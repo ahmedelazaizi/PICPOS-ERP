@@ -1,0 +1,59 @@
+{
+    "@@locale": "ar",
+    "treasuryManagement": "إدارة الخزينة",
+    "totalTreasuryBalance": "إجمالي رصيد الخزائن",
+    "receiptVoucher": "سند قبض",
+    "paymentVoucher": "سند صرف",
+    "cashSafes": "الخزائن النقدية",
+    "bankAccounts": "الحسابات البنكية",
+    "dailyClosing": "الإقفال اليومي",
+    "noBankAccounts": "لا توجد حسابات بنكية",
+    "recentTransactions": "آخر الحركات",
+    "noTransactions": "لا توجد حركات",
+    "defaultSafe": "الخزينة الافتراضية",
+    "cash": "نقدي",
+    "bank": "بنكي",
+    "customerPayment": "تحصيل من عميل",
+    "supplierPayment": "سداد لمورد",
+    "sales": "مبيعات",
+    "purchase": "مشتريات",
+    "expense": "مصروفات",
+    "salary": "رواتب",
+    "advance": "سلفة",
+    "loan": "قرض",
+    "other": "أخرى",
+    "resetBalances": "تصفير أرصدة الخزائن وترحيل الأرباح",
+    "close": "إقفال",
+    "dailyClosingTitle": "إقفال يومي - {safeName}",
+    "@dailyClosingTitle": {
+        "placeholders": {
+            "safeName": {}
+        }
+    },
+    "confirmClosing": "هل أنت متأكد من رغبتك في إقفال الخزينة؟",
+    "closingWarning": "هذا الإجراء سيقوم بتصفير الرصيد الحالي ({balance} JOD) وبداية فترة جديدة.",
+    "@closingWarning": {
+        "placeholders": {
+            "balance": {}
+        }
+    },
+    "closingNote": "ملاحظة: سيتم تسجيل كافة الحركات السابقة في التقارير ولن تُحذف.",
+    "cancel": "إلغاء",
+    "confirmCloseAndReset": "إقفال وتصفير الرصيد",
+    "closingSuccess": "تم إقفال الخزينة {safeName} بنجاح",
+    "@closingSuccess": {
+        "placeholders": {
+            "safeName": {}
+        }
+    },
+    "enterValidAmount": "يرجى إدخال مبلغ صحيح",
+    "selectSupplier": "يرجى اختيار المورد",
+    "paymentVoucherCreated": "تم إنشاء سند الصرف",
+    "save": "حفظ",
+    "voucherType": "نوع السند",
+    "category": "التصنيف",
+    "amount": "المبلغ",
+    "description": "البيان (اختياري)",
+    "party": "الجهة (عميل/مورد)",
+    "safe": "الخزينة"
+}

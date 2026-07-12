@@ -1,0 +1,2150 @@
+import 'dart:async';
+import 'dart:io';
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:drift/drift.dart';
+import 'package:rxdart/rxdart.dart' show DebounceExtensions; // Spec 115 L2 — debounceTime
+import 'package:uuid/uuid.dart';
+import 'package:flutter/foundation.dart';
+// Import treasury_repository.dart for DAO types (SafeData, TreasurySummaryData, etc.)
+import '../../domain/repositories/treasury_repository.dart';
+import 'connection.dart';
+import '../../services/security_service.dart';
+import '../../services/password_collision_scanner.dart';
+import '../../services/journal_entry_diagnostics.dart';
+import '../../core/config/app_config.dart';
+import '../../core/constants/app_constants.dart';
+import '../../core/constants/stock_movement_types.dart';
+import '../../core/auth/bootstrap_admin.dart';
+import '../../core/logging/diagnostic_logger.dart';
+import '../../core/permissions/permission_codes.dart';
+import '../../core/utils/arabic_utils.dart';
+// Spec 139 — deterministic JE balancing uses FinancialUtils' minor-unit helpers
+// and the single balance-tolerance source of truth. `show` avoids importing its
+// UnbalancedJournalException (a different type lives in journal_entry_factory).
+import '../../core/utils/financial_utils.dart' show FinancialUtils;
+import '../../core/utils/sales_payment_calculator.dart';
+import '../../core/utils/uuid_v7.dart';
+import '../../core/utils/journal_entry_gid.dart';
+// Replaced license_service with trial_state to break cycles.
+import '../../core/trial/trial_state.dart';
+import '../../domain/entities/product_entity.dart';
+import '../../services/invoice_integrity_service.dart';
+import '../../services/role_grant_preflight_service.dart';
+import '../../domain/entities/accounting_entities.dart';
+import 'sync_interceptor.dart';
+import '../../services/sync/mirror_settings_keys.dart';
+// Removing error_handler to break cycle
+import 'daos/audit_dashboard_dao.dart';
+// Feature 004 (US1): Exception types for the auto-account-linkage path.
+import 'daos/account_linkage_exceptions.dart';
+export 'daos/account_linkage_exceptions.dart';
+// Feature 004 (US3): Mutation guard mirror for read-only-on-disconnect.
+import '../../core/mutation_guard.dart';
+export '../../core/mutation_guard.dart';
+// Feature 009 (Auto-Deplete BOM): exceptions + stock-shortage policy enum
+// used by _consumeBomComponentsAtomic in manufacturing_dao.dart and by
+// applyAutoDepleteForSale (T015).
+import 'daos/manufacturing_exceptions.dart';
+export 'daos/manufacturing_exceptions.dart';
+import '../../services/stock_shortage_policy_service.dart';
+export '../../services/stock_shortage_policy_service.dart' show StockShortagePolicy;
+// Feature 009 (T012h): shift-open populates Shifts.posTerminalId from this
+// service so the per-terminal stock-shortage policy tier (FR-017) can
+// resolve at sale time. Null-tolerant — see treasury_dao.dart openShift.
+import '../../services/pos_terminal_registration_service.dart';
+// 062 (D1-004) — PermissionEnforcer for critical financial ops.
+import '../../services/permission_enforcer.dart';
+export '../../services/permission_enforcer.dart' show PermissionDeniedException;
+
+part 'database.g.dart';
+
+// DAO EXTENSIONS
+part 'daos/product_crud_dao.dart';
+part 'daos/product_barcode_units_dao.dart';
+part 'daos/sales_dao.dart';
+part 'daos/sales_mutations_dao.dart';
+part 'daos/sales_actions_dao.dart';
+part 'daos/sales_held_orders_dao.dart';
+part 'daos/sales_analytics_dao.dart';
+part 'daos/purchase_dao.dart';
+part 'daos/purchase_reports_dao.dart';
+part 'daos/treasury_dao.dart';
+part 'daos/treasury_reports_dao.dart';
+part 'daos/user_dao.dart';
+part 'daos/party_dao.dart';
+part 'daos/tables_dao.dart';
+part 'daos/inventory_dao.dart';
+part 'daos/inventory_batch_dao.dart';
+part 'daos/inventory_transfers_dao.dart';
+part 'daos/offers_dao.dart';
+part 'daos/settings_dao.dart';
+part 'daos/printer_dao.dart';
+part 'daos/permissions_dao.dart';
+part 'daos/delivery_dao.dart';
+part 'daos/kitchen_dao.dart';
+part 'daos/branches_dao.dart';
+part 'daos/regions_dao.dart';
+part 'daos/accounting_dao.dart';
+part 'daos/accounting_dao_reads.dart';
+part 'daos/accounting_dao_writes.dart';
+part 'daos/accounting_autopost_dao.dart';
+part 'daos/autopost_repair_dao.dart';
+part 'daos/accounting_reports_dao.dart';
+part 'daos/accounting_fiscal_dao.dart';
+part 'daos/accounting_audit_dao.dart';
+part 'daos/commercial_papers_dao.dart';
+part 'daos/multi_currency_pricelist_dao.dart';
+part 'daos/manufacturing_dao.dart';
+part 'daos/fixed_assets_dao_ext.dart';
+part 'daos/e_invoicing_dao.dart';
+part 'daos/activity_logs_dao.dart';
+part 'daos/invoice_template_dao.dart';
+part 'daos/invoice_template_seeder_dao.dart';
+part 'daos/sync_dao.dart';
+part 'daos/quotations_dao.dart';
+part 'daos/scale_dao.dart';
+part 'daos/purchase_orders_dao.dart';
+part 'daos/modifiers_dao.dart';
+// fixed_assets_dao.dart merged into fixed_assets_dao_ext.dart (Phase 3.2 God DAO split)
+part 'daos/sales_orders_dao.dart';
+part 'daos/bank_reconciliation_dao.dart';
+part 'daos/data_maintenance_dao.dart';
+part 'daos/multi_currency_dao.dart';
+part 'daos/budgeting_dao.dart';
+part 'daos/deferred_schedule_dao.dart';
+part 'daos/approval_workflow_dao.dart';
+part 'daos/sod_matrix_dao.dart';
+part 'daos/consolidated_statements_dao.dart';
+part 'daos/intercompany_dao.dart';
+part 'daos/restatement_dao.dart';
+part 'daos/compliance_dashboard_dao.dart';
+part 'daos/journal_template_dao.dart';
+part 'daos/field_audit_dao.dart';
+part 'daos/cycle_count_dao.dart';
+part 'daos/landed_cost_dao.dart';
+part 'daos/api_key_dao.dart';
+part 'daos/report_builder_dao.dart';
+part 'daos/notification_dao.dart';
+part 'daos/operational_expenses_dao.dart';
+part 'daos/fk_resolver_dao.dart';
+// Seeding & Projections
+part 'database_seeder.dart';
+part 'database_seeder_permissions.dart';
+part 'database_seeder_accounts.dart';
+part 'database_seeder_postgres.dart';
+part 'database_migrations.dart';
+part 'database_startup.dart';
+part 'migrations/epoch_1.dart';
+part 'migrations/epoch_2.dart';
+part 'migrations/epoch_3.dart';
+part 'models/projections.dart';
+
+// Table Definitions
+part 'tables/auth_tables.dart';
+part 'tables/inventory_tables.dart';
+part 'tables/product_tables.dart';
+part 'tables/sales_purchase_tables.dart';
+part 'tables/restaurant_tables.dart';
+part 'tables/accounting_tables.dart';
+part 'tables/treasury_settings_tables.dart';
+part 'tables/delivery_tables.dart';
+part 'tables/kitchen_tables.dart';
+part 'tables/hr_tables.dart';
+part 'tables/scale_tables.dart';
+part 'tables/audit_tables.dart';
+part 'tables/sync_tables.dart';
+part 'tables/invoice_template_tables.dart';
+part 'tables/commercial_finance_tables.dart';
+part 'tables/manufacturing_assets_tables.dart';
+part 'tables/e_invoicing_tables.dart';
+part 'tables/loyalty_tables.dart';
+part 'tables/distribution_tables.dart';
+part 'tables/document_sequences.dart';
+part 'tables/quotation_tables.dart';
+part 'tables/operational_expenses_tables.dart';
+part 'tables/bank_reconciliation_tables.dart';
+part 'tables/enterprise_tables.dart';
+part 'tables/phase9_enterprise_tables.dart';
+part 'tables/journal_template_tables.dart';
+part 'tables/field_audit_tables.dart';
+part 'tables/cycle_count_tables.dart';
+part 'tables/landed_cost_tables.dart';
+part 'tables/api_key_tables.dart';
+part 'tables/report_builder_tables.dart';
+
+/// The primary industry mode for the application, controlling which
+/// screens and features are available (e.g. restaurant tables, café menus).
+enum IndustryMode { supermarket, restaurant, cafe, retail }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SPEC 130 — PG SCHEMA PARITY EXCEPTION
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// Thrown by `_ensurePostgresSchemaParity()` when the parity pass cannot
+// close schema gaps because of an unrecoverable error (DDL permission
+// denied, connection lost, etc.). Caller (main_desktop.dart) MUST route
+// to FatalSetupErrorApp per Spec 130 Clarification Q2 (Block-all):
+// no reads + no writes until resolved or user clicks "إعادة محاولة".
+//
+// Distinct from runtime DDL errors that the pass tolerates (e.g.,
+// column type drift, extra PG tables) — those are warn-only.
+// ═══════════════════════════════════════════════════════════════════════════
+class PgSchemaParityException implements Exception {
+  /// Arabic message for FatalSetupErrorApp display.
+  final String reasonAr;
+
+  /// English details for DiagnosticLogger / support call-in.
+  final List<String> details;
+
+  /// Entity names that the pass couldn't heal (e.g., table names).
+  final List<String> failedEntities;
+
+  const PgSchemaParityException({
+    required this.reasonAr,
+    this.details = const [],
+    this.failedEntities = const [],
+  });
+
+  @override
+  String toString() =>
+      'PgSchemaParityException(reasonAr=$reasonAr, '
+      'failedEntities=$failedEntities, details=$details)';
+}
+
+/// In-memory snapshot of a single PG column from `information_schema.columns`.
+/// Lowercased everywhere for case-insensitive comparison.
+class _PgLiveColumn {
+  final String pgType;
+  final bool nullable;
+  const _PgLiveColumn({required this.pgType, required this.nullable});
+}
+
+/// Captured DDL failure during the parity pass. Aggregated and converted to
+/// [PgSchemaParityException] at end-of-pass.
+class _PgParityFatal {
+  final String entity;
+  final String detail;
+  const _PgParityFatal({required this.entity, required this.detail});
+}
+
+/// 066 (D5-001) — read-only audit result row from
+/// [AppDatabase.auditNumberingGaps]. Egyptian VAT prohibits auto-renumbering;
+/// callers display this to the accountant, who decides whether to post
+/// compensating void rows. See
+/// specs/066-voucher-numbering-atomicity/contracts/numbering-atomicity.md.
+///
+/// NOTE: kept ABOVE `@DriftDatabase(...)` so the annotation binds to
+/// `AppDatabase` (the very next class declaration) and not to this one.
+/// drift_dev attaches each `@DriftDatabase` to the next class in source
+/// order — placing this class between the annotation and `AppDatabase`
+/// caused build_runner to emit `_$NumberingGapReport extends GeneratedDatabase`
+/// instead of `_$AppDatabase`, breaking every `flutter analyze` call.
+class NumberingGapReport {
+  final String prefix;
+  final int counterNext;
+  final int maxUsedNumber;
+  final int gapCount;
+  const NumberingGapReport({
+    required this.prefix,
+    required this.counterNext,
+    required this.maxUsedNumber,
+    required this.gapCount,
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Spec 151 — auto-post dedup UNIQUE index: single source of truth
+// ═══════════════════════════════════════════════════════════════════════════
+//
+/// Name of the partial UNIQUE index that backstops duplicate auto-posted JEs
+/// for the same `(reference_type, reference_id)` pair (originally added in the
+/// v120 migration).
+const String kJeAutopostDedupIndexName = 'idx_je_autopost_dedup';
+
+/// Canonical CREATE statement for [kJeAutopostDedupIndexName] — the ONE place
+/// the index shape is defined. Referenced by (a) the v150 migration step,
+/// (b) the fresh-install `onCreate` SQLite path, and (c) the every-boot
+/// `ensureSchemaDefaults` self-heal, so all three agree.
+///
+/// Spec 151: return JEs are now keyed on the ORIGINATING invoice id
+/// (`referenceId = invoice.id`), so multiple partial returns of one invoice
+/// legitimately share `(reference_type, reference_id)`. Their per-event
+/// uniqueness rides on `journal_entries.global_id` (its own UNIQUE constraint),
+/// NOT on this index — so the return types are exempted here.
+///
+/// The exemption list MUST stay in lock-step with `createJournalEntry`'s
+/// `multiJeReferenceTypes` guard: EVERY reference type that legitimately posts
+/// more than one auto-posted JE per `referenceId` is exempt. Besides the two
+/// return types that Spec 151 re-keyed, that set already includes
+/// `commercial_paper` (one JE per lifecycle status: deposited → cashed …) and
+/// `partial_collection` (one JE per instalment). Omitting those here would let
+/// the index — once it lives on fresh installs (b) — reject the second
+/// lifecycle/instalment JE that the in-code guard deliberately allows.
+///
+/// SQLite-only (partial index `WHERE …`). Postgres never carried this index
+/// (the v120 migration was SQLite-only and it is not a Drift schema entity), so
+/// we do NOT create it on PG — matching existing behavior.
+const String kCreateJeAutopostDedupIndexSql =
+    'CREATE UNIQUE INDEX IF NOT EXISTS $kJeAutopostDedupIndexName '
+    'ON journal_entries(reference_type, reference_id) '
+    'WHERE is_auto_posted = 1 '
+    "AND reference_type NOT IN "
+    "('sales_return', 'purchase_return', 'commercial_paper', 'partial_collection')";
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DATABASE CLASS
+// ═══════════════════════════════════════════════════════════════════════════
+
+@DriftDatabase(
+  tables: [
+    Roles, // User roles
+    Permissions, // Permission definitions
+    RolePermissions, // Role-Permission mapping
+    Users,
+    UserBranchAccess, // N3: User-branch access control
+    UserWarehouseAccess, // N3: User-warehouse access control
+    UserRegionAccess, // Region-level access control
+    Regions,
+    Branches,
+    Warehouses,
+    Units,
+    Categories,
+    CategoryBranches, // PIR R-10: Category-Branch visibility join table
+    Products,
+    ProductBarcodes,
+    ProductUnits,
+    ProductBatches, // Batch tracking for expiry
+    PartyGroups,
+    Parties,
+    PurchaseInvoices,
+    PurchaseInvoiceItems,
+    SalesInvoices,
+    SalesInvoiceItems,
+    Offers,
+    OfferItems,
+    TableSections, // NEW: Restaurant sections
+    RestaurantTables, // NEW: Restaurant tables
+    TableOrders, // NEW: Table orders
+    TableOrderItems, // NEW: Items in table orders
+    TableReservations, // NEW: Table reservations
+    StockMovements,
+    InventoryBalances,
+    Accounts,
+    JournalEntries,
+    JournalEntryLines,
+    Safes,
+    SafeTransactions,
+    Printers, // Work order printers
+    PosTerminals, // v146 / Feature 009: POS terminal registry (FR-034)
+    HeldOrders, // Held/suspended orders
+    HeldOrderItems, // Items in held orders
+    DeliveryCompanies,
+    Couriers,
+    Settings,
+    // KDS Tables
+    WorkOrders,
+    WorkOrderItems,
+    KitchenStations,
+    // Spec 130 root-cause: the table class existed in kitchen_tables.dart
+    // but was never registered here, so Drift never emitted a CREATE TABLE.
+    // On PG installs this manifested as
+    //   42P01 relation "category_station_mappings" does not exist
+    // on every POS sale that hit KitchenDao.getStationForCategory.
+    CategoryStationMappings,
+    // HR Tables
+    Employees,
+    EmployeeAttendance,
+    SalaryPayments,
+    EmployeeTransactions, // NEW: Advances and deductions
+    EmployeeLeaves, // Phase 5: Leave management
+    LeaveBalances, // Phase 5: Leave balance tracking
+    OvertimeRecords, // Phase 5: Overtime tracking
+    FingerprintDevices, // Phase 5: Biometric device registry
+    PerformanceReviews, // Phase 9: HR Performance evaluation
+    PerformanceGoals, // Phase 9: Employee goal tracking
+    EmployeeContracts, // Phase 9: Employment contracts
+    // Stock Audit Tables
+    StockAudits,
+    StockAuditItems,
+    ReceiptSettings, // Receipt/Invoice customization
+    ActivityLogs, // Audit trail for all user actions (#14)
+    // Invoice Template Designer Tables
+    InvoiceTemplates,
+    InvoiceTemplateElements,
+    InvoiceTableSettings,
+    // Phase 2: Inventory Bonds
+    InventoryBonds,
+    InventoryBondItems,
+    StockRequisitions, // Phase 2: Cross-Branch Stock Requisition
+    StockRequisitionItems, // Phase 2: Cross-Branch Stock Requisition
+    Shifts, // #Phase4: Operational Auditing
+    LabelScales, // #Phase5: Multi-scale PLU export registry
+    // Phase 1: Advanced Accounting
+    CostCenters,
+    FiscalYears,
+    AccountingPeriods, // PIR Phase 1.5: Monthly period locking
+    ActivityProfiles,
+    // Phase 2: Commercial Papers & Finance
+    CommercialPapers,
+    PaperStatusHistory,
+    Currencies,
+    ExchangeRateHistory,
+    PriceLists,
+    PriceListItems,
+    // Phase 3: Manufacturing & Assets
+    BillOfMaterials,
+    BomComponents,
+    ManufacturingOrders,
+    AssetCategories,
+    FixedAssets,
+    AssetDepreciations,
+    // Phase 4: E-Invoicing
+    EInvoiceConfigs,
+    EInvoiceSubmissions,
+    TaxTypes,
+    TaxSubtypes,
+    // Phase 5.2: Loyalty Points
+    LoyaltyPrograms,
+    CustomerLoyaltyPoints,
+    LoyaltyTransactions,
+    // Phase 5.3: Distribution & Sales Reps
+    SalesRoutes,
+    RouteVisits,
+    SalesRepTargets,
+    SalesRepCollections,
+    // Phase 7: Sync Engine
+    SyncOutbox,
+    SyncConflictLog,
+    AccountMappings,
+    DocumentSequences,
+    Quotations,
+    QuotationItems,
+    // Phase 8: Operational Expenses
+    OpExpenseCategories,
+    OpExpenses,
+    MfgOrderCosts,
+    // v146 / Feature 009: Auto-Deplete BOM consumption log
+    SaleBomConsumptions,
+    // Phase 8.1: Purchase Orders
+    PurchaseOrders,
+    PurchaseOrderItems,
+    WarehousePrices, // v69: Per-warehouse product pricing
+    // Phase 9: Sales Orders
+    SalesOrders,
+    SalesOrderItems,
+    // Phase 10: Independent Payments
+    Payments,
+    PaymentAllocations,
+    // Phase 11: Bank Reconciliation
+    BankStatementLines,
+    BankReconciliations,
+    // Phase 12: Enterprise — Budgeting, Deferred, Approvals, SOD
+    Budgets,
+    BudgetLines,
+    DeferredSchedules,
+    DeferredEntries,
+    ApprovalWorkflows,
+    ApprovalSteps,
+    ApprovalRequests,
+    ApprovalDecisions,
+    SodConflicts,
+    SodViolations,
+    // Phase 13: Enterprise Advanced — Consolidation, Intercompany, Restatement, Compliance
+    Entities,
+    EntityMappings,
+    IntercompanyTransactions,
+    Restatements,
+    RestatementLines,
+    ComplianceChecks,
+    // Phase 14: Journal Entry Templates
+    JournalEntryTemplates,
+    JournalEntryTemplateLines,
+    // Phase 15: Notifications
+    Notifications,
+    // Phase C7: Field-Level Audit Logging
+    FieldAuditLogs,
+    // Phase C4: Cycle Counting
+    CycleCountPlans,
+    CycleCountTasks,
+    CycleCountItems,
+    // Phase C2: Landed Cost
+    LandedCostSheets,
+    LandedCostItems,
+    LandedCostAllocations,
+    // Phase C1: API Keys
+    ApiKeys,
+    // Phase C5: Report Builder
+    CustomReports,
+    SavedReportRuns,
+    // API Idempotency
+    ProcessedMessages,
+    // P2.2: FK remap table (replaces JSON blob in settings)
+    RemoteIdMappings,
+    // PIR P0-04: Failed Autopost monitoring
+    FailedAutoposts,
+  ],
+)
+/// MonixaERP ERP Core Database.
+///
+/// Drift-powered SQLite database with 41 schema versions, full-text search,
+/// and 16 DAO extensions covering products, sales, purchases, treasury,
+/// inventory, users, permissions, HR, delivery, kitchen, and audit logging.
+///
+/// Uses the SINGLETON PATTERN: `AppDatabase()` always returns the same instance.
+/// This prevents multiple SQLCipher connections that would each run their own
+/// `beforeOpen` seeder, leading to inconsistent data (e.g., password hash corruption).
+///
+/// `AppDatabase.forTesting()` opens an in-memory connection for tests (not singleton).
+class AppDatabase extends _$AppDatabase {
+  /// Whether this database is backed by PostgreSQL (affects migration behavior)
+  final bool _isPostgres;
+
+  /// Singleton instance for the default SQLite connection
+  static AppDatabase? _instance;
+
+  /// Factory constructor — returns the singleton SQLite instance.
+  /// Every call to `AppDatabase()` returns the SAME database connection.
+  factory AppDatabase() {
+    _instance ??= AppDatabase._internal();
+    return _instance!;
+  }
+
+  /// Private internal constructor — called only once
+  AppDatabase._internal() : _isPostgres = false, super(openConnection());
+
+  // Backwards compatibility for refactored DAOs
+  AppDatabase get accountingDao => this;
+  AppDatabase get quotationsDao => this;
+  AppDatabase get journalTemplateDao => this;
+
+  /// Opens the database using a custom [QueryExecutor] (e.g., PostgreSQL).
+  /// NOT a singleton — each PostgreSQL config gets its own instance.
+  AppDatabase.withExecutor(super.executor, {bool isPostgres = false})
+      : _isPostgres = isPostgres;
+
+  /// Opens an in-memory database for widget / integration tests.
+  /// NOT a singleton — each test gets its own isolated database.
+  AppDatabase.forTesting() : _isPostgres = false, super(openTestConnection()) {
+    // Clear top-level caches to prevent cross-test contamination
+    resetProductCaches();
+  }
+
+  /// Whether this database is backed by PostgreSQL (public read-only accessor
+  /// used by DAOs that need to generate database-agnostic raw SQL).
+  bool get isPostgres => _isPostgres;
+
+  /// Lazy accessor for the Audit Dashboard DAO
+  late final AuditDashboardDao auditDashboardDao = AuditDashboardDao(this);
+
+  /// 062 (D1-004) — shared PermissionEnforcer for critical financial ops.
+  /// Used by DAO part-files (sales_actions_dao, purchase_dao, …) to gate
+  /// the admin bypass on voidPaidInvoice / modifyLockedInvoice /
+  /// overrideCreditLimit. See specs/062-wire-critical-financial-ops.
+  late final PermissionEnforcer permissionEnforcer =
+      PermissionEnforcer(userHasPermission);
+
+  /// Returns the SQL literal for a boolean value that is compatible with the
+  /// current database backend. PostgreSQL uses TRUE/FALSE, SQLite uses 1/0.
+  String sqlBool(bool value) => _isPostgres
+      ? (value ? 'TRUE' : 'FALSE')
+      : (value ? '1' : '0');
+
+  /// Returns a [Variable] for DateTime that works in raw SQL (customSelect).
+  ///
+  /// Drift stores DateTime columns as epoch seconds (BIGINT) in both SQLite
+  /// and our PostgreSQL schema. On SQLite, `Variable(DateTime)` auto-converts
+  /// to integer. On PostgreSQL, `drift_postgres` sends DateTime as a native
+  /// timestamp type which causes type mismatch with BIGINT columns.
+  ///
+  /// This helper always returns `Variable<int>` with epoch seconds, ensuring
+  /// `BETWEEN ? AND ?` and other comparisons work on both backends.
+  Variable<int> dateVar(DateTime dt) =>
+      Variable<int>(dt.millisecondsSinceEpoch ~/ 1000);
+
+  /// Current schema version.
+  ///
+  /// Bump this whenever table definitions or migrations change.
+  /// See [migration] for the full upgrade path.
+  /// Schema v49: Phase 5.2-5.3 — Loyalty Points + Distribution
+  /// Schema v142: Feature 004 (Multi-Branch Governance) — FixedAssets gains
+  /// `global_id` (UUIDv7) + `linked_account_id` for atomic CoA sub-account linkage.
+  ///
+  /// Schema v143: Feature 005 (CoA Hardening) — re-aligns party sub-account
+  /// parents from the phantom `'1201'`/`'2101'` codes (which were never in
+  /// the seeder) to the seeded `'1121'`/`'2111'`. The migration attempts to
+  /// move any orphan sub-accounts off `1201`/`2101` to the seeded counterparts
+  /// then deletes the orphan parents — best-effort, no-op when those codes
+  /// aren't present.
+  ///
+  /// Schema v144: Feature 005 Phase 8 — archives duplicate safe-linked
+  /// accounts (orphan no-dash siblings of the canonical `111-XXXXX` rows)
+  /// that some users created via the manual COA dialog. Soft-delete only,
+  /// preserves rows that carry JE lines.
+  ///
+  /// Schema v145: Spec 008 / FR-001 — adds `branch_id` to `shifts` (nullable)
+  /// so multi-branch users can record which branch each shift was opened on.
+  ///
+  /// Schema v146: Feature 009 (Auto-Deplete BOM on Sale) — adds
+  /// `auto_deplete_on_sale` + `depletion_policy` columns on `bill_of_materials`,
+  /// creates the `sale_bom_consumptions` append-only log, creates the
+  /// `pos_terminals` master-data registry, and adds nullable
+  /// `pos_terminal_id` on `shifts` for per-terminal policy resolution.
+  ///
+  /// Schema v150: Spec 151 (return-key fix) — RETURN journal entries are now
+  /// keyed on the ORIGINATING invoice id, so multiple partial returns of one
+  /// invoice share `(reference_type, reference_id)`. Drop + recreate
+  /// `idx_je_autopost_dedup` with an exemption for the multi-JE reference types
+  /// (returns + commercial papers + partial collections) so the second partial
+  /// return no longer violates UNIQUE, and backfill historical hash-keyed
+  /// return JEs onto their invoice id. Index-only change — no table/column
+  /// change, so no generated schema regeneration is required.
+  @override
+  int get schemaVersion => 150;
+
+  /// PostgreSQL-specific table creation: Drift's `currentDateAndTime` generates
+  /// `strftime('%s','now')` which doesn't exist in PostgreSQL.
+  /// We try normal creation first, and for failures, we create the table using
+  /// raw SQL with PostgreSQL-compatible defaults.
+  Future<void> _createAllForPostgres(Migrator m) async {
+    final failedEntities = <DatabaseSchemaEntity>[];
+
+    // Phase 1: try creating each entity normally
+    for (final entity in allSchemaEntities) {
+      try {
+        await m.create(entity);
+      } catch (e) {
+        failedEntities.add(entity);
+        debugPrint('[PG] Failed to create ${entity.entityName}, will retry with fixed SQL');
+      }
+    }
+
+    // Phase 2: for failed tables, create using raw PostgreSQL-compatible SQL
+    for (final entity in failedEntities) {
+      if (entity is TableInfo) {
+        try {
+          final columns = entity.$columns;
+          final colDefs = <String>[];
+
+          for (final col in columns) {
+            final colName = col.$name;
+            String pgType;
+
+            // Map Drift types to PostgreSQL types
+            if (col.type == DriftSqlType.int) {
+              if (col.hasAutoIncrement) {
+                pgType = 'SERIAL PRIMARY KEY';
+                colDefs.add('"$colName" $pgType');
+                continue;
+              }
+              pgType = 'INTEGER';
+            } else if (col.type == DriftSqlType.string) {
+              pgType = 'TEXT';
+            } else if (col.type == DriftSqlType.bool) {
+              pgType = 'BOOLEAN';
+            } else if (col.type == DriftSqlType.double) {
+              pgType = 'DOUBLE PRECISION';
+            } else if (col.type == DriftSqlType.dateTime) {
+              pgType = 'BIGINT';  // Drift stores datetime as unix epoch
+            } else if (col.type == DriftSqlType.blob) {
+              pgType = 'BYTEA';
+            } else {
+              pgType = 'TEXT';
+            }
+
+            final nullable = col.$nullable ? '' : ' NOT NULL';
+            String defaultClause = '';
+
+            // Handle defaults: replace strftime with PostgreSQL equivalent
+            if (col.defaultValue != null) {
+              final defaultStr = col.defaultValue.toString();
+              if (defaultStr.contains('currentDateAndTime') || defaultStr.contains('CurrentDateTimeExpression')) {
+                defaultClause = " DEFAULT (EXTRACT(EPOCH FROM NOW())::bigint)";
+              } else if (col.defaultValue is Constant) {
+                final val = (col.defaultValue as Constant).value;
+                if (val is bool) {
+                  defaultClause = ' DEFAULT ${val ? 'TRUE' : 'FALSE'}';
+                } else if (val is String) {
+                  defaultClause = " DEFAULT '${val.replaceAll("'", "''")}'";
+                } else {
+                  defaultClause = ' DEFAULT $val';
+                }
+              }
+            }
+
+            colDefs.add('"$colName" $pgType$nullable$defaultClause');
+          }
+
+          final sql = 'CREATE TABLE IF NOT EXISTS "${entity.entityName}" (${colDefs.join(', ')})';
+          await customStatement(sql);
+          debugPrint('[PG] Created ${entity.entityName} with fixed SQL');
+        } catch (e2) {
+          debugPrint('[PG] Failed to create ${entity.entityName} even with fixed SQL: $e2');
+        }
+      } else {
+        // For indices and other entities, try again (they might depend on now-created tables)
+        try {
+          await m.create(entity);
+          debugPrint('[PG] Created entity ${entity.entityName} on retry');
+        } catch (e2) {
+          debugPrint('[PG] Skipped non-table entity ${entity.entityName}: $e2');
+        }
+      }
+    }
+  }
+
+  /// PostgreSQL-specific seeder. Delegates to the atomic, idempotent,
+  /// verifiable implementation in `database_seeder_postgres.dart`.
+  ///
+  /// Kept as a thin wrapper for backward compatibility with
+  /// `database_startup.dart` callers. New code should call
+  /// `seedInitialDataPostgresAtomic()` directly to get the `SeedResult`.
+  Future<void> _seedInitialDataPostgres() async {
+    await seedInitialDataPostgresAtomic();
+  }
+
+  /// Create PostgreSQL compatibility layer for SQLite-specific SQL that
+  /// Drift generates. Covers: strftime(), boolean=integer comparisons.
+  ///
+  /// CRITICAL: this function runs on EVERY app start via `onCreate` on a
+  /// fresh install AND explicitly from `runBeforeOpen` on re-launches.
+  /// The previous implementation tried to `DROP ... IF EXISTS` the
+  /// operators/casts before re-creating them. On a re-run, every table
+  /// that carries a `CHECK (col IN (0, 1))` constraint on a BOOLEAN
+  /// column depends on the `=(boolean, integer)` operator — so the
+  /// DROP was refused by PostgreSQL with
+  ///     "constraint users_force_password_change_check on table users
+  ///      depends on operator =(boolean,integer)"
+  /// and the follow-up CREATE OPERATOR failed (operator already exists).
+  /// That cascade is exactly what left fresh server installs with an
+  /// empty `roles` + `users` table and unsolvable login errors.
+  ///
+  /// New behaviour: functions are idempotent via `CREATE OR REPLACE`;
+  /// operators and casts are guarded by catalog lookups so we do NOT
+  /// drop them when they already exist (tables legitimately depend on
+  /// them). We only `CREATE` on first run, otherwise we no-op silently.
+  Future<void> _createPostgresCompatLayer() async {
+    // 1. strftime() compatibility — Drift uses strftime('%s', 'now')
+    try {
+      await customStatement(r'''
+        CREATE OR REPLACE FUNCTION strftime(fmt text, ts text)
+        RETURNS bigint AS $fn$
+          SELECT EXTRACT(EPOCH FROM NOW())::bigint;
+        $fn$ LANGUAGE sql STABLE
+      ''');
+    } catch (e) { debugPrint('[PG-COMPAT] strftime(text,text): $e'); }
+
+    try {
+      await customStatement(r'''
+        CREATE OR REPLACE FUNCTION strftime(fmt text, ts timestamptz)
+        RETURNS bigint AS $fn$
+          SELECT EXTRACT(EPOCH FROM ts)::bigint;
+        $fn$ LANGUAGE sql STABLE
+      ''');
+    } catch (e) { debugPrint('[PG-COMPAT] strftime(text,timestamptz): $e'); }
+
+    // 2. boolean = integer helper function (CREATE OR REPLACE is safe).
+    try {
+      await customStatement(r'''
+        CREATE OR REPLACE FUNCTION bool_eq_int(boolean, integer)
+        RETURNS boolean AS $fn$
+          SELECT $1 = ($2 != 0);
+        $fn$ LANGUAGE sql IMMUTABLE
+      ''');
+    } catch (e) { debugPrint('[PG-COMPAT] bool_eq_int func: $e'); }
+
+    try {
+      await customStatement(r'''
+        CREATE OR REPLACE FUNCTION int_eq_bool(integer, boolean)
+        RETURNS boolean AS $fn$
+          SELECT ($1 != 0) = $2;
+        $fn$ LANGUAGE sql IMMUTABLE
+      ''');
+    } catch (e) { debugPrint('[PG-COMPAT] int_eq_bool func: $e'); }
+
+    try {
+      await customStatement(r'''
+        CREATE OR REPLACE FUNCTION int_to_bool(integer)
+        RETURNS boolean AS $fn$
+          SELECT $1 != 0;
+        $fn$ LANGUAGE sql IMMUTABLE
+      ''');
+    } catch (e) { debugPrint('[PG-COMPAT] int_to_bool func: $e'); }
+
+    // 3. Operators and cast — guarded by catalog lookup. CREATE ONLY IF
+    //    MISSING. Never drop — table CHECK constraints depend on these.
+    await _pgCreateIfMissing(
+      checkSql:
+          "SELECT 1 FROM pg_operator WHERE oprname = '=' "
+          "AND oprleft = 'boolean'::regtype AND oprright = 'integer'::regtype",
+      createSql: r'''
+        CREATE OPERATOR public.= (
+          LEFTARG = boolean, RIGHTARG = integer,
+          FUNCTION = bool_eq_int
+        )
+      ''',
+      label: 'OPERATOR =(boolean,integer)',
+    );
+
+    await _pgCreateIfMissing(
+      checkSql:
+          "SELECT 1 FROM pg_operator WHERE oprname = '=' "
+          "AND oprleft = 'integer'::regtype AND oprright = 'boolean'::regtype",
+      createSql: r'''
+        CREATE OPERATOR public.= (
+          LEFTARG = integer, RIGHTARG = boolean,
+          FUNCTION = int_eq_bool
+        )
+      ''',
+      label: 'OPERATOR =(integer,boolean)',
+    );
+
+    await _pgCreateIfMissing(
+      checkSql:
+          "SELECT 1 FROM pg_cast "
+          "WHERE castsource = 'integer'::regtype "
+          "AND casttarget = 'boolean'::regtype",
+      createSql: r'''
+        CREATE CAST (integer AS boolean)
+        WITH FUNCTION int_to_bool(integer)
+        AS IMPLICIT
+      ''',
+      label: 'CAST (integer AS boolean)',
+    );
+
+    debugPrint('[PG] ✅ Compatibility layer ready (idempotent, re-run safe)');
+  }
+
+  /// Runs [createSql] only if [checkSql] returns zero rows. Used for DDL
+  /// objects (operators, casts) that have no `CREATE OR REPLACE` form
+  /// AND cannot be dropped because live tables depend on them.
+  Future<void> _pgCreateIfMissing({
+    required String checkSql,
+    required String createSql,
+    required String label,
+  }) async {
+    try {
+      final rows = await customSelect(checkSql).get();
+      if (rows.isNotEmpty) {
+        debugPrint('[PG-COMPAT] $label already exists — skipping');
+        return;
+      }
+      await customStatement(createSql);
+      debugPrint('[PG-COMPAT] $label created');
+    } catch (e) {
+      debugPrint('[PG-COMPAT] $label check/create failed: $e');
+    }
+  }
+
+  /// Canonical list of sync-hardening tables (mirrors the list in
+  /// `migrations/epoch_3.dart` v129). Used by the Postgres infrastructure
+  /// ensurer to backfill columns and attach auto-bump triggers.
+  static const _syncHardenedTables = <String>[
+    'party_groups', 'parties', 'purchase_invoices', 'purchase_invoice_items',
+    'sales_invoices', 'sales_invoice_items', 'held_orders', 'held_order_items',
+    'purchase_orders', 'purchase_order_items', 'sales_orders', 'sales_order_items',
+    'payments', 'payment_allocations',
+    'accounts', 'journal_entries', 'cost_centers', 'fiscal_years', 'accounting_periods',
+    'roles', 'users',
+    'commercial_papers', 'currencies', 'price_lists', 'price_list_items',
+    'regions', 'branches', 'warehouses', 'stock_movements',
+    'units', 'categories', 'products', 'product_barcodes', 'product_units',
+    'quotations', 'quotation_items',
+    'safes', 'safe_transactions', 'printers',
+    'shifts',
+  ];
+
+  /// Ensures PostgreSQL has the full sync-hardening infrastructure.
+  ///
+  /// The SQLite migration path (epoch_3.dart v129/v130) uses SQLite-only DDL
+  /// (`strftime`, `CREATE TRIGGER ... WHEN ... BEGIN ... END`, `AUTOINCREMENT`)
+  /// which is incompatible with Postgres. The Drift `onUpgrade` hook is
+  /// skipped entirely on PG (see [migration]), so those v129/v130 changes
+  /// never land on server-mode installs. This method installs the Postgres
+  /// equivalents directly, and runs idempotently on every startup so both
+  /// fresh installs (where `_createAllForPostgres` already created the base
+  /// tables) and older PG databases (pre-v129) converge to the same state.
+  ///
+  /// Steps:
+  ///   1. `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` for the 4 sync columns
+  ///      (`last_modified_at`, `deleted_at`, `origin_client_id`, `row_version`)
+  ///      on every table in [_syncHardenedTables].
+  ///   2. `CREATE TABLE IF NOT EXISTS remote_id_mappings` with Postgres DDL
+  ///      (`SERIAL` instead of `AUTOINCREMENT`, `BIGINT` with
+  ///      `EXTRACT(EPOCH FROM NOW())::bigint` default instead of `strftime`).
+  ///   3. `CREATE OR REPLACE FUNCTION fn_bump_row_version()` in PL/pgSQL —
+  ///      the Postgres equivalent of the SQLite auto-bump trigger body.
+  ///      Runs as a BEFORE UPDATE trigger and mutates NEW directly (cheaper
+  ///      than the SQLite approach of firing a follow-up UPDATE).
+  ///   4. DROP + CREATE TRIGGER for each sync table (Postgres `CREATE OR
+  ///      REPLACE TRIGGER` requires v14+; DROP IF EXISTS + CREATE is portable
+  ///      back to v10).
+  Future<void> _ensurePostgresSyncInfrastructure() async {
+    if (!_isPostgres) return;
+
+    // ── Step 1: backfill sync columns (Postgres 9.6+ supports IF NOT EXISTS).
+    for (final t in _syncHardenedTables) {
+      for (final ddl in [
+        'ALTER TABLE $t ADD COLUMN IF NOT EXISTS last_modified_at BIGINT',
+        'ALTER TABLE $t ADD COLUMN IF NOT EXISTS deleted_at BIGINT',
+        'ALTER TABLE $t ADD COLUMN IF NOT EXISTS origin_client_id TEXT',
+        'ALTER TABLE $t ADD COLUMN IF NOT EXISTS row_version INTEGER NOT NULL DEFAULT 0',
+      ]) {
+        try {
+          await customStatement(ddl);
+        } catch (e) {
+          // Table might not exist yet on a partially-provisioned DB; log and
+          // continue so one missing table doesn't block the rest.
+          debugPrint('[PG-SYNC] $t: $ddl failed: $e');
+        }
+      }
+    }
+
+    // ── Step 1b (v133): direct branch_id on invoice tables for multi-branch
+    // reports + filters. PG-side ALTER + backfill from warehouses.branch_id
+    // for any rows created before this schema bump.
+    for (final t in const ['sales_invoices', 'purchase_invoices']) {
+      try {
+        await customStatement('ALTER TABLE $t ADD COLUMN IF NOT EXISTS branch_id INTEGER REFERENCES branches(id)');
+        await customStatement(
+          'UPDATE $t SET branch_id = '
+          '(SELECT branch_id FROM warehouses WHERE warehouses.id = $t.warehouse_id) '
+          'WHERE branch_id IS NULL',
+        );
+        await customStatement('CREATE INDEX IF NOT EXISTS idx_${t}_branch ON $t(branch_id)');
+      } catch (e) {
+        debugPrint('[PG-SYNC] $t.branch_id: $e');
+      }
+    }
+
+    // ── Step 1c (v134): branch code for invoice number prefixing.
+    // PG-side ALTER + backfill from name (first 3 chars uppercased).
+    try {
+      await customStatement('ALTER TABLE branches ADD COLUMN IF NOT EXISTS code TEXT');
+      await customStatement(
+        "UPDATE branches SET code = UPPER(SUBSTRING(REPLACE(name,' ',''), 1, 3)) "
+        "WHERE code IS NULL OR code = ''",
+      );
+    } catch (e) {
+      debugPrint('[PG-SYNC] branches.code: $e');
+    }
+
+    // ── Step 1d (v142, Feature 004 US1): per-asset CoA sub-account linkage
+    // + UUIDv7 sync identity on fixed_assets. Idempotent on PG.
+    try {
+      await customStatement(
+          'ALTER TABLE fixed_assets ADD COLUMN IF NOT EXISTS linked_account_id INTEGER REFERENCES accounts(id)');
+      await customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_fixed_assets_linked_account ON fixed_assets(linked_account_id)');
+      await customStatement(
+          'ALTER TABLE fixed_assets ADD COLUMN IF NOT EXISTS global_id TEXT');
+      await customStatement(
+          'CREATE UNIQUE INDEX IF NOT EXISTS idx_fixed_assets_global_id '
+          'ON fixed_assets(global_id) WHERE global_id IS NOT NULL');
+    } catch (e) {
+      debugPrint('[PG-SYNC] fixed_assets v142 columns: $e');
+    }
+
+    // ── Step 2: ensure remote_id_mappings (idempotent; Drift schema already
+    //    creates it on fresh installs via _createAllForPostgres, but older PG
+    //    databases from before v130 won't have it).
+    try {
+      await customStatement('''
+        CREATE TABLE IF NOT EXISTS remote_id_mappings (
+          id SERIAL PRIMARY KEY,
+          table_name TEXT NOT NULL,
+          local_id INTEGER NOT NULL,
+          remote_id INTEGER NOT NULL,
+          global_id TEXT,
+          created_at BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())::bigint
+        )
+      ''');
+      await customStatement(
+        'CREATE UNIQUE INDEX IF NOT EXISTS idx_remote_id_local '
+        'ON remote_id_mappings(table_name, local_id)',
+      );
+      await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_remote_id_remote '
+        'ON remote_id_mappings(table_name, remote_id)',
+      );
+      await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_remote_id_global '
+        'ON remote_id_mappings(table_name, global_id)',
+      );
+    } catch (e) {
+      debugPrint('[PG-SYNC] remote_id_mappings: $e');
+    }
+
+    // ── Step 2b (B-MIG-3): e_invoice_status_log has a Drift class but is NOT
+    //    registered in @DriftDatabase, so _createAllForPostgres (which iterates
+    //    allSchemaEntities) never creates it, and PG skips the SQLite onUpgrade
+    //    that would. On a fresh PG install e_invoicing_dao's status-log
+    //    INSERT/SELECT then failed with 42P01. Create it here idempotently.
+    //    (The other raw-SQL-only tables the audit listed — sync_logs,
+    //    warehouse_transfers/_items, pricing_rules — have zero call sites and
+    //    are dead/id-only stubs, so they are intentionally NOT provisioned.)
+    try {
+      await customStatement('''
+        CREATE TABLE IF NOT EXISTS e_invoice_status_log (
+          id SERIAL PRIMARY KEY,
+          submission_id INTEGER NOT NULL REFERENCES e_invoice_submissions(id),
+          old_status TEXT,
+          new_status TEXT NOT NULL,
+          changed_by TEXT,
+          notes TEXT,
+          changed_at BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())::bigint
+        )
+      ''');
+      await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_einv_status_log_submission '
+        'ON e_invoice_status_log(submission_id)',
+      );
+    } catch (e) {
+      debugPrint('[PG-SYNC] e_invoice_status_log: $e');
+    }
+
+    // ── Step 3: auto-bump trigger function. Handles BOTH INSERT and UPDATE:
+    //    * INSERT → stamps last_modified_at with server time so delta pull
+    //      queries `WHERE last_modified_at > since` can find new rows. Server
+    //      time is always authoritative here (avoids client clock skew).
+    //    * UPDATE → if the application didn't advance row_version, bump it
+    //      and refresh last_modified_at. The guard respects explicit client
+    //      writes (e.g. a sync pull replaying a specific version).
+    try {
+      await customStatement(r'''
+        CREATE OR REPLACE FUNCTION fn_bump_row_version()
+        RETURNS trigger AS $fn$
+        BEGIN
+          IF TG_OP = 'INSERT' THEN
+            NEW.last_modified_at := EXTRACT(EPOCH FROM NOW())::bigint;
+            IF NEW.row_version IS NULL THEN
+              NEW.row_version := 0;
+            END IF;
+          ELSIF TG_OP = 'UPDATE' THEN
+            IF NEW.row_version IS NULL OR OLD.row_version IS NULL
+               OR NEW.row_version = OLD.row_version THEN
+              NEW.row_version := COALESCE(OLD.row_version, 0) + 1;
+              NEW.last_modified_at := EXTRACT(EPOCH FROM NOW())::bigint;
+            END IF;
+          END IF;
+          RETURN NEW;
+        END;
+        $fn$ LANGUAGE plpgsql
+      ''');
+    } catch (e) {
+      debugPrint('[PG-SYNC] fn_bump_row_version: $e');
+    }
+
+    // ── Step 4: attach/refresh trigger on each sync table. Skip the whole
+    //    loop when the expected trigger count is already installed — this
+    //    keeps the common-case startup near zero-cost.
+    var shouldInstallTriggers = true;
+    try {
+      final existing = await customSelect(
+        "SELECT COUNT(*)::integer AS c FROM pg_trigger "
+        "WHERE tgname LIKE '%_bump_version' AND NOT tgisinternal",
+      ).get();
+      final count = (existing.first.data['c'] as num).toInt();
+      if (count >= _syncHardenedTables.length) {
+        shouldInstallTriggers = false;
+        debugPrint(
+          '[PG-SYNC] triggers already installed ($count ≥ '
+          '${_syncHardenedTables.length}) — skipping install',
+        );
+      }
+    } catch (e) {
+      debugPrint('[PG-SYNC] trigger count check failed, will reinstall: $e');
+    }
+
+    if (shouldInstallTriggers) {
+      for (final t in _syncHardenedTables) {
+        try {
+          await customStatement(
+            'DROP TRIGGER IF EXISTS ${t}_bump_version ON $t',
+          );
+          await customStatement('''
+            CREATE TRIGGER ${t}_bump_version
+            BEFORE INSERT OR UPDATE ON $t
+            FOR EACH ROW
+            EXECUTE FUNCTION fn_bump_row_version()
+          ''');
+        } catch (e) {
+          debugPrint('[PG-SYNC] trigger $t: $e');
+        }
+      }
+    }
+
+    // ── Step 4.5: Modifier tables. Migration v70 creates these via raw
+    //    SQLite DDL (AUTOINCREMENT, INTEGER booleans), and Drift's
+    //    onUpgrade is skipped on PG, so a Postgres server installed
+    //    before v70 — or any PG server, since these tables have no
+    //    Drift Table class — never gets the schema. The DAO query
+    //      SELECT mg.* FROM modifier_groups ...
+    //    then fails with "relation modifier_groups does not exist"
+    //    every time a cashier opens the modifier panel for a product.
+    //    Idempotent CREATE IF NOT EXISTS keeps this safe across restarts.
+    try {
+      await customStatement('''
+        CREATE TABLE IF NOT EXISTS modifier_groups (
+          id SERIAL PRIMARY KEY,
+          name TEXT NOT NULL,
+          min_selection INTEGER NOT NULL DEFAULT 0,
+          max_selection INTEGER NOT NULL DEFAULT 1,
+          is_active BOOLEAN NOT NULL DEFAULT TRUE
+        )
+      ''');
+      await customStatement('''
+        CREATE TABLE IF NOT EXISTS modifier_items (
+          id SERIAL PRIMARY KEY,
+          group_id INTEGER NOT NULL REFERENCES modifier_groups(id) ON DELETE CASCADE,
+          name TEXT NOT NULL,
+          extra_price DOUBLE PRECISION NOT NULL DEFAULT 0,
+          is_default BOOLEAN NOT NULL DEFAULT FALSE,
+          is_active BOOLEAN NOT NULL DEFAULT TRUE,
+          sort_order INTEGER NOT NULL DEFAULT 0
+        )
+      ''');
+      await customStatement('''
+        CREATE TABLE IF NOT EXISTS product_modifier_groups (
+          id SERIAL PRIMARY KEY,
+          product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+          modifier_group_id INTEGER NOT NULL REFERENCES modifier_groups(id) ON DELETE CASCADE,
+          sort_order INTEGER NOT NULL DEFAULT 0,
+          UNIQUE(product_id, modifier_group_id)
+        )
+      ''');
+      await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_modifier_items_group ON modifier_items(group_id)',
+      );
+      await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_product_modifier_groups_product ON product_modifier_groups(product_id)',
+      );
+    } catch (e) {
+      debugPrint('[PG-SYNC] modifier tables ensure failed: $e');
+    }
+
+    // ── Step 5: activity_logs sync columns. activity_logs is NOT in
+    //    _syncHardenedTables (it has no deleted_at / row_version because the
+    //    audit trail is append-only and never modified once written), but it
+    //    DOES need global_id + last_modified_at + origin_client_id so that
+    //    multi-client activity logs can be pushed and pulled by globalId.
+    //
+    //    Without this block, ActivityLogger.log() throws on every call:
+    //      Severity.error 42703: column "global_id" of relation
+    //      "activity_logs" does not exist
+    //    on Postgres servers that were created before the schema added these
+    //    columns (Drift's onUpgrade is skipped on PG).
+    try {
+      for (final ddl in [
+        'ALTER TABLE activity_logs ADD COLUMN IF NOT EXISTS global_id TEXT',
+        'ALTER TABLE activity_logs ADD COLUMN IF NOT EXISTS origin_client_id TEXT',
+        'ALTER TABLE activity_logs ADD COLUMN IF NOT EXISTS last_modified_at BIGINT',
+        // Unique constraint on global_id matches the SQLite schema
+        // (auth_tables.dart: globalId.unique()). IF NOT EXISTS keeps this
+        // idempotent across restarts.
+        'CREATE UNIQUE INDEX IF NOT EXISTS idx_activity_logs_global_id '
+            'ON activity_logs(global_id) WHERE global_id IS NOT NULL',
+        'CREATE INDEX IF NOT EXISTS idx_activity_logs_modified '
+            'ON activity_logs(last_modified_at)',
+      ]) {
+        try {
+          await customStatement(ddl);
+        } catch (e) {
+          debugPrint('[PG-SYNC] activity_logs DDL failed: $e');
+        }
+      }
+    } catch (e) {
+      debugPrint('[PG-SYNC] activity_logs ensure failed: $e');
+    }
+
+    debugPrint('[PG-SYNC] ✅ Postgres sync infrastructure ensured');
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SPEC 130 — PG SCHEMA PARITY (generic self-heal pass)
+  // ═══════════════════════════════════════════════════════════════════════════
+  //
+  // Defense-in-depth catch-all that ensures every Drift schema entity exists
+  // on PostgreSQL. Runs every boot in Phase 2d (after
+  // `_ensurePostgresSyncInfrastructure`). Compares `allSchemaEntities` against
+  // `information_schema` + `pg_indexes` and emits idempotent DDL to close
+  // gaps:
+  //   - Missing tables → CREATE TABLE IF NOT EXISTS (via Migrator)
+  //   - Missing columns → ALTER TABLE ADD COLUMN IF NOT EXISTS
+  //   - Missing indexes → CREATE INDEX IF NOT EXISTS
+  //   - Missing FK constraints → ALTER TABLE ADD CONSTRAINT (guarded)
+  //
+  // Per Clarification Q1: full parity (tables + columns + indexes + FKs).
+  // Per Clarification Q2: unrecoverable failure throws
+  // [PgSchemaParityException] → Fatal screen (Block-all).
+  // Per Clarification Q3: defense-in-depth — does NOT replace
+  // `_createAllForPostgres()` or `_ensurePostgresSyncInfrastructure()`,
+  // runs AFTER them as catch-all.
+  // Per Clarification Q4: column type drift = warn-only, no ALTER COLUMN TYPE.
+  //
+  // **FR-008**: runs outside any transaction. Uses `customStatement` directly,
+  // NEVER `db.transaction(...)`. Static test (T025) grep-asserts this.
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Information schema snapshot for one PG table column.
+  /// Private helper structure for the parity pass.
+  static const Map<DriftSqlType, List<String>> _driftTypeToPgAcceptable = {
+    DriftSqlType.int: ['integer', 'bigint', 'smallint'],
+    DriftSqlType.bigInt: ['bigint', 'integer'],
+    DriftSqlType.string: ['text', 'character varying', 'character'],
+    DriftSqlType.bool: ['boolean'],
+    DriftSqlType.double: ['double precision', 'real', 'numeric'],
+    DriftSqlType.dateTime: ['bigint'], // Drift stores epoch
+    DriftSqlType.blob: ['bytea'],
+    // `any` is Drift's wildcard for custom types — accept any actual PG
+    // type to avoid false-positive drift warnings on columns the schema
+    // intentionally leaves loose.
+    DriftSqlType.any: [],
+  };
+
+  /// Read PG live table names from information_schema (public schema only).
+  /// Returns lowercased set for case-insensitive comparison.
+  Future<Set<String>> _pgFetchTableNames() async {
+    final rows = await customSelect(
+      "SELECT table_name FROM information_schema.tables "
+      "WHERE table_schema = 'public' AND table_type = 'BASE TABLE'",
+    ).get();
+    return rows
+        .map((r) => (r.data['table_name'] as String).toLowerCase())
+        .toSet();
+  }
+
+  /// Read PG live columns keyed by `(table_name, column_name)` → (type, nullable).
+  /// All names lowercased for case-insensitive comparison.
+  Future<Map<String, _PgLiveColumn>> _pgFetchColumns() async {
+    final rows = await customSelect(
+      "SELECT table_name, column_name, data_type, is_nullable "
+      "FROM information_schema.columns WHERE table_schema = 'public'",
+    ).get();
+    final out = <String, _PgLiveColumn>{};
+    for (final r in rows) {
+      final table = (r.data['table_name'] as String).toLowerCase();
+      final col = (r.data['column_name'] as String).toLowerCase();
+      out['$table.$col'] = _PgLiveColumn(
+        pgType: (r.data['data_type'] as String).toLowerCase(),
+        nullable: (r.data['is_nullable'] as String).toUpperCase() == 'YES',
+      );
+    }
+    return out;
+  }
+
+  /// Read PG live FK constraint signatures `(table.column → refTable.refColumn)`.
+  /// Used to detect missing FKs in Drift schema.
+  Future<Set<String>> _pgFetchForeignKeys() async {
+    final rows = await customSelect(
+      "SELECT tc.table_name AS src_table, kcu.column_name AS src_col, "
+      "       ccu.table_name AS ref_table, ccu.column_name AS ref_col "
+      "FROM information_schema.table_constraints tc "
+      "JOIN information_schema.key_column_usage kcu "
+      "  ON tc.constraint_name = kcu.constraint_name "
+      "JOIN information_schema.constraint_column_usage ccu "
+      "  ON tc.constraint_name = ccu.constraint_name "
+      "WHERE tc.table_schema = 'public' "
+      "  AND tc.constraint_type = 'FOREIGN KEY'",
+    ).get();
+    return rows
+        .map((r) =>
+            '${(r.data['src_table'] as String).toLowerCase()}.'
+            '${(r.data['src_col'] as String).toLowerCase()}→'
+            '${(r.data['ref_table'] as String).toLowerCase()}.'
+            '${(r.data['ref_col'] as String).toLowerCase()}')
+        .toSet();
+  }
+
+  /// Read PG live index names. Returns lowercased set.
+  Future<Set<String>> _pgFetchIndexNames() async {
+    final rows = await customSelect(
+      "SELECT indexname FROM pg_indexes WHERE schemaname = 'public'",
+    ).get();
+    return rows
+        .map((r) => (r.data['indexname'] as String).toLowerCase())
+        .toSet();
+  }
+
+  /// Build a `CREATE TABLE IF NOT EXISTS` statement for the given Drift
+  /// [TableInfo] using PostgreSQL-compatible DDL (SERIAL, BOOLEAN, BYTEA,
+  /// `EXTRACT(EPOCH FROM NOW())` instead of `strftime`).
+  ///
+  /// Logic mirrors `_createAllForPostgres()` Phase 2 (lines 508-563) so
+  /// the same dialect rules apply on both first-boot creation and
+  /// every-boot self-heal. Duplicated rather than shared via helper to
+  /// avoid touching the legacy creator (Constitution I — Behavior
+  /// Preservation).
+  String _buildPgCreateTableSql(TableInfo entity) {
+    final columns = entity.$columns;
+    final colDefs = <String>[];
+
+    for (final col in columns) {
+      final colName = col.$name;
+      String pgType;
+
+      if (col.type == DriftSqlType.int) {
+        if (col.hasAutoIncrement) {
+          colDefs.add('"$colName" SERIAL PRIMARY KEY');
+          continue;
+        }
+        pgType = 'INTEGER';
+      } else if (col.type == DriftSqlType.string) {
+        pgType = 'TEXT';
+      } else if (col.type == DriftSqlType.bool) {
+        pgType = 'BOOLEAN';
+      } else if (col.type == DriftSqlType.double) {
+        pgType = 'DOUBLE PRECISION';
+      } else if (col.type == DriftSqlType.dateTime) {
+        pgType = 'BIGINT'; // Drift stores datetime as unix epoch
+      } else if (col.type == DriftSqlType.blob) {
+        pgType = 'BYTEA';
+      } else {
+        pgType = 'TEXT';
+      }
+
+      final nullable = col.$nullable ? '' : ' NOT NULL';
+      var defaultClause = '';
+
+      if (col.defaultValue != null) {
+        final defaultStr = col.defaultValue.toString();
+        if (defaultStr.contains('currentDateAndTime') ||
+            defaultStr.contains('CurrentDateTimeExpression')) {
+          defaultClause = " DEFAULT (EXTRACT(EPOCH FROM NOW())::bigint)";
+        } else if (col.defaultValue is Constant) {
+          final val = (col.defaultValue as Constant).value;
+          if (val is bool) {
+            defaultClause = ' DEFAULT ${val ? 'TRUE' : 'FALSE'}';
+          } else if (val is String) {
+            defaultClause = " DEFAULT '${val.replaceAll("'", "''")}'";
+          } else {
+            defaultClause = ' DEFAULT $val';
+          }
+        }
+      }
+
+      colDefs.add('"$colName" $pgType$nullable$defaultClause');
+    }
+
+    return 'CREATE TABLE IF NOT EXISTS "${entity.actualTableName}" '
+        '(${colDefs.join(', ')})';
+  }
+
+  /// Generic schema parity pass. Iterates `allSchemaEntities`, reads PG
+  /// live schema from `information_schema` + `pg_indexes`, and emits
+  /// idempotent DDL to close gaps. See class-level comment for the full
+  /// contract.
+  ///
+  /// **DO NOT** wrap the body in `db.transaction(...)` — FR-008 requires
+  /// DDL to run outside any active transaction. Static test T025
+  /// grep-asserts the absence of `transaction(` here.
+  Future<void> _ensurePostgresSchemaParity() async {
+    if (!_isPostgres) return;
+
+    final sw = Stopwatch()..start();
+    var healedCount = 0;
+    var driftCount = 0;
+    final fatalErrors = <_PgParityFatal>[];
+
+    // Snapshot PG live schema once. O(1) round-trips instead of per-entity.
+    final pgTables = await _pgFetchTableNames();
+    final pgColumns = await _pgFetchColumns();
+    final pgIndexes = await _pgFetchIndexNames();
+    // `_pgFetchForeignKeys` exists for future FK-parity work (see T018
+    // comment in the loop below) but is not snapshotted here yet — the
+    // current implementation cannot programmatically derive Drift's
+    // declared FK targets, so reading PG's side without a way to compare
+    // would emit only spurious extras warnings.
+
+    // Iterate Drift schema entities. Handle each kind explicitly so out-of-
+    // scope kinds (Trigger/View) are logged via [PG-PARITY-SKIP] rather than
+    // silently ignored (FR-006).
+    final driftTableNames = <String>{};
+    for (final entity in allSchemaEntities) {
+      if (entity is TableInfo) {
+        final tableName = entity.actualTableName.toLowerCase();
+        driftTableNames.add(tableName);
+        final tableExisted = pgTables.contains(tableName);
+
+        if (!tableExisted) {
+          // Missing table → emit CREATE TABLE IF NOT EXISTS with
+          // PG-compatible DDL (Drift-generated DDL uses SQLite-only syntax
+          // like strftime() / AUTOINCREMENT that PG rejects).
+          try {
+            final sql = _buildPgCreateTableSql(entity);
+            await customStatement(sql);
+            healedCount++;
+            await DiagnosticLogger.log(
+              'PG-PARITY-HEAL',
+              'table=$tableName action=created',
+            );
+          } catch (e) {
+            fatalErrors.add(_PgParityFatal(
+              entity: 'table:$tableName',
+              detail: 'CREATE TABLE failed: $e',
+            ));
+            await DiagnosticLogger.log(
+              'PG-PARITY-FATAL',
+              'table=$tableName error=$e',
+            );
+            continue; // skip column/FK heal on a table we couldn't create
+          }
+        }
+
+        // T016 — column-level parity. ALTER ADD COLUMN IF NOT EXISTS for
+        // any Drift column not present on PG. Reuses the Drift→PG type
+        // mapping via [_buildPgColumnDef]. Skipped for tables we just
+        // created above (they already carry all their columns) AND for
+        // SERIAL-PK columns (cannot be re-added via ALTER).
+        if (tableExisted) {
+          for (final col in entity.$columns) {
+            if (col.hasAutoIncrement) continue; // SERIAL PK — never ALTER ADD
+            final colName = col.$name.toLowerCase();
+            final key = '$tableName.$colName';
+            final live = pgColumns[key];
+
+            if (live == null) {
+              // Missing column → ALTER TABLE ADD COLUMN IF NOT EXISTS.
+              try {
+                final colDef = _buildPgColumnDef(col);
+                await customStatement(
+                  'ALTER TABLE "$tableName" '
+                  'ADD COLUMN IF NOT EXISTS $colDef',
+                );
+                healedCount++;
+                await DiagnosticLogger.log(
+                  'PG-PARITY-HEAL',
+                  'column=$tableName.$colName action=added',
+                );
+              } catch (e) {
+                fatalErrors.add(_PgParityFatal(
+                  entity: 'column:$tableName.$colName',
+                  detail: 'ALTER ADD COLUMN failed: $e',
+                ));
+                await DiagnosticLogger.log(
+                  'PG-PARITY-FATAL',
+                  'column=$tableName.$colName error=$e',
+                );
+              }
+            } else {
+              // T019 — drift detection. Column exists; verify type +
+              // nullability. Warn-only per Clarification Q4 (no ALTER
+              // COLUMN TYPE — too risky for data loss).
+              final acceptable =
+                  _driftTypeToPgAcceptable[col.type] ?? const ['text'];
+              if (!acceptable.contains(live.pgType)) {
+                driftCount++;
+                await DiagnosticLogger.log(
+                  'PG-PARITY-DRIFT',
+                  'table=$tableName column=$colName '
+                      'expected_type=${col.type} '
+                      'actual_type=${live.pgType}',
+                );
+              } else if (live.nullable != col.$nullable) {
+                driftCount++;
+                await DiagnosticLogger.log(
+                  'PG-PARITY-DRIFT',
+                  'table=$tableName column=$colName '
+                      'expected_null=${col.$nullable} '
+                      'actual_null=${live.nullable}',
+                );
+              }
+            }
+          }
+        }
+
+        // T018 — FK constraint parity. Drift's runtime `GeneratedColumn`
+        // does not expose the `.references(...)` target programmatically
+        // (the metadata is baked into a private constraint-generation
+        // closure that only fires inside Drift's own SQL emission path).
+        //
+        // The practical safety net for FK gaps is `_buildPgCreateTableSql`
+        // — when a *missing table* is created, ON-INSERT runtime errors
+        // surface FK violations loudly. For *existing tables* that lost a
+        // constraint manually, an operator-level repair is required.
+        //
+        // Clarification Q1 listed FKs in the "full parity" scope, but
+        // research.md §R4 and Edge Case §"Drift schema entity بدون SQL
+        // CREATE statement جاهز" pre-authorized deferring constraint
+        // kinds when the Drift API limits us. Log once per table so the
+        // gap is visible in diagnostics.
+        // (No-op for now — see comment block above. Drift API limitation
+        // tracked for follow-up.)
+      } else if (entity is Index) {
+        // T017 — index-level parity. CREATE INDEX IF NOT EXISTS via
+        // Migrator first, falling back to a no-op warn if Drift's emitted
+        // DDL is PG-incompatible.
+        final indexName = entity.entityName.toLowerCase();
+        if (pgIndexes.contains(indexName)) continue;
+        try {
+          await Migrator(this).create(entity);
+          healedCount++;
+          await DiagnosticLogger.log(
+            'PG-PARITY-HEAL',
+            'index=$indexName action=created',
+          );
+        } catch (e) {
+          // Index creation failed (often because the underlying table
+          // doesn't have a matching column on this PG install). Warn-only
+          // so a single bad index doesn't block the whole pass.
+          driftCount++;
+          await DiagnosticLogger.log(
+            'PG-PARITY-DRIFT',
+            'index=$indexName reason=create_index_failed error=$e',
+          );
+        }
+      } else {
+        // Trigger / View / unknown kind — explicitly out of Spec 130 scope
+        // per Assumption A3. Logged so the pass NEVER silently swallows an
+        // entity kind (FR-006).
+        await DiagnosticLogger.log(
+          'PG-PARITY-SKIP',
+          'kind=${entity.runtimeType} entity=${entity.entityName} '
+              'reason=out_of_scope',
+        );
+      }
+    }
+
+    // Extras detection — PG tables not in Drift schema. CREATE-only policy
+    // means we never drop them (FR-004); warn-only.
+    for (final pgTable in pgTables) {
+      if (!driftTableNames.contains(pgTable)) {
+        await DiagnosticLogger.log(
+          'PG-PARITY-EXTRA',
+          'table=$pgTable reason=not_in_drift_schema action=preserved',
+        );
+      }
+    }
+
+    sw.stop();
+
+    if (fatalErrors.isNotEmpty) {
+      await DiagnosticLogger.log(
+        'PG-PARITY-FATAL',
+        'count=${fatalErrors.length} '
+            'entities=${fatalErrors.map((e) => e.entity).join(',')}',
+      );
+      throw PgSchemaParityException(
+        reasonAr:
+            'فشل إصلاح المخطط الذاتى. الكيانات المتأثرة: '
+            '${fatalErrors.map((e) => e.entity).join('، ')}. '
+            'راجع السجل التشخيصى للتفاصيل.',
+        details: fatalErrors.map((e) => e.detail).toList(),
+        failedEntities: fatalErrors.map((e) => e.entity).toList(),
+      );
+    }
+
+    await DiagnosticLogger.log(
+      'PG-PARITY-OK',
+      'healed=$healedCount drift=$driftCount '
+          'duration=${sw.elapsedMilliseconds}ms',
+    );
+  }
+
+  /// Build a single column definition (`"$name" $type [NOT NULL] [DEFAULT ...]`)
+  /// in PG dialect — used by both `_buildPgCreateTableSql` (via inlining)
+  /// and the column-heal path (T016) which emits ALTER ADD COLUMN with this
+  /// fragment.
+  ///
+  /// SERIAL PK columns return their own `SERIAL PRIMARY KEY` string. The
+  /// column-heal path must filter `hasAutoIncrement` out before calling
+  /// this — PostgreSQL doesn't allow ALTER ADD COLUMN on a SERIAL PK.
+  String _buildPgColumnDef(GeneratedColumn col) {
+    final colName = col.$name;
+    if (col.type == DriftSqlType.int && col.hasAutoIncrement) {
+      return '"$colName" SERIAL PRIMARY KEY';
+    }
+
+    String pgType;
+    if (col.type == DriftSqlType.int) {
+      pgType = 'INTEGER';
+    } else if (col.type == DriftSqlType.bigInt) {
+      pgType = 'BIGINT';
+    } else if (col.type == DriftSqlType.string) {
+      pgType = 'TEXT';
+    } else if (col.type == DriftSqlType.bool) {
+      pgType = 'BOOLEAN';
+    } else if (col.type == DriftSqlType.double) {
+      pgType = 'DOUBLE PRECISION';
+    } else if (col.type == DriftSqlType.dateTime) {
+      pgType = 'BIGINT';
+    } else if (col.type == DriftSqlType.blob) {
+      pgType = 'BYTEA';
+    } else if (col.type == DriftSqlType.any) {
+      // DriftSqlType.any is the schema-loose "untyped column" marker. PG
+      // doesn't have a true equivalent — fall back to TEXT so the ALTER
+      // succeeds; drift detection is suppressed via the empty acceptable
+      // list above.
+      pgType = 'TEXT';
+    } else {
+      pgType = 'TEXT';
+    }
+
+    final nullable = col.$nullable ? '' : ' NOT NULL';
+    var defaultClause = '';
+    if (col.defaultValue != null) {
+      final defaultStr = col.defaultValue.toString();
+      if (defaultStr.contains('currentDateAndTime') ||
+          defaultStr.contains('CurrentDateTimeExpression')) {
+        defaultClause = ' DEFAULT (EXTRACT(EPOCH FROM NOW())::bigint)';
+      } else if (col.defaultValue is Constant) {
+        final val = (col.defaultValue as Constant).value;
+        if (val is bool) {
+          defaultClause = ' DEFAULT ${val ? 'TRUE' : 'FALSE'}';
+        } else if (val is String) {
+          defaultClause = " DEFAULT '${val.replaceAll("'", "''")}'";
+        } else {
+          defaultClause = ' DEFAULT $val';
+        }
+      }
+    }
+
+    return '"$colName" $pgType$nullable$defaultClause';
+  }
+
+  /// ISS-08: Migration logic delegated to database_migrations.dart
+  @override
+  MigrationStrategy get migration {
+    return MigrationStrategy(
+      onCreate: (Migrator m) async {
+        // PostgreSQL: create strftime() compatibility function BEFORE createAll
+        if (_isPostgres) {
+          await _createPostgresCompatLayer();
+          // Use PostgreSQL-safe table creation with per-table fallback
+          await _createAllForPostgres(m);
+        } else {
+          await m.createAll();
+          // Spec 151: idx_je_autopost_dedup is raw SQL (not a Drift table
+          // entity), so createAll() never emits it. Create it here so FRESH
+          // SQLite installs get the same return-exempt dedup backstop that
+          // upgraded DBs get via the v150 migration. Uses the shared SoT SQL so
+          // fresh installs and upgrades agree on the exemption shape.
+          await customStatement(kCreateJeAutopostDedupIndexSql);
+        }
+        // seedInitialData + syncDefaultAccounts moved to beforeOpen
+        // (after defensive v110 column additions)
+      },
+      onUpgrade: (Migrator m, int from, int to) async {
+        // PostgreSQL: skip SQLite-specific migrations entirely.
+        // PG schema is created fresh via _createAllForPostgres() in onCreate.
+        // Incremental migrations use SQLite-only syntax (AUTOINCREMENT, PRAGMA,
+        // INSERT OR IGNORE, typeof(), etc.) that fails on PostgreSQL.
+        if (_isPostgres) {
+          debugPrint('[PG] onUpgrade skipped (from=$from to=$to) — PG uses fresh schema');
+          return;
+        }
+        await runOnUpgrade(m, from, to);
+      },
+      beforeOpen: (details) async {
+        await runBeforeOpen(details);
+      },
+    );
+  }
+  // Seeding methods have been moved to DatabaseSeeder extension in database_seeder.dart
+  // to keep the main database.dart file clean and manageable.
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // UTILITY METHODS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// ═══════════════════════════════════════════════════════════════════════
+  /// INVOICE / VOUCHER NUMBER PREFIXES — single source of truth
+  /// ═══════════════════════════════════════════════════════════════════════
+  ///
+  /// Canonical defaults for each of the eight document types. Each prefix
+  /// was chosen to be visually distinct even at a glance — `POS` / `SINV`
+  /// / `SRET` / `PINV` / `PRET` / `RCPT` / `PMT` / `QUOT`. User-configured
+  /// overrides live in the `settings` table under the matching key from
+  /// [_prefixSettingKeys].
+  static const defaultSalesPosPrefix = 'POS';
+  static const defaultSalesManualPrefix = 'SINV';
+  static const defaultSalesReturnPrefix = 'SRET';
+  static const defaultPurchasePrefix = 'PINV';
+  static const defaultPurchaseReturnPrefix = 'PRET';
+  static const defaultReceiptVoucherPrefix = 'RCPT';
+  static const defaultPaymentVoucherPrefix = 'PMT';
+  static const defaultQuotationPrefix = 'QUOT';
+
+  /// Map of canonical prefixes → setting key. Callers pass the canonical
+  /// prefix (or one of the legacy aliases in [_prefixAliases]); the
+  /// `generateInvoiceNumber` entry point normalises to the canonical form
+  /// before looking up either a user override or the default.
+  static const _prefixSettingKeys = <String, String>{
+    defaultSalesPosPrefix: 'prefix_sales_pos',
+    defaultSalesManualPrefix: 'prefix_sales_manual',
+    defaultSalesReturnPrefix: 'prefix_sales_return',
+    defaultPurchasePrefix: 'prefix_purchase',
+    defaultPurchaseReturnPrefix: 'prefix_purchase_return',
+    defaultReceiptVoucherPrefix: 'prefix_receipt_voucher',
+    defaultPaymentVoucherPrefix: 'prefix_payment_voucher',
+    defaultQuotationPrefix: 'prefix_quotation',
+  };
+
+  /// Legacy → canonical alias map. Historical call sites hard-coded older
+  /// prefix strings (`R-`, `INV`, `RET-`, `PUR`, `RV`, `PV`, `QUO`, ...).
+  /// We normalise them on entry so every new document flows through the
+  /// same canonical prefix pipeline AND honours the shared settings keys.
+  static const _prefixAliases = <String, String>{
+    // Sales
+    'R': defaultSalesPosPrefix,
+    'R-': defaultSalesPosPrefix,
+    'Receipt': defaultSalesPosPrefix,
+    'Recept': defaultSalesPosPrefix,
+    'INV': defaultSalesManualPrefix,
+    'RET-': defaultSalesReturnPrefix,
+    'SRET-': defaultSalesReturnPrefix,
+    // Purchases
+    'PUR': defaultPurchasePrefix,
+    'PRET-': defaultPurchaseReturnPrefix,
+    // Vouchers
+    'RV': defaultReceiptVoucherPrefix,
+    'PV': defaultPaymentVoucherPrefix,
+    // Quotations
+    'QUO': defaultQuotationPrefix,
+  };
+
+  /// All canonical prefixes — used by the settings screen to validate that
+  /// no two document types accidentally share the same user-configured
+  /// prefix.
+  static List<String> get canonicalInvoicePrefixes => const [
+        defaultSalesPosPrefix,
+        defaultSalesManualPrefix,
+        defaultSalesReturnPrefix,
+        defaultPurchasePrefix,
+        defaultPurchaseReturnPrefix,
+        defaultReceiptVoucherPrefix,
+        defaultPaymentVoucherPrefix,
+        defaultQuotationPrefix,
+      ];
+
+  /// Generate a unique, thread-safe invoice number based on DocumentSequences.
+  ///
+  /// Takes either a canonical prefix (`POS`, `SINV`, `SRET`, `PINV`, `PRET`,
+  /// `RCPT`, `PMT`, `QUOT`) or a legacy alias (`R-`, `INV`, `RET-`, `PUR`,
+  /// `RV`, `PV`, `QUO`, ...). All aliases are normalised to their canonical
+  /// form up-front, so legacy call-sites keep working without changes.
+  ///
+  /// User overrides from the "إعدادات ترقيم المستندات" screen (settings
+  /// keyed by [_prefixSettingKeys]) are honoured verbatim as the DISPLAY
+  /// prefix. The SEQUENCE counter stays locked to the canonical prefix
+  /// so renaming the display prefix never restarts the counter.
+  ///
+  /// Output format: `<DISPLAY><YYYY><6-digit>` (e.g. `POS2026000001`,
+  /// `SINV2026000042`). Unified across every document type so the printed
+  /// invoices look consistent and the database UNIQUE index is safe.
+  Future<String> generateInvoiceNumber(String prefix) async {
+    // 066 (D5-001) — defensive guard. The counter advance and the dependent
+    // voucher insert MUST be atomic; Drift makes a nested transaction() into
+    // a SAVEPOINT only when the caller is already in a transaction. Calling
+    // bare → the inner txn commits independently → if the caller's insert
+    // fails the counter is permanently advanced → Egyptian-VAT-illegal gap.
+    // See specs/066-voucher-numbering-atomicity/contracts/numbering-atomicity.md C-1.
+    // ignore: invalid_use_of_internal_member
+    if (identical(resolvedEngine, this)) {
+      throw StateError(
+        'generateInvoiceNumber must be called inside a db.transaction(). '
+        'See specs/066-voucher-numbering-atomicity/contracts/numbering-atomicity.md',
+      );
+    }
+    return transaction(() async {
+      debugPrint(
+        '[GEN_INV_DEBUG] generateInvoiceNumber called with prefix: "$prefix"',
+      );
+
+      // Normalise any legacy alias onto its canonical prefix. Unknown
+      // prefixes (e.g. `VD` / `ADV` used by ad-hoc helpers) pass through
+      // unchanged — they still follow the same counter + format pipeline.
+      final normalizedPrefix = _prefixAliases[prefix] ?? prefix;
+
+      // Check for user-configured custom prefix for this document type.
+      String displayPrefix = normalizedPrefix;
+      final settingKey = _prefixSettingKeys[normalizedPrefix];
+      if (settingKey != null) {
+        final customPrefix = await getSettingValue(settingKey);
+        if (customPrefix != null && customPrefix.isNotEmpty) {
+          displayPrefix = customPrefix;
+        } else {
+          // Legacy fallback: the old single `invoice_code_prefix` setting
+          // still applies to all three sales-side types if nobody set a
+          // per-type override.
+          final isSalesPrefix = normalizedPrefix == defaultSalesPosPrefix ||
+              normalizedPrefix == defaultSalesManualPrefix ||
+              normalizedPrefix == defaultSalesReturnPrefix;
+          if (isSalesPrefix) {
+            final legacyPrefix = await getSettingValue('invoice_code_prefix');
+            if (legacyPrefix != null && legacyPrefix.isNotEmpty) {
+              displayPrefix = legacyPrefix;
+            }
+          }
+        }
+      }
+
+      // Counter lives on the canonical prefix so a display-prefix change
+      // from the settings screen never rewinds the sequence.
+      var seq = await (select(
+        documentSequences,
+      )..where((s) => s.prefix.equals(normalizedPrefix))..limit(1))
+          .getSingleOrNull();
+
+      int nextNumber;
+      if (seq == null) {
+        // First-time backfill: count rows that already share the same
+        // canonical prefix or any of its aliases so we don't re-use an
+        // existing number. Bounded query (`LIKE prefix%`) and also a
+        // scan over aliases so legacy `INV...` rows don't collide with
+        // fresh `SINV...` ones.
+        final aliasesForThis = _prefixAliases.entries
+            .where((e) => e.value == normalizedPrefix)
+            .map((e) => e.key)
+            .toList()
+          ..add(normalizedPrefix);
+
+        int maxExisting = 0;
+        for (final alias in aliasesForThis) {
+          final count = await (selectOnly(salesInvoices)
+                ..addColumns([salesInvoices.id.count()])
+                ..where(salesInvoices.invoiceNumber.like('$alias%')))
+              .map((row) => row.read(salesInvoices.id.count()))
+              .getSingle();
+          if ((count ?? 0) > maxExisting) maxExisting = count!;
+        }
+        nextNumber = maxExisting + 1;
+
+        await into(documentSequences).insert(
+          DocumentSequencesCompanion.insert(
+            prefix: normalizedPrefix,
+            nextValue: Value(nextNumber + 1),
+          ),
+        );
+      } else {
+        nextNumber = seq.nextValue;
+        await (update(
+          documentSequences,
+        )..where((s) => s.prefix.equals(normalizedPrefix))).write(
+          DocumentSequencesCompanion(nextValue: Value(nextNumber + 1)),
+        );
+      }
+
+      // Simplified format: `<DISPLAY>-<counter>` (e.g. `POS-1`, `SINV-42`).
+      // Per product request 2026-04: drop the year + 6-digit zero-pad. Counter
+      // is unbounded and human-readable. Uniqueness is still guaranteed by the
+      // canonical-prefix sequence in DocumentSequences + the UNIQUE index on
+      // invoice_number.
+      return '$displayPrefix-$nextNumber';
+    });
+  }
+
+  /// 066 (D5-001) — read-only peek at the per-prefix counter, used by tests
+  /// to verify counter rollback on caller failure (see
+  /// `test/unit/voucher_numbering_atomicity_test.dart`). Returns `0` if no
+  /// row exists yet for the prefix (first-time-use state).
+  @visibleForTesting
+  Future<int> peekNumberingCounter(String prefix) async {
+    final normalizedPrefix = _prefixAliases[prefix] ?? prefix;
+    final seq = await (select(documentSequences)
+          ..where((s) => s.prefix.equals(normalizedPrefix))
+          ..limit(1))
+        .getSingleOrNull();
+    return seq?.nextValue ?? 0;
+  }
+
+  // READ-ONLY — Egyptian VAT prohibits auto-renumbering.
+  // See specs/066-voucher-numbering-atomicity/contracts/numbering-atomicity.md C-2.
+  /// 066 (D5-001) — READ-ONLY diagnostic. Egyptian VAT prohibits
+  /// auto-renumbering, so this query reports gaps but offers NO write path.
+  /// See specs/066-voucher-numbering-atomicity/contracts/numbering-atomicity.md C-2.
+  ///
+  /// Returns one row per prefix where `(counterNext - 1) > maxUsedNumber`,
+  /// scanning `sales_invoices`, `purchase_invoices`, and `safe_transactions`
+  /// for the highest numeric tail (`<prefix>-<n>`).
+  Future<List<NumberingGapReport>> auditNumberingGaps() async {
+    final sequences = await select(documentSequences).get();
+    final results = <NumberingGapReport>[];
+    for (final seq in sequences) {
+      int maxUsed = 0;
+
+      Future<int> maxNumberInTable(String table, String numberCol,
+          {bool checkDeleted = true}) async {
+        final deletedClause =
+            checkDeleted ? 'AND deleted_at IS NULL' : '';
+        final rows = await customSelect(
+          "SELECT MAX(CAST(SUBSTR($numberCol, INSTR($numberCol, '-') + 1) "
+          "AS INTEGER)) AS max_n FROM $table "
+          "WHERE $numberCol LIKE '%-%' $deletedClause "
+          "AND SUBSTR($numberCol, 1, INSTR($numberCol, '-') - 1) = ?",
+          variables: [Variable.withString(seq.prefix)],
+        ).getSingleOrNull();
+        if (rows == null) return 0;
+        final v = rows.data['max_n'];
+        if (v is int) return v;
+        if (v is num) return v.toInt();
+        return 0;
+      }
+
+      final n1 = await maxNumberInTable('sales_invoices', 'invoice_number');
+      if (n1 > maxUsed) maxUsed = n1;
+      final n2 = await maxNumberInTable('purchase_invoices', 'invoice_number');
+      if (n2 > maxUsed) maxUsed = n2;
+      final n3 = await maxNumberInTable('safe_transactions', 'voucher_number',
+          checkDeleted: false);
+      if (n3 > maxUsed) maxUsed = n3;
+
+      final gap = (seq.nextValue - 1) - maxUsed;
+      if (gap > 0) {
+        results.add(NumberingGapReport(
+          prefix: seq.prefix,
+          counterNext: seq.nextValue,
+          maxUsedNumber: maxUsed,
+          gapCount: gap,
+        ));
+      }
+    }
+    results.sort((a, b) => b.gapCount.compareTo(a.gapCount));
+    return results;
+  }
+
+  /// Validates the set of user-configured prefix overrides for invoice
+  /// numbering. Returns `null` when every configured prefix is unique
+  /// (case-insensitive) across document types; otherwise returns a
+  /// user-facing error message listing the conflict. Designed to be
+  /// called by the "إعدادات ترقيم المستندات" screen before saving.
+  Future<String?> validateInvoicePrefixes() async {
+    // Collect current effective prefix for each type — user override if
+    // set, otherwise the canonical default.
+    final effective = <String, String>{}; // canonical → displayPrefix
+    for (final entry in _prefixSettingKeys.entries) {
+      final canonical = entry.key;
+      final key = entry.value;
+      final custom = (await getSettingValue(key))?.trim();
+      effective[canonical] =
+          (custom != null && custom.isNotEmpty) ? custom : canonical;
+    }
+
+    // Detect duplicate display prefixes (case-insensitive).
+    final Map<String, List<String>> grouped = {};
+    effective.forEach((canonical, display) {
+      final k = display.toLowerCase();
+      grouped.putIfAbsent(k, () => []).add(canonical);
+    });
+    for (final e in grouped.entries) {
+      if (e.value.length > 1) {
+        return 'تعارض فى بادئات الترقيم — البادئة "${effective[e.value.first]}" '
+            'مكرّرة على الأنواع: ${e.value.join(', ')}. '
+            'يجب أن تكون كل بادئة فريدة.';
+      }
+    }
+    return null;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // S01: DAO methods — extracted from UI layer (security hardening)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Ensure modifier tables exist (fallback for pre-v70 DBs).
+  Future<void> ensureModifierTables() async {
+    // Cluster 030 / Bug C: PostgreSQL doesn't accept SQLite's
+    // `INTEGER PRIMARY KEY AUTOINCREMENT` syntax. The previous version
+    // passed the SQLite DDL verbatim to PG which crashed every time the
+    // server's modifier-management dialog was opened. Branch on
+    // `_isPostgres` and emit `SERIAL PRIMARY KEY` (PG) or
+    // `INTEGER PRIMARY KEY AUTOINCREMENT` (SQLite). Add a defensive
+    // `ALTER TABLE … ADD COLUMN IF NOT EXISTS sort_order` so legacy
+    // installs whose table predates the column also self-heal.
+    final pkClause = _isPostgres
+        ? 'id SERIAL PRIMARY KEY'
+        : 'id INTEGER PRIMARY KEY AUTOINCREMENT';
+    final boolType = _isPostgres ? 'BOOLEAN' : 'INTEGER';
+    final boolFalse = _isPostgres ? 'false' : '0';
+    final boolTrue = _isPostgres ? 'true' : '1';
+
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS modifier_groups (
+        $pkClause,
+        name TEXT NOT NULL,
+        type TEXT NOT NULL DEFAULT 'addon',
+        min_select INTEGER NOT NULL DEFAULT 0,
+        max_select INTEGER NOT NULL DEFAULT 1,
+        is_required $boolType NOT NULL DEFAULT $boolFalse,
+        is_active $boolType NOT NULL DEFAULT $boolTrue,
+        sort_order INTEGER NOT NULL DEFAULT 0
+      )
+    ''');
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS modifier_items (
+        $pkClause,
+        group_id INTEGER NOT NULL REFERENCES modifier_groups(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        extra_price REAL NOT NULL DEFAULT 0,
+        is_default $boolType NOT NULL DEFAULT $boolFalse,
+        is_active $boolType NOT NULL DEFAULT $boolTrue,
+        sort_order INTEGER NOT NULL DEFAULT 0
+      )
+    ''');
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS product_modifier_groups (
+        $pkClause,
+        product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+        modifier_group_id INTEGER NOT NULL REFERENCES modifier_groups(id) ON DELETE CASCADE,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        UNIQUE(product_id, modifier_group_id)
+      )
+    ''');
+
+    // Defensive ADD COLUMN — older installs whose modifier_groups was
+    // created before sort_order was added still work after the schema
+    // is reconciled.
+    if (_isPostgres) {
+      try {
+        await customStatement(
+            'ALTER TABLE modifier_groups ADD COLUMN IF NOT EXISTS sort_order INTEGER NOT NULL DEFAULT 0');
+      } catch (_) {/* already exists */}
+      try {
+        await customStatement(
+            'ALTER TABLE modifier_items ADD COLUMN IF NOT EXISTS sort_order INTEGER NOT NULL DEFAULT 0');
+      } catch (_) {/* already exists */}
+    }
+  }
+
+  /// Update safe name, bank info.
+  /// Update safe details. PostgreSQL-compatible.
+  Future<void> updateSafeDetails({
+    required int safeId,
+    required String name,
+    String? bankName,
+    String? accountNumber,
+  }) async {
+    await (update(safes)..where((s) => s.id.equals(safeId))).write(
+      SafesCompanion(
+        name: Value(name),
+        bankName: Value(bankName),
+        accountNumber: Value(accountNumber),
+      ),
+    );
+  }
+
+  /// Set a safe as the default for its branch (scoped per-branch).
+  /// PostgreSQL-compatible: uses raw SQL with sqlBool().
+  Future<void> setDefaultSafe(int safeId) async {
+    final falseVal = sqlBool(false);
+    final trueVal = sqlBool(true);
+
+    // Look up the target safe's branch
+    final targetSafe = await (select(safes)..where((s) => s.id.equals(safeId))).getSingleOrNull();
+    final branchId = targetSafe?.branchId;
+
+    // Clear defaults only within the same branch scope
+    if (branchId != null) {
+      await customStatement(
+        'UPDATE safes SET is_default = $falseVal WHERE branch_id = ?',
+        [branchId],
+      );
+    } else {
+      // No branch — clear defaults only among safes with no branch
+      await customStatement(
+        'UPDATE safes SET is_default = $falseVal WHERE branch_id IS NULL',
+      );
+    }
+
+    await customStatement(
+      'UPDATE safes SET is_default = $trueVal, is_active = $trueVal WHERE id = ?',
+      [safeId],
+    );
+  }
+
+  /// Toggle safe active/inactive. PostgreSQL-compatible.
+  Future<void> toggleSafeActive(int safeId, bool isActive) async {
+    final boolVal = sqlBool(isActive);
+    await customStatement(
+      'UPDATE safes SET is_active = $boolVal WHERE id = ?',
+      [safeId],
+    );
+  }
+
+  /// Delete a non-default safe. PostgreSQL-compatible.
+  ///
+  /// Feature 004 (US1, FR-007): rejects deletion when the safe's linked
+  /// CoA sub-account has any journal-entry lines. Mirrors the rule already
+  /// applied to parties — preserves audit trail integrity.
+  Future<void> deleteSafeById(int safeId) async {
+    await transaction(() async {
+      // Look up the linked account before mutating anything.
+      final safe = await (select(safes)
+            ..where((s) => s.id.equals(safeId))
+            ..limit(1))
+          .getSingleOrNull();
+      if (safe == null) return;
+
+      if (safe.linkedAccountId != null) {
+        final movementCountRow = await customSelect(
+          'SELECT COUNT(*) AS c FROM journal_entry_lines WHERE account_id = ?',
+          variables: [Variable.withInt(safe.linkedAccountId!)],
+        ).getSingle();
+        final count = movementCountRow.read<int>('c');
+        if (count > 0) {
+          throw Exception(
+            'لا يمكن حذف الصندوق "${safe.name}" لأن الحساب المرتبط به '
+            'يحتوى على قيود محاسبية ($count قيد). يرجى تصفية الحركات أولاً.',
+          );
+        }
+      }
+
+      await (delete(safes)..where((s) => s.id.equals(safeId) & s.isDefault.equals(false))).go();
+    });
+  }
+
+  /// Get per-product stock for a specific warehouse. PostgreSQL-compatible.
+  Future<Map<int, double>> getWarehouseStockMap(int warehouseId) async {
+    final rows = await (select(inventoryBalances)
+      ..where((ib) => ib.warehouseId.equals(warehouseId))
+    ).get();
+    final map = <int, double>{};
+    for (final row in rows) {
+      map[row.productId] = row.quantity;
+    }
+    return map;
+  }
+
+  /// Get journal entry lines with account info (code + name) for display.
+  /// PostgreSQL-compatible: uses Drift selectOnly + join.
+  Future<List<Map<String, dynamic>>> getJournalEntryLinesWithAccounts(int entryId) async {
+    final query = selectOnly(journalEntryLines).join([
+      innerJoin(accounts, accounts.id.equalsExp(journalEntryLines.accountId)),
+    ]);
+    query.addColumns([
+      journalEntryLines.debit,
+      journalEntryLines.credit,
+      journalEntryLines.description,
+      accounts.code,
+      accounts.name,
+    ]);
+    query.where(journalEntryLines.entryId.equals(entryId));
+    query.orderBy([OrderingTerm.asc(journalEntryLines.id)]);
+    
+    final rows = await query.get();
+    return rows.map((row) => {
+      'debit': row.read(journalEntryLines.debit) ?? 0.0,
+      'credit': row.read(journalEntryLines.credit) ?? 0.0,
+      'description': row.read(journalEntryLines.description),
+      'account_code': row.read(accounts.code),
+      'account_name': row.read(accounts.name),
+    }).toList();
+  }
+
+  /// Search sales invoices by invoice number (LIKE). PostgreSQL-compatible.
+  Future<List<SalesInvoiceData>> searchInvoicesByNumber(String query) async {
+    return (select(salesInvoices)
+      ..where((s) => s.invoiceNumber.like('%$query%') & s.isDeleted.equals(false))
+      ..orderBy([(s) => OrderingTerm.desc(s.invoiceDate)])
+      ..limit(20)
+    ).get();
+  }
+
+  /// Search customers / parties by phone (LIKE). PostgreSQL-compatible.
+  Future<List<Party>> searchCustomerByPhone(String phone) async {
+    return (select(parties)
+      ..where((p) => p.phone.like('%$phone%') & p.isCustomer.equals(true))
+      ..limit(1)
+    ).get();
+  }
+}

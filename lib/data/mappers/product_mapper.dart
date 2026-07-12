@@ -1,0 +1,87 @@
+import '../database/database_barrel.dart';
+import '../../domain/entities/product_entity.dart';
+
+extension ProductToEntityMapper on Product {
+  ProductEntity toEntity({String? categoryName}) {
+    return ProductEntity(
+      id: id,
+      code: code,
+      name: name,
+      categoryId: categoryId,
+      categoryName: categoryName,
+      salePrice: salePrice,
+      costPrice: costPrice,
+      pricePerUnit: pricePerUnit,
+      currentStock: currentStock,
+      minStock: minStock,
+      trackInventory: trackInventory,
+      trackExpiry: trackExpiry,
+      isSoldByWeight: isSoldByWeight,
+      isActive: isActive,
+      description: description,
+      barcode: barcode,
+      scalePluNumber: scalePluNumber,
+      scaleType: scaleType,
+      taxRate: taxRate,
+      isLocked: isLocked,
+      allowNegativeSale: allowNegativeSale,
+      defaultShelfDays: defaultShelfDays,
+      alertDaysBefore: alertDaysBefore,
+      priceTalabat: priceTalabat,
+      priceCareem: priceCareem,
+      priceAshyae: priceAshyae,
+      wholesalePrice: wholesalePrice,
+      supplierId: supplierId,
+      imageData: imageData,
+      productType: productType,
+      warehouseId: warehouseId,
+      createdOnServer: createdOnServer,
+    );
+  }
+}
+
+extension ProductEntityToDriftMapper on ProductEntity {
+  Product toDrift() {
+    return Product(
+      id: id,
+      code: code,
+      name: name,
+      categoryId: categoryId,
+      salePrice: salePrice,
+      costPrice: costPrice,
+      pricePerUnit: pricePerUnit,
+      currentStock: currentStock,
+      minStock: minStock,
+      trackInventory: trackInventory,
+      trackExpiry: trackExpiry,
+      isSoldByWeight: isSoldByWeight,
+      isActive: isActive,
+      description: description,
+      barcode: barcode,
+      scalePluNumber: scalePluNumber,
+      scaleType: scaleType ?? 'count',
+      taxRate: taxRate,
+      isLocked: isLocked,
+      allowNegativeSale: allowNegativeSale,
+      defaultShelfDays: defaultShelfDays,
+      alertDaysBefore: alertDaysBefore,
+      priceTalabat: priceTalabat,
+      priceCareem: priceCareem,
+      priceAshyae: priceAshyae,
+      wholesalePrice: wholesalePrice,
+      supplierId: supplierId,
+      imageData: imageData,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+      isKitchenSet: false,
+      itemTaxSubtype: '',
+      itemTaxType: '',
+      sortOrder: 0,
+      weightUnit: '',
+      productType: 'general',
+      globalId: '',
+      rowVersion: 0,
+      createdOnServer: createdOnServer,
+    );
+  }
+}

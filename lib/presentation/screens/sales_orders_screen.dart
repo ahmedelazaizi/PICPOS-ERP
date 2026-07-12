@@ -1,0 +1,609 @@
+import 'dart:ui' as ui;
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
+
+import '../../core/theme/app_colors.dart';
+import '../../core/constants/app_constants.dart';
+import '../../data/providers/providers.dart';
+import '../../domain/repositories/i_sales_orders_repository.dart';
+import '../../domain/repositories/parties_repository.dart';
+import '../../domain/repositories/branch_repository.dart';
+import 'package:drift/drift.dart' hide Column;
+import '../../core/widgets/app_toast.dart';
+
+/// Sales Orders Screen — طلبات البيع
+/// Status flow: draft → sent → confirmed → delivered → (converted to invoice)
+///            ↘ cancelled
+class SalesOrdersScreen extends ConsumerStatefulWidget {
+  const SalesOrdersScreen({super.key});
+
+  @override
+  ConsumerState<SalesOrdersScreen> createState() => _SalesOrdersScreenState();
+}
+
+class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
+  String _filterStatus = 'all';
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final salesRepo = ref.watch(salesOrdersRepositoryProvider);
+    final partiesRepo = ref.watch(partiesRepositoryProvider);
+    final branchRepo = ref.watch(branchRepositoryProvider);
+
+    return Directionality(
+      textDirection: ui.TextDirection.rtl,
+      child: Scaffold(
+        backgroundColor: AppColors.surface,
+        appBar: AppBar(
+          title: const Text('طلبات البيع'),
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          actions: [
+            ElevatedButton.icon(
+              onPressed: () => _showCreateOrderDialog(salesRepo, partiesRepo, branchRepo),
+              icon: const Icon(PhosphorIconsBold.plus, size: 16),
+              label: const Text('طلب بيع جديد'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: AppColors.primary,
+              ),
+            ),
+            const SizedBox(width: 16),
+          ],
+        ),
+        body: Column(
+          children: [
+            // Status filter chips
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildFilterChip('all', 'الكل', PhosphorIconsBold.list),
+                    const SizedBox(width: 8),
+                    _buildFilterChip('draft', 'مسودة', PhosphorIconsBold.pencilSimple),
+                    const SizedBox(width: 8),
+                    _buildFilterChip('sent', 'مرسل', PhosphorIconsBold.paperPlaneRight),
+                    const SizedBox(width: 8),
+                    _buildFilterChip('confirmed', 'مؤكد', PhosphorIconsBold.checkCircle),
+                    const SizedBox(width: 8),
+                    _buildFilterChip('delivered', 'تم التسليم', PhosphorIconsBold.package),
+                    const SizedBox(width: 8),
+                    _buildFilterChip('cancelled', 'ملغي', PhosphorIconsBold.xCircle),
+                  ],
+                ),
+              ),
+            ),
+            // Search bar
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'بحث عن طلب بيع...',
+                  prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? IconButton(icon: const Icon(Icons.clear, size: 18), onPressed: () { _searchController.clear(); setState(() => _searchQuery = ''); })
+                      : null,
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                onChanged: (v) => setState(() => _searchQuery = v.trim().toLowerCase()),
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Orders list
+            Expanded(
+              child: StreamBuilder<List<SalesOrderData>>(
+                stream: _filterStatus == 'all'
+                    ? salesRepo.watchSalesOrders()
+                    : salesRepo.watchSalesOrdersByStatus(_filterStatus),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  var orders = snapshot.data!;
+                  if (_searchQuery.isNotEmpty) {
+                    orders = orders.where((o) =>
+                      o.orderNumber.toLowerCase().contains(_searchQuery) ||
+                      (o.notes ?? '').toLowerCase().contains(_searchQuery)
+                    ).toList();
+                  }
+                  if (orders.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(PhosphorIconsBold.clipboardText, size: 64,
+                              color: AppColors.textMuted.withValues(alpha: 0.3)),
+                          const SizedBox(height: 16),
+                          Text('لا توجد طلبات بيع',
+                              style: GoogleFonts.cairo(color: AppColors.textMuted)),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    itemCount: orders.length,
+                    itemBuilder: (context, i) {
+                      final order = orders[i];
+                      return _buildOrderCard(salesRepo, partiesRepo, order);
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(String status, String label, IconData icon) {
+    final selected = _filterStatus == status;
+    return FilterChip(
+      selected: selected,
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: selected ? Colors.white : AppColors.textMuted),
+          const SizedBox(width: 4),
+          Text(label),
+        ],
+      ),
+      onSelected: (_) => setState(() => _filterStatus = status),
+      selectedColor: AppColors.primary,
+      checkmarkColor: Colors.white,
+      labelStyle: GoogleFonts.cairo(
+        fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+        color: selected ? Colors.white : AppColors.textPrimary,
+        fontSize: 12,
+      ),
+    );
+  }
+
+  Widget _buildOrderCard(ISalesOrdersRepository salesRepo, IPartiesRepository partiesRepo, SalesOrderData order) {
+    final statusInfo = _getStatusInfo(order.status);
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: statusInfo.$2.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(statusInfo.$3, color: statusInfo.$2, size: 20),
+        ),
+        title: Row(
+          children: [
+            Text(order.orderNumber,
+                style: GoogleFonts.cairo(fontWeight: FontWeight.w700, fontSize: 13)),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+              decoration: BoxDecoration(
+                color: statusInfo.$2.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(statusInfo.$1,
+                  style: GoogleFonts.cairo(fontSize: 9, color: statusInfo.$2, fontWeight: FontWeight.w700)),
+            ),
+          ],
+        ),
+        subtitle: FutureBuilder<Party?>(
+          future: order.customerId != null
+              ? partiesRepo.getPartyById(order.customerId!)
+              : Future.value(null),
+          builder: (ctx, snap) {
+            final customerName = snap.data?.name ?? 'بدون عميل';
+            return Text(
+              '$customerName  •  ${order.orderDate.toString().substring(0, 10)}  •  ${order.total.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
+              style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted),
+            );
+          },
+        ),
+        trailing: PopupMenuButton<String>(
+          onSelected: (action) => _handleAction(salesRepo, order, action),
+          itemBuilder: (_) => [
+            if (order.status == 'draft') ...[
+              const PopupMenuItem(value: 'send', child: Text('إرسال للعميل')),
+              const PopupMenuItem(value: 'delete', child: Text('حذف', style: TextStyle(color: AppColors.error))),
+            ],
+            if (order.status == 'sent')
+              const PopupMenuItem(value: 'confirm', child: Text('تأكيد')),
+            if (order.status == 'confirmed')
+              const PopupMenuItem(value: 'deliver', child: Text('تسليم')),
+            if (order.status != 'cancelled' && order.status != 'delivered')
+              const PopupMenuItem(value: 'cancel', child: Text('إلغاء', style: TextStyle(color: AppColors.error))),
+            // Field-report 2026-05-14: previously a cancelled order had
+            // no actions, so operators couldn't edit or recover from a
+            // mis-click on إلغاء. Re-activating flips status back to
+            // 'draft' (safest — operator must re-confirm to re-reserve
+            // stock). The DAO already handles cancelled→draft cleanly.
+            if (order.status == 'cancelled')
+              const PopupMenuItem(value: 'reactivate', child: Text('إعادة تفعيل')),
+            if (order.status == 'confirmed' || order.status == 'delivered')
+              if (order.convertedToInvoiceId == null)
+                const PopupMenuItem(value: 'convert', child: Text('تحويل لفاتورة مبيعات')),
+          ],
+        ),
+      ),
+    );
+  }
+
+  (String, Color, IconData) _getStatusInfo(String status) {
+    switch (status) {
+      case 'draft':
+        return ('مسودة', AppColors.textMuted, PhosphorIconsBold.pencilSimple);
+      case 'sent':
+        return ('مرسل', AppColors.info, PhosphorIconsBold.paperPlaneRight);
+      case 'confirmed':
+        return ('مؤكد', AppColors.success, PhosphorIconsBold.checkCircle);
+      case 'delivered':
+        return ('تم التسليم', AppColors.primary, PhosphorIconsBold.package);
+      case 'cancelled':
+        return ('ملغي', AppColors.error, PhosphorIconsBold.xCircle);
+      default:
+        return ('غير معروف', AppColors.textMuted, PhosphorIconsBold.question);
+    }
+  }
+
+  Future<void> _handleAction(ISalesOrdersRepository salesRepo, SalesOrderData order, String action) async {
+    try {
+      switch (action) {
+        case 'send':
+          await salesRepo.updateSalesOrderStatus(order.id, 'sent');
+        case 'confirm':
+          await salesRepo.updateSalesOrderStatus(order.id, 'confirmed');
+        case 'deliver':
+          // "تسليم" is a three-in-one action: flip status → delivered,
+          // materialise the sales invoice, and post its treasury receipt.
+          // Previously we only flipped the status, so the quotation/order
+          // stayed with no invoice and the treasury never saw the cash —
+          // the root cause the user reported as "لا يتم تحويلها ولا يظهر
+          // تحصيلها فى الخزينة". convertSOToInvoice() does all three
+          // inside one DAO transaction (status, invoice, receipt) and
+          // stamps convertedToInvoiceId so the UI flips to "محول".
+          final invoiceId = await salesRepo.convertSOToInvoice(order.id);
+          if (mounted) {
+            AppToast.show(
+              context,
+              'تم تسليم الطلب وإنشاء فاتورة مبيعات #$invoiceId بنجاح',
+            );
+          }
+        case 'cancel':
+          await salesRepo.updateSalesOrderStatus(order.id, 'cancelled');
+        case 'reactivate':
+          await salesRepo.updateSalesOrderStatus(order.id, 'draft');
+          if (mounted) {
+            AppToast.show(context, 'تم إعادة تفعيل الطلب كمسودة');
+          }
+        case 'delete':
+          await salesRepo.deleteSalesOrder(order.id);
+        case 'convert':
+          final invoiceId = await salesRepo.convertSOToInvoice(order.id);
+          if (mounted) {
+            AppToast.show(context, 'تم إنشاء فاتورة مبيعات #$invoiceId بنجاح');
+          }
+      }
+    } catch (e) {
+      if (mounted) {
+        AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+      }
+    }
+  }
+
+  void _showCreateOrderDialog(ISalesOrdersRepository salesRepo, IPartiesRepository partiesRepo, IBranchRepository branchRepo) async {
+    final productRepo = ref.read(productRepositoryProvider);
+    final allProducts = await productRepo.getAllProducts();
+
+    int? selectedCustomerId;
+    int? selectedWarehouseId;
+    int? selectedCostCenterId;
+    DateTime orderDate = DateTime.now();
+    final notesCtrl = TextEditingController();
+    final List<Map<String, dynamic>> orderItems = [];
+    double orderTotal = 0;
+
+    void recalculate(StateSetter setDialogState) {
+      orderTotal = orderItems.fold(0.0, (sum, item) => sum + (item['total'] as double));
+      setDialogState(() {});
+    }
+
+    showDialog(
+      context: context,
+      builder: (ctx) => Directionality(
+        textDirection: ui.TextDirection.rtl,
+        child: StatefulBuilder(builder: (ctx, setDialogState) {
+          return AlertDialog(
+            title: Text('طلب بيع جديد', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+            content: SizedBox(
+              width: 650,
+              height: 550,
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Customer picker
+                    FutureBuilder<List<Party>>(
+                      future: partiesRepo.getParties(isCustomer: true),
+                      builder: (ctx, snap) {
+                        if (!snap.hasData) return const LinearProgressIndicator();
+                        final activeCustomers = snap.data!.where((p) => p.isActive).toList();
+                        activeCustomers.sort((a, b) => a.name.compareTo(b.name));
+                        
+                        return DropdownButtonFormField<int?>(
+                          initialValue: selectedCustomerId,
+                          isExpanded: true,
+                          decoration: InputDecoration(
+                            labelText: 'العميل (اختياري)',
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                            isDense: true,
+                          ),
+                          items: [
+                            const DropdownMenuItem<int?>(value: null, child: Text('بدون عميل')),
+                            ...activeCustomers.map((c) => DropdownMenuItem<int?>(
+                                  value: c.id,
+                                  child: Text(c.name, overflow: TextOverflow.ellipsis),
+                                )),
+                          ],
+                          onChanged: (v) => setDialogState(() => selectedCustomerId = v),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    // Warehouse picker
+                    FutureBuilder<List<Warehouse>>(
+                      future: branchRepo.getWarehouses(),
+                      builder: (ctx, snap) {
+                        if (!snap.hasData) return const LinearProgressIndicator();
+                        final warehouses = snap.data!;
+                        warehouses.sort((a, b) => a.name.compareTo(b.name));
+                        
+                        if (selectedWarehouseId == null && warehouses.isNotEmpty) {
+                          selectedWarehouseId = warehouses.first.id;
+                        }
+                        return DropdownButtonFormField<int>(
+                          initialValue: selectedWarehouseId,
+                          isExpanded: true,
+                          decoration: InputDecoration(
+                            labelText: 'المستودع *',
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                            isDense: true,
+                          ),
+                          items: warehouses.map((w) => DropdownMenuItem<int>(
+                                value: w.id,
+                                child: Text(w.name),
+                              )).toList(),
+                          onChanged: (v) => setDialogState(() => selectedWarehouseId = v),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    // Product search
+                    Text('الأصناف:', style: GoogleFonts.cairo(fontWeight: FontWeight.w700, fontSize: 13)),
+                    const SizedBox(height: 6),
+                    Builder(builder: (context) {
+                      TextEditingController? acCtrl;
+                      return Autocomplete<Product>(
+                        optionsBuilder: (textValue) {
+                          if (textValue.text.isEmpty) return const [];
+                          final q = textValue.text.toLowerCase();
+                          return allProducts.where((p) =>
+                              p.name.toLowerCase().contains(q) ||
+                              (p.code.toLowerCase().contains(q) ?? false) ||
+                              (p.barcode?.contains(textValue.text) ?? false));
+                        },
+                        displayStringForOption: (p) => '${p.name} (${p.code ?? "-"})',
+                        fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                          acCtrl = controller;
+                          return TextField(
+                            controller: controller,
+                            focusNode: focusNode,
+                            decoration: const InputDecoration(
+                              hintText: 'ابحث بالاسم أو الكود أو الباركود...',
+                              prefixIcon: Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
+                              border: OutlineInputBorder(),
+                              isDense: true,
+                            ),
+                            style: const TextStyle(fontSize: 13),
+                          );
+                        },
+                        onSelected: (product) {
+                          final lineTotal = product.salePrice * 1.0;
+                          final taxAmt = lineTotal * (product.taxRate / 100);
+                          setDialogState(() {
+                            orderItems.add({
+                              'productId': product.id,
+                              'productName': product.name,
+                              'quantity': 1.0,
+                              'unitPrice': product.salePrice,
+                              'taxRate': product.taxRate,
+                              'taxAmount': taxAmt,
+                              'total': lineTotal + taxAmt,
+                            });
+                            recalculate(setDialogState);
+                          });
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            acCtrl?.clear();
+                          });
+                        },
+                      );
+                    }),
+                    const SizedBox(height: 8),
+                    // Items table
+                    if (orderItems.isNotEmpty)
+                      DataTable(
+                        columnSpacing: 10,
+                        headingRowHeight: 32,
+                        dataRowMinHeight: 30,
+                        dataRowMaxHeight: 40,
+                        columns: const [
+                          DataColumn(label: Text('الصنف', style: TextStyle(fontSize: 11))),
+                          DataColumn(label: Text('الكمية', style: TextStyle(fontSize: 11))),
+                          DataColumn(label: Text('السعر', style: TextStyle(fontSize: 11))),
+                          DataColumn(label: Text('الإجمالي', style: TextStyle(fontSize: 11))),
+                          DataColumn(label: Text('', style: TextStyle(fontSize: 11))),
+                        ],
+                        rows: orderItems.asMap().entries.map((entry) {
+                          final i = entry.key;
+                          final item = entry.value;
+                          return DataRow(cells: [
+                            DataCell(Text(item['productName'] as String, style: const TextStyle(fontSize: 11))),
+                            DataCell(SizedBox(width: 50, child: TextFormField(
+                              initialValue: (item['quantity'] as double).toString(),
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              style: const TextStyle(fontSize: 11),
+                              decoration: const InputDecoration(isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 4)),
+                              onChanged: (val) {
+                                final qty = double.tryParse(val) ?? 1;
+                                item['quantity'] = qty;
+                                final lineTotal = qty * (item['unitPrice'] as double);
+                                item['taxAmount'] = lineTotal * ((item['taxRate'] as double) / 100);
+                                item['total'] = lineTotal + (item['taxAmount'] as double);
+                                recalculate(setDialogState);
+                              },
+                            ))),
+                            DataCell(SizedBox(width: 60, child: TextFormField(
+                              initialValue: (item['unitPrice'] as double).toStringAsFixed(AppConstants.decimalPlaces),
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              style: const TextStyle(fontSize: 11),
+                              decoration: const InputDecoration(isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 4)),
+                              onChanged: (val) {
+                                final price = double.tryParse(val) ?? 0;
+                                item['unitPrice'] = price;
+                                final lineTotal = (item['quantity'] as double) * price;
+                                item['taxAmount'] = lineTotal * ((item['taxRate'] as double) / 100);
+                                item['total'] = lineTotal + (item['taxAmount'] as double);
+                                recalculate(setDialogState);
+                              },
+                            ))),
+                            DataCell(Text((item['total'] as double).toStringAsFixed(AppConstants.decimalPlaces), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold))),
+                            DataCell(IconButton(
+                              icon: const Icon(PhosphorIconsBold.trash, size: 14, color: AppColors.error),
+                              onPressed: () {
+                                setDialogState(() {
+                                  orderItems.removeAt(i);
+                                  recalculate(setDialogState);
+                                });
+                              },
+                            )),
+                          ]);
+                        }).toList(),
+                      ),
+                    if (orderItems.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Text('الإجمالي: ', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+                            Text(orderTotal.toStringAsFixed(AppConstants.decimalPlaces),
+                                style: GoogleFonts.cairo(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.primary)),
+                          ],
+                        ),
+                      ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: notesCtrl,
+                      maxLines: 2,
+                      decoration: InputDecoration(
+                        labelText: 'ملاحظات',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                        isDense: true,
+                      ),
+                    ),
+                    // GAP-09: Cost Center dropdown
+                    const SizedBox(height: 10),
+                    FutureBuilder<List<CostCenter>>(
+                      future: ref.read(accountingRepositoryProvider).getActiveCostCenters(),
+                      builder: (ctx, ccSnap) {
+                        final ccList = ccSnap.data ?? [];
+                        if (ccList.isEmpty) return const SizedBox.shrink();
+                        return DropdownButtonFormField<int?>(
+                          initialValue: selectedCostCenterId,
+                          isExpanded: true,
+                          decoration: InputDecoration(
+                            labelText: 'مركز التكلفة',
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                            isDense: true,
+                          ),
+                          items: [
+                            const DropdownMenuItem<int?>(value: null, child: Text('بدون')),
+                            ...ccList.map((cc) => DropdownMenuItem<int?>(value: cc.id, child: Text(cc.name))),
+                          ],
+                          onChanged: (v) => setDialogState(() => selectedCostCenterId = v),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+              ElevatedButton.icon(
+                onPressed: selectedWarehouseId == null
+                    ? null
+                    : () async {
+                        if (orderItems.isEmpty) {
+                          AppToast.show(context, 'يرجى إضافة صنف واحد على الأقل', type: ToastType.info);
+                          return;
+                        }
+                        try {
+                          final companions = orderItems.map((item) {
+                            final lineTotal = (item['quantity'] as double) * (item['unitPrice'] as double);
+                            return SalesOrderItemsCompanion.insert(
+                              orderId: 0, // Will be set by repository
+                              productId: item['productId'] as int,
+                              quantity: item['quantity'] as double,
+                              unitPrice: item['unitPrice'] as double,
+                              total: item['total'] as double,
+                              taxRate: Value(item['taxRate'] as double),
+                              taxAmount: Value(item['taxAmount'] as double),
+                            );
+                          }).toList();
+
+                          await salesRepo.createSalesOrder(
+                            customerId: selectedCustomerId,
+                            warehouseId: selectedWarehouseId!,
+                            orderDate: orderDate,
+                            notes: notesCtrl.text.isNotEmpty ? notesCtrl.text : null,
+                            costCenterId: selectedCostCenterId,
+                            items: companions,
+                          );
+                          if (ctx.mounted) Navigator.pop(ctx);
+                          if (mounted) {
+                            AppToast.show(context, 'تم إنشاء طلب البيع بنجاح');
+                          }
+                        } catch (e) {
+                          if (mounted) {
+                            AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+                          }
+                        }
+                      },
+                icon: const Icon(PhosphorIconsBold.floppyDisk, size: 16),
+                label: Text('إنشاء', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
+              ),
+            ],
+          );
+        }),
+      ),
+    );
+  }
+}

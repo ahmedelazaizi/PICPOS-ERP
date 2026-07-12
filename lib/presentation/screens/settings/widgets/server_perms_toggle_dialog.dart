@@ -1,0 +1,374 @@
+// Spec 078 — Toggle dialog for server_per_user_perms_enabled.
+//
+// Two modes based on current flag state:
+//   - Mode A (flag OFF, about to enable): pre-flight check + grant
+//     defaults + enable. "Enable" is disabled until known roles are
+//     ready.
+//   - Mode B (flag ON, about to disable): single-tap disable. No
+//     pre-flight (emergency-off must be fast).
+//
+// Visibility of the entry tile in settings_screen.dart is gated on
+// PermissionCodes.rolesManage (the most relevant existing perm).
+
+import 'package:flutter/material.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
+
+import '../../../../core/theme/app_colors.dart';
+import '../../../../data/database/database.dart';
+import '../../../../services/role_grant_preflight_service.dart';
+
+const String _settingKey = 'server_per_user_perms_enabled';
+
+class ServerPermsToggleDialog extends StatefulWidget {
+  const ServerPermsToggleDialog({
+    super.key,
+    required this.db,
+    required this.currentlyEnabled,
+  });
+
+  final AppDatabase db;
+  final bool currentlyEnabled;
+
+  static Future<bool?> show({
+    required BuildContext context,
+    required AppDatabase db,
+    required bool currentlyEnabled,
+  }) {
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => ServerPermsToggleDialog(
+        db: db,
+        currentlyEnabled: currentlyEnabled,
+      ),
+    );
+  }
+
+  @override
+  State<ServerPermsToggleDialog> createState() =>
+      _ServerPermsToggleDialogState();
+}
+
+class _ServerPermsToggleDialogState extends State<ServerPermsToggleDialog> {
+  late final RoleGrantPreflightService _svc;
+  RolePreflightReport? _report;
+  bool _loading = false;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _svc = RoleGrantPreflightService(widget.db);
+    if (!widget.currentlyEnabled) {
+      // Mode A — auto-run preflight on open.
+      _runPreflight();
+    }
+  }
+
+  Future<void> _runPreflight() async {
+    setState(() => _loading = true);
+    try {
+      final report = await _svc.scanMissingGrants();
+      if (mounted) setState(() => _report = report);
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _grantDefaults() async {
+    setState(() => _saving = true);
+    try {
+      final count = await _svc.grantMissingDefaults();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(count == 0
+                ? 'لم يكن هناك صلاحيات ناقصة لمنحها'
+                : 'تم منح $count صلاحية للأدوار المعروفة'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+      await _runPreflight();
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _writeFlag(bool value) async {
+    setState(() => _saving = true);
+    try {
+      await widget.db.setSetting(_settingKey, value ? 'true' : 'false');
+      if (mounted) Navigator.of(context).pop(true);
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: widget.currentlyEnabled ? _buildDisableMode() : _buildEnableMode(),
+    );
+  }
+
+  // ───────────────────────── Mode B (Disable) ─────────────────────────
+
+  Widget _buildDisableMode() {
+    return AlertDialog(
+      title: const Text('تعطيل فحص الصلاحيات على السيرفر'),
+      content: const Text(
+        'هل تريد تعطيل الفحص؟ سيعود السيرفر للحالة الافتراضية '
+        '(يقبل أي مستخدم مُعرَّف بدون التحقق من صلاحياته على مستوى '
+        'العمليات).\n\nيمكنك إعادة التفعيل في أي وقت لاحقاً.',
+      ),
+      actions: [
+        TextButton(
+          onPressed: _saving ? null : () => Navigator.of(context).pop(false),
+          child: const Text('إلغاء'),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+          onPressed: _saving ? null : () => _writeFlag(false),
+          child: _saving
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('تعطيل الآن'),
+        ),
+      ],
+    );
+  }
+
+  // ───────────────────────── Mode A (Enable) ──────────────────────────
+
+  Widget _buildEnableMode() {
+    final report = _report;
+    return AlertDialog(
+      title: const Text('تفعيل فحص الصلاحيات على السيرفر'),
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 520),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _warningBanner(),
+              const SizedBox(height: 16),
+              const Text(
+                'فحص جاهزية الأدوار',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+              ),
+              const SizedBox(height: 8),
+              if (_loading)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else if (report == null)
+                const SizedBox.shrink()
+              else
+                _buildReportBody(report),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _saving ? null : () => Navigator.of(context).pop(false),
+          child: const Text('إلغاء'),
+        ),
+        FilledButton(
+          onPressed: (_canEnable && !_saving) ? () => _writeFlag(true) : null,
+          child: _saving
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('تفعيل الآن'),
+        ),
+      ],
+    );
+  }
+
+  bool get _canEnable {
+    final r = _report;
+    if (r == null) return false;
+    // Allow enabling even if there are custom roles — operator was
+    // shown the list and chose to proceed. Only block on known-role
+    // gaps (those would cause field outages).
+    return r.knownRolesAreReady;
+  }
+
+  Widget _warningBanner() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.warning.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+      ),
+      child: const Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(PhosphorIconsBold.warning, color: AppColors.warning),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'بعد التفعيل، السيرفر سيرفض أي عملية يقوم بها مستخدم '
+              'لا يملك الصلاحية المناسبة لها (مثلاً: كاشير يحاول حذف '
+              'فاتورة بدون صلاحية sales_delete). تأكد من فحص الأدوار '
+              'قبل التفعيل.',
+              style: TextStyle(fontSize: 13),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReportBody(RolePreflightReport report) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (report.knownRolesAreReady)
+          _readyChip()
+        else
+          _gapsList(report),
+        if (report.customRolesPresent.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _customRolesNote(report.customRolesPresent),
+        ],
+      ],
+    );
+  }
+
+  Widget _readyChip() {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: AppColors.success.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: const Row(
+        children: [
+          Icon(PhosphorIconsBold.checkCircle, color: AppColors.success),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'كل الأدوار المعروفة جاهزة للتشغيل',
+              style: TextStyle(color: AppColors.success),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _gapsList(RolePreflightReport report) {
+    final roleCount = report.missingByKnownRole.length;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: AppColors.error.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              const Icon(PhosphorIconsBold.warning, color: AppColors.error),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '$roleCount دور يحتاج صلاحيات إضافية '
+                  '(${report.totalMissingPairs} صلاحية ناقصة)',
+                  style: const TextStyle(color: AppColors.error),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        ...report.missingByKnownRole.entries.map(
+          (e) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  e.key,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Padding(
+                  padding: const EdgeInsetsDirectional.only(start: 12),
+                  child: Text(
+                    e.value.join('، '),
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        OutlinedButton.icon(
+          onPressed: _saving ? null : _grantDefaults,
+          icon: const Icon(PhosphorIconsBold.shieldPlus, size: 18),
+          label: const Text('امنح الصلاحيات الناقصة تلقائياً (الأدوار المعروفة)'),
+        ),
+      ],
+    );
+  }
+
+  Widget _customRolesNote(List<String> customRoles) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: AppColors.info.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(PhosphorIconsBold.info, color: AppColors.info, size: 18),
+              SizedBox(width: 6),
+              Text(
+                'أدوار مخصّصة (يلزم منحها الصلاحيات يدوياً)',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.info,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Padding(
+            padding: const EdgeInsetsDirectional.only(start: 24),
+            child: Text(
+              customRoles.join('، '),
+              style: const TextStyle(fontSize: 12),
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Padding(
+            padding: EdgeInsetsDirectional.only(start: 24),
+            child: Text(
+              'هذه الأدوار خارج المصفوفة الافتراضية. تأكد من منحها '
+              'الصلاحيات المناسبة من شاشة "إدارة صلاحيات الأدوار" قبل '
+              'التفعيل، وإلا سيواجه مستخدموها أخطاء 403.',
+              style: TextStyle(fontSize: 11, color: Colors.grey),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

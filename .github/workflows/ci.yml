@@ -1,0 +1,300 @@
+name: URAL-ERP CI/CD
+
+# ── Triggers ────────────────────────────────────────────────────────────────
+on:
+  push:
+    branches: [main, develop, master]
+    tags: ['v*.*.*']
+  pull_request:
+    branches: [main, develop, master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# ── Shared env ───────────────────────────────────────────────────────────────
+env:
+  FLUTTER_VERSION: '3.38.x'   # Pin to the version used in development
+  DART_SDK_CONSTRAINT: '3.10.4'
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# STAGE 0 — Secrets scan (runs first; cheapest fail-fast gate)
+# ═══════════════════════════════════════════════════════════════════════════════
+jobs:
+  secrets-scan:
+    name: 🔒 Secrets Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history so gitleaks can scan all commits on the PR
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}   # omit for public repos
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# STAGE 1 — Analysis & Tests
+# ═══════════════════════════════════════════════════════════════════════════════
+  verify:
+    name: 🔍 Verify & Test
+    runs-on: ubuntu-latest
+    needs: secrets-scan
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate Code (Drift)
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      # ── Static analysis ────────────────────────────────────────────────────
+      - name: Analyze code (strict)
+        run: flutter analyze lib/
+
+      # ── God-File size gates ────────────────────────────────────────────────
+      # Each threshold is the MAXIMUM allowed byte size.
+      # Lower the threshold when a file is refactored; never raise it.
+      # client_write_interceptor.dart is tracked at its current size and will be
+      # reduced to ≤ 30 000 bytes once Week 11 splits it into modules.
+      - name: Check God-File size thresholds
+        shell: bash
+        run: |
+          declare -A THRESHOLDS
+          THRESHOLDS["lib/presentation/screens/tables_screen.dart"]=70000
+          THRESHOLDS["lib/presentation/pos/screens/pos_table_service_screen.dart"]=70000
+          THRESHOLDS["lib/services/client_write_interceptor.dart"]=30000   # Week 11: split into 4 part files under interceptor/
+
+          FAILED=0
+          for file in "${!THRESHOLDS[@]}"; do
+            threshold="${THRESHOLDS[$file]}"
+            if [ -f "$file" ]; then
+              size=$(stat -c%s "$file")
+              if [ "$size" -gt "$threshold" ]; then
+                echo "❌ GOD-FILE: $file  (${size} bytes > threshold ${threshold})"
+                FAILED=1
+              else
+                echo "✅ OK: $file  (${size} bytes ≤ ${threshold})"
+              fi
+            fi
+          done
+          [ "$FAILED" -eq 0 ] || exit 1
+
+      # ── Test suites ────────────────────────────────────────────────────────
+      - name: Run unit tests
+        run: flutter test test/unit/ --reporter=expanded
+
+      - name: Run core tests
+        run: flutter test test/core/ --reporter=expanded
+
+      - name: Run DAO tests
+        run: flutter test test/data/ --reporter=expanded
+
+      - name: Run domain tests
+        run: flutter test test/domain/ --reporter=expanded
+
+      - name: Run service tests
+        run: flutter test test/services/ --reporter=expanded
+
+      - name: Run widget tests
+        run: flutter test test/widget/ --reporter=expanded
+
+      - name: Run integration tests
+        run: flutter test test/integration/ --reporter=expanded
+
+      # ── Mandatory audit flows (explicit CI steps for visibility) ───────────
+      - name: PIR Mandatory 5 Flows
+        run: flutter test test/integration/pir_mandatory_5_tests.dart --reporter=expanded
+        continue-on-error: false
+
+      - name: Accounting E2E Suite (AC1..AC8)
+        run: flutter test test/integration/accounting_e2e_suite.dart --reporter=expanded
+        continue-on-error: false
+
+      # ── Coverage ───────────────────────────────────────────────────────────
+      - name: Generate coverage report
+        run: flutter test --coverage
+
+      - name: Coverage hard gate (≥ 35 %)
+        shell: bash
+        run: |
+          if [ ! -f coverage/lcov.info ]; then
+            echo "::error::No coverage/lcov.info found — did flutter test --coverage run?"
+            exit 1
+          fi
+          TOTAL=$(grep -c "^DA:" coverage/lcov.info 2>/dev/null || echo "0")
+          HIT=$(grep "^DA:" coverage/lcov.info | grep -v ",0$" | wc -l || echo "0")
+          if [ "$TOTAL" -gt 0 ]; then
+            PCT=$(( HIT * 100 / TOTAL ))
+            echo "Coverage: ${PCT}%  (${HIT} / ${TOTAL} lines)"
+            if [ "$PCT" -lt 35 ]; then
+              echo "::error::Coverage ${PCT}% < 35% minimum — add tests before merging"
+              exit 1
+            fi
+          else
+            echo "::warning::Could not determine coverage (0 DA lines found)"
+          fi
+
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ github.run_number }}
+          path: coverage/lcov.info
+          retention-days: 30
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# STAGE 2 — Windows release build
+# Runs on main / master / develop pushes and on version tags.
+# ═══════════════════════════════════════════════════════════════════════════════
+  build-windows:
+    name: 🏗️ Build Windows
+    needs: verify
+    runs-on: windows-latest
+    timeout-minutes: 35
+    if: |
+      github.ref == 'refs/heads/main'    ||
+      github.ref == 'refs/heads/master'  ||
+      github.ref == 'refs/heads/develop' ||
+      startsWith(github.ref, 'refs/tags/v')
+
+    outputs:
+      artifact-name: ${{ steps.meta.outputs.artifact-name }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate Code (Drift)
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      # ── Version stamp ──────────────────────────────────────────────────────
+      # Artifact name format: URAL-ERP-<semver>+<short-sha>
+      - name: Compute build metadata
+        id: meta
+        shell: bash
+        run: |
+          SEMVER=$(grep '^version:' pubspec.yaml | sed 's/version:[[:space:]]*//')
+          SHORT_SHA=${GITHUB_SHA::8}
+          FULL="${SEMVER}+${SHORT_SHA}"
+          echo "semver=${SEMVER}"       >> "$GITHUB_OUTPUT"
+          echo "full-version=${FULL}"   >> "$GITHUB_OUTPUT"
+          echo "artifact-name=URAL-ERP-${FULL}-windows" >> "$GITHUB_OUTPUT"
+          echo "Building: URAL-ERP ${FULL}"
+
+      - name: Build Windows release
+        run: >-
+          flutter build windows --release
+          --build-name="${{ steps.meta.outputs.semver }}"
+          --build-number="${{ github.run_number }}"
+
+      # ── Package as zip ─────────────────────────────────────────────────────
+      - name: Package artifact
+        shell: pwsh
+        run: |
+          $src = "build\windows\x64\runner\Release"
+          $name = "${{ steps.meta.outputs.artifact-name }}"
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          Compress-Archive -Path "$src\*" -DestinationPath "dist\${name}.zip" -Force
+          Write-Host "Packaged: dist\${name}.zip"
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.meta.outputs.artifact-name }}
+          path: dist/*.zip
+          retention-days: 30
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# STAGE 3 — Web release build
+# Runs on main / master pushes and version tags.
+# ═══════════════════════════════════════════════════════════════════════════════
+  build-web:
+    name: 🌐 Build Web
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: |
+      github.ref == 'refs/heads/main'   ||
+      github.ref == 'refs/heads/master' ||
+      startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate Code (Drift)
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Build Web release
+        run: >-
+          flutter build web --release
+          --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+          --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+
+      - name: Upload web artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-release-${{ github.run_number }}
+          path: build/web/
+          retention-days: 14
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# STAGE 4 — GitHub Release (version tags only: v*.*.*)
+# Creates a draft GitHub Release and attaches the Windows zip.
+# ═══════════════════════════════════════════════════════════════════════════════
+  release:
+    name: 🚀 Create Release
+    needs: [build-windows, build-web]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.build-windows.outputs.artifact-name }}
+          path: release-assets/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "URAL-ERP ${{ github.ref_name }}"
+          files: release-assets/*.zip
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-rc') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-alpha') }}

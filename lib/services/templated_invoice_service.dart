@@ -1,0 +1,1479 @@
+import 'dart:convert';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show rootBundle;
+import '../core/constants/app_constants.dart';
+import '../data/database/database.dart';
+import '../data/repositories/printers_repository_impl.dart';
+import 'printer_resolver.dart';
+
+/// خدمة طباعة الفواتير باستخدام القوالب المخصصة
+/// تقرأ القالب الافتراضي وتطبق إعداداته على PDF الفاتورة
+class TemplatedInvoiceService {
+  static pw.Font? _arabicFont;
+
+  static Future<void> _initFont() async {
+    if (_arabicFont != null) return;
+
+    // ① Load from bundled asset (works offline on POS machines)
+    try {
+      final fontData = await rootBundle.load('assets/fonts/Cairo-Regular.ttf');
+      _arabicFont = pw.Font.ttf(fontData);
+      debugPrint('[TemplatedInvoice] Loaded Cairo from bundled asset');
+      return;
+    } catch (e) {
+      debugPrint('[TemplatedInvoice] Bundled asset failed: $e');
+    }
+
+    // ② Fallback: download from Google Fonts (requires internet)
+    try {
+      _arabicFont = await PdfGoogleFonts.cairoRegular();
+      debugPrint('[TemplatedInvoice] Loaded Cairo from Google Fonts');
+      return;
+    } catch (e) {
+      debugPrint('[TemplatedInvoice] Google Fonts failed: $e');
+    }
+
+    // ③ Last resort: Helvetica — NOT cached, so next call retries
+    debugPrint('[TemplatedInvoice] WARNING: Arabic font unavailable — text will show as boxes');
+    _arabicFont = pw.Font.helvetica();
+  }
+
+  /// التحقق من وجود قالب افتراضي لنوع معين (مع فئة اختيارية)
+  static Future<bool> hasDefaultTemplate(
+    AppDatabase db,
+    String type, {
+    String? category,
+  }) async {
+    if (category != null) {
+      // When a specific category is requested, only check that category.
+      // Do NOT fall back to any thermal template — kitchen ≠ receipt.
+      final template = await db.getDefaultTemplateByCategory(type, category);
+      return template != null;
+    }
+    final template = await db.getDefaultTemplate(type);
+    return template != null;
+  }
+
+  /// طباعة فاتورة باستخدام القالب المخصصة (Thermal أو A4)
+  static Future<void> printWithTemplate({
+    required AppDatabase db,
+    required String invoiceNumber,
+    required DateTime date,
+    required String? customerName,
+    required String? customerPhone,
+    required String? customerAddress,
+    required List<Map<String, dynamic>> items,
+    required double subtotal,
+    required double discount,
+    required double tax,
+    required double deliveryFee,
+    required double total,
+    required double paid,
+    required String companyName,
+    required String companyAddress,
+    required String companyPhone,
+    required String? companyTaxId,
+    Uint8List? logoBytes,
+    String paymentMethod = 'نقدي',
+    bool directPrint = false,
+    String type = 'thermal',
+    String category = 'receipt',
+    String? cashierName,
+    String? notes,
+    String? adhocCustomerName,
+    String? adhocCustomerPhone,
+    String? salesType,
+    String? orderNumber,
+    String? platformOrderNumber,
+    String locale = 'ar',
+  }) async {
+    await _initFont();
+
+    // Derive lookup type from category: kitchen templates have type='kitchen'
+    final InvoiceTemplateWithData? templateData;
+    if (category == 'kitchen') {
+      // Kitchen templates have type='kitchen'
+      templateData = await db.getDefaultTemplateWithData('kitchen');
+    } else {
+      templateData = await db.getDefaultTemplateWithDataByCategory(
+        type,
+        category,
+      );
+    }
+
+    if (templateData == null) {
+      throw Exception('لا يوجد قالب افتراضي - سيتم استخدام التصميم الافتراضي');
+    }
+
+    final allVisible = templateData.elements.where((e) => e.isVisible).toList()
+      ..sort((a, b) {
+        // Print service reads from DB where sortOrder may be stale.
+        // Use section-priority as PRIMARY to guarantee correct grouping,
+        // sortOrder as tiebreaker within each section.
+        final aPriority = _contentSectionPriority(_resolveType(a));
+        final bPriority = _contentSectionPriority(_resolveType(b));
+        if (aPriority != bPriority) return aPriority.compareTo(bPriority);
+        final orderCmp = a.sortOrder.compareTo(b.sortOrder);
+        if (orderCmp != 0) return orderCmp;
+        return a.yPosition.compareTo(b.yPosition);
+      });
+
+    // Dedup by resolved content — keep only first occurrence of each content key
+    final seenContent = <String>{};
+    final elements = <InvoiceTemplateElement>[];
+    for (final el in allVisible) {
+      final key = _resolveType(el);
+      if (!seenContent.contains(key)) {
+        seenContent.add(key);
+        elements.add(el);
+      }
+    }
+
+    debugPrint(
+      '[TemplatedInvoice] Template: "${templateData.template.name}", elements: ${elements.length}, items: ${items.length}',
+    );
+
+    final pdf = pw.Document();
+    final remaining = total - paid;
+
+    const mmToPoints = 2.8346;
+    // For thermal printers (80mm paper), the actual print head width is ~72mm.
+    // The remaining 8mm is non-printable hardware margin (4mm each side).
+    final paperWidthMm = templateData.template.paperWidth;
+    final printableWidthMm = paperWidthMm <= 80
+        ? paperWidthMm - 8  // 80mm → 72mm actual printable
+        : paperWidthMm;      // A4 stays as-is
+    final canvasWidth = printableWidthMm * mmToPoints;
+    final ts = templateData.tableSettings;
+
+    // ─── FLOW-BASED LAYOUT ───────────────────────────────────────────
+    // Matches the Section Editor's preview: elements flow vertically,
+    // consecutive inline elements (flexWidth < 100) share a row with
+    // Expanded, single elements take full paper width.
+    // Text wraps naturally — no clipping, fits within paper size.
+
+    // --- Helper to resolve element type (wraps static) ---
+    String resolveType(InvoiceTemplateElement element) => _resolveType(element);
+
+    pw.Widget buildFlowWidget(InvoiceTemplateElement element) {
+      final resolvedType = resolveType(element);
+
+      // Special handling for logo — scale to actual paper width
+      if (resolvedType == 'logo') {
+        // Cap at 60% for thermal to prevent oversized logos
+        final maxPercent = paperWidthMm <= 80 ? 0.60 : 1.0;
+        final sizePercent = (element.width / 100.0).clamp(0.15, maxPercent);
+        final logoW = canvasWidth * sizePercent;
+        final logoH = logoW * 0.65;
+        if (logoBytes != null && logoBytes.isNotEmpty) {
+          final image = pw.MemoryImage(logoBytes);
+          return pw.Padding(
+            padding: const pw.EdgeInsets.symmetric(vertical: 4),
+            child: pw.Center(
+              child: pw.Image(
+                image,
+                width: logoW,
+                height: logoH,
+                fit: pw.BoxFit.contain,
+              ),
+            ),
+          );
+        }
+        return pw.Center(
+          child: pw.Container(
+            width: logoW, height: logoH,
+            decoration: pw.BoxDecoration(
+              border: pw.Border.all(color: PdfColors.grey300),
+            ),
+            child: pw.Center(child: pw.Text('LOGO', style: _getStyle(element))),
+          ),
+        );
+      }
+
+      return _buildElementContent(
+        resolvedType: resolvedType,
+        element: element,
+        invoiceNumber: invoiceNumber,
+        date: date,
+        customerName: customerName,
+        customerPhone: customerPhone,
+        customerAddress: customerAddress,
+        items: items,
+        subtotal: subtotal,
+        discount: discount,
+        tax: tax,
+        deliveryFee: deliveryFee,
+        total: total,
+        paid: paid,
+        remaining: remaining,
+        companyName: companyName,
+        companyAddress: companyAddress,
+        companyPhone: companyPhone,
+        companyTaxId: companyTaxId,
+        paymentMethod: paymentMethod,
+        tableSettings: ts,
+        logoBytes: logoBytes,
+        cashierName: cashierName,
+        notes: notes,
+        adhocCustomerName: adhocCustomerName,
+        adhocCustomerPhone: adhocCustomerPhone,
+        salesType: salesType,
+        orderNumber: orderNumber,
+        platformOrderNumber: platformOrderNumber,
+      );
+    }
+
+    // ── Group elements: consecutive inline (flexWidth < 100) → row ──
+    // Filter elements: only process known elementTypes (variable, text, line, image)
+    // This skips old-format seeded elements with elementType like 'customer', 'footer'
+    final validElements = elements.where((e) {
+      return const {'variable', 'text', 'line', 'image', 'rectangle'}.contains(e.elementType);
+    }).toList();
+
+    final contentWidgets = <pw.Widget>[];
+    bool tableInserted = false;
+    int i = 0;
+
+    while (i < validElements.length) {
+      final el = validElements[i];
+
+      // Check if we should insert the items table here
+      // (after header/invoice-info elements, before totals)
+      final resolved = resolveType(el);
+      if (!tableInserted &&
+          items.isNotEmpty &&
+          (resolved == 'subtotal' ||
+           resolved == 'total' ||
+           resolved == 'discount' ||
+           resolved == 'tax' ||
+           resolved == 'paid' ||
+           resolved == 'remaining' ||
+           resolved == 'notes' ||
+           resolved == 'footer' ||
+           resolved == 'qr_code')) {
+        final baseStyle = pw.TextStyle(
+          font: _arabicFont,
+          fontSize: ts?.fontSize ?? 9,
+        );
+        contentWidgets.add(_buildItemsTable(items, ts, baseStyle));
+        tableInserted = true;
+      }
+
+      // Check if this element and the next form an inline group
+      if (el.flexWidth < 100 && i + 1 < validElements.length) {
+        // Collect consecutive inline elements
+        final group = <InvoiceTemplateElement>[el];
+        while (i + group.length < validElements.length &&
+            group.last.flexWidth < 100) {
+          group.add(validElements[i + group.length]);
+        }
+        // If last element in group is NOT inline, it was just pulled in
+        // as the "next" — that's correct for side-by-side layout
+
+        try {
+          contentWidgets.add(
+            pw.Row(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: group
+                  .map((g) => pw.Expanded(child: buildFlowWidget(g)))
+                  .toList(),
+            ),
+          );
+        } catch (e) {
+          debugPrint(
+            '[TemplatedInvoice] ❌ Row group FAILED: $e',
+          );
+        }
+        i += group.length;
+      } else {
+        // Single element — full width
+        try {
+          contentWidgets.add(buildFlowWidget(el));
+        } catch (e) {
+          debugPrint(
+            '[TemplatedInvoice] ❌ Element "${el.elementType}" FAILED: $e',
+          );
+        }
+        i++;
+      }
+    }
+
+    // If table hasn't been inserted yet, add at end
+    if (!tableInserted && items.isNotEmpty) {
+      final baseStyle = pw.TextStyle(
+        font: _arabicFont,
+        fontSize: ts?.fontSize ?? 9,
+      );
+      contentWidgets.add(_buildItemsTable(items, ts, baseStyle));
+    }
+
+    // ── Build the page — thermal uses minimal margins, A4 uses standard ──
+    final isThermalPrint = templateData.template.paperWidth <= 80;
+    final marginMm = isThermalPrint ? 2.0 : 4.0;
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat(
+          canvasWidth,
+          double.infinity,
+          marginAll: marginMm * mmToPoints,
+        ),
+        textDirection: locale == 'en' ? pw.TextDirection.ltr : pw.TextDirection.rtl,
+        build: (context) => pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+          children: contentWidgets,
+        ),
+      ),
+    );
+
+    if (directPrint) {
+      // Resolve configured printer based on category
+      final printersRepo = PrintersRepositoryImpl(db);
+      final resolvedPrinter = category == 'kitchen'
+          ? await PrinterResolver.resolveByPurpose(printersRepo, 'kitchen')
+          : await PrinterResolver.resolveReceiptPrinter(printersRepo);
+
+      if (resolvedPrinter != null) {
+        debugPrint('[TemplatedInvoice] Printing ($category) to: ${resolvedPrinter.name}');
+        await Printing.directPrintPdf(
+          printer: resolvedPrinter,
+          onLayout: (_) => pdf.save(),
+        );
+      } else {
+        debugPrint(
+          '[TemplatedInvoice] No configured $category printer, showing print dialog',
+        );
+        await Printing.layoutPdf(onLayout: (_) => pdf.save());
+      }
+    } else {
+      await Printing.layoutPdf(onLayout: (_) => pdf.save());
+    }
+  }
+
+  /// بناء محتوى عنصر واحد من القالب (resolvedType تم حله بالفعل في الـ caller)
+  static pw.Widget _buildElementContent({
+    required String resolvedType,
+    required InvoiceTemplateElement element,
+    required String invoiceNumber,
+    required DateTime date,
+    String? customerName,
+    String? customerPhone,
+    String? customerAddress,
+    required List<Map<String, dynamic>> items,
+    required double subtotal,
+    required double discount,
+    required double tax,
+    required double deliveryFee,
+    required double total,
+    required double paid,
+    required double remaining,
+    required String companyName,
+    required String companyAddress,
+    required String companyPhone,
+    String? companyTaxId,
+    String paymentMethod = 'نقدي',
+    InvoiceTableSetting? tableSettings,
+    Uint8List? logoBytes,
+    String? cashierName,
+    String? notes,
+    String? adhocCustomerName,
+    String? adhocCustomerPhone,
+    String? salesType,
+    String? orderNumber,
+    String? platformOrderNumber,
+  }) {
+    final style = _getStyle(element);
+    final align = _getAlignment(element.textAlign);
+
+    switch (resolvedType) {
+      // Company Info
+      case 'company_name':
+        return pw.Padding(
+          padding: const pw.EdgeInsets.symmetric(vertical: 2),
+          child: pw.Text(companyName, style: style, textAlign: align),
+        );
+      case 'company_address':
+        return pw.Text(companyAddress, style: style, textAlign: align);
+      case 'company_phone':
+        return pw.Text('هاتف: $companyPhone', style: style, textAlign: align);
+      case 'company_tax_id':
+        return companyTaxId != null
+            ? pw.Text(
+                'السجل الضريبي: $companyTaxId',
+                style: style,
+                textAlign: align,
+              )
+            : pw.SizedBox();
+      case 'logo':
+        if (logoBytes != null && logoBytes.isNotEmpty) {
+          final image = pw.MemoryImage(logoBytes);
+          return pw.Center(
+            child: pw.Image(
+              image,
+              width: element.width,
+              height: element.height,
+              fit: pw.BoxFit.contain,
+            ),
+          );
+        }
+        return pw.Center(
+          child: pw.Container(
+            width: element.width,
+            height: element.height,
+            decoration: pw.BoxDecoration(
+              border: pw.Border.all(color: PdfColors.grey300),
+            ),
+            child: pw.Center(child: pw.Text('LOGO', style: style)),
+          ),
+        );
+
+      // Invoice Info
+      case 'invoice_title':
+        return pw.Padding(
+          padding: const pw.EdgeInsets.symmetric(vertical: 4),
+          child: pw.Text(
+            element.content ?? 'فاتورة مبيعات',
+            style: style,
+            textAlign: align,
+          ),
+        );
+      case 'invoice_number':
+        return pw.Text(
+          '${element.labelAr ?? 'رقم الفاتورة'}: $invoiceNumber',
+          style: style,
+          textAlign: align,
+        );
+      case 'date':
+        return pw.Text(
+          '${element.labelAr ?? 'التاريخ'}: ${date.day}/${date.month}/${date.year}',
+          style: style,
+          textAlign: align,
+        );
+      case 'time':
+        return pw.Text(
+          '${element.labelAr ?? 'الوقت'}: ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}',
+          style: style,
+          textAlign: align,
+        );
+      case 'cashier_name':
+        return pw.Text(
+          '${element.labelAr ?? 'الكاشير'}: ${cashierName ?? ''}',
+          style: style,
+          textAlign: align,
+        );
+      case 'order_number':
+        final orderLabel = element.labelAr?.trim().isNotEmpty == true ? element.labelAr! : 'رقم الطلب';
+        return pw.Text(
+          '$orderLabel: ${platformOrderNumber ?? orderNumber ?? invoiceNumber}',
+          style: style,
+          textAlign: align,
+        );
+      case 'table_number':
+        final tableValue = platformOrderNumber ?? adhocCustomerName ?? customerName ?? '';
+        if (tableValue.isEmpty) return pw.SizedBox();
+        final tableLabel = element.labelAr?.trim().isNotEmpty == true ? element.labelAr! : 'رقم الطاولة';
+        return pw.Text(
+          '$tableLabel: $tableValue',
+          style: style,
+          textAlign: align,
+        );
+      case 'payment_method':
+        return pw.Text(
+          '${element.labelAr ?? 'طريقة الدفع'}: $paymentMethod',
+          style: style,
+          textAlign: align,
+        );
+
+      // Customer Info
+      case 'customer':
+        return customerName != null
+            ? pw.Text(
+                '${element.labelAr ?? 'العميل'}: $customerName',
+                style: style,
+                textAlign: align,
+              )
+            : pw.SizedBox();
+      case 'customer_phone':
+        return customerPhone != null
+            ? pw.Text(
+                '${element.labelAr ?? 'الهاتف'}: $customerPhone',
+                style: style,
+                textAlign: align,
+              )
+            : pw.SizedBox();
+      case 'customer_address':
+        return customerAddress != null
+            ? pw.Text(
+                '${element.labelAr ?? 'العنوان'}: $customerAddress',
+                style: style,
+                textAlign: align,
+              )
+            : pw.SizedBox();
+      case 'adhoc_customer_name':
+        return adhocCustomerName != null && adhocCustomerName.isNotEmpty
+            ? pw.Text(
+                '${element.labelAr ?? 'اسم العميل'}: $adhocCustomerName',
+                style: style,
+                textAlign: align,
+              )
+            : pw.SizedBox();
+      case 'adhoc_customer_phone':
+        return adhocCustomerPhone != null && adhocCustomerPhone.isNotEmpty
+            ? pw.Text(
+                '${element.labelAr ?? 'هاتف العميل'}: $adhocCustomerPhone',
+                style: style,
+                textAlign: align,
+              )
+            : pw.SizedBox();
+
+      // Items Table
+      case 'items_table':
+        return _buildItemsTable(items, tableSettings, style);
+
+      // Totals
+      case 'subtotal':
+        return _totalRow(
+          element.labelAr ?? 'المجموع الفرعي',
+          subtotal,
+          style,
+          align,
+        );
+      case 'discount':
+        return discount > 0
+            ? _totalRow(
+                element.labelAr ?? 'الخصم',
+                discount,
+                style,
+                align,
+                isSubtraction: true,
+              )
+            : pw.SizedBox();
+      case 'tax':
+        return tax > 0
+            ? _totalRow(element.labelAr ?? 'الضريبة', tax, style, align)
+            : pw.SizedBox();
+      case 'total':
+        return _totalRow(
+          element.labelAr ?? 'الإجمالي',
+          total,
+          style.copyWith(fontWeight: pw.FontWeight.bold),
+          align,
+        );
+      case 'paid':
+        return _totalRow(element.labelAr ?? 'المدفوع', paid, style, align);
+      case 'remaining':
+        return _totalRow(
+          element.labelAr ?? 'المتبقي',
+          remaining,
+          style.copyWith(color: remaining > 0 ? PdfColors.red : null),
+          align,
+        );
+      case 'delivery_fee':
+        return deliveryFee > 0
+            ? _totalRow(element.labelAr ?? 'رسوم التوصيل', deliveryFee, style, align)
+            : pw.SizedBox();
+
+      // Info-only fields (label: value)
+      case 'sale_type':
+      case 'invoice_type_label':
+        final saleLabel = salesType != null && salesType.isNotEmpty
+            ? _mapSaleTypeLabel(salesType)
+            : paymentMethod;
+        return pw.Text(
+          saleLabel ?? '',
+          style: style,
+          textAlign: align,
+        );
+      case 'supplier_name':
+        return pw.Text(
+          '${element.labelAr ?? 'المورد'}: ${customerName ?? ''}',
+          style: style,
+          textAlign: align,
+        );
+      // Visual Elements
+      case 'divider':
+        return pw.Padding(
+          padding: const pw.EdgeInsets.symmetric(vertical: 4),
+          child: pw.Divider(thickness: 0.5),
+        );
+      case 'spacer':
+        return pw.SizedBox(height: 8);
+      case 'qr_code':
+        return pw.Center(
+          child: pw.BarcodeWidget(
+            barcode: pw.Barcode.qrCode(),
+            data: invoiceNumber,
+            width: 50,
+            height: 50,
+          ),
+        );
+      case 'barcode':
+        return pw.Center(
+          child: pw.BarcodeWidget(
+            barcode: pw.Barcode.code128(),
+            data: invoiceNumber,
+            width: 60,
+            height: 25,
+          ),
+        );
+
+      // Custom text / notes / footer
+      case 'text':
+      case 'custom_text':
+        return element.content != null
+            ? pw.Text(element.content!, style: style, textAlign: align)
+            : pw.SizedBox();
+      case 'notes':
+        final noteText = notes ?? element.content;
+        return noteText != null && noteText.isNotEmpty
+            ? pw.Text(noteText, style: style, textAlign: align)
+            : pw.SizedBox();
+      case 'footer':
+        return pw.Padding(
+          padding: const pw.EdgeInsets.only(top: 8),
+          child: pw.Text(
+            element.content ?? 'شكراً لتعاملكم معنا',
+            style: style, textAlign: align,
+          ),
+        );
+
+      // ══════════════════════════════════════════════════════════════════
+      // SMART DEFAULT — mirrors the preview dialog's fallback behavior.
+      // Any element type not explicitly cased above is rendered using
+      // its label (from labelAr or _getLabel) + real data value.
+      // Totals-like fields render as label ↔ value rows (right-aligned).
+      // ══════════════════════════════════════════════════════════════════
+      default:
+        final label = element.labelAr ?? _getLabel(resolvedType);
+        final value = _getDataValue(
+          resolvedType,
+          invoiceNumber: invoiceNumber,
+          date: date,
+          customerName: customerName,
+          customerPhone: customerPhone,
+          customerAddress: customerAddress,
+          companyName: companyName,
+          companyAddress: companyAddress,
+          companyPhone: companyPhone,
+          companyTaxId: companyTaxId,
+          paymentMethod: paymentMethod,
+          cashierName: cashierName,
+          notes: notes,
+          adhocCustomerName: adhocCustomerName,
+          adhocCustomerPhone: adhocCustomerPhone,
+          subtotal: subtotal,
+          discount: discount,
+          tax: tax,
+          deliveryFee: deliveryFee,
+          total: total,
+          paid: paid,
+          remaining: remaining,
+          orderNumber: orderNumber,
+          platformOrderNumber: platformOrderNumber,
+        );
+
+        if (label.isEmpty && value.isEmpty) {
+          debugPrint('[TemplatedInvoice] ⚠ Unknown: "$resolvedType"');
+          return pw.SizedBox();
+        }
+
+        // Totals-like fields → right-aligned label ↔ value row
+        if (_isTotalField(resolvedType)) {
+          final num? numVal = double.tryParse(value);
+          if (numVal != null) {
+            final isMainTotal = resolvedType == 'total' || resolvedType == 'total_amount';
+            return _totalRow(
+              label,
+              numVal.toDouble(),
+              isMainTotal ? style.copyWith(fontWeight: pw.FontWeight.bold) : style,
+              align,
+            );
+          }
+        }
+
+        // Regular field → label: value
+        if (label.isNotEmpty && value.isNotEmpty) {
+          return pw.Padding(
+            padding: const pw.EdgeInsets.symmetric(vertical: 1),
+            child: pw.Text('$label: $value', style: style, textAlign: align),
+          );
+        }
+
+        // Label-only or value-only
+        return pw.Padding(
+          padding: const pw.EdgeInsets.symmetric(vertical: 1),
+          child: pw.Text(
+            label.isNotEmpty ? label : value,
+            style: style, textAlign: align,
+          ),
+        );
+    }
+  }
+
+  /// Labels for all known element types — mirrors preview dialog's _getLabel
+  static String _getLabel(String type) {
+    const labels = {
+      'invoice_number': 'رقم الفاتورة',
+      'order_number': 'رقم الطلب',
+      'date': 'التاريخ',
+      'time': 'الوقت',
+      'customer_name': 'اسم العميل',
+      'customer': 'العميل',
+      'customer_phone': 'الهاتف',
+      'customer_address': 'العنوان',
+      'cashier_name': 'الكاشير',
+      'payment_method': 'طريقة الدفع',
+      'sale_type': 'نوع البيع',
+      'invoice_type_label': 'نوع الفاتورة',
+      'warehouse_name': 'المخزن',
+      'branch_name': 'الفرع',
+      'company_name': 'اسم الشركة',
+      'company_address': 'عنوان الشركة',
+      'company_phone': 'هاتف الشركة',
+      'company_tax_number': 'الرقم الضريبي',
+      'company_tax_id': 'الرقم الضريبي',
+      'tax_registration': 'السجل الضريبي',
+      'adhoc_customer_name': 'اسم العميل',
+      'adhoc_customer_phone': 'هاتف العميل',
+      'supplier_name': 'المورد',
+      'subtotal': 'الإجمالي الفرعي',
+      'discount': 'الخصم',
+      'tax': 'الضريبة',
+      'tax_amount': 'الضريبة',
+      'total': 'الإجمالي النهائي',
+      'total_amount': 'الإجمالي النهائي',
+      'grand_total': 'الإجمالي النهائي',
+      'paid': 'المدفوع',
+      'paid_amount': 'المدفوع',
+      'remaining': 'المتبقي',
+      'change': 'الباقي',
+      'cash_amount': 'مدفوع نقداً',
+      'bank_amount': 'مدفوع بنكياً',
+      'click_amount': 'مدفوع كليك',
+      'notes': 'ملاحظات',
+      'kitchen_notes': 'ملاحظات المطبخ',
+      'delivery_fee': 'رسوم التوصيل',
+      'delivery_type': 'نوع التوصيل',
+      'delivery_address': 'عنوان التوصيل',
+      'courier_name': 'المندوب',
+      'table_number': 'رقم الطاولة',
+      'waiter_name': 'الويتر',
+      'footer_text': 'التذييل',
+    };
+    return labels[type] ?? '';
+  }
+
+  /// Whether a field should be rendered as a total row (label ↔ value)
+  static bool _isTotalField(String type) {
+    return const {
+      'subtotal', 'discount', 'tax', 'tax_amount', 'total',
+      'total_amount', 'grand_total', 'paid', 'paid_amount',
+      'remaining', 'change', 'cash_amount', 'bank_amount',
+      'click_amount', 'delivery_fee',
+    }.contains(type);
+  }
+
+  /// Resolve element type from DB element — handles variable, text, image, line
+  static String _resolveType(InvoiceTemplateElement element) {
+    String resolvedType = element.elementType;
+    if ((resolvedType == 'variable' || resolvedType == 'text') &&
+        element.content != null &&
+        element.content!.isNotEmpty) {
+      resolvedType = element.content!;
+    } else if (resolvedType == 'line') {
+      resolvedType = 'divider';
+    } else if (resolvedType == 'image' && element.content == 'logo') {
+      resolvedType = 'logo';
+    }
+    const nameMapping = {
+      'customer_name': 'customer',
+      'tax_amount': 'tax',
+      'grand_total': 'total',
+      'total_amount': 'total',
+      'paid_amount': 'paid',
+      'change': 'remaining',
+      'company_tax_number': 'company_tax_id',
+      'footer_text': 'footer',
+    };
+    return nameMapping[resolvedType] ?? resolvedType;
+  }
+
+  /// Section priority for ordering — matches section editor's section sequence.
+  /// Lower number = appears earlier in the invoice.
+  static int _contentSectionPriority(String resolvedType) {
+    // Header section (priority 0)
+    if (const {'logo', 'company_name', 'company_address', 'company_phone',
+               'company_tax_id', 'branch_name'}.contains(resolvedType)) {
+      return 0;
+    }
+    // Invoice info section (priority 1)
+    if (const {'invoice_number', 'order_number', 'date', 'time',
+               'cashier_name', 'warehouse_name', 'payment_method',
+               'sale_type', 'invoice_type_label', 'invoice_title'}.contains(resolvedType)) {
+      return 1;
+    }
+    // Customer section (priority 2)
+    if (const {'customer', 'customer_phone', 'customer_address',
+               'adhoc_customer_name', 'adhoc_customer_phone',
+               'supplier_name', 'table_number', 'waiter_name'}.contains(resolvedType)) {
+      return 2;
+    }
+    // Delivery section (priority 3)
+    if (const {'delivery_type', 'delivery_address', 'delivery_fee',
+               'courier_name'}.contains(resolvedType)) {
+      return 3;
+    }
+    // Totals section (priority 5 — after items table which is inserted at 4)
+    if (const {'subtotal', 'discount', 'tax', 'total',
+               'paid', 'remaining',
+               'cash_amount', 'bank_amount', 'click_amount'}.contains(resolvedType)) {
+      return 5;
+    }
+    // Notes section (priority 6)
+    if (const {'notes', 'kitchen_notes'}.contains(resolvedType)) return 6;
+    // Footer section (priority 7)
+    if (const {'footer', 'qr_code', 'tax_registration', 'barcode'}.contains(resolvedType)) return 7;
+    // Dividers (priority 4 — around items table)
+    if (resolvedType == 'divider') return 4;
+    // Unknown — put after totals
+    return 8;
+  }
+
+  /// Map sale type codes to human-readable Arabic labels (with platform hashtags)
+  static String _mapSaleTypeLabel(String saleType) {
+    switch (saleType.toLowerCase()) {
+      case 'delivery':
+        return 'توصيل';
+      case 'internal':
+      case 'default':
+        return 'محلي';
+      case 'dine_in':
+      case 'صالة':
+        return 'صالة';
+      case 'takeaway':
+      case 'سفري':
+        return 'سفري';
+      case 'talabat':
+      case 'طلبات':
+        return '#طلبات';
+      case 'careem':
+      case 'كريم':
+        return '#كريم';
+      case 'marsool':
+      case 'مرسول':
+        return '#مرسول';
+      case 'jahez':
+      case 'جاهز':
+        return '#جاهز';
+      case 'hungerstation':
+        return '#هنقرستيشن';
+      case 'toyo':
+      case 'toyou':
+        return '#ToYou';
+      default:
+        return saleType;
+    }
+  }
+
+  /// Get the actual data value for an element type from the print parameters
+  static String _getDataValue(
+    String type, {
+    required String invoiceNumber,
+    required DateTime date,
+    String? customerName,
+    String? customerPhone,
+    String? customerAddress,
+    required String companyName,
+    required String companyAddress,
+    required String companyPhone,
+    String? companyTaxId,
+    required String paymentMethod,
+    String? cashierName,
+    String? notes,
+    String? adhocCustomerName,
+    String? adhocCustomerPhone,
+    required double subtotal,
+    required double discount,
+    required double tax,
+    required double deliveryFee,
+    required double total,
+    required double paid,
+    required double remaining,
+    String? orderNumber,
+    String? platformOrderNumber,
+  }) {
+    switch (type) {
+      case 'invoice_number': return invoiceNumber;
+      case 'order_number': return platformOrderNumber ?? orderNumber ?? invoiceNumber;
+      case 'date': return '${date.day}/${date.month}/${date.year}';
+      case 'time': return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+      case 'customer_name': case 'customer': return customerName ?? '';
+      case 'customer_phone': return customerPhone ?? '';
+      case 'customer_address': return customerAddress ?? '';
+      case 'adhoc_customer_name': return adhocCustomerName ?? '';
+      case 'adhoc_customer_phone': return adhocCustomerPhone ?? '';
+      case 'company_name': return companyName;
+      case 'company_address': return companyAddress;
+      case 'company_phone': return companyPhone;
+      case 'company_tax_id': case 'company_tax_number': case 'tax_registration': return companyTaxId ?? '';
+      case 'payment_method': case 'sale_type': case 'invoice_type_label': return paymentMethod;
+      case 'cashier_name': return cashierName ?? '';
+      case 'supplier_name': return customerName ?? '';
+      case 'notes': case 'kitchen_notes': return notes ?? '';
+      case 'subtotal': return subtotal.toStringAsFixed(AppConstants.decimalPlaces);
+      case 'discount': return discount.toStringAsFixed(AppConstants.decimalPlaces);
+      case 'tax': case 'tax_amount': return tax.toStringAsFixed(AppConstants.decimalPlaces);
+      case 'delivery_fee': return deliveryFee.toStringAsFixed(AppConstants.decimalPlaces);
+      case 'total': case 'total_amount': case 'grand_total': return total.toStringAsFixed(AppConstants.decimalPlaces);
+      case 'paid': case 'paid_amount': return paid.toStringAsFixed(AppConstants.decimalPlaces);
+      case 'remaining': case 'change': return remaining.toStringAsFixed(AppConstants.decimalPlaces);
+      // Fields where data is not yet passed through to the print service
+      case 'table_number':
+        return platformOrderNumber ?? adhocCustomerName ?? customerName ?? '';
+      case 'warehouse_name': case 'branch_name': case 'delivery_type':
+      case 'delivery_address': case 'courier_name': case 'waiter_name':
+      case 'cash_amount': case 'bank_amount':
+      case 'click_amount':
+        return '';
+      default: return '';
+    }
+  }
+
+  static pw.Widget _buildItemsTable(
+    List<Map<String, dynamic>> items,
+    InvoiceTableSetting? settings,
+    pw.TextStyle baseStyle,
+  ) {
+    final showIndex = settings?.showIndex ?? false;
+    final showName = settings?.showProductName ?? true;
+    final showCode = settings?.showProductCode ?? false;
+    final showQty = settings?.showQuantity ?? true;
+    final showPrice = settings?.showUnitPrice ?? true;
+    final showDiscount = settings?.showDiscount ?? false;
+    final showTax = settings?.showTax ?? false;
+    final showTotalCol = settings?.showTotal ?? true;
+
+    // Parse custom flex ratios and _decimalPlaces from JSON
+    final defaultWidths = <String, double>{
+      'index': 0.8,
+      'product': 3.0,
+      'code': 1.5,
+      'quantity': 1.0,
+      'price': 1.2,
+      'discount': 1.0,
+      'tax': 1.0,
+      'total': 1.5,
+    };
+    int decimalPlaces = 2;
+    bool headerBold = true;  // Default: header is bold
+    bool bodyBold = false;   // Default: body is normal
+    bool showHeader = true;  // Default: show header row
+    if (settings?.columnWidths != null && settings!.columnWidths!.isNotEmpty) {
+      try {
+        final decoded =
+            jsonDecode(settings.columnWidths!) as Map<String, dynamic>;
+        for (final e in decoded.entries) {
+          if (e.key == '_decimalPlaces') {
+            decimalPlaces = (e.value as num).toInt();
+          } else if (e.key == '_headerBold') {
+            headerBold = e.value as bool? ?? true;
+          } else if (e.key == '_bodyBold') {
+            bodyBold = e.value as bool? ?? false;
+          } else if (e.key == '_showHeader') {
+            showHeader = e.value as bool? ?? true;
+          } else if (e.value is num) {
+            defaultWidths[e.key] = (e.value as num).toDouble();
+          }
+        }
+      } catch (_) {}
+    }
+
+    // Number formatter helper
+    String fmt(num val) => val.toStringAsFixed(decimalPlaces);
+
+    // Build column widths using Flex ratios — proportional to content importance.
+    // Product name gets the most space. Numbers get less.
+    // Columns are ordered RTL (reversed) in the cell builders below,
+    // so column indices map naturally: 0 = rightmost (last visual column).
+    int colIdx = 0;
+    final Map<int, pw.TableColumnWidth> colWidths = {};
+    // Order: Total | Tax | Discount | Price | Qty | Code | Name | Index
+    // (cells already reversed for RTL in the builders below)
+    if (showTotalCol) colWidths[colIdx++] = pw.FlexColumnWidth(defaultWidths['total']!);
+    if (showTax) colWidths[colIdx++] = pw.FlexColumnWidth(defaultWidths['tax']!);
+    if (showDiscount) colWidths[colIdx++] = pw.FlexColumnWidth(defaultWidths['discount']!);
+    if (showPrice) colWidths[colIdx++] = pw.FlexColumnWidth(defaultWidths['price']!);
+    if (showQty) colWidths[colIdx++] = pw.FlexColumnWidth(defaultWidths['quantity']!);
+    if (showCode) colWidths[colIdx++] = pw.FlexColumnWidth(defaultWidths['code']!);
+    if (showName) colWidths[colIdx++] = pw.FlexColumnWidth(defaultWidths['product']!);
+    if (showIndex) colWidths[colIdx++] = pw.FlexColumnWidth(defaultWidths['index']!);
+
+    // final totalCols = colIdx;
+
+    // Count enabled columns — auto-reduce header font for cramped layouts
+    int enabledCols = 0;
+    if (showIndex) enabledCols++;
+    if (showName) enabledCols++;
+    if (showCode) enabledCols++;
+    if (showQty) enabledCols++;
+    if (showPrice) enabledCols++;
+    if (showDiscount) enabledCols++;
+    if (showTax) enabledCols++;
+    if (showTotalCol) enabledCols++;
+
+    // Use font sizes from settings — clamp to reasonable range for thermal paper
+    // Auto-reduce header font when many columns are enabled
+    final maxHeaderFont = enabledCols >= 7 ? 7.0 : (enabledCols >= 6 ? 8.0 : 24.0);
+    final headerFontSize = (settings?.headerFontSize ?? 9.0).clamp(1.0, maxHeaderFont);
+    final bodyFontSize = (settings?.fontSize ?? 8.0).clamp(1.0, 24.0);
+    final headerStyle = baseStyle.copyWith(
+      fontWeight: headerBold ? pw.FontWeight.bold : pw.FontWeight.normal,
+      fontSize: headerFontSize,
+      color: PdfColors.white,
+    );
+    final bodyStyle = baseStyle.copyWith(
+      fontWeight: bodyBold ? pw.FontWeight.bold : pw.FontWeight.normal,
+      fontSize: bodyFontSize,
+    );
+
+    return pw.Table(
+      border: pw.TableBorder.all(width: 0.5, color: PdfColors.grey400),
+      columnWidths: colWidths,
+      children: [
+        // Header (cells in RTL order — rightmost visual column first)
+        if (showHeader)
+        pw.TableRow(
+          decoration: const pw.BoxDecoration(color: PdfColors.black),
+          children: [
+            if (showTotalCol)
+              _tableCell(
+                '\u0627\u0644\u0625\u062c\u0645\u0627\u0644\u064a',
+                headerStyle,
+              ),
+            if (showTax)
+              _tableCell(
+                '\u0627\u0644\u0636\u0631\u064a\u0628\u0629',
+                headerStyle,
+              ),
+            if (showDiscount)
+              _tableCell('\u0627\u0644\u062e\u0635\u0645', headerStyle),
+            if (showPrice)
+              _tableCell('\u0627\u0644\u0633\u0639\u0631', headerStyle),
+            if (showQty)
+              _tableCell('العدد', headerStyle),
+            if (showCode)
+              _tableCell('\u0627\u0644\u0643\u0648\u062f', headerStyle),
+            if (showName)
+              _tableCell('\u0627\u0644\u0635\u0646\u0641', headerStyle),
+            if (showIndex) _tableCell('\u0645', headerStyle),
+          ],
+        ),
+        ...items.asMap().entries.expand((entry) {
+          final idx = entry.key + 1;
+          final item = entry.value;
+          final itemNote = item['note']?.toString() ?? '';
+          
+          final formattedNote = itemNote.replaceAll(' | ', '\n').replaceAll('📝 ', '\nملاحظة: ').trim();
+
+          pw.Widget productNameWidget() {
+            return pw.Padding(
+              padding: const pw.EdgeInsets.all(4),
+              child: formattedNote.isNotEmpty
+                ? pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+                    children: [
+                      pw.Text(
+                        item['name']?.toString() ?? '',
+                        style: bodyStyle,
+                        textAlign: pw.TextAlign.right,
+                        textDirection: pw.TextDirection.rtl,
+                      ),
+                      pw.SizedBox(height: 2),
+                      pw.Text(
+                        formattedNote,
+                        style: bodyStyle.copyWith(
+                          fontSize: (bodyStyle.fontSize ?? 10) >= 8.0 ? (bodyStyle.fontSize ?? 10) - 2.0 : 6.0,
+                          fontWeight: pw.FontWeight.normal,
+                          color: PdfColors.black,
+                          lineSpacing: 0.5,
+                        ),
+                        textAlign: pw.TextAlign.right,
+                        textDirection: pw.TextDirection.rtl,
+                      ),
+                    ],
+                  )
+                : pw.Text(
+                    item['name']?.toString() ?? '',
+                    style: bodyStyle,
+                    textAlign: pw.TextAlign.right,
+                    textDirection: pw.TextDirection.rtl,
+                  ),
+            );
+          }
+
+          final rows = <pw.TableRow>[
+            pw.TableRow(
+              children: [
+                if (showTotalCol) _tableCell(fmt(item['total'] ?? 0), bodyStyle),
+                if (showTax) _tableCell(fmt(item['tax'] ?? 0), bodyStyle),
+                if (showDiscount)
+                  _tableCell(fmt(item['discount'] ?? 0), bodyStyle),
+                if (showPrice) _tableCell(fmt(item['price'] ?? 0), bodyStyle),
+                if (showQty) _tableCell(fmt(item['quantity'] ?? 1), bodyStyle),
+                if (showCode)
+                  _tableCell(item['code']?.toString() ?? '', bodyStyle),
+                if (showName) productNameWidget(),
+                if (showIndex) _tableCell('$idx', bodyStyle),
+              ],
+            ),
+          ];
+
+          return rows;
+        }),
+      ],
+    );
+  }
+
+  static pw.Widget _tableCell(String text, pw.TextStyle style) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(horizontal: 1, vertical: 2),
+      child: pw.Text(text, style: style, textAlign: pw.TextAlign.center),
+    );
+  }
+
+  static pw.Widget _totalRow(
+    String label,
+    double value,
+    pw.TextStyle style,
+    pw.TextAlign align, {
+    bool isSubtraction = false,
+  }) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(vertical: 2),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Flexible(
+            child: pw.Text(label, style: style),
+          ),
+          pw.SizedBox(width: 4),
+          pw.Text(
+            '${isSubtraction ? "-" : ""}${value.toStringAsFixed(AppConstants.decimalPlaces)}',
+            style: style,
+          ),
+        ],
+      ),
+    );
+  }
+
+  static pw.TextStyle _getStyle(InvoiceTemplateElement element) {
+    // Clamp font size for thermal-safe rendering (max 12pt).
+    // The designer may allow larger sizes for preview, but 79mm paper
+    // can't fit long Arabic labels at 14-18pt without overflow.
+    final fontSize = element.fontSize.clamp(1.0, 24.0);
+    return pw.TextStyle(
+      font: _arabicFont,
+      fontSize: fontSize,
+      fontWeight: element.isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
+      color: _parseColor(element.fontColor),
+    );
+  }
+
+  static pw.TextAlign _getAlignment(String? alignment) {
+    switch (alignment) {
+      case 'left':
+        return pw.TextAlign.left;
+      case 'center':
+        return pw.TextAlign.center;
+      case 'right':
+      default:
+        return pw.TextAlign.right;
+    }
+  }
+
+  static PdfColor _parseColor(String hexColor) {
+    try {
+      final hex = hexColor.replaceFirst('#', '');
+      return PdfColor.fromInt(int.parse('FF$hex', radix: 16));
+    } catch (_) {
+      return PdfColors.black;
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // BARCODE LABEL PRINTING
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// طباعة ملصقات باركود باستخدام القالب المحفوظ
+  /// Prints barcode labels using a saved barcode template design.
+  /// Each label is laid out according to the template's paper size,
+  /// with multiple labels arranged in a grid on A4 pages.
+  static Future<void> printBarcodeWithTemplate({
+    required AppDatabase db,
+    required String barcodeValue,
+    required String productName,
+    String? productCode,
+    double? price,
+    String? companyName,
+    int copies = 1,
+    bool directPrint = true,
+    int? templateId,
+  }) async {
+    await _initFont();
+
+    // Find template
+    InvoiceTemplateWithData? templateData;
+    if (templateId != null) {
+      final t = await db.getTemplateById(templateId);
+      if (t != null) {
+        final elements = await db.getTemplateElements(templateId);
+        templateData = InvoiceTemplateWithData(template: t, elements: elements);
+      }
+    }
+    templateData ??= await db.getDefaultTemplateWithDataByCategory(
+      'thermal',
+      'barcode',
+    );
+
+    if (templateData == null) {
+      debugPrint('[BarcodeTemplate] No barcode template found');
+      return;
+    }
+
+    final template = templateData.template;
+    final elements = templateData.elements;
+
+    // Label dimensions in mm → points
+    final labelWidthMM = template.paperWidth;
+    final labelHeightMM = template.paperHeight ?? 25.0;
+    final labelWidth = labelWidthMM * PdfPageFormat.mm;
+    final labelHeight = labelHeightMM * PdfPageFormat.mm;
+
+    // Calculate grid layout on A4
+    const pageMargin = 10.0;
+    const a4Width = 210.0 * PdfPageFormat.mm;
+    const a4Height = 297.0 * PdfPageFormat.mm;
+    const usableWidth = a4Width - (2 * pageMargin);
+    const usableHeight = a4Height - (2 * pageMargin);
+
+    final labelsPerRow = (usableWidth / (labelWidth + 2)).floor().clamp(1, 20);
+    final labelsPerCol = (usableHeight / (labelHeight + 2)).floor().clamp(
+      1,
+      40,
+    );
+    final labelsPerPage = labelsPerRow * labelsPerCol;
+    final totalPages = (copies / labelsPerPage).ceil();
+
+    final pdf = pw.Document();
+
+    for (int page = 0; page < totalPages; page++) {
+      final labelsOnThisPage = (page == totalPages - 1)
+          ? copies - (page * labelsPerPage)
+          : labelsPerPage;
+
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.all(pageMargin),
+          build: (context) => pw.Wrap(
+            spacing: 2,
+            runSpacing: 2,
+            children: List.generate(
+              labelsOnThisPage,
+              (_) => _buildSingleBarcodeLabel(
+                elements: elements,
+                labelWidth: labelWidth,
+                labelHeight: labelHeight,
+                labelWidthMM: labelWidthMM,
+                labelHeightMM: labelHeightMM,
+                barcodeValue: barcodeValue,
+                productName: productName,
+                productCode: productCode,
+                price: price,
+                companyName: companyName,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (directPrint) {
+      final printerName = await PrinterResolver.resolveByPurpose(PrintersRepositoryImpl(db), 'barcode');
+      await Printing.directPrintPdf(
+        printer: printerName ?? (await Printing.listPrinters()).first,
+        onLayout: (format) async => pdf.save(),
+        name: 'Barcode_${barcodeValue}_x$copies',
+      );
+    } else {
+      await Printing.layoutPdf(
+        onLayout: (format) async => pdf.save(),
+        name: 'Barcode_${barcodeValue}_x$copies',
+      );
+    }
+  }
+
+  /// Build a single barcode label from template elements
+  static pw.Widget _buildSingleBarcodeLabel({
+    required List<InvoiceTemplateElement> elements,
+    required double labelWidth,
+    required double labelHeight,
+    required double labelWidthMM,
+    required double labelHeightMM,
+    required String barcodeValue,
+    required String productName,
+    String? productCode,
+    double? price,
+    String? companyName,
+  }) {
+    // Scale factor from mm units (template coords) to points
+    final scaleX = labelWidth / labelWidthMM;
+    final scaleY = labelHeight / labelHeightMM;
+
+    final children = <pw.Widget>[];
+    for (final el in elements) {
+      final x = el.xPosition * scaleX;
+      final y = el.yPosition * scaleY;
+      final w = el.width * scaleX;
+      final h = el.height * scaleY;
+
+      final style = pw.TextStyle(
+        font: _arabicFont,
+        fontSize: el.fontSize,
+        fontWeight: el.isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
+        fontStyle: el.isItalic ? pw.FontStyle.italic : pw.FontStyle.normal,
+        color: _parseColor(el.fontColor),
+      );
+      final align = _getAlignment(el.textAlign);
+
+      pw.Widget? contentWidget;
+      final type = el.elementType;
+
+      switch (type) {
+        case 'product_name':
+          final displayName = productName.length > 30
+              ? '${productName.substring(0, 30)}...'
+              : productName;
+          contentWidget = pw.Text(
+            displayName,
+            style: style,
+            textAlign: align,
+            maxLines: 2,
+          );
+          break;
+        case 'product_code':
+          contentWidget = pw.Text(
+            productCode ?? barcodeValue,
+            style: style,
+            textAlign: align,
+          );
+          break;
+        case 'barcode_image':
+          final barcodeType = _resolveBarcodeType(el.content);
+          contentWidget = pw.BarcodeWidget(
+            data: barcodeValue,
+            barcode: barcodeType,
+            width: w,
+            height: h * 0.8,
+            drawText: true,
+            textStyle: pw.TextStyle(fontSize: el.fontSize),
+          );
+          break;
+        case 'product_price':
+          if (price != null) {
+            contentWidget = pw.Text(
+              price.toStringAsFixed(AppConstants.decimalPlaces),
+              style: style,
+              textAlign: align,
+            );
+          } else {
+            contentWidget = pw.SizedBox();
+          }
+          break;
+        case 'company_name':
+          contentWidget = pw.Text(
+            companyName ?? '',
+            style: style,
+            textAlign: align,
+          );
+          break;
+        case 'text':
+          contentWidget = pw.Text(
+            el.content ?? '',
+            style: style,
+            textAlign: align,
+          );
+          break;
+        case 'line':
+        case 'divider':
+          contentWidget = pw.Container(
+            width: w,
+            height: 0.5,
+            decoration: const pw.BoxDecoration(
+              border: pw.Border(bottom: pw.BorderSide(width: 0.5)),
+            ),
+          );
+          break;
+        case 'rectangle':
+          contentWidget = pw.Container(
+            width: w,
+            height: h,
+            decoration: pw.BoxDecoration(
+              border: pw.Border.all(
+                width: el.borderWidth > 0 ? el.borderWidth : 0.5,
+              ),
+            ),
+          );
+          break;
+        default:
+          contentWidget = pw.Text(
+            el.content ?? '',
+            style: style,
+            textAlign: align,
+          );
+      }
+
+      children.add(
+        pw.Positioned(
+          left: x,
+          top: y,
+          child: pw.SizedBox(width: w, child: contentWidget),
+        ),
+      );
+    }
+
+    return pw.Container(
+      width: labelWidth,
+      height: labelHeight,
+      decoration: pw.BoxDecoration(
+        border: pw.Border.all(color: PdfColors.grey300, width: 0.3),
+      ),
+      child: pw.Stack(children: children),
+    );
+  }
+
+  /// Resolve barcode type from template content string
+  static pw.Barcode _resolveBarcodeType(String? type) {
+    switch (type) {
+      case 'ean13':
+        return pw.Barcode.ean13();
+      case 'ean8':
+        return pw.Barcode.ean8();
+      case 'upcA':
+        return pw.Barcode.upcA();
+      case 'code39':
+        return pw.Barcode.code39();
+      case 'code93':
+        return pw.Barcode.code93();
+      case 'codabar':
+        return pw.Barcode.codabar();
+      case 'qrCode':
+        return pw.Barcode.qrCode();
+      case 'code128':
+      default:
+        return pw.Barcode.code128();
+    }
+  }
+}

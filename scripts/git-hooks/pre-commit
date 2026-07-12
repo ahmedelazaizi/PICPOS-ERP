@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Spec 130 — pre-commit hook dispatcher.
+#
+# Git invokes this file (literally named `pre-commit`, no extension) on
+# every `git commit`. It then delegates to PowerShell scripts in the
+# same directory so each concern stays in its own file.
+#
+# Install per-clone with:
+#   git config core.hooksPath scripts/git-hooks
+#
+# All sub-scripts are warning-only (exit 0) by current policy. If a
+# future Spec adds a blocking gate, replace the trailing `|| true`
+# with an explicit exit propagation.
+
+set -u
+
+hook_dir="$(cd "$(dirname "$0")" && pwd)"
+
+# Spec 130 schema-parity reminder.
+if [ -f "$hook_dir/pre-commit-schema-parity.ps1" ]; then
+  powershell.exe -NoProfile -ExecutionPolicy Bypass \
+    -File "$hook_dir/pre-commit-schema-parity.ps1" || true
+fi
+
+exit 0

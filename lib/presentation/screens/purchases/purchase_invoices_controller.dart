@@ -1,0 +1,485 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/config/business_profile_provider.dart';
+import '../../../data/providers/providers.dart';
+import '../../../domain/entities/invoice_entity.dart';
+
+class PurchaseInvoicesScreenState {
+  final List<InvoiceEntity> allInvoices;
+  final List<InvoiceEntity> filteredInvoices;
+  final Map<int, String> supplierNames;
+  final Map<int, String> warehouseNames;
+  final Map<int, int?> warehouseBranchId; // warehouseId → branchId
+  final Map<int, String> branchNames;
+  final Map<int, String> costCenterNames;
+  final bool isLoading;
+  final DateTimeRange? dateRange;
+  final String statusFilter;
+  final String searchQuery;
+  final int? selectedWarehouseId;
+  final int? selectedBranchId;
+  final int? selectedCostCenterId;
+  final Set<int> selectedInvoices;
+
+  // returnedAmounts[invoiceId] = total purchase-return value (computed
+  // from stock_movements with reference_type='purchase_return'). Used
+  // to adjust each row's remaining and to surface "إجمالي المرتجعات".
+  final Map<int, double> returnedAmounts;
+
+  // Summaries
+  final double totalAmount;
+  final double totalPaid;
+  final double totalRemaining;
+  final double totalReturns;
+  final int invoiceCount;
+  final int displayLimit;
+  final bool hasMore;
+
+  PurchaseInvoicesScreenState({
+    this.allInvoices = const [],
+    this.filteredInvoices = const [],
+    this.supplierNames = const {},
+    this.warehouseNames = const {},
+    this.warehouseBranchId = const {},
+    this.branchNames = const {},
+    this.costCenterNames = const {},
+    this.returnedAmounts = const {},
+    this.isLoading = true,
+    this.dateRange,
+    this.statusFilter = 'all',
+    this.searchQuery = '',
+    this.selectedWarehouseId,
+    this.selectedBranchId,
+    this.selectedCostCenterId,
+    this.selectedInvoices = const {},
+    this.totalAmount = 0,
+    this.totalPaid = 0,
+    this.totalRemaining = 0,
+    this.totalReturns = 0,
+    this.invoiceCount = 0,
+    this.displayLimit = 50,
+    this.hasMore = false,
+  });
+
+  PurchaseInvoicesScreenState copyWith({
+    List<InvoiceEntity>? allInvoices,
+    List<InvoiceEntity>? filteredInvoices,
+    Map<int, String>? supplierNames,
+    Map<int, String>? warehouseNames,
+    Map<int, int?>? warehouseBranchId,
+    Map<int, String>? branchNames,
+    Map<int, String>? costCenterNames,
+    Map<int, double>? returnedAmounts,
+    bool? isLoading,
+    DateTimeRange? dateRange,
+    String? statusFilter,
+    String? searchQuery,
+    int? selectedWarehouseId,
+    bool clearWarehouse = false,
+    int? selectedBranchId,
+    bool clearBranch = false,
+    int? selectedCostCenterId,
+    bool clearCostCenter = false,
+    Set<int>? selectedInvoices,
+    double? totalAmount,
+    double? totalPaid,
+    double? totalRemaining,
+    double? totalReturns,
+    int? invoiceCount,
+    int? displayLimit,
+    bool? hasMore,
+  }) {
+    return PurchaseInvoicesScreenState(
+      allInvoices: allInvoices ?? this.allInvoices,
+      filteredInvoices: filteredInvoices ?? this.filteredInvoices,
+      supplierNames: supplierNames ?? this.supplierNames,
+      warehouseNames: warehouseNames ?? this.warehouseNames,
+      warehouseBranchId: warehouseBranchId ?? this.warehouseBranchId,
+      branchNames: branchNames ?? this.branchNames,
+      costCenterNames: costCenterNames ?? this.costCenterNames,
+      returnedAmounts: returnedAmounts ?? this.returnedAmounts,
+      isLoading: isLoading ?? this.isLoading,
+      dateRange: dateRange ?? this.dateRange,
+      statusFilter: statusFilter ?? this.statusFilter,
+      searchQuery: searchQuery ?? this.searchQuery,
+      selectedWarehouseId: clearWarehouse ? null : (selectedWarehouseId ?? this.selectedWarehouseId),
+      selectedBranchId: clearBranch ? null : (selectedBranchId ?? this.selectedBranchId),
+      selectedCostCenterId: clearCostCenter ? null : (selectedCostCenterId ?? this.selectedCostCenterId),
+      selectedInvoices: selectedInvoices ?? this.selectedInvoices,
+      totalAmount: totalAmount ?? this.totalAmount,
+      totalPaid: totalPaid ?? this.totalPaid,
+      totalRemaining: totalRemaining ?? this.totalRemaining,
+      totalReturns: totalReturns ?? this.totalReturns,
+      invoiceCount: invoiceCount ?? this.invoiceCount,
+      displayLimit: displayLimit ?? this.displayLimit,
+      hasMore: hasMore ?? this.hasMore,
+    );
+  }
+}
+
+class PurchaseInvoicesController extends Notifier<PurchaseInvoicesScreenState> {
+  Timer? _debounce;
+  bool _disposed = false;
+
+  @override
+  PurchaseInvoicesScreenState build() {
+    _disposed = false;
+
+    // Drift .watch() path — fires on local inserts and on server inserts
+    // via markTablesUpdated. Debounced so bursty signals coalesce.
+    ref.listen(purchaseInvoicesChangeProvider, (_, _) {
+      if (_disposed) return;
+      _debounce?.cancel();
+      _debounce = Timer(const Duration(milliseconds: 150), () {
+        if (!_disposed) _refreshInvoices();
+      });
+    });
+
+    // Belt-and-suspenders: also listen to the API broadcast stream so the
+    // server's UI refreshes even if drift_postgres .watch() drops a signal
+    // (observed in practice when a client posts a purchase). The 150ms
+    // debounce coalesces any duplicate triggers with the Drift path above.
+    ref.listen(serverDataChangeProvider, (_, next) {
+      if (_disposed) return;
+      next.whenData((table) {
+        if (table != 'purchases') return;
+        _debounce?.cancel();
+        _debounce = Timer(const Duration(milliseconds: 150), () {
+          if (!_disposed) _refreshInvoices();
+        });
+      });
+    });
+
+    ref.onDispose(() {
+      _disposed = true;
+      _debounce?.cancel();
+    });
+
+    _initData();
+    return PurchaseInvoicesScreenState();
+  }
+
+  void _initData() async {
+    final partiesRepo = ref.read(partiesRepositoryProvider);
+    final db = ref.read(databaseProvider);
+    final accRepo = ref.read(accountingRepositoryProvider);
+
+    // Load supplier names
+    final suppliers = await partiesRepo.watchSuppliers().first;
+    final names = <int, String>{};
+    for (final s in suppliers) {
+      names[s.id] = s.name;
+    }
+
+    // Load warehouse → name + branchId mapping so the table can show
+    // "branch / warehouse" without N+1 lookups per row.
+    final warehouses = await db.select(db.warehouses).get();
+    final whNames = <int, String>{};
+    final whToBranch = <int, int?>{};
+    for (final w in warehouses) {
+      whNames[w.id] = w.name;
+      whToBranch[w.id] = w.branchId;
+    }
+
+    // Load branch names for display + filter dropdown
+    final branches = await db.watchBranches().first;
+    final brNames = <int, String>{
+      for (final b in branches) b.id: b.name,
+    };
+
+    // Load cost center names for display + filter dropdown
+    final costCenters = await accRepo.getCostCenters();
+    final ccNames = <int, String>{
+      for (final c in costCenters) c.id: c.name,
+    };
+
+    if (_disposed) return;
+    state = state.copyWith(
+      supplierNames: names,
+      warehouseNames: whNames,
+      warehouseBranchId: whToBranch,
+      branchNames: brNames,
+      costCenterNames: ccNames,
+    );
+
+    await _refreshInvoices();
+  }
+
+  /// One-shot fetch of purchase invoices — always hits the DB directly so a
+  /// single Drift `.watch()` subscription never becomes a single point of
+  /// failure. Triggered by both table-change and server-broadcast listeners.
+  Future<void> _refreshInvoices() async {
+    try {
+      final purchasesRepo = ref.read(purchasesRepositoryProvider);
+      var invoices = await purchasesRepo.watchInvoices().first;
+      if (_disposed) return;
+      // Phase 5C.2 (Issue 4) — branch-scope guard. Mirrors the sales
+      // controller pattern in 5C.1: the repository may return rows from
+      // branches the current user shouldn't see (legacy data, an
+      // unscoped path, or an in-flight migration). Filter at the
+      // controller layer so the auth boundary is enforced regardless of
+      // where the row came from. Admin (BranchScope.fullAccess) skips.
+      final scope = await ref.read(branchScopeProvider.future);
+      if (!scope.hasFullAccess) {
+        final before = invoices.length;
+        invoices = invoices.where((inv) => scope.isAllowed(inv.branchId)).toList();
+        if (before != invoices.length) {
+          debugPrint('[PurchaseInvoices] BranchScope dropped '
+              '${before - invoices.length} cross-branch rows');
+        }
+      }
+      state = state.copyWith(
+        allInvoices: invoices,
+        isLoading: false,
+      );
+
+      // Pull purchase-return amounts for every loaded invoice. Source is
+      // stock_movements with reference_type='purchase_return' (see
+      // PurchaseDao.getPurchaseReturnedAmountsForInvoices). Done after
+      // the main load so the table renders quickly even on slow disks;
+      // the second setState retriggers _applyFilters with the new map.
+      try {
+        final ids = invoices
+            .where((inv) => inv.id != null)
+            .map((inv) => inv.id!)
+            .toList();
+        if (ids.isNotEmpty) {
+          final db = ref.read(databaseProvider);
+          final returned =
+              await db.getPurchaseReturnedAmountsForInvoices(ids);
+          if (!_disposed) {
+            state = state.copyWith(returnedAmounts: returned);
+          }
+        }
+      } catch (e) {
+        // Non-fatal — list still works, just without returns adjustment.
+      }
+
+      _applyFilters();
+    } catch (_) {
+      if (!_disposed) state = state.copyWith(isLoading: false);
+    }
+  }
+
+  void _applyFilters() {
+    var filtered = state.allInvoices.toList();
+
+    // Text search
+    final query = state.searchQuery.toLowerCase();
+    if (query.isNotEmpty) {
+      filtered = filtered.where((InvoiceEntity inv) {
+        final invoiceMatch = inv.invoiceNumber.toLowerCase().contains(query);
+        final supplierName = inv.partyId != null
+            ? (state.supplierNames[inv.partyId]?.toLowerCase() ?? '')
+            : '';
+        final supplierMatch = supplierName.contains(query);
+        return invoiceMatch || supplierMatch;
+      }).toList();
+    }
+
+    // Date range
+    if (state.dateRange != null) {
+      filtered = filtered
+          .where(
+            (InvoiceEntity inv) =>
+                inv.invoiceDate.isAfter(
+                  state.dateRange!.start.subtract(const Duration(days: 1)),
+                ) &&
+                inv.invoiceDate.isBefore(
+                  state.dateRange!.end.add(const Duration(days: 1)),
+                ),
+          )
+          .toList();
+    }
+
+    // Warehouse filter
+    if (state.selectedWarehouseId != null) {
+      filtered = filtered.where((InvoiceEntity inv) => inv.warehouseId == state.selectedWarehouseId).toList();
+    }
+
+    // Branch filter — direct match on invoice.branchId (L3) with fallback
+    // to warehouse → branch lookup for legacy rows.
+    if (state.selectedBranchId != null) {
+      filtered = filtered.where((InvoiceEntity inv) {
+        if (inv.branchId == state.selectedBranchId) return true;
+        final whId = inv.warehouseId;
+        if (whId == null) return false;
+        return state.warehouseBranchId[whId] == state.selectedBranchId;
+      }).toList();
+    }
+
+    // Cost center filter — direct match on invoice.costCenterId
+    if (state.selectedCostCenterId != null) {
+      filtered = filtered.where((InvoiceEntity inv) =>
+          inv.costCenterId == state.selectedCostCenterId).toList();
+    }
+
+    // Status filter
+    if (state.statusFilter == 'paid') {
+      filtered = filtered.where((InvoiceEntity inv) => inv.status == InvoiceStatus.paid).toList();
+    } else if (state.statusFilter == 'partial') {
+      filtered = filtered.where((InvoiceEntity inv) => inv.status == InvoiceStatus.partial).toList();
+    } else if (state.statusFilter == 'unpaid') {
+      filtered = filtered.where((InvoiceEntity inv) => inv.status == InvoiceStatus.pending).toList();
+    }
+
+    // Calculate summaries — subtract any purchase-return amount from
+    // each invoice's remaining so the dashboard total reflects refunds
+    // received, not just payments made.
+    final totalAmount = filtered.fold(0.0, (double sum, InvoiceEntity inv) => sum + inv.total);
+    final totalPaid = filtered.fold(0.0, (double sum, InvoiceEntity inv) => sum + inv.paid);
+    final totalReturned = filtered.fold(
+      0.0,
+      (double sum, InvoiceEntity inv) =>
+          sum + (state.returnedAmounts[inv.id] ?? 0.0),
+    );
+    final totalRemaining = totalAmount - totalPaid - totalReturned;
+    final invoiceCount = filtered.length;
+
+    state = state.copyWith(
+      filteredInvoices: filtered.take(state.displayLimit).toList(),
+      totalAmount: totalAmount,
+      totalPaid: totalPaid,
+      totalRemaining: totalRemaining,
+      totalReturns: totalReturned,
+      invoiceCount: invoiceCount,
+      hasMore: filtered.length > state.displayLimit,
+    );
+  }
+
+  void loadMore() {
+    state = state.copyWith(displayLimit: state.displayLimit + 50);
+    _applyFilters();
+  }
+
+  void updateSearchQuery(String query) {
+    state = state.copyWith(searchQuery: query);
+    _applyFilters();
+  }
+
+  void updateDateRange(DateTimeRange? range) {
+    state = state.copyWith(dateRange: range);
+    _applyFilters();
+  }
+
+  void updateStatusFilter(String status) {
+    state = state.copyWith(statusFilter: status);
+    _applyFilters();
+  }
+
+  void updateWarehouseFilter(int? warehouseId) {
+    if (warehouseId == null) {
+      state = state.copyWith(clearWarehouse: true);
+    } else {
+      state = state.copyWith(selectedWarehouseId: warehouseId);
+    }
+    _applyFilters();
+  }
+
+  void updateBranchFilter(int? branchId) {
+    if (branchId == null) {
+      state = state.copyWith(clearBranch: true);
+    } else {
+      state = state.copyWith(selectedBranchId: branchId);
+    }
+    _applyFilters();
+  }
+
+  void updateCostCenterFilter(int? costCenterId) {
+    if (costCenterId == null) {
+      state = state.copyWith(clearCostCenter: true);
+    } else {
+      state = state.copyWith(selectedCostCenterId: costCenterId);
+    }
+    _applyFilters();
+  }
+
+  void toggleSelection(int invoiceId) {
+    final newSelection = Set<int>.from(state.selectedInvoices);
+    if (newSelection.contains(invoiceId)) {
+      newSelection.remove(invoiceId);
+    } else {
+      newSelection.add(invoiceId);
+    }
+    state = state.copyWith(selectedInvoices: newSelection);
+  }
+
+  void toggleAllSelection() {
+    if (state.selectedInvoices.length == state.filteredInvoices.length) {
+      state = state.copyWith(selectedInvoices: {});
+    } else {
+      state = state.copyWith(
+        selectedInvoices: Set.from(state.filteredInvoices.map((e) => e.id)),
+      );
+    }
+  }
+
+  void clearSelection() {
+    state = state.copyWith(selectedInvoices: {});
+  }
+
+  Future<List<Party>> getSuppliers() async {
+    final repo = ref.read(partiesRepositoryProvider);
+    return repo.watchSuppliers().first;
+  }
+
+  Future<List<Product>> getProducts() async {
+    final repo = ref.read(productRepositoryProvider);
+    return repo.getAllProducts();
+  }
+
+  Future<List<Category>> getCategories() async {
+    final repo = ref.read(productRepositoryProvider);
+    return repo.getCategories();
+  }
+
+  Future<List<PurchaseInvoiceItemWithProduct>> getInvoiceItems(
+    int invoiceId,
+  ) async {
+    final purchasesRepo = ref.read(purchasesRepositoryProvider);
+    return purchasesRepo.getInvoiceItemsWithProduct(invoiceId);
+  }
+
+  Future<Party?> getSupplierById(int supplierId) async {
+    final repo = ref.read(partiesRepositoryProvider);
+    return repo.getPartyById(supplierId);
+  }
+
+  Future<String?> getCompanyName() async {
+    final repo = ref.read(settingsRepositoryProvider);
+    return repo.getSetting('company_name');
+  }
+
+  Future<void> deleteInvoice(
+    int invoiceId,
+    String invoiceNumber,
+    double total,
+  ) async {
+    final repo = ref.read(purchasesRepositoryProvider);
+    await repo.deleteInvoice(invoiceId);
+
+    final auth = ref.read(authProvider);
+    final activityLogRepo = ref.read(activityLogRepositoryProvider);
+    await activityLogRepo.logActivity(
+      userId: auth.user?.id,
+      userName: auth.user?.displayName ?? 'Admin',
+      action: 'delete_purchase',
+      entityType: 'purchase_invoice',
+      entityId: invoiceId,
+      description: 'حذف فاتورة مشتريات $invoiceNumber',
+      amount: total,
+    );
+  }
+
+  bool verifyAdminPassword(String password) {
+    return ref.read(adminPasswordServiceProvider).verify(password);
+  }
+}
+
+final purchaseInvoicesControllerProvider =
+    NotifierProvider<PurchaseInvoicesController, PurchaseInvoicesScreenState>(
+      () {
+        return PurchaseInvoicesController();
+      },
+    );

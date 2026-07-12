@@ -1,0 +1,942 @@
+import 'dart:io';
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:drift/drift.dart';
+import 'package:uuid/uuid.dart';
+import 'package:flutter/foundation.dart';
+// Import treasury_repository.dart for DAO types (SafeData, TreasurySummaryData, etc.)
+import '../../domain/repositories/treasury_repository.dart';
+import 'connection.dart';
+import '../../services/security_service.dart';
+import '../../core/config/app_config.dart';
+import '../../core/permissions/permission_codes.dart';
+import '../../core/utils/arabic_utils.dart';
+import '../../core/utils/sales_payment_calculator.dart';
+// Replaced license_service with trial_state to break cycles.
+import '../../core/trial/trial_state.dart';
+import '../../domain/entities/product_entity.dart';
+import '../../services/invoice_integrity_service.dart';
+import '../../domain/entities/accounting_entities.dart';
+import 'sync_interceptor.dart';
+// Removing error_handler to break cycle
+// import 'daos/audit_dashboard_dao.dart';
+
+part 'database.g.dart';
+
+// DAO EXTENSIONS
+// part 'daos/product_crud_dao.dart';
+// part 'daos/product_barcode_units_dao.dart';
+// part removed
+// part removed
+// part removed
+// part removed
+// part removed
+// part removed
+// part removed
+// part removed
+// part removed
+// part removed
+// part removed
+// part removed
+// part removed
+// part removed
+// part removed
+// part removed
+// part removed
+// part removed
+// part removed
+// part removed
+// part removed
+// part removed
+// part 'daos/accounting_dao.dart';
+// part 'daos/accounting_dao_reads.dart';
+// part 'daos/accounting_dao_writes.dart';
+// part removed
+// part removed
+// part removed
+// part removed
+// part removed
+// part removed
+// part removed
+// part removed
+// part removed
+// part removed
+// part removed
+// part removed
+// part removed
+// part removed
+// part 'daos/quotations_dao.dart';
+// part removed
+// part removed
+// part removed
+// fixed_assets_dao.dart merged into fixed_assets_dao_ext.dart (Phase 3.2 God DAO split)
+// part removed
+// part removed
+// part removed
+// part removed
+// part removed
+// part removed
+// part removed
+// part removed
+// part removed
+// part removed
+// part removed
+// part removed
+// part 'daos/journal_template_dao.dart';
+// part removed
+// part removed
+// part removed
+// part removed
+// part removed
+// part removed
+// part removed
+// Seeding & Projections
+part 'database_seeder.dart';
+part 'database_seeder_permissions.dart';
+part 'database_seeder_accounts.dart';
+part 'database_migrations.dart';
+part 'database_startup.dart';
+part 'migrations/epoch_1.dart';
+part 'migrations/epoch_2.dart';
+// part 'migrations/epoch_3.dart';
+part 'models/projections.dart';
+
+// Table Definitions
+part 'tables/auth_tables.dart';
+part 'tables/inventory_tables.dart';
+part 'tables/product_tables.dart';
+part 'tables/sales_purchase_tables.dart';
+part 'tables/restaurant_tables.dart';
+part 'tables/accounting_tables.dart';
+part 'tables/treasury_settings_tables.dart';
+part 'tables/delivery_tables.dart';
+part 'tables/kitchen_tables.dart';
+part 'tables/hr_tables.dart';
+part 'tables/scale_tables.dart';
+part 'tables/audit_tables.dart';
+part 'tables/sync_tables.dart';
+part 'tables/invoice_template_tables.dart';
+part 'tables/commercial_finance_tables.dart';
+part 'tables/manufacturing_assets_tables.dart';
+part 'tables/e_invoicing_tables.dart';
+part 'tables/loyalty_tables.dart';
+part 'tables/distribution_tables.dart';
+part 'tables/document_sequences.dart';
+part 'tables/quotation_tables.dart';
+part 'tables/operational_expenses_tables.dart';
+part 'tables/bank_reconciliation_tables.dart';
+part 'tables/enterprise_tables.dart';
+part 'tables/phase9_enterprise_tables.dart';
+part 'tables/journal_template_tables.dart';
+part 'tables/field_audit_tables.dart';
+part 'tables/cycle_count_tables.dart';
+part 'tables/landed_cost_tables.dart';
+part 'tables/api_key_tables.dart';
+part 'tables/report_builder_tables.dart';
+
+/// The primary industry mode for the application, controlling which
+/// screens and features are available (e.g. restaurant tables, café menus).
+enum IndustryMode { supermarket, restaurant, cafe, retail }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DATABASE CLASS
+// ═══════════════════════════════════════════════════════════════════════════
+
+@DriftDatabase(
+  tables: [
+    Roles, // User roles
+    Permissions, // Permission definitions
+    RolePermissions, // Role-Permission mapping
+    CategoryBranches, // PIR R-10: Join table for Category-Branch visibility
+
+    Users,
+    UserBranchAccess, // N3: User-branch access control
+    UserWarehouseAccess, // N3: User-warehouse access control
+    Branches,
+    Warehouses,
+    Units,
+    Categories,
+    Products,
+    ProductBarcodes,
+    ProductUnits,
+    ProductBatches, // Batch tracking for expiry
+    Parties,
+    PurchaseInvoices,
+    PurchaseInvoiceItems,
+    SalesInvoices,
+    SalesInvoiceItems,
+    Offers,
+    OfferItems,
+    TableSections, // NEW: Restaurant sections
+    RestaurantTables, // NEW: Restaurant tables
+    TableOrders, // NEW: Table orders
+    TableOrderItems, // NEW: Items in table orders
+    TableReservations, // NEW: Table reservations
+    StockMovements,
+    InventoryBalances,
+    Accounts,
+    JournalEntries,
+    JournalEntryLines,
+    Safes,
+    SafeTransactions,
+    Printers, // Work order printers
+    HeldOrders, // Held/suspended orders
+    HeldOrderItems, // Items in held orders
+    DeliveryCompanies,
+    Couriers,
+    Settings,
+    // KDS Tables
+    WorkOrders,
+    WorkOrderItems,
+    KitchenStations,
+    // HR Tables
+    Employees,
+    EmployeeAttendance,
+    SalaryPayments,
+    EmployeeTransactions, // NEW: Advances and deductions
+    EmployeeLeaves, // Phase 5: Leave management
+    LeaveBalances, // Phase 5: Leave balance tracking
+    OvertimeRecords, // Phase 5: Overtime tracking
+    FingerprintDevices, // Phase 5: Biometric device registry
+    PerformanceReviews, // Phase 9: HR Performance evaluation
+    PerformanceGoals, // Phase 9: Employee goal tracking
+    EmployeeContracts, // Phase 9: Employment contracts
+    // Stock Audit Tables
+    StockAudits,
+    StockAuditItems,
+    ReceiptSettings, // Receipt/Invoice customization
+    ActivityLogs, // Audit trail for all user actions (#14)
+    // Invoice Template Designer Tables
+    InvoiceTemplates,
+    // TODO: restore these tables
+    // InvoiceTemplateElements,
+    // InvoiceTableSettings,
+    // // Phase 2: Inventory Bonds
+    // InventoryBonds,
+    // InventoryBondItems,
+    // StockRequisitions, 
+    // StockRequisitionItems, 
+    // Shifts, 
+    // LabelScales, 
+    // CostCenters,
+    // FiscalYears,
+    // AccountingPeriods, 
+    // ActivityProfiles,
+    // CommercialPapers,
+    // PaperStatusHistory,
+    // Currencies,
+    // ExchangeRateHistory,
+    // PriceLists,
+    // PriceListItems,
+    // BillOfMaterials,
+    // BomComponents,
+    // ManufacturingOrders,
+    // AssetCategories,
+    // FixedAssets,
+    // AssetDepreciations,
+    // EInvoiceConfigs,
+    // EInvoiceSubmissions,
+    // TaxTypes,
+    // TaxSubtypes,
+    // LoyaltyPrograms,
+    // CustomerLoyaltyPoints,
+    // LoyaltyTransactions,
+    // SalesRoutes,
+    // RouteVisits,
+    // SalesRepTargets,
+    // SalesRepCollections,
+    // SyncOutbox,
+    // SyncConflictLog,
+    // ProcessedMessages,
+    // AccountMappings,
+    // DocumentSequences,
+    // Quotations,
+    // QuotationItems,
+    // OpExpenseCategories,
+    // OpExpenses,
+    // MfgOrderCosts,
+    // PurchaseOrders,
+    // PurchaseOrderItems,
+    // WarehousePrices, 
+    // SalesOrders,
+    // SalesOrderItems,
+    // Payments,
+    // PaymentAllocations,
+    // BankStatementLines,
+    // BankReconciliations,
+    // Budgets,
+    // BudgetLines,
+    // DeferredSchedules,
+    // DeferredEntries,
+    // ApprovalWorkflows,
+    // ApprovalSteps,
+    // ApprovalRequests,
+    // ApprovalDecisions,
+    // SodConflicts,
+    // SodViolations,
+    // Entities,
+    // EntityMappings,
+    // IntercompanyTransactions,
+    // Restatements,
+    // RestatementLines,
+    // ComplianceChecks,
+    // JournalEntryTemplates,
+    // JournalEntryTemplateLines,
+    // Notifications,
+    // FieldAuditLogs,
+    // CycleCountPlans,
+    // CycleCountTasks,
+    // CycleCountItems,
+    // LandedCostSheets,
+    // LandedCostItems,
+    // LandedCostAllocations,
+    // ApiKeys,
+    // CustomReports,
+    // SavedReportRuns,
+  ],
+  daos: [
+    // QuotationsDao,
+    // AccountingDao,
+    // JournalTemplateDao,
+  ],
+)
+/// UralCash ERP Core Database.
+///
+/// Drift-powered SQLite database with 41 schema versions, full-text search,
+/// and 16 DAO extensions covering products, sales, purchases, treasury,
+/// inventory, users, permissions, HR, delivery, kitchen, and audit logging.
+///
+/// Uses the SINGLETON PATTERN: `AppDatabase()` always returns the same instance.
+/// This prevents multiple SQLCipher connections that would each run their own
+/// `beforeOpen` seeder, leading to inconsistent data (e.g., password hash corruption).
+///
+/// `AppDatabase.forTesting()` opens an in-memory connection for tests (not singleton).
+class AppDatabase extends _$AppDatabase {
+  /// Whether this database is backed by PostgreSQL (affects migration behavior)
+  final bool _isPostgres;
+
+  /// Singleton instance for the default SQLite connection
+  static AppDatabase? _instance;
+
+  /// Factory constructor — returns the singleton SQLite instance.
+  /// Every call to `AppDatabase()` returns the SAME database connection.
+  factory AppDatabase() {
+    _instance ??= AppDatabase._internal();
+    return _instance!;
+  }
+
+  /// Private internal constructor — called only once
+  AppDatabase._internal() : _isPostgres = false, super(openConnection());
+
+  /// Opens the database using a custom [QueryExecutor] (e.g., PostgreSQL).
+  /// NOT a singleton — each PostgreSQL config gets its own instance.
+  AppDatabase.withExecutor(super.executor, {bool isPostgres = false})
+      : _isPostgres = isPostgres;
+
+  /// Opens an in-memory database for widget / integration tests.
+  /// NOT a singleton — each test gets its own isolated database.
+  AppDatabase.forTesting() : _isPostgres = false, super(openTestConnection());
+
+  /// Whether this database is backed by PostgreSQL (public read-only accessor
+  /// used by DAOs that need to generate database-agnostic raw SQL).
+  bool get isPostgres => _isPostgres;
+
+  /// Lazy accessor for the Audit Dashboard DAO
+  // late final AuditDashboardDao auditDashboardDao = AuditDashboardDao(this);
+
+  /// Returns the SQL literal for a boolean value that is compatible with the
+  /// current database backend. PostgreSQL uses TRUE/FALSE, SQLite uses 1/0.
+  String sqlBool(bool value) => _isPostgres
+      ? (value ? 'TRUE' : 'FALSE')
+      : (value ? '1' : '0');
+
+  /// Returns a [Variable] for DateTime that works in raw SQL (customSelect).
+  ///
+  /// Drift stores DateTime columns as epoch seconds (BIGINT) in both SQLite
+  /// and our PostgreSQL schema. On SQLite, `Variable(DateTime)` auto-converts
+  /// to integer. On PostgreSQL, `drift_postgres` sends DateTime as a native
+  /// timestamp type which causes type mismatch with BIGINT columns.
+  ///
+  /// This helper always returns `Variable<int>` with epoch seconds, ensuring
+  /// `BETWEEN ? AND ?` and other comparisons work on both backends.
+  Variable<int> dateVar(DateTime dt) =>
+      Variable<int>(dt.millisecondsSinceEpoch ~/ 1000);
+
+  /// Watch all active offers (not yet expired).
+  Stream<List<Offer>> watchActiveOffers() => select(offers).watch();
+
+  /// Get all items belonging to a specific offer.
+  Future<List<OfferItem>> getOfferItems(int offerId) =>
+      (select(offerItems)..where((i) => i.offerId.equals(offerId))).get();
+
+  /// Current schema version.
+  ///
+  /// Bump this whenever table definitions or migrations change.
+  /// See [migration] for the full upgrade path.
+  /// Schema v49: Phase 5.2-5.3 — Loyalty Points + Distribution
+  @override
+  int get schemaVersion => 118; // v118: RE-01 — UUID-First Relational Strategy (global_id injection)
+
+
+  /// PostgreSQL-specific table creation: Drift's `currentDateAndTime` generates
+  /// `strftime('%s','now')` which doesn't exist in PostgreSQL.
+  /// We try normal creation first, and for failures, we create the table using
+  /// raw SQL with PostgreSQL-compatible defaults.
+  Future<void> _createAllForPostgres(Migrator m) async {
+    final failedEntities = <DatabaseSchemaEntity>[];
+
+    // Phase 1: try creating each entity normally
+    for (final entity in allSchemaEntities) {
+      try {
+        await m.create(entity);
+      } catch (e) {
+        failedEntities.add(entity);
+        debugPrint('[PG] Failed to create ${entity.entityName}, will retry with fixed SQL');
+      }
+    }
+
+    // Phase 2: for failed tables, create using raw PostgreSQL-compatible SQL
+    for (final entity in failedEntities) {
+      if (entity is TableInfo) {
+        try {
+          final columns = entity.$columns;
+          final colDefs = <String>[];
+
+          for (final col in columns) {
+            final colName = col.$name;
+            String pgType;
+
+            // Map Drift types to PostgreSQL types
+            if (col.type == DriftSqlType.int) {
+              if (col.hasAutoIncrement) {
+                pgType = 'SERIAL PRIMARY KEY';
+                colDefs.add('"$colName" $pgType');
+                continue;
+              }
+              pgType = 'INTEGER';
+            } else if (col.type == DriftSqlType.string) {
+              pgType = 'TEXT';
+            } else if (col.type == DriftSqlType.bool) {
+              pgType = 'BOOLEAN';
+            } else if (col.type == DriftSqlType.double) {
+              pgType = 'DOUBLE PRECISION';
+            } else if (col.type == DriftSqlType.dateTime) {
+              pgType = 'BIGINT';  // Drift stores datetime as unix epoch
+            } else if (col.type == DriftSqlType.blob) {
+              pgType = 'BYTEA';
+            } else {
+              pgType = 'TEXT';
+            }
+
+            final nullable = col.$nullable ? '' : ' NOT NULL';
+            String defaultClause = '';
+
+            // Handle defaults: replace strftime with PostgreSQL equivalent
+            if (col.defaultValue != null) {
+              final defaultStr = col.defaultValue.toString();
+              if (defaultStr.contains('currentDateAndTime') || defaultStr.contains('CurrentDateTimeExpression')) {
+                defaultClause = " DEFAULT (EXTRACT(EPOCH FROM NOW())::bigint)";
+              } else if (col.defaultValue is Constant) {
+                final val = (col.defaultValue as Constant).value;
+                if (val is bool) {
+                  defaultClause = ' DEFAULT ${val ? 'TRUE' : 'FALSE'}';
+                } else if (val is String) {
+                  defaultClause = " DEFAULT '${val.replaceAll("'", "''")}'";
+                } else {
+                  defaultClause = ' DEFAULT $val';
+                }
+              }
+            }
+
+            colDefs.add('"$colName" $pgType$nullable$defaultClause');
+          }
+
+          final sql = 'CREATE TABLE IF NOT EXISTS "${entity.entityName}" (${colDefs.join(', ')})';
+          await customStatement(sql);
+          debugPrint('[PG] Created ${entity.entityName} with fixed SQL');
+        } catch (e2) {
+          debugPrint('[PG] Failed to create ${entity.entityName} even with fixed SQL: $e2');
+        }
+      } else {
+        // For indices and other entities, try again (they might depend on now-created tables)
+        try {
+          await m.create(entity);
+          debugPrint('[PG] Created entity ${entity.entityName} on retry');
+        } catch (e2) {
+          debugPrint('[PG] Skipped non-table entity ${entity.entityName}: $e2');
+        }
+      }
+    }
+  }
+
+  /// PostgreSQL-specific seeder using Drift companions with EXPLICIT createdAt.
+  /// When createdAt is provided explicitly, Drift doesn't generate strftime() default.
+  Future<void> _seedInitialDataPostgres() async {
+    
+    // 1. Seed admin role
+    try {
+      await into(roles).insert(
+        RolesCompanion.insert(
+          name: 'مدير النظام',
+          description: const Value('Full system access'),
+          isSystemRole: const Value(true),
+        ),
+      );
+      debugPrint('[PG Seeder] ✅ Role created');
+    } catch (e) { debugPrint('[PG Seeder] Role: $e'); }
+
+    // 2. Seed admin user (password: admin)
+    try {
+      final salt = SecurityService.generateSalt();
+      final hash = SecurityService.hashPassword('admin', salt);
+      await into(users).insert(
+        UsersCompanion.insert(
+          username: 'admin',
+          passwordHash: hash,
+          displayName: 'مدير النظام',
+        ).copyWith(
+          passwordSalt: Value(salt),
+          roleId: const Value(1),
+        ),
+      );
+      debugPrint('[PG Seeder] ✅ Admin user created (password: admin)');
+    } catch (e) { debugPrint('[PG Seeder] Admin user: $e'); }
+
+    // 3. Seed default branch
+    try {
+      await into(branches).insert(
+        BranchesCompanion.insert(name: 'الفرع الرئيسي'),
+      );
+    } catch (e) { debugPrint('[PG Seeder] Branch: $e'); }
+
+    // 4. Seed default warehouse
+    try {
+      await into(warehouses).insert(
+        WarehousesCompanion.insert(
+          name: 'المخزن الرئيسي',
+          branchId: const Value(1),
+          isDefault: const Value(true),
+        ),
+      );
+    } catch (e) { debugPrint('[PG Seeder] Warehouse: $e'); }
+
+    // 5. Seed default units
+    for (final u in [['قطعة', 'قطعة'], ['كيلو', 'كجم'], ['علبة', 'علبة'], ['كرتونة', 'كرتون']]) {
+      try {
+        await into(units).insert(UnitsCompanion.insert(name: u[0], symbol: u[1]));
+      } catch (e) { debugPrint('[PG Seeder] Unit ${u[0]}: $e'); }
+    }
+
+    // 6. Seed default category
+    try {
+      await into(categories).insert(
+        CategoriesCompanion.insert(name: 'عام', color: const Value('#2563EB')),
+      );
+    } catch (e) { debugPrint('[PG Seeder] Category: $e'); }
+
+    // 7. Seed safes
+    for (final s in [['صندوق الكاشير', 'cash'], ['الحساب البنكي', 'bank'], ['صندوق تحويل كليك', 'click']]) {
+      try {
+        await into(safes).insert(
+          SafesCompanion.insert(
+            name: s[0],
+            safeType: Value(s[1]),
+            isDefault: const Value(true),
+          ),
+        );
+      } catch (e) { debugPrint('[PG Seeder] Safe ${s[0]}: $e'); }
+    }
+
+    // 8. Seed essential settings
+    try {
+      await into(settings).insert(SettingsCompanion.insert(key: 'company_name', value: const Value('سوبر ماركت')));
+      await into(settings).insert(SettingsCompanion.insert(key: 'tax_rate', value: const Value('14')));
+    } catch (e) { debugPrint('[PG Seeder] Settings: $e'); }
+
+    // 9. Seed chart of accounts (uses raw SQL via _acct helper)
+    try {
+      await seedChartOfAccounts();
+    } catch (e) { debugPrint('[PG Seeder] seedChartOfAccounts: $e'); }
+
+    debugPrint('[PG Seeder] ✅ PostgreSQL initial data seeding complete');
+  }
+
+  /// Create PostgreSQL compatibility layer for SQLite-specific SQL that
+  /// Drift generates. Covers: strftime(), boolean=integer comparisons.
+  Future<void> _createPostgresCompatLayer() async {
+    // 1. strftime() compatibility — Drift uses strftime('%s', 'now')
+    await customStatement(r'''
+      CREATE OR REPLACE FUNCTION strftime(fmt text, ts text)
+      RETURNS bigint AS $fn$
+        SELECT EXTRACT(EPOCH FROM NOW())::bigint;
+      $fn$ LANGUAGE sql STABLE
+    ''');
+    await customStatement(r'''
+      CREATE OR REPLACE FUNCTION strftime(fmt text, ts timestamptz)
+      RETURNS bigint AS $fn$
+        SELECT EXTRACT(EPOCH FROM ts)::bigint;
+      $fn$ LANGUAGE sql STABLE
+    ''');
+
+    // 2. boolean = integer — Drift generates WHERE is_active = 1 etc.
+    // Each statement is individually try/caught to prevent cascading failures.
+    // No COMMUTATOR clause (caused forward-reference errors).
+    await customStatement(r'''
+      CREATE OR REPLACE FUNCTION bool_eq_int(boolean, integer)
+      RETURNS boolean AS $fn$
+        SELECT $1 = ($2 != 0);
+      $fn$ LANGUAGE sql IMMUTABLE
+    ''');
+    try {
+      await customStatement(r'''DROP OPERATOR IF EXISTS public.= (boolean, integer)''');
+    } catch (_) {}
+    try {
+      await customStatement(r'''
+        CREATE OPERATOR public.= (
+          LEFTARG = boolean, RIGHTARG = integer,
+          FUNCTION = bool_eq_int
+        )
+      ''');
+    } catch (_) { /* already exists */ }
+
+    // 3. integer = boolean (reverse)
+    await customStatement(r'''
+      CREATE OR REPLACE FUNCTION int_eq_bool(integer, boolean)
+      RETURNS boolean AS $fn$
+        SELECT ($1 != 0) = $2;
+      $fn$ LANGUAGE sql IMMUTABLE
+    ''');
+    try {
+      await customStatement(r'''DROP OPERATOR IF EXISTS public.= (integer, boolean)''');
+    } catch (_) {}
+    try {
+      await customStatement(r'''
+        CREATE OPERATOR public.= (
+          LEFTARG = integer, RIGHTARG = boolean,
+          FUNCTION = int_eq_bool
+        )
+      ''');
+    } catch (_) { /* already exists */ }
+
+    // 4. IMPLICIT CAST: integer → boolean
+    // Drift generates INSERT/UPDATE with integer values (0/1) for boolean columns.
+    // PostgreSQL rejects this: "column is_default is of type boolean but expression
+    // is of type integer". An implicit cast allows PG to auto-convert 0→FALSE, 1→TRUE.
+    await customStatement(r'''
+      CREATE OR REPLACE FUNCTION int_to_bool(integer)
+      RETURNS boolean AS $fn$
+        SELECT $1 != 0;
+      $fn$ LANGUAGE sql IMMUTABLE
+    ''');
+    try {
+      await customStatement(r'''DROP CAST IF EXISTS (integer AS boolean)''');
+    } catch (_) {}
+    try {
+      await customStatement(r'''
+        CREATE CAST (integer AS boolean)
+        WITH FUNCTION int_to_bool(integer)
+        AS IMPLICIT
+      ''');
+    } catch (_) { /* already exists */ }
+
+    debugPrint('[PG] ✅ Compatibility layer created (strftime + bool=int + int→bool cast)');
+  }
+
+  /// ISS-08: Migration logic delegated to database_migrations.dart
+  @override
+  MigrationStrategy get migration {
+    return MigrationStrategy(
+      onCreate: (Migrator m) async {
+        // PostgreSQL: create strftime() compatibility function BEFORE createAll
+        if (_isPostgres) {
+          await _createPostgresCompatLayer();
+          // Use PostgreSQL-safe table creation with per-table fallback
+          await _createAllForPostgres(m);
+        } else {
+          await m.createAll();
+        }
+        // seedInitialData + syncDefaultAccounts moved to beforeOpen
+        // (after defensive v110 column additions)
+      },
+      onUpgrade: (Migrator m, int from, int to) async {
+        await runOnUpgrade(m, from, to);
+      },
+      beforeOpen: (details) async {
+        await runBeforeOpen(details);
+      },
+    );
+  }
+  // Seeding methods have been moved to DatabaseSeeder extension in database_seeder.dart
+  // to keep the main database.dart file clean and manageable.
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // UTILITY METHODS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Map of normalized prefixes to their settings key for user customization.
+  static const _prefixSettingKeys = <String, String>{
+    'R-': 'prefix_sales_pos',
+    'INV': 'prefix_sales_manual',
+    'RET-': 'prefix_sales_return',
+    'PUR': 'prefix_purchase',
+    'PRET': 'prefix_purchase_return',
+    'RV': 'prefix_receipt_voucher',
+    'PV': 'prefix_payment_voucher',
+    'QUO': 'prefix_quotation',
+  };
+
+  /// Generate a unique, thread-safe invoice number based on DocumentSequences.
+  /// Checks for user-configured per-document-type prefix settings and uses
+  /// them as the display prefix if set. Sequence tracking always uses the
+  /// original normalized prefix to ensure counter continuity.
+  Future<String> generateInvoiceNumber(String prefix) async {
+    return transaction(() async {
+      debugPrint(
+        '[GEN_INV_DEBUG] generateInvoiceNumber called with prefix: "$prefix"',
+      );
+
+      String normalizedPrefix = prefix;
+      // Special handling for POS Receipts - use R-1 format
+      if (prefix == 'Receipt' || prefix == 'Recept' || prefix == 'R') {
+        normalizedPrefix = 'R-';
+      }
+
+      // Check for user-configured custom prefix for this document type
+      String displayPrefix = normalizedPrefix;
+      final settingKey = _prefixSettingKeys[normalizedPrefix];
+      if (settingKey != null) {
+        // First check type-specific setting
+        final customPrefix = await getSettingValue(settingKey);
+        if (customPrefix != null && customPrefix.isNotEmpty) {
+          displayPrefix = customPrefix;
+        } else {
+          // Fallback: check legacy single-prefix setting for sales types
+          final isSalesPrefix = normalizedPrefix == 'R-' || normalizedPrefix == 'INV' || normalizedPrefix == 'RET-';
+          if (isSalesPrefix) {
+            final legacyPrefix = await getSettingValue('invoice_code_prefix');
+            if (legacyPrefix != null && legacyPrefix.isNotEmpty) {
+              displayPrefix = legacyPrefix;
+            }
+          }
+        }
+      }
+
+      // Use normalizedPrefix for sequence tracking (not display prefix)
+      // This ensures the counter stays consistent regardless of prefix changes
+      var seq = await (select(
+        documentSequences,
+      )..where((s) => s.prefix.equals(normalizedPrefix))).getSingleOrNull();
+
+      int nextNumber;
+      if (seq == null) {
+        nextNumber = 1;
+        // Backfill from existing invoices
+        if (normalizedPrefix == 'R-') {
+          final count =
+              await (selectOnly(salesInvoices)
+                    ..addColumns([salesInvoices.id.count()])
+                    ..where(salesInvoices.invoiceNumber.like('%-%')))
+                  .map((row) => row.read(salesInvoices.id.count()))
+                  .getSingle();
+          nextNumber = (count ?? 0) + 1;
+        } else if (normalizedPrefix == 'INV') {
+          final count =
+              await (selectOnly(salesInvoices)
+                    ..addColumns([salesInvoices.id.count()])
+                    ..where(salesInvoices.invoiceNumber.like('INV%')))
+                  .map((row) => row.read(salesInvoices.id.count()))
+                  .getSingle();
+          nextNumber = (count ?? 0) + 1;
+        } else {
+          final count =
+              await (selectOnly(salesInvoices)
+                    ..addColumns([salesInvoices.id.count()])
+                    ..where(
+                      salesInvoices.invoiceNumber.like('$normalizedPrefix%'),
+                    ))
+                  .map((row) => row.read(salesInvoices.id.count()))
+                  .getSingle();
+          nextNumber = (count ?? 0) + 1;
+        }
+
+        await into(documentSequences).insert(
+          DocumentSequencesCompanion.insert(
+            prefix: normalizedPrefix,
+            nextValue: Value(nextNumber + 1),
+          ),
+        );
+      } else {
+        nextNumber = seq.nextValue;
+        await (update(
+          documentSequences,
+        )..where((s) => s.prefix.equals(normalizedPrefix))).write(
+          DocumentSequencesCompanion(nextValue: Value(nextNumber + 1)),
+        );
+      }
+
+      // For prefixes that have a settings key: use displayPrefix directly
+      if (_prefixSettingKeys.containsKey(normalizedPrefix)) {
+        return '$displayPrefix$nextNumber';
+      }
+
+      final year = DateTime.now().year;
+      return '$normalizedPrefix$year${nextNumber.toString().padLeft(6, '0')}';
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // S01: DAO methods — extracted from UI layer (security hardening)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Ensure modifier tables exist (fallback for pre-v70 DBs).
+  Future<void> ensureModifierTables() async {
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS modifier_groups (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        type TEXT NOT NULL DEFAULT 'addon',
+        min_select INTEGER NOT NULL DEFAULT 0,
+        max_select INTEGER NOT NULL DEFAULT 1,
+        is_required INTEGER NOT NULL DEFAULT 0,
+        is_active INTEGER NOT NULL DEFAULT 1,
+        sort_order INTEGER NOT NULL DEFAULT 0
+      )
+    ''');
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS modifier_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        group_id INTEGER NOT NULL REFERENCES modifier_groups(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        extra_price REAL NOT NULL DEFAULT 0,
+        is_default INTEGER NOT NULL DEFAULT 0,
+        is_active INTEGER NOT NULL DEFAULT 1,
+        sort_order INTEGER NOT NULL DEFAULT 0
+      )
+    ''');
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS product_modifier_groups (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+        modifier_group_id INTEGER NOT NULL REFERENCES modifier_groups(id) ON DELETE CASCADE,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        UNIQUE(product_id, modifier_group_id)
+      )
+    ''');
+  }
+
+  /// Update safe name, bank info.
+  /// Update safe details. PostgreSQL-compatible.
+  Future<void> updateSafeDetails({
+    required int safeId,
+    required String name,
+    String? bankName,
+    String? accountNumber,
+  }) async {
+    await (update(safes)..where((s) => s.id.equals(safeId))).write(
+      SafesCompanion(
+        name: Value(name),
+        bankName: Value(bankName),
+        accountNumber: Value(accountNumber),
+      ),
+    );
+  }
+
+  /// Set a safe as the default for its branch (scoped per-branch).
+  /// PostgreSQL-compatible: uses raw SQL with sqlBool().
+  Future<void> setDefaultSafe(int safeId) async {
+    final falseVal = sqlBool(false);
+    final trueVal = sqlBool(true);
+
+    // Look up the target safe's branch
+    final targetSafe = await (select(safes)..where((s) => s.id.equals(safeId))).getSingleOrNull();
+    final branchId = targetSafe?.branchId;
+
+    // Clear defaults only within the same branch scope
+    if (branchId != null) {
+      await customStatement(
+        'UPDATE safes SET is_default = $falseVal WHERE branch_id = ?',
+        [branchId],
+      );
+    } else {
+      // No branch — clear defaults only among safes with no branch
+      await customStatement(
+        'UPDATE safes SET is_default = $falseVal WHERE branch_id IS NULL',
+      );
+    }
+
+    await customStatement(
+      'UPDATE safes SET is_default = $trueVal, is_active = $trueVal WHERE id = ?',
+      [safeId],
+    );
+  }
+
+  /// Toggle safe active/inactive. PostgreSQL-compatible.
+  Future<void> toggleSafeActive(int safeId, bool isActive) async {
+    final boolVal = sqlBool(isActive);
+    await customStatement(
+      'UPDATE safes SET is_active = $boolVal WHERE id = ?',
+      [safeId],
+    );
+  }
+
+  /// Delete a non-default safe. PostgreSQL-compatible.
+  Future<void> deleteSafeById(int safeId) async {
+    await (delete(safes)..where((s) => s.id.equals(safeId) & s.isDefault.equals(false))).go();
+  }
+
+  /// Get per-product stock for a specific warehouse. PostgreSQL-compatible.
+  Future<Map<int, double>> getWarehouseStockMap(int warehouseId) async {
+    final rows = await (select(inventoryBalances)
+      ..where((ib) => ib.warehouseId.equals(warehouseId))
+    ).get();
+    final map = <int, double>{};
+    for (final row in rows) {
+      map[row.productId] = row.quantity;
+    }
+    return map;
+  }
+
+  /// Get journal entry lines with account info (code + name) for display.
+  /// PostgreSQL-compatible: uses Drift selectOnly + join.
+  Future<List<Map<String, dynamic>>> getJournalEntryLinesWithAccounts(int entryId) async {
+    final query = selectOnly(journalEntryLines).join([
+      innerJoin(accounts, accounts.id.equalsExp(journalEntryLines.accountId)),
+    ]);
+    query.addColumns([
+      journalEntryLines.debit,
+      journalEntryLines.credit,
+      journalEntryLines.description,
+      accounts.code,
+      accounts.name,
+    ]);
+    query.where(journalEntryLines.entryId.equals(entryId));
+    query.orderBy([OrderingTerm.asc(journalEntryLines.id)]);
+    
+    final rows = await query.get();
+    return rows.map((row) => {
+      'debit': row.read(journalEntryLines.debit) ?? 0.0,
+      'credit': row.read(journalEntryLines.credit) ?? 0.0,
+      'description': row.read(journalEntryLines.description),
+      'account_code': row.read(accounts.code),
+      'account_name': row.read(accounts.name),
+    }).toList();
+  }
+
+  /// Search sales invoices by invoice number (LIKE). PostgreSQL-compatible.
+  Future<List<SalesInvoiceData>> searchInvoicesByNumber(String query) async {
+    return (select(salesInvoices)
+      ..where((s) => s.invoiceNumber.like('%$query%'))
+      ..orderBy([(s) => OrderingTerm.desc(s.invoiceDate)])
+      ..limit(20)
+    ).get();
+  }
+
+  /// Search customers / parties by phone (LIKE). PostgreSQL-compatible.
+  Future<List<Party>> searchCustomerByPhone(String phone) async {
+    return (select(parties)
+      ..where((p) => p.phone.like('%$phone%') & p.isCustomer.equals(true))
+      ..limit(1)
+    ).get();
+  }
+}

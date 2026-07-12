@@ -1,0 +1,46 @@
+name: core
+description: Core shared package for UralCash - Database, Security, Providers, Theme
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: ^3.10.4
+  flutter: ">=3.10.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  
+  # Database
+  drift: ^2.30.0
+  sqlite3_flutter_libs: ^0.5.41
+  drift_flutter: ^0.2.4
+  sqlite3: ^2.7.7
+  
+  # State Management
+  flutter_riverpod: ^3.1.0
+  state_notifier: ^1.0.0
+  
+  # Theme & UI
+  google_fonts: ^7.0.0
+  phosphor_flutter: ^2.1.0
+  
+  # Utils
+  intl: ^0.20.2
+  crypto: ^3.0.7
+  path_provider: ^2.1.5
+  path: ^1.9.1
+  shared_preferences: ^2.5.4
+  logger: ^2.6.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  drift_dev: ^2.30.0
+  build_runner: ^2.10.4
+
+flutter:
+  uses-material-design: true

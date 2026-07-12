@@ -1,0 +1,135 @@
+{
+    "name": "طلب مطبخ احترافي",
+    "type": "kitchen",
+    "paperSize": "80mm",
+    "paperWidth": 80,
+    "elements": [
+        {
+            "type": "text",
+            "x": 10,
+            "y": 10,
+            "width": 200,
+            "height": 35,
+            "fontSize": 22,
+            "isBold": true,
+            "textAlign": "center",
+            "content": "🍳 طلب مطبخ 🍳"
+        },
+        {
+            "type": "divider",
+            "x": 10,
+            "y": 50,
+            "width": 200,
+            "height": 4
+        },
+        {
+            "type": "order_number",
+            "x": 10,
+            "y": 60,
+            "width": 200,
+            "height": 45,
+            "fontSize": 32,
+            "isBold": true,
+            "textAlign": "center",
+            "labelAr": "طلب #"
+        },
+        {
+            "type": "divider",
+            "x": 10,
+            "y": 110,
+            "width": 200,
+            "height": 4
+        },
+        {
+            "type": "table_number",
+            "x": 10,
+            "y": 120,
+            "width": 200,
+            "height": 35,
+            "fontSize": 20,
+            "isBold": true,
+            "textAlign": "center",
+            "labelAr": "🪑 طاولة"
+        },
+        {
+            "type": "divider",
+            "x": 10,
+            "y": 160,
+            "width": 200,
+            "height": 2
+        },
+        {
+            "type": "date",
+            "x": 10,
+            "y": 170,
+            "width": 100,
+            "height": 22,
+            "fontSize": 12,
+            "textAlign": "right",
+            "labelAr": "التاريخ"
+        },
+        {
+            "type": "time",
+            "x": 110,
+            "y": 170,
+            "width": 100,
+            "height": 22,
+            "fontSize": 14,
+            "isBold": true,
+            "textAlign": "left",
+            "labelAr": "⏰"
+        },
+        {
+            "type": "divider",
+            "x": 10,
+            "y": 197,
+            "width": 200,
+            "height": 4
+        },
+        {
+            "type": "text",
+            "x": 10,
+            "y": 207,
+            "width": 200,
+            "height": 25,
+            "fontSize": 14,
+            "isBold": true,
+            "textAlign": "center",
+            "content": "📋 الأصناف المطلوبة"
+        },
+        {
+            "type": "divider",
+            "x": 10,
+            "y": 370,
+            "width": 200,
+            "height": 4
+        },
+        {
+            "type": "notes",
+            "x": 10,
+            "y": 380,
+            "width": 200,
+            "height": 60,
+            "fontSize": 14,
+            "isBold": true,
+            "textAlign": "center",
+            "labelAr": "📝 ملاحظات خاصة"
+        }
+    ],
+    "tableSettings": {
+        "x": 10,
+        "y": 237,
+        "width": 200,
+        "fontSize": 14,
+        "headerFontSize": 13,
+        "rowHeight": 28,
+        "showIndex": true,
+        "showProductCode": false,
+        "showProductName": true,
+        "showQuantity": true,
+        "showUnitPrice": false,
+        "showDiscount": false,
+        "showTax": false,
+        "showTotal": false
+    }
+}

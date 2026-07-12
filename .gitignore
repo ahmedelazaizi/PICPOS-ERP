@@ -1,0 +1,180 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+*.orig
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/coverage/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# Temporary scripts and files
+*.ps1
+*.bat
+*.sh
+!scripts/
+tmp_*
+*.tmp
+
+# Release artifacts (built locally)
+release_trial/
+release_production/
+builds/
+build-unified/
+build-unified*/
+FlavorBuilds/
+Release/
+Release_Web/
+*.zip
+*.rar
+*.7z
+
+# Flutter Windows generated (keep windows/runner & windows/CMakeLists.txt & vendor SDKs)
+windows/flutter/
+
+# Web build outputs
+web/build/
+web_app/build/
+web_app/.dart_tool/
+web_app/.flutter-plugins-dependencies
+
+# Node / JS tooling
+node_modules/
+package-lock.json
+
+# Coverage
+coverage/
+
+
+# Database files
+*.sqlite
+*.db
+
+# IDE state
+.vscode/settings.json
+
+# Temporary analysis/build outputs
+analysis*.txt
+analyze*.txt
+analyzer_*.txt
+dart_analyze*.txt
+final_*.txt
+intermediate_*.txt
+post_*.txt
+new_analyze*.txt
+diff_output.txt
+parse_failures.dart
+build_*.txt
+build_*.log
+_stderr.txt
+_stdout.txt
+check_syntax.txt
+errors.txt
+*.resolved
+verbose_build*.log
+vs_build_log.txt
+robocopy_*.log
+web_build_log.txt
+flutter_*.log
+flutter_*.txt
+pub_get_*.txt
+pubget.txt
+drift_verbose.txt
+sync_diagnostic.txt
+scale_raw_data.log
+
+# Test outputs (generated)
+test_output.txt
+test_results*.log
+test_failures*.log
+test_failures.json
+test_json.json
+test_summary.json
+test_day*_result.txt
+test_parsed.log
+tables_array.txt
+
+# Stray scratch/temp files
+tmp/
+temp_*.txt
+tmp_*.dart
+fix_*.py
+fix_*.dart
+fix_*.sql
+test_drift*.dart
+test_parse*.dart
+test_query.dart
+test_report.dart
+test_write_dt.dart
+test.dart
+query_test.dart
+parse_failures.dart
+replace_*.dart
+replace_*.ps1
+find_broken.py
+split.py
+generate_beeps.py
+do_build*.bat
+full_clean_build.bat
+build_release.bat
+_run_build.bat
+_metrics.ps1
+
+
+# Environment variables (secrets)
+.env
+.env.local
+.env.production
+
+# Local distribution artifacts (zips for beta drops)
+/dist/
+
+# Security: license/keygen tooling must NEVER be tracked.
+# Anyone with the repo could otherwise mint valid activation keys.
+# Keep these on disk locally; the signing tool belongs in a separate private repo.
+tools/*keygen*
+tools/keygen_extracted/
+tools/UralCash_License_Tool.*
+tools/license.txt
+tools/test_license.dart
+tools/keygen.bat
+
+# Inno Setup compiled output + downloaded prereqs
+installer/output/

@@ -1,0 +1,15 @@
+targets:
+  $default:
+    builders:
+      drift_dev:
+        generate_for:
+          include:
+            - lib/data/database/**
+          exclude:
+            - lib/data/database/sync_interceptor.dart
+      source_gen|combining_builder:
+        generate_for:
+          include:
+            - lib/data/database/**
+          exclude:
+            - lib/data/database/sync_interceptor.dart

@@ -1,0 +1,15 @@
+# Spec 029 / US1 — opt-in tags for the integration_pg/ suite.
+#
+# Tests tagged `pg` are SKIPPED by default. The `melos test:pg` orchestrator
+# (or `dart run scripts/run_pg_tests.dart`) invokes
+#   `flutter test test/integration_pg/ --tags pg --run-skipped`
+# after spawning a real Postgres container. This keeps default
+# `flutter test` runs fast — no Postgres dependency, no surprise failures
+# from the integration suite.
+#
+# See test/integration_pg/README.md for details.
+
+tags:
+  pg:
+    skip: "Run via `melos test:pg` (Postgres-backed integration suite)"
+    timeout: 2x

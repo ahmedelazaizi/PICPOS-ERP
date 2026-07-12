@@ -1,0 +1,288 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../data/providers/providers.dart';
+import '../../../domain/repositories/hr_repository_interface.dart';
+import '../../../domain/repositories/audit_repository_interface.dart';
+import '../../../../../../core/constants/app_constants.dart';
+
+class HRState {
+  final int? selectedEmployeeId;
+  final DateTime selectedMonth;
+  final bool isLoading;
+
+  HRState({
+    this.selectedEmployeeId,
+    required this.selectedMonth,
+    this.isLoading = false,
+  });
+
+  HRState copyWith({
+    int? selectedEmployeeId,
+    DateTime? selectedMonth,
+    bool? isLoading,
+  }) {
+    return HRState(
+      selectedEmployeeId: selectedEmployeeId ?? this.selectedEmployeeId,
+      selectedMonth: selectedMonth ?? this.selectedMonth,
+      isLoading: isLoading ?? this.isLoading,
+    );
+  }
+}
+
+class HRNotifier extends Notifier<HRState> {
+  @override
+  HRState build() {
+    return HRState(selectedMonth: DateTime.now());
+  }
+
+  IHRRepository get _hrRepo => ref.read(hrRepositoryProvider);
+  IAuditRepository get _auditRepo => ref.read(auditRepositoryProvider);
+
+  void selectEmployee(int? id) {
+    state = state.copyWith(selectedEmployeeId: id);
+  }
+
+  void selectMonth(DateTime date) {
+    state = state.copyWith(selectedMonth: date);
+  }
+
+  Future<void> saveEmployee({
+    Employee? existingEmployee,
+    required String name,
+    String? phone,
+    String role = 'staff',
+    double salary = 0,
+    String salaryType = 'monthly',
+  }) async {
+    state = state.copyWith(isLoading: true);
+    try {
+      if (existingEmployee == null) {
+        final id = await _hrRepo.addEmployee(
+          name: name,
+          phone: phone,
+          role: role,
+          salary: salary,
+          salaryType: salaryType,
+        );
+        await _log('add_employee', 'إضافة موظف: $name ($role)', entityId: id);
+      } else {
+        await _hrRepo.updateEmployee(
+          id: existingEmployee.id,
+          name: name,
+          phone: phone,
+          role: role,
+          salary: salary,
+          salaryType: salaryType,
+        );
+        await _log(
+          'update_employee',
+          'تعديل موظف: $name',
+          entityId: existingEmployee.id,
+          oldValue: existingEmployee.name,
+          newValue: name,
+        );
+      }
+    } finally {
+      state = state.copyWith(isLoading: false);
+    }
+  }
+
+  Future<void> checkIn(Employee employee) async {
+    await _hrRepo.checkInEmployee(employee.id);
+    await _log(
+      'employee_checkin',
+      'تسجيل حضور: ${employee.name}',
+      entityId: employee.id,
+    );
+  }
+
+  Future<void> checkOut(Employee employee) async {
+    await _hrRepo.checkOutEmployee(employee.id);
+    await _log(
+      'employee_checkout',
+      'تسجيل انصراف: ${employee.name}',
+      entityId: employee.id,
+    );
+  }
+
+  Future<void> recordAdvance(
+    Employee employee,
+    double amount,
+    String description,
+    DateTime date,
+    bool affectsTreasury, {
+    int? safeId,
+  }) async {
+    await _hrRepo.recordEmployeeAdvance(
+      employeeId: employee.id,
+      amount: amount,
+      description: description,
+      transactionDate: date,
+      affectsTreasury: affectsTreasury,
+      safeId: safeId,
+    );
+    await _log(
+      'employee_advance',
+      'سلفة: ${employee.name} - ${amount.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
+      entityId: employee.id,
+      newValue: amount.toStringAsFixed(AppConstants.decimalPlaces),
+    );
+  }
+
+  Future<void> recordDeduction(
+    Employee employee,
+    double amount,
+    String description,
+    DateTime date,
+  ) async {
+    await _hrRepo.recordEmployeeDeduction(
+      employeeId: employee.id,
+      amount: amount,
+      description: description,
+      transactionDate: date,
+    );
+    await _log(
+      'employee_deduction',
+      'خصم: ${employee.name} - ${amount.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
+      entityId: employee.id,
+      newValue: amount.toStringAsFixed(AppConstants.decimalPlaces),
+    );
+  }
+
+  Future<void> paySalary(EmployeeSalaryCalculation calc) async {
+    await _hrRepo.recordSalaryPayment(
+      employeeId: calc.employee.id,
+      amount: calc.netSalary,
+      period: '${calc.year}-${calc.month.toString().padLeft(2, '0')}',
+    );
+    await _log(
+      'salary_payment',
+      'صرف راتب: ${calc.employee.name} - ${calc.netSalary.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
+      entityId: calc.employee.id,
+      newValue: calc.netSalary.toStringAsFixed(AppConstants.decimalPlaces),
+    );
+  }
+
+  Future<void> requestLeave({
+    required int employeeId,
+    required String leaveType,
+    required DateTime startDate,
+    required DateTime endDate,
+    required int days,
+    String? notes,
+  }) async {
+    await _hrRepo.requestLeave(
+      employeeId: employeeId,
+      leaveType: leaveType,
+      startDate: startDate,
+      endDate: endDate,
+      days: days,
+      notes: notes,
+    );
+  }
+
+  Future<void> updateLeave(int leaveId, String status) async {
+    final user = ref.read(authProvider).user;
+    await _hrRepo.updateLeaveStatus(leaveId, status, user?.id ?? 0);
+  }
+
+  Future<void> addOvertime({
+    required int employeeId,
+    required DateTime date,
+    required double hours,
+    double rate = 1.5,
+    String? notes,
+  }) async {
+    await _hrRepo.addOvertimeRecord(
+      employeeId: employeeId,
+      date: date,
+      hours: hours,
+      rate: rate,
+      notes: notes,
+    );
+  }
+
+  Future<void> _log(
+    String action,
+    String description, {
+    int? entityId,
+    String? oldValue,
+    String? newValue,
+  }) async {
+    final auth = ref.read(authProvider);
+    final user = auth.user;
+    await _auditRepo.logActivity(
+      userId: user?.id,
+      userName: user?.displayName ?? 'مجهول',
+      action: action,
+      entityType: 'employee',
+      entityId: entityId,
+      description: description,
+      oldValue: oldValue,
+      newValue: newValue,
+    );
+  }
+}
+
+final hrFormProvider = NotifierProvider<HRNotifier, HRState>(() {
+  return HRNotifier();
+});
+
+final hrEmployeesProvider = FutureProvider.autoDispose<List<Employee>>((ref) {
+  final hrRepo = ref.watch(hrRepositoryProvider);
+  return hrRepo.getAllEmployees();
+});
+
+class LeaveBalanceArgs {
+  final int employeeId;
+  final int year;
+  const LeaveBalanceArgs(this.employeeId, this.year);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is LeaveBalanceArgs &&
+          runtimeType == other.runtimeType &&
+          employeeId == other.employeeId &&
+          year == other.year;
+
+  @override
+  int get hashCode => employeeId.hashCode ^ year.hashCode;
+}
+
+final hrLeaveBalancesProvider = FutureProvider.autoDispose.family<List<LeaveBalance>, LeaveBalanceArgs>((ref, args) {
+  final hrRepo = ref.watch(hrRepositoryProvider);
+  return hrRepo.getLeaveBalances(args.employeeId, args.year);
+});
+
+class NetSalaryArgs {
+  final int employeeId;
+  final int year;
+  final int month;
+  const NetSalaryArgs(this.employeeId, this.year, this.month);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is NetSalaryArgs &&
+          runtimeType == other.runtimeType &&
+          employeeId == other.employeeId &&
+          year == other.year &&
+          month == other.month;
+
+  @override
+  int get hashCode => employeeId.hashCode ^ year.hashCode ^ month.hashCode;
+}
+
+final hrNetSalaryProvider = FutureProvider.autoDispose.family<EmployeeSalaryCalculation, NetSalaryArgs>((ref, args) {
+  final hrRepo = ref.watch(hrRepositoryProvider);
+  return hrRepo.calculateNetSalary(
+    employeeId: args.employeeId,
+    year: args.year,
+    month: args.month,
+  );
+});
+
+final hrEmployeeByIdProvider = FutureProvider.autoDispose.family<Employee?, int>((ref, id) {
+  final hrRepo = ref.watch(hrRepositoryProvider);
+  return hrRepo.getEmployeeById(id);
+});

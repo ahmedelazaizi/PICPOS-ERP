@@ -1,0 +1,364 @@
+import 'package:flutter/material.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
+import '../../../../core/permissions/permission_codes.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/uuid_v7.dart';
+import '../../../../services/security_service.dart';
+import '../../../../services/network_service.dart';
+import '../../../../data/providers/providers.dart';
+import '../../../../data/database/sync_interceptor.dart';
+import '../../../widgets/dialogs/app_form_dialog.dart';
+import 'package:ural_erp/l10n/app_localizations.dart';
+import 'add_role_dialog.dart';
+
+class AddUserDialog extends AppFormDialog<bool> {
+  const AddUserDialog({super.key});
+
+  @override
+  AppFormDialogState<bool, AddUserDialog> createState() => _AddUserDialogState();
+}
+
+class _AddUserDialogState extends AppFormDialogState<bool, AddUserDialog> {
+  late final nameController = registerController();
+  late final usernameController = registerController();
+  late final passwordController = registerController();
+  late final cardCodeController = registerController();
+  int? selectedRoleId;
+  bool forcePasswordChange = true;
+  bool _allBranches = true;
+  final List<int> selectedBranchIds = [];
+
+  @override
+  String get dialogTitle => 'إضافة مستخدم جديد';
+
+  @override
+  IconData get dialogIcon => PhosphorIconsBold.userPlus;
+
+  @override
+  Widget buildFormContent(BuildContext context, AppLocalizations localizations) {
+    final roles = ref.watch(allRolesProvider).value ?? [];
+    final branches = ref.watch(allBranchesProvider).value ?? [];
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        TextField(
+          controller: nameController,
+          decoration: const InputDecoration(
+            labelText: 'الاسم الكامل *',
+            prefixIcon: Icon(PhosphorIconsLight.user),
+          ),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: usernameController,
+          decoration: const InputDecoration(
+            labelText: 'اسم المستخدم *',
+            prefixIcon: Icon(PhosphorIconsLight.at),
+          ),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: passwordController,
+          obscureText: true,
+          onChanged: (_) => setState(() {}),
+          decoration: const InputDecoration(
+            labelText: 'كلمة المرور *',
+            prefixIcon: Icon(PhosphorIconsLight.lock),
+          ),
+        ),
+        if (passwordController.text.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          _buildPasswordStrength(),
+        ],
+        const SizedBox(height: 12),
+        // Issue 4 (Feature 018): MSR card code field — admins can either swipe
+        // a card (the MSR keyboard-emulation feeds the field naturally) or
+        // type the code manually. Stored on Users.cardCode and used by
+        // user_dao.authenticateByCardCode at the login screen.
+        TextField(
+          controller: cardCodeController,
+          decoration: const InputDecoration(
+            labelText: 'كود كارت MSR (اختياري)',
+            hintText: 'مرر الكارت أو اكتب الكود يدوياً',
+            prefixIcon: Icon(PhosphorIconsLight.identificationCard),
+          ),
+        ),
+        const SizedBox(height: 12),
+        // Role dropdown + action buttons
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Expanded(
+              child: DropdownButtonFormField<int?>(
+                decoration: const InputDecoration(
+                  labelText: 'الدور / الصلاحية',
+                  prefixIcon: Icon(PhosphorIconsLight.shieldCheck),
+                ),
+                value: selectedRoleId,
+                items: [
+                  const DropdownMenuItem<int?>(
+                    value: null,
+                    child: Text('— بدون دور —', style: TextStyle(color: Colors.grey)),
+                  ),
+                  ...roles.map(
+                    (role) => DropdownMenuItem(
+                      value: role.id,
+                      child: Row(
+                        children: [
+                          Icon(
+                            role.isSystemRole
+                                ? PhosphorIconsFill.shieldStar
+                                : PhosphorIconsLight.shield,
+                            size: 14,
+                            color: role.isSystemRole ? AppColors.primary : Colors.grey,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(role.name),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+                onChanged: (v) => setState(() => selectedRoleId = v),
+              ),
+            ),
+            const SizedBox(width: 6),
+            // Add new role
+            Tooltip(
+              message: 'إضافة دور جديد',
+              child: IconButton.outlined(
+                icon: const Icon(PhosphorIconsBold.plus, size: 18),
+                style: IconButton.styleFrom(
+                  side: BorderSide(color: AppColors.primary.withOpacity(0.5)),
+                  foregroundColor: AppColors.primary,
+                ),
+                onPressed: () async {
+                  final added = await showDialog<bool>(
+                    context: context,
+                    builder: (_) => const AddRoleDialog(),
+                  );
+                  if (added == true) {
+                    // allRolesProvider refreshes automatically (StreamProvider)
+                    setState(() {});
+                  }
+                },
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        // Hint under the role row
+        Padding(
+          padding: const EdgeInsets.only(right: 12),
+          child: Text(
+            'لإنشاء دور جديد بصلاحيات مخصصة اضغط +',
+            style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+          ),
+        ),
+        if (branches.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          const Text('الفرع', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          const SizedBox(height: 8),
+          RadioListTile<bool>(
+            title: const Text('كل الفروع (مدير / إدارة)'),
+            value: true,
+            groupValue: _allBranches,
+            onChanged: (v) => setState(() { _allBranches = true; selectedBranchIds.clear(); }),
+            dense: true,
+          ),
+          RadioListTile<bool>(
+            title: const Text('فرع محدد'),
+            value: false,
+            groupValue: _allBranches,
+            onChanged: (v) => setState(() => _allBranches = false),
+            dense: true,
+          ),
+          if (!_allBranches)
+            ...branches.map((branch) => CheckboxListTile(
+              title: Text(branch.name),
+              value: selectedBranchIds.contains(branch.id),
+              onChanged: (v) => setState(() {
+                if (v == true) selectedBranchIds.add(branch.id);
+                else selectedBranchIds.remove(branch.id);
+              }),
+              dense: true,
+              contentPadding: const EdgeInsets.only(right: 32),
+            )),
+          const SizedBox(height: 12),
+        ],
+        CheckboxListTile(
+          title: const Text('فرض تغيير كلمة المرور عند أول دخول'),
+          subtitle: const Text('سيُطلب من المستخدم تغيير كلمة المرور فور تسجيل الدخول'),
+          value: forcePasswordChange,
+          onChanged: (v) => setState(() => forcePasswordChange = v ?? true),
+          contentPadding: EdgeInsets.zero,
+          controlAffinity: ListTileControlAffinity.leading,
+          activeColor: AppColors.primary,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPasswordStrength() {
+    final result = SecurityService.validatePassword(passwordController.text);
+    final strengthLabel = SecurityService.getPasswordStrengthLabel(result.strength);
+    final strengthColor = result.strength < 30
+        ? Colors.red
+        : result.strength < 50
+            ? Colors.orange
+            : result.strength < 70
+                ? Colors.amber
+                : result.strength < 90
+                    ? Colors.lightGreen
+                    : Colors.green;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: result.strength / 100,
+                  backgroundColor: Colors.grey.shade200,
+                  valueColor: AlwaysStoppedAnimation(strengthColor),
+                  minHeight: 6,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              strengthLabel,
+              style: TextStyle(fontSize: 11, color: strengthColor, fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+        if (!result.isValid) ...[
+          const SizedBox(height: 6),
+          ...result.errors.map((e) => Padding(
+                padding: const EdgeInsets.only(bottom: 2),
+                child: Row(
+                  children: [
+                    const Icon(Icons.close, size: 14, color: Colors.red),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(e, style: const TextStyle(fontSize: 11, color: Colors.red)),
+                    ),
+                  ],
+                ),
+              )),
+        ],
+      ],
+    );
+  }
+
+  @override
+  Future<bool> onSave() async {
+    // P5 (Issue #6): Removed the client-mode hard-block. The original guard
+    // assumed users couldn't be created on a client — but the code below
+    // (lines ~280-287) already routes the create through
+    // SyncInterceptor.createUser, which:
+    //   1. Mints a stable globalId on the client.
+    //   2. POSTs to /api/users on the server.
+    //   3. Returns the server-assigned id so the local row uses the same id.
+    //   4. Falls back to outbox queue when the server is unreachable.
+    // Symptom of the old guard: admin couldn't create cashier accounts on a
+    // client machine; new staff had to be added at the server console. When
+    // they bypassed the guard via the setup wizard, the cashier user lived
+    // ONLY on the client — every sale they rang up failed userId
+    // resolution on the server. The interceptor path is the correct fix.
+    final name = nameController.text.trim();
+    final username = usernameController.text.trim();
+    final password = passwordController.text;
+    final cardCode = cardCodeController.text.trim().isEmpty
+        ? null
+        : cardCodeController.text.trim();
+
+    if (name.isEmpty || username.isEmpty || password.isEmpty) {
+      throw 'يجب ملء جميع الحقول المطلوبة';
+    }
+
+    if (selectedRoleId == null) {
+      throw 'يجب اختيار دور للمستخدم';
+    }
+
+    // Password strength is shown as guidance only — not enforced
+
+    final authRepo = ref.read(authRepositoryProvider);
+
+    // ── Cross-branch user creation gate ─────────────────────────────────
+    // On a paired client, creating a user effectively pushes a new identity
+    // to the server's authoritative users table. Restrict that to operators
+    // who explicitly hold `users_manage_cross_branch`. Standalone and server
+    // installations are always allowed (no network propagation concern).
+    if (NetworkService.instance.isClient) {
+      final auth = ref.read(authProvider);
+      final actorId = auth.user?.id;
+      final allowed = actorId != null &&
+          await authRepo.userHasPermission(
+            actorId,
+            PermissionCodes.usersManageCrossBranch,
+          );
+      if (!allowed) {
+        throw 'لا تملك صلاحية إنشاء المستخدمين من جهاز فرع. يرجى '
+            'إنشاء المستخدم من المقر الرئيسى أو طلب تفعيل صلاحية '
+            '"إدارة المستخدمين عبر-فروع" لحسابك.';
+      }
+    }
+
+    // UUID-First (Phase 1): mint ONE globalId up-front so the same identity
+    // lands on both server (via interceptor) and local row.
+    final userGlobalId = UuidV7.generate();
+
+    // In client mode: send to server first and capture the server-assigned ID.
+    // Using the server ID locally keeps client and server IDs in perfect sync,
+    // preventing "User ID not found on server" errors on future invoice syncs.
+    int? serverId;
+    if (SyncInterceptor.instance != null) {
+      serverId = await SyncInterceptor.instance!.createUser(
+        username: username,
+        password: password,
+        displayName: name,
+        roleId: selectedRoleId,
+        branchIds: selectedBranchIds,
+        globalId: userGlobalId,
+        cardCode: cardCode,
+      );
+    }
+
+    // Always create locally so the user can authenticate immediately.
+    // If online: use server-returned ID so IDs stay in sync.
+    // If offline: auto-increment (reconciled on next fullSync).
+    final newUserId = await authRepo.createUser(
+      id: serverId,
+      username: username,
+      password: password,
+      displayName: name,
+      roleId: selectedRoleId,
+      forcePasswordChange: forcePasswordChange,
+      globalId: userGlobalId,
+      cardCode: cardCode,
+    );
+    if (!_allBranches && selectedBranchIds.isNotEmpty) {
+      await authRepo.setUserBranchAccess(newUserId, selectedBranchIds);
+    }
+
+    // #Forensic Log: User create
+    try {
+      final auth = ref.read(authProvider);
+      final logger = ref.read(activityLoggerProvider);
+      await logger.logUserCreate(
+        auth.user?.id ?? 0,
+        auth.user?.displayName ?? '',
+        name,
+      );
+    } catch (e) {
+      debugPrint('[ActivityLog] Error: $e');
+    }
+
+    return true;
+  }
+}

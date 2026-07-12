@@ -1,0 +1,204 @@
+{
+    "name": "سند قبض / صرف",
+    "type": "a4",
+    "templateCategory": "receipt",
+    "paperSize": "A4",
+    "paperWidth": 210,
+    "elements": [
+        {
+            "type": "logo",
+            "x": 240,
+            "y": 15,
+            "width": 120,
+            "height": 70,
+            "textAlign": "center"
+        },
+        {
+            "type": "company_name",
+            "x": 130,
+            "y": 90,
+            "width": 340,
+            "height": 35,
+            "fontSize": 20,
+            "isBold": true,
+            "textAlign": "center"
+        },
+        {
+            "type": "line",
+            "x": 20,
+            "y": 130,
+            "width": 555,
+            "height": 3
+        },
+        {
+            "type": "text",
+            "x": 180,
+            "y": 140,
+            "width": 240,
+            "height": 40,
+            "fontSize": 22,
+            "isBold": true,
+            "textAlign": "center",
+            "content": "سند قبض"
+        },
+        {
+            "type": "line",
+            "x": 20,
+            "y": 185,
+            "width": 555,
+            "height": 1
+        },
+        {
+            "type": "invoice_number",
+            "x": 350,
+            "y": 200,
+            "width": 220,
+            "height": 25,
+            "fontSize": 14,
+            "isBold": true,
+            "textAlign": "right",
+            "labelAr": "رقم السند"
+        },
+        {
+            "type": "date",
+            "x": 30,
+            "y": 200,
+            "width": 200,
+            "height": 25,
+            "fontSize": 13,
+            "textAlign": "right",
+            "labelAr": "التاريخ"
+        },
+        {
+            "type": "rectangle",
+            "x": 20,
+            "y": 240,
+            "width": 555,
+            "height": 100
+        },
+        {
+            "type": "text",
+            "x": 350,
+            "y": 250,
+            "width": 210,
+            "height": 25,
+            "fontSize": 14,
+            "isBold": true,
+            "textAlign": "right",
+            "content": "استلمنا من السيد / السادة:"
+        },
+        {
+            "type": "customer_name",
+            "x": 50,
+            "y": 250,
+            "width": 280,
+            "height": 25,
+            "fontSize": 14,
+            "textAlign": "right",
+            "labelAr": ""
+        },
+        {
+            "type": "text",
+            "x": 350,
+            "y": 285,
+            "width": 210,
+            "height": 25,
+            "fontSize": 14,
+            "isBold": true,
+            "textAlign": "right",
+            "content": "مبلغ وقدره:"
+        },
+        {
+            "type": "total",
+            "x": 50,
+            "y": 285,
+            "width": 280,
+            "height": 30,
+            "fontSize": 18,
+            "isBold": true,
+            "textAlign": "center",
+            "labelAr": ""
+        },
+        {
+            "type": "text",
+            "x": 350,
+            "y": 318,
+            "width": 210,
+            "height": 20,
+            "fontSize": 12,
+            "textAlign": "right",
+            "content": "وذلك عن:"
+        },
+        {
+            "type": "notes",
+            "x": 50,
+            "y": 318,
+            "width": 280,
+            "height": 20,
+            "fontSize": 12,
+            "textAlign": "right",
+            "labelAr": ""
+        },
+        {
+            "type": "payment_method",
+            "x": 30,
+            "y": 370,
+            "width": 250,
+            "height": 25,
+            "fontSize": 13,
+            "textAlign": "right",
+            "labelAr": "طريقة الدفع"
+        },
+        {
+            "type": "line",
+            "x": 20,
+            "y": 420,
+            "width": 555,
+            "height": 1
+        },
+        {
+            "type": "text",
+            "x": 380,
+            "y": 450,
+            "width": 180,
+            "height": 20,
+            "fontSize": 12,
+            "textAlign": "center",
+            "content": "توقيع المستلم"
+        },
+        {
+            "type": "line",
+            "x": 380,
+            "y": 500,
+            "width": 180,
+            "height": 1
+        },
+        {
+            "type": "text",
+            "x": 30,
+            "y": 450,
+            "width": 180,
+            "height": 20,
+            "fontSize": 12,
+            "textAlign": "center",
+            "content": "توقيع أمين الصندوق"
+        },
+        {
+            "type": "line",
+            "x": 30,
+            "y": 500,
+            "width": 180,
+            "height": 1
+        },
+        {
+            "type": "cashier_name",
+            "x": 30,
+            "y": 505,
+            "width": 180,
+            "height": 20,
+            "fontSize": 11,
+            "textAlign": "center",
+            "labelAr": ""
+        }
+    ]
+}

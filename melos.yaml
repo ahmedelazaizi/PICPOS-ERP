@@ -1,0 +1,45 @@
+name: cashier_market
+repository: https://github.com/your-org/cashier_market
+
+packages:
+  - packages/**
+  - apps/**
+
+command:
+  version:
+    updateGitTagRefs: true
+    
+  bootstrap:
+    usePubspecOverrides: true
+    runPubGetInParallel: true
+
+scripts:
+  analyze:
+    run: melos exec -- flutter analyze --no-pub
+    description: Run flutter analyze in all packages
+    
+  test:
+    run: melos exec -- flutter test
+    description: Run flutter test in all packages
+
+  test:pg:
+    # Spec 029 / US1 — opt-in Postgres integration suite.
+    # Boots a real PostgreSQL via Docker, runs test/integration_pg/, tears
+    # down. Default `melos test` does NOT include this — see
+    # test/integration_pg/README.md.
+    run: dart run scripts/run_pg_tests.dart
+    description: Run Postgres-backed integration tests against a real PG container
+    
+  clean:
+    run: melos exec -- flutter clean
+    description: Clean all packages
+    
+  build:runner:
+    run: melos exec -- dart run build_runner build --delete-conflicting-outputs
+    description: Run build_runner for code generation
+    packageFilters:
+      dependsOn: build_runner
+
+  pub:get:
+    run: melos exec -- flutter pub get
+    description: Run pub get in all packages

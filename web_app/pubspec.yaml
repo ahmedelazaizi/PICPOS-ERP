@@ -1,0 +1,45 @@
+name: cashier_market_web
+description: "UralCash POS Web Application"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  
+  # Supabase
+  supabase_flutter: ^2.8.0
+  
+  # State Management
+  flutter_riverpod: ^3.1.0
+  
+  # UI
+  google_fonts: ^7.0.0
+  phosphor_flutter: ^2.1.0
+  fl_chart: ^1.1.1
+  intl: ^0.20.2
+  
+  # Storage
+  shared_preferences: ^2.5.4
+  
+  # PDF & Printing
+  pdf: ^3.11.3
+  printing: ^5.14.2
+  
+  # Crypto for password hashing
+  crypto: ^3.0.7
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/

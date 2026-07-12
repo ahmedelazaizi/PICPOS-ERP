@@ -1,0 +1,182 @@
+import '../entities/invoice_entity.dart';
+import '../../data/database/database.dart' show PurchaseInvoiceItemWithProduct, PurchaseInvoiceData;
+/// Purchases repository interface
+///
+/// Defines contract for purchase operations. Implementations in data layer.
+abstract class PurchasesRepository {
+  /// Create a new purchase invoice
+  Future<int> createInvoice(CreatePurchaseInvoiceParams params);
+
+  /// Get invoice by ID
+  Future<InvoiceEntity?> getInvoiceById(int id);
+
+  /// Watch all purchase invoices
+  Stream<List<InvoiceEntity>> watchInvoices();
+
+  /// Watch invoices by date range
+  Stream<List<InvoiceEntity>> watchInvoicesByDateRange(
+    DateTime start,
+    DateTime end,
+  );
+
+  /// Record payment for invoice
+  Future<void> recordPayment(int invoiceId, double amount, {int? userId});
+
+  /// Update purchase invoice
+  Future<void> updateInvoice(UpdatePurchaseInvoiceParams params);
+
+  /// Get purchases report by date range
+  Future<List<InvoiceEntity>> getPurchasesReport(DateTime start, DateTime end);
+
+  /// Get purchases by supplier
+  Future<List<InvoiceEntity>> getPurchasesBySupplier(int supplierId);
+
+  /// Delete purchase invoice (Legacy - redirects to void)
+  Future<void> deleteInvoice(int invoiceId);
+
+  /// Void purchase invoice (ISS-05)
+  Future<void> voidInvoice(int invoiceId, {String? reason});
+
+  /// Get purchase invoice items with product data
+  Future<List<PurchaseInvoiceItemWithProduct>> getInvoiceItemsWithProduct(
+    int invoiceId,
+  );
+
+  /// Process purchase return — ISS-01: encapsulate return logic behind repository
+  /// Returns the total return amount
+  Future<double> processPurchaseReturn({
+    required PurchaseInvoiceData invoice,
+    required List<PurchaseReturnItem> returnItems,
+  });
+
+  /// Feature 015 — Edit a previously-posted purchase return.
+  ///
+  /// Atomically reverses every side-effect of the original return (stock
+  /// movements, WAC, supplier balance, safe-transactions memo, cash refund,
+  /// journal entry, invoice status) and re-posts a fresh return with
+  /// [newReturnItems]. Audit trail is preserved via append-only
+  /// compensating rows + a flipped journal entry — never silent mutation.
+  ///
+  /// Period gate: if [invoice].invoiceDate falls inside a closed fiscal
+  /// year or monthly period, throws the same Arabic message
+  /// `processPurchaseReturn` uses (Feature 014).
+  ///
+  /// Returns the new total return amount.
+  Future<double> editPurchaseReturn({
+    required PurchaseInvoiceData invoice,
+    required List<PurchaseReturnItem> newReturnItems,
+  });
+
+  /// Get raw purchase invoice by ID (drift type)
+  Future<PurchaseInvoiceData?> getRawInvoiceById(int id);
+}
+
+/// Parameters for creating a purchase invoice
+class CreatePurchaseInvoiceParams {
+  final int supplierId;
+  final int warehouseId;
+  final List<PurchaseItemParams> items;
+  final double paid;
+  final String paymentMethod;
+  final String? notes;
+  final String? supplierInvoiceNumber;
+  final DateTime? date;
+  final int? costCenterId;
+  final int? safeId;
+  final int? userId;
+  final String? createdByUsername;
+
+  const CreatePurchaseInvoiceParams({
+    required this.supplierId,
+    required this.warehouseId,
+    required this.items,
+    required this.paid,
+    this.paymentMethod = 'cash',
+    this.notes,
+    this.supplierInvoiceNumber,
+    this.date,
+    this.costCenterId,
+    this.safeId,
+    this.userId,
+    this.createdByUsername,
+  });
+}
+
+/// Parameters for a purchase item
+class PurchaseItemParams {
+  final int productId;
+  final double quantity;
+  final double unitCost;
+  final double salePrice;
+  final double taxRate;
+  final double taxAmount;
+  final String? batchNumber;
+  final DateTime? expiryDate;
+  final String? unitName; // NEW: Display name of the selected unit
+  // UOM: conversion factor from selected unit to base unit
+  final double quantityInBase; // e.g. 24 for carton=24 pieces
+
+  const PurchaseItemParams({
+    required this.productId,
+    required this.quantity,
+    required this.unitCost,
+    required this.salePrice,
+    required this.taxRate,
+    required this.taxAmount,
+    this.batchNumber,
+    this.expiryDate,
+    this.unitName,
+    this.quantityInBase = 1.0,
+  });
+
+  /// Stock quantity in base units (e.g., 3 cartons × 24 = 72 pieces)
+  double get stockQuantity => quantity * quantityInBase;
+
+  double get total => (quantity * unitCost) + taxAmount;
+}
+
+/// Parameters for updating a purchase invoice
+class UpdatePurchaseInvoiceParams {
+  final int invoiceId;
+  final int? supplierId;
+  final int? warehouseId;
+  final List<PurchaseItemParams>? items;
+  final double? paid;
+  final String? notes;
+  final String? supplierInvoiceNumber;
+  final String? paymentMethod;
+  final int? costCenterId;
+
+  const UpdatePurchaseInvoiceParams({
+    required this.invoiceId,
+    this.supplierId,
+    this.warehouseId,
+    this.items,
+    this.paid,
+    this.notes,
+    this.supplierInvoiceNumber,
+    this.paymentMethod,
+    this.costCenterId,
+  });
+}
+
+/// Data class for purchase return items
+class PurchaseReturnItem {
+  final int itemId;
+  final int productId;
+  final double returnQuantity;
+  final double unitCost;
+  final double taxAmount;
+  final double originalQuantity;
+  final double quantityInBase; // B1: UOM conversion factor
+
+  const PurchaseReturnItem({
+    required this.itemId,
+    required this.productId,
+    required this.returnQuantity,
+    required this.unitCost,
+    required this.taxAmount,
+    required this.originalQuantity,
+    this.quantityInBase = 1.0,
+  });
+}

@@ -1,0 +1,211 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../../../data/database/database.dart';
+import '../../../../domain/repositories/restaurant_repository.dart';
+import '../providers/tables_state_provider.dart';
+
+class TableCard extends ConsumerWidget {
+  final RestaurantTable table;
+  final IRestaurantRepository restaurantRepo;
+  final Function(RestaurantTable) onInteraction;
+
+  const TableCard({
+    super.key,
+    required this.table,
+    required this.restaurantRepo,
+    required this.onInteraction,
+  });
+
+  static const Map<String, _StatusInfo> _statusMap = {
+    'available': _StatusInfo('متاحة', Color(0xFF10B981), PhosphorIconsBold.checkCircle),
+    'reserved': _StatusInfo('محجوزة', Color(0xFFF59E0B), PhosphorIconsBold.calendarCheck),
+    'occupied': _StatusInfo('مشغولة', Color(0xFF3B82F6), PhosphorIconsBold.users),
+    'seated': _StatusInfo('مشغولة', Color(0xFF3B82F6), PhosphorIconsBold.users),
+    'ordered': _StatusInfo('مشغولة', Color(0xFF3B82F6), PhosphorIconsBold.users),
+    'eating': _StatusInfo('مشغولة', Color(0xFF3B82F6), PhosphorIconsBold.users),
+    'billing': _StatusInfo('مشغولة', Color(0xFF3B82F6), PhosphorIconsBold.users),
+    'cleaning': _StatusInfo('تنظيف', Color(0xFF6366F1), PhosphorIconsBold.broom),
+  };
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final uiState = ref.watch(tablesUIProvider);
+    final statusInfo = _statusMap[table.status] ?? _statusMap['available']!;
+    final isSelected = uiState.selectedTableId == table.id;
+    final isActive = table.status != 'available' && table.status != 'reserved' && table.status != 'cleaning';
+
+    // Calculate elapsed time
+    final elapsed = DateTime.now().difference(table.lastStatusAt);
+    final elapsedStr = elapsed.inMinutes > 0
+        ? '${elapsed.inHours > 0 ? '${elapsed.inHours}س ' : ''}${elapsed.inMinutes % 60}د'
+        : 'الآن';
+
+    final isRound = table.capacity <= 4;
+
+    return GestureDetector(
+      onTap: () => onInteraction(table),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutCubic,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isSelected
+                ? [
+                    statusInfo.color.withValues(alpha: 0.15),
+                    statusInfo.color.withValues(alpha: 0.05)
+                  ]
+                : [
+                    Colors.white.withValues(alpha: 0.04),
+                    Colors.white.withValues(alpha: 0.01)
+                  ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(isRound ? 80 : 18),
+          border: Border.all(
+            color: isSelected
+                ? statusInfo.color
+                : statusInfo.color.withValues(alpha: 0.25),
+            width: isSelected ? 2.5 : 1.5,
+          ),
+          boxShadow: [
+            if (isSelected || isActive)
+              BoxShadow(
+                color: statusInfo.color.withValues(alpha: isSelected ? 0.25 : 0.1),
+                blurRadius: isSelected ? 20 : 12,
+                spreadRadius: isSelected ? 2 : 0,
+              ),
+          ],
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // ── Main content ──
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: statusInfo.color,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                          color: statusInfo.color.withValues(alpha: 0.6),
+                          blurRadius: 8,
+                          spreadRadius: 1),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(table.name,
+                    style: GoogleFonts.cairo(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white.withValues(alpha: 0.9),
+                    ),
+                    textAlign: TextAlign.center),
+                const SizedBox(height: 2),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(PhosphorIconsBold.users,
+                        size: 10,
+                        color: Colors.white.withValues(alpha: 0.25)),
+                    const SizedBox(width: 3),
+                    Text('${table.capacity}',
+                        style: GoogleFonts.cairo(
+                            fontSize: 10,
+                            color: Colors.white.withValues(alpha: 0.25),
+                            fontWeight: FontWeight.w600)),
+                    if (isActive) ...[
+                      const SizedBox(width: 8),
+                      Icon(PhosphorIconsBold.clock,
+                          size: 10, color: statusInfo.color),
+                      const SizedBox(width: 2),
+                      Text(elapsedStr,
+                          style: GoogleFonts.cairo(
+                              fontSize: 10,
+                              color: statusInfo.color,
+                              fontWeight: FontWeight.w700)),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(colors: [
+                      statusInfo.color.withValues(alpha: 0.2),
+                      statusInfo.color.withValues(alpha: 0.08),
+                    ]),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                        color: statusInfo.color.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(statusInfo.icon,
+                          size: 10, color: statusInfo.color),
+                      const SizedBox(width: 4),
+                      Text(statusInfo.label,
+                          style: GoogleFonts.cairo(
+                              fontSize: 9,
+                              color: statusInfo.color,
+                              fontWeight: FontWeight.w700)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+
+            if (isActive)
+              Positioned(
+                top: 8,
+                left: 8,
+                child: FutureBuilder<TableOrder?>(
+                  future: restaurantRepo.getActiveOrderForTable(table.id),
+                  builder: (context, snap) {
+                    final order = snap.data;
+                    if (order == null || order.total <= 0) {
+                      return const SizedBox.shrink();
+                    }
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                            color: const Color(0xFF10B981)
+                                .withValues(alpha: 0.3)),
+                      ),
+                      child: Text(
+                        order.total.toStringAsFixed(0),
+                        style: GoogleFonts.cairo(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFF10B981)),
+                      ),
+                    );
+                  },
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StatusInfo {
+  final String label;
+  final Color color;
+  final IconData icon;
+  const _StatusInfo(this.label, this.color, this.icon);
+}

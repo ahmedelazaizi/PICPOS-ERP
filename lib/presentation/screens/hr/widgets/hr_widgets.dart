@@ -1,0 +1,9 @@
+export 'hr_dashboard_tab.dart';
+export 'staff_list_tab.dart';
+export 'attendance_tab.dart';
+export 'payroll_tab.dart';
+export 'leaves_tab.dart';
+export 'overtime_tab.dart';
+export 'hr_performance_tab.dart';
+export 'hr_contracts_tab.dart';
+export 'hr_dialogs.dart';

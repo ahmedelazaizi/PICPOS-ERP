@@ -1,0 +1,77 @@
+import '../../entities/cart_item_entity.dart';
+
+/// Use case for adding item to cart
+///
+/// Pure business logic - no UI or database dependencies
+class AddToCartUseCase {
+  /// Execute the use case
+  ///
+  /// Returns updated cart list with the new item added or quantity updated
+  List<CartItemEntity> execute({
+    required List<CartItemEntity> currentCart,
+    required int productId,
+    required String productName,
+    required String productCode,
+    required double unitPrice,
+    double quantity = 1,
+    double? customPrice,
+    double taxRate = 0,
+    bool isSoldByWeight = false,
+    int? categoryId,
+    bool forceNewEntry =
+        false, // New: For offers - prevents merging with existing items
+    bool mergeWeight =
+        false, // When true, weight items accumulate quantity (barcode scans)
+  }) {
+    final existingIndex = currentCart.indexWhere(
+      (item) => item.productId == productId,
+    );
+
+    // Don't merge if: sold by weight (unless mergeWeight), forced new entry, or price differs.
+    // Exception 1: always merge when the existing item was auto-discounted by an offer
+    // (note starts with 'عرض:'), so that adding more units doesn't create a competing
+    // full-price line that later gets stripped by auto-apply, losing quantity.
+    // Exception 2: also merge when existing item is a manually applied offer
+    // (note starts with 'عرض (يدوي):') — user explicitly added from the offers dialog
+    // and then continues tapping from the product grid.
+    final existingNote = existingIndex >= 0 ? currentCart[existingIndex].note : null;
+    final existingIsAutoDiscount = existingNote?.startsWith('عرض:') ?? false;
+    final existingIsManualOffer = existingNote?.startsWith('عرض (يدوي):') ?? false;
+    final existingIsAnyOffer = existingIsAutoDiscount || existingIsManualOffer;
+    final shouldMerge =
+        existingIndex >= 0 &&
+        (!isSoldByWeight || mergeWeight) &&
+        !forceNewEntry &&
+        (customPrice == null ||
+            customPrice == currentCart[existingIndex].effectivePrice ||
+            existingIsAnyOffer);
+
+    if (shouldMerge) {
+      // Update existing item quantity (not for weight-based products)
+      final existing = currentCart[existingIndex];
+      final updated = existing.copyWith(quantity: existing.quantity + quantity);
+
+      return [
+        ...currentCart.sublist(0, existingIndex),
+        updated,
+        ...currentCart.sublist(existingIndex + 1),
+      ];
+    } else {
+      // Add new item
+      final newItem = CartItemEntity(
+        productId: productId,
+        productName: productName,
+        productCode: productCode,
+        quantity: quantity,
+        unitPrice: unitPrice,
+        customPrice: customPrice,
+        taxRate: taxRate,
+        taxAmount: (quantity * (customPrice ?? unitPrice)) * (taxRate / 100),
+        categoryId: categoryId,
+        isSoldByWeight: isSoldByWeight,
+      );
+
+      return [...currentCart, newItem];
+    }
+  }
+}

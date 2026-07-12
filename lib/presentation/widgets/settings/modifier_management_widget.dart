@@ -1,0 +1,506 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
+import '../../../data/providers/providers.dart';
+import '../../../domain/repositories/modifier_repository.dart';
+
+/// Modifier Groups Management Screen — Settings section (#15)
+///
+/// Allows creating, editing, and deleting modifier groups and their items.
+/// Types: 'addon' (adds price) or 'option' (no price change).
+class ModifierManagementWidget extends ConsumerStatefulWidget {
+  const ModifierManagementWidget({super.key});
+
+  @override
+  ConsumerState<ModifierManagementWidget> createState() => _ModifierManagementWidgetState();
+}
+
+class _ModifierManagementWidgetState extends ConsumerState<ModifierManagementWidget> {
+  List<ModifierGroupData> _groups = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadGroups();
+  }
+
+  Future<void> _loadGroups() async {
+    setState(() => _loading = true);
+    final repo = ref.read(modifierRepositoryProvider);
+    try {
+      final groups = await repo.getAllGroups();
+      if (mounted) setState(() { _groups = groups; _loading = false; });
+    } catch (_) {
+      // Tables may not exist if DB was created before v70 migration — create them
+      try {
+        await repo.ensureTables();
+        final groups = await repo.getAllGroups();
+        if (mounted) setState(() { _groups = groups; _loading = false; });
+      } catch (e2) {
+        if (mounted) setState(() { _groups = []; _loading = false; });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('إدارة الإضافات والخيارات'),
+        actions: [
+          FilledButton.icon(
+            onPressed: _showAddGroupDialog,
+            icon: const Icon(PhosphorIconsBold.plus, size: 16),
+            label: const Text('مجموعة جديدة'),
+          ),
+          const SizedBox(width: 12),
+        ],
+      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _groups.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(PhosphorIconsBold.forkKnife, size: 64, color: theme.colorScheme.outline),
+                      const SizedBox(height: 16),
+                      Text('لا توجد مجموعات إضافات', style: theme.textTheme.titleMedium),
+                      const SizedBox(height: 8),
+                      Text('أضف مجموعة إضافات مثل "الصوصات" أو "الأحجام"',
+                          style: theme.textTheme.bodySmall),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _groups.length,
+                  itemBuilder: (ctx, i) => _ModifierGroupCard(
+                    group: _groups[i],
+                    repo: ref.read(modifierRepositoryProvider),
+                    onRefresh: _loadGroups,
+                  ),
+                ),
+    );
+  }
+
+  Future<void> _showAddGroupDialog() async {
+    final nameCtrl = TextEditingController();
+    String type = 'addon';
+    int minSelect = 0;
+    int maxSelect = 1;
+    bool isRequired = false;
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('مجموعة إضافات جديدة'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'اسم المجموعة',
+                    hintText: 'مثال: الصوصات، الأحجام',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SegmentedButton<String>(
+                  segments: const [
+                    ButtonSegment(value: 'addon', label: Text('إضافة (بسعر)'), icon: Icon(PhosphorIconsBold.plusCircle, size: 16)),
+                    ButtonSegment(value: 'option', label: Text('خيار (بدون سعر)'), icon: Icon(PhosphorIconsBold.listBullets, size: 16)),
+                  ],
+                  selected: {type},
+                  onSelectionChanged: (v) => setDialogState(() => type = v.first),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        decoration: const InputDecoration(labelText: 'أقل اختيار'),
+                        keyboardType: TextInputType.number,
+                        controller: TextEditingController(text: '$minSelect'),
+                        onChanged: (v) => minSelect = int.tryParse(v) ?? 0,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        decoration: const InputDecoration(labelText: 'أكثر اختيار'),
+                        keyboardType: TextInputType.number,
+                        controller: TextEditingController(text: '$maxSelect'),
+                        onChanged: (v) => maxSelect = int.tryParse(v) ?? 1,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                SwitchListTile(
+                  title: const Text('مطلوب'),
+                  subtitle: const Text('يجب اختيار عنصر واحد على الأقل'),
+                  value: isRequired,
+                  onChanged: (v) => setDialogState(() => isRequired = v),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('إضافة'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (result == true && nameCtrl.text.isNotEmpty) {
+      final repo = ref.read(modifierRepositoryProvider);
+      await repo.createGroup(
+        name: nameCtrl.text,
+        type: type,
+        minSelect: minSelect,
+        maxSelect: maxSelect,
+        isRequired: isRequired,
+      );
+      await _loadGroups();
+    }
+  }
+}
+
+class _ModifierGroupCard extends StatefulWidget {
+  final ModifierGroupData group;
+  final IModifierRepository repo;
+  final VoidCallback onRefresh;
+
+  const _ModifierGroupCard({required this.group, required this.repo, required this.onRefresh});
+
+  @override
+  State<_ModifierGroupCard> createState() => _ModifierGroupCardState();
+}
+
+class _ModifierGroupCardState extends State<_ModifierGroupCard> {
+  List<ModifierItemData> _items = [];
+  bool _expanded = false;
+
+  Future<void> _loadItems() async {
+    final items = await widget.repo.getItems(widget.group.id);
+    if (mounted) setState(() => _items = items);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final g = widget.group;
+    final typeLabel = g.type == 'addon' ? 'إضافة' : 'خيار';
+    final typeColor = g.type == 'addon'
+        ? theme.colorScheme.primary
+        : theme.colorScheme.tertiary;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        children: [
+          ListTile(
+            leading: CircleAvatar(
+              backgroundColor: typeColor.withValues(alpha: 0.15),
+              child: Icon(
+                g.type == 'addon' ? PhosphorIconsBold.plusCircle : PhosphorIconsBold.listBullets,
+                color: typeColor,
+                size: 20,
+              ),
+            ),
+            title: Text(g.name, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+            subtitle: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: typeColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(typeLabel, style: TextStyle(fontSize: 10, color: typeColor)),
+                ),
+                const SizedBox(width: 8),
+                if (g.isRequired) ...[
+                  const Icon(PhosphorIconsBold.asteriskSimple, size: 12, color: Colors.red),
+                  const Text(' مطلوب', style: TextStyle(fontSize: 10, color: Colors.red)),
+                  const SizedBox(width: 8),
+                ],
+                Text('${g.minSelect}-${g.maxSelect} اختيار', style: theme.textTheme.bodySmall),
+              ],
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(PhosphorIconsBold.link, size: 18),
+                  tooltip: 'ربط الأصناف',
+                  onPressed: () => _showLinkProductsDialog(),
+                ),
+                IconButton(
+                  icon: const Icon(PhosphorIconsBold.trash, size: 18),
+                  onPressed: () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (c) => AlertDialog(
+                        title: const Text('حذف المجموعة'),
+                        content: Text('هل تريد حذف "${g.name}" وجميع عناصرها؟'),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.pop(c), child: const Text('إلغاء')),
+                          FilledButton(
+                            onPressed: () => Navigator.pop(c, true),
+                            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                            child: const Text('حذف'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirm == true) {
+                      await widget.repo.deleteGroup(g.id);
+                      widget.onRefresh();
+                    }
+                  },
+                ),
+                IconButton(
+                  icon: Icon(_expanded ? PhosphorIconsBold.caretUp : PhosphorIconsBold.caretDown, size: 18),
+                  onPressed: () {
+                    setState(() => _expanded = !_expanded);
+                    if (_expanded) _loadItems();
+                  },
+                ),
+              ],
+            ),
+          ),
+          if (_expanded) ...[
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Column(
+                children: [
+                  ..._items.map((item) => ListTile(
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        leading: Icon(
+                          item.isDefault ? PhosphorIconsBold.checkCircle : PhosphorIconsBold.circle,
+                          size: 18,
+                          color: item.isDefault ? theme.colorScheme.primary : theme.colorScheme.outline,
+                        ),
+                        title: Text(item.name),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (item.extraPrice > 0)
+                              Chip(
+                                label: Text('+${item.extraPrice.toStringAsFixed(0)}', style: const TextStyle(fontSize: 11)),
+                                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                visualDensity: VisualDensity.compact,
+                              ),
+                            IconButton(
+                              icon: const Icon(PhosphorIconsBold.trash, size: 16),
+                              onPressed: () async {
+                                await widget.repo.deleteItem(item.id);
+                                _loadItems();
+                              },
+                            ),
+                          ],
+                        ),
+                      )),
+                  TextButton.icon(
+                    onPressed: () => _showAddItemDialog(),
+                    icon: const Icon(PhosphorIconsBold.plus, size: 14),
+                    label: const Text('إضافة عنصر'),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showLinkProductsDialog() async {
+    // Get all products and currently linked product IDs
+    final repo = widget.repo;
+    final allProducts = await repo.getAllProducts();
+    final allCategories = await repo.getAllCategories();
+    final categoryMap = {for (final c in allCategories) c.id: c.name};
+    final linkedIds = await repo.getLinkedProductIdsForGroup(widget.group.id);
+    final selected = Set<int>.from(linkedIds);
+    String searchQuery = '';
+
+    if (!mounted) return;
+
+    final result = await showDialog<Set<int>>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          final filtered = searchQuery.isEmpty
+              ? allProducts
+              : allProducts.where((p) => p.name.contains(searchQuery)).toList();
+
+          return AlertDialog(
+            title: Row(
+              children: [
+                const Icon(PhosphorIconsBold.link, size: 20),
+                const SizedBox(width: 8),
+                Expanded(child: Text('\u0631\u0628\u0637 \u0627\u0644\u0623\u0635\u0646\u0627\u0641 \u0628\u0640 "${widget.group.name}"')),
+              ],
+            ),
+            content: SizedBox(
+              width: 450,
+              height: 400,
+              child: Column(
+                children: [
+                  TextField(
+                    decoration: const InputDecoration(
+                      hintText: '\u0628\u062d\u062b \u0639\u0646 \u0635\u0646\u0641...',
+                      prefixIcon: Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
+                      isDense: true,
+                    ),
+                    onChanged: (v) => setDialogState(() => searchQuery = v),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Text('${selected.length} \u0635\u0646\u0641 \u0645\u062d\u062f\u062f',
+                          style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.primary)),
+                      const Spacer(),
+                      TextButton(
+                        onPressed: () => setDialogState(() => selected.addAll(filtered.map((p) => p.id))),
+                        child: const Text('\u062a\u062d\u062f\u064a\u062f \u0627\u0644\u0643\u0644', style: TextStyle(fontSize: 12)),
+                      ),
+                      TextButton(
+                        onPressed: () => setDialogState(() => selected.clear()),
+                        child: const Text('\u0625\u0644\u063a\u0627\u0621 \u0627\u0644\u0643\u0644', style: TextStyle(fontSize: 12)),
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 1),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: filtered.length,
+                      itemBuilder: (ctx, i) {
+                        final p = filtered[i];
+                        return CheckboxListTile(
+                          dense: true,
+                          title: Text(p.name, style: const TextStyle(fontSize: 13)),
+                          subtitle: p.categoryId != null && categoryMap.containsKey(p.categoryId)
+                              ? Text(categoryMap[p.categoryId]!, style: const TextStyle(fontSize: 11))
+                              : null,
+                          value: selected.contains(p.id),
+                          onChanged: (v) {
+                            setDialogState(() {
+                              if (v == true) {
+                                selected.add(p.id);
+                              } else {
+                                selected.remove(p.id);
+                              }
+                            });
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text('\u0625\u0644\u063a\u0627\u0621')),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, selected),
+                child: const Text('\u062d\u0641\u0638'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    if (result != null) {
+      // Update links: for each product, set its modifier groups
+      final groupId = widget.group.id;
+
+      // Get currently linked product IDs
+      final currentLinked = Set<int>.from(linkedIds);
+
+      // Products to add link
+      final toAdd = result.difference(currentLinked);
+      // Products to remove link
+      final toRemove = currentLinked.difference(result);
+
+      for (final productId in toAdd) {
+        await repo.linkModifierToProduct(productId: productId, modifierGroupId: groupId);
+      }
+      for (final productId in toRemove) {
+        await repo.unlinkModifierFromProduct(productId: productId, modifierGroupId: groupId);
+      }
+
+      if (mounted) {
+        setState(() {}); // Refresh card
+      }
+    }
+  }
+
+  Future<void> _showAddItemDialog() async {
+    final nameCtrl = TextEditingController();
+    final priceCtrl = TextEditingController(text: '0');
+    bool isDefault = false;
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('عنصر جديد'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameCtrl,
+                decoration: const InputDecoration(labelText: 'الاسم', hintText: 'مثال: كاتشب، جبن إضافي'),
+              ),
+              if (widget.group.type == 'addon') ...[
+                const SizedBox(height: 12),
+                TextField(
+                  controller: priceCtrl,
+                  decoration: const InputDecoration(labelText: 'السعر الإضافي'),
+                  keyboardType: TextInputType.number,
+                ),
+              ],
+              const SizedBox(height: 8),
+              SwitchListTile(
+                title: const Text('افتراضي'),
+                value: isDefault,
+                onChanged: (v) => setDialogState(() => isDefault = v),
+                contentPadding: EdgeInsets.zero,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+            FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('إضافة')),
+          ],
+        ),
+      ),
+    );
+
+    if (result == true && nameCtrl.text.isNotEmpty) {
+      await widget.repo.createItem(
+        groupId: widget.group.id,
+        name: nameCtrl.text,
+        extraPrice: double.tryParse(priceCtrl.text) ?? 0,
+        isDefault: isDefault,
+      );
+      _loadItems();
+    }
+  }
+}

@@ -1,0 +1,1026 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// DEVELOPER TOOLS SCREEN — locked behind the developer password
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// One screen, one purpose: let the developer (NOT the end-user, NOT
+// even the admin) change runtime configuration after install. Every
+// mutation flows through `ConfigService` so audit + hash + lock-checks
+// stay in one place.
+//
+// Surfaces:
+//   • Snapshot panel (profile / mode / hash) for diagnostics.
+//   • Change business profile (dropdown of `BusinessProfileCatalog`).
+//   • Change deployment mode (segmented control).
+//   • Per-feature overrides (grouped by module: pos / restaurant /
+//     enterprise; cores hidden because they can't be disabled).
+//   • Reset setup wizard.
+//   • Change / clear developer password.
+//
+// Access:
+//   `_DeveloperPasswordGate` wraps the whole screen. If the
+//   `developerSessionProvider` is active, the gate is invisible. Else
+//   a password prompt is shown and the screen mounts only on success.
+//   The session uses a sliding 10-minute window.
+// ═══════════════════════════════════════════════════════════════════════════
+
+import 'package:ural_erp/core/widgets/app_toast.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
+
+import '../../core/config/business_profile.dart';
+import '../../core/config/business_profile_meta.dart';
+import '../../core/config/business_profile_provider.dart';
+import '../../core/config/feature_key.dart';
+import '../../core/config/runtime_config_snapshot.dart';
+import '../../core/theme/app_colors.dart';
+import '../../data/providers/providers.dart';
+import '../../services/deployment/commit_result.dart';
+import '../../services/deployment/deployment_mode_committer.dart';
+import '../../services/deployment/setup_contract.dart';
+import '../../services/mirror_state.dart';
+import '../../services/network_service.dart';
+import '../widgets/settings/mirror_pairing_dialog.dart';
+
+class DeveloperToolsScreen extends ConsumerWidget {
+  const DeveloperToolsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return const Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        body: _DeveloperPasswordGate(child: _DeveloperToolsBody()),
+      ),
+    );
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════════
+// PASSWORD GATE — verifies the developer password before mounting body
+// ═════════════════════════════════════════════════════════════════════════
+
+class _DeveloperPasswordGate extends ConsumerStatefulWidget {
+  final Widget child;
+  const _DeveloperPasswordGate({required this.child});
+
+  @override
+  ConsumerState<_DeveloperPasswordGate> createState() =>
+      _DeveloperPasswordGateState();
+}
+
+class _DeveloperPasswordGateState
+    extends ConsumerState<_DeveloperPasswordGate> {
+  final _pwdCtl = TextEditingController();
+  bool _visible = false;
+  String? _error;
+  bool _verifying = false;
+
+  @override
+  void dispose() {
+    _pwdCtl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _verify() async {
+    setState(() {
+      _verifying = true;
+      _error = null;
+    });
+    final auth = ref.read(developerAuthServiceProvider);
+    final ok = auth.verify(_pwdCtl.text);
+    if (!ok) {
+      setState(() {
+        _verifying = false;
+        _error = 'كلمة المرور غير صحيحة';
+      });
+      return;
+    }
+    ref.read(developerSessionProvider.notifier).unlock();
+    if (mounted) setState(() => _verifying = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final session = ref.watch(developerSessionProvider);
+    if (session.isActive) {
+      // Listen for the session expiring while the user is on the page
+      // — kick them out so they can't continue mutating without
+      // re-authenticating.
+      return widget.child;
+    }
+    final auth = ref.watch(developerAuthServiceProvider);
+    final isFirstTime = !auth.isConfigured;
+    return Center(
+      child: SizedBox(
+        width: 420,
+        child: Card(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  PhosphorIconsBold.shieldStar,
+                  size: 48,
+                  color: AppColors.primary,
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'أدوات المطوّر',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  isFirstTime
+                      ? 'لم يتم تعيين كلمة مرور مطوّر — استخدم --reset-dev-password '
+                          'وأعد التشغيل، أو أعِد إعداد النظام لتعيينها.'
+                      : 'هذه الشاشة محمية. أدخل كلمة مرور المطوّر للمتابعة.',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _pwdCtl,
+                  obscureText: !_visible,
+                  enabled: !isFirstTime,
+                  onSubmitted: (_) => _verify(),
+                  decoration: InputDecoration(
+                    labelText: 'كلمة مرور المطوّر',
+                    prefixIcon: const Icon(PhosphorIconsBold.lock),
+                    suffixIcon: IconButton(
+                      icon: Icon(_visible
+                          ? PhosphorIconsBold.eyeSlash
+                          : PhosphorIconsBold.eye),
+                      onPressed: () =>
+                          setState(() => _visible = !_visible),
+                    ),
+                    errorText: _error,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('إلغاء'),
+                    ),
+                    const Spacer(),
+                    ElevatedButton.icon(
+                      onPressed: (_verifying || isFirstTime) ? null : _verify,
+                      icon: _verifying
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(PhosphorIconsBold.signIn),
+                      label: const Text('فتح'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════════
+// BODY — the actual tools (mounted only after the gate unlocks)
+// ═════════════════════════════════════════════════════════════════════════
+
+class _DeveloperToolsBody extends ConsumerWidget {
+  const _DeveloperToolsBody();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final snapshot = ref.watch(runtimeConfigSnapshotProvider);
+    final hash = ref.watch(runtimeConfigHashProvider);
+    final session = ref.watch(developerSessionProvider);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Row(
+          children: [
+            Icon(PhosphorIconsBold.shieldStar),
+            SizedBox(width: 8),
+            Text('أدوات المطوّر'),
+          ],
+        ),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            tooltip: 'إنهاء الجلسة',
+            icon: const Icon(PhosphorIconsBold.signOut),
+            onPressed: () {
+              ref.read(developerSessionProvider.notifier).clear();
+              if (Navigator.canPop(context)) Navigator.pop(context);
+            },
+          ),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          _SnapshotPanel(snapshot: snapshot, hash: hash, session: session),
+          const SizedBox(height: 16),
+          _ChangeProfileSection(snapshot: snapshot),
+          const SizedBox(height: 16),
+          _ChangeModeSection(snapshot: snapshot),
+          const SizedBox(height: 16),
+          const _FeatureOverridesSection(),
+          const SizedBox(height: 16),
+          const _ChangeDeveloperPasswordSection(),
+          const SizedBox(height: 16),
+          const _ResetWizardSection(),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Snapshot panel ─────────────────────────────────────────────────────
+
+class _SnapshotPanel extends StatelessWidget {
+  final RuntimeConfigSnapshot snapshot;
+  final String hash;
+  final DeveloperSession session;
+  const _SnapshotPanel({
+    required this.snapshot,
+    required this.hash,
+    required this.session,
+  });
+
+  String _hhmm(DateTime dt) =>
+      '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+
+  @override
+  Widget build(BuildContext context) {
+    final remaining = session.expiresAt == null
+        ? Duration.zero
+        : session.expiresAt!.difference(DateTime.now());
+    return Card(
+      color: AppColors.primary.withValues(alpha: 0.04),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  PhosphorIconsBold.gauge,
+                  color: AppColors.primary,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'الحالة الحالية',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const Spacer(),
+                if (remaining > Duration.zero)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      'الجلسة: ${remaining.inMinutes}:${(remaining.inSeconds % 60).toString().padLeft(2, '0')}',
+                      style: const TextStyle(
+                          fontSize: 10, color: AppColors.success),
+                    ),
+                  ),
+              ],
+            ),
+            const Divider(),
+            _row('ملف النشاط',
+                BusinessProfileCatalog.metaFor(snapshot.profile).arabicName),
+            _row('نمط التشغيل', _modeLabel(snapshot.mode)),
+            _row('Config Hash', hash.substring(0, 12)),
+            _row('وقت اللقطة', _hhmm(snapshot.capturedAt)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _row(String label, String value) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: Row(
+          children: [
+            Text(label,
+                style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+            const Spacer(),
+            Text(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+          ],
+        ),
+      );
+
+  String _modeLabel(DeploymentMode m) {
+    switch (m) {
+      case DeploymentMode.standalone: return 'مستقل (Standalone)';
+      case DeploymentMode.server:     return 'سيرفر (Server)';
+      case DeploymentMode.client:     return 'عميل (Client)';
+      case DeploymentMode.mirror:     return 'مرآة (Mirror)';
+    }
+  }
+}
+
+// ─── Change profile ─────────────────────────────────────────────────────
+
+class _ChangeProfileSection extends ConsumerStatefulWidget {
+  final RuntimeConfigSnapshot snapshot;
+  const _ChangeProfileSection({required this.snapshot});
+
+  @override
+  ConsumerState<_ChangeProfileSection> createState() =>
+      _ChangeProfileSectionState();
+}
+
+class _ChangeProfileSectionState
+    extends ConsumerState<_ChangeProfileSection> {
+  late BusinessProfile _selected = widget.snapshot.profile;
+
+  Future<void> _apply() async {
+    if (_selected == widget.snapshot.profile) return;
+    try {
+      await ref.read(configServiceProvider).changeProfile(_selected);
+      if (!mounted) return;
+      AppToast.show(
+        context,
+        'تم تغيير ملف النشاط إلى ${BusinessProfileCatalog.metaFor(_selected).arabicName}',
+        type: ToastType.success,
+      );
+    } catch (e) {
+      if (mounted) {
+        AppToast.show(context, '$e', type: ToastType.error);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const _SectionHeader(
+              icon: PhosphorIconsBold.briefcase,
+              label: 'تغيير ملف النشاط',
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'يبدّل قائمة الشاشات والـ feature flags بالكامل. أى overrides '
+              'يدوية تظل سارية فوق الـ defaults الجديدة.',
+              style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<BusinessProfile>(
+              initialValue: _selected,
+              decoration: const InputDecoration(
+                labelText: 'ملف النشاط الجديد',
+                prefixIcon: Icon(PhosphorIconsBold.briefcase),
+                border: OutlineInputBorder(),
+              ),
+              items: BusinessProfileCatalog.all()
+                  .map((m) => DropdownMenuItem(
+                        value: m.profile,
+                        child: Text(m.arabicName),
+                      ))
+                  .toList(),
+              onChanged: (v) => setState(() => _selected = v ?? _selected),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              BusinessProfileCatalog.metaFor(_selected).arabicDescription,
+              style: const TextStyle(
+                fontSize: 11,
+                color: AppColors.textMuted,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: ElevatedButton.icon(
+                onPressed: _selected == widget.snapshot.profile
+                    ? null
+                    : _apply,
+                icon: const Icon(PhosphorIconsBold.check),
+                label: const Text('تطبيق'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Change mode ────────────────────────────────────────────────────────
+
+class _ChangeModeSection extends ConsumerStatefulWidget {
+  final RuntimeConfigSnapshot snapshot;
+  const _ChangeModeSection({required this.snapshot});
+
+  @override
+  ConsumerState<_ChangeModeSection> createState() =>
+      _ChangeModeSectionState();
+}
+
+class _ChangeModeSectionState extends ConsumerState<_ChangeModeSection> {
+  late DeploymentMode _selected = widget.snapshot.mode;
+
+  Future<void> _apply() async {
+    if (_selected == widget.snapshot.mode) return;
+
+    // Spec 097: flipping TO mirror requires a successful pairing handshake
+    // FIRST. If the device is not paired (or its MirrorState was wiped),
+    // open the pairing dialog inline. Only proceed with `changeMode` after
+    // the dialog returns success. This keeps deployment_mode and
+    // network_mode from drifting into a half-configured mirror state.
+    if (_selected == DeploymentMode.mirror &&
+        !MirrorState.instance.isConfigured) {
+      final paired = await MirrorPairingDialog.show(context);
+      if (!paired) {
+        // Pairing cancelled or failed — revert the segmented control to
+        // the current mode so the UI matches reality.
+        if (mounted) {
+          setState(() => _selected = widget.snapshot.mode);
+        }
+        return;
+      }
+    }
+
+    // Spec 125 (US4 / FR-009 / FR-010): for modes that include a wipe
+    // (client, mirror) require type-to-confirm. Otherwise a plain confirm.
+    final needsWipe = _selected == DeploymentMode.client ||
+        _selected == DeploymentMode.mirror;
+    final ok = needsWipe
+        ? await _showTypeToConfirmDialog(_selected)
+        : await _showPlainConfirmDialog(_selected);
+    if (ok != true) return;
+
+    // Spec 125 (US4 / FR-008): route through DeploymentModeCommitter so
+    // Dev Tools uses the exact same atomic pipeline as the Setup Wizard.
+    // forceResync=true → re-runs first-sync (data may have drifted since
+    // the last commit; the user explicitly asked to switch mode now).
+    // Empty creds → committer skips pair (pairing was handled above via
+    // MirrorPairingDialog when needed; or the target mode has no pair step).
+    try {
+      final db = ref.read(databaseProvider);
+      final committer = DeploymentModeCommitter(db: db);
+      final contract = committer.buildContract(
+        target: _toNetworkMode(_selected),
+        serverPort: NetworkService.instance.serverPort,
+        serverHost: NetworkService.instance.serverAddress,
+      );
+      final result = await committer.commit(
+        contract: contract,
+        forceResync: true,
+      );
+      if (!mounted) return;
+      if (result is CommitFailed) {
+        AppToast.show(
+          context,
+          'فشل تغيير نمط التشغيل: ${result.reasonAr}',
+          type: ToastType.error,
+        );
+        return;
+      }
+      // Refresh the riverpod state so the snapshot picker reflects the
+      // new mode immediately. (ConfigService.changeMode also called
+      // applyFromService — we replicate the minimal subset here.)
+      ref.read(deploymentModeProvider.notifier).applyFromService(_selected);
+      AppToast.show(
+        context,
+        'تم تغيير نمط التشغيل بنجاح — يفضّل إعادة تشغيل التطبيق',
+        type: ToastType.success,
+      );
+    } catch (e) {
+      if (mounted) {
+        AppToast.show(context, '$e', type: ToastType.error);
+      }
+    }
+  }
+
+  Future<bool?> _showPlainConfirmDialog(DeploymentMode target) {
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('تأكيد تغيير نمط التشغيل'),
+        content: Text(
+          'سيتم تحويل النظام إلى وضع "${_modeLabelAr(target)}".\n\n'
+          'تغيير نمط التشغيل يتطلّب إعادة تشغيل التطبيق ليأخذ تأثيره '
+          'الكامل (network service / sync). هل تريد المتابعة؟',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('إلغاء'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('تطبيق'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Spec 125 FR-010 — type-to-confirm for wipe-inducing modes (client/mirror).
+  /// User must type "تأكيد" verbatim before the action button enables.
+  Future<bool?> _showTypeToConfirmDialog(DeploymentMode target) {
+    final controller = TextEditingController();
+    const sentinel = 'تأكيد';
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setStateD) {
+          final matches = controller.text.trim() == sentinel;
+          return AlertDialog(
+            title: const Text('تأكيد تغيير نمط التشغيل (إجراء حرج)'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'سيتم تحويل النظام إلى وضع "${_modeLabelAr(target)}".\n\n'
+                  'سيُمسح: البيانات الأساسية المحلية (الفروع، المخازن، '
+                  'الخزن، الحسابات).\n'
+                  'سيُستعاد من السيرفر: نفس البيانات بالنسخ الرسمية.\n'
+                  'المدة المتوقعة: 10-30 ثانية على شبكة LAN عادية.\n\n'
+                  'اكتب "تأكيد" أدناه للمتابعة:',
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: controller,
+                  textDirection: TextDirection.rtl,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'تأكيد',
+                  ),
+                  onChanged: (_) => setStateD(() {}),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('إلغاء'),
+              ),
+              ElevatedButton(
+                onPressed: matches ? () => Navigator.pop(ctx, true) : null,
+                child: const Text('تنفيذ التحويل'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  NetworkMode _toNetworkMode(DeploymentMode m) {
+    switch (m) {
+      case DeploymentMode.standalone: return NetworkMode.standalone;
+      case DeploymentMode.server:     return NetworkMode.server;
+      case DeploymentMode.client:     return NetworkMode.client;
+      case DeploymentMode.mirror:     return NetworkMode.mirror;
+    }
+  }
+
+  String _modeLabelAr(DeploymentMode m) {
+    switch (m) {
+      case DeploymentMode.standalone: return 'مستقل';
+      case DeploymentMode.server:     return 'سيرفر';
+      case DeploymentMode.client:     return 'عميل';
+      case DeploymentMode.mirror:     return 'مرآة';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const _SectionHeader(
+              icon: PhosphorIconsBold.network,
+              label: 'تغيير نمط التشغيل',
+            ),
+            const SizedBox(height: 12),
+            SegmentedButton<DeploymentMode>(
+              segments: const [
+                ButtonSegment(
+                  value: DeploymentMode.standalone,
+                  label: Text('مستقل'),
+                  icon: Icon(PhosphorIconsBold.desktop, size: 16),
+                ),
+                ButtonSegment(
+                  value: DeploymentMode.server,
+                  label: Text('سيرفر'),
+                  icon: Icon(PhosphorIconsBold.hardDrives, size: 16),
+                ),
+                ButtonSegment(
+                  value: DeploymentMode.client,
+                  label: Text('عميل'),
+                  icon: Icon(PhosphorIconsBold.deviceMobile, size: 16),
+                ),
+                ButtonSegment(
+                  value: DeploymentMode.mirror,
+                  label: Text('مرآة'),
+                  icon: Icon(PhosphorIconsBold.copy, size: 16),
+                ),
+              ],
+              selected: {_selected},
+              onSelectionChanged: (s) =>
+                  setState(() => _selected = s.first),
+            ),
+            const SizedBox(height: 12),
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: ElevatedButton.icon(
+                onPressed: _selected == widget.snapshot.mode ? null : _apply,
+                icon: const Icon(PhosphorIconsBold.check),
+                label: const Text('تطبيق'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Feature overrides ──────────────────────────────────────────────────
+
+class _FeatureOverridesSection extends ConsumerWidget {
+  const _FeatureOverridesSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final policy = ref.watch(featureFlagsProvider);
+    final overrides = ref.watch(featureOverridesProvider);
+    // Group keys by module, hide cores (cannot be disabled).
+    final byModule = <String, List<FeatureKey>>{};
+    for (final k in FeatureKey.values) {
+      if (k.isCore) continue;
+      byModule.putIfAbsent(k.module, () => []).add(k);
+    }
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const _SectionHeader(
+              icon: PhosphorIconsBold.toggleRight,
+              label: 'تخصيص الميزات',
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'كل ميزة لها قيمة افتراضية من ملف النشاط. أى توجيه يدوى '
+              'هنا يحلّ محل الافتراضى. الميزات الأساسية (محاسبة / مخزون / '
+              'مبيعات / خزينة) محمية ولا تظهر هنا.',
+              style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+            ),
+            const SizedBox(height: 12),
+            for (final entry in byModule.entries) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Text(
+                  _moduleLabel(entry.key),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+              for (final key in entry.value)
+                _FeatureRow(
+                  fk: key,
+                  enabled: policy.flag(key),
+                  hasOverride: overrides.containsKey(key),
+                ),
+              const Divider(),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _moduleLabel(String module) {
+    switch (module) {
+      case 'pos':         return 'نقطة البيع';
+      case 'restaurant':  return 'المطعم';
+      case 'enterprise':  return 'المؤسسة';
+      default:            return module;
+    }
+  }
+}
+
+class _FeatureRow extends ConsumerWidget {
+  final FeatureKey fk;
+  final bool enabled;
+  final bool hasOverride;
+  const _FeatureRow({
+    required this.fk,
+    required this.enabled,
+    required this.hasOverride,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  fk.name,
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                ),
+                Text(
+                  fk.settingKey,
+                  style: const TextStyle(fontSize: 9, color: AppColors.textMuted),
+                ),
+              ],
+            ),
+          ),
+          if (hasOverride)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(end: 6),
+              child: IconButton(
+                tooltip: 'إزالة التوجيه (الرجوع للافتراضى)',
+                icon: const Icon(PhosphorIconsBold.arrowCounterClockwise, size: 16),
+                onPressed: () {
+                  ref.read(configServiceProvider).clearOverride(fk);
+                },
+              ),
+            ),
+          Switch(
+            value: enabled,
+            onChanged: (v) {
+              ref.read(configServiceProvider).setOverride(fk, v);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Change developer password ──────────────────────────────────────────
+
+class _ChangeDeveloperPasswordSection extends ConsumerStatefulWidget {
+  const _ChangeDeveloperPasswordSection();
+
+  @override
+  ConsumerState<_ChangeDeveloperPasswordSection> createState() =>
+      _ChangeDeveloperPasswordSectionState();
+}
+
+class _ChangeDeveloperPasswordSectionState
+    extends ConsumerState<_ChangeDeveloperPasswordSection> {
+  final _newCtl = TextEditingController();
+  final _confirmCtl = TextEditingController();
+  bool _saving = false;
+
+  @override
+  void dispose() {
+    _newCtl.dispose();
+    _confirmCtl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final pwd = _newCtl.text.trim();
+    final cnf = _confirmCtl.text.trim();
+    if (pwd.length < 4 || pwd != cnf) {
+      AppToast.show(
+        context,
+        pwd.length < 4
+            ? 'يجب أن لا تقل كلمة المرور عن 4 أحرف'
+            : 'تأكيد كلمة المرور غير مطابق',
+        type: ToastType.error,
+      );
+      return;
+    }
+    setState(() => _saving = true);
+    try {
+      await ref.read(developerAuthServiceProvider).setPassword(pwd);
+      if (!mounted) return;
+      _newCtl.clear();
+      _confirmCtl.clear();
+      AppToast.show(context, 'تم تغيير كلمة مرور المطوّر', type: ToastType.success);
+      // Extend the active session — saves the user from re-entering the
+      // (just-changed) password again.
+      ref.read(developerSessionProvider.notifier).extend();
+    } catch (e) {
+      if (mounted) {
+        AppToast.show(context, 'فشل التغيير: $e', type: ToastType.error);
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const _SectionHeader(
+              icon: PhosphorIconsBold.key,
+              label: 'تغيير كلمة مرور المطوّر',
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _newCtl,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'كلمة مرور جديدة',
+                prefixIcon: Icon(PhosphorIconsBold.lock),
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _confirmCtl,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'تأكيد كلمة المرور',
+                prefixIcon: Icon(PhosphorIconsBold.lockKey),
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: ElevatedButton.icon(
+                onPressed: _saving ? null : _save,
+                icon: _saving
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Icon(PhosphorIconsBold.floppyDisk),
+                label: const Text('حفظ'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Reset wizard ───────────────────────────────────────────────────────
+
+class _ResetWizardSection extends ConsumerWidget {
+  const _ResetWizardSection();
+
+  Future<void> _reset(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('إعادة ضبط الإعداد'),
+        content: const Text(
+          'سيتم تشغيل الـ wizard من جديد عند بدء التطبيق التالى. '
+          'البيانات (مبيعات / مشتريات / عملاء…) لا تُحذف. هل تريد المتابعة؟',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('إلغاء'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('إعادة ضبط'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await ref.read(configServiceProvider).resetWizard();
+      if (!context.mounted) return;
+      AppToast.show(
+        context,
+        'تم إعادة الضبط — أعد تشغيل التطبيق',
+        type: ToastType.warning,
+      );
+    } catch (e) {
+      if (context.mounted) {
+        AppToast.show(context, '$e', type: ToastType.error);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Card(
+      color: AppColors.error.withValues(alpha: 0.04),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const _SectionHeader(
+              icon: PhosphorIconsBold.arrowsCounterClockwise,
+              label: 'منطقة الخطر — إعادة ضبط',
+              color: AppColors.error,
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'يعيد تشغيل الـ setup wizard. البيانات تظل سليمة لكن إعدادات '
+              'التشغيل (الملف، النمط، الميزات) ستُسأل من جديد.',
+              style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+            ),
+            const SizedBox(height: 12),
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.error,
+                  side: const BorderSide(color: AppColors.error),
+                ),
+                onPressed: () => _reset(context, ref),
+                icon: const Icon(PhosphorIconsBold.arrowsCounterClockwise),
+                label: const Text('إعادة ضبط الإعداد'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════════
+// Section header helper
+// ═════════════════════════════════════════════════════════════════════════
+
+class _SectionHeader extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color? color;
+  const _SectionHeader({
+    required this.icon,
+    required this.label,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = color ?? AppColors.primary;
+    return Row(
+      children: [
+        Icon(icon, color: c, size: 20),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+            color: c,
+          ),
+        ),
+      ],
+    );
+  }
+}

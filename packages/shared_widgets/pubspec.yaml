@@ -1,0 +1,23 @@
+name: shared_widgets
+description: Shared widgets package for UralCash - Dialogs, Forms, Tables, Charts
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: ^3.10.4
+  flutter: ">=3.10.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  core:
+    path: ../core
+  fl_chart: ^1.1.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

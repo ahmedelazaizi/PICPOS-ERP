@@ -1,0 +1,523 @@
+import 'dart:async' show unawaited;
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/logging/diagnostic_logger.dart';
+import '../../../data/providers/providers.dart';
+import '../../../domain/entities/product_entity.dart';
+import '../../../services/server_proxy.dart';
+import '../../../data/database/sync_interceptor.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:drift/drift.dart' show Value;
+import 'package:shared_preferences/shared_preferences.dart';
+import '../services/scale_barcode_handler.dart';
+import 'cart_controller.dart';
+
+// Spec 116 — diagnostic breadcrumbs قبل كل عملية حساسة في barcode chain.
+// لو حدث crash native، آخر سطر [BARCODE-STEP] في diagnostic.log يُحدّد
+// الخطوة فيمكن تشخيص السبب الجذري في Spec 117 (راجع specs/116/research.md).
+void _logBarcodeStep(String step, String details) {
+  unawaited(
+    DiagnosticLogger.log('BARCODE-STEP', '$step: $details')
+        .catchError((_) {}),
+  );
+}
+
+/// Feature 013 / Issue BARCODE-INACTIVE — typed reason for a barcode
+/// search that did not result in adding a product to the cart. The POS
+/// barcode handler uses this to decide whether to show the quick-add
+/// dialog (only on [notFound]) or just a toast (everything else).
+enum BarcodeSearchErrorKind {
+  /// The barcode is genuinely unknown — show the quick-add prompt.
+  notFound,
+
+  /// The product exists but is marked inactive — show explanatory toast,
+  /// do NOT prompt to create a duplicate.
+  inactive,
+
+  /// Scale barcode (length 13, leading 2) whose PLU number doesn't
+  /// match any product. Different fix path from a normal "not found".
+  invalidScale,
+
+  /// Any other failure (server error, lookup exception, etc.). Show the
+  /// error string but do not prompt to create a new product.
+  general,
+}
+
+class PosSearchState {
+  final bool isSearchActive;
+  final List<ProductEntity> searchResults;
+  final String? error;
+  final BarcodeSearchErrorKind? errorKind;
+  /// Warning raised when the cashier tries to add the SAME (product,
+  /// weight) pair twice within 30s via the LIVE digital-scale flow
+  /// (product tap → weight dialog → counter scale). The UI layer renders
+  /// this as a blocking popup dialog and clears the flag via
+  /// `clearDuplicateWeightWarning()`.
+  ///
+  /// IMPORTANT: never set from the barcode-scan path — scale-label scans
+  /// are legitimately allowed to have identical (product, weight) pairs.
+  final String? duplicateWeightWarning;
+
+  const PosSearchState({
+    this.isSearchActive = false,
+    this.searchResults = const [],
+    this.error,
+    this.errorKind,
+    this.duplicateWeightWarning,
+  });
+
+  PosSearchState copyWith({
+    bool? isSearchActive,
+    List<ProductEntity>? searchResults,
+    String? error,
+    BarcodeSearchErrorKind? errorKind,
+    String? duplicateWeightWarning,
+    bool clearDuplicateWarning = false,
+    bool clearError = false,
+  }) {
+    return PosSearchState(
+      isSearchActive: isSearchActive ?? this.isSearchActive,
+      searchResults: searchResults ?? this.searchResults,
+      error: clearError ? null : (error ?? this.error),
+      errorKind: clearError ? null : (errorKind ?? this.errorKind),
+      duplicateWeightWarning: clearDuplicateWarning
+          ? null
+          : (duplicateWeightWarning ?? this.duplicateWeightWarning),
+    );
+  }
+}
+
+class PosSearchController extends Notifier<PosSearchState> {
+  @override
+  PosSearchState build() => const PosSearchState();
+
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
+  // Spec 116 (L2) — audio play قد يُسبّب async error من audioplayers plugin
+  // (concurrency على rapid scan، audio device contention). نُشير على
+  // الـ Future بـ .catchError لمنع unhandled async error من صعوده.
+  // الـ try/catch sync يبقى للـ exceptions اللحظية (asset غير موجود مثلاً).
+  void _safePlay(String asset, String tagDetail) {
+    try {
+      final f = _audioPlayer.play(AssetSource(asset));
+      f.catchError((Object e, StackTrace st) {
+        unawaited(
+          DiagnosticLogger.log(
+            'AUDIO-PLAY-FAIL',
+            '$tagDetail asset=$asset async error=$e\n$st',
+          ).catchError((_) {}),
+        );
+      });
+    } catch (e, st) {
+      unawaited(
+        DiagnosticLogger.log(
+          'AUDIO-PLAY-FAIL',
+          '$tagDetail asset=$asset sync error=$e\n$st',
+        ).catchError((_) {}),
+      );
+    }
+  }
+
+  void _playSuccessBeep() {
+    _logBarcodeStep('audio', 'success-beep');
+    _safePlay('audio/barcode_beep.wav', 'success-beep');
+  }
+
+  void _playErrorBeep() {
+    _logBarcodeStep('audio', 'error-beep');
+    _safePlay('audio/error_beep.wav', 'error-beep');
+  }
+
+  /// Audible alert for duplicate weight — reuses the error beep so the
+  /// cashier immediately hears something different from the success beep.
+  void _playDuplicateWeightBeep() {
+    _logBarcodeStep('audio', 'duplicate-weight-beep');
+    _safePlay('audio/error_beep.wav', 'duplicate-weight-beep');
+  }
+
+  /// Called by the UI after it has shown the duplicate-weight popup, to
+  /// clear the state flag so the next add doesn't re-trigger on stale
+  /// data.
+  void clearDuplicateWeightWarning() {
+    if (state.duplicateWeightWarning != null) {
+      state = state.copyWith(clearDuplicateWarning: true);
+    }
+  }
+
+  /// Public entry-point ONLY for the live digital-scale flow
+  /// (`_addProductToCart` after the weight input dialog returns).
+  ///
+  /// Checks `cartController.isDuplicateWeightAdd(productId, weightKg)` —
+  /// if true, plays the alert beep and stores a warning message on
+  /// `state.duplicateWeightWarning`. The UI layer picks it up and
+  /// renders a blocking popup ("تنبيه: نفس الوزن" with a "متابعة" button).
+  ///
+  /// DO NOT call from the barcode-scan path. Pre-weighed scale labels
+  /// can legitimately have duplicate (product, weight) pairs.
+  ///
+  /// Returns `true` if a duplicate was detected (caller still proceeds
+  /// with the add — the popup is advisory, not rejecting).
+  bool checkAndWarnDuplicateWeight({
+    required int productId,
+    required String productName,
+    required double weightKg,
+  }) {
+    final cartCtl = ref.read(cartControllerProvider.notifier);
+    final isDup = cartCtl.isDuplicateWeightAdd(productId, weightKg);
+    if (isDup) {
+      _playDuplicateWeightBeep();
+      state = state.copyWith(
+        duplicateWeightWarning:
+            'نفس الوزن (${weightKg.toStringAsFixed(3)} كجم) '
+            'تم إضافته لصنف "$productName" من قبل — '
+            'غيّر الوزن على الميزان لتجنب التكرار.',
+      );
+    }
+    return isDup;
+  }
+
+  /// Search for a product by barcode — exact match only.
+  ///
+  /// Flow:
+  /// 1. Scale barcode (starts with '2', 13 digits) → parse weight/price
+  /// 2. Exact barcode match (products table + product_barcodes table)
+  /// 3. Exact internal code match
+  /// 4. Offer barcode match
+  /// 5. If nothing found → error (NO name search — that's separate in the grid)
+  Future<void> searchBarcode(String barcode) async {
+    // Spec 116 (L1) \u2014 defensive wrap \u0639\u0644\u0649 \u0627\u0644\u0645\u0633\u062A\u0648\u0649 method. \u0623\u064A Dart exception
+    // \u0645\u0646 DB lookups\u060C cart adds\u060C scale parsing\u060C \u0623\u0648 dialog logic \u064A\u064F\u0644\u062A\u0642\u0637 \u0647\u0646\u0627
+    // \u0648\u0644\u0627 \u064A\u0635\u0639\u062F \u0644\u064A\u0643\u0633\u0631 \u0627\u0644\u0640 POS. \u0627\u0644\u0640 exception \u064A\u064F\u0633\u062C\u064E\u0651\u0644 \u0628\u0640 [BARCODE-CRASH] \u0648
+    // state.error \u064A\u064F\u062D\u0648\u064E\u0651\u0644 \u0625\u0644\u0649 \u062A\u0648\u0633\u062A \u0639\u0631\u0628\u064A \u0639\u0628\u0631 \u0627\u0644\u0640 UI consumer.
+    final rawBarcode = barcode;
+    try {
+
+    // Sanitize comprehensive scanner input anomalies (Invisible chars, spaces, LRM)
+    barcode = barcode.trim()
+                     .replaceAll(RegExp(r'\s+'), '')
+                     .replaceAll('\u200E', '')
+                     .replaceAll('\u200F', '');
+
+    // Read prevent-stacking setting once for all addItem calls in this search
+    final forceNew = ref.read(preventItemStackingProvider).value ?? false;
+
+    if (barcode.isEmpty) {
+      state = state.copyWith(
+        searchResults: [],
+        isSearchActive: false,
+        clearError: true,
+      );
+      return;
+    }
+
+    final productRepo = ref.read(productRepositoryProvider);
+    final offersRepo = ref.read(offersRepositoryProvider);
+
+    debugPrint('[BarcodeSearch] Looking up: "$barcode"');
+
+    // ═══ Step 1: Scale barcode detection ═══
+    if (barcode.length == 13 && barcode.startsWith('2')) {
+      _logBarcodeStep('scale-parse', barcode);
+      final scaleResult = await ScaleBarcodeHandler.tryParse(
+        RepositoryBarcodeAdapter(ref),
+        barcode,
+      );
+      if (scaleResult != null) {
+        // NOTE: Deliberately NO duplicate-weight check here.
+        //
+        // Scale-label barcodes come pre-weighed from a label scale (Fire
+        // Bird / Aclas etc.). Each label represents a distinct weighing
+        // done elsewhere — two identical labels for "500g meat" are two
+        // legitimate, separate purchases. The duplicate-weight guard only
+        // makes sense for the LIVE counter-scale flow (see
+        // `checkAndWarnDuplicateWeight` called from `_addProductToCart`).
+        final cartCtl = ref.read(cartControllerProvider.notifier);
+        cartCtl.addItem(
+          scaleResult.product,
+          quantity: scaleResult.quantity,
+          mergeWeight: true,
+          forceNewEntry: forceNew,
+        );
+        state = state.copyWith(searchResults: [], clearError: true);
+        _playSuccessBeep();
+        debugPrint('[BarcodeSearch] ✓ Scale barcode → ${scaleResult.product.name}');
+        return;
+      }
+      // Scale handler failed — try direct code/PLU lookup as last resort
+      final pluPart = barcode.substring(2, 7);
+      final pluInt = int.tryParse(pluPart);
+      final trimmedPlu = pluPart.replaceFirst(RegExp(r'^0+'), '');
+      debugPrint('[BarcodeSearch] Scale handler failed. Trying direct PLU fallback: "$pluPart" (int=$pluInt)');
+
+      // Direct fallback: try code, trimmed code, barcode, PLU
+      ProductEntity? fallbackProduct;
+      fallbackProduct ??= await productRepo.getProductByCode(pluPart);
+      if (fallbackProduct == null && trimmedPlu.isNotEmpty && trimmedPlu != pluPart) {
+        fallbackProduct = await productRepo.getProductByCode(trimmedPlu);
+      }
+      fallbackProduct ??= await productRepo.getProductByBarcode(pluPart);
+      if (fallbackProduct == null && pluInt != null) {
+        fallbackProduct = await productRepo.getProductByScalePlu(pluInt);
+      }
+
+      if (fallbackProduct != null) {
+        // Parse weight/price from barcode value section
+        final valueStr = barcode.substring(7, 12);
+        final rawValue = double.tryParse(valueStr) ?? 0;
+        final quantity = rawValue / 1000.0; // default weight divider
+        ref.read(cartControllerProvider.notifier).addItem(
+          fallbackProduct,
+          quantity: quantity > 0 ? quantity : 1,
+          mergeWeight: true,
+          forceNewEntry: forceNew,
+        );
+        state = state.copyWith(searchResults: [], clearError: true);
+        _playSuccessBeep();
+        debugPrint('[BarcodeSearch] ✓ Scale fallback found: ${fallbackProduct.name} (qty=$quantity)');
+        return;
+      }
+
+      _playErrorBeep();
+      state = state.copyWith(
+        error: 'باركود ميزان: رقم PLU المستخرج "$pluPart" (=$pluInt) غير مطابق لأي صنف.\n'
+            'تأكد من تسجيل رقم PLU في إعدادات الصنف أو مطابقة كود الصنف.',
+        errorKind: BarcodeSearchErrorKind.invalidScale,
+        searchResults: [],
+        isSearchActive: false,
+      );
+      return;
+    }
+
+    // ═══ Step 2: Parallel barcode + unit lookup (PERF FIX) ═══
+    // ISS-06: Route unit barcode lookup through unitByBarcodeProvider
+    _logBarcodeStep('db-lookup', 'unit+product byBarcode="$barcode"');
+    final unitRecord = await ref.read(unitByBarcodeProvider(barcode).future);
+    var product = await productRepo.getProductByBarcode(barcode);
+
+    // If product wasn't found by raw barcode, but it matched a specific unit's barcode
+    if (product == null && unitRecord != null) {
+      product = await productRepo.getProductById(unitRecord.productId);
+    }
+
+    // ═══ Step 3: Exact internal code match ═══
+    product ??= await productRepo.getProductByCode(barcode);
+
+    // ═══ Step 3.5: Fallback — Strip leading zeroes ═══
+    if (product == null && unitRecord == null) {
+      final trimmedBarcode = barcode.replaceFirst(RegExp(r'^0+'), '');
+      if (trimmedBarcode.isNotEmpty && trimmedBarcode != barcode) {
+        debugPrint('[BarcodeSearch] Falling back to trimmed zeros: "$trimmedBarcode"');
+
+        // Run trimmed lookups in parallel too
+        // ISS-06: Raw DB access needed for barcode trimming + server cache writes below
+        final db = ref.read(databaseProvider);
+        final checkUnit = await db.getUnitByBarcode(trimmedBarcode);
+        product = await productRepo.getProductByBarcode(trimmedBarcode);
+
+        if (checkUnit != null && product == null) {
+          product = await productRepo.getProductById(checkUnit.productId);
+        }
+
+        if (checkUnit != null && product != null) {
+          final unitPrice = checkUnit.salePrice > 0
+              ? checkUnit.salePrice
+              : product.salePrice;
+          ref.read(cartControllerProvider.notifier).addItem(
+            product,
+            customPrice: unitPrice,
+            forceNewEntry: forceNew,
+          );
+          final cartItems = ref.read(cartControllerProvider).items;
+          if (cartItems.isNotEmpty) {
+            final idx = cartItems.indexWhere((i) => i.productId == product!.id);
+            if (idx != -1) {
+              ref.read(cartControllerProvider.notifier).updateItemUnit(
+                idx,
+                unitId: checkUnit.id,
+                unitName: checkUnit.unitName,
+                quantityInBase: checkUnit.quantityInBase,
+                unitSalePrice: unitPrice,
+              );
+            }
+          }
+          state = state.copyWith(searchResults: [], clearError: true);
+          _playSuccessBeep();
+          debugPrint('[BarcodeSearch] ✓ Found Unit (trimmed zeros): ${product.name}');
+          return;
+        }
+
+        product ??= await productRepo.getProductByCode(trimmedBarcode);
+      }
+    }
+
+    if (product != null) {
+      if (unitRecord != null) {
+        final unitPrice = unitRecord.salePrice > 0 ? unitRecord.salePrice : product.salePrice;
+        ref.read(cartControllerProvider.notifier).addItem(
+          product,
+          customPrice: unitPrice,
+          forceNewEntry: forceNew,
+        );
+        final cartItems = ref.read(cartControllerProvider).items;
+        if (cartItems.isNotEmpty) {
+          final idx = cartItems.indexWhere((i) => i.productId == product!.id);
+          if (idx != -1) {
+            ref.read(cartControllerProvider.notifier).updateItemUnit(
+              idx,
+              unitId: unitRecord.id,
+              unitName: unitRecord.unitName,
+              quantityInBase: unitRecord.quantityInBase,
+              unitSalePrice: unitPrice,
+            );
+          }
+        }
+      } else {
+        ref.read(cartControllerProvider.notifier).addItem(product, forceNewEntry: forceNew);
+      }
+      
+      state = state.copyWith(searchResults: [], clearError: true);
+      _playSuccessBeep();
+      debugPrint('[BarcodeSearch] ✓ Found: ${product.name}');
+      return;
+    }
+
+    // ═══ Step 4: Offer barcode match ═══
+    _logBarcodeStep('offers-lookup', barcode);
+    try {
+      final allOffers = await offersRepo.getOffers();
+      final offer = allOffers.where((o) => o.barcode == barcode).firstOrNull;
+      if (offer != null) {
+        await ref.read(cartControllerProvider.notifier).applyOffer(offer);
+        state = state.copyWith(searchResults: [], clearError: true);
+        _playSuccessBeep();
+        debugPrint('[BarcodeSearch] ✓ Offer matched');
+        return;
+      }
+    } catch (e) {
+      debugPrint('[BarcodeSearch] Offer lookup error: $e');
+    }
+
+    // ═══ Step 5 (CLIENT MODE): Server barcode fallback ═══
+    // If the product isn't in the local cache (e.g. assigned to a different
+    // warehouse not included in the branch sync), ask the server directly.
+    if (SyncInterceptor.isClientMode) {
+      _logBarcodeStep('server-fallback', barcode);
+      try {
+        debugPrint('[BarcodeSearch] Local miss — trying server barcode lookup...');
+        final prefs = await SharedPreferences.getInstance();
+        final clientBranchId = prefs.getInt('client_branch_id');
+        final serverResult = await ServerProxy.instance.fetchProductByBarcode(barcode, branchId: clientBranchId);
+        if (serverResult != null && serverResult['found'] == true) {
+          final pd = serverResult['product'] as Map<String, dynamic>;
+          final barcodes = serverResult['barcodes'] as List? ?? [];
+
+          // Cache product locally so future scans are instant
+          // ISS-06: Raw DB access needed for server→local product cache writes
+          final db = ref.read(databaseProvider);
+          await db.into(db.products).insertOnConflictUpdate(
+            ProductsCompanion(
+              id: Value(pd['id'] as int),
+              code: Value(pd['code'] as String? ?? ''),
+              barcode: Value(pd['barcode'] as String?),
+              name: Value(pd['name'] as String),
+              searchName: Value(pd['searchName'] as String?),
+              categoryId: Value(pd['categoryId'] as int?),
+              unitId: Value(pd['unitId'] as int? ?? 1),
+              salePrice: Value((pd['salePrice'] as num).toDouble()),
+              wholesalePrice: Value((pd['wholesalePrice'] as num? ?? 0).toDouble()),
+              costPrice: Value((pd['costPrice'] as num? ?? 0).toDouble()),
+              currentStock: Value((pd['currentStock'] as num? ?? 0).toDouble()),
+              isActive: Value(pd['isActive'] as bool? ?? true),
+              taxRate: Value((pd['taxRate'] as num? ?? 0).toDouble()),
+              trackInventory: Value(pd['trackInventory'] as bool? ?? true),
+              isSoldByWeight: Value(pd['isSoldByWeight'] as bool? ?? false),
+              allowNegativeSale: Value(pd['allowNegativeSale'] as bool? ?? false),
+            ),
+          );
+          for (final b in barcodes) {
+            final bm = b as Map<String, dynamic>;
+            await db.into(db.productBarcodes).insertOnConflictUpdate(
+              ProductBarcodesCompanion(
+                id: Value(bm['id'] as int),
+                productId: Value(bm['productId'] as int),
+                barcode: Value(bm['barcode'] as String),
+                isPrimary: Value(bm['isPrimary'] as bool? ?? false),
+              ),
+            );
+          }
+
+          // Re-lookup from local DB to get full ProductEntity
+          product = await productRepo.getProductByBarcode(barcode);
+          if (product != null) {
+            ref.read(cartControllerProvider.notifier).addItem(product, forceNewEntry: forceNew);
+            state = state.copyWith(searchResults: [], clearError: true);
+            _playSuccessBeep();
+            debugPrint('[BarcodeSearch] ✓ Found via server fallback: ${product.name}');
+            return;
+          }
+        }
+      } catch (e) {
+        debugPrint('[BarcodeSearch] Server fallback error: $e');
+      }
+    }
+
+    // ═══ Not found (with Diagnostic check) ═══
+    debugPrint('[BarcodeSearch] ✗ Not found in active products: $barcode');
+
+    // Check if it exists but is inactive
+    final inactiveProduct = await productRepo.getProductAnyStatusByBarcode(barcode);
+    if (inactiveProduct != null) {
+      debugPrint('[BarcodeSearch] ! Diagnostic: Product exists but is INACTIVE: ${inactiveProduct.name}');
+      _playErrorBeep();
+      state = state.copyWith(
+        error: 'عفواً، الصنف (${inactiveProduct.name}) موجود ولكنه "غير نشط".\nيرجى تفعيله من شاشة الأصناف ليظهر في نقطة البيع.',
+        errorKind: BarcodeSearchErrorKind.inactive,
+        searchResults: [],
+        isSearchActive: false,
+      );
+      return;
+    }
+
+    _playErrorBeep();
+    state = state.copyWith(
+      error: 'لم يتم العثور على منتج بهذا الباركود: "$barcode"',
+      errorKind: BarcodeSearchErrorKind.notFound,
+      searchResults: [],
+      isSearchActive: false,
+    );
+    debugPrint('[BarcodeSearch] ✗ Completely unknown: "$barcode"');
+    } catch (e, st) {
+      // Spec 116 (L1) — defensive catch. لا تُسقط الـ POS.
+      unawaited(
+        DiagnosticLogger.log(
+          'BARCODE-CRASH',
+          'controller barcode="$rawBarcode" error=$e\n$st',
+        ).catchError((_) {}),
+      );
+      debugPrint('[BarcodeSearch] CRITICAL: $e');
+      try {
+        _playErrorBeep();
+      } catch (_) {}
+      state = state.copyWith(
+        error: 'خطأ في معالجة الباركود — حاول مرة أخرى.',
+        errorKind: BarcodeSearchErrorKind.general,
+        searchResults: [],
+        isSearchActive: false,
+      );
+    }
+  }
+
+  void clearSearchResults() {
+    state = state.copyWith(
+      searchResults: [],
+      isSearchActive: false,
+      clearError: true,
+    );
+  }
+}
+
+final posSearchControllerProvider =
+    NotifierProvider<PosSearchController, PosSearchState>(
+  PosSearchController.new,
+);

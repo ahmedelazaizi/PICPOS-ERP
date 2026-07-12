@@ -1,0 +1,257 @@
+{
+    "name": "فاتورة مشتريات A4",
+    "type": "a4",
+    "templateCategory": "purchase",
+    "paperSize": "A4",
+    "paperWidth": 210,
+    "elements": [
+        {
+            "type": "logo",
+            "x": 430,
+            "y": 15,
+            "width": 130,
+            "height": 75
+        },
+        {
+            "type": "company_name",
+            "x": 250,
+            "y": 18,
+            "width": 180,
+            "height": 30,
+            "fontSize": 20,
+            "isBold": true,
+            "textAlign": "right"
+        },
+        {
+            "type": "company_address",
+            "x": 250,
+            "y": 50,
+            "width": 180,
+            "height": 18,
+            "fontSize": 10,
+            "textAlign": "right"
+        },
+        {
+            "type": "company_phone",
+            "x": 250,
+            "y": 68,
+            "width": 180,
+            "height": 18,
+            "fontSize": 10,
+            "textAlign": "right"
+        },
+        {
+            "type": "line",
+            "x": 20,
+            "y": 98,
+            "width": 555,
+            "height": 2
+        },
+        {
+            "type": "text",
+            "x": 180,
+            "y": 105,
+            "width": 240,
+            "height": 30,
+            "fontSize": 18,
+            "isBold": true,
+            "textAlign": "center",
+            "content": "فاتورة مشتريات"
+        },
+        {
+            "type": "line",
+            "x": 20,
+            "y": 138,
+            "width": 555,
+            "height": 1
+        },
+        {
+            "type": "invoice_number",
+            "x": 350,
+            "y": 148,
+            "width": 220,
+            "height": 22,
+            "fontSize": 12,
+            "isBold": true,
+            "textAlign": "right",
+            "labelAr": "رقم الفاتورة"
+        },
+        {
+            "type": "date",
+            "x": 350,
+            "y": 172,
+            "width": 220,
+            "height": 22,
+            "fontSize": 11,
+            "textAlign": "right",
+            "labelAr": "التاريخ"
+        },
+        {
+            "type": "rectangle",
+            "x": 20,
+            "y": 148,
+            "width": 300,
+            "height": 65
+        },
+        {
+            "type": "supplier_name",
+            "x": 30,
+            "y": 155,
+            "width": 280,
+            "height": 22,
+            "fontSize": 13,
+            "isBold": true,
+            "textAlign": "right",
+            "labelAr": "المورد"
+        },
+        {
+            "type": "text",
+            "x": 30,
+            "y": 180,
+            "width": 280,
+            "height": 22,
+            "fontSize": 11,
+            "textAlign": "right",
+            "content": "هاتف المورد: ........................"
+        },
+        {
+            "type": "subtotal",
+            "x": 350,
+            "y": 520,
+            "width": 220,
+            "height": 22,
+            "fontSize": 12,
+            "textAlign": "right",
+            "labelAr": "المجموع الفرعي"
+        },
+        {
+            "type": "discount",
+            "x": 350,
+            "y": 544,
+            "width": 220,
+            "height": 22,
+            "fontSize": 12,
+            "textAlign": "right",
+            "labelAr": "الخصم"
+        },
+        {
+            "type": "tax",
+            "x": 350,
+            "y": 568,
+            "width": 220,
+            "height": 22,
+            "fontSize": 12,
+            "textAlign": "right",
+            "labelAr": "ضريبة القيمة المضافة"
+        },
+        {
+            "type": "line",
+            "x": 350,
+            "y": 592,
+            "width": 220,
+            "height": 1
+        },
+        {
+            "type": "total",
+            "x": 350,
+            "y": 598,
+            "width": 220,
+            "height": 28,
+            "fontSize": 16,
+            "isBold": true,
+            "textAlign": "right",
+            "labelAr": "الإجمالي"
+        },
+        {
+            "type": "paid",
+            "x": 350,
+            "y": 630,
+            "width": 220,
+            "height": 22,
+            "fontSize": 12,
+            "textAlign": "right",
+            "labelAr": "المدفوع"
+        },
+        {
+            "type": "remaining",
+            "x": 350,
+            "y": 654,
+            "width": 220,
+            "height": 22,
+            "fontSize": 12,
+            "isBold": true,
+            "textAlign": "right",
+            "labelAr": "المتبقي",
+            "fontColor": "#E74C3C"
+        },
+        {
+            "type": "notes",
+            "x": 20,
+            "y": 700,
+            "width": 555,
+            "height": 40,
+            "fontSize": 10,
+            "textAlign": "right",
+            "labelAr": "ملاحظات"
+        },
+        {
+            "type": "line",
+            "x": 20,
+            "y": 750,
+            "width": 555,
+            "height": 1
+        },
+        {
+            "type": "text",
+            "x": 380,
+            "y": 760,
+            "width": 180,
+            "height": 18,
+            "fontSize": 11,
+            "textAlign": "center",
+            "content": "توقيع المورد"
+        },
+        {
+            "type": "text",
+            "x": 30,
+            "y": 760,
+            "width": 180,
+            "height": 18,
+            "fontSize": 11,
+            "textAlign": "center",
+            "content": "توقيع المستلم"
+        },
+        {
+            "type": "line",
+            "x": 380,
+            "y": 800,
+            "width": 180,
+            "height": 1
+        },
+        {
+            "type": "line",
+            "x": 30,
+            "y": 800,
+            "width": 180,
+            "height": 1
+        }
+    ],
+    "tableSettings": {
+        "x": 20,
+        "y": 230,
+        "width": 555,
+        "fontSize": 11,
+        "headerFontSize": 11,
+        "rowHeight": 24,
+        "showIndex": true,
+        "showProductCode": true,
+        "showProductName": true,
+        "showQuantity": true,
+        "showUnitPrice": true,
+        "showDiscount": true,
+        "showTax": true,
+        "showTotal": true,
+        "headerBgColor": "#1B4F72",
+        "headerTextColor": "#FFFFFF"
+    }
+}
