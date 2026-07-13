@@ -27,6 +27,13 @@ class _CycleCountScreenState extends ConsumerState<CycleCountScreen>
   // apply/post the count twice.
   bool _finalizing = false;
 
+  // BUG-C: hold the per-item count controllers in State (keyed by item id) so a
+  // typed-but-not-Enter value survives rebuilds and can be flushed to the DB
+  // before finalize. Recreating them each build (the old code) meant clicking
+  // «إكمال» without pressing Enter first silently dropped the count → finalize
+  // adjusted nothing while still toasting success.
+  final Map<int, TextEditingController> _countCtrls = {};
+
   @override
   void initState() {
     super.initState();
@@ -36,6 +43,9 @@ class _CycleCountScreenState extends ConsumerState<CycleCountScreen>
   @override
   void dispose() {
     _tabController.dispose();
+    for (final c in _countCtrls.values) {
+      c.dispose();
+    }
     super.dispose();
   }
 
@@ -268,8 +278,20 @@ class _CycleCountScreenState extends ConsumerState<CycleCountScreen>
               onPressed: _finalizing
                   ? null
                   : () async {
+                      // Option B: block finalize on client/mirror (not sync-aware
+                      // yet — would apply adjustments + JE local-only, reverted on pull).
+                      if (ref.read(isClientModeProvider)) {
+                        AppToast.show(context,
+                            'لا يمكن اعتماد الجرد من جهاز عميل أو مرآة — نفّذه على الخادم الرئيسي');
+                        return;
+                      }
                       setState(() => _finalizing = true);
                       try {
+                        // BUG-C: flush any typed-but-not-submitted counts first,
+                        // so finalize sees them (otherwise countedQty stays null
+                        // → applyCycleCountAdjustments skips the item → no stock
+                        // change but a success toast).
+                        await _flushPendingCounts(repo, state);
                         await repo.finalizeCycleCountTask(task.id);
                         if (mounted) {
                           AppToast.show(context, 'تم إكمال المهمة وتعديل المخزون');
@@ -303,11 +325,15 @@ class _CycleCountScreenState extends ConsumerState<CycleCountScreen>
     ]);
   }
 
-  Widget _buildCountItem(ThemeData theme, ICycleCountRepository repo, db.CycleCountItemData item, CycleCountState state, CycleCountController notifier) {
+  Widget _buildCountItem(ThemeData theme, ICycleCountRepository repo, db.CycleCountItemView item, CycleCountState state, CycleCountController notifier) {
     final isCounted = item.countedQty != null;
     final hasVariance = item.variance != null && item.variance!.abs() > 0.001;
-    final countCtrl = TextEditingController(
-        text: isCounted ? item.countedQty!.toStringAsFixed(2) : '');
+    // BUG-C: persistent controller (survives rebuilds), seeded once from the DB.
+    final countCtrl = _countCtrls.putIfAbsent(
+      item.id,
+      () => TextEditingController(
+          text: isCounted ? item.countedQty!.toStringAsFixed(2) : ''),
+    );
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
@@ -317,11 +343,21 @@ class _CycleCountScreenState extends ConsumerState<CycleCountScreen>
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(children: [
-          // Product name — use productId as label for now
+          // BUG-B: real product name + category (was "صنف #<id>").
           Expanded(
             flex: 2,
-            child: Text('صنف #${item.productId}',
-                style: const TextStyle(fontWeight: FontWeight.w600)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(item.productName,
+                    style: const TextStyle(fontWeight: FontWeight.w600)),
+                if (item.categoryName != null && item.categoryName!.isNotEmpty)
+                  Text(item.categoryName!,
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+              ],
+            ),
           ),
           SizedBox(
             width: 80,
@@ -373,6 +409,24 @@ class _CycleCountScreenState extends ConsumerState<CycleCountScreen>
         ]),
       ),
     );
+  }
+
+  /// BUG-C: persist any typed-but-not-Enter counts before finalize. Without this
+  /// a value typed then followed by a click on «إكمال» (no Enter in the field)
+  /// never reached the DB, so finalize adjusted nothing yet still toasted success.
+  Future<void> _flushPendingCounts(ICycleCountRepository repo, CycleCountState state) async {
+    for (final v in state.taskItems) {
+      final ctrl = _countCtrls[v.id];
+      if (ctrl == null) continue;
+      final txt = ctrl.text.trim();
+      if (txt.isEmpty) continue;
+      final qty = double.tryParse(txt);
+      if (qty == null) continue;
+      // Only write when it differs from what's already persisted.
+      if (v.countedQty == null || (v.countedQty! - qty).abs() > 0.0001) {
+        await repo.submitCount(itemId: v.id, countedQty: qty);
+      }
+    }
   }
 
   // ─── Analytics ──

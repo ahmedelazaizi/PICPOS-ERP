@@ -6,6 +6,7 @@ import 'providers.dart';
 import '../../core/diagnostics/perf_trace.dart';
 import '../../core/logging/diagnostic_logger.dart';
 import '../../domain/repositories/inventory_repository.dart';
+import '../database/sync_interceptor.dart';
 import '../../domain/entities/product_entity.dart';
 
 // inventoryRepositoryProvider moved to repository_providers.dart
@@ -323,6 +324,11 @@ final allWarehousesProvider = StreamProvider<List<WarehouseData>>((
     // WarehouseData is a Drift DataClass with value equality.
   }).distinct(listEquals);
 });
+
+/// Whether this device runs in client OR mirror mode (the broadened R9
+/// predicate). Presentation reads this instead of importing SyncInterceptor
+/// directly (Constitution §IV / R7: no presentation → data/database imports).
+final isClientModeProvider = Provider<bool>((ref) => SyncInterceptor.isClientMode);
 
 final openAuditProvider = StreamProvider.autoDispose<StockAudit?>((ref) {
   final repo = ref.watch(inventoryRepositoryProvider);

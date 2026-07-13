@@ -1,4 +1,5 @@
 import '../database/database.dart' as db;
+import '../database/sync_interceptor.dart';
 import '../../domain/repositories/cycle_count_repository.dart';
 
 class CycleCountRepositoryImpl implements ICycleCountRepository {
@@ -78,6 +79,11 @@ class CycleCountRepositoryImpl implements ICycleCountRepository {
   }
 
   @override
+  Future<List<db.CycleCountItemView>> getCycleCountItemsWithProduct(int taskId) {
+    return _db.getCycleCountItemsWithProduct(taskId);
+  }
+
+  @override
   Future<void> submitCount({
     required int itemId,
     required double countedQty,
@@ -115,6 +121,15 @@ class CycleCountRepositoryImpl implements ICycleCountRepository {
 
   @override
   Future<void> finalizeCycleCountTask(int taskId) {
+    // Pre-deploy BLOCKER (option B): same local-only silent-loss hazard as
+    // stock-audit finalize — the cycle-count subsystem is not yet sync-aware, so
+    // on a client/mirror device the applied adjustments + settlement JE never
+    // reach HQ and are reverted on the next serverWins pull. Refuse until a
+    // sync-aware finalize exists; finalize on the server.
+    if (SyncInterceptor.isClientMode) {
+      throw StateError(
+          'لا يمكن اعتماد الجرد من جهاز عميل أو مرآة. نفّذ الجرد واعتماده على الخادم الرئيسي.');
+    }
     return _db.finalizeCycleCountTask(taskId);
   }
 }

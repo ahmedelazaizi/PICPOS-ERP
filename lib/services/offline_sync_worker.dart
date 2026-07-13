@@ -967,6 +967,12 @@ class OfflineSyncWorker {
           // unreachable. Same drop-on-drain hazard as void — replay via the
           // dedicated endpoint (server dedups on the payload globalId).
           return proxy.submitSalesPayment(payload, idempotencyKey: idempotencyKey);
+        } else if (operation == 'update') {
+          // Pre-deploy BLOCKER (sync audit): an invoice edit queued offline must
+          // reach HQ (was silently dropped via break→null→markAsSyncSuccess).
+          await proxy.updateSalesInvoice(payload['id'] as int, payload, idempotencyKey: idempotencyKey);
+        } else {
+          throw StateError('Unhandled op $operation for table $table');
         }
         break;
 
@@ -1036,8 +1042,16 @@ class OfflineSyncWorker {
       case 'parties':
         if (operation == 'insert') {
           return proxy.createParty(payload, idempotencyKey: idempotencyKey);
+        } else if (operation == 'update') {
+          // Pre-deploy BLOCKER (sync audit): a customer edit (credit-limit,
+          // balance, phone, discount) queued offline via cwi_commerce.dart must
+          // reach HQ. Without this branch the op hit break→null→markAsSyncSuccess
+          // and was silently dropped, then reverted on the next serverWins pull.
+          await proxy.updateParty(payload['id'] as int, payload, idempotencyKey: idempotencyKey);
         } else if (operation == 'delete') {
           await proxy.deleteParty(payload['id'] as int, idempotencyKey: idempotencyKey);
+        } else {
+          throw StateError('Unhandled op $operation for table $table');
         }
         break;
 

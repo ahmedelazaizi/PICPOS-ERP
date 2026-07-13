@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:ural_erp/data/database/database.dart';
+import 'package:ural_erp/data/database/sync_interceptor.dart';
 import '../../domain/repositories/inventory_repository.dart';
 import '../../domain/entities/stock_requisition_entity.dart';
 import '../../domain/entities/stock_requisition_item_entity.dart';
@@ -348,7 +349,29 @@ class InventoryRepositoryImpl implements InventoryRepository {
   }
 
   @override
+  Future<bool> addAuditItemOnce({
+    required int auditId,
+    required int productId,
+    required double expectedQuantity,
+  }) {
+    return _db.addAuditItemOnce(
+      auditId: auditId,
+      productId: productId,
+      expectedQuantity: expectedQuantity,
+    );
+  }
+
+  @override
   Future<void> finalizeAudit(int auditId) {
+    // Pre-deploy BLOCKER (option B): the stock-count subsystem is not yet
+    // sync-aware — finalizeAudit writes inventory movements + the settlement JE
+    // straight to the local DB. On a client/mirror device those never reach HQ
+    // and are reverted on the next serverWins pull (R4). Until a sync-aware
+    // finalize exists, refuse on client/mirror; counts are finalized on the server.
+    if (SyncInterceptor.isClientMode) {
+      throw StateError(
+          'لا يمكن اعتماد الجرد من جهاز عميل أو مرآة. نفّذ الجرد واعتماده على الخادم الرئيسي.');
+    }
     return _db.finalizeAudit(auditId);
   }
 

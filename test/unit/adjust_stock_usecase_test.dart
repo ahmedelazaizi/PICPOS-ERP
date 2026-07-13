@@ -34,6 +34,13 @@ class MockInventoryRepository implements InventoryRepository {
     required int warehouseId,
   }) async => false;
 
+  @override
+  Future<bool> addAuditItemOnce({
+    required int auditId,
+    required int productId,
+    required double expectedQuantity,
+  }) async => false;
+
   // ── Unused stubs ──────────────────────────────────────────────────────────
   @override
   Stream<List<StockMovementData>> watchProductMovements(int productId) =>

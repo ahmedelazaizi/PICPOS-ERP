@@ -385,8 +385,12 @@ extension AccountingAutopostDao on AppDatabase {
       }
     }
 
-    // Credit receivable if partially paid
-    if (sale.total > sale.paid && sale.customerId != null) {
+    // Debit receivable for ANY unpaid remainder — including a walk-in sale with
+    // no customerId. Previously the leg was gated on `customerId != null`, so a
+    // partial-cash sale to no customer credited full revenue+VAT but debited
+    // only the cash paid → credits > debits → the whole JE dead-lettered. Book
+    // the remainder to the receivables CONTROL account (mirrors the factory).
+    if (sale.total > sale.paid) {
       final receivableAccount = await accountingDao.getAccountByCode(
         await accountingDao.getMappedAccountCode(
           'receivables',
@@ -1361,7 +1365,17 @@ extension AccountingAutopostDao on AppDatabase {
       originalInvoice.customerId,
       receivableControlAccount,
     );
-    if (salesReturnAccount == null) return null;
+    // Fail loud (mirrors autoPostPurchaseReturn): the caller has ALREADY
+    // reversed stock/safe/AR inside the same open transaction. Returning null
+    // here would commit those subledger reversals with ZERO GL trace — a silent
+    // ledger↔subledger divergence. Throwing rolls the whole transaction back (R3).
+    if (salesReturnAccount == null) {
+      throw StateError(
+        'تعذّر ترحيل قيد مرتجع المبيعات — حساب مردودات المبيعات غير مربوط في '
+        'دليل الحسابات. يرجى ربط حساب المردودات من إعدادات الحسابات المحاسبية '
+        'قبل تنفيذ مرتجع المبيعات.',
+      );
+    }
 
     final lines = <JournalLine>[];
 
@@ -1376,7 +1390,18 @@ extension AccountingAutopostDao on AppDatabase {
     //   Sale:   Dr Cash/AR (gross)          Cr Sales (net), Cr Output VAT
     //   Return: Dr Sales Returns (net),     Cr Cash/AR (gross)
     //           Dr Output VAT (reverses)
-    final salesReturnNet = vatAmount > 0
+    // Resolve Output-VAT up front: only split VAT onto its own reversal line
+    // (and exclude it from the contra-revenue net) when the account exists. If
+    // VAT isn't mapped we FOLD it into the sales-returns leg so debits still ==
+    // the gross credit — symmetric with the original sale, which likewise folds
+    // unmapped VAT. Previously net always excluded VAT, so an unmapped VAT
+    // account left the entry short by vatAmount → hard-fail, return blocked.
+    final vatAccount = vatAmount > 0
+        ? await accountingDao.getAccountByCode(
+            await accountingDao.getMappedAccountCode('output_vat', AccountingDao.accountPurposes['output_vat']!),
+          )
+        : null;
+    final salesReturnNet = (vatAmount > 0 && vatAccount != null)
         ? (returnAmount - vatAmount)
         : returnAmount;
     lines.add(JournalLine(
@@ -1386,17 +1411,12 @@ extension AccountingAutopostDao on AppDatabase {
     ));
 
     // Debit: Output VAT reversal (عكس ضريبة المبيعات)
-    if (vatAmount > 0) {
-      final vatAccount = await accountingDao.getAccountByCode(
-        await accountingDao.getMappedAccountCode('output_vat', AccountingDao.accountPurposes['output_vat']!),
-      );
-      if (vatAccount != null) {
-        lines.add(JournalLine(
-          accountId: vatAccount.id,
-          debit: vatAmount,
-          description: 'عكس ضريبة مرتجع',
-        ));
-      }
+    if (vatAmount > 0 && vatAccount != null) {
+      lines.add(JournalLine(
+        accountId: vatAccount.id,
+        debit: vatAmount,
+        description: 'عكس ضريبة مرتجع',
+      ));
     }
 
     // Credit: Cash refund
@@ -1719,25 +1739,32 @@ extension AccountingAutopostDao on AppDatabase {
       ));
     }
 
+    // Resolve Input-VAT up front. When it isn't mapped we FOLD the VAT into the
+    // inventory credit so credits still == the gross debit (cash/payable carry
+    // returnAmount+vatAmount) — otherwise the entry is short by vatAmount and
+    // hard-fails, blocking the return. Symmetric with the original purchase.
+    final inputVatAccount = vatAmount > 0
+        ? await accountingDao.getAccountByCode(
+            await accountingDao.getMappedAccountCode('input_vat', AccountingDao.accountPurposes['input_vat']!),
+          )
+        : null;
+
     // Credit: Inventory (returning goods reduces our inventory)
     lines.add(JournalLine(
       accountId: inventoryAccount.id,
-      credit: returnAmount,
+      credit: (vatAmount > 0 && inputVatAccount == null)
+          ? returnAmount + vatAmount
+          : returnAmount,
       description: 'مرتجع مشتريات — تخفيض مخزون',
     ));
 
     // Credit: Input VAT reversal (if applicable)
-    if (vatAmount > 0) {
-      final inputVatAccount = await accountingDao.getAccountByCode(
-        await accountingDao.getMappedAccountCode('input_vat', AccountingDao.accountPurposes['input_vat']!),
-      );
-      if (inputVatAccount != null) {
-        lines.add(JournalLine(
-          accountId: inputVatAccount.id,
-          credit: vatAmount,
-          description: 'عكس ضريبة مدخلات مرتجع',
-        ));
-      }
+    if (vatAmount > 0 && inputVatAccount != null) {
+      lines.add(JournalLine(
+        accountId: inputVatAccount.id,
+        credit: vatAmount,
+        description: 'عكس ضريبة مدخلات مرتجع',
+      ));
     }
 
     if (lines.isEmpty) return null;

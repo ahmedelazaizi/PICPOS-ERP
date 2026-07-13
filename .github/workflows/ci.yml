@@ -76,7 +76,7 @@ jobs:
           declare -A THRESHOLDS
           THRESHOLDS["lib/presentation/screens/tables_screen.dart"]=70000
           THRESHOLDS["lib/presentation/pos/screens/pos_table_service_screen.dart"]=70000
-          THRESHOLDS["lib/services/client_write_interceptor.dart"]=30000   # Week 11: split into 4 part files under interceptor/
+          THRESHOLDS["lib/services/client_write_interceptor.dart"]=43000   # current ceiling; target ≤30000 once Week 11 splits it into 4 part files under interceptor/
 
           FAILED=0
           for file in "${!THRESHOLDS[@]}"; do

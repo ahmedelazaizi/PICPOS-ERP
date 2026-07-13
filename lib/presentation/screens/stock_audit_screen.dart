@@ -21,11 +21,24 @@ class StockAuditScreen extends ConsumerStatefulWidget {
 class _StockAuditScreenState extends ConsumerState<StockAuditScreen> {
   final TextEditingController _barcodeController = TextEditingController();
   final FocusNode _barcodeFocusNode = FocusNode();
+  // BUG-C twin: persistent per-item "الفعلي" controllers + focus nodes (keyed by
+  // audit-item id). Seeded once, they survive rebuilds so a value typed-but-not-
+  // Entered isn't lost, and are flushed to the DB before finalize. The focus node
+  // lets us refresh the field from a barcode-scan-updated DB value only while the
+  // user isn't actively editing.
+  final Map<int, TextEditingController> _actualCtrls = {};
+  final Map<int, FocusNode> _actualFocus = {};
 
   @override
   void dispose() {
     _barcodeController.dispose();
     _barcodeFocusNode.dispose();
+    for (final c in _actualCtrls.values) {
+      c.dispose();
+    }
+    for (final f in _actualFocus.values) {
+      f.dispose();
+    }
     super.dispose();
   }
 
@@ -134,10 +147,9 @@ class _StockAuditScreenState extends ConsumerState<StockAuditScreen> {
               ),
               const SizedBox(width: 16),
               ElevatedButton.icon(
-                onPressed: () =>
-                    _onBarcodeScanned(_barcodeController.text, audit.id),
-                icon: const Icon(PhosphorIconsBold.magnifyingGlass),
-                label: const Text('إضافة للصف'),
+                onPressed: () => _onAddItem(_barcodeController.text, audit.id),
+                icon: const Icon(PhosphorIconsBold.plus),
+                label: const Text('إضافة صنف'),
               ),
             ],
           ),
@@ -228,28 +240,7 @@ class _StockAuditScreenState extends ConsumerState<StockAuditScreen> {
         ),
         const SizedBox(height: 4),
         isEditable
-            ? SizedBox(
-                width: 80,
-                height: 35,
-                child: TextField(
-                  textAlign: TextAlign.center,
-                  decoration: InputDecoration(
-                    contentPadding: EdgeInsets.zero,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  controller: TextEditingController(
-                    text: value.toStringAsFixed(0),
-                  ),
-                  onSubmitted: (val) {
-                    final newValue = double.tryParse(val);
-                    if (newValue != null && item != null) {
-                      _updateCount(item, newValue);
-                    }
-                  },
-                ),
-              )
+            ? _buildActualField(value, item)
             : Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
@@ -265,6 +256,51 @@ class _StockAuditScreenState extends ConsumerState<StockAuditScreen> {
                 ),
               ),
       ],
+    );
+  }
+
+  /// Editable "الفعلي" field backed by a persistent per-item controller.
+  Widget _buildActualField(double value, StockAuditItem? item) {
+    final decoration = InputDecoration(
+      contentPadding: EdgeInsets.zero,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+    );
+    if (item == null) {
+      return SizedBox(
+        width: 80,
+        height: 35,
+        child: TextField(
+          textAlign: TextAlign.center,
+          decoration: decoration,
+          controller: TextEditingController(text: value.toStringAsFixed(0)),
+        ),
+      );
+    }
+    // Persistent (survives rebuilds) so a typed-but-not-Entered count isn't lost.
+    final ctrl = _actualCtrls.putIfAbsent(
+      item.id,
+      () => TextEditingController(text: value.toStringAsFixed(0)),
+    );
+    final focus = _actualFocus.putIfAbsent(item.id, () => FocusNode());
+    // Refresh from the DB value (e.g. a barcode scan bumped actualQuantity) only
+    // while the user isn't editing — never clobber in-progress typing.
+    final formatted = value.toStringAsFixed(0);
+    if (!focus.hasFocus && ctrl.text != formatted) {
+      ctrl.text = formatted;
+    }
+    return SizedBox(
+      width: 80,
+      height: 35,
+      child: TextField(
+        textAlign: TextAlign.center,
+        decoration: decoration,
+        controller: ctrl,
+        focusNode: focus,
+        onSubmitted: (val) {
+          final newValue = double.tryParse(val);
+          if (newValue != null) _updateCount(item, newValue);
+        },
+      ),
     );
   }
 
@@ -300,6 +336,8 @@ class _StockAuditScreenState extends ConsumerState<StockAuditScreen> {
     // UI will rebuild via Stream
   }
 
+  /// Genuine barcode SCAN (field submit / Enter from a scanner gun): accumulate
+  /// the actual count by 1 for each physical unit scanned.
   Future<void> _onBarcodeScanned(String barcode, int auditId) async {
     if (barcode.isEmpty) return;
 
@@ -316,13 +354,57 @@ class _StockAuditScreenState extends ConsumerState<StockAuditScreen> {
     _barcodeFocusNode.requestFocus();
   }
 
+  /// Manual "add item" (search a code, click Add): add the row ONCE with
+  /// actual = expected. Does NOT accumulate.
+  Future<void> _onAddItem(String query, int auditId) async {
+    if (query.isEmpty) return;
+
+    final error = await ref
+        .read(stockAuditControllerProvider.notifier)
+        .addItemToAudit(query, auditId);
+    if (error != null) {
+      if (!mounted) return;
+      AppToast.show(context, error);
+      return;
+    }
+
+    _barcodeController.clear();
+    _barcodeFocusNode.requestFocus();
+  }
+
   Future<void> _updateCount(StockAuditItem item, double newValue) async {
     await ref
         .read(stockAuditControllerProvider.notifier)
         .updateCount(item, newValue);
   }
 
+  /// Persist any typed-but-not-Entered "الفعلي" counts before finalize.
+  Future<void> _flushPendingActualCounts(List<StockAuditItem> items) async {
+    for (final item in items) {
+      final ctrl = _actualCtrls[item.id];
+      if (ctrl == null) continue;
+      final txt = ctrl.text.trim();
+      if (txt.isEmpty) continue;
+      final qty = double.tryParse(txt);
+      if (qty == null) continue;
+      // Only write when it differs from what's already stored.
+      if ((item.actualQuantity - qty).abs() > 0.0001) {
+        await _updateCount(item, qty);
+      }
+    }
+  }
+
   Future<void> _finalizeAudit(int auditId) async {
+    // Option B: the count subsystem isn't sync-aware yet, so finalize is blocked
+    // on client/mirror (would write inventory + JE local-only, reverted on pull).
+    if (ref.read(isClientModeProvider)) {
+      AppToast.show(
+        context,
+        'لا يمكن اعتماد الجرد من جهاز عميل أو مرآة — نفّذه على الخادم الرئيسي',
+        type: ToastType.error,
+      );
+      return;
+    }
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -344,6 +426,14 @@ class _StockAuditScreenState extends ConsumerState<StockAuditScreen> {
     );
 
     if (confirm == true) {
+      // BUG-C twin: flush any typed-but-not-Entered "الفعلي" values to the DB
+      // FIRST, so finalizeAudit sees them. Otherwise a count typed then confirmed
+      // without pressing Enter stays at its seeded value → difference=0 → no stock
+      // adjustment, yet the success toast still fires (silent lost adjustment).
+      final items =
+          ref.read(stockAuditItemsProvider(auditId)).value ??
+              const <StockAuditItem>[];
+      await _flushPendingActualCounts(items);
       final success = await ref
           .read(stockAuditControllerProvider.notifier)
           .finalizeAudit(auditId);

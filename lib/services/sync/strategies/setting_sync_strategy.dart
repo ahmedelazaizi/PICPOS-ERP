@@ -31,6 +31,12 @@ class SettingSyncStrategy extends SyncStrategy {
       // install or incorrectly marks first-sync as done.
       'setup_completed',
       'client_first_sync_completed',
+      // Mirror (Spec 131) uses the same first-sync contract. These flags are
+      // per-device too — if the server payload ever carries them they must NOT
+      // be written mid-performFirstSync (would flip isFirstSyncPending false
+      // before the seeded-data wipe, leaving partial seeded master data — R8).
+      'mirror_first_sync_completed',
+      'mirror_cache_integrity_v1_applied',
       // client_branch_id records which branch THIS device belongs to.
       // The server has no client_branch_id of its own, but guard it
       // defensively so a misconfigured server row never clobbers the
