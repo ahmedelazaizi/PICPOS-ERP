@@ -14,8 +14,8 @@ concurrency:
 
 # ── Shared env ───────────────────────────────────────────────────────────────
 env:
-  FLUTTER_VERSION: '3.38.x'   # Pin to the version used in development
-  DART_SDK_CONSTRAINT: '3.10.4'
+  FLUTTER_VERSION: '3.41.x'   # Pin to the version used in development (Dart 3.11)
+  DART_SDK_CONSTRAINT: '3.11.0'
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # STAGE 0 — Secrets scan (runs first; cheapest fail-fast gate)
