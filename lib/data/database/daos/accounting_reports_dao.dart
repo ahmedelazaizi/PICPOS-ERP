@@ -271,6 +271,10 @@ extension AccountingReportsDao on AppDatabase {
     final List<Map<String, dynamic>> cogsDetails = [];
     final List<Map<String, dynamic>> expenseDetails = [];
     final List<Map<String, dynamic>> depreciationDetails = [];
+    double otherIncome = 0;   // #2: inventory surplus — non-operating gain
+    double otherExpense = 0;  // #2: inventory shrinkage — non-operating loss
+    final List<Map<String, dynamic>> otherIncomeDetails = [];
+    final List<Map<String, dynamic>> otherExpenseDetails = [];
 
     // Resolve COGS account code (default: 5101)
     final cogsCode = await accountingDao.getMappedAccountCode(
@@ -280,6 +284,18 @@ extension AccountingReportsDao on AppDatabase {
     // Resolve depreciation expense account code (default: 5207)
     final depreciationCode = await accountingDao.getMappedAccountCode(
       'depreciation_expense', '5207',
+    );
+
+    // #2: inventory surplus (4317, a revenue account) and shrinkage (6216, an
+    // expense account) are inventory-COUNT adjustments, not sales/operating
+    // figures. Classify them as OTHER income/expense so "صافي الإيراد" (net
+    // revenue) stays sales-only — adding stock via a تسوية no longer inflates
+    // the sales line. Net profit is unchanged numerically (folded back below).
+    final surplusCode = await accountingDao.getMappedAccountCode(
+      'inventory_surplus', AccountingDao.accountPurposes['inventory_surplus']!,
+    );
+    final shrinkageCode = await accountingDao.getMappedAccountCode(
+      'inventory_shrinkage', AccountingDao.accountPurposes['inventory_shrinkage']!,
     );
 
     for (var row in balances) {
@@ -292,8 +308,14 @@ extension AccountingReportsDao on AppDatabase {
         // F-03: Revenue is credit-normal → GL stores debit-credit as negative
         // Using -netMovement correctly shows positive for normal credit balances
         final val = -netMovement;
-        revenue += val;
-        if (val != 0) revenueDetails.add({'name': name, 'amount': val});
+        if (code == surplusCode) {
+          // #2: inventory surplus is a non-operating gain, not sales revenue.
+          otherIncome += val;
+          if (val != 0) otherIncomeDetails.add({'name': name, 'amount': val});
+        } else {
+          revenue += val;
+          if (val != 0) revenueDetails.add({'name': name, 'amount': val});
+        }
       } else if (type == 'contra_revenue') {
         // Sales returns — debit-normal (IFRS 15.B20)
         // netMovement is positive for contra_revenue (debit > credit)
@@ -310,6 +332,10 @@ extension AccountingReportsDao on AppDatabase {
           // Item 10: Depreciation shown separately per IAS 16.73(e)
           depreciation += val;
           if (val != 0) depreciationDetails.add({'name': name, 'amount': val});
+        } else if (code == shrinkageCode) {
+          // #2: inventory shrinkage is a non-operating loss, not an opex.
+          otherExpense += val;
+          if (val != 0) otherExpenseDetails.add({'name': name, 'amount': val});
         } else {
           expenses += val;
           if (val != 0) expenseDetails.add({'name': name, 'amount': val});
@@ -327,8 +353,12 @@ extension AccountingReportsDao on AppDatabase {
     final grossProfit = revenue - cogs;
     // Operating Profit = Gross Profit - Operating Expenses
     final operatingProfit = grossProfit - expenses;
-    // Net Profit = Operating Profit - Depreciation
-    final netProfit = operatingProfit - depreciation;
+    // Net Profit = Operating Profit - Depreciation + other income - other expense.
+    // Folding the non-operating inventory adjustments back in keeps netProfit
+    // NUMERICALLY IDENTICAL to before — only the operating totalRevenue/
+    // totalExpenses now exclude them (so the sales line isn't inflated by a تسوية).
+    final netProfit =
+        operatingProfit - depreciation + otherIncome - otherExpense;
 
     return {
       'totalRevenue': revenue,
@@ -338,10 +368,14 @@ extension AccountingReportsDao on AppDatabase {
       'totalDepreciation': depreciation,
       'operatingProfit': operatingProfit,
       'netProfit': netProfit,
+      'otherIncome': otherIncome,
+      'otherExpense': otherExpense,
       'revenueDetails': revenueDetails,
       'cogsDetails': cogsDetails,
       'expenseDetails': expenseDetails,
       'depreciationDetails': depreciationDetails,
+      'otherIncomeDetails': otherIncomeDetails,
+      'otherExpenseDetails': otherExpenseDetails,
     };
   }
 

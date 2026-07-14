@@ -146,6 +146,46 @@ class StockAuditNotifier extends Notifier<StockAuditState> {
     }
   }
 
+  /// Manual "add item" (search a code, click Add) — adds the row ONCE with
+  /// actual = expected (current stock). Does NOT accumulate; re-adding an item
+  /// already in the audit returns a message. Genuine per-unit scans go through
+  /// [scanBarcode] (+1). Returns an error string, or null on success.
+  Future<String?> addItemToAudit(String query, int auditId) async {
+    if (query.isEmpty) return null;
+
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final productRepo = ref.read(productRepositoryProvider);
+      final inventoryRepo = ref.read(inventoryRepositoryProvider);
+
+      final product =
+          await productRepo.getProductByBarcode(query) ??
+          await productRepo.getProductByCode(query);
+
+      if (product == null) {
+        state = state.copyWith(isLoading: false);
+        return 'الصنف غير موجود';
+      }
+
+      final added = await inventoryRepo.addAuditItemOnce(
+        auditId: auditId,
+        productId: product.id,
+        expectedQuantity: product.currentStock,
+      );
+
+      state = state.copyWith(isLoading: false);
+      // #1: stockAuditItemsProvider is a one-shot FutureProvider — it won't
+      // re-fetch on its own after the insert, so the new row never appears in
+      // the list (re-adding then reports "already added"). Invalidate to refetch.
+      ref.invalidate(stockAuditItemsProvider(auditId));
+      return added ? null : 'الصنف مضاف بالفعل في هذا الجرد';
+    } catch (e, st) {
+      logger.error('Failed to add audit item', e, st, 'STOCK_AUDIT');
+      state = state.copyWith(isLoading: false, error: 'حدث خطأ: $e');
+      return 'حدث خطأ: $e';
+    }
+  }
+
   Future<void> updateCount(StockAuditItem item, double newValue) async {
     try {
       await ref
@@ -156,6 +196,8 @@ class StockAuditNotifier extends Notifier<StockAuditState> {
             expectedQuantity: item.expectedQuantity,
             actualQuantity: newValue,
           );
+      // #1: refetch so the edited actual/difference re-render immediately.
+      ref.invalidate(stockAuditItemsProvider(item.auditId));
     } catch (e, st) {
       logger.error('Failed to update count', e, st, 'STOCK_AUDIT');
     }

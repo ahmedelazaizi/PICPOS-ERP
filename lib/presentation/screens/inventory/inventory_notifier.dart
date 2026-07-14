@@ -146,6 +146,12 @@ class InventoryNotifier extends Notifier<InventoryState> {
     // until the next pull, so nothing re-emits — invalidate so the new stock
     // level shows on the grid right away.
     ref.invalidate(posGridProductsProvider);
+
+    // #3: refresh the inventory-management screen's summary cards + per-warehouse
+    // stock map after an adjustment (the paged balances LIST is local screen
+    // State — the screen reloads it itself right after this call returns).
+    ref.invalidate(inventorySummaryProvider);
+    ref.invalidate(warehouseStockMapProvider(warehouseId));
   }
 }
 

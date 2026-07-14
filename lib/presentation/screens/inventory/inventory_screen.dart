@@ -720,6 +720,10 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
                           notes: _adjNotesController.text,
                           currentStock: product.currentStock,
                         );
+                    // #3: force the balances list (local paged State) to reload
+                    // page-0 so the edited row shows its new stock immediately,
+                    // instead of only after leaving and re-entering the screen.
+                    if (mounted) setState(() => _pagedKey = null);
                     if (context.mounted) Navigator.pop(context);
                   } finally {
                     // Reset only if the dialog is still on screen (reject /
