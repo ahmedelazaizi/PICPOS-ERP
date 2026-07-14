@@ -18,6 +18,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
+import 'package:ural_erp/core/permissions/permission_codes.dart';
 import 'package:ural_erp/data/database/database.dart';
 
 void main() {
@@ -40,6 +41,18 @@ void main() {
       displayName: 'PIR Integration Tester',
       roleId: roleId,
     );
+
+    // Spec 062 (D1-004): voiding a fully-paid invoice requires the explicit
+    // voidPaidInvoice critical-op permission — even for admins. Test 5's void
+    // case voids a paid invoice, so grant it to this fresh custom role here.
+    // Without it the void throws PermissionDenied and never records deletedBy.
+    // Mirrors test/unit/void_sales_invoice_atomicity_test.dart.
+    final voidPerm = await (db.select(db.permissions)
+          ..where((p) => p.code.equals(PermissionCodes.voidPaidInvoice))
+          ..limit(1))
+        .getSingle();
+    await db.addPermissionToRole(roleId, voidPerm.id);
+
     final wh = await db.getDefaultWarehouse();
     warehouseId = wh!.id;
   });
