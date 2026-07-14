@@ -65,8 +65,12 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Generate Code (Drift)
-        run: dart run build_runner build --delete-conflicting-outputs
+      # Codegen is NOT run in CI. The only generated artifact,
+      # lib/data/database/database.g.dart, is committed and kept current on any
+      # schema change (regenerate + commit locally). build_runner cost ~49 min
+      # on the free runner — nearly half the verify budget — and also overran
+      # the build-windows/build-web timeouts. analyze/test/build compile fine
+      # from the committed part file.
 
       # ── Static analysis ────────────────────────────────────────────────────
       - name: Analyze code (strict)
@@ -147,7 +151,9 @@ jobs:
     name: 🏗️ Build Windows
     needs: verify
     runs-on: windows-latest
-    timeout-minutes: 35
+    # `flutter build windows --release` cold-compiles the C++ runner + Dart AOT
+    # on a free runner; headroom so the release-gating build isn't cut short.
+    timeout-minutes: 60
     if: |
       github.ref == 'refs/heads/main'    ||
       github.ref == 'refs/heads/master'  ||
@@ -169,8 +175,12 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Generate Code (Drift)
-        run: dart run build_runner build --delete-conflicting-outputs
+      # Codegen is NOT run in CI. The only generated artifact,
+      # lib/data/database/database.g.dart, is committed and kept current on any
+      # schema change (regenerate + commit locally). build_runner cost ~49 min
+      # on the free runner — nearly half the verify budget — and also overran
+      # the build-windows/build-web timeouts. analyze/test/build compile fine
+      # from the committed part file.
 
       # ── Version stamp ──────────────────────────────────────────────────────
       # Artifact name format: URAL-ERP-<semver>+<short-sha>
@@ -217,7 +227,7 @@ jobs:
     name: 🌐 Build Web
     needs: verify
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     if: |
       github.ref == 'refs/heads/main'   ||
       github.ref == 'refs/heads/master' ||
@@ -235,8 +245,12 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Generate Code (Drift)
-        run: dart run build_runner build --delete-conflicting-outputs
+      # Codegen is NOT run in CI. The only generated artifact,
+      # lib/data/database/database.g.dart, is committed and kept current on any
+      # schema change (regenerate + commit locally). build_runner cost ~49 min
+      # on the free runner — nearly half the verify budget — and also overran
+      # the build-windows/build-web timeouts. analyze/test/build compile fine
+      # from the committed part file.
 
       - name: Build Web release
         run: >-
