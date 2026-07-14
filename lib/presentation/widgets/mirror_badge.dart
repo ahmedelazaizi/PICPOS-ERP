@@ -39,9 +39,14 @@ class MirrorBadge extends StatelessWidget {
   /// Visible to tests: classify the handshake age into one of three
   /// staleness tiers. Public so the test suite can assert without
   /// pulling at colours / phosphor icons through a widget tree.
-  static MirrorConnectivity classify(DateTime? lastHandshakeAt) {
+  static MirrorConnectivity classify(DateTime? lastHandshakeAt,
+      {DateTime? now}) {
     if (lastHandshakeAt == null) return MirrorConnectivity.offline;
-    final age = DateTime.now().toUtc().difference(lastHandshakeAt.toUtc());
+    // now is injectable so exact-boundary tests are deterministic (the real
+    // elapsed time between building a "30s ago" timestamp and calling now()
+    // otherwise tips a slow CI runner just past the inclusive boundary).
+    final age =
+        (now ?? DateTime.now()).toUtc().difference(lastHandshakeAt.toUtc());
     if (age <= const Duration(seconds: 30)) {
       return MirrorConnectivity.online;
     }

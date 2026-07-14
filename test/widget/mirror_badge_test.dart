@@ -41,8 +41,12 @@ void main() {
     });
 
     test('handshake exactly at 30s boundary → online (inclusive)', () {
+      // Inject a fixed now so the boundary is EXACTLY 30s (no real-clock jitter
+      // that flips the inclusive tier on a slow CI runner).
+      final base = DateTime.utc(2026, 1, 1, 12, 0, 0);
       expect(
-        MirrorBadge.classify(_utcAgo(const Duration(seconds: 30))),
+        MirrorBadge.classify(base.subtract(const Duration(seconds: 30)),
+            now: base),
         MirrorConnectivity.online,
         reason: '30s is the upper bound of the green tier per MM.A spec',
       );
@@ -63,8 +67,10 @@ void main() {
     });
 
     test('handshake exactly at 5min boundary → slow (inclusive)', () {
+      final base = DateTime.utc(2026, 1, 1, 12, 0, 0);
       expect(
-        MirrorBadge.classify(_utcAgo(const Duration(minutes: 5))),
+        MirrorBadge.classify(base.subtract(const Duration(minutes: 5)),
+            now: base),
         MirrorConnectivity.slow,
       );
     });
