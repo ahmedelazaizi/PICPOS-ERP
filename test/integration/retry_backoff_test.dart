@@ -29,6 +29,11 @@ void main() {
     int maxRetries = 3,
     int initialDelayMs = 1, // 1ms in tests to keep suite fast
     Set<int> retryableStatusCodes = const {408, 429, 500, 502, 503, 504},
+    // Test-only hook: receives the NOMINAL backoff delay (ms) the algorithm is
+    // about to sleep for, before it doubles. Lets the backoff-doubling test
+    // assert the contract deterministically instead of measuring wall-clock
+    // Future.delayed intervals (flaky under CI scheduler jitter at ms scale).
+    void Function(int delayMs)? onRetryDelay,
   }) async {
     var delayMs = initialDelayMs;
 
@@ -61,6 +66,7 @@ void main() {
         }
       }
 
+      onRetryDelay?.call(delayMs);
       await Future.delayed(Duration(milliseconds: delayMs));
       delayMs *= 2;
     }
@@ -202,18 +208,11 @@ void main() {
     // ─────────────────────────────────────────────────────────────────────────
     test('Delay doubles between retries (exponential backoff contract)', () async {
       final delays = <int>[];
-      final stopwatch = Stopwatch();
       var callCount = 0;
-      var lastCallAt = 0;
-
-      stopwatch.start();
 
       await requestWithRetryMirror<bool>(
         operation: () async {
           callCount++;
-          final now = stopwatch.elapsedMilliseconds;
-          if (callCount > 1) delays.add(now - lastCallAt);
-          lastCallAt = now;
           if (callCount < 3) {
             throw Exception('Server error (500): fail');
           }
@@ -221,16 +220,17 @@ void main() {
         },
         operationName: 'test-backoff-timing',
         maxRetries: 3,
-        initialDelayMs: 10, // Use larger delay so timing is measurable
+        initialDelayMs: 10,
+        onRetryDelay: delays.add,
       );
 
-      stopwatch.stop();
-
-      // delay[0] should be ~10ms, delay[1] should be ~20ms (doubled)
-      expect(delays.length, 2, reason: 'Should record two inter-attempt intervals');
-      // In CI environments timing is loose, so we just verify the second is ≥ first
-      expect(delays[1], greaterThanOrEqualTo(delays[0]),
-          reason: 'Exponential backoff: second delay must be ≥ first');
+      // Assert the NOMINAL backoff schedule doubles: 10ms → 20ms. Captured from
+      // the algorithm's own delay value, so this is exact and deterministic —
+      // no wall-clock measurement of Future.delayed (which is flaky under CI
+      // scheduler jitter: at 10/20ms scales a hiccup can inflate the FIRST
+      // interval above the second and fail an ordering assertion).
+      expect(delays, [10, 20],
+          reason: 'Exponential backoff: nominal delay must double each retry');
     });
   });
 }

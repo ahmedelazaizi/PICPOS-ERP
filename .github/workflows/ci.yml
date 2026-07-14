@@ -48,8 +48,10 @@ jobs:
     runs-on: windows-latest
     needs: secrets-scan
     # Drift build_runner codegen on the full schema + the whole test suite are
-    # slow on a cold free runner (30 min cancelled mid-codegen). Give headroom.
-    timeout-minutes: 90
+    # slow on a cold free runner. The suite now runs ONCE (single --coverage
+    # pass; see below), but coverage instrumentation over ~3k tests plus codegen
+    # still needs headroom on a free Windows runner. 120 > observed worst case.
+    timeout-minutes: 120
 
     steps:
       - uses: actions/checkout@v4
@@ -98,40 +100,16 @@ jobs:
           done
           [ "$FAILED" -eq 0 ] || exit 1
 
-      # ── Test suites ────────────────────────────────────────────────────────
-      - name: Run unit tests
-        run: flutter test test/unit/ --reporter=expanded
-
-      - name: Run core tests
-        run: flutter test test/core/ --reporter=expanded
-
-      - name: Run DAO tests
-        run: flutter test test/data/ --reporter=expanded
-
-      - name: Run domain tests
-        run: flutter test test/domain/ --reporter=expanded
-
-      - name: Run service tests
-        run: flutter test test/services/ --reporter=expanded
-
-      - name: Run widget tests
-        run: flutter test test/widget/ --reporter=expanded
-
-      - name: Run integration tests
-        run: flutter test test/integration/ --reporter=expanded
-
-      # ── Mandatory audit flows (explicit CI steps for visibility) ───────────
-      - name: PIR Mandatory 5 Flows
-        run: flutter test test/integration/pir_mandatory_5_tests.dart --reporter=expanded
-        continue-on-error: false
-
-      - name: Accounting E2E Suite (AC1..AC8)
-        run: flutter test test/integration/accounting_e2e_suite.dart --reporter=expanded
-        continue-on-error: false
-
-      # ── Coverage ───────────────────────────────────────────────────────────
-      - name: Generate coverage report
-        run: flutter test --coverage
+      # ── Full test suite + coverage (single pass) ───────────────────────────
+      # ONE instrumented run of the whole test/ tree: it is BOTH the pass/fail
+      # gate and the coverage source. Previously the suite ran ~twice — 7
+      # per-directory steps + 2 standalone "mandatory flow" file steps + a
+      # separate `flutter test --coverage` — each step also recompiling the test
+      # bundle. Even an all-green run then blew past the job timeout during the
+      # trailing coverage step (run #16). A single pass ~halves the work with
+      # zero coverage loss; a failure still names the exact failing file:test.
+      - name: Run full test suite with coverage
+        run: flutter test --coverage --reporter=expanded
 
       - name: Coverage hard gate (≥ 35 %)
         shell: bash
