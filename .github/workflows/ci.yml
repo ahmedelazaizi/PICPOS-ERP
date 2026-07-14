@@ -42,7 +42,10 @@ jobs:
 # ═══════════════════════════════════════════════════════════════════════════════
   verify:
     name: 🔍 Verify & Test
-    runs-on: ubuntu-latest
+    # Windows desktop app — run the suite on the SAME platform it targets and is
+    # developed/verified on. Several integration/timing tests are Windows-tuned
+    # and are flaky on ubuntu; matching the platform keeps CI == local.
+    runs-on: windows-latest
     needs: secrets-scan
     # Drift build_runner codegen on the full schema + the whole test suite are
     # slow on a cold free runner (30 min cancelled mid-codegen). Give headroom.
