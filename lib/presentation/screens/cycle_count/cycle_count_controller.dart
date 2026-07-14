@@ -8,7 +8,7 @@ class CycleCountState {
   final List<db.CycleCountPlanData> plans;
   final List<db.CycleCountTaskData> tasks;
   final db.CycleCountTaskData? selectedTask;
-  final List<db.CycleCountItemData> taskItems;
+  final List<db.CycleCountItemView> taskItems;
   final bool isLoading;
 
   CycleCountState({
@@ -23,7 +23,7 @@ class CycleCountState {
     List<db.CycleCountPlanData>? plans,
     List<db.CycleCountTaskData>? tasks,
     db.CycleCountTaskData? selectedTask,
-    List<db.CycleCountItemData>? taskItems,
+    List<db.CycleCountItemView>? taskItems,
     bool? isLoading,
   }) {
     return CycleCountState(
@@ -50,9 +50,9 @@ class CycleCountController extends Notifier<CycleCountState> {
       final plans = await _repo.getCycleCountPlans();
       final tasks = await _repo.getCycleCountTasks();
 
-      List<db.CycleCountItemData>? items;
+      List<db.CycleCountItemView>? items;
       if (state.selectedTask != null) {
-        items = await _repo.getCycleCountItems(state.selectedTask!.id);
+        items = await _repo.getCycleCountItemsWithProduct(state.selectedTask!.id);
       }
 
       state = state.copyWith(
@@ -72,7 +72,7 @@ class CycleCountController extends Notifier<CycleCountState> {
   Future<void> selectTask(db.CycleCountTaskData task) async {
     state = state.copyWith(isLoading: true);
     try {
-      final items = await _repo.getCycleCountItems(task.id);
+      final items = await _repo.getCycleCountItemsWithProduct(task.id);
       state = state.copyWith(selectedTask: task, taskItems: items, isLoading: false);
     } catch (e) {
       debugPrint('[CycleCount] Select task error: $e');

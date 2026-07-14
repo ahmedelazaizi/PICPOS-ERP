@@ -979,6 +979,31 @@ extension InventoryDao on AppDatabase {
     }
   }
 
+  /// Manual "add item" flow (search then Add button) — insert the row ONCE with
+  /// actual = expected (a neutral starting point the user then edits). Re-adding
+  /// an item already in the audit is a no-op. Returns true if a row was added.
+  ///
+  /// This is distinct from a per-unit barcode SCAN (see the controller's
+  /// scanBarcode → saveAuditItem(actual = existing + 1), which accumulates).
+  /// Conflating the two made the Add button increment by 1 and start from 0.
+  Future<bool> addAuditItemOnce({
+    required int auditId,
+    required int productId,
+    required double expectedQuantity,
+  }) async {
+    final existing = await (select(stockAuditItems)
+          ..where((i) => i.auditId.equals(auditId) & i.productId.equals(productId)))
+        .getSingleOrNull();
+    if (existing != null) return false;
+    await saveAuditItem(
+      auditId: auditId,
+      productId: productId,
+      expectedQuantity: expectedQuantity,
+      actualQuantity: expectedQuantity,
+    );
+    return true;
+  }
+
   /// Get all items for an audit
   Future<List<StockAuditItem>> getAuditItems(int auditId) {
     return (select(

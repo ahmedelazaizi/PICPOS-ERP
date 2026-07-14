@@ -33,6 +33,10 @@ abstract class ICycleCountRepository {
 
   Future<List<db.CycleCountItemData>> getCycleCountItems(int taskId);
 
+  /// Items for a task with product name/code + category name resolved (for the
+  /// counting screen). [getCycleCountItems] returns only the raw item row.
+  Future<List<db.CycleCountItemView>> getCycleCountItemsWithProduct(int taskId);
+
   Future<void> submitCount({
     required int itemId,
     required double countedQty,

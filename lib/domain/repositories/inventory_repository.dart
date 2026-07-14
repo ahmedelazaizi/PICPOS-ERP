@@ -119,6 +119,14 @@ abstract class InventoryRepository {
     required double actualQuantity,
   });
 
+  /// Manual "add item" flow: insert the row ONCE with actual = expected. Re-adding
+  /// an existing item is a no-op. Returns true if a row was added.
+  Future<bool> addAuditItemOnce({
+    required int auditId,
+    required int productId,
+    required double expectedQuantity,
+  });
+
   /// Finalize audit and adjust stock
   Future<void> finalizeAudit(int auditId);
 

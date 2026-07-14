@@ -1,5 +1,29 @@
 part of '../database.dart';
 
+/// A cycle-count item row joined with its product name/code + category name, for
+/// the counting screen. Getters delegate to [item] so callers read the count
+/// fields (expectedQty/countedQty/variance…) exactly as before.
+class CycleCountItemView {
+  final CycleCountItemData item;
+  final String productName;
+  final String? productCode;
+  final String? categoryName;
+
+  const CycleCountItemView({
+    required this.item,
+    required this.productName,
+    this.productCode,
+    this.categoryName,
+  });
+
+  int get id => item.id;
+  int get productId => item.productId;
+  double get expectedQty => item.expectedQty;
+  double? get countedQty => item.countedQty;
+  double? get variance => item.variance;
+  double? get variancePercent => item.variancePercent;
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // CYCLE COUNT DAO — الجرد الدوري المستمر (Phase C4)
 // ═══════════════════════════════════════════════════════════════════════════
@@ -164,6 +188,36 @@ extension CycleCountDao on AppDatabase {
           ..where((i) => i.taskId.equals(taskId))
           ..orderBy([(i) => OrderingTerm.asc(i.id)]))
         .get();
+  }
+
+  /// Get items for a task WITH the product name/code and category name resolved.
+  /// The counting screen needs these; [getCycleCountItems] returns only the raw
+  /// item row (product_id), which the screen used to render as a bare id label.
+  Future<List<CycleCountItemView>> getCycleCountItemsWithProduct(int taskId) async {
+    final items = await getCycleCountItems(taskId);
+    if (items.isEmpty) return const [];
+
+    final ids = items.map((i) => i.productId).toSet().toList();
+    final placeholders = List.filled(ids.length, '?').join(',');
+    final rows = await customSelect(
+      'SELECT p.id AS pid, p.name AS pname, p.code AS pcode, c.name AS cname '
+      'FROM products p '
+      'LEFT JOIN categories c ON c.id = p.category_id '
+      'WHERE p.id IN ($placeholders)',
+      variables: ids.map((e) => Variable<int>(e)).toList(),
+      readsFrom: {products, categories},
+    ).get();
+
+    final labels = {for (final r in rows) r.data['pid'] as int: r.data};
+    return items.map((i) {
+      final l = labels[i.productId];
+      return CycleCountItemView(
+        item: i,
+        productName: (l?['pname'] as String?) ?? 'صنف #${i.productId}',
+        productCode: l?['pcode'] as String?,
+        categoryName: l?['cname'] as String?,
+      );
+    }).toList();
   }
 
   // ─────────────────────────────────────────────────────────────────────────
