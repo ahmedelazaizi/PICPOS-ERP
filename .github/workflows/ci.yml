@@ -226,58 +226,18 @@ jobs:
           retention-days: 30
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# STAGE 3 — Web release build
-# Runs on main / master pushes and version tags.
-# ═══════════════════════════════════════════════════════════════════════════════
-  build-web:
-    name: 🌐 Build Web
-    needs: verify
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    if: |
-      github.ref == 'refs/heads/main'   ||
-      github.ref == 'refs/heads/master' ||
-      startsWith(github.ref, 'refs/tags/v')
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          channel: stable
-          cache: true
-
-      - name: Install dependencies
-        run: flutter pub get
-
-      # Codegen is NOT run in CI. The only generated artifact,
-      # lib/data/database/database.g.dart, is committed and kept current on any
-      # schema change (regenerate + commit locally). build_runner cost ~49 min
-      # on the free runner — nearly half the verify budget — and also overran
-      # the build-windows/build-web timeouts. analyze/test/build compile fine
-      # from the committed part file.
-
-      - name: Build Web release
-        run: >-
-          flutter build web --release
-          --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }}
-          --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
-
-      - name: Upload web artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: web-release-${{ github.run_number }}
-          path: build/web/
-          retention-days: 14
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# STAGE 4 — GitHub Release (version tags only: v*.*.*)
-# Creates a draft GitHub Release and attaches the Windows zip.
+# STAGE 3 — GitHub Release (version tags only: v*.*.*)
+# Creates a GitHub Release and attaches the Windows zip.
+#
+# There is deliberately NO web build job. The root app is a Windows/FFI desktop
+# target (Aclas SDK, serial_port_win32) that does not compile under dart2js
+# ("Only JS interop members may be 'external'"); the web deliverable lives in the
+# separate web_app/ project. The release attaches only the Windows artifact, so
+# a web build was never a release input — it was a spurious gate.
 # ═══════════════════════════════════════════════════════════════════════════════
   release:
     name: 🚀 Create Release
-    needs: [build-windows, build-web]
+    needs: [build-windows]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     permissions:

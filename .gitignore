@@ -66,8 +66,11 @@ Release_Web/
 *.rar
 *.7z
 
-# Flutter Windows generated (keep windows/runner & windows/CMakeLists.txt & vendor SDKs)
-windows/flutter/
+# Flutter Windows generated (keep windows/runner, windows/CMakeLists.txt, vendor
+# SDKs, and windows/flutter/CMakeLists.txt — the static Flutter build scaffolding
+# the release build needs; only ephemeral/ + pub-get-generated files are ignored)
+windows/flutter/*
+!windows/flutter/CMakeLists.txt
 
 # Web build outputs
 web/build/
