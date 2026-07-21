@@ -227,10 +227,14 @@ extension SalesAnalyticsDao on AppDatabase {
     DateTime? to,
     List<int>? warehouseIds,
     Set<int>? allowedBranchIds,
+    int? costCenterId,
   }) async {
     from ??= DateTime(2020);
     to ??= DateTime.now().add(const Duration(days: 1));
     final az = _buildAuthScopeFilter(allowedBranchIds, tableAlias: 'inv');
+    // Cost-center isolation (self + descendants). No-op when costCenterId is
+    // null, so existing callers are unaffected.
+    final cc = await _buildCostCenterFilter(costCenterId, tableAlias: 'inv');
 
     String warehouseFilter = '';
     final vars = <Variable>[dateVar(from), dateVar(to)];
@@ -243,19 +247,26 @@ extension SalesAnalyticsDao on AppDatabase {
       }
     }
     vars.addAll(az.vars);
+    vars.addAll(cc.vars);
 
     final results = await customSelect(
       '''
       SELECT
           c.id as category_id,
           COALESCE(c.name, 'بدون تصنيف') as category_name,
-          SUM(si.total) as total_sales,
+          -- Revenue must be TAX-EXCLUSIVE to compare against the tax-exclusive
+          -- cost below; si.total is tax-inclusive, so strip the line VAT
+          -- (si.tax_amount). Without this the margin was inflated by the VAT
+          -- rate on every category. NOTE: invoice-level (header) discounts are
+          -- not distributed to si rows, so they are still not reflected here —
+          -- use the GL income statement for the fully net-of-discount figure.
+          SUM(si.total - si.tax_amount) as total_sales,
           SUM(si.quantity * si.quantity_in_base * si.cost_price) as total_cost
       FROM sales_invoice_items si
       JOIN products p ON si.product_id = p.id
       LEFT JOIN categories c ON p.category_id = c.id
       JOIN sales_invoices inv ON si.invoice_id = inv.id
-      WHERE inv.invoice_date BETWEEN ? AND ? AND inv.is_deleted = 0 AND inv.status NOT IN ('returned', 'cancelled', 'voided')${_saleReturnExclusion('inv')} $warehouseFilter${az.filter}
+      WHERE inv.invoice_date BETWEEN ? AND ? AND inv.is_deleted = 0 AND inv.status NOT IN ('returned', 'cancelled', 'voided')${_saleReturnExclusion('inv')} $warehouseFilter${az.filter} ${cc.filter}
       GROUP BY c.id, c.name
       ORDER BY total_sales DESC
       ''',
@@ -316,7 +327,9 @@ extension SalesAnalyticsDao on AppDatabase {
       FROM sales_invoice_items si
       JOIN products p ON si.product_id = p.id
       JOIN sales_invoices inv ON si.invoice_id = inv.id
-      WHERE inv.invoice_date BETWEEN ? AND ? $warehouseFilter${az.filter}
+      WHERE inv.invoice_date BETWEEN ? AND ?
+        AND inv.is_deleted = 0${_saleReturnExclusion('inv')}
+        $warehouseFilter${az.filter}
       GROUP BY p.id, p.name
       ORDER BY $sortColumn DESC
       LIMIT ?
@@ -500,7 +513,9 @@ extension SalesAnalyticsDao on AppDatabase {
       JOIN products p ON si.product_id = p.id
       LEFT JOIN categories c ON p.category_id = c.id
       JOIN sales_invoices inv ON si.invoice_id = inv.id
-      WHERE inv.invoice_date BETWEEN ? AND ? $warehouseFilter${az.filter}
+      WHERE inv.invoice_date BETWEEN ? AND ?
+        AND inv.is_deleted = 0${_saleReturnExclusion('inv')}
+        $warehouseFilter${az.filter}
       GROUP BY c.name
       ORDER BY total_amount DESC
       ''',
@@ -728,12 +743,14 @@ extension SalesAnalyticsDao on AppDatabase {
       '''
       SELECT
         COUNT(*) as cnt,
-        COALESCE(SUM(total),    0) as total_sum,
-        COALESCE(SUM(discount), 0) as discount_sum,
-        COALESCE(SUM(tax),      0) as tax_sum
+        COALESCE(SUM(total),        0) as total_sum,
+        COALESCE(SUM(discount),     0) as discount_sum,
+        COALESCE(SUM(tax),          0) as tax_sum,
+        COALESCE(SUM(delivery_fee), 0) as delivery_sum
       FROM sales_invoices inv
       WHERE invoice_date BETWEEN ? AND ?
         AND is_deleted = 0${_saleReturnExclusion()}
+        AND status NOT IN ('returned', 'cancelled', 'voided')
         $userClause $ccFilter $whFilter $pmFilter $stFilter$azFilter
       ''',
       variables: variables,
@@ -756,6 +773,7 @@ extension SalesAnalyticsDao on AppDatabase {
       JOIN sales_invoices inv ON si.invoice_id = inv.id
       WHERE inv.invoice_date BETWEEN ? AND ?
         AND inv.is_deleted = 0${_saleReturnExclusion('inv')}
+        AND inv.status NOT IN ('returned', 'cancelled', 'voided')
         $userClause $ccFilter $whFilter $pmFilter $stFilter$azFilter
       ''',
       variables: variables,
@@ -763,9 +781,17 @@ extension SalesAnalyticsDao on AppDatabase {
     ).getSingle();
 
     final cogs = (cogsResult.data['total_cogs'] as num?)?.toDouble() ?? 0.0;
-    final netRevenue  = total - disc;             // الإيراد الصافي
-    final grossProfit = netRevenue - cogs;         // الربح الإجمالي الحقيقي
-    final netProfit   = grossProfit - tax;          // صافي الربح
+    final delivery = (result.data['delivery_sum'] as num?)?.toDouble() ?? 0.0;
+    // `total` (sales_invoices.total) is ALREADY net of discount and INCLUDES
+    // output VAT + delivery fee (finalTotal = subtotal − discount + tax +
+    // delivery). Product-sales revenue strips the VAT and delivery back out;
+    // the discount is baked into `total`, so it must NOT be subtracted again —
+    // the old `total - disc` double-counted the discount and understated the
+    // profit by the discount amount whenever a discount was applied, and the
+    // old `grossProfit - tax` left the delivery fee sitting inside profit.
+    final netRevenue  = total - tax - delivery;   // net of discount, excl VAT & delivery
+    final grossProfit = netRevenue - cogs;
+    final netProfit   = grossProfit;              // sales-level profit (pre-opex)
     final avg         = count > 0 ? total / count : 0.0;
 
     return SalesAnalytics(

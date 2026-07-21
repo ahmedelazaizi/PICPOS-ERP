@@ -58,7 +58,11 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
   int? _selectedSupplierId;
   int? _selectedWarehouseId;
   int? _selectedCostCenterId;
-  String _paymentMethod = 'cash';
+  // Default supplier purchases to آجل (credit). A purchase from a supplier is
+  // normally on account; defaulting to 'cash' silently forced paid=full and
+  // auto-created a supplier payment voucher the operator never issued, which
+  // zeroed the payable that should have stayed outstanding.
+  String _paymentMethod = 'credit';
   int? _selectedSafeId;
   List<Map<String, dynamic>> _items = [];
   bool _isLoading = false;
@@ -91,7 +95,7 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
       // 13-digit ugly numbers shown on saved invoices.
       _invoiceNumberController.text = '';
       _paidAmountController.text = '0';
-      _paymentMethod = 'cash';
+      _paymentMethod = 'credit';
     }
   }
 
@@ -583,14 +587,17 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
         discount: _discount,
         tax: _taxTotal,
         netAmount: _netAmount,
-        // For cash invoices, paid = full net amount regardless of what the field shows.
-        // This ensures status = 'paid' and the GL credits the cash account.
-        // BUG-U32: clamp the credit paid amount to [0, net] and accept
-        // Arabic-locale input — never a negative or over-net payment.
-        paidAmount: _paymentMethod == 'cash'
-            ? _netAmount
-            : (NumberUtils.tryParseLocale(_paidAmountController.text) ?? 0)
-                .clamp(0, _netAmount),
+        // The "المبلغ المدفوع" field is the single source of truth for `paid`
+        // in BOTH cash and credit modes. Previously cash mode ignored the
+        // field and forced paid=full — so an operator who read the field as
+        // "0 → credit" but left the (default) payment method on نقدي got a
+        // silent full auto-payment (a supplier voucher they never issued).
+        // The نقدي/آجل toggle now only PRESETS this field (full vs 0) via the
+        // dropdown onChanged; whatever is shown here is exactly what gets paid.
+        // Clamp to [0, net] and accept Arabic-locale input — never negative or
+        // over-net.
+        paidAmount: (NumberUtils.tryParseLocale(_paidAmountController.text) ?? 0)
+            .clamp(0, _netAmount),
         notes: _notesController.text,
         items: _items,
         warehouseId: _selectedWarehouseId,

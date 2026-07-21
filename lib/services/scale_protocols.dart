@@ -19,6 +19,7 @@ import 'aclas_sdk_ffi.dart';
 import 'label_scale_service.dart';
 import 'scale_transport.dart';
 import 'scale_upload_logger.dart';
+import '../core/logging/diagnostic_logger.dart';
 import '../data/database/database.dart' show LabelScale;
 
 // ═══════════════════════════════════════════════════════════════
@@ -553,9 +554,50 @@ class ScaleProtocolHandler {
         ...perItemFiles,
       ];
 
-      final raw = await Isolate.run(
-        () => _aclasUploadInIsolate(isolateArgs),
+      // Guard against a wedged AclasSDK WaitForTask. The upload runs in a
+      // background isolate, but _waitForTask (aclas_sdk_ffi.dart) is a BLOCKING
+      // UDP FFI call with no native timeout — if the scale is unplugged, on the
+      // wrong port, or unresponsive, that isolate blocks and this await would
+      // otherwise never complete, freezing the whole export ("النظام علق تعليق
+      // كامل بعد ترحيل الأصناف للميزان"). Bound it: the budget scales with the
+      // record count (a real upload of N PLU records takes proportional time)
+      // with a 45s floor for detect + prereq sequence. On timeout the UI
+      // recovers with an actionable error; the leaked isolate finishes when the
+      // SDK's own UDP timeout fires (or on process exit). The scale path emitted
+      // NOTHING to the diagnostic log before — hence this hang was invisible in
+      // the field logs — so log the start and the timeout for traceability.
+      final uploadBudget = Duration(
+        seconds: (45 + items.length ~/ 2).clamp(45, 900),
       );
+      await DiagnosticLogger.log(
+        DiagnosticLogger.plu,
+        'aclas upload START ip=$effectiveIp items=${items.length} '
+        'budget=${uploadBudget.inSeconds}s skipPrereqs=$skipPrereqs',
+      );
+      final Map<String, dynamic> raw;
+      try {
+        raw = await Isolate.run(
+          () => _aclasUploadInIsolate(isolateArgs),
+        ).timeout(uploadBudget);
+      } on TimeoutException {
+        logger?.error(
+            'انتهت مهلة الترحيل (${uploadBudget.inSeconds}ث) — الميزان لم يستجب. '
+            'تأكد من توصيل الميزان وصحة المنفذ ثم أعد المحاولة.');
+        await DiagnosticLogger.log(
+          DiagnosticLogger.plu,
+          'aclas upload TIMEOUT after ${uploadBudget.inSeconds}s '
+          'ip=$effectiveIp items=${items.length} — WaitForTask wedged',
+        );
+        return PLUUploadResult(
+          total: items.length,
+          success: 0,
+          failed: items.length,
+          errors: [
+            'انتهت مهلة الترحيل — الميزان لم يستجب خلال ${uploadBudget.inSeconds} ثانية. '
+            'تأكد من توصيل الميزان وصحة المنفذ (UDP) ثم أعد المحاولة.'
+          ],
+        );
+      }
 
       final sdkSuccess = raw['success'] == true;
       final message = raw['message']?.toString() ?? '';

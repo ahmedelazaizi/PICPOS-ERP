@@ -1388,6 +1388,40 @@ extension PartyDao on AppDatabase {
           referenceType: 'safe_transaction',
         ),
       );
+
+      // Settlement discount (خصم معجّل دفع) — createPaymentVoucher /
+      // createReceiptVoucher reduce parties.balance by (amount + discount) but
+      // only `amount` is the cash that moved. Pre-fix the statement rendered
+      // debit/credit = amount only and dropped the discount entirely, so the
+      // كشف حساب kept a phantom residual equal to the discount that never
+      // matched the party-card balance. Emit the discount as its own line so
+      // the running balance reconciles with parties.balance. Direction mirrors
+      // the voucher: supplier payment → خصم مكتسب (debit, cuts our AP);
+      // customer receipt → خصم مسموح به (credit, cuts their AR).
+      if (t.discount > 0) {
+        double discountDebit = 0;
+        double discountCredit = 0;
+        if (party.isSupplier && t.transactionType == 'payment') {
+          discountDebit = t.discount;
+        } else if (party.isCustomer && t.transactionType == 'receipt') {
+          discountCredit = t.discount;
+        }
+        if (discountDebit > 0 || discountCredit > 0) {
+          entries.add(
+            PartyStatementEntry(
+              date: t.createdAt,
+              description: party.isSupplier ? 'خصم مكتسب (تسوية)' : 'خصم مسموح به (تسوية)',
+              invoiceNumber: t.voucherNumber,
+              entryType: 'discount',
+              debit: discountDebit,
+              credit: discountCredit,
+              balance: 0.0,
+              referenceId: t.id,
+              referenceType: 'safe_transaction',
+            ),
+          );
+        }
+      }
     }
 
     double chequeOpeningBalance = 0;
@@ -1495,8 +1529,11 @@ extension PartyDao on AppDatabase {
         'SELECT COALESCE(SUM(total), 0) as amt FROM sales_invoices WHERE customer_id = ? AND invoice_date < ? ${branchId != null ? 'AND (warehouse_id IN (SELECT id FROM warehouses WHERE branch_id = ?))' : ''}',
         variables: [Variable(partyId), dateVar(from), if (branchId != null) Variable(branchId)],
       ).getSingle();
+      // Include the settlement discount: a receipt voucher reduces the
+      // customer's AR by (amount + discount), so the opening balance must too
+      // — matching the discount statement line emitted in the window above.
       final pastReceipts = await customSelect(
-        "SELECT COALESCE(SUM(t.amount), 0) as amt FROM safe_transactions t JOIN safes s ON t.safe_id = s.id WHERE t.party_id = ? AND t.transaction_type = 'receipt' AND t.created_at < ? ${branchId != null ? 'AND (s.branch_id = ?)' : ''}",
+        "SELECT COALESCE(SUM(t.amount + COALESCE(t.discount, 0)), 0) as amt FROM safe_transactions t JOIN safes s ON t.safe_id = s.id WHERE t.party_id = ? AND t.transaction_type = 'receipt' AND t.created_at < ? ${branchId != null ? 'AND (s.branch_id = ?)' : ''}",
         variables: [Variable(partyId), dateVar(from), if (branchId != null) Variable(branchId)],
       ).getSingle();
       final pastPayments = await customSelect(
@@ -1519,8 +1556,11 @@ extension PartyDao on AppDatabase {
         'SELECT COALESCE(SUM(total), 0) as amt FROM purchase_invoices WHERE supplier_id = ? AND invoice_date < ? ${branchId != null ? 'AND (warehouse_id IN (SELECT id FROM warehouses WHERE branch_id = ?))' : ''}',
         variables: [Variable(partyId), dateVar(from), if (branchId != null) Variable(branchId)],
       ).getSingle();
+      // Include the settlement discount: a payment voucher reduces our AP to
+      // the supplier by (amount + discount), so the opening balance must too
+      // — matching the discount statement line emitted in the window above.
       final pastPayments = await customSelect(
-        "SELECT COALESCE(SUM(t.amount), 0) as amt FROM safe_transactions t JOIN safes s ON t.safe_id = s.id WHERE t.party_id = ? AND t.transaction_type = 'payment' AND t.created_at < ? ${branchId != null ? 'AND (s.branch_id = ?)' : ''}",
+        "SELECT COALESCE(SUM(t.amount + COALESCE(t.discount, 0)), 0) as amt FROM safe_transactions t JOIN safes s ON t.safe_id = s.id WHERE t.party_id = ? AND t.transaction_type = 'payment' AND t.created_at < ? ${branchId != null ? 'AND (s.branch_id = ?)' : ''}",
         variables: [Variable(partyId), dateVar(from), if (branchId != null) Variable(branchId)],
       ).getSingle();
       final pastReceipts = await customSelect(

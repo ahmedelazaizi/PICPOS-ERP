@@ -392,6 +392,7 @@ mixin _PartyStatementTableMixin on ConsumerState<PartyStatementScreen> {
       'payment' => (PhosphorIconsBold.arrowArcLeft, AppColors.error),
       'receipt' => (PhosphorIconsBold.arrowArcRight, AppColors.success),
       'opening' => (PhosphorIconsBold.flag, AppColors.info),
+      'discount' => (PhosphorIconsBold.tag, AppColors.warning),
       _ => (PhosphorIconsBold.dotsThree, AppColors.textMuted),
     };
     return Container(

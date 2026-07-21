@@ -40,6 +40,8 @@ class _CategoryProfitReportScreenState
   int? _selectedWarehouseId;
   Set<int>? _branchWarehouseIds;
   Set<int>? _regionWarehouseIds;
+  int? _selectedCostCenterId; // cost-center isolation filter
+  List<CostCenter> _costCenters = [];
 
   // Spec 149 B12-5b (FIL-2): the logged-in user's branch authorization scope.
   // null = full access (admin/financial-manager/mirror) → no restriction.
@@ -79,8 +81,17 @@ class _CategoryProfitReportScreenState
         final user = ref.read(authProvider).user;
         ref.read(activityLoggerProvider).logReportView(user?.id ?? 0, user?.displayName ?? 'مجهول', 'أرباح التصنيفات');
       } catch (_) {}
+      _loadCostCenters();
       _loadData();
     });
+  }
+
+  Future<void> _loadCostCenters() async {
+    try {
+      final centers =
+          await ref.read(accountingRepositoryProvider).getActiveCostCenters();
+      if (mounted) setState(() => _costCenters = centers);
+    } catch (_) {/* non-fatal — the CC filter just stays hidden */}
   }
 
   Future<void> _loadData() async {
@@ -112,6 +123,7 @@ class _CategoryProfitReportScreenState
         to: _toDate,
         warehouseIds: warehouseIds,
         allowedBranchIds: _allowedBranchIds,
+        costCenterId: _selectedCostCenterId,
       );
       if (mounted) {
         setState(() {
@@ -251,6 +263,36 @@ class _CategoryProfitReportScreenState
                   _loadData();
                 },
               ),
+              // Cost-center isolation (self + descendants). Hidden when the
+              // system has no cost centers configured.
+              if (_costCenters.isNotEmpty)
+                SizedBox(
+                  width: 200,
+                  child: DropdownButtonFormField<int?>(
+                    value: _selectedCostCenterId,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      labelText: 'مركز التكلفة',
+                      isDense: true,
+                      prefixIcon: Icon(PhosphorIconsBold.target, size: 18),
+                      border: OutlineInputBorder(),
+                    ),
+                    items: [
+                      const DropdownMenuItem<int?>(
+                        value: null,
+                        child: Text('كل المراكز'),
+                      ),
+                      ..._costCenters.map((cc) => DropdownMenuItem<int?>(
+                            value: cc.id,
+                            child: Text(cc.name, overflow: TextOverflow.ellipsis),
+                          )),
+                    ],
+                    onChanged: (v) {
+                      setState(() => _selectedCostCenterId = v);
+                      _loadData();
+                    },
+                  ),
+                ),
               ElevatedButton.icon(
                 onPressed: _loadData,
                 icon: const Icon(PhosphorIconsBold.arrowsClockwise),

@@ -345,12 +345,14 @@ class ReportingRepositoryImpl implements IReportingRepository {
     required DateTime to,
     List<int>? warehouseIds,
     Set<int>? allowedBranchIds,
+    int? costCenterId,
   }) =>
       _db.getCategoryProfitReport(
         from: from,
         to: to,
         warehouseIds: warehouseIds,
         allowedBranchIds: allowedBranchIds,
+        costCenterId: costCenterId,
       );
 
   /// Resolve a `regionId` filter to the list of active branches in that

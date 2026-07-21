@@ -99,6 +99,7 @@ abstract class ISalesReportingRepository {
     required DateTime to,
     List<int>? warehouseIds,
     Set<int>? allowedBranchIds,
+    int? costCenterId,
   });
 
   Future<List<SalesByCategoryRow>> getSalesByCategory({

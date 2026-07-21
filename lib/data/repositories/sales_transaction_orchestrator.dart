@@ -354,7 +354,20 @@ class SalesTransactionOrchestrator {
       // direction). Calling generateSalesAccountingEntry here would post
       // a second, wrong-direction JE (Dr Cash / Cr Sales) that the dedup
       // guard might keep instead. So skip the regular sales JE for returns.
-      if (saleType != 'return') {
+      //
+      // ALSO skip in client/mirror mode — the mirror of the `!isClientMode`
+      // auto-deplete gate above (R4 / Constitution III): "the SERVER runs it
+      // so we don't double-post". In client mode the server autoposts the
+      // sale's revenue JE when it receives the submitSale POST below
+      // (api_sales_handler → autoPostCashSale, keyed on referenceType='sale'
+      // + a DETERMINISTIC globalId). This local factory JE instead used
+      // referenceType='sales_invoice' + a RANDOM globalId + the client-local
+      // invoiceId, so it never deduped against the server's JE and BOTH
+      // revenue entries survived in the server GL — the GL-sourced dashboard
+      // "revenue" card then read ~2× the invoice-based sales screen. The
+      // authoritative JE comes back via DeltaPull, exactly like the POS path
+      // (insertSalesInvoiceWithoutStock, which never posts locally).
+      if (saleType != 'return' && !isClientMode) {
         await _accountingService.generateSalesAccountingEntry(
           invoiceId: invoiceId,
           invNumber: invoice.invoiceNumber,
