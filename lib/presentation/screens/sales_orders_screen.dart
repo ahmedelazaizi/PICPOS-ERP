@@ -325,6 +325,18 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
       setDialogState(() {});
     }
 
+    // Recompute a single line's tax amount + total. Mirrors the per-line tax
+    // model in the sales-invoice form: when taxEnabled is false the line
+    // contributes zero tax regardless of the entered rate.
+    void recalcLine(Map<String, dynamic> item) {
+      final lineTotal = (item['quantity'] as double) * (item['unitPrice'] as double);
+      final taxAmt = (item['taxEnabled'] as bool)
+          ? lineTotal * ((item['taxRate'] as double) / 100)
+          : 0.0;
+      item['taxAmount'] = taxAmt;
+      item['total'] = lineTotal + taxAmt;
+    }
+
     showDialog(
       context: context,
       builder: (ctx) => Directionality(
@@ -425,18 +437,21 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
                           );
                         },
                         onSelected: (product) {
-                          final lineTotal = product.salePrice * 1.0;
-                          final taxAmt = lineTotal * (product.taxRate / 100);
                           setDialogState(() {
-                            orderItems.add({
+                            final item = <String, dynamic>{
                               'productId': product.id,
                               'productName': product.name,
                               'quantity': 1.0,
                               'unitPrice': product.salePrice,
                               'taxRate': product.taxRate,
-                              'taxAmount': taxAmt,
-                              'total': lineTotal + taxAmt,
-                            });
+                              // Seed the taxable flag from the product card,
+                              // exactly like the sales-invoice form.
+                              'taxEnabled': product.taxRate > 0,
+                              'taxAmount': 0.0,
+                              'total': 0.0,
+                            };
+                            recalcLine(item);
+                            orderItems.add(item);
                             recalculate(setDialogState);
                           });
                           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -448,7 +463,9 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
                     const SizedBox(height: 8),
                     // Items table
                     if (orderItems.isNotEmpty)
-                      DataTable(
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: DataTable(
                         columnSpacing: 10,
                         headingRowHeight: 32,
                         dataRowMinHeight: 30,
@@ -457,6 +474,8 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
                           DataColumn(label: Text('الصنف', style: TextStyle(fontSize: 11))),
                           DataColumn(label: Text('الكمية', style: TextStyle(fontSize: 11))),
                           DataColumn(label: Text('السعر', style: TextStyle(fontSize: 11))),
+                          DataColumn(label: Text('الضريبة %', style: TextStyle(fontSize: 11))),
+                          DataColumn(label: Text('قيمة الضريبة', style: TextStyle(fontSize: 11))),
                           DataColumn(label: Text('الإجمالي', style: TextStyle(fontSize: 11))),
                           DataColumn(label: Text('', style: TextStyle(fontSize: 11))),
                         ],
@@ -473,9 +492,7 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
                               onChanged: (val) {
                                 final qty = double.tryParse(val) ?? 1;
                                 item['quantity'] = qty;
-                                final lineTotal = qty * (item['unitPrice'] as double);
-                                item['taxAmount'] = lineTotal * ((item['taxRate'] as double) / 100);
-                                item['total'] = lineTotal + (item['taxAmount'] as double);
+                                recalcLine(item);
                                 recalculate(setDialogState);
                               },
                             ))),
@@ -487,12 +504,55 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
                               onChanged: (val) {
                                 final price = double.tryParse(val) ?? 0;
                                 item['unitPrice'] = price;
-                                final lineTotal = (item['quantity'] as double) * price;
-                                item['taxAmount'] = lineTotal * ((item['taxRate'] as double) / 100);
-                                item['total'] = lineTotal + (item['taxAmount'] as double);
+                                recalcLine(item);
                                 recalculate(setDialogState);
                               },
                             ))),
+                            // Tax % — checkbox to toggle taxable + editable
+                            // rate, mirroring the sales-invoice items table.
+                            DataCell(SizedBox(
+                              width: 118,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  SizedBox(
+                                    width: 28,
+                                    child: Checkbox(
+                                      value: item['taxEnabled'] as bool,
+                                      visualDensity: VisualDensity.compact,
+                                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      onChanged: (val) {
+                                        setDialogState(() {
+                                          item['taxEnabled'] = val ?? false;
+                                          recalcLine(item);
+                                          recalculate(setDialogState);
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: TextFormField(
+                                      key: ValueKey('so_tax_rate_${i}_${item['productId']}_${item['taxEnabled']}'),
+                                      enabled: item['taxEnabled'] as bool,
+                                      initialValue: (item['taxRate'] as double).toStringAsFixed(0),
+                                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                      style: const TextStyle(fontSize: 11),
+                                      decoration: const InputDecoration(
+                                        isDense: true,
+                                        suffixText: '%',
+                                        contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                                      ),
+                                      onChanged: (val) {
+                                        item['taxRate'] = double.tryParse(val) ?? 0.0;
+                                        recalcLine(item);
+                                        recalculate(setDialogState);
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )),
+                            DataCell(Text((item['taxAmount'] as double).toStringAsFixed(AppConstants.decimalPlaces), style: const TextStyle(fontSize: 11))),
                             DataCell(Text((item['total'] as double).toStringAsFixed(AppConstants.decimalPlaces), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold))),
                             DataCell(IconButton(
                               icon: const Icon(PhosphorIconsBold.trash, size: 14, color: AppColors.error),
@@ -505,6 +565,7 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
                             )),
                           ]);
                         }).toList(),
+                        ),
                       ),
                     if (orderItems.isNotEmpty)
                       Padding(
@@ -567,14 +628,16 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
                         }
                         try {
                           final companions = orderItems.map((item) {
-                            final lineTotal = (item['quantity'] as double) * (item['unitPrice'] as double);
+                            final enabled = item['taxEnabled'] as bool;
                             return SalesOrderItemsCompanion.insert(
                               orderId: 0, // Will be set by repository
                               productId: item['productId'] as int,
                               quantity: item['quantity'] as double,
                               unitPrice: item['unitPrice'] as double,
                               total: item['total'] as double,
-                              taxRate: Value(item['taxRate'] as double),
+                              // Exempt lines store a zero rate, matching the
+                              // sales-invoice save mapping.
+                              taxRate: Value(enabled ? item['taxRate'] as double : 0.0),
                               taxAmount: Value(item['taxAmount'] as double),
                             );
                           }).toList();
