@@ -247,12 +247,16 @@ extension AccountingDaoWritesExt on AppDatabase {
         }
       }
 
-      // IAS 1.99: Ensure cost center on P&L accounts
-      // If no cost center provided, auto-resolve a default one rather than
-      // silently losing the entire journal entry (which blocks accounting).
+      // IAS 1.99: P&L lines (revenue/expense/contra_revenue) must carry a cost
+      // center. We only DETECT that need here and defer the fallback until AFTER
+      // the branch/region resolution below, so a branch's own cost center wins
+      // over the global GEN centre. Final priority: explicit -> branch -> region
+      // -> GEN. (Previously the GEN fallback ran right here, which made the
+      // branch/region resolution below dead code for every P&L entry — so every
+      // branch sale/purchase landed on GEN instead of the branch's own centre.)
       int? resolvedCostCenterId = costCenterId;
+      bool needsCostCenter = false;
       if (resolvedCostCenterId == null && referenceType != 'fiscal_close') {
-        bool needsCostCenter = false;
         for (final line in roundedLines) {
           if (line.costCenterId != null) continue;
           final account = accountMap[line.accountId];
@@ -262,27 +266,6 @@ extension AccountingDaoWritesExt on AppDatabase {
                   account.accountType == 'contra_revenue')) {
             needsCostCenter = true;
             break;
-          }
-        }
-        if (needsCostCenter) {
-          // Try to find existing default cost center
-          final defaultCC = await (select(costCenters)
-                ..where((c) => c.code.equals('GEN'))
-                ..limit(1))
-              .getSingleOrNull();
-          if (defaultCC != null) {
-            resolvedCostCenterId = defaultCC.id;
-          } else {
-            // Auto-create a General cost center so entries are never lost
-            resolvedCostCenterId = await into(costCenters).insert(
-              CostCentersCompanion.insert(
-                code: 'GEN',
-                name: '\u0639\u0627\u0645', // عام (General)
-                // UUID-First (Phase 1).
-                globalId: Value(UuidV7.generate()),
-              ),
-            );
-            debugPrint('[ACCOUNTING] Auto-created default cost center GEN (id=$resolvedCostCenterId)');
           }
         }
       }
@@ -341,9 +324,9 @@ extension AccountingDaoWritesExt on AppDatabase {
         }
       }
 
-      // COST-CENTER FIX: If no explicit costCenterId was passed but we know the branch,
-      // resolve the branch's own cost center BEFORE falling back to the global 'GEN' centre.
-      // Priority: explicit → branch → GEN (was: explicit → GEN, skipping branch)
+      // COST-CENTER RESOLUTION (step 2 of 2): no explicit costCenterId, so
+      // resolve the branch's own cost center — then its region's — BEFORE the
+      // global GEN fallback below. Priority: explicit -> branch -> region -> GEN.
       if (resolvedCostCenterId == null && finalBranchId != null) {
         final branchRow = await (select(branches)..where((b) => b.id.equals(finalBranchId!))..limit(1)).getSingleOrNull();
         if (branchRow?.costCenterId != null) {
@@ -355,6 +338,30 @@ extension AccountingDaoWritesExt on AppDatabase {
             resolvedCostCenterId = regionRow!.costCenterId;
             debugPrint('[ACCOUNTING] costCenter auto-resolved from region #${branchRow!.regionId} → cc=${regionRow.costCenterId}');
           }
+        }
+      }
+
+      // COST-CENTER RESOLUTION (final fallback): a P&L entry with no explicit,
+      // branch, or region cost center lands on the global «عام» (GEN), which is
+      // auto-created once so entries are never lost. Reached ONLY after branch +
+      // region both came back empty — never ahead of the branch's own centre.
+      if (resolvedCostCenterId == null && needsCostCenter) {
+        final defaultCC = await (select(costCenters)
+              ..where((c) => c.code.equals('GEN'))
+              ..limit(1))
+            .getSingleOrNull();
+        if (defaultCC != null) {
+          resolvedCostCenterId = defaultCC.id;
+        } else {
+          // Auto-create a General cost center so entries are never lost
+          resolvedCostCenterId = await into(costCenters).insert(
+            CostCentersCompanion.insert(
+              code: 'GEN',
+              name: 'عام',
+              globalId: Value(UuidV7.generate()),
+            ),
+          );
+          debugPrint('[ACCOUNTING] Auto-created default cost center GEN (id=$resolvedCostCenterId)');
         }
       }
 
@@ -1446,6 +1453,130 @@ extension AccountingDaoWritesExt on AppDatabase {
     } catch (e) {
       debugPrint('[ACCOUNTING_REMEDIATION] Error: $e');
       return 0;
+    }
+  }
+
+  /// ONE-OFF REPAIR: re-attribute historical AUTO-POSTED journal entries that
+  /// landed on the global «عام» (GEN) cost center back to their branch's OWN
+  /// centre — falling back to the branch's region centre — matching the fixed
+  /// resolution priority in [createJournalEntry] (explicit → branch → region →
+  /// GEN). This repairs pre-fix history where every branch sale/purchase was
+  /// attributed to «عام».
+  ///
+  /// [dryRun] true (default) only COUNTS what would move and writes nothing.
+  /// Balance-neutral: only the analytical cost-center dimension changes; no
+  /// debit/credit amount, trial balance, or P&L total is touched. Manual
+  /// journal entries are left untouched (only `is_auto_posted` rows move).
+  ///
+  /// Mirror of scripts/repair_branch_cost_centers.sql, run through the app so
+  /// it works on both the encrypted local (SQLCipher) and Postgres backends.
+  Future<BranchCostCenterRepairReport> repairBranchCostCenterAttribution({
+    bool dryRun = true,
+  }) async {
+    final boolTrue = sqlBool(true);
+
+    // Entries currently on a GEN «عام» centre whose branch (or its region) has
+    // its own non-GEN centre — i.e. the ones that should move.
+    final entryCountSql = '''
+      SELECT COUNT(*) AS cnt
+      FROM journal_entries je
+      JOIN branches b     ON b.id = je.branch_id
+      LEFT JOIN regions r ON r.id = b.region_id
+      WHERE je.is_auto_posted = $boolTrue
+        AND je.cost_center_id IN (SELECT id FROM cost_centers WHERE code = 'GEN')
+        AND COALESCE(b.cost_center_id, r.cost_center_id) IS NOT NULL
+        AND COALESCE(b.cost_center_id, r.cost_center_id)
+              NOT IN (SELECT id FROM cost_centers WHERE code = 'GEN')
+    ''';
+
+    final lineCountSql = '''
+      SELECT COUNT(*) AS cnt
+      FROM journal_entry_lines jel
+      WHERE jel.cost_center_id IN (SELECT id FROM cost_centers WHERE code = 'GEN')
+        AND EXISTS (
+          SELECT 1
+          FROM journal_entries je
+          JOIN branches b     ON b.id = je.branch_id
+          LEFT JOIN regions r ON r.id = b.region_id
+          WHERE je.id = jel.entry_id
+            AND je.is_auto_posted = $boolTrue
+            AND je.cost_center_id IN (SELECT id FROM cost_centers WHERE code = 'GEN')
+            AND COALESCE(b.cost_center_id, r.cost_center_id) IS NOT NULL
+            AND COALESCE(b.cost_center_id, r.cost_center_id)
+                  NOT IN (SELECT id FROM cost_centers WHERE code = 'GEN')
+        )
+    ''';
+
+    try {
+      final entries = (await customSelect(entryCountSql).getSingle()).read<int>('cnt');
+      final lines = (await customSelect(lineCountSql).getSingle()).read<int>('cnt');
+
+      if (dryRun || entries == 0) {
+        debugPrint('[CC_REPAIR] dryRun=$dryRun preview: entries=$entries lines=$lines');
+        return BranchCostCenterRepairReport(
+          affectedEntries: entries,
+          affectedLines: lines,
+          applied: false,
+        );
+      }
+
+      // Move LINES first (while headers still point at GEN, so target entries
+      // remain identifiable), then the HEADERS. One transaction — all or nothing.
+      await transaction(() async {
+        await customStatement('''
+          UPDATE journal_entry_lines
+          SET cost_center_id = (
+                SELECT COALESCE(b.cost_center_id, r.cost_center_id)
+                FROM journal_entries je
+                JOIN branches b     ON b.id = je.branch_id
+                LEFT JOIN regions r ON r.id = b.region_id
+                WHERE je.id = journal_entry_lines.entry_id
+              )
+          WHERE journal_entry_lines.cost_center_id IN (SELECT id FROM cost_centers WHERE code = 'GEN')
+            AND EXISTS (
+              SELECT 1
+              FROM journal_entries je
+              JOIN branches b     ON b.id = je.branch_id
+              LEFT JOIN regions r ON r.id = b.region_id
+              WHERE je.id = journal_entry_lines.entry_id
+                AND je.is_auto_posted = $boolTrue
+                AND je.cost_center_id IN (SELECT id FROM cost_centers WHERE code = 'GEN')
+                AND COALESCE(b.cost_center_id, r.cost_center_id) IS NOT NULL
+                AND COALESCE(b.cost_center_id, r.cost_center_id)
+                      NOT IN (SELECT id FROM cost_centers WHERE code = 'GEN')
+            )
+        ''');
+
+        await customStatement('''
+          UPDATE journal_entries
+          SET cost_center_id = (
+                SELECT COALESCE(b.cost_center_id, r.cost_center_id)
+                FROM branches b
+                LEFT JOIN regions r ON r.id = b.region_id
+                WHERE b.id = journal_entries.branch_id
+              )
+          WHERE journal_entries.is_auto_posted = $boolTrue
+            AND journal_entries.cost_center_id IN (SELECT id FROM cost_centers WHERE code = 'GEN')
+            AND journal_entries.branch_id IS NOT NULL
+            AND (SELECT COALESCE(b.cost_center_id, r.cost_center_id)
+                 FROM branches b LEFT JOIN regions r ON r.id = b.region_id
+                 WHERE b.id = journal_entries.branch_id) IS NOT NULL
+            AND (SELECT COALESCE(b.cost_center_id, r.cost_center_id)
+                 FROM branches b LEFT JOIN regions r ON r.id = b.region_id
+                 WHERE b.id = journal_entries.branch_id)
+                  NOT IN (SELECT id FROM cost_centers WHERE code = 'GEN')
+        ''');
+      });
+
+      debugPrint('[CC_REPAIR] applied: entries=$entries lines=$lines moved to branch centres');
+      return BranchCostCenterRepairReport(
+        affectedEntries: entries,
+        affectedLines: lines,
+        applied: true,
+      );
+    } catch (e) {
+      debugPrint('[CC_REPAIR] Error: $e');
+      rethrow;
     }
   }
 }

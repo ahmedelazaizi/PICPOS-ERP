@@ -107,6 +107,10 @@ abstract class IAccountingRepository {
   /// REMEDIATION: Backfill missing cost center IDs for historical data
   Future<int> remediateHistoricalCostCenters();
 
+  /// REPAIR: re-attribute historical auto-posted entries from the global «عام»
+  /// (GEN) centre to their branch's own cost center. [dryRun] only previews.
+  Future<BranchCostCenterRepairReport> repairBranchCostCenterAttribution({bool dryRun});
+
   Future<int?> autoPostOperationalExpense({
     required int expenseId,
     required double amount,

@@ -381,4 +381,11 @@ class AccountingService {
   Future<int> remediateHistoricalData() async {
     return _accountingRepo.remediateHistoricalCostCenters();
   }
+
+  /// ONE-OFF REPAIR: move historical auto-posted entries off the global «عام»
+  /// (GEN) centre onto each transaction's branch cost center. Pass
+  /// [dryRun] = true to preview counts without writing.
+  Future<BranchCostCenterRepairReport> repairBranchCostCenters({bool dryRun = true}) {
+    return _accountingRepo.repairBranchCostCenterAttribution(dryRun: dryRun);
+  }
 }

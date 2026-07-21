@@ -833,4 +833,8 @@ class DriftAccountingRepository implements IAccountingRepository {
 
   @override
   Future<int> remediateHistoricalCostCenters() => _db.remediateHistoricalCostCenters();
+
+  @override
+  Future<BranchCostCenterRepairReport> repairBranchCostCenterAttribution({bool dryRun = true}) =>
+      _db.repairBranchCostCenterAttribution(dryRun: dryRun);
 }

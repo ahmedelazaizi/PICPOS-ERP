@@ -17,6 +17,7 @@ import '../../../services/offline_sync_worker.dart';
 import '../../../services/sync/sync_worker.dart';
 import '../../../../../../core/constants/app_constants.dart';
 import '../../widgets/report_components.dart' show DateRangeFilter;
+import '../../../domain/entities/accounting_entities.dart' show BranchCostCenterRepairReport;
 
 class FinancialStatementsScreen extends ConsumerStatefulWidget {
   /// Optional tab to open on startup. 5 = مطابقة الترحيل (used by sync badge).
@@ -1490,12 +1491,47 @@ class _FinancialStatementsScreenState
   }
 
   Future<void> _showRemediationDialog() async {
+    final accounting = ref.read(accountingServiceProvider);
+
+    // Dry-run preview of the branch cost-center repair (read-only) so the
+    // operator sees exactly how many entries would move before committing.
+    BranchCostCenterRepairReport? preview;
+    try {
+      preview = await accounting.repairBranchCostCenters(dryRun: true);
+    } catch (_) {
+      preview = null;
+    }
+    if (!mounted) return;
+
+    final String branchLine;
+    if (preview == null) {
+      branchLine = 'تعذّر حساب معاينة إصلاح مراكز الفروع.';
+    } else if (preview.hasWork) {
+      branchLine =
+          'قيود آلية مسجّلة على «عام» وتخص فروعاً لها مركز تكلفة خاص: '
+          '${preview.affectedEntries} قيد / ${preview.affectedLines} سطر — '
+          'ستُنقل إلى مركز تكلفة الفرع.';
+    } else {
+      branchLine = 'لا توجد قيود بحاجة لإعادة التوزيع على مراكز الفروع.';
+    }
+
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('إصلاح فروقات التقارير'),
-        content: const Text(
-          'سيقوم النظام بتحديث مراكز التكلفة للعمليات التاريخية لضمان ظهورها في التقارير المفلترة. هل تريد الاستمرار؟',
+        title: const Text('إصلاح فروقات التقارير والمراكز'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('١) تعبئة مراكز التكلفة للأسطر التاريخية من رؤوس القيود.'),
+            const SizedBox(height: 10),
+            Text('٢) $branchLine'),
+            const SizedBox(height: 12),
+            const Text(
+              'العملية آمنة ولا تغيّر أي مبالغ مدينة/دائنة — تعيد فقط تصنيف مركز التكلفة.',
+              style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+            ),
+          ],
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
@@ -1506,10 +1542,16 @@ class _FinancialStatementsScreenState
 
     if (ok == true && mounted) {
       try {
-        final accounting = ref.read(accountingServiceProvider);
+        // 1) Backfill line-level cost centers from headers (existing behaviour).
         await accounting.remediateHistoricalData();
+        // 2) Re-attribute auto-posted «عام» entries to their branch centre.
+        final res = await accounting.repairBranchCostCenters(dryRun: false);
         if (mounted) {
-          AppToast.show(context, 'تمت عملية الإصلاح بنجاح. يرجى تحديث التقارير.', type: ToastType.success);
+          final moved = res.applied && res.hasWork
+              ? ' — نُقل ${res.affectedEntries} قيد إلى مراكز الفروع'
+              : '';
+          AppToast.show(context, 'تمت عملية الإصلاح بنجاح$moved. يرجى تحديث التقارير.',
+              type: ToastType.success);
           setState(() => _refreshKey++);
         }
       } catch (e) {
