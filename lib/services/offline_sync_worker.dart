@@ -12,6 +12,26 @@ import 'pos_terminal_registration_service.dart';
 import 'server_proxy.dart';
 import 'websocket_sync_client.dart';
 
+/// البند 5 (متطلبات العميل 2026-07-25) — رمز التعارض الذي يرسله الخادم حين
+/// يرفض فاتورة مشتريات لأن رقم فاتورة المورد مستخدم بالفعل لهذا المورد.
+///
+/// Kept as a stable machine-readable token so the worker classifies the
+/// conflict by contract, not by guessing at Arabic error prose.
+const kDuplicateSupplierInvoiceNoCode = 'DUPLICATE_SUPPLIER_INVOICE_NO';
+
+/// True when a server error is a BUSINESS conflict the operator must resolve —
+/// as opposed to the benign "this exact row already exists" 409 that the worker
+/// folds into success.
+///
+/// The distinction matters: the benign case means the server already holds the
+/// operator's data, so marking the outbox item synced is correct. A business
+/// conflict means the server holds *different* data under the same business
+/// key — folding that into success silently DISCARDS the operator's invoice and
+/// they are never told. Those must dead-letter so they surface in the
+/// sync-failures UI.
+bool isTerminalBusinessConflict(String error) =>
+    error.contains(kDuplicateSupplierInvoiceNoCode);
+
 /// Event payload emitted by [OfflineSyncWorker.lastDeadLetterEvent] each time
 /// an outbox item is moved to the dead-letter state. The shell listens for
 /// this and surfaces a snackbar so the admin notices immediately rather than
@@ -76,7 +96,22 @@ class OfflineSyncWorker {
   static const int _maxRetrySeconds = 60;
   static const int _heartbeatSeconds = 30;
 
+  /// Floor between two drains triggered by the outbox WATCH stream.
+  ///
+  /// `watchSyncPendingCount()` re-emits on every write to `sync_outbox`, and
+  /// `markAsSyncFailed` writes to that table while KEEPING the row `pending`.
+  /// So a row the server keeps rejecting produced: drain → mark failed (write)
+  /// → stream re-emits → drain again, immediately, with no delay — up to
+  /// `_maxSyncAttempts` back-to-back cycles, each one replaying the batch AND
+  /// (before this change) firing a full 41-table `pullAll()`. That is the
+  /// retry storm behind "one or two clients load while the rest are fine".
+  /// A single poison row — e.g. the purchase edit that always 500'd on the
+  /// missing `warehouseId` — was enough to trigger it.
+  static const Duration _watchDrainCooldown = Duration(seconds: 5);
+
   DateTime? _tokenVerifiedAt;
+  DateTime _lastWatchDrain = DateTime.fromMillisecondsSinceEpoch(0);
+  Timer? _watchDrainTimer;
 
   void _scheduleRetry() {
     _retryTimer?.cancel();
@@ -85,6 +120,32 @@ class OfflineSyncWorker {
     _retryAttempts++;
     debugPrint('[OfflineSyncWorker] ⏳ Retry in ${delay}s (backoff attempt $_retryAttempts)');
     _retryTimer = Timer(Duration(seconds: delay), () => drainOutbox(force: true));
+  }
+
+  /// Rate-limited entry point for drains triggered by the outbox watch stream.
+  ///
+  /// A fresh write (a new sale queued) still drains within
+  /// [_watchDrainCooldown]; a row that keeps failing can no longer spin the
+  /// loop. The heartbeat timer and the WebSocket-reconnect listener are
+  /// unaffected — they remain immediate.
+  void _requestWatchDrain() {
+    final now = DateTime.now();
+    final elapsed = now.difference(_lastWatchDrain);
+    if (elapsed >= _watchDrainCooldown) {
+      _lastWatchDrain = now;
+      drainOutbox(force: true);
+      return;
+    }
+    // Inside the cooldown: coalesce into ONE trailing drain so a write that
+    // lands mid-cooldown is not left sitting until the 30 s heartbeat.
+    if (_watchDrainTimer?.isActive == true) return;
+    _watchDrainTimer = Timer(_watchDrainCooldown - elapsed, () {
+      if (!NetworkService.instance.isClient) return;
+      if (_isDraining) return;
+      if (pendingCount.value <= 0) return;
+      _lastWatchDrain = DateTime.now();
+      drainOutbox(force: true);
+    });
   }
 
   /// Pending items count for UI badges (yellow — waiting to sync)
@@ -110,7 +171,7 @@ class OfflineSyncWorker {
       // Only auto-drain in CLIENT mode — standalone/server should never
       // attempt to sync to a remote server.
       if (count > 0 && !_isDraining && NetworkService.instance.isClient) {
-        drainOutbox(force: true);
+        _requestWatchDrain();
       }
     });
     // Watch dead-letter count for the red alert badge
@@ -442,6 +503,27 @@ class OfflineSyncWorker {
               return;
             }
 
+            // البند 5: a BUSINESS conflict (different data under the same
+            // business key) must NOT be folded into success — that would drop
+            // the operator's invoice silently. Dead-letter it so it appears in
+            // the sync-failures UI with the server's Arabic reason.
+            if (isTerminalBusinessConflict(errorStr)) {
+              failed++;
+              await _db!.markAsSyncDeadLetter(item.id, errorStr);
+              lastDeadLetterEvent.value = DeadLetterEvent(
+                table: item.targetTable,
+                operation: item.operation,
+                reason: errorStr,
+                timestamp: DateTime.now(),
+              );
+              print('[OfflineSyncWorker] ⛔ Business conflict on item #${item.id} '
+                  '— dead-lettered, operator action required: $errorStr');
+              unawaited(DiagnosticLogger.log('SYNC-WARN',
+                  '⛔ BUSINESS-CONFLICT table=${item.targetTable} '
+                  'op=${item.operation} id=${item.id} reason=$errorStr'));
+              continue;
+            }
+
             // 409 Conflict or duplicate — data already exists on server.
             // Mark as synced (not failed) to prevent infinite retries.
             final isConflict =
@@ -504,6 +586,21 @@ class OfflineSyncWorker {
                 // warehouse assignment before retrying.
                 errorStr.contains('Authorization Error') ||
                 errorStr.contains('Cross-branch operation denied') ||
+                // A permission denial is permanent FOR THIS ACTOR — the same
+                // payload replayed by the same user always fails. Without
+                // this it burned all 10 attempts against the server before
+                // dead-lettering. Covers both denial shapes:
+                //   • ApiUserCtx.requirePermission → 403 "User #N lacks
+                //     permission: <code>"
+                //   • PermissionEnforcer.requireCriticalOp → 403 with an
+                //     Arabic reason; every one of those messages contains
+                //     "لا تملك صلاحية" or "يلزم صلاحية".
+                // Recovery once an admin grants the permission is the
+                // existing "إعادة محاولة الكل" button, which resets
+                // dead-letter rows to pending (retryAllDeadLetterItems).
+                errorStr.contains('lacks permission') ||
+                errorStr.contains('لا تملك صلاحية') ||
+                errorStr.contains('يلزم صلاحية') ||
                 // Spec 136 (field 2026-06-04): an unbalanced journal entry
                 // (debit ≠ credit beyond the balance tolerance — 0.01 since
                 // Spec 139) is a
@@ -593,8 +690,17 @@ class OfflineSyncWorker {
           'remaining=${remaining.isEmpty ? 0 : '1+'}',
         ));
       }
-      // Pull master-data updates from server after every successful drain
-      unawaited(DeltaPullService.instance.pullAll());
+      // Pull server changes back — but ONLY when this drain actually pushed
+      // something. `pullAll()` is 41 sequential HTTP round-trips; firing it
+      // unconditionally meant every drain cycle, including the ones that
+      // pushed nothing because the batch was all failures, cost the server
+      // another 41 requests. Combined with the watch-stream retry loop above,
+      // a single stuck outbox row generated hundreds of pulls per minute from
+      // one client. A drain that synced nothing has, by definition, no new
+      // server-side result to fetch.
+      if (synced > 0) {
+        unawaited(DeltaPullService.instance.pullAll());
+      }
     } catch (e) {
       print('[OfflineSyncWorker] Drain error: $e');
       _scheduleRetry();
@@ -1103,25 +1209,43 @@ class OfflineSyncWorker {
       case 'purchases':
       case 'purchase_invoices':
         if (operation == 'insert') {
-          // Handle both camelCase (from ClientWriteInterceptor) and snake_case (from PurchaseDao outbox)
-          return proxy.createPurchase({
-            'supplierId': payload['supplierId'] ?? payload['supplier_id'],
-            'warehouseId': payload['warehouseId'] ?? payload['warehouse_id'],
-            'invoiceDate': payload['invoiceDate'] ?? payload['invoice_date'],
-            'paid': payload['paid'] ?? 0,
-            'paymentMethod': payload['paymentMethod'] ?? payload['payment_method'] ?? 'cash',
-            'supplierInvoiceNumber': payload['supplierInvoiceNumber'] ?? payload['invoice_number'],
-            'notes': payload['notes'],
-            'items': (payload['items'] as List?)?.map((item) {
-              final m = item as Map<String, dynamic>;
-              return {
-                'productId': m['productId'] ?? m['product_id'],
-                'quantity': m['quantity'],
-                'unitCost': m['unitCost'] ?? m['unit_cost'],
-                'total': m['total'] ?? ((m['quantity'] as num?)?.toDouble() ?? 0) * ((m['unitCost'] ?? m['unit_cost'] as num?)?.toDouble() ?? 0),
-              };
-            }).toList() ?? [],
-          }, idempotencyKey: idempotencyKey);
+          // Replay the ORIGINAL payload, only normalising snake_case keys that
+          // the PurchaseDao outbox writes. The previous hand-built map listed
+          // 7 fields and silently dropped everything else — `discount`,
+          // `globalId`, `costCenterId`, `branchId`, `userId`, and per-line
+          // `taxRate`/`taxAmount`/`batchNumber`/`expiryDate`/`unitName`/
+          // `quantityInBase`/`globalId`. So any purchase queued while offline
+          // reached the server GROSS, with zero VAT, no idempotency key and no
+          // line identities (which then duplicated on the next pull).
+          final replay = <String, dynamic>{...payload};
+          void alias(String camel, String snake) {
+            if (replay[camel] == null && replay[snake] != null) {
+              replay[camel] = replay[snake];
+            }
+          }
+          alias('supplierId', 'supplier_id');
+          alias('warehouseId', 'warehouse_id');
+          alias('invoiceDate', 'invoice_date');
+          alias('paymentMethod', 'payment_method');
+          alias('supplierInvoiceNumber', 'invoice_number');
+          alias('costCenterId', 'cost_center_id');
+          alias('branchId', 'branch_id');
+          alias('globalId', 'global_id');
+          alias('userId', 'user_id');
+          replay['paid'] ??= 0;
+          replay['items'] = (payload['items'] as List?)?.map((item) {
+            final m = Map<String, dynamic>.from(item as Map);
+            m['productId'] ??= m['product_id'];
+            m['unitCost'] ??= m['unit_cost'];
+            m['taxRate'] ??= m['tax_rate'];
+            m['taxAmount'] ??= m['tax_amount'];
+            m['quantityInBase'] ??= m['quantity_in_base'];
+            m['globalId'] ??= m['global_id'];
+            m['total'] ??= ((m['quantity'] as num?)?.toDouble() ?? 0) *
+                ((m['unitCost'] as num?)?.toDouble() ?? 0);
+            return m;
+          }).toList() ?? [];
+          return proxy.createPurchase(replay, idempotencyKey: idempotencyKey);
         } else if (operation == 'update') {
           await proxy.updatePurchase(payload['id'] as int, payload, idempotencyKey: idempotencyKey);
         } else if (operation == 'delete') {

@@ -16,6 +16,7 @@ import '../../core/permissions/permission_codes.dart';
 import '../../core/utils/uuid_v7.dart';
 import '../../data/database/database.dart';
 import '../../domain/entities/accounting_entities.dart';
+import '../offline_sync_worker.dart' show kDuplicateSupplierInvoiceNoCode;
 import 'api_user_context.dart';
 import 'api_handler_base.dart';
 
@@ -229,6 +230,10 @@ class ApiPurchaseHandler extends ApiHandlerBase {
         supplierInvoiceNumber: data['supplierInvoiceNumber'] as String?,
         notes: data['notes'] as String?,
         globalId: incomingPurchaseGid, // UUID-First
+        // ح-1: without this the server stored the GROSS total for a discounted
+        // client invoice, so the supplier kept a payable for the discount that
+        // could never be settled.
+        discount: parseDoubleNullable(data['discount']) ?? 0,
       );
       broadcast('purchases');
       broadcast('products');
@@ -253,6 +258,26 @@ class ApiPurchaseHandler extends ApiHandlerBase {
         await storeIdempotency(idempotencyKey, responseBody, actionType: 'postPurchase');
       }
       return jsonResponse(responseBody);
+    } on StateError catch (e, st) {
+      // البند 5 (2026-07-25): a duplicate supplier-invoice-number is a BUSINESS
+      // conflict, not a server fault. Returning 500 made the outbox retry it
+      // forever; 409 lets the worker park it and surface an actionable message.
+      //
+      // This sits after the globalId short-circuit above, so a legitimate
+      // outbox replay of an already-persisted invoice returns 200/duplicate and
+      // never reaches here.
+      final msg = e.message;
+      if (msg.contains('رقم فاتورة المورد')) {
+        debugPrint('[API] postPurchase conflict: $msg');
+        // Prefix with the stable machine token so OfflineSyncWorker classifies
+        // this as a TERMINAL business conflict (dead-letter + notify) rather
+        // than the benign "row already exists" 409 it folds into success.
+        return errorResponse('$kDuplicateSupplierInvoiceNoCode: $msg',
+            statusCode: 409);
+      }
+      debugPrint('[API] postPurchase error: $e\n$st');
+      await _writeErrorLog('postPurchase', e, st);
+      return errorResponse('Failed to create purchase: $e');
     } catch (e, st) {
       debugPrint('[API] postPurchase error: $e\n$st');
       await _writeErrorLog('postPurchase', e, st);
@@ -1277,13 +1302,30 @@ class ApiPurchaseHandler extends ApiHandlerBase {
         ));
       }
 
+      final invoiceIdUp = int.parse(id);
+
+      // warehouseId is optional on an EDIT: a client that only changed lines
+      // has no reason to resend it. Falling back to the invoice's own
+      // warehouse keeps the edit valid instead of 500-ing with
+      // "warehouseId is required" — the failure that made every client-mode
+      // purchase edit impossible AND left a poison row in the client outbox
+      // (which then drove the retry storm in OfflineSyncWorker).
       final clientWhIdUp = parseInt(data['warehouseId']);
-      if (clientWhIdUp == 0) throw Exception('Validation Error: warehouseId is required.');
-      final clientBranchIdUp = parseIntNullable(data['branchId']);
-      final resolvedWhIdUp = await _resolveWarehouseId(clientWhIdUp, branchId: clientBranchIdUp);
+      final int resolvedWhIdUp;
+      if (clientWhIdUp == 0) {
+        final existing = await db.getPurchaseInvoiceById(invoiceIdUp);
+        if (existing == null) {
+          throw Exception('Validation Error: purchase invoice $id not found.');
+        }
+        resolvedWhIdUp = existing.warehouseId;
+      } else {
+        final clientBranchIdUp = parseIntNullable(data['branchId']);
+        resolvedWhIdUp =
+            await _resolveWarehouseId(clientWhIdUp, branchId: clientBranchIdUp);
+      }
 
       await db.updatePurchaseInvoice(
-        invoiceId: int.parse(id),
+        invoiceId: invoiceIdUp,
         supplierId: parseInt(data['supplierId']),
         warehouseId: resolvedWhIdUp,
         items: items,
@@ -1291,11 +1333,26 @@ class ApiPurchaseHandler extends ApiHandlerBase {
         paymentMethod: data['paymentMethod'] as String? ?? 'cash',
         notes: data['notes'] as String?,
         supplierInvoiceNumber: data['supplierInvoiceNumber'] as String?,
+        costCenterId: parseIntNullable(data['costCenterId']),
+        // Purchase-edit policy — the DAO gate evaluates `purchases_edit`
+        // against THIS user. ApiUserCtx.userIdOf is the session-token-derived
+        // identity that `requirePermission` above already validated, so the
+        // local gate and the API gate now agree on who is acting.
+        userId: ApiUserCtx.userIdOf(request),
+        // ح-1: the server edit path dropped the discount too, so a discounted
+        // invoice edited from any client came back gross. Absent key = null =
+        // keep the stored discount rather than wiping it.
+        discount: parseDoubleNullable(data['discount']),
       );
       broadcast('purchases');
       broadcast('products');
       db.markTablesUpdated({db.purchaseInvoices});
       return jsonResponse({'success': true});
+    } on PermissionDeniedException catch (e) {
+      // The DAO's purchases_edit gate throws this. It is a 403, not a 500 —
+      // otherwise the client outbox treats it as a retryable server error and
+      // replays it until dead-letter.
+      return errorResponse(e.message, statusCode: 403);
     } catch (e) {
       debugPrint('[API] putPurchase error: $e');
       return errorResponse('Failed to update purchase: $e');

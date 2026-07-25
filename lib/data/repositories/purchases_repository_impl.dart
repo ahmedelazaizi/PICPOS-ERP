@@ -97,6 +97,7 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
           globalId: purchaseGlobalId,
           userId: params.userId,
           createdByUsername: params.createdByUsername,
+          discount: params.discount,
         ).catchError((e) {
           debugPrint('[PURCHASE-SYNC] Server sync failed (queued in outbox): $e');
         }));
@@ -138,6 +139,7 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
         invoiceDate: params.date,
         costCenterId: params.costCenterId,
         globalId: purchaseGlobalId,
+        discount: params.discount,
       );
     }
 
@@ -177,12 +179,30 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
         invoiceDate: params.date,
         costCenterId: params.costCenterId,
         safeId: params.safeId,
+        discount: params.discount,
       );
     });
   }
 
   @override
   Future<void> updateInvoice(UpdatePurchaseInvoiceParams params) async {
+    // ح-6 — REVERTED 2026-07-25 after the sync review.
+    //
+    // A client gate was added here (routing the edit to the server like
+    // createInvoice does) because editing on a mirror posts a local JE for an
+    // event the server also owns. That gate was WRONG and has been removed:
+    // `ClientWriteInterceptor.updatePurchase` sends the invoice's LOCAL id and
+    // the server's `putPurchase` does `int.parse(id)` with no globalId
+    // resolution. Client and server ids diverge by design (DeltaPull keeps the
+    // local id and records an FK mapping), so the edit could rebuild a
+    // DIFFERENT invoice on the server — reversing another device's stock/WAC
+    // and re-posting its journal entry.
+    //
+    // Restoring the previous behaviour re-exposes the known mirror-divergence
+    // issue, which is far less damaging than corrupting an unrelated invoice.
+    // Doing this correctly requires threading `globalId` through
+    // `_CwiCatalog.updatePurchase` AND resolving globalId → id server-side in
+    // `putPurchase` before any mutation; that is separate work, not a gate.
     await _db.transaction(() async {
       await _db.updatePurchaseInvoice(
         invoiceId: params.invoiceId,
@@ -220,6 +240,14 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
         notes: params.notes,
         supplierInvoiceNumber: params.supplierInvoiceNumber,
         costCenterId: params.costCenterId,
+        // Purchase-edit policy — thread the caller's identity so the
+        // `purchases_edit` gate in the DAO can actually evaluate it. Before
+        // this the parameter was omitted, so the gate saw userId == null and
+        // denied EVERY posted invoice regardless of permissions.
+        userId: params.userId,
+        // ح-1: without this the edit rewrote the total GROSS and re-created
+        // the phantom payable the create path was fixed to avoid.
+        discount: params.discount,
       );
     });
   }

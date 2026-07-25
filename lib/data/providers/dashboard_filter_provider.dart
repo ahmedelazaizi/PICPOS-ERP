@@ -69,10 +69,26 @@ class DashboardKpi {
   final double revenue; // GL net revenue (ex-VAT, net of returns)
   final double netProfit; // GL net profit
   final int invoiceCount;
+
+  /// البند 1 (متطلبات العميل 2026-07-25) — مكوّنات «صافي الإيراد» حتى يستطيع
+  /// العميل تدقيق الرقم يدوياً.
+  ///
+  /// The complaint was that the figure could not be reconciled by hand. The
+  /// premise that returns weren't deducted was wrong — they were. The real
+  /// cause: the card shows an EX-VAT figure while the operator adds up
+  /// tax-inclusive receipts, so the gap is exactly the net output VAT. Rather
+  /// than change a correct number, expose its parts.
+  final double salesReturns; // المردودات المخصومة أصلاً (بدون ضريبة)
+  final double outputVatNet; // ضريبة المخرجات صافية من عكوسات المردودات
+  final double netRevenueInclVat; // = revenue + outputVatNet
+
   const DashboardKpi({
     required this.revenue,
     required this.netProfit,
     required this.invoiceCount,
+    this.salesReturns = 0,
+    this.outputVatNet = 0,
+    this.netRevenueInclVat = 0,
   });
 }
 
@@ -115,5 +131,9 @@ final dashboardKpiProvider = FutureProvider.autoDispose<DashboardKpi>((ref) asyn
     revenue: revenue,
     netProfit: netProfit,
     invoiceCount: analytics.invoiceCount,
+    salesReturns: (income['salesReturns'] as num?)?.toDouble() ?? 0.0,
+    outputVatNet: (income['outputVatNet'] as num?)?.toDouble() ?? 0.0,
+    netRevenueInclVat:
+        (income['netRevenueInclVat'] as num?)?.toDouble() ?? 0.0,
   );
 });

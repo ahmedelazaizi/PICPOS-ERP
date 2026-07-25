@@ -85,6 +85,26 @@ abstract class ISalesReportingRepository {
     Set<int>? allowedBranchIds,
   });
 
+  /// البند 8 — per-item sales-tax detail (each line's own rate + taxable base).
+  Future<List<Map<String, dynamic>>> getSalesTaxDetailByItem(
+    DateTime from,
+    DateTime to, {
+    int? costCenterId,
+    List<int>? warehouseIds,
+    int? branchId,
+    Set<int>? allowedBranchIds,
+  });
+
+  /// البند 8 — taxable base + tax subtotalled per distinct rate.
+  Future<List<Map<String, dynamic>>> getSalesTaxByRate(
+    DateTime from,
+    DateTime to, {
+    int? costCenterId,
+    List<int>? warehouseIds,
+    int? branchId,
+    Set<int>? allowedBranchIds,
+  });
+
   Future<List<ShiftReportDto>> getShiftsReportPaginated({
     int limit = 50,
     int offset = 0,

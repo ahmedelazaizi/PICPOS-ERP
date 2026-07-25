@@ -8,6 +8,65 @@
 
 part of '../database.dart';
 
+/// البند 3 — الصيغة الوحيدة التي تربط صف المرتجع بفاتورته الأصلية.
+///
+/// There is no FK column for this link: `getReturnedAmountsForInvoices` parses
+/// the id out of the invoice `notes` text. Every writer of a return row MUST
+/// use this helper so the reader and the writers cannot drift apart — the
+/// server handler, the standalone path and the client's local cache row all
+/// go through it.
+///
+/// The id passed must be the one meaningful IN THE STORE BEING WRITTEN: the
+/// server writes its own resolved id, the client writes its local id.
+///
+/// FOLLOW-UP (not done): replace the whole scheme with a real
+/// `sales_invoices.original_invoice_id` column. That needs a schema migration,
+/// a code-gen pass and sync-strategy changes, so it is left as a separate
+/// piece of work; this helper closes the correctness gap without touching the
+/// schema.
+/// [originalGlobalId], when supplied, is appended as `|gid:<uuid>` and becomes
+/// the AUTHORITATIVE half of the link.
+///
+/// Why: the numeric id is only meaningful in the store that wrote it. The
+/// server writes ITS id; DeltaPull then replaces the client's cached return row
+/// wholesale (serverWins), so the client ends up holding a server id and reads
+/// it against LOCAL ids — netting the refund off the wrong invoice, or none.
+/// The UUID is stable across every store, so the reader resolves by gid first
+/// and only falls back to the number for rows written before this format.
+String localReturnLinkNote(int originalInvoiceId, {String? originalGlobalId}) {
+  final base = 'Return for invoice #$originalInvoiceId';
+  if (originalGlobalId == null || originalGlobalId.isEmpty) return base;
+  return '$base|gid:$originalGlobalId';
+}
+
+/// ح-2 + البند 2 — نتيجة تجميع بطاقات شاشة فواتير المبيعات، محسوبة في SQL.
+class SalesInvoiceSummary {
+  /// عدد فواتير البيع **المطابقة** (لا المحمَّلة على الشاشة).
+  final int invoiceCount;
+
+  /// إجمالي المبيعات — شامل الضريبة والتوصيل، بعد خصم السطور، قبل المرتجعات.
+  final double totalAmount;
+
+  /// المحصّل من الفواتير نفسها (لا يشمل سندات القبض المستقلة).
+  final double totalPaid;
+
+  /// إجمالي المرتجعات في نفس المدى والنطاق.
+  final double totalReturns;
+
+  const SalesInvoiceSummary({
+    required this.invoiceCount,
+    required this.totalAmount,
+    required this.totalPaid,
+    required this.totalReturns,
+  });
+
+  /// البند 2 — «صافي المبيعات» الذي طلبه العميل صراحةً.
+  double get netSales => totalAmount - totalReturns;
+
+  /// المتبقي على العملاء = الإجمالي − المحصّل − المرتجعات.
+  double get totalRemaining => totalAmount - totalPaid - totalReturns;
+}
+
 /// Extension for Sales-related database operations
 extension SalesDao on AppDatabase {
   /// Watch all sales invoices ordered by creation date.
@@ -552,6 +611,115 @@ extension SalesDao on AppDatabase {
   /// origin) so summing both is safe and handles every persisted return
   /// regardless of where it was processed.
   ///
+  /// ح-2 + البند 2 (متطلبات العميل 2026-07-25) — إجماليات شاشة فواتير المبيعات
+  /// محسوبة في **SQL** على كل الصفوف المطابقة.
+  ///
+  /// Every summary card used to be folded in Dart over the result of
+  /// `getInvoicesPaged()`, which is capped at 500 rows. On a branch with a few
+  /// thousand invoices, picking a month showed a truncated total — often
+  /// `0.00` — and «عدد الفواتير» counted the LOADED rows, not the matching
+  /// ones, with no indication anything had been cut off. Adding the requested
+  /// «صافي المبيعات» card on top of that base would only have made a wrong
+  /// number look better, so the aggregate had to move down here first.
+  ///
+  /// The date window matches `dayWindowFor` in the controller exactly:
+  /// `[start-of-start-day, start-of-day-after-end)`.
+  ///
+  /// Returns should be interpreted as it does on screen: return invoices are
+  /// NOT sales rows (excluded from the count and the gross total) and are
+  /// reported separately in [SalesInvoiceSummary.totalReturns].
+  Future<SalesInvoiceSummary> getSalesInvoiceSummary({
+    required DateTime from,
+    required DateTime to,
+    List<int>? warehouseIds,
+    int? branchId,
+    int? costCenterId,
+  }) async {
+    final start = DateTime(from.year, from.month, from.day);
+    final endExclusive = DateTime(to.year, to.month, to.day + 1);
+
+    final vars = <Variable>[dateVar(start), dateVar(endExclusive)];
+    final boolFalse = sqlBool(false);
+
+    var whFilter = '';
+    if (warehouseIds != null) {
+      if (warehouseIds.isEmpty) {
+        whFilter = ' AND 1 = 0';
+      } else {
+        whFilter =
+            ' AND warehouse_id IN (${warehouseIds.map((_) => '?').join(', ')})';
+        vars.addAll(warehouseIds.map((id) => Variable<int>(id)));
+      }
+    }
+    var brFilter = '';
+    if (branchId != null) {
+      brFilter = ' AND branch_id = ?';
+      vars.add(Variable<int>(branchId));
+    }
+    var ccFilter = '';
+    if (costCenterId != null) {
+      ccFilter = ' AND cost_center_id = ?';
+      vars.add(Variable<int>(costCenterId));
+    }
+
+    // Same predicate as getSalesInvoicesPaged: live rows, excluding returns
+    // (NULL saleType counts as a normal sale).
+    final scope = 'is_deleted = $boolFalse '
+        "AND (sale_type IS NULL OR sale_type != 'return') "
+        'AND invoice_date >= ? AND invoice_date < ?'
+        '$whFilter$brFilter$ccFilter';
+
+    final sales = await customSelect(
+      'SELECT COUNT(*) AS n, '
+      'COALESCE(SUM(total), 0) AS total, '
+      'COALESCE(SUM(paid), 0) AS paid '
+      'FROM sales_invoices WHERE $scope',
+      variables: vars,
+      readsFrom: {salesInvoices},
+    ).getSingle();
+
+    // Returns for the SAME window/scope. Mirrors getReturnedAmountsForInvoices'
+    // two sources so the card can't disagree with the per-row «المتبقي».
+    final returnVars = <Variable>[dateVar(start), dateVar(endExclusive)];
+    var retWh = '';
+    if (warehouseIds != null) {
+      if (warehouseIds.isEmpty) {
+        retWh = ' AND 1 = 0';
+      } else {
+        retWh =
+            ' AND warehouse_id IN (${warehouseIds.map((_) => '?').join(', ')})';
+        returnVars.addAll(warehouseIds.map((id) => Variable<int>(id)));
+      }
+    }
+    if (branchId != null) {
+      retWh += ' AND branch_id = ?';
+      returnVars.add(Variable<int>(branchId));
+    }
+    if (costCenterId != null) {
+      retWh += ' AND cost_center_id = ?';
+      returnVars.add(Variable<int>(costCenterId));
+    }
+
+    final returns = await customSelect(
+      'SELECT COALESCE(SUM(total), 0) AS total FROM sales_invoices '
+      "WHERE sale_type = 'return' AND is_deleted = $boolFalse "
+      'AND invoice_date >= ? AND invoice_date < ?$retWh',
+      variables: returnVars,
+      readsFrom: {salesInvoices},
+    ).getSingle();
+
+    final total = (sales.data['total'] as num?)?.toDouble() ?? 0;
+    final paid = (sales.data['paid'] as num?)?.toDouble() ?? 0;
+    final returned = (returns.data['total'] as num?)?.toDouble() ?? 0;
+
+    return SalesInvoiceSummary(
+      invoiceCount: (sales.data['n'] as num?)?.toInt() ?? 0,
+      totalAmount: total,
+      totalPaid: paid,
+      totalReturns: returned,
+    );
+  }
+
   /// Used by the sales-invoices list to subtract the refund from the
   /// row's "المتبقي" and to drive the "إجمالي المرتجعات" summary card.
   Future<Map<int, double>> getReturnedAmountsForInvoices(
@@ -579,14 +747,26 @@ extension SalesDao on AppDatabase {
     // the '#' marker; CAST to INTEGER discards any trailing whitespace
     // and ignores rows whose notes don't follow the pattern. Soft-
     // deleted rows are excluded so cancelled returns don't count.
+    // Resolve the link by the original's globalId when the note carries one
+    // (`…|gid:<uuid>`), joining back to the LOCAL row that owns that uuid. This
+    // is what keeps the attribution correct after DeltaPull replaces a locally
+    // written return row with the server's copy, which carries the SERVER id.
+    // Rows written before the gid format fall back to the raw number.
     final invRows = await customSelect(
-      "SELECT CAST(SUBSTR(notes, INSTR(notes, '#') + 1) AS INTEGER) AS orig_id, "
-      'COALESCE(SUM(total), 0) AS total '
-      'FROM sales_invoices '
-      "WHERE sale_type = 'return' "
-      "  AND notes LIKE 'Return for invoice #%' "
-      '  AND is_deleted = 0 '
-      "  AND CAST(SUBSTR(notes, INSTR(notes, '#') + 1) AS INTEGER) IN ($placeholders) "
+      'SELECT COALESCE(orig.id, r.legacy_id) AS orig_id, '
+      'COALESCE(SUM(r.total), 0) AS total '
+      'FROM ('
+      '  SELECT total, '
+      "    CAST(SUBSTR(notes, INSTR(notes, '#') + 1) AS INTEGER) AS legacy_id, "
+      "    CASE WHEN INSTR(notes, '|gid:') > 0 "
+      "         THEN SUBSTR(notes, INSTR(notes, '|gid:') + 5) END AS orig_gid "
+      '  FROM sales_invoices '
+      "  WHERE sale_type = 'return' "
+      "    AND notes LIKE 'Return for invoice #%' "
+      '    AND is_deleted = 0 '
+      ') r '
+      'LEFT JOIN sales_invoices orig ON orig.global_id = r.orig_gid '
+      'WHERE COALESCE(orig.id, r.legacy_id) IN ($placeholders) '
       'GROUP BY orig_id',
       variables: invoiceIdVars,
       readsFrom: {salesInvoices},

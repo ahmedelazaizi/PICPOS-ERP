@@ -181,3 +181,6 @@ tools/keygen.bat
 
 # Inno Setup compiled output + downloaded prereqs
 installer/output/
+
+# Bundled PostgreSQL installer (354MB) — ship via download+checksum, never in git
+tools/postgresql-*-windows-x64.exe

@@ -322,6 +322,42 @@ class ReportingRepositoryImpl implements IReportingRepository {
       );
 
   @override
+  Future<List<Map<String, dynamic>>> getSalesTaxDetailByItem(
+    DateTime from,
+    DateTime to, {
+    int? costCenterId,
+    List<int>? warehouseIds,
+    int? branchId,
+    Set<int>? allowedBranchIds,
+  }) =>
+      _db.getSalesTaxDetailByItem(
+        from,
+        to,
+        costCenterId: costCenterId,
+        warehouseIds: warehouseIds,
+        branchId: branchId,
+        allowedBranchIds: allowedBranchIds,
+      );
+
+  @override
+  Future<List<Map<String, dynamic>>> getSalesTaxByRate(
+    DateTime from,
+    DateTime to, {
+    int? costCenterId,
+    List<int>? warehouseIds,
+    int? branchId,
+    Set<int>? allowedBranchIds,
+  }) =>
+      _db.getSalesTaxByRate(
+        from,
+        to,
+        costCenterId: costCenterId,
+        warehouseIds: warehouseIds,
+        branchId: branchId,
+        allowedBranchIds: allowedBranchIds,
+      );
+
+  @override
   Future<List<ShiftReportDto>> getShiftsReportPaginated({
     int limit = 50,
     int offset = 0,

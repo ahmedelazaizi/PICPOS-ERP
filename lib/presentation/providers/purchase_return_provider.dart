@@ -15,6 +15,12 @@ class PurchaseReturnState {
   final DateTime toDate;
   final String? error;
 
+  /// البند 7 — فلاتر التتبّع: المورد · الصنف · رقم الفاتورة. كلها تُنفَّذ في
+  /// SQL؛ لا يوجد أي ترشيح في الذاكرة بعد الآن.
+  final int? supplierId;
+  final int? productId;
+  final String invoiceQuery;
+
   PurchaseReturnState({
     this.invoices = const [],
     this.selectedInvoice,
@@ -25,6 +31,9 @@ class PurchaseReturnState {
     required this.fromDate,
     required this.toDate,
     this.error,
+    this.supplierId,
+    this.productId,
+    this.invoiceQuery = '',
   });
 
   PurchaseReturnState copyWith({
@@ -38,6 +47,13 @@ class PurchaseReturnState {
     DateTime? toDate,
     String? error,
     bool clearSelected = false,
+    int? supplierId,
+    int? productId,
+    String? invoiceQuery,
+    // الفلاتر اختيارية، فمسحها يحتاج علماً صريحاً — تمرير null وحده يعني
+    // «لا تغيير» لا «امسح».
+    bool clearSupplier = false,
+    bool clearProduct = false,
   }) {
     return PurchaseReturnState(
       invoices: invoices ?? this.invoices,
@@ -49,6 +65,9 @@ class PurchaseReturnState {
       fromDate: fromDate ?? this.fromDate,
       toDate: toDate ?? this.toDate,
       error: error ?? this.error,
+      supplierId: clearSupplier ? null : (supplierId ?? this.supplierId),
+      productId: clearProduct ? null : (productId ?? this.productId),
+      invoiceQuery: invoiceQuery ?? this.invoiceQuery,
     );
   }
 }
@@ -103,6 +122,34 @@ class PurchaseReturnNotifier extends Notifier<PurchaseReturnState> {
     await loadInvoices();
   }
 
+  /// البند 7 — فلتر المورد.
+  Future<void> setSupplierFilter(int? supplierId) async {
+    state = state.copyWith(
+      supplierId: supplierId,
+      clearSupplier: supplierId == null,
+    );
+    await loadInvoices();
+  }
+
+  /// البند 7 — فلتر الصنف: «الصنف الموجود في جميع الفواتير».
+  Future<void> setProductFilter(int? productId) async {
+    state = state.copyWith(
+      productId: productId,
+      clearProduct: productId == null,
+    );
+    await loadInvoices();
+  }
+
+  /// البند 7 — البحث برقم الفاتورة. مؤجَّل 400ms لأن كل ضغطة مفتاح تصير
+  /// استعلاماً الآن (البحث لم يعد في الذاكرة).
+  void setInvoiceQuery(String query) {
+    state = state.copyWith(invoiceQuery: query);
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 400), () {
+      if (!_disposed) loadInvoices();
+    });
+  }
+
   Future<void> loadInvoices() async {
     state = state.copyWith(isLoading: true);
     try {
@@ -110,6 +157,10 @@ class PurchaseReturnNotifier extends Notifier<PurchaseReturnState> {
       final filtered = await repository.getInvoicesForPurchaseReturn(
         fromDate: state.fromDate,
         toDate: state.toDate,
+        supplierId: state.supplierId,
+        productId: state.productId,
+        invoiceNumberLike:
+            state.invoiceQuery.trim().isEmpty ? null : state.invoiceQuery.trim(),
       );
       state = state.copyWith(invoices: filtered, isLoading: false);
     } catch (e) {

@@ -37,10 +37,16 @@ abstract class IReturnsRepository {
     required DateTime toDate,
   });
 
-  /// Load purchase invoices for return with filters
+  /// Load purchase invoices for return with filters.
+  ///
+  /// البند 7 — [supplierId] / [productId] / [invoiceNumberLike] are applied in
+  /// SQL, not over an already-truncated page (see PurchaseDao docs).
   Future<List<PurchaseInvoiceData>> getInvoicesForPurchaseReturn({
     required DateTime fromDate,
     required DateTime toDate,
+    int? supplierId,
+    int? productId,
+    String? invoiceNumberLike,
   });
 
   /// Get items for a specific sales invoice

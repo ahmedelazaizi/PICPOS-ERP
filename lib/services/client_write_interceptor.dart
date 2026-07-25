@@ -377,7 +377,7 @@ class ClientWriteInterceptor implements SyncInterceptor {
 
   static Future<int?> createPurchase({required int supplierId, required List<Map<String, dynamic>> items, double paid = 0, String? notes, String? globalId, int? userId}) => _CwiCatalog.createPurchase(supplierId: supplierId, items: items, paid: paid, notes: notes, globalId: globalId, userId: userId);
 
-  static Future<bool> updatePurchase({required int invoiceId, required int supplierId, required List<Map<String, dynamic>> items, double paid = 0, String? notes}) => _CwiCatalog.updatePurchase(invoiceId: invoiceId, supplierId: supplierId, items: items, paid: paid, notes: notes);
+  static Future<bool> updatePurchase({required int invoiceId, required int supplierId, required List<Map<String, dynamic>> items, double paid = 0, String? notes, int? warehouseId, int? branchId, int? costCenterId, String? paymentMethod, String? supplierInvoiceNumber, int? userId}) => _CwiCatalog.updatePurchase(invoiceId: invoiceId, supplierId: supplierId, items: items, paid: paid, notes: notes, warehouseId: warehouseId, branchId: branchId, costCenterId: costCenterId, paymentMethod: paymentMethod, supplierInvoiceNumber: supplierInvoiceNumber, userId: userId);
 
   static Future<bool> deletePurchase(int id) => _CwiCatalog.deletePurchase(id);
 
@@ -456,7 +456,7 @@ class ClientWriteInterceptor implements SyncInterceptor {
 
   static Future<bool> submitStockTransfer({required int fromWarehouseId, required int toWarehouseId, required List<Map<String, dynamic>> items, int? userId, String? notes, String? globalId}) => _CwiTrading.submitStockTransfer(fromWarehouseId: fromWarehouseId, toWarehouseId: toWarehouseId, items: items, userId: userId, notes: notes, globalId: globalId);
 
-  static Future<bool> submitPurchase({required int supplierId, required int warehouseId, required List<Map<String, dynamic>> items, required double paid, String paymentMethod = 'cash', String? supplierInvoiceNumber, String? notes, int? costCenterId, int? branchId, int? safeId, String? globalId, int? userId, String? createdByUsername}) => _CwiTrading.submitPurchase(supplierId: supplierId, warehouseId: warehouseId, items: items, paid: paid, paymentMethod: paymentMethod, supplierInvoiceNumber: supplierInvoiceNumber, notes: notes, costCenterId: costCenterId, branchId: branchId, safeId: safeId, globalId: globalId, userId: userId, createdByUsername: createdByUsername);
+  static Future<bool> submitPurchase({required int supplierId, required int warehouseId, required List<Map<String, dynamic>> items, required double paid, String paymentMethod = 'cash', String? supplierInvoiceNumber, String? notes, int? costCenterId, int? branchId, int? safeId, String? globalId, int? userId, String? createdByUsername, double discount = 0}) => _CwiTrading.submitPurchase(supplierId: supplierId, warehouseId: warehouseId, items: items, paid: paid, paymentMethod: paymentMethod, supplierInvoiceNumber: supplierInvoiceNumber, notes: notes, costCenterId: costCenterId, branchId: branchId, safeId: safeId, globalId: globalId, userId: userId, createdByUsername: createdByUsername, discount: discount);
 
   static Future<bool> submitPurchaseReturn(Map<String, dynamic> returnData) => _CwiTrading.submitPurchaseReturn(returnData);
   static Future<bool> submitPurchaseReturnEdit(Map<String, dynamic> editData) => _CwiTrading.submitPurchaseReturnEdit(editData);

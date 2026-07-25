@@ -529,6 +529,38 @@ class ApiSalesHandler extends ApiHandlerBase {
         isCustomer: true,
       );
 
+      // Spec 002 (B2): resolve the original invoice by globalId first
+      // (preferred — survives id divergence between client and server), then
+      // by numeric id as fallback.
+      //
+      // Client issue #3 (2026-07-25): this resolution MUST happen BEFORE the
+      // return row is created, because the return→original link is carried in
+      // the `notes` text that `getReturnedAmountsForInvoices` parses. Writing
+      // the client's raw `originalInvoiceId` there attributes the return to a
+      // *client-local* id, which matches nothing on the server — so the
+      // server's "المتبقي" never reflected the refund while the client's did.
+      SalesInvoiceData? original;
+      try {
+        final originalGlobalId = data['originalInvoiceGlobalId'] as String?;
+        if (originalGlobalId != null && originalGlobalId.isNotEmpty) {
+          original = await (db.select(db.salesInvoices)
+                ..where((s) => s.globalId.equals(originalGlobalId))
+                ..limit(1))
+              .getSingleOrNull();
+        }
+        original ??= await (db.select(db.salesInvoices)
+              ..where((s) => s.id.equals(originalInvoiceId))
+              ..limit(1))
+            .getSingleOrNull();
+      } catch (e) {
+        // Non-fatal: fall back to the client's id below (pre-fix behaviour).
+        debugPrint('[API] postSalesReturn: original lookup failed: $e');
+      }
+
+      // Prefer the resolved SERVER id; fall back to the client's only when the
+      // original genuinely can't be found (orphan return).
+      final linkedOriginalId = original?.id ?? originalInvoiceId;
+
       final serverId = await db.createSalesInvoice(
         invoiceNumber: data['invoiceNumber'] as String?,
         customerId: resolvedReturnCustomerId,
@@ -541,34 +573,21 @@ class ApiSalesHandler extends ApiHandlerBase {
         paid: (parseDoubleNullable(data['paid']))?.toDouble() ?? 0,
         paymentMethod: data['paymentMethod'] as String? ?? 'cash',
         saleType: 'return',
-        notes: 'Return for invoice #$originalInvoiceId',
+        // Carry the original's UUID so the client can re-resolve this link
+        // against its OWN ids after DeltaPull replaces this row locally.
+        notes: localReturnLinkNote(linkedOriginalId,
+            originalGlobalId: original?.globalId),
         items: items,
         // P5: Carry the client's UUID through so the persisted row matches the
         // dedup key checked above on subsequent retries.
         globalId: incomingReturnGlobalId,
       );
 
-      // Spec 002 (B2): flip the original invoice's status to 'returned' or
-      // 'partial_return' so the server's invoices screen + returns history
-      // dialog reflect the return. Resolve the original by globalId first
-      // (preferred — survives id divergence between client and server),
-      // then by numeric id as fallback.
-      SalesInvoiceData? original;
+      // Flip the original invoice's status to 'returned' or 'partial_return'
+      // so the server's invoices screen + returns history dialog reflect it.
       try {
-        final originalGlobalId = data['originalInvoiceGlobalId'] as String?;
         final isFullReturn = (data['isFullReturn'] as bool?) ?? false;
         final newStatus = isFullReturn ? 'returned' : 'partial_return';
-
-        if (originalGlobalId != null && originalGlobalId.isNotEmpty) {
-          original = await (db.select(db.salesInvoices)
-                ..where((s) => s.globalId.equals(originalGlobalId))
-                ..limit(1))
-              .getSingleOrNull();
-        }
-        original ??= await (db.select(db.salesInvoices)
-              ..where((s) => s.id.equals(originalInvoiceId))
-              ..limit(1))
-            .getSingleOrNull();
 
         if (original != null) {
           await (db.update(db.salesInvoices)
@@ -578,8 +597,7 @@ class ApiSalesHandler extends ApiHandlerBase {
               'status → $newStatus');
         } else {
           debugPrint('[API] postSalesReturn: could not find original invoice '
-              '(globalId=$originalGlobalId, id=$originalInvoiceId) — '
-              'status flip skipped');
+              '(id=$originalInvoiceId) — status flip skipped');
         }
       } catch (e) {
         // Non-fatal: the return itself was recorded. Surface the failure

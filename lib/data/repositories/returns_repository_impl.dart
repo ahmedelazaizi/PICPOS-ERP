@@ -234,6 +234,13 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
                 saleType: const Value('return'),
                 status: const Value('completed'),
                 globalId: Value(returnGlobalId),
+                // البند 3: without this the local cache row carried NO link to
+                // its original, so the device under-counted the refund in
+                // «المتبقي» until a DeltaPull replaced it with the server's
+                // row. `invoice.id` is the LOCAL id — which is exactly what the
+                // local query matches on.
+                notes: Value(localReturnLinkNote(invoice.id,
+                    originalGlobalId: invoice.globalId)),
               ),
               items: const [],
             );
@@ -590,8 +597,17 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
   Future<List<PurchaseInvoiceData>> getInvoicesForPurchaseReturn({
     required DateTime fromDate,
     required DateTime toDate,
+    int? supplierId,
+    int? productId,
+    String? invoiceNumberLike,
   }) async {
-    final invoices = await _db.getPurchasesForDateRange(fromDate, toDate);
+    final invoices = await _db.getPurchasesForDateRange(
+      fromDate,
+      toDate,
+      supplierId: supplierId,
+      productId: productId,
+      invoiceNumberLike: invoiceNumberLike,
+    );
     debugPrint('[ReturnsRepo] getInvoicesForPurchaseReturn: total fetched=${invoices.length}, fromDate=$fromDate, toDate=$toDate');
     final filtered = invoices.where((invoice) {
         if (invoice.total <= 0) return false;            // skip zero/negative total invoices

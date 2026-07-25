@@ -151,6 +151,37 @@ class SalesInvoicesScreenState {
   }
 }
 
+/// ح-8 (متطلبات العميل 2026-07-25) — النافذة الزمنية القانونية لفلتر فواتير
+/// المبيعات: **[بداية يوم البداية، بداية اليوم التالي للنهاية)**.
+///
+/// The predicate this replaces was
+/// ```
+/// isAfter(start − 1 day) && isBefore(end + 1 day)
+/// ```
+/// which leaked a full day at BOTH ends:
+///   • `start` from the picker is midnight, so `start − 1 day` is midnight of
+///     the PREVIOUS day and every invoice on that day passed `isAfter`;
+///   • when the picker normalised `end` to 23:59:59, `end + 1 day` reached
+///     into the day AFTER the range as well.
+///
+/// Normalising both bounds to day boundaries makes the window identical
+/// whether the caller passes a midnight `end` or an end-of-day one, and lines
+/// it up with `getReceiptVouchersTotal`'s own `[from, to + 1 day]` window so
+/// «إجمالي المبيعات» and «المحصّل» finally answer the same question.
+bool invoiceDateInRange(DateTime invoiceDate, DateTimeRange range) {
+  final w = dayWindowFor(range);
+  return !invoiceDate.isBefore(w.start) && invoiceDate.isBefore(w.endExclusive);
+}
+
+/// ح-8 — المصدر الوحيد لنافذة التاريخ في هذه الشاشة، تستعمله بطاقة «إجمالي
+/// المبيعات» وبطاقة «المحصّل» معاً. Snaps both bounds to day boundaries so the
+/// window is identical whether the caller hands over a midnight `end` or a
+/// 23:59:59 one.
+({DateTime start, DateTime endExclusive}) dayWindowFor(DateTimeRange range) => (
+      start: DateTime(range.start.year, range.start.month, range.start.day),
+      endExclusive: DateTime(range.end.year, range.end.month, range.end.day + 1),
+    );
+
 class SalesInvoicesController extends Notifier<SalesInvoicesScreenState> {
   Timer? _debounce;
   bool _disposed = false;
@@ -478,15 +509,7 @@ class SalesInvoicesController extends Notifier<SalesInvoicesScreenState> {
     // Date range
     if (state.dateRange != null) {
       filtered = filtered
-          .where(
-            (inv) =>
-                inv.invoiceDate.isAfter(
-                  state.dateRange!.start.subtract(const Duration(days: 1)),
-                ) &&
-                inv.invoiceDate.isBefore(
-                  state.dateRange!.end.add(const Duration(days: 1)),
-                ),
-          )
+          .where((inv) => invoiceDateInRange(inv.invoiceDate, state.dateRange!))
           .toList();
     }
 
@@ -567,11 +590,63 @@ class SalesInvoicesController extends Notifier<SalesInvoicesScreenState> {
       hasMore: filtered.length > state.displayLimit,
     );
 
+    // ح-2 — the in-memory folds above run over a page capped at 500 rows, so
+    // they are only a first paint. Re-derive the cards from a SQL aggregate
+    // over ALL matching rows. Fire-and-forget: the cards update on the next
+    // notify, and the search box (which changes on every keystroke) does not
+    // trigger it — see _refreshSummaryTotals.
+    unawaited(_refreshSummaryTotals());
+
     // Issue 10 — refresh receipt-voucher total scoped to the same filters
     // (date range + branch + cost center). Async + fire-and-forget so the
     // sync filter loop above stays snappy; the KPI card updates on the
     // next state.notify when the future resolves.
     unawaited(_refreshReceiptVouchersTotal());
+  }
+
+  /// ح-2 — authoritative card totals from SQL.
+  ///
+  /// Only runs when a date range is active: without one the aggregate would
+  /// scan the whole table on every filter change, and the un-ranged view is
+  /// the "everything" view where the paged fold is close enough. With a range
+  /// active — which is exactly when the operator is reading the numbers — the
+  /// paged fold could be off by an unbounded amount, or read 0.00.
+  ///
+  /// Deliberately NOT keyed off the search box: the text filter is a
+  /// client-side narrowing of what's displayed, and re-querying per keystroke
+  /// would be a query per character.
+  Future<void> _refreshSummaryTotals() async {
+    if (_disposed) return;
+    final range = state.dateRange;
+    if (range == null) return;
+    // A text search narrows the visible list only; keep the SQL totals aligned
+    // with the structural filters so the cards stay stable while typing.
+    if (state.searchQuery.trim().isNotEmpty) return;
+    try {
+      final db = ref.read(databaseProvider);
+      final window = dayWindowFor(range);
+      final summary = await db.getSalesInvoiceSummary(
+        from: window.start,
+        to: window.endExclusive.subtract(const Duration(days: 1)),
+        warehouseIds: state.selectedWarehouseId != null
+            ? [state.selectedWarehouseId!]
+            : null,
+        branchId: state.selectedBranchId,
+        costCenterId: state.selectedCostCenterId,
+      );
+      if (_disposed) return;
+      state = state.copyWith(
+        totalAmount: summary.totalAmount,
+        totalPaid: summary.totalPaid,
+        totalReturns: summary.totalReturns,
+        totalRemaining: summary.totalRemaining,
+        invoiceCount: summary.invoiceCount,
+      );
+    } catch (e) {
+      // Leave the paged fold in place rather than blanking the cards, but say
+      // so — a silent fallback to a truncated number is what ح-2 was about.
+      debugPrint('[SalesInvoices] SQL summary failed, showing paged totals: $e');
+    }
   }
 
   /// Issue 10 — pull the sum of receipt vouchers in the active date range
@@ -598,9 +673,15 @@ class SalesInvoicesController extends Notifier<SalesInvoicesScreenState> {
       // fullAccess (null) → no cap, matching the invoice-list filter above.
       final scope = await ref.read(branchScopeProvider.future);
       if (_disposed) return;
+      // ح-8: use the SAME day window as the invoice filter. Previously this
+      // passed the raw picker bounds while the invoice list used
+      // `start − 1 day … end + 1 day`, so «إجمالي المبيعات» and «المحصّل»
+      // covered different periods. getReceiptVouchersTotal applies its own
+      // `to + 1 day`, so hand it the START of the end day.
+      final window = dayWindowFor(range);
       final total = await db.getReceiptVouchersTotal(
-        from: range.start,
-        to: range.end,
+        from: window.start,
+        to: window.endExclusive.subtract(const Duration(days: 1)),
         branchId: state.selectedBranchId,
         costCenterId: state.selectedCostCenterId,
         allowedBranchIds: scope.hasFullAccess ? null : scope.allowedBranchIds,

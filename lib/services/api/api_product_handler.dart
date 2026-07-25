@@ -10,6 +10,7 @@ import 'package:shelf/shelf.dart';
 import 'package:drift/drift.dart';
 import '../../core/permissions/permission_codes.dart';
 import '../../core/utils/uuid_v7.dart';
+import '../../core/tax/tax_rate_policy.dart';
 import '../../data/database/database.dart';
 import 'api_user_context.dart';
 import 'api_handler_base.dart';
@@ -21,6 +22,20 @@ class ApiProductHandler extends ApiHandlerBase {
   // ═══════════════════════════════════════════════════════════════
   // Products
   // ═══════════════════════════════════════════════════════════════
+
+  /// البند 4 — يتحقّق من نسبة الضريبة عند حدّ الكتابة على الخادم.
+  ///
+  /// A UI-only dropdown is not enough: this endpoint is also reachable from a
+  /// mirror, an outbox replay and any crafted request, and the Excel importer
+  /// is a third ingress. Returns null when the payload omits `taxRate` (leaves
+  /// the existing/default value alone); throws [ArgumentError] on an illegal
+  /// rate, which the handler maps to 400.
+  double? _validatedTaxRate(dynamic raw) {
+    final parsed = parseDoubleNullable(raw);
+    if (parsed == null) return null;
+    TaxRatePolicy.assertAllowed(parsed);
+    return parsed;
+  }
 
   Future<Response> postProduct(Request request) async {
     try {
@@ -298,7 +313,7 @@ class ApiProductHandler extends ApiHandlerBase {
           // Start at 0 — adjustStock below populates this atomically.
           currentStock: const Value(0),
           minStock: Value(parseDoubleNullable(data['minStock']) ?? 0),
-          taxRate: Value(parseDoubleNullable(data['taxRate']) ?? 0),
+          taxRate: Value(_validatedTaxRate(data['taxRate']) ?? 0),
           isSoldByWeight: Value(parseBool(data['isSoldByWeight'], false)),
           allowNegativeSale: Value(parseBool(data['allowNegativeSale'], false)),
           trackExpiry: Value(parseBool(data['trackExpiry'], false)),
@@ -401,6 +416,12 @@ class ApiProductHandler extends ApiHandlerBase {
       return jsonResponse({'success': true, 'serverId': id});
         },
       );
+    } on ArgumentError catch (e) {
+      // البند 4: an illegal tax rate is a client-side validation failure (400),
+      // not a server fault (500), so the caller can surface the reason verbatim
+      // and the outbox doesn't retry an unfixable payload forever.
+      debugPrint('[API] postProduct rejected: ${e.message}');
+      return errorResponse('${e.message}', statusCode: 400);
     } catch (e) {
       debugPrint('[API] postProduct error: $e');
       return errorResponse('Failed to create product: $e');
@@ -539,7 +560,7 @@ class ApiProductHandler extends ApiHandlerBase {
               ? Value(parseDoubleNullable(data['pricePerUnit']))
               : Value(product.pricePerUnit),
           minStock: parseDoubleNullable(data['minStock']) ?? product.minStock,
-          taxRate: parseDoubleNullable(data['taxRate']) ?? product.taxRate,
+          taxRate: _validatedTaxRate(data['taxRate']) ?? product.taxRate,
           isSoldByWeight: data.containsKey('isSoldByWeight')
               ? parseBool(data['isSoldByWeight'], product.isSoldByWeight)
               : product.isSoldByWeight,
@@ -567,6 +588,9 @@ class ApiProductHandler extends ApiHandlerBase {
       );
       broadcast('products');
       return jsonResponse({'success': true, 'serverId': product.id});
+    } on ArgumentError catch (e) {
+      debugPrint('[API] putProduct rejected: ${e.message}');
+      return errorResponse('${e.message}', statusCode: 400);
     } catch (e) {
       debugPrint('[API] putProduct error: $e');
       return errorResponse('Failed to update product: $e');

@@ -1,4 +1,5 @@
 // ignore_for_file: avoid_dynamic_calls
+import '../../core/tax/tax_rate_policy.dart';
 import '../../core/utils/file_utils.dart';
 import 'package:flutter/foundation.dart'
     show kIsWeb, kDebugMode, debugPrint, visibleForTesting;
@@ -169,6 +170,16 @@ class ExcelService {
               ? _parseDouble(row[8]?.value)
               : 0.0;
           final taxRate = row.length > 9 ? _parseDouble(row[9]?.value) : 0.0;
+          // البند 4: the importer is the third unguarded ingress for the tax
+          // rate (after the form and the server API). Silently storing 37.5
+          // from a spreadsheet is exactly how illegal rates got in. Throwing
+          // here lands in the per-row catch below → the row is counted as an
+          // error and reported, instead of being imported wrong.
+          try {
+            TaxRatePolicy.assertAllowed(taxRate);
+          } on ArgumentError catch (e) {
+            throw Exception('السطر ${i + 1}: ${e.message}');
+          }
           final openingBalance = row.length > 10
               ? _parseDouble(row[10]?.value)
               : 0.0;

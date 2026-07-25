@@ -22,7 +22,8 @@ class SalesSummaryRow extends ConsumerWidget {
     final cards = <Widget>[
       AppKpiCard(
         icon: PhosphorIconsBold.shoppingCart,
-        label: 'إجمالي المبيعات',
+        // البند 2: الصفة صريحة حتى لا يُقارَن الرقم بمبلغ بدون ضريبة.
+        label: 'إجمالي المبيعات (شامل الضريبة)',
         value: '${totalAmount.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
         color: AppColors.info,
         style: KpiStyle.gradient,
@@ -57,6 +58,15 @@ class SalesSummaryRow extends ConsumerWidget {
         color: AppColors.warning,
         style: KpiStyle.gradient,
       ),
+      // البند 2 — «فصل المرتجعات وظهور صافي المبيعات». بطاقة «إجمالي
+      // المرتجعات» كانت موجودة أصلاً؛ الناقص كان النتيجة نفسها.
+      AppKpiCard(
+        icon: PhosphorIconsBold.equals,
+        label: 'صافي المبيعات',
+        value: '${(totalAmount - totalReturns).toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
+        color: AppColors.primary,
+        style: KpiStyle.gradient,
+      ),
       AppKpiCard(
         icon: PhosphorIconsBold.receipt,
         label: 'عدد الفواتير',
@@ -71,8 +81,9 @@ class SalesSummaryRow extends ConsumerWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final w = constraints.maxWidth;
+          // البند 2 — ستّ بطاقات الآن (أُضيفت «صافي المبيعات»).
           final perRow = w >= 1200
-              ? 5
+              ? 6
               : w >= 900
                   ? 4
                   : w >= 600

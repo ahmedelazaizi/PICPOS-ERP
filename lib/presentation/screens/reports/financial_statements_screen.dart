@@ -710,6 +710,31 @@ class _FinancialStatementsScreenState
                 ),
                 const SizedBox(height: 16),
               ],
+              // البند 1 — «إيرادات/مصروفات أخرى» (غير تشغيلية). These were
+              // computed but rendered NOWHERE, so the statement did not foot on
+              // screen: the reader added Revenue − COGS − Expenses and got a
+              // different number from the printed «صافي الربح». That is the
+              // exact "can't reconcile by hand" complaint, so leaving them
+              // hidden after re-classifying purchase discounts and cash
+              // surpluses into this bucket would have made it worse.
+              if ((data['otherIncome'] as double? ?? 0) != 0 ||
+                  (data['otherExpense'] as double? ?? 0) != 0) ...[
+                _buildSectionTitle('إيرادات ومصروفات أخرى (غير تشغيلية)'),
+                ...((data['otherIncomeDetails'] as List?) ?? const []).map(
+                  (d) => _buildReportLine(d['name'], d['amount']),
+                ),
+                ...((data['otherExpenseDetails'] as List?) ?? const []).map(
+                  (d) => _buildReportLine(d['name'], -(d['amount'] as num)),
+                ),
+                const Divider(),
+                _buildReportLine(
+                  'صافي الإيرادات الأخرى',
+                  (data['otherIncome'] as double? ?? 0) -
+                      (data['otherExpense'] as double? ?? 0),
+                  isBold: true,
+                ),
+                const SizedBox(height: 16),
+              ],
               const SizedBox(height: 16),
               // Net Profit
               Container(

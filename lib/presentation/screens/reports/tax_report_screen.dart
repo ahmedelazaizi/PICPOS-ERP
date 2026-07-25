@@ -32,6 +32,12 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
   Map<String, dynamic>? _data;
   List<SalesInvoiceData> _salesInvoices = [];
   List<PurchaseInvoiceWithSupplier> _purchaseInvoices = [];
+
+  /// البند 8 — per-line tax rows, grouped by invoice id for the drill-down.
+  Map<int, List<Map<String, dynamic>>> _salesTaxByInvoice = {};
+
+  /// البند 8 — taxable base + tax per distinct rate (VAT-return shape).
+  List<Map<String, dynamic>> _salesTaxRateBuckets = [];
   int? _selectedCostCenterId; // null = all cost centers
   int? _selectedRegionId; // Feature 017 — region filter wired to data load
   int? _selectedBranchId;
@@ -126,11 +132,37 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
         allowedBranchIds: _allowedBranchIds,
       );
 
+      // البند 8 — per-item tax detail + rate buckets. Same filter set as the
+      // summary above so the drill-down reconciles with the cards.
+      final taxDetail = await repo.getSalesTaxDetailByItem(
+        _fromDate,
+        _toDate,
+        costCenterId: _selectedCostCenterId,
+        warehouseIds: warehouseIds,
+        branchId: _selectedBranchId,
+        allowedBranchIds: _allowedBranchIds,
+      );
+      final rateBuckets = await repo.getSalesTaxByRate(
+        _fromDate,
+        _toDate,
+        costCenterId: _selectedCostCenterId,
+        warehouseIds: warehouseIds,
+        branchId: _selectedBranchId,
+        allowedBranchIds: _allowedBranchIds,
+      );
+      final grouped = <int, List<Map<String, dynamic>>>{};
+      for (final row in taxDetail) {
+        final id = (row['invoiceId'] as num).toInt();
+        (grouped[id] ??= []).add(row);
+      }
+
       if (mounted) {
         setState(() {
           _data = data;
           _salesInvoices = salesList;
           _purchaseInvoices = purchasesList;
+          _salesTaxByInvoice = grouped;
+          _salesTaxRateBuckets = rateBuckets;
           _isLoading = false;
         });
       }
@@ -265,7 +297,7 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
 
                           'FILTER-WARN',
 
-                          'Region \$v selected but no warehouses linked. '
+                          'Region $v selected but no warehouses linked. '
 
                           'Check that branches in this region have a regionId, '
 
@@ -373,7 +405,45 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
             isBold: true,
           ),
           const SizedBox(height: 32),
-          // Invoice-Level Sales Tax Detail
+          // البند 8 — rate buckets (VAT-return shape) above the drill-down.
+          if (_salesTaxRateBuckets.isNotEmpty) ...[
+            const Text('ملخص الضريبة حسب النسبة',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Card(
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: const BorderSide(color: AppColors.border)),
+              child: SizedBox(
+                width: double.infinity,
+                child: DataTable(
+                  columnSpacing: 16,
+                  columns: const [
+                    DataColumn(label: Text('النسبة', style: TextStyle(fontSize: 12))),
+                    DataColumn(label: Text('الوعاء الخاضع', style: TextStyle(fontSize: 12)), numeric: true),
+                    DataColumn(label: Text('الضريبة', style: TextStyle(fontSize: 12)), numeric: true),
+                  ],
+                  rows: _salesTaxRateBuckets.map((b) {
+                    final rate = (b['taxRate'] as num).toDouble();
+                    return DataRow(cells: [
+                      DataCell(Text(
+                          rate == 0 ? 'معفي / صفري' : '${_fmtRate(rate)}%',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold))),
+                      DataCell(Text(currencyFormat.format((b['taxableBase'] as num).toDouble()),
+                          style: const TextStyle(fontSize: 12))),
+                      DataCell(Text(currencyFormat.format((b['taxAmount'] as num).toDouble()),
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.success))),
+                    ]);
+                  }).toList(),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
+          // Invoice-Level Sales Tax Detail — البند 8: expandable per invoice so
+          // each LINE shows its own rate, taxable base and tax. Previously this
+          // was a flat header table with one lump tax figure and no rate.
           if (_salesInvoices.isNotEmpty) ...[
             const Text('تفاصيل ضريبة المبيعات (مخرجات)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
@@ -382,21 +452,77 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: const BorderSide(color: AppColors.border)),
               child: SizedBox(
                 width: double.infinity,
-                child: DataTable(
-                  columnSpacing: 16,
-                  columns: const [
-                    DataColumn(label: Text('رقم الفاتورة', style: TextStyle(fontSize: 12))),
-                    DataColumn(label: Text('التاريخ', style: TextStyle(fontSize: 12))),
-                    DataColumn(label: Text('الإجمالي', style: TextStyle(fontSize: 12)), numeric: true),
-                    DataColumn(label: Text('الضريبة', style: TextStyle(fontSize: 12)), numeric: true),
-                  ],
-                  rows: _salesInvoices.where((s) => s.tax > 0).map((s) {
-                    return DataRow(cells: [
-                      DataCell(Text(s.invoiceNumber, style: const TextStyle(fontSize: 12))),
-                      DataCell(Text(intl.DateFormat('yyyy-MM-dd').format(s.invoiceDate), style: const TextStyle(fontSize: 12))),
-                      DataCell(Text(currencyFormat.format(s.total), style: const TextStyle(fontSize: 12))),
-                      DataCell(Text(currencyFormat.format(s.tax), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.success))),
-                    ]);
+                child: Column(
+                  children: _salesInvoices.where((s) => s.tax > 0).map((s) {
+                    final lines = _salesTaxByInvoice[s.id] ?? const [];
+                    final lineTaxSum = lines.fold<double>(
+                        0, (sum, l) => sum + ((l['taxAmount'] as num?)?.toDouble() ?? 0));
+                    // Spec 151 guarantees SUM(line.tax) == header.tax for rows
+                    // written after it; legacy rows predate the guarantee, so
+                    // surface a mismatch instead of silently showing a total
+                    // the lines below don't add up to.
+                    final mismatch = lines.isNotEmpty && (lineTaxSum - s.tax).abs() > 0.01;
+                    return ExpansionTile(
+                      tilePadding: const EdgeInsets.symmetric(horizontal: 16),
+                      title: Row(
+                        children: [
+                          Expanded(flex: 3, child: Text(s.invoiceNumber, style: const TextStyle(fontSize: 12))),
+                          Expanded(flex: 2, child: Text(intl.DateFormat('yyyy-MM-dd').format(s.invoiceDate), style: const TextStyle(fontSize: 12))),
+                          Expanded(flex: 2, child: Text(currencyFormat.format(s.total), style: const TextStyle(fontSize: 12), textAlign: TextAlign.end)),
+                          Expanded(
+                            flex: 2,
+                            child: Text(currencyFormat.format(s.tax),
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.success),
+                                textAlign: TextAlign.end),
+                          ),
+                          if (mismatch)
+                            const Padding(
+                              padding: EdgeInsets.only(right: 4),
+                              child: Tooltip(
+                                message: 'مجموع ضرائب الأصناف لا يساوي ضريبة الفاتورة',
+                                child: Icon(Icons.warning_amber_rounded, size: 16, color: AppColors.warning),
+                              ),
+                            ),
+                        ],
+                      ),
+                      children: [
+                        if (lines.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.all(12),
+                            child: Text('لا توجد أصناف مسجّلة لهذه الفاتورة',
+                                style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                          )
+                        else
+                          SizedBox(
+                            width: double.infinity,
+                            child: DataTable(
+                              columnSpacing: 16,
+                              headingRowHeight: 34,
+                              dataRowMinHeight: 30,
+                              dataRowMaxHeight: 38,
+                              columns: const [
+                                DataColumn(label: Text('الصنف', style: TextStyle(fontSize: 11))),
+                                DataColumn(label: Text('الكمية', style: TextStyle(fontSize: 11)), numeric: true),
+                                DataColumn(label: Text('الوعاء الضريبي', style: TextStyle(fontSize: 11)), numeric: true),
+                                DataColumn(label: Text('النسبة', style: TextStyle(fontSize: 11)), numeric: true),
+                                DataColumn(label: Text('قيمة الضريبة', style: TextStyle(fontSize: 11)), numeric: true),
+                              ],
+                              rows: lines.map((l) {
+                                final rate = (l['taxRate'] as num?)?.toDouble() ?? 0;
+                                return DataRow(cells: [
+                                  DataCell(Text('${l['productName'] ?? '—'}', style: const TextStyle(fontSize: 11))),
+                                  DataCell(Text('${(l['quantity'] as num?)?.toDouble() ?? 0}', style: const TextStyle(fontSize: 11))),
+                                  DataCell(Text(currencyFormat.format((l['taxableBase'] as num?)?.toDouble() ?? 0), style: const TextStyle(fontSize: 11))),
+                                  DataCell(Text(rate == 0 ? 'معفي' : '${_fmtRate(rate)}%',
+                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold))),
+                                  DataCell(Text(currencyFormat.format((l['taxAmount'] as num?)?.toDouble() ?? 0),
+                                      style: const TextStyle(fontSize: 11, color: AppColors.success))),
+                                ]);
+                              }).toList(),
+                            ),
+                          ),
+                      ],
+                    );
                   }).toList(),
                 ),
               ),
@@ -546,6 +672,10 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
     );
   }
 
+  /// البند 8 — نسبة الضريبة كما يكتبها المحاسب: 16 لا 16.0، و2.5 تبقى 2.5.
+  String _fmtRate(double rate) =>
+      rate == rate.roundToDouble() ? rate.toStringAsFixed(0) : rate.toString();
+
   Widget _buildDetailRow(
     String label,
     double value,
@@ -674,15 +804,45 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
         'القيمة',
       ],
       rows: [
+        // البند 8 — stamp the filter context. A file exported for one branch
+        // used to be indistinguishable from a company-wide one: only the date
+        // range appeared, and only on screen.
+        ['الفترة', '${intl.DateFormat('yyyy-MM-dd').format(_fromDate)} → '
+            '${intl.DateFormat('yyyy-MM-dd').format(_toDate)}'],
+        ['الفرع', _selectedBranchId?.toString() ?? 'الكل'],
+        ['المخزن', _selectedWarehouseId?.toString() ?? 'الكل'],
+        ['مركز التكلفة', _selectedCostCenterId?.toString() ?? 'الكل'],
+        const ['', ''],
         ['إجمالي المبيعات (بدون ضريبة)', _data!['salesTotalExclTax']],
         ['ضريبة المبيعات (مخرجات)', _data!['salesTax']],
         ['إجمالي المشتريات (بدون ضريبة)', _data!['purchaseTotalExclTax']],
         ['ضريبة المشتريات (مدخلات)', _data!['purchaseTax']],
         ['صافي الضريبة المستحقة', _data!['netTax']],
+        const ['', ''],
+        const ['═══ ملخص الضريبة حسب النسبة ═══', ''],
+        for (final b in _salesTaxRateBuckets)
+          [
+            (b['taxRate'] as num).toDouble() == 0
+                ? 'معفي / صفري — وعاء'
+                : '${_fmtRate((b['taxRate'] as num).toDouble())}% — وعاء',
+            b['taxableBase'],
+          ],
+        const ['', ''],
+        const ['═══ تفصيل الضريبة لكل صنف ═══', ''],
+        for (final entry in _salesTaxByInvoice.entries)
+          for (final l in entry.value)
+            [
+              '${l['invoiceNumber']} · ${l['productName'] ?? '—'} · '
+                  '${(l['taxRate'] as num?)?.toDouble() == 0 ? 'معفي' : '${_fmtRate((l['taxRate'] as num?)?.toDouble() ?? 0)}%'}',
+              l['taxAmount'],
+            ],
       ],
     );
     if (path != null && mounted) {
-      AppToast.show(context, 'تم تصدير التقرير بنجاح: \$path', type: ToastType.success);
+      // Was `'... \$path'` — the escaped `$` printed the literal text `$path`
+      // instead of the file location, so the operator never learned where the
+      // export landed.
+      AppToast.show(context, 'تم تصدير التقرير بنجاح: $path', type: ToastType.success);
       try {
         final user = ref.read(authProvider).user;
         ref.read(activityLoggerProvider).logReportExport(user?.id ?? 0, user?.displayName ?? 'مجهول', 'تقرير الضريبة', 'Excel');

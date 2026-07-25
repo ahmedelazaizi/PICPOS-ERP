@@ -167,6 +167,12 @@ mixin _PurchaseInvoiceCrudMixin on ConsumerState<PurchaseInvoicesScreen> {
           notes: notes.isEmpty ? null : notes,
           supplierInvoiceNumber: supplierInvoiceNumber.isEmpty ? invoiceNumber : supplierInvoiceNumber,
           costCenterId: costCenterId,
+          // Purchase-edit policy — the `purchases_edit` gate in the DAO is
+          // evaluated against this id. Omitting it denied every edit.
+          userId: auth.user?.id,
+          // ح-1: the edit branch dropped the discount the same form collects,
+          // so re-saving a discounted invoice restored its gross total.
+          discount: discount,
         ));
       } else {
         // Create new invoice — returns the new invoice ID so we can auto-print.
@@ -183,6 +189,8 @@ mixin _PurchaseInvoiceCrudMixin on ConsumerState<PurchaseInvoicesScreen> {
           safeId: safeId,
           userId: auth.user?.id,
           createdByUsername: auth.user?.username,
+          // ح-1: was collected by the form and silently dropped here.
+          discount: discount,
         ));
       }
 

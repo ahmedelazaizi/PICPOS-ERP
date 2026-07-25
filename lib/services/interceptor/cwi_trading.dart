@@ -705,6 +705,9 @@ class _CwiTrading {
     String? globalId,
     int? userId,
     String? createdByUsername,
+    // ح-1 (2026-07-25): invoice-level discount. Omitting it made the server
+    // store the GROSS total for a discounted client invoice.
+    double discount = 0,
   }) async {
     if (!SyncInterceptor.isClientMode) return false;
     debugPrint('[ClientInterceptor] Routing purchase to server');
@@ -721,6 +724,7 @@ class _CwiTrading {
       'branchId': ?branchId,
       'items': items,
       'paid': paid,
+      'discount': discount,
       'paymentMethod': paymentMethod,
       'supplierInvoiceNumber': supplierInvoiceNumber,
       'notes': notes,

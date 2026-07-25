@@ -172,16 +172,34 @@ class _PurchaseReturnsScreenState extends ConsumerState<PurchaseReturnsScreen>
                               ],
                             ),
                             const SizedBox(height: 10),
+                            // البند 7: البحث يذهب الآن إلى SQL. سابقاً كان
+                            // `contains()` في الذاكرة فوق أحدث 500 فاتورة —
+                            // فيفشل صامتاً على أي فاتورة أقدم.
                             TextField(
                               controller: _searchController,
                               decoration: InputDecoration(
-                                hintText: 'البحث برقم الفاتورة...',
+                                hintText: 'البحث برقم الفاتورة (رقمنا أو رقم المورد)...',
                                 prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
                                 isDense: true,
                                 contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                               ),
-                              onChanged: (_) => setState(() {}),
+                              onChanged: (v) => ref
+                                  .read(purchaseReturnProvider.notifier)
+                                  .setInvoiceQuery(v),
+                            ),
+                            const SizedBox(height: 10),
+                            // البند 7: فلترا المورد والصنف.
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildSupplierFilter(state.supplierId),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: _buildProductFilter(state.productId),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -211,13 +229,89 @@ class _PurchaseReturnsScreenState extends ConsumerState<PurchaseReturnsScreen>
     );
   }
 
+  /// البند 7 — فلتر المورد. القائمة تُبنى من الموردين المعرَّفين فعلاً، عبر
+  /// نفس المسار الذي تستعمله شاشة فاتورة المشتريات (`getSuppliers`) بدل
+  /// استحداث مزوّد جديد.
+  Widget _buildSupplierFilter(int? selected) {
+    return FutureBuilder(
+      future: ref.read(productRepositoryProvider).getSuppliers(),
+      builder: (context, snapshot) {
+        final suppliers = snapshot.data ?? const [];
+        return DropdownButtonFormField<int?>(
+          initialValue: selected,
+          isExpanded: true,
+          isDense: true,
+          style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
+          decoration: InputDecoration(
+            hintText: 'المورد',
+            prefixIcon: const Icon(PhosphorIconsBold.truck, size: 16),
+            isDense: true,
+            contentPadding:
+                const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+          items: [
+            const DropdownMenuItem<int?>(
+              value: null,
+              child: Text('كل الموردين', style: TextStyle(fontSize: 13)),
+            ),
+            for (final s in suppliers)
+              DropdownMenuItem<int?>(
+                value: s.id,
+                child: Text(s.name,
+                    style: const TextStyle(fontSize: 13),
+                    overflow: TextOverflow.ellipsis),
+              ),
+          ],
+          onChanged: (v) =>
+              ref.read(purchaseReturnProvider.notifier).setSupplierFilter(v),
+        );
+      },
+    );
+  }
+
+  /// البند 7 — فلتر الصنف: «الصنف الموجود في جميع الفواتير».
+  Widget _buildProductFilter(int? selected) {
+    final productsAsync = ref.watch(allProductsProvider);
+    return productsAsync.when(
+      loading: () => const SizedBox(height: 40),
+      error: (_, _) => const SizedBox(height: 40),
+      data: (products) => DropdownButtonFormField<int?>(
+        initialValue: selected,
+        isExpanded: true,
+        isDense: true,
+        style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
+        decoration: InputDecoration(
+          hintText: 'الصنف',
+          prefixIcon: const Icon(PhosphorIconsBold.package, size: 16),
+          isDense: true,
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        items: [
+          const DropdownMenuItem<int?>(
+            value: null,
+            child: Text('كل الأصناف', style: TextStyle(fontSize: 13)),
+          ),
+          for (final p in products)
+            DropdownMenuItem<int?>(
+              value: p.id,
+              child: Text(p.name,
+                  style: const TextStyle(fontSize: 13),
+                  overflow: TextOverflow.ellipsis),
+            ),
+        ],
+        onChanged: (v) =>
+            ref.read(purchaseReturnProvider.notifier).setProductFilter(v),
+      ),
+    );
+  }
+
   Widget _buildInvoiceList(PurchaseReturnState state, PurchaseReturnNotifier notifier) {
-    var invoices = state.invoices;
-    final searchText = _searchController.text.trim().toLowerCase();
-    if (searchText.isNotEmpty) {
-      invoices = invoices.where((inv) =>
-          inv.invoiceNumber.toLowerCase().contains(searchText)).toList();
-    }
+    // البند 7: لا ترشيح في الذاكرة بعد الآن — كل الفلاتر نُفِّذت في SQL، فما
+    // يصل هنا هو النتيجة الكاملة لا شريحة مبتورة منها.
+    final invoices = state.invoices;
 
     // Day 11: unified loading / empty states via AppStateView.
     return AppStateView(

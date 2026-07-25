@@ -86,6 +86,12 @@ class CreatePurchaseInvoiceParams {
   final int? userId;
   final String? createdByUsername;
 
+  /// Client issue ح-1 (2026-07-25): invoice-level discount. The form has always
+  /// collected it and shown a net «الصافي النهائى», but it had nowhere to go —
+  /// the header stored the GROSS total, so the difference became a phantom
+  /// payable on the supplier that could never be settled.
+  final double discount;
+
   const CreatePurchaseInvoiceParams({
     required this.supplierId,
     required this.warehouseId,
@@ -99,6 +105,7 @@ class CreatePurchaseInvoiceParams {
     this.safeId,
     this.userId,
     this.createdByUsername,
+    this.discount = 0,
   });
 }
 
@@ -147,6 +154,16 @@ class UpdatePurchaseInvoiceParams {
   final String? paymentMethod;
   final int? costCenterId;
 
+  /// Caller's userId — the ONLY gate on purchase-invoice editing.
+  /// `purchases_edit` is checked against it in `updatePurchaseInvoice`;
+  /// a null value is denied, so every call site MUST supply it.
+  final int? userId;
+
+  /// ح-1 — invoice-level discount on EDIT. Null keeps whatever the stored
+  /// header already holds, so a caller that doesn't collect a discount can't
+  /// silently wipe one.
+  final double? discount;
+
   const UpdatePurchaseInvoiceParams({
     required this.invoiceId,
     this.supplierId,
@@ -157,6 +174,8 @@ class UpdatePurchaseInvoiceParams {
     this.supplierInvoiceNumber,
     this.paymentMethod,
     this.costCenterId,
+    this.userId,
+    this.discount,
   });
 }
 

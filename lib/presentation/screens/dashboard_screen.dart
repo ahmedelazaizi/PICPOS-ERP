@@ -156,9 +156,29 @@ class DashboardScreen extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: Tooltip(
-                        message:
-                            'صافي إيراد دفتر الأستاذ — غير شامل الضريبة وبعد خصم '
-                            'المردودات، عن الفترة والفرع المحددين أعلى الشاشة',
+                        // البند 1 — المعادلة كاملة بالأرقام بدل وصف نصّي. سبب
+                        // عدم تطابق الرقم مع حساب العميل اليدوي أنه بدون
+                        // ضريبة بينما هو يجمع مقبوضات شاملة الضريبة؛ الفارق
+                        // هو ضريبة المخرجات المعروضة هنا صراحةً.
+                        richMessage: kpi.maybeWhen(
+                          data: (k) {
+                            final f = NumberFormat('#,##0.00', 'ar');
+                            return TextSpan(
+                              text: 'صافي إيراد دفتر الأستاذ — عن الفترة '
+                                  'والفرع المحددين أعلى الشاشة\n\n'
+                                  'صافي الإيراد (بدون ضريبة)   ${f.format(k.revenue)}\n'
+                                  '+ ضريبة المخرجات (صافية)    ${f.format(k.outputVatNet)}\n'
+                                  '= صافي الإيراد شامل الضريبة ${f.format(k.netRevenueInclVat)}\n\n'
+                                  'المردودات المخصومة أصلاً    ${f.format(k.salesReturns)}\n\n'
+                                  'ملاحظة: الإيرادات غير البيعية (فائض الخزنة، '
+                                  'خصم المشتريات) لا تدخل هذا الرقم.',
+                            );
+                          },
+                          orElse: () => const TextSpan(
+                            text: 'صافي إيراد دفتر الأستاذ — غير شامل الضريبة '
+                                'وبعد خصم المردودات',
+                          ),
+                        ),
                         child: _HoverableStatCard(
                           // Fix 4 (spec 150 / REP-5): kpi.revenue is the GL net
                           // revenue (ex-VAT, after returns) — "المبيعات" alone

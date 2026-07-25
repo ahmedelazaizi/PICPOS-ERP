@@ -86,18 +86,59 @@ extension PurchaseDao on AppDatabase {
   /// Get purchases for a date range.
   /// Pagination: [limit] and [offset] default to 500/0 to prevent loading
   /// unbounded datasets. Callers that need all rows can pass a large limit.
+  /// البند 7 (متطلبات العميل 2026-07-25) — [supplierId] و[productId]
+  /// و[invoiceNumberLike] تُنفَّذ في SQL عمداً.
+  ///
+  /// The purchase-returns screen used to filter the invoice number with an
+  /// in-memory `contains()` over whatever this method had already truncated to
+  /// `limit` rows. That made "search for invoice X" fail SILENTLY whenever X
+  /// fell outside the newest 500 invoices of the range: the operator saw "no
+  /// results" for an invoice that exists. Pushing the predicate down here is
+  /// the fix — adding more in-memory filters on top of a truncated page would
+  /// not have been.
+  ///
+  /// [invoiceNumberLike] matches BOTH `invoice_number` and
+  /// `supplier_invoice_number`: the operator thinks of «رقم الفاتورة» as the
+  /// number the supplier printed, not our internal one.
+  ///
+  /// [productId] matches invoices CONTAINING that item, via an EXISTS over
+  /// `purchase_invoice_items` (index `idx_purchase_items_invoice` covers it).
   Future<List<PurchaseInvoiceData>> getPurchasesForDateRange(
     DateTime from,
     DateTime to, {
     int limit = 500,
     int offset = 0,
     Set<int>? allowedBranchIds,
+    int? supplierId,
+    int? productId,
+    String? invoiceNumberLike,
   }) {
     // Normalize to full-day boundaries (same as getSalesByDateRange)
     final start = DateTime(from.year, from.month, from.day);
     final end = DateTime(to.year, to.month, to.day).add(const Duration(days: 1));
     final query = select(purchaseInvoices)
       ..where((i) => i.invoiceDate.isBetween(Variable(start), Variable(end)) & i.isDeleted.equals(false));
+
+    if (supplierId != null) {
+      query.where((i) => i.supplierId.equals(supplierId));
+    }
+
+    final needle = invoiceNumberLike?.trim();
+    if (needle != null && needle.isNotEmpty) {
+      final pattern = '%${needle.toLowerCase()}%';
+      query.where((i) =>
+          i.invoiceNumber.lower().like(pattern) |
+          i.supplierInvoiceNumber.lower().like(pattern));
+    }
+
+    if (productId != null) {
+      query.where((i) => existsQuery(
+            selectOnly(purchaseInvoiceItems)
+              ..addColumns([purchaseInvoiceItems.id])
+              ..where(purchaseInvoiceItems.invoiceId.equalsExp(i.id) &
+                  purchaseInvoiceItems.productId.equals(productId)),
+          ));
+    }
 
     // Spec 151 Track-3: authoritative branch-scope cap (drives the purchase-
     // returns history report). Same contract as getSalesByDateRange: null =
@@ -417,6 +458,11 @@ extension PurchaseDao on AppDatabase {
     String? globalId,
     // 062 (D1-004): caller's userId for the overrideCreditLimit gate.
     int? userId,
+    // Client issue ح-1 (2026-07-25): invoice-level discount. Was accepted by
+    // the form, dropped on the way down, and never reached the DAO — so the
+    // header stored the GROSS total while the operator paid the NET, leaving
+    // a permanent phantom payable on the supplier for the discount amount.
+    double discount = 0,
   }) async {
     return transaction(() async {
       // 0. Soft/Hard Period Closing Gating
@@ -448,6 +494,34 @@ extension PurchaseDao on AppDatabase {
         total += subtotal + tax;
         taxTotal += tax;
       }
+
+      // ح-1 — TRADE discount (owner decision 2026-07-25). IAS 2.11 requires a
+      // trade discount to be DEDUCTED FROM THE COST of inventory, not booked
+      // as income. So the discount is apportioned pro-rata into the line unit
+      // costs, `subtotal` is stored NET, and no purchase-discount (4316) leg is
+      // posted at all.
+      //
+      // Consequences that fall out of this, all of them correct:
+      //   • WAC reflects the true landed cost (10 @ 100 less 100 → 90).
+      //   • The inventory GL debit equals Σ(qty × cost), so the GL ↔ stock
+      //     valuation reconciliation stays tied.
+      //   • A later purchase RETURN refunds the net cost, so a discounted
+      //     invoice can no longer refund more cash than was ever paid.
+      final effectiveDiscount =
+          discount > 0 ? FinancialUtils.round(discount) : 0.0;
+      if (effectiveDiscount > total) {
+        throw StateError(
+          'الخصم (${effectiveDiscount.toStringAsFixed(2)}) أكبر من إجمالي '
+          'الفاتورة (${total.toStringAsFixed(2)}).',
+        );
+      }
+      // Factor applied to every line's unit cost. Guard against a zero-value
+      // invoice so we never divide by zero.
+      final discountFactor = (effectiveDiscount > 0 && subtotalSum > 0)
+          ? (subtotalSum - effectiveDiscount) / subtotalSum
+          : 1.0;
+      total = FinancialUtils.round(total - effectiveDiscount);
+      subtotalSum = FinancialUtils.round(subtotalSum - effectiveDiscount);
 
       final remaining = total - paid;
       final status = remaining <= 0
@@ -483,6 +557,11 @@ extension PurchaseDao on AppDatabase {
         }
       }
 
+      // البند 5: reject a supplier-invoice-number already used by this supplier
+      // BEFORE anything is written. Inside the transaction() → a violation
+      // rolls back stock/GL/treasury with the invoice.
+      await _assertSupplierInvoiceNumberFree(supplierId, supplierInvoiceNumber);
+
       // Use supplier invoice number if provided, else generate internal PUR- number
       // This implements Phase 5: Purchase invoices using the number provided by the supplier.
       final invoiceNumber =
@@ -507,6 +586,7 @@ extension PurchaseDao on AppDatabase {
           branchId: Value(resolvedBranchId),
           invoiceDate: invoiceDate ?? DateTime.now(),
           subtotal: Value(subtotalSum),
+          discount: Value(effectiveDiscount),
           tax: Value(taxTotal),
           total: Value(total),
           paid: Value(paid),
@@ -528,7 +608,13 @@ extension PurchaseDao on AppDatabase {
       for (final item in items) {
         final productId = item.productId.present ? item.productId.value : 0;
         final quantity = item.quantity.present ? item.quantity.value : 1.0;
-        final unitCost = item.unitCost.present ? item.unitCost.value : 0.0;
+        // ح-1 (trade discount): apportion the invoice discount pro-rata into
+        // the line cost BEFORE it reaches the stored line, the stock movement
+        // and updateProductWAC — this is what makes WAC the true landed cost
+        // and stops a later return refunding more than was paid.
+        final unitCost = FinancialUtils.round(
+            (item.unitCost.present ? item.unitCost.value : 0.0) *
+                discountFactor);
         final taxRate = item.taxRate.present ? (item.taxRate.value ?? 0.0) : 0.0;
         // Spec 151 E-03: honour the passed per-line taxAmount (exactly as the
         // header loop above does) instead of always recomputing from the rate.
@@ -548,6 +634,11 @@ extension PurchaseDao on AppDatabase {
         await into(purchaseInvoiceItems).insert(
           item.copyWith(
             invoiceId: Value(invoiceId),
+            // ح-1 (trade discount): persist the APPORTIONED cost. copyWith
+            // keeps the caller's gross value otherwise, so the stored line
+            // would disagree with stock/WAC/GL and a later return would
+            // refund more than was ever paid.
+            unitCost: Value(unitCost),
             total: Value(quantity * unitCost + taxAmount),
             taxAmount: Value(taxAmount),
             // UUID-First Phase 1 Slice 3: stable per-line identity.
@@ -612,9 +703,23 @@ extension PurchaseDao on AppDatabase {
         await adjustPartyBalance(supplierId, remaining);
       }
 
-      // Record treasury transaction if paid
+      // Record treasury transaction if paid. Client issue البند 6: keep the
+      // returned row — the cash leg is no longer posted inline; it is posted
+      // from this voucher by autoPostPayment further down, so the credited
+      // account is the PAYING safe's own linked account (fixes ح-4) and the
+      // amount is what actually left the safe (fixes ح-3).
+      SafeTransactionData? paymentTxn;
       if (paid > 0) {
-        await _recordPurchasePayment(invoiceId, paid, paymentMethod, costCenterId, safeId: safeId, supplierId: supplierId);
+        paymentTxn = await _recordPurchasePayment(invoiceId, paid, paymentMethod, costCenterId, safeId: safeId, supplierId: supplierId);
+        if (paymentTxn == null) {
+          // Symmetry with addPurchasePayment: a payment we cannot attribute to
+          // a safe must not silently reduce the GL with no treasury movement.
+          throw StateError(
+            'تعذّر تسجيل دفعة فاتورة المشتريات #$invoiceNumber: لا يوجد صندوق '
+            'مطابق لطريقة الدفع. أنشئ صندوقاً افتراضياً أو اختر صندوقاً '
+            'قبل الحفظ.',
+          );
+        }
       }
 
       // ═══════════════════════════════════════════════════════════════════════
@@ -668,24 +773,31 @@ extension PurchaseDao on AppDatabase {
         }
       }
 
-      // 2. Credit side (Liabilities or Assets reduction)
-      if (paid > 0) {
-        final cashPurpose = paymentMethod == 'cash' ? 'cash' : 'bank';
-        final cashCode = await accountingDao.getMappedAccountCode(
-          cashPurpose, AccountingDao.accountPurposes[cashPurpose]!,
-        );
-        final cashAcc = await accountingDao.getAccountByCode(cashCode);
-        if (cashAcc != null) {
-          journalLines.add(
-            JournalLine(
-              accountId: cashAcc.id,
-              credit: paid,
-              description: 'دفع فاتورة مشتريات #$invoiceNumber',
-            ),
-          );
-        }
-      }
-      if (remaining > 0) {
+      // ح-1 (trade discount): NO purchase-discount (4316) credit leg. A trade
+      // discount reduces the cost of the goods (IAS 2.11) — it is not income.
+      // `subtotalSum` above is already NET and the line costs were apportioned,
+      // so the inventory debit equals Σ(qty × cost) and the JE balances against
+      // the payable without any extra leg.
+      //
+      // (A SETTLEMENT discount would be different — that IS financing income
+      // and would belong on 4316. This field is a trade discount by owner
+      // decision; if that ever changes, the two treatments must not be mixed.)
+
+      // 2. Credit side — البند 6 (approved 2026-07-25): the supplier's payable
+      // is ALWAYS the counter-party, cash or credit alike. The settlement leg
+      // (Dr payable / Cr cash) is posted separately from the payment voucher
+      // by autoPostPayment below.
+      //
+      // Why: previously a cash purchase credited the cash account directly and
+      // the supplier's account never moved, so their GL card showed nothing —
+      // the accountant could not read "purchased / paid" per supplier from the
+      // ledger. Trial-balance effect is identical either way.
+      //
+      // This also removes the paymentMethod-keyed branch that credited Cash for
+      // the FULL total on a partially-paid cash invoice (ح-3), and stops the
+      // cash leg landing on the global cash account instead of the paying
+      // safe's own account (ح-4) — autoPostPayment resolves that from the safe.
+      if (total > 0) {
         final apCode = await accountingDao.getMappedAccountCode(
           'payables', AccountingDao.accountPurposes['payables']!,
         );
@@ -697,8 +809,8 @@ extension PurchaseDao on AppDatabase {
           journalLines.add(
             JournalLine(
               accountId: apAcc.id,
-              credit: remaining,
-              description: 'مشتريات آجلة فاتورة #$invoiceNumber',
+              credit: total,
+              description: 'مشتريات فاتورة #$invoiceNumber',
             ),
           );
         }
@@ -728,6 +840,30 @@ extension PurchaseDao on AppDatabase {
         costCenterId: ccId,
         branchId: branchId,
       );
+
+      // البند 6 — settlement leg: Dr supplier payable / Cr the PAYING safe's
+      // linked account. autoPostPayment already implements exactly this for
+      // `category == 'purchase'`, so there is no new posting code: it resolves
+      // the supplier sub-account for the debit and the safe's own account for
+      // the credit. Runs inside the same transaction() → a failure rolls the
+      // whole invoice back rather than leaving a payable that was never settled.
+      if (paymentTxn != null) {
+        // autoPostPayment returns null (does NOT throw) when the safe has no
+        // linked account and the global cash/bank mapping is missing, or the
+        // payables control account is gone. Swallowing that would leave the
+        // payable credited in full with the safe already debited and NO
+        // settlement JE — the exact silent divergence this batch closes.
+        // addPurchasePayment already fails loud here; match it.
+        final settlementJeId =
+            await accountingDao.autoPostPayment(paymentTxn, costCenterId: ccId);
+        if (settlementJeId == null) {
+          throw StateError(
+            'تعذّر ترحيل قيد سداد فاتورة المشتريات #$invoiceNumber: '
+            'حساب الصندوق أو حساب الذمم غير مربوط في الدليل المحاسبي. '
+            'راجع إعدادات الحسابات ← ربط الحسابات.',
+          );
+        }
+      }
 
       // ═══════════════════════════════════════════════════════════════════════
       // SYNC ENGINE: Add to outbox (#Phase7)
@@ -788,6 +924,9 @@ extension PurchaseDao on AppDatabase {
     int? costCenterId,
     // UUID-First (Phase 1): pass-through from the server's submission
     String? globalId,
+    // ح-1: mirror the server's net total in the local cache row, otherwise the
+    // mirror's invoice list shows a gross total the server never stored.
+    double discount = 0,
   }) async {
     return transaction(() async {
       double taxTotal = 0;
@@ -811,6 +950,15 @@ extension PurchaseDao on AppDatabase {
         taxTotal += tax;
       }
 
+      // ح-1 (trade discount): same net rule as createPurchaseInvoice so the
+      // mirror's cached header matches what the server actually stored. This
+      // path writes no stock/WAC (that is the server's job), so only the
+      // header amounts need netting here.
+      final effectiveDiscount =
+          discount > 0 ? FinancialUtils.round(discount) : 0.0;
+      total = FinancialUtils.round(total - effectiveDiscount);
+      subtotalSum = FinancialUtils.round(subtotalSum - effectiveDiscount);
+
       final remaining = total - paid;
       final status = remaining <= 0.01 ? 'paid' : (paid > 0 ? 'partial' : 'pending');
       final invoiceNumber = await generateInvoiceNumber('PUR');
@@ -822,6 +970,7 @@ extension PurchaseDao on AppDatabase {
           warehouseId: warehouseId,
           invoiceDate: invoiceDate ?? DateTime.now(),
           subtotal: Value(subtotalSum),
+          discount: Value(effectiveDiscount),
           tax: Value(taxTotal),
           total: Value(total),
           paid: Value(paid),
@@ -856,6 +1005,56 @@ extension PurchaseDao on AppDatabase {
 
   /// Record purchase payment in treasury.
   ///
+  /// البند 5 (متطلبات العميل 2026-07-25) — يرفض تكرار رقم فاتورة المورد
+  /// **لنفس المورد**.
+  ///
+  /// Scope is per-supplier, NOT global: a supplier's invoice number is only
+  /// unique within that supplier's own book, so two different suppliers may
+  /// legitimately both issue `1001`. A global UNIQUE would reject real data.
+  ///
+  /// Blank/absent numbers are exempt — those invoices get an auto-generated
+  /// `PUR-n`, which carries no business meaning to collide on.
+  ///
+  /// Soft-deleted (voided) invoices do not reserve their number.
+  ///
+  /// [excludeInvoiceId] must be passed on the edit path so re-saving an invoice
+  /// under its own number isn't reported as a collision with itself.
+  ///
+  /// NOTE: this is an APPLICATION-level guard on purpose. A partial UNIQUE
+  /// index is the stronger fix but must not be added until the customer's live
+  /// database is confirmed free of pre-existing duplicates — otherwise the
+  /// migration fails on their data.
+  Future<void> _assertSupplierInvoiceNumberFree(
+    int supplierId,
+    String? number, {
+    int? excludeInvoiceId,
+  }) async {
+    if (number == null || number.trim().isEmpty) return;
+    final trimmed = number.trim();
+
+    final query = select(purchaseInvoices)
+      ..where((p) =>
+          p.supplierId.equals(supplierId) &
+          p.supplierInvoiceNumber.equals(trimmed) &
+          p.isDeleted.equals(false))
+      ..limit(2);
+
+    final hits = await query.get();
+    final clash = hits.where((h) => h.id != excludeInvoiceId).toList();
+    if (clash.isEmpty) return;
+
+    final supplier = await (select(parties)
+          ..where((p) => p.id.equals(supplierId))
+          ..limit(1))
+        .getSingleOrNull();
+    throw StateError(
+      'رقم فاتورة المورد "$trimmed" مستخدم بالفعل '
+      '${supplier != null ? 'للمورد «${supplier.name}» ' : ''}'
+      '(فاتورة #${clash.first.invoiceNumber}). '
+      'راجع الرقم أو افتح الفاتورة القائمة لتعديلها.',
+    );
+  }
+
   /// P2 (batch B7): returns the inserted safe-transaction row (or null when
   /// no target safe was resolved) so callers — [addPurchasePayment] — can
   /// feed it straight into [AccountingAutopostDao.autoPostPayment] without a
@@ -945,24 +1144,65 @@ extension PurchaseDao on AppDatabase {
     String? notes,
     String? supplierInvoiceNumber,
     int? costCenterId,
-    // 062 (D1-004): caller's userId for the modifyLockedInvoice gate.
+    // Purchase-edit policy: the caller's userId is the ONLY gate. Required —
+    // a null userId is denied (see the requireCriticalOp call below).
     int? userId,
+    // ح-1: the edit path had no discount parameter, so re-saving a discounted
+    // invoice — even with identical lines — recomputed `total` GROSS and left
+    // the `discount` column stale. That silently restored the phantom payable
+    // ح-1 exists to prevent, on EVERY edit. Null = keep whatever the header
+    // already holds (so callers that don't collect a discount can't wipe one).
+    double? discount,
   }) async {
     return transaction(() async {
       // Get original invoice
       final oldInvoice = await getPurchaseInvoiceById(invoiceId);
       if (oldInvoice == null) throw Exception('Invoice not found');
 
-      // ISS-04 + 062 (D1-004): Prevent editing locked/posted invoices
-      // unless the caller holds modifyLockedInvoice.
+      // ── Purchase-edit policy (supersedes ISS-04 / 062 D1-004) ────────────
+      // Owner decision 2026-07-22: editing a purchase invoice is governed by
+      // ONE thing — does the caller hold `purchases_edit`?
+      //   • holds it  → UNLIMITED edits, before or after posting. Re-posting
+      //     the GL entry is already handled at the end of this method
+      //     (_reverseOldPurchaseJournalEntry + autoPostPurchase), so a posted
+      //     invoice stays consistent across any number of edits.
+      //   • lacks it  → denied outright.
+      // `isLocked` is therefore NO LONGER a gate; it stays as the posted-state
+      // marker that drives integrityHash verification and the void reversal.
+      //
+      // Why this replaced the old gate: the previous code demanded the
+      // `modify_locked_invoice` critical-op permission whenever isLocked was
+      // true, but NO call site ever threaded `userId` down here — so
+      // PermissionEnforcer.hasCriticalOp(null, ...) always returned false and
+      // EVERY posted purchase invoice was permanently uneditable, even for a
+      // system admin holding the permission. The userId is now threaded from
+      // every call site (local repo, server putPurchase, client interceptor).
+      await permissionEnforcer.requireCriticalOp(
+        userId: userId,
+        code: PermissionCodes.purchasesEdit,
+        arabicReason: 'لا تملك صلاحية تعديل فواتير المشتريات. '
+            'يلزم صلاحية "تعديل فاتورة مشتريات".',
+      );
+
+      // البند 5: reject a supplier-invoice-number that belongs to a DIFFERENT
+      // live invoice of this supplier. Excluding this invoice's own id keeps
+      // re-saving under its existing number legal.
+      await _assertSupplierInvoiceNumberFree(
+        supplierId,
+        supplierInvoiceNumber,
+        excludeInvoiceId: invoiceId,
+      );
+
+      // Audit breadcrumb — editing an already-posted (locked) invoice reverses
+      // and re-posts the GL entry, so it is worth a persistent trail even
+      // though it is now a permitted operation.
       if (oldInvoice.isLocked) {
-        await permissionEnforcer.requireCriticalOp(
-          userId: userId,
-          code: PermissionCodes.modifyLockedInvoice,
-          arabicReason: 'لا يمكن تعديل فاتورة مشتريات مُرحّلة محاسبيًا. '
-              'استخدم المرتجعات بدلاً من التعديل، '
-              'أو يلزم صلاحية "تعديل فاتورة مقفلة".',
-        );
+        unawaited(DiagnosticLogger.log(
+          'PURCHASE-EDIT',
+          'posted invoice edited — id=$invoiceId '
+          'number=${oldInvoice.invoiceNumber} by userId=$userId '
+          'oldTotal=${oldInvoice.total}',
+        ));
       }
 
       // S-COST-2 (Spec 145): the FK that crashes the item hard-delete below is
@@ -1089,6 +1329,26 @@ extension PurchaseDao on AppDatabase {
         newTaxTotal += tax;
       }
 
+      // ح-1 (trade discount): the edit must produce the SAME shape as create —
+      // header stored NET, line costs apportioned, and NO 4316 leg. Storing a
+      // net `subtotal` also makes autoPostPurchase's _deriveBalancedLegs
+      // compute discountLeg == 0 by construction, so the re-post debits
+      // inventory net and credits only the payable.
+      final effectiveDiscount = FinancialUtils.round(
+          discount ?? oldInvoice.discount);
+      final grossSubtotal = newTotal - newTaxTotal;
+      if (effectiveDiscount > newTotal) {
+        throw StateError(
+          'الخصم (${effectiveDiscount.toStringAsFixed(2)}) أكبر من إجمالي '
+          'الفاتورة (${newTotal.toStringAsFixed(2)}).',
+        );
+      }
+      final editDiscountFactor = (effectiveDiscount > 0 && grossSubtotal > 0)
+          ? (grossSubtotal - effectiveDiscount) / grossSubtotal
+          : 1.0;
+      newTotal = FinancialUtils.round(newTotal - effectiveDiscount);
+      final netSubtotal = FinancialUtils.round(grossSubtotal - effectiveDiscount);
+
       final newRemaining = newTotal - paid;
       final newStatus = newRemaining <= 0
           ? 'paid'
@@ -1101,7 +1361,8 @@ extension PurchaseDao on AppDatabase {
         PurchaseInvoicesCompanion(
           supplierId: Value(supplierId),
           warehouseId: Value(warehouseId),
-          subtotal: Value(newTotal - newTaxTotal),
+          subtotal: Value(netSubtotal),
+          discount: Value(effectiveDiscount),
           tax: Value(newTaxTotal),
           total: Value(newTotal),
           paid: Value(paid),
@@ -1120,7 +1381,11 @@ extension PurchaseDao on AppDatabase {
       for (final item in items) {
         final productId = item.productId.present ? item.productId.value : 0;
         final quantity = item.quantity.present ? item.quantity.value : 1.0;
-        final unitCost = item.unitCost.present ? item.unitCost.value : 0.0;
+        // ح-1 (trade discount): apportion on the edit path too, so re-saving
+        // never restores gross line costs into stock/WAC.
+        final unitCost = FinancialUtils.round(
+            (item.unitCost.present ? item.unitCost.value : 0.0) *
+                editDiscountFactor);
         final taxRate = item.taxRate.present ? (item.taxRate.value ?? 0.0) : 0.0;
         // Spec 151 E-03: honour the passed per-line taxAmount (matching the
         // header loop above) instead of always recomputing from the rate, so an
@@ -1137,6 +1402,7 @@ extension PurchaseDao on AppDatabase {
         await into(purchaseInvoiceItems).insert(
           item.copyWith(
             invoiceId: Value(invoiceId),
+            unitCost: Value(unitCost),
             total: Value(quantity * unitCost + taxAmount),
             taxAmount: Value(taxAmount),
             // UUID-First Phase 1 Slice 3: stable per-line identity.
@@ -1204,8 +1470,9 @@ extension PurchaseDao on AppDatabase {
       // F02-2: thread the original payment's safe so a payment made from a
       // non-default safe is re-recorded onto that SAME safe (not the global
       // default). Null when there was no prior payment → default resolution.
+      SafeTransactionData? repostPaymentTxn;
       if (paid > 0) {
-        await _recordPurchasePayment(
+        repostPaymentTxn = await _recordPurchasePayment(
           invoiceId,
           paid,
           paymentMethod,
@@ -1213,6 +1480,14 @@ extension PurchaseDao on AppDatabase {
           safeId: originalPaymentSafeId,
           supplierId: supplierId,
         );
+        // Same fail-loud contract as the create path: an edit that says "paid"
+        // but moves no safe would leave the payable open with no trail.
+        if (repostPaymentTxn == null) {
+          throw StateError(
+            'تعذّر تسجيل دفعة تعديل فاتورة المشتريات #$invoiceId: لا يوجد '
+            'صندوق مطابق لطريقة الدفع.',
+          );
+        }
       }
 
       // F-02 (Spec 151): re-post the purchase GL entry with the NEW amounts.
@@ -1228,6 +1503,23 @@ extension PurchaseDao on AppDatabase {
           repostInvoice,
           costCenterId: costCenterId ?? repostInvoice.costCenterId,
         );
+      }
+
+      // البند 6 — re-post the settlement leg for the NEW payment. The old
+      // payment JE was reversed by _reverseOldPurchasePayment above, and
+      // autoPostPurchase now credits the payable for the FULL total, so
+      // without this the payable would stay open even though the safe moved.
+      if (repostPaymentTxn != null) {
+        final repostJeId = await accountingDao.autoPostPayment(
+          repostPaymentTxn,
+          costCenterId: costCenterId ?? repostInvoice?.costCenterId,
+        );
+        if (repostJeId == null) {
+          throw StateError(
+            'تعذّر ترحيل قيد سداد تعديل فاتورة المشتريات #$invoiceId: '
+            'حساب الصندوق أو حساب الذمم غير مربوط في الدليل المحاسبي.',
+          );
+        }
       }
     });
   }
@@ -1548,6 +1840,28 @@ extension PurchaseDao on AppDatabase {
       final safeList = await (select(safes)..where((s) => s.id.isIn(txnSafeIds))).get();
       final safeMap = {for (final s in safeList) s.id: s};
 
+      // البند 6 / regression guard: since the purchase JE stopped carrying the
+      // cash leg (it now credits the payable in full and the settlement is a
+      // SEPARATE `referenceType:'payment'` JE posted by autoPostPayment), the
+      // void below — which only mirrors the purchase JE — no longer undoes the
+      // cash movement. Left unreversed it produced a phantom AP DEBIT and left
+      // GL cash permanently below `safes.balance` by the paid amount.
+      //
+      // Reverse the settlement JE per payment transaction. Same call
+      // `_reverseOldPurchasePayment` uses on the edit path — but here we must
+      // NOT touch `safes.balance`, because the treasury loop below already
+      // restores it via its own reversal transactions.
+      for (final txn in treasuryTxns) {
+        if (txn.transactionType != 'payment') continue;
+        await reverseAutoPostedJournalEntriesFor(
+          referenceType: 'payment',
+          referenceId: txn.id,
+          voidReferenceType: 'payment_void',
+          sourceGlobalId: txn.globalId ?? 'paytxn${txn.id}',
+          description: 'عكس قيد سداد (إلغاء فاتورة مشتريات) #$invoiceId',
+        );
+      }
+
       for (final txn in treasuryTxns) {
         final safe = safeMap[txn.safeId];
         if (safe != null) {
@@ -1580,8 +1894,21 @@ extension PurchaseDao on AppDatabase {
         await adjustPartyBalance(invoice.supplierId, -remaining);
       }
 
-      // Create reversal journal entry if posted
-      if (invoice.isLocked) {
+      // Create reversal journal entry if one was posted.
+      //
+      // The `invoice.isLocked` gate that used to wrap this was dead-wrong:
+      // `createPurchaseInvoice` posts its JE inline and NEVER sets `isLocked`
+      // (only autoPostPurchase / AutoPostingService do). So voiding any
+      // invoice created from the purchases screen skipped the reversal
+      // entirely — stock was returned and the safe restored while the
+      // inventory GL account kept the full debit against zero stock, and the
+      // supplier payable kept its credit. Pre-existing; surfaced by the void
+      // regression test added with the البند 6 pass-through work.
+      //
+      // The lookup below already keys on referenceType + referenceId +
+      // isAutoPosted, so "was anything posted?" is answered by whether it
+      // finds a row — the flag added nothing but the bug.
+      {
         try {
           final originalJE = await (select(journalEntries)
                 ..where((e) =>

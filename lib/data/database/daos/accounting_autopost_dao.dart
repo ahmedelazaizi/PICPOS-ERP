@@ -933,40 +933,23 @@ extension AccountingAutopostDao on AppDatabase {
       );
     }
 
-    // Credit: Cash or Payables
-    if (purchase.paymentMethod == 'cash' && cashAccount != null) {
+    // Credit — البند 6 (approved 2026-07-25): the supplier's payable is ALWAYS
+    // the counter-party, cash or credit alike; the cash leg is posted from the
+    // payment voucher by autoPostPayment (Dr payable / Cr the paying safe's own
+    // account). Keeps this re-post identical in shape to createPurchaseInvoice,
+    // so editing an invoice no longer silently reverts it to the old model.
+    //
+    // The removed `paymentMethod == 'cash'` branch credited Cash for the FULL
+    // total even when only part was paid (ح-3), and resolved cash from the
+    // GLOBAL mapping rather than the paying safe (ح-4).
+    if (payableAccount != null) {
       lines.add(
         JournalLine(
-          accountId: cashAccount.id,
+          accountId: payableAccount.id,
           credit: purchase.total,
-          description: 'دفع نقدي',
+          description: 'دائنون',
         ),
       );
-    } else if (payableAccount != null) {
-      if (purchase.paid > 0 && cashAccount != null) {
-        lines.add(
-          JournalLine(
-            accountId: cashAccount.id,
-            credit: purchase.paid,
-            description: 'دفعة مقدمة',
-          ),
-        );
-        lines.add(
-          JournalLine(
-            accountId: payableAccount.id,
-            credit: purchase.total - purchase.paid,
-            description: 'دائنون',
-          ),
-        );
-      } else {
-        lines.add(
-          JournalLine(
-            accountId: payableAccount.id,
-            credit: purchase.total,
-            description: 'دائنون',
-          ),
-        );
-      }
     }
 
     // Spec 135 — deterministic JE globalId for the base purchase JE. sourceGid

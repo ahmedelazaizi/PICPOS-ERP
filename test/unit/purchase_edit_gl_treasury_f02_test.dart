@@ -26,6 +26,20 @@ import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/data/database/database.dart';
 
+/// Id of the seeded `admin` user (role_id 1 = مدير النظام), who holds
+/// `purchases_edit` via the system-admin bypass.
+///
+/// `updatePurchaseInvoice` now gates EVERY edit on `purchases_edit` and denies
+/// a null identity — the policy is "holds the permission → unlimited edits,
+/// posted or not; lacks it → no edit at all". These tests deliberately edit a
+/// POSTED invoice, so they must act as a permitted user.
+Future<int> _permittedEditorId(AppDatabase db) async {
+  final row = await db
+      .customSelect("SELECT id FROM users WHERE username = 'admin' LIMIT 1")
+      .getSingle();
+  return row.read<int>('id');
+}
+
 void main() {
   late AppDatabase db;
   late int branchId;
@@ -152,6 +166,7 @@ void main() {
           total: 1500,
         ),
       ],
+      userId: await _permittedEditorId(db),
     );
 
     // (1) Exactly ONE live purchase JE for the invoice, and it is the re-post
@@ -179,15 +194,35 @@ void main() {
     final invLine = lines.firstWhere((l) => l.accountId == inventoryAcc.id);
     expect(invLine.debit, closeTo(1500, 0.001));
 
-    // (4) Cash Cr == new paid (400); AP Cr == new remaining (1100).
-    final cashLine = lines.firstWhere((l) => l.accountId == cashAcc.id);
-    expect(cashLine.credit, closeTo(400, 0.001),
-        reason: 'cash leg credits the new down-payment');
+    // (4) البند 6 (owner-approved 2026-07-25) — the purchase JE now routes the
+    //     WHOLE total through the supplier payable; the cash leg moved out to
+    //     the payment voucher's own JE (Dr payable / Cr the paying safe's
+    //     account). The ledger-level outcome is unchanged: net AP == remaining,
+    //     net cash == paid. Pre-change this JE carried a cash line directly.
+    expect(lines.where((l) => l.accountId == cashAcc.id), isEmpty,
+        reason: 'البند 6: the purchase JE no longer credits cash directly — '
+            'the settlement leg lives on the payment voucher');
     final apCredit = lines
-        .where((l) => l.accountId != cashAcc.id && l.accountId != inventoryAcc.id)
+        .where((l) => l.accountId != inventoryAcc.id)
         .fold<double>(0, (s, l) => s + l.credit);
-    expect(apCredit, closeTo(1100, 0.001),
-        reason: 'payables leg credits the new remaining');
+    expect(apCredit, closeTo(1500, 0.001),
+        reason: 'payables leg credits the FULL new total (pass-through)');
+
+    // (4b) Net ledger position is what actually matters, and it is unchanged:
+    //      supplier still owes 1100, cash still moved 400.
+    Future<double> netByCodePrefix(String prefix) async {
+      final r = await db.customSelect(
+        'SELECT COALESCE(SUM(l.debit),0) - COALESCE(SUM(l.credit),0) AS n '
+        'FROM journal_entry_lines l JOIN accounts a ON a.id = l.account_id '
+        "WHERE a.code LIKE '$prefix%'",
+      ).getSingle();
+      return (r.data['n'] as num).toDouble();
+    }
+
+    expect(await netByCodePrefix('2111'), closeTo(-1100, 0.001),
+        reason: 'net payable == new remaining');
+    expect(await netByCodePrefix('1111'), closeTo(-400, 0.001),
+        reason: 'net cash credited == new paid');
 
     // (5) Inventory GL ACCOUNT balance updated to the new subtotal — the core
     //     of F-02: pre-fix this stayed at the old 1000.
@@ -289,6 +324,7 @@ void main() {
           total: 1000,
         ),
       ],
+      userId: await _permittedEditorId(db),
     );
 
     // (1) F02-1 core: cash GL nets to the ACTUAL total paid (400), NOT 800.
@@ -391,6 +427,7 @@ void main() {
           total: 1000,
         ),
       ],
+      userId: await _permittedEditorId(db),
     );
 
     // F02-2: the non-default safe carries the payment (net −400); the default

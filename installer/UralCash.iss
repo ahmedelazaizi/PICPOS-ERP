@@ -10,7 +10,7 @@
 ; ═══════════════════════════════════════════════════════════════════════════
 
 #define AppName       "UralCash ERP"
-#define AppVersion    "3.1.1.246"
+#define AppVersion    "3.1.2.247"
 #define Publisher     "Monexia"
 #define ExeName       "UralCash.exe"
 #define ReleaseDir    "..\build\windows\x64\runner\Release"

@@ -298,6 +298,40 @@ extension AccountingReportsDao on AppDatabase {
       'inventory_shrinkage', AccountingDao.accountPurposes['inventory_shrinkage']!,
     );
 
+    // البند 1 (متطلبات العميل 2026-07-25) — non-SALES revenue must not sit
+    // inside «صافي الإيراد». Same treatment `inventory_surplus` already got:
+    // routed to otherIncome, and folded back into netProfit so that figure is
+    // numerically unchanged.
+    //
+    // Why it matters: «فائض النقدية» is credited at shift close and «خصم
+    // المشتريات المكتسب» when a supplier grants a discount. Both are
+    // revenue-typed, so a cash overage in the till used to RAISE the sales
+    // figure with no sale behind it — which is a large part of why the
+    // customer could not reconcile the dashboard by hand.
+    final nonSalesRevenueCodes = <String>{
+      for (final purpose in const [
+        'purchase_discount',
+        'cash_surplus',
+        'other_income',
+        'rounding_difference',
+      ])
+        if (AccountingDao.accountPurposes[purpose] != null)
+          await accountingDao.getMappedAccountCode(
+            purpose,
+            AccountingDao.accountPurposes[purpose]!,
+          ),
+    };
+
+    // البند 1 — the three components that make the on-screen formula legible:
+    // «مبيعات شاملة الضريبة − المردودات = صافي الإيراد (منها ضريبة كذا)».
+    final salesReturnCode = await accountingDao.getMappedAccountCode(
+      'sales_return', AccountingDao.accountPurposes['sales_return']!,
+    );
+    final outputVatCode = await accountingDao.getMappedAccountCode(
+      'output_vat', AccountingDao.accountPurposes['output_vat']!,
+    );
+    double salesReturns = 0;
+
     for (var row in balances) {
       final name = row.read<String>('name');
       final type = row.read<String>('account_type');
@@ -308,12 +342,18 @@ extension AccountingReportsDao on AppDatabase {
         // F-03: Revenue is credit-normal → GL stores debit-credit as negative
         // Using -netMovement correctly shows positive for normal credit balances
         final val = -netMovement;
-        if (code == surplusCode) {
-          // #2: inventory surplus is a non-operating gain, not sales revenue.
+        if (code == surplusCode || nonSalesRevenueCodes.contains(code)) {
+          // #2 + البند 1: inventory surplus, cash overage, purchase discounts
+          // earned and rounding differences are non-operating gains, not sales.
           otherIncome += val;
           if (val != 0) otherIncomeDetails.add({'name': name, 'amount': val});
         } else {
           revenue += val;
+          // البند 1: the sales-returns account is seeded `revenue`-typed, so
+          // returns already net out by SIGN (a debit yields a negative val)
+          // rather than through the contra_revenue branch below. Capture the
+          // magnitude here so the card can show المردودات as its own line.
+          if (code == salesReturnCode) salesReturns += -val;
           if (val != 0) revenueDetails.add({'name': name, 'amount': val});
         }
       } else if (type == 'contra_revenue') {
@@ -321,6 +361,7 @@ extension AccountingReportsDao on AppDatabase {
         // netMovement is positive for contra_revenue (debit > credit)
         final val = netMovement;
         revenue -= val;
+        if (code == salesReturnCode) salesReturns += val;
         if (val != 0) revenueDetails.add({'name': name, 'amount': -val});
       } else if (type == 'expense') {
         final val = netMovement;
@@ -360,8 +401,40 @@ extension AccountingReportsDao on AppDatabase {
     final netProfit =
         operatingProfit - depreciation + otherIncome - otherExpense;
 
+    // البند 1 — output VAT for the SAME window/scope, so all four numbers on
+    // the card share one filter set and the operator's hand arithmetic works.
+    // Liability-typed, so it is not in the revenue/expense scan above.
+    final vatRow = await customSelect(
+      '''
+      SELECT COALESCE(SUM(l.credit - l.debit), 0) AS total
+      FROM journal_entry_lines l
+      JOIN journal_entries e ON l.entry_id = e.id
+      JOIN accounts a ON l.account_id = a.id
+      WHERE a.code = ? AND e.entry_date BETWEEN ? AND ?
+        AND e.is_posted = $boolTrue $ccFilter $brFilter$azFilter
+      ''',
+      variables: [
+        Variable(outputVatCode),
+        dateVar(from),
+        dateVar(to),
+        ...ccVars,
+        ...brVars,
+        ...azVars,
+      ],
+      readsFrom: {journalEntryLines, journalEntries, accounts},
+    ).getSingle();
+    final outputVatNet = (vatRow.data['total'] as num?)?.toDouble() ?? 0.0;
+
     return {
       'totalRevenue': revenue,
+      // البند 1 — مكوّنات المعادلة الظاهرة على الشاشة:
+      //   مبيعات شاملة الضريبة − المردودات = صافي الإيراد (منها الضريبة)
+      'salesReturns': salesReturns,
+      'outputVatNet': outputVatNet,
+      // صافي الإيراد **شاملاً** الضريبة — هذا هو الرقم الذي يحسبه العميل
+      // يدوياً. مساوٍ تماماً لـ totalRevenue + outputVatNet، والمردودات
+      // مخصومة من الطرفين أصلاً (المبلغ من الإيراد، وضريبتها من الضريبة).
+      'netRevenueInclVat': revenue + outputVatNet,
       'totalCOGS': cogs,
       'grossProfit': grossProfit,
       'totalExpenses': expenses,
@@ -720,12 +793,26 @@ extension AccountingReportsDao on AppDatabase {
       if (warehouseIds.isEmpty) {
         outputWhFilter = 'AND 1 = 0';
       } else {
+        // ح-7 (2026-07-25): 'sales_return' MUST be in the reference-type list.
+        // Return JEs debit output VAT (they reduce the liability); leaving them
+        // out of the EXISTS made every one of them fail the filter, so applying
+        // a branch/warehouse filter silently DROPPED the return reversals and
+        // reported a LARGER tax liability than the unfiltered view — i.e. the
+        // filtered number overstated what is owed to the authority.
+        //
+        // The trailing OR keeps JEs that have no invoice to join to (manual VAT
+        // adjustments, opening balances) in scope; previously a warehouse
+        // filter discarded those entirely.
         outputWhFilter = '''
-        AND EXISTS (
-          SELECT 1 FROM sales_invoices si
-          WHERE si.id = e.reference_id
-          AND e.reference_type IN ('sale', 'sales_invoice', 'cash_sale')
-          AND si.warehouse_id IN (${warehouseIds.map((_) => '?').join(', ')})
+        AND (
+          EXISTS (
+            SELECT 1 FROM sales_invoices si
+            WHERE si.id = e.reference_id
+            AND e.reference_type IN ('sale', 'sales_invoice', 'cash_sale', 'sales_return')
+            AND si.warehouse_id IN (${warehouseIds.map((_) => '?').join(', ')})
+          )
+          OR e.reference_type NOT IN ('sale', 'sales_invoice', 'cash_sale', 'sales_return')
+          OR e.reference_type IS NULL
         )
       ''';
         outputWhVars.addAll(warehouseIds.map((id) => Variable<int>(id)));
@@ -738,12 +825,19 @@ extension AccountingReportsDao on AppDatabase {
       if (warehouseIds.isEmpty) {
         inputWhFilter = 'AND 1 = 0';
       } else {
+        // ح-7 — same fix on the purchase side: 'purchase_invoice' is the alias
+        // the inline createPurchaseInvoice path stores, and 'purchase_return'
+        // credits input VAT back. Both were dropped by the old filter.
         inputWhFilter = '''
-        AND EXISTS (
-          SELECT 1 FROM purchase_invoices pi
-          WHERE pi.id = e.reference_id
-          AND e.reference_type = 'purchase'
-          AND pi.warehouse_id IN (${warehouseIds.map((_) => '?').join(', ')})
+        AND (
+          EXISTS (
+            SELECT 1 FROM purchase_invoices pi
+            WHERE pi.id = e.reference_id
+            AND e.reference_type IN ('purchase', 'purchase_invoice', 'purchase_return')
+            AND pi.warehouse_id IN (${warehouseIds.map((_) => '?').join(', ')})
+          )
+          OR e.reference_type NOT IN ('purchase', 'purchase_invoice', 'purchase_return')
+          OR e.reference_type IS NULL
         )
       ''';
         inputWhVars.addAll(warehouseIds.map((id) => Variable<int>(id)));
@@ -811,7 +905,7 @@ extension AccountingReportsDao on AppDatabase {
       JOIN journal_entries e ON l.entry_id = e.id
       JOIN accounts a ON l.account_id = a.id
       WHERE a.code = ? AND e.entry_date BETWEEN ? AND ? AND e.is_posted = $boolTrue $ccFilter $brFilter$azFilter $inputWhFilter
-        AND e.reference_type = 'purchase'
+        AND e.reference_type IN ('purchase', 'purchase_invoice')
       ''',
       variables: [Variable(inventoryCode), dateVar(from), dateVar(to), ...ccVars, ...brVars, ...azVars, ...inputWhVars],
       readsFrom: {journalEntryLines, journalEntries, accounts, purchaseInvoices},
@@ -827,6 +921,137 @@ extension AccountingReportsDao on AppDatabase {
       'purchaseTotalExclTax': (purchaseResult.data['total'] as num?)?.toDouble() ?? 0.0,
       'netTax': salesTax - purchaseTax,
     };
+  }
+
+  /// البند 8 (متطلبات العميل 2026-07-25) — تفصيل ضريبة المبيعات **لكل صنف**.
+  ///
+  /// The tax report used to show invoice HEADERS only (رقم الفاتورة · التاريخ ·
+  /// الإجمالي · الضريبة), so an invoice mixing a 16% item with a 5% item showed
+  /// one lump tax figure and no rate at all. The per-line `tax_rate`/`tax_amount`
+  /// were already stored and populated on every write path — the report simply
+  /// never read `sales_invoice_items`. No schema change was needed.
+  ///
+  /// Returns one row per invoice LINE with its own rate, taxable base and tax,
+  /// ordered so the UI can group by invoice. Return invoices and
+  /// cancelled/voided/soft-deleted invoices are excluded — a VAT return is
+  /// filed on live sales, and the returns reversal is reported separately.
+  Future<List<Map<String, dynamic>>> getSalesTaxDetailByItem(
+    DateTime from,
+    DateTime to, {
+    int? costCenterId,
+    List<int>? warehouseIds,
+    int? branchId,
+    Set<int>? allowedBranchIds,
+  }) async {
+    final vars = <Variable>[dateVar(from), dateVar(to)];
+    final boolFalse = sqlBool(false);
+
+    var whFilter = '';
+    if (warehouseIds != null) {
+      if (warehouseIds.isEmpty) {
+        whFilter = ' AND 1 = 0';
+      } else {
+        whFilter =
+            ' AND si.warehouse_id IN (${warehouseIds.map((_) => '?').join(', ')})';
+        vars.addAll(warehouseIds.map((id) => Variable<int>(id)));
+      }
+    }
+
+    var ccFilter = '';
+    if (costCenterId != null) {
+      ccFilter = ' AND si.cost_center_id = ?';
+      vars.add(Variable<int>(costCenterId));
+    }
+
+    var brFilter = '';
+    if (branchId != null) {
+      brFilter = ' AND (si.branch_id = ? OR si.branch_id IS NULL)';
+      vars.add(Variable<int>(branchId));
+    }
+
+    var azFilter = '';
+    if (allowedBranchIds != null) {
+      if (allowedBranchIds.isEmpty) {
+        azFilter = ' AND 1 = 0';
+      } else {
+        azFilter =
+            ' AND (si.branch_id IN (${allowedBranchIds.map((_) => '?').join(', ')})'
+            ' OR si.branch_id IS NULL)';
+        vars.addAll(allowedBranchIds.map<Variable>((id) => Variable<int>(id)));
+      }
+    }
+
+    final rows = await customSelect(
+      '''
+      SELECT si.id                AS invoiceId,
+             si.invoice_number    AS invoiceNumber,
+             si.invoice_date      AS invoiceDate,
+             si.tax               AS invoiceTax,
+             p.name               AS customerName,
+             pr.name              AS productName,
+             sii.quantity         AS quantity,
+             sii.unit_price       AS unitPrice,
+             sii.total            AS lineTotal,
+             (sii.total - sii.tax_amount) AS taxableBase,
+             sii.tax_rate         AS taxRate,
+             sii.tax_amount       AS taxAmount
+      FROM sales_invoice_items sii
+      JOIN sales_invoices si ON si.id = sii.invoice_id
+      LEFT JOIN products pr  ON pr.id = sii.product_id
+      LEFT JOIN parties p    ON p.id  = si.customer_id
+      WHERE si.invoice_date BETWEEN ? AND ?
+        AND si.is_deleted = $boolFalse
+        AND (si.sale_type IS NULL OR si.sale_type != 'return')
+        AND (si.status IS NULL OR si.status NOT IN ('cancelled', 'voided'))
+        $whFilter$ccFilter$brFilter$azFilter
+      ORDER BY si.invoice_date, si.invoice_number, sii.id
+      ''',
+      variables: vars,
+      readsFrom: {salesInvoiceItems, salesInvoices, products, parties},
+    ).get();
+
+    return rows.map((r) => Map<String, dynamic>.from(r.data)).toList();
+  }
+
+  /// البند 8 — مجاميع فرعية لكل نسبة ضريبة (الشكل الذي يتطلبه الإقرار
+  /// الضريبي: وعاء خاضع + ضريبة لكل شريحة). Built from
+  /// [getSalesTaxDetailByItem] so the buckets can never disagree with the
+  /// detail rows rendered beneath them. Sorted by rate descending.
+  Future<List<Map<String, dynamic>>> getSalesTaxByRate(
+    DateTime from,
+    DateTime to, {
+    int? costCenterId,
+    List<int>? warehouseIds,
+    int? branchId,
+    Set<int>? allowedBranchIds,
+  }) async {
+    final detail = await getSalesTaxDetailByItem(
+      from,
+      to,
+      costCenterId: costCenterId,
+      warehouseIds: warehouseIds,
+      branchId: branchId,
+      allowedBranchIds: allowedBranchIds,
+    );
+
+    final buckets = <double, ({double base, double tax})>{};
+    for (final r in detail) {
+      final rate = (r['taxRate'] as num?)?.toDouble() ?? 0.0;
+      final base = (r['taxableBase'] as num?)?.toDouble() ?? 0.0;
+      final tax = (r['taxAmount'] as num?)?.toDouble() ?? 0.0;
+      final cur = buckets[rate] ?? (base: 0.0, tax: 0.0);
+      buckets[rate] = (base: cur.base + base, tax: cur.tax + tax);
+    }
+
+    return buckets.entries
+        .map((e) => <String, dynamic>{
+              'taxRate': e.key,
+              'taxableBase': e.value.base,
+              'taxAmount': e.value.tax,
+            })
+        .toList()
+      ..sort(
+          (a, b) => (b['taxRate'] as double).compareTo(a['taxRate'] as double));
   }
 
   // ═══ M-04: Hierarchical Trial Balance (ميزان المراجعة التفصيلي) ═══

@@ -456,10 +456,9 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: _buildCompactTextField(
+                // البند 4: كان حقلاً نصياً حراً يقبل أي رقم.
+                child: ProductFormHelpers.buildTaxRateDropdown(
                   taxRateController,
-                  'نسبة الضريبة %',
-                  isNumber: true,
                   icon: PhosphorIconsBold.percent,
                 ),
               ),
