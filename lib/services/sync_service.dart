@@ -516,58 +516,23 @@ class SyncService {
   // M5: Auto-sync polling — 30-second delta pull in client mode
   // ═══════════════════════════════════════════════════════════════
 
-  /// Default polling fallback when no interval is configured. WebSocket
-  /// pushes (`data_changed`) drive most sync; this timer is the safety net
-  /// for missed events / WS down. Lowered from 30 s → 5 s so a degraded-WS
-  /// client still feels near-real-time on a multi-branch deployment.
-  static const Duration _defaultAutoSyncInterval = Duration(seconds: 5);
+  // REMOVED: `startAutoSync()` / `_resolveAutoSyncInterval()`.
+  //
+  // They armed a `Timer.periodic` that ran `DeltaPullService.pullAll()` — 41
+  // sequential HTTP round-trips — every **5 seconds** by default. Nothing ever
+  // called `startAutoSync()`: the live poll is `AdaptivePollTimer` in
+  // `main_desktop.dart` (300 s while the WebSocket is up, 30 s when it drops),
+  // and the `auto_sync_interval_seconds` setting is honoured there as the
+  // operator override. This dead code was a loaded gun — one call site added
+  // by mistake would have put every client into a 5-second full-pull loop
+  // against a single-isolate server. `stopAutoSync()` is kept because
+  // `dispose()` calls it, and it stays correct for the now-always-null timer.
 
-  /// Settings key that overrides [_defaultAutoSyncInterval]. Stored as int
-  /// seconds; clamped to [1, 300]. Letting an admin tune this matters on
-  /// flaky branch links where 5 s polling stacks up timeouts.
-  static const String _autoSyncIntervalKey = 'auto_sync_interval_seconds';
-
-  /// Start background auto-sync. Safe to call multiple times — idempotent.
-  /// Reads the interval from `settings.auto_sync_interval_seconds` (seconds);
-  /// falls back to 5 s when unset/invalid. WebSocket `data_changed` events
-  /// still drive immediate per-table pulls — this timer just covers the gap
-  /// when WebSocket is disconnected.
-  Future<void> startAutoSync() async {
-    if (!isClient) return;
-    if (_autoSyncTimer?.isActive == true) return; // already running
-    final interval = await _resolveAutoSyncInterval();
-    _autoSyncTimer = Timer.periodic(interval, (_) async {
-      if (!isClient) {
-        stopAutoSync();
-        return;
-      }
-      try {
-        await DeltaPullService.instance.pullAll();
-      } catch (e) {
-        debugPrint('[AutoSync] delta pull failed (non-fatal): $e');
-      }
-    });
-    debugPrint('[AutoSync] Started polling every ${interval.inSeconds}s');
-  }
-
-  Future<Duration> _resolveAutoSyncInterval() async {
-    try {
-      final raw = await localDb.getSettingValue(_autoSyncIntervalKey);
-      final parsed = int.tryParse(raw?.trim() ?? '');
-      if (parsed != null && parsed >= 1 && parsed <= 300) {
-        return Duration(seconds: parsed);
-      }
-    } catch (e) {
-      debugPrint('[AutoSync] Failed to read $_autoSyncIntervalKey: $e');
-    }
-    return _defaultAutoSyncInterval;
-  }
-
-  /// Stop auto-sync polling.
+  /// Stop auto-sync polling. Retained for [dispose]; the timer it cancels is
+  /// no longer armed by anything (see the note above).
   void stopAutoSync() {
     _autoSyncTimer?.cancel();
     _autoSyncTimer = null;
-    debugPrint('[AutoSync] Stopped');
   }
 
   // TODO(multi-branch): Activate via Timer.periodic when branch sync is enabled

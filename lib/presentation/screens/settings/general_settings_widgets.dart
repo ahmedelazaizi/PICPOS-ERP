@@ -732,6 +732,13 @@ class _SessionTimeoutSettingState extends ConsumerState<_SessionTimeoutSetting> 
                 await ref
                     .read(settingsRepositoryProvider)
                     .saveSetting('session_timeout_minutes', opt.value.toString());
+                // Push the new value to the live detector. Without this the
+                // FutureProvider (no autoDispose, nothing else invalidates it
+                // from here) kept serving the OLD duration until the app was
+                // restarted — so choosing "معطل" here did not actually stop
+                // the auto sign-out. The POS settings screen already did this;
+                // this screen did not.
+                ref.invalidate(sessionTimeoutProvider);
                 // #Forensic Log
                 try {
                   final auth = ref.read(authProvider);

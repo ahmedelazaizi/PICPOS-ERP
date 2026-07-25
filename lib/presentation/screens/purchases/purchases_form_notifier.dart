@@ -380,6 +380,9 @@ class PurchasesFormNotifier extends Notifier<PurchasesFormState> {
         supplierInvoiceNumber: supplierInvoiceNumber.isEmpty
             ? null
             : supplierInvoiceNumber,
+        // Purchase-edit policy — the DAO evaluates `purchases_edit` against
+        // this id; without it every edit of a posted invoice was denied.
+        userId: user?.id,
       );
 
       final result = await useCase.execute(request);

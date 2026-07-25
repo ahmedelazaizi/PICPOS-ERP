@@ -906,7 +906,7 @@ class NetworkService {
 
   /// Broadcast a data_changed WebSocket event to all connected clients.
   /// Use from server-side screens after modifying branches, cost centers, accounts, etc.
-  void broadcastChange(String table) {
-    _apiHandler?.broadcastChange(table);
+  void broadcastChange(String table, {int? branchId}) {
+    _apiHandler?.broadcastChange(table, branchId: branchId);
   }
 }

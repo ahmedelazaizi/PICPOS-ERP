@@ -260,12 +260,31 @@ class _CwiCatalog {
     );
   }
 
+  /// Route a purchase-invoice EDIT to the server.
+  ///
+  /// The payload MUST carry everything `putPurchase` needs to rebuild the
+  /// invoice. Before this it sent only id/supplier/items/paid/notes, which
+  /// broke client-mode editing two ways:
+  ///   1. no `warehouseId` → the server's `parseInt(null) == 0` tripped
+  ///      "Validation Error: warehouseId is required" on EVERY edit, and the
+  ///      failed row then sat in the outbox driving the drain retry storm;
+  ///   2. the per-line map omitted tax / batch / expiry / unit fields, so any
+  ///      edit that DID land silently zeroed the VAT and dropped batch,
+  ///      expiry and UOM data.
+  /// `warehouseId` is still allowed to be null — the server now falls back to
+  /// the invoice's own warehouse — but sending it keeps the edit explicit.
   static Future<bool> updatePurchase({
     required int invoiceId,
     required int supplierId,
     required List<Map<String, dynamic>> items,
     double paid = 0,
     String? notes,
+    int? warehouseId,
+    int? branchId,
+    int? costCenterId,
+    String? paymentMethod,
+    String? supplierInvoiceNumber,
+    int? userId,
   }) async {
     if (!SyncInterceptor.isClientMode) return false;
     debugPrint('[ClientInterceptor] Routing purchase update to server');
@@ -281,6 +300,12 @@ class _CwiCatalog {
       'items': items,
       'paid': paid,
       'notes': notes,
+      'warehouseId': ?warehouseId,
+      'branchId': ?branchId,
+      'costCenterId': ?costCenterId,
+      'paymentMethod': ?paymentMethod,
+      'supplierInvoiceNumber': ?supplierInvoiceNumber,
+      'userId': ?userId,
     };
     await ClientWriteInterceptor._enrichItemsWithProductGlobalId(data);
     return ClientWriteInterceptor._tryOrQueueVoid(

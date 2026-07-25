@@ -163,30 +163,100 @@ class DeltaPullService {
     }
     try {
       final since = await _loadWatermark(table);
-      final result = await ServerProxy.instance.fetchDelta(table, since: since);
-      if (result == null) return 0;
 
-      final rows =
-          (result['rows'] as List?)?.cast<Map<String, dynamic>>() ?? [];
-      final serverTime = result['serverTime'] as int?;
+      // ── Paged drain ─────────────────────────────────────────────────────
+      // The server now bounds every /api/sync/pull response (it used to
+      // return the whole table, which froze both ends). Loop pages with a
+      // keyset cursor and only advance the watermark AFTER the last page
+      // lands — if the loop is interrupted the watermark stays put and the
+      // next pull safely re-fetches from the same point (upserts are
+      // idempotent).
+      var totalApplied = 0;
+      int? cursorTs;
+      int? cursorId;
+      int? serverTime;
+      var pages = 0;
+      // Only a loop that reached the server's last page may advance the
+      // watermark. Any other exit — page cap, network failure, or a row we
+      // cannot build a cursor from — must leave it untouched, or the rows we
+      // never fetched would be skipped forever.
+      var drainedFully = false;
 
-      if (rows.isNotEmpty) {
-        await _db!.transaction(() async {
-          for (final row in rows) {
-            await _upsertRow(table, row);
-          }
-        });
-        // Notify Drift watch() streams so reactive queries re-fire automatically
-        _db!.notifyUpdates({
-          TableUpdate(table, kind: UpdateKind.insert),
-          TableUpdate(table, kind: UpdateKind.update),
-        });
-        // Broadcast to SyncEventBus for higher-level UI subscribers
-        SyncEventBus.instance.emit(SyncTablePulled(table, rows.length));
-        debugPrint('[DeltaPull] $table: applied ${rows.length} rows');
+      while (true) {
+        if (pages >= _maxPagesPerPull) {
+          // Leave the watermark unadvanced so the remainder is picked up on
+          // the next cycle rather than silently dropped.
+          debugPrint('[DeltaPull] $table: hit page cap ($_maxPagesPerPull) — '
+              'remainder deferred to next pull');
+          unawaited(DiagnosticLogger.log(
+            'DELTA-PULL-CAP',
+            'table=$table pages=$pages applied=$totalApplied '
+                '— watermark NOT advanced, remainder deferred',
+          ));
+          return totalApplied;
+        }
+        pages++;
+
+        final result = await ServerProxy.instance.fetchDelta(
+          table,
+          since: since,
+          limit: _pullPageSize,
+          cursorTs: cursorTs,
+          cursorId: cursorId,
+        );
+        // Network/HTTP failure — do NOT advance the watermark.
+        if (result == null) return totalApplied;
+
+        final rows =
+            (result['rows'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+        // Take the clock from the FIRST page. Rows modified while we page
+        // through are then re-fetched next cycle instead of being skipped.
+        serverTime ??= result['serverTime'] as int?;
+
+        if (rows.isNotEmpty) {
+          await _applyRowsChunked(table, rows);
+          totalApplied += rows.length;
+
+          // Notify Drift watch() streams so reactive queries re-fire
+          // automatically.
+          _db!.notifyUpdates({
+            TableUpdate(table, kind: UpdateKind.insert),
+            TableUpdate(table, kind: UpdateKind.update),
+          });
+          // Broadcast to SyncEventBus for higher-level UI subscribers
+          SyncEventBus.instance.emit(SyncTablePulled(table, rows.length));
+          debugPrint('[DeltaPull] $table: applied ${rows.length} rows '
+              '(page $pages)');
+
+          // Defensive numeric reads: the wire type varies by server backend
+          // (SQLite hands back an int, Postgres can surface a num), and a hard
+          // `as int` cast on the wrong one would throw mid-drain.
+          final last = rows.last;
+          cursorTs = _asInt(last['last_modified_at']) ?? 0;
+          cursorId = _asInt(last['id']);
+        }
+
+        final hasMore = result['hasMore'] == true;
+        if (!hasMore || rows.isEmpty) {
+          drainedFully = true;
+          break;
+        }
+        if (cursorId == null) {
+          // The server says there is more, but the last row carries no usable
+          // id, so the next page cannot be addressed. Stop WITHOUT advancing
+          // the watermark so nothing is silently dropped.
+          debugPrint('[DeltaPull] $table: hasMore but no cursor id — '
+              'watermark NOT advanced');
+          unawaited(DiagnosticLogger.log(
+            'DELTA-PULL-CURSOR',
+            'table=$table hasMore=true but last row had no int id — '
+                'watermark NOT advanced, remainder deferred',
+          ));
+          break;
+        }
       }
 
-      if (serverTime != null) {
+      if (serverTime != null && drainedFully) {
         // Spec 151 P1-8b watermark guard (defense-in-depth). The early skip
         // above already prevents a branch-scoped tokenless pull from reaching
         // here, but re-check so a future caller that bypasses the skip can
@@ -198,10 +268,55 @@ class DeltaPullService {
           await _saveWatermark(table, serverTime);
         }
       }
-      return rows.length;
+      return totalApplied;
     } catch (e) {
       debugPrint('[DeltaPull] $table error: $e');
       return 0;
+    }
+  }
+
+  /// Lenient int read for wire values that may arrive as `int`, `num` or a
+  /// numeric `String` depending on the server's database backend.
+  static int? _asInt(dynamic v) {
+    if (v is int) return v;
+    if (v is num) return v.toInt();
+    if (v is String) return int.tryParse(v);
+    return null;
+  }
+
+  /// Rows requested per `/api/sync/pull` page.
+  static const int _pullPageSize = 500;
+
+  /// Rows applied per local write transaction. The whole page used to land in
+  /// ONE `transaction()`, so a large pull held a write lock and blocked the
+  /// UI isolate for the entire batch — the visible "client freeze". Chunking
+  /// plus an event-loop yield between chunks keeps the app responsive while a
+  /// backlog drains.
+  static const int _applyChunkSize = 100;
+
+  /// Safety valve on the paging loop so a server that always answers
+  /// `hasMore: true` (bad clock, cursor bug) cannot spin forever. At the
+  /// default page size this still drains 100k rows per pull.
+  static const int _maxPagesPerPull = 200;
+
+  /// Apply [rows] in bounded transactions, yielding to the event loop between
+  /// chunks so Drift stream listeners and the UI get a turn.
+  Future<void> _applyRowsChunked(
+    String table,
+    List<Map<String, dynamic>> rows,
+  ) async {
+    for (var start = 0; start < rows.length; start += _applyChunkSize) {
+      final end = (start + _applyChunkSize) > rows.length
+          ? rows.length
+          : start + _applyChunkSize;
+      final chunk = rows.sublist(start, end);
+      await _db!.transaction(() async {
+        for (final row in chunk) {
+          await _upsertRow(table, row);
+        }
+      });
+      // Hand the event loop back between chunks.
+      await Future<void>.delayed(Duration.zero);
     }
   }
 

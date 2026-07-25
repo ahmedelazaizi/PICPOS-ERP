@@ -2,6 +2,19 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/drift.dart' hide isNotNull;
 import 'package:ural_erp/data/database/database.dart';
 
+/// Id of the seeded `admin` user (role_id 1 = مدير النظام), who holds
+/// `purchases_edit` through the system-admin bypass — `purchases_edit` is a
+/// normal permission, not one of `PermissionCodes.criticalFinancialOps`.
+///
+/// `updatePurchaseInvoice` gates every edit on that permission and denies a
+/// null identity, so tests exercising the edit path must supply a real user.
+Future<int> _permittedEditorId(AppDatabase db) async {
+  final row = await db
+      .customSelect("SELECT id FROM users WHERE username = 'admin' LIMIT 1")
+      .getSingle();
+  return row.read<int>('id');
+}
+
 void main() {
   late AppDatabase database;
 
@@ -131,6 +144,10 @@ void main() {
         ],
         paid: 360.0,
         paymentMethod: 'cash',
+        // Purchase-edit policy: `purchases_edit` is required and is evaluated
+        // against this id. A null userId is denied outright, so DAO-level
+        // tests must act as a real, permitted user.
+        userId: await _permittedEditorId(database),
       );
 
       // Verify Stock (150 - 50 + 30 = 130)

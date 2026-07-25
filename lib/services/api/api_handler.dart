@@ -2172,36 +2172,76 @@ class ApiHandler {
       final branchId =
           await _extractBranchId(request, failClosedOnNoIdentity: true);
       final branchCol = _syncPullBranchColumn[table];
+      // The branch predicate is now assembled with the other conditions
+      // below (the two pre-built `branchClause` / `branchClauseStandalone`
+      // string fragments are gone — the query is built from a condition list
+      // so the cursor predicate can join it without string surgery).
       final bool branchFilterActive = branchId != null && branchCol != null;
-      final String branchClause = branchFilterActive
-          ? ' AND ($branchCol = ? OR $branchCol IS NULL)'
-          : '';
-      final String branchClauseStandalone = branchFilterActive
-          ? 'WHERE ($branchCol = ? OR $branchCol IS NULL) '
-          : '';
+
+      // ── Page size (Spec: bounded delta pull) ────────────────────────────
+      // This query used to run with NO LIMIT at all. A table with a large
+      // backlog — or any `since=null` first pull — materialised the ENTIRE
+      // table into memory, JSON-encoded it, and shipped it in one response,
+      // all on the same isolate that serves every other client and the
+      // server's own UI. On `activity_logs` / `stock_movements` /
+      // `sales_invoice_items` in a store with a year of history that is
+      // hundreds of thousands of rows: the server froze and every other
+      // client's request queued behind it. That is the single biggest cause
+      // of "one or two clients load while the rest are fine" — whichever
+      // device had a stale/absent watermark pulled the whole table.
+      //
+      // The client now drains a table page by page and only advances its
+      // watermark once the last page has landed, so the contract is
+      // unchanged from its point of view — just bounded per request.
+      final rawLimit = int.tryParse(
+              request.requestedUri.queryParameters['limit'] ?? '') ??
+          _syncPullDefaultLimit;
+      final limit = rawLimit.clamp(1, _syncPullMaxLimit);
+
+      // Keyset cursor for pages 2..N. `(COALESCE(last_modified_at,0), id)` is
+      // the sort key, so the tie-breaker on `id` is what makes paging exact
+      // when many rows share one timestamp — a plain OFFSET or a
+      // timestamp-only cursor would silently skip or repeat those rows.
+      final cursorTs =
+          int.tryParse(request.requestedUri.queryParameters['cursorTs'] ?? '');
+      final cursorId =
+          int.tryParse(request.requestedUri.queryParameters['cursorId'] ?? '');
+      final bool cursorActive = cursorTs != null && cursorId != null;
 
       // Build the query. Table is from an allowlist, so interpolation is safe.
-      // Ordering by last_modified_at keeps the watermark advancing monotonically
-      // even if the client receives a partial batch.
-      final String sql;
-      final List<Variable> vars;
+      // Ordering by (last_modified_at, id) keeps paging deterministic and the
+      // watermark advancing monotonically.
+      final conditions = <String>[];
+      final vars = <Variable>[];
+
       if (since != null) {
-        sql = 'SELECT * FROM $table '
-            'WHERE last_modified_at IS NOT NULL AND last_modified_at > ?$branchClause '
-            'ORDER BY last_modified_at ASC';
-        vars = [
-          Variable.withInt(since),
-          if (branchFilterActive) Variable.withInt(branchId),
-        ];
-      } else {
-        sql = 'SELECT * FROM $table ${branchClauseStandalone}ORDER BY '
-            'COALESCE(last_modified_at, 0) ASC';
-        vars = [
-          if (branchFilterActive) Variable.withInt(branchId),
-        ];
+        conditions.add('last_modified_at IS NOT NULL AND last_modified_at > ?');
+        vars.add(Variable.withInt(since));
+      }
+      if (branchFilterActive) {
+        conditions.add('($branchCol = ? OR $branchCol IS NULL)');
+        vars.add(Variable.withInt(branchId));
+      }
+      if (cursorActive) {
+        conditions.add('(COALESCE(last_modified_at, 0) > ? OR '
+            '(COALESCE(last_modified_at, 0) = ? AND id > ?))');
+        vars
+          ..add(Variable.withInt(cursorTs))
+          ..add(Variable.withInt(cursorTs))
+          ..add(Variable.withInt(cursorId));
       }
 
-      final rows = await _db.customSelect(sql, variables: vars).get();
+      final whereClause =
+          conditions.isEmpty ? '' : 'WHERE ${conditions.join(' AND ')} ';
+      final sql = 'SELECT * FROM $table $whereClause'
+          'ORDER BY COALESCE(last_modified_at, 0) ASC, id ASC '
+          'LIMIT ${limit + 1}';
+
+      // Fetch limit+1 to detect "there is another page" without a COUNT(*)
+      // round-trip, then trim back to the page size.
+      final fetched = await _db.customSelect(sql, variables: vars).get();
+      final bool hasMore = fetched.length > limit;
+      final rows = hasMore ? fetched.sublist(0, limit) : fetched;
 
       final jsonRows = rows.map((r) {
         final out = <String, dynamic>{};
@@ -2265,6 +2305,11 @@ class ApiHandler {
       return _json({
         'rows': jsonRows,
         'count': jsonRows.length,
+        // `hasMore` drives the client's paging loop. Older clients that don't
+        // read it still work: they get one bounded page instead of the whole
+        // table, and the next poll picks up from the same watermark.
+        'hasMore': hasMore,
+        'limit': limit,
         'serverTime': DateTime.now().millisecondsSinceEpoch ~/ 1000,
       });
     } catch (e, st) {
@@ -2272,6 +2317,15 @@ class ApiHandler {
       return _error('Failed to fetch delta: $e');
     }
   }
+
+  /// Rows per `/api/sync/pull` page when the caller does not ask for a size.
+  /// Sized so a page JSON-encodes in tens of milliseconds on the server's
+  /// isolate rather than blocking it for seconds.
+  static const int _syncPullDefaultLimit = 500;
+
+  /// Hard ceiling on the `limit` query parameter — a client cannot ask the
+  /// server to materialise an unbounded result set again.
+  static const int _syncPullMaxLimit = 2000;
 
   // ═══════════════════════════════════════════════════════════════
   // Helpers
@@ -2652,32 +2706,20 @@ class ApiHandler {
   String _buildMenuHtml() => menuHtmlTemplate;
   String _buildCfdHtml() => cfdHtmlTemplate;
 
-  /// Public: Broadcast a data_changed event to all connected WebSocket clients.
+  /// Public: Broadcast a data_changed event to connected WebSocket clients.
   /// Call this from server-side screens when entities are modified directly
   /// (e.g. branches, cost centers, accounts created via the server UI).
-  void broadcastChange(String table) {
-    final msg = json.encode({
-      'event': 'data_changed',
-      'table': table,
-      'ts': DateTime.now().millisecondsSinceEpoch,
-    });
-    final stale = <WebSocketChannel>[];
-    for (final ws in _wsClients.keys) {
-      try {
-        ws.sink.add(msg);
-      } catch (_) {
-        stale.add(ws);
-      }
-    }
-    for (final ws in stale) {
-      _wsClients.remove(ws);
-      try {
-        ws.sink.close();
-      } catch (_) {}
-    }
-    if (_wsClients.isNotEmpty) {
-      debugPrint('[WS] Broadcast: $table → ${_wsClients.length} clients');
-    }
+  ///
+  /// Delegates to [ApiHandlerBase.broadcast] instead of re-implementing the
+  /// fan-out. The duplicate loop this replaces had two defects: it never
+  /// pushed to `_localChangeController`, so the SERVER's own open screens did
+  /// not refresh after an admin edit (only remote clients did); and it ignored
+  /// `WsSubscriberInfo.branchId` entirely, so it could not scope a broadcast
+  /// even when the caller knew the branch. Every current caller passes global
+  /// master data (accounts, branches, cost centers, role_permissions), which
+  /// correctly reaches everyone with [branchId] left null.
+  void broadcastChange(String table, {int? branchId}) {
+    _data.broadcast(table, branchId: branchId);
   }
 
   // ═══════════════════════════════════════════════════════════════

@@ -1668,17 +1668,31 @@ class ServerProxy {
   /// `&branch_id=<id>` so the server filters scoped tables before
   /// shipping. Admins keep cross-branch visibility (no parameter sent),
   /// matching their behaviour on the server-mode UI.
+  /// Fetch one PAGE of a table's delta.
+  ///
+  /// [limit] bounds the rows the server materialises for this request; the
+  /// response carries `hasMore`. [cursorTs]/[cursorId] are the keyset cursor
+  /// for pages 2..N — the `(last_modified_at, id)` pair of the last row the
+  /// caller applied. Callers must loop until `hasMore == false` before
+  /// advancing their watermark (see `DeltaPullService.pullTable`).
   Future<Map<String, dynamic>?> fetchDelta(
     String table, {
     DateTime? since,
+    int? limit,
+    int? cursorTs,
+    int? cursorId,
   }) async {
     try {
       final sinceParam = since != null
           ? '&since=${since.millisecondsSinceEpoch ~/ 1000}'
           : '';
+      final limitParam = limit != null ? '&limit=$limit' : '';
+      final cursorParam = (cursorTs != null && cursorId != null)
+          ? '&cursorTs=$cursorTs&cursorId=$cursorId'
+          : '';
       final branchParam = await _branchScopeQueryParam();
-      final url = Uri.parse(
-          '$_baseUrl/api/sync/pull?table=$table$sinceParam$branchParam');
+      final url = Uri.parse('$_baseUrl/api/sync/pull?table=$table'
+          '$sinceParam$limitParam$cursorParam$branchParam');
       final response = await http
           .get(url, headers: _authHeaders)
           .timeout(const Duration(seconds: 30));

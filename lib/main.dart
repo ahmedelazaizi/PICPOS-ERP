@@ -53,10 +53,20 @@ import 'services/sync/client_first_sync_service.dart';
 import 'services/sync/mirror_divergence_handler.dart';
 import 'services/sync_service.dart';
 import 'presentation/screens/fatal_setup_error_screen.dart';
+import 'core/widgets/app_error_boundary.dart'
+    show installGlobalErrorWidgetBuilder;
 import 'app_main_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Replace Flutter's default error box with a readable Arabic card that
+  // swaps in for ONLY the widget that failed, leaving the rest of the screen
+  // usable. Previously a build exception anywhere left the raw framework error
+  // box on screen with no way to recover short of restarting the app — the
+  // "شاشة فيها مشكلة" reports. `FlutterError.onError` below still logs the
+  // full stack; this governs what the operator sees.
+  installGlobalErrorWidgetBuilder();
 
   // Capture Flutter framework errors (widget build failures, layout exceptions)
   // that are otherwise silently dropped in release builds.

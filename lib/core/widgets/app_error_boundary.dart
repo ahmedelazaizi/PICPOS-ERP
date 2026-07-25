@@ -1,87 +1,100 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../theme/app_colors.dart';
 
-/// A widget that catches errors in its child widget tree and shows a
-/// user-friendly fallback instead of crashing the entire app.
+/// Installs a friendly, in-place replacement for Flutter's default
+/// `ErrorWidget` — the grey/red "exception caught by rendering library" box
+/// (a bare black-on-yellow error string in release).
 ///
-/// Usage:
-/// ```dart
-/// AppErrorBoundary(
-///   child: SomeWidgetThatMightFail(),
-/// )
-/// ```
-class AppErrorBoundary extends StatefulWidget {
-  final Widget child;
-  final String? title;
-  final VoidCallback? onRetry;
+/// Call once from `main()`, before `runApp`.
+///
+/// Why a global builder and not a wrapper widget: Flutter offers no true
+/// per-subtree error boundary for **build** failures. `ErrorWidget.builder` is
+/// the single hook the framework consults when a widget's `build` throws, and
+/// it replaces only the failing widget — the rest of the screen keeps working.
+/// This file previously shipped an `AppErrorBoundary` widget that assigned
+/// `ErrorWidget.builder` from inside its own `build()` (a global mutation
+/// during build) and then blanked its **entire** subtree on any descendant
+/// failure. It was never mounted anywhere, so in practice the app ran with no
+/// handling at all: a build exception in any screen left Flutter's default
+/// error box on screen with no way back except restarting the app. That widget
+/// is replaced by this function.
+///
+/// `FlutterError.onError` in `main()` still records the full stack to the
+/// diagnostic log; this only governs what the user sees.
+void installGlobalErrorWidgetBuilder() {
+  ErrorWidget.builder = (FlutterErrorDetails details) {
+    // In debug, keep Flutter's own red box — it carries the full diagnostic
+    // dump that developers rely on.
+    if (kDebugMode) return ErrorWidget(details.exception);
 
-  const AppErrorBoundary({
-    super.key,
-    required this.child,
-    this.title,
-    this.onRetry,
-  });
-
-  @override
-  State<AppErrorBoundary> createState() => _AppErrorBoundaryState();
+    return _InlineErrorCard(details: details);
+  };
 }
 
-class _AppErrorBoundaryState extends State<AppErrorBoundary> {
-  bool _hasError = false;
-  FlutterErrorDetails? _errorDetails;
+/// Release-mode stand-in for a widget whose `build` threw. Deliberately
+/// dependency-free (no Riverpod, no theme lookups, no `Directionality`
+/// inheritance) — it must be able to render inside a subtree that is already
+/// broken.
+class _InlineErrorCard extends StatelessWidget {
+  final FlutterErrorDetails details;
 
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  void _handleError(FlutterErrorDetails details) {
-    setState(() {
-      _hasError = true;
-      _errorDetails = details;
-    });
-  }
-
-  void _retry() {
-    setState(() {
-      _hasError = false;
-      _errorDetails = null;
-    });
-    widget.onRetry?.call();
-  }
+  const _InlineErrorCard({required this.details});
 
   @override
   Widget build(BuildContext context) {
-    if (_hasError) {
-      return AppErrorWidget(
-        title: widget.title ?? 'حدث خطأ غير متوقع',
-        message: _errorDetails?.exceptionAsString() ?? 'خطأ غير معروف',
-        onRetry: _retry,
-      );
-    }
-
-    return _ErrorCatcher(onError: _handleError, child: widget.child);
-  }
-}
-
-class _ErrorCatcher extends StatelessWidget {
-  final Widget child;
-  final void Function(FlutterErrorDetails) onError;
-
-  const _ErrorCatcher({required this.child, required this.onError});
-
-  @override
-  Widget build(BuildContext context) {
-    // Use ErrorWidget.builder to catch build errors
-    ErrorWidget.builder = (FlutterErrorDetails details) {
-      // Schedule the error handling after the current frame
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        onError(details);
-      });
-      return const SizedBox.shrink();
-    };
-    return child;
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        margin: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: AppColors.error.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.error.withValues(alpha: 0.35)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              PhosphorIconsBold.warningCircle,
+              color: AppColors.error,
+              size: 32,
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'تعذّر عرض هذا الجزء من الشاشة',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+                color: AppColors.error,
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'باقي الشاشة يعمل بشكل طبيعي. ارجع للخلف ثم افتح الشاشة مرة '
+              'أخرى. إذا تكرر الخطأ أرسل ملف السجل للدعم الفني.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              details.exceptionAsString(),
+              textAlign: TextAlign.center,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 10,
+                color: AppColors.textMuted,
+                fontFamily: 'monospace',
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

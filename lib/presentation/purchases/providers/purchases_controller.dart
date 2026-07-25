@@ -196,6 +196,11 @@ class PurchasesController extends Notifier<PurchasesState> {
 
       if (state.isEditing && state.editingInvoiceId != null) {
         // ── Client mode: route update to server ──
+        // The per-line map must carry EVERY field putPurchase reads. It
+        // previously sent only productId/name/quantity/unitCost/total, so a
+        // client-mode edit zeroed taxRate/taxAmount and dropped
+        // batchNumber/expiryDate/unitName/quantityInBase on the server copy.
+        final editUser = ref.read(authProvider).user;
         final serverUpdated = await ClientWriteInterceptor.updatePurchase(
           invoiceId: state.editingInvoiceId!,
           supplierId: state.selectedSupplierId!,
@@ -207,11 +212,22 @@ class PurchasesController extends Notifier<PurchasesState> {
                   'quantity': item.quantity,
                   'unitCost': item.unitCost,
                   'total': item.total,
+                  'taxRate': item.taxRate,
+                  'taxAmount': item.taxAmount,
+                  'batchNumber': item.batchNumber,
+                  'expiryDate': item.expiryDate?.toIso8601String(),
+                  // NOTE: this screen's cart model (PurchaseCartItemEntity)
+                  // carries no UOM, so unitName/quantityInBase are omitted and
+                  // the server applies its defaults (null / 1.0) — identical to
+                  // what the local `items` path below does. The UOM-aware edit
+                  // path is purchase_invoice_crud.dart.
                 },
               )
               .toList(),
           paid: state.paid,
           notes: state.notes,
+          warehouseId: warehouseId,
+          userId: editUser?.id,
         );
         if (!serverUpdated) {
           // Not in client mode or server handled it — write locally
@@ -223,6 +239,7 @@ class PurchasesController extends Notifier<PurchasesState> {
               items: items,
               paid: state.paid,
               notes: state.notes,
+              userId: editUser?.id,
             ),
           );
         }

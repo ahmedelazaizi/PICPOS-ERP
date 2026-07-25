@@ -51,6 +51,10 @@ import '../../services/cfd/cfd_serial_transport.dart';
 import '../../services/cfd/cfd_usb_transport.dart';
 import '../../services/cfd/cfd_hdmi_transport.dart';
 import '../../services/costing_method_service.dart';
+// Spec 135 NOTE 1 — the session-timeout selector below writes the single
+// canonical `session_timeout_minutes` key; invalidate its provider on save so
+// the live InactivityDetector picks the change up without an app restart.
+import '../../services/session_timeout_service.dart' show sessionTimeoutProvider;
 import '../../services/stock_shortage_policy_service.dart';
 import '../widgets/settings/branch_scope_admin_dialog.dart';
 import '../widgets/settings/cheque_receipt_drift_admin_dialog.dart';

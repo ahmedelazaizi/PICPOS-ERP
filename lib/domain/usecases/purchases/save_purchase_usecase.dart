@@ -48,6 +48,7 @@ class SavePurchaseUseCase {
             paid: request.paidAmount,
             notes: request.notes,
             supplierInvoiceNumber: request.supplierInvoiceNumber,
+            userId: request.userId,
           ),
         );
 
@@ -144,6 +145,10 @@ class PurchaseRequest {
   final String? notes;
   final String? supplierInvoiceNumber;
 
+  /// Acting user — the `purchases_edit` gate in `updatePurchaseInvoice` is
+  /// evaluated against this id. Required for edits; ignored on create.
+  final int? userId;
+
   const PurchaseRequest({
     this.invoiceId,
     this.isEditMode = false,
@@ -153,6 +158,7 @@ class PurchaseRequest {
     this.warehouseId = 1,
     this.notes,
     this.supplierInvoiceNumber,
+    this.userId,
   });
 }
 

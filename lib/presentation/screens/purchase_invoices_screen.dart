@@ -4,6 +4,7 @@ import 'package:ural_erp/core/widgets/app_toast.dart';
 import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import '../../core/permissions/permission_codes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/app_state_view.dart';
 import '../../core/widgets/shimmer_loading.dart';
@@ -60,15 +61,24 @@ class _PurchaseInvoicesScreenState
 
   /// Edit with confirmation if invoice has payments
   Future<void> _confirmEditInvoice(InvoiceEntity invoice) async {
-    if (invoice.paid > 0) {
+    // Confirm on either risk factor: money already paid, OR the invoice is
+    // already posted to the GL (isLocked). Editing a posted invoice is now
+    // permitted without limit for permission holders, so the operator should
+    // still see explicitly that the GL entry will be reversed and re-posted.
+    if (invoice.paid > 0 || invoice.isLocked) {
+      final isPosted = invoice.isLocked;
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (ctx) => Directionality(
           textDirection: ui.TextDirection.rtl,
           child: AlertDialog(
-            title: const Text('تعديل فاتورة مدفوعة'),
-            content: const Text(
-              'هذه الفاتورة تم دفع مبلغ منها. التعديل سيؤدي إلى عكس القيود المحاسبية وحركة المخزون وإعادة تطبيقها.\n\nهل تريد المتابعة؟',
+            title: Text(isPosted
+                ? 'تعديل فاتورة مُرحّلة محاسبياً'
+                : 'تعديل فاتورة مدفوعة'),
+            content: Text(
+              isPosted
+                  ? 'هذه الفاتورة مُرحّلة إلى دفتر الأستاذ. التعديل سيعكس القيد المحاسبي وحركة المخزون والتكلفة المتوسطة ثم يعيد ترحيلها بالقيم الجديدة، وسيُسجَّل في سجل التدقيق.\n\nهل تريد المتابعة؟'
+                  : 'هذه الفاتورة تم دفع مبلغ منها. التعديل سيؤدي إلى عكس القيود المحاسبية وحركة المخزون وإعادة تطبيقها.\n\nهل تريد المتابعة؟',
             ),
             actions: [
               TextButton(
@@ -96,6 +106,17 @@ class _PurchaseInvoicesScreenState
   Widget build(BuildContext context) {
     final state = ref.watch(purchaseInvoicesControllerProvider);
     final controller = ref.read(purchaseInvoicesControllerProvider.notifier);
+
+    // Purchase-edit policy (owner decision 2026-07-22): the edit button is
+    // gated by the `purchases_edit` permission ONLY — never by `isLocked`.
+    // A permitted user (including مدير النظام) edits without limit, before or
+    // after posting; the DAO reverses and re-posts the GL entry each time.
+    // Previously this was `onPressed: invoice.isLocked ? null : ...`, which
+    // made every posted invoice permanently uneditable from the UI and left
+    // the `modify_locked_invoice` permission unreachable.
+    final canEditPurchase =
+        ref.watch(hasPermissionProvider(PermissionCodes.purchasesEdit)).value ??
+            false;
 
     return Directionality(
       textDirection: ui.TextDirection.rtl,
@@ -687,20 +708,20 @@ class _PurchaseInvoicesScreenState
                                               icon: Icon(
                                                 PhosphorIconsBold.pencilSimple,
                                                 size: 18,
-                                                color: invoice.isLocked
-                                                    ? AppColors.textMuted
-                                                          .withValues(
-                                                            alpha: 0.3,
-                                                          )
-                                                    : AppColors.warning,
+                                                color: canEditPurchase
+                                                    ? AppColors.warning
+                                                    : AppColors.textMuted
+                                                        .withValues(alpha: 0.3),
                                               ),
-                                              tooltip: invoice.isLocked
-                                                  ? 'الفاتورة مقفلة'
-                                                  : 'تعديل',
-                                              onPressed: invoice.isLocked
-                                                  ? null
-                                                  : () => _confirmEditInvoice(
-                                                      invoice),
+                                              tooltip: canEditPurchase
+                                                  ? (invoice.isLocked
+                                                      ? 'تعديل فاتورة مُرحّلة'
+                                                      : 'تعديل')
+                                                  : 'لا تملك صلاحية تعديل فواتير المشتريات',
+                                              onPressed: canEditPurchase
+                                                  ? () => _confirmEditInvoice(
+                                                      invoice)
+                                                  : null,
                                             ),
                                             IconButton(
                                               icon: const Icon(
