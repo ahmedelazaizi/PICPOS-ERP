@@ -20,6 +20,7 @@ import 'package:ural_erp/core/config/brand.dart';
 import 'package:ural_erp/core/constants/app_constants.dart';
 import 'package:ural_erp/core/navigation/screen_id.dart';
 import 'package:ural_erp/core/theme/app_colors.dart';
+import 'package:ural_erp/core/theme/app_theme.dart';
 import 'package:ural_erp/data/database/connection_io.dart';
 
 void main() {
@@ -139,6 +140,15 @@ void main() {
         expect(screens, isNot(contains(outOfScope)),
             reason: '$outOfScope برّه نطاق lite — نقطة بيع + مخازن + صناديق + تقارير');
       }
+    });
+
+    test('الثيم — الشاشات المشتركة بتاخد لغة تصميم PicPos', () {
+      // الشاشات الـ٣٠ (١٨٥٠٠ سطر) ما اتنسختش ولا اتعدّلت — شكلها كله بييجي
+      // من `ThemeData` واحدة، والفرع ده هو اللي بيدّي PicPos شكله المستقل.
+      //
+      // بنتحقق من الفرع مش من `ThemeData` نفسها — بناؤها بيستدعي
+      // `GoogleFonts` لأوزان مش مضمّنة في الـ assets فبيرمي في الاختبار.
+      expect(AppTheme.designLanguage, 'picpos');
     });
   }, skip: skipReason);
 }

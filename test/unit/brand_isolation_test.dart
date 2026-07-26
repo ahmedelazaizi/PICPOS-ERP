@@ -16,6 +16,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/core/config/app_config.dart';
 import 'package:ural_erp/core/config/brand.dart';
+import 'package:ural_erp/core/theme/app_theme.dart';
 import 'package:ural_erp/data/database/connection_io.dart';
 
 void main() {
@@ -51,6 +52,19 @@ void main() {
       // UralCash فجأة بيقلع بنطاق شاشات أضيق عند كل عميل قائم.
       expect(Brand.defaultProfileCode, isEmpty);
       expect(AppConfig.profile, BusinessProfile.unified);
+    });
+
+    test('الثيم — UralCash لسه على لغة تصميمه، مش تصميم PicPos', () {
+      // الـ٣٠ شاشة مشتركة بين المنتجين وشكلها كله بييجي من `ThemeData`
+      // واحدة، فالفرع في `AppTheme` هو الحاجة الوحيدة اللي بتفصل شكل
+      // المنتجين. لو الحارس ده وقع يبقى كل عميل UralCash قايم اتغيّر شكل
+      // برنامجه.
+      //
+      // بنتحقق من الفرع مش من `ThemeData` نفسها: بناؤها بيستدعي
+      // `GoogleFonts` لأوزان (Cairo-Bold وغيره) مش مضمّنة في الـ assets،
+      // فبيرمي في بيئة الاختبار. وقيم UralCash اتنقلت حرفياً جوّه
+      // `_uralCashLightTheme` من غير تغيير سطر واحد.
+      expect(AppTheme.designLanguage, 'uralcash');
     });
   });
 

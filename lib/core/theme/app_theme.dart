@@ -1,13 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../config/brand.dart';
 import 'app_colors.dart';
+import 'picpos_theme.dart';
 
 /// App theme configuration with RTL Arabic support
 /// Optimized for compact, readable interface
+///
+/// ── طبقة العلامة ──────────────────────────────────────────────────────────
+/// المنتجان بيشاركوا نفس الـ٣٠ شاشة (١٨٥٠٠ سطر)، فنسخها لكل علامة مستحيل
+/// صيانته وتعديلها في مكانها بيغيّر شكل UralCash عند كل عميل قايم. الحل إن
+/// كل الشكل بيتحدد من `ThemeData` واحدة، والفرع هنا.
+///
+/// `Brand.isPicPos` **ثابت وقت الترجمة**، فالشرط بيتحسم في البناء: نسخة
+/// UralCash مبتشوفش `PicPosTheme` أصلاً، وThemeData بتاعتها هي بالحرف نفس
+/// الكود اللي كان موجود قبل الطبقة دي — الفروع الـ`_uralCash*` تحت اتنقلت
+/// كما هي بدون تغيير سطر واحد.
 class AppTheme {
   AppTheme._();
 
-  static ThemeData get lightTheme {
+  /// أي لغة تصميم البناء ده شغّال بيها. موجودة عشان الاختبارات تتحقق من
+  /// الفرع من غير ما تبني `ThemeData` — بناؤها بيستدعي `GoogleFonts` لأوزان
+  /// مش مضمّنة في الـ assets، فبيرمي في بيئة الاختبار.
+  ///
+  /// الفرع هو الحاجة الوحيدة اللي ممكن تنكسر هنا: قيم UralCash نفسها اتنقلت
+  /// حرفياً لـ [_uralCashLightTheme] و[_uralCashDarkTheme] من غير تغيير سطر.
+  static String get designLanguage => Brand.isPicPos ? 'picpos' : 'uralcash';
+
+  static ThemeData get lightTheme =>
+      Brand.isPicPos ? PicPosTheme.lightTheme : _uralCashLightTheme;
+
+  static ThemeData get darkTheme =>
+      Brand.isPicPos ? PicPosTheme.darkTheme : _uralCashDarkTheme;
+
+  static ThemeData get _uralCashLightTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
@@ -250,7 +276,7 @@ class AppTheme {
     );
   }
 
-  static ThemeData get darkTheme {
+  static ThemeData get _uralCashDarkTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
