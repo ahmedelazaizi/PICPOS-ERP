@@ -125,6 +125,35 @@ class Brand {
   /// طريقة كتابة العلامة في الواجهة (شوف [name]).
   static const String pgIdentifier = isPicPos ? 'picpos' : 'uralcash';
 
+  // ── بيانات المطوّر/المورّد ────────────────────────────────────────────────
+  //
+  // الشريط ده ظاهر للعميل في ٣ أماكن: تذييل شاشة الدخول، بلوك «عن البرنامج»
+  // في الإعدادات، وحوار بوابة السنة المالية.
+  //
+  // **ده كان أخطر تسريب متبقّي، وفات على كل جولات الفحص.** نمط الفحص في
+  // HANDOFF §٣.٤ بيدوّر على `uralcash` حرفياً، و«Ural Technology» و
+  // «uraljo.com» و«962797990989» مفيهمش الكلمة دي — فالفحص كان بيقول «صفر
+  // تسريب» وهو صادق بالنسبة لنمطه. اتكشف بتشغيل التطبيق وتصوير الشاشة، مش
+  // بفحص الـ binary. النمط الموسّع (`ural` بدل `uralcash`) في HANDOFF دلوقتي.
+  //
+  // PicPos بيسيبها **فاضية عن قصد**، والواجهة بتحذف الشريط بالكامل بدل ما
+  // ترسمه فاضي: رقم دعم غلط أسوأ من مفيش رقم — عميل PicPos لو اتصل بـ
+  // Ural Technology مش هيعرفوه. لما تتوفّر بيانات PicPos، تعبئتها هنا سطر
+  // واحد لكل قيمة والشريط بيرجع يظهر لوحده.
+  static const String vendorName = isPicPos ? '' : 'Ural Technology';
+  static const String vendorPhone = isPicPos ? '' : '+962797990989';
+  static const String vendorEmail = isPicPos ? '' : 'info@uraljo.com';
+  static const String vendorWebsite = isPicPos ? '' : 'www.uraljo.com';
+  static const String vendorWhatsappUrl =
+      isPicPos ? '' : 'https://wa.me/962797990989';
+  static const String vendorInstagramUrl =
+      isPicPos ? '' : 'https://instagram.com/uraltechnology';
+  static const String vendorFacebookUrl =
+      isPicPos ? '' : 'https://facebook.com/uraltechnology';
+
+  /// `false` للعلامات اللي مصرّحتش ببيانات مورّد — الواجهة بتحذف الشريط كله.
+  static const bool hasVendorInfo = vendorName != '';
+
   // ── نطاق المنتج ──────────────────────────────────────────────────────────
 
   /// كود `BusinessProfile` اللي المنتج يقلع بيه على داتابيز جديدة، أو `''`

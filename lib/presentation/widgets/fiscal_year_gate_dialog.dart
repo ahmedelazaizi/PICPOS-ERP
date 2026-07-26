@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../core/config/brand.dart';
 import '../../core/config/business_profile_provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/providers/providers.dart';
@@ -12,11 +13,12 @@ import '../../data/providers/providers.dart';
 class FiscalYearGateDialog {
   FiscalYearGateDialog._();
 
-  // Hardcoded developer (Ural Technology) contact info
-  static const String _developerCompany = 'Ural Technology';
-  static const String _developerPhone = '+962797990989';
-  static const String _developerEmail = 'Info@uraljo.com';
-  static const String _developerWebsite = 'www.uraljo.com';
+  // Vendor contact info — from `Brand`, not hard-coded. A brand that
+  // declares none hides the block entirely (see `Brand.vendorName`).
+  static const String _developerCompany = Brand.vendorName;
+  static const String _developerPhone = Brand.vendorPhone;
+  static const String _developerEmail = Brand.vendorEmail;
+  static const String _developerWebsite = Brand.vendorWebsite;
 
   /// Checks whether a valid fiscal year exists for today.
   /// If not, shows a blocking dialog.
@@ -184,7 +186,8 @@ class _FiscalYearGateContentState
                 ),
               ),
 
-              // Developer company info (hardcoded — Ural Technology)
+              // Vendor block — omitted entirely for brands with no vendor info.
+              if (Brand.hasVendorInfo) ...[
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(12),
@@ -218,6 +221,7 @@ class _FiscalYearGateContentState
                   ],
                 ),
               ),
+              ],
 
               const SizedBox(height: 16),
               const Divider(),

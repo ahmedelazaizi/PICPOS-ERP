@@ -1013,66 +1013,74 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               'الإصدار 1.0.0',
               style: TextStyle(color: AppColors.textMuted, fontSize: 12),
             ),
-            const Divider(height: 24),
-            // Developer Info
-            const Text(
-              'تطوير: Ural Technology',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            // Contact Links
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              alignment: WrapAlignment.center,
-              children: [
-                _buildContactChip(
-                  PhosphorIconsBold.envelope,
-                  'Info@uraljo.com',
-                ),
-                _buildContactChip(PhosphorIconsBold.globe, 'www.uraljo.com'),
-                _buildContactChip(
-                  PhosphorIconsBold.whatsappLogo,
-                  '+962797990989',
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            // Social Icons Row
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(
-                  icon: const Icon(
-                    PhosphorIconsBold.facebookLogo,
-                    color: Color(0xFF1877F2),
+            // Vendor block — values from `Brand`. A brand that declares no
+            // vendor info renders nothing here; printing another product's
+            // support contacts is worse than printing none.
+            if (Brand.hasVendorInfo) ...[
+              const Divider(height: 24),
+              const Text(
+                'تطوير: ${Brand.vendorName}',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              // Contact Links
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                alignment: WrapAlignment.center,
+                children: [
+                  _buildContactChip(
+                    PhosphorIconsBold.envelope,
+                    Brand.vendorEmail,
                   ),
-                  onPressed: () => launchUrl(Uri.parse('https://www.facebook.com/uraltechnology')),
-                  tooltip: 'Facebook',
-                ),
-                IconButton(
-                  icon: const Icon(
-                    PhosphorIconsBold.instagramLogo,
-                    color: Color(0xFFE4405F),
-                  ),
-                  onPressed: () => launchUrl(Uri.parse('https://www.instagram.com/uraltechnology')),
-                  tooltip: 'Instagram',
-                ),
-                IconButton(
-                  icon: const Icon(
+                  _buildContactChip(
+                      PhosphorIconsBold.globe, Brand.vendorWebsite),
+                  _buildContactChip(
                     PhosphorIconsBold.whatsappLogo,
-                    color: Color(0xFF25D366),
+                    Brand.vendorPhone,
                   ),
-                  onPressed: () => launchUrl(Uri.parse('https://wa.me/962797990989')),
-                  tooltip: 'WhatsApp',
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              '© 2026 Ural Technology',
-              style: TextStyle(color: AppColors.textMuted, fontSize: 10),
-            ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              // Social Icons Row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    icon: const Icon(
+                      PhosphorIconsBold.facebookLogo,
+                      color: Color(0xFF1877F2),
+                    ),
+                    onPressed: () =>
+                        launchUrl(Uri.parse(Brand.vendorFacebookUrl)),
+                    tooltip: 'Facebook',
+                  ),
+                  IconButton(
+                    icon: const Icon(
+                      PhosphorIconsBold.instagramLogo,
+                      color: Color(0xFFE4405F),
+                    ),
+                    onPressed: () =>
+                        launchUrl(Uri.parse(Brand.vendorInstagramUrl)),
+                    tooltip: 'Instagram',
+                  ),
+                  IconButton(
+                    icon: const Icon(
+                      PhosphorIconsBold.whatsappLogo,
+                      color: Color(0xFF25D366),
+                    ),
+                    onPressed: () =>
+                        launchUrl(Uri.parse(Brand.vendorWhatsappUrl)),
+                    tooltip: 'WhatsApp',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                '© 2026 ${Brand.vendorName}',
+                style: TextStyle(color: AppColors.textMuted, fontSize: 10),
+              ),
+            ],
           ],
         ),
       ),

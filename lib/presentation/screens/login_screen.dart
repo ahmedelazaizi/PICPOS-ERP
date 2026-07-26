@@ -847,10 +847,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  /// Ural Technology contact strip pinned at the bottom — phone, website,
-  /// email pills + social icons + © line. Mirrors the "About" panel in the
-  /// Settings dialog so the dev contact info has a consistent home.
+  /// Vendor contact strip pinned at the bottom — phone, website, email pills
+  /// + social icons + © line. Mirrors the "About" panel in the Settings
+  /// dialog so the dev contact info has a consistent home.
+  ///
+  /// Values come from [Brand]; a brand that declares none renders nothing at
+  /// all. Printing another product's support number on this screen is worse
+  /// than printing no number — see `Brand.vendorName`.
   Widget _buildContactFooter() {
+    if (!Brand.hasVendorInfo) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 18),
       child: Column(

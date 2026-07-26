@@ -169,7 +169,8 @@ class ExcelService {
           final priceAshyae = row.length > 8
               ? _parseDouble(row[8]?.value)
               : 0.0;
-          final taxRate = row.length > 9 ? _parseDouble(row[9]?.value) : 0.0;
+          final taxRate = _normalizeTaxRate(
+              row.length > 9 ? _parseDouble(row[9]?.value) : 0.0);
           // البند 4: the importer is the third unguarded ingress for the tax
           // rate (after the form and the server API). Silently storing 37.5
           // from a spreadsheet is exactly how illegal rates got in. Throwing
@@ -1269,6 +1270,31 @@ class ExcelService {
   }
 
   double _parseDouble(dynamic value) => _cellToNum(value)?.toDouble() ?? 0.0;
+
+  /// يحوّل نسبة ضريبة مكتوبة بصيغة الكسر إلى نسبة مئوية.
+  ///
+  /// Excel يخزّن الخلية المنسَّقة كـ Percentage بقيمتها الكسرية: خلية كتب فيها
+  /// المستخدم `16%` وتعرض `16%` تُقرأ من الملف كـ `0.16`. المستورِد يقرأ القيمة
+  /// الخام، فملف مملوء **صح** كان يفشل في كل سطر برسالة
+  /// «نسبة الضريبة "0.16" غير مسموح بها» — بلاغ ميداني بـ ٥٢٠ سطر فاشل.
+  ///
+  /// الإنقاذ هنا غير ملتبس: السلّم ليس فيه أي قيمة بين 0 و 1 حصراً، فأي قيمة في
+  /// المدى ده مرفوضة يقيناً كما هي. الضرب في ١٠٠ لا يمكن إلا أن يحوّل فشلاً
+  /// مؤكداً إلى نسبة صحيحة، وفقط لو وقع الناتج على السلّم فعلاً؛ وأي شيء آخر
+  /// يفشل كما كان وبنفس القيمة الأصلية في الرسالة.
+  ///
+  /// نرجّع عضو السلّم نفسه لا حاصل الضرب: `0.16 * 100` يساوي
+  /// `16.000000000000002` في الفاصلة العائمة، وتخزينها يزرع قيمة قذرة في عمود
+  /// تُقارَن قيمه بالتساوي في التقارير الضريبية.
+  double _normalizeTaxRate(double raw, {List<double>? allowed}) {
+    if (raw <= 0 || raw >= 1) return raw;
+    final ladder = allowed ?? TaxRatePolicy.defaultAllowedRates;
+    final asPercent = raw * 100;
+    for (final r in ladder) {
+      if ((r - asPercent).abs() < 1e-6) return r;
+    }
+    return raw;
+  }
 
   int _parseInt(dynamic value) => _cellToNum(value)?.round() ?? 0;
 
