@@ -7,6 +7,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/providers.dart';
 import '../../../core/config/app_config.dart';
 import '../../../services/client_write_interceptor.dart';
+import '../dialogs/app_confirm_dialog.dart';
 // Spec 135 NOTE 1 — the POS timeout UI now drives the single canonical
 // session_timeout_minutes key (System A); invalidate its provider on save.
 import '../../../services/session_timeout_service.dart' show sessionTimeoutProvider;
@@ -295,6 +296,46 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
         }
       });
     }
+  }
+
+  /// يعرض تنزيل «البيع بالسالب» على كل الأصناف بعد تشغيل الإعداد العام.
+  ///
+  /// الإعداد العام لوحده كان بيسمح بالبيع لكن الواجهة في أماكن تفضل تقول
+  /// «غير متوفر»، لأن `ProductEntity.isOutOfStock` و`product_list_tile`
+  /// بيقروا علم الصنف بس ومش شايفين الإعداد العام. تنزيل القيمة على الأصناف
+  /// بيوحّد كل القُرّاء.
+  ///
+  /// بيتأكد الأول: ده تعديل جماعي على كل صنف، ومش حاجة تحصل بضغطة مفتاح
+  /// من غير ما المستخدم يعرف حجمها.
+  Future<void> _offerNegativeSaleOnAllProducts() async {
+    final ok = await AppConfirmDialog.show(
+      context,
+      title: 'تفعيل البيع بالسالب على كل الأصناف',
+      message: 'الإعداد العام اتشغّل. تحب أفعّل «السماح بالبيع بالسالب» على '
+          'كل الأصناف النشطة كمان؟\n\n'
+          'من غير كده، بعض الشاشات هتفضل تعرض الصنف الناقص كـ«غير متوفر» '
+          'رغم إن البيع مسموح.\n\n'
+          'التفعيل الجماعي بيشغّل بس ولا بيقفل — أي صنف قافل البيع بالسالب '
+          'يدوياً هيتشغّل، ومفيش حاجة هتتقفل.',
+      confirmLabel: 'فعّل على كل الأصناف',
+    );
+    if (!ok || !mounted) return;
+
+    final dao = ref.read(databaseProvider);
+    final changed = await dao.enableNegativeSaleOnAllProducts();
+    if (!mounted) return;
+
+    // الأصناف بتتقري من providers مخزَّنة — من غير التبطيل ده الشاشات
+    // تفضل معروضة بالقيم القديمة لحد ما حاجة تانية تبطّلها.
+    ref.invalidate(allProductsProvider);
+
+    AppToast.show(
+      context,
+      changed == 0
+          ? 'كل الأصناف كانت مفعّلة أصلاً — مفيش تغيير'
+          : 'اتفعّل البيع بالسالب على $changed صنف',
+      type: ToastType.success,
+    );
   }
 
   Future<void> _saveSettings() async {
@@ -626,7 +667,10 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
                 : 'يمنع البيع عند نفاد المخزون ويظهر تنبيه باللغة العربية.',
           ),
           value: _enableNegativeSales,
-          onChanged: (v) => setState(() => _enableNegativeSales = v),
+          onChanged: (v) async {
+            setState(() => _enableNegativeSales = v);
+            if (v) await _offerNegativeSaleOnAllProducts();
+          },
           contentPadding: EdgeInsets.zero,
           secondary: Icon(
             PhosphorIconsBold.warning,

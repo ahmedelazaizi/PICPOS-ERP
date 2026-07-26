@@ -882,6 +882,32 @@ extension ProductCrudDao on AppDatabase {
   ///     default. We still defensively move ALL active products keyed by
   ///     `categoryId` here so a race-window create between the count and
   ///     this call doesn't orphan a new product.
+  /// يفعّل «السماح بالبيع بالسالب» على كل الأصناف النشطة في نقلة واحدة.
+  ///
+  /// ── ليه ده محتاج وجود، والإعداد العام موجود؟ ─────────────────────────
+  /// إعداد `enable_negative_sales` بيتعمله OR مع علم الصنف في المسارات
+  /// الحرجة (حارس `cart_controller.addItem`، كارت الصنف، `accounting_validator`)،
+  /// لكن **مش في كل مكان**: `ProductEntity.isOutOfStock` جيتر خالص مبيعرفش
+  /// حاجة عن الإعداد العام، و`product_list_tile` بيحسب نفاد المخزون من
+  /// المخزون بس. يعني تشغيل الإعداد كان بيسمح بالبيع فعلاً لكن الواجهة في
+  /// أماكن تفضل مصرّة إن الصنف «غير متوفر».
+  ///
+  /// تنزيل القيمة على الأصناف نفسها بيوحّد كل القُرّاء على مصدر واحد بدل
+  /// الاعتماد على إن كل موضع قراءة يفتكر يعمل OR.
+  ///
+  /// **اتجاه واحد عن قصد:** بيفعّل ولا بيعطّل. إلغاء التفعيل الجماعي كان
+  /// هيمسح كل علم اتحدّد يدوياً على صنف بعينه — قرار المستخدم ده مش بتاعنا
+  /// نلغيه. اللي عايز يقفلها لصنف يقفلها من شاشة الصنف.
+  ///
+  /// بيرجع عدد الصفوف اللي اتغيّرت فعلاً (الأصناف اللي كانت مفعّلة أصلاً
+  /// مش محسوبة)، عشان الواجهة تقول للمستخدم إيه اللي حصل بالظبط.
+  Future<int> enableNegativeSaleOnAllProducts() async {
+    return (update(products)
+          ..where((p) =>
+              p.isActive.equals(true) & p.allowNegativeSale.equals(false)))
+        .write(const ProductsCompanion(allowNegativeSale: Value(true)));
+  }
+
   Future<void> deleteCategory(
     int categoryId, {
     int? moveToCategoryId,
