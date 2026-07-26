@@ -5,6 +5,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/number_utils.dart';
+import '../../../data/providers/providers.dart';
 import '../../../domain/entities/cart_item_entity.dart';
 import '../../pos/providers/cart_controller.dart';
 
@@ -31,6 +32,11 @@ class PicPosItemsTable extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final items = ref.watch(cartControllerProvider.select((s) => s.items));
+    // `pos_cart_item_scale` من «إعدادات نقطة البيع» — نفس المفتاح ونفس
+    // الافتراضي اللي صفوف سلة UralCash بتقراهم. شاشات الكاشير بتتفاوت من
+    // ١٠″ لمسية لـ ٢٤″ بماوس، والصف اللي مريح على واحدة بيبقى مضيعة للتانية.
+    final scale = (ref.watch(posCartItemScaleProvider).value ?? 1.0)
+        .clamp(0.7, 1.6);
 
     return Container(
       decoration: BoxDecoration(
@@ -39,7 +45,7 @@ class PicPosItemsTable extends ConsumerWidget {
       ),
       child: Column(
         children: [
-          const _TableHeader(),
+          _TableHeader(scale: scale),
           Expanded(
             child: items.isEmpty
                 ? const _EmptyState()
@@ -49,6 +55,7 @@ class PicPosItemsTable extends ConsumerWidget {
                       index: i,
                       item: items[i],
                       isSelected: selectedIndex == i,
+                      scale: scale,
                       onSelect: () => onSelect(i),
                       onRemove: () => onRemove(i),
                     ),
@@ -71,22 +78,25 @@ const _kFlexTotal = 16;
 const _kFlexRemove = 6;
 
 class _TableHeader extends StatelessWidget {
-  const _TableHeader();
+  final double scale;
+
+  const _TableHeader({required this.scale});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 40,
+      height: 40 * scale,
       color: AppColors.primaryDark,
-      child: const Row(
+      child: Row(
         children: [
-          _HeaderCell('م', _kFlexIndex),
-          _HeaderCell('المادة', _kFlexName, align: TextAlign.right),
-          _HeaderCell('الكمية', _kFlexQty),
-          _HeaderCell('السعر', _kFlexPrice),
-          _HeaderCell('الخصم %', _kFlexDiscount),
-          _HeaderCell('المجموع', _kFlexTotal),
-          _HeaderCell('', _kFlexRemove),
+          _HeaderCell('م', _kFlexIndex, scale: scale),
+          _HeaderCell('المادة', _kFlexName,
+              align: TextAlign.right, scale: scale),
+          _HeaderCell('الكمية', _kFlexQty, scale: scale),
+          _HeaderCell('السعر', _kFlexPrice, scale: scale),
+          _HeaderCell('الخصم %', _kFlexDiscount, scale: scale),
+          _HeaderCell('المجموع', _kFlexTotal, scale: scale),
+          _HeaderCell('', _kFlexRemove, scale: scale),
         ],
       ),
     );
@@ -97,8 +107,10 @@ class _HeaderCell extends StatelessWidget {
   final String label;
   final int flex;
   final TextAlign align;
+  final double scale;
 
-  const _HeaderCell(this.label, this.flex, {this.align = TextAlign.center});
+  const _HeaderCell(this.label, this.flex,
+      {this.align = TextAlign.center, required this.scale});
 
   @override
   Widget build(BuildContext context) {
@@ -112,10 +124,10 @@ class _HeaderCell extends StatelessWidget {
               : Alignment.center,
           child: Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
-              fontSize: 13,
+              fontSize: 13 * scale,
             ),
           ),
         ),
@@ -149,6 +161,7 @@ class _ItemRow extends ConsumerWidget {
   final int index;
   final CartItemEntity item;
   final bool isSelected;
+  final double scale;
   final VoidCallback onSelect;
   final VoidCallback onRemove;
 
@@ -156,6 +169,7 @@ class _ItemRow extends ConsumerWidget {
     required this.index,
     required this.item,
     required this.isSelected,
+    required this.scale,
     required this.onSelect,
     required this.onRemove,
   });
@@ -169,7 +183,7 @@ class _ItemRow extends ConsumerWidget {
     return InkWell(
       onTap: onSelect,
       child: Container(
-        height: 44,
+        height: 44 * scale,
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.primary.withValues(alpha: 0.10)
@@ -188,8 +202,8 @@ class _ItemRow extends ConsumerWidget {
               flex: _kFlexIndex,
               child: Text('${index + 1}',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                      fontSize: 13, color: AppColors.textMuted)),
+                  style: TextStyle(
+                      fontSize: 13 * scale, color: AppColors.textMuted)),
             ),
             Expanded(
               flex: _kFlexName,
@@ -198,8 +212,8 @@ class _ItemRow extends ConsumerWidget {
                 child: Text(
                   '${item.productName}$unitSuffix',
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                      fontSize: 13, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                      fontSize: 13 * scale, fontWeight: FontWeight.w600),
                 ),
               ),
             ),
@@ -212,6 +226,7 @@ class _ItemRow extends ConsumerWidget {
                 // the visible field showing the stale number.
                 key: ValueKey('qty-$index-${item.quantity}'),
                 value: item.quantity,
+                scale: scale,
                 decimals: item.isSoldByWeight ? 3 : 2,
                 onSubmitted: (v) {
                   if (v > 0) cart.updateQuantity(index, v);
@@ -223,6 +238,7 @@ class _ItemRow extends ConsumerWidget {
               child: _NumberCell(
                 key: ValueKey('price-$index-${item.effectivePrice}'),
                 value: item.effectivePrice,
+                scale: scale,
                 decimals: 2,
                 onSubmitted: (v) {
                   if (v >= 0) cart.updatePrice(index, v);
@@ -234,6 +250,7 @@ class _ItemRow extends ConsumerWidget {
               child: _NumberCell(
                 key: ValueKey('disc-$index-${item.discountPercent}'),
                 value: item.discountPercent,
+                scale: scale,
                 decimals: 2,
                 onSubmitted: (v) {
                   if (v >= 0 && v <= 100) cart.setItemDiscount(index, v);
@@ -257,7 +274,7 @@ class _ItemRow extends ConsumerWidget {
               child: IconButton(
                 onPressed: onRemove,
                 padding: EdgeInsets.zero,
-                iconSize: 18,
+                iconSize: 18 * scale,
                 icon: const Icon(PhosphorIconsBold.x, color: AppColors.error),
                 tooltip: 'إلغاء الصنف',
               ),
@@ -275,12 +292,14 @@ class _ItemRow extends ConsumerWidget {
 class _NumberCell extends StatefulWidget {
   final double value;
   final int decimals;
+  final double scale;
   final ValueChanged<double> onSubmitted;
 
   const _NumberCell({
     super.key,
     required this.value,
     required this.decimals,
+    required this.scale,
     required this.onSubmitted,
   });
 
@@ -338,7 +357,7 @@ class _NumberCellState extends State<_NumberCell> {
         inputFormatters: [
           FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
         ],
-        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        style: TextStyle(fontSize: 13 * widget.scale, fontWeight: FontWeight.w600),
         decoration: const InputDecoration(
           isDense: true,
           contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 6),

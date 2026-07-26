@@ -528,6 +528,14 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     _refocusScanner();
   }
 
+  Future<void> _showExpenses() async {
+    await showDialog<void>(
+      context: context,
+      builder: (_) => const PosPreviousExpensesDialog(),
+    );
+    _refocusScanner();
+  }
+
   Future<void> _showPreviousInvoices() async {
     await showDialog<void>(
       context: context,

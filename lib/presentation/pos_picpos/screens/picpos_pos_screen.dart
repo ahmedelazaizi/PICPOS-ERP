@@ -22,8 +22,10 @@ import '../../pos/providers/pos_search_controller.dart';
 import '../../pos/widgets/held_orders_dialog.dart';
 import '../../pos/widgets/pos_customer_selection_dialog.dart';
 import '../../pos/widgets/pos_dialogs.dart' hide PaymentResult;
+import '../../pos/widgets/pos_previous_expenses_dialog.dart';
 import '../../pos/widgets/pos_previous_invoices_dialog.dart';
 import '../../pos/widgets/pos_product_selection_panel.dart';
+import '../widgets/picpos_payment_panel.dart';
 import '../widgets/picpos_invoice_header.dart';
 import '../widgets/picpos_items_table.dart';
 import '../widgets/picpos_shortcut_bar.dart';
@@ -187,6 +189,23 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
         ),
       ];
 
+  /// عرض عمود الفاتورة كنسبة من الشاشة.
+  ///
+  /// بيقرا نفس مفاتيح شاشة UralCash: لو `pos_cart_ratio_locked` مشغّل،
+  /// `pos_cart_ratio_value` هو المصدر ومفيش سحب؛ وإلا الحالة الجارية في
+  /// `posController.cartFlexRatio` (اللي بيحفظها في SharedPreferences)
+  /// عشان الكاشير يسحب الفاصل ويلاقيه محفوظ في الجلسة الجاية.
+  double get invoiceRatio {
+    final locked = ref.watch(posCartRatioLockedProvider).value ?? false;
+    if (locked) {
+      return (ref.watch(posCartRatioValueProvider).value ?? 0.4)
+          .clamp(0.25, 0.7);
+    }
+    return ref
+        .watch(posControllerProvider.select((s) => s.cartFlexRatio))
+        .clamp(0.25, 0.7);
+  }
+
   @override
   Widget build(BuildContext context) {
     final isProcessing =
@@ -219,9 +238,15 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Expanded(flex: 60, child: _buildBrowsePanel()),
-                          const SizedBox(width: 6),
-                          Expanded(flex: 40, child: _buildInvoiceColumn()),
+                          Expanded(
+                            flex: ((1 - invoiceRatio) * 100).round(),
+                            child: _buildBrowsePanel(),
+                          ),
+                          _buildResizeHandle(),
+                          Expanded(
+                            flex: (invoiceRatio * 100).round(),
+                            child: _buildInvoiceColumn(),
+                          ),
                         ],
                       ),
                     ),
@@ -232,6 +257,48 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
             ),
             if (isProcessing) _buildProcessingOverlay(),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// Divider between the two halves. Drag it to trade grid space for invoice
+  /// space; the ratio persists via `posController.setCartFlexRatio`.
+  ///
+  /// Collapses to a plain gap when `pos_cart_ratio_locked` is on — an admin
+  /// who pinned the split does not want a cashier's stray drag to move it, and
+  /// a handle that silently does nothing is worse than no handle.
+  Widget _buildResizeHandle() {
+    final locked = ref.watch(posCartRatioLockedProvider).value ?? false;
+    if (locked) return const SizedBox(width: 6);
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onHorizontalDragUpdate: (details) {
+        // RTL: the invoice column is on the LEFT, so dragging left (negative
+        // dx) must GROW it. Same sign convention as the UralCash handle.
+        final delta = -details.delta.dx / MediaQuery.of(context).size.width;
+        ref.read(posControllerProvider.notifier).adjustFlexRatio(delta);
+      },
+      onDoubleTap: () =>
+          ref.read(posControllerProvider.notifier).setCartFlexRatio(0.4),
+      child: MouseRegion(
+        cursor: SystemMouseCursors.resizeLeftRight,
+        child: Container(
+          width: 12,
+          margin: const EdgeInsets.symmetric(vertical: 2),
+          alignment: Alignment.center,
+          child: Container(
+            width: 4,
+            decoration: BoxDecoration(
+              color: AppColors.border,
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: const Center(
+              child: Icon(PhosphorIconsBold.dotsSixVertical,
+                  size: 11, color: AppColors.textMuted),
+            ),
+          ),
         ),
       ),
     );
@@ -274,9 +341,17 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
           ),
         ),
         const SizedBox(height: 6),
-        PicPosTotalsBar(
+        // المجاميع + طرق الدفع + أزرار الأفعال — نسخة PicPos من لوحة UralCash،
+        // بتحترم إعدادات إظهار الأزرار والمقاسات في «إعدادات نقطة البيع».
+        PicPosPaymentPanel(
+          onCheckout: _handleCheckout,
+          onSave: () => _saveInvoice(printAfter: false),
+          onSaveAndPrint: () => _saveInvoice(printAfter: true),
           onEditDiscount: _editInvoiceDiscount,
+          onPickCustomer: _pickCustomer,
           onPreviousInvoices: _showPreviousInvoices,
+          onOpenDrawer: _openDrawer,
+          onExpense: _showExpenses,
         ),
         const SizedBox(height: 6),
         _buildOperationsRow(),
