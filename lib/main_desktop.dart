@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:path/path.dart' as p;
 import 'core/config/app_config.dart';
+import 'core/logging/diagnostic_logger.dart';
 import 'core/utils/platform_init.dart';
 import 'core/services/backup_service.dart';
 import 'services/scale_service_io.dart';
@@ -332,8 +333,20 @@ void startOfflineReconnectionTimer() {
 }
 
 /// Auto-connect to the last used scale port
+///
+/// This is the ONLY automatic scale connection attempt in the app — it runs
+/// once from `MainScreen.initState` and is never retried. When it returns
+/// false the scale stays dead for the whole session with nothing on screen to
+/// say so, and a cashier has no settings screen to reconnect from. Log the
+/// outcome so a dead scale is distinguishable from a scale nobody configured.
 Future<void> autoConnectScale() async {
-  await ScaleService.instance.autoConnect();
+  final connected = await ScaleService.instance.autoConnect();
+  final settings = await ScaleService.instance.getSavedSettings();
+  await DiagnosticLogger.log(
+      'SCALE',
+      'autoConnect → ${connected ? "connected" : "NOT connected"} '
+      'type=${settings['connectionType']} port=${settings['port']} '
+      'autoConnectPref=${settings['autoConnect']}');
 }
 
 /// Show touch keyboard on Windows

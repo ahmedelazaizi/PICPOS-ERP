@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../core/logging/diagnostic_logger.dart';
 import '../../services/mirror_state.dart';
 import '../../services/network_service.dart';
 import '../../services/sync_service.dart';
@@ -69,6 +70,28 @@ class BranchScope {
   }
 }
 
+/// Record which arm of [branchScopeProvider] produced the scope.
+///
+/// An empty (non-null) `allowedBranchIds` silently hides EVERY branch-tagged
+/// row from the user — invoice lists, reports and POS lookups all come back
+/// empty with no error surfaced. Without this line the only trace was a
+/// `debugPrint`, which never reaches the on-disk log a field operator can
+/// send back, so the failure was indistinguishable from "there is no data".
+Future<BranchScope> _loggedScope(
+  int? userId,
+  String source,
+  BranchScope scope,
+) async {
+  await DiagnosticLogger.log(
+    'BRANCH-SCOPE',
+    'userId=$userId source=$source '
+    'allowed=${scope.allowedBranchIds == null ? "ALL" : scope.allowedBranchIds!.toList()} '
+    'primary=${scope.primaryBranchId}'
+    '${scope.allowedBranchIds != null && scope.allowedBranchIds!.isEmpty ? " ⚠ EMPTY SCOPE — every branch-tagged row will be hidden" : ""}',
+  );
+  return scope;
+}
+
 /// Resolved branch scope for the currently logged-in user.
 ///
 /// Backed by [getUserAccessibleBranchIds] so it honours both direct
@@ -95,7 +118,9 @@ final branchScopeProvider = FutureProvider<BranchScope>((ref) async {
   final (userId, isCrossBranchElevated) = ref.watch(
     authProvider.select((s) => (s.user?.id, s.isCrossBranchElevated)),
   );
-  if (userId == null) return const BranchScope.fullAccess();
+  if (userId == null) {
+    return _loggedScope(null, 'no-user', const BranchScope.fullAccess());
+  }
 
   final db = ref.read(databaseProvider);
   final accessIds = await db.getUserAccessibleBranchIds(userId);
@@ -109,7 +134,7 @@ final branchScopeProvider = FutureProvider<BranchScope>((ref) async {
   // never reached on a mirror device — even if auth state lags the boot.
   if (NetworkService.instance.isMirror &&
       MirrorState.instance.isConfigured) {
-    return const BranchScope.fullAccess();
+    return _loggedScope(userId, 'mirror-device', const BranchScope.fullAccess());
   }
 
   // Feature 004 (US3, FR-021/FR-024) — System Admin elevated on a paired
@@ -118,7 +143,8 @@ final branchScopeProvider = FutureProvider<BranchScope>((ref) async {
   // produces. Inserted ABOVE the existing block so the narrowing logic
   // for non-elevated users remains untouched.
   if (isCrossBranchElevated) {
-    return const BranchScope.fullAccess();
+    return _loggedScope(
+        userId, 'cross-branch-elevated', const BranchScope.fullAccess());
   }
 
   if (NetworkService.instance.isClient) {
@@ -127,11 +153,22 @@ final branchScopeProvider = FutureProvider<BranchScope>((ref) async {
       final prefs = await SharedPreferences.getInstance();
       final clientBranchId = prefs.getInt('client_branch_id');
       if (clientBranchId != null) {
-        return BranchScope(
-          allowedBranchIds: {clientBranchId},
-          primaryBranchId: clientBranchId,
+        return _loggedScope(
+          userId,
+          'client-branch-isolation',
+          BranchScope(
+            allowedBranchIds: {clientBranchId},
+            primaryBranchId: clientBranchId,
+          ),
         );
       }
+      // Branch isolation is ON but the device was never stamped with its
+      // branch during pairing. We fall through to the user-assignment path
+      // below; record it, because the fall-through is otherwise invisible
+      // and changes which branches the operator can see.
+      await DiagnosticLogger.log('BRANCH-SCOPE',
+          'userId=$userId ⚠ isolation enabled but client_branch_id pref is '
+          'missing — falling through to user assignments');
     }
   }
 
@@ -145,14 +182,22 @@ final branchScopeProvider = FutureProvider<BranchScope>((ref) async {
     // (reports, POS, parties) becomes a no-op for that user. isFullBranchAccessUser
     // is the same sentinel the server-side fix (_extractBranchId) uses.
     final privileged = await db.isFullBranchAccessUser(userId);
-    return privileged
-        ? const BranchScope.fullAccess()
-        : const BranchScope(allowedBranchIds: <int>{}, primaryBranchId: null);
+    return _loggedScope(
+      userId,
+      privileged ? 'no-assignments-privileged' : 'no-assignments-fail-closed',
+      privileged
+          ? const BranchScope.fullAccess()
+          : const BranchScope(allowedBranchIds: <int>{}, primaryBranchId: null),
+    );
   }
 
   final primary = await db.getUserBranchId(userId);
-  return BranchScope(
-    allowedBranchIds: accessIds.toSet(),
-    primaryBranchId: primary,
+  return _loggedScope(
+    userId,
+    'user-assignments',
+    BranchScope(
+      allowedBranchIds: accessIds.toSet(),
+      primaryBranchId: primary,
+    ),
   );
 });

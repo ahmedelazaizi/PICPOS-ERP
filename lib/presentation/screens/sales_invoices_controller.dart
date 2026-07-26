@@ -368,6 +368,13 @@ class SalesInvoicesController extends Notifier<SalesInvoicesScreenState> {
         }
       }
       debugPrint('[SalesInvoices] Fetched ${invoices.length} invoices');
+      // Release-safe counter. "Nothing fetched" and "fetched then filtered
+      // away by branch scope" look identical on screen (an empty list, no
+      // error) but have completely different causes, so both numbers have to
+      // reach the on-disk log — the kDebugMode diagnostics below never run on
+      // a field build.
+      await DiagnosticLogger.log(
+          'SALES-LIST', 'fetched ${invoices.length} invoices (pre-scope)');
 
       // Phase 5C.1 (Issue 4) — branch-scope guard. The repository may
       // hand back rows from branches the current user shouldn't see
@@ -380,11 +387,18 @@ class SalesInvoicesController extends Notifier<SalesInvoicesScreenState> {
       final scope = await ref.read(branchScopeProvider.future);
       if (!scope.hasFullAccess) {
         final before = invoices.length;
+        final seenBranchIds =
+            invoices.map((inv) => inv.branchId).toSet().toList();
         invoices = invoices.where((inv) => scope.isAllowed(inv.branchId)).toList();
         if (before != invoices.length) {
           debugPrint('[SalesInvoices] BranchScope dropped '
               '${before - invoices.length} cross-branch rows '
               '(allowed=${scope.allowedBranchIds})');
+          await DiagnosticLogger.log(
+              'SALES-LIST',
+              '⚠ BranchScope dropped ${before - invoices.length}/$before rows — '
+              'allowed=${scope.allowedBranchIds!.toList()} '
+              'invoiceBranchIds=$seenBranchIds');
         }
       }
 
