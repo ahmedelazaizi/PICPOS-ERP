@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../config/brand.dart';
 
 /// B5 — i18n support scaffold.
 /// Provides locale switching infrastructure.
@@ -24,7 +25,7 @@ class AppLocalizations {
   /// Translation map — extend with full translations in Phase 2
   static final Map<String, Map<String, String>> _localizedValues = {
     'ar': {
-      'app_name': 'يورال كاش',
+      'app_name': Brand.nameAr,
       'dashboard': 'لوحة التحكم',
       'products': 'الأصناف',
       'sales': 'المبيعات',
@@ -59,7 +60,7 @@ class AppLocalizations {
       'restore': 'استعادة',
     },
     'en': {
-      'app_name': 'UralCash',
+      'app_name': Brand.name,
       'dashboard': 'Dashboard',
       'products': 'Products',
       'sales': 'Sales',

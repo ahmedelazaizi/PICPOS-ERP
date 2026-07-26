@@ -22,6 +22,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../services/deployment/reconcile_result.dart';
 import '../../services/network_service.dart';
+import '../../core/config/brand.dart';
 
 /// Wrapper that boots a minimal MaterialApp with only the Fatal screen.
 /// Used from main_desktop.dart / main_web.dart when reconcileWithDb returns
@@ -60,7 +61,7 @@ class FatalSetupErrorApp extends StatelessWidget {
     final seedColor =
         isPgParity ? Colors.orange.shade700 : Colors.red.shade700;
     return MaterialApp(
-      title: 'UralCash ERP',
+      title: Brand.name,
       debugShowCheckedModeBanner: false,
       locale: const Locale('ar'),
       supportedLocales: const [Locale('ar'), Locale('en')],

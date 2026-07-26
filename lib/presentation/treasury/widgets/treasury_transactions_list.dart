@@ -9,6 +9,7 @@ import '../../../data/providers/providers.dart';
 
 import 'package:ural_erp/l10n/app_localizations.dart';
 import '../../../../../../core/constants/app_constants.dart';
+import '../../../core/config/brand.dart';
 
 /// Feature 011 / Issue UX-SCROLL — converted from ConsumerWidget to
 /// ConsumerStatefulWidget so we can persist a ScrollController across
@@ -104,7 +105,7 @@ class _TreasuryTransactionsListState
       final settingsRepo = ref.read(settingsRepositoryProvider);
       final partiesRepo = ref.read(partiesRepositoryProvider);
       final companyName =
-          await settingsRepo.getSetting('company_name') ?? 'UralCash';
+          await settingsRepo.getSetting('company_name') ?? Brand.documentCompanyFallback;
       final companyPhone = await settingsRepo.getSetting('company_phone');
 
       // Get party name if available

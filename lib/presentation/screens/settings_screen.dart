@@ -1191,8 +1191,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               // Spec 136 ISS-5 — the active mode-labelled login log first,
               // then the legacy unlabelled name for older sessions.
               DiagnosticLogger.currentFileName,
-              'uralcash_login_log.txt',
-              'uralcash_startup_log.txt',
+              '${Brand.dbPrefix}_login_log.txt',
+              '${Brand.dbPrefix}_startup_log.txt',
               'server_errors.log',
             }.toList();
             final buffer = StringBuffer();

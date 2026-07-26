@@ -4,9 +4,10 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../config/brand.dart';
 
 class BackupService {
-  static const String _backupDirName = 'UralCash_Backups';
+  static const String _backupDirName = Brand.backupFolderName;
   static const String _bucketName = 'backups';
 
   /// Performs a backup of the current database file and optionally uploads it to the cloud
@@ -32,7 +33,7 @@ class BackupService {
 
       // 2. Generate timestamped filename
       final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
-      final backupFileName = 'uralcash_backup_$timestamp.sqlite';
+      final backupFileName = '${Brand.dbPrefix}_backup_$timestamp.sqlite';
       final backupPath = p.join(backupDir.path, backupFileName);
 
       // 3. Copy file

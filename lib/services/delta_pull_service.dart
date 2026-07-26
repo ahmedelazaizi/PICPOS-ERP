@@ -614,7 +614,7 @@ class DeltaPullService {
       // would silently overwrite the server's authoritative Argon2 hash with
       // a stale local PBKDF2 'admin' hash, blocking the user from logging in
       // with their real password (and triggering the boot-heal loop the
-      // operator observed in uralcash_startup_log.txt).
+      // operator observed in ${Brand.dbPrefix}_startup_log.txt).
       final isArgon2 = hashStr.startsWith(r'$argon2');
       final saltOk = saltStr.isNotEmpty || isArgon2;
 

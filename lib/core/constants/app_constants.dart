@@ -14,7 +14,7 @@ class AppConstants {
   static String appBuildNumber = '1'; // updated from pubspec via package_info_plus
 
   // Database
-  static const String databaseName = 'uralcash.db';
+  static const String databaseName = '${Brand.dbPrefix}.db';
   static const int databaseVersion = 1;
 
   // Pagination

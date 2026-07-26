@@ -8,6 +8,7 @@ import '../printer_resolver.dart';
 import '../../core/constants/app_constants.dart';
 import '../../domain/repositories/printers_repository.dart';
 import 'thermal_voucher_generator.dart';
+import '../../core/config/brand.dart';
 
 /// Thermal Receipt Generator (80mm format)
 ///
@@ -200,7 +201,7 @@ class ThermalReceiptGenerator extends BaseGenerator {
       crossAxisAlignment: pw.CrossAxisAlignment.center,
       children: [
         pw.Text(
-          companyName ?? 'UralCash Market',
+          companyName ?? Brand.documentCompanyFallback,
           style: pw.TextStyle(
             font: font,
             fontSize: 14,

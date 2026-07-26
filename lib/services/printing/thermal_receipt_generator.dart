@@ -8,6 +8,7 @@ import '../generators/base_generator.dart' hide InvoiceItem;
 import '../../core/constants/app_constants.dart';
 import '../../domain/repositories/printers_repository.dart';
 import 'printing_models.dart';
+import '../../core/config/brand.dart';
 
 class ThermalReceiptGenerator {
   static pw.Font? _arabicFont;
@@ -427,7 +428,7 @@ class ThermalReceiptGenerator {
       child: pw.Column(
         children: [
           pw.Text(
-            name ?? 'UralCash',
+            name ?? Brand.documentCompanyFallback,
             style: pw.TextStyle(
               font: _arabicFont,
               fontSize: 18,
@@ -1084,7 +1085,7 @@ class ThermalReceiptGenerator {
           child: pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.center,
             children: [
-              pw.Text(companyName ?? 'UralCash', style: headerStyle),
+              pw.Text(companyName ?? Brand.documentCompanyFallback, style: headerStyle),
               pw.Divider(thickness: 0.5),
               pw.Text('تقرير إغلاق الوردية', style: bold),
               pw.Text(

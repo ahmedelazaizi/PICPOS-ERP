@@ -52,6 +52,7 @@ import 'sync/strategies/purchase_order_sync_strategy.dart';
 // Feature 009 / T012b + T012c — Auto-Deplete BOM consumption log + POS terminals
 import 'sync/strategies/sale_bom_consumption_sync_strategy.dart';
 import 'sync/strategies/pos_terminal_sync_strategy.dart';
+import '../core/config/brand.dart';
 
 /// Client-side sync engine for pulling data from the server
 /// and caching it in the local SQLite database.
@@ -605,7 +606,7 @@ class SyncService {
       }
       // Skip ngrok interstitial page
       request.headers.set('ngrok-skip-browser-warning', 'true');
-      request.headers.set('User-Agent', 'UralCash-Client');
+      request.headers.set('User-Agent', '${Brand.name}-Client');
 
       final response = await request.close();
       final body = await response.transform(utf8.decoder).join();
@@ -664,7 +665,7 @@ class SyncService {
       }
       // Skip ngrok interstitial page
       request.headers.set('ngrok-skip-browser-warning', 'true');
-      request.headers.set('User-Agent', 'UralCash-Client');
+      request.headers.set('User-Agent', '${Brand.name}-Client');
 
       request.write(json.encode(data));
       final response = await request.close();

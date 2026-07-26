@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ural_erp/data/database/sync_interceptor.dart';
 import '../core/logging/diagnostic_logger.dart';
 import 'network_service.dart';
+import '../core/config/brand.dart';
 
 /// Centralized proxy for all write operations in client mode.
 /// When the app is in client mode, all writes go through this proxy
@@ -897,7 +898,7 @@ class ServerProxy {
         }
         request.headers.set('Content-Type', 'application/json');
         request.headers.set('ngrok-skip-browser-warning', 'true');
-        request.headers.set('User-Agent', 'UralCash-Client');
+        request.headers.set('User-Agent', '${Brand.name}-Client');
         // Spec 151 (P1-8) — keep parity with [_authHeaders]: send the signed
         // `X-Session-Token` (never the old, no-longer-trusted `X-User-Id`).
         // fetchUsers typically runs during the post-login refresh, by which

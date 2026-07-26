@@ -10,6 +10,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'label_scale_service.dart';
+import '../core/config/brand.dart';
 
 /// Logger for scale upload operations — writes to a file on Desktop
 class ScaleUploadLogger {
@@ -35,7 +36,7 @@ class ScaleUploadLogger {
 
   void _writeHeader() {
     _buffer.writeln('╔══════════════════════════════════════════════════════════════╗');
-    _buffer.writeln('║          سجل ترحيل أصناف الميزان — UralCash ERP           ║');
+    _buffer.writeln('║          سجل ترحيل أصناف الميزان — ${Brand.name} ERP           ║');
     _buffer.writeln('╚══════════════════════════════════════════════════════════════╝');
     _buffer.writeln();
     _buffer.writeln('التاريخ: ${_startTime.toString().split('.').first}');

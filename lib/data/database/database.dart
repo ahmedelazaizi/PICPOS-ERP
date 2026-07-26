@@ -56,6 +56,7 @@ export '../../services/stock_shortage_policy_service.dart' show StockShortagePol
 import '../../services/pos_terminal_registration_service.dart';
 // 062 (D1-004) — PermissionEnforcer for critical financial ops.
 import '../../services/permission_enforcer.dart';
+import '../../core/config/brand.dart';
 export '../../services/permission_enforcer.dart' show PermissionDeniedException;
 
 part 'database.g.dart';

@@ -649,7 +649,10 @@ void main() async {
                 ? '[STARTUP] ✅ admin password reset verified — login with: admin'
                 : '[STARTUP] ❌ admin password reset WRITTEN but verify FAILED '
                     '(salt.len=${salt.length}, hash.len=${hash.length}). '
-                    'Try: .\\UralCash.exe --purge-users  then restart.');
+                    // اسم الملف التنفيذي حسب العلامة — دي تعليمة المستخدم
+                    // بينفّذها فعلاً وهو مقدرش يدخل النظام، فاسم ملف مش
+                    // موجود عنده يخلّيها بلا قيمة.
+                    'Try: .\\${Brand.name}.exe --purge-users  then restart.');
           }
         } catch (e) {
           print('[STARTUP] ❌ admin-reset SQL failed: $e');
@@ -711,8 +714,8 @@ void main() async {
     //     know with certainty whether this code path ran at all.
     //
     // Behaviour:
-    //   1. Log boot to <exe>\uralcash_startup_log.txt AND
-    //      <Documents>\uralcash_startup_log.txt — proves the code
+    //   1. Log boot to <exe>\${Brand.dbPrefix}_startup_log.txt AND
+    //      <Documents>\${Brand.dbPrefix}_startup_log.txt — proves the code
     //      executed and the build is fresh.
     //   2. Raw-SQL SELECT admin row.
     //   3. If row is missing → call _resetAdminPasswordToDefault (which
@@ -730,7 +733,7 @@ void main() async {
     //   2. Reset locally to PBKDF2('admin')
     //   3. The next sync overwrites the local row with the server password
     //   4. The next boot sees admin/admin fails again → reset → loop
-    // The user observed this loop in uralcash_startup_log.txt
+    // The user observed this loop in ${Brand.dbPrefix}_startup_log.txt
     // (defaultVerifies(admin/admin)=false → reset → next session same).
     if (!NetworkService.instance.isClient) {
       await _bootTimeAdminHeal(sharedDb);
@@ -898,7 +901,7 @@ Future<void> _bootTimeAdminHeal(AppDatabase db) async {
     // Location A: next to UralCash.exe (always writable — co-located).
     try {
       final exeDir = File(Platform.resolvedExecutable).parent.path;
-      final f = File('$exeDir${Platform.pathSeparator}uralcash_startup_log.txt');
+      final f = File('$exeDir${Platform.pathSeparator}${Brand.dbPrefix}_startup_log.txt');
       await f.writeAsString(body, mode: FileMode.append);
     } catch (e) {
       print('[BootHeal] exe-dir log write failed: $e');
@@ -906,7 +909,7 @@ Future<void> _bootTimeAdminHeal(AppDatabase db) async {
     // Location B: Documents folder.
     try {
       final dir = await getApplicationDocumentsDirectory();
-      final f = File('${dir.path}${Platform.pathSeparator}uralcash_startup_log.txt');
+      final f = File('${dir.path}${Platform.pathSeparator}${Brand.dbPrefix}_startup_log.txt');
       await f.writeAsString(body, mode: FileMode.append);
     } catch (e) {
       print('[BootHeal] Documents log write failed: $e');
@@ -915,7 +918,7 @@ Future<void> _bootTimeAdminHeal(AppDatabase db) async {
     try {
       final tmp = Platform.environment['TEMP'] ?? Platform.environment['TMP'];
       if (tmp != null && tmp.isNotEmpty) {
-        final f = File('$tmp${Platform.pathSeparator}uralcash_startup_log.txt');
+        final f = File('$tmp${Platform.pathSeparator}${Brand.dbPrefix}_startup_log.txt');
         await f.writeAsString(body, mode: FileMode.append);
       }
     } catch (e) {
@@ -969,7 +972,7 @@ Future<void> _bootTimeAdminHeal(AppDatabase db) async {
     // every subsequent boot would see salt.len=0, decide the row is broken,
     // and reset back to PBKDF2 — only for the next login to rehash to
     // Argon2 again. The salt-wipe loop the user observed in
-    // uralcash_startup_log.txt was this exact ping-pong.
+    // ${Brand.dbPrefix}_startup_log.txt was this exact ping-pong.
     final verifyResult = await SecurityService.verifyPasswordFull(
         'admin', salt, hash);
     final verifiesDefault = verifyResult.verified;

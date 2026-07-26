@@ -4,6 +4,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'base_generator.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/config/brand.dart';
 
 /// Report Generator (A4 format)
 ///
@@ -355,7 +356,7 @@ class ReportGenerator extends BaseGenerator {
           ],
         ),
         pw.Text(
-          companyName ?? 'UralCash Market',
+          companyName ?? Brand.documentCompanyFallback,
           style: pw.TextStyle(
             font: font,
             fontSize: 18,
@@ -400,7 +401,7 @@ class ReportGenerator extends BaseGenerator {
           ],
         ),
         pw.Text(
-          companyName ?? 'UralCash Market',
+          companyName ?? Brand.documentCompanyFallback,
           style: pw.TextStyle(
             font: font,
             fontSize: 18,

@@ -3,6 +3,7 @@ import 'package:pdf/widgets.dart' as pw;
 import '../../core/constants/app_constants.dart';
 import 'base_generator.dart';
 import '../printing/pdf_compute_helper.dart';
+import '../../core/config/brand.dart';
 
 /// PDF Invoice Generator (A4 format)
 ///
@@ -150,7 +151,7 @@ class PdfInvoiceGenerator extends BaseGenerator {
                   ],
                 ),
                 pw.Text(
-                  companyName ?? 'UralCash Market',
+                  companyName ?? Brand.documentCompanyFallback,
                   style: pw.TextStyle(
                     font: arabicFont,
                     fontSize: 18,
@@ -259,7 +260,7 @@ class PdfInvoiceGenerator extends BaseGenerator {
                 ],
               ),
               pw.Text(
-                companyName ?? 'UralCash Market',
+                companyName ?? Brand.documentCompanyFallback,
                 style: pw.TextStyle(
                   font: arabicFont,
                   fontSize: 18,
@@ -346,7 +347,7 @@ class PdfInvoiceGenerator extends BaseGenerator {
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
             pw.Text(
-              companyName ?? 'UralCash Market',
+              companyName ?? Brand.documentCompanyFallback,
               style: pw.TextStyle(
                 font: font,
                 fontSize: 18,

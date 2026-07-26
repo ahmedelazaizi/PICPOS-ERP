@@ -11,6 +11,7 @@ import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
 import '../core/logging/diagnostic_logger.dart';
 import 'scale_transport.dart';
+import '../core/config/brand.dart';
 
 // ─────────────────────────────────────────────────────────────────────
 // Constants
@@ -308,7 +309,7 @@ class AclasSDK {
   /// `C:\ProgramData\UralCash\scale_tmp`; falls back to the system temp dir.
   static Future<Directory> _asciiScaleTempDir() async {
     try {
-      final dir = Directory(r'C:\ProgramData\UralCash\scale_tmp');
+      final dir = Directory('C:\\\\ProgramData\\\\${Brand.dataFolderName}\\\\scale_tmp');
       if (!await dir.exists()) await dir.create(recursive: true);
       if (isAsciiPath(dir.path)) return dir;
     } catch (_) {}

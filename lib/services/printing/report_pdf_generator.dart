@@ -8,6 +8,7 @@ import '../../core/constants/app_constants.dart';
 import 'pdf_compute_helper.dart';
 import 'package:intl/intl.dart';
 import '../generators/base_generator.dart' hide InvoiceItem, StatementItem;
+import '../../core/config/brand.dart';
 
 class ReportPdfGenerator {
   static pw.Font? _arabicFont;
@@ -131,7 +132,7 @@ class ReportPdfGenerator {
               style: pw.TextStyle(font: _arabicFont, fontSize: 10),
             ),
             pw.Text(
-              'نظام UralCash ERP',
+              'نظام ${Brand.name}',
               style: pw.TextStyle(font: _arabicFont, fontSize: 10),
             ),
           ],
@@ -615,7 +616,7 @@ class ReportPdfGenerator {
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
             pw.Text(
-              comp ?? 'UralCash',
+              comp ?? Brand.documentCompanyFallback,
               style: pw.TextStyle(
                 font: _arabicFont,
                 fontSize: 18,
@@ -1516,7 +1517,7 @@ class ReportPdfGenerator {
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
                     pw.Text(
-                      companyName ?? 'UralCash',
+                      companyName ?? Brand.documentCompanyFallback,
                       style: pw.TextStyle(
                         font: _arabicFont,
                         fontSize: 18,
@@ -1670,7 +1671,7 @@ class ReportPdfGenerator {
           ],
         ),
         pw.Text(
-          comp ?? 'UralCash',
+          comp ?? Brand.documentCompanyFallback,
           style: pw.TextStyle(
             font: _arabicFont,
             fontSize: 18,
@@ -1985,7 +1986,7 @@ class ReportPdfGenerator {
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
                     pw.Text(
-                      companyName ?? 'UralCash',
+                      companyName ?? Brand.documentCompanyFallback,
                       style: pw.TextStyle(
                         font: _arabicFont,
                         fontSize: 18,

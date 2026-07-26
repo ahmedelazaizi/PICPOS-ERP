@@ -481,7 +481,7 @@ extension DatabaseStartup on AppDatabase {
     // written whenever the admin's password is changed through the UI,
     // so that a real customer-chosen password is never overwritten.
     //
-    // Writes diagnostic log to Documents/uralcash_startup_log.txt AND to
+    // Writes diagnostic log to Documents/${Brand.dbPrefix}_startup_log.txt AND to
     // a file next to UralCash.exe so the operator can always find it.
     // Uses `customSelect` (not `getSingleOrNull`) so that duplicate admin
     // rows — which *can* happen after a client↔server fullSync with id
@@ -577,18 +577,18 @@ extension DatabaseStartup on AppDatabase {
         }
 
         // Write log to TWO locations so the operator can always find it:
-        //   1. %USERPROFILE%\Documents\uralcash_startup_log.txt  (standard)
-        //   2. <exe dir>\uralcash_startup_log.txt  (fallback — always writable)
+        //   1. %USERPROFILE%\Documents\${Brand.dbPrefix}_startup_log.txt  (standard)
+        //   2. <exe dir>\${Brand.dbPrefix}_startup_log.txt  (fallback — always writable)
         final logBody = '${logLines.join('\n')}\n\n';
         try {
           final logDir = await getApplicationDocumentsDirectory();
-          final logFile = File('${logDir.path}/uralcash_startup_log.txt');
+          final logFile = File('${logDir.path}/${Brand.dbPrefix}_startup_log.txt');
           await logFile.writeAsString(logBody, mode: FileMode.append);
         } catch (e) { debugPrint('[Startup] Documents log write failed: $e'); }
         try {
           final exeDir = File(Platform.resolvedExecutable).parent.path;
           final sep = Platform.pathSeparator;
-          final logFile2 = File('$exeDir${sep}uralcash_startup_log.txt');
+          final logFile2 = File('$exeDir$sep${Brand.dbPrefix}_startup_log.txt');
           await logFile2.writeAsString(logBody, mode: FileMode.append);
         } catch (e) { debugPrint('[Startup] exe-dir log write failed: $e'); }
         for (final line in logLines) {

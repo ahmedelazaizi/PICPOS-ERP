@@ -1,6 +1,7 @@
 import 'dart:developer' as developer;
 import 'dart:typed_data';
 import '../utils/file_utils.dart';
+import '../config/brand.dart';
 
 /// Severity levels for logging
 enum LogLevel { debug, info, warning, error }
@@ -115,7 +116,7 @@ class AppLogger {
 
     developer.log(
       logMessage,
-      name: 'UralCash',
+      name: Brand.name,
       level: _levelToInt(level),
       error: exception,
       stackTrace: stackTrace,

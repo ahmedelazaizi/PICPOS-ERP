@@ -21,6 +21,7 @@ import 'scale_transport.dart';
 import 'scale_upload_logger.dart';
 import '../core/logging/diagnostic_logger.dart';
 import '../data/database/database.dart' show LabelScale;
+import '../core/config/brand.dart';
 
 // ═══════════════════════════════════════════════════════════════
 // AclasSDK Isolate Helper (top-level — required by Isolate.run)
@@ -1973,7 +1974,7 @@ class ScaleProtocolHandler {
   ) async {
     try {
       final request = await client.postUrl(Uri.parse(url));
-      final boundary = '----UralCash${DateTime.now().microsecondsSinceEpoch}';
+      final boundary = '----${Brand.name}${DateTime.now().microsecondsSinceEpoch}';
       request.headers.set('Content-Type', 'multipart/form-data; boundary=$boundary');
 
       final body = StringBuffer();

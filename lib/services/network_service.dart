@@ -18,6 +18,7 @@ import 'security_service.dart';
 import 'server_proxy.dart';
 import 'sync/mirror_settings_keys.dart';
 import 'sync_service.dart';
+import '../core/config/brand.dart';
 
 /// Network operation mode for the application
 enum NetworkMode {
@@ -729,7 +730,7 @@ class NetworkService {
       final request = await client.getUrl(Uri.parse(healthUrl));
       // Skip ngrok free-tier interstitial browser warning page
       request.headers.set('ngrok-skip-browser-warning', 'true');
-      request.headers.set('User-Agent', 'UralCash-Client');
+      request.headers.set('User-Agent', '${Brand.name}-Client');
 
       final response = await request.close();
       final body = await response.transform(utf8.decoder).join();

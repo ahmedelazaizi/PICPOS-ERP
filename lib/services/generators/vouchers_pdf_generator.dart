@@ -3,6 +3,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'base_generator.dart';
 import '../printing/pdf_compute_helper.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/config/brand.dart';
 
 /// Professional Voucher PDF Generator (A4 format)
 /// 
@@ -239,7 +240,7 @@ class VouchersPdfGenerator extends BaseGenerator {
             pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
-                pw.Text('نظام UralCash ERP — حلول ذكية للأعمال', style: pw.TextStyle(font: arabicFont, fontSize: 9, color: PdfColors.grey600)),
+                pw.Text('نظام ${Brand.name} — حلول ذكية للأعمال', style: pw.TextStyle(font: arabicFont, fontSize: 9, color: PdfColors.grey600)),
                 pw.Text('مستخدم: ${employeeName ?? 'المدير'}', style: pw.TextStyle(font: arabicFont, fontSize: 9, color: PdfColors.grey600)),
               ],
             ),
@@ -293,7 +294,7 @@ class VouchersPdfGenerator extends BaseGenerator {
           crossAxisAlignment: pw.CrossAxisAlignment.end,
           children: [
             pw.Text(
-              companyName ?? 'UralCash Market',
+              companyName ?? Brand.documentCompanyFallback,
               style: pw.TextStyle(font: font, fontSize: 20, fontWeight: pw.FontWeight.bold),
             ),
             if (companyAddress != null)

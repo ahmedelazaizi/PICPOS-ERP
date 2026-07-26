@@ -81,6 +81,13 @@ void main() {
       // قاعدة PostgreSQL منفصلة — سيرفران على نفس نسخة PG كانوا هيتصادموا
       // على قاعدة اسمها `uralcash`.
       expect(Brand.pgIdentifier, 'picpos');
+      // المستندات المطبوعة: أخطر تسريب — عميل مسجّلش اسم شركته كان بيطبع
+      // فواتيره وعليها اسم منتج مش بتاعه.
+      expect(Brand.documentCompanyFallback, 'PicPos');
+      expect(Brand.documentCompanyFallback, isNot(contains('UralCash')));
+      // النسخ الاحتياطي: مجلد مشترك = استعادة تكتب داتابيز منتج فوق التاني.
+      expect(Brand.backupFolderName, 'PicPos_Backups');
+      expect(Brand.backupFolderName, isNot(contains('UralCash')));
       expect(Brand.pgIdentifier, isNot(contains('uralcash')));
       // lowercase إجباري: PostgreSQL بيحوّل المُعرّفات غير المقتبسة لحروف صغيرة.
       expect(Brand.pgIdentifier, Brand.pgIdentifier.toLowerCase());

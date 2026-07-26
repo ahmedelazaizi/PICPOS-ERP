@@ -5,6 +5,7 @@ import 'base_generator.dart';
 import '../printer_resolver.dart';
 import '../../core/constants/app_constants.dart';
 import '../../domain/repositories/printers_repository.dart';
+import '../../core/config/brand.dart';
 
 /// Thermal Voucher & Return Generator
 ///
@@ -30,7 +31,7 @@ class ThermalVoucherGenerator {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.center,
       children: [
-        pw.Text(companyName ?? 'UralCash Market', style: pw.TextStyle(font: font, fontSize: 14, fontWeight: pw.FontWeight.bold), textAlign: pw.TextAlign.center),
+        pw.Text(companyName ?? Brand.documentCompanyFallback, style: pw.TextStyle(font: font, fontSize: 14, fontWeight: pw.FontWeight.bold), textAlign: pw.TextAlign.center),
         if (companyNameEn != null) pw.Text(companyNameEn, style: pw.TextStyle(font: font, fontSize: 10), textAlign: pw.TextAlign.center),
         if (companyAddress != null) pw.Text(companyAddress, style: pw.TextStyle(font: font, fontSize: 9), textAlign: pw.TextAlign.center),
         if (companyPhone != null) pw.Text('Tel: $companyPhone', style: pw.TextStyle(font: font, fontSize: 9), textAlign: pw.TextAlign.center),
@@ -107,7 +108,7 @@ class ThermalVoucherGenerator {
             // COMPANY HEADER
             // ═══════════════════════════════════════════════════════════════════
             pw.Text(
-              companyName ?? 'UralCash Market',
+              companyName ?? Brand.documentCompanyFallback,
               style: pw.TextStyle(
                 font: arabicFont,
                 fontSize: 14,
@@ -297,7 +298,7 @@ class ThermalVoucherGenerator {
 
             // Footer
             pw.Text(
-              'تم الطباعة بواسطة UralCash POS',
+              'تم الطباعة بواسطة ${Brand.name}',
               style: pw.TextStyle(font: arabicFont, fontSize: 8),
               textAlign: pw.TextAlign.center,
             ),
@@ -548,7 +549,7 @@ class ThermalVoucherGenerator {
 
             // Footer
             pw.Text(
-              'تم الطباعة بواسطة UralCash POS',
+              'تم الطباعة بواسطة ${Brand.name}',
               style: pw.TextStyle(font: arabicFont, fontSize: 8),
               textAlign: pw.TextAlign.center,
             ),

@@ -36,6 +36,8 @@ void main() {
       // افتراضي PostgreSQL للتنصيبات الجديدة — لو اتغيّر، معالج تنصيب جديد
       // هيجهّز قاعدة باسم مختلف عن كل التركيبات القائمة.
       expect(Brand.pgIdentifier, 'uralcash');
+      expect(Brand.backupFolderName, 'UralCash_Backups');
+      expect(Brand.documentCompanyFallback, 'UralCash Market');
     });
 
     test('assertKnownBrand ما بترميش على علامة معروفة', () {

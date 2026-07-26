@@ -13,6 +13,7 @@
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/foundation.dart';
+import '../config/brand.dart';
 
 class DiagnosticLogger {
   // Spec 136 ISS-5 — the login log is keyed by deployment mode so each device
@@ -22,7 +23,7 @@ class DiagnosticLogger {
   // were indistinguishable (the "client.txt == mirror.txt byte-identical"
   // observation). NetworkService sets the label whenever the mode is
   // loaded/reconciled/changed.
-  static const String _baseName = 'uralcash_login_log';
+  static const String _baseName = '${Brand.dbPrefix}_login_log';
   static String _modeLabel = '';
 
   /// Set the deployment-mode suffix for the log filename. `null`/empty resets

@@ -21,6 +21,7 @@ import '../cheque_receipt_jes.dart';
 import 'api_user_context.dart';
 import '../../domain/entities/accounting_entities.dart';
 import 'api_handler_base.dart';
+import '../../core/config/brand.dart';
 
 /// Handles all data CRUD API endpoints (non-sales, non-display).
 class ApiDataHandler extends ApiHandlerBase {
@@ -3906,7 +3907,7 @@ class ApiDataHandler extends ApiHandlerBase {
           .split('.')
           .first;
       final backupDir =
-          '${Platform.environment['APPDATA'] ?? '.'}/UralCash_Backups/clients';
+          '${Platform.environment['APPDATA'] ?? '.'}/${Brand.backupFolderName}/clients';
       final dir = Directory(backupDir);
       if (!await dir.exists()) await dir.create(recursive: true);
 
