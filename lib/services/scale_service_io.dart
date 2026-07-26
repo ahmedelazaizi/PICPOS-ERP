@@ -4,6 +4,8 @@ import 'dart:isolate';
 import 'package:flutter/foundation.dart';
 import 'package:serial_port_win32/serial_port_win32.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'scale_disconnect_detector.dart';
+import 'scale_reconnect_policy.dart';
 
 /// Scale operating mode
 enum ScaleMode {
@@ -62,6 +64,22 @@ class ScaleService {
   Completer<bool>? _connectCompleter;
   Completer<bool>? _testCompleter;
   Completer<bool>? _calibrateCompleter;
+
+  /// Upper bound on the connect handshake. Mode auto-detection legitimately
+  /// takes up to ~12.3s on a scale that answers none of the probes — 2.1s of
+  /// passive listening plus 12 commands × (50ms flush + 300ms settle + 500ms
+  /// read) — and the worker only replies once detection finishes. The guard
+  /// therefore has to sit well clear of that; a tighter bound would abort
+  /// healthy connections on slow scales instead of fixing anything. This only
+  /// catches a worker that never answers at all.
+  static const Duration _connectTimeout = Duration(seconds: 25);
+
+  /// Upper bound on a calibration round-trip. The worker answers from the
+  /// ADC value it already holds, so this is short by comparison.
+  static const Duration _calibrateTimeout = Duration(seconds: 15);
+
+  Timer? _reconnectTimer;
+  final ScaleReconnectPolicy _reconnect = ScaleReconnectPolicy();
 
   // SharedPreferences keys
   static const String _prefScalePort = 'scale_port';
@@ -169,7 +187,14 @@ class ScaleService {
     bool saveSettings = true,
   }) async {
     try {
-      await disconnect();
+      // Not an operator-initiated disconnect: keep automatic reconnection
+      // armed and only drop a retry already queued for this attempt. The
+      // backoff schedule is deliberately NOT rewound here — see
+      // ScaleReconnectPolicy.resume.
+      _reconnect.resume();
+      _reconnectTimer?.cancel();
+      _reconnectTimer = null;
+      await _teardown();
 
       _connectionType = connectionType;
       _currentPort = portName;
@@ -233,11 +258,27 @@ class ScaleService {
         });
       }
 
-      final success = await _connectCompleter!.future;
+      final success = await _connectCompleter!.future.timeout(
+        _connectTimeout,
+        onTimeout: () {
+          debugPrint('[Scale] Connect timed out after '
+              '${_connectTimeout.inSeconds}s — worker never replied');
+          return false;
+        },
+      );
       _connectCompleter = null;
+
+      if (!success) {
+        // Whether the worker reported failure or never answered, tear the
+        // isolate down. Leaving it alive kept the COM port claimed and made
+        // the next attempt fail too — the retry loop below would then never
+        // recover.
+        _killWorker();
+      }
 
       if (success) {
         _isConnected = true;
+        _reconnect.reset();
         if (connectionType == ScaleConnectionType.tcp) {
           debugPrint('[Scale] Connected to $tcpHost:$tcpPort (TCP)');
         } else {
@@ -258,11 +299,23 @@ class ScaleService {
     } catch (e) {
       debugPrint('[Scale] Connection failed: $e');
       _isConnected = false;
+      _killWorker();
       return false;
     }
   }
 
+  /// Operator-initiated disconnect. Suppresses automatic reconnection until
+  /// something explicitly connects again — otherwise pressing "disconnect" in
+  /// the hardware settings would be undone a couple of seconds later.
   Future<void> disconnect() async {
+    _reconnect.suppress();
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+    await _teardown();
+  }
+
+  /// Release the worker, port and streams without touching reconnect intent.
+  Future<void> _teardown() async {
     if (_workerSendPort != null) {
       _workerSendPort!.send({'type': 'disconnect'});
       await Future.delayed(const Duration(milliseconds: 150));
@@ -315,7 +368,14 @@ class ScaleService {
       'knownWeightKg': knownWeightKg,
     });
 
-    final success = await _calibrateCompleter!.future;
+    final success = await _calibrateCompleter!.future.timeout(
+      _calibrateTimeout,
+      onTimeout: () {
+        debugPrint('[Scale] Calibration timed out after '
+            '${_calibrateTimeout.inSeconds}s — worker never replied');
+        return false;
+      },
+    );
     _calibrateCompleter = null;
     return success;
   }
@@ -387,6 +447,10 @@ class ScaleService {
         _weightController?.add(0.0);
         _onDisconnectedCallback?.call();
         _killWorker();
+        // The link dropped on its own (cable pulled, scale powered off, port
+        // vanished). Nothing else in the app would ever bring it back, and a
+        // cashier has no settings screen to reconnect from, so start retrying.
+        _scheduleReconnect();
         break;
 
       case 'saveMode':
@@ -520,8 +584,43 @@ class ScaleService {
     }
   }
 
-  /// Auto-connect using saved settings (called on app startup)
+  /// Auto-connect using saved settings (called on app startup).
+  ///
+  /// This is the app's only automatic connection path — `MainScreen.initState`
+  /// calls it once and nothing else ever retries. A scale that was still
+  /// enumerating, powered off, or plugged in a minute later therefore stayed
+  /// dead for the whole session, with no error on screen and no way for a
+  /// cashier (who has no settings screen) to recover. Failures now arm a
+  /// backoff retry instead of giving up.
   Future<bool> autoConnect() async {
+    final connected = await _attemptAutoConnect();
+    if (!connected && _reconnect.shouldRetry) {
+      final settings = await getSavedSettings();
+      if (settings['autoConnect'] == true) _scheduleReconnect();
+    }
+    return connected;
+  }
+
+  /// Queue the next reconnection attempt. Re-entrant: a retry already in
+  /// flight wins, and an explicit disconnect or a live connection cancels it.
+  void _scheduleReconnect() {
+    if (!_reconnect.shouldRetry) return;
+    if (_reconnectTimer != null) return;
+
+    final delay = _reconnect.nextDelay();
+    debugPrint('[Scale] Reconnect attempt ${_reconnect.attempt} in '
+        '${delay.inSeconds}s');
+    _reconnectTimer = Timer(delay, () {
+      _reconnectTimer = null;
+      if (!_reconnect.shouldRetry || _isConnected) return;
+      // autoConnect re-arms the next attempt itself when this one fails, so
+      // the chain continues without recursion here. It also stops on its own
+      // once the saved settings say auto-connect is off.
+      autoConnect();
+    });
+  }
+
+  Future<bool> _attemptAutoConnect() async {
     try {
       final settings = await getSavedSettings();
       final bool shouldAutoConnect = settings['autoConnect'] ?? false;
@@ -644,9 +743,11 @@ class _ScaleWorker {
   int _tareStableCount = 0;
   int _lastRawAdc = 0;
 
-  // Disconnection detection
-  int _consecutiveErrors = 0;
-  static const int _maxConsecutiveErrors = 10;
+  // Disconnection detection. An empty read is the normal state of an idle
+  // scale in this event-driven loop, so it must not be counted as an error —
+  // only sustained silence or a run of real I/O exceptions is evidence the
+  // link is gone. See ScaleDisconnectDetector.
+  final ScaleDisconnectDetector _linkHealth = ScaleDisconnectDetector();
 
   // Diagnostic log
   IOSink? _diagnosticLog;
@@ -738,7 +839,7 @@ class _ScaleWorker {
         StopBits: stopBitsVal,
       );
       _port!.open();
-      _consecutiveErrors = 0;
+      _linkHealth.reset(DateTime.now());
       _recentWeights.clear();
       _isStable = false;
       _rawBuffer = '';
@@ -794,7 +895,7 @@ class _ScaleWorker {
       final savedCalibration = message['savedCalibration'] as double?;
 
       _isTcp = true;
-      _consecutiveErrors = 0;
+      _linkHealth.reset(DateTime.now());
       _recentWeights.clear();
       _smoothingBuffer.clear();
       _isStable = false;
@@ -879,7 +980,7 @@ class _ScaleWorker {
   /// Called when data arrives on the TCP socket
   void _onTcpData(List<int> data) {
     if (data.isEmpty) return;
-    _consecutiveErrors = 0;
+    _linkHealth.onData(DateTime.now());
 
     _logRawData(data, String.fromCharCodes(data));
 
@@ -943,8 +1044,9 @@ class _ScaleWorker {
       try {
         _socket!.write(_activeCommand);
       } catch (e) {
-        _consecutiveErrors++;
-        if (_consecutiveErrors >= _maxConsecutiveErrors) {
+        final now = DateTime.now();
+        _linkHealth.onIoError(now);
+        if (_linkHealth.shouldDisconnect(now)) {
           _log('[Scale] TCP: Too many errors, disconnecting');
           _handleCableDisconnection();
         }
@@ -1202,7 +1304,7 @@ class _ScaleWorker {
         timeout: const Duration(milliseconds: 30),
       );
       if (data.isNotEmpty) {
-        _consecutiveErrors = 0;
+        _linkHealth.onData(DateTime.now());
         final response = String.fromCharCodes(data);
         _logRawData(data, response);
 
@@ -1233,16 +1335,21 @@ class _ScaleWorker {
           }
         }
       } else {
-        _consecutiveErrors++;
-        if (_consecutiveErrors >= _maxConsecutiveErrors) {
-          _log('[Scale] Cable disconnected: $_maxConsecutiveErrors empty reads');
+        // An empty read is what an idle scale looks like — only a long gap
+        // since the last real byte means the cable is actually gone.
+        final now = DateTime.now();
+        _linkHealth.onEmptyRead(now);
+        if (_linkHealth.shouldDisconnect(now)) {
+          _log('[Scale] Cable disconnected: silent for '
+              '${_linkHealth.silenceFor(now).inMilliseconds}ms');
           _handleCableDisconnection();
           return;
         }
       }
     } catch (e) {
-      _consecutiveErrors++;
-      if (_consecutiveErrors >= _maxConsecutiveErrors) {
+      final now = DateTime.now();
+      _linkHealth.onIoError(now);
+      if (_linkHealth.shouldDisconnect(now)) {
         _log('[Scale] Cable disconnected: $e');
         _handleCableDisconnection();
         return;
@@ -1300,7 +1407,7 @@ class _ScaleWorker {
         timeout: const Duration(milliseconds: 25),
       );
       if (data.isNotEmpty) {
-        _consecutiveErrors = 0;
+        _linkHealth.onData(DateTime.now());
         final response = String.fromCharCodes(data);
         _logRawData(data, response);
 
@@ -1336,16 +1443,20 @@ class _ScaleWorker {
           }
         }
       } else {
-        _consecutiveErrors++;
-        if (_consecutiveErrors >= _maxConsecutiveErrors) {
-          _log('[Scale] Cable disconnected in command mode');
+        // The scale simply had nothing to say this cycle; that is not a fault.
+        final now = DateTime.now();
+        _linkHealth.onEmptyRead(now);
+        if (_linkHealth.shouldDisconnect(now)) {
+          _log('[Scale] Cable disconnected in command mode: silent for '
+              '${_linkHealth.silenceFor(now).inMilliseconds}ms');
           _handleCableDisconnection();
           return;
         }
       }
     } catch (e) {
-      _consecutiveErrors++;
-      if (_consecutiveErrors >= _maxConsecutiveErrors) {
+      final now = DateTime.now();
+      _linkHealth.onIoError(now);
+      if (_linkHealth.shouldDisconnect(now)) {
         _log('[Scale] Cable disconnected: $e');
         _handleCableDisconnection();
         return;
@@ -1367,7 +1478,7 @@ class _ScaleWorker {
     _tared = false;
     _tareStableCount = 0;
     _lastRawAdc = 0;
-    _consecutiveErrors = 0;
+    _linkHealth.reset(DateTime.now());
     _closeDiagnosticLog();
 
     // Close TCP socket
