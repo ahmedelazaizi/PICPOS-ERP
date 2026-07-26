@@ -63,6 +63,15 @@ class BusinessProfileCatalog {
   const BusinessProfileCatalog._();
 
   static final List<BusinessProfileMeta> _all = [
+    // ترتيب القايمة = ترتيب الاختيار في الويزارد. `lite` الأول لأنه الأبسط
+    // والافتراضي لـ PicPos.
+    BusinessProfileMeta.build(
+      profile: BusinessProfile.lite,
+      arabicName: 'لايت — نقطة بيع ومخازن',
+      arabicDescription:
+          'نقطة بيع + مخازن + صناديق + تقارير (ومعها المشتريات) — بدون طاولات '
+          'أو كيتشن أو فروع أو موظفين أو محاسبة موسّعة.',
+    ),
     BusinessProfileMeta.build(
       profile: BusinessProfile.restaurant,
       arabicName: 'مطعم',

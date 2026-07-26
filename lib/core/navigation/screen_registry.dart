@@ -215,6 +215,50 @@ class ScreenRegistry {
     ScreenId.purchaseReturns,
   ];
 
+  /// أصغر نطاق نشحنه: نقطة بيع + مخازن + صناديق + تقارير.
+  ///
+  /// ١٩ شاشة مقابل ٢٧ لأصغر بروفايل قبله (`supermarket`) — فمفيش قايمة
+  /// قريبة كانت تتنسخ.
+  ///
+  /// قرارات الاستبعاد اللي محتاجة تفسير:
+  /// - **المشتريات داخلة** رغم إن اسم النطاق مش ذاكرها: بدونها المخزون
+  ///   يزيد بسند إدخال يدوي بس، والمورد ملوش رصيد. محل بيع لازم يشتري.
+  ///   أوامر الشراء والتكاليف المحملة برّه — دول تدفّق جملة.
+  /// - **العملاء والموردين داخلة** لأن تصميم POS فيه «العميل» و«رصيد
+  ///   العميل»؛ بدونها الحقلين ميّتين.
+  /// - **المستخدمين داخلة** لأن الدخول للنظام نفسه محتاجها.
+  /// - **التحليلات برّه** — `reports` بتغطي احتياج التجزئة.
+  /// - كل شاشات المحاسبة الموسّعة (دليل الحسابات، اليومية، الأستاذ، مراكز
+  ///   التكلفة، الأصول، الشيكات، السنوات المالية، التقارير الضريبية) برّه:
+  ///   المحرك المحاسبي شغّال تحت زي أي بروفايل، بس الواجهة مش معروضة.
+  static const List<ScreenId> lite = [
+    ScreenId.dashboard,
+    // بيع
+    ScreenId.pos,
+    ScreenId.salesInvoices,
+    ScreenId.salesReturns,
+    // مشتريات
+    ScreenId.purchases,
+    ScreenId.purchaseReturns,
+    // مخازن
+    ScreenId.products,
+    ScreenId.categories,
+    ScreenId.inventory,
+    ScreenId.inventoryBonds,
+    ScreenId.stockTransfer,
+    ScreenId.fieldAudit,
+    // صناديق
+    ScreenId.treasury,
+    ScreenId.shiftClose,
+    // تقارير
+    ScreenId.reports,
+    ScreenId.activityLog,
+    // لازمة للتشغيل
+    ScreenId.parties,
+    ScreenId.settings,
+    ScreenId.users,
+  ];
+
   static List<ScreenId> forProfile(BusinessProfile profile) {
     switch (profile) {
       case BusinessProfile.restaurant:
@@ -229,6 +273,8 @@ class ScreenRegistry {
         return supermarketPlus;
       case BusinessProfile.commercial:
         return commercial;
+      case BusinessProfile.lite:
+        return lite;
       case BusinessProfile.unified:
         return unified;
     }

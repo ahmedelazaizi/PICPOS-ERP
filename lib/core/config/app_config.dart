@@ -12,6 +12,7 @@ library;
 import 'package:flutter/foundation.dart' show ValueListenable, ValueNotifier;
 
 import 'app_flavor.dart';
+import 'brand.dart';
 import 'business_profile.dart';
 import 'feature_policy.dart';
 import '../navigation/screen_id.dart';
@@ -49,8 +50,7 @@ class AppConfig {
   );
 
   static final AppFlavor _flavor = _parseFlavorFromEnv();
-  static final BusinessProfile _initialProfile =
-      FeaturePolicy.defaultProfileForFlavor(_flavor);
+  static final BusinessProfile _initialProfile = _resolveInitialProfile();
   static final FeaturePolicy _initialFeatures =
       FeaturePolicy.fromProfile(_initialProfile);
 
@@ -96,6 +96,33 @@ class AppConfig {
     if (_profileNotifier.value != p) {
       _profileNotifier.value = p;
     }
+  }
+
+  /// البروفايل اللي التطبيق يقلع بيه على داتابيز جديدة.
+  ///
+  /// العلامة لها الأسبقية: منتج زي PicPos معرَّف كـ «لايت» أصلاً، فبيقلع على
+  /// نطاقه الصح من أول تشغيل بدل ما يبان كل الشاشات لحد ما حد يضيّق النطاق
+  /// من الويزارد. لو العلامة مصرّحتش بافتراضي (`''` — الحالة الافتراضية
+  /// لـ UralCash) بنرجع لخريطة الـ `APP_FLAVOR` القديمة زي ما هي، فسلوك
+  /// UralCash متغيّرش ولا مليمتر.
+  ///
+  /// ملاحظة: ده **بذرة الإقلاع الأول** بس. بعد كده
+  /// `BusinessProfileNotifier.build()` بيقرا `settings.business_profile`
+  /// والقيمة المحفوظة تكسب.
+  static BusinessProfile _resolveInitialProfile() {
+    if (Brand.defaultProfileCode.isNotEmpty) {
+      for (final p in BusinessProfile.values) {
+        if (p.code == Brand.defaultProfileCode) return p;
+      }
+      // كود مش معروف = غلطة كتابة في brand.dart. `assertKnownBrand()` مش
+      // بتغطي الحالة دي، فنرمي بنفس المنطق: أحسن نقف عند الإقلاع من إننا
+      // نشحن منتج بنطاق شاشات غلط وهو شكله سليم.
+      throw StateError(
+        'Brand.defaultProfileCode غير معروف: "${Brand.defaultProfileCode}". '
+        'القيم المتاحة: ${BusinessProfile.values.map((p) => p.code).join(", ")}.',
+      );
+    }
+    return FeaturePolicy.defaultProfileForFlavor(_flavor);
   }
 
   static AppFlavor _parseFlavorFromEnv() {

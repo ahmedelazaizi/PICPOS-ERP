@@ -8,6 +8,14 @@ enum BusinessProfile {
   supermarketPro,
   supermarketPlus,
   commercial,
+
+  /// أصغر بروفايل: نقطة بيع + مخازن + صناديق + تقارير (والمشتريات اللي
+  /// بتغذّي المخزون). البروفايل الافتراضي لـ PicPos — شوف
+  /// [Brand.defaultProfileCode].
+  ///
+  /// **بيخفي شاشات فقط.** نفس الـ binary ونفس الـ schema — «لايت» نطاق
+  /// واجهة، مش نسخة أخف.
+  lite,
 }
 
 extension BusinessProfileX on BusinessProfile {
@@ -19,6 +27,7 @@ extension BusinessProfileX on BusinessProfile {
         BusinessProfile.supermarketPro => 'supermarket_pro',
         BusinessProfile.supermarketPlus => 'supermarket_plus',
         BusinessProfile.commercial => 'commercial',
+        BusinessProfile.lite => 'lite',
       };
 
   String get displayName => switch (this) {
@@ -29,6 +38,7 @@ extension BusinessProfileX on BusinessProfile {
         BusinessProfile.supermarketPro => 'السوبرماركت برو',
         BusinessProfile.supermarketPlus => 'السوبرماركت بلس',
         BusinessProfile.commercial => 'التجاري',
+        BusinessProfile.lite => 'لايت',
       };
 
   String get defaultBusinessType => switch (this) {
@@ -39,5 +49,6 @@ extension BusinessProfileX on BusinessProfile {
         BusinessProfile.supermarketPro => 'supermarket',
         BusinessProfile.supermarketPlus => 'supermarket',
         BusinessProfile.commercial => 'commercial',
+        BusinessProfile.lite => 'retail',
       };
 }

@@ -43,6 +43,15 @@ void main() {
     test('assertKnownBrand ما بترميش على علامة معروفة', () {
       expect(Brand.assertKnownBrand, returnsNormally);
     });
+
+    test('UralCash ما بيدّعيش نطاق منتج — البروفايل لسه بييجي من الـ flavor', () {
+      // `Brand.defaultProfileCode` اتضاف عشان PicPos يقلع `lite`. UralCash
+      // لازم يسيبها فاضية عشان `AppConfig._resolveInitialProfile` يرجع
+      // لخريطة `defaultProfileForFlavor` القديمة — أي قيمة هنا معناها إن
+      // UralCash فجأة بيقلع بنطاق شاشات أضيق عند كل عميل قائم.
+      expect(Brand.defaultProfileCode, isEmpty);
+      expect(AppConfig.profile, BusinessProfile.unified);
+    });
   });
 
   group('الأسماء الظاهرة — انحدار', () {

@@ -7,7 +7,9 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:ural_erp/core/widgets/app_toast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../core/config/business_profile.dart';
+// `app_config.dart` يعيد تصدير `business_profile.dart` — فمفيش استيراد
+// مباشر ليه هنا (الـ analyzer بيعتبره زيادة).
+import '../../core/config/app_config.dart';
 import '../../core/config/business_profile_meta.dart';
 import '../../core/config/business_profile_provider.dart';
 import '../../core/config/feature_key.dart';
@@ -63,9 +65,16 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
 
   // Phase-B: runtime-selected business profile (new). Backed by the
   // `BusinessProfileCatalog` so the UI and the persisted `business_profile`
-  // setting stay in sync. Defaults to `unified` — every feature visible
-  // until the admin (developer) narrows it down.
-  BusinessProfile _selectedProfile = BusinessProfile.unified;
+  // setting stay in sync.
+  //
+  // Seeded from `AppConfig.profile` — the brand/flavour boot default — NOT
+  // hard-coded. This step persists its value on finish (`_finishSetup`
+  // writes `business_profile`), so a hard-coded seed here silently
+  // overwrote the build-time default: a PicPos install would boot `lite`,
+  // then land on `unified` the moment setup completed, with every screen
+  // visible. Seeding from the actual boot profile makes "just click Next"
+  // preserve the product's intended scope.
+  BusinessProfile _selectedProfile = AppConfig.profile;
 
   // Phase-B: developer password (separate from admin password). Required
   // before finishing setup; can only be changed later from the hidden

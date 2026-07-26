@@ -18,6 +18,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/core/config/app_config.dart';
 import 'package:ural_erp/core/config/brand.dart';
 import 'package:ural_erp/core/constants/app_constants.dart';
+import 'package:ural_erp/core/navigation/screen_id.dart';
 import 'package:ural_erp/core/theme/app_colors.dart';
 import 'package:ural_erp/data/database/connection_io.dart';
 
@@ -97,6 +98,46 @@ void main() {
             reason: 'كل flavor لازم يكتب في ملف خاص بـ PicPos');
         expect(name, isNot(startsWith('uralcash')),
             reason: 'تصادم مع بيانات UralCash على نفس الجهاز');
+      }
+    });
+
+    test('نطاق المنتج — بيقلع lite من غير ما يلمس اسم ملف الداتابيز', () {
+      expect(Brand.defaultProfileCode, 'lite');
+      expect(AppConfig.profile, BusinessProfile.lite);
+
+      // ── التأكيدان دول هما سبب وجود `Brand.defaultProfileCode` أصلاً ──
+      // البديل اللي اترفض كان `AppFlavor.lite` + بناء بـ `APP_FLAVOR=lite`.
+      // اسم الملف مركّب `'${Brand.dbPrefix}_${flavor.code}.db'`، فده كان
+      // هيحوّل PicPos من `picpos_unified.db` لـ `picpos_lite.db` — أي تركيب
+      // قائم يدوّر على ملف مش موجود ويبدأ بداتابيز فاضية (فقد بيانات صامت).
+      // لو التأكيدان دول فشلوا، يبقى حد ربط نطاق المنتج بالـ flavor تاني.
+      expect(AppConfig.flavor, AppFlavor.unified);
+      expect(getDatabaseFileName(), 'picpos_unified.db');
+
+      final screens = AppConfig.allowedScreenIds;
+      for (final inScope in [
+        ScreenId.pos,
+        ScreenId.inventory,
+        ScreenId.treasury,
+        ScreenId.reports,
+        ScreenId.purchases,
+        ScreenId.parties,
+      ]) {
+        expect(screens, contains(inScope),
+            reason: '$inScope جوّه نطاق lite المعلن');
+      }
+      for (final outOfScope in [
+        ScreenId.tables,
+        ScreenId.kitchen,
+        ScreenId.hr,
+        ScreenId.branches,
+        ScreenId.regions,
+        ScreenId.manufacturing,
+        ScreenId.chartOfAccounts,
+        ScreenId.offers,
+      ]) {
+        expect(screens, isNot(contains(outOfScope)),
+            reason: '$outOfScope برّه نطاق lite — نقطة بيع + مخازن + صناديق + تقارير');
       }
     });
   }, skip: skipReason);

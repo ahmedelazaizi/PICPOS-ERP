@@ -171,6 +171,32 @@ class FeaturePolicy {
           commercialPapersEnabled: true,
           regionsEnabled: true,
         );
+      // أصغر بروفايل: نقطة بيع + مخازن + صناديق + تقارير.
+      //
+      // `barcodeEnabled: true` عن قصد — نقطة بيع تجزئة بلا قارئ باركود مش
+      // قابلة للاستخدام. القاعدة `posBarcode requires posMain` متحققة
+      // (posEnabled: true)، فـ `FeatureValidator.validate` بيمرّرها بصفر
+      // قواعد مطبَّقة وصفر مرفوضات — ودي اللي `feature_validator_test`
+      // بيتحقق منها لكل بروفايل ما عدا unified.
+      //
+      // `scaleEnabled: false` ومعاه `weightDialogEnabled: false` لازم
+      // يتحركوا مع بعض: `posWeightDialog requires posScale`، فتشغيل الحوار
+      // لوحده كان هيخلّي الڤاليديتور يفعّل الميزان تلقائياً ويكسر التأكيد فوق.
+      case BusinessProfile.lite:
+        return const FeaturePolicy(
+          tablesEnabled: false,
+          kitchenEnabled: false,
+          deliveryEnabled: false,
+          reservationsEnabled: false,
+          scaleEnabled: false,
+          offersEnabled: false,
+          branchesEnabled: false,
+          hrEnabled: false,
+          posEnabled: true,
+          invoiceModeEnabled: false,
+          warehousesEnabled: true,
+          barcodeEnabled: true,
+        );
       case BusinessProfile.unified:
         return const FeaturePolicy(
           tablesEnabled: true,

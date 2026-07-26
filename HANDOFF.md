@@ -115,7 +115,36 @@ UTF-16 hits: 0
 
 أي سلسلة زيادة = تسريب هوية جديد. أي حاجة في UTF-16 = تسريب في نص عربي.
 
-### ٣.٥ سكربتات `.bat` لازم تكون ASCII خالص
+### ٣.٥ نطاق المنتج مش `AppFlavor`
+
+اسم ملف الداتابيز مركّب من كود الـ flavor:
+
+```dart
+databaseFileNameFor(flavor) => '${Brand.dbPrefix}_${flavor.code}.db'
+```
+
+فأي قيمة `AppFlavor` جديدة + بناء بيها = **اسم ملف داتابيز جديد**. `AppFlavor.lite`
+مثلاً كان هيحوّل PicPos من `picpos_unified.db` لـ `picpos_lite.db` — نفس فقد
+البيانات الصامت اللي القسم ٣.٣ موجود يمنعه. وكمان `brand_isolation_test` فيه **٣
+تأكيدات شمول** على `AppFlavor.values` (أسماء إنجليزي، أسماء عربي، أسماء ملفات)،
+وقيمة جديدة بتفشّل التلاتة — والاختبار ده مش المفروض يتعدّل.
+
+**فنطاق المنتج بيتحدد من العلامة، مش من الـ flavor:**
+[`Brand.defaultProfileCode`](lib/core/config/brand.dart) (`const`، زي كل حاجة في
+`Brand`) → بيقراه `AppConfig._resolveInitialProfile()`. العلامة اللي مصرّحتش
+بافتراضي (`''`) بترجع لخريطة `defaultProfileForFlavor` القديمة، فسلوك UralCash
+ما اتغيّرش.
+
+مثبَّت في `brand_picpos_test.dart`:
+
+```dart
+expect(AppConfig.flavor, AppFlavor.unified);
+expect(getDatabaseFileName(), 'picpos_unified.db');
+```
+
+لو التأكيدان دول فشلوا، يبقى حد ربط نطاق المنتج بالـ flavor تاني.
+
+### ٣.٦ سكربتات `.bat` لازم تكون ASCII خالص
 
 `cmd.exe` بيقرا ملفات `.bat` بترميز OEM مش UTF-8. تعليق عربي واحد **بيمسح أسطر `set`** ويخلّي البناء يطلع بمتغيرات فاضية **وهو مبلّغ SUCCESS**. حصل فعلاً.
 
@@ -149,6 +178,46 @@ ccc9dc3  تعديل الطباعة (منقول من UralCash بـ patch)
 | عزل البيانات | `picpos_unified.db`، `PicPos_Backups`، `ProgramData\PicPos` |
 | PostgreSQL | `picpos` (lowercase إجباري — PG بيحوّل المُعرّفات غير المقتبسة) |
 | صفر تسريب | فحص binary بالترميزين: ٤ ملاح بس، UTF-16 = ٠ |
+| بروفايل `lite` | ٣٢١٥ اختبار ناجح · ٠ فشل · بناء ناجح · فحص binary نظيف |
+
+### بروفايل `lite` — التفاصيل
+
+النطاق: **نقطة بيع + مخازن + صناديق + تقارير**، ومعاها **المشتريات** (بقرار صاحب
+المشروع: بدونها المخزون يزيد بسند إدخال يدوي بس والمورد ملوش رصيد).
+
+**١٩ شاشة** — مقابل ٢٧ لأصغر بروفايل قبله (`supermarket`):
+
+```
+بيع      pos · salesInvoices · salesReturns
+مشتريات  purchases · purchaseReturns
+مخازن    products · categories · inventory · inventoryBonds
+         stockTransfer · fieldAudit
+صناديق   treasury · shiftClose
+تقارير   reports · activityLog
+تشغيل    dashboard · parties · settings · users
+```
+
+سياسة الميزات: `posEnabled` + `warehousesEnabled` + `barcodeEnabled` بس.
+`barcodeEnabled` عن قصد — نقطة بيع تجزئة بلا قارئ مش قابلة للاستخدام، والقاعدة
+`posBarcode requires posMain` متحققة فالڤاليديتور بيمرّرها بصفر قواعد مطبَّقة
+(ودي اللي `feature_validator_test` بيتحقق منها لكل بروفايل ما عدا `unified`).
+
+**PicPos بيقلع lite افتراضياً** عبر `Brand.defaultProfileCode` — اقرأ ٣.٥ للسبب.
+
+**طلعوا ٧ مواضع مش ٤.** التلاتة الزيادة:
+
+| الموضع | ليه |
+|---|---|
+| `brand.dart` | `defaultProfileCode` — نطاق المنتج (٣.٥) |
+| `app_config.dart` | `_resolveInitialProfile()` بيقراه، مع fallback للـ flavor |
+| `setup_wizard_screen.dart` | `_selectedProfile` كان **مثبَّت** على `unified` |
+
+الموضع التالت ده كان فخ صامت: الويزارد بيكتب `business_profile` في آخره، فالبذرة
+المثبتة كانت **بتمسح الافتراضي** — العميل يخلص تنصيب ويلاقي كل الشاشات ظاهرة.
+دلوقتي بيتزرع من `AppConfig.profile`.
+
+> **الافتراضي بيطبّق على داتابيز جديدة بس.** أي تركيب خلّص ويزارد قبل كده عنده
+> القيمة محفوظة في الإعدادات وهي اللي تكسب.
 
 ### ملاحظة على الأيقونة
 
@@ -158,26 +227,13 @@ ccc9dc3  تعديل الطباعة (منقول من UralCash بـ patch)
 
 ## ٥. اللي فاضل — بالترتيب
 
-### أولوية ١ — بروفايل `lite` (صغير، البنية جاهزة)
+> بروفايل `lite` **خلص** — التفاصيل في القسم ٤.
 
-النطاق المطلوب: **نقطة بيع + مخازن + تقارير + صناديق** فقط.
-
-ده تقريباً `core` + `posMain` بالظبط. الـ ٤ مواضع:
-
-1. `lib/core/config/business_profile.dart` — قيمة enum جديدة
-2. `FeaturePolicy.fromProfile` — حالة جديدة (الـ switch مقفول فالكومبايلر هيوقفك عند كل موضع ناقص)
-3. `lib/core/navigation/screen_registry.dart` — قايمة `ScreenId` + حالة في `forProfile`
-4. `BusinessProfileCatalog` — مدخل بالاسم والوصف
-
-> **مهم:** البروفايل بيخفي **الشاشات**، مش بيشيل الكود. الـ exe هيفضل نفس الحجم ونفس الـ DB schema. «لايت» = نطاق واجهة، مش binary أخف.
-
-أقل بروفايل موجود حالياً `supermarket` وفيه ~٢٧ شاشة، فمفيش حاجة قريبة تتنسخ.
-
-### أولوية ٢ — ملف التنصيب `.iss` (صغير)
+### أولوية ١ — ملف التنصيب `.iss` (صغير)
 
 `installer/UralCash.iss` فيه ~١٥ موضع ثابت (AppName، ExeName، مجلد التنصيب، الاختصارات). Inno Setup بيدعم `#define` و`/D`، فيتمعّل بنفس أسلوب CMake وسكربت البناء يمرّر القيم.
 
-### أولوية ٣ — شاشة الـ POS بالتصميم الجديد (كبير، ٣–٥ أيام)
+### أولوية ٢ — شاشة الـ POS بالتصميم الجديد (كبير، ٣–٥ أيام)
 
 **الخبر الحلو:** الشاشة الحالية modular مش monolith:
 
@@ -258,11 +314,11 @@ build_picpos.bat
 - ممنوع تضيف git remote أو ترفع على GitHub. الريبو بلا remote عن قصد.
 - ممنوع تعدّل الملاح التشفيرية الأربعة (اقرأ HANDOFF.md قسم ٣.٢).
 - كل قيمة في Brand و AppColors تفضل const (قسم ٣.١ — السبب مهم).
+- ممنوع تضيف قيمة AppFlavor جديدة (قسم ٣.٥ — بيغيّر اسم ملف الداتابيز).
 
 المطلوب بالترتيب:
-1. بروفايل lite — نقطة بيع + مخازن + تقارير + صناديق فقط (٤ مواضع، قسم ٥)
-2. تمعيل ملف التنصيب installer/UralCash.iss
-3. شاشة POS بالتصميم الجديد (شاشة جديدة في مجلد خاص، مش تعديل الحالية)
+1. تمعيل ملف التنصيب installer/UralCash.iss
+2. شاشة POS بالتصميم الجديد (شاشة جديدة في مجلد خاص، مش تعديل الحالية)
 
 بعد أي تعديل: flutter analyze، الاختبارات على العلامتين، build_picpos.bat،
 وبعدين فحص الـ binary بالترميزين ASCII و UTF-16 (قسم ٣.٤) — الناتج المقبول
