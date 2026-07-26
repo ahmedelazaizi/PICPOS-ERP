@@ -47,6 +47,8 @@ class PicPosPaymentPanel extends ConsumerWidget {
   final VoidCallback onPreviousInvoices;
   final VoidCallback onOpenDrawer;
   final VoidCallback onExpense;
+  final VoidCallback onHold;
+  final VoidCallback onHeldOrders;
 
   const PicPosPaymentPanel({
     super.key,
@@ -58,6 +60,8 @@ class PicPosPaymentPanel extends ConsumerWidget {
     required this.onPreviousInvoices,
     required this.onOpenDrawer,
     required this.onExpense,
+    required this.onHold,
+    required this.onHeldOrders,
   });
 
   @override
@@ -66,23 +70,37 @@ class PicPosPaymentPanel extends ConsumerWidget {
     final controller = ref.read(cartControllerProvider.notifier);
     final totals = cart.totals;
 
-    // نفس مفاتيح المقاسات ونفس الافتراضيات اللي شاشة UralCash بتقراها.
+    // المفاتيح هي نفس مفاتيح UralCash. الافتراضيات لما الإعداد مش مضبوط
+    // **أصغر** عن قصد: عمود الفاتورة هنا ضيّق (٤٠٪) مش نص الشاشة زي سلة
+    // UralCash، وأول تنفيذ بافتراضيات UralCash خلّى اللوحة تاكل العمود
+    // والجدول ينسحق لصفر — بلاغ ميداني: «الأزرار ضخمة ومغطية على السلة».
+    // أي قيمة مضبوطة في الإعدادات بتكسب على الافتراضي ده.
     final scale = ref.watch(posBottomPanelScaleProvider).value ?? 1.0;
-    final btnHeight = ref.watch(posButtonHeightProvider).value ?? 40.0;
-    final btnFont = ref.watch(posButtonFontSizeProvider).value ?? 13.0;
+    final btnHeight = ref.watch(posButtonHeightProvider).value ?? 32.0;
+    final btnFont = ref.watch(posButtonFontSizeProvider).value ?? 12.0;
 
     return Container(
       decoration: BoxDecoration(
         color: AppColors.card,
         border: Border.all(color: AppColors.border),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
       ),
-      padding: EdgeInsets.all(10 * scale),
+      padding: EdgeInsets.all(7 * scale),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _CustomerRow(onPickCustomer: onPickCustomer, scale: scale),
-          _OrderTypeRow(cart: cart, controller: controller, scale: scale),
+          // العميل ونوع الطلب على صف واحد — كانوا صفّين وكل واحد بارتفاع
+          // كامل، وهما أقل حاجة الكاشير بيلمسها في اللوحة.
+          Row(
+            children: [
+              Expanded(
+                flex: 3,
+                child: _CustomerRow(
+                    onPickCustomer: onPickCustomer, scale: scale),
+              ),
+              _OrderTypeRow(cart: cart, controller: controller, scale: scale),
+            ],
+          ),
           _TotalsBlock(
             cart: cart,
             controller: controller,
@@ -90,9 +108,9 @@ class PicPosPaymentPanel extends ConsumerWidget {
             scale: scale,
             onEditDiscount: onEditDiscount,
           ),
-          SizedBox(height: 8 * scale),
+          SizedBox(height: 5 * scale),
           _PaymentMethodRow(cart: cart, controller: controller, scale: scale),
-          SizedBox(height: 8 * scale),
+          SizedBox(height: 5 * scale),
           _ActionButtons(
             scale: scale,
             btnHeight: btnHeight,
@@ -103,6 +121,8 @@ class PicPosPaymentPanel extends ConsumerWidget {
             onPreviousInvoices: onPreviousInvoices,
             onOpenDrawer: onOpenDrawer,
             onExpense: onExpense,
+            onHold: onHold,
+            onHeldOrders: onHeldOrders,
           ),
         ],
       ),
@@ -505,7 +525,7 @@ class _PaymentMethodRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final height = ref.watch(paymentButtonHeightProvider).value ?? 45.0;
+    final height = ref.watch(paymentButtonHeightProvider).value ?? 36.0;
     final bankSafes = ref.watch(branchBankSafesProvider).value ?? const <Safe>[];
     final cashSafes = ref.watch(branchCashSafesProvider).value ?? const <Safe>[];
 
@@ -795,6 +815,8 @@ class _ActionButtons extends ConsumerWidget {
   final VoidCallback onPreviousInvoices;
   final VoidCallback onOpenDrawer;
   final VoidCallback onExpense;
+  final VoidCallback onHold;
+  final VoidCallback onHeldOrders;
 
   const _ActionButtons({
     required this.scale,
@@ -806,6 +828,8 @@ class _ActionButtons extends ConsumerWidget {
     required this.onPreviousInvoices,
     required this.onOpenDrawer,
     required this.onExpense,
+    required this.onHold,
+    required this.onHeldOrders,
   });
 
   @override
@@ -813,91 +837,122 @@ class _ActionButtons extends ConsumerWidget {
     final showDrawer = ref.watch(showDrawerButtonInPOSProvider).value ?? true;
     final showExpense = ref.watch(showExpenseButtonInPOSProvider).value ?? true;
     final showSaveOnly = ref.watch(showSaveOnlyInPOSProvider).value ?? true;
+    final showHold = ref.watch(showHoldButtonInPOSProvider).value ?? true;
     final isEmpty =
         ref.watch(cartControllerProvider.select((s) => s.items.isEmpty));
 
     return Column(
       children: [
-        // الدفع هو الفعل الأساسي، فبياخد صف لوحده وأعلى تباين على اللوحة.
-        SizedBox(
-          width: double.infinity,
-          height: btnHeight + 10,
-          child: ElevatedButton.icon(
-            onPressed: isEmpty ? null : onCheckout,
-            icon: const Icon(PhosphorIconsBold.money, size: 19),
-            label: Text(
-              'دفع  (F4)',
-              style: TextStyle(
-                  fontSize: btnFont + 2, fontWeight: FontWeight.bold),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.success,
-              foregroundColor: Colors.white,
-              disabledBackgroundColor: AppColors.border,
-            ),
-          ),
-        ),
-        SizedBox(height: 6 * scale),
+        // صف واحد: الدفع بارز وبياخد ضعف عرض جاره، والحفظ والطباعة جانبه.
+        // كانوا تلات صفوف منفصلة، وده كان بياكل ~١٤٠ بكسل من الجدول.
         Row(
           children: [
+            Expanded(
+              flex: showSaveOnly ? 2 : 1,
+              child: SizedBox(
+                height: btnHeight + 6,
+                child: ElevatedButton(
+                  onPressed: isEmpty ? null : onCheckout,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.success,
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor: AppColors.border,
+                    padding: EdgeInsets.zero,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(PhosphorIconsBold.money, size: btnFont + 4),
+                      const SizedBox(width: 5),
+                      Text('دفع F4',
+                          style: TextStyle(
+                              fontSize: btnFont + 1,
+                              fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
             if (showSaveOnly) ...[
+              SizedBox(width: 5 * scale),
               Expanded(
                 child: _Action(
-                  label: 'حفظ',
-                  hint: 'F2',
+                  label: 'حفظ F2',
                   icon: PhosphorIconsBold.floppyDisk,
                   onTap: isEmpty ? null : onSave,
-                  height: btnHeight,
+                  height: btnHeight + 6,
                   font: btnFont,
                 ),
               ),
-              SizedBox(width: 6 * scale),
+              SizedBox(width: 5 * scale),
               Expanded(
                 child: _Action(
-                  label: 'حفظ وطباعة',
-                  hint: 'F3',
+                  label: 'طباعة F3',
                   icon: PhosphorIconsBold.printer,
                   onTap: isEmpty ? null : onSaveAndPrint,
-                  height: btnHeight,
+                  height: btnHeight + 6,
                   font: btnFont,
                 ),
               ),
             ],
           ],
         ),
-        SizedBox(height: 6 * scale),
+        SizedBox(height: 5 * scale),
+        // الأفعال الثانوية: أيقونة + تسمية صغيرة. كل واحد خلف إعداد إظهاره.
         Row(
           children: [
             Expanded(
-              child: _Action(
+              child: _MiniAction(
                 label: 'فواتير',
                 icon: PhosphorIconsBold.receipt,
                 onTap: onPreviousInvoices,
                 height: btnHeight,
-                font: btnFont,
+                font: btnFont - 1,
               ),
             ),
-            if (showDrawer) ...[
-              SizedBox(width: 6 * scale),
+            if (showHold) ...[
+              SizedBox(width: 4 * scale),
               Expanded(
-                child: _Action(
+                child: _MiniAction(
+                  label: 'تعليق',
+                  icon: PhosphorIconsBold.pauseCircle,
+                  onTap: isEmpty ? null : onHold,
+                  height: btnHeight,
+                  font: btnFont - 1,
+                ),
+              ),
+              SizedBox(width: 4 * scale),
+              Expanded(
+                child: _MiniAction(
+                  label: 'معلقة',
+                  icon: PhosphorIconsBold.listChecks,
+                  onTap: onHeldOrders,
+                  height: btnHeight,
+                  font: btnFont - 1,
+                ),
+              ),
+            ],
+            if (showDrawer) ...[
+              SizedBox(width: 4 * scale),
+              Expanded(
+                child: _MiniAction(
                   label: 'الدرج',
                   icon: PhosphorIconsBold.money,
                   onTap: onOpenDrawer,
                   height: btnHeight,
-                  font: btnFont,
+                  font: btnFont - 1,
                 ),
               ),
             ],
             if (showExpense) ...[
-              SizedBox(width: 6 * scale),
+              SizedBox(width: 4 * scale),
               Expanded(
-                child: _Action(
+                child: _MiniAction(
                   label: 'مصاريف',
                   icon: PhosphorIconsBold.coins,
                   onTap: onExpense,
                   height: btnHeight,
-                  font: btnFont,
+                  font: btnFont - 1,
                 ),
               ),
             ],
@@ -908,9 +963,60 @@ class _ActionButtons extends ConsumerWidget {
   }
 }
 
+/// زرار ثانوي مضغوط — أيقونة فوق تسمية، بلا إطار ثقيل.
+class _MiniAction extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback? onTap;
+  final double height;
+  final double font;
+
+  const _MiniAction({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+    required this.height,
+    required this.font,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onTap != null;
+    return Opacity(
+      opacity: enabled ? 1 : 0.4,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          height: height,
+          decoration: BoxDecoration(
+            color: const Color(0xFFF4F7FC),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: font + 2, color: AppColors.primaryDark),
+              Text(
+                label,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: font,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primaryDark,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _Action extends StatelessWidget {
   final String label;
-  final String? hint;
   final IconData icon;
   final VoidCallback? onTap;
   final double height;
@@ -918,7 +1024,6 @@ class _Action extends StatelessWidget {
 
   const _Action({
     required this.label,
-    this.hint,
     required this.icon,
     required this.onTap,
     required this.height,
@@ -943,7 +1048,7 @@ class _Action extends StatelessWidget {
             const SizedBox(width: 5),
             Flexible(
               child: Text(
-                hint == null ? label : '$label ($hint)',
+                label,
                 overflow: TextOverflow.ellipsis,
                 style:
                     TextStyle(fontSize: font, fontWeight: FontWeight.w600),

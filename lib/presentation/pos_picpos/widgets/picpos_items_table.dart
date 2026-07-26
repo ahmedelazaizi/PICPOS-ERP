@@ -19,12 +19,18 @@ import '../../pos/providers/cart_controller.dart';
 /// on it (F8 deletes it, F6 edits it) — the table itself owns no shortcut.
 class PicPosItemsTable extends ConsumerWidget {
   final int? selectedIndex;
+
+  /// مضاعِف لحظي من شريط التحكم أعلى السلة، فوق إعداد `pos_cart_item_scale`.
+  /// الإعداد هو تفضيل التركيب الدائم؛ ده تعديل الجلسة.
+  final double density;
+
   final ValueChanged<int> onSelect;
   final ValueChanged<int> onRemove;
 
   const PicPosItemsTable({
     super.key,
     required this.selectedIndex,
+    this.density = 1.0,
     required this.onSelect,
     required this.onRemove,
   });
@@ -35,8 +41,9 @@ class PicPosItemsTable extends ConsumerWidget {
     // `pos_cart_item_scale` من «إعدادات نقطة البيع» — نفس المفتاح ونفس
     // الافتراضي اللي صفوف سلة UralCash بتقراهم. شاشات الكاشير بتتفاوت من
     // ١٠″ لمسية لـ ٢٤″ بماوس، والصف اللي مريح على واحدة بيبقى مضيعة للتانية.
-    final scale = (ref.watch(posCartItemScaleProvider).value ?? 1.0)
-        .clamp(0.7, 1.6);
+    final scale =
+        ((ref.watch(posCartItemScaleProvider).value ?? 1.0) * density)
+            .clamp(0.7, 1.6);
 
     return Container(
       decoration: BoxDecoration(

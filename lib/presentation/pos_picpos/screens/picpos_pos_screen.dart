@@ -25,6 +25,7 @@ import '../../pos/widgets/pos_dialogs.dart' hide PaymentResult;
 import '../../pos/widgets/pos_previous_expenses_dialog.dart';
 import '../../pos/widgets/pos_previous_invoices_dialog.dart';
 import '../../pos/widgets/pos_product_selection_panel.dart';
+import '../widgets/picpos_display_settings.dart';
 import '../widgets/picpos_payment_panel.dart';
 import '../widgets/picpos_invoice_header.dart';
 import '../widgets/picpos_items_table.dart';
@@ -189,21 +190,33 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
         ),
       ];
 
-  /// عرض عمود الفاتورة كنسبة من الشاشة.
+  /// عرض عمود الفاتورة كنسبة من الشاشة. القيمة الافتراضية **0.4** — الشبكة
+  /// هي النص الأوسع.
   ///
-  /// بيقرا نفس مفاتيح شاشة UralCash: لو `pos_cart_ratio_locked` مشغّل،
-  /// `pos_cart_ratio_value` هو المصدر ومفيش سحب؛ وإلا الحالة الجارية في
-  /// `posController.cartFlexRatio` (اللي بيحفظها في SharedPreferences)
-  /// عشان الكاشير يسحب الفاصل ويلاقيه محفوظ في الجلسة الجاية.
+  /// ── ليه حالة محلية ومش `posController.cartFlexRatio`؟ ─────────────────
+  /// قرأت `cartFlexRatio` مباشرة في أول تنفيذ، وطلعت الفاتورة ٦٠٪ والشبكة
+  /// ٤٠٪ — بالظبط عكس المطلوب. السبب إن `PosState.cartFlexRatio` افتراضيها
+  /// `0.6` وهي في شاشة UralCash معناها «**السلة** ٦٠٪»، ومفيش طريقة أفرّق
+  /// بيها بين «المستخدم اختار 0.6» و«ده الافتراضي»، فمقدرتش أعيد تفسيرها.
+  ///
+  /// ── ولا بنزرع من `pos_cart_ratio_value` كمان ─────────────────────────
+  /// المحاولة التانية زرعت منه، والفاتورة رجعت ٦٠٪ تاني: المفتاح ده كمان
+  /// افتراضيه `0.6` بنفس دلالة UralCash («**السلة** ٦٠٪»). المفتاحان
+  /// الاتنين بيحملوا نفس المعنى المعكوس عن اللي محتاجينه هنا.
+  ///
+  /// فالقاعدة بقت: **غير مقفولة** → نبدأ من 0.4 والسحب هو المصدر.
+  /// **مقفولة** → قيمة الإعداد هي المصدر، لأن المدير ساعتها ضبطها بنفسه
+  /// وهو شايف النتيجة، فدلالتها بقت اللي هو قصده.
+  double _invoiceRatio = 0.4;
+
+
   double get invoiceRatio {
     final locked = ref.watch(posCartRatioLockedProvider).value ?? false;
     if (locked) {
       return (ref.watch(posCartRatioValueProvider).value ?? 0.4)
-          .clamp(0.25, 0.7);
+          .clamp(0.25, 0.65);
     }
-    return ref
-        .watch(posControllerProvider.select((s) => s.cartFlexRatio))
-        .clamp(0.25, 0.7);
+    return _invoiceRatio;
   }
 
   @override
@@ -262,6 +275,54 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
     );
   }
 
+  /// شريط تحكم فوري أعلى السلة: عرض منطقة السلة والدفع + كثافة الجدول.
+  ///
+  /// السحب من الفاصل موجود، لكنه تقدير بالعين. النسب الجاهزة بتوصل لعرض
+  /// معروف بضغطة — نفس فكرة أزرار `30% / 40% / 50%` في مقبض شاشة UralCash.
+  ///
+  /// بيختفي كله لما `pos_cart_ratio_locked` يبقى مشغّل: المدير قافل العرض،
+  /// فأزرار بتغيّره تبقى وعد كذّاب.
+  Widget _buildSizeControls() {
+    final locked = ref.watch(posCartRatioLockedProvider).value ?? false;
+
+    return Container(
+      height: 30,
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          const Icon(PhosphorIconsBold.arrowsHorizontal,
+              size: 13, color: AppColors.textMuted),
+          const SizedBox(width: 5),
+          if (locked)
+            const Expanded(
+              child: Text(
+                'عرض المنطقة مقفول من الإعدادات',
+                style: TextStyle(fontSize: 10, color: AppColors.textMuted),
+              ),
+            )
+          else
+            for (final r in const [0.30, 0.40, 0.50, 0.60])
+              _MiniToggle(
+                label: '${(r * 100).round()}٪',
+                active: (_invoiceRatio - r).abs() < 0.02,
+                onTap: () => setState(() => _invoiceRatio = r),
+              ),
+          const Spacer(),
+          // الترس: نفس حوار «إعدادات عرض السلة» بتاع UralCash — خمس سلايدرات
+          // بتكتب على نفس مفاتيح الإعدادات، فتحكم دائم مش لحظي.
+          const PicPosDisplaySettingsButton(),
+          const SizedBox(width: 5),
+          _ClearCartButton(onClear: _cancelInvoice),
+        ],
+      ),
+    );
+  }
+
   /// Divider between the two halves. Drag it to trade grid space for invoice
   /// space; the ratio persists via `posController.setCartFlexRatio`.
   ///
@@ -276,12 +337,13 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
       behavior: HitTestBehavior.opaque,
       onHorizontalDragUpdate: (details) {
         // RTL: the invoice column is on the LEFT, so dragging left (negative
-        // dx) must GROW it. Same sign convention as the UralCash handle.
+        // dx) must GROW it.
         final delta = -details.delta.dx / MediaQuery.of(context).size.width;
-        ref.read(posControllerProvider.notifier).adjustFlexRatio(delta);
+        setState(() {
+          _invoiceRatio = (_invoiceRatio + delta).clamp(0.25, 0.65);
+        });
       },
-      onDoubleTap: () =>
-          ref.read(posControllerProvider.notifier).setCartFlexRatio(0.4),
+      onDoubleTap: () => setState(() => _invoiceRatio = 0.4),
       child: MouseRegion(
         cursor: SystemMouseCursors.resizeLeftRight,
         child: Container(
@@ -332,7 +394,9 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
     return Column(
       children: [
         PicPosInvoiceHeader(onPickCustomer: _pickCustomer),
-        const SizedBox(height: 6),
+        const SizedBox(height: 4),
+        _buildSizeControls(),
+        const SizedBox(height: 4),
         Expanded(
           child: PicPosItemsTable(
             selectedIndex: selectedIndex,
@@ -343,6 +407,9 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
         const SizedBox(height: 6),
         // المجاميع + طرق الدفع + أزرار الأفعال — نسخة PicPos من لوحة UralCash،
         // بتحترم إعدادات إظهار الأزرار والمقاسات في «إعدادات نقطة البيع».
+        // شريط العمليات المنفصل اتشال: «فواتير» و«الدرج» و«خصم» و«العميل»
+        // كانوا ظاهرين مرتين — مرة في اللوحة ومرة تحتها. التعليق والفواتير
+        // المعلقة انضموا للوحة بدل ما يعيشوا في شريط لوحدهم.
         PicPosPaymentPanel(
           onCheckout: _handleCheckout,
           onSave: () => _saveInvoice(printAfter: false),
@@ -352,9 +419,9 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
           onPreviousInvoices: _showPreviousInvoices,
           onOpenDrawer: _openDrawer,
           onExpense: _showExpenses,
+          onHold: _holdOrder,
+          onHeldOrders: _showHeldOrders,
         ),
-        const SizedBox(height: 6),
-        _buildOperationsRow(),
       ],
     );
   }
@@ -423,6 +490,93 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
                 ],
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// زرار صغير جداً لشريط التحكم — بلا حشو زائد عشان الشريط يفضل ٣٠ بكسل.
+class _MiniToggle extends StatelessWidget {
+  final String label;
+  final bool active;
+  final VoidCallback? onTap;
+
+  const _MiniToggle({
+    required this.label,
+    required this.active,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: onTap == null ? 0.35 : 1,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(5),
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 1.5),
+          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+          decoration: BoxDecoration(
+            color: active ? AppColors.primary : Colors.transparent,
+            borderRadius: BorderRadius.circular(5),
+            border: Border.all(
+              color: active ? AppColors.primary : AppColors.border,
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: active ? Colors.white : AppColors.textMuted,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// «مسح الكل» أعلى السلة — بيتعطّل لما السلة فاضية بدل ما يفتح تأكيد
+/// على مفيش حاجة.
+class _ClearCartButton extends ConsumerWidget {
+  final VoidCallback onClear;
+
+  const _ClearCartButton({required this.onClear});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isEmpty =
+        ref.watch(cartControllerProvider.select((s) => s.items.isEmpty));
+    return Opacity(
+      opacity: isEmpty ? 0.35 : 1,
+      child: InkWell(
+        onTap: isEmpty ? null : onClear,
+        borderRadius: BorderRadius.circular(6),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+          decoration: BoxDecoration(
+            color: AppColors.error.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: AppColors.error.withValues(alpha: 0.25)),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(PhosphorIconsBold.trash, size: 13, color: AppColors.error),
+              SizedBox(width: 4),
+              Text(
+                'مسح الكل',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.error,
+                ),
+              ),
+            ],
           ),
         ),
       ),

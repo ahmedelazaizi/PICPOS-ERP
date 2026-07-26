@@ -34,6 +34,7 @@ import '../../core/config/business_profile_provider.dart';
 import '../../core/config/feature_key.dart';
 import '../../core/config/runtime_config_snapshot.dart';
 import '../../core/theme/app_colors.dart';
+import '../../services/admin/data_wipe_service.dart';
 import '../../data/providers/providers.dart';
 import '../../services/deployment/commit_result.dart';
 import '../../services/deployment/deployment_mode_committer.dart';
@@ -249,6 +250,8 @@ class _DeveloperToolsBody extends ConsumerWidget {
           const _ChangeDeveloperPasswordSection(),
           const SizedBox(height: 16),
           const _ResetWizardSection(),
+          const SizedBox(height: 16),
+          const _DataWipeSection(),
         ],
       ),
     );
@@ -1021,6 +1024,326 @@ class _SectionHeader extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════════
+// تصفير البيانات — عمليات بلا رجعة
+// ═════════════════════════════════════════════════════════════════════════
+//
+// كل زرار هنا بيحذف صفوف من قاعدة البيانات مباشرة ومفيش «إلغاء». الحمايات
+// الأربعة اللي بينها المستخدم والحذف:
+//   ١. القسم كله جوّه شاشة أدوات المطوّر، وهي محمية بكلمة مرور المطوّر.
+//   ٢. تأكيد بالكتابة: لازم يكتب الكلمة المطلوبة حرفياً — مش زرار «موافق»
+//      ينضغط بالغلط.
+//   ٣. نسخة احتياطية إجبارية جوّه الخدمة، والحذف بيُلغى لو النسخة فشلت.
+//   ٤. معاملة واحدة: لو الحذف وقع في نصه بيترجع كله.
+//
+// وترتيب الأزرار مقصود: المدمّر في الآخر، والفواتير قبل الأصناف والأطراف
+// لأن دي بترفض التنفيذ لو فيه فواتير مرتبطة.
+class _DataWipeSection extends ConsumerStatefulWidget {
+  const _DataWipeSection();
+
+  @override
+  ConsumerState<_DataWipeSection> createState() => _DataWipeSectionState();
+}
+
+class _DataWipeSectionState extends ConsumerState<_DataWipeSection> {
+  bool _busy = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const _SectionHeader(
+              icon: PhosphorIconsBold.warningOctagon,
+              label: 'تصفير البيانات — بلا رجعة',
+              color: AppColors.error,
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.error.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(8),
+                border:
+                    Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+              ),
+              child: const Text(
+                'كل عملية هنا بتحذف من قاعدة البيانات مباشرة ومفيش تراجع. '
+                'بتتاخد نسخة احتياطية تلقائياً قبل أي حذف، والعملية بتُلغى لو '
+                'النسخة فشلت — النسخة دي هي طريق الرجوع الوحيد.\n\n'
+                'العمليات المالية بتحذف قيود اليومية وحركات المخزون المرتبطة '
+                'كمان: فاتورة محذوفة وقيدها موجود معناها دفتر أستاذ مش متوازن.',
+                style: TextStyle(fontSize: 12, height: 1.6),
+              ),
+            ),
+            const SizedBox(height: 12),
+            _wipeTile(
+              label: 'حذف جميع فواتير المبيعات',
+              detail: 'الفواتير وبنودها والدفعات وقيود اليومية وحركات المخزون',
+              confirmWord: 'حذف المبيعات',
+              action: (s) => s.wipeSalesInvoices(),
+            ),
+            _wipeTile(
+              label: 'حذف جميع فواتير المشتريات',
+              detail: 'الفواتير وبنودها والتكاليف المحملة وقيودها وحركاتها',
+              confirmWord: 'حذف المشتريات',
+              action: (s) => s.wipePurchaseInvoices(),
+            ),
+            _wipeTile(
+              label: 'حذف جميع الأصناف',
+              detail: 'الأصناف وأرصدتها وباركوداتها ووحداتها — بيُرفض لو فيه '
+                  'بنود فواتير مرتبطة',
+              confirmWord: 'حذف الأصناف',
+              action: (s) => s.wipeProducts(),
+            ),
+            _wipeTile(
+              label: 'حذف جميع العملاء',
+              detail: 'الطرف اللي هو عميل ومورد في نفس الوقت بتُلغى صفة '
+                  'العميل عنه فقط ومبيتحذفش',
+              confirmWord: 'حذف العملاء',
+              action: (s) => s.wipeParties(customers: true),
+            ),
+            _wipeTile(
+              label: 'حذف جميع الموردين',
+              detail: 'بنفس قاعدة الأطراف المزدوجة',
+              confirmWord: 'حذف الموردين',
+              action: (s) => s.wipeParties(customers: false),
+            ),
+            _wipeTile(
+              label: 'حذف الحسابات المضافة في دليل الحسابات',
+              detail: 'الحسابات وربطها وقوالب اليومية — بيُرفض لو فيه بنود '
+                  'يومية مرتبطة',
+              confirmWord: 'حذف الحسابات',
+              action: (s) => s.wipeChartOfAccounts(),
+            ),
+            const Divider(height: 24),
+            _wipeTile(
+              label: 'تصفير كامل لقاعدة البيانات',
+              detail: 'كل البيانات الحركية. بيسيب الإعدادات والمستخدمين '
+                  'والصلاحيات والفروع والمستودعات وتعريفات الصناديق — تركيب '
+                  'بلا مستخدمين مش مصفّر، ده تركيب مكسور',
+              confirmWord: 'تصفير كامل',
+              action: (s) => s.wipeAllTransactionalData(),
+              extraDanger: true,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _wipeTile({
+    required String label,
+    required String detail,
+    required String confirmWord,
+    required Future<WipeResult> Function(DataWipeService) action,
+    bool extraDanger = false,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: OutlinedButton(
+        onPressed: _busy ? null : () => _confirmAndRun(label, confirmWord, action),
+        style: OutlinedButton.styleFrom(
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          side: BorderSide(
+            color: AppColors.error.withValues(alpha: extraDanger ? 0.9 : 0.4),
+            width: extraDanger ? 2 : 1,
+          ),
+          foregroundColor: AppColors.error,
+        ),
+        child: Row(
+          children: [
+            Icon(
+              extraDanger
+                  ? PhosphorIconsBold.skull
+                  : PhosphorIconsBold.trash,
+              size: 18,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label,
+                      style: const TextStyle(
+                          fontSize: 13, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 2),
+                  Text(detail,
+                      style: const TextStyle(
+                          fontSize: 11,
+                          height: 1.4,
+                          color: AppColors.textMuted)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// تأكيد بالكتابة: زرار «موافق» ينضغط بالغلط، وكتابة كلمة بالحرف لأ.
+  Future<void> _confirmAndRun(
+    String label,
+    String confirmWord,
+    Future<WipeResult> Function(DataWipeService) action,
+  ) async {
+    final controller = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: StatefulBuilder(
+          builder: (ctx, setLocal) => AlertDialog(
+            title: Row(
+              children: [
+                const Icon(PhosphorIconsBold.warningOctagon,
+                    color: AppColors.error, size: 22),
+                const SizedBox(width: 8),
+                Expanded(child: Text(label, style: const TextStyle(fontSize: 15))),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'العملية دي بلا رجعة. اكتب الكلمة التالية بالحرف للتأكيد:',
+                  style: TextStyle(fontSize: 13),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.error.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    confirmWord,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: AppColors.error),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: controller,
+                  autofocus: true,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                  onChanged: (_) => setLocal(() {}),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('إلغاء'),
+              ),
+              ElevatedButton(
+                onPressed: controller.text.trim() == confirmWord
+                    ? () => Navigator.pop(ctx, true)
+                    : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.error,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('نفّذ'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    controller.dispose();
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _busy = true);
+    final result = await action(DataWipeService(ref.read(databaseProvider)));
+    if (!mounted) return;
+    setState(() => _busy = false);
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          title: Row(
+            children: [
+              Icon(
+                result.ok
+                    ? PhosphorIconsBold.checkCircle
+                    : PhosphorIconsBold.xCircle,
+                color: result.ok ? AppColors.success : AppColors.error,
+                size: 22,
+              ),
+              const SizedBox(width: 8),
+              Text(result.ok ? 'تم التنفيذ' : 'لم يتم التنفيذ'),
+            ],
+          ),
+          content: SizedBox(
+            width: 420,
+            child: SingleChildScrollView(
+              child: result.ok
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('إجمالي الصفوف المحذوفة: ${result.totalRows}',
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 13)),
+                        const Divider(),
+                        // العدّ لكل جدول: «تم» لوحدها متقولش إيه اللي حصل،
+                        // والمستخدم محتاج يعرف قبل ما يكمّل شغل.
+                        for (final e in result.deleted.entries)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 1),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                    child: Text(e.key,
+                                        style: const TextStyle(fontSize: 12))),
+                                Text('${e.value}',
+                                    style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                          ),
+                        if (result.backupPath != null) ...[
+                          const Divider(),
+                          Text('النسخة الاحتياطية: ${result.backupPath}',
+                              style: const TextStyle(
+                                  fontSize: 11, color: AppColors.textMuted)),
+                        ],
+                      ],
+                    )
+                  : Text(result.error ?? 'خطأ غير معروف',
+                      style: const TextStyle(fontSize: 13, height: 1.6)),
+            ),
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('حسناً'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
