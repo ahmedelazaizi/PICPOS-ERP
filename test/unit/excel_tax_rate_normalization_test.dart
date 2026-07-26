@@ -21,7 +21,7 @@ import 'package:ural_erp/core/tax/tax_rate_policy.dart';
 /// نسخة طبق الأصل من `ExcelService._normalizeTaxRate`.
 double normalizeTaxRate(double raw, {List<double>? allowed}) {
   if (raw <= 0 || raw >= 1) return raw;
-  final ladder = allowed ?? TaxRatePolicy.defaultAllowedRates;
+  final ladder = allowed ?? TaxRatePolicy.activeRates;
   final asPercent = raw * 100;
   for (final r in ladder) {
     if ((r - asPercent).abs() < 1e-6) return r;
@@ -84,6 +84,40 @@ void main() {
       expect(normalizeTaxRate(0.14, allowed: custom), 14);
       // 16٪ مش في السلّم المخصّص، فالكسر بتاعها ما بيتحوّلش.
       expect(normalizeTaxRate(0.16, allowed: custom), 0.16);
+    });
+  });
+
+  group('السلّم المضبوط من الإعدادات', () {
+    tearDown(TaxRatePolicy.resetForTests);
+
+    test('من غير ضبط، السلّم الفعّال هو الافتراضي', () {
+      TaxRatePolicy.resetForTests();
+      expect(TaxRatePolicy.activeRates, TaxRatePolicy.defaultAllowedRates);
+    });
+
+    test('الضبط بيغيّر ما يقبله كل مسارات الكتابة', () {
+      // السيناريو اللي كان مكسور: تركيب مصري سلّمه 0/14.
+      TaxRatePolicy.configureFromSetting('0,14');
+      expect(TaxRatePolicy.activeRates, [0, 14]);
+      expect(TaxRatePolicy.isAllowed(14), isTrue,
+          reason: '14٪ لازم تعدّي على تركيب ضابط سلّمه كده');
+      expect(TaxRatePolicy.isAllowed(16), isFalse,
+          reason: '16٪ برّه السلّم المضبوط');
+      // والكسر بيتحوّل على السلّم المضبوط، لأن normalize بيقرا activeRates.
+      expect(normalizeTaxRate(0.14), 14);
+    });
+
+    test('إعداد فاضي أو فاسد بيرجع للافتراضي بدل ترك النظام بلا سلّم', () {
+      TaxRatePolicy.configureFromSetting('');
+      expect(TaxRatePolicy.activeRates, TaxRatePolicy.defaultAllowedRates);
+      TaxRatePolicy.configureFromSetting('نص مش أرقام, ???');
+      expect(TaxRatePolicy.activeRates, TaxRatePolicy.defaultAllowedRates);
+    });
+
+    test('القيم السالبة بتُستبعد من السلّم المضبوط', () {
+      TaxRatePolicy.configureFromSetting('0, 5, -16, 10');
+      expect(TaxRatePolicy.activeRates, [0, 5, 10]);
+      expect(TaxRatePolicy.isAllowed(-16), isFalse);
     });
   });
 }

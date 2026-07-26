@@ -18,6 +18,7 @@ import 'core/config/app_config.dart';
 import 'core/config/brand.dart';
 import 'core/config/business_profile_provider.dart';
 import 'core/config/feature_key.dart';
+import 'core/tax/tax_rate_policy.dart';
 import 'core/theme/app_theme.dart';
 import 'core/config/supabase_config.dart';
 import 'data/providers/providers.dart';
@@ -762,10 +763,18 @@ void main() async {
       // listener can read it synchronously on every focus event without
       // an async hop. Default (missing row) is read as 'false'.
       'touchMode',
+      // Product tax ladder. Pre-warmed and pushed into TaxRatePolicy right
+      // below so every write path (product form, Excel importer, server API)
+      // validates against this install's ladder. It was configurable on paper
+      // only: nothing in the codebase ever read the key, so a deployment that
+      // set a custom ladder still had 14% rejected everywhere.
+      TaxRatePolicy.settingKey,
       ...FeatureKey.values.map((k) => k.settingKey),
     ];
     cachedSettings = SettingsRepositoryCached(sharedDb);
     await cachedSettings.preload(preloadKeys);
+    TaxRatePolicy.configureFromSetting(
+        cachedSettings.get(TaxRatePolicy.settingKey));
 
     // 2b. Feature 009 (T012e) — warm up the device identity (UUIDv7 in
     //     secure storage, mirrored into app_settings.device_id). The

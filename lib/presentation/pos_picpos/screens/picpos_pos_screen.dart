@@ -10,6 +10,7 @@ import '../../../core/logging/diagnostic_logger.dart';
 import '../../../core/utils/number_utils.dart';
 import '../../../data/providers/providers.dart';
 import '../../../domain/entities/cart_item_entity.dart';
+import '../../../domain/entities/product_entity.dart';
 import '../../../services/cash_drawer_service.dart';
 import '../../../services/journal_entry_diagnostics.dart';
 import '../../widgets/dialogs/app_confirm_dialog.dart';
@@ -22,6 +23,7 @@ import '../../pos/widgets/held_orders_dialog.dart';
 import '../../pos/widgets/pos_customer_selection_dialog.dart';
 import '../../pos/widgets/pos_dialogs.dart' hide PaymentResult;
 import '../../pos/widgets/pos_previous_invoices_dialog.dart';
+import '../../pos/widgets/pos_product_selection_panel.dart';
 import '../widgets/picpos_invoice_header.dart';
 import '../widgets/picpos_items_table.dart';
 import '../widgets/picpos_shortcut_bar.dart';
@@ -210,15 +212,16 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.all(6),
+                      // RTL: the first child renders on the RIGHT. Browsing is
+                      // the wide half and the invoice is the narrow one — same
+                      // split as the UralCash till, so a cashier moving between
+                      // the two products isn't relearning where things live.
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Expanded(flex: 68, child: _buildMainColumn()),
+                          Expanded(flex: 60, child: _buildBrowsePanel()),
                           const SizedBox(width: 6),
-                          Expanded(
-                            flex: 32,
-                            child: PicPosSidePanel(operations: _operations()),
-                          ),
+                          Expanded(flex: 40, child: _buildInvoiceColumn()),
                         ],
                       ),
                     ),
@@ -234,12 +237,34 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
     );
   }
 
-  Widget _buildMainColumn() {
+  /// Browsing half — barcode field, category filter and the product grid.
+  ///
+  /// This is `PosProductSelectionPanel`, the exact component the UralCash till
+  /// and the table-service screen use. Reusing it rather than rebuilding a
+  /// grid means the category rules (locked / excluded / `showInPos`), the
+  /// branch-scoped product query, the scale input and the permission guards
+  /// are the same code in every till we ship — one place to fix, one
+  /// behaviour to learn.
+  Widget _buildBrowsePanel() {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        border: Border.all(color: AppColors.border),
+      ),
+      child: PosProductSelectionPanel(
+        barcodeController: barcodeController,
+        barcodeFocus: barcodeFocus,
+        onSearchBarcode: _searchBarcode,
+        onProductTap: _handleProductTap,
+      ),
+    );
+  }
+
+  /// Invoice half — header, lines, totals and the operation buttons.
+  Widget _buildInvoiceColumn() {
     return Column(
       children: [
         PicPosInvoiceHeader(onPickCustomer: _pickCustomer),
-        const SizedBox(height: 6),
-        _buildScannerField(),
         const SizedBox(height: 6),
         Expanded(
           child: PicPosItemsTable(
@@ -253,38 +278,55 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
           onEditDiscount: _editInvoiceDiscount,
           onPreviousInvoices: _showPreviousInvoices,
         ),
+        const SizedBox(height: 6),
+        _buildOperationsRow(),
       ],
     );
   }
 
-  Widget _buildScannerField() {
+  /// Operations strip. Scrolls horizontally rather than wrapping — the
+  /// invoice column is the narrow one, and a wrapping button grid would eat
+  /// rows from the line table every time one more operation is added.
+  Widget _buildOperationsRow() {
     return Container(
+      height: 58,
       decoration: BoxDecoration(
         color: AppColors.card,
         border: Border.all(color: AppColors.border),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      child: Row(
-        children: [
-          const Icon(PhosphorIconsBold.barcode,
-              size: 20, color: AppColors.primary),
-          const SizedBox(width: 8),
-          Expanded(
-            child: TextField(
-              controller: barcodeController,
-              focusNode: barcodeFocus,
-              autofocus: true,
-              style: const TextStyle(
-                  fontSize: 16, fontWeight: FontWeight.bold),
-              decoration: const InputDecoration(
-                isDense: true,
-                border: InputBorder.none,
-                hintText: 'باركود أو كود الصنف…',
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+        itemCount: _operations().length,
+        separatorBuilder: (context, i) => const SizedBox(width: 6),
+        itemBuilder: (context, i) {
+          final op = _operations()[i];
+          return SizedBox(
+            width: 88,
+            child: OutlinedButton(
+              onPressed: op.onPressed,
+              style: OutlinedButton.styleFrom(
+                padding: EdgeInsets.zero,
+                side: const BorderSide(color: AppColors.border),
+                foregroundColor: AppColors.primaryDark,
               ),
-              onSubmitted: _searchBarcode,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(op.icon, size: 17),
+                  const SizedBox(height: 2),
+                  Text(
+                    op.label,
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                        fontSize: 11, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }

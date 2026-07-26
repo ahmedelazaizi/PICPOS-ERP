@@ -35,6 +35,36 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
 
   // ── Adding items ───────────────────────────────────────────────────────
 
+  /// Tapping a card in the product grid.
+  ///
+  /// `cartController.addItem` owns the price level, the stock guard and the
+  /// negative-sale policy, so there is nothing to decide here. It refuses
+  /// silently for an out-of-stock item (the card already renders «غير متوفر»),
+  /// which is why the cart length is compared before and after rather than
+  /// assuming the add landed.
+  void _handleProductTap(ProductEntity product) {
+    final before = ref.read(cartControllerProvider).items.length;
+    final forceNew = ref.read(preventItemStackingProvider).value ?? false;
+    ref
+        .read(cartControllerProvider.notifier)
+        .addItem(product, forceNewEntry: forceNew);
+    final items = ref.read(cartControllerProvider).items;
+    if (items.length > before) {
+      setState(() => selectedIndex = items.length - 1);
+    } else if (items.length == before) {
+      // Either merged into an existing line, or refused. Select the line the
+      // product is on so the cashier sees what changed either way.
+      final idx = items.lastIndexWhere((i) => i.productId == product.id);
+      if (idx != -1) {
+        setState(() => selectedIndex = idx);
+      } else {
+        showPosToast(context, ref, 'الصنف غير متوفر في المخزون',
+            type: PosNotificationType.error);
+      }
+    }
+    _refocusScanner();
+  }
+
   /// Barcode / internal-code entry. Delegates wholesale to the shared
   /// search controller, which owns scale-label parsing, unit barcodes, offer
   /// barcodes and the client-mode server fallback. Re-implementing any of

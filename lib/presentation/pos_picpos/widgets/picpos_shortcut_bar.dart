@@ -33,7 +33,10 @@ class PicPosShortcutBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 56,
+      // Kept deliberately short: this strip is a legend for keys the cashier
+      // presses, not a primary target. Every pixel here comes straight out of
+      // the product grid above it.
+      height: 40,
       decoration: const BoxDecoration(
         color: AppColors.primaryDark,
         border: Border(top: BorderSide(color: AppColors.primary, width: 2)),
@@ -72,10 +75,10 @@ class _ShortcutButton extends StatelessWidget {
             children: [
               Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
                   color: tint.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(5),
+                  borderRadius: BorderRadius.circular(4),
                   border: Border.all(color: tint.withValues(alpha: 0.45)),
                 ),
                 child: Text(
@@ -83,11 +86,11 @@ class _ShortcutButton extends StatelessWidget {
                   style: TextStyle(
                     color: tint,
                     fontWeight: FontWeight.bold,
-                    fontSize: 12,
+                    fontSize: 10,
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               Flexible(
                 child: Text(
                   shortcut.label,
@@ -95,7 +98,7 @@ class _ShortcutButton extends StatelessWidget {
                   style: TextStyle(
                     color: tint,
                     fontWeight: FontWeight.bold,
-                    fontSize: 14,
+                    fontSize: 12,
                   ),
                 ),
               ),

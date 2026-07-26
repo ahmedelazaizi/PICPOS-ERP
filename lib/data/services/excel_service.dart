@@ -1288,7 +1288,10 @@ class ExcelService {
   /// تُقارَن قيمه بالتساوي في التقارير الضريبية.
   double _normalizeTaxRate(double raw, {List<double>? allowed}) {
     if (raw <= 0 || raw >= 1) return raw;
-    final ladder = allowed ?? TaxRatePolicy.defaultAllowedRates;
+    // `activeRates` لا `defaultAllowedRates`: التحويل لازم يقيس على نفس السلّم
+    // اللي `assertAllowed` هيقيس عليه بعد سطرين، وإلا تركيب ضابط سلّم مخصّص
+    // (0/14 مثلاً) يحوّل 0.14 لـ 14 ثم يرفضها — أو الأسوأ، ميحوّلهاش ويرفضها.
+    final ladder = allowed ?? TaxRatePolicy.activeRates;
     final asPercent = raw * 100;
     for (final r in ladder) {
       if ((r - asPercent).abs() < 1e-6) return r;
