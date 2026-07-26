@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../core/config/brand.dart';
 
 /// Database connection mode
 enum DatabaseMode {
@@ -31,8 +32,8 @@ class PostgresConfig {
   const PostgresConfig({
     this.host = 'localhost',
     this.port = 5432,
-    this.database = 'uralcash',
-    this.username = 'uralcash',
+    this.database = Brand.pgIdentifier,
+    this.username = Brand.pgIdentifier,
     this.password = '',
     this.useSsl = false,
   });
@@ -42,8 +43,8 @@ class PostgresConfig {
     return PostgresConfig(
       host: json['host'] as String? ?? 'localhost',
       port: json['port'] as int? ?? 5432,
-      database: json['database'] as String? ?? 'uralcash',
-      username: json['username'] as String? ?? 'uralcash',
+      database: json['database'] as String? ?? Brand.pgIdentifier,
+      username: json['username'] as String? ?? Brand.pgIdentifier,
       password: json['password'] as String? ?? '',
       useSsl: json['useSsl'] as bool? ?? false,
     );

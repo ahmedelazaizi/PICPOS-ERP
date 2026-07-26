@@ -62,7 +62,7 @@ extension _SetupWizardProvisioningExt on _SetupWizardScreenState {
         _buildTextField(
           controller: _pgDatabaseController,
           label: 'اسم القاعدة',
-          hint: 'uralcash',
+          hint: Brand.pgIdentifier,
           icon: PhosphorIconsBold.database,
           isRequired: true,
         ),

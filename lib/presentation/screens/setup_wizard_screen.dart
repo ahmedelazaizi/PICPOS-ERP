@@ -32,6 +32,7 @@ import '../../services/deployment/deployment_mode_committer.dart';
 import '../../services/deployment/commit_result.dart';
 import '../../app_main_screen.dart';
 import '../touch_keyboard/providers/touch_mode_provider.dart';
+import '../../core/config/brand.dart';
 
 part 'setup_wizard/step_company_info.dart';
 part 'setup_wizard/step_branch.dart';
@@ -116,7 +117,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
   // Step 5: PostgreSQL server config (server mode only)
   final _pgHostController = TextEditingController(text: 'localhost');
   final _pgPortController = TextEditingController(text: '5432');
-  final _pgDatabaseController = TextEditingController(text: 'uralcash');
+  final _pgDatabaseController = TextEditingController(text: Brand.pgIdentifier);
   final _pgUserController = TextEditingController(text: 'postgres');
   final _pgPasswordController = TextEditingController();
   bool _pgTestInProgress = false;

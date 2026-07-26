@@ -7,6 +7,7 @@ import '../../../data/database/pg_config.dart';
 import '../../../data/database/connection_io.dart' show testPostgresConnection;
 import '../../../data/providers/providers.dart';
 import '../../../services/network_service.dart';
+import '../../../core/config/brand.dart';
 
 /// Shows the full-screen database connection settings dialog.
 void showDatabaseSettingsDialog(BuildContext context) {
@@ -32,8 +33,8 @@ class _DatabaseSettingsDialogState
 
   final _hostCtrl = TextEditingController(text: 'localhost');
   final _portCtrl = TextEditingController(text: '5432');
-  final _dbCtrl = TextEditingController(text: 'uralcash');
-  final _userCtrl = TextEditingController(text: 'uralcash');
+  final _dbCtrl = TextEditingController(text: Brand.pgIdentifier);
+  final _userCtrl = TextEditingController(text: Brand.pgIdentifier);
   final _passCtrl = TextEditingController();
   bool _useSsl = false;
 
@@ -314,7 +315,7 @@ class _DatabaseSettingsDialogState
                             controller: _dbCtrl,
                             decoration: const InputDecoration(
                               labelText: 'اسم قاعدة البيانات',
-                              hintText: 'uralcash',
+                              hintText: Brand.pgIdentifier,
                               prefixIcon:
                                   Icon(PhosphorIconsBold.database, size: 18),
                               border: OutlineInputBorder(),
@@ -331,7 +332,7 @@ class _DatabaseSettingsDialogState
                                   controller: _userCtrl,
                                   decoration: const InputDecoration(
                                     labelText: 'اسم المستخدم',
-                                    hintText: 'uralcash',
+                                    hintText: Brand.pgIdentifier,
                                     prefixIcon:
                                         Icon(PhosphorIconsBold.user, size: 18),
                                     border: OutlineInputBorder(),

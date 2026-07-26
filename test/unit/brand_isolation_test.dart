@@ -33,6 +33,9 @@ void main() {
       expect(Brand.logoAsset, 'logo.PNG');
       expect(Brand.dbPrefix, 'uralcash');
       expect(Brand.dataFolderName, 'UralCash');
+      // افتراضي PostgreSQL للتنصيبات الجديدة — لو اتغيّر، معالج تنصيب جديد
+      // هيجهّز قاعدة باسم مختلف عن كل التركيبات القائمة.
+      expect(Brand.pgIdentifier, 'uralcash');
     });
 
     test('assertKnownBrand ما بترميش على علامة معروفة', () {

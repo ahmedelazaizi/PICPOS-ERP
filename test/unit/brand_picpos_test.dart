@@ -78,6 +78,12 @@ void main() {
     test('البيانات معزولة — مفيش ملف داتابيز مشترك مع UralCash', () {
       expect(Brand.dbPrefix, 'picpos');
       expect(Brand.dataFolderName, 'PicPos');
+      // قاعدة PostgreSQL منفصلة — سيرفران على نفس نسخة PG كانوا هيتصادموا
+      // على قاعدة اسمها `uralcash`.
+      expect(Brand.pgIdentifier, 'picpos');
+      expect(Brand.pgIdentifier, isNot(contains('uralcash')));
+      // lowercase إجباري: PostgreSQL بيحوّل المُعرّفات غير المقتبسة لحروف صغيرة.
+      expect(Brand.pgIdentifier, Brand.pgIdentifier.toLowerCase());
       for (final flavor in AppFlavor.values) {
         final name = databaseFileNameFor(flavor);
         expect(name, startsWith('picpos_'),
