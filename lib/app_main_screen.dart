@@ -13,7 +13,9 @@ import 'data/providers/providers.dart';
 import 'services/license_service.dart';
 import 'services/permission_sync_bridge.dart';
 import 'presentation/shell/app_shell.dart';
+import 'core/config/brand.dart';
 import 'presentation/pos/screens/pos_main_screen.dart';
+import 'presentation/pos_picpos/screens/picpos_pos_screen.dart';
 import 'services/shift_dialog_session_guard.dart';
 // Spec 135 NOTE 1 — SessionTimeoutWrapper (POS lock screen, System B) retired;
 // session timeout is handled app-wide by InactivityDetector (System A).
@@ -644,7 +646,14 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         // session_timeout_minutes). Two parallel timeout systems on different
         // keys meant "disable" never fully disabled. PosScreenV2 mounts
         // directly now; session timeout is handled once, app-wide.
-        builder: (_) => const PosScreenV2(),
+        //
+        // Brand fork, not a profile fork. `Brand.isPicPos` is a compile-time
+        // const, so exactly one of these two screens is even reachable in a
+        // given build — UralCash cannot land on the PicPos layout by picking
+        // the `lite` profile, and vice versa. Both screens drive the same
+        // cart/checkout controllers; only layout and key bindings differ.
+        builder: (_) =>
+            Brand.isPicPos ? const PicPosPosScreen() : const PosScreenV2(),
         label: 'نقطة البيع',
         icon: PhosphorIconsBold.shoppingCart,
       ),
