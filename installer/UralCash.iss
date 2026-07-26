@@ -1,42 +1,123 @@
-; ═══════════════════════════════════════════════════════════════════════════
-;  UralCash ERP — Windows installer (Inno Setup 6)
+﻿; ═══════════════════════════════════════════════════════════════════════════
+;  Windows installer (Inno Setup 6) — one script, one installer per brand.
 ;  Installs the app + publisher certificate, auto-installs the Visual C++
 ;  runtime if missing, and optionally downloads/installs PostgreSQL (server
 ;  machines only). Arabic RTL wizard.
 ;
-;  Build:  "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\UralCash.iss
-;  Prereqs: build\windows\x64\runner\Release\  and  UralCash-PublicCert.cer
-;           must exist (flutter build windows --release + sign_release.ps1).
+;  Build (UralCash — the default, unchanged):
+;    "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\UralCash.iss
+;  Build (PicPos):
+;    ISCC.exe /DBrandId=picpos installer\UralCash.iss
+;    (or just run build_installer_picpos.bat)
+;
+;  Prereq: build\windows\x64\runner\Release\ must exist for the brand you are
+;  packaging — that directory is produced by `flutter build windows --release`
+;  with the matching --dart-define=APP_BRAND. Building one brand's installer
+;  over the other brand's Release output produces a MIXED package; the
+;  [Files] guard below fails the compile if the expected exe is missing.
+;
+;  The publisher certificate is OPTIONAL: if the .cer is absent the cert
+;  install/uninstall steps are compiled out entirely. PicPos has no signing
+;  certificate yet, and UralCash's cert is produced out-of-tree.
+;
+;  Everything brand-bound lives in the one block below. Nothing anywhere else
+;  in this file may name a brand.
 ; ═══════════════════════════════════════════════════════════════════════════
 
-#define AppName       "UralCash ERP"
+; The brand being packaged. Defaults to `uralcash` so an old, bare
+; `ISCC installer\UralCash.iss` keeps producing exactly what it always did.
+#ifndef BrandId
+  #define BrandId "uralcash"
+#endif
+
+#if BrandId == "uralcash"
+
+  ; ── UralCash — every value below is LITERAL AND FROZEN ─────────────────
+  ; AppId identifies the product to Windows' installed-programs database.
+  ; It is the one value that must never change for a shipped product: a new
+  ; AppId makes every existing install invisible to the upgrade path, so the
+  ; next setup installs alongside the old one instead of replacing it.
+  #define AppId        "{{9C4B2F1A-7E3D-4A6B-9F2C-1D8E5A0B3C77}"
+  #define AppName      "UralCash ERP"
+  #define ShortName    "UralCash"
+  #define Publisher    "Monexia"
+  #define PublisherURL "https://uralcash.app"
+  #define ExeName      "UralCash.exe"
+  #define CertName     "UralCash-PublicCert.cer"
+  ; Subject of the code-signing cert, as passed to `certutil -delstore`.
+  #define CertSubject  "UralCash Code Signing (Monexia)"
+
+#elif BrandId == "picpos"
+
+  ; ── PicPos ────────────────────────────────────────────────────────────
+  ; A DIFFERENT AppId, generated fresh. Reusing UralCash's would make
+  ; Windows treat the two products as one: installing PicPos would silently
+  ; upgrade-over an existing UralCash install, and uninstalling either would
+  ; remove the other's registry entry. This single value is the difference
+  ; between two products and one product with two skins.
+  #define AppId        "{{6700CCE0-EF37-4843-A057-F7799252DAA9}"
+  #define AppName      "PicPos ERP"
+  #define ShortName    "PicPos"
+  ; TODO(product owner): if PicPos is registered under a fuller legal name,
+  ; put that exact form here — this string is the publisher shown by Windows.
+  ; Same open question as the copyright line in build_picpos.bat.
+  #define Publisher    "PicPos"
+  ; TODO(product owner): no domain yet. Left empty on purpose — the [Setup]
+  ; directive is omitted rather than pointed at UralCash's site.
+  #define PublisherURL ""
+  #define ExeName      "PicPos.exe"
+  #define CertName     "PicPos-PublicCert.cer"
+  #define CertSubject  "PicPos Code Signing (PicPos)"
+
+#else
+  #error Unknown BrandId. Use /DBrandId=uralcash or /DBrandId=picpos.
+#endif
+
+; ── Shared across brands — same engine, same release train ───────────────
 #define AppVersion    "3.1.2.247"
-#define Publisher     "Monexia"
-#define ExeName       "UralCash.exe"
+
+; ── Brand-derived paths — no brand names below this line ─────────────────
 #define ReleaseDir    "..\build\windows\x64\runner\Release"
-#define CertFile      "..\build\windows\x64\runner\UralCash-PublicCert.cer"
+#define CertFile      "..\build\windows\x64\runner\" + CertName
 #define IconFile      "..\windows\runner\resources\app_icon.ico"
+#define InfoFile      "info-ar-" + BrandId + ".txt"
+#define WizardLarge   "assets\wizard-large-" + BrandId + ".bmp"
+#define WizardSmall   "assets\wizard-small-" + BrandId + ".bmp"
 #define VCRedistUrl   "https://aka.ms/vs/17/release/vc_redist.x64.exe"
 ; Official EDB PostgreSQL x64 installer (best-effort; download is fault-tolerant)
 #define PGUrl         "https://get.enterprisedb.com/postgresql/postgresql-16.4-1-windows-x64.exe"
 
+; Guard against packaging the wrong brand's build output. Without this the
+; compile succeeds and ships an installer whose shortcuts point at an exe
+; that isn't in the package.
+#if !FileExists(AddBackslash(SourcePath) + ReleaseDir + "\" + ExeName)
+  #error Release output for this brand is missing. Run the brand's build script first.
+#endif
+
+; The signing certificate is optional — see the header.
+#if FileExists(AddBackslash(SourcePath) + CertFile)
+  #define HaveCert
+#endif
+
 [Setup]
-AppId={{9C4B2F1A-7E3D-4A6B-9F2C-1D8E5A0B3C77}
+AppId={#AppId}
 AppName={#AppName}
 AppVersion={#AppVersion}
 AppPublisher={#Publisher}
-AppPublisherURL=https://uralcash.app
-DefaultDirName={autopf}\UralCash
-DefaultGroupName=UralCash
+#if PublisherURL != ""
+AppPublisherURL={#PublisherURL}
+#endif
+DefaultDirName={autopf}\{#ShortName}
+DefaultGroupName={#ShortName}
 DisableProgramGroupPage=yes
 OutputDir=output
-OutputBaseFilename=UralCash-Setup-{#AppVersion}
+OutputBaseFilename={#ShortName}-Setup-{#AppVersion}
 Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
-WizardImageFile=assets\wizard-large.bmp
-WizardSmallImageFile=assets\wizard-small.bmp
-InfoBeforeFile=info-ar.txt
+WizardImageFile={#WizardLarge}
+WizardSmallImageFile={#WizardSmall}
+InfoBeforeFile={#InfoFile}
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 PrivilegesRequired=admin
@@ -50,10 +131,10 @@ SetupIconFile={#IconFile}
 Name: "arabic"; MessagesFile: "compiler:Languages\Arabic.isl"
 
 [CustomMessages]
-arabic.CompApp=نظام UralCash (أساسي)
+arabic.CompApp=نظام {#ShortName} (أساسي)
 arabic.CompPg=خادم PostgreSQL (للسيرفر/الفرع الرئيسي فقط — اختياري)
 arabic.InstallingCert=جارٍ تثبيت شهادة الناشر في الجهات الموثوقة...
-arabic.LaunchApp=تشغيل UralCash الآن
+arabic.LaunchApp=تشغيل {#ShortName} الآن
 arabic.PreparingReqs=جارٍ تجهيز متطلبات النظام
 
 [Components]
@@ -65,27 +146,33 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 Source: "{#ReleaseDir}\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion; Components: app
+#ifdef HaveCert
 Source: "{#CertFile}";     DestDir: "{app}"; Flags: ignoreversion;                                Components: app
+#endif
 
 [Icons]
-Name: "{group}\UralCash";                       Filename: "{app}\{#ExeName}"
-Name: "{group}\{cm:UninstallProgram,UralCash}"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\UralCash";                 Filename: "{app}\{#ExeName}"; Tasks: desktopicon
+Name: "{group}\{#ShortName}";                       Filename: "{app}\{#ExeName}"
+Name: "{group}\{cm:UninstallProgram,{#ShortName}}"; Filename: "{uninstallexe}"
+Name: "{autodesktop}\{#ShortName}";                 Filename: "{app}\{#ExeName}"; Tasks: desktopicon
 
 [Run]
+#ifdef HaveCert
 ; Trust the publisher certificate so the signed exe stops warning "Unknown Publisher".
-Filename: "{sys}\certutil.exe"; Parameters: "-addstore -f Root ""{app}\UralCash-PublicCert.cer"""; \
+Filename: "{sys}\certutil.exe"; Parameters: "-addstore -f Root ""{app}\{#CertName}"""; \
   StatusMsg: "{cm:InstallingCert}"; Flags: runhidden waituntilterminated
-Filename: "{sys}\certutil.exe"; Parameters: "-addstore -f TrustedPublisher ""{app}\UralCash-PublicCert.cer"""; \
+Filename: "{sys}\certutil.exe"; Parameters: "-addstore -f TrustedPublisher ""{app}\{#CertName}"""; \
   StatusMsg: "{cm:InstallingCert}"; Flags: runhidden waituntilterminated
+#endif
 ; Optional launch at the end.
 Filename: "{app}\{#ExeName}"; Description: "{cm:LaunchApp}"; Flags: nowait postinstall skipifsilent
 
+#ifdef HaveCert
 [UninstallRun]
-Filename: "{sys}\certutil.exe"; Parameters: "-delstore Root ""UralCash Code Signing (Monexia)"""; \
+Filename: "{sys}\certutil.exe"; Parameters: "-delstore Root ""{#CertSubject}"""; \
   Flags: runhidden; RunOnceId: "DelCertRoot"
-Filename: "{sys}\certutil.exe"; Parameters: "-delstore TrustedPublisher ""UralCash Code Signing (Monexia)"""; \
+Filename: "{sys}\certutil.exe"; Parameters: "-delstore TrustedPublisher ""{#CertSubject}"""; \
   Flags: runhidden; RunOnceId: "DelCertPub"
+#endif
 
 [Code]
 var
