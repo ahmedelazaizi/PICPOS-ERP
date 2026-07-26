@@ -369,6 +369,7 @@ class InvoiceGenerator {
     DateTime? fromDate,
     DateTime? toDate,
     String? companyName,
+    DocumentCompanyHeader? company,
   }) {
     return ReportPdfGenerator.printPartyStatement(
       partyName: partyName,
@@ -378,6 +379,7 @@ class InvoiceGenerator {
       fromDate: fromDate,
       toDate: toDate,
       companyName: companyName,
+      company: company,
     );
   }
 

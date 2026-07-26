@@ -347,9 +347,23 @@ mixin _PartyStatementDialogsMixin on ConsumerState<PartyStatementScreen> {
     try {
       final statementItems = entries.map((e) => StatementItem(
         date: e.date,
-        description: '${e.description}${e.invoiceNumber != null ? ' - ${e.invoiceNumber}' : ''}',
+        description: e.description,
+        // رقم المستند في عموده الخاص بدل دمجه في البيان — الدمج كان يمدّد
+        // أعرض عمود ويزاحم أعمدة المبالغ.
+        documentNumber: e.invoiceNumber,
         debit: e.debit, credit: e.credit, balance: e.balance,
       )).toList();
+
+      // بيانات الشركة المسجّلة في النظام لرأس المستند وتذييله. لم تكن تُقرأ
+      // إطلاقاً، فكان الكشف يُطبع باسم افتراضي عام وبلا هاتف ولا عنوان.
+      final settingsRepo = ref.read(settingsRepositoryProvider);
+      final company = DocumentCompanyHeader(
+        name: await settingsRepo.getSetting('company_name') ?? '',
+        phone: await settingsRepo.getSetting('company_phone'),
+        phone2: await settingsRepo.getSetting('company_phone2'),
+        address: await settingsRepo.getSetting('company_address'),
+        taxId: await settingsRepo.getSetting('company_tax_id'),
+      );
 
       await InvoiceGenerator.printPartyStatement(
         partyName: widget.partyName,
@@ -357,6 +371,7 @@ mixin _PartyStatementDialogsMixin on ConsumerState<PartyStatementScreen> {
         currentBalance: party?.balance ?? 0,
         transactions: statementItems,
         fromDate: fromDate, toDate: toDate,
+        company: company,
       );
     } catch (e) {
       if (mounted) AppToast.show(context, 'خطأ في الطباعة: $e', type: ToastType.error);

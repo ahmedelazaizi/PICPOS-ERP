@@ -204,31 +204,128 @@ class ReportPdfGenerator {
     DateTime? fromDate,
     DateTime? toDate,
     String? companyName,
+    DocumentCompanyHeader? company,
   }) async {
     await _initFont();
     final pdf = pw.Document();
+
+    // The registered company identity. `company` is the full record read from
+    // settings; `companyName` stays for older callers that only had a name.
+    // DocumentCompanyHeader supplies its own fallback for a blank name, so this
+    // deliberately does not reach for a brand constant — the header must depend
+    // only on what the operator registered in settings.
+    final header = company ?? DocumentCompanyHeader(name: companyName ?? '');
+    final layout = StatementColumnLayout.forItems(transactions);
+    final totals = StatementTotals.from(transactions);
+    final printedAt = DateTime.now();
+
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         textDirection: pw.TextDirection.rtl,
+        margin: const pw.EdgeInsets.fromLTRB(24, 24, 24, 36),
+        // رأس الصفحة يتكرّر على **كل** صفحة — كشف من عدة صفحات كانت صفحاته
+        // التالية تخرج بلا أي هوية للشركة.
+        header: (context) => _buildCompanyLetterhead(header),
+        footer: (context) => _buildDocumentFooter(header, context, printedAt),
         build: (context) => [
-          _buildStatementHeader(
-            partyName,
-            partyType,
-            fromDate,
-            toDate,
-            companyName,
-          ),
-          pw.SizedBox(height: 10),
+          _buildStatementHeader(partyName, partyType, fromDate, toDate),
+          pw.SizedBox(height: 8),
           pw.Divider(),
-          pw.SizedBox(height: 20),
+          pw.SizedBox(height: 12),
           _buildBalanceBox(currentBalance),
-          pw.SizedBox(height: 20),
-          _buildStatementTable(transactions),
+          pw.SizedBox(height: 12),
+          _buildStatementTable(transactions, layout, totals),
         ],
       ),
     );
     await PdfComputeHelper.layoutPdf(pdf);
+  }
+
+  /// ترويسة الشركة: الاسم ثم الهاتف والعنوان ثم الرقم الضريبي.
+  ///
+  /// Rendered as a page `header` so it repeats on every page of a multi-page
+  /// statement. Only present fields are drawn — no blank lines, no dangling
+  /// separators.
+  static pw.Widget _buildCompanyLetterhead(DocumentCompanyHeader c) {
+    return pw.Container(
+      alignment: pw.Alignment.center,
+      margin: const pw.EdgeInsets.only(bottom: 8),
+      padding: const pw.EdgeInsets.only(bottom: 6),
+      decoration: const pw.BoxDecoration(
+        border: pw.Border(
+          bottom: pw.BorderSide(color: PdfColors.grey600, width: 1.2),
+        ),
+      ),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.center,
+        children: [
+          pw.Text(
+            c.displayName,
+            style: pw.TextStyle(
+              font: _arabicFont,
+              fontSize: 16,
+              fontWeight: pw.FontWeight.bold,
+            ),
+          ),
+          if (c.hasContactInfo)
+            pw.Padding(
+              padding: const pw.EdgeInsets.only(top: 2),
+              child: pw.Text(
+                c.contactLine,
+                style: pw.TextStyle(
+                    font: _arabicFont, fontSize: 9, color: PdfColors.grey800),
+              ),
+            ),
+          if (c.taxLine.isNotEmpty)
+            pw.Text(
+              c.taxLine,
+              style: pw.TextStyle(
+                  font: _arabicFont, fontSize: 9, color: PdfColors.grey800),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// تذييل الصفحة: هوية الشركة مختصرة + تاريخ الطباعة + ترقيم الصفحات.
+  static pw.Widget _buildDocumentFooter(
+    DocumentCompanyHeader c,
+    pw.Context context,
+    DateTime printedAt,
+  ) {
+    final stamp = '${printedAt.year}/${printedAt.month}/${printedAt.day} '
+        '${printedAt.hour.toString().padLeft(2, '0')}:'
+        '${printedAt.minute.toString().padLeft(2, '0')}';
+    return pw.Container(
+      margin: const pw.EdgeInsets.only(top: 6),
+      padding: const pw.EdgeInsets.only(top: 4),
+      decoration: const pw.BoxDecoration(
+        border: pw.Border(
+          top: pw.BorderSide(color: PdfColors.grey400, width: 0.6),
+        ),
+      ),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Text(
+            'صفحة ${context.pageNumber} من ${context.pagesCount}',
+            style: pw.TextStyle(
+                font: _arabicFont, fontSize: 8, color: PdfColors.grey700),
+          ),
+          pw.Text(
+            c.hasContactInfo ? '${c.displayName}  ·  ${c.contactLine}' : c.displayName,
+            style: pw.TextStyle(
+                font: _arabicFont, fontSize: 8, color: PdfColors.grey700),
+          ),
+          pw.Text(
+            'طُبع في $stamp',
+            style: pw.TextStyle(
+                font: _arabicFont, fontSize: 8, color: PdfColors.grey700),
+          ),
+        ],
+      ),
+    );
   }
 
   static Future<void> printInventoryReport({
@@ -1054,12 +1151,13 @@ class ReportPdfGenerator {
     );
   }
 
+  /// عنوان الكشف نفسه. هوية الشركة انتقلت إلى ترويسة الصفحة المتكرّرة
+  /// (`_buildCompanyLetterhead`) فلم تعد تُمرَّر هنا.
   static pw.Widget _buildStatementHeader(
     String name,
     String type,
     DateTime? from,
     DateTime? to,
-    String? comp,
   ) {
     return pw.Row(
       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
@@ -1085,14 +1183,6 @@ class ReportPdfGenerator {
                 style: pw.TextStyle(font: _arabicFont, fontSize: 11),
               ),
           ],
-        ),
-        pw.Text(
-          comp ?? 'UralCash',
-          style: pw.TextStyle(
-            font: _arabicFont,
-            fontSize: 18,
-            fontWeight: pw.FontWeight.bold,
-          ),
         ),
       ],
     );
@@ -1127,39 +1217,96 @@ class ReportPdfGenerator {
     );
   }
 
-  static pw.Widget _buildStatementTable(List<StatementItem> items) {
+  /// جدول كشف الحساب بأعمدة مقيسة على المحتوى وصف إجماليات.
+  ///
+  /// Previously: five fixed-width columns, the document number crammed into the
+  /// description, and NO totals row — so a printed statement gave no debit or
+  /// credit total and no closing balance, while the Excel export from the same
+  /// screen did. Column widths and the font now come from
+  /// [StatementColumnLayout], which shrinks the type rather than clipping data.
+  static pw.Widget _buildStatementTable(
+    List<StatementItem> items,
+    StatementColumnLayout layout,
+    StatementTotals totals,
+  ) {
+    final showDoc = layout.showDocumentColumn;
+    final fs = layout.fontSize;
+
+    final widths = <int, pw.TableColumnWidth>{};
+    var col = 0;
+    widths[col++] = pw.FlexColumnWidth(layout.dateFlex.toDouble());
+    if (showDoc) {
+      widths[col++] = pw.FlexColumnWidth(layout.documentFlex.toDouble());
+    }
+    widths[col++] = pw.FlexColumnWidth(layout.descriptionFlex.toDouble());
+    for (var i = 0; i < 3; i++) {
+      widths[col++] = pw.FlexColumnWidth(layout.amountFlex.toDouble());
+    }
+
+    String money(double v) => v.toStringAsFixed(AppConstants.decimalPlaces);
+
     return pw.Table(
       border: pw.TableBorder.all(color: PdfColors.grey400),
-      columnWidths: {
-        0: const pw.FlexColumnWidth(2),
-        1: const pw.FlexColumnWidth(3),
-        2: const pw.FlexColumnWidth(2),
-        3: const pw.FlexColumnWidth(2),
-        4: const pw.FlexColumnWidth(2),
-      },
+      columnWidths: widths,
       children: [
         pw.TableRow(
           decoration: const pw.BoxDecoration(color: PdfColors.grey200),
           children: [
-            _tableCell('التاريخ', isHeader: true),
-            _tableCell('البيان', isHeader: true),
-            _tableCell('مدين', isHeader: true),
-            _tableCell('دائن', isHeader: true),
-            _tableCell('الرصيد', isHeader: true),
+            _statementCell('التاريخ', fs, isHeader: true),
+            if (showDoc) _statementCell('رقم المستند', fs, isHeader: true),
+            _statementCell('البيان', fs, isHeader: true),
+            _statementCell('مدين', fs, isHeader: true),
+            _statementCell('دائن', fs, isHeader: true),
+            _statementCell('الرصيد', fs, isHeader: true),
           ],
         ),
         ...items.map(
           (t) => pw.TableRow(
             children: [
-              _tableCell('${t.date.day}/${t.date.month}/${t.date.year}'),
-              _tableCell(t.description),
-              _tableCell(t.debit > 0 ? t.debit.toStringAsFixed(AppConstants.decimalPlaces) : '-'),
-              _tableCell(t.credit > 0 ? t.credit.toStringAsFixed(AppConstants.decimalPlaces) : '-'),
-              _tableCell(t.balance.toStringAsFixed(AppConstants.decimalPlaces)),
+              _statementCell(
+                  '${t.date.day}/${t.date.month}/${t.date.year}', fs),
+              if (showDoc) _statementCell(t.documentNumber ?? '-', fs),
+              _statementCell(t.description, fs),
+              _statementCell(t.debit > 0 ? money(t.debit) : '-', fs),
+              _statementCell(t.credit > 0 ? money(t.credit) : '-', fs),
+              _statementCell(money(t.balance), fs),
             ],
           ),
         ),
+        // صف الإجماليات — محسوب على كل الحركات لا على الصفحة الظاهرة.
+        pw.TableRow(
+          decoration: const pw.BoxDecoration(color: PdfColors.grey300),
+          children: [
+            _statementCell('', fs),
+            if (showDoc) _statementCell('', fs),
+            _statementCell('الإجمالي', fs, isHeader: true),
+            _statementCell(money(totals.totalDebit), fs, isHeader: true),
+            _statementCell(money(totals.totalCredit), fs, isHeader: true),
+            _statementCell(money(totals.closingBalance), fs, isHeader: true),
+          ],
+        ),
       ],
+    );
+  }
+
+  /// خلية كشف الحساب بحجم خط مُمرَّر — `_tableCell` يثبّت الحجم، فلا يسمح
+  /// بالتصغير النسبي الذي يجعل الأعمدة الطويلة تتّسع بدل أن تُبتر.
+  static pw.Widget _statementCell(
+    String text,
+    double fontSize, {
+    bool isHeader = false,
+  }) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(horizontal: 3, vertical: 4),
+      child: pw.Text(
+        text,
+        style: pw.TextStyle(
+          font: _arabicFont,
+          fontSize: fontSize,
+          fontWeight: isHeader ? pw.FontWeight.bold : pw.FontWeight.normal,
+        ),
+        textAlign: pw.TextAlign.center,
+      ),
     );
   }
 
