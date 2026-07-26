@@ -245,6 +245,18 @@ mixin _ReturnLogicMixin on ConsumerState<SalesReturnsScreen> {
     }
   }
 
+  /// «سجل المرتجعات» — mirrors the purchase-returns history dialog.
+  ///
+  /// Feeds off [IReturnsRepository.getSalesReturnHistoryEntries], NOT
+  /// `getSalesReturnHistory`. The latter matches only `sale_type='return'`
+  /// invoice rows, and THIS screen's own standalone path never writes one —
+  /// it flips the ORIGINAL invoice to 'returned'/'partial_return' and records
+  /// the refund in `safe_transactions`, exactly like the purchases side. So
+  /// the old query left this dialog permanently empty on a standalone/server
+  /// install while «سجل مرتجعات المشتريات» listed everything. The entry list
+  /// normalises both storage shapes and carries the ACTUAL refunded amount
+  /// (not the original invoice's total) plus the original row that
+  /// cancel/reprint must act on.
   void showReturnsHistoryDialog() {
     final repository = ref.read(returnsRepositoryProvider);
     // Use a 1-year lookback so recently processed returns always appear.
@@ -264,14 +276,14 @@ mixin _ReturnLogicMixin on ConsumerState<SalesReturnsScreen> {
                   color: AppColors.info,
                 ),
                 SizedBox(width: 8),
-                Text('سجل المرتجعات'),
+                Text('سجل مرتجعات المبيعات'),
               ],
             ),
             content: SizedBox(
               width: 600,
               height: 450,
-              child: FutureBuilder<List<SalesInvoiceData>>(
-                future: repository.getSalesReturnHistory(
+              child: FutureBuilder<List<SalesReturnHistoryEntry>>(
+                future: repository.getSalesReturnHistoryEntries(
                   fromDate: historyFrom,
                   toDate: historyTo,
                 ),
@@ -283,9 +295,9 @@ mixin _ReturnLogicMixin on ConsumerState<SalesReturnsScreen> {
                     );
                   }
 
-                  final returnedInvoices = snapshot.data ?? [];
+                  final entries = snapshot.data ?? [];
 
-                  if (returnedInvoices.isEmpty) {
+                  if (entries.isEmpty) {
                     return const Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -297,7 +309,7 @@ mixin _ReturnLogicMixin on ConsumerState<SalesReturnsScreen> {
                           ),
                           SizedBox(height: 16),
                           Text(
-                            'لا توجد مرتجعات في آخر 30 يوم',
+                            'لا توجد مرتجعات خلال آخر سنة',
                             style: TextStyle(color: AppColors.textMuted),
                           ),
                         ],
@@ -306,16 +318,19 @@ mixin _ReturnLogicMixin on ConsumerState<SalesReturnsScreen> {
                   }
 
                   return ListView.builder(
-                    itemCount: returnedInvoices.length,
+                    itemCount: entries.length,
                     itemBuilder: (context, index) {
-                      final invoice = returnedInvoices[index];
-                      final isActualReturn = invoice.total < 0;
-                      final isFullReturn = invoice.status == 'returned';
+                      final entry = entries[index];
+                      // The row to act on for cancel/reprint is always the
+                      // ORIGINAL invoice (see SalesReturnHistoryEntry docs);
+                      // fall back to the displayed row when unresolvable.
+                      final invoice = entry.originalInvoice ?? entry.invoice;
+                      final isFullReturn = entry.isFullReturn;
 
                       return Card(
                         child: ListTile(
                           leading: CircleAvatar(
-                            backgroundColor: isActualReturn
+                            backgroundColor: isFullReturn
                                 ? AppColors.error.withValues(alpha: 0.1)
                                 : AppColors.warning.withValues(alpha: 0.1),
                             child: Icon(
@@ -323,12 +338,17 @@ mixin _ReturnLogicMixin on ConsumerState<SalesReturnsScreen> {
                                   ? PhosphorIconsBold.arrowUDownLeft
                                   : PhosphorIconsBold.arrowsClockwise,
                               size: 18,
-                              color: isActualReturn
+                              color: isFullReturn
                                   ? AppColors.error
                                   : AppColors.warning,
                             ),
                           ),
-                          title: Text('فاتورة #${invoice.invoiceNumber}'),
+                          title: Text('فاتورة #${entry.originalInvoiceNumber}'),
+                          // Show the ACTUAL returned amount next to the
+                          // original's total — same shape as the purchase
+                          // returns history, where showing the original total
+                          // alone made a 100 د.أ return on a 5000 د.أ invoice
+                          // read as 5000.
                           subtitle: FutureBuilder<String?>(
                             future: invoice.customerId != null
                                 ? ref
@@ -337,10 +357,19 @@ mixin _ReturnLogicMixin on ConsumerState<SalesReturnsScreen> {
                                     .then((p) => p?.name)
                                 : Future.value(null),
                             builder: (ctx, partySnap) {
-                                final customerName =
-                                    partySnap.data ?? 'عميل نقدي';
+                              final customerName =
+                                  partySnap.data ?? 'عميل نقدي';
+                              final d = entry.invoice.invoiceDate;
+                              final ret = entry.returnAmount.toStringAsFixed(
+                                  AppConstants.decimalPlaces);
+                              final orig = entry.originalInvoiceTotal
+                                  .toStringAsFixed(
+                                      AppConstants.decimalPlaces);
+                              final cur = AppConstants.currencySymbolAr;
                               return Text(
-                                '$customerName • ${invoice.invoiceDate.day}/${invoice.invoiceDate.month}/${invoice.invoiceDate.year} • ${invoice.total.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolAr}',
+                                '$customerName • ${d.day}/${d.month}/${d.year} • '
+                                'قيمة المرتجع: $ret $cur '
+                                '(الفاتورة الأصلية: $orig $cur)',
                               );
                             },
                           ),
@@ -353,7 +382,7 @@ mixin _ReturnLogicMixin on ConsumerState<SalesReturnsScreen> {
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: isActualReturn
+                                  color: isFullReturn
                                       ? AppColors.error.withValues(alpha: 0.1)
                                       : AppColors.warning.withValues(
                                           alpha: 0.1,
@@ -361,14 +390,10 @@ mixin _ReturnLogicMixin on ConsumerState<SalesReturnsScreen> {
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
-                                  isActualReturn
-                                      ? 'مرتجع'
-                                      : (isFullReturn
-                                          ? 'مراجع'
-                                          : 'مراجع جزئي'),
+                                  isFullReturn ? 'مرتجع كامل' : 'مرتجع جزئي',
                                   style: TextStyle(
                                     fontSize: 11,
-                                    color: isActualReturn
+                                    color: isFullReturn
                                         ? AppColors.error
                                         : AppColors.warning,
                                     fontWeight: FontWeight.bold,
@@ -386,7 +411,11 @@ mixin _ReturnLogicMixin on ConsumerState<SalesReturnsScreen> {
                                 onPressed: () async {
                                   // ISS-06: Acceptable — one-shot read in button callback
                                   final db = ref.read(databaseProvider);
-                                  final items = await db.getSalesReturnItemDetails(invoice.id);
+                                  // Keyed on the ORIGINAL id: that is what
+                                  // stock_movements.reference_id holds.
+                                  final items = await db
+                                      .getSalesReturnItemDetails(
+                                          entry.originalInvoiceId);
                                   if (!ctx.mounted) return;
                                   showDialog(
                                     context: ctx,
@@ -401,7 +430,7 @@ mixin _ReturnLogicMixin on ConsumerState<SalesReturnsScreen> {
                                             ),
                                             const SizedBox(width: 8),
                                             Text(
-                                              'أصناف المرتجع - ${invoice.invoiceNumber}',
+                                              'أصناف المرتجع - ${entry.originalInvoiceNumber}',
                                             ),
                                           ],
                                         ),
@@ -484,11 +513,11 @@ mixin _ReturnLogicMixin on ConsumerState<SalesReturnsScreen> {
                                               CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              'فاتورة: ${invoice.invoiceNumber}',
+                                              'فاتورة: ${entry.originalInvoiceNumber}',
                                             ),
                                             const SizedBox(height: 8),
                                             Text(
-                                              'المبلغ: ${invoice.total.abs().toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolAr}',
+                                              'المبلغ: ${entry.returnAmount.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolAr}',
                                             ),
                                             const SizedBox(height: 16),
                                             Container(
@@ -568,8 +597,8 @@ mixin _ReturnLogicMixin on ConsumerState<SalesReturnsScreen> {
                                 ),
                                 tooltip: 'طباعة المرتجع',
                                 onPressed: () => _printReturnReceipt(
-                                  invoiceNumber: invoice.invoiceNumber,
-                                  returnTotal: invoice.total.abs(),
+                                  invoiceNumber: entry.originalInvoiceNumber,
+                                  returnTotal: entry.returnAmount,
                                 ),
                               ),
                             ],

@@ -352,6 +352,12 @@ class AppDatabase {
     DateTime startDate,
     DateTime endDate,
   ) async => [];
+  Future<List<db.SalesReturnHistoryEntry>> getSalesReturnHistoryEntries(
+    DateTime startDate,
+    DateTime endDate, {
+    int limit = 500,
+    Set<int>? allowedBranchIds,
+  }) async => [];
   Future<List<db.PurchaseInvoiceData>> getPurchaseInvoicesByDateRange(
     DateTime start,
     DateTime end,

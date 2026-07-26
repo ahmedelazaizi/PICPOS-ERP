@@ -77,6 +77,18 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
   }
 
   @override
+  Future<List<SalesReturnHistoryEntry>> getSalesReturnHistoryEntries({
+    required DateTime fromDate,
+    required DateTime toDate,
+    Set<int>? allowedBranchIds,
+  }) =>
+      _db.getSalesReturnHistoryEntries(
+        fromDate,
+        toDate,
+        allowedBranchIds: allowedBranchIds,
+      );
+
+  @override
   Future<bool> processSalesReturn({
     required SalesInvoiceData invoice,
     required Map<int, double> returnQuantities,

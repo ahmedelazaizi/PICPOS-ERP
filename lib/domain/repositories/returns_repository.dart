@@ -95,6 +95,20 @@ abstract class IReturnsRepository {
     Set<int>? allowedBranchIds,
   });
 
+  /// Sales return history for the «سجل المرتجعات» dialog — normalised over
+  /// BOTH persisted return shapes (separate `sale_type='return'` document, or
+  /// a flipped original + `safe_transactions`), so a return processed on a
+  /// standalone/server install shows up the same way a purchase return does.
+  ///
+  /// [getSalesReturnHistory] above only sees the return-document shape and is
+  /// therefore empty on standalone installs; prefer this method for any
+  /// user-facing "list the returns" view.
+  Future<List<SalesReturnHistoryEntry>> getSalesReturnHistoryEntries({
+    required DateTime fromDate,
+    required DateTime toDate,
+    Set<int>? allowedBranchIds,
+  });
+
   /// Get purchase return history
   ///
   /// [allowedBranchIds] — authoritative branch-scope cap (Spec 151 Track-3):

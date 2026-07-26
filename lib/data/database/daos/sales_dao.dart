@@ -39,6 +39,59 @@ String localReturnLinkNote(int originalInvoiceId, {String? originalGlobalId}) {
   return '$base|gid:$originalGlobalId';
 }
 
+/// صف واحد في «سجل مردودات المبيعات».
+///
+/// A sales return is persisted in one of two mutually exclusive shapes (see
+/// the doc on [SalesDao.getReturnedAmountsForInvoices]): either as a separate
+/// `sale_type='return'` invoice row (server API / mirror cache / POS), or as a
+/// status flip on the ORIGINAL invoice plus `safe_transactions` rows (the
+/// standalone path that the sales-returns SCREEN itself runs). This entry
+/// normalises both so the UI does not have to care which one it is looking at.
+class SalesReturnHistoryEntry {
+  /// The row to display — the return document (shape B) or the flipped
+  /// original (shape A).
+  final SalesInvoiceData invoice;
+
+  /// The id to pass to `getSalesReturnItemDetails` / reprint helpers. Always
+  /// the ORIGINAL invoice's local id, because that is what
+  /// `stock_movements.reference_id` and `safe_transactions.reference_id` hold.
+  final int originalInvoiceId;
+
+  /// The ORIGINAL invoice row, when it is resolvable locally. This — not
+  /// [invoice] — is what `cancelSalesReturn` must be handed: it reverses stock
+  /// movements, safe transactions and JEs keyed on the ORIGINAL invoice's id
+  /// and resets that invoice's status. Null only when the return document's
+  /// link is unresolvable (a POS quick-return has no original at all).
+  final SalesInvoiceData? originalInvoice;
+
+  /// The original invoice's human number, for the list title.
+  final String originalInvoiceNumber;
+
+  /// The amount actually refunded — never the original invoice's total.
+  final double returnAmount;
+
+  /// The original invoice's total, shown alongside [returnAmount] the same way
+  /// the purchase-returns history does.
+  final double originalInvoiceTotal;
+
+  /// `true` when the whole invoice was returned (`status='returned'`).
+  final bool isFullReturn;
+
+  /// `true` when [invoice] is a standalone return document (shape B).
+  final bool isReturnDocument;
+
+  const SalesReturnHistoryEntry({
+    required this.invoice,
+    required this.originalInvoiceId,
+    required this.originalInvoice,
+    required this.originalInvoiceNumber,
+    required this.returnAmount,
+    required this.originalInvoiceTotal,
+    required this.isFullReturn,
+    required this.isReturnDocument,
+  });
+}
+
 /// ح-2 + البند 2 — نتيجة تجميع بطاقات شاشة فواتير المبيعات، محسوبة في SQL.
 class SalesInvoiceSummary {
   /// عدد فواتير البيع **المطابقة** (لا المحمَّلة على الشاشة).
@@ -488,6 +541,191 @@ extension SalesDao on AppDatabase {
       ..limit(limit, offset: offset);
 
     return query.get();
+  }
+
+  /// «سجل مردودات المبيعات» — every sales return in the window, whichever of
+  /// the two storage shapes it was written in.
+  ///
+  /// Why this exists on top of [getSalesReturns]: that query matches only
+  /// `sale_type='return' OR total < 0`, i.e. shape B (a separate return
+  /// DOCUMENT, written by the server API handler, the client mirror cache and
+  /// the POS quick-return). The sales-returns SCREEN's own standalone path
+  /// (`processSalesReturn`) writes shape A instead — it flips the ORIGINAL
+  /// invoice to `returned` / `partial_return` and records the refund in
+  /// `safe_transactions(reference_type='sales_return')` — and creates no
+  /// return document at all. So on a standalone/server install the history
+  /// dialog fed by [getSalesReturns] was always empty, while the purchases
+  /// dialog (which keys off the ORIGINAL invoice's status) listed everything.
+  /// This method matches both shapes, which is the parity the purchases side
+  /// has had all along.
+  ///
+  /// Dedup: when a return document exists, its original has ALSO been flipped
+  /// (both the server handler and the mirror path do that), so the original is
+  /// dropped from the result — otherwise every client-mode return would be
+  /// listed twice. The link is the `notes` text written by
+  /// [localReturnLinkNote], resolved by `|gid:` first and by the raw id only
+  /// for rows written before that format — same precedence as
+  /// [getReturnedAmountsForInvoices].
+  ///
+  /// [allowedBranchIds] follows the Spec 151 Track-3 contract: null = no cap,
+  /// {} = fail-closed, {ids} = those branches OR NULL-branch rows.
+  Future<List<SalesReturnHistoryEntry>> getSalesReturnHistoryEntries(
+    DateTime startDate,
+    DateTime endDate, {
+    int limit = 500,
+    Set<int>? allowedBranchIds,
+  }) async {
+    final start = DateTime(startDate.year, startDate.month, startDate.day);
+    final end = DateTime(
+      endDate.year,
+      endDate.month,
+      endDate.day,
+    ).add(const Duration(days: 1));
+
+    void applyBranchCap(SimpleSelectStatement<$SalesInvoicesTable, SalesInvoiceData> q) {
+      if (allowedBranchIds == null) return;
+      if (allowedBranchIds.isEmpty) {
+        q.where((s) => s.branchId.isIn(const <int>[]));
+      } else {
+        q.where((s) => s.branchId.isIn(allowedBranchIds) | s.branchId.isNull());
+      }
+    }
+
+    // ── Shape B: standalone return documents ────────────────────────────────
+    final docQuery = select(salesInvoices)
+      ..where(
+        (s) =>
+            s.invoiceDate.isBetween(Variable(start), Variable(end)) &
+            s.isDeleted.equals(false) &
+            (s.saleType.equals('return') | s.total.isSmallerThanValue(0)),
+      );
+    applyBranchCap(docQuery);
+    docQuery
+      ..orderBy([(s) => OrderingTerm.desc(s.createdAt)])
+      ..limit(limit);
+    final docs = await docQuery.get();
+
+    // ── Shape A: originals flipped by a return ──────────────────────────────
+    final originalQuery = select(salesInvoices)
+      ..where(
+        (s) =>
+            s.invoiceDate.isBetween(Variable(start), Variable(end)) &
+            s.isDeleted.equals(false) &
+            s.status.isIn(const ['returned', 'partial_return']) &
+            (s.saleType.equals('return').not() | s.saleType.isNull()),
+      );
+    applyBranchCap(originalQuery);
+    originalQuery
+      ..orderBy([(s) => OrderingTerm.desc(s.createdAt)])
+      ..limit(limit);
+    final originals = await originalQuery.get();
+
+    // Resolve each return document's original. `|gid:` wins because the numeric
+    // id is only meaningful in the store that wrote it (see localReturnLinkNote).
+    final gids = <String>{};
+    for (final d in docs) {
+      final gid = _originalGidFromNote(d.notes);
+      if (gid != null) gids.add(gid);
+    }
+    final gidToLocalId = <String, int>{};
+    if (gids.isNotEmpty) {
+      final rows = await (select(salesInvoices)
+            ..where((s) => s.globalId.isIn(gids)))
+          .get();
+      for (final r in rows) {
+        final g = r.globalId;
+        if (g != null) gidToLocalId[g] = r.id;
+      }
+    }
+
+    final byId = {for (final o in originals) o.id: o};
+    final linkedOriginalIds = <int>{};
+    final docOriginalId = <int, int?>{};
+    for (final d in docs) {
+      final gid = _originalGidFromNote(d.notes);
+      final resolved = (gid != null ? gidToLocalId[gid] : null) ??
+          _originalIdFromNote(d.notes);
+      docOriginalId[d.id] = resolved;
+      if (resolved != null) linkedOriginalIds.add(resolved);
+    }
+
+    // A linked original may sit OUTSIDE the window (a June sale returned in
+    // July) or carry an un-flipped status, so it won't be in `originals`.
+    // Fetch the stragglers — the cancel/reprint actions need that row.
+    final missingOriginalIds =
+        linkedOriginalIds.where((id) => !byId.containsKey(id)).toList();
+    if (missingOriginalIds.isNotEmpty) {
+      final extra = await (select(salesInvoices)
+            ..where((s) => s.id.isIn(missingOriginalIds)))
+          .get();
+      for (final e in extra) {
+        byId[e.id] = e;
+      }
+    }
+
+    // Actual refund per ORIGINAL invoice, from both persisted sources.
+    // Drop originals already represented by a return document, and any row
+    // that landed in BOTH lists (a legacy negative-total row whose status was
+    // also flipped) — either would otherwise be listed twice.
+    final docIds = {for (final d in docs) d.id};
+    final unlinkedOriginals = originals
+        .where((o) => !linkedOriginalIds.contains(o.id) && !docIds.contains(o.id))
+        .toList();
+    final amounts = await getReturnedAmountsForInvoices(
+      unlinkedOriginals.map((o) => o.id).toList(),
+    );
+
+    final entries = <SalesReturnHistoryEntry>[
+      for (final d in docs)
+        () {
+          final origId = docOriginalId[d.id];
+          final orig = origId != null ? byId[origId] : null;
+          return SalesReturnHistoryEntry(
+            invoice: d,
+            originalInvoiceId: origId ?? d.id,
+            originalInvoice: orig,
+            originalInvoiceNumber: orig?.invoiceNumber ?? d.invoiceNumber,
+            returnAmount: d.total.abs(),
+            originalInvoiceTotal: orig?.total ?? d.total.abs(),
+            isFullReturn: orig?.status == 'returned',
+            isReturnDocument: true,
+          );
+        }(),
+      for (final o in unlinkedOriginals)
+        SalesReturnHistoryEntry(
+          invoice: o,
+          originalInvoiceId: o.id,
+          originalInvoice: o,
+          originalInvoiceNumber: o.invoiceNumber,
+          returnAmount: amounts[o.id] ?? 0.0,
+          originalInvoiceTotal: o.total,
+          isFullReturn: o.status == 'returned',
+          isReturnDocument: false,
+        ),
+    ];
+
+    entries.sort((a, b) => b.invoice.createdAt.compareTo(a.invoice.createdAt));
+    return entries.length > limit ? entries.sublist(0, limit) : entries;
+  }
+
+  /// `'Return for invoice #12|gid:<uuid>'` → `<uuid>`; null when absent.
+  static String? _originalGidFromNote(String? notes) {
+    if (notes == null) return null;
+    final i = notes.indexOf('|gid:');
+    if (i < 0) return null;
+    final gid = notes.substring(i + 5).trim();
+    return gid.isEmpty ? null : gid;
+  }
+
+  /// `'Return for invoice #12|gid:…'` → `12`; null when the note doesn't
+  /// follow the [localReturnLinkNote] format (e.g. a POS quick-return, which
+  /// has no original at all).
+  static int? _originalIdFromNote(String? notes) {
+    if (notes == null || !notes.startsWith('Return for invoice #')) return null;
+    var tail = notes.substring('Return for invoice #'.length);
+    final bar = tail.indexOf('|');
+    if (bar >= 0) tail = tail.substring(0, bar);
+    return int.tryParse(tail.trim());
   }
 
   /// Helper to resolve cost center and its children (copied/shared from SalesAnalyticsDao pattern)
