@@ -24,6 +24,9 @@ class ApiSessionToken {
   /// Header the client sends the opaque token in (shelf lowercases lookups).
   static const String headerName = 'x-session-token';
 
+  // ⚠ ملح تشفير — ثابت حرفي بشكل مقصود. **ممنوع** يتحول لـ `Brand.name` أو
+  // أي قيمة مرتبطة بالعلامة: مفتاح التوقيع مشتق منه، فتغييره بيبطّل كل
+  // جلسات المستخدمين القائمة فوراً. يفضل 'UralCash' مهما كانت العلامة.
   static const String _salt = 'UralCash-Session-v1';
   static const Duration _ttl = Duration(days: 30);
 

@@ -15,6 +15,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:ural_erp/l10n/app_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/config/app_config.dart';
+import 'core/config/brand.dart';
 import 'core/config/business_profile_provider.dart';
 import 'core/config/feature_key.dart';
 import 'core/theme/app_theme.dart';
@@ -59,6 +60,14 @@ import 'app_main_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // حارس الهوية — أول حاجة تتنفّذ.
+  //
+  // `String.fromEnvironment` بترجع أي سلسلة من غير تحقق، فغلطة كتابة زي
+  // `--dart-define=APP_BRAND=picops` كانت هتبني بنجاح وتشتغل بهوية UralCash
+  // كاملة — بناء يبان سليم وهو مخلوط. الرمي هنا بيحوّل الغلطة الصامتة دي
+  // لفشل صريح عند أول تشغيل، قبل ما توصل للعميل.
+  Brand.assertKnownBrand();
 
   // Replace Flutter's default error box with a readable Arabic card that
   // swaps in for ONLY the widget that failed, leaving the rest of the screen

@@ -1,3 +1,5 @@
+import 'brand.dart';
+
 /// Distribution flavor used for packaging, branding, and default profile
 /// selection.
 enum AppFlavor {
@@ -21,23 +23,29 @@ extension AppFlavorX on AppFlavor {
         AppFlavor.commercial => 'commercial',
       };
 
+  /// الاسم الظاهر = اسم العلامة + لاحقة الـ flavor.
+  ///
+  /// الاسم نفسه بيجي من [Brand] عشان المنتجات المستقلة (UralCash / PicPos)
+  /// تطلع من نفس الكود. لـ `Brand.name == 'UralCash'` الناتج مطابق حرف بحرف
+  /// للسلاسل اللي كانت مكتوبة صراحةً هنا — مثبَّت في
+  /// `test/unit/brand_isolation_test.dart`.
   String get appName => switch (this) {
-        AppFlavor.unified => 'UralCash',
-        AppFlavor.restaurant => 'UralCash Restaurant',
-        AppFlavor.cafe => 'UralCash Cafe',
-        AppFlavor.supermarket => 'UralCash Market',
-        AppFlavor.supermarketPro => 'UralCash Market Pro',
-        AppFlavor.supermarketPlus => 'UralCash Market Plus',
-        AppFlavor.commercial => 'UralCash Commercial',
+        AppFlavor.unified => Brand.name,
+        AppFlavor.restaurant => '${Brand.name} Restaurant',
+        AppFlavor.cafe => '${Brand.name} Cafe',
+        AppFlavor.supermarket => '${Brand.name} Market',
+        AppFlavor.supermarketPro => '${Brand.name} Market Pro',
+        AppFlavor.supermarketPlus => '${Brand.name} Market Plus',
+        AppFlavor.commercial => '${Brand.name} Commercial',
       };
 
   String get appNameAr => switch (this) {
-        AppFlavor.unified => 'يورال كاش',
-        AppFlavor.restaurant => 'يورال كاش - المطاعم',
-        AppFlavor.cafe => 'يورال كاش - الكافيهات',
-        AppFlavor.supermarket => 'يورال كاش - السوبرماركت',
-        AppFlavor.supermarketPro => 'يورال كاش - السوبرماركت برو',
-        AppFlavor.supermarketPlus => 'يورال كاش - السوبرماركت بلس',
-        AppFlavor.commercial => 'يورال كاش - التجاري',
+        AppFlavor.unified => Brand.nameAr,
+        AppFlavor.restaurant => '${Brand.nameAr} - المطاعم',
+        AppFlavor.cafe => '${Brand.nameAr} - الكافيهات',
+        AppFlavor.supermarket => '${Brand.nameAr} - السوبرماركت',
+        AppFlavor.supermarketPro => '${Brand.nameAr} - السوبرماركت برو',
+        AppFlavor.supermarketPlus => '${Brand.nameAr} - السوبرماركت بلس',
+        AppFlavor.commercial => '${Brand.nameAr} - التجاري',
       };
 }

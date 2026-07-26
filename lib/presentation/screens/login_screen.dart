@@ -7,6 +7,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:async' show unawaited;
 import 'dart:io';
+import '../../core/config/brand.dart';
 import '../../core/logging/diagnostic_logger.dart';
 import '../../core/networking/sync_failure_class.dart';
 import '../../core/networking/sync_retry_policy.dart';
@@ -615,12 +616,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(14),
-              child: Image.asset('logo.PNG', fit: BoxFit.contain),
+              child: Image.asset(Brand.logoAsset, fit: BoxFit.contain),
             ),
           ),
           const SizedBox(height: 18),
           const Text(
-            'UralCash',
+            Brand.name,
             style: TextStyle(
               fontSize: 30,
               fontWeight: FontWeight.bold,

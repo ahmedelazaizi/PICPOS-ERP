@@ -4,32 +4,28 @@ import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import '../../core/config/app_config.dart';
+import '../../core/config/brand.dart';
 import '../../services/security_service.dart';
 import 'package:drift_postgres/drift_postgres.dart';
 import 'package:postgres/postgres.dart' as pg;
 import 'pg_config.dart';
 import 'pg_compat_sql.dart';
 
-/// Get database filename based on app flavor
-/// This prevents data conflicts when multiple apps are installed
-String getDatabaseFileName() {
-  switch (AppConfig.flavor) {
-    case AppFlavor.restaurant:
-      return 'uralcash_restaurant.db';
-    case AppFlavor.cafe:
-      return 'uralcash_cafe.db';
-    case AppFlavor.supermarket:
-      return 'uralcash_supermarket.db';
-    case AppFlavor.supermarketPro:
-      return 'uralcash_supermarket_pro.db';
-    case AppFlavor.supermarketPlus:
-      return 'uralcash_supermarket_plus.db';
-    case AppFlavor.commercial:
-      return 'uralcash_commercial.db';
-    case AppFlavor.unified:
-      return 'uralcash_unified.db';
-  }
-}
+/// اسم ملف الداتابيز = `<العلامة>_<flavor>.db`.
+///
+/// بيمنع تصادم البيانات لما يتثبت أكتر من منتج على نفس الجهاز — سواء
+/// flavors مختلفة من نفس العلامة، أو علامتين مستقلتين (UralCash / PicPos).
+///
+/// **حرج:** لـ UralCash لازم الناتج يفضل مطابق حرف بحرف للأسماء القديمة،
+/// وإلا كل تركيب قائم هيدوّر على ملف مش موجود ويبدأ بداتابيز فاضية.
+/// `Brand.dbPrefix` = `'uralcash'` و `flavor.code` بيدّي نفس اللاحقة
+/// القديمة لكل الـ ٧ flavors — مثبَّت في `test/unit/brand_isolation_test.dart`.
+String getDatabaseFileName() => databaseFileNameFor(AppConfig.flavor);
+
+/// نسخة قابلة للاختبار من [getDatabaseFileName] — بتاخد الـ flavor كمُعامل
+/// بدل ما تقراه من الإعداد العام، عشان الاختبار يغطي الـ ٧ في مرة واحدة.
+String databaseFileNameFor(AppFlavor flavor) =>
+    '${Brand.dbPrefix}_${flavor.code}.db';
 
 QueryExecutor openConnection() {
   return LazyDatabase(() async {

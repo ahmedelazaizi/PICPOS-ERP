@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:path/path.dart' as p;
 import '../../core/config/app_config.dart';
+import '../../core/config/brand.dart';
 import '../../core/config/business_profile_provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/backup_service.dart';
@@ -618,7 +619,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(8),
-                            child: Image.asset('logo.PNG', fit: BoxFit.contain),
+                            child: Image.asset(Brand.logoAsset, fit: BoxFit.contain),
                           ),
                         ),
                         if (_isExpanded) ...[

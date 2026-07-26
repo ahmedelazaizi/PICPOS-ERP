@@ -27,6 +27,12 @@ target_compile_definitions(${BINARY_NAME} PRIVATE "FLUTTER_VERSION_MINOR=${FLUTT
 target_compile_definitions(${BINARY_NAME} PRIVATE "FLUTTER_VERSION_PATCH=${FLUTTER_VERSION_PATCH}")
 target_compile_definitions(${BINARY_NAME} PRIVATE "FLUTTER_VERSION_BUILD=${FLUTTER_VERSION_BUILD}")
 
+# هوية المنتج — بتوصل لـ main.cpp (عنوان النافذة) و Runner.rc (بيانات ملف
+# الـ exe). القيم نفسها بتتحدد في windows/CMakeLists.txt من متغيرات البيئة.
+target_compile_definitions(${BINARY_NAME} PRIVATE "BRAND_BINARY_NAME=\"${BINARY_NAME}\"")
+target_compile_definitions(${BINARY_NAME} PRIVATE "BRAND_PRODUCT_NAME=\"${BRAND_PRODUCT_NAME}\"")
+target_compile_definitions(${BINARY_NAME} PRIVATE "BRAND_COMPANY_NAME=\"${BRAND_COMPANY_NAME}\"")
+
 # Disable Windows macros that collide with C++ standard library functions.
 target_compile_definitions(${BINARY_NAME} PRIVATE "NOMINMAX")
 

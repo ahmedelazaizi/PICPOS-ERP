@@ -112,7 +112,20 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
+    # لوجو UralCash — في الجذر لأسباب تاريخية؛ الكود بيوصله عبر
+    # Brand.logoAsset مش بسلسلة مكتوبة.
     - logo.PNG
+    # أصول العلامات المستقلة — ملفات مفردة، **مش** المجلد.
+    #
+    # `assets/brand/picpos/` كان بيحزم `app_icon.ico` (٣٦٤ ك.ب) كذلك، وهي
+    # مطلوبة وقت البناء فقط (مورد Win32 من
+    # `windows/runner/resources/app_icon_picpos.ico`) ومالهاش أي استخدام
+    # وقت التشغيل. اللوجو هو الأصل الوحيد اللي الكود بيقراه.
+    #
+    # ملاحظة: الحزم بيتحدد من pubspec وقت البناء، فأصول كل العلامات بتتحزم
+    # في كل بناء. اللي بيتعرض بيتحدد من Brand.logoAsset — مفيش خلط بصري،
+    # بس كل علامة جديدة بتزوّد بضع كيلوبايت على كل المنتجات.
+    - assets/brand/picpos/logo.png
     - assets/invoice_templates/
     - assets/fonts/Cairo-Regular.ttf
     - assets/audio/

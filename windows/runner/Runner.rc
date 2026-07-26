@@ -72,6 +72,23 @@ IDI_APP_ICON            ICON                    "resources\\app_icon.ico"
 #define VERSION_AS_STRING "1.0.0"
 #endif
 
+// ── هوية المنتج ───────────────────────────────────────────────────────────
+// بتيجي من CMake (windows/CMakeLists.txt) اللي بيقراها من متغيرات البيئة
+// اللي سكربت بناء العلامة بيظبطها. القيم دي هي اللي المستخدم بيشوفها في
+// «خصائص الملف» على الـ exe، فلو فضلت ثابتة كان PicPos هيوزّع ملف مكتوب
+// عليه UralCash — نفس نوع الخلط اللي الفصل ده موجود يمنعه.
+#if !defined(BRAND_BINARY_NAME)
+#define BRAND_BINARY_NAME "UralCash"
+#endif
+#if !defined(BRAND_PRODUCT_NAME)
+#define BRAND_PRODUCT_NAME "UralCash ERP"
+#endif
+#if !defined(BRAND_COMPANY_NAME)
+#define BRAND_COMPANY_NAME "Monexia"
+#endif
+#define BRAND_EXE_NAME BRAND_BINARY_NAME ".exe"
+#define BRAND_COPYRIGHT "Copyright (C) 2026 " BRAND_COMPANY_NAME ". All rights reserved."
+
 VS_VERSION_INFO VERSIONINFO
  FILEVERSION VERSION_AS_NUMBER
  PRODUCTVERSION VERSION_AS_NUMBER
@@ -89,13 +106,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "Monexia" "\0"
-            VALUE "FileDescription", "UralCash ERP" "\0"
+            VALUE "CompanyName", BRAND_COMPANY_NAME "\0"
+            VALUE "FileDescription", BRAND_PRODUCT_NAME "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "UralCash" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 Monexia. All rights reserved." "\0"
-            VALUE "OriginalFilename", "UralCash.exe" "\0"
-            VALUE "ProductName", "UralCash ERP" "\0"
+            VALUE "InternalName", BRAND_BINARY_NAME "\0"
+            VALUE "LegalCopyright", BRAND_COPYRIGHT "\0"
+            VALUE "OriginalFilename", BRAND_EXE_NAME "\0"
+            VALUE "ProductName", BRAND_PRODUCT_NAME "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

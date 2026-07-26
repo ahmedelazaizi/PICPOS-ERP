@@ -2,9 +2,41 @@
 cmake_minimum_required(VERSION 3.14)
 project(ural_erp LANGUAGES CXX)
 
-# The name of the executable created for the application. Change this to change
-# the on-disk name of your application.
-set(BINARY_NAME "UralCash")
+# ── هوية المنتج ────────────────────────────────────────────────────────────
+#
+# المشروع بيطلّع أكتر من منتج مستقل من نفس الكود (UralCash / PicPos). القيم
+# دي بتحدد اسم الملف التنفيذي وبيانات ملف الـ exe، وبتتقري من **متغيرات
+# البيئة** اللي سكربت بناء العلامة بيظبطها قبل ما ينادي flutter build.
+#
+# ليه متغيرات بيئة وليه `--dart-define`؟ لأن `--dart-define` بيوصل لكود Dart
+# بس ومبيوصلش لـ CMake خالص، والحاجات دي بتتحدد وقت الترجمة الأصلية.
+#
+# الافتراضي UralCash عشان أي بناء قديم أو تشغيل من الـ IDE يفضل شغال زي ما هو.
+#
+# ⚠ الـ CMake cache بيحتفظ بالقيم دي. تبديل العلامة في نفس مجلد البناء بيخلّي
+#   ناتج مختلط — عشان كده سكربتات البناء بتمسح مجلد البناء الأول.
+if(DEFINED ENV{BRAND_BINARY_NAME})
+  set(BINARY_NAME "$ENV{BRAND_BINARY_NAME}")
+else()
+  set(BINARY_NAME "UralCash")
+endif()
+
+if(DEFINED ENV{BRAND_PRODUCT_NAME})
+  set(BRAND_PRODUCT_NAME "$ENV{BRAND_PRODUCT_NAME}")
+else()
+  set(BRAND_PRODUCT_NAME "UralCash ERP")
+endif()
+
+# الكيان القانوني الظاهر في «خصائص الملف» وسطر حقوق النشر. لازم يكون الاسم
+# المسجَّل للجهة اللي بتوزّع المنتج — منتج بيتباع لعميل تحت كيان مختلف
+# مينفعش يحمل اسم كيان تاني.
+if(DEFINED ENV{BRAND_COMPANY_NAME})
+  set(BRAND_COMPANY_NAME "$ENV{BRAND_COMPANY_NAME}")
+else()
+  set(BRAND_COMPANY_NAME "Monexia")
+endif()
+
+message(STATUS "Brand: BINARY_NAME=${BINARY_NAME} PRODUCT_NAME=${BRAND_PRODUCT_NAME} COMPANY=${BRAND_COMPANY_NAME}")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.

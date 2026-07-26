@@ -11,6 +11,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import '../../core/config/brand.dart';
 import '../../core/logging/diagnostic_logger.dart';
 import '../../core/theme/app_colors.dart';
 
@@ -991,12 +992,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: Image.asset('logo.PNG', fit: BoxFit.contain),
+                child: Image.asset(Brand.logoAsset, fit: BoxFit.contain),
               ),
             ),
             const SizedBox(height: 12),
             const Text(
-              'UralCash',
+              Brand.name,
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,

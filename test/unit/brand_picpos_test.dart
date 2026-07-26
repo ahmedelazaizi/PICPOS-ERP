@@ -1,0 +1,90 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// PicPos — التحقق من فرع العلامة الثانية
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// الملف ده **بيتخطّى** في التشغيل العادي، وبيشتغل بس مع:
+//
+//   flutter test --dart-define=APP_BRAND=picpos test/unit/brand_picpos_test.dart
+//
+// وده أمر مدمج في سكربت بناء PicPos، فأي بناء للعلامة بيتحقق من هويتها قبل
+// ما يطلع. الغرض إثبات إن الـ dart-define بيوصل فعلاً وإن كل قيمة هوية
+// بتتبدّل — مش بس الاسم.
+//
+// اختبارات UralCash في `brand_isolation_test.dart`.
+// ═══════════════════════════════════════════════════════════════════════════
+
+import 'package:flutter/material.dart' show Color;
+import 'package:flutter_test/flutter_test.dart';
+import 'package:ural_erp/core/config/app_config.dart';
+import 'package:ural_erp/core/config/brand.dart';
+import 'package:ural_erp/core/constants/app_constants.dart';
+import 'package:ural_erp/core/theme/app_colors.dart';
+import 'package:ural_erp/data/database/connection_io.dart';
+
+void main() {
+  // مفيش `skip` على مستوى الملف في flutter_test، فالبوابة على مستوى الجروب.
+  const skipReason =
+      Brand.isPicPos ? null : 'يشتغل فقط مع --dart-define=APP_BRAND=picpos';
+
+  group('PicPos', () {
+    test('الـ dart-define وصل والعلامة معروفة', () {
+      expect(Brand.id, 'picpos');
+      expect(Brand.isPicPos, isTrue);
+      expect(Brand.isUralCash, isFalse);
+      expect(Brand.isKnown, isTrue);
+      expect(Brand.assertKnownBrand, returnsNormally);
+    });
+
+    test('الاسم اتبدّل في كل المصادر — مفيش UralCash متسرّب', () {
+      expect(Brand.name, 'PicPos');
+      expect(Brand.nameAr, 'بيك بوس');
+      expect(AppConstants.appName, 'PicPos');
+      expect(AppConfig.appName, isNot(contains('UralCash')));
+      expect(AppConfig.appNameAr, isNot(contains('يورال')));
+    });
+
+    test('اللوجو من مجلد العلامة، مش لوجو UralCash', () {
+      expect(Brand.logoAsset, 'assets/brand/picpos/logo.png');
+      expect(Brand.logoAsset, isNot('logo.PNG'));
+    });
+
+    test('لوحة الألوان اتبدّلت للأزرق ومفيش تركواز متبقّي', () {
+      // مسحوبة من ملف اللوجو نفسه.
+      expect(AppColors.primary, const Color(0xFF0250D3));
+      expect(AppColors.primaryDark, const Color(0xFF012258));
+
+      // ألوان UralCash التركوازية ما تظهرش في أي فتحة مرتبطة بالعلامة.
+      const uralTeal = [
+        Color(0xFF2B737F),
+        Color(0xFF134657),
+        Color(0xFF469CA5),
+        Color(0xFF1E4A5A),
+      ];
+      const brandSlots = [
+        AppColors.primary,
+        AppColors.primaryDark,
+        AppColors.primaryLight,
+        AppColors.info,
+        AppColors.surfaceDark,
+        AppColors.cardDark,
+        AppColors.borderDark,
+      ];
+      for (final slot in brandSlots) {
+        expect(uralTeal, isNot(contains(slot)),
+            reason: 'لون تركواز من UralCash متسرّب في هوية PicPos');
+      }
+    });
+
+    test('البيانات معزولة — مفيش ملف داتابيز مشترك مع UralCash', () {
+      expect(Brand.dbPrefix, 'picpos');
+      expect(Brand.dataFolderName, 'PicPos');
+      for (final flavor in AppFlavor.values) {
+        final name = databaseFileNameFor(flavor);
+        expect(name, startsWith('picpos_'),
+            reason: 'كل flavor لازم يكتب في ملف خاص بـ PicPos');
+        expect(name, isNot(startsWith('uralcash')),
+            reason: 'تصادم مع بيانات UralCash على نفس الجهاز');
+      }
+    });
+  }, skip: skipReason);
+}

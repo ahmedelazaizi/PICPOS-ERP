@@ -1,9 +1,15 @@
+import '../config/brand.dart';
+
 /// Application-wide constants
 class AppConstants {
   AppConstants._();
 
   // App Info — ISS-CODE-02: populated at startup by AppVersionService.initialize()
-  static const String appName = 'UralCash';
+  //
+  // الاسم بيجي من [Brand] عشان يفضل مصدر واحد للحقيقة عبر المنتجات
+  // المستقلة. بيفضل `const` — ده شرط، مش تفضيل: قيم الهوية مستخدمة جوّه
+  // سياقات `const` في مئات المواضع.
+  static const String appName = Brand.name;
   static String appVersion = '1.0.0'; // updated from pubspec via package_info_plus
   static String appBuildNumber = '1'; // updated from pubspec via package_info_plus
 

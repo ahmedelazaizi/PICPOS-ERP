@@ -31,6 +31,10 @@ class ApiAuthMiddleware {
   /// Called once at server startup. The token is derived from the machine's
   /// unique identifier so it's stable across restarts but unique per machine.
   static String generateToken(String machineSeed) {
+    // ⚠ ملح تشفير — ثابت حرفي بشكل مقصود. **ممنوع** يتحول لـ `Brand.name`
+    // أو أي قيمة مرتبطة بالعلامة: التوكن مشتق منه، فتغييره بيبطّل كل توكنز
+    // الأجهزة المقترنة القائمة وتحتاج إقران من جديد. يفضل 'UralCash' مهما
+    // كانت العلامة اللي بتتبني.
     const salt = 'UralCash-API-v1';
     final bytes = utf8.encode('$machineSeed:$salt');
     final digest = sha256.convert(bytes);
