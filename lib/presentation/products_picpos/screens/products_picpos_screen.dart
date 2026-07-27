@@ -108,12 +108,15 @@ class _ProductsPicposScreenState extends ConsumerState<ProductsPicposScreen> {
     final selectedCategoryId =
         ref.watch(productsControllerProvider.select((s) => s.selectedCategoryId));
     final cats = ref.watch(visibleCategoriesProvider).value ?? const [];
-    final categoryLabel = selectedCategoryId == null
-        ? 'كل التصنيفات'
-        : cats
-            .where((c) => c.id == selectedCategoryId)
-            .map((c) => c.name)
-            .fold<String?>(null, (_, n) => n) ?? 'تصنيف';
+    String categoryName = 'تصنيف';
+    for (final c in cats) {
+      if (c.id == selectedCategoryId) {
+        categoryName = c.name;
+        break;
+      }
+    }
+    final categoryLabel =
+        selectedCategoryId == null ? 'كل التصنيفات' : categoryName;
 
     return AppShortcuts(
       searchFocusNode: _searchFocusNode,

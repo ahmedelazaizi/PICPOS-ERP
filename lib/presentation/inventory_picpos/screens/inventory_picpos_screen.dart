@@ -378,11 +378,7 @@ class _InventoryPicposScreenState extends ConsumerState<InventoryPicposScreen>
         _buildMovementFilters(productsAsync),
         const SizedBox(height: 12),
         Expanded(
-          child: Card(
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
+          child: PicPosContentCard(
             child: StockMovementsTable(
               productNameMap: productNameMap,
               movementsAsync: movementsAsync.when(
