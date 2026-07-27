@@ -1,0 +1,1175 @@
+From a1dba85836642202c61203798cbe42e4a8554af1 Mon Sep 17 00:00:00 2001
+From: Ahmed Sola <ahmedsola27@gmail.com>
+Date: Mon, 27 Jul 2026 11:21:30 +0300
+Subject: [PATCH 1/2] =?UTF-8?q?fix(engine):=20=D8=AB=D9=85=D8=A7=D9=86?=
+ =?UTF-8?q?=D9=8A=D8=A9=20=D8=A8=D8=A7=D8=AC=D8=A7=D8=AA=20=D9=81=D9=8A=20?=
+ =?UTF-8?q?=D8=A7=D9=84=D9=86=D8=B3=D8=AE=20=D8=A7=D9=84=D8=A7=D8=AD=D8=AA?=
+ =?UTF-8?q?=D9=8A=D8=A7=D8=B7=D9=8A=20=D9=88=D8=A7=D9=84=D8=A7=D8=B3=D8=AA?=
+ =?UTF-8?q?=D8=B9=D8=A7=D8=AF=D8=A9=20=D9=88=D8=A7=D9=84=D9=85=D9=8A=D8=B2?=
+ =?UTF-8?q?=D8=A7=D9=86=20=D9=88=D8=A7=D9=84=D8=AA=D9=82=D8=A7=D8=B1=D9=8A?=
+ =?UTF-8?q?=D8=B1?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+كلها في ملفات محرك مشتركة — يعني موجودة عند UralCash بنفس الشكل.
+الكوميت ده معمول عشان ينتقل بـ format-patch من غير تعديل (مفيش فيه
+أي إشارة لثوابت العلامة).
+
+اتكشفوا أثناء التحقق من أدوات تصفير البيانات، وأربعة منهم كان مستحيل
+يبانوا من غير تشغيل فعلي.
+
+── ١) النسخ الاحتياطية مش مفلترة باسم الداتابيز ─────────────────────
+مجلد `Documents/backups` مشترك بين كل المنتجات على نفس الجهاز، واللي
+بيفرّق بينهم اسم الملف بس. وكل الدوال كانت بتقرا المجلد بلا فلترة،
+فأربع حاجات كانت مكسورة في نفس الوقت:
+
+  - `_cleanOldBackups` بيسيب آخر ٧ ملفات في المجلد كله، فسبع عمليات
+    على منتج بتمسح نسخ المنتج التاني — ومنها النسخة اللي أدوات التصفير
+    بتعتبرها طريق الرجوع الوحيد.
+  - `autoBackupOnStartup` بيتخطّى النسخة لو فيه واحدة أحدث من ٢٤ ساعة،
+    فنسخة منتج كانت بتمنع التاني من أخذ نسخته.
+  - `exportBackupToPath` ممكن يصدّر نسخة منتج تاني.
+  - `getBackupStats` بيعدّ نسخ مش بتاعته.
+
+الفلترة بقت في `listBackups` و`_cleanOldBackups` باسم ملف الداتابيز
+الحالي. الصيغة ثابتة من أول كوميت، فنسخ العملاء القديمة تفضل ظاهرة.
+
+── ٢) سباق على اسم النسخة يلغي الحذف عشوائياً ───────────────────────
+اسم النسخة بدقة **ثانية**، و`File.copy` على ويندوز **بيرمي** لو الهدف
+موجود (errno 183) مش بيستبدل. و`autoBackupOnStartup` بيشتغل في مرحلة
+إقلاع مؤجَّلة **متوازية**.
+
+فأي تصفير بعد الإقلاع مباشرة — أو عمليتان ورا بعض — كانت التانية
+بتتلغي بـ «تعذّر إنشاء نسخة احتياطية» بلا سبب، والإعادة بعد ثانية
+بتنجح، فالباج يبان عشوائي. و`createDatabaseBackup` كان بيبلع الاستثناء
+صامتاً فمفيش أثر في اللوج.
+
+الحل بيجرّب أسماء بديلة **بعد** فشل النسخ كمان مش قبله بس — الفحص
+المسبق لوحده مبيحلّش سباق بين مسارين متوازيين. وضاف debugPrint.
+
+── ٣) النسخة بتتاخد من غير تفريغ الـ WAL ────────────────────────────
+الاتصال بيشتغل WAL، والنسخ بينسخ ملف `.db` لوحده. على جهاز تجريبي كان
+الـ WAL ٢ ميجا والداتابيز ١.٨ — يعني ممكن يبقى أكبر منها، وكله برّه
+النسخة.
+
+`createDatabaseBackup` بقى بياخد callback للتفريغ، و`requireCheckpoint`
+بيخلّي فشل التفريغ **يلغي النسخة**. أدوات التصفير بتمرّره true لأن
+نسخة ناقصة عندها معناها إن اللي يرجع أقل من اللي اتحذف. الإقلاع وزرار
+الإعدادات بياخدوا نسخة ناقصة (أحسن من ولا نسخة). نسخة ما قبل الترحيل
+من غير تفريغ عن قصد — إحنا جوّه onUpgrade والاتصال في نص فتحه.
+
+التنفيذ في ملف منفصل `wal_checkpoint.dart` لأن دوال النسخ مالهاش مقبض
+داتابيز، وتمرير AppDatabase ليها بيقفل دورة استيراد.
+
+── ٤) زرار النسخ الاحتياطي بيفشل دايماً ─────────────────────────────
+`backup_restore_widget_io` كان شغال على اسم داتابيز مكتوب بالإيد
+(`cashier_market.db` — اسم من قبل إعادة التسمية)، فالزرار كان بيطلّع
+«قاعدة البيانات غير موجودة» في كل مرة.
+
+── ٥) الاستعادة بتقول «نجحت» وهي ما عملتش حاجة ──────────────────────
+نفس الاسم الوهمي، بس هنا أخطر: الاستعادة كانت بتنسخ النسخة على ملف
+**التطبيق مبيقراهوش**، وتقول «تمت الاستعادة بنجاح» وتطلب إعادة تشغيل.
+حد بيستعيد بعد كارثة كان يفتكر إن بياناته رجعت وهي ما رجعتش. ونسخة ما
+قبل الاستعادة كانت بتتاخد من نفس الملف الوهمي فمفيش حتى شبكة أمان.
+
+الودجت بقت تعدّي من ISettingsRepository — الـ API كان موجود أصلاً،
+وطبقة العرض ممنوعة أصلاً تلمس data/database (الدستور §IV، ويحرسه
+presentation_db_import_guard_test).
+
+وضفت مسح ملفات WAL/SHM بعد الاستبدال في `restoreDatabaseBackup`: من
+غيره أول فتحة بتحاول تعيد تطبيق معاملات داتابيز **تانية** على الملف
+المستعاد.
+
+── ٦) getBackupStats بينادي نفسه ────────────────────────────────────
+`settings_repository_impl.getBackupStats` كان `return getBackupStats()`
+والتعليق بيقول إنه قاصد اللي في connection_io — بس الاسم غير المُسمّى
+بيحلّ لدالة الكلاس. استدعاء لا نهائي و StackOverflowError. الاستيراد
+بقى بـ prefix.
+
+── ٧) أصناف «ميزان بالحبة» بتترحّل للميزان كأنها بالوزن ─────────────
+بلاغ من المختبر: الميزان بيطبع «كيلو» على كل أصناف الميزان.
+
+`scaleType` له أربع قيم، و`weightByPiece` معناها «ميزان بالحبة».
+و`isSoldByWeight` مش صالحة للتفرقة لأن شاشة تعديل الصنف بتضبطها true
+للنوعين. والحساب كان متكرر في ٦ مواضع بتلات صيغ، أربعة منهم غلط.
+
+وأخطر من الطباعة: الباركود المولَّد كان بياخد **بادئة الوزن** بدل بادئة
+السعر، فباركود صنف بالحبة بيتقرا على نقطة البيع كباركود وزن والسعر
+بيتحسب غلط.
+
+بقى دالة واحدة `scaleItemIsSoldByWeight` والستة بينادوها.
+
+── ٨) اسم شركة مثبَّت على رأس ثلاث تقارير ───────────────────────────
+`companyName: 'MONEXIA Market'` في تقارير المبيعات والمخزون والتصنيف —
+اسم علامة تالتة بيتطبع على تقرير العميل مهما كان اسم شركته. الإصلاح
+كان معمول بالفعل في تقرير الخزينة (تعليق GAP-15) واتنسي في التلاتة.
+
+── ٩) بوابة أدوات المطوّر بتقفل بدل ما تفتح ─────────────────────────
+`DeveloperAuthService` بيوثّق إن `--reset-dev-password` مسار تعافي
+و«المطوّر يعيّن كلمة جديدة عند أول دخول». لكن البوابة كانت **بتعطّل
+الخانة والزرار** لما مفيش كلمة مضبوطة، ومفيش أي طريق لتعيين واحدة —
+يعني العلم بيقفل الشاشة بدل ما يفتحها، والحل الوحيد إعادة الويزارد.
+بقى فيه نموذج تعيين كلمة مرور في الحالة دي.
+
+flutter analyze lib: صفر مشاكل.
+flutter test: ٣٢٥١ ناجح · ١٢ متخطّى · ٠ فشل.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+---
+ lib/data/database/connection_io.dart          | 137 ++++++++++++++++--
+ lib/data/database/database.dart               |   1 +
+ lib/data/database/database_migrations.dart    |   6 +
+ lib/data/database/database_startup.dart       |   7 +-
+ lib/data/database/wal_checkpoint.dart         |  55 +++++++
+ .../settings_repository_impl.dart             |  20 ++-
+ lib/main.dart                                 |  16 +-
+ .../screens/categories_screen.dart            |   5 +-
+ .../screens/developer_tools_screen.dart       |  83 +++++++++--
+ .../screens/plu_manager/plu_csv_mixin.dart    |   5 +-
+ .../plu_manager/plu_scale_upload_mixin.dart   |   5 +-
+ .../widgets/product_search_header.dart        |   5 +-
+ .../reports/inventory_report_screen.dart      |   7 +-
+ .../sales_by_classification_report.dart       |   7 +-
+ .../screens/reports/sales_report_screen.dart  |  10 +-
+ .../screens/scale_plu/scale_logic.dart        |   5 +-
+ .../screens/scale_plu/scale_panels.dart       |   5 +-
+ .../settings/backup_restore_widget_io.dart    | 110 ++++++++------
+ lib/services/admin/data_wipe_service.dart     |  16 +-
+ lib/services/label_scale_service.dart         |  48 ++++++
+ 20 files changed, 466 insertions(+), 87 deletions(-)
+ create mode 100644 lib/data/database/wal_checkpoint.dart
+
+diff --git a/lib/data/database/connection_io.dart b/lib/data/database/connection_io.dart
+index ce866e3..a245feb 100644
+--- a/lib/data/database/connection_io.dart
++++ b/lib/data/database/connection_io.dart
+@@ -1,4 +1,5 @@
+ import 'dart:io';
++import 'package:flutter/foundation.dart' show debugPrint;
+ import 'package:drift/drift.dart';
+ import 'package:drift/native.dart';
+ import 'package:path_provider/path_provider.dart';
+@@ -288,15 +289,48 @@ Future<String> getDatabasePath() async {
+   return p.join(dbFolder.path, getDatabaseFileName());
+ }
+ 
++/// دالة بتفرّغ الـ WAL في ملف الداتابيز، وبترجع `true` لو نجحت بالكامل.
++/// التنفيذ في `wal_checkpoint.dart` — بيتبعت كـ callback عشان الملف ده
++/// مبيقدرش يستورد `database.dart` (دورة استيراد، اقرأ التعليق هناك).
++typedef WalCheckpoint = Future<bool> Function();
++
+ /// Create a backup of the database
+ /// Returns the backup file path on success, null on failure
+-Future<String?> createDatabaseBackup() async {
++///
++/// [checkpoint] بيتنفّذ **قبل** النسخ عشان يفرّغ الـ WAL في ملف الداتابيز.
++/// من غيره النسخة بتعكس آخر نقطة تفريغ تلقائية مش الحالة دلوقتي، وممكن
++/// تكون ناقصة كل المعاملات اللي لسه في الـ WAL.
++///
++/// [requireCheckpoint] بيخلّي فشل التفريغ **يلغي النسخة كلها** بدل ما ياخد
++/// نسخة ناقصة. تستخدمه الجهات اللي النسخة عندها هي طريق الرجوع الوحيد —
++/// زي أدوات تصفير البيانات. الباقي بياخد نسخة ناقصة أحسن من ولا نسخة.
++Future<String?> createDatabaseBackup({
++  WalCheckpoint? checkpoint,
++  bool requireCheckpoint = false,
++}) async {
+   try {
+     final dbPath = await getDatabasePath();
+     final dbFile = File(dbPath);
+ 
+     if (!await dbFile.exists()) return null;
+ 
++    if (checkpoint != null) {
++      final flushed = await checkpoint();
++      if (!flushed) {
++        if (requireCheckpoint) {
++          debugPrint(
++            '[BACKUP] WAL checkpoint failed and the caller requires a '
++            'complete snapshot — backup cancelled.',
++          );
++          return null;
++        }
++        debugPrint(
++          '[BACKUP] WAL checkpoint incomplete — the backup may be missing '
++          'the most recent transactions.',
++        );
++      }
++    }
++
+     final dbFolder = await getApplicationDocumentsDirectory();
+     final backupFolder = Directory(p.join(dbFolder.path, 'backups'));
+ 
+@@ -309,16 +343,51 @@ Future<String?> createDatabaseBackup() async {
+         .replaceAll(':', '-')
+         .split('.')
+         .first;
+-    final backupFileName = '${getDatabaseFileName()}_backup_$timestamp.db';
+-    final backupPath = p.join(backupFolder.path, backupFileName);
+-
+-    await dbFile.copy(backupPath);
++    // الطابع الزمني بدقة **ثانية**، و`File.copy` على ويندوز بيرمي
++    // `PathExistsException` (errno 183) لو الهدف موجود — مش بيستبدله. فنسختان
++    // في نفس الثانية كانت التانية فيهم بترمي، و`createDatabaseBackup` بيبلع
++    // الاستثناء ويرجع `null`.
++    //
++    // وde مش نظري: الإقلاع بياخد نسخة تلقائية (`autoBackupOnStartup` في
++    // `database_startup.dart`) في مرحلة **مؤجَّلة بتشتغل بالتوازي**، وأدوات
++    // تصفير البيانات بتاخد نسخة إجبارية قبل كل عملية وبتعتبر `null` سبب كافٍ
++    // **لإلغاء الحذف**. فعملية تصفير بعد الإقلاع مباشرة — أو عمليتان ورا بعض
++    // — كانت التانية بتتلغي برسالة «تعذّر إنشاء نسخة احتياطية» بلا سبب ظاهر،
++    // والإعادة بعد ثانية بتنجح، فالباج يبان عشوائي.
++    //
++    // والفحص قبل النسخ لوحده مش كفاية: النسختان بيتاخدوا من مسارَي تنفيذ
++    // متوازيين، فالاتنين ممكن يشوفوا الاسم فاضي ويحاولوا ينسخوا عليه. عشان
++    // كده الحلقة بتجرّب اسم تاني **بعد** فشل النسخ كمان، مش قبله بس.
++    String? backupPath;
++    for (var attempt = 0; attempt < 5 && backupPath == null; attempt++) {
++      final suffix = attempt == 0 ? '' : '-$attempt';
++      final candidate = p.join(
++        backupFolder.path,
++        '${getDatabaseFileName()}_backup_$timestamp$suffix.db',
++      );
++      if (await File(candidate).exists()) continue;
++      try {
++        await dbFile.copy(candidate);
++        backupPath = candidate;
++      } on PathExistsException {
++        // خسرنا السباق على الاسم ده — نجرّب اللي بعده.
++        continue;
++      }
++    }
++    if (backupPath == null) {
++      debugPrint('[BACKUP] could not find a free backup name for $timestamp');
++      return null;
++    }
+ 
+     // Keep only last 7 backups
+     await _cleanOldBackups(backupFolder.path);
+ 
+     return backupPath;
+-  } catch (e) {
++  } catch (e, st) {
++    // أدوات التصفير بتعتبر `null` هنا سبب كافٍ لإلغاء الحذف، فالمستخدم بيشوف
++    // «تعذّر إنشاء نسخة احتياطية» من غير أي سبب. اللوج ده هو الطريق الوحيد
++    // لمعرفة إيه اللي فشل فعلاً.
++    debugPrint('[BACKUP] createDatabaseBackup failed: $e\n$st');
+     return null;
+   }
+ }
+@@ -331,13 +400,55 @@ Future<bool> restoreDatabaseBackup(String backupPath) async {
+ 
+     final dbPath = await getDatabasePath();
+     await backupFile.copy(dbPath);
++
++    // ملفات WAL/SHM بتاعة الداتابيز القديمة لازم تتشال مع الاستبدال.
++    // الاتصال هنا بيشتغل `PRAGMA journal_mode = WAL`، فلو الملفين دول فضلوا
++    // جنب ملف داتابيز جديد، أول فتحة بتحاول تعيد تطبيق معاملات بتاعة داتابيز
++    // **تانية** على ملف مش بتاعها: يا فساد يا بيانات قديمة بترجع فوق
++    // المستعادة. الاستعادة كانت بتسيبهم مكانهم.
++    for (final sidecar in ['$dbPath-wal', '$dbPath-shm']) {
++      final f = File(sidecar);
++      if (await f.exists()) await f.delete();
++    }
+     return true;
+   } catch (e) {
++    debugPrint('[BACKUP] restoreDatabaseBackup failed: $e');
+     return false;
+   }
+ }
+ 
+-/// List available backup files
++// ═══════════════════════════════════════════════════════════════════════════
++// مجلد `Documents/backups` **مشترك بين كل المنتجات على نفس الجهاز**، لأن
++// `getApplicationDocumentsDirectory()` بيرجع نفس المسار للاتنين. اللي بيفرّق
++// بينهم هو اسم الملف بس: `uralcash_unified.db_backup_…` مقابل
++// `picpos_unified.db_backup_…`.
++//
++// فأي دالة بتقرا المجلد من غير فلترة بتشوف نسخ المنتج التاني كأنها بتاعتها.
++// وده كان بيكسر أربع حاجات في نفس الوقت:
++//
++//   1. `_cleanOldBackups` بيسيب آخر ٧ ملفات في المجلد — فسبع عمليات على
++//      منتج واحد كانت **بتمسح نسخ المنتج التاني**. وأخطر: أدوات تصفير
++//      البيانات بتاخد نسخة إجبارية قبل كل حذف وبتعتبرها طريق الرجوع
++//      الوحيد، والنسخة دي كانت ممكن تتمسح بالعمليات اللي بعدها.
++//   2. `autoBackupOnStartup` بيتخطّى النسخة لو فيه واحدة أحدث من ٢٤ ساعة —
++//      فنسخة UralCash كانت بتمنع PicPos من أخذ نسخته.
++//   3. `exportBackupToPath` كان ممكن يصدّر نسخة المنتج التاني.
++//   4. `getBackupStats` كان بيعدّ نسخ مش بتاعته.
++//
++// الحل واحد: كل قراءة تتفلتر باسم ملف الداتابيز الحالي. الصيغة دي ثابتة من
++// أول كوميت في المشروع، فنسخ العملاء القديمة بتفضل ظاهرة.
++// ═══════════════════════════════════════════════════════════════════════════
++
++/// بادئة أسماء النسخ الاحتياطية للداتابيز الحالية — انظر التعليق فوق.
++String _backupFilePrefix() => '${getDatabaseFileName()}_backup_';
++
++/// هل الملف ده نسخة احتياطية **لهذه** الداتابيز؟
++bool _isOwnBackup(String path) {
++  final name = path.split(Platform.pathSeparator).last;
++  return name.startsWith(_backupFilePrefix()) && name.endsWith('.db');
++}
++
++/// List available backup files (this database's only)
+ Future<List<FileSystemEntity>> listBackups() async {
+   try {
+     final dbFolder = await getApplicationDocumentsDirectory();
+@@ -347,7 +458,7 @@ Future<List<FileSystemEntity>> listBackups() async {
+ 
+     final files = await backupFolder
+         .list()
+-        .where((f) => f.path.endsWith('.db'))
++        .where((f) => _isOwnBackup(f.path))
+         .toList();
+ 
+     // Sort by modification time (newest first)
+@@ -363,13 +474,13 @@ Future<List<FileSystemEntity>> listBackups() async {
+   }
+ }
+ 
+-/// Clean old backups, keeping only the last 7
++/// Clean old backups, keeping only the last 7 **of this database**
+ Future<void> _cleanOldBackups(String backupFolderPath) async {
+   try {
+     final backupFolder = Directory(backupFolderPath);
+     final files = await backupFolder
+         .list()
+-        .where((f) => f.path.endsWith('.db'))
++        .where((f) => _isOwnBackup(f.path))
+         .toList();
+ 
+     if (files.length <= 7) return;
+@@ -392,7 +503,7 @@ Future<void> _cleanOldBackups(String backupFolderPath) async {
+ 
+ /// Auto-backup on startup — creates a backup if the last one is older than 24 hours
+ /// Returns the backup path if created, null if skipped or failed
+-Future<String?> autoBackupOnStartup() async {
++Future<String?> autoBackupOnStartup({WalCheckpoint? checkpoint}) async {
+   try {
+     final backups = await listBackups();
+ 
+@@ -402,7 +513,9 @@ Future<String?> autoBackupOnStartup() async {
+       if (hoursSince < 24) return null; // Skip — recent backup exists
+     }
+ 
+-    return await createDatabaseBackup();
++    // مش `requireCheckpoint`: نسخة الإقلاع التلقائية بتحصل والتطبيق بيفتح،
++    // فوارد قارئ تاني يخلّي التفريغ busy. نسخة ناقصة أحسن من ولا نسخة.
++    return await createDatabaseBackup(checkpoint: checkpoint);
+   } catch (e) {
+     return null;
+   }
+diff --git a/lib/data/database/database.dart b/lib/data/database/database.dart
+index aaca1c6..9fa8dc6 100644
+--- a/lib/data/database/database.dart
++++ b/lib/data/database/database.dart
+@@ -10,6 +10,7 @@ import 'package:flutter/foundation.dart';
+ // Import treasury_repository.dart for DAO types (SafeData, TreasurySummaryData, etc.)
+ import '../../domain/repositories/treasury_repository.dart';
+ import 'connection.dart';
++import 'wal_checkpoint.dart';
+ import '../../services/security_service.dart';
+ import '../../services/password_collision_scanner.dart';
+ import '../../services/journal_entry_diagnostics.dart';
+diff --git a/lib/data/database/database_migrations.dart b/lib/data/database/database_migrations.dart
+index 8c304bd..bbee7a0 100644
+--- a/lib/data/database/database_migrations.dart
++++ b/lib/data/database/database_migrations.dart
+@@ -48,6 +48,12 @@ extension DatabaseMigrations on AppDatabase {
+   /// - [_migrateEpoch3]: v81 → v132 (enterprise, advanced features, multi-client sync)
+   Future<void> runOnUpgrade(Migrator m, int from, int to) async {
+     // R-29: Pre-migration backup — safety snapshot before schema changes
++    //
++    // من غير `checkpoint` عن قصد، بعكس باقي نداءات النسخ: إحنا هنا **جوّه**
++    // `onUpgrade`، يعني الاتصال في نص فتحه والـ migrator ماسكه. إصدار
++    // `PRAGMA wal_checkpoint` في اللحظة دي ممكن يتعارض مع القفل اللي
++    // الترحيل شغال تحته. النسخة هنا ممكن تنقص آخر معاملات قبل الإقفال،
++    // وde مقبول لأنها لقطة أمان قبل تغيير سكيما مش طريق رجوع من حذف.
+     try {
+       final backupPath = await createDatabaseBackup();
+       debugPrint('[Migration] Pre-migration backup created: $backupPath (v$from → v$to)');
+diff --git a/lib/data/database/database_startup.dart b/lib/data/database/database_startup.dart
+index a8f87b7..9b96132 100644
+--- a/lib/data/database/database_startup.dart
++++ b/lib/data/database/database_startup.dart
+@@ -1176,7 +1176,12 @@ extension DatabaseStartup on AppDatabase {
+     // Auto-backup on startup — only for SQLite (file-based)
+     if (!_isPostgres) {
+       try {
+-        await autoBackupOnStartup();
++        // تفريغ الـ WAL قبل النسخ — من غيره النسخة بتعكس آخر تفريغ تلقائي
++        // مش الحالة دلوقتي. مش إجباري هنا: التطبيق بيفتح والقراء الآخرين
++        // واردين، ونسخة ناقصة أحسن من ولا نسخة.
++        await autoBackupOnStartup(
++          checkpoint: () => walCheckpointTruncate(this),
++        );
+       } catch (e) {
+         debugPrint('[Startup] autoBackup: $e');
+       }
+diff --git a/lib/data/database/wal_checkpoint.dart b/lib/data/database/wal_checkpoint.dart
+new file mode 100644
+index 0000000..708de78
+--- /dev/null
++++ b/lib/data/database/wal_checkpoint.dart
+@@ -0,0 +1,55 @@
++// ═══════════════════════════════════════════════════════════════════════════
++// تفريغ الـ WAL قبل أخذ نسخة احتياطية
++// ═══════════════════════════════════════════════════════════════════════════
++//
++// الاتصال بيشتغل `PRAGMA journal_mode = WAL`، يعني المعاملات بتتكتب في ملف
++// `<db>-wal` جنب الداتابيز، وما بتتنقلش لملف الداتابيز نفسه غير عند الـ
++// checkpoint. و`wal_autocheckpoint = 500` صفحة بيخلّي ده يحصل تلقائياً، بس
++// **مش فوراً** — في أي لحظة بيبقى فيه شغل موجود في الـ WAL بس.
++//
++// ونسخ الاحتياطي بينسخ ملف `.db` **لوحده**. فمن غير checkpoint، النسخة
++// بتعكس آخر نقطة تفريغ مش الحالة دلوقتي. على جهاز تجريبي واحد كان الـ WAL
++// ٢ ميجا والداتابيز ١.٨ ميجا — يعني ممكن يبقى أكبر من الداتابيز نفسها.
++//
++// وde بيبقى خطير تحديداً مع **أدوات تصفير البيانات**: النسخة الإجبارية اللي
++// بتتاخد قبل الحذف هي طريق الرجوع الوحيد، ونسخة ناقصة معناها إن اللي هيرجع
++// أقل من اللي اتحذف.
++//
++// ليه ملف منفصل، وليه بيتبعت لـ `createDatabaseBackup` كـ callback:
++// دوال النسخ في `connection_io.dart` **مالهاش مقبض داتابيز** — هي بتشتغل
++// على المسارات بس. وتمرير `AppDatabase` ليها كان معناه إن `connection_io`
++// يستورد `database.dart`، وده بيقفل دورة استيراد لأن `database.dart`
++// بيستورده هو عبر `connection.dart` — نفس المشكلة المكتوبة في
++// `sync_interceptor.dart`. الدالة هنا بتاخد نوع drift عام، فمفيش دورة.
++// ═══════════════════════════════════════════════════════════════════════════
++
++import 'package:drift/drift.dart';
++import 'package:flutter/foundation.dart';
++
++/// بينفّذ `PRAGMA wal_checkpoint(TRUNCATE)` وبيرجع `true` لو الـ WAL اتنقل
++/// بالكامل لملف الداتابيز.
++///
++/// الـ PRAGMA بيرجع صف `(busy, log, checkpointed)`. `busy = 0` معناها إن
++/// الـ checkpoint خلص من غير ما يتعارض مع قارئ تاني — وهي الحالة الوحيدة
++/// اللي نقدر نقول بعدها إن ملف الـ `.db` لوحده كامل.
++///
++/// بيرجع `false` بدل ما يرمي: على PostgreSQL الـ PRAGMA مش موجود أصلاً،
++/// وعلى SQLite ممكن يفشل لو فيه اتصال تاني ماسك قفل قراءة.
++Future<bool> walCheckpointTruncate(DatabaseConnectionUser db) async {
++  try {
++    final rows = await db.customSelect('PRAGMA wal_checkpoint(TRUNCATE)').get();
++    if (rows.isEmpty) return false;
++
++    final data = rows.first.data;
++    // بالاسم لو متاح، وبالترتيب لو الـ driver مسمّاش الأعمدة.
++    final busy = data['busy'] ?? (data.isEmpty ? null : data.values.first);
++    final ok = busy == 0;
++    if (!ok) {
++      debugPrint('[WAL] checkpoint(TRUNCATE) busy — result: $data');
++    }
++    return ok;
++  } catch (e) {
++    debugPrint('[WAL] checkpoint(TRUNCATE) failed: $e');
++    return false;
++  }
++}
+diff --git a/lib/data/repositories/settings_repository_impl.dart b/lib/data/repositories/settings_repository_impl.dart
+index 0c7044d..dd4ef6d 100644
+--- a/lib/data/repositories/settings_repository_impl.dart
++++ b/lib/data/repositories/settings_repository_impl.dart
+@@ -1,7 +1,11 @@
+ import 'dart:io';
+ import 'package:flutter/foundation.dart' show kIsWeb;
+ import '../database/database.dart';
+-import '../database/connection_io.dart';
++// بـ prefix عن قصد: الملف ده فيه دوال بنفس أسماء دوال connection_io
++// (`getBackupStats` مثلاً)، والاستدعاء غير المُسمّى بيحلّ لدالة الكلاس نفسها
++// مش لدالة الملف — وde كان بيعمل استدعاء لا نهائي.
++import '../database/connection_io.dart' as conn;
++import '../database/wal_checkpoint.dart';
+ import '../../domain/repositories/settings_repository.dart';
+ import 'base_repository.dart';
+ 
+@@ -46,26 +50,30 @@ class SettingsRepositoryImpl extends BaseRepository<Setting> implements ISetting
+   @override
+   Future<List<String>> getAvailableBackups() async {
+     if (kIsWeb) return [];
+-    final entities = await listBackups();
++    final entities = await conn.listBackups();
+     return entities.map((e) => e.path).toList();
+   }
+ 
+   @override
+   Future<String?> createBackup() async {
+     if (kIsWeb) return null;
+-    return createDatabaseBackup();
++    // تفريغ الـ WAL قبل النسخ عشان النسخة تعكس الحالة دلوقتي — من غيره
++    // بتعكس آخر تفريغ تلقائي بس. مش إجباري: نسخة ناقصة أحسن من ولا نسخة.
++    return conn.createDatabaseBackup(
++      checkpoint: () => walCheckpointTruncate(db),
++    );
+   }
+ 
+   @override
+   Future<Map<String, dynamic>> getBackupStats() async {
+     if (kIsWeb) return {'count': 0, 'totalSize': 0, 'lastBackup': null};
+-    return getBackupStats(); // Use the one from connection_io.dart
++    return conn.getBackupStats();
+   }
+ 
+   @override
+   Future<bool> exportBackup(String destinationFolder) async {
+     if (kIsWeb) return false;
+-    return exportBackupToPath(destinationFolder);
++    return conn.exportBackupToPath(destinationFolder);
+   }
+ 
+   @override
+@@ -86,7 +94,7 @@ class SettingsRepositoryImpl extends BaseRepository<Setting> implements ISetting
+   @override
+   Future<bool> restoreBackup(String path) async {
+     if (kIsWeb) return false;
+-    return restoreDatabaseBackup(path);
++    return conn.restoreDatabaseBackup(path);
+   }
+ 
+   @override
+diff --git a/lib/main.dart b/lib/main.dart
+index ffd4344..7c86c28 100644
+--- a/lib/main.dart
++++ b/lib/main.dart
+@@ -671,13 +671,17 @@ void main() async {
+     //
+     // Why this exists: an install can land in a stuck state where no
+     // developer password is set (e.g. wizard never completed cleanly, or
+-    // dev password was cleared but never re-set). The developer-tools
+-    // gate then disables the password field with "use --reset-dev-password
+-    // or re-setup the system" — both paths require either an in-app
+-    // toggle that doesn't exist OR re-running the wizard, which can only
+-    // be triggered from Developer Tools (chicken-and-egg).
++    // dev password was cleared but never re-set).
+     //
+-    // This flag breaks the deadlock: clears `setup_completed`,
++    // The narrow case — "no dev password, need into Developer Tools" — is
++    // now handled at the gate itself: when nothing is configured it offers
++    // a set-password form instead of a disabled field, which is what
++    // `DeveloperAuthService` documented all along. This flag remains for
++    // the broader case: re-running the whole wizard (profile, mode,
++    // branches, provisioning), which cannot be triggered from anywhere
++    // else once setup is marked complete.
++    //
++    // It clears `setup_completed`,
+     // `setup_in_progress`, AND the developer password keys. On the next
+     // boot's wizard-gate (lib/main.dart line ~907), `setup_completed`
+     // will be empty so the wizard runs from scratch, including the dev
+diff --git a/lib/presentation/screens/categories_screen.dart b/lib/presentation/screens/categories_screen.dart
+index 92bb957..4fb9348 100644
+--- a/lib/presentation/screens/categories_screen.dart
++++ b/lib/presentation/screens/categories_screen.dart
+@@ -1181,7 +1181,10 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
+             pluNumber: (p.scalePluNumber != null && p.scalePluNumber! > 0) ? p.scalePluNumber! : p.id,
+             name: p.name,
+             unitPrice: p.pricePerUnit ?? p.salePrice,
+-            isByWeight: p.scaleType != 'weightByPiece',
++            isByWeight: scaleItemIsSoldByWeight(
++              scaleType: p.scaleType,
++              isSoldByWeight: p.isSoldByWeight,
++            ),
+             barcode: p.barcode,
+             productCode: p.code,
+           ),
+diff --git a/lib/presentation/screens/developer_tools_screen.dart b/lib/presentation/screens/developer_tools_screen.dart
+index 9300a8b..dbc4e71 100644
+--- a/lib/presentation/screens/developer_tools_screen.dart
++++ b/lib/presentation/screens/developer_tools_screen.dart
+@@ -73,6 +73,7 @@ class _DeveloperPasswordGate extends ConsumerStatefulWidget {
+ class _DeveloperPasswordGateState
+     extends ConsumerState<_DeveloperPasswordGate> {
+   final _pwdCtl = TextEditingController();
++  final _confirmCtl = TextEditingController();
+   bool _visible = false;
+   String? _error;
+   bool _verifying = false;
+@@ -80,6 +81,7 @@ class _DeveloperPasswordGateState
+   @override
+   void dispose() {
+     _pwdCtl.dispose();
++    _confirmCtl.dispose();
+     super.dispose();
+   }
+ 
+@@ -101,6 +103,47 @@ class _DeveloperPasswordGateState
+     if (mounted) setState(() => _verifying = false);
+   }
+ 
++  /// مسار التعافي: تعيين كلمة مرور مطوّر لما تكون **مش مضبوطة أصلاً**.
++  ///
++  /// من غيره كان `--reset-dev-password` بيقفل الشاشة بدل ما يفتحها: الحالة
++  /// الوحيدة اللي بيوصّلك ليها هي `isFirstTime`، وفيها الخانة والزرار
++  /// الاتنين كانوا متعطّلين ومفيش أي طريق لتعيين كلمة جديدة — فالتعافي
++  /// الموثَّق في `DeveloperAuthService` («يعيّن كلمة جديدة عند أول دخول»)
++  /// ما كانش موجود، والحل الوحيد كان إعادة تشغيل الويزارد من الأول.
++  ///
++  /// أمنياً: الوصول للحالة دي بيتطلّب تشغيل الـ exe بعلم CLI أو متغيّر بيئة
++  /// على الجهاز نفسه — يعني اللي يقدر يعمله يقدر أصلاً يوصل لملف الداتابيز.
++  /// و`setPassword` بيسجّل في سجل التدقيق بمستوى critical.
++  Future<void> _createPassword() async {
++    final pwd = _pwdCtl.text.trim();
++    final cnf = _confirmCtl.text.trim();
++    if (pwd.length < 4 || pwd != cnf) {
++      setState(() {
++        _error = pwd.length < 4
++            ? 'يجب أن لا تقل كلمة المرور عن 4 أحرف'
++            : 'تأكيد كلمة المرور غير مطابق';
++      });
++      return;
++    }
++    setState(() {
++      _verifying = true;
++      _error = null;
++    });
++    try {
++      await ref.read(developerAuthServiceProvider).setPassword(pwd);
++      if (!mounted) return;
++      ref.read(developerSessionProvider.notifier).unlock();
++      setState(() => _verifying = false);
++    } catch (e) {
++      if (mounted) {
++        setState(() {
++          _verifying = false;
++          _error = 'فشل التعيين: $e';
++        });
++      }
++    }
++  }
++
+   @override
+   Widget build(BuildContext context) {
+     final session = ref.watch(developerSessionProvider);
+@@ -137,8 +180,8 @@ class _DeveloperPasswordGateState
+                 const SizedBox(height: 8),
+                 Text(
+                   isFirstTime
+-                      ? 'لم يتم تعيين كلمة مرور مطوّر — استخدم --reset-dev-password '
+-                          'وأعد التشغيل، أو أعِد إعداد النظام لتعيينها.'
++                      ? 'لم يتم تعيين كلمة مرور مطوّر على هذا التركيب. '
++                          'عيّن واحدة الآن لحماية الشاشة وفتحها.'
+                       : 'هذه الشاشة محمية. أدخل كلمة مرور المطوّر للمتابعة.',
+                   textAlign: TextAlign.center,
+                   style: const TextStyle(
+@@ -150,10 +193,12 @@ class _DeveloperPasswordGateState
+                 TextField(
+                   controller: _pwdCtl,
+                   obscureText: !_visible,
+-                  enabled: !isFirstTime,
+-                  onSubmitted: (_) => _verify(),
++                  onSubmitted: (_) =>
++                      isFirstTime ? _createPassword() : _verify(),
+                   decoration: InputDecoration(
+-                    labelText: 'كلمة مرور المطوّر',
++                    labelText: isFirstTime
++                        ? 'كلمة مرور مطوّر جديدة'
++                        : 'كلمة مرور المطوّر',
+                     prefixIcon: const Icon(PhosphorIconsBold.lock),
+                     suffixIcon: IconButton(
+                       icon: Icon(_visible
+@@ -162,12 +207,28 @@ class _DeveloperPasswordGateState
+                       onPressed: () =>
+                           setState(() => _visible = !_visible),
+                     ),
+-                    errorText: _error,
++                    errorText: isFirstTime ? null : _error,
+                     border: OutlineInputBorder(
+                       borderRadius: BorderRadius.circular(10),
+                     ),
+                   ),
+                 ),
++                if (isFirstTime) ...[
++                  const SizedBox(height: 10),
++                  TextField(
++                    controller: _confirmCtl,
++                    obscureText: !_visible,
++                    onSubmitted: (_) => _createPassword(),
++                    decoration: InputDecoration(
++                      labelText: 'تأكيد كلمة المرور',
++                      prefixIcon: const Icon(PhosphorIconsBold.lockKey),
++                      errorText: _error,
++                      border: OutlineInputBorder(
++                        borderRadius: BorderRadius.circular(10),
++                      ),
++                    ),
++                  ),
++                ],
+                 const SizedBox(height: 16),
+                 Row(
+                   children: [
+@@ -177,7 +238,9 @@ class _DeveloperPasswordGateState
+                     ),
+                     const Spacer(),
+                     ElevatedButton.icon(
+-                      onPressed: (_verifying || isFirstTime) ? null : _verify,
++                      onPressed: _verifying
++                          ? null
++                          : (isFirstTime ? _createPassword : _verify),
+                       icon: _verifying
+                           ? const SizedBox(
+                               width: 14,
+@@ -187,8 +250,10 @@ class _DeveloperPasswordGateState
+                                 color: Colors.white,
+                               ),
+                             )
+-                          : const Icon(PhosphorIconsBold.signIn),
+-                      label: const Text('فتح'),
++                          : Icon(isFirstTime
++                              ? PhosphorIconsBold.key
++                              : PhosphorIconsBold.signIn),
++                      label: Text(isFirstTime ? 'تعيين وفتح' : 'فتح'),
+                     ),
+                   ],
+                 ),
+diff --git a/lib/presentation/screens/plu_manager/plu_csv_mixin.dart b/lib/presentation/screens/plu_manager/plu_csv_mixin.dart
+index 64b6904..114d9a7 100644
+--- a/lib/presentation/screens/plu_manager/plu_csv_mixin.dart
++++ b/lib/presentation/screens/plu_manager/plu_csv_mixin.dart
+@@ -142,7 +142,10 @@ mixin _PluCsvMixin on ConsumerState<PluManagerScreen> {
+ 
+       final pluItems = scaleProducts.map((p) {
+         final plu = (p.scalePluNumber != null && p.scalePluNumber! > 0) ? p.scalePluNumber! : p.id;
+-        final isByWeight = p.isSoldByWeight;
++        final isByWeight = scaleItemIsSoldByWeight(
++          scaleType: p.scaleType,
++          isSoldByWeight: p.isSoldByWeight,
++        );
+         return ScalePLUItem(
+           pluNumber: plu,
+           name: p.name,
+diff --git a/lib/presentation/screens/plu_manager/plu_scale_upload_mixin.dart b/lib/presentation/screens/plu_manager/plu_scale_upload_mixin.dart
+index 8eb1228..040fc5b 100644
+--- a/lib/presentation/screens/plu_manager/plu_scale_upload_mixin.dart
++++ b/lib/presentation/screens/plu_manager/plu_scale_upload_mixin.dart
+@@ -51,7 +51,10 @@ mixin _PluScaleUploadMixin on ConsumerState<PluManagerScreen> {
+ 
+     final pluItems = scaleProducts.map((p) {
+       final plu = (p.scalePluNumber != null && p.scalePluNumber! > 0) ? p.scalePluNumber! : p.id;
+-      final isByWeight = p.isSoldByWeight;
++      final isByWeight = scaleItemIsSoldByWeight(
++        scaleType: p.scaleType,
++        isSoldByWeight: p.isSoldByWeight,
++      );
+       return ScalePLUItem(
+         pluNumber: plu,
+         name: p.name,
+diff --git a/lib/presentation/screens/products/widgets/product_search_header.dart b/lib/presentation/screens/products/widgets/product_search_header.dart
+index b4ec4e5..87e14cc 100644
+--- a/lib/presentation/screens/products/widgets/product_search_header.dart
++++ b/lib/presentation/screens/products/widgets/product_search_header.dart
+@@ -335,7 +335,10 @@ class ProductSearchHeader extends ConsumerWidget {
+             pluNumber: (p.scalePluNumber != null && p.scalePluNumber! > 0) ? p.scalePluNumber! : p.id,
+             name: p.name,
+             unitPrice: p.pricePerUnit ?? p.salePrice,
+-            isByWeight: p.scaleType != 'weightByPiece',
++            isByWeight: scaleItemIsSoldByWeight(
++              scaleType: p.scaleType,
++              isSoldByWeight: p.isSoldByWeight,
++            ),
+             barcode: p.barcode,
+             productCode: p.code,
+           ),
+diff --git a/lib/presentation/screens/reports/inventory_report_screen.dart b/lib/presentation/screens/reports/inventory_report_screen.dart
+index 304c7cd..437253c 100644
+--- a/lib/presentation/screens/reports/inventory_report_screen.dart
++++ b/lib/presentation/screens/reports/inventory_report_screen.dart
+@@ -717,9 +717,14 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
+               .map((p) => p.copyWith(currentStock: _scopedStock(p)))
+               .toList()
+           : _filteredProducts;
++      // GAP-15: اسم الشركة من إعدادات العميل مش قيمة مكتوبة بالإيد. كان
++      // مثبَّت على `MONEXIA Market` — اسم علامة تالتة على رأس تقرير العميل.
++      final receiptSettings =
++          await ref.read(settingsRepositoryProvider).getReceiptSettings();
++
+       await InvoiceGenerator.printInventoryReport(
+         products: products,
+-        companyName: 'MONEXIA Market',
++        companyName: receiptSettings['companyName'] as String? ?? 'الشركة',
+       );
+     } catch (e) {
+       if (mounted) {
+diff --git a/lib/presentation/screens/reports/sales_by_classification_report.dart b/lib/presentation/screens/reports/sales_by_classification_report.dart
+index 9072f7a..9a1ccab 100644
+--- a/lib/presentation/screens/reports/sales_by_classification_report.dart
++++ b/lib/presentation/screens/reports/sales_by_classification_report.dart
+@@ -220,13 +220,18 @@ class _SalesByClassificationReportState
+         ? _categoryData.fold<double>(0, (sum, item) => sum + item.total)
+         : _saleTypeData.fold<double>(0, (sum, item) => sum + item.total);
+ 
++    // GAP-15: اسم الشركة من إعدادات العميل مش قيمة مكتوبة بالإيد. كان
++    // مثبَّت على `MONEXIA Market` — اسم علامة تالتة على رأس تقرير العميل.
++    final receiptSettings =
++        await ref.read(settingsRepositoryProvider).getReceiptSettings();
++
+     await InvoiceGenerator.printCategoryReport(
+       categories: printData,
+       totalSales: totalSales,
+       isCategory: isCategory,
+       fromDate: _dateRange.start,
+       toDate: _dateRange.end,
+-      companyName: 'MONEXIA Market',
++      companyName: receiptSettings['companyName'] as String? ?? 'الشركة',
+     );
+   }
+ 
+diff --git a/lib/presentation/screens/reports/sales_report_screen.dart b/lib/presentation/screens/reports/sales_report_screen.dart
+index 14d2f30..f63e3ea 100644
+--- a/lib/presentation/screens/reports/sales_report_screen.dart
++++ b/lib/presentation/screens/reports/sales_report_screen.dart
+@@ -857,6 +857,14 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
+     }
+ 
+     try {
++      // GAP-15: اسم الشركة من إعدادات العميل مش قيمة مكتوبة بالإيد. كان
++      // مثبَّت على `MONEXIA Market` — اسم علامة تالتة كان بيتطبع على
++      // رأس تقرير العميل مهما كان اسم شركته في الإعدادات.
++      final receiptSettings =
++          await ref.read(settingsRepositoryProvider).getReceiptSettings();
++      final companyName =
++          receiptSettings['companyName'] as String? ?? 'الشركة';
++
+       await InvoiceGenerator.printSalesReport(
+         invoices: _invoices,
+         totalSales: _analytics!.totalSales,
+@@ -864,7 +872,7 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
+         invoiceCount: _analytics!.invoiceCount,
+         fromDate: _dateRange.start,
+         toDate: _dateRange.end,
+-        companyName: 'MONEXIA Market',
++        companyName: companyName,
+         printedBy: ref.read(authProvider).user?.displayName,
+       );
+       // #Forensic Log: Report Print
+diff --git a/lib/presentation/screens/scale_plu/scale_logic.dart b/lib/presentation/screens/scale_plu/scale_logic.dart
+index 4000110..f9b2790 100644
+--- a/lib/presentation/screens/scale_plu/scale_logic.dart
++++ b/lib/presentation/screens/scale_plu/scale_logic.dart
+@@ -131,7 +131,10 @@ mixin _ScaleLogicMixin on ConsumerState<ScalePluExportScreen> {
+           continue;
+         }
+ 
+-        final isByWeight = p.scaleType == 'weight' || p.scaleType == 'weightByPiece' || p.isSoldByWeight;
++        final isByWeight = scaleItemIsSoldByWeight(
++          scaleType: p.scaleType,
++          isSoldByWeight: p.isSoldByWeight,
++        );
+         final prefix = isByWeight ? weightPrefix : pricePrefix;
+         final scaleBarcode = '$prefix${pluNumber.toString().padLeft(codeLen, '0')}';
+ 
+diff --git a/lib/presentation/screens/scale_plu/scale_panels.dart b/lib/presentation/screens/scale_plu/scale_panels.dart
+index 0702645..e08dc33 100644
+--- a/lib/presentation/screens/scale_plu/scale_panels.dart
++++ b/lib/presentation/screens/scale_plu/scale_panels.dart
+@@ -433,7 +433,10 @@ mixin _ScalePanelsMixin on ConsumerState<ScalePluExportScreen> {
+     final pluItems = <ScalePLUItem>[];
+     for (final p in selected) {
+       final pluNumber = p.scalePluNumber ?? p.id;
+-      final isByWeight = p.scaleType == 'weight' || p.scaleType == 'weightByPiece' || p.isSoldByWeight;
++      final isByWeight = scaleItemIsSoldByWeight(
++        scaleType: p.scaleType,
++        isSoldByWeight: p.isSoldByWeight,
++      );
+       final prefix = isByWeight ? weightPrefix : pricePrefix;
+       final scaleBarcode = '$prefix${pluNumber.toString().padLeft(codeLen, '0')}';
+       pluItems.add(ScalePLUItem(
+diff --git a/lib/presentation/widgets/settings/backup_restore_widget_io.dart b/lib/presentation/widgets/settings/backup_restore_widget_io.dart
+index 848ae8e..5404f7f 100644
+--- a/lib/presentation/widgets/settings/backup_restore_widget_io.dart
++++ b/lib/presentation/widgets/settings/backup_restore_widget_io.dart
+@@ -4,10 +4,9 @@ import 'dart:io';
+ import 'dart:ui' as ui;
+ import 'package:flutter_riverpod/flutter_riverpod.dart';
+ import 'package:phosphor_flutter/phosphor_flutter.dart';
+-import 'package:path_provider/path_provider.dart';
+ import 'package:file_picker/file_picker.dart';
+-import 'package:intl/intl.dart';
+ import '../../../core/theme/app_colors.dart';
++import '../../../data/providers/repository_providers.dart';
+ 
+ import '../../../core/design_system/typography.dart';
+ 
+@@ -30,7 +29,7 @@ class BackupRestoreWidget extends ConsumerWidget {
+             style: AppTypography.bodySmall,
+           ),
+           trailing: ElevatedButton(
+-            onPressed: () => _backupDatabase(context),
++            onPressed: () => _backupDatabase(context, ref),
+             style: ElevatedButton.styleFrom(backgroundColor: AppColors.success),
+             child: const Row(
+               mainAxisSize: MainAxisSize.min,
+@@ -53,7 +52,7 @@ class BackupRestoreWidget extends ConsumerWidget {
+             style: AppTypography.bodySmall,
+           ),
+           trailing: OutlinedButton(
+-            onPressed: () => _showRestoreDialog(context),
++            onPressed: () => _showRestoreDialog(context, ref),
+             child: const Row(
+               mainAxisSize: MainAxisSize.min,
+               children: [
+@@ -68,41 +67,57 @@ class BackupRestoreWidget extends ConsumerWidget {
+     );
+   }
+ 
+-  Future<void> _backupDatabase(BuildContext context) async {
++  // ═══════════════════════════════════════════════════════════════════════
++  // الودجت دي كانت بتعمل عمليات الملفات بنفسها وعلى اسم داتابيز **مكتوب
++  // بالإيد** (`cashier_market.db` — اسم من قبل إعادة التسمية). النتيجة:
++  //
++  //   * زرار «نسخ احتياطي» كان **بيفشل دايماً** برسالة «قاعدة البيانات غير
++  //     موجودة» — على العلامتين، مش PicPos بس.
++  //   * زرار «استعادة» كان بينسخ النسخة على ملف التطبيق **مبيقراهوش**،
++  //     وبيقول «تمت الاستعادة بنجاح» ويطلب إعادة التشغيل. يعني حد بيستعيد
++  //     بعد كارثة كان يفتكر إن بياناته رجعت وهي ما رجعتش.
++  //   * ونسخة ما قبل الاستعادة كانت بتتاخد من نفس الملف الوهمي، فمفيش حتى
++  //     شبكة أمان قبل الكتابة.
++  //   * واسم النسخة كان `monexia_backup_*` — اسم علامة تالتة خالص.
++  //
++  // الحل مش تصليح الاسم هنا: طبقة العرض أصلاً ممنوعة تلمس `data/database`
++  // (الدستور §IV، ويحرسه `presentation_db_import_guard_test`). فكل العمليات
++  // بقت من `ISettingsRepository`، وهي اللي بتعرف مسار الداتابيز الصح.
++  // ═══════════════════════════════════════════════════════════════════════
++
++  Future<void> _backupDatabase(BuildContext context, WidgetRef ref) async {
+     try {
+-      final dbFolder = await getApplicationDocumentsDirectory();
+-      final sourceFile = File('${dbFolder.path}/cashier_market.db');
++      final repo = ref.read(settingsRepositoryProvider);
++
++      String? selectedDirectory = await FilePicker.getDirectoryPath(
++        dialogTitle: 'اختر مجلد حفظ النسخة الاحتياطية',
++      );
++
++      if (selectedDirectory == null) return;
+ 
+-      if (!await sourceFile.exists()) {
++      // نسخة طازة الأول، وبعدين تصدير الأحدث للمجلد اللي المستخدم اختاره —
++      // كده الملف المُصدَّر بيعبّر عن الحالة دلوقتي مش عن آخر نسخة قديمة.
++      final created = await repo.createBackup();
++      if (created == null) {
+         if (context.mounted) {
+           AppToast.show(
+             context,
+-            'قاعدة البيانات غير موجودة',
++            'تعذّر إنشاء النسخة الاحتياطية',
+             type: ToastType.error,
+           );
+         }
+         return;
+       }
+ 
+-      String? selectedDirectory = await FilePicker.getDirectoryPath(
+-        dialogTitle: 'اختر مجلد حفظ النسخة الاحتياطية',
+-      );
+-
+-      if (selectedDirectory == null) return;
+-
+-      final timestamp = DateFormat(
+-        'yyyy-MM-dd_HH-mm-ss',
+-      ).format(DateTime.now());
+-      final backupFile = File(
+-        '$selectedDirectory/monexia_backup_$timestamp.db',
+-      );
+-      await sourceFile.copy(backupFile.path);
++      final exported = await repo.exportBackup(selectedDirectory);
+ 
+       if (context.mounted) {
+         AppToast.show(
+           context,
+-          'تم حفظ النسخة الاحتياطية في: ${backupFile.path}',
+-          type: ToastType.success,
++          exported
++              ? 'تم حفظ النسخة الاحتياطية في: $selectedDirectory'
++              : 'تعذّر نسخ الملف إلى المجلد المحدد',
++          type: exported ? ToastType.success : ToastType.error,
+         );
+       }
+     } catch (e) {
+@@ -116,7 +131,7 @@ class BackupRestoreWidget extends ConsumerWidget {
+     }
+   }
+ 
+-  void _showRestoreDialog(BuildContext context) async {
++  void _showRestoreDialog(BuildContext context, WidgetRef ref) async {
+     try {
+       FilePickerResult? result = await FilePicker.pickFiles(
+         type: FileType.custom,
+@@ -133,7 +148,7 @@ class BackupRestoreWidget extends ConsumerWidget {
+ 
+       if (!context.mounted) return;
+ 
+-      _confirmRestore(context, selectedFile.path!, filename);
++      _confirmRestore(context, ref, selectedFile.path!, filename);
+     } catch (e) {
+       if (context.mounted) {
+         AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+@@ -143,6 +158,7 @@ class BackupRestoreWidget extends ConsumerWidget {
+ 
+   void _confirmRestore(
+     BuildContext context,
++    WidgetRef ref,
+     String backupPath,
+     String filename,
+   ) {
+@@ -198,7 +214,7 @@ class BackupRestoreWidget extends ConsumerWidget {
+               ),
+               onPressed: () async {
+                 Navigator.pop(context);
+-                await _restoreDatabase(context, backupPath);
++                await _restoreDatabase(context, ref, backupPath);
+               },
+               child: const Text('استعادة'),
+             ),
+@@ -208,28 +224,38 @@ class BackupRestoreWidget extends ConsumerWidget {
+     );
+   }
+ 
+-  Future<void> _restoreDatabase(BuildContext context, String backupPath) async {
++  Future<void> _restoreDatabase(
++    BuildContext context,
++    WidgetRef ref,
++    String backupPath,
++  ) async {
+     try {
+-      final dbFolder = await getApplicationDocumentsDirectory();
+-      final targetFile = File('${dbFolder.path}/cashier_market.db');
+-      final backupFile = File(backupPath);
+-
+-      if (await targetFile.exists()) {
+-        final timestamp = DateFormat(
+-          'yyyy-MM-dd_HH-mm-ss',
+-        ).format(DateTime.now());
+-        final backupDir = Directory('${dbFolder.path}/backups');
+-        if (!await backupDir.exists()) await backupDir.create();
+-        await targetFile.copy('${backupDir.path}/pre_restore_$timestamp.db');
++      final repo = ref.read(settingsRepositoryProvider);
++
++      if (!await File(backupPath).exists()) {
++        if (context.mounted) {
++          AppToast.show(
++            context,
++            'ملف النسخة الاحتياطية غير موجود',
++            type: ToastType.error,
++          );
++        }
++        return;
+       }
+ 
+-      await backupFile.copy(targetFile.path);
++      // شبكة أمان قبل الكتابة فوق الداتابيز الحالية: لو المستخدم استعاد نسخة
++      // غلط، الحالة اللي كان فيها لسه موجودة في مجلد النسخ.
++      await repo.createBackup();
++
++      final ok = await repo.restoreBackup(backupPath);
+ 
+       if (context.mounted) {
+         AppToast.show(
+           context,
+-          'تمت الاستعادة بنجاح. يرجى إعادة تشغيل البرنامج.',
+-          type: ToastType.success,
++          ok
++              ? 'تمت الاستعادة بنجاح. يرجى إعادة تشغيل البرنامج.'
++              : 'فشلت الاستعادة — البيانات الحالية لم تتغيّر.',
++          type: ok ? ToastType.success : ToastType.error,
+         );
+       }
+     } catch (e) {
+diff --git a/lib/services/admin/data_wipe_service.dart b/lib/services/admin/data_wipe_service.dart
+index 4ac8511..c4dc483 100644
+--- a/lib/services/admin/data_wipe_service.dart
++++ b/lib/services/admin/data_wipe_service.dart
+@@ -33,6 +33,7 @@ import 'package:flutter/foundation.dart';
+ import '../../data/database/connection_io.dart' show createDatabaseBackup;
+ import '../../data/database/database.dart';
+ import '../../data/database/sync_interceptor.dart';
++import '../../data/database/wal_checkpoint.dart';
+ 
+ /// نتيجة عملية تصفير.
+ @immutable
+@@ -84,11 +85,22 @@ class DataWipeService {
+ 
+   /// بياخد نسخة احتياطية. الفشل بيوقف العملية — النسخة هي طريق الرجوع
+   /// الوحيد، والحذف من غيرها مقامرة مش عملية صيانة.
++  ///
++  /// و`requireCheckpoint: true` عشان نفس السبب: نسخ ملف الـ `.db` من غير
++  /// تفريغ الـ WAL بيسيب المعاملات الأخيرة برّه النسخة، فاللي هيرجع بعد
++  /// الحذف يبقى أقل من اللي اتحذف. نسخة ناقصة هنا أسوأ من إلغاء العملية.
+   Future<(String?, String?)> _backupOrFail() async {
+     try {
+-      final path = await createDatabaseBackup();
++      final path = await createDatabaseBackup(
++        checkpoint: () => walCheckpointTruncate(db),
++        requireCheckpoint: true,
++      );
+       if (path == null || path.isEmpty) {
+-        return (null, 'تعذّر إنشاء نسخة احتياطية — أُلغيت العملية.');
++        return (
++          null,
++          'تعذّر إنشاء نسخة احتياطية كاملة — أُلغيت العملية.\n\n'
++              'لو التطبيق مفتوح على أجهزة أو نوافذ تانية، اقفلها وحاول تاني.',
++        );
+       }
+       return (path, null);
+     } catch (e) {
+diff --git a/lib/services/label_scale_service.dart b/lib/services/label_scale_service.dart
+index dc3ea08..06d0fac 100644
+--- a/lib/services/label_scale_service.dart
++++ b/lib/services/label_scale_service.dart
+@@ -89,6 +89,54 @@ enum LabelScaleConnection {
+   aclasSDK, // AclasSDK auto-detect (IP only, no port needed)
+ }
+ 
++// ═══════════════════════════════════════════════════════════════════════════
++// هل الصنف ده بيتباع بالوزن على الميزان؟
++// ═══════════════════════════════════════════════════════════════════════════
++//
++// `scaleType` في جدول الأصناف له أربع قيم، واللي بتحدد الإجابة اتنين منهم:
++//
++//   'count'          عدد          — مش صنف ميزان أصلاً
++//   'weight'         ميزان        — بالوزن (كيلو)          → true
++//   'weightByPiece'  ميزان بالحبة — بالحبة (عدد)           → **false**
++//   'display'        عرض
++//
++// و`isSoldByWeight` **مش كافية لوحدها**: شاشة تعديل الصنف بتضبطها بـ
++// `scaleType == 'weight' || scaleType == 'weightByPiece'`، يعني بتبقى `true`
++// للاتنين. فأي كود بيقرا `isSoldByWeight` من غير ما يستثني `weightByPiece`
++// بيعتبر أصناف الحبة أصناف وزن.
++//
++// ── الباج اللي الدالة دي موجودة عشانه ────────────────────────────────────
++// الحساب ده كان مكرر في أربع أماكن بتلات صيغ مختلفة، وتلاتة منهم غلط:
++//
++//   scale_logic.dart / scale_panels.dart   (شاشة ترحيل الأصناف للميزان)
++//     scaleType == 'weight' || scaleType == 'weightByPiece' || isSoldByWeight
++//     → 'weightByPiece' بيدي true. غلط.
++//
++//   plu_csv_mixin.dart / plu_scale_upload_mixin.dart
++//     isSoldByWeight
++//     → بتتجاهل scaleType خالص، و'weightByPiece' بيبقى isSoldByWeight=true.
++//
++//   categories_screen.dart / product_search_header.dart
++//     scaleType != 'weightByPiece'   ← الصح
++//
++// والنتيجة عند العميل: **كل أصناف الميزان بتترحّل للميزان كأنها بالوزن،
++// فالميزان بيطبع «كيلو» على أصناف الحبة.** وأخطر من الطباعة إن الباركود
++// المولَّد بياخد **بادئة الوزن** (٢١) بدل بادئة السعر (٢٠) — فباركود صنف
++// بالحبة بيتقرا على نقطة البيع كباركود وزن، والسعر بيتحسب غلط.
++//
++// عشان كده الحساب بقى هنا وبس — تكراره تاني معناه إن الصيغ تفترق من جديد.
++bool scaleItemIsSoldByWeight({
++  required String? scaleType,
++  required bool isSoldByWeight,
++}) {
++  // «ميزان بالحبة» بيحسم الموضوع مهما كانت `isSoldByWeight`.
++  if (scaleType == 'weightByPiece') return false;
++  if (scaleType == 'weight') return true;
++  // الأصناف القديمة اللي اتعملت قبل ما `scaleType` يتضاف بيبقى عندها
++  // `isSoldByWeight` بس، فهي الاحتياطي.
++  return isSoldByWeight;
++}
++
+ /// PLU item to upload to scale
+ class ScalePLUItem {
+   final int pluNumber; // PLU code (1-99999)
+-- 
+2.55.0.windows.3
+

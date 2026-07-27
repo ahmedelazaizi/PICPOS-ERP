@@ -1,0 +1,99 @@
+From e1e6a2fc1141d298b545d65d98fb93de2d6e9998 Mon Sep 17 00:00:00 2001
+From: Ahmed Sola <ahmedsola27@gmail.com>
+Date: Mon, 27 Jul 2026 11:21:54 +0300
+Subject: [PATCH 2/2] =?UTF-8?q?fix(engine/brand):=20=D9=88=D8=B3=D9=85=20?=
+ =?UTF-8?q?=D8=A7=D9=84=D9=84=D9=88=D8=AC=20=D9=88=D8=A7=D8=B3=D9=85=20?=
+ =?UTF-8?q?=D8=AF=D8=A7=D8=AA=D8=A7=D8=A8=D9=8A=D8=B2=20=D8=A7=D9=84=D9=88?=
+ =?UTF-8?q?=D9=8A=D8=A8=20=E2=80=94=20=D8=B9=D9=84=D8=A7=D9=85=D8=A9=20?=
+ =?UTF-8?q?=D8=AA=D8=A7=D9=84=D8=AA=D8=A9=20=D9=88=D9=85=D8=B4=D8=AA=D8=B1?=
+ =?UTF-8?q?=D9=83=D8=A9?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+الكوميتان دول محرك برضه، بس **بيستخدموا ثابت `Brand`**. لو الطبقة دي
+مش موجودة عند UralCash، طبّق الفكرة بالقيمة الحرفية بدل الثابت:
+`Brand.name` → `'UralCash'` و`Brand.dbPrefix` → `'uralcash'`.
+
+── error_handler ────────────────────────────────────────────────────
+كل سطر لوج كان بيتوسم `MONEXIA` — اسم علامة تالتة، غلط على المنتجين.
+بقى `Brand.name`.
+
+── connection_web ───────────────────────────────────────────────────
+`databaseName: 'cashier_market'` — اسم من قبل إعادة التسمية، و**مشترك
+بين المنتجين**: أي علامتين على نفس المتصفح كانوا هيفتحوا نفس قاعدة
+IndexedDB. ودي بالظبط المشكلة اللي طبقة العزل موجودة تمنعها على سطح
+المكتب.
+
+بقى `${Brand.dbPrefix}_${AppConfig.flavor.code}` — نفس تركيبة سطح
+المكتب من غير لاحقة `.db`.
+
+ملاحظة: تغيير اسم داتابيز عادةً ممنوع (فقد بيانات صامت لأي تركيب
+قايم). اتعمل هنا بقرار صريح من صاحب المشروع لأن مسار الويب مش مستخدم
+في المنتجين — الاتنين ديسكتوب. **لو فيه تركيب ويب قايم عند UralCash،
+متنقلش السطر ده.**
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+---
+ lib/data/database/connection_web.dart | 17 ++++++++++++++++-
+ lib/services/error_handler.dart       |  4 +++-
+ 2 files changed, 19 insertions(+), 2 deletions(-)
+
+diff --git a/lib/data/database/connection_web.dart b/lib/data/database/connection_web.dart
+index 5273fbd..a255c24 100644
+--- a/lib/data/database/connection_web.dart
++++ b/lib/data/database/connection_web.dart
+@@ -1,12 +1,27 @@
+ import 'package:drift/drift.dart';
+ import 'package:drift/wasm.dart';
+ 
++import '../../core/config/app_config.dart';
++import '../../core/config/brand.dart';
++
++/// اسم قاعدة البيانات على الويب.
++///
++/// كان مثبَّت على `'cashier_market'` — اسم من قبل إعادة التسمية، **ومشترك
++/// بين المنتجين**: أي علامتين شغالين على نفس المتصفح كانوا هيفتحوا نفس
++/// قاعدة IndexedDB، وde بالظبط اللي طبقة العزل موجودة تمنعه على سطح المكتب
++/// (اقرأ `databaseFileNameFor` في `connection_io.dart`).
++///
++/// نفس التركيبة بتاعة سطح المكتب من غير لاحقة `.db` — WasmDatabase بياخد
++/// اسم مش مسار.
++String getWebDatabaseName() =>
++    '${Brand.dbPrefix}_${AppConfig.flavor.code}';
++
+ /// Open database connection for web platform using IndexedDB
+ QueryExecutor openConnection() {
+   return DatabaseConnection.delayed(
+     Future(() async {
+       final result = await WasmDatabase.open(
+-        databaseName: 'cashier_market',
++        databaseName: getWebDatabaseName(),
+         sqlite3Uri: Uri.parse('sqlite3.wasm'),
+         driftWorkerUri: Uri.parse('drift_worker.js'),
+       );
+diff --git a/lib/services/error_handler.dart b/lib/services/error_handler.dart
+index bf127ee..6d7fb91 100644
+--- a/lib/services/error_handler.dart
++++ b/lib/services/error_handler.dart
+@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
+ import '../../core/widgets/app_toast.dart';
+ import 'dart:developer' as developer;
+ import 'package:intl/intl.dart';
++import '../core/config/brand.dart';
+ import 'log_writer.dart';
+ 
+ /// Log level enumeration
+@@ -73,7 +74,8 @@ class AppLogger {
+     // Console output
+     developer.log(
+       message,
+-      name: tag ?? 'MONEXIA',
++      // كان مثبَّت على `MONEXIA` — اسم علامة تالتة بيوسم كل سطر لوج.
++      name: tag ?? Brand.name,
+       level: _levelToInt(level),
+       error: error,
+       stackTrace: stackTrace,
+-- 
+2.55.0.windows.3
+
