@@ -24,6 +24,7 @@ import 'presentation/widgets/omnibox/global_search_omnibox.dart';
 import 'presentation/pos/providers/cart_controller.dart';
 import 'presentation/screens/dashboard_screen.dart';
 import 'presentation/screens/sales_invoices_screen.dart';
+import 'presentation/sales_invoices_picpos/screens/sales_invoices_picpos_screen.dart';
 import 'presentation/screens/unified_parties_screen.dart';
 import 'presentation/screens/inventory/inventory_screen.dart';
 import 'presentation/inventory_picpos/screens/inventory_picpos_screen.dart';
@@ -776,7 +777,9 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
       ),
       ScreenConfig(
         appScreen: AppScreen.salesInvoices,
-        builder: (_) => const SalesInvoicesScreen(),
+        builder: (_) => Brand.isPicPos
+            ? const SalesInvoicesPicposScreen()
+            : const SalesInvoicesScreen(),
         label: 'فواتير المبيعات',
         icon: PhosphorIconsBold.fileText,
       ),
