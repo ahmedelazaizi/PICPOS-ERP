@@ -28,6 +28,7 @@ import 'presentation/screens/unified_parties_screen.dart';
 import 'presentation/screens/inventory/inventory_screen.dart';
 import 'presentation/inventory_picpos/screens/inventory_picpos_screen.dart';
 import 'presentation/screens/purchase_invoices_screen.dart';
+import 'presentation/purchases_picpos/screens/purchases_picpos_screen.dart';
 import 'presentation/screens/treasury_screen.dart';
 import 'presentation/screens/reports_screen.dart';
 import 'presentation/screens/settings_screen.dart';
@@ -706,7 +707,9 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => const SecurityScreenGate(
           settingKey: 'purchases_access_password',
           title: 'المشتريات',
-          child: PurchaseInvoicesScreen(),
+          child: Brand.isPicPos
+              ? PurchasesPicposScreen()
+              : PurchaseInvoicesScreen(),
         ),
         label: 'المشتريات',
         icon: PhosphorIconsBold.receipt,

@@ -1,0 +1,238 @@
+part of 'purchases_picpos_screen.dart';
+
+// نسخة حرفية من lib/presentation/screens/purchase_invoices/purchase_invoice_crud.dart
+// (mixin `_PurchaseInvoiceCrudMixin` في شاشة UralCash). الملف الأصل `part of`
+// خاص فما ينفعش يتعمله import، فبينتقل بنسخ حرفي هنا — نفس الأسلوب المعتمد في
+// picpos_pos_operations.dart. التغيير الوحيد: السطر الأول واسم الـ mixin/قيد
+// `on`. جسم الدوال بدون أي تعديل.
+//
+// مصيدة النسخ (موثّقة): أي باج منطقي يُصلَّح هنا لاحقاً، افحص أصله في
+// purchase_invoice_crud.dart — يُصلَّح بكوميت منفصل + patch لـ UralCash.
+mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
+  /// Create a new purchase invoice or return
+  void createNewInvoice() async {
+    if (!mounted) return;
+
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierLabel: 'Purchase Invoice',
+      transitionDuration: const Duration(milliseconds: 200),
+      pageBuilder: (context, anim1, anim2) => Scaffold(
+        body: PurchaseInvoiceForm(
+          onSave: ({
+            required int? partyId,
+            required String invoiceNumber,
+            required String supplierInvoiceNumber,
+            required DateTime date,
+            required double total,
+            required double discount,
+            required double tax,
+            required double netAmount,
+            required double paidAmount,
+            required String notes,
+            required List<Map<String, dynamic>> items,
+            required int? warehouseId,
+            required int? costCenterId,
+            required bool isDraft,
+            required String paymentMethod,
+            int? safeId,
+            bool printAfterSave = false,
+          }) async {
+            await _handleSavePurchaseSimple(
+              partyId: partyId,
+              invoiceNumber: invoiceNumber,
+              supplierInvoiceNumber: supplierInvoiceNumber,
+              date: date,
+              total: total,
+              discount: discount,
+              tax: tax,
+              netAmount: netAmount,
+              paidAmount: paidAmount,
+              notes: notes,
+              items: items,
+              warehouseId: warehouseId,
+              costCenterId: costCenterId,
+              isDraft: isDraft,
+              paymentMethod: paymentMethod,
+              safeId: safeId,
+              printAfterSave: printAfterSave,
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  /// Edit existing invoice
+  void editInvoice(InvoiceEntity invoice) async {
+    final purchasesRepo = ref.read(purchasesRepositoryProvider);
+
+    // Fetch the raw invoice data for editing
+    final rawInvoice = await purchasesRepo.getRawInvoiceById(invoice.id!);
+
+    if (!mounted || rawInvoice == null) return;
+
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierLabel: 'Edit Purchase Invoice',
+      transitionDuration: const Duration(milliseconds: 200),
+      pageBuilder: (context, anim1, anim2) => Scaffold(
+        body: PurchaseInvoiceForm(
+          editInvoice: rawInvoice,
+          onSave: ({
+            required int? partyId,
+            required String invoiceNumber,
+            required String supplierInvoiceNumber,
+            required DateTime date,
+            required double total,
+            required double discount,
+            required double tax,
+            required double netAmount,
+            required double paidAmount,
+            required String notes,
+            required List<Map<String, dynamic>> items,
+            required int? warehouseId,
+            required int? costCenterId,
+            required bool isDraft,
+            required String paymentMethod,
+            int? safeId,
+            bool printAfterSave = false,
+          }) async {
+            await _handleSavePurchaseSimple(
+              partyId: partyId,
+              invoiceNumber: invoiceNumber,
+              supplierInvoiceNumber: supplierInvoiceNumber,
+              date: date,
+              total: total,
+              discount: discount,
+              tax: tax,
+              netAmount: netAmount,
+              paidAmount: paidAmount,
+              notes: notes,
+              items: items,
+              warehouseId: warehouseId,
+              costCenterId: costCenterId,
+              isDraft: isDraft,
+              editInvoiceId: invoice.id,
+              paymentMethod: paymentMethod,
+              safeId: safeId,
+              printAfterSave: printAfterSave,
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  /// Centralized handler for saving
+  Future<void> _handleSavePurchaseSimple({
+    required int? partyId,
+    required String invoiceNumber,
+    required String supplierInvoiceNumber,
+    required DateTime date,
+    required double total,
+    required double discount,
+    required double tax,
+    required double netAmount,
+    required double paidAmount,
+    required String notes,
+    required List<Map<String, dynamic>> items,
+    required int? warehouseId,
+    required int? costCenterId,
+    required bool isDraft,
+    required String paymentMethod,
+    int? editInvoiceId,
+    int? safeId,
+    bool printAfterSave = false,
+  }) async {
+    try {
+      final purchasesRepo = ref.read(purchasesRepositoryProvider);
+
+      // Convert items to PurchaseItemParams
+      final purchaseItems = items.map((item) => PurchaseItemParams(
+        productId: item['productId'] as int,
+        quantity: (item['quantity'] as num).toDouble(),
+        unitCost: (item['unitCost'] as num).toDouble(),
+        salePrice: 0,
+        taxRate: (item['taxRate'] as num?)?.toDouble() ?? 0,
+        taxAmount: (item['taxAmount'] as num?)?.toDouble() ?? 0,
+        unitName: item['selectedUnitName'] as String?,
+      )).toList();
+
+      final auth = ref.read(authProvider);
+      int savedInvoiceId = editInvoiceId ?? 0;
+      if (editInvoiceId != null) {
+        // Update existing invoice
+        await purchasesRepo.updateInvoice(UpdatePurchaseInvoiceParams(
+          invoiceId: editInvoiceId,
+          supplierId: partyId,
+          warehouseId: warehouseId,
+          items: purchaseItems,
+          paid: paidAmount,
+          paymentMethod: paymentMethod,
+          notes: notes.isEmpty ? null : notes,
+          supplierInvoiceNumber: supplierInvoiceNumber.isEmpty ? invoiceNumber : supplierInvoiceNumber,
+          costCenterId: costCenterId,
+          // Purchase-edit policy — the `purchases_edit` gate in the DAO is
+          // evaluated against this id. Omitting it denied every edit.
+          userId: auth.user?.id,
+          // ح-1: the edit branch dropped the discount the same form collects,
+          // so re-saving a discounted invoice restored its gross total.
+          discount: discount,
+        ));
+      } else {
+        // Create new invoice — returns the new invoice ID so we can auto-print.
+        savedInvoiceId = await purchasesRepo.createInvoice(CreatePurchaseInvoiceParams(
+          supplierId: partyId ?? 0,
+          warehouseId: warehouseId ?? 1,
+          items: purchaseItems,
+          paid: paidAmount,
+          paymentMethod: paymentMethod,
+          notes: notes.isEmpty ? null : notes,
+          supplierInvoiceNumber: supplierInvoiceNumber.isEmpty ? invoiceNumber : supplierInvoiceNumber,
+          date: date,
+          costCenterId: costCenterId,
+          safeId: safeId,
+          userId: auth.user?.id,
+          createdByUsername: auth.user?.username,
+          // ح-1: was collected by the form and silently dropped here.
+          discount: discount,
+        ));
+      }
+
+      // Auto-print A4 purchase invoice when the user clicked "حفظ وطباعة".
+      // Mirrors the sales-invoice flow; POS path is unaffected.
+      if (printAfterSave && savedInvoiceId > 0) {
+        final printingService = ref.read(printingServiceProvider);
+        await printingService.printPurchaseInvoiceA4(savedInvoiceId);
+      }
+
+      // Log Activity
+      final activityLogRepo = ref.read(activityLogRepositoryProvider);
+      await activityLogRepo.logActivity(
+        userId: auth.user?.id,
+        userName: auth.user?.displayName ?? 'Admin',
+        action: editInvoiceId != null ? 'edit_purchase' : 'create_purchase',
+        entityType: 'purchase_invoice',
+        description: editInvoiceId != null
+            ? 'تعديل فاتورة مشتريات #$editInvoiceId'
+            : 'إنشاء فاتورة مشتريات',
+        amount: total,
+      );
+
+      if (mounted) {
+        AppToast.show(
+          context,
+          'تم الحفظ بنجاح',
+          type: ToastType.success,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        AppToast.show(context, 'فشلت العملية: $e', type: ToastType.error);
+      }
+    }
+  }
+}
