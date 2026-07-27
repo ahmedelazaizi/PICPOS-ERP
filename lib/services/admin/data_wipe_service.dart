@@ -112,6 +112,98 @@ class DataWipeService {
     return db.delete(table).go();
   }
 
+  // ═══════════════════════════════════════════════════════════════════════
+  // تنظيف التبعيات — مولَّد من السكيما مش مكتوب بالإيد
+  // ═══════════════════════════════════════════════════════════════════════
+  //
+  // النسخة الأولى من الملف ده كانت بتعدّد جداول الأبناء **بالإيد**، والحد ده
+  // كان مكتوب في رأس الملف كملاحظة. وهو اللي ضرب فعلاً على أول قاعدة حقيقية:
+  //
+  //   SqliteException(787): FOREIGN KEY constraint failed
+  //   Causing statement: DELETE FROM "sales_invoices"
+  //
+  // لأن `work_orders` و`e_invoice_submissions` و`quotations` و`sales_orders`
+  // كلهم بيشاوروا على `sales_invoices` وماكانوش في القايمة. والفحص على
+  // السكيما طلّع نفس المشكلة في كل عملية تانية — `wipeProducts` لوحدها كانت
+  // ناقصة **١٢ جدول**.
+  //
+  // فالمصدر بقى `PRAGMA foreign_key_list` نفسه: نسأل الداتابيز مين بيشاور
+  // على الهدف، ونتصرّف حسب نوع العمود:
+  //
+  //   * العمود **بيقبل NULL** → نفصل الربط بس. عرض سعر اتحوّل لفاتورة
+  //     والفاتورة اتحذفت لازم يفضل موجود — حذفه معناه إننا بنمسح مستند
+  //     تاني ما حدش طلب مسحه. نفس منطق «الطرف المزدوج» الموجود تحت.
+  //   * العمود **إجباري** → الصف مالوش معنى من غير أبوه، فيتحذف، ونكرّر
+  //     العملية عليه هو كمان (بنته ممكن يكون ليها أبناء).
+  //
+  // وكده أي جدول جديد يتضاف للسكيما بيتغطّى لوحده.
+
+  /// كل الأعمدة اللي بتشاور على [target]، مع هل العمود بيقبل NULL.
+  Future<List<({String table, String column, bool nullable})>> _dependentsOf(
+    String target,
+  ) async {
+    final tables = await db
+        .customSelect(
+          "SELECT name FROM sqlite_master WHERE type='table' "
+          "AND name NOT LIKE 'sqlite_%'",
+        )
+        .get();
+
+    final out = <({String table, String column, bool nullable})>[];
+    for (final row in tables) {
+      final name = row.data['name'] as String;
+      if (name == target) continue;
+
+      final fks =
+          await db.customSelect('PRAGMA foreign_key_list("$name")').get();
+      for (final fk in fks) {
+        if (fk.data['table'] != target) continue;
+        final column = fk.data['from'] as String;
+
+        final cols =
+            await db.customSelect('PRAGMA table_info("$name")').get();
+        final col = cols.where((c) => c.data['name'] == column).firstOrNull;
+        // `notnull = 1` معناها العمود إجباري.
+        final nullable = (col?.data['notnull'] as int? ?? 0) == 0;
+
+        out.add((table: name, column: column, nullable: nullable));
+      }
+    }
+    return out;
+  }
+
+  /// بيفضّي الطريق قدّام حذف [target]: يفصل الروابط الاختيارية ويحذف الصفوف
+  /// اللي مالهاش معنى من غير أبوها — بالتكرار لحد ما التبعيات تخلص.
+  ///
+  /// [counts] بتتزوّد بالمحذوف والمفصول عشان الواجهة تعرض اللي حصل بالظبط.
+  Future<void> _clearDependents(
+    String target,
+    Map<String, int> counts, {
+    Set<String>? visited,
+  }) async {
+    final seen = visited ?? <String>{};
+    if (!seen.add(target)) return; // دورة في السكيما — بنوقف
+
+    for (final dep in await _dependentsOf(target)) {
+      if (dep.table == target) continue;
+
+      if (dep.nullable) {
+        final n = await db.customUpdate(
+          'UPDATE "${dep.table}" SET "${dep.column}" = NULL '
+          'WHERE "${dep.column}" IS NOT NULL',
+        );
+        if (n > 0) counts['فصل ارتباط ${dep.table}'] = n;
+      } else {
+        // الأبناء الأول، وبعدين الصف نفسه.
+        await _clearDependents(dep.table, counts, visited: seen);
+        final n = await db.customUpdate('DELETE FROM "${dep.table}"');
+        if (n > 0) {
+          counts[dep.table] = (counts[dep.table] ?? 0) + n;
+        }
+      }
+    }
+  }
+
   /// القالب المشترك: حارس الوضع ← نسخة احتياطية ← معاملة واحدة.
   ///
   /// المعاملة مهمة: لو الحذف وقع في النص، الجزء اللي اتنفّذ يترجع. الحالة
@@ -173,6 +265,10 @@ class DataWipeService {
       counts['بنود العروض'] = await _wipe(db.offerItems);
       counts['مكوّنات قوائم التصنيع'] = await _wipe(db.bomComponents);
       counts['قوائم التصنيع'] = await _wipe(db.billOfMaterials);
+      // الأصناف عندها أكتر من عشرين جدول تابع (فواتير معلقة، جرد، سندات،
+      // أوامر شراء وبيع، عروض أسعار، تكاليف محمّلة…). التعداد اليدوي كان
+      // ناقص ١٢ منهم.
+      await _clearDependents('products', counts);
       counts['الأصناف'] = await _wipe(db.products);
       return counts;
     });
@@ -195,6 +291,9 @@ class DataWipeService {
         counts['بنود اليومية'] = await _wipe(db.journalEntryLines);
         counts['قيود اليومية'] = await _wipe(db.journalEntries);
         counts['حركات الصناديق'] = await _wipe(db.safeTransactions);
+        // أي تبعية باقية على الفاتورة (أوامر التشغيل، الفواتير الإلكترونية،
+        // عروض الأسعار المتحوّلة، أوامر البيع) تتفصل أو تتحذف حسب نوع العمود.
+        await _clearDependents('sales_invoices', counts);
         counts['الفواتير'] = await _wipe(db.salesInvoices);
         return counts;
       });
@@ -211,6 +310,7 @@ class DataWipeService {
         counts['حركات المخزون'] = await _wipe(db.stockMovements);
         counts['بنود اليومية'] = await _wipe(db.journalEntryLines);
         counts['قيود اليومية'] = await _wipe(db.journalEntries);
+        await _clearDependents('purchase_invoices', counts);
         counts['الفواتير'] = await _wipe(db.purchaseInvoices);
         return counts;
       });
@@ -248,6 +348,10 @@ class DataWipeService {
       );
       counts['أطراف مزدوجة (أُلغيت الصفة فقط)'] = demoted;
 
+      // الأطراف عندها ١٤ جدول تابع (دفعات، أوراق تجارية، نقاط ولاء، أوامر
+      // بيع وشراء، فواتير معلقة…) — الحارس فوق بيغطي الفواتير بس.
+      await _clearDependents('parties', counts);
+
       final removed = await db.customUpdate(
         'DELETE FROM parties WHERE $flagCol = 1 AND $otherCol = 0',
         updates: {db.parties},
@@ -279,6 +383,9 @@ class DataWipeService {
       counts['ربط الحسابات'] = await _wipe(db.accountMappings);
       counts['بنود قوالب اليومية'] = await _wipe(db.journalEntryTemplateLines);
       counts['قوالب اليومية'] = await _wipe(db.journalEntryTemplates);
+      // الحسابات مربوطة بالخزائن والأصول الثابتة والموازنات والتسويات
+      // البنكية — وكلهم روابط اختيارية بتتفصل مش مستندات تتحذف.
+      await _clearDependents('accounts', counts);
       counts['الحسابات'] = await _wipe(db.accounts);
       return counts;
     });
@@ -327,8 +434,11 @@ class DataWipeService {
         counts['الفواتير المعلقة'] = await _wipe(db.heldOrders);
         counts['الورديات'] = await _wipe(db.shifts);
 
-        // أطراف وأصناف
+        // أطراف وأصناف — دول أكتر جدولين عليهم تبعيات في السكيما كلها،
+        // فالتنظيف المولَّد بيمسك اللي التعداد اليدوي فوق ما وصلوش.
+        await _clearDependents('parties', counts);
         counts['الأطراف'] = await _wipe(db.parties);
+        await _clearDependents('products', counts);
         counts['الأصناف'] = await _wipe(db.products);
 
         // سجلات

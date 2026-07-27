@@ -60,6 +60,10 @@ void main() {
   late AppDatabase db;
   late DataWipeService svc;
   late Directory docsDir;
+  // مع تشغيل قيود الـ FK، أي صف بيشاور على مستودع أو مستخدم لازم يشاور على
+  // واحد **موجود فعلاً** — مينفعش نكتب 1 ونمشي.
+  late int whId;
+  late int userId;
 
   /// بيحطّ ملف داتابيز صوري في مجلد المستندات الوهمي عشان
   /// `createDatabaseBackup` يلاقي حاجة ينسخها (بيرجع null لو الملف مش موجود).
@@ -74,6 +78,21 @@ void main() {
     plantDatabaseFile();
 
     db = AppDatabase.forTesting();
+
+    // ⚠️ `AppDatabase.forTesting()` بيسيب `PRAGMA foreign_keys` **مطفي**،
+    // والتطبيق الحقيقي بيشغّله (`connection_io.openConnection`). الفرق ده
+    // خلّى فئة كاملة من الباجات غير مرئية للاختبارات: الحذف كان بينجح هنا
+    // ويفشل عند العميل بـ `SqliteException(787): FOREIGN KEY constraint
+    // failed`. الملف ده بيشغّله عشان يختبر تحت نفس قيود الإنتاج.
+    await db.customStatement('PRAGMA foreign_keys = ON');
+
+    whId = (await db.customSelect('SELECT id FROM warehouses LIMIT 1')
+            .getSingle())
+        .data['id'] as int;
+    userId =
+        (await db.customSelect('SELECT id FROM users LIMIT 1').getSingle())
+            .data['id'] as int;
+
     svc = DataWipeService(db);
   });
 
@@ -117,19 +136,19 @@ void main() {
       db.into(db.salesInvoices).insert(
             SalesInvoicesCompanion.insert(
               invoiceNumber: number,
-              warehouseId: 1,
-              userId: 1,
+              warehouseId: whId,
+              userId: userId,
               invoiceDate: DateTime(2026, 7, 27),
               total: Value(total),
             ),
           );
 
-  Future<int> seedPurchaseInvoice(String number, {double total = 50}) =>
+  Future<int> seedPurchaseInvoice(String number, {double total = 50}) async =>
       db.into(db.purchaseInvoices).insert(
             PurchaseInvoicesCompanion.insert(
               invoiceNumber: number,
-              supplierId: 1,
-              warehouseId: 1,
+              supplierId: await seedParty('مورد الفاتورة', supplier: true),
+              warehouseId: whId,
               invoiceDate: DateTime(2026, 7, 27),
               total: Value(total),
             ),
@@ -174,9 +193,10 @@ void main() {
   group('الحُرّاس', () {
     test('حذف الأصناف يُرفض لما يكون فيه بنود فواتير مبيعات', () async {
       final pid = await seedProduct('صنف مرتبط');
+      final invId = await seedSalesInvoice('S-G1');
       await db.into(db.salesInvoiceItems).insert(
             SalesInvoiceItemsCompanion.insert(
-              invoiceId: 1,
+              invoiceId: invId,
               productId: pid,
               quantity: 1,
               unitPrice: 10,
@@ -195,9 +215,10 @@ void main() {
 
     test('حذف الأصناف يُرفض لما يكون فيه بنود فواتير مشتريات', () async {
       final pid = await seedProduct('صنف مشتريات');
+      final invId = await seedPurchaseInvoice('P-G1');
       await db.into(db.purchaseInvoiceItems).insert(
             PurchaseInvoiceItemsCompanion.insert(
-              invoiceId: 1,
+              invoiceId: invId,
               productId: pid,
               quantity: 1,
               unitCost: 5,
@@ -327,7 +348,7 @@ void main() {
       await db.into(db.stockMovements).insert(
             StockMovementsCompanion.insert(
               productId: pid,
-              warehouseId: 1,
+              warehouseId: whId,
               movementType: 'sale',
               quantity: -2,
               balanceAfter: 0,
@@ -363,7 +384,7 @@ void main() {
       await db.into(db.inventoryBalances).insert(
             InventoryBalancesCompanion.insert(
               productId: pid,
-              warehouseId: 1,
+              warehouseId: whId,
               quantity: const Value(5),
             ),
           );
@@ -442,7 +463,166 @@ void main() {
   });
 
   // ═══════════════════════════════════════════════════════════════════════
-  // ٣) النسخة الاحتياطية — الحماية التالتة
+  // ٣) قيود المفاتيح الأجنبية — الباج اللي ضرب على أول قاعدة حقيقية
+  // ═══════════════════════════════════════════════════════════════════════
+  //
+  // النسخة الأولى كانت بتعدّد جداول الأبناء بالإيد، فأول فاتورة مبيعات
+  // حقيقية طلّعت:
+  //
+  //   SqliteException(787): FOREIGN KEY constraint failed
+  //   Causing statement: DELETE FROM "sales_invoices"
+  //
+  // الاختبارات دي بتزرع صف في **كل** جدول تابع بيقدر يوقّع الحذف، وبتتأكد
+  // إن العملية بتخلص. ولإن التنظيف مولَّد من `PRAGMA foreign_key_list`، أي
+  // جدول جديد في السكيما بيتغطّى من غير تعديل هنا.
+
+  group('قيود المفاتيح الأجنبية', () {
+    /// كل الأعمدة اللي بتشاور على [target] — نفس استعلام الخدمة.
+    Future<List<({String table, String column, bool nullable})>> dependentsOf(
+      String target,
+    ) async {
+      final tables = await db
+          .customSelect(
+            "SELECT name FROM sqlite_master WHERE type='table' "
+            "AND name NOT LIKE 'sqlite_%'",
+          )
+          .get();
+
+      final out = <({String table, String column, bool nullable})>[];
+      for (final row in tables) {
+        final name = row.data['name'] as String;
+        if (name == target) continue;
+        final fks =
+            await db.customSelect('PRAGMA foreign_key_list("$name")').get();
+        for (final fk in fks) {
+          if (fk.data['table'] != target) continue;
+          final column = fk.data['from'] as String;
+          final cols =
+              await db.customSelect('PRAGMA table_info("$name")').get();
+          final col = cols.where((c) => c.data['name'] == column).firstOrNull;
+          out.add((
+            table: name,
+            column: column,
+            nullable: (col?.data['notnull'] as int? ?? 0) == 0,
+          ));
+        }
+      }
+      return out;
+    }
+
+    test('السكيما فعلاً فيها تبعيات على كل هدف — الاختبار مش فاضي', () async {
+      // لو ده فشل يبقى الاستعلام اتكسر، والاختبارات اللي تحت بتعدّي
+      // على الفاضي وهي مش بتختبر حاجة.
+      for (final target in [
+        'sales_invoices',
+        'purchase_invoices',
+        'products',
+        'parties',
+        'accounts',
+      ]) {
+        expect(
+          (await dependentsOf(target)).length,
+          greaterThan(0),
+          reason: 'مفيش تبعيات على $target — الاستعلام غلط',
+        );
+      }
+    });
+
+    test('قيود الـ FK مفعّلة في الاختبار زي التطبيق', () async {
+      // من غير ده الاختبارات دي بتعدّي غلط: الحذف بينجح في الاختبار
+      // وبيفشل عند العميل، وهي بالظبط الحالة اللي حصلت.
+      final r = await db.customSelect('PRAGMA foreign_keys').getSingle();
+      expect(r.data.values.first, 1);
+    });
+
+    test('حذف فواتير المبيعات بينجح مع أمر تشغيل وفاتورة إلكترونية مرتبطين',
+        () async {
+      final invId = await seedSalesInvoice('S-FK', total: 10);
+
+      // العمودان دول هما اللي وقّعوا العملية عند العميل: الأول اختياري
+      // (يتفصل) والتاني إجباري (الصف يتحذف).
+      await db.customUpdate(
+        'INSERT INTO work_orders (order_number, invoice_id) '
+        "VALUES ('WO-1', $invId)",
+      );
+      await db.customUpdate(
+        'INSERT INTO e_invoice_submissions (sale_id, platform) '
+        "VALUES ($invId, 'test')",
+      );
+
+      final res = await svc.wipeSalesInvoices();
+
+      expect(res.ok, isTrue, reason: res.error);
+      expect(await countOf('sales_invoices'), 0);
+      // أمر التشغيل مستند مستقل — بيفضل موجود بلا ربط.
+      expect(await countOf('work_orders'), 1);
+      final wo = await db
+          .customSelect('SELECT invoice_id FROM work_orders')
+          .getSingle();
+      expect(wo.data['invoice_id'], isNull);
+      // الفاتورة الإلكترونية مالهاش معنى من غير فاتورتها.
+      expect(await countOf('e_invoice_submissions'), 0);
+    });
+
+    test('حذف الأصناف بينجح مع بنود مستندات مرتبطة', () async {
+      final pid = await seedProduct('صنف مرتبط بكل حاجة');
+
+      await db.customUpdate('INSERT INTO stock_audits DEFAULT VALUES');
+      final auditId = (await db
+              .customSelect('SELECT id FROM stock_audits LIMIT 1')
+              .getSingle())
+          .data['id'] as int;
+      await db.customUpdate(
+        'INSERT INTO inventory_bonds (bond_number, warehouse_id) '
+        "VALUES ('B-1', $whId)",
+      );
+      final bondId = (await db
+              .customSelect('SELECT id FROM inventory_bonds LIMIT 1')
+              .getSingle())
+          .data['id'] as int;
+
+      // بنود مستندات كانت **كلها** ناقصة من التعداد اليدوي.
+      await db.customUpdate(
+        'INSERT INTO stock_audit_items (audit_id, product_id, '
+        'expected_quantity, actual_quantity, difference) '
+        'VALUES ($auditId, $pid, 0, 0, 0)',
+      );
+      await db.customUpdate(
+        'INSERT INTO inventory_bond_items (bond_id, product_id, quantity) '
+        'VALUES ($bondId, $pid, 1)',
+      );
+
+      final res = await svc.wipeProducts();
+
+      expect(res.ok, isTrue, reason: res.error);
+      expect(await countOf('products'), 0);
+      expect(await countOf('stock_audit_items'), 0);
+      expect(await countOf('inventory_bond_items'), 0);
+    });
+
+    test('الروابط الاختيارية تتفصل ولا تُحذف مستنداتها', () async {
+      // عرض سعر اتحوّل لفاتورة: حذف الفاتورة **مش** المفروض يمسح عرض
+      // السعر — ده مستند تاني ما حدش طلب مسحه.
+      final invId = await seedSalesInvoice('S-Q', total: 5);
+      await db.customUpdate(
+        'INSERT INTO quotations (quotation_number, warehouse_id, user_id, '
+        'quotation_date, converted_to_invoice_id) '
+        "VALUES ('Q-1', $whId, $userId, 0, $invId)",
+      );
+
+      final res = await svc.wipeSalesInvoices();
+
+      expect(res.ok, isTrue, reason: res.error);
+      expect(await countOf('quotations'), 1);
+      final q = await db
+          .customSelect('SELECT converted_to_invoice_id FROM quotations')
+          .getSingle();
+      expect(q.data['converted_to_invoice_id'], isNull);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // ٤) النسخة الاحتياطية — الحماية التالتة
   // ═══════════════════════════════════════════════════════════════════════
 
   group('النسخة الاحتياطية', () {
