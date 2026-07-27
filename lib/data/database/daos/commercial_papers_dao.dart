@@ -159,6 +159,7 @@ extension CommercialPapersDao on AppDatabase {
     int? costCenterId,
     int? counterAccountId,
   }) async {
+    await _ensureValidActor(changedBy);
     await transaction(() async {
       final paper = await getCommercialPaper(paperId);
       if (paper == null) {
@@ -203,6 +204,23 @@ extension CommercialPapersDao on AppDatabase {
         counterAccountId: counterAccountId,
       );
     });
+  }
+
+  /// `paper_status_history.changed_by` is a NOT NULL FK to users. A caller that
+  /// passes an id with no matching user — e.g. the repository's `changedBy ?? 0`
+  /// fallback when no acting user was supplied — would otherwise fail the
+  /// history insert with an opaque `SqliteException(787)` at the client (a
+  /// failure that stayed invisible to the tests while FK enforcement was off).
+  /// Fail loud and actionable instead of writing a broken foreign key.
+  Future<void> _ensureValidActor(int changedBy) async {
+    final actor = await (select(users)..where((u) => u.id.equals(changedBy)))
+        .getSingleOrNull();
+    if (actor == null) {
+      throw StateError(
+        'commercial paper status change: changedBy=$changedBy is not a valid '
+        'user id — a real acting user must be supplied',
+      );
+    }
   }
 
   /// Auto-post journal entries for commercial paper status changes
@@ -878,6 +896,7 @@ extension CommercialPapersDao on AppDatabase {
     required int changedBy,
     String? notes,
   }) async {
+    await _ensureValidActor(changedBy);
     await transaction(() async {
       final paper = await getCommercialPaper(paperId);
       if (paper == null) throw Exception('الورقة التجارية غير موجودة');
@@ -923,6 +942,7 @@ extension CommercialPapersDao on AppDatabase {
     int? costCenterId,
     String? notes,
   }) async {
+    await _ensureValidActor(changedBy);
     await transaction(() async {
       final paper = await getCommercialPaper(paperId);
       if (paper == null) throw Exception('الورقة التجارية غير موجودة');
@@ -983,6 +1003,7 @@ extension CommercialPapersDao on AppDatabase {
     int? costCenterId,
     String? notes,
   }) async {
+    await _ensureValidActor(changedBy);
     await transaction(() async {
       final paper = await getCommercialPaper(paperId);
       if (paper == null) {
@@ -1029,6 +1050,7 @@ extension CommercialPapersDao on AppDatabase {
     int? costCenterId,
     String? notes,
   }) async {
+    await _ensureValidActor(changedBy);
     await transaction(() async {
       final paper = await getCommercialPaper(paperId);
       if (paper == null) {
