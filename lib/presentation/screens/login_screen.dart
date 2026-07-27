@@ -242,9 +242,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ]) {
               try {
                 await SyncRetryPolicy.withSyncRetry(
-                  () => syncRepo
-                      .performTableSync(serverUrl, t)
-                      .timeout(const Duration(seconds: 5)),
+                  () async {
+                    final result = await syncRepo
+                        .performTableSync(serverUrl, t)
+                        .timeout(const Duration(seconds: 5));
+                    // performTableSync CATCHES the underlying error and reports
+                    // it in `result.success` instead of throwing. withSyncRetry
+                    // only classifies an outcome as a failure when the request
+                    // throws, and nothing here read `success` — so a pull that
+                    // never happened was retried zero times, raised no toast,
+                    // and printed "✓ synced table: $t (immediate)" in the login
+                    // log. A silently missed `user_branch_access` pull leaves
+                    // the user with no branch rows at all, which BranchScope
+                    // then fails CLOSED on: every branch-tagged invoice, report
+                    // and party disappears from the UI with no error anywhere.
+                    if (!result.success) {
+                      throw StateError(result.message);
+                    }
+                    return result;
+                  },
                   tag: '${t.toUpperCase()}-SYNC',
                   onClassification: (cls) {
                     // immediate/slow/transient → already logged by policy

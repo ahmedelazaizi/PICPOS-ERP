@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../core/logging/diagnostic_logger.dart';
 import '../data/database/database.dart';
 import '../domain/entities/sync_dtos.dart';
 import 'delta_pull_service.dart';
@@ -387,7 +388,20 @@ class SyncService {
 
   /// Sync a specific table triggered by WebSocket data_changed event
   Future<void> syncTable(String? table) async {
-    if (_isSyncing) return;
+    if (_isSyncing) {
+      // Returning here reports SUCCESS to the caller for a pull that never
+      // ran. At login six identity tables are pulled in a loop, so a periodic
+      // or WebSocket-triggered sync overlapping that loop can silently skip
+      // `user_branch_access` — and the user ends up with no branch rows and an
+      // empty, fail-closed BranchScope. Behaviour is unchanged; this only
+      // makes the skip visible in the log an operator can send back.
+      unawaited(DiagnosticLogger.log(
+        'SYNC-SKIP',
+        'syncTable("$table") skipped — another sync already in flight; '
+        'the caller will still be told it succeeded',
+      ));
+      return;
+    }
     debugPrint('[Sync] Initializing modular sync for table: $table');
 
     // Phase 6 (T2) — branch-isolation gate also applies to per-table syncs
