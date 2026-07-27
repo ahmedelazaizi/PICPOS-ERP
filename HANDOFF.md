@@ -652,6 +652,66 @@ accounts+mappings كاملة · cost_centers/currencies/price_lists 0`.
 
 ---
 
+## ٥.٨ جلسة ٢٧ يوليو ٢٠٢٦ — عيّنة إعادة تصميم الشاشات (٣ شاشات)
+
+البند ٣ في ٥.٥ (إعادة تصميم باقي الشاشات) — **العيّنة خلصت ومتحقَّق منها.**
+
+### الكوميتات
+
+```
+679b50c  تلميع مراجعة نهائية (كارت الحركة + تبسيط اسم التصنيف)
+838fb92  شاشة المشتريات بهوية PicPos
+33c7355  شاشة المخزون بهوية PicPos
+cfd39d3  شاشة الأصناف بهوية PicPos
+9e2a9f2  طقم تخطيط picpos_shell
+```
+
+### القرار المعماري (مؤكَّد من صاحب المشروع)
+
+**شاشات PicPos منفصلة يختارها `Brand.isPicPos`** — نفس سابقة الـ POS، **ليس** مكوّنات
+مشتركة تتفرّع داخل ملفات UralCash. الشاشة المنفصلة **تستورد وتنادي** نفس الـ controllers
+والخدمات والجداول، فـ«المنطق واحد» حرفياً، وملفات UralCash **لا تُلمس** (التعديل الوحيد
+المشترك = ٣ أسطر اختيار بالعلامة في `app_main_screen.dart`، فرع `else` = السلوك الحالي).
+
+### طقم `picpos_shell/` (PicPos-only، مشترك بين الشاشات)
+
+`picpos_page_header.dart` (هيدر فاتح + خط لوني سفلي 2.5px — قرار صاحب المشروع) ·
+`picpos_content_card.dart` (كارت مسطّح بحد شعري، بديل `elevation:2`) · `picpos_toolbar.dart` ·
+`picpos_screen_scaffold.dart`. أي شاشة PicPos جاية تُبنى فوقه.
+
+### تكلفة النسخ (مقبولة بوعي — نفس منطق `picpos_pos_operations.dart`)
+
+المخزون والمشتريات فيهم منطق تنظيم واجهة في `State`/mixins **خاصة (`part of`)**، فاتنسخ
+حرفياً في الـ fork (المخزون: تنظيم الصفحات؛ المشتريات: `_PurchasesPicposCrud` +
+`_PurchasesPicposDetails` ومنهم **مسار الحفظ المحاسبي `_handleSavePurchaseSimple`**، متحقَّق
+byte-identical). **مصيدة النسخ:** أي إصلاح باج منطقي في المنسوخ يتصلّح في مصدر UralCash أولاً
+ثم ينتقل patch — [[engine-fixes-backport-to-uralcash]].
+
+### الحالة — متحقَّق منها
+
+```
+flutter analyze lib     No issues found!
+flutter test            +3269 ~12 · 0 فشل (جولة تسلسلية --concurrency=1)
+اختبارات الهوية         العلامتين خضرا (uralcash 12 · picpos 7)
+build_picpos.bat        SUCCESS
+فحص binary             ٤ ملاح · UTF-16=٠ · monexia/cashier_market/avalon/uraljo=٠
+```
+
+> **مصيدة بيئة جديدة:** الجولة الكاملة **بالتوازي** بتفشل عشوائياً بـ «Connection closed
+> before test suite loaded» (موت isolate تحت ضغط ذاكرة في جلسة طويلة) — ملفات مختلفة كل مرة،
+> وتعدّي معزولة، ومبتستوردش كود العيّنة. **الحقيقة النظيفة = `flutter test --concurrency=1`.**
+
+> **مصيدة اختبار:** اختبار render لشاشة كاملة بيهنّج ١٠ دقايق تحت flutter_test (drift +
+> platform channels، مفيش سابقة في الريبو). اختبارات العيّنة بتجرّب المكوّنات المعزولة الجديدة
+> بس (`picpos_shell` + `PicPosCategoryPicker`)؛ render الشاشة يتحقق بالبناء والتشغيل اليدوي.
+
+### اللي فاضل
+
+باقي شاشات lite الـ١٦ — نفس الطقم يوسّع بسهولة. القرار المعلّق: الترتيب. مستند التصميم
+والخطة في `docs/superpowers/`.
+
+---
+
 ## ٦. أوامر البناء والاختبار
 
 ```bash
