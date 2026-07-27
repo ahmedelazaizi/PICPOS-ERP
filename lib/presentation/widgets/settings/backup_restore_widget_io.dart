@@ -191,7 +191,9 @@ class BackupRestoreWidget extends ConsumerWidget {
                     SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'سيتم استبدال جميع البيانات الحالية. يرجى إعادة تشغيل البرنامج بعد الاستعادة.',
+                        'سيتم استبدال جميع البيانات الحالية. الاستعادة تُطبَّق '
+                        'عند إعادة تشغيل البرنامج — قبلها لا يتغيّر شيء. '
+                        'وتُؤخذ نسخة احتياطية من الحالة الراهنة أولاً.',
                         style: TextStyle(
                           color: AppColors.warning,
                           fontSize: 12,
@@ -250,11 +252,14 @@ class BackupRestoreWidget extends ConsumerWidget {
       final ok = await repo.restoreBackup(backupPath);
 
       if (context.mounted) {
+        // الاستعادة **متجدولة** مش منفَّذة: مينفعش نكتب فوق داتابيز مفتوحة،
+        // فبتتطبّق عند الإقلاع الجاي. الرسالة لازم تقول ده بالظبط — «تمت»
+        // وهي لسه ما تمّتش هي نفس الكذبة اللي كانت في الكود القديم.
         AppToast.show(
           context,
           ok
-              ? 'تمت الاستعادة بنجاح. يرجى إعادة تشغيل البرنامج.'
-              : 'فشلت الاستعادة — البيانات الحالية لم تتغيّر.',
+              ? 'تم تجهيز الاستعادة. أغلق البرنامج وأعد تشغيله لتطبيقها.'
+              : 'فشل تجهيز الاستعادة — البيانات الحالية لم تتغيّر.',
           type: ok ? ToastType.success : ToastType.error,
         );
       }

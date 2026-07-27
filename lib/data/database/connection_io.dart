@@ -33,6 +33,11 @@ QueryExecutor openConnection() {
     final dbFolder = await getApplicationDocumentsDirectory();
     final file = File(p.join(dbFolder.path, getDatabaseFileName()));
 
+    // أي استعادة متجدولة بتتطبّق **هنا** — قبل أول فتحة للملف. دي اللحظة
+    // الوحيدة اللي مفيش فيها مقبض مفتوح على الداتابيز. اقرا التعليق فوق
+    // `restoreDatabaseBackup`.
+    await _applyPendingRestore(file.path);
+
     // Phase 2: Securely retrieve or generate machine-unique encryption key
     final key = await SecurityService.getDatabaseEncryptionKey();
 
@@ -392,27 +397,80 @@ Future<String?> createDatabaseBackup({
   }
 }
 
-/// Restore database from a backup file
+// ═══════════════════════════════════════════════════════════════════════════
+// الاستعادة — بتتجدول وبتتطبّق عند الإقلاع، مش بتتكتب فوراً
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// الاستعادة كانت بتحاول تكتب فوق ملف الداتابيز **وهو مفتوح من التطبيق نفسه**،
+// وde بيفشل على ويندوز. والنسخة القديمة من الكود كانت بتخبّي الفشل ده لأنها
+// كانت بتكتب على اسم ملف مهجور محدش بيقراه، فبتقول «تمت الاستعادة بنجاح»
+// وهي ما عملتش حاجة.
+//
+// وحتى لو الكتابة نجحت، كانت هتبقى غلط: SQLite ماسك الملف ومعاه WAL وذاكرة
+// صفحات، فاستبدال الملف تحت رجليه بيخلّي الحالة في الذاكرة مش متطابقة مع
+// القرص.
+//
+// فالاستعادة بقت على مرحلتين: النسخة المختارة تتحط في ملف `.restore-pending`
+// جنب الداتابيز، والإقلاع الجاي بيطبّقها **قبل** ما الاتصال يتفتح أصلاً
+// (اقرا `openConnection` فوق). ولو التطبيق اتقفل قبل ما يعيد التشغيل، مفيش
+// حاجة اتغيّرت — الملف المعلَّق بيستنى.
+
+const String _pendingRestoreSuffix = '.restore-pending';
+
+/// بيطبّق استعادة معلَّقة لو موجودة. بيتنادى من `openConnection` **قبل** فتح
+/// الملف، فمفيش أي مقبض مفتوح على الداتابيز في اللحظة دي.
+///
+/// الترتيب مقصود: النسخ الأول، ومسح الملف المعلَّق **بعد** ما ينجح. لو
+/// التطبيق مات في النص، الملف المعلَّق لسه موجود والإقلاع اللي بعده بيعيد
+/// المحاولة — بدل ما نفضل بداتابيز نصّ منسوخة وبلا مصدر.
+Future<void> _applyPendingRestore(String dbPath) async {
+  try {
+    final pending = File('$dbPath$_pendingRestoreSuffix');
+    if (!await pending.exists()) return;
+
+    await pending.copy(dbPath);
+
+    // ملفات WAL/SHM بتاعة الداتابيز القديمة لازم تتشال مع الاستبدال: لو
+    // فضلوا جنب ملف جديد، أول فتحة بتحاول تعيد تطبيق معاملات بتاعة داتابيز
+    // **تانية** على ملف مش بتاعها — يا فساد يا بيانات قديمة بترجع فوق
+    // المستعادة.
+    for (final sidecar in ['$dbPath-wal', '$dbPath-shm']) {
+      final f = File(sidecar);
+      if (await f.exists()) await f.delete();
+    }
+
+    await pending.delete();
+    debugPrint('[RESTORE] pending restore applied from ${pending.path}');
+  } catch (e) {
+    debugPrint('[RESTORE] failed to apply pending restore: $e');
+  }
+}
+
+/// بيجدول استعادة من نسخة احتياطية. **مش بيطبّقها فوراً** — بتتطبّق عند
+/// أول إقلاع بعد كده، عشان مفيش حد يكتب فوق داتابيز مفتوحة.
+///
+/// بيرجع `true` لو الجدولة نجحت. الواجهة لازم تقول للمستخدم إن الاستعادة
+/// هتخلص بعد إعادة التشغيل — مش إنها خلصت.
 Future<bool> restoreDatabaseBackup(String backupPath) async {
   try {
     final backupFile = File(backupPath);
     if (!await backupFile.exists()) return false;
 
     final dbPath = await getDatabasePath();
-    await backupFile.copy(dbPath);
-
-    // ملفات WAL/SHM بتاعة الداتابيز القديمة لازم تتشال مع الاستبدال.
-    // الاتصال هنا بيشتغل `PRAGMA journal_mode = WAL`، فلو الملفين دول فضلوا
-    // جنب ملف داتابيز جديد، أول فتحة بتحاول تعيد تطبيق معاملات بتاعة داتابيز
-    // **تانية** على ملف مش بتاعها: يا فساد يا بيانات قديمة بترجع فوق
-    // المستعادة. الاستعادة كانت بتسيبهم مكانهم.
-    for (final sidecar in ['$dbPath-wal', '$dbPath-shm']) {
-      final f = File(sidecar);
-      if (await f.exists()) await f.delete();
-    }
+    await backupFile.copy('$dbPath$_pendingRestoreSuffix');
+    debugPrint('[RESTORE] scheduled from $backupPath');
     return true;
   } catch (e) {
     debugPrint('[BACKUP] restoreDatabaseBackup failed: $e');
+    return false;
+  }
+}
+
+/// هل فيه استعادة متجدولة مستنية إعادة التشغيل؟
+Future<bool> hasPendingRestore() async {
+  try {
+    return File('${await getDatabasePath()}$_pendingRestoreSuffix').exists();
+  } catch (e) {
     return false;
   }
 }

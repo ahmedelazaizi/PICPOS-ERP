@@ -676,6 +676,36 @@ void main() {
       expect(File(path!).existsSync(), isTrue);
     });
 
+    // ── الاستعادة المعلَّقة ────────────────────────────────────────────
+    //
+    // الاستعادة كانت بتحاول تكتب فوق ملف الداتابيز وهو مفتوح — بتفشل على
+    // ويندوز. والكود الأقدم كان بيخبّي الفشل لأنه بيكتب على ملف مهجور،
+    // فيقول «تمت الاستعادة بنجاح» وهو ما عملش حاجة.
+
+    test('الاستعادة بتتجدول ومبتلمسش الداتابيز الحالية', () async {
+      final source = File('${docsDir.path}${Platform.pathSeparator}src.db')
+        ..writeAsStringSync('restored payload');
+      final dbFile = File(
+        '${docsDir.path}${Platform.pathSeparator}${getDatabaseFileName()}',
+      );
+
+      final ok = await restoreDatabaseBackup(source.path);
+
+      expect(ok, isTrue);
+      // الملف الحيّ زي ما هو — الاستعادة لسه ما اتطبّقتش.
+      expect(dbFile.readAsStringSync(), 'fake sqlite payload');
+      expect(await hasPendingRestore(), isTrue);
+    });
+
+    test('نسخة احتياطية مش موجودة → الجدولة تفشل ومفيش معلَّق', () async {
+      final ok = await restoreDatabaseBackup(
+        '${docsDir.path}${Platform.pathSeparator}لا-يوجد.db',
+      );
+
+      expect(ok, isFalse);
+      expect(await hasPendingRestore(), isFalse);
+    });
+
     test('walCheckpointTruncate بتنجح على قاعدة شغّالة', () async {
       // على قاعدة في الذاكرة الـ PRAGMA بيرجع (busy:0, log:-1,
       // checkpointed:-1) — الـ -1 معناها إن الـ WAL مش مستخدم أصلاً، و
