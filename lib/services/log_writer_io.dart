@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
 
+import '../core/config/brand.dart';
+
 class LogWriter {
   Future<void> writeLog(
     String? path,
@@ -28,7 +30,11 @@ class LogWriter {
       if (!await logDir.exists()) {
         await logDir.create(recursive: true);
       }
-      return '${dir.path}/logs/monexia_$date.log';
+      // كان `monexia_$date.log` — اسم علامة تالتة بيتكتب على قرص العميل.
+      // الملفات دي بيشوفها العميل، فالاسم جزء من الهوية. قيمة UralCash
+      // متروكة بالحرف عشان ملفات السجل القديمة تفضل بنفس النمط.
+      const prefix = Brand.isPicPos ? Brand.dbPrefix : 'monexia';
+      return '${dir.path}/logs/${prefix}_$date.log';
     } catch (_) {
       return null;
     }

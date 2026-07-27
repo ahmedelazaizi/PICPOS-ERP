@@ -264,7 +264,17 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'مرحباً بك في URAL-ERP',
+                          // تسريب هوية: أول شاشة يشوفها عميل PicPos كانت
+                          // بترحّب بيه باسم المنتج التاني. النص عربي، يعني
+                          // مخزّن UTF-16 في الـ snapshot — فحص ASCII في
+                          // قسم ٣.٤ **مبيشوفهوش**. اتكشف بفحص UTF-16.
+                          //
+                          // الشرط `const` فبيتحسم وقت الترجمة والفرع التاني
+                          // بيتشال من الـ snapshot أصلاً. وقيمة UralCash
+                          // متروكة بالحرف عشان شكله ما يتغيّرش.
+                          Brand.isPicPos
+                              ? 'مرحباً بك في ${Brand.name}'
+                              : 'مرحباً بك في URAL-ERP',
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,

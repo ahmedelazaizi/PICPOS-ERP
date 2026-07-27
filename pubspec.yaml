@@ -97,6 +97,11 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   drift_dev: ^2.30.0
   build_runner: ^2.10.4
+  # Transitive via path_provider, declared explicitly so tests can swap
+  # `PathProviderPlatform.instance` for a fake. Needed because the Windows
+  # implementation is pure Dart (win32) rather than a method channel, so
+  # the usual `setMockMethodCallHandler` trick doesn't reach it.
+  path_provider_platform_interface: ^2.1.2
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
