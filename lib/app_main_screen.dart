@@ -36,6 +36,7 @@ import 'presentation/kitchen/screens/kitchen_display_screen.dart';
 import 'presentation/screens/offers_screen.dart';
 import 'presentation/screens/tables_screen.dart';
 import 'presentation/screens/products_screen.dart';
+import 'presentation/products_picpos/screens/products_picpos_screen.dart';
 import 'presentation/screens/categories_screen.dart';
 import 'presentation/screens/analytics_dashboard_screen.dart';
 import 'presentation/screens/hr_screen.dart';
@@ -671,7 +672,9 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
       ),
       ScreenConfig(
         appScreen: AppScreen.products,
-        builder: (_) => const ProductsScreen(),
+        builder: (_) => Brand.isPicPos
+            ? const ProductsPicposScreen()
+            : const ProductsScreen(),
         label: 'الأصناف',
         icon: PhosphorIconsBold.package,
       ),
