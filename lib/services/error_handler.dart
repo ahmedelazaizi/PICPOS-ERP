@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/widgets/app_toast.dart';
 import 'dart:developer' as developer;
 import 'package:intl/intl.dart';
+import '../core/config/brand.dart';
 import 'log_writer.dart';
 
 /// Log level enumeration
@@ -73,7 +74,8 @@ class AppLogger {
     // Console output
     developer.log(
       message,
-      name: tag ?? 'MONEXIA',
+      // كان مثبَّت على `MONEXIA` — اسم علامة تالتة بيوسم كل سطر لوج.
+      name: tag ?? Brand.name,
       level: _levelToInt(level),
       error: error,
       stackTrace: stackTrace,
