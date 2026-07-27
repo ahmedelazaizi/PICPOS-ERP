@@ -671,13 +671,17 @@ void main() async {
     //
     // Why this exists: an install can land in a stuck state where no
     // developer password is set (e.g. wizard never completed cleanly, or
-    // dev password was cleared but never re-set). The developer-tools
-    // gate then disables the password field with "use --reset-dev-password
-    // or re-setup the system" — both paths require either an in-app
-    // toggle that doesn't exist OR re-running the wizard, which can only
-    // be triggered from Developer Tools (chicken-and-egg).
+    // dev password was cleared but never re-set).
     //
-    // This flag breaks the deadlock: clears `setup_completed`,
+    // The narrow case — "no dev password, need into Developer Tools" — is
+    // now handled at the gate itself: when nothing is configured it offers
+    // a set-password form instead of a disabled field, which is what
+    // `DeveloperAuthService` documented all along. This flag remains for
+    // the broader case: re-running the whole wizard (profile, mode,
+    // branches, provisioning), which cannot be triggered from anywhere
+    // else once setup is marked complete.
+    //
+    // It clears `setup_completed`,
     // `setup_in_progress`, AND the developer password keys. On the next
     // boot's wizard-gate (lib/main.dart line ~907), `setup_completed`
     // will be empty so the wizard runs from scratch, including the dev

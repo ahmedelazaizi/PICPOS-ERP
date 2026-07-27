@@ -142,7 +142,10 @@ mixin _PluCsvMixin on ConsumerState<PluManagerScreen> {
 
       final pluItems = scaleProducts.map((p) {
         final plu = (p.scalePluNumber != null && p.scalePluNumber! > 0) ? p.scalePluNumber! : p.id;
-        final isByWeight = p.isSoldByWeight;
+        final isByWeight = scaleItemIsSoldByWeight(
+          scaleType: p.scaleType,
+          isSoldByWeight: p.isSoldByWeight,
+        );
         return ScalePLUItem(
           pluNumber: plu,
           name: p.name,

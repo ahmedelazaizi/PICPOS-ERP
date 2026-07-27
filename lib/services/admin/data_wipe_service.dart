@@ -33,6 +33,7 @@ import 'package:flutter/foundation.dart';
 import '../../data/database/connection_io.dart' show createDatabaseBackup;
 import '../../data/database/database.dart';
 import '../../data/database/sync_interceptor.dart';
+import '../../data/database/wal_checkpoint.dart';
 
 /// نتيجة عملية تصفير.
 @immutable
@@ -84,11 +85,22 @@ class DataWipeService {
 
   /// بياخد نسخة احتياطية. الفشل بيوقف العملية — النسخة هي طريق الرجوع
   /// الوحيد، والحذف من غيرها مقامرة مش عملية صيانة.
+  ///
+  /// و`requireCheckpoint: true` عشان نفس السبب: نسخ ملف الـ `.db` من غير
+  /// تفريغ الـ WAL بيسيب المعاملات الأخيرة برّه النسخة، فاللي هيرجع بعد
+  /// الحذف يبقى أقل من اللي اتحذف. نسخة ناقصة هنا أسوأ من إلغاء العملية.
   Future<(String?, String?)> _backupOrFail() async {
     try {
-      final path = await createDatabaseBackup();
+      final path = await createDatabaseBackup(
+        checkpoint: () => walCheckpointTruncate(db),
+        requireCheckpoint: true,
+      );
       if (path == null || path.isEmpty) {
-        return (null, 'تعذّر إنشاء نسخة احتياطية — أُلغيت العملية.');
+        return (
+          null,
+          'تعذّر إنشاء نسخة احتياطية كاملة — أُلغيت العملية.\n\n'
+              'لو التطبيق مفتوح على أجهزة أو نوافذ تانية، اقفلها وحاول تاني.',
+        );
       }
       return (path, null);
     } catch (e) {

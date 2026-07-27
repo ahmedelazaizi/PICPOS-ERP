@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
@@ -288,14 +289,47 @@ Future<String> getDatabasePath() async {
   return p.join(dbFolder.path, getDatabaseFileName());
 }
 
+/// دالة بتفرّغ الـ WAL في ملف الداتابيز، وبترجع `true` لو نجحت بالكامل.
+/// التنفيذ في `wal_checkpoint.dart` — بيتبعت كـ callback عشان الملف ده
+/// مبيقدرش يستورد `database.dart` (دورة استيراد، اقرأ التعليق هناك).
+typedef WalCheckpoint = Future<bool> Function();
+
 /// Create a backup of the database
 /// Returns the backup file path on success, null on failure
-Future<String?> createDatabaseBackup() async {
+///
+/// [checkpoint] بيتنفّذ **قبل** النسخ عشان يفرّغ الـ WAL في ملف الداتابيز.
+/// من غيره النسخة بتعكس آخر نقطة تفريغ تلقائية مش الحالة دلوقتي، وممكن
+/// تكون ناقصة كل المعاملات اللي لسه في الـ WAL.
+///
+/// [requireCheckpoint] بيخلّي فشل التفريغ **يلغي النسخة كلها** بدل ما ياخد
+/// نسخة ناقصة. تستخدمه الجهات اللي النسخة عندها هي طريق الرجوع الوحيد —
+/// زي أدوات تصفير البيانات. الباقي بياخد نسخة ناقصة أحسن من ولا نسخة.
+Future<String?> createDatabaseBackup({
+  WalCheckpoint? checkpoint,
+  bool requireCheckpoint = false,
+}) async {
   try {
     final dbPath = await getDatabasePath();
     final dbFile = File(dbPath);
 
     if (!await dbFile.exists()) return null;
+
+    if (checkpoint != null) {
+      final flushed = await checkpoint();
+      if (!flushed) {
+        if (requireCheckpoint) {
+          debugPrint(
+            '[BACKUP] WAL checkpoint failed and the caller requires a '
+            'complete snapshot — backup cancelled.',
+          );
+          return null;
+        }
+        debugPrint(
+          '[BACKUP] WAL checkpoint incomplete — the backup may be missing '
+          'the most recent transactions.',
+        );
+      }
+    }
 
     final dbFolder = await getApplicationDocumentsDirectory();
     final backupFolder = Directory(p.join(dbFolder.path, 'backups'));
@@ -309,16 +343,51 @@ Future<String?> createDatabaseBackup() async {
         .replaceAll(':', '-')
         .split('.')
         .first;
-    final backupFileName = '${getDatabaseFileName()}_backup_$timestamp.db';
-    final backupPath = p.join(backupFolder.path, backupFileName);
-
-    await dbFile.copy(backupPath);
+    // الطابع الزمني بدقة **ثانية**، و`File.copy` على ويندوز بيرمي
+    // `PathExistsException` (errno 183) لو الهدف موجود — مش بيستبدله. فنسختان
+    // في نفس الثانية كانت التانية فيهم بترمي، و`createDatabaseBackup` بيبلع
+    // الاستثناء ويرجع `null`.
+    //
+    // وde مش نظري: الإقلاع بياخد نسخة تلقائية (`autoBackupOnStartup` في
+    // `database_startup.dart`) في مرحلة **مؤجَّلة بتشتغل بالتوازي**، وأدوات
+    // تصفير البيانات بتاخد نسخة إجبارية قبل كل عملية وبتعتبر `null` سبب كافٍ
+    // **لإلغاء الحذف**. فعملية تصفير بعد الإقلاع مباشرة — أو عمليتان ورا بعض
+    // — كانت التانية بتتلغي برسالة «تعذّر إنشاء نسخة احتياطية» بلا سبب ظاهر،
+    // والإعادة بعد ثانية بتنجح، فالباج يبان عشوائي.
+    //
+    // والفحص قبل النسخ لوحده مش كفاية: النسختان بيتاخدوا من مسارَي تنفيذ
+    // متوازيين، فالاتنين ممكن يشوفوا الاسم فاضي ويحاولوا ينسخوا عليه. عشان
+    // كده الحلقة بتجرّب اسم تاني **بعد** فشل النسخ كمان، مش قبله بس.
+    String? backupPath;
+    for (var attempt = 0; attempt < 5 && backupPath == null; attempt++) {
+      final suffix = attempt == 0 ? '' : '-$attempt';
+      final candidate = p.join(
+        backupFolder.path,
+        '${getDatabaseFileName()}_backup_$timestamp$suffix.db',
+      );
+      if (await File(candidate).exists()) continue;
+      try {
+        await dbFile.copy(candidate);
+        backupPath = candidate;
+      } on PathExistsException {
+        // خسرنا السباق على الاسم ده — نجرّب اللي بعده.
+        continue;
+      }
+    }
+    if (backupPath == null) {
+      debugPrint('[BACKUP] could not find a free backup name for $timestamp');
+      return null;
+    }
 
     // Keep only last 7 backups
     await _cleanOldBackups(backupFolder.path);
 
     return backupPath;
-  } catch (e) {
+  } catch (e, st) {
+    // أدوات التصفير بتعتبر `null` هنا سبب كافٍ لإلغاء الحذف، فالمستخدم بيشوف
+    // «تعذّر إنشاء نسخة احتياطية» من غير أي سبب. اللوج ده هو الطريق الوحيد
+    // لمعرفة إيه اللي فشل فعلاً.
+    debugPrint('[BACKUP] createDatabaseBackup failed: $e\n$st');
     return null;
   }
 }
@@ -331,13 +400,55 @@ Future<bool> restoreDatabaseBackup(String backupPath) async {
 
     final dbPath = await getDatabasePath();
     await backupFile.copy(dbPath);
+
+    // ملفات WAL/SHM بتاعة الداتابيز القديمة لازم تتشال مع الاستبدال.
+    // الاتصال هنا بيشتغل `PRAGMA journal_mode = WAL`، فلو الملفين دول فضلوا
+    // جنب ملف داتابيز جديد، أول فتحة بتحاول تعيد تطبيق معاملات بتاعة داتابيز
+    // **تانية** على ملف مش بتاعها: يا فساد يا بيانات قديمة بترجع فوق
+    // المستعادة. الاستعادة كانت بتسيبهم مكانهم.
+    for (final sidecar in ['$dbPath-wal', '$dbPath-shm']) {
+      final f = File(sidecar);
+      if (await f.exists()) await f.delete();
+    }
     return true;
   } catch (e) {
+    debugPrint('[BACKUP] restoreDatabaseBackup failed: $e');
     return false;
   }
 }
 
-/// List available backup files
+// ═══════════════════════════════════════════════════════════════════════════
+// مجلد `Documents/backups` **مشترك بين كل المنتجات على نفس الجهاز**، لأن
+// `getApplicationDocumentsDirectory()` بيرجع نفس المسار للاتنين. اللي بيفرّق
+// بينهم هو اسم الملف بس: `uralcash_unified.db_backup_…` مقابل
+// `picpos_unified.db_backup_…`.
+//
+// فأي دالة بتقرا المجلد من غير فلترة بتشوف نسخ المنتج التاني كأنها بتاعتها.
+// وده كان بيكسر أربع حاجات في نفس الوقت:
+//
+//   1. `_cleanOldBackups` بيسيب آخر ٧ ملفات في المجلد — فسبع عمليات على
+//      منتج واحد كانت **بتمسح نسخ المنتج التاني**. وأخطر: أدوات تصفير
+//      البيانات بتاخد نسخة إجبارية قبل كل حذف وبتعتبرها طريق الرجوع
+//      الوحيد، والنسخة دي كانت ممكن تتمسح بالعمليات اللي بعدها.
+//   2. `autoBackupOnStartup` بيتخطّى النسخة لو فيه واحدة أحدث من ٢٤ ساعة —
+//      فنسخة UralCash كانت بتمنع PicPos من أخذ نسخته.
+//   3. `exportBackupToPath` كان ممكن يصدّر نسخة المنتج التاني.
+//   4. `getBackupStats` كان بيعدّ نسخ مش بتاعته.
+//
+// الحل واحد: كل قراءة تتفلتر باسم ملف الداتابيز الحالي. الصيغة دي ثابتة من
+// أول كوميت في المشروع، فنسخ العملاء القديمة بتفضل ظاهرة.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// بادئة أسماء النسخ الاحتياطية للداتابيز الحالية — انظر التعليق فوق.
+String _backupFilePrefix() => '${getDatabaseFileName()}_backup_';
+
+/// هل الملف ده نسخة احتياطية **لهذه** الداتابيز؟
+bool _isOwnBackup(String path) {
+  final name = path.split(Platform.pathSeparator).last;
+  return name.startsWith(_backupFilePrefix()) && name.endsWith('.db');
+}
+
+/// List available backup files (this database's only)
 Future<List<FileSystemEntity>> listBackups() async {
   try {
     final dbFolder = await getApplicationDocumentsDirectory();
@@ -347,7 +458,7 @@ Future<List<FileSystemEntity>> listBackups() async {
 
     final files = await backupFolder
         .list()
-        .where((f) => f.path.endsWith('.db'))
+        .where((f) => _isOwnBackup(f.path))
         .toList();
 
     // Sort by modification time (newest first)
@@ -363,13 +474,13 @@ Future<List<FileSystemEntity>> listBackups() async {
   }
 }
 
-/// Clean old backups, keeping only the last 7
+/// Clean old backups, keeping only the last 7 **of this database**
 Future<void> _cleanOldBackups(String backupFolderPath) async {
   try {
     final backupFolder = Directory(backupFolderPath);
     final files = await backupFolder
         .list()
-        .where((f) => f.path.endsWith('.db'))
+        .where((f) => _isOwnBackup(f.path))
         .toList();
 
     if (files.length <= 7) return;
@@ -392,7 +503,7 @@ Future<void> _cleanOldBackups(String backupFolderPath) async {
 
 /// Auto-backup on startup — creates a backup if the last one is older than 24 hours
 /// Returns the backup path if created, null if skipped or failed
-Future<String?> autoBackupOnStartup() async {
+Future<String?> autoBackupOnStartup({WalCheckpoint? checkpoint}) async {
   try {
     final backups = await listBackups();
 
@@ -402,7 +513,9 @@ Future<String?> autoBackupOnStartup() async {
       if (hoursSince < 24) return null; // Skip — recent backup exists
     }
 
-    return await createDatabaseBackup();
+    // مش `requireCheckpoint`: نسخة الإقلاع التلقائية بتحصل والتطبيق بيفتح،
+    // فوارد قارئ تاني يخلّي التفريغ busy. نسخة ناقصة أحسن من ولا نسخة.
+    return await createDatabaseBackup(checkpoint: checkpoint);
   } catch (e) {
     return null;
   }

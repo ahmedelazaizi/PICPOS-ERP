@@ -73,6 +73,7 @@ class _DeveloperPasswordGate extends ConsumerStatefulWidget {
 class _DeveloperPasswordGateState
     extends ConsumerState<_DeveloperPasswordGate> {
   final _pwdCtl = TextEditingController();
+  final _confirmCtl = TextEditingController();
   bool _visible = false;
   String? _error;
   bool _verifying = false;
@@ -80,6 +81,7 @@ class _DeveloperPasswordGateState
   @override
   void dispose() {
     _pwdCtl.dispose();
+    _confirmCtl.dispose();
     super.dispose();
   }
 
@@ -99,6 +101,47 @@ class _DeveloperPasswordGateState
     }
     ref.read(developerSessionProvider.notifier).unlock();
     if (mounted) setState(() => _verifying = false);
+  }
+
+  /// مسار التعافي: تعيين كلمة مرور مطوّر لما تكون **مش مضبوطة أصلاً**.
+  ///
+  /// من غيره كان `--reset-dev-password` بيقفل الشاشة بدل ما يفتحها: الحالة
+  /// الوحيدة اللي بيوصّلك ليها هي `isFirstTime`، وفيها الخانة والزرار
+  /// الاتنين كانوا متعطّلين ومفيش أي طريق لتعيين كلمة جديدة — فالتعافي
+  /// الموثَّق في `DeveloperAuthService` («يعيّن كلمة جديدة عند أول دخول»)
+  /// ما كانش موجود، والحل الوحيد كان إعادة تشغيل الويزارد من الأول.
+  ///
+  /// أمنياً: الوصول للحالة دي بيتطلّب تشغيل الـ exe بعلم CLI أو متغيّر بيئة
+  /// على الجهاز نفسه — يعني اللي يقدر يعمله يقدر أصلاً يوصل لملف الداتابيز.
+  /// و`setPassword` بيسجّل في سجل التدقيق بمستوى critical.
+  Future<void> _createPassword() async {
+    final pwd = _pwdCtl.text.trim();
+    final cnf = _confirmCtl.text.trim();
+    if (pwd.length < 4 || pwd != cnf) {
+      setState(() {
+        _error = pwd.length < 4
+            ? 'يجب أن لا تقل كلمة المرور عن 4 أحرف'
+            : 'تأكيد كلمة المرور غير مطابق';
+      });
+      return;
+    }
+    setState(() {
+      _verifying = true;
+      _error = null;
+    });
+    try {
+      await ref.read(developerAuthServiceProvider).setPassword(pwd);
+      if (!mounted) return;
+      ref.read(developerSessionProvider.notifier).unlock();
+      setState(() => _verifying = false);
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _verifying = false;
+          _error = 'فشل التعيين: $e';
+        });
+      }
+    }
   }
 
   @override
@@ -137,8 +180,8 @@ class _DeveloperPasswordGateState
                 const SizedBox(height: 8),
                 Text(
                   isFirstTime
-                      ? 'لم يتم تعيين كلمة مرور مطوّر — استخدم --reset-dev-password '
-                          'وأعد التشغيل، أو أعِد إعداد النظام لتعيينها.'
+                      ? 'لم يتم تعيين كلمة مرور مطوّر على هذا التركيب. '
+                          'عيّن واحدة الآن لحماية الشاشة وفتحها.'
                       : 'هذه الشاشة محمية. أدخل كلمة مرور المطوّر للمتابعة.',
                   textAlign: TextAlign.center,
                   style: const TextStyle(
@@ -150,10 +193,12 @@ class _DeveloperPasswordGateState
                 TextField(
                   controller: _pwdCtl,
                   obscureText: !_visible,
-                  enabled: !isFirstTime,
-                  onSubmitted: (_) => _verify(),
+                  onSubmitted: (_) =>
+                      isFirstTime ? _createPassword() : _verify(),
                   decoration: InputDecoration(
-                    labelText: 'كلمة مرور المطوّر',
+                    labelText: isFirstTime
+                        ? 'كلمة مرور مطوّر جديدة'
+                        : 'كلمة مرور المطوّر',
                     prefixIcon: const Icon(PhosphorIconsBold.lock),
                     suffixIcon: IconButton(
                       icon: Icon(_visible
@@ -162,12 +207,28 @@ class _DeveloperPasswordGateState
                       onPressed: () =>
                           setState(() => _visible = !_visible),
                     ),
-                    errorText: _error,
+                    errorText: isFirstTime ? null : _error,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                 ),
+                if (isFirstTime) ...[
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: _confirmCtl,
+                    obscureText: !_visible,
+                    onSubmitted: (_) => _createPassword(),
+                    decoration: InputDecoration(
+                      labelText: 'تأكيد كلمة المرور',
+                      prefixIcon: const Icon(PhosphorIconsBold.lockKey),
+                      errorText: _error,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 16),
                 Row(
                   children: [
@@ -177,7 +238,9 @@ class _DeveloperPasswordGateState
                     ),
                     const Spacer(),
                     ElevatedButton.icon(
-                      onPressed: (_verifying || isFirstTime) ? null : _verify,
+                      onPressed: _verifying
+                          ? null
+                          : (isFirstTime ? _createPassword : _verify),
                       icon: _verifying
                           ? const SizedBox(
                               width: 14,
@@ -187,8 +250,10 @@ class _DeveloperPasswordGateState
                                 color: Colors.white,
                               ),
                             )
-                          : const Icon(PhosphorIconsBold.signIn),
-                      label: const Text('فتح'),
+                          : Icon(isFirstTime
+                              ? PhosphorIconsBold.key
+                              : PhosphorIconsBold.signIn),
+                      label: Text(isFirstTime ? 'تعيين وفتح' : 'فتح'),
                     ),
                   ],
                 ),

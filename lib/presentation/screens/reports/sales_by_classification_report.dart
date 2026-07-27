@@ -220,13 +220,18 @@ class _SalesByClassificationReportState
         ? _categoryData.fold<double>(0, (sum, item) => sum + item.total)
         : _saleTypeData.fold<double>(0, (sum, item) => sum + item.total);
 
+    // GAP-15: اسم الشركة من إعدادات العميل مش قيمة مكتوبة بالإيد. كان
+    // مثبَّت على `MONEXIA Market` — اسم علامة تالتة على رأس تقرير العميل.
+    final receiptSettings =
+        await ref.read(settingsRepositoryProvider).getReceiptSettings();
+
     await InvoiceGenerator.printCategoryReport(
       categories: printData,
       totalSales: totalSales,
       isCategory: isCategory,
       fromDate: _dateRange.start,
       toDate: _dateRange.end,
-      companyName: 'MONEXIA Market',
+      companyName: receiptSettings['companyName'] as String? ?? 'الشركة',
     );
   }
 

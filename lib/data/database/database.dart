@@ -10,6 +10,7 @@ import 'package:flutter/foundation.dart';
 // Import treasury_repository.dart for DAO types (SafeData, TreasurySummaryData, etc.)
 import '../../domain/repositories/treasury_repository.dart';
 import 'connection.dart';
+import 'wal_checkpoint.dart';
 import '../../services/security_service.dart';
 import '../../services/password_collision_scanner.dart';
 import '../../services/journal_entry_diagnostics.dart';

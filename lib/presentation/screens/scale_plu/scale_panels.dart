@@ -433,7 +433,10 @@ mixin _ScalePanelsMixin on ConsumerState<ScalePluExportScreen> {
     final pluItems = <ScalePLUItem>[];
     for (final p in selected) {
       final pluNumber = p.scalePluNumber ?? p.id;
-      final isByWeight = p.scaleType == 'weight' || p.scaleType == 'weightByPiece' || p.isSoldByWeight;
+      final isByWeight = scaleItemIsSoldByWeight(
+        scaleType: p.scaleType,
+        isSoldByWeight: p.isSoldByWeight,
+      );
       final prefix = isByWeight ? weightPrefix : pricePrefix;
       final scaleBarcode = '$prefix${pluNumber.toString().padLeft(codeLen, '0')}';
       pluItems.add(ScalePLUItem(

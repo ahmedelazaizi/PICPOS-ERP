@@ -717,9 +717,14 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
               .map((p) => p.copyWith(currentStock: _scopedStock(p)))
               .toList()
           : _filteredProducts;
+      // GAP-15: اسم الشركة من إعدادات العميل مش قيمة مكتوبة بالإيد. كان
+      // مثبَّت على `MONEXIA Market` — اسم علامة تالتة على رأس تقرير العميل.
+      final receiptSettings =
+          await ref.read(settingsRepositoryProvider).getReceiptSettings();
+
       await InvoiceGenerator.printInventoryReport(
         products: products,
-        companyName: 'MONEXIA Market',
+        companyName: receiptSettings['companyName'] as String? ?? 'الشركة',
       );
     } catch (e) {
       if (mounted) {

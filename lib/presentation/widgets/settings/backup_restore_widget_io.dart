@@ -4,10 +4,9 @@ import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../data/providers/repository_providers.dart';
 
 import '../../../core/design_system/typography.dart';
 
@@ -30,7 +29,7 @@ class BackupRestoreWidget extends ConsumerWidget {
             style: AppTypography.bodySmall,
           ),
           trailing: ElevatedButton(
-            onPressed: () => _backupDatabase(context),
+            onPressed: () => _backupDatabase(context, ref),
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.success),
             child: const Row(
               mainAxisSize: MainAxisSize.min,
@@ -53,7 +52,7 @@ class BackupRestoreWidget extends ConsumerWidget {
             style: AppTypography.bodySmall,
           ),
           trailing: OutlinedButton(
-            onPressed: () => _showRestoreDialog(context),
+            onPressed: () => _showRestoreDialog(context, ref),
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -68,21 +67,27 @@ class BackupRestoreWidget extends ConsumerWidget {
     );
   }
 
-  Future<void> _backupDatabase(BuildContext context) async {
-    try {
-      final dbFolder = await getApplicationDocumentsDirectory();
-      final sourceFile = File('${dbFolder.path}/cashier_market.db');
+  // ═══════════════════════════════════════════════════════════════════════
+  // الودجت دي كانت بتعمل عمليات الملفات بنفسها وعلى اسم داتابيز **مكتوب
+  // بالإيد** (`cashier_market.db` — اسم من قبل إعادة التسمية). النتيجة:
+  //
+  //   * زرار «نسخ احتياطي» كان **بيفشل دايماً** برسالة «قاعدة البيانات غير
+  //     موجودة» — على العلامتين، مش PicPos بس.
+  //   * زرار «استعادة» كان بينسخ النسخة على ملف التطبيق **مبيقراهوش**،
+  //     وبيقول «تمت الاستعادة بنجاح» ويطلب إعادة التشغيل. يعني حد بيستعيد
+  //     بعد كارثة كان يفتكر إن بياناته رجعت وهي ما رجعتش.
+  //   * ونسخة ما قبل الاستعادة كانت بتتاخد من نفس الملف الوهمي، فمفيش حتى
+  //     شبكة أمان قبل الكتابة.
+  //   * واسم النسخة كان `monexia_backup_*` — اسم علامة تالتة خالص.
+  //
+  // الحل مش تصليح الاسم هنا: طبقة العرض أصلاً ممنوعة تلمس `data/database`
+  // (الدستور §IV، ويحرسه `presentation_db_import_guard_test`). فكل العمليات
+  // بقت من `ISettingsRepository`، وهي اللي بتعرف مسار الداتابيز الصح.
+  // ═══════════════════════════════════════════════════════════════════════
 
-      if (!await sourceFile.exists()) {
-        if (context.mounted) {
-          AppToast.show(
-            context,
-            'قاعدة البيانات غير موجودة',
-            type: ToastType.error,
-          );
-        }
-        return;
-      }
+  Future<void> _backupDatabase(BuildContext context, WidgetRef ref) async {
+    try {
+      final repo = ref.read(settingsRepositoryProvider);
 
       String? selectedDirectory = await FilePicker.getDirectoryPath(
         dialogTitle: 'اختر مجلد حفظ النسخة الاحتياطية',
@@ -90,19 +95,29 @@ class BackupRestoreWidget extends ConsumerWidget {
 
       if (selectedDirectory == null) return;
 
-      final timestamp = DateFormat(
-        'yyyy-MM-dd_HH-mm-ss',
-      ).format(DateTime.now());
-      final backupFile = File(
-        '$selectedDirectory/monexia_backup_$timestamp.db',
-      );
-      await sourceFile.copy(backupFile.path);
+      // نسخة طازة الأول، وبعدين تصدير الأحدث للمجلد اللي المستخدم اختاره —
+      // كده الملف المُصدَّر بيعبّر عن الحالة دلوقتي مش عن آخر نسخة قديمة.
+      final created = await repo.createBackup();
+      if (created == null) {
+        if (context.mounted) {
+          AppToast.show(
+            context,
+            'تعذّر إنشاء النسخة الاحتياطية',
+            type: ToastType.error,
+          );
+        }
+        return;
+      }
+
+      final exported = await repo.exportBackup(selectedDirectory);
 
       if (context.mounted) {
         AppToast.show(
           context,
-          'تم حفظ النسخة الاحتياطية في: ${backupFile.path}',
-          type: ToastType.success,
+          exported
+              ? 'تم حفظ النسخة الاحتياطية في: $selectedDirectory'
+              : 'تعذّر نسخ الملف إلى المجلد المحدد',
+          type: exported ? ToastType.success : ToastType.error,
         );
       }
     } catch (e) {
@@ -116,7 +131,7 @@ class BackupRestoreWidget extends ConsumerWidget {
     }
   }
 
-  void _showRestoreDialog(BuildContext context) async {
+  void _showRestoreDialog(BuildContext context, WidgetRef ref) async {
     try {
       FilePickerResult? result = await FilePicker.pickFiles(
         type: FileType.custom,
@@ -133,7 +148,7 @@ class BackupRestoreWidget extends ConsumerWidget {
 
       if (!context.mounted) return;
 
-      _confirmRestore(context, selectedFile.path!, filename);
+      _confirmRestore(context, ref, selectedFile.path!, filename);
     } catch (e) {
       if (context.mounted) {
         AppToast.show(context, 'خطأ: $e', type: ToastType.error);
@@ -143,6 +158,7 @@ class BackupRestoreWidget extends ConsumerWidget {
 
   void _confirmRestore(
     BuildContext context,
+    WidgetRef ref,
     String backupPath,
     String filename,
   ) {
@@ -198,7 +214,7 @@ class BackupRestoreWidget extends ConsumerWidget {
               ),
               onPressed: () async {
                 Navigator.pop(context);
-                await _restoreDatabase(context, backupPath);
+                await _restoreDatabase(context, ref, backupPath);
               },
               child: const Text('استعادة'),
             ),
@@ -208,28 +224,38 @@ class BackupRestoreWidget extends ConsumerWidget {
     );
   }
 
-  Future<void> _restoreDatabase(BuildContext context, String backupPath) async {
+  Future<void> _restoreDatabase(
+    BuildContext context,
+    WidgetRef ref,
+    String backupPath,
+  ) async {
     try {
-      final dbFolder = await getApplicationDocumentsDirectory();
-      final targetFile = File('${dbFolder.path}/cashier_market.db');
-      final backupFile = File(backupPath);
+      final repo = ref.read(settingsRepositoryProvider);
 
-      if (await targetFile.exists()) {
-        final timestamp = DateFormat(
-          'yyyy-MM-dd_HH-mm-ss',
-        ).format(DateTime.now());
-        final backupDir = Directory('${dbFolder.path}/backups');
-        if (!await backupDir.exists()) await backupDir.create();
-        await targetFile.copy('${backupDir.path}/pre_restore_$timestamp.db');
+      if (!await File(backupPath).exists()) {
+        if (context.mounted) {
+          AppToast.show(
+            context,
+            'ملف النسخة الاحتياطية غير موجود',
+            type: ToastType.error,
+          );
+        }
+        return;
       }
 
-      await backupFile.copy(targetFile.path);
+      // شبكة أمان قبل الكتابة فوق الداتابيز الحالية: لو المستخدم استعاد نسخة
+      // غلط، الحالة اللي كان فيها لسه موجودة في مجلد النسخ.
+      await repo.createBackup();
+
+      final ok = await repo.restoreBackup(backupPath);
 
       if (context.mounted) {
         AppToast.show(
           context,
-          'تمت الاستعادة بنجاح. يرجى إعادة تشغيل البرنامج.',
-          type: ToastType.success,
+          ok
+              ? 'تمت الاستعادة بنجاح. يرجى إعادة تشغيل البرنامج.'
+              : 'فشلت الاستعادة — البيانات الحالية لم تتغيّر.',
+          type: ok ? ToastType.success : ToastType.error,
         );
       }
     } catch (e) {

@@ -48,6 +48,12 @@ extension DatabaseMigrations on AppDatabase {
   /// - [_migrateEpoch3]: v81 → v132 (enterprise, advanced features, multi-client sync)
   Future<void> runOnUpgrade(Migrator m, int from, int to) async {
     // R-29: Pre-migration backup — safety snapshot before schema changes
+    //
+    // من غير `checkpoint` عن قصد، بعكس باقي نداءات النسخ: إحنا هنا **جوّه**
+    // `onUpgrade`، يعني الاتصال في نص فتحه والـ migrator ماسكه. إصدار
+    // `PRAGMA wal_checkpoint` في اللحظة دي ممكن يتعارض مع القفل اللي
+    // الترحيل شغال تحته. النسخة هنا ممكن تنقص آخر معاملات قبل الإقفال،
+    // وde مقبول لأنها لقطة أمان قبل تغيير سكيما مش طريق رجوع من حذف.
     try {
       final backupPath = await createDatabaseBackup();
       debugPrint('[Migration] Pre-migration backup created: $backupPath (v$from → v$to)');

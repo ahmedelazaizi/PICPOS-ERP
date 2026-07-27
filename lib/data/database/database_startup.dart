@@ -1176,7 +1176,12 @@ extension DatabaseStartup on AppDatabase {
     // Auto-backup on startup — only for SQLite (file-based)
     if (!_isPostgres) {
       try {
-        await autoBackupOnStartup();
+        // تفريغ الـ WAL قبل النسخ — من غيره النسخة بتعكس آخر تفريغ تلقائي
+        // مش الحالة دلوقتي. مش إجباري هنا: التطبيق بيفتح والقراء الآخرين
+        // واردين، ونسخة ناقصة أحسن من ولا نسخة.
+        await autoBackupOnStartup(
+          checkpoint: () => walCheckpointTruncate(this),
+        );
       } catch (e) {
         debugPrint('[Startup] autoBackup: $e');
       }

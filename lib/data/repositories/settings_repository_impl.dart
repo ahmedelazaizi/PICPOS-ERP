@@ -1,7 +1,11 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../database/database.dart';
-import '../database/connection_io.dart';
+// بـ prefix عن قصد: الملف ده فيه دوال بنفس أسماء دوال connection_io
+// (`getBackupStats` مثلاً)، والاستدعاء غير المُسمّى بيحلّ لدالة الكلاس نفسها
+// مش لدالة الملف — وde كان بيعمل استدعاء لا نهائي.
+import '../database/connection_io.dart' as conn;
+import '../database/wal_checkpoint.dart';
 import '../../domain/repositories/settings_repository.dart';
 import 'base_repository.dart';
 
@@ -46,26 +50,30 @@ class SettingsRepositoryImpl extends BaseRepository<Setting> implements ISetting
   @override
   Future<List<String>> getAvailableBackups() async {
     if (kIsWeb) return [];
-    final entities = await listBackups();
+    final entities = await conn.listBackups();
     return entities.map((e) => e.path).toList();
   }
 
   @override
   Future<String?> createBackup() async {
     if (kIsWeb) return null;
-    return createDatabaseBackup();
+    // تفريغ الـ WAL قبل النسخ عشان النسخة تعكس الحالة دلوقتي — من غيره
+    // بتعكس آخر تفريغ تلقائي بس. مش إجباري: نسخة ناقصة أحسن من ولا نسخة.
+    return conn.createDatabaseBackup(
+      checkpoint: () => walCheckpointTruncate(db),
+    );
   }
 
   @override
   Future<Map<String, dynamic>> getBackupStats() async {
     if (kIsWeb) return {'count': 0, 'totalSize': 0, 'lastBackup': null};
-    return getBackupStats(); // Use the one from connection_io.dart
+    return conn.getBackupStats();
   }
 
   @override
   Future<bool> exportBackup(String destinationFolder) async {
     if (kIsWeb) return false;
-    return exportBackupToPath(destinationFolder);
+    return conn.exportBackupToPath(destinationFolder);
   }
 
   @override
@@ -86,7 +94,7 @@ class SettingsRepositoryImpl extends BaseRepository<Setting> implements ISetting
   @override
   Future<bool> restoreBackup(String path) async {
     if (kIsWeb) return false;
-    return restoreDatabaseBackup(path);
+    return conn.restoreDatabaseBackup(path);
   }
 
   @override

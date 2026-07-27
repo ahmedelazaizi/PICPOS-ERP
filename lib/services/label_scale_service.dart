@@ -89,6 +89,54 @@ enum LabelScaleConnection {
   aclasSDK, // AclasSDK auto-detect (IP only, no port needed)
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// هل الصنف ده بيتباع بالوزن على الميزان؟
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// `scaleType` في جدول الأصناف له أربع قيم، واللي بتحدد الإجابة اتنين منهم:
+//
+//   'count'          عدد          — مش صنف ميزان أصلاً
+//   'weight'         ميزان        — بالوزن (كيلو)          → true
+//   'weightByPiece'  ميزان بالحبة — بالحبة (عدد)           → **false**
+//   'display'        عرض
+//
+// و`isSoldByWeight` **مش كافية لوحدها**: شاشة تعديل الصنف بتضبطها بـ
+// `scaleType == 'weight' || scaleType == 'weightByPiece'`، يعني بتبقى `true`
+// للاتنين. فأي كود بيقرا `isSoldByWeight` من غير ما يستثني `weightByPiece`
+// بيعتبر أصناف الحبة أصناف وزن.
+//
+// ── الباج اللي الدالة دي موجودة عشانه ────────────────────────────────────
+// الحساب ده كان مكرر في أربع أماكن بتلات صيغ مختلفة، وتلاتة منهم غلط:
+//
+//   scale_logic.dart / scale_panels.dart   (شاشة ترحيل الأصناف للميزان)
+//     scaleType == 'weight' || scaleType == 'weightByPiece' || isSoldByWeight
+//     → 'weightByPiece' بيدي true. غلط.
+//
+//   plu_csv_mixin.dart / plu_scale_upload_mixin.dart
+//     isSoldByWeight
+//     → بتتجاهل scaleType خالص، و'weightByPiece' بيبقى isSoldByWeight=true.
+//
+//   categories_screen.dart / product_search_header.dart
+//     scaleType != 'weightByPiece'   ← الصح
+//
+// والنتيجة عند العميل: **كل أصناف الميزان بتترحّل للميزان كأنها بالوزن،
+// فالميزان بيطبع «كيلو» على أصناف الحبة.** وأخطر من الطباعة إن الباركود
+// المولَّد بياخد **بادئة الوزن** (٢١) بدل بادئة السعر (٢٠) — فباركود صنف
+// بالحبة بيتقرا على نقطة البيع كباركود وزن، والسعر بيتحسب غلط.
+//
+// عشان كده الحساب بقى هنا وبس — تكراره تاني معناه إن الصيغ تفترق من جديد.
+bool scaleItemIsSoldByWeight({
+  required String? scaleType,
+  required bool isSoldByWeight,
+}) {
+  // «ميزان بالحبة» بيحسم الموضوع مهما كانت `isSoldByWeight`.
+  if (scaleType == 'weightByPiece') return false;
+  if (scaleType == 'weight') return true;
+  // الأصناف القديمة اللي اتعملت قبل ما `scaleType` يتضاف بيبقى عندها
+  // `isSoldByWeight` بس، فهي الاحتياطي.
+  return isSoldByWeight;
+}
+
 /// PLU item to upload to scale
 class ScalePLUItem {
   final int pluNumber; // PLU code (1-99999)

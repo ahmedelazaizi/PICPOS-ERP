@@ -857,6 +857,14 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
     }
 
     try {
+      // GAP-15: اسم الشركة من إعدادات العميل مش قيمة مكتوبة بالإيد. كان
+      // مثبَّت على `MONEXIA Market` — اسم علامة تالتة كان بيتطبع على
+      // رأس تقرير العميل مهما كان اسم شركته في الإعدادات.
+      final receiptSettings =
+          await ref.read(settingsRepositoryProvider).getReceiptSettings();
+      final companyName =
+          receiptSettings['companyName'] as String? ?? 'الشركة';
+
       await InvoiceGenerator.printSalesReport(
         invoices: _invoices,
         totalSales: _analytics!.totalSales,
@@ -864,7 +872,7 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
         invoiceCount: _analytics!.invoiceCount,
         fromDate: _dateRange.start,
         toDate: _dateRange.end,
-        companyName: 'MONEXIA Market',
+        companyName: companyName,
         printedBy: ref.read(authProvider).user?.displayName,
       );
       // #Forensic Log: Report Print

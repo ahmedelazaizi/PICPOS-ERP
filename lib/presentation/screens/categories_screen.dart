@@ -1181,7 +1181,10 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
             pluNumber: (p.scalePluNumber != null && p.scalePluNumber! > 0) ? p.scalePluNumber! : p.id,
             name: p.name,
             unitPrice: p.pricePerUnit ?? p.salePrice,
-            isByWeight: p.scaleType != 'weightByPiece',
+            isByWeight: scaleItemIsSoldByWeight(
+              scaleType: p.scaleType,
+              isSoldByWeight: p.isSoldByWeight,
+            ),
             barcode: p.barcode,
             productCode: p.code,
           ),
