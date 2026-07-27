@@ -26,6 +26,7 @@ import 'presentation/screens/dashboard_screen.dart';
 import 'presentation/screens/sales_invoices_screen.dart';
 import 'presentation/screens/unified_parties_screen.dart';
 import 'presentation/screens/inventory/inventory_screen.dart';
+import 'presentation/inventory_picpos/screens/inventory_picpos_screen.dart';
 import 'presentation/screens/purchase_invoices_screen.dart';
 import 'presentation/screens/treasury_screen.dart';
 import 'presentation/screens/reports_screen.dart';
@@ -695,7 +696,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => const SecurityScreenGate(
           settingKey: 'inventory_access_password',
           title: 'المخازن',
-          child: InventoryScreen(),
+          child: Brand.isPicPos ? InventoryPicposScreen() : InventoryScreen(),
         ),
         label: 'المخزون',
         icon: PhosphorIconsBold.warehouse,
