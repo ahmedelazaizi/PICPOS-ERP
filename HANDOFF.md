@@ -712,6 +712,74 @@ build_picpos.bat        SUCCESS
 
 ---
 
+## ٥.٩ جلسة ٢٨ يوليو ٢٠٢٦ — نقل صيانة المزامنة والميزان من UralCash (وارد)
+
+البند ١ في برومت بدء الجلسة — **خلص ومتحقَّق منه.** ده أول نقل **وارد** من UralCash
+لـ PicPos (عكس اتجاه الـ backport المعتاد في ٥.٦/٥.٧). صاحب المشروع عمل `format-patch`
+من UralCash وحطّ الملفات في `incoming-patches/`، والجلسة طبّقتها بـ `git am --3way`
+من غير ما تلمس `D:\URAL-ERP`. (المجلد اتشال بعد التطبيق — الكوميتات بتحمل كل المحتوى.)
+
+### الكوميتات
+
+```
+bee3483  chore(diagnostics): إظهار BranchScope فاضي وميزان ميت في لوج الميدان (لوجينج بس)
+56ac445  fix(scale): قراءات الخمول مش فصل كابل + إعادة اتصال بـ backoff + connect/calibrate timeout
+12f43cb  fix(sync): login table-sync كان بيبلّغ نجاح وهو فاشل
+```
+
+### الحالة — متحقَّق منها
+
+```
+flutter analyze lib     No issues found!
+flutter test            +3289 ~12 · 0 فشل (جولة تسلسلية --concurrency=1)
+اختبارات الهوية         العلامتين خضرا (uralcash 12 · picpos 7)
+build_picpos.bat        SUCCESS
+فحص binary             ٤ ملاح · UTF-16=٠ · uraljo/monexia/cashier_market/avalon=٠
+```
+
+(الـ٢٠ اختبار الزيادة عن أساس ٣٢٦٩ هي اختبارات وحدة الميزان الجديدة —
+`scale_disconnect_detector` و`scale_reconnect_policy`.)
+
+### اللي حصل
+
+الصيانة اتعملت في جلسة موازية على UralCash: sync (كوميت واحد) + scale (كوميتين على
+فرع `fix/scale-cashier-hang` مدموجين بميرج). الميرج نفسه **اتخطّى** (بيجمّع بس)، والـ٣
+كوميتات المحتوى اتعملها `format-patch -1 <sha> --start-number N` كل واحدة لوحدها عشان
+الترتيب يتحفظ. طُبّقوا بصفر تعارض، فالتأليف والرسائل اتحفظوا (منقول مش مؤلَّف).
+
+**كوميت مستبعد بوعي:** `1d2c49c test(fk): enforce foreign keys + 94 test` — ده أصله
+اتعمل في PicPos أولاً واتبعت patch لـ UralCash (٥.٧، كوميت `55678f6`)، فـ PicPos عنده
+الشغل ده أصلاً؛ نقله تاني كان هيكرّره.
+
+### ملفات النقل (كلها محرك — صفر forks)
+
+`branch_scope_provider.dart` · `main_desktop.dart` · `login_screen.dart` ·
+`sales_invoices_controller.dart` · `scale_service_io.dart` · `sync_service.dart` +
+ملفين جداد `scale_disconnect_detector.dart` / `scale_reconnect_policy.dart` واختباراتهم.
+**ولا واحد فيهم متنسخ في PicPos** (مش `picpos_pos_operations.dart` ولا inventory/purchases
+forks)، فمصيدة النسخ (٥.٨) مش منطبقة على النقل ده.
+
+**باج ٩ مش متأثّر:** صيانة الميزان دي عن كشف فصل/إعادة اتصال الكابل، مش
+`weightByPiece` ولا بادئة الباركود — فمفيش حاجة تتصلّح في شاشة PicPos POS/الأصناف.
+
+### مصيدة بيئة جديدة
+
+`build_picpos.bat` لمّا يتطلّق من PowerShell **لازم flutter على `$env:PATH`** — خطوة
+`[1/5] Verifying brand isolation` بتنادي `flutter test`، ولو flutter مش متعرّف الـ`.bat`
+بيجهض برسالة **مضلِّلة** «FAILED: brand isolation tests did not pass» بينما السبب الحقيقي
+`'flutter' is not recognized`. البناء الأول أُجهض كده؛ الحل `$env:PATH =
+"D:\Cash\develop\flutter\bin;$env:PATH"` قبل نداء الـ`.bat`.
+
+### قاعدة النقل الوارد (مرجع لأي نقل جاي من UralCash)
+
+1. صاحب المشروع بس يعمل `format-patch` من UralCash ويحطّه في `incoming-patches/`.
+   الجلسة ممنوعة تلمس `D:\URAL-ERP` — ولا حتى `git -C`.
+2. استخدم `-o <dir>` مش `--stdout > file` — PowerShell بيخرّب العربي في رسائل الكوميت.
+3. راجع محتوى الـ patches قبل `git am` — لازم منطق محرك بحت، صفر تسريب هوية.
+4. تحقّق كامل زي فوق قبل ما تقول خلص.
+
+---
+
 ## ٦. أوامر البناء والاختبار
 
 ```bash
@@ -761,28 +829,20 @@ build_picpos.bat
 اقرأ الأقسام ٥.٦ و٥.٧ و٥.٨ بتركيز — قاعدة نقل إصلاحات المحرك بـ patch،
 ومصايد البيئة (flake التوازي، هنجان اختبار الشاشة الكاملة).
 
-الحالة: عيّنة إعادة تصميم ٣ شاشات (الأصناف/المخزون/المشتريات) بهوية PicPos
-**خلصت ومتحقَّق منها** (قسم ٥.٨) — شاشات منفصلة يختارها Brand.isPicPos + طقم
-picpos_shell، وUralCash ما اتلمسش. آخر HEAD نظيف: analyze lib صفر، جولة تسلسلية
-٣٢٦٩ ناجح · ١٢ متخطّى · ٠ فشل، العلامتين خضرا، build_picpos SUCCESS، binary نظيف.
+الحالة: البند ١ (نقل صيانة المزامنة والميزان من UralCash) **خلص ومتحقَّق منه** (قسم ٥.٩) —
+٣ كوميتات منقولة بـ git am --3way، وUralCash ما اتلمسش. قبله عيّنة إعادة تصميم ٣ شاشات
+(الأصناف/المخزون/المشتريات) بهوية PicPos خلصت (قسم ٥.٨). آخر HEAD نظيف: analyze lib صفر،
+جولة تسلسلية ٣٢٨٩ ناجح · ١٢ متخطّى · ٠ فشل، العلامتين خضرا، build_picpos SUCCESS، binary نظيف.
 ⚠️ الجولة الكاملة **بالتوازي** بتفلك عشوائياً (Connection closed — موت isolate)؛
 للتأكيد النظيف استخدم flutter test --concurrency=1 (قسم ٥.٨).
 
-البند ١ (أولوية) — نقل صيانة المزامنة والميزان من UralCash:
-اتعملت صيانة في جلسة موازية على UralCash تخص **المزامنة (sync)** و**الميزان (scale)**،
-ولازم تتنقل لـ PicPos. **ممنوع تفتح D:\URAL-ERP** — الطريق الوحيد المسموح إن صاحب
-المشروع يعمل format-patch من UralCash ويحطّ ملفات الـ patch جوّه PicPos، وإنت تطبّقها
-بـ git am --3way (قسم ١ + ٥.٦). **اسأل صاحب المشروع عن مكان ملفات الـ patch قبل ما تبدأ.**
-بعد التطبيق:
-- ده منطق محرك **منقول مش مؤلَّف** — طبّقه بأمانة زي ما هو من الـ patch، متعيدش تأليفه.
-- مصيدة النسخ: أي إصلاح منطقي في ملف محرك اتنسخ في PicPos لازم ياخد نفس الإصلاح —
-  picpos_pos_operations.dart والنسخ الجديدة في inventory_picpos و purchases_picpos (٥.٨).
-- الميزان: راجع باج ٩ في HANDOFF (weightByPiece + بادئة الباركود) لو الصيانة بتلمسه،
-  وشوف شاشة PicPos POS والأصناف.
-- تحقّق كامل: analyze lib، الاختبارات على العلامتين (--concurrency=1)، build_picpos.bat،
-  فحص binary بالترميزين.
+البند ١ — نقل صيانة المزامنة والميزان من UralCash: **خلص ومتحقَّق منه** (قسم ٥.٩).
+٣ كوميتات (sync + scale + diagnostics) اتنقلت بـ git am --3way من ملفات patch حطّها
+صاحب المشروع في incoming-patches/ (اتشال بعد التطبيق)، وUralCash ما اتلمسش. الميزان
+ماكانش بيلمس باج ٩ (weightByPiece/الباركود). أي نقل **وارد** جديد من UralCash يتبع
+قاعدة قسم ٥.٩.
 
-البند ٢ (استكمال) — باقي شاشات lite الـ١٦ بنفس نمط ٥.٨:
+البند ٢ (الأولوية دلوقتي) — باقي شاشات lite الـ١٦ بنفس نمط ٥.٨:
 شاشات PicPos منفصلة يختارها Brand.isPicPos، تبني فوق طقم picpos_shell، وتعيد استخدام
 نفس الـ controllers والخدمات والجداول — **التخطيط والهوية بس اللي جديد، دون المساس بأي
 منطق**. مستند التصميم والخطة في docs/superpowers/. اعمل brainstorming واعرض الترتيب قبل التنفيذ.
