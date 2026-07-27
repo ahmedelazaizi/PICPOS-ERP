@@ -1,147 +1,5 @@
-From a1dba85836642202c61203798cbe42e4a8554af1 Mon Sep 17 00:00:00 2001
-From: Ahmed Sola <ahmedsola27@gmail.com>
-Date: Mon, 27 Jul 2026 11:21:30 +0300
-Subject: [PATCH 1/2] =?UTF-8?q?fix(engine):=20=D8=AB=D9=85=D8=A7=D9=86?=
- =?UTF-8?q?=D9=8A=D8=A9=20=D8=A8=D8=A7=D8=AC=D8=A7=D8=AA=20=D9=81=D9=8A=20?=
- =?UTF-8?q?=D8=A7=D9=84=D9=86=D8=B3=D8=AE=20=D8=A7=D9=84=D8=A7=D8=AD=D8=AA?=
- =?UTF-8?q?=D9=8A=D8=A7=D8=B7=D9=8A=20=D9=88=D8=A7=D9=84=D8=A7=D8=B3=D8=AA?=
- =?UTF-8?q?=D8=B9=D8=A7=D8=AF=D8=A9=20=D9=88=D8=A7=D9=84=D9=85=D9=8A=D8=B2?=
- =?UTF-8?q?=D8=A7=D9=86=20=D9=88=D8=A7=D9=84=D8=AA=D9=82=D8=A7=D8=B1=D9=8A?=
- =?UTF-8?q?=D8=B1?=
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
-
-كلها في ملفات محرك مشتركة — يعني موجودة عند UralCash بنفس الشكل.
-الكوميت ده معمول عشان ينتقل بـ format-patch من غير تعديل (مفيش فيه
-أي إشارة لثوابت العلامة).
-
-اتكشفوا أثناء التحقق من أدوات تصفير البيانات، وأربعة منهم كان مستحيل
-يبانوا من غير تشغيل فعلي.
-
-── ١) النسخ الاحتياطية مش مفلترة باسم الداتابيز ─────────────────────
-مجلد `Documents/backups` مشترك بين كل المنتجات على نفس الجهاز، واللي
-بيفرّق بينهم اسم الملف بس. وكل الدوال كانت بتقرا المجلد بلا فلترة،
-فأربع حاجات كانت مكسورة في نفس الوقت:
-
-  - `_cleanOldBackups` بيسيب آخر ٧ ملفات في المجلد كله، فسبع عمليات
-    على منتج بتمسح نسخ المنتج التاني — ومنها النسخة اللي أدوات التصفير
-    بتعتبرها طريق الرجوع الوحيد.
-  - `autoBackupOnStartup` بيتخطّى النسخة لو فيه واحدة أحدث من ٢٤ ساعة،
-    فنسخة منتج كانت بتمنع التاني من أخذ نسخته.
-  - `exportBackupToPath` ممكن يصدّر نسخة منتج تاني.
-  - `getBackupStats` بيعدّ نسخ مش بتاعته.
-
-الفلترة بقت في `listBackups` و`_cleanOldBackups` باسم ملف الداتابيز
-الحالي. الصيغة ثابتة من أول كوميت، فنسخ العملاء القديمة تفضل ظاهرة.
-
-── ٢) سباق على اسم النسخة يلغي الحذف عشوائياً ───────────────────────
-اسم النسخة بدقة **ثانية**، و`File.copy` على ويندوز **بيرمي** لو الهدف
-موجود (errno 183) مش بيستبدل. و`autoBackupOnStartup` بيشتغل في مرحلة
-إقلاع مؤجَّلة **متوازية**.
-
-فأي تصفير بعد الإقلاع مباشرة — أو عمليتان ورا بعض — كانت التانية
-بتتلغي بـ «تعذّر إنشاء نسخة احتياطية» بلا سبب، والإعادة بعد ثانية
-بتنجح، فالباج يبان عشوائي. و`createDatabaseBackup` كان بيبلع الاستثناء
-صامتاً فمفيش أثر في اللوج.
-
-الحل بيجرّب أسماء بديلة **بعد** فشل النسخ كمان مش قبله بس — الفحص
-المسبق لوحده مبيحلّش سباق بين مسارين متوازيين. وضاف debugPrint.
-
-── ٣) النسخة بتتاخد من غير تفريغ الـ WAL ────────────────────────────
-الاتصال بيشتغل WAL، والنسخ بينسخ ملف `.db` لوحده. على جهاز تجريبي كان
-الـ WAL ٢ ميجا والداتابيز ١.٨ — يعني ممكن يبقى أكبر منها، وكله برّه
-النسخة.
-
-`createDatabaseBackup` بقى بياخد callback للتفريغ، و`requireCheckpoint`
-بيخلّي فشل التفريغ **يلغي النسخة**. أدوات التصفير بتمرّره true لأن
-نسخة ناقصة عندها معناها إن اللي يرجع أقل من اللي اتحذف. الإقلاع وزرار
-الإعدادات بياخدوا نسخة ناقصة (أحسن من ولا نسخة). نسخة ما قبل الترحيل
-من غير تفريغ عن قصد — إحنا جوّه onUpgrade والاتصال في نص فتحه.
-
-التنفيذ في ملف منفصل `wal_checkpoint.dart` لأن دوال النسخ مالهاش مقبض
-داتابيز، وتمرير AppDatabase ليها بيقفل دورة استيراد.
-
-── ٤) زرار النسخ الاحتياطي بيفشل دايماً ─────────────────────────────
-`backup_restore_widget_io` كان شغال على اسم داتابيز مكتوب بالإيد
-(`cashier_market.db` — اسم من قبل إعادة التسمية)، فالزرار كان بيطلّع
-«قاعدة البيانات غير موجودة» في كل مرة.
-
-── ٥) الاستعادة بتقول «نجحت» وهي ما عملتش حاجة ──────────────────────
-نفس الاسم الوهمي، بس هنا أخطر: الاستعادة كانت بتنسخ النسخة على ملف
-**التطبيق مبيقراهوش**، وتقول «تمت الاستعادة بنجاح» وتطلب إعادة تشغيل.
-حد بيستعيد بعد كارثة كان يفتكر إن بياناته رجعت وهي ما رجعتش. ونسخة ما
-قبل الاستعادة كانت بتتاخد من نفس الملف الوهمي فمفيش حتى شبكة أمان.
-
-الودجت بقت تعدّي من ISettingsRepository — الـ API كان موجود أصلاً،
-وطبقة العرض ممنوعة أصلاً تلمس data/database (الدستور §IV، ويحرسه
-presentation_db_import_guard_test).
-
-وضفت مسح ملفات WAL/SHM بعد الاستبدال في `restoreDatabaseBackup`: من
-غيره أول فتحة بتحاول تعيد تطبيق معاملات داتابيز **تانية** على الملف
-المستعاد.
-
-── ٦) getBackupStats بينادي نفسه ────────────────────────────────────
-`settings_repository_impl.getBackupStats` كان `return getBackupStats()`
-والتعليق بيقول إنه قاصد اللي في connection_io — بس الاسم غير المُسمّى
-بيحلّ لدالة الكلاس. استدعاء لا نهائي و StackOverflowError. الاستيراد
-بقى بـ prefix.
-
-── ٧) أصناف «ميزان بالحبة» بتترحّل للميزان كأنها بالوزن ─────────────
-بلاغ من المختبر: الميزان بيطبع «كيلو» على كل أصناف الميزان.
-
-`scaleType` له أربع قيم، و`weightByPiece` معناها «ميزان بالحبة».
-و`isSoldByWeight` مش صالحة للتفرقة لأن شاشة تعديل الصنف بتضبطها true
-للنوعين. والحساب كان متكرر في ٦ مواضع بتلات صيغ، أربعة منهم غلط.
-
-وأخطر من الطباعة: الباركود المولَّد كان بياخد **بادئة الوزن** بدل بادئة
-السعر، فباركود صنف بالحبة بيتقرا على نقطة البيع كباركود وزن والسعر
-بيتحسب غلط.
-
-بقى دالة واحدة `scaleItemIsSoldByWeight` والستة بينادوها.
-
-── ٨) اسم شركة مثبَّت على رأس ثلاث تقارير ───────────────────────────
-`companyName: 'MONEXIA Market'` في تقارير المبيعات والمخزون والتصنيف —
-اسم علامة تالتة بيتطبع على تقرير العميل مهما كان اسم شركته. الإصلاح
-كان معمول بالفعل في تقرير الخزينة (تعليق GAP-15) واتنسي في التلاتة.
-
-── ٩) بوابة أدوات المطوّر بتقفل بدل ما تفتح ─────────────────────────
-`DeveloperAuthService` بيوثّق إن `--reset-dev-password` مسار تعافي
-و«المطوّر يعيّن كلمة جديدة عند أول دخول». لكن البوابة كانت **بتعطّل
-الخانة والزرار** لما مفيش كلمة مضبوطة، ومفيش أي طريق لتعيين واحدة —
-يعني العلم بيقفل الشاشة بدل ما يفتحها، والحل الوحيد إعادة الويزارد.
-بقى فيه نموذج تعيين كلمة مرور في الحالة دي.
-
-flutter analyze lib: صفر مشاكل.
-flutter test: ٣٢٥١ ناجح · ١٢ متخطّى · ٠ فشل.
-
-Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
----
- lib/data/database/connection_io.dart          | 137 ++++++++++++++++--
- lib/data/database/database.dart               |   1 +
- lib/data/database/database_migrations.dart    |   6 +
- lib/data/database/database_startup.dart       |   7 +-
- lib/data/database/wal_checkpoint.dart         |  55 +++++++
- .../settings_repository_impl.dart             |  20 ++-
- lib/main.dart                                 |  16 +-
- .../screens/categories_screen.dart            |   5 +-
- .../screens/developer_tools_screen.dart       |  83 +++++++++--
- .../screens/plu_manager/plu_csv_mixin.dart    |   5 +-
- .../plu_manager/plu_scale_upload_mixin.dart   |   5 +-
- .../widgets/product_search_header.dart        |   5 +-
- .../reports/inventory_report_screen.dart      |   7 +-
- .../sales_by_classification_report.dart       |   7 +-
- .../screens/reports/sales_report_screen.dart  |  10 +-
- .../screens/scale_plu/scale_logic.dart        |   5 +-
- .../screens/scale_plu/scale_panels.dart       |   5 +-
- .../settings/backup_restore_widget_io.dart    | 110 ++++++++------
- lib/services/admin/data_wipe_service.dart     |  16 +-
- lib/services/label_scale_service.dart         |  48 ++++++
- 20 files changed, 466 insertions(+), 87 deletions(-)
- create mode 100644 lib/data/database/wal_checkpoint.dart
-
 diff --git a/lib/data/database/connection_io.dart b/lib/data/database/connection_io.dart
-index ce866e3..a245feb 100644
+index ce866e3..5e6f7c9 100644
 --- a/lib/data/database/connection_io.dart
 +++ b/lib/data/database/connection_io.dart
 @@ -1,4 +1,5 @@
@@ -150,7 +8,19 @@ index ce866e3..a245feb 100644
  import 'package:drift/drift.dart';
  import 'package:drift/native.dart';
  import 'package:path_provider/path_provider.dart';
-@@ -288,15 +289,48 @@ Future<String> getDatabasePath() async {
+@@ -32,6 +33,11 @@ QueryExecutor openConnection() {
+     final dbFolder = await getApplicationDocumentsDirectory();
+     final file = File(p.join(dbFolder.path, getDatabaseFileName()));
+ 
++    // أي استعادة متجدولة بتتطبّق **هنا** — قبل أول فتحة للملف. دي اللحظة
++    // الوحيدة اللي مفيش فيها مقبض مفتوح على الداتابيز. اقرا التعليق فوق
++    // `restoreDatabaseBackup`.
++    await _applyPendingRestore(file.path);
++
+     // Phase 2: Securely retrieve or generate machine-unique encryption key
+     final key = await SecurityService.getDatabaseEncryptionKey();
+ 
+@@ -288,15 +294,48 @@ Future<String> getDatabasePath() async {
    return p.join(dbFolder.path, getDatabaseFileName());
  }
  
@@ -200,7 +70,7 @@ index ce866e3..a245feb 100644
      final dbFolder = await getApplicationDocumentsDirectory();
      final backupFolder = Directory(p.join(dbFolder.path, 'backups'));
  
-@@ -309,16 +343,51 @@ Future<String?> createDatabaseBackup() async {
+@@ -309,35 +348,165 @@ Future<String?> createDatabaseBackup() async {
          .replaceAll(':', '-')
          .split('.')
          .first;
@@ -257,20 +127,71 @@ index ce866e3..a245feb 100644
      return null;
    }
  }
-@@ -331,13 +400,55 @@ Future<bool> restoreDatabaseBackup(String backupPath) async {
  
-     final dbPath = await getDatabasePath();
-     await backupFile.copy(dbPath);
+-/// Restore database from a backup file
++// ═══════════════════════════════════════════════════════════════════════════
++// الاستعادة — بتتجدول وبتتطبّق عند الإقلاع، مش بتتكتب فوراً
++// ═══════════════════════════════════════════════════════════════════════════
++//
++// الاستعادة كانت بتحاول تكتب فوق ملف الداتابيز **وهو مفتوح من التطبيق نفسه**،
++// وde بيفشل على ويندوز. والنسخة القديمة من الكود كانت بتخبّي الفشل ده لأنها
++// كانت بتكتب على اسم ملف مهجور محدش بيقراه، فبتقول «تمت الاستعادة بنجاح»
++// وهي ما عملتش حاجة.
++//
++// وحتى لو الكتابة نجحت، كانت هتبقى غلط: SQLite ماسك الملف ومعاه WAL وذاكرة
++// صفحات، فاستبدال الملف تحت رجليه بيخلّي الحالة في الذاكرة مش متطابقة مع
++// القرص.
++//
++// فالاستعادة بقت على مرحلتين: النسخة المختارة تتحط في ملف `.restore-pending`
++// جنب الداتابيز، والإقلاع الجاي بيطبّقها **قبل** ما الاتصال يتفتح أصلاً
++// (اقرا `openConnection` فوق). ولو التطبيق اتقفل قبل ما يعيد التشغيل، مفيش
++// حاجة اتغيّرت — الملف المعلَّق بيستنى.
 +
-+    // ملفات WAL/SHM بتاعة الداتابيز القديمة لازم تتشال مع الاستبدال.
-+    // الاتصال هنا بيشتغل `PRAGMA journal_mode = WAL`، فلو الملفين دول فضلوا
-+    // جنب ملف داتابيز جديد، أول فتحة بتحاول تعيد تطبيق معاملات بتاعة داتابيز
-+    // **تانية** على ملف مش بتاعها: يا فساد يا بيانات قديمة بترجع فوق
-+    // المستعادة. الاستعادة كانت بتسيبهم مكانهم.
++const String _pendingRestoreSuffix = '.restore-pending';
++
++/// بيطبّق استعادة معلَّقة لو موجودة. بيتنادى من `openConnection` **قبل** فتح
++/// الملف، فمفيش أي مقبض مفتوح على الداتابيز في اللحظة دي.
++///
++/// الترتيب مقصود: النسخ الأول، ومسح الملف المعلَّق **بعد** ما ينجح. لو
++/// التطبيق مات في النص، الملف المعلَّق لسه موجود والإقلاع اللي بعده بيعيد
++/// المحاولة — بدل ما نفضل بداتابيز نصّ منسوخة وبلا مصدر.
++Future<void> _applyPendingRestore(String dbPath) async {
++  try {
++    final pending = File('$dbPath$_pendingRestoreSuffix');
++    if (!await pending.exists()) return;
++
++    await pending.copy(dbPath);
++
++    // ملفات WAL/SHM بتاعة الداتابيز القديمة لازم تتشال مع الاستبدال: لو
++    // فضلوا جنب ملف جديد، أول فتحة بتحاول تعيد تطبيق معاملات بتاعة داتابيز
++    // **تانية** على ملف مش بتاعها — يا فساد يا بيانات قديمة بترجع فوق
++    // المستعادة.
 +    for (final sidecar in ['$dbPath-wal', '$dbPath-shm']) {
 +      final f = File(sidecar);
 +      if (await f.exists()) await f.delete();
 +    }
++
++    await pending.delete();
++    debugPrint('[RESTORE] pending restore applied from ${pending.path}');
++  } catch (e) {
++    debugPrint('[RESTORE] failed to apply pending restore: $e');
++  }
++}
++
++/// بيجدول استعادة من نسخة احتياطية. **مش بيطبّقها فوراً** — بتتطبّق عند
++/// أول إقلاع بعد كده، عشان مفيش حد يكتب فوق داتابيز مفتوحة.
++///
++/// بيرجع `true` لو الجدولة نجحت. الواجهة لازم تقول للمستخدم إن الاستعادة
++/// هتخلص بعد إعادة التشغيل — مش إنها خلصت.
+ Future<bool> restoreDatabaseBackup(String backupPath) async {
+   try {
+     final backupFile = File(backupPath);
+     if (!await backupFile.exists()) return false;
+ 
+     final dbPath = await getDatabasePath();
+-    await backupFile.copy(dbPath);
++    await backupFile.copy('$dbPath$_pendingRestoreSuffix');
++    debugPrint('[RESTORE] scheduled from $backupPath');
      return true;
    } catch (e) {
 +    debugPrint('[BACKUP] restoreDatabaseBackup failed: $e');
@@ -279,6 +200,15 @@ index ce866e3..a245feb 100644
  }
  
 -/// List available backup files
++/// هل فيه استعادة متجدولة مستنية إعادة التشغيل؟
++Future<bool> hasPendingRestore() async {
++  try {
++    return File('${await getDatabasePath()}$_pendingRestoreSuffix').exists();
++  } catch (e) {
++    return false;
++  }
++}
++
 +// ═══════════════════════════════════════════════════════════════════════════
 +// مجلد `Documents/backups` **مشترك بين كل المنتجات على نفس الجهاز**، لأن
 +// `getApplicationDocumentsDirectory()` بيرجع نفس المسار للاتنين. اللي بيفرّق
@@ -314,7 +244,7 @@ index ce866e3..a245feb 100644
  Future<List<FileSystemEntity>> listBackups() async {
    try {
      final dbFolder = await getApplicationDocumentsDirectory();
-@@ -347,7 +458,7 @@ Future<List<FileSystemEntity>> listBackups() async {
+@@ -347,7 +516,7 @@ Future<List<FileSystemEntity>> listBackups() async {
  
      final files = await backupFolder
          .list()
@@ -323,7 +253,7 @@ index ce866e3..a245feb 100644
          .toList();
  
      // Sort by modification time (newest first)
-@@ -363,13 +474,13 @@ Future<List<FileSystemEntity>> listBackups() async {
+@@ -363,13 +532,13 @@ Future<List<FileSystemEntity>> listBackups() async {
    }
  }
  
@@ -339,7 +269,7 @@ index ce866e3..a245feb 100644
          .toList();
  
      if (files.length <= 7) return;
-@@ -392,7 +503,7 @@ Future<void> _cleanOldBackups(String backupFolderPath) async {
+@@ -392,7 +561,7 @@ Future<void> _cleanOldBackups(String backupFolderPath) async {
  
  /// Auto-backup on startup — creates a backup if the last one is older than 24 hours
  /// Returns the backup path if created, null if skipped or failed
@@ -348,7 +278,7 @@ index ce866e3..a245feb 100644
    try {
      final backups = await listBackups();
  
-@@ -402,7 +513,9 @@ Future<String?> autoBackupOnStartup() async {
+@@ -402,7 +571,9 @@ Future<String?> autoBackupOnStartup() async {
        if (hoursSince < 24) return null; // Skip — recent backup exists
      }
  
@@ -874,7 +804,7 @@ index 0702645..e08dc33 100644
        final scaleBarcode = '$prefix${pluNumber.toString().padLeft(codeLen, '0')}';
        pluItems.add(ScalePLUItem(
 diff --git a/lib/presentation/widgets/settings/backup_restore_widget_io.dart b/lib/presentation/widgets/settings/backup_restore_widget_io.dart
-index 848ae8e..5404f7f 100644
+index 848ae8e..32b0509 100644
 --- a/lib/presentation/widgets/settings/backup_restore_widget_io.dart
 +++ b/lib/presentation/widgets/settings/backup_restore_widget_io.dart
 @@ -4,10 +4,9 @@ import 'dart:io';
@@ -1011,7 +941,18 @@ index 848ae8e..5404f7f 100644
      String backupPath,
      String filename,
    ) {
-@@ -198,7 +214,7 @@ class BackupRestoreWidget extends ConsumerWidget {
+@@ -175,7 +191,9 @@ class BackupRestoreWidget extends ConsumerWidget {
+                     SizedBox(width: 8),
+                     Expanded(
+                       child: Text(
+-                        'سيتم استبدال جميع البيانات الحالية. يرجى إعادة تشغيل البرنامج بعد الاستعادة.',
++                        'سيتم استبدال جميع البيانات الحالية. الاستعادة تُطبَّق '
++                        'عند إعادة تشغيل البرنامج — قبلها لا يتغيّر شيء. '
++                        'وتُؤخذ نسخة احتياطية من الحالة الراهنة أولاً.',
+                         style: TextStyle(
+                           color: AppColors.warning,
+                           fontSize: 12,
+@@ -198,7 +216,7 @@ class BackupRestoreWidget extends ConsumerWidget {
                ),
                onPressed: () async {
                  Navigator.pop(context);
@@ -1020,7 +961,7 @@ index 848ae8e..5404f7f 100644
                },
                child: const Text('استعادة'),
              ),
-@@ -208,28 +224,38 @@ class BackupRestoreWidget extends ConsumerWidget {
+@@ -208,28 +226,41 @@ class BackupRestoreWidget extends ConsumerWidget {
      );
    }
  
@@ -1063,53 +1004,19 @@ index 848ae8e..5404f7f 100644
 +      final ok = await repo.restoreBackup(backupPath);
  
        if (context.mounted) {
++        // الاستعادة **متجدولة** مش منفَّذة: مينفعش نكتب فوق داتابيز مفتوحة،
++        // فبتتطبّق عند الإقلاع الجاي. الرسالة لازم تقول ده بالظبط — «تمت»
++        // وهي لسه ما تمّتش هي نفس الكذبة اللي كانت في الكود القديم.
          AppToast.show(
            context,
 -          'تمت الاستعادة بنجاح. يرجى إعادة تشغيل البرنامج.',
 -          type: ToastType.success,
 +          ok
-+              ? 'تمت الاستعادة بنجاح. يرجى إعادة تشغيل البرنامج.'
-+              : 'فشلت الاستعادة — البيانات الحالية لم تتغيّر.',
++              ? 'تم تجهيز الاستعادة. أغلق البرنامج وأعد تشغيله لتطبيقها.'
++              : 'فشل تجهيز الاستعادة — البيانات الحالية لم تتغيّر.',
 +          type: ok ? ToastType.success : ToastType.error,
          );
        }
-     } catch (e) {
-diff --git a/lib/services/admin/data_wipe_service.dart b/lib/services/admin/data_wipe_service.dart
-index 4ac8511..c4dc483 100644
---- a/lib/services/admin/data_wipe_service.dart
-+++ b/lib/services/admin/data_wipe_service.dart
-@@ -33,6 +33,7 @@ import 'package:flutter/foundation.dart';
- import '../../data/database/connection_io.dart' show createDatabaseBackup;
- import '../../data/database/database.dart';
- import '../../data/database/sync_interceptor.dart';
-+import '../../data/database/wal_checkpoint.dart';
- 
- /// نتيجة عملية تصفير.
- @immutable
-@@ -84,11 +85,22 @@ class DataWipeService {
- 
-   /// بياخد نسخة احتياطية. الفشل بيوقف العملية — النسخة هي طريق الرجوع
-   /// الوحيد، والحذف من غيرها مقامرة مش عملية صيانة.
-+  ///
-+  /// و`requireCheckpoint: true` عشان نفس السبب: نسخ ملف الـ `.db` من غير
-+  /// تفريغ الـ WAL بيسيب المعاملات الأخيرة برّه النسخة، فاللي هيرجع بعد
-+  /// الحذف يبقى أقل من اللي اتحذف. نسخة ناقصة هنا أسوأ من إلغاء العملية.
-   Future<(String?, String?)> _backupOrFail() async {
-     try {
--      final path = await createDatabaseBackup();
-+      final path = await createDatabaseBackup(
-+        checkpoint: () => walCheckpointTruncate(db),
-+        requireCheckpoint: true,
-+      );
-       if (path == null || path.isEmpty) {
--        return (null, 'تعذّر إنشاء نسخة احتياطية — أُلغيت العملية.');
-+        return (
-+          null,
-+          'تعذّر إنشاء نسخة احتياطية كاملة — أُلغيت العملية.\n\n'
-+              'لو التطبيق مفتوح على أجهزة أو نوافذ تانية، اقفلها وحاول تاني.',
-+        );
-       }
-       return (path, null);
      } catch (e) {
 diff --git a/lib/services/label_scale_service.dart b/lib/services/label_scale_service.dart
 index dc3ea08..06d0fac 100644
@@ -1170,6 +1077,101 @@ index dc3ea08..06d0fac 100644
  /// PLU item to upload to scale
  class ScalePLUItem {
    final int pluNumber; // PLU code (1-99999)
--- 
-2.55.0.windows.3
-
+diff --git a/test/unit/scale_item_unit_type_test.dart b/test/unit/scale_item_unit_type_test.dart
+new file mode 100644
+index 0000000..694051d
+--- /dev/null
++++ b/test/unit/scale_item_unit_type_test.dart
+@@ -0,0 +1,92 @@
++// ═══════════════════════════════════════════════════════════════════════════
++// نوع وحدة صنف الميزان — وزن ولا حبة
++// ═══════════════════════════════════════════════════════════════════════════
++//
++// الباج اللي الاختبار ده موجود عشانه: أصناف «ميزان بالحبة» كانت بتترحّل
++// للميزان كأنها بالوزن، فالميزان يطبع «كيلو» عليها. والأخطر إن الباركود
++// المولَّد كان بياخد بادئة الوزن بدل بادئة السعر، فالسعر بيتحسب غلط على
++// نقطة البيع.
++//
++// السبب إن الحساب كان متكرر في أربع أماكن بتلات صيغ. الاختبار ده بيثبّت
++// الصيغة الواحدة الصح — وأهم حالة فيه إن `isSoldByWeight = true` **مش**
++// كافية لوحدها، لأن شاشة تعديل الصنف بتضبطها `true` لأصناف الحبة كمان.
++// ═══════════════════════════════════════════════════════════════════════════
++
++import 'package:flutter_test/flutter_test.dart';
++import 'package:ural_erp/services/label_scale_service.dart';
++
++void main() {
++  group('scaleItemIsSoldByWeight', () {
++    test('«ميزان» → بالوزن', () {
++      expect(
++        scaleItemIsSoldByWeight(scaleType: 'weight', isSoldByWeight: true),
++        isTrue,
++      );
++    });
++
++    test('«ميزان بالحبة» → بالحبة، حتى لو isSoldByWeight = true', () {
++      // ده جوهر الباج: شاشة تعديل الصنف بتضبط isSoldByWeight = true للنوعين
++      // (weight و weightByPiece)، فالاعتماد عليها لوحدها بيحوّل أصناف الحبة
++      // لأصناف وزن.
++      expect(
++        scaleItemIsSoldByWeight(
++          scaleType: 'weightByPiece',
++          isSoldByWeight: true,
++        ),
++        isFalse,
++      );
++    });
++
++    test('«عدد» → مش بالوزن', () {
++      expect(
++        scaleItemIsSoldByWeight(scaleType: 'count', isSoldByWeight: false),
++        isFalse,
++      );
++    });
++
++    test('«عرض» → مش بالوزن', () {
++      expect(
++        scaleItemIsSoldByWeight(scaleType: 'display', isSoldByWeight: false),
++        isFalse,
++      );
++    });
++
++    test('صنف قديم بلا scaleType → بيقع على isSoldByWeight', () {
++      expect(
++        scaleItemIsSoldByWeight(scaleType: null, isSoldByWeight: true),
++        isTrue,
++      );
++      expect(
++        scaleItemIsSoldByWeight(scaleType: null, isSoldByWeight: false),
++        isFalse,
++      );
++      expect(
++        scaleItemIsSoldByWeight(scaleType: '', isSoldByWeight: true),
++        isTrue,
++      );
++    });
++
++    test('الصيغ التلاتة القديمة الغلط كانت هتفشّل حالة الحبة', () {
++      const scaleType = 'weightByPiece';
++      const isSoldByWeight = true; // زي ما شاشة الصنف بتحفظها
++
++      // الصيغة اللي كانت في شاشة الترحيل وشاشة اللوحات
++      final oldExportFormula = scaleType == 'weight' ||
++          scaleType == 'weightByPiece' ||
++          isSoldByWeight;
++      // الصيغة اللي كانت في مسارَي PLU manager
++      const oldPluFormula = isSoldByWeight;
++
++      expect(oldExportFormula, isTrue, reason: 'الصيغة القديمة كانت بتدي وزن');
++      expect(oldPluFormula, isTrue, reason: 'الصيغة القديمة كانت بتدي وزن');
++      expect(
++        scaleItemIsSoldByWeight(
++          scaleType: scaleType,
++          isSoldByWeight: isSoldByWeight,
++        ),
++        isFalse,
++        reason: 'الصيغة الصح لازم تدي حبة',
++      );
++    });
++  });
++}
