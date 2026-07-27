@@ -249,11 +249,20 @@ case BusinessProfile.lite:
 child: Brand.isPicPos ? const TreasuryPicposScreen() : const TreasuryScreen(),
 ```
 
-### Task 10: إغلاق الوردية — قرار مطلوب ⚠️
-**الاكتشاف:** `ScreenId.shiftClose` مُدرَج في قائمة lite لكن **لا يملك `AppScreen` ولا شاشة قابلة للتوجيه** — منطقه في حوارات (`DailyClosingDialog` عبر `TreasuryClosingTab`، و`PosCashierClosingDialog` مدفوع بـ `posClosingControllerProvider`) و`DailyCashClosingDialog`.
-**التوصية:** بما أن العمل «إعادة تصميم شاشات موجودة»، والحوارات دي **تأخذ ثيم PicPos تلقائياً**، **لا فورك منفصل مطلوب لـ shiftClose في هذه الجولة**. لو صاحب المشروع أراد **شاشة إغلاق وردية مستقلة** بهوية PicPos، فهي **ميزة جديدة** (شاشة جديدة + إدخال `AppScreen` + راوتر) خارج نطاق «الفورك»، تُخطَّط منفصلة.
-- [ ] **الخطوة ١:** أكّد القرار مع صاحب المشروع (حوار متأطّر بالثيم يكفي / أم شاشة مستقلة جديدة).
-- [ ] **الخطوة ٢ (إن اكتُفي بالحوار):** لا كود — علّم المهمة مكتملة بقرار «مغطّى بالثيم». (إن طُلبت شاشة جديدة → مهمة منفصلة خارج هذه الخطة.)
+### Task 10: إغلاق الوردية — `ShiftClosePicposScreen` (مطلوب — أكّده صاحب المشروع)
+**السياق:** `ScreenId.shiftClose` مُدرَج في lite لكن **لا يملك `AppScreen` ولا شاشة قابلة للتوجيه** — منطقه موزّع على حوارات + `PosClosingController`. **صاحب المشروع أكّد (٢٨ يوليو) إنه مطلوب**: بدونه **مهام الورديات وتقارير الوردية في شاشة التقارير مش هتبقى مظبوطة**. فده **ليس اختيارياً**.
+**تحقيق أولاً (إلزامي قبل الكود):** افهم تدفّق الوردية وربطه بالتقارير:
+- `posClosingControllerProvider` (`PosClosingController`, ~727س) · `PosCashierClosingDialog` (`pos/widgets/pos_cashier_closing_dialog.dart`)
+- `TreasuryClosingTab` → `DailyClosingDialog` (`treasury/widgets/`) · `DailyCashClosingDialog` (`presentation/dialogs/`)
+- `treasuryRepositoryProvider.openShift/getCurrentOpenShift` · `treasury_dao.dart` · صلاحية `pos_shift_close`
+- **شاشات/تقارير الوردية في `reports_screen.dart`** (shifts report) — حدّد كيف تتغذّى وما الشاشة/الاستعلام المصدر.
+حدّد: هل المطلوب **شاشة PicPos تجمع فتح/إغلاق الوردية + قائمة الورديات** (المصدر لتقارير الوردية)، أم تغليف الحوارات القائمة، وما التغييرات اللازمة على `AppScreen`/الراوتر.
+**Files:** Create `lib/presentation/shift_close_picpos/screens/shift_close_picpos_screen.dart` · Modify `lib/core/navigation/screen_id.dart` (`AppScreen.shiftClose` إن لزم) · `lib/app_main_screen.dart` (راوتر جديد بفرع العلامة) · Test `test/widget/picpos_shift_close_test.dart`.
+**Reuse:** `posClosingControllerProvider`/`PosClosingController` + حوارات الإغلاق + `treasuryRepositoryProvider` كما هي — الجديد شاشة PicPos تغلّف التدفّق وتعرض الورديات.
+**تنبيه شراكة UralCash:** إضافة `AppScreen.shiftClose` + راوتر = ملفات مشتركة. الشاشة فورك PicPos (بفرع العلامة). التغيير المشترك (enum/راوتر): لو منطقي ويفيد UralCash → ينتقل patch؛ لو PicPos-only → يُحوَّط بفرع `Brand.isPicPos`. **يُحسم في التحقيق.**
+- [ ] **الخطوة ١:** تحقيق تدفّق الوردية + تقارير الوردية (اقرأ الملفات أعلاه) — أرجِع خريطة واضحة.
+- [ ] **الخطوة ٢:** اعرض النتيجة والنهج (شاشة جديدة تغلّف التدفّق + مصدر تقارير الوردية) على صاحب المشروع **قبل الكود**.
+- [ ] **الخطوة ٣+:** بعد الموافقة — TDD حسب الوصفة (شاشة + راوتر بفرع العلامة + اختبار).
 
 ### Batch هـ — بوابة المراجعة
 - [ ] analyze صفر · اختبارات العلامتين · جولة كاملة `--concurrency=1`.
@@ -267,8 +276,9 @@ child: Brand.isPicPos ? const TreasuryPicposScreen() : const TreasuryScreen(),
 **الطبيعة:** الشاشة **مُطلِق تنقّل** (شبكة بطاقات فئات لـ ~٢٥ شاشة تقرير)، monolith ~1871 سطر. الفورك يعيد تأطير **شبكة المُطلِق فقط**؛ شاشات الوجهة تأخذ شكلها من الثيم.
 **Reuse:** كلاسات البيانات `_ReportCategory`/`_ReportEntry`/`_ReportShortcut`/`_FlatItem` (تُنسخ) + الودجتس `_PopoverPanel`/`_HoverCard` (تُنسخ أو تُستبدل بـ `PicPosContentCard`) + مفضّلات `SharedPreferences` (`reports_favorites`/`reports_recent`). محاط بـ `PermissionGuard`.
 **Copy-cost:** monolith — تُنسخ خرائط الفئات ومنطق البحث/المفضّلات؛ التنقّل لشاشات الوجهة كما هو.
+**نطاق lite (تأكيد صاحب المشروع ٢٨ يوليو):** الفورك يعرض **مجموعة التقارير اللي تخص lite**، و**منها تقارير الوردية (تقارير الوردية موجودة في UralCash)** — مربوطة بشاشة إغلاق الوردية (Task 10). تحقّق أن مدخل تقارير الوردية ظاهر ويشتغل في نسخة lite (لو الشاشة الحالية بتفلتر بالبروفايل/الصلاحية، أبقِ على نفس الفلترة؛ لو بتعرض الكل، خُذ الـ subset المناسب لـ lite شاملاً الوردية).
 **Header:** «التقارير» / «كل تقارير المبيعات والمخزون والمالية».
-- [ ] نفس الوصفة. الاختيار داخل الـ gate: `Brand.isPicPos ? const ReportsPicposScreen() : const ReportsScreen()`.
+- [ ] نفس الوصفة. الاختيار داخل الـ gate: `Brand.isPicPos ? const ReportsPicposScreen() : const ReportsScreen()`. تأكّد من ظهور تقارير الوردية ضمن مجموعة lite.
 
 ### Task 12: سجل النشاط — `ActivityLogPicposScreen`
 **Files:** Create `lib/presentation/activity_log_picpos/screens/activity_log_picpos_screen.dart` · Copy mixins `activity_log/activity_log_filters.dart` (`_ActivityLogFiltersMixin`) + `activity_log/activity_log_items.dart` (`_ActivityLogItemsMixin`) · Modify `app_main_screen.dart:785` · Test `test/widget/picpos_activity_log_test.dart`.
