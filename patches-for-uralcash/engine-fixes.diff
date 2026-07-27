@@ -1175,3 +1175,168 @@ index 0000000..694051d
 +    });
 +  });
 +}
+diff --git a/lib/presentation/pos/widgets/cart_item_tile.dart b/lib/presentation/pos/widgets/cart_item_tile.dart
+index b792a93..fa569d1 100644
+--- a/lib/presentation/pos/widgets/cart_item_tile.dart
++++ b/lib/presentation/pos/widgets/cart_item_tile.dart
+@@ -495,7 +495,23 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
+                           crossAxisAlignment: CrossAxisAlignment.end,
+                           children: [
+                             Text(
+-                              widget.item.total.abs().toStringAsFixed(AppConstants.decimalPlaces),
++                              // `total` بيضيف ضريبة الصف **بلا شرط**، بينما
++                              // `CalculateInvoiceTotalsUseCase` بيتجاهل ضريبة
++                              // الصف المخزّنة عن قصد ويعيد حسابها على الصافي
++                              // **ومشروطة بـ `taxEnabled`** (سبيك ١٣٧ —
++                              // BUG-C02/BUG-H01).
++                              //
++                              // فلما الضريبة تكون مقفولة، الصف كان بيعرض
++                              // ضريبة الفاتورة قررت ما تحصّلهاش: صنف ٧ × ٥
++                              // يعرض ٤٠.٦ والإجمالي النهائي ٣٥. الباج كامن
++                              // عند أي عميل شغّال بضريبة مفتوحة، وبيظهر فوراً
++                              // لما تتقفل.
++                              //
++                              // الصافي هو اللي بيجمع للمجموع الفرعي، والضريبة
++                              // سطر مستقل في لوحة الإجماليات.
++                              widget.item.totalBeforeTax
++                                  .abs()
++                                  .toStringAsFixed(AppConstants.decimalPlaces),
+                               style: TextStyle(
+                                 fontSize: fontSize + 1,
+                                 fontWeight: FontWeight.w900,
+diff --git a/lib/presentation/pos/widgets/pos_deleted_items_dialog.dart b/lib/presentation/pos/widgets/pos_deleted_items_dialog.dart
+index f8fbacf..a16190d 100644
+--- a/lib/presentation/pos/widgets/pos_deleted_items_dialog.dart
++++ b/lib/presentation/pos/widgets/pos_deleted_items_dialog.dart
+@@ -69,7 +69,13 @@ class PosDeletedItemsDialog extends ConsumerWidget {
+                       ),
+                       title: Text(item.productName),
+                       subtitle: Text(
+-                        '${item.quantity} × ${item.effectivePrice.toStringAsFixed(AppConstants.decimalPlaces)} = ${item.total.toStringAsFixed(AppConstants.decimalPlaces)} د.أ',
++                        // السطر ده بيعرض معادلة، فلازم تكون صحيحة حسابياً.
++                        // كان `= item.total` وهو شامل الضريبة، يعني
++                        // «٧ × ٥ = ٤٠.٦» — رقم مايطلعش من الضرب المكتوب
++                        // قدامه. `subtotal` هو ناتج الضرب بالظبط.
++                        '${item.quantity} × '
++                        '${item.effectivePrice.toStringAsFixed(AppConstants.decimalPlaces)}'
++                        ' = ${item.subtotal.toStringAsFixed(AppConstants.decimalPlaces)} د.أ',
+                       ),
+                       trailing: Text(
+                         item.note ?? '',
+diff --git a/lib/presentation/pos/widgets/table_pos/table_pos_cart_item.dart b/lib/presentation/pos/widgets/table_pos/table_pos_cart_item.dart
+index 56e9ff3..4910818 100644
+--- a/lib/presentation/pos/widgets/table_pos/table_pos_cart_item.dart
++++ b/lib/presentation/pos/widgets/table_pos/table_pos_cart_item.dart
+@@ -113,7 +113,12 @@ class TablePosCartItem extends StatelessWidget {
+               SizedBox(
+                 width: 60,
+                 child: Text(
+-                  item.total.toStringAsFixed(AppConstants.decimalPlaces),
++                  // صافي الصف مش شامل الضريبة — نفس سبب `cart_item_tile`:
++                  // حساب الفاتورة بيتجاهل ضريبة الصف ويعيد حسابها مشروطة
++                  // بـ `taxEnabled`، فعرض الصف شاملها بيخلّيه رقم مالوش
++                  // علاقة بالإجماليات لما الضريبة تكون مقفولة.
++                  item.totalBeforeTax
++                      .toStringAsFixed(AppConstants.decimalPlaces),
+                   style: GoogleFonts.cairo(
+                       fontSize: 12,
+                       fontWeight: FontWeight.w700,
+diff --git a/test/unit/cart_line_total_display_test.dart b/test/unit/cart_line_total_display_test.dart
+new file mode 100644
+index 0000000..6257a69
+--- /dev/null
++++ b/test/unit/cart_line_total_display_test.dart
+@@ -0,0 +1,93 @@
++// ═══════════════════════════════════════════════════════════════════════════
++// مجموع صف السلة — لازم يطابق اللي الفاتورة بتحسبه
++// ═══════════════════════════════════════════════════════════════════════════
++//
++// البلاغ: صنف بسعر ٥ وكمية ٧ وخصم ٠ كان بيعرض في عمود «المجموع» **٤٠.٦٠٠**،
++// والمجموع الفرعي والإجمالي النهائي الاتنين **٣٥.٠٠٠**.
++//
++// السبب إن `CartItemEntity.total` بيضيف ضريبة الصف بلا شرط، بينما
++// `CalculateInvoiceTotalsUseCase` بيتجاهل ضريبة الصف المخزّنة **عن قصد**
++// (سبيك ١٣٧ — BUG-C02/BUG-H01) ويعيد حسابها على الصافي ومشروطة بـ
++// `taxEnabled`. فالصف كان بيعرض ضريبة الفاتورة قررت ما تحصّلهاش.
++//
++// الاختبار ده بيثبّت العلاقة نفسها مش الرقم: **مجموع صفوف السلة لازم يساوي
++// الأساس اللي الفاتورة بتشتغل عليه**، سواء الضريبة مقفولة أو مفتوحة.
++// ═══════════════════════════════════════════════════════════════════════════
++
++import 'package:flutter_test/flutter_test.dart';
++import 'package:ural_erp/domain/entities/cart_item_entity.dart';
++import 'package:ural_erp/domain/usecases/sales/calculate_invoice_totals_usecase.dart';
++
++void main() {
++  CartItemEntity item({
++    double quantity = 7,
++    double unitPrice = 5,
++    double discountPercent = 0,
++    double taxRate = 16,
++  }) =>
++      CartItemEntity(
++        productId: 1,
++        productName: 'لوز أرباع',
++        productCode: 'P-1',
++        quantity: quantity,
++        unitPrice: unitPrice,
++        discountPercent: discountPercent,
++        taxRate: taxRate,
++      );
++
++  group('مجموع صف السلة', () {
++    test('حالة البلاغ: ٧ × ٥ بلا خصم = ٣٥ مش ٤٠.٦', () {
++      final i = item();
++
++      expect(i.totalBeforeTax, 35);
++      // `total` لسه بيشمل الضريبة — ده تعريفه، والمشكلة كانت في **عرضه**
++      // في عمود جنب السعر والخصم.
++      expect(i.total, 40.6);
++    });
++
++    test('الصف المعروض يساوي الكمية × السعر − الخصم', () {
++      final i = item(quantity: 4, unitPrice: 25, discountPercent: 10);
++
++      // 4 × 25 = 100، ناقص ١٠٪ = ٩٠
++      expect(i.totalBeforeTax, 90);
++    });
++
++    test('والضريبة مقفولة: مجموع الصفوف = إجمالي الفاتورة', () {
++      final items = [
++        item(),
++        item(quantity: 2, unitPrice: 10),
++      ];
++
++      final totals = CalculateInvoiceTotalsUseCase().execute(
++        items: items,
++        taxEnabled: false,
++      );
++
++      final rowsSum =
++          items.fold<double>(0, (s, i) => s + i.totalBeforeTax);
++
++      expect(rowsSum, totals.total,
++          reason: 'الصفوف لازم تجمع للإجمالي لما مفيش ضريبة');
++      // ولو كنا بنعرض `total` كان المجموع هيبقى أكبر من الفاتورة.
++      final wrongSum = items.fold<double>(0, (s, i) => s + i.total);
++      expect(wrongSum, greaterThan(totals.total));
++    });
++
++    test('والضريبة مفتوحة: مجموع الصفوف = الأساس قبل الضريبة', () {
++      final items = [item()];
++
++      final totals = CalculateInvoiceTotalsUseCase().execute(
++        items: items,
++        taxEnabled: true,
++      );
++
++      final rowsSum =
++          items.fold<double>(0, (s, i) => s + i.totalBeforeTax);
++
++      // الصفوف بتجمع للأساس، والضريبة سطر مستقل فوقه — ودي القراءة اللي
++      // بتخلي الفاتورة مفهومة.
++      expect(rowsSum, totals.total - totals.taxAmount);
++      expect(totals.taxAmount, greaterThan(0));
++    });
++  });
++}
