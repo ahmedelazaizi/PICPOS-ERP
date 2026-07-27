@@ -297,6 +297,9 @@ void main() {
     late int rm1;
     late int rm2;
     late int rmG;
+    late int cInvId;
+    late int cItemId;
+    late int cBomId;
     final cFrom = DateTime(2026, 1, 1);
     final cTo = DateTime(2026, 12, 31);
 
@@ -307,13 +310,16 @@ void main() {
     }) async {
       await db.into(db.saleBomConsumptions).insert(
           SaleBomConsumptionsCompanion.insert(
-            saleInvoiceId: 1, // dummy — FK off, not joined by this report
-            saleInvoiceItemId: 1, // dummy
-            bomId: 1, // dummy
+            // FK enforced now — reference the shared (report-irrelevant) parents
+            // seeded in setUp; getConsumptionReport aggregates by
+            // raw_material_id and never joins these.
+            saleInvoiceId: cInvId,
+            saleInvoiceItemId: cItemId,
+            bomId: cBomId,
             rawMaterialId: rawMaterialId,
             consumedQty: 5,
             unitCostAtSale: 2,
-            warehouseId: 1, // dummy
+            warehouseId: 1,
             globalId: gid,
             branchId: branchId == null ? const Value.absent() : Value(branchId),
             createdAt: Value(DateTime(2026, 2, 5)),
@@ -328,6 +334,22 @@ void main() {
           ProductsCompanion.insert(code: 'RM2', name: 'خام 2'));
       rmG = await db.into(db.products).insert(
           ProductsCompanion.insert(code: 'RMG', name: 'خام عام'));
+
+      // Shared (report-irrelevant) FK parents for the consumption rows.
+      cInvId = await db.into(db.salesInvoices).insert(SalesInvoicesCompanion.insert(
+          invoiceNumber: 'C-INV',
+          warehouseId: 1,
+          userId: 1,
+          invoiceDate: DateTime(2026, 2, 5)));
+      cItemId = await db.into(db.salesInvoiceItems).insert(
+          SalesInvoiceItemsCompanion.insert(
+              invoiceId: cInvId,
+              productId: rm1,
+              quantity: 1,
+              unitPrice: 1,
+              total: 1));
+      cBomId = await db.into(db.billOfMaterials).insert(
+          BillOfMaterialsCompanion.insert(finishedProductId: rm1, bomCode: 'C-BOM'));
 
       await seedConsumption(rawMaterialId: rm1, gid: 'c-b1', branchId: branch1);
       await seedConsumption(rawMaterialId: rm2, gid: 'c-b2', branchId: branch2);
@@ -369,6 +391,7 @@ void main() {
     late int fp1;
     late int fp2;
     late int fpG;
+    late int pBomId;
     final pFrom = DateTime(2026, 1, 1);
     final pTo = DateTime(2026, 12, 31);
 
@@ -402,11 +425,11 @@ void main() {
           SaleBomConsumptionsCompanion.insert(
             saleInvoiceId: invId,
             saleInvoiceItemId: itemId, // links c.sale_invoice_item_id = sii.id
-            bomId: 1, // dummy
-            rawMaterialId: 1, // dummy — not joined against products here
+            bomId: pBomId, // FK enforced now — shared bom seeded in setUp
+            rawMaterialId: fp1, // any real product; not joined against here
             consumedQty: 2,
             unitCostAtSale: 3,
-            warehouseId: 1, // dummy
+            warehouseId: 1,
             globalId: gid,
           ));
     }
@@ -419,6 +442,10 @@ void main() {
           ProductsCompanion.insert(code: 'FP2', name: 'منتج 2'));
       fpG = await db.into(db.products).insert(
           ProductsCompanion.insert(code: 'FPG', name: 'منتج عام'));
+
+      // Shared (report-irrelevant) bom for the consumption rows.
+      pBomId = await db.into(db.billOfMaterials).insert(
+          BillOfMaterialsCompanion.insert(finishedProductId: fp1, bomCode: 'PF-BOM'));
 
       await seedProfitChain(
           productId: fp1, invNo: 'PF-B1', gid: 'pf-b1', branchId: branch1);

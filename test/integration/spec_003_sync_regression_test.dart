@@ -148,7 +148,12 @@ void main() {
 
   group('BranchSyncStrategy — Tier 1 globalId', () {
     test('matches by globalId, produces single row, no SYNC-WARN', () async {
+      // Reset the branches table for a from-scratch sync test. FK is enforced
+      // now, so drop the seeded branch (whose warehouse/safes reference it)
+      // with FK momentarily off — the sync code under test still runs FK-ON.
+      await db.customStatement('PRAGMA foreign_keys = OFF');
       await db.delete(db.branches).go();
+      await db.customStatement('PRAGMA foreign_keys = ON');
       await db.into(db.branches).insert(
             BranchesCompanion.insert(
               name: 'الفرع الرئيسي',
@@ -183,7 +188,12 @@ void main() {
 
   group('BranchSyncStrategy — Tier 2 name fallback', () {
     test('matches by name when globalIds differ, emits SYNC-WARN', () async {
+      // Reset the branches table for a from-scratch sync test. FK is enforced
+      // now, so drop the seeded branch (whose warehouse/safes reference it)
+      // with FK momentarily off — the sync code under test still runs FK-ON.
+      await db.customStatement('PRAGMA foreign_keys = OFF');
       await db.delete(db.branches).go();
+      await db.customStatement('PRAGMA foreign_keys = ON');
       await db.into(db.branches).insert(
             BranchesCompanion.insert(
               name: 'الفرع الرئيسي',
@@ -223,7 +233,12 @@ void main() {
         () async {
       // Insert a row with the same numeric id as the server will use,
       // but different globalId and name so Tier 1 + Tier 2 both miss.
+      // Reset the branches table for a from-scratch sync test. FK is enforced
+      // now, so drop the seeded branch (whose warehouse/safes reference it)
+      // with FK momentarily off — the sync code under test still runs FK-ON.
+      await db.customStatement('PRAGMA foreign_keys = OFF');
       await db.delete(db.branches).go();
+      await db.customStatement('PRAGMA foreign_keys = ON');
       await db.into(db.branches).insert(
             BranchesCompanion.insert(
               name: 'اسم قديم',
@@ -258,7 +273,12 @@ void main() {
     });
 
     test('inserts a new row when no tier matches', () async {
+      // Reset the branches table for a from-scratch sync test. FK is enforced
+      // now, so drop the seeded branch (whose warehouse/safes reference it)
+      // with FK momentarily off — the sync code under test still runs FK-ON.
+      await db.customStatement('PRAGMA foreign_keys = OFF');
       await db.delete(db.branches).go();
+      await db.customStatement('PRAGMA foreign_keys = ON');
       await BranchSyncStrategy(db).syncFromJson({
         'branches': [
           {

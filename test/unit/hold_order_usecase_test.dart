@@ -13,14 +13,20 @@ import 'package:ural_erp/data/providers/providers.dart';
 import 'package:ural_erp/domain/entities/cart_item_entity.dart';
 import 'package:ural_erp/domain/usecases/sales/hold_order_usecase.dart';
 import 'package:ural_erp/presentation/pos/widgets/modifier_selection_dialog.dart';
+import 'package:ural_erp/data/database/database.dart' show ProductsCompanion;
 
 void main() {
   late AppDatabase db;
   late ProviderContainer container;
   late HoldOrderUseCase useCase;
 
-  setUp(() {
+  setUp(() async {
     db = AppDatabase.forTesting();
+    // held_order_items.product_id FKs to products — seed the product the
+    // executeHold tests reference (products is empty in a fresh DB; the first
+    // insert lands at id 1). FK is enforced in tests now (mirrors production).
+    await db.into(db.products).insert(
+        ProductsCompanion.insert(code: 'HELD-1', name: 'Held Item'));
     container = ProviderContainer(
       overrides: [
         databaseProvider.overrideWith((ref) => db),

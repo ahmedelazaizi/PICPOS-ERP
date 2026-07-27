@@ -271,9 +271,14 @@ void main() {
       await (db.delete(db.accountMappings)
             ..where((m) => m.purpose.equals('inventory')))
           .go();
+      // FK is enforced in tests now — the account still has a non-mapping
+      // child, so force the deletion with FK momentarily off; the code under
+      // test still runs with FK ON.
+      await db.customStatement('PRAGMA foreign_keys = OFF');
       final deleted =
           await (db.delete(db.accounts)..where((a) => a.code.equals('1136')))
               .go();
+      await db.customStatement('PRAGMA foreign_keys = ON');
       expect(deleted, 1,
           reason: 'the seeded inventory account (1136) must exist before '
               'we delete it — otherwise this test proves nothing');

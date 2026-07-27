@@ -28,9 +28,10 @@ void main() {
 
   setUp(() async {
     db = AppDatabase.forTesting();
-    // FK is off in the in-memory test DB (NativeDatabase.memory sets no
-    // foreign_keys pragma), so bare invoice rows suffice — mirrors the setup
-    // in spec_149_b12_branch_scope_leak_test.dart.
+    // FK is enforced in tests now (mirrors production). The seeder creates only
+    // warehouse 1 and user 1 — seed warehouse 2 which the second invoice below
+    // references.
+    await db.into(db.warehouses).insert(WarehousesCompanion.insert(name: 'مخزن ٢'));
     await db.into(db.salesInvoices).insert(SalesInvoicesCompanion.insert(
           invoiceNumber: 'SI-WH1-B12',
           warehouseId: 1,

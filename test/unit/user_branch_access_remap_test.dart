@@ -23,6 +23,19 @@ void main() {
 
   setUp(() async {
     db = AppDatabase.forTesting();
+    // user_branch_access.user_id FKs to users — seed the two users the tests
+    // assign (only the admin user 1 is seeded). FK is enforced in tests now.
+    for (final uid in [7, 10]) {
+      await db.into(db.users).insert(UsersCompanion.insert(
+          id: Value(uid),
+          username: 'usr$uid',
+          passwordHash: 'x',
+          displayName: 'U$uid'));
+    }
+    // The legacy-fallback test stores the raw server branchId=3 verbatim; on a
+    // legacy server local and server ids match, so branch 3 exists locally.
+    await db.into(db.branches).insert(
+        BranchesCompanion.insert(id: const Value(3), name: 'فرع ٣'));
   });
 
   tearDown(() => db.close());

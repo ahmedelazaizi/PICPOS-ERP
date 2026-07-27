@@ -33,6 +33,12 @@ void main() {
     db = AppDatabase.forTesting();
     await db.syncDefaultAccounts();
 
+    // paper_status_history.changed_by FKs to users. These tests attribute the
+    // change to a placeholder actor id 0; seed it so the FK resolves (the DAO's
+    // _ensureValidActor guard now rejects an actor with no matching user).
+    await db.into(db.users).insert(UsersCompanion.insert(
+        id: const Value(0), username: 'usr0', passwordHash: 'x', displayName: 'U0'));
+
     customerPartyId = await db.into(db.parties).insert(
           PartiesCompanion.insert(
             name: 'عميل اختبار 048',

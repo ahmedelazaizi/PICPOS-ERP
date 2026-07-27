@@ -179,8 +179,12 @@ void main() {
         description: 'عمالة',
         amount: 40.0,
       );
-      // Simulate an install where the applied-overhead account is absent.
+      // Simulate an install where the applied-overhead account is absent. FK is
+      // enforced in tests now — force the deletion with FK momentarily off; the
+      // code under test still runs with FK ON.
+      await db.customStatement('PRAGMA foreign_keys = OFF');
       await (db.delete(db.accounts)..where((a) => a.code.equals('5138'))).go();
+      await db.customStatement('PRAGMA foreign_keys = ON');
 
       await expectLater(
         db.completeProduction(orderId),

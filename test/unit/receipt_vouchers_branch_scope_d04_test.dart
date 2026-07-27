@@ -66,6 +66,11 @@ void main() {
         branchId: Value(branchBId),
         globalId: const Value('gid-safe-d04-b')));
 
+    // safe_transactions.user_id FKs to users — seed user 7 (only the admin
+    // user 1 is seeded). FK is enforced in tests now (mirrors production).
+    await db.into(db.users).insert(UsersCompanion.insert(
+        id: const Value(7), username: 'usr7', passwordHash: 'x', displayName: 'U7'));
+
     // Branch A: one 100 receipt. Branch B: one 250 receipt + a 999 PAYMENT
     // (payments must never enter the receipts total, regardless of scope).
     await insertTxn(voucher: 'A-R', safeId: safeAId, type: 'receipt', amount: 100);

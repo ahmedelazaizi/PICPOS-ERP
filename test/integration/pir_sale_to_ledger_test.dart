@@ -505,7 +505,11 @@ void main() {
     test('REGRESSION taxable sale balances even when the VAT account is UNMAPPED',
         () async {
       // Remove the VAT account so getAccountByCode('output_vat') resolves null.
+      // FK is enforced in tests now — force the deletion with FK momentarily
+      // off; the code under test still runs with FK ON.
+      await db.customStatement('PRAGMA foreign_keys = OFF');
       await (db.delete(db.accounts)..where((a) => a.code.equals('2121'))).go();
+      await db.customStatement('PRAGMA foreign_keys = ON');
 
       final saleId = await db.createSalesInvoice(
         invoiceNumber: 'PIR-STL-VATMISS',

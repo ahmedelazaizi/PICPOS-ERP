@@ -112,8 +112,13 @@ void main() {
       // mapping still points at the now-nonexistent account id, and
       // getMappedAccountCode's fallback to the hardcoded default CODE
       // STRING ('1136') is then also a dead end.
+      // FK is enforced in tests now, so this deliberate FK-violating state (a
+      // dangling mapping) must be forced with FK momentarily off; the engine
+      // under test still runs with FK ON.
+      await db.customStatement('PRAGMA foreign_keys = OFF');
       final deletedCount =
           await (db.delete(db.accounts)..where((a) => a.code.equals('1136'))).go();
+      await db.customStatement('PRAGMA foreign_keys = ON');
       expect(deletedCount, 1,
           reason: 'syncDefaultAccounts() must have seeded 1136 for this '
               'test to be meaningful');
@@ -406,8 +411,12 @@ void main() {
         notes: 'B7 seed',
       );
 
+      // Deliberate FK-violating state — force with FK momentarily off (engine
+      // under test still runs FK-ON).
+      await db.customStatement('PRAGMA foreign_keys = OFF');
       final deleted =
           await (db.delete(db.accounts)..where((a) => a.code.equals('1136'))).go();
+      await db.customStatement('PRAGMA foreign_keys = ON');
       expect(deleted, 1);
 
       final stockBefore = (await db.getProductById(productId))!.currentStock;
@@ -447,9 +456,13 @@ void main() {
       // — a mapping row wins over the hardcoded default in
       // getAccountByPurpose, so this can't self-heal via syncDefaultAccounts
       // (same technique as the EXP-1 test).
+      // Deliberate FK-violating state (mapping → nonexistent account) — force
+      // with FK momentarily off (engine under test still runs FK-ON).
+      await db.customStatement('PRAGMA foreign_keys = OFF');
       final updatedMapping = await (db.update(db.accountMappings)
             ..where((m) => m.purpose.equals('op_expenses')))
           .write(const AccountMappingsCompanion(accountId: Value(999999)));
+      await db.customStatement('PRAGMA foreign_keys = ON');
       expect(updatedMapping, 1);
 
       expect(await db.select(db.opExpenses).get(), isEmpty);
@@ -554,8 +567,12 @@ void main() {
       final supplierId = await seedSupplier('B7 P2 Supplier FAIL');
       final safeId = await seedCashSafe();
 
+      // Deliberate FK-violating state — force with FK momentarily off (engine
+      // under test still runs FK-ON).
+      await db.customStatement('PRAGMA foreign_keys = OFF');
       final deleted =
           await (db.delete(db.accounts)..where((a) => a.code.equals('1111'))).go();
+      await db.customStatement('PRAGMA foreign_keys = ON');
       expect(deleted, 1);
 
       final invoiceId = await db.into(db.purchaseInvoices).insert(

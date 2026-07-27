@@ -29,8 +29,13 @@ void main() {
       // so the branches/parties tables are NOT empty. Wipe them so each
       // test starts from a known pristine state and the migration's
       // MIN(id) result is fully owned by the test data we insert.
+      // FK is enforced now — the seeded branch/party children would block these
+      // wipes; reset with FK momentarily off (the migration under test runs
+      // FK-ON).
+      await db.customStatement('PRAGMA foreign_keys = OFF');
       await db.delete(db.branches).go();
       await db.delete(db.parties).go();
+      await db.customStatement('PRAGMA foreign_keys = ON');
     });
 
     tearDown(() async {

@@ -116,9 +116,13 @@ void main() {
       // points nowhere. This is the only way to force a truly unresolvable
       // expense account, proving the guard fails loud instead of ever
       // falling through to `return null`.
+      // FK is enforced in tests now — force this dangling-mapping state with FK
+      // momentarily off; the code under test still runs with FK ON.
+      await db.customStatement('PRAGMA foreign_keys = OFF');
       final updated = await (db.update(db.accountMappings)
             ..where((m) => m.purpose.equals('op_expenses')))
           .write(const AccountMappingsCompanion(accountId: Value(999999)));
+      await db.customStatement('PRAGMA foreign_keys = ON');
       expect(updated, 1,
           reason: 'syncDefaultAccounts() must have pre-seeded exactly one '
               "'op_expenses' mapping row for this redirect to be meaningful");

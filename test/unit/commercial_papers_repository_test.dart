@@ -15,9 +15,14 @@ void main() {
   late AppDatabase db;
   late CommercialPapersRepositoryImpl repo;
 
-  setUp(() {
+  setUp(() async {
     db = AppDatabase.forTesting();
     repo = CommercialPapersRepositoryImpl(db);
+    // paper_status_history.changed_by FKs to users. Calls that omit changedBy
+    // resolve to the repo's `?? 0` fallback; seed that placeholder actor so the
+    // FK resolves (the DAO's _ensureValidActor guard rejects an unseeded actor).
+    await db.into(db.users).insert(UsersCompanion.insert(
+        id: const Value(0), username: 'usr0', passwordHash: 'x', displayName: 'U0'));
   });
 
   tearDown(() async {
@@ -116,7 +121,7 @@ void main() {
       final partyId = await seedParty('عميل');
       final paperId = await createTestPaper(partyId);
 
-      await repo.updatePaperStatus(paperId, 'deposited', changedBy: 42);
+      await repo.updatePaperStatus(paperId, 'deposited', changedBy: 0);
 
       final history = await repo.getPaperHistory(paperId);
       expect(history.length, greaterThanOrEqualTo(1));

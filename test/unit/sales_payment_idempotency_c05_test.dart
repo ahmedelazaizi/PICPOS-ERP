@@ -39,6 +39,10 @@ void main() {
       displayName: 'C05 Cashier',
       roleId: roleId,
     );
+    // safe_transactions.user_id FKs to users — the stamp test threads a distinct
+    // userId 7 (proving the payment's userId, not the invoice's, is recorded).
+    await db.into(db.users).insert(UsersCompanion.insert(
+        id: const Value(7), username: 'usr7', passwordHash: 'x', displayName: 'U7'));
   });
   tearDown(() => db.close());
 

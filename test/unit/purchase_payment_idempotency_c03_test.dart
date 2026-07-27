@@ -23,6 +23,10 @@ void main() {
   setUp(() async {
     db = AppDatabase.forTesting();
     await db.syncDefaultAccounts();
+    // safe_transactions.user_id FKs to users — the stamp test threads userId 9
+    // (only the admin user 1 is seeded). FK is enforced in tests now.
+    await db.into(db.users).insert(UsersCompanion.insert(
+        id: const Value(9), username: 'usr9', passwordHash: 'x', displayName: 'U9'));
   });
   tearDown(() => db.close());
 

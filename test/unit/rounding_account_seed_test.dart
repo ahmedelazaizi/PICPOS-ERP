@@ -45,8 +45,11 @@ void main() {
 
   test('self-heal: an existing install missing 4319 regains it, once, no dup',
       () async {
-    // Simulate a pre-139 install: drop 4319 but keep the rest of the tree.
+    // Simulate a pre-139 install: drop 4319 but keep the rest of the tree. FK
+    // is enforced in tests now — force the deletion with FK momentarily off.
+    await db.customStatement('PRAGMA foreign_keys = OFF');
     await (db.delete(db.accounts)..where((a) => a.code.equals('4319'))).go();
+    await db.customStatement('PRAGMA foreign_keys = ON');
     expect(await db.getAccountByCode('4319'), isNull);
     final countBefore = (await db.select(db.accounts).get()).length;
 

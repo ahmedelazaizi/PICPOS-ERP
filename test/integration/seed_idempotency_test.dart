@@ -135,8 +135,12 @@ void main() {
       // not actually empty. We verify by wiping a table and checking.
       await db.seedInitialDataPostgresAtomic();
 
-      // Wipe branches to simulate a broken baseline.
+      // Wipe branches to simulate a broken baseline. FK is enforced now, so the
+      // seeded branch's children (warehouse/safes) would block the delete —
+      // drop it with FK momentarily off (verifyPostgresBaseline runs FK-ON).
+      await db.customStatement('PRAGMA foreign_keys = OFF');
       await db.customStatement('DELETE FROM branches');
+      await db.customStatement('PRAGMA foreign_keys = ON');
 
       final check = await db.verifyPostgresBaseline();
       expect(check.ok, isFalse);

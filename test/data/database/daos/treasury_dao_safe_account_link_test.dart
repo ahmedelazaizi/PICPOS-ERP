@@ -110,9 +110,14 @@ void main() {
       // Wipe BOTH candidate parents — the production code (2026-05-03)
       // falls back from '1110' to '111' to support the project's default
       // seeded chart of accounts. Both must be absent to trigger the throw.
+      // FK is enforced in tests now — force this deliberate FK-violating state
+      // (orphaned child accounts) with FK momentarily off; the code under test
+      // still runs with FK ON.
+      await db.customStatement('PRAGMA foreign_keys = OFF');
       await (db.delete(db.accounts)
             ..where((a) => a.code.equals('1110') | a.code.equals('111')))
           .go();
+      await db.customStatement('PRAGMA foreign_keys = ON');
 
       // Snapshot account count + safe count BEFORE the failing call, so we
       // can verify atomic rollback (no stray accounts, no half-created safe).

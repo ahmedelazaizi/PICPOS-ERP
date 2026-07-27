@@ -87,6 +87,17 @@ void main() {
         balance: const Value(200), // cash, branchId NULL (shared)
         globalId: const Value('gid-safe-d01-shared')));
 
+    // safe_transactions.user_id FKs to users — seed the two actors the per-user
+    // summary asserts on (only the admin user 1 is seeded). FK is enforced in
+    // tests now (mirrors production).
+    for (final uid in [11, 22]) {
+      await db.into(db.users).insert(UsersCompanion.insert(
+          id: Value(uid),
+          username: 'usr$uid',
+          passwordHash: 'x',
+          displayName: 'U$uid'));
+    }
+
     // Branch A: receipt 100. Branch B: receipt 250 + payment 40. Shared: 30.
     await insertTxn(voucher: 'A-R', safeId: safeAId, type: 'receipt', amount: 100, userId: 11);
     await insertTxn(voucher: 'B-R', safeId: safeBId, type: 'receipt', amount: 250, userId: 22);

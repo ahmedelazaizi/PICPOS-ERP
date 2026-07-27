@@ -25,6 +25,15 @@ void main() {
   setUp(() async {
     db = AppDatabase.forTesting();
     strategy = ShiftSyncStrategy(db);
+    // shifts.user_id FKs to users — seed the shift owners referenced below
+    // (only the admin user 1 is seeded). FK is enforced in tests now.
+    for (final uid in [5, 7, 10, 99, 888, 999]) {
+      await db.into(db.users).insert(UsersCompanion.insert(
+          id: Value(uid),
+          username: 'usr$uid',
+          passwordHash: 'x',
+          displayName: 'U$uid'));
+    }
   });
 
   tearDown(() => db.close());

@@ -283,9 +283,20 @@ Future<String?> testPostgresConnection(PostgresConfig config) async {
   }
 }
 
-/// Create an in-memory database for testing purposes
+/// Create an in-memory database for testing purposes.
+///
+/// يطابق الإنتاج (`openConnection`): بيشغّل `PRAGMA foreign_keys` في نفس
+/// نوع الـ setup callback ووقت فتح الاتصال (برّه أي transaction). من غير
+/// ده كان أي حذف يخالف قيد أجنبي بينجح في الاختبار ويفشل عند العميل بـ
+/// `SqliteException(787): FOREIGN KEY constraint failed` — فئة كاملة من
+/// الباجات كانت غير مرئية للاختبارات. اختبار محتاج FK مطفي (محاكاة سكيما
+/// قديمة مثلاً) بيطفّيه محلياً بـ `PRAGMA foreign_keys = OFF`.
 QueryExecutor openTestConnection() {
-  return NativeDatabase.memory();
+  return NativeDatabase.memory(
+    setup: (database) {
+      database.execute('PRAGMA foreign_keys = ON;');
+    },
+  );
 }
 
 /// Get the current database file path

@@ -132,15 +132,20 @@ void main() {
         invoiceDate: DateTime(2025, 5, 11),
         total: const Value(200)));
 
+    // products is empty in a fresh DB — seed the product the stock/inventory
+    // rows below FK to (FK is enforced in tests now, mirroring production).
+    final prodId = await db.into(db.products).insert(
+        ProductsCompanion.insert(code: 'P-R2', name: 'صنف R2'));
+
     // Stock movements (Step C — warehouse-resolve).
     await db.into(db.stockMovements).insert(StockMovementsCompanion.insert(
-        productId: 1,
+        productId: prodId,
         warehouseId: whAId,
         quantity: 5.0,
         movementType: 'adjustment',
         balanceAfter: 5.0));
     await db.into(db.stockMovements).insert(StockMovementsCompanion.insert(
-        productId: 1,
+        productId: prodId,
         warehouseId: whBId,
         quantity: 7.0,
         movementType: 'adjustment',
@@ -148,9 +153,9 @@ void main() {
 
     // Inventory balances (Step C — warehouse-resolve).
     await db.into(db.inventoryBalances).insert(InventoryBalancesCompanion.insert(
-        productId: 1, warehouseId: whAId, quantity: const Value(5)));
+        productId: prodId, warehouseId: whAId, quantity: const Value(5)));
     await db.into(db.inventoryBalances).insert(InventoryBalancesCompanion.insert(
-        productId: 1, warehouseId: whBId, quantity: const Value(7)));
+        productId: prodId, warehouseId: whBId, quantity: const Value(7)));
 
     // Safe transactions (Step C — safe-resolve).
     await db.into(db.safeTransactions).insert(SafeTransactionsCompanion.insert(
