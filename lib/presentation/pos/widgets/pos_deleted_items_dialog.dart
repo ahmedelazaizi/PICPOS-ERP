@@ -69,7 +69,13 @@ class PosDeletedItemsDialog extends ConsumerWidget {
                       ),
                       title: Text(item.productName),
                       subtitle: Text(
-                        '${item.quantity} × ${item.effectivePrice.toStringAsFixed(AppConstants.decimalPlaces)} = ${item.total.toStringAsFixed(AppConstants.decimalPlaces)} د.أ',
+                        // السطر ده بيعرض معادلة، فلازم تكون صحيحة حسابياً.
+                        // كان `= item.total` وهو شامل الضريبة، يعني
+                        // «٧ × ٥ = ٤٠.٦» — رقم مايطلعش من الضرب المكتوب
+                        // قدامه. `subtotal` هو ناتج الضرب بالظبط.
+                        '${item.quantity} × '
+                        '${item.effectivePrice.toStringAsFixed(AppConstants.decimalPlaces)}'
+                        ' = ${item.subtotal.toStringAsFixed(AppConstants.decimalPlaces)} د.أ',
                       ),
                       trailing: Text(
                         item.note ?? '',

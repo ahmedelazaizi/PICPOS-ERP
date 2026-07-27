@@ -495,7 +495,23 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Text(
-                              widget.item.total.abs().toStringAsFixed(AppConstants.decimalPlaces),
+                              // `total` بيضيف ضريبة الصف **بلا شرط**، بينما
+                              // `CalculateInvoiceTotalsUseCase` بيتجاهل ضريبة
+                              // الصف المخزّنة عن قصد ويعيد حسابها على الصافي
+                              // **ومشروطة بـ `taxEnabled`** (سبيك ١٣٧ —
+                              // BUG-C02/BUG-H01).
+                              //
+                              // فلما الضريبة تكون مقفولة، الصف كان بيعرض
+                              // ضريبة الفاتورة قررت ما تحصّلهاش: صنف ٧ × ٥
+                              // يعرض ٤٠.٦ والإجمالي النهائي ٣٥. الباج كامن
+                              // عند أي عميل شغّال بضريبة مفتوحة، وبيظهر فوراً
+                              // لما تتقفل.
+                              //
+                              // الصافي هو اللي بيجمع للمجموع الفرعي، والضريبة
+                              // سطر مستقل في لوحة الإجماليات.
+                              widget.item.totalBeforeTax
+                                  .abs()
+                                  .toStringAsFixed(AppConstants.decimalPlaces),
                               style: TextStyle(
                                 fontSize: fontSize + 1,
                                 fontWeight: FontWeight.w900,

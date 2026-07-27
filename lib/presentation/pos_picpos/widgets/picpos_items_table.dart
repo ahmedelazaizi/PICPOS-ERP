@@ -267,7 +267,22 @@ class _ItemRow extends ConsumerWidget {
             Expanded(
               flex: _kFlexTotal,
               child: Text(
-                NumberUtils.formatCurrency(item.total),
+                // ── ليه `totalBeforeTax` مش `total` ──────────────────────
+                // `CartItemEntity.total` بيضيف ضريبة الصف **بلا شرط**،
+                // بينما حساب الفاتورة بيتجاهل ضريبة الصف المخزّنة عن قصد
+                // ويعيد حسابها على الصافي **ومشروطة بـ `taxEnabled`**
+                // (اقرا التعليق في `CalculateInvoiceTotalsUseCase` — سبيك
+                // ١٣٧، BUG-C02/BUG-H01).
+                //
+                // فالنتيجة كانت صف بيعرض رقم مالوش علاقة بأي حاجة تانية على
+                // الشاشة: صنف بسعر ٥ وكمية ٧ والضريبة مقفولة كان بيعرض
+                // ٤٠.٦٠٠ (٣٥ + ١٦٪) والمجموع الفرعي والإجمالي النهائي
+                // الاتنين ٣٥.٠٠٠.
+                //
+                // العمود ده جنب «السعر» و«الخصم ٪»، فمعناه المتوقّع هو
+                // ناتجهم: الكمية × السعر − الخصم. والضريبة سطر مستقل في
+                // لوحة الإجماليات، مش مدسوسة في صفوف الأصناف.
+                NumberUtils.formatCurrency(item.totalBeforeTax),
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 13,

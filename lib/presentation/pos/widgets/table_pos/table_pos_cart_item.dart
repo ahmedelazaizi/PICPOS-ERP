@@ -113,7 +113,12 @@ class TablePosCartItem extends StatelessWidget {
               SizedBox(
                 width: 60,
                 child: Text(
-                  item.total.toStringAsFixed(AppConstants.decimalPlaces),
+                  // صافي الصف مش شامل الضريبة — نفس سبب `cart_item_tile`:
+                  // حساب الفاتورة بيتجاهل ضريبة الصف ويعيد حسابها مشروطة
+                  // بـ `taxEnabled`، فعرض الصف شاملها بيخلّيه رقم مالوش
+                  // علاقة بالإجماليات لما الضريبة تكون مقفولة.
+                  item.totalBeforeTax
+                      .toStringAsFixed(AppConstants.decimalPlaces),
                   style: GoogleFonts.cairo(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
