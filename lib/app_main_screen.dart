@@ -37,6 +37,7 @@ import 'presentation/treasury_picpos/screens/treasury_picpos_screen.dart';
 import 'presentation/screens/reports_screen.dart';
 import 'presentation/reports_picpos/screens/reports_picpos_screen.dart';
 import 'presentation/screens/settings_screen.dart';
+import 'presentation/settings_picpos/screens/settings_picpos_screen.dart';
 import 'presentation/screens/branch_management_screen.dart';
 import 'presentation/screens/region_management_screen.dart';
 import 'presentation/kitchen/screens/kitchen_display_screen.dart';
@@ -763,7 +764,8 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
       ),
       ScreenConfig(
         appScreen: AppScreen.settings,
-        builder: (_) => const SettingsScreen(),
+        builder: (_) =>
+            Brand.isPicPos ? const SettingsPicposScreen() : const SettingsScreen(),
         label: 'الإعدادات',
         icon: PhosphorIconsBold.gear,
       ),
