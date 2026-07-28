@@ -309,100 +309,107 @@ class _InventoryBondsPicposScreenState
                           ),
                         ),
                       )
+                    // Vertical scroll — a tall opening-balance/stock-take
+                    // bond can have dozens of rows; without this outer
+                    // scroller the card's clipBehavior silently hides rows
+                    // past the visible height (parity with the original's
+                    // outer `ListView` around the table).
                     : SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: DataTable(
-                          columnSpacing: 20,
-                          columns: const [
-                            DataColumn(label: Text('الصنف')),
-                            DataColumn(label: Text('التصنيف')),
-                            DataColumn(label: Text('المورد')),
-                            DataColumn(label: Text('الرصيد الحالي')),
-                            DataColumn(label: Text('الكمية المضافة')),
-                            DataColumn(label: Text('سعر التكلفة')),
-                            DataColumn(label: Text('سعر البيع')),
-                            DataColumn(label: Text('حذف')),
-                          ],
-                          rows: _items.asMap().entries.map((entry) {
-                            final index = entry.key;
-                            final item = entry.value;
-                            return DataRow(
-                              cells: [
-                                DataCell(
-                                  Text(
-                                    item.product.name,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                DataCell(Text(item.categoryName)),
-                                DataCell(Text(item.supplierName)),
-                                DataCell(
-                                  Text(
-                                    item.product.currentStock
-                                        .toStringAsFixed(2),
-                                  ),
-                                ),
-                                DataCell(
-                                  SizedBox(
-                                    width: 80,
-                                    child: TextFormField(
-                                      initialValue: item.quantity > 0
-                                          ? item.quantity.toString()
-                                          : '',
-                                      keyboardType: TextInputType.number,
-                                      decoration: const InputDecoration(
-                                        hintText: '0',
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: DataTable(
+                            columnSpacing: 20,
+                            columns: const [
+                              DataColumn(label: Text('الصنف')),
+                              DataColumn(label: Text('التصنيف')),
+                              DataColumn(label: Text('المورد')),
+                              DataColumn(label: Text('الرصيد الحالي')),
+                              DataColumn(label: Text('الكمية المضافة')),
+                              DataColumn(label: Text('سعر التكلفة')),
+                              DataColumn(label: Text('سعر البيع')),
+                              DataColumn(label: Text('حذف')),
+                            ],
+                            rows: _items.asMap().entries.map((entry) {
+                              final index = entry.key;
+                              final item = entry.value;
+                              return DataRow(
+                                cells: [
+                                  DataCell(
+                                    Text(
+                                      item.product.name,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
                                       ),
-                                      onChanged: (val) {
-                                        item.quantity =
-                                            double.tryParse(val) ?? 0;
-                                      },
                                     ),
                                   ),
-                                ),
-                                DataCell(
-                                  SizedBox(
-                                    width: 80,
-                                    child: TextFormField(
-                                      initialValue:
-                                          item.costPrice.toString(),
-                                      keyboardType: TextInputType.number,
-                                      onChanged: (val) {
-                                        item.costPrice =
-                                            double.tryParse(val) ?? 0;
-                                      },
+                                  DataCell(Text(item.categoryName)),
+                                  DataCell(Text(item.supplierName)),
+                                  DataCell(
+                                    Text(
+                                      item.product.currentStock
+                                          .toStringAsFixed(2),
                                     ),
                                   ),
-                                ),
-                                DataCell(
-                                  SizedBox(
-                                    width: 80,
-                                    child: TextFormField(
-                                      initialValue:
-                                          item.salePrice.toString(),
-                                      keyboardType: TextInputType.number,
-                                      onChanged: (val) {
-                                        item.salePrice =
-                                            double.tryParse(val) ?? 0;
-                                      },
+                                  DataCell(
+                                    SizedBox(
+                                      width: 80,
+                                      child: TextFormField(
+                                        initialValue: item.quantity > 0
+                                            ? item.quantity.toString()
+                                            : '',
+                                        keyboardType: TextInputType.number,
+                                        decoration: const InputDecoration(
+                                          hintText: '0',
+                                        ),
+                                        onChanged: (val) {
+                                          item.quantity =
+                                              double.tryParse(val) ?? 0;
+                                        },
+                                      ),
                                     ),
                                   ),
-                                ),
-                                DataCell(
-                                  IconButton(
-                                    icon: const Icon(
-                                      PhosphorIconsBold.trash,
-                                      color: Colors.red,
-                                      size: 20,
+                                  DataCell(
+                                    SizedBox(
+                                      width: 80,
+                                      child: TextFormField(
+                                        initialValue:
+                                            item.costPrice.toString(),
+                                        keyboardType: TextInputType.number,
+                                        onChanged: (val) {
+                                          item.costPrice =
+                                              double.tryParse(val) ?? 0;
+                                        },
+                                      ),
                                     ),
-                                    onPressed: () => _removeItem(index),
                                   ),
-                                ),
-                              ],
-                            );
-                          }).toList(),
+                                  DataCell(
+                                    SizedBox(
+                                      width: 80,
+                                      child: TextFormField(
+                                        initialValue:
+                                            item.salePrice.toString(),
+                                        keyboardType: TextInputType.number,
+                                        onChanged: (val) {
+                                          item.salePrice =
+                                              double.tryParse(val) ?? 0;
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                  DataCell(
+                                    IconButton(
+                                      icon: const Icon(
+                                        PhosphorIconsBold.trash,
+                                        color: Colors.red,
+                                        size: 20,
+                                      ),
+                                      onPressed: () => _removeItem(index),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            }).toList(),
+                          ),
                         ),
                       ),
               ),
