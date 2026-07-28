@@ -48,6 +48,7 @@ import 'presentation/screens/activity_log_screen.dart';
 import 'presentation/screens/inventory/inventory_bonds_screen.dart';
 import 'presentation/inventory_bonds_picpos/screens/inventory_bonds_picpos_screen.dart';
 import 'presentation/screens/inventory/stock_transfer_screen.dart';
+import 'presentation/stock_transfer_picpos/screens/stock_transfer_picpos_screen.dart';
 import 'presentation/screens/inventory/stock_requisitions_screen.dart';
 import 'presentation/screens/scale_plu_export_screen.dart';
 import 'presentation/screens/e_invoice_dashboard_screen.dart';
@@ -805,7 +806,9 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
       ),
       ScreenConfig(
         appScreen: AppScreen.stockTransfer,
-        builder: (_) => const StockTransferScreen(),
+        builder: (_) => Brand.isPicPos
+            ? const StockTransferPicposScreen()
+            : const StockTransferScreen(),
         label: 'تحويل مخزني',
         icon: PhosphorIconsBold.arrowsLeftRight,
       ),
