@@ -5,19 +5,31 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/config/brand.dart';
+import '../../../core/permissions/permission_codes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/providers.dart';
+import '../../widgets/permission_guard.dart';
 
-/// Top strip: logo · clock/date · user · POS name · held invoices.
+/// Top strip: logo · clock/date · user · POS name · held invoices · close shift.
 class PicPosTopBar extends ConsumerWidget {
   final VoidCallback onHeldOrders;
   final VoidCallback onBack;
   final bool showBackButton;
 
+  /// إغلاق الوردية — Task 10B: يسدّ فجوة إن كاشير PicPos ما كان عندوش أي طريقة
+  /// يقفل الوردية من نقطة البيع. المُستدعي (`picpos_pos_screen.dart`) يمرّر
+  /// الفعل مباشرة (`PosCashierClosingDialog.show(context)`) بلا لف — نفس أسلوب
+  /// `onCashierClosing` في `pos_main_screen.dart` → `pos_header.dart`. حارس
+  /// الصلاحية (`PermissionCodes.posShiftClose` + `allowManagerOverride`) يعيش
+  /// هنا داخل الزر نفسه، مطابقاً لـ `_buildShiftCloseButton` في
+  /// `pos_header.dart:384-387`.
+  final VoidCallback onCloseShift;
+
   const PicPosTopBar({
     super.key,
     required this.onHeldOrders,
     required this.onBack,
+    required this.onCloseShift,
     this.showBackButton = false,
   });
 
@@ -66,6 +78,21 @@ class PicPosTopBar extends ConsumerWidget {
           ),
           const SizedBox(width: 8),
           _HeldOrdersButton(count: heldCount, onPressed: onHeldOrders),
+          const SizedBox(width: 8),
+          // ملحوظة تصميم: الحارس هنا يبني الـ InkWell/Container مباشرة (بدل
+          // كلاس خاص زي `_HeldOrdersButton`) لأن `PermissionGuard` مع
+          // `allowManagerOverride` بيدوّر جوه شجرة الـ widget عن onTap/onPressed
+          // (`_ManagerOverrideWrapper._extractOnPressed`) ليعترضه بعد نجاح
+          // تصريح المدير — وهو بيتعرف بس على عناصر Flutter القياسية
+          // (InkWell/TextButton/Container/إلخ)، مش على كلاس خاص. لف الفعل في
+          // كلاس زي `_HeldOrdersButton` كان هيخلي التصريح الناجح ينفّذ لا شيء
+          // بصمت. نفس بنية `_buildShiftCloseButton` في pos_header.dart.
+          PermissionGuard(
+            permission: PermissionCodes.posShiftClose,
+            allowManagerOverride: true,
+            actionName: 'إغلاق الوردية',
+            child: _closeShiftChip(onCloseShift),
+          ),
         ],
       ),
     );
@@ -200,4 +227,36 @@ class _HeldOrdersButton extends StatelessWidget {
       ),
     );
   }
+}
+
+/// شريحة «إغلاق الوردية» — نفس أسلوب `_HeldOrdersButton` بصرياً (لون تحذير،
+/// نفس المقاسات). مبنية كدالة ترجع widgets قياسية مباشرة (مش كلاس خاص) —
+/// السبب موضّح عند نقطة الاستخدام في `PicPosTopBar.build`.
+Widget _closeShiftChip(VoidCallback onPressed) {
+  return InkWell(
+    onTap: onPressed,
+    borderRadius: BorderRadius.circular(8),
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: AppColors.error,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(PhosphorIconsBold.signOut, size: 16, color: Colors.white),
+          SizedBox(width: 6),
+          Text(
+            'إغلاق الوردية',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }

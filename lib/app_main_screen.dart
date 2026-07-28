@@ -81,6 +81,7 @@ import 'presentation/sales_returns_picpos/screens/sales_returns_picpos_screen.da
 import 'presentation/screens/purchase_returns_screen.dart';
 import 'presentation/purchase_returns_picpos/screens/purchase_returns_picpos_screen.dart';
 import 'presentation/screens/shift_close_screen.dart';
+import 'presentation/shift_close_picpos/screens/shift_close_picpos_screen.dart';
 import 'presentation/screens/sync/sync_conflicts_screen.dart';
 import 'presentation/screens/audit/audit_dashboard_screen.dart';
 import 'main_desktop.dart' if (dart.library.html) 'main_web.dart' as platform;
@@ -988,7 +989,9 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
       ),
       ScreenConfig(
         appScreen: AppScreen.shiftClose,
-        builder: (_) => const ShiftCloseScreen(),
+        builder: (_) => Brand.isPicPos
+            ? const ShiftClosePicposScreen()
+            : const ShiftCloseScreen(),
         label: 'إغلاق الوردية',
         icon: PhosphorIconsBold.lockKey,
       ),

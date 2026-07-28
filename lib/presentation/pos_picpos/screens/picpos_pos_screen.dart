@@ -20,6 +20,7 @@ import '../../pos/providers/pos_controller.dart';
 import '../../pos/providers/pos_notification_provider.dart';
 import '../../pos/providers/pos_search_controller.dart';
 import '../../pos/widgets/held_orders_dialog.dart';
+import '../../pos/widgets/pos_cashier_closing_dialog.dart';
 import '../../pos/widgets/pos_customer_selection_dialog.dart';
 import '../../pos/widgets/pos_dialogs.dart' hide PaymentResult;
 import '../../pos/widgets/pos_previous_expenses_dialog.dart';
@@ -240,6 +241,10 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
                     showBackButton: widget.showBackButton,
                     onBack: () => Navigator.of(context).maybePop(),
                     onHeldOrders: _showHeldOrders,
+                    // Task 10B — يسدّ فجوة إن كاشير PicPos ما عندوش أي طريقة
+                    // يقفل الوردية. الفعل نفسه (10C يبدّله للمعاد تصميمه)؛
+                    // حارس الصلاحية يعيش داخل `PicPosTopBar` نفسها.
+                    onCloseShift: () => PosCashierClosingDialog.show(context),
                   ),
                   Expanded(
                     child: Padding(
