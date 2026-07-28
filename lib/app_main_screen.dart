@@ -41,6 +41,7 @@ import 'presentation/screens/tables_screen.dart';
 import 'presentation/screens/products_screen.dart';
 import 'presentation/products_picpos/screens/products_picpos_screen.dart';
 import 'presentation/screens/categories_screen.dart';
+import 'presentation/categories_picpos/screens/categories_picpos_screen.dart';
 import 'presentation/screens/analytics_dashboard_screen.dart';
 import 'presentation/screens/hr_screen.dart';
 import 'presentation/screens/activity_log_screen.dart';
@@ -685,7 +686,9 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
       ),
       ScreenConfig(
         appScreen: AppScreen.categories,
-        builder: (_) => const CategoriesScreen(),
+        builder: (_) => Brand.isPicPos
+            ? const CategoriesPicposScreen()
+            : const CategoriesScreen(),
         label: 'التصنيفات',
         icon: PhosphorIconsBold.squaresFour,
       ),
