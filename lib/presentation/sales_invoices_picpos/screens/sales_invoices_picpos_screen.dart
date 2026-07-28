@@ -25,6 +25,9 @@ import '../../screens/sales_orders_screen.dart';
 import '../../widgets/searchable_unit_selection_dialog.dart';
 import '../../../domain/entities/cart_item_entity.dart';
 import '../../screens/quotations/quotations_controller.dart';
+// Fix round 1 (owner decision): full parity with UralCash — the Quotations
+// tab is reused as-is, not copied (its own file, not a `part of`).
+import '../../screens/quotations/quotations_tab.dart';
 import '../../../domain/entities/quotation_entity.dart';
 import '../../../domain/entities/invoice_entity.dart';
 import '../../../domain/repositories/sales_repository.dart';
@@ -54,9 +57,15 @@ part 'sales_batch_action_bar.dart';
 /// `SalesInvoiceForm` / `AddProductDialog` / `SearchableUnitSelectionDialog` /
 /// `SyncPendingBanner` من UralCash — فقط طبقة العرض تبدّلت لـ `picpos_shell`.
 ///
-/// النطاق: تبويب فواتير المبيعات فقط (بدون تبويب «عروض الأسعار» — غير مذكور
-/// في نطاق المهمة ولا في الهيدر المطلوب). زر «حفظ كعرض سعر» داخل
-/// `SalesInvoiceForm` نفسه (`onSaveQuotation`) يبقى شغّال بلا تغيير لأن
+/// Fix round 1 (owner decision) — parity: الأصل `sales_invoices_screen.dart`
+/// يعرض تبويبَين دايماً وبلا أي شرط/صلاحية (`DefaultTabController(length: 2)`
+/// ثابت، مفيش `PermissionGuard`/feature flag يلفّهم) — «فواتير المبيعات» و
+/// «عروض الأسعار». هنا نفس الترتيب ونفس عدم الاشتراط، فقط التبويب مبني بـ
+/// `TabController` صريح (نفس أسلوب `inventory_picpos_screen.dart`) عشان
+/// الـ `TabBar` يتحط في `subHeader` بتاع `PicPosScreenScaffold` بدل ما يتحط
+/// في `AppBar.bottom` الأصلي. تبويب «عروض الأسعار» يعيد استخدام `QuotationsTab`
+/// و`quotationsControllerProvider` كما هما (بلا نسخ منطق). زر «حفظ كعرض سعر»
+/// داخل `SalesInvoiceForm` نفسه (`onSaveQuotation`) يبقى شغّال بلا تغيير لأن
 /// النموذج يُعاد استخدامه كما هو.
 ///
 /// راجع lib/presentation/screens/sales_invoices_screen.dart (الأصل).
@@ -69,13 +78,20 @@ class SalesInvoicesPicposScreen extends ConsumerStatefulWidget {
 }
 
 class _SalesInvoicesPicposScreenState
-    extends ConsumerState<SalesInvoicesPicposScreen> {
+    extends ConsumerState<SalesInvoicesPicposScreen>
+    with SingleTickerProviderStateMixin {
   final _searchController = TextEditingController();
   final _searchFocusNode = FocusNode();
+  // Fix round 1 — parity tab (فواتير المبيعات / عروض الأسعار). Explicit
+  // TabController (not DefaultTabController) so the TabBar can live in
+  // PicPosScreenScaffold's `subHeader` slot while TabBarView lives in `body`
+  // — same pattern as inventory_picpos_screen.dart.
+  late final TabController _tabController;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_searchController.text.isNotEmpty) {
         ref
@@ -87,6 +103,7 @@ class _SalesInvoicesPicposScreenState
 
   @override
   void dispose() {
+    _tabController.dispose();
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
@@ -152,37 +169,68 @@ class _SalesInvoicesPicposScreenState
             label: const Text('فاتورة جديدة'),
           ),
         ],
-        body: AppStateView(
-          isLoading: state.isLoading,
-          isEmpty: state.allInvoices.isEmpty && !state.isLoading,
-          emptyMessage: 'لا توجد فواتير مبيعات',
-          emptyIcon: PhosphorIconsBold.receipt,
-          child: Column(
-            children: [
-              const SyncPendingBanner(
-                tableName: 'sales',
-                label: 'فاتورة مبيعات',
-              ),
-              const SalesSummaryRow(),
-              SalesFilterBar(
-                searchController: _searchController,
-                searchFocusNode: _searchFocusNode,
-              ),
-              const SizedBox(height: 16),
-              // ملاحظة تخطيط: SalesInvoicesTable بترجع Expanded من جوّاها
-              // (منسوخة حرفياً بلا تعديل منطقي — مصيدة النسخ)، فما بتتلفّش
-              // بـ PicPosContentCard (Container بيكسر ParentDataWidget بتاع
-              // Expanded لو حط بينها وبين الـ Flex). AppDataTable أصلاً
-              // بترسم حدودها كـ"كارت" بنفسها، فمفيش فرق بصري محسوس.
-              SalesInvoicesTable(
-                onView: _showInvoiceDetails,
-                onEdit: _editInvoice,
-                onPrint: _printInvoice,
-                onDelete: _deleteInvoice,
-              ),
-              const SalesBatchActionBar(),
+        // Fix round 1 — parity tab bar. Unconditional, same order/text as
+        // the original's AppBar.bottom TabBar. Styling comes from
+        // PicPosTheme.tabBarTheme automatically (no hardcoded colors here,
+        // unlike the original which hardcodes white for its primary-colored
+        // AppBar background).
+        subHeader: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+          child: TabBar(
+            controller: _tabController,
+            tabs: const [
+              Tab(text: 'فواتير المبيعات'),
+              Tab(text: 'عروض الأسعار'),
             ],
           ),
+        ),
+        body: TabBarView(
+          controller: _tabController,
+          children: [
+            // Tab 1: Sales Invoices — unchanged from before this fix.
+            AppStateView(
+              isLoading: state.isLoading,
+              isEmpty: state.allInvoices.isEmpty && !state.isLoading,
+              emptyMessage: 'لا توجد فواتير مبيعات',
+              emptyIcon: PhosphorIconsBold.receipt,
+              child: Column(
+                children: [
+                  const SyncPendingBanner(
+                    tableName: 'sales',
+                    label: 'فاتورة مبيعات',
+                  ),
+                  const SalesSummaryRow(),
+                  SalesFilterBar(
+                    searchController: _searchController,
+                    searchFocusNode: _searchFocusNode,
+                  ),
+                  const SizedBox(height: 16),
+                  // ملاحظة تخطيط: SalesInvoicesTable بترجع Expanded من جوّاها
+                  // (منسوخة حرفياً بلا تعديل منطقي — مصيدة النسخ)، فما بتتلفّش
+                  // بـ PicPosContentCard (Container بيكسر ParentDataWidget بتاع
+                  // Expanded لو حط بينها وبين الـ Flex). AppDataTable أصلاً
+                  // بترسم حدودها كـ"كارت" بنفسها، فمفيش فرق بصري محسوس.
+                  SalesInvoicesTable(
+                    onView: _showInvoiceDetails,
+                    onEdit: _editInvoice,
+                    onPrint: _printInvoice,
+                    onDelete: _deleteInvoice,
+                  ),
+                  const SalesBatchActionBar(),
+                ],
+              ),
+            ),
+            // Tab 2: Quotations — reused as-is (verbatim from the original's
+            // TabBarView second child), same onEditQuotation/onConvertQuotation
+            // wiring into _createNewInvoice from the copied
+            // sales_invoice_dialogs.dart.
+            QuotationsTab(
+              onEditQuotation: (q) =>
+                  _createNewInvoice(editQuotation: q, isConvert: false),
+              onConvertQuotation: (q) =>
+                  _createNewInvoice(editQuotation: q, isConvert: true),
+            ),
+          ],
         ),
       ),
     );
