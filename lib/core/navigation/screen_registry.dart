@@ -1,3 +1,4 @@
+import '../config/brand.dart';
 import '../config/business_profile.dart';
 import 'screen_id.dart';
 
@@ -259,6 +260,12 @@ class ScreenRegistry {
     ScreenId.users,
   ];
 
+  /// PicPos-only widening of `lite`: adds the PLU scale-export screen.
+  ///
+  /// UralCash's `lite` (above) MUST stay byte-unchanged — this is a
+  /// brand-gated ADDITION, not a replacement. See `forProfile` below.
+  static const List<ScreenId> litePicpos = [...lite, ScreenId.scalePlu];
+
   static List<ScreenId> forProfile(BusinessProfile profile) {
     switch (profile) {
       case BusinessProfile.restaurant:
@@ -274,7 +281,8 @@ class ScreenRegistry {
       case BusinessProfile.commercial:
         return commercial;
       case BusinessProfile.lite:
-        return lite;
+        // UralCash-lite stays 19 verbatim; PicPos-lite adds the scale screen.
+        return Brand.isPicPos ? litePicpos : lite;
       case BusinessProfile.unified:
         return unified;
     }
