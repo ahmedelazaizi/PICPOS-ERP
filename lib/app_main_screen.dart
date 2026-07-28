@@ -72,6 +72,7 @@ import 'presentation/screens/branch_performance_screen.dart';
 import 'presentation/screens/help_center_screen.dart';
 import 'presentation/screens/landed_cost_screen.dart';
 import 'presentation/screens/cycle_count_screen.dart';
+import 'presentation/cycle_count_picpos/screens/cycle_count_picpos_screen.dart';
 import 'presentation/screens/report_builder_screen.dart';
 import 'presentation/screens/sales_returns_screen.dart';
 import 'presentation/sales_returns_picpos/screens/sales_returns_picpos_screen.dart';
@@ -952,7 +953,9 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
       ),
       ScreenConfig(
         appScreen: AppScreen.cycleCounting,
-        builder: (_) => const CycleCountScreen(),
+        builder: (_) => Brand.isPicPos
+            ? const CycleCountPicposScreen()
+            : const CycleCountScreen(),
         label: 'الجرد الدوري',
         icon: PhosphorIconsBold.listChecks,
       ),

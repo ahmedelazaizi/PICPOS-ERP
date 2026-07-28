@@ -50,6 +50,9 @@ void main() {
       'lib/presentation/screens/create_journal_template_dialog.dart',
       'lib/presentation/screens/cycle_count/cycle_count_controller.dart',
       'lib/presentation/screens/cycle_count_screen.dart',
+      // TODO(D4-001 phase-2): fork mirrors the allowlisted cycle_count_screen.dart;
+      // migrate both off data/database together.
+      'lib/presentation/cycle_count_picpos/screens/cycle_count_picpos_screen.dart',
       'lib/presentation/screens/enhanced_role_management_screen.dart',
       'lib/presentation/screens/inventory/widgets/inventory_filters_bar.dart',
       'lib/presentation/screens/invoice_designer/invoice_designer_canvas.dart',
