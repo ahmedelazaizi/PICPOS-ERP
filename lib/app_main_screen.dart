@@ -33,6 +33,7 @@ import 'presentation/purchases_picpos/screens/purchases_picpos_screen.dart';
 import 'presentation/screens/treasury_screen.dart';
 import 'presentation/treasury_picpos/screens/treasury_picpos_screen.dart';
 import 'presentation/screens/reports_screen.dart';
+import 'presentation/reports_picpos/screens/reports_picpos_screen.dart';
 import 'presentation/screens/settings_screen.dart';
 import 'presentation/screens/branch_management_screen.dart';
 import 'presentation/screens/region_management_screen.dart';
@@ -742,7 +743,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => const SecurityScreenGate(
           settingKey: 'reports_access_password',
           title: 'التقارير',
-          child: ReportsScreen(),
+          child: Brand.isPicPos ? ReportsPicposScreen() : ReportsScreen(),
         ),
         label: 'التقارير',
         icon: PhosphorIconsBold.chartBar,
