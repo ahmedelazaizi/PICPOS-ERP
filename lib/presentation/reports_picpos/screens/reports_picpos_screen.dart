@@ -19,9 +19,9 @@
 // العملاء، تقارير الموردين، الصناديق والكاش (شامل مدخل تقرير الورديات
 // `cb_shifts` → ShiftsReportScreen، مع اختصاري «فتح وإغلاق الصندوق» و«العجز
 // والزيادة» — مطلوب owner لِمهمة ١١ لضمان تغطية شاشة إغلاق الوردية/مهمة ١٠)،
-// تقارير المستخدمين (المدخل `u_perms` لسه بيروح لِـ UsersManagementScreen —
-// بيتغيّر لشاشة PicPos في مهمة ١٤ لاحقة، مش هنا)، تقارير الفروع، تقارير
-// الضرائب، الحركة والسجلات، التحليلات والإحصائيات.
+// تقارير المستخدمين (المدخل `u_perms` بيروح لِـ UsersManagementPicposScreen —
+// فورك مهمة ١٤، بيعيد استخدام allUsersProvider وبقية مزوّدات UralCash)، تقارير
+// الفروع، تقارير الضرائب، الحركة والسجلات، التحليلات والإحصائيات.
 //
 // راجع lib/presentation/screens/reports_screen.dart (الأصل).
 // ---------------------------------------------------------------------------
@@ -70,7 +70,7 @@ import '../../screens/reports/treasury_report_screen.dart';
 import '../../screens/reports/vat_reconciliation_screen.dart';
 import '../../screens/stock_audit_screen.dart';
 import '../../screens/stock_movements_screen.dart';
-import '../../screens/users_management_screen.dart';
+import '../../users_picpos/screens/users_management_picpos_screen.dart';
 
 // ---------------------------------------------------------------------------
 const String _kPrefFavoritesKey = 'reports_favorites';
@@ -512,9 +512,10 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
             id: 'u_perms',
             title: 'صلاحيات المستخدمين',
             subtitle: 'مصفوفة صلاحيات لكل دور ومستخدم',
-            // ملاحظة: يبقى UsersManagementScreen (الأصلية) هنا عمداً — التفريع
-            // لشاشة PicPos مؤجَّل لمهمة 14 (لسه مش موجودة).
-            action: () => nav(() => const UsersManagementScreen()),
+            // مهمة 14: هذا الفورك (reports_picpos_screen.dart) خاص بـ PicPos
+            // فقط (Brand.isPicPos) — فالـ push يروح مباشرة لشاشة المستخدمين
+            // بهوية PicPos، بلا حاجة لفحص العلامة هنا.
+            action: () => nav(() => const UsersManagementPicposScreen()),
           ),
         ],
       ),
