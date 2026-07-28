@@ -780,6 +780,83 @@ forks)، فمصيدة النسخ (٥.٨) مش منطبقة على النقل د�
 
 ---
 
+## ٥.١٠ جلسة ٢٨ يوليو ٢٠٢٦ — إعادة تصميم باقي شاشات lite + ميزة إغلاق الوردية
+
+البند ٣ في ٥.٥ / البند ٢ في برومت البدء (باقي شاشات lite الـ١٦) — **خلص ومتحقَّق منه.** نُفِّذ بـ
+`superpowers:subagent-driven-development` (منفِّذ + مراجع لكل مهمة، بوابة لكل باتش). الخطة والسجل في
+`docs/superpowers/plans/2026-07-28-picpos-lite-screens-redesign.md` و
+`.superpowers/sdd/2026-07-28-picpos-lite-screens-redesign/progress.md`.
+
+### الحالة النهائية — متحقَّق منها
+
+```
+flutter analyze lib     No issues found!
+flutter test            +3312 ~12 · 0 فشل (جولة تسلسلية --concurrency=1)
+اختبارات الهوية         العلامتين خضرا (uralcash 12 · picpos 7)
+build_picpos.bat        SUCCESS (FlavorBuilds\PicPos\PicPos.exe · لا UralCash.exe)
+فحص binary             ٤ ملاح تشفيرية · UTF-16=٠ · monexia/cashier_market/avalon/uraljo=٠
+```
+
+### الشاشات الـ١٦ (كلها فورك PicPos يختاره `Brand.isPicPos`، الأصل UNCHANGED)
+
+```
+بيع/مرتجعات   salesInvoices(+عروض أسعار) · salesReturns · purchaseReturns · categories
+مخزون         inventoryBonds · stockTransfer · fieldAudit(=CycleCount)
+ميزان         scalePlu (مضموم لـ lite بفرع Brand في screen_registry — UralCash-lite تفضل ١٩)
+صناديق/تقارير treasury · reports(تقارير الوردية ضمن lite) · activityLog
+تشغيل         parties · users(تُفتح بـ push من reports/settings المتفوركين) · dashboard · settings
+```
+
+**النمط:** كل فورك يستورد ويعيد استخدام نفس الـ controllers/providers/dialogs، ويبدّل طبقة العرض بطقم
+`picpos_shell`. الأصل يفضل حرف بحرف (التعديل الوحيد المشترك = سطر اختيار `Brand.isPicPos` في
+`app_main_screen.dart`، فرع `else` = سلوك UralCash). النسخ-للفورك (part/mixin/monolith) قرار معماري معتمد؛
+تحقّق byte-identical للمنطق المنسوخ في كل مراجعة.
+
+- **الداشبورد (`dashboard_picpos`)** الوحيد بتخطيط مخصّص + جيوجات PicPos حية جديدة (`PicPosGauge`/`PicPosDonut`،
+  CustomPainter). **صفر أرقام مخترعة:** هامش الربح=`netProfit/revenue` ودونات الإيراد=`revenue+outputVatNet`
+  من `dashboardKpiProvider` الحقيقي؛ المؤشرات بلا مصدر حقيقي (تحصيل/توزيع دفع/هدف) **مؤجَّلة بإشعار صريح**.
+  > **تجربة يدوية مطلوبة:** تخطيط الداشبورد المخصّص لم يُختبر render (يهنّج تحت flutter_test) — شغّل التطبيق وتأكّد بصرياً.
+
+### ميزة إغلاق الوردية (`shiftClose`) — نطاق موسّع بموافقة صاحب المشروع (زيادة عن الـ١٦ شاشة)
+
+التحقيق كشف إن `ScreenId.shiftClose` **ميّت على ٣ طبقات** (لا `AppScreen`، لا `screenPermissionMap`، لا
+`NavItemDef`) في **كل بروفايلات العلامتين** — فجوة قديمة. وإن تقارير الوردية (`ShiftsReportScreen`) شغّالة
+بالفعل؛ **الفجوة الحقيقية إن فورك POS بتاع PicPos ملوش زر إغلاق وردية**. قرارات صاحب المشروع:
+
+- **10A (محرك مشترك، محايد، ينتقل patch):** `AppScreen.shiftClose` + `screenPermissionMap` + `NavItemDef` +
+  شاشة أساس `ShiftCloseScreen` تعيد استخدام الحوارات/المستودعات الموجودة. **`patches-for-uralcash/shift-close-activation.diff`
+  جاهز** (صفر إشارات `Brand.`، صفر ملفات PicPos) لكن **ما اتطبّقش على UralCash** — صاحب المشروع يطبّقه.
+- **10B (هوية PicPos):** `ShiftClosePicposScreen` (picpos_shell) + `PicposOpeningBalanceDialog` (فورك معاد تصميمه) +
+  **زر إغلاق وردية في فورك POS** (`pos_picpos/**` — سدّ الفجوة الحقيقية) + فرع `Brand.isPicPos` في الراوتر.
+- **10C:** `PicposCashierClosingDialog` — فورك ديالوج الإغلاق (١٠٦٦ سطر)، **منطق byte-identical** (تحقّق مستقل)،
+  الـ chrome فقط بهوية PicPos.
+
+> **باج ٩ مش متأثّر:** ميزان PLU نسخ إصلاح بادئة الوزن/السعر حرفياً من المصدر (متحقَّق).
+
+### مصايد بيئة جديدة (اتكلّفت وقت)
+
+| المصيدة | الحل |
+|---|---|
+| الجولة الكاملة **بالتوازي** بتفلك (موت isolate «Connection closed») | `flutter test --concurrency=1` دائماً للجولة الكاملة |
+| اختبار render لشاشة كاملة بيهنّج تحت flutter_test | اختبِر المكوّنات المعزولة فقط؛ render الشاشة بالبناء/التشغيل اليدوي |
+| `build_picpos.bat` فشل بـ `flutter_assemble` MSB8066 عام **بلا خطأ Dart** | كاش `.dart_tool/hooks_runner/shared/sqlite3` تالف (ملف sqlite3.dll المصدر ناقص، errno 2) من سباق الجولات المتوازية — الحل **`flutter clean` + `flutter pub get`** ثم أعد البناء (مش بس مسح `build/native_assets`) |
+| عملية `flutter_tester` زومبي بتفضل بعد قتل جولة | defunct/unreapable؛ `flutter clean` بيحرّر الكاش |
+
+### حارس D4
+
+فورك `sales_invoices` و`cycle_count` أُضيفا لـ allowlist حارس D4 (الأصل مسموح، بيستورد `data/database`). باقي
+الفورك D4-clean. لكل مهمة نسخ: لو الأصل في allowlist → ضيف الفورك بتعليق TODO؛ غير كده خلّي الفورك نظيف.
+
+### اللي فاضل
+
+1. **تطبيق `patches-for-uralcash/shift-close-activation.diff`** على UralCash (صاحب المشروع، مش جلسة PicPos).
+2. **تجربة يدوية** لتخطيط الداشبورد المخصّص (render ما اتأكّدش آلياً).
+3. تلميع اختياري: `settings_picpos` سابت ٤ كروت ثانوية (About/License/DeveloperTools/CopyLog) + بوابة كلمة السر
+   بـ `Card`/`Scaffold` عادي بدل طقم PicPos — هوية PicPos مش ١٠٠٪ على الشاشة دي.
+4. الأسئلة المفتوحة القديمة (القسم ٥.٦): الاسم القانوني، بيانات المورّد، سعر البيع صفر، أيقونة مربعة.
+
+---
+
 ## ٦. أوامر البناء والاختبار
 
 ```bash
