@@ -72,6 +72,9 @@ void main() {
       'lib/presentation/screens/role_management/widgets/role_list_panel.dart',
       // TODO(spec): migrate through a repository
       'lib/presentation/screens/sales_invoices_screen.dart',
+      // TODO(D4-001 phase-2): fork mirrors the allowlisted sales_invoices_screen.dart;
+      // migrate both off data/database/sync_interceptor together.
+      'lib/presentation/sales_invoices_picpos/screens/sales_invoices_picpos_screen.dart',
       'lib/presentation/screens/settings/widgets/add_role_dialog.dart',
       'lib/presentation/screens/settings/widgets/add_user_dialog.dart',
       // TODO(spec): migrate through a repository
