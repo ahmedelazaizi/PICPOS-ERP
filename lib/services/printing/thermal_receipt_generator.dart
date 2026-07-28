@@ -1035,6 +1035,9 @@ class ThermalReceiptGenerator {
     required double cashVariance,
     required double cardVariance,
     required double totalVariance,
+    double systemClick = 0.0,
+    double actualClick = 0.0,
+    double clickVariance = 0.0,
     double totalExpenses = 0,
     double cashRefunds = 0,
     double cashIncome = 0,
@@ -1178,6 +1181,27 @@ class ThermalReceiptGenerator {
                 normal,
                 bold.copyWith(
                   color: cardVariance < 0 ? PdfColors.red : PdfColors.black,
+                ),
+              ),
+              pw.SizedBox(height: 4),
+              _labelValue(
+                'كليك - النظام',
+                systemClick.toStringAsFixed(AppConstants.decimalPlaces),
+                normal,
+                bold,
+              ),
+              _labelValue(
+                'كليك - الفعلي',
+                actualClick.toStringAsFixed(AppConstants.decimalPlaces),
+                normal,
+                bold,
+              ),
+              _labelValue(
+                'كليك - الفارق',
+                clickVariance.toStringAsFixed(AppConstants.decimalPlaces),
+                normal,
+                bold.copyWith(
+                  color: clickVariance < 0 ? PdfColors.red : PdfColors.black,
                 ),
               ),
               pw.Divider(thickness: 0.5),
