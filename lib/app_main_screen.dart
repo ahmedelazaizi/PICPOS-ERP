@@ -31,6 +31,7 @@ import 'presentation/inventory_picpos/screens/inventory_picpos_screen.dart';
 import 'presentation/screens/purchase_invoices_screen.dart';
 import 'presentation/purchases_picpos/screens/purchases_picpos_screen.dart';
 import 'presentation/screens/treasury_screen.dart';
+import 'presentation/treasury_picpos/screens/treasury_picpos_screen.dart';
 import 'presentation/screens/reports_screen.dart';
 import 'presentation/screens/settings_screen.dart';
 import 'presentation/screens/branch_management_screen.dart';
@@ -729,7 +730,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => const SecurityScreenGate(
           settingKey: 'accounting_access_password',
           title: 'الحسابات والمالية',
-          child: TreasuryScreen(),
+          child: Brand.isPicPos ? TreasuryPicposScreen() : TreasuryScreen(),
         ),
         label: 'الخزينة',
         icon: PhosphorIconsBold.wallet,
