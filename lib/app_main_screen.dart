@@ -71,6 +71,7 @@ import 'presentation/screens/landed_cost_screen.dart';
 import 'presentation/screens/cycle_count_screen.dart';
 import 'presentation/screens/report_builder_screen.dart';
 import 'presentation/screens/sales_returns_screen.dart';
+import 'presentation/sales_returns_picpos/screens/sales_returns_picpos_screen.dart';
 import 'presentation/screens/purchase_returns_screen.dart';
 import 'presentation/screens/sync/sync_conflicts_screen.dart';
 import 'presentation/screens/audit/audit_dashboard_screen.dart';
@@ -953,7 +954,9 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
       ),
       ScreenConfig(
         appScreen: AppScreen.salesReturns,
-        builder: (_) => const SalesReturnsScreen(),
+        builder: (_) => Brand.isPicPos
+            ? const SalesReturnsPicposScreen()
+            : const SalesReturnsScreen(),
         label: 'مردودات المبيعات',
         icon: PhosphorIconsBold.arrowUUpLeft,
       ),
