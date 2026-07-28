@@ -11,9 +11,9 @@ import '../../../services/client_write_interceptor.dart';
 import '../../picpos_shell/picpos_content_card.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../pos/providers/pos_closing_controller.dart';
-import '../../pos/widgets/pos_cashier_closing_dialog.dart';
 import '../../screens/reports/shifts_report_screen.dart';
 import '../../widgets/permission_guard.dart';
+import '../widgets/picpos_cashier_closing_dialog.dart';
 import '../widgets/picpos_opening_balance_dialog.dart';
 
 // منطق منسوخ من shift_close_screen.dart (Task 10A) — أي إصلاح منطقي
@@ -24,16 +24,17 @@ import '../widgets/picpos_opening_balance_dialog.dart';
 // `_openShift` كاملاً (treasuryRepo.openShift + ClientWriteInterceptor.openShift
 // + branchScopeProvider + mirror fire-and-forget) و`_viewAllShifts` وبنية
 // `_buildBody` — كل ده منسوخ هنا حرفياً بلا أي تعديل منطقي. يتغيّر بس اسم
-// الكلاس وطبقة العرض (تستخدم picpos_shell بدل Scaffold+AppBar)، والديالوج
-// اللي يفتحه `_openShift`: هنا `PicposOpeningBalanceDialog` (فورك بهوية PicPos
-// من Task 10B) بدل `PosOpeningBalanceDialog`. زر الإغلاق لسه يستدعي
-// `PosCashierClosingDialog.show` الموجود كما هو (10C يبدّله للمعاد تصميمه).
+// الكلاس وطبقة العرض (تستخدم picpos_shell بدل Scaffold+AppBar)، والديالوجين
+// اللي يفتحهم `_openShift`/زر الإغلاق: هنا `PicposOpeningBalanceDialog` (فورك
+// بهوية PicPos من Task 10B) بدل `PosOpeningBalanceDialog`، و
+// `PicposCashierClosingDialog` (فورك بهوية PicPos من Task 10C) بدل
+// `PosCashierClosingDialog`.
 //
 // `posClosingControllerProvider`/`PosClosingState`،
 // `treasuryRepositoryProvider.openShift/getCurrentOpenShift`،
-// `ClientWriteInterceptor.openShift`، `PosCashierClosingDialog.show`،
-// `ShiftsReportScreen`، `PermissionCodes.posShiftClose`، `branchScopeProvider`
-// و`authProvider` مُعاد استخدامهم من UralCash زي ما هم (import، مش نسخ).
+// `ClientWriteInterceptor.openShift`، `ShiftsReportScreen`،
+// `PermissionCodes.posShiftClose`، `branchScopeProvider` و`authProvider`
+// مُعاد استخدامهم من UralCash زي ما هم (import، مش نسخ).
 class ShiftClosePicposScreen extends ConsumerStatefulWidget {
   const ShiftClosePicposScreen({super.key});
 
@@ -197,7 +198,7 @@ class _ShiftClosePicposScreenState
             )
           else
             ElevatedButton.icon(
-              onPressed: () => PosCashierClosingDialog.show(context),
+              onPressed: () => PicposCashierClosingDialog.show(context),
               icon: const Icon(PhosphorIconsBold.signOut),
               label: const Text('إغلاق الوردية'),
               style: ElevatedButton.styleFrom(

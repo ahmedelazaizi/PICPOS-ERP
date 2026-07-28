@@ -20,12 +20,12 @@ import '../../pos/providers/pos_controller.dart';
 import '../../pos/providers/pos_notification_provider.dart';
 import '../../pos/providers/pos_search_controller.dart';
 import '../../pos/widgets/held_orders_dialog.dart';
-import '../../pos/widgets/pos_cashier_closing_dialog.dart';
 import '../../pos/widgets/pos_customer_selection_dialog.dart';
 import '../../pos/widgets/pos_dialogs.dart' hide PaymentResult;
 import '../../pos/widgets/pos_previous_expenses_dialog.dart';
 import '../../pos/widgets/pos_previous_invoices_dialog.dart';
 import '../../pos/widgets/pos_product_selection_panel.dart';
+import '../../shift_close_picpos/widgets/picpos_cashier_closing_dialog.dart';
 import '../widgets/picpos_display_settings.dart';
 import '../widgets/picpos_payment_panel.dart';
 import '../widgets/picpos_invoice_header.dart';
@@ -244,7 +244,7 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
                     // Task 10B — يسدّ فجوة إن كاشير PicPos ما عندوش أي طريقة
                     // يقفل الوردية. الفعل نفسه (10C يبدّله للمعاد تصميمه)؛
                     // حارس الصلاحية يعيش داخل `PicPosTopBar` نفسها.
-                    onCloseShift: () => PosCashierClosingDialog.show(context),
+                    onCloseShift: () => PicposCashierClosingDialog.show(context),
                   ),
                   Expanded(
                     child: Padding(
