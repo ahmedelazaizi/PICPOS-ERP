@@ -26,6 +26,7 @@ import 'presentation/screens/dashboard_screen.dart';
 import 'presentation/screens/sales_invoices_screen.dart';
 import 'presentation/sales_invoices_picpos/screens/sales_invoices_picpos_screen.dart';
 import 'presentation/screens/unified_parties_screen.dart';
+import 'presentation/parties_picpos/screens/parties_picpos_screen.dart';
 import 'presentation/screens/inventory/inventory_screen.dart';
 import 'presentation/inventory_picpos/screens/inventory_picpos_screen.dart';
 import 'presentation/screens/purchase_invoices_screen.dart';
@@ -703,7 +704,9 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
       ),
       ScreenConfig(
         appScreen: AppScreen.parties,
-        builder: (_) => const UnifiedPartiesScreen(),
+        builder: (_) => Brand.isPicPos
+            ? const PartiesPicposScreen()
+            : const UnifiedPartiesScreen(),
         label: 'العملاء والموردين',
         icon: PhosphorIconsBold.usersThree,
       ),
