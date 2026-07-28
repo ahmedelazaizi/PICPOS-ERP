@@ -291,12 +291,18 @@ class _ProductCardState extends ConsumerState<ProductCard>
   }
 
   Widget _buildInfo(bool isOutOfStock, bool isLowStock, double scaleFactor, {bool textOnly = false}) {
+    // BUG (خط الصنف/السعر): سابقاً الأرضيات كانت 13/14 (نص فقط) و10/12 (مع
+    // الصور)، فتخفيض إعداد `pos_product_name/price_font_size` (المدى 10..24) كان
+    // بيوصل للأرضية ويقف — خصوصاً على الكروت الضيّقة حيث scaleFactor يهبط لـ0.6
+    // فأي إعداد لحد ~16 كان بيتقصّ لـ13. النتيجة: «التصغير مش بيصغّر». الآن
+    // الأرضية 8.0 (حدّ مقروء) عشان الإعداد يسري حتى أصغره، مع الحفاظ على السقف.
+    const double kMinFont = 8.0;
     final nameFontSize = textOnly
-        ? (widget.nameFontSize * 1.33 * scaleFactor).clamp(13.0, 26.0)
-        : (widget.nameFontSize * scaleFactor).clamp(10.0, 20.0);
+        ? (widget.nameFontSize * 1.33 * scaleFactor).clamp(kMinFont, 26.0)
+        : (widget.nameFontSize * scaleFactor).clamp(kMinFont, 20.0);
     final priceFontSize = textOnly
-        ? (widget.priceFontSize * 1.33 * scaleFactor).clamp(14.0, 28.0)
-        : (widget.priceFontSize * scaleFactor).clamp(12.0, 22.0);
+        ? (widget.priceFontSize * 1.33 * scaleFactor).clamp(kMinFont, 28.0)
+        : (widget.priceFontSize * scaleFactor).clamp(kMinFont, 22.0);
 
     return Container(
       padding: EdgeInsets.symmetric(
