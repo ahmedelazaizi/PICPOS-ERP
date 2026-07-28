@@ -36,6 +36,22 @@ class PicPosPageHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
+          // زر رجوع يظهر تلقائياً لما الشاشة مدفوعة على راوت (مستوى أعمق /
+          // شاشة فرعية بـ Navigator.push). شاشات الشريط الجانبي أعلى المكدّس
+          // (canPop=false) فما بيظهرش عندها — التنقّل بينها بالشريط. في RTL
+          // «رجوع» سهم لليمين (→) مطابقةً لباقي الشاشات.
+          if (Navigator.canPop(context)) ...[
+            IconButton(
+              onPressed: () => Navigator.maybePop(context),
+              icon: const Icon(Icons.arrow_forward),
+              color: AppColors.primary,
+              tooltip: 'رجوع',
+              style: IconButton.styleFrom(
+                backgroundColor: AppColors.primary.withValues(alpha: 0.08),
+              ),
+            ),
+            const SizedBox(width: 10),
+          ],
           if (icon != null) ...[
             Container(
               padding: const EdgeInsets.all(9),
