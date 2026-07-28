@@ -23,6 +23,7 @@ import 'presentation/widgets/auth/security_gate_wrapper.dart';
 import 'presentation/widgets/omnibox/global_search_omnibox.dart';
 import 'presentation/pos/providers/cart_controller.dart';
 import 'presentation/screens/dashboard_screen.dart';
+import 'presentation/dashboard_picpos/screens/dashboard_picpos_screen.dart';
 import 'presentation/screens/sales_invoices_screen.dart';
 import 'presentation/sales_invoices_picpos/screens/sales_invoices_picpos_screen.dart';
 import 'presentation/screens/unified_parties_screen.dart';
@@ -650,9 +651,17 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
     return _allScreensCache ??= [
       ScreenConfig(
         appScreen: AppScreen.dashboard,
-        builder: (_) => DashboardScreen(
-          onNavigate: (index) => _navigateToScreen(index),
-        ),
+        // Brand fork, not a profile fork — matches the `Brand.isPicPos`
+        // pattern used by every other forked screen below (e.g. `pos`,
+        // `products`, `categories`): exactly one branch is reachable per
+        // build, both wired to the exact same `onNavigate` callback.
+        builder: (_) => Brand.isPicPos
+            ? DashboardPicposScreen(
+                onNavigate: (index) => _navigateToScreen(index),
+              )
+            : DashboardScreen(
+                onNavigate: (index) => _navigateToScreen(index),
+              ),
         label: 'الرئيسية',
         icon: PhosphorIconsBold.house,
       ),
