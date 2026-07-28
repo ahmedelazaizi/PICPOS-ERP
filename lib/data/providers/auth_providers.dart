@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/config/app_config.dart';
 import '../../core/config/business_profile_provider.dart';
 import '../../core/navigation/screen_id.dart';
+import '../../core/permissions/permission_codes.dart';
 import '../../services/login_rate_limiter.dart';
 import '../../services/network_service.dart';
 import '../../services/server_proxy.dart';
@@ -566,6 +567,7 @@ final userNavItemsProvider = FutureProvider<List<NavItemDef>>((ref) async {
     // 💵 المالية والمحاسبة
     // ═══════════════════════════════════════════
     const NavItemDef(icon: PhosphorIconsBold.wallet, label: 'الخزينة', permission: 'treasury_view', index: 10, section: 'المالية والمحاسبة', group: 'accounting'),
+    const NavItemDef(icon: PhosphorIconsBold.lockKey, label: 'إغلاق الوردية', permission: PermissionCodes.posShiftClose, index: 56, group: 'accounting'),
     const NavItemDef(icon: PhosphorIconsBold.treeStructure, label: 'دليل الحسابات', permission: 'settings_view', index: 27, group: 'accounting'),
     const NavItemDef(icon: PhosphorIconsBold.notebook, label: 'دفتر اليومية', permission: 'settings_view', index: 32, group: 'accounting'),
     const NavItemDef(icon: PhosphorIconsBold.book, label: 'دفتر الأستاذ', permission: 'settings_view', index: 36, group: 'accounting'),
@@ -719,6 +721,7 @@ const screenPermissionMap = <ScreenId, String>{
   ScreenId.salesReturns: 'sales_view',
   ScreenId.purchaseReturns: 'purchases_create',
   ScreenId.regions: 'settings_view',
+  ScreenId.shiftClose: PermissionCodes.posShiftClose,
 };
 
 final userAllowedScreensProvider = FutureProvider<List<int>>((ref) async {

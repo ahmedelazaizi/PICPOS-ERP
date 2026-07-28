@@ -53,6 +53,8 @@ enum AppScreen {
   // Phase 2 Audit: Returns Screens
   salesReturns(44),
   purchaseReturns(45),
+  // Shift management
+  shiftClose(56),
   // Phase 14: Hardening
   syncConflicts(58),
   auditDashboard(59),
