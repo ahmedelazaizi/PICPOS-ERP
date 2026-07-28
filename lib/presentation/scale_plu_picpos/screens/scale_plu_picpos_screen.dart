@@ -12,6 +12,7 @@ import '../../../domain/repositories/scale_repository.dart';
 import '../../../domain/repositories/settings_repository.dart';
 import '../../../services/label_scale_service.dart';
 import '../../../services/scale_transport.dart';
+import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../screens/plu_manager_screen.dart';
 
 // ── Part files (mixin-based extraction) ─────────────────────────────────
@@ -59,18 +60,21 @@ part 'scale_logic_picpos.dart';
 /// `ScaleTransport`, `scaleItemIsSoldByWeight`, `ProductEntity`,
 /// `IScaleRepository`/`ISettingsRepository`.
 ///
-/// ── Layout choice ───────────────────────────────────────────────────────
-/// Kept the shell's own `Directionality(rtl) + Scaffold + Padding + Column`
-/// layout rather than wrapping in `PicPosScreenScaffold`. This is a dense
-/// tool screen (category filter + items grid + scale-management table), not
-/// a list/browse screen, and the mixins already call `buildHeader()` /
-/// `buildCategoryPanel()` / `buildItemsGrid()` / `buildScalePanel()`
-/// directly — wrapping would either duplicate the header or require
-/// threading a title through an extra layer for no behavioural gain. The
-/// screen still renders under the app's single `ThemeData`, so it picks up
-/// PicPos colors automatically. `buildHeader()` already renders the title
-/// text used throughout this screen ("تصدير مواد الميزان PLU"), which
-/// covers the brief's header requirement.
+/// ── Layout choice (corrected after review) ─────────────────────────────
+/// `build()` wraps the content in `PicPosScreenScaffold` (title «ميزان
+/// PLU», subtitle «تصدير الأصناف وأكواد PLU للموازين» — the exact pair the
+/// brief mandates), which supplies `Directionality(rtl)` + `Scaffold` + the
+/// PicPos page header. An earlier version of this file kept the shell's own
+/// bare `Directionality + Scaffold + Padding` and relied on `buildHeader()`
+/// to "cover" the header requirement — that was wrong: `buildHeader()`
+/// (copied verbatim into `scale_panels_picpos.dart`) renders the ORIGINAL's
+/// title text `'تصدير مواد الميزان PLU'`, which matches neither required
+/// string, so the PicPos identity never actually surfaced. `buildHeader()`
+/// is still called inside the scaffold's `body` — unchanged, verbatim — for
+/// its action buttons (export, verify, select-all, preview, PLU-manager,
+/// search) so nothing is dropped; its own title text is now a redundant
+/// sub-heading directly under the real PicPos header, which is an accepted
+/// cosmetic side effect of reusing the mixin without editing its body.
 class ScalePluPicposScreen extends ConsumerStatefulWidget {
   const ScalePluPicposScreen({super.key});
 
@@ -129,34 +133,30 @@ class _ScalePluPicposScreenState extends ConsumerState<ScalePluPicposScreen>
     final productsAsync = ref.watch(allProductsProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Directionality(
-      textDirection: ui.TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        body: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            children: [
-              buildHeader(),
-              const SizedBox(height: 16),
-              Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(
-                      width: 220,
-                      child: buildCategoryPanel(categoriesAsync, isDark),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(child: buildItemsGrid(productsAsync, isDark)),
-                  ],
+    return PicPosScreenScaffold(
+      title: 'ميزان PLU',
+      subtitle: 'تصدير الأصناف وأكواد PLU للموازين',
+      icon: PhosphorIconsBold.scales,
+      body: Column(
+        children: [
+          buildHeader(),
+          const SizedBox(height: 16),
+          Expanded(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 220,
+                  child: buildCategoryPanel(categoriesAsync, isDark),
                 ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(height: 200, child: buildScalePanel(isDark)),
-            ],
+                const SizedBox(width: 12),
+                Expanded(child: buildItemsGrid(productsAsync, isDark)),
+              ],
+            ),
           ),
-        ),
+          const SizedBox(height: 12),
+          SizedBox(height: 200, child: buildScalePanel(isDark)),
+        ],
       ),
     );
   }
