@@ -33,6 +33,149 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     if (mounted) barcodeFocus.requestFocus();
   }
 
+  // ── Shift open enforcement ─────────────────────────────────────────────
+  //
+  // منسوخ حرفياً من `pos_main_dialogs.dart` (`_PosMainDialogsMixin._ensureShiftOpen`)
+  // — كان مفقوداً من فورك PicPos POS، فالكاشير في PicPos ما كانش بيشوف ديالوج
+  // بدء الوردية عند الدخول زي UralCash (شاشة UralCash POS بتنادي `_ensureShiftOpen`
+  // من `initState`؛ الفورك فوّتها فبقى يعتمد على حارس MainScreen وحده اللي بيتخطّى
+  // المدير). أي إصلاح منطقي هنا يتصلّح في المصدر أولاً ثم patch (مصيدة النسخ §٥.٥).
+  // يشارك `shiftDialogPromptedUserIds` (حارس الجلسة المشترك) مع حارس MainScreen
+  // فمفيش ديالوج مزدوج — أول واحد يفتح بيقيّد المستخدم والتاني بيتخطّى.
+  Future<void> _ensureShiftOpen() async {
+    try {
+      final treasuryRepo = ref.read(treasuryRepositoryProvider);
+      final authState = ref.read(authProvider);
+      final userId = authState.user?.id ?? 1;
+
+      // Spec 135 NOTE 2 (req 4) — a system-admin login does NOT auto-open its
+      // own shift. The admin enters through the previous cashier's OPEN shift
+      // (via the closing dialog) to reconcile balances, close it, and record
+      // the variances. Cashiers keep the auto-open behaviour below.
+      if (authState.isOriginallyAdmin) {
+        unawaited(DiagnosticLogger.log('SHIFT-GUARD',
+            '_ensureShiftOpen skipped for system admin userId=$userId — '
+            'admin attaches to an existing open shift to reconcile/close, '
+            'not a new auto-opened shift'));
+        return;
+      }
+
+      final currentShift = await treasuryRepo.getCurrentOpenShift(userId);
+      unawaited(DiagnosticLogger.log('SHIFT-GUARD',
+          '_ensureShiftOpen check userId=$userId '
+          'openShiftId=${currentShift?.id} '
+          'alreadyPrompted=${shiftDialogPromptedUserIds.contains(userId)} '
+          'callSite=PicPosPosScreen.initState'));
+      if (currentShift != null) return; // Shift already open
+
+      // Feature 012 / Issue C-SHIFT-LOOP: same-session guard. Once we
+      // have already prompted this user in this session, refuse to do
+      // it again — even if the lookup transiently returns null. The
+      // user will use the manual "فتح الوردية" affordance from the
+      // treasury screen if they truly need to reopen.
+      if (shiftDialogPromptedUserIds.contains(userId)) {
+        unawaited(DiagnosticLogger.log('SHIFT-GUARD',
+            '⚠ suppressed re-prompt for userId=$userId '
+            '(already prompted in this session) — likely upstream '
+            'overwrite of local open-shift row, see ShiftSyncStrategy'));
+        return;
+      }
+      shiftDialogPromptedUserIds.add(userId);
+
+      // Feature 006 #2: properly await the setting future so we don't race
+      // the FutureProvider's first load. `ref.read(...).value` returned
+      // null on cold-start (provider still loading) and the `?? true`
+      // fallback masked toggled-off setups; switch to `.future` so we read
+      // the persisted value, not the in-flight AsyncValue.
+      final shiftDialogEnabled =
+          await ref.read(posShiftDialogEnabledProvider.future);
+
+      double opening = 0;
+      if (!shiftDialogEnabled) {
+        opening = 0;
+      } else {
+        if (!mounted) return;
+        final userName = authState.user?.displayName ?? 'كاشير';
+        final picked = await showDialog<double>(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => PosOpeningBalanceDialog(userName: userName),
+        );
+        opening = picked ?? 0; // Cancel → treat as 0
+      }
+
+      // Spec 008 / FR-004: resolve the operating branch so multi-branch
+      // users open the shift on their CURRENT branch, not always the
+      // first user_branch_access row. Single-branch users get the same
+      // value as before (their only branch).
+      int? scopedBranchId;
+      try {
+        final scope = await ref.read(branchScopeProvider.future);
+        scopedBranchId = scope.primaryBranchId;
+        // Full-access admins (system admin) have primaryBranchId=null;
+        // fall back to getUserBranchId so the shift close can find the
+        // correct safes and the shift reports show the right branch.
+        if (scopedBranchId == null) {
+          final db = ref.read(databaseProvider);
+          final uid = authState.user?.id ?? userId;
+          scopedBranchId = await db.getUserBranchId(uid);
+        }
+      } catch (e) {
+        debugPrint('openShift: BranchScope lookup failed (non-fatal): $e');
+      }
+
+      // Write locally first so the cashier can work immediately even while
+      // offline. The local shift ID anchors the rest of the session.
+      await treasuryRepo.openShift(userId, opening, branchId: scopedBranchId);
+
+      // Look up the local shift id/globalId we just created and forward them
+      // to the mirror call so close-shift later resolves by globalId (R9 fix
+      // for the recurring "Shift not found" 500 / DEAD-LETTER on every close).
+      int? localShiftId;
+      String? localShiftGlobalId;
+      try {
+        final activeShift = await treasuryRepo.getCurrentOpenShift(userId);
+        localShiftId = activeShift?.id;
+        localShiftGlobalId = activeShift?.globalId;
+      } catch (e) {
+        debugPrint('openShift: could not fetch local shift id (non-fatal): $e');
+      }
+      unawaited(DiagnosticLogger.log('SHIFT',
+          'New shift opened (PicPosPosScreen._ensureShiftOpen) '
+          'userId=$userId localShiftId=$localShiftId '
+          'globalId=$localShiftGlobalId opening=$opening '
+          'branchId=$scopedBranchId'));
+
+      // Mirror to server so close-shift later has a matching row there.
+      try {
+        await ClientWriteInterceptor.openShift(userId, opening,
+            localShiftId: localShiftId,
+            branchId: scopedBranchId,
+            globalId: localShiftGlobalId);
+      } catch (e) {
+        debugPrint('openShift server mirror failed (non-fatal, will queue): $e');
+      }
+    } catch (e, st) {
+      // Feature 006 #2: surface the failure instead of swallowing it, so the
+      // operator sees WHY the auto-open failed (unmapped CoA cash accounts,
+      // missing branch row, or a server-mirror failure) rather than "broken".
+      debugPrint('Error ensuring shift open: $e\n$st');
+      unawaited(DiagnosticLogger.log(
+        'SHIFT-OPEN-FAIL',
+        '_ensureShiftOpen threw: $e',
+      ));
+      if (mounted) {
+        final msg = e.toString();
+        final shortMsg = msg.length > 200 ? '${msg.substring(0, 200)}…' : msg;
+        AppToast.show(
+          context,
+          'تعذّر فتح الوردية تلقائياً: $shortMsg',
+          type: ToastType.warning,
+        );
+      }
+    }
+  }
+
   // ── Adding items ───────────────────────────────────────────────────────
 
   /// Tapping a card in the product grid.

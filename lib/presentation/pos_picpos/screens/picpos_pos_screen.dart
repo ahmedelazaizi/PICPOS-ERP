@@ -8,7 +8,11 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/logging/diagnostic_logger.dart';
 import '../../../core/utils/number_utils.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../../../data/providers/providers.dart';
+import '../../../services/client_write_interceptor.dart';
+import '../../../services/shift_dialog_session_guard.dart';
+import '../../pos/widgets/pos_opening_balance_dialog.dart';
 import '../../../domain/entities/cart_item_entity.dart';
 import '../../../domain/entities/product_entity.dart';
 import '../../../services/cash_drawer_service.dart';
@@ -75,6 +79,12 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       barcodeFocus.requestFocus();
       unawaited(DiagnosticLogger.log('PICPOS-POS', 'screen mounted'));
+      // Parity with UralCash PosScreenV2.initState: prompt the cashier to open
+      // a shift (opening balance) on landing if none is open. Shares the
+      // session guard with MainScreen._enforceShiftForCashier so it never
+      // double-prompts. Was missing from this fork → PicPos cashiers/managers
+      // never saw the open-shift dialog.
+      _ensureShiftOpen();
     });
   }
 
