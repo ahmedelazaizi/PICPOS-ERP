@@ -2272,5 +2272,28 @@ extension Epoch3Migrations on AppDatabase {
       debugPrint('[Migration] v150: return-exempt autopost dedup index '
           '+ historical backfill applied');
     }
+
+    // ═════════════════════════════════════════════════════════════════════
+    // v151 — shifts.closing_snapshot (reprint a closed shift)
+    //
+    // The closing report is printed once, at close time, and was never
+    // recoverable afterwards. Recomputing it is not enough: the ACTUAL
+    // counted amounts are cashier input, and only `actual_cash` had a
+    // column — the bank and click counts lived inside the free-text `notes`
+    // string. A "reprint" built without them would not match the paper the
+    // cashier signed.
+    //
+    // So the close path now stores the exact figures it printed, as JSON.
+    // Nullable, no backfill: shifts closed before this point have no
+    // snapshot to recover and are recomputed + labelled in the UI. Adding a
+    // nullable column is the cheapest possible schema change on the large
+    // production databases this runs against.
+    // ═════════════════════════════════════════════════════════════════════
+    if (from < 151) {
+      await _safeMigrate('v151 shifts.closing_snapshot', () async {
+        await m.addColumn(shifts, shifts.closingSnapshot);
+        debugPrint('[Migration] v151 shifts.closing_snapshot OK');
+      });
+    }
   }
 }

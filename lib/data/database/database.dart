@@ -603,7 +603,7 @@ class AppDatabase extends _$AppDatabase {
   /// return JEs onto their invoice id. Index-only change — no table/column
   /// change, so no generated schema regeneration is required.
   @override
-  int get schemaVersion => 150;
+  int get schemaVersion => 151;
 
   /// PostgreSQL-specific table creation: Drift's `currentDateAndTime` generates
   /// `strftime('%s','now')` which doesn't exist in PostgreSQL.

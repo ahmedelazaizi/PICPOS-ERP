@@ -642,8 +642,8 @@ class TreasuryRepositoryImpl extends BaseRepository<Safe> implements ITreasuryRe
       db.openShift(userId, openingBalance, branchId: branchId);
 
   @override
-  Future<void> closeShiftWithAudit(int shiftId, double actualCash, {String? notes, String closingMethod = 'normal', void Function(double)? onVarianceJeFailed}) =>
-      db.closeShiftWithAudit(shiftId, actualCash, notes: notes, closingMethod: closingMethod, onVarianceJeFailed: onVarianceJeFailed);
+  Future<void> closeShiftWithAudit(int shiftId, double actualCash, {String? notes, String closingMethod = 'normal', String? closingSnapshot, void Function(double)? onVarianceJeFailed}) =>
+      db.closeShiftWithAudit(shiftId, actualCash, notes: notes, closingMethod: closingMethod, closingSnapshot: closingSnapshot, onVarianceJeFailed: onVarianceJeFailed);
 
   @override
   Future<void> deleteExpenseTransaction(int transactionId) =>

@@ -54296,6 +54296,17 @@ class $ShiftsTable extends Shifts with TableInfo<$ShiftsTable, Shift> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _closingSnapshotMeta = const VerificationMeta(
+    'closingSnapshot',
+  );
+  @override
+  late final GeneratedColumn<String> closingSnapshot = GeneratedColumn<String>(
+    'closing_snapshot',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _closingMethodMeta = const VerificationMeta(
     'closingMethod',
   );
@@ -54405,6 +54416,7 @@ class $ShiftsTable extends Shifts with TableInfo<$ShiftsTable, Shift> {
     variance,
     status,
     notes,
+    closingSnapshot,
     closingMethod,
     createdAt,
     globalId,
@@ -54499,6 +54511,15 @@ class $ShiftsTable extends Shifts with TableInfo<$ShiftsTable, Shift> {
       context.handle(
         _notesMeta,
         notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('closing_snapshot')) {
+      context.handle(
+        _closingSnapshotMeta,
+        closingSnapshot.isAcceptableOrUnknown(
+          data['closing_snapshot']!,
+          _closingSnapshotMeta,
+        ),
       );
     }
     if (data.containsKey('closing_method')) {
@@ -54614,6 +54635,10 @@ class $ShiftsTable extends Shifts with TableInfo<$ShiftsTable, Shift> {
         DriftSqlType.string,
         data['${effectivePrefix}notes'],
       ),
+      closingSnapshot: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}closing_snapshot'],
+      ),
       closingMethod: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}closing_method'],
@@ -54667,6 +54692,7 @@ class Shift extends DataClass implements Insertable<Shift> {
   final double? variance;
   final String status;
   final String? notes;
+  final String? closingSnapshot;
   final String closingMethod;
   final DateTime createdAt;
   final String? globalId;
@@ -54687,6 +54713,7 @@ class Shift extends DataClass implements Insertable<Shift> {
     this.variance,
     required this.status,
     this.notes,
+    this.closingSnapshot,
     required this.closingMethod,
     required this.createdAt,
     this.globalId,
@@ -54721,6 +54748,9 @@ class Shift extends DataClass implements Insertable<Shift> {
     map['status'] = Variable<String>(status);
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
+    }
+    if (!nullToAbsent || closingSnapshot != null) {
+      map['closing_snapshot'] = Variable<String>(closingSnapshot);
     }
     map['closing_method'] = Variable<String>(closingMethod);
     map['created_at'] = Variable<DateTime>(createdAt);
@@ -54768,6 +54798,9 @@ class Shift extends DataClass implements Insertable<Shift> {
       notes: notes == null && nullToAbsent
           ? const Value.absent()
           : Value(notes),
+      closingSnapshot: closingSnapshot == null && nullToAbsent
+          ? const Value.absent()
+          : Value(closingSnapshot),
       closingMethod: Value(closingMethod),
       createdAt: Value(createdAt),
       globalId: globalId == null && nullToAbsent
@@ -54908,6 +54941,9 @@ class Shift extends DataClass implements Insertable<Shift> {
       variance: data.variance.present ? data.variance.value : this.variance,
       status: data.status.present ? data.status.value : this.status,
       notes: data.notes.present ? data.notes.value : this.notes,
+      closingSnapshot: data.closingSnapshot.present
+          ? data.closingSnapshot.value
+          : this.closingSnapshot,
       closingMethod: data.closingMethod.present
           ? data.closingMethod.value
           : this.closingMethod,
@@ -54943,6 +54979,7 @@ class Shift extends DataClass implements Insertable<Shift> {
           ..write('variance: $variance, ')
           ..write('status: $status, ')
           ..write('notes: $notes, ')
+          ..write('closingSnapshot: $closingSnapshot, ')
           ..write('closingMethod: $closingMethod, ')
           ..write('createdAt: $createdAt, ')
           ..write('globalId: $globalId, ')
@@ -54968,6 +55005,7 @@ class Shift extends DataClass implements Insertable<Shift> {
     variance,
     status,
     notes,
+    closingSnapshot,
     closingMethod,
     createdAt,
     globalId,
@@ -54992,6 +55030,7 @@ class Shift extends DataClass implements Insertable<Shift> {
           other.variance == this.variance &&
           other.status == this.status &&
           other.notes == this.notes &&
+          other.closingSnapshot == this.closingSnapshot &&
           other.closingMethod == this.closingMethod &&
           other.createdAt == this.createdAt &&
           other.globalId == this.globalId &&
@@ -55014,6 +55053,7 @@ class ShiftsCompanion extends UpdateCompanion<Shift> {
   final Value<double?> variance;
   final Value<String> status;
   final Value<String?> notes;
+  final Value<String?> closingSnapshot;
   final Value<String> closingMethod;
   final Value<DateTime> createdAt;
   final Value<String?> globalId;
@@ -55034,6 +55074,7 @@ class ShiftsCompanion extends UpdateCompanion<Shift> {
     this.variance = const Value.absent(),
     this.status = const Value.absent(),
     this.notes = const Value.absent(),
+    this.closingSnapshot = const Value.absent(),
     this.closingMethod = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.globalId = const Value.absent(),
@@ -55055,6 +55096,7 @@ class ShiftsCompanion extends UpdateCompanion<Shift> {
     this.variance = const Value.absent(),
     required String status,
     this.notes = const Value.absent(),
+    this.closingSnapshot = const Value.absent(),
     this.closingMethod = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.globalId = const Value.absent(),
@@ -55078,6 +55120,7 @@ class ShiftsCompanion extends UpdateCompanion<Shift> {
     Expression<double>? variance,
     Expression<String>? status,
     Expression<String>? notes,
+    Expression<String>? closingSnapshot,
     Expression<String>? closingMethod,
     Expression<DateTime>? createdAt,
     Expression<String>? globalId,
@@ -55099,6 +55142,7 @@ class ShiftsCompanion extends UpdateCompanion<Shift> {
       if (variance != null) 'variance': variance,
       if (status != null) 'status': status,
       if (notes != null) 'notes': notes,
+      if (closingSnapshot != null) 'closing_snapshot': closingSnapshot,
       if (closingMethod != null) 'closing_method': closingMethod,
       if (createdAt != null) 'created_at': createdAt,
       if (globalId != null) 'global_id': globalId,
@@ -55122,6 +55166,7 @@ class ShiftsCompanion extends UpdateCompanion<Shift> {
     Value<double?>? variance,
     Value<String>? status,
     Value<String?>? notes,
+    Value<String?>? closingSnapshot,
     Value<String>? closingMethod,
     Value<DateTime>? createdAt,
     Value<String?>? globalId,
@@ -55143,6 +55188,7 @@ class ShiftsCompanion extends UpdateCompanion<Shift> {
       variance: variance ?? this.variance,
       status: status ?? this.status,
       notes: notes ?? this.notes,
+      closingSnapshot: closingSnapshot ?? this.closingSnapshot,
       closingMethod: closingMethod ?? this.closingMethod,
       createdAt: createdAt ?? this.createdAt,
       globalId: globalId ?? this.globalId,
@@ -55190,6 +55236,9 @@ class ShiftsCompanion extends UpdateCompanion<Shift> {
     if (notes.present) {
       map['notes'] = Variable<String>(notes.value);
     }
+    if (closingSnapshot.present) {
+      map['closing_snapshot'] = Variable<String>(closingSnapshot.value);
+    }
     if (closingMethod.present) {
       map['closing_method'] = Variable<String>(closingMethod.value);
     }
@@ -55231,6 +55280,7 @@ class ShiftsCompanion extends UpdateCompanion<Shift> {
           ..write('variance: $variance, ')
           ..write('status: $status, ')
           ..write('notes: $notes, ')
+          ..write('closingSnapshot: $closingSnapshot, ')
           ..write('closingMethod: $closingMethod, ')
           ..write('createdAt: $createdAt, ')
           ..write('globalId: $globalId, ')

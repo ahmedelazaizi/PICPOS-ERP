@@ -122,6 +122,7 @@ class ShiftSyncStrategy extends SyncStrategy {
                   variance: Value(parseDoubleNullable(s['variance'])),
                   status: serverStatus,
                   notes: Value(s['notes'] as String?),
+                  closingSnapshot: Value(s['closingSnapshot'] as String?),
                   branchId: Value(
                       parseIntNullable(s['branchId'] ?? s['branch_id'])),
                   globalId: Value(serverGlobalId),
@@ -271,6 +272,12 @@ class ShiftSyncStrategy extends SyncStrategy {
           variance: Value(parseDoubleNullable(s['variance'])),
           status: Value(serverStatus),
           notes: Value(s['notes'] as String?),
+          // v151 — `Absent` when the server omits the key, NOT `Value(null)`:
+          // an older server that doesn't know the column would otherwise wipe
+          // a snapshot this device captured locally at close time.
+          closingSnapshot: s.containsKey('closingSnapshot')
+              ? Value(s['closingSnapshot'] as String?)
+              : const Value.absent(),
           // Spec 008 / FR-001: pull the server's branchId so the close-time
           // logic on this client uses the same value the open-time client
           // recorded. Tolerates both `branchId` and snake_case `branch_id`

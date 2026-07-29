@@ -28,7 +28,7 @@ abstract class ITreasuryRepository {
 
   /// Close shift with blind audit (variance calculation).
   /// [onVarianceJeFailed]: optional callback when variance JE fails (GAP-24).
-  Future<void> closeShiftWithAudit(int shiftId, double actualCash, {String? notes, String closingMethod = 'normal', void Function(double)? onVarianceJeFailed});
+  Future<void> closeShiftWithAudit(int shiftId, double actualCash, {String? notes, String closingMethod = 'normal', String? closingSnapshot, void Function(double)? onVarianceJeFailed});
 
   /// Watch all active safes
   Stream<List<SafeData>> watchSafes();

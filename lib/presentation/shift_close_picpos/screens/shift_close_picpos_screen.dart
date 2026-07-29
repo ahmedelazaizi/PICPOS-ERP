@@ -15,6 +15,7 @@ import '../../screens/reports/shifts_report_screen.dart';
 import '../../widgets/permission_guard.dart';
 import '../widgets/picpos_cashier_closing_dialog.dart';
 import '../widgets/picpos_opening_balance_dialog.dart';
+import '../widgets/picpos_past_shifts_panel.dart';
 
 // منطق منسوخ من shift_close_screen.dart (Task 10A) — أي إصلاح منطقي
 // يتصلّح في المصدر أولاً ثم patch (مصيدة النسخ §٥.٨).
@@ -43,9 +44,17 @@ class ShiftClosePicposScreen extends ConsumerStatefulWidget {
       _ShiftClosePicposScreenState();
 }
 
-class _ShiftClosePicposScreenState
-    extends ConsumerState<ShiftClosePicposScreen> {
+class _ShiftClosePicposScreenState extends ConsumerState<ShiftClosePicposScreen>
+    with SingleTickerProviderStateMixin {
   bool _isOpeningShift = false;
+  late final TabController _tabController =
+      TabController(length: 2, vsync: this);
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   Future<void> _openShift() async {
     final authState = ref.read(authProvider);
@@ -120,7 +129,32 @@ class _ShiftClosePicposScreenState
         permission: PermissionCodes.posShiftClose,
         allowManagerOverride: true,
         actionName: 'إغلاق الوردية',
-        child: _buildBody(closingState),
+        child: Column(
+          children: [
+            TabBar(
+              controller: _tabController,
+              tabs: const [
+                Tab(text: 'الوردية الحالية'),
+                Tab(text: 'ورديات سابقة'),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildBody(closingState),
+                  // Reachable without an open shift — reviewing or reprinting
+                  // yesterday's close is exactly what you do before opening
+                  // today's.
+                  const SingleChildScrollView(
+                    child: PicposPastShiftsPanel(),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

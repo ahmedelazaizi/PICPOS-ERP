@@ -688,6 +688,10 @@ class ApiDataHandler extends ApiHandlerBase {
         parseDouble(data['actualCash']),
         notes: data['notes'] as String?,
         closingMethod: (data['closingMethod'] as String?) ?? 'normal',
+        // v151 — persist the client's closing figures on the server too;
+        // otherwise a shift closed from a client terminal has no snapshot to
+        // reprint from anywhere but that one machine.
+        closingSnapshot: data['closingSnapshot'] as String?,
       );
       return jsonResponse({'success': true, 'shiftId': shiftId});
         },

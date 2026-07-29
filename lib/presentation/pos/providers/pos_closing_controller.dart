@@ -8,8 +8,9 @@ import '../../../core/config/business_profile_provider.dart';
 import '../../../data/providers/providers.dart';
 import '../../../services/client_write_interceptor.dart';
 import '../../../services/delta_pull_service.dart';
-import '../../../services/invoice_generator.dart';
 import '../../../services/network_service.dart';
+import '../../../services/printing/shift_closing_print.dart';
+import '../../../domain/entities/shift_closing_snapshot.dart';
 import '../../../data/database/sync_interceptor.dart';
 
 /// Closing-dialog state.
@@ -598,11 +599,46 @@ class PosClosingController extends Notifier<PosClosingState> {
         state = state.copyWith(isProcessing: false);
         throw Exception('لا توجد وردية مفتوحة لإغلاقها');
       }
+      // Built BEFORE the close so the exact same figures are both persisted
+      // and printed. Deriving the printout separately would let the stored
+      // snapshot and the paper drift apart, which defeats the whole point of
+      // keeping one.
+      final settingsRepo2 = ref.read(settingsRepositoryProvider);
+      final companyName = await settingsRepo2.getSetting('company_name');
+      final fontScaleStr =
+          await settingsRepo2.getSetting('closing_report_font_scale');
+      final fontScale = double.tryParse(fontScaleStr ?? '') ?? 1.0;
+
+      final snapshot = ShiftClosingSnapshot(
+        invoiceCount: state.invoiceCount,
+        totalSales: state.totalSales,
+        systemCash: state.systemCash,
+        systemCard: state.systemCard,
+        systemClick: state.systemClick,
+        actualCash: state.actualCashAmount,
+        actualCard: state.actualCardAmount,
+        actualClick: state.actualClickAmount,
+        cashVariance: state.cashVariance,
+        cardVariance: state.cardVariance,
+        clickVariance: state.clickVariance,
+        totalVariance: state.totalVariance,
+        totalExpenses: state.totalExpenses,
+        cashRefunds: state.cashRefunds,
+        cashIncome: state.cashIncome,
+        creditSales: state.creditIncome,
+        creditSalesCount: state.creditCount,
+        openingBalance: state.openingBalance,
+        employeeName: authState.user?.displayName,
+        companyName: companyName,
+        closedAt: DateTime.now(),
+      );
+
       await treasuryRepo.closeShiftWithAudit(
         closeShiftId,
         state.actualCashAmount,
         notes: 'إغلاق وردية POS - ${state.actualCardAmount > 0 ? 'بطاقة: ${state.actualCardAmount.toStringAsFixed(AppConstants.decimalPlaces)}' : ''}',
         closingMethod: closingMethod,
+        closingSnapshot: snapshot.encode(),
         onVarianceJeFailed: (variance) {
           // GAP-24: non-fatal — shift closes but UI warns the operator
           state = state.copyWith(varianceJeWarning: variance);
@@ -624,33 +660,9 @@ class PosClosingController extends Notifier<PosClosingState> {
       // Variance entries (actual vs expected) are handled separately
       // in treasury_dao.dart → _postVarianceJournalEntry().
 
-      final settingsRepo2 = ref.read(settingsRepositoryProvider);
-      final companyName = await settingsRepo2.getSetting('company_name');
-      final fontScaleStr = await settingsRepo2.getSetting('closing_report_font_scale');
-      final fontScale = double.tryParse(fontScaleStr ?? '') ?? 1.0;
-
-      await InvoiceGenerator.printShiftClosingReport(
-        invoiceCount: state.invoiceCount,
-        totalSales: state.totalSales,
-        systemCash: state.systemCash,
-        systemCard: state.systemCard,
-        actualCash: state.actualCashAmount,
-        actualCard: state.actualCardAmount,
-        cashVariance: state.cashVariance,
-        cardVariance: state.cardVariance,
-        totalVariance: state.totalVariance,
-        systemClick: state.systemClick,
-        actualClick: state.actualClickAmount,
-        clickVariance: state.clickVariance,
-        totalExpenses: state.totalExpenses,
-        cashRefunds: state.cashRefunds,
-        cashIncome: state.cashIncome,
-        creditSales: state.creditIncome,
-        creditSalesCount: state.creditCount,
-        openingBalance: state.openingBalance,
+      await printShiftClosingSnapshot(
+        snapshot: snapshot,
         fontScale: fontScale,
-        employeeName: authState.user?.displayName,
-        companyName: companyName,
         printersRepo: ref.read(printersRepositoryProvider),
       );
 

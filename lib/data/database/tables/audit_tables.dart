@@ -44,6 +44,20 @@ class Shifts extends Table {
 
   TextColumn get status => text().withLength(max: 20)(); // 'open', 'closed'
   TextColumn get notes => text().nullable()();
+
+  /// v151 — JSON snapshot of every figure the closing report was printed
+  /// from, captured at close time.
+  ///
+  /// Reprinting a closed shift cannot be done by recomputation alone: the
+  /// **actual** counted amounts are what the cashier typed, and only
+  /// `actualCash` ever had a column — the bank and click counts were buried
+  /// inside the free-text `notes` string. Anything reconstructed without them
+  /// would disagree with the paper the cashier signed, which defeats the
+  /// point of a reprint.
+  ///
+  /// NULL for shifts closed before this column existed; those fall back to
+  /// recomputation and are labelled as such in the UI.
+  TextColumn get closingSnapshot => text().nullable()();
   // Closing method: 'normal', 'quick', 'msr_card', 'admin_password'
   TextColumn get closingMethod => text().withDefault(const Constant('normal'))();
 

@@ -857,6 +857,9 @@ class ApiHandler {
               'variance': s.variance,
               'status': s.status,
               'notes': s.notes,
+              // v151 — the closing report's stored figures, so a pulling
+              // client can reprint a shift closed on another terminal.
+              'closingSnapshot': s.closingSnapshot,
               'createdAt': s.createdAt.toIso8601String(),
               // Spec 008 / FR-001: surface the recorded operating branch so
               // pulling clients see it via shift_sync_strategy.

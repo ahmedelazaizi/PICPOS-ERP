@@ -158,6 +158,15 @@ class ShiftReportDto {
   // client-side by branch / region without changing the DAO query.
   final int? branchId;
 
+  /// Owner of the shift. Needed to recompute a closed shift's aggregates,
+  /// which are scoped per user.
+  final int userId;
+
+  /// v151 — raw JSON of the figures the closing report was printed from,
+  /// or null for shifts closed before the column existed (those are
+  /// recomputed and labelled as such).
+  final String? closingSnapshot;
+
   ShiftReportDto({
     required this.id,
     required this.startTime,
@@ -170,6 +179,8 @@ class ShiftReportDto {
     required this.status,
     this.notes,
     this.branchId,
+    this.userId = 0,
+    this.closingSnapshot,
   });
 }
 
@@ -318,6 +329,12 @@ extension TreasuryDao on AppDatabase {
     double actualCash, {
     String? notes,
     String closingMethod = 'normal',
+
+    /// v151 — JSON of the figures the closing report is being printed from.
+    /// Stored verbatim so the report can be reproduced exactly later; the
+    /// `actual*` amounts in it are cashier input and are not recomputable.
+    String? closingSnapshot,
+
     /// GAP-24: Optional callback invoked when the variance JE fails to post.
     /// Receives the variance amount so the UI can show a warning dialog.
     /// The shift is still closed — this is non-fatal.
@@ -343,6 +360,7 @@ extension TreasuryDao on AppDatabase {
       endTime: endTime,
       notes: notes,
       closingMethod: closingMethod,
+      closingSnapshot: closingSnapshot,
     );
 
     // Step 2: Variance JE — separate, non-fatal.
@@ -428,6 +446,7 @@ extension TreasuryDao on AppDatabase {
     required DateTime endTime,
     String? notes,
     String closingMethod = 'normal',
+    String? closingSnapshot,
   }) async {
     return transaction(() async {
       // Get all transactions during this shift for this user
@@ -475,6 +494,11 @@ extension TreasuryDao on AppDatabase {
           status: const Value('closed'),
           notes: Value(notes),
           closingMethod: Value(closingMethod),
+          // Absent(), not Value(null): a close path that doesn't supply a
+          // snapshot must leave any existing one alone rather than erase it.
+          closingSnapshot: closingSnapshot == null
+              ? const Value.absent()
+              : Value(closingSnapshot),
         ),
       );
 
@@ -1048,6 +1072,8 @@ extension TreasuryDao on AppDatabase {
         status: s.status,
         notes: s.notes,
         branchId: s.branchId,
+        userId: s.userId,
+        closingSnapshot: s.closingSnapshot,
       );
     }).toList();
   }
@@ -2235,9 +2261,11 @@ extension TreasuryDao on AppDatabase {
   // Rules:
   //   * Non-system-admin users see ONLY their own transactions. System
   //     admins see everyone's. (Matches the legacy controller semantics.)
-  //   * Time window is `[shiftStart, now]` when `shiftStart` is known;
-  //     otherwise falls back to start-of-today (safe floor so we never
-  //     bleed into yesterday's closed shift).
+  //   * Time window is `[shiftStart, shiftEnd ?? now]` when `shiftStart` is
+  //     known; otherwise falls back to start-of-today (safe floor so we never
+  //     bleed into yesterday's closed shift). `shiftEnd` is only passed when
+  //     RECOMPUTING a closed shift — leaving it null there would extend the
+  //     window to the present and swallow everything sold since.
   //   * `paymentMethod='mixed'` invoices are split across cash/bank/click
   //     using the per-field `cashPaid`, `bankPaid`, `clickPaid` columns.
   //   * `paymentMethod='credit'` invoices count towards AR only — they
@@ -2282,10 +2310,20 @@ extension TreasuryDao on AppDatabase {
     /// included so legacy/seed data isn't silently excluded from the
     /// cashier's drawer count.
     int? branchId,
+
+    /// Upper bound of the aggregation window. Defaults to "now", which is
+    /// what closing a live shift wants.
+    ///
+    /// Required for RECOMPUTING an already-closed shift: without it the
+    /// window runs to the present moment, so a shift closed this morning
+    /// would swallow every sale made since. Only pass it for a closed
+    /// shift, using that shift's `endTime`.
+    DateTime? shiftEnd,
   }) async {
     final now = DateTime.now();
     final effectiveFrom = shiftStart ??
         DateTime(now.year, now.month, now.day);
+    final effectiveTo = shiftEnd ?? now;
 
     // ── Sales invoices — SQL GROUP BY aggregation ─────────────────────
     // Previous approach loaded ALL invoice rows into Dart (potentially
@@ -2366,7 +2404,7 @@ extension TreasuryDao on AppDatabase {
       ''',
       variables: [
         Variable<DateTime>(effectiveFrom),
-        Variable<DateTime>(now),
+        Variable<DateTime>(effectiveTo),
         if (!includeAllUsers) Variable<int>(userId),
         if (branchId != null) Variable<int>(branchId),
       ],
@@ -2462,7 +2500,7 @@ extension TreasuryDao on AppDatabase {
       innerJoin(safes, safes.id.equalsExp(safeTransactions.safeId)),
     ])
       ..where(safeTransactions.createdAt.isBiggerOrEqualValue(effectiveFrom))
-      ..where(safeTransactions.createdAt.isSmallerOrEqualValue(now))
+      ..where(safeTransactions.createdAt.isSmallerOrEqualValue(effectiveTo))
       ..where(
         safeTransactions.referenceType.isNull() |
         safeTransactions.referenceType.isNotIn(
