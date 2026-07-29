@@ -1,0 +1,349 @@
+diff --git a/lib/domain/usecases/sales/add_to_cart_usecase.dart b/lib/domain/usecases/sales/add_to_cart_usecase.dart
+index a77b353f..3fe507c4 100644
+--- a/lib/domain/usecases/sales/add_to_cart_usecase.dart
++++ b/lib/domain/usecases/sales/add_to_cart_usecase.dart
+@@ -1,5 +1,31 @@
+ import '../../entities/cart_item_entity.dart';
+ 
++/// Resolves the two cart-merge flags from the POS «منع تراكم الأصناف» setting.
++///
++/// The setting only ever meant one thing: **a weighed item gets its own line
++/// per weighing**, so the cashier can see 0.750 + 0.400 as two readings from
++/// the scale instead of an opaque 1.150. It was never meant to stop counted
++/// items from accumulating — two taps on the same bottle of water is a
++/// quantity of 2, not two lines.
++///
++/// The old call sites passed the raw setting as `forceNewEntry` for EVERY
++/// product, which inverted it in practice: [AddToCartUseCase]'s
++/// `(!isSoldByWeight || mergeWeight)` clause already blocked weighed items
++/// from merging (callers never passed `mergeWeight` on the tap path), so the
++/// toggle had no effect on weighed items at all and its entire effect landed
++/// on counted ones — the exact opposite of its name and purpose.
++///
++/// Centralised here so the tap path, the barcode path and both product
++/// brands can never drift apart on it again.
++({bool forceNewEntry, bool mergeWeight}) resolveStackingFlags({
++  required bool isSoldByWeight,
++  required bool preventStacking,
++}) =>
++    (
++      forceNewEntry: isSoldByWeight && preventStacking,
++      mergeWeight: isSoldByWeight && !preventStacking,
++    );
++
+ /// Use case for adding item to cart
+ ///
+ /// Pure business logic - no UI or database dependencies
+diff --git a/lib/presentation/pos/providers/pos_search_controller.dart b/lib/presentation/pos/providers/pos_search_controller.dart
+index 9d887546..82ecc609 100644
+--- a/lib/presentation/pos/providers/pos_search_controller.dart
++++ b/lib/presentation/pos/providers/pos_search_controller.dart
+@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
+ import '../../../core/logging/diagnostic_logger.dart';
+ import '../../../data/providers/providers.dart';
+ import '../../../domain/entities/product_entity.dart';
++import '../../../domain/usecases/sales/add_to_cart_usecase.dart'
++    show resolveStackingFlags;
+ import '../../../services/server_proxy.dart';
+ import '../../../data/database/sync_interceptor.dart';
+ import 'package:audioplayers/audioplayers.dart';
+@@ -199,8 +201,17 @@ class PosSearchController extends Notifier<PosSearchState> {
+                      .replaceAll('\u200E', '')
+                      .replaceAll('\u200F', '');
+ 
+-    // Read prevent-stacking setting once for all addItem calls in this search
+-    final forceNew = ref.read(preventItemStackingProvider).value ?? false;
++    // Read prevent-stacking setting once for all addItem calls in this search.
++    // It is NOT passed straight through as `forceNewEntry` any more — the
++    // setting only governs weighed items (see `resolveStackingFlags`), so each
++    // add site resolves it against the product it is actually adding.
++    final preventStacking =
++        ref.read(preventItemStackingProvider).value ?? false;
++    // Scale-label paths always add a weighed product, so their flags are fixed.
++    final scaleStacking = resolveStackingFlags(
++      isSoldByWeight: true,
++      preventStacking: preventStacking,
++    );
+ 
+     if (barcode.isEmpty) {
+       state = state.copyWith(
+@@ -236,8 +247,8 @@ class PosSearchController extends Notifier<PosSearchState> {
+         cartCtl.addItem(
+           scaleResult.product,
+           quantity: scaleResult.quantity,
+-          mergeWeight: true,
+-          forceNewEntry: forceNew,
++          mergeWeight: scaleStacking.mergeWeight,
++          forceNewEntry: scaleStacking.forceNewEntry,
+         );
+         state = state.copyWith(searchResults: [], clearError: true);
+         _playSuccessBeep();
+@@ -269,8 +280,8 @@ class PosSearchController extends Notifier<PosSearchState> {
+         ref.read(cartControllerProvider.notifier).addItem(
+           fallbackProduct,
+           quantity: quantity > 0 ? quantity : 1,
+-          mergeWeight: true,
+-          forceNewEntry: forceNew,
++          mergeWeight: scaleStacking.mergeWeight,
++          forceNewEntry: scaleStacking.forceNewEntry,
+         );
+         state = state.copyWith(searchResults: [], clearError: true);
+         _playSuccessBeep();
+@@ -323,10 +334,15 @@ class PosSearchController extends Notifier<PosSearchState> {
+           final unitPrice = checkUnit.salePrice > 0
+               ? checkUnit.salePrice
+               : product.salePrice;
++          final unitStacking = resolveStackingFlags(
++            isSoldByWeight: product.isSoldByWeight,
++            preventStacking: preventStacking,
++          );
+           ref.read(cartControllerProvider.notifier).addItem(
+             product,
+             customPrice: unitPrice,
+-            forceNewEntry: forceNew,
++            forceNewEntry: unitStacking.forceNewEntry,
++            mergeWeight: unitStacking.mergeWeight,
+           );
+           final cartItems = ref.read(cartControllerProvider).items;
+           if (cartItems.isNotEmpty) {
+@@ -352,12 +368,17 @@ class PosSearchController extends Notifier<PosSearchState> {
+     }
+ 
+     if (product != null) {
++      final productStacking = resolveStackingFlags(
++        isSoldByWeight: product.isSoldByWeight,
++        preventStacking: preventStacking,
++      );
+       if (unitRecord != null) {
+         final unitPrice = unitRecord.salePrice > 0 ? unitRecord.salePrice : product.salePrice;
+         ref.read(cartControllerProvider.notifier).addItem(
+           product,
+           customPrice: unitPrice,
+-          forceNewEntry: forceNew,
++          forceNewEntry: productStacking.forceNewEntry,
++          mergeWeight: productStacking.mergeWeight,
+         );
+         final cartItems = ref.read(cartControllerProvider).items;
+         if (cartItems.isNotEmpty) {
+@@ -373,7 +394,11 @@ class PosSearchController extends Notifier<PosSearchState> {
+           }
+         }
+       } else {
+-        ref.read(cartControllerProvider.notifier).addItem(product, forceNewEntry: forceNew);
++        ref.read(cartControllerProvider.notifier).addItem(
++              product,
++              forceNewEntry: productStacking.forceNewEntry,
++              mergeWeight: productStacking.mergeWeight,
++            );
+       }
+       
+       state = state.copyWith(searchResults: [], clearError: true);
+@@ -450,7 +475,15 @@ class PosSearchController extends Notifier<PosSearchState> {
+           // Re-lookup from local DB to get full ProductEntity
+           product = await productRepo.getProductByBarcode(barcode);
+           if (product != null) {
+-            ref.read(cartControllerProvider.notifier).addItem(product, forceNewEntry: forceNew);
++            final serverStacking = resolveStackingFlags(
++              isSoldByWeight: product.isSoldByWeight,
++              preventStacking: preventStacking,
++            );
++            ref.read(cartControllerProvider.notifier).addItem(
++                  product,
++                  forceNewEntry: serverStacking.forceNewEntry,
++                  mergeWeight: serverStacking.mergeWeight,
++                );
+             state = state.copyWith(searchResults: [], clearError: true);
+             _playSuccessBeep();
+             debugPrint('[BarcodeSearch] ✓ Found via server fallback: ${product.name}');
+diff --git a/lib/presentation/pos/screens/pos_main_operations.dart b/lib/presentation/pos/screens/pos_main_operations.dart
+index f074732d..b20c775b 100644
+--- a/lib/presentation/pos/screens/pos_main_operations.dart
++++ b/lib/presentation/pos/screens/pos_main_operations.dart
+@@ -178,12 +178,15 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
+       );
+     }
+ 
+-    final forceNew = ref.read(preventItemStackingProvider).value ?? false;
++    final stacking = resolveStackingFlags(
++      isSoldByWeight: product.isSoldByWeight,
++      preventStacking: ref.read(preventItemStackingProvider).value ?? false,
++    );
+     ref.read(cartControllerProvider.notifier).addItem(
+       product,
+       quantity: quantity,
+-      forceNewEntry: forceNew,
+-      mergeWeight: product.isSoldByWeight,
++      forceNewEntry: stacking.forceNewEntry,
++      mergeWeight: stacking.mergeWeight,
+       customPrice: customPrice,
+     );
+     (this as _PosScreenV2State)._barcodeFocus.requestFocus();
+diff --git a/lib/presentation/pos/screens/pos_main_screen.dart b/lib/presentation/pos/screens/pos_main_screen.dart
+index 27aab3ae..17ceb995 100644
+--- a/lib/presentation/pos/screens/pos_main_screen.dart
++++ b/lib/presentation/pos/screens/pos_main_screen.dart
+@@ -17,6 +17,8 @@ import '../providers/pos_search_controller.dart';
+ import '../providers/cfd_controller.dart';
+ 
+ import '../../../domain/entities/product_entity.dart';
++import '../../../domain/usecases/sales/add_to_cart_usecase.dart'
++    show resolveStackingFlags;
+ import '../../screens/sales_returns_screen.dart';
+ import '../logic/pos_credential_handler.dart';
+ 
+diff --git a/lib/presentation/widgets/settings/pos_settings_widget.dart b/lib/presentation/widgets/settings/pos_settings_widget.dart
+index e4a2c58e..0c45cf0f 100644
+--- a/lib/presentation/widgets/settings/pos_settings_widget.dart
++++ b/lib/presentation/widgets/settings/pos_settings_widget.dart
+@@ -848,7 +848,17 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
+             FilterChip(label: const Text('إضافة عميل'), selected: _showAddCustomerInPOS, onSelected: (v) => setState(() => _showAddCustomerInPOS = v)),
+             FilterChip(label: const Text('نوع الطلب'), selected: _showOrderTypeInPOS, onSelected: (v) => setState(() => _showOrderTypeInPOS = v)),
+             FilterChip(label: const Text('اسم العميل بالسلة'), selected: _showAdhocCustomerInPOS, onSelected: (v) => setState(() => _showAdhocCustomerInPOS = v)),
+-            FilterChip(label: const Text('منع تراكم الأصناف (سطر جديد)'), selected: _preventItemStacking, onSelected: (v) => setState(() => _preventItemStacking = v)),
++            // العنوان بيقول «أصناف الميزان» صراحةً لأن ده اللي الإعداد بيعمله
++            // فعلاً: أصناف العدد والحبة بتتراكم دايماً مهما كان (شوف
++            // `resolveStackingFlags`). العنوان القديم «منع تراكم الأصناف» كان
++            // بيوعد بحاجة تانية خالص.
++            FilterChip(
++              label: const Text('منع تراكم أصناف الميزان (سطر لكل وزن)'),
++              tooltip: 'كل وزنة ميزان تنزل في سطر مستقل بدل ما تتجمع. '
++                  'أصناف العدد والحبة بتتراكم دايماً في سطر واحد.',
++              selected: _preventItemStacking,
++              onSelected: (v) => setState(() => _preventItemStacking = v),
++            ),
+           ],
+         ),
+         const Divider(thickness: 2),
+diff --git a/test/unit/prevent_item_stacking_test.dart b/test/unit/prevent_item_stacking_test.dart
+new file mode 100644
+index 00000000..5f13d965
+--- /dev/null
++++ b/test/unit/prevent_item_stacking_test.dart
+@@ -0,0 +1,127 @@
++// ═══════════════════════════════════════════════════════════════════════════
++// «منع تراكم الأصناف» — يخص أصناف الميزان وحدها
++// ═══════════════════════════════════════════════════════════════════════════
++//
++// الباج اللي الاختبار ده موجود عشانه: الإعداد كان **مقلوب** في التطبيق.
++//
++// كل مسارات الإضافة (اللمس والباركود) كانت بتمرّر قيمة الإعداد كما هي في
++// `forceNewEntry` لكل الأصناف. وفي نفس الوقت `AddToCartUseCase` فيها شرط
++// `(!isSoldByWeight || mergeWeight)` اللي بيمنع دمج أصناف الميزان أصلاً —
++// ومسار اللمس مكانش بيمرّر `mergeWeight` خالص.
++//
++// النتيجة: الإعداد **مالوش أي أثر** على أصناف الميزان (اللي هو مخصوص
++// ليها)، وكل أثره وقع على أصناف العدد والحبة (اللي المفروض تتراكم دايماً).
++// يعني كاشير بيدوس على نفس زجاجة المية مرتين كان بيلاقي سطرين.
++//
++// الاختبار ده بيثبّت المصفوفة الصح: الميزان بيتأثر بالإعداد، والعدد بيتراكم
++// دايماً مهما كان الإعداد.
++// ═══════════════════════════════════════════════════════════════════════════
++
++import 'package:flutter_test/flutter_test.dart';
++import 'package:ural_erp/domain/entities/cart_item_entity.dart';
++import 'package:ural_erp/domain/usecases/sales/add_to_cart_usecase.dart';
++
++void main() {
++  group('resolveStackingFlags', () {
++    test('ميزان + الإعداد مفعّل → سطر جديد', () {
++      final flags = resolveStackingFlags(
++        isSoldByWeight: true,
++        preventStacking: true,
++      );
++      expect(flags.forceNewEntry, isTrue);
++      expect(flags.mergeWeight, isFalse);
++    });
++
++    test('ميزان + الإعداد مغلق → يتراكم', () {
++      final flags = resolveStackingFlags(
++        isSoldByWeight: true,
++        preventStacking: false,
++      );
++      expect(flags.forceNewEntry, isFalse);
++      // لازم `mergeWeight` تبقى true، لأن شرط الـ use case بيمنع دمج
++      // الميزان من غيرها — سيبها false معناها الإعداد مالوش أثر تاني.
++      expect(flags.mergeWeight, isTrue);
++    });
++
++    test('عدد + الإعداد مفعّل → يتراكم برضه (جوهر الإصلاح)', () {
++      final flags = resolveStackingFlags(
++        isSoldByWeight: false,
++        preventStacking: true,
++      );
++      expect(flags.forceNewEntry, isFalse);
++      expect(flags.mergeWeight, isFalse);
++    });
++
++    test('عدد + الإعداد مغلق → يتراكم', () {
++      final flags = resolveStackingFlags(
++        isSoldByWeight: false,
++        preventStacking: false,
++      );
++      expect(flags.forceNewEntry, isFalse);
++      expect(flags.mergeWeight, isFalse);
++    });
++  });
++
++  // ── السلوك الفعلي على السلة ────────────────────────────────────────────
++  //
++  // الاختبارات فوق بتتحقق من الأعلام. دي بتتحقق إن الأعلام دي فعلاً بتنتج
++  // السلوك المطلوب لما تعدّي على الـ use case — عشان لو حد غيّر شرط الدمج
++  // جوه الـ use case الاختبار يقع.
++
++  group('AddToCartUseCase مع الأعلام المحسوبة', () {
++    final useCase = AddToCartUseCase();
++
++    List<CartItemEntity> addTwice({
++      required bool isSoldByWeight,
++      required bool preventStacking,
++      double quantity = 1,
++    }) {
++      final flags = resolveStackingFlags(
++        isSoldByWeight: isSoldByWeight,
++        preventStacking: preventStacking,
++      );
++      var cart = <CartItemEntity>[];
++      for (var i = 0; i < 2; i++) {
++        cart = useCase.execute(
++          currentCart: cart,
++          productId: 7,
++          productName: 'صنف تجريبي',
++          productCode: 'P7',
++          unitPrice: 10,
++          quantity: quantity,
++          isSoldByWeight: isSoldByWeight,
++          forceNewEntry: flags.forceNewEntry,
++          mergeWeight: flags.mergeWeight,
++        );
++      }
++      return cart;
++    }
++
++    test('صنف عدد يتراكم في سطر واحد حتى والإعداد مفعّل', () {
++      final cart = addTwice(isSoldByWeight: false, preventStacking: true);
++      expect(cart, hasLength(1));
++      expect(cart.single.quantity, 2);
++    });
++
++    test('صنف عدد يتراكم والإعداد مغلق', () {
++      final cart = addTwice(isSoldByWeight: false, preventStacking: false);
++      expect(cart, hasLength(1));
++      expect(cart.single.quantity, 2);
++    });
++
++    test('صنف ميزان يعمل سطرين والإعداد مفعّل', () {
++      final cart =
++          addTwice(isSoldByWeight: true, preventStacking: true, quantity: 0.5);
++      expect(cart, hasLength(2));
++      expect(cart[0].quantity, 0.5);
++      expect(cart[1].quantity, 0.5);
++    });
++
++    test('صنف ميزان يتراكم في سطر واحد والإعداد مغلق', () {
++      final cart =
++          addTwice(isSoldByWeight: true, preventStacking: false, quantity: 0.5);
++      expect(cart, hasLength(1));
++      expect(cart.single.quantity, 1.0);
++    });
++  });
++}
