@@ -40,27 +40,9 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _detailRow('العميل', customerName),
-                  _detailRow(
-                    'التاريخ',
-                    (invoice.createdAt ?? invoice.invoiceDate).toString().substring(0, 10),
-                  ),
-                  _detailRow(
-                    'المجموع الفرعي',
-                    invoice.subtotal.toStringAsFixed(AppConstants.decimalPlaces),
-                  ),
-                  _detailRow('الخصم', invoice.discountAmount.toStringAsFixed(AppConstants.decimalPlaces)),
-                  _detailRow('الضريبة', invoice.taxAmount.toStringAsFixed(AppConstants.decimalPlaces)),
-                  _detailRow('الإجمالي', invoice.total.toStringAsFixed(AppConstants.decimalPlaces)),
-                  _detailRow('المدفوع', invoice.paid.toStringAsFixed(AppConstants.decimalPlaces)),
-                  _detailRow(
-                    'المتبقي',
-                    (invoice.total - invoice.paid).toStringAsFixed(AppConstants.decimalPlaces),
-                  ),
-                  _detailRow('الحالة', invoice.status.name),
-                  // Branch / Warehouse / Cost center context — resolves
-                  // branch via warehouse FK so admin viewing a server-side
-                  // invoice can immediately see its origin.
+                  // حقائق الفاتورة كشبكة مدمجة بدل ١٢ سطر «تسمية … قيمة»
+                  // مرصوصين فوق بعض — الأرقام المالية بقت تحت في كتلة
+                  // مجاميع لوحدها، فالعين بتفرّق بين السياق والفلوس.
                   Builder(builder: (_) {
                     final state = ref.read(salesInvoicesControllerProvider);
                     final whId = invoice.warehouseId;
@@ -73,19 +55,45 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
                     final ccName = invoice.costCenterId != null
                         ? state.costCenterNames[invoice.costCenterId]
                         : null;
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (brName != null) _detailRow('الفرع', brName),
-                        if (whName != null) _detailRow('المخزن', whName),
-                        if (ccName != null) _detailRow('مركز التكلفة', ccName),
-                      ],
+                    return Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Wrap(
+                        spacing: 26,
+                        runSpacing: 10,
+                        children: [
+                          _metaField('العميل', customerName),
+                          _metaField(
+                            'التاريخ',
+                            (invoice.createdAt ?? invoice.invoiceDate)
+                                .toString()
+                                .substring(0, 16),
+                          ),
+                          _metaField('الحالة', invoice.status.name),
+                          if (brName != null) _metaField('الفرع', brName),
+                          if (whName != null) _metaField('المخزن', whName),
+                          if (ccName != null)
+                            _metaField('مركز التكلفة', ccName),
+                          if (invoice.originClientId != null &&
+                              invoice.originClientId!.isNotEmpty)
+                            _metaField('الجهاز', invoice.originClientId!),
+                        ],
+                      ),
                     );
                   }),
-                  if (invoice.originClientId != null && invoice.originClientId!.isNotEmpty)
-                    _detailRow('الجهاز', invoice.originClientId!),
-                  if (invoice.notes != null && invoice.notes!.isNotEmpty)
-                    _detailRow('ملاحظات', invoice.notes!),
+                  if (invoice.notes != null && invoice.notes!.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      'ملاحظات: ${invoice.notes}',
+                      style: const TextStyle(
+                          fontSize: 12, color: AppColors.textSecondary),
+                    ),
+                  ],
                   const Divider(height: 24),
 
                   // Margin Analysis
@@ -149,17 +157,95 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
                           )
                           .toList(),
                     ),
+                  const SizedBox(height: 16),
+                  // كتلة المجاميع محاذاة لآخر الصف ومحدودة العرض — الأرقام
+                  // تحت بعضها تتقارن بالعين، بخلاف الأسطر العريضة اللي كانت
+                  // بتباعد التسمية عن القيمة لعرض الديالوج كله.
+                  Align(
+                    alignment: AlignmentDirectional.centerEnd,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 300),
+                      child: Column(
+                        children: [
+                          _totalRow('المجموع الفرعي', invoice.subtotal),
+                          if (invoice.discountAmount != 0)
+                            _totalRow('الخصم', invoice.discountAmount,
+                                color: AppColors.warning),
+                          if (invoice.taxAmount != 0)
+                            _totalRow('الضريبة', invoice.taxAmount),
+                          const Divider(height: 18),
+                          _totalRow('الإجمالي', invoice.total,
+                              emphasize: true),
+                          _totalRow('المدفوع', invoice.paid,
+                              color: AppColors.success),
+                          _totalRow(
+                            'المتبقي',
+                            invoice.total - invoice.paid,
+                            color: (invoice.total - invoice.paid) > 0.001
+                                ? AppColors.error
+                                : AppColors.success,
+                            emphasize: (invoice.total - invoice.paid) > 0.001,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
           ),
           actions: [
+            TextButton.icon(
+              onPressed: () => _printInvoice(invoice),
+              icon: const Icon(PhosphorIconsBold.printer, size: 16),
+              label: const Text('طباعة'),
+            ),
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: const Text('إغلاق'),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// حقيقة سياقية: تسمية صغيرة فوق القيمة. مصمّمة تترص في `Wrap`.
+  Widget _metaField(String label, String value) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label,
+            style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
+        const SizedBox(height: 2),
+        Text(value,
+            style:
+                const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+      ],
+    );
+  }
+
+  /// سطر في كتلة المجاميع. القيم متنسّقة كعملة مش `toStringAsFixed` خام.
+  Widget _totalRow(
+    String label,
+    double value, {
+    Color? color,
+    bool emphasize = false,
+  }) {
+    final style = TextStyle(
+      fontSize: emphasize ? 15 : 13,
+      fontWeight: emphasize ? FontWeight.bold : FontWeight.w500,
+      color: color,
+    );
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: style),
+          Text(NumberUtils.formatCurrency(value), style: style),
+        ],
       ),
     );
   }
