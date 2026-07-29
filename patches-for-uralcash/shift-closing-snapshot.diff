@@ -1,0 +1,732 @@
+diff --git a/lib/data/database/daos/treasury_dao.dart b/lib/data/database/daos/treasury_dao.dart
+index b762cb57..75580058 100644
+--- a/lib/data/database/daos/treasury_dao.dart
++++ b/lib/data/database/daos/treasury_dao.dart
+@@ -158,6 +158,15 @@ class ShiftReportDto {
+   // client-side by branch / region without changing the DAO query.
+   final int? branchId;
+ 
++  /// Owner of the shift. Needed to recompute a closed shift's aggregates,
++  /// which are scoped per user.
++  final int userId;
++
++  /// v151 — raw JSON of the figures the closing report was printed from,
++  /// or null for shifts closed before the column existed (those are
++  /// recomputed and labelled as such).
++  final String? closingSnapshot;
++
+   ShiftReportDto({
+     required this.id,
+     required this.startTime,
+@@ -170,6 +179,8 @@ class ShiftReportDto {
+     required this.status,
+     this.notes,
+     this.branchId,
++    this.userId = 0,
++    this.closingSnapshot,
+   });
+ }
+ 
+@@ -318,6 +329,12 @@ extension TreasuryDao on AppDatabase {
+     double actualCash, {
+     String? notes,
+     String closingMethod = 'normal',
++
++    /// v151 — JSON of the figures the closing report is being printed from.
++    /// Stored verbatim so the report can be reproduced exactly later; the
++    /// `actual*` amounts in it are cashier input and are not recomputable.
++    String? closingSnapshot,
++
+     /// GAP-24: Optional callback invoked when the variance JE fails to post.
+     /// Receives the variance amount so the UI can show a warning dialog.
+     /// The shift is still closed — this is non-fatal.
+@@ -343,6 +360,7 @@ extension TreasuryDao on AppDatabase {
+       endTime: endTime,
+       notes: notes,
+       closingMethod: closingMethod,
++      closingSnapshot: closingSnapshot,
+     );
+ 
+     // Step 2: Variance JE — separate, non-fatal.
+@@ -428,6 +446,7 @@ extension TreasuryDao on AppDatabase {
+     required DateTime endTime,
+     String? notes,
+     String closingMethod = 'normal',
++    String? closingSnapshot,
+   }) async {
+     return transaction(() async {
+       // Get all transactions during this shift for this user
+@@ -475,6 +494,11 @@ extension TreasuryDao on AppDatabase {
+           status: const Value('closed'),
+           notes: Value(notes),
+           closingMethod: Value(closingMethod),
++          // Absent(), not Value(null): a close path that doesn't supply a
++          // snapshot must leave any existing one alone rather than erase it.
++          closingSnapshot: closingSnapshot == null
++              ? const Value.absent()
++              : Value(closingSnapshot),
+         ),
+       );
+ 
+@@ -1048,6 +1072,8 @@ extension TreasuryDao on AppDatabase {
+         status: s.status,
+         notes: s.notes,
+         branchId: s.branchId,
++        userId: s.userId,
++        closingSnapshot: s.closingSnapshot,
+       );
+     }).toList();
+   }
+@@ -2235,9 +2261,11 @@ extension TreasuryDao on AppDatabase {
+   // Rules:
+   //   * Non-system-admin users see ONLY their own transactions. System
+   //     admins see everyone's. (Matches the legacy controller semantics.)
+-  //   * Time window is `[shiftStart, now]` when `shiftStart` is known;
+-  //     otherwise falls back to start-of-today (safe floor so we never
+-  //     bleed into yesterday's closed shift).
++  //   * Time window is `[shiftStart, shiftEnd ?? now]` when `shiftStart` is
++  //     known; otherwise falls back to start-of-today (safe floor so we never
++  //     bleed into yesterday's closed shift). `shiftEnd` is only passed when
++  //     RECOMPUTING a closed shift — leaving it null there would extend the
++  //     window to the present and swallow everything sold since.
+   //   * `paymentMethod='mixed'` invoices are split across cash/bank/click
+   //     using the per-field `cashPaid`, `bankPaid`, `clickPaid` columns.
+   //   * `paymentMethod='credit'` invoices count towards AR only — they
+@@ -2282,10 +2310,20 @@ extension TreasuryDao on AppDatabase {
+     /// included so legacy/seed data isn't silently excluded from the
+     /// cashier's drawer count.
+     int? branchId,
++
++    /// Upper bound of the aggregation window. Defaults to "now", which is
++    /// what closing a live shift wants.
++    ///
++    /// Required for RECOMPUTING an already-closed shift: without it the
++    /// window runs to the present moment, so a shift closed this morning
++    /// would swallow every sale made since. Only pass it for a closed
++    /// shift, using that shift's `endTime`.
++    DateTime? shiftEnd,
+   }) async {
+     final now = DateTime.now();
+     final effectiveFrom = shiftStart ??
+         DateTime(now.year, now.month, now.day);
++    final effectiveTo = shiftEnd ?? now;
+ 
+     // ── Sales invoices — SQL GROUP BY aggregation ─────────────────────
+     // Previous approach loaded ALL invoice rows into Dart (potentially
+@@ -2366,7 +2404,7 @@ extension TreasuryDao on AppDatabase {
+       ''',
+       variables: [
+         Variable<DateTime>(effectiveFrom),
+-        Variable<DateTime>(now),
++        Variable<DateTime>(effectiveTo),
+         if (!includeAllUsers) Variable<int>(userId),
+         if (branchId != null) Variable<int>(branchId),
+       ],
+@@ -2462,7 +2500,7 @@ extension TreasuryDao on AppDatabase {
+       innerJoin(safes, safes.id.equalsExp(safeTransactions.safeId)),
+     ])
+       ..where(safeTransactions.createdAt.isBiggerOrEqualValue(effectiveFrom))
+-      ..where(safeTransactions.createdAt.isSmallerOrEqualValue(now))
++      ..where(safeTransactions.createdAt.isSmallerOrEqualValue(effectiveTo))
+       ..where(
+         safeTransactions.referenceType.isNull() |
+         safeTransactions.referenceType.isNotIn(
+diff --git a/lib/data/database/database.dart b/lib/data/database/database.dart
+index 9fa8dc64..0d2cd849 100644
+--- a/lib/data/database/database.dart
++++ b/lib/data/database/database.dart
+@@ -603,7 +603,7 @@ class AppDatabase extends _$AppDatabase {
+   /// return JEs onto their invoice id. Index-only change — no table/column
+   /// change, so no generated schema regeneration is required.
+   @override
+-  int get schemaVersion => 150;
++  int get schemaVersion => 151;
+ 
+   /// PostgreSQL-specific table creation: Drift's `currentDateAndTime` generates
+   /// `strftime('%s','now')` which doesn't exist in PostgreSQL.
+diff --git a/lib/data/database/migrations/epoch_3.dart b/lib/data/database/migrations/epoch_3.dart
+index 1b82c779..8bef11a8 100644
+--- a/lib/data/database/migrations/epoch_3.dart
++++ b/lib/data/database/migrations/epoch_3.dart
+@@ -2272,5 +2272,28 @@ extension Epoch3Migrations on AppDatabase {
+       debugPrint('[Migration] v150: return-exempt autopost dedup index '
+           '+ historical backfill applied');
+     }
++
++    // ═════════════════════════════════════════════════════════════════════
++    // v151 — shifts.closing_snapshot (reprint a closed shift)
++    //
++    // The closing report is printed once, at close time, and was never
++    // recoverable afterwards. Recomputing it is not enough: the ACTUAL
++    // counted amounts are cashier input, and only `actual_cash` had a
++    // column — the bank and click counts lived inside the free-text `notes`
++    // string. A "reprint" built without them would not match the paper the
++    // cashier signed.
++    //
++    // So the close path now stores the exact figures it printed, as JSON.
++    // Nullable, no backfill: shifts closed before this point have no
++    // snapshot to recover and are recomputed + labelled in the UI. Adding a
++    // nullable column is the cheapest possible schema change on the large
++    // production databases this runs against.
++    // ═════════════════════════════════════════════════════════════════════
++    if (from < 151) {
++      await _safeMigrate('v151 shifts.closing_snapshot', () async {
++        await m.addColumn(shifts, shifts.closingSnapshot);
++        debugPrint('[Migration] v151 shifts.closing_snapshot OK');
++      });
++    }
+   }
+ }
+diff --git a/lib/data/database/tables/audit_tables.dart b/lib/data/database/tables/audit_tables.dart
+index 9dbc5511..6556b6ad 100644
+--- a/lib/data/database/tables/audit_tables.dart
++++ b/lib/data/database/tables/audit_tables.dart
+@@ -44,6 +44,20 @@ class Shifts extends Table {
+ 
+   TextColumn get status => text().withLength(max: 20)(); // 'open', 'closed'
+   TextColumn get notes => text().nullable()();
++
++  /// v151 — JSON snapshot of every figure the closing report was printed
++  /// from, captured at close time.
++  ///
++  /// Reprinting a closed shift cannot be done by recomputation alone: the
++  /// **actual** counted amounts are what the cashier typed, and only
++  /// `actualCash` ever had a column — the bank and click counts were buried
++  /// inside the free-text `notes` string. Anything reconstructed without them
++  /// would disagree with the paper the cashier signed, which defeats the
++  /// point of a reprint.
++  ///
++  /// NULL for shifts closed before this column existed; those fall back to
++  /// recomputation and are labelled as such in the UI.
++  TextColumn get closingSnapshot => text().nullable()();
+   // Closing method: 'normal', 'quick', 'msr_card', 'admin_password'
+   TextColumn get closingMethod => text().withDefault(const Constant('normal'))();
+ 
+diff --git a/lib/data/repositories/treasury_repository_impl.dart b/lib/data/repositories/treasury_repository_impl.dart
+index 64da994a..b5ef1778 100644
+--- a/lib/data/repositories/treasury_repository_impl.dart
++++ b/lib/data/repositories/treasury_repository_impl.dart
+@@ -642,8 +642,8 @@ class TreasuryRepositoryImpl extends BaseRepository<Safe> implements ITreasuryRe
+       db.openShift(userId, openingBalance, branchId: branchId);
+ 
+   @override
+-  Future<void> closeShiftWithAudit(int shiftId, double actualCash, {String? notes, String closingMethod = 'normal', void Function(double)? onVarianceJeFailed}) =>
+-      db.closeShiftWithAudit(shiftId, actualCash, notes: notes, closingMethod: closingMethod, onVarianceJeFailed: onVarianceJeFailed);
++  Future<void> closeShiftWithAudit(int shiftId, double actualCash, {String? notes, String closingMethod = 'normal', String? closingSnapshot, void Function(double)? onVarianceJeFailed}) =>
++      db.closeShiftWithAudit(shiftId, actualCash, notes: notes, closingMethod: closingMethod, closingSnapshot: closingSnapshot, onVarianceJeFailed: onVarianceJeFailed);
+ 
+   @override
+   Future<void> deleteExpenseTransaction(int transactionId) =>
+diff --git a/lib/domain/entities/shift_closing_snapshot.dart b/lib/domain/entities/shift_closing_snapshot.dart
+new file mode 100644
+index 00000000..cf0ad2e4
+--- /dev/null
++++ b/lib/domain/entities/shift_closing_snapshot.dart
+@@ -0,0 +1,138 @@
++import 'dart:convert';
++
++/// The exact set of figures a shift-closing report was printed from.
++///
++/// Persisted as JSON on `shifts.closing_snapshot` at close time so the paper
++/// can be reproduced byte-for-byte later. Recomputation alone cannot do this:
++/// the `actual*` amounts are what the cashier physically counted and typed,
++/// and before this only `actualCash` had a column — the bank and click counts
++/// were buried inside the free-text `notes` string.
++///
++/// Deliberately a plain map round-trip rather than a codegen'd model: it is
++/// written once and read by one screen, and it must tolerate being read back
++/// by a build whose field list has since grown (see [fromJson]'s defaults).
++class ShiftClosingSnapshot {
++  final int invoiceCount;
++  final double totalSales;
++
++  final double systemCash;
++  final double systemCard;
++  final double systemClick;
++
++  final double actualCash;
++  final double actualCard;
++  final double actualClick;
++
++  final double cashVariance;
++  final double cardVariance;
++  final double clickVariance;
++  final double totalVariance;
++
++  final double totalExpenses;
++  final double cashRefunds;
++  final double cashIncome;
++  final double creditSales;
++  final int creditSalesCount;
++  final double openingBalance;
++
++  final String? employeeName;
++  final String? companyName;
++
++  /// When the close actually happened. Used as the report date on a reprint —
++  /// stamping it with "now" would date last week's shift to today.
++  final DateTime? closedAt;
++
++  const ShiftClosingSnapshot({
++    required this.invoiceCount,
++    required this.totalSales,
++    required this.systemCash,
++    required this.systemCard,
++    required this.systemClick,
++    required this.actualCash,
++    required this.actualCard,
++    required this.actualClick,
++    required this.cashVariance,
++    required this.cardVariance,
++    required this.clickVariance,
++    required this.totalVariance,
++    required this.totalExpenses,
++    required this.cashRefunds,
++    required this.cashIncome,
++    required this.creditSales,
++    required this.creditSalesCount,
++    required this.openingBalance,
++    this.employeeName,
++    this.companyName,
++    this.closedAt,
++  });
++
++  Map<String, dynamic> toJson() => {
++        'v': 1,
++        'invoiceCount': invoiceCount,
++        'totalSales': totalSales,
++        'systemCash': systemCash,
++        'systemCard': systemCard,
++        'systemClick': systemClick,
++        'actualCash': actualCash,
++        'actualCard': actualCard,
++        'actualClick': actualClick,
++        'cashVariance': cashVariance,
++        'cardVariance': cardVariance,
++        'clickVariance': clickVariance,
++        'totalVariance': totalVariance,
++        'totalExpenses': totalExpenses,
++        'cashRefunds': cashRefunds,
++        'cashIncome': cashIncome,
++        'creditSales': creditSales,
++        'creditSalesCount': creditSalesCount,
++        'openingBalance': openingBalance,
++        'employeeName': employeeName,
++        'companyName': companyName,
++        'closedAt': closedAt?.toIso8601String(),
++      };
++
++  String encode() => jsonEncode(toJson());
++
++  static double _d(Object? v) => (v as num?)?.toDouble() ?? 0;
++  static int _i(Object? v) => (v as num?)?.toInt() ?? 0;
++
++  factory ShiftClosingSnapshot.fromJson(Map<String, dynamic> json) =>
++      ShiftClosingSnapshot(
++        invoiceCount: _i(json['invoiceCount']),
++        totalSales: _d(json['totalSales']),
++        systemCash: _d(json['systemCash']),
++        systemCard: _d(json['systemCard']),
++        systemClick: _d(json['systemClick']),
++        actualCash: _d(json['actualCash']),
++        actualCard: _d(json['actualCard']),
++        actualClick: _d(json['actualClick']),
++        cashVariance: _d(json['cashVariance']),
++        cardVariance: _d(json['cardVariance']),
++        clickVariance: _d(json['clickVariance']),
++        totalVariance: _d(json['totalVariance']),
++        totalExpenses: _d(json['totalExpenses']),
++        cashRefunds: _d(json['cashRefunds']),
++        cashIncome: _d(json['cashIncome']),
++        creditSales: _d(json['creditSales']),
++        creditSalesCount: _i(json['creditSalesCount']),
++        openingBalance: _d(json['openingBalance']),
++        employeeName: json['employeeName'] as String?,
++        companyName: json['companyName'] as String?,
++        closedAt: DateTime.tryParse((json['closedAt'] as String?) ?? ''),
++      );
++
++  /// Decodes a stored snapshot, returning null for absent or unreadable data.
++  ///
++  /// Never throws: a corrupt snapshot must degrade to "recompute and label it"
++  /// rather than break the shift screen for every other shift on it.
++  static ShiftClosingSnapshot? tryDecode(String? raw) {
++    if (raw == null || raw.trim().isEmpty) return null;
++    try {
++      final decoded = jsonDecode(raw);
++      if (decoded is! Map<String, dynamic>) return null;
++      return ShiftClosingSnapshot.fromJson(decoded);
++    } catch (_) {
++      return null;
++    }
++  }
++}
+diff --git a/lib/domain/repositories/treasury_repository.dart b/lib/domain/repositories/treasury_repository.dart
+index 29ffcbc9..cc107626 100644
+--- a/lib/domain/repositories/treasury_repository.dart
++++ b/lib/domain/repositories/treasury_repository.dart
+@@ -28,7 +28,7 @@ abstract class ITreasuryRepository {
+ 
+   /// Close shift with blind audit (variance calculation).
+   /// [onVarianceJeFailed]: optional callback when variance JE fails (GAP-24).
+-  Future<void> closeShiftWithAudit(int shiftId, double actualCash, {String? notes, String closingMethod = 'normal', void Function(double)? onVarianceJeFailed});
++  Future<void> closeShiftWithAudit(int shiftId, double actualCash, {String? notes, String closingMethod = 'normal', String? closingSnapshot, void Function(double)? onVarianceJeFailed});
+ 
+   /// Watch all active safes
+   Stream<List<SafeData>> watchSafes();
+diff --git a/lib/presentation/pos/providers/pos_closing_controller.dart b/lib/presentation/pos/providers/pos_closing_controller.dart
+index 0c47b736..ef8c0887 100644
+--- a/lib/presentation/pos/providers/pos_closing_controller.dart
++++ b/lib/presentation/pos/providers/pos_closing_controller.dart
+@@ -8,8 +8,9 @@ import '../../../core/config/business_profile_provider.dart';
+ import '../../../data/providers/providers.dart';
+ import '../../../services/client_write_interceptor.dart';
+ import '../../../services/delta_pull_service.dart';
+-import '../../../services/invoice_generator.dart';
+ import '../../../services/network_service.dart';
++import '../../../services/printing/shift_closing_print.dart';
++import '../../../domain/entities/shift_closing_snapshot.dart';
+ import '../../../data/database/sync_interceptor.dart';
+ 
+ /// Closing-dialog state.
+@@ -598,11 +599,46 @@ class PosClosingController extends Notifier<PosClosingState> {
+         state = state.copyWith(isProcessing: false);
+         throw Exception('لا توجد وردية مفتوحة لإغلاقها');
+       }
++      // Built BEFORE the close so the exact same figures are both persisted
++      // and printed. Deriving the printout separately would let the stored
++      // snapshot and the paper drift apart, which defeats the whole point of
++      // keeping one.
++      final settingsRepo2 = ref.read(settingsRepositoryProvider);
++      final companyName = await settingsRepo2.getSetting('company_name');
++      final fontScaleStr =
++          await settingsRepo2.getSetting('closing_report_font_scale');
++      final fontScale = double.tryParse(fontScaleStr ?? '') ?? 1.0;
++
++      final snapshot = ShiftClosingSnapshot(
++        invoiceCount: state.invoiceCount,
++        totalSales: state.totalSales,
++        systemCash: state.systemCash,
++        systemCard: state.systemCard,
++        systemClick: state.systemClick,
++        actualCash: state.actualCashAmount,
++        actualCard: state.actualCardAmount,
++        actualClick: state.actualClickAmount,
++        cashVariance: state.cashVariance,
++        cardVariance: state.cardVariance,
++        clickVariance: state.clickVariance,
++        totalVariance: state.totalVariance,
++        totalExpenses: state.totalExpenses,
++        cashRefunds: state.cashRefunds,
++        cashIncome: state.cashIncome,
++        creditSales: state.creditIncome,
++        creditSalesCount: state.creditCount,
++        openingBalance: state.openingBalance,
++        employeeName: authState.user?.displayName,
++        companyName: companyName,
++        closedAt: DateTime.now(),
++      );
++
+       await treasuryRepo.closeShiftWithAudit(
+         closeShiftId,
+         state.actualCashAmount,
+         notes: 'إغلاق وردية POS - ${state.actualCardAmount > 0 ? 'بطاقة: ${state.actualCardAmount.toStringAsFixed(AppConstants.decimalPlaces)}' : ''}',
+         closingMethod: closingMethod,
++        closingSnapshot: snapshot.encode(),
+         onVarianceJeFailed: (variance) {
+           // GAP-24: non-fatal — shift closes but UI warns the operator
+           state = state.copyWith(varianceJeWarning: variance);
+@@ -624,33 +660,9 @@ class PosClosingController extends Notifier<PosClosingState> {
+       // Variance entries (actual vs expected) are handled separately
+       // in treasury_dao.dart → _postVarianceJournalEntry().
+ 
+-      final settingsRepo2 = ref.read(settingsRepositoryProvider);
+-      final companyName = await settingsRepo2.getSetting('company_name');
+-      final fontScaleStr = await settingsRepo2.getSetting('closing_report_font_scale');
+-      final fontScale = double.tryParse(fontScaleStr ?? '') ?? 1.0;
+-
+-      await InvoiceGenerator.printShiftClosingReport(
+-        invoiceCount: state.invoiceCount,
+-        totalSales: state.totalSales,
+-        systemCash: state.systemCash,
+-        systemCard: state.systemCard,
+-        actualCash: state.actualCashAmount,
+-        actualCard: state.actualCardAmount,
+-        cashVariance: state.cashVariance,
+-        cardVariance: state.cardVariance,
+-        totalVariance: state.totalVariance,
+-        systemClick: state.systemClick,
+-        actualClick: state.actualClickAmount,
+-        clickVariance: state.clickVariance,
+-        totalExpenses: state.totalExpenses,
+-        cashRefunds: state.cashRefunds,
+-        cashIncome: state.cashIncome,
+-        creditSales: state.creditIncome,
+-        creditSalesCount: state.creditCount,
+-        openingBalance: state.openingBalance,
++      await printShiftClosingSnapshot(
++        snapshot: snapshot,
+         fontScale: fontScale,
+-        employeeName: authState.user?.displayName,
+-        companyName: companyName,
+         printersRepo: ref.read(printersRepositoryProvider),
+       );
+ 
+diff --git a/lib/services/api/api_data_handler.dart b/lib/services/api/api_data_handler.dart
+index 29ef429a..14352f21 100644
+--- a/lib/services/api/api_data_handler.dart
++++ b/lib/services/api/api_data_handler.dart
+@@ -688,6 +688,10 @@ class ApiDataHandler extends ApiHandlerBase {
+         parseDouble(data['actualCash']),
+         notes: data['notes'] as String?,
+         closingMethod: (data['closingMethod'] as String?) ?? 'normal',
++        // v151 — persist the client's closing figures on the server too;
++        // otherwise a shift closed from a client terminal has no snapshot to
++        // reprint from anywhere but that one machine.
++        closingSnapshot: data['closingSnapshot'] as String?,
+       );
+       return jsonResponse({'success': true, 'shiftId': shiftId});
+         },
+diff --git a/lib/services/api/api_handler.dart b/lib/services/api/api_handler.dart
+index 6e6c2d91..574dc3d3 100644
+--- a/lib/services/api/api_handler.dart
++++ b/lib/services/api/api_handler.dart
+@@ -857,6 +857,9 @@ class ApiHandler {
+               'variance': s.variance,
+               'status': s.status,
+               'notes': s.notes,
++              // v151 — the closing report's stored figures, so a pulling
++              // client can reprint a shift closed on another terminal.
++              'closingSnapshot': s.closingSnapshot,
+               'createdAt': s.createdAt.toIso8601String(),
+               // Spec 008 / FR-001: surface the recorded operating branch so
+               // pulling clients see it via shift_sync_strategy.
+diff --git a/lib/services/printing/shift_closing_print.dart b/lib/services/printing/shift_closing_print.dart
+new file mode 100644
+index 00000000..74b66a46
+--- /dev/null
++++ b/lib/services/printing/shift_closing_print.dart
+@@ -0,0 +1,41 @@
++import '../../domain/entities/shift_closing_snapshot.dart';
++import '../../domain/repositories/printers_repository.dart';
++import '../invoice_generator.dart';
++
++/// Prints a shift-closing report from a [ShiftClosingSnapshot].
++///
++/// Both the close path and the reprint path go through here, which is what
++/// guarantees a reprint is the same document rather than a lookalike rebuilt
++/// from a second set of assumptions. The close path builds the snapshot,
++/// persists it, and prints from it; the reprint path loads the stored one and
++/// prints from that.
++Future<void> printShiftClosingSnapshot({
++  required ShiftClosingSnapshot snapshot,
++  double fontScale = 1.0,
++  IPrintersRepository? printersRepo,
++}) {
++  return InvoiceGenerator.printShiftClosingReport(
++    invoiceCount: snapshot.invoiceCount,
++    totalSales: snapshot.totalSales,
++    systemCash: snapshot.systemCash,
++    systemCard: snapshot.systemCard,
++    actualCash: snapshot.actualCash,
++    actualCard: snapshot.actualCard,
++    cashVariance: snapshot.cashVariance,
++    cardVariance: snapshot.cardVariance,
++    totalVariance: snapshot.totalVariance,
++    systemClick: snapshot.systemClick,
++    actualClick: snapshot.actualClick,
++    clickVariance: snapshot.clickVariance,
++    totalExpenses: snapshot.totalExpenses,
++    cashRefunds: snapshot.cashRefunds,
++    cashIncome: snapshot.cashIncome,
++    creditSales: snapshot.creditSales,
++    creditSalesCount: snapshot.creditSalesCount,
++    openingBalance: snapshot.openingBalance,
++    fontScale: fontScale,
++    employeeName: snapshot.employeeName,
++    companyName: snapshot.companyName,
++    printersRepo: printersRepo,
++  );
++}
+diff --git a/lib/services/sync/strategies/shift_sync_strategy.dart b/lib/services/sync/strategies/shift_sync_strategy.dart
+index dc8a1abd..add3d4a3 100644
+--- a/lib/services/sync/strategies/shift_sync_strategy.dart
++++ b/lib/services/sync/strategies/shift_sync_strategy.dart
+@@ -122,6 +122,7 @@ class ShiftSyncStrategy extends SyncStrategy {
+                   variance: Value(parseDoubleNullable(s['variance'])),
+                   status: serverStatus,
+                   notes: Value(s['notes'] as String?),
++                  closingSnapshot: Value(s['closingSnapshot'] as String?),
+                   branchId: Value(
+                       parseIntNullable(s['branchId'] ?? s['branch_id'])),
+                   globalId: Value(serverGlobalId),
+@@ -271,6 +272,12 @@ class ShiftSyncStrategy extends SyncStrategy {
+           variance: Value(parseDoubleNullable(s['variance'])),
+           status: Value(serverStatus),
+           notes: Value(s['notes'] as String?),
++          // v151 — `Absent` when the server omits the key, NOT `Value(null)`:
++          // an older server that doesn't know the column would otherwise wipe
++          // a snapshot this device captured locally at close time.
++          closingSnapshot: s.containsKey('closingSnapshot')
++              ? Value(s['closingSnapshot'] as String?)
++              : const Value.absent(),
+           // Spec 008 / FR-001: pull the server's branchId so the close-time
+           // logic on this client uses the same value the open-time client
+           // recorded. Tolerates both `branchId` and snake_case `branch_id`
+diff --git a/migration_v151_shift_closing_snapshot.sql b/migration_v151_shift_closing_snapshot.sql
+new file mode 100644
+index 00000000..987da8bb
+--- /dev/null
++++ b/migration_v151_shift_closing_snapshot.sql
+@@ -0,0 +1,30 @@
++-- ============================================================
++-- PICPOS / URAL ERP — Migration v151: Shift Closing Snapshot
++-- تطبيق على قاعدة بيانات PostgreSQL موجودة (بدون حذف وإعادة بناء)
++-- ============================================================
++-- التشغيل: psql -U <user> -d <database> -f migration_v151_shift_closing_snapshot.sql
++-- ============================================================
++
++BEGIN;
++
++-- ──────────────────────────────────────────────────────────────
++-- لقطة أرقام إغلاق الوردية وقت الإقفال (JSON)
++--
++-- السبب: إعادة طباعة وردية مقفولة مكانتش ممكنة. إعادة الحساب لوحدها
++-- مش كافية لأن المبالغ **الفعلية** دي إدخال الكاشير، ومكانش ليها أعمدة
++-- غير `actual_cash` — الفعلي للبطاقة وكليك كان مدفون جوه نص `notes`.
++-- فأي «إعادة طباعة» متبنية من غيرهم مش هتطابق الورقة اللي الكاشير مضاها.
++--
++-- NULL للورديات المقفولة قبل الترقية — دي بيتعاد حسابها وبتتوسم في الواجهة.
++-- ──────────────────────────────────────────────────────────────
++ALTER TABLE shifts
++    ADD COLUMN IF NOT EXISTS closing_snapshot TEXT;
++
++COMMIT;
++
++-- ============================================================
++-- ملاحظات:
++-- 1. العمود nullable بلا default — أرخص تغيير سكيما على قواعد بيانات كبيرة
++-- 2. مفيش backfill: الورديات القديمة مالهاش لقطة تُسترجع أصلاً
++-- 3. المحتوى JSON لكل الوسائط اللي `printShiftClosingReport` بتستقبلها
++-- ============================================================
+diff --git a/test/unit/shift_closing_aggregates_shift_end_test.dart b/test/unit/shift_closing_aggregates_shift_end_test.dart
+new file mode 100644
+index 00000000..44148c2d
+--- /dev/null
++++ b/test/unit/shift_closing_aggregates_shift_end_test.dart
+@@ -0,0 +1,115 @@
++// ═══════════════════════════════════════════════════════════════════════════
++// نافذة احتساب إغلاق الوردية — `shiftEnd`
++// ═══════════════════════════════════════════════════════════════════════════
++//
++// `getShiftClosingAggregates` كانت نافذتها `[shiftStart, now]` بلا نهاية.
++// ده صح تماماً وإنت بتقفل وردية شغّالة، لكنه غلط خطير لو استخدمناه في
++// **إعادة احتساب وردية مقفولة**: الوردية اللي اتقفلت الصبح هتبلع كل مبيعات
++// اليوم اللي بعدها، فالورقة المعاد طباعتها تطلع بأرقام أكبر من الأصل.
++//
++// الاختبار ده بيثبّت إن `shiftEnd` بيقصّ النافذة فعلاً، وإن غيابه بيحافظ
++// على السلوك القديم بالظبط (الافتراضي = دلوقتي) عشان مسار الإغلاق الحيّ
++// ما يتغيّرش.
++// ═══════════════════════════════════════════════════════════════════════════
++
++import 'package:drift/drift.dart' hide isNotNull, isNull;
++import 'package:flutter_test/flutter_test.dart';
++import 'package:ural_erp/data/database/database.dart';
++
++void main() {
++  late AppDatabase db;
++  late int userId;
++  late int warehouseId;
++
++  /// فاتورة نقدي بتاريخ محدد.
++  Future<void> insertCashSale({
++    required String number,
++    required double total,
++    required DateTime at,
++  }) async {
++    await db.into(db.salesInvoices).insert(
++          SalesInvoicesCompanion.insert(
++            invoiceNumber: number,
++            warehouseId: warehouseId,
++            userId: userId,
++            invoiceDate: at,
++            subtotal: Value(total),
++            total: Value(total),
++            paid: Value(total),
++            cashPaid: Value(total),
++            paymentMethod: const Value('cash'),
++            status: const Value('completed'),
++          ),
++        );
++  }
++
++  setUp(() async {
++    db = AppDatabase.forTesting();
++    await db.syncDefaultAccounts();
++
++    final roleId = await db.into(db.roles).insert(
++          RolesCompanion.insert(
++            name: 'cashier-shiftend',
++            isSystemRole: const Value(false),
++          ),
++        );
++    userId = await db.createUser(
++      username: 'cashier_shiftend',
++      password: 'pw',
++      displayName: 'ShiftEnd',
++      roleId: roleId,
++    );
++    warehouseId = await db.into(db.warehouses).insert(
++          WarehousesCompanion.insert(name: 'wh-shiftend'),
++        );
++  });
++
++  tearDown(() => db.close());
++
++  test('shiftEnd يقص النافذة فما تبلعش مبيعات بعد الإغلاق', () async {
++    final start = DateTime.now().subtract(const Duration(hours: 6));
++    final end = DateTime.now().subtract(const Duration(hours: 3));
++
++    // جوه الوردية
++    await insertCashSale(number: 'IN-1', total: 100, at: start.add(
++      const Duration(minutes: 30),
++    ));
++    // بعد ما الوردية اتقفلت — المفروض ما تدخلش
++    await insertCashSale(number: 'OUT-1', total: 999, at: end.add(
++      const Duration(minutes: 30),
++    ));
++
++    final scoped = await db.getShiftClosingAggregates(
++      userId: userId,
++      includeAllUsers: false,
++      shiftStart: start,
++      shiftEnd: end,
++    );
++
++    expect(scoped.salesCash, closeTo(100, 0.001),
++        reason: 'المبيعة اللي بعد نهاية الوردية لازم تفضل برّه.');
++    expect(scoped.salesCount, 1);
++  });
++
++  test('من غير shiftEnd السلوك زي ما هو — النافذة لحد دلوقتي', () async {
++    final start = DateTime.now().subtract(const Duration(hours: 6));
++    final end = DateTime.now().subtract(const Duration(hours: 3));
++
++    await insertCashSale(
++        number: 'IN-2', total: 100, at: start.add(const Duration(minutes: 30)));
++    await insertCashSale(
++        number: 'AFTER-2', total: 999, at: end.add(const Duration(minutes: 30)));
++
++    final open = await db.getShiftClosingAggregates(
++      userId: userId,
++      includeAllUsers: false,
++      shiftStart: start,
++      // مفيش shiftEnd — ده مسار الإغلاق الحيّ
++    );
++
++    // ده بالظبط السبب اللي عشانه `shiftEnd` لازم يتبعت لما نعيد احتساب
++    // وردية مقفولة: من غيره الاتنين بيتحسبوا.
++    expect(open.salesCash, closeTo(1099, 0.001));
++    expect(open.salesCount, 2);
++  });
++}
