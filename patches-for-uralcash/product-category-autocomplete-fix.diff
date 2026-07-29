@@ -1,0 +1,149 @@
+From 956a60d38b3e50535c667931022802a48f5f06b0 Mon Sep 17 00:00:00 2001
+From: Ahmed Sola <ahmedsola27@gmail.com>
+Date: Wed, 29 Jul 2026 13:17:47 +0300
+Subject: [PATCH] =?UTF-8?q?fix(products):=20=D8=A5=D8=B8=D9=87=D8=A7=D8=B1?=
+ =?UTF-8?q?=20=D8=A7=D9=84=D8=AA=D8=B5=D9=86=D9=8A=D9=81=20=D9=88=D8=A7?=
+ =?UTF-8?q?=D9=84=D9=85=D9=88=D8=B1=D9=91=D8=AF=20=D8=B9=D9=86=D8=AF=20?=
+ =?UTF-8?q?=D8=AA=D8=B9=D8=AF=D9=8A=D9=84=20=D8=A7=D9=84=D8=B5=D9=86=D9=81?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+حقل التصنيف كان بيفضل فاضي في ديالوج تعديل الصنف رغم إن `selectedCategoryId`
+محمَّل صح — العطل عرضي بحت مش بيانات، والحفظ كان سليم طول الوقت.
+
+السبب: `Autocomplete` (يعني `RawAutocomplete`) بيقرا `initialValue` مرة
+واحدة بس جوه `initState` بتاعه ومبيعيدش قراءته أبداً. وفي أول build كان
+`FutureBuilder` لسه بيحمّل التصنيفات، فقائمة `categories` فاضية والاسم
+بيتحل لنص فاضي — وبعد ما التصنيفات توصل بيتعاد استخدام نفس الـ Element
+فمفيش `State` جديدة تقرا القيمة الصح.
+
+وزوّد الطين بلة إن `future:` كان بيتبني جوه `build`، يعني Future جديد كل
+rebuild فالـ `FutureBuilder` بيرجع لحالة التحميل من أول وجديد مع كل
+`setState` — ومنها `_refreshFromDatabase`.
+
+الإصلاح:
+- رفع الـ Future لحقل يتبني مرة واحدة بدل إنشائه في كل build
+- `key` على الـ Autocomplete يجبر إنشاء State جديدة أول ما البيانات توصل
+- نفس العطل حرفياً في حقل المورّد — اتصلح معاه
+- نفس النمط في `add_product_dialog` (كان مستخفي لأن الإضافة بتبدأ بلا اختيار)
+
+flutter analyze على الملفين: صفر مشاكل
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+---
+ .../products/widgets/product_edit_dialog.dart | 24 +++++++++++++++----
+ .../widgets/dialogs/add_product_dialog.dart   | 18 ++++++++++++--
+ 2 files changed, 36 insertions(+), 6 deletions(-)
+
+diff --git a/lib/presentation/screens/products/widgets/product_edit_dialog.dart b/lib/presentation/screens/products/widgets/product_edit_dialog.dart
+index b03d4843..d8ee8532 100644
+--- a/lib/presentation/screens/products/widgets/product_edit_dialog.dart
++++ b/lib/presentation/screens/products/widgets/product_edit_dialog.dart
+@@ -59,6 +59,13 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
+ 
+   bool _saving = false;
+ 
++  // Built ONCE, not inside build(). `FutureBuilder` restarts whenever it is
++  // handed a new Future, so creating these inline made every `setState` flip
++  // the selectors back to an empty option list — which is what stopped the
++  // category name from ever rendering (see `_buildCategorySelector`).
++  Future<List<Category>>? _categoriesFuture;
++  Future<List<Party>>? _suppliersFuture;
++
+   late TabController _tabController;
+ 
+   @override
+@@ -600,12 +607,19 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
+   }
+ 
+   Widget _buildCategorySelector() {
+-    final repository = ref.read(productRepositoryProvider);
++    _categoriesFuture ??= ref.read(productRepositoryProvider).getCategories();
+     return FutureBuilder<List<Category>>(
+-      future: repository.getCategories(),
++      future: _categoriesFuture,
+       builder: (context, snapshot) {
+         final categories = snapshot.data ?? [];
+         return Autocomplete<Category>(
++          // `RawAutocomplete` reads `initialValue` exactly once, in its own
++          // initState. On the first build the categories haven't loaded yet,
++          // so the resolved name is '' — and without a key the element is
++          // reused when they arrive, leaving the field permanently blank on
++          // edit even though `selectedCategoryId` was correct all along.
++          // Keying on both inputs forces a fresh State once either changes.
++          key: ValueKey('category-${categories.length}-$selectedCategoryId'),
+           optionsBuilder: (textValue) {
+             if (textValue.text.isEmpty) return categories;
+             return categories.where(
+@@ -661,12 +675,14 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
+   }
+ 
+   Widget _buildSupplierSelector() {
+-    final repository = ref.read(productRepositoryProvider);
++    _suppliersFuture ??= ref.read(productRepositoryProvider).getSuppliers();
+     return FutureBuilder<List<Party>>(
+-      future: repository.getSuppliers(),
++      future: _suppliersFuture,
+       builder: (context, snapshot) {
+         final suppliers = snapshot.data ?? [];
+         return Autocomplete<Party>(
++          // Same one-shot `initialValue` trap as the category selector above.
++          key: ValueKey('supplier-${suppliers.length}-$selectedSupplierId'),
+           optionsBuilder: (textValue) {
+             if (textValue.text.isEmpty) return suppliers;
+             return suppliers.where(
+diff --git a/lib/presentation/widgets/dialogs/add_product_dialog.dart b/lib/presentation/widgets/dialogs/add_product_dialog.dart
+index f8f3456f..1d672e17 100644
+--- a/lib/presentation/widgets/dialogs/add_product_dialog.dart
++++ b/lib/presentation/widgets/dialogs/add_product_dialog.dart
+@@ -98,6 +98,14 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
+   bool _showWarehousePrices = false;
+   final List<_WarehousePriceRow> _warehousePriceRows = [];
+ 
++  // Built ONCE, not inside build(). A Future created inline makes its
++  // `FutureBuilder` restart on every setState, which empties the option list
++  // and (combined with `Autocomplete`'s one-shot `initialValue`) blanks the
++  // field. Harmless here because add mode starts with no selection, but the
++  // same shape is what broke the edit dialog — fixed in both to keep it fixed.
++  Future<List<Category>>? _categoriesFuture;
++  Future<List<Party>>? _suppliersFuture;
++
+   // Multi-unit packaging rows (up to 5 units)
+   bool _showPackagingUnits = false;
+   final List<_ProductUnitRow> _unitRows = [];
+@@ -314,12 +322,15 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
+ 
+                 // Category Dropdown
+                 FutureBuilder<List<Category>>(
+-                  future: ref.read(productRepositoryProvider).getCategories(),
++                  future: _categoriesFuture ??=
++                      ref.read(productRepositoryProvider).getCategories(),
+                   builder: (context, snapshot) {
+                     final categories = snapshot.data ?? [];
+                     return SizedBox(
+                       height: 44,
+                       child: Autocomplete<Category>(
++                        key: ValueKey(
++                            'category-${categories.length}-$_selectedCategoryId'),
+                         initialValue: TextEditingValue(
+                           text: _selectedCategoryId != null
+                               ? (categories.where((c) => c.id == _selectedCategoryId).firstOrNull?.name ?? '')
+@@ -415,10 +426,13 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
+                 if (!widget.simplified) ...[
+                   const SizedBox(height: 8),
+                   FutureBuilder<List<Party>>(
+-                    future: ref.read(productRepositoryProvider).getSuppliers(),
++                    future: _suppliersFuture ??=
++                        ref.read(productRepositoryProvider).getSuppliers(),
+                     builder: (context, snapshot) {
+                       final suppliers = snapshot.data ?? [];
+                       return Autocomplete<Party>(
++                        key: ValueKey(
++                            'supplier-${suppliers.length}-$_selectedSupplierId'),
+                         initialValue: TextEditingValue(
+                           text: _selectedSupplierId != null
+                               ? (suppliers.where((s) => s.id == _selectedSupplierId).firstOrNull?.name ?? '')
+-- 
+2.55.0.windows.3
+
