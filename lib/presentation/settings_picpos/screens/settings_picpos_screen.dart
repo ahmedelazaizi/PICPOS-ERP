@@ -143,6 +143,8 @@ import '../../widgets/settings/database_settings_widget.dart';
 import '../../touch_keyboard/providers/touch_mode_provider.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../picpos_shell/picpos_content_card.dart';
+import '../../picpos_shell/picpos_section_header.dart';
+import '../../picpos_shell/picpos_empty_state.dart';
 
 // Part files — copied verbatim from lib/presentation/screens/settings/*
 // (only `part of` retargeted to this shell; see the copy-trap note above).
@@ -168,10 +170,23 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
   bool _isUnlocked = false;
   bool _isCheckingPassword = true;
 
+  /// القسم المعروض في اللوحة اليمنى. الشاشة كانت `ListView` واحد طوله ٨ كروت
+  /// بلا تبويب ولا بحث — الوصول لأي إعداد كان تمرير أعمى.
+  String _selectedSectionId = 'system';
+
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
+
   @override
   void initState() {
     super.initState();
     _checkPasswordGate();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _checkPasswordGate() async {
@@ -377,12 +392,14 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
       }
     });
 
-    return PicPosScreenScaffold(
-      title: 'الإعدادات',
-      subtitle: 'تهيئة النظام والأجهزة والصلاحيات',
-      icon: PhosphorIconsBold.gear,
-      body: ListView(
-        children: [
+    final sections = <_SettingsSection>[
+      _SettingsSection(
+        id: 'system',
+        title: 'النظام والمظهر',
+        icon: PhosphorIconsBold.slidersHorizontal,
+        keywords: 'شركة صناعة عملة مظهر ثيم داكن نهاري شاشة رئيسية قاعدة '
+            'بيانات صيانة مزامنة مرآة شيكات فروع سيرفر شبكة لمس كيبورد',
+        children: () => [
           // ═══ 1. النظام والمظهر ═══
           _buildSettingsCard(
             title: 'إعدادات النظام والمظهر',
@@ -513,8 +530,15 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
               const _ForceSyncPanel(),
             ],
           ),
-          const SizedBox(height: 16),
-
+        ],
+      ),
+      _SettingsSection(
+        id: 'devices',
+        title: 'الأجهزة والطباعة',
+        icon: PhosphorIconsBold.printer,
+        keywords: 'طابعة باركود ماسح ميزان حراري قوالب فواتير نقاط بيع '
+            'بصمة تصميم',
+        children: () => [
           // ═══ 2. الأجهزة والطباعة ═══
           _buildSettingsCard(
             title: 'الأجهزة والطباعة',
@@ -599,8 +623,16 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
                 const FingerprintSettingsWidget(),
             ],
           ),
-          const SizedBox(height: 16),
-
+        ],
+      ),
+      _SettingsSection(
+        id: 'pos',
+        title: 'نقطة البيع',
+        icon: PhosphorIconsBold.shoppingCart,
+        keywords: 'تراكم أصناف ميزان وزن سلة أزرار تصنيفات شبكة منتجات '
+            'إيصال طباعة تلقائية بيع بالسالب خصم ضريبة درج مصروفات وردية '
+            'مخزن افتراضي بادئة ترقيم',
+        children: () => [
           // ═══ 3. نقطة البيع ═══
           _buildSettingsCard(
             title: 'إعدادات نقطة البيع',
@@ -619,8 +651,14 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
-
+        ],
+      ),
+      _SettingsSection(
+        id: 'users',
+        title: 'المستخدمون والأمان',
+        icon: PhosphorIconsBold.shieldCheck,
+        keywords: 'مستخدمين صلاحيات أدوار كلمة مرور جلسة مهلة حماية أقسام',
+        children: () => [
           // ═══ 4. المستخدمين والأمان ═══
           // User + role management are server-authoritative. In
           // client mode these are hidden — the client cannot create
@@ -742,9 +780,16 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
                   ),
               ],
             ),
-            const SizedBox(height: 16),
           ],
-
+        ],
+      ),
+      _SettingsSection(
+        id: 'finance',
+        title: 'المالية والمحاسبة',
+        icon: PhosphorIconsBold.bank,
+        keywords: 'حسابات ربط تلقائي تكلفة تسعير نقص مخزون فوترة إلكترونية '
+            'ضريبة قيمة مضافة',
+        children: () => [
           // ═══ 5. الإعدادات المالية ═══
           PermissionGuard(
             permission: PermissionCodes.settingsBackup,
@@ -785,8 +830,14 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
-
+        ],
+      ),
+      _SettingsSection(
+        id: 'data',
+        title: 'إدارة البيانات',
+        icon: PhosphorIconsBold.database,
+        keywords: 'نسخ احتياطي استعادة باك اب backup restore تصدير',
+        children: () => [
           // ═══ 6. إدارة البيانات ═══
           PermissionGuard(
             permission: PermissionCodes.settingsBackup,
@@ -797,8 +848,14 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
               children: [const BackupRestoreWidget()],
             ),
           ),
-          const SizedBox(height: 16),
-
+        ],
+      ),
+      _SettingsSection(
+        id: 'integrations',
+        title: 'التكاملات والخدمات',
+        icon: PhosphorIconsBold.plugsConnected,
+        keywords: 'توصيل مناديب شاشة عميل CFD مطبخ KDS إضافات معدلات',
+        children: () => [
           // ═══ 7. التكاملات والخدمات ═══
           _buildSettingsCard(
             title: 'التكاملات والخدمات',
@@ -858,8 +915,14 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
               ],
             ],
           ),
-          const SizedBox(height: 24),
-
+        ],
+      ),
+      _SettingsSection(
+        id: 'about',
+        title: 'عن البرنامج',
+        icon: PhosphorIconsBold.info,
+        keywords: 'إصدار نسخة ترخيص تفعيل لوج تشخيصي مطور دعم',
+        children: () => [
           // ═══ 8. عن البرنامج والترخيص ═══
           _buildAboutCard(),
 
@@ -907,10 +970,146 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
               );
             },
           ),
-
-          const SizedBox(height: 24),
         ],
       ),
+    ];
+
+    final query = _searchQuery.trim();
+    // A selected section can vanish between builds — a feature flag flips, or
+    // client mode hides one — so fall back rather than render an empty pane.
+    final selected = sections.firstWhere(
+      (s) => s.id == _selectedSectionId,
+      orElse: () => sections.first,
+    );
+
+    return PicPosScreenScaffold(
+      title: 'الإعدادات',
+      subtitle: 'تهيئة النظام والأجهزة والصلاحيات',
+      icon: PhosphorIconsBold.gear,
+      headerSearch: SizedBox(
+        width: 260,
+        child: TextField(
+          controller: _searchController,
+          onChanged: (v) => setState(() => _searchQuery = v),
+          decoration: InputDecoration(
+            hintText: 'ابحث في الإعدادات…',
+            prefixIcon:
+                const Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
+            isDense: true,
+            suffixIcon: _searchQuery.isEmpty
+                ? null
+                : IconButton(
+                    icon: const Icon(PhosphorIconsBold.x, size: 14),
+                    onPressed: () {
+                      _searchController.clear();
+                      setState(() => _searchQuery = '');
+                    },
+                  ),
+          ),
+        ),
+      ),
+      bodyPadding: EdgeInsets.zero,
+      body: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _SettingsNavRail(
+            sections: sections,
+            selectedId: selected.id,
+            onSelect: (id) => setState(() {
+              _selectedSectionId = id;
+              _searchController.clear();
+              _searchQuery = '';
+            }),
+          ),
+          const VerticalDivider(width: 1, color: AppColors.border),
+          Expanded(
+            child: query.isEmpty
+                ? _buildSectionPane(selected)
+                : _buildSearchResults(sections, query),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionPane(_SettingsSection section) {
+    return ListView(
+      key: PageStorageKey('settings-${section.id}'),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
+      children: [
+        PicPosSectionHeader(
+          title: section.title,
+          icon: section.icon,
+          showDivider: false,
+        ),
+        const SizedBox(height: 14),
+        for (final child in section.children()) ...[
+          child,
+          const SizedBox(height: 16),
+        ],
+      ],
+    );
+  }
+
+  /// Search over section titles + their keyword lists.
+  ///
+  /// It resolves to a SECTION, not to an individual control, because most
+  /// settings here live inside nested dialogs and expansion tiles that have
+  /// no addressable identity. Landing the user on the right section is the
+  /// honest thing this data can support — and it already fixes the case that
+  /// motivated it, where «منع تراكم الأصناف» sits behind a tile inside a
+  /// dialog inside a card and was effectively unfindable.
+  Widget _buildSearchResults(List<_SettingsSection> sections, String query) {
+    final q = query.toLowerCase();
+    final matches = sections
+        .where((s) =>
+            s.title.toLowerCase().contains(q) ||
+            s.keywords.toLowerCase().contains(q))
+        .toList();
+
+    if (matches.isEmpty) {
+      return PicPosEmptyState(
+        icon: PhosphorIconsBold.magnifyingGlass,
+        title: 'لا يوجد إعداد بهذا الاسم',
+        hint: 'جرّب كلمة أقصر — «طابعة» بدل «إعدادات الطابعة الحرارية».',
+        action: TextButton(
+          onPressed: () {
+            _searchController.clear();
+            setState(() => _searchQuery = '');
+          },
+          child: const Text('مسح البحث'),
+        ),
+      );
+    }
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
+      children: [
+        Text(
+          '${matches.length} قسم مطابق',
+          style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+        ),
+        const SizedBox(height: 10),
+        for (final s in matches)
+          PicPosContentCard(
+            child: ListTile(
+              leading: Icon(s.icon, color: AppColors.primary),
+              title: Text(s.title),
+              subtitle: Text(
+                s.keywords,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 11),
+              ),
+              trailing: const Icon(PhosphorIconsBold.caretLeft, size: 16),
+              onTap: () => setState(() {
+                _selectedSectionId = s.id;
+                _searchController.clear();
+                _searchQuery = '';
+              }),
+            ),
+          ),
+      ],
     );
   }
 
@@ -1029,9 +1228,9 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
   }
 
   Widget _buildAboutCard() {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    // كان `Card(elevation: 2)` — آخر أربع كروت فضلوا بالشكل المرفوع بتاع
+    // UralCash جنب كروت PicPos المسطّحة، فالشاشة كانت بتبان نصّين تصميم.
+    return PicPosContentCard(
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -1152,15 +1351,18 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
     final activationAsync = ref.watch(activationStatusProvider);
 
     return activationAsync.when(
-      data: (isActivated) => Card(
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(
+      // مسطّح زي باقي كروت PicPos، بس بحد ملوّن بيفرّق حالة التفعيل — الحد
+      // هنا معلومة مش زينة، فاتساب على `Container` بدل `PicPosContentCard`
+      // اللي حدّه ثابت.
+      data: (isActivated) => Container(
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: AppColors.card,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
             color: isActivated
                 ? AppColors.success.withValues(alpha: 0.5)
                 : AppColors.warning.withValues(alpha: 0.5),
-            width: 1,
           ),
         ),
         child: ListTile(
@@ -1205,8 +1407,13 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
   /// makes the entry discoverable to anyone who can read the settings
   /// page (admin or higher).
   Widget _buildDeveloperToolsCard(BuildContext context) {
-    return Card(
-      color: AppColors.primary.withValues(alpha: 0.04),
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
+      ),
       child: ListTile(
         leading: const Icon(
           PhosphorIconsBold.shieldStar,
@@ -1237,8 +1444,13 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
   /// in two taps and WhatsApp it to the admin without leaving the app or
   /// needing access to developer tools.
   Widget _buildCopyLogCard(BuildContext context) {
-    return Card(
-      color: AppColors.info.withValues(alpha: 0.04),
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: AppColors.info.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.info.withValues(alpha: 0.25)),
+      ),
       child: ListTile(
         leading: const Icon(
           PhosphorIconsBold.clipboard,
@@ -1461,6 +1673,122 @@ class _ServerPermsToggleTileState
               child: CircularProgressIndicator(strokeWidth: 2),
             ),
       onTap: _openDialog,
+    );
+  }
+}
+
+/// قسم واحد في شاشة الإعدادات.
+///
+/// [children] دالة مش قائمة جاهزة عن قصد: محتوى الأقسام بيقرا feature flags
+/// و`NetworkService.isClient` و`PermissionGuard`، فلازم يتبني وقت العرض مش
+/// وقت تعريف القائمة.
+class _SettingsSection {
+  final String id;
+  final String title;
+  final IconData icon;
+
+  /// كلمات البحث. بتظهر كمان كسطر وصف تحت اسم القسم في نتايج البحث، فهي
+  /// مش مخفية — المستخدم بيشوف ليه القسم ده طلع.
+  final String keywords;
+
+  final List<Widget> Function() children;
+
+  const _SettingsSection({
+    required this.id,
+    required this.title,
+    required this.icon,
+    required this.keywords,
+    required this.children,
+  });
+}
+
+/// عمود أقسام الإعدادات على اليمين (RTL).
+class _SettingsNavRail extends StatelessWidget {
+  final List<_SettingsSection> sections;
+  final String selectedId;
+  final ValueChanged<String> onSelect;
+
+  const _SettingsNavRail({
+    required this.sections,
+    required this.selectedId,
+    required this.onSelect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 208,
+      color: AppColors.surface,
+      child: ListView(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+        children: [
+          for (final s in sections)
+            _NavItem(
+              section: s,
+              selected: s.id == selectedId,
+              onTap: () => onSelect(s.id),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  final _SettingsSection section;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _NavItem({
+    required this.section,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          decoration: BoxDecoration(
+            color: selected
+                ? AppColors.primary.withValues(alpha: 0.10)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: selected
+                  ? AppColors.primary.withValues(alpha: 0.35)
+                  : Colors.transparent,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                section.icon,
+                size: 16,
+                color: selected ? AppColors.primary : AppColors.textMuted,
+              ),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Text(
+                  section.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: selected ? FontWeight.bold : FontWeight.w500,
+                    color: selected ? AppColors.primary : null,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
