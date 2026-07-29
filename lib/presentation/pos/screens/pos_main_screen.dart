@@ -17,6 +17,8 @@ import '../providers/pos_search_controller.dart';
 import '../providers/cfd_controller.dart';
 
 import '../../../domain/entities/product_entity.dart';
+import '../../../domain/usecases/sales/add_to_cart_usecase.dart'
+    show resolveStackingFlags;
 import '../../screens/sales_returns_screen.dart';
 import '../logic/pos_credential_handler.dart';
 

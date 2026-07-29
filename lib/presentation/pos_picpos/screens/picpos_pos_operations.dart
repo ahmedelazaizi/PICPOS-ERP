@@ -187,10 +187,15 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
   /// assuming the add landed.
   void _handleProductTap(ProductEntity product) {
     final before = ref.read(cartControllerProvider).items.length;
-    final forceNew = ref.read(preventItemStackingProvider).value ?? false;
-    ref
-        .read(cartControllerProvider.notifier)
-        .addItem(product, forceNewEntry: forceNew);
+    final stacking = resolveStackingFlags(
+      isSoldByWeight: product.isSoldByWeight,
+      preventStacking: ref.read(preventItemStackingProvider).value ?? false,
+    );
+    ref.read(cartControllerProvider.notifier).addItem(
+          product,
+          forceNewEntry: stacking.forceNewEntry,
+          mergeWeight: stacking.mergeWeight,
+        );
     final items = ref.read(cartControllerProvider).items;
     if (items.length > before) {
       setState(() => selectedIndex = items.length - 1);

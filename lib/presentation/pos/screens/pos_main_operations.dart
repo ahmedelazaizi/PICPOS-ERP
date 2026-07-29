@@ -178,12 +178,15 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
       );
     }
 
-    final forceNew = ref.read(preventItemStackingProvider).value ?? false;
+    final stacking = resolveStackingFlags(
+      isSoldByWeight: product.isSoldByWeight,
+      preventStacking: ref.read(preventItemStackingProvider).value ?? false,
+    );
     ref.read(cartControllerProvider.notifier).addItem(
       product,
       quantity: quantity,
-      forceNewEntry: forceNew,
-      mergeWeight: product.isSoldByWeight,
+      forceNewEntry: stacking.forceNewEntry,
+      mergeWeight: stacking.mergeWeight,
       customPrice: customPrice,
     );
     (this as _PosScreenV2State)._barcodeFocus.requestFocus();

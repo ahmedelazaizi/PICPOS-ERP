@@ -1,5 +1,31 @@
 import '../../entities/cart_item_entity.dart';
 
+/// Resolves the two cart-merge flags from the POS «منع تراكم الأصناف» setting.
+///
+/// The setting only ever meant one thing: **a weighed item gets its own line
+/// per weighing**, so the cashier can see 0.750 + 0.400 as two readings from
+/// the scale instead of an opaque 1.150. It was never meant to stop counted
+/// items from accumulating — two taps on the same bottle of water is a
+/// quantity of 2, not two lines.
+///
+/// The old call sites passed the raw setting as `forceNewEntry` for EVERY
+/// product, which inverted it in practice: [AddToCartUseCase]'s
+/// `(!isSoldByWeight || mergeWeight)` clause already blocked weighed items
+/// from merging (callers never passed `mergeWeight` on the tap path), so the
+/// toggle had no effect on weighed items at all and its entire effect landed
+/// on counted ones — the exact opposite of its name and purpose.
+///
+/// Centralised here so the tap path, the barcode path and both product
+/// brands can never drift apart on it again.
+({bool forceNewEntry, bool mergeWeight}) resolveStackingFlags({
+  required bool isSoldByWeight,
+  required bool preventStacking,
+}) =>
+    (
+      forceNewEntry: isSoldByWeight && preventStacking,
+      mergeWeight: isSoldByWeight && !preventStacking,
+    );
+
 /// Use case for adding item to cart
 ///
 /// Pure business logic - no UI or database dependencies

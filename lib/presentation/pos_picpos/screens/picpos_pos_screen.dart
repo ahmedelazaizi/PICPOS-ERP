@@ -15,6 +15,8 @@ import '../../../services/shift_dialog_session_guard.dart';
 import '../../pos/widgets/pos_opening_balance_dialog.dart';
 import '../../../domain/entities/cart_item_entity.dart';
 import '../../../domain/entities/product_entity.dart';
+import '../../../domain/usecases/sales/add_to_cart_usecase.dart'
+    show resolveStackingFlags;
 import '../../../services/cash_drawer_service.dart';
 import '../../../services/journal_entry_diagnostics.dart';
 import '../../widgets/dialogs/app_confirm_dialog.dart';

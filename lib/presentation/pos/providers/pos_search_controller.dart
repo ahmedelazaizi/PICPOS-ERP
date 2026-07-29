@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/logging/diagnostic_logger.dart';
 import '../../../data/providers/providers.dart';
 import '../../../domain/entities/product_entity.dart';
+import '../../../domain/usecases/sales/add_to_cart_usecase.dart'
+    show resolveStackingFlags;
 import '../../../services/server_proxy.dart';
 import '../../../data/database/sync_interceptor.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -199,8 +201,17 @@ class PosSearchController extends Notifier<PosSearchState> {
                      .replaceAll('\u200E', '')
                      .replaceAll('\u200F', '');
 
-    // Read prevent-stacking setting once for all addItem calls in this search
-    final forceNew = ref.read(preventItemStackingProvider).value ?? false;
+    // Read prevent-stacking setting once for all addItem calls in this search.
+    // It is NOT passed straight through as `forceNewEntry` any more — the
+    // setting only governs weighed items (see `resolveStackingFlags`), so each
+    // add site resolves it against the product it is actually adding.
+    final preventStacking =
+        ref.read(preventItemStackingProvider).value ?? false;
+    // Scale-label paths always add a weighed product, so their flags are fixed.
+    final scaleStacking = resolveStackingFlags(
+      isSoldByWeight: true,
+      preventStacking: preventStacking,
+    );
 
     if (barcode.isEmpty) {
       state = state.copyWith(
@@ -236,8 +247,8 @@ class PosSearchController extends Notifier<PosSearchState> {
         cartCtl.addItem(
           scaleResult.product,
           quantity: scaleResult.quantity,
-          mergeWeight: true,
-          forceNewEntry: forceNew,
+          mergeWeight: scaleStacking.mergeWeight,
+          forceNewEntry: scaleStacking.forceNewEntry,
         );
         state = state.copyWith(searchResults: [], clearError: true);
         _playSuccessBeep();
@@ -269,8 +280,8 @@ class PosSearchController extends Notifier<PosSearchState> {
         ref.read(cartControllerProvider.notifier).addItem(
           fallbackProduct,
           quantity: quantity > 0 ? quantity : 1,
-          mergeWeight: true,
-          forceNewEntry: forceNew,
+          mergeWeight: scaleStacking.mergeWeight,
+          forceNewEntry: scaleStacking.forceNewEntry,
         );
         state = state.copyWith(searchResults: [], clearError: true);
         _playSuccessBeep();
@@ -323,10 +334,15 @@ class PosSearchController extends Notifier<PosSearchState> {
           final unitPrice = checkUnit.salePrice > 0
               ? checkUnit.salePrice
               : product.salePrice;
+          final unitStacking = resolveStackingFlags(
+            isSoldByWeight: product.isSoldByWeight,
+            preventStacking: preventStacking,
+          );
           ref.read(cartControllerProvider.notifier).addItem(
             product,
             customPrice: unitPrice,
-            forceNewEntry: forceNew,
+            forceNewEntry: unitStacking.forceNewEntry,
+            mergeWeight: unitStacking.mergeWeight,
           );
           final cartItems = ref.read(cartControllerProvider).items;
           if (cartItems.isNotEmpty) {
@@ -352,12 +368,17 @@ class PosSearchController extends Notifier<PosSearchState> {
     }
 
     if (product != null) {
+      final productStacking = resolveStackingFlags(
+        isSoldByWeight: product.isSoldByWeight,
+        preventStacking: preventStacking,
+      );
       if (unitRecord != null) {
         final unitPrice = unitRecord.salePrice > 0 ? unitRecord.salePrice : product.salePrice;
         ref.read(cartControllerProvider.notifier).addItem(
           product,
           customPrice: unitPrice,
-          forceNewEntry: forceNew,
+          forceNewEntry: productStacking.forceNewEntry,
+          mergeWeight: productStacking.mergeWeight,
         );
         final cartItems = ref.read(cartControllerProvider).items;
         if (cartItems.isNotEmpty) {
@@ -373,7 +394,11 @@ class PosSearchController extends Notifier<PosSearchState> {
           }
         }
       } else {
-        ref.read(cartControllerProvider.notifier).addItem(product, forceNewEntry: forceNew);
+        ref.read(cartControllerProvider.notifier).addItem(
+              product,
+              forceNewEntry: productStacking.forceNewEntry,
+              mergeWeight: productStacking.mergeWeight,
+            );
       }
       
       state = state.copyWith(searchResults: [], clearError: true);
@@ -450,7 +475,15 @@ class PosSearchController extends Notifier<PosSearchState> {
           // Re-lookup from local DB to get full ProductEntity
           product = await productRepo.getProductByBarcode(barcode);
           if (product != null) {
-            ref.read(cartControllerProvider.notifier).addItem(product, forceNewEntry: forceNew);
+            final serverStacking = resolveStackingFlags(
+              isSoldByWeight: product.isSoldByWeight,
+              preventStacking: preventStacking,
+            );
+            ref.read(cartControllerProvider.notifier).addItem(
+                  product,
+                  forceNewEntry: serverStacking.forceNewEntry,
+                  mergeWeight: serverStacking.mergeWeight,
+                );
             state = state.copyWith(searchResults: [], clearError: true);
             _playSuccessBeep();
             debugPrint('[BarcodeSearch] ✓ Found via server fallback: ${product.name}');

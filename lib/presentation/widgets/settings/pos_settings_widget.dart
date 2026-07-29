@@ -848,7 +848,17 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
             FilterChip(label: const Text('إضافة عميل'), selected: _showAddCustomerInPOS, onSelected: (v) => setState(() => _showAddCustomerInPOS = v)),
             FilterChip(label: const Text('نوع الطلب'), selected: _showOrderTypeInPOS, onSelected: (v) => setState(() => _showOrderTypeInPOS = v)),
             FilterChip(label: const Text('اسم العميل بالسلة'), selected: _showAdhocCustomerInPOS, onSelected: (v) => setState(() => _showAdhocCustomerInPOS = v)),
-            FilterChip(label: const Text('منع تراكم الأصناف (سطر جديد)'), selected: _preventItemStacking, onSelected: (v) => setState(() => _preventItemStacking = v)),
+            // العنوان بيقول «أصناف الميزان» صراحةً لأن ده اللي الإعداد بيعمله
+            // فعلاً: أصناف العدد والحبة بتتراكم دايماً مهما كان (شوف
+            // `resolveStackingFlags`). العنوان القديم «منع تراكم الأصناف» كان
+            // بيوعد بحاجة تانية خالص.
+            FilterChip(
+              label: const Text('منع تراكم أصناف الميزان (سطر لكل وزن)'),
+              tooltip: 'كل وزنة ميزان تنزل في سطر مستقل بدل ما تتجمع. '
+                  'أصناف العدد والحبة بتتراكم دايماً في سطر واحد.',
+              selected: _preventItemStacking,
+              onSelected: (v) => setState(() => _preventItemStacking = v),
+            ),
           ],
         ),
         const Divider(thickness: 2),
