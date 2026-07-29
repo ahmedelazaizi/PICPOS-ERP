@@ -56,16 +56,12 @@ class PicPosItemsTable extends ConsumerWidget {
           Expanded(
             child: items.isEmpty
                 ? const _EmptyState()
-                : ListView.builder(
-                    itemCount: items.length,
-                    itemBuilder: (context, i) => _ItemRow(
-                      index: i,
-                      item: items[i],
-                      isSelected: selectedIndex == i,
-                      scale: scale,
-                      onSelect: () => onSelect(i),
-                      onRemove: () => onRemove(i),
-                    ),
+                : _AutoScrollItemList(
+                    items: items,
+                    selectedIndex: selectedIndex,
+                    scale: scale,
+                    onSelect: onSelect,
+                    onRemove: onRemove,
                   ),
           ),
         ],
@@ -83,6 +79,113 @@ const _kFlexPrice = 14;
 const _kFlexDiscount = 12;
 const _kFlexTotal = 16;
 const _kFlexRemove = 6;
+
+/// The line list, with the row the cashier just touched kept on screen.
+///
+/// Without this the cart never scrolled at all: once the lines outgrew the
+/// panel, every further add landed below the fold. The cashier kept scanning
+/// into a list whose last visible row was several items stale — and the
+/// selected-row highlight, which F6/F8 act on, was off-screen too.
+///
+/// It scrolls to the SELECTED row rather than simply to the bottom, because
+/// an add doesn't always append: with «منع تراكم الأصناف» off, adding a
+/// product already in the cart merges into its existing line, which may sit
+/// anywhere. The parent points `selectedIndex` at whichever line changed, so
+/// following the selection is correct in both cases.
+class _AutoScrollItemList extends StatefulWidget {
+  final List<CartItemEntity> items;
+  final int? selectedIndex;
+  final double scale;
+  final ValueChanged<int> onSelect;
+  final ValueChanged<int> onRemove;
+
+  const _AutoScrollItemList({
+    required this.items,
+    required this.selectedIndex,
+    required this.scale,
+    required this.onSelect,
+    required this.onRemove,
+  });
+
+  @override
+  State<_AutoScrollItemList> createState() => _AutoScrollItemListState();
+}
+
+class _AutoScrollItemListState extends State<_AutoScrollItemList> {
+  final ScrollController _controller = ScrollController();
+
+  double get _rowExtent => 44 * widget.scale;
+
+  @override
+  void didUpdateWidget(_AutoScrollItemList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final grew = widget.items.length > oldWidget.items.length;
+    final movedSelection = widget.selectedIndex != oldWidget.selectedIndex;
+    if (grew || movedSelection) _revealSelected();
+  }
+
+  /// Brings the selected row fully into view, scrolling the shortest distance
+  /// that does the job. Deliberately does nothing when the row is already
+  /// visible — yanking the list on every quantity edit would fight the
+  /// cashier for control of the scroll position.
+  void _revealSelected() {
+    final index = widget.selectedIndex;
+    if (index == null || index < 0 || index >= widget.items.length) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_controller.hasClients) return;
+      final position = _controller.position;
+      final extent = _rowExtent;
+      final rowStart = index * extent;
+      final rowEnd = rowStart + extent;
+      final viewStart = position.pixels;
+      final viewEnd = viewStart + position.viewportDimension;
+
+      double? target;
+      if (rowStart < viewStart) {
+        target = rowStart;
+      } else if (rowEnd > viewEnd) {
+        target = rowEnd - position.viewportDimension;
+      }
+      if (target == null) return;
+
+      _controller.animateTo(
+        target.clamp(position.minScrollExtent, position.maxScrollExtent),
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scrollbar(
+      controller: _controller,
+      child: ListView.builder(
+        controller: _controller,
+        // Rows are a fixed `44 * scale` tall, so declaring the extent lets
+        // the list resolve any row's offset arithmetically — that is what
+        // makes scrolling to an arbitrary index possible at all here.
+        itemExtent: _rowExtent,
+        itemCount: widget.items.length,
+        itemBuilder: (context, i) => _ItemRow(
+          index: i,
+          item: widget.items[i],
+          isSelected: widget.selectedIndex == i,
+          scale: widget.scale,
+          onSelect: () => widget.onSelect(i),
+          onRemove: () => widget.onRemove(i),
+        ),
+      ),
+    );
+  }
+}
 
 class _TableHeader extends StatelessWidget {
   final double scale;

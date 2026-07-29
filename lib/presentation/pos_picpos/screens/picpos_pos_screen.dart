@@ -25,6 +25,7 @@ import '../../pos/providers/checkout_controller.dart';
 import '../../pos/providers/pos_controller.dart';
 import '../../pos/providers/pos_notification_provider.dart';
 import '../../pos/providers/pos_search_controller.dart';
+import '../../pos/dialogs/unit_selection_dialog.dart';
 import '../../pos/widgets/held_orders_dialog.dart';
 import '../../pos/widgets/pos_customer_selection_dialog.dart';
 import '../../pos/widgets/pos_dialogs.dart' hide PaymentResult;
@@ -37,6 +38,7 @@ import '../widgets/picpos_payment_panel.dart';
 import '../widgets/picpos_invoice_header.dart';
 import '../widgets/picpos_items_table.dart';
 import '../widgets/picpos_shortcut_bar.dart';
+import '../widgets/picpos_switch_user_dialog.dart';
 import '../widgets/picpos_side_panel.dart';
 import '../widgets/picpos_top_bar.dart';
 import '../widgets/picpos_totals_bar.dart';
@@ -257,6 +259,7 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
                     // يقفل الوردية. الفعل نفسه (10C يبدّله للمعاد تصميمه)؛
                     // حارس الصلاحية يعيش داخل `PicPosTopBar` نفسها.
                     onCloseShift: () => PicposCashierClosingDialog.show(context),
+                    onSwitchUser: _switchUser,
                   ),
                   Expanded(
                     child: Padding(

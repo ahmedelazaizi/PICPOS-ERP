@@ -18,6 +18,7 @@ import '../../data/database/sync_interceptor.dart';
 import '../../services/sync_event_bus.dart';
 import '../pos/providers/cart_controller.dart';
 import '../pos/providers/cfd_controller.dart';
+import '../pos/logic/open_shift_gate.dart';
 import '../pos/widgets/pos_cashier_closing_dialog.dart';
 import '../widgets/inactivity_detector.dart';
 import '../../main_desktop.dart'
@@ -214,57 +215,18 @@ class _AppShellState extends ConsumerState<AppShell> {
     // يجب أن يُغلقها أولاً — لا يُسمح بالخروج وتركها معلّقة (يمنع الورديات
     // المتروكة التي لا تُرصّد معاملاتها). لا يوجد تجاوز، حتى للأدمن.
     // تغيير محايد للعلامة (يستخدم PosCashierClosingDialog المشترك) لينتقل patch.
-    final auth = ref.read(authProvider);
-    final userId = auth.user?.id;
-    if (userId != null) {
-      final treasuryRepo = ref.read(treasuryRepositoryProvider);
-      // النظام-أدمن لا يفتح وردية خاصة به (Spec 135)، لكن لو كان عنده وردية
-      // مفتوحة فعلاً (بدأها كتصرّف تشغيلي) فلا بد أن يُرصّدها كذلك — لذا نفحص
-      // getCurrentOpenShift للجميع.
-      final openShift = await treasuryRepo.getCurrentOpenShift(userId);
-      if (openShift != null && mounted) {
-        final closeNow = await showDialog<bool>(
-          context: context,
-          builder: (ctx) => Directionality(
-            textDirection: TextDirection.rtl,
-            child: AlertDialog(
-              title: const Row(
-                children: [
-                  Icon(PhosphorIconsBold.warningCircle, color: AppColors.warning),
-                  SizedBox(width: 8),
-                  Text('وردية مفتوحة'),
-                ],
-              ),
-              content: Text(
-                'لديك وردية مفتوحة (#${openShift.id}) لم يتم ترصيدها. '
-                'يجب إغلاق الوردية قبل تسجيل الخروج حتى لا تبقى معاملاتها '
-                'دون ترصيد.',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx, false),
-                  child: const Text('إلغاء'),
-                ),
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.error),
-                  onPressed: () => Navigator.pop(ctx, true),
-                  icon: const Icon(PhosphorIconsBold.signOut),
-                  label: const Text('إغلاق الوردية'),
-                ),
-              ],
-            ),
-          ),
-        );
-        if (closeNow == true && mounted) {
-          // ديالوج الإغلاق يسجّل الخروج تلقائياً بعد إغلاق ناجح. لو ألغى
-          // المستخدم فالوردية تبقى مفتوحة وهو يبقى مسجّل الدخول — أي لا خروج
-          // بدون ترصيد.
-          await PosCashierClosingDialog.show(context);
-        }
-        return; // لا نُكمل لمسار الخروج العادي طالما كانت هناك وردية مفتوحة.
-      }
-    }
+    // البوابة نفسها بقت مشتركة مع مسار «تحويل المستخدم» في نقطة البيع
+    // (`ensureShiftClosed`) — نسخة تانية كانت هتبطّل تطابق أول تعديل في أي
+    // منهما. ديالوج الإغلاق يسجّل الخروج تلقائياً بعد إغلاق ناجح؛ ولو ألغى
+    // المستخدم فالوردية تبقى مفتوحة وهو يبقى مسجّل الدخول — أي لا خروج بدون
+    // ترصيد.
+    final gate = await ensureShiftClosed(
+      context: context,
+      ref: ref,
+      reason: 'قبل تسجيل الخروج',
+      showClosingDialog: (ctx) => PosCashierClosingDialog.show(ctx),
+    );
+    if (gate == ShiftGateResult.blocked) return;
 
     if (!mounted) return;
     showDialog(

@@ -176,6 +176,54 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     }
   }
 
+  /// Hand the till to another cashier. Refuses while a shift is open — the
+  /// gate inside the dialog is the same one that guards logout.
+  Future<void> _switchUser() async {
+    // A cart in progress belongs to the outgoing cashier; make them decide
+    // what to do with it before the session changes underneath them.
+    if (ref.read(cartControllerProvider).items.isNotEmpty) {
+      final discard = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => Directionality(
+          textDirection: TextDirection.rtl,
+          child: AlertDialog(
+            title: const Text('السلة غير فارغة'),
+            content: const Text(
+              'فيه أصناف في السلة لسه ما اتحفظتش. تحويل المستخدم هيمسحها. '
+              'تحب تكمّل؟',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('رجوع'),
+              ),
+              ElevatedButton(
+                style:
+                    ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('مسح وتحويل'),
+              ),
+            ],
+          ),
+        ),
+      );
+      if (discard != true || !mounted) return;
+    }
+
+    final switched = await PicposSwitchUserDialog.show(context, ref);
+    if (!mounted) return;
+    if (switched) {
+      setState(() => selectedIndex = null);
+      showPosToast(
+        context,
+        ref,
+        'تم التحويل إلى ${ref.read(authProvider).effectiveUser?.displayName ?? 'المستخدم الجديد'}',
+        type: PosNotificationType.success,
+      );
+      _refocusScanner();
+    }
+  }
+
   // ── Adding items ───────────────────────────────────────────────────────
 
   /// Tapping a card in the product grid.
@@ -185,7 +233,96 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
   /// silently for an out-of-stock item (the card already renders «غير متوفر»),
   /// which is why the cart length is compared before and after rather than
   /// assuming the add landed.
-  void _handleProductTap(ProductEntity product) {
+  ///
+  /// A weighed item cannot be added on a tap alone — it has no quantity until
+  /// something weighs it. PicPos used to add it as quantity 1, i.e. one
+  /// kilogram of whatever the cashier tapped, while still rendering the scale
+  /// badge on the card. The weight prompt below closes that gap; it is the
+  /// same `PosDialogs.showWeightInput` UralCash uses, which short-circuits
+  /// silently when a live scale is connected and stable.
+  Future<void> _handleProductTap(ProductEntity product) async {
+    if (product.isSoldByWeight) {
+      final weight = await PosDialogs.showWeightInput(context, ref, product);
+      // null = cashier cancelled. Adding nothing is the correct outcome.
+      if (weight == null || weight <= 0) {
+        _refocusScanner();
+        return;
+      }
+      if (!mounted) return;
+      await _addProductWithUnits(product, quantity: weight);
+      return;
+    }
+    await _addProductWithUnits(product);
+  }
+
+  /// Adds [product] to the cart, offering the unit picker first when the
+  /// product is sold in more than one packaging unit.
+  Future<void> _addProductWithUnits(
+    ProductEntity product, {
+    double quantity = 1,
+  }) async {
+    final units =
+        await ref.read(productRepositoryProvider).getProductUnits(product.id);
+    if (!mounted) return;
+
+    if (units.length > 1) {
+      final selectedUnit = await UnitSelectionDialog.show(
+        context,
+        productName: product.name,
+        units: units,
+      );
+      // Cancelling the unit picker cancels the whole add — guessing a unit
+      // would silently price the line wrong.
+      if (selectedUnit == null) {
+        _refocusScanner();
+        return;
+      }
+      if (!mounted) return;
+
+      final unitPrice = selectedUnit.salePrice > 0
+          ? selectedUnit.salePrice
+          : product.salePrice;
+      _addToCart(product, quantity: quantity, customPrice: unitPrice);
+
+      final cartItems = ref.read(cartControllerProvider).items;
+      if (cartItems.isNotEmpty) {
+        ref.read(cartControllerProvider.notifier).updateItemUnit(
+              cartItems.length - 1,
+              unitId: selectedUnit.id,
+              unitName: selectedUnit.unitName,
+              quantityInBase: selectedUnit.quantityInBase,
+              unitSalePrice: unitPrice,
+            );
+      }
+      return;
+    }
+
+    _addToCart(product, quantity: quantity);
+  }
+
+  /// The actual cart write, plus the selection/rejection bookkeeping the
+  /// PicPos cart relies on.
+  void _addToCart(
+    ProductEntity product, {
+    double quantity = 1,
+    double? customPrice,
+  }) {
+    // Live-scale duplicate-weight guard. Only for the tap → weight-dialog
+    // flow: two identical PRE-PRINTED labels are two legitimate weighings,
+    // so `searchBarcode` deliberately skips this check. Here, the same
+    // (product, weight) twice within 30s usually means the cashier forgot to
+    // change the item on the scale.
+    bool shouldWarnDuplicate = false;
+    if (product.isSoldByWeight && quantity > 0) {
+      shouldWarnDuplicate = ref
+          .read(posSearchControllerProvider.notifier)
+          .checkAndWarnDuplicateWeight(
+            productId: product.id,
+            productName: product.name,
+            weightKg: quantity,
+          );
+    }
+
     final before = ref.read(cartControllerProvider).items.length;
     final stacking = resolveStackingFlags(
       isSoldByWeight: product.isSoldByWeight,
@@ -193,8 +330,10 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     );
     ref.read(cartControllerProvider.notifier).addItem(
           product,
+          quantity: quantity,
           forceNewEntry: stacking.forceNewEntry,
           mergeWeight: stacking.mergeWeight,
+          customPrice: customPrice,
         );
     final items = ref.read(cartControllerProvider).items;
     if (items.length > before) {
@@ -210,6 +349,58 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
             type: PosNotificationType.error);
       }
     }
+    _refocusScanner();
+
+    // Raised AFTER the add so the cart reflects reality when the cashier
+    // acknowledges. The item stays in the cart either way — the popup only
+    // makes sure a repeated weight cannot go unnoticed.
+    if (shouldWarnDuplicate && mounted) {
+      final msg = ref.read(posSearchControllerProvider).duplicateWeightWarning;
+      // Cleared immediately so a follow-up add with a new weight doesn't
+      // re-trigger the popup from stale state.
+      ref
+          .read(posSearchControllerProvider.notifier)
+          .clearDuplicateWeightWarning();
+      if (msg != null) _showDuplicateWeightDialog(msg);
+    }
+  }
+
+  /// Blocking popup for a repeated live-scale weight. The single button just
+  /// acknowledges — the cart keeps the item.
+  Future<void> _showDuplicateWeightDialog(String message) async {
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          icon: const Icon(PhosphorIconsBold.warning,
+              color: AppColors.warning, size: 44),
+          title: const Text(
+            'تنبيه: نفس الوزن',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          content: Text(
+            message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 14),
+          ),
+          actionsAlignment: MainAxisAlignment.center,
+          actions: [
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.warning,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('متابعة'),
+            ),
+          ],
+        ),
+      ),
+    );
     _refocusScanner();
   }
 

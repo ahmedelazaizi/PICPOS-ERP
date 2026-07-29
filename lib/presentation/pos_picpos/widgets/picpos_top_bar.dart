@@ -25,11 +25,17 @@ class PicPosTopBar extends ConsumerWidget {
   /// `pos_header.dart:384-387`.
   final VoidCallback onCloseShift;
 
+  /// تحويل الوردية لكاشير تاني من غير خروج من التطبيق. الشريحة اللي بتعرض
+  /// اسم المستخدم كانت `Container` جامد بلا `onTap` — والطريقة الوحيدة
+  /// لتغيير الكاشير كانت خروج كامل ورجوع لشاشة الدخول.
+  final VoidCallback onSwitchUser;
+
   const PicPosTopBar({
     super.key,
     required this.onHeldOrders,
     required this.onBack,
     required this.onCloseShift,
+    required this.onSwitchUser,
     this.showBackButton = false,
   });
 
@@ -67,9 +73,12 @@ class PicPosTopBar extends ConsumerWidget {
           const SizedBox(width: 16),
           const _ClockBlock(),
           const Spacer(),
-          _InfoChip(
-            icon: PhosphorIconsBold.user,
+          // شريحة المستخدم بقت زرار «تحويل المستخدم». مبنية كدالة بترجع
+          // widgets قياسية مباشرة (زي `_closeShiftChip`) مش كلاس خاص —
+          // نفس السبب الموضّح تحت عند `PermissionGuard`.
+          _switchUserChip(
             label: user?.displayName ?? 'مستخدم',
+            onPressed: onSwitchUser,
           ),
           const SizedBox(width: 8),
           const _InfoChip(
@@ -227,6 +236,45 @@ class _HeldOrdersButton extends StatelessWidget {
       ),
     );
   }
+}
+
+/// شريحة المستخدم الحالي — دوس عليها يفتح «تحويل المستخدم». مبنية كدالة
+/// ترجع widgets قياسية للسبب الموضّح عند `_closeShiftChip`.
+Widget _switchUserChip({
+  required String label,
+  required VoidCallback onPressed,
+}) {
+  return InkWell(
+    onTap: onPressed,
+    borderRadius: BorderRadius.circular(8),
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(PhosphorIconsBold.user, size: 16, color: Colors.white),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(width: 6),
+          // إشارة إن الشريحة قابلة للضغط — من غيرها بتبان زي باقي شرائح
+          // العرض الجامدة جنبها.
+          const Icon(PhosphorIconsBold.arrowsLeftRight,
+              size: 12, color: Colors.white70),
+        ],
+      ),
+    ),
+  );
 }
 
 /// شريحة «إغلاق الوردية» — نفس أسلوب `_HeldOrdersButton` بصرياً (لون تحذير،
