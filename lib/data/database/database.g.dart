@@ -53278,21 +53278,6 @@ class $StockRequisitionsTable extends StockRequisitions
     } else if (isInserting) {
       context.missing(_toBranchIdMeta);
     }
-    if (data.containsKey('global_id')) {
-      context.handle(
-        _globalIdMeta,
-        globalId.isAcceptableOrUnknown(data['global_id']!, _globalIdMeta),
-      );
-    }
-    if (data.containsKey('fulfilled_by_transfer_id')) {
-      context.handle(
-        _fulfilledByTransferIdMeta,
-        fulfilledByTransferId.isAcceptableOrUnknown(
-          data['fulfilled_by_transfer_id']!,
-          _fulfilledByTransferIdMeta,
-        ),
-      );
-    }
     if (data.containsKey('status')) {
       context.handle(
         _statusMeta,
@@ -53315,6 +53300,21 @@ class $StockRequisitionsTable extends StockRequisitions
       context.handle(
         _createdAtMeta,
         createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('global_id')) {
+      context.handle(
+        _globalIdMeta,
+        globalId.isAcceptableOrUnknown(data['global_id']!, _globalIdMeta),
+      );
+    }
+    if (data.containsKey('fulfilled_by_transfer_id')) {
+      context.handle(
+        _fulfilledByTransferIdMeta,
+        fulfilledByTransferId.isAcceptableOrUnknown(
+          data['fulfilled_by_transfer_id']!,
+          _fulfilledByTransferIdMeta,
+        ),
       );
     }
     return context;
@@ -53414,12 +53414,6 @@ class StockRequisition extends DataClass
     map['from_branch_id'] = Variable<int>(fromBranchId);
     map['to_branch_id'] = Variable<int>(toBranchId);
     map['status'] = Variable<String>(status);
-    if (!nullToAbsent || globalId != null) {
-      map['global_id'] = Variable<String>(globalId);
-    }
-    if (!nullToAbsent || fulfilledByTransferId != null) {
-      map['fulfilled_by_transfer_id'] = Variable<int>(fulfilledByTransferId);
-    }
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
     }
@@ -53427,6 +53421,12 @@ class StockRequisition extends DataClass
       map['created_by'] = Variable<int>(createdBy);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || globalId != null) {
+      map['global_id'] = Variable<String>(globalId);
+    }
+    if (!nullToAbsent || fulfilledByTransferId != null) {
+      map['fulfilled_by_transfer_id'] = Variable<int>(fulfilledByTransferId);
+    }
     return map;
   }
 
@@ -53688,7 +53688,8 @@ class StockRequisitionsCompanion extends UpdateCompanion<StockRequisition> {
       createdBy: createdBy ?? this.createdBy,
       createdAt: createdAt ?? this.createdAt,
       globalId: globalId ?? this.globalId,
-      fulfilledByTransferId: fulfilledByTransferId ?? this.fulfilledByTransferId,
+      fulfilledByTransferId:
+          fulfilledByTransferId ?? this.fulfilledByTransferId,
     );
   }
 
@@ -54692,6 +54693,19 @@ class Shift extends DataClass implements Insertable<Shift> {
   final double? variance;
   final String status;
   final String? notes;
+
+  /// v151 — JSON snapshot of every figure the closing report was printed
+  /// from, captured at close time.
+  ///
+  /// Reprinting a closed shift cannot be done by recomputation alone: the
+  /// **actual** counted amounts are what the cashier typed, and only
+  /// `actualCash` ever had a column — the bank and click counts were buried
+  /// inside the free-text `notes` string. Anything reconstructed without them
+  /// would disagree with the paper the cashier signed, which defeats the
+  /// point of a reprint.
+  ///
+  /// NULL for shifts closed before this column existed; those fall back to
+  /// recomputation and are labelled as such in the UI.
   final String? closingSnapshot;
   final String closingMethod;
   final DateTime createdAt;
@@ -54839,6 +54853,7 @@ class Shift extends DataClass implements Insertable<Shift> {
       variance: serializer.fromJson<double?>(json['variance']),
       status: serializer.fromJson<String>(json['status']),
       notes: serializer.fromJson<String?>(json['notes']),
+      closingSnapshot: serializer.fromJson<String?>(json['closingSnapshot']),
       closingMethod: serializer.fromJson<String>(json['closingMethod']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       globalId: serializer.fromJson<String?>(json['globalId']),
@@ -54864,6 +54879,7 @@ class Shift extends DataClass implements Insertable<Shift> {
       'variance': serializer.toJson<double?>(variance),
       'status': serializer.toJson<String>(status),
       'notes': serializer.toJson<String?>(notes),
+      'closingSnapshot': serializer.toJson<String?>(closingSnapshot),
       'closingMethod': serializer.toJson<String>(closingMethod),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'globalId': serializer.toJson<String?>(globalId),
@@ -54887,6 +54903,7 @@ class Shift extends DataClass implements Insertable<Shift> {
     Value<double?> variance = const Value.absent(),
     String? status,
     Value<String?> notes = const Value.absent(),
+    Value<String?> closingSnapshot = const Value.absent(),
     String? closingMethod,
     DateTime? createdAt,
     Value<String?> globalId = const Value.absent(),
@@ -54907,6 +54924,9 @@ class Shift extends DataClass implements Insertable<Shift> {
     variance: variance.present ? variance.value : this.variance,
     status: status ?? this.status,
     notes: notes.present ? notes.value : this.notes,
+    closingSnapshot: closingSnapshot.present
+        ? closingSnapshot.value
+        : this.closingSnapshot,
     closingMethod: closingMethod ?? this.closingMethod,
     createdAt: createdAt ?? this.createdAt,
     globalId: globalId.present ? globalId.value : this.globalId,
@@ -100006,10 +100026,12 @@ class LandedCostSheetData extends DataClass
   final String sheetNumber;
   final double totalAdditionalCost;
 
-  /// Allocation method: by_value, by_quantity, by_weight, equal
+  /// Allocation method: by_value, by_quantity, equal
+  /// (by_weight is intentionally not offered — deferred; needs a product weight.)
   final String allocationMethod;
 
-  /// Status: draft, applied, cancelled
+  /// Status: draft, applied, cancelled, voided (set when the parent purchase
+  /// invoice is voided — S-COST-2 / Spec 145; its landed JE is reversed).
   final String status;
   final String? notes;
   final int? createdBy;
@@ -162566,6 +162588,8 @@ typedef $$StockRequisitionsTableCreateCompanionBuilder =
       Value<String?> notes,
       Value<int?> createdBy,
       Value<DateTime> createdAt,
+      Value<String?> globalId,
+      Value<int?> fulfilledByTransferId,
     });
 typedef $$StockRequisitionsTableUpdateCompanionBuilder =
     StockRequisitionsCompanion Function({
@@ -162578,6 +162602,8 @@ typedef $$StockRequisitionsTableUpdateCompanionBuilder =
       Value<String?> notes,
       Value<int?> createdBy,
       Value<DateTime> createdAt,
+      Value<String?> globalId,
+      Value<int?> fulfilledByTransferId,
     });
 
 final class $$StockRequisitionsTableReferences
@@ -162717,6 +162743,16 @@ class $$StockRequisitionsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get fulfilledByTransferId => $composableBuilder(
+    column: $table.fulfilledByTransferId,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$BranchesTableFilterComposer get fromBranchId {
     final $$BranchesTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -162852,6 +162888,16 @@ class $$StockRequisitionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get fulfilledByTransferId => $composableBuilder(
+    column: $table.fulfilledByTransferId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$BranchesTableOrderingComposer get fromBranchId {
     final $$BranchesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -162952,6 +162998,14 @@ class $$StockRequisitionsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get globalId =>
+      $composableBuilder(column: $table.globalId, builder: (column) => column);
+
+  GeneratedColumn<int> get fulfilledByTransferId => $composableBuilder(
+    column: $table.fulfilledByTransferId,
+    builder: (column) => column,
+  );
 
   $$BranchesTableAnnotationComposer get fromBranchId {
     final $$BranchesTableAnnotationComposer composer = $composerBuilder(
@@ -163096,6 +163150,8 @@ class $$StockRequisitionsTableTableManager
                 Value<String?> notes = const Value.absent(),
                 Value<int?> createdBy = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<int?> fulfilledByTransferId = const Value.absent(),
               }) => StockRequisitionsCompanion(
                 id: id,
                 requisitionNumber: requisitionNumber,
@@ -163106,6 +163162,8 @@ class $$StockRequisitionsTableTableManager
                 notes: notes,
                 createdBy: createdBy,
                 createdAt: createdAt,
+                globalId: globalId,
+                fulfilledByTransferId: fulfilledByTransferId,
               ),
           createCompanionCallback:
               ({
@@ -163118,6 +163176,8 @@ class $$StockRequisitionsTableTableManager
                 Value<String?> notes = const Value.absent(),
                 Value<int?> createdBy = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<int?> fulfilledByTransferId = const Value.absent(),
               }) => StockRequisitionsCompanion.insert(
                 id: id,
                 requisitionNumber: requisitionNumber,
@@ -163128,6 +163188,8 @@ class $$StockRequisitionsTableTableManager
                 notes: notes,
                 createdBy: createdBy,
                 createdAt: createdAt,
+                globalId: globalId,
+                fulfilledByTransferId: fulfilledByTransferId,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -163821,6 +163883,7 @@ typedef $$ShiftsTableCreateCompanionBuilder =
       Value<double?> variance,
       required String status,
       Value<String?> notes,
+      Value<String?> closingSnapshot,
       Value<String> closingMethod,
       Value<DateTime> createdAt,
       Value<String?> globalId,
@@ -163843,6 +163906,7 @@ typedef $$ShiftsTableUpdateCompanionBuilder =
       Value<double?> variance,
       Value<String> status,
       Value<String?> notes,
+      Value<String?> closingSnapshot,
       Value<String> closingMethod,
       Value<DateTime> createdAt,
       Value<String?> globalId,
@@ -163962,6 +164026,11 @@ class $$ShiftsTableFilterComposer
 
   ColumnFilters<String> get notes => $composableBuilder(
     column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get closingSnapshot => $composableBuilder(
+    column: $table.closingSnapshot,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -164124,6 +164193,11 @@ class $$ShiftsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get closingSnapshot => $composableBuilder(
+    column: $table.closingSnapshot,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get closingMethod => $composableBuilder(
     column: $table.closingMethod,
     builder: (column) => ColumnOrderings(column),
@@ -164271,6 +164345,11 @@ class $$ShiftsTableAnnotationComposer
   GeneratedColumn<String> get notes =>
       $composableBuilder(column: $table.notes, builder: (column) => column);
 
+  GeneratedColumn<String> get closingSnapshot => $composableBuilder(
+    column: $table.closingSnapshot,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get closingMethod => $composableBuilder(
     column: $table.closingMethod,
     builder: (column) => column,
@@ -164413,6 +164492,7 @@ class $$ShiftsTableTableManager
                 Value<double?> variance = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
+                Value<String?> closingSnapshot = const Value.absent(),
                 Value<String> closingMethod = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<String?> globalId = const Value.absent(),
@@ -164433,6 +164513,7 @@ class $$ShiftsTableTableManager
                 variance: variance,
                 status: status,
                 notes: notes,
+                closingSnapshot: closingSnapshot,
                 closingMethod: closingMethod,
                 createdAt: createdAt,
                 globalId: globalId,
@@ -164455,6 +164536,7 @@ class $$ShiftsTableTableManager
                 Value<double?> variance = const Value.absent(),
                 required String status,
                 Value<String?> notes = const Value.absent(),
+                Value<String?> closingSnapshot = const Value.absent(),
                 Value<String> closingMethod = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<String?> globalId = const Value.absent(),
@@ -164475,6 +164557,7 @@ class $$ShiftsTableTableManager
                 variance: variance,
                 status: status,
                 notes: notes,
+                closingSnapshot: closingSnapshot,
                 closingMethod: closingMethod,
                 createdAt: createdAt,
                 globalId: globalId,
