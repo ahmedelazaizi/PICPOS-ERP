@@ -220,15 +220,18 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
             action: () => nav(() => const SalesReportScreen()),
           ),
         ],
-        shortcuts: const [
-          _ReportShortcut('s_today', 'مبيعات اليوم', 'sales_main'),
-          _ReportShortcut('s_range', 'من تاريخ إلى تاريخ', 'sales_main'),
-          _ReportShortcut('s_cashier', 'حسب الكاشير', 'sales_main'),
-          _ReportShortcut('s_branch', 'حسب الفرع', 'sales_main'),
-          _ReportShortcut('s_product', 'حسب الصنف', 'sales_main'),
-          _ReportShortcut('s_group', 'حسب المجموعة', 'sales_main'),
-          _ReportShortcut('s_payment', 'حسب طريقة الدفع', 'sales_main'),
-          _ReportShortcut('s_credit', 'مبيعات آجل / نقدي / فيزا', 'sales_main'),
+        shortcuts: [
+          const _ReportShortcut('s_today', 'مبيعات اليوم', 'sales_main'),
+          const _ReportShortcut('s_range', 'من تاريخ إلى تاريخ', 'sales_main'),
+          const _ReportShortcut('s_cashier', 'حسب الكاشير', 'sales_main'),
+          const _ReportShortcut('s_branch', 'حسب الفرع', 'sales_main'),
+          _ReportShortcut('s_product', 'حسب الصنف', 'sales_main',
+              action: () => nav(() => const TopProductsReportScreen())),
+          _ReportShortcut('s_group', 'حسب المجموعة', 'sales_main',
+              action: () => nav(() => const SalesByClassificationReport())),
+          const _ReportShortcut('s_payment', 'حسب طريقة الدفع', 'sales_main'),
+          const _ReportShortcut(
+              's_credit', 'مبيعات آجل / نقدي / فيزا', 'sales_main'),
         ],
       ),
       _ReportCategory(
@@ -264,12 +267,14 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
             action: () => nav(() => const AnalyticsDashboardScreen()),
           ),
         ],
-        shortcuts: const [
-          _ReportShortcut('p_invoice', 'ربح كل فاتورة', 'category_profit'),
-          _ReportShortcut('p_product', 'ربح كل صنف', 'category_profit'),
-          _ReportShortcut('p_group', 'حسب المجموعة', 'category_profit'),
-          _ReportShortcut('p_cashier', 'حسب الكاشير', 'category_profit'),
-          _ReportShortcut('p_branch', 'حسب الفرع', 'category_profit'),
+        shortcuts: [
+          const _ReportShortcut('p_invoice', 'ربح كل فاتورة', 'category_profit'),
+          _ReportShortcut('p_product', 'ربح كل صنف', 'category_profit',
+              action: () => nav(() => const TopProductsReportScreen())),
+          _ReportShortcut('p_group', 'حسب المجموعة', 'category_profit',
+              action: () => nav(() => const CategoryProfitReportScreen())),
+          const _ReportShortcut('p_cashier', 'حسب الكاشير', 'category_profit'),
+          const _ReportShortcut('p_branch', 'حسب الفرع', 'category_profit'),
         ],
       ),
       _ReportCategory(
@@ -875,7 +880,10 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
         (r) => r.id == shortcut.parentReportId,
         orElse: () => cat.mainReports.first,
       );
-      parent.action();
+      // Honour the shortcut's own destination here too — otherwise finding
+      // «حسب المجموعة» through search would land somewhere different from
+      // clicking the same chip in the category card.
+      (shortcut.action ?? parent.action)();
     } else {
       final entry = item.category.mainReports.firstWhere(
         (r) => r.id == item.id,
@@ -1159,7 +1167,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
       borderRadius: BorderRadius.circular(14),
       onTap: () {
         _registerOpen(s.id);
-        parent.action();
+        (s.action ?? parent.action)();
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -1849,7 +1857,16 @@ class _ReportShortcut {
   final String id;
   final String title;
   final String parentReportId;
-  const _ReportShortcut(this.id, this.title, this.parentReportId);
+
+  /// Destination for shortcuts that lead somewhere OTHER than their parent
+  /// report. Without this every shortcut fell through to `parent.action()`,
+  /// so «حسب المجموعة» opened the plain sales report — the by-category report
+  /// existed and was reachable elsewhere, but this chip never went there,
+  /// which read to users as "the report is missing".
+  final VoidCallback? action;
+
+  const _ReportShortcut(this.id, this.title, this.parentReportId,
+      {this.action});
 }
 
 class _FlatItem {
