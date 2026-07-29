@@ -762,15 +762,19 @@ class SalesRepositoryImpl extends DatabaseAccessor<AppDatabase>
 
   @override
   Future<List<SalesInvoiceItemWithProduct>> getInvoiceItemsWithProduct(int invoiceId) async {
+    // leftOuterJoin, NOT innerJoin: a line whose product row was hard-deleted
+    // must still be returned. An innerJoin dropped it silently, so the invoice
+    // rendered a total its own lines didn't add up to — and re-saving from the
+    // edit screen persisted the invoice without that line.
     final query = db.select(db.salesInvoiceItems).join([
-      innerJoin(db.products, db.products.id.equalsExp(db.salesInvoiceItems.productId)),
+      leftOuterJoin(db.products, db.products.id.equalsExp(db.salesInvoiceItems.productId)),
     ])..where(db.salesInvoiceItems.invoiceId.equals(invoiceId));
 
     final rows = await query.get();
     return rows.map((row) {
       return SalesInvoiceItemWithProduct(
         item: row.readTable(db.salesInvoiceItems),
-        product: row.readTable(db.products),
+        product: row.readTableOrNull(db.products),
       );
     }).toList();
   }

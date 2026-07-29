@@ -128,7 +128,7 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesScreenState {
                           .map(
                             (item) => DataRow(
                               cells: [
-                                DataCell(Text(item.product.name)),
+                                DataCell(Text(item.displayName)),
                                 DataCell(Text(item.item.unitName ?? 'قطعة')),
                                 DataCell(
                                   Text(item.item.quantity.toStringAsFixed(AppConstants.decimalPlaces)),

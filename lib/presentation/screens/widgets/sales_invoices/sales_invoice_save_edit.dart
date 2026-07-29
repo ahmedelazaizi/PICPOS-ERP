@@ -387,7 +387,7 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesScreenState {
       final lineTotal = e.item.quantity * e.item.unitPrice;
       return {
         'productId': e.item.productId,
-        'productName': e.product.name,
+        'productName': e.displayName,
         'quantity': e.item.quantity,
         'unitPrice': e.item.unitPrice,
         'taxRate': e.item.taxRate,

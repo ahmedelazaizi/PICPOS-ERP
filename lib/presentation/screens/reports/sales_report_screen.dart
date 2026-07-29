@@ -54,6 +54,7 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
   List<CostCenter> _costCenters = [];
   Map<int, String> _userNames = {};
   Map<int, String> _warehouseNames = {};
+  Map<int, String> _customerNames = {};
   List<UserWithRole> _allUsers = [];
 
   // Spec 149 B12-4 (FIL-2): the logged-in user's branch authorization scope.
@@ -212,6 +213,21 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
         whMap[w.id] = w.name;
       }
 
+      // Load customer names. The table, the details dialog and the export all
+      // used to print the raw `customerId`, which is meaningless to a user
+      // reading a sales report — "العميل: 34" tells them nothing.
+      // `watchAllCustomersForLookup` on purpose: it ignores `isActive`, so a
+      // customer deactivated after the sale still resolves on a historical
+      // report instead of silently falling back to a bare id.
+      final customers = await ref
+          .read(partiesRepositoryProvider)
+          .watchAllCustomersForLookup()
+          .first;
+      final customerMap = <int, String>{};
+      for (final c in customers) {
+        customerMap[c.id] = c.name;
+      }
+
       setState(() {
         _analytics = analytics;
         _previousAnalytics = prevAnalytics;
@@ -255,6 +271,7 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
         _invoices = filtered;
         _userNames = userMap;
         _warehouseNames = whMap;
+        _customerNames = customerMap;
         _allUsers = users;
       });
     } finally {
@@ -670,11 +687,7 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
                                           _userNames[s.userId] ?? 'غير معروف',
                                         ),
                                       ),
-                                      DataCell(
-                                        Text(
-                                          s.customerId?.toString() ?? 'نقدي',
-                                        ),
-                                      ),
+                                      DataCell(Text(_customerLabel(s))),
                                       DataCell(
                                         Text(
                                           _warehouseNames[s.warehouseId] ?? 'غير محدد',
@@ -700,16 +713,7 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
                                         ),
                                       ),
                                       DataCell(
-                                        Text(
-                                          switch (s.paymentMethod) {
-                                            'cash' => 'نقدي',
-                                            'card' || 'transfer' || 'bank' => 'بطاقة/تحويل',
-                                            'click' => 'كليك',
-                                            'multiple' || 'mixed' => 'متعدد',
-                                            'credit' => 'آجل',
-                                            _ => s.paymentMethod ?? '-',
-                                          },
-                                        ),
+                                        Text(_paymentLabel(s.paymentMethod)),
                                       ),
                                     ],
                                   );
@@ -727,72 +731,262 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
     );
   }
 
+  /// Human-readable customer for an invoice row.
+  ///
+  /// Order matters: an ad-hoc (walk-in-with-a-name) sale stores the name on
+  /// the invoice itself and has no party row, so it must win over the id
+  /// lookup. A sale with neither is a plain cash sale.
+  String _customerLabel(SalesInvoiceData s) {
+    final adhoc = s.adhocCustomerName?.trim();
+    if (adhoc != null && adhoc.isNotEmpty) return adhoc;
+    final id = s.customerId;
+    if (id == null) return 'نقدي';
+    return _customerNames[id] ?? 'عميل #$id';
+  }
+
+  /// Arabic label for a payment method. Shared by the invoice table and the
+  /// details dialog so the same sale never reads two different ways.
+  static String _paymentLabel(String? method) => switch (method) {
+        'cash' => 'نقدي',
+        'card' || 'transfer' || 'bank' => 'بطاقة/تحويل',
+        'click' => 'كليك',
+        'multiple' || 'mixed' => 'متعدد',
+        'credit' => 'آجل',
+        _ => method ?? '-',
+      };
+
+  /// Quantity with just enough precision: weighed lines carry 3 decimals,
+  /// counted lines are whole numbers. Printing `2.0` for two loaves of bread
+  /// (what `toString()` did) reads like a measurement error.
+  static String _qty(double value) {
+    if (value == value.roundToDouble()) return value.toStringAsFixed(0);
+    return value
+        .toStringAsFixed(3)
+        .replaceFirst(RegExp(r'0+$'), '')
+        .replaceFirst(RegExp(r'\.$'), '');
+  }
+
   void _viewInvoice(SalesInvoiceData invoice) async {
-    // We can reuse the dialog logic from PartyStatementScreen if we refactor it,
-    // or implement a quick version here.
     final salesRepo = ref.read(salesRepositoryProvider);
-    final items = await salesRepo.getSalesInvoiceItems(invoice.id);
+    // `getInvoiceItemsWithProduct`, not `getSalesInvoiceItems`: the latter is
+    // a bare SELECT with no join, which is why this dialog used to print
+    // "منتج #20" for every line — there was no name to print.
+    final items = await salesRepo.getInvoiceItemsWithProduct(invoice.id);
 
     if (!mounted) return;
+
+    final remaining = invoice.total - invoice.paid;
+    final currency = AppConstants.currencySymbolEn;
 
     showDialog(
       context: context,
       builder: (context) => Directionality(
         textDirection: ui.TextDirection.rtl,
         child: AlertDialog(
-          title: Text('تفاصيل فاتورة ${invoice.invoiceNumber}'),
+          title: Row(
+            children: [
+              const Icon(PhosphorIconsBold.receipt,
+                  size: 20, color: AppColors.primary),
+              const SizedBox(width: 8),
+              Expanded(child: Text('فاتورة ${invoice.invoiceNumber}')),
+              _StatusPill(status: invoice.status, isLocked: invoice.isLocked),
+            ],
+          ),
           content: SizedBox(
-            width: 600,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('التاريخ: ${_dateFormat.format(invoice.invoiceDate)}'),
-                    Text('العميل: ${invoice.customerId ?? "نقدي"}'),
-                  ],
-                ),
-                const Divider(height: 32),
-                DataTable(
-                  columns: const [
-                    DataColumn(label: Text('المنتج')),
-                    DataColumn(label: Text('الكمية')),
-                    DataColumn(label: Text('السعر')),
-                    DataColumn(label: Text('الإجمالي')),
-                  ],
-                  rows: items
-                      .map(
-                        (item) => DataRow(
-                          cells: [
-                            DataCell(
-                              Text('منتج #${item.productId}'),
-                            ), // Ideally fetch name
-                            DataCell(Text(item.quantity.toString())),
-                            DataCell(Text(item.unitPrice.toString())),
-                            DataCell(Text(item.total.toString())),
-                          ],
+            width: 720,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // ── Header facts ───────────────────────────────────────
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Wrap(
+                      spacing: 28,
+                      runSpacing: 10,
+                      children: [
+                        _MetaField(
+                          label: 'التاريخ',
+                          value: _dateFormat.format(invoice.invoiceDate),
                         ),
-                      )
-                      .toList(),
-                ),
-                const Divider(height: 32),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Text(
-                      'الإجمالي النهائي: ${invoice.total} ${AppConstants.currencySymbolEn}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
+                        _MetaField(
+                          label: 'العميل',
+                          value: _customerLabel(invoice),
+                        ),
+                        _MetaField(
+                          label: 'الكاشير',
+                          value: _userNames[invoice.userId] ?? 'غير معروف',
+                        ),
+                        _MetaField(
+                          label: 'المخزن',
+                          value: _warehouseNames[invoice.warehouseId] ??
+                              'غير محدد',
+                        ),
+                        _MetaField(
+                          label: 'طريقة الدفع',
+                          value: _paymentLabel(invoice.paymentMethod),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // ── Lines ──────────────────────────────────────────────
+                  if (items.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 24),
+                      child: Text(
+                        'لا توجد أصناف على هذه الفاتورة',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: AppColors.textMuted),
+                      ),
+                    )
+                  else
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: DataTable(
+                        headingRowHeight: 38,
+                        dataRowMinHeight: 34,
+                        dataRowMaxHeight: 44,
+                        columns: const [
+                          DataColumn(label: Text('الصنف')),
+                          DataColumn(label: Text('الكمية'), numeric: true),
+                          DataColumn(label: Text('السعر'), numeric: true),
+                          DataColumn(label: Text('الخصم'), numeric: true),
+                          DataColumn(label: Text('الضريبة'), numeric: true),
+                          DataColumn(label: Text('الإجمالي'), numeric: true),
+                        ],
+                        rows: items.map((row) {
+                          final line = row.item;
+                          // A line whose product row is gone is rendered in
+                          // muted italics rather than dropped — an invoice
+                          // whose lines don't add up to its total is worse
+                          // than one that admits a deleted item.
+                          final missing = row.product == null;
+                          return DataRow(
+                            cells: [
+                              DataCell(
+                                Text(
+                                  row.displayName,
+                                  style: TextStyle(
+                                    fontStyle: missing
+                                        ? FontStyle.italic
+                                        : FontStyle.normal,
+                                    color:
+                                        missing ? AppColors.textMuted : null,
+                                  ),
+                                ),
+                              ),
+                              DataCell(Text(
+                                '${_qty(line.quantity)}'
+                                '${line.unitName != null ? ' ${line.unitName}' : ''}',
+                              )),
+                              DataCell(
+                                  Text(_currencyFormat.format(line.unitPrice))),
+                              DataCell(
+                                  Text(_currencyFormat.format(line.discount))),
+                              DataCell(
+                                  Text(_currencyFormat.format(line.taxAmount))),
+                              DataCell(Text(
+                                _currencyFormat.format(line.total),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold),
+                              )),
+                            ],
+                          );
+                        }).toList(),
+                      ),
+                    ),
+
+                  const SizedBox(height: 16),
+
+                  // ── Totals ─────────────────────────────────────────────
+                  Align(
+                    alignment: AlignmentDirectional.centerEnd,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 320),
+                      child: Column(
+                        children: [
+                          _TotalRow(
+                            label: 'الإجمالي الفرعي',
+                            value:
+                                '${_currencyFormat.format(invoice.subtotal)} $currency',
+                          ),
+                          if (invoice.discount != 0)
+                            _TotalRow(
+                              label: 'الخصم',
+                              value:
+                                  '${_currencyFormat.format(invoice.discount)} $currency',
+                              color: AppColors.warning,
+                            ),
+                          if (invoice.tax != 0)
+                            _TotalRow(
+                              label: 'الضريبة',
+                              value:
+                                  '${_currencyFormat.format(invoice.tax)} $currency',
+                            ),
+                          if (invoice.deliveryFee != 0)
+                            _TotalRow(
+                              label: 'رسوم التوصيل',
+                              value:
+                                  '${_currencyFormat.format(invoice.deliveryFee)} $currency',
+                            ),
+                          const Divider(height: 18),
+                          _TotalRow(
+                            label: 'الإجمالي',
+                            value:
+                                '${_currencyFormat.format(invoice.total)} $currency',
+                            emphasize: true,
+                          ),
+                          _TotalRow(
+                            label: 'المدفوع',
+                            value:
+                                '${_currencyFormat.format(invoice.paid)} $currency',
+                            color: AppColors.success,
+                          ),
+                          _TotalRow(
+                            label: 'المتبقي',
+                            value:
+                                '${_currencyFormat.format(remaining)} $currency',
+                            color: remaining > 0
+                                ? AppColors.error
+                                : AppColors.success,
+                            emphasize: remaining > 0,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  if ((invoice.notes ?? '').trim().isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: Text(
+                        'ملاحظات: ${invoice.notes!.trim()}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                     ),
                   ],
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           actions: [
+            TextButton.icon(
+              onPressed: () => _printInvoice(invoice, items),
+              icon: const Icon(PhosphorIconsBold.printer, size: 16),
+              label: const Text('طباعة'),
+            ),
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: const Text('إغلاق'),
@@ -801,6 +995,43 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _printInvoice(
+    SalesInvoiceData invoice,
+    List<SalesInvoiceItemWithProduct> items,
+  ) async {
+    try {
+      final settingsRepo = ref.read(settingsRepositoryProvider);
+      await InvoiceGenerator.printSalesInvoice(
+        invoiceNumber: invoice.invoiceNumber,
+        date: invoice.invoiceDate,
+        customerName: _customerLabel(invoice),
+        items: items
+            .map((row) => InvoiceItem(
+                  name: row.displayName,
+                  quantity: row.item.quantity,
+                  price: row.item.unitPrice,
+                  total: row.item.total,
+                  note: row.item.note,
+                ))
+            .toList(),
+        subtotal: invoice.subtotal,
+        discount: invoice.discount,
+        tax: invoice.tax,
+        total: invoice.total,
+        paid: invoice.paid,
+        notes: invoice.notes,
+        companyName: await settingsRepo.getSetting('company_name'),
+        companyAddress: await settingsRepo.getSetting('company_address'),
+        companyPhone: await settingsRepo.getSetting('company_phone'),
+        companyTaxId: await settingsRepo.getSetting('company_tax_id'),
+        db: ref.read(databaseProvider),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      AppToast.show(context, 'تعذّرت الطباعة: $e', type: ToastType.error);
+    }
   }
 
   Future<void> _exportToExcel() async {
@@ -823,7 +1054,7 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
             (SalesInvoiceData s) => [
               s.invoiceNumber,
               _dateFormat.format(s.invoiceDate),
-              s.customerId ?? 'نقدي',
+              _customerLabel(s),
               _warehouseNames[s.warehouseId] ?? 'غير محدد',
               s.total,
               s.paid,
@@ -893,5 +1124,103 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
   double? _calcChange(double current, double? previous) {
     if (previous == null || previous == 0) return null;
     return ((current - previous) / previous) * 100;
+  }
+}
+/// Small label-over-value block used in the invoice details header.
+class _MetaField extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _MetaField({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        ),
+      ],
+    );
+  }
+}
+
+/// One line of the totals stack in the invoice details dialog.
+class _TotalRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color? color;
+  final bool emphasize;
+
+  const _TotalRow({
+    required this.label,
+    required this.value,
+    this.color,
+    this.emphasize = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final style = TextStyle(
+      fontSize: emphasize ? 15 : 13,
+      fontWeight: emphasize ? FontWeight.bold : FontWeight.w500,
+      color: color,
+    );
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: style),
+          Text(value, style: style),
+        ],
+      ),
+    );
+  }
+}
+
+/// Status chip in the invoice details title. A posted (locked) invoice is
+/// called out explicitly because it cannot be edited — the cashier asking
+/// "why can't I change this?" should be able to see the answer.
+class _StatusPill extends StatelessWidget {
+  final String status;
+  final bool isLocked;
+
+  const _StatusPill({required this.status, required this.isLocked});
+
+  @override
+  Widget build(BuildContext context) {
+    final (String label, Color color) = switch (status) {
+      'cancelled' || 'canceled' => ('ملغاة', AppColors.error),
+      'returned' => ('مرتجعة', AppColors.warning),
+      'draft' => ('مسودة', AppColors.textMuted),
+      _ => isLocked
+          ? ('مُرحّلة', AppColors.success)
+          : ('مكتملة', AppColors.success),
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+          color: color,
+        ),
+      ),
+    );
   }
 }

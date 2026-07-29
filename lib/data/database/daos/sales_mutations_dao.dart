@@ -1232,15 +1232,14 @@ extension SalesMutationsDao on AppDatabase {
   }
 
   /// Get sales invoice items with their product data (for details dialog)
-  Future<List<({SalesInvoiceItem item, Product product})>>
+  /// [product] is nullable: a line whose product row is gone must still be
+  /// returned, otherwise the dialog shows a total its lines don't explain.
+  Future<List<({SalesInvoiceItem item, Product? product})>>
   getSalesInvoiceItemsWithProduct(int invoiceId) async {
     final items = await getSalesInvoiceItems(invoiceId);
-    final result = <({SalesInvoiceItem item, Product product})>[];
+    final result = <({SalesInvoiceItem item, Product? product})>[];
     for (final item in items) {
-      final product = await getProductById(item.productId);
-      if (product != null) {
-        result.add((item: item, product: product));
-      }
+      result.add((item: item, product: await getProductById(item.productId)));
     }
     return result;
   }

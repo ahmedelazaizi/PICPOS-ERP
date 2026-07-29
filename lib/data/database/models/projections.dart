@@ -13,11 +13,23 @@ class PurchaseInvoiceItemWithProduct {
 }
 
 /// Helper class for Sales Invoice Item with Product data
+///
+/// [product] is nullable on purpose. `sales_invoice_items` stores no product
+/// name, so every display path has to join — and the join used to be an
+/// `innerJoin`, which silently DROPPED any line whose product row was gone.
+/// That produced invoices whose totals its own lines could not explain, and
+/// on the edit path it meant re-saving an invoice quietly lost the line.
+/// Surfacing the null lets callers render a "صنف محذوف" placeholder instead.
 class SalesInvoiceItemWithProduct {
   final SalesInvoiceItem item;
-  final Product product;
+  final Product? product;
 
   SalesInvoiceItemWithProduct({required this.item, required this.product});
+
+  /// Display name for the line, falling back to the id when the product row
+  /// is missing. Never returns an empty string.
+  String get displayName =>
+      product?.name ?? 'صنف محذوف #${item.productId}';
 }
 
 /// Helper class for Purchase Analytics
