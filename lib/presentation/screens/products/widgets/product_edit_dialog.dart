@@ -59,6 +59,13 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
 
   bool _saving = false;
 
+  // Built ONCE, not inside build(). `FutureBuilder` restarts whenever it is
+  // handed a new Future, so creating these inline made every `setState` flip
+  // the selectors back to an empty option list — which is what stopped the
+  // category name from ever rendering (see `_buildCategorySelector`).
+  Future<List<Category>>? _categoriesFuture;
+  Future<List<Party>>? _suppliersFuture;
+
   late TabController _tabController;
 
   @override
@@ -600,12 +607,19 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
   }
 
   Widget _buildCategorySelector() {
-    final repository = ref.read(productRepositoryProvider);
+    _categoriesFuture ??= ref.read(productRepositoryProvider).getCategories();
     return FutureBuilder<List<Category>>(
-      future: repository.getCategories(),
+      future: _categoriesFuture,
       builder: (context, snapshot) {
         final categories = snapshot.data ?? [];
         return Autocomplete<Category>(
+          // `RawAutocomplete` reads `initialValue` exactly once, in its own
+          // initState. On the first build the categories haven't loaded yet,
+          // so the resolved name is '' — and without a key the element is
+          // reused when they arrive, leaving the field permanently blank on
+          // edit even though `selectedCategoryId` was correct all along.
+          // Keying on both inputs forces a fresh State once either changes.
+          key: ValueKey('category-${categories.length}-$selectedCategoryId'),
           optionsBuilder: (textValue) {
             if (textValue.text.isEmpty) return categories;
             return categories.where(
@@ -661,12 +675,14 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
   }
 
   Widget _buildSupplierSelector() {
-    final repository = ref.read(productRepositoryProvider);
+    _suppliersFuture ??= ref.read(productRepositoryProvider).getSuppliers();
     return FutureBuilder<List<Party>>(
-      future: repository.getSuppliers(),
+      future: _suppliersFuture,
       builder: (context, snapshot) {
         final suppliers = snapshot.data ?? [];
         return Autocomplete<Party>(
+          // Same one-shot `initialValue` trap as the category selector above.
+          key: ValueKey('supplier-${suppliers.length}-$selectedSupplierId'),
           optionsBuilder: (textValue) {
             if (textValue.text.isEmpty) return suppliers;
             return suppliers.where(

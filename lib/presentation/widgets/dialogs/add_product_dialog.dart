@@ -98,6 +98,14 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
   bool _showWarehousePrices = false;
   final List<_WarehousePriceRow> _warehousePriceRows = [];
 
+  // Built ONCE, not inside build(). A Future created inline makes its
+  // `FutureBuilder` restart on every setState, which empties the option list
+  // and (combined with `Autocomplete`'s one-shot `initialValue`) blanks the
+  // field. Harmless here because add mode starts with no selection, but the
+  // same shape is what broke the edit dialog — fixed in both to keep it fixed.
+  Future<List<Category>>? _categoriesFuture;
+  Future<List<Party>>? _suppliersFuture;
+
   // Multi-unit packaging rows (up to 5 units)
   bool _showPackagingUnits = false;
   final List<_ProductUnitRow> _unitRows = [];
@@ -314,12 +322,15 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
 
                 // Category Dropdown
                 FutureBuilder<List<Category>>(
-                  future: ref.read(productRepositoryProvider).getCategories(),
+                  future: _categoriesFuture ??=
+                      ref.read(productRepositoryProvider).getCategories(),
                   builder: (context, snapshot) {
                     final categories = snapshot.data ?? [];
                     return SizedBox(
                       height: 44,
                       child: Autocomplete<Category>(
+                        key: ValueKey(
+                            'category-${categories.length}-$_selectedCategoryId'),
                         initialValue: TextEditingValue(
                           text: _selectedCategoryId != null
                               ? (categories.where((c) => c.id == _selectedCategoryId).firstOrNull?.name ?? '')
@@ -415,10 +426,13 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                 if (!widget.simplified) ...[
                   const SizedBox(height: 8),
                   FutureBuilder<List<Party>>(
-                    future: ref.read(productRepositoryProvider).getSuppliers(),
+                    future: _suppliersFuture ??=
+                        ref.read(productRepositoryProvider).getSuppliers(),
                     builder: (context, snapshot) {
                       final suppliers = snapshot.data ?? [];
                       return Autocomplete<Party>(
+                        key: ValueKey(
+                            'supplier-${suppliers.length}-$_selectedSupplierId'),
                         initialValue: TextEditingValue(
                           text: _selectedSupplierId != null
                               ? (suppliers.where((s) => s.id == _selectedSupplierId).firstOrNull?.name ?? '')
