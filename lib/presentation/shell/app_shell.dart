@@ -226,7 +226,11 @@ class _AppShellState extends ConsumerState<AppShell> {
       reason: 'قبل تسجيل الخروج',
       showClosingDialog: (ctx) => PosCashierClosingDialog.show(ctx),
     );
-    if (gate == ShiftGateResult.blocked) return;
+    // `clear` وحدها هي اللي بتكمّل. `closed` معناها إن ديالوج الإغلاق قفل
+    // الوردية **وسجّل الخروج بنفسه** — فالاستمرار هنا كان هيعرض ديالوج «تريد
+    // تسجيل الخروج؟» لمستخدم خارج بالفعل. و`blocked` معناها الوردية لسه
+    // مفتوحة. السلوك هنا ما اتغيرش عن قبل إضافة `closed`.
+    if (gate != ShiftGateResult.clear) return;
 
     if (!mounted) return;
     showDialog(

@@ -28,18 +28,32 @@ import '../../pos/providers/pos_closing_controller.dart';
 // المنطق المتبقي لازم يكون مطابق حرفياً للأصل.
 /// Dialog for cashier shift closing and reconciliation — نسخة PicPos.
 class PicposCashierClosingDialog extends ConsumerStatefulWidget {
-  const PicposCashierClosingDialog({super.key});
+  /// يسجّل الخروج تلقائياً بعد إغلاق ناجح. الافتراضي `true` — ده سلوك الديالوج
+  /// من الأصل وكل مستدعياته القديمة معتمدة عليه.
+  ///
+  /// ── ليه بقى قابل للإطفاء ─────────────────────────────────────────────────
+  /// الديالوج كان بيفترض إن «إغلاق الوردية» = «انتهت الجلسة»، فبينادي
+  /// `logout()` بلا شرط. الافتراض ده صح لمسار تسجيل الخروج، وغلط لمسار **تحويل
+  /// المستخدم**: هناك إغلاق الوردية خطوة وسط في تسليم التِل، والخروج لشاشة
+  /// الدخول هو بالظبط اللي التحويل موجود عشان يمنعه.
+  final bool logoutAfterClose;
+
+  const PicposCashierClosingDialog({super.key, this.logoutAfterClose = true});
 
   @override
   ConsumerState<PicposCashierClosingDialog> createState() =>
       _PicposCashierClosingDialogState();
 
   /// Static helper to show the dialog
-  static Future<void> show(BuildContext context) async {
+  static Future<void> show(
+    BuildContext context, {
+    bool logoutAfterClose = true,
+  }) async {
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const PicposCashierClosingDialog(),
+      builder: (context) =>
+          PicposCashierClosingDialog(logoutAfterClose: logoutAfterClose),
     );
   }
 }
@@ -1150,7 +1164,12 @@ class _PicposCashierClosingDialogState
           );
         }
         Navigator.pop(context); // Close dialog
-        ref.read(authProvider.notifier).logout();
+        // مسار تحويل المستخدم بيمرّر `false`: الوردية اتقفلت واتصفّت، والجلسة
+        // الجاية هتتحدّد من ديالوج التحويل — الخروج هنا كان بيقطع المسار ويودّي
+        // الكاشير لشاشة الدخول.
+        if (widget.logoutAfterClose) {
+          ref.read(authProvider.notifier).logout();
+        }
         showPosToast(context, ref, 'تم إغلاق الوردية وطباعة التقرير بنجاح', type: PosNotificationType.success);
       }
     } catch (e) {

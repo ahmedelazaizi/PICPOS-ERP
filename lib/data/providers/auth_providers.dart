@@ -335,6 +335,47 @@ class AuthNotifier extends Notifier<AuthState> {
     unawaited(_refreshActorBranchScope());
   }
 
+  /// Hand the session from the current user to [incoming] in one step.
+  ///
+  /// ── ليه دالة واحدة مش `logout()` بعدها `login()` ─────────────────────────
+  /// ده مش تفضيل شكلي — `logout()` بتصفّر `state` لـ `AuthState()` الفاضية،
+  /// و`main.dart` بيحط **مفتاح على `MaterialApp` نفسه** مبني على حالة المصادقة:
+  ///
+  /// ```dart
+  /// final isAuthenticated = ref.watch(authProvider).isAuthenticated;
+  /// return MaterialApp(key: ValueKey('app_auth_$isAuthenticated'), …);
+  /// ```
+  ///
+  /// فلحظة واحدة بـ `isAuthenticated == false` معناها **مفتاح جديد** → فلاتر
+  /// بتهدم شجرة الودجت كلها وتبنيها من الأول على شاشة الدخول، وكل ديالوج مفتوح
+  /// بيموت معاها — بما فيه ديالوج التحويل اللي بنكون واقفين فيه. أي إن
+  /// `logout()` ثم `login()` كان هيعمل بالظبط العرض اللي التحويل موجود عشان
+  /// يمنعه، حتى لو النداءين ورا بعض بسطر واحد.
+  ///
+  /// فالتنظيف هنا بيحصل **بلا لحظة الفراغ دي**: نفس تنظيف [logout] بالحرف،
+  /// وبعده [login] فوراً — والحالة بتنتقل من مستخدم لمستخدم مباشرة.
+  ///
+  /// ── وليه مش نداءات مفكوكة في ديالوج التحويل ──────────────────────────────
+  /// كان التحويل بينادي `login()` وبس، فالتنظيف اللي في `logout()` كان بيتفوّت:
+  /// توكنات السيرفر المخزّنة، وحدّ محاولات الدخول، وعلامات «اتسأل يفتح وردية».
+  /// حطّها هنا معناه إن أي مسار تحويل جاي بياخدها غصب عنه.
+  void switchUser(UserWithRole incoming) {
+    // ── تنظيف جلسة الخارج ──
+    LoginRateLimiter.reset();
+    // توكنات وإثباتات السيرفر مفهرسة بـ userId فالجاي مايقدرش يركب على توكن
+    // الخارج أصلاً — بننضّفها عشان ما تفضلش في الذاكرة بلا داعي، ونفس نية
+    // Spec 151 P1-8: «الجاي يبدأ بلا هوية موروثة».
+    ServerProxy.instance.clearSessions();
+    // Feature 012 / Issue C-SHIFT-LOOP — من غيرها تحويل A→B→A بيسيب A متعلّم
+    // إنه اتسأل يفتح وردية، فما يتسألش تاني.
+    clearShiftDialogPromptedUsers();
+
+    // ── دخول الجاي ──
+    // `login` بتبني `AuthState` جديدة (فالترقية المؤقتة بتسقط)، وبتعيد نشر
+    // هوية التزامن، وبتصفّر نطاق الفروع وتعيد تحميله.
+    login(incoming);
+  }
+
   void elevate(UserWithRole adminUser) {
     if (!state.isAuthenticated) return;
     state = state.copyWith(

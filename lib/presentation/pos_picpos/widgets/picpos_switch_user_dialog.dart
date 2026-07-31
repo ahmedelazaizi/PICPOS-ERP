@@ -32,8 +32,15 @@ class PicposSwitchUserDialog extends ConsumerStatefulWidget {
       context: context,
       ref: ref,
       reason: 'قبل تحويل المستخدم',
-      showClosingDialog: (ctx) => PicposCashierClosingDialog.show(ctx),
+      // `logoutAfterClose: false` هو بيت القصيد: الديالوج بيقفل الوردية ويصفّيها
+      // ويطبع تقريرها، **ومايسجّلش الخروج** — فالتحويل بيكمّل على نفس الشاشة.
+      // من غيرها كان الكاشير يلاقي نفسه على شاشة الدخول ويرجع يدخل يدوي، وهي
+      // الشكوى اللي المسار ده موجود عشانها.
+      showClosingDialog: (ctx) =>
+          PicposCashierClosingDialog.show(ctx, logoutAfterClose: false),
     );
+    // `clear` (مفيش وردية) و `closed` (اتقفلت دلوقتي) الاتنين بيكمّلوا.
+    // `blocked` بس هي اللي بتوقف — الكاشير ألغى والوردية لسه مفتوحة.
     if (gate == ShiftGateResult.blocked || !context.mounted) return false;
 
     final switched = await showDialog<bool>(
@@ -128,7 +135,10 @@ class _PicposSwitchUserDialogState
       ref.invalidate(userRoleProvider);
       ref.invalidate(activeBranchIdProvider);
 
-      ref.read(authProvider.notifier).login(authenticated);
+      // `switchUser` مش `login`: بتعمل تنظيف جلسة الخارج (توكنات السيرفر، حدّ
+      // محاولات الدخول، علامات «اتسأل يفتح وردية») ثم تدخّل الجاي في خطوة
+      // واحدة — بلا لحظة «مفيش مستخدم» اللي كانت هتقذف الكاشير لشاشة الدخول.
+      ref.read(authProvider.notifier).switchUser(authenticated);
 
       try {
         await logger.logLogin(

@@ -7,11 +7,24 @@ import '../../../data/providers/providers.dart';
 
 /// Outcome of [ensureShiftClosed].
 enum ShiftGateResult {
-  /// No open shift — the caller may proceed.
+  /// No open shift to begin with — the caller may proceed.
   clear,
 
-  /// The user has an open shift. The caller MUST NOT proceed; either the
-  /// closing dialog was shown or the user backed out.
+  /// There WAS an open shift and it has now been settled. The caller may
+  /// proceed **if** it asked the closing dialog not to end the session.
+  ///
+  /// ── ليه حالة منفصلة عن [blocked] ─────────────────────────────────────────
+  /// قبل كده كانت البوابة بترجع `blocked` في الحالتين — «المستخدم ألغى» و«قفل
+  /// بنجاح» — وده كان مقبول وقت ما كان ليها مستدعي واحد (تسجيل الخروج)، لأن
+  /// ديالوج الإغلاق بيسجّل الخروج بنفسه فمكانش فيه فرق عملي.
+  ///
+  /// لكن مسار «تحويل المستخدم» **محتاج** يكمّل بعد الإغلاق الناجح، وبالحالة
+  /// الواحدة كان بيقف — فديالوج التبديل عمره ما فتح، والكاشير كان بيلاقي نفسه
+  /// على شاشة تسجيل الدخول. الفرق بين الحالتين هو الإصلاح.
+  closed,
+
+  /// The user has an open shift and it is STILL open — they cancelled. No
+  /// caller may proceed.
   blocked,
 }
 
@@ -79,10 +92,26 @@ Future<ShiftGateResult> ensureShiftClosed({
     ),
   );
 
-  if (closeNow == true && context.mounted) {
-    await showClosingDialog(context);
+  if (closeNow != true || !context.mounted) return ShiftGateResult.blocked;
+
+  await showClosingDialog(context);
+
+  // ── ليه بنسأل قاعدة البيانات تاني بدل ما نصدّق الديالوج ────────────────────
+  // `showClosingDialog` نوعها `Future<void>` — مابترجعش نجاح أو فشل، والكاشير
+  // ممكن يقفل الديالوج بلا ما يقفل الوردية، أو الإغلاق نفسه يرمي. فالمصدر
+  // الوحيد الموثوق هو الوردية نفسها: لو بقت مقفولة يبقى قُفلت.
+  //
+  // ودي كمان بتخلّي البوابة تفضل صح لو أي ديالوج إغلاق (PicPos أو UralCash أو
+  // أي واحد جاي) غيّر سلوكه الداخلي.
+  try {
+    final stillOpen =
+        await ref.read(treasuryRepositoryProvider).getCurrentOpenShift(userId);
+    return stillOpen == null
+        ? ShiftGateResult.closed
+        : ShiftGateResult.blocked;
+  } catch (_) {
+    // مقدرناش نتأكد → نفترض الأسوأ. `blocked` بتوقف المستدعي، وده الفشل الآمن:
+    // وردية مفتوحة بتفضل مفتوحة أحسن من تحويل مستخدم فوق وردية لسه شغّالة.
+    return ShiftGateResult.blocked;
   }
-  // Blocked either way: if the user cancelled, the shift is still open; if
-  // they closed it, the closing dialog owns what happens next.
-  return ShiftGateResult.blocked;
 }
