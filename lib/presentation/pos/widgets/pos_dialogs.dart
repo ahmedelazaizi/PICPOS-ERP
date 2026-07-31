@@ -258,10 +258,18 @@ class PosDialogs {
   }
 
   /// Show payment dialog with Split Payment support
+  ///
+  /// [allowedMethods] restricts which method chips are offered. Pass `null`
+  /// (the default) for every method — that is what the UralCash till does, so
+  /// its dialog is unchanged. The PicPos till passes the cashier's actual
+  /// payment permissions, because after the PicPos payment panel lost its
+  /// method buttons this dialog became the ONLY place a method is chosen, and
+  /// the `PermissionGuard`s that used to wrap those buttons had to move here.
   static Future<PaymentResult?> showPaymentDialog(
     BuildContext context, {
     required double totalAmount,
     String initialMethod = 'cash',
+    Set<String>? allowedMethods,
   }) async {
     return showDialog<PaymentResult>(
       context: context,
@@ -271,6 +279,7 @@ class PosDialogs {
         child: _PaymentDialog(
           totalAmount: totalAmount,
           initialMethod: initialMethod,
+          allowedMethods: allowedMethods,
         ),
       ),
     );

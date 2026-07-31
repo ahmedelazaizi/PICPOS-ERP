@@ -24,6 +24,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/providers.dart';
+import 'picpos_pos_text.dart';
 
 /// زرار الترس. بيتحط أعلى السلة جنب «مسح الكل».
 class PicPosDisplaySettingsButton extends StatelessWidget {
@@ -47,20 +48,13 @@ class PicPosDisplaySettingsButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(6),
           border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
         ),
-        child: const Row(
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(PhosphorIconsBold.slidersHorizontal,
+            const Icon(PhosphorIconsBold.slidersHorizontal,
                 size: 13, color: AppColors.primary),
-            SizedBox(width: 4),
-            Text(
-              'العرض',
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: AppColors.primary,
-              ),
-            ),
+            const SizedBox(width: 4),
+            Text('العرض', style: PicPosText.v(10, color: AppColors.primary)),
           ],
         ),
       ),
@@ -260,11 +254,7 @@ class _Slider extends StatelessWidget {
             children: [
               Icon(icon, size: 15, color: AppColors.primary),
               const SizedBox(width: 6),
-              Expanded(
-                child: Text(label,
-                    style: const TextStyle(
-                        fontSize: 13, fontWeight: FontWeight.w600)),
-              ),
+              Expanded(child: Text(label, style: PicPosText.v(13))),
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -273,10 +263,7 @@ class _Slider extends StatelessWidget {
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(display,
-                    style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primary)),
+                    style: PicPosText.v(11, color: AppColors.primary)),
               ),
             ],
           ),

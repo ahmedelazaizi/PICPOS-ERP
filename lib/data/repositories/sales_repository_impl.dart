@@ -239,7 +239,35 @@ class SalesRepositoryImpl extends DatabaseAccessor<AppDatabase>
 
   @override
   Stream<List<SalesInvoiceData>> watchTodaySalesForUser(int userId) {
+    // Branch scoping added for parity with watchTodaySales/watchSalesSince —
+    // this stream is the cashier's fallback when no shift is open, and it was
+    // the only one of the four that showed rows from every branch.
+    if (SyncInterceptor.isClientMode) {
+      return Stream.fromFuture(_getClientWarehouseIds()).asyncExpand((whIds) {
+        return db.watchTodaySalesForUser(
+          userId,
+          warehouseIds: whIds.isNotEmpty ? whIds : null,
+        );
+      });
+    }
     return db.watchTodaySalesForUser(userId);
+  }
+
+  @override
+  Stream<SalesInvoiceData?> watchLastInvoiceForUser(
+    int userId, {
+    DateTime? since,
+  }) {
+    if (SyncInterceptor.isClientMode) {
+      return Stream.fromFuture(_getClientWarehouseIds()).asyncExpand((whIds) {
+        return db.watchLastInvoiceForUser(
+          userId,
+          since: since,
+          warehouseIds: whIds.isNotEmpty ? whIds : null,
+        );
+      });
+    }
+    return db.watchLastInvoiceForUser(userId, since: since);
   }
 
   @override

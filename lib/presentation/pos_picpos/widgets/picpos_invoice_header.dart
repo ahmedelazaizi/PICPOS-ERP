@@ -6,12 +6,22 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/number_utils.dart';
 import '../../../data/providers/providers.dart';
 import '../../pos/providers/cart_controller.dart';
+import '../providers/picpos_last_invoice_provider.dart';
+import 'picpos_pos_text.dart';
 
-/// Invoice header: date · invoice no. · customer · customer balance · warehouse.
+/// Invoice header: date · last invoice no. · customer · customer balance ·
+/// warehouse.
 class PicPosInvoiceHeader extends ConsumerWidget {
   final VoidCallback onPickCustomer;
 
-  const PicPosInvoiceHeader({super.key, required this.onPickCustomer});
+  /// يفتح ديالوج «الفاتورة السابقة» — الترويسة مدخل تالت له، جنب الزر و F3.
+  final VoidCallback onShowLastInvoice;
+
+  const PicPosInvoiceHeader({
+    super.key,
+    required this.onPickCustomer,
+    required this.onShowLastInvoice,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -34,16 +44,7 @@ class PicPosInvoiceHeader extends ConsumerWidget {
             value: dateText,
           ),
           const _Divider(),
-          // The invoice number is assigned by the sales repository at save
-          // time, not reserved up front — showing a number here before the
-          // sale is committed would promise a number the invoice may not get
-          // (a concurrent till on the same branch takes the next one).
-          const _Field(
-            icon: PhosphorIconsBold.hash,
-            label: 'رقم الفاتورة',
-            value: 'يُحدَّد عند الحفظ',
-            muted: true,
-          ),
+          _LastInvoiceField(onTap: onShowLastInvoice),
           const _Divider(),
           Expanded(
             flex: 2,
@@ -100,25 +101,86 @@ class _Field extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(icon, size: 12, color: AppColors.textMuted),
+            Icon(icon, size: 12, color: PicPosText.label),
             const SizedBox(width: 4),
-            Text(label,
-                style: const TextStyle(
-                    fontSize: 10, color: AppColors.textMuted)),
+            Text(label, style: PicPosText.l(10)),
           ],
         ),
         const SizedBox(height: 2),
         Text(
           value,
           overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: muted ? 11 : 13,
-            fontWeight: muted ? FontWeight.normal : FontWeight.bold,
-            fontStyle: muted ? FontStyle.italic : FontStyle.normal,
-            color: valueColor ?? (muted ? AppColors.textMuted : null),
-          ),
+          // `muted` بقى فرق **لون** بس (رمادي غامق مقروء) مش فرق وزن: كل نص في
+          // نقطة البيع بولد (طلب ١٠). الميل الحرفي بيفضل عشان يفرّق النص
+          // النائب («—»، «...») عن قيمة حقيقية.
+          style: muted
+              ? PicPosText.l(11, fontStyle: FontStyle.italic)
+              : PicPosText.v(13, color: valueColor),
         ),
       ],
+    );
+  }
+}
+
+/// رقم **آخر فاتورة للمستخدم الحالي** (طلب ٨).
+///
+/// ── ليه «آخر فاتورة» مش «رقم الفاتورة» ───────────────────────────────────
+/// الخانة دي كانت بتقول «يُحدَّد عند الحفظ» دايماً، وده صحيح تقنياً: الرقم
+/// بيتخصَّص وقت الحفظ مش محجوز مقدماً، وعرض رقم قبل الترحيل كان بيوعد برقم
+/// ممكن تِل تاني على نفس الفرع يخده. لكن الكاشير كان محتاج **معلومة** من
+/// الخانة، لا تبرير. فالخانة اتحوّلت لـ «آخر فاتورة»: رقم حقيقي موجود، بيتحدَّث
+/// مع كل حفظ، وقابل للضغط عشان يعرض/يعيد طباعة الفاتورة دي.
+///
+/// الفاتورة الحالية لسه مالهاش رقم قبل الحفظ — والتسمية بقت صادقة عن ده.
+///
+/// ملاحظة على وضع العميل (client): الرقم المعروض هنا محلي، والسيرفر بيعيد
+/// ترقيم فواتير العميل بإضافة كود الفرع (`api_sales_handler`)، فممكن يختلف عن
+/// المخزَّن مركزياً. سلوك قائم مسبقاً وخارج نطاق الطلب.
+class _LastInvoiceField extends ConsumerWidget {
+  final VoidCallback onTap;
+
+  const _LastInvoiceField({required this.onTap});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final async = ref.watch(picposLastInvoiceProvider);
+
+    return async.when(
+      loading: () => const _Field(
+        icon: PhosphorIconsBold.hash,
+        label: 'آخر فاتورة',
+        value: '...',
+        muted: true,
+      ),
+      error: (error, stack) => const _Field(
+        icon: PhosphorIconsBold.hash,
+        label: 'آخر فاتورة',
+        value: 'غير متاح',
+        muted: true,
+      ),
+      data: (invoice) {
+        if (invoice == null) {
+          return const _Field(
+            icon: PhosphorIconsBold.hash,
+            label: 'آخر فاتورة',
+            value: '—',
+            muted: true,
+          );
+        }
+        return InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(6),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
+            child: _Field(
+              icon: PhosphorIconsBold.hash,
+              label: 'آخر فاتورة',
+              value: invoice.invoiceNumber,
+              valueColor: AppColors.primary,
+            ),
+          ),
+        );
+      },
     );
   }
 }

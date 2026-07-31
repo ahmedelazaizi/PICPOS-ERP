@@ -120,6 +120,17 @@ abstract class SalesRepository {
   /// scoping so a shift crossing midnight keeps its pre-midnight sales.
   Stream<List<SalesInvoiceData>> watchSalesSince(DateTime from, {int? userId});
 
+  /// Watch the single most recent NON-RETURN sale belonging to [userId],
+  /// optionally bounded below by [since] (the open shift's start).
+  ///
+  /// Scoped to one user on purpose: the POS "last invoice" affordance must show
+  /// the cashier THEIR OWN last sale, not one another till or another user
+  /// synced in. Emits `null` when they have not sold anything in the window.
+  Stream<SalesInvoiceData?> watchLastInvoiceForUser(
+    int userId, {
+    DateTime? since,
+  });
+
   /// Get sales invoice items
   Future<List<SalesInvoiceItem>> getSalesInvoiceItems(int invoiceId);
 

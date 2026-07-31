@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -8,6 +8,8 @@ import '../../../core/utils/number_utils.dart';
 import '../../../data/providers/providers.dart';
 import '../../../domain/entities/cart_item_entity.dart';
 import '../../pos/providers/cart_controller.dart';
+import 'picpos_numeric_keypad_dialog.dart';
+import 'picpos_pos_text.dart';
 
 /// The invoice line table: م · المادة · الكمية · السعر · الخصم · المجموع · إلغاء
 ///
@@ -27,12 +29,21 @@ class PicPosItemsTable extends ConsumerWidget {
   final ValueChanged<int> onSelect;
   final ValueChanged<int> onRemove;
 
+  /// يُنادى بعد ما الكيبورد الرقمي يقفل بقيمة مؤكَّدة.
+  ///
+  /// ── ليه محتاجين ده ───────────────────────────────────────────────────────
+  /// الكيبورد ديالوج، ولما بيقفل الفوكس مايرجعش لحد. والباركود سكانر جهاز
+  /// **كيبورد** — بيكتب في اللي عليه الفوكس. فبعد تعديل كمية، أول مسحة باركود
+  /// كانت هتروح في العدم بصمت. الشاشة بترجّع الفوكس لخانة الباركود من هنا.
+  final VoidCallback? onEditComplete;
+
   const PicPosItemsTable({
     super.key,
     required this.selectedIndex,
     this.density = 1.0,
     required this.onSelect,
     required this.onRemove,
+    this.onEditComplete,
   });
 
   @override
@@ -62,6 +73,7 @@ class PicPosItemsTable extends ConsumerWidget {
                     scale: scale,
                     onSelect: onSelect,
                     onRemove: onRemove,
+                    onEditComplete: onEditComplete,
                   ),
           ),
         ],
@@ -98,6 +110,7 @@ class _AutoScrollItemList extends StatefulWidget {
   final double scale;
   final ValueChanged<int> onSelect;
   final ValueChanged<int> onRemove;
+  final VoidCallback? onEditComplete;
 
   const _AutoScrollItemList({
     required this.items,
@@ -105,6 +118,7 @@ class _AutoScrollItemList extends StatefulWidget {
     required this.scale,
     required this.onSelect,
     required this.onRemove,
+    this.onEditComplete,
   });
 
   @override
@@ -181,6 +195,7 @@ class _AutoScrollItemListState extends State<_AutoScrollItemList> {
           scale: widget.scale,
           onSelect: () => widget.onSelect(i),
           onRemove: () => widget.onRemove(i),
+          onEditComplete: widget.onEditComplete,
         ),
       ),
     );
@@ -251,15 +266,16 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(PhosphorIconsBold.barcode, size: 44, color: AppColors.textMuted),
-          SizedBox(height: 10),
+          const Icon(PhosphorIconsBold.barcode,
+              size: 44, color: AppColors.textMuted),
+          const SizedBox(height: 10),
           Text(
             'امسح باركود أو اكتب كود الصنف للبدء',
-            style: TextStyle(color: AppColors.textMuted, fontSize: 14),
+            style: PicPosText.l(14),
           ),
         ],
       ),
@@ -274,6 +290,7 @@ class _ItemRow extends ConsumerWidget {
   final double scale;
   final VoidCallback onSelect;
   final VoidCallback onRemove;
+  final VoidCallback? onEditComplete;
 
   const _ItemRow({
     required this.index,
@@ -282,6 +299,7 @@ class _ItemRow extends ConsumerWidget {
     required this.scale,
     required this.onSelect,
     required this.onRemove,
+    this.onEditComplete,
   });
 
   @override
@@ -312,8 +330,7 @@ class _ItemRow extends ConsumerWidget {
               flex: _kFlexIndex,
               child: Text('${index + 1}',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                      fontSize: 13 * scale, color: AppColors.textMuted)),
+                  style: PicPosText.l(13 * scale)),
             ),
             Expanded(
               flex: _kFlexName,
@@ -322,8 +339,7 @@ class _ItemRow extends ConsumerWidget {
                 child: Text(
                   '${item.productName}$unitSuffix',
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                      fontSize: 13 * scale, fontWeight: FontWeight.w600),
+                  style: PicPosText.v(13 * scale),
                 ),
               ),
             ),
@@ -338,6 +354,12 @@ class _ItemRow extends ConsumerWidget {
                 value: item.quantity,
                 scale: scale,
                 decimals: item.isSoldByWeight ? 3 : 2,
+                // نطاقات الكيبورد **مطابقة** لشروط الـ callbacks تحتها. لو
+                // اختلفوا كان الكاشير هيأكّد رقم والكيبورد يقبله والسلة تتجاهله
+                // بصمت — أسوأ من الرفض الصريح.
+                label: 'الكمية',
+                min: item.isSoldByWeight ? 0.001 : 0.01,
+                onEditComplete: onEditComplete,
                 onSubmitted: (v) {
                   if (v > 0) cart.updateQuantity(index, v);
                 },
@@ -350,6 +372,9 @@ class _ItemRow extends ConsumerWidget {
                 value: item.effectivePrice,
                 scale: scale,
                 decimals: 2,
+                label: 'السعر',
+                min: 0,
+                onEditComplete: onEditComplete,
                 onSubmitted: (v) {
                   if (v >= 0) cart.updatePrice(index, v);
                 },
@@ -362,6 +387,11 @@ class _ItemRow extends ConsumerWidget {
                 value: item.discountPercent,
                 scale: scale,
                 decimals: 2,
+                label: 'الخصم %',
+                min: 0,
+                max: 100,
+                suffix: '%',
+                onEditComplete: onEditComplete,
                 onSubmitted: (v) {
                   if (v >= 0 && v <= 100) cart.setItemDiscount(index, v);
                 },
@@ -387,11 +417,11 @@ class _ItemRow extends ConsumerWidget {
                 // لوحة الإجماليات، مش مدسوسة في صفوف الأصناف.
                 NumberUtils.formatCurrency(item.totalBeforeTax),
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primaryDark,
-                ),
+                // `13 * scale` مش `13`: الخانة دي كانت مثبِّتة المقاس وبتتجاهل
+                // `posCartItemScaleProvider`، فسلايدر «حجم نص الأصناف» كان
+                // بيكبّر كل الأعمدة إلا المجموع.
+                style: PicPosText.v(13 * scale,
+                    color: AppColors.primaryDark),
               ),
             ),
             Expanded(
@@ -414,11 +444,27 @@ class _ItemRow extends ConsumerWidget {
 /// An inline numeric cell. Commits on submit or on losing focus; reverts to
 /// the model value if the text can't be parsed, so a half-typed entry can
 /// never write a garbage number into the cart.
+///
+/// **الضغط عليها بيفتح كيبورد رقمي** ([PicPosNumericKeypadDialog]) في الوضعين
+/// اللمسي والعادي — والتحرير السطري بالكيبورد الفيزيائي (Tab ثم كتابة) يفضل
+/// شغال زي ما هو، فالكاشير على ديسكتوب ما بيخسرش سرعته.
 class _NumberCell extends StatefulWidget {
   final double value;
   final int decimals;
   final double scale;
   final ValueChanged<double> onSubmitted;
+
+  /// عنوان الكيبورد — يعرّف الكاشير خانة إيه اللي بيعدّلها بعد ما الديالوج
+  /// يغطي الصف.
+  final String label;
+
+  /// نطاق التحقّق داخل الكيبورد. لازم يطابق شرط [onSubmitted].
+  final double? min;
+  final double? max;
+  final String? suffix;
+
+  /// بعد قفل الكيبورد بقيمة مؤكَّدة — الشاشة بترجّع الفوكس للباركود.
+  final VoidCallback? onEditComplete;
 
   const _NumberCell({
     super.key,
@@ -426,6 +472,11 @@ class _NumberCell extends StatefulWidget {
     required this.decimals,
     required this.scale,
     required this.onSubmitted,
+    required this.label,
+    this.min,
+    this.max,
+    this.suffix,
+    this.onEditComplete,
   });
 
   @override
@@ -470,6 +521,30 @@ class _NumberCellState extends State<_NumberCell> {
     super.dispose();
   }
 
+  /// يفتح الكيبورد الرقمي. `unfocus()` الأول مقصود: في الوضع اللمسي الفوكس على
+  /// الخانة بيرفع `TouchKeyboardOverlay` العام كمان، فبقى فيه كيبوردين على
+  /// الشاشة. بنسيب الفوكس قبل ما نفتح الديالوج فيبقى واحد بس.
+  Future<void> _openKeypad() async {
+    _focus.unfocus();
+    final v = await PicPosNumericKeypadDialog.show(
+      context,
+      title: widget.label,
+      initialValue: widget.value,
+      decimals: widget.decimals,
+      min: widget.min,
+      max: widget.max,
+      suffix: widget.suffix,
+    );
+    if (!mounted) return;
+    if (v != null) {
+      _controller.text = _format(v);
+      widget.onSubmitted(v);
+    }
+    // بيتنادى في حالتي التأكيد والإلغاء: الفوكس ضاع مع فتح الديالوج في
+    // الحالتين، فالباركود لازم يرجع يشتغل في الحالتين.
+    widget.onEditComplete?.call();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -482,7 +557,7 @@ class _NumberCellState extends State<_NumberCell> {
         inputFormatters: [
           FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
         ],
-        style: TextStyle(fontSize: 13 * widget.scale, fontWeight: FontWeight.w600),
+        style: PicPosText.v(13 * widget.scale),
         decoration: const InputDecoration(
           isDense: true,
           contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 6),
@@ -490,6 +565,7 @@ class _NumberCellState extends State<_NumberCell> {
           filled: true,
           fillColor: Colors.white,
         ),
+        onTap: _openKeypad,
         onSubmitted: (_) => _commit(),
       ),
     );

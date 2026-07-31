@@ -13,7 +13,31 @@ class ProductCard extends ConsumerStatefulWidget {
   final double nameFontSize;
   final double priceFontSize;
 
-  const ProductCard({super.key, required this.product, required this.onTap, this.showImages = true, this.nameFontSize = 12.0, this.priceFontSize = 14.0});
+  /// PicPos indicator scheme: the corner dot means SALE TYPE — red for a
+  /// weighed item, blue for a counted one — and the scale badge is hidden
+  /// because the dot now carries that information.
+  ///
+  /// Defaults to `false`, which keeps the UralCash scheme byte-identical: dot
+  /// means stock, and weighed items keep their scale badge. That badge is
+  /// load-bearing over there — the same grid backs the table-service screen,
+  /// where the badge is how staff know to weigh an item before it goes to the
+  /// kitchen — so removing it for both tills was never on the table.
+  final bool saleTypeDot;
+
+  /// PicPos out-of-stock treatment: fade the whole card instead of laying a
+  /// scrim over it. Defaults to `false` (UralCash keeps the scrim).
+  final bool dimWhenOutOfStock;
+
+  const ProductCard({
+    super.key,
+    required this.product,
+    required this.onTap,
+    this.showImages = true,
+    this.nameFontSize = 12.0,
+    this.priceFontSize = 14.0,
+    this.saleTypeDot = false,
+    this.dimWhenOutOfStock = false,
+  });
 
   @override
   ConsumerState<ProductCard> createState() => _ProductCardState();
@@ -117,7 +141,15 @@ class _ProductCardState extends ConsumerState<ProductCard>
                       },
                 child: Stack(
                   children: [
-                    Column(
+                    // PicPos: the whole card fades when out of stock. The
+                    // 'غير متوفر' badge and the corner dot are siblings BELOW
+                    // in this Stack, i.e. outside the Opacity, so the two
+                    // signals stay crisp while the content recedes.
+                    Opacity(
+                      opacity: widget.dimWhenOutOfStock && isOutOfStock
+                          ? 0.42
+                          : 1.0,
+                      child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         if (widget.showImages) ...[
@@ -168,14 +200,20 @@ class _ProductCardState extends ConsumerState<ProductCard>
                         ],
                       ],
                     ),
+                    ),
 
-                    // Out of stock overlay (More professional)
+                    // Out of stock badge. In `dimWhenOutOfStock` mode the
+                    // scrim is dropped (the Opacity above replaces it) but the
+                    // badge stays — dimming alone is a weak signal to catch at
+                    // a glance across a grid of forty cards.
                     if (isOutOfStock)
                       Positioned.fill(
                         child: Container(
-                          color: Theme.of(
-                            context,
-                          ).cardColor.withValues(alpha: 0.7),
+                          color: widget.dimWhenOutOfStock
+                              ? Colors.transparent
+                              : Theme.of(
+                                  context,
+                                ).cardColor.withValues(alpha: 0.7),
                           child: Center(
                             child: Container(
                               padding: const EdgeInsets.symmetric(
@@ -207,23 +245,17 @@ class _ProductCardState extends ConsumerState<ProductCard>
                         ),
                       ),
 
-                    if (widget.product.isSoldByWeight)
+                    // PicPos hides the badge — the corner dot below carries the
+                    // sale type instead.
+                    if (widget.product.isSoldByWeight && !widget.saleTypeDot)
                       _buildWeightBadge(scaleFactor),
 
-                    // Category Accent (More subtle)
                     Positioned(
                       top: 10,
                       left: 10,
-                      child: Container(
-                        width: 6,
-                        height: 6,
-                        decoration: BoxDecoration(
-                          color: isOutOfStock
-                              ? AppColors.error
-                              : AppColors.primary,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
+                      child: widget.saleTypeDot
+                          ? _buildSaleTypeDot()
+                          : _buildStockDot(isOutOfStock),
                     ),
 
                     // Success Ping Overlay
@@ -261,6 +293,61 @@ class _ProductCardState extends ConsumerState<ProductCard>
           ),
         );
       },
+    );
+  }
+
+  /// UralCash corner dot — a STOCK indicator (red = out of stock).
+  ///
+  /// The old code comment called this a "Category Accent"; it never was one.
+  /// Left exactly as it was so that till's grid is unchanged.
+  Widget _buildStockDot(bool isOutOfStock) => Container(
+        width: 6,
+        height: 6,
+        decoration: BoxDecoration(
+          color: isOutOfStock ? AppColors.error : AppColors.primary,
+          shape: BoxShape.circle,
+        ),
+      );
+
+  /// PicPos corner dot — a SALE-TYPE indicator. Red = weighed, blue = counted.
+  ///
+  /// ── ليه الوزن فيه رمز والعدد لأ ───────────────────────────────────────────
+  /// لو الفرق بين الصنفين **اللون وحده**، الكاشير اللي عنده عمى ألوان أحمر-أخضر
+  /// (حوالي ٨٪ من الرجال) ما بيشوفش أي فرق — والشارة اللي اتخفت (طلب ٦) كانت
+  /// مُرمَّزة بالشكل مش باللون، فشيلها بيخصم معلومة عنه.
+  ///
+  /// فنقطة الوزن جواها ميزان أبيض صغير: الفرق بقى **شكل + لون**، ومين ما يشوف
+  /// اللون يشوف الرمز. نقطة العدد بتفضل نقطة صافية — «مفيش رمز» هو نفسه إشارة،
+  /// وإضافة رمز ليها كان هيرجّعنا لزحمة بصرية على كل كارت في الشبكة.
+  ///
+  /// ── وليه مش رجعنا الشارة القديمة ──────────────────────────────────────────
+  /// الشارة كانت ٢٢ بكسل بظل ولون خلفية كامل في رُكن الكارت. دي ١٤ بكسل في مكان
+  /// النقطة نفسه — أصغر بكتير وبتقرأ كنقطة مميّزة، مش كشارة تاني.
+  Widget _buildSaleTypeDot() {
+    final isWeighed = widget.product.isSoldByWeight;
+    final color = isWeighed ? AppColors.error : AppColors.primary;
+    // نقطة العدد ٨ بكسل؛ نقطة الوزن ١٤ عشان الرمز يبان. الفرق في الحجم إشارة
+    // زيادة، مجاناً.
+    final size = isWeighed ? 14.0 : 8.0;
+
+    return Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.20),
+            blurRadius: 2,
+          ),
+        ],
+      ),
+      child: isWeighed
+          ? const Icon(PhosphorIconsBold.scales, size: 8, color: Colors.white)
+          : null,
     );
   }
 

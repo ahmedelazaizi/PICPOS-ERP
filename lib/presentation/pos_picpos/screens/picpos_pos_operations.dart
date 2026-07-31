@@ -22,6 +22,24 @@ part of 'picpos_pos_screen.dart';
 /// **If you fix a bug in the payment or save path here, check whether
 /// `pos_main_operations.dart` has the same bug.** That is the price of the
 /// copy, and it was accepted knowingly.
+///
+/// ── الفروق المقصودة عن `pos_main_operations.dart` ─────────────────────────
+/// المسارين بقوا شبه توأمين بعد توحيد الدفع (طلبين ١ و ٢)، فالفروق الباقية
+/// **كلها مقصودة** ومش سهو نسخ:
+///
+/// | | PicPos (هنا) | UralCash (`pos_main_operations.dart`) |
+/// |---|---|---|
+/// | تحقّق الفترة المالية قبل الدفع | ✔ | ✘ |
+/// | توست تسوية فروقات التقريب | ✔ | ✘ |
+/// | `printKitchenOrders` | ✘ (مفيش مطبخ في lite) | ✔ |
+/// | ديالوج تحصيل النقدية | ✔ | ✔ |
+/// | «حفظ» بيفتح الدرج | ✘ عن قصد | ✔ |
+/// | أزرار طرق الدفع في اللوحة | ✘ (الديالوج بس) | ✔ |
+/// | `allowedMethods` على ديالوج الدفع | ✔ | ✘ (`null` = الكل) |
+/// | تعديل فاتورة مرحّلة مبوَّب بصلاحية | ✔ | ✘ (بلا بوابة) |
+/// | تخطي «غير متوفر» | سؤال صريح → `allowOversell` | ضغط «آجل» قبل السحب |
+///
+/// أي صف جديد في الجدول ده لازم يكون قرار، مش نتيجة.
 mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
   // ── Contract the screen must satisfy ───────────────────────────────────
   TextEditingController get barcodeController;
@@ -220,6 +238,18 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
         'تم التحويل إلى ${ref.read(authProvider).effectiveUser?.displayName ?? 'المستخدم الجديد'}',
         type: PosNotificationType.success,
       );
+
+      // ── فتح وردية الكاشير الجديد ─────────────────────────────────────────
+      // `_ensureShiftOpen` بتتنادى من `initState` بس، والشاشة **مابتعملش
+      // remount** لما التحويل بيحصل في مكانه. فمن غير النداء ده الكاشير الجاي
+      // بيقف على تِل **بلا وردية مفتوحة ومحدش بينبّهه**، ومبيعاته تقع بره أي
+      // نافذة وردية — يعني تقرير الإغلاق ما يشوفهاش وقائمة «الفواتير السابقة»
+      // بترتد لليوم التقويمي.
+      //
+      // بلا `await` قبل التوست عشان الكاشير يشوف تأكيد التحويل الأول ثم يتصرّف
+      // في الوردية.
+      await _ensureShiftOpen();
+      if (!mounted) return;
       _refocusScanner();
     }
   }
@@ -241,6 +271,16 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
   /// same `PosDialogs.showWeightInput` UralCash uses, which short-circuits
   /// silently when a live scale is connected and stable.
   Future<void> _handleProductTap(ProductEntity product) async {
+    // سؤال «غير متوفر» **أول حاجة**، قبل الميزان وقبل منتقي الوحدة: لو الكاشير
+    // قال لا، ما يكونش وزن الصنف واختار وحدته على الفاضي. الفحص ده مكرَّر في
+    // `_addToCart` كخط دفاع تاني، ومش بيسأل مرتين — أول موافقة بتفتح
+    // `allowOversell` فالنداء التاني ما بيبقى متوقّف أصلاً.
+    if (!await _ensureOversellAllowed(product)) {
+      _refocusScanner();
+      return;
+    }
+    if (!mounted) return;
+
     if (product.isSoldByWeight) {
       final weight = await PosDialogs.showWeightInput(context, ref, product);
       // null = cashier cancelled. Adding nothing is the correct outcome.
@@ -282,7 +322,8 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       final unitPrice = selectedUnit.salePrice > 0
           ? selectedUnit.salePrice
           : product.salePrice;
-      _addToCart(product, quantity: quantity, customPrice: unitPrice);
+      await _addToCart(product, quantity: quantity, customPrice: unitPrice);
+      if (!mounted) return;
 
       final cartItems = ref.read(cartControllerProvider).items;
       if (cartItems.isNotEmpty) {
@@ -297,16 +338,27 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       return;
     }
 
-    _addToCart(product, quantity: quantity);
+    await _addToCart(product, quantity: quantity);
   }
 
   /// The actual cart write, plus the selection/rejection bookkeeping the
   /// PicPos cart relies on.
-  void _addToCart(
+  Future<void> _addToCart(
     ProductEntity product, {
     double quantity = 1,
     double? customPrice,
-  }) {
+  }) async {
+    // ── الرفض بسبب المخزون: نسأل بدل ما نرفض في الصمت ──────────────────────
+    // القدرة على بيع صنف غير متوفر كانت موجودة عن طريق ضغط «آجل» قبل السحب
+    // (اقرا `CartState.allowOversell`). أزرار الطرق اتشالت من اللوحة، فالمسار
+    // ده رجع هنا **صريحاً**: بنسأل في اللحظة اللي الرفض بيحصل فيها، فالقدرة
+    // بقت مكتشَفة بدل ما تكون معرفة شفهية.
+    if (!await _ensureOversellAllowed(product)) {
+      _refocusScanner();
+      return;
+    }
+    if (!mounted) return;
+
     // Live-scale duplicate-weight guard. Only for the tap → weight-dialog
     // flow: two identical PRE-PRINTED labels are two legitimate weighings,
     // so `searchBarcode` deliberately skips this check. Here, the same
@@ -345,7 +397,9 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       if (idx != -1) {
         setState(() => selectedIndex = idx);
       } else {
-        showPosToast(context, ref, 'الصنف غير متوفر في المخزون',
+        // مش رفض مخزون — ده اتعامل معاه فوق قبل الإضافة. أي رفض تاني (سعر
+        // صفر مرفوض من الـ use case مثلاً) بيوصل هنا.
+        showPosToast(context, ref, 'تعذّرت إضافة الصنف',
             type: PosNotificationType.error);
       }
     }
@@ -363,6 +417,84 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
           .clearDuplicateWeightWarning();
       if (msg != null) _showDuplicateWeightDialog(msg);
     }
+  }
+
+  /// يتأكد إن [product] مسموح إضافته رغم إن مخزونه صفر أو أقل.
+  ///
+  /// `true` = كمّل الإضافة (مش مرفوض أصلاً، أو الكاشير سمح). `false` = وقف.
+  ///
+  /// ── ليه في اللحظة دي مش في إعداد ─────────────────────────────────────────
+  /// المسار القديم كان «اضغط آجل قبل ما تسحب» — معرفة شفهية، ومربوطة بقرار
+  /// مالي مالوش علاقة. والسؤال في لحظة الرفض هو أوضح مكان ممكن يتحط فيه:
+  /// الكاشير شايف الصنف اللي اتوقف، وشايف الرصيد الحقيقي، وبياخد القرار وهو
+  /// عارف نتيجته.
+  ///
+  /// السماح بيفضل مفتوح **لباقي الفاتورة** (`CartState.allowOversell`)، فمفيش
+  /// سؤال متكرر على كل صنف في نفس البيعة. و`clearCart` بيصفّره.
+  ///
+  /// المحلات اللي البيع بالسالب عندها روتين بتفتح `enable_negative_sales` على
+  /// مستوى التركيب — ساعتها الحارس ما بيوقفش أصلاً وما بيظهرش أي سؤال.
+  Future<bool> _ensureOversellAllowed(ProductEntity product) async {
+    final cart = ref.read(cartControllerProvider.notifier);
+    final globalNegativeSales =
+        ref.read(enableNegativeSalesProvider).value ?? false;
+
+    if (!cart.isBlockedByStock(product,
+        globalNegativeSales: globalNegativeSales)) {
+      return true;
+    }
+    if (!mounted) return false;
+
+    final approved = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          title: const Row(children: [
+            Icon(PhosphorIconsBold.warningDiamond,
+                color: AppColors.warning, size: 24),
+            SizedBox(width: 8),
+            Expanded(child: Text('الصنف غير متوفر')),
+          ]),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(product.name, style: PicPosText.v(15)),
+              const SizedBox(height: 6),
+              Text(
+                'الرصيد الحالي: ${NumberUtils.formatQuantity(product.currentStock)}',
+                style: PicPosText.v(13, color: AppColors.error),
+              ),
+              const Divider(height: 18),
+              Text(
+                'تسمح بالبيع بالسالب في هذه الفاتورة؟ الرصيد هيبقى سالب '
+                'ولازم جرد يصحّحه.',
+                style: PicPosText.l(13),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text('لا', style: PicPosText.l(14)),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.warning,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('نعم، اسمح بالسالب'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (approved != true) return false;
+    cart.setAllowOversell(true);
+    return true;
   }
 
   /// Blocking popup for a repeated live-scale weight. The single button just
@@ -410,6 +542,10 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
   /// that here would be a second, weaker copy of the hardest code in the POS.
   Future<void> _searchBarcode(String barcode) async {
     if (barcode.trim().isEmpty) return;
+
+    // إجمالي الكميات قبل السحب — اقرا `_scanWasRefused` تحت.
+    final qtyBefore = _totalCartQuantity();
+
     await ref.read(posSearchControllerProvider.notifier).searchBarcode(barcode);
 
     if (!mounted) return;
@@ -418,6 +554,8 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     if (error != null) {
       showPosToast(context, ref, error, type: PosNotificationType.error);
       ref.read(posSearchControllerProvider.notifier).clearSearchResults();
+    } else if (_totalCartQuantity() == qtyBefore) {
+      await _handleSilentlyRefusedScan(barcode);
     } else {
       // Successful add — select the last line so F6/F8 act on what was just
       // scanned, which is what the cashier expects.
@@ -427,6 +565,92 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
 
     barcodeController.clear();
     _refocusScanner();
+  }
+
+  double _totalCartQuantity() => ref
+      .read(cartControllerProvider)
+      .items
+      .fold<double>(0, (sum, i) => sum + i.quantity);
+
+  /// مسحة رجعت «نجاح» ومغيّرتش السلة.
+  ///
+  /// ── إزاي عرفنا ───────────────────────────────────────────────────────────
+  /// متحكّم البحث المشترك بينادي `addItem` ثم يزمّر نجاح **بلا ما يتأكد** إن
+  /// الإضافة نزلت (٦ مواضع نداء فيه، كلها بنفس الشكل). فصنف مخزونه صفر بيتمسح،
+  /// الزمّور يقول تم، والسلة زي ما هي. باج قائم مشترك مع UralCash، بس بقى باين
+  /// أكتر هنا بعد ما مسار الضغط على الكارت بقى بيسأل.
+  ///
+  /// المقارنة بإجمالي **الكميات** مش عدد السطور: الدمج في سطر موجود («منع
+  /// تراكم الأصناف» مقفول) بيزوّد كمية وما بيزوّدش سطر.
+  ///
+  /// ── وليه لازم نتحقّق قبل ما نتكلّم ────────────────────────────────────────
+  /// «السلة ما اتغيرتش» **مش** معناها رفض مخزون بالضرورة: `applyOffer` بترجع
+  /// بلا إضافة لو العرض مضاف قبل كده أو لو ما طلّعش أصناف. فتوست «الصنف غير
+  /// متوفر» على مسح باركود عرض مرتين كان هيبقى كذب. فبندوّر على الصنف بنفسنا
+  /// ونتأكد إنه **فعلاً** متوقّف بالمخزون قبل أي كلام.
+  ///
+  /// ولو الكاشير سمح، بنعيد نداء `searchBarcode` بنفس الباركود بدل ما نضيف
+  /// إحنا: المتحكّم ده بيفهم باركود الميزان وباركود الوحدات والعروض، وإعادة
+  /// النداء بتستفيد من ده كله. مرة واحدة بس — مفيش لوب.
+  Future<void> _handleSilentlyRefusedScan(String barcode) async {
+    final blocked = await _blockedProductForBarcode(barcode);
+    // مش رفض مخزون (عرض مكرّر، باركود مالوش صنف، …) — المتحكّم اتعامل معاه.
+    if (blocked == null || !mounted) return;
+
+    if (!await _ensureOversellAllowed(blocked)) return;
+    if (!mounted) return;
+
+    await ref.read(posSearchControllerProvider.notifier).searchBarcode(barcode);
+    if (!mounted) return;
+    final items = ref.read(cartControllerProvider).items;
+    if (items.isNotEmpty) setState(() => selectedIndex = items.length - 1);
+  }
+
+  /// يرجّع الصنف اللي الباركود ده بيشاور عليه **لو** حارس المخزون بيوقفه، وإلا
+  /// `null`.
+  ///
+  /// ── باركود الميزان ───────────────────────────────────────────────────────
+  /// باركود الميزان (EAN-13 بيبدأ بـ `2` وجواه الـ PLU والوزن مدسوسين) **عمره
+  /// ما بيتطابق خام** مع باركود صنف أو كوده — الرقم اللي على الملصق بيتغيّر مع
+  /// كل وزنة. فبنفكّه الأول بـ [ScaleBarcodeHandler.tryParse]، وهو **نفس**
+  /// المُفكِّك اللي متحكّم البحث المشترك بيستعمله: بيقرأ بروفايل الميزان من
+  /// الإعدادات، ويجرّب الـ PLU بالكود وبالباركود وبـ `getProductByScalePlu`.
+  /// إعادة استخدامه معناها إن الصنف اللي بنسأل عنه هو **بالظبط** الصنف اللي
+  /// المتحكّم حاول يضيفه ورفضه — نسخة تانية من التفكيك كانت هتفتح باب إننا
+  /// نسأل عن صنف والرفض حصل لصنف تاني.
+  ///
+  /// `tryParse` قراءة بحتة (بيرجّع نتيجة، والإضافة شغل المستدعي) فنداؤه هنا على
+  /// مسار الفشل مالوش أي أثر جانبي.
+  ///
+  /// ولو مش باركود ميزان بيرجع `null` بسرعة، وساعتها بندوّر بالباركود ثم بالكود
+  /// — نفس أول خطوتين في المتحكّم.
+  Future<ProductEntity?> _blockedProductForBarcode(String barcode) async {
+    try {
+      final code = barcode.trim();
+      ProductEntity? product;
+
+      final scaleResult = await ScaleBarcodeHandler.tryParse(
+        RepositoryBarcodeAdapter(ref),
+        code,
+      );
+      product = scaleResult?.product;
+      product ??= await ref.read(productRepositoryProvider)
+          .getProductByBarcode(code);
+      product ??=
+          await ref.read(productRepositoryProvider).getProductByCode(code);
+      if (product == null) return null;
+
+      final globalNegativeSales =
+          ref.read(enableNegativeSalesProvider).value ?? false;
+      final blocked = ref.read(cartControllerProvider).blocksAdd(
+            product,
+            globalNegativeSales: globalNegativeSales,
+          );
+      return blocked ? product : null;
+    } catch (e) {
+      debugPrint('[PicPos-Scan] تعذّر التحقّق من سبب الرفض: $e');
+      return null;
+    }
   }
 
   // ── Line operations (F6 / F8) ──────────────────────────────────────────
@@ -592,9 +816,34 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     _refocusScanner();
   }
 
-  // ── Checkout (F4) ──────────────────────────────────────────────────────
+  // ── مسار الدفع الموحَّد (F4 دفع · F2 حفظ) ───────────────────────────────
 
-  Future<void> _handleCheckout() async {
+  /// `دفع F4` — حفظ + طباعة + فتح الدرج (طلب ١).
+  Future<void> _handleCheckout() => _processPaymentAndSave(printAfter: true);
+
+  /// `حفظ F2` — حفظ فقط: بلا طباعة وبلا درج.
+  Future<void> _saveOnly() => _processPaymentAndSave(printAfter: false);
+
+  /// المسار الوحيد اللي أي فاتورة بيع بتخرج منه من شاشة PicPos.
+  ///
+  /// ── ليه مسار واحد بدل مسارين ──────────────────────────────────────────
+  /// كان فيه `_handleCheckout` (بديالوج دفع) و `_saveInvoice` (بلا ديالوج،
+  /// بترحّل بـ `cartState.paymentMethod` مباشرة). التقسيم ده كان سليم وقت ما
+  /// كان صف طرق الدفع موجود في اللوحة، لأن الكاشير كان بيختار الطريقة هناك
+  /// قبل ما يضغط حفظ.
+  ///
+  /// بعد ما الصف اتشال (طلب ٢) بقت `cart.paymentMethod` هي الافتراضي `'cash'`
+  /// لكل فاتورة غير منصات — فـ«حفظ» كانت هترحّل **كل** المبيعات نقدي، بما فيها
+  /// بيعة بطاقة، بلا أي إشارة للكاشير. فالمسارين اتوحّدوا: الاتنين بيمرّوا
+  /// بالديالوج، والفرق الوحيد بينهم بقى [printAfter].
+  ///
+  /// ── الفروق المقصودة عن `pos_main_operations._processPaymentAndSave` ────
+  /// • هنا فيه تحقّق فترة مالية قبل الدفع — UralCash مالهاش.
+  /// • هنا فيه توست تسوية التقريب — UralCash مالهاش.
+  /// • مفيش `printKitchenOrders` — مفيش موديول مطبخ في lite.
+  /// • `حفظ` هنا **ما بيفتحش الدرج**؛ في UralCash بيفتحه. الزرين لازم يفرقوا،
+  ///   ودرج بيفتح بلا فلوس بيدرّب الكاشير إنه يتجاهل الركلة.
+  Future<void> _processPaymentAndSave({required bool printAfter}) async {
     final cartState = ref.read(cartControllerProvider);
     if (cartState.items.isEmpty) {
       showPosToast(context, ref, 'الفاتورة فارغة',
@@ -634,50 +883,320 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       return;
     }
 
-    final paymentResult = await PosDialogs.showPaymentDialog(
-      context,
-      totalAmount: cartState.total,
+    // بوابة `pos_save` — منقولة من UralCash. الفورك ده كان **بلا أي إنفاذ**
+    // لصلاحية الحفظ: سحب الصلاحية من الكاشير ما كانش بيمنعه من إتمام بيعة.
+    if (!await _userHasPermissionFresh(PermissionCodes.posSave)) {
+      if (!mounted) return;
+      final approved = await requestManagerApproval(
+        context,
+        actionName: 'حفظ فاتورة نقطة البيع',
+        permission: PermissionCodes.posSave,
+      );
+      if (!approved) return;
+    }
+    if (!mounted) return;
+
+    final total = cartState.total;
+
+    // شركات التوصيل بتتحاسب آجل. القيد ده كان عايش كـ `creditOnly` في صف طرق
+    // الدفع في اللوحة؛ الصف اتشال، فالقيد نزل هنا — على مسار الكتابة، فما
+    // يقدرش يتفوّت.
+    final isPlatform =
+        ['talabat', 'careem', 'ashyae'].contains(cartState.priceLevel);
+    final isCredit = cartState.paymentMethod == 'credit';
+
+    // ── ليه متغيّرات مفكوكة ومش كائن `PaymentResult` ──────────────────────
+    // الشاشة بتستورد `pos_dialogs.dart` بـ `hide PaymentResult`، فالنوع نفسه
+    // مش قابل للتسمية هنا. ومسار المنصات مالوش داعي يبني كائن من الأساس —
+    // قيمه كلها معروفة مقدماً. فالمتغيّرات المفكوكة بتحل الاتنين.
+    final String method;
+    final double paidTotal;
+    final double? cashAmount;
+    final double? bankAmount;
+    final double? clickAmount;
+    final int? resultCustomerId;
+
+    if (isPlatform && isCredit) {
+      method = 'credit';
+      paidTotal = total;
+      cashAmount = 0;
+      bankAmount = 0;
+      clickAmount = 0;
+      resultCustomerId = cartState.selectedCustomerId;
+    } else {
+      final result = await PosDialogs.showPaymentDialog(
+        context,
+        totalAmount: total,
+        initialMethod: isPlatform ? 'credit' : 'cash',
+        allowedMethods: await _allowedPaymentMethods(isPlatform: isPlatform),
+      );
+      if (result == null || !mounted) {
+        _refocusScanner();
+        return;
+      }
+      method = result.method;
+      paidTotal = result.total;
+      cashAmount = result.cashAmount;
+      bankAmount = result.bankAmount;
+      clickAmount = result.clickAmount;
+      resultCustomerId = result.customerId;
+    }
+
+    // لازم تتكتب على السلة: شاشة العميل (CFD) وشيب الصندوق وفحص «غير متوفر
+    // على الآجل» كلهم بيقروا من `cart.paymentMethod`. الفورك ده كان ناسيها،
+    // فالسلة والفاتورة المرحّلة كانوا بيختلفوا.
+    ref.read(cartControllerProvider.notifier).setPaymentMethod(method);
+
+    // عرض الفكة للعميل (طلب ٢). الصندوق الأخضر «الباقي للعميل (فكة)» جوه
+    // ديالوج الدفع متعشّش في فرع `multiple` بس، فمسار النقدي مالوش أي عرض
+    // للفكة. نفس حل UralCash: ديالوج تحصيل النقدية بخانة المستلم وأزرار الفئات.
+    if (method == 'cash') {
+      final confirmed =
+          await PosCashTenderingDialog.show(context, totalAmount: total);
+      if (confirmed != true || !mounted) {
+        _refocusScanner();
+        return;
+      }
+    }
+
+    final bankSafeId = await _ensureBankSafeSelected(
+      method,
+      bankAmount: bankAmount,
+      clickAmount: clickAmount,
     );
-    if (paymentResult == null) {
+    if (!mounted) return;
+
+    final success =
+        await ref.read(checkoutControllerProvider.notifier).processPayment(
+              method: method,
+              total: paidTotal,
+              cashAmount: cashAmount,
+              bankAmount: bankAmount,
+              clickAmount: clickAmount,
+              bankSafeId: bankSafeId,
+              customerId: resultCustomerId ?? cartState.selectedCustomerId,
+            );
+
+    if (!mounted) return;
+    if (!success) {
+      final err =
+          ref.read(checkoutControllerProvider).error ?? 'فشل حفظ الفاتورة';
+      showPosToast(context, ref, err, type: PosNotificationType.error);
       _refocusScanner();
       return;
     }
 
-    final success =
-        await ref.read(checkoutControllerProvider.notifier).processPayment(
-              method: paymentResult.method,
-              total: paymentResult.total,
-              cashAmount: paymentResult.cashAmount,
-              bankAmount: paymentResult.bankAmount,
-              clickAmount: paymentResult.clickAmount,
-              bankSafeId: cartState.bankSafeId,
-              customerId:
-                  paymentResult.customerId ?? cartState.selectedCustomerId,
-            );
+    setState(() => selectedIndex = null);
+    // Surface the auto-balance rounding adjustment, same as the UralCash
+    // screen — a silent sub-piaster fix is still a fix the operator should
+    // be able to see when reconciling.
+    final adj = JournalEntryDiagnostics.lastRoundingAdjustment;
+    if (adj.abs() > 0.001) {
+      showPosToast(
+        context,
+        ref,
+        'تمت تسوية فروقات تقريب ${adj.abs().toStringAsFixed(3)}',
+        type: PosNotificationType.info,
+      );
+    }
+    SystemSound.play(SystemSoundType.click);
+    barcodeController.clear();
 
-    if (!mounted) return;
-    if (success) {
-      setState(() => selectedIndex = null);
-      // Surface the auto-balance rounding adjustment, same as the UralCash
-      // screen — a silent sub-piaster fix is still a fix the operator should
-      // be able to see when reconciling.
-      final adj = JournalEntryDiagnostics.lastRoundingAdjustment;
-      if (adj.abs() > 0.001) {
+    if (printAfter) {
+      // الدرج بيتركل **بالتوازي** مع الطباعة مش بعدها: الركلة بتروح للطابعة
+      // على نفس المنفذ، وتسلسلهم كان بيضيف زمن ميت على مسار حرج.
+      final drawerFuture = _openCashDrawerQuietly();
+      final invoiceId = ref.read(checkoutControllerProvider).lastInvoiceId;
+      final printed = invoiceId != null && await _hasReceiptPrinter()
+          ? await _tryPrintReceipt(invoiceId)
+          : false;
+      await drawerFuture;
+      if (mounted) {
         showPosToast(
           context,
           ref,
-          'تمت تسوية فروقات تقريب ${adj.abs().toStringAsFixed(3)}',
-          type: PosNotificationType.info,
+          printed ? 'تم حفظ وطباعة الفاتورة' : 'تم حفظ الفاتورة',
+          type: PosNotificationType.success,
         );
       }
-      SystemSound.play(SystemSoundType.click);
-      barcodeController.clear();
     } else {
-      final err =
-          ref.read(checkoutControllerProvider).error ?? 'فشل حفظ الفاتورة';
-      showPosToast(context, ref, err, type: PosNotificationType.error);
+      showPosToast(context, ref, 'تم حفظ الفاتورة',
+          type: PosNotificationType.success);
     }
     _refocusScanner();
+  }
+
+  /// هل فيه طابعة إيصالات مضبوطة فعلاً؟
+  ///
+  /// ── ليه الفحص ده موجود ────────────────────────────────────────────────────
+  /// `printInvoice` **مابيرميش** لما مفيش طابعة مضبوطة — بيسقط على
+  /// `Printing.layoutPdf` اللي بيفتح **ديالوج الطباعة بتاع النظام**
+  /// (`printer_resolver.dart:32` وتعليقه: «caller will show print dialog»).
+  ///
+  /// ده كان مقبول وقت ما الطباعة كانت زرار منفصل الكاشير بيختاره. بعد طلب ١
+  /// بقت الطباعة جزء من `دفع` — أي **كل بيعة**. فعلى تركيب لسه ما ضبطش طابعته
+  /// (أو محل مالوش طابعة إيصالات أصلاً) كل بيعة كانت هتتوقف على ديالوج طباعة
+  /// لازم حد يقفله باليد. ده مش تعطيل للقرار، ده حماية له: «دفع بيطبع» تفضل
+  /// صح لما فيه طابعة، وتفضل صامتة لما مفيش.
+  ///
+  /// المرجع هو `pos_receipt` في مستودع الطابعات — نفس المفتاح اللي
+  /// `PrinterResolver.resolveReceiptPrinter` بيسأل عنه، فمفيش مصدر تاني للحقيقة.
+  Future<bool> _hasReceiptPrinter() async {
+    try {
+      final printer = await ref
+          .read(printersRepositoryProvider)
+          .getActivePrinterByPurpose('pos_receipt');
+      if (printer == null) {
+        debugPrint('[PicPos-Print] مفيش طابعة إيصالات مضبوطة — تم تخطي الطباعة');
+      }
+      return printer != null;
+    } catch (e) {
+      // فشل قراءة الإعداد ما يصحّش يمنع الطباعة — نحاول ونسيب معالج الخطأ يتصرّف.
+      debugPrint('[PicPos-Print] تعذّر فحص الطابعة: $e — هنحاول الطباعة');
+      return true;
+    }
+  }
+
+  /// يطبع الإيصال ويرجّع هل نجح. الفاتورة **مترحّلة** بالفعل قبل النداء ده.
+  ///
+  /// فشل الطباعة تحذير، **لا تراجع** — إلغاء بيعة محصَّلة عشان ورق ناقص أسوأ
+  /// بكتير من إيصال مش مطبوع.
+  Future<bool> _tryPrintReceipt(int invoiceId) async {
+    try {
+      await ref.read(posControllerProvider.notifier).printInvoice(invoiceId);
+      return true;
+    } catch (e) {
+      debugPrint('[PicPos-Print] فشلت طباعة الفاتورة #$invoiceId: $e');
+      if (mounted) {
+        showPosToast(context, ref,
+            '⚠️ الحفظ تم، لكن فشلت الطباعة (تأكد من الورق)',
+            type: PosNotificationType.warning);
+      }
+      return false;
+    }
+  }
+
+  /// فحص صلاحية طازة — منقول من `pos_main_operations._userHasPermissionFresh`.
+  ///
+  /// بيستهلك توكن موافقة المدير المرتبط بالفعل الأول (فالكاشير ما يتسألش كلمة
+  /// المرور مرتين لنفس الزر)، وبعدها بيبطّل كاش الصلاحيات عشان تغيير المدير
+  /// يسري بلا تسجيل خروج، وبيحترم تخطي مدير النظام إلا للعمليات المالية
+  /// الحرجة. **مش** بيقرأ أي علم ترقية جلسة: كلمة مرور واحدة ما يصحّش تفتح كل
+  /// الأفعال المحمية لباقي الجلسة.
+  Future<bool> _userHasPermissionFresh(String permissionCode) async {
+    if (ManagerApprovalCache.instance.consume(permissionCode)) return true;
+
+    ref.invalidate(currentUserPermissionsProvider);
+    final codes = await ref.read(currentUserPermissionsProvider.future);
+
+    if (codes.contains(permissionCode)) return true;
+
+    final isSystemAdmin =
+        codes.contains('system_admin') || codes.contains('*');
+    final isCriticalFin =
+        PermissionCodes.criticalFinancialOps.contains(permissionCode);
+    return isSystemAdmin && !isCriticalFin;
+  }
+
+  /// طرق الدفع المسموح بها للمستخدم الحالي.
+  ///
+  /// أكواد الصلاحيات دي كانت بتُنفَّذ بـ `PermissionGuard` حوالين كل زر طريقة
+  /// في لوحة الدفع. الأزرار اتشالت (طلب ٢)، فالإنفاذ نزل هنا — نقطة الاختيار
+  /// الوحيدة الباقية. مفيش واحدة من الخمس في `criticalFinancialOps`، فتخطي
+  /// مدير النظام مُعاد بالحرف زي `PermissionGuard`.
+  Future<Set<String>> _allowedPaymentMethods({
+    required bool isPlatform,
+  }) async {
+    // عميل منصة = آجل وبس. بنرجّعها قبل قراءة الصلاحيات: القيد ده على مستوى
+    // العميل مش على مستوى المستخدم.
+    if (isPlatform) return {'credit'};
+
+    const codeFor = {
+      'cash': PermissionCodes.posPaymentCash,
+      'card': PermissionCodes.posPaymentCard,
+      'click': PermissionCodes.posPaymentTransfer,
+      'credit': PermissionCodes.posPaymentCredit,
+      'multiple': PermissionCodes.posPaymentMultiple,
+    };
+
+    try {
+      final codes = await ref.read(currentUserPermissionsProvider.future);
+      if (codes.contains('system_admin') || codes.contains('*')) {
+        return codeFor.keys.toSet();
+      }
+      return codeFor.entries
+          .where((e) => codes.contains(e.value))
+          .map((e) => e.key)
+          .toSet();
+    } catch (_) {
+      // فشل قراءة الصلاحيات ما يصحّش يقفل التِل. نرجّع `null`-المعنى (الكل)
+      // عن طريق كل المفاتيح — نفس اللي كان بيحصل قبل الطلب ده.
+      return codeFor.keys.toSet();
+    }
+  }
+
+  /// يضمن إن فاتورة بنكية ليها خزنة بنك محدَّدة **قبل** الترحيل.
+  ///
+  /// اختيار البنك كان عايش في صف طرق الدفع في اللوحة، والصف اتشال. لو اعتمدنا
+  /// على الشيب في اللوحة وحده، كاشير اختار «بطاقة» من الديالوج ومحدَّدش بنك
+  /// كانت الفاتورة تترحّل على الخزنة الافتراضية بلا ما حدّ يقصد. فالضمانة نزلت
+  /// على مسار الكتابة: واحدة → تلقائي، أكتر → نسأل، ولا شيء → `null` ويتولّى
+  /// الـ DAO الاحتياطي (نفس سلوك UralCash بالحرف).
+  ///
+  /// ── ليه المبالغ داخلة في القرار ──────────────────────────────────────────
+  /// `card` و `click` المفردين بيرجّعوا مبالغ `null` من الديالوج (الـ DAO
+  /// بيستنتج التوزيع من الطريقة نفسها)، فالطريقة لوحدها هي الإشارة. أما `mixed`
+  /// فبيرجّع أرقام حقيقية — وتقسيم **نقدي بالكامل** مالوش أي جزء بنكي، فسؤال
+  /// الكاشير «اختر البنك» فيه كان هيبقى سؤال بلا معنى.
+  Future<int?> _ensureBankSafeSelected(
+    String method, {
+    double? bankAmount,
+    double? clickAmount,
+  }) async {
+    final isBank = method == 'card' ||
+        method == 'click' ||
+        (method == 'mixed' &&
+            ((bankAmount ?? 0) > 0 || (clickAmount ?? 0) > 0));
+    if (!isBank) return ref.read(cartControllerProvider).bankSafeId;
+
+    final safes = await ref.read(branchBankSafesProvider.future);
+    final current = ref.read(cartControllerProvider).bankSafeId;
+
+    if (safes.isEmpty) return null;
+    if (safes.length == 1) {
+      ref.read(cartControllerProvider.notifier).setBankSafe(safes.first.id);
+      return safes.first.id;
+    }
+    if (current != null && safes.any((s) => s.id == current)) return current;
+    if (!mounted) return null;
+
+    final picked = await showDialog<int>(
+      context: context,
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: SimpleDialog(
+          title: const Text('اختر الحساب البنكي'),
+          children: [
+            for (final safe in safes)
+              SimpleDialogOption(
+                onPressed: () => Navigator.pop(ctx, safe.id),
+                child: Row(
+                  children: [
+                    const Icon(PhosphorIconsBold.bank,
+                        size: 16, color: AppColors.info),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(safe.name)),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (picked != null) {
+      ref.read(cartControllerProvider.notifier).setBankSafe(picked);
+    }
+    return picked;
   }
 
   /// Blocks nothing outright — zero price or zero quantity is sometimes
@@ -744,61 +1263,6 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       ),
     );
     return proceed == true;
-  }
-
-  // ── Save (F2) / print (F3) ─────────────────────────────────────────────
-
-  Future<void> _saveInvoice({required bool printAfter}) async {
-    final cartState = ref.read(cartControllerProvider);
-    if (cartState.items.isEmpty) {
-      showPosToast(context, ref, 'الفاتورة فارغة',
-          type: PosNotificationType.info);
-      return;
-    }
-    if (!await _validateCartBeforeCheckout(cartState)) return;
-
-    final success =
-        await ref.read(checkoutControllerProvider.notifier).processPayment(
-              method: cartState.paymentMethod,
-              total: cartState.total,
-              cashAmount: cartState.paymentMethod == 'cash'
-                  ? cartState.total
-                  : 0,
-              bankAmount: 0,
-              clickAmount: 0,
-              bankSafeId: cartState.bankSafeId,
-              customerId: cartState.selectedCustomerId,
-            );
-
-    if (!mounted) return;
-    if (!success) {
-      final err =
-          ref.read(checkoutControllerProvider).error ?? 'فشل حفظ الفاتورة';
-      showPosToast(context, ref, err, type: PosNotificationType.error);
-      _refocusScanner();
-      return;
-    }
-
-    setState(() => selectedIndex = null);
-    barcodeController.clear();
-
-    if (printAfter) {
-      final invoiceId = ref.read(checkoutControllerProvider).lastInvoiceId;
-      if (invoiceId != null) {
-        try {
-          await ref.read(posControllerProvider.notifier).printInvoice(invoiceId);
-        } catch (e) {
-          if (mounted) {
-            showPosToast(context, ref, 'تعذّرت الطباعة: $e',
-                type: PosNotificationType.error);
-          }
-        }
-      }
-    } else {
-      showPosToast(context, ref, 'تم حفظ الفاتورة',
-          type: PosNotificationType.success);
-    }
-    _refocusScanner();
   }
 
   // ── Cancel the whole invoice (ESC) ─────────────────────────────────────
@@ -875,23 +1339,54 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     _refocusScanner();
   }
 
+  /// «الفاتورة السابقة» — زر صف الأزرار، و F3، ورقم الفاتورة في الترويسة،
+  /// كلهم بيوصّلوا هنا.
+  Future<void> _showLastInvoice() async {
+    await PicPosLastInvoiceDialog.show(context);
+    _refocusScanner();
+  }
+
   Future<void> _showPreviousInvoices() async {
     await showDialog<void>(
       context: context,
       builder: (_) => PosPreviousInvoicesDialog(
         onReprint: (id) =>
             ref.read(posControllerProvider.notifier).printInvoice(id),
-        // Editing a posted invoice is out of the lite scope — the correction
-        // path there is a sales return, which lite does ship.
-        onEdit: (_) {
-          showPosToast(context, ref,
-              'تعديل فاتورة مرحّلة غير متاح — استخدم مردود المبيعات',
-              type: PosNotificationType.info);
-        },
+        onEdit: _editPostedInvoice,
         // No kitchen module in lite.
         onPrintKitchen: (_) {},
       ),
     );
+    _refocusScanner();
+  }
+
+  /// تعديل **طريقة دفع** فاتورة مرحّلة + ملاحظاتها (طلب ٥).
+  ///
+  /// ── إيه اللي بيتعدَّل وإيه اللي لأ ────────────────────────────────────────
+  /// طريقة الدفع والملاحظات والتقسيم بس. **الأصناف والكميات لأ** — تصحيحها
+  /// طريقه مردود مبيعات، وده اللي كانت الشاشة دي بتقوله في توست قبل الطلب ده.
+  /// الحاجة اللي كانت ناقصة فعلاً هي الحالة الشائعة: الكاشير اختار «نقدي» وهو
+  /// كان لازم «بطاقة»، والفاتورة كلها صح ما عدا ده.
+  ///
+  /// ── ليه بوابة صلاحية إجبارية ─────────────────────────────────────────────
+  /// الفعل ده **بيحرّك فلوس ويعيد كتابة دفتر الأستاذ**: الـ DAO بيحذف القيد
+  /// القديم ويسجّل واحد جديد وينقل أرصدة الخزن
+  /// (`sales_mutations_dao.updateSalesInvoicePayment`). ده مش فعل كاشير عادي،
+  /// فبيمر بنفس فحص الصلاحية الطازة اللي الحفظ بيمر بيه، وإلا موافقة مدير.
+  ///
+  /// تحقّق الفترة المالية موجود جوه الـ DAO أصلاً فمش بنكرّره هنا.
+  Future<void> _editPostedInvoice(SalesInvoiceData invoice) async {
+    if (!await _userHasPermissionFresh(PermissionCodes.posEditInvoice)) {
+      if (!mounted) return;
+      final approved = await requestManagerApproval(
+        context,
+        actionName: 'تعديل طريقة دفع فاتورة مرحّلة',
+        permission: PermissionCodes.posEditInvoice,
+      );
+      if (!approved) return;
+    }
+    if (!mounted) return;
+    await PosEditInvoiceDialog.show(context, invoice: invoice);
     _refocusScanner();
   }
 
@@ -911,6 +1406,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     }
   }
 
+  /// زر `الدرج` الصريح — الكاشير طلب الفتح، ففشله لازم يقول.
   Future<void> _openDrawer() async {
     try {
       await CashDrawerService()
@@ -927,5 +1423,21 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       }
     }
     _refocusScanner();
+  }
+
+  /// الركلة الصامتة على مسار `دفع`.
+  ///
+  /// ── ليه صامتة ────────────────────────────────────────────────────────────
+  /// الفاتورة اتحصّلت واتطبعت خلاص. توست أحمر عن الدرج على تِل مالوش درج أصلاً
+  /// (وده تركيب شائع) كان معناه تحذير مع **كل** بيعة، والكاشير بيتعلّم يتجاهل
+  /// التوستات كلها — بما فيها اللي بتقول إن الطباعة فشلت. الفشل بيتسجّل في
+  /// `debugPrint` وخلاص. زر `الدرج` الصريح فوق هو اللي بيبلّغ.
+  Future<void> _openCashDrawerQuietly() async {
+    try {
+      await CashDrawerService()
+          .openDrawer(printerName: await _drawerPrinterName());
+    } catch (e) {
+      debugPrint('[PicPos-Drawer] فشل تشغيل الدرج: $e');
+    }
   }
 }

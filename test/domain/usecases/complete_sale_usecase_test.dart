@@ -107,6 +107,13 @@ class MockSalesRepository implements SalesRepository {
       Stream.value([]);
 
   @override
+  Stream<SalesInvoiceData?> watchLastInvoiceForUser(
+    int userId, {
+    DateTime? since,
+  }) =>
+      Stream.value(null);
+
+  @override
   Future<List<SalesInvoiceData>> getInvoicesSince(DateTime since) async => [];
 
   @override

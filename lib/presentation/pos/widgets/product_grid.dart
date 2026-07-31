@@ -4,6 +4,7 @@ import 'package:ural_erp/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:shimmer/shimmer.dart';
+import '../../../core/config/brand.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/permissions/permission_codes.dart';
 import '../providers/pos_controller.dart';
@@ -470,6 +471,10 @@ class _ProductGridState extends ConsumerState<ProductGrid> {
           showImages: showImages,
           nameFontSize: nameFontSize,
           priceFontSize: priceFontSize,
+          // The ONE place the brand is checked for the indicator scheme —
+          // `ProductCard` itself stays brand-agnostic and testable.
+          saleTypeDot: Brand.isPicPos,
+          dimWhenOutOfStock: Brand.isPicPos,
         );
       },
     );
@@ -524,7 +529,12 @@ class _ProductGridState extends ConsumerState<ProductGrid> {
                         color: Colors.transparent,
                         child: Opacity(
                           opacity: 0.8,
-                          child: ProductCard(product: product, onTap: () {}),
+                          child: ProductCard(
+                          product: product,
+                          onTap: () {},
+                          saleTypeDot: Brand.isPicPos,
+                          dimWhenOutOfStock: Brand.isPicPos,
+                        ),
                         ),
                       ),
                     ),
@@ -533,7 +543,12 @@ class _ProductGridState extends ConsumerState<ProductGrid> {
                       height: itemHeight,
                       child: Opacity(
                         opacity: 0.2,
-                        child: ProductCard(product: product, onTap: () {}),
+                        child: ProductCard(
+                          product: product,
+                          onTap: () {},
+                          saleTypeDot: Brand.isPicPos,
+                          dimWhenOutOfStock: Brand.isPicPos,
+                        ),
                       ),
                     ),
                     child: SizedBox(
@@ -544,6 +559,11 @@ class _ProductGridState extends ConsumerState<ProductGrid> {
                           ProductCard(
                             product: product,
                             onTap: () {}, // Disable tap in reorder mode
+                            // Reorder mode shows the SAME cards — matching the
+                            // live grid's indicators keeps the drag preview
+                            // honest about what the cashier will end up with.
+                            saleTypeDot: Brand.isPicPos,
+                            dimWhenOutOfStock: Brand.isPicPos,
                           ),
                           // Order badge
                           Positioned(

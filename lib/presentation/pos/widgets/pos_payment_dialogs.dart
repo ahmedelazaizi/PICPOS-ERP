@@ -9,9 +9,14 @@ class _PaymentDialog extends StatefulWidget {
   final double totalAmount;
   final String initialMethod;
 
+  /// Methods the cashier may pick. `null` ⇒ all of them, which is the UralCash
+  /// till's behaviour and the default, so that screen renders exactly as before.
+  final Set<String>? allowedMethods;
+
   const _PaymentDialog({
     required this.totalAmount,
     this.initialMethod = 'cash',
+    this.allowedMethods,
   });
 
   @override
@@ -29,10 +34,29 @@ class _PaymentDialogState extends State<_PaymentDialog> {
   int? _selectedCustomerId;
   String? _selectedCustomerName;
 
+  /// Display order — also the fallback order when [_PaymentDialog.allowedMethods]
+  /// excludes the requested initial method.
+  static const _methodOrder = ['cash', 'card', 'click', 'credit', 'multiple'];
+
+  bool _isAllowed(String method) =>
+      widget.allowedMethods == null || widget.allowedMethods!.contains(method);
+
+  bool get _hasAnyAllowedMethod =>
+      widget.allowedMethods == null || _methodOrder.any(_isAllowed);
+
   @override
   void initState() {
     super.initState();
     _selectedMethod = widget.initialMethod;
+    // A caller may ask for 'cash' while the cashier only has the card
+    // permission. Land on the first method they DO have rather than opening
+    // with a selected-but-unrenderable chip.
+    if (!_isAllowed(_selectedMethod)) {
+      _selectedMethod = _methodOrder.firstWhere(
+        _isAllowed,
+        orElse: () => widget.initialMethod,
+      );
+    }
     _cashAmount = widget.totalAmount;
     _cardAmount = 0;
     _clickAmount = 0;
@@ -109,7 +133,8 @@ class _PaymentDialogState extends State<_PaymentDialog> {
     final changeDue = paidTotal - widget.totalAmount;
     final remaining = widget.totalAmount - paidTotal;
     final isPaidEnough = _selectedMethod == 'multiple' ? remaining <= 0.001 : true;
-    final canConfirm = _isValid && isPaidEnough && !_isSubmitting;
+    final canConfirm =
+        _isValid && isPaidEnough && !_isSubmitting && _hasAnyAllowedMethod;
 
     return AlertDialog(
       title: const Row(
@@ -160,19 +185,52 @@ class _PaymentDialogState extends State<_PaymentDialog> {
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                 ),
                 const SizedBox(height: 10),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    if (_selectedMethod != 'multiple') ...[
-                      _buildMethodChip('cash', 'نقدي', PhosphorIconsBold.money, AppColors.success),
-                      _buildMethodChip('card', 'بطاقة (بنك)', PhosphorIconsBold.creditCard, AppColors.info),
-                      _buildMethodChip('click', 'كليك', PhosphorIconsBold.cursorClick, const Color(0xFF7E57C2)),
-                      _buildMethodChip('credit', 'آجل', PhosphorIconsBold.timer, AppColors.warning),
+                // No permitted method at all: say so instead of showing an
+                // empty Wrap above a live confirm button. `canConfirm` also
+                // gates on `_hasAnyAllowedMethod`, so the button is dead too.
+                if (!_hasAnyAllowedMethod)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.error),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(PhosphorIconsBold.lockKey,
+                            color: AppColors.error, size: 18),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'لا تملك صلاحية أي طريقة دفع — راجع المدير',
+                            style: TextStyle(
+                                color: AppColors.error,
+                                fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      if (_selectedMethod != 'multiple') ...[
+                        if (_isAllowed('cash'))
+                          _buildMethodChip('cash', 'نقدي', PhosphorIconsBold.money, AppColors.success),
+                        if (_isAllowed('card'))
+                          _buildMethodChip('card', 'بطاقة (بنك)', PhosphorIconsBold.creditCard, AppColors.info),
+                        if (_isAllowed('click'))
+                          _buildMethodChip('click', 'كليك', PhosphorIconsBold.cursorClick, const Color(0xFF7E57C2)),
+                        if (_isAllowed('credit'))
+                          _buildMethodChip('credit', 'آجل', PhosphorIconsBold.timer, AppColors.warning),
+                      ],
+                      if (_isAllowed('multiple'))
+                        _buildMethodChip('multiple', 'متعدد', PhosphorIconsBold.splitVertical, AppColors.primary),
                     ],
-                    _buildMethodChip('multiple', 'متعدد', PhosphorIconsBold.splitVertical, AppColors.primary),
-                  ],
-                ),
+                  ),
                 const SizedBox(height: 20),
               ],
 

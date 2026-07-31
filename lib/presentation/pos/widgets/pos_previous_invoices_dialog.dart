@@ -5,6 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../data/providers/providers.dart';
 import '../../../domain/repositories/sales_repository.dart';
+import 'pos_invoice_items_view.dart';
 
 /// Dialog for viewing and reprinting/editing previous invoices from the current shift
 class PosPreviousInvoicesDialog extends ConsumerStatefulWidget {
@@ -165,17 +166,28 @@ class _PosPreviousInvoicesDialogState
                           authState,
                         );
 
-                        if (filteredInvoices.isEmpty) {
-                          return _buildEmptyState();
-                        }
-
-                        return ListView.separated(
-                          itemCount: filteredInvoices.length,
-                          separatorBuilder: (_, _) => const Divider(height: 1),
-                          itemBuilder: (context, index) {
-                            final invoice = filteredInvoices[index];
-                            return _buildInvoiceTile(context, invoice, userMap);
-                          },
+                        // The footer is built from `filteredInvoices` — the
+                        // exact list the ListView renders — so the count and
+                        // sum always describe what is on screen: they follow
+                        // both search boxes and recompute on every stream tick.
+                        return Column(
+                          children: [
+                            Expanded(
+                              child: filteredInvoices.isEmpty
+                                  ? _buildEmptyState()
+                                  : ListView.separated(
+                                      itemCount: filteredInvoices.length,
+                                      separatorBuilder: (_, _) =>
+                                          const Divider(height: 1),
+                                      itemBuilder: (context, index) {
+                                        final invoice = filteredInvoices[index];
+                                        return _buildInvoiceTile(
+                                            context, invoice, userMap);
+                                      },
+                                    ),
+                            ),
+                            _buildTotalsFooter(filteredInvoices),
+                          ],
                         );
                       },
                     );
@@ -199,9 +211,18 @@ class _PosPreviousInvoicesDialogState
     SalesRepository salesRepo,
     AuthState authState,
   ) {
-    final isAdmin = authState.isAdmin ||
-        authState.isManager ||
-        authState.user?.id == null;
+    // No authenticated user → empty list, not "everything".
+    //
+    // The old predicate folded `user?.id == null` into `isAdmin`, which existed
+    // only to avoid the `user!.id` null-assertion two lines down — but the
+    // effect was that a null user was treated as an ADMIN and shown every
+    // invoice in the shift. Reaching the POS requires a login, so this branch
+    // should be unreachable; if it is ever reached, showing nothing is the
+    // safe failure and the assertion below is then provably safe.
+    final user = authState.user;
+    if (user == null) return Stream.value(const []);
+
+    final isAdmin = authState.isAdmin || authState.isManager;
     final shiftStart = _shiftStartTime;
     // Spec 136 ISS-25 — scope to the OPEN SHIFT window so a shift that crosses
     // midnight keeps showing its pre-midnight invoices (the calendar-day
@@ -210,13 +231,13 @@ class _PosPreviousInvoicesDialogState
     if (shiftStart != null) {
       return salesRepo.watchSalesSince(
         shiftStart,
-        userId: isAdmin ? null : authState.user!.id,
+        userId: isAdmin ? null : user.id,
       );
     }
     if (isAdmin) {
       return salesRepo.watchTodaySales();
     }
-    return salesRepo.watchTodaySalesForUser(authState.user!.id);
+    return salesRepo.watchTodaySalesForUser(user.id);
   }
 
   List<SalesInvoiceData> _applyFilters(
@@ -357,6 +378,71 @@ class _PosPreviousInvoicesDialogState
     );
   }
 
+  /// Count + sum of the rows currently displayed.
+  ///
+  /// ── Why «إجمالي المعروض» and never «إجمالي المبيعات» ──────────────────
+  /// This is the gross total of the visible rows, and it deliberately does NOT
+  /// net returns: the streams behind this dialog exclude return invoices
+  /// entirely, so netting would mean pulling rows back in that the list above
+  /// does not show — a footer that silently disagrees with its own table.
+  /// The authoritative net figure for a shift stays the shift-closing dialog.
+  ///
+  /// Voided invoices are NOT summed, and need no extra filter here:
+  /// `SalesActionsDao.voidSalesInvoice` sets `isDeleted: true` alongside
+  /// `status: 'voided'`, so every stream feeding this dialog already drops them
+  /// via its existing `isDeleted.equals(false)` predicate.
+  ///
+  /// It renders `0` rather than disappearing when the list is empty. A footer
+  /// that vanishes reads as a rendering bug, and "zero sales this shift" is
+  /// itself information the cashier wants confirmed.
+  Widget _buildTotalsFooter(List<SalesInvoiceData> invoices) {
+    final total = invoices.fold<double>(0, (sum, inv) => sum + inv.total);
+    final isFiltered =
+        _invoiceSearchQuery.isNotEmpty || _orderSearchQuery.isNotEmpty;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(top: BorderSide(color: AppColors.border)),
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(8)),
+      ),
+      child: Row(
+        children: [
+          const Icon(PhosphorIconsBold.receipt,
+              size: 16, color: AppColors.textMuted),
+          const SizedBox(width: 6),
+          Text(
+            'عدد الفواتير: ${invoices.length}',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          if (isFiltered) ...[
+            const SizedBox(width: 8),
+            const Text(
+              '(حسب البحث)',
+              style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+            ),
+          ],
+          const Spacer(),
+          const Text(
+            'إجمالي المعروض:',
+            style: TextStyle(color: AppColors.textMuted),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            '${total.toStringAsFixed(AppConstants.decimalPlaces)} '
+            '${AppConstants.currencySymbolAr}',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppColors.success,
+              fontSize: 16,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildEmptyState() {
     return Center(
       child: Column(
@@ -379,26 +465,18 @@ class _PosPreviousInvoicesDialogState
     );
   }
 
-  Future<void> _showInvoiceDetails(
+  /// Line-item detail for one invoice.
+  ///
+  /// Body delegated to the shared [PosInvoiceItemsView] — which also replaced
+  /// the per-item `getProductById` loop this used to run before it could paint.
+  /// A reprint button was added: the operator was already one click from the
+  /// printer icon in the row behind this dialog, and having to close it to
+  /// reach that was pure friction.
+  void _showInvoiceDetails(
     BuildContext context,
     SalesInvoiceData invoice,
-  ) async {
-    final salesRepo = ref.read(salesRepositoryProvider);
-    final productRepo = ref.read(productRepositoryProvider);
-    final items = await salesRepo.getSalesInvoiceItems(invoice.id);
-
-    // Fetch product names since they aren't in the items record
-    final productMap = <int, String>{};
-    for (final item in items) {
-      if (!productMap.containsKey(item.productId)) {
-        final product = await productRepo.getProductById(item.productId);
-        productMap[item.productId] = product?.name ?? 'منتج غير معروف';
-      }
-    }
-
-    if (!context.mounted) return;
-
-    showDialog(
+  ) {
+    showDialog<void>(
       context: context,
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
@@ -406,63 +484,20 @@ class _PosPreviousInvoicesDialogState
           title: Text('أصناف فاتورة #${invoice.invoiceNumber}'),
           content: SizedBox(
             width: 400,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxHeight: 400),
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: items.length,
-                    itemBuilder: (context, index) {
-                      final item = items[index];
-                      final productName =
-                          productMap[item.productId] ?? 'منتج غير معروف';
-                      return ListTile(
-                        dense: true,
-                        title: Text(
-                          productName,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: Text(
-                          '${item.quantity} x ${item.unitPrice.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
-                        ),
-                        trailing: Text(
-                          '${item.total.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                const Divider(),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'الإجمالي',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      Text(
-                        '${invoice.total.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.success,
-                          fontSize: 18,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+            child: PosInvoiceItemsView(
+              invoiceId: invoice.id,
+              invoiceTotal: invoice.total,
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
               child: const Text('إغلاق'),
+            ),
+            ElevatedButton.icon(
+              onPressed: () => widget.onReprint(invoice.id),
+              icon: const Icon(PhosphorIconsBold.printer, size: 18),
+              label: const Text('إعادة الطباعة'),
             ),
           ],
         ),

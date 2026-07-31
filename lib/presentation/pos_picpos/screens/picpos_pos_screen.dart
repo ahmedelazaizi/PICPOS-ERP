@@ -7,11 +7,14 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/logging/diagnostic_logger.dart';
+import '../../../core/permissions/permission_codes.dart';
 import '../../../core/utils/number_utils.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../data/providers/providers.dart';
 import '../../../services/client_write_interceptor.dart';
+import '../../../services/manager_approval_cache.dart';
 import '../../../services/shift_dialog_session_guard.dart';
+import '../../widgets/permission_guard.dart' show requestManagerApproval;
 import '../../pos/widgets/pos_opening_balance_dialog.dart';
 import '../../../domain/entities/cart_item_entity.dart';
 import '../../../domain/entities/product_entity.dart';
@@ -25,10 +28,13 @@ import '../../pos/providers/checkout_controller.dart';
 import '../../pos/providers/pos_controller.dart';
 import '../../pos/providers/pos_notification_provider.dart';
 import '../../pos/providers/pos_search_controller.dart';
+import '../../pos/services/scale_barcode_handler.dart';
 import '../../pos/dialogs/unit_selection_dialog.dart';
 import '../../pos/widgets/held_orders_dialog.dart';
+import '../../pos/widgets/pos_cash_tendering_dialog.dart';
 import '../../pos/widgets/pos_customer_selection_dialog.dart';
 import '../../pos/widgets/pos_dialogs.dart' hide PaymentResult;
+import '../../pos/widgets/pos_edit_invoice_dialog.dart';
 import '../../pos/widgets/pos_previous_expenses_dialog.dart';
 import '../../pos/widgets/pos_previous_invoices_dialog.dart';
 import '../../pos/widgets/pos_product_selection_panel.dart';
@@ -37,11 +43,11 @@ import '../widgets/picpos_display_settings.dart';
 import '../widgets/picpos_payment_panel.dart';
 import '../widgets/picpos_invoice_header.dart';
 import '../widgets/picpos_items_table.dart';
-import '../widgets/picpos_shortcut_bar.dart';
+import '../widgets/picpos_last_invoice_dialog.dart';
+import '../widgets/picpos_pos_shortcuts.dart';
+import '../widgets/picpos_pos_text.dart';
 import '../widgets/picpos_switch_user_dialog.dart';
-import '../widgets/picpos_side_panel.dart';
 import '../widgets/picpos_top_bar.dart';
-import '../widgets/picpos_totals_bar.dart';
 
 part 'picpos_pos_operations.dart';
 
@@ -100,67 +106,38 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
     super.dispose();
   }
 
-  /// The bottom strip from the product-owner's design. Deliberately a
-  /// DIFFERENT map from the UralCash screen's F1–F12 — that screen's keys are
-  /// muscle memory for existing UralCash cashiers and are not ours to move;
-  /// these are what the PicPos design puts on screen, and the labels and the
-  /// handler are built from this one list so they cannot disagree.
-  List<PicPosShortcut> _shortcuts() => [
-        PicPosShortcut(
-          label: 'دفع',
-          keyLabel: 'F4',
-          onPressed: _handleCheckout,
-          color: AppColors.success,
-        ),
-        PicPosShortcut(
-          label: 'حفظ',
-          keyLabel: 'F2',
-          onPressed: () => _saveInvoice(printAfter: false),
-        ),
-        PicPosShortcut(
-          label: 'طباعة',
-          keyLabel: 'F3',
-          onPressed: () => _saveInvoice(printAfter: true),
-        ),
-        PicPosShortcut(
-          label: 'تعديل',
-          keyLabel: 'F6',
-          onPressed: _editSelected,
-        ),
-        PicPosShortcut(
-          label: 'حذف',
-          keyLabel: 'F8',
-          onPressed: _deleteSelected,
-          color: AppColors.warning,
-        ),
-        PicPosShortcut(
-          label: 'إلغاء',
-          keyLabel: 'ESC',
-          onPressed: _cancelInvoice,
-          color: AppColors.error,
-        ),
-      ];
+  /// خريطة مفاتيح الشاشة — الأفعال. التسميات في [picposShortcutLabels].
+  ///
+  /// ── ليه خريطة ومش سلسلة `if/else` ─────────────────────────────────────
+  /// كان فيه قائمة تسميات (`_shortcuts()`) للشريط السفلي وسلسلة `if/else`
+  /// للمعالج، والتعليق القديم كان بيوعد إنهم من مصدر واحد فما يختلفوش. الشريط
+  /// اتشال (طلب ٤) فالوعد ده مات — والـ `assert` تحت هو اللي بيحرسه بدلاً منه:
+  /// مفتاح يتضاف هنا ويُنسى في التوثيق (أو العكس) بيفشل صريح في أول ضغطة زر
+  /// في الديباج، مش بيبقى اختصار ميت بصمت في الإنتاج.
+  Map<LogicalKeyboardKey, VoidCallback> _keyActions() {
+    final actions = <LogicalKeyboardKey, VoidCallback>{
+      LogicalKeyboardKey.f2: _saveOnly,
+      LogicalKeyboardKey.f3: _showLastInvoice,
+      LogicalKeyboardKey.f4: _handleCheckout,
+      LogicalKeyboardKey.f6: _editSelected,
+      LogicalKeyboardKey.f8: _deleteSelected,
+      LogicalKeyboardKey.escape: _cancelInvoice,
+      LogicalKeyboardKey.arrowDown: () => _moveSelection(1),
+      LogicalKeyboardKey.arrowUp: () => _moveSelection(-1),
+    };
+    assert(
+      actions.length == picposShortcutLabels.length &&
+          actions.keys.every(picposShortcutLabels.containsKey),
+      'اختصارات نقطة البيع اختلفت عن توثيقها: '
+      'أفعال=${actions.keys} توثيق=${picposShortcutLabels.keys}. '
+      'حدِّث picpos_pos_shortcuts.dart مع أي تغيير هنا.',
+    );
+    return actions;
+  }
 
   void _handleKey(KeyEvent event) {
     if (event is! KeyDownEvent) return;
-    final key = event.logicalKey;
-    if (key == LogicalKeyboardKey.f2) {
-      _saveInvoice(printAfter: false);
-    } else if (key == LogicalKeyboardKey.f3) {
-      _saveInvoice(printAfter: true);
-    } else if (key == LogicalKeyboardKey.f4) {
-      _handleCheckout();
-    } else if (key == LogicalKeyboardKey.f6) {
-      _editSelected();
-    } else if (key == LogicalKeyboardKey.f8) {
-      _deleteSelected();
-    } else if (key == LogicalKeyboardKey.escape) {
-      _cancelInvoice();
-    } else if (key == LogicalKeyboardKey.arrowDown) {
-      _moveSelection(1);
-    } else if (key == LogicalKeyboardKey.arrowUp) {
-      _moveSelection(-1);
-    }
+    _keyActions()[event.logicalKey]?.call();
   }
 
   void _moveSelection(int delta) {
@@ -171,39 +148,6 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
       selectedIndex = (current + delta).clamp(0, count - 1);
     });
   }
-
-  List<PicPosOperation> _operations() => [
-        PicPosOperation(
-          label: 'تعليق',
-          icon: PhosphorIconsBold.pauseCircle,
-          onPressed: _holdOrder,
-        ),
-        PicPosOperation(
-          label: 'فواتير معلقة',
-          icon: PhosphorIconsBold.listChecks,
-          onPressed: _showHeldOrders,
-        ),
-        PicPosOperation(
-          label: 'فواتير سابقة',
-          icon: PhosphorIconsBold.receipt,
-          onPressed: _showPreviousInvoices,
-        ),
-        PicPosOperation(
-          label: 'العميل',
-          icon: PhosphorIconsBold.user,
-          onPressed: _pickCustomer,
-        ),
-        PicPosOperation(
-          label: 'خصم',
-          icon: PhosphorIconsBold.percent,
-          onPressed: _editInvoiceDiscount,
-        ),
-        PicPosOperation(
-          label: 'فتح الدرج',
-          icon: PhosphorIconsBold.money,
-          onPressed: _openDrawer,
-        ),
-      ];
 
   /// عرض عمود الفاتورة كنسبة من الشاشة. القيمة الافتراضية **0.4** — الشبكة
   /// هي النص الأوسع.
@@ -284,7 +228,10 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
                       ),
                     ),
                   ),
-                  PicPosShortcutBar(shortcuts: _shortcuts()),
+                  // ── الشريط السفلي اتشال (طلب ٤) ──────────────────────────
+                  // كان `PicPosShortcutBar` هنا بياكل ٤٠ بكسل ثابتة من كل
+                  // شاشة. الـ F-keys شغالة زي ما هي من `_keyActions()` —
+                  // الشريط كان عرضاً للاختصارات لا مصدراً لها.
                 ],
               ),
             ),
@@ -319,10 +266,10 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
               size: 13, color: AppColors.textMuted),
           const SizedBox(width: 5),
           if (locked)
-            const Expanded(
+            Expanded(
               child: Text(
                 'عرض المنطقة مقفول من الإعدادات',
-                style: TextStyle(fontSize: 10, color: AppColors.textMuted),
+                style: PicPosText.l(10),
               ),
             )
           else
@@ -333,6 +280,11 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
                 onTap: () => setState(() => _invoiceRatio = r),
               ),
           const Spacer(),
+          // شارة «بيع بالسالب»: تظهر فقط لما السماح مفتوح فعلاً، وبتديه مخرج
+          // بضغطة. المسارين الاتنين (الضغط على الكارت ومسح الباركود) بيفتحوا
+          // السماح من نفس السؤال اللحظي — الشارة هي اللي بتخلّي الكاشير عارف
+          // إنه لسه مفتوح، عشان ما ينساهوش شغّال على فاتورة مش محتاجاه.
+          const _OversellBadge(),
           // الترس: نفس حوار «إعدادات عرض السلة» بتاع UralCash — خمس سلايدرات
           // بتكتب على نفس مفاتيح الإعدادات، فتحكم دائم مش لحظي.
           const PicPosDisplaySettingsButton(),
@@ -413,7 +365,10 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
   Widget _buildInvoiceColumn() {
     return Column(
       children: [
-        PicPosInvoiceHeader(onPickCustomer: _pickCustomer),
+        PicPosInvoiceHeader(
+          onPickCustomer: _pickCustomer,
+          onShowLastInvoice: _showLastInvoice,
+        ),
         const SizedBox(height: 4),
         _buildSizeControls(),
         const SizedBox(height: 4),
@@ -422,6 +377,10 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
             selectedIndex: selectedIndex,
             onSelect: (i) => setState(() => selectedIndex = i),
             onRemove: _removeAt,
+            // الكيبورد الرقمي ديالوج، وقفله بيسيب الفوكس معلّق. الباركود سكانر
+            // جهاز كيبورد، فبدون الرجوع ده أول مسحة بعد تعديل كمية كانت تروح
+            // في العدم.
+            onEditComplete: _refocusScanner,
           ),
         ),
         const SizedBox(height: 6),
@@ -432,8 +391,8 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
         // المعلقة انضموا للوحة بدل ما يعيشوا في شريط لوحدهم.
         PicPosPaymentPanel(
           onCheckout: _handleCheckout,
-          onSave: () => _saveInvoice(printAfter: false),
-          onSaveAndPrint: () => _saveInvoice(printAfter: true),
+          onSave: _saveOnly,
+          onLastInvoice: _showLastInvoice,
           onEditDiscount: _editInvoiceDiscount,
           onPickCustomer: _pickCustomer,
           onPreviousInvoices: _showPreviousInvoices,
@@ -443,53 +402,6 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
           onHeldOrders: _showHeldOrders,
         ),
       ],
-    );
-  }
-
-  /// Operations strip. Scrolls horizontally rather than wrapping — the
-  /// invoice column is the narrow one, and a wrapping button grid would eat
-  /// rows from the line table every time one more operation is added.
-  Widget _buildOperationsRow() {
-    return Container(
-      height: 58,
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        border: Border.all(color: AppColors.border),
-      ),
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
-        itemCount: _operations().length,
-        separatorBuilder: (context, i) => const SizedBox(width: 6),
-        itemBuilder: (context, i) {
-          final op = _operations()[i];
-          return SizedBox(
-            width: 88,
-            child: OutlinedButton(
-              onPressed: op.onPressed,
-              style: OutlinedButton.styleFrom(
-                padding: EdgeInsets.zero,
-                side: const BorderSide(color: AppColors.border),
-                foregroundColor: AppColors.primaryDark,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(op.icon, size: 17),
-                  const SizedBox(height: 2),
-                  Text(
-                    op.label,
-                    textAlign: TextAlign.center,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                        fontSize: 11, fontWeight: FontWeight.w600),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
     );
   }
 
@@ -509,6 +421,61 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
                   Text('جاري المعالجة...'),
                 ],
               ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// شارة «بيع بالسالب مسموح» — بتظهر فقط لما `CartState.allowOversell` مفتوح.
+///
+/// ── ليه بتظهر وتختفي بدل ما تكون سويتش دائم ──────────────────────────────
+/// السماح ده حالة **استثنائية** عمرها فاتورة واحدة. سويتش دائم في الشريط كان
+/// معناه إن الكاشير يفتحه مرة وينساه مفتوح، وساعتها الرفض اللي بيحمي المخزون
+/// ما بيشتغلش تاني — وهو بالظبط اللي المسار القديم («اضغط آجل الأول») كان
+/// بيعمله بلا قصد.
+///
+/// فبتظهر بس بعد ما السماح يُفتح فعلاً، بلون تحذير، وقابلة للضغط عشان يُقفل.
+/// و`clearCart` بيصفّر السماح، فالشارة بتختفي لوحدها مع كل فاتورة جديدة.
+class _OversellBadge extends ConsumerWidget {
+  const _OversellBadge();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final allowed = ref
+        .watch(cartControllerProvider.select((s) => s.allowOversell));
+    if (!allowed) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(left: 5),
+      child: Tooltip(
+        message: 'مسموح بيع أصناف غير متوفرة في هذه الفاتورة — اضغط للإلغاء',
+        child: InkWell(
+          onTap: () =>
+              ref.read(cartControllerProvider.notifier).setAllowOversell(false),
+          borderRadius: BorderRadius.circular(6),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppColors.warning.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(6),
+              border:
+                  Border.all(color: AppColors.warning.withValues(alpha: 0.45)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(PhosphorIconsBold.warningDiamond,
+                    size: 12, color: AppColors.warning),
+                const SizedBox(width: 4),
+                Text('بيع بالسالب',
+                    style: PicPosText.v(10, color: AppColors.warning)),
+                const SizedBox(width: 3),
+                const Icon(PhosphorIconsBold.x,
+                    size: 9, color: AppColors.warning),
+              ],
             ),
           ),
         ),
@@ -548,11 +515,9 @@ class _MiniToggle extends StatelessWidget {
           ),
           child: Text(
             label,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              color: active ? Colors.white : AppColors.textMuted,
-            ),
+            style: active
+                ? PicPosText.v(10, color: Colors.white)
+                : PicPosText.l(10),
           ),
         ),
       ),
@@ -583,18 +548,15 @@ class _ClearCartButton extends ConsumerWidget {
             borderRadius: BorderRadius.circular(6),
             border: Border.all(color: AppColors.error.withValues(alpha: 0.25)),
           ),
-          child: const Row(
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(PhosphorIconsBold.trash, size: 13, color: AppColors.error),
-              SizedBox(width: 4),
+              const Icon(
+                  PhosphorIconsBold.trash, size: 13, color: AppColors.error),
+              const SizedBox(width: 4),
               Text(
                 'مسح الكل',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.error,
-                ),
+                style: PicPosText.v(10, color: AppColors.error),
               ),
             ],
           ),

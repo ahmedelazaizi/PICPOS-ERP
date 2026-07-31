@@ -158,7 +158,13 @@ class _ClockBlockState extends State<_ClockBlock> {
         ),
         Text(
           date,
-          style: const TextStyle(color: Colors.white70, fontSize: 11),
+          // كان `white70` — باهت على شريط داكن تحت إضاءة المحل. أبيض كامل
+          // وبولد زي باقي نصوص نقطة البيع (طلب ١٠).
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ],
     );
@@ -189,7 +195,7 @@ class _InfoChip extends StatelessWidget {
             style: const TextStyle(
               color: Colors.white,
               fontSize: 13,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ],
@@ -228,7 +234,7 @@ class _HeldOrdersButton extends StatelessWidget {
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 13,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ],
@@ -263,7 +269,7 @@ Widget _switchUserChip({
             style: const TextStyle(
               color: Colors.white,
               fontSize: 13,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(width: 6),
@@ -300,7 +306,7 @@ Widget _closeShiftChip(VoidCallback onPressed) {
             style: TextStyle(
               color: Colors.white,
               fontSize: 13,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ],

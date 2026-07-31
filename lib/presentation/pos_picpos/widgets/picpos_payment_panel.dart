@@ -30,18 +30,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
-import '../../../core/permissions/permission_codes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/number_utils.dart';
 import '../../../data/providers/providers.dart';
 import '../../../domain/usecases/sales/calculate_invoice_totals_usecase.dart';
 import '../../pos/providers/cart_controller.dart';
-import '../../widgets/permission_guard.dart';
+import 'picpos_pos_text.dart';
 
 class PicPosPaymentPanel extends ConsumerWidget {
   final VoidCallback onCheckout;
   final VoidCallback onSave;
-  final VoidCallback onSaveAndPrint;
+
+  /// «الفاتورة السابقة» — خد خانة زرار «طباعة F3» القديم (طلبين ١ و ٩):
+  /// الطباعة بقت جوه `دفع`، فالخانة اتفرّغت لعرض/إعادة طباعة آخر فاتورة.
+  final VoidCallback onLastInvoice;
   final VoidCallback onEditDiscount;
   final VoidCallback onPickCustomer;
   final VoidCallback onPreviousInvoices;
@@ -54,7 +56,7 @@ class PicPosPaymentPanel extends ConsumerWidget {
     super.key,
     required this.onCheckout,
     required this.onSave,
-    required this.onSaveAndPrint,
+    required this.onLastInvoice,
     required this.onEditDiscount,
     required this.onPickCustomer,
     required this.onPreviousInvoices,
@@ -109,7 +111,7 @@ class PicPosPaymentPanel extends ConsumerWidget {
             onEditDiscount: onEditDiscount,
           ),
           SizedBox(height: 5 * scale),
-          _PaymentMethodRow(cart: cart, controller: controller, scale: scale),
+          _SafeChipRow(cart: cart, scale: scale),
           SizedBox(height: 5 * scale),
           _ActionButtons(
             scale: scale,
@@ -117,7 +119,7 @@ class PicPosPaymentPanel extends ConsumerWidget {
             btnFont: btnFont,
             onCheckout: onCheckout,
             onSave: onSave,
-            onSaveAndPrint: onSaveAndPrint,
+            onLastInvoice: onLastInvoice,
             onPreviousInvoices: onPreviousInvoices,
             onOpenDrawer: onOpenDrawer,
             onExpense: onExpense,
@@ -173,11 +175,9 @@ class _CustomerRow extends ConsumerWidget {
                 child: Text(
                   isSet ? name : 'عميل نقدي — اضغط للاختيار',
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 13 * scale,
-                    fontWeight: isSet ? FontWeight.bold : FontWeight.normal,
-                    color: isSet ? AppColors.primary : AppColors.textMuted,
-                  ),
+                  style: isSet
+                      ? PicPosText.v(13 * scale, color: AppColors.primary)
+                      : PicPosText.l(13 * scale),
                 ),
               ),
               const Icon(PhosphorIconsBold.caretLeft,
@@ -271,15 +271,13 @@ class _TypeChip extends StatelessWidget {
           children: [
             Icon(icon,
                 size: 14,
-                color: selected ? Colors.white : AppColors.textMuted),
+                color: selected ? Colors.white : PicPosText.label),
             const SizedBox(width: 5),
             Text(
               label,
-              style: TextStyle(
-                fontSize: 12 * scale,
-                fontWeight: FontWeight.w700,
-                color: selected ? Colors.white : AppColors.textMuted,
-              ),
+              style: selected
+                  ? PicPosText.v(12 * scale, color: Colors.white)
+                  : PicPosText.l(12 * scale),
             ),
           ],
         ),
@@ -389,18 +387,17 @@ class _TotalsBlock extends ConsumerWidget {
                 children: [
                   Text(
                     'الإجمالي النهائي',
-                    style: TextStyle(
-                      fontSize: 13 * scale,
-                      fontWeight: FontWeight.w700,
+                    style: PicPosText.l(
+                      13 * scale,
                       color: AppColors.textSecondary,
                     ),
                   ),
                   const Spacer(),
                   Text(
                     NumberUtils.formatCurrency(cart.total),
-                    style: TextStyle(
-                      fontSize: 24 * scale,
-                      fontWeight: FontWeight.bold,
+                    // اللون دلالي (أحمر لو سالب) فبيغلب أسود القيم.
+                    style: PicPosText.v(
+                      24 * scale,
                       color: cart.isNegative
                           ? AppColors.error
                           : AppColors.primaryDark,
@@ -437,15 +434,12 @@ class _Line extends StatelessWidget {
       padding: EdgeInsets.symmetric(vertical: 2 * scale),
       child: Row(
         children: [
-          Text(label,
-              style: TextStyle(
-                  fontSize: 12 * scale, color: AppColors.textMuted)),
+          Text(label, style: PicPosText.l(12 * scale)),
           const Spacer(),
           Text(
             '${negative ? '− ' : ''}${NumberUtils.formatCurrency(value)}',
-            style: TextStyle(
-              fontSize: 13 * scale,
-              fontWeight: FontWeight.w600,
+            style: PicPosText.v(
+              13 * scale,
               color: color,
             ),
           ),
@@ -491,15 +485,13 @@ class _ToggleTile extends StatelessWidget {
           children: [
             Icon(icon,
                 size: 14,
-                color: active ? AppColors.primary : AppColors.textMuted),
+                color: active ? AppColors.primary : PicPosText.label),
             const SizedBox(width: 5),
             Text(
               label,
-              style: TextStyle(
-                fontSize: 12 * scale,
-                fontWeight: FontWeight.w700,
-                color: active ? AppColors.primary : AppColors.textMuted,
-              ),
+              style: active
+                  ? PicPosText.v(12 * scale, color: AppColors.primary)
+                  : PicPosText.l(12 * scale),
             ),
           ],
         ),
@@ -508,134 +500,67 @@ class _ToggleTile extends StatelessWidget {
   }
 }
 
-// ── طرق الدفع ──────────────────────────────────────────────────────────────
+// ── شيب الصندوق / البنك ────────────────────────────────────────────────────
 
-class _PaymentMethodRow extends ConsumerWidget {
+/// عرض **للقراءة** لطريقة الدفع الحالية والخزنة اللي الفاتورة هتترحّل عليها،
+/// + منتقي البنك لما يكون فيه أكتر من حساب.
+///
+/// ── ليه مفيش أزرار طرق دفع هنا (طلب ٢) ────────────────────────────────────
+/// أزرار نقدي/بطاقة/كليك/آجل/متعدد كانت هنا **و** في ديالوج «إتمام الدفع» —
+/// نفس الاختيار في مكانين، والكاشير مش عارف مين اللي بيكسب. القرار كان إن
+/// الديالوج هو المكان الوحيد. الأكواد اللي كانت بتُنفَّذ بـ `PermissionGuard`
+/// حوالين كل زرار بقت بتتنفَّذ في `_allowedPaymentMethods()` وقت فتح الديالوج،
+/// وقيد شركات التوصيل (آجل إجباري) بقى في `_processPaymentAndSave` —
+/// **الاتنين على مسار الكتابة**، فمش ممكن يتفوّتوا بالطريقة اللي زرار مخفي
+/// كان بيسمح بها.
+///
+/// الصف ده بيفضل **بارتفاع سطر واحد دايماً** عشان ارتفاع اللوحة ما ينططش بين
+/// فاتورة وفاتورة — طول متغيّر كان بيزقّ جدول الأصناف لفوق ولتحت مع كل بيعة.
+class _SafeChipRow extends ConsumerWidget {
   final CartState cart;
-  final CartController controller;
   final double scale;
 
-  const _PaymentMethodRow({
-    required this.cart,
-    required this.controller,
-    required this.scale,
-  });
+  const _SafeChipRow({required this.cart, required this.scale});
 
-  static bool _isBankMethod(String m) => m == 'card' || m == 'click';
+  static bool _isBankMethod(String m) =>
+      m == 'card' || m == 'click' || m == 'mixed';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final height = ref.watch(paymentButtonHeightProvider).value ?? 36.0;
     final bankSafes = ref.watch(branchBankSafesProvider).value ?? const <Safe>[];
     final cashSafes = ref.watch(branchCashSafesProvider).value ?? const <Safe>[];
+    final method = cart.paymentMethod;
 
-    // شركات التوصيل بتتحاسب آجل — نفس القاعدة في شاشة UralCash. الطرق
-    // التانية بتتعطّل بصرياً بدل ما تُخفى، عشان الكاشير يفهم إن ده قيد على
-    // مستوى العميل مش زرار ناقص.
-    final creditOnly =
-        ['talabat', 'careem', 'ashyae'].contains(cart.priceLevel);
-
-    return Column(
-      children: [
-        Row(
-          children: [
-            _method(context, ref, 'cash', 'نقدي', PhosphorIconsBold.money,
-                AppColors.success, PermissionCodes.posPaymentCash,
-                height: height, disabled: creditOnly, bankSafes: bankSafes),
-            SizedBox(width: 4 * scale),
-            _method(context, ref, 'card', 'بطاقة', PhosphorIconsBold.creditCard,
-                AppColors.info, PermissionCodes.posPaymentCard,
-                height: height, disabled: creditOnly, bankSafes: bankSafes),
-            SizedBox(width: 4 * scale),
-            _method(context, ref, 'click', 'كليك',
-                PhosphorIconsBold.cellSignalFull, const Color(0xFF7C3AED),
-                PermissionCodes.posPaymentTransfer,
-                height: height, disabled: creditOnly, bankSafes: bankSafes),
-            SizedBox(width: 4 * scale),
-            _method(context, ref, 'credit', 'آجل', PhosphorIconsBold.timer,
-                AppColors.warning, PermissionCodes.posPaymentCredit,
-                height: height, bankSafes: bankSafes),
-            SizedBox(width: 4 * scale),
-            _method(context, ref, 'multiple', 'متعدد',
-                PhosphorIconsBold.circlesThreePlus, AppColors.primary,
-                PermissionCodes.posPaymentMultiple,
-                height: height, disabled: creditOnly, bankSafes: bankSafes),
-          ],
-        ),
-        if (_isBankMethod(cart.paymentMethod))
-          _SafeChip(
-            icon: PhosphorIconsBold.bank,
-            color: AppColors.info,
-            label: _bankName(bankSafes) ?? 'لا يوجد حساب بنكي',
-            scale: scale,
-            onTap: bankSafes.length > 1
-                ? () => _pickBank(context, bankSafes)
-                : null,
-          ),
-        if (cart.paymentMethod == 'cash' && cashSafes.isNotEmpty)
-          _SafeChip(
-            icon: PhosphorIconsBold.vault,
-            color: AppColors.success,
-            label: 'الصندوق: ${cashSafes.first.name}',
-            scale: scale,
-          ),
-      ],
-    );
-  }
-
-  Widget _method(
-    BuildContext context,
-    WidgetRef ref,
-    String method,
-    String label,
-    IconData icon,
-    Color color,
-    String permission, {
-    required double height,
-    required List<Safe> bankSafes,
-    bool disabled = false,
-  }) {
-    return Expanded(
-      child: PermissionGuard(
-        permission: permission,
-        child: _MethodTile(
-          label: label,
-          icon: icon,
-          color: color,
-          height: height,
-          scale: scale,
-          selected: cart.paymentMethod == method,
-          disabled: disabled,
-          onTap: disabled
-              ? null
-              : () {
-                  if (_isBankMethod(method)) {
-                    _selectBank(context, method, bankSafes);
-                  } else {
-                    controller.setPaymentMethod(method);
-                    controller.setBankSafe(null);
-                  }
-                },
-        ),
-      ),
-    );
-  }
-
-  /// اختيار حساب بنكي: واحد → تلقائي، أكثر → قائمة، ولا شيء → `null` ويتولّى
-  /// الـ DAO الاحتياطي. نفس السلوك بالحرف في شاشة UralCash — تغييره هنا كان
-  /// معناه إن نفس الفاتورة تترحّل على صندوق مختلف حسب الشاشة.
-  void _selectBank(BuildContext context, String method, List<Safe> bankSafes) {
-    controller.setPaymentMethod(method);
-    if (bankSafes.isEmpty) {
-      controller.setBankSafe(null);
-    } else if (bankSafes.length == 1) {
-      controller.setBankSafe(bankSafes.first.id);
-    } else {
-      _pickBank(context, bankSafes);
+    if (_isBankMethod(method)) {
+      return _SafeChip(
+        icon: PhosphorIconsBold.bank,
+        color: AppColors.info,
+        label: _bankName(bankSafes) ?? 'لا يوجد حساب بنكي',
+        scale: scale,
+        onTap: bankSafes.length > 1
+            ? () => _pickBank(context, ref, bankSafes)
+            : null,
+      );
     }
+    if (method == 'credit') {
+      return _SafeChip(
+        icon: PhosphorIconsBold.timer,
+        color: AppColors.warning,
+        label: 'آجل — ${cart.selectedCustomerName ?? 'بدون عميل'}',
+        scale: scale,
+      );
+    }
+    return _SafeChip(
+      icon: PhosphorIconsBold.vault,
+      color: AppColors.success,
+      label: cashSafes.isEmpty
+          ? 'نقدي'
+          : 'الصندوق: ${cashSafes.first.name}',
+      scale: scale,
+    );
   }
 
-  void _pickBank(BuildContext context, List<Safe> bankSafes) {
+  void _pickBank(BuildContext context, WidgetRef ref, List<Safe> bankSafes) {
     final box = context.findRenderObject() as RenderBox?;
     final overlayBox =
         Overlay.of(context).context.findRenderObject() as RenderBox?;
@@ -675,7 +600,9 @@ class _PaymentMethodRow extends ConsumerWidget {
           ),
       ],
     ).then((id) {
-      if (id != null) controller.setBankSafe(id);
+      if (id != null) {
+        ref.read(cartControllerProvider.notifier).setBankSafe(id);
+      }
     });
   }
 
@@ -686,66 +613,6 @@ class _PaymentMethodRow extends ConsumerWidget {
       if (m.isNotEmpty) return m.first.name;
     }
     return bankSafes.length == 1 ? bankSafes.first.name : 'اختر البنك';
-  }
-}
-
-class _MethodTile extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final Color color;
-  final bool selected;
-  final bool disabled;
-  final VoidCallback? onTap;
-  final double height;
-  final double scale;
-
-  const _MethodTile({
-    required this.label,
-    required this.icon,
-    required this.color,
-    required this.selected,
-    required this.disabled,
-    required this.onTap,
-    required this.height,
-    required this.scale,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final on = selected && !disabled;
-    return Opacity(
-      opacity: disabled ? 0.4 : 1,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          height: height,
-          decoration: BoxDecoration(
-            color: on ? color : color.withValues(alpha: 0.07),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: on ? color : color.withValues(alpha: 0.30),
-              width: on ? 1.5 : 1,
-            ),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 16 * scale, color: on ? Colors.white : color),
-              const SizedBox(height: 2),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 11 * scale,
-                  fontWeight: on ? FontWeight.bold : FontWeight.w600,
-                  color: on ? Colors.white : color,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 }
 
@@ -785,10 +652,9 @@ class _SafeChip extends StatelessWidget {
               const SizedBox(width: 5),
               Text(
                 label,
-                style: TextStyle(
-                  fontSize: 11 * scale,
+                style: PicPosText.v(
+                  11 * scale,
                   color: color,
-                  fontWeight: FontWeight.w600,
                 ),
               ),
               if (onTap != null) ...[
@@ -811,7 +677,7 @@ class _ActionButtons extends ConsumerWidget {
   final double btnFont;
   final VoidCallback onCheckout;
   final VoidCallback onSave;
-  final VoidCallback onSaveAndPrint;
+  final VoidCallback onLastInvoice;
   final VoidCallback onPreviousInvoices;
   final VoidCallback onOpenDrawer;
   final VoidCallback onExpense;
@@ -824,7 +690,7 @@ class _ActionButtons extends ConsumerWidget {
     required this.btnFont,
     required this.onCheckout,
     required this.onSave,
-    required this.onSaveAndPrint,
+    required this.onLastInvoice,
     required this.onPreviousInvoices,
     required this.onOpenDrawer,
     required this.onExpense,
@@ -843,8 +709,8 @@ class _ActionButtons extends ConsumerWidget {
 
     return Column(
       children: [
-        // صف واحد: الدفع بارز وبياخد ضعف عرض جاره، والحفظ والطباعة جانبه.
-        // كانوا تلات صفوف منفصلة، وده كان بياكل ~١٤٠ بكسل من الجدول.
+        // صف واحد: الدفع بارز وبياخد ضعف عرض جاره، والحفظ والفاتورة السابقة
+        // جانبه. كانوا تلات صفوف منفصلة، وده كان بياكل ~١٤٠ بكسل من الجدول.
         Row(
           children: [
             Expanded(
@@ -864,6 +730,8 @@ class _ActionButtons extends ConsumerWidget {
                     children: [
                       Icon(PhosphorIconsBold.money, size: btnFont + 4),
                       const SizedBox(width: 5),
+                      // «دفع» بقى بيحفظ **ويطبع ويفتح الدرج** (طلب ١)، فما
+                      // بقاش فيه زرار طباعة منفصل يتلغبط معاه.
                       Text('دفع F4',
                           style: TextStyle(
                               fontSize: btnFont + 1,
@@ -884,17 +752,24 @@ class _ActionButtons extends ConsumerWidget {
                   font: btnFont,
                 ),
               ),
-              SizedBox(width: 5 * scale),
-              Expanded(
-                child: _Action(
-                  label: 'طباعة F3',
-                  icon: PhosphorIconsBold.printer,
-                  onTap: isEmpty ? null : onSaveAndPrint,
-                  height: btnHeight + 6,
-                  font: btnFont,
-                ),
-              ),
             ],
+            // ── **خارج** بوابة `showSaveOnly` عن قصد ────────────────────────
+            // الزرار ده ورث خانة «طباعة F3» اللي كانت جوه البوابة، لكن دلالته
+            // اختلفت: هو مش فعل حفظ، هو مراجعة/إعادة طباعة. مدير قافل «إظهار
+            // زر الحفظ» مش قصده يخفي وصول الكاشير لآخر فاتورة.
+            //
+            // ومش معطّل على السلة الفاضية كمان — السلة الفاضية هي بالظبط وقت
+            // استخدامه: البيعة خلصت والعميل رجع يطلب الإيصال.
+            SizedBox(width: 5 * scale),
+            Expanded(
+              child: _Action(
+                label: 'الفاتورة السابقة',
+                icon: PhosphorIconsBold.receipt,
+                onTap: onLastInvoice,
+                height: btnHeight + 6,
+                font: btnFont,
+              ),
+            ),
           ],
         ),
         SizedBox(height: 5 * scale),
@@ -1001,9 +876,8 @@ class _MiniAction extends StatelessWidget {
               Text(
                 label,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: font,
-                  fontWeight: FontWeight.w600,
+                style: PicPosText.v(
+                  font,
                   color: AppColors.primaryDark,
                 ),
               ),
@@ -1050,8 +924,7 @@ class _Action extends StatelessWidget {
               child: Text(
                 label,
                 overflow: TextOverflow.ellipsis,
-                style:
-                    TextStyle(fontSize: font, fontWeight: FontWeight.w600),
+                style: PicPosText.v(font),
               ),
             ),
           ],

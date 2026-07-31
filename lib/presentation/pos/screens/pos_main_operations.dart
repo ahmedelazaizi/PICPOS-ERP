@@ -1,6 +1,14 @@
 // ignore_for_file: avoid_dynamic_calls
 part of 'pos_main_screen.dart';
 
+/// UralCash POS orchestration.
+///
+/// ── هناك فورك تاني لمسار الدفع ────────────────────────────────────────────
+/// `lib/presentation/pos_picpos/screens/picpos_pos_operations.dart` فيه نسخة
+/// مقلَّمة من نفس المسار لشاشة PicPos، وبعد توحيد الدفع هناك بقى
+/// `_processPaymentAndSave` في الملفين شبه متطابقة. **أي إصلاح في مسار الدفع
+/// أو الحفظ هنا لازم يتراجع هناك كذلك** — وجدول الفروق المقصودة (اللي مش
+/// المفروض تتوحّد) موجود في تعليق رأس ذلك الملف.
 mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
   void _initOperations() {
     // Logic moved from initState if needed, but mostly focus management

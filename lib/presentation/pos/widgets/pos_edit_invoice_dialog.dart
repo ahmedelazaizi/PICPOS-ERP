@@ -34,11 +34,38 @@ class _PosEditInvoiceDialogState extends ConsumerState<PosEditInvoiceDialog> {
   late TextEditingController _bankController;
   late String _selectedPaymentMethod;
 
+  /// Labels match the checkout dialog's chips (`pos_payment_dialogs.dart`) so a
+  /// method is never called two different things on two screens.
+  ///
+  /// ── 'card' and 'click' were missing, and that was a crash ─────────────
+  /// `DropdownButtonFormField` asserts that its value is among its items. With
+  /// only {cash, transfer, credit, multiple} here, opening this dialog on any
+  /// invoice saved as `card`, `click` or `mixed` — i.e. every bank or split
+  /// sale — threw. The POS writes exactly those values, so the pencil icon in
+  /// the previous-invoices dialog was broken for a large share of real
+  /// invoices on BOTH tills. Adding the two keys plus the normalisation in
+  /// [initState] is a fix for both, not a PicPos feature.
+  ///
+  /// Verified against `SalesPaymentCalculator.getSafeType`, which already
+  /// accepts every key offered here, so the DAO can post all of them.
   final Map<String, String> _paymentMethods = {
     'cash': 'نقدي',
+    'card': 'بطاقة (بنك)',
     'transfer': 'تحويل',
+    'click': 'كليك',
     'credit': 'آجل',
     'multiple': 'متعدد',
+  };
+
+  /// Historic spellings the POS and this dialog disagree on.
+  ///
+  /// The checkout dialog maps its 'multiple' chip to `'mixed'` before saving,
+  /// while this dialog writes `'multiple'`. Both are understood downstream, so
+  /// normalising the stored column is a separate migration-shaped task; here we
+  /// only need the dropdown to be able to render what it was handed.
+  static const _methodAliases = {
+    'mixed': 'multiple',
+    'bank': 'transfer',
   };
 
   @override
@@ -51,7 +78,18 @@ class _PosEditInvoiceDialogState extends ConsumerState<PosEditInvoiceDialog> {
     _bankController = TextEditingController(
       text: widget.invoice.bankPaid.toStringAsFixed(AppConstants.decimalPlaces),
     );
-    _selectedPaymentMethod = widget.invoice.paymentMethod;
+
+    final stored = widget.invoice.paymentMethod;
+    final normalized = _methodAliases[stored] ?? stored;
+    if (_paymentMethods.containsKey(normalized)) {
+      _selectedPaymentMethod = normalized;
+    } else {
+      // Truly unknown value (bad import, older build, hand-edited row): keep it
+      // selectable and visible rather than asserting. Showing the raw string
+      // also tells whoever reports the bug what the column actually holds.
+      _paymentMethods[stored] = 'غير معروف ($stored)';
+      _selectedPaymentMethod = stored;
+    }
   }
 
   @override
@@ -91,6 +129,11 @@ class _PosEditInvoiceDialogState extends ConsumerState<PosEditInvoiceDialog> {
                 // Payment Method
                 DropdownButtonFormField<String>(
                   initialValue: _selectedPaymentMethod,
+                  // `isExpanded` + ellipsis: the fallback label for an unknown
+                  // stored method embeds the raw column value, whose length we
+                  // do not control. Without this the selected-item row
+                  // overflowed the 450 px dialog instead of truncating.
+                  isExpanded: true,
                   decoration: const InputDecoration(
                     labelText: 'طريقة الدفع',
                     prefixIcon: Icon(PhosphorIconsBold.wallet),
@@ -99,12 +142,34 @@ class _PosEditInvoiceDialogState extends ConsumerState<PosEditInvoiceDialog> {
                       .map(
                         (e) => DropdownMenuItem(
                           value: e.key,
-                          child: Text(e.value),
+                          child: Text(e.value, overflow: TextOverflow.ellipsis),
                         ),
                       )
                       .toList(),
                   onChanged: _handlePaymentMethodChange,
                 ),
+
+                // The split fields below only cover cash and bank. For 'click'
+                // the DAO resolves the click safe from the method, so say so
+                // rather than leaving the operator to wonder which field it is.
+                if (_selectedPaymentMethod == 'click')
+                  const Padding(
+                    padding: EdgeInsets.only(top: 8),
+                    child: Row(
+                      children: [
+                        Icon(PhosphorIconsBold.info,
+                            size: 14, color: AppColors.info),
+                        SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'مبلغ كليك يُرحَّل بالكامل على صندوق كليك تلقائياً',
+                            style: TextStyle(
+                                fontSize: 11, color: AppColors.textMuted),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
 
                 // Multiple payment fields
                 if (_selectedPaymentMethod == 'multiple') ...[
@@ -250,13 +315,24 @@ class _PosEditInvoiceDialogState extends ConsumerState<PosEditInvoiceDialog> {
     if (value == null) return;
     setState(() {
       _selectedPaymentMethod = value;
+      final paid =
+          widget.invoice.paid.toStringAsFixed(AppConstants.decimalPlaces);
       // Auto-fill amounts based on payment method
       if (value == 'cash' || value == 'credit') {
-        _cashController.text = widget.invoice.paid.toStringAsFixed(AppConstants.decimalPlaces);
+        _cashController.text = paid;
         _bankController.text = '0.00';
-      } else if (value == 'transfer') {
+      } else if (value == 'transfer' || value == 'card') {
+        // 'card' lands in the bank column exactly like 'transfer' — it was
+        // absent from this branch only because it was absent from the dropdown.
         _cashController.text = '0.00';
-        _bankController.text = widget.invoice.paid.toStringAsFixed(AppConstants.decimalPlaces);
+        _bankController.text = paid;
+      } else if (value == 'click') {
+        // Deliberately leaves both fields at zero: the DAO derives the click
+        // safe from the METHOD itself (`getDefaultSafeByType('click')`), and
+        // these two fields only control cash and bank. Pre-filling one of them
+        // would suggest the operator can steer the click amount from here.
+        _cashController.text = '0.00';
+        _bankController.text = '0.00';
       }
     });
   }

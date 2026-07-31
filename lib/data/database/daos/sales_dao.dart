@@ -279,23 +279,40 @@ extension SalesDao on AppDatabase {
   }
 
   /// Watch today's sales for a specific user (shift-scoped)
-  Stream<List<SalesInvoiceData>> watchTodaySalesForUser(int userId) {
+  ///
+  /// ── Return-exclusion + warehouse scoping added ────────────────────────
+  /// Its three siblings ([watchTodaySales], [getTodaySales], [watchSalesSince])
+  /// all exclude returns and all accept [warehouseIds]; this one did neither.
+  /// The asymmetry was invisible while the previous-invoices dialog only
+  /// LISTED rows, but that dialog now sums them into a total, and a cashier
+  /// with no open shift falls back to exactly this stream — so return
+  /// invoices were about to be added into a "sales" figure, overstating it.
+  Stream<List<SalesInvoiceData>> watchTodaySalesForUser(
+    int userId, {
+    List<int>? warehouseIds,
+  }) {
     final today = DateTime.now();
     final startOfDay = DateTime(today.year, today.month, today.day);
     final endOfDay = startOfDay.add(const Duration(days: 1));
 
-    return (select(salesInvoices)
-          ..where(
-            (i) =>
-                i.invoiceDate.isBetween(
-                  Variable(startOfDay),
-                  Variable(endOfDay),
-                ) &
-                i.userId.equals(userId) &
-                i.isDeleted.equals(false),
-          )
-          ..orderBy([(i) => OrderingTerm.desc(i.invoiceDate)]))
-        .watch();
+    final query = select(salesInvoices)
+      ..where(
+        (i) =>
+            i.invoiceDate.isBetween(
+              Variable(startOfDay),
+              Variable(endOfDay),
+            ) &
+            i.userId.equals(userId) &
+            i.isDeleted.equals(false) &
+            (i.saleType.equals('return').not() | i.saleType.isNull()),
+      )
+      ..orderBy([(i) => OrderingTerm.desc(i.invoiceDate)]);
+    if (warehouseIds != null) {
+      // Drift's isIn([]) already yields Constant(false) — empty list
+      // correctly matches nothing instead of silently showing all rows.
+      query.where((i) => i.warehouseId.isIn(warehouseIds));
+    }
+    return query.watch();
   }
 
   /// Watch sales since [from] (open upper bound = "now").
@@ -327,6 +344,49 @@ extension SalesDao on AppDatabase {
       query.where((i) => i.warehouseId.isIn(warehouseIds));
     }
     return query.watch();
+  }
+
+  /// Watch the single most recent sale invoice belonging to [userId].
+  ///
+  /// Feeds the PicPos invoice header and its «الفاتورة السابقة» dialog. The
+  /// product owner was explicit that a cashier recalling their last invoice
+  /// must get THEIR OWN — not a copy another terminal or another user pushed
+  /// to the server — hence the mandatory `userId` scope rather than a plain
+  /// "newest invoice" query.
+  ///
+  /// Predicate copied from [watchSalesSince] deliberately: non-deleted, and
+  /// returns excluded (a sales return is not "the last invoice I sold").
+  ///
+  /// The `id` tiebreaker on top of `invoiceDate` is not cosmetic — two sales
+  /// inside the same second are routine on a busy till, and `invoiceDate`
+  /// alone is not a total order, so without it the "last" invoice would flip
+  /// between two rows at random.
+  Stream<SalesInvoiceData?> watchLastInvoiceForUser(
+    int userId, {
+    DateTime? since,
+    List<int>? warehouseIds,
+  }) {
+    final query = select(salesInvoices)
+      ..where(
+        (i) =>
+            i.userId.equals(userId) &
+            i.isDeleted.equals(false) &
+            (i.saleType.equals('return').not() | i.saleType.isNull()),
+      )
+      ..orderBy([
+        (i) => OrderingTerm.desc(i.invoiceDate),
+        (i) => OrderingTerm.desc(i.id),
+      ])
+      ..limit(1);
+    if (since != null) {
+      query.where((i) => i.invoiceDate.isBiggerOrEqualValue(since));
+    }
+    if (warehouseIds != null) {
+      // Drift's isIn([]) already yields Constant(false) — empty list
+      // correctly matches nothing instead of silently showing all rows.
+      query.where((i) => i.warehouseId.isIn(warehouseIds));
+    }
+    return query.watchSingleOrNull();
   }
 
   /// Get today's sales for a specific user (shift-scoped, non-streaming)
