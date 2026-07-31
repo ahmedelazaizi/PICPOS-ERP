@@ -51,6 +51,22 @@ class CartState {
   final double splitBankAmount;
   final double splitClickAmount;
 
+  /// يسمح بإضافة صنف مخزونه صفر أو أقل **لهذه الفاتورة فقط**.
+  ///
+  /// ── ليه علم مستقل ────────────────────────────────────────────────────────
+  /// تخطي «غير متوفر» كان مربوط بـ `paymentMethod == 'credit'`: الكاشير كان
+  /// بيضغط «آجل» قبل السحب فيتخطى الرفض. ده كان **أثر جانبي** لقرار تاني خالص
+  /// — «إزاي بتتدفع» و«مسموح أبيع بالسالب» حاجتين مختلفتين، ولمّا شاشة PicPos
+  /// شالت أزرار طرق الدفع من اللوحة (طلب ٢) القدرة دي ضاعت معاها.
+  ///
+  /// العلم ده بيرجّعها باسمها الصريح. وبيتصفّر تلقائياً مع `clearCart` لأنها
+  /// بتبني `CartState` جديدة — فهو صلاحية **لفاتورة واحدة**، مش مود بيفضل
+  /// مفتوح على التِل.
+  ///
+  /// شرط `credit` القديم **باقي** في الحارس: كاشير UralCash لسه عنده أزرار
+  /// الطرق وده مسار شغّال عنده، ومش من حقنا نشيله.
+  final bool allowOversell;
+
   const CartState({
     this.items = const [],
     this.deletedItems = const [],
@@ -77,7 +93,33 @@ class CartState {
     this.splitCashAmount = 0,
     this.splitBankAmount = 0,
     this.splitClickAmount = 0,
+    this.allowOversell = false,
   });
+
+  /// Would the POS stock guard refuse adding [product] to this cart?
+  ///
+  /// Lives on the STATE, not the controller, so it is a pure function of
+  /// (product, cart, install setting) and testable without a ProviderContainer.
+  /// [CartController.addItem] and the PicPos "may I oversell?" prompt both read
+  /// it, which is what keeps the offer and the guard from disagreeing about
+  /// what is blocked.
+  ///
+  /// Pass [globalNegativeSales] from `enableNegativeSalesProvider`.
+  bool blocksAdd(
+    ProductEntity product, {
+    required bool globalNegativeSales,
+  }) {
+    return product.trackInventory &&
+        !product.allowNegativeSale &&
+        !globalNegativeSales &&
+        product.currentStock <= 0 &&
+        !isExchangeMode &&
+        // UralCash workflow: pre-selecting «آجل» unlocks the oversell. Kept as
+        // it is — that till still has its payment buttons.
+        paymentMethod != 'credit' &&
+        // PicPos workflow: an explicit, per-invoice permission.
+        !allowOversell;
+  }
 
   /// Computed: Financial Totals using domain logic
   InvoiceTotals get totals => CalculateInvoiceTotalsUseCase().execute(
@@ -120,6 +162,7 @@ class CartState {
     double? splitCashAmount,
     double? splitBankAmount,
     double? splitClickAmount,
+    bool? allowOversell,
   }) {
     return CartState(
       items: items ?? this.items,
@@ -147,6 +190,7 @@ class CartState {
       splitCashAmount: splitCashAmount ?? this.splitCashAmount,
       splitBankAmount: splitBankAmount ?? this.splitBankAmount,
       splitClickAmount: splitClickAmount ?? this.splitClickAmount,
+      allowOversell: allowOversell ?? this.allowOversell,
     );
   }
 }
@@ -211,6 +255,24 @@ class CartController extends Notifier<CartState> {
     return CartState(taxRate: initialTax);
   }
 
+  /// Would the stock guard refuse [product]? Delegates to [CartState.blocksAdd]
+  /// so callers that only hold the controller don't need to reach for `state`.
+  bool isBlockedByStock(
+    ProductEntity product, {
+    required bool globalNegativeSales,
+  }) =>
+      state.blocksAdd(product, globalNegativeSales: globalNegativeSales);
+
+  /// يفتح/يقفل السماح بالبيع بالسالب لهذه الفاتورة. اقرا [CartState.allowOversell].
+  void setAllowOversell(bool value) {
+    if (state.allowOversell == value) return;
+    state = state.copyWith(allowOversell: value);
+    if (value) {
+      _logAction('cart_allow_oversell', 0,
+          'سمح ببيع أصناف غير متوفرة في هذه الفاتورة', 0);
+    }
+  }
+
   void addItem(
     ProductEntity product, {
     double quantity = 1,
@@ -228,12 +290,7 @@ class CartController extends Notifier<CartState> {
     // couldn't add an out-of-stock item from the POS grid.
     final globalNegativeSales =
         ref.read(enableNegativeSalesProvider).value ?? false;
-    if (product.trackInventory &&
-        !product.allowNegativeSale &&
-        !globalNegativeSales &&
-        product.currentStock <= 0 &&
-        !state.isExchangeMode &&
-        state.paymentMethod != 'credit') {
+    if (state.blocksAdd(product, globalNegativeSales: globalNegativeSales)) {
       return; // Silently refuse — product card already shows "غير متوفر"
     }
 
