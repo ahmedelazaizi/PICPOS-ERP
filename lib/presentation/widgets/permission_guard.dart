@@ -51,6 +51,19 @@ class PermissionGuard extends ConsumerWidget {
   /// Human-readable name of the action (shown in override dialog)
   final String? actionName;
 
+  /// What to run once a manager approves. **Prefer this** over letting the
+  /// guard dig the callback out of [child].
+  ///
+  /// ── ليه موجود ────────────────────────────────────────────────────────────
+  /// لما `allowManagerOverride` شغّال والمستخدم مالوش الصلاحية، الحارس بيلفّ
+  /// الابن في `AbsorbPointer` ويمسك الضغطة بنفسه — فبعد موافقة المدير لازم
+  /// يعرف يعمل إيه. الطريقة الوحيدة اللي كانت موجودة هي **تخمين** نوع الودجت
+  /// (`_extractOnPressed`) وسحب `onPressed`/`onTap` منه، وهي بتفشل بصمت لأي
+  /// نوع مش مكتوب في القائمة.
+  ///
+  /// تمريره هنا بيلغي التخمين تماماً: الفعل بيتقال صراحة، فما يقدرش يضيع.
+  final VoidCallback? onGranted;
+
   const PermissionGuard({
     super.key,
     required this.permission,
@@ -61,6 +74,7 @@ class PermissionGuard extends ConsumerWidget {
     this.anyOf,
     this.allowManagerOverride = false,
     this.actionName,
+    this.onGranted,
   });
 
   /// Constructor for requiring ALL of multiple permissions
@@ -72,6 +86,7 @@ class PermissionGuard extends ConsumerWidget {
     this.showDisabled = false,
     this.allowManagerOverride = false,
     this.actionName,
+    this.onGranted,
   }) : permission = '',
        anyOf = null;
 
@@ -84,6 +99,7 @@ class PermissionGuard extends ConsumerWidget {
     this.showDisabled = false,
     this.allowManagerOverride = false,
     this.actionName,
+    this.onGranted,
   }) : permission = '',
        allOf = null;
 
@@ -115,6 +131,7 @@ class PermissionGuard extends ConsumerWidget {
             ? permission
             : (allOf?.first ?? anyOf?.first ?? ''),
         actionName: actionName,
+        onGranted: onGranted,
         child: child,
       );
     }
@@ -210,15 +227,97 @@ class PermissionGuard extends ConsumerWidget {
   }
 }
 
+/// Digs the tap callback out of [child] so the manager-override wrapper knows
+/// what to run after approval. Returns `null` when it cannot find one.
+///
+/// ── ليه ده موجود أصلاً، وليه هو الخيار الأضعف ────────────────────────────────
+/// الحارس بيلفّ الابن في `AbsorbPointer` عشان يمسك الضغطة بنفسه، فبعد الموافقة
+/// لازم يعرف يعمل إيه. تخمين نوع الودجت شغّال لكنه هشّ بطبيعته: أي نوع مش مكتوب
+/// في القايمة دي بيرجع `null`. **`PermissionGuard.onGranted` هو الطريق الصح**؛
+/// ده احتياطي لمواقع الاستدعاء القديمة.
+///
+/// ── الباج اللي عاش هنا ────────────────────────────────────────────────────
+/// `ListTile` ما كانش موجود في القائمة، وكل مداخل «الأدوار والصلاحيات»
+/// و«إدارة المستخدمين» في شاشتَي الإعدادات (١١ موضع) عبارة عن `ListTile`.
+/// وكمان الفشل كان بيرجّع دالة فاضية بدل `null`، فالحارس كان «ينجح» ويشغّل
+/// اللاشيء: الكاشير يضغط، يكتب كلمة مرور المدير، الديالوج يقفل، وما يحصلش حاجة
+/// — بيتقرا كأن النظام رفضه.
+///
+/// مكشوف للاختبار عشان إضافة نوع ودجت جديد تبقى مغطّاة بدل ما تتكتشف ميدانياً.
+@visibleForTesting
+VoidCallback? extractChildAction(Widget child) {
+  if (child is ElevatedButton) return child.onPressed;
+  if (child is OutlinedButton) return child.onPressed;
+  if (child is TextButton) return child.onPressed;
+  if (child is IconButton) return child.onPressed;
+  if (child is ListTile) return child.onTap;
+  if (child is InkWell) return child.onTap;
+  if (child is InkResponse) return child.onTap;
+  if (child is GestureDetector) return child.onTap;
+
+  // For wrapper widgets, recursively search.
+  if (child is Expanded) return extractChildAction(child.child);
+  if (child is Flexible) return extractChildAction(child.child);
+  if (child is Center && child.child != null) {
+    return extractChildAction(child.child!);
+  }
+  if (child is Align && child.child != null) {
+    return extractChildAction(child.child!);
+  }
+  if (child is SizedBox && child.child != null) {
+    return extractChildAction(child.child!);
+  }
+  if (child is Padding && child.child != null) {
+    return extractChildAction(child.child!);
+  }
+  if (child is Container && child.child != null) {
+    return extractChildAction(child.child!);
+  }
+  if (child is Material && child.child != null) {
+    return extractChildAction(child.child!);
+  }
+  if (child is AnimatedOpacity && child.child != null) {
+    return extractChildAction(child.child!);
+  }
+  if (child is Opacity && child.child != null) {
+    return extractChildAction(child.child!);
+  }
+  if (child is DecoratedBox && child.child != null) {
+    return extractChildAction(child.child!);
+  }
+  if (child is ColoredBox && child.child != null) {
+    return extractChildAction(child.child!);
+  }
+  if (child is ConstrainedBox && child.child != null) {
+    return extractChildAction(child.child!);
+  }
+  if (child is UnconstrainedBox && child.child != null) {
+    return extractChildAction(child.child!);
+  }
+  if (child is Tooltip && child.child != null) {
+    return extractChildAction(child.child!);
+  }
+  if (child is MouseRegion && child.child != null) {
+    return extractChildAction(child.child!);
+  }
+  if (child is Semantics && child.child != null) {
+    return extractChildAction(child.child!);
+  }
+
+  return null;
+}
+
 /// Wrapper that intercepts button presses and asks for manager override
 class _ManagerOverrideWrapper extends ConsumerStatefulWidget {
   final String permission;
   final String? actionName;
+  final VoidCallback? onGranted;
   final Widget child;
 
   const _ManagerOverrideWrapper({
     required this.permission,
     this.actionName,
+    this.onGranted,
     required this.child,
   });
 
@@ -231,109 +330,30 @@ class _ManagerOverrideWrapperState
     extends ConsumerState<_ManagerOverrideWrapper> {
   VoidCallback? _originalOnPressed;
 
+  /// Set once a manager approved a child that has no single action to run
+  /// (a whole settings section, a toggle). See [_requestOverride].
+  bool _unlocked = false;
+
   @override
   Widget build(BuildContext context) {
-    // First, find the button and extract onPressed
-    _extractOnPressed(widget.child);
+    // Approval already granted for a section-shaped child: hand the child back
+    // untouched so it behaves exactly as it does for a permitted user.
+    if (_unlocked) return widget.child;
 
-    // Then wrap with GestureDetector to intercept taps
+    // An explicit callback always wins — no guessing needed.
+    _originalOnPressed =
+        widget.onGranted ?? extractChildAction(widget.child);
+
+    // The tap is intercepted unconditionally. It used to be wired only when a
+    // callback had been resolved, but the extractor always resolved SOMETHING
+    // (a no-op on failure), so that condition never actually guarded anything
+    // — and a guard that silently swallows the tap is worse than one that
+    // does something meaningful with the approval.
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: _originalOnPressed != null
-          ? () => _requestOverride(context)
-          : null,
+      onTap: () => _requestOverride(context),
       child: AbsorbPointer(child: widget.child),
     );
-  }
-
-  /// Recursively find and extract onPressed from buttons
-  void _extractOnPressed(Widget child) {
-    if (child is ElevatedButton) {
-      _originalOnPressed = child.onPressed;
-      return;
-    }
-    if (child is OutlinedButton) {
-      _originalOnPressed = child.onPressed;
-      return;
-    }
-    if (child is TextButton) {
-      _originalOnPressed = child.onPressed;
-      return;
-    }
-    if (child is IconButton) {
-      _originalOnPressed = child.onPressed;
-      return;
-    }
-    if (child is InkWell) {
-      _originalOnPressed = child.onTap;
-      return;
-    }
-    if (child is GestureDetector) {
-      _originalOnPressed = child.onTap;
-      return;
-    }
-
-    // For wrapper widgets, recursively search
-    if (child is Expanded) {
-      _extractOnPressed(child.child);
-      return;
-    }
-    if (child is SizedBox && child.child != null) {
-      _extractOnPressed(child.child!);
-      return;
-    }
-    if (child is Padding && child.child != null) {
-      _extractOnPressed(child.child!);
-      return;
-    }
-    if (child is Container && child.child != null) {
-      _extractOnPressed(child.child!);
-      return;
-    }
-    if (child is Center) {
-      _extractOnPressed(child.child!);
-      return;
-    }
-    if (child is Align) {
-      _extractOnPressed(child.child!);
-      return;
-    }
-    if (child is Material && child.child != null) {
-      _extractOnPressed(child.child!);
-      return;
-    }
-    if (child is AnimatedOpacity && child.child != null) {
-      _extractOnPressed(child.child!);
-      return;
-    }
-    if (child is Opacity && child.child != null) {
-      _extractOnPressed(child.child!);
-      return;
-    }
-    if (child is Flexible) {
-      _extractOnPressed(child.child);
-      return;
-    }
-    if (child is DecoratedBox && child.child != null) {
-      _extractOnPressed(child.child!);
-      return;
-    }
-    if (child is ColoredBox && child.child != null) {
-      _extractOnPressed(child.child!);
-      return;
-    }
-    if (child is ConstrainedBox && child.child != null) {
-      _extractOnPressed(child.child!);
-      return;
-    }
-    if (child is UnconstrainedBox && child.child != null) {
-      _extractOnPressed(child.child!);
-      return;
-    }
-
-    // If we can't find a button, set a default callback that does nothing
-    // This allows the override dialog to show, but shows an error after
-    _originalOnPressed = () {};
   }
 
   Future<void> _requestOverride(BuildContext context) async {
@@ -346,9 +366,33 @@ class _ManagerOverrideWrapperState
       ),
     );
 
-    if (result == true && _originalOnPressed != null) {
-      _originalOnPressed!();
+    if (result != true) return;
+
+    final action = widget.onGranted ?? _originalOnPressed;
+    if (action != null) {
+      // ابن له فعل واحد واضح (زرار، أو `ListTile` بـ `onTap`) — نشغّله فوراً،
+      // فالموافقة بتوصّل للنتيجة في خطوة واحدة زي ما الكاشير متوقّع.
+      action();
+      return;
     }
+
+    // ── ابن مالوش فعل واحد: نفتح القفل بدل ما نخمّن ──────────────────────────
+    // فيه مواقع استدعاء بتلفّ **قسم كامل** (`_buildSettingsCard` بداخله عدة
+    // مداخل) أو مفتاح تبديل (`_ServerPermsToggleTile`) — دول مالهمش «الفعل»
+    // الواحد اللي يتشغّل بعد الموافقة، وأي تخمين هيبقى غلط.
+    //
+    // الصح دلالياً إن الموافقة **تفكّ القفل**: الابن يرجع يشتغل عادي، والمدير
+    // يضغط اللي هو عايزه بنفسه. وده كمان بيخلّي المفتاح قابل للتبديل، وهو حاجة
+    // ما كانتش ممكنة أصلاً بمنطق «استخرج الدالة وشغّلها».
+    //
+    // قبل كده كان بيتحط `() {}` هنا وتُنادى — فالموافقة «تنجح» وما يحصلش حاجة.
+    if (!mounted) return;
+    debugPrint(
+      '[PermissionGuard] تمت الموافقة على قسم بلا فعل واحد — '
+      'permission=${widget.permission} childType=${widget.child.runtimeType} '
+      '→ فُك القفل.',
+    );
+    setState(() => _unlocked = true);
   }
 }
 
