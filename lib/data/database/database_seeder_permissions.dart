@@ -770,6 +770,11 @@ extension DatabaseSeederPermissions on AppDatabase {
       'sales_view',
       'purchases_view',
       'dashboard_access',
+      // Task 3d — عنصر قائمة «التحليلات» اتربط بكوده الخاص analytics_view
+      // بدل reports_view العام (كان بيسيب رابط ميت لمين معاه reports_view
+      // بس). محاسب والمدير المالي (اللي بيورّث المنحة دي تحت) كانوا
+      // بيشوفوا الرابط فعلاً، فلازم ياخدوا الكود الحقيقي بدل ما يتسحب منهم.
+      'analytics_view',
     ];
     for (final code in accountantPermsIndices) {
       if (permMap.containsKey(code)) {
@@ -846,6 +851,8 @@ extension DatabaseSeederPermissions on AppDatabase {
       'inventory_view', 'reports_view', 'treasury_view',
       'pos_closing_view_details', 'products_add', 'branches_manage',
       'users_manage', 'sales_view', 'purchases_create', 'settings_view',
+      // Task 3d — نفس منطق analytics_view في accountantPermsIndices فوق.
+      'analytics_view',
     ];
     if (branchManagerRoleId > 0) {
       for (final code in branchManagerPerms) {
@@ -868,6 +875,10 @@ extension DatabaseSeederPermissions on AppDatabase {
       'inventory_view', 'analytics_view',
       // Spec 3c — نفس منحة dashboard_access للأدوار التشغيلية.
       'dashboard_access',
+      // Task 3d — عنصر قائمة «الفروع» اتربط بكوده الخاص branches_manage
+      // بدل settings_view العام. الدور ده عنده settings_view فكان بيشوف
+      // الرابط فعلاً، فلازم ياخد الكود الحقيقي بدل ما يتسحب منه.
+      'branches_manage',
     ];
     if (advancedAccountantRoleId > 0) {
       for (final code in advancedAccountantPerms) {
@@ -889,6 +900,8 @@ extension DatabaseSeederPermissions on AppDatabase {
       'purchases_create', 'reports_view', 'sales_view',
       // Spec 3c — نفس منحة dashboard_access للأدوار التشغيلية.
       'dashboard_access',
+      // Task 3d — نفس منطق analytics_view في accountantPermsIndices فوق.
+      'analytics_view',
     ];
     if (inventoryManagerRoleId > 0) {
       for (final code in inventoryManagerPerms) {

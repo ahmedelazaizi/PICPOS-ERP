@@ -655,7 +655,12 @@ const kAllNavItemDefs = [
   // 📊 التقارير والتحليلات
   // ═══════════════════════════════════════════
   NavItemDef(icon: PhosphorIconsBold.chartBar, label: 'التقارير', permission: 'reports_view', index: 11, section: 'التقارير', group: 'reports'),
-  NavItemDef(icon: PhosphorIconsBold.chartPie, label: 'التحليلات', permission: 'reports_view', index: 15, group: 'reports'),
+  // Task 3d — كان على 'reports_view' وده كود عام؛ screenPermissionMap
+  // بيربط الشاشة بـ analytics_view من زمان. اللي عنده reports_view بس
+  // كان بيشوف الرابط وميقدرش يفتح الشاشة (رابط ميت). اتصلّح ليتفق مع
+  // الخريطة — راجع منح analytics_view في RoleGrantMatrix.defaultGrants
+  // والسيدر عشان محاسب/مدير مالي/مدير فرع/مدير مخزون ما يفقدوش الرابط.
+  NavItemDef(icon: PhosphorIconsBold.chartPie, label: 'التحليلات', permission: PermissionCodes.analyticsView, index: 15, group: 'reports'),
   NavItemDef(icon: PhosphorIconsBold.chartBar, label: 'أداء الفروع', permission: 'reports_view', index: 39, group: 'reports'),
   NavItemDef(icon: PhosphorIconsBold.clipboardText, label: 'سجل العمليات', permission: 'audit_view', index: 18, group: 'reports'),
   NavItemDef(icon: PhosphorIconsBold.chartBar, label: 'تقارير مخصصة', permission: 'reports_view', index: 43, group: 'reports'),
@@ -664,7 +669,11 @@ const kAllNavItemDefs = [
   // ⚙️ النظام والإعدادات
   // ═══════════════════════════════════════════
   NavItemDef(icon: PhosphorIconsBold.cookingPot, label: 'المطبخ', permission: 'kitchen_view', index: 14, section: 'النظام', group: 'system'),
-  NavItemDef(icon: PhosphorIconsBold.buildings, label: 'الفروع', permission: 'settings_view', index: 13, group: 'system'),
+  // Task 3d — اختبار الاتفاق المعمّم كشف نفس عائلة عطل «التحليلات» هنا:
+  // كان على 'settings_view' بينما screenPermissionMap يربط الشاشة بـ
+  // branches_manage. راجع منح branches_manage لمحاسب متقدم تحت (كان
+  // بيشوف الرابط عبر settings_view بس ماعندوش الكود الفعلي).
+  NavItemDef(icon: PhosphorIconsBold.buildings, label: 'الفروع', permission: PermissionCodes.branchesManage, index: 13, group: 'system'),
   NavItemDef(icon: PhosphorIconsBold.mapPin, label: 'المناطق', permission: 'settings_view', index: 60, group: 'system'),
   NavItemDef(icon: PhosphorIconsBold.users, label: 'الموظفين', permission: 'hr_view', index: 16, group: 'system'),
   NavItemDef(icon: PhosphorIconsBold.scales, label: 'ميزان التسعير', permission: 'settings_scale', index: 21, group: 'system'),

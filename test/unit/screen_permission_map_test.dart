@@ -38,40 +38,43 @@ void main() {
     });
   });
 
-  test('عنصر القائمة بتاع كل شاشة اتصلّحت لازم يتفق مع الخريطة', () {
-    // ده بالظبط نوع العطل اللي البلاغ حذّر منه: نصلّح screenPermissionMap
-    // ونسيب عنصر القائمة (userNavItemsProvider) على الكود العام القديم —
-    // فيبقى فيه رابط في القائمة الجانبية بيوصّل لشاشة ممنوعة، أو العكس:
-    // شاشة متاحة من غير رابط ليها في القائمة. حصل بالظبط كده مع لوحة
-    // التحكم أول مرة (راجع تعليق `permission: PermissionCodes.dashboardAccess`
-    // فوق عنصر "الرئيسية" في auth_providers.dart).
+  test('كل مدخل قائمة متفق مع خريطة الشاشات', () {
+    // ── ليه التعميم ──────────────────────────────────────────────────────
+    // النسخة الأولى غطّت الشاشات اللي اتصلّحت بس (التمانية اللي كانت على
+    // كود عام زي pos_access أو sales_view)، فسابت اختلاف «التحليلات»
+    // يعدّي — ودي نفس العائلة بالظبط. الاختبار اللي بيغطي عيّنة بيثبّت
+    // العيّنة، مش القاعدة. التعميم ده كشف اختلاف تاني من نفس العائلة على
+    // شاشة «الفروع» (راجع تعليق Task 3d فوق عنصرها في auth_providers.dart).
     //
-    // النطاق هنا مقصود يقتصر على الشاشات العشرة اللي اتصلّحت في الخريطة
-    // فوق. فيه شاشات تانية (زي analytics: مربوطة بـ analytics_view في
-    // الخريطة لكن عنصر قائمتها لسه على reports_view) فيها تعارض قديم مش
-    // من إصلاح النهارده — ده خارج نطاق التاسك ده ومطروح في مرحلة تانية
-    // (مرحلة الـ ٨٨ كود بلا إنفاذ).
-    const changedScreens = <ScreenId>{
-      ScreenId.dashboard,
-      ScreenId.offers,
-      ScreenId.tables,
-      ScreenId.kitchen,
-      ScreenId.salesReturns,
-      ScreenId.purchaseReturns,
-      ScreenId.manufacturing,
-      ScreenId.fixedAssets,
-    };
-
-    for (final screen in changedScreens) {
-      final navItem = kAllNavItemDefs.firstWhere(
-        (item) => ScreenId.fromIndex(item.index) == screen,
-        orElse: () =>
-            throw StateError('مفيش عنصر قائمة بيفتح شاشة $screen أصلاً'),
-      );
-      expect(navItem.permission, screenPermissionMap[screen],
-          reason:
-              'عنصر القائمة بتاع $screen (${navItem.label}) لازم يتفق مع '
-              'screenPermissionMap[$screen]');
+    // أي مدخل مالوش `ScreenId` مقابل بيتستثنى صراحة بسببه تحت — الاستثناء
+    // المكتوب أحسن من اختبار بيعدّي على الفاضي.
+    final mismatches = <String>[];
+    for (final item in kAllNavItemDefs) {
+      final screen = _screenForNavItem(item);
+      if (screen == null) continue; // مستثنى بسبب مكتوب في _screenForNavItem
+      final mapped = screenPermissionMap[screen];
+      if (mapped == null) continue;
+      if (item.permission != mapped) {
+        mismatches.add('${item.label}: القائمة=${item.permission} '
+            'الخريطة=$mapped');
+      }
     }
+    expect(mismatches, isEmpty,
+        reason: 'مدخل بيظهر لناس ما يقدروش يفتحوا شاشته (أو العكس):\n'
+            '${mismatches.join('\n')}');
   });
 }
+
+/// بيربط عنصر قائمة بالـ `ScreenId` المقابل له.
+///
+/// بيستخدم `ScreenId.fromIndex(item.index)` — بالظبط نفس المنطق اللي
+/// `userNavItemsProvider` الحقيقي بيستخدمه فوق في auth_providers.dart —
+/// مش مطابقة على `label` لأنه نص عرض عرضة يتغيّر من غير ما يبقى ده
+/// المقصود.
+///
+/// بيرجّع `null` للمداخل اللي مالهاش شاشة مقابلة فعلاً (تفتح ديالوج أو
+/// حوار مش route كامل مثلاً). دلوقتي الـ 47 مدخل كلهم في kAllNavItemDefs
+/// بيرجّعوا شاشة موجودة في screenPermissionMap — يعني صفر استثناءات حالياً
+/// — لكن السطر ده فاضل كحارس صريح لأي مدخل مستقبلي من النوع ده، عشان لو
+/// حد ضاف مدخل بدون شاشة، الاختبار يفضل شغّال بدل ما يتقفل بلا داعي.
+ScreenId? _screenForNavItem(NavItemDef item) => ScreenId.fromIndex(item.index);

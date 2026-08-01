@@ -94,6 +94,12 @@ class RoleGrantMatrix {
       'sales_view',
       'purchases_view',
       'dashboard_access',
+      // Task 3d — عنصر قائمة «التحليلات» كان على reports_view العام
+      // بينما screenPermissionMap يربط الشاشة بـ analytics_view. هذا
+      // الدور عنده reports_view فكان بيشوف الرابط قبل الإصلاح؛ الكود
+      // ده بيتمنح هنا عشان الإصلاح ما يسحبش الرابط لوحده — السحب قرار
+      // المدير.
+      'analytics_view',
     },
     'مدير مالي': {
       // Inherits the full accountant set
@@ -107,6 +113,8 @@ class RoleGrantMatrix {
       'dashboard_access',
       // FM-only extras (Spec 077 Batch 0.5)
       'commercial_papers_manage',
+      // Task 3d — نفس منطق analytics_view فوق (محاسب).
+      'analytics_view',
     },
     'كاشير متقدم': {
       'pos_access',
@@ -148,6 +156,10 @@ class RoleGrantMatrix {
       'purchases_create',
       'settings_view',
       'dashboard_access',
+      // Task 3d — نفس منطق analytics_view (محاسب فوق): الدور ده عنده
+      // reports_view فكان بيشوف رابط «التحليلات» قبل ما نربطه بكوده
+      // الخاص.
+      'analytics_view',
     },
     'محاسب متقدم': {
       'treasury_view',
@@ -159,6 +171,11 @@ class RoleGrantMatrix {
       'inventory_view',
       'analytics_view',
       'dashboard_access',
+      // Task 3d — عنصر قائمة «الفروع» كان على settings_view العام
+      // بينما screenPermissionMap يربط الشاشة بـ branches_manage. هذا
+      // الدور عنده settings_view فكان بيشوف الرابط؛ الكود ده بيتمنح هنا
+      // عشان الإصلاح ما يسحبش الرابط لوحده.
+      'branches_manage',
     },
     'مدير مخزون': {
       'inventory_view',
@@ -168,6 +185,8 @@ class RoleGrantMatrix {
       'reports_view',
       'sales_view',
       'dashboard_access',
+      // Task 3d — نفس منطق analytics_view فوق (محاسب).
+      'analytics_view',
     },
   };
 
