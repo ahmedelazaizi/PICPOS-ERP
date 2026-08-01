@@ -15,6 +15,9 @@
 - **الودجتات المشتركة تحت `lib/presentation/pos/widgets/`** بين البراندين. أي تعديل هناك يبقى إما إصلاح صحيح للاتنين، أو إضافة ببارامتر له قيمة افتراضية تعيد سلوك اليوم بالحرف. ممنوع `Brand.isPicPos` جوه ودجت مشتركة.
 - **ممنوع تشغيل `build_runner`** وممنوع تعديل `database.g.dart` يدوياً. الخطة دي ما بتغيّرش الاسكيما فمش محتاجة توليد. راجع `[[build-runner-hangs-in-this-env]]`.
 - **الاختبارات تتشغّل بـ `--concurrency=1`** — التوازي بيرفرف بموت الأيزوليت.
+- **إيقاع الاختبار (قرار 2026-08-01):** الحزمة الكاملة بتاخد ~٢٠ دقيقة، فمش بتتشغّل كل مهمة. كل مهمة بتشغّل **اختباراتها المركّزة بس** (ملف الاختبار بتاعها + أي ملف اختبار بيلمس نفس الكود)، والحزمة الكاملة بتتشغّل **مرة واحدة آخر كل مرحلة** كبوابة. `flutter analyze lib test` بيفضل على كل مهمة — رخيص.
+  المقايضة المقبولة: لو الحزمة رجعت حمرا آخر مرحلة، المهمة المسؤولة مش هتبقى واضحة فوراً. مخفّفة بإن كل مهمة ليها كوميت منفصل، فـ`git bisect` أو رجوع كوميت واحد بيحدّدها بسرعة.
+  بوابات المراحل: آخر Task 2 (مرحلة ١) · آخر Task 3 (مرحلة ٢) · آخر Task 13 (مرحلة ٣، قبل النقل لـ UralCash).
 - خط الأساس قبل البدء: `flutter analyze lib test` صفر أخطاء · `flutter test --concurrency=1` ٣٤٠٠ ناجحة / ١٢ متخطّاة / صفر فشل.
 - التعليقات بالعربي المصري وبتشرح **ليه** مش **إيه**. الكود والأسماء إنجليزي.
 - كوميت منفصل لكل مهمة، رسالته بالعربي بأسلوب `git log --oneline -6`.
@@ -453,6 +456,135 @@ fix(perms): باقي مواضع تجاوز «مدير» + فشل مفتوح في
 
 `app_main_screen` اتساب على `isManager` في المواضع التجميلية بتعليق يوضّح
 إنها مش قرار صلاحية.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+EOF
+)"
+```
+
+---
+
+### Task 2b: كلمة سر غلق البرنامج بيتخطاها أي دور نظام
+
+مهمة اتولدت من مراجعة Task 2. باج **قديم** مش انحدار — المراجع تأكد إن التعبير القديم كان تلات فروع و Task 2 لمس الأولين بس.
+
+**Files:**
+- Modify: `lib/app_main_screen.dart` (حوالي سطر ٥٨٨)
+- Test: `test/unit/close_app_gate_test.dart` (جديد)
+
+**Interfaces:**
+- Consumes: `AuthStateBypass.hasSystemAdminBypass` من Task 1.
+- Produces: `@visibleForTesting bool canCloseAppWithoutPassword(AuthState auth)` كدالة عليا في `app_main_screen.dart`.
+
+**المشكلة:** الشرط الحالي
+
+```dart
+    final isAdminOrManager =
+        authState.hasSystemAdminBypass ||
+        (authState.role?.isSystemRole ?? false);
+```
+
+الفرع التاني بيسمح لأي **دور نظام مزروع** يتخطى كلمة السر. و`isSystemRole` **مش إشارة أقدمية**: الأدوار المزروعة بـ`isSystemRole: true` هي مدير النظام و**كاشير** ومخزني ومحاسب ومدير مالي. يعني الكاشير العادي بيقفل البرنامج من غير كلمة سر مدير. البوابة دي موجودة عشان تمنع بالظبط ده.
+
+- [ ] **Step 1: اكتب الاختبار الفاشل**
+
+```dart
+// test/unit/close_app_gate_test.dart
+//
+// مين يقدر يقفل البرنامج من غير كلمة سر مدير؟
+//
+// ── الباج ─────────────────────────────────────────────────────────────────
+// الشرط كان بيسيب فرع `(role?.isSystemRole ?? false)` — و`isSystemRole` مش
+// إشارة أقدمية. الأدوار المزروعة كنظام: مدير النظام، **كاشير**، مخزني،
+// محاسب، مدير مالي. فالكاشير كان بيقفل البرنامج بلا كلمة سر، وهي بالظبط
+// الحالة اللي البوابة موجودة عشانها.
+import 'package:flutter_test/flutter_test.dart';
+import 'package:ural_erp/app_main_screen.dart';
+
+void main() {
+  group('canCloseAppWithoutPassword', () {
+    test('كاشير — دور نظام لكنه مش مدير — لا يعدّي', () {
+      expect(canCloseAppWithoutPassword(
+          authStateForRole('كاشير', isSystemRole: true)), isFalse);
+    });
+
+    test('مخزني ومحاسب ومدير مالي لا يعدّوا', () {
+      for (final name in ['مخزني', 'محاسب', 'مدير مالي']) {
+        expect(
+          canCloseAppWithoutPassword(
+              authStateForRole(name, isSystemRole: true)),
+          isFalse,
+          reason: '$name دور نظام بس مش مدير النظام',
+        );
+      }
+    });
+
+    test('مدير النظام يعدّي', () {
+      expect(canCloseAppWithoutPassword(
+          authStateForRole('مدير النظام', isSystemRole: true)), isTrue);
+    });
+
+    test('بلا دور لا يعدّي', () {
+      expect(canCloseAppWithoutPassword(const AuthState()), isFalse);
+    });
+  });
+}
+```
+
+> **للمنفّذ:** `authStateForRole` مش موجودة — أعد استعمال نفس مُساعِد بناء `AuthState` اللي في `test/unit/role_name_bypass_test.dart` (اتكتب في Task 1 وبيتعامل مع مُنشئات drift المولَّدة). انسخه أو اطلّعه لمُساعِد مشترك، وما تخترعش واحد جديد.
+
+- [ ] **Step 2: شغّل وتأكد من الفشل**
+
+```bash
+flutter test test/unit/close_app_gate_test.dart --concurrency=1
+```
+
+Expected: FAIL — `The function 'canCloseAppWithoutPassword' isn't defined`
+
+- [ ] **Step 3: استخرج الشرط وشيل الفرع الغلط**
+
+```dart
+/// هل المستخدم يقفل البرنامج من غير ما يتطلب كلمة سر المدير؟
+///
+/// ── ليه الفرع الأصلي كان غلط ──────────────────────────────────────────────
+/// كان فيه `|| (role?.isSystemRole ?? false)`، و`isSystemRole` بيوصف إن الدور
+/// **مزروع وغير قابل للحذف**، مش إنه دور عالي الصلاحية. الأدوار المزروعة
+/// كنظام هي مدير النظام و**كاشير** ومخزني ومحاسب ومدير مالي — فالكاشير كان
+/// بيتخطى البوابة اللي موجودة عشانه هو تحديداً.
+///
+/// البوابة دي سؤالها «يتطلب كلمة سر مدير؟»، فالمدير وحده هو اللي يعفى منها.
+@visibleForTesting
+bool canCloseAppWithoutPassword(AuthState auth) => auth.hasSystemAdminBypass;
+```
+
+ومكان الاستدعاء يبقى `final isAdminOrManager = canCloseAppWithoutPassword(authState);` — سيب اسم المتغير المحلي لو مستعمل تحت، أو غيّره لـ`canSkipPassword` لو ده بيوضّح أكتر.
+
+⚠️ **أثر مقصود:** «محاسب» و«مدير مالي» هيتطلبوا كلمة سر دلوقتي وما كانوش بيتطلبوها. ده الغرض من البوابة، مش أثر جانبي.
+
+- [ ] **Step 4: شغّل الاختبار + analyze**
+
+```bash
+flutter test test/unit/close_app_gate_test.dart --concurrency=1 && flutter analyze lib test
+```
+
+Expected: ٤ اختبارات PASS، صفر أخطاء تحليل.
+
+- [ ] **Step 5: كوميت**
+
+```bash
+git add lib/app_main_screen.dart test/unit/close_app_gate_test.dart
+git commit -m "$(cat <<'EOF'
+fix(perms): الكاشير كان بيقفل البرنامج من غير كلمة سر مدير
+
+بوابة غلق البرنامج كانت بتعفي أي دور بـ`isSystemRole == true`، و`isSystemRole`
+بيوصف إن الدور مزروع وغير قابل للحذف — مش إنه عالي الصلاحية. الأدوار
+المزروعة كنظام هي مدير النظام و**كاشير** ومخزني ومحاسب ومدير مالي، فالكاشير
+كان بيتخطى البوابة اللي موجودة عشانه هو بالذات.
+
+الباج قديم ومش انحدار من كوميت تجاوز «مدير»: التعبير كان تلات فروع وده
+كان تالتهم. كشفته مراجعة الكوميت اللي قبله.
+
+أثر مقصود: «محاسب» و«مدير مالي» بقوا يتطلبوا كلمة السر.
 
 Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
 EOF
