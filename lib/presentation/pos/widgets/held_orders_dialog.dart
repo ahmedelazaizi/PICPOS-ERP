@@ -11,6 +11,25 @@ import '../../../services/invoice_generator.dart';
 import '../../widgets/permission_guard.dart';
 import '../providers/cart_controller.dart';
 
+/// زرار طباعة أمر شغل لفاتورة معلقة — مستخرج كودجت top-level عشان يتعمله
+/// اختبار widget من غير الديالوج كله.
+///
+/// بدون `allowManagerOverride`: نفس معاملة زرارَي «استرجاع»/«حذف» جنبه في
+/// `_HeldOrderTile` — بدون الصلاحية الزرار يختفي تماماً، مفيش تصريح مدير
+/// لإعادة طباعة فاتورة سابقة (مش عملية مالية حرجة).
+@visibleForTesting
+Widget buildHeldOrderPrintButton({required VoidCallback onPrint}) {
+  return PermissionGuard(
+    permission: PermissionCodes.posWorkOrder,
+    child: IconButton(
+      icon: const Icon(PhosphorIconsBold.printer, size: 20),
+      color: AppColors.info,
+      tooltip: 'طباعة',
+      onPressed: onPrint,
+    ),
+  );
+}
+
 class HeldOrdersDialog extends ConsumerWidget {
   final Function(int orderId) onRetrieve;
 
@@ -230,12 +249,7 @@ class _HeldOrderTile extends ConsumerWidget {
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          IconButton(
-            icon: const Icon(PhosphorIconsBold.printer, size: 20),
-            color: AppColors.info,
-            tooltip: 'طباعة',
-            onPressed: onPrint,
-          ),
+          buildHeldOrderPrintButton(onPrint: onPrint),
           PermissionGuard(
             permission: PermissionCodes.posRestoreHeld,
             child: IconButton(

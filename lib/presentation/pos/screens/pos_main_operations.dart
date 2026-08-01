@@ -9,6 +9,29 @@ part of 'pos_main_screen.dart';
 /// `_processPaymentAndSave` في الملفين شبه متطابقة. **أي إصلاح في مسار الدفع
 /// أو الحفظ هنا لازم يتراجع هناك كذلك** — وجدول الفروق المقصودة (اللي مش
 /// المفروض تتوحّد) موجود في تعليق رأس ذلك الملف.
+
+/// فحص صريح قبل فتح ديالوج الميزان — كان مفتوح لأي مستخدم من غير أي فحص
+/// صلاحية، رغم إنه بيغيّر سعر/كمية الفاتورة فعلياً. مستخرجة top-level عشان
+/// تتاختبر لوحدها زي `canEditOffer`/`canCancelEInvoice` في Task 6a/6b.
+@visibleForTesting
+bool canOpenPosWeightDialog(List<String> permissions) {
+  final isAdmin =
+      permissions.contains('system_admin') || permissions.contains('*');
+  return isAdmin || permissions.contains(PermissionCodes.posWeightDialog);
+}
+
+/// فحص صريح قبل طباعة أمر شغل/مطبخ من فاتورة سابقة — كان الزرار شغّال لأي
+/// مستخدم من غير أي فحص صلاحية. مش نفس مسار طباعة المطبخ التلقائي وقت
+/// «حفظ وطباعة» (`printKitchenOrders` جوه `_processPaymentAndSave`) — ده
+/// أثر جانبي من إتمام البيع نفسه، مش فعل منفصل يختاره المستخدم، فسيبناه
+/// من غير فحص (زي ما عملت Task 6b مع `kitchenRepo.createWorkOrder`).
+@visibleForTesting
+bool canPrintPosWorkOrder(List<String> permissions) {
+  final isAdmin =
+      permissions.contains('system_admin') || permissions.contains('*');
+  return isAdmin || permissions.contains(PermissionCodes.posWorkOrder);
+}
+
 mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
   void _initOperations() {
     // Logic moved from initState if needed, but mostly focus management
@@ -51,6 +74,20 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
     }
 
     if (product.isSoldByWeight) {
+      final permissions =
+          ref.read(currentUserPermissionsProvider).asData?.value ??
+              const <String>[];
+      if (!canOpenPosWeightDialog(permissions)) {
+        if (mounted) {
+          showPosToast(
+            context,
+            ref,
+            'ليس لديك صلاحية استخدام الميزان',
+            type: PosNotificationType.error,
+          );
+        }
+        return;
+      }
       final weight = await PosDialogs.showWeightInput(context, ref, product);
       if (weight != null && weight > 0) {
         await _addProductWithModifiers(product, quantity: weight);
@@ -824,6 +861,20 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
   }
 
   Future<void> _printKitchenOrdersForInvoice(int invoiceId) async {
+    final permissions =
+        ref.read(currentUserPermissionsProvider).asData?.value ??
+            const <String>[];
+    if (!canPrintPosWorkOrder(permissions)) {
+      if (mounted) {
+        showPosToast(
+          context,
+          ref,
+          'ليس لديك صلاحية طباعة أوامر الشغل',
+          type: PosNotificationType.error,
+        );
+      }
+      return;
+    }
     try {
       await ref
           .read(posControllerProvider.notifier)

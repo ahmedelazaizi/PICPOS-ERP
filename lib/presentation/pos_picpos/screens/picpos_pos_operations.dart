@@ -40,6 +40,19 @@ part of 'picpos_pos_screen.dart';
 /// | تخطي «غير متوفر» | سؤال صريح → `allowOversell` | ضغط «آجل» قبل السحب |
 ///
 /// أي صف جديد في الجدول ده لازم يكون قرار، مش نتيجة.
+
+/// فحص صريح قبل فتح ديالوج الميزان — نفس الفحص الموجود في
+/// `pos_main_operations.dart` (`canOpenPosWeightDialog`)، لكن مكرَّر هنا بدل
+/// ما يتشارك، لأن الملفين مكتبتين مختلفتين (`part of` جذور مختلفة) ومفيش
+/// نقطة مشتركة موجودة أصلاً بينهم غير النسخ الصريح المقصود لهذا الفورك (زي
+/// ما موثّق في تعليق رأس الملف).
+@visibleForTesting
+bool canOpenPosWeightDialog(List<String> permissions) {
+  final isAdmin =
+      permissions.contains('system_admin') || permissions.contains('*');
+  return isAdmin || permissions.contains(PermissionCodes.posWeightDialog);
+}
+
 mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
   // ── Contract the screen must satisfy ───────────────────────────────────
   TextEditingController get barcodeController;
@@ -282,6 +295,15 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     if (!mounted) return;
 
     if (product.isSoldByWeight) {
+      final permissions =
+          ref.read(currentUserPermissionsProvider).asData?.value ??
+              const <String>[];
+      if (!canOpenPosWeightDialog(permissions)) {
+        showPosToast(context, ref, 'ليس لديك صلاحية استخدام الميزان',
+            type: PosNotificationType.error);
+        _refocusScanner();
+        return;
+      }
       final weight = await PosDialogs.showWeightInput(context, ref, product);
       // null = cashier cancelled. Adding nothing is the correct outcome.
       if (weight == null || weight <= 0) {

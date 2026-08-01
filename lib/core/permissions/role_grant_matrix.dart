@@ -89,6 +89,22 @@ class RoleGrantMatrix {
       'offers_edit',
       'offers_delete',
       'tables_manage',
+      // Task 7 — نفس المنطق بالظبط: الأكواد التمانية دي (نقطة البيع) مش في
+      // أي قايمة أدوار ثابتة في السيدر أصلاً — حتى الأكواد الشقيقة المنفَّذة
+      // فعلاً من قبل زي pos_search/pos_table_select/pos_clear_cart مش موجودة
+      // هناك برضه. الوضع الطبيعي لأكواد نقطة البيع الدقيقة دي إن المدير هو
+      // اللي يفعّلها لكل دور من شاشة «الأدوار والصلاحيات» حسب احتياج الفرع —
+      // مش منحة افتراضية للأدوار المزروعة. إضافتها هنا خط دفاع تاني بس
+      // (زي سبب٠٨٦) عشان زرار «منح الصلاحيات الافتراضية» يقدر يصلّح مدير
+      // النظام لو syncAllPermissions فشل بصمت، مش منحة جديدة لأي دور تشغيلي.
+      'pos_customer_add',
+      'pos_expense_description',
+      'pos_grid_toggle',
+      'pos_low_stock_alert',
+      'pos_note_add',
+      'pos_notifications',
+      'pos_weight_dialog',
+      'pos_work_order',
     },
     'كاشير': {
       'pos_access',

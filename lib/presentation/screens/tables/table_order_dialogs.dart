@@ -4,6 +4,16 @@ part of '../tables_screen.dart';
 // TABLE ORDER DIALOGS — Open, View Order, Close, Merge, Kitchen Print
 // ═══════════════════════════════════════════════════════════════════════════
 
+/// فحص صريح قبل طباعة أمر شغل/مطبخ لطاولة — نفس الكود اللي بيحمي
+/// `_printKitchenOrdersForInvoice` في `pos_main_operations.dart`، مكرَّر هنا
+/// لأنهم مكتبتين مختلفتين (`part of` جذور مختلفة، مفيش نقطة مشتركة موجودة).
+@visibleForTesting
+bool canPrintPosWorkOrder(List<String> permissions) {
+  final isAdmin =
+      permissions.contains('system_admin') || permissions.contains('*');
+  return isAdmin || permissions.contains(PermissionCodes.posWorkOrder);
+}
+
 mixin _TableOrderDialogsMixin on ConsumerState<TablesScreen> {
   bool _openingTable = false;
   bool _closingTable = false;
@@ -338,6 +348,16 @@ mixin _TableOrderDialogsMixin on ConsumerState<TablesScreen> {
     RestaurantTable table,
     TableOrder order,
   ) async {
+    final permissions =
+        ref.read(currentUserPermissionsProvider).asData?.value ??
+            const <String>[];
+    if (!canPrintPosWorkOrder(permissions)) {
+      if (mounted) {
+        AppToast.show(context, 'ليس لديك صلاحية طباعة أوامر الشغل',
+            type: ToastType.error);
+      }
+      return;
+    }
     try {
       final items = await restaurantRepo.getTableOrderItems(order.id);
       if (items.isEmpty) return;

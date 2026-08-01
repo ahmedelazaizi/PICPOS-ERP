@@ -4,12 +4,44 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/logging/diagnostic_logger.dart';
+import '../../../core/permissions/permission_codes.dart';
 import '../../../core/utils/uuid_v7.dart';
 import '../../../data/providers/providers.dart';
 import '../../../services/client_write_interceptor.dart';
 import '../../../services/generators/thermal_voucher_generator.dart';
 import '../providers/pos_notification_provider.dart';
 import 'pos_previous_expenses_dialog.dart';
+
+/// حقل وصف سند المصروف — مستخرج كودجت top-level عشان يتعمله اختبار wiring
+/// مباشر (هل العلم فعلاً بيتحكّم في ظهور الحقل ولّا لأ) من غير ما نركّب
+/// `PosExpenseDialog` كله أو نعمل fake لـ `IAuthRepository`. الجلب
+/// غير المتزامن للصلاحية (`_checkPermissions`) نفس شكل `_canSelectType`
+/// المجاور — مالوش اختبار مخصص هنا برضه لنفس السبب.
+///
+/// الحقل مختفي تماماً من غير الصلاحية بدل ما يتعطّل، عشان الكاشير ما
+/// يحسّش إنه في حاجة ناقصة كان المفروض يملاها (نفس معاملة _canSelectType).
+@visibleForTesting
+Widget buildPosExpenseDescriptionField({
+  required bool canEnter,
+  required TextEditingController controller,
+}) {
+  if (!canEnter) return const SizedBox.shrink();
+  return Column(
+    children: [
+      const SizedBox(height: 16),
+      TextField(
+        controller: controller,
+        decoration: InputDecoration(
+          labelText: 'الوصف (اختياري)',
+          prefixIcon: const Icon(PhosphorIconsBold.note),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+    ],
+  );
+}
 
 /// Dialog for creating quick expense vouchers from the POS
 class PosExpenseDialog extends ConsumerStatefulWidget {
@@ -32,6 +64,9 @@ class _PosExpenseDialogState extends ConsumerState<PosExpenseDialog> {
   final _descriptionController = TextEditingController();
   String _selectedCategory = 'other_expense';
   bool _canSelectType = false;
+  // إضافة وصف حر على سند المصروف — كانت دايماً ظاهرة من غير أي فحص، رغم إن
+  // حقل النوع جنبها (_canSelectType) مربوط بصلاحيته من زمان. نفس المعاملة.
+  bool _canEnterDescription = false;
   bool _isLoading = true;
 
   // #4: Employee/salary fields
@@ -76,12 +111,17 @@ class _PosExpenseDialogState extends ConsumerState<PosExpenseDialog> {
           userId,
           'pos_expense_type_select',
         );
+        _canEnterDescription = await authRepo.userHasPermission(
+          userId,
+          PermissionCodes.posExpenseDescription,
+        );
       }
     } catch (e) {
       debugPrint('[PosExpenseDialog] permission check failed: $e');
-      // Fall through with _canSelectType=false so the dialog still
-      // opens — user can add an expense with the default category.
+      // Fall through with both flags false so the dialog still opens —
+      // user can add an expense with the default category and no note.
       _canSelectType = false;
+      _canEnterDescription = false;
     } finally {
       if (mounted) {
         setState(() {
@@ -207,18 +247,9 @@ class _PosExpenseDialogState extends ConsumerState<PosExpenseDialog> {
                 ),
               ),
 
-              const SizedBox(height: 16),
-
-              // Description field - always shown
-              TextField(
+              buildPosExpenseDescriptionField(
+                canEnter: _canEnterDescription,
                 controller: _descriptionController,
-                decoration: InputDecoration(
-                  labelText: 'الوصف (اختياري)',
-                  prefixIcon: const Icon(PhosphorIconsBold.note),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
               ),
 
               // #4: Employee selector when salary is chosen

@@ -5,6 +5,93 @@ part of 'cart_item_tile.dart';
 // Extracted from cart_item_tile.dart for maintainability (PIR Phase 2)
 // ═══════════════════════════════════════════════════════════════════════════
 
+/// حقل ملاحظة الصنف — مستخرج كودجت top-level مستقل عن
+/// `_CartItemModifierPanelMixin` عشان يتعمله اختبار widget بدون تركيب
+/// `CartItemTile` الحقيقي أو أي قاعدة بيانات (نفس نمط Task 6a/6b).
+///
+/// `allowManagerOverride` بلا `onGranted`: الحقل نص حر بلا زرار واحد واضح —
+/// إضافة ملاحظة عملية كتابة حقيقية على الصنف، مش مجرد عرض، فمن غير الصلاحية
+/// المستخدم لازم تصريح مدير. الموافقة هنا **بتفتح القفل** (نفس السيناريو
+/// الموثّق في `permission_guard.dart` لقسم/حقل بلا فعل واحد) بدل ما تشغّل
+/// حفظ فوري — بعدها الكاشير يكتب ويضغط ✓ بنفسه زي أي مستخدم مصرّح له.
+@visibleForTesting
+Widget buildCartItemNoteField({
+  required TextEditingController noteController,
+  required VoidCallback onSave,
+  double scaleFactor = 1.0,
+}) {
+  return PermissionGuard(
+    permission: PermissionCodes.posNoteAdd,
+    allowManagerOverride: true,
+    actionName: 'إضافة ملاحظة على الصنف',
+    child: Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: 10 * scaleFactor,
+        vertical: 6 * scaleFactor,
+      ),
+      child: Row(
+        children: [
+          Icon(
+            PhosphorIconsBold.notepad,
+            size: 14 * scaleFactor,
+            color: AppColors.warning,
+          ),
+          SizedBox(width: 4 * scaleFactor),
+          Expanded(
+            child: SizedBox(
+              height: 30 * scaleFactor,
+              child: TextField(
+                controller: noteController,
+                style: TextStyle(fontSize: 11 * scaleFactor),
+                textInputAction: TextInputAction.done,
+                decoration: InputDecoration(
+                  isDense: true,
+                  hintText: 'ملاحظة على الصنف...',
+                  hintStyle: TextStyle(
+                    fontSize: 10 * scaleFactor,
+                    color: AppColors.textMuted,
+                  ),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 8 * scaleFactor,
+                    vertical: 6 * scaleFactor,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(6),
+                    borderSide: BorderSide(
+                      color: AppColors.border.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(6),
+                    borderSide: BorderSide(
+                      color: AppColors.border.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(6),
+                    borderSide: const BorderSide(
+                      color: AppColors.warning,
+                    ),
+                  ),
+                  suffixIcon: GestureDetector(
+                    onTap: onSave,
+                    child: Icon(
+                      PhosphorIconsBold.checkCircle,
+                      size: 16 * scaleFactor,
+                      color: AppColors.success,
+                    ),
+                  ),
+                ),
+                onSubmitted: (_) => onSave(),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 /// Mixin providing the expandable modifier/note panel and all related
 /// build helpers for [_CartItemTileState].
 mixin _CartItemModifierPanelMixin on State<CartItemTile> {
@@ -239,86 +326,16 @@ mixin _CartItemModifierPanelMixin on State<CartItemTile> {
   // ─────────────────────────────────────────────────────────────────────
 
   Widget _buildNoteField(double scaleFactor) {
-    return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: 10 * scaleFactor,
-        vertical: 6 * scaleFactor,
-      ),
-      child: Row(
-        children: [
-          Icon(
-            PhosphorIconsBold.notepad,
-            size: 14 * scaleFactor,
-            color: AppColors.warning,
-          ),
-          SizedBox(width: 4 * scaleFactor),
-          Expanded(
-            child: SizedBox(
-              height: 30 * scaleFactor,
-              child: TextField(
-                controller: noteController,
-                style: TextStyle(fontSize: 11 * scaleFactor),
-                textInputAction: TextInputAction.done,
-                decoration: InputDecoration(
-                  isDense: true,
-                  hintText: 'ملاحظة على الصنف...',
-                  hintStyle: TextStyle(
-                    fontSize: 10 * scaleFactor,
-                    color: AppColors.textMuted,
-                  ),
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: 8 * scaleFactor,
-                    vertical: 6 * scaleFactor,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(6),
-                    borderSide: BorderSide(
-                      color: AppColors.border.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(6),
-                    borderSide: BorderSide(
-                      color: AppColors.border.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(6),
-                    borderSide: const BorderSide(
-                      color: AppColors.warning,
-                    ),
-                  ),
-                  suffixIcon: GestureDetector(
-                    onTap: () {
-                      final note = noteController.text.trim();
-                      tileRef.read(cartControllerProvider.notifier)
-                          .updateItemNote(
-                        tileIndex,
-                        note.isEmpty ? null : note,
-                      );
-                      FocusScope.of(context).unfocus();
-                    },
-                    child: Icon(
-                      PhosphorIconsBold.checkCircle,
-                      size: 16 * scaleFactor,
-                      color: AppColors.success,
-                    ),
-                  ),
-                ),
-                onSubmitted: (value) {
-                  final note = value.trim();
-                  tileRef.read(cartControllerProvider.notifier)
-                      .updateItemNote(
-                    tileIndex,
-                    note.isEmpty ? null : note,
-                  );
-                  FocusScope.of(context).unfocus();
-                },
-              ),
-            ),
-          ),
-        ],
-      ),
+    return buildCartItemNoteField(
+      scaleFactor: scaleFactor,
+      noteController: noteController,
+      onSave: () {
+        final note = noteController.text.trim();
+        tileRef
+            .read(cartControllerProvider.notifier)
+            .updateItemNote(tileIndex, note.isEmpty ? null : note);
+        FocusScope.of(context).unfocus();
+      },
     );
   }
 

@@ -23,6 +23,45 @@ import 'package:ural_erp/presentation/pos/widgets/cart_item_tile.dart';
 
 part 'cart_auto_scroll.dart';
 part 'cart_display_settings.dart';
+
+/// زرار «إظهار المنتجات» (توسيع الشبكة بعد طيّها) — مستخرج كودجت مستقل عن
+/// `CartView.build` عشان يتعمله اختبار widget من غير ما نركّب الشاشة كلها.
+///
+/// `fallback` مش `allowManagerOverride`: طيّ/فتح الشبكة عرض واجهة بحت، مش
+/// عملية كتابة — فمن غير الصلاحية الزرار يختفي تماماً، بدل ما يظهر بتصريح
+/// مدير لحاجة مالهاش أثر مالي أو بيانات.
+@visibleForTesting
+Widget buildPosGridToggleButton({
+  required VoidCallback onToggle,
+  double scaleFactor = 1.0,
+}) {
+  return PermissionGuard(
+    permission: PermissionCodes.posGridToggle,
+    fallback: const SizedBox.shrink(),
+    child: Tooltip(
+      message: 'توسيع القائمة / إظهار المنتجات',
+      child: TextButton.icon(
+        onPressed: onToggle,
+        icon: Icon(PhosphorIconsBold.caretDoubleRight,
+            size: 16 * scaleFactor, color: AppColors.primary),
+        label: Text(
+          'إظهار المنتجات',
+          style: TextStyle(
+            fontSize: 12 * scaleFactor,
+            color: AppColors.primary,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        style: TextButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      ),
+    ),
+  );
+}
+
 class CartView extends ConsumerWidget {
   final VoidCallback? onCheckout;
   final VoidCallback? onClearCart;
@@ -262,25 +301,9 @@ class CartView extends ConsumerWidget {
               const Spacer(),
               if (posState.isGridCollapsed &&
                   (ref.watch(showProductLayoutToggleInPOSProvider).value ?? true))
-                Tooltip(
-                  message: 'توسيع القائمة / إظهار المنتجات',
-                  child: TextButton.icon(
-                    onPressed: () => ref.read(posControllerProvider.notifier).toggleGridCollapse(),
-                    icon: Icon(PhosphorIconsBold.caretDoubleRight, size: 16 * scaleFactor, color: AppColors.primary),
-                    label: Text(
-                      'إظهار المنتجات',
-                      style: TextStyle(
-                        fontSize: 12 * scaleFactor,
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                  ),
+                buildPosGridToggleButton(
+                  onToggle: () => ref.read(posControllerProvider.notifier).toggleGridCollapse(),
+                  scaleFactor: scaleFactor,
                 ),
               SizedBox(width: 4 * scaleFactor),
               // ⚙️ Cart display settings

@@ -14,6 +14,24 @@ import 'header/pos_status_indicators.dart';
 import 'header/pos_notification_bell.dart';
 import 'header/pos_low_stock_indicator.dart';
 
+/// جرس الإشعارات وتنبيه نقص المخزون — عرض بحت (مفيش أي كتابة)، فالحارس هنا
+/// `fallback` مش `allowManagerOverride`: من غير الصلاحية العنصر يختفي، ومفيش
+/// داعي لتصريح مدير لمجرد إخفاء/إظهار widget. مستخرجين كدوال top-level عشان
+/// يتعمل لهم اختبار wiring مباشر بدل ما نركّب PosHeader كله.
+@visibleForTesting
+Widget buildPosNotificationBellGuarded() => const PermissionGuard(
+      permission: PermissionCodes.posNotifications,
+      fallback: SizedBox.shrink(),
+      child: PosNotificationBell(),
+    );
+
+@visibleForTesting
+Widget buildPosLowStockIndicatorGuarded() => const PermissionGuard(
+      permission: PermissionCodes.posLowStockAlert,
+      fallback: SizedBox.shrink(),
+      child: PosLowStockIndicator(),
+    );
+
 class PosHeader extends ConsumerWidget {
   final bool showBackButton;
   final String? tableName;
@@ -96,8 +114,8 @@ class PosHeader extends ConsumerWidget {
           _buildActions(context, ref, posState, cartState, strategy),
 
           // Notification & Alerts
-          const PosNotificationBell(),
-          const PosLowStockIndicator(),
+          buildPosNotificationBellGuarded(),
+          buildPosLowStockIndicatorGuarded(),
 
           // Cashier Shift Closing
           if (onCashierClosing != null) _buildShiftCloseButton(),

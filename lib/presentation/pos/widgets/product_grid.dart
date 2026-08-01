@@ -17,6 +17,38 @@ import 'product_card_shimmer.dart';
 import '../../widgets/category_icon_picker.dart';
 import '../../../core/utils/arabic_utils.dart';
 
+/// زرار طيّ شبكة المنتجات (ملء الشاشة بالسلة) — مستخرج كودجت مستقل عن
+/// `_ProductGridState` عشان يتعمله اختبار widget من غير الشاشة كلها.
+///
+/// `fallback` مش `allowManagerOverride`: نفس سبب الزرار المقابل في
+/// `cart_view.dart` (`buildPosGridToggleButton`) — طيّ/فتح الشبكة عرض واجهة
+/// بحت، مش كتابة بيانات.
+@visibleForTesting
+Widget buildPosGridToggleActionButton({required VoidCallback onToggle}) {
+  return PermissionGuard(
+    permission: PermissionCodes.posGridToggle,
+    fallback: const SizedBox.shrink(),
+    child: Tooltip(
+      message: 'طي القائمة / ملء الشاشة',
+      child: InkWell(
+        onTap: onToggle,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.2), width: 1),
+          ),
+          child: const Icon(PhosphorIconsBold.caretDoubleLeft,
+              color: AppColors.primary, size: 20),
+        ),
+      ),
+    ),
+  );
+}
+
 /// Product grid widget for POS
 ///
 /// Displays products in a grid with category filtering, search,
@@ -250,11 +282,8 @@ class _ProductGridState extends ConsumerState<ProductGrid> {
         children: [
           // Layout Toggle Button (Premium)
           if (ref.watch(showProductLayoutToggleInPOSProvider).value ?? true)
-            _buildActionButton(
-              icon: PhosphorIconsBold.caretDoubleLeft,
-              onTap: () => controller.toggleGridCollapse(),
-              tooltip: 'طي القائمة / ملء الشاشة',
-              color: AppColors.primary,
+            buildPosGridToggleActionButton(
+              onToggle: () => controller.toggleGridCollapse(),
             ),
           if (ref.watch(showSearchInPOSProvider).value ?? true) ...[
             const SizedBox(width: 12),

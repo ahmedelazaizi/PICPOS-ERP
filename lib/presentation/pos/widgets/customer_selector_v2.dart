@@ -5,9 +5,33 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:drift/drift.dart' show Value;
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/permissions/permission_codes.dart';
 import '../../../data/providers/providers.dart';
 import '../../../services/client_write_interceptor.dart';
+import '../../widgets/permission_guard.dart';
 import 'package:ural_erp/presentation/pos/providers/cart_controller.dart';
+
+/// زرار «إضافة عميل سريع» بجانب حقل البحث — مستخرج كودجت مستقل عن
+/// `_CustomerSelectorV2State` عشان يتعمله اختبار widget من غير ما نركّب
+/// الشاشة كلها أو نلمس قاعدة بيانات (نفس نمط Task 6a/6b).
+///
+/// `allowManagerOverride` لأن دي عملية إضافة حقيقية (كتابة عميل جديد)، مش
+/// مجرد عرض — المستخدم من غير الكود لسه يقدر يشتغل بعد موافقة مدير.
+@visibleForTesting
+Widget buildPosCustomerAddIconButton({required VoidCallback onPressed}) {
+  return PermissionGuard(
+    permission: PermissionCodes.posCustomerAdd,
+    allowManagerOverride: true,
+    actionName: 'إضافة عميل سريع',
+    onGranted: onPressed,
+    child: IconButton(
+      icon: const Icon(PhosphorIconsBold.userPlus, size: 20),
+      onPressed: onPressed,
+      color: AppColors.primary,
+      tooltip: 'إضافة عميل سريع',
+    ),
+  );
+}
 
 /// Advanced Customer Selector for POS
 ///
@@ -113,13 +137,22 @@ class _CustomerSelectorV2State extends ConsumerState<CustomerSelectorV2> {
                   style: TextStyle(color: AppColors.textMuted),
                 ),
                 const SizedBox(height: 8),
-                TextButton.icon(
-                  onPressed: () {
+                PermissionGuard(
+                  permission: PermissionCodes.posCustomerAdd,
+                  allowManagerOverride: true,
+                  actionName: 'إضافة عميل سريع',
+                  onGranted: () {
                     _hideOverlay();
                     _showQuickAddDialog();
                   },
-                  icon: const Icon(PhosphorIconsBold.plus),
-                  label: const Text('إضافة عميل جديد'),
+                  child: TextButton.icon(
+                    onPressed: () {
+                      _hideOverlay();
+                      _showQuickAddDialog();
+                    },
+                    icon: const Icon(PhosphorIconsBold.plus),
+                    label: const Text('إضافة عميل جديد'),
+                  ),
                 ),
               ],
             ),
@@ -334,12 +367,7 @@ class _CustomerSelectorV2State extends ConsumerState<CustomerSelectorV2> {
                 },
               )
             else
-              IconButton(
-                icon: const Icon(PhosphorIconsBold.userPlus, size: 20),
-                onPressed: _showQuickAddDialog,
-                color: AppColors.primary,
-                tooltip: 'إضافة عميل سريع',
-              ),
+              buildPosCustomerAddIconButton(onPressed: _showQuickAddDialog),
           ],
         ),
       ),
