@@ -37,4 +37,41 @@ void main() {
           reason: '$screen لازم تتحكم بـ $code');
     });
   });
+
+  test('عنصر القائمة بتاع كل شاشة اتصلّحت لازم يتفق مع الخريطة', () {
+    // ده بالظبط نوع العطل اللي البلاغ حذّر منه: نصلّح screenPermissionMap
+    // ونسيب عنصر القائمة (userNavItemsProvider) على الكود العام القديم —
+    // فيبقى فيه رابط في القائمة الجانبية بيوصّل لشاشة ممنوعة، أو العكس:
+    // شاشة متاحة من غير رابط ليها في القائمة. حصل بالظبط كده مع لوحة
+    // التحكم أول مرة (راجع تعليق `permission: PermissionCodes.dashboardAccess`
+    // فوق عنصر "الرئيسية" في auth_providers.dart).
+    //
+    // النطاق هنا مقصود يقتصر على الشاشات العشرة اللي اتصلّحت في الخريطة
+    // فوق. فيه شاشات تانية (زي analytics: مربوطة بـ analytics_view في
+    // الخريطة لكن عنصر قائمتها لسه على reports_view) فيها تعارض قديم مش
+    // من إصلاح النهارده — ده خارج نطاق التاسك ده ومطروح في مرحلة تانية
+    // (مرحلة الـ ٨٨ كود بلا إنفاذ).
+    const changedScreens = <ScreenId>{
+      ScreenId.dashboard,
+      ScreenId.offers,
+      ScreenId.tables,
+      ScreenId.kitchen,
+      ScreenId.salesReturns,
+      ScreenId.purchaseReturns,
+      ScreenId.manufacturing,
+      ScreenId.fixedAssets,
+    };
+
+    for (final screen in changedScreens) {
+      final navItem = kAllNavItemDefs.firstWhere(
+        (item) => ScreenId.fromIndex(item.index) == screen,
+        orElse: () =>
+            throw StateError('مفيش عنصر قائمة بيفتح شاشة $screen أصلاً'),
+      );
+      expect(navItem.permission, screenPermissionMap[screen],
+          reason:
+              'عنصر القائمة بتاع $screen (${navItem.label}) لازم يتفق مع '
+              'screenPermissionMap[$screen]');
+    }
+  });
 }

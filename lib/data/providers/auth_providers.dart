@@ -580,87 +580,100 @@ class NavItemDef {
   });
 }
 
+/// كل عناصر القائمة الجانبية، بترتيبها ومرتبطة بأكواد الصلاحيات.
+///
+/// اتشالت من جوّه `userNavItemsProvider` لثابت مستوى الملف عشان اختبار
+/// `screen_permission_map_test.dart` يقدر يتأكد إن عنصر القائمة الخاص
+/// بكل شاشة متفق مع `screenPermissionMap[screenId]` — من غير ما يحتاج
+/// يشغّل الـ provider بكل تبعياته (auth state, DB, إلخ).
+const kAllNavItemDefs = [
+  // ═══════════════════════════════════════════
+  // 🏠 الرئيسية
+  // ═══════════════════════════════════════════
+  // كانت permission: null — أي حد يشوفها حتى لو الشاشة نفسها ممنوعة عنه.
+  // قبل كده كان ده متّسق لأن لوحة التحكم كانت بتتحقن في allowedScreens
+  // قسراً لكل الناس؛ دلوقتي screenPermissionMap بيربطها بـ dashboard_access
+  // فعلاً، فلازم عنصر القائمة يتحكم بنفس الكود عشان مايفضلش رابط ميت لشاشة
+  // ممنوعة (أو العكس).
+  NavItemDef(icon: PhosphorIconsBold.house, label: 'الرئيسية', permission: PermissionCodes.dashboardAccess, index: 0, section: 'الرئيسية', group: 'home'),
+
+  // ═══════════════════════════════════════════
+  // 💰 المبيعات
+  // ═══════════════════════════════════════════
+  NavItemDef(icon: PhosphorIconsBold.shoppingCart, label: 'نقطة البيع', permission: 'pos_access', index: 1, section: 'المبيعات', group: 'sales'),
+  NavItemDef(icon: PhosphorIconsBold.fileText, label: 'فواتير المبيعات', permission: 'sales_view', index: 17, group: 'sales'),
+  NavItemDef(icon: PhosphorIconsBold.notepad, label: 'طلبات البيع', permission: 'sales_orders_view', index: 37, group: 'sales'),
+  NavItemDef(icon: PhosphorIconsBold.circlesThree, label: 'الطاولات', permission: 'tables_view', index: 3, group: 'sales'),
+  NavItemDef(icon: PhosphorIconsBold.tag, label: 'العروض', permission: 'offers_view', index: 2, group: 'sales'),
+  NavItemDef(icon: PhosphorIconsBold.arrowUUpLeft, label: 'مردودات المبيعات', permission: 'sales_return_view', index: 44, group: 'sales'),
+
+  // ═══════════════════════════════════════════
+  // 🛒 المشتريات
+  // ═══════════════════════════════════════════
+  NavItemDef(icon: PhosphorIconsBold.receipt, label: 'فواتير المشتريات', permission: 'purchases_create', index: 9, section: 'المشتريات', group: 'purchases'),
+  NavItemDef(icon: PhosphorIconsBold.clipboardText, label: 'أوامر الشراء', permission: 'purchase_orders_view', index: 30, group: 'purchases'),
+  NavItemDef(icon: PhosphorIconsBold.arrowUUpLeft, label: 'مردودات المشتريات', permission: 'purchases_return_view', index: 45, group: 'purchases'),
+
+  // ═══════════════════════════════════════════
+  // 📦 المخزون والإنتاج
+  // ═══════════════════════════════════════════
+  NavItemDef(icon: PhosphorIconsBold.package, label: 'الأصناف', permission: 'products_add', index: 4, section: 'المخزون والإنتاج', group: 'inventory'),
+  NavItemDef(icon: PhosphorIconsBold.squaresFour, label: 'التصنيفات', permission: 'products_add', index: 5, group: 'inventory'),
+  NavItemDef(icon: PhosphorIconsBold.warehouse, label: 'المخزون', permission: 'inventory_view', index: 8, group: 'inventory'),
+  NavItemDef(icon: PhosphorIconsBold.clipboardText, label: 'أرصدة المخزون', permission: 'inventory_view', index: 19, group: 'inventory'),
+  NavItemDef(icon: PhosphorIconsBold.arrowsLeftRight, label: 'تحويل مخزني', permission: 'inventory_transfer', index: 20, group: 'inventory'),
+  NavItemDef(icon: PhosphorIconsBold.arrowsDownUp, label: 'حركة المخزون', permission: 'inventory_view', index: 29, group: 'inventory'),
+  NavItemDef(icon: PhosphorIconsBold.factory, label: 'التصنيع', permission: 'manufacturing_view', index: 25, group: 'inventory'),
+  NavItemDef(icon: PhosphorIconsBold.truck, label: 'طلبات الصرف', permission: 'inventory_view', index: 38, group: 'inventory'),
+  NavItemDef(icon: PhosphorIconsBold.money, label: 'التكاليف المحملة', permission: 'purchases_create', index: 41, group: 'inventory'),
+  NavItemDef(icon: PhosphorIconsBold.listChecks, label: 'الجرد الدوري', permission: 'inventory_view', index: 42, group: 'inventory'),
+
+  // ═══════════════════════════════════════════
+  // 👥 العملاء والموردين
+  // ═══════════════════════════════════════════
+  NavItemDef(icon: PhosphorIconsBold.usersThree, label: 'العملاء والموردين', permission: 'customers_view', index: 6, section: 'العلاقات التجارية', group: 'relations'),
+  NavItemDef(icon: PhosphorIconsBold.trophy, label: 'نقاط الولاء', permission: 'loyalty_view', index: 23, group: 'relations'),
+  NavItemDef(icon: PhosphorIconsBold.truck, label: 'التوزيع', permission: 'distribution_view', index: 24, group: 'relations'),
+
+  // ═══════════════════════════════════════════
+  // 💵 المالية والمحاسبة
+  // ═══════════════════════════════════════════
+  NavItemDef(icon: PhosphorIconsBold.wallet, label: 'الخزينة', permission: 'treasury_view', index: 10, section: 'المالية والمحاسبة', group: 'accounting'),
+  NavItemDef(icon: PhosphorIconsBold.lockKey, label: 'إغلاق الوردية', permission: PermissionCodes.posShiftClose, index: 56, group: 'accounting'),
+  NavItemDef(icon: PhosphorIconsBold.treeStructure, label: 'دليل الحسابات', permission: 'settings_view', index: 27, group: 'accounting'),
+  NavItemDef(icon: PhosphorIconsBold.notebook, label: 'دفتر اليومية', permission: 'settings_view', index: 32, group: 'accounting'),
+  NavItemDef(icon: PhosphorIconsBold.book, label: 'دفتر الأستاذ', permission: 'settings_view', index: 36, group: 'accounting'),
+  NavItemDef(icon: PhosphorIconsBold.link, label: 'ربط الحسابات', permission: 'settings_view', index: 31, group: 'accounting'),
+  NavItemDef(icon: PhosphorIconsBold.treeStructure, label: 'مراكز التكلفة', permission: 'settings_view', index: 33, group: 'accounting'),
+  NavItemDef(icon: PhosphorIconsBold.checks, label: 'الشيكات', permission: 'treasury_view', index: 34, group: 'accounting'),
+  NavItemDef(icon: PhosphorIconsBold.buildings, label: 'الأصول الثابتة', permission: 'assets_view', index: 35, group: 'accounting'),
+  NavItemDef(icon: PhosphorIconsBold.invoice, label: 'الفوترة الإلكترونية', permission: 'einvoice_view', index: 22, group: 'accounting'),
+  NavItemDef(icon: PhosphorIconsBold.calendar, label: 'السنوات المالية', permission: 'settings_view', index: 28, group: 'accounting'),
+  NavItemDef(icon: PhosphorIconsBold.coins, label: 'المصروفات التشغيلية', permission: 'settings_view', index: 26, group: 'accounting'),
+
+  // ═══════════════════════════════════════════
+  // 📊 التقارير والتحليلات
+  // ═══════════════════════════════════════════
+  NavItemDef(icon: PhosphorIconsBold.chartBar, label: 'التقارير', permission: 'reports_view', index: 11, section: 'التقارير', group: 'reports'),
+  NavItemDef(icon: PhosphorIconsBold.chartPie, label: 'التحليلات', permission: 'reports_view', index: 15, group: 'reports'),
+  NavItemDef(icon: PhosphorIconsBold.chartBar, label: 'أداء الفروع', permission: 'reports_view', index: 39, group: 'reports'),
+  NavItemDef(icon: PhosphorIconsBold.clipboardText, label: 'سجل العمليات', permission: 'audit_view', index: 18, group: 'reports'),
+  NavItemDef(icon: PhosphorIconsBold.chartBar, label: 'تقارير مخصصة', permission: 'reports_view', index: 43, group: 'reports'),
+
+  // ═══════════════════════════════════════════
+  // ⚙️ النظام والإعدادات
+  // ═══════════════════════════════════════════
+  NavItemDef(icon: PhosphorIconsBold.cookingPot, label: 'المطبخ', permission: 'kitchen_view', index: 14, section: 'النظام', group: 'system'),
+  NavItemDef(icon: PhosphorIconsBold.buildings, label: 'الفروع', permission: 'settings_view', index: 13, group: 'system'),
+  NavItemDef(icon: PhosphorIconsBold.mapPin, label: 'المناطق', permission: 'settings_view', index: 60, group: 'system'),
+  NavItemDef(icon: PhosphorIconsBold.users, label: 'الموظفين', permission: 'hr_view', index: 16, group: 'system'),
+  NavItemDef(icon: PhosphorIconsBold.scales, label: 'ميزان التسعير', permission: 'settings_scale', index: 21, group: 'system'),
+  NavItemDef(icon: PhosphorIconsBold.gear, label: 'الإعدادات', permission: 'settings_view', index: 12, group: 'system'),
+  NavItemDef(icon: PhosphorIconsBold.question, label: 'مركز المساعدة', permission: 'pos_access', index: 40, group: 'system'),
+];
+
 final userNavItemsProvider = FutureProvider<List<NavItemDef>>((ref) async {
-  final allNavItems = [
-    // ═══════════════════════════════════════════
-    // 🏠 الرئيسية
-    // ═══════════════════════════════════════════
-    const NavItemDef(icon: PhosphorIconsBold.house, label: 'الرئيسية', permission: null, index: 0, section: 'الرئيسية', group: 'home'),
-
-    // ═══════════════════════════════════════════
-    // 💰 المبيعات
-    // ═══════════════════════════════════════════
-    const NavItemDef(icon: PhosphorIconsBold.shoppingCart, label: 'نقطة البيع', permission: 'pos_access', index: 1, section: 'المبيعات', group: 'sales'),
-    const NavItemDef(icon: PhosphorIconsBold.fileText, label: 'فواتير المبيعات', permission: 'sales_view', index: 17, group: 'sales'),
-    const NavItemDef(icon: PhosphorIconsBold.notepad, label: 'طلبات البيع', permission: 'sales_orders_view', index: 37, group: 'sales'),
-    const NavItemDef(icon: PhosphorIconsBold.circlesThree, label: 'الطاولات', permission: 'tables_view', index: 3, group: 'sales'),
-    const NavItemDef(icon: PhosphorIconsBold.tag, label: 'العروض', permission: 'offers_view', index: 2, group: 'sales'),
-    const NavItemDef(icon: PhosphorIconsBold.arrowUUpLeft, label: 'مردودات المبيعات', permission: 'sales_return_view', index: 44, group: 'sales'),
-
-    // ═══════════════════════════════════════════
-    // 🛒 المشتريات
-    // ═══════════════════════════════════════════
-    const NavItemDef(icon: PhosphorIconsBold.receipt, label: 'فواتير المشتريات', permission: 'purchases_create', index: 9, section: 'المشتريات', group: 'purchases'),
-    const NavItemDef(icon: PhosphorIconsBold.clipboardText, label: 'أوامر الشراء', permission: 'purchase_orders_view', index: 30, group: 'purchases'),
-    const NavItemDef(icon: PhosphorIconsBold.arrowUUpLeft, label: 'مردودات المشتريات', permission: 'purchases_return_view', index: 45, group: 'purchases'),
-
-    // ═══════════════════════════════════════════
-    // 📦 المخزون والإنتاج
-    // ═══════════════════════════════════════════
-    const NavItemDef(icon: PhosphorIconsBold.package, label: 'الأصناف', permission: 'products_add', index: 4, section: 'المخزون والإنتاج', group: 'inventory'),
-    const NavItemDef(icon: PhosphorIconsBold.squaresFour, label: 'التصنيفات', permission: 'products_add', index: 5, group: 'inventory'),
-    const NavItemDef(icon: PhosphorIconsBold.warehouse, label: 'المخزون', permission: 'inventory_view', index: 8, group: 'inventory'),
-    const NavItemDef(icon: PhosphorIconsBold.clipboardText, label: 'أرصدة المخزون', permission: 'inventory_view', index: 19, group: 'inventory'),
-    const NavItemDef(icon: PhosphorIconsBold.arrowsLeftRight, label: 'تحويل مخزني', permission: 'inventory_transfer', index: 20, group: 'inventory'),
-    const NavItemDef(icon: PhosphorIconsBold.arrowsDownUp, label: 'حركة المخزون', permission: 'inventory_view', index: 29, group: 'inventory'),
-    const NavItemDef(icon: PhosphorIconsBold.factory, label: 'التصنيع', permission: 'manufacturing_view', index: 25, group: 'inventory'),
-    const NavItemDef(icon: PhosphorIconsBold.truck, label: 'طلبات الصرف', permission: 'inventory_view', index: 38, group: 'inventory'),
-    const NavItemDef(icon: PhosphorIconsBold.money, label: 'التكاليف المحملة', permission: 'purchases_create', index: 41, group: 'inventory'),
-    const NavItemDef(icon: PhosphorIconsBold.listChecks, label: 'الجرد الدوري', permission: 'inventory_view', index: 42, group: 'inventory'),
-
-    // ═══════════════════════════════════════════
-    // 👥 العملاء والموردين
-    // ═══════════════════════════════════════════
-    const NavItemDef(icon: PhosphorIconsBold.usersThree, label: 'العملاء والموردين', permission: 'customers_view', index: 6, section: 'العلاقات التجارية', group: 'relations'),
-    const NavItemDef(icon: PhosphorIconsBold.trophy, label: 'نقاط الولاء', permission: 'loyalty_view', index: 23, group: 'relations'),
-    const NavItemDef(icon: PhosphorIconsBold.truck, label: 'التوزيع', permission: 'distribution_view', index: 24, group: 'relations'),
-
-    // ═══════════════════════════════════════════
-    // 💵 المالية والمحاسبة
-    // ═══════════════════════════════════════════
-    const NavItemDef(icon: PhosphorIconsBold.wallet, label: 'الخزينة', permission: 'treasury_view', index: 10, section: 'المالية والمحاسبة', group: 'accounting'),
-    const NavItemDef(icon: PhosphorIconsBold.lockKey, label: 'إغلاق الوردية', permission: PermissionCodes.posShiftClose, index: 56, group: 'accounting'),
-    const NavItemDef(icon: PhosphorIconsBold.treeStructure, label: 'دليل الحسابات', permission: 'settings_view', index: 27, group: 'accounting'),
-    const NavItemDef(icon: PhosphorIconsBold.notebook, label: 'دفتر اليومية', permission: 'settings_view', index: 32, group: 'accounting'),
-    const NavItemDef(icon: PhosphorIconsBold.book, label: 'دفتر الأستاذ', permission: 'settings_view', index: 36, group: 'accounting'),
-    const NavItemDef(icon: PhosphorIconsBold.link, label: 'ربط الحسابات', permission: 'settings_view', index: 31, group: 'accounting'),
-    const NavItemDef(icon: PhosphorIconsBold.treeStructure, label: 'مراكز التكلفة', permission: 'settings_view', index: 33, group: 'accounting'),
-    const NavItemDef(icon: PhosphorIconsBold.checks, label: 'الشيكات', permission: 'treasury_view', index: 34, group: 'accounting'),
-    const NavItemDef(icon: PhosphorIconsBold.buildings, label: 'الأصول الثابتة', permission: 'assets_view', index: 35, group: 'accounting'),
-    const NavItemDef(icon: PhosphorIconsBold.invoice, label: 'الفوترة الإلكترونية', permission: 'einvoice_view', index: 22, group: 'accounting'),
-    const NavItemDef(icon: PhosphorIconsBold.calendar, label: 'السنوات المالية', permission: 'settings_view', index: 28, group: 'accounting'),
-    const NavItemDef(icon: PhosphorIconsBold.coins, label: 'المصروفات التشغيلية', permission: 'settings_view', index: 26, group: 'accounting'),
-
-    // ═══════════════════════════════════════════
-    // 📊 التقارير والتحليلات
-    // ═══════════════════════════════════════════
-    const NavItemDef(icon: PhosphorIconsBold.chartBar, label: 'التقارير', permission: 'reports_view', index: 11, section: 'التقارير', group: 'reports'),
-    const NavItemDef(icon: PhosphorIconsBold.chartPie, label: 'التحليلات', permission: 'reports_view', index: 15, group: 'reports'),
-    const NavItemDef(icon: PhosphorIconsBold.chartBar, label: 'أداء الفروع', permission: 'reports_view', index: 39, group: 'reports'),
-    const NavItemDef(icon: PhosphorIconsBold.clipboardText, label: 'سجل العمليات', permission: 'audit_view', index: 18, group: 'reports'),
-    const NavItemDef(icon: PhosphorIconsBold.chartBar, label: 'تقارير مخصصة', permission: 'reports_view', index: 43, group: 'reports'),
-
-    // ═══════════════════════════════════════════
-    // ⚙️ النظام والإعدادات
-    // ═══════════════════════════════════════════
-    const NavItemDef(icon: PhosphorIconsBold.cookingPot, label: 'المطبخ', permission: 'kitchen_view', index: 14, section: 'النظام', group: 'system'),
-    const NavItemDef(icon: PhosphorIconsBold.buildings, label: 'الفروع', permission: 'settings_view', index: 13, group: 'system'),
-    const NavItemDef(icon: PhosphorIconsBold.mapPin, label: 'المناطق', permission: 'settings_view', index: 60, group: 'system'),
-    const NavItemDef(icon: PhosphorIconsBold.users, label: 'الموظفين', permission: 'hr_view', index: 16, group: 'system'),
-    const NavItemDef(icon: PhosphorIconsBold.scales, label: 'ميزان التسعير', permission: 'settings_scale', index: 21, group: 'system'),
-    const NavItemDef(icon: PhosphorIconsBold.gear, label: 'الإعدادات', permission: 'settings_view', index: 12, group: 'system'),
-    const NavItemDef(icon: PhosphorIconsBold.question, label: 'مركز المساعدة', permission: 'pos_access', index: 40, group: 'system'),
-  ];
+  const allNavItems = kAllNavItemDefs;
 
   final authState = ref.watch(authProvider);
   // Use effectiveUser so explicit "Manager Mode" elevation expands the
