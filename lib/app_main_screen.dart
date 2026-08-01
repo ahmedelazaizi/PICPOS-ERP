@@ -101,6 +101,18 @@ import 'presentation/pos/widgets/pos_opening_balance_dialog.dart';
 import 'presentation/widgets/fiscal_year_gate_dialog.dart';
 
 
+/// هل المستخدم يقفل البرنامج من غير ما يتطلب كلمة سر المدير؟
+///
+/// ── ليه الفرع الأصلي كان غلط ──────────────────────────────────────────────
+/// كان فيه `|| (role?.isSystemRole ?? false)`، و`isSystemRole` بيوصف إن الدور
+/// **مزروع وغير قابل للحذف**، مش إنه دور عالي الصلاحية. الأدوار المزروعة
+/// كنظام هي مدير النظام و**كاشير** ومخزني ومحاسب ومدير مالي — فالكاشير كان
+/// بيتخطى البوابة اللي موجودة عشانه هو تحديداً.
+///
+/// البوابة دي سؤالها «يتطلب كلمة سر مدير؟»، فالمدير وحده هو اللي يعفى منها.
+@visibleForTesting
+bool canCloseAppWithoutPassword(AuthState auth) => auth.hasSystemAdminBypass;
+
 class MainScreen extends ConsumerStatefulWidget {
   const MainScreen({super.key});
 
@@ -590,11 +602,9 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
     // ده قرار صلاحية حقيقي: بيقرر هل غلق البرنامج محتاج كلمة سر مدير ولا لأ.
     // قبل كده كانت `isAdmin || isManager` بتتحدد بمطابقة اسم الدور، فأي دور
     // اسمه فيه «مدير» كان بيتخطى كلمة السر.
-    final isAdminOrManager =
-        authState.hasSystemAdminBypass ||
-        (authState.role?.isSystemRole ?? false);
+    final canSkipPassword = canCloseAppWithoutPassword(authState);
 
-    if (isAdminOrManager) {
+    if (canSkipPassword) {
       // Admin/Manager: simple yes/no confirmation
       final shouldClose = await showDialog<bool>(
         context: context,
