@@ -30,6 +30,12 @@ class _PermissionsManagementWidgetState
   String _searchQuery = '';
   final _searchController = TextEditingController();
 
+  // مخفيين افتراضياً — الأكواد الـ٣٣ اللي مفيش نقطة إنفاذ ممكنة ليها
+  // (PermissionCodes.nonToggleable). كانت السبب في بلاغ «بغيّر صلاحية
+  // ومفيش حاجة بتحصل»: المدير يقلّبها ومفيش أي مستقبل بياخد قرار بيها.
+  // المفتاح ده بيعرضهم معطّلين مع سبب واضح بدل ما يختفوا للأبد.
+  bool _showNonToggleable = false;
+
   // Track expanded categories
   final Set<String> _expandedCategories = {};
 
@@ -160,8 +166,14 @@ class _PermissionsManagementWidgetState
   Future<void> _toggleCategory(String category, bool grantAll) async {
     if (_selectedRole == null) return;
 
+    // مستبعدين هنا عمداً: أكواد nonToggleable مالهاش شيك بوكس أصلاً في
+    // الواجهة، فـ«تحديد الكل» بالفئة ميدّيش/يشيل صلاحيات الكود مايشوفهاش.
     final categoryPerms = _allPermissions
-        .where((p) => p.category == category)
+        .where(
+          (p) =>
+              p.category == category &&
+              !PermissionCodes.nonToggleable.containsKey(p.code),
+        )
         .toList();
     final permIds = categoryPerms.map((p) => p.id).toList();
 
@@ -275,6 +287,12 @@ class _PermissionsManagementWidgetState
   Map<String, List<Permission>> get _groupedPermissions {
     final Map<String, List<Permission>> grouped = {};
     for (final perm in _allPermissions) {
+      // مخفي افتراضياً لو الكود مالوش إنفاذ ممكن أصلاً — إلا لو المدير فعّل
+      // «إظهار الأكواد غير القابلة للتبديل» بنفسه.
+      if (!_showNonToggleable &&
+          PermissionCodes.nonToggleable.containsKey(perm.code)) {
+        continue;
+      }
       if (_searchQuery.isNotEmpty) {
         final query = _searchQuery.toLowerCase();
         if (!perm.name.toLowerCase().contains(query) &&
@@ -457,6 +475,40 @@ class _PermissionsManagementWidgetState
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          // إظهار/إخفاء الأكواد غير القابلة للتبديل (مالهاش إنفاذ ممكن)
+          Tooltip(
+            message:
+                'الأكواد دي مغطّاة بكود تاني أو الخاصية ما اتبنتش أو أثر '
+                'داخلي — إظهارها بيعرضها معطّلة مع السبب، من غير ما يقدر '
+                'حد يبدّلها',
+            child: InkWell(
+              borderRadius: BorderRadius.circular(8),
+              onTap: () =>
+                  setState(() => _showNonToggleable = !_showNonToggleable),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 6,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Switch(
+                      value: _showNonToggleable,
+                      onChanged: (v) =>
+                          setState(() => _showNonToggleable = v),
+                    ),
+                    const SizedBox(width: 4),
+                    const Text(
+                      'إظهار الأكواد غير القابلة للتبديل',
+                      style: AppTypography.bodySmall,
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -764,12 +816,22 @@ class _PermissionsManagementWidgetState
     final color = _getCategoryColor(category);
     final isExpanded = _expandedCategories.contains(category);
 
+    // فصل الأكواد القابلة للتبديل عن الـ٣٣ اللي مالهاش إنفاذ ممكن — الإحصاء
+    // والـ«تحديد الكل» بيتعاملوا مع القابلة للتبديل بس، عشان تفضل نسبة
+    // التقدّم حقيقية ومش متضخّمة بأكواد محدش هيقدر يفعّلها أصلاً.
+    final togglablePerms = perms
+        .where((p) => !PermissionCodes.nonToggleable.containsKey(p.code))
+        .toList();
+    final nonTogglablePerms = perms
+        .where((p) => PermissionCodes.nonToggleable.containsKey(p.code))
+        .toList();
+
     // Category-level check stats
-    final totalInCategory = perms.length;
-    final grantedInCategory = perms
+    final totalInCategory = togglablePerms.length;
+    final grantedInCategory = togglablePerms
         .where((p) => _rolePermissionIds.contains(p.id))
         .length;
-    final allGranted = grantedInCategory == totalInCategory;
+    final allGranted = totalInCategory > 0 && grantedInCategory == totalInCategory;
     final someGranted = grantedInCategory > 0 && !allGranted;
 
     return Container(
@@ -878,22 +940,46 @@ class _PermissionsManagementWidgetState
           // Permission items (expanded)
           if (isExpanded) ...[
             Divider(height: 1, color: Colors.grey.withValues(alpha: 0.12)),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-              child: Wrap(
-                spacing: 4,
-                runSpacing: 4,
-                children: perms.map((perm) {
-                  final isGranted = _rolePermissionIds.contains(perm.id);
-                  return _PermissionChip(
-                    permission: perm,
-                    isGranted: isGranted,
-                    color: color,
-                    onToggle: (grant) => _togglePermission(perm.id, grant),
-                  );
-                }).toList(),
+            if (togglablePerms.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 6,
+                ),
+                child: Wrap(
+                  spacing: 4,
+                  runSpacing: 4,
+                  children: togglablePerms.map((perm) {
+                    final isGranted = _rolePermissionIds.contains(perm.id);
+                    return _PermissionChip(
+                      permission: perm,
+                      isGranted: isGranted,
+                      color: color,
+                      onToggle: (grant) => _togglePermission(perm.id, grant),
+                    );
+                  }).toList(),
+                ),
               ),
-            ),
+            // الأكواد غير القابلة للتبديل — تظهر بس لو المفتاح مفعّل، معطّلة
+            // تماماً ومعاها السبب، عشان الشاشة تفضل صادقة من غير ما الكود
+            // يختفي للأبد ويتنسى.
+            if (nonTogglablePerms.isNotEmpty) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 4, 12, 6),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: nonTogglablePerms
+                      .map(
+                        (perm) => _NonToggleablePermissionTile(
+                          permission: perm,
+                          reason:
+                              PermissionCodes.nonToggleable[perm.code] ?? '',
+                        ),
+                      )
+                      .toList(),
+                ),
+              ),
+            ],
           ],
         ],
       ),
@@ -951,6 +1037,63 @@ class _PermissionChip extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// صف معطّل لكود صلاحية مالوش إنفاذ ممكن — بيعرض الاسم والسبب (من
+/// `PermissionCodes.nonToggleable`) بدل ما يكون شيك بوكس شغّال، عشان المدير
+/// يفهم ليه الكود ده معطّل مش ناقص.
+class _NonToggleablePermissionTile extends StatelessWidget {
+  final Permission permission;
+  final String reason;
+
+  const _NonToggleablePermissionTile({
+    required this.permission,
+    required this.reason,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.grey.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            PhosphorIconsBold.lock,
+            size: 14,
+            color: Colors.grey.shade400,
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  permission.name,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade500,
+                  ),
+                ),
+                Text(
+                  reason,
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Colors.grey.shade400,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

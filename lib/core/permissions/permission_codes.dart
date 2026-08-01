@@ -823,6 +823,74 @@ class PermissionCodes {
   };
 
   // ═══════════════════════════════════════════════════════════════════════════
+  // NON-TOGGLEABLE CODES (أكواد مالهاش إنفاذ ممكن)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// ٣٣ كود من الـ٨٠ اللي كانت مسجّلة في
+  /// `PermissionEnforcementRegistry.knownUnenforced` بلا نقطة إنفاذ في
+  /// الكود — لكن على عكس باقي الـ٤٧، دول **مستحيل يتحلّوا بإضافة إنفاذ**.
+  /// السبب واحد من التلاتة:
+  ///  • الفعل موجود فعلاً بس محمي بكود/آلية تانية (تكرار اسمي، مش ثغرة).
+  ///  • الفعل ده أصلاً مش موجود في الكود — الميزة ما اتبنتش.
+  ///  • الفعل موجود كأثر جانبي داخلي جوه عملية تانية، مش حاجة المستخدم
+  ///    بيضغط عليها بنفسه.
+  ///
+  /// البلاغ اللي بدأ السويب (2026-08-01) كان «المدير بيغيّر صلاحية ومفيش
+  /// حاجة بتحصل» — والـ٣٣ دول جزء أساسي من السبب: كانوا ظاهرين في شاشة
+  /// الصلاحيات زي أي كود تاني، فالمدير يقلّبهم ويفتكر إنه بيتحكم في حاجة،
+  /// ومفيش أي مستقبل بياخد القرار ده أصلاً مهما فعّله أو ألغاه. المصفوفة دي
+  /// بتوثّق سبب كل كود، و`PermissionsManagementWidget` بيستخدمها عشان
+  /// يخفيهم افتراضياً من قائمة التبديل بدل ما يكدب على اللي بيستخدم الشاشة.
+  ///
+  /// ممنوع حذف كود من هنا من غير ما يتنقل لإنفاذ حقيقي أو لـ`knownUnenforced`
+  /// الأول — اختبار ثبات المجموعتين بيتأكد إن مفيش كود يقع بين الاتنين
+  /// (`permission_nontoggleable_registry_test.dart`).
+  static const Map<String, String> nonToggleable = {
+    // ── مغطّى بكود/آلية تانية (تكرار اسمي، مش ثغرة) ──
+    'audit_invoice_unlock': 'مغطّى بـ modify_locked_invoice',
+    'audit_shift_blind': 'مغطّى بـ pos_closing_view_details',
+    'categories_scale_upload': 'الشاشة كلها مبوّبة بـ products_add',
+    'categories_view': 'الشاشة كلها مبوّبة بـ products_add',
+    'dashboard_customers': 'مغطّى بـ analytics_view',
+    'dashboard_top_products': 'مغطّى بـ analytics_view',
+    'delivery_view': 'مغطّى بـ delivery_manage',
+    'parties_credit_limit_bypass': 'مغطّى بـ override_credit_limit',
+    'pos_cancel_invoice': 'مغطّى بـ void_paid_invoice',
+    'pos_daily_closing': 'مغطّى بـ pos_shift_close',
+    'pos_payment_methods':
+        'مغطّى بالخمس pos_payment_cash/pos_payment_card/pos_payment_transfer/pos_payment_credit/pos_payment_multiple',
+    'pos_split_payment': 'مغطّى بـ pos_payment_multiple',
+    'products_scale_upload': 'مغطّى بـ products_export',
+    'reports_customers': 'الشاشة كلها مبوّبة بـ reports_view',
+    'reports_inventory': 'الشاشة كلها مبوّبة بـ reports_view',
+    'reports_products': 'الشاشة كلها مبوّبة بـ reports_view',
+    'reports_profit':
+        'مغطّى بـ reports_view (وبعض البطاقات بـ reports_category_profit)',
+    'reports_purchases': 'الشاشة كلها مبوّبة بـ reports_view',
+    'reports_shifts': 'مغطّى بـ reports_sales',
+    'settings_restore': 'مغطّى بـ settings_backup',
+    'suppliers_view': 'مغطّى بـ customers_view',
+    'system_audit_log': 'مغطّى بـ audit_view',
+    'treasury_transactions_view': 'مغطّى بـ treasury_view',
+    // ── محجوز — الخاصية ما اتبنتش أصلاً ──
+    'dashboard_pending_orders': 'محجوز — الخاصية ما اتبنتش',
+    'delete_fiscal_year': 'محجوز — الخاصية ما اتبنتش',
+    'pos_view_cost': 'محجوز — الخاصية ما اتبنتش',
+    'pos_view_profit': 'محجوز — الخاصية ما اتبنتش',
+    'sales_return_edit': 'محجوز — الخاصية ما اتبنتش',
+    'settings_receipt': 'محجوز — الخاصية ما اتبنتش',
+    'system_updates': 'محجوز — الخاصية ما اتبنتش',
+    'tables_print_bill': 'محجوز — الخاصية ما اتبنتش',
+    // ── أثر داخلي جوه عملية تانية، مش فعل يقدر المستخدم يستدعيه لوحده ──
+    'delete_posted_journal':
+        'أثر داخلي جوه عكس قيد اليومية القديم عند تعديل أو إلغاء فاتورة '
+        'مرحّلة (_reverseOldXJournalEntry)، مش فعل للمستخدم',
+    'purchases_return_delete':
+        'أثر داخلي جوه تعديل مرتجع الشراء (editPurchaseReturn عبر '
+        '_reversePurchaseReturn)، مش فعل للمستخدم',
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // PERMISSION CATEGORIES (فئات الصلاحيات)
   // ═══════════════════════════════════════════════════════════════════════════
 

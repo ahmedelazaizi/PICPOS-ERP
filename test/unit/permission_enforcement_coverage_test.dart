@@ -1,7 +1,8 @@
 // test/unit/permission_enforcement_coverage_test.dart
 //
 // كل كود صلاحية إما ليه نقطة إنفاذ في `lib/`، أو مذكور صراحة في
-// `PermissionEnforcementRegistry.knownUnenforced`.
+// `PermissionEnforcementRegistry.knownUnenforced` (لسه محتاج إنفاذ)، أو في
+// `PermissionCodes.nonToggleable` (مستحيل يتحلّ بإنفاذ — Task 5).
 //
 // من غير الحارس ده، كود جديد يتضاف لـ`masterList` ويظهر للمدير في شاشة
 // الصلاحيات وهو مالوش مستقبل — وما حدش يكتشف غير من الميدان.
@@ -93,8 +94,15 @@ void main() {
       }
     }
 
+    // كود بلا إنفاذ متعذّر (نص) لو مسجّل في أي من المجموعتين: knownUnenforced
+    // (لسه هيتنفّذ) أو nonToggleable (مستحيل يتنفّذ — Task 5). لو الاتنين
+    // مش شايفينه، يبقى ضاع من التتبّع خالص.
     final unregistered = unenforced
-        .where((c) => !PermissionEnforcementRegistry.knownUnenforced.contains(c))
+        .where(
+          (c) =>
+              !PermissionEnforcementRegistry.knownUnenforced.contains(c) &&
+              !PermissionCodes.nonToggleable.containsKey(c),
+        )
         .toList()
       ..sort();
 
