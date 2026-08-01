@@ -71,7 +71,18 @@ class PermissionGuard extends ConsumerWidget {
   /// The child widget to show if permission is granted
   final Widget child;
 
-  /// Widget to show when permission is denied (defaults to empty)
+  /// Widget to show when permission is denied (defaults to empty).
+  ///
+  /// ── مع [allowManagerOverride] ─────────────────────────────────────────
+  /// البديل هو اللي بيتعرض **قبل** موافقة المدير، والموافقة بتكشف [child].
+  ///
+  /// قبل الإصلاح ده كان `allowManagerOverride` بيتخطّى `fallback` تماماً
+  /// ويعرض [child] الحقيقي تحت `AbsorbPointer` — يعني كارت بيقول
+  /// `fallback: card(value: '---')` كان بيعرض **الرقم الحقيقي** لمين مالوش
+  /// الصلاحية ويمنع الضغطة بس. الأربع مواقع اللي كانت بتبعت الاتنين كلها
+  /// كروت لوحة التحكم في البراندين (`treasury_balance_view` و
+  /// `dashboard_profit`) — يعني صلاحيتَي عرض ماليّتين مكانوش بيخبّوا حاجة
+  /// أصلاً رغم إنهم متسجّلين «منفَّذين».
   final Widget? fallback;
 
   /// If true, shows the child but disabled instead of hiding it
@@ -163,7 +174,8 @@ class PermissionGuard extends ConsumerWidget {
       return child;
     }
 
-    // If manager override is allowed, show the widget with override wrapper
+    // If manager override is allowed, show the widget with override wrapper.
+    // `fallback` (لو موجود) هو اللي بيتعرض قبل الموافقة — شوف توثيق الحقل.
     if (allowManagerOverride) {
       return _ManagerOverrideWrapper(
         permission: permission.isNotEmpty
@@ -171,6 +183,7 @@ class PermissionGuard extends ConsumerWidget {
             : (allOf?.first ?? anyOf?.first ?? ''),
         actionName: actionName,
         onGranted: onGranted,
+        lockedChild: fallback,
         child: child,
       );
     }
@@ -351,12 +364,19 @@ class _ManagerOverrideWrapper extends ConsumerStatefulWidget {
   final String permission;
   final String? actionName;
   final VoidCallback? onGranted;
+
+  /// اللي بيتعرض **قبل** موافقة المدير لما الحارس يكون معاه `fallback`
+  /// (كارت قيمته `---` مثلاً). `null` = اعرض [child] زي ما كان — ده حال كل
+  /// مواقع الأزرار: الزرار لازم يفضل باين عشان يتضغط ويُطلب عليه الموافقة.
+  final Widget? lockedChild;
+
   final Widget child;
 
   const _ManagerOverrideWrapper({
     required this.permission,
     this.actionName,
     this.onGranted,
+    this.lockedChild,
     required this.child,
   });
 
@@ -379,9 +399,12 @@ class _ManagerOverrideWrapperState
     // untouched so it behaves exactly as it does for a permitted user.
     if (_unlocked) return widget.child;
 
+    // البديل (لو موجود) هو المعروض قبل الموافقة — وده الفرق اللي بيخلّي
+    // صلاحيات العرض تخبّي فعلاً بدل ما تمتص الضغطة وبس.
+    final visible = widget.lockedChild ?? widget.child;
+
     // An explicit callback always wins — no guessing needed.
-    _originalOnPressed =
-        widget.onGranted ?? extractChildAction(widget.child);
+    _originalOnPressed = widget.onGranted ?? extractChildAction(visible);
 
     // The tap is intercepted unconditionally. It used to be wired only when a
     // callback had been resolved, but the extractor always resolved SOMETHING
@@ -391,7 +414,7 @@ class _ManagerOverrideWrapperState
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => _requestOverride(context),
-      child: AbsorbPointer(child: widget.child),
+      child: AbsorbPointer(child: visible),
     );
   }
 
@@ -412,6 +435,11 @@ class _ManagerOverrideWrapperState
       // ابن له فعل واحد واضح (زرار، أو `ListTile` بـ `onTap`) — نشغّله فوراً،
       // فالموافقة بتوصّل للنتيجة في خطوة واحدة زي ما الكاشير متوقّع.
       action();
+      // لو كان فيه بديل معروض (صلاحية عرض)، الموافقة كمان **بتكشف** الأصل —
+      // تشغيل الفعل لوحده كان هيسيب الكارت مكتوب فيه `---` بعد الموافقة.
+      if (widget.lockedChild != null && mounted) {
+        setState(() => _unlocked = true);
+      }
       return;
     }
 
