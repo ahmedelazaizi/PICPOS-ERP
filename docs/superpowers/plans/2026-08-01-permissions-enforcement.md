@@ -265,38 +265,147 @@ EOF
 - Modify: `lib/presentation/pos/widgets/pos_cashier_closing_dialog.dart:96`
 - Modify: `lib/presentation/pos/widgets/pos_previous_invoices_dialog.dart:225`
 - Modify: `lib/presentation/shift_close_picpos/widgets/picpos_cashier_closing_dialog.dart:129`
-- Test: `test/unit/role_name_bypass_test.dart` (توسيع)
+- Test: `test/unit/payment_permission_test.dart` (جديد)
 
 **Interfaces:**
 - Consumes: `AuthStateBypass.hasSystemAdminBypass` من Task 1.
 
 ⚠️ **`payment_sheet.dart` و`pos_cashier_closing_dialog.dart` و`pos_previous_invoices_dialog.dart` مشتركة بين البراندين** — التغيير هنا إصلاح صحيح للاتنين (بيسري نفس السلوك على UralCash)، مش سلوك خاص بـ PicPos، فمش محتاج بارامتر.
 
-- [ ] **Step 1: اكتب اختبار يثبّت السلوك المتوقع لأهم موضع (لوحة الدفع)**
+**عيب تاني في نفس الدالة:** `_hasPermission` في [payment_sheet.dart:58](lib/presentation/pos/widgets/payment_sheet.dart:58) بتنتهي بـ `|| permissions.isEmpty` — يعني **مستخدم بصفر صلاحيات بيعدّي كل فحوص الدفع**. الفشل مفتوح. المدير يسحب كل صلاحيات الدفع من كاشير فيبقى عنده كلها. الاتنين بيتصلّحوا في نفس المهمة لأنهم في نفس السطرين.
+
+- [ ] **Step 1: اكتب الاختبار الفاشل على دالة حقيقية**
+
+`_hasPermission` دالة خاصة جوه `State` فمش قابلة للاختبار. استخرجها لدالة عليا في نفس الملف — نفس اللي اتعمل مع `extractChildAction` في `f8d3fa9` وللسبب ده بالظبط:
 
 ```dart
-// يتضاف في test/unit/role_name_bypass_test.dart
-  group('مواضع التجاوز', () {
-    test('«مدير فرع» بلا pos_payment_cash لا يتجاوز لوحة الدفع', () {
-      // payment_sheet.dart:60 كانت `if (auth.isAdmin || auth.isManager) return true;`
-      final s = _stateWithRole('مدير فرع', isSystemRole: true);
-      const perms = <String>[]; // مالوش أي صلاحية دفع
-      final allowed = s.hasSystemAdminBypass ||
-          perms.contains('pos_payment_cash');
-      expect(allowed, isFalse);
+// test/unit/payment_permission_test.dart
+//
+// فحص صلاحية طريقة الدفع في لوحة الدفع.
+//
+// ── عيبين كانوا هنا ───────────────────────────────────────────────────────
+// ١. `if (auth.isAdmin || auth.isManager) return true;` — والاتنين دول
+//    بيتحددوا بمطابقة اسم الدور، فأي دور اسمه فيه «مدير» كان بيعدّي بلا
+//    صلاحية دفع. الأدوار المزروعة «مدير فرع» و«مدير مالي» و«مدير مخزون».
+// ٢. `|| permissions.isEmpty` — مستخدم بصفر صلاحيات كان بيعدّي كل الفحوص.
+//    يعني سحب كل صلاحيات الدفع من كاشير كان بيديله كلها.
+import 'package:flutter_test/flutter_test.dart';
+import 'package:ural_erp/presentation/pos/widgets/payment_sheet.dart';
+
+void main() {
+  group('hasPaymentPermission', () {
+    test('«مدير فرع» بلا صلاحية دفع لا يعدّي', () {
+      expect(
+        hasPaymentPermission(
+          isSystemAdmin: false,
+          permissions: const ['pos_access'],
+          permCode: 'pos_payment_cash',
+        ),
+        isFalse,
+      );
+    });
+
+    test('قائمة صلاحيات فاضية لا تعدّي — الفشل مقفول', () {
+      // كان `|| permissions.isEmpty` بيرجّع true هنا.
+      expect(
+        hasPaymentPermission(
+          isSystemAdmin: false,
+          permissions: const [],
+          permCode: 'pos_payment_cash',
+        ),
+        isFalse,
+      );
+    });
+
+    test('مدير النظام يعدّي', () {
+      expect(
+        hasPaymentPermission(
+          isSystemAdmin: true,
+          permissions: const [],
+          permCode: 'pos_payment_cash',
+        ),
+        isTrue,
+      );
+    });
+
+    test('كاشير عنده الصلاحية يعدّي', () {
+      expect(
+        hasPaymentPermission(
+          isSystemAdmin: false,
+          permissions: const ['pos_payment_cash'],
+          permCode: 'pos_payment_cash',
+        ),
+        isTrue,
+      );
     });
   });
+}
 ```
 
 - [ ] **Step 2: شغّل وتأكد من الفشل**
 
 ```bash
-flutter test test/unit/role_name_bypass_test.dart --concurrency=1
+flutter test test/unit/payment_permission_test.dart --concurrency=1
 ```
 
-Expected: الاختبار الجديد بينجح فوراً لأنه بيختبر التعبير مش الملف. **ده مقبول هنا** — الاختبار بيوثّق القاعدة؛ التحقق الفعلي لكل موضع بالخطوة ٣ + `flutter analyze`. لو عايز فشل حقيقي، الاختبار الودجت للوحة الدفع أغلى من فايدته في الدفعة دي.
+Expected: FAIL — `The function 'hasPaymentPermission' isn't defined`
 
-- [ ] **Step 3: بدّل الستة مواضع**
+- [ ] **Step 3: استخرج الدالة وصلّح العيبين**
+
+في `payment_sheet.dart` كدالة عليا:
+
+```dart
+/// هل المستخدم يقدر يستعمل طريقة الدفع دي؟
+///
+/// ── ليه دالة عليا مكشوفة للاختبار ────────────────────────────────────────
+/// كانت دالة خاصة جوه `State` فما كانش ينفع تتغطّى، وعاشت فيها غلطتين
+/// لحد ما اتكشفوا ميدانياً. نفس السبب اللي خلّى `extractChildAction` تتكشف
+/// في `f8d3fa9`.
+///
+/// ── الغلطتين ─────────────────────────────────────────────────────────────
+/// `auth.isAdmin || auth.isManager` بيتحددوا بمطابقة **اسم الدور**، فأي دور
+/// اسمه فيه «مدير» كان بيعدّي — ودول أربعة من تسعة أدوار مزروعة.
+///
+/// و`|| permissions.isEmpty` كان فشلاً مفتوحاً: سحب كل صلاحيات الدفع من
+/// كاشير كان بيديله كلها. القايمة الفاضية معناها «مالوش صلاحية»، مش «متأكدش».
+/// حالة «لسه بيحمّل» بتتفرّق بـ`asData == null` عند المستدعي مش هنا.
+@visibleForTesting
+bool hasPaymentPermission({
+  required bool isSystemAdmin,
+  required List<String> permissions,
+  required String permCode,
+}) {
+  if (isSystemAdmin) return true;
+  return permissions.contains(permCode);
+}
+```
+
+و`_hasPermission` تبقى:
+
+```dart
+  bool _hasPermission(String permCode) {
+    final permsAsync = ref.read(currentUserPermissionsProvider);
+    final data = permsAsync.asData;
+    // لسه بيحمّل ومفيش نسخة مخبّية — ما نمنعش على شك، بس ما نفتحش الباب
+    // كمان: بنسيب الطريقة الافتراضية بس لحد ما البيانات توصل.
+    if (data == null) return permCode == PermissionCodes.posPaymentCash;
+    return hasPaymentPermission(
+      isSystemAdmin: ref.read(authProvider).hasSystemAdminBypass,
+      permissions: data.value,
+      permCode: permCode,
+    );
+  }
+```
+
+- [ ] **Step 4: شغّل الاختبار وتأكد إنه نجح**
+
+```bash
+flutter test test/unit/payment_permission_test.dart --concurrency=1
+```
+
+Expected: PASS (٤ اختبارات)
+
+- [ ] **Step 5: بدّل الخمسة مواضع الباقية**
 
 في كل موضع، `authState.isAdmin || authState.isManager` تبقى `authState.hasSystemAdminBypass`. مثال — [payment_sheet.dart:60](lib/presentation/pos/widgets/payment_sheet.dart:60):
 
@@ -308,7 +417,7 @@ Expected: الاختبار الجديد بينجح فوراً لأنه بيخت�
 
 `app_main_screen.dart:263` (تخطّي المدراء) و`:588` — اقرا السياق الأول: لو الاستعمال تجميلي (إخفاء تلميح، تخطّي جولة تعريفية) سيبه `isManager` ووثّق ليه في تعليق سطر واحد. التبديل للمواضع اللي **بتقرر صلاحية** بس.
 
-- [ ] **Step 4: تأكد إن مفيش تجاوز صلاحية فاضل**
+- [ ] **Step 6: تأكد إن مفيش تجاوز صلاحية فاضل**
 
 ```bash
 grep -rn "isAdmin || .*isManager\|isManager || .*isAdmin" lib --include=*.dart
@@ -316,22 +425,31 @@ grep -rn "isAdmin || .*isManager\|isManager || .*isAdmin" lib --include=*.dart
 
 Expected: كل نتيجة فاضلة لازم يبقى فوقها تعليق بيقول ليه دي تجميلية مش قرار صلاحية.
 
-- [ ] **Step 5: شغّل الحزمة**
+- [ ] **Step 7: شغّل الحزمة**
 
 ```bash
 flutter analyze lib test && flutter test --concurrency=1
 ```
 
-- [ ] **Step 6: كوميت**
+- [ ] **Step 8: كوميت**
 
 ```bash
 git add -A
 git commit -m "$(cat <<'EOF'
-fix(perms): باقي مواضع تجاوز «مدير» الستة
+fix(perms): باقي مواضع تجاوز «مدير» + فشل مفتوح في لوحة الدفع
 
 استكمال للكوميت اللي قبله: لوحة الدفع، إضافة صنف في البيع، ديالوجات
 الإغلاق (نقطة البيع و PicPos)، الفواتير السابقة، متحكّم الإقفال — كلهم
 كانوا بيعدّوا أي دور اسمه فيه «مدير» بلا فحص صلاحية.
+
+وفي لوحة الدفع غلطة تانية أخطر: `_hasPermission` كانت بتنتهي بـ
+`|| permissions.isEmpty` — يعني مستخدم بصفر صلاحيات بيعدّي كل فحوص الدفع.
+سحب كل صلاحيات الدفع من كاشير كان بيديله كلها. القايمة الفاضية معناها
+«مالوش صلاحية» مش «متأكدش»؛ حالة التحميل بتتفرّق بـ`asData == null`.
+
+الدالة اتحوّلت لـ`hasPaymentPermission` عليا ومكشوفة للاختبار — كانت خاصة
+جوه `State` فعاشت فيها الغلطتين لحد ما اتكشفوا ميدانياً. نفس السبب اللي
+خلّى `extractChildAction` تتكشف في f8d3fa9.
 
 `app_main_screen` اتساب على `isManager` في المواضع التجميلية بتعليق يوضّح
 إنها مش قرار صلاحية.
