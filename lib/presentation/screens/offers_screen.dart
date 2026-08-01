@@ -12,10 +12,38 @@ import '../../domain/entities/product_entity.dart';
 import '../../services/invoice_generator.dart';
 import 'package:drift/drift.dart' hide Column;
 import '../../core/constants/app_constants.dart';
+import '../../core/permissions/permission_codes.dart';
+import '../widgets/permission_guard.dart';
 
 // ── Part files (mixin-based extraction) ─────────────────────────────────
 part 'offers/offer_cards.dart';
 part 'offers/offer_dialogs.dart';
+
+// ── دالة بناء مستخرجة (Task 6b) ─────────────────────────────────────────
+// زرار «إضافة عرض» كان محمي بكود عرض خشن بس (`offers_view`)، مفيش فحص على
+// الإنشاء نفسه (`offers_create`). مستخرج كدالة top-level عشان يتبنى في
+// اختبار widget خفيف من غير شاشة/قاعدة بيانات.
+@visibleForTesting
+Widget buildOffersCreateButton({required VoidCallback onPressed}) {
+  return PermissionGuard(
+    permission: PermissionCodes.offersCreate,
+    allowManagerOverride: true,
+    actionName: 'إضافة عرض',
+    onGranted: onPressed,
+    child: ElevatedButton.icon(
+      onPressed: onPressed,
+      icon: const Icon(PhosphorIconsBold.plus),
+      label: const Text('إضافة عرض'),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.warning,
+        padding: const EdgeInsets.symmetric(
+          horizontal: 24,
+          vertical: 16,
+        ),
+      ),
+    ),
+  );
+}
 
 /// Offers Screen - Manage product bundles/offers with time-limited validity
 class OffersScreen extends ConsumerStatefulWidget {
@@ -130,17 +158,8 @@ class _OffersScreenState extends ConsumerState<OffersScreen>
                       ],
                     ),
                   ),
-                  ElevatedButton.icon(
+                  buildOffersCreateButton(
                     onPressed: () => showAddOfferDialog(context, repo),
-                    icon: const Icon(PhosphorIconsBold.plus),
-                    label: const Text('إضافة عرض'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.warning,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 16,
-                      ),
-                    ),
                   ),
                 ],
               ),

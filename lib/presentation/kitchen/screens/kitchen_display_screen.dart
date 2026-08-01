@@ -7,9 +7,52 @@ import 'package:ural_erp/core/design_system/typography.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import '../../../core/permissions/permission_codes.dart';
 import '../../../data/providers/providers.dart';
 import '../../../domain/repositories/kitchen_repository.dart';
+import '../../widgets/permission_guard.dart';
 import 'kds_stats_screen.dart';
+
+// ── دالة بناء مستخرجة (Task 6b) ─────────────────────────────────────────
+// الحارس هنا (`PermissionGuard`) declarative بحت — الثلاث أزرار (تحضير/جاهز/
+// استرجاع) بتغيّر حالة أمر المطبخ وكانت شاشتها محمية بكود عرض خشن بس
+// (`kitchen_view`)، من غير أي فحص على الفعل نفسه. الثلاثة بيستخدموا نفس
+// الدالة عشان يتبنوا في اختبار widget خفيف واحد (بدون قاعدة بيانات حقيقية).
+@visibleForTesting
+Widget buildKitchenManageActionButton({
+  required VoidCallback onPressed,
+  required IconData icon,
+  required String label,
+  required Color color,
+  bool outlined = false,
+}) {
+  final child = outlined
+      ? OutlinedButton.icon(
+          onPressed: onPressed,
+          icon: Icon(icon, size: 18),
+          label: Text(label),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: color,
+            side: BorderSide(color: color),
+          ),
+        )
+      : ElevatedButton.icon(
+          onPressed: onPressed,
+          icon: Icon(icon, size: 18),
+          label: Text(label),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: color,
+            foregroundColor: Colors.white,
+          ),
+        );
+  return PermissionGuard(
+    permission: PermissionCodes.kitchenManage,
+    allowManagerOverride: true,
+    actionName: 'تغيير حالة طلب المطبخ',
+    onGranted: onPressed,
+    child: child,
+  );
+}
 
 /// Kitchen Display Screen - Shows pending orders for the kitchen
 class KitchenDisplayScreen extends ConsumerStatefulWidget {
@@ -443,43 +486,31 @@ class _KitchenDisplayScreenState extends ConsumerState<KitchenDisplayScreen> {
               children: [
                 if (order.status == 'pending')
                   Expanded(
-                    child: ElevatedButton.icon(
+                    child: buildKitchenManageActionButton(
                       onPressed: () => _startPreparing(order.id, kitchenRepo),
-                      icon:
-                          const Icon(PhosphorIconsBold.cookingPot, size: 18),
-                      label: const Text('تحضير'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.warning,
-                        foregroundColor: Colors.white,
-                      ),
+                      icon: PhosphorIconsBold.cookingPot,
+                      label: 'تحضير',
+                      color: AppColors.warning,
                     ),
                   ),
                 if (order.status == 'preparing') ...[
                   Expanded(
-                    child: ElevatedButton.icon(
+                    child: buildKitchenManageActionButton(
                       onPressed: () => _markReady(order.id, kitchenRepo),
-                      icon: const Icon(PhosphorIconsBold.checkCircle,
-                          size: 18),
-                      label: const Text('جاهز'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.success,
-                        foregroundColor: Colors.white,
-                      ),
+                      icon: PhosphorIconsBold.checkCircle,
+                      label: 'جاهز',
+                      color: AppColors.success,
                     ),
                   ),
                 ],
                 if (order.status == 'ready') ...[
                   Expanded(
-                    child: OutlinedButton.icon(
+                    child: buildKitchenManageActionButton(
                       onPressed: () => _recallOrder(order.id, kitchenRepo),
-                      icon: const Icon(
-                          PhosphorIconsBold.arrowCounterClockwise,
-                          size: 18),
-                      label: const Text('استرجاع'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.warning,
-                        side: const BorderSide(color: AppColors.warning),
-                      ),
+                      icon: PhosphorIconsBold.arrowCounterClockwise,
+                      label: 'استرجاع',
+                      color: AppColors.warning,
+                      outlined: true,
                     ),
                   ),
                 ],

@@ -256,23 +256,41 @@ mixin _TableOperationsMixin on ConsumerState<TablesScreen> {
               Row(
                 children: [
                   Expanded(
-                    child: TextButton.icon(
-                      onPressed: () {
+                    child: PermissionGuard(
+                      permission: PermissionCodes.tablesManage,
+                      allowManagerOverride: true,
+                      actionName: 'تعديل طاولة',
+                      onGranted: () {
                         Navigator.pop(ctx);
                         _showEditTableDialog(context, restaurantRepo, table);
                       },
-                      icon: const Icon(PhosphorIconsBold.pencil, size: 16),
-                      label: const Text('تعديل'),
+                      child: TextButton.icon(
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          _showEditTableDialog(context, restaurantRepo, table);
+                        },
+                        icon: const Icon(PhosphorIconsBold.pencil, size: 16),
+                        label: const Text('تعديل'),
+                      ),
                     ),
                   ),
                   Expanded(
-                    child: TextButton.icon(
-                      onPressed: () {
+                    child: PermissionGuard(
+                      permission: PermissionCodes.tablesManage,
+                      allowManagerOverride: true,
+                      actionName: 'حذف طاولة',
+                      onGranted: () {
                         Navigator.pop(ctx);
                         _confirmDeleteTable(restaurantRepo, table);
                       },
-                      icon: const Icon(PhosphorIconsBold.trash, size: 16, color: AppColors.error),
-                      label: const Text('حذف', style: TextStyle(color: AppColors.error)),
+                      child: TextButton.icon(
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          _confirmDeleteTable(restaurantRepo, table);
+                        },
+                        icon: const Icon(PhosphorIconsBold.trash, size: 16, color: AppColors.error),
+                        label: const Text('حذف', style: TextStyle(color: AppColors.error)),
+                      ),
                     ),
                   ),
                 ],

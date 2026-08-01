@@ -7,11 +7,13 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/widgets/app_toast.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/permissions/permission_codes.dart';
 import '../../data/providers/providers.dart';
 import '../../domain/entities/product_entity.dart';
 import '../../domain/repositories/restaurant_repository.dart';
 import '../../services/invoice_generator.dart';
 import '../pos/screens/pos_table_service_screen.dart';
+import '../widgets/permission_guard.dart';
 import 'tables/tables.dart';
 import 'tables/merge_table_dialog.dart';
 import 'tables/split_table_dialog.dart';
@@ -244,13 +246,27 @@ class _TablesScreenState extends ConsumerState<TablesScreen>
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          IconButton(
-                            icon: const Icon(PhosphorIconsBold.pencil, size: 18, color: AppColors.primary),
-                            onPressed: () => _showEditSectionDialog(context, repo, section),
+                          PermissionGuard(
+                            permission: PermissionCodes.tablesManage,
+                            allowManagerOverride: true,
+                            actionName: 'تعديل قسم طاولات',
+                            onGranted: () =>
+                                _showEditSectionDialog(context, repo, section),
+                            child: IconButton(
+                              icon: const Icon(PhosphorIconsBold.pencil, size: 18, color: AppColors.primary),
+                              onPressed: () => _showEditSectionDialog(context, repo, section),
+                            ),
                           ),
-                          IconButton(
-                            icon: const Icon(PhosphorIconsBold.trash, size: 18, color: AppColors.error),
-                            onPressed: () => _confirmDeleteSection(context, repo, section),
+                          PermissionGuard(
+                            permission: PermissionCodes.tablesManage,
+                            allowManagerOverride: true,
+                            actionName: 'حذف قسم طاولات',
+                            onGranted: () =>
+                                _confirmDeleteSection(context, repo, section),
+                            child: IconButton(
+                              icon: const Icon(PhosphorIconsBold.trash, size: 18, color: AppColors.error),
+                              onPressed: () => _confirmDeleteSection(context, repo, section),
+                            ),
                           ),
                         ],
                       ),
@@ -261,9 +277,15 @@ class _TablesScreenState extends ConsumerState<TablesScreen>
             ),
           ),
           actions: [
-            TextButton(
-              onPressed: () => _showAddSectionDialog(ctx, repo),
-              child: const Text('إضافة قسم'),
+            PermissionGuard(
+              permission: PermissionCodes.tablesManage,
+              allowManagerOverride: true,
+              actionName: 'إضافة قسم طاولات',
+              onGranted: () => _showAddSectionDialog(ctx, repo),
+              child: TextButton(
+                onPressed: () => _showAddSectionDialog(ctx, repo),
+                child: const Text('إضافة قسم'),
+              ),
             ),
             TextButton(
               onPressed: () => Navigator.pop(ctx),

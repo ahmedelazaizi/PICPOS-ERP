@@ -4,6 +4,28 @@ part of 'loyalty_screen.dart';
 // PROGRAMS TAB
 // ═══════════════════════════════════════════════════════════════════════════
 
+// ── دالة بناء مستخرجة (Task 6b) ─────────────────────────────────────────
+// الحارس هنا (`PermissionGuard`) declarative بحت — زرار «إضافة برنامج» كان
+// محمي بكود عرض خشن بس (`loyalty_view`)، مفيش فحص على الإنشاء نفسه. مستخرج
+// كدالة top-level عشان يتبنى في اختبار widget خفيف من غير شاشة/قاعدة بيانات.
+@visibleForTesting
+Widget buildLoyaltyManageAddButton({required VoidCallback onPressed}) {
+  return PermissionGuard(
+    permission: PermissionCodes.loyaltyManage,
+    allowManagerOverride: true,
+    actionName: 'إضافة برنامج ولاء',
+    onGranted: onPressed,
+    child: ElevatedButton.icon(
+      onPressed: onPressed,
+      icon: const Icon(PhosphorIconsBold.plus, size: 18),
+      label: const Text('إضافة برنامج'),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.primary,
+      ),
+    ),
+  );
+}
+
 class _ProgramsTab extends StatelessWidget {
   final WidgetRef ref;
   final String searchQuery;
@@ -25,13 +47,8 @@ class _ProgramsTab extends StatelessWidget {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const Spacer(),
-              ElevatedButton.icon(
+              buildLoyaltyManageAddButton(
                 onPressed: () => _showProgramDialog(context, repo),
-                icon: const Icon(PhosphorIconsBold.plus, size: 18),
-                label: const Text('إضافة برنامج'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                ),
               ),
             ],
           ),
@@ -112,20 +129,35 @@ class _ProgramsTab extends StatelessWidget {
                                 ? Colors.green.shade50
                                 : Colors.grey.shade200,
                           ),
-                          IconButton(
-                            icon: const Icon(PhosphorIconsBold.pencilSimple),
-                            tooltip: 'تعديل',
-                            onPressed: () =>
+                          PermissionGuard(
+                            permission: PermissionCodes.loyaltyManage,
+                            allowManagerOverride: true,
+                            actionName: 'تعديل برنامج ولاء',
+                            onGranted: () =>
                                 _showProgramDialog(context, repo, existing: p),
-                          ),
-                          IconButton(
-                            icon: Icon(
-                              PhosphorIconsBold.trash,
-                              color: Colors.red.shade400,
+                            child: IconButton(
+                              icon: const Icon(PhosphorIconsBold.pencilSimple),
+                              tooltip: 'تعديل',
+                              onPressed: () => _showProgramDialog(
+                                  context, repo,
+                                  existing: p),
                             ),
-                            tooltip: 'حذف',
-                            onPressed: () =>
+                          ),
+                          PermissionGuard(
+                            permission: PermissionCodes.loyaltyManage,
+                            allowManagerOverride: true,
+                            actionName: 'حذف برنامج ولاء',
+                            onGranted: () =>
                                 _confirmDeleteProgram(context, repo, p),
+                            child: IconButton(
+                              icon: Icon(
+                                PhosphorIconsBold.trash,
+                                color: Colors.red.shade400,
+                              ),
+                              tooltip: 'حذف',
+                              onPressed: () =>
+                                  _confirmDeleteProgram(context, repo, p),
+                            ),
                           ),
                         ],
                       ),

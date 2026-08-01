@@ -4,8 +4,81 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../data/database/database.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/permissions/permission_codes.dart';
 import '../../../../data/providers/repository_providers.dart';
+import '../../../widgets/permission_guard.dart';
 import '../providers/tables_state_provider.dart';
+
+/// شكل زرار الإجراءات في الشريط العلوي — مستخرج top-level عشان تقدر
+/// `buildTablesManageAddTableButton` تستخدمه من غير الاعتماد على instance
+/// method في `TablesTopBar`.
+Widget _tablesActionButtonChip(IconData icon, String label, VoidCallback onTap,
+    {bool highlight = false}) {
+  return Padding(
+    padding: const EdgeInsets.only(right: 4),
+    child: Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: highlight
+                ? AppColors.primary.withValues(alpha: 0.15)
+                : Colors.white.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: highlight
+                  ? AppColors.primary.withValues(alpha: 0.3)
+                  : Colors.white.withValues(alpha: 0.08),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon,
+                  size: 15,
+                  color: highlight
+                      ? AppColors.primary
+                      : Colors.white.withValues(alpha: 0.7)),
+              const SizedBox(width: 6),
+              Text(label,
+                  style: GoogleFonts.cairo(
+                      fontSize: 11,
+                      color: highlight
+                          ? AppColors.primary
+                          : Colors.white.withValues(alpha: 0.7),
+                      fontWeight: FontWeight.w600)),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+// ── دالة بناء مستخرجة (Task 6b) ─────────────────────────────────────────
+// زرار «طاولة» (إضافة طاولة) كان محمي بكود عرض خشن بس (فحص الملاحية عبر
+// `screenPermissionMap`)، مفيش فحص على الإنشاء نفسه (`tables_manage`).
+// مستخرج كدالة top-level عشان يتبنى في اختبار widget خفيف من غير شاشة/قاعدة
+// بيانات حقيقية.
+@visibleForTesting
+Widget buildTablesManageAddTableButton({required VoidCallback onPressed}) {
+  return PermissionGuard(
+    permission: PermissionCodes.tablesManage,
+    allowManagerOverride: true,
+    actionName: 'إضافة طاولة',
+    onGranted: onPressed,
+    child: _tablesActionButtonChip(
+      PhosphorIconsBold.plus,
+      'طاولة',
+      onPressed,
+      highlight: true,
+    ),
+  );
+}
 
 class TablesTopBar extends ConsumerWidget {
   final VoidCallback onAddTable;
@@ -148,7 +221,7 @@ class TablesTopBar extends ConsumerWidget {
               highlight: uiState.isDesignerMode,
             ),
           _actionBtn(PhosphorIconsBold.layout, 'أقسام', onManageSections),
-          _actionBtn(PhosphorIconsBold.plus, 'طاولة', onAddTable, highlight: true),
+          buildTablesManageAddTableButton(onPressed: onAddTable),
         ],
       ),
     );
@@ -193,49 +266,6 @@ class TablesTopBar extends ConsumerWidget {
   }
 
   Widget _actionBtn(IconData icon, String label, VoidCallback onTap,
-      {bool highlight = false}) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 4),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(10),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: highlight
-                  ? AppColors.primary.withValues(alpha: 0.15)
-                  : Colors.white.withValues(alpha: 0.05),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: highlight
-                    ? AppColors.primary.withValues(alpha: 0.3)
-                    : Colors.white.withValues(alpha: 0.08),
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon,
-                    size: 15,
-                    color: highlight
-                        ? AppColors.primary
-                        : Colors.white.withValues(alpha: 0.7)),
-                const SizedBox(width: 6),
-                Text(label,
-                    style: GoogleFonts.cairo(
-                        fontSize: 11,
-                        color: highlight
-                            ? AppColors.primary
-                            : Colors.white.withValues(alpha: 0.7),
-                        fontWeight: FontWeight.w600)),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+          {bool highlight = false}) =>
+      _tablesActionButtonChip(icon, label, onTap, highlight: highlight);
 }

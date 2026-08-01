@@ -895,20 +895,31 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
                   child: KdsSettingsWidget(),
                 ),
                 const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(
-                    PhosphorIconsBold.forkKnife,
-                    color: AppColors.warning,
-                  ),
-                  title: const Text('إدارة الإضافات والمعدلات'),
-                  subtitle: const Text(
-                    'مجموعات الإضافات والخيارات للأصناف (صوصات، أحجام..)',
-                  ),
-                  trailing: const Icon(PhosphorIconsBold.caretLeft),
-                  onTap: () => Navigator.push(
+                PermissionGuard(
+                  permission: PermissionCodes.modifiersManage,
+                  allowManagerOverride: true,
+                  actionName: 'إدارة الإضافات والمعدلات',
+                  onGranted: () => Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (_) => const ModifierManagementWidget(),
+                    ),
+                  ),
+                  child: ListTile(
+                    leading: const Icon(
+                      PhosphorIconsBold.forkKnife,
+                      color: AppColors.warning,
+                    ),
+                    title: const Text('إدارة الإضافات والمعدلات'),
+                    subtitle: const Text(
+                      'مجموعات الإضافات والخيارات للأصناف (صوصات، أحجام..)',
+                    ),
+                    trailing: const Icon(PhosphorIconsBold.caretLeft),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ModifierManagementWidget(),
+                      ),
                     ),
                   ),
                 ),

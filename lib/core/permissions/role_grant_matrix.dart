@@ -77,6 +77,18 @@ class RoleGrantMatrix {
       'einvoice_submit',
       'einvoice_cancel',
       'manufacturing_manage',
+      // Task 6b — نفس المنطق بالظبط: `kitchen_view`/`loyalty_view`/
+      // `offers_view`/`tables_view` مالهاش دور غير مدير النظام في أي قايمة
+      // ثابتة تحت (نفس حالة الأربعة كودات فوق)، فـ`syncAllPermissions` هي
+      // اللي بتمنح الأكواد دي وقت التشغيل. إضافتهم هنا خط دفاع تاني بس، مش
+      // منحة جديدة.
+      'kitchen_manage',
+      'loyalty_manage',
+      'modifiers_manage',
+      'offers_create',
+      'offers_edit',
+      'offers_delete',
+      'tables_manage',
     },
     'كاشير': {
       'pos_access',

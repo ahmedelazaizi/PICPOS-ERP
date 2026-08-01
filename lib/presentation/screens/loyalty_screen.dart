@@ -5,8 +5,10 @@ import 'package:intl/intl.dart';
 import 'package:drift/drift.dart' show Value, OrderingTerm;
 import '../../data/providers/providers.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/permissions/permission_codes.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
 import '../../domain/repositories/loyalty_repository.dart';
+import '../widgets/permission_guard.dart';
 
 
 part 'loyalty_programs_tab.dart';

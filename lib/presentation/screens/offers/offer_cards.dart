@@ -4,6 +4,25 @@ part of '../offers_screen.dart';
 // OFFER CARDS — Card UI, status toggle, delete, print barcode
 // ═══════════════════════════════════════════════════════════════════════════
 
+/// هل [permissions] تسمح بتعديل عرض؟
+///
+/// مستخرجة كدالة top-level (مش method جوه الـState) — فعل التعديل/الحذف بينده
+/// عليهم `PopupMenuButton.onSelected` لكل كارت عرض، فمفيش ودجت واحد يتلف
+/// بـ`PermissionGuard` (نفس وضع `canCancelEInvoice` في Task 6a): الـ
+/// `PopupMenuItem` نفسه بيمسك الضغطة ويقفل الميني قبل ما أي حارس جواه يشتغل.
+bool canEditOffer(List<String> permissions) {
+  final isAdmin =
+      permissions.contains('system_admin') || permissions.contains('*');
+  return isAdmin || permissions.contains(PermissionCodes.offersEdit);
+}
+
+/// هل [permissions] تسمح بحذف عرض؟ نفس منطق [canEditOffer].
+bool canDeleteOffer(List<String> permissions) {
+  final isAdmin =
+      permissions.contains('system_admin') || permissions.contains('*');
+  return isAdmin || permissions.contains(PermissionCodes.offersDelete);
+}
+
 mixin _OfferCardsMixin on ConsumerState<OffersScreen> {
   // Abstract — provided by the shell
   String offerTypeLabel(String type);
@@ -118,13 +137,38 @@ mixin _OfferCardsMixin on ConsumerState<OffersScreen> {
                 PopupMenuButton<String>(
                   onSelected: (value) {
                     try {
+                      final perms = ref
+                              .read(currentUserPermissionsProvider)
+                              .asData
+                              ?.value ??
+                          const <String>[];
                       if (value == 'edit') {
                         if (!mounted) return;
+                        if (!canEditOffer(perms)) {
+                          AppToast.show(context, 'ليس لديك صلاحية تعديل العروض',
+                              type: ToastType.error);
+                          return;
+                        }
                         showEditOfferDialog(context, repo, offer);
                       } else if (value == 'delete') {
                         if (!mounted) return;
+                        if (!canDeleteOffer(perms)) {
+                          AppToast.show(context, 'ليس لديك صلاحية حذف العروض',
+                              type: ToastType.error);
+                          return;
+                        }
                         _confirmDeleteOffer(repo, offer);
                       } else if (value == 'toggle') {
+                        // تفعيل/إيقاف العرض بينده على `repo.updateOffer` — نفس
+                        // فعل الكتابة اللي وراء ديالوج التعديل بالظبط (مجرد
+                        // تغيير حقل `isActive` بدل فتح الفورم كله)، فبيتحمي
+                        // بنفس كود `offers_edit` مش كود جديد.
+                        if (!mounted) return;
+                        if (!canEditOffer(perms)) {
+                          AppToast.show(context, 'ليس لديك صلاحية تعديل العروض',
+                              type: ToastType.error);
+                          return;
+                        }
                         _toggleOfferStatus(repo, offer);
                       } else if (value == 'print_barcode') {
                         _printOfferBarcode(offer);

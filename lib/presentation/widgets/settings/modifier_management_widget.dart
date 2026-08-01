@@ -1,13 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import '../../../core/permissions/permission_codes.dart';
 import '../../../data/providers/providers.dart';
 import '../../../domain/repositories/modifier_repository.dart';
+import '../permission_guard.dart';
 
 /// Modifier Groups Management Screen — Settings section (#15)
 ///
 /// Allows creating, editing, and deleting modifier groups and their items.
 /// Types: 'addon' (adds price) or 'option' (no price change).
+///
+/// ── دالة بناء مستخرجة (Task 6b) ───────────────────────────────────────────
+/// زرار «مجموعة جديدة» كان بيوصل للشاشة دي من غير أي فحص صلاحية أصلاً —
+/// الـ`ListTile` اللي بيفتحها في شاشتَي الإعدادات مالوش `PermissionGuard`
+/// (بعكس `kdsSettings` جنبه بالظبط في نفس الملفين). مستخرج كدالة top-level
+/// عشان يتبنى في اختبار widget خفيف من غير شاشة/قاعدة بيانات.
+@visibleForTesting
+Widget buildModifiersManageAddGroupButton({required VoidCallback onPressed}) {
+  return PermissionGuard(
+    permission: PermissionCodes.modifiersManage,
+    allowManagerOverride: true,
+    actionName: 'مجموعة إضافات جديدة',
+    onGranted: onPressed,
+    child: FilledButton.icon(
+      onPressed: onPressed,
+      icon: const Icon(PhosphorIconsBold.plus, size: 16),
+      label: const Text('مجموعة جديدة'),
+    ),
+  );
+}
+
 class ModifierManagementWidget extends ConsumerStatefulWidget {
   const ModifierManagementWidget({super.key});
 
@@ -50,11 +73,7 @@ class _ModifierManagementWidgetState extends ConsumerState<ModifierManagementWid
       appBar: AppBar(
         title: const Text('إدارة الإضافات والخيارات'),
         actions: [
-          FilledButton.icon(
-            onPressed: _showAddGroupDialog,
-            icon: const Icon(PhosphorIconsBold.plus, size: 16),
-            label: const Text('مجموعة جديدة'),
-          ),
+          buildModifiersManageAddGroupButton(onPressed: _showAddGroupDialog),
           const SizedBox(width: 12),
         ],
       ),
@@ -196,6 +215,40 @@ class _ModifierGroupCardState extends State<_ModifierGroupCard> {
     if (mounted) setState(() => _items = items);
   }
 
+  /// مستخرجة عشان `PermissionGuard.onGranted` و`IconButton.onPressed` ينادوا
+  /// نفس المنطق بالظبط من غير تكرار — الحارس بيمرّر الفعل صراحة (مش بيخمّنه).
+  Future<void> _confirmAndDeleteGroup(
+    BuildContext context,
+    ModifierGroupData g,
+  ) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('حذف المجموعة'),
+        content: Text('هل تريد حذف "${g.name}" وجميع عناصرها؟'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(c), child: const Text('إلغاء')),
+          FilledButton(
+            onPressed: () => Navigator.pop(c, true),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('حذف'),
+          ),
+        ],
+      ),
+    );
+    if (confirm == true) {
+      await widget.repo.deleteGroup(g.id);
+      widget.onRefresh();
+    }
+  }
+
+  /// مستخرجة لنفس السبب: `PermissionGuard.onGranted` و`IconButton.onPressed`
+  /// ينادوا نفس الفعل صراحة.
+  Future<void> _deleteItem(ModifierItemData item) async {
+    await widget.repo.deleteItem(item.id);
+    _loadItems();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -241,34 +294,26 @@ class _ModifierGroupCardState extends State<_ModifierGroupCard> {
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                IconButton(
-                  icon: const Icon(PhosphorIconsBold.link, size: 18),
-                  tooltip: 'ربط الأصناف',
-                  onPressed: () => _showLinkProductsDialog(),
+                PermissionGuard(
+                  permission: PermissionCodes.modifiersManage,
+                  allowManagerOverride: true,
+                  actionName: 'ربط أصناف بمجموعة إضافات',
+                  onGranted: () => _showLinkProductsDialog(),
+                  child: IconButton(
+                    icon: const Icon(PhosphorIconsBold.link, size: 18),
+                    tooltip: 'ربط الأصناف',
+                    onPressed: () => _showLinkProductsDialog(),
+                  ),
                 ),
-                IconButton(
-                  icon: const Icon(PhosphorIconsBold.trash, size: 18),
-                  onPressed: () async {
-                    final confirm = await showDialog<bool>(
-                      context: context,
-                      builder: (c) => AlertDialog(
-                        title: const Text('حذف المجموعة'),
-                        content: Text('هل تريد حذف "${g.name}" وجميع عناصرها؟'),
-                        actions: [
-                          TextButton(onPressed: () => Navigator.pop(c), child: const Text('إلغاء')),
-                          FilledButton(
-                            onPressed: () => Navigator.pop(c, true),
-                            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-                            child: const Text('حذف'),
-                          ),
-                        ],
-                      ),
-                    );
-                    if (confirm == true) {
-                      await widget.repo.deleteGroup(g.id);
-                      widget.onRefresh();
-                    }
-                  },
+                PermissionGuard(
+                  permission: PermissionCodes.modifiersManage,
+                  allowManagerOverride: true,
+                  actionName: 'حذف مجموعة إضافات',
+                  onGranted: () => _confirmAndDeleteGroup(context, g),
+                  child: IconButton(
+                    icon: const Icon(PhosphorIconsBold.trash, size: 18),
+                    onPressed: () => _confirmAndDeleteGroup(context, g),
+                  ),
                 ),
                 IconButton(
                   icon: Icon(_expanded ? PhosphorIconsBold.caretUp : PhosphorIconsBold.caretDown, size: 18),
@@ -304,20 +349,29 @@ class _ModifierGroupCardState extends State<_ModifierGroupCard> {
                                 materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                 visualDensity: VisualDensity.compact,
                               ),
-                            IconButton(
-                              icon: const Icon(PhosphorIconsBold.trash, size: 16),
-                              onPressed: () async {
-                                await widget.repo.deleteItem(item.id);
-                                _loadItems();
-                              },
+                            PermissionGuard(
+                              permission: PermissionCodes.modifiersManage,
+                              allowManagerOverride: true,
+                              actionName: 'حذف عنصر إضافة',
+                              onGranted: () => _deleteItem(item),
+                              child: IconButton(
+                                icon: const Icon(PhosphorIconsBold.trash, size: 16),
+                                onPressed: () => _deleteItem(item),
+                              ),
                             ),
                           ],
                         ),
                       )),
-                  TextButton.icon(
-                    onPressed: () => _showAddItemDialog(),
-                    icon: const Icon(PhosphorIconsBold.plus, size: 14),
-                    label: const Text('إضافة عنصر'),
+                  PermissionGuard(
+                    permission: PermissionCodes.modifiersManage,
+                    allowManagerOverride: true,
+                    actionName: 'إضافة عنصر إضافة',
+                    onGranted: () => _showAddItemDialog(),
+                    child: TextButton.icon(
+                      onPressed: () => _showAddItemDialog(),
+                      icon: const Icon(PhosphorIconsBold.plus, size: 14),
+                      label: const Text('إضافة عنصر'),
+                    ),
                   ),
                 ],
               ),

@@ -49,9 +49,10 @@ class PermissionEnforcementRegistry {
     // ── العروض والتوصيل والطاولات والمطبخ (دفعة ٩) ──
     // 'offers_view' و'tables_view' و'kitchen_view' اتشالوا — بقوا منفَّذين
     // فعلياً بعد إعادة توصيل screenPermissionMap (4a032a22 وما بعدها).
-    'offers_create', 'offers_edit', 'offers_delete',
-    'tables_manage',
-    'kitchen_manage',
+    // 'offers_create' و'offers_edit' و'offers_delete' و'tables_manage' و
+    // 'kitchen_manage' اتشالوا — بقوا منفَّذين فعلياً (Task 6b: أزرار
+    // الإنشاء/التعديل/الحذف اتلفّت بـ PermissionGuard أو فحص صريح جوه
+    // PopupMenuButton.onSelected بدل ما تتحمي بكود العرض الخشن بس).
     // ── التقارير (دفعة ١٠) ──
     'reports_export', 'reports_suppliers', 'reports_delivery_recon',
     // ── الإعدادات والنظام (دفعة ١١) ──
@@ -65,8 +66,8 @@ class PermissionEnforcementRegistry {
     // 'manufacturing_manage', 'assets_manage', 'assets_depreciation' اتشالوا
     // — بقوا منفَّذين فعلياً (Task 6a، أزرار الإنشاء/التعديل/الحذف اتلفّت
     // بـ PermissionGuard بدل ما تتحمي بكود العرض الخشن بس).
-    'loyalty_manage',
-    'modifiers_manage',
+    // 'loyalty_manage' و'modifiers_manage' اتشالوا — بقوا منفَّذين فعلياً
+    // (Task 6b، نفس المعاملة).
     // ── حرجة ماليّاً — أولوية أمنية (دفعة ١٣) ──
     // 'modify_closed_period' اتشال — بقى منفَّذ فعلياً (Task 6a، فحص صريح
     // جوه زرار «إعادة فتح الفترة» في fiscal_year_screen.dart).
