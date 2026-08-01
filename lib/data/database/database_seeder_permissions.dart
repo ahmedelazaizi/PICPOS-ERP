@@ -1487,13 +1487,24 @@ extension DatabaseSeederPermissions on AppDatabase {
       );
     }
 
-    // Add all new permissions to admin role
+    // Add all new permissions to admin role — EXCEPT criticalFinancialOps
+    // (Spec 062 / D1-004: segregation of duties). ده كان باج حقيقي: التعليق
+    // فوق بالظبط بيقول "these require explicit assignment — admin bypass is
+    // NOT applied"، لكن اللوب ده كان بيمنح كل الصلاحيات لمدير النظام من غير
+    // استثناء — يعني `modify_closed_period` (وباقي الأكواد الحرجة زي
+    // `delete_fiscal_year` و`void_paid_invoice`) كانت بتتمنح تلقائياً لمدير
+    // النظام لأي حد بيرقّي قاعدة بياناته لإصدار V77. syncAllPermissions
+    // (permissions_dao.dart) وseedRolesAndPermissions فوق كانوا بيستثنوا
+    // الأكواد دي صح؛ اللوب ده كان الاستثناء المنسي.
     final adminRole = await (select(
       roles,
     )..where((r) => r.name.equals('مدير النظام'))).getSingleOrNull();
     if (adminRole != null) {
       final allPerms = await select(permissions).get();
       for (final p in allPerms) {
+        if (PermissionCodes.criticalFinancialOps.contains(p.code)) {
+          continue;
+        }
         await into(rolePermissions).insert(
           RolePermissionsCompanion.insert(
             roleId: adminRole.id,

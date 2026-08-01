@@ -9,7 +9,18 @@ import '../../core/theme/app_colors.dart';
 import '../../data/providers/providers.dart';
 import '../../domain/repositories/accounting_repository.dart';
 import '../../core/widgets/app_toast.dart';
+import '../../core/permissions/permission_codes.dart';
 import '../widgets/fiscal_year_gate_dialog.dart';
+
+/// هل [permissions] تسمح بإعادة فتح فترة محاسبية مقفلة؟
+///
+/// `modify_closed_period` كود فصل سلطات (segregation of duties) — لا يوجد
+/// أي تجاوز إداري هنا (لا `system_admin` ولا `*`)، عكس أغلب أكواد الحارس
+/// التانية. مستخرجة top-level عشان تتفحص من غير تركيب الشاشة كلها.
+@visibleForTesting
+bool canReopenClosedPeriod(List<String> permissions) {
+  return permissions.contains(PermissionCodes.modifyClosedPeriod);
+}
 
 /// Fiscal Year Management Screen — IAS 1 compliant period tracking
 class FiscalYearScreen extends ConsumerStatefulWidget {
@@ -372,6 +383,23 @@ class _FiscalYearScreenState extends ConsumerState<FiscalYearScreen> {
                 icon: const Icon(PhosphorIconsBold.lockSimpleOpen, size: 14),
                 tooltip: 'إعادة فتح الفترة',
                 onPressed: _savingPeriodIds.contains(period.id) ? null : () async {
+                  // فحص صريح بلا أي استثناء للمدير — `modify_closed_period`
+                  // كود فصل سلطات (segregation of duties)، فمينفعش يتفتح
+                  // بكلمة مرور مدير زي بقية الأزرار. الصلاحية لازم تتمنح
+                  // صراحة للمستخدم اللي هيعمل الفعل، مفيش باب خلفي.
+                  final perms =
+                      ref.read(currentUserPermissionsProvider).asData?.value ??
+                          const <String>[];
+                  if (!canReopenClosedPeriod(perms)) {
+                    if (context.mounted) {
+                      AppToast.show(
+                        context,
+                        'ليس لديك صلاحية إعادة فتح فترة مقفلة',
+                        type: ToastType.error,
+                      );
+                    }
+                    return;
+                  }
                   setState(() => _savingPeriodIds.add(period.id));
                   try {
                     await repo.reopenAccountingPeriod(period.id);

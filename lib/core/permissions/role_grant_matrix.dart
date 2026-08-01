@@ -59,6 +59,24 @@ class RoleGrantMatrix {
       // بيتمنح لكل دور تشغيلي عشان الترقية ما تسحبش الشاشة من حد — السحب
       // قرار المدير، مش أثر جانبي للإصلاح.
       'dashboard_access',
+      // Task 6a — نفس منطق سبب٠٨٦ فوق: الأكواد الستة دي مش في أي قايمة
+      // أدوار ثابتة في السيدر (`assets_view`/`distribution_view`/
+      // `einvoice_view`/`manufacturing_view` مالهاش دور غير مدير النظام
+      // أصلاً)، فـ`syncAllPermissions` هي اللي بتمنحها لمدير النظام وقت
+      // التشغيل — مش `seedRolesAndPermissions` الثابت. سجل سبب٠٨٦ نفسه
+      // بيقول إن اللوب ده فشل بصمت لأكواد معيّنة على سيرفر إنتاج فعلي.
+      // إضافتها هنا كخط دفاع تاني بتخلي `grantMissingDefaults` (زرار
+      // «منح الصلاحيات الافتراضية») قادر يصلّح تركيبة قديمة اتصاب بنفس
+      // الفشل الصامت، من غير ما نمنح أي دور تاني حاجة مكانش عنده.
+      // ملحوظة: `modify_closed_period` اتقصد قصداً برّه القايمة دي —
+      // كود فصل سلطات (segregation of duties)، ما ينفعش يتمنح تلقائياً
+      // ولا حتى لمدير النظام.
+      'assets_manage',
+      'assets_depreciation',
+      'distribution_manage',
+      'einvoice_submit',
+      'einvoice_cancel',
+      'manufacturing_manage',
     },
     'كاشير': {
       'pos_access',

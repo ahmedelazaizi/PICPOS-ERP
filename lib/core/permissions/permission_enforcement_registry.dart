@@ -61,11 +61,14 @@ class PermissionEnforcementRegistry {
     // ── وحدات فرعية (دفعة ١٢) ──
     // 'manufacturing_view' و'assets_view' اتشالوا — بقوا منفَّذين فعلياً
     // بعد إعادة توصيل screenPermissionMap (4a032a22 وما بعدها).
-    'loyalty_manage', 'distribution_manage', 'einvoice_submit',
-    'einvoice_cancel', 'manufacturing_manage',
-    'assets_manage', 'assets_depreciation',
+    // 'distribution_manage', 'einvoice_submit', 'einvoice_cancel',
+    // 'manufacturing_manage', 'assets_manage', 'assets_depreciation' اتشالوا
+    // — بقوا منفَّذين فعلياً (Task 6a، أزرار الإنشاء/التعديل/الحذف اتلفّت
+    // بـ PermissionGuard بدل ما تتحمي بكود العرض الخشن بس).
+    'loyalty_manage',
     'modifiers_manage',
     // ── حرجة ماليّاً — أولوية أمنية (دفعة ١٣) ──
-    'modify_closed_period',
+    // 'modify_closed_period' اتشال — بقى منفَّذ فعلياً (Task 6a، فحص صريح
+    // جوه زرار «إعادة فتح الفترة» في fiscal_year_screen.dart).
   };
 }

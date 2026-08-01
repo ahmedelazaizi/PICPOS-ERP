@@ -1,5 +1,24 @@
 part of '../distribution_screen.dart';
 
+// زرار «إضافة مسار» — `distribution_manage`. مستخرج كدالة top-level مستقلة
+// عن `AppDatabase`/`DistributionController` عشان يتبنى في اختبار widget
+// خفيف (Task 6a) — تركيب الشاشة كلها بقاعدة بيانات حقيقية علّق الاختبارات.
+@visibleForTesting
+Widget buildDistributionManageAddButton({required VoidCallback onPressed}) {
+  return PermissionGuard(
+    permission: PermissionCodes.distributionManage,
+    allowManagerOverride: true,
+    actionName: 'إضافة مسار توزيع',
+    onGranted: onPressed,
+    child: ElevatedButton.icon(
+      onPressed: onPressed,
+      icon: const Icon(PhosphorIconsBold.plus, size: 18),
+      label: const Text('إضافة مسار'),
+      style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+    ),
+  );
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // ROUTES TAB
 // ═══════════════════════════════════════════════════════════════════════════
@@ -25,13 +44,8 @@ class _RoutesTab extends StatelessWidget {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const Spacer(),
-              ElevatedButton.icon(
+              buildDistributionManageAddButton(
                 onPressed: () => _showRouteDialog(context, ctrl),
-                icon: const Icon(PhosphorIconsBold.plus, size: 18),
-                label: const Text('إضافة مسار'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                ),
               ),
             ],
           ),
@@ -112,19 +126,32 @@ class _RoutesTab extends StatelessWidget {
                               builder: (ctx, snap) =>
                                   Chip(label: Text(snap.data?.name ?? '...')),
                             ),
-                          IconButton(
-                            icon: const Icon(PhosphorIconsBold.pencilSimple),
-                            tooltip: 'تعديل',
-                            onPressed: () =>
+                          PermissionGuard(
+                            permission: PermissionCodes.distributionManage,
+                            allowManagerOverride: true,
+                            actionName: 'تعديل مسار توزيع',
+                            onGranted: () =>
                                 _showRouteDialog(context, ctrl, existing: r),
-                          ),
-                          IconButton(
-                            icon: Icon(
-                              PhosphorIconsBold.trash,
-                              color: Colors.red.shade400,
+                            child: IconButton(
+                              icon: const Icon(PhosphorIconsBold.pencilSimple),
+                              tooltip: 'تعديل',
+                              onPressed: () =>
+                                  _showRouteDialog(context, ctrl, existing: r),
                             ),
-                            tooltip: 'حذف',
-                            onPressed: () => _confirmDelete(context, ctrl, r),
+                          ),
+                          PermissionGuard(
+                            permission: PermissionCodes.distributionManage,
+                            allowManagerOverride: true,
+                            actionName: 'حذف مسار توزيع',
+                            onGranted: () => _confirmDelete(context, ctrl, r),
+                            child: IconButton(
+                              icon: Icon(
+                                PhosphorIconsBold.trash,
+                                color: Colors.red.shade400,
+                              ),
+                              tooltip: 'حذف',
+                              onPressed: () => _confirmDelete(context, ctrl, r),
+                            ),
                           ),
                         ],
                       ),

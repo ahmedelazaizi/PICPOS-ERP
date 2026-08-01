@@ -5,9 +5,11 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/app_toast.dart';
+import '../../core/permissions/permission_codes.dart';
 import '../../data/providers/providers.dart';
 import '../../data/providers/manufacturing_providers.dart';
 import '../../domain/entities/product_entity.dart';
+import '../widgets/permission_guard.dart';
 
 part 'widgets/manufacturing/bom_tab.dart';
 part 'widgets/manufacturing/production_orders_tab.dart';

@@ -7,6 +7,8 @@ import '../../data/providers/providers.dart';
 import '../../core/theme/app_colors.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
 import 'package:ural_erp/core/constants/app_constants.dart';
+import 'package:ural_erp/core/permissions/permission_codes.dart';
+import 'package:ural_erp/presentation/widgets/permission_guard.dart';
 import 'providers/distribution_controller.dart';
 
 

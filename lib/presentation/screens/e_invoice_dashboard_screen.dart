@@ -4,6 +4,8 @@ import '../../data/providers/providers.dart';
 import '../../data/providers/e_invoicing_providers.dart';
 import '../../services/e_invoicing/e_invoice_service_wrapper.dart';
 import '../../core/widgets/app_toast.dart';
+import '../../core/permissions/permission_codes.dart';
+import '../widgets/permission_guard.dart';
 
 
 part 'e_invoice_widgets.dart';
@@ -11,6 +13,36 @@ part 'e_invoice_config_forms.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 // E-INVOICE DASHBOARD SCREEN — لوحة تحكم الفوترة الإلكترونية
 // ═══════════════════════════════════════════════════════════════════════════
+
+/// هل [permissions] تسمح بإلغاء فاتورة إلكترونية مُرسَلة؟
+///
+/// مستخرجة كدالة عامة (مش method جوه الـ State الخاصة) عشان تتفحص من
+/// غير تركيب شاشة `EInvoiceDashboardScreen` كاملة — إلغاء فاتورة حقيقي
+/// يحتاج فاتورة بيع (FK) مزروعة في القاعدة، وده تكلفة إعداد مش لازمة
+/// لإثبات إن الحارس شغّال.
+bool canCancelEInvoice(List<String> permissions) {
+  final isAdmin =
+      permissions.contains('system_admin') || permissions.contains('*');
+  return isAdmin || permissions.contains(PermissionCodes.einvoiceCancel);
+}
+
+/// زرار «إعادة إرسال المعلقة» — `einvoice_submit`. مستخرج كدالة top-level
+/// مستقلة عن الشاشة كلها عشان يتبنى في اختبار widget خفيف (Task 6a) —
+/// تركيب الشاشة كلها بقاعدة بيانات حقيقية علّق الاختبارات.
+@visibleForTesting
+Widget buildEinvoiceSubmitButton({required VoidCallback onPressed}) {
+  return PermissionGuard(
+    permission: PermissionCodes.einvoiceSubmit,
+    allowManagerOverride: true,
+    actionName: 'إعادة إرسال فواتير إلكترونية معلقة',
+    onGranted: onPressed,
+    child: _ActionButton(
+      label: 'إعادة إرسال المعلقة',
+      icon: Icons.refresh,
+      onPressed: onPressed,
+    ),
+  );
+}
 
 class EInvoiceDashboardScreen extends ConsumerStatefulWidget {
   const EInvoiceDashboardScreen({super.key});
@@ -182,11 +214,7 @@ class _EInvoiceDashboardScreenState
               spacing: 12,
               runSpacing: 12,
               children: [
-                _ActionButton(
-                  label: 'إعادة إرسال المعلقة',
-                  icon: Icons.refresh,
-                  onPressed: _retryPending,
-                ),
+                buildEinvoiceSubmitButton(onPressed: _retryPending),
                 _ActionButton(
                   label: 'فحص الحالات',
                   icon: Icons.sync,
@@ -513,6 +541,20 @@ class _EInvoiceDashboardScreenState
   }
 
   Future<void> _cancelSingle(EInvoiceSubmissionData sub) async {
+    // فحص صريح جوه الدالة مش ودجت — الزرار اللي بينده عليها جوه
+    // `PopupMenuButton` لكل صف، فمفيش نقطة إدخال واحدة تتلف بـ
+    // `PermissionGuard` بسهولة. المنطق مستخرج في `canCancelEInvoice`
+    // عشان يتفحص من غير ما نركّب الشاشة كلها (تحتاج فاتورة بيع حقيقية
+    // كـ FK للسجل).
+    final perms = ref.read(currentUserPermissionsProvider).asData?.value ??
+        const <String>[];
+    if (!canCancelEInvoice(perms)) {
+      if (mounted) {
+        AppToast.show(context, 'ليس لديك صلاحية إلغاء الفوترة الإلكترونية',
+            type: ToastType.error);
+      }
+      return;
+    }
     if (sub.documentUuid == null) return;
     final wrapper = ref.read(eInvoiceServiceProvider);
     final ok = await wrapper.cancelDocument(

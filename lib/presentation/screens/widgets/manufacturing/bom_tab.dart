@@ -1,5 +1,29 @@
 part of '../../manufacturing_screen.dart';
 
+// زرار «قائمة مواد جديدة» — `manufacturing_manage`. مستخرج كدالة top-level
+// مستقلة عن الشاشة كلها عشان يتبنى في اختبار widget خفيف (Task 6a) —
+// تركيب الشاشة كلها بقاعدة بيانات حقيقية علّق الاختبارات.
+@visibleForTesting
+Widget buildManufacturingManageBomButton({required VoidCallback onPressed}) {
+  return PermissionGuard(
+    permission: PermissionCodes.manufacturingManage,
+    allowManagerOverride: true,
+    actionName: 'إنشاء قائمة مواد',
+    onGranted: onPressed,
+    child: ElevatedButton.icon(
+      onPressed: onPressed,
+      icon: const Icon(PhosphorIconsBold.plus, size: 18),
+      label: const Text('قائمة مواد جديدة'),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFF14B8A6),
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    ),
+  );
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // TAB 1: BOM MANAGEMENT — قوائم المكونات
 // ═══════════════════════════════════════════════════════════════════════════
@@ -33,19 +57,9 @@ class _BomTab extends ConsumerWidget {
                     ),
                   ),
                   const Spacer(),
-                  ElevatedButton.icon(
+                  buildManufacturingManageBomButton(
                     onPressed: () =>
                         _showBomDialog(context, ref, products, null),
-                    icon: const Icon(PhosphorIconsBold.plus, size: 18),
-                    label: const Text('قائمة مواد جديدة'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF14B8A6),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
-                    ),
                   ),
                 ],
               ),
@@ -183,15 +197,27 @@ class _BomCard extends ConsumerWidget {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            IconButton(
-              icon: const Icon(PhosphorIconsBold.pencilSimple, size: 18, color: Color(0xFF14B8A6)),
-              onPressed: onEdit,
-              tooltip: 'تعديل',
+            PermissionGuard(
+              permission: PermissionCodes.manufacturingManage,
+              allowManagerOverride: true,
+              actionName: 'تعديل قائمة مواد',
+              onGranted: onEdit,
+              child: IconButton(
+                icon: const Icon(PhosphorIconsBold.pencilSimple, size: 18, color: Color(0xFF14B8A6)),
+                onPressed: onEdit,
+                tooltip: 'تعديل',
+              ),
             ),
-            IconButton(
-              icon: const Icon(PhosphorIconsBold.trash, size: 18, color: Colors.red),
-              onPressed: onDelete,
-              tooltip: 'حذف',
+            PermissionGuard(
+              permission: PermissionCodes.manufacturingManage,
+              allowManagerOverride: true,
+              actionName: 'حذف قائمة مواد',
+              onGranted: onDelete,
+              child: IconButton(
+                icon: const Icon(PhosphorIconsBold.trash, size: 18, color: Colors.red),
+                onPressed: onDelete,
+                tooltip: 'حذف',
+              ),
             ),
           ],
         ),

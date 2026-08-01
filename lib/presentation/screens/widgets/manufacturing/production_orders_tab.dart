@@ -30,19 +30,28 @@ class _ProductionOrdersTab extends ConsumerWidget {
                   // Status filter chips
                   ..._statusFilters(context, ref, orders),
                   const Spacer(),
-                  ElevatedButton.icon(
-                    onPressed: boms.isEmpty
+                  PermissionGuard(
+                    permission: PermissionCodes.manufacturingManage,
+                    allowManagerOverride: true,
+                    actionName: 'إنشاء أمر إنتاج',
+                    onGranted: boms.isEmpty
                         ? null
                         : () => _showOrderDialog(context, ref, boms, products),
-                    icon: const Icon(PhosphorIconsBold.plus, size: 18),
-                    label: const Text('أمر إنتاج جديد'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF14B8A6),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
+                    child: ElevatedButton.icon(
+                      onPressed: boms.isEmpty
+                          ? null
+                          : () =>
+                              _showOrderDialog(context, ref, boms, products),
+                      icon: const Icon(PhosphorIconsBold.plus, size: 18),
+                      label: const Text('أمر إنتاج جديد'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF14B8A6),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                      ),
                     ),
                   ),
                 ],
@@ -305,13 +314,19 @@ class _ProductionOrderCard extends ConsumerWidget {
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _actionButton(
-              context,
-              ref,
-              icon: PhosphorIconsBold.pencilSimple,
-              label: 'تعديل',
-              color: const Color(0xFF14B8A6),
-              onTap: () => _editOrder(context, ref),
+            PermissionGuard(
+              permission: PermissionCodes.manufacturingManage,
+              allowManagerOverride: true,
+              actionName: 'تعديل أمر إنتاج',
+              onGranted: () => _editOrder(context, ref),
+              child: _actionButton(
+                context,
+                ref,
+                icon: PhosphorIconsBold.pencilSimple,
+                label: 'تعديل',
+                color: const Color(0xFF14B8A6),
+                onTap: () => _editOrder(context, ref),
+              ),
             ),
             const SizedBox(width: 8),
             _actionButton(

@@ -6,13 +6,72 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/permissions/permission_codes.dart';
 import '../../data/providers/providers.dart';
 import '../../domain/repositories/fixed_assets_repository.dart';
 import '../../domain/repositories/accounting_repository.dart';
 import '../../core/widgets/app_toast.dart';
 import '../../services/printing/report_pdf_generator.dart';
+import '../widgets/permission_guard.dart';
 
 part 'fixed_assets_dialogs.dart';
+
+// ── دوال بناء مستخرجة (Task 6a) ─────────────────────────────────────────
+// الحارس هنا (`PermissionGuard`) declarative بحت — مفيش قرار منطقي (bool)
+// يتستخرج، الفعل نفسه هو اللي محتاج يتأكد إنه مربوط صح. استخرجناهم كدوال
+// top-level مستقلة عن `AppDatabase`/الشاشة كلها عشان يتبنوا في اختبار
+// widget خفيف (بدون قاعدة بيانات حقيقية) — تجربة تركيب الشاشة الكاملة
+// بقاعدة حقيقية علّقت الاختبارات (كل واحد بياخد ~١٠ دقايق) بسبب دورة
+// `runBeforeOpen` الثقيلة، مش بسبب أي غلط في الحارس نفسه.
+
+/// الفتحة العائمة لإنشاء أصل ثابت/فئة جديدة — `assets_manage`.
+@visibleForTesting
+Widget buildAssetsManageFab({
+  required VoidCallback onPressed,
+  required String label,
+}) {
+  return PermissionGuard(
+    permission: PermissionCodes.assetsManage,
+    allowManagerOverride: true,
+    actionName: 'إدارة الأصول الثابتة',
+    onGranted: onPressed,
+    child: FloatingActionButton.extended(
+      onPressed: onPressed,
+      backgroundColor: AppColors.primary,
+      icon: const Icon(PhosphorIconsBold.plus, color: Colors.white),
+      label: Text(
+        label,
+        style: GoogleFonts.cairo(
+          color: Colors.white,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    ),
+  );
+}
+
+/// زرار «تنفيذ الإهلاك الشهري» — `assets_depreciation`.
+@visibleForTesting
+Widget buildAssetsDepreciationButton({required VoidCallback onPressed}) {
+  return PermissionGuard(
+    permission: PermissionCodes.assetsDepreciation,
+    allowManagerOverride: true,
+    actionName: 'تنفيذ الإهلاك الشهري',
+    onGranted: onPressed,
+    child: ElevatedButton.icon(
+      onPressed: onPressed,
+      icon: const Icon(PhosphorIconsBold.play, size: 18),
+      label: Text('تنفيذ الإهلاك الشهري',
+          style: GoogleFonts.cairo(fontWeight: FontWeight.w600)),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    ),
+  );
+}
 
 /// Fixed Assets Screen — الأصول الثابتة والإهلاك
 /// Manage asset categories, fixed assets, and run depreciation
@@ -115,23 +174,19 @@ class _FixedAssetsScreenState extends ConsumerState<FixedAssetsScreen>
   }
 
   Widget? _buildFab(IFixedAssetsRepository repo, IAccountingRepository accountingRepo) {
-    return FloatingActionButton.extended(
-      onPressed: () {
-        if (_tabCtrl.index == 0) {
-          showCreateAssetDialog(repo, accountingRepo);
-        } else if (_tabCtrl.index == 1) {
-          showCreateCategoryDialog(repo, accountingRepo);
-        }
-      },
-      backgroundColor: AppColors.primary,
-      icon: const Icon(PhosphorIconsBold.plus, color: Colors.white),
-      label: Text(
-        _tabCtrl.index == 1 ? 'فئة جديدة' : 'أصل جديد',
-        style: GoogleFonts.cairo(
-          color: Colors.white,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
+    // الفتحين (أصل جديد / فئة جديدة) بيتعاملوا مع نفس الفعل عشان الحارس
+    // يقدر يمرّره صراحة لـ onGranted من غير ما يحاول يخمّن onPressed.
+    void handlePress() {
+      if (_tabCtrl.index == 0) {
+        showCreateAssetDialog(repo, accountingRepo);
+      } else if (_tabCtrl.index == 1) {
+        showCreateCategoryDialog(repo, accountingRepo);
+      }
+    }
+
+    return buildAssetsManageFab(
+      onPressed: handlePress,
+      label: _tabCtrl.index == 1 ? 'فئة جديدة' : 'أصل جديد',
     );
   }
 
@@ -323,18 +378,26 @@ class _FixedAssetsScreenState extends ConsumerState<FixedAssetsScreen>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    ActionChip(
-                      avatar: const Icon(PhosphorIconsBold.pencilSimple,
-                          size: 14, color: Colors.indigo),
-                      label: Text('تعديل',
-                          style: GoogleFonts.cairo(
-                              fontSize: 10, color: Colors.indigo)),
-                      backgroundColor: Colors.indigo.withValues(alpha: 0.08),
-                      side: BorderSide(
-                          color: Colors.indigo.withValues(alpha: 0.2)),
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      visualDensity: VisualDensity.compact,
-                      onPressed: () => showEditAssetDialog(repo, accountingRepo, asset),
+                    PermissionGuard(
+                      permission: PermissionCodes.assetsManage,
+                      allowManagerOverride: true,
+                      actionName: 'تعديل أصل ثابت',
+                      onGranted: () =>
+                          showEditAssetDialog(repo, accountingRepo, asset),
+                      child: ActionChip(
+                        avatar: const Icon(PhosphorIconsBold.pencilSimple,
+                            size: 14, color: Colors.indigo),
+                        label: Text('تعديل',
+                            style: GoogleFonts.cairo(
+                                fontSize: 10, color: Colors.indigo)),
+                        backgroundColor: Colors.indigo.withValues(alpha: 0.08),
+                        side: BorderSide(
+                            color: Colors.indigo.withValues(alpha: 0.2)),
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        visualDensity: VisualDensity.compact,
+                        onPressed: () =>
+                            showEditAssetDialog(repo, accountingRepo, asset),
+                      ),
                     ),
                     const SizedBox(width: 6),
                     ActionChip(
@@ -465,9 +528,17 @@ class _FixedAssetsScreenState extends ConsumerState<FixedAssetsScreen>
                   '${getDepreciationMethodLabel(cat.defaultDepreciationMethod)}',
                   style: GoogleFonts.cairo(fontSize: 11, color: Colors.grey),
                 ),
-                trailing: IconButton(
-                  icon: const Icon(PhosphorIconsBold.pencilSimple, size: 16),
-                  onPressed: () => showEditCategoryDialog(repo, accountingRepo, cat),
+                trailing: PermissionGuard(
+                  permission: PermissionCodes.assetsManage,
+                  allowManagerOverride: true,
+                  actionName: 'تعديل فئة أصول',
+                  onGranted: () =>
+                      showEditCategoryDialog(repo, accountingRepo, cat),
+                  child: IconButton(
+                    icon: const Icon(PhosphorIconsBold.pencilSimple, size: 16),
+                    onPressed: () =>
+                        showEditCategoryDialog(repo, accountingRepo, cat),
+                  ),
                 ),
               ),
             );
@@ -487,18 +558,8 @@ class _FixedAssetsScreenState extends ConsumerState<FixedAssetsScreen>
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(12),
-          child: ElevatedButton.icon(
+          child: buildAssetsDepreciationButton(
             onPressed: () => runDepreciation(repo),
-            icon: const Icon(PhosphorIconsBold.play, size: 18),
-            label: Text('تنفيذ الإهلاك الشهري',
-                style: GoogleFonts.cairo(fontWeight: FontWeight.w600)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
-            ),
           ),
         ),
         const Divider(height: 1),
