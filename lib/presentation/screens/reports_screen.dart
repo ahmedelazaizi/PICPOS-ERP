@@ -418,6 +418,9 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             id: 'sup_statement',
             title: 'كشف حساب المورد',
             subtitle: 'كشف تفصيلي بالحركات',
+            // دفعة ١٢ — الفئة كلها كانت بتترسم لأي حد معاه reports_view
+            // (حقل permission اختياري، ولما يبقى null التايل بيظهر بلا فحص).
+            permission: PermissionCodes.reportsSuppliers,
             action: () =>
                 nav(() => const PartyStatementScreen(isSupplier: true)),
           ),
@@ -425,6 +428,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             id: 'sup_behavior',
             title: 'تحليل سلوك الموردين',
             subtitle: 'الموردون النشطون وحجم التعامل',
+            permission: PermissionCodes.reportsSuppliers,
             action: () => nav(() => const AnalyticsDashboardScreen()),
           ),
         ],

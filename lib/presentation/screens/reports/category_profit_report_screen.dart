@@ -13,6 +13,7 @@ import '../../../data/providers/providers.dart';
 import '../../widgets/branch_warehouse_filter.dart';
 import '../../widgets/report_components.dart' show DateRangeFilter;
 import '../../widgets/report_filter_bar.dart';
+import 'report_export_guard.dart';
 
 class CategoryProfitReportScreen extends ConsumerStatefulWidget {
   const CategoryProfitReportScreen({super.key});
@@ -177,16 +178,8 @@ class _CategoryProfitReportScreenState
       appBar: AppBar(
         title: const Text('أرباح التصنيفات'),
         actions: [
-          IconButton(
-            icon: const Icon(PhosphorIconsBold.fileXls),
-            onPressed: _exportToExcel,
-            tooltip: 'تصدير Excel',
-          ),
-          IconButton(
-            icon: const Icon(PhosphorIconsBold.printer),
-            onPressed: _exportToExcel,
-            tooltip: 'طباعة',
-          ),
+          buildReportExportAction(onExport: _exportToExcel),
+          buildReportPrintAsExportAction(onExport: _exportToExcel),
           IconButton(
             icon: const Icon(PhosphorIconsBold.calendar),
             onPressed: _selectDateRange,

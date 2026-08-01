@@ -14,6 +14,7 @@ import '../../widgets/report_components.dart';
 import '../../widgets/report_filter_bar.dart';
 import '../../../../../../core/constants/app_constants.dart';
 import '../../widgets/branch_warehouse_filter.dart';
+import 'report_export_guard.dart';
 
 class ShiftsReportScreen extends ConsumerStatefulWidget {
   const ShiftsReportScreen({super.key});
@@ -166,16 +167,8 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
           foregroundColor: Colors.white,
           elevation: 0,
           actions: [
-            IconButton(
-              onPressed: _exportToExcel,
-              icon: const Icon(PhosphorIconsBold.fileXls),
-              tooltip: 'تصدير Excel',
-            ),
-            IconButton(
-              onPressed: _printReport,
-              icon: const Icon(PhosphorIconsBold.printer),
-              tooltip: 'طباعة/PDF',
-            ),
+            buildReportExportAction(onExport: _exportToExcel),
+            buildReportPrintAsExportAction(onExport: _printReport),
             const SizedBox(width: 8),
           ],
         ),

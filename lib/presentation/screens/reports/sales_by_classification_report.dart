@@ -8,6 +8,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/shimmer_loading.dart';
+import 'report_export_guard.dart';
 
 import '../../../core/logging/diagnostic_logger.dart';
 import '../../../data/providers/providers.dart';
@@ -268,11 +269,7 @@ class _SalesByClassificationReportState
           title: const Text('تقرير المبيعات حسب التصنيف'),
           centerTitle: false,
           actions: [
-            IconButton(
-              onPressed: _exportToExcel,
-              icon: const Icon(PhosphorIconsBold.fileXls),
-              tooltip: 'تصدير Excel',
-            ),
+            buildReportExportAction(onExport: _exportToExcel),
             IconButton(
               onPressed: _printReport,
               icon: const Icon(PhosphorIconsBold.printer),

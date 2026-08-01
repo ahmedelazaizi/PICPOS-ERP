@@ -136,6 +136,9 @@ class RoleGrantMatrix {
       'dashboard_sales_today',
       'dashboard_chart',
       'dashboard_alerts',
+      // دفعة ١٢ — التقارير.
+      'reports_suppliers',
+      'reports_delivery_recon',
     },
     // دفعة ١١ — `dashboard_alerts` (بانر تنبيه نقص المخزون) اتمنح لكل دور
     // تشغيلي تحت: الحارس بتاعه إخفاء بلا تجاوز مدير، وكل دور بيشوف اللوحة
@@ -196,6 +199,9 @@ class RoleGrantMatrix {
     'محاسب': {
       'reports_view',
       'reports_export',
+      // دفعة ١٢ — كشف حساب المورد شغل يومي للدور ده (معاه reports_view
+      // و suppliers_view)؛ من غير المنحة كل فتحة تستنى موافقة مدير.
+      'reports_suppliers',
       'treasury_view',
       'customers_view',
       'suppliers_view',
@@ -220,6 +226,9 @@ class RoleGrantMatrix {
       // Inherits the full accountant set
       'reports_view',
       'reports_export',
+      // دفعة ١٢ — كشف حساب المورد شغل يومي للدور ده (معاه reports_view
+      // و suppliers_view)؛ من غير المنحة كل فتحة تستنى موافقة مدير.
+      'reports_suppliers',
       'treasury_view',
       'customers_view',
       'suppliers_view',

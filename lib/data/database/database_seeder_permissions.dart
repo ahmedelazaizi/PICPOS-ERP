@@ -810,6 +810,11 @@ extension DatabaseSeederPermissions on AppDatabase {
       'sales_return_print',
       'purchases_print',
       'purchases_return_print',
+      // دفعة ١٢ — مدخلا «تقارير الموردين» في كتالوج التقارير بقوا محروسين
+      // بـ`reports_suppliers`. الدور ده معاه `reports_view` و`suppliers_view`
+      // وكشف حساب المورد شغل يومي ليه، فبياخد الكود بدل ما يستنى موافقة مدير
+      // كل مرة. (`reports_export` عنده أصلاً من سبق٠٧٧.)
+      'reports_suppliers',
       // Task 3d — عنصر قائمة «التحليلات» اتربط بكوده الخاص analytics_view
       // بدل reports_view العام (كان بيسيب رابط ميت لمين معاه reports_view
       // بس). محاسب والمدير المالي (اللي بيورّث المنحة دي تحت) كانوا

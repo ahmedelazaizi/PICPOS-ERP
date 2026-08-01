@@ -13,6 +13,7 @@ import '../../../../../../core/constants/app_constants.dart';
 import '../../widgets/branch_warehouse_filter.dart';
 import '../../widgets/report_components.dart' show DateRangeFilter;
 import '../../widgets/report_filter_bar.dart';
+import 'report_export_guard.dart';
 
 class TopProductsReportScreen extends ConsumerStatefulWidget {
   const TopProductsReportScreen({super.key});
@@ -167,16 +168,8 @@ class _TopProductsReportScreenState
       appBar: AppBar(
         title: const Text('الأصناف الأكثر مبيعاً'),
         actions: [
-          IconButton(
-            icon: const Icon(PhosphorIconsBold.fileXls),
-            onPressed: _exportToExcel,
-            tooltip: 'تصدير Excel',
-          ),
-          IconButton(
-            icon: const Icon(PhosphorIconsBold.printer),
-            onPressed: _exportToExcel,
-            tooltip: 'طباعة',
-          ),
+          buildReportExportAction(onExport: _exportToExcel),
+          buildReportPrintAsExportAction(onExport: _exportToExcel),
           IconButton(
             icon: const Icon(PhosphorIconsBold.calendar),
             onPressed: _selectDateRange,

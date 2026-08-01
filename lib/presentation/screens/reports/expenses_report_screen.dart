@@ -1,6 +1,8 @@
 // ignore_for_file: avoid_dynamic_calls
 import 'dart:async';
 import 'package:flutter/material.dart';
+// دفعة ١٢ — حارس reports_export على زرار تصدير Excel.
+import 'report_export_guard.dart';
 import 'dart:ui' as ui;
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -415,12 +417,7 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
               tooltip: 'طباعة',
               onPressed: _isLoading || _detailRows.isEmpty ? null : _printPdf,
             ),
-            IconButton(
-              icon: const Icon(PhosphorIconsBold.fileXls),
-              tooltip: 'تصدير Excel',
-              onPressed:
-                  _isLoading || _detailRows.isEmpty ? null : _exportExcel,
-            ),
+            buildReportExportAction(onExport: _isLoading || _detailRows.isEmpty ? null : _exportExcel),
             IconButton(
               icon: const Icon(PhosphorIconsBold.arrowClockwise),
               tooltip: 'تحديث',

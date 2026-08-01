@@ -1,6 +1,9 @@
 // ignore_for_file: avoid_dynamic_calls
 import 'dart:async';
 import 'package:flutter/material.dart';
+// دفعة ١٢ — حارس reports_delivery_recon على زرار «تسوية».
+import '../../../core/permissions/permission_codes.dart';
+import '../../widgets/permission_guard.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
 import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,6 +19,7 @@ import '../../../services/client_write_interceptor.dart';
 import '../../widgets/branch_warehouse_filter.dart';
 import '../../widgets/report_components.dart' show DateRangeFilter;
 import '../../widgets/report_filter_bar.dart';
+import 'report_export_guard.dart';
 
 class DeliveryReportScreen extends ConsumerStatefulWidget {
   const DeliveryReportScreen({super.key});
@@ -153,16 +157,8 @@ class _DeliveryReportScreenState extends ConsumerState<DeliveryReportScreen>
             ],
           ),
           actions: [
-            IconButton(
-              icon: const Icon(PhosphorIconsBold.fileXls),
-              onPressed: _exportToExcel,
-              tooltip: 'تصدير Excel',
-            ),
-            IconButton(
-              icon: const Icon(PhosphorIconsBold.printer),
-              onPressed: _exportToExcel,
-              tooltip: 'طباعة',
-            ),
+            buildReportExportAction(onExport: _exportToExcel),
+            buildReportPrintAsExportAction(onExport: _exportToExcel),
             IconButton(
               icon: const Icon(PhosphorIconsBold.calendar),
               onPressed: _selectDateRange,
@@ -429,13 +425,26 @@ class _DeliveryReportScreenState extends ConsumerState<DeliveryReportScreen>
                 subtitle: Text(
                   'الرصيد الحالي: ${balance.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
                 ),
-                trailing: ElevatedButton.icon(
-                  onPressed: () => _showReconciliationDialog(company),
-                  icon: const Icon(PhosphorIconsBold.checkCircle),
-                  label: const Text('تسوية'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: balance > 0 ? Colors.green : Colors.grey,
-                    foregroundColor: Colors.white,
+                // reports_delivery_recon — مش عرض تقرير: الديالوج اللي
+                // بيفتحه بيعمل حركة فلوس حقيقية (سند صرف + قيد في الأستاذ
+                // عبر `ClientWriteInterceptor.createExpense`). الوصول للشاشة
+                // بـ`reports_view` مش بديل عن تصريح بتحريك فلوس.
+                //
+                // الحارس على زرار «تسوية» نفسه — أنضف نقطة واحدة، لأن
+                // الديالوج مالوش طريق تاني غيرها.
+                trailing: PermissionGuard(
+                  permission: PermissionCodes.reportsDeliveryRecon,
+                  allowManagerOverride: true,
+                  actionName: 'تسوية حساب شركة توصيل',
+                  onGranted: () => _showReconciliationDialog(company),
+                  child: ElevatedButton.icon(
+                    onPressed: () => _showReconciliationDialog(company),
+                    icon: const Icon(PhosphorIconsBold.checkCircle),
+                    label: const Text('تسوية'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: balance > 0 ? Colors.green : Colors.grey,
+                      foregroundColor: Colors.white,
+                    ),
                   ),
                 ),
               ),

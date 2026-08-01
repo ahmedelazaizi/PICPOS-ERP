@@ -15,6 +15,7 @@ import '../../widgets/compact_date_picker.dart';
 import '../../widgets/branch_warehouse_filter.dart';
 import '../../widgets/report_components.dart' show DateRangeFilter;
 import '../../widgets/report_filter_bar.dart';
+import 'report_export_guard.dart';
 
 class TaxReportScreen extends ConsumerStatefulWidget {
   const TaxReportScreen({super.key});
@@ -247,11 +248,7 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
               onPressed: _printTaxReport,
               tooltip: 'طباعة/PDF',
             ),
-            IconButton(
-              icon: const Icon(PhosphorIconsBold.fileXls),
-              onPressed: _exportToExcel,
-              tooltip: 'تصدير Excel',
-            ),
+            buildReportExportAction(onExport: _exportToExcel),
             IconButton(
               icon: const Icon(PhosphorIconsBold.calendar),
               onPressed: _selectDateRange,

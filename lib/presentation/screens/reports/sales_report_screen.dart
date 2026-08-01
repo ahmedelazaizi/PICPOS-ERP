@@ -9,6 +9,7 @@ import 'package:intl/intl.dart' hide TextDirection;
 import '../../../core/logging/diagnostic_logger.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/shimmer_loading.dart';
+import 'report_export_guard.dart';
 
 import '../../../data/providers/providers.dart';
 import '../../widgets/report_components.dart';
@@ -313,11 +314,7 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
           foregroundColor: Colors.white,
           elevation: 0,
           actions: [
-            IconButton(
-              onPressed: _exportToExcel,
-              icon: const Icon(PhosphorIconsBold.fileXls),
-              tooltip: 'تصدير Excel',
-            ),
+            buildReportExportAction(onExport: _exportToExcel),
             IconButton(
               onPressed: _printReport,
               icon: const Icon(PhosphorIconsBold.printer),

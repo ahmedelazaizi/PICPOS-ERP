@@ -13,6 +13,7 @@ import '../../widgets/report_components.dart';
 import '../../widgets/report_filter_bar.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../widgets/branch_warehouse_filter.dart';
+import 'report_export_guard.dart';
 
 class PurchaseReturnsReportScreen extends ConsumerStatefulWidget {
   const PurchaseReturnsReportScreen({super.key});
@@ -168,16 +169,8 @@ class _PurchaseReturnsReportScreenState extends ConsumerState<PurchaseReturnsRep
         appBar: AppBar(
           title: const Text('تقرير مردودات المشتريات'),
           actions: [
-            IconButton(
-              icon: const Icon(PhosphorIconsBold.fileXls),
-              tooltip: 'تصدير Excel',
-              onPressed: _returns.isEmpty ? null : _exportToExcel,
-            ),
-            IconButton(
-              icon: const Icon(PhosphorIconsBold.printer),
-              tooltip: 'طباعة',
-              onPressed: _returns.isEmpty ? null : _printReport,
-            ),
+            buildReportExportAction(onExport: _returns.isEmpty ? null : _exportToExcel),
+            buildReportPrintAsExportAction(onExport: _returns.isEmpty ? null : _printReport),
             IconButton(
               icon: const Icon(PhosphorIconsBold.calendar),
               onPressed: () async {

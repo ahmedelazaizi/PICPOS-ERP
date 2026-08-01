@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/shimmer_loading.dart';
+import 'report_export_guard.dart';
 
 import 'package:intl/intl.dart' hide TextDirection;
 
@@ -268,11 +269,7 @@ class _FinancialStatementsScreenState
               onPressed: () => setState(() => _refreshKey++),
               tooltip: 'تحديث البيانات',
             ),
-            IconButton(
-              icon: const Icon(PhosphorIconsBold.fileXls),
-              onPressed: _exportToExcel,
-              tooltip: 'تصدير Excel',
-            ),
+            buildReportExportAction(onExport: _exportToExcel),
             IconButton(
               icon: const Icon(PhosphorIconsBold.printer),
               onPressed: _printReport,

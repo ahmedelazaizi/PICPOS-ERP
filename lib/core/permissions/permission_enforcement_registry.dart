@@ -63,7 +63,12 @@ class PermissionEnforcementRegistry {
     // الإنشاء/التعديل/الحذف اتلفّت بـ PermissionGuard أو فحص صريح جوه
     // PopupMenuButton.onSelected بدل ما تتحمي بكود العرض الخشن بس).
     // ── التقارير (دفعة ١٠) ──
-    'reports_export', 'reports_suppliers', 'reports_delivery_recon',
+    // 'reports_export', 'reports_suppliers', 'reports_delivery_recon'
+    // اتشالوا — بقوا منفَّذين فعلياً (دفعة ١٢): زرار تصدير Excel في ١٤ شاشة
+    // تقرير (وأزرار «طباعة» اللي بتنادي التصدير نفسه) اتلمّوا في دالة واحدة
+    // مشتركة `buildReportExportAction`؛ ومدخلَي تقارير الموردين في كتالوج
+    // التقارير للبراندين ياخدوا `permission:` بدل ما يترسموا بلا فحص؛ وزرار
+    // «تسوية» في تقرير التوصيل (حركة فلوس حقيقية) اتلفّ بتجاوز مدير.
     // ── الإعدادات والنظام (دفعة ١١) ──
     // 'settings_company', 'settings_currency', 'settings_pos_edit',
     // 'settings_tax', 'system_database', 'system_license' اتشالوا — بقوا
