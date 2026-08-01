@@ -105,6 +105,15 @@ class RoleGrantMatrix {
       'pos_notifications',
       'pos_weight_dialog',
       'pos_work_order',
+      // دفعة ٨ — نفس المنطق: الستة دول مش في أي قايمة أدوار ثابتة كانت
+      // بتخص مدير النظام (بياخدهم من حلقة «كل الصلاحيات ما عدا الحرجة» +
+      // `syncAllPermissions`)، والمدخل هنا خط دفاع تاني بس زي سبب٠٨٦.
+      'products_price_view',
+      'products_cost_view',
+      'products_stock_view',
+      'products_lock',
+      'products_expiry',
+      'products_image',
     },
     'كاشير': {
       'pos_access',
@@ -130,6 +139,16 @@ class RoleGrantMatrix {
       'purchases_create',
       'categories_view',
       'dashboard_access',
+      // دفعة ٨ — الأعمدة والأقسام دي كانت مكشوفة لأي دور يفتح شاشة الأصناف
+      // (أكواد بلا إنفاذ). بعد ما اتحطّ عليها حرّاس، الدور ده لازم ياخدها
+      // في **مسار الترقية** كمان مش في التركيب الجديد بس — المصفوفة هي
+      // اللي `grantMissingDefaults()` بيقرا منها للتركيبات القايمة.
+      'products_price_view',
+      'products_cost_view',
+      'products_stock_view',
+      'products_lock',
+      'products_expiry',
+      'products_image',
     },
     'محاسب': {
       'reports_view',
@@ -206,6 +225,13 @@ class RoleGrantMatrix {
       // reports_view فكان بيشوف رابط «التحليلات» قبل ما نربطه بكوده
       // الخاص.
       'analytics_view',
+      // دفعة ٨ — نفس سبب «مخزني» فوق: `products_add` بيفتح شاشة الأصناف.
+      'products_price_view',
+      'products_cost_view',
+      'products_stock_view',
+      'products_lock',
+      'products_expiry',
+      'products_image',
     },
     'محاسب متقدم': {
       'treasury_view',
@@ -233,6 +259,13 @@ class RoleGrantMatrix {
       'dashboard_access',
       // Task 3d — نفس منطق analytics_view فوق (محاسب).
       'analytics_view',
+      // دفعة ٨ — نفس سبب «مخزني» فوق: `products_add` بيفتح شاشة الأصناف.
+      'products_price_view',
+      'products_cost_view',
+      'products_stock_view',
+      'products_lock',
+      'products_expiry',
+      'products_image',
     },
   };
 

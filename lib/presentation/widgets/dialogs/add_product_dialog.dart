@@ -9,6 +9,11 @@ import 'package:file_picker/file_picker.dart';
 import 'package:drift/drift.dart' hide Column;
 import '../../../core/theme/app_colors.dart';
 import 'product_form_helpers.dart';
+// دفعة ٨ — نفس حرّاس `products_expiry`/`products_image` بتوع ديالوج التعديل.
+// ديالوج «إضافة صنف» ده موقع تاني حيّ لنفس الحقول (شاشة الأصناف للبراندين،
+// وفورم فاتورة المبيعات، وفورم المشتريات كلهم بيفتحوه) وكان فايت من الفرز.
+import '../../screens/products/widgets/product_edit_dialog.dart'
+    show buildProductExpirySectionGuarded, buildProductImageActionsGuarded;
 
 import '../../../core/config/app_config.dart';
 import '../../../core/logging/diagnostic_logger.dart';
@@ -503,60 +508,68 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // Expiry Section
-                          _buildSectionHeader(
-                            'إدارة الصلاحية',
-                            PhosphorIconsBold.calendarBlank,
-                            AppColors.info,
-                          ),
-                          const SizedBox(height: 4),
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: AppColors.surface,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: AppColors.border),
-                            ),
+                          buildProductExpirySectionGuarded(
                             child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Row(
-                                  children: [
-                                    const Text(
-                                      'تتبع الصلاحية',
-                                      style: TextStyle(fontSize: 12),
-                                    ),
-                                    const Spacer(),
-                                    SizedBox(
-                                      height: 24,
-                                      child: Switch(
-                                        value: _trackExpiry,
-                                        onChanged: (v) =>
-                                            setState(() => _trackExpiry = v),
-                                        materialTapTargetSize:
-                                            MaterialTapTargetSize.shrinkWrap,
-                                      ),
-                                    ),
-                                  ],
+                                _buildSectionHeader(
+                                  'إدارة الصلاحية',
+                                  PhosphorIconsBold.calendarBlank,
+                                  AppColors.info,
                                 ),
-                                if (_trackExpiry) ...[
-                                  const SizedBox(height: 8),
-                                  Row(
+                                const SizedBox(height: 4),
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.surface,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: AppColors.border),
+                                  ),
+                                  child: Column(
                                     children: [
-                                      Expanded(
-                                        child: _buildMiniTextField(
-                                          _shelfDaysController,
-                                          'مدة الصلاحية (يوم)',
-                                        ),
+                                      Row(
+                                        children: [
+                                          const Text(
+                                            'تتبع الصلاحية',
+                                            style: TextStyle(fontSize: 12),
+                                          ),
+                                          const Spacer(),
+                                          SizedBox(
+                                            height: 24,
+                                            child: Switch(
+                                              value: _trackExpiry,
+                                              onChanged: (v) => setState(
+                                                  () => _trackExpiry = v),
+                                              materialTapTargetSize:
+                                                  MaterialTapTargetSize
+                                                      .shrinkWrap,
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: _buildMiniTextField(
-                                          _alertDaysController,
-                                          'تنبيه قبل (يوم)',
+                                      if (_trackExpiry) ...[
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: _buildMiniTextField(
+                                                _shelfDaysController,
+                                                'مدة الصلاحية (يوم)',
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: _buildMiniTextField(
+                                                _alertDaysController,
+                                                'تنبيه قبل (يوم)',
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                      ),
+                                      ],
                                     ],
                                   ),
-                                ],
+                                ),
                               ],
                             ),
                           ),
@@ -737,47 +750,51 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                                         ),
                                 ),
                                 const SizedBox(height: 8),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    SizedBox(
-                                      height: 28,
-                                      child: OutlinedButton.icon(
-                                        onPressed: _pickImage,
-                                        icon: const Icon(
-                                          PhosphorIconsBold.upload,
-                                          size: 12,
-                                        ),
-                                        label: const Text(
-                                          'اختيار',
-                                          style: TextStyle(fontSize: 11),
-                                        ),
-                                        style: OutlinedButton.styleFrom(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    if (_selectedImage != null) ...[
-                                      const SizedBox(width: 4),
+                                buildProductImageActionsGuarded(
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.center,
+                                    children: [
                                       SizedBox(
-                                        width: 28,
                                         height: 28,
-                                        child: IconButton(
-                                          onPressed: () => setState(
-                                            () => _selectedImage = null,
-                                          ),
+                                        child: OutlinedButton.icon(
+                                          onPressed: _pickImage,
                                           icon: const Icon(
-                                            PhosphorIconsBold.trash,
-                                            size: 14,
+                                            PhosphorIconsBold.upload,
+                                            size: 12,
                                           ),
-                                          color: AppColors.error,
-                                          padding: EdgeInsets.zero,
+                                          label: const Text(
+                                            'اختيار',
+                                            style: TextStyle(fontSize: 11),
+                                          ),
+                                          style: OutlinedButton.styleFrom(
+                                            padding:
+                                                const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                            ),
+                                          ),
                                         ),
                                       ),
+                                      if (_selectedImage != null) ...[
+                                        const SizedBox(width: 4),
+                                        SizedBox(
+                                          width: 28,
+                                          height: 28,
+                                          child: IconButton(
+                                            onPressed: () => setState(
+                                              () => _selectedImage = null,
+                                            ),
+                                            icon: const Icon(
+                                              PhosphorIconsBold.trash,
+                                              size: 14,
+                                            ),
+                                            color: AppColors.error,
+                                            padding: EdgeInsets.zero,
+                                          ),
+                                        ),
+                                      ],
                                     ],
-                                  ],
+                                  ),
                                 ),
                               ],
                             ),

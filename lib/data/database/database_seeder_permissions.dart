@@ -747,6 +747,18 @@ extension DatabaseSeederPermissions on AppDatabase {
       'categories_view',
       // Spec 3c — نفس منحة dashboard_access للأدوار التشغيلية.
       'dashboard_access',
+      // دفعة ٨ — الستة دول كانوا أكواد بلا إنفاذ، يعني الأعمدة والأقسام
+      // اللي بيوصفوها كانت بتترسم لأي دور يقدر يفتح شاشة الأصناف. دلوقتي
+      // بقى ليهم حرّاس حقيقيين، فلازم يتمنحوا للأدوار اللي بتعمل الشغل ده
+      // النهارده — من غيرهم أمين المخزن هيلاقي عمود الرصيد مموّه بعد
+      // الترقية، وده كسر شغل مش تأمين. السحب بعد كده قرار المدير من شاشة
+      // «الأدوار والصلاحيات» — والمفاتيح بقت شغّالة فعلاً.
+      'products_price_view',
+      'products_cost_view',
+      'products_stock_view',
+      'products_lock',
+      'products_expiry',
+      'products_image',
     ];
     for (final code in stockPermsIndices) {
       if (permMap.containsKey(code)) {
@@ -853,6 +865,10 @@ extension DatabaseSeederPermissions on AppDatabase {
       'users_manage', 'sales_view', 'purchases_create', 'settings_view',
       // Task 3d — نفس منطق analytics_view في accountantPermsIndices فوق.
       'analytics_view',
+      // دفعة ٨ — نفس سبب منحة أمين المخزن فوق: الدور ده عنده `products_add`
+      // فبيفتح شاشة الأصناف ويشوف الأعمدة دي النهارده.
+      'products_price_view', 'products_cost_view', 'products_stock_view',
+      'products_lock', 'products_expiry', 'products_image',
     ];
     if (branchManagerRoleId > 0) {
       for (final code in branchManagerPerms) {
@@ -902,6 +918,9 @@ extension DatabaseSeederPermissions on AppDatabase {
       'dashboard_access',
       // Task 3d — نفس منطق analytics_view في accountantPermsIndices فوق.
       'analytics_view',
+      // دفعة ٨ — نفس سبب منحة أمين المخزن فوق (`products_add` بيفتح الشاشة).
+      'products_price_view', 'products_cost_view', 'products_stock_view',
+      'products_lock', 'products_expiry', 'products_image',
     ];
     if (inventoryManagerRoleId > 0) {
       for (final code in inventoryManagerPerms) {

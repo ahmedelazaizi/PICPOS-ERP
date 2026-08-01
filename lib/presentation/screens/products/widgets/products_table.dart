@@ -17,6 +17,8 @@ import 'barcode_print_dialog.dart';
 import '../../../../../../../core/constants/app_constants.dart';
 import '../../../../domain/entities/product_entity.dart';
 import '../../../../data/providers/manufacturing_providers.dart';
+import '../../../../core/permissions/permission_codes.dart';
+import '../../../widgets/permission_guard.dart';
 
 // ─── Column widths (Spec 032 v2 — flex distribution) ─────────────────────
 //
@@ -74,6 +76,180 @@ const double _kFlexModeThreshold = _kFixedSum + _kMinFlexSum;
 
 const double _kRowHeight = 48;
 const double _kHeaderHeight = 44;
+
+// ─── خلايا محروسة بصلاحيات العرض (دفعة ٨) ────────────────────────────────
+//
+// `products_price_view` و`products_cost_view` و`products_stock_view` كانت
+// أكواد بلا إنفاذ: أعمدة سعر البيع والتكلفة ومتوسط التكلفة والرصيد بتترسم
+// لأي حد يقدر يفتح شاشة الأصناف.
+//
+// الحجب **بتمويه القيمة مش بإخفاء الخلية**: أعمدة الشبكة عرضها ثابت
+// (`_kSalePriceColWidth` وإخواتها) والهيدر ودجت منفصل تماماً
+// (`_ProductsTableHeader`)، فإخفاء الخلية بيزحلق باقي الصف بعيد عن عناوينه.
+//
+// الدوال top-level و`@visibleForTesting` عشان الاختبار يبنيها لوحدها —
+// تركيب `ProductsTable` كاملة بيجرّ `AppDatabase` حقيقية (درس دفعة ٦أ).
+
+/// خلية سعر البيع — محروسة بـ`products_price_view`.
+@visibleForTesting
+Widget buildProductSalePriceCell({
+  required double salePrice,
+  required double width,
+}) {
+  return PermissionGuard(
+    permission: PermissionCodes.productsPriceView,
+    fallback: _maskedCell(width),
+    child: _gridTextCell(
+      '${salePrice.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
+      width,
+      alignEnd: true,
+    ),
+  );
+}
+
+/// خلية سعر التكلفة — محروسة بـ`products_cost_view`.
+@visibleForTesting
+Widget buildProductCostPriceCell({
+  required double costPrice,
+  required double width,
+}) {
+  return PermissionGuard(
+    permission: PermissionCodes.productsCostView,
+    fallback: _maskedCell(width),
+    child: _gridTextCell(
+      '${costPrice.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
+      width,
+      alignEnd: true,
+    ),
+  );
+}
+
+/// خلية متوسط التكلفة — محروسة بـ`products_cost_view` برضه.
+///
+/// الفرز كان واقف عند عمود «سعر التكلفة» بس، لكن العمود ده بيعرض نفس نوع
+/// البيانات (تكلفة مرجّحة) وكمان بيعرض في الـtooltip نسبة الفرق عن سعر
+/// التكلفة الحالي — يعني بيسرّب التكلفة حتى لو عمود التكلفة اتحجب.
+@visibleForTesting
+Widget buildProductAvgCostCell({
+  required bool loading,
+  required double? value,
+  required ProductEntity product,
+  required double width,
+}) {
+  return PermissionGuard(
+    permission: PermissionCodes.productsCostView,
+    fallback: _maskedCell(width, alignEnd: true),
+    child: SizedBox(
+      width: width,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: _AvgCostCell(
+            loading: loading,
+            value: value,
+            product: product,
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+/// خلية الرصيد — محروسة بـ`products_stock_view`.
+@visibleForTesting
+Widget buildProductStockCell({
+  required double currentStock,
+  required double minStock,
+  required double width,
+}) {
+  return PermissionGuard(
+    permission: PermissionCodes.productsStockView,
+    fallback: _maskedCell(width, alignEnd: true),
+    child: SizedBox(
+      width: width,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            currentStock.toStringAsFixed(0),
+            style: TextStyle(
+              color: currentStock <= minStock
+                  ? AppColors.error
+                  : AppColors.textPrimary,
+              fontWeight:
+                  currentStock <= minStock ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+/// زرار استثناء الصنف من قفل التصنيف — محروس بـ`products_lock`.
+///
+/// كتابة حقيقية (`updateProduct`)، فالحارس بتجاوز مدير مش إخفاء: الاستثناء
+/// حالة بتحصل تحت ضغط الشغل والمدير موجود، ومنعها نهائياً بيوقف بيع أصناف
+/// شرعية. `onGranted` متمرَّر صراحة (درس `f8d3fa9`).
+@visibleForTesting
+Widget buildProductLockButton({
+  required bool isLocked,
+  required VoidCallback onToggle,
+}) {
+  return PermissionGuard(
+    permission: PermissionCodes.productsLock,
+    allowManagerOverride: true,
+    actionName: isLocked ? 'إلغاء استثناء الصنف' : 'استثناء الصنف من قفل التصنيف',
+    onGranted: onToggle,
+    child: IconButton(
+      icon: Icon(
+        isLocked ? PhosphorIconsBold.lockOpen : PhosphorIconsBold.lock,
+      ),
+      iconSize: 18,
+      color: isLocked ? AppColors.success : AppColors.textSecondary,
+      tooltip: isLocked ? 'إلغاء الاستثناء' : 'استثناء من قفل التصنيف',
+      padding: const EdgeInsets.all(4),
+      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+      onPressed: onToggle,
+    ),
+  );
+}
+
+/// بديل الخلية المحجوبة — نفس العرض بالظبط عشان الأعمدة تفضل تحت عناوينها.
+Widget _maskedCell(double width, {bool alignEnd = false}) => _gridTextCell(
+      '••••',
+      width,
+      alignEnd: alignEnd,
+      color: AppColors.textMuted,
+    );
+
+Widget _gridTextCell(
+  String text,
+  double width, {
+  double fontSize = 14,
+  bool alignEnd = false,
+  String? tooltip,
+  Color? color,
+}) {
+  final child = Text(
+    text,
+    style: TextStyle(fontSize: fontSize, color: color),
+    overflow: TextOverflow.ellipsis,
+    maxLines: 1,
+  );
+  return SizedBox(
+    width: width,
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Align(
+        alignment: alignEnd ? Alignment.centerLeft : Alignment.centerRight,
+        child: tooltip == null ? child : Tooltip(message: tooltip, child: child),
+      ),
+    ),
+  );
+}
 
 class ProductsTable extends ConsumerStatefulWidget {
   final ScrollController scrollController;
@@ -549,49 +725,24 @@ class _ProductRow extends ConsumerWidget {
                     ? null
                     : warehouseMap[product.warehouseId!],
               ),
-              _textCell(
-                '${product.salePrice.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
-                _kSalePriceColWidth,
-                alignEnd: true,
+              buildProductSalePriceCell(
+                salePrice: product.salePrice,
+                width: _kSalePriceColWidth,
               ),
-              _textCell(
-                '${product.costPrice.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
-                _kCostPriceColWidth,
-                alignEnd: true,
+              buildProductCostPriceCell(
+                costPrice: product.costPrice,
+                width: _kCostPriceColWidth,
               ),
-              SizedBox(
+              buildProductAvgCostCell(
+                loading: avgCostState.loading,
+                value: avgCostState.value,
+                product: product,
                 width: _kAvgCostColWidth,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: _AvgCostCell(
-                      loading: avgCostState.loading,
-                      value: avgCostState.value,
-                      product: product,
-                    ),
-                  ),
-                ),
               ),
-              SizedBox(
+              buildProductStockCell(
+                currentStock: product.currentStock,
+                minStock: product.minStock,
                 width: _kStockColWidth,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      product.currentStock.toStringAsFixed(0),
-                      style: TextStyle(
-                        color: product.currentStock <= product.minStock
-                            ? AppColors.error
-                            : AppColors.textPrimary,
-                        fontWeight: product.currentStock <= product.minStock
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                      ),
-                    ),
-                  ),
-                ),
               ),
               SizedBox(
                 width: _kStatusColWidth,
@@ -623,24 +774,14 @@ class _ProductRow extends ConsumerWidget {
     double fontSize = 14,
     bool alignEnd = false,
     String? tooltip,
-  }) {
-    final child = Text(
-      text,
-      style: TextStyle(fontSize: fontSize),
-      overflow: TextOverflow.ellipsis,
-      maxLines: 1,
-    );
-    return SizedBox(
-      width: width,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: Align(
-          alignment: alignEnd ? Alignment.centerLeft : Alignment.centerRight,
-          child: tooltip == null ? child : Tooltip(message: tooltip, child: child),
-        ),
-      ),
-    );
-  }
+  }) =>
+      _gridTextCell(
+        text,
+        width,
+        fontSize: fontSize,
+        alignEnd: alignEnd,
+        tooltip: tooltip,
+      );
 }
 
 class _StatusBadge extends StatelessWidget {
@@ -797,13 +938,9 @@ class _ProductActions extends ConsumerWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _iconButton(
-          icon: product.isLocked
-              ? PhosphorIconsBold.lockOpen
-              : PhosphorIconsBold.lock,
-          color: product.isLocked ? AppColors.success : AppColors.textSecondary,
-          tooltip: product.isLocked ? 'إلغاء الاستثناء' : 'استثناء من قفل التصنيف',
-          onPressed: () => _toggleLock(context, ref),
+        buildProductLockButton(
+          isLocked: product.isLocked,
+          onToggle: () => _toggleLock(context, ref),
         ),
         _iconButton(
           icon: PhosphorIconsBold.pencil,

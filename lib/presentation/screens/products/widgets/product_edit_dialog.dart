@@ -12,6 +12,48 @@ import '../../../../services/network_service.dart';
 import '../../../products/providers/products_controller.dart';
 import '../../../../data/providers/providers.dart';
 import '../../../widgets/dialogs/product_form_helpers.dart';
+import '../../../../core/permissions/permission_codes.dart';
+import '../../../widgets/permission_guard.dart';
+
+// ─── أقسام محروسة جوه ديالوج تعديل الصنف (دفعة ٨) ────────────────────────
+//
+// `products_expiry` و`products_image` كانوا أكواد بلا إنفاذ: قسم «إدارة
+// الصلاحية» وأزرار الصورة بيترسموا لأي حد يقدر يفتح الديالوج.
+//
+// الاتنين حراسة **إخفاء** مش تجاوز مدير: مفيش زرار واحد ينفّذ الفعل — دول
+// حقول في فورم، والقيمة بتترحّل مع الحفظ. ديالوج كلمة سر مدير عشان يظهر
+// حقل غلط (درس هـ في تسليم الجلسة).
+//
+// مهم: إخفاء الحقول **ما بيمسحش** البيانات — `trackExpiry` و`selectedImage`
+// بيتعبّوا من الصنف في `initState`/`_refreshFromDatabase` والحفظ بيبعتهم زي
+// ما هم، فمستخدم بلا الصلاحية بيحفظ باقي الحقول من غير ما يبوّظ تتبّع
+// الصلاحية أو يمسح الصورة.
+//
+// الدالتين بيستعملهم كمان `add_product_dialog.dart` — نفس الحقول في ديالوج
+// «إضافة صنف».
+
+/// قسم «إدارة الصلاحية» (تتبّع الصلاحية + مدة/تنبيه) — `products_expiry`.
+@visibleForTesting
+Widget buildProductExpirySectionGuarded({required Widget child}) {
+  return PermissionGuard(
+    permission: PermissionCodes.productsExpiry,
+    fallback: const SizedBox.shrink(),
+    child: child,
+  );
+}
+
+/// أزرار اختيار/حذف صورة الصنف — `products_image`.
+///
+/// المعاينة نفسها فاضلة ظاهرة: اسم الكود في الكتالوج «إضافة/تعديل الصورة»
+/// — فعل تعديل، مش عرض.
+@visibleForTesting
+Widget buildProductImageActionsGuarded({required Widget child}) {
+  return PermissionGuard(
+    permission: PermissionCodes.productsImage,
+    fallback: const SizedBox.shrink(),
+    child: child,
+  );
+}
 
 class ProductEditDialog extends ConsumerStatefulWidget {
   final ProductEntity product;
@@ -534,13 +576,20 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionHeader(
-            'إدارة الصلاحية',
-            PhosphorIconsBold.calendarBlank,
-            AppColors.info,
+          buildProductExpirySectionGuarded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildSectionHeader(
+                  'إدارة الصلاحية',
+                  PhosphorIconsBold.calendarBlank,
+                  AppColors.info,
+                ),
+                _buildExpirySection(),
+                const SizedBox(height: 12),
+              ],
+            ),
           ),
-          _buildExpirySection(),
-          const SizedBox(height: 12),
           _buildSectionHeader(
             'البيع بالوزن',
             PhosphorIconsBold.scales,
@@ -969,48 +1018,51 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
                         ),
                 ),
                 const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      height: 28,
-                      child: OutlinedButton.icon(
-                        onPressed: () async {
-                          final result = await FilePicker.pickFiles(
-                            type: FileType.image,
-                            withData: true,
-                          );
-                          if (result != null &&
-                              result.files.first.bytes != null) {
-                            setState(
-                              () => selectedImage = result.files.first.bytes,
-                            );
-                          }
-                        },
-                        icon: const Icon(PhosphorIconsBold.upload, size: 12),
-                        label: const Text(
-                          'اختيار',
-                          style: TextStyle(fontSize: 11),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                        ),
-                      ),
-                    ),
-                    if (selectedImage != null) ...[
-                      const SizedBox(width: 4),
+                buildProductImageActionsGuarded(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
                       SizedBox(
-                        width: 28,
                         height: 28,
-                        child: IconButton(
-                          onPressed: () => setState(() => selectedImage = null),
-                          icon: const Icon(PhosphorIconsBold.trash, size: 14),
-                          color: AppColors.error,
-                          padding: EdgeInsets.zero,
+                        child: OutlinedButton.icon(
+                          onPressed: () async {
+                            final result = await FilePicker.pickFiles(
+                              type: FileType.image,
+                              withData: true,
+                            );
+                            if (result != null &&
+                                result.files.first.bytes != null) {
+                              setState(
+                                () => selectedImage = result.files.first.bytes,
+                              );
+                            }
+                          },
+                          icon: const Icon(PhosphorIconsBold.upload, size: 12),
+                          label: const Text(
+                            'اختيار',
+                            style: TextStyle(fontSize: 11),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                          ),
                         ),
                       ),
+                      if (selectedImage != null) ...[
+                        const SizedBox(width: 4),
+                        SizedBox(
+                          width: 28,
+                          height: 28,
+                          child: IconButton(
+                            onPressed: () =>
+                                setState(() => selectedImage = null),
+                            icon: const Icon(PhosphorIconsBold.trash, size: 14),
+                            color: AppColors.error,
+                            padding: EdgeInsets.zero,
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ],
             ),

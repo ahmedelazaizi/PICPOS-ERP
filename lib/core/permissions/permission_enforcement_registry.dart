@@ -32,8 +32,13 @@ class PermissionEnforcementRegistry {
     'dashboard_sales_today', 'dashboard_sales_total',
     'dashboard_chart', 'dashboard_alerts',
     // ── الأصناف والتصنيفات (دفعة ٧) ──
-    'products_image', 'products_expiry', 'products_lock',
-    'products_price_view', 'products_cost_view', 'products_stock_view',
+    // 'products_price_view', 'products_cost_view', 'products_stock_view',
+    // 'products_lock', 'products_expiry', 'products_image' اتشالوا — بقوا
+    // منفَّذين فعلياً (دفعة ٨): أعمدة السعر/التكلفة/متوسط التكلفة/الرصيد في
+    // شبكة الأصناف بقت `PermissionGuard` ببديل مموّه (`••••`) بنفس عرض
+    // العمود — إخفاء الخلية كان بيزحلق الصف بعيد عن الهيدر؛ وزرار استثناء
+    // الصنف من قفل التصنيف بقى بتجاوز مدير لأنه كتابة حقيقية؛ وقسم «إدارة
+    // الصلاحية» وأزرار الصورة في ديالوج التعديل بقوا محروسين بإخفاء.
     // ── المستندات: طباعة/تعديل/حذف (دفعة ٨) ──
     // 'purchases_return_view' و'sales_return_view' اتشالوا — بقوا منفَّذين
     // فعلياً بعد إعادة توصيل screenPermissionMap (4a032a22 وما بعدها).
