@@ -67,7 +67,11 @@ void main() {
         const [],
       );
 
-      await tester.tap(find.text('إضافة مسار'));
+      // من غير الصلاحية، الضغطة بتقع على منطقة الحارس (GestureDetector
+      // معتم يلف الابن جوه AbsorbPointer) مش على الـText مباشرة — ده الشكل
+      // المتوقع بالظبط لـallowManagerOverride. التحذير مش عرض لباج؛
+      // warnIfMissed: false بيسكّته عشان مخرجات الاختبار تبقى نضيفة.
+      await tester.tap(find.text('إضافة مسار'), warnIfMissed: false);
       await tester.pump();
 
       expect(find.text('تصريح المسؤول مطلوب'), findsOneWidget);

@@ -400,18 +400,28 @@ class _FixedAssetsScreenState extends ConsumerState<FixedAssetsScreen>
                       ),
                     ),
                     const SizedBox(width: 6),
-                    ActionChip(
-                      avatar: const Icon(PhosphorIconsBold.trendUp,
-                          size: 14, color: Colors.teal),
-                      label: Text('إعادة تقييم',
-                          style: GoogleFonts.cairo(
-                              fontSize: 10, color: Colors.teal)),
-                      backgroundColor: Colors.teal.withValues(alpha: 0.08),
-                      side: BorderSide(
-                          color: Colors.teal.withValues(alpha: 0.2)),
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      visualDensity: VisualDensity.compact,
-                      onPressed: () => showRevalueDialog(repo, asset),
+                    // إعادة التقييم بتغيّر القيمة العادلة للأصل — نفس فئة
+                    // «تعديل» (تغيير بيانات مالية للأصل)، فمحمية بنفس الكود.
+                    // التريّاج ما ذكرهاش صراحة (وقّف عند إنشاء/تعديل)، لكنها
+                    // نفس الثغرة بالظبط.
+                    PermissionGuard(
+                      permission: PermissionCodes.assetsManage,
+                      allowManagerOverride: true,
+                      actionName: 'إعادة تقييم أصل ثابت',
+                      onGranted: () => showRevalueDialog(repo, asset),
+                      child: ActionChip(
+                        avatar: const Icon(PhosphorIconsBold.trendUp,
+                            size: 14, color: Colors.teal),
+                        label: Text('إعادة تقييم',
+                            style: GoogleFonts.cairo(
+                                fontSize: 10, color: Colors.teal)),
+                        backgroundColor: Colors.teal.withValues(alpha: 0.08),
+                        side: BorderSide(
+                            color: Colors.teal.withValues(alpha: 0.2)),
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        visualDensity: VisualDensity.compact,
+                        onPressed: () => showRevalueDialog(repo, asset),
+                      ),
                     ),
                     const SizedBox(width: 6),
                     ActionChip(
@@ -428,18 +438,26 @@ class _FixedAssetsScreenState extends ConsumerState<FixedAssetsScreen>
                       onPressed: () => showDepreciationHistory(repo, asset),
                     ),
                     const SizedBox(width: 6),
-                    ActionChip(
-                      avatar: const Icon(PhosphorIconsBold.trash,
-                          size: 14, color: AppColors.error),
-                      label: Text('استبعاد',
-                          style: GoogleFonts.cairo(
-                              fontSize: 10, color: AppColors.error)),
-                      backgroundColor: AppColors.error.withValues(alpha: 0.08),
-                      side: BorderSide(
-                          color: AppColors.error.withValues(alpha: 0.2)),
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      visualDensity: VisualDensity.compact,
-                      onPressed: () => showDisposeDialog(repo, asset),
+                    // الاستبعاد بيقفل الأصل نهائياً (تصرّف/إتلاف) — نفس فئة
+                    // التعديل/إعادة التقييم، فمحمي بنفس الكود لنفس السبب.
+                    PermissionGuard(
+                      permission: PermissionCodes.assetsManage,
+                      allowManagerOverride: true,
+                      actionName: 'استبعاد أصل ثابت',
+                      onGranted: () => showDisposeDialog(repo, asset),
+                      child: ActionChip(
+                        avatar: const Icon(PhosphorIconsBold.trash,
+                            size: 14, color: AppColors.error),
+                        label: Text('استبعاد',
+                            style: GoogleFonts.cairo(
+                                fontSize: 10, color: AppColors.error)),
+                        backgroundColor: AppColors.error.withValues(alpha: 0.08),
+                        side: BorderSide(
+                            color: AppColors.error.withValues(alpha: 0.2)),
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        visualDensity: VisualDensity.compact,
+                        onPressed: () => showDisposeDialog(repo, asset),
+                      ),
                     ),
                   ],
                 ),

@@ -76,7 +76,12 @@ void main() {
         const [],
       );
 
-      await tester.tap(find.text('أصل جديد'));
+      // من غير الصلاحية، الضغطة بتقع على منطقة الحارس (GestureDetector
+      // معتم يلف الابن جوه AbsorbPointer) مش على الـText مباشرة — ده الشكل
+      // المتوقع بالظبط لـallowManagerOverride (الحارس نفسه بيعترض الضغطة).
+      // التحذير هنا مش عرض لباج؛ warnIfMissed: false بيسكّته عشان مخرجات
+      // الاختبار تبقى نضيفة.
+      await tester.tap(find.text('أصل جديد'), warnIfMissed: false);
       await tester.pump();
 
       expect(find.text('تصريح المسؤول مطلوب'), findsOneWidget);
@@ -125,7 +130,11 @@ void main() {
         const [],
       );
 
-      await tester.tap(find.text('تنفيذ الإهلاك الشهري'));
+      // نفس ملاحظة تحذير hit-test في مجموعة assets_manage فوق.
+      await tester.tap(
+        find.text('تنفيذ الإهلاك الشهري'),
+        warnIfMissed: false,
+      );
       await tester.pump();
 
       expect(find.text('تصريح المسؤول مطلوب'), findsOneWidget);

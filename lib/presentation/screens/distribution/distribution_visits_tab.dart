@@ -56,12 +56,21 @@ class _VisitsTabState extends State<_VisitsTab> {
                 label: const Text('تغيير التاريخ'),
               ),
               const SizedBox(width: 8),
-              ElevatedButton.icon(
-                onPressed: () => _showAddVisitDialog(context, ctrl),
-                icon: const Icon(PhosphorIconsBold.plus, size: 18),
-                label: const Text('إضافة زيارة'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
+              // نفس صلاحية إدارة التوزيع (المسارات) — التريّاج وقّف عند
+              // تبويب المسارات بس، لكن الزيارات جزء من نفس الشاشة ونفس
+              // الكود المتاح للوحدة، ومفيش كود تاني أدق ليها.
+              PermissionGuard(
+                permission: PermissionCodes.distributionManage,
+                allowManagerOverride: true,
+                actionName: 'إضافة زيارة',
+                onGranted: () => _showAddVisitDialog(context, ctrl),
+                child: ElevatedButton.icon(
+                  onPressed: () => _showAddVisitDialog(context, ctrl),
+                  icon: const Icon(PhosphorIconsBold.plus, size: 18),
+                  label: const Text('إضافة زيارة'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                  ),
                 ),
               ),
             ],

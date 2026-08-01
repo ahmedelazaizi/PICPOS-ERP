@@ -48,12 +48,20 @@ class _TargetsTabState extends State<_TargetsTab> {
                 label: const Text('تغيير الشهر'),
               ),
               const SizedBox(width: 8),
-              ElevatedButton.icon(
-                onPressed: () => _showAddTargetDialog(context, ctrl),
-                icon: const Icon(PhosphorIconsBold.plus, size: 18),
-                label: const Text('إضافة هدف'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
+              // نفس صلاحية إدارة التوزيع — راجع نفس التعليق في
+              // distribution_visits_tab.dart.
+              PermissionGuard(
+                permission: PermissionCodes.distributionManage,
+                allowManagerOverride: true,
+                actionName: 'إضافة هدف شهري',
+                onGranted: () => _showAddTargetDialog(context, ctrl),
+                child: ElevatedButton.icon(
+                  onPressed: () => _showAddTargetDialog(context, ctrl),
+                  icon: const Icon(PhosphorIconsBold.plus, size: 18),
+                  label: const Text('إضافة هدف'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                  ),
                 ),
               ),
             ],

@@ -55,12 +55,21 @@ class _CollectionsTabState extends State<_CollectionsTab> {
                 ),
               ),
               const SizedBox(width: 8),
-              ElevatedButton.icon(
-                onPressed: () => _showAddCollectionDialog(context, ctrl),
-                icon: const Icon(PhosphorIconsBold.plus, size: 18),
-                label: const Text('إضافة تحصيل'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
+              // نفس صلاحية إدارة التوزيع — راجع نفس التعليق في
+              // distribution_visits_tab.dart. التحصيل كمان أثره مالي مباشر
+              // (يتربط بحساب المندوب)، فلا شك إنه نفس فئة إدارة التوزيع.
+              PermissionGuard(
+                permission: PermissionCodes.distributionManage,
+                allowManagerOverride: true,
+                actionName: 'إضافة تحصيل',
+                onGranted: () => _showAddCollectionDialog(context, ctrl),
+                child: ElevatedButton.icon(
+                  onPressed: () => _showAddCollectionDialog(context, ctrl),
+                  icon: const Icon(PhosphorIconsBold.plus, size: 18),
+                  label: const Text('إضافة تحصيل'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                  ),
                 ),
               ),
             ],
