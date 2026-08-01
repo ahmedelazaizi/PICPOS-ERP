@@ -1230,7 +1230,39 @@ EOF
 
 ---
 
-### Tasks 5-13: دفعات الإنفاذ
+### نتيجة الفرز (2026-08-01) — أعادت تشكيل المرحلة دي
+
+الـ٨٠ كود اتفرزوا كلهم بأدلة `file:line`. النتيجة غيّرت حجم الشغل وشكله:
+
+| الفئة | العدد | المعنى | العلاج |
+|---|---|---|---|
+| **أ** | ٤٧ | العملية موجودة وبلا بوابة | إنفاذ حقيقي — الدفعات ٦-١٢ |
+| **ب** | ٢٣ | مبوّبة بآلية تانية (شاشة أعم، أو كود تاني بنفس المعنى) | توثيق + إخفاء — Task 5 |
+| **ج** | ٨ | مفيش عملية في الريبو خالص | توسيم «محجوز» + إخفاء — Task 5 |
+| **د** | ٢ | أثر داخلي مش فعل للمستخدم | توثيق — Task 5 |
+
+الرقم الحقيقي **٤٧ نقطة إنفاذ** مش ٨٠. والـ٣٣ الباقيين شغل توثيق — بس لازم يتعمل، لأن المدير بيقلّبهم النهارده وما بيحصلش حاجة، وده نفس البلاغ الأصلي.
+
+**النمط المسيطر في فئة أ — انهيار طبقة العرض/الإدارة.** الشاشة مبوّبة بكود `*_view` على مستوى القائمة، وأزرار الإضافة/التعديل/الحذف جوّاها بلا أي فحص. الدليل إنه سهو مش تصميم: `modifiers_manage` جنبه `kds_settings` بسطر واحد في شاشتَي الإعدادات، و`kds_settings` مستعمل `PermissionGuard` صح.
+
+---
+
+### Task 5: الأكواد اللي مالهاش إنفاذ ممكن — توثيق وإخفاء
+
+**٣٣ كود** (ب+ج+د). المدير بيشوفهم وبيقلّبهم على الفاضي.
+
+**Files:** `lib/core/permissions/permission_codes.dart` · `lib/presentation/widgets/settings/permissions_management_widget.dart` · `lib/core/permissions/permission_enforcement_registry.dart` · اختبار جديد
+
+1. `PermissionCodes.nonToggleable` — `Map<String, String>` من الكود لسبب عدم قابليته للتبديل: `'مغطّى بـ pos_shift_close'` / `'محجوز — الخاصية ما اتبنتش'` / `'أثر داخلي مش فعل للمستخدم'`. الأسباب بتتاخد من عمود `notes` في ملفات الفرز.
+2. `PermissionsManagementWidget` يخفيهم افتراضياً، مع مفتاح «إظهار الأكواد غير القابلة للتبديل» يعرضهم **معطّلين** ومعاهم السبب. الإخفاء الكامل بيخلي حد يضيفهم تاني بعد سنة؛ العرض المعطّل بالسبب بيمنع ده.
+3. الـ٣٣ يتنقلوا من `knownUnenforced` لـ`nonToggleable`، فالسجل يفضل للـ٤٧ اللي **لسه** محتاجين إنفاذ ويبقى مقياس تقدّم حقيقي.
+4. اختبار: مفيش كود في الاتنين، ومفيش كود بلا إنفاذ خارجهم. ده بيمنع كود يختفي من الاتنين.
+
+⚠️ فئة ب فيها أكواد مكررة لمفاهيم موصّلة باسم تاني — السبب المكتوب لازم يسمّي البديل: `pos_daily_closing`→`pos_shift_close` · `pos_payment_methods`/`pos_split_payment`→الخمس `pos_payment_*` · `parties_credit_limit_bypass`→`override_credit_limit` · `products_scale_upload`→`products_export` · `audit_invoice_unlock`→`modify_locked_invoice`.
+
+---
+
+### الدفعات ٦-١٢ — الـ٤٧ كود (فئة أ)
 
 كل دفعة **نفس الشكل**، فالمنفّذ بيتعلم النمط مرة واحدة:
 
@@ -1238,7 +1270,7 @@ EOF
 2. شغّله وتأكد إنه بيفشل
 3. لفّ الفعل في `PermissionGuard` **مع تمرير `onGranted` صراحة** — التخمين من نوع الودجت هو اللي كان وراء الباج في `f8d3fa9`
 4. شيل أكواد الدفعة من `knownUnenforced`
-5. `flutter analyze lib test && flutter test --concurrency=1`
+5. `flutter analyze lib test` + الاختبارات المركّزة (الحزمة الكاملة بوابة مرحلة)
 6. كوميت
 
 **النمط المرجعي** — الفعل اللي له زرار أو مدخل قائمة:
@@ -1281,19 +1313,21 @@ if (!perms.contains(PermissionCodes.deletePostedJournal)) {
 
 | # | الدفعة | الأكواد | الملفات الهدف |
 |---|---|---|---|
-| 5 | نقطة البيع | ١٤ | `pos_expense_dialog.dart` · `payment_sheet.dart` · `pos_previous_invoices_dialog.dart` · `pos_customer_selection_dialog.dart` · `cart_item_tile.dart` · `pos_scale_input.dart` · `product_grid.dart` · `pos_notification_handler.dart` · `picpos_payment_panel.dart` · `picpos_items_table.dart` |
-| 6 | لوحة التحكم | ٨ | `lib/presentation/screens/dashboard_screen.dart` (بطاقة لكل كود) |
-| 7 | الأصناف والتصنيفات | ٩ | `lib/presentation/screens/products/` · `products_screen.dart` · `categories_screen.dart` · `scale_plu_export_screen.dart` |
-| 8 | المستندات | ١١ | `sales_invoices_screen.dart` · `sales_returns_screen.dart` · `purchase_invoices_screen.dart` · `purchase_returns_screen.dart` · `suppliers_screen.dart` |
-| 9 | العروض/التوصيل/الطاولات/المطبخ/الخزينة | ١١ | `offers_screen.dart` · `delivery_management_screen.dart` · `tables_screen.dart` · `treasury_screen.dart` · `lib/presentation/screens/kitchen*` |
-| 10 | التقارير | ٩ | `lib/presentation/screens/reports/*_report_screen.dart` (١:١ تقريباً) + زرار التصدير المشترك لـ`reports_export` |
-| 11 | الإعدادات والنظام | ١٠ | `company_info_widget.dart` · `receipt_settings_widget.dart` · `backup_restore_widget.dart` · `pos_settings_widget.dart` · `database_settings_widget.dart` · `activity_log_screen.dart` · `activation_dialog.dart` |
-| 12 | وحدات فرعية | ١٠ | `loyalty_screen.dart` · `distribution_screen.dart` · `e_invoice_dashboard_screen.dart` · `manufacturing_screen.dart` · `fixed_assets_screen.dart` · `modifier_management_widget.dart` |
-| 13 | **حرجة ماليّاً** | ٦ | `journal_entries_screen.dart` · `fiscal_year_screen.dart` · `shift_close_screen.dart` · `parties_screen.dart` · `sales_invoices_screen.dart` |
+| 6 | **طبقة الإدارة** ⚠️ أولوية أمنية | ١٤ | assets_manage · assets_depreciation · distribution_manage · einvoice_submit · einvoice_cancel · kitchen_manage · loyalty_manage · manufacturing_manage · modifiers_manage · offers_create · offers_edit · offers_delete · tables_manage · modify_closed_period |
+| 7 | نقطة البيع | ٨ | pos_customer_add · pos_expense_description · pos_grid_toggle · pos_low_stock_alert · pos_note_add · pos_notifications · pos_weight_dialog · pos_work_order |
+| 8 | الأصناف | ٦ | products_cost_view · products_price_view · products_stock_view · products_expiry · products_image · products_lock |
+| 9 | المستندات والطباعة | ٦ | sales_print · sales_amounts_view · sales_return_print · sales_return_delete · purchases_print · purchases_return_print |
+| 10 | الإعدادات والنظام | ٦ | settings_company · settings_currency · settings_pos_edit · settings_tax · system_database · system_license |
+| 11 | لوحة التحكم | ٤ | dashboard_alerts · dashboard_chart · dashboard_sales_today · dashboard_sales_total |
+| 12 | التقارير | ٣ | reports_export · reports_suppliers · reports_delivery_recon |
 
-⚠️ **دفعة ١٣ أولوية أمنية.** `delete_posted_journal` و`delete_fiscal_year` و`modify_closed_period` و`audit_invoice_unlock` و`parties_credit_limit_bypass` معرّفين في `PermissionCodes.criticalFinancialOps` كأكواد **فصل مهام** — يعني حتى مدير النظام المفروض ما يعملهاش من غير منح صريح. الآلية دي مبنية في `permission_guard.dart` و`permissions_dao.dart` وشغّالة، بس **مفيش ولا نقطة بتستدعيها**. لو الوقت ضاق، الدفعة دي تتقدّم على ٥-١٢.
+**مواصفة الدفعات التفصيلية = ملفات الفرز** في `.superpowers/sdd/2026-08-01-permissions-enforcement/triage-group-{a,b,c,d}.md`. كل صف فيها كود + نقطة الإدراج بالظبط (`file:line`) + نوع الحارس المناسب. المنفّذ بيشتغل منها، مش من تخمين جديد.
 
-⚠️ **دفعة ٥ و٩ فيهم ملفات مشتركة** (`lib/presentation/pos/widgets/`). أي تعديل هناك يبقى إصلاح صحيح للبراندين، أو بارامتر بقيمة افتراضية تعيد سلوك اليوم.
+⚠️ **الدفعة ٦ الأولوية.** دي مش «صلاحيات مش شغّالة» — دي كتابات حساسة متاحة لأي حد عنده صلاحية عرض: ترحيل إهلاك أصول، إلغاء فاتورة إلكترونية عند مصلحة الضرايب، حذف برنامج ولاء، أوامر تصنيع.
+
+⚠️ `dashboard_sales_today` و`dashboard_sales_total` الاتنين بيأشروا على **كارت إيراد واحد**؛ التفرقة مش موجودة في الكود. المنفّذ يقرر: يبوّب الكارت بواحد وينقل التاني لـ`nonToggleable`، ولا يفصل الكارت لاتنين. الأول أقرب للواقع.
+
+⚠️ الدفعات ٧ و٩ فيهم ملفات مشتركة بين البراندين (`lib/presentation/pos/widgets/`). أي تعديل هناك يبقى إصلاح صحيح للاتنين.
 
 ---
 
