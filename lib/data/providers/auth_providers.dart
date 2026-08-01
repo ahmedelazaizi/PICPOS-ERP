@@ -225,6 +225,27 @@ class AuthState {
   }
 }
 
+/// قرار «ده مدير نظام فيتجاوز الصلاحيات؟» — المصدر الوحيد.
+///
+/// ── ليه مش `isAdmin || isManager` ────────────────────────────────────────
+/// الاتنين دول بيتحددوا بمطابقة **نص اسم الدور**: `isManager` بترجّع `true`
+/// لأي دور اسمه فيه «مدير». الأدوار المزروعة «مدير مالي» و«مدير فرع»
+/// و«مدير مخزون» كلهم كانوا بيتجاوزوا كل صلاحيات الشاشات والقائمة، فسحب
+/// صلاحية منهم ما كانش بيسري — وده كان البلاغ.
+///
+/// وكمان كان بيخالف طبقة قاعدة البيانات: `_isAdminRole` في
+/// `permissions_dao.dart` صارمة (`isSystemRole && name == 'مدير النظام'`).
+/// الطبقتين لازم يتفقوا على مين المدير، فده بيطابقها بالحرف.
+///
+/// شرط `isSystemRole` مقصود: من غيره أي مشغّل يخترع دور مخصص بالاسم ده
+/// ويتجاوز كل حاجة.
+extension AuthStateBypass on AuthState {
+  bool get hasSystemAdminBypass {
+    final role = effectiveRole;
+    return role != null && role.isSystemRole && role.name == 'مدير النظام';
+  }
+}
+
 class AuthNotifier extends Notifier<AuthState> {
   VoidCallback? _connectionListener;
 
@@ -706,7 +727,7 @@ final userNavItemsProvider = FutureProvider<List<NavItemDef>>((ref) async {
     }
 
     if (item.permission == null ||
-        authState.isAdmin || authState.isManager ||
+        authState.hasSystemAdminBypass ||
         userPermissions.contains(item.permission)) {
       allowedItems.add(item);
     }
@@ -808,8 +829,10 @@ final userAllowedScreensProvider = FutureProvider<List<int>>((ref) async {
       if (activePlatform == null && !authState.isAdmin) continue;
     }
 
-    // Admin/Manager bypass: grant access to all screens
-    if (authState.isAdmin || authState.isManager || userPermissions.contains(entry.value)) {
+    // System-admin bypass: grant access to all screens. حصريًا لصلاحية
+    // النظام الحقيقية (hasSystemAdminBypass) مش لأي دور اسمه فيه «مدير».
+    if (authState.hasSystemAdminBypass ||
+        userPermissions.contains(entry.value)) {
       allowedScreens.add(entry.key.navigationIndex);
     }
   }
