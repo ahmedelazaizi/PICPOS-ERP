@@ -854,6 +854,100 @@ EOF
 
 ---
 
+### Task 3d: تعميم اختبارات الاتفاق — قفل عائلة الاختلاف
+
+مهمة اتولدت من ملاحظات مراجعتَي Task 3 و 3c. الفكرة الحاكمة: **الاختلاف الصامت بين مصدرين بيوصفوا نفس الحقيقة** هو نمط الباج المتكرر في المنظومة دي كلها — الخريطة ضد القائمة، والمصفوفة ضد السيدر. الاختبارات الحالية بتغطي عيّنات، فبتسيب الباقي يعدّي.
+
+**Files:**
+- Modify: `test/unit/screen_permission_map_test.dart` (تعميم اختبار الاتفاق + تصحيح تعليق)
+- Modify: `test/unit/dashboard_access_default_grant_test.dart` → يترقّى لاختبار اتفاق عام
+- Modify: `lib/data/providers/auth_providers.dart` (مدخل «التحليلات» في القائمة)
+
+**Interfaces:** `kAllNavItemDefs` (`List<NavItemDef>` عليا، من Task 3) · `screenPermissionMap` · `RoleGrantMatrix.defaultGrants`.
+
+**البند ١ — اختلاف «التحليلات».** `screenPermissionMap[ScreenId.analytics] == 'analytics_view'` بس مدخل القائمة لسه `permission: 'reports_view'`. يعني اللي عنده `reports_view` بيشوف المدخل وما يقدرش يفتح الشاشة. اختلاف قديم من نفس عائلة اللي اتصلح في Task 3.
+
+**البند ٢ — تعميم اختبار الاتفاق.** الاختبار الحالي بيغطي الشمانية اللي اتغيروا. عمّمه على **كل** مدخل قائمة له `ScreenId` مقابل:
+
+```dart
+  test('كل مدخل قائمة متفق مع خريطة الشاشات', () {
+    // ── ليه التعميم ──────────────────────────────────────────────────────
+    // النسخة الأولى غطّت الشاشات اللي اتصلّحت بس، فسابت اختلاف «التحليلات»
+    // يعدّي — ودي نفس العائلة بالظبط. الاختبار اللي بيغطي عيّنة بيثبّت
+    // العيّنة، مش القاعدة.
+    //
+    // أي مدخل مالوش `ScreenId` مقابل بيتستثنى صراحة بسببه تحت — الاستثناء
+    // المكتوب أحسن من اختبار بيعدّي على الفاضي.
+    final mismatches = <String>[];
+    for (final item in kAllNavItemDefs) {
+      final screen = _screenForNavItem(item);
+      if (screen == null) continue; // مستثنى بسبب مكتوب في _screenForNavItem
+      final mapped = screenPermissionMap[screen];
+      if (mapped == null) continue;
+      if (item.permission != mapped) {
+        mismatches.add('${item.label}: القائمة=${item.permission} '
+            'الخريطة=$mapped');
+      }
+    }
+    expect(mismatches, isEmpty,
+        reason: 'مدخل بيظهر لناس ما يقدروش يفتحوا شاشته (أو العكس):\n'
+            '${mismatches.join('\n')}');
+  });
+```
+
+`_screenForNavItem` تتكتب في الاختبار: بتربط `item.index` أو `item.label` بـ`ScreenId`، وبترجّع `null` للمداخل اللي مالهاش شاشة مقابلة **مع تعليق بيقول ليه** لكل استثناء.
+
+**البند ٣ — اتفاق المصفوفة والسيدر.** مراجعة Task 3c رفعت إن `dashboard_access_default_grant_test` بيفحص المصفوفة بس، فلو السيدر سقّط الكود الاختبار هيفضل أخضر. التغطية الحقيقية موجودة بالصدفة في `role_grant_preflight_service_test` (بيزرع قاعدة ويقارن). اعمل الاعتماد ده صريح: وسّع الاختبار ليقارن **كل** كود في `RoleGrantMatrix.defaultGrants` بما بيمنحه السيدر فعلاً لنفس الدور، مش `dashboard_access` وحده.
+
+> **للمنفّذ:** لو مقارنة السيدر محتاجة زرع قاعدة بيانات، **ما تكررش** منطق `role_grant_preflight_service_test` — استعمل نفس الـ harness بتاعه أو وسّعه. نسخة تانية من منطق الزرع هي بالظبط نوع الازدواج اللي بيبطّل يطابق.
+
+**البند ٤ — تصحيح تعليق.** التعليق في `screen_permission_map_test.dart` بيقول «الشاشات العشرة» وهو بيغطي تمانية. صحّحه (أو هيتحل تلقائياً بالبند ٢).
+
+- [ ] **Step 1: اكتب الاختبار المعمّم وشوفه بيفشل على «التحليلات»**
+
+```bash
+flutter test test/unit/screen_permission_map_test.dart --concurrency=1
+```
+
+Expected: FAIL — `التحليلات: القائمة=reports_view الخريطة=analytics_view`
+
+- [ ] **Step 2: صلّح مدخل «التحليلات»**
+
+خلّي `permission: PermissionCodes.analyticsView` في `kAllNavItemDefs`.
+
+⚠️ `analytics_view` ممنوح لمين؟ افحص `RoleGrantMatrix.defaultGrants` والسيدر **قبل** ما تغيّر. لو الأدوار اللي بتشوف التحليلات النهارده مالهاش الكود، امنحه ليها في نفس الكوميت — نفس منطق Task 3c بالظبط: الهدف إن المدير يقدر يسحبها، مش إنها تتسحب لوحدها.
+
+- [ ] **Step 3: وسّع اختبار المصفوفة/السيدر (البند ٣)**
+
+- [ ] **Step 4: شغّل المركّزة + analyze**
+
+```bash
+flutter test test/unit/screen_permission_map_test.dart test/unit/dashboard_access_default_grant_test.dart test/unit/role_grant_preflight_service_test.dart --concurrency=1 && flutter analyze lib test
+```
+
+- [ ] **Step 5: كوميت**
+
+```bash
+git add lib/data/providers/auth_providers.dart test/unit/screen_permission_map_test.dart test/unit/dashboard_access_default_grant_test.dart
+git commit -m "$(cat <<'EOF'
+test(perms): تعميم اختبارات الاتفاق + إصلاح اختلاف «التحليلات»
+
+الاختلاف الصامت بين مصدرين بيوصفوا نفس الحقيقة هو نمط الباج المتكرر في
+المنظومة دي: الخريطة ضد القائمة، والمصفوفة ضد السيدر. الاختبارات كانت
+بتغطي عيّنات، فالعيّنة بتتثبّت والقاعدة لأ.
+
+«التحليلات» كانت المثال الحي: الخريطة على `analytics_view` والقائمة على
+`reports_view`، فاللي عنده `reports_view` بيشوف المدخل وما يقدرش يفتح
+الشاشة. الاختبار المعمّم مسكها؛ النسخة اللي بتغطي الشاشات المتغيّرة بس
+عدّت عليها.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+EOF
+)"
+```
+
+---
+
 ## المرحلة ٣ — الـ ٨٨ كود بلا إنفاذ
 
 ### Task 4: سجل التغطية + اختبار الحارس
