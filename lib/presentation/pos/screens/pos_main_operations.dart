@@ -9,15 +9,43 @@ part of 'pos_main_screen.dart';
 /// `_processPaymentAndSave` في الملفين شبه متطابقة. **أي إصلاح في مسار الدفع
 /// أو الحفظ هنا لازم يتراجع هناك كذلك** — وجدول الفروق المقصودة (اللي مش
 /// المفروض تتوحّد) موجود في تعليق رأس ذلك الملف.
-
-/// فحص صريح قبل فتح ديالوج الميزان — كان مفتوح لأي مستخدم من غير أي فحص
-/// صلاحية، رغم إنه بيغيّر سعر/كمية الفاتورة فعلياً. مستخرجة top-level عشان
-/// تتاختبر لوحدها زي `canEditOffer`/`canCancelEInvoice` في Task 6a/6b.
+///
+/// ── وفيه فورك تالت للمنتج نفسه ─────────────────────────────────────────────
+/// `lib/presentation/pos/screens/table_pos_operations.dart` (جوه
+/// `TablePosScreen`، خدمة الطاولات) عنده نسخته الخاصة من `_handleProductTap`
+/// برضه — مكتشفة متأخر (مراجعة Task 7 لقت `pos_weight_dialog` هناك من غير
+/// حماية خالص لأن التريَّاج الأول عدّ فورك ين بس). أي فحص صلاحية على فتح
+/// ديالوج المنتج (ميزان، تعديل، إلخ) لازم يتأكد إنه موجود في **التلاتة**
+/// الأفرع دي، مش اتنين بس.
 @visibleForTesting
 bool canOpenPosWeightDialog(List<String> permissions) {
   final isAdmin =
       permissions.contains('system_admin') || permissions.contains('*');
   return isAdmin || permissions.contains(PermissionCodes.posWeightDialog);
+}
+
+/// نسخة أعلى مستوى من `canOpenPosWeightDialog` بتقرا الصلاحيات من `ref`
+/// وتعرض توست الرفض بنفسها — سطر واحد في نقطة الاستدعاء بدل ٣ (فحص + شرط +
+/// توست)، عشان التعديل اللي يشيل الحماية يبقى أوضح في الـdiff وأصعب إنه
+/// يحصل بالغلط جزئياً (زي ما لو حد شال الـreturn بس وسايب التوست).
+@visibleForTesting
+Future<bool> ensurePosWeightDialogPermission(
+  WidgetRef ref,
+  BuildContext context,
+) async {
+  final permissions =
+      ref.read(currentUserPermissionsProvider).asData?.value ??
+          const <String>[];
+  if (canOpenPosWeightDialog(permissions)) return true;
+  if (context.mounted) {
+    showPosToast(
+      context,
+      ref,
+      'ليس لديك صلاحية استخدام الميزان',
+      type: PosNotificationType.error,
+    );
+  }
+  return false;
 }
 
 /// فحص صريح قبل طباعة أمر شغل/مطبخ من فاتورة سابقة — كان الزرار شغّال لأي
@@ -30,6 +58,28 @@ bool canPrintPosWorkOrder(List<String> permissions) {
   final isAdmin =
       permissions.contains('system_admin') || permissions.contains('*');
   return isAdmin || permissions.contains(PermissionCodes.posWorkOrder);
+}
+
+/// نسخة أعلى مستوى من `canPrintPosWorkOrder` — نفس سبب
+/// `ensurePosWeightDialogPermission` فوق.
+@visibleForTesting
+Future<bool> ensurePosWorkOrderPermission(
+  WidgetRef ref,
+  BuildContext context,
+) async {
+  final permissions =
+      ref.read(currentUserPermissionsProvider).asData?.value ??
+          const <String>[];
+  if (canPrintPosWorkOrder(permissions)) return true;
+  if (context.mounted) {
+    showPosToast(
+      context,
+      ref,
+      'ليس لديك صلاحية طباعة أوامر الشغل',
+      type: PosNotificationType.error,
+    );
+  }
+  return false;
 }
 
 mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
@@ -74,20 +124,7 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
     }
 
     if (product.isSoldByWeight) {
-      final permissions =
-          ref.read(currentUserPermissionsProvider).asData?.value ??
-              const <String>[];
-      if (!canOpenPosWeightDialog(permissions)) {
-        if (mounted) {
-          showPosToast(
-            context,
-            ref,
-            'ليس لديك صلاحية استخدام الميزان',
-            type: PosNotificationType.error,
-          );
-        }
-        return;
-      }
+      if (!await ensurePosWeightDialogPermission(ref, context)) return;
       final weight = await PosDialogs.showWeightInput(context, ref, product);
       if (weight != null && weight > 0) {
         await _addProductWithModifiers(product, quantity: weight);
@@ -861,20 +898,7 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
   }
 
   Future<void> _printKitchenOrdersForInvoice(int invoiceId) async {
-    final permissions =
-        ref.read(currentUserPermissionsProvider).asData?.value ??
-            const <String>[];
-    if (!canPrintPosWorkOrder(permissions)) {
-      if (mounted) {
-        showPosToast(
-          context,
-          ref,
-          'ليس لديك صلاحية طباعة أوامر الشغل',
-          type: PosNotificationType.error,
-        );
-      }
-      return;
-    }
+    if (!await ensurePosWorkOrderPermission(ref, context)) return;
     try {
       await ref
           .read(posControllerProvider.notifier)

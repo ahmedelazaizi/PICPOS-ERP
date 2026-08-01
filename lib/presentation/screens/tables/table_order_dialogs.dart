@@ -14,6 +14,24 @@ bool canPrintPosWorkOrder(List<String> permissions) {
   return isAdmin || permissions.contains(PermissionCodes.posWorkOrder);
 }
 
+/// نسخة أعلى مستوى بتقرا الصلاحيات من `ref` وتعرض توست الرفض — سطر واحد في
+/// نقطة الاستدعاء (زي `pos_main_operations.dart`).
+@visibleForTesting
+Future<bool> ensurePosWorkOrderPermission(
+  WidgetRef ref,
+  BuildContext context,
+) async {
+  final permissions =
+      ref.read(currentUserPermissionsProvider).asData?.value ??
+          const <String>[];
+  if (canPrintPosWorkOrder(permissions)) return true;
+  if (context.mounted) {
+    AppToast.show(context, 'ليس لديك صلاحية طباعة أوامر الشغل',
+        type: ToastType.error);
+  }
+  return false;
+}
+
 mixin _TableOrderDialogsMixin on ConsumerState<TablesScreen> {
   bool _openingTable = false;
   bool _closingTable = false;
@@ -348,16 +366,7 @@ mixin _TableOrderDialogsMixin on ConsumerState<TablesScreen> {
     RestaurantTable table,
     TableOrder order,
   ) async {
-    final permissions =
-        ref.read(currentUserPermissionsProvider).asData?.value ??
-            const <String>[];
-    if (!canPrintPosWorkOrder(permissions)) {
-      if (mounted) {
-        AppToast.show(context, 'ليس لديك صلاحية طباعة أوامر الشغل',
-            type: ToastType.error);
-      }
-      return;
-    }
+    if (!await ensurePosWorkOrderPermission(ref, context)) return;
     try {
       final items = await restaurantRepo.getTableOrderItems(order.id);
       if (items.isEmpty) return;

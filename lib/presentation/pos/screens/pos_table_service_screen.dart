@@ -5,6 +5,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/constants/app_constants.dart';
+import '../../../core/permissions/permission_codes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../data/providers/providers.dart';
@@ -109,7 +110,10 @@ class _TablePosScreenState extends ConsumerState<TablePosScreen>
                                 child: TablePosCartPanel(
                                   onUpdateQuantity: (idx, qty) => ref.read(cartControllerProvider.notifier).updateQuantity(idx, qty),
                                   onRemove: (idx) => ref.read(cartControllerProvider.notifier).removeFromCart(idx),
-                                  onAddNote: (idx) => _showNoteDialog(idx, ref.read(cartControllerProvider).items[idx]),
+                                  onAddNote: (idx) async {
+                                    if (!await ensurePosNoteAddPermission(ref, context)) return;
+                                    await _showNoteDialog(idx, ref.read(cartControllerProvider).items[idx]);
+                                  },
                                 ),
                               ),
                               TablePosSummary(

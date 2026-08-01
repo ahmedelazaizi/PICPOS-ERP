@@ -111,6 +111,13 @@ class _CustomerSelectorV2State extends ConsumerState<CustomerSelectorV2> {
   Widget _buildSearchResultsInternal(WidgetRef ref, String query) {
     final customersAsync = ref.watch(allCustomersProvider);
 
+    // نفس الفعل مطلوب في مكانين تحت (onGranted وchild.onPressed) — دالة
+    // محلية واحدة بدل ما يتكرر نفس الجسم حرفياً مرتين (لاحظه المراجع).
+    void addCustomer() {
+      _hideOverlay();
+      _showQuickAddDialog();
+    }
+
     return customersAsync.when(
       data: (customers) {
         var filtered = customers.where((c) {
@@ -141,15 +148,9 @@ class _CustomerSelectorV2State extends ConsumerState<CustomerSelectorV2> {
                   permission: PermissionCodes.posCustomerAdd,
                   allowManagerOverride: true,
                   actionName: 'إضافة عميل سريع',
-                  onGranted: () {
-                    _hideOverlay();
-                    _showQuickAddDialog();
-                  },
+                  onGranted: addCustomer,
                   child: TextButton.icon(
-                    onPressed: () {
-                      _hideOverlay();
-                      _showQuickAddDialog();
-                    },
+                    onPressed: addCustomer,
                     icon: const Icon(PhosphorIconsBold.plus),
                     label: const Text('إضافة عميل جديد'),
                   ),

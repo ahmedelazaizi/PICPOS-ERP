@@ -53,6 +53,24 @@ bool canOpenPosWeightDialog(List<String> permissions) {
   return isAdmin || permissions.contains(PermissionCodes.posWeightDialog);
 }
 
+/// نسخة أعلى مستوى بتقرا الصلاحيات من `ref` وتعرض توست الرفض — سطر واحد
+/// في نقطة الاستدعاء (زي `pos_main_operations.dart`).
+@visibleForTesting
+Future<bool> ensurePosWeightDialogPermission(
+  WidgetRef ref,
+  BuildContext context,
+) async {
+  final permissions =
+      ref.read(currentUserPermissionsProvider).asData?.value ??
+          const <String>[];
+  if (canOpenPosWeightDialog(permissions)) return true;
+  if (context.mounted) {
+    showPosToast(context, ref, 'ليس لديك صلاحية استخدام الميزان',
+        type: PosNotificationType.error);
+  }
+  return false;
+}
+
 mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
   // ── Contract the screen must satisfy ───────────────────────────────────
   TextEditingController get barcodeController;
@@ -295,12 +313,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     if (!mounted) return;
 
     if (product.isSoldByWeight) {
-      final permissions =
-          ref.read(currentUserPermissionsProvider).asData?.value ??
-              const <String>[];
-      if (!canOpenPosWeightDialog(permissions)) {
-        showPosToast(context, ref, 'ليس لديك صلاحية استخدام الميزان',
-            type: PosNotificationType.error);
+      if (!await ensurePosWeightDialogPermission(ref, context)) {
         _refocusScanner();
         return;
       }

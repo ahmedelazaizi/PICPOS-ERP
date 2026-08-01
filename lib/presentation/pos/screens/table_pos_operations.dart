@@ -1,5 +1,39 @@
 part of 'pos_table_service_screen.dart';
 
+/// فحص صريح قبل فتح ديالوج الميزان — نفس الفحص الموجود في
+/// `pos_main_operations.dart`/`picpos_pos_operations.dart`، مكرَّر هنا لأن
+/// `TablePosScreen` (خدمة الطاولات) فورك تالت مستقل كان ناقص من التريَّاج
+/// الأول (اتلقّى اتنين بس: UralCash وPicPos) — راجع تعليق رأس
+/// `pos_main_operations.dart` عن الفورك التالت ده.
+@visibleForTesting
+bool canOpenPosWeightDialog(List<String> permissions) {
+  final isAdmin =
+      permissions.contains('system_admin') || permissions.contains('*');
+  return isAdmin || permissions.contains(PermissionCodes.posWeightDialog);
+}
+
+/// نسخة أعلى مستوى بتقرا الصلاحيات من `ref` وتعرض توست الرفض — سطر واحد في
+/// نقطة الاستدعاء (زي باقي الأفرع).
+@visibleForTesting
+Future<bool> ensurePosWeightDialogPermission(
+  WidgetRef ref,
+  BuildContext context,
+) async {
+  final permissions =
+      ref.read(currentUserPermissionsProvider).asData?.value ??
+          const <String>[];
+  if (canOpenPosWeightDialog(permissions)) return true;
+  if (context.mounted) {
+    showPosToast(
+      context,
+      ref,
+      'ليس لديك صلاحية استخدام الميزان',
+      type: PosNotificationType.error,
+    );
+  }
+  return false;
+}
+
 mixin _TablePosOperationsMixin on ConsumerState<TablePosScreen> {
   late final TextEditingController barcodeController;
   late final FocusNode barcodeFocus;
@@ -54,6 +88,7 @@ mixin _TablePosOperationsMixin on ConsumerState<TablePosScreen> {
 
   void _handleProductTap(ProductEntity product) async {
     if (product.isSoldByWeight) {
+      if (!await ensurePosWeightDialogPermission(ref, context)) return;
       final weight = await PosDialogs.showWeightInput(context, ref, product);
       if (weight != null && weight > 0) {
         await _addProductWithModifiers(product, quantity: weight);

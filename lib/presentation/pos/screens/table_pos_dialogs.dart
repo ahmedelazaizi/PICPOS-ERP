@@ -1,5 +1,41 @@
 part of 'pos_table_service_screen.dart';
 
+/// فحص صريح قبل فتح ديالوج ملاحظة الصنف في شاشة خدمة الطاولات — مسار كتابة
+/// مستقل تماماً عن `updateItemNote` (اللي بيحمي حقل الملاحظة في
+/// `cart_item_modifier_panel.dart`): `_showNoteDialog` تحت بيكتب
+/// `item.copyWith(note: ...)` مباشرة على حالة السلة، متجاوز `updateItemNote`
+/// خالص. اتكشف في مراجعة Task 7 — التريَّاج الأول عدّ فورك ين للبيع (UralCash
+/// وPicPos) وفاته إن `TablePosScreen` (خدمة الطاولات) فورك تالت بمساره
+/// الخاص بالكامل، بما فيه مسار ملاحظة منفصل.
+@visibleForTesting
+bool canAddPosNote(List<String> permissions) {
+  final isAdmin =
+      permissions.contains('system_admin') || permissions.contains('*');
+  return isAdmin || permissions.contains(PermissionCodes.posNoteAdd);
+}
+
+/// نسخة أعلى مستوى بتقرا الصلاحيات من `ref` وتعرض توست الرفض — سطر واحد في
+/// نقطة الاستدعاء (زي بواقي الأكواد في هذه الدفعة).
+@visibleForTesting
+Future<bool> ensurePosNoteAddPermission(
+  WidgetRef ref,
+  BuildContext context,
+) async {
+  final permissions =
+      ref.read(currentUserPermissionsProvider).asData?.value ??
+          const <String>[];
+  if (canAddPosNote(permissions)) return true;
+  if (context.mounted) {
+    showPosToast(
+      context,
+      ref,
+      'ليس لديك صلاحية إضافة ملاحظة للصنف',
+      type: PosNotificationType.error,
+    );
+  }
+  return false;
+}
+
 mixin _TablePosDialogsMixin on ConsumerState<TablePosScreen> {
   /// Show note dialog for an item (kitchen instructions)
   Future<void> _showNoteDialog(int index, CartItemEntity item) async {
