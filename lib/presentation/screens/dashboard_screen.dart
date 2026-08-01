@@ -179,23 +179,38 @@ class DashboardScreen extends ConsumerWidget {
                                 'وبعد خصم المردودات',
                           ),
                         ),
-                        child: _HoverableStatCard(
-                          // Fix 4 (spec 150 / REP-5): kpi.revenue is the GL net
-                          // revenue (ex-VAT, after returns) — "المبيعات" alone
-                          // reads as gross sales, so relabel + tooltip like
-                          // analytics_dashboard_screen.dart's matching card.
-                          title: 'صافي الإيراد',
-                          value: kpi.when(
-                            data: (k) =>
-                                NumberFormat('#,##0.00', 'ar').format(k.revenue),
-                            loading: () => '...',
-                            error: (e, s) => '0.00',
+                        // dashboard_sales_today — نفس شكل كارتَي الخزنة
+                        // والربح المجاورين: البديل بيموّه الرقم، وموافقة
+                        // المدير بتكشفه.
+                        child: PermissionGuard(
+                          permission: PermissionCodes.dashboardSalesToday,
+                          allowManagerOverride: true,
+                          actionName: 'عرض صافي الإيراد',
+                          fallback: _HoverableStatCard(
+                            title: 'صافي الإيراد',
+                            value: '---',
+                            suffix: AppConstants.currencySymbolEn,
+                            icon: PhosphorIconsBold.chartLineUp,
+                            color: AppColors.success,
                           ),
-                          suffix: AppConstants.currencySymbolEn,
-                          icon: PhosphorIconsBold.chartLineUp,
-                          color: AppColors.success,
-                          trendLabel:
-                              _trendBadgeLabel(dashFilter.from, dashFilter.to),
+                          child: _HoverableStatCard(
+                            // Fix 4 (spec 150 / REP-5): kpi.revenue is the GL net
+                            // revenue (ex-VAT, after returns) — "المبيعات" alone
+                            // reads as gross sales, so relabel + tooltip like
+                            // analytics_dashboard_screen.dart's matching card.
+                            title: 'صافي الإيراد',
+                            value: kpi.when(
+                              data: (k) =>
+                                  NumberFormat('#,##0.00', 'ar').format(k.revenue),
+                              loading: () => '...',
+                              error: (e, s) => '0.00',
+                            ),
+                            suffix: AppConstants.currencySymbolEn,
+                            icon: PhosphorIconsBold.chartLineUp,
+                            color: AppColors.success,
+                            trendLabel:
+                                _trendBadgeLabel(dashFilter.from, dashFilter.to),
+                          ),
                         ),
                       ),
                     ),
@@ -279,10 +294,17 @@ class DashboardScreen extends ConsumerWidget {
               const SizedBox(height: 12),
 
               // ─── Low Stock Alert ─────────────────────────────────────
-              Consumer(
-                builder: (context, ref, _) {
-                  final lowStock = ref.watch(lowStockProductsProvider);
-                  return lowStock.when(
+              // dashboard_alerts — بانر تنبيه نقص المخزون. عرض بحت:
+              // `fallback` بلا تجاوز مدير — ديالوج كلمة سر عشان يظهر بانر
+              // تنبيه غلط (نفس قرار `pos_low_stock_alert` في دفعة ٧، وهو
+              // حرفياً نفس التنبيه في نقطة البيع).
+              PermissionGuard(
+                permission: PermissionCodes.dashboardAlerts,
+                fallback: const SizedBox.shrink(),
+                child: Consumer(
+                  builder: (context, ref, _) {
+                    final lowStock = ref.watch(lowStockProductsProvider);
+                    return lowStock.when(
                     data: (products) => products.isEmpty
                         ? const SizedBox.shrink()
                         : Container(
@@ -312,10 +334,11 @@ class DashboardScreen extends ConsumerWidget {
                               ],
                             ),
                           ),
-                    loading: () => const SizedBox.shrink(),
-                    error: (_, _) => const SizedBox.shrink(),
-                  );
-                },
+                      loading: () => const SizedBox.shrink(),
+                      error: (_, _) => const SizedBox.shrink(),
+                    );
+                  },
+                ),
               ),
 
               // ─── Getting Started Checklist ─────────────────────────

@@ -132,7 +132,21 @@ class RoleGrantMatrix {
       'settings_tax',
       'system_database',
       'system_license',
+      // دفعة ١١ — كروت/رسوم لوحة التحكم.
+      'dashboard_sales_today',
+      'dashboard_chart',
+      'dashboard_alerts',
     },
+    // دفعة ١١ — `dashboard_alerts` (بانر تنبيه نقص المخزون) اتمنح لكل دور
+    // تشغيلي تحت: الحارس بتاعه إخفاء بلا تجاوز مدير، وكل دور بيشوف اللوحة
+    // النهارده بيشوف البانر، فمن غير المنحة الترقية بتشيله — والتنبيه ده شغل
+    // يومي لأمين المخزن.
+    //
+    // بالمقابل `dashboard_sales_today` و`dashboard_chart` **ما اتمنحوش لأي
+    // دور تشغيلي عن قصد**: دول بيانات فلوس (صافي الإيراد، هامش الربح،
+    // تركيبة الإيراد) — نفس فئة `dashboard_profit` و`treasury_balance_view`
+    // اللي مش ممنوحين لأي دور أصلاً. منح الرسوم كان هيسرّب هامش الربح من
+    // القوس بينما كارت الربح نفسه مموّه.
     'كاشير': {
       'pos_access',
       'pos_hold_order',
@@ -146,6 +160,7 @@ class RoleGrantMatrix {
       'sales_create',
       'sales_view',
       'dashboard_access',
+      'dashboard_alerts',
       // دفعة ٩ — `sales_amounts_view` بيحجب مبالغ قائمة فواتير البيع، وأي
       // دور معاه `sales_view` كان بيشوفها النهارده. الطباعة بتجاوز مدير
       // فمش منع، بس كلمة سر مع كل طباعة مش قابلة للاستعمال.
@@ -163,6 +178,7 @@ class RoleGrantMatrix {
       'purchases_create',
       'categories_view',
       'dashboard_access',
+      'dashboard_alerts',
       // دفعة ٨ — الأعمدة والأقسام دي كانت مكشوفة لأي دور يفتح شاشة الأصناف
       // (أكواد بلا إنفاذ). بعد ما اتحطّ عليها حرّاس، الدور ده لازم ياخدها
       // في **مسار الترقية** كمان مش في التركيب الجديد بس — المصفوفة هي
@@ -186,6 +202,7 @@ class RoleGrantMatrix {
       'sales_view',
       'purchases_view',
       'dashboard_access',
+      'dashboard_alerts',
       // Task 3d — عنصر قائمة «التحليلات» كان على reports_view العام
       // بينما screenPermissionMap يربط الشاشة بـ analytics_view. هذا
       // الدور عنده reports_view فكان بيشوف الرابط قبل الإصلاح؛ الكود
@@ -209,6 +226,7 @@ class RoleGrantMatrix {
       'sales_view',
       'purchases_view',
       'dashboard_access',
+      'dashboard_alerts',
       // FM-only extras (Spec 077 Batch 0.5)
       'commercial_papers_manage',
       // Task 3d — نفس منطق analytics_view فوق (محاسب).
@@ -234,6 +252,7 @@ class RoleGrantMatrix {
       'sales_create',
       'sales_view',
       'dashboard_access',
+      'dashboard_alerts',
       // دفعة ٩ — نفس منحة الكاشير العادي.
       'sales_amounts_view',
       'sales_print',
@@ -264,6 +283,7 @@ class RoleGrantMatrix {
       'purchases_create',
       'settings_view',
       'dashboard_access',
+      'dashboard_alerts',
       // Task 3d — نفس منطق analytics_view (محاسب فوق): الدور ده عنده
       // reports_view فكان بيشوف رابط «التحليلات» قبل ما نربطه بكوده
       // الخاص.
@@ -292,6 +312,7 @@ class RoleGrantMatrix {
       'inventory_view',
       'analytics_view',
       'dashboard_access',
+      'dashboard_alerts',
       // Task 3d — عنصر قائمة «الفروع» كان على settings_view العام
       // بينما screenPermissionMap يربط الشاشة بـ branches_manage. هذا
       // الدور عنده settings_view فكان بيشوف الرابط؛ الكود ده بيتمنح هنا
@@ -312,6 +333,7 @@ class RoleGrantMatrix {
       'reports_view',
       'sales_view',
       'dashboard_access',
+      'dashboard_alerts',
       // Task 3d — نفس منطق analytics_view فوق (محاسب).
       'analytics_view',
       // دفعة ٨ — نفس سبب «مخزني» فوق: `products_add` بيفتح شاشة الأصناف.

@@ -722,6 +722,12 @@ extension DatabaseSeederPermissions on AppDatabase {
       // Spec 3c — الرئيسية بقت متبوّبة بـ`dashboard_access`؛ الكود ده
       // بيتمنح لكل دور تشغيلي عشان الترقية ما تسحبش الشاشة من حد.
       'dashboard_access',
+      // دفعة ١١ — بانر تنبيه نقص المخزون بقى محروس بـ`dashboard_alerts`
+      // (إخفاء بلا تجاوز مدير)، وبيتمنح لكل دور تشغيلي لنفس سبب
+      // `dashboard_access` فوق. بالمقابل `dashboard_sales_today` و
+      // `dashboard_chart` مش ممنوحين لأي دور عن قصد — بيانات فلوس، نفس فئة
+      // `dashboard_profit` و`treasury_balance_view` اللي محدش واخدهم أصلاً.
+      'dashboard_alerts',
       // دفعة ٩ — `sales_amounts_view` بيحجب مبالغ قائمة فواتير البيع
       // (الإجمالي/المدفوع/المتبقي + كروت الإجماليات). أي دور معاه
       // `sales_view` بيفتح القائمة دي النهارده ويشوف المبالغ، فمن غير
@@ -756,6 +762,7 @@ extension DatabaseSeederPermissions on AppDatabase {
       'categories_view',
       // Spec 3c — نفس منحة dashboard_access للأدوار التشغيلية.
       'dashboard_access',
+      'dashboard_alerts',
       // دفعة ٨ — الستة دول كانوا أكواد بلا إنفاذ، يعني الأعمدة والأقسام
       // اللي بيوصفوها كانت بتترسم لأي دور يقدر يفتح شاشة الأصناف. دلوقتي
       // بقى ليهم حرّاس حقيقيين، فلازم يتمنحوا للأدوار اللي بتعمل الشغل ده
@@ -795,6 +802,7 @@ extension DatabaseSeederPermissions on AppDatabase {
       'sales_view',
       'purchases_view',
       'dashboard_access',
+      'dashboard_alerts',
       // دفعة ٩ — نفس منطق منحة الكاشير: الدور ده معاه `sales_view` و
       // `purchases_view` فبيفتح القايمتين ويشوف المبالغ ويطبع النهارده.
       'sales_amounts_view',
@@ -861,6 +869,7 @@ extension DatabaseSeederPermissions on AppDatabase {
       'sales_create', 'sales_view',
       // Spec 3c — dashboard_access؛ يورّث لمدير الفرع عبر الـ spread تحت.
       'dashboard_access',
+      'dashboard_alerts',
       // دفعة ٩ — نفس منحة الكاشير العادي (ويورّث لمدير الفرع بالـspread).
       'sales_amounts_view', 'sales_print', 'sales_return_print',
     ];
@@ -916,6 +925,7 @@ extension DatabaseSeederPermissions on AppDatabase {
       'inventory_view', 'analytics_view',
       // Spec 3c — نفس منحة dashboard_access للأدوار التشغيلية.
       'dashboard_access',
+      'dashboard_alerts',
       // Task 3d — عنصر قائمة «الفروع» اتربط بكوده الخاص branches_manage
       // بدل settings_view العام. الدور ده عنده settings_view فكان بيشوف
       // الرابط فعلاً، فلازم ياخد الكود الحقيقي بدل ما يتسحب منه.
@@ -945,6 +955,7 @@ extension DatabaseSeederPermissions on AppDatabase {
       'purchases_create', 'reports_view', 'sales_view',
       // Spec 3c — نفس منحة dashboard_access للأدوار التشغيلية.
       'dashboard_access',
+      'dashboard_alerts',
       // Task 3d — نفس منطق analytics_view في accountantPermsIndices فوق.
       'analytics_view',
       // دفعة ٨ — نفس سبب منحة أمين المخزن فوق (`products_add` بيفتح الشاشة).

@@ -852,6 +852,14 @@ class PermissionCodes {
     'categories_scale_upload': 'الشاشة كلها مبوّبة بـ products_add',
     'categories_view': 'الشاشة كلها مبوّبة بـ products_add',
     'dashboard_customers': 'مغطّى بـ analytics_view',
+    // دفعة ١١ — مفيش كارت «إجمالي مبيعات» منفصل في أي فورك: الكارت الوحيد
+    // (`صافي الإيراد` → `kpi.revenue`) بيتفلتر بـ`dashboardFilterProvider`
+    // اللي افتراضه اليوم الحالي والمستخدم بيوسّعه من نفس الشريط. يعني الفرق
+    // بين «اليوم» و«الإجمالي» حالة فلتر وقت التشغيل مش ودجت تانية، والكارت
+    // اتبوّب بـ`dashboard_sales_today`. تشغيل الكود ده كان هيتطلّب اختراع
+    // كارت جديد — ميزة مش إنفاذ صلاحية.
+    'dashboard_sales_total':
+        'نفس كارت dashboard_sales_today — الفرق فلتر فترة مش سطح منفصل',
     'dashboard_top_products': 'مغطّى بـ analytics_view',
     'delivery_view': 'مغطّى بـ delivery_manage',
     'parties_credit_limit_bypass': 'مغطّى بـ override_credit_limit',

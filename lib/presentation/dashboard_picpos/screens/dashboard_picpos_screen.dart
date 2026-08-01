@@ -121,7 +121,12 @@ class DashboardPicposScreen extends ConsumerWidget {
             ),
 
             // ─── بانر تنبيه المخزون (lowStockProductsProvider) ─────────
-            Consumer(
+            // dashboard_alerts — نفس حارس فورك UralCash: عرض بحت بـ`fallback`
+            // بلا تجاوز مدير.
+            PermissionGuard(
+              permission: PermissionCodes.dashboardAlerts,
+              fallback: const SizedBox.shrink(),
+              child: Consumer(
               builder: (context, ref, _) {
                 final lowStock = ref.watch(lowStockProductsProvider);
                 return lowStock.when(
@@ -165,6 +170,7 @@ class DashboardPicposScreen extends ConsumerWidget {
                   error: (_, _) => const SizedBox.shrink(),
                 );
               },
+              ),
             ),
 
             // ─── صف الإبراز: كروت KPI + قوس هامش الربح + دونات التركيبة ─
@@ -176,8 +182,20 @@ class DashboardPicposScreen extends ConsumerWidget {
                 cashCardTitle: cashCardTitle,
                 numberFmt: numberFmt,
               );
-              final profitGauge = _ProfitMarginGaugeCard(kpi: kpi);
-              final revenueDonut = _RevenueCompositionDonutCard(kpi: kpi);
+              // dashboard_chart — «عرض الرسوم البيانية». الرسمين دول موجودين
+              // في فورك PicPos بس؛ لوحة UralCash مالهاش رسوم أصلاً (اللي
+              // فيها أيقونات اسمها chartLineUp/chartBar وخلاص). عرض بحت →
+              // `fallback: SizedBox.shrink()` بلا تجاوز مدير.
+              final profitGauge = PermissionGuard(
+                permission: PermissionCodes.dashboardChart,
+                fallback: const SizedBox.shrink(),
+                child: _ProfitMarginGaugeCard(kpi: kpi),
+              );
+              final revenueDonut = PermissionGuard(
+                permission: PermissionCodes.dashboardChart,
+                fallback: const SizedBox.shrink(),
+                child: _RevenueCompositionDonutCard(kpi: kpi),
+              );
 
               // ملاحظة: بلا `CrossAxisAlignment.stretch` ولا `IntrinsicHeight`
               // عن قصد — الصف هنا جوّه `SingleChildScrollView` فبيستقبل ارتفاع
@@ -416,17 +434,31 @@ class _PicPosKpiGrid extends StatelessWidget {
         children: [
           Row(
             children: [
+              // dashboard_sales_today — نفس حارس فورك UralCash وبنفس شكل
+              // كارتَي الخزنة والربح تحت في نفس الملف.
               Expanded(
-                child: _PicPosKpiTile(
-                  title: 'صافي الإيراد',
-                  value: kpi.when(
-                    data: (k) => numberFmt.format(k.revenue),
-                    loading: () => '...',
-                    error: (e, s) => '0.00',
+                child: PermissionGuard(
+                  permission: PermissionCodes.dashboardSalesToday,
+                  allowManagerOverride: true,
+                  actionName: 'عرض صافي الإيراد',
+                  fallback: _PicPosKpiTile(
+                    title: 'صافي الإيراد',
+                    value: '---',
+                    suffix: AppConstants.currencySymbolEn,
+                    icon: PhosphorIconsBold.chartLineUp,
+                    color: AppColors.success,
                   ),
-                  suffix: AppConstants.currencySymbolEn,
-                  icon: PhosphorIconsBold.chartLineUp,
-                  color: AppColors.success,
+                  child: _PicPosKpiTile(
+                    title: 'صافي الإيراد',
+                    value: kpi.when(
+                      data: (k) => numberFmt.format(k.revenue),
+                      loading: () => '...',
+                      error: (e, s) => '0.00',
+                    ),
+                    suffix: AppConstants.currencySymbolEn,
+                    icon: PhosphorIconsBold.chartLineUp,
+                    color: AppColors.success,
+                  ),
                 ),
               ),
               const SizedBox(width: 10),

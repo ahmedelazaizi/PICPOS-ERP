@@ -29,8 +29,16 @@ class PermissionEnforcementRegistry {
     // ── لوحة التحكم (دفعة ٦) ──
     // 'dashboard_access' اتشال — بقى منفَّذ فعلياً بعد إعادة توصيل
     // screenPermissionMap في auth_providers.dart (4a032a22 وما بعدها).
-    'dashboard_sales_today', 'dashboard_sales_total',
-    'dashboard_chart', 'dashboard_alerts',
+    // 'dashboard_sales_today', 'dashboard_chart', 'dashboard_alerts'
+    // اتشالوا — بقوا منفَّذين فعلياً (دفعة ١١): كارت «صافي الإيراد» في
+    // البراندين بقى `PermissionGuard` ببديل مموّه (`---`) وتجاوز مدير — نفس
+    // شكل كارتَي الخزنة والربح المجاورين؛ وبانر تنبيه نقص المخزون في
+    // البراندين وقوس هامش الربح ودونات تركيبة الإيراد (فورك PicPos بس)
+    // بقوا محروسين بإخفاء بلا تجاوز.
+    //
+    // 'dashboard_sales_total' اتنقل لـ`PermissionCodes.nonToggleable` —
+    // مفيش سطح «إجمالي مبيعات» منفصل؛ نفس الكارت بيوسّع بالفلتر. التفاصيل
+    // في سبب الكود هناك.
     // ── الأصناف والتصنيفات (دفعة ٧) ──
     // 'products_price_view', 'products_cost_view', 'products_stock_view',
     // 'products_lock', 'products_expiry', 'products_image' اتشالوا — بقوا
