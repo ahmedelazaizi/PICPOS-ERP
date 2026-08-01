@@ -54,6 +54,32 @@ Widget buildKitchenManageActionButton({
   );
 }
 
+// ── فيكس المراجعة (Task 6b) ──────────────────────────────────────────────
+// «تعليم صنف كجاهز» (`kitchenRepo.markItemReady`، ضغطة على صف الصنف جوه
+// الطلب) اتستبعد أول مرة بسبب "فعل أدق من غير كود مخصص" — نفس المنطق اللي
+// استُبعد بيه offers_toggle، لكن هناك اتحطّت تحت كود أوسع (offers_edit) بدل
+// ما تتسحب. المراجعة رصدت التناقض: «تعليم جاهز» هو بالظبط نفس فئة الفعل اللي
+// kitchen_manage («إدارة طلبات المطبخ») موجود عشان يحميها — تغيير حالة عنصر
+// جوه أمر مطبخ، زي تحضير/جاهز/استرجاع بالظبط بس على مستوى الصنف مش الطلب
+// كله. فبيتحمي بنفس الكود.
+@visibleForTesting
+Widget buildKitchenManageItemReadyTile({
+  required VoidCallback onTap,
+  required Widget child,
+}) {
+  return PermissionGuard(
+    permission: PermissionCodes.kitchenManage,
+    allowManagerOverride: true,
+    actionName: 'تعليم صنف كجاهز',
+    onGranted: onTap,
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: child,
+    ),
+  );
+}
+
 /// Kitchen Display Screen - Shows pending orders for the kitchen
 class KitchenDisplayScreen extends ConsumerStatefulWidget {
   const KitchenDisplayScreen({super.key});
@@ -524,9 +550,8 @@ class _KitchenDisplayScreenState extends ConsumerState<KitchenDisplayScreen> {
 
   Widget _buildOrderItem(WorkOrderItem item, KitchenRepository kitchenRepo) {
     final isReady = item.status == 'ready';
-    return InkWell(
+    return buildKitchenManageItemReadyTile(
       onTap: () => kitchenRepo.markItemReady(item.id),
-      borderRadius: BorderRadius.circular(6),
       child: Container(
         margin: const EdgeInsets.only(bottom: 4),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),

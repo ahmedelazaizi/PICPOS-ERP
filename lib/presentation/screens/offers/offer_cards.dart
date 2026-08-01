@@ -23,6 +23,129 @@ bool canDeleteOffer(List<String> permissions) {
   return isAdmin || permissions.contains(PermissionCodes.offersDelete);
 }
 
+// ── فيكس المراجعة (Task 6b) ──────────────────────────────────────────────
+// المراجعة رصدت إن `canEditOffer`/`canDeleteOffer` كانوا متفحوصين لوحدهم
+// بس — لو حد شال شرط `if (!canEditOffer(perms))` من جوه `onSelected` وسايب
+// الدالة زي ما هي، كل الاختبارات كانت هتفضل خضرا (نفس شكل باج f8d3fa9:
+// الفحص موجود، لكن السلك اللي بينده عليه مش مضمون). عشان الفحص ده يتثبت
+// فعلاً، اتنقلت `PopupMenuButton` كلها (مع منطق `onSelected`) لودجت
+// top-level مستقل (`OfferCardActionsMenu`) — بيتبنى هنا لوحده في اختبار
+// widget (فتح الميني، اختيار عنصر، والتأكد إن الـcallback اتنفذ أو لأ)
+// من غير ما نحتاج شاشة `OffersScreen`/قاعدة بيانات حقيقية، لإن الـcallbacks
+// (`onEdit`/`onDelete`/`onToggle`/`onPrintBarcode`) بقوا بارامترات بسيطة.
+@visibleForTesting
+class OfferCardActionsMenu extends ConsumerWidget {
+  final bool offerIsActive;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+  final VoidCallback onToggle;
+  final VoidCallback onPrintBarcode;
+
+  const OfferCardActionsMenu({
+    super.key,
+    required this.offerIsActive,
+    required this.onEdit,
+    required this.onDelete,
+    required this.onToggle,
+    required this.onPrintBarcode,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // `ref.watch` (مش `ref.read`) هنا مقصودة: بيخلّي الـFutureProvider يبدأ
+    // يتحلّ من أول ما الودجت يتبني، فمفيش سباق زمني لو المستخدم ضغط على
+    // القائمة قبل ما أول قراءة تحصل (اللي كانت بترجع `AsyncLoading` وتتفسّر
+    // غلط كـ"مفيش صلاحيات"). اتكشف الباج ده عملياً في اختبار الودجت لما
+    // الحالة "مع الصلاحية" كانت بتفشل رغم إن الـoverride مظبوط.
+    final perms = ref.watch(currentUserPermissionsProvider).asData?.value ??
+        const <String>[];
+    return PopupMenuButton<String>(
+      onSelected: (value) {
+        try {
+          if (value == 'edit') {
+            if (!canEditOffer(perms)) {
+              AppToast.show(context, 'ليس لديك صلاحية تعديل العروض',
+                  type: ToastType.error);
+              return;
+            }
+            onEdit();
+          } else if (value == 'delete') {
+            if (!canDeleteOffer(perms)) {
+              AppToast.show(context, 'ليس لديك صلاحية حذف العروض',
+                  type: ToastType.error);
+              return;
+            }
+            onDelete();
+          } else if (value == 'toggle') {
+            // تفعيل/إيقاف العرض بينده على `repo.updateOffer` — نفس فعل
+            // الكتابة اللي وراء ديالوج التعديل بالظبط (مجرد تغيير حقل
+            // `isActive` بدل فتح الفورم كله)، فبيتحمي بنفس كود
+            // `offers_edit` مش كود جديد.
+            if (!canEditOffer(perms)) {
+              AppToast.show(context, 'ليس لديك صلاحية تعديل العروض',
+                  type: ToastType.error);
+              return;
+            }
+            onToggle();
+          } else if (value == 'print_barcode') {
+            onPrintBarcode();
+          }
+        } catch (e) {
+          debugPrint('[OfferCards] Action error: $e');
+          AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+        }
+      },
+      position: PopupMenuPosition.under,
+      itemBuilder: (ctx) => [
+        const PopupMenuItem(
+          value: 'edit',
+          child: Row(
+            children: [
+              Icon(PhosphorIconsBold.pencil, size: 18, color: AppColors.info),
+              SizedBox(width: 8),
+              Text('تعديل'),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: 'toggle',
+          child: Row(
+            children: [
+              Icon(
+                offerIsActive ? PhosphorIconsBold.pause : PhosphorIconsBold.play,
+                size: 18,
+                color: AppColors.warning,
+              ),
+              const SizedBox(width: 8),
+              Text(offerIsActive ? 'إيقاف' : 'تفعيل'),
+            ],
+          ),
+        ),
+        const PopupMenuItem(
+          value: 'print_barcode',
+          child: Row(
+            children: [
+              Icon(PhosphorIconsBold.barcode, size: 18, color: AppColors.primary),
+              SizedBox(width: 8),
+              Text('طباعة باركود'),
+            ],
+          ),
+        ),
+        const PopupMenuItem(
+          value: 'delete',
+          child: Row(
+            children: [
+              Icon(PhosphorIconsBold.trash, size: 18, color: AppColors.error),
+              SizedBox(width: 8),
+              Text('حذف'),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 mixin _OfferCardsMixin on ConsumerState<OffersScreen> {
   // Abstract — provided by the shell
   String offerTypeLabel(String type);
@@ -134,113 +257,21 @@ mixin _OfferCardsMixin on ConsumerState<OffersScreen> {
                     ],
                   ),
                 ),
-                PopupMenuButton<String>(
-                  onSelected: (value) {
-                    try {
-                      final perms = ref
-                              .read(currentUserPermissionsProvider)
-                              .asData
-                              ?.value ??
-                          const <String>[];
-                      if (value == 'edit') {
-                        if (!mounted) return;
-                        if (!canEditOffer(perms)) {
-                          AppToast.show(context, 'ليس لديك صلاحية تعديل العروض',
-                              type: ToastType.error);
-                          return;
-                        }
-                        showEditOfferDialog(context, repo, offer);
-                      } else if (value == 'delete') {
-                        if (!mounted) return;
-                        if (!canDeleteOffer(perms)) {
-                          AppToast.show(context, 'ليس لديك صلاحية حذف العروض',
-                              type: ToastType.error);
-                          return;
-                        }
-                        _confirmDeleteOffer(repo, offer);
-                      } else if (value == 'toggle') {
-                        // تفعيل/إيقاف العرض بينده على `repo.updateOffer` — نفس
-                        // فعل الكتابة اللي وراء ديالوج التعديل بالظبط (مجرد
-                        // تغيير حقل `isActive` بدل فتح الفورم كله)، فبيتحمي
-                        // بنفس كود `offers_edit` مش كود جديد.
-                        if (!mounted) return;
-                        if (!canEditOffer(perms)) {
-                          AppToast.show(context, 'ليس لديك صلاحية تعديل العروض',
-                              type: ToastType.error);
-                          return;
-                        }
-                        _toggleOfferStatus(repo, offer);
-                      } else if (value == 'print_barcode') {
-                        _printOfferBarcode(offer);
-                      }
-                    } catch (e) {
-                      debugPrint('[OfferCards] Action error: $e');
-                      if (mounted) {
-                        AppToast.show(context, 'خطأ: $e', type: ToastType.error);
-                      }
-                    }
+                OfferCardActionsMenu(
+                  offerIsActive: offer.isActive,
+                  onEdit: () {
+                    if (!mounted) return;
+                    showEditOfferDialog(context, repo, offer);
                   },
-                  position: PopupMenuPosition.under,
-                  itemBuilder: (ctx) => [
-                    const PopupMenuItem(
-                      value: 'edit',
-                      child: Row(
-                        children: [
-                          Icon(
-                            PhosphorIconsBold.pencil,
-                            size: 18,
-                            color: AppColors.info,
-                          ),
-                          SizedBox(width: 8),
-                          Text('تعديل'),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'toggle',
-                      child: Row(
-                        children: [
-                          Icon(
-                            offer.isActive
-                                ? PhosphorIconsBold.pause
-                                : PhosphorIconsBold.play,
-                            size: 18,
-                            color: AppColors.warning,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(offer.isActive ? 'إيقاف' : 'تفعيل'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'print_barcode',
-                      child: Row(
-                        children: [
-                          Icon(
-                            PhosphorIconsBold.barcode,
-                            size: 18,
-                            color: AppColors.primary,
-                          ),
-                          SizedBox(width: 8),
-                          Text('طباعة باركود'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'delete',
-                      child: Row(
-                        children: [
-                          Icon(
-                            PhosphorIconsBold.trash,
-                            size: 18,
-                            color: AppColors.error,
-                          ),
-                          SizedBox(width: 8),
-                          Text('حذف'),
-                        ],
-                      ),
-                    ),
-                  ],
+                  onDelete: () {
+                    if (!mounted) return;
+                    _confirmDeleteOffer(repo, offer);
+                  },
+                  onToggle: () {
+                    if (!mounted) return;
+                    _toggleOfferStatus(repo, offer);
+                  },
+                  onPrintBarcode: () => _printOfferBarcode(offer),
                 ),
               ],
             ),

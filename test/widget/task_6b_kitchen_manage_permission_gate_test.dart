@@ -132,4 +132,68 @@ void main() {
       expect(find.byType(OutlinedButton), findsOneWidget);
     });
   });
+
+  // ── فيكس المراجعة (Critical 2) ──────────────────────────────────────────
+  // «تعليم صنف كجاهز» (ضغطة على صف الصنف جوه الطلب، `kitchenRepo.
+  // markItemReady`) كان مستبعد أول مرة بحجة "فعل أدق من غير كود مخصص" —
+  // نفس المنطق اللي اتطبّق مختلف مع `offers_toggle` (اتحطّت تحت offers_edit
+  // بدل ما تتسحب). المراجعة صححت التناقض: نفس فئة الفعل اللي kitchen_manage
+  // موجود عشانها، فبيتحمي بنفس الكود.
+  group('kitchen_manage — صف الصنف («تعليم جاهز»)', () {
+    testWidgets('الحارس مربوط بالكود الصح ومعاه onGranted صريح', (tester) async {
+      await pumpButton(
+        tester,
+        buildKitchenManageItemReadyTile(
+          onTap: () {},
+          child: const Text('صنف تجريبي'),
+        ),
+        [PermissionCodes.kitchenManage],
+      );
+
+      final guard = tester.widget<PermissionGuard>(find.byType(PermissionGuard));
+      expect(guard.permission, PermissionCodes.kitchenManage);
+      expect(guard.allowManagerOverride, isTrue);
+      expect(guard.onGranted, isNotNull);
+    });
+
+    testWidgets('بدون الصلاحية: الضغط بيطلب تصريح مدير، والفعل ما بيتنفّذش',
+        (tester) async {
+      var tapped = false;
+      await pumpButton(
+        tester,
+        buildKitchenManageItemReadyTile(
+          onTap: () => tapped = true,
+          child: const Text('صنف تجريبي'),
+        ),
+        const [],
+      );
+
+      await tester.tap(find.text('صنف تجريبي'), warnIfMissed: false);
+      await tester.pump();
+
+      expect(find.text('تصريح المسؤول مطلوب'), findsOneWidget);
+      expect(tapped, isFalse);
+
+      await closeAnyOpenDialog(tester);
+    });
+
+    testWidgets('مع الصلاحية: الضغط بينفّذ الفعل مباشرة من غير طلب تصريح',
+        (tester) async {
+      var tapped = false;
+      await pumpButton(
+        tester,
+        buildKitchenManageItemReadyTile(
+          onTap: () => tapped = true,
+          child: const Text('صنف تجريبي'),
+        ),
+        [PermissionCodes.kitchenManage],
+      );
+
+      await tester.tap(find.text('صنف تجريبي'));
+      await tester.pump();
+
+      expect(find.text('تصريح المسؤول مطلوب'), findsNothing);
+      expect(tapped, isTrue);
+    });
+  });
 }

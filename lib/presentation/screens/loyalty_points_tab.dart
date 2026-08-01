@@ -4,6 +4,91 @@ part of 'loyalty_screen.dart';
 // CUSTOMER POINTS TAB
 // ═══════════════════════════════════════════════════════════════════════════
 
+/// هل [permissions] تسمح بتعديل رصيد نقاط عميل (إضافة/خصم يدوي)؟
+///
+/// مستخرجة top-level — نفس وضع `canEditOffer`/`canDeleteOffer` في
+/// `offer_cards.dart`: الفعل بينده عليه `PopupMenuButton.onSelected` لكل
+/// صف عميل، والـ`PopupMenuItem` نفسه بيمسك الضغطة ويقفل الميني قبل ما أي
+/// `PermissionGuard` جواه يشتغل، فمفيش ودجت واحد يتلف بيه.
+///
+/// ── فيكس المراجعة (Task 6b) ──────────────────────────────────────────────
+/// ده كان الثغرة الحرجة التانية: `_showAdjustPointsDialog` (إضافة/خصم نقاط
+/// على رصيد أي عميل) في نفس الشاشة اللي فيها `loyalty_programs_tab.dart`
+/// (تبويب شقيق، جوه نفس `part of 'loyalty_screen.dart'`)، محمي بنفس كود
+/// العرض الخشن `loyalty_view` بس — مفيش فحص على الكتابة نفسها أصلاً.
+bool canAdjustLoyaltyPoints(List<String> permissions) {
+  final isAdmin =
+      permissions.contains('system_admin') || permissions.contains('*');
+  return isAdmin || permissions.contains(PermissionCodes.loyaltyManage);
+}
+
+/// قائمة «إضافة/خصم نقاط» لصف عميل واحد.
+///
+/// مستخرجة top-level (نفس نمط `OfferCardActionsMenu` في `offer_cards.dart`،
+/// نفس السبب): لو الفحص اتحط جوه `onSelected` بتاع الشاشة نفسها بس، اختبار
+/// بيفحص `canAdjustLoyaltyPoints` لوحدها ما كانش هيثبت إن السلك فعلاً بينده
+/// عليها — استخراج القائمة كلها كودجت مستقل بياخد `onAdd`/`onSubtract`
+/// كبارامترات بسيطة بيخلّي فتح الميني واختيار عنصر واختبار حقيقي من غير
+/// شاشة `LoyaltyScreen`/قاعدة بيانات.
+@visibleForTesting
+class LoyaltyPointsAdjustMenu extends ConsumerWidget {
+  final VoidCallback onAdd;
+  final VoidCallback onSubtract;
+
+  const LoyaltyPointsAdjustMenu({
+    super.key,
+    required this.onAdd,
+    required this.onSubtract,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // `ref.watch` (مش `ref.read`) مقصودة — نفس فيكس `OfferCardActionsMenu`:
+    // بتخلّي الـFutureProvider يبدأ يتحلّ من أول ما الودجت يتبني، فمفيش
+    // سباق زمني بين أول تاب على القائمة وأول قراءة للصلاحيات.
+    final perms = ref.watch(currentUserPermissionsProvider).asData?.value ??
+        const <String>[];
+    return PopupMenuButton<String>(
+      icon: const Icon(PhosphorIconsBold.dotsThreeVertical),
+      tooltip: 'خيارات',
+      onSelected: (action) {
+        if (!canAdjustLoyaltyPoints(perms)) {
+          AppToast.show(context, 'ليس لديك صلاحية تعديل نقاط الولاء',
+              type: ToastType.error);
+          return;
+        }
+        if (action == 'add') {
+          onAdd();
+        } else if (action == 'subtract') {
+          onSubtract();
+        }
+      },
+      itemBuilder: (_) => [
+        const PopupMenuItem(
+          value: 'add',
+          child: Row(
+            children: [
+              Icon(PhosphorIconsBold.plusCircle, color: Colors.green, size: 18),
+              SizedBox(width: 8),
+              Text('إضافة نقاط'),
+            ],
+          ),
+        ),
+        const PopupMenuItem(
+          value: 'subtract',
+          child: Row(
+            children: [
+              Icon(PhosphorIconsBold.minusCircle, color: Colors.orange, size: 18),
+              SizedBox(width: 8),
+              Text('خصم نقاط'),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _CustomerPointsTab extends StatefulWidget {
   final WidgetRef ref;
   final String searchQuery;
@@ -191,58 +276,19 @@ class _CustomerPointsTabState extends State<_CustomerPointsTab> {
                                     ),
                                   ),
                                   const SizedBox(width: 4),
-                                  PopupMenuButton<String>(
-                                    icon: const Icon(
-                                      PhosphorIconsBold.dotsThreeVertical,
+                                  LoyaltyPointsAdjustMenu(
+                                    onAdd: () => _showAdjustPointsDialog(
+                                      context,
+                                      repo,
+                                      pt,
+                                      isPositive: true,
                                     ),
-                                    tooltip: 'خيارات',
-                                    onSelected: (action) {
-                                      if (action == 'add') {
-                                        _showAdjustPointsDialog(
-                                          context,
-                                          repo,
-                                          pt,
-                                          isPositive: true,
-                                        );
-                                      } else if (action == 'subtract') {
-                                        _showAdjustPointsDialog(
-                                          context,
-                                          repo,
-                                          pt,
-                                          isPositive: false,
-                                        );
-                                      }
-                                    },
-                                    itemBuilder: (_) => [
-                                      const PopupMenuItem(
-                                        value: 'add',
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              PhosphorIconsBold.plusCircle,
-                                              color: Colors.green,
-                                              size: 18,
-                                            ),
-                                            SizedBox(width: 8),
-                                            Text('إضافة نقاط'),
-                                          ],
-                                        ),
-                                      ),
-                                      const PopupMenuItem(
-                                        value: 'subtract',
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              PhosphorIconsBold.minusCircle,
-                                              color: Colors.orange,
-                                              size: 18,
-                                            ),
-                                            SizedBox(width: 8),
-                                            Text('خصم نقاط'),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
+                                    onSubtract: () => _showAdjustPointsDialog(
+                                      context,
+                                      repo,
+                                      pt,
+                                      isPositive: false,
+                                    ),
                                   ),
                                 ],
                               ),
