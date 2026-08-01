@@ -948,6 +948,80 @@ EOF
 
 ---
 
+### Task 3e: الاختبار المعمّم ما يقدرش يضعف نفسه بصمت
+
+مهمة اتولدت من مراجعة Task 3d. **العيب أصله في كود العيّنة اللي في Task 3d نفسها** — مش اجتهاد من المنفّذ.
+
+**البند ١ — تأكيد عدد المفحوص.** الحلقة في `screen_permission_map_test.dart` فيها مسارين تخطّي صامتين:
+
+```dart
+      if (screen == null) continue;
+      if (mapped == null) continue;
+```
+
+النهارده ٤٧/٤٧ بيعدّوا فعلاً. بس `ScreenId.fromIndex` بترجّع `null` مش بترمي، فمدخل قائمة جديد بـindex مالوش شاشة — أو `ScreenId` جديدة مالهاش مدخل في الخريطة — بيقلّل المفحوص بصمت والاختبار يفضل أخضر. ده بالظبط «٤٧/٤٧ النهارده و٣/٤٧ بكرة» اللي المهمة موجودة تمنعه، ومفيش اختبار تاني في الحزمة بيأكد الشمول.
+
+الإصلاح: عُدّ المفحوص وأكّده.
+
+```dart
+    var checked = 0;
+    final mismatches = <String>[];
+    final unresolved = <String>[];
+    for (final item in kAllNavItemDefs) {
+      final screen = _screenForNavItem(item);
+      if (screen == null) {
+        unresolved.add('${item.label} (index=${item.index}): مفيش ScreenId');
+        continue;
+      }
+      final mapped = screenPermissionMap[screen];
+      if (mapped == null) {
+        unresolved.add('${item.label}: $screen مش في screenPermissionMap');
+        continue;
+      }
+      checked++;
+      if (item.permission != mapped) { /* … زي ما هي … */ }
+    }
+
+    // ── ليه بنأكد العدد ───────────────────────────────────────────────────
+    // `continue` الصامتة كانت بتخلي الاختبار يضعف من غير ما يفشل: مدخل جديد
+    // بـindex مالوش شاشة كان بيتخطى وخلاص. الاختبار اللي بيقل تغطيته لوحده
+    // أسوأ من اللي مش موجود، لأنه بيدي طمأنينة كاذبة.
+    expect(unresolved, isEmpty,
+        reason: 'مداخل ما اتفحصتش — أضفها للخريطة أو استثنيها بسبب مكتوب:\n'
+            '${unresolved.join('\n')}');
+    expect(checked, kAllNavItemDefs.length);
+    expect(mismatches, isEmpty, reason: /* … زي ما هي … */);
+```
+
+**البند ٢ — اسم الملف.** `dashboard_access_default_grant_test.dart` بقى بيأكد اتفاق **المصفوفة كلها** مع السيدر، مش `dashboard_access` وحده. غيّر اسمه لـ`role_grant_matrix_seeder_agreement_test.dart` وحدّث تعليق الرأس. اسم بيوصف حاجة أضيق من اللي بيعمله بيخلي حد يدوّر على الاختبار ده وما يلاقيهوش فيكتب واحد تاني.
+
+- [ ] **Step 1: عدّل الاختبار وشوفه لسه أخضر (٤٧/٤٧)**
+- [ ] **Step 2: أضف مدخل قائمة وهمي بـindex غلط محلياً، تأكد إن الاختبار بيفشل دلوقتي، ورجّعه** — ده إثبات إن التأكيد شغّال مش زينة
+- [ ] **Step 3: غيّر اسم الملف وحدّث تعليق الرأس**
+- [ ] **Step 4: `flutter test test/unit/screen_permission_map_test.dart test/unit/role_grant_matrix_seeder_agreement_test.dart --concurrency=1 && flutter analyze lib test`**
+- [ ] **Step 5: كوميت**
+
+```bash
+git commit -m "$(cat <<'EOF'
+test(perms): الاختبار المعمّم ما يقدرش يقلّل تغطيته بصمت
+
+الحلقة كانت بتتخطى بـ`continue` من غير ما تعد: مدخل قائمة جديد بـindex
+مالوش `ScreenId`، أو شاشة جديدة مش في الخريطة، كانوا بيخرجوا من الفحص
+والاختبار يفضل أخضر. `ScreenId.fromIndex` بترجّع `null` مش بترمي، فمفيش
+حاجة كانت هتلفت النظر.
+
+بقى بيعدّ ويأكد إن كل مدخل اتفحص، وبيسمّي اللي ما اتفحصش. الاختبار اللي
+بيقل تغطيته لوحده أسوأ من اللي مش موجود — بيدي طمأنينة كاذبة.
+
+والعيب أصله في كود العيّنة في الخطة نفسها، مش اجتهاد من المنفّذ.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+EOF
+)"
+```
+
+---
+
 ## المرحلة ٣ — الـ ٨٨ كود بلا إنفاذ
 
 ### Task 4: سجل التغطية + اختبار الحارس
