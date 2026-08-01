@@ -593,16 +593,16 @@ final userNavItemsProvider = FutureProvider<List<NavItemDef>>((ref) async {
     const NavItemDef(icon: PhosphorIconsBold.shoppingCart, label: 'نقطة البيع', permission: 'pos_access', index: 1, section: 'المبيعات', group: 'sales'),
     const NavItemDef(icon: PhosphorIconsBold.fileText, label: 'فواتير المبيعات', permission: 'sales_view', index: 17, group: 'sales'),
     const NavItemDef(icon: PhosphorIconsBold.notepad, label: 'طلبات البيع', permission: 'sales_orders_view', index: 37, group: 'sales'),
-    const NavItemDef(icon: PhosphorIconsBold.circlesThree, label: 'الطاولات', permission: 'pos_access', index: 3, group: 'sales'),
-    const NavItemDef(icon: PhosphorIconsBold.tag, label: 'العروض', permission: 'pos_access', index: 2, group: 'sales'),
-    const NavItemDef(icon: PhosphorIconsBold.arrowUUpLeft, label: 'مردودات المبيعات', permission: 'sales_view', index: 44, group: 'sales'),
+    const NavItemDef(icon: PhosphorIconsBold.circlesThree, label: 'الطاولات', permission: 'tables_view', index: 3, group: 'sales'),
+    const NavItemDef(icon: PhosphorIconsBold.tag, label: 'العروض', permission: 'offers_view', index: 2, group: 'sales'),
+    const NavItemDef(icon: PhosphorIconsBold.arrowUUpLeft, label: 'مردودات المبيعات', permission: 'sales_return_view', index: 44, group: 'sales'),
 
     // ═══════════════════════════════════════════
     // 🛒 المشتريات
     // ═══════════════════════════════════════════
     const NavItemDef(icon: PhosphorIconsBold.receipt, label: 'فواتير المشتريات', permission: 'purchases_create', index: 9, section: 'المشتريات', group: 'purchases'),
     const NavItemDef(icon: PhosphorIconsBold.clipboardText, label: 'أوامر الشراء', permission: 'purchase_orders_view', index: 30, group: 'purchases'),
-    const NavItemDef(icon: PhosphorIconsBold.arrowUUpLeft, label: 'مردودات المشتريات', permission: 'purchases_create', index: 45, group: 'purchases'),
+    const NavItemDef(icon: PhosphorIconsBold.arrowUUpLeft, label: 'مردودات المشتريات', permission: 'purchases_return_view', index: 45, group: 'purchases'),
 
     // ═══════════════════════════════════════════
     // 📦 المخزون والإنتاج
@@ -613,7 +613,7 @@ final userNavItemsProvider = FutureProvider<List<NavItemDef>>((ref) async {
     const NavItemDef(icon: PhosphorIconsBold.clipboardText, label: 'أرصدة المخزون', permission: 'inventory_view', index: 19, group: 'inventory'),
     const NavItemDef(icon: PhosphorIconsBold.arrowsLeftRight, label: 'تحويل مخزني', permission: 'inventory_transfer', index: 20, group: 'inventory'),
     const NavItemDef(icon: PhosphorIconsBold.arrowsDownUp, label: 'حركة المخزون', permission: 'inventory_view', index: 29, group: 'inventory'),
-    const NavItemDef(icon: PhosphorIconsBold.factory, label: 'التصنيع', permission: 'inventory_view', index: 25, group: 'inventory'),
+    const NavItemDef(icon: PhosphorIconsBold.factory, label: 'التصنيع', permission: 'manufacturing_view', index: 25, group: 'inventory'),
     const NavItemDef(icon: PhosphorIconsBold.truck, label: 'طلبات الصرف', permission: 'inventory_view', index: 38, group: 'inventory'),
     const NavItemDef(icon: PhosphorIconsBold.money, label: 'التكاليف المحملة', permission: 'purchases_create', index: 41, group: 'inventory'),
     const NavItemDef(icon: PhosphorIconsBold.listChecks, label: 'الجرد الدوري', permission: 'inventory_view', index: 42, group: 'inventory'),
@@ -636,7 +636,7 @@ final userNavItemsProvider = FutureProvider<List<NavItemDef>>((ref) async {
     const NavItemDef(icon: PhosphorIconsBold.link, label: 'ربط الحسابات', permission: 'settings_view', index: 31, group: 'accounting'),
     const NavItemDef(icon: PhosphorIconsBold.treeStructure, label: 'مراكز التكلفة', permission: 'settings_view', index: 33, group: 'accounting'),
     const NavItemDef(icon: PhosphorIconsBold.checks, label: 'الشيكات', permission: 'treasury_view', index: 34, group: 'accounting'),
-    const NavItemDef(icon: PhosphorIconsBold.buildings, label: 'الأصول الثابتة', permission: 'settings_view', index: 35, group: 'accounting'),
+    const NavItemDef(icon: PhosphorIconsBold.buildings, label: 'الأصول الثابتة', permission: 'assets_view', index: 35, group: 'accounting'),
     const NavItemDef(icon: PhosphorIconsBold.invoice, label: 'الفوترة الإلكترونية', permission: 'einvoice_view', index: 22, group: 'accounting'),
     const NavItemDef(icon: PhosphorIconsBold.calendar, label: 'السنوات المالية', permission: 'settings_view', index: 28, group: 'accounting'),
     const NavItemDef(icon: PhosphorIconsBold.coins, label: 'المصروفات التشغيلية', permission: 'settings_view', index: 26, group: 'accounting'),
@@ -653,7 +653,7 @@ final userNavItemsProvider = FutureProvider<List<NavItemDef>>((ref) async {
     // ═══════════════════════════════════════════
     // ⚙️ النظام والإعدادات
     // ═══════════════════════════════════════════
-    const NavItemDef(icon: PhosphorIconsBold.cookingPot, label: 'المطبخ', permission: 'pos_access', index: 14, section: 'النظام', group: 'system'),
+    const NavItemDef(icon: PhosphorIconsBold.cookingPot, label: 'المطبخ', permission: 'kitchen_view', index: 14, section: 'النظام', group: 'system'),
     const NavItemDef(icon: PhosphorIconsBold.buildings, label: 'الفروع', permission: 'settings_view', index: 13, group: 'system'),
     const NavItemDef(icon: PhosphorIconsBold.mapPin, label: 'المناطق', permission: 'settings_view', index: 60, group: 'system'),
     const NavItemDef(icon: PhosphorIconsBold.users, label: 'الموظفين', permission: 'hr_view', index: 16, group: 'system'),
@@ -736,11 +736,21 @@ final userNavItemsProvider = FutureProvider<List<NavItemDef>>((ref) async {
   return allowedItems;
 });
 
+/// ربط الشاشة ← كود الصلاحية اللي بيتحكم في ظهورها.
+///
+/// ── القاعدة ──────────────────────────────────────────────────────────────
+/// الشاشة اللي ليها كود خاص في `PermissionCodes` تتربط بيه، مش بكود عام.
+/// كانت العروض والطاولات والمطبخ ولوحة التحكم كلهم على `pos_access`،
+/// ومردودات البيع على `sales_view` — فسحب `offers_view` ما كانش بيخفي شاشة
+/// العروض، لأن الكود ده ما كانش متوصّل بحاجة أصلاً.
+///
+/// الشاشات المحاسبية اللي لسه على `settings_view` مقصودة: مالهاش أكواد
+/// خاصة في `masterList` لحد دلوقتي.
 const screenPermissionMap = <ScreenId, String>{
-  ScreenId.dashboard: 'pos_access',
+  ScreenId.dashboard: 'dashboard_access',
   ScreenId.pos: 'pos_access',
-  ScreenId.offers: 'pos_access',
-  ScreenId.tables: 'pos_access',
+  ScreenId.offers: 'offers_view',
+  ScreenId.tables: 'tables_view',
   ScreenId.products: 'products_add',
   ScreenId.categories: 'products_add',
   ScreenId.parties: 'customers_view',
@@ -750,7 +760,7 @@ const screenPermissionMap = <ScreenId, String>{
   ScreenId.reports: 'reports_view',
   ScreenId.settings: 'settings_view',
   ScreenId.branches: 'branches_manage',
-  ScreenId.kitchen: 'pos_access',
+  ScreenId.kitchen: 'kitchen_view',
   ScreenId.analytics: 'analytics_view',
   ScreenId.hr: 'hr_view',
   ScreenId.salesInvoices: 'sales_view',
@@ -761,7 +771,7 @@ const screenPermissionMap = <ScreenId, String>{
   ScreenId.eInvoice: 'einvoice_view',
   ScreenId.loyalty: 'loyalty_view',
   ScreenId.distribution: 'distribution_view',
-  ScreenId.manufacturing: 'inventory_view',
+  ScreenId.manufacturing: 'manufacturing_view',
   ScreenId.operationalExpenses: 'settings_view',
   ScreenId.chartOfAccounts: 'settings_view',
   ScreenId.fiscalYear: 'settings_view',
@@ -771,7 +781,7 @@ const screenPermissionMap = <ScreenId, String>{
   ScreenId.journalEntries: 'settings_view',
   ScreenId.costCenters: 'settings_view',
   ScreenId.commercialPapers: 'treasury_view',
-  ScreenId.fixedAssets: 'settings_view',
+  ScreenId.fixedAssets: 'assets_view',
   ScreenId.generalLedger: 'settings_view',
   ScreenId.salesOrders: 'sales_orders_view',
   ScreenId.stockRequisitions: 'inventory_view',
@@ -780,8 +790,8 @@ const screenPermissionMap = <ScreenId, String>{
   ScreenId.landedCost: 'purchases_create',
   ScreenId.cycleCounting: 'inventory_view',
   ScreenId.reportBuilder: 'reports_view',
-  ScreenId.salesReturns: 'sales_view',
-  ScreenId.purchaseReturns: 'purchases_create',
+  ScreenId.salesReturns: 'sales_return_view',
+  ScreenId.purchaseReturns: 'purchases_return_view',
   ScreenId.regions: 'settings_view',
   ScreenId.shiftClose: PermissionCodes.posShiftClose,
 };
@@ -837,9 +847,12 @@ final userAllowedScreensProvider = FutureProvider<List<int>>((ref) async {
     }
   }
 
-  if (!allowedScreens.contains(ScreenId.dashboard.navigationIndex) &&
+  // مايبقاش المستخدم من غير أي شاشة يفتحها — بيقع في واجهة فاضية بلا مخرج.
+  // قبل كده كانت لوحة التحكم بتتحقن قسراً وده كان بيلغي `dashboard_access`
+  // تماماً؛ دلوقتي بتتحقن فقط لما مايبقاش فيه بديل خالص.
+  if (allowedScreens.isEmpty &&
       flavorAllowedScreenIds.contains(ScreenId.dashboard)) {
-    allowedScreens.insert(0, ScreenId.dashboard.navigationIndex);
+    allowedScreens.add(ScreenId.dashboard.navigationIndex);
   }
 
   return allowedScreens..sort();

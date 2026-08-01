@@ -379,6 +379,9 @@ class PermissionCodes {
   /// طباعة مرتجع مشتريات
   static const String purchasesReturnPrint = 'purchases_return_print';
 
+  /// عرض أوامر الشراء
+  static const String purchaseOrdersView = 'purchase_orders_view';
+
   // ═══════════════════════════════════════════════════════════════════════════
   // SALES PERMISSIONS (فواتير البيع)
   // ═══════════════════════════════════════════════════════════════════════════
@@ -415,6 +418,9 @@ class PermissionCodes {
 
   /// طباعة فواتير المرتجعات
   static const String salesReturnPrint = 'sales_return_print';
+
+  /// عرض طلبات البيع
+  static const String salesOrdersView = 'sales_orders_view';
 
   // ═══════════════════════════════════════════════════════════════════════════
   // OFFERS PERMISSIONS (العروض)
@@ -1081,6 +1087,11 @@ class PermissionCodes {
       'name': 'طباعة مرتجع مشتريات',
       'category': 'purchases',
     },
+    {
+      'code': purchaseOrdersView,
+      'name': 'عرض أوامر الشراء',
+      'category': 'purchases',
+    },
 
     // ── Sales ──
     {'code': salesView, 'name': 'عرض فواتير البيع', 'category': 'sales'},
@@ -1118,6 +1129,7 @@ class PermissionCodes {
       'name': 'طباعة فواتير المرتجعات',
       'category': 'sales',
     },
+    {'code': salesOrdersView, 'name': 'عرض طلبات البيع', 'category': 'sales'},
 
     // ── Offers ──
     {'code': offersView, 'name': 'عرض العروض', 'category': 'offers'},
