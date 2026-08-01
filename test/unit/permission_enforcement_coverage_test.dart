@@ -45,15 +45,23 @@ bool _isEnforced(String sources, String code, String? constName) {
 }
 
 void main() {
-  test('مفيش كود صلاحية بلا إنفاذ ومش مسجّل', () {
-    final sources = Directory('lib')
+  // مسح شجرة lib/ واستخراج خريطة الثوابت مرة واحدة بس — القراءتين شغل ثابت
+  // ومحدَّد النتيجة، وتكراره لكل test() كان بيضاعف وقت التشغيل من غير أي
+  // فايدة (الاختباران مستقلّين برضه، بيقروا نفس القيمة الجاهزة بس).
+  late final String sources;
+  late final Map<String, String> constByCode;
+
+  setUpAll(() {
+    sources = Directory('lib')
         .listSync(recursive: true)
         .whereType<File>()
         .where((f) => f.path.endsWith('.dart') && !_isDefinitionFile(f.path))
         .map((f) => f.readAsStringSync())
         .join('\n');
+    constByCode = _constantNameByCode();
+  });
 
-    final constByCode = _constantNameByCode();
+  test('مفيش كود صلاحية بلا إنفاذ ومش مسجّل', () {
     final unenforced = <String>[];
     for (final entry in PermissionCodes.masterList) {
       final code = entry['code']!;
@@ -73,14 +81,6 @@ void main() {
   });
 
   test('السجل ما فيهوش كود بقى منفَّذ (يتقلّص ما يكبرش)', () {
-    final sources = Directory('lib')
-        .listSync(recursive: true)
-        .whereType<File>()
-        .where((f) => f.path.endsWith('.dart') && !_isDefinitionFile(f.path))
-        .map((f) => f.readAsStringSync())
-        .join('\n');
-
-    final constByCode = _constantNameByCode();
     final staleEntries = PermissionEnforcementRegistry.knownUnenforced
         .where((c) => _isEnforced(sources, c, constByCode[c]))
         .toList()
