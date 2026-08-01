@@ -755,6 +755,105 @@ EOF
 
 ---
 
+### Task 3c: `dashboard_access` لازم يتمنح للأدوار اللي بتشوف الرئيسية النهارده
+
+مهمة اتولدت من تحفّظ رفعه منفّذ Task 3 واتأكد بالفحص.
+
+**المشكلة:** بعد ما بقت «الرئيسية» متبوّبة بـ`dashboard_access` (في الخريطة وفي عنصر القائمة)، الكود ده مش ممنوح غير لدورين من تسعة:
+
+| المصدر | مين بياخد `dashboard_access` |
+|---|---|
+| `RoleGrantMatrix.defaultGrants` | محاسب · مدير مالي |
+| السيدر (`database_seeder_permissions.dart:767`) | محاسب · مدير مالي |
+
+يعني **كاشير، مخزني، كاشير متقدم، مدير فرع، محاسب متقدم، مدير مخزون** هيفقدوا شاشة الرئيسية. ده أثر جانبي مش هدف: لوحة التحكم كانت بتتحقن قسراً للكل، فمحدش قصد يسحبها من ٦ أدوار. هدف الخطة إن المدير **يقدر** يسحبها ويسري — مش إنها تتسحب من نفسها عند الترقية.
+
+**Files:**
+- Modify: `lib/core/permissions/role_grant_matrix.dart` (الأدوار الستة)
+- Modify: `lib/data/database/database_seeder_permissions.dart` (منح `dashboard_access` لنفس الأدوار)
+- Test: `test/unit/dashboard_access_default_grant_test.dart` (جديد)
+
+**التركيبات الموجودة المستهلَكة:** `RoleGrantMatrix.defaultGrants` — `Map<String, Set<String>>`. و`RoleGrantPreflightService.grantMissingDefaults()` موجودة وبتمنح أكواد المصفوفة الناقصة — **فالتركيبات القديمة بتتعالج من غير مايجريشن**: المشغّل يضغط زرار «منح الصلاحيات الناقصة» في ديالوج فحص الصلاحيات. اذكر ده في رسالة الكوميت.
+
+- [ ] **Step 1: اكتب الاختبار الفاشل**
+
+```dart
+// test/unit/dashboard_access_default_grant_test.dart
+//
+// كل دور تشغيلي لازم ياخد `dashboard_access` افتراضياً.
+//
+// ── ليه ───────────────────────────────────────────────────────────────────
+// قبل ما الشاشة تتبوّب بالكود ده، لوحة التحكم كانت بتتحقن في المسموح قسراً
+// فالكل بيشوفها. لما بقت متبوّبة فعلاً، الأدوار اللي مالهاش الكود فقدت
+// الشاشة — وده أثر جانبي مش قرار. الهدف إن المدير يقدر يسحبها، مش إنها
+// تتسحب لوحدها عند الترقية.
+import 'package:flutter_test/flutter_test.dart';
+import 'package:ural_erp/core/permissions/role_grant_matrix.dart';
+
+void main() {
+  test('كل دور في المصفوفة عنده dashboard_access', () {
+    final missing = <String>[];
+    RoleGrantMatrix.defaultGrants.forEach((role, codes) {
+      if (!codes.contains('dashboard_access')) missing.add(role);
+    });
+    expect(missing, isEmpty,
+        reason: 'الأدوار دي هتفقد شاشة الرئيسية عند الترقية: $missing');
+  });
+}
+```
+
+- [ ] **Step 2: شغّل وتأكد من الفشل**
+
+```bash
+flutter test test/unit/dashboard_access_default_grant_test.dart --concurrency=1
+```
+
+Expected: FAIL — القايمة فيها كاشير، مخزني، كاشير متقدم، مدير فرع، محاسب متقدم، مدير مخزون (ومدير النظام لو مش موجود عنده).
+
+- [ ] **Step 3: ضيف الكود للأدوار الناقصة في المصفوفة وفي السيدر**
+
+في `role_grant_matrix.dart` ضيف `'dashboard_access',` لكل دور ناقصه، وفوق أول واحد حط:
+
+```dart
+      // الرئيسية بقت متبوّبة بـ`dashboard_access` بدل `pos_access`. الكود ده
+      // بيتمنح لكل دور تشغيلي عشان الترقية ما تسحبش الشاشة من حد — السحب
+      // قرار المدير، مش أثر جانبي للإصلاح.
+      'dashboard_access',
+```
+
+وفي السيدر، ضيف نفس المنحة لنفس الأدوار بنفس النمط الموجود.
+
+- [ ] **Step 4: شغّل الاختبار + analyze**
+
+```bash
+flutter test test/unit/dashboard_access_default_grant_test.dart --concurrency=1 && flutter analyze lib test
+```
+
+- [ ] **Step 5: كوميت**
+
+```bash
+git add lib/core/permissions/role_grant_matrix.dart lib/data/database/database_seeder_permissions.dart test/unit/dashboard_access_default_grant_test.dart
+git commit -m "$(cat <<'EOF'
+fix(perms): منح dashboard_access للأدوار اللي بتشوف الرئيسية النهارده
+
+بعد ما «الرئيسية» بقت متبوّبة بـ`dashboard_access` فعلاً، الكود ده كان
+ممنوح لدورين بس من تسعة (محاسب ومدير مالي). يعني كاشير ومخزني وكاشير متقدم
+ومدير فرع ومحاسب متقدم ومدير مخزون كانوا هيفقدوا الشاشة عند الترقية.
+
+ده أثر جانبي مش هدف: لوحة التحكم كانت بتتحقن قسراً للكل، فمحدش قصد يسحبها
+من حد. هدف الإصلاح إن المدير **يقدر** يسحبها ويسري.
+
+التركيبات القديمة بتتعالج من غير مايجريشن: `grantMissingDefaults()` موجودة
+وبتمنح أكواد المصفوفة الناقصة — المشغّل يضغط «منح الصلاحيات الناقصة» في
+ديالوج فحص الصلاحيات.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+EOF
+)"
+```
+
+---
+
 ## المرحلة ٣ — الـ ٨٨ كود بلا إنفاذ
 
 ### Task 4: سجل التغطية + اختبار الحارس
@@ -865,6 +964,26 @@ bool _isDefinitionFile(String path) {
       p.contains('lib/data/database/database_seeder');
 }
 
+/// خريطة «كود الصلاحية ← اسم الثابت» المستخرجة من `permission_codes.dart`.
+///
+/// ── ليه دي لازمة ─────────────────────────────────────────────────────────
+/// نقاط الإنفاذ بتستدعي الصلاحية بشكلين: النص الخام `'pos_save'`، أو الثابت
+/// `PermissionCodes.posSave`. والشكل التاني هو الغالب — حتى مدخلات
+/// `masterList` نفسها مكتوبة بالثوابت. فالبحث عن النص الخام وحده بيقول عن
+/// ٨٥ كود منفَّذ فعلاً إنهم ميتين، وده بيخلي الحارس بلا قيمة.
+Map<String, String> _constantNameByCode() {
+  final src =
+      File('lib/core/permissions/permission_codes.dart').readAsStringSync();
+  final re = RegExp(r"static const String (\w+) = '([a-z0-9_]+)';");
+  return {for (final m in re.allMatches(src)) m.group(2)!: m.group(1)!};
+}
+
+bool _isEnforced(String sources, String code, String? constName) {
+  if (sources.contains("'$code'") || sources.contains('"$code"')) return true;
+  if (constName == null) return false;
+  return RegExp('PermissionCodes\\.$constName\\b').hasMatch(sources);
+}
+
 void main() {
   test('مفيش كود صلاحية بلا إنفاذ ومش مسجّل', () {
     final sources = Directory('lib')
@@ -874,10 +993,11 @@ void main() {
         .map((f) => f.readAsStringSync())
         .join('\n');
 
+    final constByCode = _constantNameByCode();
     final unenforced = <String>[];
     for (final entry in PermissionCodes.masterList) {
       final code = entry['code']!;
-      if (!sources.contains("'$code'") && !sources.contains('"$code"')) {
+      if (!_isEnforced(sources, code, constByCode[code])) {
         unenforced.add(code);
       }
     }
@@ -900,8 +1020,9 @@ void main() {
         .map((f) => f.readAsStringSync())
         .join('\n');
 
+    final constByCode = _constantNameByCode();
     final staleEntries = PermissionEnforcementRegistry.knownUnenforced
-        .where((c) => sources.contains("'$c'") || sources.contains('"$c"'))
+        .where((c) => _isEnforced(sources, c, constByCode[c]))
         .toList()
       ..sort();
 
