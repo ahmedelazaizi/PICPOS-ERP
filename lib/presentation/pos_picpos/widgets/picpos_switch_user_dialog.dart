@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
+import '../../../app_main_screen.dart' show enforceShiftForUser;
 import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/providers.dart';
 import '../../../domain/entities/user_entity.dart';
@@ -140,6 +141,19 @@ class _PicposSwitchUserDialogState
       } catch (_) {}
 
       if (mounted) Navigator.of(context).pop(true);
+
+      // الكاشير الجاي لازم يتسأل يفتح ورديته. `switchUser` ما بتهدّش الشجرة
+      // عن قصد (عشان الديالوج ده ما يموتش مع مفتاح `MaterialApp`)، فـ
+      // `initState` — المكان الوحيد اللي كان بينادي الفحص ده — ما بتشتغلش.
+      // من غير النداء ده هيبيع بلا وردية مفتوحة وفواتيره ما تتنسبش لأي
+      // وردية. قبل إلغاء الإغلاق الإجباري كان ده متغطّى بالصدفة: ديالوج
+      // الإغلاق كان بيسجّل الخروج فالشجرة تتهد.
+      //
+      // بعد الـ`pop` عشان ديالوج التبديل ما يكونش لسه فوق ديالوج فتح
+      // الوردية.
+      if (context.mounted) {
+        await enforceShiftForUser(context, ref, callSite: 'switchUser');
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() {
