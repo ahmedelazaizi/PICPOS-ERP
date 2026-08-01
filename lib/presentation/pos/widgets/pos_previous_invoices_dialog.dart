@@ -222,7 +222,10 @@ class _PosPreviousInvoicesDialogState
     final user = authState.user;
     if (user == null) return Stream.value(const []);
 
-    final isAdmin = authState.isAdmin || authState.isManager;
+    // مدير النظام بس هو اللي بيشوف كل فواتير الوردية. قبل كده كانت
+    // `isAdmin || isManager`، وهي بتتحدد بمطابقة اسم الدور — فـ«مدير فرع»
+    // كان بيشوف فواتير كل الكاشيرية بلا صلاحية.
+    final isAdmin = authState.hasSystemAdminBypass;
     final shiftStart = _shiftStartTime;
     // Spec 136 ISS-25 — scope to the OPEN SHIFT window so a shift that crosses
     // midnight keeps showing its pre-midnight invoices (the calendar-day

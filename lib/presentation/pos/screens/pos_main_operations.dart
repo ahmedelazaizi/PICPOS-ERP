@@ -349,7 +349,10 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
         // SEC: Restrict quick-add to users with products_add permission (manager/admin)
         final authState = ref.read(authProvider);
         final perms = ref.read(currentUserPermissionsProvider).asData?.value ?? [];
-        final canAddProducts = authState.isAdmin || authState.isManager || perms.contains(PermissionCodes.productsAdd);
+        // مدير النظام بس هو اللي بيتجاوز صلاحية إضافة الأصناف. قبل كده كانت
+        // `isAdmin || isManager`، وهي بتتحدد بمطابقة اسم الدور — فـ«مدير فرع»
+        // كان بيعدّي بلا صلاحية.
+        final canAddProducts = authState.hasSystemAdminBypass || perms.contains(PermissionCodes.productsAdd);
 
         if (!canAddProducts) {
           if (mounted) {

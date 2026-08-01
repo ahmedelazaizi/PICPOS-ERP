@@ -410,7 +410,10 @@ class PosClosingController extends Notifier<PosClosingState> {
 
     try {
       final authState = ref.read(authProvider);
-      final isAdmin = authState.isAdmin || authState.isManager;
+      // مدير النظام بس هو اللي بيتجاوز كلمة سر الإقفال. قبل كده كانت
+      // `isAdmin || isManager`، وهي بتتحدد بمطابقة اسم الدور — فـ«مدير فرع»
+      // كان بيعدّي بلا كلمة سر.
+      final isAdmin = authState.hasSystemAdminBypass;
       final userId = authState.user?.id ?? 1;
       final closingMethod = state.closingMethod;
 

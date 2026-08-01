@@ -126,7 +126,10 @@ class _PicposCashierClosingDialogState
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final perms = ref.watch(currentUserPermissionsProvider).value ?? [];
-    final isAdmin = authState.isAdmin || authState.isManager;
+    // مدير النظام بس هو اللي بيتجاوز صلاحية عرض تفاصيل الإقفال. قبل كده كانت
+    // `isAdmin || isManager`، وهي بتتحدد بمطابقة اسم الدور — فـ«مدير فرع»
+    // كان بيعدّي بلا صلاحية.
+    final isAdmin = authState.hasSystemAdminBypass;
     final canViewDetails = isAdmin || perms.contains(PermissionCodes.posClosingViewDetails);
 
     final closingState = ref.watch(posClosingControllerProvider);

@@ -56,11 +56,16 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
 
   /// #20: Check if user has permission for a payment method
   bool _hasPermission(String permCode) {
-    final auth = ref.read(authProvider);
-    if (auth.isAdmin || auth.isManager) return true; // Admins bypass
     final permsAsync = ref.read(currentUserPermissionsProvider);
-    final permissions = permsAsync.asData?.value ?? [];
-    return permissions.contains(permCode) || permissions.isEmpty;
+    final data = permsAsync.asData;
+    // لسه بيحمّل ومفيش نسخة مخبّية — ما نمنعش على شك، بس ما نفتحش الباب
+    // كمان: بنسيب الطريقة الافتراضية بس لحد ما البيانات توصل.
+    if (data == null) return permCode == PermissionCodes.posPaymentCash;
+    return hasPaymentPermission(
+      isSystemAdmin: ref.read(authProvider).hasSystemAdminBypass,
+      permissions: data.value,
+      permCode: permCode,
+    );
   }
 
   @override
@@ -493,6 +498,30 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
       ),
     );
   }
+}
+
+/// هل المستخدم يقدر يستعمل طريقة الدفع دي؟
+///
+/// ── ليه دالة عليا مكشوفة للاختبار ────────────────────────────────────────
+/// كانت دالة خاصة جوه `State` فما كانش ينفع تتغطّى، وعاشت فيها غلطتين
+/// لحد ما اتكشفوا ميدانياً. نفس السبب اللي خلّى `extractChildAction` تتكشف
+/// في `f8d3fa9`.
+///
+/// ── الغلطتين ─────────────────────────────────────────────────────────────
+/// `auth.isAdmin || auth.isManager` بيتحددوا بمطابقة **اسم الدور**، فأي دور
+/// اسمه فيه «مدير» كان بيعدّي — ودول أربعة من تسعة أدوار مزروعة.
+///
+/// و`|| permissions.isEmpty` كان فشلاً مفتوحاً: سحب كل صلاحيات الدفع من
+/// كاشير كان بيديله كلها. القايمة الفاضية معناها «مالوش صلاحية»، مش «متأكدش».
+/// حالة «لسه بيحمّل» بتتفرّق بـ`asData == null` عند المستدعي مش هنا.
+@visibleForTesting
+bool hasPaymentPermission({
+  required bool isSystemAdmin,
+  required List<String> permissions,
+  required String permCode,
+}) {
+  if (isSystemAdmin) return true;
+  return permissions.contains(permCode);
 }
 
 /// Result of payment method selection

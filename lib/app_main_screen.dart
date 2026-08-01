@@ -260,6 +260,10 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
   Future<void> _enforceShiftForCashier() async {
     if (!mounted) return;
     final authState = ref.read(authProvider);
+    // Spec 135 NOTE 2 — سياسة وردية مقصودة، مش قرار صلاحية: مدير النظام
+    // عمداً ما بيفتحش وردية لنفسه، وبيتصل بوردية الكاشير المفتوحة عشان
+    // يسويها. `isAdmin || isManager` هنا تفادياً لتضييق السلوك على «مدير
+    // فرع» لغاية ما فحص «مين المدير» ده يتراجع فيه قرار منفصل.
     if (authState.isAdmin || authState.isManager) return; // admins/managers skip
     final userId = authState.user?.id;
     if (userId == null) return;
@@ -583,9 +587,11 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
     }
 
     final authState = ref.read(authProvider);
+    // ده قرار صلاحية حقيقي: بيقرر هل غلق البرنامج محتاج كلمة سر مدير ولا لأ.
+    // قبل كده كانت `isAdmin || isManager` بتتحدد بمطابقة اسم الدور، فأي دور
+    // اسمه فيه «مدير» كان بيتخطى كلمة السر.
     final isAdminOrManager =
-        authState.isAdmin ||
-        authState.isManager ||
+        authState.hasSystemAdminBypass ||
         (authState.role?.isSystemRole ?? false);
 
     if (isAdminOrManager) {

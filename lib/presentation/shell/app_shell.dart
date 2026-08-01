@@ -566,6 +566,9 @@ class _AppShellState extends ConsumerState<AppShell> {
           setState(() {
             // Admins/managers see the sidebar fully; cashiers are already
             // handled above. Other roles default to collapsed icon-only.
+            // تجميلي مش قرار صلاحية: أقصى أثره إخفاء/توسيع الشريط الجانبي
+            // افتراضياً، والزر العائم (FAB) بيرجّعه بكلمة سر مدير في كل
+            // الأحوال — مفيش وظيفة أو بيانات بتتفتح هنا زيادة عن اللزوم.
             final isPriv = next.isAdmin || next.isManager;
             _isHidden = !isPriv; // hide for anyone non-privileged
             _isExpanded = isPriv;
