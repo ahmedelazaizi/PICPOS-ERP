@@ -35,6 +35,114 @@ import 'reports/shifts_report_screen.dart';
 /// This screen is intentionally plain/neutral (no PicPos shell, no brand
 /// conditional of any kind) so it stays cleanly patchable to UralCash.
 /// A PicPos-identity fork of this screen is a separate task.
+/// كل الورديات المفتوحة على الفرع — القسم اللي بيعوّض الإغلاق الإجباري.
+///
+/// ── ليه موجود ────────────────────────────────────────────────────────────
+/// إلغاء بوابة الإغلاق الإجباري شال الآلية اللي كانت بتضمن إن مفيش وردية
+/// تتساب بلا ترصيد. بدل ما نمنع الكاشير، المسؤولية بقت على المشرف: اللي عنده
+/// `pos_shift_close` بيشوف الورديات المتروكة ويقفلها.
+///
+/// ── ليه زرار الإغلاق بيتعطّل على ورديات الغير ────────────────────────────
+/// `PosClosingController` بيحلّ الوردية المستهدفة حسب `isOriginallyAdmin`:
+/// اللي مش مدير أصلي بيقفل **ورديته هو** مهما كانت الوردية اللي ضغط عليها.
+/// فتفعيل الزرار على وردية غيره كان هيقفل الوردية الغلط بصمت — وده بالظبط
+/// النوع اللي سبق٠١٣٦ اتكتب عشانه. التعطيل مع سبب مكتوب أأمن.
+///
+/// دالة عليا `@visibleForTesting` عشان تتبني لوحدها: الشاشة بتقرا
+/// `posClosingControllerProvider` اللي بيحسب تعداد الوردية المالي من قاعدة
+/// بيانات حقيقية.
+@visibleForTesting
+Widget buildOpenShiftsSection({
+  required List<ShiftData> shifts,
+  required Map<int, String> userNames,
+  required int? currentUserId,
+  required bool canCloseOthers,
+  required void Function(ShiftData) onClose,
+}) {
+  if (shifts.isEmpty) {
+    return const Card(
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(PhosphorIconsBold.checkCircle, color: AppColors.success),
+            SizedBox(width: 12),
+            Expanded(child: Text('لا توجد ورديات مفتوحة على الفرع')),
+          ],
+        ),
+      ),
+    );
+  }
+
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      for (final shift in shifts)
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'وردية #${shift.id} — ${userNames[shift.userId] ?? 'مستخدم #${shift.userId}'}',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'فُتحت: ${_formatShiftStart(shift.startTime)}'
+                        ' · رصيد افتتاحي: ${shift.openingBalance.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          color: AppColors.textMuted,
+                          fontSize: 12,
+                        ),
+                      ),
+                      if (!canCloseOthers && shift.userId != currentUserId)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 4),
+                          child: Text(
+                            'إغلاق وردية كاشير تاني متاح لمدير النظام فقط',
+                            style: TextStyle(
+                              color: AppColors.warning,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                PermissionGuard(
+                  permission: PermissionCodes.posShiftClose,
+                  allowManagerOverride: true,
+                  actionName: 'إغلاق وردية #${shift.id}',
+                  // صريحة: الحارس بيمسك الضغطة، ولو ما عرفش يشغّل إيه بعد
+                  // الموافقة بيفكّ القفل وبس (f8d3fa9).
+                  onGranted: () => onClose(shift),
+                  child: ElevatedButton.icon(
+                    onPressed: (canCloseOthers || shift.userId == currentUserId)
+                        ? () => onClose(shift)
+                        : null,
+                    icon: const Icon(PhosphorIconsBold.lockKey, size: 16),
+                    label: const Text('إغلاق الوردية'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+    ],
+  );
+}
+
+String _formatShiftStart(DateTime t) {
+  String two(int v) => v.toString().padLeft(2, '0');
+  return '${t.year}-${two(t.month)}-${two(t.day)} ${two(t.hour)}:${two(t.minute)}';
+}
+
 class ShiftCloseScreen extends ConsumerStatefulWidget {
   const ShiftCloseScreen({super.key});
 
@@ -103,6 +211,39 @@ class _ShiftCloseScreenState extends ConsumerState<ShiftCloseScreen> {
       context,
       MaterialPageRoute(builder: (_) => const ShiftsReportScreen()),
     );
+  }
+
+  /// الورديات المفتوحة على فرع الجهاز. `branchId` بـ`null` بترجّع كل الفروع —
+  /// نفس التدرّج اللي `PosClosingController` بيستعمله لما فرع الجهاز ما
+  /// يتحلّش (سبق١٣٦): فرع الجهاز الأول، وبعدين الكل، عشان فرع متحلّ غلط
+  /// ما يخفيش وردية متروكة.
+  Future<List<ShiftData>> _loadOpenShifts() async {
+    final treasuryRepo = ref.read(treasuryRepositoryProvider);
+    int? terminalBranchId;
+    try {
+      terminalBranchId =
+          (await ref.read(branchRepositoryProvider).getActiveBranch())?.id;
+    } catch (_) {
+      // Non-fatal — نكمّل على كل الفروع.
+    }
+    var shifts =
+        await treasuryRepo.getOpenShiftsForBranch(branchId: terminalBranchId);
+    if (shifts.isEmpty && terminalBranchId != null) {
+      shifts = await treasuryRepo.getOpenShiftsForBranch(branchId: null);
+    }
+    return shifts;
+  }
+
+  /// بيفتح ديالوج الإغلاق الموجود — **مفيش منطق إغلاق تاني هنا**. نسخة تانية
+  /// من حساب التعداد المالي بتبطّل تطابق أول تعديل.
+  ///
+  /// لما يبقى فيه أكتر من وردية مفتوحة، الديالوج نفسه بيعرض منتقي الورديات
+  /// (`needsShiftSelection`) واللي بيقفل بيختار منه. القسم فوق هو وسيلة
+  /// **الاكتشاف**؛ الديالوج فاضل هو صاحب القرار في أي وردية بتتقفل — عن قصد،
+  /// عشان قواعد الحلّ بتاعت سبق١٣٦ تفضل في مكان واحد.
+  Future<void> _closeShiftFromList(ShiftData shift) async {
+    await PosCashierClosingDialog.show(context);
+    if (mounted) setState(() {}); // إعادة تحميل القايمة بعد الإغلاق
   }
 
   @override
@@ -205,6 +346,55 @@ class _ShiftCloseScreenState extends ConsumerState<ShiftCloseScreen> {
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
+          ),
+          const SizedBox(height: 24),
+
+          // ─── الورديات المفتوحة على الفرع ───────────────────────────────
+          // القسم ده بيعوّض بوابة الإغلاق الإجباري اللي اتلغت: الوردية بقت
+          // تفضل مفتوحة عند الخروج والتبديل، فلازم يبقى فيه مكان واحد
+          // بيوريها لمين مسؤول عن ترصيدها.
+          const Row(
+            children: [
+              Icon(PhosphorIconsBold.users, color: AppColors.primary),
+              SizedBox(width: 8),
+              Text(
+                'الورديات المفتوحة على الفرع',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          FutureBuilder<List<ShiftData>>(
+            future: _loadOpenShifts(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              }
+              if (snapshot.hasError) {
+                return Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text('تعذّر تحميل الورديات: ${snapshot.error}'),
+                  ),
+                );
+              }
+
+              final authState = ref.watch(authProvider);
+              final users = ref.watch(allUsersProvider).value ?? const [];
+              return buildOpenShiftsSection(
+                shifts: snapshot.data ?? const [],
+                userNames: {
+                  for (final u in users)
+                    u.user.id: u.user.displayName ?? u.user.username,
+                },
+                currentUserId: authState.user?.id,
+                canCloseOthers: authState.isOriginallyAdmin,
+                onClose: _closeShiftFromList,
+              );
+            },
           ),
         ],
       ),
