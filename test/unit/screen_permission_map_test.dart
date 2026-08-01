@@ -45,20 +45,35 @@ void main() {
     // يعدّي — ودي نفس العائلة بالظبط. الاختبار اللي بيغطي عيّنة بيثبّت
     // العيّنة، مش القاعدة. التعميم ده كشف اختلاف تاني من نفس العائلة على
     // شاشة «الفروع» (راجع تعليق Task 3d فوق عنصرها في auth_providers.dart).
-    //
-    // أي مدخل مالوش `ScreenId` مقابل بيتستثنى صراحة بسببه تحت — الاستثناء
-    // المكتوب أحسن من اختبار بيعدّي على الفاضي.
+    var checked = 0;
     final mismatches = <String>[];
+    final unresolved = <String>[];
     for (final item in kAllNavItemDefs) {
       final screen = _screenForNavItem(item);
-      if (screen == null) continue; // مستثنى بسبب مكتوب في _screenForNavItem
+      if (screen == null) {
+        unresolved.add('${item.label} (index=${item.index}): مفيش ScreenId');
+        continue;
+      }
       final mapped = screenPermissionMap[screen];
-      if (mapped == null) continue;
+      if (mapped == null) {
+        unresolved.add('${item.label}: $screen مش في screenPermissionMap');
+        continue;
+      }
+      checked++;
       if (item.permission != mapped) {
         mismatches.add('${item.label}: القائمة=${item.permission} '
             'الخريطة=$mapped');
       }
     }
+
+    // ── ليه بنأكد العدد ───────────────────────────────────────────────────
+    // `continue` الصامتة كانت بتخلي الاختبار يضعف من غير ما يفشل: مدخل جديد
+    // بـindex مالوش شاشة كان بيتخطى وخلاص. الاختبار اللي بيقل تغطيته لوحده
+    // أسوأ من اللي مش موجود، لأنه بيدي طمأنينة كاذبة.
+    expect(unresolved, isEmpty,
+        reason: 'مداخل ما اتفحصتش — أضفها للخريطة أو استثنيها بسبب مكتوب:\n'
+            '${unresolved.join('\n')}');
+    expect(checked, kAllNavItemDefs.length);
     expect(mismatches, isEmpty,
         reason: 'مدخل بيظهر لناس ما يقدروش يفتحوا شاشته (أو العكس):\n'
             '${mismatches.join('\n')}');
