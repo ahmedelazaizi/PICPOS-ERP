@@ -225,8 +225,8 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     }
   }
 
-  /// Hand the till to another cashier. Refuses while a shift is open — the
-  /// gate inside the dialog is the same one that guards logout.
+  /// Hand the till to another cashier. وردية الخارج بتفضل مفتوحة — الديالوج
+  /// بيبلّغ بيها بس (`notifyOpenShift`)، ونفس الإشعار بيتنادى عند الخروج.
   Future<void> _switchUser() async {
     // A cart in progress belongs to the outgoing cashier; make them decide
     // what to do with it before the session changes underneath them.

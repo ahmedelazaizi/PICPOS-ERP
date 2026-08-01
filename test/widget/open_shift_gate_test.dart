@@ -1,17 +1,22 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// `ensureShiftClosed` — the forced shift-close gate shared by TWO paths:
+// `notifyOpenShift` — إشعار غير مانع بوجود وردية مفتوحة، بيتنادى من مسارين:
 //   • تسجيل الخروج            (app_shell.dart)
 //   • تحويل المستخدم في نقطة البيع (picpos_switch_user_dialog.dart)
 //
-// The gate used to return `blocked` for BOTH "user cancelled" and "shift was
-// closed successfully". That was invisible while logout was its only caller —
-// the closing dialog logs the user out itself, so nothing needed to continue.
-// But it made the switch-user path impossible: after closing the shift the
-// switch dialog was never reached and the cashier landed on the login screen.
+// ── ليه اتغير ──────────────────────────────────────────────────────────────
+// كان اسمه `ensureShiftClosed` وكان **بوابة مانعة**: بيجبر الكاشير يرصّد
+// ورديته قبل الخروج أو التبديل، والتعليق كان بيقول صراحة إنها مالهاش تجاوز
+// ولا حتى لمدير النظام. المستخدم راجع القرار وطلب إن الوردية تفضل مفتوحة
+// ويكمّلها صاحبها لما يرجع، أو يقفلها اللي عنده `pos_shift_close`.
 //
-// These tests pin the three-way result, because collapsing `closed` back into
-// `blocked` breaks switch-user, and treating `closed` as "proceed" in the
-// LOGOUT path would show a logout dialog to an already-logged-out user.
+// ── ليه ده مش بيكسر نسبة المبيعات ──────────────────────────────────────────
+// `shifts.userId` عمود موجود من الأول، و`getCurrentOpenShift(userId)` مفلترة
+// بيه وبـ`status='open'`. يعني وردية كل كاشير مستقلة أصلاً: مبيعات «ب» بتروح
+// لوردية «ب» مهما كانت وردية «أ» لسه مفتوحة. البوابة ما كانتش بتحمي النسبة —
+// كانت بتفرض انضباط الترصيد، وده اتنقل لشاشة الورديات المتروكة.
+//
+// الاختبارات دي بتثبّت **إن المستدعي بيكمّل دايماً** — دي كل نقطة التغيير.
+// أي رجوع لقيمة يتفرّع عليها المستدعي بيحوّلها لبوابة تاني بالغلط.
 // ═══════════════════════════════════════════════════════════════════════════
 
 import 'package:flutter/material.dart';
@@ -28,18 +33,20 @@ import 'package:ural_erp/services/websocket_sync_client.dart';
 /// Only `getCurrentOpenShift` matters here; `noSuchMethod` absorbs the rest of
 /// the 30-plus member interface so this fake doesn't rot every time it grows.
 class _FakeTreasuryRepo implements ITreasuryRepository {
-  /// Queue of answers, consumed one per call. The gate asks TWICE — once to
-  /// detect the open shift, once after the closing dialog to verify it really
-  /// closed — so the two answers must be independently controllable.
-  final List<ShiftData?> answers;
+  final ShiftData? answer;
+
+  /// لما تبقى `true` الاستعلام بيرمي — عشان نثبت إن فشل الاستعلام
+  /// **ما يعطّلش** المستدعي (الفشل الآمن اتقلب مع تغيير السلوك).
+  final bool throws;
+
   int calls = 0;
 
-  _FakeTreasuryRepo(this.answers);
+  _FakeTreasuryRepo(this.answer, {this.throws = false});
 
   @override
   Future<ShiftData?> getCurrentOpenShift(int userId) async {
-    final answer = answers[calls.clamp(0, answers.length - 1)];
     calls++;
+    if (throws) throw StateError('db down');
     return answer;
   }
 
@@ -87,27 +94,24 @@ void main() {
     WebSocketSyncClient.instance.connected.value = false;
   });
 
-  /// Drives the gate inside a real widget tree (it shows dialogs).
+  /// بتشغّل `notifyOpenShift` جوه شجرة حقيقية (بيعرض توست)، وبترجّع الـfake
+  /// عشان الاختبار يتأكد من عدد الاستعلامات.
   ///
-  /// [confirmClose] taps «إغلاق الوردية» on the warning dialog when true, and
-  /// «إلغاء» when false. [onClosingDialog] stands in for the brand closing
-  /// dialog so no financial code runs here.
-  Future<ShiftGateResult> runGate(
+  /// [proceeded] بتتحط `true` **بعد** رجوع الدالة — لو الدالة اتحوّلت لبوابة
+  /// بأي شكل، السطر ده مش هيتنفّذ أو هيتأخر، والتوقّع بيفشل.
+  Future<_FakeTreasuryRepo> runNotify(
     WidgetTester tester, {
-    required List<ShiftData?> shiftAnswers,
-    required bool confirmClose,
+    required ShiftData? shift,
     bool signedIn = true,
-    VoidCallback? onClosingDialog,
+    bool repoThrows = false,
+    required void Function() onReturn,
   }) async {
-    ShiftGateResult? result;
+    final repo = _FakeTreasuryRepo(shift, throws: repoThrows);
 
     // Signing in BEFORE pumping: calling `login()` from inside `build` trips
     // Riverpod's "modified a provider while the tree was building" assert.
     final container = ProviderContainer(
-      overrides: [
-        treasuryRepositoryProvider
-            .overrideWithValue(_FakeTreasuryRepo(shiftAnswers)),
-      ],
+      overrides: [treasuryRepositoryProvider.overrideWithValue(repo)],
     );
     addTearDown(container.dispose);
     if (signedIn) container.read(authProvider.notifier).login(_cashier());
@@ -120,14 +124,12 @@ void main() {
             builder: (context, ref, _) => Scaffold(
               body: ElevatedButton(
                 onPressed: () async {
-                  result = await ensureShiftClosed(
+                  await notifyOpenShift(
                     context: context,
                     ref: ref,
                     reason: 'اختبار',
-                    showClosingDialog: (ctx) async {
-                      onClosingDialog?.call();
-                    },
                   );
+                  onReturn();
                 },
                 child: const Text('go'),
               ),
@@ -139,113 +141,79 @@ void main() {
 
     await tester.tap(find.text('go'));
     await tester.pumpAndSettle();
-
-    // The «وردية مفتوحة» warning only appears when a shift was found.
-    if (find.text('وردية مفتوحة').evaluate().isNotEmpty) {
-      await tester.tap(find.text(confirmClose ? 'إغلاق الوردية' : 'إلغاء'));
-      await tester.pumpAndSettle();
-    }
-    return result!;
+    return repo;
   }
 
-  testWidgets('no open shift → clear (the caller proceeds untouched)',
-      (tester) async {
-    final result = await runGate(tester,
-        shiftAnswers: [null], confirmClose: false);
-    expect(result, ShiftGateResult.clear);
-  });
-
-  testWidgets('not signed in → clear', (tester) async {
-    final result = await runGate(tester,
-        shiftAnswers: [_openShift()], confirmClose: false, signedIn: false);
-    expect(result, ShiftGateResult.clear,
-        reason: 'no user means no shift to attribute');
-  });
-
-  testWidgets('open shift + cashier cancels → blocked', (tester) async {
-    var closingShown = false;
-    final result = await runGate(
-      tester,
-      shiftAnswers: [_openShift(), _openShift()],
-      confirmClose: false,
-      onClosingDialog: () => closingShown = true,
-    );
-
-    expect(result, ShiftGateResult.blocked);
-    expect(closingShown, isFalse,
-        reason: 'cancelling must not open the closing dialog');
-  });
-
-  testWidgets('open shift + closed successfully → closed', (tester) async {
-    var closingShown = false;
-    final result = await runGate(
-      tester,
-      // First answer: the shift exists. Second: it is gone → really closed.
-      shiftAnswers: [_openShift(), null],
-      confirmClose: true,
-      onClosingDialog: () => closingShown = true,
-    );
-
-    expect(closingShown, isTrue);
-    expect(result, ShiftGateResult.closed,
-        reason: 'switch-user relies on this to continue to its own dialog');
-  });
-
-  testWidgets('closing dialog dismissed without closing → blocked',
-      (tester) async {
-    // The cashier opened the closing dialog and backed out of it. The gate
-    // must not take "the dialog returned" as "the shift closed" — it re-reads
-    // the shift, which is still open.
-    final result = await runGate(
-      tester,
-      shiftAnswers: [_openShift(), _openShift()],
-      confirmClose: true,
-      onClosingDialog: () {},
-    );
-
-    expect(result, ShiftGateResult.blocked,
-        reason: 'the shift is still open, so nobody may proceed');
-  });
-
-  testWidgets('the shift is re-read after the closing dialog', (tester) async {
-    final repo = _FakeTreasuryRepo([_openShift(), null]);
-    ShiftGateResult? result;
-
-    final container = ProviderContainer(
-      overrides: [treasuryRepositoryProvider.overrideWithValue(repo)],
-    );
-    addTearDown(container.dispose);
-    container.read(authProvider.notifier).login(_cashier());
-
-    await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: MaterialApp(
-          home: Consumer(
-            builder: (context, ref, _) => Scaffold(
-              body: ElevatedButton(
-                onPressed: () async => result = await ensureShiftClosed(
-                  context: context,
-                  ref: ref,
-                  reason: 'اختبار',
-                  showClosingDialog: (ctx) async {},
-                ),
-                child: const Text('go'),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-
-    await tester.tap(find.text('go'));
+  /// `AppToast.show` بيجدول مؤقّت إخفاء تلقائي (٥ ثواني للتحذير) وبيشيل
+  /// الـ`OverlayEntry` بعده. من غير تصريف المؤقّت ده، الاختبار بيموت بـ
+  /// «A Timer is still pending even after the widget tree was disposed».
+  /// بيتنادى **بعد** التأكيدات عشان التوست يكون لسه ظاهر وقتها.
+  Future<void> drainToast(WidgetTester tester) async {
+    await tester.pump(const Duration(seconds: 6));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('إغلاق الوردية'));
-    await tester.pumpAndSettle();
+  }
 
-    expect(result, ShiftGateResult.closed);
-    expect(repo.calls, 2,
-        reason: 'the DB is the source of truth, not the dialog returning — '
-            'showClosingDialog is Future<void> and cannot report success');
+  testWidgets('وردية مفتوحة → الإشعار بيظهر والمستدعي بيكمّل', (tester) async {
+    var proceeded = false;
+    await runNotify(
+      tester,
+      shift: _openShift(),
+      onReturn: () => proceeded = true,
+    );
+
+    expect(proceeded, isTrue,
+        reason: 'الإشعار ما يمنعش — دي كل نقطة التغيير');
+    expect(find.textContaining('ورديتك (#7)'), findsOneWidget);
+    await drainToast(tester);
+  });
+
+  testWidgets('مفيش وردية مفتوحة → مفيش إشعار والمستدعي بيكمّل', (tester) async {
+    var proceeded = false;
+    await runNotify(tester, shift: null, onReturn: () => proceeded = true);
+
+    expect(proceeded, isTrue);
+    expect(find.textContaining('ورديتك'), findsNothing);
+  });
+
+  testWidgets('مش مسجّل دخول → مفيش إشعار ولا استعلام', (tester) async {
+    var proceeded = false;
+    final repo = await runNotify(
+      tester,
+      shift: _openShift(),
+      signedIn: false,
+      onReturn: () => proceeded = true,
+    );
+
+    expect(proceeded, isTrue);
+    expect(repo.calls, 0, reason: 'مفيش مستخدم يعني مفيش وردية تتنسب له');
+    expect(find.textContaining('ورديتك'), findsNothing);
+  });
+
+  testWidgets('فشل الاستعلام ما يوقفش المستدعي', (tester) async {
+    // الفشل الآمن اتقلب: قبل كده «مقدرناش نتأكد → امنع» — وده كان صح وقت ما
+    // كانت بوابة. دلوقتي تعطيل الخروج على إشعار هو الضرر الأكبر.
+    var proceeded = false;
+    await runNotify(
+      tester,
+      shift: _openShift(),
+      repoThrows: true,
+      onReturn: () => proceeded = true,
+    );
+
+    expect(proceeded, isTrue);
+    expect(find.textContaining('ورديتك'), findsNothing);
+  });
+
+  testWidgets('استعلام واحد بس — مفيش إعادة قراءة بعد إغلاق', (tester) async {
+    // البوابة القديمة كانت بتستعلم مرتين (قبل الديالوج وبعده) عشان تتأكد إن
+    // الوردية قفلت فعلاً. الإشعار مالوش ديالوج إغلاق أصلاً، فاستعلام واحد.
+    final repo = await runNotify(
+      tester,
+      shift: _openShift(),
+      onReturn: () {},
+    );
+
+    expect(repo.calls, 1);
+    await drainToast(tester);
   });
 }

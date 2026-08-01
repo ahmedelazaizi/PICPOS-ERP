@@ -18,30 +18,22 @@ import '../../shift_close_picpos/widgets/picpos_cashier_closing_dialog.dart';
 /// happened to log in that morning, which makes the shift report, the
 /// activity log and the variance JE attribute everything to the wrong person.
 ///
-/// The shift gate is NOT optional here. Switching user while a shift is open
-/// would strand that shift under the outgoing cashier with the incoming one's
-/// sales landing in it.
+/// وردية الكاشير الخارج **بتفضل مفتوحة** — النسبة مضمونة بـ`shifts.userId`
+/// و`getCurrentOpenShift(userId)`، فمبيعات الكاشير الجاي بتروح لورديته هو.
 class PicposSwitchUserDialog extends ConsumerStatefulWidget {
   const PicposSwitchUserDialog._();
 
-  /// Runs the whole flow: shift gate → credentials → session swap.
+  /// Runs the whole flow: shift notice → credentials → session swap.
   ///
   /// Returns true only when the user was actually switched.
   static Future<bool> show(BuildContext context, WidgetRef ref) async {
-    final gate = await ensureShiftClosed(
+    // إشعار مش بوابة: التحويل بيكمّل مهما كانت وردية الخارج مفتوحة.
+    await notifyOpenShift(
       context: context,
       ref: ref,
       reason: 'قبل تحويل المستخدم',
-      // `logoutAfterClose: false` هو بيت القصيد: الديالوج بيقفل الوردية ويصفّيها
-      // ويطبع تقريرها، **ومايسجّلش الخروج** — فالتحويل بيكمّل على نفس الشاشة.
-      // من غيرها كان الكاشير يلاقي نفسه على شاشة الدخول ويرجع يدخل يدوي، وهي
-      // الشكوى اللي المسار ده موجود عشانها.
-      showClosingDialog: (ctx) =>
-          PicposCashierClosingDialog.show(ctx, logoutAfterClose: false),
     );
-    // `clear` (مفيش وردية) و `closed` (اتقفلت دلوقتي) الاتنين بيكمّلوا.
-    // `blocked` بس هي اللي بتوقف — الكاشير ألغى والوردية لسه مفتوحة.
-    if (gate == ShiftGateResult.blocked || !context.mounted) return false;
+    if (!context.mounted) return false;
 
     final switched = await showDialog<bool>(
       context: context,
