@@ -99,6 +99,8 @@ import '../../../core/permissions/permission_codes.dart';
 import '../../../core/config/business_profile_provider.dart';
 import '../../../data/providers/providers.dart';
 import '../../widgets/permission_guard.dart';
+// دفعة ١٠ — تايلات الإعدادات المحروسة، مشتركة بين البراندين.
+import '../../widgets/settings/settings_permission_tiles.dart';
 import '../../widgets/settings/backup_restore_widget.dart';
 import '../../widgets/settings/company_info_widget.dart';
 import '../../users_picpos/screens/users_management_picpos_screen.dart';
@@ -404,11 +406,8 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
           _buildSettingsCard(
             title: 'إعدادات النظام والمظهر',
             children: [
-              ListTile(
-                leading: const Icon(PhosphorIconsBold.buildings),
-                title: const Text('معلومات الشركة'),
-                trailing: const Icon(PhosphorIconsBold.caretLeft),
-                onTap: () => showCompanyInfoDialog(context),
+              buildCompanyInfoTileGuarded(
+                onOpen: () => showCompanyInfoDialog(context),
               ),
               const _IndustryModeToggle(),
               const _CurrencySelector(),
@@ -432,17 +431,8 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
                     _showThemeSelector(context, ref, themeMode),
               ),
               const _DefaultHomeScreenSelector(),
-              ListTile(
-                leading: const Icon(
-                  PhosphorIconsBold.database,
-                  color: AppColors.warning,
-                ),
-                title: const Text('قاعدة البيانات'),
-                subtitle: const Text(
-                  'اختيار نوع قاعدة البيانات (SQLite/PostgreSQL)',
-                ),
-                trailing: const Icon(PhosphorIconsBold.caretLeft),
-                onTap: () => showDatabaseSettingsDialog(context),
+              buildDatabaseSettingsTileGuarded(
+                onOpen: () => showDatabaseSettingsDialog(context),
               ),
               const Divider(height: 1),
               // Phase 5C admin tools — branch-scope cleanup +
@@ -637,17 +627,8 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
           _buildSettingsCard(
             title: 'إعدادات نقطة البيع',
             children: [
-              ListTile(
-                leading: const Icon(
-                  PhosphorIconsBold.shoppingCart,
-                  color: AppColors.primary,
-                ),
-                title: const Text('إعدادات نقطة البيع الرئيسية'),
-                subtitle: const Text(
-                  'الأزرار، التصنيفات، شبكة المنتجات، السلة، الإيصال',
-                ),
-                trailing: const Icon(PhosphorIconsBold.caretLeft),
-                onTap: () => showPosSettingsDialog(context),
+              buildPosSettingsTileGuarded(
+                onOpen: () => showPosSettingsDialog(context),
               ),
             ],
           ),
@@ -1395,14 +1376,8 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
           ),
           trailing: isActivated
               ? null
-              : ElevatedButton(
-                  onPressed: () => showActivationDialog(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size(100, 36),
-                  ),
-                  child: const Text('تفعيل الآن'),
+              : buildLicenseActivateButtonGuarded(
+                  onOpen: () => showActivationDialog(context),
                 ),
         ),
       ),

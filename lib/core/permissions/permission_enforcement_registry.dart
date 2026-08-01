@@ -57,9 +57,14 @@ class PermissionEnforcementRegistry {
     // ── التقارير (دفعة ١٠) ──
     'reports_export', 'reports_suppliers', 'reports_delivery_recon',
     // ── الإعدادات والنظام (دفعة ١١) ──
-    'settings_company',
-    'settings_tax', 'settings_currency', 'settings_pos_edit',
-    'system_database', 'system_license',
+    // 'settings_company', 'settings_currency', 'settings_pos_edit',
+    // 'settings_tax', 'system_database', 'system_license' اتشالوا — بقوا
+    // منفَّذين فعلياً (دفعة ١٠): تايلات الإعدادات وزرار التفعيل في
+    // **الفوركين** اتلفّت بـPermissionGuard بتجاوز مدير و`onGranted` صريح؛
+    // وحقل نسبة الضريبة اتلفّ من غير `onGranted` عشان الموافقة تفكّ القفل
+    // بدل ما تخمّن فعل (حقل نص حر).
+    // زرار التفعيل في `core/trial/trial_guard.dart` مقصود إنه فضل مكشوف —
+    // المخرج الوحيد لما التجربة تخلص.
     // ── وحدات فرعية (دفعة ١٢) ──
     // 'manufacturing_view' و'assets_view' اتشالوا — بقوا منفَّذين فعلياً
     // بعد إعادة توصيل screenPermissionMap (4a032a22 وما بعدها).

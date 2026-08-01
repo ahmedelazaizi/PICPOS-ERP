@@ -8,6 +8,8 @@ import '../../../data/providers/providers.dart';
 import '../../../core/config/app_config.dart';
 import '../../../services/client_write_interceptor.dart';
 import '../dialogs/app_confirm_dialog.dart';
+// دفعة ١٠ — حارس settings_tax على حقل نسبة الضريبة الافتراضية.
+import 'settings_permission_tiles.dart';
 // Spec 135 NOTE 1 — the POS timeout UI now drives the single canonical
 // session_timeout_minutes key (System A); invalidate its provider on save.
 import '../../../services/session_timeout_service.dart' show sessionTimeoutProvider;
@@ -677,27 +679,21 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
             color: _enableNegativeSales ? AppColors.warning : AppColors.success,
           ),
         ),
-        ListTile(
-          title: const Text('نسبة الضريبة الافتراضية'),
-          subtitle: const Text('النسبة المئوية للضريبة التي يتم تطبيقها تلقائياً'),
-          contentPadding: EdgeInsets.zero,
-          trailing: SizedBox(
-            width: 100,
-            child: TextFormField(
-              initialValue: (_posDefaultTaxRate * 100).toStringAsFixed(0),
-              decoration: const InputDecoration(
-                suffixText: '%',
-                isDense: true,
-              ),
-              keyboardType: TextInputType.number,
-              textAlign: TextAlign.center,
-              onChanged: (v) {
-                final val = double.tryParse(v);
-                if (val != null) {
-                  setState(() => _posDefaultTaxRate = val / 100);
-                }
-              },
+        buildDefaultTaxRateTileGuarded(
+          field: TextFormField(
+            initialValue: (_posDefaultTaxRate * 100).toStringAsFixed(0),
+            decoration: const InputDecoration(
+              suffixText: '%',
+              isDense: true,
             ),
+            keyboardType: TextInputType.number,
+            textAlign: TextAlign.center,
+            onChanged: (v) {
+              final val = double.tryParse(v);
+              if (val != null) {
+                setState(() => _posDefaultTaxRate = val / 100);
+              }
+            },
           ),
         ),
         // ─── المخزن الافتراضي لنقطة البيع ───

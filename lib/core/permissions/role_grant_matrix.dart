@@ -121,6 +121,17 @@ class RoleGrantMatrix {
       'sales_return_delete',
       'purchases_print',
       'purchases_return_print',
+      // دفعة ١٠ — إعدادات على مستوى النظام. **ولا دور تشغيلي بياخدها**:
+      // كل حرّاسها بتجاوز مدير يعني مفيش منع نهائي، والنهارده أي دور معاه
+      // `settings_view` (مدير فرع/محاسب متقدم) يقدر يبدّل وصلة قاعدة
+      // البيانات أو يغيّر عملة النظام — وده بالظبط اللي الأكواد دي موجودة
+      // عشانه. المدخل هنا خط دفاع تاني لمدير النظام بس.
+      'settings_company',
+      'settings_currency',
+      'settings_pos_edit',
+      'settings_tax',
+      'system_database',
+      'system_license',
     },
     'كاشير': {
       'pos_access',

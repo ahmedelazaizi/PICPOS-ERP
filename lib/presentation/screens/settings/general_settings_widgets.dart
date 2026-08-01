@@ -129,15 +129,9 @@ class _CurrencySelector extends ConsumerWidget {
     final currentCode = ref.watch(systemCurrencyProvider);
     final info = CurrencyInfo.fromCode(currentCode);
 
-    return ListTile(
-      leading: const Icon(
-        PhosphorIconsBold.currencyCircleDollar,
-        color: AppColors.success,
-      ),
-      title: const Text('عملة النظام'),
-      subtitle: Text('${info.nameAr} (${info.code})'),
-      trailing: const Icon(PhosphorIconsBold.caretLeft),
-      onTap: () => _showCurrencySelector(context, ref, currentCode),
+    return buildCurrencyTileGuarded(
+      subtitle: '${info.nameAr} (${info.code})',
+      onOpen: () => _showCurrencySelector(context, ref, currentCode),
     );
   }
 
