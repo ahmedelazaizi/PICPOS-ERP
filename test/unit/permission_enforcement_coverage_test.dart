@@ -38,26 +38,49 @@ Map<String, String> _constantNameByCode() {
   return {for (final m in re.allMatches(src)) m.group(2)!: m.group(1)!};
 }
 
-bool _isEnforced(String sources, String code, String? constName) {
-  if (sources.contains("'$code'") || sources.contains('"$code"')) return true;
+/// كل الأكواد المشار إليها في الكود، مستخرجة بمسحة واحدة.
+///
+/// ── ليه Set مش بحث لكل كود ────────────────────────────────────────────────
+/// الفحص القديم كان بيعدّي على ٢٢ ميجا من المصادر مرة لكل كود — يعني مئات
+/// المسحات الكاملة. المسحة الواحدة اللي بتطلّع كل المراجع وتحطها في `Set`
+/// بتخلي الفحص لكل كود عملية بحث واحدة.
+({Set<String> literals, Set<String> constNames}) _referencedIn(String sources) {
+  final literals = RegExp(r"""['"]([a-z0-9_]+)['"]""")
+      .allMatches(sources)
+      .map((m) => m.group(1)!)
+      .toSet();
+  final constNames = RegExp(r'PermissionCodes\.(\w+)')
+      .allMatches(sources)
+      .map((m) => m.group(1)!)
+      .toSet();
+  return (literals: literals, constNames: constNames);
+}
+
+bool _isEnforced(
+  ({Set<String> literals, Set<String> constNames}) refs,
+  String code,
+  String? constName,
+) {
+  if (refs.literals.contains(code)) return true;
   if (constName == null) return false;
-  return RegExp('PermissionCodes\\.$constName\\b').hasMatch(sources);
+  return refs.constNames.contains(constName);
 }
 
 void main() {
   // مسح شجرة lib/ واستخراج خريطة الثوابت مرة واحدة بس — القراءتين شغل ثابت
   // ومحدَّد النتيجة، وتكراره لكل test() كان بيضاعف وقت التشغيل من غير أي
   // فايدة (الاختباران مستقلّين برضه، بيقروا نفس القيمة الجاهزة بس).
-  late final String sources;
+  late final ({Set<String> literals, Set<String> constNames}) refs;
   late final Map<String, String> constByCode;
 
   setUpAll(() {
-    sources = Directory('lib')
+    final sources = Directory('lib')
         .listSync(recursive: true)
         .whereType<File>()
         .where((f) => f.path.endsWith('.dart') && !_isDefinitionFile(f.path))
         .map((f) => f.readAsStringSync())
         .join('\n');
+    refs = _referencedIn(sources);
     constByCode = _constantNameByCode();
   });
 
@@ -65,7 +88,7 @@ void main() {
     final unenforced = <String>[];
     for (final entry in PermissionCodes.masterList) {
       final code = entry['code']!;
-      if (!_isEnforced(sources, code, constByCode[code])) {
+      if (!_isEnforced(refs, code, constByCode[code])) {
         unenforced.add(code);
       }
     }
@@ -82,7 +105,7 @@ void main() {
 
   test('السجل ما فيهوش كود بقى منفَّذ (يتقلّص ما يكبرش)', () {
     final staleEntries = PermissionEnforcementRegistry.knownUnenforced
-        .where((c) => _isEnforced(sources, c, constByCode[c]))
+        .where((c) => _isEnforced(refs, c, constByCode[c]))
         .toList()
       ..sort();
 
