@@ -719,6 +719,9 @@ extension DatabaseSeederPermissions on AppDatabase {
       // so the cashier can also list their previous invoices.
       'sales_create',
       'sales_view',
+      // Spec 3c — الرئيسية بقت متبوّبة بـ`dashboard_access`؛ الكود ده
+      // بيتمنح لكل دور تشغيلي عشان الترقية ما تسحبش الشاشة من حد.
+      'dashboard_access',
     ];
     for (final code in cashierPermsIndices) {
       if (permMap.containsKey(code)) {
@@ -742,6 +745,8 @@ extension DatabaseSeederPermissions on AppDatabase {
       'suppliers_view',
       'purchases_create',
       'categories_view',
+      // Spec 3c — نفس منحة dashboard_access للأدوار التشغيلية.
+      'dashboard_access',
     ];
     for (final code in stockPermsIndices) {
       if (permMap.containsKey(code)) {
@@ -817,6 +822,8 @@ extension DatabaseSeederPermissions on AppDatabase {
       'pos_shift_open', 'pos_shift_close',
       // Spec 084 — same gap as basic cashier; spreads into branchManagerPerms below.
       'sales_create', 'sales_view',
+      // Spec 3c — dashboard_access؛ يورّث لمدير الفرع عبر الـ spread تحت.
+      'dashboard_access',
     ];
     if (advancedCashierRoleId > 0) {
       for (final code in advancedCashierPerms) {
@@ -859,6 +866,8 @@ extension DatabaseSeederPermissions on AppDatabase {
       'treasury_view', 'reports_view', 'settings_view',
       'pos_closing_view_details', 'sales_view', 'purchases_create',
       'inventory_view', 'analytics_view',
+      // Spec 3c — نفس منحة dashboard_access للأدوار التشغيلية.
+      'dashboard_access',
     ];
     if (advancedAccountantRoleId > 0) {
       for (final code in advancedAccountantPerms) {
@@ -878,6 +887,8 @@ extension DatabaseSeederPermissions on AppDatabase {
     final inventoryManagerPerms = [
       'inventory_view', 'inventory_transfer', 'products_add',
       'purchases_create', 'reports_view', 'sales_view',
+      // Spec 3c — نفس منحة dashboard_access للأدوار التشغيلية.
+      'dashboard_access',
     ];
     if (inventoryManagerRoleId > 0) {
       for (final code in inventoryManagerPerms) {

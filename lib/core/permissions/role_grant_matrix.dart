@@ -55,6 +55,10 @@ class RoleGrantMatrix {
       'branches_manage',
       'pos_shift_open',
       'pos_shift_close',
+      // الرئيسية بقت متبوّبة بـ`dashboard_access` بدل `pos_access`. الكود ده
+      // بيتمنح لكل دور تشغيلي عشان الترقية ما تسحبش الشاشة من حد — السحب
+      // قرار المدير، مش أثر جانبي للإصلاح.
+      'dashboard_access',
     },
     'كاشير': {
       'pos_access',
@@ -68,6 +72,7 @@ class RoleGrantMatrix {
       // `sales_view` lets the cashier list their previous invoices.
       'sales_create',
       'sales_view',
+      'dashboard_access',
     },
     'مخزني': {
       'inventory_view',
@@ -78,6 +83,7 @@ class RoleGrantMatrix {
       'suppliers_view',
       'purchases_create',
       'categories_view',
+      'dashboard_access',
     },
     'محاسب': {
       'reports_view',
@@ -115,6 +121,7 @@ class RoleGrantMatrix {
       // Spec 084 — same gap as basic cashier.
       'sales_create',
       'sales_view',
+      'dashboard_access',
     },
     'مدير فرع': {
       // Inherits advanced cashier
@@ -140,6 +147,7 @@ class RoleGrantMatrix {
       'sales_view',
       'purchases_create',
       'settings_view',
+      'dashboard_access',
     },
     'محاسب متقدم': {
       'treasury_view',
@@ -150,6 +158,7 @@ class RoleGrantMatrix {
       'purchases_create',
       'inventory_view',
       'analytics_view',
+      'dashboard_access',
     },
     'مدير مخزون': {
       'inventory_view',
@@ -158,6 +167,7 @@ class RoleGrantMatrix {
       'purchases_create',
       'reports_view',
       'sales_view',
+      'dashboard_access',
     },
   };
 
