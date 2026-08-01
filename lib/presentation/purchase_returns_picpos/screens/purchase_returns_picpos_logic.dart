@@ -363,13 +363,23 @@ mixin _PurchaseReturnsPicposLogic on ConsumerState<PurchaseReturnsPicposScreen> 
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            IconButton(
-                              tooltip: 'طباعة فاتورة المرتجع',
-                              icon: const Icon(
-                                PhosphorIconsBold.printer,
-                                color: AppColors.success,
+                            // purchases_return_print — نفس حارس فورك UralCash
+                            // (`screens/purchase_returns/return_logic.dart`).
+                            PermissionGuard(
+                              permission: PermissionCodes.purchasesReturnPrint,
+                              allowManagerOverride: true,
+                              actionName: 'طباعة مرتجع مشتريات',
+                              onGranted: () =>
+                                  _reprintHistoricalReturn(invoice),
+                              child: IconButton(
+                                tooltip: 'طباعة فاتورة المرتجع',
+                                icon: const Icon(
+                                  PhosphorIconsBold.printer,
+                                  color: AppColors.success,
+                                ),
+                                onPressed: () =>
+                                    _reprintHistoricalReturn(invoice),
                               ),
-                              onPressed: () => _reprintHistoricalReturn(invoice),
                             ),
                             IconButton(
                               tooltip: 'عرض تفاصيل الأصناف المرتجعة',

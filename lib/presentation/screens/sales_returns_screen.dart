@@ -13,6 +13,8 @@ import '../../services/generators/thermal_receipt_generator.dart';
 import '../providers/sales_return_provider.dart';
 import '../../domain/entities/product_entity.dart';
 import '../widgets/permission_guard.dart'; // B5: Manager approval
+// دفعة ٩ — حرّاس sales_return_delete و sales_return_print في return_logic.dart.
+import '../../core/permissions/permission_codes.dart';
 import '../widgets/common/common.dart';
 
 // ── Part files (mixin-based extraction) ─────────────────────────────────

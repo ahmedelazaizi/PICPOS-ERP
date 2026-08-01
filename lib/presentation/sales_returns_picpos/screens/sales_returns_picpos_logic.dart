@@ -10,6 +10,42 @@ part of 'sales_returns_picpos_screen.dart';
 // RETURN LOGIC — Process, Print Receipt, History, Cancel
 // ═══════════════════════════════════════════════════════════════════════════
 
+/// زرار «إلغاء المرتجع» — `sales_return_delete`. نسخة مطابقة لنسخة فورك
+/// UralCash (`screens/sales_returns/return_logic.dart`)؛ الملفين مكتبتين
+/// منفصلتين فما ينفعش يتشاركوا دالة top-level.
+@visibleForTesting
+Widget buildSalesReturnDeleteButtonGuarded({
+  required VoidCallback onCancel,
+}) {
+  return PermissionGuard(
+    permission: PermissionCodes.salesReturnDelete,
+    allowManagerOverride: true,
+    actionName: 'إلغاء مرتجع مبيعات',
+    onGranted: onCancel,
+    child: IconButton(
+      icon: const Icon(PhosphorIconsBold.x, color: Colors.red, size: 18),
+      tooltip: 'إلغاء المرتجع',
+      onPressed: onCancel,
+    ),
+  );
+}
+
+/// زرار «طباعة المرتجع» — `sales_return_print`. نفس ملاحظة النسخ فوق.
+@visibleForTesting
+Widget buildSalesReturnPrintButtonGuarded({required VoidCallback onPrint}) {
+  return PermissionGuard(
+    permission: PermissionCodes.salesReturnPrint,
+    allowManagerOverride: true,
+    actionName: 'طباعة مرتجع مبيعات',
+    onGranted: onPrint,
+    child: IconButton(
+      icon: const Icon(PhosphorIconsBold.printer, color: AppColors.info),
+      tooltip: 'طباعة المرتجع',
+      onPressed: onPrint,
+    ),
+  );
+}
+
 mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
   // Abstract — provided by main State class
   TextEditingController get returnReasonController;
@@ -490,119 +526,15 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
                                 },
                               ),
                               const SizedBox(width: 4),
-                              IconButton(
-                                icon: const Icon(
-                                  PhosphorIconsBold.x,
-                                  color: Colors.red,
-                                  size: 18,
+                              buildSalesReturnDeleteButtonGuarded(
+                                onCancel: () => _confirmAndCancelReturn(
+                                  ctx,
+                                  entry,
+                                  invoice,
                                 ),
-                                tooltip: 'إلغاء المرتجع',
-                                onPressed: () async {
-                                  final confirmed = await showDialog<bool>(
-                                    context: ctx,
-                                    builder: (confirmCtx) => Directionality(
-                                      textDirection: TextDirection.rtl,
-                                      child: AlertDialog(
-                                        title: const Row(
-                                          children: [
-                                            Icon(
-                                              PhosphorIconsBold.warning,
-                                              color: Colors.red,
-                                            ),
-                                            SizedBox(width: 8),
-                                            Text('تأكيد إلغاء المرتجع'),
-                                          ],
-                                        ),
-                                        content: Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              'فاتورة: ${entry.originalInvoiceNumber}',
-                                            ),
-                                            const SizedBox(height: 8),
-                                            Text(
-                                              'المبلغ: ${entry.returnAmount.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolAr}',
-                                            ),
-                                            const SizedBox(height: 16),
-                                            Container(
-                                              padding:
-                                                  const EdgeInsets.all(12),
-                                              decoration: BoxDecoration(
-                                                color: Colors.orange
-                                                    .withValues(alpha: 0.1),
-                                                borderRadius:
-                                                    BorderRadius.circular(8),
-                                                border: Border.all(
-                                                  color: Colors.orange
-                                                      .withValues(alpha: 0.3),
-                                                ),
-                                              ),
-                                              child: const Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.info_outline,
-                                                    color: Colors.orange,
-                                                    size: 18,
-                                                  ),
-                                                  SizedBox(width: 8),
-                                                  Expanded(
-                                                    child: Text(
-                                                      'سيتم إرجاع المبلغ للكاش وخصم الأصناف مرة أخرى من المخزون',
-                                                      style: TextStyle(
-                                                        fontSize: 12,
-                                                        color: Colors.orange,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () => Navigator.pop(
-                                              confirmCtx,
-                                              false,
-                                            ),
-                                            child: const Text('تراجع'),
-                                          ),
-                                          ElevatedButton(
-                                            onPressed: () => Navigator.pop(
-                                                confirmCtx, true),
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.red,
-                                            ),
-                                            child: const Text(
-                                              'إلغاء المرتجع',
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-
-                                  if (confirmed == true && ctx.mounted) {
-                                    await _cancelReturn(invoice);
-                                    if (ctx.mounted) {
-                                      Navigator.pop(ctx);
-                                      showReturnsHistoryDialog();
-                                    }
-                                  }
-                                },
                               ),
-                              IconButton(
-                                icon: const Icon(
-                                  PhosphorIconsBold.printer,
-                                  color: AppColors.info,
-                                ),
-                                tooltip: 'طباعة المرتجع',
-                                onPressed: () => _printReturnReceipt(
+                              buildSalesReturnPrintButtonGuarded(
+                                onPrint: () => _printReturnReceipt(
                                   invoiceNumber: entry.originalInvoiceNumber,
                                   returnTotal: entry.returnAmount,
                                 ),
@@ -629,6 +561,86 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
   }
 
   bool _cancellingReturn = false;
+
+  /// ديالوج تأكيد «إلغاء المرتجع» ثم التنفيذ — اتنقلت من جوه `onPressed`
+  /// عشان الحارس (`onGranted`) والزرار ينادوا نفس الكود بالظبط.
+  Future<void> _confirmAndCancelReturn(
+    BuildContext ctx,
+    SalesReturnHistoryEntry entry,
+    SalesInvoiceData invoice,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: ctx,
+      builder: (confirmCtx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          title: const Row(
+            children: [
+              Icon(PhosphorIconsBold.warning, color: Colors.red),
+              SizedBox(width: 8),
+              Text('تأكيد إلغاء المرتجع'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('فاتورة: ${entry.originalInvoiceNumber}'),
+              const SizedBox(height: 8),
+              Text(
+                'المبلغ: ${entry.returnAmount.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolAr}',
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Colors.orange.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.orange, size: 18),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'سيتم إرجاع المبلغ للكاش وخصم الأصناف مرة أخرى من المخزون',
+                        style: TextStyle(fontSize: 12, color: Colors.orange),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(confirmCtx, false),
+              child: const Text('تراجع'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(confirmCtx, true),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child: const Text(
+                'إلغاء المرتجع',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed == true && ctx.mounted) {
+      await _cancelReturn(invoice);
+      if (ctx.mounted) {
+        Navigator.pop(ctx);
+        showReturnsHistoryDialog();
+      }
+    }
+  }
 
   Future<void> _cancelReturn(SalesInvoiceData invoice) async {
     if (_cancellingReturn) return;

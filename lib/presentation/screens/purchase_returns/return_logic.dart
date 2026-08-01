@@ -357,13 +357,23 @@ mixin _PurchaseReturnLogicMixin on ConsumerState<PurchaseReturnsScreen> {
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            IconButton(
-                              tooltip: 'طباعة فاتورة المرتجع',
-                              icon: const Icon(
-                                PhosphorIconsBold.printer,
-                                color: AppColors.success,
+                            // purchases_return_print — كان مكشوف جنب زرار
+                            // التعديل المبوّب تحته بالظبط.
+                            PermissionGuard(
+                              permission: PermissionCodes.purchasesReturnPrint,
+                              allowManagerOverride: true,
+                              actionName: 'طباعة مرتجع مشتريات',
+                              onGranted: () =>
+                                  _reprintHistoricalReturn(invoice),
+                              child: IconButton(
+                                tooltip: 'طباعة فاتورة المرتجع',
+                                icon: const Icon(
+                                  PhosphorIconsBold.printer,
+                                  color: AppColors.success,
+                                ),
+                                onPressed: () =>
+                                    _reprintHistoricalReturn(invoice),
                               ),
-                              onPressed: () => _reprintHistoricalReturn(invoice),
                             ),
                             IconButton(
                               tooltip: 'عرض تفاصيل الأصناف المرتجعة',

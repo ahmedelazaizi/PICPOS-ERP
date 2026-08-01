@@ -1,5 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+// دفعة ٩ — حرّاس sales_print و sales_amounts_view في ملفات الـpart تحت.
+import '../../widgets/permission_guard.dart';
+import '../../../core/permissions/permission_codes.dart';
 import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';

@@ -22,6 +22,9 @@ import '../../data/database/sync_interceptor.dart';
 import '../../services/network_service.dart';
 import '../../core/constants/app_constants.dart' hide InvoiceStatus;
 import 'sales_invoices_controller.dart';
+// دفعة ٩ — حرّاس sales_print و sales_amounts_view في ملفات الـpart تحت.
+import '../widgets/permission_guard.dart';
+import '../../core/permissions/permission_codes.dart';
 import '../widgets/dialogs/add_product_dialog.dart';
 import 'sales_orders_screen.dart';
 

@@ -7,6 +7,45 @@ import '../../core/permissions/permission_codes.dart';
 import '../../data/providers/providers.dart';
 import '../../services/manager_approval_cache.dart';
 
+/// النص اللي بيتعرض بدل المبلغ لما صلاحية العرض ناقصة.
+const String kMaskedValuePlaceholder = '••••';
+
+/// مبلغ محجوب بصلاحية عرض — بيوري القيمة لصاحب الصلاحية و[kMaskedValuePlaceholder]
+/// لغيره، بنفس شكل النص عشان الجدول ما يترصّش.
+///
+/// ── ليه ودجت مستقلة مش `PermissionBuilder` ────────────────────────────────
+/// `PermissionBuilder` بيعمل `contains(permission)` نضيف — **من غير تجاوز
+/// مدير النظام**، عكس `PermissionGuard._checkPermission`. سجل سبب٠٨٦ بيوثّق
+/// حالة إنتاج حقيقية اتفشل فيها منح كود لمدير النظام بصمت، فاستعمال
+/// `PermissionBuilder` هنا كان معناه إخفاء مبالغ عن مدير النظام. الودجت دي
+/// بتلفّ `PermissionGuard` عشان تاخد نفس منطق التجاوز بالظبط.
+class PermissionMaskedText extends StatelessWidget {
+  const PermissionMaskedText({
+    super.key,
+    required this.permission,
+    required this.text,
+    this.style,
+  });
+
+  final String permission;
+  final String text;
+  final TextStyle? style;
+
+  @override
+  Widget build(BuildContext context) {
+    return PermissionGuard(
+      permission: permission,
+      fallback: Text(
+        kMaskedValuePlaceholder,
+        style: (style ?? const TextStyle()).copyWith(
+          color: AppColors.textMuted,
+        ),
+      ),
+      child: Text(text, style: style),
+    );
+  }
+}
+
 /// A widget that conditionally shows/hides or enables/disables its child
 /// based on user permissions.
 ///

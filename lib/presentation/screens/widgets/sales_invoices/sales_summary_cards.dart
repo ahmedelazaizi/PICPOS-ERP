@@ -1,6 +1,32 @@
 // ignore_for_file: library_private_types_in_public_api
 part of '../../sales_invoices_screen.dart';
 
+/// كارت مبلغ في شريط الإجماليات — محجوب بـ`sales_amounts_view`.
+///
+/// تمويه صفوف الجدول وسيبان الإجماليات فوقه كان بيسرّب نفس البيانات مجمّعة،
+/// فالكروت لازم تتحجب بنفس الكود. الكارت نفسه فاضل ظاهر بعنوانه — الرقم بس
+/// هو اللي بيتموّه، عشان المستخدم يعرف إن فيه بيانات مش إنها صفر.
+@visibleForTesting
+Widget buildMaskedAmountKpiCard({
+  required IconData icon,
+  required String label,
+  required String value,
+  required Color color,
+}) {
+  AppKpiCard card(String v) => AppKpiCard(
+        icon: icon,
+        label: label,
+        value: v,
+        color: color,
+        style: KpiStyle.gradient,
+      );
+  return PermissionGuard(
+    permission: PermissionCodes.salesAmountsView,
+    fallback: card(kMaskedValuePlaceholder),
+    child: card(value),
+  );
+}
+
 class SalesSummaryRow extends ConsumerWidget {
   const SalesSummaryRow({super.key});
 
@@ -20,52 +46,49 @@ class SalesSummaryRow extends ConsumerWidget {
     final hasReceiptVouchers = receiptVouchersTotal > 0;
 
     final cards = <Widget>[
-      AppKpiCard(
+      buildMaskedAmountKpiCard(
         icon: PhosphorIconsBold.shoppingCart,
         // البند 2: الصفة صريحة حتى لا يُقارَن الرقم بمبلغ بدون ضريبة.
         label: 'إجمالي المبيعات (شامل الضريبة)',
         value: '${totalAmount.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
         color: AppColors.info,
-        style: KpiStyle.gradient,
       ),
       Tooltip(
+        // الـtooltip بيفصّل مدفوعات الفواتير وسندات القبض — نفس المبالغ،
+        // فبيتحجب مع الكارت لا قبله.
         message: hasReceiptVouchers
             ? 'مدفوعات الفواتير: ${totalPaid.toStringAsFixed(AppConstants.decimalPlaces)}\n'
                 'سندات القبض: ${receiptVouchersTotal.toStringAsFixed(AppConstants.decimalPlaces)}'
             : 'مدفوعات الفواتير',
-        child: AppKpiCard(
+        child: buildMaskedAmountKpiCard(
           icon: PhosphorIconsBold.wallet,
           label: 'المحصّل',
           value:
               '${collected.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
           color: AppColors.success,
-          style: KpiStyle.gradient,
         ),
       ),
       // Returns card — when present, makes the المتبقي formula explicit
       // (المتبقي = الإجمالي − المحصل − المرتجعات).
-      AppKpiCard(
+      buildMaskedAmountKpiCard(
         icon: PhosphorIconsBold.arrowUUpLeft,
         label: 'إجمالي المرتجعات',
         value: '${totalReturns.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
         color: AppColors.error,
-        style: KpiStyle.gradient,
       ),
-      AppKpiCard(
+      buildMaskedAmountKpiCard(
         icon: PhosphorIconsBold.clock,
         label: 'المتبقي',
         value: '${totalRemaining.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
         color: AppColors.warning,
-        style: KpiStyle.gradient,
       ),
       // البند 2 — «فصل المرتجعات وظهور صافي المبيعات». بطاقة «إجمالي
       // المرتجعات» كانت موجودة أصلاً؛ الناقص كان النتيجة نفسها.
-      AppKpiCard(
+      buildMaskedAmountKpiCard(
         icon: PhosphorIconsBold.equals,
         label: 'صافي المبيعات',
         value: '${(totalAmount - totalReturns).toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
         color: AppColors.primary,
-        style: KpiStyle.gradient,
       ),
       AppKpiCard(
         icon: PhosphorIconsBold.receipt,

@@ -5,6 +5,8 @@ import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/permissions/permission_codes.dart';
+// دفعة ٩ — حارس purchases_print على زرار الطباعة في قائمة الفواتير.
+import '../widgets/permission_guard.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/app_state_view.dart';
 import '../../core/widgets/shimmer_loading.dart';
@@ -723,15 +725,28 @@ class _PurchaseInvoicesScreenState
                                                       invoice)
                                                   : null,
                                             ),
-                                            IconButton(
-                                              icon: const Icon(
-                                                PhosphorIconsBold.printer,
-                                                size: 18,
-                                              ),
-                                              color: AppColors.primary,
-                                              tooltip: 'طباعة',
-                                              onPressed: () =>
+                                            // purchases_print — كان مكشوف
+                                            // جنب زرار التعديل المبوّب فوقه
+                                            // بالظبط. تجاوز مدير: منع الطباعة
+                                            // نهائياً بيوقف تسليم مستند شرعي.
+                                            PermissionGuard(
+                                              permission: PermissionCodes
+                                                  .purchasesPrint,
+                                              allowManagerOverride: true,
+                                              actionName:
+                                                  'طباعة فاتورة مشتريات',
+                                              onGranted: () =>
                                                   printInvoice(invoice),
+                                              child: IconButton(
+                                                icon: const Icon(
+                                                  PhosphorIconsBold.printer,
+                                                  size: 18,
+                                                ),
+                                                color: AppColors.primary,
+                                                tooltip: 'طباعة',
+                                                onPressed: () =>
+                                                    printInvoice(invoice),
+                                              ),
                                             ),
                                           ],
                                         ),

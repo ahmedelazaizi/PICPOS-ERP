@@ -1,6 +1,30 @@
 // ignore_for_file: library_private_types_in_public_api
 part of '../../sales_invoices_screen.dart';
 
+/// زرار طباعة فاتورة البيع — `sales_print`.
+///
+/// تجاوز مدير مش إخفاء: الطباعة بتتطلب والعميل واقف، والمنع النهائي بيوقف
+/// تسليم فاتورة شرعية. `onGranted` متمرَّر صراحة (درس f8d3fa9 — الحارس
+/// بيلفّ الابن في `AbsorbPointer` وبيمسك الضغطة بنفسه).
+///
+/// دالة top-level عشان الاختبار يبنيها لوحدها — `SalesInvoicesTable` بتقرا
+/// من `salesInvoicesControllerProvider` وقاعدة بيانات حقيقية.
+@visibleForTesting
+Widget buildSalesPrintButtonGuarded({required VoidCallback onPrint}) {
+  return PermissionGuard(
+    permission: PermissionCodes.salesPrint,
+    allowManagerOverride: true,
+    actionName: 'طباعة فاتورة بيع',
+    onGranted: onPrint,
+    child: IconButton(
+      icon: const Icon(PhosphorIconsBold.printer, size: 18),
+      color: AppColors.primary,
+      tooltip: 'طباعة',
+      onPressed: onPrint,
+    ),
+  );
+}
+
 class SalesInvoicesTable extends ConsumerWidget {
   final Function(InvoiceEntity) onView;
   final Function(InvoiceEntity) onEdit;
@@ -178,16 +202,28 @@ class SalesInvoicesTable extends ConsumerWidget {
                   DataCell(
                     Text((invoice.createdAt ?? invoice.invoiceDate).toString().substring(0, 10)),
                   ),
-                  DataCell(Text(invoice.total.toStringAsFixed(AppConstants.decimalPlaces))),
+                  // sales_amounts_view — الإجمالي والمدفوع والمتبقي. المتبقي
+                  // مشتقّ من الاتنين، فسيبانه مكشوف كان بيسرّبهم.
                   DataCell(
-                    Text(
-                      invoice.paid.toStringAsFixed(AppConstants.decimalPlaces),
+                    PermissionMaskedText(
+                      permission: PermissionCodes.salesAmountsView,
+                      text: invoice.total
+                          .toStringAsFixed(AppConstants.decimalPlaces),
+                    ),
+                  ),
+                  DataCell(
+                    PermissionMaskedText(
+                      permission: PermissionCodes.salesAmountsView,
+                      text: invoice.paid
+                          .toStringAsFixed(AppConstants.decimalPlaces),
                       style: const TextStyle(color: AppColors.success),
                     ),
                   ),
                   DataCell(
-                    Text(
-                      remaining.toStringAsFixed(AppConstants.decimalPlaces),
+                    PermissionMaskedText(
+                      permission: PermissionCodes.salesAmountsView,
+                      text: remaining
+                          .toStringAsFixed(AppConstants.decimalPlaces),
                       style: TextStyle(
                         color: remaining > 0
                             ? AppColors.error
@@ -306,14 +342,8 @@ class SalesInvoicesTable extends ConsumerWidget {
                             tooltip: 'تعديل الدفع / وسيلة الدفع',
                             onPressed: () => onEdit(invoice),
                           ),
-                        IconButton(
-                          icon: const Icon(
-                            PhosphorIconsBold.printer,
-                            size: 18,
-                          ),
-                          color: AppColors.primary,
-                          tooltip: 'طباعة',
-                          onPressed: () => onPrint(invoice),
+                        buildSalesPrintButtonGuarded(
+                          onPrint: () => onPrint(invoice),
                         ),
                         if (!invoice.isLocked)
                           IconButton(

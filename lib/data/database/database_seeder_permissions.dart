@@ -722,6 +722,15 @@ extension DatabaseSeederPermissions on AppDatabase {
       // Spec 3c — الرئيسية بقت متبوّبة بـ`dashboard_access`؛ الكود ده
       // بيتمنح لكل دور تشغيلي عشان الترقية ما تسحبش الشاشة من حد.
       'dashboard_access',
+      // دفعة ٩ — `sales_amounts_view` بيحجب مبالغ قائمة فواتير البيع
+      // (الإجمالي/المدفوع/المتبقي + كروت الإجماليات). أي دور معاه
+      // `sales_view` بيفتح القائمة دي النهارده ويشوف المبالغ، فمن غير
+      // المنحة الترقية بتوريه «••••» — كسر شغل مش تأمين. و`sales_print`
+      // و`sales_return_print` طباعة روتينية؛ الحارس بتجاوز مدير فمش منع،
+      // بس كلمة سر مدير مع كل طباعة مش قابلة للاستعمال.
+      'sales_amounts_view',
+      'sales_print',
+      'sales_return_print',
     ];
     for (final code in cashierPermsIndices) {
       if (permMap.containsKey(code)) {
@@ -759,6 +768,10 @@ extension DatabaseSeederPermissions on AppDatabase {
       'products_lock',
       'products_expiry',
       'products_image',
+      // دفعة ٩ — الدور ده معاه `purchases_create` بس (مالوش `sales_view`)،
+      // فبياخد طباعة المشتريات ومرتجعها من غير أكواد مبالغ/طباعة المبيعات.
+      'purchases_print',
+      'purchases_return_print',
     ];
     for (final code in stockPermsIndices) {
       if (permMap.containsKey(code)) {
@@ -782,6 +795,13 @@ extension DatabaseSeederPermissions on AppDatabase {
       'sales_view',
       'purchases_view',
       'dashboard_access',
+      // دفعة ٩ — نفس منطق منحة الكاشير: الدور ده معاه `sales_view` و
+      // `purchases_view` فبيفتح القايمتين ويشوف المبالغ ويطبع النهارده.
+      'sales_amounts_view',
+      'sales_print',
+      'sales_return_print',
+      'purchases_print',
+      'purchases_return_print',
       // Task 3d — عنصر قائمة «التحليلات» اتربط بكوده الخاص analytics_view
       // بدل reports_view العام (كان بيسيب رابط ميت لمين معاه reports_view
       // بس). محاسب والمدير المالي (اللي بيورّث المنحة دي تحت) كانوا
@@ -841,6 +861,8 @@ extension DatabaseSeederPermissions on AppDatabase {
       'sales_create', 'sales_view',
       // Spec 3c — dashboard_access؛ يورّث لمدير الفرع عبر الـ spread تحت.
       'dashboard_access',
+      // دفعة ٩ — نفس منحة الكاشير العادي (ويورّث لمدير الفرع بالـspread).
+      'sales_amounts_view', 'sales_print', 'sales_return_print',
     ];
     if (advancedCashierRoleId > 0) {
       for (final code in advancedCashierPerms) {
@@ -869,6 +891,9 @@ extension DatabaseSeederPermissions on AppDatabase {
       // فبيفتح شاشة الأصناف ويشوف الأعمدة دي النهارده.
       'products_price_view', 'products_cost_view', 'products_stock_view',
       'products_lock', 'products_expiry', 'products_image',
+      // دفعة ٩ — الدور ده معاه `purchases_create` فبيفتح قائمة المشتريات
+      // ويطبع منها النهارده (مبالغ البيع جايالها من كاشير متقدم بالـspread).
+      'purchases_print', 'purchases_return_print',
     ];
     if (branchManagerRoleId > 0) {
       for (final code in branchManagerPerms) {
@@ -895,6 +920,10 @@ extension DatabaseSeederPermissions on AppDatabase {
       // بدل settings_view العام. الدور ده عنده settings_view فكان بيشوف
       // الرابط فعلاً، فلازم ياخد الكود الحقيقي بدل ما يتسحب منه.
       'branches_manage',
+      // دفعة ٩ — `sales_view` + `purchases_create` = بيفتح القايمتين ويشوف
+      // المبالغ ويطبع النهارده.
+      'sales_amounts_view', 'sales_print', 'sales_return_print',
+      'purchases_print', 'purchases_return_print',
     ];
     if (advancedAccountantRoleId > 0) {
       for (final code in advancedAccountantPerms) {
@@ -921,6 +950,9 @@ extension DatabaseSeederPermissions on AppDatabase {
       // دفعة ٨ — نفس سبب منحة أمين المخزن فوق (`products_add` بيفتح الشاشة).
       'products_price_view', 'products_cost_view', 'products_stock_view',
       'products_lock', 'products_expiry', 'products_image',
+      // دفعة ٩ — `sales_view` + `purchases_create`.
+      'sales_amounts_view', 'sales_print', 'sales_return_print',
+      'purchases_print', 'purchases_return_print',
     ];
     if (inventoryManagerRoleId > 0) {
       for (final code in inventoryManagerPerms) {

@@ -42,10 +42,11 @@ class PermissionEnforcementRegistry {
     // ── المستندات: طباعة/تعديل/حذف (دفعة ٨) ──
     // 'purchases_return_view' و'sales_return_view' اتشالوا — بقوا منفَّذين
     // فعلياً بعد إعادة توصيل screenPermissionMap (4a032a22 وما بعدها).
-    'purchases_print',
-    'purchases_return_print', 'sales_print',
-    'sales_amounts_view',
-    'sales_return_delete', 'sales_return_print',
+    // 'sales_print', 'sales_amounts_view', 'sales_return_delete',
+    // 'sales_return_print', 'purchases_print', 'purchases_return_print'
+    // اتشالوا — بقوا منفَّذين فعلياً (دفعة ٩): أزرار الطباعة وإلغاء المرتجع
+    // اتلفّت بـPermissionGuard بتجاوز مدير في **الفوركين**، ومبالغ فواتير
+    // البيع (خلايا الجدول + كروت الإجماليات) بقت `PermissionMaskedText`.
     // ── العروض والتوصيل والطاولات والمطبخ (دفعة ٩) ──
     // 'offers_view' و'tables_view' و'kitchen_view' اتشالوا — بقوا منفَّذين
     // فعلياً بعد إعادة توصيل screenPermissionMap (4a032a22 وما بعدها).

@@ -114,6 +114,13 @@ class RoleGrantMatrix {
       'products_lock',
       'products_expiry',
       'products_image',
+      // دفعة ٩ — نفس المنطق (خط دفاع تاني لمدير النظام).
+      'sales_amounts_view',
+      'sales_print',
+      'sales_return_print',
+      'sales_return_delete',
+      'purchases_print',
+      'purchases_return_print',
     },
     'كاشير': {
       'pos_access',
@@ -128,6 +135,12 @@ class RoleGrantMatrix {
       'sales_create',
       'sales_view',
       'dashboard_access',
+      // دفعة ٩ — `sales_amounts_view` بيحجب مبالغ قائمة فواتير البيع، وأي
+      // دور معاه `sales_view` كان بيشوفها النهارده. الطباعة بتجاوز مدير
+      // فمش منع، بس كلمة سر مع كل طباعة مش قابلة للاستعمال.
+      'sales_amounts_view',
+      'sales_print',
+      'sales_return_print',
     },
     'مخزني': {
       'inventory_view',
@@ -149,6 +162,9 @@ class RoleGrantMatrix {
       'products_lock',
       'products_expiry',
       'products_image',
+      // دفعة ٩ — الدور ده معاه `purchases_create` بس (مالوش `sales_view`).
+      'purchases_print',
+      'purchases_return_print',
     },
     'محاسب': {
       'reports_view',
@@ -165,6 +181,12 @@ class RoleGrantMatrix {
       // ده بيتمنح هنا عشان الإصلاح ما يسحبش الرابط لوحده — السحب قرار
       // المدير.
       'analytics_view',
+      // دفعة ٩ — معاه `sales_view` و`purchases_view` فبيفتح القايمتين.
+      'sales_amounts_view',
+      'sales_print',
+      'sales_return_print',
+      'purchases_print',
+      'purchases_return_print',
     },
     'مدير مالي': {
       // Inherits the full accountant set
@@ -180,6 +202,12 @@ class RoleGrantMatrix {
       'commercial_papers_manage',
       // Task 3d — نفس منطق analytics_view فوق (محاسب).
       'analytics_view',
+      // دفعة ٩ — بيورّث طقم المحاسب (السيدر بينفّذ نفس القايمة للدورين).
+      'sales_amounts_view',
+      'sales_print',
+      'sales_return_print',
+      'purchases_print',
+      'purchases_return_print',
     },
     'كاشير متقدم': {
       'pos_access',
@@ -195,6 +223,10 @@ class RoleGrantMatrix {
       'sales_create',
       'sales_view',
       'dashboard_access',
+      // دفعة ٩ — نفس منحة الكاشير العادي.
+      'sales_amounts_view',
+      'sales_print',
+      'sales_return_print',
     },
     'مدير فرع': {
       // Inherits advanced cashier
@@ -232,6 +264,12 @@ class RoleGrantMatrix {
       'products_lock',
       'products_expiry',
       'products_image',
+      // دفعة ٩ — بيورّث طقم الكاشير المتقدم (مبيعات) + `purchases_create`.
+      'sales_amounts_view',
+      'sales_print',
+      'sales_return_print',
+      'purchases_print',
+      'purchases_return_print',
     },
     'محاسب متقدم': {
       'treasury_view',
@@ -248,6 +286,12 @@ class RoleGrantMatrix {
       // الدور عنده settings_view فكان بيشوف الرابط؛ الكود ده بيتمنح هنا
       // عشان الإصلاح ما يسحبش الرابط لوحده.
       'branches_manage',
+      // دفعة ٩ — `sales_view` + `purchases_create`.
+      'sales_amounts_view',
+      'sales_print',
+      'sales_return_print',
+      'purchases_print',
+      'purchases_return_print',
     },
     'مدير مخزون': {
       'inventory_view',
@@ -266,6 +310,12 @@ class RoleGrantMatrix {
       'products_lock',
       'products_expiry',
       'products_image',
+      // دفعة ٩ — `sales_view` + `purchases_create`.
+      'sales_amounts_view',
+      'sales_print',
+      'sales_return_print',
+      'purchases_print',
+      'purchases_return_print',
     },
   };
 
