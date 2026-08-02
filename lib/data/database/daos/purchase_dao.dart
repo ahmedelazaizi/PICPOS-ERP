@@ -466,7 +466,13 @@ extension PurchaseDao on AppDatabase {
   }) async {
     return transaction(() async {
       // 0. Soft/Hard Period Closing Gating
-      await accountingDao.validateFinancialPeriod(DateTime.now(), operation: 'فاتورة مشتريات');
+      //
+      // بتاريخ **الفاتورة** مش النهاردة. الفحص على `DateTime.now()` كان
+      // بيخلّي قفل الفترة متجاوَز على مستوى المستند: فاتورة مؤرَّخة مارس
+      // بتتقبل حتى لو مارس مقفول، لأن الفحص بيتم على أغسطس.
+      final effectiveInvoiceDate = invoiceDate ?? DateTime.now();
+      await accountingDao.validateFinancialPeriod(effectiveInvoiceDate,
+          operation: 'فاتورة مشتريات');
 
       double taxTotal = 0;
       double total = 0;
@@ -875,7 +881,12 @@ extension PurchaseDao on AppDatabase {
       // Throws on DB failure → propagates to parent transaction() → rollback
       await accountingDao.createJournalEntry(
         description: 'قيد مشتريات تلقائي للفاتورة #$invoiceNumber',
-        date: DateTime.now(),
+        // تاريخ **الفاتورة** مش النهاردة. الهيدر بيتخزن بتاريخ الفاتورة
+        // والقيد كان بتاريخ اليوم، فتقرير المشتريات (بيفلتر بـinvoiceDate)
+        // وتقرير الضريبة (بيفلتر بـentry_date) بيقولوا شهرين مختلفين لنفس
+        // المستند — وضريبة المدخلات بتتحسب في إقرار الشهر الغلط.
+        // `autoPostPurchase:968` نفسه بيستعمل `purchase.invoiceDate`.
+        date: effectiveInvoiceDate,
         lines: journalLines,
         referenceType: 'purchase_invoice',
         referenceId: invoiceId,
