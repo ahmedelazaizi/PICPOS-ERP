@@ -73,13 +73,30 @@ extension InventoryBatchDao on AppDatabase {
 
   /// Get all active batches for a product, ordered by creation date (FIFO)
   /// Oldest purchased batches are consumed first.
-  Future<List<ProductBatch>> getProductBatchesFIFO(int productId) async {
+  ///
+  /// [warehouseId] scopes the walk to the stock that is physically in the
+  /// warehouse doing the selling. Without it a sale in one branch consumed
+  /// another branch's oldest lot — the ledger stayed right (batch unit_cost
+  /// feeds no COGS path) but expiry tracking and recall traceability did not:
+  /// the untouched branch kept showing stock it had already "sold", and the
+  /// wrong lot went on record as dispatched.
+  ///
+  /// Nullable so existing/global callers keep today's behaviour verbatim;
+  /// `product_batches.warehouse_id` is NOT NULL, so no migration is involved.
+  Future<List<ProductBatch>> getProductBatchesFIFO(
+    int productId, {
+    int? warehouseId,
+  }) async {
     return (select(productBatches)
           ..where(
-            (b) =>
-                b.productId.equals(productId) &
-                b.status.equals('active') &
-                b.quantity.isBiggerThan(const Variable(0)),
+            (b) {
+              final base = b.productId.equals(productId) &
+                  b.status.equals('active') &
+                  b.quantity.isBiggerThan(const Variable(0));
+              return warehouseId == null
+                  ? base
+                  : base & b.warehouseId.equals(warehouseId);
+            },
           )
           ..orderBy([(b) => OrderingTerm.asc(b.createdAt)]))
         .get();
@@ -95,8 +112,14 @@ extension InventoryBatchDao on AppDatabase {
   Future<List<Map<String, dynamic>>> consumeBatchFIFO({
     required int productId,
     required double quantity,
+    // Required, not optional: the sole caller (adjustStock) already takes
+    // warehouseId as a required parameter, so there is no call site that
+    // legitimately does not know it. Leaving it optional is what let the
+    // value sit unused in the caller's scope for this long.
+    required int warehouseId,
   }) async {
-    final batches = await getProductBatchesFIFO(productId);
+    final batches =
+        await getProductBatchesFIFO(productId, warehouseId: warehouseId);
     if (batches.isEmpty) return [];
 
     double remaining = quantity;
@@ -139,9 +162,14 @@ extension InventoryBatchDao on AppDatabase {
     required double quantity,
     String? notes,
   }) async {
-    // Find the most recent batch (active or recently depleted)
+    // Find the most recent batch IN THE RECEIVING WAREHOUSE. The parameter was
+    // already being passed in and then ignored by this query, so a return
+    // booked to one branch could top up a lot sitting in another — inventing
+    // physical stock in a warehouse nobody delivered to.
     final recentBatch = await (select(productBatches)
-          ..where((b) => b.productId.equals(productId))
+          ..where((b) =>
+              b.productId.equals(productId) &
+              b.warehouseId.equals(warehouseId))
           ..orderBy([(b) => OrderingTerm.desc(b.createdAt)])
           ..limit(1))
         .getSingleOrNull();

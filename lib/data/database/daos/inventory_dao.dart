@@ -276,6 +276,9 @@ extension InventoryDao on AppDatabase {
         await consumeBatchFIFO(
           productId: productId,
           quantity: quantity.abs(),
+          // Was available in this scope all along and simply not passed —
+          // which is why a sale in one branch ate another branch's lot.
+          warehouseId: warehouseId,
         );
       } else if (isReturnAddition) {
         // Restore stock to most recent batch
