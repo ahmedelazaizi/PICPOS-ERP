@@ -205,8 +205,18 @@ const Map<LabelScaleBrand, Set<LabelScaleConnection>> kBrandSupportedConnections
     LabelScaleConnection.ftp,
     LabelScaleConnection.file,
   },
+  // TEM و NVK TMA يديرهما **نفس البرنامج** (`mscale`، النسخة EN3.1 المرفقة
+  // مع TM-A20B / TM-21). تصحيح 2026-07-30: التعليق القديم على `tem` كان
+  // يقول «serial only» — وهو **غلط**. لقطات قائمة `Communication → Mode`
+  // من البرنامج الرسمي تعرض `ethernet` و`serial` كليهما، وشاشة
+  // `Communication → Ethernet` تُظهر اتصالاً فعلياً على `IP:4001`.
+  //
+  // لكن «الميزان يدعم الشبكة» ≠ «UralCash يعرف يكلّمه». مسار TCP الحالي
+  // لهما (`STX + "PLUSTART" + ETX`) **مخمَّن ولم يُتحقّق منه**، فيبقى
+  // مُدرَجاً مع تنبيه صراحةً — انظر [kBrandUnverifiedConnections].
   LabelScaleBrand.tem: {
-    LabelScaleConnection.serial, // «serial only» حسب تعريف البراند
+    LabelScaleConnection.tcp,
+    LabelScaleConnection.serial,
     LabelScaleConnection.file,
   },
   LabelScaleBrand.dibal: {
@@ -214,34 +224,115 @@ const Map<LabelScaleBrand, Set<LabelScaleConnection>> kBrandSupportedConnections
     LabelScaleConnection.file,
   },
   LabelScaleBrand.nvkTma: {
-    LabelScaleConnection.tcp, // ببروتوكوله الخاص، لا Aclas UDP
+    LabelScaleConnection.tcp, // ببروتوكوله الخاص على 4001، لا Aclas UDP
     LabelScaleConnection.serial,
     LabelScaleConnection.ftp,
     LabelScaleConnection.file,
   },
 };
 
-/// تحذير عربي عند اختيار طريقة لا يدعمها البراند، أو `null` إن كانت مدعومة.
-String? brandConnectionWarning(
+/// طرق **يدعمها الجهاز فعلاً لكن تنفيذها عندنا غير متحقَّق منه**.
+///
+/// المحور الثاني الذي كان ناقصاً: خريطة التوافق وحدها تخلط بين «الميزان
+/// يقدر» و«إحنا نعرف». مسارات TCP/Serial لـ NVK و TEM مكتوبة من بروتوكول
+/// تسلسلي عام (STX + "PLUSTART" + ETX، ACK 0x06 / NAK 0x15) بلا أي التقاط
+/// من جهاز حقيقي — نفس نمط التخمين الذي جعل رونجتا وحده يعمل (رونجتا
+/// وحده كُتب من ملف تصدير حقيقي).
+///
+/// المسار المتحقَّق منه لهذين البراندين هو **تصدير ملف** يستورده `mscale`
+/// ثم يُنزّله للميزان — وهو الوحيد الذي يمكن التحقق منه بلا جهاز.
+const Map<LabelScaleBrand, Set<LabelScaleConnection>> kBrandUnverifiedConnections = {
+  LabelScaleBrand.tem: {LabelScaleConnection.tcp, LabelScaleConnection.serial},
+  LabelScaleBrand.nvkTma: {
+    LabelScaleConnection.tcp,
+    LabelScaleConnection.serial,
+    LabelScaleConnection.ftp,
+  },
+};
+
+/// درجة التنبيه على اختيار (براند × طريقة اتصال).
+enum ScaleAdviceLevel {
+  /// مدعوم ومتحقَّق منه.
+  ok,
+
+  /// الجهاز يدعمه، لكن تنفيذنا مكتوب من افتراض ولم يُختبر على جهاز.
+  unverified,
+
+  /// لا يمكن أن ينجح — البراند لا يتكلّم هذا البروتوكول أصلاً.
+  unsupported,
+}
+
+/// نصيحة معروضة للمستخدم عند اختيار طريقة اتصال لبراند معيّن.
+class ScaleConnectionAdvice {
+  final ScaleAdviceLevel level;
+  final String? message;
+  const ScaleConnectionAdvice(this.level, [this.message]);
+}
+
+/// يقيّم اختيار (براند × طريقة) ويشرح السبب بالعربية.
+ScaleConnectionAdvice adviseBrandConnection(
   LabelScaleBrand brand,
   LabelScaleConnection connection,
 ) {
   final supported = kBrandSupportedConnections[brand];
-  if (supported == null || supported.contains(connection)) return null;
 
-  if (connection == LabelScaleConnection.aclasSDK) {
-    return 'AclasSDK يكتشف موازين Aclas فقط (وبعض إصدارات Rongta المبنية '
+  if (supported != null && !supported.contains(connection)) {
+    if (connection == LabelScaleConnection.aclasSDK) {
+      return ScaleConnectionAdvice(
+        ScaleAdviceLevel.unsupported,
+        'AclasSDK يكتشف موازين Aclas فقط (وبعض إصدارات Rongta المبنية '
         'عليه). ميزان «${brand.name}» لا يتكلّم بروتوكول Aclas، فلن '
         'يُكتشَف مهما كان الـ IP صحيحاً — وهذا أيضاً سبب عدم رؤيته من '
-        'برنامج AclasSDK نفسه.';
+        'برنامج AclasSDK نفسه.',
+      );
+    }
+    final alt = supported.contains(LabelScaleConnection.tcp)
+        ? 'TCP/IP أو FTP'
+        : 'Serial (COM) أو تصدير CSV';
+    return ScaleConnectionAdvice(
+      ScaleAdviceLevel.unsupported,
+      'ميزان «${brand.name}» لا يدعم هذه الطريقة حسب تعريفه في النظام. '
+      'الطريقة المتوقَّعة له: $alt.',
+    );
   }
 
-  final alt = supported.contains(LabelScaleConnection.tcp)
-      ? 'TCP/IP أو FTP'
-      : 'Serial (COM) أو تصدير CSV';
-  return 'ميزان «${brand.name}» لا يدعم هذه الطريقة حسب تعريفه في النظام. '
-      'الطريقة المتوقَّعة له: $alt.';
+  if (kBrandUnverifiedConnections[brand]?.contains(connection) ?? false) {
+    return ScaleConnectionAdvice(
+      ScaleAdviceLevel.unverified,
+      'الميزان يدعم هذه الطريقة (المنفذ ${kDefaultBrandPort[brand] ?? 4001} '
+      'حسب برنامج mscale الرسمي)، لكن **تنفيذها عندنا لم يُختبر على جهاز '
+      'حقيقي** وقد لا ينجح.\n'
+      'المسار المضمون حالياً: «تصدير ملف» ثم استيراده من mscale '
+      '(Import ← Download).',
+    );
+  }
+
+  return const ScaleConnectionAdvice(ScaleAdviceLevel.ok);
 }
+
+/// المنفذ الافتراضي الصحيح لكل براند — مصدر واحد بدل نسختين متباعدتين.
+///
+/// تصحيح 2026-07-30 من لقطات `Communication → Ethernet` في mscale:
+/// TM/NVK/TEM يستخدمون **4001**، لا 8000 ولا 9100 كما كان مسجّلاً. الرقم
+/// كان موجوداً في المشروع أصلاً لكن معلّقاً على البراند الخطأ (ضمن منافذ
+/// رونجتا مع تعليق «Port 4001 is for scale communication/printing»).
+const Map<LabelScaleBrand, int> kDefaultBrandPort = {
+  LabelScaleBrand.cas: 20304,
+  LabelScaleBrand.digi: 3001,
+  LabelScaleBrand.rongta: 9100,
+  LabelScaleBrand.aclas: 8000,
+  LabelScaleBrand.mettlerToledo: 252,
+  LabelScaleBrand.tem: 4001,
+  LabelScaleBrand.dibal: 3000,
+  LabelScaleBrand.nvkTma: 4001,
+};
+
+/// متوافق مع النداءات القائمة — يرجع نص التحذير أو `null`.
+String? brandConnectionWarning(
+  LabelScaleBrand brand,
+  LabelScaleConnection connection,
+) =>
+    adviseBrandConnection(brand, connection).message;
 
 /// PLU item to upload to scale
 class ScalePLUItem {
@@ -307,16 +398,10 @@ class LabelScaleService {
   static const _prefBaudRate = 'label_scale_baud_rate';
 
   // Default ports per brand
-  static const Map<LabelScaleBrand, int> defaultPorts = {
-    LabelScaleBrand.cas: 20304,
-    LabelScaleBrand.digi: 3001,
-    LabelScaleBrand.rongta: 9100,
-    LabelScaleBrand.aclas: 8000,
-    LabelScaleBrand.mettlerToledo: 252,
-    LabelScaleBrand.tem: 9100,
-    LabelScaleBrand.dibal: 3000,
-    LabelScaleBrand.nvkTma: 8000,
-  };
+  /// يفوّض إلى [kDefaultBrandPort] — كان هنا نسخة ثانية من نفس الجدول،
+  /// وثالثة في شاشة «إضافة ميزان» (`_defaultBrandPorts`). ثلاث نسخ تعني
+  /// أن تصحيح منفذ في واحدة لا يصل للباقي.
+  static const Map<LabelScaleBrand, int> defaultPorts = kDefaultBrandPort;
 
   // Brand display names (Arabic)
   static const Map<LabelScaleBrand, String> brandNames = {
@@ -1053,9 +1138,12 @@ class LabelScaleService {
     LabelScaleBrand.rongta: [9100, 4001, 21],
     LabelScaleBrand.aclas: [8000, 9100, 21],
     LabelScaleBrand.mettlerToledo: [252, 9100, 21],
-    LabelScaleBrand.tem: [9100, 20304, 20305, 8000, 3001, 4001, 21],
+    // TEM و NVK: 4001 أولاً — هو المنفذ الذي يستخدمه برنامجهما الرسمي
+    // (mscale) في شاشة Communication → Ethernet. كان مدفوناً في آخر قائمة
+    // TEM وغائباً تماماً عن NVK.
+    LabelScaleBrand.tem: [4001, 9100, 20304, 20305, 8000, 3001, 21],
     LabelScaleBrand.dibal: [3000, 9100, 21],
-    LabelScaleBrand.nvkTma: [8000, 9100, 21],
+    LabelScaleBrand.nvkTma: [4001, 8000, 9100, 21],
   };
 
   /// Scan an IP address for open scale ports.

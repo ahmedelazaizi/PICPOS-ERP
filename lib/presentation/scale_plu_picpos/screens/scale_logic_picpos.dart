@@ -382,10 +382,14 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
     'dibal': 'Dibal (G310)', 'nvkTma': 'NVK TMA',
   };
 
-  static const _defaultBrandPorts = {
-    'cas': 20304, 'digi': 3001, 'rongta': 9100, 'aclas': 8000,
-    'mettlerToledo': 252, 'tem': 9100, 'dibal': 3000, 'nvkTma': 8000,
-  };
+  /// نسخة رابعة من جدول المنافذ كانت هنا بقيم غلط (`tem: 9100`,
+  /// `nvkTma: 8000` — والصحيح **4001** لكليهما حسب شاشة
+  /// `Communication → Ethernet` في برنامج mscale الرسمي). الباتش الوارد من
+  /// UralCash وحّد نُسخهم التلاتة على `kDefaultBrandPort` لكنه ما بيشوفش
+  /// الملف ده، فالنسخة دي كانت هتفضل غلط عند نص العملاء. بقت تُشتقّ من نفس
+  /// المصدر الواحد.
+  static int _defaultPortFor(String brandKey) =>
+      kDefaultBrandPort[LabelScaleService.brandFromString(brandKey)] ?? 20304;
 
   static const _baudRates = [2400, 4800, 9600, 19200, 38400, 57600, 115200];
 
@@ -421,7 +425,7 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
             brand: selectedBrand,
             connectionType: selectedConnection,
             ipAddress: ipCtrl.text.isEmpty ? null : ipCtrl.text,
-            port: int.tryParse(portCtrl.text) ?? (_defaultBrandPorts[selectedBrand] ?? 20304),
+            port: int.tryParse(portCtrl.text) ?? (_defaultPortFor(selectedBrand)),
             comPort: comPortCtrl.text.isEmpty ? null : comPortCtrl.text,
             maxPlu: int.tryParse(maxPluCtrl.text) ?? 500,
             ftpUsername: selectedConnection == 'ftp' ? ftpUserCtrl.text : null,
@@ -465,7 +469,7 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
                       setDialogState(() {
                         selectedBrand = v;
                         // Auto-update port to brand default
-                        final defaultPort = _defaultBrandPorts[v] ?? 20304;
+                        final defaultPort = _defaultPortFor(v);
                         portCtrl.text = '$defaultPort';
                       });
                     },
@@ -595,7 +599,7 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
                         controller: portCtrl,
                         decoration: InputDecoration(
                           labelText: 'المنفذ',
-                          hintText: '${_defaultBrandPorts[selectedBrand] ?? 20304}',
+                          hintText: '${_defaultPortFor(selectedBrand)}',
                           border: const OutlineInputBorder(), isDense: true,
                           suffixIcon: isScanning
                               ? const Padding(padding: EdgeInsets.all(10), child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)))
