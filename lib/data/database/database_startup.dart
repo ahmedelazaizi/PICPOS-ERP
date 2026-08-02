@@ -140,6 +140,32 @@ extension DatabaseStartup on AppDatabase {
         // Column/index already exists — safe to ignore
       }
     }
+
+    // ── تمريرة تطابق الجداول — نظير SQLite لـ_ensurePostgresSchemaParity ────
+    //
+    // جداول مسجّلة في `@DriftDatabase` بس مالهاش `createTable` في أي مايجريشن
+    // بتوصل للتركيبة النضيفة عبر `createAll()` وبس — التركيبة المرقّاة عمرها
+    // ما بتشوفها. `category_station_mappings` الحالة المؤكَّدة: بيتقري بـSQL
+    // خام في `kitchen_dao.dart:364`، وغيابه بيدي `no such table` متبلع في
+    // `catch { debugPrint }` فأوامر المطبخ ما بتتطبعش والكاشير مش شايف خطأ.
+    //
+    // نفس العطل حصل ميدانياً على PostgreSQL في 2026-05-25 (42P01 على كل بيعة)
+    // واتقفل بـSpec 130 — بس الإصلاح ده جوه `if (_isPostgres)`، فـSQLite
+    // فضلت بلا نظير. التمريرة دي هي النظير.
+    //
+    // عامة عن قصد مش لجدول بالاسم: أي جدول ينضم لـ`@DriftDatabase` في إصدار
+    // جاي من غير مايجريشن بيتغطّى تلقائياً. drift بيولّد
+    // `CREATE TABLE IF NOT EXISTS` فالتمريرة no-op على قاعدة سليمة ولا
+    // بتلمس صف واحد. كل جدول في try لوحده عشان جدول واحد فاشل ما يوقّفش
+    // الباقي.
+    final migrator = createMigrator();
+    for (final table in allSchemaEntities.whereType<TableInfo>()) {
+      try {
+        await migrator.createTable(table);
+      } catch (e) {
+        debugPrint('[SchemaHeal] ${table.actualTableName}: $e');
+      }
+    }
   }
 
   // ─────────────────────────────────────────────────────────────────────────
