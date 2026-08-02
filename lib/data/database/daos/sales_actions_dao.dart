@@ -58,13 +58,25 @@ extension SalesActionsDao on AppDatabase {
         if (product != null && product.trackInventory) {
           // UOM: apply quantityInBase conversion for base-unit accuracy
           final voidQtyInBase = item.quantityInBase > 0 ? item.quantityInBase : 1.0;
+          final restoreQty = item.quantity * voidQtyInBase;
+          // Same asymmetry the sales-return path had: the reversing JE below
+          // mirrors the original entry line-for-line, so it books the FROZEN
+          // cost — while the stock comes back valued at the CURRENT WAC.
+          // Blend at the frozen cost so valuation and the GL agree.
+          // Before adjustStock: updateProductWAC reads current_stock.
+          await updateProductWAC(
+            productId: item.productId,
+            newQuantity: restoreQty,
+            newUnitCost: item.costPrice,
+          );
           await adjustStock(
             productId: item.productId,
             warehouseId: inv.warehouseId,
-            quantity: item.quantity * voidQtyInBase,
+            quantity: restoreQty,
             type: 'void_reversal',
             referenceType: 'sales_invoice',
             referenceId: invoiceId,
+            unitCost: item.costPrice,
             notes: 'إلغاء فاتورة مبيعات #${inv.invoiceNumber}',
           );
         }

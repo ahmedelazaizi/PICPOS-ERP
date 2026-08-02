@@ -305,6 +305,25 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
             // is 0 so the COGS leg is naturally zero). Mirrors purchase_dao.dart's
             // `if (product != null && product.trackInventory)` guard.
             if (product.trackInventory) {
+              // Re-blend the returned units into WAC at the SAME cost the
+              // journal entry below uses (item.costPrice, frozen at sale
+              // time). Without this, valuation keeps the current WAC while
+              // the GL takes the frozen one, and the gap
+              // (qty × (WAC_now − frozen)) never self-corrects.
+              //
+              // MUST run before adjustStock — updateProductWAC reads
+              // products.current_stock as the "before" quantity.
+              //
+              // The sibling here is the RECEIPT path (purchase_dao's
+              // createPurchaseInvoice), not the purchase-RETURN path: a sales
+              // return brings goods IN, so it blends (updateProductWAC);
+              // reverseProductWAC is for goods going OUT and would push the
+              // cost the wrong way.
+              await _db.updateProductWAC(
+                productId: item.productId,
+                newQuantity: stockReturnQty,
+                newUnitCost: item.costPrice,
+              );
               await _db.adjustStock(
                 productId: item.productId,
                 warehouseId: invoice.warehouseId,
@@ -313,6 +332,9 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
                 referenceType: 'sales_return',
                 referenceId: invoice.id,
                 userId: userId,
+                // Same frozen cost, so the per-warehouse average_cost layer
+                // lands on the same number as the product-level WAC.
+                unitCost: item.costPrice,
                 notes: reason != null && reason.isNotEmpty
                     ? 'مرتجع: $reason'
                     : 'مرتجع فاتورة ${invoice.invoiceNumber}',

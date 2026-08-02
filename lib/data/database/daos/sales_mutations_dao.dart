@@ -309,6 +309,16 @@ extension SalesMutationsDao on AppDatabase {
         final stockQty = quantity * qtyInBase;
         if (product != null && product.trackInventory) {
           if (saleType == 'return') {
+            // Quick POS return. Same rule as the returns dialog: blend the
+            // returned units in at the cost the JE recognises, before
+            // adjustStock (which is what changes current_stock).
+            final returnCost =
+                item.costPrice.present ? item.costPrice.value : 0.0;
+            await updateProductWAC(
+              productId: productId,
+              newQuantity: stockQty,
+              newUnitCost: returnCost,
+            );
             await adjustStock(
               productId: productId,
               warehouseId: warehouseId,
@@ -316,6 +326,7 @@ extension SalesMutationsDao on AppDatabase {
               type: 'return',
               referenceType: 'sales_invoice',
               referenceId: invoiceId,
+              unitCost: returnCost,
               notes: 'صنف مرتجع فاتورة #$invNumber',
             );
           } else {
@@ -853,13 +864,24 @@ extension SalesMutationsDao on AppDatabase {
         final product = await getProductById(oldItem.productId);
         if (product != null && product.trackInventory) {
           final oldQtyInBase = oldItem.quantityInBase > 0 ? oldItem.quantityInBase : 1.0;
+          final restoreQty = oldItem.quantity * oldQtyInBase;
+          // Editing an invoice restores the OLD lines and then re-issues the
+          // new ones. Nets to zero when the quantity is unchanged, but a
+          // reduced quantity leaves goods on hand — and those goods must
+          // carry the cost the original invoice froze, not today's WAC.
+          await updateProductWAC(
+            productId: oldItem.productId,
+            newQuantity: restoreQty,
+            newUnitCost: oldItem.costPrice,
+          );
           await adjustStock(
             productId: oldItem.productId,
             warehouseId: oldInvoice.warehouseId,
-            quantity: oldItem.quantity * oldQtyInBase,
+            quantity: restoreQty,
             type: 'edit_reversal',
             referenceType: 'sales_invoice',
             referenceId: invoiceId,
+            unitCost: oldItem.costPrice,
             notes: 'عكس الكمية لتعديل فاتورة مبيعات #$invoiceId',
           );
         }

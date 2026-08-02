@@ -76,6 +76,15 @@ class ProcessSalesReturnUseCase {
 
       // Restore stock using adjustStock — properly updates both product.currentStock AND warehouse balance
       if (product.trackInventory) {
+        // Blend the returned units back in at the historical cost this
+        // use-case already resolved for the COGS reversal above, so
+        // valuation and the GL stay on the same number. Must precede
+        // adjustStock — updateProductWAC reads the pre-return stock.
+        await _db.updateProductWAC(
+          productId: item.productId,
+          newQuantity: item.quantity,
+          newUnitCost: historicalCostPrice,
+        );
         await _db.adjustStock(
           productId: item.productId,
           warehouseId: invoice.warehouseId,
@@ -83,6 +92,7 @@ class ProcessSalesReturnUseCase {
           type: 'return',
           referenceType: 'sales_return',
           referenceId: request.originalInvoiceId,
+          unitCost: historicalCostPrice,
           notes: request.returnReason.isNotEmpty
               ? 'مرتجع: ${request.returnReason}'
               : 'مرتجع فاتورة ${invoice.invoiceNumber}',
