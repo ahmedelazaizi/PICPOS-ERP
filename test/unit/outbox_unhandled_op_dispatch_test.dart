@@ -68,4 +68,95 @@ void main() {
       );
     });
   });
+
+  // ── The seven never-dispatched tables ─────────────────────────────────────
+  //
+  // Sibling of the group above, one level worse. Those cases existed but
+  // handled too few ops; these seven tables had NO case at all, so every
+  // queued row fell to `default:` → StateError → isPermanentError →
+  // markAsSyncDeadLetter. "Retry all" resets them to pending with attempts=0,
+  // they throw the same StateError, and dead-letter again: a loop the admin
+  // can never clear. Eighteen enqueue sites feed it (cwi_admin ×12,
+  // cwi_catalog ×5, cwi_sync ×1) and every one of them already had a working
+  // ServerProxy method — the dispatch table was simply missing.
+  //
+  // Client-mode only: mirror mode throws MirrorOfflineException instead of
+  // queueing, so nothing of this reaches the outbox there.
+  group('Offline outbox — permanently dead-lettered admin tables', () {
+    const expectedDispatch = <String, String>{
+      'branches/insert': 'proxy.createBranch(',
+      'branches/update': 'proxy.updateBranch(',
+      'branches/delete': 'proxy.deleteBranch(',
+      'accounts/insert': 'proxy.createAccount(',
+      'accounts/update': 'proxy.updateAccount(',
+      'accounts/delete': 'proxy.deleteAccount(',
+      'account_mappings/upsert': 'proxy.setAccountMapping(',
+      'account_mappings/delete': 'proxy.deleteAccountMapping(',
+      'cost_centers/insert': 'proxy.createCostCenter(',
+      'cost_centers/update': 'proxy.updateCostCenter(',
+      'cost_centers/delete': 'proxy.deleteCostCenter(',
+      'user_region_access/upsert': 'proxy.setUserRegionAccess(',
+      'warehouses/insert': 'proxy.createWarehouse(',
+      'warehouses/update': 'proxy.updateWarehouse(',
+      'warehouses/update(setDefault)': 'proxy.setDefaultWarehouse(',
+      'warehouses/update(unsetDefault)': 'proxy.unsetDefaultWarehouse(',
+      'activity_logs/insert': 'proxy.pushActivityLog(',
+    };
+
+    expectedDispatch.forEach((op, call) {
+      test('$op replays via $call', () {
+        expect(source.contains(call), isTrue,
+            reason: '$op is enqueued by the interceptor but had no case in '
+                '_replayOperation, so it dead-lettered forever. It must '
+                'replay via $call.');
+      });
+    });
+
+    test('every one of the seven tables has a case', () {
+      const tables = [
+        'branches',
+        'accounts',
+        'account_mappings',
+        'cost_centers',
+        'user_region_access',
+        'warehouses',
+        'activity_logs',
+      ];
+      final missing =
+          tables.where((t) => !source.contains("case '$t':")).toList();
+      expect(missing, isEmpty,
+          reason: 'these tables reach `default:` → StateError → dead-letter, '
+              'and "retry all" loops them forever: $missing');
+    });
+  });
+
+  // ── safes: silent success, the worst failure mode of the three ────────────
+  //
+  // `safes/insert` and `safes/delete` ARE enqueued (cwi_admin) but the safes
+  // case covered only close/update — so they hit `break`, _replayOperation
+  // returned null without throwing, and drainOutbox marked them a SUCCESS and
+  // cleared the row. No dead-letter, no log, no trace. Same for a generic
+  // safe edit (rename / bank details / isActive), whose inner
+  // `payload['isDefault'] == true` check failed and fell through.
+  //
+  // A dead-letter at least shows up in the sync dialog. This did not.
+  group('Offline outbox — safes silent success', () {
+    test('safes/insert replays via proxy.createSafe', () {
+      expect(source.contains('proxy.createSafe('), isTrue,
+          reason: 'a safe created offline was cleared from the outbox as if '
+              'it had synced — it never existed on HQ.');
+    });
+
+    test('safes/delete replays via proxy.deleteSafe', () {
+      expect(source.contains('proxy.deleteSafe('), isTrue,
+          reason: 'a safe deleted offline came back on the next DeltaPull, '
+              'and the outbox row was already gone.');
+    });
+
+    test('a generic safes/update replays via proxy.updateSafe', () {
+      expect(source.contains('proxy.updateSafe('), isTrue,
+          reason: 'renaming a bank safe offline was silently discarded: the '
+              "update branch only handled payload['isDefault'] == true.");
+    });
+  });
 }

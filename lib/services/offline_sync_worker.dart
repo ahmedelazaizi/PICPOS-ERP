@@ -1053,6 +1053,21 @@ class OfflineSyncWorker {
         : 'SyncOutbox_$outboxId';
   }
 
+  /// The update-shaped payloads are queued as `{'id': id, ...data}`, but the
+  /// proxy's update methods take the id separately and expect only the changed
+  /// fields. Sending `id` back inside the body would let the server overwrite
+  /// its own primary key with the CLIENT's autoincrement — the ids diverge
+  /// between instances, so that is a row-corrupting edit, not a no-op.
+  /// The routing-only flags are stripped for the same reason: they are how the
+  /// producer tags which endpoint to call, not columns on the table.
+  static Map<String, dynamic> _withoutId(Map<String, dynamic> payload) {
+    final copy = Map<String, dynamic>.from(payload)..remove('id');
+    copy.remove('idempotency_key');
+    copy.remove('setDefault');
+    copy.remove('unsetDefault');
+    return copy;
+  }
+
   /// Replay a single queued operation via ServerProxy
   Future<dynamic> _replayOperation(
     String table,
@@ -1748,6 +1763,144 @@ class OfflineSyncWorker {
         }
         break;
 
+      // ── Admin / structural tables ────────────────────────────────────────
+      // These seven had NO case at all, so every queued operation fell to the
+      // `default:` StateError → isPermanentError → markAsSyncDeadLetter. The
+      // "retry all" button flips dead-letter rows back to pending with
+      // attempts=0, they hit the same StateError, and dead-letter again —
+      // an endless loop the admin can never clear. Eighteen enqueue sites
+      // across cwi_admin/cwi_catalog/cwi_sync fed it.
+      //
+      // Every operation below already has a tested method on ServerProxy (the
+      // same one the online path calls) and every payload already carries what
+      // that method needs, so this is dispatch-table plumbing, not new
+      // behaviour. NOTE: mirror mode never reaches here — it throws
+      // MirrorOfflineException instead of queueing — so this is a client-mode
+      // fix exclusively.
+
+      case 'branches':
+        if (operation == 'insert') {
+          await proxy.createBranch(payload, idempotencyKey: idempotencyKey);
+        } else if (operation == 'update') {
+          await proxy.updateBranch(
+            payload['id'] as int,
+            _withoutId(payload),
+            idempotencyKey: idempotencyKey,
+          );
+        } else if (operation == 'delete') {
+          await proxy.deleteBranch(
+            payload['id'] as int,
+            reassignUsersToBranchId: payload['reassignUsersToBranchId'] as int?,
+            idempotencyKey: idempotencyKey,
+          );
+        } else {
+          throw StateError('Unhandled op $operation for table $table');
+        }
+        break;
+
+      case 'accounts':
+        if (operation == 'insert') {
+          await proxy.createAccount(payload, idempotencyKey: idempotencyKey);
+        } else if (operation == 'update') {
+          await proxy.updateAccount(
+            payload['id'] as int,
+            _withoutId(payload),
+            idempotencyKey: idempotencyKey,
+          );
+        } else if (operation == 'delete') {
+          await proxy.deleteAccount(payload['id'] as int,
+              idempotencyKey: idempotencyKey);
+        } else {
+          throw StateError('Unhandled op $operation for table $table');
+        }
+        break;
+
+      case 'account_mappings':
+        if (operation == 'upsert') {
+          await proxy.setAccountMapping(payload,
+              idempotencyKey: idempotencyKey);
+        } else if (operation == 'delete') {
+          await proxy.deleteAccountMapping(
+            purpose: payload['purpose'] as String,
+            costCenterId: payload['costCenterId'] as int?,
+            idempotencyKey: idempotencyKey,
+          );
+        } else {
+          throw StateError('Unhandled op $operation for table $table');
+        }
+        break;
+
+      case 'cost_centers':
+        if (operation == 'insert') {
+          await proxy.createCostCenter(payload, idempotencyKey: idempotencyKey);
+        } else if (operation == 'update') {
+          await proxy.updateCostCenter(
+            payload['id'] as int,
+            _withoutId(payload),
+            idempotencyKey: idempotencyKey,
+          );
+        } else if (operation == 'delete') {
+          await proxy.deleteCostCenter(payload['id'] as int,
+              idempotencyKey: idempotencyKey);
+        } else {
+          throw StateError('Unhandled op $operation for table $table');
+        }
+        break;
+
+      case 'user_region_access':
+        if (operation == 'upsert') {
+          await proxy.setUserRegionAccess(
+            payload['userId'] as int,
+            (payload['regionIds'] as List).map((e) => e as int).toList(),
+            idempotencyKey: idempotencyKey,
+          );
+        } else {
+          throw StateError('Unhandled op $operation for table $table');
+        }
+        break;
+
+      case 'warehouses':
+        if (operation == 'insert') {
+          return proxy.createWarehouse(
+            name: payload['name'] as String,
+            branchId: payload['branchId'] as int?,
+            globalId: payload['globalId'] as String?,
+          );
+        } else if (operation == 'update') {
+          // Three distinct enqueue sites share operation='update' and are
+          // told apart by these flags (cwi_catalog setDefault/unsetDefault).
+          // Replaying the wrong one silently re-points the POS's default
+          // warehouse, so the discrimination has to match the producer.
+          if (payload['setDefault'] == true) {
+            await proxy.setDefaultWarehouse(payload['id'] as int,
+                idempotencyKey: idempotencyKey);
+          } else if (payload['unsetDefault'] == true) {
+            await proxy.unsetDefaultWarehouse(payload['id'] as int,
+                idempotencyKey: idempotencyKey);
+          } else {
+            await proxy.updateWarehouse(
+              payload['id'] as int,
+              _withoutId(payload),
+              idempotencyKey: idempotencyKey,
+            );
+          }
+        } else if (operation == 'delete') {
+          await proxy.deleteWarehouse(payload['id'] as int,
+              idempotencyKey: idempotencyKey);
+        } else {
+          throw StateError('Unhandled op $operation for table $table');
+        }
+        break;
+
+      case 'activity_logs':
+        if (operation == 'insert') {
+          await proxy.pushActivityLog(payload,
+              idempotencyKey: idempotencyKey);
+        } else {
+          throw StateError('Unhandled op $operation for table $table');
+        }
+        break;
+
       case 'safes':
         if (operation == 'close') {
           // Spec 135: forward the cached amounts + closeEventGid so a deferred
@@ -1764,6 +1917,11 @@ class OfflineSyncWorker {
             closeEventGid: payload['closeEventGid'] as String?,
             idempotencyKey: idempotencyKey,
           );
+        } else if (operation == 'insert') {
+          await proxy.createSafe(payload, idempotencyKey: idempotencyKey);
+        } else if (operation == 'delete') {
+          await proxy.deleteSafe(payload['id'] as int,
+              idempotencyKey: idempotencyKey);
         } else if (operation == 'update') {
           // ClientWriteInterceptor.submitSetDefaultSafe queues this shape.
           if (payload['isDefault'] == true) {
@@ -1771,7 +1929,21 @@ class OfflineSyncWorker {
               safeId: payload['id'] as int,
               idempotencyKey: idempotencyKey,
             );
+          } else {
+            // A generic safe edit (rename / bank details / isActive). Falling
+            // through to `break` here returned null, which drainOutbox reads
+            // as SUCCESS and clears the row — the edit vanished with no
+            // dead-letter, no log, no trace. That is strictly worse than the
+            // dead-letter loop the seven tables above suffered: at least a
+            // dead-letter is visible.
+            await proxy.updateSafe(
+              payload['id'] as int,
+              _withoutId(payload),
+              idempotencyKey: idempotencyKey,
+            );
           }
+        } else {
+          throw StateError('Unhandled op $operation for table $table');
         }
         break;
 
