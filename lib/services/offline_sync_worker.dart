@@ -75,6 +75,29 @@ String _encodeMappingsBackground(Map<String, Map<String, int>> mappings) {
 /// [ClientWriteInterceptor] which queues failed writes into the
 /// outbox, and [ConnectionHealthWrapper] which triggers drain on
 /// reconnect.
+/// يقرا الـ`globalId` من payload مخزّن في طابور الأوفلاين.
+///
+/// ── ليه دالة مش قراءة مباشرة ────────────────────────────────────────────────
+/// الـ`globalId` هو **مسار الـdedup الوحيد** على السيرفر لعمليات زي التحويل
+/// المخزني: `postStockTransfer` بيفحصه قبل الحركات ويرجّع `dedup: true` لو
+/// شافه قبل كده، و`/api/inventory/transfer` مش ضمن الـendpoints اللي بتقرا
+/// هيدر `x-idempotency-key` — فالمفتاح لوحده بلا أثر هناك.
+///
+/// إعادة الإرسال من الطابور كانت بتسقط الحقل ده رغم إنه **مخزّن فعلاً** في
+/// الـpayload (`cwi_trading.dart:673`)، فالسيرفر كان بيشوف الطلب المعاد
+/// كطلب جديد ويخصم المخزون تاني. سبع cases تانية في نفس الـswitch بتمرّره
+/// صح — دي كانت الشاذة.
+///
+/// الطابور فيه الشكلين (`globalId` من المعترض، `global_id` من مسارات أقدم)،
+/// وصفوف قديمة بلا الحقل خالص لازم تعدّي بـ`null` مش بنص فاضي — السيرفر
+/// بيتعامل مع `''` كقيمة موجودة.
+@visibleForTesting
+String? replayGlobalIdFrom(Map<String, dynamic> payload) {
+  final raw = payload['globalId'] ?? payload['global_id'];
+  if (raw is! String || raw.isEmpty) return null;
+  return raw;
+}
+
 class OfflineSyncWorker {
   OfflineSyncWorker._();
   static final OfflineSyncWorker instance = OfflineSyncWorker._();
@@ -1558,6 +1581,10 @@ class OfflineSyncWorker {
                 [],
             userId: (payload['userId'] ?? payload['user_id']) as int?,
             notes: (payload['notes'] ?? payload['description']) as String?,
+            // بلا ده كانت إعادة الإرسال بعد timeout بتخصم المخزون تاني:
+            // السيرفر بيعمل dedup بالـglobalId حصرياً، و/api/inventory/transfer
+            // مش بيقرا هيدر الـidempotency فالمفتاح تحت بلا أثر هنا.
+            globalId: replayGlobalIdFrom(payload),
             idempotencyKey: idempotencyKey,
           );
         }
