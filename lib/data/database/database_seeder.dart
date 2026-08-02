@@ -93,14 +93,39 @@ extension DatabaseSeeder on AppDatabase {
               name: s[0],
               safeType: Value(s[1]),
               isDefault: const Value(true),
-              // Spec 136 ISS-2 — deterministic seed gid (keyed by stable
-              // safeType, not the editable display name).
+              isSystemDefault: const Value(true),
               globalId: Value(UuidV7.deriveSeedGlobalId(
                   table: 'safes', seedKey: s[1])),
-              isSystemDefault: const Value(true),
             ),
           );
         }
+      }
+
+      // ── الصندوق الرئيسي (الإدارة المركزية) ────────────────────────────────
+      //
+      // وجهة النقدية المسحوبة من أدراج الكاشيرية عند إقفال الوردية، ومنه
+      // بتتوزّع على البنوك أو المصروفات الموسّعة على مستوى الشركة.
+      //
+      // كان **مش موجود**، فسطر السحب في `_closeShiftSafes` بيخصم من الدرج بلا
+      // خزينة مستقبِلة — مجموع أرصدة الخزائن بيقلّ كل وردية وينحرف عن حساب
+      // النقدية في الأستاذ (اللي بيفضل صح، لأن النقدية اتقيّدت عليه من ساعة
+      // البيع). وصف سطر السحب نفسه كان بيقول «تحويل حصة الوردية إلى الإدارة»
+      // — النية كانت موجودة والطرف المستقبِل هو اللي ناقص.
+      //
+      // `isDefault: false` **مقصود**: ده مش صندوق بيع. الافتراضي بيتلقّط
+      // كوجهة للبيع والسندات، والصندوق المركزي مايتلقطش كده.
+      // و`branchId` فاضي لأنه على مستوى الشركة مش الفرع.
+      if (!existingSafes.contains(kCentralSafeName)) {
+        await into(safes).insert(
+          SafesCompanion.insert(
+            name: kCentralSafeName,
+            safeType: const Value('cash'),
+            isDefault: const Value(false),
+            isSystemDefault: const Value(true),
+            globalId: Value(UuidV7.deriveSeedGlobalId(
+                table: 'safes', seedKey: kCentralSafeSeedKey)),
+          ),
+        );
       }
 
       // Seed Chart of Accounts

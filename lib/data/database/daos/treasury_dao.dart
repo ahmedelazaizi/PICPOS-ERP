@@ -7,6 +7,13 @@
 
 part of '../database.dart';
 
+/// اسم الصندوق الرئيسي (الإدارة المركزية) — وجهة نقدية إقفال الورديات.
+const String kCentralSafeName = 'الصندوق الرئيسي';
+
+/// مفتاح البذرة الثابت للـ`globalId` — مستقل عن الاسم المعروض عشان إعادة
+/// التسمية ما تخلقش خزينة تانية على الأجهزة التانية (نفس نمط Spec 136 ISS-2).
+const String kCentralSafeSeedKey = 'central';
+
 /// كود الحساب الافتراضي لكل نوع خزينة — **مطابق لمسار البيع الحي**.
 ///
 /// `_resolveBranchSafeAccount` في `accounting_autopost_dao.dart:58` بيقع على
@@ -209,6 +216,25 @@ class _ShiftSettlementResult {
 
 /// Extension for Treasury-related database operations
 extension TreasuryDao on AppDatabase {
+  /// الصندوق الرئيسي (الإدارة المركزية) — أو `null` لو مش مزروع.
+  ///
+  /// البحث بالـ`globalId` المشتق مش بالاسم: الاسم قابل للتعديل من المستخدم،
+  /// والبحث بيه كان هيخلق خزينة تانية على أول إعادة تسمية. الاسم احتياطي
+  /// للتركيبات اللي اتعملت قبل ما البذرة الثابتة تدخل.
+  Future<Safe?> getCentralSafe() async {
+    final gid = UuidV7.deriveSeedGlobalId(
+        table: 'safes', seedKey: kCentralSafeSeedKey);
+    final byGid = await (select(safes)
+          ..where((s) => s.globalId.equals(gid))
+          ..limit(1))
+        .getSingleOrNull();
+    if (byGid != null) return byGid;
+    return (select(safes)
+          ..where((s) => s.name.equals(kCentralSafeName))
+          ..limit(1))
+        .getSingleOrNull();
+  }
+
 
   // ═══════════════════════════════════════════════════════════════════════
   // SHIFT OPERATIONS (#Phase4: Blind Audit)
@@ -893,6 +919,50 @@ extension TreasuryDao on AppDatabase {
         // absolute `SET balance = 0` would expose if another transaction
         // touched this safe between our read and our write.
         await adjustSafeBalance(sId, -actualDrain);
+
+        // ── الطرف المستقبِل: الصندوق الرئيسي (الإدارة المركزية) ────────────
+        //
+        // السحب فوق كان بيتم **بلا خزينة مستقبِلة**، فمجموع أرصدة الخزائن
+        // بيقلّ كل وردية وينحرف عن حساب النقدية في الأستاذ — واللي بيفضل صح
+        // لأن النقدية اتقيّدت على ١١١١ من ساعة البيع. وصف سطر السحب نفسه
+        // بيقول «تحويل حصة الوردية إلى الإدارة»: النية كانت موجودة والطرف
+        // ده هو اللي كان ناقص.
+        //
+        // مفيش قيد يومية هنا **عن قصد**: الخزنتين بيقعوا على نفس حساب
+        // النقدية، فالحركة داخل نفس الحساب ومفيش حاجة تتحرك في الأستاذ. قيد
+        // بصفر كان بيدّي إحساس كاذب إن فيه ترحيل حصل.
+        try {
+          final central = await getCentralSafe();
+          if (central == null) {
+            unawaited(DiagnosticLogger.log(
+              'SHIFT-CLOSE-NO-CENTRAL',
+              'safeId=$sId amount=$actualDrain — الصندوق الرئيسي مش مزروع، '
+              'النقدية اتسحبت بلا خزينة مستقبِلة',
+            ));
+          } else if (central.id != sId) {
+            // التحويل لنفسه معناه سطر استلام وهمي ورصيد ما بيتصفّاش.
+            await into(safeTransactions).insert(
+              SafeTransactionsCompanion.insert(
+                voucherNumber: voucherNo,
+                safeId: central.id,
+                transactionType: 'receipt',
+                category: 'shift_closing',
+                amount: actualDrain,
+                balanceAfter: central.balance + actualDrain,
+                description: Value(
+                    'إقفال وردية #$shiftId — استلام حصة ${safe.name}'),
+                createdAt: Value(endTime),
+                userId: Value(shift.userId),
+                referenceType: const Value('shift_closing'),
+                referenceId: Value(shiftId),
+                globalId: Value('$zeroOutGlobalId-central'),
+              ),
+            );
+            await adjustSafeBalance(central.id, actualDrain);
+          }
+        } catch (e) {
+          debugPrint('[TreasuryDao] Central-safe receipt failed for #$sId: $e');
+        }
 
         // Post a GL journal entry for this safe's shift-close transfer.
         // Credit: the safe's own linked GL account.
