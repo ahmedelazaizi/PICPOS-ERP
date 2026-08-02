@@ -7,6 +7,74 @@
 
 part of '../database.dart';
 
+/// نتيجة تحديد طرفَي قيد تحويل رصيد الخزينة عند الإقفال.
+class ShiftCloseTransferAccounts {
+  const ShiftCloseTransferAccounts._({
+    this.sourceAccountId,
+    this.destAccountId,
+    required this.shouldPost,
+  });
+
+  final int? sourceAccountId;
+  final int? destAccountId;
+  final bool shouldPost;
+}
+
+/// طرفا قيد «تحويل رصيد الخزينة» عند إقفال الوردية أو الخزينة.
+///
+/// ── العطل اللي الدالة دي موجودة عشانه ───────────────────────────────────────
+/// الطرفين كانوا بيتحسبوا **بنفس التعبير بالحرف**:
+///
+///     safeType == 'bank' ? purpose('bank') : purpose('cash')
+///
+/// والسيدر ما بيربطش الخزائن بحسابات، فـ`linkedAccountId` كان `null` دايماً
+/// والتعبير بيقع على نفس الـfallback في الطرفين → القيد صافيه صفر. بينما
+/// `adjustSafeBalance(-actualDrain)` قبله بيخصم من الخزينة **فعلاً**، فالدرج
+/// بيتفضّى والأستاذ ما بيتحركش، والفرق بيتراكم كل وردية.
+///
+/// ── القرار (المالك، 2026-08-02) ─────────────────────────────────────────────
+/// الوجهة = **الصندوق الرئيسي**. والمصدر = حساب الخزينة نفسها، فلازم تكون
+/// مربوطة — عشان كده [AppDatabase.linkSeededSafesToAccounts] موجودة.
+///
+/// ── الاحتياطي بنوع الخزينة ──────────────────────────────────────────────────
+/// خزينة مش مربوطة بتقع على حساب **نوعها** ([kSafeTypeAccountCode]): درج
+/// الكاشير على ١١١٧، البنك على ١١١٣، كليك على ١١١٦ — كلهم غير الوجهة، فالقيد
+/// بيتكتب صح حتى قبل ما الربط يشتغل. الاحتياطي القديم كان بيقع على **نفس**
+/// حساب الوجهة، وده كل الحكاية.
+///
+/// ── ليه «ما تكتبش» لما الطرفين يتساووا ──────────────────────────────────────
+/// لو الاتنين طلعوا نفس الحساب برضه (دليل معدَّل، ربط يدوي على ١١١١)، قيد
+/// صافيه صفر **بيخفي** المشكلة: الأرقام بتبان متوازنة والفرق بين الخزينة
+/// والأستاذ بيفضل غير مرئي. غياب القيد بيسيب فرق ظاهر في المطابقة يقود للسبب.
+ShiftCloseTransferAccounts resolveShiftCloseTransferAccounts({
+  required int? linkedAccountId,
+  required int? safeTypeAccountId,
+  required int? mainCashAccountId,
+}) {
+  final source = linkedAccountId ?? safeTypeAccountId;
+  if (source == null ||
+      mainCashAccountId == null ||
+      source == mainCashAccountId) {
+    return const ShiftCloseTransferAccounts._(shouldPost: false);
+  }
+  return ShiftCloseTransferAccounts._(
+    sourceAccountId: source,
+    destAccountId: mainCashAccountId,
+    shouldPost: true,
+  );
+}
+
+/// كود الحساب الافتراضي لكل نوع خزينة.
+///
+/// درج الكاشير له حسابه الخاص (١١١٧) مش الصندوق الرئيسي (١١١١): الأول موقع
+/// النقدية أثناء الوردية، والتاني اللي بيستلمها عند الإقفال. لو الاتنين نفس
+/// الحساب، قيد التحويل صافيه صفر.
+const Map<String, String> kSafeTypeAccountCode = {
+  'cash': '1117', // صندوق الكاشير
+  'bank': '1113', // البنك الأهلي - حساب جاري
+  'click': '1116', // حساب Click
+};
+
 /// One expense line item surfaced by [getShiftClosingAggregates] for the
 /// dialog's "detailed expenses" drop-down.
 class ShiftClosingExpenseItem {
@@ -197,6 +265,32 @@ class _ShiftSettlementResult {
 
 /// Extension for Treasury-related database operations
 extension TreasuryDao on AppDatabase {
+  /// يربط كل خزينة مالهاش حساب بحساب نوعها من [kSafeTypeAccountCode].
+  ///
+  /// ── ليه مش في السيدر بس ─────────────────────────────────────────────────
+  /// التركيبات القايمة عندها الخزائن المزروعة بـ`linkedAccountId = NULL`
+  /// (السيدر عمره ما حطّه)، فقيد إقفال الوردية عندهم صافيه صفر من أول يوم.
+  /// الدالة دي بتشتغل من السيدر **ومن الإقلاع** فالترقية بتصلّح نفسها.
+  ///
+  /// ── ما بتدوسش على ربط يدوي ───────────────────────────────────────────────
+  /// بتلمس الخزائن اللي `linkedAccountId` بتاعها `NULL` بس. محاسب ربط خزينة
+  /// بحساب مخصص عن قصد لازم يفضل كده.
+  Future<void> linkSeededSafesToAccounts() async {
+    final unlinked = await (select(safes)
+          ..where((s) => s.linkedAccountId.isNull()))
+        .get();
+    if (unlinked.isEmpty) return;
+
+    for (final safe in unlinked) {
+      final code = kSafeTypeAccountCode[safe.safeType];
+      if (code == null) continue; // نوع مخصص — قرار المحاسب
+      final account = await getAccountByCode(code);
+      if (account == null) continue; // دليل معدَّل — ما نخترعش حساب
+      await (update(safes)..where((s) => s.id.equals(safe.id)))
+          .write(SafesCompanion(linkedAccountId: Value(account.id)));
+    }
+  }
+
   // ═══════════════════════════════════════════════════════════════════════
   // SHIFT OPERATIONS (#Phase4: Blind Audit)
   // ═══════════════════════════════════════════════════════════════════════
@@ -885,19 +979,34 @@ extension TreasuryDao on AppDatabase {
         // Credit: the safe's own linked GL account.
         // Debit:  same-type purpose account (cash safe → cash, bank safe → bank).
         try {
-          Account? sourceAccount;
-          if (safe.linkedAccountId != null) {
-            sourceAccount = await accountingDao.getAccountById(safe.linkedAccountId!);
-          }
-          sourceAccount ??= safe.safeType == 'bank'
-              ? await accountingDao.getAccountByPurpose('bank')
-              : await accountingDao.getAccountByPurpose('cash');
+          // القرار (المالك، 2026-08-02): الوجهة هي الصندوق الرئيسي، والمصدر
+          // حساب الخزينة نفسها. الفرعان كانوا **نفس التعبير بالحرف** فالقيد
+          // كان صافيه صفر — والدرج بيتفضّى والأستاذ ما بيتحركش.
+          final mainCash = await accountingDao.getAccountByPurpose('cash');
+          final typeCode = kSafeTypeAccountCode[safe.safeType];
+          final typeAccount = typeCode == null
+              ? null
+              : await accountingDao.getAccountByCode(typeCode);
+          final accts = resolveShiftCloseTransferAccounts(
+            linkedAccountId: safe.linkedAccountId,
+            safeTypeAccountId: typeAccount?.id,
+            mainCashAccountId: mainCash?.id,
+          );
 
-          final destAccount = safe.safeType == 'bank'
-              ? await accountingDao.getAccountByPurpose('bank')
-              : await accountingDao.getAccountByPurpose('cash');
-
-          if (sourceAccount != null && destAccount != null) {
+          if (!accts.shouldPost) {
+            // قيد صافيه صفر بيخفي المشكلة؛ غيابه بيسيب فرق ظاهر في المطابقة.
+            unawaited(DiagnosticLogger.log(
+              'SHIFT-CLOSE-NO-JE',
+              'safeId=$sId name=${safe.name} linkedAccountId=${safe.linkedAccountId} '
+              'mainCashId=${mainCash?.id} — تخطّي قيد التحويل: المصدر والوجهة '
+              'نفس الحساب أو الربط ناقص',
+            ));
+          } else {
+            final sourceAccount =
+                await accountingDao.getAccountById(accts.sourceAccountId!);
+            final destAccount =
+                await accountingDao.getAccountById(accts.destAccountId!);
+            if (sourceAccount != null && destAccount != null) {
             // Spec 135 BUG-F — deterministic globalId for the shift-close
             // transfer JE. Previously this createJournalEntry omitted
             // globalId, so it fell back to a random UuidV7 (see
@@ -950,6 +1059,7 @@ extension TreasuryDao on AppDatabase {
               branchId: safe.branchId,
               globalId: transferJeGid,
             );
+            }
           }
         } catch (e) {
           debugPrint('[TreasuryDao] Shift-close JE failed for safe #$sId: $e');
@@ -1780,6 +1890,22 @@ extension TreasuryDao on AppDatabase {
       final safe = await (select(safes)..where((s) => s.id.equals(safeId))).getSingleOrNull();
       if (safe?.linkedAccountId != null) {
         cashAccount = await accountingDao.getLeafAccountById(safe!.linkedAccountId!);
+      }
+      // خزينة مش مربوطة: الرجوع على '1111' مباشرة كان بيرحّل سند قبض على
+      // «الحساب البنكي» أو «كليك» على **الصندوق الرئيسي** — النقدية في
+      // الأستاذ بتزيد والبنك بينقص والخزينة بتقول العكس. الـdropdown في
+      // `receipt_voucher_dialog.dart` بيعرض كل الخزائن مش الكاش بس،
+      // فالمسار قابل للوصول عادي.
+      //
+      // نفس نمط مسار المبيعات الصح (`_resolveSaleLegAccount` →
+      // `_resolveBranchSafeAccount`): الرجوع بحسب **نوع الخزينة**.
+      if (cashAccount == null && safe != null) {
+        final byType = kSafeTypeAccountCode[safe.safeType];
+        if (byType != null) {
+          cashAccount = await accountingDao.getLeafAccountById(
+            (await accountingDao.getAccountByCode(byType))?.id ?? -1,
+          );
+        }
       }
     }
     cashAccount ??= await accountingDao.getAccountByCode('1111');

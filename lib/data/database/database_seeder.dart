@@ -106,6 +106,11 @@ extension DatabaseSeeder on AppDatabase {
       // Seed Chart of Accounts
       await seedChartOfAccounts();
 
+      // الخزائن اتزرعت فوق قبل الدليل المحاسبي، فالربط بيتعمل هنا بعد ما
+      // الحسابات بقت موجودة. من غير الربط، طرفا قيد إقفال الوردية بيطلعوا
+      // نفس الحساب والقيد صافيه صفر — الدرج بيتفضّى والأستاذ ما بيتحركش.
+      await linkSeededSafesToAccounts();
+
       // Seed delivery companies as fixed customers (Careem, Talabat, Ashyae)
       await seedDeliveryCompanyParties();
     } else {
