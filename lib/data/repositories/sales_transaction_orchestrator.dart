@@ -275,6 +275,9 @@ class SalesTransactionOrchestrator {
       // 'allow_negative' (the schema default); T025 (US2) will resolve it
       // from StockShortagePolicyService.
       List<CogsLine>? cogsBreakdown;
+      // Invoice lines whose cost the breakdown already covers — see
+      // SaleAutoDepleteResult.coveredSaleItemIds.
+      Set<int>? autoDepletedItemIds;
       if (!isClientMode) {
         final saleLineRefs = savedItems
             .map((item) => SaleLineRef(
@@ -323,6 +326,7 @@ class SalesTransactionOrchestrator {
             posTerminalId: terminalId,
           );
           cogsBreakdown = result.cogsBreakdown;
+          autoDepletedItemIds = result.coveredSaleItemIds;
         } on InsufficientStockException catch (e) {
           // Feature 009 / T026 (FR-016): rewrap into a plain Exception
           // carrying a clean Arabic message so the POS / sales-invoice
@@ -384,6 +388,7 @@ class SalesTransactionOrchestrator {
           regionName: regionName,
           invoiceDate: invoice.invoiceDate,
           cogsBreakdown: cogsBreakdown,
+          autoDepletedItemIds: autoDepletedItemIds,
         );
       }
 

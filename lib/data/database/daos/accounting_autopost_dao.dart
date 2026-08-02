@@ -513,17 +513,51 @@ extension AccountingAutopostDao on AppDatabase {
       }
     }
 
+    // A BOM item sold with auto-deplete has its cost in the RAW MATERIALS that
+    // left stock, not in `sales_invoice_items.cost_price` (the finished good
+    // usually carries 0 — no production order ever stamped a WAC on it).
+    // Reading `sale_bom_consumptions` — written by applyAutoDepleteForSale in
+    // this same transaction — is what makes the server path see that cost.
+    //
+    // Sourced from the table rather than threaded through a parameter on
+    // purpose: autoPostCashSale has five call sites (API handler, deferred
+    // revenue, two repair paths, the delivery flow) and none of them has the
+    // breakdown in hand. Reading it here fixes all five, and the repair path
+    // can retro-fix already-posted invoices.
+    final autoDepleteRow = await customSelect(
+      'SELECT COALESCE(SUM(consumed_qty * unit_cost_at_sale), 0) AS total '
+      'FROM sale_bom_consumptions '
+      'WHERE sale_invoice_id = ? AND reversed_by_return_id IS NULL',
+      variables: [Variable(sale.id)],
+      readsFrom: {saleBomConsumptions},
+    ).getSingle();
+    final autoDepleteCogs =
+        (autoDepleteRow.data['total'] as num?)?.toDouble() ?? 0.0;
+
     final cogsTotal = await customSelect(
       // SAL-1: quantity is in SALE units, cost_price is per BASE unit (WAC).
       // quantity_in_base converts sale-unit qty to physical base-unit qty —
       // without it, COGS is understated on every carton/box (non-base-unit) sale.
-      'SELECT COALESCE(SUM(quantity * quantity_in_base * cost_price), 0) as total FROM sales_invoice_items WHERE invoice_id = ?',
-      variables: [Variable(sale.id)],
-      readsFrom: {salesInvoiceItems},
+      //
+      // Lines already covered by a consumption row are excluded: their cost is
+      // the raw materials above, and counting both would expense the goods
+      // twice for a tracked finished item that does carry a book cost.
+      'SELECT COALESCE(SUM(quantity * quantity_in_base * cost_price), 0) as total '
+      'FROM sales_invoice_items WHERE invoice_id = ? AND id NOT IN ('
+      '  SELECT sale_invoice_item_id FROM sale_bom_consumptions '
+      '  WHERE sale_invoice_id = ? AND reversed_by_return_id IS NULL)',
+      variables: [Variable(sale.id), Variable(sale.id)],
+      readsFrom: {salesInvoiceItems, saleBomConsumptions},
     ).getSingle();
     final cogsAmount = (cogsTotal.data['total'] as num?)?.toDouble() ?? 0.0;
 
-    if (cogsAmount > 0) {
+    // Gate on the COMBINED cost. Gating on `cogsAmount` alone dropped the whole
+    // block for an all-BOM sale, leaving Dr Cash / Cr Sales — balanced, so no
+    // validator fired, while the raw materials really had left stock. The
+    // return path (`effectiveCogs`) always credited that cost back, so
+    // sell-then-return inflated the inventory account permanently.
+    final totalCogs = cogsAmount + autoDepleteCogs;
+    if (totalCogs > 0.001) {
       final cogsAccount = await accountingDao.getAccountByCode(
         await accountingDao.getMappedAccountCode('cogs', AccountingDao.accountPurposes['cogs']!),
       );
@@ -533,12 +567,12 @@ extension AccountingAutopostDao on AppDatabase {
       if (cogsAccount != null && inventoryAccount != null) {
         lines.add(JournalLine(
           accountId: cogsAccount.id,
-          debit: cogsAmount,
+          debit: totalCogs,
           description: 'تكلفة بضاعة مباعة',
         ));
         lines.add(JournalLine(
           accountId: inventoryAccount.id,
-          credit: cogsAmount,
+          credit: totalCogs,
           description: 'تخفيض مخزون',
         ));
       }

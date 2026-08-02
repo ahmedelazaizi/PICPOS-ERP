@@ -241,6 +241,7 @@ class AccountingService {
     DateTime? invoiceDate,
     // Feature 009 / T017 — see JournalEntryFactory for semantics.
     List<CogsLine>? cogsBreakdown,
+    Set<int>? autoDepletedItemIds,
   }) => journalFactory.generateSalesAccountingEntry(
         invoiceId: invoiceId,
         invNumber: invNumber,
@@ -257,6 +258,7 @@ class AccountingService {
         regionName: regionName,
         invoiceDate: invoiceDate,
         cogsBreakdown: cogsBreakdown,
+        autoDepletedItemIds: autoDepletedItemIds,
       );
 
   Future<void> generatePurchaseAccountingEntry({

@@ -1101,6 +1101,7 @@ extension ManufacturingDao on AppDatabase {
     }
 
     final cogsBreakdown = <CogsLine>[];
+    final coveredSaleItemIds = <int>{};
 
     for (final item in items) {
       // 1. Look up the active auto-deplete BOM for this finished product.
@@ -1228,6 +1229,9 @@ extension ManufacturingDao on AppDatabase {
           inventoryAccountId: inventoryAccount.id,
           totalCost: line.lineCost,
         ));
+        // This invoice line's cost is now carried by the raw materials above,
+        // so the JE factory must not also charge its own costPrice.
+        coveredSaleItemIds.add(item.saleItemId);
         seq++;
       }
     }
@@ -1254,7 +1258,10 @@ extension ManufacturingDao on AppDatabase {
       );
     }
 
-    return SaleAutoDepleteResult(cogsBreakdown: cogsBreakdown);
+    return SaleAutoDepleteResult(
+      cogsBreakdown: cogsBreakdown,
+      coveredSaleItemIds: coveredSaleItemIds,
+    );
   }
 
   // ───────────────────────────────────────────────────────────────────────
@@ -1686,7 +1693,20 @@ class CogsLine {
 class SaleAutoDepleteResult {
   final List<CogsLine> cogsBreakdown;
 
-  const SaleAutoDepleteResult({required this.cogsBreakdown});
+  /// `sales_invoice_items.id` whose cost is now represented by
+  /// [cogsBreakdown] because raw materials were consumed on their behalf.
+  ///
+  /// The JE factory must skip these lines when summing `item.costPrice`,
+  /// otherwise a finished item that DOES carry a book cost gets charged
+  /// twice — once as the finished good and again as its raw materials.
+  /// Empty for a sale with no auto-deplete BOM, which keeps the legacy
+  /// single-account path byte-identical (Constitution I).
+  final Set<int> coveredSaleItemIds;
+
+  const SaleAutoDepleteResult({
+    required this.cogsBreakdown,
+    this.coveredSaleItemIds = const <int>{},
+  });
 
   /// Convenience — total COGS across all raw-material lines.
   /// SAL-5 (spec 149 B15): retained — not dead (asserted by

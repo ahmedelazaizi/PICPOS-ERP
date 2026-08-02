@@ -253,11 +253,22 @@ class JournalEntryFactory {
     // (Constitution I — byte-identical JE shape for sales with no
     // auto-deplete BOM in scope).
     List<CogsLine>? cogsBreakdown,
+    // Feature 009 follow-up — sales_invoice_items.id whose cost was already
+    // accounted for by [cogsBreakdown] because `applyAutoDepleteForSale`
+    // consumed raw materials for them. Their own `costPrice` must NOT be added
+    // on top, or a tracked finished item with a book cost would be charged
+    // twice (once as the finished good, once as its raw materials).
+    Set<int>? autoDepletedItemIds,
   }) async {
     final List<JournalLine> journalLines = [];
     double cogsTotal = 0;
 
     for (final item in items) {
+      // Cost comes from the consumed raw materials, not from this line.
+      if (autoDepletedItemIds != null &&
+          autoDepletedItemIds.contains(item.id)) {
+        continue;
+      }
       // ISS-05 + PIR-014: Zero cost policy enforcement
       if (item.costPrice <= 0) {
         switch (_zeroCostPolicy) {
@@ -275,6 +286,18 @@ class JournalEntryFactory {
       // quantityInBase converts to physical base-unit qty for correct COGS.
       cogsTotal += (item.costPrice * item.quantity * item.quantityInBase);
     }
+
+    // Cost of the raw materials `applyAutoDepleteForSale` actually took out of
+    // stock. This is a SEPARATE source of cost from the invoice lines, not a
+    // subdivision of them: a finished BOM item normally carries costPrice = 0
+    // (no production order ever stamped a WAC on it), so `cogsTotal` alone is
+    // blind to it. Both must be recognised.
+    final bool hasBreakdown =
+        cogsBreakdown != null && cogsBreakdown.isNotEmpty;
+    final double breakdownTotal = hasBreakdown
+        ? cogsBreakdown.fold<double>(0.0, (s, l) => s + l.totalCost)
+        : 0.0;
+    final double totalCogsDebit = cogsTotal + breakdownTotal;
 
     // 1. Debit side (Assets/Expenses)
     if (paid > 0) {
@@ -320,12 +343,15 @@ class JournalEntryFactory {
       ));
     }
 
-    // COGS Debit
-    if (cogsTotal > 0) {
+    // COGS Debit — gated on the COMBINED cost. Gating on `cogsTotal` alone
+    // dropped the whole COGS block for a BOM sale whose finished item has
+    // costPrice = 0, leaving a Dr Cash / Cr Sales entry that balances (so no
+    // validator fires) while the raw materials had really left stock.
+    if (totalCogsDebit > 0.001) {
       final cogsAcc = await _requireAccount('cogs');
       journalLines.add(JournalLine(
         accountId: cogsAcc.id,
-        debit: cogsTotal,
+        debit: totalCogsDebit,
         description: 'تكلفة بوابة المبيعات فاتورة #$invNumber',
         costCenterId: costCenterId,
       ));
@@ -402,43 +428,45 @@ class JournalEntryFactory {
     // — mathematically identical to the legacy single leg. Constitution I
     // (Behavior Preservation) is preserved when `cogsBreakdown` is null
     // OR empty.
-    if (cogsTotal > 0) {
-      final hasBreakdown =
-          cogsBreakdown != null && cogsBreakdown.isNotEmpty;
-      final breakdownTotal = hasBreakdown
-          ? cogsBreakdown.fold<double>(0.0, (s, l) => s + l.totalCost)
-          : 0.0;
-      final legacyAmount = cogsTotal - breakdownTotal;
+    // The two cost sources credit inventory INDEPENDENTLY. The old code
+    // treated the breakdown as a subdivision of `cogsTotal` and credited the
+    // difference (`cogsTotal - breakdownTotal`), which had two failure modes:
+    //   • an all-BOM invoice (cogsTotal == 0) skipped BOTH legs entirely, and
+    //   • a mixed invoice produced a NEGATIVE `credit` — written verbatim into
+    //     journal_entry_lines, where every report reading the credit column
+    //     silently under-counts. The books still balanced, so nothing caught it.
+    // Splitting the legs makes each amount a real, non-negative outflow.
 
-      // Residual goes to the legacy singleton inventory account.
-      if (legacyAmount.abs() > 0.001) {
-        final invAcc = await _requireAccount('inventory');
+    // Legacy singleton inventory account — the ordinary (non-BOM) lines.
+    if (cogsTotal > 0.001) {
+      final invAcc = await _requireAccount('inventory');
+      journalLines.add(JournalLine(
+        accountId: invAcc.id,
+        credit: cogsTotal,
+        description: 'خروج مخزون فاتورة #$invNumber',
+        costCenterId: costCenterId,
+      ));
+    }
+
+    // Per-account aggregated breakdown (one leg per distinct accountId) —
+    // the raw materials consumed by auto-deplete. Deliberately OUTSIDE the
+    // `cogsTotal` gate: that gate is exactly what hid this leg.
+    if (breakdownTotal > 0.001) {
+      final aggregated = <int, double>{};
+      for (final line in cogsBreakdown!) {
+        aggregated.update(
+          line.inventoryAccountId,
+          (existing) => existing + line.totalCost,
+          ifAbsent: () => line.totalCost,
+        );
+      }
+      for (final entry in aggregated.entries) {
         journalLines.add(JournalLine(
-          accountId: invAcc.id,
-          credit: legacyAmount,
+          accountId: entry.key,
+          credit: entry.value,
           description: 'خروج مخزون فاتورة #$invNumber',
           costCenterId: costCenterId,
         ));
-      }
-
-      // Per-account aggregated breakdown (one leg per distinct accountId).
-      if (hasBreakdown) {
-        final aggregated = <int, double>{};
-        for (final line in cogsBreakdown) {
-          aggregated.update(
-            line.inventoryAccountId,
-            (existing) => existing + line.totalCost,
-            ifAbsent: () => line.totalCost,
-          );
-        }
-        for (final entry in aggregated.entries) {
-          journalLines.add(JournalLine(
-            accountId: entry.key,
-            credit: entry.value,
-            description: 'خروج مخزون فاتورة #$invNumber',
-            costCenterId: costCenterId,
-          ));
-        }
       }
     }
 
