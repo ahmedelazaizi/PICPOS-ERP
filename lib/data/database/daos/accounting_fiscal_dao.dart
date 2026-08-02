@@ -262,72 +262,26 @@ extension AccountingFiscalDao on AppDatabase {
         await generatePeriodsForYear(nextYearId, nextStart, nextEnd);
       }
 
-      // 5. Create opening balance journal entry for BS accounts
-      // C-05: Include contra_asset (e.g., Accumulated Depreciation) in opening balances
-      final bsAccounts = allAccs.where((a) =>
-          a.accountType == 'asset' ||
-          a.accountType == 'contra_asset' ||
-          a.accountType == 'liability' ||
-          a.accountType == 'equity');
-
-      final openingLines = <JournalLine>[];
-      for (var acc in bsAccounts) {
-        final balResult = await customSelect(
-          'SELECT SUM(debit) - SUM(credit) as net FROM journal_entry_lines l JOIN journal_entries e ON l.entry_id = e.id WHERE l.account_id = ? AND e.entry_date <= ? AND e.is_posted = $boolTrue',
-          variables: [Variable(acc.id), Variable(fy.endDate)],
-          readsFrom: {journalEntryLines, journalEntries},
-        ).getSingle();
-        final net = balResult.data['net'] as double? ?? 0;
-        if (net.abs() > 0.001) {
-          if (net > 0) {
-            openingLines.add(JournalLine(
-              accountId: acc.id,
-              debit: net,
-              description: 'رصيد افتتاحي — ${acc.name}',
-            ));
-          } else {
-            openingLines.add(JournalLine(
-              accountId: acc.id,
-              credit: net.abs(),
-              description: 'رصيد افتتاحي — ${acc.name}',
-            ));
-          }
-        }
-      }
-
-      if (openingLines.isNotEmpty) {
-        // F-07: Absorb floating-point rounding difference
-        double obDebit = openingLines.fold(0.0, (s, l) => s + l.debit);
-        double obCredit = openingLines.fold(0.0, (s, l) => s + l.credit);
-        final roundingDiff = obDebit - obCredit;
-        if (roundingDiff.abs() > 0.001) {
-          final retainedEarnings = await accountingDao.getAccountByPurpose('retained_earnings');
-          if (retainedEarnings != null) {
-            if (roundingDiff > 0) {
-              openingLines.add(JournalLine(
-                accountId: retainedEarnings.id,
-                credit: roundingDiff,
-                description: 'فرق تقريب أرصدة افتتاحية',
-              ));
-            } else {
-              openingLines.add(JournalLine(
-                accountId: retainedEarnings.id,
-                debit: roundingDiff.abs(),
-                description: 'فرق تقريب أرصدة افتتاحية',
-              ));
-            }
-          }
-        }
-
-        await accountingDao.createJournalEntry(
-          description: 'قيد الأرصدة الافتتاحية — $nextName',
-          date: nextStart,
-          lines: openingLines,
-          referenceType: 'opening_balance',
-          referenceId: nextYearId,
-          isAutoPosted: true,
-        );
-      }
+      // 5. ── قيد الأرصدة الافتتاحية اتشال ────────────────────────────────────
+      //
+      // كان بيمدين/يدائن كل حساب ميزانية برصيده التراكمي كما في `fy.endDate`،
+      // بتاريخ بداية السنة الجديدة. بس الأستاذ في النظام ده **مستمر ومش
+      // بيتقفل**: `getBalanceSheet` (`accounting_reports_dao.dart:477`)
+      // بتجمّع `entry_date <= ?` من بداية التاريخ، و`getTrialBalance` بتحسب
+      // الافتتاحي = كل الحركة قبل `from`، ومفيش أي تقرير بيستثني
+      // `reference_type = 'opening_balance'`.
+      //
+      // فالقيد كان **بيتضاف فوق** الأرصدة الموجودة أصلاً: نقدية حقيقية ١٢٠٠
+      // بتبقى ٢٤٠٠ ورأس مال ١٠٠٠ بيبقى ٢٠٠٠. والميزانية بتفضل «متوازنة» لأن
+      // الطرفين اتضاعفوا مع بعض — عشان كده `isBalanced` عمره ما مسك ده.
+      //
+      // البديل (الاحتفاظ بالقيد واستثناؤه من كل تجميعة تراكمية) بيتطلب تعديل
+      // `getBalanceSheet` و`getTrialBalance` و`getIncomeStatement` وأي تقرير
+      // جاي — وأول واحد يتنسي بيرجّع الباج. في أستاذ مستمر الأرصدة بتترحّل
+      // تلقائياً، فالقيد نفسه هو الزيادة.
+      //
+      // قيد إقفال النتيجة (خطوة ٣) **ما اتلمسش** — هو الجزء الصح: بيقفل
+      // الإيرادات والمصروفات في الأرباح المبقاة.
     });
   }
 
