@@ -52,10 +52,6 @@ extension DatabaseSeederAccounts on AppDatabase {
     await _acct('1114', 'بنك القاهرة - حساب جاري', 'Cairo Bank - Current Acct', 'asset', 'detail', 'debit', 4, '111');
     await _acct('1115', 'البنك التجاري - ودائع', 'Commercial Bank - Deposits', 'asset', 'detail', 'debit', 4, '111');
     await _acct('1116', 'حساب Click', 'Click Account', 'asset', 'detail', 'debit', 4, '111');
-    // درج الكاشير موقع أصل مستقل عن الصندوق الرئيسي: النقدية بتقعد فيه أثناء
-    // الوردية وبتتسلّم للصندوق الرئيسي عند الإقفال. من غير حساب خاص بيه كان
-    // طرفا قيد التحويل بيطلعوا نفس الحساب (١١١١) والقيد صافيه صفر.
-    await _acct('1117', 'صندوق الكاشير', 'Cashier Drawer', 'asset', 'detail', 'debit', 4, '111');
 
     // 112 — Accounts Receivable
     await _acct('112', 'الذمم المدينة - العملاء', 'Accounts Receivable - Customers', 'asset', 'view', 'debit', 3, '11');

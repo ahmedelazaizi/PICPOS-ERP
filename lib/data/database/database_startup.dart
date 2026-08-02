@@ -166,16 +166,6 @@ extension DatabaseStartup on AppDatabase {
         debugPrint('[SchemaHeal] ${table.actualTableName}: $e');
       }
     }
-
-    // ربط الخزائن المزروعة بحساباتها — التركيبات القايمة عندها
-    // `linkedAccountId = NULL` (السيدر عمره ما حطّه)، فقيد إقفال الوردية
-    // عندهم صافيه صفر: الدرج بيتفضّى والأستاذ ما بيتحركش. بيلمس اللي مالوش
-    // حساب بس فما بيدوسش على ربط يدوي.
-    try {
-      await linkSeededSafesToAccounts();
-    } catch (e) {
-      debugPrint('[SchemaHeal] linkSeededSafesToAccounts: $e');
-    }
   }
 
   // ─────────────────────────────────────────────────────────────────────────
