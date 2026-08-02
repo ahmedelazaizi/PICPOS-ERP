@@ -1566,6 +1566,9 @@ class OfflineSyncWorker {
             amount: (payload['amount'] as num).toDouble(),
             userId: (payload['userId'] ?? payload['user_id']) as int?,
             description: (payload['description'] ?? payload['notes']) as String?,
+            // نفس سبب stock_transfers تحت: /api/safes/transfer بيعمل dedup
+            // بالـglobalId ومش بيقرا هيدر الـidempotency.
+            globalId: replayGlobalIdFrom(payload),
             idempotencyKey: idempotencyKey,
           );
         }

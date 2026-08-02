@@ -7,6 +7,31 @@ part of '../client_write_interceptor.dart';
 // Part of the ClientWriteInterceptor library.
 // ═══════════════════════════════════════════════════════════════════════════
 
+/// شكل الـpayload المخزّن في الطابور لتحويل بين الخزائن.
+///
+/// ── ليه دالة منفصلة ─────────────────────────────────────────────────────────
+/// الـ`globalId` لازم يكون **جزء من الـpayload** مش يتولّد وقت الإرسال: إعادة
+/// الإرسال من الطابور بتقرا نفس الـpayload المخزّن، فلو الـid بيتولّد في كل
+/// محاولة كانت كل واحدة هتاخد قيمة جديدة والـdedup بلا معنى. ده جوهر الفرق
+/// بين «مفتاح idempotency» و«هوية العملية».
+@visibleForTesting
+Map<String, dynamic> safeTransferPayload({
+  required int fromSafeId,
+  required int toSafeId,
+  required double amount,
+  int? userId,
+  String? description,
+  required String globalId,
+}) =>
+    {
+      'fromSafeId': fromSafeId,
+      'toSafeId': toSafeId,
+      'amount': amount,
+      'userId': userId,
+      'description': description,
+      'globalId': globalId,
+    };
+
 class _CwiTrading {
   _CwiTrading._();
 
@@ -618,22 +643,29 @@ class _CwiTrading {
   }) async {
     if (!SyncInterceptor.isClientMode) return false;
     debugPrint('[ClientInterceptor] Routing safe transfer to server');
+    // هوية العملية بتتسك هنا مرة واحدة وبتتخزن في الـpayload، فالمحاولة
+    // الأولى وإعادة الإرسال من الطابور بيحملوا نفس القيمة. من غير كده كان
+    // تحويل ١٠,٠٠٠ + timeout بيتنفّذ مرتين: الدرج ‎-٢٠,٠٠٠ والبنك ‎+٢٠,٠٠٠
+    // و٤ سندات بدل ٢.
+    final transferGid = const Uuid().v7();
     return ClientWriteInterceptor._tryOrQueueVoid(
       tableName: 'safe_transfers',
       operation: 'insert',
-      payload: {
-        'fromSafeId': fromSafeId,
-        'toSafeId': toSafeId,
-        'amount': amount,
-        'userId': userId,
-        'description': description,
-      },
+      payload: safeTransferPayload(
+        fromSafeId: fromSafeId,
+        toSafeId: toSafeId,
+        amount: amount,
+        userId: userId,
+        description: description,
+        globalId: transferGid,
+      ),
       serverCall: (reqIdemKey) => ClientWriteInterceptor._proxy.submitSafeTransfer(
         fromSafeId: fromSafeId,
         toSafeId: toSafeId,
         amount: amount,
         userId: userId,
         description: description,
+        globalId: transferGid,
       ),
     );
   }

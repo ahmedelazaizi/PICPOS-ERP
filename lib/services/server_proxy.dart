@@ -1347,6 +1347,7 @@ class ServerProxy {
     required double amount,
     int? userId,
     String? description,
+    String? globalId,
     String? idempotencyKey,
   }) async {
     await post('/api/safes/transfer', {
@@ -1355,6 +1356,9 @@ class ServerProxy {
       'amount': amount,
       'userId': userId,
       'description': description,
+      // `/api/safes/transfer` مش بيقرا هيدر الـidempotency، فالـglobalId هو
+      // مسار الـdedup الوحيد — زي `postSafeTransaction` و`postExpense`.
+      'globalId': globalId,
     }, idempotencyKey: idempotencyKey);
   }
 

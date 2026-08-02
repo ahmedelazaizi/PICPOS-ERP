@@ -2580,6 +2580,27 @@ class ApiDataHandler extends ApiHandlerBase {
           fallbackUsername: data['createdByUsername'] as String?);
       final description = data['description'] as String? ?? 'تحويل بين صناديق';
 
+      // ── dedup بالـglobalId قبل أي حركة ────────────────────────────────────
+      // ده كان الـendpoint الوحيد في مجموعة الخزينة بلا أي فحص تكرار — على
+      // عكس postSafeTransaction وpostExpense. فطلب اتنفّذ وضاع رده كان
+      // بيتعاد من طابور العميل ويتنفّذ تاني: تحويل ١٠,٠٠٠ يبقى ٢٠,٠٠٠ و٤
+      // سندات بدل ٢. والهيدر x-idempotency-key مش مقروء هنا فما كانش بيحمي.
+      //
+      // التحويل مالوش جدول رأس، بيتسجّل كسطرين في safe_transactions، فالختم
+      // على سطر الصرف (الخزنة المصدر) وهو هدف الفحص.
+      final incomingGlobalId = (data['globalId'] as String?)?.trim();
+      if (incomingGlobalId != null && incomingGlobalId.isNotEmpty) {
+        final existing = await (db.select(db.safeTransactions)
+              ..where((t) => t.globalId.equals(incomingGlobalId))
+              ..limit(1))
+            .getSingleOrNull();
+        if (existing != null) {
+          debugPrint('[API] postSafeTransfer: duplicate globalId='
+              '$incomingGlobalId — skipping (voucher=${existing.voucherNumber})');
+          return jsonResponse({'success': true, 'dedup': true});
+        }
+      }
+
       // Validate both safes exist before opening the transaction.
       final fromSafe = await (db.select(db.safes)
             ..where((s) => s.id.equals(fromSafeId)))
@@ -2620,6 +2641,8 @@ class ApiDataHandler extends ApiHandlerBase {
             balanceAfter: fromUpdated.balance,
             description: Value('$description → ${toSafe.name}'),
             userId: Value(userId),
+            // هدف الـdedup فوق — سطر الصرف هو هوية التحويل.
+            globalId: Value(incomingGlobalId),
           ),
         );
 
