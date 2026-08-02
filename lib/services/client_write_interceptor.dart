@@ -182,6 +182,51 @@ class ClientWriteInterceptor implements SyncInterceptor {
     }
   }
 
+  /// Dispatch a server write under the failure contract of the CURRENT mode.
+  ///
+  /// [_tryOrQueue] already gets the interceptor side right: mirror mode skips
+  /// the outbox and throws [MirrorOfflineException]. The defect this helper
+  /// closes is on the **caller** side — repositories launched the submit with
+  /// `unawaited(...).catchError(debugPrint)` and then wrote their local cache
+  /// row unconditionally. In mirror mode that turns a rejected write into a
+  /// row the operator sees as saved forever, while HQ never heard about it
+  /// (and the log line even claimed "queued in outbox", which is a lie there).
+  ///
+  /// * **Mirror** — `await` the submit and let the exception propagate, so the
+  ///   caller aborts BEFORE writing anything locally. Mirror has no outbox by
+  ///   design (SYNC_ARCHITECTURE §8.3); the server is the source of truth and
+  ///   the next DeltaPull re-materialises whatever HQ actually accepted.
+  /// * **Client** — unchanged fire-and-forget. By the time the future
+  ///   completes `_tryOrQueue` has already parked the payload in the outbox,
+  ///   so blocking the UI on the network would only hurt offline-first
+  ///   resilience on cashier devices.
+  ///
+  /// Awaiting inside a DB transaction is deliberately NOT how this is used:
+  /// callers must submit first, then open their local transaction. Holding a
+  /// SQLite/PG transaction open across an HTTP round-trip locks the database
+  /// for the duration and is a red rule in SYNC_ARCHITECTURE §9.6.
+  static Future<void> dispatchWrite(
+    Future<Object?> Function() submit, {
+    required String tag,
+  }) async {
+    if (SyncInterceptor.isMirrorMode) {
+      await submit();
+      return;
+    }
+    // Client mode keeps the legacy contract EXACTLY, including the outer
+    // guard: a throw raised while merely building the request must not take
+    // down the caller, because the local write that follows is the cashier's
+    // record of the sale.
+    try {
+      unawaited(submit().catchError((Object e) {
+        debugPrint('[$tag] Server sync failed (queued in outbox): $e');
+        return null;
+      }));
+    } catch (e) {
+      debugPrint('[$tag] Sync setup failed: $e');
+    }
+  }
+
   /// Void-returning variant: returns true if succeeded or queued.
   ///
   /// Same mirror-mode semantics as [_tryOrQueue] — see that method's

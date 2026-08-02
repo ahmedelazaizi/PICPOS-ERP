@@ -163,8 +163,12 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
       // brand-new return invoice on the server and the client sees phantom
       // duplicates after the next DeltaPull.
       final returnGlobalId = UuidV7.generate();
-      try {
-        unawaited(ClientWriteInterceptor.submitSalesReturn({
+      // Mirror: awaited — the local return-invoice cache row below (Spec 136)
+      // makes the return visible in the party statement immediately. Writing it
+      // for a return HQ rejected would credit the customer locally on a
+      // document that exists nowhere else.
+      await ClientWriteInterceptor.dispatchWrite(
+        () => ClientWriteInterceptor.submitSalesReturn({
           'globalId': returnGlobalId,
           'originalInvoiceId': invoice.id,
           // Send the original invoice's identifiers so the server can resolve
@@ -203,12 +207,9 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
           }(),
           'paymentMethod': invoice.paymentMethod,
           'reason': reason,
-        }).catchError((e) {
-          debugPrint('[SALES-RETURN-SYNC] Server sync failed (queued in outbox): $e');
-        }));
-      } catch (e) {
-        debugPrint('[SALES-RETURN-SYNC] Sync setup failed: $e');
-      }
+        }),
+        tag: 'SALES-RETURN-SYNC',
+      );
 
       // Spec 136 — light LOCAL return-invoice cache so the sales return shows
       // in the CUSTOMER statement immediately on the mirror/client. The server

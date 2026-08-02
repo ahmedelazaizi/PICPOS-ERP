@@ -759,28 +759,26 @@ class SalesTransactionOrchestrator {
       // whether each invoice actually reached the server. The user reported
       // invoices saving locally but never appearing on the server, and the
       // previous debugPrint-only logging was invisible in release builds.
-      debugPrint('[SALE-SYNC] Submitting sale to server (fire-and-forget)...');
+      debugPrint('[SALE-SYNC] Submitting sale to server...');
       unawaited(DiagnosticLogger.log('SALE-SYNC',
           'submit invoice=$localInvoiceNumber userId=${request.userId} '
           'total=$finalTotal globalId=$saleGlobalId'));
-      try {
-        unawaited(ClientWriteInterceptor.submitSale(syncRequest).then((serverId) {
+      // Local persistence (step 5, below) runs AFTER this point, which is what
+      // lets the mirror branch abort cleanly: a rejected sale leaves no local
+      // invoice at all. Client mode keeps fire-and-forget — the cashier must
+      // be able to sell while the server is down.
+      await ClientWriteInterceptor.dispatchWrite(
+        () => ClientWriteInterceptor.submitSale(syncRequest).then((serverId) {
           debugPrint('[SALE-SYNC] Server response: serverId=$serverId');
           unawaited(DiagnosticLogger.log('SALE-SYNC',
               serverId != null
                   ? '✓ accepted invoice=$localInvoiceNumber → serverId=$serverId'
                   : '⏳ queued offline invoice=$localInvoiceNumber '
                       '(server unreachable, will retry from sync_outbox)'));
-        }).catchError((e) {
-          debugPrint('[SALE-SYNC] Server sync failed (queued in outbox): $e');
-          unawaited(DiagnosticLogger.log('SALE-SYNC',
-              '❌ sync error invoice=$localInvoiceNumber: $e'));
-        }));
-      } catch (e) {
-        debugPrint('[SALE-SYNC] Sync setup failed: $e');
-        unawaited(DiagnosticLogger.log('SALE-SYNC',
-            '❌ setup failed invoice=$localInvoiceNumber: $e'));
-      }
+          return serverId;
+        }),
+        tag: 'SALE-SYNC',
+      );
     } else {
       // Not in client mode — make this visible too. If the operator
       // expected client mode but isClientMode came back false, the sale

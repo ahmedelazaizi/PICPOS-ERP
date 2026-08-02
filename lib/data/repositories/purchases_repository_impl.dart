@@ -84,9 +84,13 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
         });
       }
 
-      // Fire-and-forget: submit to server, queue in outbox on failure
-      try {
-        unawaited(ClientWriteInterceptor.submitPurchase(
+      // Client: fire-and-forget (the outbox catches a failed submit).
+      // Mirror: awaited — a MirrorOfflineException propagates from here and
+      // the local cache insert below never runs. Mirror has no outbox, so a
+      // cached row for a purchase HQ never received would show the operator a
+      // saved invoice that does not exist anywhere else.
+      await ClientWriteInterceptor.dispatchWrite(
+        () => ClientWriteInterceptor.submitPurchase(
           supplierId: params.supplierId,
           warehouseId: params.warehouseId,
           items: itemMaps,
@@ -98,12 +102,9 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
           userId: params.userId,
           createdByUsername: params.createdByUsername,
           discount: params.discount,
-        ).catchError((e) {
-          debugPrint('[PURCHASE-SYNC] Server sync failed (queued in outbox): $e');
-        }));
-      } catch (e) {
-        debugPrint('[PURCHASE-SYNC] Sync setup failed: $e');
-      }
+        ),
+        tag: 'PURCHASE-SYNC',
+      );
 
       // Local cache only: insert invoice + items without stock/accounting/treasury
       final localItems = <PurchaseInvoiceItemsCompanion>[];
@@ -307,8 +308,10 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
       // keep only a light local paid marker (no cash/JE side-effects). The
       // authoritative paid/JE/safe move come back on the next DeltaPull
       // (purchase_sync_strategy propagates `paid` on existing rows).
-      try {
-        unawaited(ClientWriteInterceptor.submitPurchasePayment(
+      // Mirror: awaited — the local paid marker below must not claim a payment
+      // HQ rejected. Client: unchanged fire-and-queue.
+      await ClientWriteInterceptor.dispatchWrite(
+        () => ClientWriteInterceptor.submitPurchasePayment(
           purchaseId: invoice.id,
           purchaseGlobalId: invoice.globalId,
           invoiceNumber: invoice.invoiceNumber,
@@ -318,12 +321,10 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
         ).then((accepted) {
           debugPrint('[PURCHASE-PAYMENT-SYNC] accepted=$accepted '
               'invoice=${invoice.invoiceNumber}');
-        }).catchError((Object e, StackTrace st) {
-          debugPrint('[PURCHASE-PAYMENT-SYNC] sync failed (queued in outbox): $e');
-        }));
-      } catch (e) {
-        debugPrint('[PURCHASE-PAYMENT-SYNC] submit setup error: $e');
-      }
+          return accepted;
+        }),
+        tag: 'PURCHASE-PAYMENT-SYNC',
+      );
       await _db.updatePurchaseInvoicePayment(invoiceId, invoice.paid + amount);
     } else {
       // Standalone / server: this machine IS the source of truth — full apply
@@ -405,11 +406,15 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
           'invoiceNumber=${invoice.invoiceNumber} '
           'globalId=${invoice.globalId} voidGlobalId=$voidGlobalId'));
 
-      // 1) Fire-and-forget: submit to server (server performs the
-      // authoritative stock/AP/treasury/JE reversal). Guarded so a setup
-      // error here cannot prevent the local status marker below.
-      try {
-        unawaited(ClientWriteInterceptor.submitVoidPurchase(
+      // 1) Submit to server (server performs the authoritative
+      // stock/AP/treasury/JE reversal).
+      //   • Client — fire-and-forget; the outbox retries and the local status
+      //     marker below still flips so the invoice leaves the active list.
+      //   • Mirror — awaited; a failure propagates and the status marker never
+      //     runs. Marking an invoice "voided" locally when HQ still has it live
+      //     is worse than not voiding at all: the operator stops chasing it.
+      await ClientWriteInterceptor.dispatchWrite(
+        () => ClientWriteInterceptor.submitVoidPurchase(
           purchaseId: invoice.id,
           purchaseGlobalId: invoice.globalId,
           invoiceNumber: invoice.invoiceNumber,
@@ -422,17 +427,10 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
                   ? '✓ accepted invoice=${invoice.invoiceNumber}'
                   : '⏳ queued offline invoice=${invoice.invoiceNumber} '
                       '(server unreachable, will retry from sync_outbox)'));
-        }).catchError((Object e, StackTrace st) {
-          final stackLines = st.toString().split('\n').take(8).join(' | ');
-          debugPrint('[PURCHASE-VOID-SYNC] Server sync failed (queued in outbox): $e\n$st');
-          unawaited(DiagnosticLogger.log('PURCHASE-VOID',
-              '❌ sync error invoice=${invoice.invoiceNumber}: $e\nstack: $stackLines'));
-        }));
-      } catch (e) {
-        debugPrint('[PURCHASE-VOID-SYNC] Sync setup failed: $e');
-        unawaited(DiagnosticLogger.log('PURCHASE-VOID',
-            '❌ submit setup failed invoice=${invoice.invoiceNumber}: $e'));
-      }
+          return accepted;
+        }),
+        tag: 'PURCHASE-VOID-SYNC',
+      );
 
       // 2) Local marker only — MUST NOT run the full stock/AP/treasury/GL
       // reversal (that is now the server's job). The authoritative row
@@ -534,11 +532,14 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
           'warehouseId=${invoice.warehouseId} '
           'items=${returnItems.length} total=$totalReturnAmount'));
 
-      // 1) Fire-and-forget: submit to server (server handles stock reversal,
-      // WAC adjustment, supplier balance, safe transactions, accounting JE).
-      // Guarded so a setup error here cannot prevent the local writes below.
-      try {
-        unawaited(ClientWriteInterceptor.submitPurchaseReturn({
+      // 1) Submit to server (server handles stock reversal, WAC adjustment,
+      // supplier balance, safe transactions, accounting JE).
+      //   • Client — fire-and-forget; the outbox retries.
+      //   • Mirror — awaited; on failure the local 'partial_return' badge and
+      //     the cache rows below never land, so the invoice keeps showing its
+      //     true (un-returned) state instead of a return HQ never recorded.
+      await ClientWriteInterceptor.dispatchWrite(
+        () => ClientWriteInterceptor.submitPurchaseReturn({
           'purchaseId': invoice.id,
           if (invoice.globalId != null && invoice.globalId!.isNotEmpty)
             'purchaseGlobalId': invoice.globalId,
@@ -574,21 +575,10 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
                   ? '✓ accepted invoice=${invoice.invoiceNumber}'
                   : '⏳ queued offline invoice=${invoice.invoiceNumber} '
                       '(server unreachable, will retry from sync_outbox)'));
-        }).catchError((Object e, StackTrace st) {
-          // Spec 002 Round 6: capture the stack trace too. Round 5 narrowed
-          // this error to client-side (no 'Server error (500)' prefix means
-          // it never reached the server), so the stack will pinpoint the
-          // exact line. Truncate to 8 frames so the log file stays readable.
-          final stackLines = st.toString().split('\n').take(8).join(' | ');
-          debugPrint('[PURCHASE-RETURN-SYNC] Server sync failed (queued in outbox): $e\n$st');
-          unawaited(DiagnosticLogger.log('PURCHASE-RETURN',
-              '❌ sync error invoice=${invoice.invoiceNumber}: $e\nstack: $stackLines'));
-        }));
-      } catch (e) {
-        debugPrint('[PURCHASE-RETURN-SYNC] Sync setup failed: $e');
-        unawaited(DiagnosticLogger.log('PURCHASE-RETURN',
-            '❌ submit setup failed invoice=${invoice.invoiceNumber}: $e'));
-      }
+          return accepted;
+        }),
+        tag: 'PURCHASE-RETURN-SYNC',
+      );
 
       // 2) Local status update — MUST succeed regardless of optional cache
       // population below. Done OUTSIDE any transaction so the user-visible
@@ -1006,8 +996,11 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
           'globalId=${invoice.globalId} '
           'oldTotal=$oldTotalReturnAmount newTotal=$newTotalReturnAmount '
           'items=${newReturnItems.length}'));
-      try {
-        unawaited(ClientWriteInterceptor.submitPurchaseReturnEdit({
+      // Mirror: awaited — this path writes NOTHING locally and returns the new
+      // total as if it were applied, so a swallowed failure is a pure silent
+      // loss. The caller now gets the exception instead.
+      await ClientWriteInterceptor.dispatchWrite(
+        () => ClientWriteInterceptor.submitPurchaseReturnEdit({
           'purchaseId': invoice.id,
           if (invoice.globalId != null && invoice.globalId!.isNotEmpty)
             'purchaseGlobalId': invoice.globalId,
@@ -1028,17 +1021,10 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
                   ? '✓ accepted invoice=${invoice.invoiceNumber}'
                   : '⏳ queued offline invoice=${invoice.invoiceNumber} '
                       '(server unreachable, will retry from sync_outbox)'));
-        }).catchError((Object e, StackTrace st) {
-          final stackLines = st.toString().split('\n').take(8).join(' | ');
-          debugPrint('[PURCHASE-RETURN-EDIT-SYNC] Server sync failed (queued in outbox): $e\n$st');
-          unawaited(DiagnosticLogger.log('PURCHASE-RETURN-EDIT',
-              '❌ sync error invoice=${invoice.invoiceNumber}: $e\nstack: $stackLines'));
-        }));
-      } catch (e) {
-        debugPrint('[PURCHASE-RETURN-EDIT-SYNC] Sync setup failed: $e');
-        unawaited(DiagnosticLogger.log('PURCHASE-RETURN-EDIT',
-            '❌ submit setup failed invoice=${invoice.invoiceNumber}: $e'));
-      }
+          return accepted;
+        }),
+        tag: 'PURCHASE-RETURN-EDIT-SYNC',
+      );
       return newTotalReturnAmount;
     }
 

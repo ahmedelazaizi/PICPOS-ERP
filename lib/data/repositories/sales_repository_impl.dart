@@ -398,8 +398,10 @@ class SalesRepositoryImpl extends DatabaseAccessor<AppDatabase>
       // Server is SSoT for money + GL + treasury. Fire-and-queue the collection;
       // keep only a light local paid marker (no cash/JE/AR side-effects). The
       // authoritative paid/JE/safe/AR come back on the next DeltaPull.
-      try {
-        unawaited(ClientWriteInterceptor.submitSalesPayment(
+      // Mirror: awaited — the local paid marker below must not credit a
+      // collection HQ never recorded, or the customer's balance diverges.
+      await ClientWriteInterceptor.dispatchWrite(
+        () => ClientWriteInterceptor.submitSalesPayment(
           salesId: invoice.id,
           salesGlobalId: invoice.globalId,
           invoiceNumber: invoice.invoiceNumber,
@@ -409,12 +411,10 @@ class SalesRepositoryImpl extends DatabaseAccessor<AppDatabase>
         ).then((accepted) {
           debugPrint('[SALES-PAYMENT-SYNC] accepted=$accepted '
               'invoice=${invoice.invoiceNumber}');
-        }).catchError((Object e, StackTrace st) {
-          debugPrint('[SALES-PAYMENT-SYNC] sync failed (queued in outbox): $e');
-        }));
-      } catch (e) {
-        debugPrint('[SALES-PAYMENT-SYNC] submit setup error: $e');
-      }
+          return accepted;
+        }),
+        tag: 'SALES-PAYMENT-SYNC',
+      );
       await db.updateSalesInvoicePaidAmount(invoiceId, amount);
     } else {
       // Standalone / server: this machine IS the source of truth — full apply
@@ -506,11 +506,14 @@ class SalesRepositoryImpl extends DatabaseAccessor<AppDatabase>
           'invoiceNumber=${invoice.invoiceNumber} '
           'globalId=${invoice.globalId} voidGlobalId=$voidGlobalId'));
 
-      // 1) Fire-and-forget: submit to server (server performs the authoritative
-      // stock/treasury/JE reversal). Guarded so a setup error here cannot
-      // prevent the local status marker below.
-      try {
-        unawaited(ClientWriteInterceptor.submitVoidSalesInvoice(
+      // 1) Submit to server (server performs the authoritative
+      // stock/treasury/JE reversal).
+      //   • Client — fire-and-forget; the outbox retries.
+      //   • Mirror — awaited; on failure the status marker below never runs, so
+      //     the invoice keeps showing as live rather than "voided" on a device
+      //     where HQ still has it outstanding.
+      await ClientWriteInterceptor.dispatchWrite(
+        () => ClientWriteInterceptor.submitVoidSalesInvoice(
           salesId: invoice.id,
           salesGlobalId: invoice.globalId,
           invoiceNumber: invoice.invoiceNumber,
@@ -527,17 +530,10 @@ class SalesRepositoryImpl extends DatabaseAccessor<AppDatabase>
                   ? '✓ accepted invoice=${invoice.invoiceNumber}'
                   : '⏳ queued offline invoice=${invoice.invoiceNumber} '
                       '(server unreachable, will retry from sync_outbox)'));
-        }).catchError((Object e, StackTrace st) {
-          final stackLines = st.toString().split('\n').take(8).join(' | ');
-          debugPrint('[SALES-VOID-SYNC] Server sync failed (queued in outbox): $e\n$st');
-          unawaited(DiagnosticLogger.log('SALES-VOID',
-              '❌ sync error invoice=${invoice.invoiceNumber}: $e\nstack: $stackLines'));
-        }));
-      } catch (e) {
-        debugPrint('[SALES-VOID-SYNC] Sync setup failed: $e');
-        unawaited(DiagnosticLogger.log('SALES-VOID',
-            '❌ submit setup failed invoice=${invoice.invoiceNumber}: $e'));
-      }
+          return accepted;
+        }),
+        tag: 'SALES-VOID-SYNC',
+      );
 
       // 2) LIGHT local marker ONLY — MUST NOT run the full stock/treasury/GL
       // reversal (that is now the server's job). Flips the user-visible status
