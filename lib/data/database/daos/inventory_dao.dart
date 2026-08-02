@@ -260,16 +260,39 @@ extension InventoryDao on AppDatabase {
         ),
       );
 
-      // ═══ FIFO Batch Consumption (Sprint 15) ═══
-      // Automatically consume/restore batches when inventory is tracked via batches.
-      // Uses FIFO (oldest created batch first) for sales deductions.
-      final isSaleDeduction = quantity < 0 &&
-          (movementType == 'sale' ||
-           movementType == 'legacy_sale' ||
-           movementType == 'edit_adjustment');
-      final isReturnAddition = quantity > 0 &&
-          (movementType == 'return' ||
-           movementType == 'edit_reversal');
+      // ═══ Batch consumption / restoration (Sprint 15) ═══
+      // Keep the batch ledger in step with the warehouse. Issue order is
+      // decided per product by getBatchesForIssue (FEFO for expiry-tracked
+      // goods, FIFO otherwise).
+      //
+      // Both lists gate on the SIGN of the movement, so a type that occurs in
+      // both directions belongs in BOTH lists and the sign dispatches it.
+      // That is exactly the case for `void_reversal`: voiding a SALE puts
+      // goods back (sales_actions_dao, positive) while voiding a PURCHASE
+      // takes them away (purchase_dao, negative).
+      //
+      // `purchase_return` and `void_reversal` used to be in neither list, so
+      // warehouse stock moved while the batches sat still — and in opposite
+      // directions, so the drift did not even average out. Everything reading
+      // batches downstream (expiry alerts, FEFO ordering, recall
+      // traceability) was working off quantities that no longer described
+      // what was on the shelf.
+      const outboundTypes = {
+        'sale',
+        'legacy_sale',
+        'edit_adjustment',
+        'purchase_return', // goods physically returned to the supplier
+        'void_reversal', // voiding a purchase removes what it brought in
+      };
+      const inboundTypes = {
+        'return',
+        'edit_reversal',
+        'void_reversal', // voiding a sale puts the goods back on the shelf
+      };
+      final isSaleDeduction =
+          quantity < 0 && outboundTypes.contains(movementType);
+      final isReturnAddition =
+          quantity > 0 && inboundTypes.contains(movementType);
 
       if (isSaleDeduction) {
         // Consume from oldest batches (FIFO)

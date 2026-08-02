@@ -66,8 +66,22 @@ extension InventoryBatchDao on AppDatabase {
     int productId, {
     int? warehouseId,
   }) async {
-    final product = await getProductById(productId);
-    final byExpiry = product?.trackExpiry ?? false;
+    // Deliberately NOT getProductById: that helper memoises rows in
+    // `_productByIdCache`, and this runs INSIDE adjustStock's transaction —
+    // after the stock row has already been decremented. A cached read there
+    // captures the mid-transaction value, and the cache is not
+    // transaction-aware, so a rollback leaves the stale figure behind and
+    // every later read sees a quantity that was never committed.
+    // (Caught by landed_lifecycle_b8 PRET-1a, which asserts a failed purchase
+    // return rolls back completely: stock read back as 5 instead of 10.)
+    // One boolean column, read straight from the table, avoids the hazard
+    // entirely and is cheaper besides.
+    final row = await (selectOnly(products)
+          ..addColumns([products.trackExpiry])
+          ..where(products.id.equals(productId))
+          ..limit(1))
+        .getSingleOrNull();
+    final byExpiry = row?.read(products.trackExpiry) ?? false;
     return byExpiry
         ? getProductBatchesFEFO(productId, warehouseId: warehouseId)
         : getProductBatchesFIFO(productId, warehouseId: warehouseId);
