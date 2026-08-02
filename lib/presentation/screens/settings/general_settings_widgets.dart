@@ -281,7 +281,7 @@ class _CostingMethodToggle extends ConsumerStatefulWidget {
 }
 
 class _CostingMethodToggleState extends ConsumerState<_CostingMethodToggle> {
-  CostingMethod _method = CostingMethod.lastPurchase;
+  CostingMethod _method = CostingMethod.weightedAverage;
   bool _loading = true;
 
   @override
@@ -298,71 +298,16 @@ class _CostingMethodToggleState extends ConsumerState<_CostingMethodToggle> {
   @override
   Widget build(BuildContext context) {
     if (_loading) return const SizedBox.shrink();
+    // بلا `onTap`: الصيغة قرار سياسة محاسبية بتتحدد مرة، مش تفضيل استخدام.
     return ListTile(
       leading: const Icon(
         PhosphorIconsBold.calculator,
         color: AppColors.info,
       ),
       title: const Text('طريقة حساب التكلفة'),
-      subtitle: Text(CostingMethodService.label(_method)),
-      trailing: const Icon(PhosphorIconsBold.caretLeft),
-      onTap: () => _showSelector(context),
-    );
-  }
-
-  void _showSelector(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => Directionality(
-        textDirection: ui.TextDirection.rtl,
-        child: SimpleDialog(
-          title: const Text('اختر طريقة حساب التكلفة'),
-          children: [
-            _buildOption(
-              ctx,
-              CostingMethod.lastPurchase,
-              'آخر سعر شراء',
-              PhosphorIconsBold.tag,
-              'يتم تحديث تكلفة الصنف بآخر سعر شراء من المورد',
-            ),
-            _buildOption(
-              ctx,
-              CostingMethod.weightedAverage,
-              'متوسط مرجح (WAC)',
-              PhosphorIconsBold.chartBar,
-              'يتم حساب المتوسط المرجح بناءً على الكميات والأسعار',
-            ),
-          ],
-        ),
+      subtitle: Text(
+        '${CostingMethodService.label(_method)} — وفق IAS 2',
       ),
-    );
-  }
-
-  Widget _buildOption(
-    BuildContext context,
-    CostingMethod method,
-    String label,
-    IconData icon,
-    String description,
-  ) {
-    final isSelected = method == _method;
-    return ListTile(
-      leading: Icon(icon, color: isSelected ? AppColors.primary : null),
-      title: Text(
-        label,
-        style: TextStyle(
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-        ),
-      ),
-      subtitle: Text(description, style: const TextStyle(fontSize: 12)),
-      trailing: isSelected
-          ? const Icon(PhosphorIconsBold.check, color: AppColors.success)
-          : null,
-      onTap: () async {
-        await CostingMethodService.save(ref.read(settingsRepositoryProvider), method);
-        setState(() => _method = method);
-        if (context.mounted) Navigator.pop(context);
-      },
     );
   }
 }

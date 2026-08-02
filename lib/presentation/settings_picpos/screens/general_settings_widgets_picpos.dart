@@ -279,7 +279,19 @@ class _DeliveryToggleState extends ConsumerState<_DeliveryToggle> {
 // backfill still runs, and existing installs keep their previously
 // written value.
 
-/// Costing method toggle — last purchase price vs weighted average
+/// عرض صيغة تحميل تكلفة المخزون — **للاطلاع لا للتغيير**.
+///
+/// كانت قائمة اختيار بين «آخر سعر شراء» و«متوسط مرجح». اتشالت لسببين:
+///
+/// ١. «آخر سعر شراء» مش صيغة تحميل تكلفة مسموحة — `IAS 2.25` بيحصر الصيغ في
+///    المتوسط المرجّح وFIFO والتمييز المحدد. وكانت الافتراضية كمان.
+/// ٢. حتى بين الصيغ المسموحة، تبديل الصيغة بعد التشغيل هو **تغيير في السياسة
+///    المحاسبية** (`IAS 8`) بيستوجب تعديل بأثر رجعي — فتوجل حر في الإعدادات
+///    هو نفسه مَخرج للمخالفة.
+///
+/// وعملياً الاختيار ما كانش بيعمل حاجة أصلاً: مسار الشراء الحيّ
+/// (`purchase_dao.createPurchaseInvoice`) بيستعمل المتوسط المرجّح مثبَّتاً
+/// ويتجاهل الإعداد.
 class _CostingMethodToggle extends ConsumerStatefulWidget {
   const _CostingMethodToggle();
 
@@ -288,7 +300,7 @@ class _CostingMethodToggle extends ConsumerStatefulWidget {
 }
 
 class _CostingMethodToggleState extends ConsumerState<_CostingMethodToggle> {
-  CostingMethod _method = CostingMethod.lastPurchase;
+  CostingMethod _method = CostingMethod.weightedAverage;
   bool _loading = true;
 
   @override
@@ -305,71 +317,16 @@ class _CostingMethodToggleState extends ConsumerState<_CostingMethodToggle> {
   @override
   Widget build(BuildContext context) {
     if (_loading) return const SizedBox.shrink();
+    // بلا `onTap`: الصيغة قرار سياسة محاسبية بتتحدد مرة، مش تفضيل استخدام.
     return ListTile(
       leading: const Icon(
         PhosphorIconsBold.calculator,
         color: AppColors.info,
       ),
       title: const Text('طريقة حساب التكلفة'),
-      subtitle: Text(CostingMethodService.label(_method)),
-      trailing: const Icon(PhosphorIconsBold.caretLeft),
-      onTap: () => _showSelector(context),
-    );
-  }
-
-  void _showSelector(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => Directionality(
-        textDirection: ui.TextDirection.rtl,
-        child: SimpleDialog(
-          title: const Text('اختر طريقة حساب التكلفة'),
-          children: [
-            _buildOption(
-              ctx,
-              CostingMethod.lastPurchase,
-              'آخر سعر شراء',
-              PhosphorIconsBold.tag,
-              'يتم تحديث تكلفة الصنف بآخر سعر شراء من المورد',
-            ),
-            _buildOption(
-              ctx,
-              CostingMethod.weightedAverage,
-              'متوسط مرجح (WAC)',
-              PhosphorIconsBold.chartBar,
-              'يتم حساب المتوسط المرجح بناءً على الكميات والأسعار',
-            ),
-          ],
-        ),
+      subtitle: Text(
+        '${CostingMethodService.label(_method)} — وفق IAS 2',
       ),
-    );
-  }
-
-  Widget _buildOption(
-    BuildContext context,
-    CostingMethod method,
-    String label,
-    IconData icon,
-    String description,
-  ) {
-    final isSelected = method == _method;
-    return ListTile(
-      leading: Icon(icon, color: isSelected ? AppColors.primary : null),
-      title: Text(
-        label,
-        style: TextStyle(
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-        ),
-      ),
-      subtitle: Text(description, style: const TextStyle(fontSize: 12)),
-      trailing: isSelected
-          ? const Icon(PhosphorIconsBold.check, color: AppColors.success)
-          : null,
-      onTap: () async {
-        await CostingMethodService.save(ref.read(settingsRepositoryProvider), method);
-        setState(() => _method = method);
-        if (context.mounted) Navigator.pop(context);
-      },
     );
   }
 }

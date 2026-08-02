@@ -4,30 +4,56 @@ import '../domain/repositories/settings_repository.dart';
 /// ───────────────────────────────────────────────────────────────────
 /// Costing Method Service
 /// ───────────────────────────────────────────────────────────────────
-/// Controls how product cost price is calculated on purchase receipt:
-/// - lastPurchase: Cost = latest purchase unit cost (default)
-/// - weightedAverage: Cost = (old_qty × old_cost + new_qty × new_cost) / total_qty
+/// يحدّد صيغة تحميل تكلفة المخزون عند استلام المشتريات.
 ///
-/// Stored in the app settings table under 'costing_method' (P1-02: migrated
-/// from SharedPreferences to the encrypted SQLite settings table so the value
-/// travels with database backups and is consistent with all other settings).
+/// ── الصيغ المسموح بها (IAS 2.23-25) ────────────────────────────────
+/// المعيار يحصر صيغ تحميل التكلفة في:
+///   · المتوسط المرجّح            ← المنفَّذ هنا
+///   · الوارد أولاً صادر أولاً (FIFO) ← مسموح، غير منفَّذ (يحتاج طبقات حقيقية)
+///   · التمييز المحدد              ← للأصناف غير المتماثلة فقط
+/// و LIFO ممنوعة منذ تعديل ٢٠٠٣.
+///
+/// ── لماذا حُذفت «آخر سعر شراء» ─────────────────────────────────────
+/// لم تكن صيغة تحميل تكلفة أصلاً — هي قياس **تكلفة إحلال / جارية**.
+/// استعمالها يكتب على `products.costPrice` قيمة لا تقابلها أي حركة في
+/// الأستاذ، فيقفز تقييم المخزون بلا قيد مقابل وينحرف عن الحساب الرقابي
+/// ١١٣٦. وكانت هي **الافتراضية** ومعروضة في شاشة الإعدادات في المنتجين،
+/// بينما مسار الشراء الحيّ (`purchase_dao.createPurchaseInvoice`) يستعمل
+/// المتوسط المرجّح مثبَّتاً ويتجاهل الإعداد — وعْد كاذب في الاتجاهين.
+///
+/// إن كانت الحاجة الفعلية «آخر سعر شراء» لأغراض **التسعير** (بكم أبيع)
+/// فذلك قرار مختلف تماماً ويُعرض كمساعد تسعير بعيداً عن التكلفة.
+///
+/// ── تغيير الصيغة = تغيير سياسة محاسبية ─────────────────────────────
+/// `IAS 8` يجعل تبديل الصيغة تغييراً في السياسة المحاسبية يستوجب تعديلاً
+/// بأثر رجعي، و`IAS 2.25` يوجب الصيغة نفسها لكل المخزون المتماثل في
+/// الطبيعة والاستخدام. فالاختيار قرار إعداد لا تفضيل استخدام.
+///
+/// مخزَّنة في `settings` تحت `costing_method` (P1-02: نُقلت من
+/// SharedPreferences إلى جدول الإعدادات المشفَّر لتسافر مع النسخ الاحتياطية).
 
 enum CostingMethod {
-  lastPurchase,      // آخر سعر شراء (default)
-  weightedAverage,   // متوسط مرجح (WAC)
+  weightedAverage, // متوسط مرجح (WAC) — الافتراضي والوحيد المنفَّذ
 }
 
 class CostingMethodService {
   static const _key = 'costing_method';
 
+  /// أي قيمة مخزَّنة غير معروفة — بما فيها `lastPurchase` على التركيبات
+  /// القائمة — تُقرأ كمتوسط مرجّح.
+  ///
+  /// ده **مش تغيير سلوك**: مسار الشراء الحيّ كان بيستعمل المتوسط المرجّح
+  /// فعلاً ويتجاهل الإعداد، فالتصحيح في الاسم المعروض مش في الحساب.
   static Future<CostingMethod> load(ISettingsRepository settings) async {
-    final value = await settings.getSetting(_key) ?? 'lastPurchase';
-    return value == 'weightedAverage'
-        ? CostingMethod.weightedAverage
-        : CostingMethod.lastPurchase;
+    final value = await settings.getSetting(_key);
+    return CostingMethod.values.firstWhere(
+      (m) => m.name == value,
+      orElse: () => CostingMethod.weightedAverage,
+    );
   }
 
-  static Future<void> save(ISettingsRepository settings, CostingMethod method) async {
+  static Future<void> save(
+      ISettingsRepository settings, CostingMethod method) async {
     await settings.saveSetting(_key, method.name);
   }
 
@@ -45,8 +71,6 @@ class CostingMethodService {
     required double purchaseUnitCost,
   }) {
     switch (method) {
-      case CostingMethod.lastPurchase:
-        return purchaseUnitCost;
       case CostingMethod.weightedAverage:
         final totalQty = currentStock + purchaseQty;
         if (totalQty <= 0) return purchaseUnitCost;
@@ -62,8 +86,6 @@ class CostingMethodService {
   /// Human-readable label
   static String label(CostingMethod method) {
     switch (method) {
-      case CostingMethod.lastPurchase:
-        return 'آخر سعر شراء';
       case CostingMethod.weightedAverage:
         return 'متوسط مرجح (WAC)';
     }
