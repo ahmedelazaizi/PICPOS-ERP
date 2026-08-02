@@ -1034,7 +1034,29 @@ extension InventoryDao on AppDatabase {
       double totalSurplus = 0;
 
       final productMap = await getProductsByIds(items.map((i) => i.productId).toList());
-      for (final item in items) {
+      for (final rawItem in items) {
+        // ── الفرق بيتحسب من قراءة **طازجة** وقت الترحيل ────────────────────
+        //
+        // `item.difference` لقطة اتحفظت وقت **العدّ**. أي بيعة بين العدّ
+        // والترحيل بتخلّي الفرق ده قديم، والتطبيق بيوصل لرصيد **غير**
+        // الكمية المعدودة:
+        //   رصيد دفتري 100 · العدّ الفعلي 95 (difference = -5)
+        //   بيعة 10 بين العدّ والترحيل → الرصيد 90
+        //   بعد الترحيل: 85 — والعدّ قال 95.
+        //
+        // الجرد الدوري (`cycle_count_dao.dart:400-407`) بيقرا طازج ويحسب
+        // `delta = counted − current`. ده نفس النمط.
+        final curBal = await (select(inventoryBalances)
+              ..where((b) =>
+                  b.productId.equals(rawItem.productId) &
+                  b.warehouseId.equals(auditWarehouseId))
+              ..limit(1))
+            .getSingleOrNull();
+        final freshDelta = curBal == null
+            ? rawItem.difference // مفيش رصيد للمخزن — سيبها زي ما هي
+            : rawItem.actualQuantity - curBal.quantity;
+        final item = rawItem.copyWith(difference: freshDelta);
+
         if (item.difference != 0) {
           final product = productMap[item.productId];
           final costPrice = product?.costPrice ?? 0;
