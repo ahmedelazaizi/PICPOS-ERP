@@ -1134,7 +1134,15 @@ extension Epoch3Migrations on AppDatabase {
         ];
         for (var t in tables) {
           // 1. Add global_id
-          try { await m.database.customStatement("ALTER TABLE $t ADD COLUMN global_id TEXT UNIQUE"); } catch (e) { debugPrint('[Migration] v119 ADD $t.global_id (safe-skip): $e'); }
+          //
+          // كان `ADD COLUMN ... TEXT UNIQUE` — صيغة **مرفوضة في SQLite**
+          // نهائياً، والخطأ مبلوع هنا فالبلوك كان بيكمّل بصمت والعمود ما
+          // بيتعملش، والـbackfill تحته بيفشل بـ`no such column` ويتبلع هو
+          // كمان. يعني v119 ما نجحش ولا مرة على أي ترقية.
+          // دليل داخلي: v114/v118 في نفس الملف بيستعملوا `ADD COLUMN TEXT`
+          // من غير UNIQUE — وde بينجح.
+          try { await m.database.customStatement("ALTER TABLE $t ADD COLUMN global_id TEXT"); } catch (e) { debugPrint('[Migration] v119 ADD $t.global_id (safe-skip): $e'); }
+          try { await m.database.customStatement("CREATE UNIQUE INDEX IF NOT EXISTS idx_${t}_global_id ON $t(global_id) WHERE global_id IS NOT NULL"); } catch (e) { debugPrint('[Migration] v119 IX $t.global_id (safe-skip): $e'); }
           // 2. Add is_global (for common static data like units/categories)
           try { await m.database.customStatement("ALTER TABLE $t ADD COLUMN is_global INTEGER NOT NULL DEFAULT 0"); } catch (e) { debugPrint('[Migration] v119 ADD $t.is_global (safe-skip): $e'); }
           // 3. Add branch_ids (for scoped data)
@@ -1448,12 +1456,23 @@ extension Epoch3Migrations on AppDatabase {
         ];
         for (final t in tables) {
           // 1. Add global_id column (safe-skip if already present).
+          //
+          // كان `TEXT UNIQUE` — مرفوضة في SQLite، والخطأ مبلوع فالعمود ما
+          // كانش بيتعمل على أي من الـ٢٢ جدول. نفس عطل v119 فوق.
           try {
             await m.database.customStatement(
-              "ALTER TABLE $t ADD COLUMN global_id TEXT UNIQUE",
+              "ALTER TABLE $t ADD COLUMN global_id TEXT",
             );
           } catch (e) {
             debugPrint('[Migration] v128 ADD $t.global_id (safe-skip): $e');
+          }
+          try {
+            await m.database.customStatement(
+              "CREATE UNIQUE INDEX IF NOT EXISTS idx_${t}_global_id "
+              "ON $t(global_id) WHERE global_id IS NOT NULL",
+            );
+          } catch (e) {
+            debugPrint('[Migration] v128 IX $t.global_id (safe-skip): $e');
           }
 
           // 2. Backfill UUID v7 for existing rows missing global_id.
@@ -1568,9 +1587,19 @@ extension Epoch3Migrations on AppDatabase {
     // so client operations are pushed to the server and appear in the central
     // audit trail (سجل العمليات المركزي).
     if (from < 132) {
-      await _safeMigrate('v132 activity_logs.global_id',
-          () => m.database.customStatement(
-              'ALTER TABLE activity_logs ADD COLUMN global_id TEXT UNIQUE'));
+      // `ADD COLUMN ... UNIQUE` مرفوضة في SQLite، وكانت بتوصل للـ`rethrow`
+      // في `_safeMigrate` فتقتل الإقلاع كله على أي ترقية من إصدار < 132.
+      // الصيغة دي (عمود عادي + فهرس فريد جزئي) هي نفس النمط الصح المستعمل
+      // في v142/v148/v149 تحت.
+      await _safeMigrate('v132 activity_logs.global_id', () async {
+        await _safeMigrate(
+            'v132 activity_logs.global_id (column)',
+            () => m.database.customStatement(
+                'ALTER TABLE activity_logs ADD COLUMN global_id TEXT'));
+        await m.database.customStatement(
+            'CREATE UNIQUE INDEX IF NOT EXISTS idx_activity_logs_global_id '
+            'ON activity_logs(global_id) WHERE global_id IS NOT NULL');
+      });
       await _safeMigrate('v132 activity_logs.origin_client_id',
           () => m.database.customStatement(
               'ALTER TABLE activity_logs ADD COLUMN origin_client_id TEXT'));

@@ -14,19 +14,36 @@ part of 'database.dart';
 ///     object that was added by a previous migration run
 ///   • "no such column" — fixDateTime-style UPDATE that references a column
 ///     which was never created (safe to skip; data doesn't exist)
+///   • "cannot add a unique column" — SQLite رافضة `ADD COLUMN ... UNIQUE`
+///     نهائياً (مفيش صيغة كده أصلاً). كانت بتوصل للـ`rethrow` فتقتل الإقلاع
+///     كله بدل ما تتخطّى — شوف التعليق على [isIdempotentMigrationError].
+@visibleForTesting
+bool isIdempotentMigrationError(String message) {
+  final msg = message.toLowerCase();
+  return msg.contains('duplicate column name') ||
+      (msg.contains('already exists') &&
+          (msg.contains('table') ||
+              msg.contains('index') ||
+              msg.contains('view'))) ||
+      msg.contains('no such column') ||
+      // ── ليه دي هنا ────────────────────────────────────────────────────────
+      // `ALTER TABLE x ADD COLUMN c TEXT UNIQUE` **مرفوضة في SQLite** (الجدول
+      // ممكن يكون فيه صفوف مكرَّرة أصلاً). v132 كان بيعملها على
+      // `activity_logs`، والخطأ مش في القايمة → `rethrow` → `onUpgrade` يفشل →
+      // drift ما بيفتحش القاعدة → التطبيق ما بيقلعش. والترقية جوه ترانزاكشن
+      // فبترجع وتعيد المحاولة كل إقلاع = موت دائم مش عطل مؤقت.
+      //
+      // البلوكات نفسها اتصلّحت (عمود عادي + فهرس فريد جزئي)، بس ده خط دفاع
+      // تاني: أي `ADD COLUMN ... UNIQUE` فاضلة في مايجريشن قديمة أو جاية
+      // تتخطّى بدل ما تقفل التطبيق.
+      msg.contains('cannot add a unique column');
+}
+
 Future<void> _safeMigrate(String label, Future<void> Function() action) async {
   try {
     await action();
   } catch (e) {
-    final msg = e.toString().toLowerCase();
-    final isIdempotentError =
-        msg.contains('duplicate column name') ||
-        (msg.contains('already exists') &&
-            (msg.contains('table') ||
-                msg.contains('index') ||
-                msg.contains('view'))) ||
-        msg.contains('no such column');
-    if (isIdempotentError) {
+    if (isIdempotentMigrationError(e.toString())) {
       debugPrint('[Migration] $label (safe-skip): $e');
     } else {
       debugPrint('[Migration] $label (ERROR - rethrowing): $e');
