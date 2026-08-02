@@ -130,11 +130,29 @@ extension SalesActionsDao on AppDatabase {
       // 'sales_invoice_void'. Fail loud instead — let the exception propagate
       // so the enclosing transaction rolls back the ENTIRE void
       // (all-or-nothing). The success path is byte-for-byte unchanged.
-      if (inv.isLocked) {
+      // ── الشرط بقى «فيه قيد؟» بدل «مقفولة؟» ─────────────────────────────
+      //
+      // البوابة كانت `if (inv.isLocked)`، و`isLocked` بتتحط في تلات مسارات
+      // ترحيل من أربعة: `autoPostCashSale` و`autoPostCreditSale`
+      // و`autoPostPurchase` بيحطوها، و**`_autoPostDeferredRevenue` لأ**.
+      // فطلب توصيل بإيراد مؤجل كان بيتلغي والمخزون والخزينة ورصيد العميل
+      // بيتعكسوا، والأستاذ فاضل فيه الذمم والإيراد المقدم على فاتورة ملغية.
+      //
+      // ربط **صحة الدفاتر** بحقل بيتحط في مكان تاني معناه إن أي مسار ترحيل
+      // جديد ينسى يحطه بيعيد نفس الباج. السؤال الصح: فيه قيد مرحَّل
+      // للفاتورة دي؟
+      //
+      // و`deferred_sale` اتضاف للفلتر — كان مستثنى فما كانش هيتلقى أصلاً
+      // حتى لو البوابة عدّت.
+      {
         // Get original auto-post JE and create a reversal
         final originalJE = await (select(journalEntries)
               ..where((e) =>
-                  (e.referenceType.equals('sale') | e.referenceType.equals('sales_invoice')) &
+                  e.referenceType.isIn(const [
+                    'sale',
+                    'sales_invoice',
+                    'deferred_sale',
+                  ]) &
                   e.referenceId.equals(inv.id) &
                   e.isAutoPosted.equals(true))
               ..limit(1))
