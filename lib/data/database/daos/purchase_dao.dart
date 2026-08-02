@@ -470,6 +470,7 @@ extension PurchaseDao on AppDatabase {
 
       double taxTotal = 0;
       double total = 0;
+      double rawMaterialSubtotal = 0;
       double subtotalSum = 0;
 
       for (final item in items) {
@@ -491,6 +492,16 @@ extension PurchaseDao on AppDatabase {
             : subtotal * (rate / 100));
 
         subtotalSum += subtotal;
+        // نصيب الخامات من الإجمالي. الشراء كان بيدخّل **كل** الأصناف على
+        // ١١٣٦ بينما استهلاك التصنيع بيسحب من ١١٣١، فالخامة بتدخل حساب
+        // وتخرج من حساب تاني و١١٣١ بيبقى رصيد أصل سالب مع كل أمر إنتاج.
+        if (item.productId.present) {
+          final p = await getProductById(item.productId.value);
+          if (inventoryAccountPurposeForProduct(p?.productType) ==
+              'raw_materials') {
+            rawMaterialSubtotal += subtotal;
+          }
+        }
         total += subtotal + tax;
         taxTotal += tax;
       }
@@ -749,13 +760,45 @@ extension PurchaseDao on AppDatabase {
           'راجع إعدادات الحسابات ← ربط الحسابات قبل حفظ الفاتورة.',
         );
       }
-      journalLines.add(
-        JournalLine(
-          accountId: invAcc.id,
-          debit: subtotalSum,
-          description: 'مشتريات مخزنية فاتورة #$invoiceNumber',
-        ),
-      );
+      // ── توجيه المدين حسب نوع الصنف (قرار المالك، 2026-08-02) ────────────
+      //
+      // الخامات على حساب الخامات (١١٣١) والباقي على المخزون (١١٣٦). قبل كده
+      // كل الأصناف كانت بتدخل ١١٣٦ بينما `manufacturing_dao` بيسحب الاستهلاك
+      // من ١١٣١ — فكل أمر إنتاج بيضخّم ١١٣٦ بقيمة الخامات المستهلكة ويخلّي
+      // ١١٣١ رصيد أصل سالب.
+      //
+      // نسبة الخصم اتطبقت على `subtotalSum` فوق، فنصيب الخامات بيتعدّل بنفس
+      // النسبة عشان مجموع السطرين يساوي الإجمالي بعد الخصم بالظبط.
+      final rawShare = rawMaterialSubtotal > 0
+          ? FinancialUtils.round(rawMaterialSubtotal * discountFactor)
+          : 0.0;
+      final rawAcc = rawShare > 0
+          ? await accountingDao.getAccountByCode(
+              await accountingDao.getMappedAccountCode('raw_materials',
+                  AccountingDao.accountPurposes['raw_materials']!))
+          : null;
+      // حساب الخامات مش موجود (دليل معدَّل) ⇒ الكل على المخزون زي الأول بدل
+      // ما القيد يفشل ويوقف الفاتورة.
+      final rawLeg = rawAcc == null ? 0.0 : rawShare;
+
+      if (rawLeg > 0) {
+        journalLines.add(
+          JournalLine(
+            accountId: rawAcc!.id,
+            debit: rawLeg,
+            description: 'مشتريات خامات فاتورة #$invoiceNumber',
+          ),
+        );
+      }
+      if (subtotalSum - rawLeg > 0) {
+        journalLines.add(
+          JournalLine(
+            accountId: invAcc.id,
+            debit: FinancialUtils.round(subtotalSum - rawLeg),
+            description: 'مشتريات مخزنية فاتورة #$invoiceNumber',
+          ),
+        );
+      }
 
       if (taxTotal > 0) {
         final inputTaxCode = await accountingDao.getMappedAccountCode(

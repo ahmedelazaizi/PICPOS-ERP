@@ -1628,18 +1628,31 @@ extension AccountingReportsDao on AppDatabase {
     final invAccount = await accountingDao.getAccountByCode(invCode);
     if (invAccount == null) return null;
 
-    // GL 1136 balance = Σ(debit − credit) over POSTED, non-deleted JE lines. The
-    // posted/deleted filter lives INSIDE the join (cf. getPartyBalanceMismatches):
-    // a secondary/LEFT join would leak deleted-entry lines into the SUM.
+    // رصيد المخزون الرقابي = Σ(مدين − دائن) على حسابات المخزون **التلاتة**
+    // (خامات ١١٣١ + تحت التشغيل ١١٣٣ + مخزون ١١٣٦).
+    //
+    // كان بيقارن التقييم بـ١١٣٦ **وحده**، والتقييم بيجمع كل الأصناف
+    // المتعقَّبة بغض النظر عن نوعها. مع توجيه الشراء بنوع الصنف (قرار
+    // المالك 2026-08-02) الخامات بقت على ١١٣١ والإنتاج الجاري على ١١٣٣،
+    // فمقارنة بـ١١٣٦ وحده كانت هترجّع فرق بقيمتهم.
+    //
+    // الفلتر posted/deleted جوه الـjoin (زي getPartyBalanceMismatches):
+    // join تانوي أو LEFT كان هيسرّب سطور قيود محذوفة في الـSUM.
+    final controlIds = <int>[];
+    for (final purpose in kInventoryControlPurposes) {
+      final acc = await accountingDao.getAccountByPurpose(purpose);
+      if (acc != null) controlIds.add(acc.id);
+    }
+    if (controlIds.isEmpty) controlIds.add(invAccount.id);
     final glRow = await customSelect(
       '''
       SELECT COALESCE(SUM(jel.debit) - SUM(jel.credit), 0.0) AS gl_balance
       FROM journal_entry_lines jel
       INNER JOIN journal_entries je
         ON je.id = jel.entry_id AND je.is_posted = 1 AND je.is_deleted = 0
-      WHERE jel.account_id = ?
+      WHERE jel.account_id IN (${List.filled(controlIds.length, '?').join(',')})
       ''',
-      variables: [Variable<int>(invAccount.id)],
+      variables: controlIds.map((id) => Variable<int>(id)).toList(),
       readsFrom: {journalEntryLines, journalEntries},
     ).getSingle();
     final glBalance = (glRow.data['gl_balance'] as num?)?.toDouble() ?? 0.0;
