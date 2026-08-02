@@ -36,10 +36,26 @@ Future<bool> ensurePosNoteAddPermission(
   return false;
 }
 
+/// يكتب ملاحظة المطبخ على صنف في سلة شاشة خدمة الطاولات.
+///
+/// ── ليه مش `copyWith(note: ...)` زي الأول ───────────────────────────────────
+/// `note` حقل **مشتق** من `modifiers` + `itemNote`، والكتابة المباشرة عليه
+/// كانت بتخلّي المشتق يخالف مصدره: `item.modifiers` فيها «الحجم: كبير» والنص
+/// المطبوع مفيهوش، فالمطبخ بيحضّر الطلب من غير الإضافات. وطبقتَي الطباعة
+/// بتفكّكا النص بـ` | ` و`📝 ` — الشكل المركّب عقد مش تزيين.
+///
+/// نص فاضي = «امسح الملاحظة» (زرار «حذف الملاحظة» بيرجّع `''`).
+@visibleForTesting
+void applyTablePosItemNote(CartController cart, int index, String note) {
+  cart.updateItemNote(index, note.isEmpty ? null : note);
+}
+
 mixin _TablePosDialogsMixin on ConsumerState<TablePosScreen> {
   /// Show note dialog for an item (kitchen instructions)
   Future<void> _showNoteDialog(int index, CartItemEntity item) async {
-    final controller = TextEditingController(text: item.note ?? '');
+    // `itemNote` مش `note`: التاني فيه نص المعدِّلات كمان، ولو اتعرض في خانة
+    // الملاحظة الجرسون هيحفظه كملاحظة يدوية فيتضاعف عند أول إعادة تركيب.
+    final controller = TextEditingController(text: item.itemNote ?? '');
     final note = await showDialog<String>(
       context: context,
       builder: (ctx) => Directionality(
@@ -118,7 +134,7 @@ mixin _TablePosDialogsMixin on ConsumerState<TablePosScreen> {
                   style: GoogleFonts.cairo(
                       color: Colors.white.withValues(alpha: 0.5))),
             ),
-            if (item.note != null && item.note!.isNotEmpty)
+            if (item.itemNote != null && item.itemNote!.isNotEmpty)
               TextButton(
                 onPressed: () {
                   controller.clear();
@@ -143,12 +159,11 @@ mixin _TablePosDialogsMixin on ConsumerState<TablePosScreen> {
     );
 
     if (note != null && mounted) {
-      // Update the cart item note
-      final items =
-          List<CartItemEntity>.from(ref.read(cartControllerProvider).items);
-      items[index] = item.copyWith(note: note.isEmpty ? null : note);
-      ref.read(cartControllerProvider.notifier).state =
-          ref.read(cartControllerProvider).copyWith(items: items);
+      applyTablePosItemNote(
+        ref.read(cartControllerProvider.notifier),
+        index,
+        note,
+      );
     }
   }
 
