@@ -278,7 +278,19 @@ class SalesTransactionOrchestrator {
       // Invoice lines whose cost the breakdown already covers — see
       // SaleAutoDepleteResult.coveredSaleItemIds.
       Set<int>? autoDepletedItemIds;
-      if (!isClientMode) {
+      // `saleType != 'return'` mirrors the guard on the JE at the bottom of
+      // this method. A return runs through this same DAO with the quantities
+      // POSITIVE, so auto-deplete would consume the raw materials A SECOND
+      // TIME instead of giving them back: the finished item is restored to
+      // stock and its inputs are deducted again. Returning a BOM meal ate
+      // another meal's worth of ingredients.
+      //
+      // Reversal is a different operation with its own implementation —
+      // `reverseSaleConsumption` (manufacturing_dao), which the returns
+      // dialog already calls via returns_repository_impl. Auto-deplete simply
+      // has no role on a return.
+      final isReturnSale = saleType == 'return';
+      if (!isClientMode && !isReturnSale) {
         final saleLineRefs = savedItems
             .map((item) => SaleLineRef(
                   saleItemId: item.id,
