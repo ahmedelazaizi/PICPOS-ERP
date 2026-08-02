@@ -50,7 +50,11 @@ Map<String, String> _constantNameByCode() {
       .allMatches(sources)
       .map((m) => m.group(1)!)
       .toSet();
-  final constNames = RegExp(r'PermissionCodes\.(\w+)')
+  // `\s*` حوالين النقطة: `PermissionGuard` جوه شجرة ودجت عميقة بيوصل لعمود
+  // ٧٠+ فـ`dart format` بيلف السطر بين اسم الكلاس والنقطة. من غيرها الحارس
+  // بيقول عن كود محروس فعلاً إنه ثغرة — وهو أسوأ نوع كذب لأنه بيدفع اللي
+  // بيقرا التقرير إنه يسجّله في `knownUnenforced` فيتخبّى للأبد.
+  final constNames = RegExp(r'PermissionCodes\s*\.\s*(\w+)')
       .allMatches(sources)
       .map((m) => m.group(1)!)
       .toSet();
@@ -83,6 +87,39 @@ void main() {
         .join('\n');
     refs = _referencedIn(sources);
     constByCode = _constantNameByCode();
+  });
+
+  // ── ليه الاختبار ده موجود ───────────────────────────────────────────────
+  // اتبلّغ من نقل الباتش في UralCash: الـregex كان `PermissionCodes\.(\w+)`
+  // فما بيمسكش المرجع الملفوف على سطرين. وده بيحصل فعلاً — `PermissionGuard`
+  // جوه شجرة ودجت عميقة بيوصل لعمود ٧٠+ فـ`dart format` بيلف السطر بين اسم
+  // الكلاس والنقطة:
+  //
+  //     permission: PermissionCodes
+  //         .purchasesPrint,
+  //
+  // النتيجة إن الحارس بيقول عن كود **محروس فعلاً** إنه ثغرة، والمتوقَّع من
+  // اللي بيقرا التقرير إنه يسجّله في `knownUnenforced` (فيتخبّى للأبد) أو
+  // يضيف إنفاذ مكرَّر. حارس بيكدب في الاتجاه ده أسوأ من غيابه.
+  //
+  // عندنا الحالة الوحيدة (`purchase_invoices_screen.dart:733`) متلقّطة
+  // بالصدفة لأن فورك PicPos فيه نفس المرجع على سطر واحد — يعني الثغرة كامنة
+  // مش ظاهرة. أول ما الفورك يتلف أو يتشال بتبان.
+  test('استخراج المراجع بيمسك الشكل الملفوف على سطرين', () {
+    final wrapped = _referencedIn('''
+      PermissionGuard(
+        permission: PermissionCodes
+            .purchasesPrint,
+        allowManagerOverride: true,
+      )
+    ''');
+    expect(wrapped.constNames, contains('purchasesPrint'));
+  });
+
+  test('الشكل العادي على سطر واحد لسه بيتمسك', () {
+    final inline =
+        _referencedIn('permission: PermissionCodes.posSave,');
+    expect(inline.constNames, contains('posSave'));
   });
 
   test('مفيش كود صلاحية بلا إنفاذ ومش مسجّل', () {
