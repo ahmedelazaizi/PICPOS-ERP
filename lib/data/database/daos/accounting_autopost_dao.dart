@@ -6,6 +6,32 @@
 part of '../database.dart';
 
 /// Extension for Accounting Auto-Posting operations
+/// تاريخ ترحيل قيد المرتجع.
+///
+/// ── العطل اللي الدالة دي موجودة عشانه ───────────────────────────────────────
+/// القيد كان بيتسجّل بـ`originalInvoice.invoiceDate` — تاريخ **الفاتورة
+/// الأصلية**. أثرين:
+///
+/// ١. إعادة تشكيل فترة منتهية: مرتجع أغسطس بيقلّل إيراد مارس ويعكس تكلفة
+///    مارس، فقائمة دخل مارس اللي اتطبعت واتقدّمت للضرايب بتتغيّر بأثر رجعي،
+///    وأغسطس بيظهر مبيعات بلا مرتجعات.
+///
+/// ٢. قفل كامل للمرتجعات: `createJournalEntry` بينادي
+///    `validateFinancialPeriod(date)`، فأول ما الشهر القديم يتقفل أي مرتجع
+///    لفواتيره **بيترفض تماماً** — والمستدعي عكس المخزون والخزنة جوه نفس
+///    الترانزاكشن، فالعملية كلها بترجع والكاشير مش قادر يعمل مرتجع مشروع.
+///
+/// المرتجع **حدث لاحق** له فترته الخاصة مش تعديل على المستند الأصلي.
+///
+/// `null` بيقع على تاريخ الفاتورة عشان المسارات اللي لسه ما بتمرّرش تاريخ
+/// تفضل شغّالة بسلوكها القديم — الانتقال تدريجي مش كسر.
+@visibleForTesting
+DateTime resolveReturnPostingDate({
+  required DateTime? returnDate,
+  required DateTime originalInvoiceDate,
+}) =>
+    returnDate ?? originalInvoiceDate;
+
 extension AccountingAutopostDao on AppDatabase {
 
   /// Spec 136 — shared derivation of the balanced primary + discount legs for
@@ -1279,6 +1305,8 @@ extension AccountingAutopostDao on AppDatabase {
   /// reversalCogs param) get exactly the same JE as before.
   Future<int?> autoPostSalesReturn({
     required SalesInvoiceData originalInvoice,
+    /// تاريخ حدث المرتجع. `null` = السلوك القديم (تاريخ الفاتورة الأصلية).
+    DateTime? returnDate,
     required double returnAmount,
     required double cogsAmount,
     required double cashRefund,
@@ -1463,7 +1491,11 @@ extension AccountingAutopostDao on AppDatabase {
 
     return accountingDao.createJournalEntry(
       description: 'قيد مرتجع مبيعات فاتورة ${originalInvoice.invoiceNumber}',
-      date: originalInvoice.invoiceDate, // H-03: Use document date, not DateTime.now()
+      // المرتجع حدث لاحق له فترته الخاصة — مش تعديل على المستند الأصلي.
+      date: resolveReturnPostingDate(
+        returnDate: returnDate,
+        originalInvoiceDate: originalInvoice.invoiceDate,
+      ),
       lines: lines,
       referenceType: 'sales_return',
       // A-02: the cancel/reverse query keys on the originating invoice id
@@ -1576,6 +1608,8 @@ extension AccountingAutopostDao on AppDatabase {
   /// Dr: Output refund on Input VAT (if applicable)
   Future<int?> autoPostPurchaseReturn({
     required PurchaseInvoiceData originalPurchase,
+    /// تاريخ حدث المرتجع. `null` = السلوك القديم (تاريخ الفاتورة الأصلية).
+    DateTime? returnDate,
     required double returnAmount,
     double vatAmount = 0,
     int? costCenterId,
@@ -1754,7 +1788,11 @@ extension AccountingAutopostDao on AppDatabase {
 
     return accountingDao.createJournalEntry(
       description: 'قيد مرتجع مشتريات فاتورة ${originalPurchase.invoiceNumber}',
-      date: originalPurchase.invoiceDate, // F-01: Use document date, not DateTime.now()
+      // المرتجع حدث لاحق له فترته الخاصة — مش تعديل على المستند الأصلي.
+      date: resolveReturnPostingDate(
+        returnDate: returnDate,
+        originalInvoiceDate: originalPurchase.invoiceDate,
+      ),
       lines: lines,
       referenceType: 'purchase_return',
       // F-04: the edit-reverse query keys on the originating invoice id

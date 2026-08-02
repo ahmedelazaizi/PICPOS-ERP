@@ -912,6 +912,8 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
       // whole refund onto a single leg keyed only on paymentMethod.
       await _db.autoPostPurchaseReturn(
         originalPurchase: invoice,
+        // نفس سبب مرتجع المبيعات: المرتجع حدث لاحق له فترته الخاصة.
+        returnDate: DateTime.now(),
         returnAmount: totalReturnAmount,
         vatAmount: totalVatReturn,
         costCenterId: invoice.costCenterId, // FIX: Pass original cost center

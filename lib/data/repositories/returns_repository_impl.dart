@@ -524,6 +524,10 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
       // Auto-post return journal entry (IFRS 15.B20)
       await _db.autoPostSalesReturn(
         originalInvoice: invoice,
+        // المرتجع حدث النهاردة مش في فترة الفاتورة الأصلية. من غير ده كان
+        // مرتجع لفاتورة شهر مقفول **بيترفض تماماً** والترانزاكشن كلها ترجع،
+        // فالكاشير مش قادر يعمل مرتجع مشروع.
+        returnDate: DateTime.now(),
         returnAmount: totalReturn,
         cogsAmount: totalCogsReturn,
         cashRefund: cashRefund,
