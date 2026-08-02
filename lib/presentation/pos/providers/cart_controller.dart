@@ -14,6 +14,39 @@ import '../../../application/services/cart_pricing_service.dart';
 import '../widgets/modifier_selection_dialog.dart';
 import 'checkout_controller.dart';
 
+/// يبني نص `CartItemEntity.note` المركّب من المعدِّلات + الملاحظة اليدوية.
+///
+/// ── ليه دالة واحدة ─────────────────────────────────────────────────────────
+/// نفس التركيب كان مكرَّر حرفياً في `updateItemModifiers` و`updateItemNote`.
+/// أي مسار تالت بيكتب `note` مباشرة (زي ما كان بيحصل في شاشة خدمة الطاولات)
+/// بيمسح المعدِّلات من النص من غير ما يمسحها من `item.modifiers` — فالفاتورة
+/// المطبوعة بتخسر الإضافات والمطبخ بيحضّر الطلب غلط. الحقل `itemNote` هو
+/// **مصدر الملاحظة اليدوية الوحيد**، و`note` مخرج مشتق بيتبني هنا بس.
+///
+/// النص الناتج بيتقرا كمان في `templated_invoice_service.dart` اللي بيحوّل
+/// `📝 ` لـ«ملاحظة: » و` | ` لسطر جديد — فالبادئة جزء من العقد مش تزيين.
+String? composeCartItemNote(
+  List<SelectedModifier> modifiers,
+  String? itemNote,
+) {
+  final parts = <String>[];
+  for (final m in modifiers) {
+    if (m.isOption) {
+      // Include quantity level label (قليل/بدون/كثير) when set
+      final levelLabel = m.quantityLevel.label;
+      final optionText =
+          levelLabel.isNotEmpty ? '$levelLabel ${m.itemName}' : m.itemName;
+      parts.add('(${m.groupName}: $optionText)');
+    } else {
+      parts.add('+${m.itemName}${m.extraPrice > 0 ? ' ${m.extraPrice.toStringAsFixed(0)} ${AppConstants.currencySymbolEn}' : ''}');
+    }
+  }
+  if (itemNote != null && itemNote.isNotEmpty) {
+    parts.add('📝 $itemNote');
+  }
+  return parts.isNotEmpty ? parts.join(' | ') : null;
+}
+
 class CartState {
   final List<CartItemEntity> items;
   final List<CartItemEntity> deletedItems;
@@ -993,26 +1026,6 @@ class CartController extends Notifier<CartState> {
     if (index < 0 || index >= state.items.length) return;
     final item = state.items[index];
 
-    // Build note string from modifiers
-    final parts = <String>[];
-    for (final m in modifiers) {
-      if (m.isOption) {
-        // Include quantity level label (قليل/بدون/كثير) when set
-        final levelLabel = m.quantityLevel.label;
-        final optionText = levelLabel.isNotEmpty
-            ? '$levelLabel ${m.itemName}'
-            : m.itemName;
-        parts.add('(${m.groupName}: $optionText)');
-      } else {
-        parts.add('+${m.itemName}${m.extraPrice > 0 ? ' ${m.extraPrice.toStringAsFixed(0)} ${AppConstants.currencySymbolEn}' : ''}');
-      }
-    }
-    // Append manual itemNote if any
-    final itemNote = item.itemNote;
-    if (itemNote != null && itemNote.isNotEmpty) {
-      parts.add('📝 $itemNote');
-    }
-
     // Calculate extra price from addons
     final extraPrice = modifiers.fold<double>(0, (sum, m) => sum + m.extraPrice);
     final newCustomPrice = item.unitPrice + extraPrice;
@@ -1020,7 +1033,7 @@ class CartController extends Notifier<CartState> {
     final updatedItems = List<CartItemEntity>.from(state.items);
     updatedItems[index] = item.copyWith(
       modifiers: modifiers,
-      note: parts.isNotEmpty ? parts.join(' | ') : null,
+      note: composeCartItemNote(modifiers, item.itemNote),
       customPrice: newCustomPrice,
     );
     state = state.copyWith(items: updatedItems);
@@ -1031,28 +1044,10 @@ class CartController extends Notifier<CartState> {
     if (index < 0 || index >= state.items.length) return;
     final item = state.items[index];
 
-    // Rebuild note string from modifiers + new note
-    final parts = <String>[];
-    for (final m in item.modifiers) {
-      if (m.isOption) {
-        // Include quantity level label (قليل/بدون/كثير) when set
-        final levelLabel = m.quantityLevel.label;
-        final optionText = levelLabel.isNotEmpty
-            ? '$levelLabel ${m.itemName}'
-            : m.itemName;
-        parts.add('(${m.groupName}: $optionText)');
-      } else {
-        parts.add('+${m.itemName}${m.extraPrice > 0 ? ' ${m.extraPrice.toStringAsFixed(0)} ${AppConstants.currencySymbolEn}' : ''}');
-      }
-    }
-    if (note != null && note.isNotEmpty) {
-      parts.add('📝 $note');
-    }
-
     final updatedItems = List<CartItemEntity>.from(state.items);
     updatedItems[index] = item.copyWith(
       itemNote: note,
-      note: parts.isNotEmpty ? parts.join(' | ') : null,
+      note: composeCartItemNote(item.modifiers, note),
     );
     state = state.copyWith(items: updatedItems);
   }

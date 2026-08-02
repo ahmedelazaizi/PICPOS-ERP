@@ -1,5 +1,32 @@
 part of 'pos_main_screen.dart';
 
+/// يطبّق نتيجة ديالوج «تعديل الصنف» على السلة.
+///
+/// ── ليه دالة top-level ──────────────────────────────────────────────────────
+/// المستدعي الأصلي (`_showEditItemDialog`) كان بيقرا `shouldDelete` و`price`
+/// **بس** ويرمي `note` — الكاشير يكتب ملاحظة ويحفظ وهي تتبخّر. اختبار على
+/// `updateItemNote` لوحدها كان هيفضل أخضر والباج شغّال، لأن العطل في
+/// **التوصيلة** مش في الدالة. الخطوة اتفصلت هنا عشان تتغطّى باختبار من غير
+/// تركيب شاشة نقطة بيع كاملة على قاعدة بيانات (مهلة ١٠ دقايق).
+///
+/// الحذف بيوقف كل حاجة تانية: الصنف مبقاش موجود، فكتابة سعر أو ملاحظة على
+/// نفس الـindex بعده بتقع على صنف مختلف.
+@visibleForTesting
+void applyCartItemEdit(
+  CartItemEditData edit, {
+  required void Function() onDelete,
+  required void Function(double price) onPrice,
+  required void Function(String? note) onNote,
+}) {
+  if (edit.shouldDelete) {
+    onDelete();
+    return;
+  }
+  if (edit.price != null) onPrice(edit.price!);
+  // بلا فحص null: null معناها «الكاشير مسح الملاحظة» مش «مالهاش لزمة».
+  onNote(edit.note);
+}
+
 mixin _PosMainDialogsMixin on ConsumerState<PosScreenV2> {
   /// Check if a shift is open for the current user, if not, prompt for opening balance
   Future<void> _ensureShiftOpen() async {
@@ -225,21 +252,25 @@ mixin _PosMainDialogsMixin on ConsumerState<PosScreenV2> {
     }
 
     if (!mounted) return;
+    // `itemNote` مش `note`: التاني نص مشتق فيه المعدِّلات كمان، ولو اتعرض في
+    // خانة الملاحظة الكاشير هيحفظ «(الحجم: كبير) | 📝 حار» كملاحظة يدوية
+    // فتتضاعف المعدِّلات في النص عند أول إعادة تركيب. نفس اللي بيعمله
+    // `cart_item_tile.dart` و`cart_item_modifier_panel.dart`.
     final CartItemEditData? editResult = await PosDialogs.showEditCartItem(
       context,
       item.productName,
       item.unitPrice,
-      item.note,
+      item.itemNote,
     );
 
     if (editResult != null) {
-      if (editResult.shouldDelete) {
-        ref.read(cartControllerProvider.notifier).removeFromCart(index);
-      } else if (editResult.price != null) {
-        ref
-            .read(cartControllerProvider.notifier)
-            .updatePrice(index, editResult.price!);
-      }
+      final cart = ref.read(cartControllerProvider.notifier);
+      applyCartItemEdit(
+        editResult,
+        onDelete: () => cart.removeFromCart(index),
+        onPrice: (price) => cart.updatePrice(index, price),
+        onNote: (note) => cart.updateItemNote(index, note),
+      );
     }
     if (mounted) (this as _PosScreenV2State)._barcodeFocus.requestFocus();
   }
