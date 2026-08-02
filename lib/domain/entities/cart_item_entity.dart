@@ -101,6 +101,12 @@ class CartItemEntity {
     int? selectedUnitId,
     String? selectedUnitName,
     double? quantityInBase,
+    // `x ?? this.x` معناها إن `null` = «ما تغيّرش»، فمفيش طريقة تمسح ملاحظة
+    // اتكتبت غلط: الكاشير يمسحها ويحفظ وهي تفضل مكتوبة وتتطبع على تذكرة
+    // المطبخ. العلمين دول المخرج الوحيد. القيمة الافتراضية `false` =
+    // سلوك النهاردة بالحرف لكل المواضع التانية في المنتجين.
+    bool clearNote = false,
+    bool clearItemNote = false,
   }) {
     return CartItemEntity(
       productId: productId ?? this.productId,
@@ -114,8 +120,8 @@ class CartItemEntity {
       discountPercent: discountPercent ?? this.discountPercent,
       taxRate: taxRate ?? this.taxRate,
       taxAmount: taxAmount ?? this.taxAmount,
-      note: note ?? this.note,
-      itemNote: itemNote ?? this.itemNote,
+      note: clearNote ? null : (note ?? this.note),
+      itemNote: clearItemNote ? null : (itemNote ?? this.itemNote),
       isSoldByWeight: isSoldByWeight ?? this.isSoldByWeight,
       itemType: itemType ?? this.itemType,
       modifiers: modifiers ?? this.modifiers,

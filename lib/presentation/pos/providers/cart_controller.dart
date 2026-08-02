@@ -1030,10 +1030,15 @@ class CartController extends Notifier<CartState> {
     final extraPrice = modifiers.fold<double>(0, (sum, m) => sum + m.extraPrice);
     final newCustomPrice = item.unitPrice + extraPrice;
 
+    // شيل آخر معدِّل من صنف بلا ملاحظة يدوية ⇒ النص المركّب المفروض يبقى
+    // فاضي. من غير `clearNote` كان بيفضل بالمعدِّلات القديمة رغم إن
+    // `modifiers` بقت فاضية، فالمطبوع بيقول غير اللي في السلة.
+    final composed = composeCartItemNote(modifiers, item.itemNote);
     final updatedItems = List<CartItemEntity>.from(state.items);
     updatedItems[index] = item.copyWith(
       modifiers: modifiers,
-      note: composeCartItemNote(modifiers, item.itemNote),
+      note: composed,
+      clearNote: composed == null,
       customPrice: newCustomPrice,
     );
     state = state.copyWith(items: updatedItems);
@@ -1044,10 +1049,13 @@ class CartController extends Notifier<CartState> {
     if (index < 0 || index >= state.items.length) return;
     final item = state.items[index];
 
+    final composed = composeCartItemNote(item.modifiers, note);
     final updatedItems = List<CartItemEntity>.from(state.items);
     updatedItems[index] = item.copyWith(
       itemNote: note,
-      note: composeCartItemNote(item.modifiers, note),
+      clearItemNote: note == null || note.isEmpty,
+      note: composed,
+      clearNote: composed == null,
     );
     state = state.copyWith(items: updatedItems);
   }
