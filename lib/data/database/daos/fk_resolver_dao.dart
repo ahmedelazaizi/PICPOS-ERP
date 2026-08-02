@@ -20,18 +20,44 @@ extension FkResolverDao on AppDatabase {
 
   /// Upsert a local→remote mapping. If the (tableName, localId) pair already
   /// exists, the remoteId and globalId are updated in place.
+  ///
+  /// ── ليه `target` صريح ──────────────────────────────────────────────────────
+  /// `insertOnConflictUpdate` من غير `target` بيستعمل **الـPK** كهدف التعارض،
+  /// وهو هنا `id` autoincrement — عمره ما بيتعارض لأنه مش بيتبعت أصلاً.
+  /// والتفرّد الحقيقي في `idx_remote_id_local (table_name, local_id)`، وهو
+  /// كان خارج الهدف فبيضرب كـ`UNIQUE constraint failed` مكشوف. يعني الدالة
+  /// كانت **بترمي في كل نداء بعد الأول** بدل ما تحدّث — عكس اللي التعليق
+  /// فوق بيوعد بيه.
+  ///
+  /// والمستدعيين بيبلعوا الاستثناء: `delta_pull_service.dart:360` جوه `try`
+  /// بيطبع «will fall back»، و`offline_sync_worker.dart:412` نداء `unawaited`
+  /// فالاستثناء بيروح لـzone handler. فالنتيجة إن الماب بيتجمّد على أول قيمة
+  /// من غير ما حد يلاحظ، ولو الـ`remoteId` اتغيّر (سيرفر اتعمله rebuild)
+  /// الطابور بيحلّ الـFK على id سيرفر مش موجود.
+  ///
+  /// `globalId` بيتحدّث بس لما ييجي مش فاضي — مسارات بتعرف الـid بس ما ينفعش
+  /// تمسح هوية اتسجّلت من مسار تاني.
   Future<void> storeFkMapping({
     required String tableName,
     required int localId,
     required int remoteId,
     String? globalId,
   }) =>
-      into(remoteIdMappings).insertOnConflictUpdate(
+      into(remoteIdMappings).insert(
         RemoteIdMappingsCompanion.insert(
           entityTable: tableName,
           localId: localId,
           remoteId: remoteId,
           globalId: Value(globalId),
+        ),
+        onConflict: DoUpdate(
+          (_) => RemoteIdMappingsCompanion(
+            remoteId: Value(remoteId),
+            globalId: (globalId != null && globalId.isNotEmpty)
+                ? Value(globalId)
+                : const Value.absent(),
+          ),
+          target: [remoteIdMappings.entityTable, remoteIdMappings.localId],
         ),
       );
 
