@@ -273,7 +273,7 @@ extension InventoryDao on AppDatabase {
 
       if (isSaleDeduction) {
         // Consume from oldest batches (FIFO)
-        await consumeBatchFIFO(
+        await consumeBatchesForIssue(
           productId: productId,
           quantity: quantity.abs(),
           // Was available in this scope all along and simply not passed —

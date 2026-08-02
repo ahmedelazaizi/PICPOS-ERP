@@ -18,53 +18,59 @@ extension InventoryBatchDao on AppDatabase {
   Future<int> insertBatch(ProductBatchesCompanion batch) =>
       into(productBatches).insert(batch);
 
-  /// Get all active batches for a product, ordered by expiry date (FEFO)
-  Future<List<ProductBatch>> getProductBatchesFEFO(int productId) async {
+  /// Get all active batches for a product, ordered by expiry date (FEFO).
+  ///
+  /// `created_at` is the tie-break so two lots sharing an expiry date still
+  /// come out in a deterministic order (oldest purchase first) instead of
+  /// whatever the row order happens to be.
+  Future<List<ProductBatch>> getProductBatchesFEFO(
+    int productId, {
+    int? warehouseId,
+  }) async {
     return (select(productBatches)
           ..where(
-            (b) =>
-                b.productId.equals(productId) &
-                b.status.equals('active') &
-                b.quantity.isBiggerThan(const Variable(0)),
+            (b) {
+              final base = b.productId.equals(productId) &
+                  b.status.equals('active') &
+                  b.quantity.isBiggerThan(const Variable(0));
+              return warehouseId == null
+                  ? base
+                  : base & b.warehouseId.equals(warehouseId);
+            },
           )
-          ..orderBy([(b) => OrderingTerm.asc(b.expiryDate)]))
+          ..orderBy([
+            (b) => OrderingTerm.asc(b.expiryDate),
+            (b) => OrderingTerm.asc(b.createdAt),
+          ]))
         .get();
   }
 
-  /// Deduct quantity from batches using FEFO method
-  Future<List<Map<String, dynamic>>> deductFromBatchesFEFO({
-    required int productId,
-    required double quantity,
+  /// Batches to issue against, in the order this product should release them.
+  ///
+  /// This is the one place the FEFO-vs-FIFO decision is made:
+  ///
+  /// * `trackExpiry == true` → **FEFO**, nearest expiry first. These are the
+  ///   goods that go off: releasing long-dated stock ahead of short-dated
+  ///   stock guarantees the short-dated lot is written off while the customer
+  ///   received the fresher one.
+  /// * otherwise → **FIFO**, oldest purchase first. Expiry either is not
+  ///   recorded for these or was fabricated by the return path, so ordering
+  ///   by it would be meaningless — this branch preserves existing behaviour
+  ///   exactly.
+  ///
+  /// Both orderings existed in this file from the start (the section header
+  /// even reads "FEFO - First Expiry First Out"), but the FEFO pair had ZERO
+  /// callers: the live path went through the FIFO one, so every expiry-tracked
+  /// product was in fact selling oldest-purchase-first.
+  Future<List<ProductBatch>> getBatchesForIssue(
+    int productId, {
+    int? warehouseId,
   }) async {
-    final batches = await getProductBatchesFEFO(productId);
-    double remaining = quantity;
-    final deductions = <Map<String, dynamic>>[];
-
-    for (final batch in batches) {
-      if (remaining <= 0) break;
-
-      final deduct = remaining > batch.quantity ? batch.quantity : remaining;
-      final newQty = batch.quantity - deduct;
-
-      await (update(productBatches)..where((b) => b.id.equals(batch.id))).write(
-        ProductBatchesCompanion(
-          quantity: Value(newQty),
-          status: Value(newQty <= 0 ? 'depleted' : 'active'),
-        ),
-      );
-
-      deductions.add({
-        'batchId': batch.id,
-        'batchNumber': batch.batchNumber,
-        'quantity': deduct,
-        'unitCost': batch.unitCost,
-        'expiryDate': batch.expiryDate,
-      });
-
-      remaining -= deduct;
-    }
-
-    return deductions;
+    final product = await getProductById(productId);
+    final byExpiry = product?.trackExpiry ?? false;
+    return byExpiry
+        ? getProductBatchesFEFO(productId, warehouseId: warehouseId)
+        : getProductBatchesFIFO(productId, warehouseId: warehouseId);
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -102,14 +108,19 @@ extension InventoryBatchDao on AppDatabase {
         .get();
   }
 
-  /// Consume quantity from batches using FIFO method (oldest first by createdAt).
+  /// Consume quantity from this product's batches in issue order — FEFO for
+  /// expiry-tracked products, FIFO otherwise (see [getBatchesForIssue]).
+  ///
+  /// Named for the intent (issuing stock) rather than one ordering: this used
+  /// to be `consumeBatchFIFO`, and having the strategy in the name is part of
+  /// why a whole product class silently got the wrong one.
   ///
   /// Returns a list of deduction records for audit/traceability:
   /// `[{batchId, batchNumber, quantity, unitCost, expiryDate}]`
   ///
   /// If no active batches exist, returns an empty list (stock is still
   /// deducted globally via adjustStock — batches are optional).
-  Future<List<Map<String, dynamic>>> consumeBatchFIFO({
+  Future<List<Map<String, dynamic>>> consumeBatchesForIssue({
     required int productId,
     required double quantity,
     // Required, not optional: the sole caller (adjustStock) already takes
@@ -119,7 +130,7 @@ extension InventoryBatchDao on AppDatabase {
     required int warehouseId,
   }) async {
     final batches =
-        await getProductBatchesFIFO(productId, warehouseId: warehouseId);
+        await getBatchesForIssue(productId, warehouseId: warehouseId);
     if (batches.isEmpty) return [];
 
     double remaining = quantity;
