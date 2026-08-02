@@ -1769,11 +1769,33 @@ extension PartyDao on AppDatabase {
     final arAccount = await accountingDao.getAccountByCode(arCode);
     if (arAccount == null) return null;
 
-    // 3. Sum GL balance for receivables account across all journal entry lines
-    final glLines = await (select(journalEntryLines)
-          ..where((l) => l.accountId.equals(arAccount.id)))
-        .get();
-    final totalGlBalance = glLines.fold(0.0, (sum, l) => sum + l.debit - l.credit);
+    // 3. رصيد الأستاذ للذمم = حساب المراقبة **وكل الحسابات الفرعية تحته**.
+    //
+    // القيود عمرها ما بتنزل على المراقبة نفسه: `_resolvePartySubAccount`
+    // بيرجّع `party.accountId` — الحساب الفرعي للعميل (`1121-00001`) اللي
+    // بيتخلق تحت ١١٢١ عند إنشاء أي عميل. فالتجميع على المراقبة وحده كان
+    // بيرجّع **صفر دايماً**، و`difference` = كل رصيد العملاء.
+    //
+    // النتيجة: `reconciliation_service.dart:377` بيسجّل إنذار في
+    // `field_audit_logs` وشاشة التقارير بتعرض فرق وهمي بقيمة الـAR كلها،
+    // والدفاتر سليمة ١٠٠٪. ده على الأغلب مصدر «الإيجابيات الكاذبة» في
+    // التقارير السابقة.
+    //
+    // والفلتر `is_posted`/`is_deleted` كان ناقص كمان — على عكس
+    // `getPartyBalanceMismatches` في نفس الملف اللي بيفلتر صح، فمسودّة قيد
+    // أو قيد محذوف كان بيتحسب في الرصيد.
+    final arSubtree = await accountSubtreeIds(arAccount.id);
+    final placeholders = List.filled(arSubtree.length, '?').join(',');
+    final glRow = await customSelect(
+      'SELECT COALESCE(SUM(l.debit - l.credit), 0) AS bal '
+      'FROM journal_entry_lines l '
+      'JOIN journal_entries e ON e.id = l.entry_id '
+      'WHERE l.account_id IN ($placeholders) '
+      'AND e.is_posted = ${sqlBool(true)} AND e.is_deleted = ${sqlBool(false)}',
+      variables: arSubtree.map((id) => Variable<int>(id)).toList(),
+      readsFrom: {journalEntryLines, journalEntries},
+    ).getSingle();
+    final totalGlBalance = (glRow.data['bal'] as num).toDouble();
 
     return ArReconciliation(
       totalCardBalance: totalCardBalance,

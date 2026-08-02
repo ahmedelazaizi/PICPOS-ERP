@@ -2,6 +2,34 @@
 part of '../database.dart';
 
 extension AccountingDaoReadsExt on AppDatabase {
+  /// معرّفات الحساب **وكل أبنائه** بالشجرة (`parent_id`).
+  ///
+  /// ── ليه مش `code LIKE 'X%'` ────────────────────────────────────────────
+  /// البادئة النصية بتشتغل صح للأبناء الحقيقيين (`412` → `4121`) وبتكسر لما
+  /// يبقى فيه **شقيق** بادئته أطول. وده موجود في الدليل المزروع فعلاً:
+  /// `621` «رواتب وأجور» شقيق لـ`6210`…`6217` (كلهم `detail` تحت `62`) مش
+  /// أب ليهم. فكارت أستاذ الرواتب كان بيضم رخص حكومية ونظافة وسفر وإهلاك
+  /// ومتنوعة وخصم مسموح وعجز مخزون وعجز نقدي — كارت الأستاذ بيقول رقم
+  /// وميزان المراجعة (اللي بيجمّع per-account) بيقول رقم تاني لنفس الحساب.
+  ///
+  /// نفس الجذر بيضرب مطابقة الذمم: القيود بتنزل على الحساب الفرعي للعميل
+  /// (`1121-00001`) مش على حساب المراقبة `1121`، فأي تجميع على المراقبة
+  /// وحده بيرجّع صفر.
+  ///
+  /// الاستعلام تكراري (`WITH RECURSIVE`) ومدعوم في SQLite وPostgreSQL.
+  Future<List<int>> accountSubtreeIds(int accountId) async {
+    final rows = await customSelect(
+      'WITH RECURSIVE sub(id) AS ('
+      '  SELECT id FROM accounts WHERE id = ?'
+      '  UNION ALL'
+      '  SELECT a.id FROM accounts a JOIN sub ON a.parent_id = sub.id'
+      ') SELECT id FROM sub',
+      variables: [Variable<int>(accountId)],
+      readsFrom: {accounts},
+    ).get();
+    return rows.map((r) => r.data['id'] as int).toList();
+  }
+
 
   /// Strips audit-trail hash suffix [HASH:...] from description for clean display.
   /// The hash remains in the DB for integrity verification (ICR-03).
@@ -468,12 +496,18 @@ extension AccountingDaoReadsExt on AppDatabase {
     // which matched EVERY account and dumped the entire journal into this one
     // account's ledger. Fall back to an exact account-id match when there is no
     // usable code (also returns nothing for a non-existent accountId).
-    final bool byCode = accountCode.isNotEmpty;
-    final String accountFilter = byCode
-        ? 'l.account_id IN (SELECT id FROM accounts WHERE code LIKE ?)'
-        : 'l.account_id = ?';
-    final Variable acctVar =
-        byCode ? Variable('$accountCode%') : Variable<int>(accountId);
+    //
+    // ⚠️ البادئة النصية اتشالت: `code LIKE '621%'` كان بيلقّط `6210`…`6217`
+    // وهم **إخوة** لـ`621` مش أبناؤه (كلهم `detail` تحت `62` في الدليل
+    // المزروع). فكارت أستاذ الرواتب كان بيضم عجز المخزون وعجز النقدية
+    // وغيرهم، ويخالف ميزان المراجعة لنفس الحساب. التجميع بقى بالشجرة.
+    final subtreeIds = await accountSubtreeIds(accountId);
+    final String accountFilter = subtreeIds.isEmpty
+        ? 'l.account_id = ?'
+        : 'l.account_id IN (${List.filled(subtreeIds.length, '?').join(',')})';
+    final List<Variable> acctVars = subtreeIds.isEmpty
+        ? [Variable<int>(accountId)]
+        : subtreeIds.map((id) => Variable<int>(id)).toList();
 
     final result = await customSelect(
       '''SELECT 
@@ -488,7 +522,7 @@ extension AccountingDaoReadsExt on AppDatabase {
         WHERE $accountFilter AND e.entry_date BETWEEN ? AND ? AND e.is_posted = $boolTrue AND e.is_deleted = $boolFalse $ccFilter $brFilter $scopeFilter
         ORDER BY e.entry_date, e.id
         LIMIT ? OFFSET ?''',
-      variables: [acctVar, dateVar(from), dateVar(to), ...ccVars, ...brVars, ...scopeVars, Variable<int>(limit), Variable<int>(offset)],
+      variables: [...acctVars, dateVar(from), dateVar(to), ...ccVars, ...brVars, ...scopeVars, Variable<int>(limit), Variable<int>(offset)],
       readsFrom: {journalEntryLines, journalEntries, accounts, costCenters},
     ).get();
 
@@ -496,7 +530,7 @@ extension AccountingDaoReadsExt on AppDatabase {
     // Get opening balance (all entries before 'from' date) for this account + children
     final openingResult = await customSelect(
       'SELECT SUM(debit - credit) as balance FROM journal_entry_lines l JOIN journal_entries e ON l.entry_id = e.id WHERE $accountFilter AND e.entry_date < ? AND e.is_posted = $boolTrue AND e.is_deleted = $boolFalse $ccFilter $brFilter $scopeFilter',
-      variables: [acctVar, dateVar(from), ...ccVars, ...brVars, ...scopeVars],
+      variables: [...acctVars, dateVar(from), ...ccVars, ...brVars, ...scopeVars],
       readsFrom: {journalEntryLines, journalEntries, accounts},
     ).getSingle();
     runningBalance = openingResult.data['balance'] as double? ?? 0;
