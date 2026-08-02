@@ -1,10 +1,34 @@
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import '../core/utils/uuid_v7.dart';
 import '../data/database/database.dart';
 import '../domain/entities/accounting_entities.dart';
 import '../domain/repositories/settings_repository.dart';
 import 'costing_method_service.dart';
 import 'client_write_interceptor.dart';
+
+/// الحساب المقابل لقيد السند المخزني، حسب **نوع السند** مش إشارة القيمة وحدها.
+///
+/// ── ليه دالة منفصلة ─────────────────────────────────────────────────────────
+/// القرار ده كان سطر واحد جوه `createAddingBond` بيقرا `bond.type`، بينما
+/// نفس الدالة بتثبّت `type: 'in'` على كل سند — فشرط `'opening'` كان **مستحيل
+/// يتحقق** وفرع `capital` كود ميت من يوم ما اتكتب.
+///
+/// والنتيجة إن رصيد أول المدة كان بيتقيّد على `4317 فائض مخزون` **ونوعه
+/// revenue**: عميل بيدخل ٢٥٠ ألف بضاعة افتتاحية بيلاقي ٢٥٠ ألف ربح وهمي في
+/// قائمة الدخل من أول يوم، وحقوق ملكية ناقصة بنفس المبلغ، وضريبة دخل محسوبة
+/// على ربح مش موجود.
+///
+/// الرصيد الافتتاحي حركة **حقوق ملكية** بطبيعتها — مش فايض تشغيلي — فنوع
+/// السند بيغلب على إشارة القيمة.
+@visibleForTesting
+String inventoryBondAccountPurpose({
+  required String? bondType,
+  required double totalValue,
+}) {
+  if (bondType == 'opening') return 'capital';
+  return totalValue >= 0 ? 'inventory_surplus' : 'inventory_shrinkage';
+}
 
 class InventoryService {
   final AppDatabase db;
@@ -13,9 +37,14 @@ class InventoryService {
   InventoryService(this.db, this.settingsRepo);
 
   /// Create a new inventory bond (Adding stock)
+  ///
+  /// [bondType] بيتكتب على الهيدر ويحدد الحساب المقابل في القيد — كان مثبّت
+  /// `'in'` دايماً فسندات الرصيد الافتتاحي كانت بتضيع هويتها قبل ما توصل
+  /// للقرار المحاسبي. الافتراضي `'in'` = سلوك النهاردة لكل المستدعيين.
   Future<int> createAddingBond({
     required List<InventoryBondItemsCompanion> items,
     required int warehouseId,
+    String bondType = 'in',
     String? notes,
     int? userId,
     DateTime? date,
@@ -31,7 +60,7 @@ class InventoryService {
         InventoryBondsCompanion.insert(
           bondNumber:
               'BND-${DateTime.now().millisecondsSinceEpoch}', // Temporary logic, can be improved
-          type: const Value('in'),
+          type: Value(bondType),
           warehouseId: warehouseId,
           notes: Value(notes),
           createdBy: Value(userId),
@@ -91,9 +120,10 @@ class InventoryService {
       if (totalValue > 0) {
         try {
           final bond = await (db.select(db.inventoryBonds)..where((b) => b.id.equals(bondId))).getSingle();
-          final String purpose = (bond.type == 'opening') 
-              ? 'capital' 
-              : (totalValue > 0 ? 'inventory_surplus' : 'inventory_shrinkage');
+          final String purpose = inventoryBondAccountPurpose(
+            bondType: bond.type,
+            totalValue: totalValue,
+          );
           
           final invAccount = await db.getAccountByPurpose('inventory');
           final targetAccount = await db.getAccountByPurpose(purpose);
@@ -178,6 +208,9 @@ class InventoryService {
     return createAddingBond(
       items: items,
       warehouseId: warehouseId,
+      // من غير ده الهيدر بيتكتب `'in'` فالقرار المحاسبي تحت بيقرا نوع غلط
+      // ويدائن «فائض مخزون» (إيراد) بدل رأس المال.
+      bondType: 'opening',
       notes: notes ?? 'رصيد افتتاحي',
       userId: userId,
     );
