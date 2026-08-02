@@ -262,10 +262,12 @@ grep -rn "<اسم الدالة اللي اتصلّحت>" lib/presentation/scale_
 
 - **كود ميت اتكشف ولسه موجود:** `sales_invoices_dashboard.dart`
   (`SalesInvoicesDashboard` مش متبني، وباريل `sales_widgets.dart` محدش
-  بيستورده) · `purchases_screen_v2.dart` (`PurchasesScreenV2`) ·
-  `products/widgets/product_form.dart` + `product_card.dart` +
-  `product_list_tile.dart` · `ProductsController.toggleProductLock` (جسمها
-  كله comment). يستاهلوا تذكرة حذف مستقلة.
+  بيستورده) · ~~`purchases_screen_v2.dart`~~ (**اتحذف** — طلع عنقود من ١٠
+  ملفات في مجلدين مش ملف واحد) · `products/widgets/product_form.dart` +
+  `product_card.dart` + `product_list_tile.dart` ·
+  `ProductsController.toggleProductLock` (جسمها كله comment). الباقي يستاهل
+  تذكرة حذف مستقلة — والتعداد لازم يكون **بأسماء الكلاسات** مش الملفات، زي
+  ما اتعمل في حذف المشتريات.
 - **`distribution_visits_tab`** فيه «تغيير الحالة» لسه بلا بوابة.
 - **`offers_print`** مالوش كود في الكتالوج (طباعة باركود العرض اتسابت بلا
   بوابة قصداً بدل استعارة كود تاني).
