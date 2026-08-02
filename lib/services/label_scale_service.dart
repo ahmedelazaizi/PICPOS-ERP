@@ -40,11 +40,13 @@ Map<String, dynamic> _aclasDetectInIsolate(String ip) {
     return {'found': false, 'error': 'فشل تهيئة AclasSDK'};
   }
   try {
-    // Try auto-detect first, then known Aclas UDP ports
+    // Try auto-detect first, then known Aclas UDP ports.
+    // القائمة مشتركة مع مسار الرفع (AclasSDK.fallbackUdpPorts) — كانت
+    // قائمتين مختلفتين، فميزان يُكشَف هنا كان يفشل عند الرفع والعكس.
     AclasDeviceInfo? info = AclasSDK.getDeviceInfo(ip);
     int? triedPort;
     if (info == null) {
-      for (final p in [9001, 9002, 10000, 3000, 8008]) {
+      for (final p in AclasSDK.fallbackUdpPorts) {
         info = AclasSDK.getDeviceInfo(ip, port: p);
         if (info != null) { triedPort = p; break; }
       }
@@ -135,6 +137,110 @@ bool scaleItemIsSoldByWeight({
   // الأصناف القديمة اللي اتعملت قبل ما `scaleType` يتضاف بيبقى عندها
   // `isSoldByWeight` بس، فهي الاحتياطي.
   return isSoldByWeight;
+}
+
+/// طرق الاتصال التي يدعمها كل براند فعلياً — بلاغ العميل 2026-07-30
+/// («في أوقات الاتصال بالـ IP مش بيتم اكتشاف الميزان رغم أن الـ IP سليم،
+/// وحتى AclasSDK نفسه مش بيشوف الميزان»).
+///
+/// ## أهم سبب للعطل: `aclasSDK` ليست طريقة عامّة
+///
+/// قائمة «طريقة الاتصال» في الشاشة تعرض الطرق **الخمس لكل البراندات بلا
+/// تفرقة**، ومنها `AclasSDK — كشف تلقائي بالـ IP فقط`. لكن AclasSDK هو
+/// SDK **خاص بموازين Aclas**، ودالّة الكشف فيه
+/// (`AclasSDK_GetDevicesInfo`) تُرسل استعلام UDP ببروتوكول Aclas المملوك.
+/// ميزان **لا يتكلّم هذا البروتوكول لن يردّ مهما كان الـ IP صحيحاً** —
+/// وهذا ليس عطلاً في الشبكة ولا في الإعداد.
+///
+/// وهو ما يفسّر ملاحظة العميل أن **أداة AclasSDK نفسها** لا ترى الميزان:
+/// الأداة تعمل تماماً كما يجب، لكنها تبحث عن ميزان Aclas على عنوان فيه
+/// ميزان من نوع آخر. فشل الأداة **دليل يؤكّد التشخيص**، لا عرَض إضافي.
+///
+/// ## ما تقوله تعريفات هذا الملف نفسه
+///
+/// من تعليقات [LabelScaleBrand] أعلاه (مكتوبة قبل هذا البلاغ):
+///   · `tem`   — «serial only, ASCII command/response» ⇒ **لا اتصال IP
+///     إطلاقاً**. ومع ذلك كانت الشاشة تعرض له TCP و AclasSDK، وله منفذ
+///     افتراضي 9100 — إعداد لا يمكن أن ينجح بحال.
+///   · `dibal` — «serial only» ⇒ نفس الشيء.
+///   · `nvkTma`— «Ethernet/RS232/FTP» ⇒ الشبكة مدعومة، لكن ببروتوكوله
+///     الخاص أو عبر FTP — **لا عبر Aclas UDP**.
+///   · `rongta`— بعض إصداراته Aclas‑OEM (انظر تعليق مسار الرفع في
+///     `scale_protocols.dart` عن «Fire Bird / Rongta firmwares»)، فقد
+///     ينجح AclasSDK معه **حسب الإصدار** — وهذا مصدر التقطّع بين ميزان
+///     وآخر من نفس الماركة.
+///
+/// الخريطة تُستخدم للتحذير فقط، لا للمنع: قد يكون لدى العميل إصدار يخالف
+/// المتوقَّع، ومنعه من محاولة أصلاً أسوأ من تحذيره.
+const Map<LabelScaleBrand, Set<LabelScaleConnection>> kBrandSupportedConnections = {
+  LabelScaleBrand.cas: {
+    LabelScaleConnection.tcp,
+    LabelScaleConnection.serial,
+    LabelScaleConnection.ftp,
+    LabelScaleConnection.file,
+  },
+  LabelScaleBrand.digi: {
+    LabelScaleConnection.tcp,
+    LabelScaleConnection.serial,
+    LabelScaleConnection.ftp,
+    LabelScaleConnection.file,
+  },
+  LabelScaleBrand.rongta: {
+    LabelScaleConnection.aclasSDK, // حسب الإصدار (Aclas-OEM)
+    LabelScaleConnection.tcp,
+    LabelScaleConnection.serial,
+    LabelScaleConnection.ftp,
+    LabelScaleConnection.file,
+  },
+  LabelScaleBrand.aclas: {
+    LabelScaleConnection.aclasSDK, // الطريقة الأصلية لهذا البراند
+    LabelScaleConnection.tcp,
+    LabelScaleConnection.serial,
+    LabelScaleConnection.ftp,
+    LabelScaleConnection.file,
+  },
+  LabelScaleBrand.mettlerToledo: {
+    LabelScaleConnection.tcp,
+    LabelScaleConnection.serial,
+    LabelScaleConnection.ftp,
+    LabelScaleConnection.file,
+  },
+  LabelScaleBrand.tem: {
+    LabelScaleConnection.serial, // «serial only» حسب تعريف البراند
+    LabelScaleConnection.file,
+  },
+  LabelScaleBrand.dibal: {
+    LabelScaleConnection.serial, // «serial only» حسب تعريف البراند
+    LabelScaleConnection.file,
+  },
+  LabelScaleBrand.nvkTma: {
+    LabelScaleConnection.tcp, // ببروتوكوله الخاص، لا Aclas UDP
+    LabelScaleConnection.serial,
+    LabelScaleConnection.ftp,
+    LabelScaleConnection.file,
+  },
+};
+
+/// تحذير عربي عند اختيار طريقة لا يدعمها البراند، أو `null` إن كانت مدعومة.
+String? brandConnectionWarning(
+  LabelScaleBrand brand,
+  LabelScaleConnection connection,
+) {
+  final supported = kBrandSupportedConnections[brand];
+  if (supported == null || supported.contains(connection)) return null;
+
+  if (connection == LabelScaleConnection.aclasSDK) {
+    return 'AclasSDK يكتشف موازين Aclas فقط (وبعض إصدارات Rongta المبنية '
+        'عليه). ميزان «${brand.name}» لا يتكلّم بروتوكول Aclas، فلن '
+        'يُكتشَف مهما كان الـ IP صحيحاً — وهذا أيضاً سبب عدم رؤيته من '
+        'برنامج AclasSDK نفسه.';
+  }
+
+  final alt = supported.contains(LabelScaleConnection.tcp)
+      ? 'TCP/IP أو FTP'
+      : 'Serial (COM) أو تصدير CSV';
+  return 'ميزان «${brand.name}» لا يدعم هذه الطريقة حسب تعريفه في النظام. '
+      'الطريقة المتوقَّعة له: $alt.';
 }
 
 /// PLU item to upload to scale
@@ -826,12 +932,33 @@ class LabelScaleService {
             '[LabelScale] TCP probe response: ${response.length} bytes from $effectiveIp:$effectivePort',
           );
 
-          // Any non-empty response = the device is alive and responsive
+          // بلاغ العميل 2026-07-30: كان يُرجع `success: true` بمجرّد نجاح
+          // `Socket.connect`، أي **بمجرّد أن المنفذ مفتوح** — حتى لو الجهاز
+          // لم يردّ على أمر الفحص إطلاقاً. فأي جهاز آخر على نفس الـ IP
+          // (طابعة، راوتر، كاميرا) يُعطي «تم الاتصال بنجاح» ثم يفشل الرفع
+          // بلا تفسير. و`probeResponse: false` كان يُرسَل لكن لا أحد يقرأه.
+          //
+          // الآن: المنفذ مفتوح بلا ردّ = **ليس نجاحاً**، ورسالة تقول أين
+          // بالضبط توقّف الأمر بدل «تأكد أن الجهاز متصل».
           final probeOk = response.isNotEmpty;
+          if (!probeOk) {
+            return {
+              'success': false,
+              'ip': effectiveIp, 'port': effectivePort,
+              'probeResponse': false,
+              'error': 'المنفذ $effectivePort مفتوح على $effectiveIp لكن الجهاز '
+                  'لم يردّ على أمر الفحص.\n'
+                  'يعني: هناك جهاز على هذا العنوان، لكنه لا يتكلّم بروتوكول '
+                  '«${brand.name}» على هذا المنفذ.\n'
+                  'جرّب: (1) زر البحث 🔍 بجوار خانة المنفذ لمسح المنافذ '
+                  'المفتوحة  (2) تأكد أن العلامة التجارية المختارة تطابق '
+                  'الميزان فعلاً  (3) راجع منفذ الميزان من إعداداته.',
+            };
+          }
           return {
             'success': true, 'error': null,
             'ip': effectiveIp, 'port': effectivePort,
-            'probeResponse': probeOk,
+            'probeResponse': true,
           };
         } finally {
           try { await socket.close(); } catch (_) {}

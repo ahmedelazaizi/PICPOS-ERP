@@ -484,6 +484,51 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
                     onChanged: (v) => setDialogState(() { selectedConnection = v ?? 'tcp'; testResult = null; }),
                   ),
 
+                  // ── تحذير توافق البراند مع طريقة الاتصال ──
+                  // نقل يدوي من فورك UralCash (`scale_logic.dart`) — الباتش
+                  // الوارد ما بيلمسش الملف ده لأنه مش موجود عندهم. القائمة
+                  // فوق **نفسها بالحرف** في الفورك ين، بما فيها خيار AclasSDK،
+                  // فبلاغ العميل 2026-07-30 بيضرب عملاء PicPos بالتساوي:
+                  // AclasSDK هو SDK خاص بموازين Aclas وحدها، واختياره لميزان
+                  // NVK أو TEM بينتج «لم يتم العثور على الميزان» رغم إن الـIP
+                  // سليم والميزان شغّال، بلا أي إشارة إن الطريقة نفسها هي
+                  // الخطأ.
+                  //
+                  // تحذير لا منع: ممكن ميزان العميل يحمل إصداراً يخالف
+                  // المتوقَّع، فمنعه من المحاولة أسوأ من إعلامه.
+                  Builder(builder: (_) {
+                    final warning = brandConnectionWarning(
+                      LabelScaleService.brandFromString(selectedBrand),
+                      LabelScaleService.connectionFromString(selectedConnection),
+                    );
+                    if (warning == null) return const SizedBox.shrink();
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.warning.withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                              color: AppColors.warning.withValues(alpha: 0.4)),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(PhosphorIconsBold.warning,
+                                size: 16, color: AppColors.warning),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(warning,
+                                  style: const TextStyle(
+                                      fontSize: 12, color: AppColors.warning)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+
                   // ── AclasSDK: IP-only auto-detect ──
                   if (selectedConnection == 'aclassdk') ...[
                     const SizedBox(height: 12),

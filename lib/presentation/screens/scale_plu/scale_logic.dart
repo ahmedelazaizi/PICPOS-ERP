@@ -472,6 +472,48 @@ mixin _ScaleLogicMixin on ConsumerState<ScalePluExportScreen> {
                     onChanged: (v) => setDialogState(() { selectedConnection = v ?? 'tcp'; testResult = null; }),
                   ),
 
+                  // ── تحذير توافق البراند مع طريقة الاتصال ──
+                  // بلاغ العميل 2026-07-30: القائمة أعلاه تعرض الطرق الخمس
+                  // لكل البراندات بلا تفرقة، ومنها AclasSDK — وهو SDK خاص
+                  // بموازين Aclas وحدها. اختياره لميزان NVK أو TEM ينتج
+                  // «لم يتم العثور على الميزان» رغم أن الـ IP سليم والميزان
+                  // شغّال، بلا أي إشارة إلى أن الطريقة نفسها هي الخطأ.
+                  //
+                  // تحذير لا منع: قد يحمل ميزان العميل إصداراً يخالف
+                  // المتوقَّع، فمنعه من المحاولة أسوأ من إعلامه.
+                  Builder(builder: (_) {
+                    final warning = brandConnectionWarning(
+                      LabelScaleService.brandFromString(selectedBrand),
+                      LabelScaleService.connectionFromString(selectedConnection),
+                    );
+                    if (warning == null) return const SizedBox.shrink();
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.warning.withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                              color: AppColors.warning.withValues(alpha: 0.4)),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(PhosphorIconsBold.warning,
+                                size: 16, color: AppColors.warning),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(warning,
+                                  style: const TextStyle(
+                                      fontSize: 12, color: AppColors.warning)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+
                   // ── AclasSDK: IP-only auto-detect ──
                   if (selectedConnection == 'aclassdk') ...[
                     const SizedBox(height: 12),

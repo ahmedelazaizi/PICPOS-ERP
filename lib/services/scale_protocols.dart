@@ -84,10 +84,12 @@ Future<Map<String, dynamic>> _aclasUploadInIsolate(List<String> args) async {
     }
     device ??= AclasSDK.getDeviceInfo(ip);  // auto-detect (port=0)
     if (device == null) {
-      // Only the two most-common Aclas UDP ports. Total worst-case time
-      // with the tightened AclasSDK.ini (TryCount=1, Timeout=1500ms) is
-      // ~3 seconds for this loop — vs the previous ~48 seconds for 8 ports.
-      for (final p in const [9001, 5001]) {
+      // القائمة مشتركة مع مسار «اختبار الاتصال»
+      // (AclasSDK.fallbackUdpPorts). كانت هنا `[9001, 5001]` وهناك
+      // `[9001, 9002, 10000, 3000, 8008]` — فميزان على UDP 10000 يُكشَف في
+      // الاختبار ثم يفشل عند الرفع على نفس الـ IP، وميزان على 5001 يفشل في
+      // الاختبار رغم أن الرفع كان سينجح. (بلاغ العميل 2026-07-30.)
+      for (final p in AclasSDK.fallbackUdpPorts) {
         if (triedPorts.contains(p)) continue;
         device = AclasSDK.getDeviceInfo(ip, port: p);
         triedPorts.add(p);
