@@ -1439,7 +1439,12 @@ class OfflineSyncWorker {
 
       case 'commercial_papers':
         if (operation == 'insert') {
-          await proxy.createCommercialPaper(payload, idempotencyKey: idempotencyKey);
+          // `return` مش `await`: الـdrain بيلتقط الـserverId من القيمة
+          // المرجَّعة ويسجّل mapping في `remote_id_mappings`. `await` بيرجّع
+          // `null` فمفيش mapping — والعمليات اللاحقة (تجديد · تحصيل جزئي ·
+          // إيداع · إعادة إصدار) بتبعت الـid **المحلي** في مسار الـURL،
+          // فبتضرب ورقة تانية خالص على السيرفر ليها نفس الرقم.
+          return proxy.createCommercialPaper(payload, idempotencyKey: idempotencyKey);
         } else if (operation == 'update_status') {
           await proxy.updateCommercialPaperStatus(
             payload['id'] as int,
