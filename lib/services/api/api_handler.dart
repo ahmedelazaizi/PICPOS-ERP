@@ -2122,6 +2122,12 @@ class ApiHandler {
     // exist` متنكّراً في صورة بطء الشاشات (حادثة 2026-05-05 أعلاه).
     'warehouses': 'branch_id',
     'safes': 'branch_id',
+    // `branches` يرتبط بالفرع بمفتاحه الأساسي، لا بعمود `branch_id`.
+    // الشرط العام (`api_handler.dart:2242`) ينتج
+    // `(id = ? OR id IS NULL)` — والذراع الثانية ميتة لأن `id` مفتاح
+    // أساسي. مقصود ومتروك: تخصيص المُنشئ لجدول واحد يكلّف أكثر مما
+    // يوفّر، والذراع الميتة بلا أثر على الخطة التنفيذية.
+    'branches': 'id',
   };
 
   /// Spec 151 P1-8b — TRANSACTIONAL delta-pull tables (Tier 3 + Tier 4 +

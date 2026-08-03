@@ -152,5 +152,19 @@ void main() {
       );
       expect(names, isNot(contains('مخزن ب')));
     });
+
+    test('branches: الجهاز يرى فرعه فقط', () async {
+      await seedScopedUser(13, 1);
+
+      final rows = await pull('branches', branchId: 1, userId: 13);
+      final names = rows.map((r) => r['name']).toSet();
+
+      expect(names, contains('فرع أ'));
+      expect(
+        names,
+        isNot(contains('فرع ب')),
+        reason: 'قائمة الفروع كاملة تصل لجهاز مربوط بفرع واحد',
+      );
+    });
   });
 }
