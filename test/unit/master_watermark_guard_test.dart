@@ -44,4 +44,58 @@ void main() {
       reason: 'الجداول الأساسية تسرّبت إلى القائمة التعاملية',
     );
   });
+
+  // ── قرار الحارس نفسه — ليس المجموعة فقط ────────────────────────────────
+  //
+  // الاختباران أعلاه يثبّتان محتوى `branchScopedMasterPullTables` وانفصالها،
+  // لكن لا شيء منهما يتحقّق من أن الحارس الفعلي في `pullTable` يستعملها.
+  // لو حذف أحدهم `|| branchScopedMasterPullTables.contains(table)` من
+  // الحارس، تبقى المجموعة موجودة ويبقى الاختباران أعلاه أخضرين، ويعود
+  // تسميم الـwatermark بصمت. لذلك نختبر [DeltaPullService.shouldWithholdWatermark]
+  // مباشرة — التعبير الوحيد للقاعدة الفعلية.
+  group('shouldWithholdWatermark — سلوك الحارس الفعلي', () {
+    for (final table in {'branches', 'warehouses', 'safes', 'cost_centers'}) {
+      test('$table: يُحجَب بلا هوية', () {
+        expect(
+          DeltaPullService.shouldWithholdWatermark(table,
+              hasSessionToken: false),
+          isTrue,
+          reason: 'جدول أساسي محصور بلا هوية يجب أن يُحجَب watermark عنه',
+        );
+      });
+
+      test('$table: لا يُحجَب مع وجود هوية', () {
+        expect(
+          DeltaPullService.shouldWithholdWatermark(table,
+              hasSessionToken: true),
+          isFalse,
+          reason:
+              'بعد الدخول تُقدَّم الـwatermark عادياً — لا سبب للحجب بوجود توكن',
+        );
+      });
+    }
+
+    test('جدول تعاملي (sales_invoices) لا يزال يُحجَب بلا هوية', () {
+      // يثبت أن هذا التوسيع لم يُضيّق القاعدة القائمة لقائمة المنع
+      // التعاملية.
+      expect(
+        DeltaPullService.shouldWithholdWatermark('sales_invoices',
+            hasSessionToken: false),
+        isTrue,
+      );
+    });
+
+    test('جدول أساسي غير محصور (products) لا يُحجَب أبداً', () {
+      expect(
+        DeltaPullService.shouldWithholdWatermark('products',
+            hasSessionToken: false),
+        isFalse,
+      );
+      expect(
+        DeltaPullService.shouldWithholdWatermark('products',
+            hasSessionToken: true),
+        isFalse,
+      );
+    });
+  });
 }

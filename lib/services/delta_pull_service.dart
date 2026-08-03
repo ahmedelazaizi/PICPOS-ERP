@@ -126,6 +126,19 @@ class DeltaPullService {
     'branches', 'warehouses', 'safes', 'cost_centers',
   };
 
+  /// Single source of truth for the watermark guard's decision (used by
+  /// [pullTable] below). Extracted so a test can pin the actual *behaviour* —
+  /// not just the contents of the two sets it reads — without mocking the
+  /// whole pull. A tokenless caller must withhold the watermark for both the
+  /// transactional denylist AND the branch-scoped master tables (W1); a
+  /// caller with a token, or a table in neither set, never withholds.
+  @visibleForTesting
+  static bool shouldWithholdWatermark(String table,
+          {required bool hasSessionToken}) =>
+      !hasSessionToken &&
+      (branchScopedPullTables.contains(table) ||
+          branchScopedMasterPullTables.contains(table));
+
   void initialize(AppDatabase db) {
     _db = db;
     ConflictResolutionService.instance.initialize(db);
@@ -285,11 +298,12 @@ class DeltaPullService {
         // لا تُتخطّى مبكراً (التزويد يحتاجها)، فهذا الحارس هو دفاعها
         // **الوحيد**: بلا هوية يقصّها الخادم على سنتينل `-1`، فحفظ
         // watermark على ذلك الرد يُسقِط الصفوف الأقدم نهائياً.
-        final tokenless = !ServerProxy.instance.hasSessionToken();
-        final tokenlessBranchScoped = tokenless &&
-            (branchScopedPullTables.contains(table) ||
-                branchScopedMasterPullTables.contains(table));
-        if (!tokenlessBranchScoped) {
+        //
+        // القرار نفسه مُستخرَج في [shouldWithholdWatermark] — تعبير واحد
+        // فقط عن القاعدة، ومختبَر مباشرة بدل تخمينه من محتوى المجموعتين.
+        final withhold = shouldWithholdWatermark(table,
+            hasSessionToken: ServerProxy.instance.hasSessionToken());
+        if (!withhold) {
           await _saveWatermark(table, serverTime);
         }
       }
