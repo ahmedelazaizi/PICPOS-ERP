@@ -555,8 +555,19 @@ class AppDatabase extends _$AppDatabase {
   /// caller must see its OWN uncommitted writes, which a pre-transaction
   /// cache entry would hide.
   ///
-  /// (drift knows this internally via `resolvedEngine is Transaction`, but
-  /// that member is `@internal`; this counter is the public-API equivalent.)
+  /// ⚠️ **Deliberately over-conservative.** drift runs a transaction body in
+  /// its own zone, so `resolvedEngine is Transaction` is scoped to the code
+  /// actually inside it. This counter is a plain instance field, so it reads
+  /// true for EVERY caller on this database while any transaction is open —
+  /// a POS barcode lookup during invoice posting bypasses the cache too, and
+  /// (because the write side is skipped as well) stays cold.
+  ///
+  /// That is safe but not free: correctness is unaffected — a database read is
+  /// always at least as correct as a memoised one — while cache hit rate drops
+  /// for the duration of any transaction. The zone-scoped alternative is
+  /// `resolvedEngine`, which is `@internal` and cannot be used without
+  /// breaking `flutter analyze`. **The performance cost is UNMEASURED**;
+  /// measuring barcode-scan latency on weak hardware is a tracked follow-up.
   bool get isInTransaction => _txDepth > 0;
 
   @override

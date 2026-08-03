@@ -126,6 +126,13 @@ class ProductSyncStrategy extends SyncStrategy {
     }
     // Force UI refresh after sync
     if (products.isNotEmpty) {
+      // The upsert above rewrites currentStock, costPrice and salePrice from
+      // the server. Without dropping the memoised rows, every reader keeps
+      // serving the pre-sync figures until the process restarts — the same
+      // failure `updateProductStock` had, reached from a different door.
+      // This runs on every delta pull, so a stale entry here outlives any
+      // number of syncs.
+      db.invalidateProductCache();
       db.markTablesUpdated({db.products});
     }
   }
