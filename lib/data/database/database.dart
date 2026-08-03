@@ -1925,13 +1925,12 @@ class AppDatabase extends _$AppDatabase {
 
       // Counter lives on the canonical prefix so a display-prefix change
       // from the settings screen never rewinds the sequence.
-      var seq = await (select(
+      final existing = await (select(
         documentSequences,
       )..where((s) => s.prefix.equals(normalizedPrefix))..limit(1))
           .getSingleOrNull();
 
-      int nextNumber;
-      if (seq == null) {
+      if (existing == null) {
         // First-time backfill: count rows that already share the same
         // canonical prefix or any of its aliases so we don't re-use an
         // existing number. Bounded query (`LIKE prefix%`) and also a
@@ -1952,22 +1951,56 @@ class AppDatabase extends _$AppDatabase {
               .getSingle();
           if ((count ?? 0) > maxExisting) maxExisting = count!;
         }
-        nextNumber = maxExisting + 1;
 
-        await into(documentSequences).insert(
-          DocumentSequencesCompanion.insert(
-            prefix: normalizedPrefix,
-            nextValue: Value(nextNumber + 1),
-          ),
-        );
-      } else {
-        nextNumber = seq.nextValue;
-        await (update(
-          documentSequences,
-        )..where((s) => s.prefix.equals(normalizedPrefix))).write(
-          DocumentSequencesCompanion(nextValue: Value(nextNumber + 1)),
-        );
+        // Seed the row at the FIRST number to hand out and let the shared
+        // allocation below consume it. The insert must be idempotent: the
+        // `FOR UPDATE` above locks nothing when the row does not exist yet, so
+        // two connections racing the very first use of a prefix both land here
+        // and both try to INSERT. A plain insert makes the loser die on
+        // `23505 document_sequences_pkey`, which aborts the whole caller
+        // transaction — i.e. the first sale on a newly configured prefix fails.
+        // Losing the race is not an error: the winner seeded the identical
+        // value, so DO NOTHING and read it back under the lock.
+        final seed = maxExisting + 1;
+        if (_isPostgres) {
+          await customStatement(
+            'INSERT INTO document_sequences (prefix, next_value) '
+            'VALUES (?, ?) ON CONFLICT (prefix) DO NOTHING',
+            [normalizedPrefix, seed],
+          );
+          // The seed insert above is what the earlier FOR UPDATE could not
+          // lock. Take the lock now that the row is guaranteed to exist.
+          await customStatement(
+            'SELECT 1 FROM document_sequences WHERE prefix = ? FOR UPDATE',
+            [normalizedPrefix],
+          );
+        } else {
+          await into(documentSequences).insert(
+            DocumentSequencesCompanion.insert(
+              prefix: normalizedPrefix,
+              nextValue: Value(seed),
+            ),
+            mode: InsertMode.insertOrIgnore,
+          );
+        }
       }
+
+      // Single allocation path for both the freshly seeded and the existing
+      // row, so the counter advances in exactly one place under exactly one
+      // lock. Re-read rather than reusing `existing`: when this call lost the
+      // seed race, or waited on another transaction's FOR UPDATE, the
+      // committed value has moved on.
+      final seq = await (select(
+        documentSequences,
+      )..where((s) => s.prefix.equals(normalizedPrefix))..limit(1))
+          .getSingleOrNull();
+
+      final nextNumber = seq?.nextValue ?? 1;
+      await (update(
+        documentSequences,
+      )..where((s) => s.prefix.equals(normalizedPrefix))).write(
+        DocumentSequencesCompanion(nextValue: Value(nextNumber + 1)),
+      );
 
       // Simplified format: `<DISPLAY>-<counter>` (e.g. `POS-1`, `SINV-42`).
       // Per product request 2026-04: drop the year + 6-digit zero-pad. Counter

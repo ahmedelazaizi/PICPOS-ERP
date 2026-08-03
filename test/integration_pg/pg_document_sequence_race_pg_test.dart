@@ -110,5 +110,29 @@ void main() {
             'فاتنين بيقروا نفس next_value قبل ما أي واحد فيهم يقفل الصف.',
       );
     });
+
+    test('أول استعمال لبادئة جديدة ما يرميش 23505 على الاتصال التاني',
+        () async {
+      // البادئة دي مالهاش صف في document_sequences خالص، فالاتنين بيدخلوا فرع
+      // «أول استعمال». الـFOR UPDATE مابيحميش هنا: `SELECT ... FOR UPDATE`
+      // على صف مش موجود بيقفل **صفر صفوف**، فالاتنين بيحسبوا نفس البذرة
+      // وبيحاولوا INSERT.
+      //
+      // المفتاح الأساسي بيمسك التكرار (فمفيش بيانات فاسدة) — بس التاني بياخد
+      // 23505 وترانزاكشن الطالب كلها بتتلغي. يعني أول بيعة ببادئة اتظبطت
+      // لسه من شاشة «إعدادات ترقيم المستندات» ممكن تفشل.
+      const prefix = 'FIRSTUSE';
+
+      Future<String> alloc(AppDatabase db) =>
+          db.transaction(() => db.generateInvoiceNumber(prefix));
+
+      final results = await Future.wait<String>([
+        alloc(fx.db),
+        alloc(dbB),
+      ]);
+
+      expect(results.toSet().length, 2,
+          reason: 'لازم الاتنين يرجّعوا رقمين مختلفين: ${results.join(", ")}');
+    });
   });
 }
