@@ -181,5 +181,51 @@ void main() {
               'cannot heal it on PG.');
       expect(tableNames, contains('kitchen_stations'));
     });
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Composite / non-autoincrement primary keys must reach PostgreSQL.
+    //
+    // `_buildPgCreateTableSql` emitted PRIMARY KEY only as part of SERIAL,
+    // i.e. only for autoincrement int columns. Every table that declares its
+    // key through drift's `Set<Column> get primaryKey` was created on PG with
+    // NO primary key at all — eight of them, including `document_sequences`
+    // (keyed on `prefix`, which is what stops two invoices getting the same
+    // number) and `processed_messages` (keyed on `idempotency_key`, the whole
+    // basis of replay de-duplication).
+    //
+    // Verifiable without PostgreSQL: `$primaryKey` is drift metadata, and the
+    // generator either reads it or it does not. `$primaryKey` appeared ZERO
+    // times in database.dart before this fix.
+    test('PG table DDL emits composite primary keys', () async {
+      expect(dbSrc.contains(r'$primaryKey'), isTrue,
+          reason: 'the PG CREATE TABLE builder must read drift\'s declared '
+              'primaryKey. Without it, tables keyed on anything other than '
+              'an autoincrement id land on the server with no key — '
+              'duplicate document numbers and dead idempotency.');
+    });
+
+    test('tables with a declared composite key are still in the schema',
+        () async {
+      // Guards the fix against becoming vacuous: if these tables ever stop
+      // declaring a composite key, the assertion above would pass while
+      // protecting nothing.
+      final db = AppDatabase.forTesting();
+      addTearDown(() async => db.close());
+
+      final keyed = db.allSchemaEntities
+          .whereType<TableInfo>()
+          .where((t) => t.$primaryKey.isNotEmpty)
+          .where((t) => !t.$columns.any((c) => c.hasAutoIncrement))
+          .map((t) => t.actualTableName.toLowerCase())
+          .toSet();
+
+      expect(keyed, contains('document_sequences'),
+          reason: 'document numbering depends on this key');
+      expect(keyed, contains('processed_messages'),
+          reason: 'replay de-duplication depends on this key');
+      expect(keyed.length, greaterThanOrEqualTo(8),
+          reason: 'eight such tables were measured; a drop means one lost '
+              'its key declaration rather than the builder being fixed');
+    });
   });
 }

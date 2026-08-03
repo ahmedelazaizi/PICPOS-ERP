@@ -1366,6 +1366,33 @@ class AppDatabase extends _$AppDatabase {
       colDefs.add('"$colName" $pgType$nullable$defaultClause');
     }
 
+    // Composite / non-autoincrement primary keys.
+    //
+    // The loop above only emits PRIMARY KEY for an autoincrement int column
+    // (as part of SERIAL). Everything else declared via drift's
+    // `Set<Column> get primaryKey` was DROPPED, so eight tables were created
+    // on PostgreSQL with no primary key at all — among them
+    // `document_sequences` (keyed on `prefix`, guarding document numbering)
+    // and `processed_messages` (keyed on `idempotency_key`, the whole basis
+    // of replay de-duplication).
+    //
+    // Scope note: this affects CREATE TABLE only. It is deliberately NOT
+    // retro-fitted onto tables that already exist on a live server — adding a
+    // primary key to a table that has accumulated duplicate rows fails, and a
+    // failing statement in the boot path is exactly what killed the app in
+    // v132. Existing deployments need a measured dedup + ALTER, tracked
+    // separately.
+    if (entity.$primaryKey.isNotEmpty) {
+      final hasSerialPk = columns.any(
+        (c) => c.type == DriftSqlType.int && c.hasAutoIncrement,
+      );
+      if (!hasSerialPk) {
+        final pkCols =
+            entity.$primaryKey.map((c) => '"${c.$name}"').join(', ');
+        colDefs.add('PRIMARY KEY ($pkCols)');
+      }
+    }
+
     return 'CREATE TABLE IF NOT EXISTS "${entity.actualTableName}" '
         '(${colDefs.join(', ')})';
   }
