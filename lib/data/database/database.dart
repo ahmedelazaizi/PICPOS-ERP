@@ -1484,7 +1484,14 @@ class AppDatabase extends _$AppDatabase {
             if (live == null) {
               // Missing column → ALTER TABLE ADD COLUMN IF NOT EXISTS.
               try {
-                final colDef = _buildPgColumnDef(col);
+                final colDef =
+                    _buildPgColumnDef(col, forExistingTable: true);
+                // Required-with-no-default arrives nullable instead of
+                // aborting the boot. Surface it so ops can see which columns
+                // still need promoting, rather than discovering it later from
+                // a NULL that should have been impossible.
+                final degraded =
+                    !col.$nullable && _buildPgDefaultClause(col).isEmpty;
                 await customStatement(
                   'ALTER TABLE "$tableName" '
                   'ADD COLUMN IF NOT EXISTS $colDef',
@@ -1492,7 +1499,10 @@ class AppDatabase extends _$AppDatabase {
                 healedCount++;
                 await DiagnosticLogger.log(
                   'PG-PARITY-HEAL',
-                  'column=$tableName.$colName action=added',
+                  'column=$tableName.$colName action=added'
+                      '${degraded ? ' nullability=degraded_to_nullable '
+                          'reason=not_null_without_default_on_existing_table '
+                          'followup=needs_backfill_then_set_not_null' : ''}',
                 );
               } catch (e) {
                 fatalErrors.add(_PgParityFatal(
@@ -1627,7 +1637,13 @@ class AppDatabase extends _$AppDatabase {
   /// SERIAL PK columns return their own `SERIAL PRIMARY KEY` string. The
   /// column-heal path must filter `hasAutoIncrement` out before calling
   /// this — PostgreSQL doesn't allow ALTER ADD COLUMN on a SERIAL PK.
-  String _buildPgColumnDef(GeneratedColumn col) {
+  ///
+  /// Set [forExistingTable] when the fragment is destined for
+  /// `ALTER TABLE ... ADD COLUMN` rather than `CREATE TABLE`. On an existing
+  /// table a `NOT NULL` column with no `DEFAULT` is rejected outright by
+  /// PostgreSQL if any row is present, so that combination is degraded to
+  /// nullable — see the comment at the nullability decision below.
+  String _buildPgColumnDef(GeneratedColumn col, {bool forExistingTable = false}) {
     final colName = col.$name;
     if (col.type == DriftSqlType.int && col.hasAutoIncrement) {
       return '"$colName" SERIAL PRIMARY KEY';
@@ -1658,26 +1674,47 @@ class AppDatabase extends _$AppDatabase {
       pgType = 'TEXT';
     }
 
-    final nullable = col.$nullable ? '' : ' NOT NULL';
-    var defaultClause = '';
-    if (col.defaultValue != null) {
-      final defaultStr = col.defaultValue.toString();
-      if (defaultStr.contains('currentDateAndTime') ||
-          defaultStr.contains('CurrentDateTimeExpression')) {
-        defaultClause = ' DEFAULT (EXTRACT(EPOCH FROM NOW())::bigint)';
-      } else if (col.defaultValue is Constant) {
-        final val = (col.defaultValue as Constant).value;
-        if (val is bool) {
-          defaultClause = ' DEFAULT ${val ? 'TRUE' : 'FALSE'}';
-        } else if (val is String) {
-          defaultClause = " DEFAULT '${val.replaceAll("'", "''")}'";
-        } else {
-          defaultClause = ' DEFAULT $val';
-        }
-      }
+    final defaultClause = _buildPgDefaultClause(col);
+    var nullable = col.$nullable ? '' : ' NOT NULL';
+
+    // PostgreSQL rejects `ALTER TABLE ... ADD COLUMN ... NOT NULL` on a table
+    // that already has rows unless a DEFAULT backfills them (23502). Drift
+    // columns declared required-but-without-a-default therefore make the heal
+    // pass throw, and that exception is fatal: it aggregates into
+    // `PgSchemaParityException`, `database_startup` rethrows it, and the retry
+    // button just re-runs the same ALTER — a permanently bricked install with
+    // no exit but `--use-sqlite`. That is the v132 failure class exactly.
+    //
+    // The boot path must never throw for something this recoverable, so the
+    // column lands nullable and the caller logs it. Promoting it to NOT NULL
+    // needs a backfill decision plus an ACCESS EXCLUSIVE lock and a full table
+    // scan — offline reconciliation work, not something to do while the app is
+    // trying to start.
+    if (forExistingTable && !col.$nullable && defaultClause.isEmpty) {
+      nullable = '';
     }
 
     return '"$colName" $pgType$nullable$defaultClause';
+  }
+
+  /// The ` DEFAULT ...` fragment for [col] in PG dialect, or `''` when drift
+  /// declares no default this builder can render. Split out of
+  /// [_buildPgColumnDef] so the heal path can ask "would this column arrive
+  /// with a backfill value?" without re-deriving the answer.
+  String _buildPgDefaultClause(GeneratedColumn col) {
+    if (col.defaultValue == null) return '';
+    final defaultStr = col.defaultValue.toString();
+    if (defaultStr.contains('currentDateAndTime') ||
+        defaultStr.contains('CurrentDateTimeExpression')) {
+      return ' DEFAULT (EXTRACT(EPOCH FROM NOW())::bigint)';
+    }
+    if (col.defaultValue is Constant) {
+      final val = (col.defaultValue as Constant).value;
+      if (val is bool) return ' DEFAULT ${val ? 'TRUE' : 'FALSE'}';
+      if (val is String) return " DEFAULT '${val.replaceAll("'", "''")}'";
+      return ' DEFAULT $val';
+    }
+    return '';
   }
 
   /// ISS-08: Migration logic delegated to database_migrations.dart
