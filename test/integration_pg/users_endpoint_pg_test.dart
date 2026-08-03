@@ -52,6 +52,18 @@ void main() {
     await fx.db.delete(fx.db.rolePermissions).go();
     await fx.db.delete(fx.db.users).go();
     await fx.db.delete(fx.db.roles).go();
+
+    // Branch 2 must actually exist. Every scenario below writes
+    // `userBranchAccess(branchId: 2)`, and PostgreSQL enforces the
+    // `user_branch_access_branch_id_fkey` that SQLite-backed runs never
+    // checked — so these three tests failed with 23503 the first time this
+    // suite was ever pointed at a real server, for a fixture reason rather
+    // than a product one. Idempotent: `branches` is not truncated between
+    // tests, so this is a no-op after the first run.
+    await fx.db.customStatement(
+      "INSERT INTO branches (id, name) VALUES (2, 'فرع الاختبار') "
+      'ON CONFLICT (id) DO NOTHING',
+    );
   });
 
   Future<Map<String, dynamic>> callGetUsers({int? branchId}) async {
