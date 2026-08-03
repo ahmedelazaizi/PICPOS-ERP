@@ -21,14 +21,27 @@ import '../database.dart';
 ///     rows. Safe to call repeatedly; subsequent runs are no-ops once
 ///     all foreign rows are gone.
 ///
-/// Tables are taken from the same allowlist used server-side
-/// (`api_handler._syncPullBranchColumn`) so the two ends stay aligned —
-/// if the server filters a table, the cleanup helper will also remove
-/// any pre-filter leaks for it.
+/// النطاق: **الجداول التعاملية فقط** من قائمة الخادم
+/// (`api_handler._syncPullBranchColumn`). الجداول الأساسية التي يقصّها
+/// الخادم (`branches`, `warehouses`, `safes`, `cost_centers`) **مستثناة
+/// عمداً** — حذفها محلياً قد يكسر FK لصفوف تعاملية تشير إليها، وهو قرار
+/// منفصل أجّله المالك. لا تفترض أن الطرفين مرآة لبعضهما: راجع
+/// [_scopedTables] قبل أي إضافة.
 extension BranchScopeCleanupExtension on AppDatabase {
-  /// خريطة الجدول → عمود الفرع. **يجب أن تطابق
-  /// `api_handler._syncPullBranchColumn` بالضبط** — أي جدول يقصّه الخادم
-  /// يُنظَّف هنا أيضاً.
+  /// خريطة الجدول → عمود الفرع. تعكس `api_handler._syncPullBranchColumn`
+  /// **في جداوله التعاملية فقط**، وليست نسخة منها.
+  ///
+  /// شرطان لأي إضافة هنا، ومخالفة أيّهما تُنتج عطلاً صامتاً:
+  ///
+  /// 1. **للجدول عمود `branchId` حقيقي في drift.** بدونه يرمي الاستعلام
+  ///    و[wipeForeignBranchData] يعمل rethrow داخل `transaction` ⇒ ارتداد
+  ///    كل التنظيف (العطل المُصلَح أدناه).
+  /// 2. **الجدول تعاملي، لا أساسي.** `branches` · `warehouses` · `safes` ·
+  ///    `cost_centers` ممنوعة هنا مهما فعل الخادم: حذفها محلياً يكسر FK
+  ///    لصفوف تعاملية تشير إليها. وخريطة الخادم تُدخل `'branches': 'id'`
+  ///    (api_handler.dart:2164) — نقلها إلى هنا يعني
+  ///    `DELETE FROM branches WHERE id NOT IN (...)`، أي محو فروع من قاعدة
+  ///    العميل نفسها. القرار مؤجَّل من المالك، وليس سهواً.
   ///
   /// كانت تحوي `sales_orders` · `purchase_orders` · `held_orders` ·
   /// `quotations` · `commercial_papers` بناءً على ترحيل مُخطَّط لم يحدث
@@ -41,10 +54,6 @@ extension BranchScopeCleanupExtension on AppDatabase {
   /// الجداول بلا عمود فرع (`sales_invoice_items`, `journal_lines`,
   /// `safe_transactions`) غائبة عمداً — تُحصَر عبر سجلّها الأب ويتتالى
   /// حذفها عبر سلسلة الـFK.
-  ///
-  /// الجداول الأساسية التي يقصّها الخادم (`warehouses`, `safes`) غائبة
-  /// عمداً كذلك: حذف مخزن محلياً قد يكسر FK لصفوف تعاملية تشير إليه —
-  /// قرار منفصل خارج نطاق المرحلة ١.
   static const _scopedTables = <String, String>{
     'sales_invoices': 'branch_id',
     'purchase_invoices': 'branch_id',
