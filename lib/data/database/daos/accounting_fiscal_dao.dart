@@ -355,7 +355,12 @@ extension AccountingFiscalDao on AppDatabase {
           // UUID-First (Phase 1): stable cross-install identity for sync.
           globalId: Value(UuidV7.generate()),
         ),
-        mode: InsertMode.insertOrIgnore,
+        // Bare `ON CONFLICT DO NOTHING` rather than `mode: insertOrIgnore`:
+        // drift drops that mode on postgres, so the `{month, year}` unique key
+        // would raise 23505. This runs under the atomic PG seeder, which is
+        // explicitly documented as having no try/catch so it can roll back —
+        // meaning one 23505 here discards the entire seed.
+        onConflict: DoNothing(target: []),
       );
 
       current = DateTime(current.year, current.month + 1, 1);

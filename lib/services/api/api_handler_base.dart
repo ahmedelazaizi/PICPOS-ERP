@@ -122,7 +122,17 @@ abstract class ApiHandlerBase {
         responsePayload: json.encode(responsePayload),
         actionType: drift.Value(actionType),
       ),
-      mode: drift.InsertMode.insertOrIgnore,
+      // NOT `mode: insertOrIgnore` — drift silently downgrades that to a plain
+      // INSERT on postgres (the mode is dropped unless an `onConflict` clause
+      // is also supplied), so the PK on `idempotency_key` raises 23505 instead
+      // of ignoring. Measured on a live PG in
+      // test/integration_pg/pg_insert_or_ignore_pg_test.dart. That matters here
+      // more than anywhere: this runs AFTER the sale has already committed, and
+      // the caller's catch turns the throw into a 500 for a sale that actually
+      // succeeded. `target: []` emits a bare `ON CONFLICT DO NOTHING`, which
+      // matches any constraint — so it is also correct on a legacy server whose
+      // `processed_messages` PK was never emitted.
+      onConflict: drift.DoNothing(target: []),
     );
   }
 

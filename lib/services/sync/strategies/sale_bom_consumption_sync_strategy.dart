@@ -85,7 +85,9 @@ class SaleBomConsumptionSyncStrategy extends SyncStrategy {
               ),
               globalId: Value(serverGlobalId ?? ''),
             ),
-            mode: InsertMode.insertOrIgnore,
+            // Bare `ON CONFLICT DO NOTHING` — see sales_sync_strategy for the
+            // rationale; `insertOrIgnore` is dropped on postgres.
+            onConflict: DoNothing(target: []),
           );
       return true;
     } catch (e) {
@@ -100,7 +102,8 @@ class SaleBomConsumptionSyncStrategy extends SyncStrategy {
     if (record is SaleBomConsumptionsCompanion) {
       await db.into(db.saleBomConsumptions).insert(
             record,
-            mode: InsertMode.insertOrIgnore,
+            // Bare `ON CONFLICT DO NOTHING` — see sales_sync_strategy.
+            onConflict: DoNothing(target: []),
           );
     }
   }

@@ -3334,7 +3334,7 @@ class ApiDataHandler extends ApiHandlerBase {
               notes: Value(itemMap['notes'] as String?),
               globalId: Value(itemGid != null && itemGid.isNotEmpty ? itemGid : UuidV7.generate()),
             ),
-            mode: InsertMode.insertOrIgnore,
+            onConflict: DoNothing(target: []),
           );
         }
         return id;
@@ -3453,7 +3453,7 @@ class ApiDataHandler extends ApiHandlerBase {
               notes: Value(itemMap['notes'] as String?),
               globalId: Value(itemGid != null && itemGid.isNotEmpty ? itemGid : UuidV7.generate()),
             ),
-            mode: InsertMode.insertOrIgnore,
+            onConflict: DoNothing(target: []),
           );
         }
         return id;
@@ -3582,7 +3582,7 @@ class ApiDataHandler extends ApiHandlerBase {
               total: parseDouble(itemMap['total']),
               globalId: Value(itemGid != null && itemGid.isNotEmpty ? itemGid : UuidV7.generate()),
             ),
-            mode: InsertMode.insertOrIgnore,
+            onConflict: DoNothing(target: []),
           );
         }
         return id;
@@ -3693,7 +3693,7 @@ class ApiDataHandler extends ApiHandlerBase {
                 total: parseDouble(itemMap['total']),
                 globalId: Value(itemGid != null && itemGid.isNotEmpty ? itemGid : UuidV7.generate()),
               ),
-              mode: InsertMode.insertOrIgnore,
+              onConflict: DoNothing(target: []),
             );
           }
         }

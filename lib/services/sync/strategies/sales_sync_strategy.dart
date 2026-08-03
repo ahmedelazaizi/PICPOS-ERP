@@ -265,7 +265,14 @@ class SalesSyncStrategy extends SyncStrategy {
                     ? Value(remoteGlobalId)
                     : const Value.absent(),
               ),
-              mode: InsertMode.insertOrIgnore,
+              // Bare `ON CONFLICT DO NOTHING`. These strategies pull onto a
+              // SQLite mirror today, where `insertOrIgnore` behaves — but the
+              // mode is silently dropped on postgres, so the moment a mirror
+              // runs on PG this would raise 23505 on `global_id` instead of
+              // skipping an already-pulled row. Converted rather than reasoned
+              // about: the form below is correct on both dialects and with or
+              // without the constraint.
+              onConflict: DoNothing(target: []),
             );
           }
         }

@@ -568,7 +568,12 @@ class ApiPurchaseHandler extends ApiHandlerBase {
               responsePayload: '{"success":true,"serverId":${invoice.id}}',
               actionType: const Value('purchase_return'),
             ),
-            mode: InsertMode.insertOrIgnore,
+            // Bare `ON CONFLICT DO NOTHING` — drift drops `insertOrIgnore` on
+            // postgres. The enclosing catch would swallow the resulting 23505,
+            // but then the idempotency record is never written and the next
+            // retry re-runs the whole return: re-reverses stock, re-posts the
+            // JE, re-adjusts the supplier balance.
+            onConflict: DoNothing(target: []),
           );
         } catch (e) {
           debugPrint('[API] postPurchaseReturn: idempotency record failed (non-fatal): $e');
@@ -1010,7 +1015,10 @@ class ApiPurchaseHandler extends ApiHandlerBase {
                       '{"success":true,"serverId":${invoice.id}}',
                   actionType: const Value('purchase_return_edit'),
                 ),
-                mode: InsertMode.insertOrIgnore,
+                // Same as the purchase_return site above: bare
+                // `ON CONFLICT DO NOTHING`, because drift drops
+                // `insertOrIgnore` on postgres.
+                onConflict: DoNothing(target: []),
               );
         } catch (e) {
           debugPrint(

@@ -194,7 +194,9 @@ class PurchaseSyncStrategy extends SyncStrategy {
                       ? Value(remoteGlobalId)
                       : const Value.absent(),
                 ),
-                mode: InsertMode.insertOrIgnore,
+                // Bare `ON CONFLICT DO NOTHING` — see sales_sync_strategy for
+                // the rationale; `insertOrIgnore` is dropped on postgres.
+                onConflict: DoNothing(target: []),
               );
         }
 

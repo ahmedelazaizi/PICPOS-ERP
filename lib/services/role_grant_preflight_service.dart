@@ -150,7 +150,10 @@ class RoleGrantPreflightService {
                 roleId: roleId,
                 permissionId: permId,
               ),
-              mode: InsertMode.insertOrIgnore,
+              // Bare `ON CONFLICT DO NOTHING`: drift drops `insertOrIgnore` on
+              // postgres, so re-granting an existing permission raised 23505
+              // and aborted the rest of the grant loop for that boot.
+              onConflict: DoNothing(target: []),
             );
         inserted++;
       }
