@@ -1907,6 +1907,19 @@ class ApiHandler {
   @visibleForTesting
   static int debugLastNullBranchRowCount = 0;
 
+  /// آخر عدد **سُجِّل** لكل جدول — خانق السجلّ لعدّاد `[BRANCH-SCOPE-NULL]`.
+  ///
+  /// القاعدة: نكتب سطراً فقط حين **يتغيّر** العدد عن آخر ما سُجِّل لهذا
+  /// الجدول. السبب: DeltaPull يسحب بلا توقّف، فسطر لكل سحب لكل جدول يغرق
+  /// الملف بآلاف السطور المتطابقة ويُتلف المراجعة نفسها التي وُجد السجلّ
+  /// من أجلها. الاستقرار ⇒ سطر واحد، لا آلاف.
+  ///
+  /// الغياب من الخريطة يعني «لم يُقَس بعد» لا «صفر»، فتعرّض جديد حقيقي
+  /// (٠ ⇒ N) يُنتج سطراً دائماً ولا يبتلعه الخانق؛ والانخفاض إلى صفر بعد
+  /// تعرّض سابق يُسجَّل أيضاً حتى يظهر أثر التنظيف في نفس الملف. أول قياس
+  /// بصفر وحده لا يُسجَّل — ليس خبراً.
+  static final Map<String, int> _lastLoggedNullBranchRows = <String, int>{};
+
   /// Raw parse of `?branch_id=` (unchanged behavior, kept private).
   /// Spec 151 D-06 — split out of the old `_extractBranchId` so the async
   /// clamp below can reuse the pure query-param read.
@@ -2351,12 +2364,28 @@ class ApiHandler {
       //
       // الشرط `branchFilterActive` وحده: مسار `cost_centers` يحصر بمجموعة
       // مشتقّة (`id IN (...)`) وبلا ذراع NULL أصلاً، فلا شيء ليُقاس فيه.
+      //
+      // التصفير قبل الشرط لا داخله: بدونه تُرجع قراءة بعد سحب غير محصور
+      // (أو سحب `cost_centers`) قيمة السحب المحصور السابق، فاختبار يتوقّع
+      // صفراً هناك ينجح لسبب خاطئ.
+      debugLastNullBranchRowCount = 0;
       if (branchFilterActive) {
         final nullRows = rows.where((r) => r.data[branchCol] == null).length;
         debugLastNullBranchRowCount = nullRows;
-        if (nullRows > 0) {
-          debugPrint('[BRANCH-SCOPE-NULL] table=$table '
-              'branch=$branchId nullRows=$nullRows');
+
+        // السجلّ يُكتب في ملف قابل للمراجعة لا في الطرفية وحدها: ملاحظات
+        // الإصدار تطلب من المالك «راجعه بعد أسبوع تشغيل»، و`debugPrint`
+        // لا يُحفظ ويُخنق تحت الحمل فالمراجعة كانت مستحيلة.
+        // مخنوق بالتغيّر — انظر `_lastLoggedNullBranchRows`.
+        final lastLogged = _lastLoggedNullBranchRows[table];
+        if (lastLogged != nullRows) {
+          _lastLoggedNullBranchRows[table] = nullRows;
+          if (nullRows > 0 || lastLogged != null) {
+            await DiagnosticLogger.log(
+              'BRANCH-SCOPE-NULL',
+              'table=$table branch=$branchId nullRows=$nullRows',
+            );
+          }
         }
       }
 
