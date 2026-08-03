@@ -108,6 +108,24 @@ class DeltaPullService {
     'quotation_items', 'payment_allocations',
   };
 
+  /// المرحلة ١ (W1) — الجداول الأساسية التي صار الخادم يقصّها على الفرع
+  /// (`api_handler._syncPullBranchColumn` + الاشتقاق العكسي لمراكز
+  /// التكلفة).
+  ///
+  /// **منفصلة عمداً عن [branchScopedPullTables]،** فتلك تصف عقداً آخر —
+  /// قائمة منع الـtokenless التعاملية، ويثبّتها اختبار تساوٍ صارم مع
+  /// نظيرتها على الخادم. خلط المجموعتين يكسر ذلك العقد.
+  ///
+  /// الفرق في الأثر: الجداول التعاملية **تُتخطّى** كلياً قبل الدخول،
+  /// أما هذه فتُسحَب عادياً — التزويد يعتمد عليها — ويُمنع فقط **تقديم
+  /// الـwatermark**. لولا ذلك: الخادم يقصّ الرد على سنتينل `-1` للمستدعي
+  /// بلا هوية، والعميل يحفظ watermark على رد مقصوص، فيسأل بعد الدخول
+  /// عمّا هو أحدث منه فقط وتضيع الصفوف الأقدم نهائياً. وهذا يتكرر عند
+  /// **كل إقلاع**، لا عند التزويد الأوّلي فحسب.
+  static const Set<String> branchScopedMasterPullTables = {
+    'branches', 'warehouses', 'safes', 'cost_centers',
+  };
+
   void initialize(AppDatabase db) {
     _db = db;
     ConflictResolutionService.instance.initialize(db);
@@ -262,8 +280,15 @@ class DeltaPullService {
         // here, but re-check so a future caller that bypasses the skip can
         // never advance a branch-scoped table's watermark on a tokenless pull
         // (which returned zero rows) and strand its backlog.
-        final tokenlessBranchScoped = branchScopedPullTables.contains(table) &&
-            !ServerProxy.instance.hasSessionToken();
+        //
+        // المرحلة ١ (W1) — وُسِّع ليشمل الجداول الأساسية المحصورة. تلك
+        // لا تُتخطّى مبكراً (التزويد يحتاجها)، فهذا الحارس هو دفاعها
+        // **الوحيد**: بلا هوية يقصّها الخادم على سنتينل `-1`، فحفظ
+        // watermark على ذلك الرد يُسقِط الصفوف الأقدم نهائياً.
+        final tokenless = !ServerProxy.instance.hasSessionToken();
+        final tokenlessBranchScoped = tokenless &&
+            (branchScopedPullTables.contains(table) ||
+                branchScopedMasterPullTables.contains(table));
         if (!tokenlessBranchScoped) {
           await _saveWatermark(table, serverTime);
         }
