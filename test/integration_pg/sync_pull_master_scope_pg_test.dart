@@ -225,5 +225,29 @@ void main() {
             'التي أغلقها سنتينل _kNoBranchAccess',
       );
     });
+
+    test('العدّاد يحصي صفوف IS NULL — ضبط موجب', () async {
+      await seedScopedUser(16, 1);
+      // صفّان يتيمان معروفان بالعدد + واحد على الفرع. الضبط الموجب: لو
+      // أعاد العدّاد صفراً هنا فالأداة لا تلتقط، فأي «صفر» لاحق بلا قيمة.
+      await fx.db.into(fx.db.warehouses).insert(
+            WarehousesCompanion.insert(name: 'يتيم ١'),
+          );
+      await fx.db.into(fx.db.warehouses).insert(
+            WarehousesCompanion.insert(name: 'يتيم ٢'),
+          );
+      await fx.db.into(fx.db.warehouses).insert(
+            WarehousesCompanion.insert(name: 'مخزن أ')
+                .copyWith(branchId: const d.Value(1)),
+          );
+
+      await pull('warehouses', branchId: 1, userId: 16);
+
+      expect(
+        ApiHandler.debugLastNullBranchRowCount,
+        2,
+        reason: 'العدّاد لا يلتقط — أي «صفر» منه بلا قيمة',
+      );
+    });
   });
 }

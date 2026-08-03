@@ -1901,6 +1901,12 @@ class ApiHandler {
   /// this so `col IN (-1)` matches nothing instead of leaking every row.
   static const int _kNoBranchAccess = -1;
 
+  /// عدد صفوف `IS NULL` في آخر سحب محصور — منفذ قياس للاختبار.
+  /// `debugPrint` وحده لا يكفي: يُخنق تحت الحمل، فـ«صفر سطر في السجل»
+  /// ليس دليلاً بلا هذا العدّاد.
+  @visibleForTesting
+  static int debugLastNullBranchRowCount = 0;
+
   /// Raw parse of `?branch_id=` (unchanged behavior, kept private).
   /// Spec 151 D-06 — split out of the old `_extractBranchId` so the async
   /// clamp below can reuse the pure query-param read.
@@ -2335,6 +2341,24 @@ class ApiHandler {
       final fetched = await _db.customSelect(sql, variables: vars).get();
       final bool hasMore = fetched.length > limit;
       final rows = hasMore ? fetched.sublist(0, limit) : fetched;
+
+      // المرحلة ١ / §٣-١ — قياس التعرّض الناتج عن ذراع `OR IS NULL`.
+      //
+      // `Warehouses.branchId` و`Safes.branchId` كلاهما `nullable()`، فالصف
+      // بلا فرع حالة مدعومة مستمرة لا بقية قديمة: أي مخزن يُنشَأ اليوم بلا
+      // فرع يبقى مرئياً على كل الأجهزة للأبد. نقيس الحجم قبل أي قرار
+      // تشديد بدل أن نفترضه.
+      //
+      // الشرط `branchFilterActive` وحده: مسار `cost_centers` يحصر بمجموعة
+      // مشتقّة (`id IN (...)`) وبلا ذراع NULL أصلاً، فلا شيء ليُقاس فيه.
+      if (branchFilterActive) {
+        final nullRows = rows.where((r) => r.data[branchCol] == null).length;
+        debugLastNullBranchRowCount = nullRows;
+        if (nullRows > 0) {
+          debugPrint('[BRANCH-SCOPE-NULL] table=$table '
+              'branch=$branchId nullRows=$nullRows');
+        }
+      }
 
       final jsonRows = rows.map((r) {
         final out = <String, dynamic>{};
