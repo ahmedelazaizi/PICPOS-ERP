@@ -42,6 +42,18 @@ abstract class SyncInterceptor {
   /// and a gated handler / branch-scoped read fails closed.
   static int? currentUserId;
 
+  /// المرحلة ١ / G2 — علَم `roles.isSystemRole` للمستخدم الحالي، يضبطه
+  /// متحكّم المصادقة عند الدخول ويمسحه عند الخروج (نفس نمط
+  /// [currentUserRole] و[currentUserId]).
+  ///
+  /// يحلّ محلّ [isCurrentUserAdmin] في مسار حصر المزامنة تحديداً.
+  /// المطابقة النصّية على اسم الدور **ليست صلاحية**: «مسؤول مبيعات»
+  /// يطابق `contains('مسؤول')` فيُعامَل كأدمن كامل الصلاحية. العلَم يقرأ
+  /// السمة المقصودة من قاعدة البيانات بدل تخمينها من اسم يكتبه المستخدم.
+  ///
+  /// `null` قبل الدخول ⇒ يُعامَل كـ«ليس مدير نظام» (يفشل مقفولاً).
+  static bool? currentUserIsSystemRole;
+
   /// True when the logged-in user has unrestricted branch visibility (admin
   /// or financial manager). Falls back to `false` when no user is set so a
   /// pre-login sync doesn't accidentally pull cross-branch data.

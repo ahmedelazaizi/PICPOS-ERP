@@ -1712,17 +1712,32 @@ class ServerProxy {
     }
   }
 
-  /// Build the `&branch_id=<id>` URL fragment for branch-scoped sync calls.
-  /// Returns an empty string when no scoping should apply (server mode,
-  /// admin user on client, or unpaired client). Centralised so future
-  /// scoped endpoints can reuse the same decision.
+  /// المرحلة ١ / G2 — يبني `&branch_id=<id>` لنداءات المزامنة المحصورة.
+  ///
+  /// **يُرجع `''` (بلا حصر) لمدير النظام وحده**، لأن إعداد البدء يحتاج
+  /// قراءة البيانات الأساسية كاملة قبل ربط الجهاز بفرع.
+  ///
+  /// كان يستعمل [SyncInterceptor.isCurrentUserAdmin] — مطابقة نصّية على
+  /// اسم الدور تمنح «مسؤول مبيعات» صلاحية كاملة. وكان يُرجع `''` أيضاً
+  /// عندما لا يكون الجهاز مربوطاً بفرع، أي **يفشل مفتوحاً**: جهاز غير
+  /// مُعَدّ كان يسحب بيانات الشركة كاملة. كلاهما مُغلق الآن.
   Future<String> _branchScopeQueryParam() async {
-    if (SyncInterceptor.isCurrentUserAdmin) return '';
+    if (SyncInterceptor.currentUserIsSystemRole == true) return '';
+
     final prefs = await SharedPreferences.getInstance();
     final id = prefs.getInt('client_branch_id');
-    if (id == null) return '';
+    if (id == null) {
+      // يفشل مقفولاً. السنتينل يطابق `ApiHandler._kNoBranchAccess` فيقصّ
+      // الخادمُ الصفوفَ إلى صفر بدل أن يعيدها كلها.
+      return '&branch_id=-1';
+    }
     return '&branch_id=$id';
   }
+
+  /// منفذ اختبار لـ[_branchScopeQueryParam]. المنطق أعلاه هو حدّ أمني،
+  /// واختباره عبر نداء HTTP كامل يخلط فشله بفشل الشبكة.
+  @visibleForTesting
+  Future<String> debugBranchScopeQueryParam() => _branchScopeQueryParam();
 
   /// Returns the authoritative server clock (epoch seconds) from
   /// `/api/sync/time`. Falls back to `null` on failure — callers should

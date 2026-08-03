@@ -344,6 +344,10 @@ class AuthNotifier extends Notifier<AuthState> {
     // should carry a `branch_id` filter. Admins skip the filter and keep
     // cross-branch visibility on a paired client device.
     SyncInterceptor.currentUserRole = userWithRole.role?.name;
+    // المرحلة ١ / G2 — العلَم هو ما يقرأه حصر المزامنة فعلاً. الاسم أعلاه
+    // بقي لمستدعين آخرين، لكنه لا يصلح قراراً أمنياً: «مسؤول مبيعات» كان
+    // يطابق `contains('مسؤول')`. نُنشر السمة من قاعدة البيانات نفسها.
+    SyncInterceptor.currentUserIsSystemRole = userWithRole.role?.isSystemRole;
     // Spec 060 Phase 2 — publish userId so ServerProxy can attach it as
     // X-User-Id on every outbound API call. Drives server-side per-user
     // permission enforcement when the `server_per_user_perms_enabled`
@@ -407,6 +411,9 @@ class AuthNotifier extends Notifier<AuthState> {
     // Elevation grants admin powers temporarily — mirror it into the sync
     // layer so cross-branch reads are unblocked while elevated.
     SyncInterceptor.currentUserRole = adminUser.role?.name;
+    // المرحلة ١ / G2 — الترقية تعمل بهوية الأدمن، فلازم العلَم ينتقل معها؛
+    // لو فضل على قيمة المستخدم الأصلي كان الأدمن المُرقّي هيفضل محصوراً.
+    SyncInterceptor.currentUserIsSystemRole = adminUser.role?.isSystemRole;
     // Spec 060 Phase 2 — mirror the admin's userId so any server call made
     // while elevated is gated against the admin's permissions, not the
     // underlying user's (matches what role-elevation already does for
@@ -424,6 +431,10 @@ class AuthNotifier extends Notifier<AuthState> {
     // Restore the underlying user's role so post-elevation pulls re-apply
     // the branch filter.
     SyncInterceptor.currentUserRole = state.userWithRole?.role?.name;
+    // المرحلة ١ / G2 — إسقاط الترقية لازم يسحب العلَم كمان، وإلا فضل إعفاء
+    // الأدمن ساري على المستخدم الأصلي بعد انتهاء الترقية.
+    SyncInterceptor.currentUserIsSystemRole =
+        state.userWithRole?.role?.isSystemRole;
     // Spec 060 Phase 2 — restore the underlying user's id symmetrically.
     SyncInterceptor.currentUserId = state.userWithRole?.user.id;
   }
@@ -449,6 +460,9 @@ class AuthNotifier extends Notifier<AuthState> {
     _actorIsUnrestricted = false;
     state = const AuthState();
     SyncInterceptor.currentUserRole = null;
+    // المرحلة ١ / G2 — المسح إلزامي: علَم جلسة سابقة باقٍ بعد الخروج معناه
+    // مستخدم تالٍ يرث إعفاء مدير النظام من حصر الفروع.
+    SyncInterceptor.currentUserIsSystemRole = null;
     SyncInterceptor.currentUserId = null;
     // Spec 151 (P1-8) — drop all cached session tokens + in-memory credential
     // proofs so the next user that signs in starts with no inherited identity.
