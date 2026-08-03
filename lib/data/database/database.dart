@@ -1844,9 +1844,14 @@ class AppDatabase extends _$AppDatabase {
   /// prefix. The SEQUENCE counter stays locked to the canonical prefix
   /// so renaming the display prefix never restarts the counter.
   ///
-  /// Output format: `<DISPLAY><YYYY><6-digit>` (e.g. `POS2026000001`,
-  /// `SINV2026000042`). Unified across every document type so the printed
-  /// invoices look consistent and the database UNIQUE index is safe.
+  /// Output format: `<DISPLAY>-<counter>` (e.g. `POS-1`, `SINV-42`) since the
+  /// 2026-04 product change. Unified across every document type so the printed
+  /// invoices look consistent.
+  ///
+  /// On PostgreSQL the counter row is locked with `FOR UPDATE` before it is
+  /// read — without that, concurrent callers on separate connections issue
+  /// duplicate numbers, and there is no UNIQUE index on `invoice_number` to
+  /// catch them.
   Future<String> generateInvoiceNumber(String prefix) async {
     // 066 (D5-001) — defensive guard. The counter advance and the dependent
     // voucher insert MUST be atomic; Drift makes a nested transaction() into
@@ -1892,6 +1897,30 @@ class AppDatabase extends _$AppDatabase {
             }
           }
         }
+      }
+
+      // PostgreSQL: take the row lock BEFORE reading the counter.
+      //
+      // The read-modify-write below is only atomic if nobody else can read the
+      // same `next_value` in between. On SQLite that is free — the global write
+      // lock serialises the whole transaction. On PostgreSQL under READ
+      // COMMITTED it is not: two connections both read N, both compute N, and
+      // the second UPDATE simply blocks until the first commits and then writes
+      // the same N+1. Both callers walk away holding document number N.
+      //
+      // Measured on a live PG with two connections: 16 allocations produced 8
+      // distinct numbers — a 100% collision rate on every concurrent pair, not
+      // an intermittent race. And nothing catches it downstream: there is no
+      // UNIQUE index on `invoice_number` (see the note where the number is
+      // returned).
+      //
+      // `FOR UPDATE` makes the second reader wait for the first to commit, so
+      // it reads N+1 and the sequence advances correctly.
+      if (_isPostgres) {
+        await customStatement(
+          'SELECT 1 FROM document_sequences WHERE prefix = ? FOR UPDATE',
+          [normalizedPrefix],
+        );
       }
 
       // Counter lives on the canonical prefix so a display-prefix change
@@ -1942,9 +1971,17 @@ class AppDatabase extends _$AppDatabase {
 
       // Simplified format: `<DISPLAY>-<counter>` (e.g. `POS-1`, `SINV-42`).
       // Per product request 2026-04: drop the year + 6-digit zero-pad. Counter
-      // is unbounded and human-readable. Uniqueness is still guaranteed by the
-      // canonical-prefix sequence in DocumentSequences + the UNIQUE index on
-      // invoice_number.
+      // is unbounded and human-readable.
+      //
+      // NOTE: this used to claim uniqueness was "guaranteed by the sequence
+      // plus the UNIQUE index on invoice_number". There is no such index, on
+      // either backend — `SalesInvoices.invoiceNumber` and
+      // `PurchaseInvoices.invoiceNumber` are plain `text().withLength(max: 50)`
+      // and the partial unique index was deliberately deferred because customer
+      // databases may already hold duplicates (see
+      // client_issue_m4_duplicate_invoice_no_test.dart). The sequence is the
+      // ONLY guarantee, which is why the `FOR UPDATE` lock above is load-bearing
+      // rather than defensive.
       return '$displayPrefix-$nextNumber';
     });
   }
