@@ -604,7 +604,13 @@ git commit -m "fix(branch-scope): حصر cost_centers بالاشتقاق الع�
 **Files:**
 - Modify: `lib/data/database/sync_interceptor.dart:44-56`
 - Modify: `lib/services/server_proxy.dart:1717-1724`
-- Test: `test/integration_pg/client_branch_scope_g2_pg_test.dart` (Create)
+- Test: `test/unit/client_branch_scope_g2_test.dart` (Create)
+
+> **لماذا `test/unit` لا `test/integration_pg`:** المنطق المُختبَر هنا يمسّ
+> `SharedPreferences` وحقول `SyncInterceptor` الساكنة فقط — **لا قاعدة
+> بيانات إطلاقاً**. وضعه في سويّة PG كان سيستدعي `bootPgTestSchema()` الذي
+> ينفّذ `DROP SCHEMA public CASCADE` بلا أي حاجة إليه: إبطاء ومخاطرة بلا
+> مقابل.
 
 **Interfaces:**
 - Consumes: `SyncInterceptor.currentUserId` (`sync_interceptor.dart:44`)
@@ -627,29 +633,22 @@ git commit -m "fix(branch-scope): حصر cost_centers بالاشتقاق الع�
 
 - [ ] **Step 1: اكتب الاختبار الفاشل**
 
-Create `test/integration_pg/client_branch_scope_g2_pg_test.dart`:
+Create `test/unit/client_branch_scope_g2_test.dart`:
 
 ```dart
 // المرحلة ١ / G2 — دخول «أدمن» على جهاز عميل كان يزيل `branch_id` من كل
 // عمليات السحب. المطابقة النصّية على اسم الدور ليست صلاحية.
-@Tags(['pg'])
-library;
+//
+// بلا قاعدة بيانات: المسار المُختبَر يقرأ `SharedPreferences` وحقول
+// `SyncInterceptor` الساكنة فقط.
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ural_erp/data/database/sync_interceptor.dart';
 import 'package:ural_erp/services/server_proxy.dart';
 
-import '_support/pg_fixture.dart';
-
 void main() {
-  late PgTestFixture fx;
-
-  setUpAll(() async {
-    fx = await bootPgTestSchema();
-  });
-
-  tearDownAll(() async => fx.tearDown());
+  TestWidgetsFlutterBinding.ensureInitialized(); // لازم لقناة SharedPreferences
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({'client_branch_id': 7});
@@ -709,13 +708,18 @@ void main() {
 - [ ] **Step 2: شغّل وتأكّد أنه أحمر**
 
 ```bash
-PG_TEST_DSN="postgres://postgres:<pw>@127.0.0.1:5432/picpos" flutter test test/integration_pg/client_branch_scope_g2_pg_test.dart --tags pg --run-skipped --concurrency=1
+flutter test test/unit/client_branch_scope_g2_test.dart --concurrency=1
 ```
 
 المتوقَّع: فشل تصريف على `currentUserIsSystemRole` و
 `debugBranchScopeQueryParam` — كلاهما غير موجود بعد. **هذا أحمر مقبول
 للخطوة الأولى فقط**؛ بعد Step 3 يجب أن يصير الأحمر **تأكيدياً** (`''` بدل
 `'&branch_id=7'`) لا فشل تصريف. لا تتجاوز حتى ترى الشكل الثاني.
+
+⚠️ لو `ServerProxy.instance` احتاج تهيئة شبكة أو تعذّر إنشاؤه في اختبار
+وحدة، اجعل `debugBranchScopeQueryParam` **ساكنة** أو استدعِ المنطق عبر
+نسخة مُنشأة مباشرةً. لا تُرجِع الاختبار إلى سويّة PG — لا حاجة له بقاعدة
+بيانات، وذلك يعيد إدخال `DROP SCHEMA` بلا مقابل.
 
 - [ ] **Step 3: أضف العلَم إلى `SyncInterceptor`**
 
@@ -792,25 +796,31 @@ grep -rn "SyncInterceptor.currentUserRole = " lib/
 
 - [ ] **Step 7: تحقّق إزالة الإصلاح**
 
+
 أعِد `if (SyncInterceptor.isCurrentUserAdmin) return '';` مؤقتاً مكان السطر
 الأول، وشغّل. **يجب أن يحمرّ اختبارا «مسؤول مبيعات» و«مدير مالي».** إن بقيا
 أخضرين فالاختبار بلا أسنان — أصلحه قبل المتابعة. أعِد الإصلاح بعدها.
 
 - [ ] **Step 8: السويّة الكاملة + التحليل**
 
-المتوقَّع: `integration_pg` **٢٩ ناجح · صفر فاشل**؛
-`flutter analyze lib test` **٦ `info`**.
+```bash
+flutter test test/unit test/data test/structural test/services --concurrency=1
+flutter analyze lib test
+```
+
+المتوقَّع: **٢٥٢٩ ناجح** (٢٥٢٥ + ٤ جديدة) · صفر فاشل ·
+`flutter analyze lib test` **٦ `info`**. سويّة PG **لم تتغيّر — ٢٥**.
 
 - [ ] **Step 9: كوميت**
 
 ```bash
-git add lib/data/database/sync_interceptor.dart lib/services/server_proxy.dart test/integration_pg/client_branch_scope_g2_pg_test.dart
+git add lib/data/database/sync_interceptor.dart lib/services/server_proxy.dart test/unit/client_branch_scope_g2_test.dart
 git commit -m "fix(branch-scope): إغلاق تجاوز الأدمن على جهاز العميل (G2)
 
 المطابقة النصّية على اسم الدور استُبدلت بعلَم roles.isSystemRole: «مسؤول
 مبيعات» كان يطابق contains('مسؤول') فيسحب بلا قيد. وجهاز بلا
 client_branch_id كان يفشل مفتوحاً — صار يفشل مقفولاً بسنتينل -1.
-سويّة PG: ٢٥ ⇒ ٢٩ ناجح · صفر فاشل."
+اختبارات الوحدة: ٢٥٢٥ ⇒ ٢٥٢٩ ناجح · صفر فاشل."
 ```
 
 ---
@@ -1027,7 +1037,10 @@ flutter test test/integration --concurrency=1
 flutter analyze lib test
 ```
 
-المتوقَّع: **٢٥٢٧** (٢٥٢٥ + ٢ جديدة) · **٦٤١** · **٦ `info`**.
+المتوقَّع: **٢٥٣١** (٢٥٢٩ بعد المهمة ٤ + ٢ جديدة) · **٦٤١** · **٦ `info`**.
+
+> لو نُفِّذت المهمة ٥ قبل المهمة ٤ (فهي مستقلّة تماماً) فالمتوقَّع **٢٥٢٧**،
+> والمهمة ٤ ترفعه إلى ٢٥٣١. المهمّ أن يكون الفارق **+٢ بالضبط**.
 
 - [ ] **Step 8: كوميت**
 
@@ -1039,7 +1052,7 @@ _scopedTables فيها ١٠ جداول مقابل ٥ في خريطة الخاد�
 عمود branch_id في drift. wipeForeignBranchData يعمل rethrow داخل
 transaction عند ثالث مدخل ⇒ الزر في شاشة الإعدادات لم يحذف صفاً قط.
 والدراي-رن كان يبلع الفشل فيُظهر عدداً ناقصاً يسبق الحذف.
-اختبارات الوحدة: ٢٥٢٥ ⇒ ٢٥٢٧ ناجح · صفر فاشل."
+اختبارات الوحدة: +٢ ناجح · صفر فاشل."
 ```
 
 ---
@@ -1133,7 +1146,7 @@ transaction عند ثالث مدخل ⇒ الزر في شاشة الإعدادا
 
 - [ ] **Step 4: شغّل وتأكّد أنه أخضر**
 
-المتوقَّع: **٧ ناجح · صفر فاشل** في هذا الملف؛ `integration_pg` **٣٠**.
+المتوقَّع: **٧ ناجح · صفر فاشل** في هذا الملف؛ `integration_pg` **٢٦**.
 
 - [ ] **Step 5: وثّق البنود المفتوحة**
 
