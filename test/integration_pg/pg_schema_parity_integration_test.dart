@@ -211,11 +211,17 @@ void main() {
           reason: 'Second consecutive boot on a clean schema must not '
               'emit any HEAL breadcrumbs — pass must be idempotent');
 
+      // `DiagnosticLogger.log` formats as `[$stamp] [$tag] $message`, so the
+      // tag and the message are separated by `] `. The old matcher looked for
+      // `'PG-PARITY-OK healed=0'` as one substring, which can never occur —
+      // the assertion was unsatisfiable regardless of product behaviour. The
+      // pass does emit `[PG-PARITY-OK] healed=0 drift=143 duration=490ms`.
       final okLines = DiagnosticLogger.testLog
-          .where((l) => l.contains('PG-PARITY-OK healed=0'))
+          .where((l) => l.contains('[PG-PARITY-OK] healed=0'))
           .toList();
       expect(okLines, isNotEmpty,
-          reason: 'OK aggregate must report healed=0');
+          reason: 'OK aggregate must report healed=0. Captured lines: '
+              '${DiagnosticLogger.testLog.where((l) => l.contains('PG-PARITY-OK')).toList()}');
     });
   });
 
@@ -234,6 +240,17 @@ void main() {
           "GRANT USAGE ON SCHEMA public TO uralerp_readonly");
       await _execAdmin(config,
           "GRANT SELECT ON ALL TABLES IN SCHEMA public TO uralerp_readonly");
+      // `bootPgTestSchema` runs `GRANT ALL ON SCHEMA public TO public` when it
+      // recreates the schema, and CREATE is part of ALL. Every role inherits
+      // PUBLIC, so without this revoke the "restricted" user can create tables
+      // freely — measured: has_schema_privilege(...,'CREATE') = true and the
+      // CREATE actually succeeds. The parity pass then heals normally, nothing
+      // throws, and the test fails asserting on an exception it made
+      // impossible. Revoke from PUBLIC and from the role itself, so the only
+      // privileges left are the SELECT grants above.
+      await _execAdmin(config, 'REVOKE CREATE ON SCHEMA public FROM PUBLIC');
+      await _execAdmin(
+          config, 'REVOKE CREATE ON SCHEMA public FROM uralerp_readonly');
 
       // Drop a table that the restricted user CANNOT recreate.
       await _execAdmin(
@@ -257,8 +274,36 @@ void main() {
         try {
           await db.close();
         } catch (_) {}
-        // cleanup user
-        await _execAdmin(config, "DROP USER IF EXISTS uralerp_readonly");
+        // Put CREATE back on PUBLIC. Roles are cluster-level, but so is the
+        // damage of leaving `public` non-creatable: every later test file that
+        // reuses this database would fail to build its schema.
+        //
+        // Then drop the role properly. A bare `DROP USER` fails with
+        // `2BP01 role ... cannot be dropped because some objects depend on it`
+        // once the role holds any grant — which the GRANTs above create — so
+        // the original teardown leaked `uralerp_readonly` into the cluster on
+        // every single run. `DROP OWNED BY` alone is NOT enough either: it does
+        // not clear the database-level `GRANT CONNECT`, which is exactly what
+        // the 2BP01 detail line points at ("privileges for database ..."). The
+        // grants have to be revoked explicitly first.
+        //
+        // Each step is independent so one failure cannot skip the rest and
+        // re-leak the role.
+        for (final sql in [
+          'GRANT CREATE ON SCHEMA public TO PUBLIC',
+          'REVOKE ALL ON ALL TABLES IN SCHEMA public FROM uralerp_readonly',
+          'REVOKE ALL ON SCHEMA public FROM uralerp_readonly',
+          'REVOKE ALL ON DATABASE ${config.database} FROM uralerp_readonly',
+          'DROP OWNED BY uralerp_readonly CASCADE',
+          'DROP USER IF EXISTS uralerp_readonly',
+        ]) {
+          try {
+            await _execAdmin(config, sql);
+          } catch (e) {
+            // ignore: avoid_print
+            print('[cleanup] "$sql" failed: $e');
+          }
+        }
       });
 
       Object? caught;
