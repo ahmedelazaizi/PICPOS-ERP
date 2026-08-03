@@ -278,6 +278,10 @@ class _BranchScopeAdminDialogState
   }
 
   Future<void> _scanForeign() async {
+    // `dryRunForeignBranchCounts` بقى بيرمي بدل ما يبلع فشل جدول، فتصفير
+    // `_foreignCounts` **قبل** الفحص شرط سلامة مش تجميل: لو الفحص رمى،
+    // القيمة تفضل `null` فالواجهة ما تعرضش «✓ لا توجد صفوف» ولا تفعّل زر
+    // الحذف بعدد ناقص — بيظهر توست خطأ بس. متخليهاش تحتفظ بعدّ قديم.
     setState(() {
       _scanningForeign = true;
       _foreignCounts = null;

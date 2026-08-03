@@ -26,21 +26,29 @@ import '../database.dart';
 /// if the server filters a table, the cleanup helper will also remove
 /// any pre-filter leaks for it.
 extension BranchScopeCleanupExtension on AppDatabase {
-  /// Map of table → branch column for rows that should be scoped per
-  /// branch. Mirrors `api_handler._syncPullBranchColumn` exactly. Tables
-  /// without a direct branch column (sales_invoice_items, journal_lines,
-  /// safe_transactions) are intentionally absent — they are scoped via
-  /// their parent record, and removing the parent cascades through the
-  /// FK chain on its own.
+  /// خريطة الجدول → عمود الفرع. **يجب أن تطابق
+  /// `api_handler._syncPullBranchColumn` بالضبط** — أي جدول يقصّه الخادم
+  /// يُنظَّف هنا أيضاً.
+  ///
+  /// كانت تحوي `sales_orders` · `purchase_orders` · `held_orders` ·
+  /// `quotations` · `commercial_papers` بناءً على ترحيل مُخطَّط لم يحدث
+  /// قط: هذه الجداول **بلا `branchId` في drift**
+  /// (sales_purchase_tables.dart:286,329,380 · quotation_tables.dart:6 ·
+  /// commercial_finance_tables.dart:11). الاستعلام عليها يرمي، و
+  /// [wipeForeignBranchData] يعمل rethrow داخل `transaction` ⇒ **ارتداد
+  /// دائم**؛ الزر في `branch_scope_admin_dialog.dart:346` لم يحذف صفاً قط.
+  ///
+  /// الجداول بلا عمود فرع (`sales_invoice_items`, `journal_lines`,
+  /// `safe_transactions`) غائبة عمداً — تُحصَر عبر سجلّها الأب ويتتالى
+  /// حذفها عبر سلسلة الـFK.
+  ///
+  /// الجداول الأساسية التي يقصّها الخادم (`warehouses`, `safes`) غائبة
+  /// عمداً كذلك: حذف مخزن محلياً قد يكسر FK لصفوف تعاملية تشير إليه —
+  /// قرار منفصل خارج نطاق المرحلة ١.
   static const _scopedTables = <String, String>{
     'sales_invoices': 'branch_id',
     'purchase_invoices': 'branch_id',
-    'sales_orders': 'branch_id',
-    'purchase_orders': 'branch_id',
-    'held_orders': 'branch_id',
-    'quotations': 'branch_id',
     'journal_entries': 'branch_id',
-    'commercial_papers': 'branch_id',
     'stock_movements': 'branch_id',
     'activity_logs': 'branch_id',
   };
@@ -72,7 +80,11 @@ extension BranchScopeCleanupExtension on AppDatabase {
         final count = rows.isEmpty ? 0 : (rows.first.data['c'] as int? ?? 0);
         if (count > 0) result[table] = count;
       } catch (e) {
+        // لا تبلع. عدّ ناقص هنا يسبق **حذفاً** يوافق عليه المستخدم بناءً
+        // عليه، فالصمت أخطر من الفشل: الشاشة تقول «لا صفوف غريبة» بينما
+        // الجدول لم يُستعلَم أصلاً.
         debugPrint('[BRANCH-CLEANUP-DRYRUN] $table failed: $e');
+        rethrow;
       }
     }
     if (result.isEmpty) {
