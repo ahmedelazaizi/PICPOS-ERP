@@ -1985,6 +1985,40 @@ class ApiHandler {
     return ids.isEmpty ? const [_kNoBranchAccess] : ids;
   }
 
+  /// المرحلة ١ / G1 — مراكز تكلفة الفرع، مشتقّة **عكسياً**.
+  ///
+  /// `CostCenters` لا تملك `branchId` (accounting_tables.dart:107) وإضافته
+  /// تتطلّب `build_runner` المتجمّد في بيئة الوكيل. لكن الربط العكسي قائم:
+  /// الفرع ومخازنه وخزائنه يشير كلٌّ منها إلى مركز تكلفته. هذا نفس ما
+  /// يحسبه `clientScopeProvider:47-56` على الواجهة.
+  ///
+  /// تُعيد مجموعة فارغة عندما لا يرتبط الفرع بأي مركز — والمستدعي يترجم
+  /// ذلك إلى سنتينل «صفر صفوف»، لا إلى «بلا حصر».
+  Future<List<int>> _resolveBranchCostCenterIds(int branchId) async {
+    final ids = <int>{};
+
+    final branch = await (_db.select(_db.branches)
+          ..where((b) => b.id.equals(branchId)))
+        .getSingleOrNull();
+    if (branch?.costCenterId != null) ids.add(branch!.costCenterId!);
+
+    final warehouses = await (_db.select(_db.warehouses)
+          ..where((w) => w.branchId.equals(branchId)))
+        .get();
+    for (final w in warehouses) {
+      if (w.costCenterId != null) ids.add(w.costCenterId!);
+    }
+
+    final safes = await (_db.select(_db.safes)
+          ..where((s) => s.branchId.equals(branchId)))
+        .get();
+    for (final s in safes) {
+      if (s.costCenterId != null) ids.add(s.costCenterId!);
+    }
+
+    return ids.toList();
+  }
+
   /// Resolve branch → user IDs that have access to this branch.
   Future<List<int>> _resolveScopedUserIds(int branchId) async {
     // Spec 151 residual #2 (D-06 fail-open): the -1 sentinel means "no branch
@@ -2216,6 +2250,14 @@ class ApiHandler {
       // so the cursor predicate can join it without string surgery).
       final bool branchFilterActive = branchId != null && branchCol != null;
 
+      // المرحلة ١ / G1 — `cost_centers` يُحصَر بمجموعة مشتقّة لا بعمود،
+      // فلا يمكن التعبير عنه بمدخل في `_syncPullBranchColumn`.
+      final bool costCenterScopeActive =
+          table == 'cost_centers' && branchId != null;
+      final List<int> scopedCostCenterIds = costCenterScopeActive
+          ? await _resolveBranchCostCenterIds(branchId)
+          : const <int>[];
+
       // ── Page size (Spec: bounded delta pull) ────────────────────────────
       // This query used to run with NO LIMIT at all. A table with a large
       // backlog — or any `since=null` first pull — materialised the ENTIRE
@@ -2259,6 +2301,19 @@ class ApiHandler {
       if (branchFilterActive) {
         conditions.add('($branchCol = ? OR $branchCol IS NULL)');
         vars.add(Variable.withInt(branchId));
+      }
+      if (costCenterScopeActive) {
+        if (scopedCostCenterIds.isEmpty) {
+          // فرع بلا أي ارتباط. مجموعة فارغة يجب ألّا تنقلب إلى «بلا
+          // حصر» — نفس فئة الفشل المفتوح التي أغلقها `_kNoBranchAccess`.
+          conditions.add('id = ?');
+          vars.add(Variable.withInt(_kNoBranchAccess));
+        } else {
+          final placeholders =
+              List.filled(scopedCostCenterIds.length, '?').join(',');
+          conditions.add('id IN ($placeholders)');
+          vars.addAll(scopedCostCenterIds.map(Variable.withInt));
+        }
       }
       if (cursorActive) {
         conditions.add('(COALESCE(last_modified_at, 0) > ? OR '

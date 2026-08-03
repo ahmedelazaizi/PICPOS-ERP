@@ -166,5 +166,64 @@ void main() {
         reason: 'قائمة الفروع كاملة تصل لجهاز مربوط بفرع واحد',
       );
     });
+
+    test('cost_centers: مشتقّة عكسياً من الفرع ومخازنه وخزائنه', () async {
+      await seedScopedUser(14, 1);
+
+      // ⚠️ `CostCenters.code` مطلوب وبلا قيمة افتراضية
+      // (accounting_tables.dart:109) — إغفاله يفشل بـNOT NULL لا بمنطق
+      // الحصر، فيبدو الاختبار أحمر للسبب الخطأ.
+      await fx.db.customStatement(
+        'INSERT INTO cost_centers (id, code, name) VALUES '
+        "(101,'CC101','مركز الفرع أ'),(102,'CC102','مركز مخزن أ'),"
+        "(103,'CC103','مركز خزنة أ'),(201,'CC201','مركز الفرع ب') "
+        'ON CONFLICT (id) DO NOTHING',
+      );
+      await fx.db.customStatement(
+        'UPDATE branches SET cost_center_id = 101 WHERE id = 1',
+      );
+      await fx.db.customStatement(
+        'UPDATE branches SET cost_center_id = 201 WHERE id = 2',
+      );
+      await fx.db.into(fx.db.warehouses).insert(
+            WarehousesCompanion.insert(name: 'مخزن أ').copyWith(
+              branchId: const d.Value(1),
+              costCenterId: const d.Value(102),
+            ),
+          );
+      await fx.db.into(fx.db.safes).insert(
+            SafesCompanion.insert(name: 'خزنة أ').copyWith(
+              branchId: const d.Value(1),
+              costCenterId: const d.Value(103),
+            ),
+          );
+
+      final rows = await pull('cost_centers', branchId: 1, userId: 14);
+      final ids = rows.map((r) => r['id']).toSet();
+
+      expect(ids, containsAll(<int>[101, 102, 103]));
+      expect(
+        ids,
+        isNot(contains(201)),
+        reason: 'مركز تكلفة الفرع ٢ تسرّب — الاشتقاق العكسي لا يعمل',
+      );
+    });
+
+    test('cost_centers: فرع بلا أي ارتباط ⇒ صفر صفوف لا كل الصفوف', () async {
+      await seedScopedUser(15, 1);
+      await fx.db.customStatement(
+        "INSERT INTO cost_centers (id, code, name) VALUES "
+        "(301,'CC301','مركز غريب') ON CONFLICT (id) DO NOTHING",
+      );
+
+      final rows = await pull('cost_centers', branchId: 1, userId: 15);
+
+      expect(
+        rows,
+        isEmpty,
+        reason: 'مجموعة فارغة انقلبت إلى «بلا حصر» — نفس فئة الفشل المفتوح '
+            'التي أغلقها سنتينل _kNoBranchAccess',
+      );
+    });
   });
 }
