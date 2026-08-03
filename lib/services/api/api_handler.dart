@@ -1609,9 +1609,26 @@ class ApiHandler {
                   ..where((u) => u.roleId.isIn(systemRoleIds)))
                 .get();
 
+        // The bootstrap admin is NOT guaranteed to live at id=1. Since the
+        // 2026-05-10 corrective patch, `_ensureBootstrapAdminOnce` inserts a
+        // restored admin without forcing an id — forcing 1 is what
+        // drift_postgres rejected against an already-advanced sequence. So a
+        // literal `1` here is not the guarantee it looks like: an admin at
+        // id≠1 that has no userBranchAccess row for this branch and whose role
+        // is not flagged isSystemRole falls out of the set entirely, which is
+        // Feature 011 / Issue 9 — the exact bug this materialize-set exists to
+        // prevent. Resolve the row by username so the guarantee follows the
+        // admin wherever it actually is, and keep the literal as a fallback
+        // for the window where no admin row exists at all.
+        final bootstrapAdmin = await (_db.select(_db.users)
+              ..where((u) => u.username.equals('admin'))
+              ..limit(1))
+            .getSingleOrNull();
+
         final allowedIds = <int>{
           ...accessibleUserIds.map((a) => a.userId),
           ...usersInSystemRoles.map((u) => u.id),
+          if (bootstrapAdmin != null) bootstrapAdmin.id,
           1, // bootstrap admin — always included (Feature 011 / Issue 9)
         };
 
