@@ -2110,6 +2110,18 @@ class ApiHandler {
     'journal_entries': 'branch_id',
     'stock_movements': 'branch_id',
     'activity_logs': 'branch_id',
+    // المرحلة ١ / G1 — البيانات الأساسية. بلا هذين المدخلين كان
+    // `/api/sync/pull` يعيد كل الصفوف، وDeltaPull يعيد ملء قاعدة العميل
+    // ببيانات الشركة كل دورة، مُلغياً حصر المزامنة الكاملة الذي يعمل
+    // بشكل صحيح في `sync_service.dart:594-601`.
+    //
+    // ⚠️ العمود موجود ومتحقَّق منه في drift — `Warehouses.branchId`
+    // (inventory_tables.dart:48) و`Safes.branchId`
+    // (treasury_settings_tables.dart:16). لا تُضف جدولاً هنا بلا التحقّق:
+    // عمود مفقود يقتل DeltaPull كل دقيقة بـ`column "branch_id" does not
+    // exist` متنكّراً في صورة بطء الشاشات (حادثة 2026-05-05 أعلاه).
+    'warehouses': 'branch_id',
+    'safes': 'branch_id',
   };
 
   /// Spec 151 P1-8b — TRANSACTIONAL delta-pull tables (Tier 3 + Tier 4 +
