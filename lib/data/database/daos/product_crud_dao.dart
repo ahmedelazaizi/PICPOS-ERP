@@ -253,11 +253,14 @@ extension ProductCrudDao on AppDatabase {
 
   /// Get a single product by ID (PERF: cached for barcode scan flow)
   Future<Product?> getProductById(int id) async {
-    // Check cache first
-    if (_productByIdCache.containsKey(id)) return _productByIdCache[id];
+    // Check cache first — but never inside a transaction. See
+    // AppDatabase.isInTransaction for why both directions are unsafe there.
+    if (!isInTransaction && _productByIdCache.containsKey(id)) {
+      return _productByIdCache[id];
+    }
 
     final product = await (select(products)..where((p) => p.id.equals(id))).getSingleOrNull();
-    if (product != null) {
+    if (product != null && !isInTransaction) {
       // LRU eviction at 200 entries
       if (_productByIdCache.length > 200) {
         _productByIdCache.remove(_productByIdCache.keys.first);
@@ -273,11 +276,17 @@ extension ProductCrudDao on AppDatabase {
     if (ids.isEmpty) return const {};
     final unique = ids.toSet().toList();
     final productList = await (select(products)..where((p) => p.id.isIn(unique))).get();
-    for (final p in productList) {
-      if (_productByIdCache.length > 200) {
-        _productByIdCache.remove(_productByIdCache.keys.first);
+    // Same transaction rule as getProductById. This reader is the worse
+    // offender of the two: it never consults the cache, only WRITES to it, so
+    // inside the purchase-invoice loop it poisoned every line of the invoice
+    // at once with mid-transaction stock and cost.
+    if (!isInTransaction) {
+      for (final p in productList) {
+        if (_productByIdCache.length > 200) {
+          _productByIdCache.remove(_productByIdCache.keys.first);
+        }
+        _productByIdCache[p.id] = p;
       }
-      _productByIdCache[p.id] = p;
     }
     return {for (final p in productList) p.id: p};
   }
@@ -648,6 +657,15 @@ extension ProductCrudDao on AppDatabase {
         updatedAt: Value(DateTime.now()),
       ),
     );
+    // Without this the write lands on disk while every cached reader keeps
+    // returning the old quantity. Its neighbour adjustProductStockGlobal has
+    // always invalidated for exactly this reason — the omission here was an
+    // oversight, and a costly one: this method is what
+    // `reconciliation_service` calls (so the repair tool's own correction was
+    // invisible to readers) and what `inventory_balance_sync_strategy` calls
+    // on every client balance sync (silently undoing the "zero stock in POS"
+    // fix for any product sitting in the cache).
+    invalidateProductCache(productId);
   }
 
   /// Atomically adjust product stock (prevents race conditions)

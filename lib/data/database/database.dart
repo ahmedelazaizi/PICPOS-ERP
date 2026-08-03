@@ -537,6 +537,43 @@ class AppDatabase extends _$AppDatabase {
   /// used by DAOs that need to generate database-agnostic raw SQL).
   bool get isPostgres => _isPostgres;
 
+  /// Open-transaction depth. Nested transactions (savepoints) push it further,
+  /// so it only returns to zero once the OUTERMOST one has settled.
+  int _txDepth = 0;
+
+  /// True while any transaction is open on this database.
+  ///
+  /// Read caches must not be populated or served while this is true. A read
+  /// taken mid-transaction sees state that may never be committed, and the
+  /// product cache is process-global and has no notion of rollback — so one
+  /// such read outlives the transaction and is handed to every later reader.
+  /// That is not merely a stale display: `updateProductWAC` computes the
+  /// weighted average from a cached `currentStock`/`costPrice` pair and WRITES
+  /// the result, turning a poisoned read into stored cost.
+  ///
+  /// Bypassing reads as well as writes is deliberate — inside a transaction a
+  /// caller must see its OWN uncommitted writes, which a pre-transaction
+  /// cache entry would hide.
+  ///
+  /// (drift knows this internally via `resolvedEngine is Transaction`, but
+  /// that member is `@internal`; this counter is the public-API equivalent.)
+  bool get isInTransaction => _txDepth > 0;
+
+  @override
+  Future<T> transaction<T>(
+    Future<T> Function() action, {
+    bool requireNew = false,
+  }) {
+    return super.transaction(() async {
+      _txDepth++;
+      try {
+        return await action();
+      } finally {
+        _txDepth--;
+      }
+    }, requireNew: requireNew);
+  }
+
   /// Lazy accessor for the Audit Dashboard DAO
   late final AuditDashboardDao auditDashboardDao = AuditDashboardDao(this);
 
