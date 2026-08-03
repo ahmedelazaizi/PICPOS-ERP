@@ -405,9 +405,19 @@ extension PermissionsDao on AppDatabase {
     }
 
     // Auto-assign new permissions to the admin role (مدير النظام)
-    final adminRole = await (select(
-      roles,
-    )..where((r) => r.name.equals('مدير النظام'))).getSingleOrNull();
+    //
+    // `roles` has NO unique constraint on `name` (only PK(id) + UNIQUE(global_id)),
+    // so duplicate role names are a legal state on both dialects — and the seeder
+    // can produce them, because it mints a fresh globalId per call so its
+    // `insertOrIgnore` has no constraint to conflict against. Without `limit(1)`
+    // this is `getSingleOrNull` → `list.single` → StateError, and the caller
+    // swallows it, so new permission codes silently never reach admin.
+    // Ordered by id so the survivor is deterministically the original row.
+    final adminRole = await (select(roles)
+          ..where((r) => r.name.equals('مدير النظام'))
+          ..orderBy([(r) => OrderingTerm.asc(r.id)])
+          ..limit(1))
+        .getSingleOrNull();
     if (adminRole != null) {
       // Build the set of (roleId, permissionId) pairs admin already has so we
       // can skip existing entries explicitly rather than relying on

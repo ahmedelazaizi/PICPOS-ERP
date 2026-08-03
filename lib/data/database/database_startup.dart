@@ -478,8 +478,15 @@ extension DatabaseStartup on AppDatabase {
 
     // Step 4: Ensure admin has correct roleId (repair broken PG seeds)
     try {
+      // limit(1): `roles.name` carries no unique constraint, so duplicate names
+      // are a legal state on both dialects. Bare getSingleOrNull is
+      // `list.single` → StateError, and the catch below swallows it, so the
+      // admin roleId repair would silently never run. Ordered by id so the row
+      // we settle on is deterministically the original.
       final adminRole = await (select(roles)
-            ..where((r) => r.name.equals('مدير النظام')))
+            ..where((r) => r.name.equals('مدير النظام'))
+            ..orderBy([(r) => OrderingTerm.asc(r.id)])
+            ..limit(1))
           .getSingleOrNull();
       if (adminRole != null) {
         final adminUser = await (select(users)
@@ -848,8 +855,13 @@ extension DatabaseStartup on AppDatabase {
   /// Last-resort admin creation when all seeders fail.
   Future<void> _createFallbackAdmin() async {
     try {
+      // limit(1): same class as Step 4 above — `roles.name` is not unique, and
+      // this is the last-resort admin path, so a StateError here leaves the
+      // install with no usable admin at all.
       final adminRole = await (select(roles)
-            ..where((r) => r.name.equals('مدير النظام')))
+            ..where((r) => r.name.equals('مدير النظام'))
+            ..orderBy([(r) => OrderingTerm.asc(r.id)])
+            ..limit(1))
           .getSingleOrNull();
       final salt = SecurityService.generateSalt();
       final hash = SecurityService.hashPassword('admin', salt);
