@@ -462,6 +462,55 @@ void main() async {
       ));
       return; // Stop main() — Fatal app owns the UI now.
     } catch (e) {
+      // A PostgreSQL privilege failure must NOT fall through to the
+      // continue-anyway branch below.
+      //
+      // Measured 2026-08-03: when the DB user lacks DDL rights on `public`,
+      // the open fails with a raw `ServerException 42501` thrown from inside
+      // drift's own migration machinery — *before* `beforeOpen` runs at all
+      // (proven with a positive control: the admin connection produced 151
+      // startup log entries, the restricted one produced zero). So Phase 2d's
+      // parity pass never executes and can never raise the
+      // `PgSchemaParityException` the clause above is waiting for, despite its
+      // doc comment promising exactly that for "DDL permission denied".
+      //
+      // The old behaviour was the worst of both: the raw driver error landed
+      // here, got logged as "continuing", and the app carried on against a
+      // database it could not use — no Fatal screen, no Arabic reason, and a
+      // confusing downstream failure instead. Route it to the same Fatal
+      // screen the parity path uses; the retry button is exactly right here,
+      // because the operator's fix (granting rights) needs no restart.
+      if (isPostgresInsufficientPrivilege(e)) {
+        debugPrint('[STARTUP] ❌ PG insufficient privilege: $e');
+        runApp(FatalSetupErrorApp(
+          result: ReconcileInconsistent(
+            kind: ReconcileFatalKind.pgSchemaParity,
+            reasonCode: ReconcileReasonCode.pgSchemaParity,
+            reasonAr:
+                'فشل فتح قاعدة البيانات. مستخدم PostgreSQL لا يملك صلاحيات '
+                'كافية على مخطط public (إنشاء/تعديل الجداول). امنح المستخدم '
+                'الصلاحيات المطلوبة ثم اضغط إعادة المحاولة.',
+            details: ['insufficient_privilege (42501): $e'],
+            dbMode: NetworkService.instance.mode,
+          ),
+          onRetrySelfHeal: () {
+            debugPrint('[FATAL-SCREEN] retry after privilege grant');
+            unawaited(() async {
+              try {
+                await dbForReconcile.customSelect('SELECT 1').get();
+                debugPrint('[FATAL-SCREEN] retry probe succeeded — '
+                    'restart app to resume normal boot');
+              } catch (err) {
+                debugPrint('[FATAL-SCREEN] retry still failing: $err');
+              }
+            }());
+          },
+          onEnterDevTools: () {
+            debugPrint('[FATAL-SCREEN] user chose: enter developer tools');
+          },
+        ));
+        return; // Stop main() — Fatal app owns the UI now.
+      }
       debugPrint('[STARTUP] ⚠️ reconcileWithDb failed (continuing): $e');
     }
 
@@ -1485,6 +1534,22 @@ class _SetupGate extends ConsumerWidget {
   }
 }
 
+
+/// True when [e] is PostgreSQL's `42501 insufficient_privilege`.
+///
+/// Matched on the SQLSTATE code and the server's message text rather than a
+/// typed check, because the startup path sees this error in more than one
+/// shape: raw `ServerException` from package:postgres when it escapes drift's
+/// migration machinery, and drift-wrapped forms elsewhere. A typed catch would
+/// silently miss whichever shape it wasn't written for.
+///
+/// Deliberately narrow: it must not classify ordinary runtime failures as a
+/// fatal setup error. `42501` is emitted by PostgreSQL only for privilege
+/// denial.
+bool isPostgresInsufficientPrivilege(Object e) {
+  final s = e.toString();
+  return s.contains('42501') || s.contains('permission denied for schema');
+}
 
 // =======================================================================
 // MAIN SCREEN & NAVIGATION -- See app_main_screen.dart

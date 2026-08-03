@@ -34,6 +34,7 @@ import 'package:ural_erp/core/logging/diagnostic_logger.dart';
 import 'package:ural_erp/data/database/connection_io.dart';
 import 'package:ural_erp/data/database/database.dart';
 import 'package:ural_erp/data/database/pg_config.dart';
+import 'package:ural_erp/main.dart' show isPostgresInsufficientPrivilege;
 
 import '_support/pg_fixture.dart';
 
@@ -313,13 +314,36 @@ void main() {
         caught = e;
       }
 
-      expect(caught, isA<PgSchemaParityException>(),
-          reason: 'Restricted user without DDL perms must trigger '
-              'PgSchemaParityException');
-      final pex = caught as PgSchemaParityException;
-      expect(pex.reasonAr, contains('فشل إصلاح المخطط الذاتى'));
-      expect(pex.failedEntities, isNotEmpty);
-      expect(pex.failedEntities.first, contains('category_station_mappings'));
+      // The original expectation here was `isA<PgSchemaParityException>()` with
+      // `failedEntities.first == 'category_station_mappings'`. That is
+      // impossible, and it was measured to be impossible on 2026-08-03 rather
+      // than argued:
+      //
+      //   probe at the top of runBeforeOpen + DiagnosticLogger.testLog
+      //   (in-memory, so not subject to debugPrint throttling):
+      //     admin connection      -> 151 startup log entries
+      //     restricted connection -> 0
+      //
+      // `runBeforeOpen` is never entered for a privilege-restricted user: the
+      // open fails inside drift's own migration machinery, before beforeOpen.
+      // So Phase 2d's parity pass never executes, and a pass that never runs
+      // cannot raise the exception this test was waiting for — no matter how
+      // the pass is written. (The restricted user CAN read `__schema`, so this
+      // is not an onCreate-vs-onUpgrade question; the throw carries no
+      // `ural_erp` stack frames at all.)
+      //
+      // What the system actually guarantees — and what this now pins — is that
+      // the failure is a hard, classifiable one that `main.dart` routes to the
+      // Arabic Fatal screen instead of logging "continuing" and limping on
+      // against a database it cannot use (which is what it did before
+      // 2026-08-03). The classifier itself is unit-tested in
+      // test/unit/pg_insufficient_privilege_classifier_test.dart.
+      expect(caught, isNotNull,
+          reason: 'a DDL-restricted user must fail the open, not succeed');
+      expect(isPostgresInsufficientPrivilege(caught!), isTrue,
+          reason: 'the failure must be classifiable as 42501 so main.dart can '
+              'route it to the Fatal screen with an actionable Arabic reason. '
+              'Got: $caught');
     });
   });
 }
