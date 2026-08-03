@@ -1667,12 +1667,10 @@ class ServerProxy {
   /// Returns `{ "rows": [...], "serverTime": <int epoch> }` or null on error.
   /// When [since] is null the server performs a full table dump.
   ///
-  /// Phase 5A.3 (Issue 5): when this client device is paired to a specific
-  /// branch (`SharedPreferences.client_branch_id`) AND the currently
-  /// logged-in user is NOT an admin/financial-manager, append
-  /// `&branch_id=<id>` so the server filters scoped tables before
-  /// shipping. Admins keep cross-branch visibility (no parameter sent),
-  /// matching their behaviour on the server-mode UI.
+  /// Phase 5A.3 (Issue 5) / المرحلة ١ G2: النداء يحمل `&branch_id=<id>` فيقصّ
+  /// الخادمُ الجداولَ المحصورة قبل الإرسال. الإعفاء الوحيد من الحصر هو **مدير
+  /// النظام** (وجهاز المرآة) — لا «المدير أو المدير المالي» كما كان هنا:
+  /// تفصيل القرار في [_branchScopeQueryParam].
   /// Fetch one PAGE of a table's delta.
   ///
   /// [limit] bounds the rows the server materialises for this request; the
@@ -1721,8 +1719,21 @@ class ServerProxy {
   /// اسم الدور تمنح «مسؤول مبيعات» صلاحية كاملة. وكان يُرجع `''` أيضاً
   /// عندما لا يكون الجهاز مربوطاً بفرع، أي **يفشل مفتوحاً**: جهاز غير
   /// مُعَدّ كان يسحب بيانات الشركة كاملة. كلاهما مُغلق الآن.
+  ///
+  /// ⚠️ العلَم أدناه هو الاقتران `isSystemRole && name == 'مدير النظام'` كما
+  /// ينشره متحكّم المصادقة — **لا** العمود `isSystemRole` وحده، فهو `true`
+  /// لخمسة أدوار مزروعة منها الكاشير ومدير مالي.
   Future<String> _branchScopeQueryParam() async {
-    if (SyncInterceptor.currentUserIsSystemRole == true) return '';
+    if (SyncInterceptor.currentUserIsSystemAdmin == true) return '';
+
+    // جهاز المرآة — بلا تغيير (المواصفة §٢). المرآة لا تكتب
+    // `client_branch_id` إطلاقاً (يكتبه معالج الإعداد وشاشة وضع الشبكة
+    // فقط)، فكانت هتقع على سنتينل `-1`. وبما أن الاقتران يمنحها توكن جلسة
+    // أدمن مُتحقَّق منه، كان الخادم هيرجّع صفر صفوف بينما
+    // `DeltaPullService.shouldWithholdWatermark` لا يحجب العلامة المائية
+    // إلا للنداء **بلا توكن** ⇒ علامة مائية تتقدّم فوق استجابة فارغة
+    // وفجوة دائمة. المرآة ليست جهاز فرع أصلاً: نطاقها الفروع كلها.
+    if (SyncInterceptor.isMirrorMode) return '';
 
     final prefs = await SharedPreferences.getInstance();
     final id = prefs.getInt('client_branch_id');

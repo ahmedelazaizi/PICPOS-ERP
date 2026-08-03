@@ -25,10 +25,13 @@ abstract class SyncInterceptor {
   bool get isMirrorModeImpl;
 
   /// Phase 5A.3 (Issue 5) — set by the auth controller on login, cleared on
-  /// logout. Used by server_proxy to decide whether the current sync caller
-  /// should bypass the per-branch filter on `/api/sync/pull`. Admins / مدير
-  /// النظام / مسؤول النظام / financial managers see all branches even when
-  /// signed in on a branch-paired client device.
+  /// logout. Carries the **display name** of the current role, for logging and
+  /// for the legacy [isCurrentUserAdmin] getter.
+  ///
+  /// المرحلة ١ / G2 — لم يعد يقرّر أي شيء في حصر المزامنة. كان
+  /// `/api/sync/pull` يتجاوز فلتر الفرع بناءً على مطابقة نصّية لهذا الاسم،
+  /// وهي **ليست صلاحية**: اسم يكتبه المشغّل. القرار انتقل إلى
+  /// [currentUserIsSystemAdmin].
   static String? currentUserRole;
 
   /// Spec 060 Phase 2 / Spec 151 (P1-8) — set by the auth controller on login
@@ -42,21 +45,31 @@ abstract class SyncInterceptor {
   /// and a gated handler / branch-scoped read fails closed.
   static int? currentUserId;
 
-  /// المرحلة ١ / G2 — علَم `roles.isSystemRole` للمستخدم الحالي، يضبطه
-  /// متحكّم المصادقة عند الدخول ويمسحه عند الخروج (نفس نمط
-  /// [currentUserRole] و[currentUserId]).
+  /// المرحلة ١ / G2 — «هل المستخدم الحالي **مدير النظام** فعلاً؟» يضبطه
+  /// متحكّم المصادقة عند الدخول والترقية، ويمسحه عند الخروج (نفس نمط
+  /// [currentUserRole] و[currentUserId]). هو وحده ما يقرأه مسار حصر
+  /// المزامنة في `server_proxy._branchScopeQueryParam`.
   ///
-  /// يحلّ محلّ [isCurrentUserAdmin] في مسار حصر المزامنة تحديداً.
-  /// المطابقة النصّية على اسم الدور **ليست صلاحية**: «مسؤول مبيعات»
-  /// يطابق `contains('مسؤول')` فيُعامَل كأدمن كامل الصلاحية. العلَم يقرأ
-  /// السمة المقصودة من قاعدة البيانات بدل تخمينها من اسم يكتبه المستخدم.
+  /// ⚠️ **العمود `roles.isSystemRole` وحده ليس اختبار إدارة.** معناه «دور
+  /// مدمج غير قابل للتعديل»، و`database_seeder_permissions.dart` يزرعه
+  /// `true` لخمسة أدوار: **مدير النظام · كاشير · مخزني · محاسب · مدير
+  /// مالي**. فلو بُني هذا العلَم على العمود وحده لحصل **الكاشير** على سحب
+  /// غير مقيّد — أوسع من المطابقة النصّية التي جاء ليستبدلها.
+  ///
+  /// القيمة الصحيحة هي **الاقتران**: `isSystemRole && name == 'مدير النظام'`
+  /// — نفس ما يفعله `permissions_dao._isAdminRole` و
+  /// `AuthStateBypass.hasSystemAdminBypass`. شرط `isSystemRole` ضروري
+  /// بدوره: بدونه يخترع مشغّل دوراً مخصصاً بالاسم نفسه ويتجاوز كل شيء.
   ///
   /// `null` قبل الدخول ⇒ يُعامَل كـ«ليس مدير نظام» (يفشل مقفولاً).
-  static bool? currentUserIsSystemRole;
+  static bool? currentUserIsSystemAdmin;
 
-  /// True when the logged-in user has unrestricted branch visibility (admin
-  /// or financial manager). Falls back to `false` when no user is set so a
-  /// pre-login sync doesn't accidentally pull cross-branch data.
+  /// ⚠️ **مطابقة نصّية على اسم الدور — ليست صلاحية، ولا تستعملها في قرار
+  /// أمني.** «مسؤول مبيعات» يطابق `contains('مسؤول')` فتُرجع `true`.
+  ///
+  /// المرحلة ١ / G2 — أُخرجت من مسار حصر المزامنة واستُبدلت بـ
+  /// [currentUserIsSystemAdmin]. لا مستدعي إنتاجي لها الآن؛ أُبقيت في
+  /// مكانها فقط لأن حذفها خارج نطاق المرحلة ١.
   static bool get isCurrentUserAdmin {
     final role = currentUserRole?.toLowerCase() ?? '';
     if (role.isEmpty) return false;
