@@ -232,6 +232,18 @@ extension AccountingAutopostDao on AppDatabase {
   /// Debit: Cash (total) | Credit: Sales (subtotal-discount) + VAT (tax)
   /// APG-04: IFRS 15.38 — defer revenue for undelivered delivery orders
   Future<int?> autoPostCashSale(SalesInvoiceData sale, {int? costCenterId}) async {
+    // فاتورة مرتجع ماتترحّلش كبيعة — مهما كان اللي نداها.
+    //
+    // قيد المرتجع بيتخزّن بـ`referenceType = 'sales_return'`، وحارس التكرار
+    // تحت بيدوّر على `'sale'` بس ⇒ ما بيشوفهوش. فالنداء بيضيف قيد بيعة
+    // **بعكس اتجاه** قيد المرتجع: النقدية في الأستاذ بترجع صفر بينما الدرج
+    // ناقص، والمخزون بيرجع صفر بينما الصنف رجع على الرف فعلاً، ويظهر إيراد
+    // وهمي بقيمة المرتجع.
+    //
+    // المسار اللي كان بيعمل كده: `api_sales_handler.dart` بينده الدالة دي
+    // بلا شرط بعد `createSalesInvoice` اللي بترحّل المرتجع جوّاها — أي
+    // «المرتجع السريع» من نقطة البيع في وضع client/mirror.
+    if (sale.saleType == 'return') return null;
     if (sale.total <= 0) return null;
     // APG-04: Defer revenue for undelivered delivery orders
     if (sale.deliveryStatus != null &&
@@ -624,6 +636,8 @@ extension AccountingAutopostDao on AppDatabase {
   /// Debit: Sales Discount (if applicable)
   /// APG-04: IFRS 15.38 — skip auto-posting for undelivered delivery orders
   Future<int?> autoPostCreditSale(SalesInvoiceData sale, {int? costCenterId}) async {
+    // نفس حارس `autoPostCashSale` — شوف التعليق هناك.
+    if (sale.saleType == 'return') return null;
     if (sale.total <= 0) return null;
     // APG-04: Defer revenue for undelivered delivery orders
     if (sale.deliveryStatus != null &&
