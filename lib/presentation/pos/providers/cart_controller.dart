@@ -438,6 +438,13 @@ class CartController extends Notifier<CartState> {
 
   void _tryAutoApplyOffers() {
     if (_isApplyingOffers) {
+      // كل نداء هنا معناه إن السلة اتغيّرت **جوّه** نافذة الـ await بتاعة الجولة
+      // الشغّالة، فلقطتها بقت قديمة. رفع الجيل هو اللي بيخلّي حارس القِدَم
+      // (:509 و:545) يضرب فعلاً فترجع الجولة من غير ما تكتب — من غير الرفع ده
+      // كانت بتكتب لقطتها القديمة فوق الحالة الحالية وتمسح الكمية اللي اتضافت.
+      // الدمج بالـ productId ما بيحميش من ده لأن الصنف نفسه موجود في اللقطة،
+      // اللي اتغيّر هو كميته.
+      ++_autoApplyGeneration;
       _pendingAutoApply = true; // will re-run after current completes
       return;
     }
