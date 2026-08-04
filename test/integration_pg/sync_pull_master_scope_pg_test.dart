@@ -12,6 +12,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart' as d;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shelf/shelf.dart' as shelf;
+import 'package:ural_erp/core/logging/diagnostic_logger.dart';
 import 'package:ural_erp/data/database/database.dart';
 import 'package:ural_erp/services/api/api_handler.dart';
 import 'package:ural_erp/services/api/api_user_context.dart';
@@ -89,6 +90,29 @@ void main() {
             branchId: branchId,
           ),
         );
+  }
+
+  /// مستخدم مقيَّد على **أكثر من فرع** — «مدير فروع» كما يجلس على جهاز
+  /// المرآة: ليس `isFullBranchAccessUser` (الاسم ليس «مدير النظام» ولا
+  /// «مدير مالي» والمعرّف ليس ١) ومع ذلك نطاقه أوسع من فرع واحد.
+  Future<void> seedMultiBranchUser(int userId, List<int> branchIds) async {
+    await fx.db.into(fx.db.roles).insert(
+          RolesCompanion.insert(name: 'مدير فروع')
+              .copyWith(id: const d.Value(8)),
+        );
+    await fx.db.into(fx.db.users).insert(
+          UsersCompanion.insert(
+            username: 'u$userId',
+            passwordHash: 'h',
+            displayName: 'u$userId',
+            roleId: const d.Value(8),
+          ).copyWith(id: d.Value(userId)),
+        );
+    for (final b in branchIds) {
+      await fx.db.into(fx.db.userBranchAccess).insert(
+            UserBranchAccessCompanion.insert(userId: userId, branchId: b),
+          );
+    }
   }
 
   group('G1 — الجداول الأساسية تُحصَر على الفرع', () {
@@ -247,6 +271,223 @@ void main() {
         ApiHandler.debugLastNullBranchRowCount,
         2,
         reason: 'العدّاد لا يلتقط — أي «صفر» منه بلا قيمة',
+      );
+    });
+  });
+
+  // ── المراجعة النهائية / FR-1 ────────────────────────────────────────────
+  // جهاز المرآة معفى من الحصر على الواجهة فلا يرسل `branch_id` إطلاقاً.
+  // «مدير فروع» عليه ليس `isFullBranchAccessUser`، فالخادم كان يرى
+  // `requested == null` مع `allowed = {1,2,3}` **ويقصّه على فرعه الأصلي**.
+  // ومعه توكن جلسة ⇒ `shouldWithholdWatermark` كاذبة ⇒ العلامة المائية
+  // تتقدّم فوق استجابة مقصوصة والفرعان ٢ و٣ يتوقّفان عن الوصول للأبد.
+  // القرار: بلا `branch_id` + أكثر من فرع مسموح ⇒ `IN (allowed)`.
+  group('FR-1 — بلا branch_id ومعه أكثر من فرع ⇒ كل فروعه', () {
+    Future<void> seedThirdBranch() => fx.db.customStatement(
+          "INSERT INTO branches (id, name) VALUES (3,'فرع ج') "
+          'ON CONFLICT (id) DO NOTHING',
+        );
+
+    test('warehouses: يرى مخازن الفروع الثلاثة لا فرعه الأصلي وحده', () async {
+      await seedThirdBranch();
+      await seedMultiBranchUser(20, [1, 2, 3]);
+      for (final (name, branch) in [('مخزن أ', 1), ('مخزن ب', 2), ('مخزن ج', 3)]) {
+        await fx.db.into(fx.db.warehouses).insert(
+              WarehousesCompanion.insert(name: name)
+                  .copyWith(branchId: d.Value(branch)),
+            );
+      }
+
+      final rows = await pull('warehouses', userId: 20); // بلا branch_id
+      final names = rows.map((r) => r['name']).toSet();
+
+      expect(
+        names,
+        containsAll(<String>['مخزن أ', 'مخزن ب', 'مخزن ج']),
+        reason: 'الخادم قصّ المرآة على فرع واحد، والعلامة المائية تقدّمت '
+            'فوق الاستجابة المقصوصة ⇒ فرعان يتجمّدان بصمت',
+      );
+    });
+
+    test('safes: نفس الاتّساع', () async {
+      await seedThirdBranch();
+      await seedMultiBranchUser(21, [1, 2, 3]);
+      for (final (name, branch) in [('خزنة أ', 1), ('خزنة ب', 2), ('خزنة ج', 3)]) {
+        await fx.db.into(fx.db.safes).insert(
+              SafesCompanion.insert(name: name)
+                  .copyWith(branchId: d.Value(branch)),
+            );
+      }
+
+      final rows = await pull('safes', userId: 21);
+      final names = rows.map((r) => r['name']).toSet();
+
+      expect(names, containsAll(<String>['خزنة أ', 'خزنة ب', 'خزنة ج']));
+    });
+
+    test('branches: الفروع الثلاثة تصل — عمود المفتاح الأساسي', () async {
+      await seedThirdBranch();
+      await seedMultiBranchUser(22, [1, 2, 3]);
+
+      final rows = await pull('branches', userId: 22);
+      final names = rows.map((r) => r['name']).toSet();
+
+      expect(names, containsAll(<String>['فرع أ', 'فرع ب', 'فرع ج']));
+    });
+
+    test('cost_centers: اتّحاد مراكز الفروع المسموحة، لا فرع واحد', () async {
+      await seedThirdBranch();
+      await seedMultiBranchUser(23, [1, 2]);
+      await fx.db.customStatement(
+        'INSERT INTO cost_centers (id, code, name) VALUES '
+        "(101,'CC101','مركز الفرع أ'),(201,'CC201','مركز الفرع ب'),"
+        "(301,'CC301','مركز الفرع ج') ON CONFLICT (id) DO NOTHING",
+      );
+      await fx.db.customStatement(
+        'UPDATE branches SET cost_center_id = 101 WHERE id = 1',
+      );
+      await fx.db.customStatement(
+        'UPDATE branches SET cost_center_id = 201 WHERE id = 2',
+      );
+      await fx.db.customStatement(
+        'UPDATE branches SET cost_center_id = 301 WHERE id = 3',
+      );
+
+      final rows = await pull('cost_centers', userId: 23);
+      final ids = rows.map((r) => r['id']).toSet();
+
+      expect(
+        ids,
+        containsAll(<int>[101, 201]),
+        reason: 'مستخدم يرى مخازن فرعين ومركز تكلفة فرع واحد = نصف إصلاح',
+      );
+      expect(
+        ids,
+        isNot(contains(301)),
+        reason: 'الاتّحاد اتّسع لفرع غير مسموح',
+      );
+    });
+
+    test('فرع واحد مسموح ⇒ بلا اتّساع (المسار القديم كما هو)', () async {
+      await seedMultiBranchUser(24, [1]);
+      await fx.db.into(fx.db.warehouses).insert(
+            WarehousesCompanion.insert(name: 'مخزن أ')
+                .copyWith(branchId: const d.Value(1)),
+          );
+      await fx.db.into(fx.db.warehouses).insert(
+            WarehousesCompanion.insert(name: 'مخزن ب')
+                .copyWith(branchId: const d.Value(2)),
+          );
+
+      final rows = await pull('warehouses', userId: 24);
+      final names = rows.map((r) => r['name']).toSet();
+
+      expect(names, contains('مخزن أ'));
+      expect(names, isNot(contains('مخزن ب')));
+    });
+
+    test('مستدعٍ بلا توكن: السنتينل -1 باقٍ ولا يتّسع', () async {
+      await fx.db.into(fx.db.warehouses).insert(
+            WarehousesCompanion.insert(name: 'مخزن أ')
+                .copyWith(branchId: const d.Value(1)),
+          );
+      await fx.db.into(fx.db.warehouses).insert(
+            WarehousesCompanion.insert(name: 'مخزن ب')
+                .copyWith(branchId: const d.Value(2)),
+          );
+      await fx.db.into(fx.db.warehouses).insert(
+            WarehousesCompanion.insert(name: 'مخزن يتيم'),
+          );
+
+      final rows = await pull('warehouses'); // بلا هوية
+      final names = rows.map((r) => r['name']).toSet();
+
+      expect(
+        names,
+        <String>{'مخزن يتيم'},
+        reason: 'اتّساع «بلا branch_id» ابتلع مسار انعدام الهوية — السنتينل '
+            'كان حدّاً أمنياً قائماً بذاته',
+      );
+    });
+
+    test('طلب فرع أجنبي ما زال يُقصّ على فرع واحد', () async {
+      await seedThirdBranch();
+      await seedMultiBranchUser(25, [1, 2]);
+      await fx.db.into(fx.db.warehouses).insert(
+            WarehousesCompanion.insert(name: 'مخزن ج')
+                .copyWith(branchId: const d.Value(3)),
+          );
+      await fx.db.into(fx.db.warehouses).insert(
+            WarehousesCompanion.insert(name: 'مخزن ب')
+                .copyWith(branchId: const d.Value(2)),
+          );
+
+      final rows = await pull('warehouses', branchId: 3, userId: 25);
+      final names = rows.map((r) => r['name']).toSet();
+
+      expect(
+        names,
+        isNot(contains('مخزن ج')),
+        reason: 'طلب فرع خارج النطاق لا يُشرَّف',
+      );
+      expect(
+        names,
+        isNot(contains('مخزن ب')),
+        reason: 'الطلب الأجنبي يُقصّ على فرع واحد لا يتّسع لكل النطاق',
+      );
+    });
+  });
+
+  // ── المراجعة النهائية / FR-3 ────────────────────────────────────────────
+  // السطر كان مشروطاً بـ`nullRows > 0`، فغياب السطر بعد أسبوع تشغيل يعني
+  // «نظيف» **أو** «لم يُقَس قط» ولا سبيل للمالك للتفريق. المواصفة §٦ تقول
+  // حرفياً إن صفر سطور ليس دليلاً.
+  group('FR-3 — أول قياس يُنتج سطراً ولو كان صفراً', () {
+    test('صفر صفوف يتيمة ⇒ سطر [BRANCH-SCOPE-NULL] موجود', () async {
+      ApiHandler.debugResetNullBranchLogThrottle();
+      DiagnosticLogger.enableTestMode();
+      await seedScopedUser(30, 1);
+      await fx.db.into(fx.db.warehouses).insert(
+            WarehousesCompanion.insert(name: 'مخزن أ')
+                .copyWith(branchId: const d.Value(1)),
+          );
+
+      await pull('warehouses', branchId: 1, userId: 30);
+
+      expect(
+        DiagnosticLogger.testLog
+            .where((l) => l.contains('BRANCH-SCOPE-NULL'))
+            .length,
+        1,
+        reason: 'الصمت لا يُميّز «نظيف» عن «لم يُقَس» — والعدّاد وُجد ليتّخذ '
+            'المالك قرار التشديد على أرقام',
+      );
+      expect(
+        DiagnosticLogger.testLog.last,
+        contains('nullRows=0'),
+      );
+    });
+
+    test('السحب المتكرّر بنفس العدد لا يكرّر السطر (الخانق باقٍ)', () async {
+      ApiHandler.debugResetNullBranchLogThrottle();
+      DiagnosticLogger.enableTestMode();
+      await seedScopedUser(31, 1);
+      await fx.db.into(fx.db.warehouses).insert(
+            WarehousesCompanion.insert(name: 'مخزن أ')
+                .copyWith(branchId: const d.Value(1)),
+          );
+
+      await pull('warehouses', branchId: 1, userId: 31);
+      await pull('warehouses', branchId: 1, userId: 31);
+      await pull('warehouses', branchId: 1, userId: 31);
+
+      expect(
+        DiagnosticLogger.testLog
+            .where((l) => l.contains('BRANCH-SCOPE-NULL'))
+            .length,
+        1,
+        reason: 'DeltaPull يسحب بلا توقّف — سطر لكل سحب يُغرق الملف ويُتلف '
+            'المراجعة نفسها',
       );
     });
   });

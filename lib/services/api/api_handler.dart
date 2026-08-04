@@ -1539,7 +1539,11 @@ class ApiHandler {
       final branchId = await _extractBranchId(request);
       final query = _db.select(_db.warehouses);
       if (branchId != null) {
-        query.where((w) => w.branchId.equals(branchId));
+        // قرار المالك §٢-ب — الصف بلا فرع يبقى مرئياً. `Warehouses.branchId`
+        // nullable، والحصر الصارم هنا كان يُخفي مخازن مشروعة عن جهاز يعمل
+        // عليها ⇒ «جهاز بلا مخزن يعمل عليه». نفس ذراع `_getSafes` والمسار
+        // المحصور في `/api/sync/pull`.
+        query.where((w) => w.branchId.equals(branchId) | w.branchId.isNull());
       }
       final warehouses = await query.get();
       final jsonList = warehouses
@@ -1916,9 +1920,20 @@ class ApiHandler {
   ///
   /// الغياب من الخريطة يعني «لم يُقَس بعد» لا «صفر»، فتعرّض جديد حقيقي
   /// (٠ ⇒ N) يُنتج سطراً دائماً ولا يبتلعه الخانق؛ والانخفاض إلى صفر بعد
-  /// تعرّض سابق يُسجَّل أيضاً حتى يظهر أثر التنظيف في نفس الملف. أول قياس
-  /// بصفر وحده لا يُسجَّل — ليس خبراً.
+  /// تعرّض سابق يُسجَّل أيضاً حتى يظهر أثر التنظيف في نفس الملف.
+  ///
+  /// المراجعة النهائية / FR-3 — **وأول قياس بصفر يُسجَّل أيضاً**. كان
+  /// مشروطاً بـ`nullRows > 0`، فغياب السطر بعد أسبوع تشغيل يعني «نظيف» أو
+  /// «لم يُقَس بلا حصر قط» ولا سبيل للمالك للتفريق. العدّاد وُجد ليُبنى عليه
+  /// قرار تشديد بالأرقام، والمواصفة §٦ تقول حرفياً إن صفر سطور ليس دليلاً.
+  /// الخانق باقٍ: الاستقرار على نفس العدد ⇒ لا سطر جديد.
   static final Map<String, int> _lastLoggedNullBranchRows = <String, int>{};
+
+  /// يُفرِّغ خانق السجلّ. الخريطة ساكنة فتعيش عبر اختبارات العملية الواحدة،
+  /// فبدون هذا يقرأ اختبارُ «أول قياس» أثرَ اختبار سابق.
+  @visibleForTesting
+  static void debugResetNullBranchLogThrottle() =>
+      _lastLoggedNullBranchRows.clear();
 
   /// Raw parse of `?branch_id=` (unchanged behavior, kept private).
   /// Spec 151 D-06 — split out of the old `_extractBranchId` so the async
@@ -1963,6 +1978,36 @@ class ApiHandler {
   /// follow-up; compensating controls: trusted LAN, TLS, guarded bearer token.
   Future<int?> _extractBranchId(Request request,
       {bool failClosedOnNoIdentity = false}) async {
+    final scope = await _resolveBranchScope(request,
+        failClosedOnNoIdentity: failClosedOnNoIdentity);
+    // The head of the list is always the value the pre-FR-1 single-branch
+    // resolution produced (the honoured request, the sentinel, or the clamped
+    // home). Every single-branch caller therefore behaves EXACTLY as before;
+    // only `/api/sync/pull`, which consumes the whole list, widens.
+    return scope?.first;
+  }
+
+  /// المراجعة النهائية / FR-1 — النطاق **الكامل** لمستدعي القراءة، لا قيمة
+  /// واحدة. `null` تعني «بلا حصر»؛ `[-1]` تعني «صفر صفوف».
+  ///
+  /// الفرق الوحيد عن [_extractBranchId]: مستدعٍ **لا يرسل `branch_id`** ومعه
+  /// أكثر من فرع مسموح يُعيد فروعه كلها بدل أن يُقصّ على فرع واحد.
+  ///
+  /// هذا هو مسار **المرآة** بالضبط: `_branchScopeQueryParam` يعفيها فلا ترسل
+  /// المُعامل، و«مدير فروع» عليها ليس `isFullBranchAccessUser`، فكان الخادم
+  /// يقصّه على فرعه الأصلي؛ ومعه توكن جلسة فـ`shouldWithholdWatermark` كاذبة
+  /// ⇒ العلامة المائية تتقدّم فوق استجابة مقصوصة وبقية فروعه تتجمّد بصمت.
+  ///
+  /// ⚠️ ثلاثة مسارات **لا** تتّسع هنا، وكلٌّ منها حدّ قائم بذاته:
+  ///  * انعدام الهوية مع `failClosedOnNoIdentity` ⇒ السنتينل `-1` قبل أي
+  ///    استعلام عن الفروع (Spec 151 P1-8b) — الاتّساع لا يلمسه إطلاقاً.
+  ///  * جهاز العميل يرسل `branch_id` دائماً (`server_proxy:1738-1745` يرسل
+  ///    السنتينل حتى حين لا يكون مربوطاً)، فـ`requested != null` وسلوكه
+  ///    كما كان بلا حرف واحد يتغيّر.
+  ///  * طلب فرع **خارج** النطاق يظل مقصوصاً على فرع واحد: من طلب فرعاً
+  ///    بعينه لا يُكافأ بالنطاق كاملاً.
+  Future<List<int>?> _resolveBranchScope(Request request,
+      {bool failClosedOnNoIdentity = false}) async {
     final requested = _rawBranchId(request);
     final userId = ApiUserCtx.userIdOf(request);
     if (userId == null) {
@@ -1972,7 +2017,8 @@ class ApiHandler {
       // (false) → honor `requested`, because the tokenless provisioning path
       // (ClientFirstSyncService / boot delta-pull, pre-login) must read shared
       // master data to seed a new client — fail-closing it would brick setup.
-      return failClosedOnNoIdentity ? _kNoBranchAccess : requested;
+      if (failClosedOnNoIdentity) return const <int>[_kNoBranchAccess];
+      return requested == null ? null : <int>[requested];
     }
     final allowed = await _db.getUserAccessibleBranchIds(userId);
     if (allowed.isEmpty) {
@@ -1981,13 +2027,22 @@ class ApiHandler {
       // mis-provisioned non-privileged user. Split so the latter fails CLOSED
       // (scoped to the impossible sentinel) instead of reading every branch.
       if (await _db.isFullBranchAccessUser(userId)) {
-        return requested; // (a) privileged → full access (null = all branches)
+        // (a) privileged → full access (null = all branches)
+        return requested == null ? null : <int>[requested];
       }
-      return _kNoBranchAccess; // (b) mis-provisioned → empty scope
+      return const <int>[_kNoBranchAccess]; // (b) mis-provisioned → empty scope
     }
-    if (requested != null && allowed.contains(requested)) return requested;
+    if (requested != null && allowed.contains(requested)) {
+      return <int>[requested];
+    }
     final home = await _db.getUserBranchId(userId); // clamp foreign/null to home
-    return (home != null && allowed.contains(home)) ? home : allowed.first;
+    final clamped =
+        (home != null && allowed.contains(home)) ? home : allowed.first;
+    if (requested != null || allowed.length == 1) return <int>[clamped];
+    // FR-1 — بلا طلب صريح ومعه أكثر من فرع. الفرع المقصوص يتصدّر القائمة
+    // عمداً: [_extractBranchId] تقرأ `first`، فيبقى كل مستدعٍ أحادي القيمة
+    // على سلوكه السابق حرفياً.
+    return <int>[clamped, ...allowed.where((b) => b != clamped)];
   }
 
   /// Resolve branch → warehouse IDs from database.
@@ -2035,6 +2090,19 @@ class ApiHandler {
       if (s.costCenterId != null) ids.add(s.costCenterId!);
     }
 
+    return ids.toList();
+  }
+
+  /// المراجعة النهائية / FR-1 — اتّحاد مراكز تكلفة عدة فروع.
+  ///
+  /// `cost_centers` يسلك مسار المجموعة المشتقّة لا مسار العمود، فلو بقي على
+  /// فرع واحد بينما اتّسعت `warehouses`/`safes` لكل النطاق، لرأى المستخدم
+  /// مخازن ثلاثة فروع ومراكز تكلفة فرع واحد — نصف إصلاح يُنتج تقارير عرجاء.
+  Future<List<int>> _resolveBranchesCostCenterIds(List<int> branchIds) async {
+    final ids = <int>{};
+    for (final branchId in branchIds) {
+      ids.addAll(await _resolveBranchCostCenterIds(branchId));
+    }
     return ids.toList();
   }
 
@@ -2217,10 +2285,17 @@ class ApiHandler {
   ///
   /// Returns all rows from [table] whose `last_modified_at > since` (epoch
   /// seconds). Omitting `since` performs a full table dump (first-time sync).
-  /// When `branch_id` is supplied AND the table appears in
-  /// [_syncPullBranchColumn], rows are scoped to that branch (plus any rows
-  /// where the column is NULL — legacy data). Admin clients omit the
-  /// parameter and continue to see every branch.
+  /// Rows are scoped to the caller's EFFECTIVE branch scope
+  /// ([_resolveBranchScope]) when the table appears in
+  /// [_syncPullBranchColumn] — plus any rows where the column is NULL
+  /// (owner decision §2-b: a branch-less row stays visible). `cost_centers`
+  /// is scoped too, via a reverse-derived id set rather than a column.
+  ///
+  /// Omitting `branch_id` does NOT mean "all branches": only a genuine
+  /// full-access user (system admin / financial manager / id==1) reads
+  /// unscoped. Any other caller is scoped to the branches they actually
+  /// hold — all of them when they hold several (FR-1), which is the mirror's
+  /// «مدير فروع» case.
   ///
   /// Response: `{ "rows": [...], "serverTime": <epoch_seconds>, "count": N }`
   ///
@@ -2257,24 +2332,28 @@ class ApiHandler {
 
       // Phase 5A.1 — derive the branch filter clause. Empty when admin or
       // when the table is universal master data (not in the map).
-      // Spec 151 P1-8b: fail closed on no identity. A master table (branchCol
-      // == null) stays full even with the sentinel (branchFilterActive stays
-      // false); a branch-scoped table with no identity → sentinel → zero rows.
-      final branchId =
-          await _extractBranchId(request, failClosedOnNoIdentity: true);
+      // Spec 151 P1-8b: fail closed on no identity. A table in NEITHER
+      // scoping path (no `branch_id` column AND not `cost_centers`) stays
+      // full even with the sentinel; every scoped table with no identity →
+      // sentinel → zero rows. `cost_centers` is scoped (المرحلة ١ / G1), so
+      // it is no longer among the "stays full" set.
+      // FR-1: النطاق **الكامل** لا قيمة واحدة. مستدعٍ بلا `branch_id` ومعه
+      // أكثر من فرع (المرآة) يُحصَر على فروعه كلها بدل أن يُقصّ على واحد.
+      final branchScope =
+          await _resolveBranchScope(request, failClosedOnNoIdentity: true);
       final branchCol = _syncPullBranchColumn[table];
       // The branch predicate is now assembled with the other conditions
       // below (the two pre-built `branchClause` / `branchClauseStandalone`
       // string fragments are gone — the query is built from a condition list
       // so the cursor predicate can join it without string surgery).
-      final bool branchFilterActive = branchId != null && branchCol != null;
+      final bool branchFilterActive = branchScope != null && branchCol != null;
 
       // المرحلة ١ / G1 — `cost_centers` يُحصَر بمجموعة مشتقّة لا بعمود،
       // فلا يمكن التعبير عنه بمدخل في `_syncPullBranchColumn`.
       final bool costCenterScopeActive =
-          table == 'cost_centers' && branchId != null;
+          table == 'cost_centers' && branchScope != null;
       final List<int> scopedCostCenterIds = costCenterScopeActive
-          ? await _resolveBranchCostCenterIds(branchId)
+          ? await _resolveBranchesCostCenterIds(branchScope)
           : const <int>[];
 
       // ── Page size (Spec: bounded delta pull) ────────────────────────────
@@ -2318,8 +2397,12 @@ class ApiHandler {
         vars.add(Variable.withInt(since));
       }
       if (branchFilterActive) {
-        conditions.add('($branchCol = ? OR $branchCol IS NULL)');
-        vars.add(Variable.withInt(branchId));
+        // `IN (...)` بدل `= ?`: بفرع واحد هما متطابقان، وبأكثر من فرع هذا
+        // هو اتّساع FR-1. ذراع `IS NULL` قرار المالك §٢-ب (صف بلا فرع يبقى
+        // مرئياً) ولا تتأثّر بعدد الفروع.
+        final placeholders = List.filled(branchScope.length, '?').join(',');
+        conditions.add('($branchCol IN ($placeholders) OR $branchCol IS NULL)');
+        vars.addAll(branchScope.map(Variable.withInt));
       }
       if (costCenterScopeActive) {
         if (scopedCostCenterIds.isEmpty) {
@@ -2380,12 +2463,11 @@ class ApiHandler {
         final lastLogged = _lastLoggedNullBranchRows[table];
         if (lastLogged != nullRows) {
           _lastLoggedNullBranchRows[table] = nullRows;
-          if (nullRows > 0 || lastLogged != null) {
-            await DiagnosticLogger.log(
-              'BRANCH-SCOPE-NULL',
-              'table=$table branch=$branchId nullRows=$nullRows',
-            );
-          }
+          await DiagnosticLogger.log(
+            'BRANCH-SCOPE-NULL',
+            'table=$table branch=${branchScope.join(",")} '
+                'nullRows=$nullRows',
+          );
         }
       }
 
