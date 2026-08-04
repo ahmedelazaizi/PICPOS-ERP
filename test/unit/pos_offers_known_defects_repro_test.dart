@@ -10,11 +10,12 @@
 // وقع مع غيره فالمشكلة في التجهيزة نفسها.
 //
 // اللي بيتحرس هنا:
-// * H1 — كمية بتتضاف جوّه نافذة `await` بتاعة العروض ما تضيعش
-//   (`cart_controller.dart:_tryAutoApplyOffers` بيرفع الجيل).
+// * H1 — كمية بتتضاف جوّه نافذة `await` بتاعة العروض ما تضيعش، **والإعادة
+//   المجدولة بتحسب وتكتب فعلاً** (`cart_controller.dart:_cartChangedSince`).
 // * H2 — مجموع سطور الحزمة = سعر العرض المعلن
-//   (`cart_pricing_service.dart:_settleBundleRemainder`).
-// * H3 — عرض سعره ≥ مجموع أسعار بيع أصنافه بيترفض برسالة، مش بيرفع الأسعار.
+//   (`cart_pricing_service.dart:settleBundleRemainder`).
+// * H3 — عرض سعره ≥ مجموع أسعار بيع أصنافه بيترفض برسالة، مش بيرفع الأسعار
+//   (بما فيهم الحد الفاصل: سعر العرض = المجموع).
 // ═══════════════════════════════════════════════════════════════════════════
 
 import 'dart:async';
@@ -31,8 +32,10 @@ import 'package:ural_erp/presentation/pos/providers/cart_controller.dart';
 
 /// يفرّغ طابور الأحداث عشان الـ Future اللي اتكمّلت تكمّل مشوارها.
 /// حلقة صريحة بدل `pumpEventQueue` — مفيش widget binding في الملف ده.
+/// ٦٠ دورة مش ٢٠: الإعادة المجدولة بتقرا الأصناف من قاعدة البيانات فعلاً
+/// (`getProductById`)، فمحتاجة دورات أكتر من مجرد تكملة Future جاهزة.
 Future<void> _settle() async {
-  for (var i = 0; i < 20; i++) {
+  for (var i = 0; i < 60; i++) {
     await Future<void>.delayed(Duration.zero);
   }
 }
@@ -49,9 +52,14 @@ class _GatedOffersRepo implements IOffersRepository {
   /// البوابة — `complete()` بترجّع العروض وتفكّ التطبيق التلقائي من وقفته.
   final Completer<List<Offer>> gate = Completer<List<Offer>>();
 
-  /// أصناف العرض. بترجع لصنف **مش موجود في السلة**، فـ `_applyBundleOffer`
-  /// بتخرج بدري ومش بتعدّل أي سعر — وكده اللي يتبقّى تحت المجهر هو خطوة
-  /// الدمج لوحدها، مش حساب العرض.
+  /// أصناف العرض — **بتطابق الصنف اللي في السلة فعلاً**.
+  ///
+  /// كانت بترجع صنف وهمي (٩٩٩) مش في السلة، فالعرض ما كانش بيتطبّق أصلاً
+  /// والاختبار يبقى بيتأكد من الكمية بس. ودي كانت ثغرة: الكمية ٢ بتيجي من
+  /// `addItem` نفسها، فلو `_autoApplyOffers` مكتوبة `async {}` الاختبار
+  /// **يعدّي**. دلوقتي العرض بيتطبّق فعلاً، فالتأكيد بيشوف السعر والملاحظة
+  /// كمان — يعني بيفشل لو الكتابة اتشالت فوقها، **و** بيفشل لو الإعادة
+  /// المجدولة ما اشتغلتش خالص.
   final List<OfferItem> bundleItems;
 
   @override
@@ -127,12 +135,30 @@ void main() {
     late ProviderContainer container;
     late _GatedOffersRepo offersRepo;
     late CartController cart;
+    late ProductEntity a;
 
-    setUp(() {
+    // سعر البيع ١٠ وسعر العرض ٦ → المعامل ٠٫٦ وسعر الوحدة تحت العرض ٦٫٠.
+    const salePrice = 10.0;
+    const offerPrice = 6.0;
+    const offerUnitPrice = 6.0;
+
+    setUp(() async {
       db = AppDatabase.forTesting();
+
+      // الصنف لازم يبقى في القاعدة فعلاً: `_applyBundleOffer` بتقرا سعر البيع
+      // عن طريق `productRepo.getProductById`، فلو مش موجود العرض ما بيتطبّقش
+      // والاختبار يرجع ضعيف زي ما كان.
+      final productId = await db.into(db.products).insert(
+            ProductsCompanion.insert(
+              code: 'A1',
+              name: 'شاي',
+              salePrice: const Value(salePrice),
+            ),
+          );
+      a = _product(id: productId, salePrice: salePrice);
+
       offersRepo = _GatedOffersRepo([
-        // صنف العرض ٩٩٩ مش في السلة خالص → العرض ما بيتطبّقش.
-        const OfferItem(id: 1, offerId: 1, productId: 999, quantity: 1),
+        OfferItem(id: 1, offerId: 1, productId: productId, quantity: 1),
       ]);
       container = ProviderContainer(overrides: [
         databaseProvider.overrideWithValue(db),
@@ -147,27 +173,50 @@ void main() {
       });
     });
 
-    double qtyOf(int productId) => container
-        .read(cartControllerProvider)
-        .items
-        .where((i) => i.productId == productId)
-        .fold<double>(0, (a, i) => a + i.quantity);
+    // بنستخرج القيم الأولية بدل ما نمرّر `CartItemEntity` — الحقول اللي تهم
+    // الاختبار تلاتة بس، وكده مفيش نداء على `dynamic`.
+    List<({double qty, double price, String? note})> linesOf(int productId) =>
+        container
+            .read(cartControllerProvider)
+            .items
+            .where((i) => i.productId == productId)
+            .map((i) =>
+                (qty: i.quantity, price: i.effectivePrice, note: i.note))
+            .toList();
 
-    test('الضابط: من غير تشابك، سحبتين = كمية ٢', () async {
-      final a = _product();
+    double qtyOf(int productId) =>
+        linesOf(productId).fold<double>(0, (acc, l) => acc + l.qty);
+
+    /// بيتأكد إن العرض **اتطبّق فعلاً** على كل سطور الصنف.
+    ///
+    /// ده هو اللي بيمنع الاختبار من إنه يعدّي وهو فاضي: الكمية لوحدها بتيجي من
+    /// `addItem`، فلو التطبيق التلقائي اتشال بالكامل الكمية تفضل صح. السعر
+    /// والملاحظة ما بيجوش إلا لو الجولة اشتغلت **وكتبت**.
+    void expectOfferApplied(int productId) {
+      final lines = linesOf(productId);
+      expect(lines, isNotEmpty, reason: 'الصنف اختفى من السلة');
+      for (final line in lines) {
+        expect(line.price, closeTo(offerUnitPrice, 0.0005),
+            reason: 'سعر العرض ما اتكتبش — التطبيق التلقائي ما وصلش للكتابة');
+        expect(line.note, startsWith('عرض:'),
+            reason: 'ملاحظة العرض ناقصة — العرض ما اتطبّقش فعلاً');
+      }
+    }
+
+    test('الضابط: من غير تشابك، سحبتين = كمية ٢ والعرض متطبّق', () async {
       cart.addItem(a);
-      offersRepo.gate.complete([_offer()]);
+      offersRepo.gate.complete([_offer(offerPrice: offerPrice)]);
       await _settle();
       cart.addItem(a);
       await _settle();
 
       expect(qtyOf(a.id), 2,
           reason: 'من غير تشابك المسار سليم — لو ده وقع فالتجهيزة هي البايظة');
+      expectOfferApplied(a.id);
     });
 
-    test('السحبة التانية جوّه نافذة الـ await بتتمسح', () async {
-      final a = _product();
-
+    test('سحبة جوّه نافذة الـ await: الكمية بتفضل والعرض بيتطبّق بعدها',
+        () async {
       // سحبة ١ — التطبيق التلقائي دلوقتي واقف على البوابة، ماسك لقطة «A × ١».
       cart.addItem(a);
       expect(qtyOf(a.id), 1, reason: 'تجهيزة: السحبة الأولى دخلت');
@@ -179,13 +228,18 @@ void main() {
       expect(qtyOf(a.id), 2,
           reason: 'تجهيزة: الكمية بقت ٢ فعلاً قبل ما العروض ترجع');
 
-      // العروض رجعت → الجولة القديمة لازم تلاقي جيلها قديم وترجع من غير كتابة.
-      offersRepo.gate.complete([_offer()]);
+      // العروض رجعت → الجولة القديمة لازم ترجع من غير كتابة، والإعادة المجدولة
+      // تحسب من جديد على «A × ٢».
+      offersRepo.gate.complete([_offer(offerPrice: offerPrice)]);
       await _settle();
 
-      // قبل الإصلاح كانت بترجع ١ — الوحدة تتمسح ومش بترجع تاني.
+      // النص الأول: الكمية ما ضاعتش (قبل الإصلاح كانت بترجع ١).
       expect(qtyOf(a.id), 2,
           reason: 'الوحدة اللي اتسحبت أثناء انتظار العروض ضاعت من السلة');
+
+      // النص التاني: الإعادة المجدولة اشتغلت **وكتبت**. من غير ده، استبدال
+      // `_autoApplyOffers` بـ`async {}` كان بيخلّي الاختبار يعدّي.
+      expectOfferApplied(a.id);
     });
   });
 
@@ -262,7 +316,10 @@ void main() {
       );
 
       expect(priced, hasLength(2), reason: 'تجهيزة: الخدمة رجّعت سطور العرض');
-      expect(bundleTotal(priced), offer.offerPrice,
+      // `closeTo` مش مساواة تامة: المجموع بيتجمّع بـdouble، فالمساواة الحرفية
+      // بتعدّي بحظ الفاصلة العايمة مش بصحة الحساب. نصف مليم هو حد الخطأ اللي
+      // يهم فعلاً — أقل من أصغر وحدة قابلة للطباعة.
+      expect(bundleTotal(priced), closeTo(offer.offerPrice, 0.0005),
           reason: 'قسمة نضيفة لازم تجمع لسعر العرض بالظبط');
     });
 
@@ -285,9 +342,19 @@ void main() {
         'الفرق = $drift (بخانات العملة = ${AppConstants.decimalPlaces})',
       );
 
-      // قبل الإصلاح: ٩٫٩٩٩ مش ١٠.
-      expect(total, offer.offerPrice,
+      // قبل الإصلاح: ٩٫٩٩٩ مش ١٠. الفرق كان مليم كامل — أكبر بـ٢× من هامش
+      // الـ`closeTo` هنا، فالتأكيد لسه بيمسك الانحدار من غير ما يعتمد على حظ
+      // الفاصلة العايمة.
+      expect(total, closeTo(offer.offerPrice, 0.0005),
           reason: 'مجموع سطور العرض لازم يساوي سعر العرض المعلن — الفرق $drift');
+
+      // وكمان: توزيع الباقي ممنوع يطلّع أي سطر فوق سعر بيعه. هنا التأكيد ده
+      // بيعضّ فعلاً (٣٫٣٣٤ مقابل ٥) — مش زي المجموعة المرفوضة تحت اللي
+      // بترجع فاضية.
+      for (final p in priced) {
+        expect(p.customPrice, lessThanOrEqualTo(p.product.salePrice),
+            reason: 'تصحيح الباقي رفع ${p.product.name} فوق سعر بيعه');
+      }
     });
 
     // ─────────────────────────────────────────────────────────────────────
@@ -330,12 +397,28 @@ void main() {
           reason: 'سبب الرفض لازم يوصل للي مناديها مش يتبلع في اللوج');
       expect(rejection?.normalPrice, 15.0);
 
-      // الثابت الأصلي محفوظ: مفيش سطر راجع بسعر أعلى من سعر بيعه.
-      for (final p in priced) {
-        expect(p.customPrice, lessThanOrEqualTo(p.product.salePrice),
-            reason: 'عرض المفروض ما يرفعش سعر الصنف '
-                '(${p.product.name}: عرض ${p.customPrice} مقابل بيع ${p.product.salePrice})');
-      }
+      // (اتشالت حلقة كانت بتلفّ على `priced` وهي متأكَّد إنها فاضية — ثابت
+      // بيعدّي فراغياً مش بيحرس حاجة. الثابت الحقيقي بيتفحص في اختبار H2 فوق
+      // على سطور موجودة فعلاً.)
+    });
+
+    // الحد الفاصل: `>=` مش `>`. عرض سعره **يساوي** مجموع أسعار البيع مش عرض —
+    // خصمه صفر، فبيضيف سطور وبيوهم الكاشير إنه وفّر. من غير الاختبار ده، قلب
+    // الشرط لـ`>` كان هيعدّي من غير ما حد ياخد باله.
+    test('الحد الفاصل: سعر العرض = مجموع أسعار البيع بيترفض برضه', () async {
+      final offer = await seedOffer(
+          salePrices: [5, 5, 5], offerPrice: 15, name: 'متعادل');
+
+      OfferRejection? rejection;
+      final priced = await service.calculateOfferItems(
+        ApplyOfferRequest(offer: offer),
+        onRejected: (r) => rejection = r,
+      );
+
+      expect(priced, isEmpty,
+          reason: 'عرض بخصم صفر مش عرض — لازم يترفض زي المقلوب');
+      expect(rejection?.reason, OfferRejectionReason.notADiscount);
+      expect(rejection?.normalPrice, 15.0);
     });
   });
 }
