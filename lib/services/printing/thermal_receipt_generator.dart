@@ -10,6 +10,66 @@ import '../../domain/repositories/printers_repository.dart';
 import 'printing_models.dart';
 import '../../core/config/brand.dart';
 
+/// حساب أرقام ذيل الإيصال — مستخرَج من باني الـPDF عشان يبقى **قابلاً للاختبار**.
+///
+/// ── العطل اللي بيقفله ──────────────────────────────────────────────────────
+/// `salesInvoices.total` المخزَّن **بيشمل رسوم التوصيل بالفعل**:
+///
+///   finalTotal = subtotal − discount + tax + deliveryFee
+///   (sales_transaction_orchestrator.dart:635-636)
+///
+/// وطبقة الطباعة كانت بتجمعها تاني: `grandTotal = total + deliveryFee`.
+/// فعلى فاتورة توصيل أصنافها ١٠٠ ورسومها ٥ ومدفوعة ١٠٥ بالكامل:
+///
+///   المجموع الفرعي المطبوع = ١٠٥ (والصح ١٠٠)
+///   الإجمالي المطبوع       = ١١٠ (والصح ١٠٥)
+///   «المتبقي ٥٫٠٠٠» بالأحمر على فاتورة **مقفولة ومدفوعة**
+///
+/// يعني الورقة بتقول العميل مديون والقاعدة بتقول صفر.
+///
+/// `total` هو الإجمالي النهائي — ما بيتجمعش عليه حاجة. والمجموع الفرعي
+/// بيترجع بالعكس: `subtotal = total + discount − tax − deliveryFee`.
+@immutable
+class ReceiptTotals {
+  const ReceiptTotals({
+    required this.itemsSubtotal,
+    required this.grandTotal,
+    required this.change,
+    required this.remaining,
+  });
+
+  /// مجموع الأصناف قبل الخصم والضريبة والتوصيل.
+  final double itemsSubtotal;
+
+  /// الإجمالي النهائي المستحق — نفس `total` المخزَّن.
+  final double grandTotal;
+
+  /// الباقي للعميل (صفر لو مفيش).
+  final double change;
+
+  /// المتبقي على العميل (صفر لو مفيش).
+  final double remaining;
+
+  factory ReceiptTotals.from({
+    required double total,
+    required double paid,
+    double? discount,
+    double? tax,
+    double? deliveryFee,
+  }) {
+    final fee = deliveryFee ?? 0;
+    final disc = discount ?? 0;
+    final t = tax ?? 0;
+    final diff = paid - total;
+    return ReceiptTotals(
+      itemsSubtotal: total + disc - t - fee,
+      grandTotal: total,
+      change: diff > 0 ? diff : 0,
+      remaining: diff < 0 ? -diff : 0,
+    );
+  }
+}
+
 class ThermalReceiptGenerator {
   static pw.Font? _arabicFont;
 
@@ -60,10 +120,17 @@ class ThermalReceiptGenerator {
     );
 
     final displayInvoiceNumber = invoiceNumber;
-    final double itemsSubtotal = total + (discount ?? 0) - (tax ?? 0);
-    final double grandTotal = total + (deliveryFee ?? 0);
-    final double actualChange = paid - grandTotal;
-    final double remaining = grandTotal - paid;
+    final totals = ReceiptTotals.from(
+      total: total,
+      paid: paid,
+      discount: discount,
+      tax: tax,
+      deliveryFee: deliveryFee,
+    );
+    final double itemsSubtotal = totals.itemsSubtotal;
+    final double grandTotal = totals.grandTotal;
+    final double actualChange = totals.change;
+    final double remaining = totals.remaining;
 
     pdf.addPage(
       pw.Page(
