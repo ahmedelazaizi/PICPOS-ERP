@@ -403,7 +403,7 @@ extension DatabaseStartup on AppDatabase {
           if (!ok) {
             debugPrint('[Startup] ⚠️ Post-seed verify FAILED — forcing admin/admin reset');
             final newSalt = SecurityService.generateSalt();
-            final newHash = SecurityService.hashPassword('admin', newSalt);
+            final newHash = await SecurityService.hashPasswordArgon2('admin');
             final boolTrue = sqlBool(true);
             final boolFalse = sqlBool(false);
             await customStatement(
@@ -568,7 +568,7 @@ extension DatabaseStartup on AppDatabase {
         if (shouldHeal) {
           logLines.add('⚠️ Broken salt/hash — resetting to "admin"...');
           final salt = SecurityService.generateSalt();
-          final hash = SecurityService.hashPassword('admin', salt);
+          final hash = await SecurityService.hashPasswordArgon2('admin');
 
           // Use RAW SQL to bypass any Drift companion issues.
           // IMPORTANT: `is_active = 1` is SQLite syntax — on PostgreSQL the
@@ -864,7 +864,7 @@ extension DatabaseStartup on AppDatabase {
             ..limit(1))
           .getSingleOrNull();
       final salt = SecurityService.generateSalt();
-      final hash = SecurityService.hashPassword('admin', salt);
+      final hash = await SecurityService.hashPasswordArgon2('admin');
       await into(users).insert(
         UsersCompanion.insert(
           username: 'admin',

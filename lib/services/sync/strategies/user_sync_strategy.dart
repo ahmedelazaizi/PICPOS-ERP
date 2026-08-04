@@ -103,7 +103,11 @@ class UserSyncStrategy extends SyncStrategy {
         // rather than the nullable serveSalt to keep the column non-null.
         hashToSave = serveHash;
         saltToSave = serveSalt ?? '';
-        pinToSave = servePin;
+        // الخادم مابقاش بيبعت `pin` (تسريب B11 — شوف api_handler `_getUsers`).
+        // كان `= servePin` مباشرةً، فغياب الحقل كان هيمسح الـPIN المحلي على
+        // كل مزامنة. الـPIN بقى سرّاً محلياً: بيتظبط عبر نقطة النهاية
+        // المخصّصة وبيتحقق محلياً، والمزامنة ما بتلمسهوش.
+        pinToSave = servePin ?? existingUser?.pin;
       } else if (existingUser != null &&
           existingUser.passwordHash.isNotEmpty &&
           existingUser.passwordSalt.isNotEmpty) {
@@ -123,9 +127,10 @@ class UserSyncStrategy extends SyncStrategy {
         debugPrint('[UserSync] Preserved password from offline duplicate for "$username"');
       } else {
         // No password available anywhere — generate temporary
+        // ⚠️ متوقَّعة — شوف نفس التعليق في `delta_pull_service.dart`.
         final tempPassword = '${username}123';
         saltToSave = SecurityService.generateSalt();
-        hashToSave = SecurityService.hashPassword(tempPassword, saltToSave);
+        hashToSave = await SecurityService.hashPasswordArgon2(tempPassword);
         pinToSave = servePin;
         debugPrint('[UserSync] New user "$username" synced without password — '
             'temporary password set, forcePasswordChange enabled');

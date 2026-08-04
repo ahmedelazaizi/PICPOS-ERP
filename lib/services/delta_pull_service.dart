@@ -710,10 +710,17 @@ class DeltaPullService {
               !username.startsWith('__dup_')) {
             final tempPassword = '${username}123';
             saltToUse = SecurityService.generateSalt();
-            hashToUse = SecurityService.hashPassword(tempPassword, saltToUse);
+            hashToUse = await SecurityService.hashPasswordArgon2(tempPassword);
+            // ⚠️ الكلمة المؤقتة **متوقَّعة** (‏`<username>123`) وأسماء
+            //    المستخدمين بتتبعت في `GET /api/users` — يعني مش محتاجة كسر
+            //    أصلاً، بتتجرّب على شاشة الدخول على طول. Argon2 ما بيحلّش
+            //    التوقّع؛ ده بند مفتوح للمالك (التنصيب المؤقت المطلوب:
+            //    قفل الحساب لحد ما الخادم يبعت اعتماداً حقيقياً).
+            //    اللي اتقفل هنا: الكلمة نفسها ما بقتش بتتكتب في اللوج —
+            //    `debugPrint` بيروح لملف تشخيص على القرص.
             debugPrint('[DeltaPull] users id=${row['id']} '
                 'username="$username": no usable credentials — minted temp '
-                'password "${username}123" + forcePasswordChange=true');
+                'password + forcePasswordChange=true');
           }
 
           if (hashToUse != null && saltToUse != null) {

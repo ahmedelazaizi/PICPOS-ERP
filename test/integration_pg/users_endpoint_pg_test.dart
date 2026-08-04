@@ -111,6 +111,37 @@ void main() {
         );
   }
 
+  // ═══════════════════════════════════════════════════════════════════════
+  // B11 — الـPIN ممنوع يخرج على السلك
+  //
+  // الاستجابة دي بتروح لكل حامل bearer على الشبكة المحلية عمداً، عشان العميل
+  // يصادق محلياً وهو offline. ده مقبول لهاش كلمة مرور Argon2id (ذاكرة-صعب،
+  // وملحه جوّاه). **مش مقبول للـPIN**: ٤-٦ أرقام = ١٫١ مليون احتمال على
+  // الأكثر، فأي KDF مهما كان بيتكسر في وقت معقول.
+  //
+  // ومحدش بيصادق بالـPIN في المنتج أصلاً (`verifyUserPin` بلا أي مُنادٍ
+  // إنتاجي)، فالحقل كان بيتبعت على الشبكة **بلا أي مستهلك للمصادقة**.
+  // ═══════════════════════════════════════════════════════════════════════
+  group('/api/users — الـPIN مايخرجش', () {
+    test('الاستجابة مفيهاش حقل pin إطلاقاً', () async {
+      await seedRole(id: 1, name: 'مدير النظام', isSystem: true);
+      await seedUser(id: 1, username: 'admin', roleId: 1);
+      // مستخدم عنده PIN فعلاً — لو الحقل بيتبعت، هيبان هنا.
+      await seedUser(id: 2, username: 'cashier_pin', roleId: 1);
+      await fx.db.updateUserPin(2, '1234');
+
+      final response = await callGetUsers();
+      final users = (response['users'] as List).cast<Map<String, dynamic>>();
+      expect(users, isNotEmpty, reason: 'تجهيزة: الاستجابة مش فاضية');
+
+      for (final u in users) {
+        expect(u.containsKey('pin'), isFalse,
+            reason: 'الـPIN بيتبعت لكل حامل bearer على الشبكة المحلية — '
+                'وهو ٤-٦ أرقام، يعني بيتكسر offline مهما كان الـKDF');
+      }
+    });
+  });
+
   group('/api/users — admin always included (Bug A)', () {
     test(
       'admin (id=1) is present when userBranchAccess for id=1 is empty '

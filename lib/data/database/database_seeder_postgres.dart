@@ -414,7 +414,7 @@ extension DatabaseSeederPostgres on AppDatabase {
     final roleId = adminRole?.id ?? 1;
 
     final salt = SecurityService.generateSalt();
-    final hash = SecurityService.hashPassword('admin', salt);
+    final hash = await SecurityService.hashPasswordArgon2('admin');
     final globalId = UuidV7.generate();
 
     // Raw SQL INSERT: avoids a drift_postgres quirk where `withDefault('')`

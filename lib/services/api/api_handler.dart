@@ -1654,10 +1654,20 @@ class ApiHandler {
               'discountLimitIsPercent': u.discountLimitIsPercent,
               'cardCode': u.cardCode,
               // Include hashed credentials so clients can authenticate
-              // locally. Values are already PBKDF2-hashed — safe over LAN.
+              // locally while offline. الهاش دلوقتي Argon2id (ذاكرة-صعب،
+              // وملحه جوّه سلسلة الـPHC) — وده اللي بيخلّي إرساله على الشبكة
+              // المحلية مقبولاً. التعليق القديم كان بيقول «PBKDF2 — safe over
+              // LAN» وده **ما كانش صحيحاً**: PBKDF2 بالملح المرفَق بيتكسر رخيص.
               'passwordHash': u.passwordHash,
+              // باقٍ للتوافق مع أي هاش قديم واصل عبر المزامنة؛ لصفوف Argon2id
+              // بقى بلا قيمة أمنية لأن الملح الحقيقي جوّه الـPHC.
               'passwordSalt': u.passwordSalt,
-              'pin': u.pin,
+              // ⛔ الـPIN **مايخرجش**. ٤-٦ أرقام = ١٫١ مليون احتمال على
+              //    الأكثر، فأي KDF بيتكسر offline في وقت معقول لو الهاش وصل
+              //    للمهاجم. ومحدش بيصادق بالـPIN أصلاً (`verifyUserPin` بلا
+              //    مُنادٍ إنتاجي)، فالحقل كان بيتبعت بلا أي مستهلك.
+              //    الـPIN بقى سرّاً محلياً: بيتظبط عبر
+              //    `POST /api/users/<id>/pin` وبيتحقق محلياً.
             },
           )
           .toList();
@@ -1758,7 +1768,7 @@ class ApiHandler {
       // autoincrement sequence assign one. The default password is
       // 'admin' so the operator can log in and rotate.
       final salt = SecurityService.generateSalt();
-      final passwordHash = SecurityService.hashPassword('admin', salt);
+      final passwordHash = await SecurityService.hashPasswordArgon2('admin');
       await _db.into(_db.users).insertOnConflictUpdate(
             UsersCompanion.insert(
               username: 'admin',

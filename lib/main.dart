@@ -1108,7 +1108,7 @@ Future<void> _bootTimeAdminHeal(AppDatabase db) async {
 /// dialect [sqlBool] helper for the boolean column.
 Future<void> _resetAdminPasswordToDefault(AppDatabase db) async {
   final salt = SecurityService.generateSalt();
-  final hash = SecurityService.hashPassword('admin', salt);
+  final hash = await SecurityService.hashPasswordArgon2('admin');
 
   final boolTrue = db.sqlBool(true);
   final boolFalse = db.sqlBool(false);

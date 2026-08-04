@@ -31,7 +31,7 @@ extension Epoch1Migrations on AppDatabase {
       final existingUsers = await select(users).get();
       for (final user in existingUsers) {
         final salt = SecurityService.generateSalt();
-        final newHash = SecurityService.hashPassword('admin', salt);
+        final newHash = await SecurityService.hashPasswordArgon2('admin');
         await (update(users)..where((u) => u.id.equals(user.id))).write(
           UsersCompanion(
             passwordSalt: Value(salt),

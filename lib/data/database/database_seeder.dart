@@ -27,7 +27,7 @@ extension DatabaseSeeder on AppDatabase {
     ).get();
     if (existingAdmin.isEmpty) {
       final salt = SecurityService.generateSalt();
-      final passwordHash = SecurityService.hashPassword('admin', salt);
+      final passwordHash = await SecurityService.hashPasswordArgon2('admin');
       final globalId = UuidV7.generate();
       final boolTrue = sqlBool(true);
       final boolFalse = sqlBool(false);
