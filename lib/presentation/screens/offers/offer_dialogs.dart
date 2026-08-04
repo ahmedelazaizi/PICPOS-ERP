@@ -694,6 +694,34 @@ mixin _OfferDialogsMixin on ConsumerState<OffersScreen> {
                           return;
                         }
 
+                        // دفاع في العمق: عرض حزمة سعره ≥ مجموع أسعار بيع أصنافه
+                        // بيرفع الأسعار بدل ما يخفّضها. الحارس الحقيقي عند
+                        // التطبيق (`CartPricingService`) لأن `salePrice` ممكن
+                        // ينزل على جهاز تاني بعد الحفظ — ده هنا عشان نمسك
+                        // غلطة الكتابة وقت ما الموظف لسه شايف الشاشة.
+                        if (selectedOfferType == 'bundle') {
+                          final productRepo = ref.read(productRepositoryProvider);
+                          double normalTotal = 0;
+                          for (final item in selectedItems) {
+                            final p = await productRepo
+                                .getProductById(item['productId'] as int);
+                            if (p == null) continue;
+                            normalTotal +=
+                                p.salePrice * (item['quantity'] as double);
+                          }
+                          if (!ctx.mounted) return;
+                          if (normalTotal > 0 && price >= normalTotal) {
+                            AppToast.show(
+                              ctx,
+                              'سعر العرض ($price) أعلى من أو يساوي مجموع أسعار '
+                              'بيع الأصناف ($normalTotal) — العرض بهذا السعر '
+                              'سيرفع الأسعار بدل خفضها.',
+                              type: ToastType.warning,
+                            );
+                            return;
+                          }
+                        }
+
                         setDialogState(() => isLoading = true);
 
                         try {

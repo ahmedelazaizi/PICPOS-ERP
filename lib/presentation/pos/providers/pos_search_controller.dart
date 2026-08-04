@@ -413,10 +413,31 @@ class PosSearchController extends Notifier<PosSearchState> {
       final allOffers = await offersRepo.getOffers();
       final offer = allOffers.where((o) => o.barcode == barcode).firstOrNull;
       if (offer != null) {
-        await ref.read(cartControllerProvider.notifier).applyOffer(offer);
-        state = state.copyWith(searchResults: [], clearError: true);
-        _playSuccessBeep();
-        debugPrint('[BarcodeSearch] ✓ Offer matched');
+        final outcome =
+            await ref.read(cartControllerProvider.notifier).applyOffer(offer);
+        // الباركود اتطابق فعلاً، فالمسار بينتهي هنا في كل الحالات — بس بيب
+        // النجاح لازم يبقى مقصور على الإضافة الحقيقية. من غير الفرق ده كان
+        // العرض المرفوض بيدّي نفس صوت العرض اللي اتضاف.
+        if (outcome == ApplyOfferOutcome.added) {
+          state = state.copyWith(searchResults: [], clearError: true);
+          _playSuccessBeep();
+          debugPrint('[BarcodeSearch] ✓ Offer matched');
+        } else {
+          _playErrorBeep();
+          state = state.copyWith(
+            error: switch (outcome) {
+              ApplyOfferOutcome.alreadyInCart =>
+                'العرض "${offer.name}" مضاف بالفعل إلى السلة.',
+              ApplyOfferOutcome.notADiscount =>
+                'العرض "${offer.name}" سعره أعلى من مجموع أسعار بيع أصنافه — '
+                    'اترفض عشان ما يرفعش الأسعار. راجع سعر العرض.',
+              _ => 'تعذّر تطبيق العرض "${offer.name}" — تأكد من أصناف العرض.',
+            },
+            errorKind: BarcodeSearchErrorKind.general,
+            searchResults: [],
+          );
+          debugPrint('[BarcodeSearch] ✗ Offer rejected: $outcome');
+        }
         return;
       }
     } catch (e) {

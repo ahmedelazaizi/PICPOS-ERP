@@ -14,6 +14,27 @@ import '../../../application/services/cart_pricing_service.dart';
 import '../widgets/modifier_selection_dialog.dart';
 import 'checkout_controller.dart';
 
+/// نتيجة [CartController.applyOffer].
+///
+/// ── ليه مش `void` ──────────────────────────────────────────────────────────
+/// كل حالات الرفض كانت بترجع `void` وتكتفي بـ`debugPrint`، والواجهة كانت
+/// بتخمّن اللي حصل من فرق عدد الأصناف قبل/بعد — فأي رفض بيطلع بنفس رسالة
+/// «العرض مضاف بالفعل» حتى لو السبب مختلف تماماً. الكاشير بيقف قدام شاشة
+/// بتقول حاجة غلط، أو ما بتقولش حاجة أصلاً.
+enum ApplyOfferOutcome {
+  /// اتضاف للسلة فعلاً.
+  added,
+
+  /// نفس العرض مضاف يدوياً قبل كده.
+  alreadyInCart,
+
+  /// العرض من غير أصناف صالحة للتسعير.
+  noItems,
+
+  /// سعر العرض ≥ مجموع أسعار بيع أصنافه — عرض مقلوب، اترفض.
+  notADiscount,
+}
+
 /// يبني نص `CartItemEntity.note` المركّب من المعدِّلات + الملاحظة اليدوية.
 ///
 /// ── ليه دالة واحدة ─────────────────────────────────────────────────────────
@@ -797,7 +818,7 @@ class CartController extends Notifier<CartState> {
     state = state.copyWith(items: updatedItems);
   }
 
-  Future<void> applyOffer(Offer offer) async {
+  Future<ApplyOfferOutcome> applyOffer(Offer offer) async {
     // P5 (Issue #5): Idempotent guard — if this exact offer was already added
     // manually, refuse to add it again. Without this, every press of the
     // offer card produced another set of items in the cart, silently
@@ -806,18 +827,25 @@ class CartController extends Notifier<CartState> {
     final alreadyApplied = state.items.any((i) => i.note == manualNote);
     if (alreadyApplied) {
       debugPrint('[applyOffer] offer "${offer.name}" already in cart — skipping duplicate manual add');
-      return;
+      return ApplyOfferOutcome.alreadyInCart;
     }
 
     final cartPricingService = ref.read(cartPricingServiceProvider);
 
+    OfferRejection? rejection;
     final pricedItems = await cartPricingService.calculateOfferItems(
       ApplyOfferRequest(offer: offer),
+      onRejected: (r) => rejection = r,
     );
     if (pricedItems.isEmpty) {
       debugPrint('[applyOffer] offer "${offer.name}" produced 0 priced items — '
-          'either getOfferItems returned empty or no product matched.');
-      return;
+          'reason=${rejection?.reason}');
+      // الفرق بين «مقلوب» و«فاضي» لازم يوصل للواجهة: الأول غلطة في بيانات
+      // العرض محتاجة تصليح، والتاني عرض ناقص. رسالة واحدة عامة كانت بتخلّي
+      // الاتنين شكلهم واحد قدام الكاشير.
+      return rejection?.reason == OfferRejectionReason.notADiscount
+          ? ApplyOfferOutcome.notADiscount
+          : ApplyOfferOutcome.noItems;
     }
 
     // Batch-add all offer items atomically (no per-item auto-apply)
@@ -841,6 +869,7 @@ class CartController extends Notifier<CartState> {
 
     // Add all items at once — no auto-apply since items are already priced
     state = state.copyWith(items: [...state.items, ...newItems]);
+    return ApplyOfferOutcome.added;
   }
 
   void removeFromCart(int index) {

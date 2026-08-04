@@ -15,6 +15,29 @@ class ApplyOfferRequest {
   });
 }
 
+/// ليه العرض اترفض. الرفض هنا **ممنوع يكون صامت**: الكاشير ضغط على العرض
+/// قدام الزبون، فلو مفيش حاجة حصلت ومفيش سبب ظاهر هيفضل يضغط ويشك في الجهاز.
+enum OfferRejectionReason {
+  /// العرض من غير أصناف، أو أصنافه مش موجودة/مجموع أسعارها صفر.
+  noPricedItems,
+
+  /// سعر العرض ≥ مجموع أسعار بيع أصنافه — يعني «عرض» بيغلّي مش بيخفّض.
+  notADiscount,
+}
+
+/// تفاصيل رفض تطبيق عرض، عشان الواجهة تعرض رقم مش رسالة عامة.
+class OfferRejection {
+  final OfferRejectionReason reason;
+  final double offerPrice;
+  final double normalPrice;
+
+  const OfferRejection({
+    required this.reason,
+    required this.offerPrice,
+    required this.normalPrice,
+  });
+}
+
 /// Item returned to controller
 class PricedCartItem {
   final ProductEntity product;
@@ -34,8 +57,14 @@ class CartPricingService {
 
   CartPricingService(this._ref);
 
-  /// Computes the offer bundle and returns the list of priced cart items to add
-  Future<List<PricedCartItem>> calculateOfferItems(ApplyOfferRequest request) async {
+  /// Computes the offer bundle and returns the list of priced cart items to add.
+  ///
+  /// [onRejected] بينده لما العرض يترفض، عشان اللي مناديها يقدر يقول للكاشير
+  /// السبب. لو مبعتّش، الرفض بيفضل مكتوب في اللوج بس.
+  Future<List<PricedCartItem>> calculateOfferItems(
+    ApplyOfferRequest request, {
+    void Function(OfferRejection rejection)? onRejected,
+  }) async {
     final db = _ref.read(databaseProvider);
     final offer = request.offer;
     final List<PricedCartItem> pricedItems = [];
@@ -43,7 +72,10 @@ class CartPricingService {
     try {
       // NOTE: getOfferItems should return actual item bundles linked to the offer
       final items = await db.getOfferItems(offer.id);
-      if (items.isEmpty) return pricedItems;
+      if (items.isEmpty) {
+        _reject(onRejected, OfferRejectionReason.noPricedItems, offer, 0);
+        return pricedItems;
+      }
 
       double totalNormalPrice = 0;
       final List<Map<String, dynamic>> productsToAdd = [];
@@ -60,7 +92,26 @@ class CartPricingService {
         }
       }
 
-      if (totalNormalPrice == 0) return pricedItems;
+      if (totalNormalPrice == 0) {
+        _reject(onRejected, OfferRejectionReason.noPricedItems, offer, 0);
+        return pricedItems;
+      }
+
+      // عرض سعره ≥ مجموع أسعار بيع أصنافه بيدّي `factor > 1`، فكل سطر بيتسعّر
+      // **فوق** سعر بيعه العادي — «عرض» بيغرّم الزبون. الحارس ده كان موجود في
+      // `apply_offers_usecase.dart:70` والمسار الحيّ ورث الشرط الناقص بس.
+      //
+      // وليه هنا بالذات مش عند إنشاء العرض: `products.salePrice` ممكن ينزل على
+      // جهاز تاني **بعد** ما العرض اتحفظ، فعرض سليم يوصل مقلوب بعد المزامنة.
+      // نقطة التطبيق هي الوحيدة اللي بتقفل الطريقين (غلطة كتابة + انحراف مزامنة).
+      // مسار التطبيق التلقائي (`_applyBundleOffer`) عنده الحارس ده أصلاً؛
+      // المكشوف كان المسار اليدوي/الباركود بس.
+      if (offer.offerPrice >= totalNormalPrice) {
+        _reject(onRejected, OfferRejectionReason.notADiscount, offer,
+            totalNormalPrice);
+        return pricedItems;
+      }
+
       final factor = offer.offerPrice / totalNormalPrice;
 
       for (final p in productsToAdd) {
@@ -92,6 +143,23 @@ class CartPricingService {
       AppLogger.instance.error('Failed to calculate offer', e, null, 'CART_PRICING');
       return pricedItems;
     }
+  }
+
+  void _reject(
+    void Function(OfferRejection)? onRejected,
+    OfferRejectionReason reason,
+    Offer offer,
+    double normalPrice,
+  ) {
+    AppLogger.instance.warning(
+      'رفض تطبيق عرض "${offer.name}" (#${offer.id}): $reason — '
+      'سعر العرض ${offer.offerPrice}، مجموع أسعار البيع $normalPrice',
+    );
+    onRejected?.call(OfferRejection(
+      reason: reason,
+      offerPrice: offer.offerPrice,
+      normalPrice: normalPrice,
+    ));
   }
 
   void _logAction(

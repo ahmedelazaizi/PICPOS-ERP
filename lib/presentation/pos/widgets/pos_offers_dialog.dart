@@ -218,19 +218,25 @@ class PosOffersDialog extends ConsumerWidget {
 
     // Use the controller's applyOffer for atomic batch-add
     final controller = ref.read(cartControllerProvider.notifier);
-    final beforeCount = controller.state.items.length;
-    await controller.applyOffer(offer);
-    final afterCount = controller.state.items.length;
+    final outcome = await controller.applyOffer(offer);
 
     if (!context.mounted) return;
-    if (afterCount == beforeCount) {
-      // applyOffer guards against duplicates and returns early when this
-      // offer is already in the cart — tell the cashier instead of silently
-      // pretending success.
+    // كل رفض له رسالته. الفرق بين «مضاف بالفعل» و«سعر العرض غلط» هو الفرق بين
+    // «كمّل شغلك» و«روح صلّح العرض» — دمجهم في رسالة واحدة كان بيخلّي عرض
+    // مقلوب يبان كأنه مكرَّر.
+    if (outcome != ApplyOfferOutcome.added) {
+      final message = switch (outcome) {
+        ApplyOfferOutcome.alreadyInCart =>
+          'العرض "${offer.name}" مضاف بالفعل إلى السلة',
+        ApplyOfferOutcome.notADiscount =>
+          'العرض "${offer.name}" سعره أعلى من مجموع أسعار بيع أصنافه — '
+              'اترفض عشان ما يرفعش الأسعار. راجع سعر العرض.',
+        _ => 'تعذّر تطبيق العرض "${offer.name}" — تأكد من أصناف العرض',
+      };
       showPosToast(
         context,
         ref,
-        'العرض "${offer.name}" مضاف بالفعل إلى السلة',
+        message,
         type: PosNotificationType.warning,
       );
       return;

@@ -294,21 +294,33 @@ void main() {
     // وشاشة إنشاء العروض (offer_dialogs.dart) بتتحقق من الاسم والسعر > ٠
     // ووجود أصناف بس — فمفيش حاجة بتمنع حفظ العرض ده من الأساس.
     // ─────────────────────────────────────────────────────────────────────
-    test('عرض سعره أعلى من مجموع أصنافه بيسعّر السطور فوق سعر البيع', () async {
-      // تلات أصناف بـ٥ = ١٥، وسعر العرض ٣٠ → المعامل ٢٫٠.
+    test('عرض سعره أعلى من مجموع أصنافه بيترفض ومش بيرفع الأسعار', () async {
+      // تلات أصناف بـ٥ = ١٥، وسعر العرض ٣٠ → المعامل كان هيبقى ٢٫٠.
       final offer =
           await seedOffer(salePrices: [5, 5, 5], offerPrice: 30, name: 'مقلوب');
+
+      OfferRejection? rejection;
       final priced = await service.calculateOfferItems(
         ApplyOfferRequest(offer: offer),
+        onRejected: (r) => rejection = r,
       );
 
-      expect(priced, hasLength(3), reason: 'تجهيزة: الخدمة رجّعت تلات سطور');
       printOnFailure(
         'سعر البيع العادي = ٥ لكل صنف · '
         'أسعار العرض الراجعة = ${priced.map((p) => p.customPrice).toList()}',
       );
 
-      // 🔴 متوقَّع يفشل: بترجع ١٠ لكل وحدة — ضِعف سعر البيع.
+      // قبل الإصلاح كانت بترجع تلات سطور بـ١٠ للوحدة — ضِعف سعر البيع.
+      // الإصلاح بيرفض العرض من أصله، وده أقوى من مجرد تسقيف السعر: عرض بيغلّي
+      // مش عرض ناقص، فما ينفعش يدخل السلة بأي سعر.
+      expect(priced, isEmpty, reason: 'عرض مقلوب لازم يترفض بالكامل');
+
+      // الرفض ممنوع يكون صامت — الكاشير لازم يعرف السبب.
+      expect(rejection?.reason, OfferRejectionReason.notADiscount,
+          reason: 'سبب الرفض لازم يوصل للي مناديها مش يتبلع في اللوج');
+      expect(rejection?.normalPrice, 15.0);
+
+      // الثابت الأصلي محفوظ: مفيش سطر راجع بسعر أعلى من سعر بيعه.
       for (final p in priced) {
         expect(p.customPrice, lessThanOrEqualTo(p.product.salePrice),
             reason: 'عرض المفروض ما يرفعش سعر الصنف '
