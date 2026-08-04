@@ -480,6 +480,31 @@ class CartController extends Notifier<CartState> {
     });
   }
 
+  /// هل السلة اتغيّرت من ساعة ما اللقطة [snapshotRef] اتاخدت؟
+  ///
+  /// ── ليه مقارنة هوية القايمة، مش تبليغ من كل mutator ────────────────────
+  /// رفع الجيل من `_tryAutoApplyOffers` بيغطّي الأربع مسارات اللي بتناديه بس.
+  /// لكن **١٤ دالة** في الكلاس ده بتبدّل `state.items` — `clearCart` و
+  /// `updatePrice` و`applyOffer` و`retrieveHeldOrder` و`loadFromQuotation`
+  /// وغيرهم — ومفيش فيهم واحد بيبلّغ. أخطرهم `clearCart`: الكاشير يمسح السلة
+  /// والجولة الشغّالة تكتب اللقطة اللي قبل المسح، فالسلة الممسوحة **ترجع**
+  /// بأسعارها الأساسية. وفي `applyOffer` سطور العرض اليدوي بتتبلع في دمج
+  /// الـ productId فالعرض يتطبّق وبعدين يختفي.
+  ///
+  /// أي مسار بيبدّل الأصناف بيحط List **جديدة** في `copyWith`، والمسارات اللي
+  /// بتغيّر حاجة تانية بس (ضريبة، عميل، طريقة دفع) بتمرّر نفس القايمة. يعني
+  /// مقارنة الهوية بتمسك كل المسارات — الموجودة والجاية — من غير ما أي واحد
+  /// فيهم يفتكر يعمل حاجة. حراسة معتمدة على انضباط ١٤ نقطة نداء بتصدّي مع
+  /// أول مسار جديد.
+  ///
+  /// لما تضرب بنجدول إعادة: الجولة بترجع من غير كتابة، والإعادة بتحسب من
+  /// حالة طازجة. الإعادة بتاخد لقطتها بنفسها فما بتبطّلش نفسها — مفيش حلقة.
+  bool _cartChangedSince(List<CartItemEntity> snapshotRef) {
+    if (identical(state.items, snapshotRef)) return false;
+    _pendingAutoApply = true;
+    return true;
+  }
+
   /// Core offer auto-application logic for the main POS.
   /// Resets old auto-applied items to base price, then re-evaluates all active offers.
   Future<void> _autoApplyOffers() async {
@@ -489,8 +514,12 @@ class CartController extends Notifier<CartState> {
       final productRepo = ref.read(productRepositoryProvider);
       final generation = ++_autoApplyGeneration;
 
-      // 1) Take a snapshot of current items for processing
-      final snapshotItems = List<CartItemEntity>.from(state.items);
+      // 1) Take a snapshot of current items for processing.
+      // `snapshotRef` هي هوية القايمة نفسها وقت اللقطة — بنقارن بيها قبل أي
+      // كتابة عشان نعرف إذا كان حد بدّل السلة أثناء الـ await. اقرا
+      // [_cartChangedSince].
+      final snapshotRef = state.items;
+      final snapshotItems = List<CartItemEntity>.from(snapshotRef);
 
       // Classify: auto-applied items have 'عرض:' prefix; manual have 'عرض (يدوي):'
       bool isAutoApplied(String? n) {
@@ -535,6 +564,7 @@ class CartController extends Notifier<CartState> {
 
       // Check if generation is stale (a newer auto-apply was triggered)
       if (generation != _autoApplyGeneration) return;
+      if (_cartChangedSince(snapshotRef)) return;
 
       if (activeOffers.isEmpty) {
         final hadAutoItems = snapshotItems.any((i) => isAutoApplied(i.note));
@@ -571,18 +601,17 @@ class CartController extends Notifier<CartState> {
 
       // Check if generation is stale
       if (generation != _autoApplyGeneration) return;
+      if (_cartChangedSince(snapshotRef)) return;
 
-      // 3) Merge: preserve items for products added to state AFTER our snapshot.
-      // Use productId-based detection (not identityHashCode which breaks on copyWith).
-      final currentItems = state.items;
-      final snapshotProductIds = snapshotItems.map((i) => i.productId).toSet();
-      for (final currentItem in currentItems) {
-        if (!snapshotProductIds.contains(currentItem.productId) &&
-            !isAutoApplied(currentItem.note)) {
-          resultItems.add(currentItem);
-        }
-      }
-
+      // 3) اتشال: خطوة دمج كانت بتحاول تتعايش مع تغيّر السلة أثناء الـ await
+      // بإنها تضيف الأصناف اللي مش في اللقطة، بمقارنة `productId` بس. ودي كانت
+      // **هي نفسها** مصدر العطل: صنف موجود في اللقطة وكميته زادت كان بيتخطّى،
+      // وسطور العرض اليدوي كانت بتتبلع.
+      //
+      // دلوقتي [_cartChangedSince] فوق بيضمن إن `state.items` نفس القايمة
+      // بالهوية — يعني مفيش أي صنف اتضاف أو اتغيّر بعد اللقطة، والدمج بقى
+      // ميت بالبرهان. التعايش اتشال ومحلّه إعادة حساب من حالة طازجة، وده
+      // صحيح دايماً مش في حالات معيّنة.
       state = state.copyWith(items: resultItems);
     } catch (e, st) {
       debugPrint('[AutoApplyOffers] ERROR: $e');
@@ -797,8 +826,17 @@ class CartController extends Notifier<CartState> {
     if (applied) appliedOfferIds.add(offer.id);
   }
 
-  /// Public method kept for backward compatibility / manual trigger
-  Future<void> autoApplyMatchingOffers() => _autoApplyOffers();
+  /// نقطة نداء يدوية للتطبيق التلقائي للعروض.
+  ///
+  /// بتعدّي على [_tryAutoApplyOffers] مش على `_autoApplyOffers` مباشرة: النداء
+  /// المباشر كان بيتخطّى حارس `_isApplyingOffers`، فيقدر يشتغل بالتوازي مع
+  /// جولة شغّالة — جولتين بلقطتين مختلفتين بيتسابقوا على الكتابة. الدالة دي
+  /// مش مستعملة حالياً في أي مكان، فده فخ منصوب لأول واحد ينادي عليها.
+  ///
+  /// ⚠️ رجعت `void` بدل `Future<void>` عن قصد: الطلب بيتجدول ومش بيتنفّذ فوراً
+  /// (لو في جولة شغّالة بيستنى نهايتها)، فـ`Future` كان هيوعد بانتظار مش
+  /// بيحصل. النتيجة بتوصل عبر `state` زي أي تغيير تاني في السلة.
+  void autoApplyMatchingOffers() => _tryAutoApplyOffers();
 
   void initiateExchange() {
     state = state.copyWith(isExchangeMode: !state.isExchangeMode);
