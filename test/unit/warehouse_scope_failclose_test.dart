@@ -29,7 +29,6 @@ import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:ural_erp/data/database/database.dart';
 import 'package:ural_erp/data/database/sync_interceptor.dart';
 import 'package:ural_erp/data/providers/client_scope_provider.dart';
 import 'package:ural_erp/data/providers/providers.dart';
@@ -194,10 +193,9 @@ void main() {
       required String mode,
       int? clientBranchId,
     }) async {
-      SharedPreferences.setMockInitialValues({
-        'network_mode': mode,
-        if (clientBranchId != null) 'client_branch_id': clientBranchId,
-      });
+      final prefs = <String, Object>{'network_mode': mode};
+      if (clientBranchId != null) prefs['client_branch_id'] = clientBranchId;
+      SharedPreferences.setMockInitialValues(prefs);
       await NetworkService.instance.loadSettings();
 
       container = ProviderContainer(

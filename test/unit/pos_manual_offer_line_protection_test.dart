@@ -20,11 +20,21 @@
 //   ٢. الكمية اللي أهّلت العرض أصلاً (سطر الأساس) بتفضل من غير عرض، لأن
 //      الحلقة استهلكت حصّتها على السطر اليدوي الغلط.
 //
-// الوصول ضيّق لكنه حقيقي: محتاج سطر يدوي قبل كمية أساس، و`AddToCartUseCase`
-// بيدمج عادةً فيمنع الترتيب ده — **لكن الدمج بيترفض للأصناف الموزونة**
-// (مطاعم/أغذية) وللسطر المعدَّل سعره، وهو بالظبط حال السطر اليدوي.
+// ⚠️ **تصحيح**: نسخة أولى من الملف ده قالت إن «الوصول ضيّق لكنه حقيقي»
+// وإن الدمج بيترفض للسطر المعدَّل سعره. **الاتنين غلط**، ومراجعة مستقلة
+// أثبتت العكس:
+//
+//   ١. `add_to_cart_usecase.dart:66-73` بيلغي شرط تطابق السعر عن قصد لما
+//      السطر الموجود سطر عرض (`existingIsAnyOffer`). فالسطر اليدوي **بيبلع**
+//      السحبات اللاحقة بدل ما يرفض الدمج.
+//   ٢. الأهم: `_applyPercentageOffer` و`_applyFixedDiscountOffer` **مالهمش
+//      ميزانية كمية** — بيلفّوا على كل السطور وبيطبّقوا على كل مطابقة. يعني
+//      ما يهمّهمش الترتيب ولا الدمج ولا وجود سطر أساس أصلاً.
+//
+// فالوصول **واسع ويومي**: الكاشير يمسح باركود عرض (سطر يدوي)، يسحب أي صنف
+// تاني (بيشغّل الجولة)، وأي عرض نسبي نشِط على نفس الفئة بيمسح الخصم اليدوي.
+// مجموعة «المسار النسبي» تحت بتغطّي الحالة دي بالظبط.
 
-import 'dart:async';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -79,16 +89,32 @@ Offer _offer({
       isGlobal: true,
     );
 
-ProductEntity _product({required int id, double salePrice = 10}) =>
+ProductEntity _product({
+  required int id,
+  String code = 'A1',
+  String name = 'شاي',
+  double salePrice = 10,
+  bool isSoldByWeight = true,
+  int? categoryId,
+}) =>
     ProductEntity(
       id: id,
-      code: 'A1',
-      name: 'شاي',
+      code: code,
+      name: name,
       salePrice: salePrice,
       costPrice: 5,
       currentStock: 100, // موجب عشان حارس «غير متوفر» ما يرفضش الإضافة
       minStock: 0,
       taxRate: 0,
+      // ── ليه موزون افتراضياً ────────────────────────────────────────────
+      // عشان السطر الجديد يتخلق **بالمسار الإنتاجي الحقيقي**. كل نقاط
+      // النداء بتمرّر `forceNewEntry: isSoldByWeight && preventStacking`
+      // (`add_to_cart_usecase.dart:25`)، فتركيبة «معدود + forceNewEntry»
+      // مستحيلة إنتاجياً. للصنف الموزون بـ`mergeWeight: false` (الافتراضي)
+      // شرط الدمج في `:69` بيرجع false ⇒ سطر جديد بيتضاف بعد السطر اليدوي.
+      // ودي الحالة الطبيعية في المطاعم/الأغذية.
+      isSoldByWeight: isSoldByWeight,
+      categoryId: categoryId,
     );
 
 void main() {
@@ -116,6 +142,9 @@ void main() {
               code: 'A1',
               name: 'شاي',
               salePrice: const Value(salePrice),
+              // لازم يطابق الكيان: `applyOffer` بيبني السطر اليدوي من صف
+              // القاعدة (`product.isSoldByWeight`).
+              isSoldByWeight: const Value(true),
             ),
           );
       a = _product(id: productId);
@@ -181,9 +210,10 @@ void main() {
           reason: 'تجهيزة: العرض اليدوي لازم يتضاف فعلاً');
 
       // سطر ١ — أساس: هو ده اللي بيأهّل الحزمة (`cartQtyMap` بيعدّه لوحده).
-      // `forceNewEntry` عشان الترتيب يبقى مضبوط بالبرهان مش بالاعتماد على
-      // قواعد الدمج — والدمج مرفوض أصلاً للسطر المعدَّل سعره وللموزون.
-      cart.addItem(a, forceNewEntry: true);
+      // بلا أي علم اصطناعي: الصنف موزون و`mergeWeight` افتراضياً false،
+      // فـ`AddToCartUseCase` بيرفض الدمج ويضيف سطراً جديداً — نفس ما بيحصل
+      // على تلّ مطعم/سوبرماركت.
+      cart.addItem(a);
 
       // ── تأكيدات التجهيزة لازم تتقاس **قبل** الـsettle ──────────────────
       // `addItem` بيشغّل جولة تطبيق تلقائي، والجولة دي هي نفسها اللي بنصطادها.
@@ -256,20 +286,187 @@ void main() {
           reason: 'المضاعِف اتحسب من كمية مش مؤهّلة');
     });
 
-    test('recalculateAllPrices ما بيمسحش الخصم اليدوي عند تغيير مستوى السعر',
-        () async {
+    test('تغيير مستوى السعر ما بيمسحش الخصم اليدوي', () async {
       await buildCart();
 
-      // نفس عدم التطابق كان في `recalculateAllPrices` كمان: توثيقها بيقول
-      // إنها بتتخطّى السطور «اللي جزء من عرض»، وسطر العرض اليدوي جزء من عرض
-      // بالتعريف — لكن الفلتر كان بيشوف التلقائي بس.
-      await cart.recalculateAllPrices();
+      // صنف تالت مش في أي عرض — **ضابط حيّ**: بيثبت إن حلقة إعادة الحساب
+      // اشتغلت فعلاً. من غيره الاختبار كان بيعدّي وهو فاضي: كل سطور السلة
+      // سطور عرض ⇒ الحلقة بتعمل `continue` على الكل ⇒ `changed == false` ⇒
+      // مفيش كتابة على `state` خالص، والتأكيدات بتعيد قراءة حالة قديمة.
+      final plainId = await db.into(db.products).insert(
+            ProductsCompanion.insert(
+              code: 'B1',
+              name: 'سكر',
+              salePrice: const Value(20),
+              wholesalePrice: const Value(12),
+            ),
+          );
+      final plain = _product(
+          id: plainId,
+          code: 'B1',
+          name: 'سكر',
+          salePrice: 20,
+          isSoldByWeight: false);
+      cart.addItem(plain);
       await _settle();
+
+      // المسار الحقيقي: `setPriceLevel` هو اللي بينده `recalculateAllPrices`.
+      cart.setPriceLevel('wholesale');
+      await _settle();
+
+      final plainLine = lines().firstWhere((l) => l.note == null && l.price != manualOfferPrice);
+      expect(plainLine.price, closeTo(12, 0.0005),
+          reason: 'الضابط: الحلقة لازم تكون اشتغلت وكتبت فعلاً');
 
       final manual = lines()[0];
       expect(manual.note, startsWith('عرض (يدوي):'));
       expect(manual.price, closeTo(manualOfferPrice, 0.0005),
           reason: 'إعادة حساب الأسعار رجّعت السطر اليدوي لسعر الأساس');
+    });
+  });
+
+  // ═════════════════════════════════════════════════════════════════════════
+  // المسار النسبي — هنا الوصول **واسع ويومي**، مش ضيّق
+  //
+  // `_applyPercentageOffer` مالهوش ميزانية كمية: بيلفّ على كل السطور وبيطبّق
+  // على كل مطابقة. فما بيحتاجش ترتيباً معيّناً ولا سطر أساس ولا صنفاً موزوناً.
+  // سطر يدوي **لوحده** في السلة + أي سحبة تشغّل الجولة = الخصم اليدوي يتمسح.
+  // ═════════════════════════════════════════════════════════════════════════
+  group('3-3 — المسار النسبي: سطر يدوي لوحده يكفي', () {
+    late AppDatabase db;
+    late ProviderContainer container;
+    late CartController cart;
+    late Offer manualOffer;
+    late ProductEntity other;
+
+    const manualOfferPrice = 4.0;
+
+    setUp(() async {
+      db = AppDatabase.forTesting();
+
+      final categoryId = await db.into(db.categories).insert(
+            CategoriesCompanion.insert(name: 'مشروبات'),
+          );
+      final teaId = await db.into(db.products).insert(
+            ProductsCompanion.insert(
+              code: 'A1',
+              name: 'شاي',
+              salePrice: const Value(10),
+              categoryId: Value(categoryId),
+            ),
+          );
+      // صنف تاني — سحبته هي اللي بتشغّل الجولة، زي أي صنف على التلّ.
+      final otherId = await db.into(db.products).insert(
+            ProductsCompanion.insert(
+              code: 'Z9',
+              name: 'ماء',
+              salePrice: const Value(5),
+            ),
+          );
+      other = _product(id: otherId, code: 'Z9', name: 'ماء', salePrice: 5,
+          isSoldByWeight: false);
+
+      final manualOfferId = await db.into(db.offers).insert(
+            OffersCompanion.insert(
+                name: 'خصم المدير', offerPrice: manualOfferPrice),
+          );
+      await db.into(db.offerItems).insert(
+            OfferItemsCompanion.insert(
+                offerId: manualOfferId, productId: teaId, quantity: 1),
+          );
+      manualOffer = _offer(
+          id: manualOfferId, name: 'خصم المدير', offerPrice: manualOfferPrice);
+
+      container = ProviderContainer(overrides: [
+        databaseProvider.overrideWithValue(db),
+        offersRepositoryProvider.overrideWithValue(
+          _OffersRepo(
+            [
+              Offer(
+                id: 555,
+                name: 'خصم الفئة',
+                offerPrice: 0,
+                isActive: true,
+                createdAt: DateTime(2026),
+                offerType: 'percentage',
+                discountValue: 20,
+                categoryId: categoryId,
+                currentUses: 0,
+                isGlobal: true,
+              ),
+            ],
+            const [],
+          ),
+        ),
+        posDefaultTaxRateProvider.overrideWith((ref) async => 0.0),
+        enableNegativeSalesProvider.overrideWith((ref) async => false),
+      ]);
+      cart = container.read(cartControllerProvider.notifier);
+
+      addTearDown(() async {
+        container.dispose();
+        await db.close();
+      });
+    });
+
+    test('عرض نسبي على نفس الفئة ما بيلمسش سطر الخصم اليدوي', () async {
+      expect(await cart.applyOffer(manualOffer), ApplyOfferOutcome.added,
+          reason: 'تجهيزة: السطر اليدوي اتضاف');
+
+      // سحبة صنف تاني — ده كل اللي محتاجينه عشان الجولة تشتغل.
+      cart.addItem(other);
+      await _settle();
+
+      final tea = container
+          .read(cartControllerProvider)
+          .items
+          .firstWhere((i) => i.productName == 'شاي');
+
+      expect(tea.note, startsWith('عرض (يدوي):'),
+          reason: 'العرض النسبي حوّل السطر اليدوي لتلقائي');
+      expect(tea.effectivePrice, closeTo(manualOfferPrice, 0.0005),
+          reason: 'العرض النسبي ضرب ٢٠٪ فوق الخصم اليدوي — خصم على خصم');
+    });
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // تعليق الطلب واسترجاعه — كان بيهدم الحماية كلها
+    //
+    // `_serializeCartItemMeta` بتسلسل `modifiers` و`itemNote` بس؛ `item.note`
+    // (اللي فيه بادئة العرض) مش موجود فيها خالص، والاسترجاع ما بيحطّهوش.
+    // بينما `customPrice` **بيتحفظ**. فالسطر اليدوي بيرجع بسعر العرض وبملاحظة
+    // `null` ⇒ سطر أساس عادي في عين الفلاتر الستة كلها ⇒ يتعدّ ككمية مؤهّلة
+    // ويتخصم فوق خصمه ويترجّع لسعر المستوى.
+    //
+    // ودي مش حالة حافة: تعليق/استرجاع مسار كاشير يومي.
+    // ═══════════════════════════════════════════════════════════════════════
+    test('تعليق الطلب واسترجاعه بيحافظ على ملاحظة العرض اليدوي', () async {
+      expect(await cart.applyOffer(manualOffer), ApplyOfferOutcome.added,
+          reason: 'تجهيزة: السطر اليدوي اتضاف');
+      final before = container
+          .read(cartControllerProvider)
+          .items
+          .firstWhere((i) => i.productName == 'شاي');
+      expect(before.note, startsWith('عرض (يدوي):'), reason: 'تجهيزة');
+
+      final holdNum = await cart.holdOrder();
+      expect(holdNum, isNotNull, reason: 'تجهيزة: الطلب اتعلّق');
+
+      final held = await db.select(db.heldOrders).get();
+      expect(held, hasLength(1), reason: 'تجهيزة: صف طلب معلّق واحد');
+
+      await cart.retrieveHeldOrder(held.first.id);
+      await _settle();
+
+      final after = container
+          .read(cartControllerProvider)
+          .items
+          .firstWhere((i) => i.productName == 'شاي');
+
+      expect(after.effectivePrice, closeTo(manualOfferPrice, 0.0005),
+          reason: 'تجهيزة: السعر بيتحفظ أصلاً — المشكلة في الملاحظة');
+      expect(after.note, startsWith('عرض (يدوي):'),
+          reason: 'السطر رجع بملاحظة فاضية ⇒ بقى سطر أساس عادي، '
+              'وكل حماية الفلاتر الستة اتهدّت');
     });
   });
 }

@@ -126,6 +126,7 @@ class HoldOrderUseCase {
                 customPrice: item.customPrice,
                 isSoldByWeight: product.isSoldByWeight,
                 itemNote: meta['itemNote'] as String?,
+                note: meta['note'] as String?,
                 modifiers: meta['modifiers'] as List<SelectedModifier>,
               ),
             );
@@ -202,12 +203,23 @@ final holdOrderUseCaseProvider = Provider<HoldOrderUseCase>((ref) {
 
 /// Serialize modifiers + itemNote into a JSON string for storage in held order note field
 String? _serializeCartItemMeta(CartItemEntity item) {
-  if (item.modifiers.isEmpty && (item.itemNote == null || item.itemNote!.isEmpty)) {
+  final hasNote = item.note != null && item.note!.isNotEmpty;
+  if (item.modifiers.isEmpty &&
+      (item.itemNote == null || item.itemNote!.isEmpty) &&
+      !hasNote) {
     return null;
   }
   final data = <String, dynamic>{};
   if (item.itemNote != null && item.itemNote!.isNotEmpty) {
     data['itemNote'] = item.itemNote;
+  }
+  // `note` المركّب لازم يترحّل كما هو. كان **مش متسلسل خالص**، بينما
+  // `customPrice` بيتحفظ — فسطر العرض اليدوي كان يرجع بسعر العرض وبملاحظة
+  // فاضية، أي «سطر أساس رخيص» في عين كل فلاتر العروض ⇒ يتعدّ ككمية مؤهّلة
+  // ويتخصم فوق خصمه، والجولة اللي بعدها ترجّعه لسعر الأساس.
+  // وبيخسّر كمان لافتة الإضافات اللي تذكرة المطبخ بتقراها من `item.note`.
+  if (hasNote) {
+    data['note'] = item.note;
   }
   if (item.modifiers.isNotEmpty) {
     data['modifiers'] = item.modifiers.map((m) => {
@@ -226,6 +238,7 @@ String? _serializeCartItemMeta(CartItemEntity item) {
 Map<String, dynamic> _deserializeCartItemMeta(String? note) {
   final result = <String, dynamic>{
     'itemNote': null,
+    'note': null,
     'modifiers': <SelectedModifier>[],
   };
   if (note == null || note.isEmpty) return result;
@@ -233,6 +246,8 @@ Map<String, dynamic> _deserializeCartItemMeta(String? note) {
   try {
     final data = jsonDecode(note) as Map<String, dynamic>;
     result['itemNote'] = data['itemNote'] as String?;
+    // غايب في الطلبات المعلّقة القديمة ⇒ null ⇒ نفس السلوك القديم بالظبط.
+    result['note'] = data['note'] as String?;
     if (data['modifiers'] != null) {
       result['modifiers'] = (data['modifiers'] as List).map<SelectedModifier>((m) {
         final map = m as Map<String, dynamic>;
