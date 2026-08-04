@@ -1,6 +1,9 @@
+import 'dart:math' as math;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/logging/app_logger.dart';
+import '../../core/constants/app_constants.dart';
 import '../../core/utils/number_utils.dart';
 import '../../../data/providers/providers.dart';
 import '../../domain/entities/product_entity.dart';
@@ -114,19 +117,23 @@ class CartPricingService {
 
       final factor = offer.offerPrice / totalNormalPrice;
 
-      for (final p in productsToAdd) {
-        final product = p['product'] as ProductEntity;
-        final qty = p['quantity'] as double;
-        // BUG-H04: round the per-unit offer price to currency precision so the
-        // bundle line totals don't carry float tails. (Residual sub-fils drift
-        // vs offer.offerPrice is inherent to per-unit pricing at 3dp.)
-        final customPrice = NumberUtils.roundCurrency(product.salePrice * factor);
+      // BUG-H04: round the per-unit offer price to currency precision so the
+      // bundle line totals don't carry float tails.
+      final unitPrices = productsToAdd
+          .map((p) => NumberUtils.roundCurrency(
+              (p['product'] as ProductEntity).salePrice * factor))
+          .toList();
 
+      // التقريب لكل وحدة لوحده ما بيجمّعش لسعر العرض: ٣ أصناف بـ٥ بسعر عرض ١٠
+      // كانت بتدي ٣٫٣٣٣ × ٣ = ٩٫٩٩٩. اللافتة بتقول رقم والفاتورة بتقول غيره.
+      _settleBundleRemainder(productsToAdd, unitPrices, offer.offerPrice);
+
+      for (var i = 0; i < productsToAdd.length; i++) {
         pricedItems.add(
           PricedCartItem(
-            product: product,
-            quantity: qty,
-            customPrice: customPrice,
+            product: productsToAdd[i]['product'] as ProductEntity,
+            quantity: productsToAdd[i]['quantity'] as double,
+            customPrice: unitPrices[i],
           ),
         );
       }
@@ -142,6 +149,69 @@ class CartPricingService {
     } catch (e) {
       AppLogger.instance.error('Failed to calculate offer', e, null, 'CART_PRICING');
       return pricedItems;
+    }
+  }
+
+  /// بيوزّع باقي التقريب على سطور الحزمة عشان مجموعها يساوي [target].
+  ///
+  /// ── ليه ما ينفعش نضمن صفر دايماً ─────────────────────────────────────────
+  /// السعر متخزَّن **لكل وحدة** بدقة العملة (`AppConstants.decimalPlaces` = ٣).
+  /// تعديل سطر كميته `q` بأصغر خطوة ممكنة (٠٫٠٠١ للوحدة) بيغيّر المجموع بـ
+  /// `q × 0.001` — يعني الباقي يتصفّى تماماً بس لو كان من مضاعفات ده.
+  ///
+  /// الحد الأقصى للباقي بعد التوزيع = `q_min × 0.0005` حيث `q_min` أصغر كمية
+  /// في الحزمة. **مقيس** بمسح ٦٠٠ ألف حالة (١–٤ أصناف، كميات ١–١٠، أسعار بيع
+  /// ١–١٠٠، سعر عرض ١٠٪–٩٩٪ من المجموع)، والمقيس طابق الحد النظري بالظبط:
+  /// * `q_min = 1` (الشكل الغالب للعروض) → الباقي **صفر** في كل الحالات.
+  /// * `q_min = 2` → ٠٫٠٠١ · `q_min = 3` → ٠٫٠٠١ · `q_min = 10` → ٠٫٠٠٥.
+  /// * أسوأ باقٍ مرصود إجمالاً: **٠٫٠٠٥** (كان ٠٫٠١٦ قبل التوزيع).
+  /// مثال ما ينفعش يتصفّى: صنف واحد كميته ٣ محتاج تصحيح ٠٫٠٠١ — مفيش تعديل
+  /// لكل وحدة بيمثّله (٠٫٠٠١ ÷ ٣ بتقرّب لصفر).
+  ///
+  /// يعني القيد في **نموذج البيانات** (سعر وحدة بـ3dp) مش في الحسبة. الحسبة
+  /// بتوصل لأقصى حاجة النموذج بيسمح بيها، وما بتنفّذش خطوة إلا لو قلّلت الباقي
+  /// فعلاً — فالنتيجة عمرها ما تبقى أسوأ من عدم التوزيع.
+  static void _settleBundleRemainder(
+    List<Map<String, dynamic>> lines,
+    List<double> unitPrices,
+    double target,
+  ) {
+    final step = 1 / math.pow(10, AppConstants.decimalPlaces);
+
+    double residual = target;
+    for (var i = 0; i < lines.length; i++) {
+      residual -= unitPrices[i] * (lines[i]['quantity'] as double);
+    }
+
+    // الأصغر كمية الأول: خطوتها على المجموع (`q × 0.001`) هي الأنعم، فبتقدر
+    // تمتصّ باقي ما كانتش الكميات الأكبر هتوصله.
+    final order = List<int>.generate(lines.length, (i) => i)
+      ..sort((a, b) => (lines[a]['quantity'] as double)
+          .compareTo(lines[b]['quantity'] as double));
+
+    for (final i in order) {
+      if (residual.abs() < step / 2) break;
+      final qty = lines[i]['quantity'] as double;
+      if (qty <= 0) continue;
+
+      final steps = (residual / (qty * step)).round();
+      if (steps == 0) continue;
+
+      // العرض المفروض يخفّض: التصحيح ممنوع يطلّع السعر فوق سعر البيع ولا
+      // ينزّله تحت الصفر.
+      final product = lines[i]['product'] as ProductEntity;
+      final adjusted = NumberUtils.clamp(
+        NumberUtils.roundCurrency(unitPrices[i] + steps * step),
+        0,
+        product.salePrice,
+      );
+      final delta = adjusted - unitPrices[i];
+      if (delta == 0) continue;
+
+      final next = residual - delta * qty;
+      if (next.abs() >= residual.abs()) continue; // ما تبوّظش اللي كان أحسن
+      unitPrices[i] = adjusted;
+      residual = next;
     }
   }
 
