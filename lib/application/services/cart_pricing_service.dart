@@ -126,7 +126,15 @@ class CartPricingService {
 
       // التقريب لكل وحدة لوحده ما بيجمّعش لسعر العرض: ٣ أصناف بـ٥ بسعر عرض ١٠
       // كانت بتدي ٣٫٣٣٣ × ٣ = ٩٫٩٩٩. اللافتة بتقول رقم والفاتورة بتقول غيره.
-      _settleBundleRemainder(productsToAdd, unitPrices, offer.offerPrice);
+      settleBundleRemainder(
+        quantities:
+            productsToAdd.map((p) => p['quantity'] as double).toList(),
+        unitPrices: unitPrices,
+        maxUnitPrices: productsToAdd
+            .map((p) => (p['product'] as ProductEntity).salePrice)
+            .toList(),
+        target: offer.offerPrice,
+      );
 
       for (var i = 0; i < productsToAdd.length; i++) {
         pricedItems.add(
@@ -171,27 +179,34 @@ class CartPricingService {
   /// يعني القيد في **نموذج البيانات** (سعر وحدة بـ3dp) مش في الحسبة. الحسبة
   /// بتوصل لأقصى حاجة النموذج بيسمح بيها، وما بتنفّذش خطوة إلا لو قلّلت الباقي
   /// فعلاً — فالنتيجة عمرها ما تبقى أسوأ من عدم التوزيع.
-  static void _settleBundleRemainder(
-    List<Map<String, dynamic>> lines,
-    List<double> unitPrices,
-    double target,
-  ) {
+  /// [quantities] كمية كل سطر · [unitPrices] أسعار الوحدة (بتتعدّل في مكانها)
+  /// · [maxUnitPrices] سقف كل سطر (سعر البيع العادي) · [target] مجموع الحزمة.
+  ///
+  /// عامّة (مش خاصة) عشان مسار التطبيق التلقائي في `CartController` يستعملها
+  /// هي نفسها: كان بيسعّر بـ`salePrice * factor` خام من غير تقريب ولا توزيع،
+  /// فنفس انحراف الـ٩٫٩٩٩ كان لسه حيّ هناك. نسخة تانية من المنطق كانت هتفترق
+  /// عن دي مع أول تعديل.
+  static void settleBundleRemainder({
+    required List<double> quantities,
+    required List<double> unitPrices,
+    required List<double> maxUnitPrices,
+    required double target,
+  }) {
     final step = 1 / math.pow(10, AppConstants.decimalPlaces);
 
     double residual = target;
-    for (var i = 0; i < lines.length; i++) {
-      residual -= unitPrices[i] * (lines[i]['quantity'] as double);
+    for (var i = 0; i < quantities.length; i++) {
+      residual -= unitPrices[i] * quantities[i];
     }
 
     // الأصغر كمية الأول: خطوتها على المجموع (`q × 0.001`) هي الأنعم، فبتقدر
     // تمتصّ باقي ما كانتش الكميات الأكبر هتوصله.
-    final order = List<int>.generate(lines.length, (i) => i)
-      ..sort((a, b) => (lines[a]['quantity'] as double)
-          .compareTo(lines[b]['quantity'] as double));
+    final order = List<int>.generate(quantities.length, (i) => i)
+      ..sort((a, b) => quantities[a].compareTo(quantities[b]));
 
     for (final i in order) {
       if (residual.abs() < step / 2) break;
-      final qty = lines[i]['quantity'] as double;
+      final qty = quantities[i];
       if (qty <= 0) continue;
 
       final steps = (residual / (qty * step)).round();
@@ -199,11 +214,10 @@ class CartPricingService {
 
       // العرض المفروض يخفّض: التصحيح ممنوع يطلّع السعر فوق سعر البيع ولا
       // ينزّله تحت الصفر.
-      final product = lines[i]['product'] as ProductEntity;
       final adjusted = NumberUtils.clamp(
         NumberUtils.roundCurrency(unitPrices[i] + steps * step),
         0,
-        product.salePrice,
+        maxUnitPrices[i],
       );
       final delta = adjusted - unitPrices[i];
       if (delta == 0) continue;

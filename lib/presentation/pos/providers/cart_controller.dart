@@ -8,6 +8,7 @@ import '../../../domain/entities/product_entity.dart';
 import '../../../domain/repositories/offers_repository.dart';
 import '../../../domain/repositories/i_products_repository.dart';
 import '../../../core/logging/app_logger.dart';
+import '../../../core/utils/number_utils.dart';
 import '../../../services/invoice_generator.dart';
 import '../../../domain/usecases/sales/hold_order_usecase.dart';
 import '../../../application/services/cart_pricing_service.dart';
@@ -650,24 +651,44 @@ class CartController extends Notifier<CartState> {
     }
     if (multiplier <= 0) return;
 
-    // Calculate normal total price for one set
+    // Calculate normal total price for one set.
+    // الأصناف بتتجاب **مرة واحدة**: الكود القديم كان بينده `getProductById`
+    // مرتين لكل صنف (مرة للمجموع ومرة للتطبيق) جوّه دالة أصلاً بتستنى.
     double totalNormalPrice = 0;
+    final resolved = <({OfferItem oi, ProductEntity product})>[];
     for (final oi in offerItems) {
       final product = await productRepo.getProductById(oi.productId);
-      if (product != null) {
-        totalNormalPrice += product.salePrice * oi.quantity;
-      }
+      if (product == null) continue; // صنف مش موجود → سطوره ما بتتلمسش خالص
+      totalNormalPrice += product.salePrice * oi.quantity;
+      resolved.add((oi: oi, product: product));
     }
     if (totalNormalPrice <= 0 || offer.offerPrice >= totalNormalPrice) return;
 
     final factor = offer.offerPrice / totalNormalPrice;
 
+    // المسار ده كان بيكتب `salePrice * factor` **خام** — لا تقريب لدقة العملة
+    // ولا توزيع للباقي. يعني انحراف الـ٩٫٩٩٩ اللي اتصلح في المسار اليدوي كان
+    // لسه حيّ هنا، والمسار ده هو اللي بيتاخد لما الكاشير يسحب أصناف الحزمة
+    // بدل ما يدوس على كارت العرض — أي الحالة الأشيع.
+    //
+    // المجموع المستهدف = سعر العرض × عدد الأطقم، لأن كل طقم بيتحاسب بسعر العرض.
+    final quantities =
+        resolved.map((r) => r.oi.quantity * multiplier).toList();
+    final unitPrices = resolved
+        .map((r) => NumberUtils.roundCurrency(r.product.salePrice * factor))
+        .toList();
+    CartPricingService.settleBundleRemainder(
+      quantities: quantities,
+      unitPrices: unitPrices,
+      maxUnitPrices: resolved.map((r) => r.product.salePrice).toList(),
+      target: offer.offerPrice * multiplier,
+    );
+
     // Apply proportional price to matching cart items
-    for (final oi in offerItems) {
-      final product = await productRepo.getProductById(oi.productId);
-      if (product == null) continue;
-      final offerUnitPrice = product.salePrice * factor;
-      final totalOfferQty = oi.quantity * multiplier;
+    for (var r = 0; r < resolved.length; r++) {
+      final oi = resolved[r].oi;
+      final offerUnitPrice = unitPrices[r];
+      final totalOfferQty = quantities[r];
 
       // Find matching cart items and adjust their price
       double remaining = totalOfferQty;
