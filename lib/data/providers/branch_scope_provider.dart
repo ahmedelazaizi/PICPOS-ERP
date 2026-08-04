@@ -88,8 +88,18 @@ class BranchScope {
 /// أصلاً وقاعدة السيرفر هي الأصل)، وجهاز عميل لم يُربَط بفرع قط (لا نحذف
 /// بناءً على حدّ مجهول).
 Future<Set<int>> resolveForeignRowScope(BranchScope scope) async {
-  if (!scope.hasFullAccess) return scope.allowedBranchIds!;
+  // ⚠️ ترتيب الحارسَين حامل للسلوك، لا تجميلي — **سياق الجهاز أولاً**.
+  //
+  // كان فحص النطاق يسبق فحص السياق، فكانت المرآة تنجو بالصدفة وحدها: كل
+  // مستخدم على مرآة كان `hasFullAccess` فيسقط للسطر الثاني ويأخذ `{}`. وحين
+  // صار المستخدم المخصَّص على المرآة محصوراً (2026-08-04) بدأ السطر الأول
+  // يُرجِع `{A, B}` فلا يُبلَغ حارس المرآة أصلاً ⇒ تُسلَّح أداة التنظيف على
+  // وحدة تحكّم المقر وتحذف صفوف الفرع C من قاعدتها المحلية.
+  //
+  // الحدّ الذي تُقاس عليه «الغرابة» هو **ربط الجهاز** لا نطاق المستخدم، وما
+  // لم يكن الجهاز عميلاً مربوطاً فلا ربط يُقاس عليه ⇒ `{}` مهما كان النطاق.
   if (!NetworkService.instance.isClient) return const <int>{};
+  if (!scope.hasFullAccess) return scope.allowedBranchIds!;
   final prefs = await SharedPreferences.getInstance();
   final deviceBranchId = prefs.getInt('client_branch_id');
   return deviceBranchId == null ? const <int>{} : <int>{deviceBranchId};
@@ -163,6 +173,15 @@ final branchScopeProvider = FutureProvider<BranchScope>((ref) async {
   // الجهاز غير محصور، لا أن **المستخدم** غير محصور — فمدير مخصَّص له فرعان
   // كان يرى كل الفروع. والخادم بعد FR-1 يقصّ نفس المستدعي على
   // `IN (allowed)`، فكانت الواجهة تعلن نطاقاً أوسع مما يسلّمه الخادم.
+  //
+  // ⚠️ الذراع كلها **أداة توسيم لا أداة سياسة**: على مرآة لا تُستوفى شروط
+  // ذراع `isCrossBranchElevated` (المرآة تُرقّي الجهاز لا الجلسة) ولا ذراع
+  // `isClient`، فالحالات الثلاث أدناه تنتج `BranchScope` **مطابقاً حرفياً**
+  // لما ينتجه المسار العام في آخر الدالة. الفارق الوحيد هو `source` في سجلّ
+  // `BRANCH-SCOPE`، وهو مطلوب عمداً: المشغّل الميداني يشخّص بالوسم، ووسم
+  // `user-assignments` على وحدة تحكّم المقر لا يقول له إن الجهاز مرآة.
+  // ⇒ حذف هذه الذراع لا يُسقِط أي اختبار سياسة؛ الاختبارات تقفل السياسة
+  //   لا الذراع. من يحذفها يفقد التشخيص فقط — فلا تُوسَّع بمنطق سياسة.
   if (NetworkService.instance.isMirror &&
       MirrorState.instance.isConfigured) {
     if (accessIds.isNotEmpty) {

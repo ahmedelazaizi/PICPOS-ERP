@@ -20,6 +20,8 @@ import 'package:drift/drift.dart' as drift;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+// `providers.dart` يعيد تصدير `branch_scope_provider.dart`، ومنه
+// `resolveForeignRowScope` — فاستيراده صراحةً زائد ويكسر خطّ الأساس.
 import 'package:ural_erp/data/providers/providers.dart';
 import 'package:ural_erp/services/mirror_state.dart';
 import 'package:ural_erp/services/network_service.dart';
@@ -163,9 +165,20 @@ void main() {
       expect(scope.allowedBranchIds, equals({branchA, branchB}));
       expect(scope.isAllowed(branchC), isFalse,
           reason: 'فرع غير مخصَّص على الخادم يجب ألا يظهر على المرآة');
+      // ⚠️ هذا التوقّع **يوثّق ولا يميّز**: حاولتُ جعله يفرّق بين
+      // `getUserBranchId` و`accessIds.first` بعكس ترتيب الإدخال، فأثبت
+      // التشغيل أن `WHERE user_id = ?` يستعمل فهرس المفتاح الأساسي
+      // `(user_id, branch_id)` فترجع الصفوف مرتّبة `branch_id ASC` أصلاً ⇒
+      // الحلّان يعطيان `branchA` هنا مهما كان ترتيب الإدخال.
+      //
+      // الافتراق الحقيقي في مستخدم وصولُه **بمنحة منطقة فقط**: عندئذ
+      // `accessIds.first` فرعٌ ما بينما `getUserBranchId` تعطي `null` (تقرأ
+      // `user_branch_access` المباشر وحده). لم يُثبَّت هنا لأن تثبيته يقفل
+      // `null` كسلوك مقصود، وهو حافّة قائمة في ذراع user-assignments أيضاً
+      // ومرشّحة لتذكرة مستقلة — لا شيء تقرّره هذه المهمة.
       expect(scope.primaryBranchId, equals(branchA),
-          reason: 'الفرع الرئيسي = getUserBranchId (أصغر branchId) كما في '
-              'ذراع user-assignments — لا أول عنصر في مجموعة غير مرتّبة');
+          reason: 'الفرع الرئيسي = أصغر branchId، اتّساقاً مع ذراع '
+              'user-assignments (getUserBranchId)');
     });
 
     test('٢. مرآة + مدير نظام بلا تخصيص ⇒ كل الفروع (قرار المالك الصريح)',
@@ -238,6 +251,42 @@ void main() {
           reason: 'ربط الجهاز يتقدّم على تخصيص المستخدم على مسار العميل — '
               'هذه المهمة تمسّ مسار المرآة وحده');
       expect(scope.primaryBranchId, equals(branchB));
+    });
+
+    // ⚠️ حرج — أداة التنظيف على المرآة.
+    //
+    // `resolveForeignRowScope` كانت تفحص النطاق قبل سياق الجهاز. قبل حصر
+    // المرآة كان كل مستخدم عليها `hasFullAccess` فيسقط لحارس السياق ويأخذ
+    // `{}` — أي أن الأداة كانت معطّلة على المرآة **بالصدفة**. بعد الحصر صار
+    // المدير المخصَّص `hasFullAccess == false` فيرجع السطر الأول `{A, B}`
+    // ولا يُبلَغ حارس المرآة ⇒ `wipeForeignBranchData` تُسلَّح على وحدة تحكّم
+    // المقر وتحذف صفوف الفرع C من قاعدتها المحلية (فواتير · قيود · حركات
+    // مخزون · سجلّ عمليات). إصلاحان صحيحان ظاهرياً ركّبا مساراً مدمّراً.
+    test('٥. مرآة + مستخدم مخصَّص ⇒ أداة التنظيف تبقى معطّلة', () async {
+      final (userId, roleId) = await insertUser('mgr_wipe', 'مدير فرع');
+      for (final b in [branchA, branchB]) {
+        await db.into(db.userBranchAccess).insert(
+              UserBranchAccessCompanion.insert(userId: userId, branchId: b),
+            );
+      }
+      container.read(authProvider.notifier).login(_userWithRole(
+            userId: userId,
+            roleId: roleId,
+            roleName: 'مدير فرع',
+            isSystemRole: false,
+          ));
+
+      becomeConfiguredMirror();
+      final scope = await container.read(branchScopeProvider.future);
+      expect(scope.hasFullAccess, isFalse,
+          reason: 'حارس الفرضية: بدون الحصر يسقط الاختبار على الحارس القديم '
+              'ولا يقيس الترتيب');
+
+      expect(await resolveForeignRowScope(scope), isEmpty,
+          reason: 'المرآة ليست جهازاً مربوطاً بفرع، فلا حدّ تُقاس عليه '
+              '«الغرابة» — وقاعدتها نسخة من قاعدة السيرفر. أي مجموعة غير '
+              'فارغة هنا تعني حذفاً فعلياً لصفوف فروع أخرى من وحدة تحكّم '
+              'المقر (توثيق الدالة نفسه يسمّي المرآة سياقاً يجب أن يعطي {})');
     });
   });
 }

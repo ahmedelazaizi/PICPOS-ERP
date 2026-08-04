@@ -18,9 +18,11 @@ import 'package:drift/drift.dart' as drift;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:ural_erp/core/logging/diagnostic_logger.dart';
 import 'package:ural_erp/data/providers/providers.dart';
 import 'package:ural_erp/services/mirror_state.dart';
 import 'package:ural_erp/services/network_service.dart';
+import 'package:ural_erp/services/sync_service.dart';
 import 'package:ural_erp/services/websocket_sync_client.dart';
 
 UserWithRole _cashier({required int userId, required int roleId}) {
@@ -59,6 +61,10 @@ void main() {
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
+    // Captures BRANCH-SCOPE lines in memory (and skips file I/O). One test
+    // asserts the source tag because the scope alone can no longer tell the
+    // mirror arm apart from the generic path.
+    DiagnosticLogger.enableTestMode();
     NetworkService.instance.debugSetModeForTests(NetworkMode.standalone);
     MirrorState.instance.debugSetForTests();
     WebSocketSyncClient.instance.connected.value = false;
@@ -115,6 +121,9 @@ void main() {
 
   tearDown(() async {
     container.dispose();
+    SyncService.clearInstance();
+    NetworkService.instance.debugSetModeForTests(NetworkMode.standalone);
+    MirrorState.instance.debugSetForTests();
     await db.close();
   });
 
@@ -164,6 +173,12 @@ void main() {
       // scope must fall through to the regular per-user narrowing —
       // unconfigured mirror is an invalid runtime state, not an
       // implicit fullAccess grant.
+      //
+      // ⚠ asserted on the BRANCH-SCOPE **source tag**, not on the resulting
+      // scope. Since 2026-08-04 the mirror arm yields a scope byte-identical
+      // to the generic path for this fixture, so `allowedBranchIds == {branchA}`
+      // holds whether or not the gate fires — a tautology. The tag is the only
+      // observable that distinguishes the two arms.
       NetworkService.instance.debugSetModeForTests(NetworkMode.mirror);
       // Leave MirrorState empty (no setPaired, no debugSetForTests args)
       MirrorState.instance.debugSetForTests();
@@ -171,9 +186,16 @@ void main() {
 
       container.invalidate(branchScopeProvider);
       final scope = await container.read(branchScopeProvider.future);
-      expect(scope.hasFullAccess, isFalse,
-          reason: 'unconfigured mirror must not bypass the per-user scope');
       expect(scope.allowedBranchIds, equals({branchA}));
+
+      final tags = DiagnosticLogger.testLog
+          .where((l) => l.contains('[BRANCH-SCOPE]'))
+          .toList();
+      expect(tags, isNotEmpty, reason: 'provider must have logged its arm');
+      expect(tags.last, contains('source=user-assignments'),
+          reason: 'an unconfigured mirror must fall through to the generic '
+              'path — a mirror-device-* tag here means the conjunctive gate '
+              'fired on half a state');
     });
 
     test('configured but mode is client (not mirror): no short-circuit',
@@ -182,21 +204,28 @@ void main() {
       // must not leak into a device that has since been re-paired as a
       // regular client. The gate must be conjunctive — both flags
       // required.
+      //
+      // ⚠ the device is deliberately paired to branchB while the cashier is
+      // assigned branchA, and a real SyncService is installed so the client
+      // isolation arm can actually fire. Without that divergence both arms
+      // return {branchA} and the assertion proves nothing: a leaked mirror
+      // gate would now yield {branchA}, the client path yields {branchB}.
+      SharedPreferences.setMockInitialValues({'client_branch_id': branchB});
       NetworkService.instance.debugSetModeForTests(NetworkMode.client);
       MirrorState.instance.debugSetForTests(
         serverDisplayName: 'hq.example.com:8080',
         lastHandshakeAt: DateTime.now().toUtc(),
       );
       expect(MirrorState.instance.isConfigured, isTrue);
+      SyncService(serverUrl: 'http://fake-server', localDb: db);
+      expect(SyncService.instance?.clientPullsTransactionalEnabled, isFalse);
 
       container.invalidate(branchScopeProvider);
       final scope = await container.read(branchScopeProvider.future);
-      // In client mode, branch isolation is the default unless the
-      // client_pulls_transactional flag flips. Either way this user's
-      // scope must remain {branchA} — fullAccess would mean the mirror
-      // short-circuit fired despite being in client mode.
-      expect(scope.hasFullAccess, isFalse,
-          reason: 'mirror gate must require BOTH isMirror AND isConfigured');
+      expect(scope.allowedBranchIds, equals({branchB}),
+          reason: 'mirror gate must require BOTH isMirror AND isConfigured — '
+              '{branchA} here would mean a stale MirrorState re-armed the '
+              'mirror arm on a re-paired client');
     });
   });
 }
