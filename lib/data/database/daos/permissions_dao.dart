@@ -278,7 +278,16 @@ extension PermissionsDao on AppDatabase {
         .then((count) => count > 0);
   }
 
-  /// Update user PIN (Securely hashed in Phase 2)
+  /// Update user PIN — hashed with Argon2id (B11).
+  ///
+  /// Was PBKDF2-SHA256 keyed on `user.passwordSalt`. That salt is shipped to
+  /// every LAN bearer by `GET /api/users` alongside the PIN itself, and a PIN
+  /// is only 4-6 digits — so the whole keyspace fell offline in under a
+  /// second. Argon2id's PHC string carries its own random 16-byte salt, so
+  /// `passwordSalt` is no longer the PIN's salt at all, and each guess now
+  /// costs 4 MB + 3 passes instead of one SHA256 round.
+  ///
+  /// No schema change: the PHC string fits the existing nullable `pin` column.
   Future<bool> updateUserPin(int userId, String? pin) async {
     if (pin == null) {
       return (update(users)..where((u) => u.id.equals(userId)))
@@ -286,13 +295,13 @@ extension PermissionsDao on AppDatabase {
           .then((count) => count > 0);
     }
 
+    // Existence check kept: callers rely on `false` for an unknown user.
     final user = await (select(
       users,
     )..where((u) => u.id.equals(userId))).getSingleOrNull();
     if (user == null) return false;
 
-    // Use password salt for PIN hashing to avoid schema changes
-    final hashedPin = SecurityService.hashPassword(pin, user.passwordSalt);
+    final hashedPin = await SecurityService.hashPasswordArgon2(pin);
 
     return (update(users)..where((u) => u.id.equals(userId)))
         .write(UsersCompanion(pin: Value(hashedPin)))
@@ -318,8 +327,22 @@ extension PermissionsDao on AppDatabase {
       return false;
     }
 
-    // Verify hashed PIN
-    return SecurityService.verifyPassword(pin, user.passwordSalt, user.pin!);
+    // Argon2id (new) or PBKDF2-SHA256 (legacy) — verifyPasswordFull dispatches
+    // on the stored hash's own format. Legacy hashes still arrive over sync
+    // from servers that have not been upgraded yet, so they must keep working.
+    final result = await SecurityService.verifyPasswordFull(
+      pin,
+      user.passwordSalt,
+      user.pin!,
+    );
+    if (!result.verified) return false;
+
+    // Transparent upgrade — only ever on a CORRECT PIN, so a wrong guess can
+    // never overwrite the stored hash.
+    if (result.needsRehash) {
+      await updateUserPin(userId, pin);
+    }
+    return true;
   }
 
   /// PIR-09: Force-migrate ALL legacy plaintext PINs to hashed format at startup.
@@ -331,8 +354,8 @@ extension PermissionsDao on AppDatabase {
 
     for (final user in allUsers) {
       if (user.pin != null && SecurityService.isLegacyPin(user.pin)) {
-        // Hash the plaintext PIN using the user's existing password salt
-        final hashedPin = SecurityService.hashPassword(user.pin!, user.passwordSalt);
+        // B11: Argon2id, NOT the leaked-salt KDF — see updateUserPin.
+        final hashedPin = await SecurityService.hashPasswordArgon2(user.pin!);
         await (update(users)..where((u) => u.id.equals(user.id))).write(
           UsersCompanion(pin: Value(hashedPin)),
         );
