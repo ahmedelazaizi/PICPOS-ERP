@@ -520,6 +520,32 @@ extension UserDao on AppDatabase {
     return {...directIds, ...regionBranchIds}.toList();
   }
 
+  /// حصر المخازن للمستخدم — بعقد **لا يخلط** «بلا حصر» بـ«بلا وصول».
+  ///
+  ///   `null`   ⇒ مميّز (صاحب البرنامج / مدير النظام / مدير مالي) — بلا حصر.
+  ///   `{}`     ⇒ غير مميّز ومحدش خصّصله مخازن — **مفيش وصول**.
+  ///   `{ids}`  ⇒ محصور على المخازن دي.
+  ///
+  /// ── ليه نوع جديد بدل تصليح `getUserAccessibleWarehouseIds` ────────────────
+  /// القديمة بترجّع `List<int>` وتوثيقها بيقول إن الفاضية = «بلا حصر». فالقيمة
+  /// الفاضية بتحمل معنيين متضادين، وأقلّ مستخدم صلاحيةً وأعلاه بياخدوا **نفس
+  /// النتيجة**. النوع نفسه هنا بيفصل المعنيين، فمفيش مُنادٍ يقدر ينسى التفرقة —
+  /// وده كان بالظبط نمط الفشل. نفس علاج توأم الفروع في Spec 151 Track-3.
+  ///
+  /// معيار الامتياز single-sourced من [isFullBranchAccessUser] عشان القاعدة
+  /// ما تنحرفش بين الفروع والمخازن.
+  ///
+  /// ⚠️ **القرار «مفيش وصول» مش بيتنفّذ هنا** — الدالة بتقول الحقيقة بس.
+  ///    مين بيفشل مقفولاً ومين لأ قرار عرض، شوف `allWarehousesProvider`.
+  Future<Set<int>?> getWarehouseScopeForUser(int userId) async {
+    if (await isFullBranchAccessUser(userId)) return null;
+
+    final rows = await (select(userWarehouseAccess)
+          ..where((a) => a.userId.equals(userId)))
+        .get();
+    return rows.map((r) => r.warehouseId).toSet();
+  }
+
   /// Get warehouse IDs accessible by a user.
   /// Returns empty list if user has no restrictions (= full access).
   /// Admin (userId=1) always returns empty (= full access).

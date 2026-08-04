@@ -1,3 +1,5 @@
+// لازم للمُعامل `|` على `Expression<bool>` (شرط `OR branch_id IS NULL`).
+import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -12,6 +14,11 @@ import 'providers.dart';
 ///   warehouses, safes, and cost centers from the local database.
 ///
 /// Usage: `ref.watch(clientScopeProvider)` returns an `AsyncValue<ClientScope>`.
+///
+/// ⚠️ **مفيش أي مُنادٍ للمزوّد ده في المستودع حالياً** — اتساب متعمّد. توصيله
+/// بالشاشات تغيير سلوكي واسع لوحده. الإصلاحين اللي هنا (فشل مقفول + دلالة
+/// `OR IS NULL`) الغرض منهم إنه يبقى **آمن ومتسق مع الخادم لحظة ما حد
+/// يوصّله**، مش إنه يغيّر سلوك النهارده.
 final clientScopeProvider = FutureProvider<ClientScope>((ref) async {
   if (!NetworkService.instance.isClient) {
     return ClientScope.unrestricted;
@@ -21,8 +28,10 @@ final clientScopeProvider = FutureProvider<ClientScope>((ref) async {
   final branchId = prefs.getInt('client_branch_id');
 
   if (branchId == null) {
-    debugPrint('[ClientScope] No client_branch_id configured — unrestricted');
-    return ClientScope.unrestricted;
+    // كان بيرجّع `unrestricted` — أي إن جهاز عميل **ناقص التنصيب** ياخد
+    // وصولاً كاملاً. نقص الهوية لازم يفشل مقفولاً، زي سنتينل `-1` في G2.
+    debugPrint('[ClientScope] ⚠ لا يوجد client_branch_id — نطاق مقفول');
+    return ClientScope.closed;
   }
 
   final db = ref.read(databaseProvider);
@@ -33,15 +42,20 @@ final clientScopeProvider = FutureProvider<ClientScope>((ref) async {
       .getSingleOrNull();
   final branchName = branch?.name ?? 'فرع $branchId';
 
-  // Resolve warehouses belonging to this branch
+  // Resolve warehouses belonging to this branch.
+  //
+  // `OR branch_id IS NULL` مقصود ولازم يفضل: الخادم بيقصّ بنفس الدلالة في
+  // `/api/sync/pull` (الصفوف اللي فرعها NULL = عامة/المقر وبتفضل ظاهرة).
+  // `equals` لوحدها كانت هتخلّي الطرفين يختلفوا لحظة توصيل المزوّد ده:
+  // الخادم بيبعت صفوف العميل ما بيشوفهاش، فتظهر مخازن «مفقودة» على الجهاز.
   final warehouses = await (db.select(db.warehouses)
-        ..where((w) => w.branchId.equals(branchId)))
+        ..where((w) => w.branchId.equals(branchId) | w.branchId.isNull()))
       .get();
   final warehouseIds = warehouses.map((w) => w.id).toList();
 
-  // Resolve safes belonging to this branch
+  // Resolve safes belonging to this branch (same NULL = global semantics)
   final safes = await (db.select(db.safes)
-        ..where((s) => s.branchId.equals(branchId)))
+        ..where((s) => s.branchId.equals(branchId) | s.branchId.isNull()))
       .get();
   final safeIds = safes.map((s) => s.id).toList();
 

@@ -32,6 +32,13 @@ class ClientScope {
   /// An unrestricted scope (used when running as server or standalone)
   static const unrestricted = _UnrestrictedScope();
 
+  /// نطاق مقفول — جهاز عميل من غير `client_branch_id` مضبوط.
+  ///
+  /// كان بيرجّع [unrestricted] في الحالة دي، يعني جهاز **ناقص التنصيب**
+  /// بياخد وصول كامل. ده نفس نمط الفشل اللي اتقفل في مسار المزامنة (G2)
+  /// بسنتينل `-1`؛ والقاعدة واحدة: نقص الهوية يفشل **مقفولاً** لا مفتوحاً.
+  static const closed = _ClosedScope();
+
   @override
   String toString() =>
       'ClientScope(branch=$branchId, warehouses=$allowedWarehouseIds, safes=$allowedSafeIds, costCenters=$allowedCostCenterIds)';
@@ -61,4 +68,30 @@ class _UnrestrictedScope implements ClientScope {
 
   @override
   String toString() => 'ClientScope.unrestricted';
+}
+
+/// Sentinel class representing a fully CLOSED scope — nothing is allowed.
+class _ClosedScope implements ClientScope {
+  const _ClosedScope();
+
+  @override
+  int get branchId => -1;
+  @override
+  String get branchName => 'بلا فرع';
+  @override
+  List<int> get allowedWarehouseIds => const [];
+  @override
+  List<int> get allowedSafeIds => const [];
+  @override
+  List<int> get allowedCostCenterIds => const [];
+
+  @override
+  bool isWarehouseAllowed(int warehouseId) => false;
+  @override
+  bool isSafeAllowed(int safeId) => false;
+  @override
+  bool isCostCenterAllowed(int costCenterId) => false;
+
+  @override
+  String toString() => 'ClientScope.closed';
 }

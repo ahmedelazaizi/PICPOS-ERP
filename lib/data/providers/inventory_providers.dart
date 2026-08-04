@@ -1,6 +1,6 @@
 import 'dart:async' show unawaited;
 
-import 'package:flutter/foundation.dart' show kIsWeb, listEquals;
+import 'package:flutter/foundation.dart' show debugPrint, kIsWeb, listEquals;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'providers.dart';
 import '../../core/diagnostics/perf_trace.dart';
@@ -315,10 +315,29 @@ final allWarehousesProvider = StreamProvider<List<WarehouseData>>((
   return repo.watchWarehouses().asyncMap((warehouses) async {
     if (userId == null) return warehouses;
     final db = ref.read(databaseProvider);
-    final accessIds = await db.getUserAccessibleWarehouseIds(userId);
-    // Empty = full access (admin or no restrictions set)
-    if (accessIds.isEmpty) return warehouses;
-    return warehouses.where((w) => accessIds.contains(w.id)).toList();
+    final scope = await db.getWarehouseScopeForUser(userId);
+
+    // null = مميّز ⇒ بلا حصر.
+    if (scope == null) return warehouses;
+
+    if (scope.isEmpty) {
+      // غير مميّز ومحدش خصّصله مخازن. `getUserAccessibleWarehouseIds` كانت
+      // بتدّي `[]` هنا و`[]` للمميّز كمان، فالاتنين كانوا بياخدوا كل المخازن —
+      // أقلّ مستخدم صلاحيةً وأعلاه بنفس النتيجة.
+      //
+      // قرار المالك (2026-08-04): نفشل مقفولاً على **أجهزة العميل والمرآة
+      // فقط**. دول الأجهزة اللي بتسرّب فعلاً. الجهاز المستقل بيفضل بسلوكه
+      // القديم عن قصد — محل بجهاز واحد وكاشير محدش خصّصله مخازن ماينفعش
+      // يقف عشان حصر مالوش لازمة أصلاً على جهاز واحد.
+      if (SyncInterceptor.isClientMode) {
+        debugPrint('[WarehouseScope] ⚠ user=$userId غير مميّز وبلا تخصيص مخازن '
+            'على جهاز عميل/مرآة ⇒ صفر مخازن (فشل مقفول)');
+        return const <WarehouseData>[];
+      }
+      return warehouses;
+    }
+
+    return warehouses.where((w) => scope.contains(w.id)).toList();
     // Spec 136 ISS-23 — suppress byte-identical re-emits (Drift fires on every
     // dependency-table update; on a mirror that's the rebuild/refresh storm).
     // WarehouseData is a Drift DataClass with value equality.

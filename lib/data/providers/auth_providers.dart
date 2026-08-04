@@ -942,7 +942,10 @@ final userAccessibleBranchesProvider = FutureProvider<List<Branche>>((ref) async
 });
 
 /// Returns only the warehouses the current user can access.
-/// Empty access list from DAO = full access → returns all warehouses.
+///
+/// نفس عقد [allWarehousesProvider] بالظبط — شوف التعليق هناك لتفصيل قرار
+/// «مقفول على العميل/المرآة فقط». المنطق متكرّر هنا لأن المصدر مختلف
+/// (تجميع من كل الفروع بدل stream)، لكن **القرار واحد** ومينفعش يختلفوا.
 final userAccessibleWarehousesProvider = FutureProvider<List<Warehouse>>((ref) async {
   final authState = ref.watch(authProvider);
   final userId = authState.user?.id;
@@ -950,7 +953,7 @@ final userAccessibleWarehousesProvider = FutureProvider<List<Warehouse>>((ref) a
 
   final db = ref.read(databaseProvider);
   final allBranches = await db.getBranches();
-  final accessIds = await db.getUserAccessibleWarehouseIds(userId);
+  final scope = await db.getWarehouseScopeForUser(userId);
 
   // Collect all warehouses from all branches
   final allWarehouses = <Warehouse>[];
@@ -958,9 +961,16 @@ final userAccessibleWarehousesProvider = FutureProvider<List<Warehouse>>((ref) a
     allWarehouses.addAll(await db.getWarehousesByBranch(branch.id));
   }
 
-  // Empty = full access
-  if (accessIds.isEmpty) return allWarehouses;
-  return allWarehouses.where((w) => accessIds.contains(w.id)).toList();
+  if (scope == null) return allWarehouses; // مميّز ⇒ بلا حصر
+  if (scope.isEmpty) {
+    if (SyncInterceptor.isClientMode) {
+      debugPrint('[WarehouseScope] ⚠ user=$userId غير مميّز وبلا تخصيص مخازن '
+          'على جهاز عميل/مرآة ⇒ صفر مخازن (فشل مقفول)');
+      return const <Warehouse>[];
+    }
+    return allWarehouses;
+  }
+  return allWarehouses.where((w) => scope.contains(w.id)).toList();
 });
 
 /// Bank safes available for the current user's branch.
