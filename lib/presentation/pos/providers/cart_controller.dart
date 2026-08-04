@@ -94,7 +94,6 @@ String? composeCartItemNote(
 class CartState {
   final List<CartItemEntity> items;
   final List<CartItemEntity> deletedItems;
-  final bool isExchangeMode;
 
   // Sale Session Data
   final double discountPercent;
@@ -147,7 +146,6 @@ class CartState {
   const CartState({
     this.items = const [],
     this.deletedItems = const [],
-    this.isExchangeMode = false,
     this.discountPercent = 0,
     this.taxEnabled = false,
     this.taxRate = 0.16,
@@ -190,7 +188,6 @@ class CartState {
         !product.allowNegativeSale &&
         !globalNegativeSales &&
         product.currentStock <= 0 &&
-        !isExchangeMode &&
         // UralCash workflow: pre-selecting «آجل» unlocks the oversell. Kept as
         // it is — that till still has its payment buttons.
         paymentMethod != 'credit' &&
@@ -216,7 +213,6 @@ class CartState {
   CartState copyWith({
     List<CartItemEntity>? items,
     List<CartItemEntity>? deletedItems,
-    bool? isExchangeMode,
     double? discountPercent,
     bool? taxEnabled,
     double? taxRate,
@@ -244,7 +240,6 @@ class CartState {
     return CartState(
       items: items ?? this.items,
       deletedItems: deletedItems ?? this.deletedItems,
-      isExchangeMode: isExchangeMode ?? this.isExchangeMode,
       discountPercent: discountPercent ?? this.discountPercent,
       taxEnabled: taxEnabled ?? this.taxEnabled,
       taxRate: taxRate ?? this.taxRate,
@@ -371,7 +366,11 @@ class CartController extends Notifier<CartState> {
       return; // Silently refuse — product card already shows "غير متوفر"
     }
 
-    final finalQuantity = state.isExchangeMode ? -quantity.abs() : quantity;
+    // الكميات **موجبة دايماً**. الاتجاه بييجي من `saleType` على المستند
+    // (`sales_mutations_dao.dart:311`) — مش من إشارة السطر. كان فيه هنا
+    // `state.isExchangeMode ? -quantity.abs() : quantity` وده كان بيقلب
+    // اتجاه المخزون: سالب × مستند مرتجع = المخزون ينقص بدل ما يزيد.
+    final finalQuantity = quantity;
 
     // Resolve effective price based on the customer's price level
     final effectivePrice = _resolvePrice(product);
@@ -457,23 +456,9 @@ class CartController extends Notifier<CartState> {
     }
   }
 
-  void toggleItemType(int index) {
-    if (index < 0 || index >= state.items.length) return;
-
-    final item = state.items[index];
-    final newType = item.itemType == CartItemType.returned
-        ? CartItemType.exchanged
-        : CartItemType.returned;
-
-    final updatedItems = List<CartItemEntity>.from(state.items);
-    updatedItems[index] = item.copyWith(
-      itemType: newType,
-      quantity:
-          item.quantity.abs() * (newType == CartItemType.returned ? -1 : 1),
-    );
-
-    state = state.copyWith(items: updatedItems);
-  }
+  /// ⛔ `toggleItemType` اتشالت مع «وضع الاستبدال» — كانت بتخزّن كمية سالبة
+  /// للسطر المرتجع، وده كان بيقلب اتجاه المخزون. المرتجع بقى عبر
+  /// `convertToQuickReturn` بكميات موجبة.
 
   /// Debounced auto-apply wrapper — prevents recursive calls.
   /// If called while already running, schedules a re-run after completion.
@@ -882,10 +867,6 @@ class CartController extends Notifier<CartState> {
   /// (لو في جولة شغّالة بيستنى نهايتها)، فـ`Future` كان هيوعد بانتظار مش
   /// بيحصل. النتيجة بتوصل عبر `state` زي أي تغيير تاني في السلة.
   void autoApplyMatchingOffers() => _tryAutoApplyOffers();
-
-  void initiateExchange() {
-    state = state.copyWith(isExchangeMode: !state.isExchangeMode);
-  }
 
   void convertToQuickReturn() {
     if (state.items.isEmpty) return;

@@ -70,10 +70,8 @@ class _AutoScrollCartListState extends State<_AutoScrollCartList> {
           onEdit: widget.onEditItem != null
               ? () => widget.onEditItem!(index)
               : null,
-          isExchangeMode: widget.cartState.isExchangeMode,
-          onToggleType: widget.cartState.isExchangeMode
-              ? () => widget.controller.toggleItemType(index)
-              : null,
+          // ⛔ `onToggleType` مش موصول — كان بيقلب السطر لـ`returned` بكمية
+          //    **سالبة**، ووده كان بيعكس اتجاه المخزون. شوف `pos_cart_panel`.
           onPrintBarcode: () => _showBarcodePrintDialog(context, item),
         );
       },

@@ -84,13 +84,18 @@ void main() {
       );
     });
 
-    test('allows in exchange mode', () {
-      expect(
-        const CartState(isExchangeMode: true)
-            .blocksAdd(product(), globalNegativeSales: false),
-        isFalse,
-      );
-    });
+    // ⛔ اختبار «allows in exchange mode» اتشال مع «وضع الاستبدال» نفسه.
+    //
+    // الوضع ده كان بيخزّن كميات **سالبة**، و`adjustStock` بياخد الاتجاه من
+    // `saleType` وبيمرّر الكمية بإشارتها ⇒ سالب × مستند مرتجع = المخزون
+    // **ينقص** بدل ما يزيد. مكسور في كل حالاته، مش في المختلطة بس.
+    //
+    // كان بيتخطّى حارس «غير متوفر» كمان (`!isExchangeMode` في `blocksAdd`) —
+    // وده تخطٍّ **ضاع مع الوضع**. المرتجع دلوقتي بيمرّ من
+    // `convertToQuickReturn` وهو بيشتغل على أصناف موجودة في السلة أصلاً،
+    // فما بيحتاجش تخطّي الحارس.
+    //
+    // شوف test/unit/exchange_mode_removed_test.dart
 
     test('allows on credit — the UralCash workflow, deliberately preserved',
         () {

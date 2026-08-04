@@ -167,7 +167,6 @@ class _PosScreenV2State extends ConsumerState<PosScreenV2>
                       onHoldOrder: _holdCurrentOrder,
                       onCashierClosing: _showCashierClosingDialog,
                       onViewReturns: _navigateToReturns,
-                      onExchange: () => ref.read(cartControllerProvider.notifier).initiateExchange(),
                       onQuickReturn: () => ref.read(cartControllerProvider.notifier).convertToQuickReturn(),
                     ),
                     Expanded(

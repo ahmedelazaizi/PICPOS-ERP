@@ -627,7 +627,10 @@ mixin _SalesReturnsPicposDetailsPanel
                 Switch(
                   value: state.isExchangeMode,
                   activeTrackColor: AppColors.info,
-                  onChanged: (val) => notifier.toggleExchangeMode(val),
+                  // ⛔ معطَّل عن قصد: مسار الاستبدال هنا بيحسب الفرق ويعرضه للكاشير
+                  //    وبيقبضه، لكنه **ما بيبيعش الصنف البديل خالص** — لا قيد ولا خروج
+                  //    مخزون. البديل: مرتجع مستقل + فاتورة بيع.
+                  onChanged: null,
                 ),
               ],
             ),

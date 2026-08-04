@@ -51,8 +51,11 @@ class PosCartPanel extends ConsumerWidget {
         onCheckout: onCheckout,
         onClearCart: onClearCart,
         onEditItem: onEditItem,
-        onExchange: () =>
-            ref.read(cartControllerProvider.notifier).initiateExchange(),
+        // ⛔ زر «استبدال» **مش موصول عن قصد** — الزر بيتعرض فقط لما
+        //    `onExchange != null` (`pos_header.dart:366`). «وضع الاستبدال»
+        //    كان بيخزّن كميات سالبة فيقلب اتجاه المخزون. البديل الصح تحت:
+        //    «مرتجع سريع» (مستند مرتجع بكميات موجبة) ثم بيعة جديدة —
+        //    وده بالظبط نفس المستندين اللي بينتجهم الحل الصحيح.
         onQuickReturn: () =>
             ref.read(cartControllerProvider.notifier).convertToQuickReturn(),
         onViewReturns: onVReturns,
