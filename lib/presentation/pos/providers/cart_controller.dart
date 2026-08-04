@@ -47,6 +47,28 @@ enum ApplyOfferOutcome {
 ///
 /// النص الناتج بيتقرا كمان في `templated_invoice_service.dart` اللي بيحوّل
 /// `📝 ` لـ«ملاحظة: » و` | ` لسطر جديد — فالبادئة جزء من العقد مش تزيين.
+/// بادئة سطر العرض **التلقائي** — كل جولة تطبيق بتصفّره وتعيد حسابه.
+const String kAutoOfferNotePrefix = 'عرض:';
+
+/// بادئة سطر العرض **اليدوي** — إنسان طبّقه، فما بيتلمسش.
+///
+/// ⚠️ `'عرض (يدوي):'` **ما بيبدأش** بـ`'عرض:'` — بعد «عرض» بييجي « (» مش «:».
+/// اللي بيسأل «هل ده سطر عرض؟» بـ`startsWith(kAutoOfferNotePrefix)` لوحدها
+/// بيرجّع false للسطر اليدوي فيعامله كسطر أساس عادي. ده كان مصدر عطل ٣-٣.
+const String kManualOfferNotePrefix = 'عرض (يدوي):';
+
+/// هل السطر ده سطر عرض بأي شكل — تلقائي أو يدوي؟
+///
+/// ده السؤال اللي كل حلقات التطبيق عايزة تسأله: «هل السطر ده متسعّر بعرض
+/// خلاص فما ينفعش أعيد تسعيره / أعدّه ككمية أساس؟». خمس مواضع كانت بتسأله
+/// بفلتر أضيق (التلقائي بس)، فسطر الخصم اليدوي كان بيتكتب فوقه، وملاحظته
+/// بتتحوّل لـ`عرض:` فالجولة اللي بعدها بتصفّره لسعر الأساس ⇒ الخصم اليدوي
+/// يتدمّر نهائياً والعميل يتحمّل زيادة.
+bool isOfferLineNote(String? note) =>
+    note != null &&
+    (note.startsWith(kAutoOfferNotePrefix) ||
+        note.startsWith(kManualOfferNotePrefix));
+
 String? composeCartItemNote(
   List<SelectedModifier> modifiers,
   String? itemNote,
@@ -525,8 +547,11 @@ class CartController extends Notifier<CartState> {
       // Classify: auto-applied items have 'عرض:' prefix; manual have 'عرض (يدوي):'
       bool isAutoApplied(String? n) {
         if (n == null) return false;
-        if (n.startsWith('عرض (يدوي):')) return false; // manual — keep
-        if (n.startsWith('عرض:')) return true; // auto — reset
+        // الترتيب مقصود: اليدوي يتفحص الأول. البادئتين مش متداخلتين
+        // (`'عرض (يدوي):'` ما بيبدأش بـ`'عرض:'`) فالترتيب مش شرط للصحة،
+        // لكنه بيخلّي «اليدوي يفوز» مقروء في الكود.
+        if (n.startsWith(kManualOfferNotePrefix)) return false; // manual — keep
+        if (n.startsWith(kAutoOfferNotePrefix)) return true; // auto — reset
         return false;
       }
 
@@ -636,8 +661,7 @@ class CartController extends Notifier<CartState> {
     // Build qty map of base cart items (excluding any offer items)
     final cartQtyMap = <int, double>{};
     for (final item in items) {
-      final n = item.note;
-      if (n != null && (n.startsWith('عرض:') || n.startsWith('عرض (يدوي):'))) continue;
+      if (isOfferLineNote(item.note)) continue;
       cartQtyMap[item.productId] = (cartQtyMap[item.productId] ?? 0) + item.quantity;
     }
 
@@ -695,7 +719,7 @@ class CartController extends Notifier<CartState> {
       for (int i = 0; i < items.length && remaining > 0; i++) {
         final item = items[i];
         if (item.productId != oi.productId) continue;
-        if (item.note?.startsWith('عرض:') ?? false) continue;
+        if (isOfferLineNote(item.note)) continue;
 
         if (item.quantity <= remaining) {
           // Entire item at offer price
@@ -733,7 +757,7 @@ class CartController extends Notifier<CartState> {
       // Count quantity of this product in cart (base items only)
       double cartQty = 0;
       for (final item in items) {
-        if (item.productId == oi.productId && !(item.note?.startsWith('عرض:') ?? false)) {
+        if (item.productId == oi.productId && !isOfferLineNote(item.note)) {
           cartQty += item.quantity;
         }
       }
@@ -776,7 +800,7 @@ class CartController extends Notifier<CartState> {
     bool applied = false;
     for (int i = 0; i < items.length; i++) {
       final item = items[i];
-      if (item.note?.startsWith('عرض:') ?? false) continue;
+      if (isOfferLineNote(item.note)) continue;
 
       bool matches = false;
       // Category match
@@ -819,7 +843,7 @@ class CartController extends Notifier<CartState> {
     bool applied = false;
     for (int i = 0; i < items.length; i++) {
       final item = items[i];
-      if (item.note?.startsWith('عرض:') ?? false) continue;
+      if (isOfferLineNote(item.note)) continue;
 
       bool matches = false;
       if (offer.categoryId != null && item.categoryId == offer.categoryId) {
@@ -1057,7 +1081,7 @@ class CartController extends Notifier<CartState> {
       final item = updatedItems[i];
       
       // Skip items that are part of an offer (notes starting with 'عرض:')
-      if (item.note?.startsWith('عرض:') ?? false) continue;
+      if (isOfferLineNote(item.note)) continue;
       
       // Fetch fresh product info to get prices for all levels
       final product = await productRepo.getProductById(item.productId);
