@@ -694,6 +694,12 @@ mixin _OfferDialogsMixin on ConsumerState<OffersScreen> {
                           return;
                         }
 
+                        // القفل بيتقفل **قبل** أول `await`. التحققات اللي فوق
+                        // كلها متزامنة، لكن اللي تحت بيقرا الأصناف من القاعدة
+                        // واحد واحد — والزرار كان بيفضل حيّ طول القراءات دي،
+                        // فدوسة تانية كانت بتحفظ العرض مرتين.
+                        setDialogState(() => isLoading = true);
+
                         // دفاع في العمق: عرض حزمة سعره ≥ مجموع أسعار بيع أصنافه
                         // بيرفع الأسعار بدل ما يخفّضها. الحارس الحقيقي عند
                         // التطبيق (`CartPricingService`) لأن `salePrice` ممكن
@@ -711,6 +717,8 @@ mixin _OfferDialogsMixin on ConsumerState<OffersScreen> {
                           }
                           if (!ctx.mounted) return;
                           if (normalTotal > 0 && price >= normalTotal) {
+                            // فك القفل: العرض ما اتحفظش والموظف محتاج يعدّل السعر.
+                            setDialogState(() => isLoading = false);
                             AppToast.show(
                               ctx,
                               'سعر العرض ($price) أعلى من أو يساوي مجموع أسعار '
@@ -721,8 +729,6 @@ mixin _OfferDialogsMixin on ConsumerState<OffersScreen> {
                             return;
                           }
                         }
-
-                        setDialogState(() => isLoading = true);
 
                         try {
                           if (existingOffer == null) {
