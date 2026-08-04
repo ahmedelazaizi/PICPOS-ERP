@@ -70,8 +70,13 @@ extension BranchScopeCleanupExtension on AppDatabase {
     Set<int> allowedBranchIds,
   ) async {
     if (allowedBranchIds.isEmpty) {
-      // Empty allowed set means full access (admin) — there are no
-      // foreign rows by definition. Mirrors BranchScope.fullAccess.
+      // مجموعة فارغة = **سياق غير محصور فعلاً** (سيرفر · مستقل · مرآة،
+      // أو جهاز عميل لم يُربَط بفرع قط) ⇒ لا حدّ يُقاس عليه «الغريب».
+      //
+      // ⚠️ ليست «صلاحية كاملة». مدير النظام على جهاز عميل مربوط له صلاحية
+      // كاملة ومع ذلك قرصه مليء بصفوف فروع أخرى — على المستدعي أن يحلّ
+      // الحدّ عبر `resolveForeignRowScope` (ربط الجهاز) قبل النداء، وإلا
+      // عادت الأداة بلا أثر للمشغّل الذي وُجدت من أجله (FR-2).
       return const {};
     }
     final result = <String, int>{};
@@ -118,6 +123,8 @@ extension BranchScopeCleanupExtension on AppDatabase {
   Future<Map<String, int>> wipeForeignBranchData(
     Set<int> allowedBranchIds,
   ) async {
+    // نفس دلالة الحارس في [dryRunForeignBranchCounts]: فارغة = بلا حدّ
+    // معروف ⇒ لا حذف. المستدعي يحلّ الحدّ بـ`resolveForeignRowScope`.
     if (allowedBranchIds.isEmpty) return const {};
     final placeholders = List.filled(allowedBranchIds.length, '?').join(',');
     final ids = allowedBranchIds.map((i) => Variable.withInt(i)).toList();

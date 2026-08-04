@@ -7,15 +7,22 @@
 
 import 'package:drift/drift.dart' as d;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ural_erp/data/database/database.dart';
 import 'package:ural_erp/data/database/extensions/branch_scope_cleanup_extension.dart';
+import 'package:ural_erp/data/providers/branch_scope_provider.dart';
+import 'package:ural_erp/services/network_service.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized(); // لقناة SharedPreferences
+
   late AppDatabase db;
   late int warehouseId;
   late int userId;
 
   setUp(() async {
+    NetworkService.instance.debugSetModeForTests(NetworkMode.standalone);
+    SharedPreferences.setMockInitialValues(const {});
     db = AppDatabase.forTesting();
     // فرعان + مخزن + مستخدم: `SalesInvoices.warehouseId` و`.userId`
     // **مطلوبان وغير nullable** (sales_purchase_tables.dart:181,186)،
@@ -114,5 +121,93 @@ void main() {
       throwsA(isA<Exception>()),
       reason: 'الدراي-رن بلع فشل الجدول ورجّع عدّاً ناقصاً',
     );
+  });
+
+  // ── المراجعة النهائية / FR-2 ────────────────────────────────────────────
+  // الأداة كانت تُبلّغ «لا توجد صفوف» على الجهاز المليء بصفوف فروع أخرى.
+  // مدير النظام على جهاز عميل مربوط يكون `isCrossBranchElevated` ⇒
+  // `hasFullAccess` ⇒ الواجهة كانت تمرّر `<int>{}` ⇒ الحارس يرجّع `{}`.
+  // «الصف الغريب» على جهاز عميل يحدّده **ربط الجهاز** (`client_branch_id`)
+  // لا نطاق صلاحية المستخدم — وهذا ما يقيسه هذا الفوج.
+  group('FR-2 — نطاق التنظيف على جهاز مربوط', () {
+    test('جهاز عميل + صلاحية كاملة ⇒ ربط الجهاز هو الحدّ', () async {
+      NetworkService.instance.debugSetModeForTests(NetworkMode.client);
+      SharedPreferences.setMockInitialValues({'client_branch_id': 1});
+      await seedInvoice(1, 1);
+      await seedInvoice(2, 2);
+
+      final allowed =
+          await resolveForeignRowScope(const BranchScope.fullAccess());
+      expect(allowed, {1});
+
+      final counts = await db.dryRunForeignBranchCounts(allowed);
+      expect(
+        counts['sales_invoices'],
+        1,
+        reason: 'الفحص قال «لا توجد صفوف» على جهاز مليء بصفوف الفرع ٢ — '
+            'الأداة عديمة الأثر للمشغّل الذي تخاطبه ملاحظات الإصدار',
+      );
+    });
+
+    test('التنظيف يحذف فعلاً على جهاز عميل بصلاحية كاملة', () async {
+      NetworkService.instance.debugSetModeForTests(NetworkMode.client);
+      SharedPreferences.setMockInitialValues({'client_branch_id': 1});
+      await seedInvoice(1, 1);
+      await seedInvoice(2, 2);
+
+      final allowed =
+          await resolveForeignRowScope(const BranchScope.fullAccess());
+      final deleted = await db.wipeForeignBranchData(allowed);
+
+      expect(deleted['sales_invoices'], 1);
+      final remaining = await db.select(db.salesInvoices).get();
+      expect(remaining.map((r) => r.id), [1]);
+    });
+
+    test('سيرفر/مستقل + صلاحية كاملة ⇒ مجموعة فارغة (الحارس يبقى معنياً)',
+        () async {
+      NetworkService.instance.debugSetModeForTests(NetworkMode.server);
+      SharedPreferences.setMockInitialValues({'client_branch_id': 1});
+      await seedInvoice(1, 1);
+      await seedInvoice(2, 2);
+
+      final allowed =
+          await resolveForeignRowScope(const BranchScope.fullAccess());
+
+      expect(
+        allowed,
+        isEmpty,
+        reason: 'سياق غير محصور فعلاً — لا يوجد «فرع للجهاز» يُقاس عليه، '
+            'وحذف صفوف من قاعدة السيرفر الأصلية كارثة',
+      );
+      expect(await db.dryRunForeignBranchCounts(allowed), isEmpty);
+    });
+
+    test('جهاز عميل غير مربوط ⇒ مجموعة فارغة، لا حذف أعمى', () async {
+      NetworkService.instance.debugSetModeForTests(NetworkMode.client);
+      SharedPreferences.setMockInitialValues(const {}); // بلا client_branch_id
+      await seedInvoice(1, 1);
+      await seedInvoice(2, 2);
+
+      final allowed =
+          await resolveForeignRowScope(const BranchScope.fullAccess());
+
+      expect(allowed, isEmpty);
+    });
+
+    test('مستخدم محصور: نطاقه هو الحدّ ولو كان الجهاز مربوطاً بغيره', () async {
+      NetworkService.instance.debugSetModeForTests(NetworkMode.client);
+      SharedPreferences.setMockInitialValues({'client_branch_id': 1});
+
+      final allowed = await resolveForeignRowScope(
+        const BranchScope(allowedBranchIds: {2}, primaryBranchId: 2),
+      );
+
+      expect(
+        allowed,
+        {2},
+        reason: 'نطاق المستخدم المحصور لا يُستبدَل بربط الجهاز',
+      );
+    });
   });
 }

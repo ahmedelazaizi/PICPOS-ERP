@@ -70,6 +70,31 @@ class BranchScope {
   }
 }
 
+/// المرحلة ١ / FR-2 — الحدّ الذي تُقاس عليه «الصفوف الغريبة» في أداة
+/// التنظيف (`BranchScopeCleanupExtension`).
+///
+/// كانت الواجهة تمرّر `<int>{}` كلما كان [BranchScope.hasFullAccess]، وحارس
+/// المجموعة الفارغة يترجم ذلك إلى «لا صفوف غريبة بالتعريف». لكن **مدير
+/// النظام** على جهاز عميل مربوط يكون `isCrossBranchElevated` ⇒ صلاحية
+/// كاملة ⇒ الفحص يقول «لا توجد صفوف» على جهاز مليء بصفوف فروع أخرى، وهو
+/// بالضبط المشغّل الذي تطلب منه ملاحظات الإصدار تشغيل الأداة.
+///
+/// على جهاز عميل، «الغريب» يحدّده **ربط الجهاز** (`client_branch_id` الذي
+/// يكتبه معالج الإعداد) لا نطاق صلاحية المستخدم: الصلاحية تقول ماذا يحقّ
+/// له أن يرى، والربط يقول أي بيانات يُفترض أن تسكن هذا القرص.
+///
+/// تبقى المجموعة فارغة — فيُبطِل الحارس الأداة — في حالتين فقط، وكلتاهما
+/// مقصودة: سياق غير محصور فعلاً (سيرفر · مستقل · مرآة، فلا «فرع للجهاز»
+/// أصلاً وقاعدة السيرفر هي الأصل)، وجهاز عميل لم يُربَط بفرع قط (لا نحذف
+/// بناءً على حدّ مجهول).
+Future<Set<int>> resolveForeignRowScope(BranchScope scope) async {
+  if (!scope.hasFullAccess) return scope.allowedBranchIds!;
+  if (!NetworkService.instance.isClient) return const <int>{};
+  final prefs = await SharedPreferences.getInstance();
+  final deviceBranchId = prefs.getInt('client_branch_id');
+  return deviceBranchId == null ? const <int>{} : <int>{deviceBranchId};
+}
+
 /// Record which arm of [branchScopeProvider] produced the scope.
 ///
 /// An empty (non-null) `allowedBranchIds` silently hides EVERY branch-tagged

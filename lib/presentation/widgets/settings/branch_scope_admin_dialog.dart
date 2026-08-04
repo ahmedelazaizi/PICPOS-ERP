@@ -288,9 +288,9 @@ class _BranchScopeAdminDialogState
     });
     try {
       final scope = await ref.read(branchScopeProvider.future);
-      final allowed = scope.hasFullAccess
-          ? <int>{} // empty == admin == nothing to clean
-          : scope.allowedBranchIds!;
+      // FR-2: صلاحية كاملة لا تعني «لا صفوف غريبة». على جهاز عميل مربوط
+      // الحدّ هو ربط الجهاز لا نطاق المستخدم — التفصيل في الدالة.
+      final allowed = await resolveForeignRowScope(scope);
       final db = ref.read(databaseProvider);
       final result = await db.dryRunForeignBranchCounts(allowed);
       if (!mounted) return;
@@ -345,7 +345,7 @@ class _BranchScopeAdminDialogState
     setState(() => _wiping = true);
     try {
       final scope = await ref.read(branchScopeProvider.future);
-      final allowed = scope.hasFullAccess ? <int>{} : scope.allowedBranchIds!;
+      final allowed = await resolveForeignRowScope(scope);
       final db = ref.read(databaseProvider);
       final deleted = await db.wipeForeignBranchData(allowed);
       if (!mounted) return;
