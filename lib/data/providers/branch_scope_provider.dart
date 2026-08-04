@@ -155,11 +155,43 @@ final branchScopeProvider = FutureProvider<BranchScope>((ref) async {
   // paired the laptop in the wizard, captured in `MirrorState`), so it
   // takes precedence over session-level elevation. Placed FIRST so any
   // future change to `isCrossBranchElevated` semantics doesn't accidentally
-  // strip mirror's all-branches view, and so the narrowing path below is
-  // never reached on a mirror device — even if auth state lags the boot.
+  // strip mirror's *device* scope — the mirror caches every branch, so the
+  // client-pairing narrowing below must never fire here.
+  //
+  // 2026-08-04 (بطلب المالك، خارج نطاق المرحلة ١) — «المرآة تعرض كل الفروع»
+  // كان يعني: ارمِ `accessIds` وأرجِع صلاحية كاملة بلا شرط. المقصود هو أن
+  // الجهاز غير محصور، لا أن **المستخدم** غير محصور — فمدير مخصَّص له فرعان
+  // كان يرى كل الفروع. والخادم بعد FR-1 يقصّ نفس المستدعي على
+  // `IN (allowed)`، فكانت الواجهة تعلن نطاقاً أوسع مما يسلّمه الخادم.
   if (NetworkService.instance.isMirror &&
       MirrorState.instance.isConfigured) {
-    return _loggedScope(userId, 'mirror-device', const BranchScope.fullAccess());
+    if (accessIds.isNotEmpty) {
+      // `primaryBranchId` = getUserBranchId لا `accessIds.first`:
+      // getUserAccessibleBranchIds تبني مجموعة من صفوف بلا `orderBy` ثم
+      // تدمج فروع المناطق، فترتيبها غير مضمون — وهو بعينه العطل الذي
+      // يوثّقه getUserBranchId (أرقام فواتير تتأرجح بين بادئتي فرعين).
+      final primary = await db.getUserBranchId(userId);
+      return _loggedScope(
+        userId,
+        'mirror-device-scoped',
+        BranchScope(
+          allowedBranchIds: accessIds.toSet(),
+          primaryBranchId: primary,
+        ),
+      );
+    }
+    // القائمة الفارغة غامضة (انظر ذراع `accessIds.isEmpty` أدناه): مستخدم
+    // مميّز ⇒ وصول كامل حقيقي، وغير مميّز ⇒ سيّئ التزويد. نفرّق بنفس
+    // السنتينل الذي تستخدمه بقية المسارات كي لا تصير المرآة ثغرة تلتفّ
+    // على الفشل المقفول.
+    final privileged = await db.isFullBranchAccessUser(userId);
+    return _loggedScope(
+      userId,
+      privileged ? 'mirror-device-full' : 'mirror-device-fail-closed',
+      privileged
+          ? const BranchScope.fullAccess()
+          : const BranchScope(allowedBranchIds: <int>{}, primaryBranchId: null),
+    );
   }
 
   // Feature 004 (US3, FR-021/FR-024) — System Admin elevated on a paired

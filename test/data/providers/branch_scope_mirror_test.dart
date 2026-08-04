@@ -3,12 +3,15 @@
 // ═══════════════════════════════════════════════════════════════════════════
 //
 // Verifies the device-level short-circuit added at the top of
-// branchScopeProvider: when NetworkMode.mirror + MirrorState.isConfigured,
-// any logged-in user (admin or otherwise) gets BranchScope.fullAccess so
-// the HQ console can read every branch through the local cache. Mirror
-// must take precedence over the existing per-user narrowing — even for a
-// cashier whose user_branch_access table restricts them to a single
-// branch on a non-mirror device.
+// branchScopeProvider: it fires only when NetworkMode.mirror AND
+// MirrorState.isConfigured are both true — a half-state (mode without
+// handshake, or a stale MirrorState on a re-paired client) must fall
+// through to the regular per-user narrowing.
+//
+// ⚠ 2026-08-04 — ما يفعله المسار تغيّر بطلب المالك: المرآة تُلغي حصر
+// **الجهاز** لا حصر **المستخدم**، فالمستخدم المخصَّص له فروع يبقى محصوراً
+// عليها. الحالات الأربع (مخصَّص · مدير نظام · سيّئ التزويد · عميل مربوط)
+// في test/unit/branch_scope_mirror_assignments_test.dart.
 // ═══════════════════════════════════════════════════════════════════════════
 
 import 'package:drift/drift.dart' as drift;
@@ -129,7 +132,13 @@ void main() {
           reason: 'branchB must be hidden from this cashier on a non-mirror device');
     });
 
-    test('mirror + configured: cashier gets fullAccess', () async {
+    // 2026-08-04 — كان هذا الاختبار يثبّت `fullAccess` للكاشير على المرآة.
+    // نقضه المالك صراحةً: «الميرور لما يكون المستخدم الادارى متحددله فروع
+    // معينه بينحصر عرض الفروع له على الفروع اللى تم تحديدها من السيرفر».
+    // فالمرآة تُلغي حصر **الجهاز** (ربط العميل) لا حصر **المستخدم**.
+    // تفاصيل الحالات الأربع في test/unit/branch_scope_mirror_assignments_test.dart.
+    test('mirror + configured: assigned cashier stays scoped to their branches',
+        () async {
       NetworkService.instance.debugSetModeForTests(NetworkMode.mirror);
       MirrorState.instance.debugSetForTests(
         serverDisplayName: 'hq.example.com:8080',
@@ -141,10 +150,12 @@ void main() {
       container.invalidate(branchScopeProvider);
 
       final scope = await container.read(branchScopeProvider.future);
-      expect(scope.hasFullAccess, isTrue,
-          reason: 'mirror is a device-level assertion — overrides per-user scope');
-      expect(scope.isAllowed(branchB), isTrue,
-          reason: 'every branch must be visible on a mirror device');
+      expect(scope.hasFullAccess, isFalse,
+          reason: 'mirror lifts the device pairing, not the user assignment');
+      expect(scope.allowedBranchIds, equals({branchA}));
+      expect(scope.isAllowed(branchB), isFalse,
+          reason: 'a branch the server never assigned must not appear on the '
+              'mirror either — the server now returns IN (allowed) too');
     });
 
     test('mirror but NOT configured: short-circuit must NOT apply', () async {
