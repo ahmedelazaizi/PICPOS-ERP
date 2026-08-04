@@ -2332,15 +2332,36 @@ class ApiHandler {
 
       // Phase 5A.1 — derive the branch filter clause. Empty when admin or
       // when the table is universal master data (not in the map).
-      // Spec 151 P1-8b: fail closed on no identity. A table in NEITHER
-      // scoping path (no `branch_id` column AND not `cost_centers`) stays
-      // full even with the sentinel; every scoped table with no identity →
-      // sentinel → zero rows. `cost_centers` is scoped (المرحلة ١ / G1), so
-      // it is no longer among the "stays full" set.
+      //
+      // FR-6 — `failClosedOnNoIdentity` is now per-table, not unconditional.
+      // The flag's own contract (see [_extractBranchId]) is that REFERENCE
+      // endpoints must NOT fail closed, "because the tokenless provisioning
+      // path must read the full master set to seed a new client". This call
+      // site passed `true` for every table; that was harmless while master
+      // tables had no entry in `_syncPullBranchColumn`, but المرحلة ١ / G1
+      // added `branches`/`warehouses`/`safes`/`cost_centers` — so a tokenless
+      // pull started clamping to the `-1` sentinel and returning ZERO master
+      // rows while still handing back a forward `serverTime`. Owner decision:
+      // master tables stay FULL for a caller with no identity.
+      //
+      // TRANSACTIONAL tables keep `true`. They can never reach this line
+      // tokenless — the `_transactionalPullTables` early return above already
+      // answered them — so this is defence in depth: the day that early
+      // return is refactored, the flag still fails them closed rather than
+      // silently inheriting the master-table relaxation.
+      //
+      // ⚠️ This relaxes only the NO-`branch_id` case. A tokenless caller that
+      // DOES send `branch_id` is still scoped to it (`requested != null` →
+      // honoured), which is what keeps a paired-but-pre-login client on its
+      // own branch and keeps an unpaired client's `branch_id=-1`
+      // self-lockout at zero rows.
+      //
       // FR-1: النطاق **الكامل** لا قيمة واحدة. مستدعٍ بلا `branch_id` ومعه
       // أكثر من فرع (المرآة) يُحصَر على فروعه كلها بدل أن يُقصّ على واحد.
-      final branchScope =
-          await _resolveBranchScope(request, failClosedOnNoIdentity: true);
+      final branchScope = await _resolveBranchScope(
+        request,
+        failClosedOnNoIdentity: _transactionalPullTables.contains(table),
+      );
       final branchCol = _syncPullBranchColumn[table];
       // The branch predicate is now assembled with the other conditions
       // below (the two pre-built `branchClause` / `branchClauseStandalone`

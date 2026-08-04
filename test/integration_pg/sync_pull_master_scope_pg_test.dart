@@ -386,7 +386,11 @@ void main() {
       expect(names, isNot(contains('مخزن ب')));
     });
 
-    test('مستدعٍ بلا توكن: السنتينل -1 باقٍ ولا يتّسع', () async {
+    test('اتّساع «بلا branch_id» لا يشتغل على مستدعٍ **له** هوية بفرع واحد',
+        () async {
+      // الحارس الذي يمنع أن يكون FR-1 قد اتّسع لأكثر من حالته: مستخدم
+      // بهوية وفرع واحد لا يرى فرعاً غيره مهما كان مسار الحلّ.
+      await seedScopedUser(26, 1);
       await fx.db.into(fx.db.warehouses).insert(
             WarehousesCompanion.insert(name: 'مخزن أ')
                 .copyWith(branchId: const d.Value(1)),
@@ -395,19 +399,12 @@ void main() {
             WarehousesCompanion.insert(name: 'مخزن ب')
                 .copyWith(branchId: const d.Value(2)),
           );
-      await fx.db.into(fx.db.warehouses).insert(
-            WarehousesCompanion.insert(name: 'مخزن يتيم'),
-          );
 
-      final rows = await pull('warehouses'); // بلا هوية
+      final rows = await pull('warehouses', userId: 26); // بلا branch_id
       final names = rows.map((r) => r['name']).toSet();
 
-      expect(
-        names,
-        <String>{'مخزن يتيم'},
-        reason: 'اتّساع «بلا branch_id» ابتلع مسار انعدام الهوية — السنتينل '
-            'كان حدّاً أمنياً قائماً بذاته',
-      );
+      expect(names, contains('مخزن أ'));
+      expect(names, isNot(contains('مخزن ب')));
     });
 
     test('طلب فرع أجنبي ما زال يُقصّ على فرع واحد', () async {
@@ -435,6 +432,84 @@ void main() {
         isNot(contains('مخزن ب')),
         reason: 'الطلب الأجنبي يُقصّ على فرع واحد لا يتّسع لكل النطاق',
       );
+    });
+  });
+
+  // ── المراجعة النهائية / FR-6 ────────────────────────────────────────────
+  // قرار المالك: **البيانات الأساسية تظل كاملة للمستدعي بلا هوية**. إدخال
+  // `'branches': 'id'` في خريطة الحصر جعل السحب بلا توكن يُقصّ على السنتينل
+  // `-1` ويعيد صفر صفوف بينما `serverTime` غير فارغ ⇒ علامة مائية تتقدّم فوق
+  // رد فارغ. `_getSyncPull` كان يمرّر `failClosedOnNoIdentity: true` لكل
+  // جدول رغم أن عقد العَلَم نفسه يقول إن جداول المرجع لا تفشل مقفولة.
+  //
+  // الاسترخاء يمسّ **حالة إغفال `branch_id` وحدها**؛ الفوج التالي يثبّت
+  // المسارات الثلاثة بالاسم.
+  group('FR-6 — البيانات الأساسية بلا توكن', () {
+    setUp(() async {
+      await fx.db.into(fx.db.warehouses).insert(
+            WarehousesCompanion.insert(name: 'مخزن أ')
+                .copyWith(branchId: const d.Value(1)),
+          );
+      await fx.db.into(fx.db.warehouses).insert(
+            WarehousesCompanion.insert(name: 'مخزن ب')
+                .copyWith(branchId: const d.Value(2)),
+          );
+      await fx.db.into(fx.db.warehouses).insert(
+            WarehousesCompanion.insert(name: 'مخزن يتيم'),
+          );
+    });
+
+    test('مسار ١: بلا توكن وبلا branch_id ⇒ كامل (منع تعطيل التزويد)',
+        () async {
+      final rows = await pull('warehouses');
+      final names = rows.map((r) => r['name']).toSet();
+
+      expect(
+        names,
+        containsAll(<String>['مخزن أ', 'مخزن ب', 'مخزن يتيم']),
+        reason: 'التزويد قبل أول دخول يقرأ البيانات الأساسية كاملة؛ القصّ '
+            'على السنتينل كان يُقدّم العلامة المائية فوق رد فارغ',
+      );
+
+      final branchRows = await pull('branches');
+      expect(
+        branchRows.map((r) => r['name']).toSet(),
+        containsAll(<String>['فرع أ', 'فرع ب']),
+      );
+    });
+
+    test('مسار ٢: بلا توكن مع branch_id=N ⇒ محصور على N', () async {
+      // جهاز مربوط قبل الدخول: `_branchScopeQueryParam` يبعث التفضيل بلا
+      // نظر للتوكن. حصر العميل الذاتي لا بد أن ينجو من استرخاء FR-6.
+      final rows = await pull('warehouses', branchId: 1);
+      final names = rows.map((r) => r['name']).toSet();
+
+      expect(names, contains('مخزن أ'));
+      expect(names, contains('مخزن يتيم')); // ذراع IS NULL — قرار §٢-ب
+      expect(
+        names,
+        isNot(contains('مخزن ب')),
+        reason: 'استرخاء «بلا branch_id» تسرّب لحالة الطلب الصريح',
+      );
+    });
+
+    test('مسار ٣: بلا توكن مع branch_id=-1 ⇒ صفر (الحصر الذاتي باقٍ)',
+        () async {
+      // جهاز غير مربوط يفشل مقفولاً من عند نفسه بإرسال السنتينل.
+      final rows = await pull('warehouses', branchId: -1);
+      final names = rows.map((r) => r['name']).toSet();
+
+      expect(
+        names,
+        isNot(anyOf(contains('مخزن أ'), contains('مخزن ب'))),
+        reason: 'السنتينل انقلب إلى قراءة واسعة — هذا هو الفشل المفتوح الذي '
+            'أُغلق في شغل منفصل',
+      );
+
+      // `branches` عموده هو المفتاح الأساسي فلا صفوف NULL فيه إطلاقاً:
+      // صفر حرفي، وهو أنظف تعبير عن «الحصر الذاتي ما زال يقفل».
+      final branchRows = await pull('branches', branchId: -1);
+      expect(branchRows, isEmpty);
     });
   });
 
