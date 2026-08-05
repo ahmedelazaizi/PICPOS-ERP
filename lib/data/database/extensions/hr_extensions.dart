@@ -206,6 +206,37 @@ extension HRExtensions on AppDatabase {
     String? notes,
   }) async {
     return transaction(() async {
+      // B1 — idempotency guard. The «صرف الراتب» button stays enabled, and
+      // every press used to create a fresh salary row, a fresh cash voucher
+      // (debiting the safe again) and a fresh journal entry. Two presses paid
+      // the salary twice.
+      //
+      // createJournalEntry's own duplicate guard could not help: it keys on
+      // referenceId = salaryPayments.id, which is a NEW id on every press, so
+      // each press looked like a brand-new business event.
+      //
+      // `type` is part of the key on purpose — a bonus or an advance for the
+      // same period is a different obligation, not a repeat of the salary.
+      //
+      // TODO(owner): this belongs in the schema as UNIQUE(employee_id, period,
+      // type). Adding it needs a migration + build_runner, which is frozen in
+      // agent sessions; until then this is the only layer enforcing it, so a
+      // concurrent writer on another device could still slip a duplicate past.
+      final existing = await (select(salaryPayments)
+            ..where((p) =>
+                p.employeeId.equals(employeeId) &
+                p.period.equals(period) &
+                p.type.equals(type))
+            ..limit(1))
+          .getSingleOrNull();
+      if (existing != null) {
+        throw StateError(
+          'تم صرف $type الفترة $period لهذا الموظف بالفعل '
+          '(سند #${existing.id} بمبلغ ${existing.amount}). '
+          'لو محتاج تعديل، الغِ الصرف السابق الأول.',
+        );
+      }
+
       // Create payment record
       final id = await into(salaryPayments).insert(
         SalaryPaymentsCompanion.insert(
