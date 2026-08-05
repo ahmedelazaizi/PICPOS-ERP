@@ -79,8 +79,14 @@ void main() {
 
     // خط الأساس لازم يضيق: لو موضع اتصلح، شيله من _baseline عشان الحارس
     // يقفل عليه.
+    //
+    // ملف **غير موجود** مش موضعاً اتصلح — الحارس ده بينتقل بـpatch بين
+    // منتجين بيتشاركوا المحرك ومش متطابقين في كل الشاشات (مثلاً
+    // shift_close_picpos_screen موجودة في PicPos بس). فغياب الملف يتخطّى،
+    // ووجوده بعدد أقل هو اللي بيتبلّغ.
     final stale = <String>[];
     _baseline.forEach((path, allowed) {
+      if (!File(path).existsSync()) return;
       final actual = perFile[path] ?? 0;
       if (actual < allowed) {
         stale.add('$path: بقى $actual والمسجَّل $allowed');
