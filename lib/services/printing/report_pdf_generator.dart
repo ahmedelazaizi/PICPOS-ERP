@@ -35,15 +35,68 @@ class ReportPdfGenerator {
     String title = 'فاتورة مبيعات',
     String? printedBy,
   }) async {
+    await PdfComputeHelper.layoutPdf(await buildSalesInvoiceDocument(
+      invoiceNumber: invoiceNumber,
+      date: date,
+      customerName: customerName,
+      items: items,
+      subtotal: subtotal,
+      discount: discount,
+      tax: tax,
+      total: total,
+      paid: paid,
+      companyName: companyName,
+      companyAddress: companyAddress,
+      companyPhone: companyPhone,
+      companyTaxId: companyTaxId,
+      notes: notes,
+      title: title,
+      printedBy: printedBy,
+    ));
+  }
+
+  /// Builds the A4 sales-invoice document. Split out of [printSalesInvoice] so
+  /// the real widget tree can be asserted on without a platform channel —
+  /// PdfComputeHelper.layoutPdf needs one, which previously forced the PDF
+  /// tests to re-implement the layout instead of exercising it.
+  ///
+  /// ⚠️ MultiPage, not Page. `pw.Table` is a SpanningWidget (pdf-3.12.0
+  /// table.dart:250) but only a MultiPage drives the spanning protocol; inside
+  /// a plain Page it truncates at `if (totalHeight + lineHeight >
+  /// constraints.maxHeight) { index--; break; }` (table.dart:473) and the
+  /// totals block that follows lays out beyond the page bounds and never
+  /// prints. A 35-line wholesale invoice printed ~20 lines with NO totals,
+  /// no exception and no log — a commercial document silently handed to a
+  /// customer with data missing.
+  static Future<pw.Document> buildSalesInvoiceDocument({
+    required String invoiceNumber,
+    required DateTime date,
+    required String? customerName,
+    required List<InvoiceItem> items,
+    required double subtotal,
+    required double discount,
+    required double tax,
+    required double total,
+    required double paid,
+    String? companyName,
+    String? companyAddress,
+    String? companyPhone,
+    String? companyTaxId,
+    String? notes,
+    String title = 'فاتورة مبيعات',
+    String? printedBy,
+  }) async {
     await _initFont();
     final pdf = pw.Document();
     final remaining = total - paid;
 
     pdf.addPage(
-      pw.Page(
+      pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         textDirection: pw.TextDirection.rtl,
-        build: (context) => pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.end,
+        // Repeated per page so page 2+ still identifies the invoice.
+        header: (context) => pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.end,
           children: [
             _buildA4Header(
@@ -69,39 +122,50 @@ class ReportPdfGenerator {
               ),
             ),
             pw.SizedBox(height: 20),
-            if (customerName != null)
-              pw.Text(
-                'العميل: $customerName',
-                style: pw.TextStyle(font: _arabicFont, fontSize: 14),
-              ),
-            if (notes != null && notes.isNotEmpty) ...[
-              pw.SizedBox(height: 10),
-              pw.Text(
-                'ملاحظات: $notes',
-                style: pw.TextStyle(font: _arabicFont, fontSize: 12),
-              ),
-            ],
-            pw.SizedBox(height: 20),
-            _buildItemsTable(items),
-            pw.SizedBox(height: 20),
-            _buildTotalsSection(
-              subtotal,
-              discount,
-              tax,
-              total,
-              paid,
-              remaining,
-            ),
-            pw.Spacer(),
-            _buildA4Footer(printedBy: printedBy),
           ],
         ),
+        footer: (context) => _buildA4Footer(
+          printedBy: printedBy,
+          pageNumber: context.pageNumber,
+          pagesCount: context.pagesCount,
+        ),
+        build: (context) => [
+          if (customerName != null)
+            pw.Text(
+              'العميل: $customerName',
+              style: pw.TextStyle(font: _arabicFont, fontSize: 14),
+            ),
+          if (notes != null && notes.isNotEmpty) ...[
+            pw.SizedBox(height: 10),
+            pw.Text(
+              'ملاحظات: $notes',
+              style: pw.TextStyle(font: _arabicFont, fontSize: 12),
+            ),
+          ],
+          pw.SizedBox(height: 20),
+          _buildItemsTable(items),
+          pw.SizedBox(height: 20),
+          // Last element in `build`, so it flows onto whatever page the table
+          // ends on (or its own) instead of being laid out off-page.
+          _buildTotalsSection(
+            subtotal,
+            discount,
+            tax,
+            total,
+            paid,
+            remaining,
+          ),
+        ],
       ),
     );
-    await PdfComputeHelper.layoutPdf(pdf);
+    return pdf;
   }
 
-  static pw.Widget _buildA4Footer({String? printedBy}) {
+  static pw.Widget _buildA4Footer({
+    String? printedBy,
+    int? pageNumber,
+    int? pagesCount,
+  }) {
     final now = DateTime.now();
     final dateStr = '${now.year}/${now.month.toString().padLeft(2, '0')}/${now.day.toString().padLeft(2, '0')} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
     return pw.Column(
@@ -131,6 +195,13 @@ class ReportPdfGenerator {
               'شكراً لتعاملكم معنا',
               style: pw.TextStyle(font: _arabicFont, fontSize: 10),
             ),
+            // Page marker — on a multi-page invoice the recipient must be able
+            // to tell a short print from a missing page.
+            if (pageNumber != null && pagesCount != null)
+              pw.Text(
+                'صفحة $pageNumber من $pagesCount',
+                style: pw.TextStyle(font: _arabicFont, fontSize: 9),
+              ),
             pw.Text(
               'نظام ${Brand.name}',
               style: pw.TextStyle(font: _arabicFont, fontSize: 10),
@@ -151,13 +222,39 @@ class ReportPdfGenerator {
     String? companyName,
     bool isReturn = false,
   }) async {
+    await PdfComputeHelper.layoutPdf(await buildPurchaseInvoiceDocument(
+      invoiceNumber: invoiceNumber,
+      date: date,
+      supplierName: supplierName,
+      items: items,
+      total: total,
+      paid: paid,
+      companyName: companyName,
+      isReturn: isReturn,
+    ));
+  }
+
+  /// Builds the A4 purchase-invoice document. Same MultiPage rationale as
+  /// [buildSalesInvoiceDocument] — a plain Page silently dropped every line
+  /// past the first page along with the totals block.
+  static Future<pw.Document> buildPurchaseInvoiceDocument({
+    required String invoiceNumber,
+    required DateTime date,
+    required String supplierName,
+    required List<InvoiceItem> items,
+    required double total,
+    required double paid,
+    String? companyName,
+    bool isReturn = false,
+  }) async {
     await _initFont();
     final pdf = pw.Document();
     pdf.addPage(
-      pw.Page(
+      pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         textDirection: pw.TextDirection.rtl,
-        build: (context) => pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.end,
+        header: (context) => pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.end,
           children: [
             _buildA4Header(
@@ -182,19 +279,25 @@ class ReportPdfGenerator {
               ),
             ),
             pw.SizedBox(height: 20),
-            pw.Text(
-              'المورد: $supplierName',
-              style: pw.TextStyle(font: _arabicFont, fontSize: 14),
-            ),
-            pw.SizedBox(height: 20),
-            _buildItemsTable(items, showBarcode: true),
-            pw.SizedBox(height: 20),
-            _buildTotalsSection(total, 0, 0, total, paid, total - paid),
           ],
         ),
+        footer: (context) => _buildA4Footer(
+          pageNumber: context.pageNumber,
+          pagesCount: context.pagesCount,
+        ),
+        build: (context) => [
+          pw.Text(
+            'المورد: $supplierName',
+            style: pw.TextStyle(font: _arabicFont, fontSize: 14),
+          ),
+          pw.SizedBox(height: 20),
+          _buildItemsTable(items, showBarcode: true),
+          pw.SizedBox(height: 20),
+          _buildTotalsSection(total, 0, 0, total, paid, total - paid),
+        ],
       ),
     );
-    await PdfComputeHelper.layoutPdf(pdf);
+    return pdf;
   }
 
   static Future<void> printPartyStatement({
@@ -680,6 +783,9 @@ class ReportPdfGenerator {
             _tableCell('السعر', isHeader: true),
             _tableCell('الإجمالي', isHeader: true),
           ],
+          // Repeated on every page of a multi-page invoice — otherwise page 2
+          // is a wall of unlabelled numbers.
+          repeat: true,
         ),
         ...items.asMap().entries.map((entry) {
           final i = entry.key;
@@ -969,6 +1075,10 @@ class ReportPdfGenerator {
       pdf.addPage(
         pw.Page(
           pageFormat: labelFormat,
+          // The only page in this file that omitted textDirection, so Arabic
+          // product names printed as disconnected, reversed glyphs on shelf
+          // labels — the one print an operator reads dozens of times a day.
+          textDirection: pw.TextDirection.rtl,
           build: (context) => pw.Column(
             mainAxisAlignment: pw.MainAxisAlignment.center,
             children: [
@@ -993,7 +1103,10 @@ class ReportPdfGenerator {
               ),
               if (price != null)
                 pw.Text(
-                  '${price.toStringAsFixed(AppConstants.decimalPlaces)} JOD',
+                  // Was the literal 'JOD'. The label ignored the company's
+                  // configured currency, so every non-Jordanian install
+                  // printed the wrong unit on its shelf tags.
+                  '${price.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbol}',
                   style: pw.TextStyle(
                     font: _arabicFont,
                     fontSize: 8,
