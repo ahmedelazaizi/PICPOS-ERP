@@ -497,6 +497,18 @@ extension SalesDao on AppDatabase {
     List<int>? warehouseIds,
     int? costCenterId,
     Set<int>? allowedBranchIds,
+    /// يستثني الصفوف اللي **مش إيراد**: مستندات المرتجع (saleType='return')
+    /// والفواتير الملغية/المعدومة والأصول اللي اترجّعت.
+    ///
+    /// موجود كمعامل اختياري لأن الدالة دي مشتركة: returns_repository_impl
+    /// بينديها عشان يلاقي فاتورة يرجّعها (ومحتاج يشوف المكتملة والمُرجَعة)،
+    /// و tax_report_screen للقائمة التفصيلية. تغيير الدلالة عامةً كان هيكسر
+    /// مسار المرتجعات.
+    ///
+    /// تقرير المبيعات بيطلبه عشان جمع عمود الجدول يطابق بطاقة «إجمالي
+    /// المبيعات» — البطاقة بتنده getSalesAnalytics اللي بيستثني التلاتة دول
+    /// أصلاً، فمن غير المعامل ده الكارت بيقول ١٠٠٬٠٠٠ وجمع Excel ١٠٨٬٠٠٠.
+    bool revenueOnly = false,
   }) async {
     final start = DateTime(startDate.year, startDate.month, startDate.day);
     final end = DateTime(
@@ -510,6 +522,14 @@ extension SalesDao on AppDatabase {
         (s) => s.invoiceDate.isBetween(Variable(start), Variable(end)) &
                s.isDeleted.equals(false),
       );
+
+    // نفس استثناءات getSalesAnalytics بالظبط (sales_analytics_dao) — أي انحراف
+    // بينهم بيرجّع نفس العطل: كارت وجدول بيجاوبوا سؤالين تحت عنوان واحد.
+    if (revenueOnly) {
+      query.where((s) => s.saleType.isNull() | s.saleType.equals('return').not());
+      query.where(
+          (s) => s.status.isIn(const ['returned', 'cancelled', 'voided']).not());
+    }
 
     if (userId != null) {
       query.where((s) => s.userId.equals(userId));

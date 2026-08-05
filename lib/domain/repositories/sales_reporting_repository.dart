@@ -49,6 +49,9 @@ abstract class ISalesReportingRepository {
     Set<int>? allowedBranchIds,
   });
 
+  /// [revenueOnly] يستثني اللي مش إيراد (مستندات المرتجع والملغي والمُرجَع)
+  /// عشان جمع عمود الجدول يطابق بطاقة «إجمالي المبيعات». اختياري لأن مسار
+  /// المرتجعات وقائمة الضريبة محتاجين المجموعة الكاملة.
   Future<List<SalesInvoiceData>> getSalesByDateRange(
     DateTime start,
     DateTime end, {
@@ -56,6 +59,7 @@ abstract class ISalesReportingRepository {
     List<int>? warehouseIds,
     int? costCenterId,
     Set<int>? allowedBranchIds,
+    bool revenueOnly = false,
   });
 
   Future<List<SalesInvoiceItem>> getSalesInvoiceItems(int invoiceId);

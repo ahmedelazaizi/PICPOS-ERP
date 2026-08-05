@@ -183,6 +183,10 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
         warehouseIds: warehouseIds,
         costCenterId: _selectedCostCenterId,
         allowedBranchIds: _allowedBranchIds,
+        // نفس مجموعة getSalesAnalytics فوق. من غيره الجدول بيعرض المرتجعات
+        // والملغيات اللي البطاقة بتستثنيها، فالمستخدم بيصدّر Excel ويجمع عمود
+        // الإجمالي فيطلّع رقماً أكبر من البطاقة بلا سبب ظاهر.
+        revenueOnly: true,
       );
 
       // Compute previous period (same duration, immediately before)
