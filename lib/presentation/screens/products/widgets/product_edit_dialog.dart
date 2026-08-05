@@ -234,6 +234,11 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
             unitName: u.unitName,
             barcode: u.barcode,
             factor: u.quantityInBase.toString(),
+            // كان بيتجاهل السعر المخزّن، فأي سعر مخصّص كان بيضيع مع أول حفظ
+            // (الحفظ بيمسح الوحدات ويعيد إدراجها).
+            // نفس صيغة حقل المعامل فوق (‏toString) — بتدور ذهاباً وإياباً بأمان
+            // مع tryParseLocale، على عكس الصيغ اللي بتحطّ فواصل آلاف.
+            salePrice: u.salePrice > 0 ? u.salePrice.toString() : null,
           ));
           if (u.isDefaultSale) _defaultUnitIndex = i;
         }
@@ -1244,13 +1249,22 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
           if (unitName.isEmpty) continue;
           final factor = NumberUtils.tryParseLocale(row.factorController.text) ?? 1.0;
           final barcode = row.barcodeController.text.trim();
+          // سعر الوحدة: المُدخَل يفوز، وفاضي = اشتق (السلوك القديم كـسلوك
+          // افتراضي). ده اللي بيخلّي شوال السكر يتسعّر جملةً بدل ما يبقى
+          // مجبراً على سعر الكيلو × ٥٠.
+          final unitSalePrice = ProductFormHelpers.resolveUnitSalePrice(
+            typedPrice:
+                NumberUtils.tryParseLocale(row.salePriceController.text.trim()),
+            baseSalePrice: salePrice,
+            factor: factor,
+          );
           await repo.insertProductUnit(
             ProductUnitsCompanion.insert(
               productId: widget.product.id,
               unitName: unitName,
               barcode: Value(barcode.isNotEmpty ? barcode : null),
               quantityInBase: Value(factor),
-              salePrice: Value(salePrice * factor),
+              salePrice: Value(unitSalePrice),
               costPrice: Value(costPrice * factor),
               isBaseUnit: Value(factor == 1.0),
               isDefaultPurchase: Value(i == _defaultUnitIndex),
@@ -1656,6 +1670,29 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
                             ),
                           ),
                         ),
+                        const SizedBox(width: 8),
+                        // سعر البيع لهذه الوحدة. فاضي = يُشتق من سعر الصنف ×
+                        // المعامل، وهو السلوك الوحيد اللي كان متاحاً قبل كده.
+                        Expanded(
+                          child: SizedBox(
+                            height: 38,
+                            child: TextField(
+                              controller: row.salePriceController,
+                              keyboardType: const TextInputType.numberWithOptions(
+                                  decimal: true),
+                              decoration: InputDecoration(
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(6)),
+                                isDense: true,
+                                hintText: 'سعر الوحدة',
+                                hintStyle: const TextStyle(fontSize: 11),
+                              ),
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ),
+                        ),
                         const SizedBox(width: 4),
                         SizedBox(
                           width: 26,
@@ -1721,11 +1758,22 @@ class _EditProductUnitRow {
   final TextEditingController barcodeController;
   final TextEditingController factorController;
 
+  /// سعر بيع الوحدة. فاضي = اشتق من سعر الصنف × المعامل (السلوك القديم).
+  ///
+  /// `product_units.sale_price` كان موجوداً في السكيما ونقطة البيع بتحترمه
+  /// (‏cart_item_tile.dart) — لكن النموذج ده كان بيدهسه دايماً بـ
+  /// «سعر أساسي × معامل»، ومفيش حقل يدخّله. فشوال السكر لازم يساوي سعر
+  /// الكيلو × ٥٠ بالظبط، ومستحيل تحطّله سعر جملة. وأسوأ: التحميل عند الفتح
+  /// كان بيتجاهل القيمة المخزّنة، فأي سعر مخصّص بيضيع مع أول حفظ.
+  final TextEditingController salePriceController;
+
   _EditProductUnitRow({
     this.existingId,
     this.unitName = '',
     String? barcode,
     String? factor,
+    String? salePrice,
   })  : barcodeController = TextEditingController(text: barcode ?? ''),
-        factorController = TextEditingController(text: factor ?? '1');
+        factorController = TextEditingController(text: factor ?? '1'),
+        salePriceController = TextEditingController(text: salePrice ?? '');
 }

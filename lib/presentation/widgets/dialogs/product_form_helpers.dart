@@ -18,6 +18,28 @@ import '../../../core/theme/app_colors.dart';
 class ProductFormHelpers {
   ProductFormHelpers._();
 
+  /// سعر بيع وحدة التعبئة: المُدخَل يفوز، وفاضي/صفر/غير صالح = اشتق من
+  /// `سعر الصنف × المعامل`.
+  ///
+  /// قبل كده كان الاشتقاق هو **الوحيد** الممكن: النموذجان بيكتبوا
+  /// `salePrice * factor` دايماً، وصفّ الوحدة مكانش فيه حقل سعر أصلاً. يعني
+  /// شوال السكر مجبَر على سعر الكيلو × ٥٠ — وده مش الواقع التجاري، والجملة
+  /// دايماً أرخص للوحدة. العمود `product_units.sale_price` كان موجوداً
+  /// ونقطة البيع بتحترمه (‏cart_item_tile.dart)، فالنقص كان في الواجهة وحدها.
+  ///
+  /// مستخرجة هنا لأن القاعدة بتتكرّر في **تلات** مواضع (الحفظ في نموذج
+  /// التعديل، والحفظ في نموذج الإضافة، وحِمل السيرفر في نموذج الإضافة). لو
+  /// اختلف أي واحد منهم عن التاني، السيرفر يخزّن سعراً والعميل يخزّن غيره
+  /// وأول DeltaPull يدهس سعر المستخدم.
+  static double resolveUnitSalePrice({
+    required double? typedPrice,
+    required double baseSalePrice,
+    required double factor,
+  }) {
+    if (typedPrice != null && typedPrice > 0) return typedPrice;
+    return baseSalePrice * factor;
+  }
+
   /// Build a section header with icon and colored text.
   static Widget buildSectionHeader(
     String title,

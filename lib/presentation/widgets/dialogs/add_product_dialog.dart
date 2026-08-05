@@ -963,6 +963,14 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
           if (unitName.isEmpty) continue;
           final factor = NumberUtils.tryParseLocale(row.factorController.text) ?? 1.0;
           final ub = row.barcodeController.text.trim();
+          // نفس قاعدة الحفظ المحلي بالظبط — لو اختلفوا، السيرفر يخزّن السعر
+          // المشتق والعميل يخزّن المُدخَل، وأول DeltaPull بيدهس سعر المستخدم.
+          final payloadSalePrice = ProductFormHelpers.resolveUnitSalePrice(
+            typedPrice:
+                NumberUtils.tryParseLocale(row.salePriceController.text.trim()),
+            baseSalePrice: salePrice,
+            factor: factor,
+          );
           unitsPayload.add({
             // Pre-mint a globalId so the local insert below uses the SAME UUID
             // the server creates with — DeltaPull then dedupes by globalId
@@ -971,7 +979,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
             'unitName': unitName,
             'barcode': ub.isNotEmpty ? ub : null,
             'quantityInBase': factor,
-            'salePrice': salePrice * factor,
+            'salePrice': payloadSalePrice,
             'costPrice': costPrice * factor,
             'isBaseUnit': factor == 1.0,
             'isDefaultPurchase': i == _defaultUnitIndex,
@@ -1140,13 +1148,20 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
               ? unitsPayload[payloadIdx]['globalId'] as String?
               : null;
           payloadIdx++;
+          // المُدخَل يفوز، وفاضي = اشتق (السلوك القديم كـسلوك افتراضي).
+          final unitSalePrice = ProductFormHelpers.resolveUnitSalePrice(
+            typedPrice:
+                NumberUtils.tryParseLocale(row.salePriceController.text.trim()),
+            baseSalePrice: salePrice,
+            factor: factor,
+          );
           await productRepo.insertProductUnit(
             ProductUnitsCompanion.insert(
               productId: productId,
               unitName: unitName,
               barcode: Value(barcode.isNotEmpty ? barcode : null),
               quantityInBase: Value(factor),
-              salePrice: Value(salePrice * factor),
+              salePrice: Value(unitSalePrice),
               costPrice: Value(costPrice * factor),
               isBaseUnit: Value(factor == 1.0),
               isDefaultPurchase: Value(i == _defaultUnitIndex),
@@ -1476,6 +1491,29 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                                 isDense: true,
                                 hintText: 'مثال: 12',
                                 hintStyle: const TextStyle(fontSize: 12),
+                              ),
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        // سعر البيع لهذه الوحدة. فاضي = يُشتق من سعر الصنف ×
+                        // المعامل، وهو السلوك الوحيد اللي كان متاحاً قبل كده.
+                        Expanded(
+                          child: SizedBox(
+                            height: 38,
+                            child: TextField(
+                              controller: row.salePriceController,
+                              keyboardType: const TextInputType.numberWithOptions(
+                                  decimal: true),
+                              decoration: InputDecoration(
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(6)),
+                                isDense: true,
+                                hintText: 'سعر الوحدة',
+                                hintStyle: const TextStyle(fontSize: 11),
                               ),
                               style: const TextStyle(fontSize: 12),
                             ),
@@ -1960,12 +1998,19 @@ class _ProductUnitRow {
   final TextEditingController barcodeController;
   final TextEditingController factorController;
 
+  /// سعر بيع الوحدة. فاضي = اشتق من سعر الصنف × المعامل (السلوك القديم).
+  /// شوال السكر سعره جملةً أقل من سعر الكيلو × ٥٠ — والاشتقاق الإجباري
+  /// كان بيمنع ده تماماً رغم إن العمود موجود ونقطة البيع بتحترمه.
+  final TextEditingController salePriceController;
+
   _ProductUnitRow({
     this.unitName = '',
     String? barcode,
     String? factor,
+    String? salePrice,
   })  : barcodeController = TextEditingController(text: barcode ?? ''),
-        factorController = TextEditingController(text: factor ?? '1');
+        factorController = TextEditingController(text: factor ?? '1'),
+        salePriceController = TextEditingController(text: salePrice ?? '');
 }
 
 /// Cluster 023 / Issue 11 — one raw-material row in the inline BOM section.
