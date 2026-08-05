@@ -6,6 +6,7 @@ import '../../../core/diagnostics/perf_trace.dart';
 import '../../../domain/entities/product_entity.dart';
 import '../../../domain/repositories/i_products_repository.dart';
 import '../../../data/database/database_barrel.dart';
+import '../../../data/database/sync_interceptor.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../data/providers/providers.dart' show databaseProvider;
 import '../../../data/providers/auth_providers.dart';
@@ -387,10 +388,32 @@ class ProductsController extends Notifier<ProductsState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      // ── Client mode: also queue to server (fire-and-forget) ──
-      ClientWriteInterceptor.deleteProduct(id).catchError((_) {});
+      // ── Client/Mirror mode: route to the server FIRST (awaited). If the
+      //    server refuses we must NOT delete locally.
+      //
+      //    The old code fired this and forgot, swallowing every failure with
+      //    `.catchError((_) {})`, then deleted locally regardless — so the
+      //    operator saw a success and the row vanished. But
+      //    cwi_catalog.deleteProduct schedules `_scheduleProductsPull` right
+      //    after the submit, so a local-only delete is pulled back almost
+      //    immediately, not merely at the next sync tick.
+      //
+      //    Same contract and same wording as deleteCategory (v128), which
+      //    fixed this exact defect class for categories and documents the
+      //    field report: "vanished locally but persisted on the server, and
+      //    the next DeltaPull resurrected it".
+      if (SyncInterceptor.isClientMode) {
+        final ok = await ClientWriteInterceptor.deleteProduct(id);
+        if (!ok) {
+          state = state.copyWith(
+            isLoading: false,
+            error: 'تعذّر حذف الصنف على الخادم — لم يتم الحذف محلياً '
+                'لمنع رجوع الصنف مع المزامنة القادمة.',
+          );
+          return false;
+        }
+      }
 
-      // ALWAYS delete locally
       await _repository.deleteProduct(id);
 
       logger.info('Deleted product #$id', correlationId: 'PRODUCTS');
@@ -445,21 +468,44 @@ class ProductsController extends Notifier<ProductsState> {
     
     state = state.copyWith(isLoading: true, error: null);
     try {
+      // Same server-first contract as deleteProduct above. Per-item, because
+      // a single blocked product (one with transaction history, which the DAO
+      // refuses by design) used to abort the whole loop — leaving the earlier
+      // items already deleted while the UI showed only a generic failure and
+      // never refreshed the list.
+      final deleted = <int>{};
+      final blocked = <int>[];
       for (final id in state.selectedIds) {
-        // Fire-and-forget server sync
-        ClientWriteInterceptor.deleteProduct(id).catchError((_) {});
-        // ALWAYS delete locally
-        await _repository.deleteProduct(id);
+        try {
+          if (SyncInterceptor.isClientMode) {
+            final ok = await ClientWriteInterceptor.deleteProduct(id);
+            if (!ok) {
+              blocked.add(id);
+              continue;
+            }
+          }
+          await _repository.deleteProduct(id);
+          deleted.add(id);
+        } catch (e) {
+          logger.warning('Skipped product #$id during bulk delete: $e',
+              correlationId: 'PRODUCTS');
+          blocked.add(id);
+        }
       }
-      
-      final updatedItems = state.items.where((p) => !state.selectedIds.contains(p.id)).toList();
-      final count = state.selectedIds.length;
+
+      final updatedItems =
+          state.items.where((p) => !deleted.contains(p.id)).toList();
+      final count = deleted.length;
       final user = ref.read(authProvider).user;
-      
+
       state = state.copyWith(
-        items: updatedItems, 
-        isLoading: false, 
+        items: updatedItems,
+        isLoading: false,
         selectedIds: {},
+        error: blocked.isEmpty
+            ? null
+            : 'تم حذف $count صنف، وتعذّر حذف ${blocked.length} '
+                '(مرتبط بمعاملات أو رفضه الخادم).',
       );
       
       if (user != null) {

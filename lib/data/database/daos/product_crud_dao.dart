@@ -646,7 +646,15 @@ extension ProductCrudDao on AppDatabase {
     await (update(products)..where((p) => p.id.equals(productId))).write(
       const ProductsCompanion(isActive: Value(false)),
     );
-    _productSearchCache.clear(); // Invalidate cache on write
+    // Was `_productSearchCache.clear()` alone, which left `_productByIdCache`
+    // holding the pre-delete row with isActive=true. getProductById returns
+    // straight from that cache, so a "deleted" product kept resolving on the
+    // barcode-scan path until LRU eviction (200 entries) or app restart.
+    // invalidateProductCache clears BOTH — its own doc comment already said
+    // "call after insert/update/delete", and delete was the one caller that
+    // didn't. Its neighbours updateProductStock / adjustProductStockGlobal
+    // both call it.
+    invalidateProductCache(productId);
   }
 
   /// Update product stock
