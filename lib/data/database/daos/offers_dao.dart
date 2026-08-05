@@ -27,12 +27,17 @@ extension OffersDao on AppDatabase {
   /// Watch active offers (null-safe date handling: null start/end = no date limit)
   Stream<List<Offer>> watchActiveOffers() {
     final now = DateTime.now();
+    // Same inclusive-end-date window as getActiveOffers — see the rationale
+    // there. This is the stream the offers list and the POS offers dialog read,
+    // so leaving it on the old comparison would keep hiding an offer on its
+    // final day even after the query path was fixed.
+    final today = DateUtils.startOfDay(now);
     return (select(offers)..where(
           (o) =>
               o.isActive.equals(true) &
               (o.startDate.isNull() |
                   o.startDate.isSmallerOrEqual(Variable(now))) &
-              (o.endDate.isNull() | o.endDate.isBiggerOrEqual(Variable(now))),
+              (o.endDate.isNull() | o.endDate.isBiggerOrEqual(Variable(today))),
         ))
         .watch();
   }
@@ -40,12 +45,24 @@ extension OffersDao on AppDatabase {
   /// Get active offers (for use from non-part-of files)
   Future<List<Offer>> getActiveOffers() async {
     final now = DateTime.now();
+    // `endDate` is a DATE the operator picked, and showDatePicker hands back
+    // MIDNIGHT of that day (offer_dialogs.dart). Comparing it against `now`
+    // expired the offer at 00:00 on its own end date — the whole final day was
+    // lost, and an offer created to end "today" never fired at all. That single
+    // gate sits above every offer type, so it read as "bundle and buy-x-get-y
+    // are both broken at POS".
+    //
+    // Compared against the START of today so the end date is inclusive of its
+    // whole day. Deliberately fixed in the query, not in the dialog: UralCash
+    // is live and already holds offers stored with midnight end dates, so this
+    // has to read correctly without a data migration.
+    final today = DateUtils.startOfDay(now);
     return (select(offers)..where(
           (o) =>
               o.isActive.equals(true) &
               (o.startDate.isNull() |
                   o.startDate.isSmallerOrEqual(Variable(now))) &
-              (o.endDate.isNull() | o.endDate.isBiggerOrEqual(Variable(now))),
+              (o.endDate.isNull() | o.endDate.isBiggerOrEqual(Variable(today))),
         ))
         .get();
   }
@@ -58,13 +75,16 @@ extension OffersDao on AppDatabase {
   /// Get active offer by barcode
   Future<Offer?> getOfferByBarcode(String barcode) async {
     final now = DateTime.now();
+    // Same inclusive-end-date window as getActiveOffers — scanning an offer's
+    // barcode must not stop working on the offer's last day.
+    final today = DateUtils.startOfDay(now);
     return (select(offers)..where(
           (o) =>
               o.barcode.equals(barcode) &
               o.isActive.equals(true) &
               (o.startDate.isNull() |
                   o.startDate.isSmallerOrEqual(Variable(now))) &
-              (o.endDate.isNull() | o.endDate.isBiggerOrEqual(Variable(now))),
+              (o.endDate.isNull() | o.endDate.isBiggerOrEqual(Variable(today))),
         ))
         .getSingleOrNull();
   }
