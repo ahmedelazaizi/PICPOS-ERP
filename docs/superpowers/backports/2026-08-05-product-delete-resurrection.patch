@@ -1,0 +1,317 @@
+diff --git a/lib/data/database/daos/product_crud_dao.dart b/lib/data/database/daos/product_crud_dao.dart
+index 3fbafb27..0736be86 100644
+--- a/lib/data/database/daos/product_crud_dao.dart
++++ b/lib/data/database/daos/product_crud_dao.dart
+@@ -646,7 +646,15 @@ extension ProductCrudDao on AppDatabase {
+     await (update(products)..where((p) => p.id.equals(productId))).write(
+       const ProductsCompanion(isActive: Value(false)),
+     );
+-    _productSearchCache.clear(); // Invalidate cache on write
++    // Was `_productSearchCache.clear()` alone, which left `_productByIdCache`
++    // holding the pre-delete row with isActive=true. getProductById returns
++    // straight from that cache, so a "deleted" product kept resolving on the
++    // barcode-scan path until LRU eviction (200 entries) or app restart.
++    // invalidateProductCache clears BOTH — its own doc comment already said
++    // "call after insert/update/delete", and delete was the one caller that
++    // didn't. Its neighbours updateProductStock / adjustProductStockGlobal
++    // both call it.
++    invalidateProductCache(productId);
+   }
+ 
+   /// Update product stock
+diff --git a/lib/presentation/products/providers/products_controller.dart b/lib/presentation/products/providers/products_controller.dart
+index 8c284832..e7a6a5da 100644
+--- a/lib/presentation/products/providers/products_controller.dart
++++ b/lib/presentation/products/providers/products_controller.dart
+@@ -6,6 +6,7 @@ import '../../../core/diagnostics/perf_trace.dart';
+ import '../../../domain/entities/product_entity.dart';
+ import '../../../domain/repositories/i_products_repository.dart';
+ import '../../../data/database/database_barrel.dart';
++import '../../../data/database/sync_interceptor.dart';
+ import '../../../data/providers/repository_providers.dart';
+ import '../../../data/providers/providers.dart' show databaseProvider;
+ import '../../../data/providers/auth_providers.dart';
+@@ -387,10 +388,32 @@ class ProductsController extends Notifier<ProductsState> {
+     state = state.copyWith(isLoading: true, error: null);
+ 
+     try {
+-      // ── Client mode: also queue to server (fire-and-forget) ──
+-      ClientWriteInterceptor.deleteProduct(id).catchError((_) {});
++      // ── Client/Mirror mode: route to the server FIRST (awaited). If the
++      //    server refuses we must NOT delete locally.
++      //
++      //    The old code fired this and forgot, swallowing every failure with
++      //    `.catchError((_) {})`, then deleted locally regardless — so the
++      //    operator saw a success and the row vanished. But
++      //    cwi_catalog.deleteProduct schedules `_scheduleProductsPull` right
++      //    after the submit, so a local-only delete is pulled back almost
++      //    immediately, not merely at the next sync tick.
++      //
++      //    Same contract and same wording as deleteCategory (v128), which
++      //    fixed this exact defect class for categories and documents the
++      //    field report: "vanished locally but persisted on the server, and
++      //    the next DeltaPull resurrected it".
++      if (SyncInterceptor.isClientMode) {
++        final ok = await ClientWriteInterceptor.deleteProduct(id);
++        if (!ok) {
++          state = state.copyWith(
++            isLoading: false,
++            error: 'تعذّر حذف الصنف على الخادم — لم يتم الحذف محلياً '
++                'لمنع رجوع الصنف مع المزامنة القادمة.',
++          );
++          return false;
++        }
++      }
+ 
+-      // ALWAYS delete locally
+       await _repository.deleteProduct(id);
+ 
+       logger.info('Deleted product #$id', correlationId: 'PRODUCTS');
+@@ -445,21 +468,44 @@ class ProductsController extends Notifier<ProductsState> {
+     
+     state = state.copyWith(isLoading: true, error: null);
+     try {
++      // Same server-first contract as deleteProduct above. Per-item, because
++      // a single blocked product (one with transaction history, which the DAO
++      // refuses by design) used to abort the whole loop — leaving the earlier
++      // items already deleted while the UI showed only a generic failure and
++      // never refreshed the list.
++      final deleted = <int>{};
++      final blocked = <int>[];
+       for (final id in state.selectedIds) {
+-        // Fire-and-forget server sync
+-        ClientWriteInterceptor.deleteProduct(id).catchError((_) {});
+-        // ALWAYS delete locally
+-        await _repository.deleteProduct(id);
++        try {
++          if (SyncInterceptor.isClientMode) {
++            final ok = await ClientWriteInterceptor.deleteProduct(id);
++            if (!ok) {
++              blocked.add(id);
++              continue;
++            }
++          }
++          await _repository.deleteProduct(id);
++          deleted.add(id);
++        } catch (e) {
++          logger.warning('Skipped product #$id during bulk delete: $e',
++              correlationId: 'PRODUCTS');
++          blocked.add(id);
++        }
+       }
+-      
+-      final updatedItems = state.items.where((p) => !state.selectedIds.contains(p.id)).toList();
+-      final count = state.selectedIds.length;
++
++      final updatedItems =
++          state.items.where((p) => !deleted.contains(p.id)).toList();
++      final count = deleted.length;
+       final user = ref.read(authProvider).user;
+-      
++
+       state = state.copyWith(
+-        items: updatedItems, 
+-        isLoading: false, 
++        items: updatedItems,
++        isLoading: false,
+         selectedIds: {},
++        error: blocked.isEmpty
++            ? null
++            : 'تم حذف $count صنف، وتعذّر حذف ${blocked.length} '
++                '(مرتبط بمعاملات أو رفضه الخادم).',
+       );
+       
+       if (user != null) {
+diff --git a/test/structural/no_bare_client_write_submit_test.dart b/test/structural/no_bare_client_write_submit_test.dart
+new file mode 100644
+index 00000000..57319a97
+--- /dev/null
++++ b/test/structural/no_bare_client_write_submit_test.dart
+@@ -0,0 +1,98 @@
++// حارس بنيوي — ممنوع نداء عارٍ (إطلاق وننسى) لـClientWriteInterceptor من
++// طبقات المُنادين.
++//
++// ── ليه حارس تاني جنب mirror_write_dispatch_test ────────────────────────────
++// الحارس ده مكمّل مش مكرّر. `mirror_write_dispatch_test` بيدوّر بـregex على
++// `unawaited(ClientWriteInterceptor.` — والصيغة العارية
++// `ClientWriteInterceptor.deleteProduct(id).catchError((_) {});` بتعدّي من
++// تحته وهي **نفس الدلالة وأسوأ**: `unawaited(...)` على الأقل بتعلن النية
++// وبتسجّل الخطأ، والصيغة العارية بـ`.catchError((_) {})` بتبلعه بالكامل.
++//
++// ── العطل اللي كشف الفجوة ───────────────────────────────────────────────────
++// حذف صنف من شاشة الأصناف. `products_controller.deleteProduct` كانت بتطلق
++// نداء السيرفر وتنسى، وتحذف محلياً مهما حصل. و`cwi_catalog.deleteProduct:194`
++// بيجدول `_scheduleProductsPull` بعد النداء على طول — فلو السيرفر رفض أو
++// الشبكة فصلت، السحب ده بيرجّع الصنف **فوراً**، مش في المزامنة الجاية.
++// والمستخدم شايف رسالة نجاح.
++//
++// ونفس فئة العطل دي كانت في التصنيفات واتصلحت في v128
++// (categories_controller.dart:150) — الأصناف اتنسيت.
++//
++// ── العقد ───────────────────────────────────────────────────────────────────
++// في `lib/presentation/` و`lib/data/`: أي نداء لـClientWriteInterceptor لازم
++// يكون `await` أو `return` أو مُسنَداً لمتغيّر يُفحص. ملفات
++// `lib/services/interceptor/` مستثناة — دي تنفيذ المُعترِض نفسه، بيستعمل
++// الاسم كـnamespace داخل تعبيرات.
++
++import 'dart:io';
++
++import 'package:flutter_test/flutter_test.dart';
++
++/// خط أساس موثَّق — **مش نمطاً مقبولاً**، دي مسارات لسه ممكن تضيع فيها كتابة.
++///
++/// كل واحد فيهم بيحتاج نفس علاج v128: استنِّ النداء في وضع العميل، وأجهض
++/// الكتابة المحلية لو السيرفر رفض. اتساب هنا لأن كل واحد بيغيّر تدفّق شاشة
++/// مختلفة وله مخاطرته — والأهم إنه **مش** نفس العطل المُبلَّغ.
++///
++/// لإزالة سطر: حوّل الموضع لـawait + رفض عند الفشل، واكتب اختباراً، وشيله.
++const Map<String, int> _baseline = {
++  'lib/presentation/pos/widgets/pos_expense_dialog.dart': 1,
++  'lib/presentation/pos/widgets/pos_previous_expenses_dialog.dart': 1,
++  'lib/presentation/products/providers/categories_controller.dart': 2,
++  'lib/presentation/products/providers/products_controller.dart': 1,
++  'lib/presentation/screens/inventory/inventory_notifier.dart': 1,
++  'lib/presentation/screens/shift_close_screen.dart': 1,
++  'lib/presentation/shift_close_picpos/screens/shift_close_picpos_screen.dart': 1,
++  'lib/data/services/excel_service.dart': 1,
++};
++
++void main() {
++  test('مفيش نداء عارٍ جديد لـClientWriteInterceptor في presentation/ و data/',
++      () {
++    // نداء في موضع **جملة**: بداية سطر (بعد مسافات) بالاسم مباشرةً — يعني
++    // مش مسبوقاً بـawait ولا return ولا `= `.
++    final pattern = RegExp(r'^\s*ClientWriteInterceptor\s*\.');
++    final perFile = <String, int>{};
++
++    for (final root in ['lib/presentation', 'lib/data']) {
++      for (final entity in Directory(root).listSync(recursive: true)) {
++        if (entity is! File || !entity.path.endsWith('.dart')) continue;
++        final path = entity.path.replaceAll(r'\', '/');
++        final hits = entity
++            .readAsLinesSync()
++            .where((l) => pattern.hasMatch(l))
++            .length;
++        if (hits > 0) perFile[path] = hits;
++      }
++    }
++
++    final offenders = <String>[];
++    perFile.forEach((path, count) {
++      final allowed = _baseline[path] ?? 0;
++      if (count > allowed) {
++        offenders.add('$path: $count نداء عارٍ (المسموح $allowed)');
++      }
++    });
++    expect(offenders, isEmpty,
++        reason: 'نداء إطلاق-وننسى جديد — استنِّ النداء في وضع العميل وأجهض '
++            'الكتابة المحلية لو السيرفر رفض (زي deleteCategory)');
++
++    // خط الأساس لازم يضيق: لو موضع اتصلح، شيله من _baseline عشان الحارس
++    // يقفل عليه.
++    //
++    // ملف **غير موجود** مش موضعاً اتصلح — الحارس ده بينتقل بـpatch بين
++    // منتجين بيتشاركوا المحرك ومش متطابقين في كل الشاشات (مثلاً
++    // shift_close_picpos_screen موجودة في PicPos بس). فغياب الملف يتخطّى،
++    // ووجوده بعدد أقل هو اللي بيتبلّغ.
++    final stale = <String>[];
++    _baseline.forEach((path, allowed) {
++      if (!File(path).existsSync()) return;
++      final actual = perFile[path] ?? 0;
++      if (actual < allowed) {
++        stale.add('$path: بقى $actual والمسجَّل $allowed');
++      }
++    });
++    expect(stale, isEmpty,
++        reason: 'مواضع اتصلحت — نزّل الرقم في _baseline');
++  });
++}
+diff --git a/test/unit/product_delete_cache_invalidation_test.dart b/test/unit/product_delete_cache_invalidation_test.dart
+new file mode 100644
+index 00000000..5e6ec9d2
+--- /dev/null
++++ b/test/unit/product_delete_cache_invalidation_test.dart
+@@ -0,0 +1,83 @@
++// ═══════════════════════════════════════════════════════════════════════════
++// حذف الصنف كان بيسيب الصنف في كاش القراءة بالمعرّف.
++// ═══════════════════════════════════════════════════════════════════════════
++//
++// `deleteProduct` (product_crud_dao.dart) بيمسح `_productSearchCache` بس،
++// ومش بينده `invalidateProductCache(productId)` — رغم إن تعليق الدالة دي
++// مكتوب فيه حرفياً «call after insert/update/**delete**». الحذف هو المكان
++// الوحيد اللي نسيها.
++//
++// النتيجة: `_productByIdCache` — الكاش الموصوف في الكود بإنه «for barcode scan
++// flow» — بيفضل شايل نسخة الصنف بـ`isActive: true`، و`getProductById` بيرجّعها
++// من الكاش (سطر 258) من غير ما يلمس قاعدة البيانات. فالصنف «المحذوف» لسه
++// بيتحلّ في مسار الباركود لحد ما الكاش يتطرد بالـLRU (٢٠٠ صنف) أو التطبيق
++// يتقفل.
++//
++// جيرانها بيعملوا الصح: updateProductStock (‏:668) و adjustProductStockGlobal
++// (‏:679) الاتنين بيندهوا invalidateProductCache.
++// ═══════════════════════════════════════════════════════════════════════════
++
++import 'package:drift/drift.dart' hide isNotNull, isNull;
++import 'package:flutter_test/flutter_test.dart';
++import 'package:ural_erp/data/database/database.dart';
++
++void main() {
++  late AppDatabase db;
++  late int productId;
++  late int warehouseId;
++
++  setUp(() async {
++    db = AppDatabase.forTesting();
++    productId = await db.into(db.products).insert(ProductsCompanion.insert(
++          name: 'صنف للاختبار',
++          code: 'P-DEL-1',
++        ));
++    warehouseId = await db
++        .into(db.warehouses)
++        .insert(WarehousesCompanion.insert(name: 'مخزن'));
++  });
++
++  tearDown(() => db.close());
++
++  test('الصنف بيتقرا نشط قبل الحذف (ضابط)', () async {
++    final p = await db.getProductById(productId);
++    expect(p, isNotNull);
++    expect(p!.isActive, isTrue);
++  });
++
++  test('بعد الحذف، القراءة بالمعرّف بتدّي isActive=false مش النسخة المكاشة',
++      () async {
++    // بيملا _productByIdCache — ده بالظبط اللي بيحصل مع أول مسح باركود.
++    final before = await db.getProductById(productId);
++    expect(before!.isActive, isTrue);
++
++    await db.deleteProduct(productId);
++
++    final after = await db.getProductById(productId);
++    expect(after, isNotNull);
++    expect(after!.isActive, isFalse,
++        reason: 'الكاش كان بيرجّع الصنف المحذوف كأنه لسه نشط');
++  });
++
++  test('الحذف بيشيله من نتائج القائمة النشطة', () async {
++    await db.getProductById(productId); // يملا الكاش
++    await db.deleteProduct(productId);
++    final all = await db.getAllProducts();
++    expect(all.any((p) => p.id == productId), isFalse);
++  });
++
++  test('الحذف بيترفض لو الصنف عليه معاملات (سلوك مقصود، غير متغيّر)', () async {
++    await db.into(db.stockMovements).insert(StockMovementsCompanion.insert(
++          productId: productId,
++          warehouseId: warehouseId,
++          movementType: 'in',
++          quantity: 5,
++          balanceAfter: 5,
++        ));
++    await expectLater(
++      db.deleteProduct(productId),
++      throwsA(isA<Exception>()),
++      reason: 'الرسالة بتوجّه المستخدم لإلغاء التفعيل بدل الحذف',
++    );
++  });
++}
