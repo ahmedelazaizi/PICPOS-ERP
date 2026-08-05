@@ -42,10 +42,11 @@ const _notAScreen = <String>{
 ///   • ar_aging_report_screen    — أرصدة كل العملاء والموردين على مستوى الشركة
 ///   • vat_reconciliation_screen — إجماليات ضريبة المخرجات/المدخلات + أرصدة GL
 ///   • report_builder_screen     — تقارير مخصّصة على كل الجداول بلا أي حصر
-///   • party_statement_screen    — بينده watchAllParties() مع إن
-///                                 watchAllPartiesForBranches(allowedBranchIds)
-///                                 موجودة فعلاً
 ///   • stock_movements_screen    — كل الحركات بـunitCost/balanceAfter، بلا LIMIT
+///
+/// اتشال: party_statement_screen — بقى بيحلّ branchScopeProvider ويمرّره لـ
+/// watchAllPartiesForBranches. الإثبات السلوكي المطلوب في
+/// party_statement_branch_scope_test (‏{} بتفشل مقفولة).
 ///
 /// لإزالة سطر: حُلّ `branchScopeProvider` في الشاشة، مرّر `allowedBranchIds`
 /// للاستعلام، اكتب اختباراً سلوكياً يثبت إن `{}` بتفشل مقفولة، وشيل السطر.
@@ -53,7 +54,6 @@ const _baseline = <String>{
   'lib/presentation/screens/reports/ar_aging_report_screen.dart',
   'lib/presentation/screens/reports/vat_reconciliation_screen.dart',
   'lib/presentation/screens/report_builder_screen.dart',
-  'lib/presentation/screens/party_statement_screen.dart',
   'lib/presentation/screens/stock_movements_screen.dart',
 };
 
@@ -91,5 +91,57 @@ void main() {
     expect(fixed, isEmpty,
         reason: 'الشاشات دي بقت بتحلّ النطاق — شيلها من _baseline عشان '
             'الحارس يقفل عليها');
+  });
+
+  // ── ليه فحص تاني ────────────────────────────────────────────────────────
+  // الفحص فوق بيسأل «الملف بيذكر branchScopeProvider؟» وبس. طفرةٌ أثبتت
+  // ضعفه: إرجاع party_statement لـ`watchAllParties()` غير المحصورة **عدّى**،
+  // لأن سطر حلّ النطاق فضل موجود فوقها بلا استعمال. فالحارس بيمسك النسيان
+  // الكامل — مش الارتداد.
+  //
+  // القراءات دي ليها نظير محصور بنفس الاسم + ForBranches، فاستعمال النسخة
+  // العارية في شاشة تقرير خطأ دايماً حتى لو النطاق متحلول في مكان تاني من
+  // نفس الملف.
+  test('مفيش شاشة تقرير بتنده قراءةً غير محصورة ليها نظير محصور', () {
+    const unscopedReaders = <String>[
+      'watchAllParties()',
+      'watchCustomers()',
+      'watchSuppliers()',
+    ];
+
+    final files = <String>[
+      ...Directory('lib/presentation/screens/reports')
+          .listSync()
+          .whereType<File>()
+          .map((f) => f.path.replaceAll(r'\', '/'))
+          .where((p) => p.endsWith('.dart')),
+      ..._extraReportScreens,
+    ]..sort();
+
+    final offenders = <String>[];
+    for (final path in files) {
+      if (_notAScreen.contains(path)) continue;
+      final file = File(path);
+      if (!file.existsSync()) continue;
+      // التعليقات تُستبعَد: أول نسخة من الفحص ده اتعثّرت في تعليقٍ بيشرح
+      // العطل القديم ويذكر اسم الدالة العارية. حارس بيفشل على شرح العطل
+      // بيعلّم الناس تشيل الشرح.
+      final src = file
+          .readAsLinesSync()
+          .map((l) {
+            final i = l.indexOf('//');
+            return i >= 0 ? l.substring(0, i) : l;
+          })
+          .join('\n');
+      for (final reader in unscopedReaders) {
+        if (src.contains(reader)) {
+          offenders.add('$path → $reader');
+        }
+      }
+    }
+
+    expect(offenders, isEmpty,
+        reason: 'استعمل النسخة المحصورة (‏…ForBranches(allowedBranchIds)) — '
+            'العارية بتعرض أطراف كل الفروع بأسمائها وأرصدتها');
   });
 }

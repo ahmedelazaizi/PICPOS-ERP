@@ -80,7 +80,15 @@ class _PartyStatementScreenState extends ConsumerState<PartyStatementScreen>
     setState(() => isLoading = true);
     try {
       final repo = ref.read(partiesRepositoryProvider);
-      final parties = await repo.watchAllParties().first;
+      // كانت `watchAllParties()` غير المحصورة، فكشف الحساب كان بيعرض كل عملاء
+      // وموردي الشركة — بالأسماء والأرصدة — لمستخدم محصور بفرع.
+      //
+      // العقد: null = وصول كامل (بلا حصر)، {ids} = الفروع دي + الأطراف
+      // العامة، {} = لا شيء. و`scope.allowedBranchIds` بيساوي null بالظبط
+      // لمّا hasFullAccess، فتمريره مباشرةً صحيح ومطابق لـallPartiesProvider.
+      final scope = await ref.read(branchScopeProvider.future);
+      final parties =
+          await repo.watchAllPartiesForBranches(scope.allowedBranchIds).first;
       if (mounted) {
       final isSupplierMode = widget.isSupplier || widget.isCustomer == false;
       final isCustomerMode = widget.isCustomer == true;
