@@ -89,11 +89,20 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
           setState(() => _selectedBranchId = activeBranchId);
         } else if (!_noBranchNoticeShown) {
           _noBranchNoticeShown = true;
+          // The old copy promised «يتم عرض كل الفروع» unconditionally, which
+          // was both a lie and the leak's user-facing symptom: a branch-scoped
+          // user without an active branch is capped to their own branches (or
+          // to nothing), never to the company. Say what actually happens.
+          final scope = await ref.read(branchScopeProvider.future);
+          if (!mounted) return;
+          final message = scope.hasFullAccess
+              ? 'لم يتم تعيين فرع لهذا المستخدم — يتم عرض كل الفروع'
+              : 'لم يتم تعيين فرع لهذا المستخدم — يتم عرض الفروع المصرّح بها فقط';
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content: Text('لم يتم تعيين فرع لهذا المستخدم — يتم عرض كل الفروع'),
-              duration: Duration(seconds: 6),
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(message),
+              duration: const Duration(seconds: 6),
             ));
           });
         }
@@ -106,17 +115,29 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
     setState(() => _isLoading = true);
     try {
       final db = ref.read(databaseProvider);
+      // Authoritative branch-scope cap. `_selectedBranchId` is a UI convenience
+      // filter seeded from activeBranchIdProvider — which is null for a user
+      // with NO branch assignment, i.e. exactly the user branchScopeProvider
+      // hands `{}` («sees nothing»). Relying on it alone inverted fail-closed
+      // into fail-open: that user read the WHOLE company's expenses. The cap is
+      // resolved here and enforced in SQL, so it holds no matter what the
+      // dropdown says. Full-access users get null → unchanged behaviour.
+      final scope = await ref.read(branchScopeProvider.future);
+      final allowedBranchIds =
+          scope.hasFullAccess ? null : scope.allowedBranchIds;
       final summary = await db.getMonthlyExpenseSummary(
         from: _dateRange.start,
         to: _dateRange.end,
         branchId: _selectedBranchId,
         userId: _selectedUserId,
+        allowedBranchIds: allowedBranchIds,
       );
       final detail = await db.getExpensesForReport(
         from: _dateRange.start,
         to: _dateRange.end,
         branchId: _selectedBranchId,
         userId: _selectedUserId,
+        allowedBranchIds: allowedBranchIds,
       );
 
       // Spec 079b (B1): apply region scope client-side. The DAO doesn't
@@ -399,7 +420,12 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final branchesAsync = ref.watch(allBranchesProvider);
+    // Scoped list, not allBranchesProvider: the picker used to name every
+    // branch in the company to a branch-restricted user — a master-data leak
+    // on top of the amounts leak, and it let them pick a branch they may not
+    // read (the SQL cap now returns nothing for it, so the picker would just
+    // lie). Mirrors treasury_report_screen's scoped safe picker.
+    final branchesAsync = ref.watch(userAccessibleBranchesProvider);
     final usersAsync = ref.watch(allUsersProvider);
     final regionsAsync = ref.watch(allRegionsProvider);
 

@@ -493,6 +493,35 @@ extension OperationalExpensesDao on AppDatabase {
     'cash_in',
   };
 
+  /// Authoritative branch-scope cap for the expenses report. Same contract as
+  /// the canonical `_buildAuthScopeFilter` (accounting_reports_dao.dart:79,
+  /// sales_analytics_dao.dart:57 — redeclared here because four extensions on
+  /// AppDatabase already carry that name, so a shared call would be ambiguous):
+  ///   null  → no cap (admin / userId=1 / mirror / cross-branch-elevated)
+  ///   {}    → `AND 1 = 0` (fail-closed — no branch access means no rows)
+  ///   {ids} → those branches OR NULL-branch (head-office / shared) rows
+  ///
+  /// Why it is needed here: the screen capped nothing at all. It seeded
+  /// `_selectedBranchId` from `activeBranchIdProvider`, which returns null for a
+  /// user with no branch assignment — the very user branchScopeProvider hands
+  /// `{}` («sees nothing»). Fail-closed inverted to fail-open: that user read
+  /// the WHOLE company's expense amounts, categories, payment methods and notes.
+  ({String filter, List<Variable> vars}) _expenseAuthScope(
+    Set<int>? allowedBranchIds,
+    String tableAlias,
+  ) {
+    if (allowedBranchIds == null) return (filter: '', vars: <Variable>[]);
+    if (allowedBranchIds.isEmpty) {
+      return (filter: 'AND 1 = 0', vars: <Variable>[]);
+    }
+    final col = '$tableAlias.branch_id';
+    final ph = allowedBranchIds.map((_) => '?').join(', ');
+    return (
+      filter: 'AND ($col IN ($ph) OR $col IS NULL)',
+      vars: allowedBranchIds.map<Variable>((id) => Variable<int>(id)).toList(),
+    );
+  }
+
   /// Get monthly expense summary by category — combines `op_expenses` rows
   /// with the expense-flavored `safe_transactions` (POS quick expense,
   /// treasury "سند صرف", cash sales-return refunds). Filtered by branch +
@@ -504,11 +533,14 @@ extension OperationalExpensesDao on AppDatabase {
     required DateTime to,
     int? branchId,
     int? userId,
+    Set<int>? allowedBranchIds,
   }) async {
     final opBranchFilter = branchId != null
         ? 'AND (e.branch_id IS NULL OR e.branch_id = $branchId)'
         : '';
     final opUserFilter = userId != null ? 'AND e.user_id = $userId' : '';
+    final opScope = _expenseAuthScope(allowedBranchIds, 'e');
+    final stScope = _expenseAuthScope(allowedBranchIds, 's');
     final opRows = await customSelect(
       '''
       SELECT c.id as cat_id, c.name as cat_name, c.type as cat_type,
@@ -520,10 +552,11 @@ extension OperationalExpensesDao on AppDatabase {
         AND e.expense_date BETWEEN ? AND ?
         $opBranchFilter
         $opUserFilter
+        ${opScope.filter}
       WHERE c.is_active = ${sqlBool(true)}
       GROUP BY c.id
       ''',
-      variables: [dateVar(from), dateVar(to)],
+      variables: [dateVar(from), dateVar(to), ...opScope.vars],
       readsFrom: {opExpenses, opExpenseCategories},
     ).get();
 
@@ -550,6 +583,7 @@ extension OperationalExpensesDao on AppDatabase {
       FROM safe_transactions st
       LEFT JOIN safes s ON st.safe_id = s.id
       WHERE st.created_at BETWEEN ? AND ?
+        AND st.deleted_at IS NULL
         AND st.transaction_type IN ('payment', 'withdrawal')
         AND COALESCE(st.category, '') NOT IN
             ('sales','sales_collection','customer_receipt','transfer',
@@ -557,9 +591,10 @@ extension OperationalExpensesDao on AppDatabase {
         AND COALESCE(st.reference_type, '') != 'op_expense'
         $stUserFilter
         $stBranchFilter
+        ${stScope.filter}
       GROUP BY st.category
       ''',
-      variables: [dateVar(from), dateVar(to)],
+      variables: [dateVar(from), dateVar(to), ...stScope.vars],
       readsFrom: {safeTransactions, safes},
     ).get();
 
@@ -606,10 +641,19 @@ extension OperationalExpensesDao on AppDatabase {
     required DateTime to,
     int? branchId,
     int? userId,
+    Set<int>? allowedBranchIds,
   }) async {
-    final opBranchFilter =
-        branchId != null ? 'AND e.branch_id = $branchId' : '';
+    // Was `e.branch_id = ?` while the summary above used
+    // `(e.branch_id IS NULL OR e.branch_id = ?)`. A head-office expense with no
+    // branch counted toward the KPI card but never appeared in the table, so
+    // Σ rows ≠ card and `_averagePerEntry` divided one set's total by another
+    // set's count. The summary's semantics win — NULL-branch rows are shared.
+    final opBranchFilter = branchId != null
+        ? 'AND (e.branch_id IS NULL OR e.branch_id = $branchId)'
+        : '';
     final opUserFilter = userId != null ? 'AND e.user_id = $userId' : '';
+    final opScope = _expenseAuthScope(allowedBranchIds, 'e');
+    final stScope = _expenseAuthScope(allowedBranchIds, 's');
     final opRowsRaw = await customSelect(
       '''
       SELECT e.id, e.amount, e.expense_date, e.period, e.reference, e.notes,
@@ -624,9 +668,10 @@ extension OperationalExpensesDao on AppDatabase {
       WHERE e.expense_date BETWEEN ? AND ?
         $opBranchFilter
         $opUserFilter
+        ${opScope.filter}
       ORDER BY e.expense_date DESC
       ''',
-      variables: [dateVar(from), dateVar(to)],
+      variables: [dateVar(from), dateVar(to), ...opScope.vars],
       readsFrom: {opExpenses, opExpenseCategories, branches, users},
     ).get();
 
@@ -651,6 +696,7 @@ extension OperationalExpensesDao on AppDatabase {
       LEFT JOIN branches b ON s.branch_id = b.id
       LEFT JOIN users u ON st.user_id = u.id
       WHERE st.created_at BETWEEN ? AND ?
+        AND st.deleted_at IS NULL
         AND st.transaction_type IN ('payment', 'withdrawal')
         AND COALESCE(st.category, '') NOT IN
             ('sales','sales_collection','customer_receipt','transfer',
@@ -658,9 +704,10 @@ extension OperationalExpensesDao on AppDatabase {
         AND COALESCE(st.reference_type, '') != 'op_expense'
         $stUserFilter
         $stBranchFilter
+        ${stScope.filter}
       ORDER BY st.created_at DESC
       ''',
-      variables: [dateVar(from), dateVar(to)],
+      variables: [dateVar(from), dateVar(to), ...stScope.vars],
       readsFrom: {safeTransactions, safes, branches, users},
     ).get();
 
