@@ -34,6 +34,27 @@ class _StockMovementsScreenState
   // Feature 058: one-time guard for the no-branch-assigned inline notice.
   bool _noBranchNoticeShown = false;
 
+  /// الاستعلام كان بيتبني **جوّه `build()`**، يعني `FutureBuilder` بياخد future
+  /// جديد مع كل rebuild — كل حرف في خانة البحث، وكل تغيير فلتر، وكل تبديل
+  /// ثيم = استعلام كامل جديد على `stock_movements`. الكاش ده مفتاحه المدى
+  /// الزمني وحده لأن باقي الفلاتر بتتطبّق على النتيجة في الذاكرة.
+  Future<List<StockMovementData>>? _movementsFuture;
+  ({DateTime from, DateTime to})? _movementsKey;
+
+  Future<List<StockMovementData>> _fetchMovements() async {
+    final repo = ref.read(inventoryRepositoryProvider);
+    // حصر المخازن: الحركات بتحمل unit_cost و balance_after — تكلفة ورصيد،
+    // بيان مالي. العقد موثَّق في userAccessibleWarehousesProvider: بيرجّع كل
+    // المخازن للمميّز، ومجموعة فاضية لمستخدم بلا تخصيص على عميل/مرآة (فشل
+    // مقفول). تمرير المعرّفات بيغطّي الحالتين من غير فرع إضافي.
+    final accessible = await ref.read(userAccessibleWarehousesProvider.future);
+    return repo.getMovementsByDateRange(
+      _fromDate,
+      _toDate,
+      warehouseIds: accessible.map((w) => w.id).toList(),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -88,8 +109,14 @@ class _StockMovementsScreenState
 
   @override
   Widget build(BuildContext context) {
-    final inventoryRepo = ref.watch(inventoryRepositoryProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // يُعاد بناء الـfuture لما المدى الزمني يتغيّر بس — مش مع كل rebuild.
+    final key = (from: _fromDate, to: _toDate);
+    if (_movementsKey != key || _movementsFuture == null) {
+      _movementsKey = key;
+      _movementsFuture = _fetchMovements();
+    }
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -101,7 +128,7 @@ class _StockMovementsScreenState
             _buildFilters(context),
             Expanded(
               child: FutureBuilder<List<StockMovementData>>(
-                future: inventoryRepo.getMovementsByDateRange(_fromDate, _toDate),
+                future: _movementsFuture,
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) {
                     return const Center(child: CircularProgressIndicator());
@@ -140,7 +167,8 @@ class _StockMovementsScreenState
                     return _buildEmptyState();
                   }
 
-                  return _buildMovementsList(context, inventoryRepo, movements);
+                  return _buildMovementsList(
+                      context, ref.read(inventoryRepositoryProvider), movements);
                 },
               ),
             ),

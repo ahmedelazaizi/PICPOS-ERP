@@ -47,7 +47,8 @@ class MockInventoryRepository implements InventoryRepository {
       const Stream.empty();
   @override
   Future<List<StockMovementData>> getMovementsByDateRange(
-          DateTime from, DateTime to) async =>
+          DateTime from, DateTime to,
+          {List<int>? warehouseIds, int limit = 500}) async =>
       [];
   @override
   Stream<List<StockMovementData>> watchAllStockMovements({int limit = 100}) =>

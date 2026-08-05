@@ -84,14 +84,30 @@ class InventoryRepositoryImpl implements InventoryRepository {
   @override
   Future<List<StockMovementData>> getMovementsByDateRange(
     DateTime from,
-    DateTime to,
-  ) async {
+    DateTime to, {
+    List<int>? warehouseIds,
+    int limit = 500,
+  }) async {
     final query = _db.select(_db.stockMovements).join([
       leftOuterJoin(_db.products, _db.products.id.equalsExp(_db.stockMovements.productId)),
       leftOuterJoin(_db.warehouses, _db.warehouses.id.equalsExp(_db.stockMovements.warehouseId)),
     ])
       ..where(_db.stockMovements.createdAt.isBetweenValues(from, to))
-      ..orderBy([OrderingTerm.desc(_db.stockMovements.createdAt)]);
+      ..orderBy([OrderingTerm.desc(_db.stockMovements.createdAt)])
+      // كان بلا حدّ خالص، بينما التوأم في الـDAO عنده limit=500 و
+      // watchAllStockMovements تحته مباشرةً عنده 100. المسار ده هو اللي شاشة
+      // حركة المخزون بتستعمله، فكان بيحمّل كل الحركات في الذاكرة.
+      ..limit(limit);
+
+    // حصر المخازن: null = بلا حدّ (وصول كامل)، [] = لا شيء. نفس عُرف
+    // sales_analytics_dao.dart:182 و inventory_dao.dart:1219 — والـ isIn([])
+    // في drift بيدي Constant(false) فالقايمة الفاضية بتفشل مقفولة لوحدها.
+    //
+    // من غير ده كانت الشاشة بتعرض unit_cost و balance_after لكل حركة في كل
+    // مخازن الشركة لمستخدم محصور بفرع — التكلفة والرصيد بيان مالي.
+    if (warehouseIds != null) {
+      query.where(_db.stockMovements.warehouseId.isIn(warehouseIds));
+    }
 
     final rows = await query.get();
     return rows.map((row) {

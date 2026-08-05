@@ -39,10 +39,15 @@ abstract class InventoryRepository {
   Stream<List<StockMovementData>> watchProductMovements(int productId);
 
   /// Get stock movements by date range
+  /// [warehouseIds]: null = بلا حصر (وصول كامل)، [] = لا شيء، {ids} = المخازن دي.
+  /// [limit]: سقف صفوف — الحركات بتحمل unit_cost و balance_after فتحميلها كلها
+  /// تسريب مالي وحِمل ذاكرة معاً.
   Future<List<StockMovementData>> getMovementsByDateRange(
     DateTime from,
-    DateTime to,
-  );
+    DateTime to, {
+    List<int>? warehouseIds,
+    int limit = 500,
+  });
 
   /// Watch all stock movements
   Stream<List<StockMovementData>> watchAllStockMovements({int limit = 100});

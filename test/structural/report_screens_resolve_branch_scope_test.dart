@@ -42,11 +42,13 @@ const _notAScreen = <String>{
 ///   • ar_aging_report_screen    — أرصدة كل العملاء والموردين على مستوى الشركة
 ///   • vat_reconciliation_screen — إجماليات ضريبة المخرجات/المدخلات + أرصدة GL
 ///   • report_builder_screen     — تقارير مخصّصة على كل الجداول بلا أي حصر
-///   • stock_movements_screen    — كل الحركات بـunitCost/balanceAfter، بلا LIMIT
 ///
 /// اتشال: party_statement_screen — بقى بيحلّ branchScopeProvider ويمرّره لـ
-/// watchAllPartiesForBranches. الإثبات السلوكي المطلوب في
-/// party_statement_branch_scope_test (‏{} بتفشل مقفولة).
+/// watchAllPartiesForBranches. الإثبات في party_statement_branch_scope_test.
+///
+/// اتشال: stock_movements_screen — بقى بيحلّ userAccessibleWarehousesProvider
+/// ويمرّر معرّفات المخازن للاستعلام، والاستعلام بقى عنده سقف صفوف.
+/// الإثبات في stock_movements_scope_test (‏[] بتفشل مقفولة).
 ///
 /// لإزالة سطر: حُلّ `branchScopeProvider` في الشاشة، مرّر `allowedBranchIds`
 /// للاستعلام، اكتب اختباراً سلوكياً يثبت إن `{}` بتفشل مقفولة، وشيل السطر.
@@ -54,7 +56,6 @@ const _baseline = <String>{
   'lib/presentation/screens/reports/ar_aging_report_screen.dart',
   'lib/presentation/screens/reports/vat_reconciliation_screen.dart',
   'lib/presentation/screens/report_builder_screen.dart',
-  'lib/presentation/screens/stock_movements_screen.dart',
 };
 
 void main() {
@@ -75,7 +76,15 @@ void main() {
       if (!file.existsSync()) {
         fail('مسار في قائمة الحارس مش موجود — حدّث القائمة: $path');
       }
-      if (!file.readAsStringSync().contains('branchScopeProvider')) {
+      // حصر المخازن مقبول زي حصر الفروع بالظبط: شاشات زي حركة المخزون
+      // استعلامها **لكل مخزن** لا لكل فرع، و`userAccessibleWarehousesProvider`
+      // بيشتق من نفس المصدر (‏getWarehouseScopeForUser) وبيفشل مقفولاً على
+      // العميل/المرآة. إجبارها على branchScopeProvider كان هيخلّي الحصر
+      // الصحيح يتقرا «تسريباً».
+      final src = file.readAsStringSync();
+      final resolvesScope = src.contains('branchScopeProvider') ||
+          src.contains('userAccessibleWarehousesProvider');
+      if (!resolvesScope) {
         offenders.add(path);
       }
     }
