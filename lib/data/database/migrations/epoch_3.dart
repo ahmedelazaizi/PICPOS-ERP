@@ -2324,5 +2324,66 @@ extension Epoch3Migrations on AppDatabase {
         debugPrint('[Migration] v151 shifts.closing_snapshot OK');
       });
     }
+
+    // ── v152: قيود قاعدة البيانات لمنعَي B1 و B2 ──────────────────────────
+    //
+    // الحارسان الموجودان (recordSalaryPayment و importDeviceCheckIn) كودُ
+    // تطبيق، فبيقفلوا الضغط المكرر على نفس الجهاز بس. كاتب متزامن من جهاز
+    // تاني بيقرا «مفيش صف سابق» في نفس اللحظة فالاتنين بيعدّوا. دي الطبقة
+    // اللي بتمنع ده فعلاً.
+    if (from < 152) {
+      // الحضور: بيتنضّف قبل الفهرس. الصفوف دي **مش سجلات مالية** — بتتحوّل
+      // لفلوس عبر العدّ فقط — فدمجها آمن: نبقّي أقدم صف لكل (موظف، يوم)
+      // ونضم عليه أبكر دخول وآخر خروج، ونحذف الباقي.
+      await _safeMigrate('v152 employee_attendance dedup', () async {
+        await m.database.customStatement('''
+          UPDATE employee_attendance
+          SET check_in = (SELECT MIN(b.check_in) FROM employee_attendance b
+                          WHERE b.employee_id = employee_attendance.employee_id
+                            AND b.date = employee_attendance.date
+                            AND b.check_in IS NOT NULL),
+              check_out = (SELECT MAX(b.check_out) FROM employee_attendance b
+                           WHERE b.employee_id = employee_attendance.employee_id
+                             AND b.date = employee_attendance.date
+                             AND b.check_out IS NOT NULL)
+          WHERE id IN (SELECT MIN(id) FROM employee_attendance
+                       GROUP BY employee_id, date)
+        ''');
+        await m.database.customStatement('''
+          DELETE FROM employee_attendance
+          WHERE id NOT IN (SELECT MIN(id) FROM employee_attendance
+                           GROUP BY employee_id, date)
+        ''');
+        debugPrint('[Migration] v152 attendance rows deduped');
+      });
+
+      // الفهرسان **غير قاتلين بقصد**. `_safeMigrate` بيرمي أي خطأ غير
+      // idempotent، ولو رمى هنا التطبيق ما بيقلعش خالص — وده تمن غالي جداً
+      // لطبقة **تحصين**: الحارسان في `recordSalaryPayment` و
+      // `importDeviceCheckIn` شغالين على أي حال.
+      //
+      // والرواتب تحديداً **ما بتتنضّفش تلقائياً**: الصف المكرر سجل مالي مربوط
+      // بسند صرف نقدي وقيد يومية، وحذفه من غير عكس الحركتين بيخلّي الخزنة
+      // والدفاتر غلط. لو فيه تكرار قائم، الفهرس ما بيتركّبش والبيانات تفضل زي
+      // ما هي لحد ما محاسب يسوّيها — والرسالة تحت بتقول له فين بالظبط.
+      //
+      // PicPos لسه ماطرحش (مفيش تنصيبات) فالاتنين بينجحوا دايماً هناك؛ الفرع
+      // ده موجود للنقل لقاعدة فيها بيانات.
+      for (final (label, sql) in [
+        ('attendance day', kCreateAttendanceDayDedupIndexSql),
+        ('salary payment period', kCreateSalaryPaymentDedupIndexSql),
+      ]) {
+        try {
+          await m.database.customStatement(sql);
+          debugPrint('[Migration] v152 $label dedup index OK');
+        } catch (e) {
+          debugPrint(
+              '[Migration] v152 $label dedup index SKIPPED — فيه تكرار قائم '
+              'في البيانات لازم يتسوّى يدوياً قبل ما القيد يتركّب: $e');
+          await DiagnosticLogger.logError(
+              DiagnosticLogger.migration, 'v152 $label dedup index', e);
+        }
+      }
+    }
   }
 }

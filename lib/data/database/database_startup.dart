@@ -133,6 +133,12 @@ extension DatabaseStartup on AppDatabase {
       // as defense-in-depth so a DB that somehow lost the index re-acquires the
       // correct exempted shape. SQLite-only (this method returns early on PG).
       kCreateJeAutopostDedupIndexSql,
+      // B1/B2: نفس منطق الشفاء الذاتي — IF NOT EXISTS بيخلّيهم no-op بعد ما
+      // هجرة v152 (أو مسار التنصيب الجديد) ركّبهم. وبيفشلوا بصمت هنا لو
+      // البيانات لسه فيها تكرار، وده مقصود: الحارسان في التطبيق شغالين،
+      // والتسوية اليدوية شغل محاسب مش شغل إقلاع.
+      kCreateSalaryPaymentDedupIndexSql,
+      kCreateAttendanceDayDedupIndexSql,
     ]) {
       try {
         await customStatement(stmt);

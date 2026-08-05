@@ -296,6 +296,36 @@ const String kCreateJeAutopostDedupIndexSql =
     "AND reference_type NOT IN "
     "('sales_return', 'purchase_return', 'commercial_paper', 'partial_collection')";
 
+/// B1 — قيد قاعدة البيانات ضد صرف الراتب مرتين لنفس الفترة.
+///
+/// الحارس في `recordSalaryPayment` على مستوى التطبيق، وبيقفل الحالة الشائعة
+/// (ضغطتين على نفس الجهاز). لكنه **مش كافٍ**: كاتب متزامن من جهاز تاني بيقرا
+/// «مفيش صرف سابق» في نفس اللحظة، فالاتنين بيعدّوا الفحص ويكتبوا. ده الطبقة
+/// اللي بتمنع ده.
+///
+/// `type` جزء من المفتاح بقصد — مكافأة أو سلفة لنفس الفترة التزام مختلف لا
+/// تكرار للراتب.
+///
+/// ⚠️ `period` عمود nullable، وSQLite بيعتبر الـNULLات متمايزة في الفهرس
+/// الفريد. فصفوف بلا فترة **مش محروسة** — وده **مطابق عن قصد** لحارس التطبيق:
+/// `p.period.equals(null)` بيترجم لـ`= NULL` اللي عمره ما بيتحقق. التطابق بين
+/// الطبقتين أهم من إحكام أكتر في طبقة واحدة، لأن اختلافهما بينتج رفضاً من
+/// القاعدة بلا رسالة مفهومة من التطبيق.
+const String kSalaryPaymentDedupIndexName = 'idx_salary_payments_period_dedup';
+const String kCreateSalaryPaymentDedupIndexSql =
+    'CREATE UNIQUE INDEX IF NOT EXISTS $kSalaryPaymentDedupIndexName '
+    'ON salary_payments(employee_id, period, type)';
+
+/// B2 — قيد قاعدة البيانات ضد تكرار صف الحضور لنفس اليوم.
+///
+/// استيراد البصمة بقى يعمل upsert على (‏employeeId, date)، لكن ده كود تطبيق
+/// كمان. والحضور بيتحوّل لفلوس مباشرةً (الراتب بيعدّ صفوف `present`)، فصف
+/// مكرر واحد = يوم عمل مدفوع مرتين.
+const String kAttendanceDayDedupIndexName = 'idx_employee_attendance_day_dedup';
+const String kCreateAttendanceDayDedupIndexSql =
+    'CREATE UNIQUE INDEX IF NOT EXISTS $kAttendanceDayDedupIndexName '
+    'ON employee_attendance(employee_id, date)';
+
 // ═══════════════════════════════════════════════════════════════════════════
 // DATABASE CLASS
 // ═══════════════════════════════════════════════════════════════════════════
@@ -652,7 +682,7 @@ class AppDatabase extends _$AppDatabase {
   /// return JEs onto their invoice id. Index-only change — no table/column
   /// change, so no generated schema regeneration is required.
   @override
-  int get schemaVersion => 151;
+  int get schemaVersion => 152;
 
   /// PostgreSQL-specific table creation: Drift's `currentDateAndTime` generates
   /// `strftime('%s','now')` which doesn't exist in PostgreSQL.
@@ -1736,6 +1766,10 @@ class AppDatabase extends _$AppDatabase {
           // upgraded DBs get via the v150 migration. Uses the shared SoT SQL so
           // fresh installs and upgrades agree on the exemption shape.
           await customStatement(kCreateJeAutopostDedupIndexSql);
+          // نفس المنطق: فهارس خام مش كيانات Drift، فـcreateAll() ما بيصدّرهاش.
+          // التنصيبات الجديدة لازم تاخد نفس حراسة B1/B2 اللي بتاخدها المُرقّاة.
+          await customStatement(kCreateSalaryPaymentDedupIndexSql);
+          await customStatement(kCreateAttendanceDayDedupIndexSql);
         }
         // seedInitialData + syncDefaultAccounts moved to beforeOpen
         // (after defensive v110 column additions)
