@@ -43,16 +43,31 @@ class CategoriesNotifier extends Notifier<CategoriesState> {
   }) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      // ── Client mode: also queue to server (fire-and-forget) ──
-      // Note: sync interceptor might need update for isGlobal/branchIds later
-      ClientWriteInterceptor.createCategory(
-        name: name,
-        color: color,
-        printerId: printerId,
-        iconName: iconName,
-        isGlobal: isGlobal,
-        branchIds: branchIds,
-      ).catchError((_) {});
+      // ── Client/Mirror mode: route to the server FIRST (awaited) ──
+      // Fire-and-forget left the category existing on this device ONLY: the
+      // categories pull upserts, it never re-pushes local-only rows, so a
+      // failed submit produced a tree that silently disagreed with every other
+      // device — and the operator had no way to tell. In client mode the
+      // interceptor still returns success for "queued to outbox", so this only
+      // refuses when the write genuinely could not be placed.
+      if (SyncInterceptor.isClientMode) {
+        final serverId = await ClientWriteInterceptor.createCategory(
+          name: name,
+          color: color,
+          printerId: printerId,
+          iconName: iconName,
+          isGlobal: isGlobal,
+          branchIds: branchIds,
+        );
+        if (serverId == null) {
+          state = state.copyWith(
+            isLoading: false,
+            error: 'تعذّر إنشاء التصنيف على الخادم — لم يُنشأ محلياً '
+                'حتى لا يظهر على هذا الجهاز وحده.',
+          );
+          return false;
+        }
+      }
 
       // ALWAYS write locally so the UI reflects the change immediately
       await _repository.insertCategoryWithPrinter(
@@ -85,16 +100,33 @@ class CategoriesNotifier extends Notifier<CategoriesState> {
   }) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      // ── Client mode: also queue to server (fire-and-forget) ──
-      ClientWriteInterceptor.updateCategory(
-        id: id,
-        name: name,
-        color: color,
-        printerId: printerId,
-        iconName: iconName,
-        isGlobal: isGlobal,
-        branchIds: branchIds,
-      ).catchError((_) {});
+      // ── Client/Mirror mode: route to the server FIRST (awaited) ──
+      // Same contract as deleteCategory below. Fire-and-forget was lossy for
+      // the same reason: cwi_catalog.updateCategory schedules
+      // `_scheduleCategoriesPull` right after the submit, and
+      // CategorySyncStrategy upserts (insertOnConflictUpdate) the server row
+      // over the local one. A failed submit + a local write meant the pull
+      // overwrote the edit with the server's stale values — the rename or the
+      // colour change reverted on its own after a success message.
+      if (SyncInterceptor.isClientMode) {
+        final ok = await ClientWriteInterceptor.updateCategory(
+          id: id,
+          name: name,
+          color: color,
+          printerId: printerId,
+          iconName: iconName,
+          isGlobal: isGlobal,
+          branchIds: branchIds,
+        );
+        if (!ok) {
+          state = state.copyWith(
+            isLoading: false,
+            error: 'تعذّر حفظ التعديل على الخادم — لم يُحفظ محلياً '
+                'لمنع رجوع القيم القديمة مع المزامنة القادمة.',
+          );
+          return false;
+        }
+      }
 
       // ALWAYS write locally so the UI reflects the change immediately
       await _repository.updateCategoryWithPrinter(

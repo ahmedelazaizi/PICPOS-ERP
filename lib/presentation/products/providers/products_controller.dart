@@ -352,15 +352,28 @@ class ProductsController extends Notifier<ProductsState> {
         'warehouseId': product.warehouseId,
       };
 
-      ClientWriteInterceptor.updateProduct(
-        product.id,
-        productData,
-      ).catchError((e) {
-        debugPrint('[ProductsController] updateProduct sync failed (queued): $e');
-        return false;
-      });
+      // Server-first in client/mirror mode, same contract as deleteProduct.
+      // Fire-and-forget was silently lossy here for the same reason:
+      // cwi_catalog.updateProduct schedules `_scheduleProductsPull` right after
+      // the submit, and the products pull upserts the server row over the local
+      // one. So a failed submit + a local write meant the pull overwrote the
+      // operator's edit with the server's stale values — the edit reverted on
+      // its own, with a success message already shown.
+      if (SyncInterceptor.isClientMode) {
+        final ok = await ClientWriteInterceptor.updateProduct(
+          product.id,
+          productData,
+        );
+        if (!ok) {
+          state = state.copyWith(
+            isLoading: false,
+            error: 'تعذّر حفظ التعديل على الخادم — لم يُحفظ محلياً '
+                'لمنع رجوع القيم القديمة مع المزامنة القادمة.',
+          );
+          return false;
+        }
+      }
 
-      // ALWAYS write locally
       await _repository.updateProductFromEntity(product);
 
       logger.info(
