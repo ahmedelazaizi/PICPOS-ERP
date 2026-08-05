@@ -1,0 +1,310 @@
+diff --git a/lib/presentation/screens/products/widgets/product_edit_dialog.dart b/lib/presentation/screens/products/widgets/product_edit_dialog.dart
+index 5bf60cec..2c8af26e 100644
+--- a/lib/presentation/screens/products/widgets/product_edit_dialog.dart
++++ b/lib/presentation/screens/products/widgets/product_edit_dialog.dart
+@@ -234,6 +234,11 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
+             unitName: u.unitName,
+             barcode: u.barcode,
+             factor: u.quantityInBase.toString(),
++            // كان بيتجاهل السعر المخزّن، فأي سعر مخصّص كان بيضيع مع أول حفظ
++            // (الحفظ بيمسح الوحدات ويعيد إدراجها).
++            // نفس صيغة حقل المعامل فوق (‏toString) — بتدور ذهاباً وإياباً بأمان
++            // مع tryParseLocale، على عكس الصيغ اللي بتحطّ فواصل آلاف.
++            salePrice: u.salePrice > 0 ? u.salePrice.toString() : null,
+           ));
+           if (u.isDefaultSale) _defaultUnitIndex = i;
+         }
+@@ -1244,13 +1249,22 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
+           if (unitName.isEmpty) continue;
+           final factor = NumberUtils.tryParseLocale(row.factorController.text) ?? 1.0;
+           final barcode = row.barcodeController.text.trim();
++          // سعر الوحدة: المُدخَل يفوز، وفاضي = اشتق (السلوك القديم كـسلوك
++          // افتراضي). ده اللي بيخلّي شوال السكر يتسعّر جملةً بدل ما يبقى
++          // مجبراً على سعر الكيلو × ٥٠.
++          final unitSalePrice = ProductFormHelpers.resolveUnitSalePrice(
++            typedPrice:
++                NumberUtils.tryParseLocale(row.salePriceController.text.trim()),
++            baseSalePrice: salePrice,
++            factor: factor,
++          );
+           await repo.insertProductUnit(
+             ProductUnitsCompanion.insert(
+               productId: widget.product.id,
+               unitName: unitName,
+               barcode: Value(barcode.isNotEmpty ? barcode : null),
+               quantityInBase: Value(factor),
+-              salePrice: Value(salePrice * factor),
++              salePrice: Value(unitSalePrice),
+               costPrice: Value(costPrice * factor),
+               isBaseUnit: Value(factor == 1.0),
+               isDefaultPurchase: Value(i == _defaultUnitIndex),
+@@ -1656,6 +1670,29 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
+                             ),
+                           ),
+                         ),
++                        const SizedBox(width: 8),
++                        // سعر البيع لهذه الوحدة. فاضي = يُشتق من سعر الصنف ×
++                        // المعامل، وهو السلوك الوحيد اللي كان متاحاً قبل كده.
++                        Expanded(
++                          child: SizedBox(
++                            height: 38,
++                            child: TextField(
++                              controller: row.salePriceController,
++                              keyboardType: const TextInputType.numberWithOptions(
++                                  decimal: true),
++                              decoration: InputDecoration(
++                                contentPadding: const EdgeInsets.symmetric(
++                                    horizontal: 8, vertical: 4),
++                                border: OutlineInputBorder(
++                                    borderRadius: BorderRadius.circular(6)),
++                                isDense: true,
++                                hintText: 'سعر الوحدة',
++                                hintStyle: const TextStyle(fontSize: 11),
++                              ),
++                              style: const TextStyle(fontSize: 12),
++                            ),
++                          ),
++                        ),
+                         const SizedBox(width: 4),
+                         SizedBox(
+                           width: 26,
+@@ -1721,11 +1758,22 @@ class _EditProductUnitRow {
+   final TextEditingController barcodeController;
+   final TextEditingController factorController;
+ 
++  /// سعر بيع الوحدة. فاضي = اشتق من سعر الصنف × المعامل (السلوك القديم).
++  ///
++  /// `product_units.sale_price` كان موجوداً في السكيما ونقطة البيع بتحترمه
++  /// (‏cart_item_tile.dart) — لكن النموذج ده كان بيدهسه دايماً بـ
++  /// «سعر أساسي × معامل»، ومفيش حقل يدخّله. فشوال السكر لازم يساوي سعر
++  /// الكيلو × ٥٠ بالظبط، ومستحيل تحطّله سعر جملة. وأسوأ: التحميل عند الفتح
++  /// كان بيتجاهل القيمة المخزّنة، فأي سعر مخصّص بيضيع مع أول حفظ.
++  final TextEditingController salePriceController;
++
+   _EditProductUnitRow({
+     this.existingId,
+     this.unitName = '',
+     String? barcode,
+     String? factor,
++    String? salePrice,
+   })  : barcodeController = TextEditingController(text: barcode ?? ''),
+-        factorController = TextEditingController(text: factor ?? '1');
++        factorController = TextEditingController(text: factor ?? '1'),
++        salePriceController = TextEditingController(text: salePrice ?? '');
+ }
+diff --git a/lib/presentation/widgets/dialogs/add_product_dialog.dart b/lib/presentation/widgets/dialogs/add_product_dialog.dart
+index 37c300a6..9974a256 100644
+--- a/lib/presentation/widgets/dialogs/add_product_dialog.dart
++++ b/lib/presentation/widgets/dialogs/add_product_dialog.dart
+@@ -963,6 +963,14 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
+           if (unitName.isEmpty) continue;
+           final factor = NumberUtils.tryParseLocale(row.factorController.text) ?? 1.0;
+           final ub = row.barcodeController.text.trim();
++          // نفس قاعدة الحفظ المحلي بالظبط — لو اختلفوا، السيرفر يخزّن السعر
++          // المشتق والعميل يخزّن المُدخَل، وأول DeltaPull بيدهس سعر المستخدم.
++          final payloadSalePrice = ProductFormHelpers.resolveUnitSalePrice(
++            typedPrice:
++                NumberUtils.tryParseLocale(row.salePriceController.text.trim()),
++            baseSalePrice: salePrice,
++            factor: factor,
++          );
+           unitsPayload.add({
+             // Pre-mint a globalId so the local insert below uses the SAME UUID
+             // the server creates with — DeltaPull then dedupes by globalId
+@@ -971,7 +979,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
+             'unitName': unitName,
+             'barcode': ub.isNotEmpty ? ub : null,
+             'quantityInBase': factor,
+-            'salePrice': salePrice * factor,
++            'salePrice': payloadSalePrice,
+             'costPrice': costPrice * factor,
+             'isBaseUnit': factor == 1.0,
+             'isDefaultPurchase': i == _defaultUnitIndex,
+@@ -1140,13 +1148,20 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
+               ? unitsPayload[payloadIdx]['globalId'] as String?
+               : null;
+           payloadIdx++;
++          // المُدخَل يفوز، وفاضي = اشتق (السلوك القديم كـسلوك افتراضي).
++          final unitSalePrice = ProductFormHelpers.resolveUnitSalePrice(
++            typedPrice:
++                NumberUtils.tryParseLocale(row.salePriceController.text.trim()),
++            baseSalePrice: salePrice,
++            factor: factor,
++          );
+           await productRepo.insertProductUnit(
+             ProductUnitsCompanion.insert(
+               productId: productId,
+               unitName: unitName,
+               barcode: Value(barcode.isNotEmpty ? barcode : null),
+               quantityInBase: Value(factor),
+-              salePrice: Value(salePrice * factor),
++              salePrice: Value(unitSalePrice),
+               costPrice: Value(costPrice * factor),
+               isBaseUnit: Value(factor == 1.0),
+               isDefaultPurchase: Value(i == _defaultUnitIndex),
+@@ -1481,6 +1496,29 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
+                             ),
+                           ),
+                         ),
++                        const SizedBox(width: 8),
++                        // سعر البيع لهذه الوحدة. فاضي = يُشتق من سعر الصنف ×
++                        // المعامل، وهو السلوك الوحيد اللي كان متاحاً قبل كده.
++                        Expanded(
++                          child: SizedBox(
++                            height: 38,
++                            child: TextField(
++                              controller: row.salePriceController,
++                              keyboardType: const TextInputType.numberWithOptions(
++                                  decimal: true),
++                              decoration: InputDecoration(
++                                contentPadding: const EdgeInsets.symmetric(
++                                    horizontal: 8, vertical: 4),
++                                border: OutlineInputBorder(
++                                    borderRadius: BorderRadius.circular(6)),
++                                isDense: true,
++                                hintText: 'سعر الوحدة',
++                                hintStyle: const TextStyle(fontSize: 11),
++                              ),
++                              style: const TextStyle(fontSize: 12),
++                            ),
++                          ),
++                        ),
+                         const SizedBox(width: 4),
+                         // Delete button (not for first row)
+                         SizedBox(
+@@ -1960,12 +1998,19 @@ class _ProductUnitRow {
+   final TextEditingController barcodeController;
+   final TextEditingController factorController;
+ 
++  /// سعر بيع الوحدة. فاضي = اشتق من سعر الصنف × المعامل (السلوك القديم).
++  /// شوال السكر سعره جملةً أقل من سعر الكيلو × ٥٠ — والاشتقاق الإجباري
++  /// كان بيمنع ده تماماً رغم إن العمود موجود ونقطة البيع بتحترمه.
++  final TextEditingController salePriceController;
++
+   _ProductUnitRow({
+     this.unitName = '',
+     String? barcode,
+     String? factor,
++    String? salePrice,
+   })  : barcodeController = TextEditingController(text: barcode ?? ''),
+-        factorController = TextEditingController(text: factor ?? '1');
++        factorController = TextEditingController(text: factor ?? '1'),
++        salePriceController = TextEditingController(text: salePrice ?? '');
+ }
+ 
+ /// Cluster 023 / Issue 11 — one raw-material row in the inline BOM section.
+diff --git a/lib/presentation/widgets/dialogs/product_form_helpers.dart b/lib/presentation/widgets/dialogs/product_form_helpers.dart
+index 67a88950..1069350a 100644
+--- a/lib/presentation/widgets/dialogs/product_form_helpers.dart
++++ b/lib/presentation/widgets/dialogs/product_form_helpers.dart
+@@ -18,6 +18,28 @@ import '../../../core/theme/app_colors.dart';
+ class ProductFormHelpers {
+   ProductFormHelpers._();
+ 
++  /// سعر بيع وحدة التعبئة: المُدخَل يفوز، وفاضي/صفر/غير صالح = اشتق من
++  /// `سعر الصنف × المعامل`.
++  ///
++  /// قبل كده كان الاشتقاق هو **الوحيد** الممكن: النموذجان بيكتبوا
++  /// `salePrice * factor` دايماً، وصفّ الوحدة مكانش فيه حقل سعر أصلاً. يعني
++  /// شوال السكر مجبَر على سعر الكيلو × ٥٠ — وده مش الواقع التجاري، والجملة
++  /// دايماً أرخص للوحدة. العمود `product_units.sale_price` كان موجوداً
++  /// ونقطة البيع بتحترمه (‏cart_item_tile.dart)، فالنقص كان في الواجهة وحدها.
++  ///
++  /// مستخرجة هنا لأن القاعدة بتتكرّر في **تلات** مواضع (الحفظ في نموذج
++  /// التعديل، والحفظ في نموذج الإضافة، وحِمل السيرفر في نموذج الإضافة). لو
++  /// اختلف أي واحد منهم عن التاني، السيرفر يخزّن سعراً والعميل يخزّن غيره
++  /// وأول DeltaPull يدهس سعر المستخدم.
++  static double resolveUnitSalePrice({
++    required double? typedPrice,
++    required double baseSalePrice,
++    required double factor,
++  }) {
++    if (typedPrice != null && typedPrice > 0) return typedPrice;
++    return baseSalePrice * factor;
++  }
++
+   /// Build a section header with icon and colored text.
+   static Widget buildSectionHeader(
+     String title,
+diff --git a/test/unit/product_unit_sale_price_test.dart b/test/unit/product_unit_sale_price_test.dart
+new file mode 100644
+index 00000000..259b484f
+--- /dev/null
++++ b/test/unit/product_unit_sale_price_test.dart
+@@ -0,0 +1,76 @@
++// ═══════════════════════════════════════════════════════════════════════════
++// سعر وحدة التعبئة — شوال السكر مش لازم يساوي سعر الكيلو × ٥٠.
++// ═══════════════════════════════════════════════════════════════════════════
++//
++// بلاغ مختبِر: «تعديل السعر لكل وحدة تعبئة… شوال سكر السعر له غير لما يكون
++// بالكيلو / إضافة مهمة جداً يوجد نقص فيها».
++//
++// القدرة كانت موجودة من الآخر للآخر: `product_units.sale_price` عمود حقيقي،
++// ونقطة البيع بتحترمه فعلاً (cart_item_tile.dart:673 و cart_controller:1180).
++// النقص كان في نموذج الصنف وحده: صفّ الوحدة فيه اسم ومعامل وباركود بس —
++// **ومفيش حقل سعر** — والحفظ بيكتب `سعر الصنف × المعامل` دايماً.
++//
++// وكان دائرياً كمان: التحميل عند الفتح بيتجاهل `u.salePrice` المخزّن، والحفظ
++// بيمسح الوحدات ويعيد إدراجها بالسعر المشتق. فأي سعر مخصّص — حتى لو اتحطّ في
++// القاعدة مباشرةً — بيضيع مع أول فتح وحفظ للصنف.
++//
++// القاعدة اتجمّعت في دالة واحدة لأنها بتتكرّر في تلات مواضع: الحفظ في نموذج
++// التعديل، والحفظ في نموذج الإضافة، و**حِمل السيرفر** في نموذج الإضافة. لو
++// اختلف أي واحد فيهم، السيرفر يخزّن سعراً والعميل غيره وأول DeltaPull يدهس
++// سعر المستخدم.
++// ═══════════════════════════════════════════════════════════════════════════
++
++import 'package:flutter_test/flutter_test.dart';
++import 'package:ural_erp/presentation/widgets/dialogs/product_form_helpers.dart';
++
++void main() {
++  double resolve(double? typed, double base, double factor) =>
++      ProductFormHelpers.resolveUnitSalePrice(
++        typedPrice: typed,
++        baseSalePrice: base,
++        factor: factor,
++      );
++
++  group('المُدخَل يفوز', () {
++    test('شوال ٥٠ كيلو بسعر جملة أقل من الاشتقاق', () {
++      // كيلو السكر بـ٢٠، والشوال بـ٩٠٠ جملةً (مش ١٠٠٠).
++      expect(resolve(900, 20, 50), 900,
++          reason: 'ده جوهر البلاغ — الاشتقاق كان بيفرض ١٠٠٠');
++    });
++
++    test('سعر مُدخَل أعلى من الاشتقاق برضو بيُحترم', () {
++      // وحدة تجزئة صغيرة بهامش أعلى.
++      expect(resolve(25, 20, 1), 25);
++    });
++  });
++
++  group('فاضي = اشتق (السلوك القديم كـسلوك افتراضي)', () {
++    test('null بيشتق', () {
++      expect(resolve(null, 20, 50), 1000);
++    });
++
++    test('صفر بيشتق — مش سعر مجاني بالغلط', () {
++      expect(resolve(0, 20, 50), 1000,
++          reason: 'حقل اتساب فاضي أو اتكتب فيه صفر مش نية بيع ببلاش');
++    });
++
++    test('سالب بيشتق', () {
++      expect(resolve(-5, 20, 50), 1000);
++    });
++
++    test('الوحدة الأساسية (معامل ١) بتشتق سعر الصنف نفسه', () {
++      expect(resolve(null, 20, 1), 20);
++    });
++  });
++
++  test('التلات مواضع لازم تتفق — نفس المُدخَلات نفس الناتج', () {
++    // الحفظ المحلي وحِمل السيرفر بيندهوا نفس الدالة، فاتفاقهم مضمون بالبناء.
++    // الاختبار ده بيوثّق النية: لو حد فكّ التجميع تاني وكتب القاعدة يدوياً في
++    // موضع، ده السطر اللي بيقول ليه ده غلط.
++    const typed = 900.0, base = 20.0, factor = 50.0;
++    final local = resolve(typed, base, factor);
++    final payload = resolve(typed, base, factor);
++    expect(local, payload,
++        reason: 'اختلافهم معناه إن DeltaPull بيدهس سعر المستخدم');
++  });
++}
