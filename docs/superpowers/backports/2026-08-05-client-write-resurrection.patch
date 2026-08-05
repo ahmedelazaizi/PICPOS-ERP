@@ -19,8 +19,98 @@ index 3fbafb27..0736be86 100644
    }
  
    /// Update product stock
+diff --git a/lib/presentation/products/providers/categories_controller.dart b/lib/presentation/products/providers/categories_controller.dart
+index e64127fa..2c501a71 100644
+--- a/lib/presentation/products/providers/categories_controller.dart
++++ b/lib/presentation/products/providers/categories_controller.dart
+@@ -43,16 +43,31 @@ class CategoriesNotifier extends Notifier<CategoriesState> {
+   }) async {
+     state = state.copyWith(isLoading: true, clearError: true);
+     try {
+-      // ── Client mode: also queue to server (fire-and-forget) ──
+-      // Note: sync interceptor might need update for isGlobal/branchIds later
+-      ClientWriteInterceptor.createCategory(
+-        name: name,
+-        color: color,
+-        printerId: printerId,
+-        iconName: iconName,
+-        isGlobal: isGlobal,
+-        branchIds: branchIds,
+-      ).catchError((_) {});
++      // ── Client/Mirror mode: route to the server FIRST (awaited) ──
++      // Fire-and-forget left the category existing on this device ONLY: the
++      // categories pull upserts, it never re-pushes local-only rows, so a
++      // failed submit produced a tree that silently disagreed with every other
++      // device — and the operator had no way to tell. In client mode the
++      // interceptor still returns success for "queued to outbox", so this only
++      // refuses when the write genuinely could not be placed.
++      if (SyncInterceptor.isClientMode) {
++        final serverId = await ClientWriteInterceptor.createCategory(
++          name: name,
++          color: color,
++          printerId: printerId,
++          iconName: iconName,
++          isGlobal: isGlobal,
++          branchIds: branchIds,
++        );
++        if (serverId == null) {
++          state = state.copyWith(
++            isLoading: false,
++            error: 'تعذّر إنشاء التصنيف على الخادم — لم يُنشأ محلياً '
++                'حتى لا يظهر على هذا الجهاز وحده.',
++          );
++          return false;
++        }
++      }
+ 
+       // ALWAYS write locally so the UI reflects the change immediately
+       await _repository.insertCategoryWithPrinter(
+@@ -85,16 +100,33 @@ class CategoriesNotifier extends Notifier<CategoriesState> {
+   }) async {
+     state = state.copyWith(isLoading: true, clearError: true);
+     try {
+-      // ── Client mode: also queue to server (fire-and-forget) ──
+-      ClientWriteInterceptor.updateCategory(
+-        id: id,
+-        name: name,
+-        color: color,
+-        printerId: printerId,
+-        iconName: iconName,
+-        isGlobal: isGlobal,
+-        branchIds: branchIds,
+-      ).catchError((_) {});
++      // ── Client/Mirror mode: route to the server FIRST (awaited) ──
++      // Same contract as deleteCategory below. Fire-and-forget was lossy for
++      // the same reason: cwi_catalog.updateCategory schedules
++      // `_scheduleCategoriesPull` right after the submit, and
++      // CategorySyncStrategy upserts (insertOnConflictUpdate) the server row
++      // over the local one. A failed submit + a local write meant the pull
++      // overwrote the edit with the server's stale values — the rename or the
++      // colour change reverted on its own after a success message.
++      if (SyncInterceptor.isClientMode) {
++        final ok = await ClientWriteInterceptor.updateCategory(
++          id: id,
++          name: name,
++          color: color,
++          printerId: printerId,
++          iconName: iconName,
++          isGlobal: isGlobal,
++          branchIds: branchIds,
++        );
++        if (!ok) {
++          state = state.copyWith(
++            isLoading: false,
++            error: 'تعذّر حفظ التعديل على الخادم — لم يُحفظ محلياً '
++                'لمنع رجوع القيم القديمة مع المزامنة القادمة.',
++          );
++          return false;
++        }
++      }
+ 
+       // ALWAYS write locally so the UI reflects the change immediately
+       await _repository.updateCategoryWithPrinter(
 diff --git a/lib/presentation/products/providers/products_controller.dart b/lib/presentation/products/providers/products_controller.dart
-index 8c284832..e7a6a5da 100644
+index 8c284832..69c66bd2 100644
 --- a/lib/presentation/products/providers/products_controller.dart
 +++ b/lib/presentation/products/providers/products_controller.dart
 @@ -6,6 +6,7 @@ import '../../../core/diagnostics/perf_trace.dart';
@@ -31,7 +121,44 @@ index 8c284832..e7a6a5da 100644
  import '../../../data/providers/repository_providers.dart';
  import '../../../data/providers/providers.dart' show databaseProvider;
  import '../../../data/providers/auth_providers.dart';
-@@ -387,10 +388,32 @@ class ProductsController extends Notifier<ProductsState> {
+@@ -351,15 +352,28 @@ class ProductsController extends Notifier<ProductsState> {
+         'warehouseId': product.warehouseId,
+       };
+ 
+-      ClientWriteInterceptor.updateProduct(
+-        product.id,
+-        productData,
+-      ).catchError((e) {
+-        debugPrint('[ProductsController] updateProduct sync failed (queued): $e');
+-        return false;
+-      });
++      // Server-first in client/mirror mode, same contract as deleteProduct.
++      // Fire-and-forget was silently lossy here for the same reason:
++      // cwi_catalog.updateProduct schedules `_scheduleProductsPull` right after
++      // the submit, and the products pull upserts the server row over the local
++      // one. So a failed submit + a local write meant the pull overwrote the
++      // operator's edit with the server's stale values — the edit reverted on
++      // its own, with a success message already shown.
++      if (SyncInterceptor.isClientMode) {
++        final ok = await ClientWriteInterceptor.updateProduct(
++          product.id,
++          productData,
++        );
++        if (!ok) {
++          state = state.copyWith(
++            isLoading: false,
++            error: 'تعذّر حفظ التعديل على الخادم — لم يُحفظ محلياً '
++                'لمنع رجوع القيم القديمة مع المزامنة القادمة.',
++          );
++          return false;
++        }
++      }
+ 
+-      // ALWAYS write locally
+       await _repository.updateProductFromEntity(product);
+ 
+       logger.info(
+@@ -387,10 +401,32 @@ class ProductsController extends Notifier<ProductsState> {
      state = state.copyWith(isLoading: true, error: null);
  
      try {
@@ -67,7 +194,7 @@ index 8c284832..e7a6a5da 100644
        await _repository.deleteProduct(id);
  
        logger.info('Deleted product #$id', correlationId: 'PRODUCTS');
-@@ -445,21 +468,44 @@ class ProductsController extends Notifier<ProductsState> {
+@@ -445,21 +481,44 @@ class ProductsController extends Notifier<ProductsState> {
      
      state = state.copyWith(isLoading: true, error: null);
      try {
@@ -124,10 +251,10 @@ index 8c284832..e7a6a5da 100644
        if (user != null) {
 diff --git a/test/structural/no_bare_client_write_submit_test.dart b/test/structural/no_bare_client_write_submit_test.dart
 new file mode 100644
-index 00000000..57319a97
+index 00000000..e5c3ce82
 --- /dev/null
 +++ b/test/structural/no_bare_client_write_submit_test.dart
-@@ -0,0 +1,98 @@
+@@ -0,0 +1,117 @@
 +// حارس بنيوي — ممنوع نداء عارٍ (إطلاق وننسى) لـClientWriteInterceptor من
 +// طبقات المُنادين.
 +//
@@ -158,21 +285,31 @@ index 00000000..57319a97
 +
 +import 'package:flutter_test/flutter_test.dart';
 +
-+/// خط أساس موثَّق — **مش نمطاً مقبولاً**، دي مسارات لسه ممكن تضيع فيها كتابة.
++/// إعفاءات موثَّقة — الإطلاق-وننسى هنا **صحيح**، مش فجوة.
 +///
-+/// كل واحد فيهم بيحتاج نفس علاج v128: استنِّ النداء في وضع العميل، وأجهض
-+/// الكتابة المحلية لو السيرفر رفض. اتساب هنا لأن كل واحد بيغيّر تدفّق شاشة
-+/// مختلفة وله مخاطرته — والأهم إنه **مش** نفس العطل المُبلَّغ.
++/// الفرق الفاصل: العطل بيحصل لما السيرفر يفشل بصمت والكتابة المحلية تتم، وبعدين
++/// **سحب مجدوَل** يدهس الحالة المحلية بحالة السيرفر القديمة. المواضع اللي تحت
++/// عندها آلية تقارب بتمنع ده، وكل واحدة اتفحصت على حدة:
 +///
-+/// لإزالة سطر: حوّل الموضع لـawait + رفض عند الفشل، واكتب اختباراً، وشيله.
++///   • pos_expense_dialog — المحلي والسيرفر بيتشاركوا نفس `globalId`، فالسيرفر
++///     بيعمل dedupe على الإدراج والمُصالِح بيدمج الصفّين. إصلاح ميداني مقصود
++///     («المصروفات مش بتظهر للكاشير») والتراجع عنه بيرجّع العطل.
++///   • inventory_notifier — Spec 135 BUG-A: `adjustmentEventGid` واحد بيتمرّر
++///     للطرفين عشان قيدَي اليومية يتقاربوا على globalId حتمي بدل تصادم 23505.
++///   • excel_service — استيراد جماعي محروس بـ`hasOpeningStockMovement`
++///     (إعادة الاستيراد idempotent)، والاستناء لكل صف بيخنق الاستيراد.
++///   • pos_previous_expenses_dialog — قرار موثَّق: الربط على القيمة المرجَّعة
++///     كان بيسيب الصف محلياً لأن المُعترِض بيرجّع true لـ«نجح» و«اتحجز» معاً.
++///
++/// ⚠️ صيغة `unawaited(` مستثناة أصلاً في الماسح فوق — دي مسؤولية
++/// mirror_write_dispatch_test وليها خط أساسها هناك.
++///
++/// لإضافة سطر هنا لازم تكتب ليه الإطلاق-وننسى صحيح في الموضع ده. ولو مفيش
++/// آلية تقارب، الصح هو علاج v128: استنِّ في وضع العميل وأجهض الكتابة المحلية.
 +const Map<String, int> _baseline = {
 +  'lib/presentation/pos/widgets/pos_expense_dialog.dart': 1,
 +  'lib/presentation/pos/widgets/pos_previous_expenses_dialog.dart': 1,
-+  'lib/presentation/products/providers/categories_controller.dart': 2,
-+  'lib/presentation/products/providers/products_controller.dart': 1,
 +  'lib/presentation/screens/inventory/inventory_notifier.dart': 1,
-+  'lib/presentation/screens/shift_close_screen.dart': 1,
-+  'lib/presentation/shift_close_picpos/screens/shift_close_picpos_screen.dart': 1,
 +  'lib/data/services/excel_service.dart': 1,
 +};
 +
@@ -182,16 +319,25 @@ index 00000000..57319a97
 +    // نداء في موضع **جملة**: بداية سطر (بعد مسافات) بالاسم مباشرةً — يعني
 +    // مش مسبوقاً بـawait ولا return ولا `= `.
 +    final pattern = RegExp(r'^\s*ClientWriteInterceptor\s*\.');
++    // صيغة `unawaited(` على السطر اللي قبله مستثناة — دي مسؤولية
++    // mirror_write_dispatch_test، وهو بيقرا الملف كله فالـ`\s*` عنده بيعدّي
++    // السطر ويمسكها. من غير الاستثناء ده الحارسان بيعدّوا نفس الموضع مرتين
++    // وخط الأساس هنا بيوحي بفئة عطل مستقلة مش موجودة.
++    final unawaitedOpen = RegExp(r'unawaited\(\s*$');
 +    final perFile = <String, int>{};
 +
 +    for (final root in ['lib/presentation', 'lib/data']) {
 +      for (final entity in Directory(root).listSync(recursive: true)) {
 +        if (entity is! File || !entity.path.endsWith('.dart')) continue;
 +        final path = entity.path.replaceAll(r'\', '/');
-+        final hits = entity
-+            .readAsLinesSync()
-+            .where((l) => pattern.hasMatch(l))
-+            .length;
++        final lines = entity.readAsLinesSync();
++        var hits = 0;
++        for (var i = 0; i < lines.length; i++) {
++          if (!pattern.hasMatch(lines[i])) continue;
++          final prev = i > 0 ? lines[i - 1] : '';
++          if (unawaitedOpen.hasMatch(prev)) continue;
++          hits++;
++        }
 +        if (hits > 0) perFile[path] = hits;
 +      }
 +    }
