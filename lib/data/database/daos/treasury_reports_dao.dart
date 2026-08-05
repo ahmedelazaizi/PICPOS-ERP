@@ -104,13 +104,13 @@ extension TreasuryReportsDao on AppDatabase {
       "LEFT JOIN safes s ON s.id = st.safe_id "
       "WHERE st.transaction_type = 'receipt' "
       "  AND st.deleted_at IS NULL "
-      "  AND st.created_at BETWEEN ? AND ? "
+      "  AND st.created_at >= ? AND st.created_at < ? "
       "  $branchClause "
       "  $costCenterClause "
       "  $scopeClause",
       variables: [
-        dateVar(from),
-        dateVar(to.add(const Duration(days: 1))),
+        dateVar(DateUtils.startOfDay(from)),
+        dateVar(DateUtils.startOfNextDay(to)),
         ...scope.vars,
       ],
       readsFrom: {safeTransactions, safes},
@@ -188,11 +188,14 @@ extension TreasuryReportsDao on AppDatabase {
       safeTransactions,
     ).join([leftOuterJoin(users, users.id.equalsExp(safeTransactions.userId))]);
 
+    // Half-open day window — see DateUtils.startOfNextDay. `end` may arrive as
+    // midnight (sales convention) or 23:59:59.999 (normalizeRange); snapping
+    // to the day boundary first yields the same window for both.
     query.where(
-      safeTransactions.createdAt.isBetween(
-        Variable(start),
-        Variable(end.add(const Duration(days: 1))),
-      ),
+      safeTransactions.createdAt
+              .isBiggerOrEqualValue(DateUtils.startOfDay(start)) &
+          safeTransactions.createdAt
+              .isSmallerThanValue(DateUtils.startOfNextDay(end)),
     );
 
     // Hide soft-deleted rows — admin may have removed an expense on the
@@ -467,8 +470,14 @@ extension TreasuryReportsDao on AppDatabase {
   }
 
   /// D-PERF-2: shared date-range + optional safe/cost-center filter, matching
-  /// getTransactionsByDateRange's WHERE exactly (soft-deleted excluded,
-  /// created_at ∈ [start, end+1d]).
+  /// getTransactionsByDateRange's WHERE exactly: soft-deleted excluded,
+  /// created_at ∈ [startOfDay(start), startOfNextDay(end)).
+  ///
+  /// «matching exactly» was an aspiration, not a fact: the screen reads its
+  /// rows from ReportingRepositoryImpl.getTransactionsByDateRange — a SEPARATE
+  /// query that had no soft-delete guard, so the KPI card and the table below
+  /// it disagreed. Both sides are now covered by
+  /// test/unit/treasury_report_row_hygiene_test.dart.
   ({String sql, List<Variable> vars}) _dateRangeWhere(
     DateTime start,
     DateTime end, {
@@ -477,19 +486,27 @@ extension TreasuryReportsDao on AppDatabase {
     List<int>? safeIds,
     Set<int>? allowedBranchIds,
   }) {
+    // Half-open day window — see DateUtils.startOfNextDay.
     final vars = <Variable>[
-      dateVar(start),
-      dateVar(end.add(const Duration(days: 1))),
+      dateVar(DateUtils.startOfDay(start)),
+      dateVar(DateUtils.startOfNextDay(end)),
     ];
     final sql = StringBuffer(
-        'deleted_at IS NULL AND created_at BETWEEN ? AND ?');
+        'deleted_at IS NULL AND created_at >= ? AND created_at < ?');
     if (safeId != null) {
       sql.write(' AND safe_id = ?');
       vars.add(Variable(safeId));
     }
-    if (safeIds != null && safeIds.isNotEmpty) {
-      sql.write(' AND safe_id IN (${List.filled(safeIds.length, '?').join(', ')})');
-      vars.addAll(safeIds.map((e) => Variable(e)));
+    // null = every safe; [] = none. The old `&& safeIds.isNotEmpty` skipped the
+    // filter for a branch with no safes, so it saw EVERY safe — the inverse of
+    // the intent (convention: sales_analytics_dao.dart:182, inventory_dao.dart:1219).
+    if (safeIds != null) {
+      if (safeIds.isEmpty) {
+        sql.write(' AND 1 = 0');
+      } else {
+        sql.write(' AND safe_id IN (${List.filled(safeIds.length, '?').join(', ')})');
+        vars.addAll(safeIds.map((e) => Variable(e)));
+      }
     }
     if (costCenterId != null) {
       sql.write(' AND safe_id IN (SELECT id FROM safes WHERE cost_center_id = ?)');

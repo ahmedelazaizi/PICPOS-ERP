@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import '../database/database.dart';
+import '../../core/utils/date_utils.dart' as core_date_utils;
 import '../../domain/repositories/reporting_repository.dart';
 
 class ReportingRepositoryImpl implements IReportingRepository {
@@ -209,21 +210,37 @@ class ReportingRepositoryImpl implements IReportingRepository {
     List<int>? safeIds,
     Set<int>? allowedBranchIds,
   }) async {
+    // Half-open day window [startOfDay(start), startOfNextDay(end)). The old
+    // `end.add(days: 1)` assumed `end` was midnight, but this screen passes
+    // DateRangeFilter.normalizeRange's 23:59:59.999 — so «اليوم» stretched
+    // across the WHOLE next day. Snapping to the day boundary first makes the
+    // window identical for both conventions (see DateUtils.startOfNextDay).
     final query = _db.select(_db.safeTransactions);
     query.where(
-      (t) => t.createdAt.isBetween(
-        Variable(start),
-        Variable(end.add(const Duration(days: 1))),
-      ),
+      (t) =>
+          t.createdAt.isBiggerOrEqualValue(
+              core_date_utils.DateUtils.startOfDay(start)) &
+          t.createdAt.isSmallerThanValue(
+              core_date_utils.DateUtils.startOfNextDay(end)),
     );
+    // Card/table parity: the DAO twin that feeds the KPI cards
+    // (_dateRangeWhere, treasury_reports_dao.dart) excludes soft-deleted rows —
+    // this query, which is what the screen actually renders and exports, did
+    // not. A voided 50,000 voucher read 0 on the card and 50,000 in the table.
+    query.where((t) => t.deletedAt.isNull());
     if (userId != null) {
       query.where((t) => t.userId.equals(userId));
     }
     if (safeId != null) {
       query.where((t) => t.safeId.equals(safeId));
     }
-    // Branch-level safe filtering
-    if (safeIds != null && safeIds.isNotEmpty) {
+    // Branch-level safe filtering. null = every safe; [] = none. The old
+    // `&& safeIds.isNotEmpty` made a branch with no safes skip the filter
+    // entirely and see EVERY safe — the inverse of the intent. Drift's
+    // isIn([]) already yields false, so dropping the guard is the whole fix.
+    // Matches the convention documented at sales_analytics_dao.dart:182 and
+    // inventory_dao.dart:1219.
+    if (safeIds != null) {
       query.where((t) => t.safeId.isIn(safeIds));
     }
     if (costCenterId != null) {

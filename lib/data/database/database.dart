@@ -24,6 +24,7 @@ import '../../core/utils/arabic_utils.dart';
 // Spec 139 — deterministic JE balancing uses FinancialUtils' minor-unit helpers
 // and the single balance-tolerance source of truth. `show` avoids importing its
 // UnbalancedJournalException (a different type lives in journal_entry_factory).
+import '../../core/utils/date_utils.dart' show DateUtils;
 import '../../core/utils/financial_utils.dart' show FinancialUtils;
 import '../../core/utils/sales_payment_calculator.dart';
 import '../../core/utils/uuid_v7.dart';

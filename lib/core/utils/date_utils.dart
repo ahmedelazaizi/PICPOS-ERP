@@ -53,6 +53,22 @@ class DateUtils {
     return DateTime(date.year, date.month, date.day, 23, 59, 59, 999);
   }
 
+  /// Exclusive upper bound of [date]'s day — midnight of the following day.
+  ///
+  /// Why this exists: a half-open window `[startOfDay(from), startOfNextDay(to))`
+  /// is the ONLY formulation that yields the same window whether the caller
+  /// hands over a midnight `end` (native `showDateRangePicker`) or a
+  /// 23:59:59.999 one (`DateRangeFilter.normalizeRange`). Queries that instead
+  /// did `end.add(Duration(days: 1))` silently stretched an already-normalized
+  /// end across the WHOLE next day — «اليوم» included tomorrow. Snapping to the
+  /// day boundary first makes the call idempotent, so both conventions agree.
+  ///
+  /// Mirrors `dayWindowFor`'s `endExclusive` in sales_invoices_controller.dart,
+  /// which is the same contract for the sales screen.
+  static DateTime startOfNextDay(DateTime date) {
+    return DateTime(date.year, date.month, date.day + 1);
+  }
+
   /// Get start of month
   static DateTime startOfMonth(DateTime date) {
     return DateTime(date.year, date.month, 1);
