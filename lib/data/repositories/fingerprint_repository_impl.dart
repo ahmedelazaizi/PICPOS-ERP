@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import '../../domain/repositories/fingerprint_repository.dart';
 import '../database/database.dart' as db;
+import '../database/extensions/hr_extensions.dart';
 import '../../services/fingerprint_service.dart';
 
 class FingerprintRepositoryImpl implements IFingerprintRepository {
@@ -31,32 +32,29 @@ class FingerprintRepositoryImpl implements IFingerprintRepository {
     return query.getSingleOrNull();
   }
 
-  @override
-  Future<void> importCheckIn(int employeeId, DateTime timestamp) async {
-    await _db.into(_db.employeeAttendance).insert(
-      db.EmployeeAttendanceCompanion.insert(
-        employeeId: employeeId,
-        date: DateTime(timestamp.year, timestamp.month, timestamp.day),
-        checkIn: Value(timestamp),
-      ),
-    );
-  }
+  // B2 — both of these used to write blind. `importCheckIn` inserted a row per
+  // call with no match on (employeeId, date), and the device's logs are never
+  // cleared (`clearAttendanceLogs()` is a stub returning false,
+  // fingerprint_service.dart:167) while `fingerprint_last_sync` is written but
+  // never read back as a filter — so every «ترحيل الحضور» re-read the SAME
+  // logs. Three presses over 26 days produced 78 `present` rows, and salary is
+  // computed by counting them: a 3000 salary paid 7800.
+  //
+  // The correct upsert already existed as `importDeviceCheckIn` /
+  // `importDeviceCheckOut` (hr_extensions.dart) with no caller at all. These
+  // now delegate to it instead of carrying a second, wrong implementation.
+  //
+  // TODO(owner): the durable fix is UNIQUE(employee_id, date) in the schema
+  // plus honouring `fingerprint_last_sync` when fetching from the device, so a
+  // re-import is cheap as well as safe. Both need build_runner / SDK work.
 
   @override
-  Future<void> importCheckOut(int employeeId, DateTime timestamp) async {
-    // Find the latest open attendance record and update its check-out
-    final openRecord = await (_db.select(_db.employeeAttendance)
-          ..where((a) => a.employeeId.equals(employeeId))
-          ..where((a) => a.checkOut.isNull())
-          ..orderBy([(a) => OrderingTerm.desc(a.checkIn)])
-          ..limit(1))
-        .getSingleOrNull();
-    if (openRecord != null) {
-      await (_db.update(_db.employeeAttendance)
-            ..where((a) => a.id.equals(openRecord.id)))
-          .write(db.EmployeeAttendanceCompanion(checkOut: Value(timestamp)));
-    }
-  }
+  Future<void> importCheckIn(int employeeId, DateTime timestamp) =>
+      _db.importDeviceCheckIn(employeeId, timestamp);
+
+  @override
+  Future<void> importCheckOut(int employeeId, DateTime timestamp) =>
+      _db.importDeviceCheckOut(employeeId, timestamp);
 
   @override
   Future<List<db.Employee>> getAllEmployees() =>
