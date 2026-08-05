@@ -187,8 +187,21 @@ extension ReportBuilderDao on AppDatabase {
             if (col == 'date') return 'sales_invoices.invoice_date AS date';
             if (col == 'party_name') return 'p.name AS party_name';
             if (col == 'net_total') return 'sales_invoices.total AS net_total';
-            if (col == 'payment_status') return "'مكتمل' AS payment_status";
-            if (col == 'sale_type') return "'أجل' AS sale_type";
+            // كان `'مكتمل' AS payment_status` — نص ثابت باسم حقل حقيقي، فكل
+            // صف بيقول «مكتمل» مهما كانت الحقيقة. و`payment_status` مش عمود
+            // في الجدول أصلاً، فلازم يُشتق من paid مقابل total.
+            if (col == 'payment_status') {
+              return "CASE WHEN sales_invoices.paid >= sales_invoices.total "
+                  "THEN 'مكتمل' "
+                  "WHEN sales_invoices.paid > 0 THEN 'جزئي' "
+                  "ELSE 'غير مدفوع' END AS payment_status";
+            }
+            // كان `'أجل' AS sale_type` — غلط مرتين: العمود موجود فعلاً، و«أجل»
+            // مش من مجال قيمه (default/talabat/careem/ashyae). «أجل مقابل
+            // نقدي» دلالتها payment_method = 'credit'، حقل تاني تماماً.
+            if (col == 'sale_type') {
+              return 'sales_invoices.sale_type AS sale_type';
+            }
             return 'sales_invoices.$col';
           case 'purchase_invoices':
             if (col == 'date') return 'purchase_invoices.invoice_date AS date';
@@ -249,10 +262,18 @@ extension ReportBuilderDao on AppDatabase {
   String _getJoins(String entity) {
     switch (entity) {
       case 'products':
+        // الـjoin المباشر على inventory_balances كان بلا تجميع: صنف في مخزنين
+        // بيطلّع **صفّين** في التقرير، فأي جمع لعمود بيتضاعف بعدد المخازن —
+        // والمستخدم شايف الصنف مكرر بلا سبب ظاهر. التجميع المسبق بيدي صف واحد
+        // لكل صنف و`quantity` = إجمالي المخازن، وهو المعنى اللي الحقل معروض بيه
+        // («الكمية المتوفرة»).
         return '''
           LEFT JOIN categories c ON c.id = products.category_id
           LEFT JOIN units u ON u.id = products.unit_id
-          LEFT JOIN inventory_balances ib ON ib.product_id = products.id
+          LEFT JOIN (
+            SELECT product_id, SUM(quantity) AS quantity
+            FROM inventory_balances GROUP BY product_id
+          ) ib ON ib.product_id = products.id
         ''';
       case 'sales_invoices':
         return 'LEFT JOIN parties p ON p.id = sales_invoices.customer_id';
