@@ -1,0 +1,299 @@
+diff --git a/lib/data/repositories/inventory_repository_impl.dart b/lib/data/repositories/inventory_repository_impl.dart
+index 9a91eedb..027a4e11 100644
+--- a/lib/data/repositories/inventory_repository_impl.dart
++++ b/lib/data/repositories/inventory_repository_impl.dart
+@@ -84,14 +84,30 @@ class InventoryRepositoryImpl implements InventoryRepository {
+   @override
+   Future<List<StockMovementData>> getMovementsByDateRange(
+     DateTime from,
+-    DateTime to,
+-  ) async {
++    DateTime to, {
++    List<int>? warehouseIds,
++    int limit = 500,
++  }) async {
+     final query = _db.select(_db.stockMovements).join([
+       leftOuterJoin(_db.products, _db.products.id.equalsExp(_db.stockMovements.productId)),
+       leftOuterJoin(_db.warehouses, _db.warehouses.id.equalsExp(_db.stockMovements.warehouseId)),
+     ])
+       ..where(_db.stockMovements.createdAt.isBetweenValues(from, to))
+-      ..orderBy([OrderingTerm.desc(_db.stockMovements.createdAt)]);
++      ..orderBy([OrderingTerm.desc(_db.stockMovements.createdAt)])
++      // كان بلا حدّ خالص، بينما التوأم في الـDAO عنده limit=500 و
++      // watchAllStockMovements تحته مباشرةً عنده 100. المسار ده هو اللي شاشة
++      // حركة المخزون بتستعمله، فكان بيحمّل كل الحركات في الذاكرة.
++      ..limit(limit);
++
++    // حصر المخازن: null = بلا حدّ (وصول كامل)، [] = لا شيء. نفس عُرف
++    // sales_analytics_dao.dart:182 و inventory_dao.dart:1219 — والـ isIn([])
++    // في drift بيدي Constant(false) فالقايمة الفاضية بتفشل مقفولة لوحدها.
++    //
++    // من غير ده كانت الشاشة بتعرض unit_cost و balance_after لكل حركة في كل
++    // مخازن الشركة لمستخدم محصور بفرع — التكلفة والرصيد بيان مالي.
++    if (warehouseIds != null) {
++      query.where(_db.stockMovements.warehouseId.isIn(warehouseIds));
++    }
+ 
+     final rows = await query.get();
+     return rows.map((row) {
+diff --git a/lib/domain/repositories/inventory_repository.dart b/lib/domain/repositories/inventory_repository.dart
+index 65d6784e..092cfac6 100644
+--- a/lib/domain/repositories/inventory_repository.dart
++++ b/lib/domain/repositories/inventory_repository.dart
+@@ -39,10 +39,15 @@ abstract class InventoryRepository {
+   Stream<List<StockMovementData>> watchProductMovements(int productId);
+ 
+   /// Get stock movements by date range
++  /// [warehouseIds]: null = بلا حصر (وصول كامل)، [] = لا شيء، {ids} = المخازن دي.
++  /// [limit]: سقف صفوف — الحركات بتحمل unit_cost و balance_after فتحميلها كلها
++  /// تسريب مالي وحِمل ذاكرة معاً.
+   Future<List<StockMovementData>> getMovementsByDateRange(
+     DateTime from,
+-    DateTime to,
+-  );
++    DateTime to, {
++    List<int>? warehouseIds,
++    int limit = 500,
++  });
+ 
+   /// Watch all stock movements
+   Stream<List<StockMovementData>> watchAllStockMovements({int limit = 100});
+diff --git a/lib/presentation/screens/stock_movements_screen.dart b/lib/presentation/screens/stock_movements_screen.dart
+index befd77f0..5d12987d 100644
+--- a/lib/presentation/screens/stock_movements_screen.dart
++++ b/lib/presentation/screens/stock_movements_screen.dart
+@@ -34,6 +34,27 @@ class _StockMovementsScreenState
+   // Feature 058: one-time guard for the no-branch-assigned inline notice.
+   bool _noBranchNoticeShown = false;
+ 
++  /// الاستعلام كان بيتبني **جوّه `build()`**، يعني `FutureBuilder` بياخد future
++  /// جديد مع كل rebuild — كل حرف في خانة البحث، وكل تغيير فلتر، وكل تبديل
++  /// ثيم = استعلام كامل جديد على `stock_movements`. الكاش ده مفتاحه المدى
++  /// الزمني وحده لأن باقي الفلاتر بتتطبّق على النتيجة في الذاكرة.
++  Future<List<StockMovementData>>? _movementsFuture;
++  ({DateTime from, DateTime to})? _movementsKey;
++
++  Future<List<StockMovementData>> _fetchMovements() async {
++    final repo = ref.read(inventoryRepositoryProvider);
++    // حصر المخازن: الحركات بتحمل unit_cost و balance_after — تكلفة ورصيد،
++    // بيان مالي. العقد موثَّق في userAccessibleWarehousesProvider: بيرجّع كل
++    // المخازن للمميّز، ومجموعة فاضية لمستخدم بلا تخصيص على عميل/مرآة (فشل
++    // مقفول). تمرير المعرّفات بيغطّي الحالتين من غير فرع إضافي.
++    final accessible = await ref.read(userAccessibleWarehousesProvider.future);
++    return repo.getMovementsByDateRange(
++      _fromDate,
++      _toDate,
++      warehouseIds: accessible.map((w) => w.id).toList(),
++    );
++  }
++
+   @override
+   void initState() {
+     super.initState();
+@@ -88,9 +109,15 @@ class _StockMovementsScreenState
+ 
+   @override
+   Widget build(BuildContext context) {
+-    final inventoryRepo = ref.watch(inventoryRepositoryProvider);
+     final isDark = Theme.of(context).brightness == Brightness.dark;
+ 
++    // يُعاد بناء الـfuture لما المدى الزمني يتغيّر بس — مش مع كل rebuild.
++    final key = (from: _fromDate, to: _toDate);
++    if (_movementsKey != key || _movementsFuture == null) {
++      _movementsKey = key;
++      _movementsFuture = _fetchMovements();
++    }
++
+     return Directionality(
+       textDirection: TextDirection.rtl,
+       child: Scaffold(
+@@ -101,7 +128,7 @@ class _StockMovementsScreenState
+             _buildFilters(context),
+             Expanded(
+               child: FutureBuilder<List<StockMovementData>>(
+-                future: inventoryRepo.getMovementsByDateRange(_fromDate, _toDate),
++                future: _movementsFuture,
+                 builder: (context, snapshot) {
+                   if (!snapshot.hasData) {
+                     return const Center(child: CircularProgressIndicator());
+@@ -140,7 +167,8 @@ class _StockMovementsScreenState
+                     return _buildEmptyState();
+                   }
+ 
+-                  return _buildMovementsList(context, inventoryRepo, movements);
++                  return _buildMovementsList(
++                      context, ref.read(inventoryRepositoryProvider), movements);
+                 },
+               ),
+             ),
+diff --git a/test/structural/report_screens_resolve_branch_scope_test.dart b/test/structural/report_screens_resolve_branch_scope_test.dart
+index 6f468ed5..783d8bc6 100644
+--- a/test/structural/report_screens_resolve_branch_scope_test.dart
++++ b/test/structural/report_screens_resolve_branch_scope_test.dart
+@@ -42,11 +42,13 @@ const _notAScreen = <String>{
+ ///   • ar_aging_report_screen    — أرصدة كل العملاء والموردين على مستوى الشركة
+ ///   • vat_reconciliation_screen — إجماليات ضريبة المخرجات/المدخلات + أرصدة GL
+ ///   • report_builder_screen     — تقارير مخصّصة على كل الجداول بلا أي حصر
+-///   • stock_movements_screen    — كل الحركات بـunitCost/balanceAfter، بلا LIMIT
+ ///
+ /// اتشال: party_statement_screen — بقى بيحلّ branchScopeProvider ويمرّره لـ
+-/// watchAllPartiesForBranches. الإثبات السلوكي المطلوب في
+-/// party_statement_branch_scope_test (‏{} بتفشل مقفولة).
++/// watchAllPartiesForBranches. الإثبات في party_statement_branch_scope_test.
++///
++/// اتشال: stock_movements_screen — بقى بيحلّ userAccessibleWarehousesProvider
++/// ويمرّر معرّفات المخازن للاستعلام، والاستعلام بقى عنده سقف صفوف.
++/// الإثبات في stock_movements_scope_test (‏[] بتفشل مقفولة).
+ ///
+ /// لإزالة سطر: حُلّ `branchScopeProvider` في الشاشة، مرّر `allowedBranchIds`
+ /// للاستعلام، اكتب اختباراً سلوكياً يثبت إن `{}` بتفشل مقفولة، وشيل السطر.
+@@ -54,7 +56,6 @@ const _baseline = <String>{
+   'lib/presentation/screens/reports/ar_aging_report_screen.dart',
+   'lib/presentation/screens/reports/vat_reconciliation_screen.dart',
+   'lib/presentation/screens/report_builder_screen.dart',
+-  'lib/presentation/screens/stock_movements_screen.dart',
+ };
+ 
+ void main() {
+@@ -75,7 +76,15 @@ void main() {
+       if (!file.existsSync()) {
+         fail('مسار في قائمة الحارس مش موجود — حدّث القائمة: $path');
+       }
+-      if (!file.readAsStringSync().contains('branchScopeProvider')) {
++      // حصر المخازن مقبول زي حصر الفروع بالظبط: شاشات زي حركة المخزون
++      // استعلامها **لكل مخزن** لا لكل فرع، و`userAccessibleWarehousesProvider`
++      // بيشتق من نفس المصدر (‏getWarehouseScopeForUser) وبيفشل مقفولاً على
++      // العميل/المرآة. إجبارها على branchScopeProvider كان هيخلّي الحصر
++      // الصحيح يتقرا «تسريباً».
++      final src = file.readAsStringSync();
++      final resolvesScope = src.contains('branchScopeProvider') ||
++          src.contains('userAccessibleWarehousesProvider');
++      if (!resolvesScope) {
+         offenders.add(path);
+       }
+     }
+diff --git a/test/unit/adjust_stock_usecase_test.dart b/test/unit/adjust_stock_usecase_test.dart
+index ee52e594..ac4cd892 100644
+--- a/test/unit/adjust_stock_usecase_test.dart
++++ b/test/unit/adjust_stock_usecase_test.dart
+@@ -47,7 +47,8 @@ class MockInventoryRepository implements InventoryRepository {
+       const Stream.empty();
+   @override
+   Future<List<StockMovementData>> getMovementsByDateRange(
+-          DateTime from, DateTime to) async =>
++          DateTime from, DateTime to,
++          {List<int>? warehouseIds, int limit = 500}) async =>
+       [];
+   @override
+   Stream<List<StockMovementData>> watchAllStockMovements({int limit = 100}) =>
+diff --git a/test/unit/stock_movements_scope_test.dart b/test/unit/stock_movements_scope_test.dart
+new file mode 100644
+index 00000000..ee6cfb94
+--- /dev/null
++++ b/test/unit/stock_movements_scope_test.dart
+@@ -0,0 +1,105 @@
++// ═══════════════════════════════════════════════════════════════════════════
++// حركة المخزون — كل الحركات بتكلفتها وأرصدتها، بلا حصر وبلا سقف.
++// ═══════════════════════════════════════════════════════════════════════════
++//
++// `InventoryRepositoryImpl.getMovementsByDateRange` كان **بلا حصر مخازن وبلا
++// limit** — بينما توأمه في inventory_dao.dart:70 عنده limit=500، و
++// watchAllStockMovements تحته مباشرةً في نفس الملف عنده limit=100. والمسار ده
++// هو اللي شاشة حركة المخزون بتستعمله فعلاً.
++//
++// والصفوف بتحمل `unit_cost` و`balance_after` — تكلفة الشراء ورصيد المخزن —
++// وده بيان مالي لا يقل حساسية عن أرصدة العملاء.
++//
++// الاختبار ده هو الشرط الموثَّق في خط أساس
++// report_screens_resolve_branch_scope_test لإزالة الشاشة منه: إثبات سلوكي إن
++// `[]` بتفشل مقفولة.
++//
++// العقد (نفس عُرف sales_analytics_dao.dart:182 و inventory_dao.dart:1219):
++//   null = بلا حصر · [ids] = المخازن دي · [] = لا شيء
++// ═══════════════════════════════════════════════════════════════════════════
++
++import 'package:drift/drift.dart' hide isNotNull, isNull;
++import 'package:flutter_test/flutter_test.dart';
++import 'package:ural_erp/data/database/database.dart';
++import 'package:ural_erp/data/repositories/inventory_repository_impl.dart';
++
++void main() {
++  late AppDatabase db;
++  late InventoryRepositoryImpl repo;
++  late int warehouseA;
++  late int warehouseB;
++  late int productId;
++
++  final from = DateTime(2026, 8, 1);
++  final to = DateTime(2026, 8, 31);
++
++  Future<void> movement({
++    required int warehouseId,
++    required double qty,
++    required double unitCost,
++    DateTime? at,
++  }) =>
++      db.into(db.stockMovements).insert(StockMovementsCompanion.insert(
++            productId: productId,
++            warehouseId: warehouseId,
++            movementType: 'in',
++            quantity: qty,
++            balanceAfter: qty,
++            unitCost: Value(unitCost),
++            createdAt: Value(at ?? DateTime(2026, 8, 10)),
++          ));
++
++  setUp(() async {
++    db = AppDatabase.forTesting();
++    repo = InventoryRepositoryImpl(db);
++    warehouseA = await db
++        .into(db.warehouses)
++        .insert(WarehousesCompanion.insert(name: 'مخزن أ'));
++    warehouseB = await db
++        .into(db.warehouses)
++        .insert(WarehousesCompanion.insert(name: 'مخزن ب'));
++    productId = await db
++        .into(db.products)
++        .insert(ProductsCompanion.insert(name: 'صنف', code: 'SM-1'));
++
++    await movement(warehouseId: warehouseA, qty: 5, unitCost: 10);
++    await movement(warehouseId: warehouseB, qty: 7, unitCost: 99);
++  });
++
++  tearDown(() => db.close());
++
++  test('null = بلا حصر (سلوك غير متغيّر)', () async {
++    final rows = await repo.getMovementsByDateRange(from, to);
++    expect(rows.length, 2);
++  });
++
++  test('[A] بيرجّع مخزن أ وحده — التكلفة والرصيد ما بيتسربوش', () async {
++    final rows =
++        await repo.getMovementsByDateRange(from, to, warehouseIds: [warehouseA]);
++    expect(rows.map((m) => m.warehouseId), [warehouseA]);
++    expect(rows.single.unitCost, 10);
++    expect(rows.any((m) => m.unitCost == 99), isFalse,
++        reason: 'تكلفة شراء مخزن تاني بيان مالي');
++  });
++
++  test('[] بتفشل مقفولة — مش «كل المخازن»', () async {
++    // ده الشرط اللي بيسمح بإزالة الشاشة من خط أساس الحارس البنيوي.
++    final rows =
++        await repo.getMovementsByDateRange(from, to, warehouseIds: const []);
++    expect(rows, isEmpty);
++  });
++
++  test('[B] ضابط — بيرجّع مخزن ب فعلاً مش قايمة فاضية', () async {
++    final rows =
++        await repo.getMovementsByDateRange(from, to, warehouseIds: [warehouseB]);
++    expect(rows.map((m) => m.warehouseId), [warehouseB]);
++  });
++
++  test('السقف بيتطبّق — الاستعلام مكانش عنده أي حد', () async {
++    for (var i = 0; i < 8; i++) {
++      await movement(warehouseId: warehouseA, qty: 1, unitCost: 1);
++    }
++    final rows = await repo.getMovementsByDateRange(from, to, limit: 3);
++    expect(rows.length, 3);
++  });
++}

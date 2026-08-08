@@ -1,0 +1,310 @@
+diff --git a/lib/data/database/daos/report_builder_dao.dart b/lib/data/database/daos/report_builder_dao.dart
+index 94cdebe2..b0e2ffc8 100644
+--- a/lib/data/database/daos/report_builder_dao.dart
++++ b/lib/data/database/daos/report_builder_dao.dart
+@@ -75,14 +75,28 @@ extension ReportBuilderDao on AppDatabase {
+   // ─────────────────────────────────────────────────────────────────────────
+ 
+   /// Execute a custom report and return results
+-  Future<List<Map<String, dynamic>>> executeReport(int reportId) async {
++  /// [allowedBranchIds] — null = وصول كامل · {ids} = الفروع دي · {} = لا شيء.
++  ///
++  /// الحصر دلالته **مختلفة لكل كيان مصدر**، فمعمول كخريطة لا كفلتر واحد
++  /// (شوف [_scopeClauseFor]). وكيان مالوش فلتر مدعوم بيرجّع **فاضي** لمستخدم
++  /// محصور بدل ما يتساب يسرّب: الحصر الجزئي أخطر من غيابه، لأن التقرير بيبان
++  /// محصوراً والمستخدم بيثق فيه.
++  Future<List<Map<String, dynamic>>> executeReport(
++    int reportId, {
++    Set<int>? allowedBranchIds,
++  }) async {
+     final report = await getCustomReport(reportId);
+     if (report == null) return [];
+ 
+     final stopwatch = Stopwatch()..start();
+ 
+     // Build the query dynamically
+-    final query = _buildReportQuery(report);
++    final query = _buildReportQuery(report, allowedBranchIds);
++    if (query == null) {
++      debugPrint('[ReportBuilder] رُفض: الكيان "${report.sourceEntity}" مالوش '
++          'فلتر حصر مدعوم، والمستخدم محصور بفرع');
++      return [];
++    }
+     final results = await customSelect(query).get();
+ 
+     stopwatch.stop();
+@@ -169,7 +183,39 @@ extension ReportBuilderDao on AppDatabase {
+   // QUERY BUILDER (internal)
+   // ─────────────────────────────────────────────────────────────────────────
+ 
+-  String _buildReportQuery(CustomReportData report) {
++  /// شرط الحصر لكل كيان. `null` = **مالوش فلتر مدعوم** ⇒ ارفض التقرير.
++  ///
++  /// عن قصد مش فلتراً واحداً: كل مصدر بيوصل للفرع بطريق مختلف، والتعميم بيدي
++  /// إما تسريباً أو صفر صفوف مضلّلاً.
++  ///   • الفواتير      → `branch_id` مباشرةً (‏L3 حطّه على الصف)
++  ///   • الأطراف       → `is_global OR branch_ids LIKE` (زي _watchPartiesForBranches)
++  ///   • الأصناف       → بيانات أساسية على مستوى الشركة، مفيش قيم مالية عبر فروع
++  ///   • قيود اليومية  → الوصول للفرع عبر مراكز التكلفة، مش عمود على الصف
++  ///   • الموظفون      → `employees.branch_id` **ما بيتكتبش أصلاً** (مانع H6)،
++  ///                     فحصره بيدي صفر صفوف بشكل مضلّل بدل ما يحصر
++  ///   • أرصدة المخزون → الحصر بالمخزن لا الفرع (‏getWarehouseScopeForUser)
++  String? _scopeClauseFor(String entity, Set<int> ids) {
++    final list = ids.join(',');
++    switch (entity) {
++      case 'sales_invoices':
++      case 'purchase_invoices':
++        final t = _getTableName(entity);
++        return '$t.branch_id IN ($list) OR $t.branch_id IS NULL';
++      case 'parties':
++        final ors = ids
++            .map((id) =>
++                "(',' || COALESCE(parties.branch_ids, '') || ',') LIKE '%,$id,%'")
++            .join(' OR ');
++        return 'parties.is_global = 1 OR $ors';
++      case 'products':
++        return '1 = 1';
++      default:
++        return null;
++    }
++  }
++
++  String? _buildReportQuery(
++      CustomReportData report, Set<int>? allowedBranchIds) {
+     final tableName = _getTableName(report.sourceEntity);
+     
+     // Map friendly keys to proper SQL columns to prevent "no such column" errors
+@@ -226,9 +272,24 @@ extension ReportBuilderDao on AppDatabase {
+       query += ' $joins';
+     }
+ 
+-    // Add filters
++    // حصر الفروع + فلاتر المستخدم في نفس الـWHERE. الحصر **الأول** وبقوسين
++    // حواليه، فأي فلتر مستخدم بـOR ما يقدرش يوسّع النطاق.
++    final conditions = <String>[];
++    if (allowedBranchIds != null) {
++      if (allowedBranchIds.isEmpty) {
++        conditions.add('1 = 0'); // فشل مقفول
++      } else {
++        final clause =
++            _scopeClauseFor(report.sourceEntity, allowedBranchIds);
++        if (clause == null) return null; // كيان مالوش فلتر مدعوم ⇒ ارفض
++        conditions.add('($clause)');
++      }
++    }
+     if (report.filters != null && report.filters!.isNotEmpty) {
+-      query += ' WHERE ${_buildWhereClause(report.filters!)}';
++      conditions.add('(${_buildWhereClause(report.filters!)})');
++    }
++    if (conditions.isNotEmpty) {
++      query += ' WHERE ${conditions.join(' AND ')}';
+     }
+ 
+     // Add group by
+diff --git a/lib/data/repositories/reporting_repository_impl.dart b/lib/data/repositories/reporting_repository_impl.dart
+index 1793ee96..733fa894 100644
+--- a/lib/data/repositories/reporting_repository_impl.dart
++++ b/lib/data/repositories/reporting_repository_impl.dart
+@@ -565,8 +565,9 @@ class ReportingRepositoryImpl implements IReportingRepository {
+   Future<void> deleteCustomReport(int id) => _db.deleteCustomReport(id);
+ 
+   @override
+-  Future<List<Map<String, dynamic>>> executeReport(int reportId) =>
+-      _db.executeReport(reportId);
++  Future<List<Map<String, dynamic>>> executeReport(int reportId,
++          {Set<int>? allowedBranchIds}) =>
++      _db.executeReport(reportId, allowedBranchIds: allowedBranchIds);
+ 
+   @override
+   List<Map<String, String>> getAvailableFields(String entity) =>
+diff --git a/lib/domain/repositories/reporting_repository.dart b/lib/domain/repositories/reporting_repository.dart
+index 18d867e6..12dbe75f 100644
+--- a/lib/domain/repositories/reporting_repository.dart
++++ b/lib/domain/repositories/reporting_repository.dart
+@@ -39,7 +39,10 @@ abstract class IReportingRepository
+   Future<void> deleteCustomReport(int id);
+ 
+   /// Execute a custom report and get results
+-  Future<List<Map<String, dynamic>>> executeReport(int reportId);
++  /// [allowedBranchIds] — null = وصول كامل. كيان مالوش فلتر حصر مدعوم
++  /// بيرجّع فاضي لمستخدم محصور بدل ما يتساب يسرّب.
++  Future<List<Map<String, dynamic>>> executeReport(int reportId,
++      {Set<int>? allowedBranchIds});
+ 
+   /// Get fields available for a custom report entity
+   List<Map<String, String>> getAvailableFields(String entity);
+diff --git a/lib/presentation/screens/report_builder_screen.dart b/lib/presentation/screens/report_builder_screen.dart
+index 6d0efbd2..247c046b 100644
+--- a/lib/presentation/screens/report_builder_screen.dart
++++ b/lib/presentation/screens/report_builder_screen.dart
+@@ -246,8 +246,21 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
+   Future<void> _executeReport(IReportingRepository repo, CustomReportData report) async {
+     setState(() => _running = true);
+     try {
+-      final results = await repo.executeReport(report.id);
++      // منشئ التقارير بيقرا **أي** جدول بأي أعمدة، فمن غير الحصر ده مستخدم
++      // محصور بفرع كان يقدر يبني تقريراً على sales_invoices أو parties ويشوف
++      // الشركة كلها. الحصر بيتطبّق جوّه الاستعلام لكل كيان على حدة، وكيان
++      // مالوش فلتر مدعوم بيرجّع فاضي بدل ما يتساب يسرّب.
++      final scope = await ref.read(branchScopeProvider.future);
++      final results = await repo.executeReport(report.id,
++          allowedBranchIds: scope.allowedBranchIds);
++      if (!mounted) return;
+       setState(() { _results = results; _running = false; });
++      if (results.isEmpty && !scope.hasFullAccess) {
++        AppToast.show(
++            context,
++            'مفيش نتائج — بعض مصادر البيانات مش مدعومة للمستخدمين المحصورين بفرع',
++            type: ToastType.info);
++      }
+     } catch (e) {
+       setState(() => _running = false);
+       if (mounted) AppToast.show(context, 'خطأ: $e', type: ToastType.error);
+diff --git a/test/structural/report_screens_resolve_branch_scope_test.dart b/test/structural/report_screens_resolve_branch_scope_test.dart
+index 68fcae48..842f0780 100644
+--- a/test/structural/report_screens_resolve_branch_scope_test.dart
++++ b/test/structural/report_screens_resolve_branch_scope_test.dart
+@@ -79,9 +79,10 @@ const _permissionGatedNotBranchScoped = <String, String>{
+ ///
+ /// لإزالة سطر: حُلّ `branchScopeProvider` في الشاشة، مرّر `allowedBranchIds`
+ /// للاستعلام، اكتب اختباراً سلوكياً يثبت إن `{}` بتفشل مقفولة، وشيل السطر.
+-const _baseline = <String>{
+-  'lib/presentation/screens/report_builder_screen.dart',
+-};
++/// ✅ **فاضي.** كل تسريبات خط الأساس الأصلية (٥) اتقفلت. سيبه موجوداً عشان
++/// الفحص التاني («خط أساس قديم») يفضل شغّالاً، ولو اضطر حد يضيف سطر هنا
++/// يبقى يعرف إنه بيرجّع تسريباً موثَّقاً لا بيقنّن نمطاً.
++const _baseline = <String>{};
+ 
+ void main() {
+   test('كل شاشة تقرير بتحلّ branchScopeProvider (عدا خط الأساس الموثَّق)', () {
+diff --git a/test/unit/report_builder_branch_scope_test.dart b/test/unit/report_builder_branch_scope_test.dart
+new file mode 100644
+index 00000000..b3647eec
+--- /dev/null
++++ b/test/unit/report_builder_branch_scope_test.dart
+@@ -0,0 +1,124 @@
++// ═══════════════════════════════════════════════════════════════════════════
++// منشئ التقارير كان بيقرا كل الجداول بلا أي حصر فروع.
++// ═══════════════════════════════════════════════════════════════════════════
++//
++// آخر تسريب في خط أساس report_screens_resolve_branch_scope_test. مستخدم محصور
++// بفرع كان يقدر يبني تقريراً على `sales_invoices` أو `parties` ويشوف الشركة
++// كلها.
++//
++// ── ليه خريطة لكل كيان لا فلتر واحد ─────────────────────────────────────────
++// الحصر دلالته مختلفة لكل مصدر:
++//   sales_invoices / purchase_invoices → branch_id مباشرةً
++//   parties                            → is_global OR branch_ids LIKE
++//   products                           → بيانات أساسية على مستوى الشركة
++//   journal_entries / employees /      → **مالهمش فلتر مدعوم**
++//   inventory_balances
++//
++// و`employees.branch_id` **ما بيتكتبش أصلاً** (مانع H6)، فحصره بيدي صفر صفوف
++// بشكل مضلّل بدل ما يحصر فعلاً.
++//
++// ── القرار: الرفض لا الحصر الجزئي ───────────────────────────────────────────
++// كيان مالوش فلتر مدعوم بيرجّع **فاضي** لمستخدم محصور. الحصر الجزئي أخطر من
++// غيابه: التقرير هيبان محصوراً والمستخدم هيثق فيه بينما الكيانات دي بتسرّب.
++// ═══════════════════════════════════════════════════════════════════════════
++
++import 'package:drift/drift.dart' hide isNotNull, isNull;
++import 'package:flutter_test/flutter_test.dart';
++import 'package:ural_erp/data/database/database.dart';
++
++void main() {
++  late AppDatabase db;
++  late int branchA;
++  late int branchB;
++  late int whA;
++  late int whB;
++
++  Future<int> report(String entity, String columns) =>
++      db.into(db.customReports).insert(CustomReportsCompanion.insert(
++          name: 'ت', sourceEntity: entity, columns: columns));
++
++  setUp(() async {
++    db = AppDatabase.forTesting();
++    branchA = await db.into(db.branches).insert(BranchesCompanion.insert(
++        name: 'فرع أ', globalId: const Value('gid-br-rb-a')));
++    branchB = await db.into(db.branches).insert(BranchesCompanion.insert(
++        name: 'فرع ب', globalId: const Value('gid-br-rb-b')));
++    whA = await db.into(db.warehouses).insert(
++        WarehousesCompanion.insert(name: 'مخزن أ', branchId: Value(branchA)));
++    whB = await db.into(db.warehouses).insert(
++        WarehousesCompanion.insert(name: 'مخزن ب', branchId: Value(branchB)));
++
++    for (final (num_, wh, br) in [('INV-A', whA, branchA), ('INV-B', whB, branchB)]) {
++      await db.into(db.salesInvoices).insert(SalesInvoicesCompanion.insert(
++            invoiceNumber: num_,
++            warehouseId: wh,
++            userId: 1,
++            invoiceDate: DateTime(2026, 8, 10),
++            branchId: Value(br),
++            total: const Value(100),
++          ));
++    }
++
++    await db.into(db.parties).insert(PartiesCompanion.insert(
++        name: 'طرف أ',
++        isGlobal: const Value(false),
++        branchIds: Value(',$branchA,')));
++    await db.into(db.parties).insert(PartiesCompanion.insert(
++        name: 'طرف ب',
++        isGlobal: const Value(false),
++        branchIds: Value(',$branchB,')));
++  });
++
++  tearDown(() => db.close());
++
++  group('الفواتير — حصر بـbranch_id', () {
++    test('null = وصول كامل', () async {
++      final id = await report('sales_invoices', 'invoice_number');
++      final rows = await db.executeReport(id);
++      expect(rows.map((r) => r['invoice_number']),
++          containsAll(<String>['INV-A', 'INV-B']));
++    });
++
++    test('{A} بتستبعد فواتير فرع ب', () async {
++      final id = await report('sales_invoices', 'invoice_number');
++      final rows = await db.executeReport(id, allowedBranchIds: {branchA});
++      expect(rows.map((r) => r['invoice_number']), ['INV-A']);
++    });
++
++    test('{} بتفشل مقفولة', () async {
++      final id = await report('sales_invoices', 'invoice_number');
++      expect(await db.executeReport(id, allowedBranchIds: <int>{}), isEmpty);
++    });
++  });
++
++  group('الأطراف — حصر بـis_global أو branch_ids', () {
++    test('{A} بتستبعد أطراف فرع ب', () async {
++      final id = await report('parties', 'name');
++      final rows = await db.executeReport(id, allowedBranchIds: {branchA});
++      final names =
++          rows.map((r) => r['name'] as String).where((n) => n.startsWith('طرف '));
++      expect(names, ['طرف أ']);
++    });
++  });
++
++  group('كيان بلا فلتر مدعوم — رفض لا حصر جزئي', () {
++    test('journal_entries بترجّع فاضي لمستخدم محصور', () async {
++      final id = await report('journal_entries', 'date');
++      expect(await db.executeReport(id, allowedBranchIds: {branchA}), isEmpty,
++          reason: 'الحصر الجزئي أخطر من غيابه — التقرير هيبان محصوراً وهو بيسرّب');
++    });
++
++    test('نفس الكيان شغّال عادي لمستخدم بوصول كامل', () async {
++      final id = await report('journal_entries', 'date');
++      // مفيش قيود يومية مزروعة — المهم إنه **ما يرفضش** (مفيش استثناء).
++      expect(await db.executeReport(id), isEmpty);
++    });
++
++    test('employees بترجّع فاضي لمستخدم محصور (‏branch_id ما بيتكتبش — H6)',
++        () async {
++      final id = await report('employees', 'name');
++      await db.into(db.employees).insert(EmployeesCompanion.insert(name: 'موظف'));
++      expect(await db.executeReport(id, allowedBranchIds: {branchA}), isEmpty);
++    });
++  });
++}

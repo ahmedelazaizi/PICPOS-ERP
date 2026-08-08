@@ -1,0 +1,127 @@
+diff --git a/lib/presentation/screens/reports/vat_reconciliation_screen.dart b/lib/presentation/screens/reports/vat_reconciliation_screen.dart
+index 412115f7..5a89bb72 100644
+--- a/lib/presentation/screens/reports/vat_reconciliation_screen.dart
++++ b/lib/presentation/screens/reports/vat_reconciliation_screen.dart
+@@ -5,8 +5,10 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
+ import 'package:intl/intl.dart' hide TextDirection;
+ import '../../../core/theme/app_colors.dart';
+ import '../../../core/constants/app_constants.dart';
++import '../../../core/permissions/permission_codes.dart';
+ import '../../../data/database/database.dart';
+ import '../../../data/providers/report_providers.dart';
++import '../../widgets/permission_guard.dart';
+ 
+ /// GAP-P2-FIX-11: VAT Reconciliation — compares invoice-level tax totals
+ /// with GL journal entry lines on output_vat / input_vat accounts.
+@@ -34,7 +36,31 @@ class _VatReconciliationScreenState
+     final params = (year: _year, month: _month);
+     final asyncData = ref.watch(vatReconciliationProvider(params));
+ 
+-    return Directionality(
++    // ── ليه حراسة بصلاحية لا حصر بفرع ────────────────────────────────────
++    // التقرير ده بيقارن **طرفين**: إجماليات الضريبة من الفواتير (فيها
++    // branch_id وتتحصر بسهولة) مقابل **أرصدة حسابات GL** (‏2121 و1141 — على
++    // مستوى الشركة بطبيعتها، وإسنادها لفرع بيعدّي على مراكز التكلفة).
++    //
++    // لو حصرنا طرفاً وسبنا التاني، التقرير هيعرض **فرقاً دايماً** والتسوية —
++    // اللي هي كل وظيفته — تفقد معناها. يعني الفلتر الميكانيكي هنا مش إصلاح،
++    // ده كسر للتقرير.
++    //
++    // فالصح إن الوصول نفسه يتحرس: ده تقرير محاسبي على مستوى الشركة، ومن
++    // يملك reports_taxes يراه كاملاً، ومن لا يملكها لا يراه إطلاقاً. الشاشة
++    // كانت **بلا أي فحص صلاحية** قبل كده.
++    return PermissionGuard(
++      permission: PermissionCodes.reportsTaxes,
++      fallback: const Center(
++        child: Padding(
++          padding: EdgeInsets.all(24),
++          child: Text(
++            'تسوية ضريبة القيمة المضافة تقرير على مستوى الشركة — '
++            'لا تملك صلاحية عرضه.',
++            textAlign: TextAlign.center,
++          ),
++        ),
++      ),
++      child: Directionality(
+       textDirection: ui.TextDirection.rtl,
+       child: Scaffold(
+         backgroundColor: const Color(0xFFF1F5F9),
+@@ -73,6 +99,7 @@ class _VatReconciliationScreenState
+           ],
+         ),
+       ),
++      ),
+     );
+   }
+ 
+diff --git a/test/structural/report_screens_resolve_branch_scope_test.dart b/test/structural/report_screens_resolve_branch_scope_test.dart
+index 783d8bc6..ff707986 100644
+--- a/test/structural/report_screens_resolve_branch_scope_test.dart
++++ b/test/structural/report_screens_resolve_branch_scope_test.dart
+@@ -36,6 +36,21 @@ const _notAScreen = <String>{
+   'lib/presentation/screens/reports/report_export_guard.dart',
+ };
+ 
++/// تقارير **لا يصحّ** حصرها بفرع — محروسة بصلاحية بدلاً من ذلك.
++///
++/// `vat_reconciliation` بيقارن طرفين: إجماليات الضريبة من الفواتير (فيها
++/// branch_id) مقابل **أرصدة حسابات GL** (‏2121 و1141 — على مستوى الشركة
++/// بطبيعتها). حصر طرف وترك الآخر بيخلّي التقرير يعرض فرقاً دايماً،
++/// و«التسوية» — كل وظيفته — تفقد معناها. فالفلتر هنا كسر لا إصلاح.
++///
++/// البديل الصحيح: الوصول نفسه يتحرس. من يملك `reports_taxes` يراه كاملاً،
++/// ومن لا يملكها لا يراه. الفحص التاني تحت بيثبت إن الحراسة **موجودة فعلاً**
++/// عشان شيلها ما يعدّيش صامتاً.
++const _permissionGatedNotBranchScoped = <String, String>{
++  'lib/presentation/screens/reports/vat_reconciliation_screen.dart':
++      'PermissionCodes.reportsTaxes',
++};
++
+ /// خط أساس موثَّق — **مش نمطاً مقبولاً**، دي تسريبات مقيسة لسه مفتوحة.
+ ///
+ /// كل واحدة فيهم بتعرض قيم مالية عبر الفروع لمستخدم محصور:
+@@ -54,7 +69,6 @@ const _notAScreen = <String>{
+ /// للاستعلام، اكتب اختباراً سلوكياً يثبت إن `{}` بتفشل مقفولة، وشيل السطر.
+ const _baseline = <String>{
+   'lib/presentation/screens/reports/ar_aging_report_screen.dart',
+-  'lib/presentation/screens/reports/vat_reconciliation_screen.dart',
+   'lib/presentation/screens/report_builder_screen.dart',
+ };
+ 
+@@ -72,6 +86,9 @@ void main() {
+     final offenders = <String>[];
+     for (final path in files) {
+       if (_notAScreen.contains(path)) continue;
++      // تقارير لا يصحّ حصرها بفرع — محروسة بصلاحية، والفحص التاني تحت بيثبت
++      // إن الحراسة موجودة فعلاً.
++      if (_permissionGatedNotBranchScoped.containsKey(path)) continue;
+       final file = File(path);
+       if (!file.existsSync()) {
+         fail('مسار في قائمة الحارس مش موجود — حدّث القائمة: $path');
+@@ -111,6 +128,26 @@ void main() {
+   // القراءات دي ليها نظير محصور بنفس الاسم + ForBranches، فاستعمال النسخة
+   // العارية في شاشة تقرير خطأ دايماً حتى لو النطاق متحلول في مكان تاني من
+   // نفس الملف.
++  // الإعفاء من الحصر بالفرع مشروط بوجود بديل. من غير الفحص ده، شيل
++  // `PermissionGuard` من الشاشة بيخلّيها تقرير على مستوى الشركة **مفتوحاً
++  // للكل** — وخط الأساس فوق مش هيلاحظ لأنها معفاة أصلاً.
++  test('التقارير المعفاة من الحصر محروسة بصلاحية فعلاً', () {
++    final missing = <String>[];
++    _permissionGatedNotBranchScoped.forEach((path, permission) {
++      final file = File(path);
++      if (!file.existsSync()) {
++        fail('مسار في قائمة الإعفاء مش موجود — حدّث القائمة: $path');
++      }
++      final src = file.readAsStringSync();
++      if (!src.contains('PermissionGuard') || !src.contains(permission)) {
++        missing.add('$path → ناقصه PermissionGuard($permission)');
++      }
++    });
++    expect(missing, isEmpty,
++        reason: 'تقرير معفى من حصر الفروع لازم يكون محروساً بصلاحية — وإلا '
++            'بقى مكشوفاً للكل بلا أي طبقة');
++  });
++
+   test('مفيش شاشة تقرير بتنده قراءةً غير محصورة ليها نظير محصور', () {
+     const unscopedReaders = <String>[
+       'watchAllParties()',

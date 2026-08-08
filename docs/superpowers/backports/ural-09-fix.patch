@@ -1,0 +1,198 @@
+diff --git a/lib/presentation/screens/party_statement_screen.dart b/lib/presentation/screens/party_statement_screen.dart
+index b2d1a592..a5471996 100644
+--- a/lib/presentation/screens/party_statement_screen.dart
++++ b/lib/presentation/screens/party_statement_screen.dart
+@@ -80,7 +80,15 @@ class _PartyStatementScreenState extends ConsumerState<PartyStatementScreen>
+     setState(() => isLoading = true);
+     try {
+       final repo = ref.read(partiesRepositoryProvider);
+-      final parties = await repo.watchAllParties().first;
++      // كانت `watchAllParties()` غير المحصورة، فكشف الحساب كان بيعرض كل عملاء
++      // وموردي الشركة — بالأسماء والأرصدة — لمستخدم محصور بفرع.
++      //
++      // العقد: null = وصول كامل (بلا حصر)، {ids} = الفروع دي + الأطراف
++      // العامة، {} = لا شيء. و`scope.allowedBranchIds` بيساوي null بالظبط
++      // لمّا hasFullAccess، فتمريره مباشرةً صحيح ومطابق لـallPartiesProvider.
++      final scope = await ref.read(branchScopeProvider.future);
++      final parties =
++          await repo.watchAllPartiesForBranches(scope.allowedBranchIds).first;
+       if (mounted) {
+       final isSupplierMode = widget.isSupplier || widget.isCustomer == false;
+       final isCustomerMode = widget.isCustomer == true;
+diff --git a/test/structural/report_screens_resolve_branch_scope_test.dart b/test/structural/report_screens_resolve_branch_scope_test.dart
+index c4e95180..6f468ed5 100644
+--- a/test/structural/report_screens_resolve_branch_scope_test.dart
++++ b/test/structural/report_screens_resolve_branch_scope_test.dart
+@@ -42,18 +42,18 @@ const _notAScreen = <String>{
+ ///   • ar_aging_report_screen    — أرصدة كل العملاء والموردين على مستوى الشركة
+ ///   • vat_reconciliation_screen — إجماليات ضريبة المخرجات/المدخلات + أرصدة GL
+ ///   • report_builder_screen     — تقارير مخصّصة على كل الجداول بلا أي حصر
+-///   • party_statement_screen    — بينده watchAllParties() مع إن
+-///                                 watchAllPartiesForBranches(allowedBranchIds)
+-///                                 موجودة فعلاً
+ ///   • stock_movements_screen    — كل الحركات بـunitCost/balanceAfter، بلا LIMIT
+ ///
++/// اتشال: party_statement_screen — بقى بيحلّ branchScopeProvider ويمرّره لـ
++/// watchAllPartiesForBranches. الإثبات السلوكي المطلوب في
++/// party_statement_branch_scope_test (‏{} بتفشل مقفولة).
++///
+ /// لإزالة سطر: حُلّ `branchScopeProvider` في الشاشة، مرّر `allowedBranchIds`
+ /// للاستعلام، اكتب اختباراً سلوكياً يثبت إن `{}` بتفشل مقفولة، وشيل السطر.
+ const _baseline = <String>{
+   'lib/presentation/screens/reports/ar_aging_report_screen.dart',
+   'lib/presentation/screens/reports/vat_reconciliation_screen.dart',
+   'lib/presentation/screens/report_builder_screen.dart',
+-  'lib/presentation/screens/party_statement_screen.dart',
+   'lib/presentation/screens/stock_movements_screen.dart',
+ };
+ 
+@@ -92,4 +92,56 @@ void main() {
+         reason: 'الشاشات دي بقت بتحلّ النطاق — شيلها من _baseline عشان '
+             'الحارس يقفل عليها');
+   });
++
++  // ── ليه فحص تاني ────────────────────────────────────────────────────────
++  // الفحص فوق بيسأل «الملف بيذكر branchScopeProvider؟» وبس. طفرةٌ أثبتت
++  // ضعفه: إرجاع party_statement لـ`watchAllParties()` غير المحصورة **عدّى**،
++  // لأن سطر حلّ النطاق فضل موجود فوقها بلا استعمال. فالحارس بيمسك النسيان
++  // الكامل — مش الارتداد.
++  //
++  // القراءات دي ليها نظير محصور بنفس الاسم + ForBranches، فاستعمال النسخة
++  // العارية في شاشة تقرير خطأ دايماً حتى لو النطاق متحلول في مكان تاني من
++  // نفس الملف.
++  test('مفيش شاشة تقرير بتنده قراءةً غير محصورة ليها نظير محصور', () {
++    const unscopedReaders = <String>[
++      'watchAllParties()',
++      'watchCustomers()',
++      'watchSuppliers()',
++    ];
++
++    final files = <String>[
++      ...Directory('lib/presentation/screens/reports')
++          .listSync()
++          .whereType<File>()
++          .map((f) => f.path.replaceAll(r'\', '/'))
++          .where((p) => p.endsWith('.dart')),
++      ..._extraReportScreens,
++    ]..sort();
++
++    final offenders = <String>[];
++    for (final path in files) {
++      if (_notAScreen.contains(path)) continue;
++      final file = File(path);
++      if (!file.existsSync()) continue;
++      // التعليقات تُستبعَد: أول نسخة من الفحص ده اتعثّرت في تعليقٍ بيشرح
++      // العطل القديم ويذكر اسم الدالة العارية. حارس بيفشل على شرح العطل
++      // بيعلّم الناس تشيل الشرح.
++      final src = file
++          .readAsLinesSync()
++          .map((l) {
++            final i = l.indexOf('//');
++            return i >= 0 ? l.substring(0, i) : l;
++          })
++          .join('\n');
++      for (final reader in unscopedReaders) {
++        if (src.contains(reader)) {
++          offenders.add('$path → $reader');
++        }
++      }
++    }
++
++    expect(offenders, isEmpty,
++        reason: 'استعمل النسخة المحصورة (‏…ForBranches(allowedBranchIds)) — '
++            'العارية بتعرض أطراف كل الفروع بأسمائها وأرصدتها');
++  });
+ }
+diff --git a/test/unit/party_statement_branch_scope_test.dart b/test/unit/party_statement_branch_scope_test.dart
+new file mode 100644
+index 00000000..97865803
+--- /dev/null
++++ b/test/unit/party_statement_branch_scope_test.dart
+@@ -0,0 +1,87 @@
++// ═══════════════════════════════════════════════════════════════════════════
++// كشف الحساب كان بيعرض كل عملاء وموردي الشركة لمستخدم محصور بفرع.
++// ═══════════════════════════════════════════════════════════════════════════
++//
++// `party_statement_screen.dart:83` كان بينده `watchAllParties()` غير المحصورة —
++// مع إن `watchAllPartiesForBranches(allowedBranchIds)` **موجودة فعلاً** ومستعملة
++// في `allPartiesProvider`. فالقائمة اللي المستخدم بيختار منها كانت بتعرض
++// الأسماء، وأول اختيار بيعرض الرصيد وكل الحركات.
++//
++// الاختبار ده هو الشرط الموثَّق في خط أساس
++// `report_screens_resolve_branch_scope_test` لإزالة الشاشة منه: إثبات سلوكي إن
++// `{}` بتفشل **مقفولة**. لأن انقلاب fail-closed لـfail-open هو فئة العطل
++// الحقيقية هنا — مش النسيان الكامل، اللي الحارس البنيوي بيمسكه لوحده.
++//
++// العقد المُختبَر (نفس عقد BranchScope في باقي المنظومة):
++//   null  = وصول كامل — بلا حصر
++//   {ids} = الفروع دي + الأطراف العامة (is_global)
++//   {}    = لا شيء
++// ═══════════════════════════════════════════════════════════════════════════
++
++import 'package:drift/drift.dart' hide isNotNull, isNull;
++import 'package:flutter_test/flutter_test.dart';
++import 'package:ural_erp/data/database/database.dart';
++
++void main() {
++  late AppDatabase db;
++  late int branchA;
++  late int branchB;
++
++  Future<void> party({
++    required String name,
++    bool isGlobal = false,
++    List<int> branches = const [],
++  }) =>
++      db.into(db.parties).insert(PartiesCompanion.insert(
++            name: name,
++            isGlobal: Value(isGlobal),
++            branchIds:
++                Value(branches.isEmpty ? null : ',${branches.join(',')},'),
++          ));
++
++  setUp(() async {
++    db = AppDatabase.forTesting();
++    branchA = await db.into(db.branches).insert(BranchesCompanion.insert(
++        name: 'فرع أ', globalId: const Value('gid-br-ps-a')));
++    branchB = await db.into(db.branches).insert(BranchesCompanion.insert(
++        name: 'فرع ب', globalId: const Value('gid-br-ps-b')));
++
++    await party(name: 'عميل فرع أ', branches: [branchA]);
++    await party(name: 'عميل فرع ب', branches: [branchB]);
++    await party(name: 'عميل عام', isGlobal: true);
++  });
++
++  tearDown(() => db.close());
++
++  // `forTesting()` بيزرع أطراف افتراضية، فالتأكيدات على الأسماء اللي الاختبار
++  // ده أنشأها بنفسه — لا على أعداد مطلقة تتغيّر مع أي تعديل في البذر.
++  Set<String> mine(List<Party> rows) => rows
++      .map((p) => p.name)
++      .where((n) => n.startsWith('عميل '))
++      .toSet();
++
++  test('null = وصول كامل — كل الأطراف', () async {
++    final rows = await db.watchAllPartiesForBranches(null).first;
++    expect(mine(rows),
++        <String>{'عميل فرع أ', 'عميل فرع ب', 'عميل عام'});
++  });
++
++  test('{A} = فرع أ + العام، ومفيش تسريب من فرع ب', () async {
++    final rows = await db.watchAllPartiesForBranches({branchA}).first;
++    expect(mine(rows), <String>{'عميل فرع أ', 'عميل عام'},
++        reason: 'ظهور «عميل فرع ب» معناه تسريب اسم ورصيد طرف من فرع تاني');
++  });
++
++  test('{} بتفشل مقفولة — مش «كل الأطراف»', () async {
++    // ده الشرط اللي بيسمح بإزالة الشاشة من خط أساس الحارس البنيوي.
++    // الانقلاب المعتاد: مستخدم بلا تخصيص بياخد {} فيتفرج على الشركة كلها.
++    final rows = await db.watchAllPartiesForBranches(<int>{}).first;
++    expect(rows, isEmpty);
++  });
++
++  test('{B} ضابط — بيرجّع فرع ب فعلاً مش قايمة فاضية', () async {
++    // من غير ده، اختبار «{A} ما فيهاش فرع ب» ممكن يعدّي على بيانات فاضية.
++    final rows = await db.watchAllPartiesForBranches({branchB}).first;
++    expect(mine(rows), <String>{'عميل فرع ب', 'عميل عام'});
++  });
++}

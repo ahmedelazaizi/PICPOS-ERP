@@ -1,0 +1,170 @@
+diff --git a/lib/data/repositories/fingerprint_repository_impl.dart b/lib/data/repositories/fingerprint_repository_impl.dart
+index 7e9ef3f2..a7f40278 100644
+--- a/lib/data/repositories/fingerprint_repository_impl.dart
++++ b/lib/data/repositories/fingerprint_repository_impl.dart
+@@ -1,6 +1,7 @@
+ import 'package:drift/drift.dart';
+ import '../../domain/repositories/fingerprint_repository.dart';
+ import '../database/database.dart' as db;
++import '../database/extensions/hr_extensions.dart';
+ import '../../services/fingerprint_service.dart';
+ 
+ class FingerprintRepositoryImpl implements IFingerprintRepository {
+@@ -31,32 +32,29 @@ class FingerprintRepositoryImpl implements IFingerprintRepository {
+     return query.getSingleOrNull();
+   }
+ 
+-  @override
+-  Future<void> importCheckIn(int employeeId, DateTime timestamp) async {
+-    await _db.into(_db.employeeAttendance).insert(
+-      db.EmployeeAttendanceCompanion.insert(
+-        employeeId: employeeId,
+-        date: DateTime(timestamp.year, timestamp.month, timestamp.day),
+-        checkIn: Value(timestamp),
+-      ),
+-    );
+-  }
+-
+-  @override
+-  Future<void> importCheckOut(int employeeId, DateTime timestamp) async {
+-    // Find the latest open attendance record and update its check-out
+-    final openRecord = await (_db.select(_db.employeeAttendance)
+-          ..where((a) => a.employeeId.equals(employeeId))
+-          ..where((a) => a.checkOut.isNull())
+-          ..orderBy([(a) => OrderingTerm.desc(a.checkIn)])
+-          ..limit(1))
+-        .getSingleOrNull();
+-    if (openRecord != null) {
+-      await (_db.update(_db.employeeAttendance)
+-            ..where((a) => a.id.equals(openRecord.id)))
+-          .write(db.EmployeeAttendanceCompanion(checkOut: Value(timestamp)));
+-    }
+-  }
++  // B2 — both of these used to write blind. `importCheckIn` inserted a row per
++  // call with no match on (employeeId, date), and the device's logs are never
++  // cleared (`clearAttendanceLogs()` is a stub returning false,
++  // fingerprint_service.dart:167) while `fingerprint_last_sync` is written but
++  // never read back as a filter — so every «ترحيل الحضور» re-read the SAME
++  // logs. Three presses over 26 days produced 78 `present` rows, and salary is
++  // computed by counting them: a 3000 salary paid 7800.
++  //
++  // The correct upsert already existed as `importDeviceCheckIn` /
++  // `importDeviceCheckOut` (hr_extensions.dart) with no caller at all. These
++  // now delegate to it instead of carrying a second, wrong implementation.
++  //
++  // TODO(owner): the durable fix is UNIQUE(employee_id, date) in the schema
++  // plus honouring `fingerprint_last_sync` when fetching from the device, so a
++  // re-import is cheap as well as safe. Both need build_runner / SDK work.
++
++  @override
++  Future<void> importCheckIn(int employeeId, DateTime timestamp) =>
++      _db.importDeviceCheckIn(employeeId, timestamp);
++
++  @override
++  Future<void> importCheckOut(int employeeId, DateTime timestamp) =>
++      _db.importDeviceCheckOut(employeeId, timestamp);
+ 
+   @override
+   Future<List<db.Employee>> getAllEmployees() =>
+diff --git a/test/unit/fingerprint_attendance_idempotency_test.dart b/test/unit/fingerprint_attendance_idempotency_test.dart
+new file mode 100644
+index 00000000..95e57ae1
+--- /dev/null
++++ b/test/unit/fingerprint_attendance_idempotency_test.dart
+@@ -0,0 +1,96 @@
++// ═══════════════════════════════════════════════════════════════════════════
++// B2 — «ترحيل الحضور» كان بيضاعف أيام الحضور كل ضغطة.
++// ═══════════════════════════════════════════════════════════════════════════
++//
++// المسار اللي الواجهة بتنده فعلاً (fingerprint_settings_widget.dart:150) هو
++// `FingerprintRepositoryImpl.importCheckIn` — و`insert` أعمى بلا أي مطابقة
++// على `(employeeId, date)`. وجهاز البصمة ما بتتمسحش سجلاته
++// (`clearAttendanceLogs()` stub بيرجّع false، fingerprint_service.dart:167)،
++// و`fingerprint_last_sync` بتتحفظ وما بتتقرأش في التصفية — فكل ترحيل بيعيد
++// قراءة **نفس** السجلات.
++//
++// ٣ ضغطات على ٢٦ يوم = ٧٨ صف status='present'. وحساب الراتب بيعدّ صفوف
++// 'present'، فراتب ٣٠٠٠ كان بيطلع ٧٨٠٠.
++//
++// والمفارقة إن الدالة الصح كانت موجودة بالفعل: `importDeviceCheckIn`
++// (hr_extensions.dart:626) بتطابق على اليوم قبل الإدراج — **وبلا أي مُنادٍ**.
++// ═══════════════════════════════════════════════════════════════════════════
++
++import 'package:drift/drift.dart' hide isNotNull, isNull;
++import 'package:flutter_test/flutter_test.dart';
++import 'package:ural_erp/data/database/database.dart';
++import 'package:ural_erp/data/repositories/fingerprint_repository_impl.dart';
++import 'package:ural_erp/services/fingerprint_service.dart';
++
++void main() {
++  late AppDatabase db;
++  late FingerprintRepositoryImpl repo;
++  late int employeeId;
++
++  // بصمات يوم واحد: دخول ٨:٠٠ وخروج ١٦:٠٠.
++  final checkIn = DateTime(2026, 8, 3, 8, 0);
++  final checkOut = DateTime(2026, 8, 3, 16, 0);
++
++  Future<List<EmployeeAttendanceData>> rows() =>
++      (db.select(db.employeeAttendance)
++            ..where((a) => a.employeeId.equals(employeeId)))
++          .get();
++
++  setUp(() async {
++    db = AppDatabase.forTesting();
++    // الخدمة مش بتتنده في مسار الاستيراد — الاستيراد كله شغل قاعدة بيانات.
++    repo = FingerprintRepositoryImpl(db, FingerprintService());
++    employeeId = await db.into(db.employees).insert(EmployeesCompanion.insert(
++        name: 'أحمد محمد',
++        salary: const Value(3000.0),
++        deviceUserId: const Value('7')));
++  });
++
++  tearDown(() => db.close());
++
++  test('ترحيل واحد بيكتب صف حضور واحد', () async {
++    await repo.importCheckIn(employeeId, checkIn);
++    expect((await rows()).length, 1);
++  });
++
++  test('٣ ترحيلات لنفس البصمة = صف واحد، مش تلاتة', () async {
++    for (var i = 0; i < 3; i++) {
++      await repo.importCheckIn(employeeId, checkIn);
++    }
++    final r = await rows();
++    expect(r.length, 1,
++        reason: 'كل ضغطة كانت بتزوّد يوم حضور — ٢٦ يوم بقوا ٧٨');
++    expect(r.single.checkIn, checkIn,
++        reason: 'أول بصمة دخول هي المعتبرة، مش آخر واحدة');
++  });
++
++  test('الخروج بيتكتب على صف نفس اليوم ومش بيعمل صف جديد', () async {
++    await repo.importCheckIn(employeeId, checkIn);
++    await repo.importCheckOut(employeeId, checkOut);
++    final r = await rows();
++    expect(r.length, 1);
++    expect(r.single.checkOut, checkOut);
++  });
++
++  test('إعادة ترحيل الدخول والخروج مع بعض بتفضل صف واحد', () async {
++    for (var i = 0; i < 3; i++) {
++      await repo.importCheckIn(employeeId, checkIn);
++      await repo.importCheckOut(employeeId, checkOut);
++    }
++    final r = await rows();
++    expect(r.length, 1);
++    expect(r.single.checkIn, checkIn);
++    expect(r.single.checkOut, checkOut);
++  });
++
++  test('يوم تاني بيكتب صف تاني (الحارس مش بيقفل على اليوم الواحد)', () async {
++    await repo.importCheckIn(employeeId, checkIn);
++    await repo.importCheckIn(employeeId, DateTime(2026, 8, 4, 8, 0));
++    expect((await rows()).length, 2);
++  });
++
++  test('الصف المُنشأ من البصمة حالته present (الراتب بيعدّ دي)', () async {
++    await repo.importCheckIn(employeeId, checkIn);
++    expect((await rows()).single.status, 'present');
++  });
++}

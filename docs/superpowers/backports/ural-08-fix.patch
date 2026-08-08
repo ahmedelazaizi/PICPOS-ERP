@@ -1,0 +1,212 @@
+diff --git a/lib/data/database/daos/sales_dao.dart b/lib/data/database/daos/sales_dao.dart
+index a0925e7f..a7b19f1e 100644
+--- a/lib/data/database/daos/sales_dao.dart
++++ b/lib/data/database/daos/sales_dao.dart
+@@ -497,6 +497,18 @@ extension SalesDao on AppDatabase {
+     List<int>? warehouseIds,
+     int? costCenterId,
+     Set<int>? allowedBranchIds,
++    /// يستثني الصفوف اللي **مش إيراد**: مستندات المرتجع (saleType='return')
++    /// والفواتير الملغية/المعدومة والأصول اللي اترجّعت.
++    ///
++    /// موجود كمعامل اختياري لأن الدالة دي مشتركة: returns_repository_impl
++    /// بينديها عشان يلاقي فاتورة يرجّعها (ومحتاج يشوف المكتملة والمُرجَعة)،
++    /// و tax_report_screen للقائمة التفصيلية. تغيير الدلالة عامةً كان هيكسر
++    /// مسار المرتجعات.
++    ///
++    /// تقرير المبيعات بيطلبه عشان جمع عمود الجدول يطابق بطاقة «إجمالي
++    /// المبيعات» — البطاقة بتنده getSalesAnalytics اللي بيستثني التلاتة دول
++    /// أصلاً، فمن غير المعامل ده الكارت بيقول ١٠٠٬٠٠٠ وجمع Excel ١٠٨٬٠٠٠.
++    bool revenueOnly = false,
+   }) async {
+     final start = DateTime(startDate.year, startDate.month, startDate.day);
+     final end = DateTime(
+@@ -511,6 +523,14 @@ extension SalesDao on AppDatabase {
+                s.isDeleted.equals(false),
+       );
+ 
++    // نفس استثناءات getSalesAnalytics بالظبط (sales_analytics_dao) — أي انحراف
++    // بينهم بيرجّع نفس العطل: كارت وجدول بيجاوبوا سؤالين تحت عنوان واحد.
++    if (revenueOnly) {
++      query.where((s) => s.saleType.isNull() | s.saleType.equals('return').not());
++      query.where(
++          (s) => s.status.isIn(const ['returned', 'cancelled', 'voided']).not());
++    }
++
+     if (userId != null) {
+       query.where((s) => s.userId.equals(userId));
+     }
+diff --git a/lib/data/repositories/reporting_repository_impl.dart b/lib/data/repositories/reporting_repository_impl.dart
+index e457481c..1793ee96 100644
+--- a/lib/data/repositories/reporting_repository_impl.dart
++++ b/lib/data/repositories/reporting_repository_impl.dart
+@@ -114,6 +114,7 @@ class ReportingRepositoryImpl implements IReportingRepository {
+     List<int>? warehouseIds,
+     int? costCenterId,
+     Set<int>? allowedBranchIds,
++    bool revenueOnly = false,
+   }) =>
+       _db.getSalesByDateRange(
+         start,
+@@ -122,6 +123,7 @@ class ReportingRepositoryImpl implements IReportingRepository {
+         warehouseIds: warehouseIds,
+         costCenterId: costCenterId,
+         allowedBranchIds: allowedBranchIds,
++        revenueOnly: revenueOnly,
+       );
+ 
+   @override
+diff --git a/lib/domain/repositories/sales_reporting_repository.dart b/lib/domain/repositories/sales_reporting_repository.dart
+index e2a9cf99..ceabb48f 100644
+--- a/lib/domain/repositories/sales_reporting_repository.dart
++++ b/lib/domain/repositories/sales_reporting_repository.dart
+@@ -49,6 +49,9 @@ abstract class ISalesReportingRepository {
+     Set<int>? allowedBranchIds,
+   });
+ 
++  /// [revenueOnly] يستثني اللي مش إيراد (مستندات المرتجع والملغي والمُرجَع)
++  /// عشان جمع عمود الجدول يطابق بطاقة «إجمالي المبيعات». اختياري لأن مسار
++  /// المرتجعات وقائمة الضريبة محتاجين المجموعة الكاملة.
+   Future<List<SalesInvoiceData>> getSalesByDateRange(
+     DateTime start,
+     DateTime end, {
+@@ -56,6 +59,7 @@ abstract class ISalesReportingRepository {
+     List<int>? warehouseIds,
+     int? costCenterId,
+     Set<int>? allowedBranchIds,
++    bool revenueOnly = false,
+   });
+ 
+   Future<List<SalesInvoiceItem>> getSalesInvoiceItems(int invoiceId);
+diff --git a/lib/presentation/screens/reports/sales_report_screen.dart b/lib/presentation/screens/reports/sales_report_screen.dart
+index 84214a49..bc469e8b 100644
+--- a/lib/presentation/screens/reports/sales_report_screen.dart
++++ b/lib/presentation/screens/reports/sales_report_screen.dart
+@@ -183,6 +183,10 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
+         warehouseIds: warehouseIds,
+         costCenterId: _selectedCostCenterId,
+         allowedBranchIds: _allowedBranchIds,
++        // نفس مجموعة getSalesAnalytics فوق. من غيره الجدول بيعرض المرتجعات
++        // والملغيات اللي البطاقة بتستثنيها، فالمستخدم بيصدّر Excel ويجمع عمود
++        // الإجمالي فيطلّع رقماً أكبر من البطاقة بلا سبب ظاهر.
++        revenueOnly: true,
+       );
+ 
+       // Compute previous period (same duration, immediately before)
+diff --git a/test/unit/sales_report_card_matches_table_test.dart b/test/unit/sales_report_card_matches_table_test.dart
+new file mode 100644
+index 00000000..8b941943
+--- /dev/null
++++ b/test/unit/sales_report_card_matches_table_test.dart
+@@ -0,0 +1,111 @@
++// ═══════════════════════════════════════════════════════════════════════════
++// تقرير المبيعات — الكارت والجدول كانوا بيقيسوا مجموعتين مختلفتين.
++// ═══════════════════════════════════════════════════════════════════════════
++//
++// الشاشة بتنده مسارين لنفس الفترة:
++//   • البطاقة  → getSalesAnalytics (sales_analytics_dao)
++//   • الجدول   → getSalesByDateRange (sales_dao)
++//
++// والاتنين بيستثنوا مجموعتين مختلفتين:
++//   الكارت:  is_deleted = 0
++//            AND (sale_type IS NULL OR sale_type != 'return')
++//            AND status NOT IN ('returned', 'cancelled', 'voided')
++//   الجدول:  is_deleted = 0        ← وبس
++//
++// فالكارت بيقول ١٠٠٬٠٠٠ والمستخدم بيصدّر Excel ويجمع عمود الإجمالي فيطلّع
++// ١٠٨٬٠٠٠. مفيش رقم فيهم غلط لوحده — الغلط إن الاتنين بيجاوبوا سؤالين
++// مختلفين تحت عنوان واحد.
++//
++// ── ليه معامل اختياري لا تغيير دلالة ─────────────────────────────────────
++// getSalesByDateRange **مشتركة**: returns_repository_impl بينديها عشان يلاقي
++// الفواتير المتاحة للمرتجع (ومحتاج يشوف المكتملة)، و tax_report_screen بينديها
++// لقائمة الضريبة التفصيلية. تغيير دلالتها عامةً كان هيكسر مسار المرتجعات.
++// فالاستثناء اختياري (`revenueOnly`) وتقرير المبيعات وحده بيطلبه.
++// ═══════════════════════════════════════════════════════════════════════════
++
++import 'package:drift/drift.dart' hide isNotNull, isNull;
++import 'package:flutter_test/flutter_test.dart';
++import 'package:ural_erp/data/database/database.dart';
++
++void main() {
++  late AppDatabase db;
++  late int warehouseId;
++
++  final from = DateTime(2026, 8, 1);
++  final to = DateTime(2026, 8, 31);
++
++  Future<void> invoice({
++    required String number,
++    required double total,
++    String saleType = 'default',
++    String status = 'completed',
++    bool isDeleted = false,
++  }) =>
++      db.into(db.salesInvoices).insert(SalesInvoicesCompanion.insert(
++            invoiceNumber: number,
++            warehouseId: warehouseId,
++            userId: 1,
++            invoiceDate: DateTime(2026, 8, 10),
++            total: Value(total),
++            paid: Value(total),
++            saleType: Value(saleType),
++            status: Value(status),
++            isDeleted: Value(isDeleted),
++          ));
++
++  setUp(() async {
++    db = AppDatabase.forTesting();
++    warehouseId = await db
++        .into(db.warehouses)
++        .insert(WarehousesCompanion.insert(name: 'مخزن'));
++
++    // بيعة عادية — دي وحدها اللي المفروض تتحسب إيراداً.
++    await invoice(number: 'OK', total: 100000);
++    // ملغية: الكارت بيستثنيها والجدول كان بيعرضها.
++    await invoice(number: 'CANCELLED', total: 5000, status: 'cancelled');
++    // أصل اترجّع: الكارت بيستثنيه (المرتجع بيتطرح لوحده).
++    await invoice(number: 'RETURNED', total: 3000, status: 'returned');
++    // فاتورة مرتجع (شكل جديد: إجمالي موجب + saleType='return').
++    await invoice(number: 'RET-DOC', total: 2000, saleType: 'return');
++    // محذوفة ناعماً: الاتنين بيستثنوها أصلاً.
++    await invoice(number: 'DELETED', total: 9000, isDeleted: true);
++  });
++
++  tearDown(() => db.close());
++
++  test('الضابط: الكارت بيقيس البيعة العادية وحدها', () async {
++    final card = await db.getSalesAnalytics(from, to);
++    expect(card.totalSales, 100000);
++  });
++
++  test('جمع عمود الجدول == رقم الكارت', () async {
++    final card = await db.getSalesAnalytics(from, to);
++    final rows = await db.getSalesByDateRange(from, to, revenueOnly: true);
++    final tableTotal = rows.fold<double>(0, (s, r) => s + r.total);
++    expect(tableTotal, card.totalSales,
++        reason: 'الكارت ١٠٠٬٠٠٠ وجمع Excel كان ١٠٨٬٠٠٠');
++    expect(rows.map((r) => r.invoiceNumber), ['OK']);
++  });
++
++  test('كل صنف مستبعَد بيتشال بسببه', () async {
++    final rows = await db.getSalesByDateRange(from, to, revenueOnly: true);
++    final numbers = rows.map((r) => r.invoiceNumber).toSet();
++    expect(numbers.contains('CANCELLED'), isFalse, reason: 'ملغية');
++    expect(numbers.contains('RETURNED'), isFalse, reason: 'أصل اترجّع');
++    expect(numbers.contains('RET-DOC'), isFalse, reason: 'مستند مرتجع');
++    expect(numbers.contains('DELETED'), isFalse, reason: 'محذوفة ناعماً');
++  });
++
++  test('السلوك الافتراضي غير متغيّر — مسار المرتجعات لسه بيشوف المكتملة',
++      () async {
++    // returns_repository_impl بيعتمد على ده عشان يلاقي فاتورة يرجّعها.
++    final rows = await db.getSalesByDateRange(from, to);
++    final numbers = rows.map((r) => r.invoiceNumber).toSet();
++    expect(numbers.contains('OK'), isTrue);
++    expect(numbers.contains('CANCELLED'), isTrue,
++        reason: 'من غير revenueOnly مفيش استثناء جديد — ولا كسر لمُنادٍ قائم');
++    expect(numbers.contains('RETURNED'), isTrue);
++    expect(numbers.contains('DELETED'), isFalse,
++        reason: 'المحذوف ناعماً كان مستبعَداً قبل التغيير وبعده');
++  });
++}

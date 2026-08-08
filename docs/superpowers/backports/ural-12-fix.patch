@@ -1,0 +1,260 @@
+diff --git a/lib/data/database/daos/party_dao.dart b/lib/data/database/daos/party_dao.dart
+index 5973fd4a..306a8308 100644
+--- a/lib/data/database/daos/party_dao.dart
++++ b/lib/data/database/daos/party_dao.dart
+@@ -1658,10 +1658,33 @@ extension PartyDao on AppDatabase {
+ 
+   /// GAP-22: AR/AP Aging Report — overdue balances split by age buckets.
+   /// [customersOnly] = true → customers (AR), false → suppliers (AP).
++  /// [allowedBranchIds] بيحصر **أي أطراف تظهر** — نفس قاعدة
++  /// `_watchPartiesForBranches` بالظبط: null = الكل، {ids} = الفروع دي +
++  /// الأطراف العامة، {} = لا شيء.
++  ///
++  /// الحصر على مستوى الطرف لا الفاتورة بقصد: `p.balance` رصيد الطرف **الكلي**،
++  /// والأعمار محسوبة منه. لو حصرنا الفواتير بفرع وسبنا الرصيد كلياً، الأعمدة
++  /// ما تجمعش على الرصيد المعروض جنبها — نفس فئة العطل اللي في تسوية الضريبة.
++  /// فالتقرير بيفضل متّسقاً داخلياً، والمحصور بيشوف أطراف فرعه وحدها.
+   Future<List<ArAgingRow>> getArAgingReport({
+     required DateTime asOfDate,
+     bool customersOnly = true,
++    Set<int>? allowedBranchIds,
+   }) async {
++    // نفس شكل الفلتر في _watchPartiesForBranches — CSV مطابَق بـLIKE على
++    // branch_ids، مع إبقاء الأطراف العامة مرئية.
++    final String scopeClause;
++    if (allowedBranchIds == null) {
++      scopeClause = '';
++    } else if (allowedBranchIds.isEmpty) {
++      scopeClause = ' AND 1 = 0'; // فشل مقفول
++    } else {
++      final ors = allowedBranchIds
++          .map((id) =>
++              "(',' || COALESCE(p.branch_ids, '') || ',') LIKE '%,$id,%'")
++          .join(' OR ');
++      scopeClause = ' AND (p.is_global = 1 OR $ors)';
++    }
+     // Drift stores DateTime as Unix milliseconds (INTEGER). All date comparisons
+     // must use julianday(col / 1000, 'unixepoch') — NOT julianday(col) directly.
+     final asOfMs = asOfDate.millisecondsSinceEpoch;
+@@ -1691,6 +1714,7 @@ extension PartyDao on AppDatabase {
+         WHERE p.is_active = 1
+           AND p.is_customer = 1
+           AND p.balance > 0.01
++          $scopeClause
+         GROUP BY p.id
+         ORDER BY p.balance DESC
+       ''', variables: [
+@@ -1731,6 +1755,7 @@ extension PartyDao on AppDatabase {
+         WHERE p.is_active = 1
+           AND p.is_supplier = 1
+           AND p.balance > 0.01
++          $scopeClause
+         GROUP BY p.id
+         ORDER BY p.balance DESC
+       ''', variables: [
+diff --git a/lib/data/providers/report_providers.dart b/lib/data/providers/report_providers.dart
+index 3034095c..62701dcc 100644
+--- a/lib/data/providers/report_providers.dart
++++ b/lib/data/providers/report_providers.dart
+@@ -35,9 +35,18 @@ final arAgingReportProvider =
+     FutureProvider.family<List<ArAgingRow>, ArAgingParams>(
+   (ref, params) async {
+     final db = ref.watch(databaseProvider);
++    // الحصر بيتحل **هنا** لا في `params` بقصد: ArAgingParams عبارة عن record،
++    // و`Set<int>` في Dart بيتقارن بالهوية لا بالمحتوى — فحطّه في مفتاح
++    // `family` كان هيبطّل الكاش ويعيد الاستعلام مع كل rebuild.
++    //
++    // scope.allowedBranchIds بيساوي null بالظبط لمّا hasFullAccess، فالتمرير
++    // المباشر صحيح. والانتظار هنا بيخلّي التقرير يفشل مقفولاً بدل ما يعرض
++    // الشركة كلها قبل ما النطاق يتحلّ.
++    final scope = await ref.watch(branchScopeProvider.future);
+     return db.getArAgingReport(
+       asOfDate: params.asOfDate,
+       customersOnly: params.customersOnly,
++      allowedBranchIds: scope.allowedBranchIds,
+     );
+   },
+ );
+diff --git a/test/structural/report_screens_resolve_branch_scope_test.dart b/test/structural/report_screens_resolve_branch_scope_test.dart
+index ff707986..68fcae48 100644
+--- a/test/structural/report_screens_resolve_branch_scope_test.dart
++++ b/test/structural/report_screens_resolve_branch_scope_test.dart
+@@ -46,6 +46,18 @@ const _notAScreen = <String>{
+ /// البديل الصحيح: الوصول نفسه يتحرس. من يملك `reports_taxes` يراه كاملاً،
+ /// ومن لا يملكها لا يراه. الفحص التاني تحت بيثبت إن الحراسة **موجودة فعلاً**
+ /// عشان شيلها ما يعدّيش صامتاً.
++/// شاشات بتحصر عبر **المزوّد** لا في ملفها (‏PIR P1-01: الشاشة ما بتلمسش
++/// الـDB). القيمة اسم المزوّد، والفحص تحت بيثبت إن `report_providers.dart`
++/// بيحلّ `branchScopeProvider` جوّه فعلاً.
++///
++/// ليه في المزوّد: `ArAgingParams` عبارة عن record، و`Set<int>` في Dart
++/// بيتقارن **بالهوية لا بالمحتوى** — فحطّ النطاق في مفتاح `family` كان
++/// هيبطّل الكاش ويعيد الاستعلام مع كل rebuild.
++const _scopedViaProvider = <String, String>{
++  'lib/presentation/screens/reports/ar_aging_report_screen.dart':
++      'arAgingReportProvider',
++};
++
+ const _permissionGatedNotBranchScoped = <String, String>{
+   'lib/presentation/screens/reports/vat_reconciliation_screen.dart':
+       'PermissionCodes.reportsTaxes',
+@@ -68,7 +80,6 @@ const _permissionGatedNotBranchScoped = <String, String>{
+ /// لإزالة سطر: حُلّ `branchScopeProvider` في الشاشة، مرّر `allowedBranchIds`
+ /// للاستعلام، اكتب اختباراً سلوكياً يثبت إن `{}` بتفشل مقفولة، وشيل السطر.
+ const _baseline = <String>{
+-  'lib/presentation/screens/reports/ar_aging_report_screen.dart',
+   'lib/presentation/screens/report_builder_screen.dart',
+ };
+ 
+@@ -89,6 +100,8 @@ void main() {
+       // تقارير لا يصحّ حصرها بفرع — محروسة بصلاحية، والفحص التاني تحت بيثبت
+       // إن الحراسة موجودة فعلاً.
+       if (_permissionGatedNotBranchScoped.containsKey(path)) continue;
++      // بتحصر عبر المزوّد — الفحص التاني تحت بيثبت إن المزوّد بيحلّ النطاق.
++      if (_scopedViaProvider.containsKey(path)) continue;
+       final file = File(path);
+       if (!file.existsSync()) {
+         fail('مسار في قائمة الحارس مش موجود — حدّث القائمة: $path');
+@@ -131,6 +144,34 @@ void main() {
+   // الإعفاء من الحصر بالفرع مشروط بوجود بديل. من غير الفحص ده، شيل
+   // `PermissionGuard` من الشاشة بيخلّيها تقرير على مستوى الشركة **مفتوحاً
+   // للكل** — وخط الأساس فوق مش هيلاحظ لأنها معفاة أصلاً.
++  // الإعفاء مشروط بوجود البديل. من غير الفحص ده، شيل حلّ النطاق من المزوّد
++  // بيرجّع التسريب و**خط الأساس مش هيلاحظ** لأن الشاشة معفاة أصلاً.
++  test('الشاشات المعفاة بتحصر عبر مزوّد بيحلّ النطاق فعلاً', () {
++    const providersFile = 'lib/data/providers/report_providers.dart';
++    final src = File(providersFile).readAsStringSync();
++    final missing = <String>[];
++
++    _scopedViaProvider.forEach((screen, providerName) {
++      if (!File(screen).existsSync()) {
++        fail('مسار في قائمة الإعفاء مش موجود — حدّث القائمة: $screen');
++      }
++      if (!File(screen).readAsStringSync().contains(providerName)) {
++        missing.add('$screen → مش بينده $providerName');
++        return;
++      }
++      // المزوّد لازم يكون موجوداً في الملف **و**الملف بيحلّ النطاق.
++      // فحص على مستوى الملف — كافٍ لأن الملف ده مزوّدات التقارير وحدها.
++      if (!src.contains(providerName) ||
++          !src.contains('branchScopeProvider')) {
++        missing.add('$providersFile → $providerName بلا branchScopeProvider');
++      }
++    });
++
++    expect(missing, isEmpty,
++        reason: 'شاشة معفاة من الفحص الأول لأن مزوّدها بيحصر — لو المزوّد '
++            'بطّل يحصر، التسريب رجع بلا أي حارس');
++  });
++
+   test('التقارير المعفاة من الحصر محروسة بصلاحية فعلاً', () {
+     final missing = <String>[];
+     _permissionGatedNotBranchScoped.forEach((path, permission) {
+diff --git a/test/unit/ar_aging_branch_scope_test.dart b/test/unit/ar_aging_branch_scope_test.dart
+new file mode 100644
+index 00000000..8d64d1ba
+--- /dev/null
++++ b/test/unit/ar_aging_branch_scope_test.dart
+@@ -0,0 +1,102 @@
++// ═══════════════════════════════════════════════════════════════════════════
++// أعمار الديون كانت بتعرض أرصدة كل عملاء وموردي الشركة.
++// ═══════════════════════════════════════════════════════════════════════════
++//
++// `getArAgingReport` مكانش بياخد حصراً إطلاقاً، فمستخدم محصور بفرع كان بيشوف
++// اسم كل طرف في الشركة ورصيده وتوزيعه على شرائح التقادم.
++//
++// الحصر على مستوى **الطرف** لا الفاتورة بقصد: `p.balance` رصيد الطرف الكلي
++// والأعمار محسوبة منه، فحصر الفواتير بفرع مع إبقاء الرصيد كلياً كان هيخلّي
++// الأعمدة ما تجمعش على الرصيد المعروض جنبها — نفس فئة العطل اللي خلّت تسوية
++// الضريبة تتحرس بصلاحية بدل ما تتحصر.
++//
++// ده الإثبات السلوكي اللي خط أساس report_screens_resolve_branch_scope_test
++// بيشترطه لإزالة الشاشة منه: {} بتفشل **مقفولة**.
++// ═══════════════════════════════════════════════════════════════════════════
++
++import 'package:drift/drift.dart' hide isNotNull, isNull;
++import 'package:flutter_test/flutter_test.dart';
++import 'package:ural_erp/data/database/database.dart';
++
++void main() {
++  late AppDatabase db;
++  late int branchA;
++  late int branchB;
++
++  final asOf = DateTime(2026, 8, 31);
++
++  Future<void> customer({
++    required String name,
++    required double balance,
++    bool isGlobal = false,
++    List<int> branches = const [],
++  }) =>
++      db.into(db.parties).insert(PartiesCompanion.insert(
++            name: name,
++            balance: Value(balance),
++            isCustomer: const Value(true),
++            isGlobal: Value(isGlobal),
++            branchIds:
++                Value(branches.isEmpty ? null : ',${branches.join(',')},'),
++          ));
++
++  Set<String> mine(List<ArAgingRow> rows) => rows
++      .map((r) => r.partyName)
++      .where((n) => n.startsWith('عميل '))
++      .toSet();
++
++  setUp(() async {
++    db = AppDatabase.forTesting();
++    branchA = await db.into(db.branches).insert(BranchesCompanion.insert(
++        name: 'فرع أ', globalId: const Value('gid-br-ar-a')));
++    branchB = await db.into(db.branches).insert(BranchesCompanion.insert(
++        name: 'فرع ب', globalId: const Value('gid-br-ar-b')));
++
++    await customer(name: 'عميل فرع أ', balance: 500, branches: [branchA]);
++    await customer(name: 'عميل فرع ب', balance: 900, branches: [branchB]);
++    await customer(name: 'عميل عام', balance: 300, isGlobal: true);
++  });
++
++  tearDown(() => db.close());
++
++  test('null = وصول كامل — كل الأطراف المدينة', () async {
++    final rows = await db.getArAgingReport(asOfDate: asOf);
++    expect(mine(rows), <String>{'عميل فرع أ', 'عميل فرع ب', 'عميل عام'});
++  });
++
++  test('{A} = فرع أ + العام، ومفيش رصيد من فرع ب', () async {
++    final rows =
++        await db.getArAgingReport(asOfDate: asOf, allowedBranchIds: {branchA});
++    expect(mine(rows), <String>{'عميل فرع أ', 'عميل عام'},
++        reason: 'ظهور «عميل فرع ب» معناه تسريب اسم ورصيد ٩٠٠ من فرع تاني');
++  });
++
++  test('{} بتفشل مقفولة — مش «كل الأطراف»', () async {
++    final rows =
++        await db.getArAgingReport(asOfDate: asOf, allowedBranchIds: <int>{});
++    expect(rows, isEmpty);
++  });
++
++  test('{B} ضابط — بيرجّع فرع ب فعلاً مش قايمة فاضية', () async {
++    final rows =
++        await db.getArAgingReport(asOfDate: asOf, allowedBranchIds: {branchB});
++    expect(mine(rows), <String>{'عميل فرع ب', 'عميل عام'});
++  });
++
++  test('جانب الموردين محصور بنفس القاعدة', () async {
++    await db.into(db.parties).insert(PartiesCompanion.insert(
++          name: 'عميل مورد ب',
++          balance: const Value(700),
++          isCustomer: const Value(false),
++          isSupplier: const Value(true),
++          // لازم صراحةً: العمود قيمته الافتراضية true، فنسيانها بيخلّي الطرف
++          // «عاماً» ومرئياً لأي نطاق — والاختبار يعدّي على تجهيزة غلط.
++          isGlobal: const Value(false),
++          branchIds: Value(',$branchB,'),
++        ));
++    final rows = await db.getArAgingReport(
++        asOfDate: asOf, customersOnly: false, allowedBranchIds: {branchA});
++    expect(mine(rows).contains('عميل مورد ب'), isFalse,
++        reason: 'نسخة AP كانت هتتنسى لو الفلتر اتحطّ في استعلام واحد');
++  });
++}

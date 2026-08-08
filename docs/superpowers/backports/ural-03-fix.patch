@@ -1,0 +1,421 @@
+diff --git a/lib/services/printing/report_pdf_generator.dart b/lib/services/printing/report_pdf_generator.dart
+index 7756a2f5..02d4c1c9 100644
+--- a/lib/services/printing/report_pdf_generator.dart
++++ b/lib/services/printing/report_pdf_generator.dart
+@@ -34,16 +34,69 @@ class ReportPdfGenerator {
+     String? notes,
+     String title = 'فاتورة مبيعات',
+     String? printedBy,
++  }) async {
++    await PdfComputeHelper.layoutPdf(await buildSalesInvoiceDocument(
++      invoiceNumber: invoiceNumber,
++      date: date,
++      customerName: customerName,
++      items: items,
++      subtotal: subtotal,
++      discount: discount,
++      tax: tax,
++      total: total,
++      paid: paid,
++      companyName: companyName,
++      companyAddress: companyAddress,
++      companyPhone: companyPhone,
++      companyTaxId: companyTaxId,
++      notes: notes,
++      title: title,
++      printedBy: printedBy,
++    ));
++  }
++
++  /// Builds the A4 sales-invoice document. Split out of [printSalesInvoice] so
++  /// the real widget tree can be asserted on without a platform channel —
++  /// PdfComputeHelper.layoutPdf needs one, which previously forced the PDF
++  /// tests to re-implement the layout instead of exercising it.
++  ///
++  /// ⚠️ MultiPage, not Page. `pw.Table` is a SpanningWidget (pdf-3.12.0
++  /// table.dart:250) but only a MultiPage drives the spanning protocol; inside
++  /// a plain Page it truncates at `if (totalHeight + lineHeight >
++  /// constraints.maxHeight) { index--; break; }` (table.dart:473) and the
++  /// totals block that follows lays out beyond the page bounds and never
++  /// prints. A 35-line wholesale invoice printed ~20 lines with NO totals,
++  /// no exception and no log — a commercial document silently handed to a
++  /// customer with data missing.
++  static Future<pw.Document> buildSalesInvoiceDocument({
++    required String invoiceNumber,
++    required DateTime date,
++    required String? customerName,
++    required List<InvoiceItem> items,
++    required double subtotal,
++    required double discount,
++    required double tax,
++    required double total,
++    required double paid,
++    String? companyName,
++    String? companyAddress,
++    String? companyPhone,
++    String? companyTaxId,
++    String? notes,
++    String title = 'فاتورة مبيعات',
++    String? printedBy,
+   }) async {
+     await _initFont();
+     final pdf = pw.Document();
+     final remaining = total - paid;
+ 
+     pdf.addPage(
+-      pw.Page(
++      pw.MultiPage(
+         pageFormat: PdfPageFormat.a4,
+         textDirection: pw.TextDirection.rtl,
+-        build: (context) => pw.Column(
++        crossAxisAlignment: pw.CrossAxisAlignment.end,
++        // Repeated per page so page 2+ still identifies the invoice.
++        header: (context) => pw.Column(
+           crossAxisAlignment: pw.CrossAxisAlignment.end,
+           children: [
+             _buildA4Header(
+@@ -69,39 +122,50 @@ class ReportPdfGenerator {
+               ),
+             ),
+             pw.SizedBox(height: 20),
+-            if (customerName != null)
+-              pw.Text(
+-                'العميل: $customerName',
+-                style: pw.TextStyle(font: _arabicFont, fontSize: 14),
+-              ),
+-            if (notes != null && notes.isNotEmpty) ...[
+-              pw.SizedBox(height: 10),
+-              pw.Text(
+-                'ملاحظات: $notes',
+-                style: pw.TextStyle(font: _arabicFont, fontSize: 12),
+-              ),
+-            ],
+-            pw.SizedBox(height: 20),
+-            _buildItemsTable(items),
+-            pw.SizedBox(height: 20),
+-            _buildTotalsSection(
+-              subtotal,
+-              discount,
+-              tax,
+-              total,
+-              paid,
+-              remaining,
+-            ),
+-            pw.Spacer(),
+-            _buildA4Footer(printedBy: printedBy),
+           ],
+         ),
++        footer: (context) => _buildA4Footer(
++          printedBy: printedBy,
++          pageNumber: context.pageNumber,
++          pagesCount: context.pagesCount,
++        ),
++        build: (context) => [
++          if (customerName != null)
++            pw.Text(
++              'العميل: $customerName',
++              style: pw.TextStyle(font: _arabicFont, fontSize: 14),
++            ),
++          if (notes != null && notes.isNotEmpty) ...[
++            pw.SizedBox(height: 10),
++            pw.Text(
++              'ملاحظات: $notes',
++              style: pw.TextStyle(font: _arabicFont, fontSize: 12),
++            ),
++          ],
++          pw.SizedBox(height: 20),
++          _buildItemsTable(items),
++          pw.SizedBox(height: 20),
++          // Last element in `build`, so it flows onto whatever page the table
++          // ends on (or its own) instead of being laid out off-page.
++          _buildTotalsSection(
++            subtotal,
++            discount,
++            tax,
++            total,
++            paid,
++            remaining,
++          ),
++        ],
+       ),
+     );
+-    await PdfComputeHelper.layoutPdf(pdf);
++    return pdf;
+   }
+ 
+-  static pw.Widget _buildA4Footer({String? printedBy}) {
++  static pw.Widget _buildA4Footer({
++    String? printedBy,
++    int? pageNumber,
++    int? pagesCount,
++  }) {
+     final now = DateTime.now();
+     final dateStr = '${now.year}/${now.month.toString().padLeft(2, '0')}/${now.day.toString().padLeft(2, '0')} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+     return pw.Column(
+@@ -131,6 +195,13 @@ class ReportPdfGenerator {
+               'شكراً لتعاملكم معنا',
+               style: pw.TextStyle(font: _arabicFont, fontSize: 10),
+             ),
++            // Page marker — on a multi-page invoice the recipient must be able
++            // to tell a short print from a missing page.
++            if (pageNumber != null && pagesCount != null)
++              pw.Text(
++                'صفحة $pageNumber من $pagesCount',
++                style: pw.TextStyle(font: _arabicFont, fontSize: 9),
++              ),
+             pw.Text(
+               'نظام ${Brand.name}',
+               style: pw.TextStyle(font: _arabicFont, fontSize: 10),
+@@ -150,14 +221,40 @@ class ReportPdfGenerator {
+     required double paid,
+     String? companyName,
+     bool isReturn = false,
++  }) async {
++    await PdfComputeHelper.layoutPdf(await buildPurchaseInvoiceDocument(
++      invoiceNumber: invoiceNumber,
++      date: date,
++      supplierName: supplierName,
++      items: items,
++      total: total,
++      paid: paid,
++      companyName: companyName,
++      isReturn: isReturn,
++    ));
++  }
++
++  /// Builds the A4 purchase-invoice document. Same MultiPage rationale as
++  /// [buildSalesInvoiceDocument] — a plain Page silently dropped every line
++  /// past the first page along with the totals block.
++  static Future<pw.Document> buildPurchaseInvoiceDocument({
++    required String invoiceNumber,
++    required DateTime date,
++    required String supplierName,
++    required List<InvoiceItem> items,
++    required double total,
++    required double paid,
++    String? companyName,
++    bool isReturn = false,
+   }) async {
+     await _initFont();
+     final pdf = pw.Document();
+     pdf.addPage(
+-      pw.Page(
++      pw.MultiPage(
+         pageFormat: PdfPageFormat.a4,
+         textDirection: pw.TextDirection.rtl,
+-        build: (context) => pw.Column(
++        crossAxisAlignment: pw.CrossAxisAlignment.end,
++        header: (context) => pw.Column(
+           crossAxisAlignment: pw.CrossAxisAlignment.end,
+           children: [
+             _buildA4Header(
+@@ -182,19 +279,25 @@ class ReportPdfGenerator {
+               ),
+             ),
+             pw.SizedBox(height: 20),
+-            pw.Text(
+-              'المورد: $supplierName',
+-              style: pw.TextStyle(font: _arabicFont, fontSize: 14),
+-            ),
+-            pw.SizedBox(height: 20),
+-            _buildItemsTable(items, showBarcode: true),
+-            pw.SizedBox(height: 20),
+-            _buildTotalsSection(total, 0, 0, total, paid, total - paid),
+           ],
+         ),
++        footer: (context) => _buildA4Footer(
++          pageNumber: context.pageNumber,
++          pagesCount: context.pagesCount,
++        ),
++        build: (context) => [
++          pw.Text(
++            'المورد: $supplierName',
++            style: pw.TextStyle(font: _arabicFont, fontSize: 14),
++          ),
++          pw.SizedBox(height: 20),
++          _buildItemsTable(items, showBarcode: true),
++          pw.SizedBox(height: 20),
++          _buildTotalsSection(total, 0, 0, total, paid, total - paid),
++        ],
+       ),
+     );
+-    await PdfComputeHelper.layoutPdf(pdf);
++    return pdf;
+   }
+ 
+   static Future<void> printPartyStatement({
+@@ -680,6 +783,9 @@ class ReportPdfGenerator {
+             _tableCell('السعر', isHeader: true),
+             _tableCell('الإجمالي', isHeader: true),
+           ],
++          // Repeated on every page of a multi-page invoice — otherwise page 2
++          // is a wall of unlabelled numbers.
++          repeat: true,
+         ),
+         ...items.asMap().entries.map((entry) {
+           final i = entry.key;
+@@ -969,6 +1075,10 @@ class ReportPdfGenerator {
+       pdf.addPage(
+         pw.Page(
+           pageFormat: labelFormat,
++          // The only page in this file that omitted textDirection, so Arabic
++          // product names printed as disconnected, reversed glyphs on shelf
++          // labels — the one print an operator reads dozens of times a day.
++          textDirection: pw.TextDirection.rtl,
+           build: (context) => pw.Column(
+             mainAxisAlignment: pw.MainAxisAlignment.center,
+             children: [
+@@ -993,7 +1103,10 @@ class ReportPdfGenerator {
+               ),
+               if (price != null)
+                 pw.Text(
+-                  '${price.toStringAsFixed(AppConstants.decimalPlaces)} JOD',
++                  // Was the literal 'JOD'. The label ignored the company's
++                  // configured currency, so every non-Jordanian install
++                  // printed the wrong unit on its shelf tags.
++                  '${price.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbol}',
+                   style: pw.TextStyle(
+                     font: _arabicFont,
+                     fontSize: 8,
+diff --git a/test/services/a4_invoice_pagination_test.dart b/test/services/a4_invoice_pagination_test.dart
+new file mode 100644
+index 00000000..93a87c6f
+--- /dev/null
++++ b/test/services/a4_invoice_pagination_test.dart
+@@ -0,0 +1,136 @@
++// ═══════════════════════════════════════════════════════════════════════════
++// فاتورة A4 — كانت بتفقد سطوراً والإجماليات بالكامل، بصمت.
++// ═══════════════════════════════════════════════════════════════════════════
++//
++// `printSalesInvoice` و`printPurchaseInvoice` كانوا بيستعملوا `pw.Page`
++// (صفحة واحدة ثابتة) بينما باقي التقارير في **نفس الملف** بتستعمل `MultiPage`.
++//
++// و`pw.Table` في حزمة pdf هي SpanningWidget (pdf-3.12.0 table.dart:250)، بس
++// بروتوكول التقسيم بيشغّله MultiPage بس. جوّه Page عادية الجدول بيقصّ عند:
++//     if (totalHeight + lineHeight > constraints.maxHeight) { index--; break; }
++//     (pdf-3.12.0/lib/src/widgets/table.dart:473)
++// وبعده `_buildTotalsSection` بيتخطّط بره حدود الصفحة فما بيطبعش.
++//
++// النتيجة: فاتورة جملة بـ٣٥ سطر ⇒ ~٢٠ سطر مطبوع، **من غير أي إجمالي**، وبلا
++// أي استثناء ولا لوج. مستند تجاري ناقص بيتسلّم للعميل.
++//
++// الاختبار ده بينده دالة بناء المستند **الإنتاجية** (اللي بيندهها
++// printSalesInvoice بالظبط) — مش نسخة محاكية للمنطق.
++// ═══════════════════════════════════════════════════════════════════════════
++
++import 'package:flutter_test/flutter_test.dart';
++import 'package:pdf/pdf.dart';
++import 'package:pdf/widgets.dart' as pw;
++import 'package:ural_erp/services/printing/printing_models.dart';
++import 'package:ural_erp/services/printing/report_pdf_generator.dart';
++
++void main() {
++  TestWidgetsFlutterBinding.ensureInitialized();
++
++  List<InvoiceItem> itemsOf(int n) => List.generate(
++        n,
++        (i) => InvoiceItem(
++          name: 'صنف رقم ${i + 1} بوصف طويل نسبياً زي الواقع',
++          quantity: (i % 5) + 1,
++          price: 12.5 + i,
++          total: ((i % 5) + 1) * (12.5 + i),
++          barcode: '62912340000${i.toString().padLeft(2, '0')}',
++        ),
++      );
++
++  Future<int> salesPages(int itemCount) async {
++    final doc = await ReportPdfGenerator.buildSalesInvoiceDocument(
++      invoiceNumber: 'INV-1',
++      date: DateTime(2026, 8, 5),
++      customerName: 'عميل جملة',
++      items: itemsOf(itemCount),
++      subtotal: 1000,
++      discount: 50,
++      tax: 95,
++      total: 1045,
++      paid: 500,
++      companyName: 'شركة الاختبار',
++    );
++    await doc.save();
++    return doc.document.pdfPageList.pages.length;
++  }
++
++  Future<int> purchasePages(int itemCount) async {
++    final doc = await ReportPdfGenerator.buildPurchaseInvoiceDocument(
++      invoiceNumber: 'PINV-1',
++      date: DateTime(2026, 8, 5),
++      supplierName: 'مورد جملة',
++      items: itemsOf(itemCount),
++      total: 1045,
++      paid: 500,
++      companyName: 'شركة الاختبار',
++    );
++    await doc.save();
++    return doc.document.pdfPageList.pages.length;
++  }
++
++  group('فاتورة مبيعات A4', () {
++    test('فاتورة قصيرة تفضل صفحة واحدة (مفيش ارتداد للحالة العادية)', () async {
++      expect(await salesPages(3), 1);
++    });
++
++    test('٦٠ صنف بتتقسّم على أكتر من صفحة بدل ما تتقصّ', () async {
++      expect(await salesPages(60), greaterThan(1),
++          reason: 'قبل الإصلاح: صفحة واحدة والباقي بيختفي بصمت');
++    });
++
++    test('عدد الصفحات بيزيد مع عدد الأصناف — مفيش سقف صامت', () async {
++      final p60 = await salesPages(60);
++      final p160 = await salesPages(160);
++      expect(p160, greaterThan(p60),
++          reason: 'لو الرقم اتثبّت يبقى فيه قصّ تاني في مكان ما');
++    });
++  });
++
++  // ضابط — بيرصد آلية العطل نفسها بدل ما يستنتجها. نفس الجدول بالظبط،
++  // الفرق الوحيد Page مقابل MultiPage. لو الضابط ده وقع يوماً (يعني pw.Page
++  // بقت بتقسّم لوحدها) يبقى مبرّر الإصلاح اتغيّر ولازم يتراجَع.
++  group('ضابط: pw.Page بتقصّ، MultiPage لأ', () {
++    pw.Table sixtyRowTable() => pw.Table(
++          border: pw.TableBorder.all(),
++          children: List.generate(
++            60,
++            (i) => pw.TableRow(
++              children: [pw.Text('سطر رقم ${i + 1}')],
++            ),
++          ),
++        );
++
++    test('pw.Page بـ٦٠ صف = صفحة واحدة (الصفوف الزيادة بتختفي)', () async {
++      final doc = pw.Document();
++      doc.addPage(pw.Page(
++        pageFormat: PdfPageFormat.a4,
++        build: (_) => pw.Column(children: [sixtyRowTable()]),
++      ));
++      await doc.save();
++      expect(doc.document.pdfPageList.pages.length, 1,
++          reason: 'ده هو العطل: صفحة واحدة مهما كان عدد الصفوف');
++    });
++
++    test('MultiPage بنفس الجدول = أكتر من صفحة', () async {
++      final doc = pw.Document();
++      doc.addPage(pw.MultiPage(
++        pageFormat: PdfPageFormat.a4,
++        build: (_) => [sixtyRowTable()],
++      ));
++      await doc.save();
++      expect(doc.document.pdfPageList.pages.length, greaterThan(1),
++          reason: 'نفس الجدول — الفرق الوحيد نوع الصفحة');
++    });
++  });
++
++  group('فاتورة مشتريات A4', () {
++    test('فاتورة قصيرة تفضل صفحة واحدة', () async {
++      expect(await purchasePages(3), 1);
++    });
++
++    test('٦٠ صنف بتتقسّم على أكتر من صفحة', () async {
++      expect(await purchasePages(60), greaterThan(1));
++    });
++  });
++}
