@@ -285,8 +285,10 @@ extension ReportBuilderDao on AppDatabase {
         conditions.add('($clause)');
       }
     }
-    if (report.filters != null && report.filters!.isNotEmpty) {
-      conditions.add('(${_buildWhereClause(report.filters!)})');
+    if (report.filters != null && report.filters!.trim().isNotEmpty) {
+      final safe = _buildWhereClause(report.filters!);
+      if (safe == null) return null; // فلتر مرفوض ⇒ ارفض التقرير كله
+      conditions.add('($safe)');
     }
     if (conditions.isNotEmpty) {
       query += ' WHERE ${conditions.join(' AND ')}';
@@ -345,13 +347,47 @@ extension ReportBuilderDao on AppDatabase {
     }
   }
 
-  String _buildWhereClause(String filtersJson) {
-    try {
-      final filters = filtersJson;
-      // Filters are stored as pre-built WHERE conditions
-      return filters;
-    } catch (_) {
-      return '1=1';
+  /// الفلتر مخزَّن كـ«شرط WHERE جاهز» ‑ وكان بيترجع كما هو بلا أي تحقّق.
+  ///
+  /// ده مش سطح حقن نظري: الاستعلام بقى
+  /// `WHERE (حصر الفروع) AND (فلتر المستخدم)`، ففلتر زي `1=1) OR (1=1` بينتج
+  /// `WHERE (branch_id IN (1)) AND (1=1) OR (1=1)` — والـOR بيلغي الشرطين
+  /// اللي قبله ⇒ **حصر الفروع نفسه بيتكسر**. مقيس: التقرير رجّع فواتير
+  /// الفرعين لمستخدم محصور بفرع واحد.
+  ///
+  /// التحصين بيرفض الأشكال اللي بتسمح بالهروب بدل ما يعيد تصميم الصيغة:
+  /// أقواس غير متوازنة (الهروب من القوس الحاوي)، تعليق (قصّ باقي الشرط)،
+  /// فاصلة منقوطة (جملة تانية)، واقتباس غير مغلق. الفلاتر السليمة بتفضل
+  /// شغّالة زي ما هي.
+  ///
+  /// `null` = مرفوض ⇒ المُنادي بيرفض التقرير كله. الرفض بيسري على المستخدم
+  /// بالوصول الكامل كمان — الحقن مش خطره على الحصر وحده.
+  ///
+  /// TODO(owner): الأنضف صيغة مهيكلة (عمود/عامل/قيمة) بمعاملات مربوطة بدل
+  /// نص SQL. اتأجّل لأنه بيغيّر شكل التقارير المحفوظة، وUralCash مطروح وعنده
+  /// تقارير قائمة — قرار هجرة مش تحصين.
+  String? _buildWhereClause(String filtersJson) {
+    final f = filtersJson.trim();
+    if (f.isEmpty) return null;
+    if (f.contains(';') ||
+        f.contains('--') ||
+        f.contains('/*') ||
+        f.contains('*/')) {
+      return null;
     }
+    var depth = 0;
+    var inQuote = false;
+    for (final c in f.split('')) {
+      if (c == "'") {
+        inQuote = !inQuote;
+        continue;
+      }
+      if (inQuote) continue;
+      if (c == '(') depth++;
+      if (c == ')') depth--;
+      if (depth < 0) return null; // قوس إغلاق زيادة ⇒ هروب
+    }
+    if (depth != 0 || inQuote) return null;
+    return f;
   }
 }
