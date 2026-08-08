@@ -111,7 +111,11 @@ class SalaryPayments extends Table {
 }
 
 /// Employee transactions for advances and deductions
-/// Formula: Net Salary = (Base / 30) * Days Attended - Advances - Deductions
+///
+/// Formula: Net Salary = (Base / أيام الشهر الحقيقية) * Days Attended
+///                       - Advances - Deductions
+/// المقام أيام الشهر الفعلية لا ٣٠ ثابتة (H1) — شوف `_daysInMonth` في
+/// `hr_extensions.dart`.
 class EmployeeTransactions extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get employeeId => integer().references(Employees, #id)();

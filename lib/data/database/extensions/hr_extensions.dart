@@ -3,6 +3,24 @@ import 'package:flutter/foundation.dart';
 import '../database.dart';
 import '../../../domain/entities/accounting_entities.dart';
 
+/// H1 — عدد أيام الشهر الحقيقي، أساس الأجر اليومي.
+///
+/// القسمة على ٣٠ ثابتة كانت تكسر ثابتاً بسيطاً: **شهرٌ كامل الحضور يجب أن
+/// يُعطي الراتب**. فبراير (٢٨ يوماً) كان يُعطي `salary/30*28` = خصمَ ٦٫٦٧٪ على
+/// موظف لم يغب يوماً، ويناير (٣١) كان يُعطي أكثر من الراتب.
+///
+/// `DateTime(y, m + 1, 0)` يُرجع آخر يوم في الشهر `m` لأن Dart يطبّع اليوم صفر
+/// إلى آخر يوم في الشهر السابق — ويصحّ على ديسمبر كذلك (الشهر ١٣ يُطبَّع إلى
+/// يناير السنة التالية) وعلى فبراير الكبيسة بلا حالة خاصة.
+int _daysInMonth(int year, int month) => DateTime(year, month + 1, 0).day;
+
+/// ساعات اليوم القياسية — مقام الأجر بالساعة للوقت الإضافي.
+///
+/// ليس في المستودع أيّ إعداد لساعات العمل أو الورديات (فُحص 2026-08-08)، فهذا
+/// الرقم افتراضٌ **معلَن** لا قيمةٌ مشتقّة. إن أُضيف إعداد ورديات يوماً، فهذا
+/// هو الموضع الوحيد الذي يقرأ منه.
+const int kStandardWorkHoursPerDay = 8;
+
 /// Extensions for HR/Employee management
 extension HRExtensions on AppDatabase {
   // -----------------------------------------------------------------------
@@ -555,7 +573,11 @@ extension HRExtensions on AppDatabase {
   }
 
   /// Calculate net salary for an employee
-  /// Formula: (Base Salary / 30) * Days Attended + Overtime - Advances - Deductions
+  ///
+  /// Formula: (Base Salary / أيام الشهر الحقيقية) * Days Attended
+  ///          + Overtime - Advances - Deductions
+  ///
+  /// المقام هو [_daysInMonth] لا ٣٠ ثابتة — شوف تعليقه لسبب ذلك.
   Future<EmployeeSalaryCalculation> calculateNetSalary({
     required int employeeId,
     required int year,
@@ -592,7 +614,7 @@ extension HRExtensions on AppDatabase {
     );
 
     // Calculate
-    final dailyRate = employee.salary / 30;
+    final dailyRate = employee.salary / _daysInMonth(year, month);
     final grossPay = dailyRate * daysAttended + overtimeAmount;
     final netSalary = grossPay - advances - deductions;
 
@@ -844,7 +866,13 @@ extension HRExtensions on AppDatabase {
     final employee = await (select(
       employees,
     )..where((e) => e.id.equals(employeeId))).getSingle();
-    final hourlyRate = employee.salary / 30 / 8; // Daily/8 hours
+    // الأجر بالساعة مشتقٌّ من الأجر اليومي **لشهر السجل نفسه**، فساعةٌ إضافية
+    // في فبراير تُقاس على ٢٨ يوماً لا ٣٠. لو ظلّ المقام ٣٠ هنا بعد إصلاح الأجر
+    // اليومي، لصارت ساعة الموظف الإضافية أرخص من ساعته العادية في كل شهر أقصر
+    // من ٣٠ يوماً — تناقضٌ داخلي بين مسارَي الأجر نفسه.
+    final hourlyRate = employee.salary /
+        _daysInMonth(date.year, date.month) /
+        kStandardWorkHoursPerDay;
     final amount = hours * hourlyRate * rate;
 
     return into(overtimeRecords).insert(
