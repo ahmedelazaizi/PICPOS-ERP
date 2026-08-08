@@ -64,10 +64,14 @@ void main() {
 
   setUp(() async {
     db = AppDatabase.forTesting();
+    // ‏`salaryType: 'daily'` صريحٌ — الموديلُ الشهري يدفع كاملاً ما لم يُسجَّل
+    // غيابٌ، فتأكيدُ «الإجازةُ المعتمدة تُحتسب» يمرّ فيه بلا أن يُحتسب شيء.
+    // ومسارُ الاحتساب هو التراكمُ اليومي، فهو مسارُ هذا الملف.
     employeeId = await db.into(db.employees).insert(
           EmployeesCompanion.insert(
             name: 'أحمد',
             salary: const Value(salary),
+            salaryType: const Value('daily'),
           ),
         );
     await db.initializeLeaveBalances(employeeId, 2026);

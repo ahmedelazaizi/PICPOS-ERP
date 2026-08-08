@@ -31,6 +31,13 @@ abstract class IHRRepository {
   Stream<List<EmployeeAttendanceWithDetails>> watchTodayAttendance();
   Future<void> checkInEmployee(int employeeId);
   Future<void> checkOutEmployee(int employeeId);
+
+  /// يعلّم يوماً غياباً غيرَ مدفوع — المدخلُ الوحيدُ للخصم من الراتب الشهري.
+  Future<void> markEmployeeAbsent(
+    int employeeId,
+    DateTime date, {
+    String? notes,
+  });
   Future<List<Employee>> getAllEmployees({Set<int>? allowedBranchIds});
 
   // Transactions

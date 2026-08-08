@@ -84,10 +84,14 @@ void main() {
 
   setUp(() async {
     db = AppDatabase.forTesting();
+    // ‏`salaryType: 'daily'` صريحٌ حتى تُشتقّ أرقامُ القيد من صفوف الحضور كما
+    // يقول التعليق أعلاه. وتوازنُ القيدِ للموظف الشهري محروسٌ في
+    // `monthly_salary_model_test` عبر ثابت `payable = net + settled`.
     employeeId = await db.into(db.employees).insert(
           EmployeesCompanion.insert(
             name: 'أحمد',
             salary: const Value(salary),
+            salaryType: const Value('daily'),
           ),
         );
 

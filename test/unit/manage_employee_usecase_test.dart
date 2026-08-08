@@ -112,6 +112,10 @@ class _MockHRRepository implements IHRRepository {
   }) =>
       throw UnimplementedError();
   @override
+  Future<void> markEmployeeAbsent(int employeeId, DateTime date,
+          {String? notes}) =>
+      throw UnimplementedError();
+  @override
   Stream<List<EmployeeLeave>> watchPendingLeaves() => throw UnimplementedError();
   @override
   Stream<List<EmployeeLeave>> watchEmployeeLeaves(int id) =>

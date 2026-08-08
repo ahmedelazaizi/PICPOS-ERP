@@ -65,6 +65,13 @@ class HRRepositoryImpl implements IHRRepository {
       _db.checkOutEmployee(employeeId);
 
   @override
+  Future<void> markEmployeeAbsent(
+    int employeeId,
+    DateTime date, {
+    String? notes,
+  }) => _db.markEmployeeAbsent(employeeId, date, notes: notes);
+
+  @override
   Future<List<Employee>> getAllEmployees({Set<int>? allowedBranchIds}) =>
       _db.getAllEmployees(allowedBranchIds: allowedBranchIds);
 

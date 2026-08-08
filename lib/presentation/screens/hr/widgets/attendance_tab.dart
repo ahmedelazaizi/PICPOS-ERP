@@ -164,41 +164,139 @@ class _ManualAttendanceButton extends StatelessWidget {
   }
 
   void _showManualAttendance(BuildContext context) {
-    final hrRepo = ref.read(hrRepositoryProvider);
     final notifier = ref.read(hrFormProvider.notifier);
+
+    // الغيابُ يُعلَّم بأثرٍ رجعيّ عادةً (يُكتشف بعد يومٍ أو يومين)، فاليومُ
+    // قابلٌ للاختيار — بخلاف التحضير الذي هو دائماً «الآن».
+    DateTime absenceDate = DateTime.now();
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('تسجيل حضور يدوي'),
-        content: SizedBox(
-          width: 400,
-          height: 300,
-          child: FutureBuilder<List<Employee>>(
-            // H6 — المزوّد المحصور لا القراءة المباشرة.
-            future: ref.read(hrEmployeesProvider.future),
-            builder: (context, snapshot) {
-              final emps = snapshot.data ?? [];
-              return ListView.builder(
-                itemCount: emps.length,
-                itemBuilder: (context, index) {
-                  final e = emps[index];
-                  return ListTile(
-                    title: Text(e.name),
-                    trailing: const Icon(
-                      PhosphorIconsBold.plusCircle,
-                      color: Colors.green,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) => AlertDialog(
+          title: const Text('تسجيل يدوي'),
+          content: SizedBox(
+            width: 460,
+            height: 380,
+            child: Column(
+              children: [
+                // يومُ الغياب — لا يمسّ زرّ التحضير.
+                Row(
+                  children: [
+                    const Text('يوم الغياب: '),
+                    Expanded(
+                      child: Text(
+                        DateFormat('yyyy/MM/dd').format(absenceDate),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
-                    onTap: () async {
-                      await notifier.checkIn(e);
-                      if (ctx.mounted) Navigator.pop(ctx);
+                    TextButton.icon(
+                      icon: const Icon(PhosphorIconsBold.calendar, size: 16),
+                      label: const Text('تغيير'),
+                      onPressed: () async {
+                        final picked = await showDatePicker(
+                          context: ctx,
+                          initialDate: absenceDate,
+                          firstDate: DateTime(absenceDate.year - 1),
+                          lastDate: DateTime.now(),
+                        );
+                        if (picked != null) {
+                          setState(() => absenceDate = picked);
+                        }
+                      },
+                    ),
+                  ],
+                ),
+                const Divider(),
+                Expanded(
+                  child: FutureBuilder<List<Employee>>(
+                    // H6 — المزوّد المحصور لا القراءة المباشرة.
+                    future: ref.read(hrEmployeesProvider.future),
+                    builder: (context, snapshot) {
+                      final emps = snapshot.data ?? [];
+                      return ListView.builder(
+                        itemCount: emps.length,
+                        itemBuilder: (context, index) {
+                          final e = emps[index];
+                          return ListTile(
+                            title: Text(e.name),
+                            subtitle: Text(
+                              e.salaryType == 'monthly'
+                                  ? 'شهري — الغياب المسجّل يُخصم'
+                                  : 'يومي — يُدفع بما عمل',
+                              style: const TextStyle(fontSize: 11),
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  tooltip: 'تسجيل حضور اليوم',
+                                  icon: const Icon(
+                                    PhosphorIconsBold.plusCircle,
+                                    color: Colors.green,
+                                  ),
+                                  onPressed: () async {
+                                    await notifier.checkIn(e);
+                                    if (ctx.mounted) Navigator.pop(ctx);
+                                  },
+                                ),
+                                IconButton(
+                                  tooltip: 'تعليم غياب غير مدفوع',
+                                  icon: const Icon(
+                                    PhosphorIconsBold.minusCircle,
+                                    color: Colors.red,
+                                  ),
+                                  onPressed: () =>
+                                      _confirmAbsence(ctx, notifier, e,
+                                          absenceDate),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      );
                     },
-                  );
-                },
-              );
-            },
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
+      ),
+    );
+  }
+
+  /// تأكيدٌ قبل تعليم الغياب: العمليةُ **تخصم مالاً** من راتبٍ شهري، وضغطةٌ
+  /// بالخطأ على أيقونةٍ بجانب أيقونة التحضير عاقبتُها يومُ أجرٍ ضائع.
+  void _confirmAbsence(
+    BuildContext dialogCtx,
+    HRNotifier notifier,
+    Employee employee,
+    DateTime date,
+  ) {
+    showDialog(
+      context: dialogCtx,
+      builder: (confirmCtx) => AlertDialog(
+        title: const Text('تأكيد تعليم غياب'),
+        content: Text(
+          'تعليم ${employee.name} غائباً يوم '
+          '${DateFormat('yyyy/MM/dd').format(date)}؟'
+          '${employee.salaryType == 'monthly' ? '\n\nسيُخصم يومٌ من راتبه الشهري.' : ''}',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(confirmCtx),
+            child: const Text('إلغاء'),
+          ),
+          TextButton(
+            onPressed: () async {
+              await notifier.markAbsent(employee, date);
+              if (confirmCtx.mounted) Navigator.pop(confirmCtx);
+              if (dialogCtx.mounted) Navigator.pop(dialogCtx);
+            },
+            child: const Text('تأكيد', style: TextStyle(color: Colors.red)),
+          ),
+        ],
       ),
     );
   }

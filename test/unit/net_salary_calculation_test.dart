@@ -66,10 +66,14 @@ void main() {
 
   setUp(() async {
     db = AppDatabase.forTesting();
+    // ‏`salaryType: 'daily'` صريحٌ — شوف التعليق في `payroll_month_length_test`:
+    // الموديلُ الشهري يجعل الإجماليَّ مستقلاً عن أيام الحضور، فتغطيةُ تركيبِ
+    // الإجمالي هنا تصير صامتةً. هذا الملفُّ عن التراكم اليومي؛ الشهريُّ له ملفُّه.
     employeeId = await db.into(db.employees).insert(
           EmployeesCompanion.insert(
             name: 'أحمد',
             salary: const Value(salary),
+            salaryType: const Value('daily'),
           ),
         );
   });

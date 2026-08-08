@@ -98,6 +98,19 @@ class HRNotifier extends Notifier<HRState> {
     );
   }
 
+  /// يعلّم يوماً غياباً. يُسجَّل في سجلّ التدقيق لأنه **يخصم مالاً** من راتبٍ
+  /// شهري — فمن علّمه ومتى سؤالٌ سيُطرح.
+  Future<void> markAbsent(Employee employee, DateTime date) async {
+    await _hrRepo.markEmployeeAbsent(employee.id, date);
+    await _log(
+      'employee_absent',
+      'تعليم غياب: ${employee.name} — '
+          '${date.year}/${date.month.toString().padLeft(2, '0')}/'
+          '${date.day.toString().padLeft(2, '0')}',
+      entityId: employee.id,
+    );
+  }
+
   Future<void> checkOut(Employee employee) async {
     await _hrRepo.checkOutEmployee(employee.id);
     await _log(

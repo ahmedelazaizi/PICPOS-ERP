@@ -59,6 +59,7 @@ class _MockHR implements IHRRepository {
   @override Stream<List<EmployeeAttendanceWithDetails>> watchTodayAttendance() => throw UnimplementedError();
   @override Future<void> checkInEmployee(int e) => throw UnimplementedError();
   @override Future<void> checkOutEmployee(int e) => throw UnimplementedError();
+  @override Future<void> markEmployeeAbsent(int e, DateTime d, {String? notes}) => throw UnimplementedError();
   @override Future<List<Employee>> getAllEmployees({Set<int>? allowedBranchIds}) => throw UnimplementedError();
   @override Stream<List<EmployeeTransaction>> watchEmployeeTransactions(int id) => throw UnimplementedError();
   @override Future<void> recordEmployeeAdvance({required int employeeId, required double amount, String? description, required DateTime transactionDate, bool affectsTreasury = true, int? safeId}) => throw UnimplementedError();

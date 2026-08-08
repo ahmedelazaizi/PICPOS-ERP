@@ -43,10 +43,16 @@ void main() {
 
   setUp(() async {
     db = AppDatabase.forTesting();
+    // ‏`salaryType` **صريحٌ** لا افتراضيّ: افتراضُ السكيما `monthly`، والموديلُ
+    // الشهري (قرار المالك 2026-08-09) يدفع الراتبَ كاملاً ما لم يُسجَّل غيابٌ
+    // — فيصير الإجماليُّ مستقلاً عن أيام الحضور وتمرّ تأكيداتُ هذا الملف
+    // **لسببٍ مختلف** عمّا تدّعيه. وهذا الملفُّ عن مقامِ الأجر اليومي، فمساره
+    // هو التراكمُ اليومي. الموديلُ الشهري له `monthly_salary_model_test.dart`.
     employeeId = await db.into(db.employees).insert(
           EmployeesCompanion.insert(
             name: 'أحمد',
             salary: const Value(salary),
+            salaryType: const Value('daily'),
           ),
         );
   });

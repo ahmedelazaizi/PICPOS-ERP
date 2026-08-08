@@ -45,6 +45,31 @@ const Set<String> kPaidAttendanceStatuses = {
   kAttendanceStatusPaidLeave,
 };
 
+/// غيابٌ يعلّمه المدير — يومٌ غيرُ مدفوعٍ **مسجَّل**.
+const String kAttendanceStatusAbsent = 'absent';
+
+/// حالاتُ صفِّ الحضور التي تُخصم من **الراتب الشهري**.
+///
+/// `unpaid_leave` معها لا وحدَها `absent`: لو خُصم الغيابُ وحده لصارت الإجازةُ
+/// غيرُ المدفوعةِ المعتمدة مدفوعةً بحكم الأمر الواقع، لأن الشهريَّ يُدفَع كاملاً
+/// ما لم يُخصَم صراحةً.
+const Set<String> kUnpaidAttendanceStatuses = {
+  kAttendanceStatusAbsent,
+  kAttendanceStatusUnpaidLeave,
+};
+
+/// نوعُ الراتب الذي يُدفَع كاملاً ويُخصم منه الغيابُ المسجَّل.
+///
+/// قرار المالك 2026-08-09. المجالُ المدعوم لـ`employees.salaryType` هو
+/// `monthly` · `daily` · `hourly`، وكان المحرّكُ **لا يقرأ العمود إطلاقاً**
+/// فيطبّق موديلَ الأجر اليومي على الثلاثة: `daysAttended × dailyRate`. ويومُ
+/// الراحة لا صفَّ حضورٍ له، فكان الشهريُّ يُخصَم عن أيام راحته.
+///
+/// ⚠️ `hourly` باقٍ على موديل اليوم ولم يُحسَم بعد: `employees.salary` نفسه
+/// غامضٌ لهذا النوع (شهريٌّ مكافئ أم أجرُ ساعة؟) ولا شيء في السكيما يحسمه،
+/// و`checkIn`/`checkOut` موجودان فالساعاتُ مشتقّةٌ لو تقرّر ذلك.
+const String kMonthlySalaryType = 'monthly';
+
 /// حدٌّ أعلى لعدد الأيام التي يكتبها اعتمادُ إجازةٍ واحدة.
 ///
 /// ليس قاعدةَ عمل بل حاجزَ بيانات: `endDate` يأتي من منتقي تواريخ، وخطأُ
@@ -243,6 +268,50 @@ extension HRExtensions on AppDatabase {
     if (existing != null) {
       await (update(employeeAttendance)..where((a) => a.id.equals(existing.id)))
           .write(EmployeeAttendanceCompanion(checkOut: Value(now)));
+    }
+  }
+
+  /// يعلّم يوماً غياباً غيرَ مدفوع.
+  ///
+  /// المدخلُ الوحيدُ للخصم من الراتب الشهري: الشهريُّ يُدفَع كاملاً ما لم
+  /// يُسجَّل غيابُه هنا. فالعبءُ على من يريد الخصمَ أن يوثّقه — لا على الموظف
+  /// أن يُثبت أنه حضر.
+  ///
+  /// **upsert لا insert** لقيد v152 `idx_employee_attendance_day_dedup`: اليومُ
+  /// قد يكون فيه صفُّ بصمةٍ سابق، فالإدراجُ يُرفَض. وتعليمُ المدير هو الأحدث
+  /// فهو الحاكم — لكن التحضيرَ والانصرافَ المسجَّلَين يبقيان: إن كان الغيابُ
+  /// خطأً فالإثباتُ لم يضِع.
+  Future<void> markEmployeeAbsent(
+    int employeeId,
+    DateTime date, {
+    String? notes,
+  }) async {
+    final day = DateTime(date.year, date.month, date.day);
+
+    final existing =
+        await (select(employeeAttendance)
+              ..where((a) => a.employeeId.equals(employeeId))
+              ..where((a) => a.date.equals(day)))
+            .getSingleOrNull();
+
+    if (existing == null) {
+      await into(employeeAttendance).insert(
+        EmployeeAttendanceCompanion.insert(
+          employeeId: employeeId,
+          date: day,
+          status: const Value(kAttendanceStatusAbsent),
+          notes: Value(notes),
+        ),
+      );
+    } else {
+      await (update(
+        employeeAttendance,
+      )..where((a) => a.id.equals(existing.id))).write(
+        EmployeeAttendanceCompanion(
+          status: const Value(kAttendanceStatusAbsent),
+          notes: notes != null ? Value(notes) : const Value.absent(),
+        ),
+      );
     }
   }
 
@@ -737,6 +806,21 @@ extension HRExtensions on AppDatabase {
 
     final daysAttended = attendanceRecords.length;
 
+    // الأيامُ غيرُ المدفوعة **المسجَّلة** — أساسُ خصمِ الراتب الشهري.
+    // تُقرأ من الجدول لا تُستنتج من غياب الصفوف: يومُ الراحة لا صفَّ له كذلك،
+    // والاستنتاجُ كان يخصمه.
+    final unpaidRecords =
+        await (select(employeeAttendance)
+              ..where((a) => a.employeeId.equals(employeeId))
+              ..where((a) => a.date.isBiggerOrEqual(Variable(startOfMonth)))
+              ..where((a) => a.date.isSmallerThan(Variable(endOfMonth)))
+              ..where(
+                (a) => a.status.isIn(kUnpaidAttendanceStatuses.toList()),
+              ))
+            .get();
+
+    final unpaidDays = unpaidRecords.length;
+
     // Get advances and deductions
     final advances = await getMonthlyAdvances(employeeId, year, month);
     final deductions = await getMonthlyDeductions(employeeId, year, month);
@@ -750,7 +834,27 @@ extension HRExtensions on AppDatabase {
 
     // Calculate
     final dailyRate = employee.salary / _daysInMonth(year, month);
-    final grossPay = dailyRate * daysAttended + overtimeAmount;
+
+    // ── الموديلُ بحسب `salaryType` (قرار المالك 2026-08-09) ─────────────────
+    // كان موديلٌ واحد — أجرٌ يومي — يُطبَّق على الأنواع الثلاثة، و`salaryType`
+    // لا يُقرأ إطلاقاً. فالشهريُّ كان يُخصَم عن أيام راحته: أيامُ العمل تأتي من
+    // بصمةٍ أو تحضيرٍ يدوي، ويومُ الراحة لا أحد يبصم فيه ⇒ لا صفَّ ⇒ لا أجر.
+    // موظفٌ بـ٢٨٠٠ وأسبوعُ عملٍ من خمسة أيام كان يأخذ ٢٢٠٠ — خصمُ ٢١٪ بلا
+    // غيابٍ واحد، وصفراً في فرعٍ بلا جهاز بصمة.
+    //
+    //   شهري : الراتبُ كاملاً − (الأجرُ اليومي × الأيامِ غيرِ المدفوعةِ المسجَّلة)
+    //   غيرُه : الأجرُ اليومي × الأيامِ المدفوعة   ← كما كان، وهو صحيحٌ لليومي
+    //
+    // والاتجاهُ الآمن مقصود: غيابٌ لم يُسجَّل = لا خصم. فلا يُخصَم من موظفٍ
+    // لأن أحداً نسي أن يبصم له، والعبءُ على من يريد الخصمَ أن يوثّقه.
+    //
+    // وقيدُ v152 يمنع أكثرَ من صفٍّ لليوم، فـ`unpaidDays ≤ أيام الشهر` ⇒
+    // الأساسُ لا يهبط تحت الصفر بالبناء.
+    final basePay = employee.salaryType == kMonthlySalaryType
+        ? employee.salary - dailyRate * unpaidDays
+        : dailyRate * daysAttended;
+
+    final grossPay = basePay + overtimeAmount;
 
     // ── B3 — الاشتقاقُ هنا وحده، فلا يُعاد حسابه في طبقةٍ أخرى ──────────────
     // ثلاثةُ أرقامٍ يحتاجها قيدُ اليومية، وحسابُها في مكانَين يعني انحرافَهما
@@ -781,6 +885,7 @@ extension HRExtensions on AppDatabase {
       totalAdvances: advances,
       totalDeductions: deductions,
       overtimeAmount: overtimeAmount,
+      unpaidDays: unpaidDays,
       payableAmount: payableAmount,
       advancesSettled: advancesSettled,
       netSalary: netSalary < 0 ? 0 : netSalary,
@@ -1353,6 +1458,13 @@ class EmployeeSalaryCalculation {
   final double totalDeductions;
   final double overtimeAmount;
 
+  /// عددُ الأيام غيرِ المدفوعةِ **المسجَّلة** في الشهر — غيابٌ أو إجازةٌ غيرُ
+  /// مدفوعةٍ معتمدة.
+  ///
+  /// هو أساسُ الخصم للراتب الشهري. ولليومي لا معنى له في الحساب (يُدفَع بما
+  /// عمل)، لكنه يبقى مُبلَّغاً لأن سجلَّ الغياب معلومةٌ إدارية بذاتها.
+  final int unpaidDays;
+
   /// B3 — المستحقُّ بعد الجزاءات = [grossPay] − [totalDeductions]، وهو المبلغُ
   /// الذي يُقيَّد **مديناً** على مصروف الرواتب.
   ///
@@ -1382,6 +1494,7 @@ class EmployeeSalaryCalculation {
     required this.totalAdvances,
     required this.totalDeductions,
     this.overtimeAmount = 0,
+    this.unpaidDays = 0,
     required this.payableAmount,
     this.advancesSettled = 0,
     required this.netSalary,

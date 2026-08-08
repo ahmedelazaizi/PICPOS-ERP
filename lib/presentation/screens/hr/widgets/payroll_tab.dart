@@ -124,10 +124,23 @@ class _PayrollCard extends ConsumerWidget {
                 const Divider(),
                 _calcRow('الراتب الأساسي', calc.baseSalary),
                 _calcRow('قيمة اليومية', calc.dailyRate, color: Colors.blueGrey),
-                // B4 — «الأيام المدفوعة» لا «أيام الحضور»: العدد صار يضمّ
-                // الإجازةَ المدفوعة المعتمدة، فالتسميةُ القديمة تجعل القسيمة
-                // تُظهر حضوراً في أيامٍ كان الموظف فيها في إجازة.
-                _calcRow('الأيام المدفوعة (${calc.daysAttended})', calc.dailyRate * calc.daysAttended, color: Colors.green),
+                // الصفُّ يتبع الموديل. للشهري: الراتبُ هو الأساس ويُخصم منه
+                // الغيابُ المسجَّل، فعرضُ «الأيام المدفوعة × الأجر اليومي» كان
+                // يشرح حساباً لا يجري.
+                //
+                // B4 — «الأيام المدفوعة» لا «أيام الحضور» لليومي: العدد يضمّ
+                // الإجازةَ المدفوعة المعتمدة.
+                if (calc.employee.salaryType == 'monthly')
+                  ...[
+                    if (calc.unpaidDays > 0)
+                      _calcRow('خصم غياب (${calc.unpaidDays} يوم)',
+                          -calc.dailyRate * calc.unpaidDays,
+                          color: Colors.red),
+                  ]
+                else
+                  _calcRow('الأيام المدفوعة (${calc.daysAttended})',
+                      calc.dailyRate * calc.daysAttended,
+                      color: Colors.green),
                 _calcRow('الإضافي', calc.overtimeAmount, color: Colors.green),
                 // B3 — المسوَّى من هذه القسيمة لا المُصرَف كلَّه. سلفةُ ٥٠٠٠ على
                 // مستحقٍّ ٢٨٠٠ تُسوّي ٢٨٠٠ فقط، وعرضُ ٥٠٠٠ خصماً بجانب صافٍ
@@ -361,7 +374,11 @@ void _showSalarySlip(BuildContext context, EmployeeSalaryCalculation calc) {
                     const Divider(),
                     _slipRow('الراتب الأساسي',
                         '${calc.baseSalary.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}'),
-                    _slipRow('الأيام المدفوعة', '${calc.daysAttended} يوم'),
+                    if (calc.employee.salaryType == 'monthly')
+                      _slipRow('أيام غياب غير مدفوعة',
+                          '${calc.unpaidDays} يوم')
+                    else
+                      _slipRow('الأيام المدفوعة', '${calc.daysAttended} يوم'),
                     _slipRow('بدل إضافي',
                         '${calc.overtimeAmount.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
                         color: const Color(0xFF059669)),
