@@ -129,7 +129,14 @@ class _PayrollCard extends ConsumerWidget {
                 // تُظهر حضوراً في أيامٍ كان الموظف فيها في إجازة.
                 _calcRow('الأيام المدفوعة (${calc.daysAttended})', calc.dailyRate * calc.daysAttended, color: Colors.green),
                 _calcRow('الإضافي', calc.overtimeAmount, color: Colors.green),
-                _calcRow('السلف النشطة', -calc.totalAdvances, color: Colors.red),
+                // B3 — المسوَّى من هذه القسيمة لا المُصرَف كلَّه. سلفةُ ٥٠٠٠ على
+                // مستحقٍّ ٢٨٠٠ تُسوّي ٢٨٠٠ فقط، وعرضُ ٥٠٠٠ خصماً بجانب صافٍ
+                // بصفرٍ أرقامٌ لا تجتمع: ٢٨٠٠ − ٥٠٠٠ ≠ ٠.
+                _calcRow('السلف المسوّاة', -calc.advancesSettled, color: Colors.red),
+                if (calc.totalAdvances - calc.advancesSettled > 0.01)
+                  _calcRow('سلف مؤجّلة للشهر القادم',
+                      calc.totalAdvances - calc.advancesSettled,
+                      color: Colors.orange),
                 _calcRow('الخصومات', -calc.totalDeductions, color: Colors.red),
                 const Divider(),
                 _calcRow('الإجمالي المستحق', calc.grossPay, isBold: true, color: Colors.indigo),

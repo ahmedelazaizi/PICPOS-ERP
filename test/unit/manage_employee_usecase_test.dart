@@ -107,6 +107,8 @@ class _MockHRRepository implements IHRRepository {
     required int employeeId,
     required double amount,
     required String period,
+    double? payableAmount,
+    double advancesSettled = 0,
   }) =>
       throw UnimplementedError();
   @override

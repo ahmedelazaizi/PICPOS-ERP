@@ -152,10 +152,15 @@ class HRNotifier extends Notifier<HRState> {
   }
 
   Future<void> paySalary(EmployeeSalaryCalculation calc) async {
+    // B3 — الأرقامُ الثلاثة من `calc` نفسه لا مُعادةَ الحساب هنا: كانت الدالةُ
+    // تستقبل الحسابَ كاملاً وتمرّر الصافيَ وحده، فيُقيَّد المصروفُ مُبخَّساً
+    // و١١٤٦ لا يُقيَّد عليه دائنٌ قطّ.
     await _hrRepo.recordSalaryPayment(
       employeeId: calc.employee.id,
       amount: calc.netSalary,
       period: '${calc.year}-${calc.month.toString().padLeft(2, '0')}',
+      payableAmount: calc.payableAmount,
+      advancesSettled: calc.advancesSettled,
     );
     await _log(
       'salary_payment',

@@ -285,7 +285,36 @@ extension HRExtensions on AppDatabase {
     required String period, // e.g., "2023-10"
     String type = 'salary',
     String? notes,
+    double? payableAmount,
+    double advancesSettled = 0,
   }) async {
+    // ── B3 — حارسُ الثابت، **قبل** فتحِ المعاملة ────────────────────────────
+    // قيدُ اليومية ملفوفٌ في `try/catch` يبتلع الفشل بـ`debugPrint`. فقيدٌ
+    // مختلٌّ يرفضه حارسُ التوازن، ويُبتلَع الرفض، ويُصرَف الراتبُ **بلا قيدٍ
+    // إطلاقاً** بصمت — والخزنةُ تنقص والدفاترُ لا تعلم. فلا يجوز الاتّكال على
+    // حارسِ التوازن هنا؛ الثابتُ يُفحَص صراحةً وقبل أيّ كتابة.
+    if (advancesSettled < 0) {
+      throw ArgumentError.value(
+        advancesSettled,
+        'advancesSettled',
+        'السلفُ المسوّاة لا تكون سالبة',
+      );
+    }
+    if (payableAmount == null && advancesSettled > 0) {
+      throw ArgumentError(
+        'تسويةُ سلفٍ بلا `payableAmount` — المصروفُ المُعترَف به غيرُ معلوم '
+        'فالقيدُ لا يمكن أن يتوازن.',
+      );
+    }
+    if (payableAmount != null &&
+        (payableAmount - (amount + advancesSettled)).abs() > 0.01) {
+      throw ArgumentError(
+        'أرقامُ الراتب غيرُ متّسقة: المستحقُّ ($payableAmount) لا يساوي '
+        'الصافي ($amount) + السلفَ المسوّاة ($advancesSettled). '
+        'مصدرُ الأرقام الوحيدُ هو `calculateNetSalary`.',
+      );
+    }
+
     return transaction(() async {
       // B1 — idempotency guard. The «صرف الراتب» button stays enabled, and
       // every press used to create a fresh salary row, a fresh cash voucher
@@ -357,8 +386,39 @@ extension HRExtensions on AppDatabase {
           SalaryPaymentsCompanion(treasuryTransactionId: Value(transId)),
         );
 
+        // ── B3 — حسابُ سلف الموظفين، **قبل** الـtry الذي يبتلع الفشل ────────
+        // لو احتاج القيدُ سطرَ تسويةٍ وتعذّر الحسابُ، فإسقاطُ السطر يُنتج قيداً
+        // مختلاًّ يرفضه الحارسُ ويُبتلَع الرفض ⇒ لا قيدَ إطلاقاً و١١٤٦ لا
+        // يُقيَّد عليه دائنٌ — أي العطلُ نفسه يعود من بابٍ آخر. فالفشلُ صريح.
+        Account? advanceAcc;
+        if (advancesSettled > 0) {
+          final advanceCode = await getMappedAccountCode(
+            'employee_advances',
+            AccountingDao.accountPurposes['employee_advances']!,
+          );
+          advanceAcc = await getAccountByCode(advanceCode);
+          if (advanceAcc == null) {
+            throw StateError(
+              'حساب سلف الموظفين ($advanceCode) غير موجود، وتسويةُ '
+              '$advancesSettled لا يمكن تقييدُها. صحّح شجرةَ الحسابات أولاً.',
+            );
+          }
+        }
+
         // GAP-HR-JE: Auto-post GL journal entry for salary disbursement
-        // Dr مصروف الرواتب (621) / Cr الصندوق (1111)
+        //
+        // B3 — القيدُ ثلاثيّ لا ثنائيّ:
+        //   مدين  مصروف الرواتب ٦٢١  = المستحقّ (الإجمالي − الجزاءات)
+        //   دائن  النقدية ١١١١       = الصافي (ما خرج من الخزنة فعلاً)
+        //   دائن  سلف الموظفين ١١٤٦  = السلفُ المسوّاة
+        //
+        // كان يُدَبِّن **الصافي**، فيُبلَّغ المصروفُ أقلَّ من حقيقته بقيمة السلف،
+        // و١١٤٦ لا يُقيَّد عليه دائنٌ قطّ فيتضخّم للأبد: السلفةُ تُدَبَّن حين
+        // تُصرَف ولا تُدَيَّن حين تُسدَّد، فتظلّ ظاهرةً أصلاً بعد سدادها.
+        //
+        // وسطرُ الصفر يُحجَب: صافٍ بصفرٍ (سلفةٌ استوعبت المستحقَّ كلَّه) لا يعني
+        // حركةَ نقدٍ، وسطرٌ بصفرٍ يشوّش سجلَّ الحساب بلا معنى.
+        final expenseAmount = payableAmount ?? amount;
         try {
           final salaryAccCode = await getMappedAccountCode(
             'salary_expense',
@@ -377,14 +437,21 @@ extension HRExtensions on AppDatabase {
               lines: [
                 JournalLine(
                   accountId: salaryAcc.id,
-                  debit: amount,
+                  debit: expenseAmount,
                   description: 'مصروف الرواتب',
                 ),
-                JournalLine(
-                  accountId: cashAcc.id,
-                  credit: amount,
-                  description: 'صرف نقدي من الصندوق',
-                ),
+                if (amount > 0)
+                  JournalLine(
+                    accountId: cashAcc.id,
+                    credit: amount,
+                    description: 'صرف نقدي من الصندوق',
+                  ),
+                if (advanceAcc != null)
+                  JournalLine(
+                    accountId: advanceAcc.id,
+                    credit: advancesSettled,
+                    description: 'تسوية سلف الموظف من راتب $period',
+                  ),
               ],
               referenceType: 'salary_payment',
               referenceId: id,
@@ -684,7 +751,26 @@ extension HRExtensions on AppDatabase {
     // Calculate
     final dailyRate = employee.salary / _daysInMonth(year, month);
     final grossPay = dailyRate * daysAttended + overtimeAmount;
-    final netSalary = grossPay - advances - deductions;
+
+    // ── B3 — الاشتقاقُ هنا وحده، فلا يُعاد حسابه في طبقةٍ أخرى ──────────────
+    // ثلاثةُ أرقامٍ يحتاجها قيدُ اليومية، وحسابُها في مكانَين يعني انحرافَهما
+    // عند أول تعديل — والانحرافُ في قيدٍ يعني دفاترَ مختلّة.
+    //
+    // `payableAmount` هو ما استحقّه الموظف بعد الجزاءات، وهو **المصروفُ
+    // المُعترَف به** (قرار المالك 2026-08-08: الجزاءُ يُنقص المصروف لا يُقيَّد
+    // إيراداً — فالموظف استحقّ أقلَّ، وتكلفةُ الأجر انخفضت فعلاً).
+    final payableAmount = grossPay - deductions;
+
+    // لا تُسوَّى سلفةٌ أكثر من المستحقّ: سلفةُ ٥٠٠٠ على مستحقٍّ ٢٨٠٠ تُسوّي
+    // ٢٨٠٠ ويبقى ٢٢٠٠ أصلاً قائماً في ١١٤٦ — لأنه فعلاً لم يُسدَّد بعد.
+    // وبهذا يتحقّق الثابت `payableAmount == netSalary + advancesSettled`
+    // **بالبناء**، فحارسُ توازن القيد يمرّ دائماً بلا حسابٍ إضافي.
+    final settleable = payableAmount > 0 ? payableAmount : 0.0;
+    final advancesSettled = advances < settleable ? advances : settleable;
+
+    // القصُّ يبقى لحالةٍ واحدة فقط: جزاءاتٌ تتجاوز الإجمالي (‏payable سالب).
+    // السلفُ لم تعد تُسلِّب الصافي لأن المسوَّى منها محدودٌ بالمستحقّ.
+    final netSalary = payableAmount - advancesSettled;
 
     return EmployeeSalaryCalculation(
       employee: employee,
@@ -695,6 +781,8 @@ extension HRExtensions on AppDatabase {
       totalAdvances: advances,
       totalDeductions: deductions,
       overtimeAmount: overtimeAmount,
+      payableAmount: payableAmount,
+      advancesSettled: advancesSettled,
       netSalary: netSalary < 0 ? 0 : netSalary,
       month: month,
       year: year,
@@ -1264,6 +1352,23 @@ class EmployeeSalaryCalculation {
   final double totalAdvances;
   final double totalDeductions;
   final double overtimeAmount;
+
+  /// B3 — المستحقُّ بعد الجزاءات = [grossPay] − [totalDeductions]، وهو المبلغُ
+  /// الذي يُقيَّد **مديناً** على مصروف الرواتب.
+  ///
+  /// كان القيدُ يُدَبِّن الصافي، فيُبلَّغ المصروفُ أقلَّ من حقيقته بقيمة السلف
+  /// المخصومة.
+  final double payableAmount;
+
+  /// B3 — ما تُسوّيه هذه القسيمةُ من السلف = min([totalAdvances], المستحقّ).
+  ///
+  /// ليس [totalAdvances] نفسه: سلفةٌ أكبر من المستحقّ لا تُسوّى كاملةً، والباقي
+  /// يظلّ أصلاً قائماً في ١١٤٦ لأنه فعلاً لم يُسدَّد.
+  ///
+  /// والثابت `payableAmount == netSalary + advancesSettled` محقَّقٌ بالبناء —
+  /// وهو بعينه شرطُ توازنِ قيدِ اليومية.
+  final double advancesSettled;
+
   final double netSalary;
   final int month;
   final int year;
@@ -1277,6 +1382,8 @@ class EmployeeSalaryCalculation {
     required this.totalAdvances,
     required this.totalDeductions,
     this.overtimeAmount = 0,
+    required this.payableAmount,
+    this.advancesSettled = 0,
     required this.netSalary,
     required this.month,
     required this.year,

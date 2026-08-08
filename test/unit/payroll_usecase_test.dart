@@ -10,13 +10,22 @@ import 'package:ural_erp/data/database/database_barrel.dart';
 class _MockHR implements IHRRepository {
   bool shouldFail = false;
 
+  /// B3 — تُلتقط لا تُتجاهل: إغفالُ تمريرِها يُنتج قيداً بالصافي فيُبخَّس
+  /// المصروفُ ولا يُسوّى ١١٤٦ — وهو عطلٌ لا يُسقِط أيَّ اختبارٍ آخر.
+  double? capturedPayableAmount;
+  double? capturedAdvancesSettled;
+
   @override
   Future<void> recordSalaryPayment({
     required int employeeId,
     required double amount,
     required String period,
+    double? payableAmount,
+    double advancesSettled = 0,
   }) async {
     if (shouldFail) throw Exception('salary payment failed');
+    capturedPayableAmount = payableAmount;
+    capturedAdvancesSettled = advancesSettled;
   }
 
   @override
@@ -123,6 +132,31 @@ void main() {
         month: 1,
       );
       expect(result.isSuccess, isFalse);
+    });
+
+    // B3 — أرقامُ القيد تصل إلى المستودع، وإلا قُيِّد الصافي وحده.
+    test('payableAmount وadvancesSettled يُمرَّران إلى المستودع', () async {
+      await useCase.paySalary(
+        employeeId: 3,
+        netSalary: 1800,
+        year: 2026,
+        month: 2,
+        payableAmount: 2800,
+        advancesSettled: 1000,
+      );
+      expect(mock.capturedPayableAmount, 2800);
+      expect(mock.capturedAdvancesSettled, 1000);
+    });
+
+    test('إغفالُهما يعني لا تسويةَ سلف — الصحيحُ للمكافآت', () async {
+      await useCase.paySalary(
+        employeeId: 3,
+        netSalary: 500,
+        year: 2026,
+        month: 2,
+      );
+      expect(mock.capturedPayableAmount, isNull);
+      expect(mock.capturedAdvancesSettled, 0);
     });
   });
 

@@ -119,10 +119,14 @@ class HRRepositoryImpl implements IHRRepository {
     required int employeeId,
     required double amount,
     required String period,
+    double? payableAmount,
+    double advancesSettled = 0,
   }) => _db.recordSalaryPayment(
     employeeId: employeeId,
     amount: amount,
     period: period,
+    payableAmount: payableAmount,
+    advancesSettled: advancesSettled,
   );
 
   @override

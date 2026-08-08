@@ -57,10 +57,17 @@ abstract class IHRRepository {
     required int year,
     required int month,
   });
+  /// B3 — [amount] هو الصافي المدفوع نقداً، و[payableAmount] هو المستحقُّ بعد
+  /// الجزاءات (المصروفُ المُعترَف به)، و[advancesSettled] ما تُسوّيه هذه
+  /// القسيمةُ من السلف. مصدرُ الثلاثة الوحيد هو `calculateNetSalary`.
+  ///
+  /// إغفالُ الأخيرَين يعني «لا تسويةَ سلفٍ» — وهو الصحيح للمكافآت وما شابه.
   Future<void> recordSalaryPayment({
     required int employeeId,
     required double amount,
     required String period,
+    double? payableAmount,
+    double advancesSettled,
   });
 
   // Leaves
