@@ -35,9 +35,18 @@ final arAgingReportProvider =
     FutureProvider.family<List<ArAgingRow>, ArAgingParams>(
   (ref, params) async {
     final db = ref.watch(databaseProvider);
+    // الحصر بيتحل **هنا** لا في `params` بقصد: ArAgingParams عبارة عن record،
+    // و`Set<int>` في Dart بيتقارن بالهوية لا بالمحتوى — فحطّه في مفتاح
+    // `family` كان هيبطّل الكاش ويعيد الاستعلام مع كل rebuild.
+    //
+    // scope.allowedBranchIds بيساوي null بالظبط لمّا hasFullAccess، فالتمرير
+    // المباشر صحيح. والانتظار هنا بيخلّي التقرير يفشل مقفولاً بدل ما يعرض
+    // الشركة كلها قبل ما النطاق يتحلّ.
+    final scope = await ref.watch(branchScopeProvider.future);
     return db.getArAgingReport(
       asOfDate: params.asOfDate,
       customersOnly: params.customersOnly,
+      allowedBranchIds: scope.allowedBranchIds,
     );
   },
 );

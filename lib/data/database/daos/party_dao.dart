@@ -1658,10 +1658,33 @@ extension PartyDao on AppDatabase {
 
   /// GAP-22: AR/AP Aging Report — overdue balances split by age buckets.
   /// [customersOnly] = true → customers (AR), false → suppliers (AP).
+  /// [allowedBranchIds] بيحصر **أي أطراف تظهر** — نفس قاعدة
+  /// `_watchPartiesForBranches` بالظبط: null = الكل، {ids} = الفروع دي +
+  /// الأطراف العامة، {} = لا شيء.
+  ///
+  /// الحصر على مستوى الطرف لا الفاتورة بقصد: `p.balance` رصيد الطرف **الكلي**،
+  /// والأعمار محسوبة منه. لو حصرنا الفواتير بفرع وسبنا الرصيد كلياً، الأعمدة
+  /// ما تجمعش على الرصيد المعروض جنبها — نفس فئة العطل اللي في تسوية الضريبة.
+  /// فالتقرير بيفضل متّسقاً داخلياً، والمحصور بيشوف أطراف فرعه وحدها.
   Future<List<ArAgingRow>> getArAgingReport({
     required DateTime asOfDate,
     bool customersOnly = true,
+    Set<int>? allowedBranchIds,
   }) async {
+    // نفس شكل الفلتر في _watchPartiesForBranches — CSV مطابَق بـLIKE على
+    // branch_ids، مع إبقاء الأطراف العامة مرئية.
+    final String scopeClause;
+    if (allowedBranchIds == null) {
+      scopeClause = '';
+    } else if (allowedBranchIds.isEmpty) {
+      scopeClause = ' AND 1 = 0'; // فشل مقفول
+    } else {
+      final ors = allowedBranchIds
+          .map((id) =>
+              "(',' || COALESCE(p.branch_ids, '') || ',') LIKE '%,$id,%'")
+          .join(' OR ');
+      scopeClause = ' AND (p.is_global = 1 OR $ors)';
+    }
     // Drift stores DateTime as Unix milliseconds (INTEGER). All date comparisons
     // must use julianday(col / 1000, 'unixepoch') — NOT julianday(col) directly.
     final asOfMs = asOfDate.millisecondsSinceEpoch;
@@ -1691,6 +1714,7 @@ extension PartyDao on AppDatabase {
         WHERE p.is_active = 1
           AND p.is_customer = 1
           AND p.balance > 0.01
+          $scopeClause
         GROUP BY p.id
         ORDER BY p.balance DESC
       ''', variables: [
@@ -1731,6 +1755,7 @@ extension PartyDao on AppDatabase {
         WHERE p.is_active = 1
           AND p.is_supplier = 1
           AND p.balance > 0.01
+          $scopeClause
         GROUP BY p.id
         ORDER BY p.balance DESC
       ''', variables: [

@@ -46,6 +46,18 @@ const _notAScreen = <String>{
 /// البديل الصحيح: الوصول نفسه يتحرس. من يملك `reports_taxes` يراه كاملاً،
 /// ومن لا يملكها لا يراه. الفحص التاني تحت بيثبت إن الحراسة **موجودة فعلاً**
 /// عشان شيلها ما يعدّيش صامتاً.
+/// شاشات بتحصر عبر **المزوّد** لا في ملفها (‏PIR P1-01: الشاشة ما بتلمسش
+/// الـDB). القيمة اسم المزوّد، والفحص تحت بيثبت إن `report_providers.dart`
+/// بيحلّ `branchScopeProvider` جوّه فعلاً.
+///
+/// ليه في المزوّد: `ArAgingParams` عبارة عن record، و`Set<int>` في Dart
+/// بيتقارن **بالهوية لا بالمحتوى** — فحطّ النطاق في مفتاح `family` كان
+/// هيبطّل الكاش ويعيد الاستعلام مع كل rebuild.
+const _scopedViaProvider = <String, String>{
+  'lib/presentation/screens/reports/ar_aging_report_screen.dart':
+      'arAgingReportProvider',
+};
+
 const _permissionGatedNotBranchScoped = <String, String>{
   'lib/presentation/screens/reports/vat_reconciliation_screen.dart':
       'PermissionCodes.reportsTaxes',
@@ -68,7 +80,6 @@ const _permissionGatedNotBranchScoped = <String, String>{
 /// لإزالة سطر: حُلّ `branchScopeProvider` في الشاشة، مرّر `allowedBranchIds`
 /// للاستعلام، اكتب اختباراً سلوكياً يثبت إن `{}` بتفشل مقفولة، وشيل السطر.
 const _baseline = <String>{
-  'lib/presentation/screens/reports/ar_aging_report_screen.dart',
   'lib/presentation/screens/report_builder_screen.dart',
 };
 
@@ -89,6 +100,8 @@ void main() {
       // تقارير لا يصحّ حصرها بفرع — محروسة بصلاحية، والفحص التاني تحت بيثبت
       // إن الحراسة موجودة فعلاً.
       if (_permissionGatedNotBranchScoped.containsKey(path)) continue;
+      // بتحصر عبر المزوّد — الفحص التاني تحت بيثبت إن المزوّد بيحلّ النطاق.
+      if (_scopedViaProvider.containsKey(path)) continue;
       final file = File(path);
       if (!file.existsSync()) {
         fail('مسار في قائمة الحارس مش موجود — حدّث القائمة: $path');
@@ -131,6 +144,34 @@ void main() {
   // الإعفاء من الحصر بالفرع مشروط بوجود بديل. من غير الفحص ده، شيل
   // `PermissionGuard` من الشاشة بيخلّيها تقرير على مستوى الشركة **مفتوحاً
   // للكل** — وخط الأساس فوق مش هيلاحظ لأنها معفاة أصلاً.
+  // الإعفاء مشروط بوجود البديل. من غير الفحص ده، شيل حلّ النطاق من المزوّد
+  // بيرجّع التسريب و**خط الأساس مش هيلاحظ** لأن الشاشة معفاة أصلاً.
+  test('الشاشات المعفاة بتحصر عبر مزوّد بيحلّ النطاق فعلاً', () {
+    const providersFile = 'lib/data/providers/report_providers.dart';
+    final src = File(providersFile).readAsStringSync();
+    final missing = <String>[];
+
+    _scopedViaProvider.forEach((screen, providerName) {
+      if (!File(screen).existsSync()) {
+        fail('مسار في قائمة الإعفاء مش موجود — حدّث القائمة: $screen');
+      }
+      if (!File(screen).readAsStringSync().contains(providerName)) {
+        missing.add('$screen → مش بينده $providerName');
+        return;
+      }
+      // المزوّد لازم يكون موجوداً في الملف **و**الملف بيحلّ النطاق.
+      // فحص على مستوى الملف — كافٍ لأن الملف ده مزوّدات التقارير وحدها.
+      if (!src.contains(providerName) ||
+          !src.contains('branchScopeProvider')) {
+        missing.add('$providersFile → $providerName بلا branchScopeProvider');
+      }
+    });
+
+    expect(missing, isEmpty,
+        reason: 'شاشة معفاة من الفحص الأول لأن مزوّدها بيحصر — لو المزوّد '
+            'بطّل يحصر، التسريب رجع بلا أي حارس');
+  });
+
   test('التقارير المعفاة من الحصر محروسة بصلاحية فعلاً', () {
     final missing = <String>[];
     _permissionGatedNotBranchScoped.forEach((path, permission) {
