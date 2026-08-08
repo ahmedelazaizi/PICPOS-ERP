@@ -9,13 +9,14 @@
 // ── ليه خريطة لكل كيان لا فلتر واحد ─────────────────────────────────────────
 // الحصر دلالته مختلفة لكل مصدر:
 //   sales_invoices / purchase_invoices → branch_id مباشرةً
+//   employees                          → branch_id مباشرةً (اتقفل H6)
 //   parties                            → is_global OR branch_ids LIKE
 //   products                           → بيانات أساسية على مستوى الشركة
-//   journal_entries / employees /      → **مالهمش فلتر مدعوم**
-//   inventory_balances
+//   journal_entries / inventory_balances → **مالهمش فلتر مدعوم**
 //
-// و`employees.branch_id` **ما بيتكتبش أصلاً** (مانع H6)، فحصره بيدي صفر صفوف
-// بشكل مضلّل بدل ما يحصر فعلاً.
+// `employees` كان مرفوضاً لأن `branch_id` **ما كانش بيتكتب أصلاً** (مانع H6)،
+// فحصره كان بيدي صفر صفوف مضلّلاً. اتقفل H6 — `addEmployee` بيكتب العمود —
+// فبقى الحصر ذا معنى، وهو المصدر الوحيد في منشئ التقارير اللي فيه **رواتب**.
 //
 // ── القرار: الرفض لا الحصر الجزئي ───────────────────────────────────────────
 // كيان مالوش فلتر مدعوم بيرجّع **فاضي** لمستخدم محصور. الحصر الجزئي أخطر من
@@ -114,11 +115,38 @@ void main() {
       expect(await db.executeReport(id), isEmpty);
     });
 
-    test('employees بترجّع فاضي لمستخدم محصور (‏branch_id ما بيتكتبش — H6)',
-        () async {
+  });
+
+  group('الموظفون — حصر بـbranch_id بعد ما اتقفل H6', () {
+    setUp(() async {
+      await db.into(db.employees).insert(EmployeesCompanion.insert(
+          name: 'موظف أ', branchId: Value(branchA)));
+      await db.into(db.employees).insert(EmployeesCompanion.insert(
+          name: 'موظف ب', branchId: Value(branchB)));
+      await db.into(db.employees)
+          .insert(EmployeesCompanion.insert(name: 'موظف مركزي'));
+    });
+
+    test('{A} بتستبعد موظف فرع ب وتُبقي المركزي', () async {
       final id = await report('employees', 'name');
-      await db.into(db.employees).insert(EmployeesCompanion.insert(name: 'موظف'));
-      expect(await db.executeReport(id, allowedBranchIds: {branchA}), isEmpty);
+      final rows = await db.executeReport(id, allowedBranchIds: {branchA});
+      final names = rows.map((r) => r['name'] as String);
+      expect(names, containsAll(<String>['موظف أ', 'موظف مركزي']));
+      expect(names, isNot(contains('موظف ب')),
+          reason: 'ده المصدر الوحيد اللي فيه رواتب — التسريب هنا فلوس');
+    });
+
+    test('null = وصول كامل', () async {
+      final id = await report('employees', 'name');
+      final names =
+          (await db.executeReport(id)).map((r) => r['name'] as String);
+      expect(names,
+          containsAll(<String>['موظف أ', 'موظف ب', 'موظف مركزي']));
+    });
+
+    test('{} بتفشل مقفولة', () async {
+      final id = await report('employees', 'name');
+      expect(await db.executeReport(id, allowedBranchIds: <int>{}), isEmpty);
     });
   });
 }

@@ -175,7 +175,8 @@ class _ManualAttendanceButton extends StatelessWidget {
           width: 400,
           height: 300,
           child: FutureBuilder<List<Employee>>(
-            future: hrRepo.getAllEmployees(),
+            // H6 — المزوّد المحصور لا القراءة المباشرة.
+            future: ref.read(hrEmployeesProvider.future),
             builder: (context, snapshot) {
               final emps = snapshot.data ?? [];
               return ListView.builder(

@@ -5,6 +5,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_toast.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 import '../../../../data/providers/providers.dart';
+import '../hr_notifier.dart';
 import 'hr_dialogs.dart';
 import '../../../../../../../core/constants/app_constants.dart';
 import '../../../widgets/permission_guard.dart';
@@ -48,17 +49,20 @@ class StaffListTab extends ConsumerWidget {
           ),
         ),
         Expanded(
-          child: StreamBuilder<List<Employee>>(
-            stream: hrRepo.watchAllEmployees(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: ShimmerLoading.list(itemCount: 8),
-                );
-              }
-
-              final employees = snapshot.data ?? [];
+          // H6 — عبر `hrEmployeesStreamProvider` لا `hrRepo` مباشرةً: المزوّد
+          // هو ما يحلّ نطاقَ الفروع، والقراءةُ المباشرة تتجاوزه فتُظهر موظفي
+          // الشركة كلها لمدير فرع. (تحوّل من StreamBuilder إلى AsyncValue لأن
+          // ‏Riverpod 3 أزال `.stream` على StreamProvider.)
+          child: ref.watch(hrEmployeesStreamProvider).when(
+            loading: () => Padding(
+              padding: const EdgeInsets.all(16),
+              child: ShimmerLoading.list(itemCount: 8),
+            ),
+            error: (e, _) => Center(
+              child: Text('خطأ في تحميل الموظفين: $e',
+                  style: const TextStyle(color: Colors.red)),
+            ),
+            data: (employees) {
               if (employees.isEmpty) {
                 return const Center(child: Text('لا يوجد موظفين حالياً'));
               }

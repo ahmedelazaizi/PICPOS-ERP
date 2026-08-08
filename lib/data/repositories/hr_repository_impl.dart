@@ -8,7 +8,8 @@ class HRRepositoryImpl implements IHRRepository {
   HRRepositoryImpl(this._db);
 
   @override
-  Stream<List<Employee>> watchAllEmployees() => _db.watchAllEmployees();
+  Stream<List<Employee>> watchAllEmployees({Set<int>? allowedBranchIds}) =>
+      _db.watchAllEmployees(allowedBranchIds: allowedBranchIds);
 
   @override
   Future<Employee?> getEmployeeById(int id) => _db.getEmployeeById(id);
@@ -20,12 +21,14 @@ class HRRepositoryImpl implements IHRRepository {
     required String role,
     required double salary,
     required String salaryType,
+    int? branchId,
   }) => _db.addEmployee(
     name: name,
     phone: phone,
     role: role,
     salary: salary,
     salaryType: salaryType,
+    branchId: branchId,
   );
 
   @override
@@ -37,6 +40,7 @@ class HRRepositoryImpl implements IHRRepository {
     double? salary,
     String? salaryType,
     bool? isActive,
+    int? branchId,
   }) => _db.updateEmployee(
     id: id,
     name: name,
@@ -45,6 +49,7 @@ class HRRepositoryImpl implements IHRRepository {
     salary: salary,
     salaryType: salaryType,
     isActive: isActive,
+    branchId: branchId,
   );
 
   @override
@@ -60,7 +65,8 @@ class HRRepositoryImpl implements IHRRepository {
       _db.checkOutEmployee(employeeId);
 
   @override
-  Future<List<Employee>> getAllEmployees() => _db.getAllEmployees();
+  Future<List<Employee>> getAllEmployees({Set<int>? allowedBranchIds}) =>
+      _db.getAllEmployees(allowedBranchIds: allowedBranchIds);
 
   @override
   Stream<List<EmployeeTransaction>> watchEmployeeTransactions(int employeeId) =>

@@ -43,14 +43,14 @@ class _MockHR implements IHRRepository {
   }
 
   // ── Unneeded methods ─────────────────────────────────────────────────────
-  @override Stream<List<Employee>> watchAllEmployees() => throw UnimplementedError();
+  @override Stream<List<Employee>> watchAllEmployees({Set<int>? allowedBranchIds}) => throw UnimplementedError();
   @override Future<Employee?> getEmployeeById(int id) => throw UnimplementedError();
-  @override Future<int> addEmployee({required String name, String? phone, required String role, required double salary, required String salaryType}) => throw UnimplementedError();
-  @override Future<void> updateEmployee({required int id, String? name, String? phone, String? role, double? salary, String? salaryType, bool? isActive}) => throw UnimplementedError();
+  @override Future<int> addEmployee({required String name, String? phone, required String role, required double salary, required String salaryType, int? branchId}) => throw UnimplementedError();
+  @override Future<void> updateEmployee({required int id, String? name, String? phone, String? role, double? salary, String? salaryType, bool? isActive, int? branchId}) => throw UnimplementedError();
   @override Stream<List<EmployeeAttendanceWithDetails>> watchTodayAttendance() => throw UnimplementedError();
   @override Future<void> checkInEmployee(int e) => throw UnimplementedError();
   @override Future<void> checkOutEmployee(int e) => throw UnimplementedError();
-  @override Future<List<Employee>> getAllEmployees() => throw UnimplementedError();
+  @override Future<List<Employee>> getAllEmployees({Set<int>? allowedBranchIds}) => throw UnimplementedError();
   @override Stream<List<EmployeeTransaction>> watchEmployeeTransactions(int id) => throw UnimplementedError();
   @override Future<void> recordEmployeeAdvance({required int employeeId, required double amount, String? description, required DateTime transactionDate, bool affectsTreasury = true, int? safeId}) => throw UnimplementedError();
   @override Future<void> recordEmployeeDeduction({required int employeeId, required double amount, String? description, required DateTime transactionDate}) => throw UnimplementedError();

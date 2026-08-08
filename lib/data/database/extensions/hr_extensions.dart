@@ -51,6 +51,21 @@ const Set<String> kPaidAttendanceStatuses = {
 /// إدخالٍ بسنةٍ كاملة كان سيكتب آلافَ الصفوف داخل معاملةٍ واحدة.
 const int kMaxLeaveDaysPerRequest = 366;
 
+/// H6 — شرطُ حصر الموظفين بالفرع.
+///
+/// `branch_id IS NULL` تعني موظفاً على مستوى الشركة (مديرٌ عام · محاسبٌ مركزي)
+/// فيظلّ مرئياً لكل نطاق — نفسُ قاعدة `BranchScope.isAllowed` بالحرف، فلا يفترق
+/// حصرُ الـSQL عن الصنف الذي يولّد النطاق.
+///
+/// ومجموعةٌ **فارغة** ليست «بلا حصر»: هي مستخدمٌ لا يرى شيئاً ⇒ صفرُ صفوف،
+/// فشلٌ مقفول مطابقٌ لكلِّ تقريرٍ محصور في المستودع (‏`_buildAuthScopeFilter`
+/// و`_buildReportQuery` كلاهما `1 = 0`). و«بلا حصر» يُعبَّر عنه بـ`null` عند
+/// الاستدعاء فلا يُستدعى هذا الشرطُ أصلاً.
+Expression<bool> _employeeBranchScope($EmployeesTable e, Set<int> ids) =>
+    ids.isEmpty
+        ? const Constant(false)
+        : e.branchId.isIn(ids.toList()) | e.branchId.isNull();
+
 /// Extensions for HR/Employee management
 extension HRExtensions on AppDatabase {
   // -----------------------------------------------------------------------
@@ -58,18 +73,24 @@ extension HRExtensions on AppDatabase {
   // -----------------------------------------------------------------------
 
   /// Get all active employees
-  Stream<List<Employee>> watchAllEmployees() {
-    return (select(employees)
-          ..where((e) => e.isActive.equals(true))
-          ..orderBy([(e) => OrderingTerm.asc(e.name)]))
-        .watch();
+  Stream<List<Employee>> watchAllEmployees({Set<int>? allowedBranchIds}) {
+    final q = select(employees)
+      ..where((e) => e.isActive.equals(true))
+      ..orderBy([(e) => OrderingTerm.asc(e.name)]);
+    if (allowedBranchIds != null) {
+      q.where((e) => _employeeBranchScope(e, allowedBranchIds));
+    }
+    return q.watch();
   }
 
   /// Get all employees including inactive
-  Future<List<Employee>> getAllEmployees() {
-    return (select(
-      employees,
-    )..orderBy([(e) => OrderingTerm.asc(e.name)])).get();
+  Future<List<Employee>> getAllEmployees({Set<int>? allowedBranchIds}) {
+    final q = select(employees)
+      ..orderBy([(e) => OrderingTerm.asc(e.name)]);
+    if (allowedBranchIds != null) {
+      q.where((e) => _employeeBranchScope(e, allowedBranchIds));
+    }
+    return q.get();
   }
 
   /// Get employee by ID
@@ -111,12 +132,17 @@ extension HRExtensions on AppDatabase {
   }
 
   /// Add new employee
+  ///
+  /// H6 — [branchId] يُكتب. كان العمودُ موجوداً في السكيما ولا يُكتب قطّ، فكلُّ
+  /// موظفٍ يُولَد بلا فرعٍ ⇒ لا حصرَ ممكن على الرواتب.
+  /// `null` = موظفٌ على مستوى الشركة، يظلّ مرئياً لكل نطاق.
   Future<int> addEmployee({
     required String name,
     String? phone,
     String role = 'staff',
     double salary = 0,
     String salaryType = 'monthly',
+    int? branchId,
   }) {
     return into(employees).insert(
       EmployeesCompanion.insert(
@@ -125,12 +151,17 @@ extension HRExtensions on AppDatabase {
         role: Value(role),
         salary: Value(salary),
         salaryType: Value(salaryType),
+        branchId: Value(branchId),
         hiredAt: Value(DateTime.now()),
       ),
     );
   }
 
   /// Update employee
+  ///
+  /// H6 — [branchId] بـ`null` تعني «لا تلمس الفرع» لا «انقله إلى بلا فرع»،
+  /// مطابقةً لبقيةِ الحقول هنا: تعديلُ الاسم وحده لا يجوز أن يُخرج الموظف من
+  /// فرعه. (نقلُه إلى «بلا فرع» يحتاج مساراً صريحاً، وليس مطلوباً بعد.)
   Future<void> updateEmployee({
     required int id,
     String? name,
@@ -139,6 +170,7 @@ extension HRExtensions on AppDatabase {
     double? salary,
     String? salaryType,
     bool? isActive,
+    int? branchId,
   }) {
     return (update(employees)..where((e) => e.id.equals(id))).write(
       EmployeesCompanion(
@@ -150,6 +182,7 @@ extension HRExtensions on AppDatabase {
             ? Value(salaryType)
             : const Value.absent(),
         isActive: isActive != null ? Value(isActive) : const Value.absent(),
+        branchId: branchId != null ? Value(branchId) : const Value.absent(),
       ),
     );
   }

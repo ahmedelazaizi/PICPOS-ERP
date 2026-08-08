@@ -2,7 +2,11 @@ import '../../../data/database/database_barrel.dart';
 
 abstract class IHRRepository {
   // Employee management
-  Stream<List<Employee>> watchAllEmployees();
+  //
+  // H6 — `allowedBranchIds` هو نطاق `branchScopeProvider`: `null` = وصولٌ كامل،
+  // ومجموعةٌ فارغة = صفرُ صفوف (فشلٌ مقفول). والموظفُ بلا فرعٍ على مستوى
+  // الشركة فيبقى مرئياً لكل نطاق.
+  Stream<List<Employee>> watchAllEmployees({Set<int>? allowedBranchIds});
   Future<Employee?> getEmployeeById(int id);
   Future<int> addEmployee({
     required String name,
@@ -10,6 +14,7 @@ abstract class IHRRepository {
     required String role,
     required double salary,
     required String salaryType,
+    int? branchId,
   });
   Future<void> updateEmployee({
     required int id,
@@ -19,13 +24,14 @@ abstract class IHRRepository {
     double? salary,
     String? salaryType,
     bool? isActive,
+    int? branchId,
   });
 
   // Attendance
   Stream<List<EmployeeAttendanceWithDetails>> watchTodayAttendance();
   Future<void> checkInEmployee(int employeeId);
   Future<void> checkOutEmployee(int employeeId);
-  Future<List<Employee>> getAllEmployees();
+  Future<List<Employee>> getAllEmployees({Set<int>? allowedBranchIds});
 
   // Transactions
   Stream<List<EmployeeTransaction>> watchEmployeeTransactions(int employeeId);

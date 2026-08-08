@@ -11,6 +11,11 @@ class _MockHRRepository implements IHRRepository {
   bool shouldFail = false;
   int nextEmployeeId = 55;
 
+  /// H6 — يُلتقط لا يُتجاهل: تمريرُ `branchId` من `EmployeeInput` إلى المستودع
+  /// هو الحلقةُ التي لو انقطعت وُلد كلُّ موظفٍ بلا فرع، وهو العطلُ نفسه.
+  int? capturedAddBranchId;
+  int? capturedUpdateBranchId;
+
   @override
   Future<int> addEmployee({
     required String name,
@@ -18,8 +23,10 @@ class _MockHRRepository implements IHRRepository {
     required String role,
     required double salary,
     required String salaryType,
+    int? branchId,
   }) async {
     if (shouldFail) throw Exception('DB error');
+    capturedAddBranchId = branchId;
     return nextEmployeeId;
   }
 
@@ -32,7 +39,9 @@ class _MockHRRepository implements IHRRepository {
     double? salary,
     String? salaryType,
     bool? isActive,
+    int? branchId,
   }) async {
+    capturedUpdateBranchId = branchId;
     if (shouldFail) throw Exception('DB error');
   }
 
@@ -73,14 +82,16 @@ class _MockHRRepository implements IHRRepository {
 
   // ── Unneeded methods — throw so we notice if they're accidentally called
   @override
-  Stream<List<Employee>> watchAllEmployees() => throw UnimplementedError();
+  Stream<List<Employee>> watchAllEmployees({Set<int>? allowedBranchIds}) =>
+      throw UnimplementedError();
   @override
   Future<Employee?> getEmployeeById(int id) => throw UnimplementedError();
   @override
   Stream<List<EmployeeAttendanceWithDetails>> watchTodayAttendance() =>
       throw UnimplementedError();
   @override
-  Future<List<Employee>> getAllEmployees() => throw UnimplementedError();
+  Future<List<Employee>> getAllEmployees({Set<int>? allowedBranchIds}) =>
+      throw UnimplementedError();
   @override
   Stream<List<EmployeeTransaction>> watchEmployeeTransactions(int id) =>
       throw UnimplementedError();
@@ -228,6 +239,25 @@ void main() {
       expect(result.isSuccess, isFalse);
       expect(result.error, isNotNull);
     });
+
+    // H6 — الحلقةُ التي لو انقطعت وُلد كلُّ موظفٍ بلا فرعٍ فسقط الحصر كلُّه.
+    test('branchId يُمرَّر إلى المستودع', () async {
+      final input = EmployeeInput(
+        name: 'Ahmed Ali',
+        role: 'cashier',
+        salary: 2000,
+        branchId: 3,
+      );
+      await useCase.addEmployee(input);
+      expect(mock.capturedAddBranchId, 3);
+    });
+
+    test('غيابُ branchId يُمرَّر null — موظفٌ على مستوى الشركة', () async {
+      final input =
+          EmployeeInput(name: 'Ahmed Ali', role: 'manager', salary: 9000);
+      await useCase.addEmployee(input);
+      expect(mock.capturedAddBranchId, isNull);
+    });
   });
 
   // ── updateEmployee ──────────────────────────────────────────────────────────
@@ -237,6 +267,17 @@ void main() {
       final result = await useCase.updateEmployee(1, input);
       expect(result.isSuccess, isFalse);
       expect(result.error, 'يجب إدخال اسم الموظف');
+    });
+
+    test('branchId يُمرَّر إلى المستودع — نقلُ موظفٍ بين الفروع', () async {
+      final input = EmployeeInput(
+        name: 'Ahmed Ali',
+        role: 'cashier',
+        salary: 2000,
+        branchId: 8,
+      );
+      await useCase.updateEmployee(11, input);
+      expect(mock.capturedUpdateBranchId, 8);
     });
 
     test('succeeds and returns same employee id', () async {

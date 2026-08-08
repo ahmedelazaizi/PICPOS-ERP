@@ -274,7 +274,9 @@ class _ExportPayrollButton extends ConsumerWidget {
   }
 
   Future<void> _exportPayroll(BuildContext context, WidgetRef ref) async {
-    final employees = await hrRepo.getAllEmployees();
+    // H6 — التصديرُ محصورٌ كذلك. كشفُ رواتب Excel أخطرُ من الشاشة: ملفٌ يُرسَل
+    // ويُحفَظ، فتسريبُه أثرٌ باقٍ لا عرضٌ عابر.
+    final employees = await ref.read(hrEmployeesProvider.future);
     final calcs = await Future.wait(
       employees.map((e) => hrRepo.calculateNetSalary(
         employeeId: e.id,

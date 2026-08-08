@@ -8,12 +8,16 @@ class EmployeeInput {
   final double salary;
   final String salaryType;
 
+  /// H6 — فرعُ الموظف. `null` = مستوى الشركة (يظلّ مرئياً لكل نطاق).
+  final int? branchId;
+
   EmployeeInput({
     required this.name,
     this.phone,
     this.role = 'staff',
     this.salary = 0,
     this.salaryType = 'monthly',
+    this.branchId,
   });
 }
 
@@ -49,6 +53,7 @@ class ManageEmployeeUseCase {
         role: input.role,
         salary: input.salary,
         salaryType: input.salaryType,
+        branchId: input.branchId,
       );
       return EmployeeResult.success(id);
     } catch (e) {
@@ -70,6 +75,7 @@ class ManageEmployeeUseCase {
         role: input.role,
         salary: input.salary,
         salaryType: input.salaryType,
+        branchId: input.branchId,
       );
       return EmployeeResult.success(id);
     } catch (e) {

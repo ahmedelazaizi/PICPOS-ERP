@@ -5,6 +5,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../data/providers/providers.dart';
+import '../hr_notifier.dart';
 import '../../../../domain/repositories/hr_repository_interface.dart';
 
 /// HR Contracts Management Tab
@@ -18,7 +19,8 @@ class ContractsTab extends ConsumerWidget {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: FutureBuilder<List<Employee>>(
-        future: hrRepo.getAllEmployees(),
+        // H6 — المزوّد المحصور لا القراءة المباشرة.
+        future: ref.watch(hrEmployeesProvider.future),
         builder: (context, snap) {
           if (!snap.hasData) {
             return const Center(child: CircularProgressIndicator());

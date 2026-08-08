@@ -52,6 +52,7 @@ class HRNotifier extends Notifier<HRState> {
     String role = 'staff',
     double salary = 0,
     String salaryType = 'monthly',
+    int? branchId,
   }) async {
     state = state.copyWith(isLoading: true);
     try {
@@ -62,6 +63,7 @@ class HRNotifier extends Notifier<HRState> {
           role: role,
           salary: salary,
           salaryType: salaryType,
+          branchId: branchId,
         );
         await _log('add_employee', 'إضافة موظف: $name ($role)', entityId: id);
       } else {
@@ -72,6 +74,7 @@ class HRNotifier extends Notifier<HRState> {
           role: role,
           salary: salary,
           salaryType: salaryType,
+          branchId: branchId,
         );
         await _log(
           'update_employee',
@@ -227,9 +230,44 @@ final hrFormProvider = NotifierProvider<HRNotifier, HRState>(() {
   return HRNotifier();
 });
 
-final hrEmployeesProvider = FutureProvider.autoDispose<List<Employee>>((ref) {
+// ═══════════════════════════════════════════════════════════════════════════
+// H6 — قوائمُ الموظفين محصورةٌ بفروع المستخدم.
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// كانت شاشاتُ HR تقرأ `getAllEmployees()` بلا نطاق، وليس في مجلد `hr/` ذكرٌ
+// واحدٌ لـ`branchId`. فمديرُ فرعٍ يفتح تبويبَ الرواتب فيقرأ **رواتبَ الشركة
+// كاملة** — أسماءها وأدوارها ومبالغها وسلفها.
+//
+// وحتى تستقرّ الشاشةُ لم يُمرَّر النطاق في كلِّ شاشةٍ على حِدة، بل يُحَلّ هنا
+// مرةً واحدة: الشاشةُ تراقب المزوّد فقط، ونسيانُ شاشةٍ جديدة للحصر يصير
+// مستحيلاً لأن لا مسارَ غيرَ محصورٍ متاحاً لها.
+//
+// ريثما يُحَلّ النطاق (الإطارُ الأولُ بعد الدخول) يُعاد **صفرُ صفوف** لا القائمة
+// غيرَ المحصورة — نفسُ اختيار `parties_providers.dart`: وميضُ صفوفِ فرعٍ آخر
+// لعشراتِ الميلي ثانية تسريبٌ كامل.
+
+/// نطاقُ الفروع للمستخدم الحالي، أو `null` ريثما لم يُحَلّ بعد.
+///
+/// `hasFullAccess` يُترجَم إلى `null` في نداءِ المستودع (بلا فلتر)، وغيرُه إلى
+/// المجموعةِ المغلقة.
+Set<int>? _scopeFilter(BranchScope scope) =>
+    scope.hasFullAccess ? null : scope.allowedBranchIds;
+
+final hrEmployeesProvider = FutureProvider.autoDispose<List<Employee>>((
+  ref,
+) async {
   final hrRepo = ref.watch(hrRepositoryProvider);
-  return hrRepo.getAllEmployees();
+  final scope = await ref.watch(branchScopeProvider.future);
+  return hrRepo.getAllEmployees(allowedBranchIds: _scopeFilter(scope));
+});
+
+/// نسخةُ التدفّق — `staff_list_tab` يحتاج تحديثاً حياً عند الإضافة والتعطيل.
+final hrEmployeesStreamProvider =
+    StreamProvider.autoDispose<List<Employee>>((ref) {
+  final hrRepo = ref.watch(hrRepositoryProvider);
+  final scope = ref.watch(branchScopeProvider.select((s) => s.value));
+  if (scope == null) return Stream<List<Employee>>.value(const []);
+  return hrRepo.watchAllEmployees(allowedBranchIds: _scopeFilter(scope));
 });
 
 class LeaveBalanceArgs {

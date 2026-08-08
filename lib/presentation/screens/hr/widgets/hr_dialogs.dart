@@ -31,6 +31,17 @@ class HRDialogs {
     String role = employee?.role ?? 'staff';
     String salaryType = employee?.salaryType ?? 'monthly';
 
+    // H6 — فرعُ الموظف. خياراتُ القائمة **متقاطعةٌ مع نطاق المستخدم** فلا يقدر
+    // مديرُ فرعٍ أن يُنشئ موظفاً في فرعٍ لا يراه، ويُبذَر للموظف الجديد بفرعه
+    // هو (‏`primaryBranchId`) — وإلا وُلد بلا فرعٍ فصار مرئياً لكل الفروع، وهو
+    // بالضبط الحالُ الذي أُصلح.
+    final scope = ref.watch(branchScopeProvider).value;
+    final allBranches = ref.watch(allBranchesProvider).value ?? const [];
+    final visibleBranches = (scope == null || scope.hasFullAccess)
+        ? allBranches
+        : allBranches.where((b) => scope.isAllowed(b.id)).toList();
+    int? branchId = employee?.branchId ?? scope?.primaryBranchId;
+
     showDialog(
       context: context,
       builder: (ctx) => Directionality(
@@ -106,6 +117,28 @@ class HRDialogs {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<int?>(
+                    initialValue: branchId,
+                    decoration: const InputDecoration(labelText: 'الفرع'),
+                    items: [
+                      // «بلا فرع» = موظفٌ على مستوى الشركة، يراه كلُّ الفروع.
+                      // مقصورٌ على من له وصولٌ كامل: مديرُ فرعٍ يختاره كان
+                      // يُنشئ موظفاً مرئياً لكل الفروع من داخل نطاقه.
+                      if (scope == null || scope.hasFullAccess)
+                        const DropdownMenuItem<int?>(
+                          value: null,
+                          child: Text('بلا فرع (مستوى الشركة)'),
+                        ),
+                      ...visibleBranches.map(
+                        (b) => DropdownMenuItem<int?>(
+                          value: b.id,
+                          child: Text(b.name),
+                        ),
+                      ),
+                    ],
+                    onChanged: (v) => setState(() => branchId = v),
+                  ),
                 ],
               ),
             ),
@@ -126,6 +159,7 @@ class HRDialogs {
                     role: role,
                     salary: salary,
                     salaryType: salaryType,
+                    branchId: branchId,
                   );
 
                   if (ctx.mounted) Navigator.pop(ctx);

@@ -51,7 +51,8 @@ class OvertimeTab extends ConsumerWidget {
               _MonthSelector(state: state, notifier: notifier),
               const SizedBox(width: 8),
               ElevatedButton.icon(
-                onPressed: () => _showAddOvertimeDialog(context, notifier, hrRepo),
+                onPressed: () =>
+                    _showAddOvertimeDialog(context, ref, notifier, hrRepo),
                 icon: const Icon(PhosphorIconsBold.plus, size: 18),
                 label: const Text('تسجيل إضافي'),
                 style: ElevatedButton.styleFrom(
@@ -65,7 +66,8 @@ class OvertimeTab extends ConsumerWidget {
         // Employee list with overtime summary
         Expanded(
           child: FutureBuilder<List<Employee>>(
-            future: hrRepo.getAllEmployees(),
+            // H6 — المزوّد المحصور لا القراءة المباشرة.
+            future: ref.watch(hrEmployeesProvider.future),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return Padding(
@@ -102,6 +104,7 @@ class OvertimeTab extends ConsumerWidget {
 
   void _showAddOvertimeDialog(
     BuildContext context,
+    WidgetRef ref,
     HRNotifier notifier,
     IHRRepository db,
   ) {
@@ -123,7 +126,9 @@ class OvertimeTab extends ConsumerWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   FutureBuilder<List<Employee>>(
-                    future: db.getAllEmployees(),
+                    // H6 — منتقي الموظف محصور كذلك: بدونه يُسجَّل عملٌ إضافي
+                    // (‏= أجرٌ) على موظف فرعٍ آخر.
+                    future: ref.read(hrEmployeesProvider.future),
                     builder: (_, snap) {
                       final emps = snap.data ?? [];
                       return DropdownButtonFormField<int>(

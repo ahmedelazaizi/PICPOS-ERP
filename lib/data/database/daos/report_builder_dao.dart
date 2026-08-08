@@ -191,8 +191,10 @@ extension ReportBuilderDao on AppDatabase {
   ///   • الأطراف       → `is_global OR branch_ids LIKE` (زي _watchPartiesForBranches)
   ///   • الأصناف       → بيانات أساسية على مستوى الشركة، مفيش قيم مالية عبر فروع
   ///   • قيود اليومية  → الوصول للفرع عبر مراكز التكلفة، مش عمود على الصف
-  ///   • الموظفون      → `employees.branch_id` **ما بيتكتبش أصلاً** (مانع H6)،
-  ///                     فحصره بيدي صفر صفوف بشكل مضلّل بدل ما يحصر
+  ///   • الموظفون      → `branch_id` مباشرةً. كان مرفوضاً لأن العمود **ما كانش
+  ///                     بيتكتب أصلاً** (مانع H6)، فحصرُه كان بيدي صفر صفوف
+  ///                     مضلّلاً. اتقفل H6 (‏addEmployee بيكتبه) فبقى الحصر
+  ///                     ذا معنى — وهو المصدر الوحيد اللي فيه **رواتب**
   ///   • أرصدة المخزون → الحصر بالمخزن لا الفرع (‏getWarehouseScopeForUser)
   String? _scopeClauseFor(String entity, Set<int> ids) {
     final list = ids.join(',');
@@ -209,6 +211,11 @@ extension ReportBuilderDao on AppDatabase {
         return 'parties.is_global = 1 OR $ors';
       case 'products':
         return '1 = 1';
+      case 'employees':
+        // نفس دلالة الفواتير: `branch_id` على الصف، وNULL = مستوى الشركة
+        // فيبقى مرئياً — مطابقةً لـ`_employeeBranchScope` في hr_extensions.
+        return 'employees.branch_id IN ($list) '
+            'OR employees.branch_id IS NULL';
       default:
         return null;
     }

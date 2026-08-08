@@ -4,6 +4,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../data/providers/providers.dart';
+import '../hr_notifier.dart';
 import '../../../../domain/repositories/hr_repository_interface.dart';
 import '../../../../../../../core/constants/app_constants.dart';
 
@@ -16,7 +17,8 @@ class HRDashboardTab extends ConsumerWidget {
     final hrRepo = ref.watch(hrRepositoryProvider);
 
     return FutureBuilder<List<Employee>>(
-      future: hrRepo.getAllEmployees(),
+      // H6 — المزوّد المحصور لا القراءة المباشرة (شوف hrEmployeesProvider).
+      future: ref.watch(hrEmployeesProvider.future),
       builder: (context, empSnap) {
         if (!empSnap.hasData) {
           return const Center(child: CircularProgressIndicator());
