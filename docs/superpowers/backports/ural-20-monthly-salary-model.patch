@@ -1,0 +1,829 @@
+diff --git a/lib/data/database/extensions/hr_extensions.dart b/lib/data/database/extensions/hr_extensions.dart
+index 21e62539..9b90e8c8 100644
+--- a/lib/data/database/extensions/hr_extensions.dart
++++ b/lib/data/database/extensions/hr_extensions.dart
+@@ -45,6 +45,31 @@ const Set<String> kPaidAttendanceStatuses = {
+   kAttendanceStatusPaidLeave,
+ };
+ 
++/// غيابٌ يعلّمه المدير — يومٌ غيرُ مدفوعٍ **مسجَّل**.
++const String kAttendanceStatusAbsent = 'absent';
++
++/// حالاتُ صفِّ الحضور التي تُخصم من **الراتب الشهري**.
++///
++/// `unpaid_leave` معها لا وحدَها `absent`: لو خُصم الغيابُ وحده لصارت الإجازةُ
++/// غيرُ المدفوعةِ المعتمدة مدفوعةً بحكم الأمر الواقع، لأن الشهريَّ يُدفَع كاملاً
++/// ما لم يُخصَم صراحةً.
++const Set<String> kUnpaidAttendanceStatuses = {
++  kAttendanceStatusAbsent,
++  kAttendanceStatusUnpaidLeave,
++};
++
++/// نوعُ الراتب الذي يُدفَع كاملاً ويُخصم منه الغيابُ المسجَّل.
++///
++/// قرار المالك 2026-08-09. المجالُ المدعوم لـ`employees.salaryType` هو
++/// `monthly` · `daily` · `hourly`، وكان المحرّكُ **لا يقرأ العمود إطلاقاً**
++/// فيطبّق موديلَ الأجر اليومي على الثلاثة: `daysAttended × dailyRate`. ويومُ
++/// الراحة لا صفَّ حضورٍ له، فكان الشهريُّ يُخصَم عن أيام راحته.
++///
++/// ⚠️ `hourly` باقٍ على موديل اليوم ولم يُحسَم بعد: `employees.salary` نفسه
++/// غامضٌ لهذا النوع (شهريٌّ مكافئ أم أجرُ ساعة؟) ولا شيء في السكيما يحسمه،
++/// و`checkIn`/`checkOut` موجودان فالساعاتُ مشتقّةٌ لو تقرّر ذلك.
++const String kMonthlySalaryType = 'monthly';
++
+ /// حدٌّ أعلى لعدد الأيام التي يكتبها اعتمادُ إجازةٍ واحدة.
+ ///
+ /// ليس قاعدةَ عمل بل حاجزَ بيانات: `endDate` يأتي من منتقي تواريخ، وخطأُ
+@@ -246,6 +271,50 @@ extension HRExtensions on AppDatabase {
+     }
+   }
+ 
++  /// يعلّم يوماً غياباً غيرَ مدفوع.
++  ///
++  /// المدخلُ الوحيدُ للخصم من الراتب الشهري: الشهريُّ يُدفَع كاملاً ما لم
++  /// يُسجَّل غيابُه هنا. فالعبءُ على من يريد الخصمَ أن يوثّقه — لا على الموظف
++  /// أن يُثبت أنه حضر.
++  ///
++  /// **upsert لا insert** لقيد v152 `idx_employee_attendance_day_dedup`: اليومُ
++  /// قد يكون فيه صفُّ بصمةٍ سابق، فالإدراجُ يُرفَض. وتعليمُ المدير هو الأحدث
++  /// فهو الحاكم — لكن التحضيرَ والانصرافَ المسجَّلَين يبقيان: إن كان الغيابُ
++  /// خطأً فالإثباتُ لم يضِع.
++  Future<void> markEmployeeAbsent(
++    int employeeId,
++    DateTime date, {
++    String? notes,
++  }) async {
++    final day = DateTime(date.year, date.month, date.day);
++
++    final existing =
++        await (select(employeeAttendance)
++              ..where((a) => a.employeeId.equals(employeeId))
++              ..where((a) => a.date.equals(day)))
++            .getSingleOrNull();
++
++    if (existing == null) {
++      await into(employeeAttendance).insert(
++        EmployeeAttendanceCompanion.insert(
++          employeeId: employeeId,
++          date: day,
++          status: const Value(kAttendanceStatusAbsent),
++          notes: Value(notes),
++        ),
++      );
++    } else {
++      await (update(
++        employeeAttendance,
++      )..where((a) => a.id.equals(existing.id))).write(
++        EmployeeAttendanceCompanion(
++          status: const Value(kAttendanceStatusAbsent),
++          notes: notes != null ? Value(notes) : const Value.absent(),
++        ),
++      );
++    }
++  }
++
+   /// Get today's attendance
+   Stream<List<EmployeeAttendanceWithDetails>> watchTodayAttendance() {
+     final today = DateTime.now();
+@@ -737,6 +806,21 @@ extension HRExtensions on AppDatabase {
+ 
+     final daysAttended = attendanceRecords.length;
+ 
++    // الأيامُ غيرُ المدفوعة **المسجَّلة** — أساسُ خصمِ الراتب الشهري.
++    // تُقرأ من الجدول لا تُستنتج من غياب الصفوف: يومُ الراحة لا صفَّ له كذلك،
++    // والاستنتاجُ كان يخصمه.
++    final unpaidRecords =
++        await (select(employeeAttendance)
++              ..where((a) => a.employeeId.equals(employeeId))
++              ..where((a) => a.date.isBiggerOrEqual(Variable(startOfMonth)))
++              ..where((a) => a.date.isSmallerThan(Variable(endOfMonth)))
++              ..where(
++                (a) => a.status.isIn(kUnpaidAttendanceStatuses.toList()),
++              ))
++            .get();
++
++    final unpaidDays = unpaidRecords.length;
++
+     // Get advances and deductions
+     final advances = await getMonthlyAdvances(employeeId, year, month);
+     final deductions = await getMonthlyDeductions(employeeId, year, month);
+@@ -750,7 +834,27 @@ extension HRExtensions on AppDatabase {
+ 
+     // Calculate
+     final dailyRate = employee.salary / _daysInMonth(year, month);
+-    final grossPay = dailyRate * daysAttended + overtimeAmount;
++
++    // ── الموديلُ بحسب `salaryType` (قرار المالك 2026-08-09) ─────────────────
++    // كان موديلٌ واحد — أجرٌ يومي — يُطبَّق على الأنواع الثلاثة، و`salaryType`
++    // لا يُقرأ إطلاقاً. فالشهريُّ كان يُخصَم عن أيام راحته: أيامُ العمل تأتي من
++    // بصمةٍ أو تحضيرٍ يدوي، ويومُ الراحة لا أحد يبصم فيه ⇒ لا صفَّ ⇒ لا أجر.
++    // موظفٌ بـ٢٨٠٠ وأسبوعُ عملٍ من خمسة أيام كان يأخذ ٢٢٠٠ — خصمُ ٢١٪ بلا
++    // غيابٍ واحد، وصفراً في فرعٍ بلا جهاز بصمة.
++    //
++    //   شهري : الراتبُ كاملاً − (الأجرُ اليومي × الأيامِ غيرِ المدفوعةِ المسجَّلة)
++    //   غيرُه : الأجرُ اليومي × الأيامِ المدفوعة   ← كما كان، وهو صحيحٌ لليومي
++    //
++    // والاتجاهُ الآمن مقصود: غيابٌ لم يُسجَّل = لا خصم. فلا يُخصَم من موظفٍ
++    // لأن أحداً نسي أن يبصم له، والعبءُ على من يريد الخصمَ أن يوثّقه.
++    //
++    // وقيدُ v152 يمنع أكثرَ من صفٍّ لليوم، فـ`unpaidDays ≤ أيام الشهر` ⇒
++    // الأساسُ لا يهبط تحت الصفر بالبناء.
++    final basePay = employee.salaryType == kMonthlySalaryType
++        ? employee.salary - dailyRate * unpaidDays
++        : dailyRate * daysAttended;
++
++    final grossPay = basePay + overtimeAmount;
+ 
+     // ── B3 — الاشتقاقُ هنا وحده، فلا يُعاد حسابه في طبقةٍ أخرى ──────────────
+     // ثلاثةُ أرقامٍ يحتاجها قيدُ اليومية، وحسابُها في مكانَين يعني انحرافَهما
+@@ -781,6 +885,7 @@ extension HRExtensions on AppDatabase {
+       totalAdvances: advances,
+       totalDeductions: deductions,
+       overtimeAmount: overtimeAmount,
++      unpaidDays: unpaidDays,
+       payableAmount: payableAmount,
+       advancesSettled: advancesSettled,
+       netSalary: netSalary < 0 ? 0 : netSalary,
+@@ -1353,6 +1458,13 @@ class EmployeeSalaryCalculation {
+   final double totalDeductions;
+   final double overtimeAmount;
+ 
++  /// عددُ الأيام غيرِ المدفوعةِ **المسجَّلة** في الشهر — غيابٌ أو إجازةٌ غيرُ
++  /// مدفوعةٍ معتمدة.
++  ///
++  /// هو أساسُ الخصم للراتب الشهري. ولليومي لا معنى له في الحساب (يُدفَع بما
++  /// عمل)، لكنه يبقى مُبلَّغاً لأن سجلَّ الغياب معلومةٌ إدارية بذاتها.
++  final int unpaidDays;
++
+   /// B3 — المستحقُّ بعد الجزاءات = [grossPay] − [totalDeductions]، وهو المبلغُ
+   /// الذي يُقيَّد **مديناً** على مصروف الرواتب.
+   ///
+@@ -1382,6 +1494,7 @@ class EmployeeSalaryCalculation {
+     required this.totalAdvances,
+     required this.totalDeductions,
+     this.overtimeAmount = 0,
++    this.unpaidDays = 0,
+     required this.payableAmount,
+     this.advancesSettled = 0,
+     required this.netSalary,
+diff --git a/lib/data/repositories/hr_repository_impl.dart b/lib/data/repositories/hr_repository_impl.dart
+index 21cd0765..c262abee 100644
+--- a/lib/data/repositories/hr_repository_impl.dart
++++ b/lib/data/repositories/hr_repository_impl.dart
+@@ -64,6 +64,13 @@ class HRRepositoryImpl implements IHRRepository {
+   Future<void> checkOutEmployee(int employeeId) =>
+       _db.checkOutEmployee(employeeId);
+ 
++  @override
++  Future<void> markEmployeeAbsent(
++    int employeeId,
++    DateTime date, {
++    String? notes,
++  }) => _db.markEmployeeAbsent(employeeId, date, notes: notes);
++
+   @override
+   Future<List<Employee>> getAllEmployees({Set<int>? allowedBranchIds}) =>
+       _db.getAllEmployees(allowedBranchIds: allowedBranchIds);
+diff --git a/lib/domain/repositories/hr_repository_interface.dart b/lib/domain/repositories/hr_repository_interface.dart
+index 86674f1b..73456051 100644
+--- a/lib/domain/repositories/hr_repository_interface.dart
++++ b/lib/domain/repositories/hr_repository_interface.dart
+@@ -31,6 +31,13 @@ abstract class IHRRepository {
+   Stream<List<EmployeeAttendanceWithDetails>> watchTodayAttendance();
+   Future<void> checkInEmployee(int employeeId);
+   Future<void> checkOutEmployee(int employeeId);
++
++  /// يعلّم يوماً غياباً غيرَ مدفوع — المدخلُ الوحيدُ للخصم من الراتب الشهري.
++  Future<void> markEmployeeAbsent(
++    int employeeId,
++    DateTime date, {
++    String? notes,
++  });
+   Future<List<Employee>> getAllEmployees({Set<int>? allowedBranchIds});
+ 
+   // Transactions
+diff --git a/lib/presentation/screens/hr/hr_notifier.dart b/lib/presentation/screens/hr/hr_notifier.dart
+index 5166cd26..393ac88a 100644
+--- a/lib/presentation/screens/hr/hr_notifier.dart
++++ b/lib/presentation/screens/hr/hr_notifier.dart
+@@ -98,6 +98,19 @@ class HRNotifier extends Notifier<HRState> {
+     );
+   }
+ 
++  /// يعلّم يوماً غياباً. يُسجَّل في سجلّ التدقيق لأنه **يخصم مالاً** من راتبٍ
++  /// شهري — فمن علّمه ومتى سؤالٌ سيُطرح.
++  Future<void> markAbsent(Employee employee, DateTime date) async {
++    await _hrRepo.markEmployeeAbsent(employee.id, date);
++    await _log(
++      'employee_absent',
++      'تعليم غياب: ${employee.name} — '
++          '${date.year}/${date.month.toString().padLeft(2, '0')}/'
++          '${date.day.toString().padLeft(2, '0')}',
++      entityId: employee.id,
++    );
++  }
++
+   Future<void> checkOut(Employee employee) async {
+     await _hrRepo.checkOutEmployee(employee.id);
+     await _log(
+diff --git a/lib/presentation/screens/hr/widgets/attendance_tab.dart b/lib/presentation/screens/hr/widgets/attendance_tab.dart
+index 39794ab8..14d4222d 100644
+--- a/lib/presentation/screens/hr/widgets/attendance_tab.dart
++++ b/lib/presentation/screens/hr/widgets/attendance_tab.dart
+@@ -164,42 +164,140 @@ class _ManualAttendanceButton extends StatelessWidget {
+   }
+ 
+   void _showManualAttendance(BuildContext context) {
+-    final hrRepo = ref.read(hrRepositoryProvider);
+     final notifier = ref.read(hrFormProvider.notifier);
+ 
++    // الغيابُ يُعلَّم بأثرٍ رجعيّ عادةً (يُكتشف بعد يومٍ أو يومين)، فاليومُ
++    // قابلٌ للاختيار — بخلاف التحضير الذي هو دائماً «الآن».
++    DateTime absenceDate = DateTime.now();
++
+     showDialog(
+       context: context,
+-      builder: (ctx) => AlertDialog(
+-        title: const Text('تسجيل حضور يدوي'),
+-        content: SizedBox(
+-          width: 400,
+-          height: 300,
+-          child: FutureBuilder<List<Employee>>(
+-            // H6 — المزوّد المحصور لا القراءة المباشرة.
+-            future: ref.read(hrEmployeesProvider.future),
+-            builder: (context, snapshot) {
+-              final emps = snapshot.data ?? [];
+-              return ListView.builder(
+-                itemCount: emps.length,
+-                itemBuilder: (context, index) {
+-                  final e = emps[index];
+-                  return ListTile(
+-                    title: Text(e.name),
+-                    trailing: const Icon(
+-                      PhosphorIconsBold.plusCircle,
+-                      color: Colors.green,
++      builder: (ctx) => StatefulBuilder(
++        builder: (ctx, setState) => AlertDialog(
++          title: const Text('تسجيل يدوي'),
++          content: SizedBox(
++            width: 460,
++            height: 380,
++            child: Column(
++              children: [
++                // يومُ الغياب — لا يمسّ زرّ التحضير.
++                Row(
++                  children: [
++                    const Text('يوم الغياب: '),
++                    Expanded(
++                      child: Text(
++                        DateFormat('yyyy/MM/dd').format(absenceDate),
++                        style: const TextStyle(fontWeight: FontWeight.bold),
++                      ),
+                     ),
+-                    onTap: () async {
+-                      await notifier.checkIn(e);
+-                      if (ctx.mounted) Navigator.pop(ctx);
++                    TextButton.icon(
++                      icon: const Icon(PhosphorIconsBold.calendar, size: 16),
++                      label: const Text('تغيير'),
++                      onPressed: () async {
++                        final picked = await showDatePicker(
++                          context: ctx,
++                          initialDate: absenceDate,
++                          firstDate: DateTime(absenceDate.year - 1),
++                          lastDate: DateTime.now(),
++                        );
++                        if (picked != null) {
++                          setState(() => absenceDate = picked);
++                        }
++                      },
++                    ),
++                  ],
++                ),
++                const Divider(),
++                Expanded(
++                  child: FutureBuilder<List<Employee>>(
++                    // H6 — المزوّد المحصور لا القراءة المباشرة.
++                    future: ref.read(hrEmployeesProvider.future),
++                    builder: (context, snapshot) {
++                      final emps = snapshot.data ?? [];
++                      return ListView.builder(
++                        itemCount: emps.length,
++                        itemBuilder: (context, index) {
++                          final e = emps[index];
++                          return ListTile(
++                            title: Text(e.name),
++                            subtitle: Text(
++                              e.salaryType == 'monthly'
++                                  ? 'شهري — الغياب المسجّل يُخصم'
++                                  : 'يومي — يُدفع بما عمل',
++                              style: const TextStyle(fontSize: 11),
++                            ),
++                            trailing: Row(
++                              mainAxisSize: MainAxisSize.min,
++                              children: [
++                                IconButton(
++                                  tooltip: 'تسجيل حضور اليوم',
++                                  icon: const Icon(
++                                    PhosphorIconsBold.plusCircle,
++                                    color: Colors.green,
++                                  ),
++                                  onPressed: () async {
++                                    await notifier.checkIn(e);
++                                    if (ctx.mounted) Navigator.pop(ctx);
++                                  },
++                                ),
++                                IconButton(
++                                  tooltip: 'تعليم غياب غير مدفوع',
++                                  icon: const Icon(
++                                    PhosphorIconsBold.minusCircle,
++                                    color: Colors.red,
++                                  ),
++                                  onPressed: () =>
++                                      _confirmAbsence(ctx, notifier, e,
++                                          absenceDate),
++                                ),
++                              ],
++                            ),
++                          );
++                        },
++                      );
+                     },
+-                  );
+-                },
+-              );
+-            },
++                  ),
++                ),
++              ],
++            ),
+           ),
+         ),
+       ),
+     );
+   }
++
++  /// تأكيدٌ قبل تعليم الغياب: العمليةُ **تخصم مالاً** من راتبٍ شهري، وضغطةٌ
++  /// بالخطأ على أيقونةٍ بجانب أيقونة التحضير عاقبتُها يومُ أجرٍ ضائع.
++  void _confirmAbsence(
++    BuildContext dialogCtx,
++    HRNotifier notifier,
++    Employee employee,
++    DateTime date,
++  ) {
++    showDialog(
++      context: dialogCtx,
++      builder: (confirmCtx) => AlertDialog(
++        title: const Text('تأكيد تعليم غياب'),
++        content: Text(
++          'تعليم ${employee.name} غائباً يوم '
++          '${DateFormat('yyyy/MM/dd').format(date)}؟'
++          '${employee.salaryType == 'monthly' ? '\n\nسيُخصم يومٌ من راتبه الشهري.' : ''}',
++        ),
++        actions: [
++          TextButton(
++            onPressed: () => Navigator.pop(confirmCtx),
++            child: const Text('إلغاء'),
++          ),
++          TextButton(
++            onPressed: () async {
++              await notifier.markAbsent(employee, date);
++              if (confirmCtx.mounted) Navigator.pop(confirmCtx);
++              if (dialogCtx.mounted) Navigator.pop(dialogCtx);
++            },
++            child: const Text('تأكيد', style: TextStyle(color: Colors.red)),
++          ),
++        ],
++      ),
++    );
++  }
+ }
+diff --git a/lib/presentation/screens/hr/widgets/payroll_tab.dart b/lib/presentation/screens/hr/widgets/payroll_tab.dart
+index bc0f085d..347a3661 100644
+--- a/lib/presentation/screens/hr/widgets/payroll_tab.dart
++++ b/lib/presentation/screens/hr/widgets/payroll_tab.dart
+@@ -124,10 +124,23 @@ class _PayrollCard extends ConsumerWidget {
+                 const Divider(),
+                 _calcRow('الراتب الأساسي', calc.baseSalary),
+                 _calcRow('قيمة اليومية', calc.dailyRate, color: Colors.blueGrey),
+-                // B4 — «الأيام المدفوعة» لا «أيام الحضور»: العدد صار يضمّ
+-                // الإجازةَ المدفوعة المعتمدة، فالتسميةُ القديمة تجعل القسيمة
+-                // تُظهر حضوراً في أيامٍ كان الموظف فيها في إجازة.
+-                _calcRow('الأيام المدفوعة (${calc.daysAttended})', calc.dailyRate * calc.daysAttended, color: Colors.green),
++                // الصفُّ يتبع الموديل. للشهري: الراتبُ هو الأساس ويُخصم منه
++                // الغيابُ المسجَّل، فعرضُ «الأيام المدفوعة × الأجر اليومي» كان
++                // يشرح حساباً لا يجري.
++                //
++                // B4 — «الأيام المدفوعة» لا «أيام الحضور» لليومي: العدد يضمّ
++                // الإجازةَ المدفوعة المعتمدة.
++                if (calc.employee.salaryType == 'monthly')
++                  ...[
++                    if (calc.unpaidDays > 0)
++                      _calcRow('خصم غياب (${calc.unpaidDays} يوم)',
++                          -calc.dailyRate * calc.unpaidDays,
++                          color: Colors.red),
++                  ]
++                else
++                  _calcRow('الأيام المدفوعة (${calc.daysAttended})',
++                      calc.dailyRate * calc.daysAttended,
++                      color: Colors.green),
+                 _calcRow('الإضافي', calc.overtimeAmount, color: Colors.green),
+                 // B3 — المسوَّى من هذه القسيمة لا المُصرَف كلَّه. سلفةُ ٥٠٠٠ على
+                 // مستحقٍّ ٢٨٠٠ تُسوّي ٢٨٠٠ فقط، وعرضُ ٥٠٠٠ خصماً بجانب صافٍ
+@@ -361,7 +374,11 @@ void _showSalarySlip(BuildContext context, EmployeeSalaryCalculation calc) {
+                     const Divider(),
+                     _slipRow('الراتب الأساسي',
+                         '${calc.baseSalary.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}'),
+-                    _slipRow('الأيام المدفوعة', '${calc.daysAttended} يوم'),
++                    if (calc.employee.salaryType == 'monthly')
++                      _slipRow('أيام غياب غير مدفوعة',
++                          '${calc.unpaidDays} يوم')
++                    else
++                      _slipRow('الأيام المدفوعة', '${calc.daysAttended} يوم'),
+                     _slipRow('بدل إضافي',
+                         '${calc.overtimeAmount.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
+                         color: const Color(0xFF059669)),
+diff --git a/test/unit/manage_employee_usecase_test.dart b/test/unit/manage_employee_usecase_test.dart
+index 719fc914..8fda6536 100644
+--- a/test/unit/manage_employee_usecase_test.dart
++++ b/test/unit/manage_employee_usecase_test.dart
+@@ -112,6 +112,10 @@ class _MockHRRepository implements IHRRepository {
+   }) =>
+       throw UnimplementedError();
+   @override
++  Future<void> markEmployeeAbsent(int employeeId, DateTime date,
++          {String? notes}) =>
++      throw UnimplementedError();
++  @override
+   Stream<List<EmployeeLeave>> watchPendingLeaves() => throw UnimplementedError();
+   @override
+   Stream<List<EmployeeLeave>> watchEmployeeLeaves(int id) =>
+diff --git a/test/unit/monthly_salary_model_test.dart b/test/unit/monthly_salary_model_test.dart
+new file mode 100644
+index 00000000..b5df7864
+--- /dev/null
++++ b/test/unit/monthly_salary_model_test.dart
+@@ -0,0 +1,273 @@
++// ═══════════════════════════════════════════════════════════════════════════
++// الموديل الشهري — الراتبُ كاملاً ناقص غيابٍ مسجَّل (قرار المالك 2026-08-09).
++// ═══════════════════════════════════════════════════════════════════════════
++//
++// كان المحرّكُ يطبّق موديلاً واحداً — **أجرٌ يومي** — على الأنواع الثلاثة:
++// `daysAttended × dailyRate`. و`salaryType` **لم يُقرأ قطّ** (صفر إشارة في
++// الدالة). والأيامُ المدفوعة تُعَدّ من **وجود** صفِّ حضور، وصفوفُ الحضور تأتي
++// من ثلاثة مصادر فقط: بصمة · تحضير يدوي · إجازة معتمدة.
++//
++// ويومُ الراحة لا أحد يبصم فيه ⇒ لا صفَّ له ⇒ **لا يُدفَع**. فموظفٌ شهريٌّ
++// بـ٢٨٠٠ وأسبوعُ عملٍ من خمسة أيام كان يأخذ ٢٢٠٠ — خصمُ ٢١٪ على شهرٍ لم يغب
++// فيه يوماً واحداً. ولو لم يكن في الفرع جهازُ بصمةٍ أصلاً كان يأخذ **صفراً**.
++//
++// ── الموديل الآن ───────────────────────────────────────────────────────────
++//   شهري : الراتبُ كاملاً − (الأجرُ اليومي × أيامٍ غيرِ مدفوعةٍ **مسجَّلة**)
++//   يومي : الأجرُ اليومي × الأيامِ المدفوعة        ← كما كان، وهو صحيحٌ له
++//
++// وغيرُ المدفوعِ المسجَّل حالتان: `absent` (غيابٌ يعلّمه المدير) و`unpaid_leave`
++// (إجازةٌ غيرُ مدفوعةٍ معتمدة يكتبها B4). لو خُصمت الأولى وحدها لصارت الإجازةُ
++// غيرُ المدفوعةِ مدفوعةً بحكم الأمر الواقع.
++//
++// ⚠️ الاتجاهُ الآمن مقصود: غيابٌ لم يُسجَّل = لا خصم. فمن لا يعلّم الغيابَ يدفع
++// كاملاً، ولا يُخصَم من موظفٍ بالخطأ لأن أحداً نسي أن يبصم له.
++//
++// الراتبُ ٢٨٠٠ وفبراير ٢٠٢٦ ‏٢٨ يوماً ⇒ الأجرُ اليومي = ١٠٠ بالتدقيق.
++// ═══════════════════════════════════════════════════════════════════════════
++
++import 'package:drift/drift.dart' hide isNotNull, isNull;
++import 'package:flutter_test/flutter_test.dart';
++import 'package:ural_erp/data/database/database.dart';
++import 'package:ural_erp/data/database/extensions/hr_extensions.dart';
++
++void main() {
++  late AppDatabase db;
++  late int monthlyId;
++  late int dailyId;
++
++  const salary = 2800.0;
++  const dailyRate = 100.0;
++
++  Future<void> present(int empId, int fromDay, int toDay) async {
++    for (var d = fromDay; d <= toDay; d++) {
++      await db.into(db.employeeAttendance).insert(
++            EmployeeAttendanceCompanion.insert(
++              employeeId: empId,
++              date: DateTime(2026, 2, d),
++              status: const Value('present'),
++            ),
++          );
++    }
++  }
++
++  Future<void> absent(int empId, int fromDay, int toDay) async {
++    for (var d = fromDay; d <= toDay; d++) {
++      await db.markEmployeeAbsent(empId, DateTime(2026, 2, d));
++    }
++  }
++
++  Future<EmployeeSalaryCalculation> calc(int empId) => db.calculateNetSalary(
++        employeeId: empId,
++        year: 2026,
++        month: 2,
++      );
++
++  Future<void> approveLeave(
++    int empId,
++    String leaveType,
++    int fromDay,
++    int toDay,
++  ) async {
++    final id = await db.requestLeave(
++      employeeId: empId,
++      leaveType: leaveType,
++      startDate: DateTime(2026, 2, fromDay),
++      endDate: DateTime(2026, 2, toDay),
++      days: toDay - fromDay + 1,
++    );
++    await db.updateLeaveStatus(id, 'approved', 1);
++  }
++
++  setUp(() async {
++    db = AppDatabase.forTesting();
++    monthlyId = await db.addEmployee(
++      name: 'شهري',
++      salary: salary,
++      salaryType: 'monthly',
++    );
++    dailyId = await db.addEmployee(
++      name: 'يومي',
++      salary: salary,
++      salaryType: 'daily',
++    );
++    await db.initializeLeaveBalances(monthlyId, 2026);
++  });
++
++  tearDown(() => db.close());
++
++  group('الشهري — الراتبُ هو الأصل لا الاستثناء', () {
++    test('بلا أيّ صفِّ حضور: الراتبُ كاملاً', () async {
++      final c = await calc(monthlyId);
++
++      expect(c.payableAmount, closeTo(salary, 0.01),
++          reason: 'فرعٌ بلا جهاز بصمةٍ كان يُعطي صفراً لكل موظفيه الشهريين');
++      expect(c.unpaidDays, 0);
++      expect(c.netSalary, closeTo(salary, 0.01));
++    });
++
++    test('٢٢ يوم بصمة وأيامُ الراحة بلا صفوف: الراتبُ كاملاً', () async {
++      await present(monthlyId, 1, 22);
++
++      final c = await calc(monthlyId);
++
++      expect(c.payableAmount, closeTo(salary, 0.01),
++          reason: 'الموديلُ القديم كان يُعطي ٢٢٠٠ — خصمُ ٢١٪ بلا غيابٍ واحد');
++      expect(c.unpaidDays, 0);
++    });
++
++    test('يومان غيابٌ مسجَّلان يُخصمان', () async {
++      await present(monthlyId, 1, 26);
++      await absent(monthlyId, 27, 28);
++
++      final c = await calc(monthlyId);
++
++      expect(c.unpaidDays, 2);
++      expect(c.payableAmount, closeTo(salary - 2 * dailyRate, 0.01));
++      expect(c.payableAmount, closeTo(2600, 0.01));
++    });
++
++    test('الإجازةُ المدفوعة المعتمدة لا تُخصم', () async {
++      await present(monthlyId, 1, 20);
++      await approveLeave(monthlyId, 'annual', 21, 25);
++
++      final c = await calc(monthlyId);
++
++      expect(c.unpaidDays, 0);
++      expect(c.payableAmount, closeTo(salary, 0.01));
++    });
++
++    test('الإجازةُ غيرُ المدفوعة المعتمدة تُخصم', () async {
++      await present(monthlyId, 1, 20);
++      await approveLeave(monthlyId, 'unpaid', 21, 23);
++
++      final c = await calc(monthlyId);
++
++      expect(c.unpaidDays, 3,
++          reason: 'لو لم تُخصم لصارت غيرُ المدفوعةِ مدفوعةً بحكم الأمر الواقع');
++      expect(c.payableAmount, closeTo(salary - 3 * dailyRate, 0.01));
++    });
++
++    test('الغيابُ والإجازةُ غيرُ المدفوعة يُجمعان', () async {
++      await absent(monthlyId, 1, 2);
++      await approveLeave(monthlyId, 'unpaid', 5, 6);
++
++      final c = await calc(monthlyId);
++
++      expect(c.unpaidDays, 4);
++      expect(c.payableAmount, closeTo(salary - 4 * dailyRate, 0.01));
++    });
++
++    test('الوقتُ الإضافي يُضاف فوق الراتب الكامل', () async {
++      await db.addOvertimeRecord(
++        employeeId: monthlyId,
++        date: DateTime(2026, 2, 12),
++        hours: 2,
++        rate: 1.5,
++      );
++
++      final c = await calc(monthlyId);
++
++      expect(c.overtimeAmount, closeTo(37.5, 0.01));
++      expect(c.payableAmount, closeTo(salary + 37.5, 0.01));
++    });
++
++    test('شهرٌ كامل الغياب: صفرٌ لا سالب', () async {
++      await absent(monthlyId, 1, 28);
++
++      final c = await calc(monthlyId);
++
++      expect(c.unpaidDays, 28);
++      expect(c.payableAmount, closeTo(0, 0.01),
++          reason: 'قيدُ v152 يمنع أكثر من صفٍّ لليوم، فالغيابُ محدودٌ بأيام '
++              'الشهر ⇒ المستحقُّ لا يهبط تحت الصفر بالبناء');
++      expect(c.netSalary, closeTo(0, 0.01));
++    });
++  });
++
++  group('اليومي — لم يتغيّر شيء', () {
++    test('٢٢ يوم بصمة = ٢٢ × الأجر اليومي', () async {
++      await present(dailyId, 1, 22);
++
++      final c = await calc(dailyId);
++
++      expect(c.daysAttended, 22);
++      expect(c.payableAmount, closeTo(2200, 0.01),
++          reason: 'اليومي يُدفع بما عمل — وهذا صحيحٌ له');
++    });
++
++    test('بلا صفوف: صفر', () async {
++      expect((await calc(dailyId)).payableAmount, closeTo(0, 0.01));
++    });
++
++    test('صفوفُ الغياب لا تَخصم منه مرةً ثانية', () async {
++      await present(dailyId, 1, 22);
++      await absent(dailyId, 23, 24);
++
++      final c = await calc(dailyId);
++
++      expect(c.payableAmount, closeTo(2200, 0.01),
++          reason: 'اليومُ غيرُ المعمول غيرُ مدفوعٍ أصلاً — لا يُخصَم ثانيةً');
++    });
++  });
++
++  group('التفاعل مع السلف والجزاءات — ثابتُ B3 يبقى', () {
++    test('شهريٌّ بغيابٍ وجزاءٍ وسلفة: المستحقّ = الصافي + المسوّى', () async {
++      await absent(monthlyId, 27, 28);
++      await db.recordEmployeeAdvance(
++        employeeId: monthlyId,
++        amount: 1000,
++        affectsTreasury: false,
++        transactionDate: DateTime(2026, 2, 10),
++      );
++      await db.recordEmployeeDeduction(
++        employeeId: monthlyId,
++        amount: 300,
++        transactionDate: DateTime(2026, 2, 11),
++      );
++
++      final c = await calc(monthlyId);
++
++      expect(c.grossPay, closeTo(2600, 0.01), reason: '2800 − يومان غياب');
++      expect(c.payableAmount, closeTo(2300, 0.01), reason: '2600 − جزاء 300');
++      expect(c.advancesSettled, closeTo(1000, 0.01));
++      expect(c.netSalary, closeTo(1300, 0.01));
++      expect(c.payableAmount, closeTo(c.netSalary + c.advancesSettled, 0.01),
++          reason: 'شرطُ توازنِ قيدِ اليومية');
++    });
++  });
++
++  group('markEmployeeAbsent', () {
++    test('يكتب صفاً بحالة absent', () async {
++      await db.markEmployeeAbsent(monthlyId, DateTime(2026, 2, 14));
++
++      final rows = await (db.select(db.employeeAttendance)
++            ..where((a) => a.employeeId.equals(monthlyId)))
++          .get();
++      expect(rows.length, 1);
++      expect(rows.first.status, kAttendanceStatusAbsent);
++      expect(rows.first.date, DateTime(2026, 2, 14));
++    });
++
++    test('upsert لا insert — يومٌ فيه صفٌّ سابق لا يرتطم بقيد v152', () async {
++      await present(monthlyId, 14, 14);
++
++      await db.markEmployeeAbsent(monthlyId, DateTime(2026, 2, 14));
++
++      final rows = await (db.select(db.employeeAttendance)
++            ..where((a) => a.employeeId.equals(monthlyId)))
++          .get();
++      expect(rows.length, 1, reason: 'insert كان سيرتطم بالفهرس الفريد');
++      expect(rows.first.status, kAttendanceStatusAbsent,
++          reason: 'تعليمُ المدير هو الأحدث فهو الحاكم');
++    });
++
++    test('تعليمُ الغياب مرتين لا يُخصم مرتين', () async {
++      await db.markEmployeeAbsent(monthlyId, DateTime(2026, 2, 14));
++      await db.markEmployeeAbsent(monthlyId, DateTime(2026, 2, 14));
++
++      final c = await calc(monthlyId);
++      expect(c.unpaidDays, 1);
++      expect(c.payableAmount, closeTo(salary - dailyRate, 0.01));
++    });
++  });
++}
+diff --git a/test/unit/net_salary_calculation_test.dart b/test/unit/net_salary_calculation_test.dart
+index e2fa49c5..e7746b4a 100644
+--- a/test/unit/net_salary_calculation_test.dart
++++ b/test/unit/net_salary_calculation_test.dart
+@@ -66,10 +66,14 @@ void main() {
+ 
+   setUp(() async {
+     db = AppDatabase.forTesting();
++    // ‏`salaryType: 'daily'` صريحٌ — شوف التعليق في `payroll_month_length_test`:
++    // الموديلُ الشهري يجعل الإجماليَّ مستقلاً عن أيام الحضور، فتغطيةُ تركيبِ
++    // الإجمالي هنا تصير صامتةً. هذا الملفُّ عن التراكم اليومي؛ الشهريُّ له ملفُّه.
+     employeeId = await db.into(db.employees).insert(
+           EmployeesCompanion.insert(
+             name: 'أحمد',
+             salary: const Value(salary),
++            salaryType: const Value('daily'),
+           ),
+         );
+   });
+diff --git a/test/unit/payroll_approved_leave_test.dart b/test/unit/payroll_approved_leave_test.dart
+index 34d44708..3dcec313 100644
+--- a/test/unit/payroll_approved_leave_test.dart
++++ b/test/unit/payroll_approved_leave_test.dart
+@@ -64,10 +64,14 @@ void main() {
+ 
+   setUp(() async {
+     db = AppDatabase.forTesting();
++    // ‏`salaryType: 'daily'` صريحٌ — الموديلُ الشهري يدفع كاملاً ما لم يُسجَّل
++    // غيابٌ، فتأكيدُ «الإجازةُ المعتمدة تُحتسب» يمرّ فيه بلا أن يُحتسب شيء.
++    // ومسارُ الاحتساب هو التراكمُ اليومي، فهو مسارُ هذا الملف.
+     employeeId = await db.into(db.employees).insert(
+           EmployeesCompanion.insert(
+             name: 'أحمد',
+             salary: const Value(salary),
++            salaryType: const Value('daily'),
+           ),
+         );
+     await db.initializeLeaveBalances(employeeId, 2026);
+diff --git a/test/unit/payroll_month_length_test.dart b/test/unit/payroll_month_length_test.dart
+index b7f84017..a3f49c12 100644
+--- a/test/unit/payroll_month_length_test.dart
++++ b/test/unit/payroll_month_length_test.dart
+@@ -43,10 +43,16 @@ void main() {
+ 
+   setUp(() async {
+     db = AppDatabase.forTesting();
++    // ‏`salaryType` **صريحٌ** لا افتراضيّ: افتراضُ السكيما `monthly`، والموديلُ
++    // الشهري (قرار المالك 2026-08-09) يدفع الراتبَ كاملاً ما لم يُسجَّل غيابٌ
++    // — فيصير الإجماليُّ مستقلاً عن أيام الحضور وتمرّ تأكيداتُ هذا الملف
++    // **لسببٍ مختلف** عمّا تدّعيه. وهذا الملفُّ عن مقامِ الأجر اليومي، فمساره
++    // هو التراكمُ اليومي. الموديلُ الشهري له `monthly_salary_model_test.dart`.
+     employeeId = await db.into(db.employees).insert(
+           EmployeesCompanion.insert(
+             name: 'أحمد',
+             salary: const Value(salary),
++            salaryType: const Value('daily'),
+           ),
+         );
+   });
+diff --git a/test/unit/payroll_usecase_test.dart b/test/unit/payroll_usecase_test.dart
+index b9e8729f..ec5b20e2 100644
+--- a/test/unit/payroll_usecase_test.dart
++++ b/test/unit/payroll_usecase_test.dart
+@@ -59,6 +59,7 @@ class _MockHR implements IHRRepository {
+   @override Stream<List<EmployeeAttendanceWithDetails>> watchTodayAttendance() => throw UnimplementedError();
+   @override Future<void> checkInEmployee(int e) => throw UnimplementedError();
+   @override Future<void> checkOutEmployee(int e) => throw UnimplementedError();
++  @override Future<void> markEmployeeAbsent(int e, DateTime d, {String? notes}) => throw UnimplementedError();
+   @override Future<List<Employee>> getAllEmployees({Set<int>? allowedBranchIds}) => throw UnimplementedError();
+   @override Stream<List<EmployeeTransaction>> watchEmployeeTransactions(int id) => throw UnimplementedError();
+   @override Future<void> recordEmployeeAdvance({required int employeeId, required double amount, String? description, required DateTime transactionDate, bool affectsTreasury = true, int? safeId}) => throw UnimplementedError();
+diff --git a/test/unit/salary_advance_settlement_test.dart b/test/unit/salary_advance_settlement_test.dart
+index 3a8eedcd..4b72b8ab 100644
+--- a/test/unit/salary_advance_settlement_test.dart
++++ b/test/unit/salary_advance_settlement_test.dart
+@@ -84,10 +84,14 @@ void main() {
+ 
+   setUp(() async {
+     db = AppDatabase.forTesting();
++    // ‏`salaryType: 'daily'` صريحٌ حتى تُشتقّ أرقامُ القيد من صفوف الحضور كما
++    // يقول التعليق أعلاه. وتوازنُ القيدِ للموظف الشهري محروسٌ في
++    // `monthly_salary_model_test` عبر ثابت `payable = net + settled`.
+     employeeId = await db.into(db.employees).insert(
+           EmployeesCompanion.insert(
+             name: 'أحمد',
+             salary: const Value(salary),
++            salaryType: const Value('daily'),
+           ),
+         );
+ 

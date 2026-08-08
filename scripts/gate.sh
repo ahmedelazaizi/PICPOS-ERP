@@ -34,7 +34,7 @@ else
   ok "analyze — ٦ info بالظبط"
 fi
 
-step "unit + data + structural + services   (خط الأساس: 2780 ناجح · 7 متخطّى)"
+step "unit + data + structural + services   (خط الأساس: 2795 ناجح · 7 متخطّى)"
 if flutter test test/unit test/data test/structural test/services --concurrency=1; then
   ok "unit"
 else
