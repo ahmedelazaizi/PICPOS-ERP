@@ -246,8 +246,21 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
   Future<void> _executeReport(IReportingRepository repo, CustomReportData report) async {
     setState(() => _running = true);
     try {
-      final results = await repo.executeReport(report.id);
+      // منشئ التقارير بيقرا **أي** جدول بأي أعمدة، فمن غير الحصر ده مستخدم
+      // محصور بفرع كان يقدر يبني تقريراً على sales_invoices أو parties ويشوف
+      // الشركة كلها. الحصر بيتطبّق جوّه الاستعلام لكل كيان على حدة، وكيان
+      // مالوش فلتر مدعوم بيرجّع فاضي بدل ما يتساب يسرّب.
+      final scope = await ref.read(branchScopeProvider.future);
+      final results = await repo.executeReport(report.id,
+          allowedBranchIds: scope.allowedBranchIds);
+      if (!mounted) return;
       setState(() { _results = results; _running = false; });
+      if (results.isEmpty && !scope.hasFullAccess) {
+        AppToast.show(
+            context,
+            'مفيش نتائج — بعض مصادر البيانات مش مدعومة للمستخدمين المحصورين بفرع',
+            type: ToastType.info);
+      }
     } catch (e) {
       setState(() => _running = false);
       if (mounted) AppToast.show(context, 'خطأ: $e', type: ToastType.error);

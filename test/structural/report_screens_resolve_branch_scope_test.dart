@@ -79,9 +79,10 @@ const _permissionGatedNotBranchScoped = <String, String>{
 ///
 /// لإزالة سطر: حُلّ `branchScopeProvider` في الشاشة، مرّر `allowedBranchIds`
 /// للاستعلام، اكتب اختباراً سلوكياً يثبت إن `{}` بتفشل مقفولة، وشيل السطر.
-const _baseline = <String>{
-  'lib/presentation/screens/report_builder_screen.dart',
-};
+/// ✅ **فاضي.** كل تسريبات خط الأساس الأصلية (٥) اتقفلت. سيبه موجوداً عشان
+/// الفحص التاني («خط أساس قديم») يفضل شغّالاً، ولو اضطر حد يضيف سطر هنا
+/// يبقى يعرف إنه بيرجّع تسريباً موثَّقاً لا بيقنّن نمطاً.
+const _baseline = <String>{};
 
 void main() {
   test('كل شاشة تقرير بتحلّ branchScopeProvider (عدا خط الأساس الموثَّق)', () {

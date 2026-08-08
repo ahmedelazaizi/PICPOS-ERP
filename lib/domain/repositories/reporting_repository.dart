@@ -39,7 +39,10 @@ abstract class IReportingRepository
   Future<void> deleteCustomReport(int id);
 
   /// Execute a custom report and get results
-  Future<List<Map<String, dynamic>>> executeReport(int reportId);
+  /// [allowedBranchIds] — null = وصول كامل. كيان مالوش فلتر حصر مدعوم
+  /// بيرجّع فاضي لمستخدم محصور بدل ما يتساب يسرّب.
+  Future<List<Map<String, dynamic>>> executeReport(int reportId,
+      {Set<int>? allowedBranchIds});
 
   /// Get fields available for a custom report entity
   List<Map<String, String>> getAvailableFields(String entity);

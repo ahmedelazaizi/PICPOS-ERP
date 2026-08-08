@@ -565,8 +565,9 @@ class ReportingRepositoryImpl implements IReportingRepository {
   Future<void> deleteCustomReport(int id) => _db.deleteCustomReport(id);
 
   @override
-  Future<List<Map<String, dynamic>>> executeReport(int reportId) =>
-      _db.executeReport(reportId);
+  Future<List<Map<String, dynamic>>> executeReport(int reportId,
+          {Set<int>? allowedBranchIds}) =>
+      _db.executeReport(reportId, allowedBranchIds: allowedBranchIds);
 
   @override
   List<Map<String, String>> getAvailableFields(String entity) =>

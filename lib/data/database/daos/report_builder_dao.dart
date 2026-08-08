@@ -75,14 +75,28 @@ extension ReportBuilderDao on AppDatabase {
   // ─────────────────────────────────────────────────────────────────────────
 
   /// Execute a custom report and return results
-  Future<List<Map<String, dynamic>>> executeReport(int reportId) async {
+  /// [allowedBranchIds] — null = وصول كامل · {ids} = الفروع دي · {} = لا شيء.
+  ///
+  /// الحصر دلالته **مختلفة لكل كيان مصدر**، فمعمول كخريطة لا كفلتر واحد
+  /// (شوف [_scopeClauseFor]). وكيان مالوش فلتر مدعوم بيرجّع **فاضي** لمستخدم
+  /// محصور بدل ما يتساب يسرّب: الحصر الجزئي أخطر من غيابه، لأن التقرير بيبان
+  /// محصوراً والمستخدم بيثق فيه.
+  Future<List<Map<String, dynamic>>> executeReport(
+    int reportId, {
+    Set<int>? allowedBranchIds,
+  }) async {
     final report = await getCustomReport(reportId);
     if (report == null) return [];
 
     final stopwatch = Stopwatch()..start();
 
     // Build the query dynamically
-    final query = _buildReportQuery(report);
+    final query = _buildReportQuery(report, allowedBranchIds);
+    if (query == null) {
+      debugPrint('[ReportBuilder] رُفض: الكيان "${report.sourceEntity}" مالوش '
+          'فلتر حصر مدعوم، والمستخدم محصور بفرع');
+      return [];
+    }
     final results = await customSelect(query).get();
 
     stopwatch.stop();
@@ -169,7 +183,39 @@ extension ReportBuilderDao on AppDatabase {
   // QUERY BUILDER (internal)
   // ─────────────────────────────────────────────────────────────────────────
 
-  String _buildReportQuery(CustomReportData report) {
+  /// شرط الحصر لكل كيان. `null` = **مالوش فلتر مدعوم** ⇒ ارفض التقرير.
+  ///
+  /// عن قصد مش فلتراً واحداً: كل مصدر بيوصل للفرع بطريق مختلف، والتعميم بيدي
+  /// إما تسريباً أو صفر صفوف مضلّلاً.
+  ///   • الفواتير      → `branch_id` مباشرةً (‏L3 حطّه على الصف)
+  ///   • الأطراف       → `is_global OR branch_ids LIKE` (زي _watchPartiesForBranches)
+  ///   • الأصناف       → بيانات أساسية على مستوى الشركة، مفيش قيم مالية عبر فروع
+  ///   • قيود اليومية  → الوصول للفرع عبر مراكز التكلفة، مش عمود على الصف
+  ///   • الموظفون      → `employees.branch_id` **ما بيتكتبش أصلاً** (مانع H6)،
+  ///                     فحصره بيدي صفر صفوف بشكل مضلّل بدل ما يحصر
+  ///   • أرصدة المخزون → الحصر بالمخزن لا الفرع (‏getWarehouseScopeForUser)
+  String? _scopeClauseFor(String entity, Set<int> ids) {
+    final list = ids.join(',');
+    switch (entity) {
+      case 'sales_invoices':
+      case 'purchase_invoices':
+        final t = _getTableName(entity);
+        return '$t.branch_id IN ($list) OR $t.branch_id IS NULL';
+      case 'parties':
+        final ors = ids
+            .map((id) =>
+                "(',' || COALESCE(parties.branch_ids, '') || ',') LIKE '%,$id,%'")
+            .join(' OR ');
+        return 'parties.is_global = 1 OR $ors';
+      case 'products':
+        return '1 = 1';
+      default:
+        return null;
+    }
+  }
+
+  String? _buildReportQuery(
+      CustomReportData report, Set<int>? allowedBranchIds) {
     final tableName = _getTableName(report.sourceEntity);
     
     // Map friendly keys to proper SQL columns to prevent "no such column" errors
@@ -226,9 +272,24 @@ extension ReportBuilderDao on AppDatabase {
       query += ' $joins';
     }
 
-    // Add filters
+    // حصر الفروع + فلاتر المستخدم في نفس الـWHERE. الحصر **الأول** وبقوسين
+    // حواليه، فأي فلتر مستخدم بـOR ما يقدرش يوسّع النطاق.
+    final conditions = <String>[];
+    if (allowedBranchIds != null) {
+      if (allowedBranchIds.isEmpty) {
+        conditions.add('1 = 0'); // فشل مقفول
+      } else {
+        final clause =
+            _scopeClauseFor(report.sourceEntity, allowedBranchIds);
+        if (clause == null) return null; // كيان مالوش فلتر مدعوم ⇒ ارفض
+        conditions.add('($clause)');
+      }
+    }
     if (report.filters != null && report.filters!.isNotEmpty) {
-      query += ' WHERE ${_buildWhereClause(report.filters!)}';
+      conditions.add('(${_buildWhereClause(report.filters!)})');
+    }
+    if (conditions.isNotEmpty) {
+      query += ' WHERE ${conditions.join(' AND ')}';
     }
 
     // Add group by
