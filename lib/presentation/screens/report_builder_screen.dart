@@ -18,6 +18,10 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
   List<CustomReportData> _reports = [];
   CustomReportData? _selectedReport;
   List<Map<String, dynamic>> _results = [];
+
+  /// السقفُ الذي اقتُطع عنده آخرُ تشغيل، أو `null` إن كان التقريرُ كاملاً.
+  int? _truncatedAt;
+
   bool _loading = true;
   bool _running = false;
 
@@ -197,6 +201,26 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
             ),
           ]),
         ),
+        if (_truncatedAt != null)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            color: Colors.orange.withValues(alpha: 0.15),
+            child: Row(children: [
+              const Icon(PhosphorIconsBold.warning,
+                  size: 18, color: Colors.orange),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'التقرير مقتطع عند $_truncatedAt صف — البيانات أكثر من ذلك. '
+                  'الإجماليات المحسوبة من هذا الجدول ناقصة؛ ضيّق الفترة أو '
+                  'أضف فلتراً.',
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ]),
+          ),
         Expanded(
           child: _results.isEmpty
               ? Center(
@@ -251,10 +275,21 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
       // الشركة كلها. الحصر بيتطبّق جوّه الاستعلام لكل كيان على حدة، وكيان
       // مالوش فلتر مدعوم بيرجّع فاضي بدل ما يتساب يسرّب.
       final scope = await ref.read(branchScopeProvider.future);
-      final results = await repo.executeReport(report.id,
-          allowedBranchIds: scope.allowedBranchIds);
+      // القصُّ يُلتقط أثناء التنفيذ ويُعرَض **لافتةً ثابتة** لا رسالةً عابرة:
+      // هو صفةٌ للتقرير المعروض لا حدثٌ لحظي، ومن يفوّت الرسالة يجمع أعمدةَ
+      // تقريرٍ ناقصٍ ويقدّمها إجمالياً للفترة.
+      int? truncatedAt;
+      final results = await repo.executeReport(
+        report.id,
+        allowedBranchIds: scope.allowedBranchIds,
+        onRowLimitReached: (limit) => truncatedAt = limit,
+      );
       if (!mounted) return;
-      setState(() { _results = results; _running = false; });
+      setState(() {
+        _results = results;
+        _truncatedAt = truncatedAt;
+        _running = false;
+      });
       if (results.isEmpty && !scope.hasFullAccess) {
         AppToast.show(
             context,

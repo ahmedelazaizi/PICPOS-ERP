@@ -566,8 +566,11 @@ class ReportingRepositoryImpl implements IReportingRepository {
 
   @override
   Future<List<Map<String, dynamic>>> executeReport(int reportId,
-          {Set<int>? allowedBranchIds}) =>
-      _db.executeReport(reportId, allowedBranchIds: allowedBranchIds);
+          {Set<int>? allowedBranchIds,
+          void Function(int limit)? onRowLimitReached}) =>
+      _db.executeReport(reportId,
+          allowedBranchIds: allowedBranchIds,
+          onRowLimitReached: onRowLimitReached);
 
   @override
   List<Map<String, String>> getAvailableFields(String entity) =>

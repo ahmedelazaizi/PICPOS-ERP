@@ -4,6 +4,13 @@ part of '../database.dart';
 // REPORT BUILDER DAO — منشئ التقارير المخصصة (Phase C5)
 // ═══════════════════════════════════════════════════════════════════════════
 
+/// سقفُ صفوف تقريرٍ مخصَّص واحد.
+///
+/// كان `LIMIT 10000` رقماً مدفوناً في بناء الاستعلام بتعليق `// Safety limit`،
+/// فلا المستخدمُ يعلم بوجوده ولا الكودُ يتيح تغييره. معلَنٌ هنا كي يُقاس عليه
+/// الإبلاغُ ويُمرَّر في الاختبار بقيمةٍ صغيرة بدل زرعِ عشرةِ آلاف صفّ.
+const int kReportBuilderRowLimit = 10000;
+
 extension ReportBuilderDao on AppDatabase {
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -81,9 +88,18 @@ extension ReportBuilderDao on AppDatabase {
   /// (شوف [_scopeClauseFor]). وكيان مالوش فلتر مدعوم بيرجّع **فاضي** لمستخدم
   /// محصور بدل ما يتساب يسرّب: الحصر الجزئي أخطر من غيابه، لأن التقرير بيبان
   /// محصوراً والمستخدم بيثق فيه.
+  /// [rowLimit] — سقفُ الصفوف المُرجَعة. و[onRowLimitReached] يُنادى **فقط** إذا
+  /// كانت هناك صفوفٌ أكثر منه ⇒ التقريرُ مقتطع.
+  ///
+  /// كان السقفُ `LIMIT 10000` مدفوناً في بناء الاستعلام **بلا أن ينطق**: من
+  /// يبني تقريراً على ١٥ ألف صفٍّ يرى عشرةَ آلاف ويجمع العمودَ ويقدّمه إجمالياً
+  /// للفترة. والتقريرُ المقتطعُ لا يُميَّز عن الكامل — وهذا أخطرُ من فشلٍ، لأن
+  /// الفشلَ يُرى.
   Future<List<Map<String, dynamic>>> executeReport(
     int reportId, {
     Set<int>? allowedBranchIds,
+    int rowLimit = kReportBuilderRowLimit,
+    void Function(int limit)? onRowLimitReached,
   }) async {
     final report = await getCustomReport(reportId);
     if (report == null) return [];
@@ -91,13 +107,20 @@ extension ReportBuilderDao on AppDatabase {
     final stopwatch = Stopwatch()..start();
 
     // Build the query dynamically
-    final query = _buildReportQuery(report, allowedBranchIds);
+    final query = _buildReportQuery(report, allowedBranchIds, rowLimit);
     if (query == null) {
       debugPrint('[ReportBuilder] رُفض: الكيان "${report.sourceEntity}" مالوش '
           'فلتر حصر مدعوم، والمستخدم محصور بفرع');
       return [];
     }
-    final results = await customSelect(query).get();
+    var results = await customSelect(query).get();
+
+    // الصفُّ الزائد دليلُ القصّ: يُبلَّغ عنه ثم يُطرَح فلا يُعرَض ولا يُحتسب.
+    // والإبلاغُ **قبل** الطرح كي لا يبقى الاكتشافُ متوقفاً على ترتيبِ سطور.
+    if (results.length > rowLimit) {
+      onRowLimitReached?.call(rowLimit);
+      results = results.sublist(0, rowLimit);
+    }
 
     stopwatch.stop();
 
@@ -222,7 +245,7 @@ extension ReportBuilderDao on AppDatabase {
   }
 
   String? _buildReportQuery(
-      CustomReportData report, Set<int>? allowedBranchIds) {
+      CustomReportData report, Set<int>? allowedBranchIds, int rowLimit) {
     final tableName = _getTableName(report.sourceEntity);
     
     // Map friendly keys to proper SQL columns to prevent "no such column" errors
@@ -311,7 +334,10 @@ extension ReportBuilderDao on AppDatabase {
       query += ' ORDER BY ${report.sortBy}';
     }
 
-    query += ' LIMIT 10000'; // Safety limit
+    // ‏`rowLimit + 1` عن قصد: `LIMIT n` وحده لا يفرّق بين «توجد n صفوفٍ
+    // بالضبط» و«قُصَّت». فالصفُّ الزائدُ **دليلٌ لا بيانات** — يُقاس ثم يُطرح
+    // في [executeReport].
+    query += ' LIMIT ${rowLimit + 1}';
 
     return query;
   }

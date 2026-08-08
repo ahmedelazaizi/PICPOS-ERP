@@ -41,8 +41,11 @@ abstract class IReportingRepository
   /// Execute a custom report and get results
   /// [allowedBranchIds] — null = وصول كامل. كيان مالوش فلتر حصر مدعوم
   /// بيرجّع فاضي لمستخدم محصور بدل ما يتساب يسرّب.
+  /// [onRowLimitReached] يُنادى إذا كانت البيانات أكثر من السقف ⇒ الناتجُ
+  /// **مقتطع**. تمريرُه ليس تحسيناً: بلا إبلاغٍ يقرأ المستخدم تقريراً ناقصاً
+  /// كأنه كامل ويجمع أعمدته.
   Future<List<Map<String, dynamic>>> executeReport(int reportId,
-      {Set<int>? allowedBranchIds});
+      {Set<int>? allowedBranchIds, void Function(int limit)? onRowLimitReached});
 
   /// Get fields available for a custom report entity
   List<Map<String, String>> getAvailableFields(String entity);
