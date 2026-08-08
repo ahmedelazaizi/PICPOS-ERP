@@ -1,0 +1,735 @@
+diff --git a/lib/data/database/extensions/hr_extensions.dart b/lib/data/database/extensions/hr_extensions.dart
+index a49230a5..21e62539 100644
+--- a/lib/data/database/extensions/hr_extensions.dart
++++ b/lib/data/database/extensions/hr_extensions.dart
+@@ -285,7 +285,36 @@ extension HRExtensions on AppDatabase {
+     required String period, // e.g., "2023-10"
+     String type = 'salary',
+     String? notes,
++    double? payableAmount,
++    double advancesSettled = 0,
+   }) async {
++    // ── B3 — حارسُ الثابت، **قبل** فتحِ المعاملة ────────────────────────────
++    // قيدُ اليومية ملفوفٌ في `try/catch` يبتلع الفشل بـ`debugPrint`. فقيدٌ
++    // مختلٌّ يرفضه حارسُ التوازن، ويُبتلَع الرفض، ويُصرَف الراتبُ **بلا قيدٍ
++    // إطلاقاً** بصمت — والخزنةُ تنقص والدفاترُ لا تعلم. فلا يجوز الاتّكال على
++    // حارسِ التوازن هنا؛ الثابتُ يُفحَص صراحةً وقبل أيّ كتابة.
++    if (advancesSettled < 0) {
++      throw ArgumentError.value(
++        advancesSettled,
++        'advancesSettled',
++        'السلفُ المسوّاة لا تكون سالبة',
++      );
++    }
++    if (payableAmount == null && advancesSettled > 0) {
++      throw ArgumentError(
++        'تسويةُ سلفٍ بلا `payableAmount` — المصروفُ المُعترَف به غيرُ معلوم '
++        'فالقيدُ لا يمكن أن يتوازن.',
++      );
++    }
++    if (payableAmount != null &&
++        (payableAmount - (amount + advancesSettled)).abs() > 0.01) {
++      throw ArgumentError(
++        'أرقامُ الراتب غيرُ متّسقة: المستحقُّ ($payableAmount) لا يساوي '
++        'الصافي ($amount) + السلفَ المسوّاة ($advancesSettled). '
++        'مصدرُ الأرقام الوحيدُ هو `calculateNetSalary`.',
++      );
++    }
++
+     return transaction(() async {
+       // B1 — idempotency guard. The «صرف الراتب» button stays enabled, and
+       // every press used to create a fresh salary row, a fresh cash voucher
+@@ -357,8 +386,39 @@ extension HRExtensions on AppDatabase {
+           SalaryPaymentsCompanion(treasuryTransactionId: Value(transId)),
+         );
+ 
++        // ── B3 — حسابُ سلف الموظفين، **قبل** الـtry الذي يبتلع الفشل ────────
++        // لو احتاج القيدُ سطرَ تسويةٍ وتعذّر الحسابُ، فإسقاطُ السطر يُنتج قيداً
++        // مختلاًّ يرفضه الحارسُ ويُبتلَع الرفض ⇒ لا قيدَ إطلاقاً و١١٤٦ لا
++        // يُقيَّد عليه دائنٌ — أي العطلُ نفسه يعود من بابٍ آخر. فالفشلُ صريح.
++        Account? advanceAcc;
++        if (advancesSettled > 0) {
++          final advanceCode = await getMappedAccountCode(
++            'employee_advances',
++            AccountingDao.accountPurposes['employee_advances']!,
++          );
++          advanceAcc = await getAccountByCode(advanceCode);
++          if (advanceAcc == null) {
++            throw StateError(
++              'حساب سلف الموظفين ($advanceCode) غير موجود، وتسويةُ '
++              '$advancesSettled لا يمكن تقييدُها. صحّح شجرةَ الحسابات أولاً.',
++            );
++          }
++        }
++
+         // GAP-HR-JE: Auto-post GL journal entry for salary disbursement
+-        // Dr مصروف الرواتب (621) / Cr الصندوق (1111)
++        //
++        // B3 — القيدُ ثلاثيّ لا ثنائيّ:
++        //   مدين  مصروف الرواتب ٦٢١  = المستحقّ (الإجمالي − الجزاءات)
++        //   دائن  النقدية ١١١١       = الصافي (ما خرج من الخزنة فعلاً)
++        //   دائن  سلف الموظفين ١١٤٦  = السلفُ المسوّاة
++        //
++        // كان يُدَبِّن **الصافي**، فيُبلَّغ المصروفُ أقلَّ من حقيقته بقيمة السلف،
++        // و١١٤٦ لا يُقيَّد عليه دائنٌ قطّ فيتضخّم للأبد: السلفةُ تُدَبَّن حين
++        // تُصرَف ولا تُدَيَّن حين تُسدَّد، فتظلّ ظاهرةً أصلاً بعد سدادها.
++        //
++        // وسطرُ الصفر يُحجَب: صافٍ بصفرٍ (سلفةٌ استوعبت المستحقَّ كلَّه) لا يعني
++        // حركةَ نقدٍ، وسطرٌ بصفرٍ يشوّش سجلَّ الحساب بلا معنى.
++        final expenseAmount = payableAmount ?? amount;
+         try {
+           final salaryAccCode = await getMappedAccountCode(
+             'salary_expense',
+@@ -377,14 +437,21 @@ extension HRExtensions on AppDatabase {
+               lines: [
+                 JournalLine(
+                   accountId: salaryAcc.id,
+-                  debit: amount,
++                  debit: expenseAmount,
+                   description: 'مصروف الرواتب',
+                 ),
+-                JournalLine(
+-                  accountId: cashAcc.id,
+-                  credit: amount,
+-                  description: 'صرف نقدي من الصندوق',
+-                ),
++                if (amount > 0)
++                  JournalLine(
++                    accountId: cashAcc.id,
++                    credit: amount,
++                    description: 'صرف نقدي من الصندوق',
++                  ),
++                if (advanceAcc != null)
++                  JournalLine(
++                    accountId: advanceAcc.id,
++                    credit: advancesSettled,
++                    description: 'تسوية سلف الموظف من راتب $period',
++                  ),
+               ],
+               referenceType: 'salary_payment',
+               referenceId: id,
+@@ -684,7 +751,26 @@ extension HRExtensions on AppDatabase {
+     // Calculate
+     final dailyRate = employee.salary / _daysInMonth(year, month);
+     final grossPay = dailyRate * daysAttended + overtimeAmount;
+-    final netSalary = grossPay - advances - deductions;
++
++    // ── B3 — الاشتقاقُ هنا وحده، فلا يُعاد حسابه في طبقةٍ أخرى ──────────────
++    // ثلاثةُ أرقامٍ يحتاجها قيدُ اليومية، وحسابُها في مكانَين يعني انحرافَهما
++    // عند أول تعديل — والانحرافُ في قيدٍ يعني دفاترَ مختلّة.
++    //
++    // `payableAmount` هو ما استحقّه الموظف بعد الجزاءات، وهو **المصروفُ
++    // المُعترَف به** (قرار المالك 2026-08-08: الجزاءُ يُنقص المصروف لا يُقيَّد
++    // إيراداً — فالموظف استحقّ أقلَّ، وتكلفةُ الأجر انخفضت فعلاً).
++    final payableAmount = grossPay - deductions;
++
++    // لا تُسوَّى سلفةٌ أكثر من المستحقّ: سلفةُ ٥٠٠٠ على مستحقٍّ ٢٨٠٠ تُسوّي
++    // ٢٨٠٠ ويبقى ٢٢٠٠ أصلاً قائماً في ١١٤٦ — لأنه فعلاً لم يُسدَّد بعد.
++    // وبهذا يتحقّق الثابت `payableAmount == netSalary + advancesSettled`
++    // **بالبناء**، فحارسُ توازن القيد يمرّ دائماً بلا حسابٍ إضافي.
++    final settleable = payableAmount > 0 ? payableAmount : 0.0;
++    final advancesSettled = advances < settleable ? advances : settleable;
++
++    // القصُّ يبقى لحالةٍ واحدة فقط: جزاءاتٌ تتجاوز الإجمالي (‏payable سالب).
++    // السلفُ لم تعد تُسلِّب الصافي لأن المسوَّى منها محدودٌ بالمستحقّ.
++    final netSalary = payableAmount - advancesSettled;
+ 
+     return EmployeeSalaryCalculation(
+       employee: employee,
+@@ -695,6 +781,8 @@ extension HRExtensions on AppDatabase {
+       totalAdvances: advances,
+       totalDeductions: deductions,
+       overtimeAmount: overtimeAmount,
++      payableAmount: payableAmount,
++      advancesSettled: advancesSettled,
+       netSalary: netSalary < 0 ? 0 : netSalary,
+       month: month,
+       year: year,
+@@ -1264,6 +1352,23 @@ class EmployeeSalaryCalculation {
+   final double totalAdvances;
+   final double totalDeductions;
+   final double overtimeAmount;
++
++  /// B3 — المستحقُّ بعد الجزاءات = [grossPay] − [totalDeductions]، وهو المبلغُ
++  /// الذي يُقيَّد **مديناً** على مصروف الرواتب.
++  ///
++  /// كان القيدُ يُدَبِّن الصافي، فيُبلَّغ المصروفُ أقلَّ من حقيقته بقيمة السلف
++  /// المخصومة.
++  final double payableAmount;
++
++  /// B3 — ما تُسوّيه هذه القسيمةُ من السلف = min([totalAdvances], المستحقّ).
++  ///
++  /// ليس [totalAdvances] نفسه: سلفةٌ أكبر من المستحقّ لا تُسوّى كاملةً، والباقي
++  /// يظلّ أصلاً قائماً في ١١٤٦ لأنه فعلاً لم يُسدَّد.
++  ///
++  /// والثابت `payableAmount == netSalary + advancesSettled` محقَّقٌ بالبناء —
++  /// وهو بعينه شرطُ توازنِ قيدِ اليومية.
++  final double advancesSettled;
++
+   final double netSalary;
+   final int month;
+   final int year;
+@@ -1277,6 +1382,8 @@ class EmployeeSalaryCalculation {
+     required this.totalAdvances,
+     required this.totalDeductions,
+     this.overtimeAmount = 0,
++    required this.payableAmount,
++    this.advancesSettled = 0,
+     required this.netSalary,
+     required this.month,
+     required this.year,
+diff --git a/lib/data/repositories/hr_repository_impl.dart b/lib/data/repositories/hr_repository_impl.dart
+index 6bb3102e..21cd0765 100644
+--- a/lib/data/repositories/hr_repository_impl.dart
++++ b/lib/data/repositories/hr_repository_impl.dart
+@@ -119,10 +119,14 @@ class HRRepositoryImpl implements IHRRepository {
+     required int employeeId,
+     required double amount,
+     required String period,
++    double? payableAmount,
++    double advancesSettled = 0,
+   }) => _db.recordSalaryPayment(
+     employeeId: employeeId,
+     amount: amount,
+     period: period,
++    payableAmount: payableAmount,
++    advancesSettled: advancesSettled,
+   );
+ 
+   @override
+diff --git a/lib/domain/repositories/hr_repository_interface.dart b/lib/domain/repositories/hr_repository_interface.dart
+index 29003923..86674f1b 100644
+--- a/lib/domain/repositories/hr_repository_interface.dart
++++ b/lib/domain/repositories/hr_repository_interface.dart
+@@ -57,10 +57,17 @@ abstract class IHRRepository {
+     required int year,
+     required int month,
+   });
++  /// B3 — [amount] هو الصافي المدفوع نقداً، و[payableAmount] هو المستحقُّ بعد
++  /// الجزاءات (المصروفُ المُعترَف به)، و[advancesSettled] ما تُسوّيه هذه
++  /// القسيمةُ من السلف. مصدرُ الثلاثة الوحيد هو `calculateNetSalary`.
++  ///
++  /// إغفالُ الأخيرَين يعني «لا تسويةَ سلفٍ» — وهو الصحيح للمكافآت وما شابه.
+   Future<void> recordSalaryPayment({
+     required int employeeId,
+     required double amount,
+     required String period,
++    double? payableAmount,
++    double advancesSettled,
+   });
+ 
+   // Leaves
+diff --git a/lib/domain/usecases/hr/payroll_usecase.dart b/lib/domain/usecases/hr/payroll_usecase.dart
+index 4a1076e5..66f39b87 100644
+--- a/lib/domain/usecases/hr/payroll_usecase.dart
++++ b/lib/domain/usecases/hr/payroll_usecase.dart
+@@ -17,11 +17,20 @@ class PayrollUseCase {
+   PayrollUseCase(this._hrRepo);
+ 
+   /// Process salary payment
++  ///
++  /// B3 — [payableAmount] و[advancesSettled] مصدرُهما `calculateNetSalary`،
++  /// وإغفالُهما يُنتج قيداً بالصافي: المصروفُ مُبخَّس و١١٤٦ لا يُسوّى.
++  ///
++  /// ⚠️ هذه الدالةُ غيرُ مستدعاةٍ من `lib/` (المسارُ الإنتاجي هو
++  /// `HRNotifier.paySalary`)، ومُرِّرَت المعاملاتُ فيها عن قصد: تركُها بلا
++  /// تمريرٍ يجعل من يوصلها يوماً يُعيد B3 صامتاً.
+   Future<PayrollResult> paySalary({
+     required int employeeId,
+     required double netSalary,
+     required int year,
+     required int month,
++    double? payableAmount,
++    double advancesSettled = 0,
+   }) async {
+     if (netSalary <= 0) return PayrollResult.failure('الراتب الصافي يجب أن يكون أكبر من صفر');
+ 
+@@ -31,6 +40,8 @@ class PayrollUseCase {
+         employeeId: employeeId,
+         amount: netSalary,
+         period: period,
++        payableAmount: payableAmount,
++        advancesSettled: advancesSettled,
+       );
+       return PayrollResult.success(netSalary);
+     } catch (e) {
+diff --git a/lib/presentation/screens/hr/hr_notifier.dart b/lib/presentation/screens/hr/hr_notifier.dart
+index b408ae3d..5166cd26 100644
+--- a/lib/presentation/screens/hr/hr_notifier.dart
++++ b/lib/presentation/screens/hr/hr_notifier.dart
+@@ -152,10 +152,15 @@ class HRNotifier extends Notifier<HRState> {
+   }
+ 
+   Future<void> paySalary(EmployeeSalaryCalculation calc) async {
++    // B3 — الأرقامُ الثلاثة من `calc` نفسه لا مُعادةَ الحساب هنا: كانت الدالةُ
++    // تستقبل الحسابَ كاملاً وتمرّر الصافيَ وحده، فيُقيَّد المصروفُ مُبخَّساً
++    // و١١٤٦ لا يُقيَّد عليه دائنٌ قطّ.
+     await _hrRepo.recordSalaryPayment(
+       employeeId: calc.employee.id,
+       amount: calc.netSalary,
+       period: '${calc.year}-${calc.month.toString().padLeft(2, '0')}',
++      payableAmount: calc.payableAmount,
++      advancesSettled: calc.advancesSettled,
+     );
+     await _log(
+       'salary_payment',
+diff --git a/lib/presentation/screens/hr/widgets/payroll_tab.dart b/lib/presentation/screens/hr/widgets/payroll_tab.dart
+index 724e0f74..bc0f085d 100644
+--- a/lib/presentation/screens/hr/widgets/payroll_tab.dart
++++ b/lib/presentation/screens/hr/widgets/payroll_tab.dart
+@@ -129,7 +129,14 @@ class _PayrollCard extends ConsumerWidget {
+                 // تُظهر حضوراً في أيامٍ كان الموظف فيها في إجازة.
+                 _calcRow('الأيام المدفوعة (${calc.daysAttended})', calc.dailyRate * calc.daysAttended, color: Colors.green),
+                 _calcRow('الإضافي', calc.overtimeAmount, color: Colors.green),
+-                _calcRow('السلف النشطة', -calc.totalAdvances, color: Colors.red),
++                // B3 — المسوَّى من هذه القسيمة لا المُصرَف كلَّه. سلفةُ ٥٠٠٠ على
++                // مستحقٍّ ٢٨٠٠ تُسوّي ٢٨٠٠ فقط، وعرضُ ٥٠٠٠ خصماً بجانب صافٍ
++                // بصفرٍ أرقامٌ لا تجتمع: ٢٨٠٠ − ٥٠٠٠ ≠ ٠.
++                _calcRow('السلف المسوّاة', -calc.advancesSettled, color: Colors.red),
++                if (calc.totalAdvances - calc.advancesSettled > 0.01)
++                  _calcRow('سلف مؤجّلة للشهر القادم',
++                      calc.totalAdvances - calc.advancesSettled,
++                      color: Colors.orange),
+                 _calcRow('الخصومات', -calc.totalDeductions, color: Colors.red),
+                 const Divider(),
+                 _calcRow('الإجمالي المستحق', calc.grossPay, isBold: true, color: Colors.indigo),
+diff --git a/test/unit/manage_employee_usecase_test.dart b/test/unit/manage_employee_usecase_test.dart
+index 61760a6c..719fc914 100644
+--- a/test/unit/manage_employee_usecase_test.dart
++++ b/test/unit/manage_employee_usecase_test.dart
+@@ -107,6 +107,8 @@ class _MockHRRepository implements IHRRepository {
+     required int employeeId,
+     required double amount,
+     required String period,
++    double? payableAmount,
++    double advancesSettled = 0,
+   }) =>
+       throw UnimplementedError();
+   @override
+diff --git a/test/unit/payroll_usecase_test.dart b/test/unit/payroll_usecase_test.dart
+index ad1a3d39..b9e8729f 100644
+--- a/test/unit/payroll_usecase_test.dart
++++ b/test/unit/payroll_usecase_test.dart
+@@ -10,13 +10,22 @@ import 'package:ural_erp/data/database/database_barrel.dart';
+ class _MockHR implements IHRRepository {
+   bool shouldFail = false;
+ 
++  /// B3 — تُلتقط لا تُتجاهل: إغفالُ تمريرِها يُنتج قيداً بالصافي فيُبخَّس
++  /// المصروفُ ولا يُسوّى ١١٤٦ — وهو عطلٌ لا يُسقِط أيَّ اختبارٍ آخر.
++  double? capturedPayableAmount;
++  double? capturedAdvancesSettled;
++
+   @override
+   Future<void> recordSalaryPayment({
+     required int employeeId,
+     required double amount,
+     required String period,
++    double? payableAmount,
++    double advancesSettled = 0,
+   }) async {
+     if (shouldFail) throw Exception('salary payment failed');
++    capturedPayableAmount = payableAmount;
++    capturedAdvancesSettled = advancesSettled;
+   }
+ 
+   @override
+@@ -124,6 +133,31 @@ void main() {
+       );
+       expect(result.isSuccess, isFalse);
+     });
++
++    // B3 — أرقامُ القيد تصل إلى المستودع، وإلا قُيِّد الصافي وحده.
++    test('payableAmount وadvancesSettled يُمرَّران إلى المستودع', () async {
++      await useCase.paySalary(
++        employeeId: 3,
++        netSalary: 1800,
++        year: 2026,
++        month: 2,
++        payableAmount: 2800,
++        advancesSettled: 1000,
++      );
++      expect(mock.capturedPayableAmount, 2800);
++      expect(mock.capturedAdvancesSettled, 1000);
++    });
++
++    test('إغفالُهما يعني لا تسويةَ سلف — الصحيحُ للمكافآت', () async {
++      await useCase.paySalary(
++        employeeId: 3,
++        netSalary: 500,
++        year: 2026,
++        month: 2,
++      );
++      expect(mock.capturedPayableAmount, isNull);
++      expect(mock.capturedAdvancesSettled, 0);
++    });
+   });
+ 
+   // ── requestLeave ────────────────────────────────────────────────────────────
+diff --git a/test/unit/salary_advance_settlement_test.dart b/test/unit/salary_advance_settlement_test.dart
+new file mode 100644
+index 00000000..3a8eedcd
+--- /dev/null
++++ b/test/unit/salary_advance_settlement_test.dart
+@@ -0,0 +1,362 @@
++// ═══════════════════════════════════════════════════════════════════════════
++// B3 — السلف لم تكن تُسوّى محاسبياً: حساب ١١٤٦ يتضخّم للأبد.
++// ═══════════════════════════════════════════════════════════════════════════
++//
++// القيدُ كان سطرين بالصافي:
++//     مدين  مصروف الرواتب ٦٢١ = الصافي        ← مُبخَّس بقيمة السلف
++//     دائن  النقدية ١١١١      = الصافي
++//
++// فحسابُ `1146` (سلف الموظفين) **لم يُقيَّد عليه دائنٌ قطّ**: السلفةُ تُدَبَّن
++// حين تُصرَف ولا تُدَيَّن حين تُسدَّد، فتظلّ ظاهرةً أصلاً مستحقاً بعد سدادها —
++// وتتراكم بلا حدّ. ومصروفُ الرواتب يُبلَّغ أقلَّ من حقيقته بنفس القيمة.
++//
++// الصحيح ثلاثةُ سطور:
++//     مدين  مصروف الرواتب ٦٢١  = المستحقّ (الإجمالي − الجزاءات)
++//     دائن  النقدية ١١١١       = الصافي (ما خرج من الخزنة فعلاً)
++//     دائن  سلف الموظفين ١١٤٦  = السلفُ المسوّاة
++//
++// ── قرار المالك (2026-08-08): الجزاءاتُ تُنقص مصروف الرواتب ────────────────
++// لا تُقيَّد إيراداً ولا التزاماً. الجزاءُ يعني أنّ الموظف استحقّ أقلَّ، فتكلفةُ
++// الأجر انخفضت فعلاً — والقيدُ يتوازن بثلاثةِ سطورٍ بلا تعيينِ حسابٍ جديد.
++//
++// ── ⚠️ فخٌّ في الكود المفحوص: القيدُ ملفوفٌ في try/catch يبتلع الفشل ──────────
++// `catch (e) { debugPrint(...) }` — فقيدٌ غيرُ متوازنٍ يرفضه حارسُ التوازن،
++// ويُبتلَع الرفض، ويُصرَف الراتبُ **بلا قيدٍ إطلاقاً** بصمت. فنمطُ العطل هنا
++// هو **غيابُ** القيد لا ظهورُ استثناء، ولهذا كلُّ اختبارٍ أدناه يؤكّد على وجودِ
++// القيد وسطورِه لا على انعدامِ الاستثناء.
++// ═══════════════════════════════════════════════════════════════════════════
++
++import 'package:drift/drift.dart' hide isNotNull, isNull;
++import 'package:flutter_test/flutter_test.dart';
++import 'package:ural_erp/data/database/database.dart';
++import 'package:ural_erp/data/database/extensions/hr_extensions.dart';
++
++void main() {
++  late AppDatabase db;
++  late int employeeId;
++  late int safeId;
++  late int salaryAccId;
++  late int cashAccId;
++  late int advanceAccId;
++
++  const salary = 2800.0; // ÷ ٢٨ يوماً في فبراير = ١٠٠ يومياً
++  const period = '2026-02';
++
++  Future<void> markPresentFullFebruary() async {
++    for (var d = 1; d <= 28; d++) {
++      await db.into(db.employeeAttendance).insert(
++            EmployeeAttendanceCompanion.insert(
++              employeeId: employeeId,
++              date: DateTime(2026, 2, d),
++              status: const Value('present'),
++            ),
++          );
++    }
++  }
++
++  /// سطورُ قيدِ صرفِ الراتب — مفتاحُها `referenceType` الذي يكتبه الإنتاج.
++  Future<List<JournalEntryLine>> salaryEntryLines() async {
++    final entries = await (db.select(db.journalEntries)
++          ..where((e) => e.referenceType.equals('salary_payment')))
++        .get();
++    expect(entries.length, 1,
++        reason: 'قيدُ الراتب غائبٌ أو مكرَّر — والغيابُ يُبتلَع في catch بصمت');
++    return (db.select(db.journalEntryLines)
++          ..where((l) => l.entryId.equals(entries.first.id)))
++        .get();
++  }
++
++  double debitOf(List<JournalEntryLine> lines, int accountId) => lines
++      .where((l) => l.accountId == accountId)
++      .fold<double>(0, (s, l) => s + l.debit);
++
++  double creditOf(List<JournalEntryLine> lines, int accountId) => lines
++      .where((l) => l.accountId == accountId)
++      .fold<double>(0, (s, l) => s + l.credit);
++
++  /// صافي حركة حسابٍ عبر **كل** القيود — مدين ناقص دائن.
++  Future<double> accountNetBalance(int accountId) async {
++    final lines = await (db.select(db.journalEntryLines)
++          ..where((l) => l.accountId.equals(accountId)))
++        .get();
++    return lines.fold<double>(0, (s, l) => s + l.debit - l.credit);
++  }
++
++  setUp(() async {
++    db = AppDatabase.forTesting();
++    employeeId = await db.into(db.employees).insert(
++          EmployeesCompanion.insert(
++            name: 'أحمد',
++            salary: const Value(salary),
++          ),
++        );
++
++    // ── تأكيدُ التجهيزة نفسها ──────────────────────────────────────────────
++    // المسارُ النقدي والقيدُ كلاهما داخل `if (safe != null)` وداخل فحص
++    // `salaryAcc != null && cashAcc != null`. فتجهيزةٌ ناقصةٌ تجعل الاختبار
++    // يمرّ على مسارٍ لا يُقيَّد فيه شيء — نجاحٌ كاذب.
++    final defaultSafe = await db.getDefaultSafeByType('cash');
++    expect(defaultSafe, isNotNull,
++        reason: 'بلا خزنة نقدية يُتخطّى مسارُ القيد بالكامل');
++    safeId = defaultSafe!.id;
++    await (db.update(db.safes)..where((s) => s.id.equals(safeId)))
++        .write(const SafesCompanion(balance: Value(50000)));
++
++    final salaryAcc = await db.getAccountByCode('621');
++    final cashAcc = await db.getAccountByCode('1111');
++    final advanceAcc = await db.getAccountByCode('1146');
++    expect(salaryAcc, isNotNull, reason: 'حساب ٦٢١ غير مزروع');
++    expect(cashAcc, isNotNull, reason: 'حساب ١١١١ غير مزروع');
++    expect(advanceAcc, isNotNull, reason: 'حساب ١١٤٦ غير مزروع');
++    salaryAccId = salaryAcc!.id;
++    cashAccId = cashAcc!.id;
++    advanceAccId = advanceAcc!.id;
++  });
++
++  tearDown(() => db.close());
++
++  group('B3 — القيد الثلاثي', () {
++    test('سلفةٌ ١٠٠٠ على راتب ٢٨٠٠: ٦٢١ مدين ٢٨٠٠ · ١١١١ دائن ١٨٠٠ · ١١٤٦ دائن ١٠٠٠',
++        () async {
++      await markPresentFullFebruary();
++      await db.recordEmployeeAdvance(
++        employeeId: employeeId,
++        amount: 1000,
++        affectsTreasury: false,
++        transactionDate: DateTime(2026, 2, 10),
++      );
++      final calc = await db.calculateNetSalary(
++          employeeId: employeeId, year: 2026, month: 2);
++
++      await db.recordSalaryPayment(
++        employeeId: employeeId,
++        amount: calc.netSalary,
++        period: period,
++        payableAmount: calc.payableAmount,
++        advancesSettled: calc.advancesSettled,
++      );
++
++      final lines = await salaryEntryLines();
++      expect(debitOf(lines, salaryAccId), closeTo(2800, 0.01),
++          reason: 'المصروفُ كان يُقيَّد بالصافي ١٨٠٠ — مُبخَّساً بقيمة السلفة');
++      expect(creditOf(lines, cashAccId), closeTo(1800, 0.01),
++          reason: 'النقديةُ بما خرج فعلاً');
++      expect(creditOf(lines, advanceAccId), closeTo(1000, 0.01),
++          reason: 'هذا السطرُ لم يكن يُكتَب قطّ — ولهذا تضخّم ١١٤٦ للأبد');
++    });
++
++    test('القيدُ متوازن — وإلا رفضه الحارسُ وابتلع الرفضَ الـcatch', () async {
++      await markPresentFullFebruary();
++      await db.recordEmployeeAdvance(
++        employeeId: employeeId,
++        amount: 1000,
++        affectsTreasury: false,
++        transactionDate: DateTime(2026, 2, 10),
++      );
++      final calc = await db.calculateNetSalary(
++          employeeId: employeeId, year: 2026, month: 2);
++
++      await db.recordSalaryPayment(
++        employeeId: employeeId,
++        amount: calc.netSalary,
++        period: period,
++        payableAmount: calc.payableAmount,
++        advancesSettled: calc.advancesSettled,
++      );
++
++      final lines = await salaryEntryLines();
++      final debit = lines.fold<double>(0, (s, l) => s + l.debit);
++      final credit = lines.fold<double>(0, (s, l) => s + l.credit);
++      expect(debit, closeTo(credit, 0.01));
++      expect(debit, closeTo(2800, 0.01));
++    });
++
++    test('بلا سلفة: سطران ولا سطرَ ١١٤٦', () async {
++      await markPresentFullFebruary();
++      final calc = await db.calculateNetSalary(
++          employeeId: employeeId, year: 2026, month: 2);
++
++      await db.recordSalaryPayment(
++        employeeId: employeeId,
++        amount: calc.netSalary,
++        period: period,
++        payableAmount: calc.payableAmount,
++        advancesSettled: calc.advancesSettled,
++      );
++
++      final lines = await salaryEntryLines();
++      expect(lines.length, 2);
++      expect(debitOf(lines, salaryAccId), closeTo(2800, 0.01));
++      expect(creditOf(lines, cashAccId), closeTo(2800, 0.01));
++      expect(creditOf(lines, advanceAccId), 0,
++          reason: 'سطرٌ بصفرٍ يشوّش سجلَّ الحساب بلا فائدة');
++    });
++  });
++
++  group('B3 — حساب ١١٤٦ يعود إلى الصفر بعد السداد', () {
++    test('صرفُ سلفةٍ ثم صرفُ الراتب يُصفّر ١١٤٦', () async {
++      await markPresentFullFebruary();
++
++      // سلفةٌ **بأثرٍ محاسبي** — تُدَبِّن ١١٤٦ بـ١٠٠٠ كما في الإنتاج.
++      await db.recordEmployeeAdvance(
++        employeeId: employeeId,
++        amount: 1000,
++        transactionDate: DateTime(2026, 2, 10),
++      );
++      expect(await accountNetBalance(advanceAccId), closeTo(1000, 0.01),
++          reason: 'التجهيزة: السلفةُ أصلٌ مستحقٌّ على الموظف');
++
++      final calc = await db.calculateNetSalary(
++          employeeId: employeeId, year: 2026, month: 2);
++      await db.recordSalaryPayment(
++        employeeId: employeeId,
++        amount: calc.netSalary,
++        period: period,
++        payableAmount: calc.payableAmount,
++        advancesSettled: calc.advancesSettled,
++      );
++
++      expect(await accountNetBalance(advanceAccId), closeTo(0, 0.01),
++          reason: 'هذا هو العطلُ بعينه: كان يبقى ١٠٠٠ إلى الأبد بعد السداد');
++    });
++  });
++
++  group('B3 — الجزاءات تُنقص المصروف (قرار المالك)', () {
++    test('جزاءُ ٣٠٠ وسلفةُ ١٠٠٠: ٦٢١ مدين ٢٥٠٠ لا ٢٨٠٠', () async {
++      await markPresentFullFebruary();
++      await db.recordEmployeeAdvance(
++        employeeId: employeeId,
++        amount: 1000,
++        affectsTreasury: false,
++        transactionDate: DateTime(2026, 2, 10),
++      );
++      await db.recordEmployeeDeduction(
++        employeeId: employeeId,
++        amount: 300,
++        transactionDate: DateTime(2026, 2, 11),
++      );
++      final calc = await db.calculateNetSalary(
++          employeeId: employeeId, year: 2026, month: 2);
++      expect(calc.netSalary, closeTo(1500, 0.01), reason: '2800 − 1000 − 300');
++
++      await db.recordSalaryPayment(
++        employeeId: employeeId,
++        amount: calc.netSalary,
++        period: period,
++        payableAmount: calc.payableAmount,
++        advancesSettled: calc.advancesSettled,
++      );
++
++      final lines = await salaryEntryLines();
++      expect(debitOf(lines, salaryAccId), closeTo(2500, 0.01),
++          reason: 'الجزاءُ يُنقص المصروف — قرار المالك 2026-08-08');
++      expect(creditOf(lines, cashAccId), closeTo(1500, 0.01));
++      expect(creditOf(lines, advanceAccId), closeTo(1000, 0.01));
++      final debit = lines.fold<double>(0, (s, l) => s + l.debit);
++      final credit = lines.fold<double>(0, (s, l) => s + l.credit);
++      expect(debit, closeTo(credit, 0.01), reason: '٢٥٠٠ = ١٥٠٠ + ١٠٠٠');
++    });
++  });
++
++  group('B3 — سلفةٌ أكبر من المستحقّ: تُسوّى جزئياً', () {
++    test('سلفةُ ٥٠٠٠ على مستحقٍّ ٢٨٠٠ تُسوّي ٢٨٠٠ ويبقى ٢٢٠٠ أصلاً قائماً',
++        () async {
++      await markPresentFullFebruary();
++      await db.recordEmployeeAdvance(
++        employeeId: employeeId,
++        amount: 5000,
++        transactionDate: DateTime(2026, 2, 10),
++      );
++
++      final calc = await db.calculateNetSalary(
++          employeeId: employeeId, year: 2026, month: 2);
++      expect(calc.advancesSettled, closeTo(2800, 0.01),
++          reason: 'لا تُسوَّى سلفةٌ أكثر من المستحقّ');
++      expect(calc.netSalary, closeTo(0, 0.01));
++      expect(calc.totalAdvances, closeTo(5000, 0.01),
++          reason: 'المُصرَف ٥٠٠٠ — والمسوَّى منه ٢٨٠٠ فقط');
++
++      await db.recordSalaryPayment(
++        employeeId: employeeId,
++        amount: calc.netSalary,
++        period: period,
++        payableAmount: calc.payableAmount,
++        advancesSettled: calc.advancesSettled,
++      );
++
++      final lines = await salaryEntryLines();
++      expect(debitOf(lines, salaryAccId), closeTo(2800, 0.01));
++      expect(creditOf(lines, advanceAccId), closeTo(2800, 0.01));
++      expect(creditOf(lines, cashAccId), 0,
++          reason: 'لم يخرج نقدٌ — فلا سطرَ نقديةٍ بصفر');
++
++      expect(await accountNetBalance(advanceAccId), closeTo(2200, 0.01),
++          reason: 'الباقي أصلٌ قائمٌ فعلاً — لا يجوز محقُه ولا تسويتُه');
++    });
++  });
++
++  group('B3 — حارسُ الثابت قبل أي كتابة', () {
++    test('مستحقٌّ لا يساوي الصافي + المسوّى يُرفَض صراحةً', () async {
++      await expectLater(
++        db.recordSalaryPayment(
++          employeeId: employeeId,
++          amount: 1800,
++          period: period,
++          payableAmount: 2800,
++          advancesSettled: 500, // ‏1800 + 500 ≠ 2800
++        ),
++        throwsA(isA<ArgumentError>()),
++      );
++    });
++
++    test('الرفضُ لا يترك صفَّ راتبٍ ولا حركةَ خزنة', () async {
++      final safeBefore = (await (db.select(db.safes)
++                ..where((s) => s.id.equals(safeId)))
++              .getSingle())
++          .balance;
++
++      await expectLater(
++        db.recordSalaryPayment(
++          employeeId: employeeId,
++          amount: 1800,
++          period: period,
++          payableAmount: 2800,
++          advancesSettled: 500,
++        ),
++        throwsA(isA<ArgumentError>()),
++      );
++
++      expect(await db.select(db.salaryPayments).get(), isEmpty,
++          reason: 'الحارسُ قبل الكتابة لا بعدها');
++      final safeAfter = (await (db.select(db.safes)
++                ..where((s) => s.id.equals(safeId)))
++              .getSingle())
++          .balance;
++      expect(safeAfter, safeBefore);
++    });
++  });
++
++  group('B3 — المسارُ القديم ما زال يعمل (المكافآت وما شابه)', () {
++    test('بلا المعاملين الجديدين: سطران بالمبلغ نفسه', () async {
++      await db.recordSalaryPayment(
++        employeeId: employeeId,
++        amount: 500,
++        period: period,
++        type: 'bonus',
++      );
++
++      final entries = await (db.select(db.journalEntries)
++            ..where((e) => e.referenceType.equals('salary_payment')))
++          .get();
++      expect(entries.length, 1);
++      final lines = await (db.select(db.journalEntryLines)
++            ..where((l) => l.entryId.equals(entries.first.id)))
++          .get();
++      expect(lines.length, 2);
++      expect(debitOf(lines, salaryAccId), closeTo(500, 0.01));
++      expect(creditOf(lines, cashAccId), closeTo(500, 0.01));
++      expect(creditOf(lines, advanceAccId), 0,
++          reason: 'المكافأةُ لا تُسوّي سلفةً — لا سطرَ ١١٤٦');
++    });
++  });
++}
