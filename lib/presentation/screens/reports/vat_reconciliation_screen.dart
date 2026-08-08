@@ -5,8 +5,10 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import '../../../core/theme/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/permissions/permission_codes.dart';
 import '../../../data/database/database.dart';
 import '../../../data/providers/report_providers.dart';
+import '../../widgets/permission_guard.dart';
 
 /// GAP-P2-FIX-11: VAT Reconciliation — compares invoice-level tax totals
 /// with GL journal entry lines on output_vat / input_vat accounts.
@@ -34,7 +36,31 @@ class _VatReconciliationScreenState
     final params = (year: _year, month: _month);
     final asyncData = ref.watch(vatReconciliationProvider(params));
 
-    return Directionality(
+    // ── ليه حراسة بصلاحية لا حصر بفرع ────────────────────────────────────
+    // التقرير ده بيقارن **طرفين**: إجماليات الضريبة من الفواتير (فيها
+    // branch_id وتتحصر بسهولة) مقابل **أرصدة حسابات GL** (‏2121 و1141 — على
+    // مستوى الشركة بطبيعتها، وإسنادها لفرع بيعدّي على مراكز التكلفة).
+    //
+    // لو حصرنا طرفاً وسبنا التاني، التقرير هيعرض **فرقاً دايماً** والتسوية —
+    // اللي هي كل وظيفته — تفقد معناها. يعني الفلتر الميكانيكي هنا مش إصلاح،
+    // ده كسر للتقرير.
+    //
+    // فالصح إن الوصول نفسه يتحرس: ده تقرير محاسبي على مستوى الشركة، ومن
+    // يملك reports_taxes يراه كاملاً، ومن لا يملكها لا يراه إطلاقاً. الشاشة
+    // كانت **بلا أي فحص صلاحية** قبل كده.
+    return PermissionGuard(
+      permission: PermissionCodes.reportsTaxes,
+      fallback: const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Text(
+            'تسوية ضريبة القيمة المضافة تقرير على مستوى الشركة — '
+            'لا تملك صلاحية عرضه.',
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
+      child: Directionality(
       textDirection: ui.TextDirection.rtl,
       child: Scaffold(
         backgroundColor: const Color(0xFFF1F5F9),
@@ -72,6 +98,7 @@ class _VatReconciliationScreenState
             ),
           ],
         ),
+      ),
       ),
     );
   }
