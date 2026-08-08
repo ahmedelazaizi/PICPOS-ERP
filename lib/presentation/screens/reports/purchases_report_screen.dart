@@ -690,7 +690,10 @@ class _PurchasesReportScreenState extends ConsumerState<PurchasesReportScreen> {
         'المتبقي',
         'الحالة',
       ],
-      rows: _invoices.map<List<dynamic>>((item) {
+      // ‏`_filteredInvoices` لا `_invoices`: الجدولُ والطباعةُ والتحليلاتُ كلُّها
+      // تقرأ المفلترة، والفلترُ الباقي عميلاً هو **البحثُ النصّي**. فمن يبحث عن
+      // مورّدٍ فيرى ثلاثَ فواتير ثم يصدّر كان يحصل على المئتين كلِّها.
+      rows: _filteredInvoices.map<List<dynamic>>((item) {
         final p = item.invoice;
         return [
           p.invoiceNumber,

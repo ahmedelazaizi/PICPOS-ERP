@@ -1060,7 +1060,11 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
               s.total,
               s.paid,
               s.total - s.paid,
-              s.paymentMethod == 'cash' ? 'نقدي' : 'آجل',
+              // الخريطةُ الثنائية كانت تطبع كلَّ ما ليس نقدياً «آجل»: البطاقةُ
+              // والتحويلُ والكليكُ والمتعدّد. فالمحاسبُ يقرأ الملفَّ فيرى
+              // مبيعاتِ البطاقات ديوناً على العملاء. و`_paymentLabel` قائمةٌ
+              // بالفعل ويستعملها الجدولُ والطباعة — كان التصديرُ وحده يتخطّاها.
+              _paymentLabel(s.paymentMethod),
             ],
           )
           .whereType<List<dynamic>>()
