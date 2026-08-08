@@ -1,0 +1,958 @@
+diff --git a/lib/data/database/daos/report_builder_dao.dart b/lib/data/database/daos/report_builder_dao.dart
+index 2a717011..f7183191 100644
+--- a/lib/data/database/daos/report_builder_dao.dart
++++ b/lib/data/database/daos/report_builder_dao.dart
+@@ -191,8 +191,10 @@ extension ReportBuilderDao on AppDatabase {
+   ///   • الأطراف       → `is_global OR branch_ids LIKE` (زي _watchPartiesForBranches)
+   ///   • الأصناف       → بيانات أساسية على مستوى الشركة، مفيش قيم مالية عبر فروع
+   ///   • قيود اليومية  → الوصول للفرع عبر مراكز التكلفة، مش عمود على الصف
+-  ///   • الموظفون      → `employees.branch_id` **ما بيتكتبش أصلاً** (مانع H6)،
+-  ///                     فحصره بيدي صفر صفوف بشكل مضلّل بدل ما يحصر
++  ///   • الموظفون      → `branch_id` مباشرةً. كان مرفوضاً لأن العمود **ما كانش
++  ///                     بيتكتب أصلاً** (مانع H6)، فحصرُه كان بيدي صفر صفوف
++  ///                     مضلّلاً. اتقفل H6 (‏addEmployee بيكتبه) فبقى الحصر
++  ///                     ذا معنى — وهو المصدر الوحيد اللي فيه **رواتب**
+   ///   • أرصدة المخزون → الحصر بالمخزن لا الفرع (‏getWarehouseScopeForUser)
+   String? _scopeClauseFor(String entity, Set<int> ids) {
+     final list = ids.join(',');
+@@ -209,6 +211,11 @@ extension ReportBuilderDao on AppDatabase {
+         return 'parties.is_global = 1 OR $ors';
+       case 'products':
+         return '1 = 1';
++      case 'employees':
++        // نفس دلالة الفواتير: `branch_id` على الصف، وNULL = مستوى الشركة
++        // فيبقى مرئياً — مطابقةً لـ`_employeeBranchScope` في hr_extensions.
++        return 'employees.branch_id IN ($list) '
++            'OR employees.branch_id IS NULL';
+       default:
+         return null;
+     }
+diff --git a/lib/data/database/extensions/hr_extensions.dart b/lib/data/database/extensions/hr_extensions.dart
+index 8ce7c69e..a49230a5 100644
+--- a/lib/data/database/extensions/hr_extensions.dart
++++ b/lib/data/database/extensions/hr_extensions.dart
+@@ -51,6 +51,21 @@ const Set<String> kPaidAttendanceStatuses = {
+ /// إدخالٍ بسنةٍ كاملة كان سيكتب آلافَ الصفوف داخل معاملةٍ واحدة.
+ const int kMaxLeaveDaysPerRequest = 366;
+ 
++/// H6 — شرطُ حصر الموظفين بالفرع.
++///
++/// `branch_id IS NULL` تعني موظفاً على مستوى الشركة (مديرٌ عام · محاسبٌ مركزي)
++/// فيظلّ مرئياً لكل نطاق — نفسُ قاعدة `BranchScope.isAllowed` بالحرف، فلا يفترق
++/// حصرُ الـSQL عن الصنف الذي يولّد النطاق.
++///
++/// ومجموعةٌ **فارغة** ليست «بلا حصر»: هي مستخدمٌ لا يرى شيئاً ⇒ صفرُ صفوف،
++/// فشلٌ مقفول مطابقٌ لكلِّ تقريرٍ محصور في المستودع (‏`_buildAuthScopeFilter`
++/// و`_buildReportQuery` كلاهما `1 = 0`). و«بلا حصر» يُعبَّر عنه بـ`null` عند
++/// الاستدعاء فلا يُستدعى هذا الشرطُ أصلاً.
++Expression<bool> _employeeBranchScope($EmployeesTable e, Set<int> ids) =>
++    ids.isEmpty
++        ? const Constant(false)
++        : e.branchId.isIn(ids.toList()) | e.branchId.isNull();
++
+ /// Extensions for HR/Employee management
+ extension HRExtensions on AppDatabase {
+   // -----------------------------------------------------------------------
+@@ -58,18 +73,24 @@ extension HRExtensions on AppDatabase {
+   // -----------------------------------------------------------------------
+ 
+   /// Get all active employees
+-  Stream<List<Employee>> watchAllEmployees() {
+-    return (select(employees)
+-          ..where((e) => e.isActive.equals(true))
+-          ..orderBy([(e) => OrderingTerm.asc(e.name)]))
+-        .watch();
++  Stream<List<Employee>> watchAllEmployees({Set<int>? allowedBranchIds}) {
++    final q = select(employees)
++      ..where((e) => e.isActive.equals(true))
++      ..orderBy([(e) => OrderingTerm.asc(e.name)]);
++    if (allowedBranchIds != null) {
++      q.where((e) => _employeeBranchScope(e, allowedBranchIds));
++    }
++    return q.watch();
+   }
+ 
+   /// Get all employees including inactive
+-  Future<List<Employee>> getAllEmployees() {
+-    return (select(
+-      employees,
+-    )..orderBy([(e) => OrderingTerm.asc(e.name)])).get();
++  Future<List<Employee>> getAllEmployees({Set<int>? allowedBranchIds}) {
++    final q = select(employees)
++      ..orderBy([(e) => OrderingTerm.asc(e.name)]);
++    if (allowedBranchIds != null) {
++      q.where((e) => _employeeBranchScope(e, allowedBranchIds));
++    }
++    return q.get();
+   }
+ 
+   /// Get employee by ID
+@@ -111,12 +132,17 @@ extension HRExtensions on AppDatabase {
+   }
+ 
+   /// Add new employee
++  ///
++  /// H6 — [branchId] يُكتب. كان العمودُ موجوداً في السكيما ولا يُكتب قطّ، فكلُّ
++  /// موظفٍ يُولَد بلا فرعٍ ⇒ لا حصرَ ممكن على الرواتب.
++  /// `null` = موظفٌ على مستوى الشركة، يظلّ مرئياً لكل نطاق.
+   Future<int> addEmployee({
+     required String name,
+     String? phone,
+     String role = 'staff',
+     double salary = 0,
+     String salaryType = 'monthly',
++    int? branchId,
+   }) {
+     return into(employees).insert(
+       EmployeesCompanion.insert(
+@@ -125,12 +151,17 @@ extension HRExtensions on AppDatabase {
+         role: Value(role),
+         salary: Value(salary),
+         salaryType: Value(salaryType),
++        branchId: Value(branchId),
+         hiredAt: Value(DateTime.now()),
+       ),
+     );
+   }
+ 
+   /// Update employee
++  ///
++  /// H6 — [branchId] بـ`null` تعني «لا تلمس الفرع» لا «انقله إلى بلا فرع»،
++  /// مطابقةً لبقيةِ الحقول هنا: تعديلُ الاسم وحده لا يجوز أن يُخرج الموظف من
++  /// فرعه. (نقلُه إلى «بلا فرع» يحتاج مساراً صريحاً، وليس مطلوباً بعد.)
+   Future<void> updateEmployee({
+     required int id,
+     String? name,
+@@ -139,6 +170,7 @@ extension HRExtensions on AppDatabase {
+     double? salary,
+     String? salaryType,
+     bool? isActive,
++    int? branchId,
+   }) {
+     return (update(employees)..where((e) => e.id.equals(id))).write(
+       EmployeesCompanion(
+@@ -150,6 +182,7 @@ extension HRExtensions on AppDatabase {
+             ? Value(salaryType)
+             : const Value.absent(),
+         isActive: isActive != null ? Value(isActive) : const Value.absent(),
++        branchId: branchId != null ? Value(branchId) : const Value.absent(),
+       ),
+     );
+   }
+diff --git a/lib/data/repositories/hr_repository_impl.dart b/lib/data/repositories/hr_repository_impl.dart
+index 546142ee..6bb3102e 100644
+--- a/lib/data/repositories/hr_repository_impl.dart
++++ b/lib/data/repositories/hr_repository_impl.dart
+@@ -8,7 +8,8 @@ class HRRepositoryImpl implements IHRRepository {
+   HRRepositoryImpl(this._db);
+ 
+   @override
+-  Stream<List<Employee>> watchAllEmployees() => _db.watchAllEmployees();
++  Stream<List<Employee>> watchAllEmployees({Set<int>? allowedBranchIds}) =>
++      _db.watchAllEmployees(allowedBranchIds: allowedBranchIds);
+ 
+   @override
+   Future<Employee?> getEmployeeById(int id) => _db.getEmployeeById(id);
+@@ -20,12 +21,14 @@ class HRRepositoryImpl implements IHRRepository {
+     required String role,
+     required double salary,
+     required String salaryType,
++    int? branchId,
+   }) => _db.addEmployee(
+     name: name,
+     phone: phone,
+     role: role,
+     salary: salary,
+     salaryType: salaryType,
++    branchId: branchId,
+   );
+ 
+   @override
+@@ -37,6 +40,7 @@ class HRRepositoryImpl implements IHRRepository {
+     double? salary,
+     String? salaryType,
+     bool? isActive,
++    int? branchId,
+   }) => _db.updateEmployee(
+     id: id,
+     name: name,
+@@ -45,6 +49,7 @@ class HRRepositoryImpl implements IHRRepository {
+     salary: salary,
+     salaryType: salaryType,
+     isActive: isActive,
++    branchId: branchId,
+   );
+ 
+   @override
+@@ -60,7 +65,8 @@ class HRRepositoryImpl implements IHRRepository {
+       _db.checkOutEmployee(employeeId);
+ 
+   @override
+-  Future<List<Employee>> getAllEmployees() => _db.getAllEmployees();
++  Future<List<Employee>> getAllEmployees({Set<int>? allowedBranchIds}) =>
++      _db.getAllEmployees(allowedBranchIds: allowedBranchIds);
+ 
+   @override
+   Stream<List<EmployeeTransaction>> watchEmployeeTransactions(int employeeId) =>
+diff --git a/lib/domain/repositories/hr_repository_interface.dart b/lib/domain/repositories/hr_repository_interface.dart
+index 70c0c0dc..29003923 100644
+--- a/lib/domain/repositories/hr_repository_interface.dart
++++ b/lib/domain/repositories/hr_repository_interface.dart
+@@ -2,7 +2,11 @@ import '../../../data/database/database_barrel.dart';
+ 
+ abstract class IHRRepository {
+   // Employee management
+-  Stream<List<Employee>> watchAllEmployees();
++  //
++  // H6 — `allowedBranchIds` هو نطاق `branchScopeProvider`: `null` = وصولٌ كامل،
++  // ومجموعةٌ فارغة = صفرُ صفوف (فشلٌ مقفول). والموظفُ بلا فرعٍ على مستوى
++  // الشركة فيبقى مرئياً لكل نطاق.
++  Stream<List<Employee>> watchAllEmployees({Set<int>? allowedBranchIds});
+   Future<Employee?> getEmployeeById(int id);
+   Future<int> addEmployee({
+     required String name,
+@@ -10,6 +14,7 @@ abstract class IHRRepository {
+     required String role,
+     required double salary,
+     required String salaryType,
++    int? branchId,
+   });
+   Future<void> updateEmployee({
+     required int id,
+@@ -19,13 +24,14 @@ abstract class IHRRepository {
+     double? salary,
+     String? salaryType,
+     bool? isActive,
++    int? branchId,
+   });
+ 
+   // Attendance
+   Stream<List<EmployeeAttendanceWithDetails>> watchTodayAttendance();
+   Future<void> checkInEmployee(int employeeId);
+   Future<void> checkOutEmployee(int employeeId);
+-  Future<List<Employee>> getAllEmployees();
++  Future<List<Employee>> getAllEmployees({Set<int>? allowedBranchIds});
+ 
+   // Transactions
+   Stream<List<EmployeeTransaction>> watchEmployeeTransactions(int employeeId);
+diff --git a/lib/domain/usecases/hr/manage_employee_usecase.dart b/lib/domain/usecases/hr/manage_employee_usecase.dart
+index e051a699..8d09f23e 100644
+--- a/lib/domain/usecases/hr/manage_employee_usecase.dart
++++ b/lib/domain/usecases/hr/manage_employee_usecase.dart
+@@ -8,12 +8,16 @@ class EmployeeInput {
+   final double salary;
+   final String salaryType;
+ 
++  /// H6 — فرعُ الموظف. `null` = مستوى الشركة (يظلّ مرئياً لكل نطاق).
++  final int? branchId;
++
+   EmployeeInput({
+     required this.name,
+     this.phone,
+     this.role = 'staff',
+     this.salary = 0,
+     this.salaryType = 'monthly',
++    this.branchId,
+   });
+ }
+ 
+@@ -49,6 +53,7 @@ class ManageEmployeeUseCase {
+         role: input.role,
+         salary: input.salary,
+         salaryType: input.salaryType,
++        branchId: input.branchId,
+       );
+       return EmployeeResult.success(id);
+     } catch (e) {
+@@ -70,6 +75,7 @@ class ManageEmployeeUseCase {
+         role: input.role,
+         salary: input.salary,
+         salaryType: input.salaryType,
++        branchId: input.branchId,
+       );
+       return EmployeeResult.success(id);
+     } catch (e) {
+diff --git a/lib/presentation/screens/hr/hr_notifier.dart b/lib/presentation/screens/hr/hr_notifier.dart
+index b1bcbc04..b408ae3d 100644
+--- a/lib/presentation/screens/hr/hr_notifier.dart
++++ b/lib/presentation/screens/hr/hr_notifier.dart
+@@ -52,6 +52,7 @@ class HRNotifier extends Notifier<HRState> {
+     String role = 'staff',
+     double salary = 0,
+     String salaryType = 'monthly',
++    int? branchId,
+   }) async {
+     state = state.copyWith(isLoading: true);
+     try {
+@@ -62,6 +63,7 @@ class HRNotifier extends Notifier<HRState> {
+           role: role,
+           salary: salary,
+           salaryType: salaryType,
++          branchId: branchId,
+         );
+         await _log('add_employee', 'إضافة موظف: $name ($role)', entityId: id);
+       } else {
+@@ -72,6 +74,7 @@ class HRNotifier extends Notifier<HRState> {
+           role: role,
+           salary: salary,
+           salaryType: salaryType,
++          branchId: branchId,
+         );
+         await _log(
+           'update_employee',
+@@ -227,9 +230,44 @@ final hrFormProvider = NotifierProvider<HRNotifier, HRState>(() {
+   return HRNotifier();
+ });
+ 
+-final hrEmployeesProvider = FutureProvider.autoDispose<List<Employee>>((ref) {
++// ═══════════════════════════════════════════════════════════════════════════
++// H6 — قوائمُ الموظفين محصورةٌ بفروع المستخدم.
++// ═══════════════════════════════════════════════════════════════════════════
++//
++// كانت شاشاتُ HR تقرأ `getAllEmployees()` بلا نطاق، وليس في مجلد `hr/` ذكرٌ
++// واحدٌ لـ`branchId`. فمديرُ فرعٍ يفتح تبويبَ الرواتب فيقرأ **رواتبَ الشركة
++// كاملة** — أسماءها وأدوارها ومبالغها وسلفها.
++//
++// وحتى تستقرّ الشاشةُ لم يُمرَّر النطاق في كلِّ شاشةٍ على حِدة، بل يُحَلّ هنا
++// مرةً واحدة: الشاشةُ تراقب المزوّد فقط، ونسيانُ شاشةٍ جديدة للحصر يصير
++// مستحيلاً لأن لا مسارَ غيرَ محصورٍ متاحاً لها.
++//
++// ريثما يُحَلّ النطاق (الإطارُ الأولُ بعد الدخول) يُعاد **صفرُ صفوف** لا القائمة
++// غيرَ المحصورة — نفسُ اختيار `parties_providers.dart`: وميضُ صفوفِ فرعٍ آخر
++// لعشراتِ الميلي ثانية تسريبٌ كامل.
++
++/// نطاقُ الفروع للمستخدم الحالي، أو `null` ريثما لم يُحَلّ بعد.
++///
++/// `hasFullAccess` يُترجَم إلى `null` في نداءِ المستودع (بلا فلتر)، وغيرُه إلى
++/// المجموعةِ المغلقة.
++Set<int>? _scopeFilter(BranchScope scope) =>
++    scope.hasFullAccess ? null : scope.allowedBranchIds;
++
++final hrEmployeesProvider = FutureProvider.autoDispose<List<Employee>>((
++  ref,
++) async {
++  final hrRepo = ref.watch(hrRepositoryProvider);
++  final scope = await ref.watch(branchScopeProvider.future);
++  return hrRepo.getAllEmployees(allowedBranchIds: _scopeFilter(scope));
++});
++
++/// نسخةُ التدفّق — `staff_list_tab` يحتاج تحديثاً حياً عند الإضافة والتعطيل.
++final hrEmployeesStreamProvider =
++    StreamProvider.autoDispose<List<Employee>>((ref) {
+   final hrRepo = ref.watch(hrRepositoryProvider);
+-  return hrRepo.getAllEmployees();
++  final scope = ref.watch(branchScopeProvider.select((s) => s.value));
++  if (scope == null) return Stream<List<Employee>>.value(const []);
++  return hrRepo.watchAllEmployees(allowedBranchIds: _scopeFilter(scope));
+ });
+ 
+ class LeaveBalanceArgs {
+diff --git a/lib/presentation/screens/hr/widgets/attendance_tab.dart b/lib/presentation/screens/hr/widgets/attendance_tab.dart
+index 9f401a7d..39794ab8 100644
+--- a/lib/presentation/screens/hr/widgets/attendance_tab.dart
++++ b/lib/presentation/screens/hr/widgets/attendance_tab.dart
+@@ -175,7 +175,8 @@ class _ManualAttendanceButton extends StatelessWidget {
+           width: 400,
+           height: 300,
+           child: FutureBuilder<List<Employee>>(
+-            future: hrRepo.getAllEmployees(),
++            // H6 — المزوّد المحصور لا القراءة المباشرة.
++            future: ref.read(hrEmployeesProvider.future),
+             builder: (context, snapshot) {
+               final emps = snapshot.data ?? [];
+               return ListView.builder(
+diff --git a/lib/presentation/screens/hr/widgets/hr_contracts_tab.dart b/lib/presentation/screens/hr/widgets/hr_contracts_tab.dart
+index ea60a3ef..90908bed 100644
+--- a/lib/presentation/screens/hr/widgets/hr_contracts_tab.dart
++++ b/lib/presentation/screens/hr/widgets/hr_contracts_tab.dart
+@@ -5,6 +5,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
+ import 'package:google_fonts/google_fonts.dart';
+ import '../../../../core/theme/app_colors.dart';
+ import '../../../../data/providers/providers.dart';
++import '../hr_notifier.dart';
+ import '../../../../domain/repositories/hr_repository_interface.dart';
+ 
+ /// HR Contracts Management Tab
+@@ -18,7 +19,8 @@ class ContractsTab extends ConsumerWidget {
+     return Directionality(
+       textDirection: TextDirection.rtl,
+       child: FutureBuilder<List<Employee>>(
+-        future: hrRepo.getAllEmployees(),
++        // H6 — المزوّد المحصور لا القراءة المباشرة.
++        future: ref.watch(hrEmployeesProvider.future),
+         builder: (context, snap) {
+           if (!snap.hasData) {
+             return const Center(child: CircularProgressIndicator());
+diff --git a/lib/presentation/screens/hr/widgets/hr_dashboard_tab.dart b/lib/presentation/screens/hr/widgets/hr_dashboard_tab.dart
+index 20b9b215..d109ac89 100644
+--- a/lib/presentation/screens/hr/widgets/hr_dashboard_tab.dart
++++ b/lib/presentation/screens/hr/widgets/hr_dashboard_tab.dart
+@@ -4,6 +4,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
+ import 'package:google_fonts/google_fonts.dart';
+ import '../../../../core/theme/app_colors.dart';
+ import '../../../../data/providers/providers.dart';
++import '../hr_notifier.dart';
+ import '../../../../domain/repositories/hr_repository_interface.dart';
+ import '../../../../../../../core/constants/app_constants.dart';
+ 
+@@ -16,7 +17,8 @@ class HRDashboardTab extends ConsumerWidget {
+     final hrRepo = ref.watch(hrRepositoryProvider);
+ 
+     return FutureBuilder<List<Employee>>(
+-      future: hrRepo.getAllEmployees(),
++      // H6 — المزوّد المحصور لا القراءة المباشرة (شوف hrEmployeesProvider).
++      future: ref.watch(hrEmployeesProvider.future),
+       builder: (context, empSnap) {
+         if (!empSnap.hasData) {
+           return const Center(child: CircularProgressIndicator());
+diff --git a/lib/presentation/screens/hr/widgets/hr_dialogs.dart b/lib/presentation/screens/hr/widgets/hr_dialogs.dart
+index 63819e42..0cee5dce 100644
+--- a/lib/presentation/screens/hr/widgets/hr_dialogs.dart
++++ b/lib/presentation/screens/hr/widgets/hr_dialogs.dart
+@@ -31,6 +31,17 @@ class HRDialogs {
+     String role = employee?.role ?? 'staff';
+     String salaryType = employee?.salaryType ?? 'monthly';
+ 
++    // H6 — فرعُ الموظف. خياراتُ القائمة **متقاطعةٌ مع نطاق المستخدم** فلا يقدر
++    // مديرُ فرعٍ أن يُنشئ موظفاً في فرعٍ لا يراه، ويُبذَر للموظف الجديد بفرعه
++    // هو (‏`primaryBranchId`) — وإلا وُلد بلا فرعٍ فصار مرئياً لكل الفروع، وهو
++    // بالضبط الحالُ الذي أُصلح.
++    final scope = ref.watch(branchScopeProvider).value;
++    final allBranches = ref.watch(allBranchesProvider).value ?? const [];
++    final visibleBranches = (scope == null || scope.hasFullAccess)
++        ? allBranches
++        : allBranches.where((b) => scope.isAllowed(b.id)).toList();
++    int? branchId = employee?.branchId ?? scope?.primaryBranchId;
++
+     showDialog(
+       context: context,
+       builder: (ctx) => Directionality(
+@@ -106,6 +117,28 @@ class HRDialogs {
+                       ),
+                     ],
+                   ),
++                  const SizedBox(height: 12),
++                  DropdownButtonFormField<int?>(
++                    initialValue: branchId,
++                    decoration: const InputDecoration(labelText: 'الفرع'),
++                    items: [
++                      // «بلا فرع» = موظفٌ على مستوى الشركة، يراه كلُّ الفروع.
++                      // مقصورٌ على من له وصولٌ كامل: مديرُ فرعٍ يختاره كان
++                      // يُنشئ موظفاً مرئياً لكل الفروع من داخل نطاقه.
++                      if (scope == null || scope.hasFullAccess)
++                        const DropdownMenuItem<int?>(
++                          value: null,
++                          child: Text('بلا فرع (مستوى الشركة)'),
++                        ),
++                      ...visibleBranches.map(
++                        (b) => DropdownMenuItem<int?>(
++                          value: b.id,
++                          child: Text(b.name),
++                        ),
++                      ),
++                    ],
++                    onChanged: (v) => setState(() => branchId = v),
++                  ),
+                 ],
+               ),
+             ),
+@@ -126,6 +159,7 @@ class HRDialogs {
+                     role: role,
+                     salary: salary,
+                     salaryType: salaryType,
++                    branchId: branchId,
+                   );
+ 
+                   if (ctx.mounted) Navigator.pop(ctx);
+diff --git a/lib/presentation/screens/hr/widgets/hr_performance_tab.dart b/lib/presentation/screens/hr/widgets/hr_performance_tab.dart
+index 925d3ca8..144cabce 100644
+--- a/lib/presentation/screens/hr/widgets/hr_performance_tab.dart
++++ b/lib/presentation/screens/hr/widgets/hr_performance_tab.dart
+@@ -4,6 +4,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
+ import 'package:google_fonts/google_fonts.dart';
+ import '../../../../core/theme/app_colors.dart';
+ import '../../../../data/providers/providers.dart';
++import '../hr_notifier.dart';
+ 
+ /// HR Performance Evaluation Tab
+ class PerformanceTab extends ConsumerWidget {
+@@ -16,7 +17,8 @@ class PerformanceTab extends ConsumerWidget {
+     return Directionality(
+       textDirection: TextDirection.rtl,
+       child: FutureBuilder<List<Employee>>(
+-        future: hrRepo.getAllEmployees(),
++        // H6 — المزوّد المحصور لا القراءة المباشرة.
++        future: ref.watch(hrEmployeesProvider.future),
+         builder: (context, snap) {
+           if (!snap.hasData) {
+             return const Center(child: CircularProgressIndicator());
+diff --git a/lib/presentation/screens/hr/widgets/overtime_tab.dart b/lib/presentation/screens/hr/widgets/overtime_tab.dart
+index d352bc2d..72953f2b 100644
+--- a/lib/presentation/screens/hr/widgets/overtime_tab.dart
++++ b/lib/presentation/screens/hr/widgets/overtime_tab.dart
+@@ -51,7 +51,8 @@ class OvertimeTab extends ConsumerWidget {
+               _MonthSelector(state: state, notifier: notifier),
+               const SizedBox(width: 8),
+               ElevatedButton.icon(
+-                onPressed: () => _showAddOvertimeDialog(context, notifier, hrRepo),
++                onPressed: () =>
++                    _showAddOvertimeDialog(context, ref, notifier, hrRepo),
+                 icon: const Icon(PhosphorIconsBold.plus, size: 18),
+                 label: const Text('تسجيل إضافي'),
+                 style: ElevatedButton.styleFrom(
+@@ -65,7 +66,8 @@ class OvertimeTab extends ConsumerWidget {
+         // Employee list with overtime summary
+         Expanded(
+           child: FutureBuilder<List<Employee>>(
+-            future: hrRepo.getAllEmployees(),
++            // H6 — المزوّد المحصور لا القراءة المباشرة.
++            future: ref.watch(hrEmployeesProvider.future),
+             builder: (context, snapshot) {
+               if (snapshot.connectionState == ConnectionState.waiting) {
+                 return Padding(
+@@ -102,6 +104,7 @@ class OvertimeTab extends ConsumerWidget {
+ 
+   void _showAddOvertimeDialog(
+     BuildContext context,
++    WidgetRef ref,
+     HRNotifier notifier,
+     IHRRepository db,
+   ) {
+@@ -123,7 +126,9 @@ class OvertimeTab extends ConsumerWidget {
+                 mainAxisSize: MainAxisSize.min,
+                 children: [
+                   FutureBuilder<List<Employee>>(
+-                    future: db.getAllEmployees(),
++                    // H6 — منتقي الموظف محصور كذلك: بدونه يُسجَّل عملٌ إضافي
++                    // (‏= أجرٌ) على موظف فرعٍ آخر.
++                    future: ref.read(hrEmployeesProvider.future),
+                     builder: (_, snap) {
+                       final emps = snap.data ?? [];
+                       return DropdownButtonFormField<int>(
+diff --git a/lib/presentation/screens/hr/widgets/payroll_tab.dart b/lib/presentation/screens/hr/widgets/payroll_tab.dart
+index f2d9f5e1..724e0f74 100644
+--- a/lib/presentation/screens/hr/widgets/payroll_tab.dart
++++ b/lib/presentation/screens/hr/widgets/payroll_tab.dart
+@@ -274,7 +274,9 @@ class _ExportPayrollButton extends ConsumerWidget {
+   }
+ 
+   Future<void> _exportPayroll(BuildContext context, WidgetRef ref) async {
+-    final employees = await hrRepo.getAllEmployees();
++    // H6 — التصديرُ محصورٌ كذلك. كشفُ رواتب Excel أخطرُ من الشاشة: ملفٌ يُرسَل
++    // ويُحفَظ، فتسريبُه أثرٌ باقٍ لا عرضٌ عابر.
++    final employees = await ref.read(hrEmployeesProvider.future);
+     final calcs = await Future.wait(
+       employees.map((e) => hrRepo.calculateNetSalary(
+         employeeId: e.id,
+diff --git a/lib/presentation/screens/hr/widgets/staff_list_tab.dart b/lib/presentation/screens/hr/widgets/staff_list_tab.dart
+index 316740f9..eeedce38 100644
+--- a/lib/presentation/screens/hr/widgets/staff_list_tab.dart
++++ b/lib/presentation/screens/hr/widgets/staff_list_tab.dart
+@@ -5,6 +5,7 @@ import '../../../../core/theme/app_colors.dart';
+ import '../../../../core/widgets/app_toast.dart';
+ import '../../../../core/widgets/shimmer_loading.dart';
+ import '../../../../data/providers/providers.dart';
++import '../hr_notifier.dart';
+ import 'hr_dialogs.dart';
+ import '../../../../../../../core/constants/app_constants.dart';
+ import '../../../widgets/permission_guard.dart';
+@@ -48,17 +49,20 @@ class StaffListTab extends ConsumerWidget {
+           ),
+         ),
+         Expanded(
+-          child: StreamBuilder<List<Employee>>(
+-            stream: hrRepo.watchAllEmployees(),
+-            builder: (context, snapshot) {
+-              if (snapshot.connectionState == ConnectionState.waiting) {
+-                return Padding(
+-                  padding: const EdgeInsets.all(16),
+-                  child: ShimmerLoading.list(itemCount: 8),
+-                );
+-              }
+-
+-              final employees = snapshot.data ?? [];
++          // H6 — عبر `hrEmployeesStreamProvider` لا `hrRepo` مباشرةً: المزوّد
++          // هو ما يحلّ نطاقَ الفروع، والقراءةُ المباشرة تتجاوزه فتُظهر موظفي
++          // الشركة كلها لمدير فرع. (تحوّل من StreamBuilder إلى AsyncValue لأن
++          // ‏Riverpod 3 أزال `.stream` على StreamProvider.)
++          child: ref.watch(hrEmployeesStreamProvider).when(
++            loading: () => Padding(
++              padding: const EdgeInsets.all(16),
++              child: ShimmerLoading.list(itemCount: 8),
++            ),
++            error: (e, _) => Center(
++              child: Text('خطأ في تحميل الموظفين: $e',
++                  style: const TextStyle(color: Colors.red)),
++            ),
++            data: (employees) {
+               if (employees.isEmpty) {
+                 return const Center(child: Text('لا يوجد موظفين حالياً'));
+               }
+diff --git a/test/unit/employee_branch_scope_test.dart b/test/unit/employee_branch_scope_test.dart
+new file mode 100644
+index 00000000..36f788e0
+--- /dev/null
++++ b/test/unit/employee_branch_scope_test.dart
+@@ -0,0 +1,173 @@
++// ═══════════════════════════════════════════════════════════════════════════
++// H6 — الرواتب كانت تُقرأ عبر الفروع كلها.
++// ═══════════════════════════════════════════════════════════════════════════
++//
++// عمود `employees.branch_id` موجود في السكيما من قديم، و`addEmployee`
++// **لم يكتبه قطّ**. وشاشات HR ليس فيها ذكرٌ واحد لـ`branchId`. فمديرُ فرعٍ
++// يفتح تبويب الرواتب فيقرأ رواتب الشركة كاملة.
++//
++// ── الترتيب داخل الإصلاح إلزامي ────────────────────────────────────────────
++// الكتابة **قبل** الحصر. الحصر أوّلاً يُعطي صفر صفوف لكل الموظفين القدامى
++// (كلّهم `branch_id = NULL`) — مظهرُ إصلاحٍ وهو تعطيل. فالمجموعة الأولى من
++// الاختبارات (العمود يُكتب) هي الشرط، والثانية (الحصر) هي النتيجة.
++//
++// ── دلالة NULL ─────────────────────────────────────────────────────────────
++// `branch_id = NULL` تعني موظفاً على مستوى الشركة (مدير عام · محاسب مركزي)
++// ويظلّ مرئياً لكل نطاق — نفس قاعدة [BranchScope.isAllowed] بالحرف.
++// ومجموعةٌ **فارغة** غير null تعني «لا يرى شيئاً» ⇒ صفر صفوف، فشلٌ مقفول
++// مطابقٌ لكل تقرير محصور آخر في المستودع.
++// ═══════════════════════════════════════════════════════════════════════════
++
++import 'package:drift/drift.dart' hide isNotNull, isNull;
++import 'package:flutter_test/flutter_test.dart';
++import 'package:ural_erp/data/database/database.dart';
++import 'package:ural_erp/data/database/extensions/hr_extensions.dart';
++
++void main() {
++  late AppDatabase db;
++  late int branchA;
++  late int branchB;
++
++  setUp(() async {
++    db = AppDatabase.forTesting();
++    branchA = await db.into(db.branches).insert(BranchesCompanion.insert(
++        name: 'فرع أ', globalId: const Value('gid-br-h6-a')));
++    branchB = await db.into(db.branches).insert(BranchesCompanion.insert(
++        name: 'فرع ب', globalId: const Value('gid-br-h6-b')));
++  });
++
++  tearDown(() => db.close());
++
++  group('H6/١ — العمود يُكتب (شرط الحصر)', () {
++    test('addEmployee يكتب branch_id', () async {
++      final id = await db.addEmployee(
++        name: 'موظف أ',
++        salary: 3000,
++        branchId: branchA,
++      );
++
++      final row = await db.getEmployeeById(id);
++      expect(row!.branchId, branchA,
++          reason: 'addEmployee كان يتجاهل العمود تماماً');
++    });
++
++    test('addEmployee بلا فرع يكتب NULL — موظف على مستوى الشركة', () async {
++      final id = await db.addEmployee(name: 'مدير عام', salary: 9000);
++
++      expect((await db.getEmployeeById(id))!.branchId, isNull);
++    });
++
++    test('updateEmployee ينقل الموظف بين الفروع', () async {
++      final id = await db.addEmployee(name: 'موظف', branchId: branchA);
++
++      await db.updateEmployee(id: id, branchId: branchB);
++
++      expect((await db.getEmployeeById(id))!.branchId, branchB);
++    });
++
++    test('updateEmployee بلا branchId لا يمسح الفرع القائم', () async {
++      final id = await db.addEmployee(name: 'موظف', branchId: branchA);
++
++      await db.updateEmployee(id: id, name: 'موظف معدَّل');
++
++      final row = await db.getEmployeeById(id);
++      expect(row!.name, 'موظف معدَّل');
++      expect(row.branchId, branchA,
++          reason: 'تعديل الاسم لا يجوز أن يُخرج الموظف من فرعه');
++    });
++  });
++
++  group('H6/٢ — الحصر بعد الكتابة', () {
++    Future<List<String>> namesFor(Set<int>? scope) async {
++      final rows = await db.getAllEmployees(allowedBranchIds: scope);
++      return rows.map((e) => e.name).toList();
++    }
++
++    setUp(() async {
++      await db.addEmployee(name: 'أ-موظف', salary: 3000, branchId: branchA);
++      await db.addEmployee(name: 'ب-موظف', salary: 4000, branchId: branchB);
++      await db.addEmployee(name: 'ج-مركزي', salary: 9000);
++    });
++
++    test('بلا حصر (‏null) = وصول كامل', () async {
++      expect(await namesFor(null),
++          containsAll(<String>['أ-موظف', 'ب-موظف', 'ج-مركزي']));
++    });
++
++    test('{أ} تستبعد موظف فرع ب وتُبقي المركزي', () async {
++      final names = await namesFor({branchA});
++      expect(names, contains('أ-موظف'));
++      expect(names, contains('ج-مركزي'));
++      expect(names, isNot(contains('ب-موظف')),
++          reason: 'راتب ٤٠٠٠ لفرع آخر — هذا هو التسريب بعينه');
++    });
++
++    test('{ب} تستبعد موظف فرع أ', () async {
++      final names = await namesFor({branchB});
++      expect(names, contains('ب-موظف'));
++      expect(names, isNot(contains('أ-موظف')));
++    });
++
++    test('{أ، ب} ترى الاثنين', () async {
++      final names = await namesFor({branchA, branchB});
++      expect(names, containsAll(<String>['أ-موظف', 'ب-موظف']));
++    });
++
++    test('المجموعة الفارغة تفشل مقفولة — صفر صفوف', () async {
++      expect(await namesFor(<int>{}), isEmpty);
++    });
++
++    test('watchAllEmployees محصورة كذلك', () async {
++      final rows = await db
++          .watchAllEmployees(allowedBranchIds: {branchA})
++          .first;
++      final names = rows.map((e) => e.name);
++      expect(names, contains('أ-موظف'));
++      expect(names, isNot(contains('ب-موظف')));
++    });
++
++    test('watchAllEmployees بمجموعة فارغة تفشل مقفولة', () async {
++      expect(
++        await db.watchAllEmployees(allowedBranchIds: <int>{}).first,
++        isEmpty,
++      );
++    });
++  });
++
++  group('H6/٣ — منشئ التقارير لم يعد يرفض employees', () {
++    test('تقرير الموظفين محصورٌ فعلاً بدل أن يُرفض', () async {
++      await db.addEmployee(name: 'أ-موظف', salary: 3000, branchId: branchA);
++      await db.addEmployee(name: 'ب-موظف', salary: 4000, branchId: branchB);
++
++      final reportId = await db.into(db.customReports).insert(
++            CustomReportsCompanion.insert(
++              name: 'ت',
++              sourceEntity: 'employees',
++              columns: 'name',
++            ),
++          );
++
++      final rows =
++          await db.executeReport(reportId, allowedBranchIds: {branchA});
++
++      expect(rows.map((r) => r['name']), ['أ-موظف'],
++          reason: 'كان `_scopeClauseFor` يُرجع null فيُرفض التقرير كاملاً');
++    });
++
++    test('المجموعة الفارغة ما زالت تفشل مقفولة', () async {
++      await db.addEmployee(name: 'أ-موظف', branchId: branchA);
++      final reportId = await db.into(db.customReports).insert(
++            CustomReportsCompanion.insert(
++              name: 'ت',
++              sourceEntity: 'employees',
++              columns: 'name',
++            ),
++          );
++
++      expect(
++        await db.executeReport(reportId, allowedBranchIds: <int>{}),
++        isEmpty,
++      );
++    });
++  });
++}
+diff --git a/test/unit/manage_employee_usecase_test.dart b/test/unit/manage_employee_usecase_test.dart
+index 4a9ebb17..61760a6c 100644
+--- a/test/unit/manage_employee_usecase_test.dart
++++ b/test/unit/manage_employee_usecase_test.dart
+@@ -11,6 +11,11 @@ class _MockHRRepository implements IHRRepository {
+   bool shouldFail = false;
+   int nextEmployeeId = 55;
+ 
++  /// H6 — يُلتقط لا يُتجاهل: تمريرُ `branchId` من `EmployeeInput` إلى المستودع
++  /// هو الحلقةُ التي لو انقطعت وُلد كلُّ موظفٍ بلا فرع، وهو العطلُ نفسه.
++  int? capturedAddBranchId;
++  int? capturedUpdateBranchId;
++
+   @override
+   Future<int> addEmployee({
+     required String name,
+@@ -18,8 +23,10 @@ class _MockHRRepository implements IHRRepository {
+     required String role,
+     required double salary,
+     required String salaryType,
++    int? branchId,
+   }) async {
+     if (shouldFail) throw Exception('DB error');
++    capturedAddBranchId = branchId;
+     return nextEmployeeId;
+   }
+ 
+@@ -32,7 +39,9 @@ class _MockHRRepository implements IHRRepository {
+     double? salary,
+     String? salaryType,
+     bool? isActive,
++    int? branchId,
+   }) async {
++    capturedUpdateBranchId = branchId;
+     if (shouldFail) throw Exception('DB error');
+   }
+ 
+@@ -73,14 +82,16 @@ class _MockHRRepository implements IHRRepository {
+ 
+   // ── Unneeded methods — throw so we notice if they're accidentally called
+   @override
+-  Stream<List<Employee>> watchAllEmployees() => throw UnimplementedError();
++  Stream<List<Employee>> watchAllEmployees({Set<int>? allowedBranchIds}) =>
++      throw UnimplementedError();
+   @override
+   Future<Employee?> getEmployeeById(int id) => throw UnimplementedError();
+   @override
+   Stream<List<EmployeeAttendanceWithDetails>> watchTodayAttendance() =>
+       throw UnimplementedError();
+   @override
+-  Future<List<Employee>> getAllEmployees() => throw UnimplementedError();
++  Future<List<Employee>> getAllEmployees({Set<int>? allowedBranchIds}) =>
++      throw UnimplementedError();
+   @override
+   Stream<List<EmployeeTransaction>> watchEmployeeTransactions(int id) =>
+       throw UnimplementedError();
+@@ -228,6 +239,25 @@ void main() {
+       expect(result.isSuccess, isFalse);
+       expect(result.error, isNotNull);
+     });
++
++    // H6 — الحلقةُ التي لو انقطعت وُلد كلُّ موظفٍ بلا فرعٍ فسقط الحصر كلُّه.
++    test('branchId يُمرَّر إلى المستودع', () async {
++      final input = EmployeeInput(
++        name: 'Ahmed Ali',
++        role: 'cashier',
++        salary: 2000,
++        branchId: 3,
++      );
++      await useCase.addEmployee(input);
++      expect(mock.capturedAddBranchId, 3);
++    });
++
++    test('غيابُ branchId يُمرَّر null — موظفٌ على مستوى الشركة', () async {
++      final input =
++          EmployeeInput(name: 'Ahmed Ali', role: 'manager', salary: 9000);
++      await useCase.addEmployee(input);
++      expect(mock.capturedAddBranchId, isNull);
++    });
+   });
+ 
+   // ── updateEmployee ──────────────────────────────────────────────────────────
+@@ -239,6 +269,17 @@ void main() {
+       expect(result.error, 'يجب إدخال اسم الموظف');
+     });
+ 
++    test('branchId يُمرَّر إلى المستودع — نقلُ موظفٍ بين الفروع', () async {
++      final input = EmployeeInput(
++        name: 'Ahmed Ali',
++        role: 'cashier',
++        salary: 2000,
++        branchId: 8,
++      );
++      await useCase.updateEmployee(11, input);
++      expect(mock.capturedUpdateBranchId, 8);
++    });
++
+     test('succeeds and returns same employee id', () async {
+       final input = EmployeeInput(name: 'Omar', role: 'manager', salary: 5000);
+       final result = await useCase.updateEmployee(7, input);
+diff --git a/test/unit/payroll_usecase_test.dart b/test/unit/payroll_usecase_test.dart
+index cc482102..ad1a3d39 100644
+--- a/test/unit/payroll_usecase_test.dart
++++ b/test/unit/payroll_usecase_test.dart
+@@ -43,14 +43,14 @@ class _MockHR implements IHRRepository {
+   }
+ 
+   // ── Unneeded methods ─────────────────────────────────────────────────────
+-  @override Stream<List<Employee>> watchAllEmployees() => throw UnimplementedError();
++  @override Stream<List<Employee>> watchAllEmployees({Set<int>? allowedBranchIds}) => throw UnimplementedError();
+   @override Future<Employee?> getEmployeeById(int id) => throw UnimplementedError();
+-  @override Future<int> addEmployee({required String name, String? phone, required String role, required double salary, required String salaryType}) => throw UnimplementedError();
+-  @override Future<void> updateEmployee({required int id, String? name, String? phone, String? role, double? salary, String? salaryType, bool? isActive}) => throw UnimplementedError();
++  @override Future<int> addEmployee({required String name, String? phone, required String role, required double salary, required String salaryType, int? branchId}) => throw UnimplementedError();
++  @override Future<void> updateEmployee({required int id, String? name, String? phone, String? role, double? salary, String? salaryType, bool? isActive, int? branchId}) => throw UnimplementedError();
+   @override Stream<List<EmployeeAttendanceWithDetails>> watchTodayAttendance() => throw UnimplementedError();
+   @override Future<void> checkInEmployee(int e) => throw UnimplementedError();
+   @override Future<void> checkOutEmployee(int e) => throw UnimplementedError();
+-  @override Future<List<Employee>> getAllEmployees() => throw UnimplementedError();
++  @override Future<List<Employee>> getAllEmployees({Set<int>? allowedBranchIds}) => throw UnimplementedError();
+   @override Stream<List<EmployeeTransaction>> watchEmployeeTransactions(int id) => throw UnimplementedError();
+   @override Future<void> recordEmployeeAdvance({required int employeeId, required double amount, String? description, required DateTime transactionDate, bool affectsTreasury = true, int? safeId}) => throw UnimplementedError();
+   @override Future<void> recordEmployeeDeduction({required int employeeId, required double amount, String? description, required DateTime transactionDate}) => throw UnimplementedError();
+diff --git a/test/unit/report_builder_branch_scope_test.dart b/test/unit/report_builder_branch_scope_test.dart
+index b3647eec..2c84d46a 100644
+--- a/test/unit/report_builder_branch_scope_test.dart
++++ b/test/unit/report_builder_branch_scope_test.dart
+@@ -9,13 +9,14 @@
+ // ── ليه خريطة لكل كيان لا فلتر واحد ─────────────────────────────────────────
+ // الحصر دلالته مختلفة لكل مصدر:
+ //   sales_invoices / purchase_invoices → branch_id مباشرةً
++//   employees                          → branch_id مباشرةً (اتقفل H6)
+ //   parties                            → is_global OR branch_ids LIKE
+ //   products                           → بيانات أساسية على مستوى الشركة
+-//   journal_entries / employees /      → **مالهمش فلتر مدعوم**
+-//   inventory_balances
++//   journal_entries / inventory_balances → **مالهمش فلتر مدعوم**
+ //
+-// و`employees.branch_id` **ما بيتكتبش أصلاً** (مانع H6)، فحصره بيدي صفر صفوف
+-// بشكل مضلّل بدل ما يحصر فعلاً.
++// `employees` كان مرفوضاً لأن `branch_id` **ما كانش بيتكتب أصلاً** (مانع H6)،
++// فحصره كان بيدي صفر صفوف مضلّلاً. اتقفل H6 — `addEmployee` بيكتب العمود —
++// فبقى الحصر ذا معنى، وهو المصدر الوحيد في منشئ التقارير اللي فيه **رواتب**.
+ //
+ // ── القرار: الرفض لا الحصر الجزئي ───────────────────────────────────────────
+ // كيان مالوش فلتر مدعوم بيرجّع **فاضي** لمستخدم محصور. الحصر الجزئي أخطر من
+@@ -114,11 +115,38 @@ void main() {
+       expect(await db.executeReport(id), isEmpty);
+     });
+ 
+-    test('employees بترجّع فاضي لمستخدم محصور (‏branch_id ما بيتكتبش — H6)',
+-        () async {
++  });
++
++  group('الموظفون — حصر بـbranch_id بعد ما اتقفل H6', () {
++    setUp(() async {
++      await db.into(db.employees).insert(EmployeesCompanion.insert(
++          name: 'موظف أ', branchId: Value(branchA)));
++      await db.into(db.employees).insert(EmployeesCompanion.insert(
++          name: 'موظف ب', branchId: Value(branchB)));
++      await db.into(db.employees)
++          .insert(EmployeesCompanion.insert(name: 'موظف مركزي'));
++    });
++
++    test('{A} بتستبعد موظف فرع ب وتُبقي المركزي', () async {
+       final id = await report('employees', 'name');
+-      await db.into(db.employees).insert(EmployeesCompanion.insert(name: 'موظف'));
+-      expect(await db.executeReport(id, allowedBranchIds: {branchA}), isEmpty);
++      final rows = await db.executeReport(id, allowedBranchIds: {branchA});
++      final names = rows.map((r) => r['name'] as String);
++      expect(names, containsAll(<String>['موظف أ', 'موظف مركزي']));
++      expect(names, isNot(contains('موظف ب')),
++          reason: 'ده المصدر الوحيد اللي فيه رواتب — التسريب هنا فلوس');
++    });
++
++    test('null = وصول كامل', () async {
++      final id = await report('employees', 'name');
++      final names =
++          (await db.executeReport(id)).map((r) => r['name'] as String);
++      expect(names,
++          containsAll(<String>['موظف أ', 'موظف ب', 'موظف مركزي']));
++    });
++
++    test('{} بتفشل مقفولة', () async {
++      final id = await report('employees', 'name');
++      expect(await db.executeReport(id, allowedBranchIds: <int>{}), isEmpty);
+     });
+   });
+ }
