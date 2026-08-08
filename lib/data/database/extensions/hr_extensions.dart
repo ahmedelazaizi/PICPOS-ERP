@@ -21,6 +21,36 @@ int _daysInMonth(int year, int month) => DateTime(year, month + 1, 0).day;
 /// هو الموضع الوحيد الذي يقرأ منه.
 const int kStandardWorkHoursPerDay = 8;
 
+/// B4 — أنواعُ الإجازات المدفوعة: تُحتسب حضوراً في حساب الراتب.
+///
+/// المجالُ المدعوم لـ`EmployeeLeaves.leaveType` هو `annual` · `sick` ·
+/// `unpaid` · `emergency`. المدفوعُ منها ثلاثة، و`unpaid` مستثنى بحكم اسمه:
+/// يومٌ بلا أجر. فلا يصحّ تعميمُ «كلُّ إجازةٍ معتمدة مدفوعة» — التعميم يدفع
+/// أجراً عن أيامٍ اتُّفق صراحةً على ألّا تُدفَع.
+const Set<String> kPaidLeaveTypes = {'annual', 'sick', 'emergency'};
+
+/// حالةُ صفِّ الحضور لإجازةٍ مدفوعة معتمدة.
+const String kAttendanceStatusPaidLeave = 'leave';
+
+/// حالةُ صفِّ الحضور لإجازةٍ غير مدفوعة معتمدة.
+///
+/// الصفُّ يُكتب ولا يُحتسب: الغيابُ مصرَّحٌ به لا مجهول، فيظهر في سجلِّ الحضور
+/// مميَّزاً. ولهذا لم تُستعمل `absent` — دلالتُها «لم يحضر بلا إذن»، وطمسُ
+/// الفرق يُخفي أنّ المدير وافق.
+const String kAttendanceStatusUnpaidLeave = 'unpaid_leave';
+
+/// حالاتُ صفِّ الحضور التي تُعَدّ يوماً **مدفوعاً** في حساب الراتب.
+const Set<String> kPaidAttendanceStatuses = {
+  'present',
+  kAttendanceStatusPaidLeave,
+};
+
+/// حدٌّ أعلى لعدد الأيام التي يكتبها اعتمادُ إجازةٍ واحدة.
+///
+/// ليس قاعدةَ عمل بل حاجزَ بيانات: `endDate` يأتي من منتقي تواريخ، وخطأُ
+/// إدخالٍ بسنةٍ كاملة كان سيكتب آلافَ الصفوف داخل معاملةٍ واحدة.
+const int kMaxLeaveDaysPerRequest = 366;
+
 /// Extensions for HR/Employee management
 extension HRExtensions on AppDatabase {
   // -----------------------------------------------------------------------
@@ -597,7 +627,12 @@ extension HRExtensions on AppDatabase {
               ..where((a) => a.employeeId.equals(employeeId))
               ..where((a) => a.date.isBiggerOrEqual(Variable(startOfMonth)))
               ..where((a) => a.date.isSmallerThan(Variable(endOfMonth)))
-              ..where((a) => a.status.equals('present')))
+              // B4 — الأيامُ **المدفوعة** لا الحاضرةُ وحدها. الإجازةُ المدفوعة
+              // المعتمدة يومٌ مستحَقُّ الأجر، فاستثناؤها كان يخصم إجازةً وافق
+              // عليها المدير. شوف [kPaidAttendanceStatuses].
+              ..where(
+                (a) => a.status.isIn(kPaidAttendanceStatuses.toList()),
+              ))
             .get();
 
     final daysAttended = attendanceRecords.length;
@@ -747,30 +782,105 @@ extension HRExtensions on AppDatabase {
   }
 
   /// Approve or reject a leave request
+  ///
+  /// B4 — الاعتمادُ يكتب **صفوفَ حضورٍ** للفترة، لا يغيّر حالةَ الطلب وحدها.
+  /// قبل ذلك كان حسابُ الراتب يعدّ صفوفَ الحضور ولا صفَّ مكتوب، فإجازةٌ سنوية
+  /// **معتمدة** سبعةَ أيامٍ تُخصم سبعةَ أيامٍ من الراتب: الموظف يطلب، والمديرُ
+  /// يوافق، والنظامُ يعاقبه على موافقةٍ حصل عليها.
+  ///
+  /// والثلاثة في معاملةٍ واحدة: حالةُ الطلب وصفوفُ الحضور وخصمُ الرصيد. كانت
+  /// الحالةُ والرصيدُ منفصلَين، وإضافةُ كتابةٍ ثالثة بلا معاملة تجعل السقوطَ في
+  /// الوسط يترك رصيداً مخصوماً بلا أيامٍ مدفوعة — أو العكس.
   Future<void> updateLeaveStatus(
     int leaveId,
     String status,
     int approvedBy,
   ) async {
-    final leave = await (select(
-      employeeLeaves,
-    )..where((l) => l.id.equals(leaveId))).getSingle();
+    return transaction(() async {
+      final leave = await (select(
+        employeeLeaves,
+      )..where((l) => l.id.equals(leaveId))).getSingle();
 
-    await (update(employeeLeaves)..where((l) => l.id.equals(leaveId))).write(
-      EmployeeLeavesCompanion(
-        status: Value(status),
-        approvedBy: Value(approvedBy),
-      ),
+      await (update(employeeLeaves)..where((l) => l.id.equals(leaveId))).write(
+        EmployeeLeavesCompanion(
+          status: Value(status),
+          approvedBy: Value(approvedBy),
+        ),
+      );
+
+      // Update leave balance if approved
+      if (status == 'approved') {
+        await _writeLeaveAttendance(leave);
+        await _deductLeaveBalance(
+          leave.employeeId,
+          leave.leaveType,
+          leave.days,
+          leave.startDate.year,
+        );
+      }
+    });
+  }
+
+  /// B4 — يكتب صفَّ حضورٍ لكلِّ يومٍ تقويميّ في [leave] شاملاً الطرفين.
+  ///
+  /// **الفترةُ بالتقويم لا بعدّاد `days`**: العدّادُ يخصم الرصيد، والتقويمُ
+  /// يحدّد أيَّ أيامٍ تُدفَع. وهما رقمان مختلفان قد يفترقان.
+  ///
+  /// **upsert لا insert**: قيدُ v152 `idx_employee_attendance_day_dedup` فريدٌ
+  /// على (موظف، يوم)، فموظفٌ بصم صباحَ يومٍ ثم اعتُمدت إجازتُه عليه كان إدراجُه
+  /// يُرفَض فتسقط المعاملةُ كلُّها. والتحديثُ يمسّ الحالةَ والملاحظة **فقط**،
+  /// فيبقى التحضيرُ والانصرافُ المسجَّلان: إثباتُ أنه حضر فعلاً لا يجوز أن يضيع
+  /// لأن إجازةً اعتُمدت على نفس اليوم.
+  ///
+  /// **العدُّ باليوم لا بـ`add(Duration(days: 1))`**: إضافةُ ٢٤ ساعةً عبر حدِّ
+  /// التوقيت الصيفي تُنتج الساعةَ ٢٣ من **نفس** اليوم، فيتكرّر يومٌ ويُفقَد
+  /// آخر. و`DateTime(y, m, d + i)` يطبّع تجاوزَ الشهر والسنة من نفسه.
+  Future<void> _writeLeaveAttendance(EmployeeLeave leave) async {
+    final attendanceStatus = kPaidLeaveTypes.contains(leave.leaveType)
+        ? kAttendanceStatusPaidLeave
+        : kAttendanceStatusUnpaidLeave;
+    final note = 'إجازة ${leave.leaveType} معتمدة — طلب #${leave.id}';
+
+    final first = DateTime(
+      leave.startDate.year,
+      leave.startDate.month,
+      leave.startDate.day,
+    );
+    final last = DateTime(
+      leave.endDate.year,
+      leave.endDate.month,
+      leave.endDate.day,
     );
 
-    // Update leave balance if approved
-    if (status == 'approved') {
-      await _deductLeaveBalance(
-        leave.employeeId,
-        leave.leaveType,
-        leave.days,
-        leave.startDate.year,
-      );
+    for (var i = 0; i < kMaxLeaveDaysPerRequest; i++) {
+      final day = DateTime(first.year, first.month, first.day + i);
+      if (day.isAfter(last)) break;
+
+      final existing =
+          await (select(employeeAttendance)
+                ..where((a) => a.employeeId.equals(leave.employeeId))
+                ..where((a) => a.date.equals(day)))
+              .getSingleOrNull();
+
+      if (existing == null) {
+        await into(employeeAttendance).insert(
+          EmployeeAttendanceCompanion.insert(
+            employeeId: leave.employeeId,
+            date: day,
+            status: Value(attendanceStatus),
+            notes: Value(note),
+          ),
+        );
+      } else {
+        await (update(
+          employeeAttendance,
+        )..where((a) => a.id.equals(existing.id))).write(
+          EmployeeAttendanceCompanion(
+            status: Value(attendanceStatus),
+            notes: Value(note),
+          ),
+        );
+      }
     }
   }
 

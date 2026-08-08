@@ -124,7 +124,10 @@ class _PayrollCard extends ConsumerWidget {
                 const Divider(),
                 _calcRow('الراتب الأساسي', calc.baseSalary),
                 _calcRow('قيمة اليومية', calc.dailyRate, color: Colors.blueGrey),
-                _calcRow('أيام الحضور (${calc.daysAttended})', calc.dailyRate * calc.daysAttended, color: Colors.green),
+                // B4 — «الأيام المدفوعة» لا «أيام الحضور»: العدد صار يضمّ
+                // الإجازةَ المدفوعة المعتمدة، فالتسميةُ القديمة تجعل القسيمة
+                // تُظهر حضوراً في أيامٍ كان الموظف فيها في إجازة.
+                _calcRow('الأيام المدفوعة (${calc.daysAttended})', calc.dailyRate * calc.daysAttended, color: Colors.green),
                 _calcRow('الإضافي', calc.overtimeAmount, color: Colors.green),
                 _calcRow('السلف النشطة', -calc.totalAdvances, color: Colors.red),
                 _calcRow('الخصومات', -calc.totalDeductions, color: Colors.red),
@@ -281,7 +284,7 @@ class _ExportPayrollButton extends ConsumerWidget {
     );
 
     final headers = [
-      'الموظف', 'الدور', 'الراتب الأساسي', 'أيام الحضور',
+      'الموظف', 'الدور', 'الراتب الأساسي', 'الأيام المدفوعة',
       'إضافي', 'سُلف', 'خصومات', 'صافي المستحق',
     ];
 
@@ -349,7 +352,7 @@ void _showSalarySlip(BuildContext context, EmployeeSalaryCalculation calc) {
                     const Divider(),
                     _slipRow('الراتب الأساسي',
                         '${calc.baseSalary.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}'),
-                    _slipRow('أيام الحضور', '${calc.daysAttended} يوم'),
+                    _slipRow('الأيام المدفوعة', '${calc.daysAttended} يوم'),
                     _slipRow('بدل إضافي',
                         '${calc.overtimeAmount.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
                         color: const Color(0xFF059669)),
