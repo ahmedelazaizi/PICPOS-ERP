@@ -14,13 +14,6 @@ import '../../../domain/entities/accounting_entities.dart';
 /// يناير السنة التالية) وعلى فبراير الكبيسة بلا حالة خاصة.
 int _daysInMonth(int year, int month) => DateTime(year, month + 1, 0).day;
 
-/// ساعات اليوم القياسية — مقام الأجر بالساعة للوقت الإضافي.
-///
-/// ليس في المستودع أيّ إعداد لساعات العمل أو الورديات (فُحص 2026-08-08)، فهذا
-/// الرقم افتراضٌ **معلَن** لا قيمةٌ مشتقّة. إن أُضيف إعداد ورديات يوماً، فهذا
-/// هو الموضع الوحيد الذي يقرأ منه.
-const int kStandardWorkHoursPerDay = 8;
-
 /// B4 — أنواعُ الإجازات المدفوعة: تُحتسب حضوراً في حساب الراتب.
 ///
 /// المجالُ المدعوم لـ`EmployeeLeaves.leaveType` هو `annual` · `sick` ·
@@ -1282,18 +1275,26 @@ extension HRExtensions on AppDatabase {
     required double hours,
     double rate = 1.5,
     String? notes,
+    double? manualAmount,
   }) async {
     final employee = await (select(
       employees,
     )..where((e) => e.id.equals(employeeId))).getSingle();
-    // الأجر بالساعة مشتقٌّ من الأجر اليومي **لشهر السجل نفسه**، فساعةٌ إضافية
-    // في فبراير تُقاس على ٢٨ يوماً لا ٣٠. لو ظلّ المقام ٣٠ هنا بعد إصلاح الأجر
-    // اليومي، لصارت ساعة الموظف الإضافية أرخص من ساعته العادية في كل شهر أقصر
-    // من ٣٠ يوماً — تناقضٌ داخلي بين مسارَي الأجر نفسه.
-    final hourlyRate = employee.salary /
-        _daysInMonth(date.year, date.month) /
-        kStandardWorkHoursPerDay;
-    final amount = hours * hourlyRate * rate;
+
+    // المبلغُ مُشتقٌّ من [hourlyRateFor] — المصدرِ الوحيد. وكان يُشتقّ هنا
+    // محلياً بمقام `_daysInMonth` (أيامِ التقويم) و٨ ساعاتٍ مثبّتة، فساعةُ
+    // الموظف الإضافية أرخصُ ممّا تستحق بنحو ١٥٪ في شهرٍ بأربع عطلات.
+    //
+    // الفحصُ هنا **قبل** أيّ نداءٍ لـ[hourlyRateFor]: هي ترمي لو `hoursPerDay`
+    // معدومٌ، وموظفٌ بلا `hoursPerDay` مع تجاوزٍ يدويّ يجب أن يمرّ بلا رمي —
+    // فنداءها في المسار اليدويّ يكسر ذلك حتى لو أُهمِلت نتيجته.
+    final double amount;
+    if (manualAmount != null) {
+      amount = manualAmount;
+    } else {
+      amount =
+          hours * rate * await hourlyRateFor(employee, date.year, date.month);
+    }
 
     return into(overtimeRecords).insert(
       OvertimeRecordsCompanion.insert(
@@ -1302,6 +1303,7 @@ extension HRExtensions on AppDatabase {
         hours: hours,
         rate: Value(rate),
         amount: amount,
+        isManualAmount: Value(manualAmount != null),
         notes: Value(notes),
       ),
     );

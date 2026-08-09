@@ -74,6 +74,11 @@ void main() {
             name: 'أحمد',
             salary: const Value(salary),
             salaryType: const Value('daily'),
+            // `addOvertimeRecord` يشتقّ الآن من [hourlyRateFor] وهي ترمي لو
+            // `hoursPerDay` معدومٌ. هذا الملفُّ لا يسجّل عطلاتٍ فـ
+            // `workingDaysInMonth` = أيامُ التقويم بالضبط، فالمقامُ يبقى
+            // مطابقاً لتوقّع اختبار الوقت الإضافي أدناه (٣٧٫٥).
+            hoursPerDay: const Value(8),
           ),
         );
   });

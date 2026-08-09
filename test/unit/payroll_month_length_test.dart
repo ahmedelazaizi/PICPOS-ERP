@@ -53,6 +53,11 @@ void main() {
             name: 'أحمد',
             salary: const Value(salary),
             salaryType: const Value('daily'),
+            // `addOvertimeRecord` يشتقّ الآن من [hourlyRateFor]، وهي ترمي لو
+            // `hoursPerDay` معدومٌ. هذا الملفُّ لا يسجّل عطلاتٍ إطلاقاً فـ
+            // `workingDaysInMonth` = أيامُ التقويم بالضبط — فالمقامُ هنا يبقى
+            // مطابقاً لِما تتوقّعه تأكيداتُ مجموعة «الأجر بالساعة» أدناه.
+            hoursPerDay: const Value(8),
           ),
         );
   });

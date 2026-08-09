@@ -158,6 +158,12 @@ void main() {
     });
 
     test('الوقتُ الإضافي يُضاف فوق الراتب الكامل', () async {
+      // `addOvertimeRecord` يشتقّ الآن من [hourlyRateFor] وهي ترمي لو
+      // `hoursPerDay` معدومٌ. `addEmployee` لا يعرض هذا الحقل بعد، فيُضبَط هنا
+      // مباشرةً — بلا عطلاتٍ مسجَّلةٍ في هذا الملف يبقى `workingDaysInMonth`
+      // = ٢٨ فيطابق التوقّعَ القديم ٣٧٫٥ بالضبط.
+      await (db.update(db.employees)..where((e) => e.id.equals(monthlyId)))
+          .write(const EmployeesCompanion(hoursPerDay: Value(8)));
       await db.addOvertimeRecord(
         employeeId: monthlyId,
         date: DateTime(2026, 2, 12),
