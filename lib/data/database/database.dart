@@ -132,6 +132,7 @@ part 'daos/report_builder_dao.dart';
 part 'daos/notification_dao.dart';
 part 'daos/operational_expenses_dao.dart';
 part 'daos/fk_resolver_dao.dart';
+part 'daos/work_holidays_dao.dart';
 // Seeding & Projections
 part 'database_seeder.dart';
 part 'database_seeder_permissions.dart';
