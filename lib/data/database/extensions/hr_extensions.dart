@@ -70,6 +70,13 @@ const Set<String> kUnpaidAttendanceStatuses = {
 /// و`checkIn`/`checkOut` موجودان فالساعاتُ مشتقّةٌ لو تقرّر ذلك.
 const String kMonthlySalaryType = 'monthly';
 
+/// نوعُ الأجر بالساعة — الأساسيُّ = ساعاتُ الحضور الفعلية × أجرُ الساعة
+/// ([hourlyRateFor])، لا يومٌ كاملٌ بصرف النظر عن طول الحضور.
+///
+/// قرار المالك 2026-08-09. صفُّ حضورٍ بلا `checkOut` لا يحتسب ساعات: المدةُ
+/// مجهولة، والاتجاهُ الآمن أن تُوثَّق لا أن تُخمَّن.
+const String kHourlySalaryType = 'hourly';
+
 /// حدٌّ أعلى لعدد الأيام التي يكتبها اعتمادُ إجازةٍ واحدة.
 ///
 /// ليس قاعدةَ عمل بل حاجزَ بيانات: `endDate` يأتي من منتقي تواريخ، وخطأُ
@@ -846,7 +853,15 @@ extension HRExtensions on AppDatabase {
               ))
             .get();
 
-    final unpaidDays = unpaidRecords.length;
+    // التقويمُ يسري على الجميع (قرار المالك 2026-08-09، مواصفة الأجر
+    // بالساعة): يومُ العطلة لا يُعدّ غياباً — حتى لو سُجِّل له صفُّ «absent»
+    // خطأً أو بأثرٍ رجعي.
+    final holidays = await holidaysInMonth(year, month,
+        branchId: employee.branchId);
+    final unpaidDays = unpaidRecords
+        .where((r) => !holidays.contains(
+            DateTime(r.date.year, r.date.month, r.date.day)))
+        .length;
 
     // Get advances and deductions
     final advances = await getMonthlyAdvances(employeeId, year, month);
@@ -862,6 +877,14 @@ extension HRExtensions on AppDatabase {
     // Calculate
     final dailyRate = employee.salary / _daysInMonth(year, month);
 
+    // ساعاتُ الحضور الفعلية — صفٌّ بلا انصرافٍ لا يُحتسب: مدةٌ مجهولة
+    // تُوثَّق ولا تُخمَّن.
+    final hoursWorked = attendanceRecords.fold<double>(0, (sum, a) {
+      final inAt = a.checkIn, outAt = a.checkOut;
+      if (inAt == null || outAt == null) return sum;
+      return sum + outAt.difference(inAt).inMinutes / 60.0;
+    });
+
     // ── الموديلُ بحسب `salaryType` (قرار المالك 2026-08-09) ─────────────────
     // كان موديلٌ واحد — أجرٌ يومي — يُطبَّق على الأنواع الثلاثة، و`salaryType`
     // لا يُقرأ إطلاقاً. فالشهريُّ كان يُخصَم عن أيام راحته: أيامُ العمل تأتي من
@@ -870,16 +893,21 @@ extension HRExtensions on AppDatabase {
     // غيابٍ واحد، وصفراً في فرعٍ بلا جهاز بصمة.
     //
     //   شهري : الراتبُ كاملاً − (الأجرُ اليومي × الأيامِ غيرِ المدفوعةِ المسجَّلة)
-    //   غيرُه : الأجرُ اليومي × الأيامِ المدفوعة   ← كما كان، وهو صحيحٌ لليومي
+    //   بالساعة : ساعاتُ الحضور الفعلية × أجرُ الساعة (‏[hourlyRateFor]) — لا
+    //             يومٌ كاملٌ بصرف النظر عن طول الحضور.
+    //   غيرُه (يومي) : الأجرُ اليومي × الأيامِ المدفوعة   ← كما كان
     //
     // والاتجاهُ الآمن مقصود: غيابٌ لم يُسجَّل = لا خصم. فلا يُخصَم من موظفٍ
     // لأن أحداً نسي أن يبصم له، والعبءُ على من يريد الخصمَ أن يوثّقه.
     //
     // وقيدُ v152 يمنع أكثرَ من صفٍّ لليوم، فـ`unpaidDays ≤ أيام الشهر` ⇒
     // الأساسُ لا يهبط تحت الصفر بالبناء.
-    final basePay = employee.salaryType == kMonthlySalaryType
-        ? employee.salary - dailyRate * unpaidDays
-        : dailyRate * daysAttended;
+    final basePay = switch (employee.salaryType) {
+      kMonthlySalaryType => employee.salary - dailyRate * unpaidDays,
+      kHourlySalaryType =>
+        hoursWorked * await hourlyRateFor(employee, year, month),
+      _ => dailyRate * daysAttended,
+    };
 
     final grossPay = basePay + overtimeAmount;
 

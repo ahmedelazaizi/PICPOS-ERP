@@ -138,7 +138,7 @@ else
   ok "analyze — ٦ info بالظبط"
 fi
 
-run_suite "unit + data + structural + services" 2917 \
+run_suite "unit + data + structural + services" 2921 \
   flutter test test/unit test/data test/structural test/services --concurrency="$LOCAL_CONCURRENCY"
 
 # الواجهات والنطاقُ والنواة — كانت **كلُّها** خارج البوابة حتى 2026-08-09.
