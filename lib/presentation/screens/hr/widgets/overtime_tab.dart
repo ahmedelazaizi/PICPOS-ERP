@@ -113,6 +113,7 @@ class OvertimeTab extends ConsumerWidget {
     double rate = 1.5;
     DateTime date = DateTime.now();
     final notesCtrl = TextEditingController();
+    final manualAmountCtrl = TextEditingController();
 
     showDialog(
       context: context,
@@ -194,6 +195,17 @@ class OvertimeTab extends ConsumerWidget {
                     ),
                     maxLines: 2,
                   ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: manualAmountCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'المبلغ (اتركه فارغاً للاحتساب التلقائي)',
+                      prefixIcon: Icon(PhosphorIconsBold.money),
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -206,21 +218,28 @@ class OvertimeTab extends ConsumerWidget {
                 onPressed: () async {
                   final hours = double.tryParse(hoursCtrl.text) ?? 0;
                   if (selectedEmpId == null || hours <= 0) return;
-                  await notifier.addOvertime(
+                  final manualAmount = manualAmountCtrl.text.trim().isEmpty
+                      ? null
+                      : double.tryParse(manualAmountCtrl.text.trim());
+                  final error = await notifier.addOvertime(
                     employeeId: selectedEmpId!,
                     date: date,
                     hours: hours,
                     rate: rate,
                     notes: notesCtrl.text,
+                    manualAmount: manualAmount,
                   );
-                  if (ctx.mounted) {
-                    Navigator.pop(ctx);
-                    AppToast.show(
-                      context,
-                      'تم تسجيل العمل الإضافي بنجاح',
-                      type: ToastType.success,
-                    );
+                  if (!ctx.mounted) return;
+                  if (error != null) {
+                    AppToast.show(context, error, type: ToastType.error);
+                    return;
                   }
+                  Navigator.pop(ctx);
+                  AppToast.show(
+                    context,
+                    'تم تسجيل العمل الإضافي بنجاح',
+                    type: ToastType.success,
+                  );
                 },
                 child: const Text('تسجيل'),
               ),

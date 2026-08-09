@@ -168,7 +168,14 @@ extension HRExtensions on AppDatabase {
     double salary = 0,
     String salaryType = 'monthly',
     int? branchId,
+    double? hoursPerDay,
   }) {
+    // ساعاتُ اليوم مقامُ أجر الساعة. وموظفُ `hourly` بدونها تجهيزةٌ ناقصة
+    // تُفشل حسابَ راتبه، والمنعُ عند الإدخال أرخصُ وأوضحُ من اكتشافه في كشف.
+    if (salaryType == kHourlySalaryType &&
+        (hoursPerDay == null || hoursPerDay <= 0)) {
+      throw ArgumentError('ساعاتُ العمل اليومية مطلوبةٌ لموظفٍ بأجر الساعة');
+    }
     return into(employees).insert(
       EmployeesCompanion.insert(
         name: name,
@@ -177,6 +184,7 @@ extension HRExtensions on AppDatabase {
         salary: Value(salary),
         salaryType: Value(salaryType),
         branchId: Value(branchId),
+        hoursPerDay: Value(hoursPerDay),
         hiredAt: Value(DateTime.now()),
       ),
     );
@@ -196,8 +204,27 @@ extension HRExtensions on AppDatabase {
     String? salaryType,
     bool? isActive,
     int? branchId,
-  }) {
-    return (update(employees)..where((e) => e.id.equals(id))).write(
+    double? hoursPerDay,
+  }) async {
+    // نفسُ حارسِ `addEmployee`، لكن `salaryType` هنا معاملٌ اختياريّ:
+    // `null` يعني «النوعُ لم يتغيّر» لا «ليس hourly». فالحكمُ على النوع
+    // **الفعليّ** بعد هذا التحديث — ولو لم يُمرَّر فمصدرُه الصفُّ القائم، لا
+    // افتراضٌ. وكذلك [hoursPerDay]: غيابُه هنا يعني «لم يتغيّر» فقد تكفي
+    // الساعاتُ المخزَّنةُ سلفاً.
+    Employee? current;
+    Future<Employee> loadCurrent() async =>
+        current ??= await (select(employees)..where((e) => e.id.equals(id)))
+            .getSingle();
+
+    final effectiveSalaryType = salaryType ?? (await loadCurrent()).salaryType;
+    if (effectiveSalaryType == kHourlySalaryType) {
+      final effectiveHours = hoursPerDay ?? (await loadCurrent()).hoursPerDay;
+      if (effectiveHours == null || effectiveHours <= 0) {
+        throw ArgumentError('ساعاتُ العمل اليومية مطلوبةٌ لموظفٍ بأجر الساعة');
+      }
+    }
+
+    await (update(employees)..where((e) => e.id.equals(id))).write(
       EmployeesCompanion(
         name: name != null ? Value(name) : const Value.absent(),
         phone: phone != null ? Value(phone) : const Value.absent(),
@@ -208,6 +235,8 @@ extension HRExtensions on AppDatabase {
             : const Value.absent(),
         isActive: isActive != null ? Value(isActive) : const Value.absent(),
         branchId: branchId != null ? Value(branchId) : const Value.absent(),
+        hoursPerDay:
+            hoursPerDay != null ? Value(hoursPerDay) : const Value.absent(),
       ),
     );
   }

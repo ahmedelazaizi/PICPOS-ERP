@@ -28,6 +28,9 @@ class HRDialogs {
     final salaryCtrl = TextEditingController(
       text: employee?.salary.toString() ?? '0',
     );
+    final hoursPerDayCtrl = TextEditingController(
+      text: employee?.hoursPerDay?.toString() ?? '',
+    );
     String role = employee?.role ?? 'staff';
     String salaryType = employee?.salaryType ?? 'monthly';
 
@@ -118,6 +121,21 @@ class HRDialogs {
                     ],
                   ),
                   const SizedBox(height: 12),
+                  TextField(
+                    controller: hoursPerDayCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'ساعات العمل اليومية',
+                      helperText:
+                          'مطلوب لأجر الساعة، ويُستعمل لاحتساب الوقت '
+                          'الإضافي تلقائياً',
+                      helperMaxLines: 2,
+                      prefixIcon: Icon(PhosphorIconsBold.timer),
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   DropdownButtonFormField<int?>(
                     initialValue: branchId,
                     decoration: const InputDecoration(labelText: 'الفرع'),
@@ -151,6 +169,21 @@ class HRDialogs {
                 onPressed: () async {
                   if (nameCtrl.text.isEmpty) return;
                   final salary = double.tryParse(salaryCtrl.text) ?? 0;
+                  final hoursPerDay = hoursPerDayCtrl.text.trim().isEmpty
+                      ? null
+                      : double.tryParse(hoursPerDayCtrl.text.trim());
+
+                  // الحقلُ يظهر لكلّ الأنواع، ويُلزَم لـ`hourly` وحدَه: بدونه
+                  // يفشل حسابُ راتبه لاحقاً بصمت — والمنعُ هنا أرخصُ وأوضحُ.
+                  if (salaryType == kHourlySalaryType &&
+                      (hoursPerDay == null || hoursPerDay <= 0)) {
+                    AppToast.show(
+                      context,
+                      'ساعاتُ العمل اليومية مطلوبةٌ لموظفٍ بأجر الساعة',
+                      type: ToastType.error,
+                    );
+                    return;
+                  }
 
                   await notifier.saveEmployee(
                     existingEmployee: employee,
@@ -160,6 +193,7 @@ class HRDialogs {
                     salary: salary,
                     salaryType: salaryType,
                     branchId: branchId,
+                    hoursPerDay: hoursPerDay,
                   );
 
                   if (ctx.mounted) Navigator.pop(ctx);

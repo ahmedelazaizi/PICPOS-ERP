@@ -53,6 +53,7 @@ class HRNotifier extends Notifier<HRState> {
     double salary = 0,
     String salaryType = 'monthly',
     int? branchId,
+    double? hoursPerDay,
   }) async {
     state = state.copyWith(isLoading: true);
     try {
@@ -64,6 +65,7 @@ class HRNotifier extends Notifier<HRState> {
           salary: salary,
           salaryType: salaryType,
           branchId: branchId,
+          hoursPerDay: hoursPerDay,
         );
         await _log('add_employee', 'إضافة موظف: $name ($role)', entityId: id);
       } else {
@@ -75,6 +77,7 @@ class HRNotifier extends Notifier<HRState> {
           salary: salary,
           salaryType: salaryType,
           branchId: branchId,
+          hoursPerDay: hoursPerDay,
         );
         await _log(
           'update_employee',
@@ -206,20 +209,37 @@ class HRNotifier extends Notifier<HRState> {
     await _hrRepo.updateLeaveStatus(leaveId, status, user?.id ?? 0);
   }
 
-  Future<void> addOvertime({
+  /// يُعيد `null` عند النجاح، أو رسالةَ خطأٍ للعرض.
+  ///
+  /// كان النداءُ عارياً، و`HRNotifier` ليس `AsyncNotifier` فلا تغليفَ تلقائي:
+  /// أيُّ استثناءٍ يهبط في `PlatformDispatcher.onError` الذي يسجّله ويُعيد
+  /// `true` — فلا التطبيقُ يسقط ولا المستخدمُ يرى شيئاً. الزرُّ يبدو أنه لم
+  /// يفعل شيئاً، والسجلُّ لا يُحفظ، ولا رسالة. **الفشلُ الصامت أسوأ من
+  /// الانهيار**: الانهيارُ يُبلَّغ عنه.
+  Future<String?> addOvertime({
     required int employeeId,
     required DateTime date,
     required double hours,
     double rate = 1.5,
     String? notes,
+    double? manualAmount,
   }) async {
-    await _hrRepo.addOvertimeRecord(
-      employeeId: employeeId,
-      date: date,
-      hours: hours,
-      rate: rate,
-      notes: notes,
-    );
+    try {
+      await _hrRepo.addOvertimeRecord(
+        employeeId: employeeId,
+        date: date,
+        hours: hours,
+        rate: rate,
+        notes: notes,
+        manualAmount: manualAmount,
+      );
+      return null;
+    } on StateError catch (e) {
+      return 'تعذّر احتسابُ المبلغ تلقائياً: ${e.message}. '
+          'أدخِل ساعاتِ العمل اليومية للموظف، أو أدخِل المبلغَ يدوياً.';
+    } catch (e) {
+      return 'تعذّر تسجيلُ الوقت الإضافي: $e';
+    }
   }
 
   Future<void> _log(

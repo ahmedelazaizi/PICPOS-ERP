@@ -24,6 +24,7 @@ class _MockHRRepository implements IHRRepository {
     required double salary,
     required String salaryType,
     int? branchId,
+    double? hoursPerDay,
   }) async {
     if (shouldFail) throw Exception('DB error');
     capturedAddBranchId = branchId;
@@ -40,6 +41,7 @@ class _MockHRRepository implements IHRRepository {
     String? salaryType,
     bool? isActive,
     int? branchId,
+    double? hoursPerDay,
   }) async {
     capturedUpdateBranchId = branchId;
     if (shouldFail) throw Exception('DB error');
@@ -153,6 +155,7 @@ class _MockHRRepository implements IHRRepository {
     required double hours,
     required double rate,
     String? notes,
+    double? manualAmount,
   }) =>
       throw UnimplementedError();
   @override

@@ -47,6 +47,7 @@ class _MockHR implements IHRRepository {
     required double hours,
     required double rate,
     String? notes,
+    double? manualAmount,
   }) async {
     if (shouldFail) throw Exception('overtime record failed');
   }
@@ -54,8 +55,8 @@ class _MockHR implements IHRRepository {
   // ── Unneeded methods ─────────────────────────────────────────────────────
   @override Stream<List<Employee>> watchAllEmployees({Set<int>? allowedBranchIds}) => throw UnimplementedError();
   @override Future<Employee?> getEmployeeById(int id) => throw UnimplementedError();
-  @override Future<int> addEmployee({required String name, String? phone, required String role, required double salary, required String salaryType, int? branchId}) => throw UnimplementedError();
-  @override Future<void> updateEmployee({required int id, String? name, String? phone, String? role, double? salary, String? salaryType, bool? isActive, int? branchId}) => throw UnimplementedError();
+  @override Future<int> addEmployee({required String name, String? phone, required String role, required double salary, required String salaryType, int? branchId, double? hoursPerDay}) => throw UnimplementedError();
+  @override Future<void> updateEmployee({required int id, String? name, String? phone, String? role, double? salary, String? salaryType, bool? isActive, int? branchId, double? hoursPerDay}) => throw UnimplementedError();
   @override Stream<List<EmployeeAttendanceWithDetails>> watchTodayAttendance() => throw UnimplementedError();
   @override Future<void> checkInEmployee(int e) => throw UnimplementedError();
   @override Future<void> checkOutEmployee(int e) => throw UnimplementedError();

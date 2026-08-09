@@ -22,6 +22,7 @@ class HRRepositoryImpl implements IHRRepository {
     required double salary,
     required String salaryType,
     int? branchId,
+    double? hoursPerDay,
   }) => _db.addEmployee(
     name: name,
     phone: phone,
@@ -29,6 +30,7 @@ class HRRepositoryImpl implements IHRRepository {
     salary: salary,
     salaryType: salaryType,
     branchId: branchId,
+    hoursPerDay: hoursPerDay,
   );
 
   @override
@@ -41,6 +43,7 @@ class HRRepositoryImpl implements IHRRepository {
     String? salaryType,
     bool? isActive,
     int? branchId,
+    double? hoursPerDay,
   }) => _db.updateEmployee(
     id: id,
     name: name,
@@ -50,6 +53,7 @@ class HRRepositoryImpl implements IHRRepository {
     salaryType: salaryType,
     isActive: isActive,
     branchId: branchId,
+    hoursPerDay: hoursPerDay,
   );
 
   @override
@@ -186,12 +190,14 @@ class HRRepositoryImpl implements IHRRepository {
     required double hours,
     required double rate,
     String? notes,
+    double? manualAmount,
   }) => _db.addOvertimeRecord(
     employeeId: employeeId,
     date: date,
     hours: hours,
     rate: rate,
     notes: notes,
+    manualAmount: manualAmount,
   );
 
   @override

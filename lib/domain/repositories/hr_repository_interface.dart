@@ -15,6 +15,7 @@ abstract class IHRRepository {
     required double salary,
     required String salaryType,
     int? branchId,
+    double? hoursPerDay,
   });
   Future<void> updateEmployee({
     required int id,
@@ -25,6 +26,7 @@ abstract class IHRRepository {
     String? salaryType,
     bool? isActive,
     int? branchId,
+    double? hoursPerDay,
   });
 
   // Attendance
@@ -104,6 +106,7 @@ abstract class IHRRepository {
     required double hours,
     required double rate,
     String? notes,
+    double? manualAmount,
   });
 
   // Performance Reviews
