@@ -1,0 +1,1824 @@
+diff --git a/lib/data/database/daos/report_builder_dao.dart b/lib/data/database/daos/report_builder_dao.dart
+index d3f0929f..cc89073e 100644
+--- a/lib/data/database/daos/report_builder_dao.dart
++++ b/lib/data/database/daos/report_builder_dao.dart
+@@ -110,10 +110,10 @@ extension ReportBuilderDao on AppDatabase {
+     final query = _buildReportQuery(report, allowedBranchIds, rowLimit);
+     if (query == null) {
+       debugPrint('[ReportBuilder] رُفض: الكيان "${report.sourceEntity}" مالوش '
+-          'فلتر حصر مدعوم، والمستخدم محصور بفرع');
++          'فلتر حصر مدعوم (أو الفلتر مرفوض)، والمستخدم محصور بفرع');
+       return [];
+     }
+-    var results = await customSelect(query).get();
++    var results = await customSelect(query.sql, variables: query.vars).get();
+ 
+     // الصفُّ الزائد دليلُ القصّ: يُبلَّغ عنه ثم يُطرَح فلا يُعرَض ولا يُحتسب.
+     // والإبلاغُ **قبل** الطرح كي لا يبقى الاكتشافُ متوقفاً على ترتيبِ سطور.
+@@ -202,6 +202,31 @@ extension ReportBuilderDao on AppDatabase {
+     }
+   }
+ 
++  /// عواملُ الفلتر المتاحة لنوعِ حقلٍ ما — **نفسُ القائمة التي يفرضها
++  /// التنفيذ** ([_kFilterOpsByFieldType])، لا نسخةٌ منها في الواجهة.
++  ///
++  /// لو كانت القائمتان اثنتين لأمكن أن تعرض الواجهةُ عاملاً يرفضه المحرِّك،
++  /// فيخرج التقريرُ **مرفوضاً بالكامل**: صفرُ صفوفٍ بلا رسالةِ خطأ ولا حقلٍ
++  /// معطَّل — أي عطلٌ لا يُرى.
++  List<Map<String, String>> getFilterOperators(String fieldType) {
++    const labels = {
++      '=': 'يساوي',
++      '!=': 'لا يساوي',
++      '>': 'أكبر من',
++      '>=': 'أكبر من أو يساوي',
++      '<': 'أصغر من',
++      '<=': 'أصغر من أو يساوي',
++      'contains': 'يحتوي',
++    };
++    // الترتيبُ ثابتٌ لا يتبع ترتيبَ الـSet كي لا تتبدّل المنسدلةُ بين تشغيلتين.
++    const order = ['=', '!=', 'contains', '>', '>=', '<', '<='];
++    final allowed = _kFilterOpsByFieldType[fieldType] ?? const <String>{};
++    return [
++      for (final op in order)
++        if (allowed.contains(op)) {'op': op, 'label': labels[op]!},
++    ];
++  }
++
+   // ─────────────────────────────────────────────────────────────────────────
+   // QUERY BUILDER (internal)
+   // ─────────────────────────────────────────────────────────────────────────
+@@ -244,83 +269,101 @@ extension ReportBuilderDao on AppDatabase {
+     }
+   }
+ 
+-  String? _buildReportQuery(
++  /// تعبيرُ الحقل المعروض في SQL — **بلا `AS`**.
++  ///
++  /// المُعلَن في `getAvailableFields` ليس بالضرورة اسمَ العمود: `price` عمودُه
++  /// `sale_price`، و`type` في الأطراف لا عمودَ له أصلاً بل يُشتقّ من صفتَين،
++  /// و`total_debit` يُشتقّ باستعلامٍ فرعيّ. وكان بثُّ الاسم المعروض كما هو
++  /// يعطي `no such column` **فيفشل التقريرُ كلُّه** لا العمودُ وحده.
++  ///
++  /// ⚠️ **مشتركٌ إجبارياً بين `SELECT` والفلتر.** لو بنى كلٌّ خريطته لفلتَر
++  /// الفلترُ على عمودٍ آخر — أو على عمودٍ لا وجود له — بينما الأعمدةُ المعروضة
++  /// صحيحة، فيخرج تقريرٌ **يبدو سليماً وقد صُفّي بشرطٍ غير الذي طلبه المستخدم**.
++  /// والاسمُ المستعار (`AS`) لا يُرى داخل `WHERE` في SQLite، فالتعبيرُ نفسُه هو
++  /// ما يتكرّر هناك.
++  String _fieldSqlExpression(String entity, String col) {
++    switch (entity) {
++      case 'products':
++        if (col == 'category_name') return 'c.name';
++        if (col == 'unit_name') return 'u.name';
++        if (col == 'quantity') return 'ib.quantity';
++        if (col == 'price') return 'products.sale_price';
++        if (col == 'cost') return 'products.cost_price';
++        return 'products.$col';
++      case 'sales_invoices':
++        if (col == 'date') return 'sales_invoices.invoice_date';
++        if (col == 'party_name') return 'p.name';
++        if (col == 'net_total') return 'sales_invoices.total';
++        // كان `'مكتمل' AS payment_status` — نص ثابت باسم حقل حقيقي، فكل
++        // صف بيقول «مكتمل» مهما كانت الحقيقة. و`payment_status` مش عمود
++        // في الجدول أصلاً، فلازم يُشتق من paid مقابل total.
++        if (col == 'payment_status') {
++          return "CASE WHEN sales_invoices.paid >= sales_invoices.total "
++              "THEN 'مكتمل' "
++              "WHEN sales_invoices.paid > 0 THEN 'جزئي' "
++              "ELSE 'غير مدفوع' END";
++        }
++        // كان `'أجل' AS sale_type` — غلط مرتين: العمود موجود فعلاً، و«أجل»
++        // مش من مجال قيمه (default/talabat/careem/ashyae). «أجل مقابل
++        // نقدي» دلالتها payment_method = 'credit'، حقل تاني تماماً.
++        return 'sales_invoices.$col';
++      case 'purchase_invoices':
++        if (col == 'date') return 'purchase_invoices.invoice_date';
++        if (col == 'party_name') return 'p.name';
++        if (col == 'net_total') return 'purchase_invoices.total';
++        return 'purchase_invoices.$col';
++      case 'parties':
++        // لا عمودَ `type` في الجدول — النوعُ صفتان منطقيتان
++        // (`is_customer`/`is_supplier`)، وقد يكون الطرفُ الاثنين معاً.
++        if (col == 'type') {
++          return "CASE "
++              "WHEN parties.is_customer = 1 AND parties.is_supplier = 1 "
++              "THEN 'عميل ومورد' "
++              "WHEN parties.is_supplier = 1 THEN 'مورد' "
++              "WHEN parties.is_customer = 1 THEN 'عميل' "
++              "ELSE '-' END";
++        }
++        return 'parties.$col';
++      case 'journal_entries':
++        if (col == 'date') return 'journal_entries.entry_date';
++        // لا عمودَي إجمالٍ في الجدول — الإجماليُّ يُشتقّ بجمع السطور.
++        //
++        // استعلامٌ فرعيٌّ مترابط لا `JOIN`: الـJOIN على السطور يُنتج صفاً
++        // لكل سطرٍ في القيد فيتضاعف كلُّ عمودٍ آخر — نفسُ عطلِ تضاعفِ
++        // الأصناف بعدد المخازن الذي أُصلح في `_getJoins`.
++        if (col == 'total_debit' || col == 'total_credit') {
++          final side = col == 'total_debit' ? 'debit' : 'credit';
++          return '(SELECT COALESCE(SUM(jel.$side), 0) '
++              'FROM journal_entry_lines jel '
++              'WHERE jel.entry_id = journal_entries.id)';
++        }
++        return 'journal_entries.$col';
++    }
++    return col;
++  }
++
++  /// نوعُ الحقل كما **يُعلنه السجلّ** — لا كما يُخمَّن من اسم العمود.
++  /// `null` = الحقلُ ليس من حقول هذا الكيان ⇒ يُرفَض.
++  String? _fieldType(String entity, String key) {
++    for (final f in getAvailableFields(entity)) {
++      if (f['key'] == key) return f['type'];
++    }
++    return null;
++  }
++
++  ({String sql, List<Variable> vars})? _buildReportQuery(
+       CustomReportData report, Set<int>? allowedBranchIds, int rowLimit) {
+     final tableName = _getTableName(report.sourceEntity);
+-    
++
+     // Map friendly keys to proper SQL columns to prevent "no such column" errors
+     String mappedCols = '*';
+     if (report.columns.isNotEmpty) {
+       mappedCols = report.columns.split(',').map((c) {
+         final col = c.trim();
+-        switch (report.sourceEntity) {
+-          case 'products':
+-            if (col == 'category_name') return 'c.name AS category_name';
+-            if (col == 'unit_name') return 'u.name AS unit_name';
+-            if (col == 'quantity') return 'ib.quantity AS quantity';
+-            // المُعلَن في `getAvailableFields` ليس اسمَ العمود: العمودان
+-            // `sale_price` و`cost_price`، وكان يُبَثّ `products.price` و
+-            // `products.cost` ⇒ `no such column` **فيفشل التقريرُ كلُّه** لا
+-            // العمودُ وحده. والاسمُ المُعلَن يُحفَظ بـAS كي تبقى رؤوسُ الجدول
+-            // في الواجهة هي ما اختاره المستخدم.
+-            if (col == 'price') return 'products.sale_price AS price';
+-            if (col == 'cost') return 'products.cost_price AS cost';
+-            return 'products.$col';
+-          case 'sales_invoices':
+-            if (col == 'date') return 'sales_invoices.invoice_date AS date';
+-            if (col == 'party_name') return 'p.name AS party_name';
+-            if (col == 'net_total') return 'sales_invoices.total AS net_total';
+-            // كان `'مكتمل' AS payment_status` — نص ثابت باسم حقل حقيقي، فكل
+-            // صف بيقول «مكتمل» مهما كانت الحقيقة. و`payment_status` مش عمود
+-            // في الجدول أصلاً، فلازم يُشتق من paid مقابل total.
+-            if (col == 'payment_status') {
+-              return "CASE WHEN sales_invoices.paid >= sales_invoices.total "
+-                  "THEN 'مكتمل' "
+-                  "WHEN sales_invoices.paid > 0 THEN 'جزئي' "
+-                  "ELSE 'غير مدفوع' END AS payment_status";
+-            }
+-            // كان `'أجل' AS sale_type` — غلط مرتين: العمود موجود فعلاً، و«أجل»
+-            // مش من مجال قيمه (default/talabat/careem/ashyae). «أجل مقابل
+-            // نقدي» دلالتها payment_method = 'credit'، حقل تاني تماماً.
+-            if (col == 'sale_type') {
+-              return 'sales_invoices.sale_type AS sale_type';
+-            }
+-            return 'sales_invoices.$col';
+-          case 'purchase_invoices':
+-            if (col == 'date') return 'purchase_invoices.invoice_date AS date';
+-            if (col == 'party_name') return 'p.name AS party_name';
+-            if (col == 'net_total') return 'purchase_invoices.total AS net_total';
+-            return 'purchase_invoices.$col';
+-          case 'parties':
+-            // لا عمودَ `type` في الجدول — النوعُ صفتان منطقيتان
+-            // (`is_customer`/`is_supplier`)، وقد يكون الطرفُ الاثنين معاً.
+-            // وكان يُبَثّ `parties.type` ⇒ فشلُ التقرير كلِّه.
+-            if (col == 'type') {
+-              return "CASE "
+-                  "WHEN parties.is_customer = 1 AND parties.is_supplier = 1 "
+-                  "THEN 'عميل ومورد' "
+-                  "WHEN parties.is_supplier = 1 THEN 'مورد' "
+-                  "WHEN parties.is_customer = 1 THEN 'عميل' "
+-                  "ELSE '-' END AS type";
+-            }
+-            return 'parties.$col';
+-          case 'journal_entries':
+-            if (col == 'date') return 'journal_entries.entry_date AS date';
+-            // لا عمودَي إجمالٍ في الجدول — الإجماليُّ يُشتقّ بجمع السطور. وكان
+-            // يُبَثّ `journal_entries.total_debit` ⇒ فشلُ التقرير كلِّه.
+-            //
+-            // استعلامٌ فرعيٌّ مترابط لا `JOIN`: الـJOIN على السطور يُنتج صفاً
+-            // لكل سطرٍ في القيد فيتضاعف كلُّ عمودٍ آخر — نفسُ عطلِ تضاعفِ
+-            // الأصناف بعدد المخازن الذي أُصلح في `_getJoins`.
+-            if (col == 'total_debit' || col == 'total_credit') {
+-              final side = col == 'total_debit' ? 'debit' : 'credit';
+-              return '(SELECT COALESCE(SUM(jel.$side), 0) '
+-                  'FROM journal_entry_lines jel '
+-                  'WHERE jel.entry_id = journal_entries.id) AS $col';
+-            }
+-            return 'journal_entries.$col';
+-        }
+-        return col;
++        final expr = _fieldSqlExpression(report.sourceEntity, col);
++        // الاسمُ المُعلَن يُحفَظ بـ`AS` كي تبقى رؤوسُ الجدول في الواجهة هي ما
++        // اختاره المستخدم لا اسمَ العمود الخام.
++        return expr == col ? col : '$expr AS $col';
+       }).join(', ');
+     }
+ 
+@@ -335,6 +378,7 @@ extension ReportBuilderDao on AppDatabase {
+     // حصر الفروع + فلاتر المستخدم في نفس الـWHERE. الحصر **الأول** وبقوسين
+     // حواليه، فأي فلتر مستخدم بـOR ما يقدرش يوسّع النطاق.
+     final conditions = <String>[];
++    final vars = <Variable>[];
+     if (allowedBranchIds != null) {
+       if (allowedBranchIds.isEmpty) {
+         conditions.add('1 = 0'); // فشل مقفول
+@@ -345,10 +389,22 @@ extension ReportBuilderDao on AppDatabase {
+         conditions.add('($clause)');
+       }
+     }
+-    if (report.filters != null && report.filters!.trim().isNotEmpty) {
+-      final safe = _buildWhereClause(report.filters!);
+-      if (safe == null) return null; // فلتر مرفوض ⇒ ارفض التقرير كله
+-      conditions.add('($safe)');
++    final rawFilters = report.filters?.trim() ?? '';
++    if (rawFilters.isNotEmpty) {
++      // التمييزُ بأوّل حرفٍ غير فراغ: `[` ⇒ الصيغةُ المهيكلة التي توثّقها
++      // السكيما وتنتجها الواجهة. وما عداه نصُّ SQL خامّ من تقريرٍ قديم.
++      if (rawFilters.startsWith('[')) {
++        final built = _buildStructuredFilter(report.sourceEntity, rawFilters);
++        if (built == null) return null; // فلتر مرفوض ⇒ ارفض التقرير كله
++        if (built.sql.isNotEmpty) {
++          conditions.add('(${built.sql})');
++          vars.addAll(built.vars);
++        }
++      } else {
++        final safe = _buildWhereClause(rawFilters);
++        if (safe == null) return null; // فلتر مرفوض ⇒ ارفض التقرير كله
++        conditions.add('($safe)');
++      }
+     }
+     if (conditions.isNotEmpty) {
+       query += ' WHERE ${conditions.join(' AND ')}';
+@@ -369,7 +425,7 @@ extension ReportBuilderDao on AppDatabase {
+     // في [executeReport].
+     query += ' LIMIT ${rowLimit + 1}';
+ 
+-    return query;
++    return (sql: query, vars: vars);
+   }
+ 
+   String _getTableName(String entity) {
+@@ -426,9 +482,9 @@ extension ReportBuilderDao on AppDatabase {
+   /// `null` = مرفوض ⇒ المُنادي بيرفض التقرير كله. الرفض بيسري على المستخدم
+   /// بالوصول الكامل كمان — الحقن مش خطره على الحصر وحده.
+   ///
+-  /// TODO(owner): الأنضف صيغة مهيكلة (عمود/عامل/قيمة) بمعاملات مربوطة بدل
+-  /// نص SQL. اتأجّل لأنه بيغيّر شكل التقارير المحفوظة، وUralCash مطروح وعنده
+-  /// تقارير قائمة — قرار هجرة مش تحصين.
++  /// ⚠️ ده **المسار القديم وحده**. الواجهة بقت تنتج [_buildStructuredFilter]،
++  /// والخامُّ باقٍ للنصوص المخزَّنة سلفاً: حذفُه كسرٌ لتقاريرَ قائمةٍ في منتجٍ
++  /// مطروح مقابل فائدةٍ صفر، لأن التحصين بيمنع الهروب أصلاً.
+   String? _buildWhereClause(String filtersJson) {
+     final f = filtersJson.trim();
+     if (f.isEmpty) return null;
+@@ -453,4 +509,182 @@ extension ReportBuilderDao on AppDatabase {
+     if (depth != 0 || inQuote) return null;
+     return f;
+   }
++
++  // ─────────────────────────────────────────────────────────────────────────
++  // STRUCTURED FILTER — الصيغةُ التي توثّقها السكيما
++  // ─────────────────────────────────────────────────────────────────────────
++
++  /// يبني شرطَ `WHERE` من الصيغة المهيكلة التي تعلنها السكيما:
++  ///
++  ///     [{"field":"price","op":">","value":100}, …]
++  ///
++  /// **الأمانُ من البناء لا من الفحص**: اسمُ العمود لا يأتي من المستخدم بل
++  /// يُختار من [getAvailableFields] — قائمةٌ مغلقة — ثم يُترجَم بـ
++  /// [_fieldSqlExpression]. والقيمةُ **تُربَط معاملاً** فلا تصل السلسلةَ
++  /// النصّية للاستعلام أبداً. فالحقنُ مستحيلٌ بالبناء، لا مرفوضٌ بفحصٍ
++  /// يُنسى تحديثُه كلما أُضيف شكلُ هروبٍ جديد.
++  ///
++  /// `null` = مرفوض ⇒ التقريرُ كلُّه مرفوض. والرفضُ **صريحٌ لا صامت**: شرطٌ
++  /// لا يُفهَم لا يُسقَط بل يُبطل التقرير، وإلا رأى المستخدمُ صفوفاً أكثرَ مما
++  /// طلب وظنّها مفلترة.
++  ///
++  /// وقائمةٌ فارغة ⇒ `sql` فارغ: لا شرطَ ولا `WHERE ()` مكسور.
++  ({String sql, List<Variable> vars})? _buildStructuredFilter(
++      String entity, String json) {
++    final List<dynamic> decoded;
++    try {
++      final v = jsonDecode(json);
++      if (v is! List) return null;
++      decoded = v;
++    } catch (_) {
++      return null; // JSON فاسد ⇒ ارفض، ولا تبثّه SQL
++    }
++
++    final parts = <String>[];
++    final vars = <Variable>[];
++    for (final c in decoded) {
++      if (c is! Map) return null;
++      final field = c['field'];
++      final op = c['op'];
++      if (field is! String || op is! String) return null;
++
++      final type = _fieldType(entity, field);
++      if (type == null) return null; // خارج القائمة المغلقة
++      if (!(_kFilterOpsByFieldType[type] ?? const <String>{}).contains(op)) {
++        return null; // عاملٌ غيرُ مدعوم لهذا النوع
++      }
++
++      final cond = _filterCondition(
++          _fieldSqlExpression(entity, field), type, op, c['value']);
++      if (cond == null) return null;
++      parts.add(cond.sql);
++      vars.addAll(cond.vars);
++    }
++    // الشروطُ تُجمَع بـAND وحدَه — عن قصد. `OR` بين شرطَي المستخدم يحتاج
++    // تعشيشاً في الصيغة والواجهة معاً، وبلا ذلك يكون بابَ توسيعٍ للنطاق.
++    return (sql: parts.join(' AND '), vars: vars);
++  }
++
++  /// شرطٌ واحد: التعبيرُ جاهزٌ ومحصور، والقيمةُ تُتحقَّق **بحسب نوع الحقل**
++  /// ثم تُربَط. `null` = القيمةُ لا تليق بالنوع ⇒ ارفض.
++  ({String sql, List<Variable> vars})? _filterCondition(
++      String expr, String type, String op, Object? value) {
++    // `!=` بعاملٍ آمنٍ تجاه NULL لا بـ`<>`: مقارنةُ NULL في SQL تُنتج NULL
++    // فيسقط الصفُّ من النتيجة. فصنفٌ **بلا** باركود «ليس BC-1» فعلاً،
++    // وإسقاطُه صمتاً هو بالضبط نوعُ الخطأ الذي لا يُرى.
++    //
++    // ⚠️ والعاملُ ليس لغةً مشتركة: `x IS NOT y` صحيحٌ في SQLite، أما
++    // PostgreSQL فلا تقبل بعد `IS NOT` إلا `NULL`/`TRUE`/`FALSE`/`UNKNOWN`
++    // ونظيرُه هناك `IS DISTINCT FROM`. وبثُّ `IS NOT ?` على PostgreSQL
++    // **خطأٌ نحويّ عند التشغيل** (`42601`) لا اختلافُ نتيجة — مقيسٌ في
++    // `report_builder_structured_filter_pg_test`.
++    final notEq = isPostgres ? 'IS DISTINCT FROM' : 'IS NOT';
++    String eq() => op == '!=' ? '$expr $notEq ?' : '$expr = ?';
++
++    switch (type) {
++      case 'number':
++        final n = value is num
++            ? value
++            : (value is String ? num.tryParse(value) : null);
++        // قيمةٌ غيرُ رقميةٍ لحقلٍ رقميّ تُرفَض ولا تُمرَّر: مقارنةُ REAL بنصٍّ
++        // في SQLite لا تطابق شيئاً، فالتقريرُ كان سيرجع **فارغاً بلا سبب ظاهر**.
++        if (n == null) return null;
++        if (op == '=' || op == '!=') return (sql: eq(), vars: [Variable(n)]);
++        return (sql: '$expr $op ?', vars: [Variable(n)]);
++
++      case 'boolean':
++        final b = _asBool(value);
++        if (b == null) return null;
++        return (sql: eq(), vars: [Variable(b)]);
++
++      case 'date':
++        // دلالةُ اليوم لا اللحظة: المستخدمُ يختار يوماً من التقويم، والعمودُ
++        // يحمل وقتاً. فـ`= 2026-08-10` على فاتورةِ ١٤:٣٠ كان سيرجع صفراً.
++        final day = _asDay(value);
++        if (day == null) return null;
++        final next = DateTime(day.year, day.month, day.day + 1);
++        switch (op) {
++          case '=':
++            return (
++              sql: '($expr >= ? AND $expr < ?)',
++              vars: [Variable(day), Variable(next)]
++            );
++          case '!=':
++            return (
++              sql: '($expr IS NULL OR $expr < ? OR $expr >= ?)',
++              vars: [Variable(day), Variable(next)]
++            );
++          case '>': // بعد ذلك اليوم ⇒ من أوّل اليوم التالي
++            return (sql: '$expr >= ?', vars: [Variable(next)]);
++          case '>=':
++            return (sql: '$expr >= ?', vars: [Variable(day)]);
++          case '<':
++            return (sql: '$expr < ?', vars: [Variable(day)]);
++          case '<=': // حتى نهاية ذلك اليوم ⇒ قبل أوّل اليوم التالي
++            return (sql: '$expr < ?', vars: [Variable(next)]);
++        }
++        return null;
++
++      default: // text
++        if (value == null) return null;
++        final s = value.toString();
++        if (op == 'contains') {
++          // ‏`%` و`_` محرفا بدلٍ في نمط LIKE **مهما كان مصدرُ النمط**، فالربطُ
++          // معاملاً وحدَه لا يحوّلهما نصّاً. فمن يبحث عن «خصم %50» بلا هروبٍ
++          // يحصل على كلِّ ما فيه «50».
++          //
++          // و`ILIKE` على PostgreSQL: ‏`LIKE` في SQLite لا يفرّق بين حالتَي
++          // الحرف اللاتينيّ، وفي PostgreSQL يفرّق. فبلا التسوية يعطي **نفسُ
++          // التقرير نتيجتَين مختلفتين** بحسب المحرِّك تحته — والاختلافُ صامت.
++          final like = isPostgres ? 'ILIKE' : 'LIKE';
++          return (
++            sql: "$expr $like ? ESCAPE '\\'",
++            vars: [Variable('%${_escapeLikePattern(s)}%')]
++          );
++        }
++        return (sql: eq(), vars: [Variable(s)]);
++    }
++  }
++
++  bool? _asBool(Object? value) {
++    if (value is bool) return value;
++    if (value is num) return value != 0;
++    if (value is String) {
++      if (value == 'true' || value == '1') return true;
++      if (value == 'false' || value == '0') return false;
++    }
++    return null;
++  }
++
++  /// يُرجِع **بدايةَ اليوم** المحلّي — الجزءُ الزمنيّ يُطرح عمداً.
++  DateTime? _asDay(Object? value) {
++    DateTime? dt;
++    if (value is DateTime) {
++      dt = value;
++    } else if (value is String) {
++      dt = DateTime.tryParse(value);
++    } else if (value is int) {
++      dt = DateTime.fromMillisecondsSinceEpoch(value);
++    }
++    if (dt == null) return null;
++    return DateTime(dt.year, dt.month, dt.day);
++  }
++
++  String _escapeLikePattern(String v) => v
++      .replaceAll('\\', '\\\\')
++      .replaceAll('%', '\\%')
++      .replaceAll('_', '\\_');
+ }
++
++/// العواملُ المسموحة **لكلِّ نوعِ حقل** — قائمةٌ مغلقة.
++///
++/// مربوطةٌ بالنوع لا بالحقل: «يحتوي» على حقلٍ رقميّ يُقارن نصّاً فيعطي
++/// نتائجَ لا يتوقّعها أحد (‏`100` تحتوي `0`)، ولذلك يُرفَض بدل أن يُقبَل
++/// ويُفسَّر. ونفسُ القائمة تبني منسدلةَ العامل في الواجهة، فلا يظهر للمستخدم
++/// عاملٌ سيُرفض عند التنفيذ.
++const Map<String, Set<String>> _kFilterOpsByFieldType = {
++  'text': {'=', '!=', 'contains'},
++  'number': {'=', '!=', '>', '>=', '<', '<='},
++  'date': {'=', '!=', '>', '>=', '<', '<='},
++  'boolean': {'=', '!='},
++};
+diff --git a/lib/data/repositories/reporting_repository_impl.dart b/lib/data/repositories/reporting_repository_impl.dart
+index 34750162..0bab4ad8 100644
+--- a/lib/data/repositories/reporting_repository_impl.dart
++++ b/lib/data/repositories/reporting_repository_impl.dart
+@@ -555,10 +555,12 @@ class ReportingRepositoryImpl implements IReportingRepository {
+     required String name,
+     required String sourceEntity,
+     required String columns,
++    String? filters,
+   }) => _db.createCustomReport(
+         name: name,
+         sourceEntity: sourceEntity,
+         columns: columns,
++        filters: filters,
+       );
+ 
+   @override
+@@ -575,4 +577,8 @@ class ReportingRepositoryImpl implements IReportingRepository {
+   @override
+   List<Map<String, String>> getAvailableFields(String entity) =>
+       _db.getAvailableFields(entity);
++
++  @override
++  List<Map<String, String>> getFilterOperators(String fieldType) =>
++      _db.getFilterOperators(fieldType);
+ }
+diff --git a/lib/domain/models/report_filter_condition.dart b/lib/domain/models/report_filter_condition.dart
+new file mode 100644
+index 00000000..069aa171
+--- /dev/null
++++ b/lib/domain/models/report_filter_condition.dart
+@@ -0,0 +1,105 @@
++import 'dart:convert';
++
++/// مُسترجِعُ عوامل الفلتر لنوعِ حقل — `getFilterOperators` في المستودع.
++///
++/// مُمرَّرٌ دالةً لا واجهةً كي يبقى النموذجُ بلا تبعيةٍ لطبقة البيانات، ويظلّ
++/// مع ذلك مربوطاً بالقائمة **الوحيدة** التي يفرضها المحرِّك.
++typedef FilterOperatorLookup = List<Map<String, String>> Function(
++    String fieldType);
++
++/// شرطُ تصفيةٍ واحدٌ في حوار منشئ التقارير.
++///
++/// يُرمَّز إلى الصيغة التي توثّقها السكيما ويقرؤها المحرِّك:
++/// `{"field":"price","op":">","value":100}`.
++///
++/// و[value] نصٌّ دائماً لأن حقولَ الإدخال تعطي نصّاً؛ والتحويلُ إلى النوع
++/// الصحيح يقع في [encodeReportFilters] لا في الواجهة — فلو رُمّز `"50"` نصّاً
++/// لحقلٍ رقميّ لصارت مقارنةَ نصٍّ برقمٍ في SQLite ولم تطابق شيئاً.
++class ReportFilterCondition {
++  const ReportFilterCondition({
++    required this.field,
++    required this.type,
++    required this.op,
++    this.value = '',
++  });
++
++  /// مفتاحُ الحقل من `getAvailableFields` — قائمةٌ مغلقة.
++  final String field;
++
++  /// `text` · `number` · `date` · `boolean`.
++  final String type;
++
++  /// العاملُ من `getFilterOperators(type)` — قائمةٌ مغلقة.
++  final String op;
++
++  /// القيمةُ كما كتبها المستخدم. للتاريخ `yyyy-MM-dd`، وللمنطقيّ
++  /// `'true'`/`'false'`.
++  final String value;
++
++  /// شرطٌ ابتدائيّ لحقلٍ ما: أوّلُ عاملٍ **معروض** لنوعه.
++  ///
++  /// أخذُ العامل من القائمة المعروضة لا من ثابتٍ مكتوب هنا يمنع منسدلةً
++  /// قيمتُها الابتدائية خارجَ عناصرها (‏`DropdownButtonFormField` يرمي عندها).
++  factory ReportFilterCondition.forField(
++      Map<String, String> field, FilterOperatorLookup operators) {
++    final type = field['type'] ?? 'text';
++    final ops = operators(type);
++    return ReportFilterCondition(
++      field: field['key']!,
++      type: type,
++      op: ops.isEmpty ? '=' : ops.first['op']!,
++      // المنطقيُّ لا حقلَ نصٍّ له بل مفتاح، فله قيمةٌ ابتدائيةٌ صريحة.
++      value: type == 'boolean' ? 'false' : '',
++    );
++  }
++
++  ReportFilterCondition copyWith({String? op, String? value}) =>
++      ReportFilterCondition(
++        field: field,
++        type: type,
++        op: op ?? this.op,
++        value: value ?? this.value,
++      );
++
++  /// هل الشرطُ صالحٌ للحفظ؟
++  ///
++  /// المحرِّك يرفض التقريرَ **كلَّه** لشرطٍ واحدٍ لا تليق قيمتُه بنوعه، فيُحفظ
++  /// تقريرٌ لا يُنتج صفاً واحداً أبداً ولا يقول لماذا. فالمنعُ عند الحفظ.
++  bool get isComplete {
++    switch (type) {
++      case 'boolean':
++        return true; // «لا» قيمةٌ صحيحةٌ لا قيمةٌ ناقصة
++      case 'number':
++        return num.tryParse(value.trim()) != null;
++      case 'date':
++        return DateTime.tryParse(value.trim()) != null;
++      default:
++        return value.trim().isNotEmpty;
++    }
++  }
++
++  /// القيمةُ بنوعها الذي ينتظره المحرِّك.
++  Object? get typedValue {
++    final v = value.trim();
++    switch (type) {
++      case 'boolean':
++        return v == 'true';
++      case 'number':
++        return num.tryParse(v);
++      default:
++        return v; // التاريخُ يمرّ نصّاً ISO — والمحرِّك يقرؤه يوماً
++    }
++  }
++
++  Map<String, Object?> toJson() =>
++      {'field': field, 'op': op, 'value': typedValue};
++}
++
++/// يرمّز شروطَ الحوار إلى العمود `filters`.
++///
++/// `null` لا `'[]'` عند غياب الشروط: العمودُ nullable، وقيمةٌ غيرُ فارغةٍ بلا
++/// شرطٍ تُوهم من يقرأ التقريرَ لاحقاً أن له فلتراً.
++String? encodeReportFilters(List<ReportFilterCondition> conditions) {
++  if (conditions.isEmpty) return null;
++  return jsonEncode(conditions.map((c) => c.toJson()).toList());
++}
+diff --git a/lib/domain/repositories/reporting_repository.dart b/lib/domain/repositories/reporting_repository.dart
+index 2357eb84..bb200cc3 100644
+--- a/lib/domain/repositories/reporting_repository.dart
++++ b/lib/domain/repositories/reporting_repository.dart
+@@ -29,10 +29,16 @@ abstract class IReportingRepository
+   Future<List<CustomReportData>> getCustomReports();
+ 
+   /// Create a new custom report
++  ///
++  /// [filters] — شروطُ التصفية بالصيغة المهيكلة التي توثّقها السكيما:
++  /// `[{"field":"price","op":">","value":100}]`. اسمُ الحقل من
++  /// [getAvailableFields] والعاملُ من [getFilterOperators] — قائمتان مغلقتان،
++  /// والقيمةُ تُربَط معاملاً داخل المحرِّك فلا تصل الاستعلامَ نصّاً.
+   Future<int> createCustomReport({
+     required String name,
+     required String sourceEntity,
+     required String columns,
++    String? filters,
+   });
+ 
+   /// Delete a custom report
+@@ -49,4 +55,8 @@ abstract class IReportingRepository
+ 
+   /// Get fields available for a custom report entity
+   List<Map<String, String>> getAvailableFields(String entity);
++
++  /// عواملُ الفلتر المتاحة لنوعِ حقل (`text`/`number`/`date`/`boolean`).
++  /// تبني الواجهةُ المنسدلةَ منها كي لا تعرض عاملاً يرفضه المحرِّك.
++  List<Map<String, String>> getFilterOperators(String fieldType);
+ }
+diff --git a/lib/presentation/screens/report_builder_screen.dart b/lib/presentation/screens/report_builder_screen.dart
+index a196caed..f4c0ab9b 100644
+--- a/lib/presentation/screens/report_builder_screen.dart
++++ b/lib/presentation/screens/report_builder_screen.dart
+@@ -4,6 +4,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
+ import 'package:intl/intl.dart';
+ import '../../data/providers/providers.dart';
+ import '../../core/widgets/app_toast.dart';
++import '../../domain/models/report_filter_condition.dart';
+ import '../../domain/repositories/reporting_repository.dart';
+ 
+ /// Report Builder Screen — التقارير المخصصة
+@@ -76,9 +77,17 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
+                       ],
+                       Icon(PhosphorIconsBold.chartBar, color: theme.colorScheme.primary),
+                       const SizedBox(width: 8),
+-                      Text('التقارير المخصصة',
+-                          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+-                      const Spacer(),
++                      // العنوانُ مرن لا طبيعيّ الحجم: الشريطُ الجانبيّ مثبَّتٌ
++                      // على ٣٢٠ بكسل مهما اتّسعت النافذة، فعنوانٌ بلا حدٍّ مع
++                      // زرٍّ بجانبه يفيض أفقياً بخطٍّ أعرضَ قليلاً أو بعد
++                      // ظهور زرّ الرجوع.
++                      Expanded(
++                        child: Text('التقارير المخصصة',
++                            overflow: TextOverflow.ellipsis,
++                            style: theme.textTheme.titleMedium
++                                ?.copyWith(fontWeight: FontWeight.bold)),
++                      ),
++                      const SizedBox(width: 8),
+                       FilledButton.icon(
+                         onPressed: () => _showCreateReportDialog(repo),
+                         icon: const Icon(Icons.add, size: 18),
+@@ -306,6 +315,7 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
+     final nameCtrl = TextEditingController();
+     String sourceEntity = 'products';
+     final selectedColumns = <String>[];
++    final conditions = <ReportFilterCondition>[];
+ 
+     await showDialog(
+       context: context,
+@@ -344,37 +354,35 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
+                       setDialogState(() {
+                         sourceEntity = v;
+                         selectedColumns.clear();
++                        // الشروطُ تُمسح مع الكيان: حقولُها من قائمةِ الكيان
++                        // السابق، فلو بقيت لرُفض التقريرُ كلُّه عند التنفيذ.
++                        conditions.clear();
+                       });
+                     }
+                   },
+                 ),
+-                const SizedBox(height: 16),
+-                const Align(
+-                  alignment: Alignment.centerRight,
+-                  child: Text('اختر الأعمدة:', style: TextStyle(fontWeight: FontWeight.bold)),
+-                ),
+-                const SizedBox(height: 8),
++                const SizedBox(height: 12),
++                // تبويبان بدل حشرِ قسمٍ ثانٍ في ٤٥٠ بكسل: الأعمدةُ والفلاتر
++                // كلاهما قائمةٌ تطول بعدد الحقول.
+                 Expanded(
+-                  child: ListView(
+-                    children: fields.map((f) {
+-                      final key = f['key']!;
+-                      final label = f['label']!;
+-                      return CheckboxListTile(
+-                        dense: true,
+-                        title: Text(label),
+-                        subtitle: Text(key, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+-                        value: selectedColumns.contains(key),
+-                        onChanged: (v) {
+-                          setDialogState(() {
+-                            if (v == true) {
+-                              selectedColumns.add(key);
+-                            } else {
+-                              selectedColumns.remove(key);
+-                            }
+-                          });
+-                        },
+-                      );
+-                    }).toList(),
++                  child: DefaultTabController(
++                    length: 2,
++                    child: Column(children: [
++                      TabBar(tabs: [
++                        const Tab(text: 'الأعمدة'),
++                        Tab(text: conditions.isEmpty
++                            ? 'الفلاتر'
++                            : 'الفلاتر (${conditions.length})'),
++                      ]),
++                      Expanded(
++                        child: TabBarView(children: [
++                          _buildColumnsTab(fields, selectedColumns,
++                              setDialogState),
++                          _buildFiltersTab(
++                              repo, ctx, fields, conditions, setDialogState),
++                        ]),
++                      ),
++                    ]),
+                   ),
+                 ),
+               ]),
+@@ -387,11 +395,22 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
+                     AppToast.show(ctx, 'يرجى ملء الاسم واختيار أعمدة', type: ToastType.error);
+                     return;
+                   }
++                  // شرطٌ بلا قيمة يُرفَض هنا لا بعد الحفظ: المحرِّك يرفض
++                  // التقريرَ **كلَّه** لشرطٍ واحدٍ فاسد، فيُحفَظ تقريرٌ لا
++                  // يُنتج صفاً واحداً أبداً بلا سببٍ ظاهر للمستخدم.
++                  final incomplete = conditions.indexWhere((c) => !c.isComplete);
++                  if (incomplete >= 0) {
++                    AppToast.show(ctx,
++                        'الشرط رقم ${incomplete + 1} ناقص — اختر حقلاً وقيمة',
++                        type: ToastType.error);
++                    return;
++                  }
+                   // columns is a comma-separated string
+                   await repo.createCustomReport(
+                     name: nameCtrl.text,
+                     sourceEntity: sourceEntity,
+                     columns: selectedColumns.join(', '),
++                    filters: encodeReportFilters(conditions),
+                   );
+                   if (ctx.mounted) Navigator.pop(ctx);
+                   _loadReports();
+@@ -405,6 +424,189 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
+     );
+   }
+ 
++  Widget _buildColumnsTab(List<Map<String, String>> fields,
++      List<String> selectedColumns, StateSetter setDialogState) {
++    return ListView(
++      children: fields.map((f) {
++        final key = f['key']!;
++        final label = f['label']!;
++        return CheckboxListTile(
++          dense: true,
++          title: Text(label),
++          subtitle: Text(key, style: const TextStyle(fontSize: 11, color: Colors.grey)),
++          value: selectedColumns.contains(key),
++          onChanged: (v) {
++            setDialogState(() {
++              if (v == true) {
++                selectedColumns.add(key);
++              } else {
++                selectedColumns.remove(key);
++              }
++            });
++          },
++        );
++      }).toList(),
++    );
++  }
++
++  Widget _buildFiltersTab(
++      IReportingRepository repo,
++      BuildContext ctx,
++      List<Map<String, String>> fields,
++      List<ReportFilterCondition> conditions,
++      StateSetter setDialogState) {
++    return Column(children: [
++      Expanded(
++        child: conditions.isEmpty
++            ? const Center(
++                child: Padding(
++                  padding: EdgeInsets.all(24),
++                  child: Text('بلا شروط — التقرير يشمل كل الصفوف',
++                      textAlign: TextAlign.center,
++                      style: TextStyle(color: Colors.grey)),
++                ),
++              )
++            : ListView.builder(
++                itemCount: conditions.length,
++                itemBuilder: (_, i) => _buildConditionRow(
++                    repo, ctx, fields, conditions, i, setDialogState),
++              ),
++      ),
++      Align(
++        alignment: Alignment.centerRight,
++        child: TextButton.icon(
++          icon: const Icon(PhosphorIconsBold.plus, size: 16),
++          label: const Text('إضافة شرط'),
++          onPressed: fields.isEmpty
++              ? null
++              : () => setDialogState(() => conditions.add(
++                  ReportFilterCondition.forField(fields.first, repo.getFilterOperators))),
++        ),
++      ),
++    ]);
++  }
++
++  Widget _buildConditionRow(
++      IReportingRepository repo,
++      BuildContext ctx,
++      List<Map<String, String>> fields,
++      List<ReportFilterCondition> conditions,
++      int index,
++      StateSetter setDialogState) {
++    final c = conditions[index];
++    final ops = repo.getFilterOperators(c.type);
++
++    return Padding(
++      padding: const EdgeInsets.symmetric(vertical: 6),
++      child: Column(children: [
++        Row(children: [
++          Expanded(
++            flex: 4,
++            child: DropdownButtonFormField<String>(
++              initialValue: c.field,
++              isExpanded: true,
++              decoration: const InputDecoration(
++                  labelText: 'الحقل',
++                  isDense: true,
++                  border: OutlineInputBorder()),
++              items: fields
++                  .map((f) => DropdownMenuItem(
++                      value: f['key'],
++                      child: Text(f['label']!, overflow: TextOverflow.ellipsis)))
++                  .toList(),
++              onChanged: (v) {
++                if (v == null) return;
++                final f = fields.firstWhere((e) => e['key'] == v);
++                // تغييرُ الحقل يعيد ضبطَ العامل والقيمة: عواملُ النصّ ليست
++                // عواملَ الرقم، والقيمةُ المكتوبة لا تليق بالنوع الجديد.
++                setDialogState(() =>
++                    conditions[index] = ReportFilterCondition.forField(f, repo.getFilterOperators));
++              },
++            ),
++          ),
++          const SizedBox(width: 6),
++          Expanded(
++            flex: 3,
++            child: DropdownButtonFormField<String>(
++              initialValue: ops.any((o) => o['op'] == c.op) ? c.op : null,
++              isExpanded: true,
++              decoration: const InputDecoration(
++                  labelText: 'العامل',
++                  isDense: true,
++                  border: OutlineInputBorder()),
++              items: ops
++                  .map((o) => DropdownMenuItem(
++                      value: o['op'],
++                      child: Text(o['label']!, overflow: TextOverflow.ellipsis)))
++                  .toList(),
++              onChanged: (v) =>
++                  setDialogState(() => conditions[index] = c.copyWith(op: v)),
++            ),
++          ),
++          IconButton(
++            tooltip: 'حذف الشرط',
++            icon: const Icon(PhosphorIconsBold.trash, size: 18, color: Colors.red),
++            onPressed: () => setDialogState(() => conditions.removeAt(index)),
++          ),
++        ]),
++        const SizedBox(height: 6),
++        _buildValueField(ctx, conditions, index, setDialogState),
++      ]),
++    );
++  }
++
++  /// حقلُ القيمة **بحسب نوع الحقل**: منتقي تاريخ للتواريخ ومفتاحٌ للمنطقيّ
++  /// ولوحةُ أرقام للأرقام. وليس تجميلاً: قيمةٌ لا تليق بالنوع يرفضها المحرِّك
++  /// فيُرفَض التقريرُ كلُّه، والمستخدمُ لا يرى إلا صفراً من الصفوف.
++  Widget _buildValueField(BuildContext ctx, List<ReportFilterCondition> conditions,
++      int index, StateSetter setDialogState) {
++    final c = conditions[index];
++    switch (c.type) {
++      case 'boolean':
++        return SwitchListTile(
++          dense: true,
++          contentPadding: EdgeInsets.zero,
++          title: Text(c.value == 'true' ? 'نعم' : 'لا'),
++          value: c.value == 'true',
++          onChanged: (v) => setDialogState(
++              () => conditions[index] = c.copyWith(value: '$v')),
++        );
++      case 'date':
++        final picked = DateTime.tryParse(c.value);
++        return OutlinedButton.icon(
++          icon: const Icon(PhosphorIconsBold.calendarBlank, size: 16),
++          label: Text(picked == null
++              ? 'اختر التاريخ'
++              : DateFormat('yyyy-MM-dd').format(picked)),
++          onPressed: () async {
++            final d = await showDatePicker(
++              context: ctx,
++              initialDate: picked ?? DateTime.now(),
++              firstDate: DateTime(2000),
++              lastDate: DateTime(2100),
++            );
++            if (d == null) return;
++            setDialogState(() => conditions[index] =
++                c.copyWith(value: DateFormat('yyyy-MM-dd').format(d)));
++          },
++        );
++      default:
++        return TextFormField(
++          // المفتاحُ يحمل الحقلَ لا الترتيبَ وحدَه: `initialValue` لا يُطبَّق
++          // إلا على أوّل بناء، فبلا مفتاحٍ يتغيّر يبقى النصُّ المكتوبُ لحقلٍ
++          // سابقٍ معروضاً بعد تبديل الحقل — بينما القيمةُ المخزَّنة صارت فارغة.
++          key: ValueKey('rf-$index-${c.field}'),
++          initialValue: c.value,
++          keyboardType: c.type == 'number'
++              ? const TextInputType.numberWithOptions(decimal: true, signed: true)
++              : TextInputType.text,
++          decoration: const InputDecoration(
++              labelText: 'القيمة', isDense: true, border: OutlineInputBorder()),
++          onChanged: (v) => conditions[index] = c.copyWith(value: v),
++        );
++    }
++  }
++
+   String _entityLabel(String t) => {
+     'products': 'الأصناف',
+     'parties': 'العملاء/الموردين',
+diff --git a/test/integration_pg/report_builder_structured_filter_pg_test.dart b/test/integration_pg/report_builder_structured_filter_pg_test.dart
+new file mode 100644
+index 00000000..429046e2
+--- /dev/null
++++ b/test/integration_pg/report_builder_structured_filter_pg_test.dart
+@@ -0,0 +1,103 @@
++// ═══════════════════════════════════════════════════════════════════════════
++// الفلترُ المهيكل على PostgreSQL — ‏`IS NOT` ليست لغةً مشتركة.
++// ═══════════════════════════════════════════════════════════════════════════
++//
++// المحرِّك يبني `!=` بـ`IS NOT` كي لا تُسقِط مقارنةُ NULL الصفوفَ الخالية.
++// و`x IS NOT y` عاملٌ صحيح في SQLite — أما في PostgreSQL فـ`IS NOT` لا يقبل
++// إلا `NULL`/`TRUE`/`FALSE`/`UNKNOWN`، ونظيرُه هناك `IS DISTINCT FROM`.
++//
++// فالفرقُ **خطأٌ نحويّ عند التشغيل** لا اختلافُ نتيجة: تقريرٌ بشرط «لا يساوي»
++// ينفجر على أيّ تنصيبٍ يعمل على PostgreSQL بينما يمرّ أخضرَ في كلّ اختبارات
++// SQLite. ولا تلتقطه سويّةُ الوحدات مهما كثرت.
++//
++// وهذا الملفّ يشغّل الصيغةَ المهيكلة كاملةً على قاعدةٍ حيّة: العواملُ الرقمية
++// والنصّية و«يحتوي» بمحارف البدل و«لا يساوي» على عمودٍ يقبل NULL.
++// ═══════════════════════════════════════════════════════════════════════════
++
++@Tags(['pg'])
++library;
++
++import 'dart:convert';
++
++import 'package:drift/drift.dart' hide isNotNull, isNull;
++import 'package:flutter_test/flutter_test.dart';
++import 'package:ural_erp/data/database/database.dart';
++
++import '_support/pg_fixture.dart';
++
++void main() {
++  late PgTestFixture fx;
++
++  setUpAll(() async {
++    fx = await bootPgTestSchema();
++    final db = fx.db;
++    await db.into(db.products).insert(ProductsCompanion.insert(
++        code: 'PG1', name: 'قلم', salePrice: const Value(10)));
++    await db.into(db.products).insert(ProductsCompanion.insert(
++        code: 'PG2',
++        name: 'حاسوب',
++        barcode: const Value('BC-1'),
++        salePrice: const Value(5000)));
++    await db.into(db.products).insert(ProductsCompanion.insert(
++        code: 'PG3', name: 'خصم %50', salePrice: const Value(7)));
++    await db.into(db.products).insert(ProductsCompanion.insert(
++        code: 'PG4', name: 'دفتر 50 ورقة', salePrice: const Value(8)));
++  });
++
++  tearDownAll(() async => fx.tearDown());
++
++  Future<List<String>> names(List<Map<String, Object?>> filters) async {
++    final db = fx.db;
++    final id = await db.into(db.customReports).insert(
++          CustomReportsCompanion.insert(
++            name: 'ت',
++            sourceEntity: 'products',
++            columns: 'name',
++            filters: Value(jsonEncode(filters)),
++          ),
++        );
++    final rows = await db.executeReport(id);
++    return rows.map((r) => r['name'] as String).toList()..sort();
++  }
++
++  group('الفلترُ المهيكل على PostgreSQL', () {
++    test('مقارنةٌ رقمية', () async {
++      expect(await names([
++        {'field': 'price', 'op': '>', 'value': 1000}
++      ]), ['حاسوب']);
++    });
++
++    test('«لا يساوي» يشمل الصفوفَ الخالية ولا يكسر الاستعلام', () async {
++      // ‏🔴 هنا كان ينفجر: `products.barcode IS NOT $1` خطأٌ نحويّ في
++      // PostgreSQL. والثلاثةُ بلا باركود «ليست BC-1» فعلاً.
++      expect(await names([
++        {'field': 'barcode', 'op': '!=', 'value': 'BC-1'}
++      ]), ['خصم %50', 'دفتر 50 ورقة', 'قلم']);
++    });
++
++    test('«يحتوي» يهرب محارفَ البدل', () async {
++      expect(await names([
++        {'field': 'name', 'op': 'contains', 'value': '%50'}
++      ]), ['خصم %50'],
++          reason: 'بلا هروبٍ يلتقط «دفتر 50 ورقة» أيضاً');
++    });
++
++    test('«يحتوي» لا يفرّق بين حالتَي الحرف — كما في SQLite', () async {
++      // ‏`LIKE` في SQLite لا يفرّق بين `abc` و`ABC`، وفي PostgreSQL يفرّق.
++      // فبلا `ILIKE` يعطي **نفسُ التقرير** نتيجتَين بحسب المحرِّك تحته.
++      final db = fx.db;
++      await db.into(db.products).insert(ProductsCompanion.insert(
++          code: 'PG5', name: 'Laptop PRO', salePrice: const Value(99)));
++
++      expect(await names([
++        {'field': 'name', 'op': 'contains', 'value': 'pro'}
++      ]), ['Laptop PRO']);
++    });
++
++    test('حقلٌ خارج القائمة المغلقة يُرفَض هنا أيضاً', () async {
++      expect(await names([
++        {'field': 'balance', 'op': '>', 'value': 0}
++      ]), isEmpty);
++    });
++  });
++}
+diff --git a/test/unit/report_builder_filter_operators_test.dart b/test/unit/report_builder_filter_operators_test.dart
+new file mode 100644
+index 00000000..284ce93e
+--- /dev/null
++++ b/test/unit/report_builder_filter_operators_test.dart
+@@ -0,0 +1,122 @@
++// ═══════════════════════════════════════════════════════════════════════════
++// كلُّ عاملٍ تعرضه واجهةُ الفلتر لا بد أن يقبله المحرِّك — القائمةُ واحدة.
++// ═══════════════════════════════════════════════════════════════════════════
++//
++// واجهةُ الفلتر تبني منسدلةَ العامل من [getFilterOperators]، والمحرِّك يرفض
++// أيَّ عاملٍ خارج قائمته. فلو كانت القائمتان اثنتين لأمكن أن تعرض الواجهةُ
++// عاملاً يُنتج تقريراً **مرفوضاً بالكامل** — والمستخدم يرى صفراً من الصفوف
++// بلا سببٍ ظاهر، لا رسالةَ خطأ ولا حقلاً معطَّلاً.
++//
++// وهذه نفسُ فئةِ العطل التي كُتب لها `report_builder_field_registry_test`:
++// قائمةٌ تعرضها الواجهةُ وتخالف ما ينفّذه المحرِّك. وذاك فحص **الحقول**،
++// وهذا يفحص **العوامل** — وحاصلُ ضربِهما هو ما يستطيع المستخدمُ بناءه فعلاً.
++//
++// ⚠️ ويفشل تلقائياً لأيّ عاملٍ أو حقلٍ يُضاف مستقبلاً لأحد الطرفين وحده.
++// ═══════════════════════════════════════════════════════════════════════════
++
++import 'dart:convert';
++
++import 'package:drift/drift.dart' hide isNotNull, isNull;
++import 'package:flutter_test/flutter_test.dart';
++import 'package:ural_erp/data/database/database.dart';
++
++void main() {
++  late AppDatabase db;
++
++  const entities = [
++    'products',
++    'parties',
++    'sales_invoices',
++    'purchase_invoices',
++    'journal_entries',
++  ];
++
++  /// قيمةٌ تليق بالنوع — الغرضُ فحصُ القبول لا فحصُ النتيجة.
++  Object sampleFor(String type) => switch (type) {
++        'number' => 1,
++        'date' => '2026-08-10',
++        'boolean' => true,
++        _ => 'س',
++      };
++
++  setUp(() async => db = AppDatabase.forTesting());
++  tearDown(() => db.close());
++
++  test('كلُّ نوعِ حقلٍ معروضٍ له عواملُ معروضة', () {
++    final types = <String>{};
++    for (final e in entities) {
++      for (final f in db.getAvailableFields(e)) {
++        types.add(f['type']!);
++      }
++    }
++    expect(types, isNotEmpty);
++    for (final t in types) {
++      expect(db.getFilterOperators(t), isNotEmpty,
++          reason: 'نوعٌ «$t» بلا عوامل ⇒ حقلٌ لا يمكن الفلترةُ به وهو معروض');
++    }
++  });
++
++  group('كلُّ (حقل × عامل) تعرضه الواجهةُ يقبله المحرِّك', () {
++    for (final entity in entities) {
++      test(entity, () async {
++        final fields = db.getAvailableFields(entity);
++        final rejected = <String>[];
++
++        for (final f in fields) {
++          final key = f['key']!;
++          final type = f['type']!;
++          for (final op in db.getFilterOperators(type)) {
++            final id = await db.into(db.customReports).insert(
++                  CustomReportsCompanion.insert(
++                    name: 'ت-$key-${op['op']}',
++                    sourceEntity: entity,
++                    columns: key,
++                    filters: Value(jsonEncode([
++                      {
++                        'field': key,
++                        'op': op['op'],
++                        'value': sampleFor(type),
++                      }
++                    ])),
++                  ),
++                );
++            try {
++              await db.executeReport(id);
++            } catch (e) {
++              rejected.add('$key ${op['op']} → '
++                  '${e.toString().split('\n').first}');
++              continue;
++            }
++            // ‏«صفرُ صفوفٍ» ليس دليلاً — الجداولُ فارغة. الدليلُ أن الاستعلامَ
++            // **نُفِّذ**: سجلُّ التشغيل لا يُكتَب على المسار المرفوض.
++            final ran = await (db.select(db.savedReportRuns)
++                  ..where((r) => r.reportId.equals(id)))
++                .get();
++            if (ran.isEmpty) rejected.add('$key ${op['op']} → رُفض التقرير');
++          }
++        }
++
++        expect(rejected, isEmpty,
++            reason: 'عواملُ تعرضها الواجهةُ ويرفضها المحرِّك:\n'
++                '${rejected.join('\n')}');
++      });
++    }
++  });
++
++  test('عاملٌ خارج القائمة المعروضة يبقى مرفوضاً', () async {
++    // الحارسُ أعلاه يثبت أن المعروضَ مقبول؛ وهذا يثبت أن القائمة **تحصر**
++    // فعلاً، وإلا لمرّ كلُّ شيء ومرّ الحارسُ معه بلا معنى.
++    final id = await db.into(db.customReports).insert(
++          CustomReportsCompanion.insert(
++            name: 'ت',
++            sourceEntity: 'products',
++            columns: 'name',
++            filters: Value(jsonEncode([
++              {'field': 'name', 'op': 'REGEXP', 'value': 'س'}
++            ])),
++          ),
++        );
++    await db.executeReport(id);
++    expect(await db.select(db.savedReportRuns).get(), isEmpty);
++  });
++}
+diff --git a/test/unit/report_builder_structured_filter_test.dart b/test/unit/report_builder_structured_filter_test.dart
+new file mode 100644
+index 00000000..890c9373
+--- /dev/null
++++ b/test/unit/report_builder_structured_filter_test.dart
+@@ -0,0 +1,342 @@
++// ═══════════════════════════════════════════════════════════════════════════
++// §٥/٢ — فلترُ منشئ التقارير: صيغةٌ مهيكلة بمعاملاتٍ مربوطة.
++// ═══════════════════════════════════════════════════════════════════════════
++//
++// السكيما **توثّق العقد** منذ البداية:
++//     /// Filter conditions as JSON: [{"field":"price","op":">","value":100}]
++//     TextColumn get filters => text().nullable()();
++// والتنفيذُ كان يعامل العمودَ **نصَّ SQL خاماً** ويُلحقه بالـ`WHERE` كما هو.
++//
++// فالعطلُ ليس أمنياً بالدرجة الأولى — لا مسارَ في التطبيق يُنشئ فلتراً أصلاً
++// (الواجهةُ لا تمرّره و`custom_reports` غيرُ مُزامَن) — بل **تخالفُ التنفيذِ
++// لعقده المكتوب**: من يبني واجهةَ الفلتر يتبع تعليقَ السكيما، فيكتب JSON
++// مهيكلاً، فيُبثّ كـSQL ⇒ استعلامٌ مكسور أو تقريرٌ مرفوض.
++//
++// ── والأمانُ من البناء لا من الفحص ─────────────────────────────────────────
++// اسمُ العمود يُختار من `getAvailableFields(sourceEntity)` — **قائمةٌ مغلقة** —
++// والقيمةُ تُربَط معاملاً. فلا يوجد نصٌّ من المستخدم يصل إلى الـSQL، والحقنُ
++// يصير مستحيلاً بالبناء لا مرفوضاً بفحصٍ يُنسى تحديثه.
++//
++// ── والمسارُ الخام يبقى مقبولاً ─────────────────────────────────────────────
++// UralCash **مطروح**، وحذفُ المسار كسرٌ لمنتجٍ مطروح مقابل فائدةٍ صفر. فالخامُّ
++// يبقى محصَّناً للنصوص القديمة، والمهيكلُ هو ما تنتجه الواجهةُ الجديدة. والتمييزُ
++// بأول حرفٍ غيرِ فراغ: `[` ⇒ مهيكل.
++// ═══════════════════════════════════════════════════════════════════════════
++
++import 'dart:convert';
++
++import 'package:drift/drift.dart' hide isNotNull, isNull;
++import 'package:flutter_test/flutter_test.dart';
++import 'package:ural_erp/data/database/database.dart';
++
++void main() {
++  late AppDatabase db;
++  late int branchA;
++  late int whA;
++  var seq = 0;
++
++  Future<int> report(String entity, String columns, {Object? filters}) =>
++      db.into(db.customReports).insert(CustomReportsCompanion.insert(
++            name: 'ت',
++            sourceEntity: entity,
++            columns: columns,
++            filters: Value(filters is String ? filters : jsonEncode(filters)),
++          ));
++
++  Future<int> product(String name, double price,
++          {String? barcode, bool isActive = true}) =>
++      db.into(db.products).insert(ProductsCompanion.insert(
++            code: 'P${++seq}',
++            name: name,
++            barcode: Value(barcode),
++            salePrice: Value(price),
++            costPrice: Value(price / 2),
++            isActive: Value(isActive),
++          ));
++
++  Future<int> invoice(String number, DateTime date, {double total = 100}) =>
++      db.into(db.salesInvoices).insert(SalesInvoicesCompanion.insert(
++            invoiceNumber: number,
++            warehouseId: whA,
++            userId: 1,
++            invoiceDate: date,
++            branchId: Value(branchA),
++            total: Value(total),
++          ));
++
++  setUp(() async {
++    seq = 0;
++    db = AppDatabase.forTesting();
++    branchA = await db.into(db.branches).insert(BranchesCompanion.insert(
++        name: 'فرع أ', globalId: const Value('gid-sf-a')));
++    whA = await db.into(db.warehouses).insert(
++        WarehousesCompanion.insert(name: 'مخزن أ', branchId: Value(branchA)));
++    await product('قلم', 10);
++    await product('دفتر', 100);
++    await product('حاسوب', 5000);
++  });
++
++  tearDown(() => db.close());
++
++  Future<List<String>> names(int reportId, {Set<int>? scope}) async {
++    final rows = await db.executeReport(reportId, allowedBranchIds: scope);
++    return rows.map((r) => r['name'] as String).toList();
++  }
++
++  group('عوامل المقارنة على الأرقام', () {
++    test('أكبر من', () async {
++      final id = await report('products', 'name',
++          filters: [
++            {'field': 'price', 'op': '>', 'value': 50}
++          ]);
++      expect(await names(id), containsAll(<String>['دفتر', 'حاسوب']));
++      expect(await names(id), isNot(contains('قلم')));
++    });
++
++    test('أصغر من أو يساوي', () async {
++      final id = await report('products', 'name',
++          filters: [
++            {'field': 'price', 'op': '<=', 'value': 100}
++          ]);
++      final n = await names(id);
++      expect(n, containsAll(<String>['قلم', 'دفتر']));
++      expect(n, isNot(contains('حاسوب')));
++    });
++
++    test('يساوي', () async {
++      final id = await report('products', 'name',
++          filters: [
++            {'field': 'price', 'op': '=', 'value': 100}
++          ]);
++      expect(await names(id), ['دفتر']);
++    });
++
++    test('لا يساوي', () async {
++      final id = await report('products', 'name',
++          filters: [
++            {'field': 'price', 'op': '!=', 'value': 100}
++          ]);
++      expect(await names(id), isNot(contains('دفتر')));
++    });
++
++    test('الفلترُ يترجم اسمَ الحقل بنفس خريطة الأعمدة', () async {
++      // `price` ليس اسمَ العمود — العمودُ `sale_price`. لو افترق الفلترُ عن
++      // خريطةِ `SELECT` لصار `no such column` أو فلترةً على عمودٍ آخر.
++      final id = await report('products', 'name, price',
++          filters: [
++            {'field': 'price', 'op': '>', 'value': 4000}
++          ]);
++      final rows = await db.executeReport(id);
++      expect(rows.map((r) => r['name']), ['حاسوب']);
++      expect(rows.first['price'], 5000);
++    });
++  });
++
++  group('عوامل النصّ', () {
++    test('يحتوي', () async {
++      final id = await report('products', 'name',
++          filters: [
++            {'field': 'name', 'op': 'contains', 'value': 'حاس'}
++          ]);
++      expect(await names(id), ['حاسوب']);
++    });
++
++    test('يحتوي — % في القيمة نصٌّ لا محرفُ بدل', () async {
++      await product('خصم %50', 7);
++      // ‏«دفتر ٥٠ ورقة» هو ما يوقع الطفرة: بلا هروبِ `%` يصير النمطُ `%%50%`
++      // فيلتقطه، ومعه يصير النمطُ `%\%50%` فلا يلتقطه إلا حرفياً.
++      await product('دفتر 50 ورقة', 8);
++      final id = await report('products', 'name',
++          filters: [
++            {'field': 'name', 'op': 'contains', 'value': '%50'}
++          ]);
++      expect(await names(id), ['خصم %50'],
++          reason: 'القيمةُ مربوطةٌ معاملاً ومهروبةٌ، فـ% داخلها نصٌّ');
++    });
++
++    test('يحتوي — _ في القيمة نصٌّ لا محرفَ واحدٍ أيّاً كان', () async {
++      await product('A_B', 3);
++      await product('AXB', 4);
++      final id = await report('products', 'name',
++          filters: [
++            {'field': 'name', 'op': 'contains', 'value': 'A_B'}
++          ]);
++      expect(await names(id), ['A_B'],
++          reason: '`_` محرفُ بدلٍ في LIKE تماماً كـ%');
++    });
++
++    test('لا يساوي يشمل الصفوفَ الخالية', () async {
++      await product('بلا باركود', 3);
++      await product('له باركود', 4, barcode: 'BC-1');
++      final id = await report('products', 'name',
++          filters: [
++            {'field': 'barcode', 'op': '!=', 'value': 'BC-1'}
++          ]);
++      expect(await names(id), contains('بلا باركود'),
++          reason: 'صنفٌ بلا باركود «ليس BC-1» فعلاً — و`!= ?` وحدَه '
++              'يُسقطه لأن مقارنةَ NULL تُنتج NULL');
++      expect(await names(id), isNot(contains('له باركود')));
++    });
++  });
++
++  group('المنطقيّ', () {
++    test('يساوي false يرجّع غيرَ النشط وحده', () async {
++      await product('موقوف', 9, isActive: false);
++      final id = await report('products', 'name',
++          filters: [
++            {'field': 'is_active', 'op': '=', 'value': false}
++          ]);
++      expect(await names(id), ['موقوف']);
++    });
++  });
++
++  group('التواريخ — دلالةُ اليوم لا اللحظة', () {
++    setUp(() async {
++      await invoice('INV-08', DateTime(2026, 8, 10, 14, 30));
++      await invoice('INV-09', DateTime(2026, 8, 11, 9, 0));
++      await invoice('INV-10', DateTime(2026, 8, 12, 23, 59));
++    });
++
++    Future<List<String>> numbers(int id) async {
++      final rows = await db.executeReport(id);
++      return rows.map((r) => r['invoice_number'] as String).toList();
++    }
++
++    test('يساوي يوماً يشمل اليومَ كلَّه لا لحظةَ منتصف الليل', () async {
++      final id = await report('sales_invoices', 'invoice_number',
++          filters: [
++            {'field': 'date', 'op': '=', 'value': '2026-08-10'}
++          ]);
++      expect(await numbers(id), ['INV-08'],
++          reason: 'الفاتورةُ في ١٤:٣٠ — مطابقةُ اللحظةِ تُرجع صفراً صامتاً');
++    });
++
++    test('أصغر من أو يساوي يشمل آخرَ اليوم', () async {
++      final id = await report('sales_invoices', 'invoice_number',
++          filters: [
++            {'field': 'date', 'op': '<=', 'value': '2026-08-11'}
++          ]);
++      expect(await numbers(id), ['INV-08', 'INV-09'],
++          reason: 'فاتورةُ ٠٩:٠٠ من يوم ١١ داخلةٌ في «حتى ١١»');
++    });
++
++    test('أكبر من يومٍ يبدأ من اليوم التالي', () async {
++      final id = await report('sales_invoices', 'invoice_number',
++          filters: [
++            {'field': 'date', 'op': '>', 'value': '2026-08-11'}
++          ]);
++      expect(await numbers(id), ['INV-10']);
++    });
++  });
++
++  group('شروطٌ متعدّدة تُجمَع بـAND', () {
++    test('نطاقٌ سعريّ', () async {
++      final id = await report('products', 'name',
++          filters: [
++            {'field': 'price', 'op': '>', 'value': 5},
++            {'field': 'price', 'op': '<', 'value': 1000},
++          ]);
++      final n = await names(id);
++      expect(n, containsAll(<String>['قلم', 'دفتر']));
++      expect(n, isNot(contains('حاسوب')));
++    });
++  });
++
++  group('الرفض — الأمان من البناء', () {
++    test('حقلٌ خارج القائمة المغلقة يُرفَض التقريرُ كلُّه', () async {
++      final id = await report('products', 'name',
++          filters: [
++            {'field': 'id) OR 1=1 --', 'op': '=', 'value': 1}
++          ]);
++      expect(await names(id), isEmpty,
++          reason: 'اسمُ العمود من `getAvailableFields` وحدها');
++    });
++
++    test('حقلٌ سليمُ الشكل لكن ليس من حقول الكيان يُرفَض', () async {
++      final id = await report('products', 'name',
++          filters: [
++            {'field': 'balance', 'op': '>', 'value': 0}
++          ]);
++      expect(await names(id), isEmpty,
++          reason: '`balance` حقلُ الأطراف لا الأصناف');
++    });
++
++    test('عاملٌ غيرُ مدعوم يُرفَض', () async {
++      final id = await report('products', 'name',
++          filters: [
++            {'field': 'price', 'op': 'GLOB', 'value': '*'}
++          ]);
++      expect(await names(id), isEmpty);
++    });
++
++    test('عاملٌ لا يليق بنوع الحقل يُرفَض', () async {
++      final id = await report('products', 'name',
++          filters: [
++            {'field': 'price', 'op': 'contains', 'value': '10'}
++          ]);
++      expect(await names(id), isEmpty,
++          reason: '«يحتوي» على رقمٍ يفلتر بالنصّ فيعطي نتائجَ غيرَ متوقَّعة');
++    });
++
++    test('قيمةٌ غيرُ رقميةٍ لحقلٍ رقميّ تُرفَض لا تُرجع صفراً صامتاً', () async {
++      final id = await report('products', 'name',
++          filters: [
++            {'field': 'price', 'op': '>', 'value': 'غالي'}
++          ]);
++      expect(await names(id), isEmpty);
++      // ⚠️ «فارغ» وحدَه **لا يميّز**: لو مُرِّر النصُّ معاملاً لكان
++      // `sale_price > 'غالي'` فارغاً أيضاً — فالنصُّ في SQLite أكبرُ من كلِّ
++      // رقم. فالدليلُ أن الاستعلامَ **لم يُنفَّذ أصلاً**: سجلُّ التشغيل
++      // (`saved_report_runs`) لا يُكتَب إلا بعد تنفيذٍ فعليّ.
++      expect(await db.select(db.savedReportRuns).get(), isEmpty,
++          reason: 'الرفضُ قبل التنفيذ لا بعده');
++    });
++
++    test('JSON مهيكلٌ فاسد يُرفَض لا يُبَثّ SQL', () async {
++      final id = await report('products', 'name', filters: '[{"field":');
++      expect(await names(id), isEmpty);
++    });
++
++    test('قائمةٌ فارغة لا تكسر الاستعلام', () async {
++      final id = await report('products', 'name', filters: <Object>[]);
++      expect(await names(id), hasLength(3),
++          reason: 'بلا شروطٍ ⇒ بلا تقييد، لا `WHERE ()` مكسور');
++    });
++
++    test('قيمةٌ نصّيةٌ فيها اقتباسٌ لا تكسر الاستعلام', () async {
++      await product("قلم O'Brien", 3);
++      final id = await report('products', 'name',
++          filters: [
++            {'field': 'name', 'op': '=', 'value': "قلم O'Brien"}
++          ]);
++      expect(await names(id), ["قلم O'Brien"],
++          reason: 'المعاملُ المربوطُ يمرّر الاقتباسَ نصّاً');
++    });
++  });
++
++  group('الحصرُ يبقى فوق الفلتر', () {
++    test('فلترٌ مهيكلٌ لا يوسّع نطاق الفروع', () async {
++      await invoice('INV-A', DateTime(2026, 8, 10));
++      final id = await report('sales_invoices', 'invoice_number',
++          filters: [
++            {'field': 'total', 'op': '>', 'value': 0}
++          ]);
++
++      final rows = await db.executeReport(id, allowedBranchIds: <int>{});
++      expect(rows, isEmpty, reason: 'الحصرُ الفاشلُ مقفولاً يغلب أي فلتر');
++    });
++  });
++
++  group('المسارُ الخام لم يُكسَر', () {
++    test('نصُّ SQL سليمٌ لا يزال يعمل', () async {
++      final id = await report('products', 'name',
++          filters: 'products.sale_price > 50');
++      expect(await names(id), containsAll(<String>['دفتر', 'حاسوب']));
++    });
++
++    test('نصٌّ خامٌّ يحاول الهروب لا يزال يُرفَض', () async {
++      final id = await report('products', 'name', filters: '1=1) OR (1=1');
++      expect(await names(id), isEmpty);
++    });
++  });
++}
+diff --git a/test/unit/report_filter_condition_test.dart b/test/unit/report_filter_condition_test.dart
+new file mode 100644
+index 00000000..aeaea42d
+--- /dev/null
++++ b/test/unit/report_filter_condition_test.dart
+@@ -0,0 +1,142 @@
++// ═══════════════════════════════════════════════════════════════════════════
++// ما تُرمّزه واجهةُ الفلتر لا بد أن يفهمه المحرِّك — والفحصُ بالتنفيذ لا بالشكل.
++// ═══════════════════════════════════════════════════════════════════════════
++//
++// [ReportFilterCondition] هو ما تحمله صفوفُ حوار الإنشاء، و[encodeReportFilters]
++// هو الجسرُ الوحيد بينها وبين العمود `filters`. فلو رمّزت الواجهةُ القيمةَ
++// نصّاً حيث ينتظر المحرِّك رقماً — أو رمّزت التاريخَ بصيغةٍ لا تُقرأ — رُفض
++// التقريرُ **كلُّه** عند التشغيل: صفرُ صفوفٍ بلا رسالةِ خطأ.
++//
++// ولذلك لا يفحص هذا الاختبارُ **شكلَ** الـJSON، بل يمرّره في `executeReport`
++// ويقيس الصفوفَ الراجعة. فحصُ الشكل يُثبّت التنفيذَ الحاليّ ولا يثبت أنه
++// مفهوم.
++// ═══════════════════════════════════════════════════════════════════════════
++
++import 'package:drift/drift.dart' hide isNotNull, isNull;
++import 'package:flutter_test/flutter_test.dart';
++import 'package:ural_erp/data/database/database.dart';
++import 'package:ural_erp/domain/models/report_filter_condition.dart';
++
++void main() {
++  late AppDatabase db;
++  var seq = 0;
++
++  Future<int> product(String name, double price, {bool isActive = true}) =>
++      db.into(db.products).insert(ProductsCompanion.insert(
++            code: 'P${++seq}',
++            name: name,
++            salePrice: Value(price),
++            isActive: Value(isActive),
++          ));
++
++  /// يمرّ بنفس مسار الواجهة: شرطٌ يُبنى من حقل، ثم يُرمَّز، ثم يُنفَّذ.
++  Future<List<String>> run(
++      String entity, String columns, List<ReportFilterCondition> conds) async {
++    final id = await db.into(db.customReports).insert(
++          CustomReportsCompanion.insert(
++            name: 'ت',
++            sourceEntity: entity,
++            columns: columns,
++            filters: Value(encodeReportFilters(conds)),
++          ),
++        );
++    final rows = await db.executeReport(id);
++    return rows.map((r) => r[columns.split(',').first.trim()].toString())
++        .toList();
++  }
++
++  ReportFilterCondition cond(String entity, String key, String op, String v) {
++    final f = db.getAvailableFields(entity).firstWhere((e) => e['key'] == key);
++    return ReportFilterCondition.forField(f, db.getFilterOperators).copyWith(op: op, value: v);
++  }
++
++  setUp(() async {
++    seq = 0;
++    db = AppDatabase.forTesting();
++    await product('قلم', 10);
++    await product('دفتر', 100);
++    await product('حاسوب', 5000);
++  });
++
++  tearDown(() => db.close());
++
++  test('الشرطُ الجديد يبدأ بأوّل عاملٍ معروضٍ لنوع الحقل', () {
++    final f = db
++        .getAvailableFields('products')
++        .firstWhere((e) => e['key'] == 'price');
++    final c = ReportFilterCondition.forField(f, db.getFilterOperators);
++    expect(c.field, 'price');
++    expect(c.type, 'number');
++    expect(db.getFilterOperators('number').map((o) => o['op']),
++        contains(c.op),
++        reason: 'عاملٌ ابتدائيّ خارج المعروض = منسدلةٌ فارغةُ الاختيار');
++  });
++
++  test('قيمةٌ رقميةٌ مكتوبةٌ نصّاً في الحقل تُقارَن رقماً', () async {
++    // ‏`TextFormField` يعطي `String` دائماً. فلو رُمّزت كما هي لصارت مقارنةَ
++    // نصٍّ برقمٍ في SQLite — ولا تطابق شيئاً.
++    final rows = await run(
++        'products', 'name', [cond('products', 'price', '>', '50')]);
++    expect(rows, containsAll(<String>['دفتر', 'حاسوب']));
++    expect(rows, isNot(contains('قلم')));
++  });
++
++  test('المنطقيُّ يُرمَّز قيمةً منطقيةً لا نصَّ "false"', () async {
++    await product('موقوف', 9, isActive: false);
++    final rows = await run(
++        'products', 'name', [cond('products', 'is_active', '=', 'false')]);
++    expect(rows, ['موقوف']);
++  });
++
++  test('التاريخُ يُرمَّز بصيغةٍ يقرأها المحرِّك', () async {
++    final wh = await db
++        .into(db.warehouses)
++        .insert(WarehousesCompanion.insert(name: 'مخزن'));
++    for (final (n, d) in [
++      ('INV-1', DateTime(2026, 8, 10, 14, 30)),
++      ('INV-2', DateTime(2026, 8, 12, 8, 0)),
++    ]) {
++      await db.into(db.salesInvoices).insert(SalesInvoicesCompanion.insert(
++            invoiceNumber: n,
++            warehouseId: wh,
++            userId: 1,
++            invoiceDate: d,
++          ));
++    }
++
++    final rows = await run('sales_invoices', 'invoice_number',
++        [cond('sales_invoices', 'date', '=', '2026-08-10')]);
++    expect(rows, ['INV-1']);
++  });
++
++  test('شرطان يُجمعان بـAND', () async {
++    final rows = await run('products', 'name', [
++      cond('products', 'price', '>', '5'),
++      cond('products', 'price', '<', '1000'),
++    ]);
++    expect(rows, containsAll(<String>['قلم', 'دفتر']));
++    expect(rows, isNot(contains('حاسوب')));
++  });
++
++  test('بلا شروطٍ ⇒ `null` لا نصٌّ فارغٌ ولا "[]"', () {
++    expect(encodeReportFilters(const []), isNull,
++        reason: 'العمودُ nullable — وقيمةٌ غيرُ فارغةٍ بلا شرطٍ تُوهم '
++            'أن للتقرير فلتراً');
++  });
++
++  group('اكتمالُ الشرط', () {
++    test('شرطٌ بلا قيمة غيرُ مكتمل', () {
++      expect(cond('products', 'name', '=', '').isComplete, isFalse);
++    });
++
++    test('المنطقيُّ مكتملٌ دائماً — "لا" قيمةٌ صحيحة', () {
++      expect(cond('products', 'is_active', '=', 'false').isComplete, isTrue);
++    });
++
++    test('الرقميُّ بقيمةٍ غيرِ رقميةٍ غيرُ مكتمل', () {
++      expect(cond('products', 'price', '>', 'غالي').isComplete, isFalse,
++          reason: 'يرفضه المحرِّك، فمنعُه عند الحفظ أوضح من تقريرٍ '
++              'محفوظٍ لا يُنتج صفاً أبداً');
++    });
++  });
++}
+diff --git a/test/widget/report_builder_filter_dialog_test.dart b/test/widget/report_builder_filter_dialog_test.dart
+new file mode 100644
+index 00000000..81cb116e
+--- /dev/null
++++ b/test/widget/report_builder_filter_dialog_test.dart
+@@ -0,0 +1,141 @@
++// ═══════════════════════════════════════════════════════════════════════════
++// حوارُ إنشاء التقرير كان يبني الأعمدةَ **ولا يمرّر فلتراً أبداً**.
++// ═══════════════════════════════════════════════════════════════════════════
++//
++// السكيما توثّق عموداً للفلاتر منذ البداية، والمحرِّك يقرؤه — لكن الحوار كان
++// يستدعي `createCustomReport` بالاسم والكيان والأعمدة وحدها. فلا سبيلَ في
++// التطبيق كلِّه إلى بناء تقريرٍ مُصفّى.
++//
++// وهذا الاختبار يقطع المسارَ كاملاً بمستودعٍ **حقيقيّ** على قاعدةٍ في الذاكرة:
++// حوار ⇒ ترميز ⇒ عمود `filters` ⇒ `executeReport` ⇒ الصفوف. فلا يثبت أن
++// الحوار «مرّر شيئاً» بل أن ما مرّره **يُصفّي فعلاً**.
++// ═══════════════════════════════════════════════════════════════════════════
++
++import 'package:drift/drift.dart' hide isNotNull, isNull;
++import 'package:flutter/material.dart';
++import 'package:flutter_riverpod/flutter_riverpod.dart';
++import 'package:flutter_test/flutter_test.dart';
++// ‏`providers.dart` يُصدّر `database.dart` — واستيرادُه صراحةً ملاحظةُ تحليل.
++import 'package:ural_erp/data/providers/providers.dart';
++import 'package:ural_erp/data/repositories/reporting_repository_impl.dart';
++import 'package:ural_erp/presentation/screens/report_builder_screen.dart';
++
++void main() {
++  late AppDatabase db;
++
++  Future<void> product(String code, String name, double price) =>
++      db.into(db.products).insert(ProductsCompanion.insert(
++          code: code, name: name, salePrice: Value(price)));
++
++  setUp(() async {
++    db = AppDatabase.forTesting();
++    await product('P1', 'قلم', 10);
++    await product('P2', 'حاسوب', 5000);
++  });
++
++  tearDown(() => db.close());
++
++  Future<void> pump(WidgetTester tester) async {
++    await tester.pumpWidget(ProviderScope(
++      overrides: [
++        reportingRepositoryProvider
++            .overrideWithValue(ReportingRepositoryImpl(db)),
++      ],
++      child: const MaterialApp(home: ReportBuilderScreen()),
++    ));
++    await tester.pumpAndSettle();
++  }
++
++  Future<void> openDialogWithName(WidgetTester tester, String name) async {
++    await tester.tap(find.text('جديد'));
++    await tester.pumpAndSettle();
++    await tester.enterText(
++        find.widgetWithText(TextField, 'اسم التقرير'), name);
++    await tester.tap(find.widgetWithText(CheckboxListTile, 'اسم المنتج'));
++    await tester.pumpAndSettle();
++  }
++
++  testWidgets('بلا شروطٍ: التقريرُ يُحفظ بفلترٍ خالٍ ويُرجع كلَّ الصفوف',
++      (tester) async {
++    await pump(tester);
++    await openDialogWithName(tester, 'كل الأصناف');
++    await tester.tap(find.text('إنشاء'));
++    await tester.pumpAndSettle();
++
++    final saved = (await db.select(db.customReports).get()).single;
++    expect(saved.filters, isNull,
++        reason: 'حوارٌ بلا شروطٍ لا يكتب `[]` — فيبقى التقريرُ بلا فلتر');
++    expect(await db.executeReport(saved.id), hasLength(2));
++  });
++
++  testWidgets('شرطٌ واحد: ما يُحفَظ يُصفّي فعلاً لا يُخزَّن وحسب',
++      (tester) async {
++    await pump(tester);
++    await openDialogWithName(tester, 'الحواسيب');
++
++    await tester.tap(find.text('الفلاتر'));
++    await tester.pumpAndSettle();
++    await tester.tap(find.text('إضافة شرط'));
++    await tester.pumpAndSettle();
++
++    await tester.enterText(
++        find.widgetWithText(TextFormField, 'القيمة'), 'حاسوب');
++    await tester.tap(find.text('إنشاء'));
++    await tester.pumpAndSettle();
++
++    final saved = (await db.select(db.customReports).get()).single;
++    expect(saved.filters, startsWith('['),
++        reason: 'الصيغةُ المهيكلة لا نصُّ SQL خامّ');
++
++    final rows = await db.executeReport(saved.id);
++    expect(rows.map((r) => r['name']), ['حاسوب'],
++        reason: 'التقريرُ المحفوظُ من الحوار يُصفّي — لا يرجع الصنفين');
++  });
++
++  testWidgets('شرطٌ بلا قيمة يُمنع عند الحفظ لا يُحفَظ فيُرفَض عند التشغيل',
++      (tester) async {
++    await pump(tester);
++    await openDialogWithName(tester, 'ناقص');
++
++    await tester.tap(find.text('الفلاتر'));
++    await tester.pumpAndSettle();
++    await tester.tap(find.text('إضافة شرط'));
++    await tester.pumpAndSettle();
++
++    // بلا كتابةِ قيمة
++    await tester.tap(find.text('إنشاء'));
++    await tester.pumpAndSettle();
++
++    expect(await db.select(db.customReports).get(), isEmpty,
++        reason: 'المحرِّك يرفض التقريرَ كلَّه لشرطٍ فاسد، فيُحفَظ تقريرٌ '
++            'لا يُنتج صفاً أبداً ولا يقول لماذا');
++    expect(find.text('إنشاء'), findsOneWidget, reason: 'الحوارُ يبقى مفتوحاً');
++
++    // رسالةُ التنبيه تجدول مؤقّتاً لإخفائها؛ `pumpAndSettle` لا يستهلكه لأنه
++    // لا يجدول إطاراً. وبلا استهلاكه يفشل الاختبارُ بـ«مؤقّتٌ معلّق» — فشلٌ
++    // في التنظيف يُقرأ خطأً كفشلٍ في السلوك.
++    await tester.pump(const Duration(seconds: 3));
++    await tester.pumpAndSettle();
++  });
++
++  testWidgets('تبديلُ الكيان يمسح شروطَ الكيان السابق', (tester) async {
++    await pump(tester);
++    await tester.tap(find.text('جديد'));
++    await tester.pumpAndSettle();
++
++    await tester.tap(find.text('الفلاتر'));
++    await tester.pumpAndSettle();
++    await tester.tap(find.text('إضافة شرط'));
++    await tester.pumpAndSettle();
++    expect(find.text('الفلاتر (1)'), findsOneWidget);
++
++    await tester.tap(find.text('الأصناف').last);
++    await tester.pumpAndSettle();
++    await tester.tap(find.text('العملاء/الموردين').last);
++    await tester.pumpAndSettle();
++
++    expect(find.text('الفلاتر (1)'), findsNothing,
++        reason: 'حقلُ «الأصناف» ليس من حقول «الأطراف» — بقاؤه يُبطل '
++            'التقريرَ كلَّه عند التشغيل');
++  });
++}
