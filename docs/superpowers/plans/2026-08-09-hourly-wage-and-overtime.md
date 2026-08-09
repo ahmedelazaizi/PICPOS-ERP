@@ -438,11 +438,129 @@ rm -rf build/native_assets && flutter test test/unit/work_holidays_test.dart --c
 
 بدّل `out.add(day)` إلى قائمةٍ بدل مجموعة (‏`final out = <DateTime>[]`) وشغّل: يجب أن يسقط اختبارُ «عيدٌ يقع على عطلةٍ أسبوعية». تحقّق أوّلاً أن التبديلَ دخل الملف (`grep -c '<DateTime>\['`)، ثم استعِد الملف من نسخةٍ احتياطية — **لا تستعمل `git checkout`**.
 
-- [ ] **Step 6: ارفع حدَّ البوابة وكوّم**
+- [ ] **Step 6: اكتب اختبارَ التحقّق في مسار الكتابة**
+
+🔴 **لماذا هذا مطلوبٌ رغم وجود قيدِ `CHECK`:** القيدُ في السكيما **لا يوجد على تنصيبات PostgreSQL القائمة**. مقيسٌ في المهمة ٢: `onUpgrade` متجاوَزٌ كلياً على PostgreSQL، والآليةُ الوحيدة لإيصال جدولٍ جديد إلى خادمٍ قائم هي `_ensurePostgresSchemaParity` — وهي لا تكتب `customConstraints` إطلاقاً. فصفٌّ يحمل الشكلين معاً يُقبَل **بصمت** هناك.
+
+فالتحقّقُ في **الكود** يحمي المحرّكَين معاً بلا اعتمادٍ على السكيما. (قرارُ المالك 2026-08-09؛ وإصلاحُ `_buildPgCreateTableSql` بندٌ مستقلٌّ مؤجَّل.)
+
+أضف إلى `test/unit/work_holidays_test.dart`:
+
+```dart
+  group('التحقّقُ في مسار الكتابة — لا يعتمد على السكيما', () {
+    test('يومٌ أسبوعيّ وحدَه يُقبَل', () async {
+      final id = await db.addWorkHoliday(
+          name: 'الجمعة', weekday: 5, date: null, branchId: null);
+      expect(id, greaterThan(0));
+    });
+
+    test('تاريخٌ وحدَه يُقبَل', () async {
+      final id = await db.addWorkHoliday(
+          name: 'العيد',
+          weekday: null,
+          date: DateTime(2026, 4, 10),
+          branchId: null);
+      expect(id, greaterThan(0));
+    });
+
+    test('الشكلان معاً يُرفَضان بـArgumentError', () async {
+      expect(
+        () => db.addWorkHoliday(
+            name: 'خطأ',
+            weekday: 5,
+            date: DateTime(2026, 4, 10),
+            branchId: null),
+        throwsArgumentError,
+        reason: 'قيدُ السكيما غائبٌ على PostgreSQL القائم — فالكودُ يحرس',
+      );
+    });
+
+    test('بلا أيٍّ منهما يُرفَض بـArgumentError', () async {
+      expect(
+        () => db.addWorkHoliday(
+            name: 'فارغ', weekday: null, date: null, branchId: null),
+        throwsArgumentError,
+      );
+    });
+
+    test('يومُ أسبوعٍ خارج ١–٧ يُرفَض', () async {
+      expect(
+        () => db.addWorkHoliday(
+            name: 'ثامن', weekday: 8, date: null, branchId: null),
+        throwsArgumentError,
+        reason: 'قيمةٌ لا يُنتجها `DateTime.weekday` أبداً ⇒ عطلةٌ لا تقع '
+            'في أيّ يوم، وصفٌّ ميّتٌ لا يُرى',
+      );
+    });
+
+    test('اسمٌ فارغٌ يُرفَض', () async {
+      expect(
+        () => db.addWorkHoliday(
+            name: '  ', weekday: 5, date: null, branchId: null),
+        throwsArgumentError,
+        reason: 'الاسمُ هو ما يميّز الصفَّ في الشاشة والتدقيق',
+      );
+    });
+  });
+```
+
+- [ ] **Step 7: نفّذ التحقّق**
+
+أضف إلى `lib/data/database/daos/work_holidays_dao.dart`:
+
+```dart
+  /// يضيف عطلةً بعد **تحقّقٍ في الكود** لا في السكيما وحدها.
+  ///
+  /// قيدُ `CHECK` موجودٌ على SQLite، لكنه **غائبٌ عن تنصيبات PostgreSQL
+  /// القائمة**: `onUpgrade` متجاوَزٌ هناك، و`_ensurePostgresSchemaParity` —
+  /// الآليةُ الوحيدة لإيصال جدولٍ جديد لخادمٍ قائم — لا تكتب
+  /// `customConstraints`. فصفٌّ يحمل الشكلين يمرّ بصمت. والتحقّقُ هنا يحمي
+  /// المحرّكَين معاً.
+  Future<int> addWorkHoliday({
+    required String name,
+    required int? weekday,
+    required DateTime? date,
+    required int? branchId,
+  }) async {
+    if ((weekday == null) == (date == null)) {
+      throw ArgumentError(
+          'العطلةُ إمّا يومٌ أسبوعيٌّ متكرّر وإمّا تاريخٌ بعينه — لا الاثنان '
+          'ولا لا شيء');
+    }
+    if (weekday != null && (weekday < 1 || weekday > 7)) {
+      throw ArgumentError(
+          'يومُ الأسبوع خارج المدى ١–٧ (اصطلاحُ DateTime.weekday): $weekday');
+    }
+    if (name.trim().isEmpty) {
+      throw ArgumentError('اسمُ العطلة مطلوب');
+    }
+    return into(workHolidays).insert(WorkHolidaysCompanion.insert(
+      name: name.trim(),
+      weekday: Value(weekday),
+      date: Value(date),
+      branchId: Value(branchId),
+    ));
+  }
+```
+
+- [ ] **Step 8: شغّل**
+
+```bash
+rm -rf build/native_assets && flutter test test/unit/work_holidays_test.dart --concurrency=1
+```
+المتوقَّع: PASS (‏١٥ اختباراً: ٤ من المهمة ٢ · ٥ لأيام العمل · ٦ للتحقّق).
+
+- [ ] **Step 9: اقتل طفرةَ التحقّق**
+
+بدّل `if ((weekday == null) == (date == null))` إلى `if (false)` وشغّل: يجب أن يسقط اختبارا «الشكلان معاً» و«بلا أيٍّ منهما». تحقّق بـ`grep -c 'if (false)'` أن التبديل دخل، ثم استعِد بنسخةٍ احتياطية.
+
+- [ ] **Step 10: ارفع حدَّ البوابة وكوّم**
+
+الحدُّ الحاليّ ٢٩٠٠؛ ارفعه بعددِ اختباراتك الجديدة بالضبط (‏١١).
 
 ```bash
 git add lib/data/database/ test/unit/work_holidays_test.dart scripts/gate.sh
-git commit -m "feat(hr): حسابُ أيام العمل من تقويم العطلات"
+git commit -m "feat(hr): حسابُ أيام العمل · وتحقّقُ الكتابة يحرس ما لا تحرسه سكيما PostgreSQL"
 ```
 
 ---
