@@ -13,8 +13,8 @@ git rev-list --left-right --count HEAD...claude/reports-invoice-payroll-2a9821
 ```
 
 **الرقم اليمين لازم يكون صفر.** لو مش صفر: `git merge --ff-only`.
-الفرع: `claude/payroll-b4-h1-h6-ural-77158a` · آخر كوميت متوقَّع **`fdf298b9`**
-(+ كوميت إصلاح الحقول لو اتكوّم، شوف §٢-٣).
+الفرع: `claude/payroll-b4-h1-h6-ural-77158a` · آخر كوميت متوقَّع **`25553702`**
+والشجرة **نظيفة** — مفيش شغل غير مكوَّم.
 
 ### ٠-٢ 🔴 فخّ البيئة — كلّف الجلسة السابقة **٣ ساعات و٤٥ دقيقة**
 
@@ -73,7 +73,7 @@ bash scripts/gate.sh --pg > /tmp/gate.log 2>&1; RC=$?; echo "GATE_EXIT=$RC"
 | السويّة | خط الأساس |
 |---|---|
 | `flutter analyze lib test` | **٦ info** · صفر error/warning |
-| `unit`+`data`+`structural`+`services` | **٢٨١٢** ناجح · ٧ متخطّى (**٢٨٢٠** بعد كوميت الحقول) |
+| `unit`+`data`+`structural`+`services` | **٢٨١٢** ناجح · ٧ متخطّى — مقيس 2026-08-09 بعد كل كوميتات الجلسة |
 | `test/integration` | **٦٤١** ناجح · ١ متخطّى |
 | `test/integration_pg` | **٤٠** ناجح |
 
@@ -83,7 +83,7 @@ bash scripts/gate.sh --pg > /tmp/gate.log 2>&1; RC=$?; echo "GATE_EXIT=$RC"
 
 ---
 
-## ٢. حالة §٥ — تلاتة اتقفلوا، واحد شبه جاهز، واحد ما ابتداش
+## ٢. حالة §٥ — أربعة اتقفلوا، واحد ما ابتداش
 
 ### ٢-١ اتقفل ومكوَّم
 
@@ -93,45 +93,45 @@ bash scripts/gate.sh --pg > /tmp/gate.log 2>&1; RC=$?; echo "GATE_EXIT=$RC"
 | ٣ `LIMIT` الصامت | `ccf12784` | ٥ وحدة | ٣ |
 | ٤ج فترة/فرع في Excel | `fdf298b9` | ١٠ وحدة | ٤ |
 
-### ٢-٢ 🔴 تلات كوميتات **بلا رقع Ural** — أول شغل تعمله
+### ٢-٢ رقع Ural ٢١–٢٤ — مولَّدة، وواحدة فيها **تعارض حقيقي**
 
-الرقع الموجودة توقفت عند **٢٠**. المطلوب:
+الرقع كلها في `docs/superpowers/backports/` (كوميت `25553702`).
 
-```bash
-git diff 15066d67~1..15066d67 -- lib test > docs/superpowers/backports/ural-21-export-fidelity.patch
-git diff ccf12784~1..ccf12784 -- lib test > docs/superpowers/backports/ural-22-silent-row-limit.patch
-git diff fdf298b9~1..fdf298b9 -- lib test > docs/superpowers/backports/ural-23-export-context.patch
+**الترتيب الكامل المتبقّي: ١٨ → ١٩ → ٢٠ → ٢١ → ٢٢ → ٢٣ → ٢٤.**
+
+**نتيجة التحقّق** (مستودع مؤقت من لقطة ملفات Ural، المستودع لم يُمسّ):
+
+| الرقعة | النتيجة |
+|---|---|
+| ١٨ · ١٩ · ٢٠ · ٢١ · ٢٢ | ✅ نظيفة بالتسلسل |
+| **٢٣** | 🔴 **تعارض حقيقي في ملفّين** |
+| ٢٤ | ⏳ لم تُختبَر — ٢٣ أوقفت التسلسل |
+
+**تعارض ٢٣ — ملفّان متفرّعان بين المنتجَين** (مثل `sales_dao` و
+`reporting_repository_impl` المعروفَين):
 ```
-
-ثم التحقّق **الجاف** جوّه `D:/URAL-ERP` (متلمسش المستودع):
-
-```bash
-cd /d/URAL-ERP && git apply --check --3way <path>
+lib/presentation/screens/reports/sales_returns_report_screen.dart:341
+lib/presentation/screens/reports/tax_report_screen.dart:795
 ```
+`git apply --check` بلا `--3way` بيرفضهما لعدم تطابق السياق.
 
-⚠️ **رتّبهم ٢١ → ٢٢ → ٢٣**: ٢٢ و٢٣ بيعدّلوا `report_builder_dao.dart` و
-`excel_service.dart`، و٢١ بيعدّل `sales_report_screen` و`purchases_report_screen`
-اللي ٢٣ بيعدّلهم كمان (توصيل الفترة/الفرع).
+**جرّب `--3way` جوّه Ural نفسه** — مخزن كائناتهم يملك الـblobs اللي بيفتقدها
+المستودع المؤقت، فقد يحلّهما. **لكن ده لم يُتحقَّق منه، فلا تفترضه.** ولو تعذّر
+فالتعديل يدويّ وبسيط: إضافة `periodFrom`/`periodTo`/`branchId`/`scopedBranchIds`
+لنداء `exportReport` في الملفّين.
 
-⚠️ **وفحص رقعةٍ وحدها على شجرة Ural بيفشل بـexit=1 لو رقعةٌ سابقة ما اتركّبتش**
-— زي ما حصل مع ٢٠. الفحص الصحيح: مستودع مؤقت من لقطة ملفاتهم، وتركيب بالتسلسل
-(شوف نصّ الطريقة في كوميت `1d059d98`).
+⚠️ **فحص رقعةٍ وحدها على شجرة Ural بيفشل بـexit=1 لو رقعةٌ سابقة ما اتركّبتش**
+— حصل مع ٢٠ و٢٣. الفحص الصحيح: مستودع مؤقت + تسلسل (الطريقة في `25553702`).
 
-**حالة Ural وقت التسليم:** HEAD `c0347d71` = رسالة كوميت H6 ⇒ الرقع ١٥·١٦·١٧
-**مركّبة ومكوّمة عندهم**. و١٨·١٩·٢٠ **لسه لأ** (`payableAmount` صفر إشارات في
-`hr_extensions.dart` عندهم). فالترتيب الكامل المتبقّي: **١٨ → ١٩ → ٢٠ → ٢١ → ٢٢ → ٢٣**.
+**حالة Ural وقت التسليم:** HEAD `c0347d71` ⇒ الرقع ١٥·١٦·١٧ **مركّبة ومكوّمة
+عندهم**، و١٨ فما بعد **لأ** (`payableAmount` صفر إشارات في `hr_extensions.dart`).
 
 ⚠️ واقرأ حالة `D:/URAL-ERP` **لحظة الحاجة لا مرة واحدة**: اتغيّرت مرتين أثناء
 الجلسة السابقة (اتكوّمت ٤٣ تعديلاً، ثم اتركّبت ١٥·١٦·١٧).
 
-### ٢-٣ 🔴 إصلاح **غير مكوَّم** في الشجرة — كمّله أولاً
+### ٢-٣ ✅ اتقفل — خمسة حقول مكسورة (`f07d57a5`)
 
-```
- M lib/data/database/daos/report_builder_dao.dart
-?? test/unit/report_builder_field_registry_test.dart
-```
-
-**العطل (مقيس تجريبياً):** `getAvailableFields` بيعرض **خمسة حقول** بتفشّل
+**العطل (مقيس تجريبياً):** `getAvailableFields` كان بيعرض **خمسة حقول** بتفشّل
 التقرير كلّه بـ`SqliteException(1): no such column`:
 
 | المعروض | الواقع | الإصلاح المطبَّق |
@@ -142,8 +142,8 @@ cd /d/URAL-ERP && git apply --check --3way <path>
 | `journal_entries.total_debit` | **لا عمود** — يُشتقّ من السطور | استعلام فرعي مترابط |
 | `journal_entries.total_credit` | نفسه | نفسه |
 
-الكود مكتوب والاختبار أخضر (١١ مع `columns_test`)، والطفرات التلاتة بتُقتَل.
-**الباقي:** بوابة كاملة ⇒ كوميت ⇒ رقعة `ural-24-field-registry.patch`.
+الاختبار `report_builder_field_registry_test.dart` (٨ اختبارات) والطفرات التلاتة بتُقتَل.
+اتكوّم في `f07d57a5` مع بوابة كاملة خضراء، ورقعته `ural-24` مولَّدة.
 
 ⚠️ **استعلام فرعي لا `JOIN`** عن قصد: الـJOIN على السطور بيدي صف لكل سطر في
 القيد فيتضاعف كل عمود تاني — نفس عطل تضاعف الأصناف بعدد المخازن.
