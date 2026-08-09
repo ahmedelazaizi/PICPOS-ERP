@@ -347,6 +347,33 @@ extension HRExtensions on AppDatabase {
   // PAYROLL
   // -----------------------------------------------------------------------
 
+  /// أجرُ الساعة لموظفٍ في شهرٍ بعينه — **المصدرُ الوحيد**.
+  ///
+  ///     الراتب الشهري ÷ (ساعاتُ اليوم × أيامِ العمل في ذلك الشهر)
+  ///
+  /// يستعمله مسارُ الراتب ومسارُ الإضافي معاً. وكان الإضافيُّ يشتقّه محلياً
+  /// بمقامٍ خاطئ — `_daysInMonth` (أيامُ التقويم) و٨ ساعاتٍ مثبّتة — فساعةُ
+  /// الموظف الإضافية كانت أرخص مما تستحق بنحو ١٥٪ في شهرٍ بأربع عطلات.
+  ///
+  /// **لا يُقرَّب الناتج**: التقريبُ هنا يتراكم على عشرات الساعات، والتقريبُ
+  /// موضعُه الناتجُ النهائيّ وحده.
+  Future<double> hourlyRateFor(Employee employee, int year, int month) async {
+    final hours = employee.hoursPerDay;
+    if (hours == null || hours <= 0) {
+      throw StateError(
+          'ساعاتُ العمل اليومية غيرُ محدَّدة للموظف ${employee.id} — '
+          'لا يمكن اشتقاقُ أجر الساعة');
+    }
+    final days = await workingDaysInMonth(year, month,
+        branchId: employee.branchId);
+    if (days <= 0) {
+      throw StateError(
+          'لا أيامَ عملٍ في $month/$year لفرع الموظف ${employee.id} — '
+          'راجع تقويمَ العطلات');
+    }
+    return employee.salary / (hours * days);
+  }
+
   /// Record salary payment
   Future<int> recordSalaryPayment({
     required int employeeId,
