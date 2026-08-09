@@ -1074,6 +1074,203 @@ git commit -m "fix(hr): مقامُ أجر الساعة في الإضافي كا�
 
 ---
 
+## Task 6أ: توصيلُ المسار — الإضافي معطَّلٌ صامتاً بعد المهمة ٦
+
+**Files:**
+- Modify: `lib/domain/repositories/hr_repository_interface.dart:101-107`
+- Modify: `lib/data/repositories/hr_repository_impl.dart:183-195`
+- Modify: `lib/presentation/screens/hr/hr_notifier.dart:209-223`
+- Modify: `lib/presentation/screens/hr/widgets/overtime_tab.dart` (نحو ٢٠٦-٢٢٤)
+- Modify: `lib/presentation/screens/hr/hr_dialogs.dart` (‏`showEmployeeForm`)
+- Modify: `lib/data/database/extensions/hr_extensions.dart` (‏`addEmployee` · `updateEmployee`)
+- Test: `test/unit/employee_hours_validation_test.dart` (create)
+
+**Interfaces:**
+- Consumes: `addOvertimeRecord({… , double? manualAmount})` من المهمة ٦ · `kHourlySalaryType` من المهمة ٥
+- Produces: `addEmployee({… , double? hoursPerDay})` و`updateEmployee({… , double? hoursPerDay})` يرميان `ArgumentError` لموظف `hourly` بلا ساعاتٍ صالحة · `IHRRepository.addOvertimeRecord({… , double? manualAmount})` · `HRNotifier.addOvertime({… , double? manualAmount})`
+
+🔴 **لماذا هذه المهمة أُدرجت بعد كتابة الخطة:** المهمةُ ٦ جعلت `addOvertimeRecord` يرمي `StateError` لأيّ موظفٍ بلا `hoursPerDay` حين لا يُمرَّر `manualAmount`. وفحصُ المراجعة أظهر ثلاثةَ أمورٍ لم تكن الخطةُ تعلمها:
+
+1. **لا واجهةَ في التطبيق تعرض `hoursPerDay` لأحد** — ولا حتى لموظف `hourly`.
+2. **`manualAmount` غيرُ موصَّلٍ للواجهة** — لا في `IHRRepository` ولا `HRRepositoryImpl` ولا `HRNotifier`. فمنفذُ الهروب المصمَّم غيرُ قابلٍ للوصول.
+3. **الفشلُ صامتٌ تماماً**: `HRNotifier` ليس `AsyncNotifier` وبلا `try/catch`، فالاستثناءُ يهبط في `PlatformDispatcher.onError` الذي يسجّله ويُعيد `true` — لا التطبيقُ يسقط ولا المستخدمُ يرى شيئاً. يضغط «تسجيل»، النافذةُ تبقى مفتوحة، ولا رسالةَ ولا سجلّ.
+
+⇒ **تسجيلُ الإضافي معطَّلٌ لكلّ الموظفين** في التطبيق الحيّ، لا للشهريّين وحدَهم.
+
+⚠️ **والمهمةُ ٨ القديمة مدموجةٌ هنا** — كانت تضيف الحقلَ «مطلوباً لـ`hourly` وحدَه»، وهذا لا يغلق الثغرة: `hoursPerDay` مطلوبٌ عملياً **لكلّ من يُسجَّل له إضافي**. فالحقلُ يظهر للجميع، ويُلزَم لـ`hourly` وحدَه، ومَن لا يملكه يسجّل إضافيَّه بمبلغٍ يدويّ.
+
+- [ ] **Step 1: اكتب اختبارَ التحقّق الفاشل**
+
+```dart
+// test/unit/employee_hours_validation_test.dart
+import 'package:flutter_test/flutter_test.dart';
+import 'package:ural_erp/data/database/database.dart';
+import 'package:ural_erp/data/database/extensions/hr_extensions.dart';
+
+void main() {
+  late AppDatabase db;
+  setUp(() => db = AppDatabase.forTesting());
+  tearDown(() => db.close());
+
+  test('hourly بلا ساعاتٍ يوميةٍ يُرفَض عند الحفظ', () async {
+    expect(
+      () => db.addEmployee(name: 'ع', salary: 5200, salaryType: 'hourly'),
+      throwsArgumentError,
+      reason: 'التجهيزةُ الناقصة تُمنع عند الإدخال لا تُكتشف في كشفِ راتب',
+    );
+  });
+
+  test('hourly بساعاتٍ صالحةٍ يُقبَل', () async {
+    final id = await db.addEmployee(
+        name: 'ع', salary: 5200, salaryType: 'hourly', hoursPerDay: 8);
+    expect(id, greaterThan(0));
+  });
+
+  test('الشهريُّ بلا ساعاتٍ يُقبَل — الحقلُ اختياريٌّ له', () async {
+    final id = await db.addEmployee(name: 'ش', salary: 5200);
+    expect(id, greaterThan(0));
+  });
+
+  test('ساعاتٌ صفرٌ أو سالبةٌ تُرفَض لـhourly', () async {
+    expect(
+      () => db.addEmployee(
+          name: 'ع', salary: 1, salaryType: 'hourly', hoursPerDay: 0),
+      throwsArgumentError,
+    );
+    expect(
+      () => db.addEmployee(
+          name: 'ع', salary: 1, salaryType: 'hourly', hoursPerDay: -1),
+      throwsArgumentError,
+    );
+  });
+
+  test('التعديلُ إلى hourly بلا ساعاتٍ يُرفَض كذلك', () async {
+    final id = await db.addEmployee(name: 'ش', salary: 5200);
+    expect(
+      () => db.updateEmployee(id, salaryType: 'hourly'),
+      throwsArgumentError,
+      reason: 'بابُ التعديل ثغرةٌ إن حُرس بابُ الإضافة وحدَه',
+    );
+  });
+
+  test('التعديلُ إلى hourly مع ساعاتٍ يُقبَل', () async {
+    final id = await db.addEmployee(name: 'ش', salary: 5200);
+    await db.updateEmployee(id, salaryType: 'hourly', hoursPerDay: 8);
+    final e = await (db.select(db.employees)..where((t) => t.id.equals(id)))
+        .getSingle();
+    expect(e.hoursPerDay, 8);
+  });
+}
+```
+
+- [ ] **Step 2: شغّله وتأكّد أنه يفشل**
+
+```bash
+rm -rf build/native_assets && flutter test test/unit/employee_hours_validation_test.dart --concurrency=1
+```
+المتوقَّع: FAIL — لا معاملَ `hoursPerDay` في `addEmployee`.
+
+- [ ] **Step 3: نفّذ التحقّق في طبقة البيانات**
+
+في `hr_extensions.dart` أضف `double? hoursPerDay` إلى معاملات `addEmployee` و`updateEmployee`، ومرّرْه في الـCompanion (‏`hoursPerDay: Value(hoursPerDay)`). وأضف في أوّل كلٍّ منهما:
+
+```dart
+    // ساعاتُ اليوم مقامُ أجر الساعة. وموظفُ `hourly` بدونها تجهيزةٌ ناقصة
+    // تُفشل حسابَ راتبه، والمنعُ عند الإدخال أرخصُ وأوضحُ من اكتشافه في كشف.
+    if (salaryType == kHourlySalaryType &&
+        (hoursPerDay == null || hoursPerDay <= 0)) {
+      throw ArgumentError('ساعاتُ العمل اليومية مطلوبةٌ لموظفٍ بأجر الساعة');
+    }
+```
+
+⚠️ في `updateEmployee` احذر: `salaryType` معاملٌ اختياريّ (‏`String?`). لو كان `null` فالنوعُ لم يتغيّر — اقرأ الصفَّ القائمَ لتعرف النوعَ الفعليّ قبل الحكم، ولا تفترض أن `null` يعني «ليس hourly».
+
+- [ ] **Step 4: شغّل وتأكّد أنه يمرّ**
+
+```bash
+rm -rf build/native_assets && flutter test test/unit/employee_hours_validation_test.dart test/unit/manage_employee_usecase_test.dart --concurrency=1
+```
+المتوقَّع: PASS — بما فيها اختباراتُ الموظف القائمة.
+
+- [ ] **Step 5: مرّر `manualAmount` عبر الطبقات الثلاث**
+
+أضِف `double? manualAmount` إلى:
+* `IHRRepository.addOvertimeRecord` (‏`hr_repository_interface.dart:101`)
+* `HRRepositoryImpl.addOvertimeRecord` (‏`hr_repository_impl.dart:183`) — ومرّرْه إلى `_db.addOvertimeRecord`
+* `HRNotifier.addOvertime` (‏`hr_notifier.dart:209`) — ومرّرْه إلى المستودع
+
+- [ ] **Step 6: أوقِف الفشلَ الصامت**
+
+في `HRNotifier.addOvertime` غلّف النداءَ:
+
+```dart
+  /// يُعيد `null` عند النجاح، أو رسالةَ خطأٍ للعرض.
+  ///
+  /// كان النداءُ عارياً، و`HRNotifier` ليس `AsyncNotifier` فلا تغليفَ تلقائي:
+  /// أيُّ استثناءٍ يهبط في `PlatformDispatcher.onError` الذي يسجّله ويُعيد
+  /// `true` — فلا التطبيقُ يسقط ولا المستخدمُ يرى شيئاً. الزرُّ يبدو أنه لم
+  /// يفعل شيئاً، والسجلُّ لا يُحفظ، ولا رسالة. **الفشلُ الصامت أسوأ من
+  /// الانهيار**: الانهيارُ يُبلَّغ عنه.
+  Future<String?> addOvertime({
+    required int employeeId,
+    required DateTime date,
+    required double hours,
+    double rate = 1.5,
+    String? notes,
+    double? manualAmount,
+  }) async {
+    try {
+      await _hrRepo.addOvertimeRecord(
+        employeeId: employeeId,
+        date: date,
+        hours: hours,
+        rate: rate,
+        notes: notes,
+        manualAmount: manualAmount,
+      );
+      return null;
+    } on StateError catch (e) {
+      return 'تعذّر احتسابُ المبلغ تلقائياً: ${e.message}. '
+          'أدخِل ساعاتِ العمل اليومية للموظف، أو أدخِل المبلغَ يدوياً.';
+    } catch (e) {
+      return 'تعذّر تسجيلُ الوقت الإضافي: $e';
+    }
+  }
+```
+
+وفي `overtime_tab.dart` عند الزرّ: استقبل القيمةَ المُعادة، واعرضها بـ`AppToast` إن لم تكن `null`، ولا تُغلق النافذةَ إلا عند النجاح.
+
+- [ ] **Step 7: أضِف الحقلَين للواجهة**
+
+في `hr_dialogs.dart` (‏`showEmployeeForm`):
+* حقلٌ رقميّ **«ساعات العمل اليومية»** يظهر **لكلّ الأنواع** — مع تلميحٍ «مطلوب لأجر الساعة، ويُستعمل لاحتساب الوقت الإضافي تلقائياً». امنع الحفظَ إن كان النوعُ `hourly` والحقلُ فارغاً أو ≤ صفر.
+* وفي نافذة «تسجيل عمل إضافي»: حقلٌ اختياريّ **«المبلغ (اتركه فارغاً للاحتساب التلقائي)»** يُمرَّر `manualAmount`.
+
+- [ ] **Step 8: شغّل السويّات المتأثّرة**
+
+```bash
+rm -rf build/native_assets && flutter test test/unit/employee_hours_validation_test.dart test/unit/overtime_amount_test.dart test/unit/manage_employee_usecase_test.dart test/unit/hourly_salary_model_test.dart --concurrency=1
+```
+المتوقَّع: PASS. و`flutter analyze lib test` ⇒ ٦ info صفر error/warning.
+
+- [ ] **Step 9: اقتل طفرتين**
+
+١. أسقِط شرطَ `ArgumentError` في `addEmployee` ⇒ يجب أن يسقط اختبارا `hourly` بلا ساعات.
+٢. أعِد `addOvertime` إلى نداءٍ عارٍ بلا `try/catch` وأرجِع `void` ⇒ يجب أن يفشل التصريفُ عند مستدعي `overtime_tab` — **وهذه طفرةٌ تكسر التصريف فلا تُثبت المنطق**؛ سجّل ذلك واقترح بديلاً يُبقيه مترجَماً (مثلاً `catch` يبتلع ويُعيد `null` دائماً) وشغّله.
+
+تحقّق بـ`grep -c` أن كلَّ طفرةٍ دخلت **قبل** تفسير نتيجتها، واستعِد بـ`cp` لا بـ`git checkout`.
+
+- [ ] **Step 10: ارفع حدَّ البوابة وكوّم**
+
+اضبط الحدَّ بالعدّ الفعليّ (`grep -c '  test('`). الحدُّ الحاليّ ٢٩٣٢.
+
+```bash
+git add lib/ test/unit/employee_hours_validation_test.dart scripts/gate.sh
+git commit -m "fix(hr): تسجيلُ الإضافي كان معطَّلاً صامتاً · وحقلُ ساعات العمل موصَّلٌ للواجهة"
+```
+
+---
+
 ## Task 7: شاشةُ تعريف العطلات
 
 **Files:**
@@ -1149,7 +1346,11 @@ git commit -m "feat(hr): شاشةُ تعريف عطلات العمل لكل فر
 
 ---
 
-## Task 8: حقلُ ساعات اليوم في شاشة الموظف
+## Task 8: (مدموجةٌ في المهمة ٦أ — لا تُنفَّذ)
+
+🔴 كانت تضيف حقلَ `hoursPerDay` «مطلوباً لـ`hourly` وحدَه»، وهذا **لا يغلق الثغرة** التي كشفتها مراجعةُ المهمة ٦: الحقلُ مطلوبٌ عملياً لكلّ من يُسجَّل له إضافي. دُمجت في المهمة ٦أ التي تسبق المهمة ٧.
+
+<details><summary>النصُّ الأصليّ (للسجل)</summary>
 
 **Files:**
 - Modify: شاشةُ إضافة/تعديل الموظف (‏ابحث عن مستدعي `addEmployee` تحت `lib/presentation/screens/hr/`)
