@@ -398,6 +398,7 @@ const String kCreateAttendanceDayDedupIndexSql =
     PerformanceReviews, // Phase 9: HR Performance evaluation
     PerformanceGoals, // Phase 9: Employee goal tracking
     EmployeeContracts, // Phase 9: Employment contracts
+    WorkHolidays, // v153: Hourly wage/overtime — holiday calendar
     // Stock Audit Tables
     StockAudits,
     StockAuditItems,
@@ -681,8 +682,14 @@ class AppDatabase extends _$AppDatabase {
   /// return no longer violates UNIQUE, and backfill historical hash-keyed
   /// return JEs onto their invoice id. Index-only change — no table/column
   /// change, so no generated schema regeneration is required.
+  ///
+  /// Schema v153: الأجرُ بالساعة والإضافي المحسوب (المهمة ٢) — جدولُ
+  /// `work_holidays` (تقويمُ العطلات لكلّ فرع)، وعمودُ
+  /// `employees.hours_per_day` (مقامُ أجر الساعة)، وعمودُ
+  /// `overtime_records.is_manual_amount` (تعليمُ السجلّات القائمة كي لا
+  /// يُعاد اشتقاقُها).
   @override
-  int get schemaVersion => 152;
+  int get schemaVersion => 153;
 
   /// PostgreSQL-specific table creation: Drift's `currentDateAndTime` generates
   /// `strftime('%s','now')` which doesn't exist in PostgreSQL.

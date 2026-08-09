@@ -33180,6 +33180,17 @@ class $EmployeesTable extends Employees
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _hoursPerDayMeta = const VerificationMeta(
+    'hoursPerDay',
+  );
+  @override
+  late final GeneratedColumn<double> hoursPerDay = GeneratedColumn<double>(
+    'hours_per_day',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -33192,6 +33203,7 @@ class $EmployeesTable extends Employees
     isActive,
     hiredAt,
     deviceUserId,
+    hoursPerDay,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -33267,6 +33279,15 @@ class $EmployeesTable extends Employees
         ),
       );
     }
+    if (data.containsKey('hours_per_day')) {
+      context.handle(
+        _hoursPerDayMeta,
+        hoursPerDay.isAcceptableOrUnknown(
+          data['hours_per_day']!,
+          _hoursPerDayMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -33316,6 +33337,10 @@ class $EmployeesTable extends Employees
         DriftSqlType.string,
         data['${effectivePrefix}device_user_id'],
       ),
+      hoursPerDay: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}hours_per_day'],
+      ),
     );
   }
 
@@ -33336,6 +33361,13 @@ class Employee extends DataClass implements Insertable<Employee> {
   final bool isActive;
   final DateTime hiredAt;
   final String? deviceUserId;
+
+  /// ساعاتُ العمل اليومية — مقامُ أجر الساعة.
+  ///
+  /// مطلوبٌ لموظف `hourly`، واختياريٌّ لغيره: بدونه لا يُشتقّ مبلغُ الإضافي
+  /// ويبقى يدوياً. ولا تُخمَّن قيمةٌ افتراضية — تخمينُ المقام يعطي رقماً
+  /// يبدو صحيحاً وليس كذلك.
+  final double? hoursPerDay;
   const Employee({
     required this.id,
     required this.name,
@@ -33347,6 +33379,7 @@ class Employee extends DataClass implements Insertable<Employee> {
     required this.isActive,
     required this.hiredAt,
     this.deviceUserId,
+    this.hoursPerDay,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -33366,6 +33399,9 @@ class Employee extends DataClass implements Insertable<Employee> {
     map['hired_at'] = Variable<DateTime>(hiredAt);
     if (!nullToAbsent || deviceUserId != null) {
       map['device_user_id'] = Variable<String>(deviceUserId);
+    }
+    if (!nullToAbsent || hoursPerDay != null) {
+      map['hours_per_day'] = Variable<double>(hoursPerDay);
     }
     return map;
   }
@@ -33388,6 +33424,9 @@ class Employee extends DataClass implements Insertable<Employee> {
       deviceUserId: deviceUserId == null && nullToAbsent
           ? const Value.absent()
           : Value(deviceUserId),
+      hoursPerDay: hoursPerDay == null && nullToAbsent
+          ? const Value.absent()
+          : Value(hoursPerDay),
     );
   }
 
@@ -33407,6 +33446,7 @@ class Employee extends DataClass implements Insertable<Employee> {
       isActive: serializer.fromJson<bool>(json['isActive']),
       hiredAt: serializer.fromJson<DateTime>(json['hiredAt']),
       deviceUserId: serializer.fromJson<String?>(json['deviceUserId']),
+      hoursPerDay: serializer.fromJson<double?>(json['hoursPerDay']),
     );
   }
   @override
@@ -33423,6 +33463,7 @@ class Employee extends DataClass implements Insertable<Employee> {
       'isActive': serializer.toJson<bool>(isActive),
       'hiredAt': serializer.toJson<DateTime>(hiredAt),
       'deviceUserId': serializer.toJson<String?>(deviceUserId),
+      'hoursPerDay': serializer.toJson<double?>(hoursPerDay),
     };
   }
 
@@ -33437,6 +33478,7 @@ class Employee extends DataClass implements Insertable<Employee> {
     bool? isActive,
     DateTime? hiredAt,
     Value<String?> deviceUserId = const Value.absent(),
+    Value<double?> hoursPerDay = const Value.absent(),
   }) => Employee(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -33448,6 +33490,7 @@ class Employee extends DataClass implements Insertable<Employee> {
     isActive: isActive ?? this.isActive,
     hiredAt: hiredAt ?? this.hiredAt,
     deviceUserId: deviceUserId.present ? deviceUserId.value : this.deviceUserId,
+    hoursPerDay: hoursPerDay.present ? hoursPerDay.value : this.hoursPerDay,
   );
   Employee copyWithCompanion(EmployeesCompanion data) {
     return Employee(
@@ -33465,6 +33508,9 @@ class Employee extends DataClass implements Insertable<Employee> {
       deviceUserId: data.deviceUserId.present
           ? data.deviceUserId.value
           : this.deviceUserId,
+      hoursPerDay: data.hoursPerDay.present
+          ? data.hoursPerDay.value
+          : this.hoursPerDay,
     );
   }
 
@@ -33480,7 +33526,8 @@ class Employee extends DataClass implements Insertable<Employee> {
           ..write('branchId: $branchId, ')
           ..write('isActive: $isActive, ')
           ..write('hiredAt: $hiredAt, ')
-          ..write('deviceUserId: $deviceUserId')
+          ..write('deviceUserId: $deviceUserId, ')
+          ..write('hoursPerDay: $hoursPerDay')
           ..write(')'))
         .toString();
   }
@@ -33497,6 +33544,7 @@ class Employee extends DataClass implements Insertable<Employee> {
     isActive,
     hiredAt,
     deviceUserId,
+    hoursPerDay,
   );
   @override
   bool operator ==(Object other) =>
@@ -33511,7 +33559,8 @@ class Employee extends DataClass implements Insertable<Employee> {
           other.branchId == this.branchId &&
           other.isActive == this.isActive &&
           other.hiredAt == this.hiredAt &&
-          other.deviceUserId == this.deviceUserId);
+          other.deviceUserId == this.deviceUserId &&
+          other.hoursPerDay == this.hoursPerDay);
 }
 
 class EmployeesCompanion extends UpdateCompanion<Employee> {
@@ -33525,6 +33574,7 @@ class EmployeesCompanion extends UpdateCompanion<Employee> {
   final Value<bool> isActive;
   final Value<DateTime> hiredAt;
   final Value<String?> deviceUserId;
+  final Value<double?> hoursPerDay;
   const EmployeesCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -33536,6 +33586,7 @@ class EmployeesCompanion extends UpdateCompanion<Employee> {
     this.isActive = const Value.absent(),
     this.hiredAt = const Value.absent(),
     this.deviceUserId = const Value.absent(),
+    this.hoursPerDay = const Value.absent(),
   });
   EmployeesCompanion.insert({
     this.id = const Value.absent(),
@@ -33548,6 +33599,7 @@ class EmployeesCompanion extends UpdateCompanion<Employee> {
     this.isActive = const Value.absent(),
     this.hiredAt = const Value.absent(),
     this.deviceUserId = const Value.absent(),
+    this.hoursPerDay = const Value.absent(),
   }) : name = Value(name);
   static Insertable<Employee> custom({
     Expression<int>? id,
@@ -33560,6 +33612,7 @@ class EmployeesCompanion extends UpdateCompanion<Employee> {
     Expression<bool>? isActive,
     Expression<DateTime>? hiredAt,
     Expression<String>? deviceUserId,
+    Expression<double>? hoursPerDay,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -33572,6 +33625,7 @@ class EmployeesCompanion extends UpdateCompanion<Employee> {
       if (isActive != null) 'is_active': isActive,
       if (hiredAt != null) 'hired_at': hiredAt,
       if (deviceUserId != null) 'device_user_id': deviceUserId,
+      if (hoursPerDay != null) 'hours_per_day': hoursPerDay,
     });
   }
 
@@ -33586,6 +33640,7 @@ class EmployeesCompanion extends UpdateCompanion<Employee> {
     Value<bool>? isActive,
     Value<DateTime>? hiredAt,
     Value<String?>? deviceUserId,
+    Value<double?>? hoursPerDay,
   }) {
     return EmployeesCompanion(
       id: id ?? this.id,
@@ -33598,6 +33653,7 @@ class EmployeesCompanion extends UpdateCompanion<Employee> {
       isActive: isActive ?? this.isActive,
       hiredAt: hiredAt ?? this.hiredAt,
       deviceUserId: deviceUserId ?? this.deviceUserId,
+      hoursPerDay: hoursPerDay ?? this.hoursPerDay,
     );
   }
 
@@ -33634,6 +33690,9 @@ class EmployeesCompanion extends UpdateCompanion<Employee> {
     if (deviceUserId.present) {
       map['device_user_id'] = Variable<String>(deviceUserId.value);
     }
+    if (hoursPerDay.present) {
+      map['hours_per_day'] = Variable<double>(hoursPerDay.value);
+    }
     return map;
   }
 
@@ -33649,7 +33708,8 @@ class EmployeesCompanion extends UpdateCompanion<Employee> {
           ..write('branchId: $branchId, ')
           ..write('isActive: $isActive, ')
           ..write('hiredAt: $hiredAt, ')
-          ..write('deviceUserId: $deviceUserId')
+          ..write('deviceUserId: $deviceUserId, ')
+          ..write('hoursPerDay: $hoursPerDay')
           ..write(')'))
         .toString();
   }
@@ -42146,6 +42206,21 @@ class $OvertimeRecordsTable extends OvertimeRecords
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
+  static const VerificationMeta _isManualAmountMeta = const VerificationMeta(
+    'isManualAmount',
+  );
+  @override
+  late final GeneratedColumn<bool> isManualAmount = GeneratedColumn<bool>(
+    'is_manual_amount',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_manual_amount" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -42156,6 +42231,7 @@ class $OvertimeRecordsTable extends OvertimeRecords
     amount,
     notes,
     createdAt,
+    isManualAmount,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -42222,6 +42298,15 @@ class $OvertimeRecordsTable extends OvertimeRecords
         createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
       );
     }
+    if (data.containsKey('is_manual_amount')) {
+      context.handle(
+        _isManualAmountMeta,
+        isManualAmount.isAcceptableOrUnknown(
+          data['is_manual_amount']!,
+          _isManualAmountMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -42263,6 +42348,10 @@ class $OvertimeRecordsTable extends OvertimeRecords
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      isManualAmount: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_manual_amount'],
+      )!,
     );
   }
 
@@ -42281,6 +42370,12 @@ class OvertimeRecord extends DataClass implements Insertable<OvertimeRecord> {
   final double amount;
   final String? notes;
   final DateTime createdAt;
+
+  /// المبلغُ عُدِّل يدوياً ⇒ لا يُعاد اشتقاقُه.
+  ///
+  /// السجلّاتُ القائمة تُهاجَر إلى `true`: قيمُها حُسبت بمقامٍ آخر، وإعادةُ
+  /// حسابها تغيّر رواتبَ ماضية.
+  final bool isManualAmount;
   const OvertimeRecord({
     required this.id,
     required this.employeeId,
@@ -42290,6 +42385,7 @@ class OvertimeRecord extends DataClass implements Insertable<OvertimeRecord> {
     required this.amount,
     this.notes,
     required this.createdAt,
+    required this.isManualAmount,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -42304,6 +42400,7 @@ class OvertimeRecord extends DataClass implements Insertable<OvertimeRecord> {
       map['notes'] = Variable<String>(notes);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
+    map['is_manual_amount'] = Variable<bool>(isManualAmount);
     return map;
   }
 
@@ -42319,6 +42416,7 @@ class OvertimeRecord extends DataClass implements Insertable<OvertimeRecord> {
           ? const Value.absent()
           : Value(notes),
       createdAt: Value(createdAt),
+      isManualAmount: Value(isManualAmount),
     );
   }
 
@@ -42336,6 +42434,7 @@ class OvertimeRecord extends DataClass implements Insertable<OvertimeRecord> {
       amount: serializer.fromJson<double>(json['amount']),
       notes: serializer.fromJson<String?>(json['notes']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      isManualAmount: serializer.fromJson<bool>(json['isManualAmount']),
     );
   }
   @override
@@ -42350,6 +42449,7 @@ class OvertimeRecord extends DataClass implements Insertable<OvertimeRecord> {
       'amount': serializer.toJson<double>(amount),
       'notes': serializer.toJson<String?>(notes),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'isManualAmount': serializer.toJson<bool>(isManualAmount),
     };
   }
 
@@ -42362,6 +42462,7 @@ class OvertimeRecord extends DataClass implements Insertable<OvertimeRecord> {
     double? amount,
     Value<String?> notes = const Value.absent(),
     DateTime? createdAt,
+    bool? isManualAmount,
   }) => OvertimeRecord(
     id: id ?? this.id,
     employeeId: employeeId ?? this.employeeId,
@@ -42371,6 +42472,7 @@ class OvertimeRecord extends DataClass implements Insertable<OvertimeRecord> {
     amount: amount ?? this.amount,
     notes: notes.present ? notes.value : this.notes,
     createdAt: createdAt ?? this.createdAt,
+    isManualAmount: isManualAmount ?? this.isManualAmount,
   );
   OvertimeRecord copyWithCompanion(OvertimeRecordsCompanion data) {
     return OvertimeRecord(
@@ -42384,6 +42486,9 @@ class OvertimeRecord extends DataClass implements Insertable<OvertimeRecord> {
       amount: data.amount.present ? data.amount.value : this.amount,
       notes: data.notes.present ? data.notes.value : this.notes,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      isManualAmount: data.isManualAmount.present
+          ? data.isManualAmount.value
+          : this.isManualAmount,
     );
   }
 
@@ -42397,14 +42502,24 @@ class OvertimeRecord extends DataClass implements Insertable<OvertimeRecord> {
           ..write('rate: $rate, ')
           ..write('amount: $amount, ')
           ..write('notes: $notes, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('isManualAmount: $isManualAmount')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, employeeId, date, hours, rate, amount, notes, createdAt);
+  int get hashCode => Object.hash(
+    id,
+    employeeId,
+    date,
+    hours,
+    rate,
+    amount,
+    notes,
+    createdAt,
+    isManualAmount,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -42416,7 +42531,8 @@ class OvertimeRecord extends DataClass implements Insertable<OvertimeRecord> {
           other.rate == this.rate &&
           other.amount == this.amount &&
           other.notes == this.notes &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.isManualAmount == this.isManualAmount);
 }
 
 class OvertimeRecordsCompanion extends UpdateCompanion<OvertimeRecord> {
@@ -42428,6 +42544,7 @@ class OvertimeRecordsCompanion extends UpdateCompanion<OvertimeRecord> {
   final Value<double> amount;
   final Value<String?> notes;
   final Value<DateTime> createdAt;
+  final Value<bool> isManualAmount;
   const OvertimeRecordsCompanion({
     this.id = const Value.absent(),
     this.employeeId = const Value.absent(),
@@ -42437,6 +42554,7 @@ class OvertimeRecordsCompanion extends UpdateCompanion<OvertimeRecord> {
     this.amount = const Value.absent(),
     this.notes = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.isManualAmount = const Value.absent(),
   });
   OvertimeRecordsCompanion.insert({
     this.id = const Value.absent(),
@@ -42447,6 +42565,7 @@ class OvertimeRecordsCompanion extends UpdateCompanion<OvertimeRecord> {
     required double amount,
     this.notes = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.isManualAmount = const Value.absent(),
   }) : employeeId = Value(employeeId),
        date = Value(date),
        hours = Value(hours),
@@ -42460,6 +42579,7 @@ class OvertimeRecordsCompanion extends UpdateCompanion<OvertimeRecord> {
     Expression<double>? amount,
     Expression<String>? notes,
     Expression<DateTime>? createdAt,
+    Expression<bool>? isManualAmount,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -42470,6 +42590,7 @@ class OvertimeRecordsCompanion extends UpdateCompanion<OvertimeRecord> {
       if (amount != null) 'amount': amount,
       if (notes != null) 'notes': notes,
       if (createdAt != null) 'created_at': createdAt,
+      if (isManualAmount != null) 'is_manual_amount': isManualAmount,
     });
   }
 
@@ -42482,6 +42603,7 @@ class OvertimeRecordsCompanion extends UpdateCompanion<OvertimeRecord> {
     Value<double>? amount,
     Value<String?>? notes,
     Value<DateTime>? createdAt,
+    Value<bool>? isManualAmount,
   }) {
     return OvertimeRecordsCompanion(
       id: id ?? this.id,
@@ -42492,6 +42614,7 @@ class OvertimeRecordsCompanion extends UpdateCompanion<OvertimeRecord> {
       amount: amount ?? this.amount,
       notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
+      isManualAmount: isManualAmount ?? this.isManualAmount,
     );
   }
 
@@ -42522,6 +42645,9 @@ class OvertimeRecordsCompanion extends UpdateCompanion<OvertimeRecord> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (isManualAmount.present) {
+      map['is_manual_amount'] = Variable<bool>(isManualAmount.value);
+    }
     return map;
   }
 
@@ -42535,7 +42661,8 @@ class OvertimeRecordsCompanion extends UpdateCompanion<OvertimeRecord> {
           ..write('rate: $rate, ')
           ..write('amount: $amount, ')
           ..write('notes: $notes, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('isManualAmount: $isManualAmount')
           ..write(')'))
         .toString();
   }
@@ -44974,6 +45101,406 @@ class EmployeeContractsCompanion extends UpdateCompanion<EmployeeContract> {
           ..write('terminationClause: $terminationClause, ')
           ..write('status: $status, ')
           ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $WorkHolidaysTable extends WorkHolidays
+    with TableInfo<$WorkHolidaysTable, WorkHoliday> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WorkHolidaysTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _branchIdMeta = const VerificationMeta(
+    'branchId',
+  );
+  @override
+  late final GeneratedColumn<int> branchId = GeneratedColumn<int>(
+    'branch_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES branches (id)',
+    ),
+  );
+  static const VerificationMeta _weekdayMeta = const VerificationMeta(
+    'weekday',
+  );
+  @override
+  late final GeneratedColumn<int> weekday = GeneratedColumn<int>(
+    'weekday',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _dateMeta = const VerificationMeta('date');
+  @override
+  late final GeneratedColumn<DateTime> date = GeneratedColumn<DateTime>(
+    'date',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(maxTextLength: 100),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    branchId,
+    weekday,
+    date,
+    name,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'work_holidays';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WorkHoliday> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('branch_id')) {
+      context.handle(
+        _branchIdMeta,
+        branchId.isAcceptableOrUnknown(data['branch_id']!, _branchIdMeta),
+      );
+    }
+    if (data.containsKey('weekday')) {
+      context.handle(
+        _weekdayMeta,
+        weekday.isAcceptableOrUnknown(data['weekday']!, _weekdayMeta),
+      );
+    }
+    if (data.containsKey('date')) {
+      context.handle(
+        _dateMeta,
+        date.isAcceptableOrUnknown(data['date']!, _dateMeta),
+      );
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  WorkHoliday map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WorkHoliday(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      branchId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}branch_id'],
+      ),
+      weekday: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}weekday'],
+      ),
+      date: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}date'],
+      ),
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $WorkHolidaysTable createAlias(String alias) {
+    return $WorkHolidaysTable(attachedDatabase, alias);
+  }
+}
+
+class WorkHoliday extends DataClass implements Insertable<WorkHoliday> {
+  final int id;
+  final int? branchId;
+
+  /// قيمةُ `DateTime.weekday`: ‏١ = الاثنين … ٧ = الأحد.
+  final int? weekday;
+  final DateTime? date;
+  final String name;
+  final DateTime createdAt;
+  const WorkHoliday({
+    required this.id,
+    this.branchId,
+    this.weekday,
+    this.date,
+    required this.name,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    if (!nullToAbsent || branchId != null) {
+      map['branch_id'] = Variable<int>(branchId);
+    }
+    if (!nullToAbsent || weekday != null) {
+      map['weekday'] = Variable<int>(weekday);
+    }
+    if (!nullToAbsent || date != null) {
+      map['date'] = Variable<DateTime>(date);
+    }
+    map['name'] = Variable<String>(name);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  WorkHolidaysCompanion toCompanion(bool nullToAbsent) {
+    return WorkHolidaysCompanion(
+      id: Value(id),
+      branchId: branchId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(branchId),
+      weekday: weekday == null && nullToAbsent
+          ? const Value.absent()
+          : Value(weekday),
+      date: date == null && nullToAbsent ? const Value.absent() : Value(date),
+      name: Value(name),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory WorkHoliday.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WorkHoliday(
+      id: serializer.fromJson<int>(json['id']),
+      branchId: serializer.fromJson<int?>(json['branchId']),
+      weekday: serializer.fromJson<int?>(json['weekday']),
+      date: serializer.fromJson<DateTime?>(json['date']),
+      name: serializer.fromJson<String>(json['name']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'branchId': serializer.toJson<int?>(branchId),
+      'weekday': serializer.toJson<int?>(weekday),
+      'date': serializer.toJson<DateTime?>(date),
+      'name': serializer.toJson<String>(name),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  WorkHoliday copyWith({
+    int? id,
+    Value<int?> branchId = const Value.absent(),
+    Value<int?> weekday = const Value.absent(),
+    Value<DateTime?> date = const Value.absent(),
+    String? name,
+    DateTime? createdAt,
+  }) => WorkHoliday(
+    id: id ?? this.id,
+    branchId: branchId.present ? branchId.value : this.branchId,
+    weekday: weekday.present ? weekday.value : this.weekday,
+    date: date.present ? date.value : this.date,
+    name: name ?? this.name,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  WorkHoliday copyWithCompanion(WorkHolidaysCompanion data) {
+    return WorkHoliday(
+      id: data.id.present ? data.id.value : this.id,
+      branchId: data.branchId.present ? data.branchId.value : this.branchId,
+      weekday: data.weekday.present ? data.weekday.value : this.weekday,
+      date: data.date.present ? data.date.value : this.date,
+      name: data.name.present ? data.name.value : this.name,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkHoliday(')
+          ..write('id: $id, ')
+          ..write('branchId: $branchId, ')
+          ..write('weekday: $weekday, ')
+          ..write('date: $date, ')
+          ..write('name: $name, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, branchId, weekday, date, name, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WorkHoliday &&
+          other.id == this.id &&
+          other.branchId == this.branchId &&
+          other.weekday == this.weekday &&
+          other.date == this.date &&
+          other.name == this.name &&
+          other.createdAt == this.createdAt);
+}
+
+class WorkHolidaysCompanion extends UpdateCompanion<WorkHoliday> {
+  final Value<int> id;
+  final Value<int?> branchId;
+  final Value<int?> weekday;
+  final Value<DateTime?> date;
+  final Value<String> name;
+  final Value<DateTime> createdAt;
+  const WorkHolidaysCompanion({
+    this.id = const Value.absent(),
+    this.branchId = const Value.absent(),
+    this.weekday = const Value.absent(),
+    this.date = const Value.absent(),
+    this.name = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  WorkHolidaysCompanion.insert({
+    this.id = const Value.absent(),
+    this.branchId = const Value.absent(),
+    this.weekday = const Value.absent(),
+    this.date = const Value.absent(),
+    required String name,
+    this.createdAt = const Value.absent(),
+  }) : name = Value(name);
+  static Insertable<WorkHoliday> custom({
+    Expression<int>? id,
+    Expression<int>? branchId,
+    Expression<int>? weekday,
+    Expression<DateTime>? date,
+    Expression<String>? name,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (branchId != null) 'branch_id': branchId,
+      if (weekday != null) 'weekday': weekday,
+      if (date != null) 'date': date,
+      if (name != null) 'name': name,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  WorkHolidaysCompanion copyWith({
+    Value<int>? id,
+    Value<int?>? branchId,
+    Value<int?>? weekday,
+    Value<DateTime?>? date,
+    Value<String>? name,
+    Value<DateTime>? createdAt,
+  }) {
+    return WorkHolidaysCompanion(
+      id: id ?? this.id,
+      branchId: branchId ?? this.branchId,
+      weekday: weekday ?? this.weekday,
+      date: date ?? this.date,
+      name: name ?? this.name,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (branchId.present) {
+      map['branch_id'] = Variable<int>(branchId.value);
+    }
+    if (weekday.present) {
+      map['weekday'] = Variable<int>(weekday.value);
+    }
+    if (date.present) {
+      map['date'] = Variable<DateTime>(date.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkHolidaysCompanion(')
+          ..write('id: $id, ')
+          ..write('branchId: $branchId, ')
+          ..write('weekday: $weekday, ')
+          ..write('date: $date, ')
+          ..write('name: $name, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -104451,6 +104978,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $EmployeeContractsTable employeeContracts =
       $EmployeeContractsTable(this);
+  late final $WorkHolidaysTable workHolidays = $WorkHolidaysTable(this);
   late final $StockAuditsTable stockAudits = $StockAuditsTable(this);
   late final $StockAuditItemsTable stockAuditItems = $StockAuditItemsTable(
     this,
@@ -105279,6 +105807,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     performanceReviews,
     performanceGoals,
     employeeContracts,
+    workHolidays,
     stockAudits,
     stockAuditItems,
     receiptSettings,
@@ -113458,6 +113987,24 @@ final class $$BranchesTableReferences
     );
   }
 
+  static MultiTypedResultKey<$WorkHolidaysTable, List<WorkHoliday>>
+  _workHolidaysRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.workHolidays,
+    aliasName: $_aliasNameGenerator(db.branches.id, db.workHolidays.branchId),
+  );
+
+  $$WorkHolidaysTableProcessedTableManager get workHolidaysRefs {
+    final manager = $$WorkHolidaysTableTableManager(
+      $_db,
+      $_db.workHolidays,
+    ).filter((f) => f.branchId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_workHolidaysRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
   static MultiTypedResultKey<$ActivityLogsTable, List<ActivityLog>>
   _activityLogsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.activityLogs,
@@ -113915,6 +114462,31 @@ class $$BranchesTableFilterComposer
           }) => $$PosTerminalsTableFilterComposer(
             $db: $db,
             $table: $db.posTerminals,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> workHolidaysRefs(
+    Expression<bool> Function($$WorkHolidaysTableFilterComposer f) f,
+  ) {
+    final $$WorkHolidaysTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.workHolidays,
+      getReferencedColumn: (t) => t.branchId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkHolidaysTableFilterComposer(
+            $db: $db,
+            $table: $db.workHolidays,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -114515,6 +115087,31 @@ class $$BranchesTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> workHolidaysRefs<T extends Object>(
+    Expression<T> Function($$WorkHolidaysTableAnnotationComposer a) f,
+  ) {
+    final $$WorkHolidaysTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.workHolidays,
+      getReferencedColumn: (t) => t.branchId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkHolidaysTableAnnotationComposer(
+            $db: $db,
+            $table: $db.workHolidays,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> activityLogsRefs<T extends Object>(
     Expression<T> Function($$ActivityLogsTableAnnotationComposer a) f,
   ) {
@@ -114668,6 +115265,7 @@ class $$BranchesTableTableManager
             bool safesRefs,
             bool employeesRefs,
             bool posTerminalsRefs,
+            bool workHolidaysRefs,
             bool activityLogsRefs,
             bool shiftsRefs,
             bool opExpensesRefs,
@@ -114772,6 +115370,7 @@ class $$BranchesTableTableManager
                 safesRefs = false,
                 employeesRefs = false,
                 posTerminalsRefs = false,
+                workHolidaysRefs = false,
                 activityLogsRefs = false,
                 shiftsRefs = false,
                 opExpensesRefs = false,
@@ -114791,6 +115390,7 @@ class $$BranchesTableTableManager
                     if (safesRefs) db.safes,
                     if (employeesRefs) db.employees,
                     if (posTerminalsRefs) db.posTerminals,
+                    if (workHolidaysRefs) db.workHolidays,
                     if (activityLogsRefs) db.activityLogs,
                     if (shiftsRefs) db.shifts,
                     if (opExpensesRefs) db.opExpenses,
@@ -115054,6 +115654,27 @@ class $$BranchesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (workHolidaysRefs)
+                        await $_getPrefetchedData<
+                          Branche,
+                          $BranchesTable,
+                          WorkHoliday
+                        >(
+                          currentTable: table,
+                          referencedTable: $$BranchesTableReferences
+                              ._workHolidaysRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$BranchesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).workHolidaysRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.branchId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                       if (activityLogsRefs)
                         await $_getPrefetchedData<
                           Branche,
@@ -115192,6 +115813,7 @@ typedef $$BranchesTableProcessedTableManager =
         bool safesRefs,
         bool employeesRefs,
         bool posTerminalsRefs,
+        bool workHolidaysRefs,
         bool activityLogsRefs,
         bool shiftsRefs,
         bool opExpensesRefs,
@@ -145544,6 +146166,7 @@ typedef $$EmployeesTableCreateCompanionBuilder =
       Value<bool> isActive,
       Value<DateTime> hiredAt,
       Value<String?> deviceUserId,
+      Value<double?> hoursPerDay,
     });
 typedef $$EmployeesTableUpdateCompanionBuilder =
     EmployeesCompanion Function({
@@ -145557,6 +146180,7 @@ typedef $$EmployeesTableUpdateCompanionBuilder =
       Value<bool> isActive,
       Value<DateTime> hiredAt,
       Value<String?> deviceUserId,
+      Value<double?> hoursPerDay,
     });
 
 final class $$EmployeesTableReferences
@@ -145953,6 +146577,11 @@ class $$EmployeesTableFilterComposer
 
   ColumnFilters<String> get deviceUserId => $composableBuilder(
     column: $table.deviceUserId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get hoursPerDay => $composableBuilder(
+    column: $table.hoursPerDay,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -146384,6 +147013,11 @@ class $$EmployeesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get hoursPerDay => $composableBuilder(
+    column: $table.hoursPerDay,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$BranchesTableOrderingComposer get branchId {
     final $$BranchesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -146445,6 +147079,11 @@ class $$EmployeesTableAnnotationComposer
 
   GeneratedColumn<String> get deviceUserId => $composableBuilder(
     column: $table.deviceUserId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get hoursPerDay => $composableBuilder(
+    column: $table.hoursPerDay,
     builder: (column) => column,
   );
 
@@ -146881,6 +147520,7 @@ class $$EmployeesTableTableManager
                 Value<bool> isActive = const Value.absent(),
                 Value<DateTime> hiredAt = const Value.absent(),
                 Value<String?> deviceUserId = const Value.absent(),
+                Value<double?> hoursPerDay = const Value.absent(),
               }) => EmployeesCompanion(
                 id: id,
                 name: name,
@@ -146892,6 +147532,7 @@ class $$EmployeesTableTableManager
                 isActive: isActive,
                 hiredAt: hiredAt,
                 deviceUserId: deviceUserId,
+                hoursPerDay: hoursPerDay,
               ),
           createCompanionCallback:
               ({
@@ -146905,6 +147546,7 @@ class $$EmployeesTableTableManager
                 Value<bool> isActive = const Value.absent(),
                 Value<DateTime> hiredAt = const Value.absent(),
                 Value<String?> deviceUserId = const Value.absent(),
+                Value<double?> hoursPerDay = const Value.absent(),
               }) => EmployeesCompanion.insert(
                 id: id,
                 name: name,
@@ -146916,6 +147558,7 @@ class $$EmployeesTableTableManager
                 isActive: isActive,
                 hiredAt: hiredAt,
                 deviceUserId: deviceUserId,
+                hoursPerDay: hoursPerDay,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -154832,6 +155475,7 @@ typedef $$OvertimeRecordsTableCreateCompanionBuilder =
       required double amount,
       Value<String?> notes,
       Value<DateTime> createdAt,
+      Value<bool> isManualAmount,
     });
 typedef $$OvertimeRecordsTableUpdateCompanionBuilder =
     OvertimeRecordsCompanion Function({
@@ -154843,6 +155487,7 @@ typedef $$OvertimeRecordsTableUpdateCompanionBuilder =
       Value<double> amount,
       Value<String?> notes,
       Value<DateTime> createdAt,
+      Value<bool> isManualAmount,
     });
 
 final class $$OvertimeRecordsTableReferences
@@ -154918,6 +155563,11 @@ class $$OvertimeRecordsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<bool> get isManualAmount => $composableBuilder(
+    column: $table.isManualAmount,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$EmployeesTableFilterComposer get employeeId {
     final $$EmployeesTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -154986,6 +155636,11 @@ class $$OvertimeRecordsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isManualAmount => $composableBuilder(
+    column: $table.isManualAmount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$EmployeesTableOrderingComposer get employeeId {
     final $$EmployeesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -155039,6 +155694,11 @@ class $$OvertimeRecordsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get isManualAmount => $composableBuilder(
+    column: $table.isManualAmount,
+    builder: (column) => column,
+  );
 
   $$EmployeesTableAnnotationComposer get employeeId {
     final $$EmployeesTableAnnotationComposer composer = $composerBuilder(
@@ -155102,6 +155762,7 @@ class $$OvertimeRecordsTableTableManager
                 Value<double> amount = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<bool> isManualAmount = const Value.absent(),
               }) => OvertimeRecordsCompanion(
                 id: id,
                 employeeId: employeeId,
@@ -155111,6 +155772,7 @@ class $$OvertimeRecordsTableTableManager
                 amount: amount,
                 notes: notes,
                 createdAt: createdAt,
+                isManualAmount: isManualAmount,
               ),
           createCompanionCallback:
               ({
@@ -155122,6 +155784,7 @@ class $$OvertimeRecordsTableTableManager
                 required double amount,
                 Value<String?> notes = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<bool> isManualAmount = const Value.absent(),
               }) => OvertimeRecordsCompanion.insert(
                 id: id,
                 employeeId: employeeId,
@@ -155131,6 +155794,7 @@ class $$OvertimeRecordsTableTableManager
                 amount: amount,
                 notes: notes,
                 createdAt: createdAt,
+                isManualAmount: isManualAmount,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -156795,6 +157459,338 @@ typedef $$EmployeeContractsTableProcessedTableManager =
       (EmployeeContract, $$EmployeeContractsTableReferences),
       EmployeeContract,
       PrefetchHooks Function({bool employeeId})
+    >;
+typedef $$WorkHolidaysTableCreateCompanionBuilder =
+    WorkHolidaysCompanion Function({
+      Value<int> id,
+      Value<int?> branchId,
+      Value<int?> weekday,
+      Value<DateTime?> date,
+      required String name,
+      Value<DateTime> createdAt,
+    });
+typedef $$WorkHolidaysTableUpdateCompanionBuilder =
+    WorkHolidaysCompanion Function({
+      Value<int> id,
+      Value<int?> branchId,
+      Value<int?> weekday,
+      Value<DateTime?> date,
+      Value<String> name,
+      Value<DateTime> createdAt,
+    });
+
+final class $$WorkHolidaysTableReferences
+    extends BaseReferences<_$AppDatabase, $WorkHolidaysTable, WorkHoliday> {
+  $$WorkHolidaysTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $BranchesTable _branchIdTable(_$AppDatabase db) =>
+      db.branches.createAlias(
+        $_aliasNameGenerator(db.workHolidays.branchId, db.branches.id),
+      );
+
+  $$BranchesTableProcessedTableManager? get branchId {
+    final $_column = $_itemColumn<int>('branch_id');
+    if ($_column == null) return null;
+    final manager = $$BranchesTableTableManager(
+      $_db,
+      $_db.branches,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_branchIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$WorkHolidaysTableFilterComposer
+    extends Composer<_$AppDatabase, $WorkHolidaysTable> {
+  $$WorkHolidaysTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get weekday => $composableBuilder(
+    column: $table.weekday,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$BranchesTableFilterComposer get branchId {
+    final $$BranchesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.branchId,
+      referencedTable: $db.branches,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BranchesTableFilterComposer(
+            $db: $db,
+            $table: $db.branches,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkHolidaysTableOrderingComposer
+    extends Composer<_$AppDatabase, $WorkHolidaysTable> {
+  $$WorkHolidaysTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get weekday => $composableBuilder(
+    column: $table.weekday,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$BranchesTableOrderingComposer get branchId {
+    final $$BranchesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.branchId,
+      referencedTable: $db.branches,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BranchesTableOrderingComposer(
+            $db: $db,
+            $table: $db.branches,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkHolidaysTableAnnotationComposer
+    extends Composer<_$AppDatabase, $WorkHolidaysTable> {
+  $$WorkHolidaysTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get weekday =>
+      $composableBuilder(column: $table.weekday, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get date =>
+      $composableBuilder(column: $table.date, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$BranchesTableAnnotationComposer get branchId {
+    final $$BranchesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.branchId,
+      referencedTable: $db.branches,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BranchesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.branches,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkHolidaysTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $WorkHolidaysTable,
+          WorkHoliday,
+          $$WorkHolidaysTableFilterComposer,
+          $$WorkHolidaysTableOrderingComposer,
+          $$WorkHolidaysTableAnnotationComposer,
+          $$WorkHolidaysTableCreateCompanionBuilder,
+          $$WorkHolidaysTableUpdateCompanionBuilder,
+          (WorkHoliday, $$WorkHolidaysTableReferences),
+          WorkHoliday,
+          PrefetchHooks Function({bool branchId})
+        > {
+  $$WorkHolidaysTableTableManager(_$AppDatabase db, $WorkHolidaysTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WorkHolidaysTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$WorkHolidaysTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$WorkHolidaysTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int?> branchId = const Value.absent(),
+                Value<int?> weekday = const Value.absent(),
+                Value<DateTime?> date = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => WorkHolidaysCompanion(
+                id: id,
+                branchId: branchId,
+                weekday: weekday,
+                date: date,
+                name: name,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int?> branchId = const Value.absent(),
+                Value<int?> weekday = const Value.absent(),
+                Value<DateTime?> date = const Value.absent(),
+                required String name,
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => WorkHolidaysCompanion.insert(
+                id: id,
+                branchId: branchId,
+                weekday: weekday,
+                date: date,
+                name: name,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$WorkHolidaysTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({branchId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (branchId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.branchId,
+                                referencedTable: $$WorkHolidaysTableReferences
+                                    ._branchIdTable(db),
+                                referencedColumn: $$WorkHolidaysTableReferences
+                                    ._branchIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$WorkHolidaysTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $WorkHolidaysTable,
+      WorkHoliday,
+      $$WorkHolidaysTableFilterComposer,
+      $$WorkHolidaysTableOrderingComposer,
+      $$WorkHolidaysTableAnnotationComposer,
+      $$WorkHolidaysTableCreateCompanionBuilder,
+      $$WorkHolidaysTableUpdateCompanionBuilder,
+      (WorkHoliday, $$WorkHolidaysTableReferences),
+      WorkHoliday,
+      PrefetchHooks Function({bool branchId})
     >;
 typedef $$StockAuditsTableCreateCompanionBuilder =
     StockAuditsCompanion Function({
@@ -206806,6 +207802,8 @@ class $AppDatabaseManager {
       $$PerformanceGoalsTableTableManager(_db, _db.performanceGoals);
   $$EmployeeContractsTableTableManager get employeeContracts =>
       $$EmployeeContractsTableTableManager(_db, _db.employeeContracts);
+  $$WorkHolidaysTableTableManager get workHolidays =>
+      $$WorkHolidaysTableTableManager(_db, _db.workHolidays);
   $$StockAuditsTableTableManager get stockAudits =>
       $$StockAuditsTableTableManager(_db, _db.stockAudits);
   $$StockAuditItemsTableTableManager get stockAuditItems =>

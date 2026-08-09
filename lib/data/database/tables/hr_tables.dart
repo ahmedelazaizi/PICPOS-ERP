@@ -19,6 +19,13 @@ class Employees extends Table {
   DateTimeColumn get hiredAt => dateTime().withDefault(currentDateAndTime)();
   TextColumn get deviceUserId =>
       text().nullable()(); // ZKTeco fingerprint device user ID
+
+  /// ساعاتُ العمل اليومية — مقامُ أجر الساعة.
+  ///
+  /// مطلوبٌ لموظف `hourly`، واختياريٌّ لغيره: بدونه لا يُشتقّ مبلغُ الإضافي
+  /// ويبقى يدوياً. ولا تُخمَّن قيمةٌ افتراضية — تخمينُ المقام يعطي رقماً
+  /// يبدو صحيحاً وليس كذلك.
+  RealColumn get hoursPerDay => real().nullable()();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -63,6 +70,40 @@ class OvertimeRecords extends Table {
   RealColumn get amount => real()();
   TextColumn get notes => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  /// المبلغُ عُدِّل يدوياً ⇒ لا يُعاد اشتقاقُه.
+  ///
+  /// السجلّاتُ القائمة تُهاجَر إلى `true`: قيمُها حُسبت بمقامٍ آخر، وإعادةُ
+  /// حسابها تغيّر رواتبَ ماضية.
+  BoolColumn get isManualAmount =>
+      boolean().withDefault(const Constant(false))();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// HOLIDAY CALENDAR
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// تقويمُ العطلات — يعرّفه المستخدم لكلّ فرع.
+///
+/// شكلان في جدولٍ واحد: يومٌ أسبوعيٌّ متكرّر، أو تاريخٌ بعينه. والصفُّ يحمل
+/// **أحدَهما لا كليهما** — يُفرض بقيدٍ في [WorkHolidays.customConstraints].
+///
+/// `branchId` معدومٌ = يسري على كلّ الفروع. والدمجُ **تراكميّ**: عطلاتُ فرعٍ
+/// هي صفوفُه مضافةً إلى الصفوف العامّة، لا بديلةً عنها.
+class WorkHolidays extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get branchId => integer().nullable().references(Branches, #id)();
+
+  /// قيمةُ `DateTime.weekday`: ‏١ = الاثنين … ٧ = الأحد.
+  IntColumn get weekday => integer().nullable()();
+  DateTimeColumn get date => dateTime().nullable()();
+  TextColumn get name => text().withLength(max: 100)();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  List<String> get customConstraints => [
+        'CHECK ((weekday IS NULL) <> (date IS NULL))',
+      ];
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

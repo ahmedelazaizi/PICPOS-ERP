@@ -2385,5 +2385,22 @@ extension Epoch3Migrations on AppDatabase {
         }
       }
     }
+
+    // ── v153: الأجرُ بالساعة والإضافي المحسوب — جدولُ العطلات وعمودا
+    // ساعاتِ اليوم والتجاوز اليدويّ ──────────────────────────────────────
+    if (from < 153) {
+      await _safeMigrate('v153 work_holidays + hoursPerDay + isManualAmount',
+          () async {
+        await m.createTable(workHolidays);
+        await m.addColumn(employees, employees.hoursPerDay);
+        await m.addColumn(overtimeRecords, overtimeRecords.isManualAmount);
+        // السجلّاتُ القائمة حُسبت بمقامٍ آخر — تُعلَّم يدويةً فلا يُعاد
+        // حسابُها وتتغيّر رواتبُ ماضية.
+        await m.database
+            .customStatement('UPDATE overtime_records SET is_manual_amount = 1');
+        debugPrint('[Migration] v153 work_holidays + hoursPerDay + '
+            'isManualAmount OK');
+      });
+    }
   }
 }
