@@ -105,4 +105,84 @@ void main() {
         employeeId: id, year: 2026, month: 4);
     expect(calc.grossPay, lessThan(5200));
   });
+
+  // ── دورة إصلاح ١ — الملاحظة ٢: الإجازةُ المدفوعة تُدفع لموظف الساعة ──────
+  // (قرار المالك 2026-08-09، سدُّ فجوة B4 المذكورة في hr_extensions.dart)
+
+  test('إجازةٌ مدفوعةٌ معتمدة تُدفع لموظف الساعة', () async {
+    await fridayOff(); // ⇒ أجرُ الساعة = 25
+    final id = await employee('hourly');
+    await db.into(db.employeeAttendance).insert(
+        EmployeeAttendanceCompanion.insert(
+          employeeId: id,
+          date: DateTime(2026, 4, 1),
+          status: const Value(kAttendanceStatusPaidLeave),
+        ));
+    final calc = await db.calculateNetSalary(
+        employeeId: id, year: 2026, month: 4);
+    expect(calc.grossPay, closeTo(8 * 25, 0.01),
+        reason: 'يومُ الإجازة المدفوعة يُحتسب hoursPerDay ساعةً لا صفراً');
+  });
+
+  test('الإجازةُ غيرُ المدفوعة لا تُدفع لموظف الساعة', () async {
+    await fridayOff();
+    final id = await employee('hourly');
+    await db.into(db.employeeAttendance).insert(
+        EmployeeAttendanceCompanion.insert(
+          employeeId: id,
+          date: DateTime(2026, 4, 1),
+          status: const Value(kAttendanceStatusUnpaidLeave),
+        ));
+    final calc = await db.calculateNetSalary(
+        employeeId: id, year: 2026, month: 4);
+    expect(calc.grossPay, closeTo(0, 0.01),
+        reason: 'غيرُ مدفوعةٍ بحكم اسمها — لا تصير مدفوعةً لموظف الساعة');
+  });
+
+  test('الغيابُ لا يُدفع لموظف الساعة', () async {
+    await fridayOff();
+    final id = await employee('hourly');
+    await db.into(db.employeeAttendance).insert(
+        EmployeeAttendanceCompanion.insert(
+          employeeId: id,
+          date: DateTime(2026, 4, 1),
+          status: const Value(kAttendanceStatusAbsent),
+        ));
+    final calc = await db.calculateNetSalary(
+        employeeId: id, year: 2026, month: 4);
+    expect(calc.grossPay, closeTo(0, 0.01),
+        reason: 'غيابٌ بلا حضورٍ ولا إجازةٍ معتمدة');
+  });
+
+  test('صفُّ إجازةٍ مدفوعةٍ يحمل بصمةً كذلك لا يُحتسب مرتين', () async {
+    await fridayOff();
+    final id = await employee('hourly');
+    await db.into(db.employeeAttendance).insert(
+        EmployeeAttendanceCompanion.insert(
+          employeeId: id,
+          date: DateTime(2026, 4, 1),
+          status: const Value(kAttendanceStatusPaidLeave),
+          checkIn: Value(DateTime(2026, 4, 1, 9)),
+          checkOut: Value(DateTime(2026, 4, 1, 17)), // ٨ ساعات بصمة كذلك
+        ));
+    final calc = await db.calculateNetSalary(
+        employeeId: id, year: 2026, month: 4);
+    expect(calc.grossPay, closeTo(8 * 25, 0.01),
+        reason: 'hoursPerDay وحدها — لا هي مجموعةً مع بصمة اليوم نفسه '
+            '(لو احتُسبتا معاً لكانت النتيجة ١٦ ساعة = ٤٠٠)');
+  });
+
+  test('ثابتةٌ تربط الموديلين: شهرٌ كاملُ العمل يعطي الراتبَ بالضبط', () async {
+    await fridayOff();
+    final id = await employee('hourly');
+    for (var d = 1; d <= 30; d++) {
+      if (DateTime(2026, 4, d).weekday == DateTime.friday) continue;
+      await attend(id, d, 9, 17); // ٨ ساعات كلَّ يوم عمل
+    }
+    final calc = await db.calculateNetSalary(
+        employeeId: id, year: 2026, month: 4);
+    expect(calc.grossPay, closeTo(5200, 0.01),
+        reason: 'المقامُ والبسطُ متّسقان — موظفُ الساعة الملتزمُ يأخذ راتبَه '
+            'كاملاً لا أقلّ');
+  });
 }

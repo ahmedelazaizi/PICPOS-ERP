@@ -879,7 +879,20 @@ extension HRExtensions on AppDatabase {
 
     // ساعاتُ الحضور الفعلية — صفٌّ بلا انصرافٍ لا يُحتسب: مدةٌ مجهولة
     // تُوثَّق ولا تُخمَّن.
+    //
+    // ── قرار المالك 2026-08-09 — سدُّ فجوة B4 لموظف الساعة ─────────────────
+    // إجازةٌ مدفوعةٌ معتمدة (‏[kAttendanceStatusPaidLeave]) لا تحمل بصمةً
+    // عادةً، فكانت تُسهم بصفر ساعات ⇒ موظفُ الساعة لا يُدفَع عن إجازةٍ وافق
+    // عليها مديرُه — يناقض B4 الموثَّق أعلاه لـ[kPaidAttendanceStatuses].
+    // فيومُ الإجازة المدفوعة يُحتسب [Employee.hoursPerDay] ساعةً كاملة، **لا**
+    // مجموعاً مع أيّ بصمةٍ مسجَّلة على نفس الصف (فلا ازدواج). والغيابُ
+    // والإجازةُ غيرُ المدفوعة أصلاً خارج `attendanceRecords` — الاستعلامُ
+    // أعلاه يحصرها بـ[kPaidAttendanceStatuses] — فتُسهم بصفرٍ بالبناء بلا
+    // حاجةٍ لفرعٍ صريح هنا.
     final hoursWorked = attendanceRecords.fold<double>(0, (sum, a) {
+      if (a.status == kAttendanceStatusPaidLeave) {
+        return sum + (employee.hoursPerDay ?? 0);
+      }
       final inAt = a.checkIn, outAt = a.checkOut;
       if (inAt == null || outAt == null) return sum;
       return sum + outAt.difference(inAt).inMinutes / 60.0;
@@ -941,6 +954,7 @@ extension HRExtensions on AppDatabase {
       totalDeductions: deductions,
       overtimeAmount: overtimeAmount,
       unpaidDays: unpaidDays,
+      hoursWorked: hoursWorked,
       payableAmount: payableAmount,
       advancesSettled: advancesSettled,
       netSalary: netSalary < 0 ? 0 : netSalary,
@@ -1535,6 +1549,13 @@ class EmployeeSalaryCalculation {
   /// عمل)، لكنه يبقى مُبلَّغاً لأن سجلَّ الغياب معلومةٌ إدارية بذاتها.
   final int unpaidDays;
 
+  /// ساعاتُ الحضور الفعلية في الشهر — أساسُ الأجر لموظف [kHourlySalaryType].
+  ///
+  /// إجازةٌ مدفوعةٌ معتمدة تُسهم بـ`hoursPerDay` (قرار المالك 2026-08-09،
+  /// سدُّ فجوة B4 لموظف الساعة)، وصفٌّ بلا انصرافٍ يُسهم بصفر. ولغير الساعة
+  /// لا معنى له في الحساب لكنه يبقى مُبلَّغاً لعرضه في واجهة الرواتب.
+  final double hoursWorked;
+
   /// B3 — المستحقُّ بعد الجزاءات = [grossPay] − [totalDeductions]، وهو المبلغُ
   /// الذي يُقيَّد **مديناً** على مصروف الرواتب.
   ///
@@ -1565,6 +1586,7 @@ class EmployeeSalaryCalculation {
     required this.totalDeductions,
     this.overtimeAmount = 0,
     this.unpaidDays = 0,
+    this.hoursWorked = 0,
     required this.payableAmount,
     this.advancesSettled = 0,
     required this.netSalary,

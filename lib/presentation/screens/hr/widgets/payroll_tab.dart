@@ -137,6 +137,17 @@ class _PayrollCard extends ConsumerWidget {
                           -calc.dailyRate * calc.unpaidDays,
                           color: Colors.red),
                   ]
+                else if (calc.employee.salaryType == 'hourly')
+                  // موظفُ الساعة: الأساسيُّ = ساعاتُ الحضور × أجرُ الساعة، لا
+                  // «الأيام × الأجر اليومي» — `dailyRate` لا معنى له هنا.
+                  // `grossPay - overtimeAmount` يساوي الأساسيَّ بالبناء
+                  // (‏`grossPay = basePay + overtimeAmount` في
+                  // `calculateNetSalary`)، فلا حاجةَ لتعريض أجر الساعة حقلاً
+                  // مستقلاً.
+                  _calcRow(
+                      'الساعات (${calc.hoursWorked.toStringAsFixed(1)}) × أجر الساعة',
+                      calc.grossPay - calc.overtimeAmount,
+                      color: Colors.green)
                 else
                   _calcRow('الأيام المدفوعة (${calc.daysAttended})',
                       calc.dailyRate * calc.daysAttended,
@@ -394,6 +405,9 @@ void _showSalarySlip(BuildContext context, EmployeeSalaryCalculation calc) {
                     if (calc.employee.salaryType == 'monthly')
                       _slipRow('أيام غياب غير مدفوعة',
                           '${calc.unpaidDays} يوم')
+                    else if (calc.employee.salaryType == 'hourly')
+                      _slipRow('الساعات المدفوعة',
+                          '${calc.hoursWorked.toStringAsFixed(1)} ساعة')
                     else
                       _slipRow('الأيام المدفوعة', '${calc.daysAttended} يوم'),
                     _slipRow('بدل إضافي',
