@@ -331,6 +331,11 @@ class _FinancialStatementsScreenState
         case 0: // Trial Balance
           final data = await repo.getTrialBalance(_fromDate, _toDate, costCenterId: _selectedCostCenterId, branchId: _selectedBranchId, regionId: _selectedRegionId, allowedBranchIds: _allowedBranchIds);
           await service.exportReport(
+      periodFrom: _fromDate,
+      periodTo: _toDate,
+      branchId: _selectedBranchId,
+      scopedBranchIds:
+          (await ref.read(branchScopeProvider.future)).allowedBranchIds,
             title: 'ميزان المراجعة من ${_fromDate.toString().split(' ')[0]} إلى ${_toDate.toString().split(' ')[0]}',
             headers: [
               'كود الحساب',
@@ -369,6 +374,11 @@ class _FinancialStatementsScreenState
           }
           rows.add(['', 'صافي الربح', data['netProfit']]);
           await service.exportReport(
+      periodFrom: _fromDate,
+      periodTo: _toDate,
+      branchId: _selectedBranchId,
+      scopedBranchIds:
+          (await ref.read(branchScopeProvider.future)).allowedBranchIds,
             title: 'قائمة الدخل',
             headers: ['النوع', 'البيان', 'المبلغ'],
             rows: rows,
@@ -387,6 +397,11 @@ class _FinancialStatementsScreenState
             rows.add(['حقوق ملكية', item['name'], item['balance']]);
           }
           await service.exportReport(
+      periodFrom: _fromDate,
+      periodTo: _toDate,
+      branchId: _selectedBranchId,
+      scopedBranchIds:
+          (await ref.read(branchScopeProvider.future)).allowedBranchIds,
             title: 'الميزانية العمومية',
             headers: ['النوع', 'البيان', 'الرصيد'],
             rows: rows,
@@ -414,6 +429,11 @@ class _FinancialStatementsScreenState
             ['', 'الرصيد الختامي', data['closingBalance']],
           ];
           await service.exportReport(
+      periodFrom: _fromDate,
+      periodTo: _toDate,
+      branchId: _selectedBranchId,
+      scopedBranchIds:
+          (await ref.read(branchScopeProvider.future)).allowedBranchIds,
             title: 'قائمة التدفقات النقدية',
             headers: ['النشاط', 'البيان', 'المبلغ'],
             rows: rows,
@@ -431,6 +451,11 @@ class _FinancialStatementsScreenState
             title = 'تقادم الذمم الدائنة (الموردين)';
           }
           await service.exportReport(
+      periodFrom: _fromDate,
+      periodTo: _toDate,
+      branchId: _selectedBranchId,
+      scopedBranchIds:
+          (await ref.read(branchScopeProvider.future)).allowedBranchIds,
             title: title,
             headers: ['الاسم', 'الإجمالي', '0-30 يوم', '31-60 يوم', '61-90 يوم', '+90 يوم'],
             rows: agingData.map<List<dynamic>>((r) => [

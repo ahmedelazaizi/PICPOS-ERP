@@ -830,6 +830,11 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
 
       final service = ref.read(excelServiceProvider);
       final path = await service.exportReport(
+      periodFrom: _dateFrom,
+      periodTo: _dateTo,
+      branchId: _filterBranchId,
+      scopedBranchIds:
+          (await ref.read(branchScopeProvider.future)).allowedBranchIds,
         title: 'دفتر اليومية (${entries.length} قيد)',
         headers: ['رقم القيد', 'التاريخ', 'البيان', 'النوع/الوصف', 'مدين', 'دائن'],
         rows: rows,

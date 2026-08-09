@@ -341,6 +341,11 @@ class _SalesReturnsReportScreenState extends ConsumerState<SalesReturnsReportScr
     try {
       final service = ref.read(excelServiceProvider);
       final path = await service.exportReport(
+      periodFrom: _dateRange.start,
+      periodTo: _dateRange.end,
+      branchId: _selectedBranchId,
+      scopedBranchIds:
+          (await ref.read(branchScopeProvider.future)).allowedBranchIds,
         title: 'تقرير مردودات المبيعات',
         headers: ['رقم الفاتورة', 'التاريخ', 'المستخدم', 'المبلغ'],
         rows: _returns.map<List<dynamic>>((r) => [

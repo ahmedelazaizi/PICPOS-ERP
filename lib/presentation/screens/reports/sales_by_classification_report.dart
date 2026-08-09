@@ -174,6 +174,11 @@ class _SalesByClassificationReportState
     }
 
     final path = await service.exportReport(
+      periodFrom: _dateRange.start,
+      periodTo: _dateRange.end,
+      branchId: _selectedBranchId,
+      scopedBranchIds:
+          (await ref.read(branchScopeProvider.future)).allowedBranchIds,
       title: isCategory
           ? 'تقرير المبيعات حسب التصنيف'
           : 'تقرير المبيعات حسب نوع البيع',

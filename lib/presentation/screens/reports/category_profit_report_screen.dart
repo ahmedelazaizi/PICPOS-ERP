@@ -399,6 +399,11 @@ class _CategoryProfitReportScreenState
     }
     final service = ref.read(excelServiceProvider);
     final path = await service.exportReport(
+      periodFrom: _fromDate,
+      periodTo: _toDate,
+      branchId: _selectedBranchId,
+      scopedBranchIds:
+          (await ref.read(branchScopeProvider.future)).allowedBranchIds,
       title: 'تقرير أرباح التصنيفات',
       headers: [
         'التصنيف',

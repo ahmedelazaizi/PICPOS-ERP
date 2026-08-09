@@ -611,6 +611,11 @@ class _DeliveryReportScreenState extends ConsumerState<DeliveryReportScreen>
       }
       final service = ref.read(excelServiceProvider);
       final path = await service.exportReport(
+      periodFrom: _fromDate,
+      periodTo: _toDate,
+      branchId: _selectedBranchId,
+      scopedBranchIds:
+          (await ref.read(branchScopeProvider.future)).allowedBranchIds,
         title: 'تقرير عمليات التحصيل',
         headers: [
           'رقم الفاتورة',

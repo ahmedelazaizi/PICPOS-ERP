@@ -323,10 +323,27 @@ class _ExportPayrollButton extends ConsumerWidget {
 
     final excelService = ref.read(excelServiceProvider);
     final period = DateFormat('yyyy-MM').format(state.selectedMonth);
+    // فترةُ الكشف شهرٌ كامل: أوّلُه إلى آخرِ يومٍ فيه. والفرعُ من نطاق
+    // المستخدم لا من فلترٍ — تبويبُ الرواتب لا يملك منسدلةَ فرع، والقائمةُ
+    // محصورةٌ بالنطاق (H6)، فالنطاقُ هو ما يصف الملفَّ بصدق.
+    final monthStart = DateTime(
+      state.selectedMonth.year,
+      state.selectedMonth.month,
+      1,
+    );
+    final monthEnd = DateTime(
+      state.selectedMonth.year,
+      state.selectedMonth.month + 1,
+      0,
+    );
     final path = await excelService.exportReport(
       title: 'كشف رواتب $period',
       headers: headers,
       rows: rows,
+      periodFrom: monthStart,
+      periodTo: monthEnd,
+      scopedBranchIds:
+          (await ref.read(branchScopeProvider.future)).allowedBranchIds,
     );
 
     if (context.mounted) {

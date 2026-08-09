@@ -18,6 +18,78 @@ import 'package:excel/excel.dart';
 import 'package:file_picker/file_picker.dart';
 
 /// Excel Import/Export Service for Products, Customers, Suppliers, and Purchase Invoices
+// ═══════════════════════════════════════════════════════════════════════════
+// سياقُ التقرير المُصدَّر — الفترةُ والفرع
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// دالّتان **نقيّتان** خارج الصنف عن قصد: منطقُ «عن أيّ فترةٍ وأيّ فرعٍ هذا
+// الملف» هو موضعُ الكذب المحتمل، فيجب أن يكون قابلاً للاختبار مباشرةً بلا
+// قاعدةِ بياناتٍ ولا كتابةِ ملفٍ على القرص.
+
+/// تسميةُ الفرع في رأس الملف المُصدَّر.
+///
+/// تُشتقّ من **الفلتر الصريح والنطاق معاً**: مديرُ فرعٍ محصورٌ يصدّر بلا اختيار
+/// فرعٍ، فبياناتُه محصورةٌ بفروعه — وكتابةُ «كل الفروع» تجعل الملفَّ يدّعي
+/// شمولاً ليس فيه. والسطرُ الكاذب أسوأُ من الغائب: الغائبُ يُسأل عنه،
+/// والكاذبُ يُصدَّق.
+///
+/// [scopedBranchIds] — `null` = وصولٌ كامل · `{}` = لا شيء (فشلٌ مقفول).
+String reportBranchLabel({
+  required int? branchId,
+  required Set<int>? scopedBranchIds,
+  required Map<int, String> names,
+}) {
+  if (branchId != null) {
+    return names[branchId] ?? 'فرع #$branchId';
+  }
+  if (scopedBranchIds == null) return 'كل الفروع';
+  if (scopedBranchIds.isEmpty) return 'لا يوجد فرع مسموح';
+  final labels = scopedBranchIds
+      .map((id) => names[id] ?? 'فرع #$id')
+      .toList()
+    ..sort();
+  return labels.join('، ');
+}
+
+String _d(DateTime d) =>
+    '${d.year}/${d.month.toString().padLeft(2, '0')}/'
+    '${d.day.toString().padLeft(2, '0')}';
+
+/// كتلةُ السياق التي تسبق صفَّ الرؤوس في الملف المُصدَّر.
+///
+/// سطرُ الفترة يُحذف إن لم تكن هناك فترة — تقريرُ المخزون لقطةٌ لحظية، وسطرُ
+/// فترةٍ فيه اختراع. وآخرُ سطرٍ فارغٌ فاصلاً، وإلا التصقت الكتلةُ بصفِّ الرؤوس
+/// فقُرئت عموداً من البيانات.
+List<List<String>> reportContextRows({
+  required String title,
+  required DateTime? periodFrom,
+  required DateTime? periodTo,
+  required String branchLabel,
+  required DateTime generatedAt,
+}) {
+  final rows = <List<String>>[
+    [title],
+  ];
+
+  if (periodFrom != null && periodTo != null) {
+    rows.add(['الفترة: ${_d(periodFrom)} — ${_d(periodTo)}']);
+  } else if (periodTo != null) {
+    rows.add(['الفترة: حتى ${_d(periodTo)}']);
+  } else if (periodFrom != null) {
+    rows.add(['الفترة: من ${_d(periodFrom)}']);
+  }
+
+  rows.add(['الفرع: $branchLabel']);
+  rows.add([
+    'تاريخ التصدير: ${_d(generatedAt)} '
+        '${generatedAt.hour.toString().padLeft(2, '0')}:'
+        '${generatedAt.minute.toString().padLeft(2, '0')}'
+  ]);
+  rows.add(['']);
+
+  return rows;
+}
+
 class ExcelService {
   final IProductRepository productRepo;
   final IPartiesRepository partyRepo;
@@ -1668,14 +1740,56 @@ class ExcelService {
   }
 
   /// Generic method to export report data to Excel
+  ///
+  /// [periodFrom]/[periodTo] و[branchId] و[scopedBranchIds] تكتب كتلةَ سياقٍ
+  /// فوق الرؤوس. بدونها كان الملفُّ لا يقول عن أيّ فترةٍ ولا أيّ فرعٍ هو، فملفٌّ
+  /// على القرص باسم «تقرير المبيعات» لا يُعرف أهو يناير أم السنة كاملة.
+  ///
+  /// اسمُ الفرع يُحَلّ هنا من [branchRepo] لا في كلِّ شاشة: ستَّ عشرةَ شاشةً
+  /// تُنادي هذه الدالة، وحلُّ الاسم في كلٍّ منها ستَّ عشرةَ فرصةً للاختلاف.
+  /// والشاشةُ تمرّر ما تملكه أصلاً — معرِّفَ الفلتر ونطاقَ المستخدم.
   Future<String?> exportReport({
     required String title,
     required List<String> headers,
     required List<List<dynamic>> rows,
+    DateTime? periodFrom,
+    DateTime? periodTo,
+    int? branchId,
+    Set<int>? scopedBranchIds,
   }) async {
     try {
       final excel = Excel.createExcel();
       final sheet = excel[title];
+
+      // كتلةُ السياق قبل الرؤوس. تُكتب فقط إن كان هناك سياقٌ يُذكر، فالمُنادي
+      // الذي لم يُمرّر شيئاً يحصل على الشكل القديم بلا تغيير.
+      if (periodFrom != null ||
+          periodTo != null ||
+          branchId != null ||
+          scopedBranchIds != null) {
+        final names = <int, String>{};
+        try {
+          for (final b in await branchRepo.getAllBranches()) {
+            names[b.id] = b.name;
+          }
+        } catch (_) {
+          // تعذّرُ قراءة الفروع لا يمنع التصدير — التسميةُ تسقط إلى «فرع #id».
+        }
+        final context = reportContextRows(
+          title: title,
+          periodFrom: periodFrom,
+          periodTo: periodTo,
+          branchLabel: reportBranchLabel(
+            branchId: branchId,
+            scopedBranchIds: scopedBranchIds,
+            names: names,
+          ),
+          generatedAt: DateTime.now(),
+        );
+        for (final line in context) {
+          sheet.appendRow(line.map((c) => TextCellValue(c)).toList());
+        }
+      }
 
       sheet.appendRow(headers.map((h) => TextCellValue(h)).toList());
 

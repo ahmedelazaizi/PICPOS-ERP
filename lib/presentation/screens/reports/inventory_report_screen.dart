@@ -655,6 +655,9 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
     final service = ref.read(excelServiceProvider);
 
     final path = await service.exportReport(
+      branchId: _selectedBranchId,
+      scopedBranchIds:
+          (await ref.read(branchScopeProvider.future)).allowedBranchIds,
       title: 'تقرير المخزون',
       headers: [
         'كود الصنف',
