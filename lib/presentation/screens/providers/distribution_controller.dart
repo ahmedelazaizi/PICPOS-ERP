@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../data/providers/branch_scope_provider.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../domain/repositories/hr_repository_interface.dart';
 import '../../../domain/repositories/parties_repository.dart';
@@ -73,7 +74,21 @@ class DistributionController {
 
   // Helpers
   Future<Employee?> getEmployeeById(int id) => _hrRepo.getEmployeeById(id);
-  Future<List<Employee>> getAllEmployees() => _hrRepo.getAllEmployees();
+  /// قائمةُ الموظفين **محصورةً بفروع المستخدم**.
+  ///
+  /// أغلق H6 التسريبَ في شاشات HR بحلّ النطاق في `hr_notifier` مرةً واحدة،
+  /// وبقيت تبويباتُ التوزيع الأربعة تنادي هذه بلا نطاق. والمسرَّبُ هنا
+  /// الأسماءُ والأدوارُ لا الرواتب — أخفُّ وليس بلا أثر: مديرُ فرعٍ يرى مندوبي
+  /// الشركة كلَّها في المنسدلة ويقدر يُسنِد تحصيلاً لمندوبِ فرعٍ لا يملكه.
+  ///
+  /// والحلُّ هنا لا في كلّ تبويب — نفسُ مبدأ H6: لا مسارَ غيرَ محصورٍ متاحٌ
+  /// للشاشة، فنسيانُ تبويبٍ جديدٍ للحصر يصير مستحيلاً.
+  Future<List<Employee>> getAllEmployees() async {
+    final scope = await ref.read(branchScopeProvider.future);
+    return _hrRepo.getAllEmployees(
+      allowedBranchIds: scope.hasFullAccess ? null : scope.allowedBranchIds,
+    );
+  }
 
   Future<Party?> getPartyById(int id) => _partiesRepo.getPartyById(id);
 

@@ -12,5 +12,5 @@ abstract class IFingerprintRepository {
   Future<db.Employee?> getEmployeeByDeviceUserId(String deviceUserId);
   Future<void> importCheckIn(int employeeId, DateTime timestamp);
   Future<void> importCheckOut(int employeeId, DateTime timestamp);
-  Future<List<db.Employee>> getAllEmployees();
+  Future<List<db.Employee>> getAllEmployees({required Set<int>? allowedBranchIds});
 }

@@ -1,0 +1,94 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// طرقُ الدفع — مصدرٌ واحدٌ للحقيقة.
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// كانت خريطةُ «المفتاح → التسمية» مكرّرةً في **سبعةِ مواضع** لا تتفق، ومقيسٌ
+// 2026-08-09 أن الاختلاف ليس شكلياً:
+//
+//   الموضع                            المفاتيح       الملاحظة
+//   pos_edit_invoice_dialog           ٦ + مرادفات    `card` = «بطاقة (بنك)»
+//   sales_by_classification_report    ٦              `card` = «بطاقة» و`bank` منفصل
+//   picpos_last_invoice_dialog        ٧              بلا `bank`
+//   sales_report_screen               ٦ مجمَّعة       `card‖transfer‖bank` = «بطاقة/تحويل»
+//   analytics_dashboard_screen        ٦
+//   distribution_collections_tab      ٣              مجالٌ آخر: `check` بدل البطاقة
+//
+// فالفاتورةُ الواحدة تُقرأ بتسميتين بحسب الشاشة، وإضافةُ طريقةٍ جديدة تحتاج
+// تعديلَ سبعةِ ملفات — ونسيانُ أحدها لا يظهر إلا للمستخدم.
+//
+// ── ولماذا لا تُوحَّد التسمياتُ هنا قسراً ──────────────────────────────────
+// التوحيدُ الكامل يحمل **قرارَي منتجٍ** لا قرارَين تقنيَّين:
+//   ١. هل `bank` مرادفٌ لـ`transfer` (كما يفترض POS) أم طريقةٌ مستقلة (كما
+//      يفترض تقريرُ التصنيفات)؟ الجوابُ يغيّر **تجميعَ الأرقام** في التقارير.
+//   ٢. هل `card` تُسمّى «بطاقة» أم «بطاقة (بنك)»؟
+// فتُركت الاختلافاتُ القائمة كما هي **حرفياً** — [label] هي التسميةُ القياسية،
+// و[groupedLabel] تحفظ تجميعَ تقرير المبيعات. صفرُ تغييرٍ فيما يراه المستخدم
+// اليوم، والاختلافُ صار **مرئياً في ملفٍ واحد** بدل أن يكون متناثراً.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// مفاتيحُ طرق الدفع المخزَّنة في `sales_invoices.payment_method`.
+///
+/// ⚠️ هذه **قيمٌ مخزَّنة** لا نصوصُ عرض — تغييرُها يُبطل بياناتٍ قائمة.
+abstract final class PaymentMethods {
+  static const String cash = 'cash';
+  static const String card = 'card';
+  static const String transfer = 'transfer';
+  static const String bank = 'bank';
+  static const String credit = 'credit';
+  static const String click = 'click';
+  static const String multiple = 'multiple';
+  static const String mixed = 'mixed';
+
+  /// كلُّ مفتاحٍ يظهر في البيانات، بما فيه المرادفاتُ التاريخية.
+  static const List<String> all = [
+    cash,
+    card,
+    transfer,
+    bank,
+    credit,
+    click,
+    multiple,
+    mixed,
+  ];
+
+  /// المرادفاتُ التاريخية → المفتاحُ الذي يُعرَض به.
+  ///
+  /// ‏`mixed` و`multiple` كُتبا كلاهما في أوقاتٍ مختلفة ويعنيان الشيءَ نفسه.
+  /// ⚠️ ولا يُضاف هنا `bank → transfer`: POS يفترضه ويفصله تقريرُ التصنيفات،
+  /// وحسمُه قرارُ منتجٍ يغيّر تجميعَ الأرقام.
+  static const Map<String, String> _canonical = {mixed: multiple};
+
+  static String canonical(String? key) =>
+      key == null ? '' : (_canonical[key] ?? key);
+
+  static const Map<String, String> _labels = {
+    cash: 'نقدي',
+    card: 'بطاقة',
+    transfer: 'تحويل',
+    bank: 'بنك',
+    credit: 'آجل',
+    click: 'كليك',
+    multiple: 'متعدد',
+  };
+
+  /// التسميةُ العربية القياسية. المفتاحُ غيرُ المعروف يُعاد **كما هو** لا
+  /// يُستبدل بشرطة: قيمةٌ غريبةٌ في البيانات يجب أن تُرى لتُصلَح.
+  static String label(String? key) {
+    if (key == null || key.isEmpty) return '-';
+    return _labels[canonical(key)] ?? key;
+  }
+
+  /// تسميةُ تقرير المبيعات — يجمع البطاقةَ والتحويلَ والبنك في وسمٍ واحد.
+  ///
+  /// محفوظةٌ كما كانت لأن تغييرَها يغيّر ما يقرؤه المستخدمُ في تقريرٍ قائم.
+  /// ⚠️ وهي السببُ في أن الفاتورةَ الواحدة تُقرأ «بطاقة» في شاشةٍ و«بطاقة/
+  /// تحويل» في أخرى — قرارُ توحيدها مؤجَّلٌ لصاحب المنتج.
+  static String groupedLabel(String? key) => switch (canonical(key)) {
+        cash => 'نقدي',
+        card || transfer || bank => 'بطاقة/تحويل',
+        click => 'كليك',
+        multiple => 'متعدد',
+        credit => 'آجل',
+        _ => key ?? '-',
+      };
+}

@@ -1,6 +1,7 @@
 // ignore_for_file: avoid_dynamic_calls
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../../core/constants/payment_methods.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
 import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -732,17 +733,9 @@ class _SalesByClassificationReportState
                                         dateFormat.format(rawDate);
                                   }
 
-                                  // Payment method label
+                                  // Payment method label — المصدرُ الواحد.
+                                  // كانت خريطةً محلّيةً من سبعِ خرائطَ لا تتفق.
                                   final pm = inv.paymentMethod;
-                                  const pmLabels = {
-                                    'cash': 'نقدي',
-                                    'card': 'بطاقة',
-                                    'transfer': 'تحويل',
-                                    'bank': 'بنك',
-                                    'click': 'كليك',
-                                    'credit': 'آجل',
-                                    'multiple': 'متعدد',
-                                  };
 
                                   return DataRow(
                                     cells: [
@@ -810,7 +803,7 @@ class _SalesByClassificationReportState
                                                         4),
                                           ),
                                           child: Text(
-                                            pmLabels[pm] ?? pm,
+                                            PaymentMethods.label(pm),
                                             style:
                                                 const TextStyle(
                                               fontSize: 11,

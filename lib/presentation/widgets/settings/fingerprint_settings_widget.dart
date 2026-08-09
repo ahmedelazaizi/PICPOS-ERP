@@ -219,7 +219,12 @@ class _FingerprintSettingsWidgetState
         return;
       }
 
-      final employees = await repo.getAllEmployees();
+      // جهازُ البصمة في فرعٍ بعينه — فلا تُرفع إليه أسماءُ موظفي فروعٍ لا
+      // يملكها صاحبُ الجهاز. وصاحبُ الوصول الكامل يرفع الجميع كما كان.
+      final scope = await ref.read(branchScopeProvider.future);
+      final employees = await repo.getAllEmployees(
+        allowedBranchIds: scope.hasFullAccess ? null : scope.allowedBranchIds,
+      );
       int uploaded = 0;
 
       for (final emp in employees) {

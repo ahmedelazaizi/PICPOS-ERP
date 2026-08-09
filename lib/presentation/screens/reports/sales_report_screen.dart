@@ -1,6 +1,7 @@
 // ignore_for_file: avoid_dynamic_calls
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../../core/constants/payment_methods.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
 import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -747,14 +748,12 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
 
   /// Arabic label for a payment method. Shared by the invoice table and the
   /// details dialog so the same sale never reads two different ways.
-  static String _paymentLabel(String? method) => switch (method) {
-        'cash' => 'نقدي',
-        'card' || 'transfer' || 'bank' => 'بطاقة/تحويل',
-        'click' => 'كليك',
-        'multiple' || 'mixed' => 'متعدد',
-        'credit' => 'آجل',
-        _ => method ?? '-',
-      };
+  ///
+  /// ⚠️ هذا التقريرُ **يجمع** البطاقةَ والتحويلَ والبنك في وسمٍ واحد، وغيرُه
+  /// يفصلها. التجميعُ محفوظٌ حرفياً في [PaymentMethods.groupedLabel] لأن
+  /// تغييرَه يغيّر ما يقرؤه المستخدمُ في تقريرٍ قائم — وحسمُه قرارُ منتج.
+  static String _paymentLabel(String? method) =>
+      PaymentMethods.groupedLabel(method);
 
   /// Quantity with just enough precision: weighed lines carry 3 decimals,
   /// counted lines are whole numbers. Printing `2.0` for two loaves of bread

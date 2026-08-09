@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/constants/payment_methods.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -33,15 +34,9 @@ class PicPosLastInvoiceDialog extends ConsumerWidget {
     );
   }
 
-  static const _methodLabels = {
-    'cash': 'نقدي',
-    'card': 'بطاقة',
-    'click': 'كليك',
-    'transfer': 'تحويل',
-    'credit': 'آجل',
-    'mixed': 'متعدد',
-    'multiple': 'متعدد',
-  };
+  // كانت هنا خريطةٌ محلّية من سبعِ خرائطَ لا تتفق — وكانت **بلا `bank`**،
+  // فالفاتورةُ المدفوعةُ بنكياً تظهر بالمفتاح الإنجليزيّ الخام.
+  // [PaymentMethods.label] تعطي نفسَ التسميات وتضيف الناقص.
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -102,8 +97,7 @@ class PicPosLastInvoiceDialog extends ConsumerWidget {
                           size: 14, color: AppColors.textMuted),
                       const SizedBox(width: 4),
                       Text(
-                        _methodLabels[invoice.paymentMethod] ??
-                            invoice.paymentMethod,
+                        PaymentMethods.label(invoice.paymentMethod),
                         style: PicPosText.v(12),
                       ),
                       if (invoice.orderNumber != null) ...[

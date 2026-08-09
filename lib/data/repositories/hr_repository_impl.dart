@@ -8,7 +8,7 @@ class HRRepositoryImpl implements IHRRepository {
   HRRepositoryImpl(this._db);
 
   @override
-  Stream<List<Employee>> watchAllEmployees({Set<int>? allowedBranchIds}) =>
+  Stream<List<Employee>> watchAllEmployees({required Set<int>? allowedBranchIds}) =>
       _db.watchAllEmployees(allowedBranchIds: allowedBranchIds);
 
   @override
@@ -72,7 +72,7 @@ class HRRepositoryImpl implements IHRRepository {
   }) => _db.markEmployeeAbsent(employeeId, date, notes: notes);
 
   @override
-  Future<List<Employee>> getAllEmployees({Set<int>? allowedBranchIds}) =>
+  Future<List<Employee>> getAllEmployees({required Set<int>? allowedBranchIds}) =>
       _db.getAllEmployees(allowedBranchIds: allowedBranchIds);
 
   @override

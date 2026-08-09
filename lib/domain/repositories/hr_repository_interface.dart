@@ -6,7 +6,7 @@ abstract class IHRRepository {
   // H6 — `allowedBranchIds` هو نطاق `branchScopeProvider`: `null` = وصولٌ كامل،
   // ومجموعةٌ فارغة = صفرُ صفوف (فشلٌ مقفول). والموظفُ بلا فرعٍ على مستوى
   // الشركة فيبقى مرئياً لكل نطاق.
-  Stream<List<Employee>> watchAllEmployees({Set<int>? allowedBranchIds});
+  Stream<List<Employee>> watchAllEmployees({required Set<int>? allowedBranchIds});
   Future<Employee?> getEmployeeById(int id);
   Future<int> addEmployee({
     required String name,
@@ -38,7 +38,7 @@ abstract class IHRRepository {
     DateTime date, {
     String? notes,
   });
-  Future<List<Employee>> getAllEmployees({Set<int>? allowedBranchIds});
+  Future<List<Employee>> getAllEmployees({required Set<int>? allowedBranchIds});
 
   // Transactions
   Stream<List<EmployeeTransaction>> watchEmployeeTransactions(int employeeId);

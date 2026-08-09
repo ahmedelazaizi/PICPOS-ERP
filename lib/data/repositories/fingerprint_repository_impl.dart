@@ -57,6 +57,10 @@ class FingerprintRepositoryImpl implements IFingerprintRepository {
       _db.importDeviceCheckOut(employeeId, timestamp);
 
   @override
-  Future<List<db.Employee>> getAllEmployees() =>
-      _db.select(_db.employees).get();
+  Future<List<db.Employee>> getAllEmployees({required Set<int>? allowedBranchIds}) =>
+      // كان `select(employees).get()` خاماً — بلا أيّ حصر. وجهازُ البصمة
+      // **في فرعٍ بعينه**، فرفعُ موظفي الشركة كلِّها إليه يضع أسماءَهم على
+      // جهازٍ لا يملكه صاحبُ الفرع. والتوحيدُ على `_db.getAllEmployees` يجعل
+      // دلالةَ الحصر واحدةً في المسارين (‏NULL = مستوى الشركة فيبقى مرئياً).
+      _db.getAllEmployees(allowedBranchIds: allowedBranchIds);
 }

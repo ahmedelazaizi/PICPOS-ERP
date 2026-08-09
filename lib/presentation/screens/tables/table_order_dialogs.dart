@@ -48,7 +48,16 @@ mixin _TableOrderDialogsMixin on ConsumerState<TablesScreen> {
     RestaurantTable table,
   ) async {
     final hrRepo = ref.read(hrRepositoryProvider);
-    final employeesList = await hrRepo.getAllEmployees();
+    // محصورٌ بفروع المستخدم — وإلا ظهر موظفو الشركة كلُّها في منسدلة «مَن
+    // يفتح الطاولة»، فيُسنَد الطلبُ لموظفِ فرعٍ آخر.
+    //
+    // ⚠️ و`// ignore: unused_element` فوق هذه الدالة **مضلّل**: التصريحُ في
+    // `table_operations.dart` إعلانٌ مجرَّدٌ في mixin، والتنفيذُ هنا يُنادى
+    // فعلاً من `table_operations.dart:226` عند التركيب.
+    final scope = await ref.read(branchScopeProvider.future);
+    final employeesList = await hrRepo.getAllEmployees(
+      allowedBranchIds: scope.hasFullAccess ? null : scope.allowedBranchIds,
+    );
     int? selectedEmployeeId =
         employeesList.isNotEmpty ? employeesList.first.id : null;
     if (!mounted) return;
