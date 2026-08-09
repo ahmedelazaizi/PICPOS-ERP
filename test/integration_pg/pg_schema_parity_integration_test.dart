@@ -231,8 +231,24 @@ void main() {
         '4 — restricted PG user → PgSchemaParityException with Arabic '
         'reasonAr', () async {
       // Create a SELECT-only user.
-      await _execAdmin(config,
-          "DROP USER IF EXISTS uralerp_readonly");
+      //
+      // 🔴 الحذفُ المسبق يُنظّف **على مستوى العنقود** لا القاعدةِ وحدها.
+      // ‏`DROP USER` وحدَه يفشل بـ`2BP01` ما دام الدورُ يحمل أيَّ منحة، ومنها
+      // منحةٌ على **قاعدةٍ أخرى** كتبتها تشغيلةٌ سابقة لمنتجٍ آخر على نفس
+      // الخادم — لا يراها `REVOKE … ON DATABASE <القاعدةُ الحالية>`.
+      // مقيسٌ 2026-08-09: بقيت منحةٌ على `avalon_test` فأفشلت السويّةَ كلَّها
+      // في كلّ تشغيلة، ولا سبيلَ لمسحها من هنا إلا بـ`DROP OWNED BY` الذي
+      // يسحب الصلاحياتِ على الكائنات المشتركة (القواعد والمساحات) أيضاً.
+      //
+      // وكتلةُ `DO` لأن `DROP OWNED BY` يرمي إن لم يكن الدورُ موجوداً — ولا
+      // نظيرَ لـ`IF EXISTS` فيه.
+      await _execAdmin(config, '''
+DO \$\$ BEGIN
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'uralerp_readonly') THEN
+    DROP OWNED BY uralerp_readonly CASCADE;
+    DROP USER uralerp_readonly;
+  END IF;
+END \$\$;''');
       await _execAdmin(config,
           "CREATE USER uralerp_readonly WITH PASSWORD 'r'");
       await _execAdmin(config,
@@ -283,13 +299,22 @@ void main() {
         // `2BP01 role ... cannot be dropped because some objects depend on it`
         // once the role holds any grant — which the GRANTs above create — so
         // the original teardown leaked `uralerp_readonly` into the cluster on
-        // every single run. `DROP OWNED BY` alone is NOT enough either: it does
-        // not clear the database-level `GRANT CONNECT`, which is exactly what
-        // the 2BP01 detail line points at ("privileges for database ..."). The
-        // grants have to be revoked explicitly first.
+        // every single run.
         //
-        // Each step is independent so one failure cannot skip the rest and
-        // re-leak the role.
+        // ⚠️ وكان مكتوباً هنا أن «`DROP OWNED BY` وحدَه لا يكفي: لا يمسح
+        // ‏`GRANT CONNECT` على مستوى القاعدة». **غلطٌ مقيس** 2026-08-09:
+        // ‏`DROP OWNED BY` يسحب الصلاحيات على الكائنات المشتركة (القواعد
+        // والمساحات) لأنها في `pg_shdepend` — بما فيها منحةٌ على قاعدةٍ
+        // **أخرى** لا يراها `REVOKE … ON DATABASE <الحالية>`. وهو وحدَه ما
+        // أزال منحةً متبقّيةً على `avalon_test` أعادت السويّةَ خضراء.
+        //
+        // ولماذا بقيت السلسلةُ كاملةً رغم ذلك: كلُّ خطوةٍ مستقلّة فلا يُسقط
+        // فشلُ واحدةٍ ما بعدها، والتنظيفُ الصريح يجعل نيّةَ كلّ سطرٍ مقروءة.
+        //
+        // 🔴 والأهمّ: هذه الكتلةُ كانت تُسجَّل **بعد** إنشاء الدور، فأيُّ فشلٍ
+        // قبلها — ومنه فشلُ الحذف المسبق نفسه — يُنهي الاختبارَ قبل تسجيلها
+        // فلا تعمل أبداً ويتراكم التلوّث. الحذفُ المسبق صار يُنظّف نفسه
+        // لهذا السبب.
         for (final sql in [
           'GRANT CREATE ON SCHEMA public TO PUBLIC',
           'REVOKE ALL ON ALL TABLES IN SCHEMA public FROM uralerp_readonly',
