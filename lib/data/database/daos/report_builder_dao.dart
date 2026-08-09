@@ -258,6 +258,13 @@ extension ReportBuilderDao on AppDatabase {
             if (col == 'category_name') return 'c.name AS category_name';
             if (col == 'unit_name') return 'u.name AS unit_name';
             if (col == 'quantity') return 'ib.quantity AS quantity';
+            // المُعلَن في `getAvailableFields` ليس اسمَ العمود: العمودان
+            // `sale_price` و`cost_price`، وكان يُبَثّ `products.price` و
+            // `products.cost` ⇒ `no such column` **فيفشل التقريرُ كلُّه** لا
+            // العمودُ وحده. والاسمُ المُعلَن يُحفَظ بـAS كي تبقى رؤوسُ الجدول
+            // في الواجهة هي ما اختاره المستخدم.
+            if (col == 'price') return 'products.sale_price AS price';
+            if (col == 'cost') return 'products.cost_price AS cost';
             return 'products.$col';
           case 'sales_invoices':
             if (col == 'date') return 'sales_invoices.invoice_date AS date';
@@ -285,9 +292,32 @@ extension ReportBuilderDao on AppDatabase {
             if (col == 'net_total') return 'purchase_invoices.total AS net_total';
             return 'purchase_invoices.$col';
           case 'parties':
+            // لا عمودَ `type` في الجدول — النوعُ صفتان منطقيتان
+            // (`is_customer`/`is_supplier`)، وقد يكون الطرفُ الاثنين معاً.
+            // وكان يُبَثّ `parties.type` ⇒ فشلُ التقرير كلِّه.
+            if (col == 'type') {
+              return "CASE "
+                  "WHEN parties.is_customer = 1 AND parties.is_supplier = 1 "
+                  "THEN 'عميل ومورد' "
+                  "WHEN parties.is_supplier = 1 THEN 'مورد' "
+                  "WHEN parties.is_customer = 1 THEN 'عميل' "
+                  "ELSE '-' END AS type";
+            }
             return 'parties.$col';
           case 'journal_entries':
             if (col == 'date') return 'journal_entries.entry_date AS date';
+            // لا عمودَي إجمالٍ في الجدول — الإجماليُّ يُشتقّ بجمع السطور. وكان
+            // يُبَثّ `journal_entries.total_debit` ⇒ فشلُ التقرير كلِّه.
+            //
+            // استعلامٌ فرعيٌّ مترابط لا `JOIN`: الـJOIN على السطور يُنتج صفاً
+            // لكل سطرٍ في القيد فيتضاعف كلُّ عمودٍ آخر — نفسُ عطلِ تضاعفِ
+            // الأصناف بعدد المخازن الذي أُصلح في `_getJoins`.
+            if (col == 'total_debit' || col == 'total_credit') {
+              final side = col == 'total_debit' ? 'debit' : 'credit';
+              return '(SELECT COALESCE(SUM(jel.$side), 0) '
+                  'FROM journal_entry_lines jel '
+                  'WHERE jel.entry_id = journal_entries.id) AS $col';
+            }
             return 'journal_entries.$col';
         }
         return col;
