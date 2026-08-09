@@ -106,7 +106,11 @@ QueryExecutor openPostgresConnection(PostgresConfig config) {
     settings: pg.ConnectionSettings(
       sslMode: config.useSsl ? pg.SslMode.require : pg.SslMode.disable,
       connectTimeout: const Duration(seconds: 5),
-      applicationName: 'URAL-ERP',
+      // يظهر في `pg_stat_activity` على الخادم. كان مثبَّتاً `'URAL-ERP'` في
+      // المنتجَين معاً — رغم عزل قاعدة كلّ منتج — فتظهر اتصالاتُهما بالاسم
+      // نفسه ولا يُفرَّق بينهما عند تشخيص قفلٍ أو استعلامٍ ثقيلٍ على خادمٍ
+      // مشترك. و[Brand] كلُّها `const` فلا كلفةَ تشغيل.
+      applicationName: '${Brand.name}-ERP',
     ),
   ).interceptWith(_PgCompatInterceptor());
 }
@@ -271,7 +275,7 @@ Future<String?> testPostgresConnection(PostgresConfig config) async {
       settings: pg.ConnectionSettings(
         sslMode: config.useSsl ? pg.SslMode.require : pg.SslMode.disable,
         connectTimeout: const Duration(seconds: 3),
-        applicationName: 'URAL-ERP-Test',
+        applicationName: '${Brand.name}-ERP-Test',
       ),
     );
     // Quick verification query

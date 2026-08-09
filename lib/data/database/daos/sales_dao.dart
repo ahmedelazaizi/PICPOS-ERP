@@ -649,6 +649,25 @@ extension SalesDao on AppDatabase {
   ///
   /// [allowedBranchIds] follows the Spec 151 Track-3 contract: null = no cap,
   /// {} = fail-closed, {ids} = those branches OR NULL-branch rows.
+  /// معرّفاتُ الفواتير التي **سُجِّل لها استردادٌ** داخل النافذة.
+  ///
+  /// في المسار المستقلّ هذا هو الأثرُ الوحيد الذي يحمل **تاريخ المرتجع**:
+  /// `safe_transactions(reference_type='sales_return')` و`reference_id`
+  /// معرّفُ الفاتورة الأصلية.
+  Future<List<int>> _invoiceIdsRefundedBetween(
+      DateTime start, DateTime end) async {
+    final rows = await customSelect(
+      'SELECT DISTINCT reference_id AS id FROM safe_transactions '
+      "WHERE reference_type = 'sales_return' "
+      'AND deleted_at IS NULL '
+      'AND reference_id IS NOT NULL '
+      'AND created_at >= ? AND created_at < ?',
+      variables: [dateVar(start), dateVar(end)],
+      readsFrom: {safeTransactions},
+    ).get();
+    return [for (final r in rows) r.data['id'] as int];
+  }
+
   Future<List<SalesReturnHistoryEntry>> getSalesReturnHistoryEntries(
     DateTime startDate,
     DateTime endDate, {
@@ -686,14 +705,28 @@ extension SalesDao on AppDatabase {
     final docs = await docQuery.get();
 
     // ── Shape A: originals flipped by a return ──────────────────────────────
+    //
+    // ⚠️ `invoiceDate` هو تاريخُ **البيع** لا المرتجع، والشكلُ أ لا مستندَ له
+    // يحمل تاريخَ المرتجع — يحمله صفُّ الخزينة وحدَه. فالفلترةُ به وحدَها
+    // تُخفي بيعَ يوليو المرتجَعَ في أغسطس من تقرير أغسطس، والمدى الافتراضيُّ
+    // للشاشة (أوّلُ الشهر → اليوم) يجعل **كلَّ** مرتجعٍ لفاتورةٍ أقدم غيرَ
+    // مرئيّ. مقيسٌ: التقريرُ رجع فارغاً على تنصيبٍ مستقلّ.
+    //
+    // والتوسعةُ **إضافيةٌ بـ`OR`** لا استبدال: لا تُسقط صفّاً كان يظهر، ولا
+    // تكسر اختباراً قائماً. والفاتورةُ المطابقةُ للشرطين تظهر مرةً واحدة —
+    // الـ`OR` شرطٌ لا وصل.
+    final refundedIds = await _invoiceIdsRefundedBetween(start, end);
     final originalQuery = select(salesInvoices)
-      ..where(
-        (s) =>
-            s.invoiceDate.isBetween(Variable(start), Variable(end)) &
+      ..where((s) {
+        final inWindow = s.invoiceDate.isBetween(Variable(start), Variable(end));
+        // `isIn([])` يولّد `IN ()` — غيرُ صالحٍ في SQLite، فيُتخطّى الشقُّ.
+        final dated =
+            refundedIds.isEmpty ? inWindow : (inWindow | s.id.isIn(refundedIds));
+        return dated &
             s.isDeleted.equals(false) &
             s.status.isIn(const ['returned', 'partial_return']) &
-            (s.saleType.equals('return').not() | s.saleType.isNull()),
-      );
+            (s.saleType.equals('return').not() | s.saleType.isNull());
+      });
     applyBranchCap(originalQuery);
     originalQuery
       ..orderBy([(s) => OrderingTerm.desc(s.createdAt)])
@@ -946,6 +979,17 @@ extension SalesDao on AppDatabase {
   /// Returns should be interpreted as it does on screen: return invoices are
   /// NOT sales rows (excluded from the count and the gross total) and are
   /// reported separately in [SalesInvoiceSummary.totalReturns].
+  ///
+  /// ⚠️ والفاتورةُ **المرتجَعة** ليست مستندَ مرتجع: تبقى في العدّ وفي المجمل
+  /// بقيمتها الكاملة، ويُطرح المرتجعُ الفعليّ منها في [SalesInvoiceSummary.netSales].
+  /// حذفُها من المجمل **مع** عدّها في المرتجعات يخصم المبلغَ مرتين (‏١٠٠٠
+  /// مرتجعة ⇒ صفر − ١٠٠٠ = سالب ١٠٠٠). وهي دلالةُ قائمة الدخل: المردوداتُ
+  /// حسابٌ مقابلٌ للإيراد لا حذفٌ منه.
+  ///
+  /// و[SalesInvoiceSummary.totalReturns] يجمع **مصدرَي** المرتجع كما يفعل
+  /// [getReturnedAmountsForInvoices] الذي يغذّي «المتبقي» في كلّ صفّ — مستندُ
+  /// المرتجع (الشكل ب) واستردادُ الخزينة (الشكل أ). وبلا الثاني تخرج البطاقةُ
+  /// **صفراً دائماً** على أيّ تنصيبٍ مستقلّ.
   Future<SalesInvoiceSummary> getSalesInvoiceSummary({
     required DateTime from,
     required DateTime to,
@@ -1018,6 +1062,7 @@ extension SalesDao on AppDatabase {
       returnVars.add(Variable<int>(costCenterId));
     }
 
+    // ── المصدر ١: مستنداتُ المرتجع (الشكل ب) ────────────────────────────────
     final returns = await customSelect(
       'SELECT COALESCE(SUM(total), 0) AS total FROM sales_invoices '
       "WHERE sale_type = 'return' AND is_deleted = $boolFalse "
@@ -1026,9 +1071,62 @@ extension SalesDao on AppDatabase {
       readsFrom: {salesInvoices},
     ).getSingle();
 
+    // ── المصدر ٢: استردادُ الخزينة (الشكل أ) ────────────────────────────────
+    //
+    // 🔴 هذا هو ما كان ناقصاً. في التنصيب المستقلّ **لا يُكتب مستندُ مرتجعٍ
+    // إطلاقاً**: `processSalesReturn` يقلب حالةَ الفاتورة الأصلية ويكتب صفَّ
+    // خزينةٍ فقط. فصفوفُ `sale_type='return'` معدومةٌ هناك، وكانت البطاقةُ
+    // تخرج **صفراً دائماً** بينما الفاتورةُ المرتجَعة تدخل «إجمالي المبيعات»
+    // بقيمتها الكاملة: مبيعاتٌ منتفخة · مرتجعاتٌ صفر · صافٍ = المجمل.
+    //
+    // والجمعُ لا الاستبدال — مطابقةً لـ[getReturnedAmountsForInvoices] الذي
+    // يغذّي «المتبقي» في كلّ صفّ. وكان تعليقُ هذه الدالة يدّعي تلك المطابقةَ
+    // ولا يحقّقها، فتخالف البطاقةُ الصفوفَ تحتها.
+    //
+    // والنافذةُ على `created_at` — تاريخِ **حدوث** المرتجع — تماثلاً مع
+    // الشكل ب الذي يُفلتر بتاريخ مستند المرتجع. فالمجملُ بتاريخ البيع
+    // والمرتجعُ بتاريخ الرد، وهي دلالةُ قائمة الدخل.
+    //
+    // والحصرُ يُطبَّق على الفاتورة **الأصلية** بالوصل: `safe_transactions`
+    // لا تحمل مخزناً ولا فرعاً ولا مركزَ تكلفة، فبلا الوصل يُخصم مرتجعُ
+    // مخزنٍ آخر من هذا المخزن.
+    final stVars = <Variable>[dateVar(start), dateVar(endExclusive)];
+    var stScope = '';
+    if (warehouseIds != null) {
+      if (warehouseIds.isEmpty) {
+        stScope = ' AND 1 = 0';
+      } else {
+        stScope =
+            ' AND si.warehouse_id IN (${warehouseIds.map((_) => '?').join(', ')})';
+        stVars.addAll(warehouseIds.map((id) => Variable<int>(id)));
+      }
+    }
+    if (branchId != null) {
+      stScope += ' AND si.branch_id = ?';
+      stVars.add(Variable<int>(branchId));
+    }
+    if (costCenterId != null) {
+      stScope += ' AND si.cost_center_id = ?';
+      stVars.add(Variable<int>(costCenterId));
+    }
+
+    final safeReturns = await customSelect(
+      'SELECT COALESCE(SUM(st.amount), 0) AS total '
+      'FROM safe_transactions st '
+      'JOIN sales_invoices si ON si.id = st.reference_id '
+      "WHERE st.reference_type = 'sales_return' "
+      'AND st.deleted_at IS NULL '
+      "AND si.is_deleted = $boolFalse "
+      'AND st.created_at >= ? AND st.created_at < ?'
+      '$stScope',
+      variables: stVars,
+      readsFrom: {safeTransactions, salesInvoices},
+    ).getSingle();
+
     final total = (sales.data['total'] as num?)?.toDouble() ?? 0;
     final paid = (sales.data['paid'] as num?)?.toDouble() ?? 0;
-    final returned = (returns.data['total'] as num?)?.toDouble() ?? 0;
+    final returned = ((returns.data['total'] as num?)?.toDouble() ?? 0) +
+        ((safeReturns.data['total'] as num?)?.toDouble() ?? 0);
 
     return SalesInvoiceSummary(
       invoiceCount: (sales.data['n'] as num?)?.toInt() ?? 0,
