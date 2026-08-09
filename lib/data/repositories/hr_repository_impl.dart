@@ -262,4 +262,27 @@ class HRRepositoryImpl implements IHRRepository {
   @override
   Future<void> updateContractStatus(int contractId, String status) =>
       _db.updateContractStatus(contractId, status);
+
+  @override
+  Future<List<WorkHoliday>> getWorkHolidays({
+    required Set<int>? allowedBranchIds,
+  }) =>
+      _db.getWorkHolidays(allowedBranchIds: allowedBranchIds);
+
+  @override
+  Future<int> addWorkHoliday({
+    required String name,
+    required int? weekday,
+    required DateTime? date,
+    required int? branchId,
+  }) =>
+      _db.addWorkHoliday(
+        name: name,
+        weekday: weekday,
+        date: date,
+        branchId: branchId,
+      );
+
+  @override
+  Future<void> deleteWorkHoliday(int id) => _db.deleteWorkHoliday(id);
 }

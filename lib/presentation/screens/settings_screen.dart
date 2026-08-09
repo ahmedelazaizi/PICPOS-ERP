@@ -31,6 +31,7 @@ import '../widgets/settings/user_management_widget.dart';
 import '../widgets/settings/permissions_management_widget.dart';
 import 'settings/widgets/server_perms_toggle_dialog.dart';
 import 'account_mapping_settings_screen.dart';
+import 'settings/work_holidays_screen.dart';
 
 import 'printers_screen.dart';
 import 'pos_terminals_screen.dart';
@@ -697,6 +698,36 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             const Divider(height: 1),
                             const _EInvoiceVisibilityToggles(),
                           ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // ═══ 5.1 شؤون الموظفين ═══
+                    // عطلاتُ العمل مدخلُ إعداداتٍ لا شاشةُ تشغيل: عليها يقوم
+                    // مقامُ `workingDaysInMonth` الذي يُشتقّ منه أجرُ الساعة
+                    // والإضافيُّ المحسوب. الحارسُ `hrManage` لا `settingsBackup`
+                    // لأنها إعدادُ موظفين لا إعدادُ محاسبة.
+                    PermissionGuard(
+                      permission: PermissionCodes.hrManage,
+                      allowManagerOverride: true,
+                      actionName: 'عطلات العمل',
+                      child: _buildSettingsCard(
+                        title: 'شؤون الموظفين',
+                        children: [
+                          ListTile(
+                            leading: const Icon(PhosphorIconsBold.calendarCheck,
+                                color: AppColors.primary),
+                            title: const Text('عطلات العمل'),
+                            subtitle: const Text(
+                                'العطل الأسبوعية والأعياد — أساسُ حساب أيام العمل وأجر الساعة والإضافي'),
+                            trailing: const Icon(PhosphorIconsBold.caretLeft),
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) => const WorkHolidaysScreen()),
+                            ),
+                          ),
                         ],
                       ),
                     ),

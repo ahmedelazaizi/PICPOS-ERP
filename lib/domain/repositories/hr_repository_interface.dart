@@ -138,4 +138,23 @@ abstract class IHRRepository {
     String? notes,
   });
   Future<void> updateContractStatus(int contractId, String status);
+
+  // Work holidays
+  //
+  // H6 — نفسُ اصطلاح `allowedBranchIds` أعلاه: `null` = وصولٌ كامل، ومجموعةٌ
+  // فارغة = صفرُ صفوف. عطلةٌ بلا فرع (`branchId == null`) عامّةٌ وتظلّ
+  // مرئيةً لكل نطاق.
+  Future<List<WorkHoliday>> getWorkHolidays({
+    required Set<int>? allowedBranchIds,
+  });
+
+  /// يرمي `ArgumentError` عند مدخلٍ غيرَ صالح (كليهما أو لا شيء منهما،
+  /// يومُ أسبوعٍ خارج ١–٧، اسمٌ فارغ) — انظر `WorkHolidaysDao.addWorkHoliday`.
+  Future<int> addWorkHoliday({
+    required String name,
+    required int? weekday,
+    required DateTime? date,
+    required int? branchId,
+  });
+  Future<void> deleteWorkHoliday(int id);
 }

@@ -80,6 +80,9 @@ class _MockHR implements IHRRepository {
   @override Future<List<EmployeeContract>> getExpiringContracts(int d) => throw UnimplementedError();
   @override Future<int> addEmployeeContract({required int employeeId, required String contractType, required DateTime startDate, DateTime? endDate, required double salary, String? benefits, String? terminationClause, String? notes}) => throw UnimplementedError();
   @override Future<void> updateContractStatus(int id, String s) => throw UnimplementedError();
+  @override Future<List<WorkHoliday>> getWorkHolidays({Set<int>? allowedBranchIds}) => throw UnimplementedError();
+  @override Future<int> addWorkHoliday({required String name, int? weekday, DateTime? date, int? branchId}) => throw UnimplementedError();
+  @override Future<void> deleteWorkHoliday(int id) => throw UnimplementedError();
 }
 
 void main() {

@@ -4,7 +4,32 @@ part of '../database.dart';
 // WORK HOLIDAYS — تقويمُ العطلات وأيامُ العمل
 // ═══════════════════════════════════════════════════════════════════════════
 
+/// H6 — شرطُ حصر عطلات العمل بالفرع، مطابقٌ لـ`_employeeBranchScope` في
+/// `hr_extensions.dart` بالحرف: عطلةٌ بلا فرع (`branch_id IS NULL`) عامّةٌ
+/// وتبقى مرئيةً لكل نطاق، ومجموعةٌ فارغة تعني صفرَ صفوف لا «بلا حصر».
+Expression<bool> _workHolidayBranchScope(
+        $WorkHolidaysTable h, Set<int> ids) =>
+    ids.isEmpty
+        ? const Constant(false)
+        : h.branchId.isIn(ids.toList()) | h.branchId.isNull();
+
 extension WorkHolidaysDao on AppDatabase {
+  /// كلُّ عطلات العمل المعرَّفة — محصورةٌ بفروع المستخدم (H6).
+  Future<List<WorkHoliday>> getWorkHolidays({
+    required Set<int>? allowedBranchIds,
+  }) {
+    final q = select(workHolidays)
+      ..orderBy([(h) => OrderingTerm.asc(h.name)]);
+    if (allowedBranchIds != null) {
+      q.where((h) => _workHolidayBranchScope(h, allowedBranchIds));
+    }
+    return q.get();
+  }
+
+  /// يحذف عطلةً بمعرّفها.
+  Future<void> deleteWorkHoliday(int id) =>
+      (delete(workHolidays)..where((h) => h.id.equals(id))).go();
+
   /// أيامُ العطلة في شهرٍ لفرعٍ ما — تواريخُ بلا وقت.
   ///
   /// **مجموعةٌ لا قائمة**: عيدٌ يقع على عطلةٍ أسبوعية يجب أن يُعدّ يوماً

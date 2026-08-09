@@ -110,6 +110,7 @@ import '../../widgets/settings/user_management_widget.dart';
 import '../../widgets/settings/permissions_management_widget.dart';
 import '../../screens/settings/widgets/server_perms_toggle_dialog.dart';
 import '../../screens/account_mapping_settings_screen.dart';
+import '../../screens/settings/work_holidays_screen.dart';
 
 import '../../screens/printers_screen.dart';
 import '../../screens/pos_terminals_screen.dart';
@@ -808,6 +809,43 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
                   const Divider(height: 1),
                   const _EInvoiceVisibilityToggles(),
                 ],
+              ],
+            ),
+          ),
+        ],
+      ),
+      _SettingsSection(
+        id: 'hr',
+        title: 'شؤون الموظفين',
+        icon: PhosphorIconsBold.calendarCheck,
+        keywords: 'عطلات عطل إجازات أسبوعية أعياد أيام العمل رواتب '
+            'أجر الساعة إضافي وقت',
+        children: () => [
+          // ═══ 5.1 شؤون الموظفين ═══
+          // عطلاتُ العمل مدخلُ إعداداتٍ لا شاشةُ تشغيل: عليها يقوم مقامُ
+          // `workingDaysInMonth` الذي يُشتقّ منه أجرُ الساعة والإضافيُّ
+          // المحسوب. الحارسُ `hrManage` لا `settingsBackup` لأنها إعدادُ
+          // موظفين لا إعدادُ محاسبة.
+          PermissionGuard(
+            permission: PermissionCodes.hrManage,
+            allowManagerOverride: true,
+            actionName: 'عطلات العمل',
+            child: _buildSettingsCard(
+              title: 'شؤون الموظفين',
+              children: [
+                ListTile(
+                  leading: const Icon(PhosphorIconsBold.calendarCheck,
+                      color: AppColors.primary),
+                  title: const Text('عطلات العمل'),
+                  subtitle: const Text(
+                      'العطل الأسبوعية والأعياد — أساسُ حساب أيام العمل وأجر الساعة والإضافي'),
+                  trailing: const Icon(PhosphorIconsBold.caretLeft),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const WorkHolidaysScreen()),
+                  ),
+                ),
               ],
             ),
           ),
