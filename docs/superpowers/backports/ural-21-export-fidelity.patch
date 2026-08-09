@@ -1,0 +1,171 @@
+diff --git a/lib/presentation/screens/reports/purchases_report_screen.dart b/lib/presentation/screens/reports/purchases_report_screen.dart
+index 025b1dae..c21a1348 100644
+--- a/lib/presentation/screens/reports/purchases_report_screen.dart
++++ b/lib/presentation/screens/reports/purchases_report_screen.dart
+@@ -690,7 +690,10 @@ class _PurchasesReportScreenState extends ConsumerState<PurchasesReportScreen> {
+         'المتبقي',
+         'الحالة',
+       ],
+-      rows: _invoices.map<List<dynamic>>((item) {
++      // ‏`_filteredInvoices` لا `_invoices`: الجدولُ والطباعةُ والتحليلاتُ كلُّها
++      // تقرأ المفلترة، والفلترُ الباقي عميلاً هو **البحثُ النصّي**. فمن يبحث عن
++      // مورّدٍ فيرى ثلاثَ فواتير ثم يصدّر كان يحصل على المئتين كلِّها.
++      rows: _filteredInvoices.map<List<dynamic>>((item) {
+         final p = item.invoice;
+         return [
+           p.invoiceNumber,
+diff --git a/lib/presentation/screens/reports/sales_report_screen.dart b/lib/presentation/screens/reports/sales_report_screen.dart
+index bc469e8b..a7b3ea43 100644
+--- a/lib/presentation/screens/reports/sales_report_screen.dart
++++ b/lib/presentation/screens/reports/sales_report_screen.dart
+@@ -1060,7 +1060,11 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
+               s.total,
+               s.paid,
+               s.total - s.paid,
+-              s.paymentMethod == 'cash' ? 'نقدي' : 'آجل',
++              // الخريطةُ الثنائية كانت تطبع كلَّ ما ليس نقدياً «آجل»: البطاقةُ
++              // والتحويلُ والكليكُ والمتعدّد. فالمحاسبُ يقرأ الملفَّ فيرى
++              // مبيعاتِ البطاقات ديوناً على العملاء. و`_paymentLabel` قائمةٌ
++              // بالفعل ويستعملها الجدولُ والطباعة — كان التصديرُ وحده يتخطّاها.
++              _paymentLabel(s.paymentMethod),
+             ],
+           )
+           .whereType<List<dynamic>>()
+diff --git a/test/structural/report_export_matches_screen_test.dart b/test/structural/report_export_matches_screen_test.dart
+new file mode 100644
+index 00000000..1891f6b0
+--- /dev/null
++++ b/test/structural/report_export_matches_screen_test.dart
+@@ -0,0 +1,132 @@
++// حارس بنيوي — الملفُّ المُصدَّر لا بد أن يقول ما تقوله الشاشة.
++//
++// ── ليه بنيويّ لا سلوكيّ ────────────────────────────────────────────────────
++// العطلان أدناه في **حالة الودجت** لا في استعلام: أيُّ مجموعةٍ يقرأها زرُّ
++// التصدير، وأيُّ خريطةِ تسميةٍ يستعملها. لا استعلامَ يُختبر ولا دالةَ يُنادى
++// عليها — والاختبارُ السلوكي يحتاج تشغيلَ الشاشة وكتابةَ ملفٍ على القرص لكل
++// حالة. وفئةُ العطل تتكرّر بطبيعتها: **نسخةٌ ثانية** من منطقٍ قائم تنحرف عن
++// الأصل، ولا شيء يمنع النسخةَ الثالثة.
++//
++// ── العطلان المقيسان (2026-08-09) ──────────────────────────────────────────
++// ١) `sales_report_screen` فيه `_paymentLabel` صحيحة تفرّق ستَّ طرقِ دفع
++//    (نقدي · بطاقة/تحويل · كليك · متعدد · آجل)، ويستعملها الجدولُ والطباعة.
++//    ومسارُ تصدير Excel كان يكتب بدلها
++//    `paymentMethod == 'cash' ? 'نقدي' : 'آجل'` — فبطاقةٌ وتحويلٌ وكليكٌ
++//    ومتعدّدٌ **كلُّها تُصدَّر «آجل»**. والمحاسبُ يقرأ الملفَّ فيرى مبيعاتِ
++//    البطاقات ديوناً على العملاء.
++//
++// ٢) `purchases_report_screen` يعرض `_filteredInvoices` في الجدول والطباعة
++//    والتحليلات، وكان يصدّر `_invoices` — والفلترُ الباقي عميلاً هو **البحثُ
++//    النصّي** (الفلاتر المكانية صارت على السيرفر). فمن يبحث عن مورّدٍ فيرى
++//    ثلاثَ فواتير ثم يصدّر يحصل على المئتين كلِّها.
++//
++// ── العقد ───────────────────────────────────────────────────────────────────
++// في `lib/presentation/screens/reports/`:
++//   أ) لا خريطةَ تسميةٍ ثنائية لطريقة الدفع (‏`== 'cash' ? … : …`) — التسميةُ
++//      تمرّ بدالة الشاشة الواحدة.
++//   ب) أيُّ شاشةٍ تُعلن مجموعةً خامّاً ومجموعةً مفلترة، فتصديرُها يقرأ المفلترة.
++
++import 'dart:io';
++
++import 'package:flutter_test/flutter_test.dart';
++
++const _reportsDir = 'lib/presentation/screens/reports';
++
++List<File> _reportScreens() {
++  final dir = Directory(_reportsDir);
++  expect(dir.existsSync(), isTrue,
++      reason: 'مجلد شاشات التقارير اتغيّر مكانه — حدّث الحارس');
++  return dir
++      .listSync()
++      .whereType<File>()
++      .where((f) => f.path.endsWith('.dart'))
++      .toList();
++}
++
++/// يحذف تعليقات السطر قبل أي فحص.
++///
++/// ⚠️ ليس تجميلاً — الطفرةُ M3 نجت بسببه: تعليقٌ يشرح الإصلاح ويذكر فيه
++/// `_filteredInvoices` كان يُرضي شرطَ «الاسمُ موجود» فيعمى الحارسُ عن كودٍ
++/// يقرأ المجموعةَ الخامّة. فالحارسُ يفحص **الكودَ** لا ما كُتب عنه.
++String _stripComments(String source) => source
++    .split('\n')
++    .map((l) {
++      final i = l.indexOf('//');
++      return i < 0 ? l : l.substring(0, i);
++    })
++    .join('\n');
++
++/// جسمُ دالةٍ بالاسم — من سطر التعريف إلى أول سطرٍ يُغلق على عمودِ الدالة.
++///
++/// كافٍ لهذا الغرض: الدوالُ المفحوصة أعضاءٌ بمسافةِ بادئةٍ من فراغَين، فسطرُ
++/// `  }` يُغلقها. ولو تغيّر التنسيق يفشل الحارسُ بوضوح لا بصمت.
++String? _methodBody(String source, String signature) {
++  final lines = source.split('\n');
++  final start = lines.indexWhere((l) => l.contains(signature));
++  if (start < 0) return null;
++  final end = lines.indexWhere((l) => l.trimRight() == '  }', start + 1);
++  if (end < 0) return null;
++  return lines.sublist(start, end + 1).join('\n');
++}
++
++void main() {
++  group('أ — لا خريطة تسمية ثنائية لطريقة الدفع', () {
++    test('كل شاشات التقارير', () {
++      final offenders = <String>[];
++
++      for (final file in _reportScreens()) {
++        final source = _stripComments(file.readAsStringSync());
++        for (final (i, line) in source.split('\n').indexed) {
++          // الشكلُ المرصود: شرطٌ على 'cash' ثم قيمتان نصّيتان.
++          final binaryCashLabel = RegExp(
++            r"==\s*'cash'\s*\?\s*'[^']*'\s*:\s*'[^']*'",
++          );
++          if (binaryCashLabel.hasMatch(line)) {
++            offenders.add('${file.path}:${i + 1}');
++          }
++        }
++      }
++
++      expect(offenders, isEmpty,
++          reason: 'خريطةٌ ثنائية تطبع كلَّ ما ليس نقدياً «آجل»: البطاقةُ '
++              'والتحويلُ والكليكُ والمتعدّد. مرّرها بدالة تسمية الشاشة.\n'
++              '${offenders.join('\n')}');
++    });
++  });
++
++  group('ب — التصدير يقرأ المجموعة المفلترة', () {
++    test('كل شاشة تُعلن مجموعةً خامّاً ومفلترة', () {
++      final offenders = <String>[];
++
++      for (final file in _reportScreens()) {
++        final source = _stripComments(file.readAsStringSync());
++
++        // الشكلُ المرصود: حقلان بنفس النوع، أحدهما `_filteredX`.
++        final filteredDecl =
++            RegExp(r'^\s*List<[^>]+>\s+_filtered(\w+)\s*=', multiLine: true)
++                .firstMatch(source);
++        if (filteredDecl == null) continue;
++
++        final rawName = '_${_lowerFirst(filteredDecl.group(1)!)}';
++        final filteredName = '_filtered${filteredDecl.group(1)}';
++
++        final body = _methodBody(source, 'Future<void> _exportToExcel()');
++        if (body == null) continue;
++
++        // مسارُ التصدير لا يجوز أن يقرأ الخامّ حين توجد مفلترة.
++        if (RegExp('$rawName(?![A-Za-z0-9_])').hasMatch(body) &&
++            !body.contains(filteredName)) {
++          offenders.add('${file.path} → _exportToExcel يقرأ $rawName '
++              'بدل $filteredName');
++        }
++      }
++
++      expect(offenders, isEmpty,
++          reason: 'الملفُّ المُصدَّر يخالف ما رآه المستخدم على الشاشة:\n'
++              '${offenders.join('\n')}');
++    });
++  });
++}
++
++String _lowerFirst(String s) =>
++    s.isEmpty ? s : s[0].toLowerCase() + s.substring(1);

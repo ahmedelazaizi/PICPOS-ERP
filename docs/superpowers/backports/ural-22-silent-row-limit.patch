@@ -1,0 +1,304 @@
+diff --git a/lib/data/database/daos/report_builder_dao.dart b/lib/data/database/daos/report_builder_dao.dart
+index f7183191..fef5cb79 100644
+--- a/lib/data/database/daos/report_builder_dao.dart
++++ b/lib/data/database/daos/report_builder_dao.dart
+@@ -4,6 +4,13 @@ part of '../database.dart';
+ // REPORT BUILDER DAO — منشئ التقارير المخصصة (Phase C5)
+ // ═══════════════════════════════════════════════════════════════════════════
+ 
++/// سقفُ صفوف تقريرٍ مخصَّص واحد.
++///
++/// كان `LIMIT 10000` رقماً مدفوناً في بناء الاستعلام بتعليق `// Safety limit`،
++/// فلا المستخدمُ يعلم بوجوده ولا الكودُ يتيح تغييره. معلَنٌ هنا كي يُقاس عليه
++/// الإبلاغُ ويُمرَّر في الاختبار بقيمةٍ صغيرة بدل زرعِ عشرةِ آلاف صفّ.
++const int kReportBuilderRowLimit = 10000;
++
+ extension ReportBuilderDao on AppDatabase {
+ 
+   // ─────────────────────────────────────────────────────────────────────────
+@@ -81,9 +88,18 @@ extension ReportBuilderDao on AppDatabase {
+   /// (شوف [_scopeClauseFor]). وكيان مالوش فلتر مدعوم بيرجّع **فاضي** لمستخدم
+   /// محصور بدل ما يتساب يسرّب: الحصر الجزئي أخطر من غيابه، لأن التقرير بيبان
+   /// محصوراً والمستخدم بيثق فيه.
++  /// [rowLimit] — سقفُ الصفوف المُرجَعة. و[onRowLimitReached] يُنادى **فقط** إذا
++  /// كانت هناك صفوفٌ أكثر منه ⇒ التقريرُ مقتطع.
++  ///
++  /// كان السقفُ `LIMIT 10000` مدفوناً في بناء الاستعلام **بلا أن ينطق**: من
++  /// يبني تقريراً على ١٥ ألف صفٍّ يرى عشرةَ آلاف ويجمع العمودَ ويقدّمه إجمالياً
++  /// للفترة. والتقريرُ المقتطعُ لا يُميَّز عن الكامل — وهذا أخطرُ من فشلٍ، لأن
++  /// الفشلَ يُرى.
+   Future<List<Map<String, dynamic>>> executeReport(
+     int reportId, {
+     Set<int>? allowedBranchIds,
++    int rowLimit = kReportBuilderRowLimit,
++    void Function(int limit)? onRowLimitReached,
+   }) async {
+     final report = await getCustomReport(reportId);
+     if (report == null) return [];
+@@ -91,13 +107,20 @@ extension ReportBuilderDao on AppDatabase {
+     final stopwatch = Stopwatch()..start();
+ 
+     // Build the query dynamically
+-    final query = _buildReportQuery(report, allowedBranchIds);
++    final query = _buildReportQuery(report, allowedBranchIds, rowLimit);
+     if (query == null) {
+       debugPrint('[ReportBuilder] رُفض: الكيان "${report.sourceEntity}" مالوش '
+           'فلتر حصر مدعوم، والمستخدم محصور بفرع');
+       return [];
+     }
+-    final results = await customSelect(query).get();
++    var results = await customSelect(query).get();
++
++    // الصفُّ الزائد دليلُ القصّ: يُبلَّغ عنه ثم يُطرَح فلا يُعرَض ولا يُحتسب.
++    // والإبلاغُ **قبل** الطرح كي لا يبقى الاكتشافُ متوقفاً على ترتيبِ سطور.
++    if (results.length > rowLimit) {
++      onRowLimitReached?.call(rowLimit);
++      results = results.sublist(0, rowLimit);
++    }
+ 
+     stopwatch.stop();
+ 
+@@ -222,7 +245,7 @@ extension ReportBuilderDao on AppDatabase {
+   }
+ 
+   String? _buildReportQuery(
+-      CustomReportData report, Set<int>? allowedBranchIds) {
++      CustomReportData report, Set<int>? allowedBranchIds, int rowLimit) {
+     final tableName = _getTableName(report.sourceEntity);
+     
+     // Map friendly keys to proper SQL columns to prevent "no such column" errors
+@@ -311,7 +334,10 @@ extension ReportBuilderDao on AppDatabase {
+       query += ' ORDER BY ${report.sortBy}';
+     }
+ 
+-    query += ' LIMIT 10000'; // Safety limit
++    // ‏`rowLimit + 1` عن قصد: `LIMIT n` وحده لا يفرّق بين «توجد n صفوفٍ
++    // بالضبط» و«قُصَّت». فالصفُّ الزائدُ **دليلٌ لا بيانات** — يُقاس ثم يُطرح
++    // في [executeReport].
++    query += ' LIMIT ${rowLimit + 1}';
+ 
+     return query;
+   }
+diff --git a/lib/data/repositories/reporting_repository_impl.dart b/lib/data/repositories/reporting_repository_impl.dart
+index 733fa894..34750162 100644
+--- a/lib/data/repositories/reporting_repository_impl.dart
++++ b/lib/data/repositories/reporting_repository_impl.dart
+@@ -566,8 +566,11 @@ class ReportingRepositoryImpl implements IReportingRepository {
+ 
+   @override
+   Future<List<Map<String, dynamic>>> executeReport(int reportId,
+-          {Set<int>? allowedBranchIds}) =>
+-      _db.executeReport(reportId, allowedBranchIds: allowedBranchIds);
++          {Set<int>? allowedBranchIds,
++          void Function(int limit)? onRowLimitReached}) =>
++      _db.executeReport(reportId,
++          allowedBranchIds: allowedBranchIds,
++          onRowLimitReached: onRowLimitReached);
+ 
+   @override
+   List<Map<String, String>> getAvailableFields(String entity) =>
+diff --git a/lib/domain/repositories/reporting_repository.dart b/lib/domain/repositories/reporting_repository.dart
+index 12dbe75f..2357eb84 100644
+--- a/lib/domain/repositories/reporting_repository.dart
++++ b/lib/domain/repositories/reporting_repository.dart
+@@ -41,8 +41,11 @@ abstract class IReportingRepository
+   /// Execute a custom report and get results
+   /// [allowedBranchIds] — null = وصول كامل. كيان مالوش فلتر حصر مدعوم
+   /// بيرجّع فاضي لمستخدم محصور بدل ما يتساب يسرّب.
++  /// [onRowLimitReached] يُنادى إذا كانت البيانات أكثر من السقف ⇒ الناتجُ
++  /// **مقتطع**. تمريرُه ليس تحسيناً: بلا إبلاغٍ يقرأ المستخدم تقريراً ناقصاً
++  /// كأنه كامل ويجمع أعمدته.
+   Future<List<Map<String, dynamic>>> executeReport(int reportId,
+-      {Set<int>? allowedBranchIds});
++      {Set<int>? allowedBranchIds, void Function(int limit)? onRowLimitReached});
+ 
+   /// Get fields available for a custom report entity
+   List<Map<String, String>> getAvailableFields(String entity);
+diff --git a/lib/presentation/screens/report_builder_screen.dart b/lib/presentation/screens/report_builder_screen.dart
+index 247c046b..a196caed 100644
+--- a/lib/presentation/screens/report_builder_screen.dart
++++ b/lib/presentation/screens/report_builder_screen.dart
+@@ -18,6 +18,10 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
+   List<CustomReportData> _reports = [];
+   CustomReportData? _selectedReport;
+   List<Map<String, dynamic>> _results = [];
++
++  /// السقفُ الذي اقتُطع عنده آخرُ تشغيل، أو `null` إن كان التقريرُ كاملاً.
++  int? _truncatedAt;
++
+   bool _loading = true;
+   bool _running = false;
+ 
+@@ -197,6 +201,26 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
+             ),
+           ]),
+         ),
++        if (_truncatedAt != null)
++          Container(
++            width: double.infinity,
++            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
++            color: Colors.orange.withValues(alpha: 0.15),
++            child: Row(children: [
++              const Icon(PhosphorIconsBold.warning,
++                  size: 18, color: Colors.orange),
++              const SizedBox(width: 8),
++              Expanded(
++                child: Text(
++                  'التقرير مقتطع عند $_truncatedAt صف — البيانات أكثر من ذلك. '
++                  'الإجماليات المحسوبة من هذا الجدول ناقصة؛ ضيّق الفترة أو '
++                  'أضف فلتراً.',
++                  style: theme.textTheme.bodySmall
++                      ?.copyWith(fontWeight: FontWeight.bold),
++                ),
++              ),
++            ]),
++          ),
+         Expanded(
+           child: _results.isEmpty
+               ? Center(
+@@ -251,10 +275,21 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
+       // الشركة كلها. الحصر بيتطبّق جوّه الاستعلام لكل كيان على حدة، وكيان
+       // مالوش فلتر مدعوم بيرجّع فاضي بدل ما يتساب يسرّب.
+       final scope = await ref.read(branchScopeProvider.future);
+-      final results = await repo.executeReport(report.id,
+-          allowedBranchIds: scope.allowedBranchIds);
++      // القصُّ يُلتقط أثناء التنفيذ ويُعرَض **لافتةً ثابتة** لا رسالةً عابرة:
++      // هو صفةٌ للتقرير المعروض لا حدثٌ لحظي، ومن يفوّت الرسالة يجمع أعمدةَ
++      // تقريرٍ ناقصٍ ويقدّمها إجمالياً للفترة.
++      int? truncatedAt;
++      final results = await repo.executeReport(
++        report.id,
++        allowedBranchIds: scope.allowedBranchIds,
++        onRowLimitReached: (limit) => truncatedAt = limit,
++      );
+       if (!mounted) return;
+-      setState(() { _results = results; _running = false; });
++      setState(() {
++        _results = results;
++        _truncatedAt = truncatedAt;
++        _running = false;
++      });
+       if (results.isEmpty && !scope.hasFullAccess) {
+         AppToast.show(
+             context,
+diff --git a/test/unit/report_builder_row_limit_test.dart b/test/unit/report_builder_row_limit_test.dart
+new file mode 100644
+index 00000000..213c1335
+--- /dev/null
++++ b/test/unit/report_builder_row_limit_test.dart
+@@ -0,0 +1,115 @@
++// ═══════════════════════════════════════════════════════════════════════════
++// منشئ التقارير كان يقصّ عند ١٠٠٠٠ صفٍّ **بلا أن ينطق**.
++// ═══════════════════════════════════════════════════════════════════════════
++//
++// `_buildReportQuery` كان يُلحق `LIMIT 10000 // Safety limit` بكل استعلام. فمن
++// يبني تقريراً على ١٥ ألف حركةِ مخزون يرى عشرةَ آلاف، ويجمع عمودَ القيمة،
++// ويقدّم الرقمَ على أنه إجماليُّ الفترة. **لا رسالةَ ولا علامة** — والتقريرُ
++// المقتطعُ لا يُميَّز عن التقريرِ الكامل.
++//
++// وهذا أخطرُ من تقريرٍ يفشل: الفشلُ يُرى، والقصُّ الصامتُ يُقرأ كأنه الحقيقة.
++//
++// ── ليه معامل اختياري لا كسرُ توقيع ─────────────────────────────────────────
++// `executeReport` له مُنادٍ إنتاجيٌّ واحد لكن نحو ٢٠ موضعاً في الاختبارات، ومنها
++// ملفٌّ تحمله رقعةُ نقلٍ سابقة لـUralCash — فكسرُ التوقيع يوسّع الرقعة ويخلق
++// تعارضاً مع ما رُكِّب. والمعاملُ الاختياري يُبلِّغ من يسأل بلا أن يلمس من لا
++// يسأل.
++//
++// ── والقصُّ يُكتشَف بجلبِ صفٍّ زائد ──────────────────────────────────────────
++// `LIMIT n` وحده لا يفرّق بين «توجد n صفوفٍ بالضبط» و«قُصَّت». فالاستعلامُ يجلب
++// `n + 1` ويُرجِع `n` — ووجودُ الزائد هو الدليل.
++// ═══════════════════════════════════════════════════════════════════════════
++
++import 'package:drift/drift.dart' hide isNotNull, isNull;
++import 'package:flutter_test/flutter_test.dart';
++import 'package:ural_erp/data/database/database.dart';
++
++void main() {
++  late AppDatabase db;
++
++  Future<int> report(String entity, String columns) =>
++      db.into(db.customReports).insert(CustomReportsCompanion.insert(
++          name: 'ت', sourceEntity: entity, columns: columns));
++
++  Future<void> seedParties(int count) async {
++    await db.batch((b) {
++      for (var i = 0; i < count; i++) {
++        b.insert(
++          db.parties,
++          PartiesCompanion.insert(name: 'طرف ${i.toString().padLeft(5, '0')}'),
++        );
++      }
++    });
++  }
++
++  setUp(() async => db = AppDatabase.forTesting());
++  tearDown(() => db.close());
++
++  group('حدُّ الصفوف يُبلَّغ عنه', () {
++    test('تقريرٌ تحت الحدّ لا يُبلِّغ قصّاً', () async {
++      await seedParties(5);
++      final id = await report('parties', 'name');
++
++      var reported = -1;
++      final rows = await db.executeReport(
++        id,
++        onRowLimitReached: (limit) => reported = limit,
++      );
++
++      expect(rows.length, greaterThan(0));
++      expect(reported, -1, reason: 'لا قصَّ ⇒ لا نداء');
++    });
++
++    test('تقريرٌ فوق الحدّ يُبلِّغ الحدَّ ويُرجِع الحدَّ بالضبط', () async {
++      // حدٌّ صغيرٌ مُمرَّر عوضاً عن زرع ١٠٠٠١ صفّ — نفسُ المنطق بربعِ الثانية.
++      await seedParties(25);
++      final id = await report('parties', 'name');
++
++      var reported = -1;
++      final rows = await db.executeReport(
++        id,
++        rowLimit: 10,
++        onRowLimitReached: (limit) => reported = limit,
++      );
++
++      expect(rows.length, 10, reason: 'الصفُّ الزائدُ دليلٌ لا بيانات');
++      expect(reported, 10);
++    });
++
++    test('عددٌ يساوي الحدَّ بالضبط لا يُبلِّغ قصّاً', () async {
++      // الفخُّ الذي يجعل `rows.length == limit` وحده كشفاً كاذباً.
++      // ‏`forTesting()` يزرع أطرافاً افتراضية، فيُقاس العددُ الفعلي أولاً.
++      final id = await report('parties', 'name');
++      final baseline = (await db.executeReport(id)).length;
++
++      var reported = -1;
++      final rows = await db.executeReport(
++        id,
++        rowLimit: baseline,
++        onRowLimitReached: (limit) => reported = limit,
++      );
++
++      expect(rows.length, baseline);
++      expect(reported, -1,
++          reason: 'قصٌّ مُبلَّغٌ بلا قصٍّ يجعل المستخدم يشكّ في تقريرٍ كامل');
++    });
++
++    test('الحدُّ الافتراضي معلَنٌ لا رقمٌ مدفون', () async {
++      expect(kReportBuilderRowLimit, 10000);
++    });
++
++    test('القصُّ لا يمنع تسجيل التشغيل بعدد الصفوف المُرجَع', () async {
++      await seedParties(25);
++      final id = await report('parties', 'name');
++
++      final rows = await db.executeReport(id, rowLimit: 10);
++
++      final runs = await (db.select(db.savedReportRuns)
++            ..where((r) => r.reportId.equals(id)))
++          .get();
++      expect(runs.length, 1);
++      expect(runs.first.rowCount, rows.length,
++          reason: 'سجلُّ التشغيل يوافق ما رآه المستخدم');
++    });
++  });
++}

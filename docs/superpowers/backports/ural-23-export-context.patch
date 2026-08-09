@@ -1,0 +1,582 @@
+diff --git a/lib/data/services/excel_service.dart b/lib/data/services/excel_service.dart
+index 78a70ce5..b44949b5 100644
+--- a/lib/data/services/excel_service.dart
++++ b/lib/data/services/excel_service.dart
+@@ -18,6 +18,78 @@ import 'package:excel/excel.dart';
+ import 'package:file_picker/file_picker.dart';
+ 
+ /// Excel Import/Export Service for Products, Customers, Suppliers, and Purchase Invoices
++// ═══════════════════════════════════════════════════════════════════════════
++// سياقُ التقرير المُصدَّر — الفترةُ والفرع
++// ═══════════════════════════════════════════════════════════════════════════
++//
++// دالّتان **نقيّتان** خارج الصنف عن قصد: منطقُ «عن أيّ فترةٍ وأيّ فرعٍ هذا
++// الملف» هو موضعُ الكذب المحتمل، فيجب أن يكون قابلاً للاختبار مباشرةً بلا
++// قاعدةِ بياناتٍ ولا كتابةِ ملفٍ على القرص.
++
++/// تسميةُ الفرع في رأس الملف المُصدَّر.
++///
++/// تُشتقّ من **الفلتر الصريح والنطاق معاً**: مديرُ فرعٍ محصورٌ يصدّر بلا اختيار
++/// فرعٍ، فبياناتُه محصورةٌ بفروعه — وكتابةُ «كل الفروع» تجعل الملفَّ يدّعي
++/// شمولاً ليس فيه. والسطرُ الكاذب أسوأُ من الغائب: الغائبُ يُسأل عنه،
++/// والكاذبُ يُصدَّق.
++///
++/// [scopedBranchIds] — `null` = وصولٌ كامل · `{}` = لا شيء (فشلٌ مقفول).
++String reportBranchLabel({
++  required int? branchId,
++  required Set<int>? scopedBranchIds,
++  required Map<int, String> names,
++}) {
++  if (branchId != null) {
++    return names[branchId] ?? 'فرع #$branchId';
++  }
++  if (scopedBranchIds == null) return 'كل الفروع';
++  if (scopedBranchIds.isEmpty) return 'لا يوجد فرع مسموح';
++  final labels = scopedBranchIds
++      .map((id) => names[id] ?? 'فرع #$id')
++      .toList()
++    ..sort();
++  return labels.join('، ');
++}
++
++String _d(DateTime d) =>
++    '${d.year}/${d.month.toString().padLeft(2, '0')}/'
++    '${d.day.toString().padLeft(2, '0')}';
++
++/// كتلةُ السياق التي تسبق صفَّ الرؤوس في الملف المُصدَّر.
++///
++/// سطرُ الفترة يُحذف إن لم تكن هناك فترة — تقريرُ المخزون لقطةٌ لحظية، وسطرُ
++/// فترةٍ فيه اختراع. وآخرُ سطرٍ فارغٌ فاصلاً، وإلا التصقت الكتلةُ بصفِّ الرؤوس
++/// فقُرئت عموداً من البيانات.
++List<List<String>> reportContextRows({
++  required String title,
++  required DateTime? periodFrom,
++  required DateTime? periodTo,
++  required String branchLabel,
++  required DateTime generatedAt,
++}) {
++  final rows = <List<String>>[
++    [title],
++  ];
++
++  if (periodFrom != null && periodTo != null) {
++    rows.add(['الفترة: ${_d(periodFrom)} — ${_d(periodTo)}']);
++  } else if (periodTo != null) {
++    rows.add(['الفترة: حتى ${_d(periodTo)}']);
++  } else if (periodFrom != null) {
++    rows.add(['الفترة: من ${_d(periodFrom)}']);
++  }
++
++  rows.add(['الفرع: $branchLabel']);
++  rows.add([
++    'تاريخ التصدير: ${_d(generatedAt)} '
++        '${generatedAt.hour.toString().padLeft(2, '0')}:'
++        '${generatedAt.minute.toString().padLeft(2, '0')}'
++  ]);
++  rows.add(['']);
++
++  return rows;
++}
++
+ class ExcelService {
+   final IProductRepository productRepo;
+   final IPartiesRepository partyRepo;
+@@ -1668,15 +1740,57 @@ class ExcelService {
+   }
+ 
+   /// Generic method to export report data to Excel
++  ///
++  /// [periodFrom]/[periodTo] و[branchId] و[scopedBranchIds] تكتب كتلةَ سياقٍ
++  /// فوق الرؤوس. بدونها كان الملفُّ لا يقول عن أيّ فترةٍ ولا أيّ فرعٍ هو، فملفٌّ
++  /// على القرص باسم «تقرير المبيعات» لا يُعرف أهو يناير أم السنة كاملة.
++  ///
++  /// اسمُ الفرع يُحَلّ هنا من [branchRepo] لا في كلِّ شاشة: ستَّ عشرةَ شاشةً
++  /// تُنادي هذه الدالة، وحلُّ الاسم في كلٍّ منها ستَّ عشرةَ فرصةً للاختلاف.
++  /// والشاشةُ تمرّر ما تملكه أصلاً — معرِّفَ الفلتر ونطاقَ المستخدم.
+   Future<String?> exportReport({
+     required String title,
+     required List<String> headers,
+     required List<List<dynamic>> rows,
++    DateTime? periodFrom,
++    DateTime? periodTo,
++    int? branchId,
++    Set<int>? scopedBranchIds,
+   }) async {
+     try {
+       final excel = Excel.createExcel();
+       final sheet = excel[title];
+ 
++      // كتلةُ السياق قبل الرؤوس. تُكتب فقط إن كان هناك سياقٌ يُذكر، فالمُنادي
++      // الذي لم يُمرّر شيئاً يحصل على الشكل القديم بلا تغيير.
++      if (periodFrom != null ||
++          periodTo != null ||
++          branchId != null ||
++          scopedBranchIds != null) {
++        final names = <int, String>{};
++        try {
++          for (final b in await branchRepo.getAllBranches()) {
++            names[b.id] = b.name;
++          }
++        } catch (_) {
++          // تعذّرُ قراءة الفروع لا يمنع التصدير — التسميةُ تسقط إلى «فرع #id».
++        }
++        final context = reportContextRows(
++          title: title,
++          periodFrom: periodFrom,
++          periodTo: periodTo,
++          branchLabel: reportBranchLabel(
++            branchId: branchId,
++            scopedBranchIds: scopedBranchIds,
++            names: names,
++          ),
++          generatedAt: DateTime.now(),
++        );
++        for (final line in context) {
++          sheet.appendRow(line.map((c) => TextCellValue(c)).toList());
++        }
++      }
++
+       sheet.appendRow(headers.map((h) => TextCellValue(h)).toList());
+ 
+       for (final row in rows) {
+diff --git a/lib/presentation/screens/hr/widgets/payroll_tab.dart b/lib/presentation/screens/hr/widgets/payroll_tab.dart
+index 347a3661..08d921ee 100644
+--- a/lib/presentation/screens/hr/widgets/payroll_tab.dart
++++ b/lib/presentation/screens/hr/widgets/payroll_tab.dart
+@@ -323,10 +323,27 @@ class _ExportPayrollButton extends ConsumerWidget {
+ 
+     final excelService = ref.read(excelServiceProvider);
+     final period = DateFormat('yyyy-MM').format(state.selectedMonth);
++    // فترةُ الكشف شهرٌ كامل: أوّلُه إلى آخرِ يومٍ فيه. والفرعُ من نطاق
++    // المستخدم لا من فلترٍ — تبويبُ الرواتب لا يملك منسدلةَ فرع، والقائمةُ
++    // محصورةٌ بالنطاق (H6)، فالنطاقُ هو ما يصف الملفَّ بصدق.
++    final monthStart = DateTime(
++      state.selectedMonth.year,
++      state.selectedMonth.month,
++      1,
++    );
++    final monthEnd = DateTime(
++      state.selectedMonth.year,
++      state.selectedMonth.month + 1,
++      0,
++    );
+     final path = await excelService.exportReport(
+       title: 'كشف رواتب $period',
+       headers: headers,
+       rows: rows,
++      periodFrom: monthStart,
++      periodTo: monthEnd,
++      scopedBranchIds:
++          (await ref.read(branchScopeProvider.future)).allowedBranchIds,
+     );
+ 
+     if (context.mounted) {
+diff --git a/lib/presentation/screens/journal_entries_screen.dart b/lib/presentation/screens/journal_entries_screen.dart
+index 61cbf450..f9ebcb19 100644
+--- a/lib/presentation/screens/journal_entries_screen.dart
++++ b/lib/presentation/screens/journal_entries_screen.dart
+@@ -830,6 +830,11 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
+ 
+       final service = ref.read(excelServiceProvider);
+       final path = await service.exportReport(
++      periodFrom: _dateFrom,
++      periodTo: _dateTo,
++      branchId: _filterBranchId,
++      scopedBranchIds:
++          (await ref.read(branchScopeProvider.future)).allowedBranchIds,
+         title: 'دفتر اليومية (${entries.length} قيد)',
+         headers: ['رقم القيد', 'التاريخ', 'البيان', 'النوع/الوصف', 'مدين', 'دائن'],
+         rows: rows,
+diff --git a/lib/presentation/screens/reports/category_profit_report_screen.dart b/lib/presentation/screens/reports/category_profit_report_screen.dart
+index 58308d15..762f1248 100644
+--- a/lib/presentation/screens/reports/category_profit_report_screen.dart
++++ b/lib/presentation/screens/reports/category_profit_report_screen.dart
+@@ -399,6 +399,11 @@ class _CategoryProfitReportScreenState
+     }
+     final service = ref.read(excelServiceProvider);
+     final path = await service.exportReport(
++      periodFrom: _fromDate,
++      periodTo: _toDate,
++      branchId: _selectedBranchId,
++      scopedBranchIds:
++          (await ref.read(branchScopeProvider.future)).allowedBranchIds,
+       title: 'تقرير أرباح التصنيفات',
+       headers: [
+         'التصنيف',
+diff --git a/lib/presentation/screens/reports/delivery_report_screen.dart b/lib/presentation/screens/reports/delivery_report_screen.dart
+index 80ce17ed..4ee1fe41 100644
+--- a/lib/presentation/screens/reports/delivery_report_screen.dart
++++ b/lib/presentation/screens/reports/delivery_report_screen.dart
+@@ -611,6 +611,11 @@ class _DeliveryReportScreenState extends ConsumerState<DeliveryReportScreen>
+       }
+       final service = ref.read(excelServiceProvider);
+       final path = await service.exportReport(
++      periodFrom: _fromDate,
++      periodTo: _toDate,
++      branchId: _selectedBranchId,
++      scopedBranchIds:
++          (await ref.read(branchScopeProvider.future)).allowedBranchIds,
+         title: 'تقرير عمليات التحصيل',
+         headers: [
+           'رقم الفاتورة',
+diff --git a/lib/presentation/screens/reports/financial_statements_screen.dart b/lib/presentation/screens/reports/financial_statements_screen.dart
+index 7ff11025..689aa7b2 100644
+--- a/lib/presentation/screens/reports/financial_statements_screen.dart
++++ b/lib/presentation/screens/reports/financial_statements_screen.dart
+@@ -331,6 +331,11 @@ class _FinancialStatementsScreenState
+         case 0: // Trial Balance
+           final data = await repo.getTrialBalance(_fromDate, _toDate, costCenterId: _selectedCostCenterId, branchId: _selectedBranchId, regionId: _selectedRegionId, allowedBranchIds: _allowedBranchIds);
+           await service.exportReport(
++      periodFrom: _fromDate,
++      periodTo: _toDate,
++      branchId: _selectedBranchId,
++      scopedBranchIds:
++          (await ref.read(branchScopeProvider.future)).allowedBranchIds,
+             title: 'ميزان المراجعة من ${_fromDate.toString().split(' ')[0]} إلى ${_toDate.toString().split(' ')[0]}',
+             headers: [
+               'كود الحساب',
+@@ -369,6 +374,11 @@ class _FinancialStatementsScreenState
+           }
+           rows.add(['', 'صافي الربح', data['netProfit']]);
+           await service.exportReport(
++      periodFrom: _fromDate,
++      periodTo: _toDate,
++      branchId: _selectedBranchId,
++      scopedBranchIds:
++          (await ref.read(branchScopeProvider.future)).allowedBranchIds,
+             title: 'قائمة الدخل',
+             headers: ['النوع', 'البيان', 'المبلغ'],
+             rows: rows,
+@@ -387,6 +397,11 @@ class _FinancialStatementsScreenState
+             rows.add(['حقوق ملكية', item['name'], item['balance']]);
+           }
+           await service.exportReport(
++      periodFrom: _fromDate,
++      periodTo: _toDate,
++      branchId: _selectedBranchId,
++      scopedBranchIds:
++          (await ref.read(branchScopeProvider.future)).allowedBranchIds,
+             title: 'الميزانية العمومية',
+             headers: ['النوع', 'البيان', 'الرصيد'],
+             rows: rows,
+@@ -414,6 +429,11 @@ class _FinancialStatementsScreenState
+             ['', 'الرصيد الختامي', data['closingBalance']],
+           ];
+           await service.exportReport(
++      periodFrom: _fromDate,
++      periodTo: _toDate,
++      branchId: _selectedBranchId,
++      scopedBranchIds:
++          (await ref.read(branchScopeProvider.future)).allowedBranchIds,
+             title: 'قائمة التدفقات النقدية',
+             headers: ['النشاط', 'البيان', 'المبلغ'],
+             rows: rows,
+@@ -431,6 +451,11 @@ class _FinancialStatementsScreenState
+             title = 'تقادم الذمم الدائنة (الموردين)';
+           }
+           await service.exportReport(
++      periodFrom: _fromDate,
++      periodTo: _toDate,
++      branchId: _selectedBranchId,
++      scopedBranchIds:
++          (await ref.read(branchScopeProvider.future)).allowedBranchIds,
+             title: title,
+             headers: ['الاسم', 'الإجمالي', '0-30 يوم', '31-60 يوم', '61-90 يوم', '+90 يوم'],
+             rows: agingData.map<List<dynamic>>((r) => [
+diff --git a/lib/presentation/screens/reports/inventory_report_screen.dart b/lib/presentation/screens/reports/inventory_report_screen.dart
+index 72c35513..01805703 100644
+--- a/lib/presentation/screens/reports/inventory_report_screen.dart
++++ b/lib/presentation/screens/reports/inventory_report_screen.dart
+@@ -655,6 +655,9 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
+     final service = ref.read(excelServiceProvider);
+ 
+     final path = await service.exportReport(
++      branchId: _selectedBranchId,
++      scopedBranchIds:
++          (await ref.read(branchScopeProvider.future)).allowedBranchIds,
+       title: 'تقرير المخزون',
+       headers: [
+         'كود الصنف',
+diff --git a/lib/presentation/screens/reports/purchase_returns_report_screen.dart b/lib/presentation/screens/reports/purchase_returns_report_screen.dart
+index 497844af..70ae9ce5 100644
+--- a/lib/presentation/screens/reports/purchase_returns_report_screen.dart
++++ b/lib/presentation/screens/reports/purchase_returns_report_screen.dart
+@@ -347,6 +347,11 @@ class _PurchaseReturnsReportScreenState extends ConsumerState<PurchaseReturnsRep
+     try {
+       final service = ref.read(excelServiceProvider);
+       final path = await service.exportReport(
++      periodFrom: _dateRange.start,
++      periodTo: _dateRange.end,
++      branchId: _selectedBranchId,
++      scopedBranchIds:
++          (await ref.read(branchScopeProvider.future)).allowedBranchIds,
+         title: 'تقرير مردودات المشتريات',
+         headers: ['رقم المرجع', 'التاريخ', 'المورد', 'المبلغ'],
+         rows: _returns.map<List<dynamic>>((r) => [
+diff --git a/lib/presentation/screens/reports/purchases_report_screen.dart b/lib/presentation/screens/reports/purchases_report_screen.dart
+index c21a1348..938fa55c 100644
+--- a/lib/presentation/screens/reports/purchases_report_screen.dart
++++ b/lib/presentation/screens/reports/purchases_report_screen.dart
+@@ -679,6 +679,11 @@ class _PurchasesReportScreenState extends ConsumerState<PurchasesReportScreen> {
+     final service = ref.read(excelServiceProvider);
+ 
+     final path = await service.exportReport(
++      periodFrom: _dateRange.start,
++      periodTo: _dateRange.end,
++      branchId: _selectedBranchId,
++      scopedBranchIds:
++          (await ref.read(branchScopeProvider.future)).allowedBranchIds,
+       title: 'تقرير المشتريات',
+       headers: [
+         'رقم الفاتورة',
+diff --git a/lib/presentation/screens/reports/sales_by_classification_report.dart b/lib/presentation/screens/reports/sales_by_classification_report.dart
+index 1e0499a7..204afe94 100644
+--- a/lib/presentation/screens/reports/sales_by_classification_report.dart
++++ b/lib/presentation/screens/reports/sales_by_classification_report.dart
+@@ -174,6 +174,11 @@ class _SalesByClassificationReportState
+     }
+ 
+     final path = await service.exportReport(
++      periodFrom: _dateRange.start,
++      periodTo: _dateRange.end,
++      branchId: _selectedBranchId,
++      scopedBranchIds:
++          (await ref.read(branchScopeProvider.future)).allowedBranchIds,
+       title: isCategory
+           ? 'تقرير المبيعات حسب التصنيف'
+           : 'تقرير المبيعات حسب نوع البيع',
+diff --git a/lib/presentation/screens/reports/sales_report_screen.dart b/lib/presentation/screens/reports/sales_report_screen.dart
+index a7b3ea43..07b262d4 100644
+--- a/lib/presentation/screens/reports/sales_report_screen.dart
++++ b/lib/presentation/screens/reports/sales_report_screen.dart
+@@ -1039,6 +1039,11 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
+     final service = ref.read(excelServiceProvider);
+ 
+     final path = await service.exportReport(
++      periodFrom: _dateRange.start,
++      periodTo: _dateRange.end,
++      branchId: _selectedBranchId,
++      scopedBranchIds:
++          (await ref.read(branchScopeProvider.future)).allowedBranchIds,
+       title: 'تقرير المبيعات',
+       headers: [
+         'رقم الفاتورة',
+diff --git a/lib/presentation/screens/reports/sales_returns_report_screen.dart b/lib/presentation/screens/reports/sales_returns_report_screen.dart
+index deb30da4..539ae5b1 100644
+--- a/lib/presentation/screens/reports/sales_returns_report_screen.dart
++++ b/lib/presentation/screens/reports/sales_returns_report_screen.dart
+@@ -341,6 +341,11 @@ class _SalesReturnsReportScreenState extends ConsumerState<SalesReturnsReportScr
+     try {
+       final service = ref.read(excelServiceProvider);
+       final path = await service.exportReport(
++      periodFrom: _dateRange.start,
++      periodTo: _dateRange.end,
++      branchId: _selectedBranchId,
++      scopedBranchIds:
++          (await ref.read(branchScopeProvider.future)).allowedBranchIds,
+         title: 'تقرير مردودات المبيعات',
+         headers: ['رقم الفاتورة', 'التاريخ', 'المستخدم', 'المبلغ'],
+         rows: _returns.map<List<dynamic>>((r) => [
+diff --git a/lib/presentation/screens/reports/shifts_report_screen.dart b/lib/presentation/screens/reports/shifts_report_screen.dart
+index b17dbd11..083cca8d 100644
+--- a/lib/presentation/screens/reports/shifts_report_screen.dart
++++ b/lib/presentation/screens/reports/shifts_report_screen.dart
+@@ -557,6 +557,11 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
+     }
+     final service = ref.read(excelServiceProvider);
+     final path = await service.exportReport(
++      periodFrom: _dateRange.start,
++      periodTo: _dateRange.end,
++      branchId: _selectedBranchId,
++      scopedBranchIds:
++          (await ref.read(branchScopeProvider.future)).allowedBranchIds,
+       title: 'تقرير الورديات',
+       headers: [
+         '# الوردية',
+diff --git a/lib/presentation/screens/reports/tax_report_screen.dart b/lib/presentation/screens/reports/tax_report_screen.dart
+index a14eab7e..3ec3b4a8 100644
+--- a/lib/presentation/screens/reports/tax_report_screen.dart
++++ b/lib/presentation/screens/reports/tax_report_screen.dart
+@@ -795,6 +795,11 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
+     }
+     final service = ref.read(excelServiceProvider);
+     final path = await service.exportReport(
++      periodFrom: _fromDate,
++      periodTo: _toDate,
++      branchId: _selectedBranchId,
++      scopedBranchIds:
++          (await ref.read(branchScopeProvider.future)).allowedBranchIds,
+       title: 'تقرير ضريبة المبيعات',
+       headers: [
+         'البند',
+diff --git a/lib/presentation/screens/reports/top_products_report_screen.dart b/lib/presentation/screens/reports/top_products_report_screen.dart
+index ceec620a..804fd8c9 100644
+--- a/lib/presentation/screens/reports/top_products_report_screen.dart
++++ b/lib/presentation/screens/reports/top_products_report_screen.dart
+@@ -347,6 +347,11 @@ class _TopProductsReportScreenState
+     }
+     final service = ref.read(excelServiceProvider);
+     final path = await service.exportReport(
++      periodFrom: _fromDate,
++      periodTo: _toDate,
++      branchId: _selectedBranchId,
++      scopedBranchIds:
++          (await ref.read(branchScopeProvider.future)).allowedBranchIds,
+       title: 'الأصناف الأكثر مبيعاً',
+       headers: [
+         'الترتيب',
+diff --git a/lib/presentation/screens/reports/treasury_report_screen.dart b/lib/presentation/screens/reports/treasury_report_screen.dart
+index 2fe4dab3..4d2e6256 100644
+--- a/lib/presentation/screens/reports/treasury_report_screen.dart
++++ b/lib/presentation/screens/reports/treasury_report_screen.dart
+@@ -719,6 +719,11 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
+     }
+ 
+     final path = await service.exportReport(
++      periodFrom: _dateRange.start,
++      periodTo: _dateRange.end,
++      branchId: _selectedBranchId,
++      scopedBranchIds:
++          (await ref.read(branchScopeProvider.future)).allowedBranchIds,
+       title: 'تقرير الخزينة',
+       headers: [
+         'رقم السند',
+diff --git a/test/unit/report_export_context_test.dart b/test/unit/report_export_context_test.dart
+new file mode 100644
+index 00000000..3748b3ad
+--- /dev/null
++++ b/test/unit/report_export_context_test.dart
+@@ -0,0 +1,133 @@
++// ═══════════════════════════════════════════════════════════════════════════
++// ملفُّ Excel المُصدَّر كان لا يقول عن أيّ فترةٍ ولا أيّ فرعٍ هو.
++// ═══════════════════════════════════════════════════════════════════════════
++//
++// `exportReport({title, headers, rows})` كان يكتب الرؤوسَ والصفوفَ فقط. فملفٌّ
++// اسمه «تقرير المبيعات» على القرص لا يُعرف: أهو يناير أم السنة كاملة؟ فرعُ
++// المعادي أم الشركةُ كلها؟ ومن يجد الملفَّ بعد شهرٍ — أو يستلمه بالبريد — لا
++// سبيل له لمعرفة ذلك. وملفَّان لفترتين مختلفتين لا يُفرَّق بينهما إلا بتاريخ
++// الحفظ على نظام الملفات.
++//
++// ── وأخطرُ من غيابِ السطر أن يكذب ──────────────────────────────────────────
++// مديرُ فرعٍ محصورٌ بفرعه يصدّر بلا اختيار فرعٍ في الفلتر. البياناتُ محصورةٌ
++// بفروعه (‏branchScopeProvider)، فلو كُتب «كل الفروع» لصار الملفُّ يدّعي شمولاً
++// ليس فيه — وهو أسوأ من سطرٍ غائب: الغائبُ يُسأل عنه، والكاذبُ يُصدَّق.
++//
++// فالتسميةُ تُشتقّ من **الفلتر الصريح والنطاق معاً** لا من أحدهما.
++// ═══════════════════════════════════════════════════════════════════════════
++
++import 'package:flutter_test/flutter_test.dart';
++import 'package:ural_erp/data/services/excel_service.dart';
++
++void main() {
++  const names = {1: 'فرع المعادي', 2: 'فرع مدينة نصر', 3: 'فرع طنطا'};
++
++  group('تسمية الفرع — الفلتر والنطاق معاً', () {
++    test('فلترٌ صريح ⇒ اسم الفرع', () {
++      expect(
++        reportBranchLabel(branchId: 2, scopedBranchIds: null, names: names),
++        'فرع مدينة نصر',
++      );
++    });
++
++    test('بلا فلتر ووصولٌ كامل ⇒ كل الفروع', () {
++      expect(
++        reportBranchLabel(branchId: null, scopedBranchIds: null, names: names),
++        'كل الفروع',
++      );
++    });
++
++    test('بلا فلتر ومستخدمٌ محصور ⇒ فروعُه بالاسم لا «كل الفروع»', () {
++      expect(
++        reportBranchLabel(
++            branchId: null, scopedBranchIds: {1, 3}, names: names),
++        'فرع المعادي، فرع طنطا',
++        reason: 'كتابة «كل الفروع» هنا تجعل الملفَّ يدّعي شمولاً ليس فيه',
++      );
++    });
++
++    test('الفلترُ الصريح يغلب النطاق', () {
++      expect(
++        reportBranchLabel(branchId: 1, scopedBranchIds: {1, 3}, names: names),
++        'فرع المعادي',
++      );
++    });
++
++    test('نطاقٌ فارغ ⇒ لا فرع (فشلٌ مقفول)', () {
++      expect(
++        reportBranchLabel(
++            branchId: null, scopedBranchIds: <int>{}, names: names),
++        'لا يوجد فرع مسموح',
++      );
++    });
++
++    test('فرعٌ غيرُ معروف الاسم لا يُطبع رقماً عارياً', () {
++      expect(
++        reportBranchLabel(branchId: 99, scopedBranchIds: null, names: names),
++        'فرع #99',
++      );
++    });
++  });
++
++  group('كتلةُ السياق فوق الجدول', () {
++    final generatedAt = DateTime(2026, 8, 9, 14, 30);
++
++    test('العنوانُ والفترةُ والفرعُ وتاريخُ التصدير', () {
++      final rows = reportContextRows(
++        title: 'تقرير المبيعات',
++        periodFrom: DateTime(2026, 2, 1),
++        periodTo: DateTime(2026, 2, 28),
++        branchLabel: 'فرع المعادي',
++        generatedAt: generatedAt,
++      );
++
++      final flat = rows.map((r) => r.join(' ')).join('\n');
++      expect(flat, contains('تقرير المبيعات'));
++      expect(flat, contains('2026/02/01'));
++      expect(flat, contains('2026/02/28'));
++      expect(flat, contains('فرع المعادي'));
++      expect(flat, contains('2026/08/09'));
++    });
++
++    test('بلا فترة ⇒ لا سطرَ فترةٍ كاذب', () {
++      final rows = reportContextRows(
++        title: 'تقرير المخزون',
++        periodFrom: null,
++        periodTo: null,
++        branchLabel: 'كل الفروع',
++        generatedAt: generatedAt,
++      );
++
++      final flat = rows.map((r) => r.join(' ')).join('\n');
++      expect(flat, isNot(contains('الفترة')),
++          reason: 'تقريرُ المخزون لقطةٌ لحظية — سطرُ فترةٍ فيه اختراع');
++      expect(flat, contains('كل الفروع'));
++    });
++
++    test('تاريخٌ واحد (حتى تاريخ) يُكتب بلا مدى', () {
++      final rows = reportContextRows(
++        title: 'الميزانية',
++        periodFrom: null,
++        periodTo: DateTime(2026, 3, 31),
++        branchLabel: 'كل الفروع',
++        generatedAt: generatedAt,
++      );
++
++      final flat = rows.map((r) => r.join(' ')).join('\n');
++      expect(flat, contains('حتى 2026/03/31'));
++    });
++
++    test('آخرُ سطرٍ فارغ — فاصلٌ عن الرؤوس', () {
++      final rows = reportContextRows(
++        title: 'ت',
++        periodFrom: DateTime(2026, 1, 1),
++        periodTo: DateTime(2026, 1, 31),
++        branchLabel: 'كل الفروع',
++        generatedAt: generatedAt,
++      );
++
++      expect(rows.last.join(), isEmpty,
++          reason: 'بلا فاصلٍ تلتصق كتلةُ السياق بصفِّ الرؤوس فتُقرأ عموداً');
++    });
++  });
++}
