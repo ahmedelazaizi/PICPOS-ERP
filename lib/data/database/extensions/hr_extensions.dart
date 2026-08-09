@@ -1036,13 +1036,28 @@ extension HRExtensions on AppDatabase {
 
       // Update leave balance if approved
       if (status == 'approved') {
+        // كتابةُ الحضور بـupsert على (موظف، يوم) فإعادتُها تُحدّث الصفَّ
+        // نفسَه — تُعاد بلا ضرر.
         await _writeLeaveAttendance(leave);
-        await _deductLeaveBalance(
-          leave.employeeId,
-          leave.leaveType,
-          leave.days,
-          leave.startDate.year,
-        );
+
+        // 🔴 الخصمُ **تراكميّ**، فلا يُعاد لطلبٍ معتمدٍ سلفاً.
+        //
+        // كان يُنفَّذ كلَّما نُودِيت الدالةُ بـ`approved` بلا نظرٍ إلى الحالة
+        // السابقة، فاعتمادُ طلبٍ معتمدٍ ثانيةً (نقرةٌ مزدوجة · إعادةُ محاولةٍ
+        // بعد خطأِ شبكة · مزامنةٌ تُعيد تطبيق الأمر) يخصم ضعفَ أيامه —
+        // مقيس: ١٠ أيامٍ بدل ٥. والرصيدُ هو ما يحدّ إجازاتِ الموظف لاحقاً،
+        // فالخصمُ المضاعَف يحرمه أياماً يستحقها ولا سجلَّ يقول لماذا.
+        //
+        // والشرطُ على الحالة **السابقة** لا على الجديدة: طلبٌ مرفوضٌ ثم
+        // معتمَدٌ يُخصم مرةً واحدة، وطلبان مستقلّان يُخصمان كلاهما.
+        if (leave.status != 'approved') {
+          await _deductLeaveBalance(
+            leave.employeeId,
+            leave.leaveType,
+            leave.days,
+            leave.startDate.year,
+          );
+        }
       }
     });
   }
