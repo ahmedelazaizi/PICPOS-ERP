@@ -110,10 +110,10 @@ extension ReportBuilderDao on AppDatabase {
     final query = _buildReportQuery(report, allowedBranchIds, rowLimit);
     if (query == null) {
       debugPrint('[ReportBuilder] رُفض: الكيان "${report.sourceEntity}" مالوش '
-          'فلتر حصر مدعوم، والمستخدم محصور بفرع');
+          'فلتر حصر مدعوم (أو الفلتر مرفوض)، والمستخدم محصور بفرع');
       return [];
     }
-    var results = await customSelect(query).get();
+    var results = await customSelect(query.sql, variables: query.vars).get();
 
     // الصفُّ الزائد دليلُ القصّ: يُبلَّغ عنه ثم يُطرَح فلا يُعرَض ولا يُحتسب.
     // والإبلاغُ **قبل** الطرح كي لا يبقى الاكتشافُ متوقفاً على ترتيبِ سطور.
@@ -202,6 +202,31 @@ extension ReportBuilderDao on AppDatabase {
     }
   }
 
+  /// عواملُ الفلتر المتاحة لنوعِ حقلٍ ما — **نفسُ القائمة التي يفرضها
+  /// التنفيذ** ([_kFilterOpsByFieldType])، لا نسخةٌ منها في الواجهة.
+  ///
+  /// لو كانت القائمتان اثنتين لأمكن أن تعرض الواجهةُ عاملاً يرفضه المحرِّك،
+  /// فيخرج التقريرُ **مرفوضاً بالكامل**: صفرُ صفوفٍ بلا رسالةِ خطأ ولا حقلٍ
+  /// معطَّل — أي عطلٌ لا يُرى.
+  List<Map<String, String>> getFilterOperators(String fieldType) {
+    const labels = {
+      '=': 'يساوي',
+      '!=': 'لا يساوي',
+      '>': 'أكبر من',
+      '>=': 'أكبر من أو يساوي',
+      '<': 'أصغر من',
+      '<=': 'أصغر من أو يساوي',
+      'contains': 'يحتوي',
+    };
+    // الترتيبُ ثابتٌ لا يتبع ترتيبَ الـSet كي لا تتبدّل المنسدلةُ بين تشغيلتين.
+    const order = ['=', '!=', 'contains', '>', '>=', '<', '<='];
+    final allowed = _kFilterOpsByFieldType[fieldType] ?? const <String>{};
+    return [
+      for (final op in order)
+        if (allowed.contains(op)) {'op': op, 'label': labels[op]!},
+    ];
+  }
+
   // ─────────────────────────────────────────────────────────────────────────
   // QUERY BUILDER (internal)
   // ─────────────────────────────────────────────────────────────────────────
@@ -244,83 +269,101 @@ extension ReportBuilderDao on AppDatabase {
     }
   }
 
-  String? _buildReportQuery(
+  /// تعبيرُ الحقل المعروض في SQL — **بلا `AS`**.
+  ///
+  /// المُعلَن في `getAvailableFields` ليس بالضرورة اسمَ العمود: `price` عمودُه
+  /// `sale_price`، و`type` في الأطراف لا عمودَ له أصلاً بل يُشتقّ من صفتَين،
+  /// و`total_debit` يُشتقّ باستعلامٍ فرعيّ. وكان بثُّ الاسم المعروض كما هو
+  /// يعطي `no such column` **فيفشل التقريرُ كلُّه** لا العمودُ وحده.
+  ///
+  /// ⚠️ **مشتركٌ إجبارياً بين `SELECT` والفلتر.** لو بنى كلٌّ خريطته لفلتَر
+  /// الفلترُ على عمودٍ آخر — أو على عمودٍ لا وجود له — بينما الأعمدةُ المعروضة
+  /// صحيحة، فيخرج تقريرٌ **يبدو سليماً وقد صُفّي بشرطٍ غير الذي طلبه المستخدم**.
+  /// والاسمُ المستعار (`AS`) لا يُرى داخل `WHERE` في SQLite، فالتعبيرُ نفسُه هو
+  /// ما يتكرّر هناك.
+  String _fieldSqlExpression(String entity, String col) {
+    switch (entity) {
+      case 'products':
+        if (col == 'category_name') return 'c.name';
+        if (col == 'unit_name') return 'u.name';
+        if (col == 'quantity') return 'ib.quantity';
+        if (col == 'price') return 'products.sale_price';
+        if (col == 'cost') return 'products.cost_price';
+        return 'products.$col';
+      case 'sales_invoices':
+        if (col == 'date') return 'sales_invoices.invoice_date';
+        if (col == 'party_name') return 'p.name';
+        if (col == 'net_total') return 'sales_invoices.total';
+        // كان `'مكتمل' AS payment_status` — نص ثابت باسم حقل حقيقي، فكل
+        // صف بيقول «مكتمل» مهما كانت الحقيقة. و`payment_status` مش عمود
+        // في الجدول أصلاً، فلازم يُشتق من paid مقابل total.
+        if (col == 'payment_status') {
+          return "CASE WHEN sales_invoices.paid >= sales_invoices.total "
+              "THEN 'مكتمل' "
+              "WHEN sales_invoices.paid > 0 THEN 'جزئي' "
+              "ELSE 'غير مدفوع' END";
+        }
+        // كان `'أجل' AS sale_type` — غلط مرتين: العمود موجود فعلاً، و«أجل»
+        // مش من مجال قيمه (default/talabat/careem/ashyae). «أجل مقابل
+        // نقدي» دلالتها payment_method = 'credit'، حقل تاني تماماً.
+        return 'sales_invoices.$col';
+      case 'purchase_invoices':
+        if (col == 'date') return 'purchase_invoices.invoice_date';
+        if (col == 'party_name') return 'p.name';
+        if (col == 'net_total') return 'purchase_invoices.total';
+        return 'purchase_invoices.$col';
+      case 'parties':
+        // لا عمودَ `type` في الجدول — النوعُ صفتان منطقيتان
+        // (`is_customer`/`is_supplier`)، وقد يكون الطرفُ الاثنين معاً.
+        if (col == 'type') {
+          return "CASE "
+              "WHEN parties.is_customer = 1 AND parties.is_supplier = 1 "
+              "THEN 'عميل ومورد' "
+              "WHEN parties.is_supplier = 1 THEN 'مورد' "
+              "WHEN parties.is_customer = 1 THEN 'عميل' "
+              "ELSE '-' END";
+        }
+        return 'parties.$col';
+      case 'journal_entries':
+        if (col == 'date') return 'journal_entries.entry_date';
+        // لا عمودَي إجمالٍ في الجدول — الإجماليُّ يُشتقّ بجمع السطور.
+        //
+        // استعلامٌ فرعيٌّ مترابط لا `JOIN`: الـJOIN على السطور يُنتج صفاً
+        // لكل سطرٍ في القيد فيتضاعف كلُّ عمودٍ آخر — نفسُ عطلِ تضاعفِ
+        // الأصناف بعدد المخازن الذي أُصلح في `_getJoins`.
+        if (col == 'total_debit' || col == 'total_credit') {
+          final side = col == 'total_debit' ? 'debit' : 'credit';
+          return '(SELECT COALESCE(SUM(jel.$side), 0) '
+              'FROM journal_entry_lines jel '
+              'WHERE jel.entry_id = journal_entries.id)';
+        }
+        return 'journal_entries.$col';
+    }
+    return col;
+  }
+
+  /// نوعُ الحقل كما **يُعلنه السجلّ** — لا كما يُخمَّن من اسم العمود.
+  /// `null` = الحقلُ ليس من حقول هذا الكيان ⇒ يُرفَض.
+  String? _fieldType(String entity, String key) {
+    for (final f in getAvailableFields(entity)) {
+      if (f['key'] == key) return f['type'];
+    }
+    return null;
+  }
+
+  ({String sql, List<Variable> vars})? _buildReportQuery(
       CustomReportData report, Set<int>? allowedBranchIds, int rowLimit) {
     final tableName = _getTableName(report.sourceEntity);
-    
+
     // Map friendly keys to proper SQL columns to prevent "no such column" errors
     String mappedCols = '*';
     if (report.columns.isNotEmpty) {
       mappedCols = report.columns.split(',').map((c) {
         final col = c.trim();
-        switch (report.sourceEntity) {
-          case 'products':
-            if (col == 'category_name') return 'c.name AS category_name';
-            if (col == 'unit_name') return 'u.name AS unit_name';
-            if (col == 'quantity') return 'ib.quantity AS quantity';
-            // المُعلَن في `getAvailableFields` ليس اسمَ العمود: العمودان
-            // `sale_price` و`cost_price`، وكان يُبَثّ `products.price` و
-            // `products.cost` ⇒ `no such column` **فيفشل التقريرُ كلُّه** لا
-            // العمودُ وحده. والاسمُ المُعلَن يُحفَظ بـAS كي تبقى رؤوسُ الجدول
-            // في الواجهة هي ما اختاره المستخدم.
-            if (col == 'price') return 'products.sale_price AS price';
-            if (col == 'cost') return 'products.cost_price AS cost';
-            return 'products.$col';
-          case 'sales_invoices':
-            if (col == 'date') return 'sales_invoices.invoice_date AS date';
-            if (col == 'party_name') return 'p.name AS party_name';
-            if (col == 'net_total') return 'sales_invoices.total AS net_total';
-            // كان `'مكتمل' AS payment_status` — نص ثابت باسم حقل حقيقي، فكل
-            // صف بيقول «مكتمل» مهما كانت الحقيقة. و`payment_status` مش عمود
-            // في الجدول أصلاً، فلازم يُشتق من paid مقابل total.
-            if (col == 'payment_status') {
-              return "CASE WHEN sales_invoices.paid >= sales_invoices.total "
-                  "THEN 'مكتمل' "
-                  "WHEN sales_invoices.paid > 0 THEN 'جزئي' "
-                  "ELSE 'غير مدفوع' END AS payment_status";
-            }
-            // كان `'أجل' AS sale_type` — غلط مرتين: العمود موجود فعلاً، و«أجل»
-            // مش من مجال قيمه (default/talabat/careem/ashyae). «أجل مقابل
-            // نقدي» دلالتها payment_method = 'credit'، حقل تاني تماماً.
-            if (col == 'sale_type') {
-              return 'sales_invoices.sale_type AS sale_type';
-            }
-            return 'sales_invoices.$col';
-          case 'purchase_invoices':
-            if (col == 'date') return 'purchase_invoices.invoice_date AS date';
-            if (col == 'party_name') return 'p.name AS party_name';
-            if (col == 'net_total') return 'purchase_invoices.total AS net_total';
-            return 'purchase_invoices.$col';
-          case 'parties':
-            // لا عمودَ `type` في الجدول — النوعُ صفتان منطقيتان
-            // (`is_customer`/`is_supplier`)، وقد يكون الطرفُ الاثنين معاً.
-            // وكان يُبَثّ `parties.type` ⇒ فشلُ التقرير كلِّه.
-            if (col == 'type') {
-              return "CASE "
-                  "WHEN parties.is_customer = 1 AND parties.is_supplier = 1 "
-                  "THEN 'عميل ومورد' "
-                  "WHEN parties.is_supplier = 1 THEN 'مورد' "
-                  "WHEN parties.is_customer = 1 THEN 'عميل' "
-                  "ELSE '-' END AS type";
-            }
-            return 'parties.$col';
-          case 'journal_entries':
-            if (col == 'date') return 'journal_entries.entry_date AS date';
-            // لا عمودَي إجمالٍ في الجدول — الإجماليُّ يُشتقّ بجمع السطور. وكان
-            // يُبَثّ `journal_entries.total_debit` ⇒ فشلُ التقرير كلِّه.
-            //
-            // استعلامٌ فرعيٌّ مترابط لا `JOIN`: الـJOIN على السطور يُنتج صفاً
-            // لكل سطرٍ في القيد فيتضاعف كلُّ عمودٍ آخر — نفسُ عطلِ تضاعفِ
-            // الأصناف بعدد المخازن الذي أُصلح في `_getJoins`.
-            if (col == 'total_debit' || col == 'total_credit') {
-              final side = col == 'total_debit' ? 'debit' : 'credit';
-              return '(SELECT COALESCE(SUM(jel.$side), 0) '
-                  'FROM journal_entry_lines jel '
-                  'WHERE jel.entry_id = journal_entries.id) AS $col';
-            }
-            return 'journal_entries.$col';
-        }
-        return col;
+        final expr = _fieldSqlExpression(report.sourceEntity, col);
+        // الاسمُ المُعلَن يُحفَظ بـ`AS` كي تبقى رؤوسُ الجدول في الواجهة هي ما
+        // اختاره المستخدم لا اسمَ العمود الخام.
+        return expr == col ? col : '$expr AS $col';
       }).join(', ');
     }
 
@@ -335,6 +378,7 @@ extension ReportBuilderDao on AppDatabase {
     // حصر الفروع + فلاتر المستخدم في نفس الـWHERE. الحصر **الأول** وبقوسين
     // حواليه، فأي فلتر مستخدم بـOR ما يقدرش يوسّع النطاق.
     final conditions = <String>[];
+    final vars = <Variable>[];
     if (allowedBranchIds != null) {
       if (allowedBranchIds.isEmpty) {
         conditions.add('1 = 0'); // فشل مقفول
@@ -345,10 +389,22 @@ extension ReportBuilderDao on AppDatabase {
         conditions.add('($clause)');
       }
     }
-    if (report.filters != null && report.filters!.trim().isNotEmpty) {
-      final safe = _buildWhereClause(report.filters!);
-      if (safe == null) return null; // فلتر مرفوض ⇒ ارفض التقرير كله
-      conditions.add('($safe)');
+    final rawFilters = report.filters?.trim() ?? '';
+    if (rawFilters.isNotEmpty) {
+      // التمييزُ بأوّل حرفٍ غير فراغ: `[` ⇒ الصيغةُ المهيكلة التي توثّقها
+      // السكيما وتنتجها الواجهة. وما عداه نصُّ SQL خامّ من تقريرٍ قديم.
+      if (rawFilters.startsWith('[')) {
+        final built = _buildStructuredFilter(report.sourceEntity, rawFilters);
+        if (built == null) return null; // فلتر مرفوض ⇒ ارفض التقرير كله
+        if (built.sql.isNotEmpty) {
+          conditions.add('(${built.sql})');
+          vars.addAll(built.vars);
+        }
+      } else {
+        final safe = _buildWhereClause(rawFilters);
+        if (safe == null) return null; // فلتر مرفوض ⇒ ارفض التقرير كله
+        conditions.add('($safe)');
+      }
     }
     if (conditions.isNotEmpty) {
       query += ' WHERE ${conditions.join(' AND ')}';
@@ -369,7 +425,7 @@ extension ReportBuilderDao on AppDatabase {
     // في [executeReport].
     query += ' LIMIT ${rowLimit + 1}';
 
-    return query;
+    return (sql: query, vars: vars);
   }
 
   String _getTableName(String entity) {
@@ -426,9 +482,9 @@ extension ReportBuilderDao on AppDatabase {
   /// `null` = مرفوض ⇒ المُنادي بيرفض التقرير كله. الرفض بيسري على المستخدم
   /// بالوصول الكامل كمان — الحقن مش خطره على الحصر وحده.
   ///
-  /// TODO(owner): الأنضف صيغة مهيكلة (عمود/عامل/قيمة) بمعاملات مربوطة بدل
-  /// نص SQL. اتأجّل لأنه بيغيّر شكل التقارير المحفوظة، وUralCash مطروح وعنده
-  /// تقارير قائمة — قرار هجرة مش تحصين.
+  /// ⚠️ ده **المسار القديم وحده**. الواجهة بقت تنتج [_buildStructuredFilter]،
+  /// والخامُّ باقٍ للنصوص المخزَّنة سلفاً: حذفُه كسرٌ لتقاريرَ قائمةٍ في منتجٍ
+  /// مطروح مقابل فائدةٍ صفر، لأن التحصين بيمنع الهروب أصلاً.
   String? _buildWhereClause(String filtersJson) {
     final f = filtersJson.trim();
     if (f.isEmpty) return null;
@@ -453,4 +509,182 @@ extension ReportBuilderDao on AppDatabase {
     if (depth != 0 || inQuote) return null;
     return f;
   }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // STRUCTURED FILTER — الصيغةُ التي توثّقها السكيما
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /// يبني شرطَ `WHERE` من الصيغة المهيكلة التي تعلنها السكيما:
+  ///
+  ///     [{"field":"price","op":">","value":100}, …]
+  ///
+  /// **الأمانُ من البناء لا من الفحص**: اسمُ العمود لا يأتي من المستخدم بل
+  /// يُختار من [getAvailableFields] — قائمةٌ مغلقة — ثم يُترجَم بـ
+  /// [_fieldSqlExpression]. والقيمةُ **تُربَط معاملاً** فلا تصل السلسلةَ
+  /// النصّية للاستعلام أبداً. فالحقنُ مستحيلٌ بالبناء، لا مرفوضٌ بفحصٍ
+  /// يُنسى تحديثُه كلما أُضيف شكلُ هروبٍ جديد.
+  ///
+  /// `null` = مرفوض ⇒ التقريرُ كلُّه مرفوض. والرفضُ **صريحٌ لا صامت**: شرطٌ
+  /// لا يُفهَم لا يُسقَط بل يُبطل التقرير، وإلا رأى المستخدمُ صفوفاً أكثرَ مما
+  /// طلب وظنّها مفلترة.
+  ///
+  /// وقائمةٌ فارغة ⇒ `sql` فارغ: لا شرطَ ولا `WHERE ()` مكسور.
+  ({String sql, List<Variable> vars})? _buildStructuredFilter(
+      String entity, String json) {
+    final List<dynamic> decoded;
+    try {
+      final v = jsonDecode(json);
+      if (v is! List) return null;
+      decoded = v;
+    } catch (_) {
+      return null; // JSON فاسد ⇒ ارفض، ولا تبثّه SQL
+    }
+
+    final parts = <String>[];
+    final vars = <Variable>[];
+    for (final c in decoded) {
+      if (c is! Map) return null;
+      final field = c['field'];
+      final op = c['op'];
+      if (field is! String || op is! String) return null;
+
+      final type = _fieldType(entity, field);
+      if (type == null) return null; // خارج القائمة المغلقة
+      if (!(_kFilterOpsByFieldType[type] ?? const <String>{}).contains(op)) {
+        return null; // عاملٌ غيرُ مدعوم لهذا النوع
+      }
+
+      final cond = _filterCondition(
+          _fieldSqlExpression(entity, field), type, op, c['value']);
+      if (cond == null) return null;
+      parts.add(cond.sql);
+      vars.addAll(cond.vars);
+    }
+    // الشروطُ تُجمَع بـAND وحدَه — عن قصد. `OR` بين شرطَي المستخدم يحتاج
+    // تعشيشاً في الصيغة والواجهة معاً، وبلا ذلك يكون بابَ توسيعٍ للنطاق.
+    return (sql: parts.join(' AND '), vars: vars);
+  }
+
+  /// شرطٌ واحد: التعبيرُ جاهزٌ ومحصور، والقيمةُ تُتحقَّق **بحسب نوع الحقل**
+  /// ثم تُربَط. `null` = القيمةُ لا تليق بالنوع ⇒ ارفض.
+  ({String sql, List<Variable> vars})? _filterCondition(
+      String expr, String type, String op, Object? value) {
+    // `!=` بعاملٍ آمنٍ تجاه NULL لا بـ`<>`: مقارنةُ NULL في SQL تُنتج NULL
+    // فيسقط الصفُّ من النتيجة. فصنفٌ **بلا** باركود «ليس BC-1» فعلاً،
+    // وإسقاطُه صمتاً هو بالضبط نوعُ الخطأ الذي لا يُرى.
+    //
+    // ⚠️ والعاملُ ليس لغةً مشتركة: `x IS NOT y` صحيحٌ في SQLite، أما
+    // PostgreSQL فلا تقبل بعد `IS NOT` إلا `NULL`/`TRUE`/`FALSE`/`UNKNOWN`
+    // ونظيرُه هناك `IS DISTINCT FROM`. وبثُّ `IS NOT ?` على PostgreSQL
+    // **خطأٌ نحويّ عند التشغيل** (`42601`) لا اختلافُ نتيجة — مقيسٌ في
+    // `report_builder_structured_filter_pg_test`.
+    final notEq = isPostgres ? 'IS DISTINCT FROM' : 'IS NOT';
+    String eq() => op == '!=' ? '$expr $notEq ?' : '$expr = ?';
+
+    switch (type) {
+      case 'number':
+        final n = value is num
+            ? value
+            : (value is String ? num.tryParse(value) : null);
+        // قيمةٌ غيرُ رقميةٍ لحقلٍ رقميّ تُرفَض ولا تُمرَّر: مقارنةُ REAL بنصٍّ
+        // في SQLite لا تطابق شيئاً، فالتقريرُ كان سيرجع **فارغاً بلا سبب ظاهر**.
+        if (n == null) return null;
+        if (op == '=' || op == '!=') return (sql: eq(), vars: [Variable(n)]);
+        return (sql: '$expr $op ?', vars: [Variable(n)]);
+
+      case 'boolean':
+        final b = _asBool(value);
+        if (b == null) return null;
+        return (sql: eq(), vars: [Variable(b)]);
+
+      case 'date':
+        // دلالةُ اليوم لا اللحظة: المستخدمُ يختار يوماً من التقويم، والعمودُ
+        // يحمل وقتاً. فـ`= 2026-08-10` على فاتورةِ ١٤:٣٠ كان سيرجع صفراً.
+        final day = _asDay(value);
+        if (day == null) return null;
+        final next = DateTime(day.year, day.month, day.day + 1);
+        switch (op) {
+          case '=':
+            return (
+              sql: '($expr >= ? AND $expr < ?)',
+              vars: [Variable(day), Variable(next)]
+            );
+          case '!=':
+            return (
+              sql: '($expr IS NULL OR $expr < ? OR $expr >= ?)',
+              vars: [Variable(day), Variable(next)]
+            );
+          case '>': // بعد ذلك اليوم ⇒ من أوّل اليوم التالي
+            return (sql: '$expr >= ?', vars: [Variable(next)]);
+          case '>=':
+            return (sql: '$expr >= ?', vars: [Variable(day)]);
+          case '<':
+            return (sql: '$expr < ?', vars: [Variable(day)]);
+          case '<=': // حتى نهاية ذلك اليوم ⇒ قبل أوّل اليوم التالي
+            return (sql: '$expr < ?', vars: [Variable(next)]);
+        }
+        return null;
+
+      default: // text
+        if (value == null) return null;
+        final s = value.toString();
+        if (op == 'contains') {
+          // ‏`%` و`_` محرفا بدلٍ في نمط LIKE **مهما كان مصدرُ النمط**، فالربطُ
+          // معاملاً وحدَه لا يحوّلهما نصّاً. فمن يبحث عن «خصم %50» بلا هروبٍ
+          // يحصل على كلِّ ما فيه «50».
+          //
+          // و`ILIKE` على PostgreSQL: ‏`LIKE` في SQLite لا يفرّق بين حالتَي
+          // الحرف اللاتينيّ، وفي PostgreSQL يفرّق. فبلا التسوية يعطي **نفسُ
+          // التقرير نتيجتَين مختلفتين** بحسب المحرِّك تحته — والاختلافُ صامت.
+          final like = isPostgres ? 'ILIKE' : 'LIKE';
+          return (
+            sql: "$expr $like ? ESCAPE '\\'",
+            vars: [Variable('%${_escapeLikePattern(s)}%')]
+          );
+        }
+        return (sql: eq(), vars: [Variable(s)]);
+    }
+  }
+
+  bool? _asBool(Object? value) {
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    if (value is String) {
+      if (value == 'true' || value == '1') return true;
+      if (value == 'false' || value == '0') return false;
+    }
+    return null;
+  }
+
+  /// يُرجِع **بدايةَ اليوم** المحلّي — الجزءُ الزمنيّ يُطرح عمداً.
+  DateTime? _asDay(Object? value) {
+    DateTime? dt;
+    if (value is DateTime) {
+      dt = value;
+    } else if (value is String) {
+      dt = DateTime.tryParse(value);
+    } else if (value is int) {
+      dt = DateTime.fromMillisecondsSinceEpoch(value);
+    }
+    if (dt == null) return null;
+    return DateTime(dt.year, dt.month, dt.day);
+  }
+
+  String _escapeLikePattern(String v) => v
+      .replaceAll('\\', '\\\\')
+      .replaceAll('%', '\\%')
+      .replaceAll('_', '\\_');
 }
+
+/// العواملُ المسموحة **لكلِّ نوعِ حقل** — قائمةٌ مغلقة.
+///
+/// مربوطةٌ بالنوع لا بالحقل: «يحتوي» على حقلٍ رقميّ يُقارن نصّاً فيعطي
+/// نتائجَ لا يتوقّعها أحد (‏`100` تحتوي `0`)، ولذلك يُرفَض بدل أن يُقبَل
+/// ويُفسَّر. ونفسُ القائمة تبني منسدلةَ العامل في الواجهة، فلا يظهر للمستخدم
+/// عاملٌ سيُرفض عند التنفيذ.
+const Map<String, Set<String>> _kFilterOpsByFieldType = {
+  'text': {'=', '!=', 'contains'},
+  'number': {'=', '!=', '>', '>=', '<', '<='},
+  'date': {'=', '!=', '>', '>=', '<', '<='},
+  'boolean': {'=', '!='},
+};

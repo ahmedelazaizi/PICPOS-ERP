@@ -34,7 +34,7 @@ else
   ok "analyze — ٦ info بالظبط"
 fi
 
-step "unit + data + structural + services   (خط الأساس: 2795 ناجح · 7 متخطّى)"
+step "unit + data + structural + services   (خط الأساس: 2861 ناجح · 7 متخطّى)"
 if flutter test test/unit test/data test/structural test/services --concurrency=1; then
   ok "unit"
 else
@@ -45,7 +45,7 @@ step "integration   (خط الأساس: 641 ناجح · 1 متخطّى)"
 if flutter test test/integration --concurrency=1; then ok "integration"; else fail "integration"; fi
 
 if [[ "${1:-}" == "--pg" ]]; then
-  step "integration_pg — PostgreSQL حيّة   (خط الأساس: 40 ناجح)"
+  step "integration_pg — PostgreSQL حيّة   (خط الأساس: 45 ناجح)"
   # ⚠️ bootPgTestSchema() ينفّذ DROP SCHEMA public CASCADE — قاعدة picpos فقط.
   #    uralcash و Avalon على نفس الخادم وفيهما بيانات.
   if PG_TEST_DSN="postgres://postgres:14590@127.0.0.1:5432/picpos" \

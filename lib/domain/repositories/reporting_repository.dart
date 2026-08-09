@@ -29,10 +29,16 @@ abstract class IReportingRepository
   Future<List<CustomReportData>> getCustomReports();
 
   /// Create a new custom report
+  ///
+  /// [filters] — شروطُ التصفية بالصيغة المهيكلة التي توثّقها السكيما:
+  /// `[{"field":"price","op":">","value":100}]`. اسمُ الحقل من
+  /// [getAvailableFields] والعاملُ من [getFilterOperators] — قائمتان مغلقتان،
+  /// والقيمةُ تُربَط معاملاً داخل المحرِّك فلا تصل الاستعلامَ نصّاً.
   Future<int> createCustomReport({
     required String name,
     required String sourceEntity,
     required String columns,
+    String? filters,
   });
 
   /// Delete a custom report
@@ -49,4 +55,8 @@ abstract class IReportingRepository
 
   /// Get fields available for a custom report entity
   List<Map<String, String>> getAvailableFields(String entity);
+
+  /// عواملُ الفلتر المتاحة لنوعِ حقل (`text`/`number`/`date`/`boolean`).
+  /// تبني الواجهةُ المنسدلةَ منها كي لا تعرض عاملاً يرفضه المحرِّك.
+  List<Map<String, String>> getFilterOperators(String fieldType);
 }

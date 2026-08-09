@@ -555,10 +555,12 @@ class ReportingRepositoryImpl implements IReportingRepository {
     required String name,
     required String sourceEntity,
     required String columns,
+    String? filters,
   }) => _db.createCustomReport(
         name: name,
         sourceEntity: sourceEntity,
         columns: columns,
+        filters: filters,
       );
 
   @override
@@ -575,4 +577,8 @@ class ReportingRepositoryImpl implements IReportingRepository {
   @override
   List<Map<String, String>> getAvailableFields(String entity) =>
       _db.getAvailableFields(entity);
+
+  @override
+  List<Map<String, String>> getFilterOperators(String fieldType) =>
+      _db.getFilterOperators(fieldType);
 }
