@@ -18,6 +18,7 @@
 - **حدودُ البوابة الدنيا تُرفَع في نفس كوميت إضافة الاختبارات** (`scripts/gate.sh`).
 - **`schemaVersion` الحالي ١٥٢** — كلُّ تغييرِ سكيما يرفعه ويضيف خطوةَ هجرة.
 - **الاختبار قبل الكود دائماً**، ولكلّ إصلاحٍ طفرةٌ تُثبت أن الاختبار يميّز. وتحقّق أن الطفرة **طُبِّقت** (`grep -c`) قبل تفسير نتيجتها — نهاياتُ الأسطر CRLF تُفشل أنماطَ `perl` الحاوية على `\n` أو مرساة `$` صامتةً.
+- ⚠️ **`EmployeeSalaryCalculation` لا يعرّف `basePay`** — الأجرُ الأساسيّ متغيّرٌ محلّيٌّ داخل `calculateNetSalary`. المتاحُ من الخارج `grossPay` (‏= الأساسيُّ + الإضافي) و`baseSalary` (‏= **راتبُ العقد** لا المحسوب). فاختباراتُ الأجر الأساسيّ تقارن بـ`grossPay` **وتُبقي `overtimeRecords` فارغاً** كي يتساويا. أضِف صفَّ إضافيٍّ في اختبارٍ يقيس الأساسيَّ ⇒ الرقمُ يزيح بلا سبب ظاهر. (اكتُشف في المهمة ١.)
 
 ---
 
@@ -96,7 +97,7 @@ void main() {
     final calc = await db.calculateNetSalary(
         employeeId: id, year: 2026, month: 4);
 
-    expect(calc.basePay, closeTo(1000, 0.01),
+    expect(calc.grossPay, closeTo(1000, 0.01),
         reason: '١٠ أيامٍ × ١٠٠ — أي أن ساعاتِ الحضور لا تُقرأ إطلاقاً، '
             'وثمانُ ساعاتٍ أو ثنتان تعطيان الرقمَ نفسه');
   });
@@ -113,7 +114,7 @@ void main() {
 
     final calc = await db.calculateNetSalary(
         employeeId: id, year: 2026, month: 4);
-    expect(calc.basePay, closeTo(100, 0.01),
+    expect(calc.grossPay, closeTo(100, 0.01),
         reason: 'يومٌ كامل الأجر مقابل ساعتين — وهو ما تُصلحه هذه المواصفة');
   });
 }
@@ -642,7 +643,7 @@ void main() {
 
     final calc = await db.calculateNetSalary(
         employeeId: id, year: 2026, month: 4);
-    expect(calc.basePay, closeTo(12 * 25, 0.01),
+    expect(calc.grossPay, closeTo(12 * 25, 0.01),
         reason: '١٢ ساعةً × ٢٥ — لا يومان × الأجر اليومي');
   });
 
@@ -652,7 +653,7 @@ void main() {
     await attend(id, 1, 9, 11); // ساعتان
     final calc = await db.calculateNetSalary(
         employeeId: id, year: 2026, month: 4);
-    expect(calc.basePay, closeTo(2 * 25, 0.01),
+    expect(calc.grossPay, closeTo(2 * 25, 0.01),
         reason: 'كان يأخذ يوماً كاملاً مقابل ساعتين');
   });
 
@@ -667,7 +668,7 @@ void main() {
         ));
     final calc = await db.calculateNetSalary(
         employeeId: id, year: 2026, month: 4);
-    expect(calc.basePay, closeTo(0, 0.01),
+    expect(calc.grossPay, closeTo(0, 0.01),
         reason: 'مدةٌ مجهولة لا تُخمَّن — والاتجاهُ الآمن أن تُوثَّق');
   });
 
@@ -677,7 +678,7 @@ void main() {
     await attend(id, 1, 9, 11);
     final calc = await db.calculateNetSalary(
         employeeId: id, year: 2026, month: 4);
-    expect(calc.basePay, closeTo(5200, 0.01),
+    expect(calc.grossPay, closeTo(5200, 0.01),
         reason: 'الشهريُّ = الراتبُ كاملاً ناقص غيابٍ مسجَّل');
   });
 
@@ -693,7 +694,7 @@ void main() {
         ));
     final calc = await db.calculateNetSalary(
         employeeId: id, year: 2026, month: 4);
-    expect(calc.basePay, closeTo(5200, 0.01),
+    expect(calc.grossPay, closeTo(5200, 0.01),
         reason: 'التقويمُ يسري على الجميع — تغييرٌ مقصودٌ في موديل الشهري');
   });
 
@@ -708,7 +709,7 @@ void main() {
         ));
     final calc = await db.calculateNetSalary(
         employeeId: id, year: 2026, month: 4);
-    expect(calc.basePay, lessThan(5200));
+    expect(calc.grossPay, lessThan(5200));
   });
 }
 ```
