@@ -279,6 +279,7 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
                   SizedBox(
                     width: 160,
                     child: DropdownButtonFormField<int?>(
+                      isExpanded: true,
                       initialValue: _selectedCostCenterId,
                       decoration: InputDecoration(
                         labelText: 'مركز التكلفة',
@@ -303,6 +304,7 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
                   SizedBox(
                     width: 160,
                     child: DropdownButtonFormField<int?>(
+                      isExpanded: true,
                       initialValue: _selectedSafeId,
                       decoration: InputDecoration(
                         labelText: 'الصندوق',

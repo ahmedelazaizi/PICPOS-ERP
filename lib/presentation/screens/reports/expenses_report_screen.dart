@@ -494,6 +494,7 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
           width: 220,
           child: regionsAsync.when(
             data: (regions) => DropdownButtonFormField<int?>(
+              isExpanded: true,
               initialValue: _selectedRegionId,
               isDense: true,
               decoration: InputDecoration(
@@ -557,6 +558,7 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
           width: 220,
           child: branchesAsync.when(
             data: (branches) => DropdownButtonFormField<int?>(
+              isExpanded: true,
               initialValue: _selectedBranchId,
               isDense: true,
               decoration: InputDecoration(
@@ -589,6 +591,7 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
           width: 220,
           child: usersAsync.when(
             data: (users) => DropdownButtonFormField<int?>(
+              isExpanded: true,
               initialValue: _selectedUserId,
               isDense: true,
               decoration: InputDecoration(
