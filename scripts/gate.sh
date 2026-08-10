@@ -54,11 +54,11 @@ rm -rf build/native_assets
 #   integration                      641 /  604s    641 / 258s   مطابق
 #
 # تشغيلةُ 2026-08-10 بعد إغلاق بلوكرات PicPos (‏c=4، ١٦ نواة، ‏--pg):
-#   analyze 6 info · unit 2973 · widget 651 · integration 678 · pg 45
-#   (‏آخرُ تشغيلةٍ كاملةٍ على شجرةٍ ثابتة بعد إغلاق H8 · H11 · H13 · H14 · H15
-#    وبعد إغلاق التطبيق المزدوج لحركة الخزنة — حارسُ
-#    `safe_balance_single_write_test` ‏+٣ في unit، واختبارا رصيدِ الخزنة في
-#    إلغاء المرتجع ‏+٢ في integration)
+#   analyze 6 info · unit 3011 · widget 651 · integration 678 · pg 45
+#   (‏آخرُ تشغيلةٍ كاملةٍ على شجرةٍ ثابتة — بعد H8 · H11 · H13 · H14 · H15،
+#    وبعد إغلاق التطبيق المزدوج لحركة الخزنة، وخمسِ متوسطاتٍ من §٣-ب،
+#    وسلسلةِ الطباعة: مصدرُ الخطّ الواحد · الأصلُ الكامل · اتجاهُ الصفحات ·
+#    وصلُ قالب إغلاق الوردية)
 #
 # والحكمُ **بتطابق عدد النجاحات** لا بالخضرة: لو كشف التوازي هشاشةً كامنة
 # لظهر الفرقُ رقماً. وصفرُ `PathExistsException` في كلّ التشغيلات بعد تنظيف
@@ -146,7 +146,7 @@ else
 fi
 
 # الحدود مقيسةٌ 2026-08-10 بعد جلسة إغلاق بلوكرات PicPos.
-run_suite "unit + data + structural + services" 2988 \
+run_suite "unit + data + structural + services" 3011 \
   flutter test test/unit test/data test/structural test/services --concurrency="$LOCAL_CONCURRENCY"
 
 # الواجهات والنطاقُ والنواة — كانت **كلُّها** خارج البوابة حتى 2026-08-09.
