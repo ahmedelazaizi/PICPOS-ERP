@@ -23,8 +23,20 @@ import 'formula_evaluator.dart';
 class TemplatePrintRenderer {
   static pw.Font? _arabicFont;
 
+  /// الخطُّ من المصنع وحدَه — Noto Naskh، لا Cairo.
+  ///
+  /// كان هنا `PdfGoogleFonts.cairoRegular()`، وهي علّةٌ مزدوجة:
+  ///
+  /// ١) Cairo ينقصه **الياءُ المنفصلة U+FEF1**. والنمطُ المحلّيُّ
+  ///    `TextStyle(font: …)` يدهس أساسَ الثيم ولا يدهس احتياطيَّه، والاحتياطيُّ
+  ///    في الثيم هو Cairo نفسُه — فتصير السلسلةُ **Cairo ← Cairo** ولا مصدرَ
+  ///    فيه الرسم. مقيس على إيصالٍ مطبوع: «صبري» بالياء راكبةً على الراء،
+  ///    و«لوز ارباع» صارت «لوزارباع».
+  ///
+  /// ٢) `PdfGoogleFonts` **تنزّل من الشبكة** وقت الطباعة — ونقطةُ البيع قد
+  ///    تكون بلا إنترنت. المصنعُ يقرأ الأصلَ المحزوم أولاً.
   static Future<void> _initFont() async {
-    _arabicFont ??= await printing_pkg.PdfGoogleFonts.cairoRegular();
+    _arabicFont ??= await BaseGenerator.initFont();
   }
 
   /// Build a PDF document from a template and its data.

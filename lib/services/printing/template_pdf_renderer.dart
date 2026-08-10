@@ -86,25 +86,14 @@ class TemplateInvoiceData {
 class TemplatePdfRenderer {
   static pw.Font? _arabicFont;
 
+  /// الخطُّ من المصنع وحدَه.
+  ///
+  /// كان هنا سلَّمٌ خاصٌّ من ثلاث درجات أوّلُها **Cairo** المحزوم — وCairo
+  /// ينقصه الياءُ المنفصلة U+FEF1، فكلُّ كلمةٍ آخرُها ي بعد حرفٍ غيرِ موصول
+  /// (ر ز د ذ و ا) تُطبع ناقصةً والياءُ راكبةٌ على ما قبلها. والمصنعُ عنده
+  /// نفسُ السلَّم لكن أساسُه Noto Naskh الذي يحمل الأشكالَ كلَّها.
   static Future<pw.Font> _initFont() async {
-    if (_arabicFont != null) return _arabicFont!;
-
-    // ① Load from bundled asset (works offline)
-    try {
-      final fontData = await rootBundle.load('assets/fonts/Cairo-Regular.ttf');
-      _arabicFont = pw.Font.ttf(fontData);
-      return _arabicFont!;
-    } catch (_) {}
-
-    // ② Fallback: Google Fonts (requires internet)
-    try {
-      _arabicFont = await printing_pkg.PdfGoogleFonts.cairoRegular();
-      return _arabicFont!;
-    } catch (_) {}
-
-    // ③ Last resort: Helvetica — NOT cached so next call retries
-    debugPrint('[TemplatePDF] WARNING: Arabic font unavailable');
-    return pw.Font.helvetica();
+    return _arabicFont ??= await BaseGenerator.initFont();
   }
 
   /// Main entry: print using template + real data.

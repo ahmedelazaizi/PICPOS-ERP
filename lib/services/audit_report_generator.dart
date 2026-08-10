@@ -21,10 +21,15 @@ class AuditReportGenerator {
     required DateTime toDate,
     String generatedBy = '',
   }) async {
-    final font = await printing_pkg.PdfGoogleFonts.cairoRegular();
-    final fontBold = await printing_pkg.PdfGoogleFonts.cairoBold();
+    // الخطُّ من المصنع — Noto Naskh. وCairo (الذي كان هنا) ينقصه الياءُ
+    // المنفصلة U+FEF1، فتسقط من كلّ اسمٍ آخرُه ي بعد حرفٍ غيرِ موصول.
+    //
+    // ولا وزنَ عريضٌ منفصل: الأصلُ المحزوم Regular وحدَه، والعريضُ المصطنَع
+    // لا تنتجه الحزمة. فالعريضُ هنا نفسُ الرسم — نصٌّ صحيحٌ بوزنٍ واحد
+    // أفضلُ من نصٍّ عريضٍ ناقصِ حرف.
+    final font = await BaseGenerator.initFont();
     final ttf = font;
-    final ttfBold = fontBold;
+    final ttfBold = font;
 
     final pdf = await BaseGenerator.newDocument();
 

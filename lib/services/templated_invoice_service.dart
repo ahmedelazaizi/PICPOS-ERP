@@ -15,31 +15,14 @@ import 'printer_resolver.dart';
 class TemplatedInvoiceService {
   static pw.Font? _arabicFont;
 
+  /// الخطُّ من المصنع وحدَه.
+  ///
+  /// كان هنا سلَّمٌ خاصٌّ أوّلُه **Cairo** المحزوم. وCairo ينقصه الياءُ
+  /// المنفصلة U+FEF1، فكلُّ اسمٍ آخرُه ي بعد حرفٍ غيرِ موصول («صبري» ·
+  /// «بدري» · «المصري») يُطبع والياءُ راكبةٌ على ما قبلها. والمصنعُ عنده
+  /// نفسُ السلَّم بأساسٍ يحمل الأشكالَ كلَّها (Noto Naskh).
   static Future<void> _initFont() async {
-    if (_arabicFont != null) return;
-
-    // ① Load from bundled asset (works offline on POS machines)
-    try {
-      final fontData = await rootBundle.load('assets/fonts/Cairo-Regular.ttf');
-      _arabicFont = pw.Font.ttf(fontData);
-      debugPrint('[TemplatedInvoice] Loaded Cairo from bundled asset');
-      return;
-    } catch (e) {
-      debugPrint('[TemplatedInvoice] Bundled asset failed: $e');
-    }
-
-    // ② Fallback: download from Google Fonts (requires internet)
-    try {
-      _arabicFont = await PdfGoogleFonts.cairoRegular();
-      debugPrint('[TemplatedInvoice] Loaded Cairo from Google Fonts');
-      return;
-    } catch (e) {
-      debugPrint('[TemplatedInvoice] Google Fonts failed: $e');
-    }
-
-    // ③ Last resort: Helvetica — NOT cached, so next call retries
-    debugPrint('[TemplatedInvoice] WARNING: Arabic font unavailable — text will show as boxes');
-    _arabicFont = pw.Font.helvetica();
+    _arabicFont ??= await BaseGenerator.initFont();
   }
 
   /// التحقق من وجود قالب افتراضي لنوع معين (مع فئة اختيارية)
