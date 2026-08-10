@@ -61,6 +61,12 @@ class _SalesReturnsReportScreenState extends ConsumerState<SalesReturnsReportScr
         if (!mounted) return;
         if (activeBranchId != null) {
           setState(() => _selectedBranchId = activeBranchId);
+          // H13 · بذرُ الاسم وحدَه كان يخلّي القائمةَ تقول فرعاً والأرقامَ
+          // تقول شركة: نطاقُ الاستعلام (`_branchWarehouseIds`) كان يُحلّ في
+          // `onBranchChanged` فقط، فيفضل `null` على أوّل تحميل.
+          _branchWarehouseIds =
+              await BranchWarehouseFilterBar.getBranchWarehouseIds(
+                  ref, activeBranchId);
         } else if (!_noBranchNoticeShown) {
           _noBranchNoticeShown = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
