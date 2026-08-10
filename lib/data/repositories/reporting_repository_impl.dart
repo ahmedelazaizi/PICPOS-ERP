@@ -214,6 +214,23 @@ class ReportingRepositoryImpl implements IReportingRepository {
         allowedBranchIds: allowedBranchIds,
       );
 
+  /// يفوّض إلى نفس دالّة القاعدة التي تحمل قاعدةَ الإشارة الوحيدة.
+  @override
+  Future<double> getSafeOpeningBalance(
+    DateTime start, {
+    int? safeId,
+    int? costCenterId,
+    List<int>? safeIds,
+    Set<int>? allowedBranchIds,
+  }) =>
+      _db.getSafeOpeningBalance(
+        start,
+        safeId: safeId,
+        costCenterId: costCenterId,
+        safeIds: safeIds,
+        allowedBranchIds: allowedBranchIds,
+      );
+
   @override
   Future<List<SafeTransactionData>> getTransactionsByDateRange(
     DateTime start,

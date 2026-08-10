@@ -11,6 +11,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import 'report_export_guard.dart';
 
+import '../../../data/database/models/safe_running_balance.dart';
 import '../../../data/providers/providers.dart';
 import '../../widgets/report_components.dart';
 import '../../widgets/report_filter_bar.dart';
@@ -36,6 +37,13 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
   bool _isLoading = false;
   TreasuryAnalytics? _analytics;
   List<SafeTransactionData> _transactions = [];
+
+  /// رصيدُ الخزائن المشمولة قبل بداية النافذة — مرساةُ عمود «الرصيد».
+  double _openingBalance = 0;
+
+  /// `{معرّفُ الحركة: الرصيدُ الجاري بعدها}` — فارغةٌ حين يكون فلترُ المستخدم
+  /// فعّالاً، لأن الصفوفَ عندئذٍ مجموعةٌ جزئيةٌ لا يصحّ المشيُ فوقها.
+  Map<int, double> _runningBalances = const {};
   List<UserTreasurySummary> _perUserSummary = [];
   final _dateFormat = DateFormat('yyyy-MM-dd HH:mm');
   final _currencyFormat = NumberFormat.currency(symbol: '', decimalDigits: AppConstants.decimalPlaces);
@@ -188,9 +196,45 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
         allowedBranchIds: allowedBranchIds,
       );
 
+      // §٣-ج — «الرصيد» رصيداً جارياً على النافذة المفلترة.
+      //
+      // العمودُ كان يعرض `balanceAfter` المخزَّن: لقطةٌ وقتَ الإدراج لا تعني
+      // شيئاً تحت التصفية، وتصير خاطئةً صامتةً بعد إلغاء حركةٍ سابقة.
+      //
+      // ⚠️ وفلترُ **المستخدم** يصفّي الصفوفَ ولا يملك رصيداً: الصفوفُ
+      // المعروضةُ عندئذٍ مجموعةٌ جزئيةٌ من حركات الخزنة، فأيُّ مشيٍ فوقها
+      // يعطي رقماً منحرفاً. فيُخفى العمودُ بدل أن يكذب.
+      final rows = List<SafeTransactionData>.from(transactions);
+      var opening = 0.0;
+      var running = const <int, double>{};
+      if (_selectedUserId == null) {
+        opening = await repo.getSafeOpeningBalance(
+          _dateRange.start,
+          safeId: _selectedSafeId,
+          costCenterId: _selectedCostCenterId,
+          safeIds: _branchSafeIds,
+          allowedBranchIds: allowedBranchIds,
+        );
+        running = runningBalances(
+          // تصل من الاستعلام **الأحدثَ أولاً**؛ الدالّةُ تتولّى الاتجاه.
+          rowsNewestFirst: [
+            for (final t in rows)
+              SafeMovementRow(
+                id: t.id,
+                type: t.transactionType,
+                amount: t.amount,
+              ),
+          ],
+          openingBalance: opening,
+        );
+      }
+      if (!mounted) return;
+
       setState(() {
         _analytics = analytics;
-        _transactions = List<SafeTransactionData>.from(transactions);
+        _transactions = rows;
+        _openingBalance = opening;
+        _runningBalances = running;
         _perUserSummary = perUser;
       });
     } finally {
@@ -622,16 +666,26 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
                             child: SizedBox(
                               width: double.infinity,
                               child: DataTable(
-                                columns: const [
-                                  DataColumn(label: Text('رقم السند')),
-                                  DataColumn(label: Text('التاريخ')),
-                                  DataColumn(label: Text('الصندوق')),
-                                  DataColumn(label: Text('النوع')),
-                                  DataColumn(label: Text('الفئة')),
-                                  DataColumn(label: Text('المبلغ')),
-                                  DataColumn(label: Text('الرصيد بعد')),
-                                  DataColumn(label: Text('المستخدم')),
-                                  DataColumn(label: Text('البيان')),
+                                columns: [
+                                  const DataColumn(label: Text('رقم السند')),
+                                  const DataColumn(label: Text('التاريخ')),
+                                  const DataColumn(label: Text('الصندوق')),
+                                  const DataColumn(label: Text('النوع')),
+                                  const DataColumn(label: Text('الفئة')),
+                                  const DataColumn(label: Text('المبلغ')),
+                                  // الرصيدُ الافتتاحيُّ معلنٌ في العنوان:
+                                  // عمودٌ جارٍ بلا مرساةٍ ظاهرةٍ لا يمكن
+                                  // للمستخدم أن يتحقّق من أوّل صفٍّ فيه.
+                                  DataColumn(
+                                    label: Text(
+                                      _runningBalances.isEmpty
+                                          ? 'الرصيد'
+                                          : 'الرصيد (افتتاحي: '
+                                              '${_currencyFormat.format(_openingBalance)})',
+                                    ),
+                                  ),
+                                  const DataColumn(label: Text('المستخدم')),
+                                  const DataColumn(label: Text('البيان')),
                                 ],
                                 rows: _transactions.map((t) {
                                   final isReceipt =
@@ -671,9 +725,13 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
                                       ),
                                       DataCell(
                                         Text(
-                                          _currencyFormat.format(
-                                            t.balanceAfter,
-                                          ),
+                                          // مشيٌ فوق الرصيد الافتتاحي للنافذة.
+                                          // و«—» حين يُخفى (فلترُ المستخدم):
+                                          // لا رقمَ خيرٌ من رقمٍ منحرف.
+                                          _runningBalances.containsKey(t.id)
+                                              ? _currencyFormat.format(
+                                                  _runningBalances[t.id])
+                                              : '—',
                                         ),
                                       ),
                                       DataCell(Text(_getUserName(t.userId))),
@@ -727,6 +785,20 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
       allRows.add(['', '', '', '', '', '', '', '']);
     }
 
+    // مرساةُ العمود الجاري — بدونها لا يمكن التحقّقُ من أوّل صفّ.
+    if (_runningBalances.isNotEmpty) {
+      allRows.add([
+        '',
+        '',
+        '',
+        'رصيد افتتاحي',
+        '',
+        _openingBalance,
+        '',
+        'الرصيد قبل بداية الفترة',
+      ]);
+    }
+
     for (final t in _transactions) {
       allRows.add([
         t.voucherNumber,
@@ -734,7 +806,9 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
         t.transactionType == 'receipt' ? 'قبض' : 'صرف',
         t.category,
         t.amount,
-        t.balanceAfter,
+        // نفسُ عمود الشاشة: مشيٌ فوق الرصيد الافتتاحي، و«—» حين يُخفى.
+        // تصديرُ اللقطة المخزَّنة هنا كان يخالف ما يراه المستخدمُ فوقه.
+        _runningBalances.containsKey(t.id) ? _runningBalances[t.id]! : '—',
         _getUserName(t.userId),
         t.description ?? '-',
       ]);

@@ -59,6 +59,9 @@ import '../../services/pos_terminal_registration_service.dart';
 // 062 (D1-004) — PermissionEnforcer for critical financial ops.
 import '../../services/permission_enforcer.dart';
 import '../../core/config/brand.dart';
+// قاعدةُ إشارة حركة الخزنة — مصدرٌ واحدٌ يشترك فيه الاستعلامُ والشاشة، فلا
+// تُنسخ داخل `CASE` في SQL ثم تنحرف عن نسختها بأوّل نوعٍ جديد.
+import 'models/safe_running_balance.dart';
 export '../../services/permission_enforcer.dart' show PermissionDeniedException;
 
 part 'database.g.dart';

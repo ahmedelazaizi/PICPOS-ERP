@@ -252,6 +252,73 @@ extension TreasuryReportsDao on AppDatabase {
     }).toList();
   }
 
+  /// رصيدُ الخزائن المشمولة **قبل** بداية النافذة — مرساةُ عمود «الرصيد».
+  ///
+  /// العمودُ كان يعرض `balanceAfter` المخزَّن، وهو لقطةٌ وقتَ الإدراج: تحت
+  /// التصفية لا تعني شيئاً، وبعد إلغاء حركةٍ سابقةٍ تصير لقطاتُ ما بعدها
+  /// خاطئةً صامتة. فالصوابُ رصيدٌ افتتاحيٌّ يُعاد حسابه من الحركات **الحيّة**
+  /// ثم مشيٌ فوقه.
+  ///
+  /// النطاقُ يطابق [getTransactionsByDateRange] في كلّ ما هو **نطاقُ خزنة**
+  /// (‏الخزنةُ · خزائنُ الفرع · مركزُ التكلفة · سقفُ الصلاحية) ويُسقط
+  /// `userId` عمداً: المستخدمُ يصفّي **الصفوف** ولا يملك رصيداً، فرصيدٌ
+  /// افتتاحيٌّ «لهذا المستخدم» لا معنى له. ولذلك تُخفي الشاشةُ العمودَ حين
+  /// يكون فلترُ المستخدم فعّالاً بدل أن تعرض رقماً منحرفاً صامتاً.
+  ///
+  /// التجميعُ في SQL والإشارةُ في Dart (`signedSafeDelta`): مجموعٌ لكلّ نوعٍ
+  /// يعود مصغَّراً، وقاعدةُ الإشارة تبقى في **مصدرٍ واحد** بدل نسخةٍ ثانيةٍ
+  /// داخل `CASE` تنحرف عن الأولى بأوّل نوعٍ جديد.
+  Future<double> getSafeOpeningBalance(
+    DateTime start, {
+    int? safeId,
+    int? costCenterId,
+    List<int>? safeIds,
+    Set<int>? allowedBranchIds,
+  }) async {
+    final typeCol = safeTransactions.transactionType;
+    final sumCol = safeTransactions.amount.sum();
+
+    final query = selectOnly(safeTransactions)
+      ..addColumns([typeCol, sumCol])
+      ..where(safeTransactions.createdAt
+          .isSmallerThanValue(DateUtils.startOfDay(start)))
+      ..where(safeTransactions.deletedAt.isNull());
+
+    if (safeId != null) {
+      query.where(safeTransactions.safeId.equals(safeId));
+    }
+    if (safeIds != null && safeIds.isNotEmpty) {
+      query.where(safeTransactions.safeId.isIn(safeIds));
+    }
+    if (costCenterId != null) {
+      final byCostCentre = selectOnly(safes)
+        ..addColumns([safes.id])
+        ..where(safes.costCenterId.equals(costCenterId));
+      query.where(safeTransactions.safeId.isInQuery(byCostCentre));
+    }
+    if (allowedBranchIds != null) {
+      if (allowedBranchIds.isEmpty) {
+        query.where(const Constant(false)); // fail-closed
+      } else {
+        final scopedSafes = selectOnly(safes)
+          ..addColumns([safes.id])
+          ..where(
+              safes.branchId.isIn(allowedBranchIds) | safes.branchId.isNull());
+        query.where(safeTransactions.safeId.isInQuery(scopedSafes));
+      }
+    }
+
+    query.groupBy([typeCol]);
+
+    var opening = 0.0;
+    for (final row in await query.get()) {
+      final type = row.read(typeCol);
+      if (type == null) continue;
+      opening += signedSafeDelta(type, row.read(sumCol) ?? 0);
+    }
+    return opening;
+  }
+
   /// Delete an expense/payment transaction and reverse its balance effect.
   ///
   /// Uses SOFT delete (sets `deletedAt`) rather than hard-delete so that the

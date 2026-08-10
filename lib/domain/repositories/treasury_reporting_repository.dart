@@ -24,6 +24,18 @@ abstract class ITreasuryReportingRepository {
     Set<int>? allowedBranchIds,
   });
 
+  /// رصيدُ الخزائن المشمولة **قبل** [start] — مرساةُ عمود «الرصيد» في التقرير.
+  ///
+  /// يُسقط `userId` عمداً: المستخدمُ يصفّي الصفوفَ ولا يملك رصيداً. اقرأ
+  /// `TreasuryReportsDao.getSafeOpeningBalance`.
+  Future<double> getSafeOpeningBalance(
+    DateTime start, {
+    int? safeId,
+    int? costCenterId,
+    List<int>? safeIds,
+    Set<int>? allowedBranchIds,
+  });
+
   Future<List<UserTreasurySummary>> getPerUserTreasurySummary(
     DateTime from,
     DateTime to, {
