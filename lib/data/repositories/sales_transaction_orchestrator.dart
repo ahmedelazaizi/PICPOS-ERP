@@ -219,6 +219,11 @@ class SalesTransactionOrchestrator {
         adhocCustomerName: adhocCustomerName,
         adhocCustomerPhone: adhocCustomerPhone,
         adhocCustomerNote: adhocCustomerNote,
+        // نفسُ شرطِ القيد في آخر هذه الدالة بالضبط: حين نصدره بأنفسنا — ومعنا
+        // `cogsBreakdown` من الخصم التلقائيّ في الخطوة ٤٫٥ — لا يصدره الـDAO
+        // قبلنا بلا تكلفة. اقرا `SalesMutationsDao.createSalesInvoice →
+        // deferAutoPost`.
+        deferAutoPost: (saleType ?? 'default') != 'return' && !isClientMode,
       );
 
       // Fetch the generated invoice record

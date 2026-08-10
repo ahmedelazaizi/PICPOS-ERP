@@ -46,6 +46,24 @@ extension SalesMutationsDao on AppDatabase {
     String? adhocCustomerName,
     String? adhocCustomerPhone,
     String? adhocCustomerNote,
+
+    /// يؤجّل قيدَ «Phase 8» لأن المنادي سيصدره بنفسه **بعد** أن يعرف تكلفةَ
+    /// الخامات.
+    ///
+    /// ⚠️ ترتيبٌ لا يظهر إلا من المسار الكامل: `autoPostCashSale` يقرأ
+    /// `sale_bom_consumptions` ليعرف تكلفةَ الصنف المركّب (تكلفتُه ليست على
+    /// سطر الفاتورة — الصنفُ المركّب يحمل صفراً عادةً). لكن على مسار
+    /// `SalesTransactionOrchestrator` لا تُكتب تلك الصفوف إلا في الخطوة ٤٫٥،
+    /// أي **بعد** أن يكون هذا الـDAO قد أصدر القيدَ وعاد.
+    ///
+    /// فالقيدُ يخرج «مدين نقدية / دائن مبيعات» بلا تكلفةٍ إطلاقاً — متوازنٌ
+    /// فلا يشتكي مدقّق، والخاماتُ خرجت من المخزن فعلاً. مقيس: تكلفةُ مبيعاتٍ
+    /// صفرٌ بدل ٦٠ على بيعةِ ١٠٠ ⇒ هامشٌ ١٠٠٪ وربحٌ وهميّ بحجم التكلفة.
+    /// ثم يأتي قيدُ المنسّق (ومعه التفصيل) فيصطدم بحارس الازدواج ويُهمَل.
+    ///
+    /// المنادون الآخرون (‏معالجُ الـAPI، الإيرادُ المؤجَّل، مسارا الإصلاح،
+    /// التوصيل) لا يمرّرونها فيبقى سلوكُهم كما هو بالضبط.
+    bool deferAutoPost = false,
   }) async {
     final invoiceId = await transaction(() async {
       // Use client-provided date or current server time
@@ -441,6 +459,7 @@ extension SalesMutationsDao on AppDatabase {
     // autoPostCashSale/autoPostCreditSale each wrap themselves in transaction()
     // internally — nesting them inside would cause SQLite deadlock (SqliteException 517).
     // The dedup guard (hasAutoPostEntry) inside each method is idempotent.
+    if (deferAutoPost) return invoiceId; // اقرا [deferAutoPost] فوق
     try {
       final sale = await getSalesInvoiceById(invoiceId);
       if (sale != null) {
