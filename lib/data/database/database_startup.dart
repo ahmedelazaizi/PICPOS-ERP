@@ -705,7 +705,6 @@ extension DatabaseStartup on AppDatabase {
       debugPrint('[Startup] repairAllMissingInvoiceJEs: $e');
     }
 
-
     // Step 7: Spec 136 ISS-2 — backfill deterministic globalIds on seeded
     // master-data defaults that still carry a NULL globalId (pre-globalId
     // upgraded installs, e.g. fiscal_years created before createFiscalYear
@@ -1007,35 +1006,6 @@ extension DatabaseStartup on AppDatabase {
         await accountingDao.syncDefaultAccounts();
       } catch (e) {
         debugPrint('[Startup] syncDefaultAccounts: $e');
-      }
-
-      // حسابٌ فرعيٌّ لكلّ خزنة تحت أب الخزائن (`1110` أو `111`).
-      //
-      // خزنةٌ بلا `linkedAccountId` تسقط بحسب **نوعها** على حسابٍ مشترك
-      // (`kSafeTypeAccountCode`: cash→1111)، فدرجُ الكاشير والصندوقُ
-      // المركزيُّ يترحّلان على رقمٍ واحدٍ لا ينفصل في الأستاذ، ولا سبيلَ
-      // لمطابقة رصيد خزنةٍ بعينها مع الدفاتر.
-      //
-      // و`createSafeWithLinkedAccount` تفعل الصوابَ منذ v142، لكنّ **البذرة**
-      // لا تمرّ بها: `database_seeder.dart` يُدرج الخزائنَ الافتراضية بإدراجٍ
-      // عارٍ بلا ربط — فكلُّ تنصيبٍ جديدٍ يولد بالعطب كاملاً. ولأن الإصلاح
-      // **متعادلٌ** (‏`linkedAccountId IS NULL` وحدَها) فهو آمنٌ كلَّ إقلاع،
-      // ولا يُداس اختيارُ المستخدم الصريح.
-      //
-      // ⚠️ **بعد** `syncDefaultAccounts` قصداً: الإصلاحُ ينصرف صامتاً حين لا
-      // يجد أبَ الخزائن، فوضعُه قبل بذر الدليل كان يجعله لا يفعل شيئاً على
-      // أوّل إقلاعٍ — وهو الإقلاعُ الوحيدُ الذي يحتاجه تنصيبٌ جديد.
-      //
-      // وداخلَ فرع «لا عميل» قصداً كذلك: في وضع العميل السيرفرُ صاحبُ
-      // الدليل، وإنشاءُ حساباتٍ محليةٍ هنا يزدوج مع نسخته بعد أوّل سحب —
-      // نفسُ سبب تخطّي بذر الحسابات فوق.
-      try {
-        final linked = await linkUnlinkedSafesToSubAccounts();
-        if (linked > 0) {
-          debugPrint('[Startup] ✅ ربطُ الخزائن بالحسابات — $linked خزنة');
-        }
-      } catch (e) {
-        debugPrint('[Startup] linkUnlinkedSafesToSubAccounts: $e');
       }
     }
   }

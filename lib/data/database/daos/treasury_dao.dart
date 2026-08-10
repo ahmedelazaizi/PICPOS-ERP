@@ -3060,88 +3060,6 @@ extension TreasuryDao on AppDatabase {
     return maxSuffix + 1;
   }
 
-  /// الأبُ الذي تُعلَّق تحته حساباتُ الخزائن الفرعية.
-  ///
-  /// Compatibility (2026-05-03) — `'1110'` أولاً (استيرادُ دليلٍ مخصَّصٍ قد
-  /// يحمله) ثم `'111'` وهو ما يبذره `database_seeder_accounts.dart` فعلاً
-  /// («النقدية وما فى حكمها»)، فلا يُجبَر المشغّلُ على إنشاء `1110` يدوياً.
-  ///
-  /// مستخرَجٌ كي يشترك فيه مسارُ الإنشاء ومسارُ الإصلاح: لو افترق النصّان
-  /// لأمكن أن يُنشئ أحدُهما تحت `1110` والآخرُ تحت `111` في نفس التنصيب،
-  /// فتتشتّت حساباتُ الخزائن على أبوين ولا يجمعها تقرير.
-  Future<Account?> _resolveSafesParentAccount() async {
-    for (final code in const ['1110', '111']) {
-      final found =
-          await (select(accounts)..where((a) => a.code.equals(code)))
-              .getSingleOrNull();
-      if (found != null) return found;
-    }
-    return null;
-  }
-
-  /// يمنح كلَّ خزنةٍ بلا `linkedAccountId` حسابَها الفرعيَّ تحت أب الخزائن،
-  /// ويعيد عددَ ما رُبط.
-  ///
-  /// ── فئةُ العطب ────────────────────────────────────────────────────────
-  /// خزنةٌ بلا ربطٍ تسقط بحسب **نوعها** على حسابٍ مشترك
-  /// ([kSafeTypeAccountCode]: cash→1111 · bank→1113 · click→1116)، فكلُّ
-  /// الخزائن النقدية تترحّل على `1111` ولا تُميَّز في الأستاذ: درجُ الكاشير
-  /// والصندوقُ المركزيُّ رقمٌ واحدٌ لا ينفصل، ولا سبيلَ لمطابقة رصيد خزنةٍ
-  /// بعينها مع الدفاتر.
-  ///
-  /// و[createSafeWithLinkedAccount] تفعل الصوابَ منذ v142، لكنّ **البذرة**
-  /// لا تمرّ بها: `database_seeder.dart` يُدرج «صندوق الكاشير» و«الحساب
-  /// البنكي» و«صندوق تحويل كليك» و«الصندوق الرئيسي» بإدراجٍ عارٍ بلا ربط —
-  /// فكلُّ تنصيبٍ جديدٍ يولد بالعطب كاملاً. هذا الإصلاحُ هو الطرفُ المكمّل.
-  ///
-  /// **متعادلٌ** ويعمل كلَّ إقلاع: لا يمسّ إلا `linkedAccountId IS NULL`،
-  /// فاختيارُ المستخدم الصريحُ لا يُداس أبداً. والمحذوفةُ ناعماً مستثناةٌ —
-  /// لا معنى لحسابٍ جديدٍ لخزنةٍ أُزيلت.
-  ///
-  /// كلُّ خزنةٍ في معاملةٍ مستقلّة: لاحقةُ الكود متسلسلةٌ لكلّ أب، فمعاملةٌ
-  /// واحدةٌ جامعةٌ كانت ستُسقط الجميعَ لتصادمٍ في واحدة.
-  Future<int> linkUnlinkedSafesToSubAccounts() async {
-    final parent = await _resolveSafesParentAccount();
-    // دليلٌ بلا أبٍ للخزائن: لا نُنشئ شجرةً من عندنا — الإنشاءُ اليدويّ
-    // يصرّح بذلك للمستخدم، والإصلاحُ الصامتُ يكتفي بالانصراف.
-    if (parent == null) return 0;
-
-    final unlinked = await (select(safes)
-          ..where((s) => s.linkedAccountId.isNull() & s.deletedAt.isNull()))
-        .get();
-    if (unlinked.isEmpty) return 0;
-
-    var linked = 0;
-    for (final safe in unlinked) {
-      final ok = await transaction(() async {
-        final suffix = await _nextAccountSuffix(parent.id);
-        final code = '${parent.code}-${suffix.toString().padLeft(5, '0')}';
-
-        // تصادمٌ نظريّ (صفٌّ قديمٌ من هجرةٍ جزئية) — نتخطّى هذه الخزنةَ
-        // وتُلتقط في الإقلاع التالي بدل إسقاط الدفعة كلّها.
-        final dup = await (select(accounts)..where((a) => a.code.equals(code)))
-            .getSingleOrNull();
-        if (dup != null) return false;
-
-        final accountId = await into(accounts).insert(
-          AccountsCompanion.insert(
-            code: code,
-            name: safe.name,
-            accountType: 'asset',
-            parentId: Value(parent.id),
-            isSystem: const Value(false),
-            globalId: Value(UuidV7.generate()),
-          ),
-        );
-        await (update(safes)..where((s) => s.id.equals(safe.id)))
-            .write(SafesCompanion(linkedAccountId: Value(accountId)));
-        return true;
-      });
-      if (ok) linked++;
-    }
-    return linked;
-  }
-
   /// Atomically create a Safe and its linked Chart-of-Accounts sub-account.
   ///
   /// This is the canonical entry point for safe creation since v142 (Feature
@@ -3174,8 +3092,26 @@ extension TreasuryDao on AppDatabase {
       throw MutationDeniedException(guard.reason);
     }
     return transaction(() async {
-      final parent = await _resolveSafesParentAccount();
-      final parentCode = parent?.code;
+      // Compatibility (2026-05-03) — try the original spec'd code '1110'
+      // first (custom CoA imports may have it), then fall back to '111'
+      // which is what the project's default seeder
+      // (database_seeder_accounts.dart line 48) actually creates as the
+      // cash-safes parent ("النقدية وما فى حكمها"). This avoids forcing
+      // every operator to manually add a 1110 row before they can create
+      // a safe.
+      const candidateParentCodes = ['1110', '111'];
+      Account? parent;
+      String? parentCode;
+      for (final code in candidateParentCodes) {
+        final found = await (select(accounts)
+              ..where((a) => a.code.equals(code)))
+            .getSingleOrNull();
+        if (found != null) {
+          parent = found;
+          parentCode = code;
+          break;
+        }
+      }
       if (parent == null || parentCode == null) {
         throw const MissingParentAccountException(
           '1110 / 111',

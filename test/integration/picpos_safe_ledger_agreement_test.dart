@@ -95,24 +95,10 @@ void main() {
     return lines.fold<double>(0, (s, l) => s + l.debit - l.credit);
   }
 
-  /// نقديةُ الخزائن في الأستاذ — **مجموعُ الفرع** تحت `111` لا حسابٌ مفرد.
-  ///
-  /// كان يقرأ `1111` وحدَه. ومنذ صار لكلّ خزنةٍ حسابٌ فرعيٌّ خاصٌّ تحت `111`
-  /// (‏`linkUnlinkedSafesToSubAccounts`) لم يعد رقمٌ واحدٌ يمثّل النقدية —
-  /// وهو المقصودُ من التغيير نفسِه: الخزائنُ تُميَّز في الأستاذ. والمجموعُ
-  /// هو ما يقابل «الدرج» في الطرف الآخر من هذه المساواة، فالمقيسُ ما زال
-  /// «الدرجُ والأستاذ يتحرّكان معاً» لا موضعَ حسابٍ بعينه.
   Future<double> cashAccountNet() async {
-    final parent = await db.getAccountByCode('111');
-    if (parent == null) return 0;
-    final children = await (db.select(db.accounts)
-          ..where((a) => a.parentId.equals(parent.id)))
-        .get();
-    var sum = await accountNet(parent.id);
-    for (final c in children) {
-      sum += await accountNet(c.id);
-    }
-    return sum;
+    final acc = await db.getAccountByCode(await db.getMappedAccountCode(
+        'cash', AccountingDao.accountPurposes['cash']!));
+    return acc == null ? 0 : accountNet(acc.id);
   }
 
   // ═════════════════════════════════════════════════════════════════════════
