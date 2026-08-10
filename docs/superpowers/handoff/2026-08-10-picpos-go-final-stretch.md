@@ -55,15 +55,14 @@ Start-Process cmd.exe -ArgumentList '/c','call .\build_picpos.bat > build_picpos
 | البند | القيمة |
 |---|---|
 | الفرع | `claude/section-5-structured-format-ural-b97659` |
-| آخر كوميت | `d5faecd8` |
+| آخر كوميت | `c000b5ae` |
 | الشجرة | نظيفة |
-| البوابة | **خضراء بالحكمَين** عند `4b42c9ee` |
-| خطُّ الأساس | analyze **٦ info** · unit **٢٩٦٨** · widget **٦٥١** · integration **٦٦٧** · pg **٤٥** |
+| خطُّ الأساس المكتوب في `gate.sh` | analyze **٦ info** · unit **٢٩٦٨** · widget **٦٥١** · integration **٦٦٧** · pg **٤٥** |
 
-⚠️ **الحدودُ في `gate.sh` أقدمُ من الشجرة الآن**: أُضيفت ١٠ اختباراتٍ
-تكامليةٍ بعد آخر تشغيلةٍ كاملة (H8 ×٣ · H11 ×٢ · H14 ×٤ ... إلخ في
-`picpos_report_consistency_test.dart`). **أوّلُ شيءٍ تفعله: شغّل البوابة
-كاملةً، اقرأ الأرقام، وارفع الحدود** — لا تخمّنها.
+⚠️ **الحدودُ في `gate.sh` أقدمُ من الشجرة**: أُضيفت اختباراتٌ بعد آخر ضبطٍ
+لها (‏`picpos_report_consistency_test` نما إلى ١٦ حالة، و
+`report_screens_seed_branch_scope_test` جديد). **أوّلُ شيءٍ تفعله: شغّل
+البوابة كاملةً، اقرأ الأرقام، وارفع الحدود** — لا تخمّنها.
 
 **النطاق:** PicPos = `BusinessProfile.lite`. الموارد البشرية والأجور **خارج
 النطاق** (`hrEnabled: false`) — الكودُ يبقى مسيَّجاً ولا يُحذف ولا يُفعَّل.
@@ -76,61 +75,43 @@ Start-Process cmd.exe -ArgumentList '/c','call .\build_picpos.bat > build_picpos
 `docs/superpowers/audits/2026-08-10-picpos-go-blockers.md` — **اقرأه أولاً**.
 
 B1 · B2 · B3 · B4 · إلغاءُ مرتجع المبيعات · تكلفةُ الصنف المركّب ·
-H1 · H2 · H3 · H4 · H5 · H6 · H7 · H8 · H9 · H10 · H11 · H12 ·
-H13 (‏الخزينة وحدَها) · H14 · H16 (الخط) · سندُ الإضافة · CE-1 · SC-1.
+**H1 → H16 كلُّها** (‏H13 على العشر شاشات · H15 على مسار البيع وحدَه —
+اقرأ §٣-أ) · سندُ الإضافة · CE-1 · SC-1.
+
+وثلاثةُ حرّاسٍ بنيويّةٍ جديدة تمنع عودةَ الفئات:
+`no_bare_pdf_document_test` · `report_screens_seed_branch_scope_test` ·
+(‏مع القديم `report_screens_resolve_branch_scope_test`).
 
 ---
 
 ## ٣. المطلوب — بالترتيب
 
-### أ) H13 — تسعُ شاشاتٍ باقية (‏الأكبر، والأكثرُ ميكانيكية)
+### أ) H15 — ١٣ موضعاً باقياً خارج مسار البيع
 
-**العطب:** `initState` يبذر `_selectedBranchId` من `activeBranchIdProvider`
-ثم ينادي `_loadData` مباشرةً، بينما حلَّ الفرعِ إلى نطاقِ الاستعلام
-(`_branchSafeIds` / `_branchWarehouseIds`) يعيش داخل `onBranchChanged` وحدَه.
-فعلى أوّل تحميل: **القائمةُ تُظهر اسمَ الفرع والأرقامُ لكلّ الفروع**، ولا شيءَ
-على الشاشة يكشف الفرق.
+`updateSafeBalance` كتابةٌ **مطلقة** بعد قراءة ⇒ سباقُ «التحديث الضائع» تحت
+عزل PostgreSQL الافتراضيّ. البديلُ `adjustSafeBalance` (‏`SET balance =
+balance + ?`). الوثيقةُ على `updateSafeBalance` في `treasury_dao.dart:1405`
+تسمّي المساراتِ الروتينية بالاسم.
 
-و`allowedBranchIds` لا يُنقذ — سقفُ **صلاحية** لا فلترُ عرض، وصاحبُ الوصول
-الكامل يأخذ `null`.
+**الحصرُ قال «٤ مسارات» والمقيسُ ٢٠ موضعاً.** أُغلقت السبعةُ في
+`sales_mutations_dao` (‏كوميت `c000b5ae`). الباقي — **عُدَّه بنفسك ولا تنقله**:
+`purchase_dao` (٣) · `treasury_dao` (٣) · `operational_expenses_dao` (١) ·
+`hr_extensions` (٢ — خارجَ نطاق lite، سيِّجها ولا تفعّلها) ·
+`supabase_database` (٣) · و`treasury_dao:1484` يكتب `trans.balanceAfter`
+عمداً فلا يُلمس.
 
-**الوصفة** (‏طُبِّقت على `treasury_report_screen.dart` — اقرأها كنموذج،
-كوميت `d5faecd8`): استخرج جسمَ `onBranchChanged` إلى دالّةٍ خاصّة ونادِها
-**بعد** البذر و**قبل** أوّل `_loadData`.
+النمطُ في كلّها واحد: `final newBalance = safe.balance + delta;` ثم
+`updateSafeBalance(safe.id, newBalance)` ⇒ حوِّلها إلى
+`adjustSafeBalance(safe.id, delta)` وأبقِ `newBalance` لـ`balanceAfter`
+(‏لقطةٌ بطبيعتها).
 
-**التسع:**
-`category_profit_report_screen` · `delivery_report_screen` ·
-`purchase_returns_report_screen` · `purchases_report_screen` ·
-`sales_by_classification_report` · `sales_report_screen` ·
-`sales_returns_report_screen` · `tax_report_screen` ·
-`top_products_report_screen`
-
-**تحقّقٌ آليّ من التغطية** (‏يجب أن يطبع `initStateResolves=1` للعشرة):
-```bash
-for f in lib/presentation/screens/reports/*.dart; do
-  grep -q "activeBranchIdProvider" "$f" && grep -qE "_branchSafeIds|_branchWarehouseIds" "$f" || continue
-  echo "$(basename $f) initStateResolves=$(awk '/void initState/,/^  }/' "$f" | grep -cE '_resolveBranch|_branchSafeIds|_branchWarehouseIds')"
-done
-```
-
-**واكتب حارساً بنيوياً** يفرضها — على نمط
-`test/structural/report_screens_resolve_branch_scope_test.dart` الموجود
-(الذي يفرض *وجودَ* `branchScopeProvider`). الجديدُ يفرض أن كلَّ شاشةٍ تبذر
-فرعاً **تحلّه** في `initState`. بدونه تعود الفئةُ مع أوّل شاشةٍ جديدة.
-
-### ب) H15 — `adjustSafeBalance` مُخالَفٌ في ٤ مسارات كاش
-**مقروءٌ لا مقيس** في الحصر — `treasury_dao.dart` و`sales_mutations_dao.dart`.
-سباقُ «قراءة ثم كتابة» تحت PostgreSQL. **قِسه قبل أن تُصلحه**: `createSafeTransaction`
-يستعمل `UPDATE safes SET balance = balance ± ?` الذرّيّ فعلاً (قرأتُه)، فالبنودُ
-الأربعةُ قد تكون مسارات `updateSafeBalance` المباشرة. عُدّها بنفسك.
-
-### ج) المتوسطة السبع (‏من الحصر)
+### ب) المتوسطة السبع (‏من الحصر)
 الورديات: فلترُ مخزنٍ لا يُطبَّق وسقفُ ١٠٠ صفٍّ صامت · المصروفات: الفرعُ غيرُ
 متماثلٍ بين شقّي الاتحاد وعمودا تاريخٍ مختلفان · تصديرُ Excel لا يتبع خانات
 العشرية · كلُّ خزنةٍ تسقط على ١١١١ (`linkedAccountId` فارغ) · `balanceAfter`
 إسقاطٌ لا يُعاد حسابُه · `repairAllMissingInvoiceJEs` غيرُ منادى عند الإقلاع.
 
-### د) §٧-٣ — التشغيلةُ اليدوية (‏معيارُ Go الوحيدُ غيرُ البرمجيّ)
+### ج) §٧-٣ — التشغيلةُ اليدوية (‏معيارُ Go الوحيدُ غيرُ البرمجيّ)
 ابنِ (§٠-٦) ثم شغّل وأدِر بالفعل:
 بيعةٌ كاملة ← إقفالُ وردية ← إقفالٌ يوميّ ← تقرير ← **طباعةُ إيصالٍ فيه اسمٌ
 آخرُه ي بعد حرفٍ غيرِ موصول** («صبري») والتأكّدُ أن الحرفَ ظهر.
