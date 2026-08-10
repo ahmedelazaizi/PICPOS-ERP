@@ -853,28 +853,44 @@ class TreasuryRepositoryImpl extends BaseRepository<Safe> implements ITreasuryRe
     )).toList());
   }
 
+  /// صافي حركات الخزنة من السجلّ — **مرآةٌ حرفية** لقاعدة تعديل الرصيد في
+  /// `TreasuryDao.createSafeTransaction:1335-1342`.
+  ///
+  /// ── الباج اللي عاش هنا ────────────────────────────────────────────────────
+  /// الصيغة كانت بتعدّ `receipt/sale/transfer_in` داخل و`payment/expense/
+  /// transfer_out` خارج. و**تلاتة من الستة دول ما بيتكتبوش في أي مكان**:
+  /// `sale` و`transfer_in` و`transfer_out` صفر استعمال، و`expense` تصنيف
+  /// (`category`) مش نوع. الأنواع المكتوبة فعلاً: payment · receipt · memo ·
+  /// withdrawal · closing · deduction · advance.
+  ///
+  /// فـ`withdrawal` — وهو **كلّ** سحب إقفال وردية (`treasury_dao.dart:903`)
+  /// وكلّ إقفال يومي (`:2103`) — ما كانش يُحسب إطلاقاً. فيقول المُصالِح إنّ
+  /// الدرجَ المتصفَّى ينقصه المبلغُ كلُّه، و«الإصلاح التلقائي» يكتب الرقمَ
+  /// في الدرج ⇒ **نقديةٌ تُخلَق من العدم**.
+  ///
+  /// القاعدة الصحيحة:
+  ///   `deposit` · `receipt`    ⇒ +amount
+  ///   `withdrawal` · `payment` ⇒ −amount
+  ///   وأيُّ نوعٍ آخر (`memo` · `closing` · `deduction` · `advance`) **محايد**
+  ///   — لأنّ `createSafeTransaction` لا يمسّ الرصيدَ لها.
+  ///
+  /// و`deleted_at IS NULL` لأنّ السندَ الملغيَّ يُرَدّ رصيدُه فيجب أن يخرج.
+  ///
+  /// ⚠️ والناتجُ **ليس** الرصيدَ المتوقَّع للخزنة: الرصيدُ الافتتاحيّ المزروع
+  /// لا صفَّ حركةٍ له، فخزنةٌ زُرعت برصيدٍ ≠ صفر تفترق شرعياً. استعمله
+  /// للعرض والتنبيه **لا للكتابة فوق الرصيد** — انظر `ReconciliationService`.
   @override
   Future<double> getCalculatedSafeBalance(int safeId) async {
-    // Receipts (deposits) add to balance, Payments (withdrawals) subtract
     final result = await db.customSelect(
-      'SELECT '
-      'COALESCE(SUM(CASE WHEN transaction_type IN (?, ?, ?) THEN amount ELSE 0 END), 0) as total_in, '
-      'COALESCE(SUM(CASE WHEN transaction_type IN (?, ?, ?) THEN amount ELSE 0 END), 0) as total_out '
-      'FROM safe_transactions WHERE safe_id = ?',
-      variables: [
-        const Variable('receipt'),
-        const Variable('sale'),
-        const Variable('transfer_in'),
-        const Variable('payment'),
-        const Variable('expense'),
-        const Variable('transfer_out'),
-        Variable(safeId),
-      ],
+      'SELECT COALESCE(SUM(CASE '
+      "  WHEN transaction_type IN ('receipt','deposit')    THEN  amount "
+      "  WHEN transaction_type IN ('payment','withdrawal') THEN -amount "
+      '  ELSE 0 END), 0) as net '
+      'FROM safe_transactions WHERE safe_id = ? AND deleted_at IS NULL',
+      variables: [Variable(safeId)],
       readsFrom: {db.safeTransactions},
     ).getSingle();
 
-    final totalIn = (result.data['total_in'] as num?)?.toDouble() ?? 0.0;
-    final totalOut = (result.data['total_out'] as num?)?.toDouble() ?? 0.0;
-    return totalIn - totalOut;
+    return (result.data['net'] as num?)?.toDouble() ?? 0.0;
   }
 }

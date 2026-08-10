@@ -2089,6 +2089,44 @@ extension TreasuryDao on AppDatabase {
       final currentBalance = safe.balance;
       if (currentBalance <= 0) return; // Already zeroed
 
+      // ── الطرفُ المستقبِل ومرجعُ الحساب: يُحسمان **قبل** أيّ تعديل ──────────
+      //
+      // كان الإقفالُ اليوميّ يصفّي الدرجَ بلا خزينةٍ مستقبِلة، تماماً كالعطب
+      // الذي أُصلح في `_closeShiftSafes` (اقرأ التعليق عند `:923`) — والإصلاح
+      // لم يُنقَل إلى هنا. النتيجةُ مقيسة: قبل الإقفال Σالخزائن=١٠٠ والأستاذ
+      // ١٠٠، وبعده Σالخزائن=**صفر** والأستاذ ١٠٠ ⇒ فجوةٌ دائمةٌ تتراكم كلَّ يوم.
+      //
+      // وكان `if (sourceAccount == null …) return;` أسفلَه **داخل** الـ`try`
+      // وبعد التصفير، فيخرج من ردّ النداء كلِّه ويثبّت التصفيرَ **بلا أيّ قيد**.
+      // لذلك يُحسم كلُّ شيءٍ هنا قبل أن يُمَسّ رصيد.
+      final central = await getCentralSafe();
+      if (central == null) {
+        throw StateError(
+            'الإقفال اليومي متوقّف: الصندوق الرئيسي غيرُ موجود، فلا خزينةَ '
+            'تستقبل رصيدَ «${safe.name}». صفَّرَ الإقفالُ الدرجَ قبل هذا '
+            'الإصلاح بلا طرفٍ مقابل، فتختفي النقديةُ من الخزائن ويبقى الأستاذُ '
+            'كما هو. اِزرع الصندوقَ الرئيسي ثم أعِد الإقفال.');
+      }
+      if (central.id == safeId) {
+        throw StateError(
+            'الإقفال اليومي متوقّف: «${safe.name}» هو الصندوقُ الرئيسي نفسُه، '
+            'والتحويلُ إلى الذات سطرُ استلامٍ وهميٌّ ورصيدٌ لا يتصفّى.');
+      }
+
+      Account? sourceAccount;
+      if (safe.linkedAccountId != null) {
+        sourceAccount = await accountingDao.getAccountById(safe.linkedAccountId!);
+      }
+      sourceAccount ??= safe.safeType == 'bank'
+          ? await accountingDao.getAccountByPurpose('bank')
+          : await accountingDao.getAccountByPurpose('cash');
+      if (sourceAccount == null) {
+        throw StateError(
+            'الإقفال اليومي متوقّف: لا حسابَ دفتريّاً لـ«${safe.name}» ولا '
+            'حسابَ غرضٍ (${safe.safeType == 'bank' ? 'bank' : 'cash'}). '
+            'الإقفالُ بلا قيدٍ يترك النقديةَ خارجَ الأستاذ.');
+      }
+
       final voucherNumber = await generateInvoiceNumber('CLO');
       final description = 'إقفال يومي — كاش: ${cashAmount ?? 0} | بنك: ${bankAmount ?? 0} | ملاحظات: ${notes ?? ''}';
 
@@ -2111,8 +2149,34 @@ extension TreasuryDao on AppDatabase {
         ),
       );
 
-      // Reset safe balance to zero
-      await updateSafeBalance(safeId, 0);
+      // تصفيرٌ **نسبيّ** لا مطلق: `updateSafeBalance(safeId, 0)` كتابةٌ مطلقة
+      // تمحو أيَّ حركةٍ دخلت بين قراءتنا وكتابتنا (سباقُ read-then-write الذي
+      // يوثّقه هذا الملفُّ نفسُه عند `:1277`).
+      await adjustSafeBalance(safeId, -currentBalance);
+
+      // ── الطرفُ المستقبِل — الصندوقُ الرئيسي ────────────────────────────────
+      // بلا هذا السطر تنقص Σ أرصدة الخزائن بمقدار الإقفال كلَّ يوم بينما يبقى
+      // حسابُ النقدية في الأستاذ صحيحاً. مطابقٌ لـ`_closeShiftSafes:944-961`.
+      await into(safeTransactions).insert(
+        SafeTransactionsCompanion.insert(
+          voucherNumber: voucherNumber,
+          safeId: central.id,
+          transactionType: 'receipt',
+          category: 'closing',
+          amount: currentBalance,
+          balanceAfter: central.balance + currentBalance,
+          description: Value('إقفال يومي — استلام رصيد ${safe.name}'),
+          userId: Value(userId),
+          createdAt: Value(DateTime.now()),
+          referenceType: const Value('daily_closing'),
+          referenceId: Value(closingTxnId),
+          globalId: Value(
+              (closeEventGid != null && closeEventGid.isNotEmpty)
+                  ? '$closeEventGid-central'
+                  : null),
+        ),
+      );
+      await adjustSafeBalance(central.id, currentBalance);
 
       final branchId = safe.branchId; // Standardized branch resolution
 
@@ -2122,18 +2186,13 @@ extension TreasuryDao on AppDatabase {
       // Debit:  split between cash and bank destinations based on
       //         the amounts entered by the user; if neither provided,
       //         route to the generic opposite-type purpose account.
-      try {
-        // ── Source account (Credit side): this safe's GL account ──
-        Account? sourceAccount;
-        if (safe.linkedAccountId != null) {
-          sourceAccount = await accountingDao.getAccountById(safe.linkedAccountId!);
-        }
-        sourceAccount ??= safe.safeType == 'bank'
-            ? await accountingDao.getAccountByPurpose('bank')
-            : await accountingDao.getAccountByPurpose('cash');
-
-        if (sourceAccount == null || currentBalance <= 0) return;
-
+      // ⚠️ **بلا `try/catch` هنا عن قصد.** كان القيدُ كلُّه ملفوفاً في
+      // `catch (e) { debugPrint(...) }`، فأيُّ فشلٍ في الترحيل يُبتلَع **بعد**
+      // أن صُفِّي الدرجُ فعلاً ⇒ نقديةٌ خرجت من الخزائن بلا أثرٍ في الأستاذ ولا
+      // رسالةٍ لأحد. ونحن داخلَ `transaction()`، فتركُ الاستثناء يصعد يُرجِع
+      // التصفيرَ والاستلامَ معاً — وهو التصرّفُ الصحيح: إقفالٌ بلا قيدٍ لا
+      // يُحفَظ أصلاً. (‏نفسُ نمطِ `operational_expenses_dao.dart:395`.)
+      {
         // ── Destination accounts (Debit side): where the money goes ──
         final effectiveCash = (cashAmount ?? 0).clamp(0, currentBalance).toDouble();
         final effectiveBank = (bankAmount ?? 0).clamp(0, currentBalance).toDouble();
@@ -2198,7 +2257,21 @@ extension TreasuryDao on AppDatabase {
           description: 'إقفال يومي — ${safe.name}',
         ));
 
-        if (lines.length >= 2) {
+        // ── قيدٌ يلغي نفسَه = لا قيد ────────────────────────────────────────
+        // الخزنتان تقعان على نفس حساب النقدية حين لا يكون للخزنة حسابٌ مرتبط،
+        // فيخرج القيدُ `١١١١ مدين ١٠٠ / ١١١١ دائن ١٠٠` — صافيه صفرٌ على نفس
+        // الحساب. مقيسٌ في الإقفال اليومي. وهو ليس عبثاً فحسب: يقرأه المدقّقُ
+        // ترحيلاً حدث ولم يحدث. والحركةُ الحقيقيةُ هنا بين خزنتين لا بين
+        // حسابين — سطرا الخزائن أعلاه هما الأثرُ الصحيح.
+        final netByAccount = <int, double>{};
+        for (final l in lines) {
+          netByAccount.update(l.accountId, (v) => v + l.debit - l.credit,
+              ifAbsent: () => l.debit - l.credit);
+        }
+        final isSelfCancelling =
+            netByAccount.values.every((v) => v.abs() < 0.001);
+
+        if (lines.length >= 2 && !isSelfCancelling) {
           // Spec 135 — deterministic JE globalId for the daily-closing JE.
           // referenceId is closingTxnId, a LOCAL autoincrement that differs
           // client vs server, so the (referenceType, referenceId) dedup never
@@ -2234,8 +2307,6 @@ extension TreasuryDao on AppDatabase {
             globalId: closeJeGid,
           );
         }
-      } catch (e) {
-        debugPrint('[FINANCIAL_WARNING] Daily closing JE failed for safe #$safeId: $e');
       }
     });
   }
