@@ -509,8 +509,22 @@ extension SalesDao on AppDatabase {
     /// المبيعات» — البطاقة بتنده getSalesAnalytics اللي بيستثني التلاتة دول
     /// أصلاً، فمن غير المعامل ده الكارت بيقول ١٠٠٬٠٠٠ وجمع Excel ١٠٨٬٠٠٠.
     bool revenueOnly = false,
+
+    /// H8 · يستبعد **الملغى/المعدوم فقط** ويُبقي مستنداتِ المرتجع.
+    ///
+    /// تقريرُ الضريبة يحتاج هذا تحديداً ولا يصلح له [revenueOnly]: بطاقةُ
+    /// التقرير تقرأ من **الأستاذ** (حسابا الضريبة) فتحمل عكسَ ضريبة المخرجات
+    /// سالباً وتستبعد الملغى، بينما القائمةُ التفصيلية كانت تقرأ صفوفَ
+    /// الفواتير خاماً ⇒ تجمع الملغى وتجمع المرتجعَ **موجباً** بدل أن تطرحه.
+    ///
+    /// و[revenueOnly] يُسقط المرتجعَ كذلك، فيختفي العكسُ من التفصيل بينما
+    /// البطاقةُ تحتسبه — فجوةٌ جديدةٌ في الاتجاه المعاكس على إقرارٍ ضريبيّ.
+    bool excludeVoided = false,
   }) async {
     final start = DateTime(startDate.year, startDate.month, startDate.day);
+    // H7 (نفسُ العائلة) · نهايةُ المدى هي منتصفُ ليل اليوم التالي، فلا بدّ من
+    // مدىً **نصفِ مفتوح**: `isBetween` شاملُ الطرفين ⇒ فاتورةُ الحدّ تُحتسب
+    // في مدّتين متجاورتين.
     final end = DateTime(
       endDate.year,
       endDate.month,
@@ -519,7 +533,8 @@ extension SalesDao on AppDatabase {
 
     final query = select(salesInvoices)
       ..where(
-        (s) => s.invoiceDate.isBetween(Variable(start), Variable(end)) &
+        (s) => s.invoiceDate.isBiggerOrEqualValue(start) &
+               s.invoiceDate.isSmallerThanValue(end) &
                s.isDeleted.equals(false),
       );
 
@@ -529,6 +544,8 @@ extension SalesDao on AppDatabase {
       query.where((s) => s.saleType.isNull() | s.saleType.equals('return').not());
       query.where(
           (s) => s.status.isIn(const ['returned', 'cancelled', 'voided']).not());
+    } else if (excludeVoided) {
+      query.where((s) => s.status.isIn(const ['cancelled', 'voided']).not());
     }
 
     if (userId != null) {

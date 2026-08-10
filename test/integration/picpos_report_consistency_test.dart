@@ -343,6 +343,95 @@ void main() {
   });
 
   // ═════════════════════════════════════════════════════════════════════════
+  // H8
+  // ═════════════════════════════════════════════════════════════════════════
+
+  group('H8 — تفاصيلُ الضريبة تطابق البطاقة', () {
+    final from = DateTime(2026, 7, 1);
+    final to = DateTime(2026, 7, 31);
+
+    Future<void> taxedSale({
+      required String no,
+      required double tax,
+      String saleType = 'default',
+      String status = 'completed',
+    }) async {
+      await db.into(db.salesInvoices).insert(SalesInvoicesCompanion.insert(
+            invoiceNumber: no,
+            warehouseId: warehouseId,
+            userId: userId,
+            invoiceDate: DateTime(2026, 7, 12),
+            subtotal: const Value(1000),
+            tax: Value(tax),
+            total: Value(1000 + tax),
+            paid: Value(1000 + tax),
+            paymentMethod: const Value('cash'),
+            saleType: Value(saleType),
+            status: Value(status),
+          ));
+    }
+
+    /// نفسُ الحساب الذي تجريه الشاشة على العمود: المرتجعُ يُطرح.
+    double signedTaxSum(List<SalesInvoiceData> rows) => rows
+        .where((s) => s.tax > 0)
+        .fold<double>(
+            0, (sum, s) => sum + (s.saleType == 'return' ? -s.tax : s.tax));
+
+    test('مجموعُ عمود الضريبة = صافي المخرجات، لا جمعُ كلِّ شيء', () async {
+      await taxedSale(no: 'TX-1', tax: 200);
+      await taxedSale(no: 'TX-RET', tax: 50, saleType: 'return');
+      await taxedSale(no: 'TX-CAN', tax: 55, status: 'cancelled');
+
+      final rows = await db.getSalesByDateRange(from, to, excludeVoided: true);
+
+      expect(
+        rows.any((s) => s.invoiceNumber == 'TX-CAN'),
+        isFalse,
+        reason: 'الملغى كان يدخل التفصيل بينما بطاقةُ الأستاذ لا تراه.',
+      );
+      expect(
+        rows.any((s) => s.invoiceNumber == 'TX-RET'),
+        isTrue,
+        reason: 'المرتجعُ لازم يفضل ظاهراً — إسقاطُه (‏`revenueOnly`) بيخفي '
+            'عكسَ ضريبة المخرجات فيفتح فجوةً في الاتجاه المعاكس.',
+      );
+      expect(
+        signedTaxSum(rows),
+        closeTo(150, 0.01),
+        reason: 'اتقاس ٢٥٥ — التفصيلُ كان يجمع الملغى (٥٥) ويجمع المرتجعَ '
+            '**موجباً** (٥٠) بدل أن يطرحه. الصافي الصحيح ٢٠٠ − ٥٠ = ١٥٠.',
+      );
+    });
+
+    test('ضابط: بلا الخيار، الملغى يعود ويظهر', () async {
+      await taxedSale(no: 'TX-CAN2', tax: 55, status: 'cancelled');
+      final rows = await db.getSalesByDateRange(from, to);
+      expect(rows.any((s) => s.invoiceNumber == 'TX-CAN2'), isTrue,
+          reason: 'الدلالةُ الافتراضيةُ ما اتغيّرتش — مسارُ المرتجعات '
+              'بيعتمد عليها');
+    });
+
+    test('وفاتورةُ الحدّ لا تُحتسب في مدّتين', () async {
+      await db.into(db.salesInvoices).insert(SalesInvoicesCompanion.insert(
+            invoiceNumber: 'TX-BND',
+            warehouseId: warehouseId,
+            userId: userId,
+            invoiceDate: DateTime(2026, 8, 1),
+            subtotal: const Value(1000),
+            tax: const Value(90),
+            total: const Value(1090),
+            paid: const Value(1090),
+            paymentMethod: const Value('cash'),
+          ));
+
+      final july = await db.getSalesByDateRange(from, to, excludeVoided: true);
+      expect(july.any((s) => s.invoiceNumber == 'TX-BND'), isFalse,
+          reason: '`isBetween` شاملُ الطرفين ونهايةُ المدى منتصفُ ليل اليوم '
+              'التالي ⇒ فاتورةُ أوّل أغسطس كانت تظهر في يوليو كمان.');
+    });
+  });
+
+  // ═════════════════════════════════════════════════════════════════════════
   // H14
   // ═════════════════════════════════════════════════════════════════════════
 

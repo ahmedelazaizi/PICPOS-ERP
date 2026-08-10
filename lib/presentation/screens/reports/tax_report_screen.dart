@@ -117,12 +117,17 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
         allowedBranchIds: _allowedBranchIds,
       );
       
+      // H8 · البطاقةُ فوق تقرأ من **الأستاذ** فتستبعد الملغى وتحمل عكسَ
+      // ضريبة المرتجع سالباً. فالقائمةُ التفصيلية لازم تطابقها: تستبعد
+      // الملغى، وتُبقي المرتجعَ لكن **مطروحاً** (اقرا `taxSigned` تحت).
+      // بلا هذا كانت تجمع الملغى وتجمع المرتجعَ موجباً: ٢٥٥ بدل ١٥٠.
       final salesList = await repo.getSalesByDateRange(
         _fromDate,
         _toDate,
         warehouseIds: warehouseIds,
         costCenterId: _selectedCostCenterId,
         allowedBranchIds: _allowedBranchIds,
+        excludeVoided: true,
       );
 
       final purchasesList = await repo.getPurchasesWithSupplierByDateRange(
@@ -451,6 +456,13 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
                 width: double.infinity,
                 child: Column(
                   children: _salesInvoices.where((s) => s.tax > 0).map((s) {
+                    // H8 · مستندُ المرتجع يحمل ضريبتَه **موجبةً** في صفّه،
+                    // وهو في الحقيقة عكسٌ لضريبة مخرجاتٍ سبق تحصيلُها.
+                    // فيُعرض مطروحاً كي يجمع العمودُ على ما تقوله البطاقة
+                    // (وهي تقرأ من الأستاذ حيث العكسُ مقيَّدٌ مديناً).
+                    final isReturn = s.saleType == 'return';
+                    final taxSigned = isReturn ? -s.tax : s.tax;
+                    final totalSigned = isReturn ? -s.total : s.total;
                     final lines = _salesTaxByInvoice[s.id] ?? const [];
                     final lineTaxSum = lines.fold<double>(
                         0, (sum, l) => sum + ((l['taxAmount'] as num?)?.toDouble() ?? 0));
@@ -465,11 +477,16 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
                         children: [
                           Expanded(flex: 3, child: Text(s.invoiceNumber, style: const TextStyle(fontSize: 12))),
                           Expanded(flex: 2, child: Text(intl.DateFormat('yyyy-MM-dd').format(s.invoiceDate), style: const TextStyle(fontSize: 12))),
-                          Expanded(flex: 2, child: Text(currencyFormat.format(s.total), style: const TextStyle(fontSize: 12), textAlign: TextAlign.end)),
+                          Expanded(flex: 2, child: Text(currencyFormat.format(totalSigned), style: const TextStyle(fontSize: 12), textAlign: TextAlign.end)),
                           Expanded(
                             flex: 2,
-                            child: Text(currencyFormat.format(s.tax),
-                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.success),
+                            child: Text(currencyFormat.format(taxSigned),
+                                style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: isReturn
+                                        ? AppColors.error
+                                        : AppColors.success),
                                 textAlign: TextAlign.end),
                           ),
                           if (mismatch)

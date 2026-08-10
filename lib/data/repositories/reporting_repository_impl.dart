@@ -115,6 +115,7 @@ class ReportingRepositoryImpl implements IReportingRepository {
     int? costCenterId,
     Set<int>? allowedBranchIds,
     bool revenueOnly = false,
+    bool excludeVoided = false,
   }) =>
       _db.getSalesByDateRange(
         start,
@@ -124,6 +125,7 @@ class ReportingRepositoryImpl implements IReportingRepository {
         costCenterId: costCenterId,
         allowedBranchIds: allowedBranchIds,
         revenueOnly: revenueOnly,
+        excludeVoided: excludeVoided,
       );
 
   @override

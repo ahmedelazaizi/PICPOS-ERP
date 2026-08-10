@@ -60,6 +60,10 @@ abstract class ISalesReportingRepository {
     int? costCenterId,
     Set<int>? allowedBranchIds,
     bool revenueOnly = false,
+
+    /// H8 · يستبعد الملغى/المعدوم **فقط** ويُبقي المرتجعَ ليُطرح — اقرا
+    /// `SalesDao.getSalesByDateRange`.
+    bool excludeVoided = false,
   });
 
   Future<List<SalesInvoiceItem>> getSalesInvoiceItems(int invoiceId);
