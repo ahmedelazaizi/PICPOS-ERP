@@ -55,6 +55,9 @@ rm -rf build/native_assets
 #
 # تشغيلةُ 2026-08-10 بعد إغلاق بلوكرات PicPos (‏c=4، ١٦ نواة، ‏--pg):
 #   analyze 6 info · unit 3021 · widget 651 · integration 678 · pg 45
+#
+# تشغيلةُ 2026-08-11 بعد §٣-أ و§٣-ج (‏c=4، ‏--pg):
+#   analyze 6 info · unit 3050 · widget 651 · integration 690 · pg 45
 #   (‏آخرُ تشغيلةٍ كاملةٍ على شجرةٍ ثابتة — بعد H8 · H11 · H13 · H14 · H15،
 #    وبعد إغلاق التطبيق المزدوج لحركة الخزنة، وخمسِ متوسطاتٍ من §٣-ب،
 #    وسلسلةِ الطباعة: مصدرُ الخطّ الواحد · الأصلُ الكامل · اتجاهُ الصفحات ·
@@ -145,8 +148,15 @@ else
   ok "analyze — ٦ info بالظبط"
 fi
 
-# الحدود مقيسةٌ 2026-08-10 بعد جلسة إغلاق بلوكرات PicPos.
-run_suite "unit + data + structural + services" 3021 \
+# الحدود مقيسةٌ 2026-08-11 بعد §٣-أ (تقريرُ المبيعات صافياً من المرتجعات)
+# و§٣-ج (الرصيدُ الجاري في تقرير الخزينة).
+#
+# ⚠️ و§٣-ب (حسابٌ فرعيٌّ لكلّ خزنة تحت 111) **مُرجَعٌ** في 015395ba: أسقط
+# ٤٤+ اختباراً في **هذه السويّة تحديداً** لأن اختبارات المحاسبة تزرع `1111`
+# وتؤكّد عليه عبر `getMappedAccountCode('cash', …)`. وسويّةُ `integration`
+# مرّت وقتها ٦٩٣ خضراءَ بلا فشلٍ واحد — فلا تُقاس تلك الفئةُ من التغيير
+# بالتكامل وحدَه أبداً.
+run_suite "unit + data + structural + services" 3050 \
   flutter test test/unit test/data test/structural test/services --concurrency="$LOCAL_CONCURRENCY"
 
 # الواجهات والنطاقُ والنواة — كانت **كلُّها** خارج البوابة حتى 2026-08-09.
@@ -154,7 +164,7 @@ run_suite "widget + core + domain + presentation + security + static" 651 \
   flutter test test/core test/domain test/presentation test/security \
               test/static test/widget test/widget_test.dart --concurrency="$LOCAL_CONCURRENCY"
 
-run_suite "integration" 678 \
+run_suite "integration" 690 \
   flutter test test/integration --concurrency="$LOCAL_CONCURRENCY"
 
 if (( WITH_PG )); then

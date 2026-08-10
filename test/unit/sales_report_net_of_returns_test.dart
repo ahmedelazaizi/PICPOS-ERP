@@ -22,7 +22,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/models/sales_returns_netting.dart';
+import 'package:ural_erp/domain/models/sales_returns_netting.dart';
 import 'package:ural_erp/data/database/database.dart';
 
 /// مجملٌ اصطناعيٌّ بهامشٍ معلوم: مبيعاتٌ [sales] وربحٌ [profit].

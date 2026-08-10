@@ -19,7 +19,7 @@
 // واحدٍ سقط ذلك الاختبار.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/models/safe_running_balance.dart';
+import 'package:ural_erp/domain/models/safe_running_balance.dart';
 
 void main() {
   group('signedSafeDelta — إشارةُ كلّ نوع', () {

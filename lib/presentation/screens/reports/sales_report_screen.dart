@@ -12,7 +12,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import 'report_export_guard.dart';
 
-import '../../../data/database/models/sales_returns_netting.dart';
+import '../../../domain/models/sales_returns_netting.dart';
 import '../../../data/providers/providers.dart';
 import '../../widgets/report_components.dart';
 import '../../widgets/report_filter_bar.dart';
