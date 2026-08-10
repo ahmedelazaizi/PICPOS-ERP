@@ -208,9 +208,14 @@ class _ShiftSettlementResult {
   final double variance;
   final List<SafeTransactionData> transactions;
 
+  /// الدرجُ الذي حُسب عليه [variance] — يُكتب عليه صفُّ التسوية كي لا يبقى
+  /// الفرقُ في الأستاذ بلا طرفٍ في الخزنة. `null` حين لا درجَ نقديّاً أصلاً.
+  final int? drawerSafeId;
+
   const _ShiftSettlementResult({
     required this.variance,
     required this.transactions,
+    this.drawerSafeId,
   });
 }
 
@@ -413,6 +418,27 @@ extension TreasuryDao on AppDatabase {
     // remediation.  COA-not-configured errors are handled silently inside
     // _postVarianceJournalEntry (early return, no exception thrown).
     if (settlementResult.variance.abs() > 0.01) {
+      // H2 · الطرفُ في الخزنة قبل قيد الأستاذ — اقرا
+      // [_postVarianceSafeTransaction]. غيرُ قاتلٍ كنظيره في الأستاذ: الفرقُ
+      // محفوظٌ في صفّ الوردية على كل حال، فلا يُمنع الإقفال.
+      if (settlementResult.drawerSafeId != null) {
+        try {
+          await _postVarianceSafeTransaction(
+            shiftId: shiftId,
+            safeId: settlementResult.drawerSafeId!,
+            variance: settlementResult.variance,
+            endTime: endTime,
+            userId: shift.userId,
+          );
+        } catch (e) {
+          debugPrint('[ShiftClose] Variance safe txn failed: $e');
+          unawaited(DiagnosticLogger.log(
+            'SHIFT-VARIANCE-SAFE-FAIL',
+            'shift=$shiftId safe=${settlementResult.drawerSafeId} '
+            'variance=${settlementResult.variance.toStringAsFixed(2)} err=$e',
+          ));
+        }
+      }
       try {
         await _postVarianceJournalEntry(
           shiftId: shiftId,
@@ -582,11 +608,67 @@ extension TreasuryDao on AppDatabase {
         ),
       );
 
+      // الدرجُ الذي تحرّك أكثر — وإن لم يتحرّك شيءٌ فأوّلُ أدراج النطاق.
+      int? primaryDrawer;
+      if (drawerSafeIds.isNotEmpty) {
+        final moved = <int, double>{};
+        for (final t in drawerTxs) {
+          moved[t.safeId] = (moved[t.safeId] ?? 0) + t.amount.abs();
+        }
+        primaryDrawer = moved.isEmpty
+            ? drawerSafeIds.first
+            : moved.entries
+                .reduce((a, b) => a.value >= b.value ? a : b)
+                .key;
+      }
+
       return _ShiftSettlementResult(
         variance: variance,
         transactions: txs,
+        drawerSafeId: primaryDrawer,
       );
     });
+  }
+
+  /// H2 · الطرفُ الغائب: فرقُ الوردية كان يُقيَّد في الأستاذ وحدَه (‏دائن
+  /// نقدية للعجز) بينما `safes.balance` يبقى كما هو ⇒ حسابُ النقدية والخزنةُ
+  /// ينفصلان بمقدار الفرق، **وتتراكم الفجوةُ كلَّ وردية**، ولا أثرَ للفرق في
+  /// كشف حركة الخزنة يراه مراجع.
+  ///
+  /// مقيس: عجزُ ٥٠ ⇒ الأستاذ ينزل ٥٠ والخزنةُ لا تنزل شيئاً.
+  ///
+  /// يُنادى **خارج** `_settleShift` عمداً: `createSafeTransaction` يفتح
+  /// معاملتَه، ودمجُها في معاملةِ التسوية هو نفسُ نمط التعشيش الذي سبّب
+  /// SqliteException 517 مع `createJournalEntry` (اقرا الخطوة ٢ في
+  /// [closeShiftWithAudit]).
+  Future<void> _postVarianceSafeTransaction({
+    required int shiftId,
+    required int safeId,
+    required double variance,
+    required DateTime endTime,
+    required int userId,
+  }) async {
+    final safe =
+        await (select(safes)..where((s) => s.id.equals(safeId))).getSingleOrNull();
+    if (safe == null) return;
+
+    final isShortage = variance < 0;
+    final amount = variance.abs();
+    await createSafeTransaction(SafeTransactionsCompanion.insert(
+      voucherNumber: 'SHV-$shiftId-${safe.id}',
+      safeId: safe.id,
+      transactionType: isShortage ? 'payment' : 'receipt',
+      category: 'shift_variance',
+      amount: amount,
+      balanceAfter: safe.balance + (isShortage ? -amount : amount),
+      referenceType: const Value('shift_close'),
+      referenceId: Value(shiftId),
+      description: Value(isShortage
+          ? 'تسوية عجز إقفال وردية #$shiftId'
+          : 'تسوية فائض إقفال وردية #$shiftId'),
+      userId: Value(userId),
+      createdAt: Value(endTime),
+    ));
   }
 
   /// PIR-06 Step 2: Generate journal entry for cash variance (shortage/surplus)

@@ -429,12 +429,21 @@ extension AccountingAutopostDao on AppDatabase {
     // only the cash paid → credits > debits → the whole JE dead-lettered. Book
     // the remainder to the receivables CONTROL account (mirrors the factory).
     if (sale.total > sale.paid) {
-      final receivableAccount = await accountingDao.getAccountByCode(
+      final controlAccount = await accountingDao.getAccountByCode(
         await accountingDao.getMappedAccountCode(
           'receivables',
           AccountingDao.accountPurposes['receivables']!,
         ),
       );
+      // H5 · الباقي كان يقع على حساب **المراقبة** دائماً، حتى مع عميلٍ معروفٍ
+      // له حسابٌ فرعيّ — بينما ثمانيةُ مواضعَ في هذا الملف تستعمل
+      // `_resolvePartySubAccount`. فكشفُ حساب العميل من الأستاذ ينقصه دَينُه،
+      // وتنكسر مطابقةُ المراقبة مع مجموع الفرعيات.
+      // مقيس: بيعةُ ٥٠٠ سُدِّد منها ٣٠٠ ⇒ الحسابُ الفرعيّ صفرٌ بدل ٢٠٠.
+      // والدالةُ ترجّع حسابَ المراقبة نفسَه حين لا عميلَ أو لا حسابَ فرعيّ،
+      // فحالةُ الزبون العابر (‏سببُ وجود هذا الفرع أصلاً) لا تتغيّر.
+      final receivableAccount =
+          await _resolvePartySubAccount(sale.customerId, controlAccount);
       if (receivableAccount != null) {
         lines.add(
           JournalLine(

@@ -790,10 +790,22 @@ extension SalesMutationsDao on AppDatabase {
     }
 
     if (targetSafe == null) {
+      // H1 · كان `return` صامتاً هنا: الفاتورةُ تُحفظ وقيدُها يُقيَّد (مدين
+      // نقدية) **والدرجُ لا يتحرّك إطلاقاً** ⇒ عجزٌ عند الإقفال بحجم البيعة،
+      // وحسابُ النقدية في الأستاذ ينفصل عن الخزائن. ولا رسالةَ للكاشير ولا
+      // صفَّ فشلٍ يُراجَع — البيعةُ تبدو ناجحة.
+      //
+      // والرميُ هنا يرجّع المعاملةَ كلَّها (هذه الدالةُ تُنادى من داخل
+      // `createSalesInvoice`'s transaction)، فلا يبقى نصفُ عملية: إما بيعةٌ
+      // كاملةٌ بنقديةٍ مقيَّدة، أو لا بيعة. وهو ما يفعله المسارُ نفسُه لنقص
+      // المخزون وغيره.
       debugPrint('[SafeRoute] ✗ No safe found for invoice #$invoiceId '
-          'paymentMethod=$paymentMethod safeType=$safeType warehouseId=$warehouseId '
-          '— safe transaction SKIPPED (check safe configuration)');
-      return;
+          'paymentMethod=$paymentMethod safeType=$safeType warehouseId=$warehouseId');
+      throw Exception(
+        'لا توجد خزنة ${safeType == 'cash' ? 'نقدية' : safeType} صالحة '
+        'لتسجيل المتحصَّل. اضبط الخزائن من الإعدادات ← الخزينة قبل البيع '
+        '(الفاتورة لم تُحفظ).',
+      );
     }
 
     debugPrint('[SafeRoute] ✓ invoice #$invoiceId/$paymentMethod → safe "${targetSafe.name}" '
