@@ -54,7 +54,8 @@ rm -rf build/native_assets
 #   integration                      641 /  604s    641 / 258s   مطابق
 #
 # تشغيلةُ 2026-08-10 بعد إغلاق بلوكرات PicPos (‏c=4، ١٦ نواة، ‏--pg):
-#   analyze 6 info · unit 2966 · widget 651 · integration 667 · pg 45
+#   analyze 6 info · unit 2968 · widget 651 · integration 667 · pg 45
+#   (‏unit قِيست ٢٩٦٦ ثم ٢٩٦٨ بعد إضافة حارس `no_bare_pdf_document`)
 #
 # والحكمُ **بتطابق عدد النجاحات** لا بالخضرة: لو كشف التوازي هشاشةً كامنة
 # لظهر الفرقُ رقماً. وصفرُ `PathExistsException` في كلّ التشغيلات بعد تنظيف
@@ -141,8 +142,8 @@ else
   ok "analyze — ٦ info بالظبط"
 fi
 
-# الحدود مقيسةٌ 2026-08-10 بعد جلسة إغلاق بلوكرات PicPos (‏+٢٦ وحدة و+٢٦ تكامل).
-run_suite "unit + data + structural + services" 2966 \
+# الحدود مقيسةٌ 2026-08-10 بعد جلسة إغلاق بلوكرات PicPos.
+run_suite "unit + data + structural + services" 2968 \
   flutter test test/unit test/data test/structural test/services --concurrency="$LOCAL_CONCURRENCY"
 
 # الواجهات والنطاقُ والنواة — كانت **كلُّها** خارج البوابة حتى 2026-08-09.
