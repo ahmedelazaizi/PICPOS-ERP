@@ -841,7 +841,13 @@ extension SalesMutationsDao on AppDatabase {
       ),
     ));
 
-    await updateSafeBalance(targetSafe.id, newBalance);
+    // H15 · `adjustSafeBalance` لا `updateSafeBalance`: الثاني كتابةٌ مطلقة
+    // بعد قراءة (`safe.balance + amount`) — وهو سباقُ «التحديث الضائع» تحت
+    // عزل PostgreSQL الافتراضيّ Read-Committed: بيعتان متزامنتان بـ١٠٠ على
+    // نفس الخزنة تنزلان +١٠٠ لا +٢٠٠. الأول يُجري الحسابَ في SQL نفسِه.
+    // `newBalance` يبقى لـ`balanceAfter` — وهو لقطةٌ بطبيعتها.
+    // (‏الوثيقةُ على `updateSafeBalance` تنصّ على هذا صراحةً: Spec 069/D5-003.)
+    await adjustSafeBalance(targetSafe.id, amount);
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -1006,7 +1012,7 @@ extension SalesMutationsDao on AppDatabase {
                 ),
               ),
             );
-            await updateSafeBalance(cashSafe.id, newBalance);
+            await adjustSafeBalance(cashSafe.id, cashDiff); // H15
           }
         }
 
@@ -1034,7 +1040,7 @@ extension SalesMutationsDao on AppDatabase {
                 ),
               ),
             );
-            await updateSafeBalance(bankSafe.id, newBalance);
+            await adjustSafeBalance(bankSafe.id, bankDiff); // H15
           }
         }
 
@@ -1062,7 +1068,7 @@ extension SalesMutationsDao on AppDatabase {
                 ),
               ),
             );
-            await updateSafeBalance(clickSafe.id, newBalance);
+            await adjustSafeBalance(clickSafe.id, clickDiff); // H15
           }
         }
       }
@@ -1194,7 +1200,7 @@ extension SalesMutationsDao on AppDatabase {
             ),
           );
 
-          await updateSafeBalance(cashSafe.id, newBalance);
+          await adjustSafeBalance(cashSafe.id, cashDiff); // H15
         }
       }
 
@@ -1224,7 +1230,7 @@ extension SalesMutationsDao on AppDatabase {
             ),
           );
 
-          await updateSafeBalance(bankSafe.id, newBalance);
+          await adjustSafeBalance(bankSafe.id, bankDiff); // H15
         }
       }
 
@@ -1254,7 +1260,7 @@ extension SalesMutationsDao on AppDatabase {
             ),
           );
 
-          await updateSafeBalance(clickSafe.id, newBalance);
+          await adjustSafeBalance(clickSafe.id, clickDiff); // H15
         }
       }
 
