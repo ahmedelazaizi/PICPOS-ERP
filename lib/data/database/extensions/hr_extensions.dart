@@ -504,7 +504,9 @@ extension HRExtensions on AppDatabase {
           ),
         );
 
-        await updateSafeBalance(safe.id, newBalance);
+        // H15 — خصمٌ ذرّيّ. (مسارُ الأجور خارجَ نطاق PicPos lite ومسيَّجٌ
+        // بـ`features.hrEnabled`؛ صُحِّح الحسابُ ولم يُفعَّل شيء.)
+        await adjustSafeBalance(safe.id, -amount);
 
         // Link transaction to salary payment
         await (update(salaryPayments)..where((p) => p.id.equals(id))).write(
@@ -741,7 +743,8 @@ extension HRExtensions on AppDatabase {
               description: Value('سلفة موظف: ${employee.name}'),
             ),
           );
-          await updateSafeBalance(targetSafe.id, newBalance);
+          // H15 — خصمُ سلفةٍ ذرّيّ. (خارجَ نطاق lite، مسيَّجٌ بـhrEnabled.)
+          await adjustSafeBalance(targetSafe.id, -amount);
         }
 
         // Determine debit account (Employee Advances)

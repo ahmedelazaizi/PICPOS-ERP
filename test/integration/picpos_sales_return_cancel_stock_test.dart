@@ -48,6 +48,10 @@ void main() {
   Future<double> productStock() async =>
       (await db.getProductById(productId))!.currentStock;
 
+  /// رصيدُ الخزنة النقدية — نفسُ الخزنة التي يسحب منها المرتجعُ النقديّ.
+  Future<double> cashSafeBalance() async =>
+      (await db.getDefaultSafeByType('cash'))!.balance;
+
   setUp(() async {
     db = AppDatabase.forTesting();
     await db.syncDefaultAccounts();
@@ -196,6 +200,46 @@ void main() {
       moves.where((m) => m.referenceType == 'return_cancel'), isNotEmpty,
       reason: 'وللإلغاء نفسِه لازم صفٌّ مضادّ — نفسُ ما تفعله الخزنةُ '
           'بـ«return_cancel».',
+    );
+  });
+
+  // ═════════════════════════════════════════════════════════════════════════
+  // الخزنة — الخصمُ والردُّ كلٌّ مرّةً واحدة
+  // ═════════════════════════════════════════════════════════════════════════
+  //
+  // `createSafeTransaction` **يعدّل الرصيدَ بنفسه**: `receipt/deposit` تزيد
+  // و`payment/withdrawal` تنقص (‏`treasury_dao.dart:1464-1475`). فأيُّ نداءٍ
+  // يكتب الرصيدَ **ثم** ينادي `createSafeTransaction` يطبّق الحركةَ مرّتين.
+  //
+  // وهذا ما يفعله مسارُ المرتجع: `adjustSafeBalance(-refund)` ثم
+  // `createSafeTransaction(type: 'payment', amount: refund)`.
+
+  test('ضابط: المرتجعُ النقديّ يخصم من الخزنة مرّةً واحدة لا مرّتين', () async {
+    final before = await cashSafeBalance();
+
+    await processReturn(); // مرتجعٌ نقديّ ٥٠٠
+
+    expect(
+      await cashSafeBalance(),
+      closeTo(before - 500, 0.001),
+      reason: 'المرتجعُ ٥٠٠ فالدرجُ ينقص ٥٠٠. لو نقص ١٠٠٠ فالخصمُ وقع '
+          'مرّتين: مرّةً من `adjustSafeBalance(-refund)` ومرّةً من '
+          '`createSafeTransaction(payment)` الذي ينقص الرصيدَ بنفسه.',
+    );
+  });
+
+  test('إلغاءُ المرتجع يرجّع رصيدَ الخزنة لما كان — لا يزيده', () async {
+    final before = await cashSafeBalance();
+
+    await processReturn();
+    await cancelReturn();
+
+    expect(
+      await cashSafeBalance(),
+      closeTo(before, 0.001),
+      reason: 'الإلغاءُ يعكس المرتجعَ فالدرجُ يرجع لرقمه. و`cancelSalesReturn` '
+          'يكتب الرصيدَ المطلق ثم ينادي `createSafeTransaction(receipt)` '
+          'فيُضيف المبلغَ مرّةً ثانية ⇒ نقديةٌ تُخلق من العدم.',
     );
   });
 }

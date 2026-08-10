@@ -1178,7 +1178,9 @@ extension PurchaseDao on AppDatabase {
         ),
       );
 
-      await updateSafeBalance(targetSafe.id, newBalance);
+      // H15 — خصمُ سدادٍ ذرّيّ: سدادان متزامنان على نفس الخزنة كانا
+      // يقرآن نفسَ الرصيد فيضيع أحدُهما. `newBalance` لقطةُ `balanceAfter`.
+      await adjustSafeBalance(targetSafe.id, -amount);
 
       return (select(safeTransactions)..where((t) => t.id.equals(txnId)))
           .getSingle();
@@ -1676,7 +1678,8 @@ extension PurchaseDao on AppDatabase {
           .getSingleOrNull();
       if (safe != null) {
         // The original payment DEBITED the safe (balance −= amount); restore it.
-        await updateSafeBalance(safe.id, safe.balance + txn.amount);
+        // H15 — ردٌّ ذرّيّ: القراءةُ ثم الكتابة كانت تضيّع ردّاً موازياً.
+        await adjustSafeBalance(safe.id, txn.amount);
       }
       // F02-1: reverse the separate GL 'payment' JE that addPurchasePayment
       // posted for THIS safe_txn (no-op for create-time down-payments, which
@@ -1938,7 +1941,9 @@ extension PurchaseDao on AppDatabase {
               description: Value('عكس حركة إلغاء فاتورة مشتريات #${invoice.invoiceNumber}'),
             ),
           );
-          await updateSafeBalance(safe.id, newBalance);
+          // H15 — عكسٌ ذرّيّ بمقدار `reverseAmount` (موجبٌ للسداد المعكوس،
+          // سالبٌ لغيره). `newBalance` لقطةُ `balanceAfter` وحدَها.
+          await adjustSafeBalance(safe.id, reverseAmount);
         }
       }
 

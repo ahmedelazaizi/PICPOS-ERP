@@ -507,8 +507,10 @@ class ApiPurchaseHandler extends ApiHandlerBase {
               : await db.getDefaultSafeByType('cash');
           debugPrint('[API:postPurchaseReturn] step=safeLookup paymentMethod=${invoice.paymentMethod} safeId=${safe?.id} cashReturn=$cashReturnAmount');
           if (safe != null) {
+            // ⚠️ لا كتابةَ رصيدٍ هنا: `createSafeTransaction('receipt')`
+            // يزيد الرصيدَ بنفسه، فالكتابةُ قبله تُضيف المبلغَ مرّتين
+            // (‏`treasury_dao.dart:1464-1469`). `newBalance` لقطةٌ لا أمر.
             final newBalance = safe.balance + cashReturnAmount;
-            await db.updateSafeBalance(safe.id, newBalance);
             await db.createSafeTransaction(
               SafeTransactionsCompanion.insert(
                 voucherNumber: returnVoucherNumber,
@@ -807,8 +809,10 @@ class ApiPurchaseHandler extends ApiHandlerBase {
                 'يرجى تعويض الخزنة قبل التعديل.',
               );
             }
+            // H15 — استعادةُ الاسترداد القديم خصمٌ ذرّيّ. الصفُّ التالي
+            // `into(...).insert` لا يمسّ الرصيد، فالخصمُ هنا وحدَه.
             final newBalance = safe.balance - oldCashReturn;
-            await db.updateSafeBalance(safe.id, newBalance);
+            await db.adjustSafeBalance(safe.id, -oldCashReturn);
             await db.into(db.safeTransactions).insert(
                   SafeTransactionsCompanion.insert(
                     voucherNumber: reverseVoucher,
@@ -962,8 +966,9 @@ class ApiPurchaseHandler extends ApiHandlerBase {
               ? await db.getDefaultSafeByType('bank')
               : await db.getDefaultSafeByType('cash');
           if (safe != null) {
+            // نفسُ علّة `postPurchaseReturn` أعلاه: الدالّةُ تزيد الرصيدَ
+            // بنفسها، فالكتابةُ قبلها تطبّق الاسترداد مرّتين.
             final newBalance = safe.balance + newCashReturnAmount;
-            await db.updateSafeBalance(safe.id, newBalance);
             await db.createSafeTransaction(
               SafeTransactionsCompanion.insert(
                 voucherNumber: returnVoucherNumber,

@@ -440,8 +440,9 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
       if (cashRefund > 0) {
         final cashSafe = await _db.getDefaultSafeByType('cash');
         if (cashSafe != null) {
+          // H15 — خصمٌ ذرّيّ. و`newBalance` يبقى لقطةً لـ`balanceAfter`.
           final newBalance = cashSafe.balance - cashRefund;
-          await _db.updateSafeBalance(cashSafe.id, newBalance);
+          await _db.adjustSafeBalance(cashSafe.id, -cashRefund);
           await _db.into(_db.safeTransactions).insert(
             SafeTransactionsCompanion.insert(
               voucherNumber: returnVoucherNumber,
@@ -463,8 +464,9 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
       if (bankRefund > 0) {
         final bankSafe = await _db.getDefaultSafeByType('bank');
         if (bankSafe != null) {
+          // H15 — نفسُ الشقّ النقديّ أعلاه.
           final newBalance = bankSafe.balance - bankRefund;
-          await _db.updateSafeBalance(bankSafe.id, newBalance);
+          await _db.adjustSafeBalance(bankSafe.id, -bankRefund);
           await _db.into(_db.safeTransactions).insert(
             SafeTransactionsCompanion.insert(
               voucherNumber: returnVoucherNumber,

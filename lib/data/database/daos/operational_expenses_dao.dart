@@ -417,7 +417,9 @@ extension OperationalExpensesDao on AppDatabase {
           ),
         );
 
-        await updateSafeBalance(targetSafe.id, newBalance);
+        // H15 — حسابٌ ذرّيّ لا كتابةٌ مطلقة: مصروفان نقديّان متزامنان على
+        // نفس الخزنة كانا يقرآن نفسَ الرصيد فيضيع أحدُ الخصمين.
+        await adjustSafeBalance(targetSafe.id, -amount);
       }
 
       return expenseId;

@@ -1676,7 +1676,9 @@ extension TreasuryDao on AppDatabase {
           ),
         );
 
-        await updateSafeBalance(targetSafe.id, newBalance);
+        // H15 — سندُ قبضٍ: زيادةٌ ذرّية. سندان متزامنان على نفس الخزنة كانا
+        // يقرآن نفسَ الرصيد فيضيع أحدُ المبلغين. `newBalance` لقطةٌ لا أمر.
+        await adjustSafeBalance(targetSafe.id, amount);
 
         // Spec 133 — party balance adjustment belongs INSIDE the
         // skipSafeTransaction guard. For cheque receipts the commercial
@@ -1835,7 +1837,8 @@ extension TreasuryDao on AppDatabase {
           ),
         );
 
-        await updateSafeBalance(targetSafe.id, newBalance);
+        // H15 — سندُ صرف: خصمٌ ذرّيّ (نفسُ علّة سند القبض أعلاه).
+        await adjustSafeBalance(targetSafe.id, -amount);
 
         // Create journal entry for financial reporting.
         // Skipped for check payments: the commercial papers system creates the

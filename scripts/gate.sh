@@ -54,8 +54,11 @@ rm -rf build/native_assets
 #   integration                      641 /  604s    641 / 258s   مطابق
 #
 # تشغيلةُ 2026-08-10 بعد إغلاق بلوكرات PicPos (‏c=4، ١٦ نواة، ‏--pg):
-#   analyze 6 info · unit 2970 · widget 651 · integration 676 · pg 45
-#   (‏آخرُ تشغيلةٍ كاملةٍ على شجرةٍ ثابتة بعد إغلاق H8 · H11 · H13 · H14 · H15)
+#   analyze 6 info · unit 2973 · widget 651 · integration 678 · pg 45
+#   (‏آخرُ تشغيلةٍ كاملةٍ على شجرةٍ ثابتة بعد إغلاق H8 · H11 · H13 · H14 · H15
+#    وبعد إغلاق التطبيق المزدوج لحركة الخزنة — حارسُ
+#    `safe_balance_single_write_test` ‏+٣ في unit، واختبارا رصيدِ الخزنة في
+#    إلغاء المرتجع ‏+٢ في integration)
 #
 # والحكمُ **بتطابق عدد النجاحات** لا بالخضرة: لو كشف التوازي هشاشةً كامنة
 # لظهر الفرقُ رقماً. وصفرُ `PathExistsException` في كلّ التشغيلات بعد تنظيف
@@ -143,7 +146,7 @@ else
 fi
 
 # الحدود مقيسةٌ 2026-08-10 بعد جلسة إغلاق بلوكرات PicPos.
-run_suite "unit + data + structural + services" 2970 \
+run_suite "unit + data + structural + services" 2973 \
   flutter test test/unit test/data test/structural test/services --concurrency="$LOCAL_CONCURRENCY"
 
 # الواجهات والنطاقُ والنواة — كانت **كلُّها** خارج البوابة حتى 2026-08-09.
@@ -151,7 +154,7 @@ run_suite "widget + core + domain + presentation + security + static" 651 \
   flutter test test/core test/domain test/presentation test/security \
               test/static test/widget test/widget_test.dart --concurrency="$LOCAL_CONCURRENCY"
 
-run_suite "integration" 676 \
+run_suite "integration" 678 \
   flutter test test/integration --concurrency="$LOCAL_CONCURRENCY"
 
 if (( WITH_PG )); then

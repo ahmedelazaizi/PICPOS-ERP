@@ -131,9 +131,15 @@ class ProcessSalesReturnUseCase {
       if (cashRefund > 0) {
         final cashSafe = await _db.getDefaultSafeByType('cash');
         if (cashSafe != null) {
-          // 069 (D5-003): atomic delta update to avoid PG lost-update.
+          // ⚠️ لا تعديلَ يدويّ للرصيد هنا. `createSafeTransaction` يطبّق
+          // الحركةَ بنفسه: `payment` ⇒ `balance = balance - amount`
+          // (‏`treasury_dao.dart:1470-1475`). وكان السطرُ
+          // `adjustSafeBalance(-cashRefund)` مكتوباً قبل النداء فيُخصم
+          // المبلغُ **مرّتين** — مقيس: درجٌ فيه ٥٠٠ ومرتجعٌ ٥٠٠ ينتهي
+          // بـ‏−٥٠٠ بدل صفر.
+          //
+          // و`newBalance` يبقى — لقطةٌ لـ`balanceAfter` لا أمرُ كتابة.
           final newBalance = cashSafe.balance - cashRefund;
-          await _db.adjustSafeBalance(cashSafe.id, -cashRefund);
           await _db.createSafeTransaction(
             SafeTransactionsCompanion.insert(
               voucherNumber:
@@ -155,9 +161,9 @@ class ProcessSalesReturnUseCase {
       if (bankRefund > 0) {
         final bankSafe = await _db.getDefaultSafeByType('bank');
         if (bankSafe != null) {
-          // 069 (D5-003): atomic delta update to avoid PG lost-update.
+          // نفسُ علّة الشقّ النقديّ أعلاه: `createSafeTransaction('payment')`
+          // ينقص الرصيدَ بنفسه، فالتعديلُ اليدويُّ قبله خصمٌ ثانٍ.
           final newBalance = bankSafe.balance - bankRefund;
-          await _db.adjustSafeBalance(bankSafe.id, -bankRefund);
           await _db.createSafeTransaction(
             SafeTransactionsCompanion.insert(
               voucherNumber:

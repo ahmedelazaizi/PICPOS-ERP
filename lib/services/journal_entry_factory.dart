@@ -788,8 +788,16 @@ class JournalEntryFactory {
         if (origTxn.category == 'sales_return') {
           final safe = await _treasuryRepo.getSafeByIdRaw(origTxn.safeId);
           if (safe != null) {
+            // ⚠️ لا كتابةَ رصيدٍ هنا. `createSafeTransaction('receipt')`
+            // يزيد الرصيدَ بنفسه (‏`treasury_dao.dart:1464-1469`)، فكتابةُ
+            // `newBalance` قبله تُضيف المبلغَ مرّتين ⇒ نقديةٌ تُخلق من العدم.
+            //
+            // وكان العطبُ **مستوراً**: مسارُ المرتجع كان يخصم مرّتين أيضاً،
+            // فالغلطان يتعادلان ما دام الإلغاءُ يتبع المرتجع. أُصلح المرتجعُ
+            // في `process_sales_return_usecase.dart` فظهر هذا وحدَه.
+            //
+            // و`newBalance` يبقى لقطةً لـ`balanceAfter`.
             final newBalance = safe.balance + origTxn.amount;
-            await _treasuryRepo.updateSafeBalance(safe.id, newBalance);
             await _treasuryRepo.createSafeTransaction(
               voucherNumber: 'CAN-RET${DateTime.now().year}${invoice.id.toString().padLeft(6, '0')}',
               safeId: safe.id,
