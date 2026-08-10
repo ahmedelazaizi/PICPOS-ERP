@@ -488,7 +488,23 @@ extension TreasuryDao on AppDatabase {
     String? closingSnapshot,
   }) async {
     return transaction(() async {
-      // Get all transactions during this shift for this user
+      // ⚠️ نطاقان مختلفان عن قصد، وخلطُهما كان أصلَ عطبٍ ماليّ:
+      //
+      // [txs] — مفلترةٌ بـ`shift.userId` — تخصّ **التصريف** وحدَه
+      //   (`_closeShiftSafes`, Spec 136 ISS-8): الإقفال يرحّل صافيَ ما حرّكته
+      //   هذه الوردية فقط، ويترك فلوسَ الورديات الأخرى في الدرج.
+      //
+      // [drawerTxs] — بلا فلترِ مستخدم — تخصّ **التوقّع**: `expectedCash`
+      //   يوصف ما ينبغي أن يكون في الدرج **فعلاً**، والدرجُ واحدٌ يشترك فيه
+      //   كلُّ من مسّه. والكاشير يعدّه كلَّه.
+      //
+      // قبل الفصل كان الاثنان نطاقاً واحداً، فأيُّ إيصالٍ على نفس الدرج
+      // بمستخدمٍ آخر يسقط من التوقّع بينما فلوسُه في الدرج:
+      //   * بيعةُ مديرٍ بلا وردية (الفورك يتخطّى `_ensureShiftOpen` له)
+      //     ⇒ **فائضٌ** بحجمها بالضبط، فيُقيَّد «فائض نقدية» مدين نقدية /
+      //     دائن إيراد — والمبلغُ نفسُه كان قد قُيِّد بقيد البيعة. النتيجة:
+      //     النقديةُ في الأستاذ مرّتين وإيرادٌ وهميّ. مقيس: فرقُ +٢٠٠.
+      //   * سندُ صرفٍ يوقّعه مشرفٌ على درج الكاشير ⇒ **عجزٌ وهميّ** بحجمه.
       final txs =
           await (select(safeTransactions)..where(
                 (t) =>
@@ -504,16 +520,41 @@ extension TreasuryDao on AppDatabase {
       // Bank/visa and click collections are settled electronically — including
       // them in expectedCash inflates it relative to actualCash (physical drawer)
       // and produces a phantom deficit equal to the non-cash collections.
-      final cashSafeIds = await (select(safes)
+      final cashSafes = await (select(safes)
               ..where((s) => s.safeType.equals('cash')))
-          .get()
-          .then((rows) => {for (final s in rows) s.id});
+          .get();
+      final cashSafeIds = {for (final s in cashSafes) s.id};
+
+      // الدرجُ (أو الأدراج) التي تخصّ هذه الوردية: ما لمسَته فعلاً. وإن لم
+      // تلمس شيئاً فأدراجُ فرعِها النقدية — وإلا بقيت وردية «بلا حركةٍ خاصة»
+      // عمياءَ عن بيعةٍ حصلت على درجها.
+      var drawerSafeIds = txs
+          .map((t) => t.safeId)
+          .where(cashSafeIds.contains)
+          .toSet();
+      if (drawerSafeIds.isEmpty) {
+        drawerSafeIds = {
+          for (final s in cashSafes)
+            if (shift.branchId == null || s.branchId == shift.branchId) s.id,
+        };
+      }
+
+      final drawerTxs = drawerSafeIds.isEmpty
+          ? <SafeTransactionData>[]
+          : await (select(safeTransactions)..where(
+                (t) =>
+                    t.safeId.isIn(drawerSafeIds) &
+                    t.createdAt.isBetween(
+                      Variable(shift.startTime),
+                      Variable(endTime),
+                    ),
+              ))
+              .get();
 
       double totalReceipts = 0;
       double totalPayments = 0;
 
-      for (final t in txs) {
-        if (!cashSafeIds.contains(t.safeId)) continue;
+      for (final t in drawerTxs) {
         if (t.transactionType == 'receipt') {
           totalReceipts += t.amount;
         } else if (t.transactionType == 'payment') {
