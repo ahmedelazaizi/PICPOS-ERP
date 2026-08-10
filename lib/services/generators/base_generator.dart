@@ -1,7 +1,11 @@
+import 'dart:async' show unawaited;
+
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
+
+import '../../core/logging/diagnostic_logger.dart';
 
 /// Base class for all generators with shared font initialization
 abstract class BaseGenerator {
@@ -87,7 +91,10 @@ abstract class BaseGenerator {
       final fontData =
           await rootBundle.load('assets/fonts/NotoNaskhArabic-Regular.ttf');
       _arabicFont = pw.Font.ttf(fontData);
-      debugPrint('[Font] Loaded Noto Naskh from bundled asset ✓');
+      // في السجلّ لا في الطرفية وحدَها: عطبُ الطباعة يُقرأ عند المستخدم من
+      // ملفّ التشخيص، والسؤالُ الأول دائماً «أيُّ خطٍّ حُمِّل؟».
+      unawaited(DiagnosticLogger.log(DiagnosticLogger.printOut,
+          'font=NotoNaskhArabic-Regular source=bundled fallback=none'));
       return _arabicFont!;
     } catch (e) {
       debugPrint('[Font] Bundled Noto Naskh failed: $e');

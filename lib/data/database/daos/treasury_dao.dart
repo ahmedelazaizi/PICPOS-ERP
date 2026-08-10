@@ -1439,6 +1439,11 @@ extension TreasuryDao on AppDatabase {
     await (update(safes)..where((s) => s.id.equals(safeId))).write(
       SafesCompanion(balance: Value(newBalance)),
     );
+    // الكتابةُ المطلقة مشروعةٌ في مواضعَ معدودة (مصالحة · تصحيحُ محاسب ·
+    // فرعُ `else` في `createSafeTransaction`). ظهورُها في التشغيلة اليدوية
+    // بجوار حركةِ بيعٍ يعني أن مساراً روتينياً عاد إليها.
+    unawaited(DiagnosticLogger.log(DiagnosticLogger.safeMove,
+        'safe=$safeId abs=$newBalance via=absolute'));
   }
 
   /// 069 (D5-003) — Atomically adjust a safe's balance by [delta].
@@ -1456,6 +1461,10 @@ extension TreasuryDao on AppDatabase {
       'UPDATE safes SET balance = balance + ? WHERE id = ?',
       [delta, safeId],
     );
+    // أثرُ التشغيلة اليدوية — سطرٌ لكلّ حركة. سطران متطابقان لنفس الخزنة =
+    // تطبيقٌ مزدوج. `unawaited` كي لا يدخل زمنُ الملفّ في زمن المعاملة.
+    unawaited(DiagnosticLogger.log(
+        DiagnosticLogger.safeMove, 'safe=$safeId delta=$delta via=adjust'));
   }
 
   /// Low-level safe transaction with full accounting treatment (Moved from database.dart)
@@ -1474,6 +1483,13 @@ extension TreasuryDao on AppDatabase {
       final safeId = trans.safeId.value;
       final amount = trans.amount.value;
       final transType = trans.transactionType.value;
+
+      // الحركةُ نفسُها قبل أثرِها على الرصيد — تربط سطرَ `SAFE-MOVE` التالي
+      // بسببه، فيُقرأ السجلُّ قصّةً لا أرقاماً متناثرة.
+      unawaited(DiagnosticLogger.log(
+          DiagnosticLogger.safeMove,
+          'txn safe=$safeId type=$transType amount=$amount '
+          'category=${trans.category.value} ref=${trans.referenceType.present ? trans.referenceType.value : '-'}'));
 
       if (transType == 'deposit' || transType == 'receipt') {
         // Atomic increment: SET balance = balance + amount

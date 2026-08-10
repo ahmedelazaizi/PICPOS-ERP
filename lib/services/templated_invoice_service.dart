@@ -1,3 +1,4 @@
+import 'dart:async' show unawaited;
 import 'dart:convert';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -6,6 +7,7 @@ import 'package:printing/printing.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import '../core/constants/app_constants.dart';
+import '../core/logging/diagnostic_logger.dart';
 import '../data/database/database.dart';
 import '../domain/entities/shift_closing_snapshot.dart';
 import '../data/repositories/printers_repository_impl.dart';
@@ -222,6 +224,15 @@ class TemplatedInvoiceService {
     if (templateData == null) {
       throw Exception('لا يوجد قالب افتراضي - سيتم استخدام التصميم الافتراضي');
     }
+
+    // أيُّ قالبٍ أخرج هذا المستند — أوّلُ سؤالٍ عند أيّ بلاغِ طباعة.
+    unawaited(DiagnosticLogger.log(
+        DiagnosticLogger.printOut,
+        'renderer=TemplatedInvoiceService type=$type category=$category '
+        'template="${templateData.template.name}" '
+        'paper=${templateData.template.paperWidth}mm '
+        'elements=${templateData.elements.length} '
+        'shift=${shift != null}'));
 
     final allVisible = templateData.elements.where((e) => e.isVisible).toList()
       ..sort((a, b) {

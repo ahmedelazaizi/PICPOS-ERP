@@ -64,6 +64,17 @@ class DiagnosticLogger {
   // Grep-able tags for the field-failure boundaries wired via [logError], so an
   // operator's Documents log shows WHERE a problem originated (boot / migration
   // / sync push / accounting post / scale) instead of a lost console line.
+  // ── أثرُ التشغيلة اليدوية ───────────────────────────────────────────────
+  // كلُّ حركةٍ على رصيد خزنةٍ تُسجَّل بسطرٍ واحد. الغرضُ إثباتُ أن الحركةَ
+  // تُطبَّق **مرّةً واحدة**: بيعةٌ واحدةٌ لازم تُخرج سطرَ `SAFE-MOVE` واحداً
+  // لكلّ خزنةٍ لمست. سطران بنفس المبلغ للخزنة نفسها في نفس الثانية = تطبيقٌ
+  // مزدوج (‏وهو العطبُ الذي أُغلق 2026-08-10 في سبعة مواضع).
+  //
+  // ومعه `PRINT` — أيُّ مولّدٍ وأيُّ قالبٍ وأيُّ خطٍّ أخرج المستند، فالعطبُ
+  // الطباعيُّ يُقرأ من السجلّ بلا تخمين.
+  static const String safeMove = 'SAFE-MOVE';
+  static const String printOut = 'PRINT';
+
   static const String startup = 'STARTUP';
   static const String migration = 'MIGRATION';
   static const String syncPush = 'SYNC-PUSH';
