@@ -68,6 +68,9 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
         if (!mounted) return;
         if (activeBranchId != null) {
           setState(() => _selectedBranchId = activeBranchId);
+          // H13 · بذرُ الاسم وحدَه كان يجعل العنوانَ يقول فرعاً والأرقامَ
+          // تقول شركة. الحلُّ لازم يسبق أوّلَ `_loadData` تحت.
+          await _resolveBranchSafeIds(activeBranchId);
         } else if (!_noBranchNoticeShown) {
           _noBranchNoticeShown = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -88,6 +91,31 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
         ref.read(activityLoggerProvider).logReportView(user?.id ?? 0, user?.displayName ?? 'مجهول', 'تقرير الخزينة');
       } catch (_) {}
     });
+  }
+
+  /// H13 · يحلّ خزائنَ الفرع المختار.
+  ///
+  /// كان هذا الجسمُ داخل `onBranchChanged` وحدَه، بينما `initState` يبذر
+  /// `_selectedBranchId` من فرع الجهاز **بلا** أن يحلّه. فعلى أوّل تحميل:
+  /// القائمةُ تُظهر اسمَ الفرع، و`_branchSafeIds` تظل `null`، والاستعلامُ
+  /// يقرأ **كلَّ الفروع**. العنوانُ يقول فرعاً والأرقامُ تقول شركة —
+  /// والمستخدمُ لا يملك ما يكشف الفرق.
+  ///
+  /// (‏`allowedBranchIds` سقفُ **صلاحية** لا فلترُ عرض: صاحبُ الوصول الكامل
+  ///  يأخذ `null` فلا يحدّ شيئاً.)
+  ///
+  /// Spec 079b b142 hotfix: نقرأ من الـDAO مباشرةً بدل المزوّد — نفسُ مشكلة
+  /// التخلّص في `regionBranchesProvider`.
+  Future<void> _resolveBranchSafeIds(int? branchId) async {
+    if (branchId != null) {
+      final db = ref.read(databaseProvider);
+      final rows = await (db.select(db.safes)
+            ..where((s) => s.branchId.equals(branchId)))
+          .get();
+      _branchSafeIds = rows.map((s) => s.id).toList();
+    } else if (_selectedRegionId == null) {
+      _branchSafeIds = null;
+    }
   }
 
   Future<void> _loadUsers() async {
@@ -380,18 +408,7 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
                   onBranchChanged: (v) async {
                     _selectedBranchId = v;
                     _selectedWarehouseId = null;
-                    if (v != null) {
-                      // Spec 079b b142 hotfix: same disposal issue as
-                      // `regionBranchesProvider` — bypass the provider
-                      // and read from the DAO directly.
-                      final db = ref.read(databaseProvider);
-                      final rows = await (db.select(db.safes)
-                            ..where((s) => s.branchId.equals(v)))
-                          .get();
-                      _branchSafeIds = rows.map((s) => s.id).toList();
-                    } else if (_selectedRegionId == null) {
-                      _branchSafeIds = null;
-                    }
+                    await _resolveBranchSafeIds(v);
                     _loadData();
                   },
                   onWarehouseChanged: (v) {
