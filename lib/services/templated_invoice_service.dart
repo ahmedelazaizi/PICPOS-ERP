@@ -1261,6 +1261,10 @@ class TemplatedInvoiceService {
         pw.Page(
           pageFormat: PdfPageFormat.a4,
           margin: const pw.EdgeInsets.all(pageMargin),
+          // بدونه تؤول الصفحةُ إلى LTR فلا تُشكَّل العربيةُ ولا يُعاد
+          // ترتيبُها: اسمُ الصنف يخرج بحروفٍ منفصلةٍ ومقلوبِ الترتيب على
+          // **كلّ ملصقِ باركود**. مقيسٌ بالرسم: «صبري» ⇒ «يربص».
+          textDirection: pw.TextDirection.rtl,
           build: (context) => pw.Wrap(
             spacing: 2,
             runSpacing: 2,

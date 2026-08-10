@@ -150,6 +150,10 @@ class QrMenuDialog extends StatelessWidget {
                 pdf.addPage(
                   pw.Page(
                     pageFormat: PdfPageFormat.a4,
+                    // بدونه تؤول الصفحةُ إلى LTR فلا تُشكَّل «طاولة …» ولا
+                    // يُعاد ترتيبُها. وهذه الصفحةُ تعيش في طبقة العرض بعيداً
+                    // عن خدمات الطباعة، فنجت من كلّ تدقيقٍ سابق.
+                    textDirection: pw.TextDirection.rtl,
                     build: (context) => pw.Center(
                       child: pw.Column(
                         mainAxisAlignment: pw.MainAxisAlignment.center,
