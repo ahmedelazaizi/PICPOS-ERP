@@ -1236,6 +1236,12 @@ extension TreasuryDao on AppDatabase {
     DateTime? endDate,
     int? userId,
     Set<int>? allowedBranchIds,
+    // فلترُ الفرع الذي يختاره المستخدم — **غيرُ** `allowedBranchIds` أعلاه.
+    // ذاك حصرُ صلاحيةٍ آمر، وهذا اختيارُ عرضٍ. وكلاهما لا بدّ أن يصل SQL
+    // قبل `limit`، وإلا امتلأت النافذةُ بصفوفٍ ستُرمى بعد الجلب فيظهر
+    // الجدولُ فارغاً بينما للفرع صفوفٌ فعلاً.
+    int? branchId,
+    Set<int>? regionBranchIds,
   }) async {
     final query = select(
       shifts,
@@ -1246,6 +1252,14 @@ extension TreasuryDao on AppDatabase {
     }
     if (userId != null) {
       query.where(shifts.userId.equals(userId));
+    }
+
+    // مساواةٌ صارمة — نفسُ ما كانت تفعله الشاشةُ بعد الجلب، منقولاً كما هو
+    // إلى SQL. (الشفتُ بلا فرعٍ لا يدخل اختيارَ فرعٍ بعينه.)
+    if (branchId != null) {
+      query.where(shifts.branchId.equals(branchId));
+    } else if (regionBranchIds != null && regionBranchIds.isNotEmpty) {
+      query.where(shifts.branchId.isIn(regionBranchIds));
     }
 
     // Spec 151 Track-3: authoritative branch-scope cap. The shifts report

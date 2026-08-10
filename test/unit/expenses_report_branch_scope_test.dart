@@ -171,4 +171,62 @@ void main() {
       expect(sumDetail(detail), 480);
     });
   });
+
+  // ═════════════════════════════════════════════════════════════════════════
+  // الخزنةُ بلا فرع — شقّا الاتحاد لازم يعاملا NULL بنفس المعنى
+  // ═════════════════════════════════════════════════════════════════════════
+  //
+  // شقُّ `op_expenses` يقول صراحةً إن الصفَّ بلا فرعٍ **مشترَك**:
+  //   `AND (e.branch_id IS NULL OR e.branch_id = ?)`
+  // وحصرُ الصلاحية (`_expenseAuthScope`) يقول نفسَ الشيء على الشقّين:
+  //   `AND ($col IN (…) OR $col IS NULL)`
+  // وحدَه فلترُ الفرع على شقّ الخزنة يقول `AND s.branch_id = ?` — وNULL لا
+  // تساوي شيئاً في SQL، فالصفُّ يسقط.
+  //
+  // وهذا ليس فرضاً نظرياً: الخزنةُ الافتراضية في تجهيزةٍ بفرعٍ واحد
+  // `branch_id = NULL` (‏«صندوق الكاشير» في سجلّ البوابة). فأيُّ اختيارِ فرعٍ
+  // يُخفي **كلَّ** سندات الصرف النقدية من التقرير بلا أن ينطق.
+
+  group('الخزنةُ بلا فرع تُعامَل مشترَكةً كالمصروف بلا فرع', () {
+    /// خزنةُ الإدارة العامة — بلا `branch_id`، وعليها سندُ صرفٍ ٧٠.
+    Future<void> seedNoBranchSafePayment() async {
+      final safeNoBranch = await db.into(db.safes).insert(
+            SafesCompanion.insert(
+              name: 'خزنة الإدارة',
+              globalId: const Value('gid-safe-exp-null'),
+            ),
+          );
+      await insertSafePayment(
+          voucher: 'V-NULL', safeId: safeNoBranch, amount: 70);
+    }
+
+    test('الكارت بفلتر فرع A يضمّ سندَ الخزنة بلا فرع', () async {
+      await seedNoBranchSafePayment();
+
+      final summary = await db.getMonthlyExpenseSummary(
+          from: from, to: to, branchId: branchAId);
+
+      expect(
+        sumSummary(summary),
+        240,
+        reason: 'مصروف A 100 + مصروف بلا فرع 30 + نقدية خزنة A 40 + نقدية '
+            'الخزنة بلا فرع 70. لو رجع ١٧٠ فسندُ الخزنة بلا فرع سقط: '
+            '`s.branch_id = ?` تُسقط NULL بينما الشقُّ الآخرُ يضمّها.',
+      );
+    });
+
+    test('والجدولُ يقيس نفسَ المجموعة', () async {
+      await seedNoBranchSafePayment();
+
+      final summary = await db.getMonthlyExpenseSummary(
+          from: from, to: to, branchId: branchAId);
+      final detail = await db.getExpensesForReport(
+          from: from, to: to, branchId: branchAId);
+
+      expect(sumDetail(detail), sumSummary(summary),
+          reason: 'الكارتُ والجدولُ لازم يتّفقا على معنى NULL أيضاً');
+      expect(detail.any((r) => r['reference'] == 'V-NULL'), isTrue,
+          reason: 'سندُ الخزنة بلا فرع لازم يظهر في التفصيل');
+    });
+  });
 }

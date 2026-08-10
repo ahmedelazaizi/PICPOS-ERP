@@ -17,6 +17,14 @@ class BranchWarehouseFilterBar extends ConsumerWidget {
   final ValueChanged<int?> onBranchChanged;
   final ValueChanged<int?> onWarehouseChanged;
 
+  /// اعرض قائمةَ المخازن؟
+  ///
+  /// ليس كلُّ تقريرٍ مرتبطاً بمخزن. تقريرُ الورديات مثلاً: جدولُ `shifts`
+  /// فيه `branch_id` **ولا `warehouse_id` فيه أصلاً**، فالقائمةُ كانت
+  /// تُعرَض وتُخزَّن قيمتُها ولا تُقرأ في أيّ استعلام — يختار المستخدمُ
+  /// مخزناً فلا يتغيّر شيء. عرضُ فلترٍ لا يفلتر أسوأُ من غيابه.
+  final bool showWarehouse;
+
   const BranchWarehouseFilterBar({
     super.key,
     this.selectedRegionId,
@@ -25,6 +33,7 @@ class BranchWarehouseFilterBar extends ConsumerWidget {
     required this.selectedWarehouseId,
     required this.onBranchChanged,
     required this.onWarehouseChanged,
+    this.showWarehouse = true,
   });
 
   @override
@@ -110,8 +119,9 @@ class BranchWarehouseFilterBar extends ConsumerWidget {
             error: (_, e) => const SizedBox.shrink(),
           ),
         ),
-        const SizedBox(width: 12),
+        if (showWarehouse) const SizedBox(width: 12),
         // ─── Warehouse Filter (cascading) ───
+        if (showWarehouse)
         SizedBox(
           width: 160,
           child: warehousesAsync.when(

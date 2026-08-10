@@ -16,6 +16,14 @@ import '../../../../../../core/constants/app_constants.dart';
 import '../../widgets/branch_warehouse_filter.dart';
 import 'report_export_guard.dart';
 
+/// سقفُ صفحةِ تقرير الورديات.
+///
+/// كان `limit: 100` رقماً مدفوناً في النداء بتعليق `// Load top 100 for now`:
+/// لا المستخدمُ يعلم بوجوده ولا شيءَ ينطق حين يُقتطع التقرير. والتقريرُ
+/// المقتطعُ لا يُميَّز عن الكامل — وهذا أخطرُ من فشلٍ، لأن الفشلَ يُرى.
+/// (نفسُ العلاج المقيس في `report_builder_dao.dart` — سقفٌ معلَنٌ ينطق.)
+const int kShiftsReportPageLimit = 100;
+
 class ShiftsReportScreen extends ConsumerStatefulWidget {
   const ShiftsReportScreen({super.key});
 
@@ -42,8 +50,14 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
   List<UserWithRole> _allUsers = [];
   int? _selectedRegionId; // Feature 017
   int? _selectedBranchId;
-  int? _selectedWarehouseId;
+  // قائمةُ المخازن أُسقطت لنفس سبب مركزِ التكلفة والخزنة أعلاه: جدولُ
+  // `shifts` لا يحمل `warehouse_id` أصلاً، فكانت القيمةُ تُخزَّن ولا تُقرأ
+  // في أيّ استعلامٍ ولا في أيّ فلترةٍ بعد الجلب — يختار المستخدمُ مخزناً
+  // فلا يتغيّر شيء.
   Set<int>? _regionBranchIds; // resolved when a region is picked
+
+  /// هل اقتُطع التقرير على السقف؟ يُعرَض للمستخدم — لا يُبتلع.
+  bool _truncated = false;
 
   // Spec 151 Track-3: the logged-in user's branch authorization scope — an
   // AUTH CAP distinct from the user-chosen branch/region filter above. null =
@@ -102,30 +116,30 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
       // Load user names for filter
       final users = await repo.watchAllUsers().first;
 
-      // Fetch shifts. Spec 151 Track-3: the auth cap is applied in SQL so the
-      // `limit: 100` page is already branch-scoped (fixes the prior bug where
-      // the page was fetched across ALL branches then filtered client-side).
-      final shifts = await repo.getShiftsReportPaginated(
+      // Fetch shifts. الحصرُ الآمر **واختيارُ المستخدم** كلاهما في SQL الآن.
+      //
+      // كان اختيارُ الفرع يُطبَّق هنا بعد الجلب، فالسقفُ يمتلئ بشفتاتِ
+      // فروعٍ أخرى أحدث ولا يبقى للفرع المختار شيء ⇒ جدولٌ فارغٌ بينما
+      // للفرع شفتاتٌ فعلاً.
+      //
+      // ونجلب `+1` كي نعرف أن هناك ما هو أكثرُ من السقف فنقولَه.
+      final page = await repo.getShiftsReportPaginated(
         startDate: _dateRange.start,
         endDate: _dateRange.end,
         userId: _selectedUserId,
-        limit: 100, // Load top 100 for now
+        limit: kShiftsReportPageLimit + 1,
         allowedBranchIds: _allowedBranchIds,
+        branchId: _selectedBranchId,
+        regionBranchIds: _selectedBranchId == null ? _regionBranchIds : null,
       );
 
-      // Feature 017 — branch / region scope filter (client-side because the
-      // DAO query doesn't take branchId; shifts.branchId is on the row).
-      var filtered = shifts;
-      if (_selectedBranchId != null) {
-        filtered = filtered.where((s) => s.branchId == _selectedBranchId).toList();
-      } else if (_regionBranchIds != null && _regionBranchIds!.isNotEmpty) {
-        filtered = filtered
-            .where((s) => s.branchId != null && _regionBranchIds!.contains(s.branchId))
-            .toList();
-      }
+      final truncated = page.length > kShiftsReportPageLimit;
+      final shifts =
+          truncated ? page.sublist(0, kShiftsReportPageLimit) : page;
 
       setState(() {
-        _shifts = filtered;
+        _shifts = shifts;
+        _truncated = truncated;
         _allUsers = users;
       });
     } finally {
@@ -227,11 +241,12 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
                 BranchWarehouseFilterBar(
                   selectedRegionId: _selectedRegionId,
                   selectedBranchId: _selectedBranchId,
-                  selectedWarehouseId: _selectedWarehouseId,
+                  // الورديةُ لا تخصّ مخزناً — انظر التعليقَ عند التصريح.
+                  showWarehouse: false,
+                  selectedWarehouseId: null,
                   onRegionChanged: (v) async {
                     _selectedRegionId = v;
                     _selectedBranchId = null;
-                    _selectedWarehouseId = null;
                     if (v != null) {
                       // Spec 079b b142 hotfix: call DAO directly. The
                       // `regionBranchesProvider(v).future` path was throwing
@@ -260,19 +275,38 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
                     _loadData();
                   },
                   onBranchChanged: (v) {
-                    setState(() {
-                      _selectedBranchId = v;
-                      _selectedWarehouseId = null;
-                    });
+                    setState(() => _selectedBranchId = v);
                     _loadData();
                   },
-                  onWarehouseChanged: (v) {
-                    setState(() => _selectedWarehouseId = v);
-                    _loadData();
-                  },
+                  onWarehouseChanged: (_) {},
                 ),
               ],
             ),
+
+            // السقفُ ينطق: التقريرُ المقتطعُ لا يُميَّز عن الكامل بلا هذا.
+            if (_truncated && !_isLoading)
+              Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                color: AppColors.warning.withValues(alpha: 0.12),
+                child: const Row(
+                  children: [
+                    Icon(PhosphorIconsBold.warning,
+                        size: 16, color: AppColors.warning),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'معروضٌ أحدثُ $kShiftsReportPageLimit ورديةٍ فقط — '
+                        'هناك ورديّاتٌ أقدمُ خارج هذه الصفحة. ضيّق المدى '
+                        'الزمنيّ أو الفرعَ أو المستخدمَ لرؤيتها.',
+                        style: TextStyle(
+                            fontSize: 12, color: AppColors.warning),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
 
             Expanded(
               child: _isLoading

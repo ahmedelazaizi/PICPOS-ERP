@@ -527,9 +527,11 @@ extension OperationalExpensesDao on AppDatabase {
   /// Get monthly expense summary by category — combines `op_expenses` rows
   /// with the expense-flavored `safe_transactions` (POS quick expense,
   /// treasury "سند صرف", cash sales-return refunds). Filtered by branch +
-  /// user where the underlying row supports the column (safe_transactions
-  /// has user_id but no direct branch_id, so branch filtering only
-  /// constrains op_expenses).
+  /// user. `safe_transactions` has no `branch_id` of its own, so the branch
+  /// is taken from the owning safe (`safes.branch_id` via the join) — and a
+  /// safe with no branch is treated as **shared**, exactly like an
+  /// `op_expenses` row with no branch. Both halves must agree on what NULL
+  /// means or Σ(table) ≠ card.
   Future<List<Map<String, dynamic>>> getMonthlyExpenseSummary({
     required DateTime from,
     required DateTime to,
@@ -585,8 +587,14 @@ extension OperationalExpensesDao on AppDatabase {
     // TWICE: once from op_expenses, once from its own safe_transactions
     // movement.
     final stUserFilter = userId != null ? 'AND st.user_id = $userId' : '';
-    final stBranchFilter =
-        branchId != null ? 'AND s.branch_id = $branchId' : '';
+    // NULL = «مشترَكة» — نفسُ معنى شقّ `op_expenses` أعلاه ونفسُ ما يفعله
+    // `_expenseAuthScope` على الشقّين. وكان `s.branch_id = ?` وحدَه، وNULL
+    // لا تساوي شيئاً في SQL ⇒ الخزنةُ الافتراضية (‏`branch_id` فارغ في
+    // تجهيزةٍ بفرعٍ واحد) تسقط، فيُخفي أيُّ اختيارِ فرعٍ **كلَّ** سندات
+    // الصرف النقدية بلا أن ينطق.
+    final stBranchFilter = branchId != null
+        ? 'AND (s.branch_id IS NULL OR s.branch_id = $branchId)'
+        : '';
     final stRows = await customSelect(
       '''
       SELECT COALESCE(st.category, '') as category,
@@ -692,8 +700,14 @@ extension OperationalExpensesDao on AppDatabase {
     // reference an op_expense (recordAndPostOperationalExpense's own cash
     // movement) since that expense already appears via `opRowsRaw`.
     final stUserFilter = userId != null ? 'AND st.user_id = $userId' : '';
-    final stBranchFilter =
-        branchId != null ? 'AND s.branch_id = $branchId' : '';
+    // NULL = «مشترَكة» — نفسُ معنى شقّ `op_expenses` أعلاه ونفسُ ما يفعله
+    // `_expenseAuthScope` على الشقّين. وكان `s.branch_id = ?` وحدَه، وNULL
+    // لا تساوي شيئاً في SQL ⇒ الخزنةُ الافتراضية (‏`branch_id` فارغ في
+    // تجهيزةٍ بفرعٍ واحد) تسقط، فيُخفي أيُّ اختيارِ فرعٍ **كلَّ** سندات
+    // الصرف النقدية بلا أن ينطق.
+    final stBranchFilter = branchId != null
+        ? 'AND (s.branch_id IS NULL OR s.branch_id = $branchId)'
+        : '';
     final stRowsRaw = await customSelect(
       '''
       SELECT st.id, st.amount, st.created_at as expense_date,

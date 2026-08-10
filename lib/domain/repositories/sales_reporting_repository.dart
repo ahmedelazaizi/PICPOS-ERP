@@ -120,6 +120,9 @@ abstract class ISalesReportingRepository {
     DateTime? endDate,
     int? userId,
     Set<int>? allowedBranchIds,
+    /// اختيارُ المستخدم للفرع/الإقليم — يُطبَّق في SQL قبل `limit`.
+    int? branchId,
+    Set<int>? regionBranchIds,
   });
 
   Future<List<CategoryProfitRow>> getCategoryProfitReport({

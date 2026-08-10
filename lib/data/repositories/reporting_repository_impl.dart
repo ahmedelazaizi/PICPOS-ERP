@@ -388,6 +388,8 @@ class ReportingRepositoryImpl implements IReportingRepository {
     DateTime? endDate,
     int? userId,
     Set<int>? allowedBranchIds,
+    int? branchId,
+    Set<int>? regionBranchIds,
   }) =>
       _db.getShiftsReportPaginated(
         limit: limit,
@@ -396,6 +398,8 @@ class ReportingRepositoryImpl implements IReportingRepository {
         endDate: endDate,
         userId: userId,
         allowedBranchIds: allowedBranchIds,
+        branchId: branchId,
+        regionBranchIds: regionBranchIds,
       );
 
   @override
