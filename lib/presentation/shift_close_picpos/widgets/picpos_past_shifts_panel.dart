@@ -229,6 +229,9 @@ class _PicposPastShiftsPanelState
         snapshot: snapshot,
         fontScale: fontScale,
         printersRepo: ref.read(printersRepositoryProvider),
+        // إعادةُ الطباعة تمرّ بنفس المسار فتحترم القالبَ كذلك — وإلا
+        // اختلفت النسخةُ المعادة عن الأصلية.
+        db: ref.read(databaseProvider),
       );
     } catch (e) {
       if (!mounted) return;

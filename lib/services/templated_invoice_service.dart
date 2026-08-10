@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import '../core/constants/app_constants.dart';
 import '../data/database/database.dart';
+import '../domain/entities/shift_closing_snapshot.dart';
 import '../data/repositories/printers_repository_impl.dart';
 import 'printer_resolver.dart';
 
@@ -23,6 +24,73 @@ class TemplatedInvoiceService {
   /// نفسُ السلَّم بأساسٍ يحمل الأشكالَ كلَّها (Noto Naskh).
   static Future<void> _initFont() async {
     _arabicFont ??= await BaseGenerator.initFont();
+  }
+
+  /// قيمةُ عنصرِ ورديةٍ من لقطة الإقفال — أو `null` لو النوعُ ليس منها.
+  ///
+  /// `null` لا `''` عمداً: المنادي يفرّق بها بين «نوعٌ لا يخصّني» و«يخصّني
+  /// وقيمتُه فارغة»، فلا يبتلع الثاني.
+  ///
+  /// محرِّرُ القوالب يعرض هذه الأنواعَ الستّةَ عشر تحت قالب `shift_closing`،
+  /// وكانت كلُّها تسقط على `default: return ''` — فالعنصرُ بلا تسميةٍ يرجع
+  /// `SizedBox()` أي **يختفي**، وبتسميةٍ يطبع تسميةً معلَّقةً بلا رقم.
+  static String? resolveShiftValue(String type, ShiftClosingSnapshot s) {
+    String n(double v) => v.toStringAsFixed(AppConstants.decimalPlaces);
+
+    switch (type) {
+      case 'shift_invoice_count':
+        return s.invoiceCount.toString();
+      case 'shift_total_sales':
+        return n(s.totalSales);
+      case 'shift_system_cash':
+        return n(s.systemCash);
+      case 'shift_actual_cash':
+        return n(s.actualCash);
+      case 'shift_cash_variance':
+        return n(s.cashVariance);
+      case 'shift_system_card':
+        return n(s.systemCard);
+      case 'shift_actual_card':
+        return n(s.actualCard);
+      case 'shift_card_variance':
+        return n(s.cardVariance);
+      case 'shift_total_variance':
+        return n(s.totalVariance);
+      case 'shift_total_expenses':
+        return n(s.totalExpenses);
+      case 'shift_cash_refunds':
+        return n(s.cashRefunds);
+
+      // مجاميعُ مشتقّة — لا حقلَ لها في اللقطة. تُجمع من الثلاثة (نقد ·
+      // بطاقة · كليك) لا من `totalSales`: الأخيرُ مبيعاتٌ والأولُ متحصَّل،
+      // ويفترقان بالآجل والمصروفات.
+      case 'shift_total_system':
+        return n(s.systemCash + s.systemCard + s.systemClick);
+      case 'shift_total_actual':
+        return n(s.actualCash + s.actualCard + s.actualClick);
+
+      case 'shift_status':
+        // أهمُّ سطرٍ في التقرير — الفرقُ ينطق بكلمته لا برقمه وحدَه.
+        if (s.totalVariance.abs() < 0.001) return 'مطابق';
+        return s.totalVariance < 0
+            ? 'عجز: ${n(s.totalVariance)}'
+            : 'زيادة: +${n(s.totalVariance)}';
+
+      case 'shift_number':
+        // لا رقمَ ورديةٍ في اللقطة — الموظّفُ والوقتُ هما ما يميّزها للقارئ.
+        final who = s.employeeName?.trim();
+        final when = s.closedAt;
+        if (who != null && who.isNotEmpty && when != null) {
+          return '$who — ${when.day}/${when.month}/${when.year}';
+        }
+        return who?.isNotEmpty == true ? who! : '—';
+
+      case 'shift_closing':
+        return 'تقرير إغلاق الوردية';
+
+      default:
+        return null;
+    }
   }
 
   /// التحقق من وجود قالب افتراضي لنوع معين (مع فئة اختيارية)
@@ -73,6 +141,10 @@ class TemplatedInvoiceService {
     String? orderNumber,
     String? platformOrderNumber,
     String locale = 'ar',
+    /// لقطةُ إقفال الوردية — تُمرَّر حين يكون المطبوعُ تقريرَ وردية
+    /// (`type: 'shift_closing'`)، فتُحلّ بها عناصرُ `shift_*` التي يعرضها
+    /// محرّرُ القوالب. `null` لكلّ مطبوعٍ آخر.
+    ShiftClosingSnapshot? shift,
   }) async {
     await _initFont();
 
@@ -180,6 +252,7 @@ class TemplatedInvoiceService {
       return _buildElementContent(
         resolvedType: resolvedType,
         element: element,
+        shift: shift,
         invoiceNumber: invoiceNumber,
         date: date,
         customerName: customerName,
@@ -337,9 +410,13 @@ class TemplatedInvoiceService {
   }
 
   /// بناء محتوى عنصر واحد من القالب (resolvedType تم حله بالفعل في الـ caller)
+  ///
+  /// [shift] — لقطةُ إقفال الوردية حين يكون المطبوعُ تقريرَ وردية. تُقرأ
+  /// **قبل** جدول الفاتورة كي تُحلَّ أنواعُ `shift_*` التي يعرضها المحرر.
   static pw.Widget _buildElementContent({
     required String resolvedType,
     required InvoiceTemplateElement element,
+    ShiftClosingSnapshot? shift,
     required String invoiceNumber,
     required DateTime date,
     String? customerName,
@@ -370,6 +447,20 @@ class TemplatedInvoiceService {
   }) {
     final style = _getStyle(element);
     final align = _getAlignment(element.textAlign);
+
+    // عناصرُ الورديّة أولاً: أنواعُها لا تتقاطع مع أنواع الفاتورة، والمُحلِّل
+    // يرجّع `null` لأيّ نوعٍ ليس منها — فلا يخطف شيئاً.
+    if (shift != null) {
+      final shiftValue = resolveShiftValue(resolvedType, shift);
+      if (shiftValue != null) {
+        final label = element.labelAr?.trim();
+        return pw.Text(
+          label == null || label.isEmpty ? shiftValue : '$label: $shiftValue',
+          style: style,
+          textAlign: align,
+        );
+      }
+    }
 
     switch (resolvedType) {
       // Company Info

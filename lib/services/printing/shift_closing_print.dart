@@ -1,6 +1,10 @@
+import 'package:flutter/foundation.dart';
+
+import '../../data/database/database.dart';
 import '../../domain/entities/shift_closing_snapshot.dart';
 import '../../domain/repositories/printers_repository.dart';
 import '../invoice_generator.dart';
+import '../templated_invoice_service.dart';
 
 /// Prints a shift-closing report from a [ShiftClosingSnapshot].
 ///
@@ -9,11 +13,54 @@ import '../invoice_generator.dart';
 /// from a second set of assumptions. The close path builds the snapshot,
 /// persists it, and prints from it; the reprint path loads the stored one and
 /// prints from that.
+/// [db] — حين يُمرَّر ويوجد قالبٌ افتراضيٌّ من نوع `shift_closing`، يُطبع
+/// التقريرُ **بالقالب** الذي صمّمه المستخدم. وإلا فالمولّدُ الثابتُ كما كان.
+///
+/// كان المحرِّرُ يعرض نوعَ القالب هذا وستّةَ عشرَ عنصراً تحته، والبذرةُ تزرع
+/// قالباً افتراضياً باسمه — ولا شيءَ يقرؤه. فالتصميمُ يُحفظ ولا يُرى.
+/// (‏`printing_service.dart` يسأل السؤالَ نفسَه للفواتير منذ البداية.)
 Future<void> printShiftClosingSnapshot({
   required ShiftClosingSnapshot snapshot,
   double fontScale = 1.0,
   IPrintersRepository? printersRepo,
-}) {
+  AppDatabase? db,
+}) async {
+  if (db != null) {
+    try {
+      if (await TemplatedInvoiceService.hasDefaultTemplate(db, 'shift_closing')) {
+        await TemplatedInvoiceService.printWithTemplate(
+          db: db,
+          type: 'shift_closing',
+          category: 'shift_closing',
+          shift: snapshot,
+          // تقريرُ الوردية ليس فاتورة: لا بنودَ ولا مبالغَ فاتورة. القيمُ
+          // المعروضةُ كلُّها من اللقطة عبر `resolveShiftValue`.
+          invoiceNumber: '',
+          date: snapshot.closedAt ?? DateTime.now(),
+          customerName: null,
+          customerPhone: null,
+          customerAddress: null,
+          items: const [],
+          subtotal: 0,
+          discount: 0,
+          tax: 0,
+          deliveryFee: 0,
+          total: snapshot.totalSales,
+          paid: snapshot.totalSales,
+          companyName: snapshot.companyName ?? '',
+          companyAddress: '',
+          companyPhone: '',
+          companyTaxId: null,
+          cashierName: snapshot.employeeName,
+        );
+        return;
+      }
+    } catch (e) {
+      // القالبُ إضافةٌ لا استبدال: أيُّ عطبٍ فيه لا يمنع طباعةَ الإقفال.
+      debugPrint('[ShiftClosing] template print failed, falling back: $e');
+    }
+  }
+
   return InvoiceGenerator.printShiftClosingReport(
     invoiceCount: snapshot.invoiceCount,
     totalSales: snapshot.totalSales,

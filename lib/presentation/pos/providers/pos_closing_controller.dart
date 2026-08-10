@@ -667,6 +667,9 @@ class PosClosingController extends Notifier<PosClosingState> {
         snapshot: snapshot,
         fontScale: fontScale,
         printersRepo: ref.read(printersRepositoryProvider),
+        // يتيح الطباعةَ بقالب `shift_closing` الذي صمّمه المستخدم؛ وبلا
+        // قالبٍ افتراضيّ يبقى المولّدُ الثابت.
+        db: ref.read(databaseProvider),
       );
 
       final logger = ref.read(activityLoggerProvider);
