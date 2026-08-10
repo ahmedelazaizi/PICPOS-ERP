@@ -138,6 +138,63 @@ class PosSearchController extends Notifier<PosSearchState> {
     _safePlay('audio/error_beep.wav', 'duplicate-weight-beep');
   }
 
+  /// يضيف صنفاً بباركود **وحدةِ تغليف** ويثبّت التحويلَ على السطر الذي تأثّر
+  /// فعلاً — لا على أوّل سطرٍ لنفس الصنف.
+  ///
+  /// كان الموضعان يناديان `addItem` ثم `indexWhere((i) => i.productId == …)`،
+  /// و`indexWhere` يرجّع **أوّل** مطابقة. و`AddToCartUseCase` لا يدمج حين
+  /// يختلف السعر (سعرُ الكرتونة ≠ سعرُ القطعة) فيُلحق سطراً جديداً — فينزل
+  /// التحويلُ والسعرُ على سطر القطعة القديم بدل المُلحَق.
+  ///
+  /// مقيس: امسح قطعة ← قطعة ← كرتونة ⇒ الإجمالي **١٥٠ بدل ٦٠** (زيادةُ ٩٠
+  /// على العميل) و**٢٥ وحدةً تُخصم بدل ١٤** (١١ وحدةً وهمية تخرج من المحل).
+  ///
+  /// ولـ`addItem` ثلاثةُ مآلات، والدالةُ تميّزها:
+  /// * أُلحق سطرٌ جديد ⇒ الهدفُ آخرُ سطر.
+  /// * اندمج في سطرٍ قائم ⇒ الهدفُ سطرُ الدمج (أوّلُ مطابقةٍ نمت كميّتُها).
+  /// * **رُفض صامتاً** (حارسُ المخزون في `addItem` يرجع بلا أثر) ⇒ لا سطرَ
+  ///   يُوسَم إطلاقاً. بدون هذا الفرق كان الرفضُ يَسِم سطراً قديماً بوحدةٍ
+  ///   وسعرٍ لم يطلبهما أحد.
+  void _addItemWithUnit({
+    required ProductEntity product,
+    required int unitId,
+    required String unitName,
+    required double quantityInBase,
+    required double unitPrice,
+    required bool forceNewEntry,
+    required bool mergeWeight,
+  }) {
+    final cart = ref.read(cartControllerProvider.notifier);
+    final before = ref.read(cartControllerProvider).items;
+    final firstIdx = before.indexWhere((i) => i.productId == product.id);
+    final beforeQty = firstIdx == -1 ? null : before[firstIdx].quantity;
+
+    cart.addItem(
+      product,
+      customPrice: unitPrice,
+      forceNewEntry: forceNewEntry,
+      mergeWeight: mergeWeight,
+    );
+
+    final after = ref.read(cartControllerProvider).items;
+    final int target;
+    if (after.length > before.length) {
+      target = after.length - 1;
+    } else if (beforeQty != null && after[firstIdx].quantity > beforeQty) {
+      target = firstIdx;
+    } else {
+      return; // رفضٌ صامت — لا شيء أُضيف
+    }
+
+    cart.updateItemUnit(
+      target,
+      unitId: unitId,
+      unitName: unitName,
+      quantityInBase: quantityInBase,
+      unitSalePrice: unitPrice,
+    );
+  }
+
   /// Called by the UI after it has shown the duplicate-weight popup, to
   /// clear the state flag so the next add doesn't re-trigger on stale
   /// data.
@@ -338,25 +395,15 @@ class PosSearchController extends Notifier<PosSearchState> {
             isSoldByWeight: product.isSoldByWeight,
             preventStacking: preventStacking,
           );
-          ref.read(cartControllerProvider.notifier).addItem(
-            product,
-            customPrice: unitPrice,
+          _addItemWithUnit(
+            product: product,
+            unitId: checkUnit.id,
+            unitName: checkUnit.unitName,
+            quantityInBase: checkUnit.quantityInBase,
+            unitPrice: unitPrice,
             forceNewEntry: unitStacking.forceNewEntry,
             mergeWeight: unitStacking.mergeWeight,
           );
-          final cartItems = ref.read(cartControllerProvider).items;
-          if (cartItems.isNotEmpty) {
-            final idx = cartItems.indexWhere((i) => i.productId == product!.id);
-            if (idx != -1) {
-              ref.read(cartControllerProvider.notifier).updateItemUnit(
-                idx,
-                unitId: checkUnit.id,
-                unitName: checkUnit.unitName,
-                quantityInBase: checkUnit.quantityInBase,
-                unitSalePrice: unitPrice,
-              );
-            }
-          }
           state = state.copyWith(searchResults: [], clearError: true);
           _playSuccessBeep();
           debugPrint('[BarcodeSearch] ✓ Found Unit (trimmed zeros): ${product.name}');
@@ -374,25 +421,15 @@ class PosSearchController extends Notifier<PosSearchState> {
       );
       if (unitRecord != null) {
         final unitPrice = unitRecord.salePrice > 0 ? unitRecord.salePrice : product.salePrice;
-        ref.read(cartControllerProvider.notifier).addItem(
-          product,
-          customPrice: unitPrice,
+        _addItemWithUnit(
+          product: product,
+          unitId: unitRecord.id,
+          unitName: unitRecord.unitName,
+          quantityInBase: unitRecord.quantityInBase,
+          unitPrice: unitPrice,
           forceNewEntry: productStacking.forceNewEntry,
           mergeWeight: productStacking.mergeWeight,
         );
-        final cartItems = ref.read(cartControllerProvider).items;
-        if (cartItems.isNotEmpty) {
-          final idx = cartItems.indexWhere((i) => i.productId == product!.id);
-          if (idx != -1) {
-            ref.read(cartControllerProvider.notifier).updateItemUnit(
-              idx,
-              unitId: unitRecord.id,
-              unitName: unitRecord.unitName,
-              quantityInBase: unitRecord.quantityInBase,
-              unitSalePrice: unitPrice,
-            );
-          }
-        }
       } else {
         ref.read(cartControllerProvider.notifier).addItem(
               product,

@@ -118,6 +118,7 @@ class HoldOrderUseCase {
             cartItems.add(
               CartItemEntity(
                 productId: product.id,
+                categoryId: product.categoryId,
                 productName: product.name,
                 productCode: product.code,
                 barcode: product.barcode,
@@ -128,6 +129,13 @@ class HoldOrderUseCase {
                 itemNote: meta['itemNote'] as String?,
                 note: meta['note'] as String?,
                 modifiers: meta['modifiers'] as List<SelectedModifier>,
+                // الطلباتُ المعلَّقة قبل هذا التغيير ما فيهاش المفاتيح دي،
+                // فتقرأ `null` وترجع للافتراض — نفسُ سلوكها القديم بالضبط.
+                discountPercent: (meta['discountPercent'] as double?) ?? 0,
+                taxRate: (meta['taxRate'] as double?) ?? 0,
+                selectedUnitId: meta['unitId'] as int?,
+                selectedUnitName: meta['unitName'] as String?,
+                quantityInBase: (meta['quantityInBase'] as double?) ?? 1.0,
               ),
             );
           }
@@ -204,12 +212,30 @@ final holdOrderUseCaseProvider = Provider<HoldOrderUseCase>((ref) {
 /// Serialize modifiers + itemNote into a JSON string for storage in held order note field
 String? _serializeCartItemMeta(CartItemEntity item) {
   final hasNote = item.note != null && item.note!.isNotEmpty;
+  // ⚠️ الحمولةُ كانت تحفظ productId/quantity/unitPrice/customPrice فقط، فترجع
+  // كرتونةٌ (×١٢) بخصم ١٠٪ «قطعةً واحدة بلا خصم»: العميل يدفع ٥٠ بدل ٤٥،
+  // ويخرج ١٢ صنفاً بينما المخزون ينزل **واحداً**. مقيس.
+  //
+  // فالحقولُ المالية تُرحَّل حتى لو ما فيش ملاحظاتٌ ولا إضافات — وإلا تسلسل
+  // السطرُ `null` وضاع خصمُه وتحويلُ وحدته معاً.
+  final hasMoneyMeta = item.discountPercent != 0 ||
+      item.taxRate != 0 ||
+      item.selectedUnitId != null ||
+      item.quantityInBase != 1;
   if (item.modifiers.isEmpty &&
       (item.itemNote == null || item.itemNote!.isEmpty) &&
-      !hasNote) {
+      !hasNote &&
+      !hasMoneyMeta) {
     return null;
   }
   final data = <String, dynamic>{};
+  // JSON حرٌّ فلا هجرةَ ولا كسرَ للطلبات المعلَّقة القديمة: المفتاحُ الغائب
+  // يُقرأ `null` ⇒ نفسُ السلوك السابق بالضبط.
+  if (item.discountPercent != 0) data['discountPercent'] = item.discountPercent;
+  if (item.taxRate != 0) data['taxRate'] = item.taxRate;
+  if (item.selectedUnitId != null) data['unitId'] = item.selectedUnitId;
+  if (item.selectedUnitName != null) data['unitName'] = item.selectedUnitName;
+  if (item.quantityInBase != 1) data['quantityInBase'] = item.quantityInBase;
   if (item.itemNote != null && item.itemNote!.isNotEmpty) {
     data['itemNote'] = item.itemNote;
   }
@@ -240,6 +266,11 @@ Map<String, dynamic> _deserializeCartItemMeta(String? note) {
     'itemNote': null,
     'note': null,
     'modifiers': <SelectedModifier>[],
+    'discountPercent': null,
+    'taxRate': null,
+    'unitId': null,
+    'unitName': null,
+    'quantityInBase': null,
   };
   if (note == null || note.isEmpty) return result;
 
@@ -248,6 +279,11 @@ Map<String, dynamic> _deserializeCartItemMeta(String? note) {
     result['itemNote'] = data['itemNote'] as String?;
     // غايب في الطلبات المعلّقة القديمة ⇒ null ⇒ نفس السلوك القديم بالظبط.
     result['note'] = data['note'] as String?;
+    result['discountPercent'] = (data['discountPercent'] as num?)?.toDouble();
+    result['taxRate'] = (data['taxRate'] as num?)?.toDouble();
+    result['unitId'] = data['unitId'] as int?;
+    result['unitName'] = data['unitName'] as String?;
+    result['quantityInBase'] = (data['quantityInBase'] as num?)?.toDouble();
     if (data['modifiers'] != null) {
       result['modifiers'] = (data['modifiers'] as List).map<SelectedModifier>((m) {
         final map = m as Map<String, dynamic>;

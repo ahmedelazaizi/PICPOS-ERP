@@ -19,14 +19,22 @@ class CheckoutState {
     this.lastInvoiceId,
   });
 
+  /// `error ?? this.error` معناه «مرِّر null = ما تغيّرش»، فـ`clearError()`
+  /// كان **عمليةً فاضية** والرسالةُ القديمة تفضل ملزوقة. والأثرُ في PicPos أن
+  /// شاشةَ الدفع تعرض `checkoutController.error ?? 'فشل حفظ الفاتورة'`، فأيُّ
+  /// فشلٍ لاحقٍ بلا رسالةٍ خاصة (كرفض حارس إعادة الدخول) يطلع برسالةِ بيعةٍ
+  /// **قديمةٍ خالص** — والكاشير يتصرّف على سببٍ غلط.
+  ///
+  /// `clearError` صريحةٌ لأن `null` وحدها لا تفرّق بين «امسح» و«اترك كما هي».
   CheckoutState copyWith({
     bool? isProcessing,
     String? error,
+    bool clearError = false,
     int? lastInvoiceId,
   }) {
     return CheckoutState(
       isProcessing: isProcessing ?? this.isProcessing,
-      error: error ?? this.error,
+      error: clearError ? null : (error ?? this.error),
       lastInvoiceId: lastInvoiceId ?? this.lastInvoiceId,
     );
   }
@@ -40,7 +48,7 @@ class CheckoutController extends Notifier<CheckoutState> {
 
   void clearError() {
     if (state.error != null) {
-      state = state.copyWith(error: null);
+      state = state.copyWith(clearError: true);
     }
   }
 
@@ -55,7 +63,7 @@ class CheckoutController extends Notifier<CheckoutState> {
     int? customerId,
   }) async {
     if (state.isProcessing) return false;
-    state = state.copyWith(isProcessing: true, error: null);
+    state = state.copyWith(isProcessing: true, clearError: true);
 
     try {
       final cartState = ref.read(cartControllerProvider);
@@ -294,7 +302,7 @@ class CheckoutController extends Notifier<CheckoutState> {
   }
 
   Future<bool> saveAsQuotation() async {
-    state = state.copyWith(isProcessing: true, error: null);
+    state = state.copyWith(isProcessing: true, clearError: true);
 
     final cartState = ref.read(cartControllerProvider);
     if (cartState.items.isEmpty) {

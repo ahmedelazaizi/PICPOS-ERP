@@ -287,8 +287,19 @@ class ScaleBarcodeHandler {
 
       if (isPriceMode) {
         final totalPrice = value / divider;
-        quantity =
-            totalPrice / (product.salePrice > 0 ? product.salePrice : 1.0);
+        // القسمةُ على `1.0` كانت تحرس من القسمة على صفر لكنها **تحوّل المبلغ
+        // إلى كمية**: ملصقٌ بـ١٢٫٣٥ لصنفٍ سعرُه غير مضبوط كان يدخل السلة
+        // ١٢٫٣٥ كجم بسعر صفر ⇒ بضاعةٌ تخرج ببلاش وخصمُ مخزونٍ وهميٍّ بحجم
+        // المبلغ. الصحُّ رفضُ التحليل ليرى الكاشير رسالةً لا سطراً صامتاً.
+        if (product.salePrice <= 0) {
+          debugPrint(
+            '[ScaleBarcode] ✗ PRICE mode rejected: "${product.name}" '
+            '(code=${product.code}) has no sale price — cannot derive weight '
+            'from a price label.',
+          );
+          return null;
+        }
+        quantity = totalPrice / product.salePrice;
         displayText = 'سعر ميزان: ${totalPrice.toStringAsFixed(AppConstants.decimalPlaces)}';
         debugPrint(
           '[ScaleBarcode] ✓ PRICE mode: totalPrice=$totalPrice qty=$quantity',
