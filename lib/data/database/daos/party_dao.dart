@@ -1685,9 +1685,11 @@ extension PartyDao on AppDatabase {
           .join(' OR ');
       scopeClause = ' AND (p.is_global = 1 OR $ors)';
     }
-    // Drift stores DateTime as Unix milliseconds (INTEGER). All date comparisons
-    // must use julianday(col / 1000, 'unixepoch') — NOT julianday(col) directly.
-    final asOfMs = asOfDate.millisecondsSinceEpoch;
+    // Drift stores DateTime as Unix **seconds** (BIGINT) — see [dateVar] in
+    // database.dart. So the comparison is `julianday(col, 'unixepoch')`.
+    // القسمةُ على ألفٍ هنا كانت تقع **مرّتين** (drift + SQL) فينهار كلُّ تاريخٍ
+    // إلى ١٩٧٠ ويصير عمرُه ~٢٠٬٠٠٠ يوم ⇒ كلُّ فاتورةٍ غير مسدَّدة في خانة ٩٠+.
+    final asOf = dateVar(asOfDate);
 
     if (customersOnly) {
       // AR aging — join sales_invoices on customer_id
@@ -1696,13 +1698,13 @@ extension PartyDao on AppDatabase {
           p.id,
           p.name,
           p.balance,
-          COALESCE(SUM(CASE WHEN julianday(? / 1000, 'unixepoch') - julianday(si.invoice_date / 1000, 'unixepoch') <= 30
+          COALESCE(SUM(CASE WHEN julianday(?, 'unixepoch') - julianday(si.invoice_date, 'unixepoch') <= 30
             THEN MAX(si.total - si.paid, 0) ELSE 0 END), 0) AS bucket_0_30,
-          COALESCE(SUM(CASE WHEN julianday(? / 1000, 'unixepoch') - julianday(si.invoice_date / 1000, 'unixepoch') BETWEEN 31 AND 60
+          COALESCE(SUM(CASE WHEN julianday(?, 'unixepoch') - julianday(si.invoice_date, 'unixepoch') BETWEEN 31 AND 60
             THEN MAX(si.total - si.paid, 0) ELSE 0 END), 0) AS bucket_31_60,
-          COALESCE(SUM(CASE WHEN julianday(? / 1000, 'unixepoch') - julianday(si.invoice_date / 1000, 'unixepoch') BETWEEN 61 AND 90
+          COALESCE(SUM(CASE WHEN julianday(?, 'unixepoch') - julianday(si.invoice_date, 'unixepoch') BETWEEN 61 AND 90
             THEN MAX(si.total - si.paid, 0) ELSE 0 END), 0) AS bucket_61_90,
-          COALESCE(SUM(CASE WHEN julianday(? / 1000, 'unixepoch') - julianday(si.invoice_date / 1000, 'unixepoch') > 90
+          COALESCE(SUM(CASE WHEN julianday(?, 'unixepoch') - julianday(si.invoice_date, 'unixepoch') > 90
             THEN MAX(si.total - si.paid, 0) ELSE 0 END), 0) AS bucket_90_plus
         FROM parties p
         LEFT JOIN sales_invoices si
@@ -1718,8 +1720,7 @@ extension PartyDao on AppDatabase {
         GROUP BY p.id
         ORDER BY p.balance DESC
       ''', variables: [
-        Variable(asOfMs), Variable(asOfMs), Variable(asOfMs), Variable(asOfMs),
-        Variable(asOfMs),
+        asOf, asOf, asOf, asOf, asOf,
       ], readsFrom: {parties, salesInvoices}).get();
 
       return rows.map((r) => ArAgingRow(
@@ -1738,13 +1739,13 @@ extension PartyDao on AppDatabase {
           p.id,
           p.name,
           p.balance,
-          COALESCE(SUM(CASE WHEN julianday(? / 1000, 'unixepoch') - julianday(pi.invoice_date / 1000, 'unixepoch') <= 30
+          COALESCE(SUM(CASE WHEN julianday(?, 'unixepoch') - julianday(pi.invoice_date, 'unixepoch') <= 30
             THEN MAX(pi.total - pi.paid, 0) ELSE 0 END), 0) AS bucket_0_30,
-          COALESCE(SUM(CASE WHEN julianday(? / 1000, 'unixepoch') - julianday(pi.invoice_date / 1000, 'unixepoch') BETWEEN 31 AND 60
+          COALESCE(SUM(CASE WHEN julianday(?, 'unixepoch') - julianday(pi.invoice_date, 'unixepoch') BETWEEN 31 AND 60
             THEN MAX(pi.total - pi.paid, 0) ELSE 0 END), 0) AS bucket_31_60,
-          COALESCE(SUM(CASE WHEN julianday(? / 1000, 'unixepoch') - julianday(pi.invoice_date / 1000, 'unixepoch') BETWEEN 61 AND 90
+          COALESCE(SUM(CASE WHEN julianday(?, 'unixepoch') - julianday(pi.invoice_date, 'unixepoch') BETWEEN 61 AND 90
             THEN MAX(pi.total - pi.paid, 0) ELSE 0 END), 0) AS bucket_61_90,
-          COALESCE(SUM(CASE WHEN julianday(? / 1000, 'unixepoch') - julianday(pi.invoice_date / 1000, 'unixepoch') > 90
+          COALESCE(SUM(CASE WHEN julianday(?, 'unixepoch') - julianday(pi.invoice_date, 'unixepoch') > 90
             THEN MAX(pi.total - pi.paid, 0) ELSE 0 END), 0) AS bucket_90_plus
         FROM parties p
         LEFT JOIN purchase_invoices pi
@@ -1759,8 +1760,7 @@ extension PartyDao on AppDatabase {
         GROUP BY p.id
         ORDER BY p.balance DESC
       ''', variables: [
-        Variable(asOfMs), Variable(asOfMs), Variable(asOfMs), Variable(asOfMs),
-        Variable(asOfMs),
+        asOf, asOf, asOf, asOf, asOf,
       ], readsFrom: {parties, purchaseInvoices}).get();
 
       return rows.map((r) => ArAgingRow(

@@ -1498,8 +1498,11 @@ extension AccountingReportsDao on AppDatabase {
   }) async {
     final start = DateTime(year, month, 1);
     final end = DateTime(year, month + 1, 1);
-    final startMs = start.millisecondsSinceEpoch;
-    final endMs = end.millisecondsSinceEpoch;
+    // أعمدةُ DateTime مخزَّنةٌ بالثواني (‏[dateVar]) — الملّي كان يخرج المدى
+    // كلَّه عن نطاق البيانات فلا يقع فيه صفٌّ واحد. وحين يصير الطرفان صفراً
+    // يصير الفرقُ صفراً فتُرسَم الشاشةُ خضراء «مطابق» — براءةٌ كاذبة.
+    final startVar = dateVar(start);
+    final endVar = dateVar(end);
 
     // 1. Invoice-level tax totals
     final salesRow = await customSelect('''
@@ -1508,7 +1511,7 @@ extension AccountingReportsDao on AppDatabase {
       WHERE invoice_date >= ? AND invoice_date < ?
         AND is_deleted = 0
         AND status NOT IN ('returned', 'cancelled')
-    ''', variables: [Variable(startMs), Variable(endMs)],
+    ''', variables: [startVar, endVar],
         readsFrom: {salesInvoices}).getSingle();
 
     final purchaseRow = await customSelect('''
@@ -1516,7 +1519,7 @@ extension AccountingReportsDao on AppDatabase {
       FROM purchase_invoices
       WHERE invoice_date >= ? AND invoice_date < ?
         AND is_deleted = 0
-    ''', variables: [Variable(startMs), Variable(endMs)],
+    ''', variables: [startVar, endVar],
         readsFrom: {purchaseInvoices}).getSingle();
 
     final invoiceOutputVat = (salesRow.data['total_tax'] as num).toDouble();
@@ -1547,7 +1550,7 @@ extension AccountingReportsDao on AppDatabase {
           WHERE jel.account_id = ?
             AND je.entry_date >= ? AND je.entry_date < ?
             AND je.is_deleted = 0 AND je.is_posted = 1
-        ''', variables: [Variable(outputAcc.id), Variable(startMs), Variable(endMs)],
+        ''', variables: [Variable(outputAcc.id), startVar, endVar],
             readsFrom: {journalEntryLines, journalEntries}).getSingle();
         glOutputVat = (rows.data['balance'] as num).toDouble();
       }
@@ -1560,7 +1563,7 @@ extension AccountingReportsDao on AppDatabase {
           WHERE jel.account_id = ?
             AND je.entry_date >= ? AND je.entry_date < ?
             AND je.is_deleted = 0 AND je.is_posted = 1
-        ''', variables: [Variable(inputAcc.id), Variable(startMs), Variable(endMs)],
+        ''', variables: [Variable(inputAcc.id), startVar, endVar],
             readsFrom: {journalEntryLines, journalEntries}).getSingle();
         glInputVat = (rows.data['balance'] as num).toDouble();
       }
