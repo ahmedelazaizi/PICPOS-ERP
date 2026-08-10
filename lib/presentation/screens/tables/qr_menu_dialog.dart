@@ -5,6 +5,7 @@ import '../../../data/database/database_barrel.dart';
 import '../../../services/network_service.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import '../../../services/generators/base_generator.dart';
 import 'package:printing/printing.dart' as printing_pkg;
 
 class QrMenuDialog extends StatelessWidget {
@@ -143,7 +144,7 @@ class QrMenuDialog extends StatelessWidget {
           ),
           ElevatedButton.icon(
             onPressed: () async {
-              final pdf = pw.Document();
+              final pdf = await BaseGenerator.newDocument();
               for (final table in tables) {
                 final tableUrl = '$menuUrl?table=${table.id}';
                 pdf.addPage(

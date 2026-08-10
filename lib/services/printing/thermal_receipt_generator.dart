@@ -112,7 +112,7 @@ class ThermalReceiptGenerator {
     String locale = 'ar',
   }) async {
     await _initFont();
-    final pdf = pw.Document();
+    final pdf = await BaseGenerator.newDocument();
     const thermalFormat = PdfPageFormat(
       80 * PdfPageFormat.mm,
       double.infinity,
@@ -237,7 +237,7 @@ class ThermalReceiptGenerator {
     IPrintersRepository? printersRepo,
   }) async {
     await _initFont();
-    final pdf = pw.Document();
+    final pdf = await BaseGenerator.newDocument();
 
     pdf.addPage(
       pw.Page(
@@ -1117,7 +1117,7 @@ class ThermalReceiptGenerator {
     IPrintersRepository? printersRepo,
   }) async {
     await _initFont();
-    final pdf = pw.Document();
+    final pdf = await BaseGenerator.newDocument();
     final now = DateTime.now();
     const thermalWidth = 80.0 * PdfPageFormat.mm;
     // marginRight is intentionally larger than marginLeft: Arabic labels start

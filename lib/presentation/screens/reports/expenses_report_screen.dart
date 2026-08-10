@@ -285,7 +285,7 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
 
   Future<void> _printPdf() async {
     final font = await BaseGenerator.initFont();
-    final pdf = pw.Document();
+    final pdf = await BaseGenerator.newDocument();
     fmtMoney(num v) => _currencyFormat.format(v.toDouble());
 
     pdf.addPage(

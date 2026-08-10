@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import '../generators/base_generator.dart' show BaseGenerator;
 import 'package:printing/printing.dart' as printing_pkg;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
@@ -143,7 +144,7 @@ class TemplatePdfRenderer {
     required TemplateInvoiceData invoiceData,
   }) async {
     final font = await _initFont();
-    final pdf = pw.Document();
+    final pdf = await BaseGenerator.newDocument();
     final template = templateData.template;
 
     // Paper dimensions (mm to points)

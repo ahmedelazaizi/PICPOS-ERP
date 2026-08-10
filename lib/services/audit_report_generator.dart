@@ -5,6 +5,7 @@
 
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'generators/base_generator.dart';
 import 'package:printing/printing.dart' as printing_pkg;
 import 'package:intl/intl.dart';
 
@@ -25,7 +26,7 @@ class AuditReportGenerator {
     final ttf = font;
     final ttfBold = fontBold;
 
-    final pdf = pw.Document();
+    final pdf = await BaseGenerator.newDocument();
 
     // Group entries by category
     final grouped = <String, List<AuditReportEntry>>{};

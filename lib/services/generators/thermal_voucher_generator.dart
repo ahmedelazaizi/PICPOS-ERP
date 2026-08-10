@@ -84,7 +84,7 @@ class ThermalVoucherGenerator {
     IPrintersRepository? printersRepo, // For printer resolution
   }) async {
     final arabicFont = await BaseGenerator.initFont();
-    final pdf = pw.Document();
+    final pdf = await BaseGenerator.newDocument();
 
     // 80mm thermal paper format
     const thermalFormat = PdfPageFormat(
@@ -356,7 +356,7 @@ class ThermalVoucherGenerator {
     IPrintersRepository? printersRepo,
   }) async {
     final arabicFont = await BaseGenerator.initFont();
-    final pdf = pw.Document();
+    final pdf = await BaseGenerator.newDocument();
 
     const thermalFormat = PdfPageFormat(
       80 * PdfPageFormat.mm,

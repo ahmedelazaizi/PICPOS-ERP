@@ -6,6 +6,7 @@
 import 'dart:convert';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import '../generators/base_generator.dart' show BaseGenerator;
 import 'package:flutter/foundation.dart';
 import 'package:printing/printing.dart' as printing_pkg;
 import '../../core/constants/app_constants.dart';
@@ -49,7 +50,7 @@ class TemplatePrintRenderer {
           )
         : PdfPageFormat.a4;
 
-    final doc = pw.Document();
+    final doc = await BaseGenerator.newDocument();
     final baseStyle = pw.TextStyle(font: _arabicFont, fontSize: 12);
 
     if (isThermal) {

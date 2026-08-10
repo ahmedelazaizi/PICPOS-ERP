@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'generators/base_generator.dart';
 import 'package:printing/printing.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
@@ -136,7 +137,7 @@ class TemplatedInvoiceService {
       '[TemplatedInvoice] Template: "${templateData.template.name}", elements: ${elements.length}, items: ${items.length}',
     );
 
-    final pdf = pw.Document();
+    final pdf = await BaseGenerator.newDocument();
     final remaining = total - paid;
 
     const mmToPoints = 2.8346;
@@ -1266,7 +1267,7 @@ class TemplatedInvoiceService {
     final labelsPerPage = labelsPerRow * labelsPerCol;
     final totalPages = (copies / labelsPerPage).ceil();
 
-    final pdf = pw.Document();
+    final pdf = await BaseGenerator.newDocument();
 
     for (int page = 0; page < totalPages; page++) {
       final labelsOnThisPage = (page == totalPages - 1)

@@ -87,7 +87,7 @@ class ReportPdfGenerator {
     String? printedBy,
   }) async {
     await _initFont();
-    final pdf = pw.Document();
+    final pdf = await BaseGenerator.newDocument();
     final remaining = total - paid;
 
     pdf.addPage(
@@ -248,7 +248,7 @@ class ReportPdfGenerator {
     bool isReturn = false,
   }) async {
     await _initFont();
-    final pdf = pw.Document();
+    final pdf = await BaseGenerator.newDocument();
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
@@ -311,7 +311,7 @@ class ReportPdfGenerator {
     DocumentCompanyHeader? company,
   }) async {
     await _initFont();
-    final pdf = pw.Document();
+    final pdf = await BaseGenerator.newDocument();
 
     // The registered company identity. `company` is the full record read from
     // settings; `companyName` stays for older callers that only had a name.
@@ -438,7 +438,7 @@ class ReportPdfGenerator {
     Map<int, String>? categoryMap,
   }) async {
     await _initFont();
-    final pdf = pw.Document();
+    final pdf = await BaseGenerator.newDocument();
     final now = DateTime.now();
     double totalValue = 0;
     int lowStockCount = 0;
@@ -475,7 +475,7 @@ class ReportPdfGenerator {
     String? companyName,
   }) async {
     await _initFont();
-    final pdf = pw.Document();
+    final pdf = await BaseGenerator.newDocument();
     final now = DateTime.now();
 
     pdf.addPage(
@@ -517,7 +517,7 @@ class ReportPdfGenerator {
     String? printedBy,
   }) async {
     await _initFont();
-    final pdf = pw.Document();
+    final pdf = await BaseGenerator.newDocument();
     final now = DateTime.now();
 
     pdf.addPage(
@@ -551,7 +551,7 @@ class ReportPdfGenerator {
     String? companyName,
   }) async {
     await _initFont();
-    final pdf = pw.Document();
+    final pdf = await BaseGenerator.newDocument();
     final now = DateTime.now();
 
     pdf.addPage(
@@ -629,7 +629,7 @@ class ReportPdfGenerator {
     String? companyName,
   }) async {
     await _initFont();
-    final pdf = pw.Document();
+    final pdf = await BaseGenerator.newDocument();
     final now = DateTime.now();
 
     pdf.addPage(
@@ -844,7 +844,7 @@ class ReportPdfGenerator {
     String? companyName,
   }) async {
     await _initFont();
-    final pdf = pw.Document();
+    final pdf = await BaseGenerator.newDocument();
     final now = DateTime.now();
     final title = isCategory
         ? 'تقرير المبيعات حسب التصنيف'
@@ -943,7 +943,7 @@ class ReportPdfGenerator {
     String? companyName,
   }) async {
     await _initFont();
-    final pdf = pw.Document();
+    final pdf = await BaseGenerator.newDocument();
     final now = DateTime.now();
 
     pdf.addPage(
@@ -982,7 +982,7 @@ class ReportPdfGenerator {
     String? employeeName,
   }) async {
     await _initFont();
-    final pdf = pw.Document();
+    final pdf = await BaseGenerator.newDocument();
     final now = DateTime.now();
 
     pdf.addPage(
@@ -1062,7 +1062,7 @@ class ReportPdfGenerator {
     int copies = 1,
   }) async {
     await _initFont();
-    final pdf = pw.Document();
+    final pdf = await BaseGenerator.newDocument();
     const labelWidth = 50.0 * PdfPageFormat.mm;
     const labelHeight = 25.0 * PdfPageFormat.mm;
     const labelFormat = PdfPageFormat(
@@ -1435,7 +1435,7 @@ class ReportPdfGenerator {
     String? printedBy,
   }) async {
     await _initFont();
-    final pdf = pw.Document();
+    final pdf = await BaseGenerator.newDocument();
     final now = DateTime.now();
 
     pdf.addPage(
@@ -1534,7 +1534,7 @@ class ReportPdfGenerator {
     int? branchColorHex,
   }) async {
     await _initFont();
-    final pdf = pw.Document();
+    final pdf = await BaseGenerator.newDocument();
     final now = DateTime.now();
 
     double totalDebit = 0, totalCredit = 0;
@@ -2064,7 +2064,7 @@ class ReportPdfGenerator {
     String? printedBy,
   }) async {
     await _initFont();
-    final pdf = pw.Document();
+    final pdf = await BaseGenerator.newDocument();
     final now = DateTime.now();
     final isReceived = direction == 'received';
     final titleAr = isReceived ? 'سند قبض شيك' : 'سند صرف شيك';

@@ -23,7 +23,7 @@ class ReportGenerator extends BaseGenerator {
     Map<int, String>? categoryMap,
   }) async {
     final arabicFont = await BaseGenerator.initFont();
-    final pdf = pw.Document();
+    final pdf = await BaseGenerator.newDocument();
     final now = DateTime.now();
 
     // Calculate totals
@@ -94,7 +94,7 @@ class ReportGenerator extends BaseGenerator {
     String? companyName,
   }) async {
     final arabicFont = await BaseGenerator.initFont();
-    final pdf = pw.Document();
+    final pdf = await BaseGenerator.newDocument();
     final now = DateTime.now();
 
     pdf.addPage(
@@ -144,7 +144,7 @@ class ReportGenerator extends BaseGenerator {
     String? companyName,
   }) async {
     final arabicFont = await BaseGenerator.initFont();
-    final pdf = pw.Document();
+    final pdf = await BaseGenerator.newDocument();
     final now = DateTime.now();
 
     pdf.addPage(
@@ -205,7 +205,7 @@ class ReportGenerator extends BaseGenerator {
     String? companyName,
   }) async {
     final arabicFont = await BaseGenerator.initFont();
-    final pdf = pw.Document();
+    final pdf = await BaseGenerator.newDocument();
     final now = DateTime.now();
 
     pdf.addPage(
@@ -265,7 +265,7 @@ class ReportGenerator extends BaseGenerator {
     String? companyName,
   }) async {
     final arabicFont = await BaseGenerator.initFont();
-    final pdf = pw.Document();
+    final pdf = await BaseGenerator.newDocument();
     final now = DateTime.now();
 
     pdf.addPage(

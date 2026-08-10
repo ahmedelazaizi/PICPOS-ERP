@@ -27,7 +27,7 @@ class PdfInvoiceGenerator extends BaseGenerator {
     String? notes, // ADDED: pass notes through wrapper
   }) async {
     final arabicFont = await BaseGenerator.initFont();
-    final pdf = pw.Document();
+    final pdf = await BaseGenerator.newDocument();
     final remaining = total - paid;
 
     pdf.addPage(
@@ -124,7 +124,7 @@ class PdfInvoiceGenerator extends BaseGenerator {
     String? companyName,
   }) async {
     final arabicFont = await BaseGenerator.initFont();
-    final pdf = pw.Document();
+    final pdf = await BaseGenerator.newDocument();
 
     pdf.addPage(
       pw.Page(
@@ -225,7 +225,7 @@ class PdfInvoiceGenerator extends BaseGenerator {
     String? companyName,
   }) async {
     final arabicFont = await BaseGenerator.initFont();
-    final pdf = pw.Document();
+    final pdf = await BaseGenerator.newDocument();
 
     pdf.addPage(
       pw.MultiPage(

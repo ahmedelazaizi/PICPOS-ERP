@@ -15,7 +15,7 @@ class PdfComputeHelper {
   ///
   /// Usage:
   /// ```dart
-  /// final pdf = pw.Document();
+  /// final pdf = await BaseGenerator.newDocument();
   /// pdf.addPage(...);
   /// await PdfComputeHelper.layoutPdf(pdf);
   /// ```

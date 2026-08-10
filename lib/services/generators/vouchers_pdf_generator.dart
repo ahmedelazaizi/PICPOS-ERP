@@ -33,7 +33,7 @@ class VouchersPdfGenerator extends BaseGenerator {
     String? companyLogo,
   }) async {
     final arabicFont = await BaseGenerator.initFont();
-    final pdf = pw.Document();
+    final pdf = await BaseGenerator.newDocument();
     
     final isReceipt = voucherType == 'receipt';
     final voucherTitle = isReceipt ? 'سند قبض' : 'سند صرف';
