@@ -679,6 +679,32 @@ extension DatabaseStartup on AppDatabase {
       debugPrint('[Startup] repairFailedDeliveryAutoposts: $e');
     }
 
+    // Step 6b: والمسحُ الأعمّ — كلُّ فاتورةِ بيعٍ أو شراءٍ بلا قيدٍ آليّ،
+    // لا المُسلَّمةَ وحدَها.
+    //
+    // الإصلاحُ أعلاه يغطّي مسارَ التسليم فقط، بينما الفاتورةُ قد تفقد
+    // قيدَها لأسبابٍ أخرى (انقطاعُ تيّارٍ أثناء الحفظ، فشلُ ترحيلٍ صامت،
+    // استيرادٌ قديم). و`repairAllMissingInvoiceJEs` كان موجوداً ومختبَراً
+    // لكنّ **لا شيءَ يناديه** إلا زرٌّ في حوار إعدادات المشرف — فمن لا
+    // يعرف الزرَّ تبقى دفاترُه ناقصةً بلا أن ينطق شيء، والميزانيةُ لا
+    // تتزن ولا سببَ ظاهر.
+    //
+    // آمنٌ كلَّ إقلاع: العمليّةُ **متعادلة** (`hasAutoPostEntry` يقصّر
+    // الطريقَ لأيّ فاتورةٍ لها قيدٌ فعلاً)، وهي في الطورِ المؤجَّل بعد
+    // ظهور الواجهة فلا تؤخّر الإقلاع.
+    try {
+      final c = await repairAllMissingInvoiceJEs();
+      final repaired =
+          (c['salesRepaired'] ?? 0) + (c['purchasesRepaired'] ?? 0);
+      final failed = (c['salesFailed'] ?? 0) + (c['purchasesFailed'] ?? 0);
+      if (repaired > 0 || failed > 0) {
+        debugPrint('[Startup] ✅ Invoice-JE repair — أُصلح $repaired · '
+            'فشل $failed · مُسح ${c['totalScanned'] ?? 0}');
+      }
+    } catch (e) {
+      debugPrint('[Startup] repairAllMissingInvoiceJEs: $e');
+    }
+
     // Step 7: Spec 136 ISS-2 — backfill deterministic globalIds on seeded
     // master-data defaults that still carry a NULL globalId (pre-globalId
     // upgraded installs, e.g. fiscal_years created before createFiscalYear

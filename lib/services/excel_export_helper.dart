@@ -10,6 +10,7 @@ import 'package:excel/excel.dart' as xl;
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
+import '../core/constants/app_constants.dart';
 import '../core/theme/app_colors.dart';
 
 /// Standardized Excel export utility for consistent exports across all screens.
@@ -24,6 +25,30 @@ import '../core/theme/app_colors.dart';
 /// );
 /// ```
 class ExcelExportHelper {
+  /// حوّل خليةً واحدة لقيمةِ Excel.
+  ///
+  /// الأرقامُ **تُدوَّر لخانات العملة** (`AppConstants.decimalPlaces`) قبل
+  /// الكتابة. كان يُكتب `cell.toDouble()` خاماً، فالشاشةُ تعرض 12.346
+  /// والملفُّ يحمل 12.345678900000001 — ومجموعُ عمودٍ في Excel يفترق عن
+  /// مجموع الشاشة في الكسور، فيقول المراجعُ إن التقريرَ لا يطابق النظام.
+  /// والعطبُ صامت: الملفُّ يُفتح ويبدو سليماً، والفرقُ يظهر عند الجمع.
+  ///
+  /// معزولةٌ عن [export] كي تُقاس بلا `BuildContext` ولا نظامِ ملفات.
+  static xl.CellValue toCellValue(dynamic cell) {
+    if (cell == null) return xl.TextCellValue('');
+    if (cell is num) {
+      return xl.DoubleCellValue(
+        double.parse(cell.toDouble().toStringAsFixed(
+              AppConstants.decimalPlaces,
+            )),
+      );
+    }
+    if (cell is DateTime) {
+      return xl.TextCellValue(DateFormat('yyyy/MM/dd').format(cell));
+    }
+    return xl.TextCellValue(cell.toString());
+  }
+
   /// Export data to Excel with standardized formatting
   static Future<void> export({
     required BuildContext context,
@@ -60,12 +85,7 @@ class ExcelExportHelper {
 
       // Data rows
       for (final row in rows) {
-        s.appendRow(row.map((cell) {
-          if (cell == null) return xl.TextCellValue('');
-          if (cell is num) return xl.DoubleCellValue(cell.toDouble());
-          if (cell is DateTime) return xl.TextCellValue(DateFormat('yyyy/MM/dd').format(cell));
-          return xl.TextCellValue(cell.toString());
-        }).toList());
+        s.appendRow(row.map(toCellValue).toList());
       }
 
       // Save file
