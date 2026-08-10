@@ -22,6 +22,41 @@ import '../../../core/permissions/permission_codes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../permission_guard.dart';
 
+/// «عطلات العمل» — `hr_manage`.
+///
+/// مدخلُ إعداداتٍ لا شاشةُ تشغيل: عليه يقوم مقامُ `workingDaysInMonth` الذي
+/// يُشتقّ منه أجرُ الساعة والإضافيُّ المحسوب. الحارسُ `hrManage` لا
+/// `settingsBackup` — إعدادُ موظفين لا إعدادُ محاسبة.
+///
+/// ── ليه هنا مش جوّه الشاشتين ──────────────────────────────────────────────
+/// اتكتب أول مرة **مكرَّراً بالحرف** في `settings_screen.dart` و
+/// `settings_picpos_screen.dart`, وده بالظبط اللي رأس الملف ده بيحذّر منه.
+///
+/// وأخطر من التكرار: كان الحارس ملفوف حوالين **الكارت** كله
+/// (`Card` جوّاه `Column`), و`extractChildAction` مابتعرفش تطلّع فعل من
+/// `Card` ولا بتنزل جوّه `Column` متعدد الأبناء ⇒ بترجّع `null`. يعني مستخدم
+/// من غير `hr_manage` كان يضغط، المدير يكتب كلمة السر، الديالوج يقفل، وما
+/// يحصلش حاجة — نفس الباج الموثَّق في `permission_guard.dart:291`. الحراسة
+/// على `ListTile` مع `onGranted` صريح بتقفل الاتنين.
+@visibleForTesting
+Widget buildWorkHolidaysTileGuarded({required VoidCallback onOpen}) {
+  return PermissionGuard(
+    permission: PermissionCodes.hrManage,
+    allowManagerOverride: true,
+    actionName: 'عطلات العمل',
+    onGranted: onOpen,
+    child: ListTile(
+      leading: const Icon(PhosphorIconsBold.calendarCheck,
+          color: AppColors.primary),
+      title: const Text('عطلات العمل'),
+      subtitle: const Text(
+          'العطل الأسبوعية والأعياد — أساسُ حساب أيام العمل وأجر الساعة والإضافي'),
+      trailing: const Icon(PhosphorIconsBold.caretLeft),
+      onTap: onOpen,
+    ),
+  );
+}
+
 /// «معلومات الشركة» — `settings_company`.
 ///
 /// كان التايل الوحيد المكشوف وسط تايلات مبوّبة (الطابعات/المستخدمين/الأدوار)

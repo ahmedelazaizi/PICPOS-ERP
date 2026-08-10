@@ -704,25 +704,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     const SizedBox(height: 16),
 
                     // ═══ 5.1 شؤون الموظفين ═══
-                    // عطلاتُ العمل مدخلُ إعداداتٍ لا شاشةُ تشغيل: عليها يقوم
-                    // مقامُ `workingDaysInMonth` الذي يُشتقّ منه أجرُ الساعة
-                    // والإضافيُّ المحسوب. الحارسُ `hrManage` لا `settingsBackup`
-                    // لأنها إعدادُ موظفين لا إعدادُ محاسبة.
-                    PermissionGuard(
-                      permission: PermissionCodes.hrManage,
-                      allowManagerOverride: true,
-                      actionName: 'عطلات العمل',
-                      child: _buildSettingsCard(
+                    // `features.hrEnabled` **شرطٌ لا تجميل**: بروفايل `lite`
+                    // (‏وهو افتراضيُّ PicPos — `Brand.defaultProfileCode`)
+                    // يضبطه `false`، فوحدةُ الموارد البشرية غيرُ موجودةٍ أصلاً
+                    // هناك. بغير هذا الشرط يظهر مدخلُ عطلاتِ عملٍ لمنتجٍ بلا
+                    // موظفين — نفسُ نمطِ التبويب في `:523` و`:653`.
+                    if (features.hrEnabled) ...[
+                      _buildSettingsCard(
                         title: 'شؤون الموظفين',
                         children: [
-                          ListTile(
-                            leading: const Icon(PhosphorIconsBold.calendarCheck,
-                                color: AppColors.primary),
-                            title: const Text('عطلات العمل'),
-                            subtitle: const Text(
-                                'العطل الأسبوعية والأعياد — أساسُ حساب أيام العمل وأجر الساعة والإضافي'),
-                            trailing: const Icon(PhosphorIconsBold.caretLeft),
-                            onTap: () => Navigator.push(
+                          buildWorkHolidaysTileGuarded(
+                            onOpen: () => Navigator.push(
                               context,
                               MaterialPageRoute(
                                   builder: (_) => const WorkHolidaysScreen()),
@@ -730,8 +722,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           ),
                         ],
                       ),
-                    ),
-                    const SizedBox(height: 16),
+                      const SizedBox(height: 16),
+                    ],
 
                     // ═══ 6. إدارة البيانات ═══
                     PermissionGuard(

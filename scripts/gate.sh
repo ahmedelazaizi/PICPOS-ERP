@@ -142,7 +142,7 @@ run_suite "unit + data + structural + services" 2940 \
   flutter test test/unit test/data test/structural test/services --concurrency="$LOCAL_CONCURRENCY"
 
 # الواجهات والنطاقُ والنواة — كانت **كلُّها** خارج البوابة حتى 2026-08-09.
-run_suite "widget + core + domain + presentation + security + static" 650 \
+run_suite "widget + core + domain + presentation + security + static" 651 \
   flutter test test/core test/domain test/presentation test/security \
               test/static test/widget test/widget_test.dart --concurrency="$LOCAL_CONCURRENCY"
 
