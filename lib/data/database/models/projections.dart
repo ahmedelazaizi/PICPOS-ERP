@@ -184,6 +184,77 @@ class PaymentMethodStatRow {
   });
 }
 
+/// H14 · قناةُ الدفع **كما تُعرض**، لا كما تُخزَّن.
+///
+/// `getPaymentMethodStats` يجمع بـ`GROUP BY payment_method` على القيمة الخام،
+/// و`sales_invoices.payment_method` يحمل قيماً متعددةً تقع على قناةٍ واحدة:
+/// `card` · `transfer` · `bank` كلُّها «بطاقة/تحويل»، و`multiple` · `mixed`
+/// كلاهما «متعدد».
+///
+/// فكانت الشاشةُ ترسم **شريحةً لكلّ قيمةٍ خام** وتسمّيها بنفس الاسم: فطيرةٌ
+/// فيها «بطاقة/تحويل» ثلاثَ مرّاتٍ بثلاث نسبٍ، ولا يستطيع القارئ جمعَها
+/// بعينه. الطيُّ هنا كي يبقى العرضُ والتجميعُ على تعريفٍ واحد.
+enum PaymentChannel { cash, card, click, credit, multiple, other }
+
+/// يطوي القيمةَ الخام إلى قناتها. المجهولُ يقع على [PaymentChannel.other]
+/// بدل أن يُسقَط — إخفاءُ مبلغٍ من الفطيرة أسوأ من تسميته «أخرى».
+PaymentChannel paymentChannelOf(String rawMethod) {
+  switch (rawMethod.trim().toLowerCase()) {
+    case 'cash':
+      return PaymentChannel.cash;
+    case 'card':
+    case 'transfer':
+    case 'bank':
+    case 'visa':
+      return PaymentChannel.card;
+    case 'click':
+      return PaymentChannel.click;
+    case 'credit':
+      return PaymentChannel.credit;
+    case 'multiple':
+    case 'mixed':
+      return PaymentChannel.multiple;
+    default:
+      return PaymentChannel.other;
+  }
+}
+
+/// نتيجةُ الطيّ — صفٌّ واحدٌ لكلّ قناة، بترتيبٍ ثابتٍ حسب [PaymentChannel]
+/// كي لا تقفز الشرائحُ بين تحميلَين.
+class PaymentChannelStat {
+  final PaymentChannel channel;
+  final int count;
+  final double total;
+
+  const PaymentChannelStat({
+    required this.channel,
+    required this.count,
+    required this.total,
+  });
+}
+
+/// يطوي صفوفَ `getPaymentMethodStats` إلى صفٍّ واحدٍ لكلّ قناة.
+List<PaymentChannelStat> foldPaymentChannels(List<PaymentMethodStatRow> rows) {
+  final byChannel = <PaymentChannel, ({int count, double total})>{};
+  for (final r in rows) {
+    final ch = paymentChannelOf(r.method);
+    final prev = byChannel[ch];
+    byChannel[ch] = (
+      count: (prev?.count ?? 0) + r.count,
+      total: (prev?.total ?? 0) + r.total,
+    );
+  }
+  return [
+    for (final ch in PaymentChannel.values)
+      if (byChannel[ch] != null)
+        PaymentChannelStat(
+          channel: ch,
+          count: byChannel[ch]!.count,
+          total: byChannel[ch]!.total,
+        ),
+  ];
+}
+
 /// Typed result for getSalesByCategory
 class SalesByCategoryRow {
   final String category;

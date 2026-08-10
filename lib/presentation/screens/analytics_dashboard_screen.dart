@@ -980,7 +980,11 @@ class _AnalyticsDashboardScreenState
             return const Center(child: CircularProgressIndicator());
           }
 
-          final stats = snapshot.data ?? [];
+          // H14 · الطيُّ إلى قنوات **قبل** الرسم. الاستعلامُ يجمع بالقيمة
+          // الخام (`card` · `transfer` · `bank` ثلاثةُ صفوف) والعرضُ يسمّيها
+          // كلَّها «بطاقة/تحويل» — فكانت الفطيرةُ تُظهر نفسَ الاسم ثلاثَ
+          // مرّاتٍ بثلاث نسبٍ لا يستطيع القارئ جمعَها بعينه.
+          final stats = foldPaymentChannels(snapshot.data ?? []);
           final totalAll = stats.fold<double>(
             0, (sum, item) => sum + item.total,
           );
@@ -992,14 +996,14 @@ class _AnalyticsDashboardScreenState
           for (final s in stats) {
             final amount = s.total;
             final percent = totalAll > 0 ? (amount / totalAll * 100) : 0.0;
-            final method = s.method;
-            Color color = Colors.grey;
-            String label = method;
-            if (method == 'cash') { color = Colors.green; label = 'نقدي'; }
-            else if (method == 'card' || method == 'transfer' || method == 'bank') { color = Colors.blue; label = 'بطاقة/تحويل'; }
-            else if (method == 'click') { color = const Color(0xFF7E57C2); label = 'كليك'; }
-            else if (method == 'credit') { color = Colors.orange; label = 'آجل'; }
-            else if (method == 'multiple' || method == 'mixed') { color = Colors.purple; label = 'متعدد'; }
+            final (Color color, String label) = switch (s.channel) {
+              PaymentChannel.cash => (Colors.green, 'نقدي'),
+              PaymentChannel.card => (Colors.blue, 'بطاقة/تحويل'),
+              PaymentChannel.click => (const Color(0xFF7E57C2), 'كليك'),
+              PaymentChannel.credit => (Colors.orange, 'آجل'),
+              PaymentChannel.multiple => (Colors.purple, 'متعدد'),
+              PaymentChannel.other => (Colors.grey, 'أخرى'),
+            };
 
             sections.add(PieChartSectionData(
               color: color,

@@ -275,4 +275,155 @@ void main() {
       expect(cards.totalReceipts, closeTo(1400, 0.01));
     });
   });
+
+  // ═════════════════════════════════════════════════════════════════════════
+  // H11
+  // ═════════════════════════════════════════════════════════════════════════
+
+  group('H11 — المصروفات: الإجماليُّ والجدول', () {
+    final from = DateTime(2026, 7, 1);
+    final to = DateTime(2026, 7, 31);
+
+    /// ينشئ تصنيفاً ومصروفاً عليه، ثم يعطّل التصنيفَ اختيارياً — وهو ما يحصل
+    /// فعلاً حين يقرّر المحاسبُ ألّا يُسجَّل على البند بعد اليوم.
+    Future<void> expense({
+      required String category,
+      required double amount,
+      bool deactivateAfter = false,
+    }) async {
+      final catId = await db.into(db.opExpenseCategories).insert(
+            OpExpenseCategoriesCompanion.insert(name: category),
+          );
+      await db.into(db.opExpenses).insert(OpExpensesCompanion.insert(
+            categoryId: catId,
+            amount: amount,
+            expenseDate: DateTime(2026, 7, 8),
+            userId: userId,
+          ));
+      if (deactivateAfter) {
+        await (db.update(db.opExpenseCategories)
+              ..where((c) => c.id.equals(catId)))
+            .write(const OpExpenseCategoriesCompanion(isActive: Value(false)));
+      }
+    }
+
+    test('إجماليُّ البطاقة يساوي مجموعَ صفوف الجدول', () async {
+      await expense(category: 'إيجار', amount: 1000);
+      await expense(category: 'بند مُعطَّل', amount: 750, deactivateAfter: true);
+
+      final summary =
+          await db.getMonthlyExpenseSummary(from: from, to: to);
+      final detail = await db.getExpensesForReport(from: from, to: to);
+
+      final cardTotal = summary.fold<double>(
+          0, (s, r) => s + ((r['total_amount'] as num?)?.toDouble() ?? 0));
+      final tableTotal = detail.fold<double>(
+          0, (s, r) => s + ((r['amount'] as num?)?.toDouble() ?? 0));
+
+      expect(tableTotal, closeTo(1750, 0.01), reason: 'ضابط: الجدولُ يعرضهما');
+      expect(
+        cardTotal,
+        closeTo(1750, 0.01),
+        reason: 'اتقاس ١٬٠٠٠ — استعلامُ الملخّص كان يشترط `c.is_active` '
+            'وجدولُ التفصيل لا يعرف الشرطَ أصلاً، فمصروفُ التصنيف المُعطَّل '
+            'يظهر في الجدول ولا يدخل الإجمالي. وتعطيلُ التصنيف قرارٌ '
+            'مستقبليٌّ لا يمحو مالاً أُنفق.',
+      );
+    });
+
+    test('ضابط: التصنيفُ الفعّالُ الفارغ يفضل ظاهراً في الملخّص', () async {
+      await db.into(db.opExpenseCategories).insert(
+            OpExpenseCategoriesCompanion.insert(name: 'بند بلا صرف'),
+          );
+      final summary =
+          await db.getMonthlyExpenseSummary(from: from, to: to);
+      expect(summary.any((r) => r['name'] == 'بند بلا صرف'), isTrue,
+          reason: 'الشاشةُ تعتمد على ظهور التصنيفات الفارغة');
+    });
+  });
+
+  // ═════════════════════════════════════════════════════════════════════════
+  // H14
+  // ═════════════════════════════════════════════════════════════════════════
+
+  group('H14 — طيُّ طرق الدفع إلى قنوات', () {
+    test('العطبُ مقيس: الاستعلامُ يرجّع ثلاثةَ صفوفٍ لقناةٍ واحدة', () async {
+      // ثلاثُ بيعاتٍ بثلاث قيمٍ خامٍ تقع كلُّها على «بطاقة/تحويل».
+      for (final (i, m) in ['card', 'transfer', 'bank'].indexed) {
+        await db.into(db.salesInvoices).insert(SalesInvoicesCompanion.insert(
+              invoiceNumber: 'PM-$m',
+              warehouseId: warehouseId,
+              userId: userId,
+              invoiceDate: DateTime(2026, 7, 9),
+              subtotal: Value(100.0 * (i + 1)),
+              total: Value(100.0 * (i + 1)),
+              paid: Value(100.0 * (i + 1)),
+              paymentMethod: Value(m),
+            ));
+      }
+
+      final raw = await db.getPaymentMethodStats(
+          from: DateTime(2026, 7, 1), to: DateTime(2026, 7, 31));
+      expect(
+        raw.where((r) => paymentChannelOf(r.method) == PaymentChannel.card),
+        hasLength(3),
+        reason: 'ده أصلُ العطب: `GROUP BY payment_method` بيجمع بالقيمة '
+            'الخام، والشاشةُ بتسمّي التلاتة «بطاقة/تحويل» ⇒ فطيرةٌ فيها '
+            'نفسُ الاسم ٣ مرّاتٍ بـ٣ نسب.',
+      );
+
+      final folded = foldPaymentChannels(raw);
+      expect(
+        folded.where((c) => c.channel == PaymentChannel.card),
+        hasLength(1),
+        reason: 'الطيُّ لازم يخلّيها شريحةً واحدة',
+      );
+      expect(
+          folded
+              .firstWhere((c) => c.channel == PaymentChannel.card)
+              .total,
+          closeTo(600, 0.01));
+    });
+
+    test('card/transfer/bank تُطوى في قناةٍ واحدة', () {
+      final folded = foldPaymentChannels(const [
+        PaymentMethodStatRow(method: 'card', count: 1, total: 300),
+        PaymentMethodStatRow(method: 'transfer', count: 1, total: 500),
+        PaymentMethodStatRow(method: 'bank', count: 1, total: 200),
+        PaymentMethodStatRow(method: 'cash', count: 2, total: 1000),
+      ]);
+
+      final card =
+          folded.where((c) => c.channel == PaymentChannel.card).toList();
+      expect(card, hasLength(1),
+          reason: 'الاستعلامُ يجمع بالقيمة الخام فيرجّع ثلاثةَ صفوف، والشاشةُ '
+              'تسمّيها كلَّها «بطاقة/تحويل» ⇒ ثلاثُ شرائحَ بنفس الاسم لا '
+              'يستطيع القارئ جمعَها بعينه.');
+      expect(card.single.total, closeTo(1000, 0.01));
+      expect(card.single.count, 3);
+    });
+
+    test('المجهولُ يقع على «أخرى» ولا يُسقَط', () {
+      final folded = foldPaymentChannels(const [
+        PaymentMethodStatRow(method: 'crypto', count: 1, total: 90),
+      ]);
+      expect(folded, hasLength(1));
+      expect(folded.single.channel, PaymentChannel.other);
+      expect(folded.single.total, closeTo(90, 0.01),
+          reason: 'إخفاءُ مبلغٍ من الفطيرة أسوأ من تسميته «أخرى»');
+    });
+
+    test('الترتيبُ ثابتٌ فلا تقفز الشرائحُ بين تحميلَين', () {
+      final a = foldPaymentChannels(const [
+        PaymentMethodStatRow(method: 'credit', count: 1, total: 10),
+        PaymentMethodStatRow(method: 'cash', count: 1, total: 20),
+      ]);
+      final b = foldPaymentChannels(const [
+        PaymentMethodStatRow(method: 'cash', count: 1, total: 20),
+        PaymentMethodStatRow(method: 'credit', count: 1, total: 10),
+      ]);
+      expect(a.map((c) => c.channel).toList(),
+          b.map((c) => c.channel).toList());
+    });
+  });
 }

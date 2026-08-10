@@ -553,7 +553,17 @@ extension OperationalExpensesDao on AppDatabase {
         $opBranchFilter
         $opUserFilter
         ${opScope.filter}
-      WHERE c.is_active = ${sqlBool(true)}
+      -- H11 · `c.is_active` وحدَه كان يُسقط مصروفَ أيّ تصنيفٍ عُطِّل لاحقاً،
+      -- بينما جدولُ التفصيل (`getExpensesForReport`) لا يعرف هذا الشرط أصلاً
+      -- ⇒ الصفُّ يظهر في الجدول ولا يدخل الإجمالي، و`_averagePerEntry` يقسم
+      -- مجموعَ مجموعةٍ على عدد مجموعةٍ أخرى. مقيس في الحصر: ١٬٠٠٠ مقابل
+      -- ١٬٧٥٠.
+      --
+      -- تعطيلُ التصنيف قرارٌ مستقبليّ («لا تُسجّل عليه بعد اليوم») لا يمحو
+      -- مالاً أُنفق. فالشرطُ يحكم **إظهارَ التصنيفات الفارغة** فقط: التصنيفُ
+      -- الفعّال يُدرَج ولو بصفر، وأيُّ تصنيفٍ عليه صرفٌ في المدى يُدرَج مهما
+      -- كانت حالتُه.
+      WHERE c.is_active = ${sqlBool(true)} OR e.id IS NOT NULL
       GROUP BY c.id
       ''',
       variables: [dateVar(from), dateVar(to), ...opScope.vars],
