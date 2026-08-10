@@ -133,6 +133,14 @@ flutter:
     - assets/brand/picpos/logo.png
     - assets/invoice_templates/
     - assets/fonts/Cairo-Regular.ttf
+    # خطٌّ احتياطيٌّ للطباعة — Cairo ينقصه **الياءُ المنفصلة** (U+FEF1)، وعرضُها
+    # صفرٌ مطابقٌ لـ.notdef فتُحذف بالسكوت ولا تظهر مربّعاً. مقيس 2026-08-10،
+    # والملفُّ المرفوع مطابقٌ للرسميّ بايت ببايت (نفسُ SHA-256) فلا تُصلحه
+    # إعادةُ التنزيل. يصيب كلَّ كلمةٍ آخرُها ي بعد حرفٍ غيرِ موصول (ر ز د ذ و ا):
+    # صبري · بدري · المصري — أسماءُ عملاءَ وأصنافٍ على الإيصالات والفواتير.
+    # Noto Naskh يغطّي ١٤٠/١٤١ (‏والناقصُ U+FE75 نقطةٌ غيرُ مخصَّصةٍ أصلاً في
+    # يونيكود). ترخيصُه OFL فالتوزيعُ مسموح.
+    - assets/fonts/NotoNaskhArabic-Regular.ttf
     - assets/audio/
 
   # An image asset can refer to one or more resolution-specific "variants", see
