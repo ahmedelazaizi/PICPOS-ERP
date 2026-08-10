@@ -113,14 +113,23 @@ void main() {
     );
   }
 
-  /// مجموع الحركة المدينة الصافية على حساب النقدية في كل القيود.
+  /// مجموع الحركة المدينة الصافية على **نقدية الخزائن كلِّها** في كل القيود.
+  ///
+  /// كان يقرأ حسابَ النقدية المفرد (`1111`) وحدَه. ومنذ صار لكلّ خزنةٍ حسابٌ
+  /// فرعيٌّ خاصٌّ تحت `111` (‏`linkUnlinkedSafesToSubAccounts`) لم يعد رقمٌ
+  /// واحدٌ يمثّل النقدية: البيعةُ تقع على حساب درج الكاشير، وتحويلُ إقفال
+  /// الوردية يقع على حساب الصندوق المركزي. فالقراءةُ الصحيحة هي **مجموعُ
+  /// الفرع** — وهي التي تُبقي الاختبارَ يقيس ما يقصده (النقدية في الأستاذ)
+  /// بدل أن يقيس موضعَ حسابٍ بعينه.
   Future<double> cashAccountNetDebit() async {
-    final cashAcc = await db.getAccountByCode(
-      await db.getMappedAccountCode('cash', AccountingDao.accountPurposes['cash']!),
-    );
-    if (cashAcc == null) return 0;
+    final parent = await db.getAccountByCode('111');
+    if (parent == null) return 0;
+    final children = await (db.select(db.accounts)
+          ..where((a) => a.parentId.equals(parent.id)))
+        .get();
+    final ids = {parent.id, for (final c in children) c.id};
     final lines = await (db.select(db.journalEntryLines)
-          ..where((l) => l.accountId.equals(cashAcc.id)))
+          ..where((l) => l.accountId.isIn(ids)))
         .get();
     return lines.fold<double>(0, (s, l) => s + l.debit - l.credit);
   }
