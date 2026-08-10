@@ -742,19 +742,39 @@ class JournalEntryFactory {
   }) async {
     await _accountingRepo.runInTransaction(() async {
       // 1. Reverse Stock
-      final returnMovements = await _inventoryRepo.getStockMovementsByReference(
-        'sales_invoice',
-        invoice.id,
-      );
+      //
+      // ⚠️ مسارا المرتجع يكتبان مرجعَين مختلفَين لنفس الحركة:
+      //   * `ProcessSalesReturnUseCase` (شاشةُ مردودات المبيعات — المسارُ
+      //     الرئيسيّ) يكتب `'sales_return'`.
+      //   * المرتجعُ السريع من نقطة البيع (`sales_mutations_dao`) يكتب
+      //     `'sales_invoice'`.
+      // وكان هذا يستعلم بـ`'sales_invoice'` وحدَه، بينما الخطوتان ٢ و٣ تحته
+      // تستعلمان بـ`'sales_return'`. فعلى المسار الرئيسيِّ لم تدر الحلقةُ
+      // إطلاقاً: القيدُ ينعكس والنقديةُ ترجع ورصيدُ العميل يُعدَّل،
+      // **والبضاعةُ تفضل في المخزون**. مقيس: انحرافُ ٥ وحداتٍ لكلّ إلغاء.
+      final returnMovements = <StockMovementData>[
+        ...await _inventoryRepo.getStockMovementsByReference(
+            'sales_return', invoice.id),
+        ...await _inventoryRepo.getStockMovementsByReference(
+            'sales_invoice', invoice.id),
+      ];
 
       for (final movement in returnMovements) {
         if (movement.movementType == 'return') {
-          final product = await _productRepo.getProductById(movement.productId);
-          if (product != null) {
-            final newStock = product.currentStock - movement.quantity;
-            await _productRepo.updateProductStock(movement.productId, newStock);
-          }
-          await _inventoryRepo.deleteStockMovement(movement.id);
+          // عكسٌ حقيقيٌّ عبر `adjustStock` لا تعديلٌ يدويّ: التعديلُ اليدويُّ
+          // كان يمسّ `products.current_stock` وحدَه ويحذف صفَّ الحركة، فلا
+          // يلمس `inventory_balances` إطلاقاً — ينفصل رصيدُ المخزن عن رصيد
+          // الصنف، ويُمحى الدليلُ على أن المرتجع حصل أصلاً.
+          await _inventoryRepo.adjustStock(
+            productId: movement.productId,
+            warehouseId: movement.warehouseId,
+            quantity: -movement.quantity,
+            type: 'return_cancel',
+            referenceType: 'return_cancel',
+            referenceId: invoice.id,
+            unitCost: movement.unitCost,
+            notes: 'إلغاء مرتجع فاتورة ${invoice.invoiceNumber}',
+          );
         }
       }
 

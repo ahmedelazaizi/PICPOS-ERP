@@ -20,6 +20,10 @@ class InventoryRepositoryImpl implements InventoryRepository {
     String? type,
     String? notes,
     String? adjustmentEventGid,
+    String? referenceType,
+    int? referenceId,
+    double? unitCost,
+    int? userId,
   }) async {
     await _db.adjustStock(
       productId: productId,
@@ -28,6 +32,10 @@ class InventoryRepositoryImpl implements InventoryRepository {
       type: type,
       notes: notes,
       adjustmentEventGid: adjustmentEventGid,
+      referenceType: referenceType,
+      referenceId: referenceId,
+      unitCost: unitCost,
+      userId: userId,
     );
   }
 

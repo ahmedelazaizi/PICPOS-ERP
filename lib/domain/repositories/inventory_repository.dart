@@ -15,6 +15,11 @@ abstract class InventoryRepository {
   /// [adjustmentEventGid] (Spec 135 BUG-A): caller-minted UUIDv7 for the
   /// adjustment event, threaded into the local JE + the server submit so
   /// both sides converge on one JE id. Null ⇒ DAO mints a fresh one.
+  ///
+  /// [referenceType]/[referenceId] يربطان الحركةَ بالمستند الذي سبّبها، فيبقى
+  /// لها أثرٌ في كشف الحركة ويمكن عكسُها لاحقاً. بدونهما كان العاكسُ مضطرّاً
+  /// لتعديل `products.current_stock` يدوياً وحذفِ صفِّ الحركة — فينفصل رصيدُ
+  /// المخزن (`inventory_balances`) عن رصيد الصنف، ويضيع الأثر.
   Future<void> adjustStock({
     required int productId,
     required int warehouseId,
@@ -22,6 +27,10 @@ abstract class InventoryRepository {
     String? type,
     String? notes,
     String? adjustmentEventGid,
+    String? referenceType,
+    int? referenceId,
+    double? unitCost,
+    int? userId,
   });
 
   /// Get current stock for a product

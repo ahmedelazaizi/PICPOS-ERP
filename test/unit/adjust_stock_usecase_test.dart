@@ -19,6 +19,10 @@ class MockInventoryRepository implements InventoryRepository {
     String? type,
     String? notes,
     String? adjustmentEventGid, // Spec 135 BUG-A: match interface signature
+    String? referenceType,
+    int? referenceId,
+    double? unitCost,
+    int? userId,
   }) async {
     if (shouldFail) throw Exception('Mock failure');
     currentStock += quantity;
