@@ -26,6 +26,65 @@ class TemplatedInvoiceService {
     _arabicFont ??= await BaseGenerator.initFont();
   }
 
+  // ── إضافاتُ الصنف وخياراتُه ─────────────────────────────────────────────
+  //
+  // السلّةُ تركّب الاختياراتِ في نصٍّ واحدٍ (`composeCartItemNote`) يُخزَّن في
+  // `sales_invoice_items.note` ويصل هنا في `item['note']`:
+  //
+  //   الخيار  ⇒ `(اسمُ المجموعة: [مستوى] الاسم)`
+  //   الإضافة ⇒ `+الاسم [سعر عملة]`
+  //   ملاحظةُ الكاشير ⇒ `📝 نصّ`
+  //   والفصلُ بـ` | `
+  //
+  // فالاستخراجُ من هذا الشكل حتميّ. والملاحظةُ اليدوية لا تُخلط بهما:
+  // «بدون بصل» ليست إضافةً ولا خياراً، وخلطُها يجعل المطبخَ يقرأ طلباً لم
+  // يُطلب.
+
+  /// أجزاءُ ملاحظةِ بندٍ واحد، مقسَّمةً على الفاصل.
+  static Iterable<String> _noteParts(List<Map<String, dynamic>> items) sync* {
+    for (final item in items) {
+      final raw = (item['note'] as String?)?.trim();
+      if (raw == null || raw.isEmpty) continue;
+      for (final p in raw.split('|')) {
+        final t = p.trim();
+        if (t.isNotEmpty) yield t;
+      }
+    }
+  }
+
+  /// يحافظ على ترتيب أوّل ظهورٍ ويُسقط التكرار — الطباعةُ للقارئ لا للآلة.
+  static String _joinUnique(Iterable<String> values) {
+    final seen = <String>{};
+    final out = <String>[];
+    for (final v in values) {
+      if (v.isEmpty || !seen.add(v)) continue;
+      out.add(v);
+    }
+    return out.join('، ');
+  }
+
+  /// `+الاسم [سعر]` ⇒ «الاسم». السعرُ يُسقط: العنصرُ ملخّصٌ لا فاتورة.
+  static final _additionPrice = RegExp(r'\s+[\d.,]+\s*\S*$');
+
+  /// إضافاتُ كلّ البنود مجموعةً بلا تكرار — فارغةٌ حين لا إضافات.
+  static String extractItemAdditions(List<Map<String, dynamic>> items) {
+    return _joinUnique(_noteParts(items)
+        .where((p) => p.startsWith('+'))
+        .map((p) => p.substring(1).replaceAll(_additionPrice, '').trim()));
+  }
+
+  /// `(المجموعة: القيمة)` ⇒ «القيمة». اسمُ المجموعة يُسقط: «كبير» تكفي
+  /// القارئَ، و«الحجم: كبير» تطيل سطراً على ورقٍ عرضُه ٨٠ ملّيمتراً.
+  static String extractItemOptions(List<Map<String, dynamic>> items) {
+    return _joinUnique(_noteParts(items)
+        .where((p) => p.startsWith('(') && p.endsWith(')'))
+        .map((p) {
+      final inner = p.substring(1, p.length - 1);
+      final colon = inner.indexOf(':');
+      return (colon >= 0 ? inner.substring(colon + 1) : inner).trim();
+    }));
+  }
+
   /// قيمةُ عنصرِ ورديةٍ من لقطة الإقفال — أو `null` لو النوعُ ليس منها.
   ///
   /// `null` لا `''` عمداً: المنادي يفرّق بها بين «نوعٌ لا يخصّني» و«يخصّني
@@ -705,6 +764,32 @@ class TemplatedInvoiceService {
         return noteText != null && noteText.isNotEmpty
             ? pw.Text(noteText, style: style, textAlign: align)
             : pw.SizedBox();
+
+      // إضافاتُ الأصناف وخياراتُها — مجموعةً على مستوى الفاتورة، وهو ما
+      // تعاينه شاشةُ المصمّم («الإضافات: كاتشب، مايونيز»). كانا يسقطان على
+      // `default` فيرجعان `SizedBox()` أي يختفيان بلا أثر.
+      case 'item_additions':
+        final additions = extractItemAdditions(items);
+        if (additions.isEmpty) return pw.SizedBox();
+        final addLabel = element.labelAr?.trim();
+        return pw.Text(
+          addLabel == null || addLabel.isEmpty
+              ? 'الإضافات: $additions'
+              : '$addLabel: $additions',
+          style: style,
+          textAlign: align,
+        );
+      case 'item_options':
+        final options = extractItemOptions(items);
+        if (options.isEmpty) return pw.SizedBox();
+        final optLabel = element.labelAr?.trim();
+        return pw.Text(
+          optLabel == null || optLabel.isEmpty
+              ? 'الخيارات: $options'
+              : '$optLabel: $options',
+          style: style,
+          textAlign: align,
+        );
       case 'footer':
         return pw.Padding(
           padding: const pw.EdgeInsets.only(top: 8),
