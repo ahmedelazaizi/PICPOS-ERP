@@ -128,8 +128,16 @@ class ReportingRepositoryImpl implements IReportingRepository {
         excludeVoided: excludeVoided,
       );
 
+  /// يفوّض إلى **نفس** دالّة القاعدة التي تستعملها شاشةُ الفواتير — لا نسخةً
+  /// موازيةً منها. الاتّفاقُ بين الشاشتين يجب أن يكون بالبناء لا بالمصادفة.
   @override
-  Future<List<SalesInvoiceItem>> getSalesInvoiceItems(int invoiceId) => 
+  Future<Map<int, double>> getReturnedAmountsForInvoices(
+    List<int> invoiceIds,
+  ) =>
+      _db.getReturnedAmountsForInvoices(invoiceIds);
+
+  @override
+  Future<List<SalesInvoiceItem>> getSalesInvoiceItems(int invoiceId) =>
       _db.getSalesInvoiceItems(invoiceId);
 
   // ── Purchase Reporting ──────────────────────────────────────────────

@@ -429,6 +429,9 @@ class InvoiceGenerator {
     DateTime? toDate,
     String? companyName,
     String? printedBy,
+
+    /// `{معرّفُ الفاتورة: ما رُدَّ عنها}` — [totalSales] صافٍ من المرتجعات.
+    Map<int, double> returnedAmounts = const {},
   }) {
     return ReportPdfGenerator.printSalesReport(
       invoices: invoices,
@@ -439,6 +442,7 @@ class InvoiceGenerator {
       toDate: toDate,
       companyName: companyName,
       printedBy: printedBy,
+      returnedAmounts: returnedAmounts,
     );
   }
 

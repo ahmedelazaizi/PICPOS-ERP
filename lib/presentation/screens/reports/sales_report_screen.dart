@@ -12,6 +12,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import 'report_export_guard.dart';
 
+import '../../../data/database/models/sales_returns_netting.dart';
 import '../../../data/providers/providers.dart';
 import '../../widgets/report_components.dart';
 import '../../widgets/report_filter_bar.dart';
@@ -39,6 +40,11 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
   SalesAnalytics? _analytics;
   SalesAnalytics? _previousAnalytics;
   List<SalesInvoiceData> _invoices = [];
+
+  /// `{معرّفُ الفاتورة: ما رُدَّ عنها}` للفواتير المعروضة وحدَها — يغذّي عمودَ
+  /// «المرتجع» و«المتبقي» في الجدول والتصدير، وهو **نفسُ** ما بُنيت منه
+  /// بطاقةُ «إجمالي المبيعات» الصافية.
+  Map<int, double> _returnedAmounts = const {};
   final _dateFormat = DateFormat('yyyy-MM-dd HH:mm');
   final _currencyFormat = NumberFormat.currency(symbol: '', decimalDigits: AppConstants.decimalPlaces);
   int? _selectedUserId;
@@ -240,46 +246,36 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
         customerMap[c.id] = c.name;
       }
 
+      // ── §٣-أ · الصافي من المرتجعات ────────────────────────────────────
+      //
+      // الفلترةُ المحلية **قبل** الحسم: الطرحُ يقع على الفواتير المعروضة
+      // بالضبط، لا على إجمالي مرتجعات الفترة. راجع `_netOfDisplayedReturns`.
+      final filtered = _applyLocalFilters(invoices);
+      final current = await _netOfDisplayedReturns(analytics, filtered);
+      if (!mounted) return;
+
+      // والمدّةُ السابقة تُحسم بنفس الطريقة. لولا ذلك لقارن سهمُ التغيّر
+      // صافياً بمجمل، فأظهر هبوطاً وهمياً في كلّ فترةٍ فيها مرتجع.
+      final prevInvoices = await repo.getSalesByDateRange(
+        prevStart,
+        prevEnd,
+        userId: _selectedUserId,
+        warehouseIds: warehouseIds,
+        costCenterId: _selectedCostCenterId,
+        allowedBranchIds: _allowedBranchIds,
+        revenueOnly: true,
+      );
+      if (!mounted) return;
+      final previous = await _netOfDisplayedReturns(
+        prevAnalytics,
+        _applyLocalFilters(prevInvoices),
+      );
+      if (!mounted) return;
+
       setState(() {
-        _analytics = analytics;
-        _previousAnalytics = prevAnalytics;
-        var filtered = invoices;
-        if (_selectedPaymentMethod != null) {
-          // Spec 079 / B3: filter values match the DISPLAY labels.
-          // The display at line ~620 collapses card+transfer+bank into
-          // a single "بطاقة/تحويل" label; the filter follows suit so
-          // picking "بطاقة/تحويل" matches every row the user would
-          // see labeled that way. Similar grouping for multiple/mixed.
-          filtered = filtered.where((i) {
-            switch (_selectedPaymentMethod) {
-              case 'bank_group':
-                return i.paymentMethod == 'card' ||
-                    i.paymentMethod == 'transfer' ||
-                    i.paymentMethod == 'bank';
-              case 'multiple':
-                return i.paymentMethod == 'multiple' ||
-                    i.paymentMethod == 'mixed';
-              default:
-                return i.paymentMethod == _selectedPaymentMethod;
-            }
-          }).toList();
-        }
-        if (_selectedSaleType != null) {
-          filtered = filtered.where((i) => i.saleType == _selectedSaleType).toList();
-        }
-        if (_selectedWarehouseId != null) {
-          filtered = filtered.where((i) => i.warehouseId == _selectedWarehouseId).toList();
-        } else if (_branchWarehouseIds != null) {
-          filtered = filtered.where((i) => _branchWarehouseIds!.contains(i.warehouseId)).toList();
-        } else if (_regionWarehouseIds != null) {
-          // Spec 079 / B1: region scope MUST also filter locally — the
-          // repo call already passes warehouseIds, but if the dataset
-          // includes rows whose warehouse is outside the region (e.g.
-          // because warehouseIds was empty due to incomplete
-          // region→branch→warehouse data), the local filter is the
-          // belt-and-suspenders guard.
-          filtered = filtered.where((i) => _regionWarehouseIds!.contains(i.warehouseId)).toList();
-        }
+        _analytics = current.net;
+        _previousAnalytics = previous.net;
+        _returnedAmounts = current.returned;
         _invoices = filtered;
         _userNames = userMap;
         _warehouseNames = whMap;
@@ -289,6 +285,94 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
     } finally {
       setState(() => _isLoading = false);
     }
+  }
+
+  /// فلاترُ الواجهة على القائمة المعروضة.
+  ///
+  /// مستخرَجةٌ من `setState` كي تُطبَّق على **المدّتين** (الحالية والسابقة)
+  /// بنفس النصّ حرفياً: الحسمُ يجب أن يقع على نفس المجموعة التي تُعرض،
+  /// وفرعان متشابهان كانا سيفترقان بأوّل تعديل.
+  List<SalesInvoiceData> _applyLocalFilters(List<SalesInvoiceData> source) {
+    var filtered = source;
+    if (_selectedPaymentMethod != null) {
+      // Spec 079 / B3: filter values match the DISPLAY labels.
+      // The display at line ~620 collapses card+transfer+bank into
+      // a single "بطاقة/تحويل" label; the filter follows suit so
+      // picking "بطاقة/تحويل" matches every row the user would
+      // see labeled that way. Similar grouping for multiple/mixed.
+      filtered = filtered.where((i) {
+        switch (_selectedPaymentMethod) {
+          case 'bank_group':
+            return i.paymentMethod == 'card' ||
+                i.paymentMethod == 'transfer' ||
+                i.paymentMethod == 'bank';
+          case 'multiple':
+            return i.paymentMethod == 'multiple' ||
+                i.paymentMethod == 'mixed';
+          default:
+            return i.paymentMethod == _selectedPaymentMethod;
+        }
+      }).toList();
+    }
+    if (_selectedSaleType != null) {
+      filtered =
+          filtered.where((i) => i.saleType == _selectedSaleType).toList();
+    }
+    if (_selectedWarehouseId != null) {
+      filtered =
+          filtered.where((i) => i.warehouseId == _selectedWarehouseId).toList();
+    } else if (_branchWarehouseIds != null) {
+      filtered = filtered
+          .where((i) => _branchWarehouseIds!.contains(i.warehouseId))
+          .toList();
+    } else if (_regionWarehouseIds != null) {
+      // Spec 079 / B1: region scope MUST also filter locally — the
+      // repo call already passes warehouseIds, but if the dataset
+      // includes rows whose warehouse is outside the region (e.g.
+      // because warehouseIds was empty due to incomplete
+      // region→branch→warehouse data), the local filter is the
+      // belt-and-suspenders guard.
+      filtered = filtered
+          .where((i) => _regionWarehouseIds!.contains(i.warehouseId))
+          .toList();
+    }
+    return filtered;
+  }
+
+  /// المجملُ ناقصَ ما رُدَّ عن **الفواتير المعروضة وحدَها**، مقصوصاً عند قيمة
+  /// كلِّ فاتورة.
+  ///
+  /// `getSalesAnalytics` يسلّم المبيعاتِ خاماً بعقدٍ موثَّقٍ عنده: الاستعلامُ
+  /// يستثني مستنداتِ `sale_type='return'` والحالاتِ
+  /// `('returned','cancelled','voided')` — فيخرج المرتجعُ **الكاملُ** من
+  /// المجمل، وتبقى الفاتورةُ المرتجَعةُ **جزئياً** (‏`partial_return`) داخلَه
+  /// بقيمتها الكاملة. هذه الدالّةُ هي الطرفُ الآخرُ من ذلك العقد؛ بدونها
+  /// كانت البطاقةُ تقول ١٨ وشاشةُ الفواتير تقول ١٤ عن نفس الفاتورة.
+  ///
+  /// ⚠️ ولا يُطرح إجماليُّ مرتجعات الفترة جزافاً: المرتجعُ الكاملُ مطروحٌ
+  /// أصلاً بالاستثناء، فطرحُه ثانيةً يشيله مرّتين. والقصرُ على المعروض يمنع
+  /// الازدواجَ **بالبناء** — الفواتيرُ المرتجَعةُ كلياً ليست في القائمة أصلاً.
+  /// ويعيد الخريطةَ كذلك: الجدولُ والتصديرُ يعرضان «المرتجع» لكلّ صفّ بنفس
+  /// الأرقام التي بُنيت منها البطاقة — مصدرٌ واحدٌ لا اثنان.
+  Future<({SalesAnalytics net, Map<int, double> returned})>
+      _netOfDisplayedReturns(
+    SalesAnalytics gross,
+    List<SalesInvoiceData> displayed,
+  ) async {
+    if (displayed.isEmpty) {
+      return (net: gross, returned: const <int, double>{});
+    }
+    final returnedByInvoice = await ref
+        .read(reportingRepositoryProvider)
+        .getReturnedAmountsForInvoices([for (final i in displayed) i.id]);
+    final net = netOfReturns(
+      gross,
+      clampedReturnedTotal(
+        returnedByInvoice: returnedByInvoice,
+        displayedInvoiceTotals: {for (final i in displayed) i.id: i.total},
+      ),
+    );
+    return (net: net, returned: returnedByInvoice);
   }
 
   @override
@@ -666,11 +750,25 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
                                   DataColumn(label: Text('المخزن')),
                                   DataColumn(label: Text('الإجمالي'), numeric: true),
                                   DataColumn(label: Text('المدفوع'), numeric: true),
+                                  // بطاقةُ «إجمالي المبيعات» صافيةٌ من
+                                  // المرتجعات، فلولا هذا العمود لصار جمعُ
+                                  // «الإجمالي» أكبرَ منها بلا سببٍ ظاهر —
+                                  // وهو بعينه العطبُ الذي أُغلق في اتجاهٍ آخر
+                                  // بـ`revenueOnly`. الآن: Σالإجمالي −
+                                  // Σالمرتجع = البطاقة.
+                                  DataColumn(label: Text('المرتجع'), numeric: true),
                                   DataColumn(label: Text('المتبقي'), numeric: true),
                                   DataColumn(label: Text('طريقة الدفع')),
                                 ],
                                 rows: _invoices.map((s) {
-                                  final remaining = s.total - s.paid;
+                                  // نفسُ حساب شاشة الفواتير حرفياً
+                                  // (`sales_invoices_table`): المرتجعُ يقلّل
+                                  // المستحقَّ، والسالبُ يعني أننا مدينون
+                                  // للعميل. الشاشتان تختلفان في هذا الرقم
+                                  // كانتا، وهو أصلُ البلاغ.
+                                  final returned =
+                                      _returnedAmounts[s.id] ?? 0.0;
+                                  final remaining = s.total - s.paid - returned;
                                   return DataRow(
                                     cells: [
                                       DataCell(
@@ -706,6 +804,19 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
                                       ),
                                       DataCell(
                                         Text(_currencyFormat.format(s.paid)),
+                                      ),
+                                      DataCell(
+                                        Text(
+                                          returned > 0
+                                              ? _currencyFormat.format(returned)
+                                              : '—',
+                                          style: returned > 0
+                                              ? const TextStyle(
+                                                  color: AppColors.warning,
+                                                  fontWeight: FontWeight.bold,
+                                                )
+                                              : null,
+                                        ),
                                       ),
                                       DataCell(
                                         Text(
@@ -1057,6 +1168,9 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
         'المخزن',
         'الإجمالي',
         'المدفوع',
+        // نفسُ أعمدة الجدول على الشاشة — المحاسبُ يجمع «الإجمالي» في Excel
+        // ويقارنه بالبطاقة، فبلا عمود المرتجع يفترقان.
+        'المرتجع',
         'المتبقي',
         'طريقة الدفع',
       ],
@@ -1069,7 +1183,8 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
               _warehouseNames[s.warehouseId] ?? 'غير محدد',
               s.total,
               s.paid,
-              s.total - s.paid,
+              _returnedAmounts[s.id] ?? 0.0,
+              s.total - s.paid - (_returnedAmounts[s.id] ?? 0.0),
               // الخريطةُ الثنائية كانت تطبع كلَّ ما ليس نقدياً «آجل»: البطاقةُ
               // والتحويلُ والكليكُ والمتعدّد. فالمحاسبُ يقرأ الملفَّ فيرى
               // مبيعاتِ البطاقات ديوناً على العملاء. و`_paymentLabel` قائمةٌ
@@ -1120,6 +1235,8 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
         toDate: _dateRange.end,
         companyName: companyName,
         printedBy: ref.read(authProvider).user?.displayName,
+        // الرأسُ صافٍ، فالجدولُ يعرض المحسومَ كي يتّزنا.
+        returnedAmounts: _returnedAmounts,
       );
       // #Forensic Log: Report Print
       try {

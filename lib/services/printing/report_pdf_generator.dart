@@ -515,6 +515,10 @@ class ReportPdfGenerator {
     DateTime? toDate,
     String? companyName,
     String? printedBy,
+
+    /// `{معرّفُ الفاتورة: ما رُدَّ عنها}` — [totalSales] وصل هنا **صافياً**
+    /// من المرتجعات، فالجدولُ يعرض المحسومَ كي يتّزن مع الرأس.
+    Map<int, double> returnedAmounts = const {},
   }) async {
     await _initFont();
     final pdf = await BaseGenerator.newDocument();
@@ -536,7 +540,7 @@ class ReportPdfGenerator {
           pw.Divider(),
           _buildSalesSummary(totalSales, totalProfit, invoiceCount),
           pw.SizedBox(height: 20),
-          _buildSalesTable(invoices),
+          _buildSalesTable(invoices, returnedAmounts: returnedAmounts),
         ],
       ),
     );
@@ -1944,7 +1948,27 @@ class ReportPdfGenerator {
     );
   }
 
-  static pw.Widget _buildSalesTable(List<dynamic> invoices) {
+  /// [returnedAmounts] — `{معرّفُ الفاتورة: ما رُدَّ عنها}`.
+  ///
+  /// بطاقةُ «إجمالي المبيعات» في رأس التقرير صافيةٌ من المرتجعات، فبلا عمودٍ
+  /// يُظهر المحسومَ يقرأ المحاسبُ جدولاً يجمع ١٨ تحت عنوانٍ يقول ١٤ ولا شيءَ
+  /// يفسّر الفرق. الآن: Σالإجمالي − Σالمرتجع = رقمُ البطاقة.
+  ///
+  /// والعمودُ يظهر **فقط** حين يوجد مرتجعٌ فعليٌّ في المعروض، كي لا يتّسع
+  /// الجدولُ على كلّ تقريرٍ نظيفٍ بلا داعٍ.
+  static pw.Widget _buildSalesTable(
+    List<dynamic> invoices, {
+    Map<int, double> returnedAmounts = const {},
+  }) {
+    double returnedOf(dynamic inv) {
+      final id = inv.id;
+      if (id is! int) return 0.0;
+      final v = returnedAmounts[id] ?? 0.0;
+      return v > 0 ? v : 0.0;
+    }
+
+    final hasReturns = invoices.any((inv) => returnedOf(inv) > 0);
+
     return pw.Table(
       border: pw.TableBorder.all(color: PdfColors.grey400),
       children: [
@@ -1955,6 +1979,7 @@ class ReportPdfGenerator {
             _tableCell('التاريخ', isHeader: true),
             _tableCell('الإجمالي', isHeader: true),
             _tableCell('المدفوع', isHeader: true),
+            if (hasReturns) _tableCell('المرتجع', isHeader: true),
             _tableCell('الحالة', isHeader: true),
           ],
         ),
@@ -1965,6 +1990,13 @@ class ReportPdfGenerator {
               _tableCell('${inv.invoiceDate.day}/${inv.invoiceDate.month}'),
               _tableCell(inv.total.toStringAsFixed(AppConstants.decimalPlaces)),
               _tableCell(inv.paid.toStringAsFixed(AppConstants.decimalPlaces)),
+              if (hasReturns)
+                _tableCell(
+                  returnedOf(inv) > 0
+                      ? returnedOf(inv)
+                          .toStringAsFixed(AppConstants.decimalPlaces)
+                      : '—',
+                ),
               _tableCell(inv.paymentMethod == 'cash' ? 'نقدي' : 'آجل'),
             ],
           ),

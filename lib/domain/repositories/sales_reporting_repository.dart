@@ -66,6 +66,18 @@ abstract class ISalesReportingRepository {
     bool excludeVoided = false,
   });
 
+  /// `{معرّفُ الفاتورة الأصلية: مجموعُ ما رُدّ}` — **نفسُ** الدالّة التي
+  /// تغذّي «المتبقي» و«إجمالي المرتجعات» في شاشة الفواتير.
+  ///
+  /// موجودةٌ هنا كي يتّفق تقريرُ المبيعات مع شاشة الفواتير **بالبناء**: كانت
+  /// الشاشتان تقرآن نفسَ القاعدة وتجيبان جوابين، لأن التقريرَ لم يكن ينده
+  /// المرتجعاتِ ولا مرّةً واحدة (فاتورةُ ١٨ بمرتجعِ ٤ تقول ١٨ هناك و١٤ هنا).
+  ///
+  /// تجمع شكلَي المرتجع معاً: حركةَ خزينةٍ `reference_type='sales_return'`
+  /// (‏التنصيبُ المستقلّ) ومستندَ `sale_type='return'` المربوطَ بالأصل
+  /// (‏مسارُ السيرفر).
+  Future<Map<int, double>> getReturnedAmountsForInvoices(List<int> invoiceIds);
+
   Future<List<SalesInvoiceItem>> getSalesInvoiceItems(int invoiceId);
 
   Future<List<Map<String, dynamic>>> getDeliveryReport({
