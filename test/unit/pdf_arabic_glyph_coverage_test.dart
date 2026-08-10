@@ -90,20 +90,29 @@ void main() {
     );
   });
 
-  test('الاحتياطيّ (Cairo) يغطّي اللاتينيَّ الذي ينقص الأساسيَّ', () {
-    // اللاتينيُّ والأرقامُ غيرُ مُشكَّلة، فنقاطُها المنطقيةُ هي نفسُها
-    // المرسومة — وهنا يعمل `fontFallback` فعلاً.
-    final ascii = [for (var c = 0x20; c <= 0x7E; c++) c];
-    final notoLacks =
-        ascii.where((c) => !noto.charToGlyphIndexMap.containsKey(c)).toList();
-    expect(notoLacks, isNotEmpty,
-        reason: 'ضابط: لو الأساسيُّ بقى يغطّي اللاتينيَّ كلَّه فالاحتياطيُّ '
-            'ما بقاش لازماً — راجع الوصلَ عن قصد');
-    for (final c in notoLacks) {
-      expect(cairo.charToGlyphIndexMap.containsKey(c), isTrue,
-          reason: 'المحرف ${String.fromCharCode(c)} (U+'
-              '${c.toRadixString(16).toUpperCase()}) مش في أيٍّ من الخطّين');
+  // ⚠️ رُوجع عن قصدٍ 2026-08-10 — وهو ما كان الضابطُ السابقُ يطلبه نصّاً
+  // («لو الأساسيُّ بقى يغطّي اللاتينيَّ كلَّه فالاحتياطيُّ ما بقاش لازماً»).
+  //
+  // كان الأساسُ نسخةً عربيةً **مقصوصة** من Noto (١٤٦ ك.ب) ينقصها ٥٢ حرفاً
+  // لاتينياً و٧ علاماتٍ منها `/` و`(` و`%`، فكان Cairo احتياطياً ضرورةً.
+  // واستُبدل بالأصل الكامل (‏static، ١٩٩ ك.ب) فسقطت الحاجةُ ومعها الضرر:
+  // انقسامُ السطر بين خطَّين كان **يعكس اللاتينيَّ** داخل السطر العربيّ
+  // (`SINV-24` ⇒ `24-V NIS`) — مقيسٌ بالرسم.
+  test('الأساسيُّ وحدَه يغطّي كلَّ ASCII المطبوع — فلا احتياطيَّ لازم', () {
+    final missing = <String>[];
+    for (var c = 0x20; c <= 0x7E; c++) {
+      if (!noto.charToGlyphIndexMap.containsKey(c)) {
+        missing.add('${String.fromCharCode(c)} '
+            '(U+${c.toRadixString(16).toUpperCase()})');
+      }
     }
+    expect(
+      missing,
+      isEmpty,
+      reason: 'نقصٌ هنا يعني مربّعاتٍ على المطبوع — ومنها رقمُ الفاتورة '
+          'نفسُه. الناقص: ${missing.join(', ')}. والعلاجُ أصلٌ كامل لا '
+          'إعادةُ الاحتياطيّ.',
+    );
   });
 
   test('حروفُ الأسماء الشائعة: «صبري» بأشكالها المرسومة', () {
