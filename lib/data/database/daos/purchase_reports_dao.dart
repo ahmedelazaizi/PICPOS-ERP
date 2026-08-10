@@ -96,7 +96,10 @@ extension PurchaseReportsDao on AppDatabase {
       SELECT p.id, p.name, SUM(pi.total) as total_purchases, COUNT(pi.id) as invoice_count
       FROM purchase_invoices pi
       JOIN parties p ON pi.supplier_id = p.id
-      WHERE pi.invoice_date BETWEEN ? AND ?$filters
+      -- H6 · البطاقاتُ (السطران ٦١ و٢٠٩) تستبعد المحذوفَ ناعماً وهذا لم يكن
+      -- يستبعده، فيقرأ المستخدمُ رقمَين مختلفين لنفس المدى على نفس الشاشة.
+      WHERE pi.is_deleted = 0
+        AND pi.invoice_date BETWEEN ? AND ?$filters
       GROUP BY p.id, p.name
       ORDER BY total_purchases DESC
       ''',
@@ -130,6 +133,9 @@ extension PurchaseReportsDao on AppDatabase {
     query.where(
       purchaseInvoices.invoiceDate.isBetween(Variable(from), Variable(to)),
     );
+    // H6 · جدولُ الفواتير كان يعرض المحذوفَ ناعماً بينما بطاقاتُ نفس الشاشة
+    // تستبعده — رقمان مختلفان لنفس المدى.
+    query.where(purchaseInvoices.isDeleted.equals(false));
 
     if (warehouseIds != null) {
       // Drift's isIn([]) already yields Constant(false) — empty list
@@ -205,7 +211,10 @@ extension PurchaseReportsDao on AppDatabase {
         COALESCE(SUM(total), 0) as total_sum,
         COALESCE(SUM(paid),  0) as paid_sum
       FROM purchase_invoices
-      WHERE invoice_date BETWEEN ? AND ?
+      -- H7 (نفسُ العلّة على جانب المشتريات) · `normalizedEnd` منتصفُ ليل
+      -- اليوم التالي و`BETWEEN` شاملٌ للطرفين ⇒ فاتورةُ الحدّ تُحتسب في
+      -- شهرين. المدى نصفُ مفتوح.
+      WHERE invoice_date >= ? AND invoice_date < ?
         AND is_deleted = 0
         $filters
       ''',

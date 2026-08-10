@@ -562,7 +562,14 @@ extension SalesAnalyticsDao on AppDatabase {
       '''
       SELECT sale_type, COUNT(*) as count, SUM(total) as total_amount
       FROM sales_invoices
-      WHERE invoice_date BETWEEN ? AND ? AND is_deleted = 0 $warehouseFilter${az.filter}
+      -- H9 · تبويبُ «حسب التصنيف» يستبعد المرتجعَ والملغى (السطر ٥١٦ وما
+      -- حوله)، وهذا لم يكن يستبعد شيئاً — فالتبويبان يعطيان مجموعَين
+      -- مختلفَين لنفس المدى على نفس الشاشة. والأسوأ أن `GROUP BY sale_type`
+      -- كان يُخرج مجموعةً اسمُها `return` ضمن «أنواع البيع».
+      WHERE invoice_date BETWEEN ? AND ? AND is_deleted = 0
+        AND status NOT IN ('returned', 'cancelled', 'voided')
+        ${_saleReturnExclusion()}
+        $warehouseFilter${az.filter}
       GROUP BY sale_type
       ''',
       variables: vars,
@@ -748,7 +755,10 @@ extension SalesAnalyticsDao on AppDatabase {
         COALESCE(SUM(tax),          0) as tax_sum,
         COALESCE(SUM(delivery_fee), 0) as delivery_sum
       FROM sales_invoices inv
-      WHERE invoice_date BETWEEN ? AND ?
+      -- H7 · `normalizedEnd` هو **منتصفُ ليل اليوم التالي**، و`BETWEEN` شاملٌ
+      -- للطرفين ⇒ فاتورةٌ مختومةٌ على الحدّ بالضبط تُحتسب في هذه المدّة **وفي
+      -- التالية معاً**: ازدواجُ إيرادٍ عند حدود الشهور. المدى نصفُ مفتوح.
+      WHERE invoice_date >= ? AND invoice_date < ?
         AND is_deleted = 0${_saleReturnExclusion()}
         AND status NOT IN ('returned', 'cancelled', 'voided')
         $userClause $ccFilter $whFilter $pmFilter $stFilter$azFilter
@@ -771,7 +781,9 @@ extension SalesAnalyticsDao on AppDatabase {
       SELECT COALESCE(SUM(si.quantity * si.quantity_in_base * si.cost_price), 0) as total_cogs
       FROM sales_invoice_items si
       JOIN sales_invoices inv ON si.invoice_id = inv.id
-      WHERE inv.invoice_date BETWEEN ? AND ?
+      -- H7 · نفسُ المدى نصفِ المفتوح كالبطاقة فوقها بالضبط، وإلا اختلفت
+      -- التكلفةُ عن الإيراد على الحدّ.
+      WHERE inv.invoice_date >= ? AND inv.invoice_date < ?
         AND inv.is_deleted = 0${_saleReturnExclusion('inv')}
         AND inv.status NOT IN ('returned', 'cancelled', 'voided')
         $userClause $ccFilter $whFilter $pmFilter $stFilter$azFilter

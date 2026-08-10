@@ -157,7 +157,12 @@ class _SalesByClassificationReportState
     );
 
     if (picked != null) {
-      setState(() => _dateRange = picked);
+      // H10 · `showDateRangePicker` يرجّع النهايةَ عند **منتصف ليل آخر يوم**،
+      // والاستعلاماتُ تقارن `BETWEEN from AND to`. فأخذُ الناتج خاماً كان
+      // يبتر اليومَ الأخيرَ كلَّه: مقيس ٢٬٠٠٠ ⇒ ١٬٤٠٠. نفسُ التطبيع الذي
+      // تبدأ به الشاشةُ في السطر ٣٧ بالضبط.
+      setState(() => _dateRange =
+          DateRangeFilter.normalizeRange(picked.start, picked.end));
       _loadData();
     }
   }

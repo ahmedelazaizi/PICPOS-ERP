@@ -367,6 +367,9 @@ extension TreasuryReportsDao on AppDatabase {
   Future<TreasuryAnalytics> getTreasuryReportAnalytics(
     DateTime start,
     DateTime end, {
+    /// H12 · نفسُ فلتر الجدول (`getTransactionsByDateRange`) — بدونه تتحرّك
+    /// الصفوفُ وتبقى البطاقاتُ على إجمالي كلّ المستخدمين.
+    int? userId,
     int? safeId,
     int? costCenterId,
     List<int>? safeIds,
@@ -383,6 +386,7 @@ extension TreasuryReportsDao on AppDatabase {
     // exactly. Neutral types (withdrawal/transfer/closing) are excluded by the
     // CASE, matching the prior Dart classification.
     final where = _dateRangeWhere(start, end,
+        userId: userId,
         safeId: safeId, costCenterId: costCenterId, safeIds: safeIds,
         allowedBranchIds: allowedBranchIds);
     final row = await customSelect(
@@ -481,6 +485,7 @@ extension TreasuryReportsDao on AppDatabase {
   ({String sql, List<Variable> vars}) _dateRangeWhere(
     DateTime start,
     DateTime end, {
+    int? userId,
     int? safeId,
     int? costCenterId,
     List<int>? safeIds,
@@ -493,6 +498,13 @@ extension TreasuryReportsDao on AppDatabase {
     ];
     final sql = StringBuffer(
         'deleted_at IS NULL AND created_at >= ? AND created_at < ?');
+    // H12 · فلترُ المستخدم كان يُطبَّق على الجدول (`getTransactionsByDateRange`)
+    // ولا يصل البطاقاتِ إطلاقاً، فتقول البطاقةُ ١٬٤٠٠ والجدولُ تحتها ١٬٠٠٠
+    // على نفس الشاشة وبنفس الفلتر.
+    if (userId != null) {
+      sql.write(' AND user_id = ?');
+      vars.add(Variable(userId));
+    }
     if (safeId != null) {
       sql.write(' AND safe_id = ?');
       vars.add(Variable(safeId));

@@ -134,6 +134,9 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
       final analytics = await repo.getTreasuryReportAnalytics(
         _dateRange.start,
         _dateRange.end,
+        // H12 · نفسُ فلتر الجدول تحتها بالضبط — بدونه تتحرّك الصفوفُ وتبقى
+        // البطاقاتُ على إجمالي كلّ المستخدمين: ١٬٤٠٠ فوق و١٬٠٠٠ تحت.
+        userId: _selectedUserId,
         costCenterId: _selectedCostCenterId,
         safeId: _selectedSafeId,
         safeIds: _branchSafeIds,

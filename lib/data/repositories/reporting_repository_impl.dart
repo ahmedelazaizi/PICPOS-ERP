@@ -189,6 +189,7 @@ class ReportingRepositoryImpl implements IReportingRepository {
   Future<TreasuryAnalytics> getTreasuryReportAnalytics(
     DateTime start,
     DateTime end, {
+    int? userId,
     int? costCenterId,
     int? safeId,
     List<int>? safeIds,
@@ -196,6 +197,7 @@ class ReportingRepositoryImpl implements IReportingRepository {
   }) =>
       _db.getTreasuryReportAnalytics(
         start, end,
+        userId: userId,
         safeId: safeId,
         costCenterId: costCenterId,
         safeIds: safeIds,

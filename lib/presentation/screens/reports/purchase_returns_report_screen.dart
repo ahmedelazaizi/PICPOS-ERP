@@ -181,7 +181,10 @@ class _PurchaseReturnsReportScreenState extends ConsumerState<PurchaseReturnsRep
                   lastDate: DateTime.now(),
                 );
                 if (picked != null) {
-                  setState(() => _dateRange = picked);
+                  // H10 · التقويم يرجّع النهايةَ عند منتصف ليل آخر يوم ⇒
+                  // أخذُه خاماً يبتر اليومَ الأخير من التقرير.
+                  setState(() => _dateRange = DateRangeFilter.normalizeRange(
+                      picked.start, picked.end));
                   _loadData();
                 }
               },

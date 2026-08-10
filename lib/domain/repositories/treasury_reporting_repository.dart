@@ -5,6 +5,9 @@ abstract class ITreasuryReportingRepository {
   Future<TreasuryAnalytics> getTreasuryReportAnalytics(
     DateTime start,
     DateTime end, {
+    /// H12 · نفسُ فلتر [getTransactionsByDateRange] تحتها بالضبط — بدونه
+    /// تتحرّك صفوفُ الجدول وتبقى البطاقاتُ على إجمالي كلّ المستخدمين.
+    int? userId,
     int? costCenterId,
     int? safeId,
     List<int>? safeIds,

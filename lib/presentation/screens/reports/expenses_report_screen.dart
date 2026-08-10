@@ -221,7 +221,11 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
       },
     );
     if (picked != null && mounted) {
-      setState(() => _dateRange = picked);
+      // H10 · التقويم يرجّع النهايةَ عند منتصف ليل آخر يوم، والاستعلامات
+      // `BETWEEN` — فأخذُه خاماً يبتر اليومَ الأخير. نفسُ تطبيع الحالة
+      // الابتدائية في السطر ٣٧.
+      setState(() => _dateRange =
+          DateRangeFilter.normalizeRange(picked.start, picked.end));
       _loadData();
     }
   }

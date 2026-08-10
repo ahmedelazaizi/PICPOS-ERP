@@ -581,6 +581,12 @@ extension TreasuryDao on AppDatabase {
       double totalPayments = 0;
 
       for (final t in drawerTxs) {
+        // صفُّ تسوية الفرق (‏[_postVarianceSafeTransaction]) **تصحيحٌ لعدٍّ
+        // سابق** لا حركةَ درجٍ حقيقية، فلا يدخل توقّعَ أيّ وردية. وبدون
+        // استثنائه يتسرّب إلى الوردية التالية حين يتلامس وقتُ الإقفال مع وقت
+        // الفتح (‏`isBetween` شاملُ الطرفين) فيتضاعف الفرقُ المقيس: مقيس
+        // ٢٠ بدل ١٠ في `atomicity_variance_test`.
+        if (t.category == 'shift_variance') continue;
         if (t.transactionType == 'receipt') {
           totalReceipts += t.amount;
         } else if (t.transactionType == 'payment') {
