@@ -87,11 +87,18 @@ class InventoryService {
         totalValue += qty * cost;
 
         // Update Stock
+        //
+        // `unitCost` لازم يتمرّر: بدونه `adjustStock` يرجع إلى
+        // `product.costPrice`، فيقول السندُ قيمةً وتقول حركةُ المخزون ورصيدُ
+        // المخزن قيمةً أخرى. مقيس: صنفٌ تكلفتُه صفرٌ يدخل بسندٍ ١٠×١٠ = ١٠٠
+        // ⇒ `stock_movements.unit_cost` و`inventory_balances.average_cost`
+        // صفرٌ ⇒ تقييمُ المخزون في التقارير يخالف قيدَ السند بـ١٠٠.
         await db.adjustStock(
           productId: productId,
           warehouseId: warehouseId,
           quantity: qty,
           type: 'bond_in',
+          unitCost: cost,
           notes: 'Bond #$bondIdResolved',
           branchId: branchId,
         );
