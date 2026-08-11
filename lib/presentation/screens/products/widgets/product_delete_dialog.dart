@@ -76,7 +76,7 @@ class _ProductDeleteDialogState extends ConsumerState<ProductDeleteDialog> {
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     SizedBox(height: 8),
-                    Text('• إلغاء تفعيل الصنف من القوائم'),
+                    Text('• اختفاء الصنف من شاشة الأصناف'),
                     Text('• عدم ظهوره في نقطة البيع'),
                     Text('• الاحتفاظ ببيانات الفواتير السابقة'),
                   ],
@@ -150,7 +150,10 @@ class _ProductDeleteDialogState extends ConsumerState<ProductDeleteDialog> {
                     }
                   }
                 : null,
-            child: const Text('🗑️ حذف نهائي'),
+            // كان «حذف نهائي» — والديالوجُ نفسُه يقول فوقه «الاحتفاظ ببيانات
+            // الفواتير السابقة». تناقضٌ يوهم بمحوٍ لا يقع، فيتردّد المشغّلُ
+            // في إجراءٍ آمنٍ قابلٍ للاسترجاع من القاعدة.
+            child: const Text('🗑️ حذف الصنف'),
           ),
         ],
       ),

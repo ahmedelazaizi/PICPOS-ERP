@@ -128,6 +128,21 @@ class DriftProductRepository implements IProductRepository {
   }) async {
     final queryBuilder = _db.select(_db.products);
 
+    // ── المحذوفُ يختفي · والمعطَّلُ يبقى ──────────────────────────────────
+    //
+    // هذا قارئُ شاشة الأصناف، وكان **الوحيد** بين قرّاء المنتجات بلا فلترةٍ
+    // إطلاقاً — نظائرُه في الـDAO (`watchAllProducts` · `getAllProducts` ·
+    // `watchProductsByCategory`) تفلتر `isActive == true`. فالمحذوفُ كان
+    // مستبعَداً من نقطة البيع والمنتقيات تلقائياً وباقياً هنا وحدَه:
+    // «تظهر رسالة تم الحذف ولكن لا يزال الصنف موجوداً» (بلاغٌ ميدانيّ).
+    //
+    // 🔴 والفلترةُ على `deletedAt` **وحدَه** — لا `isActive`. الشاشةُ تعرض
+    // المعطَّلَ **عمداً** كي يستطيع المشغّلُ إعادةَ تفعيله، وفلترةٌ على
+    // `isActive` كانت ستُخفيه هي الأخرى فتكسر خاصيةً قائمة. وهي الطريقُ
+    // الأقصرُ الخاطئ الذي يقع فيه من يصلح هذا العطل — ولذلك اختبارٌ حارسٌ
+    // صريحٌ عليها في `test/unit/product_delete_hides_from_list_test.dart`.
+    queryBuilder.where((p) => p.deletedAt.isNull());
+
     // Apply filters
     if (query != null && query.isNotEmpty) {
       // Issue 1 (Feature 019): primary `barcode` column.

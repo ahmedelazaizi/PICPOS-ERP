@@ -642,9 +642,32 @@ extension ProductCrudDao on AppDatabase {
       );
     }
 
-    // Soft delete - mark as inactive instead of hard delete
+    // Soft delete — يُخفى لا يُمحى. الحذفُ الصلبُ يكسر أيَّ مرجعٍ قائمٍ ولا
+    // رجعةَ فيه، والحارسُ فوق يمنع الحذفَ أصلاً عند وجود معاملات.
+    //
+    // ── ولماذا `deletedAt` ومعه `isActive` ───────────────────────────────
+    // كان يكتفي بـ`isActive: false` — وهي **نفسُ** حالة «تعطيل الصنف»،
+    // إجراءٌ مستقلٌّ قائمٌ للمشغّل. فانهار الفعلان إلى حالةٍ واحدةٍ لا تفرّق
+    // بينهما، وشاشةُ الأصناف تعرض المعطَّلَ **عمداً** كي يُعاد تفعيله ⇒
+    // فالمحذوفُ يبقى معروضاً معه: «تظهر رسالة تم الحذف ولكن لا يزال الصنف
+    // موجوداً» (بلاغٌ ميدانيّ 2026-08-11). والرسالةُ لم تكن كاذبة — الكتابةُ
+    // نجحت والنتيجةُ هي التي كذّبتها.
+    //
+    // `isActive = false` يبقى مكتوباً **عمداً**: كلُّ قرّاء المنتجات الآخرين
+    // (`watchAllProducts` · `getAllProducts` · `watchProductsByCategory`)
+    // يفلترون عليه، فيظلّ المحذوفُ مستبعَداً من نقطة البيع والمنتقيات بلا
+    // تعديل سطرٍ فيها. و`deletedAt` هو ما يفصل الفعلين:
+    //
+    //   تعطيل: isActive=false · deletedAt=NULL  ⇒ يبقى معروضاً، يُعاد تفعيله
+    //   حذف  : isActive=false · deletedAt=الآن  ⇒ يختفي من الشاشة
+    //
+    // والعمودُ كان قائماً في السكيما وغيرَ مستعمل — فلا تغييرَ سكيما ولا
+    // هجرةَ ولا `build_runner`.
     await (update(products)..where((p) => p.id.equals(productId))).write(
-      const ProductsCompanion(isActive: Value(false)),
+      ProductsCompanion(
+        isActive: const Value(false),
+        deletedAt: Value(DateTime.now()),
+      ),
     );
     // Was `_productSearchCache.clear()` alone, which left `_productByIdCache`
     // holding the pre-delete row with isActive=true. getProductById returns
