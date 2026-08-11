@@ -64,10 +64,17 @@ rm -rf build/native_assets
 #
 # تشغيلةُ 2026-08-11 بعد إعادة §٣-ب وتسييجها (‏c=4، ‏--pg):
 #   analyze 6 info · unit 3054 · widget 651 · integration 701 · pg 45
-#   (‏آخرُ تشغيلةٍ كاملةٍ على شجرةٍ ثابتة — `GATE_EXIT=0` ونصُّ «كلها خضراء».
-#    الزيادة: ٤ في unit — ٣ من حارس وصل ربط الخزائن العائد وواحدٌ يمنع نداءَ
+#   (‏الزيادة: ٤ في unit — ٣ من حارس وصل ربط الخزائن العائد وواحدٌ يمنع نداءَ
 #    الإصلاح عارياً من الإقلاع. و١١ في integration — ٧ لسلوك الإصلاح و٤
 #    للتسييج المرّة-الواحدة.)
+#
+# تشغيلةُ 2026-08-11 بعد بلاغات §٥ وربطِ مراكز التكلفة (‏c=4، ‏--pg):
+#   analyze 6 info · unit 3099 · widget 651 · integration 710 · pg 45
+#   (‏آخرُ تشغيلةٍ كاملةٍ على شجرةٍ ثابتة — `GATE_EXIT=0` ونصُّ «كلها خضراء».
+#    الزيادة: ٤٥ في unit — ٤٣ من حارس الطبقات الأربع لقنوات الدفع في قالب
+#    الوردية، و٦ لمحوّل طريقة الدفع، و٤ حراسٍ للإيصال، ناقصَ ما اندمج. و٩ في
+#    integration — ٤ لثابتة «بلا مستقبِلٍ لا يخرج المال» و٥ لوراثة مركز
+#    التكلفة من الخزنة.)
 #
 # والحكمُ **بتطابق عدد النجاحات** لا بالخضرة: لو كشف التوازي هشاشةً كامنة
 # لظهر الفرقُ رقماً. وصفرُ `PathExistsException` في كلّ التشغيلات بعد تنظيف
@@ -166,7 +173,7 @@ fi
 # على `DELETE FROM "accounts"` لأن `safes.linkedAccountId` صار يشدُّ الدليل،
 # و٢ افتراضَ أن رجلَ النقدية على `1111`. فالوصفةُ الموصوفة لو طُبّقت بالجملة
 # لَما أصلحت شيئاً — اقرأ رسالةَ الفشل، لا وصفةَ المستند.
-run_suite "unit + data + structural + services" 3054 \
+run_suite "unit + data + structural + services" 3099 \
   flutter test test/unit test/data test/structural test/services --concurrency="$LOCAL_CONCURRENCY"
 
 # الواجهات والنطاقُ والنواة — كانت **كلُّها** خارج البوابة حتى 2026-08-09.
@@ -174,7 +181,7 @@ run_suite "widget + core + domain + presentation + security + static" 651 \
   flutter test test/core test/domain test/presentation test/security \
               test/static test/widget test/widget_test.dart --concurrency="$LOCAL_CONCURRENCY"
 
-run_suite "integration" 701 \
+run_suite "integration" 710 \
   flutter test test/integration --concurrency="$LOCAL_CONCURRENCY"
 
 if (( WITH_PG )); then
