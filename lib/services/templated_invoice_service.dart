@@ -6,7 +6,6 @@ import 'generators/base_generator.dart';
 import 'package:printing/printing.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
-import '../core/constants/app_constants.dart';
 import '../core/logging/diagnostic_logger.dart';
 import '../data/database/database.dart';
 import '../domain/entities/shift_closing_snapshot.dart';
@@ -18,14 +17,93 @@ import 'printer_resolver.dart';
 class TemplatedInvoiceService {
   static pw.Font? _arabicFont;
 
+  /// دقّةُ الأرقام في المستند المطبوع — **خانتان، والمصدرُ واحد.**
+  ///
+  /// البلاغ الميدانيّ (2026-08-11): «خانتان عشريتان في الجدول وثلاثٌ في
+  /// الإجماليات» — في **نفس الورقة**. مصدران مستقلّان: الجدولُ كان يبدأ من
+  /// رقمٍ مكتوبٍ عنده، والإجمالياتُ تُنسَّق بـ`AppConstants.decimalPlaces`.
+  ///
+  /// والمطبوعُ سطحُ عرضٍ له عرفُه: إيصالٌ حراريٌّ يكتب «2.000» لقطعتَي جبنٍ
+  /// يقرؤه العميلُ ثقيلاً. فدقّةُ الإيصال ثنتان، ودفاترُ النظام تبقى على
+  /// `AppConstants.decimalPlaces` بلا مساس — الثابتةُ المحروسةُ ليست «رقمٌ
+  /// بعينه» بل **دقّةٌ واحدةٌ داخل المستند الواحد**.
+  ///
+  /// ويتجاوزها `_decimalPlaces` في إعدادات جدول القالب حين يضبطه المستخدم،
+  /// فتسري على الجدول **والإجماليات معاً** — لا على الجدول وحدَه كما كان.
+  static const int kReceiptDecimalPlaces = 2;
+
+  /// دقّةُ المستند الجاري طبعُه. تُحسم مرّةً في `printWithTemplate` **قبل**
+  /// بناء أيّ عنصر، لأن الإجمالياتِ قد تُبنى قبل الجدول أو بعده بحسب ترتيب
+  /// الأقسام — فحسمُها داخل باني الجدول كان سيترك أحدَ الطرفين على قيمةٍ
+  /// بائتة. والطباعةُ متسلسلةٌ فلا تتداخل مستندان.
+  static int _docDecimals = kReceiptDecimalPlaces;
+
+  static int _resolveDocDecimals(InvoiceTableSetting? settings) {
+    final raw = settings?.columnWidths;
+    if (raw == null || raw.isEmpty) return kReceiptDecimalPlaces;
+    try {
+      final decoded = jsonDecode(raw) as Map<String, dynamic>;
+      final v = decoded['_decimalPlaces'];
+      if (v is num) return v.toInt();
+    } catch (_) {}
+    return kReceiptDecimalPlaces;
+  }
+
   /// الخطُّ من المصنع وحدَه.
   ///
   /// كان هنا سلَّمٌ خاصٌّ أوّلُه **Cairo** المحزوم. وCairo ينقصه الياءُ
   /// المنفصلة U+FEF1، فكلُّ اسمٍ آخرُه ي بعد حرفٍ غيرِ موصول («صبري» ·
   /// «بدري» · «المصري») يُطبع والياءُ راكبةٌ على ما قبلها. والمصنعُ عنده
   /// نفسُ السلَّم بأساسٍ يحمل الأشكالَ كلَّها (Noto Naskh).
+  /// الوزنُ العريضُ **ملفٌّ لا خاصية**: الحزمة لا تصطنع العريض، فـ
+  /// `FontWeight.bold` بلا وجهٍ عريضٍ محمَّلٍ يسقط على العاديّ بلا أثر —
+  /// موثَّقٌ في `base_generator.dart:44`. ورسمُ الإيصال أرى ذلك بالعين: صفُّ
+  /// العناوين بعد رفع التعبئة عنه بقي بوزن البدن نفسِه.
+  static pw.Font? _arabicBoldFont;
+
   static Future<void> _initFont() async {
     _arabicFont ??= await BaseGenerator.initFont();
+    _arabicBoldFont ??= await BaseGenerator.initBoldFont();
+  }
+
+  /// بايتاتُ جدولِ الأصناف كما يُرسَم فعلاً — **مِقبضٌ للقياس لا مسارُ إنتاج.**
+  ///
+  /// `printWithTemplate` يبني `pw.Document` ويدفعه إلى `Printing.*` مباشرةً،
+  /// فلا تُرجع الوثيقةَ ولا البايتات. ولذلك كانت حراسُ المطبوع **بنيويةً**
+  /// تمنع العودةَ ولا تثبت الخروج. وحين وصل بلاغُ «صفُّ عناوين الأعمدة لا
+  /// يظهر في الطباعة» لم يكن ثمّة سبيلٌ لرسم المستند والنظر إليه — وهي
+  /// الخطوةُ التي كشفت عطبَ الخطوط بعد ثلاث فرضياتٍ معقولةٍ خاطئة.
+  ///
+  /// فهذا يبني **نفسَ** الجدول بنفس الدالّة (`_buildItemsTable`) وبنفس هيئة
+  /// الورق الحراريّ، ويعيد البايتات كي تُرسَّم وتُفحَص. لا يستنسخ منطقاً:
+  /// أيُّ تغييرٍ في الجدول يظهر هنا فوراً.
+  @visibleForTesting
+  static Future<Uint8List> debugRenderItemsTable({
+    required List<Map<String, dynamic>> items,
+    InvoiceTableSetting? settings,
+    double paperWidthMm = 79,
+  }) async {
+    await _initFont();
+    const mmToPoints = 2.8346;
+    final baseStyle = pw.TextStyle(font: _arabicFont, fontSize: 8);
+    // `BaseGenerator.newDocument()` لا `pw.Document()` عارياً — وهو ما يستعمله
+    // مسارُ الإنتاج في هذا الملفّ (‏السطران ٣٥٢ و١٥٩٣). المستندُ العاري بلا
+    // ثيمٍ يرسم بخطٍّ واحدٍ لكلّ النصّ ويحذف الرسمَ الناقصَ بالسكوت، فمِقبضٌ
+    // للقياس يبني بغير ما يبني به الإنتاجُ يقيس مستنداً آخر.
+    // (‏حارسُ `no_bare_pdf_document_test` اصطاد هذا هنا فعلاً.)
+    final pdf = await BaseGenerator.newDocument();
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat(
+          paperWidthMm * mmToPoints,
+          double.infinity,
+          marginAll: 2.0 * mmToPoints,
+        ),
+        textDirection: pw.TextDirection.rtl,
+        build: (_) => _buildItemsTable(items, settings, baseStyle),
+      ),
+    );
+    return pdf.save();
   }
 
   // ── إضافاتُ الصنف وخياراتُه ─────────────────────────────────────────────
@@ -96,7 +174,7 @@ class TemplatedInvoiceService {
   /// وكانت كلُّها تسقط على `default: return ''` — فالعنصرُ بلا تسميةٍ يرجع
   /// `SizedBox()` أي **يختفي**، وبتسميةٍ يطبع تسميةً معلَّقةً بلا رقم.
   static String? resolveShiftValue(String type, ShiftClosingSnapshot s) {
-    String n(double v) => v.toStringAsFixed(AppConstants.decimalPlaces);
+    String n(double v) => v.toStringAsFixed(_docDecimals);
 
     switch (type) {
       case 'shift_invoice_count':
@@ -288,6 +366,7 @@ class TemplatedInvoiceService {
         : paperWidthMm;      // A4 stays as-is
     final canvasWidth = printableWidthMm * mmToPoints;
     final ts = templateData.tableSettings;
+    _docDecimals = _resolveDocDecimals(ts);
 
     // ─── FLOW-BASED LAYOUT ───────────────────────────────────────────
     // Matches the Section Editor's preview: elements flow vertically,
@@ -1155,13 +1234,13 @@ class TemplatedInvoiceService {
       case 'cashier_name': return cashierName ?? '';
       case 'supplier_name': return customerName ?? '';
       case 'notes': case 'kitchen_notes': return notes ?? '';
-      case 'subtotal': return subtotal.toStringAsFixed(AppConstants.decimalPlaces);
-      case 'discount': return discount.toStringAsFixed(AppConstants.decimalPlaces);
-      case 'tax': case 'tax_amount': return tax.toStringAsFixed(AppConstants.decimalPlaces);
-      case 'delivery_fee': return deliveryFee.toStringAsFixed(AppConstants.decimalPlaces);
-      case 'total': case 'total_amount': case 'grand_total': return total.toStringAsFixed(AppConstants.decimalPlaces);
-      case 'paid': case 'paid_amount': return paid.toStringAsFixed(AppConstants.decimalPlaces);
-      case 'remaining': case 'change': return remaining.toStringAsFixed(AppConstants.decimalPlaces);
+      case 'subtotal': return subtotal.toStringAsFixed(_docDecimals);
+      case 'discount': return discount.toStringAsFixed(_docDecimals);
+      case 'tax': case 'tax_amount': return tax.toStringAsFixed(_docDecimals);
+      case 'delivery_fee': return deliveryFee.toStringAsFixed(_docDecimals);
+      case 'total': case 'total_amount': case 'grand_total': return total.toStringAsFixed(_docDecimals);
+      case 'paid': case 'paid_amount': return paid.toStringAsFixed(_docDecimals);
+      case 'remaining': case 'change': return remaining.toStringAsFixed(_docDecimals);
       // Fields where data is not yet passed through to the print service
       case 'table_number':
         return platformOrderNumber ?? adhocCustomerName ?? customerName ?? '';
@@ -1199,15 +1278,9 @@ class TemplatedInvoiceService {
       'tax': 1.0,
       'total': 1.5,
     };
-    // §٥-٣ (بلاغٌ ميدانيّ 2026-08-11): «خانتان عشريتان في الجدول وثلاثٌ في
-    // الإجماليات» — في **نفس** المستند. مصدران مستقلّان للدقّة: الجدولُ كان
-    // يبدأ من `2` مكتوبةً هنا، والإجمالياتُ تُنسَّق بـ`AppConstants
-    // .decimalPlaces` (‏٣) في `_getDataValue` و`_totalRow`. فالافتراضان
-    // اختلفا، والقارئُ يرى رقمين بدقّتين في ورقةٍ واحدة.
-    //
-    // الافتراضُ الآن من المصدر نفسِه. و`_decimalPlaces` في إعدادات القالب
-    // يبقى تجاوزاً صريحاً للجدول حين يضبطه المستخدم.
-    int decimalPlaces = AppConstants.decimalPlaces;
+    // §٥-٣ — الدقّةُ محسومةٌ للمستند كلِّه في `_docDecimals` (انظر تعليقَه
+    // فوق). كانت تُحسم هنا وحدَها فتفترق عن الإجماليات في نفس الورقة.
+    int decimalPlaces = _docDecimals;
     bool headerBold = true;  // Default: header is bold
     bool bodyBold = false;   // Default: body is normal
     bool showHeader = true;  // Default: show header row
@@ -1269,10 +1342,23 @@ class TemplatedInvoiceService {
     final maxHeaderFont = enabledCols >= 7 ? 7.0 : (enabledCols >= 6 ? 8.0 : 24.0);
     final headerFontSize = (settings?.headerFontSize ?? 9.0).clamp(1.0, maxHeaderFont);
     final bodyFontSize = (settings?.fontSize ?? 8.0).clamp(1.0, 24.0);
+    // ── صفُّ العناوين: حبرٌ لا تعبئة ──────────────────────────────────────
+    //
+    // البلاغ الميدانيّ (2026-08-11): «صفُّ عناوين أعمدة الجدول لا يظهر في
+    // الطباعة». ورسمُ المستند بـ`Windows.Data.Pdf` أثبت أن **الصفَّ موجودٌ
+    // في الوثيقة وواضح** — فنفى كلَّ فرضيات الكود (‏`_showHeader` معطَّل ·
+    // `headerFontSize` مقصورٌ إلى ١pt · القالبُ بلا صفّ). بقي تفسيرٌ واحد:
+    // النصُّ كان **أبيضَ** يتّكئ على تعبئةٍ سوداء، والطابعةُ الحرارية تُسقط
+    // تعبئةَ الخلفية ⇒ أبيضُ على ورقٍ أبيض.
+    //
+    // فالعناوينُ الآن سوداءُ عريضة، والفصلُ من حدود الجدول القائمة لا من
+    // مساحةٍ ملوّنة. يُطبع على كلّ جهازٍ سواءٌ رسم التعبئةَ أم أسقطها —
+    // **لا يُعتمد على ما قد لا يصل إلى الورق.**
     final headerStyle = baseStyle.copyWith(
-      fontWeight: headerBold ? pw.FontWeight.bold : pw.FontWeight.normal,
+      font: _arabicBoldFont ?? baseStyle.font,
+      fontWeight: pw.FontWeight.bold,
       fontSize: headerFontSize,
-      color: PdfColors.white,
+      color: PdfColors.black,
     );
     final bodyStyle = baseStyle.copyWith(
       fontWeight: bodyBold ? pw.FontWeight.bold : pw.FontWeight.normal,
@@ -1286,7 +1372,9 @@ class TemplatedInvoiceService {
         // Header (cells in RTL order — rightmost visual column first)
         if (showHeader)
         pw.TableRow(
-          decoration: const pw.BoxDecoration(color: PdfColors.black),
+          // بلا تعبئة — انظر `headerStyle` فوق. و`headerBold` صار لا يُقرأ
+          // هنا قصداً: العناوينُ عريضةٌ دائماً لأن العَرْضَ هو ما يفصلها عن
+          // البدن بعد زوال المساحة الملوّنة.
           children: [
             if (showTotalCol)
               _tableCell(
@@ -1401,7 +1489,7 @@ class TemplatedInvoiceService {
           ),
           pw.SizedBox(width: 4),
           pw.Text(
-            '${isSubtraction ? "-" : ""}${value.toStringAsFixed(AppConstants.decimalPlaces)}',
+            '${isSubtraction ? "-" : ""}${value.toStringAsFixed(_docDecimals)}',
             style: style,
           ),
         ],
@@ -1629,7 +1717,7 @@ class TemplatedInvoiceService {
         case 'product_price':
           if (price != null) {
             contentWidget = pw.Text(
-              price.toStringAsFixed(AppConstants.decimalPlaces),
+              price.toStringAsFixed(_docDecimals),
               style: style,
               textAlign: align,
             );
