@@ -640,7 +640,8 @@ class TemplatedInvoiceService {
         );
       case 'payment_method':
         return pw.Text(
-          '${element.labelAr ?? 'طريقة الدفع'}: $paymentMethod',
+          '${element.labelAr ?? 'طريقة الدفع'}: '
+          '${mapPaymentMethodLabel(paymentMethod)}',
           style: style,
           textAlign: align,
         );
@@ -859,8 +860,19 @@ class TemplatedInvoiceService {
           platformOrderNumber: platformOrderNumber,
         );
 
-        if (label.isEmpty && value.isEmpty) {
-          debugPrint('[TemplatedInvoice] ⚠ Unknown: "$resolvedType"');
+        // §٥-٣ (بلاغٌ ميدانيّ 2026-08-11): كان الشرطُ `&&`، فتسميةٌ **معروفةٌ**
+        // بقيمةٍ فارغةٍ تُطبع معلَّقةً بلا رقم: «الكاشير:» و«المخزن:» في
+        // الإيصال المرصود. والحقولُ التي ترجع `''` مقصودةٌ ومعلومة — انظر
+        // `_getDataValue`: «Fields where data is not yet passed through to the
+        // print service» (‏`warehouse_name` · `branch_name` · `cash_amount` ·
+        // `bank_amount` · `click_amount` …).
+        //
+        // فالقاعدة: **عنصرٌ بلا قيمةٍ لا يقول شيئاً فلا يُطبع.** تسميةٌ وحدَها
+        // أسوأُ من لا شيء: القارئُ يظنّ البيانَ ناقصاً لا الحقلَ غيرَ مفعَّل.
+        if (value.isEmpty) {
+          if (label.isEmpty) {
+            debugPrint('[TemplatedInvoice] ⚠ Unknown: "$resolvedType"');
+          }
           return pw.SizedBox();
         }
 
@@ -1026,6 +1038,41 @@ class TemplatedInvoiceService {
     return 8;
   }
 
+  /// كودُ طريقة الدفع → تسميتُه العربية.
+  ///
+  /// §٥-٣ (بلاغٌ ميدانيّ 2026-08-11): الإيصالُ طبع «طريقة الدفع: cash». كان
+  /// `payment_method` يُطبع **خاماً** كما يصل من المنادي، ولا مُحوِّلَ له —
+  /// بينما `_mapSaleTypeLabel` المجاور يحوّل نوعَ البيع منذ البداية. فالكودُ
+  /// الإنجليزيُّ يظهر للعميل في إيصالٍ عربيٍّ بالكامل.
+  ///
+  /// وما لا يُعرف يُعاد كما هو لا يُبتلع: تسميةٌ عربيةٌ وصلت جاهزةً من منادٍ
+  /// آخر تمرّ، وكودٌ جديدٌ يظهر فيُرى بدل أن يختفي صامتاً.
+  static String mapPaymentMethodLabel(String method) {
+    switch (method.trim().toLowerCase()) {
+      case 'cash':
+        return 'نقدي';
+      case 'card':
+      case 'visa':
+      case 'mastercard':
+        return 'بطاقة';
+      case 'bank':
+      case 'transfer':
+        return 'تحويل بنكي';
+      case 'click':
+        return 'كليك';
+      case 'credit':
+      case 'deferred':
+        return 'آجل';
+      case 'wallet':
+        return 'محفظة';
+      case 'mixed':
+      case 'multi':
+        return 'مختلط';
+      default:
+        return method;
+    }
+  }
+
   /// Map sale type codes to human-readable Arabic labels (with platform hashtags)
   static String _mapSaleTypeLabel(String saleType) {
     switch (saleType.toLowerCase()) {
@@ -1103,7 +1150,8 @@ class TemplatedInvoiceService {
       case 'company_address': return companyAddress;
       case 'company_phone': return companyPhone;
       case 'company_tax_id': case 'company_tax_number': case 'tax_registration': return companyTaxId ?? '';
-      case 'payment_method': case 'sale_type': case 'invoice_type_label': return paymentMethod;
+      case 'payment_method': return mapPaymentMethodLabel(paymentMethod);
+      case 'sale_type': case 'invoice_type_label': return paymentMethod;
       case 'cashier_name': return cashierName ?? '';
       case 'supplier_name': return customerName ?? '';
       case 'notes': case 'kitchen_notes': return notes ?? '';
@@ -1151,7 +1199,15 @@ class TemplatedInvoiceService {
       'tax': 1.0,
       'total': 1.5,
     };
-    int decimalPlaces = 2;
+    // §٥-٣ (بلاغٌ ميدانيّ 2026-08-11): «خانتان عشريتان في الجدول وثلاثٌ في
+    // الإجماليات» — في **نفس** المستند. مصدران مستقلّان للدقّة: الجدولُ كان
+    // يبدأ من `2` مكتوبةً هنا، والإجمالياتُ تُنسَّق بـ`AppConstants
+    // .decimalPlaces` (‏٣) في `_getDataValue` و`_totalRow`. فالافتراضان
+    // اختلفا، والقارئُ يرى رقمين بدقّتين في ورقةٍ واحدة.
+    //
+    // الافتراضُ الآن من المصدر نفسِه. و`_decimalPlaces` في إعدادات القالب
+    // يبقى تجاوزاً صريحاً للجدول حين يضبطه المستخدم.
+    int decimalPlaces = AppConstants.decimalPlaces;
     bool headerBold = true;  // Default: header is bold
     bool bodyBold = false;   // Default: body is normal
     bool showHeader = true;  // Default: show header row
