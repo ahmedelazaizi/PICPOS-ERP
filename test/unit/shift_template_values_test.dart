@@ -54,6 +54,11 @@ void main() {
       'shift_system_card': 200.75,
       'shift_actual_card': 205.75,
       'shift_card_variance': 5.0,
+      // §٥-٢ — «كليك» قناةُ دفعٍ كاملةٌ في اللقطة وتدخل في المجاميع تحت،
+      // ولم يكن لها عنصرٌ يعرضها في أيّ طبقةٍ من طبقات القالب.
+      'shift_system_click': 133.5,
+      'shift_actual_click': 133.5,
+      'shift_click_variance': 0.0,
       'shift_total_variance': -5.0,
       'shift_total_expenses': 60.0,
       'shift_cash_refunds': 25.0,
@@ -93,6 +98,44 @@ void main() {
       // لولا هذا لمرّ الحلُّ بإرجاع '0' لكلّ شيء.
       expect(TemplatedInvoiceService.resolveShiftValue('company_name', _snap),
           isNull);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // §٥-٢ — بلاغٌ ميدانيّ: تقريرُ الوردية لا يجمع
+  // ═══════════════════════════════════════════════════════════════════════
+  //
+  // المرصود: المعروضُ `240,000 + 120,000` والإجماليُّ `560,000` — والفارقُ
+  // ٢٠٠,٠٠٠ هو حصّةُ «كليك»: مضمومةٌ في الإجمالي وغائبةٌ عن المعروض.
+  //
+  // والقارئُ لا يملك تفسيراً لذلك: يجمع ما يراه فلا يطابق، فيظنّ العطبَ في
+  // الحساب لا في العرض. تقريرُ إقفالٍ لا يجمع لا يُوقَّع عليه.
+  group('§٥-٢ — الإجماليُّ يساوي مجموعَ ما يمكن عرضه', () {
+    double resolved(String type) {
+      final out = TemplatedInvoiceService.resolveShiftValue(type, _snap);
+      expect(out, isNotNull,
+          reason: '«$type» يدخل في مجموعٍ معروضٍ ولا قيمةَ له ⇒ العنصرُ '
+              'يختفي من المطبوع والإجماليُّ يبقى شاملاً له');
+      return double.parse(out!.replaceAll(',', ''));
+    }
+
+    test('shift_total_system = نقد + بطاقة + كليك، وكلُّها قابلةٌ للعرض', () {
+      // الثابتةُ المحروسة: **ما يدخل المجموعَ يجب أن يكون له عنصرٌ يعرضه.**
+      // حارسُ فئةٍ لا حارسُ حالة: أيُّ قناةِ دفعٍ تُضاف للمجموع لاحقاً بلا
+      // عنصرٍ يعرضها تُعيد نفسَ العطب، ويسقط هذا فوراً.
+      final parts = ['shift_system_cash', 'shift_system_card', 'shift_system_click']
+          .map(resolved)
+          .reduce((a, b) => a + b);
+      expect(resolved('shift_total_system'), closeTo(parts, 0.001),
+          reason: 'الإجماليُّ يشمل قناةً لا يعرضها التقرير — القارئُ يجمع ما '
+              'يراه فلا يطابق');
+    });
+
+    test('shift_total_actual = نقد + بطاقة + كليك، وكلُّها قابلةٌ للعرض', () {
+      final parts = ['shift_actual_cash', 'shift_actual_card', 'shift_actual_click']
+          .map(resolved)
+          .reduce((a, b) => a + b);
+      expect(resolved('shift_total_actual'), closeTo(parts, 0.001));
     });
   });
 }

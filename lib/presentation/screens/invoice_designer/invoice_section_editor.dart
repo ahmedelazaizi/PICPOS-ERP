@@ -364,6 +364,15 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
             SectionField(key: 'shift_card_variance', label: 'فارق البطاقة', icon: PhosphorIconsBold.plusMinus, elementType: 'variable', variableContent: 'shift_card_variance'),
           ],
         ),
+        // §٥-٢ — «كليك» تدخل في الإجماليات تحت، ولم يكن لها قسمٌ هنا.
+        InvoiceSection(
+          id: 'shift_click', title: 'تسوية كليك', icon: PhosphorIconsBold.deviceMobile, color: const Color(0xFF7C3AED),
+          fields: [
+            SectionField(key: 'shift_system_click', label: 'رصيد النظام (كليك)', icon: PhosphorIconsBold.deviceMobile, elementType: 'variable', variableContent: 'shift_system_click'),
+            SectionField(key: 'shift_actual_click', label: 'كليك الفعلي', icon: PhosphorIconsBold.deviceMobile, elementType: 'variable', variableContent: 'shift_actual_click'),
+            SectionField(key: 'shift_click_variance', label: 'فارق كليك', icon: PhosphorIconsBold.plusMinus, elementType: 'variable', variableContent: 'shift_click_variance'),
+          ],
+        ),
         InvoiceSection(
           id: 'shift_totals', title: 'الإجماليات', icon: PhosphorIconsBold.calculator, color: const Color(0xFFDC2626),
           fields: [
@@ -1612,8 +1621,14 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
     'shift_system_card': '3,500.00',
     'shift_actual_card': '3,500.00',
     'shift_card_variance': '0.00',
-    'shift_total_system': '12,000.00',
-    'shift_total_actual': '11,970.00',
+    // §٥-٢ — أرقامُ المعاينة **تجمع**: ‏8,500 + 3,500 + 1,200 = 13,200.
+    // كانت 12,000 (نقد + بطاقة بلا كليك) فتُعلّم المصمّمَ إجمالياً لا يطابق
+    // معروضَه — وهو بعينه العطبُ المرصود في المطبوع.
+    'shift_system_click': '1,200.00',
+    'shift_actual_click': '1,200.00',
+    'shift_click_variance': '0.00',
+    'shift_total_system': '13,200.00',
+    'shift_total_actual': '13,170.00',
     'shift_total_variance': '-30.00',
     'shift_status': 'عجز: -30.00',
   };

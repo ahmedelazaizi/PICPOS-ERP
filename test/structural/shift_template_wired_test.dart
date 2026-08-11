@@ -21,6 +21,12 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 const _printPath = 'lib/services/printing/shift_closing_print.dart';
+const _servicePath = 'lib/services/templated_invoice_service.dart';
+const _palettePath =
+    'lib/presentation/screens/invoice_designer/invoice_designer_ui.dart';
+const _sectionPath =
+    'lib/presentation/screens/invoice_designer/invoice_section_editor.dart';
+const _seederPath = 'lib/data/database/daos/invoice_template_seeder_dao.dart';
 
 bool _isCall(String line, String name) {
   final t = line.trimLeft();
@@ -32,6 +38,37 @@ bool _isCall(String line, String name) {
 
 void main() {
   final f = File(_printPath);
+
+  // §٥-٢ — قناةُ دفعٍ تدخل الإجماليَّ ولا يعرضها القالبُ تجعل التقريرَ لا
+  // يجمع. المرصود ميدانياً: `240,000 + 120,000` بإجمالي `560,000` — والفارقُ
+  // «كليك»، حاضرةٌ في اللقطة وفي المجاميع، غائبةٌ عن **أربع** طبقات:
+  // الحلُّ · لوحةُ المصمّم · محرِّرُ الأقسام · القالبُ المبذور.
+  //
+  // فحارسٌ على الطبقات الأربع معاً: إصلاحُ الحلِّ وحدَه يجعل القيمةَ قابلةً
+  // للحلّ ولا يضعها في يد المستخدم ولا في المطبوع الافتراضيّ — أي يبقى
+  // التقريرُ لا يجمع. وهذا يمتدّ لأيّ قناةٍ تُضاف لاحقاً.
+  group('§٥-٢ — كلُّ قناةِ دفعٍ حاضرةٌ في الطبقات الأربع', () {
+    const layers = <String, String>{
+      _servicePath: 'الحلُّ — بلاها ترجع `null` فيختفي العنصر',
+      _palettePath: 'لوحةُ المصمّم — بلاها لا يملك المستخدمُ وضعَها',
+      _sectionPath: 'محرِّرُ الأقسام — بلاها لا تظهر في التحرير السريع',
+      _seederPath: 'القالبُ المبذور — بلاها لا يجمع المطبوعُ الافتراضيّ',
+    };
+
+    for (final channel in const ['cash', 'card', 'click']) {
+      for (final metric in const ['system', 'actual']) {
+        final token = 'shift_${metric}_$channel';
+        layers.forEach((path, why) {
+          test('$token في ${path.split('/').last}', () {
+            final file = File(path);
+            expect(file.existsSync(), isTrue, reason: 'مسارُ $path تغيّر');
+            expect(file.readAsStringSync().contains(token), isTrue,
+                reason: '«$token» غائبٌ عن $why');
+          });
+        });
+      }
+    }
+  });
 
   test('مسارُ إقفال الوردية يسأل عن قالبٍ افتراضيّ', () {
     expect(f.existsSync(), isTrue, reason: 'مسارُ ملفّ الطباعة تغيّر');

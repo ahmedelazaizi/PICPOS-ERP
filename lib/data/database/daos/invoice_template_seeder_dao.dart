@@ -437,6 +437,40 @@ extension InvoiceTemplateSeederDao on AppDatabase {
         'labelAr': 'الفارق',
       },
       {'type': 'line'},
+      // §٥-٢ — Click reconciliation. كانت غائبةً عن القالب المبذور بينما
+      // `shift_total_system` و`shift_total_actual` تحت **يجمعانها**، فالمطبوعُ
+      // يعرض النقدَ والبطاقةَ ويطبع إجمالياً أكبرَ من مجموعهما بلا تفسير:
+      // المرصود ميدانياً `240,000 + 120,000` بإجمالي `560,000`.
+      {
+        'type': 'text',
+        'content': 'كليك',
+        'alignment': 'center',
+        'fontSize': 9.0,
+        'fontWeight': 'bold',
+      },
+      {
+        'type': 'variable',
+        'content': 'shift_system_click',
+        'alignment': 'right',
+        'fontSize': 9.0,
+        'labelAr': 'رصيد النظام',
+      },
+      {
+        'type': 'variable',
+        'content': 'shift_actual_click',
+        'alignment': 'right',
+        'fontSize': 9.0,
+        'labelAr': 'المبلغ الفعلي',
+      },
+      {
+        'type': 'variable',
+        'content': 'shift_click_variance',
+        'alignment': 'right',
+        'fontSize': 9.0,
+        'fontWeight': 'bold',
+        'labelAr': 'الفارق',
+      },
+      {'type': 'line'},
       // Totals
       {
         'type': 'variable',

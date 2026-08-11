@@ -147,6 +147,16 @@ mixin _InvoiceDesignerUIMixin on ConsumerState<InvoiceDesignerScreen> {
                   const _PaletteItem('فارق البطاقة', 'variable', 'shift_card_variance', PhosphorIconsBold.plusMinus),
                 ]),
                 const SizedBox(height: 12),
+                // §٥-٢ — «كليك» تدخل في «إجمالي النظام» و«إجمالي الفعلي» تحت،
+                // ولم تكن لها عناصرُ تعرضها هنا. فالمصمّمُ لا يملك وضعَها في
+                // القالب أصلاً، والمطبوعُ يعرض النقدَ والبطاقةَ بإجماليٍّ
+                // يشملها — فلا يجمع.
+                _buildPaletteSection('تسوية كليك', [
+                  const _PaletteItem('رصيد كليك (نظام)', 'variable', 'shift_system_click', PhosphorIconsBold.deviceMobile),
+                  const _PaletteItem('كليك الفعلي', 'variable', 'shift_actual_click', PhosphorIconsBold.deviceMobile),
+                  const _PaletteItem('فارق كليك', 'variable', 'shift_click_variance', PhosphorIconsBold.plusMinus),
+                ]),
+                const SizedBox(height: 12),
                 _buildPaletteSection('الإجماليات', [
                   const _PaletteItem('إجمالي النظام', 'variable', 'shift_total_system', PhosphorIconsBold.calculator),
                   const _PaletteItem('إجمالي الفعلي', 'variable', 'shift_total_actual', PhosphorIconsBold.wallet),

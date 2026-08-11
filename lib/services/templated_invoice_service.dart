@@ -115,6 +115,20 @@ class TemplatedInvoiceService {
         return n(s.actualCard);
       case 'shift_card_variance':
         return n(s.cardVariance);
+
+      // §٥-٢ (بلاغٌ ميدانيّ 2026-08-11): «كليك» قناةُ دفعٍ كاملةٌ في اللقطة
+      // وتدخل في `shift_total_system` و`shift_total_actual` تحت — وكانت
+      // غائبةً عن **كلّ** طبقات القالب: لا حالةَ هنا، ولا عنصرَ في لوحة
+      // المصمّم، ولا صفَّ في القالب المبذور. فالمطبوعُ يعرض النقدَ والبطاقةَ
+      // ويطبع إجمالياً يشملها: المرصود `240,000 + 120,000` بإجمالي
+      // `560,000`. والقارئُ يجمع ما يراه فلا يطابق، فيظنّ العطبَ في الحساب.
+      case 'shift_system_click':
+        return n(s.systemClick);
+      case 'shift_actual_click':
+        return n(s.actualClick);
+      case 'shift_click_variance':
+        return n(s.clickVariance);
+
       case 'shift_total_variance':
         return n(s.totalVariance);
       case 'shift_total_expenses':
