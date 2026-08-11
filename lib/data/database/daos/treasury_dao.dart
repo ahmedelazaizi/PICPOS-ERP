@@ -1035,6 +1035,43 @@ extension TreasuryDao on AppDatabase {
           zeroOutGlobalId = UuidV7.generate();
         }
 
+        // ── الطرفُ المستقبِل يُحسم **قبل** السحب ──────────────────────────
+        //
+        // §٥-١ (بلاغٌ ميدانيّ 2026-08-11): كان السحبُ غيرَ مشروطٍ والاستلامُ
+        // بعده «أفضلَ جهد» داخل `try` يكتفي بالتسجيل حين لا يجد مستقبِلاً.
+        // فأيُّ حالةٍ بلا مستقبِلٍ تحوّل **التحويلَ** إلى **اختفاء**:
+        // `[SHIFT-CLOSE-NO-CENTRAL] safeId=1 amount=140.0` — ٤٦٠ خرجت من ثلاث
+        // خزائن ولم تستقبلها خزينة. والحارسُ كان يسجّل ولا يمنع.
+        //
+        // وثلاثةُ طرقٍ مقيسةٍ تبلغ تلك الحالة، كلُّها بنفس النتيجة:
+        //   ١. قاعدةٌ أُنشئت قبل دخول الصندوق المركزي في البذرة —
+        //      `seedInitialData` لا تعمل إلا على قاعدةٍ جديدة أو بلا
+        //      مستخدمين، ولا إصلاحَ إقلاعٍ يزرعه.
+        //   ٢. حذفُه من شاشة إدارة الصناديق على تنصيبٍ **جديد**: حارسُ
+        //      `deleteSafeById` يشترط `isDefault == false`، والمركزيُّ
+        //      `isDefault: false` قصداً؛ وحارسُ القيود لا يعترض لأن تحويلات
+        //      الإقفال لا تُنشئ قيداً، فحسابُه يبقى بلا بنود.
+        //   ٣. أن تعمل الورديةُ على المركزيّ نفسِه: سطرُ الاستلام ممنوعٌ عن
+        //      النفس (‏صواب) والسحبُ فوقه لم يكن مشروطاً (‏خطأ).
+        //
+        // فالقاعدةُ الآن واحدة: **تحويلٌ بلا طرفٍ مقابلٍ ليس تحويلاً**. لا
+        // يُكتب سطرُ سحبٍ ولا يُخصم رصيدٌ ولا يُرحَّل قيدٌ ما لم يوجد مستقبِلٌ
+        // مغايرٌ للمصدر. والمالُ يبقى في الدرج — وهو الصدق: لم يستلمه أحد.
+        final central = await getCentralSafe();
+        if (central == null) {
+          unawaited(DiagnosticLogger.log(
+            'SHIFT-CLOSE-NO-CENTRAL',
+            'safeId=$sId amount=$actualDrain — الصندوق الرئيسي مش موجود، '
+                'التسليم اتوقف والفلوس فضلت في الدرج. اعمل خزينة اسمها '
+                '"$kCentralSafeName" من شاشة إدارة الصناديق.',
+          ));
+          continue;
+        }
+        if (central.id == sId) {
+          // الورديةُ على المركزيّ نفسِه: طرفا التحويل واحدٌ فحركتُه صفر.
+          continue;
+        }
+
         // Spec 136 ISS-8 (supersedes Spec 107 Model A): balanceAfter is the
         // safe's REMAINING balance after draining only this shift's net — NOT
         // zero, because other shifts' contributions and the opening float stay
@@ -1075,38 +1112,28 @@ extension TreasuryDao on AppDatabase {
         // مفيش قيد يومية هنا **عن قصد**: الخزنتين بيقعوا على نفس حساب
         // النقدية، فالحركة داخل نفس الحساب ومفيش حاجة تتحرك في الأستاذ. قيد
         // بصفر كان بيدّي إحساس كاذب إن فيه ترحيل حصل.
-        try {
-          final central = await getCentralSafe();
-          if (central == null) {
-            unawaited(DiagnosticLogger.log(
-              'SHIFT-CLOSE-NO-CENTRAL',
-              'safeId=$sId amount=$actualDrain — الصندوق الرئيسي مش مزروع، '
-              'النقدية اتسحبت بلا خزينة مستقبِلة',
-            ));
-          } else if (central.id != sId) {
-            // التحويل لنفسه معناه سطر استلام وهمي ورصيد ما بيتصفّاش.
-            await into(safeTransactions).insert(
-              SafeTransactionsCompanion.insert(
-                voucherNumber: voucherNo,
-                safeId: central.id,
-                transactionType: 'receipt',
-                category: 'shift_closing',
-                amount: actualDrain,
-                balanceAfter: central.balance + actualDrain,
-                description: Value(
-                    'إقفال وردية #$shiftId — استلام حصة ${safe.name}'),
-                createdAt: Value(endTime),
-                userId: Value(shift.userId),
-                referenceType: const Value('shift_closing'),
-                referenceId: Value(shiftId),
-                globalId: Value('$zeroOutGlobalId-central'),
-              ),
-            );
-            await adjustSafeBalance(central.id, actualDrain);
-          }
-        } catch (e) {
-          debugPrint('[TreasuryDao] Central-safe receipt failed for #$sId: $e');
-        }
+        // المستقبِلُ محسومٌ فوق (‏موجودٌ ومغايرٌ للمصدر)، فهذا السطرُ ليس
+        // «أفضلَ جهد»: فشلُه يعني سحباً بلا استلام — وهو عينُ العطب. فيُترك
+        // بلا `try` كي تُسقط أيُّ إخفاقةٍ معاملةَ الإقفال كلَّها بدل أن
+        // تُخلّف مالاً مسحوباً لا يملكه أحد.
+        await into(safeTransactions).insert(
+          SafeTransactionsCompanion.insert(
+            voucherNumber: voucherNo,
+            safeId: central.id,
+            transactionType: 'receipt',
+            category: 'shift_closing',
+            amount: actualDrain,
+            balanceAfter: central.balance + actualDrain,
+            description:
+                Value('إقفال وردية #$shiftId — استلام حصة ${safe.name}'),
+            createdAt: Value(endTime),
+            userId: Value(shift.userId),
+            referenceType: const Value('shift_closing'),
+            referenceId: Value(shiftId),
+            globalId: Value('$zeroOutGlobalId-central'),
+          ),
+        );
+        await adjustSafeBalance(central.id, actualDrain);
 
         // Post a GL journal entry for this safe's shift-close transfer.
         // Credit: the safe's own linked GL account.

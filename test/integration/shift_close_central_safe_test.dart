@@ -190,4 +190,108 @@ void main() {
     expect(rows.where((r) => r.category == 'shift_closing'), isEmpty,
         reason: 'مفيش تحويل لنفسه');
   });
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // §٥-١ — بلاغٌ ميدانيّ: مالٌ غير ظاهرٍ عند إقفال الوردية
+  // ═══════════════════════════════════════════════════════════════════════
+  //
+  // اللوج الميدانيّ: `[SHIFT-CLOSE-NO-CENTRAL] safeId=1 amount=140.0` —
+  // ٤٦٠ خرجت من ثلاث خزائن ولم تستقبلها خزينة.
+  //
+  // ── الجذرُ المقيس ───────────────────────────────────────────────────────
+  // السحبُ (`adjustSafeBalance(sId, -actualDrain)`) غيرُ مشروط، والاستلامُ
+  // بعده «أفضلُ جهد» داخل `try` يكتفي بالتسجيل حين لا يجد مستقبِلاً. فأيُّ
+  // حالةٍ يرجع فيها `getCentralSafe()` قيمةَ `null` تحوّل **التحويلَ** إلى
+  // **اختفاء** — والحارسُ يسجّل ولا يمنع.
+  //
+  // وطريقان مقيسان يبلغان تلك الحالة:
+  //
+  //   ١. قاعدةٌ أُنشئت قبل دخول الصندوق المركزي في البذرة: `seedInitialData`
+  //      لا تعمل إلا على قاعدةٍ جديدة أو بلا مستخدمين
+  //      (`database_startup.dart:351` و`:367`)، ولا إصلاحَ إقلاعٍ يزرعه.
+  //
+  //   ٢. حذفُه من شاشة إدارة الصناديق على تنصيبٍ **جديد**: حارسُ
+  //      `deleteSafeById` يشترط `isDefault == false` — والصندوقُ المركزيُّ
+  //      `isDefault: false` **قصداً** («ده مش صندوق بيع»). وحارسُ القيود لا
+  //      يعترض لأن تحويلات الإقفال لا تُنشئ قيداً أصلاً بنصِّ الكود، فحسابُه
+  //      يبقى بلا بنودٍ مهما أُقفلت ورديات.
+  //
+  // والثابتةُ المحروسةُ في هذا الملفّ («مجموع أرصدة الخزائن ثابتٌ بالإقفال»)
+  // هي بعينها ما ينكسر — ولم يكن يقيسها اختبارٌ في حالة غياب المستقبِل.
+  group('§٥-١ — بلا مستقبِلٍ لا يخرج المال', () {
+    Future<void> removeCentralSafe() async {
+      final central = await db.getCentralSafe();
+      expect(central, isNotNull, reason: 'البذرةُ تُنشئه — نزيله نحن قصداً');
+      await (db.delete(db.safes)..where((s) => s.id.equals(central!.id))).go();
+      expect(await db.getCentralSafe(), isNull);
+    }
+
+    test('مجموعُ أرصدة الخزائن ثابتٌ حتى بلا صندوقٍ مركزيّ', () async {
+      await removeCentralSafe();
+
+      final at = DateTime.now().subtract(const Duration(hours: 3));
+      final shiftId = await openShift(at);
+      await postReceipt(drawerSafeId, 140, at.add(const Duration(hours: 1)));
+
+      final totalBefore = await totalSafeBalances();
+      expect(totalBefore, 140);
+
+      await db.closeShiftWithAudit(shiftId, 140);
+
+      expect(await totalSafeBalances(), totalBefore,
+          reason: 'بلا مستقبِلٍ لا يُسحب: التحويلُ بلا وجهةٍ ليس تحويلاً، '
+              'والسحبُ وحدَه اختفاءٌ لا تسليم');
+    });
+
+    test('ولا يُكتب سطرُ سحبٍ يدّعي تحويلاً لم يحدث', () async {
+      await removeCentralSafe();
+
+      final at = DateTime.now().subtract(const Duration(hours: 3));
+      final shiftId = await openShift(at);
+      await postReceipt(drawerSafeId, 140, at.add(const Duration(hours: 1)));
+
+      await db.closeShiftWithAudit(shiftId, 140);
+
+      final drain = await (db.select(db.safeTransactions)
+            ..where((t) =>
+                t.safeId.equals(drawerSafeId) &
+                t.category.equals('shift_closing')))
+          .get();
+      expect(drain, isEmpty,
+          reason: 'سطرٌ وصفُه «تحويل حصة الوردية إلى الإدارة» بلا طرفٍ '
+              'مقابلٍ يقرأه المراجعُ تسليماً حدث — وهو لم يحدث');
+      expect((await db.getSafeById(drawerSafeId))!.balance, 140,
+          reason: 'المالُ باقٍ في الدرج — وهو الصدقُ: لم يستلمه أحد');
+    });
+
+    test('ولا يختفي المالُ حين تعمل الوردية على المركزيّ نفسِه', () async {
+      // نفسُ الفئة، طريقٌ ثالث: `central.id == sId` يمنع سطرَ الاستلام (وهو
+      // صواب — تحويلٌ لنفسه سطرٌ وهميّ) لكنّ السحبَ فوقه غيرُ مشروط، فيخرج
+      // المالُ من المركزيّ ولا يستقبله أحد. والاختبارُ القائم يؤكّد غيابَ
+      // سطر الاستلام وحدَه فيمرُّ أخضرَ والمالُ ضائع.
+      final central = await db.getCentralSafe();
+      final at = DateTime.now().subtract(const Duration(hours: 3));
+      final shiftId = await openShift(at);
+      await postReceipt(central!.id, 140, at.add(const Duration(hours: 1)));
+
+      final totalBefore = await totalSafeBalances();
+      await db.closeShiftWithAudit(shiftId, 140);
+
+      expect(await totalSafeBalances(), totalBefore,
+          reason: 'تحويلٌ طرفاه واحدٌ حركتُه صفر — لا سحبَ ولا استلام');
+    });
+
+    test('ضابط: وجودُ المستقبِل يُعيد السلوكَ الطبيعيَّ كاملاً', () async {
+      // بلا هذا الضابط لَمرّ الاختباران فوق على إصلاحٍ يوقف التسليمَ **دائماً**
+      // كما يمرّان على إصلاحٍ يوقفه عند غياب المستقبِل وحدَه.
+      final at = DateTime.now().subtract(const Duration(hours: 3));
+      final shiftId = await openShift(at);
+      await postReceipt(drawerSafeId, 140, at.add(const Duration(hours: 1)));
+
+      await db.closeShiftWithAudit(shiftId, 140);
+
+      expect((await db.getSafeById(drawerSafeId))!.balance, 0);
+      expect((await db.getCentralSafe())!.balance, 140);
+    });
+  });
 }
