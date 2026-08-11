@@ -1719,6 +1719,21 @@ extension TreasuryDao on AppDatabase {
 
         if (targetSafe == null) throw Exception('No target safe found');
 
+        // ── مركزُ تكلفة الخزنة يُورَّث حين لا يحدّده المنادي ──────────────
+        //
+        // شاشةُ إدارة الصناديق تربط كلَّ خزنةٍ بمركز تكلفة، وكان الربطُ
+        // **لا يقرؤه أحد**: هذا المسارُ يكتب مركزَ المنادي وحدَه، فسندٌ من
+        // حوارٍ لا يسأل عن مركزٍ يقع بلا مركزٍ مهما كانت خزنتُه مربوطة —
+        // والمشغّلُ يفتح تقريرَ مراكز التكلفة فلا يجد حركةَ الخزنة فيه.
+        // (‏نفسُ فئة §٣-ب: سطحُ إعدادٍ يكتب قيمةً لا يقرؤها أحد.)
+        //
+        // والفرعُ كان يصل سلفاً (`operatingBranchId ?? targetSafe.branchId`
+        // تحت) — فهذا يُكمل الطرفَ الناقص لا يُنشئ نمطاً جديداً.
+        //
+        // ⚠️ سدُّ فراغٍ لا تجاوزٌ على اختيار: مركزُ المنادي الصريحُ أولى
+        // دائماً، وخزنةٌ بلا مركزٍ تُبقي الحركةَ بلا مركزٍ ولا تخترع واحداً.
+        final effectiveCostCenterId = costCenterId ?? targetSafe.costCenterId;
+
         final newBalance = targetSafe.balance + amount;
         final voucherNumber = await generateInvoiceNumber('RV');
 
@@ -1743,7 +1758,7 @@ extension TreasuryDao on AppDatabase {
             partyId: Value(partyId),
             description: Value(description),
             userId: Value(userId),
-            costCenterId: Value(costCenterId),
+            costCenterId: Value(effectiveCostCenterId),
             globalId: Value(effectiveGlobalId),
           ),
         );
@@ -1772,7 +1787,7 @@ extension TreasuryDao on AppDatabase {
             description: description ?? 'سند قبض',
             isReceipt: true,
             transactionId: transactionId,
-            costCenterId: costCenterId,
+            costCenterId: effectiveCostCenterId,
             branchId: operatingBranchId ?? targetSafe.branchId, // Spec 135 BUG-C
             linkedAccountId: linkedAccountId, // GAP-03
             safeId: targetSafe.id, // Use safe's linked account for cash side
@@ -1810,7 +1825,7 @@ extension TreasuryDao on AppDatabase {
             // the right cost center instead of a default fallback.
             globalId: effectiveGlobalId,
             safeGlobalId: targetSafe.globalId,
-            costCenterId: costCenterId,
+            costCenterId: effectiveCostCenterId,
             partyId: partyId,
             partyGlobalId: receiptPartyGid,
           );
@@ -1884,6 +1899,12 @@ extension TreasuryDao on AppDatabase {
         // Note: Balance check removed - expenses allowed even with zero/negative balance
         // Will be settled at daily closing (الإقفال اليومي)
 
+        // مركزُ تكلفة الخزنة يُورَّث حين لا يحدّده المنادي — انظر
+        // `createReceiptVoucher` أعلاه للتعليل الكامل. والمسارانِ متناظرانِ
+        // قصداً: صرفٌ يقع بلا مركزٍ وقبضٌ يقع به يجعل تقريرَ المركز نصفَ
+        // صورةٍ — إيراداتٌ بلا مصروفاتها.
+        final effectiveCostCenterId = costCenterId ?? targetSafe.costCenterId;
+
         final newBalance = targetSafe.balance - amount;
         final voucherNumber = await generateInvoiceNumber('PV');
 
@@ -1904,7 +1925,7 @@ extension TreasuryDao on AppDatabase {
             partyId: Value(partyId),
             description: Value(description),
             userId: Value(userId),
-            costCenterId: Value(costCenterId),
+            costCenterId: Value(effectiveCostCenterId),
             globalId: Value(effectiveGlobalId),
           ),
         );
@@ -1924,7 +1945,7 @@ extension TreasuryDao on AppDatabase {
             description: description ?? 'سند صرف',
             isReceipt: false,
             transactionId: transactionId,
-            costCenterId: costCenterId,
+            costCenterId: effectiveCostCenterId,
             branchId: operatingBranchId ?? targetSafe.branchId, // Spec 135 BUG-C
             safeId: targetSafe.id,
             partyId: partyId, // Issue 4 (Feature 022): party AP sub-account
@@ -1959,7 +1980,7 @@ extension TreasuryDao on AppDatabase {
             // vouchers.
             globalId: effectiveGlobalId,
             safeGlobalId: targetSafe.globalId,
-            costCenterId: costCenterId,
+            costCenterId: effectiveCostCenterId,
             partyId: partyId,
             partyGlobalId: paymentPartyGid,
           );
