@@ -16,10 +16,30 @@
 // with a "manual grant required" note. The grant button does NOT
 // touch them — only the operator decides what a custom role gets.
 
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
 
 import '../core/permissions/role_grant_matrix.dart';
 import '../data/database/database.dart';
+
+/// بصمةُ مصفوفة المنح المطبَّقة على هذا التنصيب.
+const String kRoleGrantMatrixFingerprint = 'role_grant_matrix_fingerprint';
+
+/// بصمةٌ ثابتةٌ لمصفوفة المنح — تتغيّر بتغيّر المصفوفة وحدَها.
+///
+/// مرتَّبةٌ قصداً: `Map`/`Set` في دارت تحفظان ترتيبَ الإدراج، فإعادةُ ترتيب
+/// أسطرٍ في الملفّ كانت ستغيّر البصمةَ بلا تغيّرِ معنى — فيُعاد المنحُ ويُداس
+/// قرارُ المشغّل لسببٍ تجميليّ.
+String computeRoleGrantMatrixFingerprint() {
+  final roles = RoleGrantMatrix.defaultGrants.keys.toList()..sort();
+  final canonical = <String, List<String>>{
+    for (final r in roles)
+      r: (RoleGrantMatrix.defaultGrants[r]!.toList()..sort()),
+  };
+  return sha256.convert(utf8.encode(jsonEncode(canonical))).toString();
+}
 
 class RolePreflightReport {
   RolePreflightReport({
@@ -123,6 +143,41 @@ class RoleGrantPreflightService {
   /// surfaced N missing pairs.
   ///
   /// Custom roles are NEVER touched here.
+  /// [grantMissingDefaults] مرّةً لكلّ **مصفوفة**، لا في كلّ إقلاع.
+  ///
+  /// ── فئةُ العطب (بلاغٌ ميدانيّ 2026-08-11) ─────────────────────────────
+  /// «مع تحديد الصلاحيات للمستخدم لا تنطبق للمستخدم» — المشغّلُ ينزع صلاحيةً
+  /// من دور الكاشير، فتُكتب صحيحةً في القاعدة، ثم يخرج ويدخل فيجدها عادت.
+  ///
+  /// السبب: [grantMissingDefaults] تُدرج كلَّ ما تمنحه المصفوفةُ وينقص الدورَ،
+  /// وكانت تعمل في كلّ إقلاع. فهي متعادلةٌ **مع نفسها** لا مع قرار المشغّل:
+  /// النزعُ نقصٌ في نظرها، فتردّه. ونفسُ فئة الخزائن تحت `111` — إصلاحُ
+  /// إقلاعٍ يدوس اختياراً صريحاً.
+  ///
+  /// ── ولماذا بصمةٌ لا علَمٌ أعمى ────────────────────────────────────────
+  /// الغرضُ الأصليُّ سليمٌ ويجب أن يبقى: ترقيةٌ تضيف `sales_create` للكاشير
+  /// يجب أن تصل بلا أن يضغط المشغّلُ «منح الصلاحيات الافتراضية» — مقيسٌ
+  /// ميدانياً (2026-05-17) أنهم لا يعرفون أن يضغطوا، فظلّ الكاشيرُ يصطدم
+  /// بـ403. فعلَمٌ يُرفع مرّةً للأبد كان سيُعيد ذلك العطب.
+  ///
+  /// والبصمةُ تفرّق بين الحالتين: **تتغيّر مع المصفوفة وحدَها.** ترقيةٌ ⇒
+  /// بصمةٌ جديدةٌ ⇒ تُطبَّق مرّةً. ونزعُ المشغّل لا يمسّ البصمةَ ⇒ لا يُردّ.
+  ///
+  /// ⚠️ والختمُ **بعد** النجاح لا قبله: فشلٌ في المنتصف يترك البصمةَ بلا
+  /// ختمٍ فيُعاد في الإقلاع التالي، بدل أن يُحرق تنصيبٌ لم يُطبَّق عليه شيء.
+  Future<int> grantMissingDefaultsOnce() async {
+    final fingerprint = computeRoleGrantMatrixFingerprint();
+    if (await db.getSettingValue(kRoleGrantMatrixFingerprint) == fingerprint) {
+      return 0;
+    }
+    final inserted = await grantMissingDefaults();
+    await db.setSetting(kRoleGrantMatrixFingerprint, fingerprint);
+    return inserted;
+  }
+
+  /// ⚠️ يعمل بلا تسييج — يُدرج كلَّ ما تمنحه المصفوفةُ وينقص الدور، فيدوس
+  /// أيَّ نزعٍ صريحٍ من المشغّل. لزرّ «منح الصلاحيات الافتراضية» الذي يطلبه
+  /// المستخدمُ بنفسه. ومسارُ الإقلاع ينادي [grantMissingDefaultsOnce].
   Future<int> grantMissingDefaults() async {
     // Ensure every code referenced by the matrix is present as a
     // permissions-table row BEFORE we try to grant any.

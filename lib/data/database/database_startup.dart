@@ -982,8 +982,13 @@ extension DatabaseStartup on AppDatabase {
       // role_permissions — the mirror pulls them and any client-side
       // grant would diverge.
       try {
+        // ⚠️ `…Once` لا `grantMissingDefaults` العارية: العاريةُ تُدرج كلَّ
+        // ما تمنحه المصفوفةُ وينقص الدور، فكانت تُعيد في كلّ إقلاعٍ ما نزعه
+        // المشغّلُ من شاشة الصلاحيات — «حدّدتُ صلاحيات الكاشير، خرجتُ ودخلتُ،
+        // فوجدتُها كما كانت» (بلاغٌ ميدانيّ 2026-08-11). والتسييجُ ببصمة
+        // المصفوفة لا بعلَمٍ أعمى، كي تبقى ترقياتُ المصفوفة تصل تلقائياً.
         final inserted =
-            await RoleGrantPreflightService(this).grantMissingDefaults();
+            await RoleGrantPreflightService(this).grantMissingDefaultsOnce();
         if (inserted > 0) {
           await DiagnosticLogger.log(
             'GRANT-SELFHEAL',
