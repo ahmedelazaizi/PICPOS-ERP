@@ -475,9 +475,13 @@ Future<void> _clearDatabase(AppDatabase db) async {
   await db.delete(db.accountingPeriods).go();
   await db.delete(db.fiscalYears).go();
   await db.delete(db.accountMappings).go();
+  // §٣-ب — الخزائنُ صارت مشدودةً إلى الدليل (`safes.linkedAccountId`)، فحذفُها
+  // **بعد** `accounts` صار يسقط بـ`FOREIGN KEY constraint failed (787)`.
+  // الترتيبُ هو الإصلاح: المشدودُ يُحذف قبل المشدودِ إليه. و`safeTransactions`
+  // مُزالةٌ فوق سلفاً فلا شيءَ يشدّ الخزائن.
+  await db.delete(db.safes).go();
   await db.delete(db.accounts).go();
   await db.delete(db.parties).go();
-  await db.delete(db.safes).go();
   await db.delete(db.settings).go();
 }
 

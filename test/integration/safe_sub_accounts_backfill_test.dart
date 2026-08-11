@@ -125,8 +125,9 @@ void main() {
 
       final countBefore = (await db.select(db.accounts).get()).length;
       expect(await db.linkUnlinkedSafesToSubAccounts(), 0,
-          reason: 'الإصلاحُ يعمل كلَّ إقلاع، فلو لم يكن متعادلاً لتكاثرت '
-              'الحساباتُ حتى يمتلئ الدليل');
+          reason: 'الإصلاحُ نفسُه بلا بوّابة — يناديه الغلافُ المسيَّج مرّةً، '
+              'لكن يبقى قابلاً للنداء مباشرةً (‏زرٌّ إداريّ · اختبار). فلو لم '
+              'يكن متعادلاً لتكاثرت الحساباتُ مع كلّ نداء');
       final countAfter = (await db.select(db.accounts).get()).length;
 
       expect(countAfter, countBefore);
@@ -156,6 +157,67 @@ void main() {
       await db.linkUnlinkedSafesToSubAccounts();
       expect(await accountOf(id), isNull,
           reason: 'لا معنى لحسابٍ جديدٍ لخزنةٍ أُزيلت');
+    });
+  });
+
+  group('الرقعةُ مرّةٌ واحدةٌ — والشاشةُ صاحبةُ القرار بعدها', () {
+    // ── قرارُ المالك 2026-08-11 ────────────────────────────────────────────
+    // شاشةُ إدارة الصناديق (`safe_management_dialog.dart`) فيها منتقي «الحساب
+    // المرتبط» من دليل الحسابات، وهو **اختياريٌّ** (‏`hint: 'بدون'` و
+    // `showClearButton: true`) في الإنشاء والتعديل معاً.
+    //
+    // فلو عمل الإصلاحُ كلَّ إقلاعٍ لداس اختيارَ «بدون»: يمسح المستخدمُ الربطَ
+    // فيعيده الإقلاعُ التالي بحسابٍ **جديدٍ يُنشئه** — وكلُّ مسحٍ يخلّف حساباً
+    // يتيماً في الدليل (‏`111-00005` ثم `111-00006` …) لا يستعمله أحد.
+    //
+    // فالبوّابةُ على **الغلاف** لا على الإصلاح: الإصلاحُ يبقى نظيفاً قابلاً
+    // للنداء (‏زرٌّ إداريٌّ · اختبار)، والغلافُ وحدَه هو ما يناديه الإقلاع.
+
+    test('الإقلاعُ ختم الرقعةَ فعلاً — فأوّلُ تشغيلةٍ حدثت وحدها', () async {
+      // مقيسٌ لا مفترَض: `AppDatabase.forTesting()` يمرّ بـ`beforeOpen` كاملاً،
+      // فالرقعةُ عملت وخُتمت قبل أن يبدأ هذا الاختبار.
+      expect(await db.getSettingValue(kSafeSubAccountsBackfillV1Applied), 'true',
+          reason: 'الإقلاعُ ينادي الغلافَ المسيَّج، والغلافُ يختم بعد نجاحه');
+    });
+
+    test('خزنةٌ تُترك «بدون» بعد الختم تبقى «بدون»', () async {
+      final id = await bareSafe('خزنةٌ تركها المستخدمُ بلا حساب', 'cash');
+
+      expect(await db.linkUnlinkedSafesToSubAccountsOnce(), 0,
+          reason: 'الرقعةُ مختومةٌ من الإقلاع، فلا تعمل ثانيةً');
+      expect(await accountOf(id), isNull,
+          reason: 'اختيارُ «بدون» قرارُ المستخدم — لا يدوسه إقلاعٌ لاحق');
+    });
+
+    test('ضابط: الإصلاحُ نفسُه سليمٌ — البوّابةُ وحدَها هي ما أوقفه', () async {
+      // بلا هذا الضابط لَمرّ الاختبارُ فوق على إصلاحٍ **معطوب** كما يمرّ على
+      // إصلاحٍ مسيَّج، فلا يميّز بينهما.
+      final id = await bareSafe('خزنةٌ بلا حساب', 'cash');
+      expect(await db.linkUnlinkedSafesToSubAccounts(), greaterThan(0));
+      expect(await accountOf(id), isNotNull);
+    });
+
+    test('لا تُختم الرقعةُ قبل أن يوجد أبُ الخزائن', () async {
+      // فخٌّ مقيسٌ في الكوميت الأصلي: الإصلاحُ ينصرف صامتاً حين لا يجد `111`.
+      // فلو ختم الغلافُ عندها لَما عمل على **أوّل** إقلاعٍ لتنصيبٍ جديد — وهو
+      // الإقلاعُ الوحيدُ الذي يحتاجه. الختمُ بعد النجاح لا قبله.
+      //
+      // ونُبعد الأبَ بتغيير كوده لا بحذف الدليل: الحساباتُ مشدودةٌ ببنود
+      // القيود وخرائط الأغراض و`safes.linkedAccountId` نفسِه، فـ`DELETE FROM
+      // accounts` يسقط على مفتاحٍ أجنبيّ — وهو عينُ ما أسقط ٤٦ اختباراً هنا.
+      await db.setSetting(kSafeSubAccountsBackfillV1Applied, 'false');
+      for (final code in const ['1110', '111']) {
+        final acc = await db.getAccountByCode(code);
+        if (acc == null) continue;
+        await (db.update(db.accounts)..where((a) => a.id.equals(acc.id)))
+            .write(const AccountsCompanion(code: Value('9999-moved')));
+      }
+      expect(await db.getAccountByCode('111'), isNull);
+
+      expect(await db.linkUnlinkedSafesToSubAccountsOnce(), 0);
+      expect(await db.getSettingValue(kSafeSubAccountsBackfillV1Applied),
+          isNot('true'),
+          reason: 'بلا أبٍ لم يعمل شيء، فختمُه هنا يحرق التنصيبَ الجديد');
     });
   });
 

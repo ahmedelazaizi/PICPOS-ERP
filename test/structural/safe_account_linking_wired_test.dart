@@ -37,12 +37,12 @@ void main() {
   final startup = File(_startupPath);
   final treasury = File(_treasuryPath);
 
-  test('الإقلاعُ ينادي `linkUnlinkedSafesToSubAccounts`', () {
+  test('الإقلاعُ ينادي `linkUnlinkedSafesToSubAccountsOnce`', () {
     expect(startup.existsSync(), isTrue, reason: 'مسارُ ملفّ الإقلاع تغيّر');
 
     final called = startup
         .readAsLinesSync()
-        .any((l) => _isCall(l, 'linkUnlinkedSafesToSubAccounts'));
+        .any((l) => _isCall(l, 'linkUnlinkedSafesToSubAccountsOnce'));
 
     expect(
       called,
@@ -50,6 +50,31 @@ void main() {
       reason: 'الخزائنُ المبذورةُ تُدرَج بلا ربط، فبلا وصلٍ بالإقلاع يولد '
           'كلُّ تنصيبٍ جديدٍ وكلُّ خزائنه النقدية على حسابٍ واحد — '
           'ولا رسالةَ خطأٍ واحدة تدلّ على السبب.',
+    );
+  });
+
+  test('والإقلاعُ يمرّ بالغلاف المسيَّج لا بالإصلاح العاري', () {
+    // قرارُ المالك 2026-08-11: الرقعةُ مرّةٌ واحدةٌ لتنصيبٍ جديد، ثم شاشةُ
+    // إدارة الصناديق صاحبةُ القرار — ومنتقي «الحساب المرتبط» فيها اختياريٌّ
+    // يسمح بـ«بدون».
+    //
+    // فنداءُ الإصلاح العاري من الإقلاع يعيد فئةَ العطب المقابلة: يمسح
+    // المستخدمُ الربطَ فيعيده الإقلاعُ التالي بحسابٍ **جديدٍ يُنشئه**، وكلُّ
+    // مسحٍ يخلّف حساباً يتيماً في الدليل لا يستعمله أحدٌ ولا يحذفه أحد.
+    //
+    // والفرقُ بين الاسمين حرفٌ واحد، فيمرُّ في المراجعة بلا انتباه — ولذلك
+    // حارسٌ لا تعليق. وصحّةُ التسييج نفسِه مقيسةٌ في
+    // `test/integration/safe_sub_accounts_backfill_test.dart`.
+    final bare = startup.readAsLinesSync().where((l) {
+      if (!_isCall(l, 'linkUnlinkedSafesToSubAccounts')) return false;
+      return !l.contains('linkUnlinkedSafesToSubAccountsOnce(');
+    });
+
+    expect(
+      bare,
+      isEmpty,
+      reason: 'الإقلاعُ ينادي `…Once` وحدَه. النداءُ العاري يدوس اختيارَ '
+          '«بدون» في شاشة إدارة الصناديق ويكوّم حساباتٍ يتيمة.',
     );
   });
 

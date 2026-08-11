@@ -189,6 +189,17 @@ Future<void> _clearDatabase(AppDatabase db) async {
   await db.delete(db.accountingPeriods).go();
   await db.delete(db.fiscalYears).go();
   await db.delete(db.accountMappings).go();
+  // §٣-ب — الخزائنُ صارت مشدودةً إلى الدليل (`safes.linkedAccountId`)، فمسحُ
+  // `accounts` بلا فكِّ الشدّ يسقط بـ`FOREIGN KEY constraint failed (787)`.
+  // وفكُّ الربط جزءٌ من مسح الدليل لا التفافٌ عليه: لا ربطَ يبقى صحيحاً بعد
+  // محو ما يشير إليه.
+  //
+  // والخزائنُ **تبقى** هنا قصداً: تحصيلُ الورقة يحرّك خزنةً، ولا تُحذف كما في
+  // `spec_082` لأن هذا الملفَّ لا يمسح `safe_transactions` فحذفُها يسقط بدوره.
+  // وبلا ربطٍ يقع مدينُ النقدية على `1111` — وهو ما يؤكّده هذا الملفّ نصّاً.
+  await db
+      .update(db.safes)
+      .write(const SafesCompanion(linkedAccountId: Value(null)));
   await db.delete(db.accounts).go();
   await db.delete(db.parties).go();
 }

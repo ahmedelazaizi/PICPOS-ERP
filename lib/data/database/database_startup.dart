@@ -1018,9 +1018,7 @@ extension DatabaseStartup on AppDatabase {
       //
       // و`createSafeWithLinkedAccount` تفعل الصوابَ منذ v142، لكنّ **البذرة**
       // لا تمرّ بها: `database_seeder.dart` يُدرج الخزائنَ الافتراضية بإدراجٍ
-      // عارٍ بلا ربط — فكلُّ تنصيبٍ جديدٍ يولد بالعطب كاملاً. ولأن الإصلاح
-      // **متعادلٌ** (‏`linkedAccountId IS NULL` وحدَها) فهو آمنٌ كلَّ إقلاع،
-      // ولا يُداس اختيارُ المستخدم الصريح.
+      // عارٍ بلا ربط — فكلُّ تنصيبٍ جديدٍ يولد بالعطب كاملاً.
       //
       // ⚠️ **بعد** `syncDefaultAccounts` قصداً: الإصلاحُ ينصرف صامتاً حين لا
       // يجد أبَ الخزائن، فوضعُه قبل بذر الدليل كان يجعله لا يفعل شيئاً على
@@ -1029,13 +1027,18 @@ extension DatabaseStartup on AppDatabase {
       // وداخلَ فرع «لا عميل» قصداً كذلك: في وضع العميل السيرفرُ صاحبُ
       // الدليل، وإنشاءُ حساباتٍ محليةٍ هنا يزدوج مع نسخته بعد أوّل سحب —
       // نفسُ سبب تخطّي بذر الحسابات فوق.
+      //
+      // 🔴 و`…Once` لا الإصلاحُ العاري (‏قرارُ المالك 2026-08-11): شاشةُ إدارة
+      // الصناديق فيها منتقي «الحساب المرتبط» **اختيارياً** يسمح بـ«بدون»، فهي
+      // صاحبةُ القرار بعد أوّل إقلاع. وإصلاحٌ يعمل كلَّ إقلاعٍ كان يدوس فكَّ
+      // الربط ويخلّف حساباً يتيماً في الدليل مع كلّ مسح. التفصيلُ عند الغلاف.
       try {
-        final linked = await linkUnlinkedSafesToSubAccounts();
+        final linked = await linkUnlinkedSafesToSubAccountsOnce();
         if (linked > 0) {
           debugPrint('[Startup] ✅ ربطُ الخزائن بالحسابات — $linked خزنة');
         }
       } catch (e) {
-        debugPrint('[Startup] linkUnlinkedSafesToSubAccounts: $e');
+        debugPrint('[Startup] linkUnlinkedSafesToSubAccountsOnce: $e');
       }
     }
   }

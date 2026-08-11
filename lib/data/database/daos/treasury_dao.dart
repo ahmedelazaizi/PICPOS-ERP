@@ -26,6 +26,21 @@ const Map<String, String> kSafeTypeAccountCode = {
   'click': '1116', // حساب Click
 };
 
+/// ختمُ الرقعة المرّة-الواحدة لربط الخزائن بحساباتها الفرعية.
+///
+/// قرارُ المالك 2026-08-11: الربطُ التلقائيُّ يصلح **تنصيباً جديداً** ثم تصير
+/// شاشةُ إدارة الصناديق صاحبةَ القرار. ومنتقي «الحساب المرتبط» فيها اختياريٌّ
+/// ويسمح بـ«بدون» (‏`safe_management_dialog.dart` — `showClearButton: true`)،
+/// فإصلاحٌ يعمل كلَّ إقلاعٍ كان سيدوس ذلك الاختيار ويخلّف حساباً يتيماً في
+/// الدليل مع كلّ مسح.
+///
+/// ويُكتب هنا لا في `DeploymentSettingsKeys`: تلك محروسةٌ بـ
+/// `test/static/no_direct_network_mode_writes_test.dart` الذي يمنع أيَّ
+/// `setSetting` على مفاتيحها خارج مُلزِم النشر — نفسُ سبب بقاء مفاتيح رقعة
+/// Spec 138 في ملفّ خدمتها.
+const String kSafeSubAccountsBackfillV1Applied =
+    'safe_sub_accounts_backfill_v1_applied';
+
 /// One expense line item surfaced by [getShiftClosingAggregates] for the
 /// dialog's "detailed expenses" drop-down.
 class ShiftClosingExpenseItem {
@@ -3139,6 +3154,39 @@ extension TreasuryDao on AppDatabase {
       });
       if (ok) linked++;
     }
+    return linked;
+  }
+
+  /// يشغّل [linkUnlinkedSafesToSubAccounts] **مرّةً واحدةً لكلّ تنصيب** — وهو
+  /// ما يناديه الإقلاع.
+  ///
+  /// ── لماذا البوّابةُ هنا لا داخلَ الإصلاح ──────────────────────────────────
+  /// شاشةُ إدارة الصناديق فيها منتقي «الحساب المرتبط» من دليل الحسابات، وهو
+  /// **اختياريٌّ** في الإنشاء والتعديل معاً (‏`hint: 'بدون'` مع
+  /// `showClearButton: true` في `safe_management_dialog.dart`). فـ«بدون»
+  /// اختيارٌ صريحٌ للمستخدم لا فراغٌ ينتظر الملء.
+  ///
+  /// ولأن الإصلاح متعادلٌ على `linkedAccountId IS NULL` فهو لا يدوس ربطاً
+  /// قائماً — لكنه كان يدوس **الفكّ**: يمسح المستخدمُ الربطَ فيعيده الإقلاعُ
+  /// التالي بحسابٍ **جديدٍ يُنشئه**، وكلُّ مسحٍ يخلّف حساباً يتيماً في الدليل
+  /// (‏`111-00005` ثم `111-00006` …) لا يستعمله أحد ولا يحذفه أحد.
+  ///
+  /// فالبوّابةُ على الغلاف: [linkUnlinkedSafesToSubAccounts] يبقى بلا بوّابةٍ
+  /// وقابلاً للنداء المباشر (‏زرٌّ إداريٌّ لاحقاً · اختبار)، والغلافُ وحدَه هو
+  /// ما يمرّ به الإقلاع.
+  ///
+  /// ⚠️ والختمُ **بعد** النجاح لا قبله: الإصلاحُ ينصرف صامتاً حين لا يجد أبَ
+  /// الخزائن، فختمُ الرقعة عندها كان يحرق التنصيبَ الجديد — لا يعمل على أوّل
+  /// إقلاعٍ ولا على ما بعده. لذلك يُفحص وجودُ الأب قبل الختم.
+  Future<int> linkUnlinkedSafesToSubAccountsOnce() async {
+    if (await getSettingValue(kSafeSubAccountsBackfillV1Applied) == 'true') {
+      return 0;
+    }
+    // بلا أبٍ لم يعمل الإصلاحُ شيئاً — فلا يُختم، ويُعاد في الإقلاع التالي.
+    if (await _resolveSafesParentAccount() == null) return 0;
+
+    final linked = await linkUnlinkedSafesToSubAccounts();
+    await setSetting(kSafeSubAccountsBackfillV1Applied, 'true');
     return linked;
   }
 

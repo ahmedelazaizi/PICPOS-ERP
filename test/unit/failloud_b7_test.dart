@@ -547,8 +547,16 @@ void main() {
       expect(totalDebit, totalCredit, reason: 'payment JE must balance');
       expect(totalDebit, 200.0);
 
-      final cashAccount = await db.getAccountByCode('1111');
-      final cashLine = lines.firstWhere((l) => l.accountId == cashAccount!.id);
+      // §٣-ب — خزنةُ الدفع صار لها حسابُها الفرعيُّ تحت `111`، فرجلُ النقدية
+      // لم تعد على `1111` المشترك. والمقيسُ هنا «رجلُ النقدية دائنةٌ بالمبلغ»
+      // لا «الحسابُ رقمُه 1111»، فنقرأ حسابَ الخزنة التي استعملها الدفعُ فعلاً
+      // (`_recordPurchasePayment` → `getDefaultSafeByType('cash')`).
+      // والقيمةُ المتوقَّعة (200.0) لم تُمسّ — وبقاؤها صحيحةً هو الدليلُ على
+      // أن المال منقولٌ لا مفقود.
+      final paySafe = await db.getDefaultSafeByType('cash');
+      final cashAccountId =
+          paySafe?.linkedAccountId ?? (await db.getAccountByCode('1111'))!.id;
+      final cashLine = lines.firstWhere((l) => l.accountId == cashAccountId);
       expect(cashLine.credit, 200.0, reason: 'cash leg must be credited (money leaving)');
 
       final apAccount = await db.getAccountByCode('2111');
@@ -569,11 +577,25 @@ void main() {
 
       // Deliberate FK-violating state — force with FK momentarily off (engine
       // under test still runs FK-ON).
+      //
+      // §٣-ب — حذفُ `1111` وحدَه لم يعد يكفي. المقصودُ من هذا الاختبار حالةُ
+      // «قيدٌ لا يمكن ترحيله» لا حذفُ رقمٍ بعينه، و`autoPostPayment` يقرأ
+      // حسابَ الخزنة أوّلاً ثم **يتراجع** إلى حساب الغرض `1111`
+      // (`accounting_autopost_dao.dart:1219-1231`). فحذفُ طرفٍ واحدٍ يترك
+      // الآخرَ يلتقط القيدَ فيمرّ الدفعُ ولا يُرمى شيء — وهو ما رُصد فعلاً.
+      // إفراغُ السلسلة كلِّها هو ما يبلغ الحالةَ المقصودة.
+      final paySafe = await db.getDefaultSafeByType('cash');
+      final cashCodes = <String>{
+        '1111',
+        if (paySafe?.linkedAccountId != null)
+          (await db.getAccountById(paySafe!.linkedAccountId!))!.code,
+      };
       await db.customStatement('PRAGMA foreign_keys = OFF');
-      final deleted =
-          await (db.delete(db.accounts)..where((a) => a.code.equals('1111'))).go();
+      final deleted = await (db.delete(db.accounts)
+            ..where((a) => a.code.isIn(cashCodes)))
+          .go();
       await db.customStatement('PRAGMA foreign_keys = ON');
-      expect(deleted, 1);
+      expect(deleted, cashCodes.length);
 
       final invoiceId = await db.into(db.purchaseInvoices).insert(
             PurchaseInvoicesCompanion.insert(
