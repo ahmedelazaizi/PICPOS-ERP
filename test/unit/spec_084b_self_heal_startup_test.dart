@@ -27,14 +27,31 @@ void main() {
       src = File('lib/data/database/database_startup.dart').readAsStringSync();
     });
 
-    test('startup calls RoleGrantPreflightService.grantMissingDefaults', () {
+    test('startup calls RoleGrantPreflightService.grantMissingDefaultsOnce',
+        () {
       expect(
           src,
           contains(
-              'RoleGrantPreflightService(this).grantMissingDefaults()'),
+              'RoleGrantPreflightService(this).grantMissingDefaultsOnce()'),
           reason: 'Without this call, matrix updates (Spec 084 onward) '
               'never propagate to existing installs and operators have '
               'to remember the "Grant defaults" button after every upgrade.');
+    });
+
+    // بلاغٌ ميدانيّ 2026-08-11: «مع تحديد الصلاحيات للمستخدم لا تنطبق
+    // للمستخدم» — الدورُ كاشير، أُعِدّ من حساب المدير، ثم خروجٌ ودخول.
+    //
+    // النداءُ **العاري** كان يُدرج كلَّ ما تمنحه المصفوفةُ وينقص الدور، وهو
+    // يرى النزعَ نقصاً فيردّه. فيُحفظ قرارُ المشغّل صحيحاً ثم يُنقض عند أوّل
+    // إقلاع. والفرقُ بين الاسمين حرفان — يمرّان في المراجعة بلا انتباه،
+    // ولذلك حارسٌ عليهما.
+    test('ولا يُنادى العاري من الإقلاع — يدوس نزعَ المشغّل', () {
+      final bare = RegExp(
+          r'RoleGrantPreflightService\(this\)\.grantMissingDefaults\(\)');
+      expect(bare.hasMatch(src), isFalse,
+          reason: 'النداءُ العاري يُعيد في كلّ إقلاعٍ ما نزعه المشغّل من '
+              'شاشة الصلاحيات. المسيَّجُ بالبصمة (`…Once`) يُبقي ترقياتِ '
+              'المصفوفة تصل ولا يدوس قراراً صريحاً.');
     });
 
     test('self-heal lives in the !isClient branch (server-only)', () {
@@ -61,7 +78,7 @@ void main() {
       // the catch (and accidentally lets exceptions bubble up to block
       // startup) fails here.
       final selfHealStart = src.indexOf(
-          'await RoleGrantPreflightService(this).grantMissingDefaults()');
+          'await RoleGrantPreflightService(this).grantMissingDefaultsOnce()');
       expect(selfHealStart, isNot(-1));
 
       // Walk backwards: there must be a `try {` within ~200 chars before.

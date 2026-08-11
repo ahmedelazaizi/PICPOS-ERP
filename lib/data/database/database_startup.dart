@@ -981,12 +981,16 @@ extension DatabaseStartup on AppDatabase {
       // Skipped in client mode because the server is authoritative for
       // role_permissions — the mirror pulls them and any client-side
       // grant would diverge.
+      // ⚠️ `…Once` لا `grantMissingDefaults` العارية: العاريةُ تُدرج كلَّ ما
+      // تمنحه المصفوفةُ وينقص الدور، فكانت تُعيد في كلّ إقلاعٍ ما نزعه
+      // المشغّلُ من شاشة الصلاحيات — «حدّدتُ صلاحيات الكاشير، خرجتُ ودخلتُ،
+      // فوجدتُها كما كانت» (بلاغٌ ميدانيّ 2026-08-11). والتسييجُ ببصمة
+      // المصفوفة لا بعلَمٍ أعمى، كي تبقى ترقياتُ المصفوفة تصل تلقائياً.
+      //
+      // (‏والتعليقُ فوق `try` قصداً: حارسُ `spec_084b_self_heal_startup_test`
+      // يشترط `try {` في نافذةٍ قصيرةٍ قبل النداء، ويقيس بذلك أن الإصلاحَ
+      // غيرُ قاتلٍ للإقلاع.)
       try {
-        // ⚠️ `…Once` لا `grantMissingDefaults` العارية: العاريةُ تُدرج كلَّ
-        // ما تمنحه المصفوفةُ وينقص الدور، فكانت تُعيد في كلّ إقلاعٍ ما نزعه
-        // المشغّلُ من شاشة الصلاحيات — «حدّدتُ صلاحيات الكاشير، خرجتُ ودخلتُ،
-        // فوجدتُها كما كانت» (بلاغٌ ميدانيّ 2026-08-11). والتسييجُ ببصمة
-        // المصفوفة لا بعلَمٍ أعمى، كي تبقى ترقياتُ المصفوفة تصل تلقائياً.
         final inserted =
             await RoleGrantPreflightService(this).grantMissingDefaultsOnce();
         if (inserted > 0) {
