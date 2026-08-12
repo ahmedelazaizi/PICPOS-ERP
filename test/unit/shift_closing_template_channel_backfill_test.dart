@@ -294,6 +294,27 @@ void main() {
 
     // الآجلُ تفصيلٌ من الإجمالي، فيليه مباشرةً.
     expect(at('shift_credit_sales'), at('shift_total_sales') + 1);
+
+    // ⚠️ كلُّ عنوانِ قناةٍ فوق كتلته لا طائراً فوق الكتل. البذرةُ تكتب
+    // «بطاقة / تحويل» وضبطُ الترتيب كان يبحث عن «البطاقة» — نصٌّ مكرَّرٌ في
+    // موضعَين افترق، فطار العنوانُ فوق الكتلة كلِّها (رُصد على ورق).
+    final all = (await db.getTemplateElements(id))
+      ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    int atAny(String content) =>
+        all.indexWhere((e) => e.content == content);
+    for (final (heading, firstRow) in [
+      ('النقد (كاش)', 'shift_system_cash'),
+      ('بطاقة / تحويل', 'shift_system_card'),
+      ('كليك', 'shift_system_click'),
+    ]) {
+      expect(atAny(heading), greaterThanOrEqualTo(0), reason: heading);
+      expect(atAny(heading), lessThan(atAny(firstRow)), reason: heading);
+      expect(
+        atAny(heading),
+        greaterThan(atAny('shift_cash_refunds')),
+        reason: '$heading داخل قسم التسوية لا فوق الحركة',
+      );
+    }
     // الحركةُ كلُّها قبل التسوية.
     expect(at('shift_cash_refunds'), lessThan(at('shift_system_cash')));
     // والتسويةُ قبل إجمالياتها.

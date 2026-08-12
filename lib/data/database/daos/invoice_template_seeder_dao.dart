@@ -238,6 +238,17 @@ extension InvoiceTemplateSeederDao on AppDatabase {
   /// بلاغُ المالك 2026-08-12: «المسمّيات كما تظهر في التقرير يجب أن تظهر في
   /// الطباعة» — الشاشةُ تعرض عموداً باسم القناة، والورقةُ كانت تعرض «رصيد
   /// النظام» ثلاثَ مرّاتٍ بلا اسمٍ يميّزها.
+  /// عناوينُ كتل القنوات — **مصدرٌ واحدٌ** للبذرة ولضبط الترتيب.
+  ///
+  /// ⚠️ كانا نصَّين منفصلَين فافترقا: البذرةُ تكتب «بطاقة / تحويل» وضبطُ
+  /// الترتيب يبحث عن «البطاقة»، فلم يعرفه عنوانَ قناةٍ فتركه خارج الكتلة —
+  /// وطار فوقها على الورق (رُصد 2026-08-12). نصٌّ مكرَّرٌ في موضعَين يفترق.
+  static const _shiftChannelHeadings = <String, String>{
+    'cash': 'النقد (كاش)',
+    'card': 'بطاقة / تحويل',
+    'click': 'كليك',
+  };
+
   static const _shiftChannelRows = <(String, String)>[
     ('shift_system_cash', 'النقد — رصيد النظام'),
     ('shift_actual_cash', 'النقد — المبلغ الفعلي'),
@@ -349,7 +360,7 @@ extension InvoiceTemplateSeederDao on AppDatabase {
   /// مفتاحُ مراجعةِ قالب الوردية. تغييرُ القيمة يُعيد بناءَ عناصر القالب
   /// **مرّةً واحدة** عند الإقلاع التالي.
   static const _shiftTemplateRevKey = 'shift_closing_template_rev';
-  static const _shiftTemplateRev = '2026-08-12-credit-under-total';
+  static const _shiftTemplateRev = '2026-08-12-headings';
 
   /// يُعيد بناءَ عناصر قالب `shift_closing` بالترتيب المبذور — مرّةً واحدة.
   ///
@@ -392,7 +403,7 @@ extension InvoiceTemplateSeederDao on AppDatabase {
   ///
   /// متعادلة: قالبٌ مرتَّبٌ سلفاً لا يُكتب فيه شيء.
   Future<int> _reorderShiftClosingChannels() async {
-    const channelHeadings = {'النقد (كاش)', 'البطاقة', 'كليك'};
+    final channelHeadings = _shiftChannelHeadings.values.toSet();
     var changed = 0;
 
     for (final template
@@ -426,12 +437,8 @@ extension InvoiceTemplateSeederDao on AppDatabase {
 
       // الترتيبُ القانونيّ داخل الكتلة: كلُّ قناةٍ بعنوانها ثم صفوفها.
       final ordered = <InvoiceTemplateElement>[];
-      for (final channelName in ['cash', 'card', 'click']) {
-        final heading = {
-          'cash': 'النقد (كاش)',
-          'card': 'البطاقة',
-          'click': 'كليك',
-        }[channelName];
+      for (final channelName in _shiftChannelHeadings.keys) {
+        final heading = _shiftChannelHeadings[channelName];
         ordered.addAll(channel.where((e) => e.content == heading));
         for (final (key, _) in _shiftChannelRows.where(
           (r) => r.$1.endsWith(channelName) || r.$1.contains('_${channelName}_'),
@@ -665,7 +672,7 @@ extension InvoiceTemplateSeederDao on AppDatabase {
       // Cash reconciliation
       {
         'type': 'text',
-        'content': 'النقد (كاش)',
+        'content': _shiftChannelHeadings['cash'],
         'alignment': 'center',
         'fontSize': 9.0,
         'fontWeight': 'bold',
@@ -696,7 +703,7 @@ extension InvoiceTemplateSeederDao on AppDatabase {
       // Card reconciliation
       {
         'type': 'text',
-        'content': 'بطاقة / تحويل',
+        'content': _shiftChannelHeadings['card'],
         'alignment': 'center',
         'fontSize': 9.0,
         'fontWeight': 'bold',
@@ -730,7 +737,7 @@ extension InvoiceTemplateSeederDao on AppDatabase {
       // المرصود ميدانياً `240,000 + 120,000` بإجمالي `560,000`.
       {
         'type': 'text',
-        'content': 'كليك',
+        'content': _shiftChannelHeadings['click'],
         'alignment': 'center',
         'fontSize': 9.0,
         'fontWeight': 'bold',
