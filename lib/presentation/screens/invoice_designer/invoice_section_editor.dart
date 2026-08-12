@@ -5,6 +5,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/template_json_flags.dart';
 import '../../../data/database/database.dart';
+import '../../../domain/models/invoice_template_layout.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SECTION-BASED INVOICE EDITOR v3
@@ -334,7 +335,10 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
           color: const Color(0xFF7C3AED),
           isExpanded: true,
           fields: [
-            SectionField(key: 'items_table', label: 'جدول الأصناف', icon: PhosphorIconsBold.table, elementType: 'items_table'),
+            // `variableContent` يربطه بعنصرِ القاعدة `variable`/`items_table`
+            // فيدخل في إعادة الترقيم — بلا ذلك كان المالكُ يحرّك جدولاً لا
+            // يُحفَظ له موضع. و`elementType` يبقى علامةً لواجهةِ القسم.
+            SectionField(key: 'items_table', label: 'جدول الأصناف', icon: PhosphorIconsBold.table, elementType: 'items_table', variableContent: 'items_table'),
           ],
         ),
 
@@ -443,7 +447,13 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
         widget.onElementUpdated(existing.first.copyWith(isVisible: true));
       } else {
         // No element exists — create new one
-        widget.onAddElement(field.elementType, variableContent: field.variableContent);
+        // `items_table` علامةُ واجهةٍ لا نوعُ عنصر: الصيغةُ المخزَّنة
+        // `variable` + `content='items_table'`، وما سواها يحذفه
+        // `_migrateOldFormatElements` كلَّ إقلاع.
+        widget.onAddElement(
+          field.elementType == 'items_table' ? 'variable' : field.elementType,
+          variableContent: field.variableContent,
+        );
       }
     } else {
       // Hide by setting isVisible=false (not deleting)
@@ -490,22 +500,44 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
 
   /// Recalculate sortOrder across all sections → push to DB elements
   /// Also updates the element's DB `section` field when moved between sections
+  ///
+  /// **يرقّم كلَّ عنصرٍ في القالب لا ما يقابله حقلٌ وحدَه.** المطابقةُ بـ
+  /// `content` تترك يتامى: الفواصلُ تُبذر بلا محتوى، ونصُّ التذييل يُبذر
+  /// بمحتواه العربيّ بينما حقلُه `footer_text`. وبعد أن صار `sortOrder` حَكَمَ
+  /// المطبوع (الخيار ب) كان أوّلُ حفظٍ يقذف «شكراً لتعاملكم معنا» فوق جدول
+  /// الأصناف ويبعثر الفواصلَ داخل كتلة العميل. فاليتيمُ يلحق بسابقه.
   void _recalcSortOrder({bool suppressHasChanges = false}) {
+    final screenRank = <String, int>{};
+    final sectionOf = <String, String>{};
     int order = 0;
     for (final section in _sections) {
       final dbSection = _sectionIdToDbSection(section.id);
       for (final field in section.fields) {
         if (field.variableContent == null) continue;
-        final match = widget.elements.where((e) => e.content == field.variableContent);
-        if (match.isNotEmpty) {
-          final dbEl = match.first;
-          widget.onElementUpdated(dbEl.copyWith(
-            sortOrder: order,
-            section: dbSection,
-          ), suppressHasChanges: suppressHasChanges);
-        }
+        screenRank[field.variableContent!] = order;
+        sectionOf[field.variableContent!] = dbSection;
         order++;
       }
+    }
+
+    final newOrder = resequenceTemplateElements(
+      elements: widget.elements
+          .map((e) => (id: e.id, content: e.content, sortOrder: e.sortOrder))
+          .toList(),
+      screenRank: screenRank,
+    );
+
+    for (final el in [...widget.elements]) {
+      final sort = newOrder[el.id];
+      if (sort == null) continue;
+      final section = el.content == null ? null : sectionOf[el.content!];
+      if (el.sortOrder == sort && (section == null || el.section == section)) {
+        continue;
+      }
+      widget.onElementUpdated(
+        el.copyWith(sortOrder: sort, section: section ?? el.section),
+        suppressHasChanges: suppressHasChanges,
+      );
     }
   }
 
@@ -547,6 +579,10 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
                         final section = _sections.removeAt(oldIndex);
                         _sections.insert(newIndex, section);
                       });
+                      // سحبُ قسمٍ كامل كان يحرّك الشاشةَ ولا يُكتب في القاعدة
+                      // — بخلاف تحريك حقلٍ مفرد. فالمالكُ يرتّب أقسامَه ثم
+                      // تخرج الورقةُ كما كانت.
+                      _recalcSortOrder();
                     },
                     proxyDecorator: (child, _, _) => Material(elevation: 6, borderRadius: BorderRadius.circular(12), child: child),
                     itemBuilder: (_, index) => _buildSectionCard(_sections[index], index),

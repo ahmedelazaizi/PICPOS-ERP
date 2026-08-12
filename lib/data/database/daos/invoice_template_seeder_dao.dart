@@ -12,8 +12,16 @@ extension InvoiceTemplateSeederDao on AppDatabase {
   Future<void> seedDefaultTemplates() async {
     // Migrate old-format elements first
     await _migrateOldFormatElements();
+    // تصحيحُ فئات القوالب القديمة قبل فحص الموجود — وإلا رأى الفحصُ حالاً
+    // بائتةً فبذر نظيراً لقالبٍ قائم.
+    await repairTemplateCategories();
     final existing = await getAllTemplates();
     final existingTypes = existing.map((t) => t.type).toSet();
+    // ⚠️ الحارسُ بالفئة لا بالنوع لما ينفرد بفئته: قالبا A4 والمشتريات
+    // نوعُهما `a4` كلاهما (‏المصمّمُ لا يعرف نوعاً اسمُه `purchase`)، فحارسٌ
+    // بالنوع كان يمنع بذرَ الثاني أو يزدوج به.
+    final existingCategories =
+        existing.map((t) => t.templateCategory).toSet();
 
     // Create Thermal receipt template (if not exists)
     if (!existingTypes.contains('thermal')) {
@@ -30,11 +38,16 @@ extension InvoiceTemplateSeederDao on AppDatabase {
     }
 
     // Create A4 invoice template (if not exists)
-    if (!existingTypes.contains('a4')) {
+    // الفئةُ `invoice` صراحةً: `invoice_generator.dart:164` يسأل `('a4',
+    // 'invoice')`، وبلا فئةٍ كانت تأخذ الافتراضَ `'receipt'` فلا يجدها —
+    // وتُطبع كلُّ فاتورة A4 بالمولّد المكتوب في الكود، وتصميمُ المالك لا
+    // يصل الورقةَ أبداً بلا استثناءٍ ولا سطرِ سجلّ.
+    if (!existingCategories.contains('invoice')) {
       final a4Id = await into(invoiceTemplates).insert(
         InvoiceTemplatesCompanion.insert(
           name: 'فاتورة A4',
           type: const Value('a4'),
+          templateCategory: const Value('invoice'),
           paperSize: const Value('A4'),
           paperWidth: const Value(210),
           paperHeight: const Value(297),
@@ -45,11 +58,15 @@ extension InvoiceTemplateSeederDao on AppDatabase {
     }
 
     // Create Kitchen ticket template (if not exists)
+    // والفئةُ `kitchen` كذلك: محرّرُ الأقسام يتفرّع عليها لا على النوع
+    // (`invoice_section_editor.dart:252`)، فكان يفتح تذكرةَ المطبخ بأقسام
+    // الإيصال.
     if (!existingTypes.contains('kitchen')) {
       final kitchenId = await into(invoiceTemplates).insert(
         InvoiceTemplatesCompanion.insert(
           name: 'طلب المطبخ',
           type: const Value('kitchen'),
+          templateCategory: const Value('kitchen'),
           paperSize: const Value('80mm'),
           paperWidth: const Value(80),
           isDefault: const Value(true),
@@ -73,11 +90,15 @@ extension InvoiceTemplateSeederDao on AppDatabase {
     }
 
     // Create Purchase Invoice template (if not exists)
-    if (!existingTypes.contains('purchase')) {
+    // كان خاطئاً في المحورَين: `type: 'purchase'` نوعٌ لا يعرضه المصمّم أصلاً
+    // (ثلاثةٌ لا غير: thermal · a4 · kitchen)، والفئةُ افتراضيةٌ `'receipt'`.
+    // و`invoice_generator.dart:239` يسأل `('a4','purchase')` فلا يجد طرفاً.
+    if (!existingCategories.contains('purchase')) {
       final purchaseId = await into(invoiceTemplates).insert(
         InvoiceTemplatesCompanion.insert(
           name: 'فاتورة مشتريات',
-          type: const Value('purchase'),
+          type: const Value('a4'),
+          templateCategory: const Value('purchase'),
           paperSize: const Value('A4'),
           paperWidth: const Value(210),
           paperHeight: const Value(297),
@@ -189,9 +210,15 @@ extension InvoiceTemplateSeederDao on AppDatabase {
     final allElements = await select(invoiceTemplateElements).get();
     for (final el in allElements) {
       if (validTypes.contains(el.elementType)) continue;
-      // Skip items_table — auto-inserted by renderer
+      // جدولُ الأصناف كان يُحذف هنا بحجّة أن المُصيِّرَ يُقحمه تلقائياً.
+      // وبعد الخيار (ب) صار موضعُه من القالب، فيُحوَّل إلى الصيغة الجديدة
+      // ويبقى حيث وضعه المصمّم بدل أن يُمحى ثم يعود استدلالاً في غير مكانه.
       if (el.elementType == 'items_table') {
-        await (delete(invoiceTemplateElements)..where((e) => e.id.equals(el.id))).go();
+        await (update(invoiceTemplateElements)..where((e) => e.id.equals(el.id)))
+            .write(const InvoiceTemplateElementsCompanion(
+          elementType: Value('variable'),
+          content: Value('items_table'),
+        ));
         continue;
       }
       final migration = migrations[el.elementType];
@@ -278,6 +305,141 @@ extension InvoiceTemplateSeederDao on AppDatabase {
   /// يُهدم عليه. تُضاف القناةُ الناقصةُ تحت آخر عنصرٍ بعنوانها فوق صفوفها.
   ///
   /// متعادلة: ما وُجد يُترك، فالتشغيلُ كلَّ إقلاعٍ آمن.
+  /// تصحيحُ فئةِ القوالب القديمة كي يجدها منادي الطباعة.
+  ///
+  /// `getDefaultTemplateByCategory` يشترط تطابقَ `type` **و**`templateCategory`
+  /// معاً. والبذورُ القديمةُ لم تكتب فئةً قطّ فأخذت الافتراضَ `'receipt'`،
+  /// بينما `invoice_generator` يسأل `'invoice'` للمبيعات و`'purchase'`
+  /// للمشتريات — فلا يجد شيئاً، ويسقط صامتاً إلى المولّد المكتوب في الكود.
+  /// فتصميمُ المالك لا يصل الورقةَ أبداً، بلا استثناءٍ ولا سطرِ سجلّ.
+  ///
+  /// ولا تدهس اختياراً: ما فئتُه غيرُ الافتراضيّ فصاحبُه اختارها.
+  ///
+  /// متعادلة: ما صحّ يُترك، فالتشغيلُ كلَّ إقلاعٍ آمن.
+  Future<int> repairTemplateCategories() async {
+    // النوعُ المبذور → فئتُه الصحيحة. والمصمّمُ لا يعرض إلا ثلاثةَ أنواع
+    // (`invoice_designer_ui.dart:338-342`)، فما عداها نوعٌ بائتٌ يُصحَّح معه.
+    const byType = <String, (String type, String category)>{
+      'a4': ('a4', 'invoice'),
+      'purchase': ('a4', 'purchase'),
+      'kitchen': ('kitchen', 'kitchen'),
+    };
+
+    var changed = 0;
+    for (final t in await getAllTemplates()) {
+      // فئةٌ غيرُ الافتراضيّ = اختيارٌ صريحٌ من المالك. لا تُدهَس.
+      if (t.templateCategory != 'receipt') continue;
+      final fix = byType[t.type];
+      if (fix == null) continue;
+      if (t.type == fix.$1 && t.templateCategory == fix.$2) continue;
+
+      await (update(invoiceTemplates)..where((x) => x.id.equals(t.id)))
+          .write(InvoiceTemplatesCompanion(
+        type: Value(fix.$1),
+        templateCategory: Value(fix.$2),
+      ));
+      changed++;
+    }
+    return changed;
+  }
+
+  /// إلحاقُ عنصرِ «جدول الأصناف» بالقوالب التي تخلو منه.
+  ///
+  /// الخيارُ (ب) 2026-08-12: المطبوعُ يحترم تخطيطَ القالب. وجدولُ الأصناف
+  /// كان الوحيدَ الذي لا موضعَ له فيه — يُقحمه المُصيِّرُ استدلالاً قبل أوّل
+  /// عنصرِ إجمالياتٍ يصادفه. فالمالكُ يحرّكه في المصمّم ولا شيءَ يُحفَظ.
+  ///
+  /// ولا ينقلب مطبوعٌ قائم: العنصرُ يُولد **حيث كان الاستدلالُ يُقحمه
+  /// بالضبط**، فالورقةُ لا تتغيّر بحرفٍ يومَ الترقية، ثم يصير الموضعُ
+  /// مملوكاً للقالب.
+  ///
+  /// متعادلة: قالبٌ فيه جدولٌ يُترك، فالتشغيلُ كلَّ إقلاعٍ آمن.
+  Future<int> backfillItemsTableElements() async {
+    var changed = 0;
+    final templates = await getAllTemplates();
+
+    for (final template in templates) {
+      // ما لا يُطبع أصنافاً لا جدولَ له: تقريرُ الوردية يمرّ بقائمةٍ فارغة،
+      // وقوالبُ الباركود والملصقات مسارٌ آخرُ بالكامل.
+      if (template.type == 'shift_closing') continue;
+      if (const {'shift_closing', 'barcode', 'label'}
+          .contains(template.templateCategory)) continue;
+
+      final elements = await getTemplateElements(template.id);
+      // قالبٌ فارغٌ تماماً شأنُ [_seedMissingElements] لا شأنُ الإلحاق.
+      if (elements.isEmpty) continue;
+      // متعادلة — ولوحةُ العناصر تُنشئه `variable`، والصيغةُ القديمة نوعاً.
+      if (elements.any((e) =>
+          e.content == 'items_table' || e.elementType == 'items_table')) {
+        continue;
+      }
+
+      // موضعُ الإلحاق = موضعُ الاستدلال القديم بعينه: قبل أوّل عنصرٍ **مرئيّ**
+      // من الإجماليات. فمن رقّى نسختَه لا يرى في ورقته فرقاً.
+      final pivot = elements
+          .where((e) =>
+              e.isVisible &&
+              const {'variable', 'text', 'line', 'image', 'rectangle'}
+                  .contains(e.elementType) &&
+              _precedesItemsTable(e.content))
+          .firstOrNull;
+
+      final int insertSort;
+      final double insertY;
+      if (pivot != null) {
+        insertSort = pivot.sortOrder;
+        insertY = pivot.yPosition;
+        // إفساحُ مكانٍ — ما عند الموضع فما بعده يُزاح واحداً.
+        for (final e in elements.where((e) => e.sortOrder >= pivot.sortOrder)) {
+          await (update(invoiceTemplateElements)
+                ..where((t) => t.id.equals(e.id)))
+              .write(InvoiceTemplateElementsCompanion(
+                  sortOrder: Value(e.sortOrder + 1)));
+        }
+      } else {
+        // بلا إجماليات — المطبخُ مثلاً — فالذيلُ موضعُه، وهو ما يفعله
+        // المُصيِّرُ حين لا يجد محفّزاً.
+        insertSort =
+            elements.map((e) => e.sortOrder).fold<int>(0, (a, b) => a > b ? a : b) +
+                1;
+        insertY = elements
+                .map((e) => e.yPosition + e.height)
+                .fold<double>(10, (a, b) => a > b ? a : b) +
+            3;
+      }
+
+      await into(invoiceTemplateElements).insert(
+        InvoiceTemplateElementsCompanion.insert(
+          templateId: template.id,
+          elementType: 'variable',
+          sortOrder: Value(insertSort),
+          xPosition: const Value(10),
+          yPosition: Value(insertY),
+          width: const Value(200),
+          height: const Value(100),
+          textAlign: const Value('right'),
+          fontSize: const Value(9),
+          fontColor: const Value('#000000'),
+          content: const Value('items_table'),
+          labelAr: const Value('جدول الأصناف'),
+          section: const Value('details'),
+        ),
+      );
+      changed++;
+    }
+    return changed;
+  }
+
+  /// العناصرُ التي يسبقها جدولُ الأصناف — نظيرُ `_precedesItemsTable` في
+  /// `TemplatedInvoiceService`، بالمفاتيح **الخام** كما تُخزَّن في القاعدة
+  /// (‏هناك تمرّ بـ`_resolveType` أوّلاً: `total_amount`→`total` وأخواتُها).
+  static bool _precedesItemsTable(String? content) => const {
+        'subtotal', 'discount', 'tax', 'tax_amount',
+        'total', 'total_amount', 'grand_total',
+        'paid', 'paid_amount', 'remaining', 'change',
+        'notes', 'footer', 'footer_text', 'qr_code',
+      }.contains(content);
+
   Future<int> backfillShiftClosingChannelElements() async {
     var changed = 0;
     final templates = await getAllTemplates();
@@ -522,7 +684,7 @@ extension InvoiceTemplateSeederDao on AppDatabase {
       {'type': 'line'},
       {'type': 'variable', 'content': 'date', 'alignment': 'right', 'fontSize': 12.0, 'labelAr': 'الوقت'},
       {'type': 'line'},
-      // items_table auto-inserted by renderer
+      {'type': 'variable', 'content': 'items_table', 'labelAr': 'جدول الأصناف'},
       {'type': 'variable', 'content': 'notes', 'alignment': 'center', 'fontSize': 14.0, 'fontWeight': 'bold', 'labelAr': 'ملاحظات'},
     ];
 
@@ -1576,7 +1738,9 @@ extension InvoiceTemplateSeederDao on AppDatabase {
     {'type': 'variable', 'content': 'customer_name', 'alignment': 'right', 'labelAr': 'العميل', 'labelEn': 'Customer'},
     {'type': 'variable', 'content': 'customer_phone', 'alignment': 'right', 'labelAr': 'الهاتف', 'labelEn': 'Phone'},
     {'type': 'line'},
-    // items_table is auto-inserted by the renderer before totals
+    // الخيار (ب) 2026-08-12: للجدول عنصرٌ في القالب — موضعُه ملكُ المصمّم
+    // لا أثرٌ جانبيٌّ لاستدلالٍ في المُصيِّر.
+    {'type': 'variable', 'content': 'items_table', 'labelAr': 'جدول الأصناف'},
     {'type': 'variable', 'content': 'subtotal', 'alignment': 'right', 'labelAr': 'المجموع', 'labelEn': 'Subtotal'},
     {'type': 'variable', 'content': 'discount', 'alignment': 'right', 'labelAr': 'الخصم', 'labelEn': 'Discount'},
     {'type': 'variable', 'content': 'tax_amount', 'alignment': 'right', 'labelAr': 'الضريبة', 'labelEn': 'Tax'},
@@ -1604,7 +1768,9 @@ extension InvoiceTemplateSeederDao on AppDatabase {
     {'type': 'variable', 'content': 'customer_address', 'alignment': 'left', 'labelAr': 'العنوان', 'labelEn': 'Address'},
     {'type': 'variable', 'content': 'customer_phone', 'alignment': 'left', 'labelAr': 'الهاتف', 'labelEn': 'Phone'},
     {'type': 'line'},
-    // items_table is auto-inserted by the renderer before totals
+    // الخيار (ب) 2026-08-12: للجدول عنصرٌ في القالب — موضعُه ملكُ المصمّم
+    // لا أثرٌ جانبيٌّ لاستدلالٍ في المُصيِّر.
+    {'type': 'variable', 'content': 'items_table', 'labelAr': 'جدول الأصناف'},
     {'type': 'variable', 'content': 'subtotal', 'alignment': 'right', 'labelAr': 'المجموع', 'labelEn': 'Subtotal'},
     {'type': 'variable', 'content': 'discount', 'alignment': 'right', 'labelAr': 'الخصم', 'labelEn': 'Discount'},
     {'type': 'variable', 'content': 'tax_amount', 'alignment': 'right', 'labelAr': 'الضريبة', 'labelEn': 'Tax'},

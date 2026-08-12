@@ -54,6 +54,36 @@ void main() {
     );
   });
 
+  test('الإقلاعُ ينادي `repairTemplateCategories`', () {
+    final called = startup
+        .readAsLinesSync()
+        .any((l) => _isCall(l, 'repairTemplateCategories'));
+
+    expect(
+      called,
+      isTrue,
+      reason: 'بلاغُ المالك: «تصميمي مش بيوصل للورقة». البذرةُ القديمةُ تركت '
+          'فئةَ قالب A4 على الافتراضيّ `receipt` بينما المنادي يسأل '
+          '`invoice` — فيسقط التنفيذُ صامتاً إلى المولّد المكتوب في الكود. '
+          'والبذرةُ لا تصلح ما هو موجود.',
+    );
+  });
+
+  test('الإقلاعُ ينادي `backfillItemsTableElements`', () {
+    final called = startup
+        .readAsLinesSync()
+        .any((l) => _isCall(l, 'backfillItemsTableElements'));
+
+    expect(
+      called,
+      isTrue,
+      reason: 'نفسُ فئة العطب مرّةً ثالثة. وبعد الخيار (ب) صار موضعُ جدول '
+          'الأصناف من القالب لا من استدلال الكود — وقالبٌ بلا عنصرِ جدولٍ '
+          'يبقى على الاستدلال أبداً. فالمالكُ يحرّك الجدولَ في المصمّم '
+          'ولا يُحفَظ له موضع، والبذرةُ لا تصلح ما هو موجود.',
+    );
+  });
+
   test('الإقلاعُ ينادي `backfillShiftClosingChannelElements`', () {
     final called = startup
         .readAsLinesSync()

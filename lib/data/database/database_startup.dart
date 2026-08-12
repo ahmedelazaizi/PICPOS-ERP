@@ -732,6 +732,40 @@ extension DatabaseStartup on AppDatabase {
       debugPrint('[Startup] shift_closing template repair: $e');
     }
 
+    // الخيار (ب) 2026-08-12: المطبوعُ يحترم تخطيطَ القالب، وجدولُ الأصناف كان
+    // الوحيدَ بلا موضعٍ فيه — يُقحمه المُصيِّرُ استدلالاً. فالمالكُ يحرّكه في
+    // المصمّم ولا يُحفَظ له أثر.
+    //
+    // ومكانُه هنا لا في `seedDefaultTemplates`: مناديها الوحيدُ شاشةُ المصمّم،
+    // ثم هي مشروطةٌ بـ`!existingTypes.contains(...)` فلا ترى قاعدةً قائمة.
+    //
+    // ولا ينقلب مطبوع: العنصرُ يُولد حيث كان الاستدلالُ يُقحم الجدولَ بالضبط.
+    try {
+      final n = await backfillItemsTableElements();
+      if (n > 0) {
+        await DiagnosticLogger.log(
+            'TEMPLATE', 'أُلحق عنصرُ جدول الأصناف بـ$n قالباً');
+      }
+    } catch (e) {
+      debugPrint('[Startup] items_table element backfill: $e');
+    }
+
+    // بلاغُ المالك 2026-08-12: «تصميمي مش بيوصل للورقة» على A4.
+    // `getDefaultTemplateByCategory` يشترط تطابقَ النوع **والفئة**، والبذرةُ
+    // القديمةُ لم تكتب فئةً فأخذت `'receipt'` بينما المنادي يسأل `'invoice'`.
+    // فيسقط التنفيذُ صامتاً إلى المولّد المكتوب في الكود.
+    //
+    // ونظيرُه في المشتريات، وفي المطبخ حيث يفتح المصمّمُ التذكرةَ بأقسام
+    // الإيصال لأنه يتفرّع على الفئة لا النوع.
+    try {
+      final n = await repairTemplateCategories();
+      if (n > 0) {
+        await DiagnosticLogger.log(
+            'TEMPLATE', 'صُحّحت فئةُ $n قالباً — التصميمُ يصل الورقةَ الآن');
+      }
+    } catch (e) {
+      debugPrint('[Startup] template category repair: $e');
+    }
 
     // Step 7: Spec 136 ISS-2 — backfill deterministic globalIds on seeded
     // master-data defaults that still carry a NULL globalId (pre-globalId

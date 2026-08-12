@@ -78,6 +78,36 @@ class TemplatedInvoiceService {
   /// فهذا يبني **نفسَ** الجدول بنفس الدالّة (`_buildItemsTable`) وبنفس هيئة
   /// الورق الحراريّ، ويعيد البايتات كي تُرسَّم وتُفحَص. لا يستنسخ منطقاً:
   /// أيُّ تغييرٍ في الجدول يظهر هنا فوراً.
+  /// نمطُ عنصرٍ كما يصل الورقةَ — للقياس الآليّ لوجه الخطّ.
+  ///
+  /// النيّةُ (`fontWeight`) لم تكن يوماً هي المشكلة؛ **الوجهُ** هو الذي كان
+  /// يخون. فيُقاس ما يُرسَم لا ما يُقصَد.
+  @visibleForTesting
+  static Future<pw.TextStyle> debugStyleFor({required bool isBold}) async {
+    await _initFont();
+    return _getStyle(InvoiceTemplateElement(
+      id: 0,
+      templateId: 0,
+      elementType: 'variable',
+      rowIndex: 0,
+      sortOrder: 0,
+      flexWidth: 100,
+      xPosition: 0,
+      yPosition: 0,
+      width: 100,
+      height: 20,
+      textAlign: 'right',
+      fontSize: 12,
+      isBold: isBold,
+      isItalic: false,
+      fontColor: '#000000',
+      borderWidth: 0,
+      content: 'total_amount',
+      isVisible: true,
+      section: 'footer',
+    ));
+  }
+
   @visibleForTesting
   static Future<Uint8List> debugRenderItemsTable({
     required List<Map<String, dynamic>> items,
@@ -345,29 +375,7 @@ class TemplatedInvoiceService {
         'elements=${templateData.elements.length} '
         'shift=${shift != null}'));
 
-    final allVisible = templateData.elements.where((e) => e.isVisible).toList()
-      ..sort((a, b) {
-        // Print service reads from DB where sortOrder may be stale.
-        // Use section-priority as PRIMARY to guarantee correct grouping,
-        // sortOrder as tiebreaker within each section.
-        final aPriority = _contentSectionPriority(_resolveType(a));
-        final bPriority = _contentSectionPriority(_resolveType(b));
-        if (aPriority != bPriority) return aPriority.compareTo(bPriority);
-        final orderCmp = a.sortOrder.compareTo(b.sortOrder);
-        if (orderCmp != 0) return orderCmp;
-        return a.yPosition.compareTo(b.yPosition);
-      });
-
-    // Dedup by resolved content — keep only first occurrence of each content key
-    final seenContent = <String>{};
-    final elements = <InvoiceTemplateElement>[];
-    for (final el in allVisible) {
-      final key = _resolveType(el);
-      if (!seenContent.contains(key)) {
-        seenContent.add(key);
-        elements.add(el);
-      }
-    }
+    final elements = orderElementsForPrint(templateData.elements);
 
     debugPrint(
       '[TemplatedInvoice] Template: "${templateData.template.name}", elements: ${elements.length}, items: ${items.length}',
@@ -466,48 +474,38 @@ class TemplatedInvoiceService {
     }
 
     // ── Group elements: consecutive inline (flexWidth < 100) → row ──
-    // Filter elements: only process known elementTypes (variable, text, line, image)
-    // This skips old-format seeded elements with elementType like 'customer', 'footer'
-    final validElements = elements.where((e) {
-      return const {'variable', 'text', 'line', 'image', 'rectangle'}.contains(e.elementType);
-    }).toList();
+    // التسلسلُ يُحسم في `layoutSequenceForPrint` — بذرةٌ خالصةٌ تُقاس آلياً.
+    // و`null` فيه = جدولُ الأصناف المُقحَم استدلالاً (قوالبُ بلا عنصرِ جدول).
+    final layoutSequence =
+        layoutSequenceForPrint(elements, hasItems: items.isNotEmpty);
 
     final contentWidgets = <pw.Widget>[];
-    bool tableInserted = false;
     int i = 0;
 
-    while (i < validElements.length) {
-      final el = validElements[i];
+    while (i < layoutSequence.length) {
+      final el = layoutSequence[i];
 
-      // Check if we should insert the items table here
-      // (after header/invoice-info elements, before totals)
-      final resolved = resolveType(el);
-      if (!tableInserted &&
-          items.isNotEmpty &&
-          (resolved == 'subtotal' ||
-           resolved == 'total' ||
-           resolved == 'discount' ||
-           resolved == 'tax' ||
-           resolved == 'paid' ||
-           resolved == 'remaining' ||
-           resolved == 'notes' ||
-           resolved == 'footer' ||
-           resolved == 'qr_code')) {
-        final baseStyle = pw.TextStyle(
-          font: _arabicFont,
-          fontSize: ts?.fontSize ?? 9,
-        );
-        contentWidgets.add(_buildItemsTable(items, ts, baseStyle));
-        tableInserted = true;
+      if (el == null) {
+        contentWidgets.add(_buildItemsTable(
+          items,
+          ts,
+          pw.TextStyle(font: _arabicFont, fontSize: ts?.fontSize ?? 9),
+        ));
+        i++;
+        continue;
       }
 
       // Check if this element and the next form an inline group
-      if (el.flexWidth < 100 && i + 1 < validElements.length) {
+      // (الجدولُ المُقحَمُ يقطع الصفَّ — لا يُضمّ إلى مجموعةٍ جانبية)
+      if (el.flexWidth < 100 &&
+          i + 1 < layoutSequence.length &&
+          layoutSequence[i + 1] != null) {
         // Collect consecutive inline elements
         final group = <InvoiceTemplateElement>[el];
-        while (i + group.length < validElements.length &&
-            group.last.flexWidth < 100) {
-          group.add(validElements[i + group.length]);
+        while (i + group.length < layoutSequence.length &&
+            group.last.flexWidth < 100 &&
+            layoutSequence[i + group.length] != null) {
+          group.add(layoutSequence[i + group.length]!);
         }
         // If last element in group is NOT inline, it was just pulled in
         // as the "next" — that's correct for side-by-side layout
@@ -540,31 +538,17 @@ class TemplatedInvoiceService {
       }
     }
 
-    // If table hasn't been inserted yet, add at end
-    if (!tableInserted && items.isNotEmpty) {
-      final baseStyle = pw.TextStyle(
-        font: _arabicFont,
-        fontSize: ts?.fontSize ?? 9,
-      );
-      contentWidgets.add(_buildItemsTable(items, ts, baseStyle));
-    }
-
     // ── Build the page — thermal uses minimal margins, A4 uses standard ──
     final isThermalPrint = templateData.template.paperWidth <= 80;
     final marginMm = isThermalPrint ? 2.0 : 4.0;
-    pdf.addPage(
-      pw.Page(
-        pageFormat: PdfPageFormat(
-          canvasWidth,
-          double.infinity,
-          marginAll: marginMm * mmToPoints,
-        ),
-        textDirection: locale == 'en' ? pw.TextDirection.ltr : pw.TextDirection.rtl,
-        build: (context) => pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.stretch,
-          children: contentWidgets,
-        ),
-      ),
+    _addDocumentPages(
+      pdf,
+      content: contentWidgets,
+      canvasWidth: canvasWidth,
+      canvasHeightPts: _pageHeightPoints(templateData.template),
+      marginPts: marginMm * mmToPoints,
+      direction:
+          locale == 'en' ? pw.TextDirection.ltr : pw.TextDirection.rtl,
     );
 
     if (directPrint) {
@@ -1119,46 +1103,226 @@ class TemplatedInvoiceService {
     return nameMapping[resolvedType] ?? resolvedType;
   }
 
-  /// Section priority for ordering — matches section editor's section sequence.
-  /// Lower number = appears earlier in the invoice.
-  static int _contentSectionPriority(String resolvedType) {
-    // Header section (priority 0)
-    if (const {'logo', 'company_name', 'company_address', 'company_phone',
-               'company_tax_id', 'branch_name'}.contains(resolvedType)) {
-      return 0;
+  /// ترتيبُ عناصر القالب للطباعة — المرئيُّ منها، مرتَّباً، منقّى من التكرار.
+  ///
+  /// بذرةٌ خالصةٌ مستخرَجةٌ من `printWithTemplate` كي تُقاس آلياً: الورقةُ
+  /// لا تُقاس، لكنّ **ترتيبَها** يُقاس.
+  ///
+  /// **`sortOrder` هو الحَكَم** — لا جدولُ أولوياتٍ مكتوبٌ في الكود. ومحرّرُ
+  /// الأقسام يكتبه عالمياً متسلسلاً عبر الأقسام كلِّها بترتيبها البصريّ، فهو
+  /// وصفٌ تامٌّ لتخطيط المصمّم. و`section` **لا يصلح** مفتاحاً أوّل: أقسامُ
+  /// `shift_*` تقع بعد جدول الأصناف على الشاشة بينما قيمتُها `'body'` وقيمةُ
+  /// الجدول `'details'`، فالفرزُ به يقلبها. و`rowIndex` لا يكتبه أحدٌ فيبقى
+  /// صفراً للجميع.
+  static List<InvoiceTemplateElement> orderElementsForPrint(
+    List<InvoiceTemplateElement> all,
+  ) {
+    final allVisible = all.where((e) => e.isVisible).toList()
+      ..sort((a, b) {
+        final orderCmp = a.sortOrder.compareTo(b.sortOrder);
+        if (orderCmp != 0) return orderCmp;
+        // تساوي الترتيب — قالبٌ لم يمرّ بالمحرّر بعدُ. يحسمه موضعُ الرسم،
+        // ثم المعرّفُ كي لا يتأرجح المطبوعُ بين تشغيلتَين.
+        final yCmp = a.yPosition.compareTo(b.yPosition);
+        if (yCmp != 0) return yCmp;
+        return a.id.compareTo(b.id);
+      });
+
+    // إزالةُ التكرار **للمتغيّرات وحدَها**: قيمةٌ يولّدها الكودُ لا تُطبع
+    // مرّتين (بذرةٌ قديمةٌ كتبت `grand_total` و`total_amount` معاً). أمّا ما
+    // رسمه المستخدمُ — فاصلٌ أو نصٌّ ثابتٌ أو شعار — فيتكرّر عمداً، وحذفُه
+    // كان يُطبع قالباً بثلاثة فواصلَ بفاصلٍ واحد.
+    final seenContent = <String>{};
+    final elements = <InvoiceTemplateElement>[];
+    for (final el in allVisible) {
+      if (el.elementType != 'variable') {
+        elements.add(el);
+        continue;
+      }
+      final key = _resolveType(el);
+      if (seenContent.add(key)) elements.add(el);
     }
-    // Invoice info section (priority 1)
-    if (const {'invoice_number', 'order_number', 'date', 'time',
-               'cashier_name', 'warehouse_name', 'payment_method',
-               'sale_type', 'invoice_type_label', 'invoice_title'}.contains(resolvedType)) {
-      return 1;
-    }
-    // Customer section (priority 2)
-    if (const {'customer', 'customer_phone', 'customer_address',
-               'adhoc_customer_name', 'adhoc_customer_phone',
-               'supplier_name', 'table_number', 'waiter_name'}.contains(resolvedType)) {
-      return 2;
-    }
-    // Delivery section (priority 3)
-    if (const {'delivery_type', 'delivery_address', 'delivery_fee',
-               'courier_name'}.contains(resolvedType)) {
-      return 3;
-    }
-    // Totals section (priority 5 — after items table which is inserted at 4)
-    if (const {'subtotal', 'discount', 'tax', 'total',
-               'paid', 'remaining',
-               'cash_amount', 'bank_amount', 'click_amount'}.contains(resolvedType)) {
-      return 5;
-    }
-    // Notes section (priority 6)
-    if (const {'notes', 'kitchen_notes'}.contains(resolvedType)) return 6;
-    // Footer section (priority 7)
-    if (const {'footer', 'qr_code', 'tax_registration', 'barcode'}.contains(resolvedType)) return 7;
-    // Dividers (priority 4 — around items table)
-    if (resolvedType == 'divider') return 4;
-    // Unknown — put after totals
-    return 8;
+    return elements;
   }
+
+  /// ارتفاعُ الصفحة بالنقاط — و`null` تعني **لفّةً مستمرّة**.
+  ///
+  /// الحراريُّ لفّةٌ تُقصّ عند آخر سطر، فارتفاعُه لا نهائيٌّ بحقّ. وA4 ورقٌ
+  /// مقصوصٌ سلفاً، و`paperHeight` مخزَّنٌ في القالب منذ البذرة ولم يكن يُقرأ
+  /// في أيّ موضع — فكانت ستّون صنفاً تخرج ورقةً واحدةً ممتدّة.
+  static double? _pageHeightPoints(InvoiceTemplate template) {
+    if (template.paperWidth <= 80) return null;
+    final h = template.paperHeight;
+    if (h == null || h <= 0) return null;
+    return h * 2.8346;
+  }
+
+  /// إضافةُ صفحات المستند.
+  ///
+  /// `canvasHeightPts == null` ⇒ **لفّةٌ مستمرّة**: صفحةٌ واحدةٌ يمتدّ طولُها
+  /// بالمحتوى، وهو الصوابُ للحراريّ. وغيرُها ⇒ `MultiPage` تنقسم عند حدّ
+  /// الورقة، وجدولُ الأصناف `SpanningWidget` فينقسم معها وصفُّ عناوينه
+  /// `repeat: true` فيتكرّر في رأس كلّ صفحة.
+  static void _addDocumentPages(
+    pw.Document pdf, {
+    required List<pw.Widget> content,
+    required double canvasWidth,
+    required double? canvasHeightPts,
+    required double marginPts,
+    required pw.TextDirection direction,
+  }) {
+    if (canvasHeightPts == null) {
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat(
+            canvasWidth,
+            double.infinity,
+            marginAll: marginPts,
+          ),
+          textDirection: direction,
+          build: (context) => pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+            children: content,
+          ),
+        ),
+      );
+      return;
+    }
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat(
+          canvasWidth,
+          canvasHeightPts,
+          marginAll: marginPts,
+        ),
+        textDirection: direction,
+        crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+        // الافتراضُ ٢٠ صفحة، وتجاوزُه يرمي `TooManyPagesException` فتضيع
+        // الفاتورةُ كلُّها. فاتورةٌ بألفَي صنفٍ أهونُ من مطبوعٍ يسقط.
+        maxPages: 200,
+        build: (context) => content,
+      ),
+    );
+  }
+
+  /// عددُ صفحات مستندٍ بأصنافٍ معلومة — للقياس الآليّ للتقسيم.
+  @visibleForTesting
+  static Future<int> debugPageCount({
+    required List<Map<String, dynamic>> items,
+    required double paperWidthMm,
+    double? paperHeightMm,
+  }) async {
+    final pdf = await _buildPaginationProbe(
+      items: items,
+      paperWidthMm: paperWidthMm,
+      paperHeightMm: paperHeightMm,
+    );
+    await pdf.save();
+    return pdf.document.pdfPageList.pages.length;
+  }
+
+  /// نفسُ المستند بايتاتٍ — كي يُرسَّم ويُنظر إليه.
+  @visibleForTesting
+  static Future<Uint8List> debugRenderPaginated({
+    required List<Map<String, dynamic>> items,
+    required double paperWidthMm,
+    double? paperHeightMm,
+  }) async {
+    final pdf = await _buildPaginationProbe(
+      items: items,
+      paperWidthMm: paperWidthMm,
+      paperHeightMm: paperHeightMm,
+    );
+    return pdf.save();
+  }
+
+  static Future<pw.Document> _buildPaginationProbe({
+    required List<Map<String, dynamic>> items,
+    required double paperWidthMm,
+    double? paperHeightMm,
+  }) async {
+    await _initFont();
+    final pdf = await BaseGenerator.newDocument();
+    const mmToPoints = 2.8346;
+    final isThermal = paperWidthMm <= 80;
+    _addDocumentPages(
+      pdf,
+      content: [
+        _buildItemsTable(
+          items,
+          null,
+          pw.TextStyle(font: _arabicFont, fontSize: 9),
+        ),
+      ],
+      canvasWidth: (isThermal ? paperWidthMm - 8 : paperWidthMm) * mmToPoints,
+      canvasHeightPts: (isThermal || paperHeightMm == null)
+          ? null
+          : paperHeightMm * mmToPoints,
+      marginPts: (isThermal ? 2.0 : 4.0) * mmToPoints,
+      direction: pw.TextDirection.rtl,
+    );
+    return pdf;
+  }
+
+  /// تسلسلُ ما يُرسم فعلاً: عناصرُ القالب مرشَّحةً، وقد وقع جدولُ الأصناف
+  /// موقعَه بينها. العنصرُ `null` في الناتج = جدولُ الأصناف.
+  static List<InvoiceTemplateElement?> layoutSequenceForPrint(
+    List<InvoiceTemplateElement> ordered, {
+    required bool hasItems,
+  }) {
+    // Filter elements: only process known elementTypes (variable, text, line, image)
+    // This skips old-format seeded elements with elementType like 'customer', 'footer'
+    final validElements = ordered
+        .where((e) => const {'variable', 'text', 'line', 'image', 'rectangle'}
+            .contains(e.elementType))
+        .toList();
+
+    // موضعُ الجدول من القالب أوّلاً. فإن خلا القالبُ من عنصرِ جدولٍ — وهو
+    // حالُ كلّ قالبٍ مبذورٍ قبل 2026-08-12 — بقي الاستدلالُ القديم احتياطاً
+    // كي لا ينقلب مطبوعٌ قائم.
+    final hasExplicitTable =
+        validElements.any((e) => _resolveType(e) == 'items_table');
+
+    final seq = <InvoiceTemplateElement?>[];
+    bool tableInserted = false;
+    for (final el in validElements) {
+      final resolved = _resolveType(el);
+      if (resolved == 'items_table') {
+        // بلا أصنافٍ لا جدولَ يُطبع — تقريرُ الوردية يمرّ بهذا المُصيِّر
+        // بقائمةٍ فارغة، وجدولٌ فارغٌ عناوينُ بلا صفوف.
+        if (hasItems) {
+          seq.add(el);
+          tableInserted = true;
+        }
+        continue;
+      }
+      // Fallback heuristic: insert before the first totals-like element
+      if (!tableInserted &&
+          hasItems &&
+          !hasExplicitTable &&
+          _precedesItemsTable(resolved)) {
+        seq.add(null);
+        tableInserted = true;
+      }
+      seq.add(el);
+    }
+    // If table hasn't been inserted yet, add at end
+    if (!tableInserted && hasItems && !hasExplicitTable) seq.add(null);
+    return seq;
+  }
+
+  /// العناصرُ التي يسبقها جدولُ الأصناف في الاستدلال الاحتياطيّ.
+  static bool _precedesItemsTable(String resolvedType) => const {
+        'subtotal', 'total', 'discount', 'tax', 'paid', 'remaining',
+        'notes', 'footer', 'qr_code',
+      }.contains(resolvedType);
+
+  // `_contentSectionPriority` حُذف 2026-08-12 (قرارُ المالك — الخيار ب).
+  // كان جدولَ أولوياتٍ مكتوباً في الكود يُفرَز به المطبوعُ **قبل** `sortOrder`،
+  // فيهدم كلَّ ترتيبٍ يرسمه المالكُ في المصمّم. والآن `sortOrder` هو الحَكَم
+  // (`orderElementsForPrint`). ونسخةٌ منه باقيةٌ في `invoice_preview_dialog.dart`
+  // حيث هي **كاسرُ تعادلٍ** بعد `sortOrder` — وهو موضعُها الصحيح.
 
   /// كودُ طريقة الدفع → تسميتُه العربية.
   ///
@@ -1410,6 +1574,10 @@ class TemplatedInvoiceService {
         // Header (cells in RTL order — rightmost visual column first)
         if (showHeader)
         pw.TableRow(
+          // `repeat: true` — الجدولُ ينقسم على صفحات A4، وبلا التكرار تخرج
+          // الصفحةُ الثانيةُ أرقاماً بلا رؤوسٍ لا يُعرف أيُّها الكمّيةُ وأيُّها
+          // السعر. ولا أثرَ له على الحراريّ: لفّةٌ لا تنقسم أصلاً.
+          repeat: true,
           // بلا تعبئة — انظر `headerStyle` فوق. و`headerBold` صار لا يُقرأ
           // هنا قصداً: العناوينُ عريضةٌ دائماً لأن العَرْضَ هو ما يفصلها عن
           // البدن بعد زوال المساحة الملوّنة.
@@ -1540,8 +1708,11 @@ class TemplatedInvoiceService {
     // The designer may allow larger sizes for preview, but 79mm paper
     // can't fit long Arabic labels at 14-18pt without overflow.
     final fontSize = element.fontSize.clamp(1.0, 24.0);
+    // ⚠️ `font:` مع `fontWeight: bold` فخّ: الحزمةُ تُركّب الخطَّ الممرَّر في
+    // **خانة العريض** (`text_style.dart:150-153`)، فيدهس الدمجُ وجهَ الثيم
+    // العريضَ الحقيقيّ ويُرسم كلُّ «عريض» عادياً. الوجهُ يُنتقى صراحةً.
     return pw.TextStyle(
-      font: _arabicFont,
+      font: element.isBold ? (_arabicBoldFont ?? _arabicFont) : _arabicFont,
       fontSize: fontSize,
       fontWeight: element.isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
       color: _parseColor(element.fontColor),
@@ -1710,8 +1881,9 @@ class TemplatedInvoiceService {
       final w = el.width * scaleX;
       final h = el.height * scaleY;
 
+      // نفسُ فخّ `_getStyle`: الوجهُ يُنتقى صراحةً وإلا رُسم العريضُ عادياً.
       final style = pw.TextStyle(
-        font: _arabicFont,
+        font: el.isBold ? (_arabicBoldFont ?? _arabicFont) : _arabicFont,
         fontSize: el.fontSize,
         fontWeight: el.isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
         fontStyle: el.isItalic ? pw.FontStyle.italic : pw.FontStyle.normal,
