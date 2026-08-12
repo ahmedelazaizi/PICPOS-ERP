@@ -9,6 +9,7 @@ import '../../../data/providers/providers.dart';
 import '../../../domain/entities/cart_item_entity.dart';
 import '../../pos/providers/cart_controller.dart';
 import 'picpos_numeric_keypad_dialog.dart';
+import 'picpos_cart_permissions.dart';
 import 'picpos_pos_text.dart';
 
 /// The invoice line table: م · المادة · الكمية · السعر · الخصم · المجموع · إلغاء
@@ -360,8 +361,14 @@ class _ItemRow extends ConsumerWidget {
                 label: 'الكمية',
                 min: item.isSoldByWeight ? 0.001 : 0.01,
                 onEditComplete: onEditComplete,
-                onSubmitted: (v) {
-                  if (v > 0) cart.updateQuantity(index, v);
+                // التعديلُ المباشرُ في الجدول مسارٌ ثانٍ لنفس الفعل — حوارُ
+                // «تعديل الصنف» هو الأول. حراسةُ أحدِهما وحدَه تترك البابَ
+                // الآخرَ مفتوحاً، وهو بالضبط ما جعل الحراسةَ في `pos/` بلا
+                // أثرٍ هنا. (بلاغٌ ميدانيّ 2026-08-11)
+                onSubmitted: (v) async {
+                  if (v <= 0) return;
+                  if (!await ensureCartQuantityPermission(ref, context)) return;
+                  cart.updateQuantity(index, v);
                 },
               ),
             ),
@@ -375,8 +382,10 @@ class _ItemRow extends ConsumerWidget {
                 label: 'السعر',
                 min: 0,
                 onEditComplete: onEditComplete,
-                onSubmitted: (v) {
-                  if (v >= 0) cart.updatePrice(index, v);
+                onSubmitted: (v) async {
+                  if (v < 0) return;
+                  if (!await ensureCartPricePermission(ref, context)) return;
+                  cart.updatePrice(index, v);
                 },
               ),
             ),

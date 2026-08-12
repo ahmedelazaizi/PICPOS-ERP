@@ -126,11 +126,13 @@ class PermissionEnforcementRegistry {
   ///
   /// مقيسةٌ 2026-08-12 على `aaac482d`: ٢٣ كوداً.
   static const Set<String> picposParityGaps = {
-    // ── سلّةُ البيع — ما بلّغ عنه المالكُ ومباشراتُه ──
-    'pos_remove_item', // cart_item_tile.dart
-    'pos_clear_cart', // cart_view.dart
-    'pos_price_edit', // cart_item_tile.dart
-    'pos_quantity_edit', // cart_item_tile.dart
+    // ── سلّةُ البيع ──
+    // ✅ 'pos_remove_item' · 'pos_clear_cart' · 'pos_price_edit' ·
+    //    'pos_quantity_edit' شُطبت (دفعة ١، 2026-08-12): صارت منفَّذةً في
+    //    `picpos_pos_operations.dart` وفي `picpos_items_table.dart` معاً.
+    //    والمساران **كلاهما** مطلوب: التعديلُ له بابان (حوارُ «تعديل الصنف»
+    //    والخليةُ المباشرة في الجدول)، وحراسةُ أحدِهما تترك الآخرَ مفتوحاً —
+    //    وهو نفسُ سبب العطب الأصليّ.
     'pos_tax_toggle', // cart/cart_totals_panel.dart
     'pos_open_drawer', // cart/cart_totals_panel.dart — يفتح الدرج يدوياً
     'pos_customer_select', // cart/cart_totals_panel.dart

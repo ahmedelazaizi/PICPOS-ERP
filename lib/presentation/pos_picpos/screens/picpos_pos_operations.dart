@@ -71,6 +71,45 @@ Future<bool> ensurePosWeightDialogPermission(
   return false;
 }
 
+// ── صلاحياتُ السلّة ────────────────────────────────────────────────────────
+//
+// بلاغٌ ميدانيّ (2026-08-11): «رفعتُ التحديد عن حذف صنف من السلة، ودخلتُ
+// بالكاشير، فحذف الصنفَ ولم يظهر حوارُ كلمة المرور».
+//
+// الأربعةُ محروسةٌ في `pos/widgets/cart_item_tile.dart` و`cart_view.dart` —
+// وهذه الشاشةُ توأمٌ كُتب من جديدٍ **ولا يستوردهما** (‏السببُ موثَّقٌ في
+// `picpos_payment_panel.dart:11`). فنُقل السلوكُ ولم تُنقل الحراسة: لم يكن
+// ثمّة تجاوزٌ للصلاحية بل **غيابُ نقطةِ فحصٍ من الأساس**.
+//
+// دوالُّ قرارٍ خالصةٌ قصداً — تُختبر بلا شجرةِ ودجت، والوصلُ محروسٌ في
+// `picpos_permission_parity_test`. ومديرُ النظام يمرّ بلا كودٍ صريحٍ لأن هذه
+// ليست عملياتٍ ماليةً حرجة، تماماً كـ`canOpenPosWeightDialog` فوق.
+
+bool _isAdmin(List<String> p) =>
+    p.contains('system_admin') || p.contains('*');
+
+/// حذفُ صنفٍ من السلة (`pos_remove_item`).
+@visibleForTesting
+bool canRemoveCartItem(List<String> permissions) =>
+    _isAdmin(permissions) ||
+    permissions.contains(PermissionCodes.posRemoveItem);
+
+/// تفريغُ السلة بالكامل (`pos_clear_cart`).
+@visibleForTesting
+bool canClearCart(List<String> permissions) =>
+    _isAdmin(permissions) || permissions.contains(PermissionCodes.posClearCart);
+
+/// تعديلُ سعر صنفٍ في البيع (`pos_price_edit`).
+@visibleForTesting
+bool canEditCartPrice(List<String> permissions) =>
+    _isAdmin(permissions) || permissions.contains(PermissionCodes.posPriceEdit);
+
+/// تعديلُ كميةِ صنفٍ في السلة (`pos_quantity_edit`).
+@visibleForTesting
+bool canEditCartQuantity(List<String> permissions) =>
+    _isAdmin(permissions) ||
+    permissions.contains(PermissionCodes.posQuantityEdit);
+
 mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
   // ── Contract the screen must satisfy ───────────────────────────────────
   TextEditingController get barcodeController;
@@ -690,9 +729,39 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
 
   // ── Line operations (F6 / F8) ──────────────────────────────────────────
 
-  void _removeAt(int index) {
+  /// يطلب موافقةَ مسؤولٍ حين ينقص المستخدمَ الكودُ — ويرجع `false` لو رُفض.
+  ///
+  /// اختيارُ المالك (2026-08-12): **حوارُ كلمة المرور على كلّ رفض**، لا على
+  /// المالية الحرجة وحدَها. فالفعلُ الممنوع يمرّ بموافقة مسؤولٍ حاضرٍ يملك
+  /// الصلاحيةَ بنفسه — و`requestManagerApproval` يشترط ذلك ولا يكتفي بأنه
+  /// مدير. والموافقةُ وحيدةُ الاستعمال ولا تُصعّد الجلسة.
+  Future<bool> _ensureCartPermission(
+    bool Function(List<String>) can,
+    String permission,
+    String actionName,
+  ) async {
+    final perms = ref.read(currentUserPermissionsProvider).asData?.value ??
+        const <String>[];
+    if (can(perms)) return true;
+    if (!mounted) return false;
+    return requestManagerApproval(
+      context,
+      actionName: actionName,
+      permission: permission,
+    );
+  }
+
+  Future<void> _removeAt(int index) async {
     final items = ref.read(cartControllerProvider).items;
     if (index < 0 || index >= items.length) return;
+    if (!await _ensureCartPermission(
+      canRemoveCartItem,
+      PermissionCodes.posRemoveItem,
+      'حذف صنف من السلة',
+    )) {
+      return;
+    }
+    if (!mounted) return;
     ref.read(cartControllerProvider.notifier).removeFromCart(index);
     final remaining = ref.read(cartControllerProvider).items.length;
     setState(() {
@@ -795,8 +864,28 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       final qty = double.tryParse(qtyCtl.text.trim());
       final price = double.tryParse(priceCtl.text.trim());
       final disc = double.tryParse(discCtl.text.trim());
-      if (qty != null && qty > 0) cart.updateQuantity(index, qty);
-      if (price != null && price >= 0) cart.updatePrice(index, price);
+      // كلٌّ على حدة: الحوارُ يعدّل الثلاثةَ معاً، فمن يملك تعديلَ الكمية
+      // ولا يملك تعديلَ السعر يجب أن يمرّ الأولُ ويُستأذَن في الثاني — لا
+      // أن يسقط الاثنان ولا أن يمرّا معاً.
+      final current = ref.read(cartControllerProvider).items[index];
+      if (qty != null && qty > 0 && qty != current.quantity) {
+        if (await _ensureCartPermission(
+          canEditCartQuantity,
+          PermissionCodes.posQuantityEdit,
+          'تعديل الكمية',
+        )) {
+          cart.updateQuantity(index, qty);
+        }
+      }
+      if (price != null && price >= 0 && price != current.effectivePrice) {
+        if (await _ensureCartPermission(
+          canEditCartPrice,
+          PermissionCodes.posPriceEdit,
+          'تعديل سعر الصنف',
+        )) {
+          cart.updatePrice(index, price);
+        }
+      }
       if (disc != null && disc >= 0 && disc <= 100) {
         cart.setItemDiscount(index, disc);
       }
@@ -1316,6 +1405,14 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       isDangerous: true,
     );
     if (!ok || !mounted) return;
+    if (!await _ensureCartPermission(
+      canClearCart,
+      PermissionCodes.posClearCart,
+      'تفريغ السلة',
+    )) {
+      return;
+    }
+    if (!mounted) return;
     ref.read(cartControllerProvider.notifier).clearCart();
     setState(() => selectedIndex = null);
     barcodeController.clear();

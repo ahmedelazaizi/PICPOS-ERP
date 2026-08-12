@@ -1,0 +1,73 @@
+// صلاحياتُ تعديل السلة — نقطةٌ واحدةٌ يشترك فيها مسارا التعديل.
+//
+// ── لماذا ملفٌّ مستقلّ ─────────────────────────────────────────────────────
+// لتعديل الكمية والسعر **مساران** في شاشة PicPos: حوارُ «تعديل الصنف» في
+// `picpos_pos_operations.dart`، والتعديلُ المباشرُ في خلايا
+// `picpos_items_table.dart`. والملفّان مكتبتان مختلفتان (‏`part of` جذور
+// مختلفة) فلا يرى أحدُهما دوالَّ الآخر.
+//
+// وحراسةُ أحدِ المسارين وحدَه تترك البابَ الآخرَ مفتوحاً — وهو **بعينه** ما
+// جعل الحراسةَ القائمة في `pos/widgets/` بلا أثرٍ في PicPos: الحراسةُ كانت
+// موجودةً في مسارٍ لا يُسلَك. فالمشتركُ هنا كي لا يفترق الطرفان بأوّل تعديل.
+//
+// ── فئةُ العطب ────────────────────────────────────────────────────────────
+// بلاغٌ ميدانيّ (2026-08-11): «رفعتُ التحديد عن حذف صنف من السلة، ودخلتُ
+// بالكاشير، فحذف الصنفَ ولم يظهر حوارُ كلمة المرور» — لم يكن تجاوزاً
+// للصلاحية بل **غيابُ نقطةِ فحصٍ من الأساس**.
+//
+// واختيارُ المالك (2026-08-12): حوارُ كلمة المرور على **كلّ** رفض، لا على
+// المالية الحرجة وحدَها. و`requestManagerApproval` يشترط أن المسؤولَ الموافقَ
+// يملك الصلاحيةَ بنفسه، ويمنح إذناً وحيدَ الاستعمال لا يُصعّد الجلسة.
+
+import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../core/permissions/permission_codes.dart';
+import '../../../data/providers/auth_providers.dart';
+import '../../widgets/permission_guard.dart';
+
+bool _isAdmin(List<String> p) =>
+    p.contains('system_admin') || p.contains('*');
+
+/// تعديلُ كميةِ صنفٍ في السلة (`pos_quantity_edit`).
+bool canEditCartQuantityCodes(List<String> permissions) =>
+    _isAdmin(permissions) ||
+    permissions.contains(PermissionCodes.posQuantityEdit);
+
+/// تعديلُ سعر صنفٍ في البيع (`pos_price_edit`).
+bool canEditCartPriceCodes(List<String> permissions) =>
+    _isAdmin(permissions) || permissions.contains(PermissionCodes.posPriceEdit);
+
+Future<bool> _ensure(
+  WidgetRef ref,
+  BuildContext context,
+  bool Function(List<String>) can,
+  String permission,
+  String actionName,
+) async {
+  final perms =
+      ref.read(currentUserPermissionsProvider).asData?.value ?? const <String>[];
+  if (can(perms)) return true;
+  if (!context.mounted) return false;
+  return requestManagerApproval(
+    context,
+    actionName: actionName,
+    permission: permission,
+  );
+}
+
+/// يسمح بتعديل الكمية، أو يطلب موافقةَ مسؤولٍ يملكها.
+Future<bool> ensureCartQuantityPermission(
+  WidgetRef ref,
+  BuildContext context,
+) =>
+    _ensure(ref, context, canEditCartQuantityCodes,
+        PermissionCodes.posQuantityEdit, 'تعديل الكمية');
+
+/// يسمح بتعديل السعر، أو يطلب موافقةَ مسؤولٍ يملكها.
+Future<bool> ensureCartPricePermission(
+  WidgetRef ref,
+  BuildContext context,
+) =>
+    _ensure(ref, context, canEditCartPriceCodes, PermissionCodes.posPriceEdit,
+        'تعديل سعر الصنف');
