@@ -346,6 +346,43 @@ extension InvoiceTemplateSeederDao on AppDatabase {
     return changed;
   }
 
+  /// مفتاحُ مراجعةِ قالب الوردية. تغييرُ القيمة يُعيد بناءَ عناصر القالب
+  /// **مرّةً واحدة** عند الإقلاع التالي.
+  static const _shiftTemplateRevKey = 'shift_closing_template_rev';
+  static const _shiftTemplateRev = '2026-08-12-channels';
+
+  /// يُعيد بناءَ عناصر قالب `shift_closing` بالترتيب المبذور — مرّةً واحدة.
+  ///
+  /// ⚠️ **يمحو أيَّ تصميمٍ أدخله المستخدم على هذا القالب.** ولهذا هو
+  /// مشروطٌ بمراجعةٍ مخزَّنة، لا يعمل كلَّ إقلاع: تشغيلٌ دوريٌّ كان سيهدم
+  /// عملَ المستخدم في كلّ مرّة، وهو أسوأُ من العطب الذي يعالجه.
+  ///
+  /// طُلب صراحةً (المالك 2026-08-12) بعد أن تراكمت على قالبه رقعتان من
+  /// إصلاحَين متتاليَين: صفوفٌ مُلحَقةٌ في الذيل وعنصرُ عنوانٍ استُغني عنه.
+  /// الترتيبُ المبذور أنظفُ من أيّ ترقيعٍ فوقهما.
+  ///
+  /// رفعُ [_shiftTemplateRev] لاحقاً يدفع تغييرَ البذرة لكلّ التجهيزات —
+  /// وهو قرارٌ يُتَّخذ بوعي: كلُّ رفعٍ يهدم تصميماتِ المستخدمين مرّةً أخرى.
+  Future<bool> resetShiftClosingTemplateToSeed({bool force = false}) async {
+    if (!force && await getSettingValue(_shiftTemplateRevKey) ==
+        _shiftTemplateRev) {
+      return false;
+    }
+
+    var rebuilt = false;
+    for (final template
+        in (await getAllTemplates()).where((t) => t.type == 'shift_closing')) {
+      await (delete(invoiceTemplateElements)
+            ..where((e) => e.templateId.equals(template.id)))
+          .go();
+      await _seedShiftClosingElements(template.id);
+      rebuilt = true;
+    }
+
+    await setSetting(_shiftTemplateRevKey, _shiftTemplateRev);
+    return rebuilt;
+  }
+
   /// يضع صفوفَ القنوات الثلاث (ومعها عناوينُها النصّية إن وُجدت) قبل
   /// الإجمالياتِ مباشرةً، ويعيد ترقيمَ `sortOrder`/`yPosition` تدفّقاً.
   ///

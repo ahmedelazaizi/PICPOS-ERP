@@ -190,6 +190,87 @@ void main() {
     expect((await db.getTemplateElements(id)).length, after1);
   });
 
+  group('إعادةُ البناء بالترتيب المبذور', () {
+    // ⚠️ `AppDatabase.forTesting()` يشغّل طورَ الإقلاع فعلاً، فالمراجعةُ
+    // تُكتب قبل أن ينشئ الاختبارُ قالبَه. مسحُها يحاكي قاعدةً قديمةً
+    // حقيقيّة — وهي الحالةُ الوحيدةُ التي تُعنى بها الدالّة.
+    Future<void> clearRev() =>
+        db.setSetting('shift_closing_template_rev', '');
+
+    test('تُنظّف قالباً تراكمت عليه رقعتان', () async {
+      final id = await seedStaleTemplate();
+      await clearRev();
+      // أثرُ نسخةٍ سابقةٍ من الإصلاح: عنوانٌ استُغني عنه في الذيل.
+      await db.into(db.invoiceTemplateElements).insert(
+            InvoiceTemplateElementsCompanion.insert(
+              templateId: id,
+              elementType: 'text',
+              sortOrder: const Value(98),
+              xPosition: const Value(10),
+              yPosition: const Value(600),
+              width: const Value(200),
+              height: const Value(20),
+              content: const Value('كليك'),
+            ),
+          );
+
+      expect(await db.resetShiftClosingTemplateToSeed(), isTrue);
+
+      final order = await orderedVariables(id);
+      // القنواتُ التسعُ كلُّها حاضرة، والإجمالياتُ بعدها.
+      for (final key in [
+        'shift_system_cash',
+        'shift_actual_cash',
+        'shift_cash_variance',
+        'shift_system_card',
+        'shift_actual_card',
+        'shift_card_variance',
+        'shift_system_click',
+        'shift_actual_click',
+        'shift_click_variance',
+      ]) {
+        expect(order, contains(key), reason: key);
+        expect(
+          order.indexOf(key),
+          lessThan(order.indexOf('shift_total_system')),
+          reason: '$key قبل الإجماليات',
+        );
+      }
+
+      final els = await db.getTemplateElements(id);
+      expect(
+        els.firstWhere((e) => e.content == 'shift_system_click').labelAr,
+        'كليك — رصيد النظام',
+      );
+      // ولا أثرَ للرقعة القديمة: عنصرُ نصٍّ «كليك» عارياً بلا كتلته.
+      expect(
+        els.where((e) => e.elementType == 'text' && e.content == 'كليك'),
+        hasLength(1),
+      );
+    });
+
+    test('مرّةً واحدةً — لا تهدم تصميمَ المستخدم كلَّ إقلاع', () async {
+      final id = await seedStaleTemplate();
+      await clearRev();
+      expect(await db.resetShiftClosingTemplateToSeed(), isTrue);
+
+      // تعديلٌ بعد إعادة البناء — يمثّل تصميمَ المستخدم.
+      final mine = (await db.getTemplateElements(id)).first;
+      await (db.update(db.invoiceTemplateElements)
+            ..where((t) => t.id.equals(mine.id)))
+          .write(const InvoiceTemplateElementsCompanion(fontSize: Value(33)));
+
+      expect(await db.resetShiftClosingTemplateToSeed(), isFalse);
+      expect(
+        (await db.getTemplateElements(id))
+            .firstWhere((e) => e.id == mine.id)
+            .fontSize,
+        33,
+        reason: 'المراجعةُ مخزَّنة، فلا إعادةَ بناءٍ ثانية',
+      );
+    });
+  });
+
   test('قالبٌ كاملٌ لا يُمَسّ', () async {
     final id = await db.into(db.invoiceTemplates).insert(
           InvoiceTemplatesCompanion.insert(

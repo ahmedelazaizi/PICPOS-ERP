@@ -716,12 +716,20 @@ extension DatabaseStartup on AppDatabase {
     //
     // متعادلٌ: ما وُجد يُترك، وقالبٌ كاملٌ لا يُمَسّ.
     try {
+      // إعادةُ البناء أوّلاً: قالبٌ أُعيد بناؤه صار مطابقاً للبذرة، فلا يجد
+      // الإصلاحُ التالي فيه ما يُصلح. والعكسُ كان سيرقّع ثم يهدم.
+      final reset = await resetShiftClosingTemplateToSeed();
+      if (reset) {
+        await DiagnosticLogger.log('TEMPLATE',
+            'shift_closing أُعيد بناؤه بالترتيب المبذور (مرّة واحدة)');
+      }
       final n = await backfillShiftClosingChannelElements();
       if (n > 0) {
-        debugPrint('[Startup] ✅ قالب الوردية — أُلحق $n عنصرَ تسوية');
+        await DiagnosticLogger.log(
+            'TEMPLATE', 'shift_closing — أُصلح $n عنصرَ تسوية');
       }
     } catch (e) {
-      debugPrint('[Startup] backfillShiftClosingChannelElements: $e');
+      debugPrint('[Startup] shift_closing template repair: $e');
     }
 
 
