@@ -89,6 +89,23 @@ rm -rf build/native_assets
 #    `BaseGenerator.newDocument()` المُثيَّم. الحارسُ أصاب في أبعدَ من
 #    قاعدته — مِقبضٌ للقياس يبني بغير ما يبني به الإنتاجُ يقيس مستنداً آخر.)
 #
+# تشغيلةُ 2026-08-12 بعد إصلاح عطب الإعدادات ورابط CFD وذيل الصلاحيات
+# (‏c=4، ‏--pg):
+#   analyze 6 info · unit 3148 · widget 653 · integration 710 · pg 45
+#   (‏الزيادةُ ١ في unit — حارسُ `no_raw_server_address_url`. و٢ في widget —
+#    اختبارا لوح الإعدادات: العطبُ نفسُه وحفظُ موضع التمرير.)
+#
+# تشغيلةُ 2026-08-12 بعد فتح المطبخ والإضافات لـPicPos-lite (‏c=4، ‏--pg):
+#   analyze 6 info · unit 3153 · widget 656 · integration 710 · pg 45
+#   (‏آخرُ تشغيلةٍ كاملةٍ على شجرةٍ ثابتة — `GATE_EXIT=0` ونصُّ «كلها خضراء».
+#    الزيادةُ ٥ في unit كلُّها `picpos_lite_kitchen_policy_test`، و٣ في
+#    widget كلُّها حارسُ حقل ملاحظة الصنف.
+#
+#    ⚠️ وفرعُ PicPos من `FeaturePolicy.fromProfile` **لا تقيسه هذه الأرقام**:
+#    `Brand.isPicPos` ثابتُ ترجمةٍ افتراضُه `uralcash`. ولهذا الوجهتان
+#    ثابتان مُسمّيان (`lite` / `litePicpos`) يُقاسان مباشرةً — الرقمُ يغطّي
+#    الاثنين بلا حاجةٍ لتشغيلةٍ ثانيةٍ بـ`--dart-define`.)
+#
 # والحكمُ **بتطابق عدد النجاحات** لا بالخضرة: لو كشف التوازي هشاشةً كامنة
 # لظهر الفرقُ رقماً. وصفرُ `PathExistsException` في كلّ التشغيلات بعد تنظيف
 # `build/native_assets` أعلاه.
@@ -186,11 +203,11 @@ fi
 # على `DELETE FROM "accounts"` لأن `safes.linkedAccountId` صار يشدُّ الدليل،
 # و٢ افتراضَ أن رجلَ النقدية على `1111`. فالوصفةُ الموصوفة لو طُبّقت بالجملة
 # لَما أصلحت شيئاً — اقرأ رسالةَ الفشل، لا وصفةَ المستند.
-run_suite "unit + data + structural + services" 3147 \
+run_suite "unit + data + structural + services" 3153 \
   flutter test test/unit test/data test/structural test/services --concurrency="$LOCAL_CONCURRENCY"
 
 # الواجهات والنطاقُ والنواة — كانت **كلُّها** خارج البوابة حتى 2026-08-09.
-run_suite "widget + core + domain + presentation + security + static" 651 \
+run_suite "widget + core + domain + presentation + security + static" 656 \
   flutter test test/core test/domain test/presentation test/security \
               test/static test/widget test/widget_test.dart --concurrency="$LOCAL_CONCURRENCY"
 
