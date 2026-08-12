@@ -98,4 +98,75 @@ class PermissionEnforcementRegistry {
     // أو fallback: SizedBox.shrink() على أكواد العرض الصرف، أو فحص صريح
     // جوه الـhandlers اللي مالهاش زرار واحد للفّه).
   };
+
+  /// أكوادٌ **محروسةٌ حراسةً صحيحة** — في شاشةٍ لا يصل إليها PicPos.
+  ///
+  /// ── فئةُ العطب ──────────────────────────────────────────────────────────
+  /// [knownUnenforced] فوق يسأل: «هل للكود موضعُ إنفاذٍ في `lib/`؟» وهذا
+  /// سؤالٌ **ناقص**. لكلٍّ من هذه الأكواد موضعُ إنفاذٍ مكتوبٌ بشكلٍ صحيح —
+  /// في `presentation/pos/` أو `products/` أو `settings/` أو `treasury/`.
+  /// وPicPos لا يستعمل تلك الشاشات: له توائمُ `*_picpos` كُتبت من جديد،
+  /// نُقل إليها **السلوكُ** ولم تُنقل **الحراسة**.
+  ///
+  /// فالحارسُ القائم يمرّ أخضرَ والمشغّلُ يرى العطب: بلاغٌ ميدانيّ
+  /// (2026-08-11) — «رفعتُ التحديد عن حذف صنف من السلة، ودخلتُ بالكاشير،
+  /// فحذف الصنفَ ولم يظهر حوارُ كلمة المرور». والسبب أن `pos_remove_item`
+  /// محروسٌ في `pos/widgets/cart_item_tile.dart`، وشاشةُ PicPos **لا
+  /// تستورده إطلاقاً** (‏موثَّقٌ في `picpos_payment_panel.dart:11`: تفكيك
+  /// `cart_view.dart` كان أخطرَ من إعادة الكتابة).
+  ///
+  /// وهذه أخطرُ من [knownUnenforced]: هناك مفتاحٌ لا يفعل شيئاً، وهنا **ضابطٌ
+  /// رقابيٌّ يبدو مفعَّلاً وهو غيرُ موجودٍ على المسار الحيّ**. المديرُ يرفع
+  /// التحديدَ فيطمئنّ، والكاشيرُ يمضي بلا أثر.
+  ///
+  /// ── القائمةُ **تتقلّص ولا تكبر** ────────────────────────────────────────
+  /// `picpos_permission_parity_test` يفشل لصلاحيةٍ جديدةٍ تُحرَس في نظيرٍ
+  /// قديمٍ بلا توأمها، **ويفشل أيضاً** لمدخلٍ هنا صار منفَّذاً في التوأم —
+  /// فلا تبقى القائمةُ ساكنةً بعد إصلاحها.
+  ///
+  /// مقيسةٌ 2026-08-12 على `aaac482d`: ٢٣ كوداً.
+  static const Set<String> picposParityGaps = {
+    // ── سلّةُ البيع — ما بلّغ عنه المالكُ ومباشراتُه ──
+    'pos_remove_item', // cart_item_tile.dart
+    'pos_clear_cart', // cart_view.dart
+    'pos_price_edit', // cart_item_tile.dart
+    'pos_quantity_edit', // cart_item_tile.dart
+    'pos_tax_toggle', // cart/cart_totals_panel.dart
+    'pos_open_drawer', // cart/cart_totals_panel.dart — يفتح الدرج يدوياً
+    'pos_customer_select', // cart/cart_totals_panel.dart
+    'pos_previous_invoices', // cart/cart_totals_panel.dart
+
+    // ── رأسُ شاشة البيع ──
+    // ⚠️ `pos_delivery` و`pos_offers` **ليستا هنا**: قياسي اليدويُّ أدرجهما
+    // فكشف الحارسُ أنهما محروستان في التوأم فعلاً. هذا سببُ وجوده — الجردُ
+    // بالعين يخطئ في الاتّجاهين.
+    'pos_booking',
+    'pos_exchange',
+    'pos_keyboard',
+    'pos_table_bill',
+    'pos_table_select',
+
+    // ── حواراتٌ مساعدة ──
+    'pos_deleted_items', // pos_deleted_items_dialog.dart
+    'pos_expense_type_select', // pos_expense_dialog.dart
+    'pos_restore_held', // held_orders_dialog.dart
+
+    // ── وسبعةٌ فاتت الجردَ اليدويَّ ولم تفت الحارس ──
+    'pos_customer_add',
+    'pos_expense_description',
+    'pos_grid_toggle',
+    'pos_low_stock_alert',
+    'pos_note_add',
+    'pos_notifications',
+    'pos_return',
+
+    // ── الطاولات ──
+    'tables_add_items',
+    'tables_cancel',
+    'tables_checkout',
+
+    // ── الخزينة — لها توأمُ `treasury_picpos` ──
+    'treasury_payments_create', // treasury/widgets/treasury_metrics_panel.dart
+    'treasury_commission', // treasury/widgets/receipt_voucher_dialog.dart
+  };
 }
