@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/permissions/permission_codes.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../data/database/database.dart';
+// `ModifierGroupWithItems` يصل عبر البرميل الذي يُصدّره `providers.dart`،
+// فاستيراد `data/database/database.dart` صار زائداً وأزيل.
+import '../../../data/providers/providers.dart';
+import '../../widgets/permission_guard.dart';
 
 /// Quantity level for options (قليل / وسط / كثير)
 enum OptionQuantityLevel {
@@ -77,6 +82,52 @@ class SelectedModifier {
   }
 }
 
+/// حصيلةُ الحوار: المعدِّلات المختارة + ملاحظةُ الكاشير اليدوية.
+///
+/// ⚠️ [note] **ليست** `CartItemEntity.note`. الأخيرُ نصٌّ مشتقٌّ يُبنى في
+/// `composeCartItemNote` وحدَها من المعدِّلات + `itemNote`. مرِّرها إلى
+/// `updateItemNote` ودعِ التركيبَ لها، وإلا محت المعدِّلات من المطبوع بينما
+/// هي باقيةٌ في `item.modifiers` — والمطبخُ يحضّر الطلبَ غلط.
+class ModifierSelectionResult {
+  const ModifierSelectionResult({required this.modifiers, this.note});
+
+  final List<SelectedModifier> modifiers;
+  final String? note;
+}
+
+/// حقلُ ملاحظة الصنف — مستخرَجٌ كدالّةٍ مستقلّةٍ ليُقاس بلا قاعدة بيانات
+/// (نفس نمط Task 6a/6b/7).
+///
+/// `allowManagerOverride` بلا `onGranted`: الحقلُ نصٌّ حرٌّ بلا زرٍّ واحدٍ
+/// واضح — إضافةُ ملاحظةٍ كتابةٌ حقيقيةٌ على الصنف لا مجردَ عرض، فمن غير
+/// الصلاحية يلزم تصريحُ مدير. والموافقةُ هنا **تفتح القفل** بدل أن تُشغّل
+/// حفظاً فورياً، ثم يكتب الكاشير ويحفظ كأيّ مستخدمٍ مصرَّحٍ له. نفسُ
+/// السيناريو الموثَّق في `permission_guard.dart` لحقلٍ بلا فعلٍ واحد.
+@visibleForTesting
+Widget buildItemNoteField({required TextEditingController controller}) {
+  return PermissionGuard(
+    permission: PermissionCodes.posNoteAdd,
+    allowManagerOverride: true,
+    actionName: 'إضافة ملاحظة على الصنف',
+    child: TextField(
+      controller: controller,
+      style: const TextStyle(fontSize: 13),
+      textInputAction: TextInputAction.done,
+      decoration: const InputDecoration(
+        isDense: true,
+        prefixIcon: Icon(
+          PhosphorIconsBold.notepad,
+          size: 16,
+          color: AppColors.warning,
+        ),
+        labelText: 'ملاحظة على الصنف',
+        hintText: 'بدون بصل، سريع التحضير…',
+        border: OutlineInputBorder(),
+      ),
+    ),
+  );
+}
+
 /// Large dialog for selecting product options and additions.
 ///
 /// Options: choices without extra price (size, cooking level, etc.)
@@ -85,10 +136,23 @@ class ModifierSelectionDialog extends StatefulWidget {
   final String productName;
   final List<ModifierGroupWithItems> modifierGroups;
 
+  /// المعدِّلاتُ المختارةُ سلفاً على السطر. فارغةٌ ⇒ تُنتقى افتراضياتُ
+  /// المجموعات (`isDefault`). غيرُ فارغةٍ ⇒ تُستأنف الحالةُ كما هي، وإلا
+  /// بدا للكاشير أن إعادةَ الفتح مسحت اختياراته.
+  final List<SelectedModifier> initialSelection;
+
+  /// يُظهر حقلَ ملاحظةِ الصنف داخل الحوار. مطفأٌ افتراضياً كي يبقى نداءُ
+  /// [show] القديم كما هو حرفياً.
+  final bool noteEnabled;
+  final String? initialNote;
+
   const ModifierSelectionDialog({
     super.key,
     required this.productName,
     required this.modifierGroups,
+    this.initialSelection = const [],
+    this.noteEnabled = false,
+    this.initialNote,
   });
 
   /// Show the dialog and return selected modifiers
@@ -96,13 +160,57 @@ class ModifierSelectionDialog extends StatefulWidget {
     BuildContext context, {
     required String productName,
     required List<ModifierGroupWithItems> modifierGroups,
-  }) {
-    return showDialog<List<SelectedModifier>>(
+  }) async {
+    final result = await showDialog<ModifierSelectionResult>(
       context: context,
       barrierDismissible: false,
       builder: (c) => ModifierSelectionDialog(
         productName: productName,
         modifierGroups: modifierGroups,
+      ),
+    );
+    return result?.modifiers;
+  }
+
+  /// يفتح الحوارَ لسطرِ سلّةٍ بعينه: يحمّل مجموعاتِ المنتج، ويستأنف
+  /// الاختياراتِ والملاحظة، ويُرجع الاثنين معاً.
+  ///
+  /// ── لماذا التحميلُ هنا لا في `pos_picpos/` ────────────────────────────
+  /// `getProductModifiers` تُرجع `ModifierGroupWithItems` وهو نوعٌ من
+  /// `data/database`، و`presentation_db_import_guard` يمنع أيَّ ملفِّ عرضٍ
+  /// **جديد** من استيراده. هذا الملفُّ في القائمة البيضاء سلفاً، فلا يتسرّب
+  /// النوعُ لسلّة PicPos — الدالّةُ لا تُرجع إلا `SelectedModifier` ونصّاً.
+  ///
+  /// تُرجع null إن أُلغي الحوار، أو إن لم يكن للمنتج أيُّ مجموعةٍ وكان حقلُ
+  /// الملاحظة مطفأً — فلا شيءَ يُعرض عندئذٍ.
+  static Future<ModifierSelectionResult?> showForCartItem(
+    BuildContext context,
+    WidgetRef ref, {
+    required int productId,
+    required String productName,
+    List<SelectedModifier> initialSelection = const [],
+    String? initialNote,
+    bool noteEnabled = true,
+  }) async {
+    List<ModifierGroupWithItems> groups;
+    try {
+      groups =
+          await ref.read(productRepositoryProvider).getProductModifiers(productId);
+    } catch (_) {
+      groups = const [];
+    }
+    if (groups.isEmpty && !noteEnabled) return null;
+    if (!context.mounted) return null;
+
+    return showDialog<ModifierSelectionResult>(
+      context: context,
+      barrierDismissible: false,
+      builder: (c) => ModifierSelectionDialog(
+        productName: productName,
+        modifierGroups: groups,
+        initialSelection: initialSelection,
+        noteEnabled: noteEnabled,
+        initialNote: initialNote,
       ),
     );
   }
@@ -124,18 +232,46 @@ class _ModifierSelectionDialogState extends State<ModifierSelectionDialog> {
       .where((mg) => mg.items.any((item) => item.extraPrice > 0) && mg.group.type != 'option')
       .toList();
 
+  late final TextEditingController _noteController;
+
   @override
   void initState() {
     super.initState();
-    // Pre-select default items
+    _noteController = TextEditingController(text: widget.initialNote ?? '');
+
+    // استئنافُ اختياراتِ السطر إن وُجدت، وإلا فافتراضياتُ المجموعات.
+    final resumed = widget.initialSelection.map((m) => m.itemId).toSet();
     for (final mg in widget.modifierGroups) {
       _selections[mg.group.id] = {};
       for (final item in mg.items) {
-        if (item.isDefault) {
+        final on = resumed.isEmpty ? item.isDefault : resumed.contains(item.id);
+        if (on) {
           _selections[mg.group.id]!.add(item.id);
         }
       }
     }
+  }
+
+  @override
+  void dispose() {
+    _noteController.dispose();
+    super.dispose();
+  }
+
+  /// يغلّف المعدِّلات بالملاحظة. لما الحقلُ مطفأً تُمرَّر [initialNote] كما
+  /// هي — فالحوارُ لم يعرضها ولا يجوز أن يمحوها.
+  ModifierSelectionResult _result(List<SelectedModifier> modifiers) {
+    if (!widget.noteEnabled) {
+      return ModifierSelectionResult(
+        modifiers: modifiers,
+        note: widget.initialNote,
+      );
+    }
+    final note = _noteController.text.trim();
+    return ModifierSelectionResult(
+      modifiers: modifiers,
+      note: note.isEmpty ? null : note,
+    );
   }
 
   double get _totalExtra {
@@ -304,7 +440,14 @@ class _ModifierSelectionDialogState extends State<ModifierSelectionDialog> {
                   border: const Border(top: BorderSide(color: AppColors.border)),
                   borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
                 ),
-                child: Row(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (widget.noteEnabled) ...[
+                      buildItemNoteField(controller: _noteController),
+                      const SizedBox(height: 12),
+                    ],
+                    Row(
                   children: [
                     // Total extra price badge
                     if (_totalExtra > 0)
@@ -340,7 +483,7 @@ class _ModifierSelectionDialogState extends State<ModifierSelectionDialog> {
                     const SizedBox(width: 8),
                     // Without additions
                     OutlinedButton.icon(
-                      onPressed: () => Navigator.pop(context, <SelectedModifier>[]),
+                      onPressed: () => Navigator.pop(context, _result(const [])),
                       icon: const Icon(PhosphorIconsBold.minus, size: 16),
                       label: const Text('بدون إضافات'),
                       style: OutlinedButton.styleFrom(
@@ -350,7 +493,9 @@ class _ModifierSelectionDialogState extends State<ModifierSelectionDialog> {
                     const SizedBox(width: 8),
                     // Confirm
                     FilledButton.icon(
-                      onPressed: _isValid ? () => Navigator.pop(context, _buildResult()) : null,
+                      onPressed: _isValid
+                          ? () => Navigator.pop(context, _result(_buildResult()))
+                          : null,
                       icon: const Icon(PhosphorIconsBold.check, size: 16),
                       label: const Text('تأكيد الاختيارات'),
                       style: FilledButton.styleFrom(
@@ -358,6 +503,8 @@ class _ModifierSelectionDialogState extends State<ModifierSelectionDialog> {
                         backgroundColor: AppColors.success,
                       ),
                     ),
+                  ],
+                ),
                   ],
                 ),
               ),

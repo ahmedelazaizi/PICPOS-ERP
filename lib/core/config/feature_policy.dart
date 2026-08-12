@@ -18,6 +18,7 @@
 import 'package:flutter/foundation.dart';
 
 import 'app_flavor.dart';
+import 'brand.dart';
 import 'business_profile.dart';
 import 'feature_key.dart';
 
@@ -66,6 +67,65 @@ class FeaturePolicy {
     this.coursesEnabled = false,
     this.weightDialogEnabled = false,
   });
+
+  // ─── lite — وجهتان حسب الماركة ────────────────────────────────────────
+  //
+  // `Brand.isPicPos` ثابتُ ترجمة، فلو بقي الفرعُ مطويّاً داخل `fromProfile`
+  // لَما قاسه أيُّ اختبارٍ في البوابة (‏تشتغل على الافتراضي `uralcash`).
+  // ثابتان مُسمّيان يُقاسان مباشرةً — نفسُ علاج `ScreenRegistry.litePicpos`.
+
+  /// أصغر بروفايل: نقطة بيع + مخازن + صناديق + تقارير.
+  ///
+  /// `barcodeEnabled: true` عن قصد — نقطة بيع تجزئة بلا قارئ باركود مش
+  /// قابلة للاستخدام. القاعدة `posBarcode requires posMain` متحققة
+  /// (posEnabled: true)، فـ `FeatureValidator.validate` بيمرّرها بصفر
+  /// قواعد مطبَّقة وصفر مرفوضات — ودي اللي `feature_validator_test`
+  /// بيتحقق منها لكل بروفايل ما عدا unified.
+  ///
+  /// `scaleEnabled: false` ومعاه `weightDialogEnabled: false` لازم
+  /// يتحركوا مع بعض: `posWeightDialog requires posScale`، فتشغيل الحوار
+  /// لوحده كان هيخلّي الڤاليديتور يفعّل الميزان تلقائياً ويكسر التأكيد فوق.
+  static const FeaturePolicy lite = FeaturePolicy(
+    tablesEnabled: false,
+    kitchenEnabled: false,
+    deliveryEnabled: false,
+    reservationsEnabled: false,
+    scaleEnabled: false,
+    offersEnabled: false,
+    branchesEnabled: false,
+    hrEnabled: false,
+    posEnabled: true,
+    invoiceModeEnabled: false,
+    warehousesEnabled: true,
+    barcodeEnabled: true,
+  );
+
+  /// PicPos-lite — [lite] زائدَ المطبخِ والإضافات.
+  ///
+  /// قرارُ المالك 2026-08-12: «إدارة الإضافات والمعدلات» كانت موصولةً في
+  /// «التكاملات والخدمات» ومحجوبةً بالعلَم وحدَه.
+  ///
+  /// والعلمان يتحرّكان معاً: الملفاتُ الأربعةُ التي تفتح المطبخ (restaurant ·
+  /// cafe · supermarketPlus · unified) تفتح `modifiersEnabled` معه بلا
+  /// استثناء، و`requires` يفرض `restaurantModifiers → posKitchen` بينما
+  /// `implies` يقترح العكس. ففتحُ أحدهما وحدَه يترك الڤاليديتور يصحّح.
+  ///
+  /// ولا تُمَسّ [lite]: UralCash مطروحٌ ولايته قد تكون منصَّبةً عند عميل.
+  static const FeaturePolicy litePicpos = FeaturePolicy(
+    tablesEnabled: false,
+    kitchenEnabled: true,
+    deliveryEnabled: false,
+    reservationsEnabled: false,
+    scaleEnabled: false,
+    offersEnabled: false,
+    branchesEnabled: false,
+    hrEnabled: false,
+    posEnabled: true,
+    invoiceModeEnabled: false,
+    warehousesEnabled: true,
+    barcodeEnabled: true,
+    modifiersEnabled: true,
+  );
 
   // ─── Profile factories (unchanged from Phase-0 behaviour) ─────────────
 
@@ -171,32 +231,13 @@ class FeaturePolicy {
           commercialPapersEnabled: true,
           regionsEnabled: true,
         );
-      // أصغر بروفايل: نقطة بيع + مخازن + صناديق + تقارير.
-      //
-      // `barcodeEnabled: true` عن قصد — نقطة بيع تجزئة بلا قارئ باركود مش
-      // قابلة للاستخدام. القاعدة `posBarcode requires posMain` متحققة
-      // (posEnabled: true)، فـ `FeatureValidator.validate` بيمرّرها بصفر
-      // قواعد مطبَّقة وصفر مرفوضات — ودي اللي `feature_validator_test`
-      // بيتحقق منها لكل بروفايل ما عدا unified.
-      //
-      // `scaleEnabled: false` ومعاه `weightDialogEnabled: false` لازم
-      // يتحركوا مع بعض: `posWeightDialog requires posScale`، فتشغيل الحوار
-      // لوحده كان هيخلّي الڤاليديتور يفعّل الميزان تلقائياً ويكسر التأكيد فوق.
+      // الشرحُ الكاملُ على الثابتَين [lite] و[litePicpos] فوق.
       case BusinessProfile.lite:
-        return const FeaturePolicy(
-          tablesEnabled: false,
-          kitchenEnabled: false,
-          deliveryEnabled: false,
-          reservationsEnabled: false,
-          scaleEnabled: false,
-          offersEnabled: false,
-          branchesEnabled: false,
-          hrEnabled: false,
-          posEnabled: true,
-          invoiceModeEnabled: false,
-          warehousesEnabled: true,
-          barcodeEnabled: true,
-        );
+        // UralCash-lite تبقى حرفياً؛ PicPos-lite تفتح المطبخَ والإضافات.
+        // نفسُ نمط `ScreenRegistry.lite` / `litePicpos` — الفرعُ في سطر
+        // الاختيار وحدَه، والوجهتان ثابتان مُسمّيان كي يقيسهما اختبارٌ
+        // واحدٌ مهما كانت ماركةُ البناء.
+        return Brand.isPicPos ? litePicpos : lite;
       case BusinessProfile.unified:
         return const FeaturePolicy(
           tablesEnabled: true,

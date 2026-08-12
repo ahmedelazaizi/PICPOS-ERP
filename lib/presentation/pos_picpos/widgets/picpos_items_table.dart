@@ -3,11 +3,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
+import '../../../core/config/business_profile_provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/number_utils.dart';
 import '../../../data/providers/providers.dart';
 import '../../../domain/entities/cart_item_entity.dart';
 import '../../pos/providers/cart_controller.dart';
+import '../../pos/widgets/modifier_selection_dialog.dart';
 import 'picpos_numeric_keypad_dialog.dart';
 import 'picpos_cart_permissions.dart';
 import 'picpos_pos_text.dart';
@@ -56,6 +58,9 @@ class PicPosItemsTable extends ConsumerWidget {
     final scale =
         ((ref.watch(posCartItemScaleProvider).value ?? 1.0) * density)
             .clamp(0.7, 1.6);
+    // «الإضافات والمعدلات» ميزةُ مطبخ. مقفولةٌ ⇒ لا عمودَ ولا زرّ — لا زرٌّ
+    // معطَّلٌ يسأل عنه الكاشير.
+    final showOptions = ref.watch(featureFlagsProvider).modifiersEnabled;
 
     return Container(
       decoration: BoxDecoration(
@@ -64,7 +69,7 @@ class PicPosItemsTable extends ConsumerWidget {
       ),
       child: Column(
         children: [
-          _TableHeader(scale: scale),
+          _TableHeader(scale: scale, showOptions: showOptions),
           Expanded(
             child: items.isEmpty
                 ? const _EmptyState()
@@ -72,6 +77,7 @@ class PicPosItemsTable extends ConsumerWidget {
                     items: items,
                     selectedIndex: selectedIndex,
                     scale: scale,
+                    showOptions: showOptions,
                     onSelect: onSelect,
                     onRemove: onRemove,
                     onEditComplete: onEditComplete,
@@ -91,6 +97,10 @@ const _kFlexQty = 13;
 const _kFlexPrice = 14;
 const _kFlexDiscount = 12;
 const _kFlexTotal = 16;
+
+/// عمودُ «الإضافات والخيارات» — يظهر فقط لما `modifiersEnabled` مفتوحة.
+/// عمودٌ ثابتُ الوجود كان يسرق عرضاً من تجزئةٍ لا مطبخَ فيها.
+const _kFlexOptions = 6;
 const _kFlexRemove = 6;
 
 /// The line list, with the row the cashier just touched kept on screen.
@@ -109,6 +119,7 @@ class _AutoScrollItemList extends StatefulWidget {
   final List<CartItemEntity> items;
   final int? selectedIndex;
   final double scale;
+  final bool showOptions;
   final ValueChanged<int> onSelect;
   final ValueChanged<int> onRemove;
   final VoidCallback? onEditComplete;
@@ -117,6 +128,7 @@ class _AutoScrollItemList extends StatefulWidget {
     required this.items,
     required this.selectedIndex,
     required this.scale,
+    required this.showOptions,
     required this.onSelect,
     required this.onRemove,
     this.onEditComplete,
@@ -194,6 +206,7 @@ class _AutoScrollItemListState extends State<_AutoScrollItemList> {
           item: widget.items[i],
           isSelected: widget.selectedIndex == i,
           scale: widget.scale,
+          showOptions: widget.showOptions,
           onSelect: () => widget.onSelect(i),
           onRemove: () => widget.onRemove(i),
           onEditComplete: widget.onEditComplete,
@@ -205,8 +218,9 @@ class _AutoScrollItemListState extends State<_AutoScrollItemList> {
 
 class _TableHeader extends StatelessWidget {
   final double scale;
+  final bool showOptions;
 
-  const _TableHeader({required this.scale});
+  const _TableHeader({required this.scale, required this.showOptions});
 
   @override
   Widget build(BuildContext context) {
@@ -222,6 +236,7 @@ class _TableHeader extends StatelessWidget {
           _HeaderCell('السعر', _kFlexPrice, scale: scale),
           _HeaderCell('الخصم %', _kFlexDiscount, scale: scale),
           _HeaderCell('المجموع', _kFlexTotal, scale: scale),
+          if (showOptions) _HeaderCell('', _kFlexOptions, scale: scale),
           _HeaderCell('', _kFlexRemove, scale: scale),
         ],
       ),
@@ -289,6 +304,7 @@ class _ItemRow extends ConsumerWidget {
   final CartItemEntity item;
   final bool isSelected;
   final double scale;
+  final bool showOptions;
   final VoidCallback onSelect;
   final VoidCallback onRemove;
   final VoidCallback? onEditComplete;
@@ -298,10 +314,41 @@ class _ItemRow extends ConsumerWidget {
     required this.item,
     required this.isSelected,
     required this.scale,
+    required this.showOptions,
     required this.onSelect,
     required this.onRemove,
     this.onEditComplete,
   });
+
+  /// حوارُ «الإضافات والخيارات + ملاحظة الصنف» للسطر.
+  ///
+  /// سلّةُ UralCash تفتح نفسَ المحتوى لوحاً يتوسّع تحت الصف
+  /// (`cart_item_modifier_panel.dart`)، وسلّةُ PicPos جدولٌ بأعمدةٍ ثابتة
+  /// وارتفاعِ صفٍّ ثابت (`itemExtent`) — فالتوسّعُ يكسرها. قرارُ المالك
+  /// 2026-08-12: حوارٌ للسطر المحدَّد.
+  Future<void> _openOptions(BuildContext context, WidgetRef ref) async {
+    onSelect();
+    final result = await ModifierSelectionDialog.showForCartItem(
+      context,
+      ref,
+      productId: item.productId,
+      productName: item.productName,
+      initialSelection: item.modifiers,
+      initialNote: item.itemNote,
+    );
+    if (result == null) return;
+
+    // ⚠️ الترتيبُ مقصود: `updateItemNote` تُعيد تركيبَ النصّ المعروض من
+    // `item.modifiers` **بعد** تحديثها. لو انعكس، رُكّب النصُّ على معدِّلاتٍ
+    // قديمة فخالف المطبوعُ ما في السلّة.
+    final cart = ref.read(cartControllerProvider.notifier);
+    cart.updateItemModifiers(index, result.modifiers);
+    cart.updateItemNote(index, result.note);
+
+    // الحوارُ خطف الفوكس، والسكانر جهازُ كيبورد — بلا هذا تضيع أوّلُ مسحةٍ
+    // بعده في العدم بصمت (نفسُ سبب `onEditComplete` في الكيبورد الرقمي).
+    onEditComplete?.call();
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -433,6 +480,26 @@ class _ItemRow extends ConsumerWidget {
                     color: AppColors.primaryDark),
               ),
             ),
+            if (showOptions)
+              Expanded(
+                flex: _kFlexOptions,
+                child: IconButton(
+                  onPressed: () => _openOptions(context, ref),
+                  padding: EdgeInsets.zero,
+                  iconSize: 18 * scale,
+                  icon: Icon(
+                    PhosphorIconsBold.slidersHorizontal,
+                    // أخضرُ لما السطرُ يحمل شيئاً بالفعل — بلا هذا لا يفرّق
+                    // الكاشيرُ بين سطرٍ بإضافاتٍ وسطرٍ بلا، والجدولُ لا
+                    // يتّسع لعرضها نصّاً.
+                    color: (item.modifiers.isNotEmpty ||
+                            (item.itemNote?.isNotEmpty ?? false))
+                        ? AppColors.success
+                        : AppColors.textMuted,
+                  ),
+                  tooltip: 'الإضافات والخيارات وملاحظة الصنف',
+                ),
+              ),
             Expanded(
               flex: _kFlexRemove,
               child: IconButton(
