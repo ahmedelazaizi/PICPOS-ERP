@@ -343,6 +343,11 @@ class TemplatedInvoiceService {
     String? orderNumber,
     String? platformOrderNumber,
     String locale = 'ar',
+    /// مبلغا الاسترداد في مرتجع المبيعات — يحلّان `cash_amount` و
+    /// `bank_amount`. كانا يُرجعان `''` دائماً («حقولٌ لم تصل الخدمةَ بعد»)،
+    /// فمرتجعٌ نصفُه نقدٌ ونصفُه بنكيٌّ يُطبع بلا تفصيلٍ للاسترداد.
+    double? cashAmount,
+    double? bankAmount,
     /// لقطةُ إقفال الوردية — تُمرَّر حين يكون المطبوعُ تقريرَ وردية
     /// (`type: 'shift_closing'`)، فتُحلّ بها عناصرُ `shift_*` التي يعرضها
     /// محرّرُ القوالب. `null` لكلّ مطبوعٍ آخر.
@@ -470,6 +475,8 @@ class TemplatedInvoiceService {
         salesType: salesType,
         orderNumber: orderNumber,
         platformOrderNumber: platformOrderNumber,
+        cashAmount: cashAmount,
+        bankAmount: bankAmount,
       );
     }
 
@@ -610,6 +617,8 @@ class TemplatedInvoiceService {
     String? salesType,
     String? orderNumber,
     String? platformOrderNumber,
+    double? cashAmount,
+    double? bankAmount,
   }) {
     final style = _getStyle(element);
     final align = _getAlignment(element.textAlign);
@@ -964,6 +973,8 @@ class TemplatedInvoiceService {
           remaining: remaining,
           orderNumber: orderNumber,
           platformOrderNumber: platformOrderNumber,
+          cashAmount: cashAmount,
+          bankAmount: bankAmount,
         );
 
         // §٥-٣ (بلاغٌ ميدانيّ 2026-08-11): كان الشرطُ `&&`، فتسميةٌ **معروفةٌ**
@@ -1421,6 +1432,8 @@ class TemplatedInvoiceService {
     required double remaining,
     String? orderNumber,
     String? platformOrderNumber,
+    double? cashAmount,
+    double? bankAmount,
   }) {
     switch (type) {
       case 'invoice_number': return invoiceNumber;
@@ -1453,7 +1466,11 @@ class TemplatedInvoiceService {
         return platformOrderNumber ?? adhocCustomerName ?? customerName ?? '';
       case 'warehouse_name': case 'branch_name': case 'delivery_type':
       case 'delivery_address': case 'courier_name': case 'waiter_name':
-      case 'cash_amount': case 'bank_amount':
+      // استردادُ مرتجع المبيعات — نقداً وبنكياً. كانا يُرجعان `''` دائماً.
+      case 'cash_amount':
+        return cashAmount == null ? '' : cashAmount.toStringAsFixed(_docDecimals);
+      case 'bank_amount':
+        return bankAmount == null ? '' : bankAmount.toStringAsFixed(_docDecimals);
       case 'click_amount':
         return '';
       default: return '';
@@ -1648,6 +1665,40 @@ class TemplatedInvoiceService {
             );
           }
 
+          // فاصلُ تصنيفٍ لا صنف: سطرٌ واحدٌ بعرض الجدول، عنوانُه في الوسط —
+          // كما يرسمه المسارُ الحراريُّ تماماً (`— الاسم —`). وبلا هذا كان
+          // يُطبع صنفاً بكمّية صفرٍ وسعرٍ صفر.
+          if (isCategoryHeaderRow(item)) {
+            // العنوانُ يقع في **عمود الصنف** — أعرضُ الأعمدة وموضعُ الاسم —
+            // وبقيةُ الخلايا فارغة. و`pw.Table` لا يدعم دمجَ الأعمدة، فهذا
+            // أقربُ ما يُطابق المسارَ الحراريّ بلا كسر الشبكة.
+            // ⚠️ وعددُ الخلايا يجب أن يساوي عددَ الأعمدة تماماً.
+            final nameCell = pw.Container(
+              padding: const pw.EdgeInsets.symmetric(vertical: 3),
+              alignment: pw.Alignment.center,
+              child: pw.Text(
+                '— ${item['name'] ?? ''} —',
+                style: headerStyle,
+                textAlign: pw.TextAlign.center,
+                textDirection: pw.TextDirection.rtl,
+              ),
+            );
+            return [
+              pw.TableRow(
+                children: [
+                  if (showTotalCol) pw.SizedBox(),
+                  if (showTax) pw.SizedBox(),
+                  if (showDiscount) pw.SizedBox(),
+                  if (showPrice) pw.SizedBox(),
+                  if (showQty) pw.SizedBox(),
+                  if (showCode) pw.SizedBox(),
+                  if (showName) nameCell,
+                  if (showIndex) pw.SizedBox(),
+                ],
+              ),
+            ];
+          }
+
           final rows = <pw.TableRow>[
             pw.TableRow(
               children: [
@@ -1670,6 +1721,14 @@ class TemplatedInvoiceService {
       ],
     );
   }
+
+  /// هل هذا السطرُ فاصلَ تصنيفٍ لا صنفاً؟
+  ///
+  /// `== true` لا `as bool?`: القيمةُ تعبر حدَّ `Map<String, dynamic>` وقد
+  /// تصل نصّاً من JSON، والرميةُ تُسقط المطبوعَ كلَّه بدل أن تقرأ.
+  @visibleForTesting
+  static bool isCategoryHeaderRow(Map<String, dynamic> item) =>
+      item['isCategoryHeader'] == true;
 
   static pw.Widget _tableCell(String text, pw.TextStyle style) {
     return pw.Padding(

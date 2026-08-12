@@ -9,6 +9,7 @@ import '../../../core/widgets/shimmer_loading.dart';
 
 import '../../../data/providers/providers.dart';
 import '../../../services/generators/thermal_receipt_generator.dart';
+import '../../../services/invoice_generator.dart';
 
 import '../../providers/sales_return_provider.dart';
 import '../../../domain/entities/product_entity.dart';

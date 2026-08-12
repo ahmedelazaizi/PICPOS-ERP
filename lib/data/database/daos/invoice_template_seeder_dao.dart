@@ -76,11 +76,14 @@ extension InvoiceTemplateSeederDao on AppDatabase {
     }
 
     // Create Sales Return template (if not exists)
-    if (!existingTypes.contains('sales_return')) {
+    // ورقُه حراريٌّ ٨٠mm كما يطبعه `ThermalReceiptGenerator` اليوم — فتوصيلُ
+    // القالب لا يقلب مقاسَ الإيصال.
+    if (!existingCategories.contains('sales_return')) {
       final salesReturnId = await into(invoiceTemplates).insert(
         InvoiceTemplatesCompanion.insert(
           name: 'إيصال مرتجع مبيعات',
-          type: const Value('sales_return'),
+          type: const Value('thermal'),
+          templateCategory: const Value('sales_return'),
           paperSize: const Value('80mm'),
           paperWidth: const Value(80),
           isDefault: const Value(true),
@@ -109,13 +112,17 @@ extension InvoiceTemplateSeederDao on AppDatabase {
     }
 
     // Create Purchase Return template (if not exists)
-    if (!existingTypes.contains('purchase_return')) {
+    // ورقُه A4 لا ٨٠mm: `ReportPdfGenerator` يطبعه A4 اليوم، وتوصيلُ قالبٍ
+    // حراريٍّ كان سيقلب مرتجعَ المشتريات إلى شريطٍ ضيّقٍ بلا أن يطلبه أحد.
+    if (!existingCategories.contains('purchase_return')) {
       final purchaseReturnId = await into(invoiceTemplates).insert(
         InvoiceTemplatesCompanion.insert(
           name: 'إيصال مرتجع مشتريات',
-          type: const Value('purchase_return'),
-          paperSize: const Value('80mm'),
-          paperWidth: const Value(80),
+          type: const Value('a4'),
+          templateCategory: const Value('purchase_return'),
+          paperSize: const Value('A4'),
+          paperWidth: const Value(210),
+          paperHeight: const Value(297),
           isDefault: const Value(true),
         ),
       );
@@ -305,6 +312,36 @@ extension InvoiceTemplateSeederDao on AppDatabase {
   /// يُهدم عليه. تُضاف القناةُ الناقصةُ تحت آخر عنصرٍ بعنوانها فوق صفوفها.
   ///
   /// متعادلة: ما وُجد يُترك، فالتشغيلُ كلَّ إقلاعٍ آمن.
+  /// الصيغةُ القديمةُ في خرائط البذر → الصيغةُ التي يرسمها المُصيِّر.
+  ///
+  /// ثلاثُ بذورٍ (المشتريات والمرتجعان) تكتب **اسمَ الحقل في خانة النوع**:
+  /// `elementType: 'company_name'` و`'total'` و`'items_table'`. ومرشّحُ
+  /// المُصيِّر لا يعرف إلا `{variable, text, line, image, rectangle}`، فيرمي
+  /// ما عداها **بلا رسالةٍ ولا سجلّ** — فتخرج الورقةُ شبهَ فارغة، ولا يبقى
+  /// منها إلا عناصرُ `text`.
+  ///
+  /// وكان نائماً لأن تلك القوالبَ لم تكن تُعثَر أصلاً؛ استيقظ يومَ صارت
+  /// تُعثَر. والتطبيعُ هنا عند البذر لا في هجرةٍ تالية: هجرةُ
+  /// `_migrateOldFormatElements` تعمل **قبل** البذر في نفس الاستدعاء،
+  /// فما يُبذر الآن يبقى قديماً حتى زيارةِ المصمّم التالية.
+  ///
+  /// ⚠️ ولا تمرّ بها عناصرُ الباركود (`product_name` · `barcode_image` …) —
+  /// تُدرَج مباشرةً خارج هذه الحلقات، ومُصيِّرُها يفرز على النوع الخام.
+  static (String, String?) _normalizeSeedElement(String type, String? content) {
+    const renderable = {'variable', 'text', 'line', 'image', 'rectangle'};
+    if (renderable.contains(type)) return (type, content);
+    if (type == 'divider' || type == 'spacer') return ('line', content);
+    if (type == 'logo') return ('image', content ?? 'logo');
+    // ما عدا ذلك اسمُ متغيّر. والتسمياتُ الموحَّدةُ نفسُها التي تعتمدها
+    // `_migrateOldFormatElements` كي لا يفترق المسارَان.
+    const renames = <String, String>{
+      'total': 'total_amount',
+      'grand_total': 'total_amount',
+      'tax': 'tax_amount',
+    };
+    return ('variable', renames[type] ?? type);
+  }
+
   /// تصحيحُ فئةِ القوالب القديمة كي يجدها منادي الطباعة.
   ///
   /// `getDefaultTemplateByCategory` يشترط تطابقَ `type` **و**`templateCategory`
@@ -323,6 +360,8 @@ extension InvoiceTemplateSeederDao on AppDatabase {
       'a4': ('a4', 'invoice'),
       'purchase': ('a4', 'purchase'),
       'kitchen': ('kitchen', 'kitchen'),
+      'sales_return': ('thermal', 'sales_return'),
+      'purchase_return': ('a4', 'purchase_return'),
     };
 
     var changed = 0;
@@ -333,10 +372,17 @@ extension InvoiceTemplateSeederDao on AppDatabase {
       if (fix == null) continue;
       if (t.type == fix.$1 && t.templateCategory == fix.$2) continue;
 
+      // مرتجعُ المشتريات يُطبع A4 اليومَ عبر `ReportPdfGenerator`، وقالبُه
+      // المبذورُ ٨٠mm — وهو قالبٌ **لم يبلغه مسارُ طباعةٍ قطّ** فلا تصميمَ
+      // فيه يُحفَظ. فيُسوّى ورقُه كي لا ينقلب المطبوعُ يومَ توصيله.
+      final isPurchaseReturn = fix.$2 == 'purchase_return';
       await (update(invoiceTemplates)..where((x) => x.id.equals(t.id)))
           .write(InvoiceTemplatesCompanion(
         type: Value(fix.$1),
         templateCategory: Value(fix.$2),
+        paperSize: isPurchaseReturn ? const Value('A4') : const Value.absent(),
+        paperWidth: isPurchaseReturn ? const Value(210) : const Value.absent(),
+        paperHeight: isPurchaseReturn ? const Value(297) : const Value.absent(),
       ));
       changed++;
     }
@@ -645,13 +691,16 @@ extension InvoiceTemplateSeederDao on AppDatabase {
     for (final template in templates) {
       final elements = await getTemplateElements(template.id);
 
-      // If template has no elements, add default ones based on type
+      // If template has no elements, add default ones based on category
+      // ⚠️ الفرزُ على **الفئة** لا النوع: بعد تصحيح المسارات صار نوعُ قوالب
+      // المشتريات والمرتجعَين `a4`/`thermal`، فحالاتُ النوع القديمةُ لم تعُد
+      // تُبلَغ — وقالبٌ فارغٌ كان يبقى فارغاً إلى الأبد.
       if (elements.isEmpty) {
-        switch (template.type) {
-          case 'thermal':
-            await _seedDefaultElements(template.id, 'thermal');
+        switch (template.templateCategory) {
+          case 'receipt':
+            await _seedDefaultElements(template.id, template.type);
             break;
-          case 'a4':
+          case 'invoice':
             await _seedDefaultElements(template.id, 'a4');
             break;
           case 'kitchen':
@@ -698,10 +747,13 @@ extension InvoiceTemplateSeederDao on AppDatabase {
       double width = paperWidth - 20;
       double height = el['type'] == 'line' ? 5 : elementHeight;
 
+      final (elType, elContent) = _normalizeSeedElement(
+          el['type'] as String, el['content'] as String?);
+
       await into(invoiceTemplateElements).insert(
         InvoiceTemplateElementsCompanion.insert(
           templateId: templateId,
-          elementType: el['type'] as String,
+          elementType: elType,
           sortOrder: Value(i),
           xPosition: const Value(10),
           yPosition: Value(currentY),
@@ -712,7 +764,7 @@ extension InvoiceTemplateSeederDao on AppDatabase {
           isBold: Value(el['fontWeight'] == 'bold'),
           fontColor: const Value('#000000'),
           labelAr: Value(el['labelAr'] as String?),
-          content: Value(el['content'] as String?),
+          content: Value(elContent),
         ),
       );
 
@@ -984,10 +1036,13 @@ extension InvoiceTemplateSeederDao on AppDatabase {
       double width = paperWidth - 20;
       double height = el['type'] == 'line' ? 5 : elementHeight;
 
+      final (elType, elContent) = _normalizeSeedElement(
+          el['type'] as String, el['content'] as String?);
+
       await into(invoiceTemplateElements).insert(
         InvoiceTemplateElementsCompanion.insert(
           templateId: templateId,
-          elementType: el['type'] as String,
+          elementType: elType,
           sortOrder: Value(i),
           xPosition: const Value(10),
           yPosition: Value(currentY),
@@ -997,7 +1052,7 @@ extension InvoiceTemplateSeederDao on AppDatabase {
           fontSize: Value(el['fontSize'] as double? ?? 9.0),
           isBold: Value(el['fontWeight'] == 'bold'),
           fontColor: const Value('#000000'),
-          content: Value(el['content'] as String?),
+          content: Value(elContent),
           labelAr: Value(el['labelAr'] as String?),
         ),
       );
@@ -1021,20 +1076,34 @@ extension InvoiceTemplateSeederDao on AppDatabase {
         'alignment': 'center',
         'fontSize': 14.0,
         'fontWeight': 'bold',
-        'content': '*** إيصال مرتجع ***',
+        'content': '*** مرتجع مبيعات ***',
       },
       {'type': 'divider'},
+      // سندُ المرتجع SRET-N هو رقمُ **هذا** المستند، والفاتورةُ الأصليةُ
+      // تُحمل في `order_number` — والتسميةُ من القالب فلا تُقرأ «رقم الطلب».
       {
         'type': 'invoice_number',
         'alignment': 'right',
         'fontSize': 12.0,
-        'labelAr': 'رقم فاتورة الأصلية',
+        'labelAr': 'رقم سند المرتجع',
+      },
+      {
+        'type': 'order_number',
+        'alignment': 'right',
+        'fontSize': 12.0,
+        'labelAr': 'رقم الفاتورة الأصلية',
       },
       {
         'type': 'date',
         'alignment': 'right',
         'fontSize': 12.0,
         'labelAr': 'تاريخ المرتجع',
+      },
+      {
+        'type': 'customer_name',
+        'alignment': 'right',
+        'fontSize': 12.0,
+        'labelAr': 'العميل',
       },
       {
         'type': 'cashier_name',
@@ -1051,6 +1120,31 @@ extension InvoiceTemplateSeederDao on AppDatabase {
         'fontSize': 14.0,
         'fontWeight': 'bold',
         'labelAr': 'إجمالي المرتجع',
+      },
+      // تفصيلُ الاسترداد — مرتجعٌ نصفُه نقدٌ ونصفُه بنكيٌّ يُقرأ على الورقة.
+      {
+        'type': 'cash_amount',
+        'alignment': 'left',
+        'fontSize': 12.0,
+        'labelAr': 'استرداد نقدي',
+      },
+      {
+        'type': 'bank_amount',
+        'alignment': 'left',
+        'fontSize': 12.0,
+        'labelAr': 'استرداد بنكي',
+      },
+      {
+        'type': 'payment_method',
+        'alignment': 'right',
+        'fontSize': 11.0,
+        'labelAr': 'طريقة الاسترداد',
+      },
+      {
+        'type': 'notes',
+        'alignment': 'right',
+        'fontSize': 11.0,
+        'labelAr': 'سبب المرتجع',
       },
       {'type': 'divider'},
       {
@@ -1071,10 +1165,13 @@ extension InvoiceTemplateSeederDao on AppDatabase {
       double width = paperWidth - 20;
       double height = el['type'] == 'divider' ? 5 : elementHeight;
 
+      final (elType, elContent) = _normalizeSeedElement(
+          el['type'] as String, el['content'] as String?);
+
       await into(invoiceTemplateElements).insert(
         InvoiceTemplateElementsCompanion.insert(
           templateId: templateId,
-          elementType: el['type'] as String,
+          elementType: elType,
           sortOrder: Value(i),
           xPosition: const Value(10),
           yPosition: Value(currentY),
@@ -1085,7 +1182,7 @@ extension InvoiceTemplateSeederDao on AppDatabase {
           isBold: Value(el['fontWeight'] == 'bold'),
           fontColor: const Value('#000000'),
           labelAr: Value(el['labelAr'] as String?),
-          content: Value(el['content'] as String?),
+          content: Value(elContent),
         ),
       );
 
@@ -1181,10 +1278,13 @@ extension InvoiceTemplateSeederDao on AppDatabase {
       double width = paperWidth - 20;
       double height = el['type'] == 'divider' ? 5 : elementHeight;
 
+      final (elType, elContent) = _normalizeSeedElement(
+          el['type'] as String, el['content'] as String?);
+
       await into(invoiceTemplateElements).insert(
         InvoiceTemplateElementsCompanion.insert(
           templateId: templateId,
-          elementType: el['type'] as String,
+          elementType: elType,
           sortOrder: Value(i),
           xPosition: const Value(10),
           yPosition: Value(currentY),
@@ -1195,7 +1295,7 @@ extension InvoiceTemplateSeederDao on AppDatabase {
           isBold: Value(el['fontWeight'] == 'bold'),
           fontColor: const Value('#000000'),
           labelAr: Value(el['labelAr'] as String?),
-          content: Value(el['content'] as String?),
+          content: Value(elContent),
         ),
       );
 
@@ -1277,10 +1377,13 @@ extension InvoiceTemplateSeederDao on AppDatabase {
       double width = paperWidth - 20;
       double height = el['type'] == 'divider' ? 5 : elementHeight;
 
+      final (elType, elContent) = _normalizeSeedElement(
+          el['type'] as String, el['content'] as String?);
+
       await into(invoiceTemplateElements).insert(
         InvoiceTemplateElementsCompanion.insert(
           templateId: templateId,
-          elementType: el['type'] as String,
+          elementType: elType,
           sortOrder: Value(i),
           xPosition: const Value(10),
           yPosition: Value(currentY),
@@ -1291,7 +1394,7 @@ extension InvoiceTemplateSeederDao on AppDatabase {
           isBold: Value(el['fontWeight'] == 'bold'),
           fontColor: const Value('#000000'),
           labelAr: Value(el['labelAr'] as String?),
-          content: Value(el['content'] as String?),
+          content: Value(elContent),
         ),
       );
 
@@ -1688,10 +1791,13 @@ extension InvoiceTemplateSeederDao on AppDatabase {
       double width = paperWidth - 20; // Full width minus margins
       double height = el['type'] == 'line' ? 5 : elementHeight;
 
+      final (elType, elContent) = _normalizeSeedElement(
+          el['type'] as String, el['content'] as String?);
+
       await into(invoiceTemplateElements).insert(
         InvoiceTemplateElementsCompanion.insert(
           templateId: templateId,
-          elementType: el['type'] as String,
+          elementType: elType,
           sortOrder: Value(i),
           xPosition: const Value(10), // Left margin
           yPosition: Value(currentY),
@@ -1703,7 +1809,7 @@ extension InvoiceTemplateSeederDao on AppDatabase {
           fontColor: Value(el['fontColor'] as String? ?? '#000000'),
           labelAr: Value(el['labelAr'] as String?),
           labelEn: Value(el['labelEn'] as String?),
-          content: Value(el['content'] as String?),
+          content: Value(elContent),
         ),
       );
 

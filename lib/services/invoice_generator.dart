@@ -2,6 +2,14 @@ import 'package:flutter/foundation.dart';
 import '../data/database/database.dart' hide Printer;
 import '../domain/repositories/printers_repository.dart';
 import 'printing/thermal_receipt_generator.dart';
+// ⚠️ صنفان بنفس الاسم `ThermalReceiptGenerator`: واحدٌ في `printing/` وآخرُ
+// في `generators/`، و`printReturnReceipt` في الثاني وحدَه. والشاشتان تستوردان
+// الثاني — فالاسمُ وحدَه لا يكفي هنا.
+// ونظيرُها في النموذج: `InvoiceItem` مُعرَّفٌ مرّتَين كذلك — في
+// `printing/printing_models.dart` وفي `generators/base_generator.dart`.
+// وشاشتا المرتجع تمرّران الثاني.
+import 'generators/thermal_receipt_generator.dart' as gen;
+import 'generators/base_generator.dart' as gen_base;
 import 'printing/template_pdf_renderer.dart';
 import 'templated_invoice_service.dart';
 import 'printing/report_pdf_generator.dart';
@@ -217,11 +225,112 @@ class InvoiceGenerator {
     );
   }
 
+  /// طباعةُ إيصال مرتجع مبيعات — بقالب المستخدم إن وُجد.
+  ///
+  /// كانت الشاشتان تناديان `ThermalReceiptGenerator.printReturnReceipt`
+  /// مباشرةً — مولّدٌ مكتوبٌ في الكود **لا يسأل عن قالبٍ أصلاً**. فقالبُ
+  /// `sales_return` مبذورٌ منذ البداية وقابلٌ للتصميم، ولا مسارَ طباعةٍ
+  /// يستدعيه: يصمّمه المالكُ ويخرج المطبوعُ كما كتبه الكود.
+  ///
+  /// والتوجيهُ هنا لا في الشاشتَين: توأمان ينسخان النداءَ نفسَه، ومنطقٌ
+  /// مكرَّرٌ في موضعَين يفترق (‏حصل في عنوان قناةٍ يومَ 2026-08-12).
+  static Future<void> printSalesReturnReceipt({
+    required String returnVoucherNumber,
+    required String originalInvoiceNumber,
+    required DateTime date,
+    required List<gen_base.InvoiceItem> items,
+    required double returnTotal,
+    required String paymentMethod,
+    double cashRefund = 0,
+    double bankRefund = 0,
+    String? returnReason,
+    String? customerName,
+    String? companyName,
+    String? companyPhone,
+    String? companyAddress,
+    String? employeeName,
+    AppDatabase? db,
+  }) async {
+    if (db != null) {
+      final hasTemplate = await TemplatedInvoiceService.hasDefaultTemplate(
+        db, 'thermal', category: 'sales_return',
+      );
+      if (hasTemplate) {
+        try {
+          await TemplatedInvoiceService.printWithTemplate(
+            db: db,
+            // رقمُ المستند هو سندُ المرتجع SRET-N، والفاتورةُ الأصليةُ تُحمل
+            // في `orderNumber` — وتسميتُها في القالب `labelAr` («رقم الفاتورة
+            // الأصلية») فلا تُقرأ «رقم الطلب».
+            invoiceNumber: returnVoucherNumber,
+            orderNumber: originalInvoiceNumber,
+            date: date,
+            customerName: customerName,
+            customerPhone: null,
+            customerAddress: null,
+            items: items
+                .map((i) => <String, dynamic>{
+                      'name': i.name,
+                      'quantity': i.quantity,
+                      'price': i.price,
+                      'total': i.total,
+                      'note': i.note ?? '',
+                    })
+                .toList(),
+            subtotal: returnTotal,
+            discount: 0,
+            tax: 0,
+            deliveryFee: 0,
+            total: returnTotal,
+            paid: returnTotal, // مرتجعٌ مسدَّدٌ بالكامل
+            companyName: companyName ?? '',
+            companyAddress: companyAddress ?? '',
+            companyPhone: companyPhone ?? '',
+            companyTaxId: null,
+            paymentMethod: paymentMethod,
+            cashierName: employeeName,
+            notes: returnReason,
+            cashAmount: cashRefund,
+            bankAmount: bankRefund,
+            type: 'thermal',
+            category: 'sales_return',
+            directPrint: true,
+          );
+          return;
+        } catch (e) {
+          debugPrint(
+              '[InvoiceGenerator] Sales return template failed, falling back: $e');
+        }
+      }
+    }
+
+    // Fallback to hardcoded thermal generator
+    return gen.ThermalReceiptGenerator.printReturnReceipt(
+      returnVoucherNumber: returnVoucherNumber,
+      originalInvoiceNumber: originalInvoiceNumber,
+      date: date,
+      items: items,
+      returnTotal: returnTotal,
+      paymentMethod: paymentMethod,
+      cashRefund: cashRefund,
+      bankRefund: bankRefund,
+      returnReason: returnReason,
+      customerName: customerName,
+      companyName: companyName,
+      companyPhone: companyPhone,
+      companyAddress: companyAddress,
+      employeeName: employeeName,
+    );
+  }
+
   /// Print A4 purchase invoice — uses user template if available.
   ///
-  /// Pass [isReturn]=true for purchase return printouts. Templates are skipped
-  /// in that case (user templates hard-code the "فاتورة مشتريات" title), so
-  /// the fallback generator renders with the correct "مرتجع مشتريات" title.
+  /// [isReturn]=true ⇒ قالبُ `purchase_return` بعنوانه، لا تخطّي القوالب.
+  ///
+  /// كان المرتجعُ يتخطّى القوالبَ كلَّها بحجّة أن «قوالبَ المستخدم تكتب عنوان
+  /// *فاتورة مشتريات* ثابتاً». والحجّةُ صحيحةٌ والعلاجُ خطأ: للمرتجع قالبُه
+  /// المبذورُ منذ البداية (`purchase_return`) بعنوانه الخاصّ في عنصرِ نصٍّ
+  /// داخله. فالتخطّي كان يحرم المالكَ من تصميم مرتجعاته بلا سبب.
   static Future<void> printPurchaseInvoice({
     required String invoiceNumber,
     required DateTime date,
@@ -233,10 +342,11 @@ class InvoiceGenerator {
     AppDatabase? db,
     bool isReturn = false,
   }) async {
-    // Try template-based rendering first (skipped for returns — see doc above)
-    if (db != null && !isReturn) {
+    // Try template-based rendering first — لكلٍّ قالبُه
+    final category = isReturn ? 'purchase_return' : 'purchase';
+    if (db != null) {
       final hasTemplate = await TemplatedInvoiceService.hasDefaultTemplate(
-        db, 'a4', category: 'purchase',
+        db, 'a4', category: category,
       );
       if (hasTemplate) {
         try {
@@ -263,7 +373,7 @@ class InvoiceGenerator {
             companyPhone: '',
             companyTaxId: null,
             type: 'a4',
-            category: 'purchase',
+            category: category,
           );
           return;
         } catch (e) {
@@ -309,6 +419,9 @@ class InvoiceGenerator {
           final itemsMaps = items.map((i) => <String, dynamic>{
             'name': i.name, 'quantity': i.quantity,
             'price': i.price, 'total': i.total, 'note': i.note ?? '',
+            // رايةُ **عرضٍ** لا بيانات — وكانت تسقط هنا صامتةً فيُطبع اسمُ
+            // التصنيف صنفاً بكمّية صفر. البلاغ: «*عرايس* بدل الصنف».
+            'isCategoryHeader': i.isCategoryHeader,
           }).toList();
           await TemplatedInvoiceService.printWithTemplate(
             db: db,
