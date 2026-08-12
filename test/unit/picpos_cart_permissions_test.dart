@@ -23,6 +23,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/core/permissions/permission_codes.dart';
 import 'package:ural_erp/presentation/pos_picpos/screens/picpos_pos_screen.dart'
     as picpos;
+import 'package:ural_erp/presentation/pos_picpos/widgets/picpos_cart_permissions.dart'
+    as shared;
 
 void main() {
   // (اسمُ الصلاحية، الدالّة) — جدولٌ واحدٌ يمنع أن يُضاف فعلٌ بلا اختبار.
@@ -31,6 +33,9 @@ void main() {
     PermissionCodes.posClearCart: picpos.canClearCart,
     PermissionCodes.posPriceEdit: picpos.canEditCartPrice,
     PermissionCodes.posQuantityEdit: picpos.canEditCartQuantity,
+    // دفعة ٢ — ما يمسّ المال.
+    PermissionCodes.posOpenDrawer: shared.canOpenCashDrawerCodes,
+    PermissionCodes.posTaxToggle: shared.canToggleTaxCodes,
   };
 
   cases.forEach((code, can) {
@@ -56,8 +61,8 @@ void main() {
     });
   });
 
-  test('الأكوادُ الأربعةُ متمايزة', () {
+  test('الأكوادُ الستّةُ متمايزة', () {
     // تكرارُ كودٍ في جدول الحالات كان سيُخفي دالّةً بلا اختبار.
-    expect(cases.keys.toSet(), hasLength(4));
+    expect(cases.keys.toSet(), hasLength(6));
   });
 }

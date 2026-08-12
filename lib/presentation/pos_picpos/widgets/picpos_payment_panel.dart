@@ -35,6 +35,7 @@ import '../../../core/utils/number_utils.dart';
 import '../../../data/providers/providers.dart';
 import '../../../domain/usecases/sales/calculate_invoice_totals_usecase.dart';
 import '../../pos/providers/cart_controller.dart';
+import 'picpos_cart_permissions.dart';
 import 'picpos_pos_text.dart';
 
 class PicPosPaymentPanel extends ConsumerWidget {
@@ -325,7 +326,17 @@ class _TotalsBlock extends ConsumerWidget {
                       active: cart.taxEnabled,
                       // نفس الاستدعاء اللي شاشة UralCash بتعمله — الحساب كله
                       // جوّه `CartState.totals`، مفيش نسبة محسوبة هنا.
-                      onTap: () => controller.toggleTax(!cart.taxEnabled),
+                      //
+                      // ومحروسٌ بـ`pos_tax_toggle`: يغيّر ما يدفعه العميلُ وما
+                      // يُرحَّل ضريبةً في الدفاتر. كان محروساً في
+                      // `pos/widgets/cart/cart_totals_panel.dart` وحدَه —
+                      // وهي شاشةٌ لا يصل إليها PicPos.
+                      onTap: () async {
+                        if (!await ensureTaxTogglePermission(ref, context)) {
+                          return;
+                        }
+                        controller.toggleTax(!cart.taxEnabled);
+                      },
                       scale: scale,
                     ),
                   ),

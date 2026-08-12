@@ -1540,6 +1540,12 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
 
   /// زر `الدرج` الصريح — الكاشير طلب الفتح، ففشله لازم يقول.
   Future<void> _openDrawer() async {
+    // الفتحُ اليدويُّ يفتح الدرجَ **بلا بيعة** — وهو ما يُراقَب. والركلةُ
+    // التلقائيةُ على مسار الدفع (`_openCashDrawerQuietly`) لا تُحرَس عن قصد:
+    // جزءٌ من إتمام بيعةٍ مأذونةٍ سلفاً، وحراستُها توقف الكاشيرَ في منتصف كلّ
+    // فاتورة.
+    if (!await ensureOpenCashDrawerPermission(ref, context)) return;
+    if (!mounted) return;
     try {
       await CashDrawerService()
           .openDrawer(printerName: await _drawerPrinterName());

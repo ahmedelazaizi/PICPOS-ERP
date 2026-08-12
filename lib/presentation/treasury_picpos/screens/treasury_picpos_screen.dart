@@ -29,6 +29,8 @@ import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../core/permissions/permission_codes.dart';
+import '../../widgets/permission_guard.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/providers.dart';
 import '../../treasury/widgets/treasury_cash_tab.dart';
@@ -144,18 +146,30 @@ class _TreasuryPicposScreenState extends ConsumerState<TreasuryPicposScreen>
           ),
         ),
         const SizedBox(width: 8),
-        OutlinedButton.icon(
-          onPressed: () => showDialog(
-            context: context,
-            builder: (context) => const PaymentVoucherDialog(),
-          ),
-          icon: const Icon(
-            PhosphorIconsBold.arrowCircleUp,
-            color: AppColors.error,
-          ),
-          label: const Text('سند صرف'),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: AppColors.error,
+        // `treasury_payments_create` كان محروساً في
+        // `treasury/widgets/treasury_metrics_panel.dart` وحدَه — وهي شاشةٌ لا
+        // يصل إليها PicPos، فسندُ الصرف كان يُفتح هنا بلا أيّ فحص.
+        //
+        // نفسُ لفّة النظير القديم بالحرف: `PermissionGuard` بـ
+        // `allowManagerOverride` — فمن ينقصه الكودُ يرى حوارَ كلمة مرور
+        // المسؤول بدل زرٍّ صامت.
+        PermissionGuard(
+          permission: PermissionCodes.treasuryPaymentsCreate,
+          allowManagerOverride: true,
+          actionName: 'إنشاء سند صرف',
+          child: OutlinedButton.icon(
+            onPressed: () => showDialog(
+              context: context,
+              builder: (context) => const PaymentVoucherDialog(),
+            ),
+            icon: const Icon(
+              PhosphorIconsBold.arrowCircleUp,
+              color: AppColors.error,
+            ),
+            label: const Text('سند صرف'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.error,
+            ),
           ),
         ),
         const SizedBox(width: 8),

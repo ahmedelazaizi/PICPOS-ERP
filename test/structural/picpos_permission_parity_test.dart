@@ -68,6 +68,26 @@ final Map<String, String> _sources = () {
   return out;
 }();
 
+/// ملفاتُ النظير القديم التي **يستوردها** التوأمُ صراحةً.
+///
+/// ⚠️ بلا هذا يُحسب زوراً فجوةً كلُّ كودٍ محروسٍ في ملفٍ مُعادِ استخدامه: توأمُ
+/// الخزينة يستورد `treasury/widgets/receipt_voucher_dialog.dart` بحراسته كما
+/// هي، فالحراسةُ تصل إلى الشاشة فعلاً. قياسُ **المجلد** وحدَه كان سيطالب
+/// بتكرار حراسةٍ قائمة — وهو ضدُّ غرض الحارس.
+Set<String> _legacyFilesImportedBy(String twin, String legacy) {
+  final imported = <String>{};
+  final re = RegExp("import\\s+'([^']*$legacy/[^']+\\.dart)'");
+  for (final e in _sources.entries) {
+    if (!e.key.startsWith('lib/presentation/$twin/')) continue;
+    for (final m in re.allMatches(e.value)) {
+      final rel = m.group(1)!;
+      final idx = rel.indexOf('$legacy/');
+      if (idx >= 0) imported.add('lib/presentation/${rel.substring(idx)}');
+    }
+  }
+  return imported;
+}
+
 /// هل يُذكر الكودُ (نصّاً خاماً أو ثابتاً) في ملفٍّ تحت [dir]؟
 ///
 /// ⚠️ المرجعُ قد يُلَفّ على سطرين (`PermissionCodes.\n  posSave`) — فالبحثُ
@@ -101,10 +121,19 @@ Set<String> _currentGaps() {
   final gaps = <String>{};
   for (final entry in _twins.entries) {
     final legacy = entry.key, twin = entry.value;
+    final reused = _legacyFilesImportedBy(twin, legacy);
     for (final code in byCode.keys) {
       final c = byCode[code];
       if (!_mentionedIn(legacy, code, c)) continue;
       if (_mentionedIn(twin, code, c)) continue;
+      // ملفٌّ قديمٌ يستورده التوأمُ = حراستُه تصل إلى الشاشة.
+      final viaImport = reused.any((p) {
+        final src = _sources[p];
+        if (src == null) return false;
+        return src.contains("'$code'") ||
+            (c != null && RegExp('\\b$c\\b').hasMatch(src));
+      });
+      if (viaImport) continue;
       if (_mentionedElsewhere(legacy, twin, code, c)) continue;
       gaps.add(code);
     }

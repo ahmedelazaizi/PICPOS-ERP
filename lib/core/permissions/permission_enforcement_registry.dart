@@ -133,8 +133,10 @@ class PermissionEnforcementRegistry {
     //    والمساران **كلاهما** مطلوب: التعديلُ له بابان (حوارُ «تعديل الصنف»
     //    والخليةُ المباشرة في الجدول)، وحراسةُ أحدِهما تترك الآخرَ مفتوحاً —
     //    وهو نفسُ سبب العطب الأصليّ.
-    'pos_tax_toggle', // cart/cart_totals_panel.dart
-    'pos_open_drawer', // cart/cart_totals_panel.dart — يفتح الدرج يدوياً
+    // ✅ 'pos_tax_toggle' · 'pos_open_drawer' شُطبتا (دفعة ٢، 2026-08-12).
+    //    والفتحُ اليدويُّ وحدَه هو المحروس: الركلةُ التلقائية بعد البيع
+    //    (`_openCashDrawerQuietly`) جزءٌ من إتمام بيعةٍ مأذونةٍ سلفاً،
+    //    وحراستُها كانت ستوقف الكاشيرَ في منتصف كلّ فاتورة.
     'pos_customer_select', // cart/cart_totals_panel.dart
     'pos_previous_invoices', // cart/cart_totals_panel.dart
 
@@ -151,7 +153,10 @@ class PermissionEnforcementRegistry {
     // ── حواراتٌ مساعدة ──
     'pos_deleted_items', // pos_deleted_items_dialog.dart
     'pos_expense_type_select', // pos_expense_dialog.dart
-    'pos_restore_held', // held_orders_dialog.dart
+    // ⚠️ 'pos_restore_held' حُذف: شاشةُ PicPos **تستورد**
+    //    `pos/widgets/held_orders_dialog.dart` بحراسته كما هي، فالحراسةُ
+    //    تصل فعلاً. كشفه الحارسُ بعد أن صار يتتبّع الاستيرادَ لا المجلدَ
+    //    وحدَه — نفسُ سبب حذف `treasury_commission`.
 
     // ── وسبعةٌ فاتت الجردَ اليدويَّ ولم تفت الحارس ──
     'pos_customer_add',
@@ -160,6 +165,14 @@ class PermissionEnforcementRegistry {
     'pos_low_stock_alert',
     'pos_note_add',
     'pos_notifications',
+
+    // ⚠️ `pos_return` يبقى هنا **لا لأنه ناقصُ حراسة** بل لأن الميزةَ نفسَها
+    // غيرُ موجودةٍ في شاشة بيع PicPos: لا زرَّ مرتجعٍ في `picpos_top_bar`
+    // ولا في الاختصارات (مقيسٌ 2026-08-12). ومرتجعاتُ المبيعات لها شاشةٌ
+    // مستقلّةٌ `sales_returns_picpos` محروسةٌ بأكوادها (`sales_return_*`).
+    //
+    // فلا شيءَ يُحرَس هنا. ولو أُضيف زرُّ مرتجعٍ لشاشة البيع لاحقاً فيجب أن
+    // يُحرَس ويُشطب هذا السطر — والحارسُ لن يذكّر لأنه يقيس الغيابَ لا النية.
     'pos_return',
 
     // ── الطاولات ──
@@ -167,8 +180,16 @@ class PermissionEnforcementRegistry {
     'tables_cancel',
     'tables_checkout',
 
-    // ── الخزينة — لها توأمُ `treasury_picpos` ──
-    'treasury_payments_create', // treasury/widgets/treasury_metrics_panel.dart
-    'treasury_commission', // treasury/widgets/receipt_voucher_dialog.dart
+    // ── الخزينة ──
+    // ✅ 'treasury_payments_create' شُطب (دفعة ٢، 2026-08-12): زرُّ «سند صرف»
+    //    في `treasury_picpos_screen.dart` صار ملفوفاً بـ`PermissionGuard`
+    //    بنفس لفّة النظير القديم حرفاً بحرف.
+    //
+    // ⚠️ و'treasury_commission' **لم يكن فجوةً أصلاً** — حُذف من هنا بعد
+    //    قياسٍ أدقّ: توأمُ الخزينة **يستورد** `receipt_voucher_dialog.dart`
+    //    بحراسته كما هي (`treasury_picpos_screen.dart:41`). فالحارسُ عدّه
+    //    فجوةً لأنه يقيس **المجلد** لا الاستيراد، وهذا حدُّه المعروف:
+    //    ملفٌّ مُعادُ استخدامه بالاستيراد من نظيرٍ قديمٍ يُحسب فجوةً زوراً.
+    //    من يضيف مدخلاً هنا فليتأكّد أن التوأمَ لا يستورد الملفَّ الحارس.
   };
 }

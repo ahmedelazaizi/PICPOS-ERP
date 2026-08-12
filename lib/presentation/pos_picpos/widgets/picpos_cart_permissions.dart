@@ -71,3 +71,38 @@ Future<bool> ensureCartPricePermission(
 ) =>
     _ensure(ref, context, canEditCartPriceCodes, PermissionCodes.posPriceEdit,
         'تعديل سعر الصنف');
+
+// ── دفعة ٢: ما يمسّ المال ──────────────────────────────────────────────────
+
+/// فتحُ درج النقدية **يدوياً** (`pos_open_drawer`).
+///
+/// ⚠️ الفتحُ اليدويُّ وحدَه. والركلةُ التلقائيةُ بعد البيع مسارٌ آخر
+/// (`_openCashDrawerQuietly`) **لا يُحرَس عن قصد**: هي جزءٌ من إتمام بيعةٍ
+/// مأذونةٍ سلفاً، وحراستُها كانت ستوقف الكاشيرَ في منتصف كلّ فاتورة.
+///
+/// والفتحُ اليدويُّ هو الذي يفتح الدرجَ **بلا بيعة** — وهو ما يُراقَب.
+bool canOpenCashDrawerCodes(List<String> permissions) =>
+    _isAdmin(permissions) ||
+    permissions.contains(PermissionCodes.posOpenDrawer);
+
+/// تغييرُ حالة الضريبة على الفاتورة (`pos_tax_toggle`).
+///
+/// يغيّر إجماليَّ ما يدفعه العميلُ وما يُرحَّل ضريبةً في الدفاتر.
+bool canToggleTaxCodes(List<String> permissions) =>
+    _isAdmin(permissions) || permissions.contains(PermissionCodes.posTaxToggle);
+
+/// يسمح بفتح الدرج يدوياً، أو يطلب موافقةَ مسؤولٍ يملكها.
+Future<bool> ensureOpenCashDrawerPermission(
+  WidgetRef ref,
+  BuildContext context,
+) =>
+    _ensure(ref, context, canOpenCashDrawerCodes,
+        PermissionCodes.posOpenDrawer, 'فتح درج النقدية');
+
+/// يسمح بتغيير حالة الضريبة، أو يطلب موافقةَ مسؤولٍ يملكها.
+Future<bool> ensureTaxTogglePermission(
+  WidgetRef ref,
+  BuildContext context,
+) =>
+    _ensure(ref, context, canToggleTaxCodes, PermissionCodes.posTaxToggle,
+        'تغيير حالة الضريبة');
