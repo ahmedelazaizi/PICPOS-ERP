@@ -36,6 +36,9 @@ void main() {
     // دفعة ٢ — ما يمسّ المال.
     PermissionCodes.posOpenDrawer: shared.canOpenCashDrawerCodes,
     PermissionCodes.posTaxToggle: shared.canToggleTaxCodes,
+    // دفعة ٣.
+    PermissionCodes.posCustomerSelect: shared.canSelectCustomerCodes,
+    PermissionCodes.posPreviousInvoices: shared.canViewPreviousInvoicesCodes,
   };
 
   cases.forEach((code, can) {
@@ -61,8 +64,8 @@ void main() {
     });
   });
 
-  test('الأكوادُ الستّةُ متمايزة', () {
+  test('الأكوادُ الثمانيةُ متمايزة', () {
     // تكرارُ كودٍ في جدول الحالات كان سيُخفي دالّةً بلا اختبار.
-    expect(cases.keys.toSet(), hasLength(6));
+    expect(cases.keys.toSet(), hasLength(8));
   });
 }

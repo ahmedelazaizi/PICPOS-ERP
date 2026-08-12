@@ -137,8 +137,10 @@ class PermissionEnforcementRegistry {
     //    والفتحُ اليدويُّ وحدَه هو المحروس: الركلةُ التلقائية بعد البيع
     //    (`_openCashDrawerQuietly`) جزءٌ من إتمام بيعةٍ مأذونةٍ سلفاً،
     //    وحراستُها كانت ستوقف الكاشيرَ في منتصف كلّ فاتورة.
-    'pos_customer_select', // cart/cart_totals_panel.dart
-    'pos_previous_invoices', // cart/cart_totals_panel.dart
+    // ✅ 'pos_customer_select' · 'pos_previous_invoices' شُطبتا (دفعة ٣،
+    //    2026-08-12): محروستان في `_pickCustomer` و`_showPreviousInvoices`.
+    //    والثانيةُ ليست عرضاً بريئاً — تكشف مبيعاتِ الورديات الأخرى
+    //    وأسعارَها وعملاءَها.
 
     // ── رأسُ شاشة البيع ──
     // ⚠️ `pos_delivery` و`pos_offers` **ليستا هنا**: قياسي اليدويُّ أدرجهما
@@ -176,6 +178,11 @@ class PermissionEnforcementRegistry {
     'pos_return',
 
     // ── الطاولات ──
+    // ⚠️ الثلاثةُ محروسةٌ في `pos/widgets/table_pos/table_pos_summary.dart`.
+    // وهل لشاشة PicPos ميزةُ طاولاتٍ أصلاً؟ **لم يُقَس بعد** — بحثٌ نصّيٌّ
+    // سريعٌ أعطى مطابقاتٍ مشوَّشة (كلمة `table` تقع داخل كلماتٍ أخرى). فإمّا
+    // أن تُقاس الميزةُ فتُحرَس، أو يثبت غيابُها فيُكتب هنا كما كُتب
+    // لـ`pos_return`. **لا تُبنى حراسةٌ على ظنّ.**
     'tables_add_items',
     'tables_cancel',
     'tables_checkout',

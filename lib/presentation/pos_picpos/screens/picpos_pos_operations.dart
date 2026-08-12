@@ -1422,6 +1422,10 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
   // ── Side-panel operations ──────────────────────────────────────────────
 
   Future<void> _pickCustomer() async {
+    // `pos_customer_select` كان محروساً في `pos/widgets/cart/
+    // cart_totals_panel.dart` وحدَه — شاشةٌ لا يصل إليها PicPos.
+    if (!await ensureSelectCustomerPermission(ref, context)) return;
+    if (!mounted) return;
     await showDialog<void>(
       context: context,
       builder: (_) => const PosCustomerSelectionDialog(),
@@ -1479,6 +1483,10 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
   }
 
   Future<void> _showPreviousInvoices() async {
+    // `pos_previous_invoices` — ليست عرضاً بريئاً: تكشف مبيعاتِ الورديات
+    // الأخرى وأسعارَها وعملاءَها.
+    if (!await ensurePreviousInvoicesPermission(ref, context)) return;
+    if (!mounted) return;
     await showDialog<void>(
       context: context,
       builder: (_) => PosPreviousInvoicesDialog(

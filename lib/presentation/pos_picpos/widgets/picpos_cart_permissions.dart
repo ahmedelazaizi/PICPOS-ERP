@@ -106,3 +106,33 @@ Future<bool> ensureTaxTogglePermission(
 ) =>
     _ensure(ref, context, canToggleTaxCodes, PermissionCodes.posTaxToggle,
         'تغيير حالة الضريبة');
+
+// ── دفعة ٣ ────────────────────────────────────────────────────────────────
+
+/// اختيارُ عميلٍ للفاتورة (`pos_customer_select`).
+bool canSelectCustomerCodes(List<String> permissions) =>
+    _isAdmin(permissions) ||
+    permissions.contains(PermissionCodes.posCustomerSelect);
+
+/// عرضُ الفواتير السابقة (`pos_previous_invoices`).
+///
+/// ليست عرضاً بريئاً: تكشف مبيعاتِ الورديات الأخرى وأسعارَها وعملاءَها.
+bool canViewPreviousInvoicesCodes(List<String> permissions) =>
+    _isAdmin(permissions) ||
+    permissions.contains(PermissionCodes.posPreviousInvoices);
+
+/// يسمح باختيار عميل، أو يطلب موافقةَ مسؤولٍ يملكها.
+Future<bool> ensureSelectCustomerPermission(
+  WidgetRef ref,
+  BuildContext context,
+) =>
+    _ensure(ref, context, canSelectCustomerCodes,
+        PermissionCodes.posCustomerSelect, 'اختيار عميل للفاتورة');
+
+/// يسمح بعرض الفواتير السابقة، أو يطلب موافقةَ مسؤولٍ يملكها.
+Future<bool> ensurePreviousInvoicesPermission(
+  WidgetRef ref,
+  BuildContext context,
+) =>
+    _ensure(ref, context, canViewPreviousInvoicesCodes,
+        PermissionCodes.posPreviousInvoices, 'عرض الفواتير السابقة');
