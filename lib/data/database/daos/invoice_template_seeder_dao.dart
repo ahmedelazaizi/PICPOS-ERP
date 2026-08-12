@@ -349,7 +349,7 @@ extension InvoiceTemplateSeederDao on AppDatabase {
   /// مفتاحُ مراجعةِ قالب الوردية. تغييرُ القيمة يُعيد بناءَ عناصر القالب
   /// **مرّةً واحدة** عند الإقلاع التالي.
   static const _shiftTemplateRevKey = 'shift_closing_template_rev';
-  static const _shiftTemplateRev = '2026-08-12-channels';
+  static const _shiftTemplateRev = '2026-08-12-movement';
 
   /// يُعيد بناءَ عناصر قالب `shift_closing` بالترتيب المبذور — مرّةً واحدة.
   ///
@@ -592,6 +592,16 @@ extension InvoiceTemplateSeederDao on AppDatabase {
         'fontSize': 9.0,
         'labelAr': 'عدد الفواتير',
       },
+      // ترتيبُ «الحركة» هنا يطابق شاشةَ `picpos_past_shifts_panel` بنداً
+      // ببند — المشغّلُ يقارن الورقةَ بالشاشة، واختلافُ الترتيب وحدَه يجعله
+      // يبحث عن بندٍ يظنّه غائباً.
+      {
+        'type': 'variable',
+        'content': 'shift_opening_balance',
+        'alignment': 'right',
+        'fontSize': 9.0,
+        'labelAr': 'الرصيد الافتتاحي',
+      },
       {
         'type': 'variable',
         'content': 'shift_total_sales',
@@ -599,6 +609,13 @@ extension InvoiceTemplateSeederDao on AppDatabase {
         'fontSize': 9.0,
         'fontWeight': 'bold',
         'labelAr': 'إجمالي المبيعات',
+      },
+      {
+        'type': 'variable',
+        'content': 'shift_cash_income',
+        'alignment': 'right',
+        'fontSize': 9.0,
+        'labelAr': 'دخل النقد',
       },
       {
         'type': 'variable',
@@ -613,6 +630,22 @@ extension InvoiceTemplateSeederDao on AppDatabase {
         'alignment': 'right',
         'fontSize': 9.0,
         'labelAr': 'مرتجعات نقدية',
+      },
+      // الآجلُ للتوضيح لا للتسوية — منفصلٌ بنصٍّ صريحٍ كي لا يجمعه أحدٌ
+      // مع الماليات. لا خزنةَ تحمله، فضمُّه يخلق عجزاً وهمياً.
+      {
+        'type': 'variable',
+        'content': 'shift_credit_count',
+        'alignment': 'right',
+        'fontSize': 9.0,
+        'labelAr': 'عدد المبيعات الآجلة',
+      },
+      {
+        'type': 'variable',
+        'content': 'shift_credit_sales',
+        'alignment': 'right',
+        'fontSize': 9.0,
+        'labelAr': 'المبيعات الآجلة (للتوضيح — خارج التسوية)',
       },
       {'type': 'line'},
       // Cash reconciliation

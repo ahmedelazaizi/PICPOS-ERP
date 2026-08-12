@@ -214,6 +214,24 @@ class TemplatedInvoiceService {
       case 'shift_cash_refunds':
         return n(s.cashRefunds);
 
+      // ── بنودُ «الحركة» الباقيةُ من الشاشة (بلاغ المالك 2026-08-12) ──
+      // شاشةُ `picpos_past_shifts_panel` تقرأ اللقطةَ مباشرةً فتعرض ستّةَ
+      // بنود؛ ثلاثةٌ منها لم يكن لها مفتاحٌ هنا فسقطت من الورقة وحدَها.
+      // والمشغّلُ يقارن الاثنين — بندٌ على الشاشة وغائبٌ عن المطبوع يُقرأ
+      // نقصاً في المطبوع لا نقصاً في القالب.
+      case 'shift_opening_balance':
+        return n(s.openingBalance);
+      case 'shift_cash_income':
+        return n(s.cashIncome);
+
+      // ⚠️ الآجلُ **للتوضيح لا للتسوية**: مبيعاتٌ لم تُقبَض، فلا خزنةَ
+      // تحمله. ضمُّه إلى `shift_total_system` كان يخلق عجزاً وهمياً بقيمته
+      // في كلّ ورديةٍ فيها بيعٌ آجل. يُعرض ويبقى خارج المجاميع.
+      case 'shift_credit_sales':
+        return n(s.creditSales);
+      case 'shift_credit_count':
+        return s.creditSalesCount.toString();
+
       // مجاميعُ مشتقّة — لا حقلَ لها في اللقطة. تُجمع من الثلاثة (نقد ·
       // بطاقة · كليك) لا من `totalSales`: الأخيرُ مبيعاتٌ والأولُ متحصَّل،
       // ويفترقان بالآجل والمصروفات.
