@@ -153,6 +153,17 @@ rm -rf build/native_assets
 #    كلَّها فيبتلع الرميةَ ويُسقط **كلَّ** الإعدادات صامتاً. من يقرأ علَماً
 #    من JSON فليستعمل `core/utils/template_json_flags.dart`.)
 #
+# تشغيلةُ 2026-08-12 بعد إصلاحَي مقاس العناوين والحقل الرقميّ (‏c=4، ‏--pg):
+#   analyze 6 info · unit 3183 · widget 656 · integration 710 · pg 45
+#   (‏آخرُ تشغيلةٍ كاملةٍ على شجرةٍ ثابتة — `GATE_EXIT=0` ونصُّ «كلها خضراء».
+#    الزيادةُ ٤ كلُّها `resolveHeaderFontSize`.
+#
+#    ⚠️ ودرسٌ خامس: **اقرأ قاعدةَ المالك بدل أن تُرجّح.** ساعةٌ ضاعت في
+#    ترجيحاتٍ حول «لماذا لا يظهر صفُّ العناوين»، وحسمها استعلامٌ واحدٌ على
+#    نسخةٍ من `picpos_unified.db`: `_showHeader:false` و`header_font_size=1.0`
+#    بينما المحرّرُ يعرض 9pt. العطبُ في **البيانات** لا في المنطق، ولا يظهر
+#    في أيّ اختبارٍ لأن الاختباراتِ تبني بياناتِها.)
+#
 # والحكمُ **بتطابق عدد النجاحات** لا بالخضرة: لو كشف التوازي هشاشةً كامنة
 # لظهر الفرقُ رقماً. وصفرُ `PathExistsException` في كلّ التشغيلات بعد تنظيف
 # `build/native_assets` أعلاه.
@@ -250,7 +261,7 @@ fi
 # على `DELETE FROM "accounts"` لأن `safes.linkedAccountId` صار يشدُّ الدليل،
 # و٢ افتراضَ أن رجلَ النقدية على `1111`. فالوصفةُ الموصوفة لو طُبّقت بالجملة
 # لَما أصلحت شيئاً — اقرأ رسالةَ الفشل، لا وصفةَ المستند.
-run_suite "unit + data + structural + services" 3179 \
+run_suite "unit + data + structural + services" 3183 \
   flutter test test/unit test/data test/structural test/services --concurrency="$LOCAL_CONCURRENCY"
 
 # الواجهات والنطاقُ والنواة — كانت **كلُّها** خارج البوابة حتى 2026-08-09.
