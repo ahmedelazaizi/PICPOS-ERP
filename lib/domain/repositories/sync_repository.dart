@@ -8,6 +8,11 @@ abstract class ISyncRepository {
   String? get serverAddress;
   int get serverPort;
   int get connectedClientCount;
+
+  /// رابط السيرفر جاهزاً للعرض. `serverAddress` وحدَه لا يصلح للّصق في نصّ —
+  /// نوعُه `String?` ويبقى null في الوضع المستقلّ، فيُطبع "null" في الرابط.
+  /// يحتاطُ بـ`localhost` ويمرّر روابطَ الأنفاق كما هي.
+  String buildServerUrl({String? address, int? port});
   
   Future<void> loadSettings();
   Future<void> saveSettings();

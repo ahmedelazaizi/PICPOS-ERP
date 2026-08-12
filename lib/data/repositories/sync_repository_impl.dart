@@ -28,6 +28,10 @@ class SyncRepositoryImpl implements ISyncRepository {
   int get connectedClientCount => _ns.connectedClientCount;
 
   @override
+  String buildServerUrl({String? address, int? port}) =>
+      _ns.buildServerUrl(address: address, port: port);
+
+  @override
   Future<void> loadSettings() async {
     await _ns.loadSettings();
   }

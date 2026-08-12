@@ -219,7 +219,7 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
                 const SizedBox(height: 16),
                 _buildUrlLink(
                   title: 'شاشة العميل (CFD)',
-                  url: 'http://${syncRepo.serverAddress}:${syncRepo.serverPort}/cfd',
+                  url: '${syncRepo.buildServerUrl()}/cfd',
                   icon: PhosphorIconsBold.monitor,
                   color: Colors.blue,
                   enabled: syncRepo.isServerRunning,
@@ -227,7 +227,7 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
                 const SizedBox(height: 12),
                 _buildUrlLink(
                   title: 'منيو الطاولات (QR Menu)',
-                  url: 'http://${syncRepo.serverAddress}:${syncRepo.serverPort}/menu',
+                  url: '${syncRepo.buildServerUrl()}/menu',
                   icon: PhosphorIconsBold.qrCode,
                   color: Colors.purple,
                   enabled: syncRepo.isServerRunning,
@@ -281,7 +281,7 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
                     ),
                     if (syncRepo.isServerRunning) ...[
                       Text(
-                        'http://${syncRepo.serverAddress}:${syncRepo.serverPort}',
+                        syncRepo.buildServerUrl(),
                         style: const TextStyle(
                           fontFamily: 'monospace',
                           fontSize: 12,

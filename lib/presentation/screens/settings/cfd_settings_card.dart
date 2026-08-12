@@ -219,14 +219,14 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
           const SizedBox(height: 8),
           _buildCFDLink(
             title: 'شاشة العميل (CFD)',
-            url: 'http://${_ns.serverAddress}:${_ns.serverPort}/cfd',
+            url: '${_ns.buildServerUrl()}/cfd',
             icon: PhosphorIconsBold.monitor,
             color: Colors.blue,
           ),
           const SizedBox(height: 8),
           _buildCFDLink(
             title: 'منيو الطاولات (QR Menu)',
-            url: 'http://${_ns.serverAddress}:${_ns.serverPort}/menu',
+            url: '${_ns.buildServerUrl()}/menu',
             icon: PhosphorIconsBold.qrCode,
             color: Colors.purple,
           ),
