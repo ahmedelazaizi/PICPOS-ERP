@@ -148,6 +148,7 @@ import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../picpos_shell/picpos_content_card.dart';
 import '../../picpos_shell/picpos_section_header.dart';
 import '../../picpos_shell/picpos_empty_state.dart';
+import '../widgets/settings_section_pane.dart';
 
 // Part files — copied verbatim from lib/presentation/screens/settings/*
 // (only `part of` retargeted to this shell; see the copy-trap note above).
@@ -1053,9 +1054,8 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
   }
 
   Widget _buildSectionPane(_SettingsSection section) {
-    return ListView(
-      key: PageStorageKey('settings-${section.id}'),
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
+    return SettingsSectionPane(
+      sectionId: section.id,
       children: [
         PicPosSectionHeader(
           title: section.title,
