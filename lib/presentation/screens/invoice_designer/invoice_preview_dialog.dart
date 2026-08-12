@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
+import '../../../../core/utils/template_json_flags.dart';
 import '../../../../data/database/database.dart';
 import 'package:intl/intl.dart' as intl;
 
@@ -563,20 +564,12 @@ class InvoicePreviewDialog extends StatelessWidget {
     };
     int decimalPlaces = 2;
     bool showHeader = true;
-    try {
-      if (settings.columnWidths != null) {
-        final Map<String, dynamic> decoded = jsonDecode(settings.columnWidths!);
-        decoded.forEach((key, value) {
-          if (key == '_decimalPlaces') {
-            decimalPlaces = (value as num).toInt();
-          } else if (key == '_showHeader') {
-            showHeader = value as bool? ?? true;
-          } else if (value is num) {
-            defaultWidths[key] = value.toDouble();
-          }
-        });
-      }
-    } catch (_) {}
+    // نفسُ مِقبض الطابعة حرفياً — المعاينةُ التي تفكّ بمنطقٍ آخرَ تَعِد بما
+    // لا يصل الورق. اقرأ `core/utils/template_json_flags.dart`.
+    final flags = parseTableFlags(settings.columnWidths);
+    defaultWidths.addAll(flags.columnWidths);
+    decimalPlaces = flags.decimalPlaces ?? decimalPlaces;
+    showHeader = flags.showHeader ?? showHeader;
 
     int getFlex(String key) => (defaultWidths[key]! * 10).round();
 

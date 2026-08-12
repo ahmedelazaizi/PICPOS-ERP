@@ -3,6 +3,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/template_json_flags.dart';
 import '../../../data/database/database.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1106,14 +1107,21 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
   }
 
   /// Read a boolean flag from the columnWidths JSON
+  /// ⚠️ نفسُ تسامح الطابعة والمعاينة: رقاقةٌ تُرسم مطفأةً بينما الطابعةُ
+  /// تقرأ العلَمَ مشتعلاً (أو العكس) تجعل المستخدمَ يصلح ما ليس معطوباً.
+  /// اقرأ `core/utils/template_json_flags.dart`.
   bool _getJsonBool(InvoiceTableSetting ts, String key, bool defaultValue) {
-    if (ts.columnWidths != null && ts.columnWidths!.isNotEmpty) {
-      try {
-        final decoded = jsonDecode(ts.columnWidths!) as Map<String, dynamic>;
-        return (decoded[key] as bool?) ?? defaultValue;
-      } catch (_) {}
+    if (ts.columnWidths == null || ts.columnWidths!.isEmpty) {
+      return defaultValue;
     }
-    return defaultValue;
+    try {
+      final decoded = jsonDecode(ts.columnWidths!);
+      if (decoded is! Map<String, dynamic>) return defaultValue;
+      if (!decoded.containsKey(key)) return defaultValue;
+      return readJsonFlag(decoded[key], defaultValue: defaultValue);
+    } catch (_) {
+      return defaultValue;
+    }
   }
 
   /// Write a boolean flag to the columnWidths JSON

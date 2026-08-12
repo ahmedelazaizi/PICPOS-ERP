@@ -7,6 +7,7 @@ import 'package:printing/printing.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import '../core/logging/diagnostic_logger.dart';
+import '../core/utils/template_json_flags.dart';
 import '../data/database/database.dart';
 import '../domain/entities/shift_closing_snapshot.dart';
 import '../data/repositories/printers_repository_impl.dart';
@@ -1319,25 +1320,17 @@ class TemplatedInvoiceService {
     bool headerBold = true;  // Default: header is bold
     bool bodyBold = false;   // Default: body is normal
     bool showHeader = true;  // Default: show header row
-    if (settings?.columnWidths != null && settings!.columnWidths!.isNotEmpty) {
-      try {
-        final decoded =
-            jsonDecode(settings.columnWidths!) as Map<String, dynamic>;
-        for (final e in decoded.entries) {
-          if (e.key == '_decimalPlaces') {
-            decimalPlaces = (e.value as num).toInt();
-          } else if (e.key == '_headerBold') {
-            headerBold = e.value as bool? ?? true;
-          } else if (e.key == '_bodyBold') {
-            bodyBold = e.value as bool? ?? false;
-          } else if (e.key == '_showHeader') {
-            showHeader = e.value as bool? ?? true;
-          } else if (e.value is num) {
-            defaultWidths[e.key] = (e.value as num).toDouble();
-          }
-        }
-      } catch (_) {}
-    }
+    // ⚠️ كان `try` واحدٌ يلفّ فكَّ المفاتيح كلَّها مع `value as bool?` —
+    // فقيمةٌ مخزَّنةٌ `1` بدل `true` ترمي، فتُبتلع الرميةُ وتضيع معها
+    // **عروضُ الأعمدة والدقّةُ وكلُّ الأعلام** دفعةً واحدة: تصميمٌ مسطَّحٌ
+    // بلا رسالةِ خطأٍ واحدة. `parseTableFlags` تعزل كلَّ مفتاحٍ وتتسامح مع
+    // الأرقام والنصوص. اقرأ `core/utils/template_json_flags.dart`.
+    final flags = parseTableFlags(settings?.columnWidths);
+    defaultWidths.addAll(flags.columnWidths);
+    decimalPlaces = flags.decimalPlaces ?? decimalPlaces;
+    headerBold = flags.headerBold ?? headerBold;
+    bodyBold = flags.bodyBold ?? bodyBold;
+    showHeader = flags.showHeader ?? showHeader;
 
     // Number formatter helper
     String fmt(num val) => val.toStringAsFixed(decimalPlaces);
