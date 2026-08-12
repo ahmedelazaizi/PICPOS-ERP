@@ -227,22 +227,27 @@ extension InvoiceTemplateSeederDao on AppDatabase {
   /// قنواتُ تسوية الوردية المتوقَّعة في قالب `shift_closing`، كلٌّ بعنوانها.
   ///
   /// نفسُ المفاتيح التي يحلّها `TemplatedInvoiceService.resolveShiftValue`.
-  static const _shiftChannelBlocks = <(String, List<(String, String)>)>[
-    ('النقد (كاش)', [
-      ('shift_system_cash', 'رصيد النظام'),
-      ('shift_actual_cash', 'المبلغ الفعلي'),
-      ('shift_cash_variance', 'الفارق'),
-    ]),
-    ('البطاقة', [
-      ('shift_system_card', 'رصيد النظام'),
-      ('shift_actual_card', 'المبلغ الفعلي'),
-      ('shift_card_variance', 'الفارق'),
-    ]),
-    ('كليك', [
-      ('shift_system_click', 'رصيد النظام'),
-      ('shift_actual_click', 'المبلغ الفعلي'),
-      ('shift_click_variance', 'الفارق'),
-    ]),
+  /// ⚠️ الاسمُ داخل `labelAr` لا في عنصرِ عنوانٍ منفصل.
+  ///
+  /// المُصيِّر يرتّب بـ`_contentSectionPriority` أوّلاً، وكلُّ مفاتيح
+  /// `shift_*` تقع في «٨ — غيرُ معروف، بعد الإجماليات» فترتيبُها بـ
+  /// `sortOrder` وحدَه. فعنصرُ عنوانٍ مستقلٌّ يفارق صفوفَه بأدنى اختلافٍ في
+  /// الترتيب، ويسقط كذلك في إزالة التكرار لو تكرّر نصُّه. والسطرُ الذي
+  /// يسمّي قناتَه بنفسه لا يُفارَق ولا يُلبَس.
+  ///
+  /// بلاغُ المالك 2026-08-12: «المسمّيات كما تظهر في التقرير يجب أن تظهر في
+  /// الطباعة» — الشاشةُ تعرض عموداً باسم القناة، والورقةُ كانت تعرض «رصيد
+  /// النظام» ثلاثَ مرّاتٍ بلا اسمٍ يميّزها.
+  static const _shiftChannelRows = <(String, String)>[
+    ('shift_system_cash', 'النقد — رصيد النظام'),
+    ('shift_actual_cash', 'النقد — المبلغ الفعلي'),
+    ('shift_cash_variance', 'النقد — الفارق'),
+    ('shift_system_card', 'البطاقة — رصيد النظام'),
+    ('shift_actual_card', 'البطاقة — المبلغ الفعلي'),
+    ('shift_card_variance', 'البطاقة — الفارق'),
+    ('shift_system_click', 'كليك — رصيد النظام'),
+    ('shift_actual_click', 'كليك — المبلغ الفعلي'),
+    ('shift_click_variance', 'كليك — الفارق'),
   ];
 
   /// يُلحق بقوالب `shift_closing` القائمة أيَّ قناةِ تسويةٍ تنقصها.
@@ -263,7 +268,7 @@ extension InvoiceTemplateSeederDao on AppDatabase {
   ///
   /// متعادلة: ما وُجد يُترك، فالتشغيلُ كلَّ إقلاعٍ آمن.
   Future<int> backfillShiftClosingChannelElements() async {
-    var added = 0;
+    var changed = 0;
     final templates = await getAllTemplates();
 
     for (final template in templates.where((t) => t.type == 'shift_closing')) {
@@ -272,70 +277,144 @@ extension InvoiceTemplateSeederDao on AppDatabase {
       // إلحاقُ القنوات وحدَها كان سيُنتج تقريراً بلا ترويسةٍ ولا إجماليات.
       if (elements.isEmpty) continue;
 
+      // ── ١) تسميةُ الصفوف القائمة ──
+      // «رصيد النظام» ثلاثَ مرّاتٍ بلا اسمِ قناةٍ لا تُقرأ. تُصحَّح في
+      // مكانها بلا تحريك — لا حذفَ ولا إعادةَ ترتيب.
+      for (final el in elements) {
+        if (el.elementType != 'variable') continue;
+        final row = _shiftChannelRows
+            .where((r) => r.$1 == el.content)
+            .firstOrNull;
+        if (row == null || el.labelAr == row.$2) continue;
+        await (update(invoiceTemplateElements)
+              ..where((t) => t.id.equals(el.id)))
+            .write(InvoiceTemplateElementsCompanion(labelAr: Value(row.$2)));
+        changed++;
+      }
+
+      // ── ٢) إلحاقُ الصفوف الغائبة **قبل الإجماليات** ──
+      // الذيلُ لا يصلح: المُصيِّر يرتّب مفاتيحَ `shift_*` بـ`sortOrder`، فصفٌّ
+      // مُلحَقٌ في الآخر يظهر بعد «إجمالي النظام» و«الحالة» — فيقرأ المستخدمُ
+      // إجمالياً ثم رقماً شارداً بعده.
       final present = elements
           .where((e) => e.elementType == 'variable')
           .map((e) => e.content)
           .toSet();
-      var nextY = elements
-          .map((e) => e.yPosition + e.height)
-          .reduce((a, b) => a > b ? a : b);
+      final missing =
+          _shiftChannelRows.where((r) => !present.contains(r.$1)).toList();
+      if (missing.isEmpty) continue;
+
+      const rowHeight = 20.0;
       var nextSort = elements
-          .map((e) => e.sortOrder)
-          .reduce((a, b) => a > b ? a : b);
+              .map((e) => e.sortOrder)
+              .fold<int>(0, (a, b) => a > b ? a : b) +
+          1;
+      var nextY = elements
+              .map((e) => e.yPosition + e.height)
+              .fold<double>(10, (a, b) => a > b ? a : b) +
+          3;
 
-      for (final (heading, rows) in _shiftChannelBlocks) {
-        final missing = rows.where((r) => !present.contains(r.$1)).toList();
-        if (missing.isEmpty) continue;
-
-        // العنوانُ يُلحق فقط مع قناةٍ غائبةٍ بالكامل. قناةٌ ناقصةٌ صفّاً
-        // واحداً لها عنوانٌ فوقه سلفاً — وعنوانٌ ثانٍ في الذيل يُربك.
-        if (missing.length == rows.length) {
-          nextY += 3;
-          await into(invoiceTemplateElements).insert(
-            InvoiceTemplateElementsCompanion.insert(
-              templateId: template.id,
-              elementType: 'text',
-              sortOrder: Value(++nextSort),
-              xPosition: const Value(10),
-              yPosition: Value(nextY),
-              width: const Value(200),
-              height: const Value(20),
-              textAlign: const Value('center'),
-              fontSize: const Value(9),
-              isBold: const Value(true),
-              fontColor: const Value('#000000'),
-              content: Value(heading),
-            ),
-          );
-          nextY += 20;
-          added++;
-        }
-
-        for (final (key, label) in missing) {
-          nextY += 3;
-          await into(invoiceTemplateElements).insert(
-            InvoiceTemplateElementsCompanion.insert(
-              templateId: template.id,
-              elementType: 'variable',
-              sortOrder: Value(++nextSort),
-              xPosition: const Value(10),
-              yPosition: Value(nextY),
-              width: const Value(200),
-              height: const Value(20),
-              textAlign: const Value('right'),
-              fontSize: const Value(9),
-              isBold: Value(key.endsWith('_variance')),
-              fontColor: const Value('#000000'),
-              content: Value(key),
-              labelAr: Value(label),
-            ),
-          );
-          nextY += 20;
-          added++;
-        }
+      for (final (key, label) in missing) {
+        await into(invoiceTemplateElements).insert(
+          InvoiceTemplateElementsCompanion.insert(
+            templateId: template.id,
+            elementType: 'variable',
+            sortOrder: Value(nextSort++),
+            xPosition: const Value(10),
+            yPosition: Value(nextY),
+            width: const Value(200),
+            height: const Value(rowHeight),
+            textAlign: const Value('right'),
+            fontSize: const Value(9),
+            isBold: Value(key.endsWith('_variance')),
+            fontColor: const Value('#000000'),
+            content: Value(key),
+            labelAr: Value(label),
+          ),
+        );
+        nextY += rowHeight + 3;
+        changed++;
       }
     }
-    return added;
+
+    // ── ٣) ضبطُ الترتيب ──
+    // منفصلٌ عن الإلحاق عمداً: قالبٌ صفوفُه **موجودةٌ** لكن في الذيل لا
+    // يراه الإلحاقُ ناقصاً فيتركه مقلوباً. وهذا يقع فعلاً — نسخةٌ أولى من
+    // هذا الإصلاح ألحقت في الذيل، فالقوالبُ التي مرّت بها تحتاج ضبطاً لا
+    // إلحاقاً.
+    changed += await _reorderShiftClosingChannels();
+    return changed;
+  }
+
+  /// يضع صفوفَ القنوات الثلاث (ومعها عناوينُها النصّية إن وُجدت) قبل
+  /// الإجمالياتِ مباشرةً، ويعيد ترقيمَ `sortOrder`/`yPosition` تدفّقاً.
+  ///
+  /// المُصيِّرُ يرتّب مفاتيحَ `shift_*` بـ`sortOrder` وحدَه — كلُّها تقع في
+  /// «أولوية ٨: غيرُ معروف» عنده. فصفٌّ بعد «إجمالي النظام» يُقرأ رقماً
+  /// شارداً بعد الخلاصة (رُصد على ورقٍ حقيقيّ 2026-08-12).
+  ///
+  /// متعادلة: قالبٌ مرتَّبٌ سلفاً لا يُكتب فيه شيء.
+  Future<int> _reorderShiftClosingChannels() async {
+    const channelHeadings = {'النقد (كاش)', 'البطاقة', 'كليك'};
+    var changed = 0;
+
+    for (final template
+        in (await getAllTemplates()).where((t) => t.type == 'shift_closing')) {
+      final elements = await getTemplateElements(template.id)
+        ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+      if (elements.isEmpty) continue;
+
+      bool isChannel(InvoiceTemplateElement e) =>
+          (e.elementType == 'variable' &&
+              _shiftChannelRows.any((r) => r.$1 == e.content)) ||
+          (e.elementType == 'text' && channelHeadings.contains(e.content));
+
+      final channel = elements.where(isChannel).toList();
+      if (channel.isEmpty) continue;
+      final rest = elements.where((e) => !isChannel(e)).toList();
+
+      final totalsIdx =
+          rest.indexWhere((e) => (e.content ?? '').startsWith('shift_total'));
+      final at = totalsIdx < 0 ? rest.length : totalsIdx;
+
+      // الترتيبُ القانونيّ داخل الكتلة: كلُّ قناةٍ بعنوانها ثم صفوفها.
+      final ordered = <InvoiceTemplateElement>[];
+      for (final channelName in ['cash', 'card', 'click']) {
+        final heading = {
+          'cash': 'النقد (كاش)',
+          'card': 'البطاقة',
+          'click': 'كليك',
+        }[channelName];
+        ordered.addAll(channel.where((e) => e.content == heading));
+        for (final (key, _) in _shiftChannelRows.where(
+          (r) => r.$1.endsWith(channelName) || r.$1.contains('_${channelName}_'),
+        )) {
+          ordered.addAll(channel.where((e) => e.content == key));
+        }
+      }
+      // أيُّ عنصرِ قناةٍ لم يلتقطه التصنيفُ يبقى في مكانه من الكتلة.
+      ordered.addAll(channel.where((e) => !ordered.contains(e)));
+
+      final finalOrder = [...rest.take(at), ...ordered, ...rest.skip(at)];
+      if (finalOrder.map((e) => e.id).join(',') ==
+          elements.map((e) => e.id).join(',')) {
+        continue; // مرتَّبٌ سلفاً
+      }
+
+      var y = 10.0;
+      for (var i = 0; i < finalOrder.length; i++) {
+        final el = finalOrder[i];
+        await (update(invoiceTemplateElements)
+              ..where((t) => t.id.equals(el.id)))
+            .write(InvoiceTemplateElementsCompanion(
+          sortOrder: Value(i),
+          yPosition: Value(y),
+        ));
+        y += el.height + 3;
+      }
+      changed++;
+    }
+    return changed;
   }
 
   /// مِقبضٌ للاختبار: يزرع عناصرَ قالب الوردية الكاملة على قالبٍ قائم.
@@ -512,14 +591,14 @@ extension InvoiceTemplateSeederDao on AppDatabase {
         'content': 'shift_system_cash',
         'alignment': 'right',
         'fontSize': 9.0,
-        'labelAr': 'رصيد النظام',
+        'labelAr': 'النقد — رصيد النظام',
       },
       {
         'type': 'variable',
         'content': 'shift_actual_cash',
         'alignment': 'right',
         'fontSize': 9.0,
-        'labelAr': 'المبلغ الفعلي',
+        'labelAr': 'النقد — المبلغ الفعلي',
       },
       {
         'type': 'variable',
@@ -527,7 +606,7 @@ extension InvoiceTemplateSeederDao on AppDatabase {
         'alignment': 'right',
         'fontSize': 9.0,
         'fontWeight': 'bold',
-        'labelAr': 'الفارق',
+        'labelAr': 'النقد — الفارق',
       },
       {'type': 'line'},
       // Card reconciliation
@@ -543,14 +622,14 @@ extension InvoiceTemplateSeederDao on AppDatabase {
         'content': 'shift_system_card',
         'alignment': 'right',
         'fontSize': 9.0,
-        'labelAr': 'رصيد النظام',
+        'labelAr': 'البطاقة — رصيد النظام',
       },
       {
         'type': 'variable',
         'content': 'shift_actual_card',
         'alignment': 'right',
         'fontSize': 9.0,
-        'labelAr': 'المبلغ الفعلي',
+        'labelAr': 'البطاقة — المبلغ الفعلي',
       },
       {
         'type': 'variable',
@@ -558,7 +637,7 @@ extension InvoiceTemplateSeederDao on AppDatabase {
         'alignment': 'right',
         'fontSize': 9.0,
         'fontWeight': 'bold',
-        'labelAr': 'الفارق',
+        'labelAr': 'البطاقة — الفارق',
       },
       {'type': 'line'},
       // §٥-٢ — Click reconciliation. كانت غائبةً عن القالب المبذور بينما
@@ -577,14 +656,14 @@ extension InvoiceTemplateSeederDao on AppDatabase {
         'content': 'shift_system_click',
         'alignment': 'right',
         'fontSize': 9.0,
-        'labelAr': 'رصيد النظام',
+        'labelAr': 'كليك — رصيد النظام',
       },
       {
         'type': 'variable',
         'content': 'shift_actual_click',
         'alignment': 'right',
         'fontSize': 9.0,
-        'labelAr': 'المبلغ الفعلي',
+        'labelAr': 'كليك — المبلغ الفعلي',
       },
       {
         'type': 'variable',
@@ -592,7 +671,7 @@ extension InvoiceTemplateSeederDao on AppDatabase {
         'alignment': 'right',
         'fontSize': 9.0,
         'fontWeight': 'bold',
-        'labelAr': 'الفارق',
+        'labelAr': 'كليك — الفارق',
       },
       {'type': 'line'},
       // Totals

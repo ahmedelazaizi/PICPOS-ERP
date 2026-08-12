@@ -49,6 +49,10 @@ void main() {
       'shift_system_card',
       'shift_actual_card',
       'shift_card_variance',
+      // الإجمالياتُ والحالةُ في الذيل — كما في قالب المالك.
+      'shift_total_system',
+      'shift_total_actual',
+      'shift_status',
     ];
     for (var i = 0; i < stale.length; i++) {
       await db.into(db.invoiceTemplateElements).insert(
@@ -57,14 +61,22 @@ void main() {
               elementType: 'variable',
               sortOrder: Value(i),
               xPosition: const Value(10),
-              yPosition: Value(20.0 + i * 12),
+              yPosition: Value(20.0 + i * 23),
               width: const Value(60),
-              height: const Value(10),
+              height: const Value(20),
               content: Value(stale[i]),
+              labelAr: const Value('رصيد النظام'),
             ),
           );
     }
     return id;
+  }
+
+  Future<List<String>> orderedVariables(int id) async {
+    final els = await db.getTemplateElements(id);
+    final sorted = els.where((e) => e.elementType == 'variable').toList()
+      ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    return sorted.map((e) => e.content ?? '').toList();
   }
 
   Future<List<String>> variablesOf(int id) async {
@@ -77,7 +89,8 @@ void main() {
 
   test('الإلحاقُ يضيف قناةَ كليك ولا يمسّ النقدَ والبطاقة', () async {
     final id = await seedStaleTemplate();
-    expect(await variablesOf(id), hasLength(6));
+    // ستُّ قنواتٍ (نقد + بطاقة) وثلاثةُ ذيل (إجمالياتٌ وحالة) — بلا كليك.
+    expect(await variablesOf(id), hasLength(9));
 
     await db.backfillShiftClosingChannelElements();
 
@@ -100,21 +113,72 @@ void main() {
     }
   });
 
-  test('عنوانُ القناة يُلحق معها — وإلا فصفوفٌ بلا اسم', () async {
+  test('كلُّ صفٍّ يسمّي قناتَه — لا «رصيد النظام» ثلاثَ مرّاتٍ بلا تمييز',
+      () async {
     final id = await seedStaleTemplate();
     await db.backfillShiftClosingChannelElements();
 
     final els = await db.getTemplateElements(id);
-    final heading = els.where(
-      (e) => e.elementType == 'text' && (e.content ?? '').contains('كليك'),
-    );
-    expect(heading, hasLength(1));
+    String labelOf(String key) =>
+        els.firstWhere((e) => e.content == key).labelAr ?? '';
 
-    // العنوانُ فوق صفوفه لا تحتها.
-    final headingY = heading.first.yPosition;
-    final systemClick =
-        els.firstWhere((e) => e.content == 'shift_system_click');
-    expect(headingY, lessThan(systemClick.yPosition));
+    expect(labelOf('shift_system_cash'), 'النقد — رصيد النظام');
+    expect(labelOf('shift_actual_card'), 'البطاقة — المبلغ الفعلي');
+    expect(labelOf('shift_click_variance'), 'كليك — الفارق');
+  });
+
+  test('المُلحَقُ يسبق الإجمالياتِ لا يتلوها', () async {
+    // ⚠️ المُصيِّر يرتّب مفاتيحَ `shift_*` بـ`sortOrder` (كلُّها في أولوية
+    // «غيرُ معروف» عنده)، فصفٌّ مُلحَقٌ في الذيل يظهر **بعد** «إجمالي
+    // النظام» و«الحالة» — رقمٌ شاردٌ بعد الخلاصة. رُصد على ورقٍ حقيقيّ
+    // 2026-08-12 قبل هذا التثبيت.
+    final id = await seedStaleTemplate();
+    await db.backfillShiftClosingChannelElements();
+
+    final order = await orderedVariables(id);
+    expect(
+      order.indexOf('shift_system_click'),
+      lessThan(order.indexOf('shift_total_system')),
+    );
+    expect(
+      order.indexOf('shift_click_variance'),
+      lessThan(order.indexOf('shift_status')),
+    );
+    // والنقدُ والبطاقةُ لم يتزحزحا عن مقدّمة الترتيب.
+    expect(order.first, 'shift_system_cash');
+  });
+
+  test('قالبٌ صفوفُه في الذيل يُضبط ترتيبُه — لا يُترك لأنه «غيرُ ناقص»',
+      () async {
+    // نسخةٌ أولى من هذا الإصلاح ألحقت في الذيل، فالقوالبُ التي مرّت بها
+    // كاملةُ الصفوف ومقلوبةُ الترتيب — والإلحاقُ وحدَه لا يراها.
+    final id = await seedStaleTemplate();
+    for (final key in [
+      'shift_system_click',
+      'shift_actual_click',
+      'shift_click_variance',
+    ]) {
+      await db.into(db.invoiceTemplateElements).insert(
+            InvoiceTemplateElementsCompanion.insert(
+              templateId: id,
+              elementType: 'variable',
+              sortOrder: const Value(99),
+              xPosition: const Value(10),
+              yPosition: const Value(500),
+              width: const Value(200),
+              height: const Value(20),
+              content: Value(key),
+            ),
+          );
+    }
+
+    await db.backfillShiftClosingChannelElements();
+
+    final order = await orderedVariables(id);
+    expect(
+      order.indexOf('shift_click_variance'),
+      lessThan(order.indexOf('shift_total_system')),
+    );
   });
 
   test('متعادلة — تشغيلةٌ ثانيةٌ لا تضيف شيئاً', () async {
