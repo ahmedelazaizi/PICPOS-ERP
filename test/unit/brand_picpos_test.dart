@@ -16,6 +16,8 @@
 import 'package:flutter/material.dart' show Color;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/core/config/app_config.dart';
+// `BusinessProfile` و`FeaturePolicy` يصلان عبر `app_config.dart` المستورد
+// فوق — استيرادُهما صراحةً يرفع خطَّ أساس analyze بلا فائدة.
 import 'package:ural_erp/core/config/brand.dart';
 import 'package:ural_erp/core/constants/app_constants.dart';
 import 'package:ural_erp/core/navigation/screen_id.dart';
@@ -149,6 +151,21 @@ void main() {
       // بنتحقق من الفرع مش من `ThemeData` نفسها — بناؤها بيستدعي
       // `GoogleFonts` لأوزان مش مضمّنة في الـ assets فبيرمي في الاختبار.
       expect(AppTheme.designLanguage, 'picpos');
+    });
+
+    test('الملفُّ الشخصيُّ lite يفتح المطبخَ والإضافات لـPicPos', () {
+      // `picpos_lite_kitchen_policy_test` يقيس الثابتَين نفسَيهما، لكنّ سطرَ
+      // الاختيار `Brand.isPicPos ? litePicpos : lite` لا تقيسه البوابةُ
+      // إطلاقاً — تشتغل على الافتراضي `uralcash`. فهذا هو الموضعُ الوحيدُ
+      // الذي يُنفَّذ فيه الفرعُ، ومعه يتحقّق كلُّ بناءِ PicPos من أن
+      // «إدارة الإضافات والمعدلات» ستُعرض فعلاً وأن حوارَ سطر السلّة سيظهر.
+      final policy = FeaturePolicy.fromProfile(BusinessProfile.lite);
+      expect(policy, FeaturePolicy.litePicpos);
+      expect(policy.kitchenEnabled, isTrue);
+      expect(policy.modifiersEnabled, isTrue);
+
+      // ⚠️ وشاشةُ المطبخ تبقى خارجَ التنقّل — مؤكَّدٌ فوق في اختبار نطاق
+      // الشاشات. العلَمُ يفتح الإعداداتِ وحوارَ السلّة لا شاشةَ KDS.
     });
   }, skip: skipReason);
 }
