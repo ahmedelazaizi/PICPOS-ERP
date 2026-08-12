@@ -839,8 +839,15 @@ class TemplatedInvoiceService {
         final saleLabel = salesType != null && salesType.isNotEmpty
             ? _mapSaleTypeLabel(salesType)
             : paymentMethod;
+        // ⚠️ كانت تُرجع القيمةَ عاريةً وتتجاهل `labelAr` — فيُطبع «مبيعات»
+        // بلا عنوانٍ بجوار «طريقة الدفع: نقدي» المُسمّاة، فيقرؤها المشغّلُ
+        // كلمةً شاردة. جاراتُها كلُّها تسبق القيمةَ بتسميتها (‏`supplier_name`
+        // تحتها مباشرةً مثالاً). رُصد على ورق 2026-08-12.
+        final saleTypeLabel = element.labelAr ?? _getLabel(resolvedType);
         return pw.Text(
-          saleLabel ?? '',
+          saleTypeLabel.isEmpty
+              ? (saleLabel ?? '')
+              : '$saleTypeLabel: ${saleLabel ?? ''}',
           style: style,
           textAlign: align,
         );
