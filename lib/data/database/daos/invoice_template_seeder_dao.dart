@@ -224,6 +224,125 @@ extension InvoiceTemplateSeederDao on AppDatabase {
     }
   }
 
+  /// قنواتُ تسوية الوردية المتوقَّعة في قالب `shift_closing`، كلٌّ بعنوانها.
+  ///
+  /// نفسُ المفاتيح التي يحلّها `TemplatedInvoiceService.resolveShiftValue`.
+  static const _shiftChannelBlocks = <(String, List<(String, String)>)>[
+    ('النقد (كاش)', [
+      ('shift_system_cash', 'رصيد النظام'),
+      ('shift_actual_cash', 'المبلغ الفعلي'),
+      ('shift_cash_variance', 'الفارق'),
+    ]),
+    ('البطاقة', [
+      ('shift_system_card', 'رصيد النظام'),
+      ('shift_actual_card', 'المبلغ الفعلي'),
+      ('shift_card_variance', 'الفارق'),
+    ]),
+    ('كليك', [
+      ('shift_system_click', 'رصيد النظام'),
+      ('shift_actual_click', 'المبلغ الفعلي'),
+      ('shift_click_variance', 'الفارق'),
+    ]),
+  ];
+
+  /// يُلحق بقوالب `shift_closing` القائمة أيَّ قناةِ تسويةٍ تنقصها.
+  ///
+  /// ── لماذا إصلاحٌ لا بذرة ────────────────────────────────────────────────
+  /// [seedDefaultTemplates] تزرع القالبَ الكامل، لكن بشرط
+  /// `!existingTypes.contains('shift_closing')`. فقاعدةٌ أُنشئت قبل §٥-٢
+  /// فيها قالبٌ بالاسم نفسِه ولا يعرف «كليك» — والبذرةُ تتخطّاه إلى الأبد،
+  /// و[_seedMissingElements] لا تنقذه لأنها تعالج القوالبَ **الفارغة** وحدَها.
+  ///
+  /// والعطبُ صامتٌ وخبيث: المطبوعُ يعرض قناتَين ويطبع `shift_total_system`
+  /// الذي **يجمع الثلاث**. فالقارئُ يجمع ما يراه فلا يطابق الإجماليَّ،
+  /// فيتّهم الحسابَ وهو سليم (‏رُصد ميدانياً 2026-08-12: ١٠ + ٣٠ معروضة
+  /// وإجمالي ٥٥، وكليك ١٥ غائبة).
+  ///
+  /// **إلحاقٌ لا إعادةُ بناء** (قرارُ المالك 2026-08-12): من صمّم قالبَه لا
+  /// يُهدم عليه. تُضاف القناةُ الناقصةُ تحت آخر عنصرٍ بعنوانها فوق صفوفها.
+  ///
+  /// متعادلة: ما وُجد يُترك، فالتشغيلُ كلَّ إقلاعٍ آمن.
+  Future<int> backfillShiftClosingChannelElements() async {
+    var added = 0;
+    final templates = await getAllTemplates();
+
+    for (final template in templates.where((t) => t.type == 'shift_closing')) {
+      final elements = await getTemplateElements(template.id);
+      // قالبٌ فارغٌ تماماً شأنُ [_seedMissingElements] لا شأنُ الإلحاق —
+      // إلحاقُ القنوات وحدَها كان سيُنتج تقريراً بلا ترويسةٍ ولا إجماليات.
+      if (elements.isEmpty) continue;
+
+      final present = elements
+          .where((e) => e.elementType == 'variable')
+          .map((e) => e.content)
+          .toSet();
+      var nextY = elements
+          .map((e) => e.yPosition + e.height)
+          .reduce((a, b) => a > b ? a : b);
+      var nextSort = elements
+          .map((e) => e.sortOrder)
+          .reduce((a, b) => a > b ? a : b);
+
+      for (final (heading, rows) in _shiftChannelBlocks) {
+        final missing = rows.where((r) => !present.contains(r.$1)).toList();
+        if (missing.isEmpty) continue;
+
+        // العنوانُ يُلحق فقط مع قناةٍ غائبةٍ بالكامل. قناةٌ ناقصةٌ صفّاً
+        // واحداً لها عنوانٌ فوقه سلفاً — وعنوانٌ ثانٍ في الذيل يُربك.
+        if (missing.length == rows.length) {
+          nextY += 3;
+          await into(invoiceTemplateElements).insert(
+            InvoiceTemplateElementsCompanion.insert(
+              templateId: template.id,
+              elementType: 'text',
+              sortOrder: Value(++nextSort),
+              xPosition: const Value(10),
+              yPosition: Value(nextY),
+              width: const Value(200),
+              height: const Value(20),
+              textAlign: const Value('center'),
+              fontSize: const Value(9),
+              isBold: const Value(true),
+              fontColor: const Value('#000000'),
+              content: Value(heading),
+            ),
+          );
+          nextY += 20;
+          added++;
+        }
+
+        for (final (key, label) in missing) {
+          nextY += 3;
+          await into(invoiceTemplateElements).insert(
+            InvoiceTemplateElementsCompanion.insert(
+              templateId: template.id,
+              elementType: 'variable',
+              sortOrder: Value(++nextSort),
+              xPosition: const Value(10),
+              yPosition: Value(nextY),
+              width: const Value(200),
+              height: const Value(20),
+              textAlign: const Value('right'),
+              fontSize: const Value(9),
+              isBold: Value(key.endsWith('_variance')),
+              fontColor: const Value('#000000'),
+              content: Value(key),
+              labelAr: Value(label),
+            ),
+          );
+          nextY += 20;
+          added++;
+        }
+      }
+    }
+    return added;
+  }
+
+  /// مِقبضٌ للاختبار: يزرع عناصرَ قالب الوردية الكاملة على قالبٍ قائم.
+  @visibleForTesting
+  Future<void> seedShiftClosingElementsForTest(int templateId) =>
+      _seedShiftClosingElements(templateId);
+
   /// Seed missing elements for existing templates that have no elements
   Future<void> _seedMissingElements() async {
     final templates = await getAllTemplates();
@@ -251,6 +370,11 @@ extension InvoiceTemplateSeederDao on AppDatabase {
             break;
           case 'purchase_return':
             await _seedPurchaseReturnElements(template.id);
+            break;
+          // كان غائباً عن الشبكة: قالبُ ورديةٍ فارغٌ يبقى فارغاً إلى الأبد
+          // لأن البذرةَ تتخطّاه (النوعُ موجود) وهذه لا تعرفه.
+          case 'shift_closing':
+            await _seedShiftClosingElements(template.id);
             break;
         }
       }

@@ -80,6 +80,17 @@ class PosClosingState {
   double get clickVariance => actualClickAmount - aggregates.systemClick;
   double get totalVariance => cashVariance + bankVariance + clickVariance;
 
+  // ── مجاميعُ القنوات الثلاث ───────────────────────────────────────────
+  //
+  // ⚠️ لا تجمعها في موضع النداء. ثلاثةُ سجلّاتٍ كانت تجمع
+  // `actualCash + actualCard` وحدَهما (‏و`actualCardAmount` اسمٌ قديمٌ
+  // مُموِّهٌ لحقل البنك)، فسجّلت ورديةً أُغلقت على ٥٥ بأنها ٤٠ — رُصد
+  // ميدانياً 2026-08-12. والمالُ نفسُه كان صحيحاً، فالفرقُ يظهر عند
+  // المطابقة وحدَها ويُقرأ عطباً في الحساب.
+  double get systemTotal => systemCash + systemCard + systemClick;
+  double get actualTotal =>
+      actualCashAmount + actualBankAmount + actualClickAmount;
+
   // ── Convenience totals for the footer strip ─────────────────────────
   int get invoiceCount => aggregates.salesCount + aggregates.returnsCount;
   double get totalSales => aggregates.salesCash +
@@ -560,7 +571,9 @@ class PosClosingController extends Notifier<PosClosingState> {
       unawaited(DiagnosticLogger.log('SHIFT-CLOSE',
           'pos_closing_controller.closeShift CALLED userId=$userId '
           'actualCash=${state.actualCashAmount} '
-          'actualCard=${state.actualCardAmount} '
+          'actualBank=${state.actualBankAmount} '
+          'actualClick=${state.actualClickAmount} '
+          'actualTotal=${state.actualTotal} '
           'closingMethod=$closingMethod'));
 
       // Spec 135 NOTE 2 (req 4) — close the shift RESOLVED at load (the
@@ -639,7 +652,15 @@ class PosClosingController extends Notifier<PosClosingState> {
       await treasuryRepo.closeShiftWithAudit(
         closeShiftId,
         state.actualCashAmount,
-        notes: 'إغلاق وردية POS - ${state.actualCardAmount > 0 ? 'بطاقة: ${state.actualCardAmount.toStringAsFixed(AppConstants.decimalPlaces)}' : ''}',
+        // القنواتُ غيرُ النقدية في الملاحظة: النقديُّ نفسُه هو المبلغُ
+        // المُمرَّر فوق. وكليك كانت غائبةً فسجّل التدقيقُ ورديةً ناقصةً قناة.
+        notes: [
+          'إغلاق وردية POS',
+          if (state.actualBankAmount > 0)
+            'بنك: ${state.actualBankAmount.toStringAsFixed(AppConstants.decimalPlaces)}',
+          if (state.actualClickAmount > 0)
+            'كليك: ${state.actualClickAmount.toStringAsFixed(AppConstants.decimalPlaces)}',
+        ].join(' - '),
         closingMethod: closingMethod,
         closingSnapshot: snapshot.encode(),
         onVarianceJeFailed: (variance) {
@@ -676,8 +697,8 @@ class PosClosingController extends Notifier<PosClosingState> {
       await logger.logShiftClose(
         authState.user?.id ?? 0,
         authState.user?.displayName ?? 'الكاشير',
-        expectedAmount: state.systemCash + state.systemCard,
-        actualAmount: state.actualCashAmount + state.actualCardAmount,
+        expectedAmount: state.systemTotal,
+        actualAmount: state.actualTotal,
       );
 
       // Feature 006 #1: refresh treasury views so the operator immediately

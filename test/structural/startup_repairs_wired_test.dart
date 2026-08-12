@@ -54,6 +54,21 @@ void main() {
     );
   });
 
+  test('الإقلاعُ ينادي `backfillShiftClosingChannelElements`', () {
+    final called = startup
+        .readAsLinesSync()
+        .any((l) => _isCall(l, 'backfillShiftClosingChannelElements'));
+
+    expect(
+      called,
+      isTrue,
+      reason: 'نفسُ فئة العطب: البذرةُ تتخطّى قالبَ `shift_closing` القائم، '
+          'ومنادي `seedDefaultTemplates` الوحيدُ شاشةُ مصمّم الفواتير. بلا '
+          'وصلٍ بالإقلاع يبقى مطبوعُ الوردية بلا قناة «كليك» — قناتان '
+          'معروضتان وإجماليٌّ يجمع الثلاث، فالقارئُ يتّهم الحسابَ وهو سليم.',
+    );
+  });
+
   test('ضابط: الإصلاحُ المجاور (التسليم) لسه موصولاً', () {
     // لو انفكّ هذا أيضاً فالمشكلةُ أوسعُ من بندٍ واحد، والحارسُ فوق وحدَه
     // كان سيمرّ صامتاً على تجهيزةٍ فقدت الاثنين.

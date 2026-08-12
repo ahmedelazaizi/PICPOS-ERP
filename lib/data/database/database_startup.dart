@@ -705,6 +705,25 @@ extension DatabaseStartup on AppDatabase {
       debugPrint('[Startup] repairAllMissingInvoiceJEs: $e');
     }
 
+    // §٥-٢ ذيلٌ (‏بلاغٌ ميدانيّ 2026-08-12): قالبُ `shift_closing` الأقدمُ
+    // من الإصلاح لا يعرف قناةَ «كليك»، والبذرةُ تتخطّى ما هو موجود
+    // (`!existingTypes.contains(...)`). فالمطبوعُ يعرض قناتَين ويطبع
+    // إجمالياً يجمع الثلاث — القارئُ يجمع ٤٠ ويرى ٥٥ فيتّهم الحساب.
+    //
+    // ومكانُه هنا لا في `seedDefaultTemplates`: منادِيها الوحيدُ شاشةُ
+    // مصمّم الفواتير، فمن لا يفتحها لا يصله الإصلاح — نفسُ فئة العطب التي
+    // كُتب لها `startup_repairs_wired_test`.
+    //
+    // متعادلٌ: ما وُجد يُترك، وقالبٌ كاملٌ لا يُمَسّ.
+    try {
+      final n = await backfillShiftClosingChannelElements();
+      if (n > 0) {
+        debugPrint('[Startup] ✅ قالب الوردية — أُلحق $n عنصرَ تسوية');
+      }
+    } catch (e) {
+      debugPrint('[Startup] backfillShiftClosingChannelElements: $e');
+    }
+
 
     // Step 7: Spec 136 ISS-2 — backfill deterministic globalIds on seeded
     // master-data defaults that still carry a NULL globalId (pre-globalId
