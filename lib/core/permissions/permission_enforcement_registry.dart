@@ -163,36 +163,50 @@ class PermissionEnforcementRegistry {
     // ── حواراتٌ مساعدة ──
     // ⚠️ بلا ميزةٍ تُحرَس كذلك (مقيس 2026-08-12):
     //   · `pos_deleted_items` — لا عرضَ للأصناف المحذوفة في شاشة PicPos.
-    //   · `pos_expense_type_select` و`pos_expense_description` تحرسان حقولاً
-    //     داخل حوار **إنشاء** مصروف (`pos/widgets/pos_expense_dialog.dart`)،
-    //     وزرُّ «مصاريف» في PicPos يفتح `PosPreviousExpensesDialog` — عرضُ
-    //     سابقٍ لا إنشاء. فلا حقلَ يُلَفّ.
+    //
+    // ✅ 'pos_expense_type_select' و'pos_expense_description' شُطبتا
+    //    (2026-08-12): الملاحظةُ السابقة هنا قالت إن زرَّ «مصاريف» في PicPos
+    //    يفتح عرضاً سابقاً لا إنشاءً — **وهي خطأ مقيس**.
+    //    `pos_previous_expenses_dialog.dart:202` فيه زرُّ «إضافة مصروف» يفتح
+    //    `PosExpenseDialog` بحقولها المحروسة. فالحراسةُ تصل فعلاً.
     'pos_deleted_items', // pos_deleted_items_dialog.dart
-    'pos_expense_type_select', // pos_expense_dialog.dart
     // ⚠️ 'pos_restore_held' حُذف: شاشةُ PicPos **تستورد**
     //    `pos/widgets/held_orders_dialog.dart` بحراسته كما هي، فالحراسةُ
     //    تصل فعلاً. كشفه الحارسُ بعد أن صار يتتبّع الاستيرادَ لا المجلدَ
     //    وحدَه — نفسُ سبب حذف `treasury_commission`.
 
-    // ── وسبعةٌ فاتت الجردَ اليدويَّ ولم تفت الحارس ──
-    // ⚠️ الستّةُ لها **نظائرُ نصّيةٌ** في ملفات PicPos، لكنّ أيّاً منها لم
-    // يُثبَت أنه **زرٌّ أو فعلٌ** يقابل ما تلفّه الحراسةُ في النظير القديم:
-    //   · `pos_customer_add` يحرس زرَّ «عميل جديد» **داخل** حوار اختيار
-    //     العميل؛ والحوارُ الذي يفتحه PicPos مستوردٌ، فلو كانت الحراسةُ فيه
-    //     لَما ظهر هنا أصلاً (الحارسُ يتتبّع الاستيراد). فهي في ملفٍّ آخرَ
-    //     لا يصله PicPos — يحتاج تحديدَ الزرّ المقابل قبل لفّه.
-    //   · `pos_note_add` — المطابقةُ الوحيدة تعليقٌ في `picpos_invoice_header`
-    //     لا حقلَ ملاحظة.
-    //   · `pos_grid_toggle` · `pos_low_stock_alert` · `pos_notifications` ·
-    //     `pos_expense_description` — مطابقاتٌ نصّيةٌ غيرُ محسومة.
+    // ── وثلاثةٌ باقيةٌ من السبعة التي فاتت الجردَ اليدويَّ ──
+    // ✅ 'pos_customer_add' و'pos_grid_toggle' شُطبتا (2026-08-12) — ولم
+    //    تكونا فجوةً قطُّ. الحارسُ كان يتتبّع **قفزةَ استيرادٍ واحدة**،
+    //    والحراسةُ تصل عبر وسيط:
+    //      · `picpos_pos_screen` → `pos_customer_selection_dialog`
+    //        → `customer_selector_v2` (الحارسُ هناك منذ Task 7).
+    //      · `pos_product_selection_panel` → `product_grid` (يُرسَم فعلاً،
+    //        `pos_product_selection_panel.dart:58`).
+    //    صار الحارسُ يتتبّع البلوغَ متعدياً — بشرط أن يذكر المستورِدُ رمزاً
+    //    من المستورَد، وإلا عدَّ البراميلُ محروساً ما لا يُرسم.
     //
-    // **لا تُبنى حراسةٌ على ظنّ**: أخطأ القياسُ السريعُ ثلاثَ مرّاتٍ في هذه
-    // المسألة وحدَها خلال جلسة 2026-08-12 (‏`pos_return` · `treasury_
-    // commission` · `pos_restore_held`). لكلٍّ من الستّة: حدّد الزرَّ
-    // المقابلَ في شاشة PicPos أوّلاً، ثم احرسه واشطب سطرَه.
-    'pos_customer_add',
-    'pos_expense_description',
-    'pos_grid_toggle',
+    // ⚠️ والثلاثةُ الباقية لها **نظائرُ نصّيةٌ** في ملفات PicPos، ولم يُثبَت
+    // لأيٍّ منها **زرٌّ أو فعلٌ** يقابل ما تلفّه الحراسةُ في النظير القديم:
+    //   · `pos_note_add` — **بلا ميزةٍ تُحرَس** (مقيسٌ 2026-08-12): يحرس لوحَ
+    //     ملاحظات/إضافات الصنف في `pos/widgets/cart_item_modifier_panel.dart`،
+    //     وهو `part` من `cart_item_tile.dart` — والملفُّ الأخير **لا تستورده
+    //     PicPos إطلاقاً** (سلّةُ PicPos أُعيدت كتابتُها، انظر أعلاه). فلا
+    //     حقلَ ملاحظةٍ على سطر السلّة أصلاً كي يُلَفّ.
+    //     ⚠️ وهذه هي الميزةُ التي سأل عنها المالك («ملاحظات/إضافات أصناف
+    //     المطبخ كما في ural»). أختُها في الإعدادات
+    //     (`ModifierManagementWidget` بكود `modifiers_manage`) **موجودةٌ
+    //     وموصولة** في «التكاملات والخدمات» لكن خلف `features.kitchenEnabled`،
+    //     وهو `false` لـ`BusinessProfile.lite`. فالمسألةُ نطاقٌ لا حراسة.
+    //   · `pos_low_stock_alert` · `pos_notifications` — مطابقاتٌ نصّيةٌ غيرُ
+    //     محسومة.
+    //
+    // **لا تُبنى حراسةٌ على ظنّ**: أخطأ القياسُ السريعُ خمسَ مرّاتٍ في هذه
+    // المسألة وحدَها (‏`pos_return` · `treasury_commission` ·
+    // `pos_restore_held` · ثم `pos_customer_add` الذي وُصف «فجوةً مؤكَّدة»
+    // وهو محروسٌ، و`pos_expense_*` الذي وُصف «بلا ميزة» والميزةُ موجودة).
+    // لكلٍّ من الثلاثة: حدّد الزرَّ المقابلَ في شاشة PicPos أوّلاً — بلقطةِ
+    // شاشةٍ من المالك لا ببحثٍ نصّيّ — ثم احرسه واشطب سطرَه.
     'pos_low_stock_alert',
     'pos_note_add',
     'pos_notifications',

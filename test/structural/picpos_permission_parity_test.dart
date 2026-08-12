@@ -74,18 +74,89 @@ final Map<String, String> _sources = () {
 /// الخزينة يستورد `treasury/widgets/receipt_voucher_dialog.dart` بحراسته كما
 /// هي، فالحراسةُ تصل إلى الشاشة فعلاً. قياسُ **المجلد** وحدَه كان سيطالب
 /// بتكرار حراسةٍ قائمة — وهو ضدُّ غرض الحارس.
+/// ⚠️ والبلوغُ **متعدٍّ**: قفزةٌ واحدةٌ كانت تفوّت الحراسةَ الواصلةَ عبر
+/// وسيط. `pos_customer_add` مثالُه المقيس — PicPos يستورد
+/// `pos/widgets/pos_customer_selection_dialog.dart`، وهو بدورِه يستورد
+/// `customer_selector_v2.dart` حيث الحارسُ فعلاً. فحسبه الحارسُ فجوةً وهو
+/// منفَّذٌ على المسار الحيّ منذ Task 7.
 Set<String> _legacyFilesImportedBy(String twin, String legacy) {
-  final imported = <String>{};
-  final re = RegExp("import\\s+'([^']*$legacy/[^']+\\.dart)'");
+  final root = 'lib/presentation/$legacy/';
+  final seen = <String>{};
+  final queue = <String>[];
+
+  final re = RegExp("(?:import|part)\\s+'([^']+\\.dart)'");
+
+  void enqueue(String path) {
+    if (!path.startsWith(root)) return;
+    if (!seen.add(path)) return;
+    queue.add(path);
+  }
+
   for (final e in _sources.entries) {
     if (!e.key.startsWith('lib/presentation/$twin/')) continue;
     for (final m in re.allMatches(e.value)) {
-      final rel = m.group(1)!;
-      final idx = rel.indexOf('$legacy/');
-      if (idx >= 0) imported.add('lib/presentation/${rel.substring(idx)}');
+      final resolved = _resolveImport(e.key, m.group(1)!);
+      if (resolved != null) enqueue(resolved);
     }
   }
-  return imported;
+
+  while (queue.isNotEmpty) {
+    final current = queue.removeLast();
+    final src = _sources[current];
+    if (src == null) continue;
+    for (final m in re.allMatches(src)) {
+      final resolved = _resolveImport(current, m.group(1)!);
+      if (resolved == null) continue;
+      // ⚠️ الاستيرادُ وحدَه لا يكفي بعد القفزة الأولى: البراميلُ والاستيرادُ
+      // العارض يجرّان رسمَ استيرادٍ كاملاً فيُعَدُّ محروساً ما لا يُرسم —
+      // وهذا اتجاهُ الخطأ الخطر (فجوةٌ حقيقيةٌ تُخفى). فلا تُتبَع الحافةُ إلا
+      // إن كان الملفُّ المستورِد **يذكر فعلاً** رمزاً معرَّفاً في المستورَد.
+      if (_referencesSymbolOf(src, resolved)) enqueue(resolved);
+    }
+  }
+
+  return seen;
+}
+
+final Map<String, Set<String>> _declaredCache = {};
+
+/// أسماءُ الأنواع المعرَّفة في ملف — تكفي لحالتنا (كلُّ ما يُرسم ودجت/كلاس).
+Set<String> _declaredTypes(String path) => _declaredCache.putIfAbsent(path, () {
+      final src = _sources[path];
+      if (src == null) return <String>{};
+      final re = RegExp(r'\b(?:class|mixin|enum|extension|typedef)\s+(\w+)');
+      return {for (final m in re.allMatches(src)) m.group(1)!};
+    });
+
+bool _referencesSymbolOf(String importerSource, String importedPath) {
+  final declared = _declaredTypes(importedPath);
+  // ملفُّ `part` لا يعرّف نوعاً بالضرورة وهو جزءٌ من نفس المكتبة — يُتبَع.
+  if (declared.isEmpty) return true;
+  for (final name in declared) {
+    if (RegExp('\\b$name\\b').hasMatch(importerSource)) return true;
+  }
+  return false;
+}
+
+/// يحوّل توجيهةَ `import`/`part` إلى مسارٍ تحت `lib/`، أو null لما لا يُقاس
+/// (‏`dart:` وحِزَمُ الطرف الثالث).
+String? _resolveImport(String from, String raw) {
+  if (raw.startsWith('dart:')) return null;
+  if (raw.startsWith('package:')) {
+    const self = 'package:ural_erp/';
+    if (!raw.startsWith(self)) return null;
+    return 'lib/${raw.substring(self.length)}';
+  }
+  final segments = from.split('/')..removeLast();
+  for (final part in raw.split('/')) {
+    if (part == '.' || part.isEmpty) continue;
+    if (part == '..') {
+      if (segments.isNotEmpty) segments.removeLast();
+      continue;
+    }
+    segments.add(part);
+  }
+  return segments.join('/');
 }
 
 /// هل يُذكر الكودُ (نصّاً خاماً أو ثابتاً) في ملفٍّ تحت [dir]؟
