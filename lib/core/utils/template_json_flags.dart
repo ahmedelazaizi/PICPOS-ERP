@@ -37,6 +37,33 @@ bool readJsonFlag(Object? value, {required bool defaultValue}) {
   return defaultValue;
 }
 
+/// أصغرُ مقاسٍ يُقرأ على ورقٍ حراريّ. ما دونه ليس تصميماً بل قيمةٌ فاسدة.
+const double kMinLegibleFontPt = 4.0;
+
+/// يحسم مقاسَ خطّ عناوين الجدول من القيمة المخزَّنة.
+///
+/// ⚠️ قِيس في قاعدة المالك 2026-08-12: `header_font_size = 1.0` بينما
+/// المحرّرُ يعرض 9pt. والطابعةُ كانت تقصّ إلى `clamp(1.0, …)` — فحدُّها
+/// الأدنى يقبل النقطةَ الواحدة، أي صفَّ عناوينَ موجوداً في الوثيقة وغيرَ
+/// مرئيٍّ على الورق. المستخدمُ يرى «العناوين لا تُطبع» ويبحث في المكان
+/// الخطأ.
+///
+/// فما دون [kMinLegibleFontPt] يُعامَل **غيرَ مضبوط** ويرجع إلى
+/// [fallback]. والسقفُ يضيق مع كثرة الأعمدة كما كان.
+double resolveHeaderFontSize(
+  double? stored, {
+  required int enabledColumns,
+  double fallback = 9.0,
+}) {
+  final max = enabledColumns >= 7
+      ? 7.0
+      : enabledColumns >= 6
+          ? 8.0
+          : 24.0;
+  final base = (stored == null || stored < kMinLegibleFontPt) ? fallback : stored;
+  return base.clamp(kMinLegibleFontPt, max);
+}
+
 /// إعداداتُ الجدول المفكوكة. الحقولُ `null` تعني «غيرُ مخزَّنة» — يقرّر
 /// المستدعي افتراضَه، فيبقى الافتراضُ في موضعٍ واحدٍ لكلّ قارئ.
 class TableJsonFlags {

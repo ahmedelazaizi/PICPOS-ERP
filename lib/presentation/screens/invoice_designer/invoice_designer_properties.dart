@@ -460,29 +460,20 @@ class _InvoiceDesignerPropertiesState extends State<InvoiceDesignerProperties> {
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
-                  _buildNumberField(
-                    'ارتفاع الصف',
-                    TextEditingController(
-                      text: widget.tableSettings!.rowHeight.toStringAsFixed(1),
+                  _TableNumberField(
+                    label: 'ارتفاع الصف',
+                    value: widget.tableSettings!.rowHeight,
+                    onChanged: (val) => widget.onUpdateTable!(
+                      widget.tableSettings!.copyWith(rowHeight: val),
                     ),
-                    (val) {
-                      widget.onUpdateTable!(
-                        widget.tableSettings!.copyWith(rowHeight: val),
-                      );
-                    },
                   ),
                   const SizedBox(height: 8),
-                  _buildNumberField(
-                    'حجم خط العنوان',
-                    TextEditingController(
-                      text: widget.tableSettings!.headerFontSize
-                          .toStringAsFixed(1),
+                  _TableNumberField(
+                    label: 'حجم خط العنوان',
+                    value: widget.tableSettings!.headerFontSize,
+                    onChanged: (val) => widget.onUpdateTable!(
+                      widget.tableSettings!.copyWith(headerFontSize: val),
                     ),
-                    (val) {
-                      widget.onUpdateTable!(
-                        widget.tableSettings!.copyWith(headerFontSize: val),
-                      );
-                    },
                   ),
                   const SizedBox(height: 4),
                   _buildTableColumnToggle(
@@ -491,16 +482,12 @@ class _InvoiceDesignerPropertiesState extends State<InvoiceDesignerProperties> {
                     (val) => _setJsonBool('_headerBold', val),
                   ),
                   const SizedBox(height: 8),
-                  _buildNumberField(
-                    'حجم خط البيانات',
-                    TextEditingController(
-                      text: widget.tableSettings!.fontSize.toStringAsFixed(1),
+                  _TableNumberField(
+                    label: 'حجم خط البيانات',
+                    value: widget.tableSettings!.fontSize,
+                    onChanged: (val) => widget.onUpdateTable!(
+                      widget.tableSettings!.copyWith(fontSize: val),
                     ),
-                    (val) {
-                      widget.onUpdateTable!(
-                        widget.tableSettings!.copyWith(fontSize: val),
-                      );
-                    },
                   ),
                   const SizedBox(height: 4),
                   _buildTableColumnToggle(
@@ -1211,3 +1198,87 @@ class _InvoiceDesignerPropertiesState extends State<InvoiceDesignerProperties> {
   }
 }
 
+
+/// حقلٌ رقميٌّ يملك مُتحكّمَه.
+///
+/// ── لماذا ودجت لا دالّة ───────────────────────────────────────────────────
+/// الحقولُ الثلاثةُ لإعدادات الجدول كانت تبني `TextEditingController` **داخل
+/// `build`**. وكلُّ إعادةِ بناءٍ — وهي تقع مع أيّ تعديلٍ آخرَ في اللوحة —
+/// تنشئ مُتحكّماً جديداً بالقيمة المخزَّنة، فيُمحى ما كتبه المستخدمُ قبل أن
+/// يفقد الحقلُ التركيز. والكتابةُ تقع عند `onSubmitted`/`onTapOutside`، فما
+/// لم يُسلَّم يضيع بلا أثر.
+///
+/// قِيس في قاعدة المالك 2026-08-12: `header_font_size = 1.0` بينما المحرّرُ
+/// يعرض 9pt — قيمةٌ في الذاكرة لم تصل القاعدةَ قط.
+///
+/// المُتحكّمُ هنا يعيش مع الحالة، ويُزامَن من الخارج **فقط حين لا يكون
+/// الحقلُ مركَّزاً** — فلا تُقتلع القيمةُ من تحت أصابع من يكتب.
+class _TableNumberField extends StatefulWidget {
+  const _TableNumberField({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String label;
+  final double value;
+  final ValueChanged<double> onChanged;
+
+  @override
+  State<_TableNumberField> createState() => _TableNumberFieldState();
+}
+
+class _TableNumberFieldState extends State<_TableNumberField> {
+  late final TextEditingController _controller =
+      TextEditingController(text: widget.value.toStringAsFixed(1));
+  final FocusNode _focus = FocusNode();
+
+  @override
+  void didUpdateWidget(covariant _TableNumberField old) {
+    super.didUpdateWidget(old);
+    if (!_focus.hasFocus && widget.value != old.value) {
+      _controller.text = widget.value.toStringAsFixed(1);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focus.dispose();
+    super.dispose();
+  }
+
+  void _commit() {
+    final parsed = double.tryParse(_controller.text.trim());
+    if (parsed != null && parsed != widget.value) widget.onChanged(parsed);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(widget.label,
+            style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        const SizedBox(height: 4),
+        TextField(
+          controller: _controller,
+          focusNode: _focus,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 14),
+          onSubmitted: (_) => _commit(),
+          onTapOutside: (_) {
+            _commit();
+            _focus.unfocus();
+          },
+          decoration: const InputDecoration(
+            isDense: true,
+            contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            border: OutlineInputBorder(),
+          ),
+        ),
+      ],
+    );
+  }
+}

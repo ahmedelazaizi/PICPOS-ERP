@@ -1367,8 +1367,11 @@ class TemplatedInvoiceService {
 
     // Use font sizes from settings — clamp to reasonable range for thermal paper
     // Auto-reduce header font when many columns are enabled
-    final maxHeaderFont = enabledCols >= 7 ? 7.0 : (enabledCols >= 6 ? 8.0 : 24.0);
-    final headerFontSize = (settings?.headerFontSize ?? 9.0).clamp(1.0, maxHeaderFont);
+    // ⚠️ الحدُّ الأدنى كان `1.0` — أي أن مقاساً فاسداً يُقبل كما هو فيصير
+    // صفُّ العناوين موجوداً في الوثيقة وغيرَ مرئيٍّ على الورق. قِيس في
+    // قاعدة المالك 2026-08-12: `header_font_size = 1.0` والمحرّرُ يعرض 9.
+    final headerFontSize =
+        resolveHeaderFontSize(settings?.headerFontSize, enabledColumns: enabledCols);
     final bodyFontSize = (settings?.fontSize ?? 8.0).clamp(1.0, 24.0);
     // ── صفُّ العناوين: حبرٌ لا تعبئة ──────────────────────────────────────
     //

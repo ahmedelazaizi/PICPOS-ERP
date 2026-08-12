@@ -48,6 +48,34 @@ void main() {
     });
   });
 
+  group('resolveHeaderFontSize — مقاسٌ فاسدٌ لا يمحو الصفّ', () {
+    test('القيمةُ المقيسةُ في قاعدة المالك (1.0pt) تُعامَل غيرَ مضبوطة', () {
+      // صفُّ عناوينَ بمقاس نقطةٍ واحدة موجودٌ في الوثيقة وغيرُ مرئيٍّ على
+      // الورق — والمستخدمُ يبحث عن السبب في المكان الخطأ.
+      expect(resolveHeaderFontSize(1.0, enabledColumns: 5), 9.0);
+      expect(resolveHeaderFontSize(0, enabledColumns: 5), 9.0);
+      expect(resolveHeaderFontSize(null, enabledColumns: 5), 9.0);
+    });
+
+    test('القيمةُ المعقولةُ تمرّ كما هي', () {
+      expect(resolveHeaderFontSize(9, enabledColumns: 5), 9.0);
+      expect(resolveHeaderFontSize(14, enabledColumns: 5), 14.0);
+    });
+
+    test('السقفُ يضيق مع كثرة الأعمدة — كما كان', () {
+      expect(resolveHeaderFontSize(12, enabledColumns: 6), 8.0);
+      expect(resolveHeaderFontSize(12, enabledColumns: 7), 7.0);
+      expect(resolveHeaderFontSize(12, enabledColumns: 5), 12.0);
+    });
+
+    test('ولا يهبط تحت حدّ القراءة مهما ضاق السقف', () {
+      expect(
+        resolveHeaderFontSize(1, enabledColumns: 8),
+        greaterThanOrEqualTo(kMinLegibleFontPt),
+      );
+    });
+  });
+
   group('parseTableFlags — عزلُ المفاتيح', () {
     test('قيمةٌ شاذّةٌ لا تُسقط جارتَها', () {
       final f = parseTableFlags(
