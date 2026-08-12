@@ -271,6 +271,36 @@ void main() {
     });
   });
 
+  test('ترتيبُ المبذور: الحركةُ ثم التسوية، والآجلُ تحت الإجمالي مباشرةً',
+      () async {
+    // ⚠️ ضبطُ الترتيب كان يبحث عن أوّل `startsWith('shift_total')` فيمسك
+    // `shift_total_sales` — بندَ **حركة** لا تسوية — فيدسّ كتلةَ القنوات
+    // قبل «إجمالي المبيعات» وينقلب ترتيبُ الورقة عن الشاشة. رُصد على ورقٍ
+    // حقيقيّ 2026-08-12.
+    final id = await db.into(db.invoiceTemplates).insert(
+          InvoiceTemplatesCompanion.insert(
+            name: 'تقرير إغلاق الوردية',
+            type: const Value('shift_closing'),
+            templateCategory: const Value('shift_closing'),
+            paperSize: const Value('80mm'),
+            paperWidth: const Value(80),
+          ),
+        );
+    await db.seedShiftClosingElementsForTest(id);
+    await db.backfillShiftClosingChannelElements();
+
+    final o = await orderedVariables(id);
+    int at(String k) => o.indexOf(k);
+
+    // الآجلُ تفصيلٌ من الإجمالي، فيليه مباشرةً.
+    expect(at('shift_credit_sales'), at('shift_total_sales') + 1);
+    // الحركةُ كلُّها قبل التسوية.
+    expect(at('shift_cash_refunds'), lessThan(at('shift_system_cash')));
+    // والتسويةُ قبل إجمالياتها.
+    expect(at('shift_click_variance'), lessThan(at('shift_total_system')));
+    expect(at('shift_total_system'), lessThan(at('shift_status')));
+  });
+
   test('قالبٌ كاملٌ لا يُمَسّ', () async {
     final id = await db.into(db.invoiceTemplates).insert(
           InvoiceTemplatesCompanion.insert(

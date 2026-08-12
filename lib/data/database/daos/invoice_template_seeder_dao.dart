@@ -349,7 +349,7 @@ extension InvoiceTemplateSeederDao on AppDatabase {
   /// مفتاحُ مراجعةِ قالب الوردية. تغييرُ القيمة يُعيد بناءَ عناصر القالب
   /// **مرّةً واحدة** عند الإقلاع التالي.
   static const _shiftTemplateRevKey = 'shift_closing_template_rev';
-  static const _shiftTemplateRev = '2026-08-12-movement';
+  static const _shiftTemplateRev = '2026-08-12-credit-under-total';
 
   /// يُعيد بناءَ عناصر قالب `shift_closing` بالترتيب المبذور — مرّةً واحدة.
   ///
@@ -410,8 +410,18 @@ extension InvoiceTemplateSeederDao on AppDatabase {
       if (channel.isEmpty) continue;
       final rest = elements.where((e) => !isChannel(e)).toList();
 
+      // ⚠️ `startsWith('shift_total')` يمسك `shift_total_sales` أيضاً — وهو
+      // بندُ **حركةٍ** لا تسوية. فكانت الكتلةُ تُدسّ قبل «إجمالي المبيعات»
+      // فينقلب ترتيبُ الورقة عن الشاشة (رُصد على ورقٍ حقيقيّ 2026-08-12).
+      // المقصودُ إجمالياتُ التسوية وحدَها.
+      const reconTotals = {
+        'shift_total_system',
+        'shift_total_actual',
+        'shift_total_variance',
+        'shift_status',
+      };
       final totalsIdx =
-          rest.indexWhere((e) => (e.content ?? '').startsWith('shift_total'));
+          rest.indexWhere((e) => reconTotals.contains(e.content));
       final at = totalsIdx < 0 ? rest.length : totalsIdx;
 
       // الترتيبُ القانونيّ داخل الكتلة: كلُّ قناةٍ بعنوانها ثم صفوفها.
@@ -608,7 +618,27 @@ extension InvoiceTemplateSeederDao on AppDatabase {
         'alignment': 'right',
         'fontSize': 9.0,
         'fontWeight': 'bold',
-        'labelAr': 'إجمالي المبيعات',
+        'labelAr': 'إجمالي المبيعات (شامل الآجل)',
+      },
+      // الآجلُ **تحت الإجمالي مباشرةً** لا في ذيل القسم: هو تفصيلٌ منه،
+      // و«منها» تربطه به. بعيداً عنه كان يُقرأ بنداً مستقلاً فيجمعه القارئُ
+      // مرّةً ثانية (بلاغ المالك 2026-08-12).
+      //
+      // وهو للتوضيح لا للتسوية: مبيعاتٌ لم تُقبَض ولا خزنةَ تحملها، فضمُّه
+      // إلى `shift_total_system` يخلق عجزاً وهمياً بقيمته.
+      {
+        'type': 'variable',
+        'content': 'shift_credit_sales',
+        'alignment': 'right',
+        'fontSize': 9.0,
+        'labelAr': 'منها آجل (خارج التسوية)',
+      },
+      {
+        'type': 'variable',
+        'content': 'shift_credit_count',
+        'alignment': 'right',
+        'fontSize': 9.0,
+        'labelAr': 'عدد الفواتير الآجلة',
       },
       {
         'type': 'variable',
@@ -630,22 +660,6 @@ extension InvoiceTemplateSeederDao on AppDatabase {
         'alignment': 'right',
         'fontSize': 9.0,
         'labelAr': 'مرتجعات نقدية',
-      },
-      // الآجلُ للتوضيح لا للتسوية — منفصلٌ بنصٍّ صريحٍ كي لا يجمعه أحدٌ
-      // مع الماليات. لا خزنةَ تحمله، فضمُّه يخلق عجزاً وهمياً.
-      {
-        'type': 'variable',
-        'content': 'shift_credit_count',
-        'alignment': 'right',
-        'fontSize': 9.0,
-        'labelAr': 'عدد المبيعات الآجلة',
-      },
-      {
-        'type': 'variable',
-        'content': 'shift_credit_sales',
-        'alignment': 'right',
-        'fontSize': 9.0,
-        'labelAr': 'المبيعات الآجلة (للتوضيح — خارج التسوية)',
       },
       {'type': 'line'},
       // Cash reconciliation

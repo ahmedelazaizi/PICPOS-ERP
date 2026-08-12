@@ -929,6 +929,23 @@ class TemplatedInvoiceService {
       // Totals-like fields render as label ↔ value rows (right-aligned).
       // ══════════════════════════════════════════════════════════════════
       default:
+        // نصٌّ ثابتٌ يُرسم كما هو.
+        //
+        // ⚠️ `_resolveType` يستبدل نوعَ عنصر النصّ **بمحتواه** كي يصلح
+        // مفتاحاً للترتيب وإزالة التكرار. فحالةُ `case 'text'` أعلاه لا
+        // تُبلَغ أبداً لأيّ نصٍّ له محتوى — يسقط هنا، ولا قيمةَ بيانٍ له،
+        // فيختفي بلا أثر. رُصد على ورقٍ حقيقيّ 2026-08-12: عناوينُ قنوات
+        // تقرير الوردية **وسطرا التوقيع** غائبةٌ عن كلّ مطبوعٍ بقالب.
+        //
+        // الشرطُ يفحص النوعَ الخام لا المُحلَّل، ويأتي **داخل** `default`
+        // لا قبل الـswitch: عنصرُ نصٍّ محتواه مفتاحُ بياناتٍ معروفٌ يبقى
+        // على سلوكه القديم فيُحَلّ قيمةً.
+        if ((element.elementType == 'text' ||
+                element.elementType == 'custom_text') &&
+            (element.content?.isNotEmpty ?? false)) {
+          return pw.Text(element.content!, style: style, textAlign: align);
+        }
+
         final label = element.labelAr ?? _getLabel(resolvedType);
         final value = _getDataValue(
           resolvedType,

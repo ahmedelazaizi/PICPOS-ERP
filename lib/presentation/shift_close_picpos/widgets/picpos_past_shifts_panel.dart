@@ -529,14 +529,17 @@ class _ShiftReportDialog extends StatelessWidget {
                 const SizedBox(height: 16),
                 const _SectionLabel('الحركة'),
                 _Row('الرصيد الافتتاحي', snapshot.openingBalance),
-                _Row('إجمالي المبيعات', snapshot.totalSales),
+                // الآجلُ تحت الإجمالي مباشرةً و«منها» تربطه به — بعيداً عنه
+                // كان يُقرأ بنداً مستقلاً فيُجمع مرّتين. ونفسُ الترتيب على
+                // الورقة كي لا تفترق الشاشةُ عن المطبوع.
+                _Row('إجمالي المبيعات (شامل الآجل)', snapshot.totalSales),
+                _Row(
+                  'منها آجل — خارج التسوية (${snapshot.creditSalesCount})',
+                  snapshot.creditSales,
+                ),
                 _Row('دخل النقد', snapshot.cashIncome),
                 _Row('المصروفات', snapshot.totalExpenses),
                 _Row('المرتجعات', snapshot.cashRefunds),
-                _Row(
-                  'المبيعات الآجلة (${snapshot.creditSalesCount})',
-                  snapshot.creditSales,
-                ),
                 const SizedBox(height: 16),
                 const _SectionLabel('تفاصيل التسوية'),
                 const _ReconHeader(),
