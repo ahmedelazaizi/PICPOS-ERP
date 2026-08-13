@@ -36,6 +36,7 @@ import 'package:ural_erp/services/dual_approval_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/auth/bootstrap_admin.dart';
+import '../../../core/permissions/permission_codes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 
@@ -58,6 +59,34 @@ import '../../picpos_shell/picpos_screen_scaffold.dart';
 /// `allUsersProvider`/`allRolesProvider`/`allUserBranchNamesProvider` وبقية
 /// المزوّدات والحوارات من UralCash — فقط طبقة العرض الخارجية تبدّلت لـ
 /// picpos_shell (هيدر PicPosScreenScaffold بدل Scaffold+AppBar).
+bool _isAdmin(List<String> p) => p.contains('system_admin') || p.contains('*');
+
+/// فتحُ شاشة إدارة المستخدمين (`users_manage`).
+///
+/// ── لماذا الفحصُ في الشاشة لا في مداخلها ────────────────────────────────
+/// كانت الشاشةُ بلا أيّ فحصٍ داخليّ، وحمايتُها كلُّها على المداخل: لفّةٌ في
+/// شاشة الإعدادات، ومدخلٌ في كتالوج التقارير **نُسي فيه `permission:`** —
+/// فمن يملك `reports_view` وحدَه كان يبلغ الشاشةَ ويُسنِد لنفسه دورَ مدير
+/// النظام (‏أُغلق 2026-08-13).
+///
+/// وحراسةُ المداخل وحدَها هي بعينها فئةُ العطب التي طاردناها اليومَ كلَّه:
+/// بابٌ يُحرَس وبابٌ يُنسى. فالفحصُ هنا نقطةٌ واحدةٌ يمرّ بها كلُّ مدخلٍ
+/// حاليٍّ ومستقبليّ.
+@visibleForTesting
+bool canManageUsersCodes(List<String> permissions) =>
+    _isAdmin(permissions) || permissions.contains(PermissionCodes.usersManage);
+
+/// إسنادُ دورٍ لمستخدم (`roles_manage`) — **لا** `users_manage`.
+///
+/// منحُ دورٍ قرارُ صلاحياتٍ لا تحريرُ سجلّ مستخدم، وهو المسارُ الذي يصنع
+/// مديرَ نظامٍ جديداً. فمن يدير الحساباتِ لا يصعّد نفسَه بالضرورة.
+///
+/// ⚠️ وكان حارسُه الوحيدُ `DualApprovalService` (سبيك ٠٦٣) وهو **مطفأٌ
+/// افتراضياً** بإعداد، فلم يكن ثمّة فحصٌ فعليٌّ إطلاقاً.
+@visibleForTesting
+bool canAssignUserRoleCodes(List<String> permissions) =>
+    _isAdmin(permissions) || permissions.contains(PermissionCodes.rolesManage);
+
 class UsersManagementPicposScreen extends ConsumerStatefulWidget {
   const UsersManagementPicposScreen({super.key});
 
@@ -70,6 +99,20 @@ class _UsersManagementPicposScreenState
     extends ConsumerState<UsersManagementPicposScreen> {
   @override
   Widget build(BuildContext context) {
+    // ── بوّابةُ الشاشة ────────────────────────────────────────────────────
+    // ⚠️ `.value` لا `asData?.value`: الثاني يرجع `null` في **كلّ** إعادة
+    // تحميلٍ لا في الأولى وحدَها، فكان سيفتح الشاشةَ لحظةَ كلّ تحديث. نفسُ
+    // العطب الذي أُصلح في `PermissionGuard` (‏4f774fd3).
+    // وبلا قيمةٍ بعد ⇒ **يُغلَق**: لا تُعرض الشاشةُ «تفاؤلاً» ريثما تُقرأ.
+    final perms = ref.watch(currentUserPermissionsProvider).value;
+    if (perms == null || !canManageUsersCodes(perms)) {
+      return _deniedScaffold(
+        perms == null
+            ? 'جارٍ التحقّق من الصلاحية…'
+            : 'ليس لديك صلاحية «إدارة المستخدمين».',
+      );
+    }
+
     final usersAsync = ref.watch(allUsersProvider);
     final rolesAsync = ref.watch(allRolesProvider);
     final branchNamesAsync = ref.watch(allUserBranchNamesProvider);
@@ -502,6 +545,33 @@ class _UsersManagementPicposScreenState
     );
   }
 
+  /// شاشةُ المنع — بنفس الترويسة كي يعرف المستخدمُ أين هو ويرجع، لا صفحةً
+  /// بيضاءَ تُقرأ عطلاً. والرسالةُ تسمّي الصلاحيةَ الناقصةَ كي يعرف المديرُ
+  /// ما يمنحه بدل أن يجرّب.
+  Widget _deniedScaffold(String message) => PicPosScreenScaffold(
+        title: 'المستخدمون',
+        subtitle: 'إدارة حسابات المستخدمين والصلاحيات',
+        icon: PhosphorIconsBold.users,
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(PhosphorIconsBold.lockKey,
+                    size: 48, color: AppColors.textMuted),
+                const SizedBox(height: 16),
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: AppColors.textMuted),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
   Future<void> _showAddUserDialog() async {
     final result = await showDialog<bool>(
       context: context,
@@ -530,6 +600,22 @@ class _UsersManagementPicposScreenState
 
   Future<void> _updateUserRole(int userId, int? roleId) async {
     if (roleId == null) return;
+    // ── `roles_manage` — الفحصُ **قبل** الموافقة الثنائية ─────────────────
+    // إسنادُ الدور هو مسارُ صناعةِ مديرِ نظامٍ جديد. وحارسُه الوحيدُ كان
+    // `DualApprovalService` أدناه وهو **مطفأٌ افتراضياً** بإعداد
+    // (`requireApprovalForOp` يرجع `true` بلا حوارٍ حين تكون الرايةُ مطفأة)،
+    // فلم يكن ثمّة فحصٌ فعليٌّ إطلاقاً. (مقيسٌ 2026-08-13)
+    //
+    // والترتيبُ مقصود: لا يُستدعى مُوافقٌ ثانٍ لعمليةٍ سترفض أصلاً.
+    final perms =
+        ref.read(currentUserPermissionsProvider).value ?? const <String>[];
+    if (!canAssignUserRoleCodes(perms)) {
+      if (mounted) {
+        AppToast.show(context, 'ليس لديك صلاحية «إدارة صلاحيات الأدوار»',
+            type: ToastType.error);
+      }
+      return;
+    }
     // 063 (D1-005): dual-approval gate (settings-flag gated; OFF by
     // default = no dialog).
     final approved = await DualApprovalService.requireApprovalForOp(

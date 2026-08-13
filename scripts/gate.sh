@@ -195,6 +195,14 @@ rm -rf build/native_assets
 #    `picposParityGaps` — وتغطيةٌ إلزاميةٌ للشواهد، ومانعُ شاهدٍ بائت،
 #    وضابطُ آليّةٍ على مصدرٍ صناعيّ.)
 #
+# تشغيلةُ 2026-08-13 بعد حارس شاشة المستخدمين (‏c=4، ‏--pg):
+#   analyze 6 info · unit 3289 · widget 656 · integration 710 · pg 45
+#   (‏`GATE_EXIT=0` ونصُّ «كلها خضراء». الزيادةُ ١٢ كلُّها في
+#    `users_picpos_permission_test`: ٨ لدالّتَي القرار، وضابطُ «فتحُ الشاشة
+#    لا يمنح إسنادَ الدور»، وتمايزُ الكودَين، وتأكيدا **وصلٍ** يقيسان ترتيبَ
+#    الفحص في `build` وفي `_updateUserRole` — لأن الدوالّ الخالصةَ تمرّ
+#    خضراءَ ولو حُذفت البوّابةُ من الشاشة.)
+#
 #    ⚠️ ودرسٌ سادس: **الحقلُ الذي يحمل معنى عرضٍ يضيع عند حدّ التحويل.**
 #    `InvoiceItem.isCategoryHeader` رايةٌ يحترمها المسارُ الحراريّ، وتسقط في
 #    `items.map((i) => <String, dynamic>{…})` إلى القالب — بلا خطأِ ترجمةٍ
@@ -305,7 +313,7 @@ fi
 # على `DELETE FROM "accounts"` لأن `safes.linkedAccountId` صار يشدُّ الدليل،
 # و٢ افتراضَ أن رجلَ النقدية على `1111`. فالوصفةُ الموصوفة لو طُبّقت بالجملة
 # لَما أصلحت شيئاً — اقرأ رسالةَ الفشل، لا وصفةَ المستند.
-run_suite "unit + data + structural + services" 3277 \
+run_suite "unit + data + structural + services" 3289 \
   flutter test test/unit test/data test/structural test/services --concurrency="$LOCAL_CONCURRENCY"
 
 # الواجهات والنطاقُ والنواة — كانت **كلُّها** خارج البوابة حتى 2026-08-09.
