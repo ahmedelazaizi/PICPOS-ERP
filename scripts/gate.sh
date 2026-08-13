@@ -188,6 +188,13 @@ rm -rf build/native_assets
 #    `flutter analyze lib` وحدَه صفرُ ملاحظات. فادّعاءُ «صفر» في التشغيلة
 #    السابقة كان عن `lib/` لا عن `lib test` التي يقيسها السطرُ ٢٦٤.
 #
+# تشغيلةُ 2026-08-13 بعد الحارس المعاكس (‏c=4، ‏--pg):
+#   analyze 6 info · unit 3277 · widget 656 · integration 710 · pg 45
+#   (‏`GATE_EXIT=0` ونصُّ «كلها خضراء». الزيادةُ ١٦ كلُّها في
+#    `picpos_permission_parity_test`: ١٣ شاهدَ غيابٍ — واحدٌ لكلّ مدخلٍ في
+#    `picposParityGaps` — وتغطيةٌ إلزاميةٌ للشواهد، ومانعُ شاهدٍ بائت،
+#    وضابطُ آليّةٍ على مصدرٍ صناعيّ.)
+#
 #    ⚠️ ودرسٌ سادس: **الحقلُ الذي يحمل معنى عرضٍ يضيع عند حدّ التحويل.**
 #    `InvoiceItem.isCategoryHeader` رايةٌ يحترمها المسارُ الحراريّ، وتسقط في
 #    `items.map((i) => <String, dynamic>{…})` إلى القالب — بلا خطأِ ترجمةٍ
@@ -298,7 +305,7 @@ fi
 # على `DELETE FROM "accounts"` لأن `safes.linkedAccountId` صار يشدُّ الدليل،
 # و٢ افتراضَ أن رجلَ النقدية على `1111`. فالوصفةُ الموصوفة لو طُبّقت بالجملة
 # لَما أصلحت شيئاً — اقرأ رسالةَ الفشل، لا وصفةَ المستند.
-run_suite "unit + data + structural + services" 3261 \
+run_suite "unit + data + structural + services" 3277 \
   flutter test test/unit test/data test/structural test/services --concurrency="$LOCAL_CONCURRENCY"
 
 # الواجهات والنطاقُ والنواة — كانت **كلُّها** خارج البوابة حتى 2026-08-09.

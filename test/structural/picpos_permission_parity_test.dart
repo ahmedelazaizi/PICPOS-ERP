@@ -260,6 +260,80 @@ Set<String> _currentGaps() {
   return gaps;
 }
 
+// ── الحارسُ المعاكس ────────────────────────────────────────────────────────
+//
+// `picposParityGaps` يقول «لا سطحَ يُحرَس اليوم». وهو حكمُ **غياب**، ولا شيءَ
+// في الحارس أعلاه يمنعه من أن يبطل صامتاً: يومَ يُضاف زرُّ مرتجعٍ أو طاولاتٍ
+// لشاشة PicPos **بلا حراسة** لن يذكر أحدٌ الكود، فيبقى الكودُ «غيرَ واصل» أي
+// فجوةً مسجَّلة، فيمرّ الاختبارُ أخضرَ وقد وُلد ثقبٌ جديد.
+//
+// والاختبارُ الثالث («السجلُّ يتقلّص») لا يسدّ هذا: هو يفشل لمدخلٍ **صار
+// محروساً** — أي للحالة السعيدة. أمّا الميزةُ التي تصل بلا حراسة فلا أثرَ لها
+// في مطابقات الكود إطلاقاً.
+//
+// فالحارسُ لا يجوز أن يرصد **ذكرَ الكود** بل **وصولَ الميزة**. ولكلّ مدخلٍ في
+// السجلّ شاهدُ غيابٍ مكتوبٌ نثراً هناك («لا مِسطرةَ زيادةٍ ونقص» · «صفرُ
+// مطابقاتٍ لـ`TablePos`»). وهذه الخريطةُ تحوّل ذلك النثرَ إلى تأكيدٍ تنفيذيّ.
+//
+// ⚠️ الشواهدُ تُقاس على الكود **بلا تعليقات**: خمسٌ منها (`استبدال` ·
+// `العروض` · `applyOffer` · `TouchKeyboard` · `Return`) لها اليومَ مطابقاتٌ في
+// تعليقاتٍ فقط، ولولا التجريدُ لوُلد الحارسُ أحمرَ بلا سبب.
+const _absenceWitness = <String, List<String>>{
+  'pos_booking': ['حجز', 'Booking'],
+  'pos_exchange': ['استبدال', 'Exchange'],
+  'pos_deleted_items': ['الأصناف المحذوفة', 'DeletedItems'],
+  'pos_keyboard': ['لوحة المفاتيح'],
+  'pos_offers': ['العروض', 'OffersDialog'],
+  'pos_return': ['مرتجع', 'SalesReturn'],
+  // جدولُ PicPos أُعيدت كتابتُه بأعمدةٍ ثابتةٍ بلا مِسطرةِ خطوة — فظهورُ زرِّ
+  // خطوةٍ أو حسابِ خطوةٍ على الكمية هو وصولُ الميزة بعينه.
+  'pos_item_plus': ['IconsBold.plus', 'quantity + 1'],
+  'pos_item_minus': ['IconsBold.minus', 'quantity - 1'],
+  'pos_table_select': ['طاولة', 'TablePos', 'table_pos'],
+  'pos_table_bill': ['طاولة', 'TablePos', 'table_pos'],
+  'tables_add_items': ['طاولة', 'TablePos', 'table_pos'],
+  'tables_cancel': ['طاولة', 'TablePos', 'table_pos'],
+  'tables_checkout': ['طاولة', 'TablePos', 'table_pos'],
+};
+
+/// مدخلاتٌ بلا شاهدٍ **بسببٍ صريح** — لا بالإهمال.
+///
+/// الاثنان غيرُ محسومَين أصلاً: لم يُثبَت لأيٍّ منهما زرٌّ مقابلٌ في PicPos،
+/// ويحتاجان لقطةَ شاشةٍ من المالك (‏لا بحثاً نصّياً — أخطأ خمسَ مرّاتٍ في هذه
+/// المسألة وحدَها). ولا يصلح لهما شاهدٌ نصّيّ بعد: `Notification` يطابق
+/// `PosNotificationType` وهو نظامُ التوست القائم، فالشاهدُ كان سيولد أحمرَ
+/// كاذباً — ومن يضيف شاهداً كاذباً يُدرّب القارئَ على تجاهل الأحمر.
+const _witnessExempt = <String>{
+  'pos_low_stock_alert',
+  'pos_notifications',
+};
+
+/// المجلدُ الذي **ستهبط فيه** الميزةُ لو وصلت.
+///
+/// ⚠️ مقيسٌ لا مفترَض: مسحُ التوائم الأربعة كلِّها ولّد أربعَ حمراواتٍ كاذبة
+/// من أوّل تشغيلة — `IconsBold.plus` أيقونةُ زرِّ «إضافة صنف» في شاشة الأصناف،
+/// و«لوحة المفاتيح» تسميةٌ في الإعدادات، و«العروض» كلمةٌ في شاشة الرئيسية.
+/// ولا واحدةَ منها تقول شيئاً عن سلّة البيع.
+///
+/// وكلُّ المدخلات الثلاثةَ عشرَ ميزاتُ **شاشة بيع**: مِسطرةُ الكمية · زرُّ
+/// المرتجع · الطاولات · العروض · الحجز · الاستبدال · لوحة المفاتيح. فمداها
+/// `pos_picpos/` وحدَه — وهو نفسُ ما تقوله أسبابُ السجلّ نثراً («جدولُ PicPos
+/// بلا مِسطرة» · «رأسُ شاشة PicPos لا يعرض طاولات»).
+///
+/// ومن يضيف مدخلاً لميزةٍ في توأمٍ آخر فليوسّع هذا **لمجلده هو**، لا للأربعة.
+const _witnessScope = <String>['pos_picpos'];
+
+/// مواضعُ [marker] في كود المجلدات المعطاة، بلا تعليقات.
+@visibleForTesting
+List<String> witnessHitsIn(Iterable<String> twinDirs, String marker) {
+  final hits = <String>[];
+  for (final e in _sources.keys) {
+    if (!twinDirs.any((d) => e.startsWith('lib/presentation/$d/'))) continue;
+    if (_codeOnly(e).contains(marker)) hits.add(e);
+  }
+  return hits;
+}
+
 void main() {
   // ── حراسةُ الحارس ────────────────────────────────────────────────────────
   // في حارسٍ أمنيّ الإيجابُ الكاذبُ أرخصُ من السلب الكاذب: الأولُ ضجيجٌ
@@ -342,6 +416,64 @@ void main() {
           'على المسار الحيّ. إمّا تُحرَس في التوأم، أو تُسجَّل في '
           '`picposParityGaps` بسببٍ صريح.',
     );
+  });
+
+  group('الحارسُ المعاكس: ميزةٌ وصلت وسطرُها ما زال مسجَّلاً «بلا ميزة»', () {
+    test('لكلّ مدخلٍ في السجلّ شاهدُ غيابٍ أو إعفاءٌ مُعلَّل', () {
+      final unwitnessed = PermissionEnforcementRegistry.picposParityGaps
+          .where((c) =>
+              !_absenceWitness.containsKey(c) && !_witnessExempt.contains(c))
+          .toList()
+        ..sort();
+      expect(
+        unwitnessed,
+        isEmpty,
+        reason: 'مدخلٌ في `picposParityGaps` بلا شاهدِ غياب. السجلُّ يقول «لا '
+            'ميزةَ تُحرَس»، وهذا حكمٌ يبطل صامتاً يومَ تصل الميزة. أضِف '
+            'عباراتٍ تدلّ على وصولها في `_absenceWitness`، أو أعفِه في '
+            '`_witnessExempt` بسببٍ مكتوب.',
+      );
+    });
+
+    test('ولا شاهدَ بائتٌ لمدخلٍ شُطب', () {
+      // سجلٌّ يحمل شواهدَ لأكوادٍ لم تعد فيه يضلّل القارئَ ويكذب على الجديد.
+      final orphan = {..._absenceWitness.keys, ..._witnessExempt}
+          .where((c) => !PermissionEnforcementRegistry.picposParityGaps
+              .contains(c))
+          .toList()
+        ..sort();
+      expect(orphan, isEmpty,
+          reason: 'شاهدٌ لكودٍ لم يعد مسجَّلاً فجوةً — احذفه');
+    });
+
+    test('والآليّةُ ترصد فعلاً — ضابطٌ على مصدرٍ صناعيّ', () {
+      // بلا هذا قد تمرّ الخريطةُ كلُّها خضراءَ لأن المطابقةَ معطوبة، لا لأن
+      // الميزةَ غائبة. وهو الفرقُ بين حارسٍ يعمل وحارسٍ يبدو أنه يعمل.
+      const arrived = "IconButton(icon: Icon(PhosphorIconsBold.plus), "
+          "onPressed: () => cart.updateQuantity(i, item.quantity + 1))";
+      expect(arrived.contains('IconsBold.plus'), isTrue);
+      expect(arrived.contains('quantity + 1'), isTrue);
+      // والتعليقُ لا يُرصد — وإلا وُلد الحارسُ أحمرَ على وثائقَ قائمة.
+      expect(stripComments('// زرُّ طاولة TablePos').contains('TablePos'),
+          isFalse);
+    });
+
+    for (final entry in _absenceWitness.entries) {
+      test('${entry.key} — الميزةُ لم تصل بعد', () {
+        for (final marker in entry.value) {
+          final hits = witnessHitsIn(_witnessScope, marker);
+          expect(
+            hits,
+            isEmpty,
+            reason: 'الشاهدُ «$marker» ظهر في توأم PicPos ⇒ يبدو أن ميزةَ '
+                '«${entry.key}» وصلت. والكودُ مسجَّلٌ في `picposParityGaps` '
+                'بوصفه «بلا ميزة»، فحارسُ التكافؤ يمرّ أخضرَ وهو مفتوح.\n'
+                'إمّا تُحرَس الميزةُ ويُشطب السطرُ من السجلّ، وإمّا كانت '
+                'المطابقةُ عرضيةً فيُضيَّق الشاهد — ولا يُحذف بلا قياس.',
+          );
+        }
+      });
+    }
   });
 
   test('والسجلُّ يتقلّص: لا مدخلَ صار منفَّذاً وبقي مكتوباً', () {
