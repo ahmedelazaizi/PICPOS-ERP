@@ -1212,8 +1212,22 @@ class OfflineSyncWorker {
       case 'product_units':
         if (operation == 'insert') {
           return proxy.submitProductUnitMapping(payload, idempotencyKey: idempotencyKey);
+        } else if (operation == 'update') {
+          // ⚠️ كان هذا الفرعُ **غائباً**، فيسقط `update` على `break` ويعود
+          // `null` ⇒ يُعلَّم في الطابور **ناجحاً** بلا إرسال. تعديلُ سعرِ
+          // وحدةٍ أو معامِلِ تحويلٍ أثناء انقطاعٍ كان يُمحى من الطابور ثم
+          // يُرجَع بأوّل سحبٍ تالٍ (`serverWins`) — فيبيع الكرتونةَ بسعرٍ
+          // خاطئ. نفسُ فئةِ العطب التي أُغلقت لـ`parties/update` و
+          // `sales/update`.
+          await proxy.updateProductUnitMapping(
+              payload['id'] as int, payload,
+              idempotencyKey: idempotencyKey);
         } else if (operation == 'delete') {
           await proxy.deleteProductUnitMapping(payload['id'] as int, idempotencyKey: idempotencyKey);
+        } else {
+          // فخُّ الفئة: عمليةٌ غيرُ معروفةٍ تُرمى ولا تُبتلع. الصمتُ هنا هو
+          // العطبُ نفسُه.
+          throw StateError('Unhandled op $operation for table $table');
         }
         break;
 

@@ -203,6 +203,19 @@ rm -rf build/native_assets
 #    الفحص في `build` وفي `_updateUserRole` — لأن الدوالّ الخالصةَ تمرّ
 #    خضراءَ ولو حُذفت البوّابةُ من الشاشة.)
 #
+# تشغيلةُ 2026-08-13 بعد الأبواب الثانية وعيوب التزامن (‏c=4، ‏--pg):
+#   analyze 6 info · unit 3301 · widget 656 · integration 710 · pg 45
+#   (‏`GATE_EXIT=0` ونصُّ «كلها خضراء». الزيادةُ ١٢: ٥ في
+#    `picpos_second_door_guards_test` (‏سند القبض · ثلاثةُ قِمَعِ «جديد» ·
+#    إعادةُ الطباعة) و٧ في `sync_confirmed_defects_test` (‏نجاحُ المزامنة
+#    الأولى مشروط · فشلُ الجلب يُحتسب فشلاً · التخطّي المقصود يبقى محايداً ·
+#    رقمٌ واحدٌ للبيعة ×٢ · `product_units/update` وفخُّ فئته).
+#
+#    ⚠️ وتشغيلةُ ما قبلها سقطت `GATE_EXIT=1` بفشلٍ واحد:
+#    `permission_nontoggleable_registry_test` عدّادُ تريّاجٍ مقفولٌ على ٣٤
+#    وصار ٤٤ بعد حذف خدمةٍ ميّتة. وهو حارسٌ فعل ما بُني له — راجَعتُ التريّاجَ
+#    وحدّثتُ الرقمَ بسببٍ مكتوب، ولم أرفعه لأُخضِر البوابة.
+#
 #    ⚠️ ودرسٌ سادس: **الحقلُ الذي يحمل معنى عرضٍ يضيع عند حدّ التحويل.**
 #    `InvoiceItem.isCategoryHeader` رايةٌ يحترمها المسارُ الحراريّ، وتسقط في
 #    `items.map((i) => <String, dynamic>{…})` إلى القالب — بلا خطأِ ترجمةٍ
@@ -313,7 +326,7 @@ fi
 # على `DELETE FROM "accounts"` لأن `safes.linkedAccountId` صار يشدُّ الدليل،
 # و٢ افتراضَ أن رجلَ النقدية على `1111`. فالوصفةُ الموصوفة لو طُبّقت بالجملة
 # لَما أصلحت شيئاً — اقرأ رسالةَ الفشل، لا وصفةَ المستند.
-run_suite "unit + data + structural + services" 3289 \
+run_suite "unit + data + structural + services" 3301 \
   flutter test test/unit test/data test/structural test/services --concurrency="$LOCAL_CONCURRENCY"
 
 # الواجهات والنطاقُ والنواة — كانت **كلُّها** خارج البوابة حتى 2026-08-09.
