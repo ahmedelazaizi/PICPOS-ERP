@@ -355,9 +355,16 @@ extension DatabaseSeederPostgres on AppDatabase {
     }
 
     // ── Defaults (mirror of seedRolesAndPermissions in database_seeder_permissions.dart) ──
+    // ⚠️ «مرآة» بالاسم لا بالمضمون: هذه القائمةُ متأخّرةٌ عن نظيرتها في
+    // `database_seeder_permissions.dart` (‏ينقصها `pos_shift_open` و
+    // `sales_create` و`sales_view` و`dashboard_*` و`sales_amounts_view` …).
+    // انحرافٌ قائمٌ سابقٌ لهذه الدفعة، مسجَّلٌ ولم يُصلَح هنا كي لا يُخلط
+    // بإصلاح الصلاحيات.
     const cashierPerms = [
       'pos_access', 'pos_hold_order', 'pos_save', 'pos_print',
       'pos_shift_close',
+      // 2026-08-13 — شريحةُ «توصيل» صارت محروسةً بـ`pos_delivery`.
+      'pos_delivery',
     ];
     const stockPerms = [
       'inventory_view', 'inventory_edit', 'products_view', 'products_add',

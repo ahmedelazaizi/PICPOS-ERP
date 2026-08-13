@@ -174,6 +174,20 @@ rm -rf build/native_assets
 #
 #    و`analyze` نزل من ٦ info إلى **صفر** — الستّةُ كانت كلُّها في `test/`.
 #
+# تشغيلةُ 2026-08-13 بعد إصلاح ثقوب الصلاحيات وحارس التكافؤ (‏c=4، ‏--pg):
+#   analyze 6 info · unit 3261 · widget 656 · integration 710 · pg 45
+#   (‏آخرُ تشغيلةٍ كاملةٍ على شجرةٍ ثابتة — `GATE_EXIT=0` ونصُّ «كلها خضراء».
+#    الزيادةُ ٢١ في unit: ١٦ لأربعة أكوادِ صلاحيةٍ جديدةٍ في
+#    `picpos_cart_permissions_test` (‏`pos_discount` · `pos_hold_order` ·
+#    `pos_expense` · `pos_delivery` ×٤ حالات) · و٥ لحراسة حارس التكافؤ نفسِه
+#    (‏قواعدُ المطابقة: رفضُ اسم الثابت بلا بادئة · المرجعُ الملفوف · السلسلةُ
+#    الخام · التعليقُ ليس حراسة · سطحُ الإنفاذ).
+#
+#    و`analyze` رجع ٦ info — الستّةُ **نفسُها** في `test/` (`avoid_dynamic_calls`
+#    و`unnecessary_import` و`prefer_const_*`)، ولا واحدةَ من هذه الدفعة:
+#    `flutter analyze lib` وحدَه صفرُ ملاحظات. فادّعاءُ «صفر» في التشغيلة
+#    السابقة كان عن `lib/` لا عن `lib test` التي يقيسها السطرُ ٢٦٤.
+#
 #    ⚠️ ودرسٌ سادس: **الحقلُ الذي يحمل معنى عرضٍ يضيع عند حدّ التحويل.**
 #    `InvoiceItem.isCategoryHeader` رايةٌ يحترمها المسارُ الحراريّ، وتسقط في
 #    `items.map((i) => <String, dynamic>{…})` إلى القالب — بلا خطأِ ترجمةٍ
@@ -284,7 +298,7 @@ fi
 # على `DELETE FROM "accounts"` لأن `safes.linkedAccountId` صار يشدُّ الدليل،
 # و٢ افتراضَ أن رجلَ النقدية على `1111`. فالوصفةُ الموصوفة لو طُبّقت بالجملة
 # لَما أصلحت شيئاً — اقرأ رسالةَ الفشل، لا وصفةَ المستند.
-run_suite "unit + data + structural + services" 3240 \
+run_suite "unit + data + structural + services" 3261 \
   flutter test test/unit test/data test/structural test/services --concurrency="$LOCAL_CONCURRENCY"
 
 # الواجهات والنطاقُ والنواة — كانت **كلُّها** خارج البوابة حتى 2026-08-09.

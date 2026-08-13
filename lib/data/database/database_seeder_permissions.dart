@@ -711,6 +711,10 @@ extension DatabaseSeederPermissions on AppDatabase {
       'pos_hold_order',
       'pos_save',
       'pos_print',
+      // 2026-08-13 — شريحةُ «توصيل» في لوحة دفع PicPos صارت محروسةً بـ
+      // `pos_delivery`. بلا المنحة يطلب كلُّ طلبِ توصيلٍ كلمةَ مرور مسؤول.
+      // ⚠️ والبذرةُ للقواعد الجديدة وحدَها — القائمةُ تحتاج منحاً يدوياً.
+      'pos_delivery',
       // Spec 077 Batch 0.5 — cashier opens AND closes shifts; new symmetric pair.
       'pos_shift_open',
       'pos_shift_close',

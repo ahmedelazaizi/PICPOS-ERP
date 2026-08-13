@@ -157,6 +157,11 @@ class RoleGrantMatrix {
       'pos_print',
       'pos_shift_open',
       'pos_shift_close',
+      // 2026-08-13 — شريحةُ «توصيل» في لوحة الدفع صارت محروسةً بـ
+      // `pos_delivery` (قرارُ المالك). وبلا المنحة يطلب **كلُّ** طلبِ توصيلٍ
+      // كلمةَ مرور مسؤول — كسرُ شغلٍ لا تأمين، وهو نفسُ منطق منحة
+      // `sales_amounts_view` أدناه.
+      'pos_delivery',
       // Spec 084 — Spec 077 gates `/api/sales` POST on `sales_create`.
       // Without it the entire POS path dies (4× DEAD-LETTER per session).
       // `sales_view` lets the cashier list their previous invoices.
