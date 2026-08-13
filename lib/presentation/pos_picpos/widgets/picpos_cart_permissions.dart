@@ -24,6 +24,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/permissions/permission_codes.dart';
 import '../../../data/providers/auth_providers.dart';
+import '../../../services/manager_approval_cache.dart';
 import '../../widgets/permission_guard.dart';
 
 bool _isAdmin(List<String> p) =>
@@ -45,6 +46,15 @@ Future<bool> _ensure(
   String permission,
   String actionName,
 ) async {
+  // ⚠️ استهلاكُ موافقةٍ سابقةٍ **قبل** أيّ سؤال — وإلا سأل مرّتين.
+  //
+  // منذ صار الحقلُ يستأذن **قبل** الكتابة (‏«إظهارٌ وإخفاء»، طلبُ المالك
+  // 2026-08-12) صار للفعل الواحد بوّابتان: لمسةُ الخانة، ثم `onSubmitted`
+  // بعد إدخال الرقم. وبلا الاستهلاك هنا كان المسؤولُ يكتب كلمةَ السرّ
+  // مرّتين لتعديلٍ واحد — وهو بعينه العطبُ الذي وُجدت له هذه الذاكرةُ في
+  // `_userHasPermissionFresh`. والموافقةُ تبقى وحيدةَ الاستعمال وعمرُها ٦٠
+  // ثانية، فلا تُصعّد الجلسة.
+  if (ManagerApprovalCache.instance.consume(permission)) return true;
   final perms =
       ref.read(currentUserPermissionsProvider).asData?.value ?? const <String>[];
   if (can(perms)) return true;
@@ -136,3 +146,69 @@ Future<bool> ensurePreviousInvoicesPermission(
 ) =>
     _ensure(ref, context, canViewPreviousInvoicesCodes,
         PermissionCodes.posPreviousInvoices, 'عرض الفواتير السابقة');
+
+// ── دفعة ٤ (2026-08-13) — ثقوبٌ كشفها الحارسُ بعد أن صار محافظاً ──────────
+//
+// الثلاثةُ كانت محروسةً في النظير القديم وحدَه (`pos/widgets/cart_view.dart`
+// و`pos_header.dart` و`cart/cart_totals_panel.dart`) — ملفاتٌ لا تبلغها شاشةُ
+// PicPos. ولم يكشفها الحارسُ البنيويُّ لأنه كان يَعُدّ **أيَّ ذكرٍ** للكود في
+// `lib/` إنفاذاً واصلاً: `pos_discount` أسكتَه لونٌ اسمُه `AppColors.
+// posDiscount`، و`pos_hold_order` أسكتَه `api_sales_handler.dart` (سطحُ HTTP
+// لا شاشة) وقائمةُ منحٍ في `migrations/epoch_3.dart`.
+
+/// خصمٌ على صنفٍ أو على الفاتورة (`pos_discount`).
+///
+/// ⚠️ ثلاثةُ أبوابٍ لنفس الفعل، وكلُّها كانت مفتوحة: خليةُ «الخصم ٪» في
+/// `picpos_items_table.dart`، وفرعُ الخصم في حوار «تعديل الصنف»، وخصمُ
+/// الفاتورة كلِّها. حراسةُ بابٍ وترك الآخرَين هي بعينها علّةُ البلاغ الأصليّ.
+bool canApplyDiscountCodes(List<String> permissions) =>
+    _isAdmin(permissions) || permissions.contains(PermissionCodes.posDiscount);
+
+/// تعليقُ الفاتورة للاسترجاع لاحقاً (`pos_hold_order`).
+bool canHoldOrderCodes(List<String> permissions) =>
+    _isAdmin(permissions) || permissions.contains(PermissionCodes.posHoldOrder);
+
+/// فتحُ لوح المصاريف السريعة (`pos_expense`).
+///
+/// ليس عرضاً بريئاً: الحوارُ فيه زرُّ «إضافة مصروف» ⇒ مالٌ يخرج من الدرج.
+bool canAddExpenseCodes(List<String> permissions) =>
+    _isAdmin(permissions) || permissions.contains(PermissionCodes.posExpense);
+
+/// يسمح بتطبيق خصم، أو يطلب موافقةَ مسؤولٍ يملكها.
+Future<bool> ensureCartDiscountPermission(
+  WidgetRef ref,
+  BuildContext context,
+) =>
+    _ensure(ref, context, canApplyDiscountCodes, PermissionCodes.posDiscount,
+        'تطبيق خصم');
+
+/// يسمح بتعليق الفاتورة، أو يطلب موافقةَ مسؤولٍ يملكها.
+Future<bool> ensureHoldOrderPermission(
+  WidgetRef ref,
+  BuildContext context,
+) =>
+    _ensure(ref, context, canHoldOrderCodes, PermissionCodes.posHoldOrder,
+        'تعليق الفاتورة');
+
+/// يسمح بفتح لوح المصاريف، أو يطلب موافقةَ مسؤولٍ يملكها.
+Future<bool> ensureAddExpensePermission(
+  WidgetRef ref,
+  BuildContext context,
+) =>
+    _ensure(ref, context, canAddExpenseCodes, PermissionCodes.posExpense,
+        'المصاريف السريعة');
+
+/// وسمُ الفاتورة طلبَ توصيل (`pos_delivery`).
+///
+/// قرارُ المالك 2026-08-13: شريحةُ «توصيل» في لوحة الدفع هي ميزةُ التوصيل في
+/// PicPos، فتُحرَس. وليست وسماً بريئاً — تغيّر مسارَ التحصيل ورسومَ التوصيل.
+bool canSetDeliveryOrderCodes(List<String> permissions) =>
+    _isAdmin(permissions) || permissions.contains(PermissionCodes.posDelivery);
+
+/// يسمح بوسم الفاتورة توصيلاً، أو يطلب موافقةَ مسؤولٍ يملكها.
+Future<bool> ensureDeliveryPermission(
+  WidgetRef ref,
+  BuildContext context,
+) =>
+    _ensure(ref, context, canSetDeliveryOrderCodes, PermissionCodes.posDelivery,
+        'طلب توصيل');

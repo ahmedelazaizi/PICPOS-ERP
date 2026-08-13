@@ -886,8 +886,16 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
           cart.updatePrice(index, price);
         }
       }
-      if (disc != null && disc >= 0 && disc <= 100) {
-        cart.setItemDiscount(index, disc);
+      if (disc != null &&
+          disc >= 0 &&
+          disc <= 100 &&
+          disc != current.discountPercent) {
+        // البابُ الثاني للخصم — الأولُ خليةُ «الخصم ٪» في الجدول. وكان هذا
+        // الفرعُ **بلا فحص** بينما جاراه فوقه محروسان، فمن رُفع عنه الخصمُ
+        // كان يطبّقه من هنا. (مقيسٌ 2026-08-13)
+        if (await ensureCartDiscountPermission(ref, context)) {
+          cart.setItemDiscount(index, disc);
+        }
       }
     }
 
@@ -899,6 +907,11 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
   // ── Invoice-level discount ─────────────────────────────────────────────
 
   Future<void> _editInvoiceDiscount() async {
+    // «الخصم المعتمد» في بلاغ المالك — البابُ الثالث لـ`pos_discount`، وكان
+    // مفتوحاً كالبابَين الآخرَين. والاستئذانُ **قبل** فتح الحوار لا بعده:
+    // لا يُطلب من الكاشير أن يكتب نسبةً ثم يُرفض.
+    if (!await ensureCartDiscountPermission(ref, context)) return;
+    if (!mounted) return;
     final current = ref.read(cartControllerProvider).discountPercent;
     final controller =
         TextEditingController(text: current == 0 ? '' : current.toString());
@@ -1455,6 +1468,12 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
           type: PosNotificationType.info);
       return;
     }
+    // `pos_hold_order` كان محروساً في `pos/widgets/pos_header.dart` وحدَه —
+    // ملفٌّ لا تبلغه شاشةُ PicPos. وأخفاه الحارسُ البنيويُّ لأن الكودَ مذكورٌ
+    // في `api_sales_handler.dart` (سطحُ HTTP) وفي قائمةِ منحٍ في
+    // `migrations/epoch_3.dart` — وكلاهما ليس شاشة.
+    if (!await ensureHoldOrderPermission(ref, context)) return;
+    if (!mounted) return;
     final err = await ref.read(cartControllerProvider.notifier).holdOrder();
     if (!mounted) return;
     if (err == null) {
@@ -1468,6 +1487,11 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
   }
 
   Future<void> _showExpenses() async {
+    // ليس عرضاً بريئاً: الحوارُ فيه زرُّ «إضافة مصروف» يفتح `PosExpenseDialog`
+    // فيكتب سندَ صرفٍ نقديّ ⇒ مالٌ يخرج من الدرج. و`pos_expense` كان محروساً
+    // في `pos/widgets/cart/cart_totals_panel.dart` وحدَه — لا تبلغه PicPos.
+    if (!await ensureAddExpensePermission(ref, context)) return;
+    if (!mounted) return;
     await showDialog<void>(
       context: context,
       builder: (_) => const PosPreviousExpensesDialog(),
@@ -1477,7 +1501,16 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
 
   /// «الفاتورة السابقة» — زر صف الأزرار، و F3، ورقم الفاتورة في الترويسة،
   /// كلهم بيوصّلوا هنا.
+  ///
+  /// ⚠️ **البابُ الثاني لـ`pos_previous_invoices`** — وهو سببُ بلاغ المالك
+  /// «الفواتير السابقة لا تعمل». الحوارُ يعرض أصنافَ الفاتورة السابقة
+  /// وكمياتِها وأسعارَها وإجماليَها، أي **نفسَ ما تحرسه** `_showPreviousInvoices`
+  /// بالضبط — وكان مفتوحاً من ثلاثة مداخل بلا فحص، بينما البابُ الأولُ محروس.
+  /// فمن رفع التحديدَ رأى المنعَ على الزرّ الصغير «فواتير» ولم يره على الزرّ
+  /// الكبير «الفاتورة السابقة». (مقيسٌ 2026-08-13)
   Future<void> _showLastInvoice() async {
+    if (!await ensurePreviousInvoicesPermission(ref, context)) return;
+    if (!mounted) return;
     await PicPosLastInvoiceDialog.show(context);
     _refocusScanner();
   }

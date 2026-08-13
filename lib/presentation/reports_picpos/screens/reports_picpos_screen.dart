@@ -505,16 +505,24 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
         icon: PhosphorIconsBold.userCircle,
         color: const Color(0xFF7C3AED),
         mainReports: [
+          // ⚠️ الثلاثةُ كانت **بلا `permission:`** حتى 2026-08-13، والمُصيِّر
+          // لا يلفّ إلا ما له كود (`r.permission != null` أدناه). فكانت
+          // «التقارير» باباً خلفياً: من يملك `reports_view` وحدَه يفتح سجلَّ
+          // النشاط، و**شاشةَ إدارة المستخدمين** التي فيها إسنادُ الأدوار
+          // وتصفيرُ كلمات المرور — أي تصعيدُ امتيازٍ كامل. والبابُ الأماميُّ
+          // لنفس الشاشة محروسٌ في `settings_picpos_screen.dart:654`.
           _ReportEntry(
             id: 'u_activity',
             title: 'نشاط المستخدمين',
             subtitle: 'العمليات لكل مستخدم',
+            permission: PermissionCodes.auditView,
             action: () => nav(() => const ActivityLogScreen()),
           ),
           _ReportEntry(
             id: 'u_login',
             title: 'سجل دخول المستخدمين',
             subtitle: 'متى دخل كل مستخدم وخرج',
+            permission: PermissionCodes.auditView,
             action: () => nav(() => const ActivityLogScreen()),
           ),
           _ReportEntry(
@@ -524,6 +532,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
             // مهمة 14: هذا الفورك (reports_picpos_screen.dart) خاص بـ PicPos
             // فقط (Brand.isPicPos) — فالـ push يروح مباشرة لشاشة المستخدمين
             // بهوية PicPos، بلا حاجة لفحص العلامة هنا.
+            permission: PermissionCodes.usersManage,
             action: () => nav(() => const UsersManagementPicposScreen()),
           ),
         ],

@@ -39,6 +39,23 @@ void main() {
     // دفعة ٣.
     PermissionCodes.posCustomerSelect: shared.canSelectCustomerCodes,
     PermissionCodes.posPreviousInvoices: shared.canViewPreviousInvoicesCodes,
+    // ── دفعة ٤ (2026-08-13): ثقوبٌ كشفها الحارسُ بعد أن صار محافظاً ──────
+    // الثلاثةُ كانت محروسةً في النظير القديم وحدَه، وأفعالُها تجري في PicPos
+    // بلا فحصٍ إطلاقاً — مقيسٌ لا مفترَض:
+    //   · `pos_discount` — ثلاثةُ أبوابٍ مفتوحة: خليةُ «الخصم ٪» في
+    //     `picpos_items_table.dart`، وفرعُ الخصم في حوار «تعديل الصنف»،
+    //     وخصمُ الفاتورة كلِّها. وجارتا الخليةِ (الكميةُ والسعر) محروستان
+    //     في نفس الملفّ — فالنمطُ كان موجوداً ولم يُطبَّق عليها.
+    //   · `pos_hold_order` — `_holdOrder` بلا فحصٍ إطلاقاً.
+    //   · `pos_expense` — `_showExpenses` يفتح حوارَ المصاريف بلا فحص،
+    //     وفيه زرُّ «إضافة مصروف» ⇒ مالٌ يخرج من الدرج.
+    PermissionCodes.posDiscount: shared.canApplyDiscountCodes,
+    PermissionCodes.posHoldOrder: shared.canHoldOrderCodes,
+    PermissionCodes.posExpense: shared.canAddExpenseCodes,
+    //   · `pos_delivery` — شريحةُ «توصيل» في لوحة الدفع. حسمها المالكُ
+    //     2026-08-13: هي ميزةُ التوصيل في PicPos، فتُحرَس. وكانت مخفيّةً عن
+    //     الحارس لأن `FeatureKey.posDelivery` يحمل نفسَ الاسم.
+    PermissionCodes.posDelivery: shared.canSetDeliveryOrderCodes,
   };
 
   cases.forEach((code, can) {
@@ -64,8 +81,8 @@ void main() {
     });
   });
 
-  test('الأكوادُ الثمانيةُ متمايزة', () {
+  test('الأكوادُ الاثنا عشرَ متمايزة', () {
     // تكرارُ كودٍ في جدول الحالات كان سيُخفي دالّةً بلا اختبار.
-    expect(cases.keys.toSet(), hasLength(8));
+    expect(cases.keys.toSet(), hasLength(12));
   });
 }

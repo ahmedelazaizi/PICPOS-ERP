@@ -228,7 +228,21 @@ class _OrderTypeRow extends ConsumerWidget {
               label: 'توصيل',
               icon: PhosphorIconsBold.moped,
               selected: cart.orderType == 'delivery',
-              onTap: () => controller.setOrderType('delivery'),
+              // ── `pos_delivery` — قرارُ المالك 2026-08-13 ─────────────────
+              // هذه الشريحةُ **هي** ميزةُ التوصيل في PicPos. وكانت الكودُ
+              // محروساً في `pos/widgets/pos_header.dart:247` وحدَه (زرُّ لوح
+              // طلبات التوصيل) — شاشةُ UralCash التي لا تبلغها PicPos.
+              // وأخفاه الحارسُ البنيويُّ لأن `FeatureKey.posDelivery` في
+              // `core/config/feature_key.dart` يحمل نفسَ الاسم — تعدادُ
+              // رايات، لا حراسة.
+              //
+              // ⚠️ و«داخلي» بلا حراسةٍ عن قصد: الرجوعُ للوضع الافتراضيّ
+              // ليس فعلاً يُراقَب، وحراستُه كانت ستحبس الكاشيرَ في «توصيل»
+              // بعد لمسةٍ خاطئة.
+              onTap: () async {
+                if (!await ensureDeliveryPermission(ref, context)) return;
+                controller.setOrderType('delivery');
+              },
               scale: scale,
             ),
           ),
