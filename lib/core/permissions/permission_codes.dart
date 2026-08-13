@@ -846,6 +846,32 @@ class PermissionCodes {
   /// الأول — اختبار ثبات المجموعتين بيتأكد إن مفيش كود يقع بين الاتنين
   /// (`permission_nontoggleable_registry_test.dart`).
   static const Map<String, String> nonToggleable = {
+    // ── عشرةٌ كان مرجعُها الوحيدُ ملفاً ميّتاً (2026-08-13) ──────────────────
+    // `lib/services/role_based_sidebar_service.dart` (٢١٢ سطراً) كان يبني
+    // شريطاً جانبياً حسب الدور، وله **صفرُ مستوردين** في `lib/` و`test/` و
+    // `tool/` — مقيسٌ لا مفترَض. فحُذف الملفّ.
+    //
+    // وكان وجودُه يجعل `permission_enforcement_coverage_test` يعدّ هذه
+    // العشرةَ «منفَّذة»، فتظهر للمدير في شاشة الصلاحيات بمربّعِ اختيارٍ
+    // يقلّبه بلا أثر. وهو بعينه بلاغُ «بغيّر صلاحية ومش بيحصل حاجة».
+    //
+    // ولا واحدٌ منها ثغرةٌ حقيقية: شاشاتُها **مبوّبةٌ بكودٍ آخرَ فعلاً** في
+    // `screenPermissionMap`. فالنقلُ هنا يُخفي المربّعَ (`nonToggleable`
+    // بلا شيك بوكس) ويُبقي السببَ مكتوباً.
+    'products_view': 'الشاشة كلها مبوّبة بـ products_add',
+    'parties_view': 'الشاشة كلها مبوّبة بـ customers_view',
+    'purchases_view': 'الشاشة كلها مبوّبة بـ purchases_create',
+    'quotes_view': 'تبويب داخل فواتير البيع، والشاشة مبوّبة بـ sales_view',
+    'returns_view': 'شاشة المرتجعات مبوّبة بـ sales_return_view',
+    'stock_view': 'حركة المخزون مبوّبة بـ inventory_view',
+    'stock_audit': 'الجرد الدوري مبوّب بـ inventory_view',
+    'settings_access': 'الشاشة كلها مبوّبة بـ settings_view',
+    'accounting_view': 'شاشات المحاسبة كلها مبوّبة بـ settings_view',
+    // ⚠️ وهذا وحدَه ليس تكراراً بل **ميزةٌ غائبة**: لا `ScreenId.warehouses`
+    // في `screen_registry` ولا مدخلَ له في `screenPermissionMap` — لا شاشةَ
+    // مخازنَ في التطبيق أصلاً. ولو أُضيفت فتُبوَّب ويُشطب هذا السطر.
+    'warehouses_view': 'لا شاشة مخازن في التطبيق — لا سطح يُحرَس',
+
     // ── مغطّى بكود/آلية تانية (تكرار اسمي، مش ثغرة) ──
     'audit_invoice_unlock': 'مغطّى بـ modify_locked_invoice',
     'audit_shift_blind': 'مغطّى بـ pos_closing_view_details',

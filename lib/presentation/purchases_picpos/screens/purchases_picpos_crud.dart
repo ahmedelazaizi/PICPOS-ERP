@@ -12,6 +12,17 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
   /// Create a new purchase invoice or return
   void createNewInvoice() async {
     if (!mounted) return;
+    // ⚠️ انحرافٌ مقصودٌ عن الأصل المنسوخ (`purchase_invoice_crud.dart`):
+    // `purchases_create` لم يكن له إنفاذٌ محليٌّ إطلاقاً — لا على الزرّ ولا
+    // على **F5** (`AppShortcuts(onNew: createNewInvoice)`)، وموضعُه الوحيد
+    // `api_purchase_handler` وهو خلف رايةٍ مطفأةٍ افتراضياً ولا وجودَ له على
+    // تنصيبةٍ مستقلّة. فالفحصُ هنا في القِمع ليغطّي المدخلَين.
+    if (!await ensurePermission(
+        ref, context, PermissionCodes.purchasesCreate,
+        actionName: 'فاتورة مشتريات جديدة')) {
+      return;
+    }
+    if (!mounted) return;
 
     showGeneralDialog(
       context: context,

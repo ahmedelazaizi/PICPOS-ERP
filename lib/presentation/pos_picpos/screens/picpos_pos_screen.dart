@@ -14,7 +14,8 @@ import '../../../data/providers/providers.dart';
 import '../../../services/client_write_interceptor.dart';
 import '../../../services/manager_approval_cache.dart';
 import '../../../services/shift_dialog_session_guard.dart';
-import '../../widgets/permission_guard.dart' show requestManagerApproval;
+import '../../widgets/permission_guard.dart'
+    show requestManagerApproval, ensurePermission;
 import '../../pos/widgets/pos_opening_balance_dialog.dart';
 import '../../../domain/entities/cart_item_entity.dart';
 import '../../../domain/entities/product_entity.dart';

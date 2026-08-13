@@ -131,18 +131,30 @@ class _TreasuryPicposScreenState extends ConsumerState<TreasuryPicposScreen>
       subtitle: 'النقدية والبنوك وإغلاق اليوم',
       icon: PhosphorIconsBold.wallet,
       headerActions: [
-        OutlinedButton.icon(
-          onPressed: () => showDialog(
-            context: context,
-            builder: (context) => const ReceiptVoucherDialog(),
-          ),
-          icon: const Icon(
-            PhosphorIconsBold.arrowCircleDown,
-            color: AppColors.success,
-          ),
-          label: const Text('سند قبض'),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: AppColors.success,
+        // ⚠️ هذا الزرُّ كان **بلا حراسة** بينما جارُه «سند صرف» محروس، وبينما
+        // نفسُ الحوار محروسٌ بـ`treasury_receipts_create` في
+        // `treasury/widgets/treasury_metrics_panel.dart:100` — واللوحةُ تلك
+        // مرسومةٌ **على هذه الشاشة نفسِها** (`:209` أدناه).
+        //
+        // فبابان لنفس الفعل على شاشةٍ واحدة، أحدُهما محروسٌ والآخرُ لا. وهو
+        // سهوٌ لا سياسة: الجارُ يثبت أن النيّةَ كانت الحراسة.
+        PermissionGuard(
+          permission: PermissionCodes.treasuryReceiptsCreate,
+          allowManagerOverride: true,
+          actionName: 'إنشاء سند قبض',
+          child: OutlinedButton.icon(
+            onPressed: () => showDialog(
+              context: context,
+              builder: (context) => const ReceiptVoucherDialog(),
+            ),
+            icon: const Icon(
+              PhosphorIconsBold.arrowCircleDown,
+              color: AppColors.success,
+            ),
+            label: const Text('سند قبض'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.success,
+            ),
           ),
         ),
         const SizedBox(width: 8),

@@ -1,0 +1,137 @@
+// أبوابٌ ثانيةٌ لأفعالٍ محروسة — وصلُ الحراسة مقيسٌ لا مفترَض.
+//
+// ── فئةُ العطب ────────────────────────────────────────────────────────────
+// النمطُ الذي تكرّر في هذا المستودع أربعَ مرّاتٍ في يومٍ واحد: فعلٌ له مدخلان،
+// يُحرَس أحدُهما ويُنسى الآخر. والحارسُ البنيويُّ لا يراه لأن الكودَ **مذكورٌ**
+// في المجلد — فيمرّ أخضر.
+//
+//   · «سند قبض» في ترويسة الخزينة بلا حراسة، وجارُه «سند صرف» محروس، ونفسُ
+//     الحوار محروسٌ في لوحةٍ مرسومةٍ على **نفس الشاشة**.
+//   · زرُّ «إضافة صنف» محروسٌ و**F5** يستدعي نفسَ الدالّة بلا مرورٍ بالحارس.
+//   · «فاتورة جديدة» في المشتريات والمبيعات: الزرُّ والاختصارُ كلاهما بلا فحص.
+//   · `onReprint` في حوار الفواتير السابقة يطبع بلا `pos_print`.
+//
+// ── لماذا تُقاس المصادرُ نصّاً ────────────────────────────────────────────
+// اختبارُ ودجتٍ لهذه الشاشات يحتاج قاعدةَ بياناتٍ حيّةً وشجرةً كاملة، وتعليقُ
+// الفتح في اختبارات الودجت مسألةٌ معروفةٌ في هذا المستودع. والمقيسُ هنا سؤالٌ
+// بنيويٌّ لا سلوكيّ: **هل الفحصُ موصولٌ وقبل الفعل؟** والنصُّ يجيبه بدقّة.
+//
+// ⚠️ ويُقاس على الكود **بلا تعليقات**: أوّلُ صياغةٍ لاختبارٍ مشابهٍ سقطت
+// حمراءَ لأن المرساةَ طوبقت في تعليقٍ قبل الفحص. التعليقُ ليس كوداً.
+
+import 'dart:io';
+
+import 'package:flutter_test/flutter_test.dart';
+
+/// نزعُ التعليقات وحدَها. السلاسلُ تُترك — ماسحٌ يدويٌّ لها قد يفقد التزامنَ
+/// فيبتلع بقيةَ الملفّ، أي يُخفي حراسةً قائمة.
+String stripComments(String src) {
+  final out = StringBuffer();
+  var i = 0;
+  while (i < src.length) {
+    if (src[i] == '/' && i + 1 < src.length && src[i + 1] == '/') {
+      while (i < src.length && src[i] != '\n') {
+        i++;
+      }
+      continue;
+    }
+    if (src[i] == '/' && i + 1 < src.length && src[i + 1] == '*') {
+      i += 2;
+      while (i + 1 < src.length && !(src[i] == '*' && src[i + 1] == '/')) {
+        i++;
+      }
+      i += 2;
+      continue;
+    }
+    out.write(src[i]);
+    i++;
+  }
+  return out.toString();
+}
+
+String _code(String path) {
+  final f = File(path);
+  expect(f.existsSync(), isTrue, reason: 'الملفُّ «$path» اختفى');
+  return stripComments(f.readAsStringSync());
+}
+
+/// موضعُ [needle]، ويفشل صراحةً إن غاب.
+///
+/// ⚠️ `indexOf` يرجع `-1` وهو «أصغرُ من» كلِّ شيء — فكان غيابُ المرساة يمرّ
+/// أخضرَ في قياس الترتيب. وحارسٌ يمرّ لأن ما يقيسه غيرُ موجودٍ أخطرُ من غيابه.
+int at(String haystack, String needle, {String? label}) {
+  final i = haystack.indexOf(needle);
+  expect(i, greaterThan(-1), reason: '${label ?? ''} «$needle» غير موجود');
+  return i;
+}
+
+/// نافذةٌ تبدأ من توقيع الدالّة.
+///
+/// ⚠️ نافذةٌ ثابتةٌ لا فاصلٌ نصّيّ: التعليقاتُ مجرَّدةٌ سلفاً فلا تصلح فواصل،
+/// وتوقيعُ الدالّة التالية يختلف شكلاً (`void` مقابل `Future<void>`). و٢٥٠٠
+/// حرفاً تغطي مطلعَ أيّ دالّةٍ هنا بفارقٍ واسع — والفحصُ المطلوبُ يقع في
+/// أوّل سطورها بحكم كونه فحصاً **قبل** الفعل.
+String windowFrom(String src, String signature, [int chars = 2500]) {
+  final start = at(src, signature);
+  final end = start + chars;
+  return src.substring(start, end > src.length ? src.length : end);
+}
+
+void main() {
+  group('سندُ القبض في ترويسة الخزينة', () {
+    test('محروسٌ كجاره «سند صرف»', () {
+      final src = _code(
+          'lib/presentation/treasury_picpos/screens/treasury_picpos_screen.dart');
+      final receipt = at(src, 'ReceiptVoucherDialog()');
+      final guard = at(src, 'PermissionCodes.treasuryReceiptsCreate');
+      expect(guard, lessThan(receipt),
+          reason: 'الحارسُ يجب أن يلفّ الزرَّ لا أن يأتي بعده. وكان الزرُّ '
+              'مفتوحاً بينما جارُه «سند صرف» محروس.');
+    });
+  });
+
+  group('«جديد» — الزرُّ والاختصارُ يمرّان بنفس الفحص', () {
+    // القِمعُ واحدٌ في الثلاثة، فحراسةُ الدالّة تغطّي المدخلَين معاً.
+    final cases = <String, List<String>>{
+      'lib/presentation/products_picpos/screens/products_picpos_screen.dart': [
+        'Future<void> _addProduct() async {',
+        'PermissionCodes.productsAdd',
+        'AddProductDialog.show',
+      ],
+      'lib/presentation/purchases_picpos/screens/purchases_picpos_crud.dart': [
+        'void createNewInvoice() async {',
+        'PermissionCodes.purchasesCreate',
+        'showGeneralDialog(',
+      ],
+      'lib/presentation/sales_invoices_picpos/screens/sales_invoice_dialogs.dart':
+          [
+        'void _createNewInvoice({',
+        'PermissionCodes.salesCreate',
+        'salesInvoicesControllerProvider',
+      ],
+    };
+
+    cases.forEach((path, spec) {
+      final signature = spec[0], code = spec[1], action = spec[2];
+      test('${path.split('/').last} — الفحصُ قبل فتح الحوار', () {
+        final body = windowFrom(_code(path), signature);
+        expect(at(body, code), lessThan(at(body, action)),
+            reason: 'الفحصُ يجب أن يسبق فتحَ حوار الإنشاء. وبلا فحصٍ في '
+                'الدالّة يتخطّى **F5** لفّةَ الزرّ كلياً.');
+      });
+    });
+  });
+
+  group('إعادةُ طباعة فاتورةٍ سابقة', () {
+    test('`onReprint` يفحص `pos_print` قبل الطباعة', () {
+      final src = _code(
+          'lib/presentation/pos_picpos/screens/picpos_pos_operations.dart');
+      final body =
+          windowFrom(src, 'Future<void> _showPreviousInvoices() async {');
+      expect(at(body, 'PermissionCodes.posPrint'),
+          lessThan(at(body, 'printInvoice(')),
+          reason: 'الطباعةُ من حوار الفواتير السابقة كانت بلا فحص، بينما '
+              'إعادةُ الطباعة في حوار «آخر فاتورة» محروسة.');
+    });
+  });
+}

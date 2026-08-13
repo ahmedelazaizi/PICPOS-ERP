@@ -756,6 +756,59 @@ Future<bool> requestManagerApproval(
   return result == true;
 }
 
+/// هل تحوي [permissions] الكودَ [permission]، مع تجاوز مدير النظام؟
+///
+/// نفسُ منطق `PermissionGuard._checkPermission` بالحرف — بما فيه أن التجاوزَ
+/// **لا** يشمل [PermissionCodes.criticalFinancialOps]. وفصلُه دالّةً خالصةً
+/// يجعله قابلاً للاختبار بلا شجرة ودجت.
+bool hasPermissionWithAdminBypass(
+  List<String> permissions,
+  String permission,
+) {
+  final isSystemAdmin =
+      permissions.contains('system_admin') || permissions.contains('*');
+  if (isSystemAdmin && !PermissionCodes.criticalFinancialOps.contains(permission)) {
+    return true;
+  }
+  return permissions.contains(permission);
+}
+
+/// بوّابةٌ إجرائيةٌ عامّة: يسمح، أو يطلب موافقةَ مسؤولٍ يملك الكود.
+///
+/// ── لماذا توجد بجانب [PermissionGuard] ──────────────────────────────────
+/// [PermissionGuard] يلفّ **ودجت**، فيحمي الضغطةَ على زرٍّ بعينه. ولا يحمي
+/// الدالّةَ التي يستدعيها الزرّ — فأيُّ مدخلٍ آخرَ لها (اختصارُ لوحة مفاتيح،
+/// قائمةُ سياق، استدعاءٌ برمجيّ) يتخطّاه كلياً.
+///
+/// وهذا عطبٌ **مقيسٌ** لا نظريّ: `AppShortcuts(onNew: _addProduct)` كان
+/// يستدعي نفسَ الدالّة التي يلفّ زرَّها `PermissionGuard(productsAdd)` — فـ
+/// **F5** يضيف صنفاً بلا فحص. ونفسُ النمط في المشتريات وفواتير البيع.
+///
+/// فالقاعدة: يُحرَس **القِمع** لا المداخل. و[PermissionGuard] يبقى للإخفاء
+/// البصريّ، وهذه للمنع الفعليّ.
+///
+/// ⚠️ وتستهلك موافقةَ المسؤول من [ManagerApprovalCache] أوّلاً — وإلا سُئل
+/// المسؤولُ مرّتين حين يكون الزرُّ ملفوفاً بالحارس **و** الدالّةُ محروسة.
+Future<bool> ensurePermission(
+  WidgetRef ref,
+  BuildContext context,
+  String permission, {
+  required String actionName,
+}) async {
+  if (ManagerApprovalCache.instance.consume(permission)) return true;
+  // `.value` لا `asData?.value`: الثاني يرجع `null` في كلّ إعادة تحميل، وهنا
+  // ذلك يعني سؤالَ المسؤول بلا داعٍ لا فتحَ الباب — لكنّ الاتّساق مقصود.
+  final perms =
+      ref.read(currentUserPermissionsProvider).value ?? const <String>[];
+  if (hasPermissionWithAdminBypass(perms, permission)) return true;
+  if (!context.mounted) return false;
+  return requestManagerApproval(
+    context,
+    actionName: actionName,
+    permission: permission,
+  );
+}
+
 /// Extension to check permission synchronously when you already have permissions
 extension PermissionListExtension on List<String> {
   bool hasPermission(String code) => contains(code);

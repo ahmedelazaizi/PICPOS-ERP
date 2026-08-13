@@ -1523,8 +1523,19 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     await showDialog<void>(
       context: context,
       builder: (_) => PosPreviousInvoicesDialog(
-        onReprint: (id) =>
-            ref.read(posControllerProvider.notifier).printInvoice(id),
+        // ⚠️ بابٌ ثانٍ لإعادة الطباعة: زرُّ إعادة الطباعة في حوار «آخر
+        // فاتورة» محروسٌ بـ`pos_print` (`picpos_last_invoice_dialog.dart:125`)
+        // وهذا المسارُ كان يطبع بلا فحص. والطباعةُ التلقائيةُ بعد البيع
+        // (`_tryPrintReceipt`) تبقى بلا حراسةٍ عن قصد: جزءٌ من إتمام بيعةٍ
+        // مأذونةٍ سلفاً.
+        onReprint: (id) async {
+          if (!await ensurePermission(ref, context, PermissionCodes.posPrint,
+              actionName: 'إعادة طباعة فاتورة')) {
+            return;
+          }
+          if (!mounted) return;
+          await ref.read(posControllerProvider.notifier).printInvoice(id);
+        },
         onEdit: _editPostedInvoice,
         // No kitchen module in lite.
         onPrintKitchen: (_) {},
