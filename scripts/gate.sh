@@ -229,6 +229,31 @@ rm -rf build/native_assets
 #    `'invoice'`/`'purchase'`. فتصميمُ المالك لـA4 لم يكن يصل الورقةَ إطلاقاً
 #    منذ البداية، ولا اختبارَ يكشفه لأن الاحتياطيَّ يطبع ورقةً سليمةَ الشكل.
 #
+# تشغيلةُ 2026-08-15 بعد §٥ و§٣ و§١ و§٤ و§٢ (‏c=4، ‏--pg):
+#   analyze 6 info · unit 3347 · widget 656 · integration 710 · pg 45
+#   (‏نصُّ «كلها خضراء» مطبوعٌ داخل `if [[ $RC -eq 0 ]]` ويليه `exit $RC`
+#    مباشرةً — فظهورُه يُثبت الحكمَ الثاني، والعمليّةُ خرجت طبيعيةً لا مقتولة.
+#
+#    الزيادةُ ٤٦ وتُسوَّى بالضبط: ٢١ `picpos_payment_methods_test` · ٦
+#    `shift_close_permission_category_test` · ٥ `shift_open_gate_test` · ٤
+#    `user_attribution_fallback_visible_test` · ٦ `user_shift_summary_test` ·
+#    ٤ `picpos_close_permissions_test`. والتسويةُ الحسابيّةُ نفسُها دليلٌ
+#    على أن لا اختبارَ سقط صامتاً.
+#
+#    ⚠️ ودرسٌ ثامن: **حارسُ التكافؤ يقطع حافةَ الاستيراد لملفٍّ بلا أنواع.**
+#    نقلتُ `resolveAllowedPaymentMethods` إلى `domain/models/` فاختفت أكوادُ
+#    `pos_payment_*` الخمسةُ عن `picpos_permission_parity_test` وأبلغ عن خمس
+#    فجواتٍ **وهمية**: `_reachableFrom` لا يتبع الحافةَ إلا إن ذُكر نوعٌ
+#    معرَّفٌ في المستورَد (`_declaredTypes` = class/mixin/enum/…)، والملفُّ
+#    دوالُّ وثوابتُ بلا `class`. والشرطُ مقصودٌ (‏بدونه تجرّ البراميلُ رسماً
+#    كاملاً فيُعَدّ محروساً ما لا يُرسَم) — فالعلاجُ إعادةُ الملفّ إلى مجلد
+#    التوأم ونقلُ **المزوِّد** معه، لا إضعافُ الشاهد.
+#
+#    ⚠️ ودرسٌ تاسع: **الفرعُ المطابقُ اسماً قد ينقصه عملُ الجلسة السابقة.**
+#    فرعُ هذه الجلسة طابق المهمةَ وشجرتُه نظيفة، ومع ذلك كان متفرّعاً من
+#    `main` فينقصه ٩ كوميتاتٍ منها الحارسُ المعاكسُ نفسُه. كشفه
+#    `git rev-list --count` في الاتّجاهَين، لا الاسمُ ولا النظافة.)
+#
 # والحكمُ **بتطابق عدد النجاحات** لا بالخضرة: لو كشف التوازي هشاشةً كامنة
 # لظهر الفرقُ رقماً. وصفرُ `PathExistsException` في كلّ التشغيلات بعد تنظيف
 # `build/native_assets` أعلاه.
@@ -326,7 +351,7 @@ fi
 # على `DELETE FROM "accounts"` لأن `safes.linkedAccountId` صار يشدُّ الدليل،
 # و٢ افتراضَ أن رجلَ النقدية على `1111`. فالوصفةُ الموصوفة لو طُبّقت بالجملة
 # لَما أصلحت شيئاً — اقرأ رسالةَ الفشل، لا وصفةَ المستند.
-run_suite "unit + data + structural + services" 3301 \
+run_suite "unit + data + structural + services" 3347 \
   flutter test test/unit test/data test/structural test/services --concurrency="$LOCAL_CONCURRENCY"
 
 # الواجهات والنطاقُ والنواة — كانت **كلُّها** خارج البوابة حتى 2026-08-09.
