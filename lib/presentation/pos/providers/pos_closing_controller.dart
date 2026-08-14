@@ -11,6 +11,7 @@ import '../../../services/delta_pull_service.dart';
 import '../../../services/network_service.dart';
 import '../../../services/printing/shift_closing_print.dart';
 import '../../../domain/entities/shift_closing_snapshot.dart';
+import '../../shift_close_picpos/widgets/picpos_close_permissions.dart';
 import '../../../data/database/sync_interceptor.dart';
 
 /// Closing-dialog state.
@@ -513,6 +514,53 @@ class PosClosingController extends Notifier<PosClosingState> {
               throw Exception('كلمة المرور غير صحيحة');
             }
             // Set actual amounts = system amounts (variance = 0 temporarily)
+            state = state.copyWith(
+              actualCashAmount: state.systemCash,
+              actualBankAmount: state.systemCard,
+              actualClickAmount: state.systemClick,
+            );
+            break;
+
+          // ── مدخلٌ واحدٌ للبطاقة وكلمة المرور (طلبُ المالك 2026-08-14) ────
+          //
+          // إضافةٌ لا استبدال: `msr_card` و`admin_password` باقيان كما هما
+          // لأن `shifts.closingMethod` يحمل القيمةَ تاريخياً، وحوارُ
+          // UralCash ما زال يعرضهما. حوارُ PicPos وحدَه يستعمل هذه.
+          //
+          // ⚠️ والفحصُ **بالصلاحية** لا بوجود المستخدم: مسارُ `msr_card`
+          // فوقُ يقبل أيَّ مستخدمٍ مسجَّل بلا فحصِ دورٍ إطلاقاً، فبطاقةُ أيّ
+          // كاشيرٍ كانت تُغلق الورديةَ بفرقٍ صفر. وهذا يناقض طلبَ المالك
+          // نفسَه («المديرُ هو من يجرد»).
+          case 'card_or_password':
+            final input = cardCode.trim().isNotEmpty
+                ? cardCode.trim()
+                : password.trim();
+            if (input.isEmpty) {
+              state = state.copyWith(isProcessing: false);
+              throw Exception('مرّر البطاقة أو أدخل كلمة المرور');
+            }
+
+            // كلمةُ مرور الإعدادات تبقى مقبولةً — هي مفتاحُ المالك حين لا
+            // يكون له حسابُ مستخدمٍ على الطرفيّة.
+            if (ref.read(adminPasswordServiceProvider).verify(input)) {
+              authenticated = true;
+            } else {
+              final authRepo = ref.read(authRepositoryProvider);
+              final user = await authRepo.authenticateByPasswordOrCard(input);
+              if (user == null) {
+                state = state.copyWith(isProcessing: false);
+                throw Exception('البطاقة أو كلمة المرور غير صالحة');
+              }
+              final codes =
+                  await authRepo.getUserPermissionCodes(user.user.id);
+              if (!canCloseShiftCodes(codes)) {
+                state = state.copyWith(isProcessing: false);
+                throw Exception(
+                    'هذا المستخدم لا يملك صلاحية إغلاق الوردية');
+              }
+              authenticated = true;
+            }
+
             state = state.copyWith(
               actualCashAmount: state.systemCash,
               actualBankAmount: state.systemCard,

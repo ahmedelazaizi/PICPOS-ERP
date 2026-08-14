@@ -641,6 +641,11 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
             title: 'طرق الدفع الظاهرة',
             children: const [_PaymentMethodsSettingsCard()],
           ),
+          const SizedBox(height: 16),
+          _buildSettingsCard(
+            title: 'إغلاق الوردية',
+            children: const [_QuickCloseSettingTile()],
+          ),
         ],
       ),
       _SettingsSection(

@@ -265,6 +265,17 @@ final posShiftDialogEnabledProvider = FutureProvider<bool>((ref) async {
   return value != 'false'; // default true
 });
 
+/// إظهارُ شريحة «إغلاق سريع» في حوار إغلاق الوردية (الافتراضي: يظهر).
+///
+/// طلبُ المالك 2026-08-14: «الإغلاقُ السريعُ له في الإعدادات إظهارٌ أو
+/// إخفاء». وهو الطريقُ الوحيدُ **بلا أيّ مصادقة**، ويُصفّر الفرقَ
+/// (`actual = system`) — فإخفاؤه قرارٌ محاسبيّ.
+final posQuickCloseEnabledProvider = FutureProvider<bool>((ref) async {
+  final db = ref.watch(databaseProvider);
+  final value = await db.getSettingValue('pos_quick_close_enabled');
+  return value != 'false'; // default true — لا يتغيّر سلوكُ تنصيبةٍ قائمة
+});
+
 /// Show top bar (breadcrumbs / notifications) (default: true)
 final showTopBarProvider = FutureProvider<bool>((ref) async {
   final db = ref.watch(databaseProvider);

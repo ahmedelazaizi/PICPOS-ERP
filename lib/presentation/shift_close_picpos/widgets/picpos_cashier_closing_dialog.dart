@@ -926,83 +926,58 @@ class _PicposCashierClosingDialogState
       children: [
         const Text('اختر طريقة إغلاق الوردية', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
         const SizedBox(height: 12),
+        // ── طريقتان لا ثلاث (طلبُ المالك 2026-08-14) ─────────────────────
+        //
+        // «الإغلاقُ بالبطاقة أو الباسورد — دمجٌ بكبسةٍ واحدة»: شريحةٌ واحدةٌ
+        // بمدخلٍ واحدٍ يجرّبهما معاً عبر `authenticateByPasswordOrCard`، ثم
+        // يفحص `pos_shift_close`. والفحصُ بالصلاحية يسدّ ثغرةً مقيسة: مسارُ
+        // `msr_card` القديم كان يقبل بطاقةَ **أيّ** مستخدمٍ مسجَّل بلا فحصِ
+        // دورٍ إطلاقاً، فيُغلق أيُّ كاشيرٍ ورديتَه بفرقٍ صفر.
+        //
+        // و«إغلاق سريع» خلف إعداد: هو الطريقُ الوحيدُ بلا أيّ مصادقة.
         Wrap(
           spacing: 8,
           children: [
+            if (ref.watch(posQuickCloseEnabledProvider).value ?? true)
+              ChoiceChip(
+                label: const Text('إغلاق سريع'),
+                selected: _selectedMethod == 'quick',
+                selectedColor: AppColors.warning.withValues(alpha: 0.2),
+                avatar: _selectedMethod == 'quick' ? const Icon(PhosphorIconsBold.lightning, size: 16) : null,
+                onSelected: (_) {
+                  setState(() => _selectedMethod = 'quick');
+                  ref.read(posClosingControllerProvider.notifier).setClosingMethod('quick');
+                },
+              ),
             ChoiceChip(
-              label: const Text('إغلاق سريع'),
-              selected: _selectedMethod == 'quick',
-              selectedColor: AppColors.warning.withValues(alpha: 0.2),
-              avatar: _selectedMethod == 'quick' ? const Icon(PhosphorIconsBold.lightning, size: 16) : null,
-              onSelected: (_) {
-                setState(() => _selectedMethod = 'quick');
-                ref.read(posClosingControllerProvider.notifier).setClosingMethod('quick');
-              },
-            ),
-            ChoiceChip(
-              label: const Text('بطاقة MSR'),
-              selected: _selectedMethod == 'msr_card',
-              selectedColor: AppColors.info.withValues(alpha: 0.2),
-              avatar: _selectedMethod == 'msr_card' ? const Icon(PhosphorIconsBold.creditCard, size: 16) : null,
-              onSelected: (_) {
-                setState(() => _selectedMethod = 'msr_card');
-                ref.read(posClosingControllerProvider.notifier).setClosingMethod('msr_card');
-              },
-            ),
-            ChoiceChip(
-              label: const Text('كلمة مرور المدير'),
-              selected: _selectedMethod == 'admin_password',
+              label: const Text('بطاقة أو كلمة مرور'),
+              selected: _selectedMethod == 'card_or_password',
               selectedColor: AppColors.primary.withValues(alpha: 0.2),
-              avatar: _selectedMethod == 'admin_password' ? const Icon(PhosphorIconsBold.lock, size: 16) : null,
+              avatar: _selectedMethod == 'card_or_password'
+                  ? const Icon(PhosphorIconsBold.lockKey, size: 16)
+                  : null,
               onSelected: (_) {
-                setState(() => _selectedMethod = 'admin_password');
-                ref.read(posClosingControllerProvider.notifier).setClosingMethod('admin_password');
+                setState(() => _selectedMethod = 'card_or_password');
+                ref
+                    .read(posClosingControllerProvider.notifier)
+                    .setClosingMethod('card_or_password');
               },
             ),
           ],
         ),
         const SizedBox(height: 16),
 
-        // Show input based on selected method
-        if (_selectedMethod == 'msr_card') ...[
-          Card(
-            // PicPos chrome: بطاقة مسطحة بحدود بلون القناة بدل الظل الافتراضي.
-            elevation: 0,
-            color: AppColors.info.withValues(alpha: 0.05),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: BorderSide(color: AppColors.info.withValues(alpha: 0.3)),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  const Row(
-                    children: [
-                      Icon(PhosphorIconsBold.creditCard, color: AppColors.info, size: 20),
-                      SizedBox(width: 8),
-                      Text('مرر بطاقة MSR', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.info)),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _msrCardController,
-                    autofocus: true,
-                    decoration: InputDecoration(
-                      labelText: 'كود البطاقة',
-                      prefixIcon: const Icon(PhosphorIconsBold.creditCard),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      hintText: 'مرر البطاقة أو أدخل الكود',
-                    ),
-                    onSubmitted: (_) => _handleClosingAction(false, closingState),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-
-        if (_selectedMethod == 'admin_password') ...[
+        // ── مدخلٌ واحدٌ للبطاقة وكلمة المرور ─────────────────────────────
+        //
+        // كان حقلَين في شريحتَين: تمريرُ بطاقةٍ في حقلٍ وكتابةُ باسوردٍ في
+        // آخر. والمالكُ طلب «كبسةً واحدة»، والمحرّكُ يقبلهما معاً سلفاً في
+        // `authenticateByPasswordOrCard` — فالمطلوبُ كان وصلاً لا بناءً.
+        //
+        // ⚠️ الحقلُ **غيرُ مخفيّ الحروف**: قارئُ MSR يكتب بسرعةٍ وينهي
+        // بـEnter، وإخفاءُ الحروف يمنع الكاشيرَ من رؤية أن القارئ أدخل
+        // نصّاً مشوَّهاً. ومن يكتب كلمةَ مرورٍ يدوياً هو مسؤولٌ واقفٌ عند
+        // الجهاز لحظةً واحدة، لا جلسةً مفتوحة.
+        if (_selectedMethod == 'card_or_password') ...[
           Card(
             // PicPos chrome: بطاقة مسطحة بحدود بلون القناة بدل الظل الافتراضي.
             elevation: 0,
@@ -1017,21 +992,38 @@ class _PicposCashierClosingDialogState
                 children: [
                   const Row(
                     children: [
-                      Icon(PhosphorIconsBold.lock, color: AppColors.primary, size: 20),
+                      Icon(PhosphorIconsBold.lockKey,
+                          color: AppColors.primary, size: 20),
                       SizedBox(width: 8),
-                      Text('أدخل كلمة سر المدير', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+                      Expanded(
+                        child: Text(
+                          'مرّر البطاقة أو أدخل كلمة المرور',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primary),
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 12),
                   TextField(
-                    controller: _passwordController,
-                    obscureText: true,
+                    controller: _msrCardController,
+                    autofocus: true,
                     decoration: InputDecoration(
-                      labelText: 'كلمة سر المدير',
-                      prefixIcon: const Icon(PhosphorIconsBold.lock),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      labelText: 'البطاقة أو كلمة المرور',
+                      prefixIcon: const Icon(PhosphorIconsBold.lockKey),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      hintText: 'مرّر البطاقة، أو اكتب كلمة المرور واضغط Enter',
                     ),
-                    onSubmitted: (_) => _handleClosingAction(false, closingState),
+                    onSubmitted: (_) =>
+                        _handleClosingAction(false, closingState),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'يُقبل من يملك صلاحية إغلاق الوردية.',
+                    style: TextStyle(
+                        fontSize: 11, color: AppColors.textSecondary),
                   ),
                 ],
               ),
@@ -1100,8 +1092,16 @@ class _PicposCashierClosingDialogState
         if (mounted) showPosToast(context, ref, 'أدخل كلمة سر المدير', type: PosNotificationType.warning);
         return;
       }
-      if (_selectedMethod == 'msr_card' && _msrCardController.text.isEmpty) {
-        if (mounted) showPosToast(context, ref, 'مرر بطاقة MSR أو أدخل الكود', type: PosNotificationType.warning);
+      // الشريحتان القديمتان اندمجتا في `card_or_password` — والحقلُ الواحدُ
+      // هو `_msrCardController`، فالتحقّقُ عليه. (‏`msr_card` باقٍ في الشرط
+      // لأن حوارَ UralCash ما زال يرسله وقيمتَه محفوظةٌ في صفوفٍ تاريخية.)
+      if ((_selectedMethod == 'msr_card' ||
+              _selectedMethod == 'card_or_password') &&
+          _msrCardController.text.isEmpty) {
+        if (mounted) {
+          showPosToast(context, ref, 'مرّر البطاقة أو أدخل كلمة المرور',
+              type: PosNotificationType.warning);
+        }
         return;
       }
     }

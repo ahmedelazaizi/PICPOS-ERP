@@ -24,6 +24,37 @@ const Map<String, String> _paymentMethodLabels = <String, String>{
   'multiple': 'دفع متعدّد',
 };
 
+/// إظهارُ «إغلاق سريع» أو إخفاؤه — طلبُ المالك 2026-08-14.
+///
+/// هو الطريقُ الوحيدُ **بلا أيّ مصادقة** ويُصفّر الفرقَ (`actual = system`)،
+/// فإخفاؤه يجعل كلَّ إغلاقٍ يمرّ ببطاقةٍ أو كلمةِ مرورٍ لمن يملك
+/// `pos_shift_close`.
+class _QuickCloseSettingTile extends ConsumerWidget {
+  const _QuickCloseSettingTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final enabled = ref.watch(posQuickCloseEnabledProvider).value ?? true;
+    return SwitchListTile(
+      value: enabled,
+      title: const Text('إظهار «إغلاق سريع»'),
+      subtitle: const Text(
+        'إغلاق بلا مصادقة يجعل الفرق صفراً — أطفئه ليمرّ كل إغلاق '
+        'ببطاقة أو كلمة مرور.',
+        style: TextStyle(fontSize: 12),
+      ),
+      secondary: const Icon(PhosphorIconsBold.lightning,
+          color: AppColors.warning),
+      onChanged: (v) async {
+        await ref
+            .read(settingsRepositoryProvider)
+            .saveSetting('pos_quick_close_enabled', v.toString());
+        ref.invalidate(posQuickCloseEnabledProvider);
+      },
+    );
+  }
+}
+
 class _PaymentMethodsSettingsCard extends ConsumerStatefulWidget {
   const _PaymentMethodsSettingsCard();
 
