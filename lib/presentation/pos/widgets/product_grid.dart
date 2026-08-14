@@ -87,10 +87,35 @@ class _ProductGridState extends ConsumerState<ProductGrid> {
   // lifetime so the filter predicate stays synchronous.
   Map<String, int> _barcodeToProductId = {};
 
+  /// ── بلاغُ المالك 2026-08-15 ────────────────────────────────────────────
+  /// «عند البحث عن المنتج لا يمكن حذف البحث حتى بعد اختيار المنتج.»
+  ///
+  /// والجذرُ مقيس: حقلُ البحث كان **بلا `TextEditingController` إطلاقاً** —
+  /// `onChanged: controller.setSearchQuery` وحدَه. فالنصُّ يعيش في الودجت
+  /// الداخليّ ولا يملك أحدٌ تفريغَه برمجياً: لا زرَّ مسحٍ يعمل، ولا اختيارُ
+  /// منتجٍ يُنظّفه. المتحكّمُ يُصفَّر والحقلُ يبقى مكتوباً — فيبدو البحثُ
+  /// «عالقاً».
+  final TextEditingController _searchController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
     _loadBarcodeIndex();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  /// يُفرغ خانةَ البحث والمتحكّمَ معاً.
+  ///
+  /// ⚠️ الاثنان معاً لا أحدُهما: تفريغُ المتحكّم وحدَه يترك النصَّ معروضاً
+  /// (وهو العطبُ الأصليّ)، وتفريغُ الحقل وحدَه يترك الشبكةَ مرشَّحة.
+  void _clearSearch() {
+    _searchController.clear();
+    ref.read(posControllerProvider.notifier).setSearchQuery('');
   }
 
   Future<void> _loadBarcodeIndex() async {
@@ -301,6 +326,11 @@ class _ProductGridState extends ConsumerState<ProductGrid> {
                     ),
                   ),
                   child: TextField(
+                    // ⚠️ بلا هذا السطر كان الحقلُ **غيرَ متحكَّمٍ به**: زرُّ
+                    // المسح (×) أدناه يستدعي `setSearchQuery('')` فيمسح
+                    // الحالةَ ويترك النصَّ معروضاً — فيبدو الزرُّ معطوباً،
+                    // وهو بلاغُ المالك 2026-08-15 بالحرف.
+                    controller: _searchController,
                     onChanged: controller.setSearchQuery,
                     style: const TextStyle(
                       fontSize: 14,
@@ -326,7 +356,7 @@ class _ProductGridState extends ConsumerState<ProductGrid> {
                                 PhosphorIconsBold.xCircle,
                                 size: 20,
                               ),
-                              onPressed: () => controller.setSearchQuery(''),
+                              onPressed: _clearSearch,
                             )
                           : null,
                     ),
@@ -496,7 +526,13 @@ class _ProductGridState extends ConsumerState<ProductGrid> {
         return ProductCard(
           key: ValueKey(product.id),
           product: product,
-          onTap: () => widget.onProductTap(product),
+          // طلبُ المالك 2026-08-15: «عند البحث والاختيار تفريغُ خانة البحث
+          // ليبدأ من جديد». الاختيارُ هو نهايةُ البحثة — وإبقاءُ النصّ يجبر
+          // الكاشيرَ على مسحه يدوياً قبل كلّ صنف.
+          onTap: () {
+            widget.onProductTap(product);
+            _clearSearch();
+          },
           showImages: showImages,
           nameFontSize: nameFontSize,
           priceFontSize: priceFontSize,
