@@ -254,6 +254,25 @@ rm -rf build/native_assets
 #    `main` فينقصه ٩ كوميتاتٍ منها الحارسُ المعاكسُ نفسُه. كشفه
 #    `git rev-list --count` في الاتّجاهَين، لا الاسمُ ولا النظافة.)
 #
+# تشغيلةُ 2026-08-15 بعد §٦ «وضع المطاعم» (‏c=4، ‏--pg):
+#   analyze 6 info · unit 3369 · widget 656 · integration 710 · pg 45
+#   (‏الزيادةُ ٢٢: ١٢ `industry_mode_drives_tables_test` · ٢
+#    `industry_mode_preloaded_test` · ٨ `picpos_restaurant_mode_screens_test`.
+#
+#    ⚠️ ودرسٌ عاشر: **`SettingsRepositoryCached.get` يرجع `null` عند إخفاق
+#    الكاش بنفس ما يرجعه عند غياب المفتاح.** والكاشُ لا يمتلئ إلا بقائمة
+#    `preloadKeys` في `main.dart`. فمفتاحٌ خارجها يُقرأ `null` **دائماً** —
+#    ميزةٌ كاملةٌ تموت بلا خطأٍ ولا اختبارٍ أحمر. وقع فعلاً مع `industry_mode`
+#    وكشفه حارسٌ بنيويٌّ شوهد أحمرَ. وأيُّ قراءةٍ متزامنةٍ جديدةٍ من هذا
+#    المستودع تحتاج سطراً في القائمة **وحارساً يثبته**.
+#
+#    ⚠️ ودرسٌ حادي عشر: **الكتابةُ عبر مستودعٍ والقراءةُ من آخرَ تُنتج
+#    إعداداً لا يتفاعل.** `IndustryModeNotifier.setMode` كان يكتب عبر
+#    `settingsRepositoryProvider` بينما `featureFlagsProvider` يقرأ من
+#    `settingsRepositoryCachedProvider` — فالكاشُ يبقى بائتاً ولا يتغيّر شيءٌ
+#    حتى إعادة التشغيل. `SettingsRepositoryCached.save` يكتب القاعدةَ ويحدّث
+#    الكاش معاً، وهو المسارُ الصحيح متى كان للمفتاح قارئٌ متزامن.)
+#
 # والحكمُ **بتطابق عدد النجاحات** لا بالخضرة: لو كشف التوازي هشاشةً كامنة
 # لظهر الفرقُ رقماً. وصفرُ `PathExistsException` في كلّ التشغيلات بعد تنظيف
 # `build/native_assets` أعلاه.
@@ -351,7 +370,7 @@ fi
 # على `DELETE FROM "accounts"` لأن `safes.linkedAccountId` صار يشدُّ الدليل،
 # و٢ افتراضَ أن رجلَ النقدية على `1111`. فالوصفةُ الموصوفة لو طُبّقت بالجملة
 # لَما أصلحت شيئاً — اقرأ رسالةَ الفشل، لا وصفةَ المستند.
-run_suite "unit + data + structural + services" 3347 \
+run_suite "unit + data + structural + services" 3369 \
   flutter test test/unit test/data test/structural test/services --concurrency="$LOCAL_CONCURRENCY"
 
 # الواجهات والنطاقُ والنواة — كانت **كلُّها** خارج البوابة حتى 2026-08-09.
