@@ -26,6 +26,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/providers/providers.dart';
 import '../../data/repositories/settings_repository_cached.dart';
+import 'brand.dart';
+import 'industry_tables_policy.dart';
 import '../../services/admin_password_service.dart';
 import '../../services/audit_log.dart';
 import '../../services/developer_auth_service.dart';
@@ -128,7 +130,30 @@ final featureCorrectionBus =
 
 final featureFlagsProvider = Provider<FeaturePolicy>((ref) {
   final profile = ref.watch(businessProfileProvider);
-  final overrides = ref.watch(featureOverridesProvider);
+  var overrides = ref.watch(featureOverridesProvider);
+
+  // ── «نوع النشاط التجاري» يحكم رايةَ الطاولات في PicPos ──────────────────
+  //
+  // العطبُ المقيس 2026-08-15: الإعداداتُ تعرض «مطعم (طاولات وصالات)»
+  // واختيارُه لا يُظهر شيئاً — `industry_mode` منفصلٌ تماماً عن البروفايل
+  // وعن السياسة، وقارئوه ثلاثةٌ لا رابعَ لهم وليس فيهم PicPos.
+  //
+  // وقرارُ المالك: وصلُ الضابط القائم لا مفتاحٌ ثانٍ بجواره.
+  //
+  // ⚠️ يُحقن **تجاوزاً** لا يُفرض بعد التصديق: كي تجري عليه قواعدُ
+  // `FeatureDependencyGraph` (‏`posTables` يستلزم `posMain`+`posKitchen`،
+  // ويستبعد `enterpriseInvoiceMode`) بدل تخطّيها.
+  //
+  // ⚠️ والقراءةُ من المستودع المخزَّن **مباشرةً** لا من `industryModeProvider`:
+  // ذاك يبني حالتَه بـ`supermarket` ثم يحمّل من القاعدة لاحقاً، فمراقبتُه
+  // كانت ستُظهر التنقّلَ بلا طاولاتٍ لحظةً ثم يقفز — ووميضٌ في شريط التنقّل
+  // يُقرأ عطباً.
+  overrides = withIndustryTablesOverride(
+    overrides,
+    ref.watch(settingsRepositoryCachedProvider).get('industry_mode'),
+    isPicPos: Brand.isPicPos,
+  );
+
   final result = FeatureValidator.validate(
     FeaturePolicy.fromProfile(profile),
     overrides,

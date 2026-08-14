@@ -18,6 +18,7 @@ import 'core/config/app_config.dart';
 import 'core/config/brand.dart';
 import 'core/config/business_profile_provider.dart';
 import 'core/config/feature_key.dart';
+import 'core/config/industry_tables_policy.dart';
 import 'core/tax/tax_rate_policy.dart';
 import 'core/theme/app_theme.dart';
 import 'core/config/supabase_config.dart';
@@ -822,6 +823,12 @@ void main() async {
       // only: nothing in the codebase ever read the key, so a deployment that
       // set a custom ladder still had 14% rejected everywhere.
       TaxRatePolicy.settingKey,
+      // «نوع النشاط التجاري» — يحكم رايةَ الطاولات في PicPos عبر
+      // `withIndustryTablesOverride`. والقراءةُ هناك **متزامنة**
+      // (`SettingsRepositoryCached.get`)، وهي ترجع `null` عند إخفاق الكاش
+      // بنفس ما ترجعه عند غياب المفتاح. فبلا هذا السطر يُقرأ `null` دائماً
+      // ⇒ اختيارُ «مطعم (طاولات وصالات)» لا يُظهر شيئاً، بلا خطأٍ ولا أثر.
+      industryModeSettingKey,
       ...FeatureKey.values.map((k) => k.settingKey),
     ];
     cachedSettings = SettingsRepositoryCached(sharedDb);

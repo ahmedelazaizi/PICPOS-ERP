@@ -1,4 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/config/business_profile_provider.dart';
+import '../../core/config/industry_tables_policy.dart';
+import '../repositories/settings_repository_cached.dart';
 import 'providers.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -320,9 +323,22 @@ class IndustryModeNotifier extends Notifier<IndustryMode> {
     }
   }
 
-  void setMode(IndustryMode mode) {
+  Future<void> setMode(IndustryMode mode) async {
     state = mode;
-    ref.read(settingsRepositoryProvider).saveSetting('industry_mode', mode.name);
+    // ── الكتابةُ عبر المستودع **المخزَّن** ──────────────────────────────
+    //
+    // `SettingsRepositoryCached.save` يكتب القاعدةَ **ويحدّث الكاش** معاً.
+    // والكتابةُ عبر `settingsRepositoryProvider` غيرِ المخزَّن كانت تترك
+    // الكاشَ بائتاً — و«نوع النشاط» صار يحكم رايةَ الطاولات في PicPos،
+    // و`featureFlagsProvider` يقرؤه **متزامناً** من ذلك الكاش. فالمالكُ كان
+    // سيختار «مطعم» ولا يرى شاشةَ طاولاتٍ حتى يُعيد التشغيل — وهو بعينه
+    // العَرَضُ الذي جاء هذا العملُ ليمنعَه.
+    await ref
+        .read(settingsRepositoryCachedProvider)
+        .save(industryModeSettingKey, mode.name);
+
+    // والمزوّدُ لا يُعاد بناؤه بمجرّد تغيّرِ كاشٍ داخلَ كائنٍ يراقبُه.
+    ref.invalidate(featureFlagsProvider);
   }
 }
 

@@ -1,5 +1,6 @@
 import '../config/brand.dart';
 import '../config/business_profile.dart';
+import '../config/feature_policy.dart';
 import 'screen_id.dart';
 
 /// Central place for profile → screen visibility mapping.
@@ -266,7 +267,33 @@ class ScreenRegistry {
   /// brand-gated ADDITION, not a replacement. See `forProfile` below.
   static const List<ScreenId> litePicpos = [...lite, ScreenId.scalePlu];
 
-  static List<ScreenId> forProfile(BusinessProfile profile) {
+  /// `litePicpos` بعد تطبيق «وضع المطاعم».
+  ///
+  /// طلبُ المالك 2026-08-14: «شاشةُ الطاولات وأوامرُ المطاعم والمطبخ يجب أن
+  /// تظهر»، وقرارُه أن تكون **خلف رايةٍ** مطفأةٍ افتراضياً لا مفتوحةً دائماً.
+  ///
+  /// ── ⚠️ الشاشتان على `tablesEnabled` وحدَها ────────────────────────────
+  /// `litePicpos.kitchenEnabled` **صحيحٌ سلفاً** منذ قرار المالك 2026-08-12،
+  /// ومعناه هناك «الإضافاتُ والملاحظاتُ تعمل» (`ModifierSelectionDialog`) لا
+  /// «شاشةُ KDS معروضة». فتعليقُ [ScreenId.kitchen] على `kitchenEnabled` كان
+  /// سيُظهر شاشةَ المطبخ لكلّ تنصيبةِ PicPos اليومَ بلا أن يطلبها أحد.
+  /// فالرايةُ الحاكمةُ للشاشتَين واحدة — وهي «وضعُ المطاعم» نفسُه.
+  ///
+  /// ── ولماذا ثابتٌ مُسمّى يُنادى مباشرة ────────────────────────────────
+  /// `Brand.isPicPos` ثابتُ ترجمةٍ افتراضُه `uralcash`، فالبوابةُ كلُّها
+  /// تشتغل على فرع UralCash ولن تقيس فرعَ PicPos أصلاً. نفسُ علاج
+  /// [litePicpos] و`FeaturePolicy.litePicpos`.
+  static List<ScreenId> litePicposWith(FeaturePolicy features) {
+    if (!features.tablesEnabled) return litePicpos;
+    return [...litePicpos, ScreenId.tables, ScreenId.kitchen];
+  }
+
+  /// [features] اختياريٌّ عن قصد: تركُه `null` يعطي **بالضبط** ما كان
+  /// يعطيه التوقيعُ القديم، فلا يتغيّر سلوكُ أيّ منادٍ لم يُحدَّث.
+  static List<ScreenId> forProfile(
+    BusinessProfile profile, {
+    FeaturePolicy? features,
+  }) {
     switch (profile) {
       case BusinessProfile.restaurant:
         return restaurant;
@@ -281,8 +308,11 @@ class ScreenRegistry {
       case BusinessProfile.commercial:
         return commercial;
       case BusinessProfile.lite:
-        // UralCash-lite stays 19 verbatim; PicPos-lite adds the scale screen.
-        return Brand.isPicPos ? litePicpos : lite;
+        // UralCash-lite stays 19 verbatim; PicPos-lite adds the scale screen،
+        // ثم «وضعَ المطاعم» إن أُشعلت رايتُه. والفرعُ محصورٌ بـPicPos فيبقى
+        // `lite` بلا حرف — وهو عقدٌ مكتوبٌ فوق [litePicpos].
+        if (!Brand.isPicPos) return lite;
+        return features == null ? litePicpos : litePicposWith(features);
       case BusinessProfile.unified:
         return unified;
     }
