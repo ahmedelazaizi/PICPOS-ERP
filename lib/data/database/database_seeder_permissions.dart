@@ -76,7 +76,14 @@ extension DatabaseSeederPermissions on AppDatabase {
       {'code': 'pos_view_cost', 'name': 'عرض سعر التكلفة', 'category': 'pos'},
       {'code': 'pos_view_profit', 'name': 'عرض الربح', 'category': 'pos'},
       {'code': 'pos_quantity_edit', 'name': 'تعديل الكمية', 'category': 'pos'},
-      {'code': 'pos_shift_close', 'name': 'إغلاق الوردية', 'category': 'pos'},
+      // فئةُ «الخزينة» لا «نقطة البيع» — يطابق `PermissionCodes.masterList`.
+      // قرارُ المالك 2026-08-14، ومقيسٌ في
+      // `test/unit/shift_close_permission_category_test.dart`.
+      {
+        'code': 'pos_shift_close',
+        'name': 'إغلاق الوردية',
+        'category': 'treasury',
+      },
 
       // POS Header \u0026 Screen (v35)
       {'code': 'pos_table_select', 'name': 'اختيار طاولة', 'category': 'pos'},

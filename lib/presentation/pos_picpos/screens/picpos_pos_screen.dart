@@ -19,6 +19,7 @@ import '../../widgets/permission_guard.dart'
 import '../../pos/widgets/pos_opening_balance_dialog.dart';
 import '../../../domain/entities/cart_item_entity.dart';
 import '../../../domain/entities/product_entity.dart';
+import '../widgets/picpos_payment_methods.dart';
 import '../../../domain/usecases/sales/add_to_cart_usecase.dart'
     show resolveStackingFlags;
 import '../../../services/cash_drawer_service.dart';

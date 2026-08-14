@@ -2402,5 +2402,24 @@ extension Epoch3Migrations on AppDatabase {
             'isManualAmount OK');
       });
     }
+
+    if (from < 154) {
+      await _safeMigrate('v154 نقلُ إغلاق الوردية إلى فئة الخزينة', () async {
+        // شاشةُ الصلاحيات تقرأ الفئةَ من **صفّ القاعدة** لا من
+        // `PermissionCodes.masterList` (‏`authRepo.getAllPermissions()`)،
+        // و`syncAllPermissions` يتخطّى أيَّ كودٍ موجودٍ سلفاً
+        // (`if (existingCodes.contains(...)) continue`). فبلا هذه الجملة
+        // تبقى الصلاحيةُ في «نقطة البيع» إلى الأبد على كلّ قاعدةٍ منصَّبة —
+        // أيْ في المكان الذي طلب المالكُ إخراجَها منه.
+        //
+        // والصلاحيةُ نفسُها لا تُمنح ولا تُنزع هنا: الفئةُ تبويبٌ في شاشة
+        // الأدوار، لا إذن.
+        await m.database.customStatement(
+          "UPDATE permissions SET category = 'treasury' "
+          "WHERE code = 'pos_shift_close'",
+        );
+        debugPrint('[Migration] v154 pos_shift_close → treasury OK');
+      });
+    }
   }
 }

@@ -1000,7 +1000,12 @@ class PermissionCodes {
     {'code': posRemoveItem, 'name': 'حذف صنف من السلة', 'category': 'pos'},
     {'code': posWeightDialog, 'name': 'استخدام الميزان', 'category': 'pos'},
     {'code': posShiftOpen, 'name': 'فتح الوردية', 'category': 'pos'},
-    {'code': posShiftClose, 'name': 'إغلاق الوردية', 'category': 'pos'},
+    // ⚠️ الإغلاقُ في «الخزينة» لا في «نقطة البيع» — قرارُ المالك 2026-08-14:
+    // «الإغلاقُ له صلاحيةٌ خارجَ إعداد صلاحيات نقطة البيع، بحيث يكون المديرُ
+    // هو من يجرد». والفتحُ يبقى فوقُ لأنه فعلُ كاشيرٍ يوميّ، والإغلاقُ جردٌ.
+    // والكودُ نفسُه لم يتغيّر ⇒ لا يفقد دورٌ صلاحيةً يملكها. والقواعدُ
+    // القائمةُ تُنقَل بهجرة v154 لأن `syncAllPermissions` يتخطّى الموجودَ.
+    {'code': posShiftClose, 'name': 'إغلاق الوردية', 'category': 'treasury'},
     {'code': posClearCart, 'name': 'مسح السلة بالكامل', 'category': 'pos'},
     {'code': posSearch, 'name': 'البحث اليدوي والباركود', 'category': 'pos'},
     {'code': posQuickPay, 'name': 'الدفع السريع', 'category': 'pos'},

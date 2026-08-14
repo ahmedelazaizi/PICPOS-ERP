@@ -693,7 +693,7 @@ class AppDatabase extends _$AppDatabase {
   /// `overtime_records.is_manual_amount` (تعليمُ السجلّات القائمة كي لا
   /// يُعاد اشتقاقُها).
   @override
-  int get schemaVersion => 153;
+  int get schemaVersion => 154;
 
   /// PostgreSQL-specific table creation: Drift's `currentDateAndTime` generates
   /// `strftime('%s','now')` which doesn't exist in PostgreSQL.

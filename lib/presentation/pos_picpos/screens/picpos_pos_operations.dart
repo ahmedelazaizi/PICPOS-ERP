@@ -1061,22 +1061,43 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       clickAmount = 0;
       resultCustomerId = cartState.selectedCustomerId;
     } else {
-      final result = await PosDialogs.showPaymentDialog(
-        context,
-        totalAmount: total,
-        initialMethod: isPlatform ? 'credit' : 'cash',
-        allowedMethods: await _allowedPaymentMethods(isPlatform: isPlatform),
-      );
-      if (result == null || !mounted) {
-        _refocusScanner();
-        return;
+      final allowed = await _allowedPaymentMethods(isPlatform: isPlatform);
+
+      // ── المسارُ السريع: طريقةٌ واحدةٌ مؤشَّرة ⇒ بلا حوار ────────────────
+      // طلبُ المالك 2026-08-14: «بطريقةٍ أسهل وأسرع». وأسرعُها ألّا يُسأل
+      // الكاشيرُ حين لا بديلَ أمامه. والقيمُ هنا **ليست اختصاراً**: الحوارُ
+      // نفسُه يرجع `total` كاملاً و`cash/bank/click = null` لكلّ طريقةٍ عدا
+      // `multiple` و`credit` (مقيسٌ في `pos_payment_dialogs.dart:390-410`)،
+      // وهما وحدَهما مستثنيان في `singlePaymentMethodFastPath`.
+      //
+      // وما يُفقَد هو اختيارُ عميلٍ **من داخل** الحوار — وله بابُه في السلّة
+      // (`_pickCustomer`)، ومنه تأتي `cartState.selectedCustomerId`.
+      final fastPath = singlePaymentMethodFastPath(allowed);
+      if (fastPath != null) {
+        method = fastPath;
+        paidTotal = total;
+        cashAmount = null;
+        bankAmount = null;
+        clickAmount = null;
+        resultCustomerId = cartState.selectedCustomerId;
+      } else {
+        final result = await PosDialogs.showPaymentDialog(
+          context,
+          totalAmount: total,
+          initialMethod: isPlatform ? 'credit' : 'cash',
+          allowedMethods: allowed,
+        );
+        if (result == null || !mounted) {
+          _refocusScanner();
+          return;
+        }
+        method = result.method;
+        paidTotal = result.total;
+        cashAmount = result.cashAmount;
+        bankAmount = result.bankAmount;
+        clickAmount = result.clickAmount;
+        resultCustomerId = result.customerId;
       }
-      method = result.method;
-      paidTotal = result.total;
-      cashAmount = result.cashAmount;
-      bankAmount = result.bankAmount;
-      clickAmount = result.clickAmount;
-      resultCustomerId = result.customerId;
     }
 
     // لازم تتكتب على السلة: شاشة العميل (CFD) وشيب الصندوق وفحص «غير متوفر
@@ -1241,35 +1262,39 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
   /// في لوحة الدفع. الأزرار اتشالت (طلب ٢)، فالإنفاذ نزل هنا — نقطة الاختيار
   /// الوحيدة الباقية. مفيش واحدة من الخمس في `criticalFinancialOps`، فتخطي
   /// مدير النظام مُعاد بالحرف زي `PermissionGuard`.
+  ///
+  /// ── القرارُ نفسُه خرج إلى [resolveAllowedPaymentMethods] ─────────────────
+  /// ما بقي هنا هو **القراءةُ** وحدَها. والسببُ أن الذيلَ الفاشلَ مفتوحاً كان
+  /// يعيش داخل `catch` في `State` فلا يبلغه اختبار: أيُّ خطأِ قراءةٍ كان
+  /// يمنح الطرقَ الخمسَ كلَّها. الآن `null` تعني «تعذّرت القراءة» والدالّةُ
+  /// الخالصةُ تُقفِل على النقديّ — ومقيسٌ في
+  /// `test/unit/picpos_payment_methods_test.dart`.
   Future<Set<String>> _allowedPaymentMethods({
     required bool isPlatform,
   }) async {
-    // عميل منصة = آجل وبس. بنرجّعها قبل قراءة الصلاحيات: القيد ده على مستوى
-    // العميل مش على مستوى المستخدم.
-    if (isPlatform) return {'credit'};
-
-    const codeFor = {
-      'cash': PermissionCodes.posPaymentCash,
-      'card': PermissionCodes.posPaymentCard,
-      'click': PermissionCodes.posPaymentTransfer,
-      'credit': PermissionCodes.posPaymentCredit,
-      'multiple': PermissionCodes.posPaymentMultiple,
-    };
-
+    // الإعدادُ يُقرأ ولو كان العميلُ منصّةً أو تعذّرت الصلاحيات — القراءتان
+    // مستقلّتان، وفشلُ إحداهما لا يُسقط الأخرى.
+    Set<String>? enabledBySetting;
     try {
-      final codes = await ref.read(currentUserPermissionsProvider.future);
-      if (codes.contains('system_admin') || codes.contains('*')) {
-        return codeFor.keys.toSet();
-      }
-      return codeFor.entries
-          .where((e) => codes.contains(e.value))
-          .map((e) => e.key)
-          .toSet();
+      enabledBySetting =
+          await ref.read(posEnabledPaymentMethodsProvider.future);
     } catch (_) {
-      // فشل قراءة الصلاحيات ما يصحّش يقفل التِل. نرجّع `null`-المعنى (الكل)
-      // عن طريق كل المفاتيح — نفس اللي كان بيحصل قبل الطلب ده.
-      return codeFor.keys.toSet();
+      // إعدادٌ غيرُ مقروء = بلا تضييق. الصلاحيةُ وحدَها تحكم عندئذٍ.
+      enabledBySetting = null;
     }
+
+    List<String>? codes;
+    try {
+      codes = await ref.read(currentUserPermissionsProvider.future);
+    } catch (_) {
+      codes = null; // ← الفشلُ يُقفِل، ولا يرجع الخمسةَ كما كان
+    }
+
+    return resolveAllowedPaymentMethods(
+      permissions: codes,
+      enabledBySetting: enabledBySetting,
+      isPlatformCustomer: isPlatform,
+    );
   }
 
   /// يضمن إن فاتورة بنكية ليها خزنة بنك محدَّدة **قبل** الترحيل.

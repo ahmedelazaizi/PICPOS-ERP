@@ -98,6 +98,7 @@ import '../../../core/design_system/typography.dart';
 import '../../../core/permissions/permission_codes.dart';
 import '../../../core/config/business_profile_provider.dart';
 import '../../../data/providers/providers.dart';
+import '../../pos_picpos/widgets/picpos_payment_methods.dart';
 import '../../widgets/permission_guard.dart';
 // دفعة ١٠ — تايلات الإعدادات المحروسة، مشتركة بين البراندين.
 import '../../widgets/settings/settings_permission_tiles.dart';
@@ -158,6 +159,7 @@ part 'admin_home_settings_picpos.dart';
 part 'cfd_settings_card_picpos.dart';
 part 'network_mode_settings_picpos.dart';
 part 'touch_input_settings_picpos.dart';
+part 'payment_methods_settings_picpos.dart';
 
 /// شاشة الإعدادات بهوية PicPos. تُختار في `app_main_screen.dart` بالعلامة
 /// (`Brand.isPicPos`). تعيد استخدام منطق `settings_screen.dart` بالكامل —
@@ -623,7 +625,7 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
         icon: PhosphorIconsBold.shoppingCart,
         keywords: 'تراكم أصناف ميزان وزن سلة أزرار تصنيفات شبكة منتجات '
             'إيصال طباعة تلقائية بيع بالسالب خصم ضريبة درج مصروفات وردية '
-            'مخزن افتراضي بادئة ترقيم',
+            'مخزن افتراضي بادئة ترقيم طرق الدفع نقدي بطاقة تحويل آجل متعدد',
         children: () => [
           // ═══ 3. نقطة البيع ═══
           _buildSettingsCard(
@@ -633,6 +635,11 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
                 onOpen: () => showPosSettingsDialog(context),
               ),
             ],
+          ),
+          const SizedBox(height: 16),
+          _buildSettingsCard(
+            title: 'طرق الدفع الظاهرة',
+            children: const [_PaymentMethodsSettingsCard()],
           ),
         ],
       ),
