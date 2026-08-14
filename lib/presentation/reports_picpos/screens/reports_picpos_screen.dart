@@ -223,7 +223,13 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
         shortcuts: [
           const _ReportShortcut('s_today', 'مبيعات اليوم', 'sales_main'),
           const _ReportShortcut('s_range', 'من تاريخ إلى تاريخ', 'sales_main'),
-          const _ReportShortcut('s_cashier', 'حسب الكاشير', 'sales_main'),
+          // ⚠️ كانت بلا `action` فتسقط على `parent.action()` = تقريرُ
+          // المبيعات العامّ **بلا أيّ ترشيحٍ بالكاشير** — وهو بعينه العطبُ
+          // الموثَّقُ فوق لشريحة «حسب المجموعة»، ومصدرُ بلاغ المالك
+          // 2026-08-14 «التقريرُ حسب المستخدم غيرُ دقيق»: الشريحةُ تَعِد
+          // بترشيحٍ لا يقع.
+          _ReportShortcut('s_cashier', 'حسب الكاشير', 'sales_main',
+              action: () => nav(() => const ShiftsReportScreen())),
           const _ReportShortcut('s_branch', 'حسب الفرع', 'sales_main'),
           _ReportShortcut('s_product', 'حسب الصنف', 'sales_main',
               action: () => nav(() => const TopProductsReportScreen())),
@@ -273,7 +279,12 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
               action: () => nav(() => const TopProductsReportScreen())),
           _ReportShortcut('p_group', 'حسب المجموعة', 'category_profit',
               action: () => nav(() => const CategoryProfitReportScreen())),
-          const _ReportShortcut('p_cashier', 'حسب الكاشير', 'category_profit'),
+          // تقريرُ أرباح التصنيفات **لا مرشِّحَ مستخدمٍ فيه أصلاً** (مقيسٌ:
+          // صفرُ ذكرٍ لـ`_selectedUserId`)، فالشريحةُ كانت تَعِد بما لا
+          // يستطيعه المصدر. وجهتُها «الإغلاق حسب المستخدم» حيث الأرقامُ
+          // مبوّبةٌ بالاسم فعلاً.
+          _ReportShortcut('p_cashier', 'حسب الكاشير', 'category_profit',
+              action: () => nav(() => const ShiftsReportScreen())),
           const _ReportShortcut('p_branch', 'حسب الفرع', 'category_profit'),
         ],
       ),
@@ -296,9 +307,15 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
             action: () => nav(() => const PurchaseReturnsReportScreen()),
           ),
         ],
+        // ⚠️ `r_cashier` («حسب الكاشير») **أُزيلت** 2026-08-14: تقريرُ
+        // مرتجعات المبيعات لا مرشِّحَ مستخدمٍ فيه إطلاقاً (صفرُ ذكرٍ لـ
+        // `_selectedUserId` فيه)، والشريحةُ كانت بلا `action` فتسقط على
+        // التقرير العامّ وتعرض مرتجعاتِ **كلّ** الكاشيرين تحت عنوانٍ يقول
+        // «حسب الكاشير». وهذا بعينه بلاغُ المالك «التقريرُ حسب المستخدم غيرُ
+        // دقيق». وإعادتُها تحتاج مرشِّحَ مستخدمٍ في التقرير نفسِه — بندٌ
+        // مستقلٌّ مصرَّحٌ به عند التسليم، لا شريحةٌ تكذب.
         shortcuts: const [
           _ReportShortcut('r_today', 'مرتجعات اليوم', 'sales_returns'),
-          _ReportShortcut('r_cashier', 'حسب الكاشير', 'sales_returns'),
           _ReportShortcut('r_product', 'حسب الصنف', 'sales_returns'),
           _ReportShortcut('r_customer', 'حسب العميل', 'sales_returns'),
         ],

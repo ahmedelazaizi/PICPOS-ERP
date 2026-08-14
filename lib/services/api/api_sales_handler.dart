@@ -1071,6 +1071,14 @@ class ApiSalesHandler extends ApiHandlerBase {
       debugPrint('[API] ⚠ _resolveUserId: clientUserId=$clientUserId '
           '(username="$fallbackUsername") not found on server — '
           'attributing invoice to admin (id=${admin.id}) to preserve data');
+      // ⚠️ أثرٌ **باقٍ** — انظر النظيرَ في `api_data_handler.dart`. الفاتورةُ
+      // تُحفظ (وفقدُها أسوأ)، لكنها تُنسب لغير بائعها فيكذب تقريرُ «حسب
+      // الكاشير» بلا أثرٍ يبقى بعد الإصدار. بلاغُ المالك 2026-08-14.
+      unawaited(DiagnosticLogger.log(
+          'USER-ATTRIBUTION',
+          '⚠ فاتورةٌ أُسنِدت إلى admin(id=${admin.id}) لأن '
+          'clientUserId=$clientUserId username="$fallbackUsername" '
+          'غيرُ موجودٍ على السيرفر — تقاريرُ «حسب المستخدم» ستنسبها للمدير'));
       return admin.id;
     }
 
