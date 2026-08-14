@@ -148,13 +148,53 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
         return;
       }
 
+      // ── وردياتٌ متزامنةٌ لنفس المستخدم (طلبُ المالك 2026-08-14) ─────────
+      //
+      // الفحصُ المحليُّ **قبل** السحب، والسحبُ بعده. الترتيبُ هو المميِّز:
+      // صفٌّ موجودٌ محلياً سلفاً = ورديتي على هذا الجهاز (إعادةُ تشغيلٍ،
+      // فأكمِل كما كان الحال دائماً)؛ صفٌّ لا يظهر إلا بعد السحب = فُتحت
+      // على طرفٍ آخر ⇒ نبّه وامنع.
+      //
+      // ولا عمودَ يغني عن هذا: `posTerminalId` يبقى `null` متى لم تُسجَّل
+      // الطرفيّةُ محلياً (`treasury_dao.dart:346-360`)، و`originClientId` لا
+      // يُكتب في مسار الفتح إطلاقاً.
       final currentShift = await treasuryRepo.getCurrentOpenShift(userId);
+
+      // نظيرُ `app_main_screen.dart:1339` يسحب `shifts` قبل فحصه، وهذه
+      // النسخةُ **كانت لا تسحب** — فالجهازُ الثاني يجهل ورديةَ الأوّل
+      // فيفتح ثانيةً صامتة. هذا هو الثقبُ بعينه.
+      ShiftData? afterPull = currentShift;
+      final isClientMode = NetworkService.instance.isClient;
+      if (currentShift == null && isClientMode) {
+        try {
+          await DeltaPullService.instance.pullTable('shifts');
+          afterPull = await treasuryRepo.getCurrentOpenShift(userId);
+        } catch (e) {
+          // تعذُّرُ السحب لا يمنع الفتح: تِلٌّ مقطوعُ الشبكة يجب أن يبيع.
+          // والسيرفرُ يرفض الازدواجَ من جهته على أيّ حال (Feature 048 v130).
+          debugPrint('[ShiftGuard] pull shifts failed (non-fatal): $e');
+        }
+      }
+
+      final gate = decideShiftOpenGate(
+        hasLocalOpenShift: currentShift != null,
+        hasOpenShiftAfterPull: afterPull != null,
+        isClient: isClientMode,
+      );
+
       unawaited(DiagnosticLogger.log('SHIFT-GUARD',
           '_ensureShiftOpen check userId=$userId '
           'openShiftId=${currentShift?.id} '
+          'afterPullShiftId=${afterPull?.id} gate=${gate.name} '
           'alreadyPrompted=${shiftDialogPromptedUserIds.contains(userId)} '
           'callSite=PicPosPosScreen.initState'));
-      if (currentShift != null) return; // Shift already open
+
+      if (gate == ShiftOpenGate.alreadyOpenHere) return;
+
+      if (gate == ShiftOpenGate.openOnAnotherTerminal) {
+        final blocked = await _handleShiftOpenedElsewhere(afterPull!);
+        if (blocked) return; // مُنِع أو انصرف — لا فتحَ هنا
+      }
 
       // Feature 012 / Issue C-SHIFT-LOOP: same-session guard. Once we
       // have already prompted this user in this session, refuse to do
@@ -1254,6 +1294,65 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     final isCriticalFin =
         PermissionCodes.criticalFinancialOps.contains(permissionCode);
     return isSystemAdmin && !isCriticalFin;
+  }
+
+  /// يعالج «ورديةٌ مفتوحةٌ على طرفٍ آخر». يرجع `true` إن وجب **عدمُ** الفتح.
+  ///
+  /// ثلاثةُ مخارج، وكلُّها مقصودة:
+  ///   • إغلاقُ المفتوحة → شاشةُ الإغلاق (محروسةٌ بـ`pos_shift_close` عندها).
+  ///   • فتحٌ بإذن مدير → `pos_shift_open` بموافقة مسؤولٍ يملكها، **ويُسجَّل**.
+  ///   • إلغاء → شاشةُ البيع بلا وردية، وهو ما طلبه المالك: «لا يقبل».
+  Future<bool> _handleShiftOpenedElsewhere(ShiftData existing) async {
+    if (!mounted) return true;
+
+    final authState = ref.read(authProvider);
+    final choice = await showPicposShiftConflictDialog(
+      context,
+      shiftId: existing.id,
+      startedAt: existing.startTime,
+      userName: authState.user?.displayName ??
+          authState.user?.username ??
+          'المستخدم الحالي',
+    );
+    if (!mounted) return true;
+
+    switch (choice) {
+      case ShiftConflictChoice.cancel:
+        return true;
+
+      case ShiftConflictChoice.closeExisting:
+        await Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const ShiftClosePicposScreen()),
+        );
+        // لا نفتح تلقائياً بعد العودة: قد يكون أغلقها وقد يكون انصرف. وفتحٌ
+        // صامتٌ هنا يعيد بالضبط السلوكَ الذي جاء هذا العملُ ليمنعه.
+        return true;
+
+      case ShiftConflictChoice.overrideOpen:
+        final approved = await requestManagerApproval(
+          context,
+          actionName: 'فتح وردية ثانية لنفس المستخدم',
+          permission: PermissionCodes.posShiftOpen,
+        );
+        if (!approved || !mounted) return true;
+
+        // التجاوزُ يُكتب. مخرجُ طوارئٍ لا يُراجَع يصير باباً خلفياً.
+        try {
+          await ref.read(activityLoggerProvider).log(
+                userId: authState.user?.id,
+                userName: authState.user?.displayName ?? 'مستخدم',
+                action: 'shift_open_override',
+                entityType: 'shifts',
+                entityId: existing.id,
+                description:
+                    'فُتحت وردية ثانية بإذن مدير رغم وردية مفتوحة #${existing.id} '
+                    'على طرف آخر بدأت ${existing.startTime}',
+              );
+        } catch (e) {
+          debugPrint('[ShiftGuard] override log failed (non-fatal): $e');
+        }
+        return false; // امضِ في الفتح
+    }
   }
 
   /// طرق الدفع المسموح بها للمستخدم الحالي.
