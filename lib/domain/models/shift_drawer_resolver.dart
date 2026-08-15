@@ -4,6 +4,9 @@
 /// يُختبر إلا بقاعدةٍ كاملة). وانتزاعُه يمنع تعريفَين للدرج: الإقفالُ يسوّي
 /// درجاً والمرتجعُ يصرف من آخر.
 ///
+/// المطابقةُ حرفيةٌ للكتلةِ الأصليةِ لأنّ الدالّةَ ستحلّ محلَّها في تسوية
+/// فرقِ الوردية، فأيُّ اختلافٍ يغيّر الدرجَ الذي يُكتب عليه صفُّ التسوية.
+///
 /// [cashSafeIdsInBranch] الخزائنُ النقدية في نطاق فرع الوردية.
 /// [movedBySafeId] مجموعُ ما تحرّك على كلّ خزنة (قد يحوي خزائنَ خارجَ النطاق
 /// فتُتجاهَل).
@@ -13,16 +16,18 @@ int? resolveShiftDrawer({
 }) {
   if (cashSafeIdsInBranch.isEmpty) return null;
 
-  double best = -1;
-  int? bestId;
-  for (final id in cashSafeIdsInBranch) {
-    final moved = movedBySafeId[id] ?? 0;
-    if (moved > best) {
-      best = moved;
-      bestId = id;
-    }
+  // فقط الخزائنُ التي لها حركاتٌ فعليةٌ وفي النطاق
+  final eligible = movedBySafeId.entries
+      .where((e) => cashSafeIdsInBranch.contains(e.key))
+      .toList();
+
+  if (eligible.isEmpty) {
+    // لا حركاتَ إطلاقاً أو كلُّها خارجَ النطاق ⇒ أوّلُ خزنة
+    return cashSafeIdsInBranch.first;
   }
-  // كلُّها أصفار ⇒ `best == 0` و`bestId` أوّلُ عنصرٍ في ترتيب المجموعة،
-  // وهو بعينه سلوكُ `drawerSafeIds.first` القائم.
-  return bestId;
+
+  // الخزنةُ الأكثرُ حركة، مع إبقاء الأولى عند التعادل (ترتيبُ الخريطة)
+  return eligible
+      .reduce((a, b) => a.value >= b.value ? a : b)
+      .key;
 }
