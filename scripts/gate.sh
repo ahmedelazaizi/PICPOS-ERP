@@ -285,6 +285,23 @@ rm -rf build/native_assets
 #    السابقة. ولا الاسمُ ولا النظافةُ كشفاه، بل `rev-list --left-right
 #    --count` في الاتّجاهَين. اقِسه أوّلَ كلّ جلسة قبل أيّ قراءةِ كود.)
 #
+# تشغيلةُ 2026-08-15 بعد بنود المالك السبعة (‏c=4، ‏--pg):
+#   analyze 6 info · unit 3394 · widget 664 · integration 710 · pg 45
+#   (‏unit +٢٣: ٨ منعِ تكرار كلمة المرور · ٥ منحِ صلاحية القائمة الجانبية ·
+#    ٦ سياسةِ تخطيط البيع · ٤ أوزانِ الخطّ. وwidget +٨: ٦ لستةِ التسعير ·
+#    ٢ لتخطيط اللوحة. وintegration ثابتٌ — أربعُ تجهيزاتٍ أُصلحت بلا تغيير عدد.
+#
+#    ⚠️ ودرسٌ ثاني عشر: **فحصُ اسم الدور يتخطّى نظامَ الصلاحيات كلَّه.**
+#    `AuthState.isOriginallyManager` يُعفي أيَّ دورٍ اسمُه يحوي «مدير» بلا
+#    نظرٍ في صلاحياته، فمنحُ صلاحيةٍ يعمل و**سحبُها لا يمنع**. ومربّعُ اختيارٍ
+#    لا يُنفَّذ عند إطفائه أخطرُ من ثقب — ضابطٌ يكذب على قارئه. أُبقي إعفاءً
+#    مُضافاً بقرار المالك، ومُنح الكودُ لتلك الأدوار كي يوافق المربّعُ الواقع.
+#
+#    ⚠️ ودرسٌ ثالث عشر: **بناءُ `ThemeData` في اختبارٍ يرمي.** `GoogleFonts`
+#    يطلب أوزاناً غيرَ مضمَّنةٍ في الـassets (‏`Cairo-Regular.ttf` وحدَه في
+#    `pubspec.yaml`). موثَّقٌ سلفاً في `brand_picpos_test.dart:152` ومؤكَّدٌ
+#    تجربةً هنا. فالثيمُ يُقاس بثوابته وبنصّه مجرَّداً من التعليقات، لا ببنائه.)
+#
 # والحكمُ **بتطابق عدد النجاحات** لا بالخضرة: لو كشف التوازي هشاشةً كامنة
 # لظهر الفرقُ رقماً. وصفرُ `PathExistsException` في كلّ التشغيلات بعد تنظيف
 # `build/native_assets` أعلاه.
@@ -382,11 +399,11 @@ fi
 # على `DELETE FROM "accounts"` لأن `safes.linkedAccountId` صار يشدُّ الدليل،
 # و٢ افتراضَ أن رجلَ النقدية على `1111`. فالوصفةُ الموصوفة لو طُبّقت بالجملة
 # لَما أصلحت شيئاً — اقرأ رسالةَ الفشل، لا وصفةَ المستند.
-run_suite "unit + data + structural + services" 3371 \
+run_suite "unit + data + structural + services" 3394 \
   flutter test test/unit test/data test/structural test/services --concurrency="$LOCAL_CONCURRENCY"
 
 # الواجهات والنطاقُ والنواة — كانت **كلُّها** خارج البوابة حتى 2026-08-09.
-run_suite "widget + core + domain + presentation + security + static" 656 \
+run_suite "widget + core + domain + presentation + security + static" 664 \
   flutter test test/core test/domain test/presentation test/security \
               test/static test/widget test/widget_test.dart --concurrency="$LOCAL_CONCURRENCY"
 
