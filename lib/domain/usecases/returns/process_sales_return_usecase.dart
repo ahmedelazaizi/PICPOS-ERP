@@ -129,7 +129,9 @@ class ProcessSalesReturnUseCase {
 
       // Proceed with Treasury transactions
       if (cashRefund > 0) {
-        final cashSafe = await _db.getDefaultSafeByType('cash');
+        // مهمّة ٣ (2026-08-16): درجُ وردية المستخدم المفتوحة لا الخزنةُ
+        // النقديةُ العامّة — راجع `TreasuryDao.resolveRefundSafe`.
+        final cashSafe = await _db.resolveRefundSafe(userId: request.userId);
         if (cashSafe != null) {
           // ⚠️ لا تعديلَ يدويّ للرصيد هنا. `createSafeTransaction` يطبّق
           // الحركةَ بنفسه: `payment` ⇒ `balance = balance - amount`

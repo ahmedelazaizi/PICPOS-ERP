@@ -438,7 +438,9 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
       // Fix: write the ledger row with a plain `into(...).insert(...)`
       // so no nested transaction runs and no auto balance mutation fires.
       if (cashRefund > 0) {
-        final cashSafe = await _db.getDefaultSafeByType('cash');
+        // مهمّة ٣ (2026-08-16): درجُ وردية المستخدم المفتوحة لا الخزنةُ
+        // النقديةُ العامّة — راجع `TreasuryDao.resolveRefundSafe`.
+        final cashSafe = await _db.resolveRefundSafe(userId: userId);
         if (cashSafe != null) {
           // H15 — خصمٌ ذرّيّ. و`newBalance` يبقى لقطةً لـ`balanceAfter`.
           final newBalance = cashSafe.balance - cashRefund;
@@ -499,9 +501,11 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
       // memo visible in the customer's statement. This is likely the
       // freeze-on-full-return bug the user reported.
       if (arRefund > 0 && invoice.customerId != null) {
+        // مهمّة ٣ — الشقُّ النقديُّ فقط يوجَّه لدرج الوردية؛ الشقُّ البنكيُّ
+        // ليس درجاً فيبقى على الخزنة الافتراضية.
         final arSafe = ['transfer', 'card', 'bank'].contains(invoice.paymentMethod)
             ? await _db.getDefaultSafeByType('bank')
-            : await _db.getDefaultSafeByType('cash');
+            : await _db.resolveRefundSafe(userId: userId);
         if (arSafe != null) {
           await _db.into(_db.safeTransactions).insert(
             SafeTransactionsCompanion.insert(

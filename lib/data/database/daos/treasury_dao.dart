@@ -2564,6 +2564,37 @@ extension TreasuryDao on AppDatabase {
     return query.get();
   }
 
+  /// خزنةُ صرف المرتجع: درجُ وردية المستخدم المفتوحة.
+  ///
+  /// كان المرتجعُ يضرب `getDefaultSafeByType('cash')` — خزنةً **عامّةً**
+  /// تتجاهل الفرع — بينما البيعَ والإقفالَ ينسبان للفرع. فمرتجعٌ في فرعٍ
+  /// كان يُنقص خزنةَ فرعٍ آخر (مقيسٌ 2026-08-16).
+  ///
+  /// وعند غياب ورديةٍ مفتوحة يسقط إلى الخزنة الافتراضية — والمستدعي يسجّل
+  /// السقوطَ في وصف الحركة كي يظهر لمراجع.
+  Future<Safe?> resolveRefundSafe({required int userId}) async {
+    final shift = await getCurrentOpenShift(userId);
+    if (shift == null) return getDefaultSafeByType('cash');
+
+    final branchSafes = await getCashSafesForBranch(shift.branchId);
+    if (branchSafes.isEmpty) return getDefaultSafeByType('cash');
+
+    final ids = {for (final s in branchSafes) s.id};
+    final txs = await (select(safeTransactions)
+          ..where((t) => t.safeId.isIn(ids))
+          ..where((t) => t.createdAt.isBiggerOrEqualValue(shift.startTime)))
+        .get();
+    final moved = <int, double>{};
+    for (final t in txs) {
+      moved[t.safeId] = (moved[t.safeId] ?? 0) + t.amount.abs();
+    }
+
+    final drawerId =
+        resolveShiftDrawer(cashSafeIdsInBranch: ids, movedBySafeId: moved);
+    if (drawerId == null) return getDefaultSafeByType('cash');
+    return branchSafes.firstWhere((s) => s.id == drawerId);
+  }
+
   /// Resolve the "primary" branch ID for a given user from UserBranchAccess.
   ///
   /// Feature 011 / Issue INV-PREFIX — DETERMINISM. The legacy `.limit(1)`
