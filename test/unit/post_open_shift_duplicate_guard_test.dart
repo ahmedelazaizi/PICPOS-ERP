@@ -89,7 +89,10 @@ void main() {
         );
     final userB = await db.createUser(
       username: 'cashier_048b',
-      password: 'pw',
+      // كلمةٌ مغايرةٌ عن `cashier_048` عن قصد: `createUser` صار يرفض تكرارَ
+      // كلمة المرور (§١) — والتجهيزةُ هنا تشاركتها بالمصادفة لا بالنيّة.
+      // ونيّةُ الاختبار «الحارسُ لكلّ مستخدمٍ على حدة»، وهي محفوظةٌ كما هي.
+      password: 'pw-b',
       displayName: 'B',
       roleId: roleId,
     );

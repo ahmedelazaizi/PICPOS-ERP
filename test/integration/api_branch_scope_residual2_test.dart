@@ -196,7 +196,9 @@ void main() {
         );
     misProvisionedUserId = await db.createUser(
       username: 'r2_unassigned',
-      password: 'test',
+      // كلماتٌ متمايزة: `createUser` صار يرفض التكرار (§١). والتمايزُ لا يمسّ
+      // نيّةَ الاختبار — نطاقُ الفرع يُقاس بالانتماء لا بكلمة المرور.
+      password: 'test-unassigned',
       displayName: 'R2 Unassigned',
       roleId: misRoleId,
     );
@@ -214,7 +216,7 @@ void main() {
         );
     branchBUserId = await db.createUser(
       username: 'r2_cashier_b',
-      password: 'test',
+      password: 'test-cashier-b',
       displayName: 'R2 Cashier B',
       roleId: branchBRoleId,
     );

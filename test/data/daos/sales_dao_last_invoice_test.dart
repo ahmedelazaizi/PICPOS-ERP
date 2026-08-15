@@ -28,7 +28,9 @@ void main() {
     );
     await db.createUser(
       username: 'cashier2',
-      password: 'test123',
+      // مغايرةٌ عن `cashier1` — `createUser` يرفض تكرارَ كلمة المرور (§١).
+      // ونيّةُ الاختبار «كلُّ كاشيرٍ يرى فاتورتَه» محفوظةٌ كما هي.
+      password: 'test123-2',
       displayName: 'Cashier Two',
       roleId: roleId,
     );

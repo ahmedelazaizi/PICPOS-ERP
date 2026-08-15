@@ -28,7 +28,8 @@ void main() {
     userA = await db.createUser(
         username: 'user_a', password: 'pass123', displayName: 'User A', roleId: role);
     userB = await db.createUser(
-        username: 'user_b', password: 'pass123', displayName: 'User B', roleId: role);
+        // مغايرةٌ عن `user_a` — `createUser` يرفض تكرارَ كلمة المرور (§١).
+        username: 'user_b', password: 'pass123-b', displayName: 'User B', roleId: role);
 
     Future<void> tx(String type, double amount, int uid,
         {DateTime? at, bool deleted = false}) async {

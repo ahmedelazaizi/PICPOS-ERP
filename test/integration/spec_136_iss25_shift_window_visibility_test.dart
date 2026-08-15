@@ -95,7 +95,8 @@ void main() {
         );
     final otherUser = await db.createUser(
       username: 'other25',
-      password: 'pw',
+      // مغايرةٌ عن `iss25_cashier` — `createUser` يرفض التكرار (§١).
+      password: 'pw-other',
       displayName: 'o',
       roleId: otherRole,
     );
