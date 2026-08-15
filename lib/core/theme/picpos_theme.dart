@@ -27,6 +27,31 @@ import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 
 class PicPosTheme {
+  // ─── §٧ — وزنان اثنان لا أكثر ─────────────────────────────────────────────
+  //
+  // طلبُ المالك: «الخطُّ في النظام بالكامل يجب أن يكون غامقاً بولد ومتناسقاً
+  // للوضوح».
+  //
+  // والعطبُ كان في المتن: `bodyLarge` و`bodyMedium` و`bodySmall` بلا
+  // `fontWeight` إطلاقاً — أي `w400` الافتراضيّ — بينما العناوينُ `w700`.
+  // وهي معظمُ ما يُقرأ (نصوصُ الجداول والبطاقات والقوائم)، فالتفاوتُ الذي
+  // رآه المالكُ كان بين عنوانٍ ثقيلٍ ومتنٍ باهتٍ في البطاقة الواحدة.
+  //
+  // ⚠️ ووزنان اثنان لا ثلاثة: توحيدُ كلّ شيءٍ على `w700` يمحو التراتبَ
+  // البصريَّ فيصير النصُّ كتلةً واحدة، والثلاثةُ تُعيد التفاوتَ من بابٍ آخر.
+  // فالعناوينُ والتسمياتُ `w700`، والمتنُ `w600` — أغلظُ من الافتراضيّ وأخفُّ
+  // من العنوان.
+  //
+  // ⚠️ وحدُّ هذا التغيير مقيسٌ ومكتوب: كثيرٌ من الجداول تضبط `fontWeight` في
+  // موضع الرسم فتتجاهل الثيمَ تماماً. فما لا يرث الثيمَ لا يتغيّر هنا، وهو
+  // يحتاج مرورَ عينٍ على شاشتَي البيع والتقارير بعد البناء.
+
+  /// وزنُ العناوين والتسميات.
+  static const FontWeight headingWeight = FontWeight.w700;
+
+  /// وزنُ المتن — أغلظُ من `w400` الافتراضيّ وأخفُّ من العنوان.
+  static const FontWeight bodyWeight = FontWeight.w600;
+
   PicPosTheme._();
 
   // ── رموز التصميم (design tokens) ────────────────────────────────────────
@@ -645,32 +670,33 @@ class PicPosTheme {
 
     return TextTheme(
       displayLarge: GoogleFonts.cairo(
-          fontSize: 30, fontWeight: FontWeight.w700, color: onSurface),
+          fontSize: 30, fontWeight: headingWeight, color: onSurface),
       displayMedium: GoogleFonts.cairo(
-          fontSize: 25, fontWeight: FontWeight.w700, color: onSurface),
+          fontSize: 25, fontWeight: headingWeight, color: onSurface),
       displaySmall: GoogleFonts.cairo(
-          fontSize: 21, fontWeight: FontWeight.w700, color: onSurface),
+          fontSize: 21, fontWeight: headingWeight, color: onSurface),
       headlineMedium: GoogleFonts.cairo(
-          fontSize: 19, fontWeight: FontWeight.w700, color: onSurface),
+          fontSize: 19, fontWeight: headingWeight, color: onSurface),
       headlineSmall: GoogleFonts.cairo(
-          fontSize: 17, fontWeight: FontWeight.w700, color: onSurface),
+          fontSize: 17, fontWeight: headingWeight, color: onSurface),
       titleLarge: GoogleFonts.cairo(
-          fontSize: 16, fontWeight: FontWeight.w700, color: onSurface),
+          fontSize: 16, fontWeight: headingWeight, color: onSurface),
       titleMedium: GoogleFonts.cairo(
-          fontSize: 15, fontWeight: FontWeight.w600, color: onSurface),
+          fontSize: 15, fontWeight: headingWeight, color: onSurface),
       titleSmall: GoogleFonts.cairo(
-          fontSize: 14, fontWeight: FontWeight.w600, color: onSurface),
+          fontSize: 14, fontWeight: headingWeight, color: onSurface),
       bodyLarge: GoogleFonts.cairo(
-          fontSize: 15, height: 1.65, color: onSurface),
+          fontSize: 15, height: 1.65, fontWeight: bodyWeight, color: onSurface),
       bodyMedium: GoogleFonts.cairo(
-          fontSize: 14, height: 1.65, color: onSurface),
-      bodySmall: GoogleFonts.cairo(fontSize: 13, height: 1.6, color: muted),
+          fontSize: 14, height: 1.65, fontWeight: bodyWeight, color: onSurface),
+      bodySmall: GoogleFonts.cairo(
+          fontSize: 13, height: 1.6, fontWeight: bodyWeight, color: muted),
       labelLarge: GoogleFonts.cairo(
-          fontSize: 14, fontWeight: FontWeight.w700, color: onSurface),
+          fontSize: 14, fontWeight: headingWeight, color: onSurface),
       labelMedium: GoogleFonts.cairo(
-          fontSize: 13, fontWeight: FontWeight.w600, color: muted),
+          fontSize: 13, fontWeight: headingWeight, color: muted),
       labelSmall: GoogleFonts.cairo(
-          fontSize: 12, fontWeight: FontWeight.w600, color: muted),
+          fontSize: 12, fontWeight: headingWeight, color: muted),
     );
   }
 }
