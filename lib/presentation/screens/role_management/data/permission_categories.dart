@@ -230,6 +230,7 @@ final Map<String, PermissionCategory> permissionCategories = {
       'system_database': 'إدارة قاعدة البيانات',
       'system_license': 'إدارة الترخيص',
       'system_updates': 'تحديث النظام',
+      'system_sidebar_open': 'فتح القائمة الجانبية بلا كلمة مرور',
     },
   ),
   'audit': const PermissionCategory(

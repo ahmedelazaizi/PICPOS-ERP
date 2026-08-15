@@ -251,6 +251,11 @@ class RoleGrantMatrix {
       'sales_return_print',
       'purchases_print',
       'purchases_return_print',
+      // §٤ — `isOriginallyManager` فحصُ نصٍّ على اسم الدور، فكلُّ دورٍ اسمُه
+      // يحوي «مدير» مُعفىً اليومَ من حوار كلمة مرور القائمة الجانبية بلا نظرٍ
+      // في صلاحياته. والمنحةُ هنا تجعل المربّعَ في شاشة الصلاحيات موافقاً
+      // للواقع بدل أن يظهر مطفأً والدورُ مُعفىً فعلاً.
+      'system_sidebar_open',
     },
     'كاشير متقدم': {
       'pos_access',
@@ -315,6 +320,8 @@ class RoleGrantMatrix {
       'sales_return_print',
       'purchases_print',
       'purchases_return_print',
+      // §٤ — نفسُ سبب منحة «مدير مالي» فوق.
+      'system_sidebar_open',
     },
     'محاسب متقدم': {
       'treasury_view',
@@ -363,6 +370,8 @@ class RoleGrantMatrix {
       'sales_return_print',
       'purchases_print',
       'purchases_return_print',
+      // §٤ — نفسُ سبب منحتَي «مدير مالي» و«مدير فرع» فوق.
+      'system_sidebar_open',
     },
   };
 

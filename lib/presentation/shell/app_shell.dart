@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 import '../../core/config/app_config.dart';
 import '../../core/config/brand.dart';
 import '../../core/config/business_profile_provider.dart';
+import '../../core/permissions/permission_codes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/backup_service.dart';
 
@@ -373,6 +374,35 @@ class _AppShellState extends ConsumerState<AppShell> {
         _isExpanded = true;
       });
       return;
+    }
+
+    // §٤ — `system_sidebar_open` يُعفي حاملَه من حوار كلمة المرور.
+    //
+    // كان الإعفاءُ صفةً ملازمةً للمنصب (مدير/مشرف)؛ وصار صلاحيةً يمنحها
+    // المالكُ لمن يشاء — وهو طلبُه بالحرف: أن يفرض فتحَ القائمة أو منعَه
+    // **لمستخدمٍ بعينه** لا لدرجةٍ وظيفية.
+    //
+    // ⚠️ وإعفاءٌ لا منع: من لا يملكه يسقط إلى الحوار كما اليوم ولا يُحبس.
+    // زرُّ «تسجيل الخروج» يعيش **داخلَ** القائمة الجانبية، فمنعٌ تامٌّ كان
+    // سيترك الكاشيرَ بلا مخرجٍ من النظام (قرارُ المالك 2026-08-15).
+    //
+    // ويُقرأ من المستخدم **الأصليّ** لا المرفوع — نفسُ سبب `isOriginallyAdmin`
+    // أعلاه: رفعُ صلاحيةٍ لفعلٍ واحدٍ يجب ألّا يفتح الشريطَ بعد سقوطه.
+    final actorId = authState.user?.id;
+    if (actorId != null) {
+      final authRepo = ref.read(authRepositoryProvider);
+      final exempt = await authRepo.userHasPermission(
+        actorId,
+        PermissionCodes.systemSidebarOpen,
+      );
+      if (exempt) {
+        if (!mounted) return;
+        setState(() {
+          _isHidden = false;
+          _isExpanded = true;
+        });
+        return;
+      }
     }
 
     final controller = TextEditingController();

@@ -552,6 +552,11 @@ extension DatabaseSeederPermissions on AppDatabase {
       },
       {'code': 'system_license', 'name': 'إدارة الترخيص', 'category': 'system'},
       {'code': 'system_updates', 'name': 'تحديث النظام', 'category': 'system'},
+      {
+        'code': 'system_sidebar_open',
+        'name': 'فتح القائمة الجانبية بلا كلمة مرور',
+        'category': 'system',
+      },
 
       // BRANCHES & ANALYTICS
       {'code': 'branches_manage', 'name': 'إدارة الفروع', 'category': 'settings'},
@@ -859,6 +864,11 @@ extension DatabaseSeederPermissions on AppDatabase {
     // for any future FM-specific permissions.
     final financialManagerExtraPerms = [
       'commercial_papers_manage',
+      // §٤ — الأدوارُ المسمّاةُ «مدير…» مُعفاةٌ اليومَ من حوار كلمة مرور
+      // القائمة الجانبية باسمها (`isOriginallyManager` فحصُ نصٍّ على الاسم).
+      // فالمنحةُ هنا تجعل مربّعَ الاختيار في شاشة الصلاحيات **صادقاً**: لو
+      // بقي فارغاً لرآه المديرُ مطفأً والدورُ مُعفىً فعلاً.
+      'system_sidebar_open',
     ];
     if (financialManagerRoleId > 0) {
       for (final code in financialManagerExtraPerms) {
@@ -910,6 +920,9 @@ extension DatabaseSeederPermissions on AppDatabase {
       'inventory_view', 'reports_view', 'treasury_view',
       'pos_closing_view_details', 'products_add', 'branches_manage',
       'users_manage', 'sales_view', 'purchases_create', 'settings_view',
+      // §٤ — نفسُ سبب منحة «مدير مالي»: الدورُ مُعفىً باسمه اليومَ فيلزم أن
+      // يظهر المربّعُ مؤشَّراً.
+      'system_sidebar_open',
       // Task 3d — نفس منطق analytics_view في accountantPermsIndices فوق.
       'analytics_view',
       // دفعة ٨ — نفس سبب منحة أمين المخزن فوق: الدور ده عنده `products_add`
@@ -980,6 +993,8 @@ extension DatabaseSeederPermissions on AppDatabase {
       // دفعة ٩ — `sales_view` + `purchases_create`.
       'sales_amounts_view', 'sales_print', 'sales_return_print',
       'purchases_print', 'purchases_return_print',
+      // §٤ — نفسُ سبب منحتَي «مدير مالي» و«مدير فرع».
+      'system_sidebar_open',
     ];
     if (inventoryManagerRoleId > 0) {
       for (final code in inventoryManagerPerms) {
