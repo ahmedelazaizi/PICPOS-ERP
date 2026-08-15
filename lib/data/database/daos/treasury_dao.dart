@@ -629,19 +629,15 @@ extension TreasuryDao on AppDatabase {
         ),
       );
 
-      // الدرجُ الذي تحرّك أكثر — وإن لم يتحرّك شيءٌ فأوّلُ أدراج النطاق.
-      int? primaryDrawer;
-      if (drawerSafeIds.isNotEmpty) {
-        final moved = <int, double>{};
-        for (final t in drawerTxs) {
-          moved[t.safeId] = (moved[t.safeId] ?? 0) + t.amount.abs();
-        }
-        primaryDrawer = moved.isEmpty
-            ? drawerSafeIds.first
-            : moved.entries
-                .reduce((a, b) => a.value >= b.value ? a : b)
-                .key;
+      // موضعٌ واحدٌ لتعريف الدرج — راجع `domain/models/shift_drawer_resolver.dart`.
+      final moved = <int, double>{};
+      for (final t in drawerTxs) {
+        moved[t.safeId] = (moved[t.safeId] ?? 0) + t.amount.abs();
       }
+      final primaryDrawer = resolveShiftDrawer(
+        cashSafeIdsInBranch: drawerSafeIds,
+        movedBySafeId: moved,
+      );
 
       return _ShiftSettlementResult(
         variance: variance,
