@@ -59,10 +59,19 @@ class ProductGrid extends ConsumerStatefulWidget {
   /// 4.1: Configurable grid columns (1-8), defaults to 4
   final int gridColumns;
 
+  /// هل تُرسم خانةُ البحث داخلَ رأس الشبكة؟
+  ///
+  /// §٢ — حين يرفعها `PosProductSelectionPanel` إلى صفّ الباركود
+  /// (‏`PosLayoutPolicy.searchBesideBarcode`) تُطفأ هنا، وإلا ظهر حقلا بحثٍ
+  /// اثنان يكتبان في نفس الحالة. والافتراضيُّ `true` فلا يتغيّر شيءٌ لمن لا
+  /// يمرّرها.
+  final bool showInlineSearch;
+
   const ProductGrid({
     super.key,
     required this.onProductTap,
     this.gridColumns = 8, // عرض 8 أصناف في الصف
+    this.showInlineSearch = true,
   });
 
   @override
@@ -310,7 +319,12 @@ class _ProductGridState extends ConsumerState<ProductGrid> {
             buildPosGridToggleActionButton(
               onToggle: () => controller.toggleGridCollapse(),
             ),
-          if (ref.watch(showSearchInPOSProvider).value ?? true) ...[
+          // §٢ — `showInlineSearch: false` يعني أن اللوحةَ رفعت الحقلَ إلى
+          // صفّ الباركود. و`Spacer` بديلُ `Expanded` المفقود كي يبقى زرُّ
+          // إعادة الترتيب في طرف الصفّ لا ملتصقاً بزرّ التخطيط.
+          if (!widget.showInlineSearch) const Spacer(),
+          if (widget.showInlineSearch &&
+              (ref.watch(showSearchInPOSProvider).value ?? true)) ...[
             const SizedBox(width: 12),
             Expanded(
               child: PermissionGuard(
