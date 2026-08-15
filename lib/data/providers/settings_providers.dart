@@ -379,7 +379,9 @@ final posButtonHeightProvider = FutureProvider<double>((ref) async {
 final posButtonFontSizeProvider = FutureProvider<double>((ref) async {
   final db = ref.watch(databaseProvider);
   final value = await db.getSettingValue('pos_button_font_size');
-  final parsed = double.tryParse(value ?? '') ?? 13.0;
+  // نفسُ بلاغ 2026-08-15 — والمدى (‏١٠–١٦) يسمح بأكثر، لكنّ ١٥ يقصّ نصوصاً
+  // كـ«الفاتورة السابقة» في زرٍّ ضيّق. فـ١٤ هو أكبرُ ما يتّسع بلا قصّ.
+  final parsed = double.tryParse(value ?? '') ?? 14.0;
   return parsed.clamp(10.0, 16.0);
 });
 
@@ -461,7 +463,10 @@ final posCategoryIconSizeProvider = FutureProvider<double>((ref) async {
 final posCategoryFontSizeProvider = FutureProvider<double>((ref) async {
   final db = ref.watch(databaseProvider);
   final value = await db.getSettingValue('pos_category_font_size');
-  final parsed = double.tryParse(value ?? '') ?? 9.0;
+  // بلاغُ المالك 2026-08-15 بعد الاختبار الميدانيّ: أسماءُ التصنيفات صغيرة.
+  // و٩ كان أدنى المدى تقريباً (‏٨–١٨) — فالافتراضيُّ نفسُه هو العطب لا
+  // المدى. ومن يشاء يضبطه من ديالوج إعدادات العرض وهو يرى شاشةَ التِل.
+  final parsed = double.tryParse(value ?? '') ?? 12.0;
   return parsed.clamp(8.0, 18.0);
 });
 

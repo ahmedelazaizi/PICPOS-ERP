@@ -776,7 +776,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
           child: Text(
             '${_allItems.length} تقرير',
             style: const TextStyle(
-              fontSize: 10.5,
+              fontSize: 12.5,
               fontWeight: FontWeight.w600,
               color: AppColors.primary,
             ),
@@ -848,7 +848,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
         const SizedBox(width: 6),
         Text(title,
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 15,
               fontWeight: FontWeight.bold,
               color: color,
             )),
@@ -887,7 +887,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
             const SizedBox(width: 5),
             Text(item.title,
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: c,
                 )),
@@ -1005,7 +1005,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 12.5,
+                        fontSize: 14.5,
                       )),
                   const SizedBox(height: 1),
                   Text(
@@ -1015,7 +1015,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 10,
+                      fontSize: 12,
                       color: AppColors.textMuted,
                     ),
                   ),
@@ -1055,7 +1055,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
               const SizedBox(width: 6),
               Text('التقارير الأساسية',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 14,
                     fontWeight: FontWeight.bold,
                     color: cat.color,
                   )),
@@ -1088,7 +1088,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
                 SizedBox(width: 5),
                 Text('اختصارات سريعة',
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 13,
                       fontWeight: FontWeight.bold,
                       color: AppColors.warningDark,
                     )),
@@ -1145,14 +1145,14 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 12,
+                        fontSize: 14,
                         fontWeight: FontWeight.bold,
                       )),
                   Text(r.subtitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 10,
+                        fontSize: 12,
                         color: AppColors.textMuted,
                         height: 1.2,
                       )),
@@ -1213,7 +1213,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
             const SizedBox(width: 5),
             Text(s.title,
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: cat.color,
                 )),
@@ -1312,7 +1312,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
-                              fontSize: 12,
+                              fontSize: 14,
                             )),
                       ),
                       if (item.isShortcut) ...[
@@ -1326,7 +1326,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
                           ),
                           child: const Text('اختصار',
                               style: TextStyle(
-                                fontSize: 8.5,
+                                fontSize: 10.5,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.warningDark,
                               )),
@@ -1340,7 +1340,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: AppColors.textMuted,
-                        fontSize: 10,
+                        fontSize: 12,
                         height: 1.25,
                       )),
                 ],
@@ -1421,7 +1421,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
                             p.currentStock <= 0 ? 'نفذ' : 'منخفض',
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 12,
+                              fontSize: 14,
                             ),
                           ),
                         ),

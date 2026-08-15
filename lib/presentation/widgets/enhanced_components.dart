@@ -39,6 +39,13 @@ class EnhancedCategoryFilter extends StatelessWidget {
   final String iconShape; // 'circle' or 'rounded'
   final double maxHeight;
 
+  /// وزنُ اسم التصنيف **غيرِ المختار**.
+  ///
+  /// المختارُ يبقى `w900` — التمييزُ بالوزن مقصود. والافتراضيُّ `w600` هو
+  /// القيمةُ القائمةُ حرفاً بحرف، فلا يتغيّر شيءٌ لمن لا يمرّره؛ ويرفعه
+  /// `PosLayoutPolicy` في PicPos وحدَه.
+  final FontWeight labelWeight;
+
   const EnhancedCategoryFilter({
     super.key,
     required this.categories,
@@ -52,6 +59,7 @@ class EnhancedCategoryFilter extends StatelessWidget {
     this.labelWidth = 52,
     this.iconShape = 'circle',
     this.maxHeight = 200,
+    this.labelWeight = FontWeight.w600,
   });
 
   /// Get default icon based on category name (Arabic support)
@@ -221,7 +229,7 @@ class EnhancedCategoryFilter extends StatelessWidget {
                 name,
                 style: TextStyle(
                   fontSize: fontSize,
-                  fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600,
+                  fontWeight: isSelected ? FontWeight.w900 : labelWeight,
                   color: isSelected
                       ? AppColors.primary
                       : AppColors.textSecondary,

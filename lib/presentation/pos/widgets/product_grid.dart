@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../../core/config/brand.dart';
+import '../../../core/config/pos_layout_policy.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/permissions/permission_codes.dart';
 import '../providers/pos_controller.dart';
@@ -488,6 +489,10 @@ class _ProductGridState extends ConsumerState<ProductGrid> {
       labelWidth: catLabelWidth,
       iconShape: catShape,
       maxHeight: catMaxHeight,
+      // بلاغُ المالك 2026-08-15: «نفس الأمر على نص ايقونات اسماء التصنيفات».
+      // والوزنُ من السياسة لا رقماً هنا — فالفرعُ على العلامة يبقى في موضعٍ
+      // واحدٍ مقيس.
+      labelWeight: PosLayoutPolicy.current.categoryLabelWeight,
     );
   }
 

@@ -20,11 +20,23 @@ class PosBarcodeInput extends ConsumerStatefulWidget {
   final FocusNode focusNode;
   final Function(String) onSubmitted;
 
+  /// الحشوُ الرأسيُّ داخلَ الحقل — المتحكّمُ الأكبرُ في ارتفاعه.
+  ///
+  /// الافتراضيُّ ١٦ هو القيمةُ القائمةُ حرفاً بحرف، فلا يتغيّر شيءٌ لمن لا
+  /// يمرّره. و`PosLayoutPolicy` تنزل به في PicPos وحدَه بعد بلاغ المالك
+  /// «تقليل ارتفاع خانتى البحث قليلاً».
+  final double contentPaddingV;
+
+  /// الحشوُ الرأسيُّ للشريط الحاوي.
+  final double rowPaddingV;
+
   const PosBarcodeInput({
     super.key,
     required this.controller,
     required this.focusNode,
     required this.onSubmitted,
+    this.contentPaddingV = 16,
+    this.rowPaddingV = 12,
   });
 
   @override
@@ -181,7 +193,10 @@ class _PosBarcodeInputState extends ConsumerState<PosBarcodeInput> {
     final isSupermarket = posState.industryMode == IndustryMode.supermarket;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: widget.rowPaddingV,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(
@@ -247,9 +262,9 @@ class _PosBarcodeInputState extends ConsumerState<PosBarcodeInput> {
                   ),
                   filled: true,
                   fillColor: AppColors.surface,
-                  contentPadding: const EdgeInsets.symmetric(
+                  contentPadding: EdgeInsets.symmetric(
                     horizontal: 20,
-                    vertical: 16,
+                    vertical: widget.contentPaddingV,
                   ),
                 ),
                 // Primary path: fire on Enter — when the scanner finishes

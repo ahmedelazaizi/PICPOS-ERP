@@ -49,6 +49,8 @@ class PosProductSelectionPanel extends ConsumerWidget {
         controller: barcodeController,
         focusNode: barcodeFocus,
         onSubmitted: onSearchBarcode,
+        contentPaddingV: layout.barcodeContentPaddingV,
+        rowPaddingV: layout.barcodeRowPaddingV,
       ),
     );
 
@@ -74,9 +76,9 @@ class PosProductSelectionPanel extends ConsumerWidget {
                 Expanded(
                   flex: layout.searchFlex,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
+                    padding: EdgeInsets.symmetric(
                       horizontal: 16,
-                      vertical: 12,
+                      vertical: layout.barcodeRowPaddingV,
                     ),
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -87,7 +89,9 @@ class PosProductSelectionPanel extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    child: const PosProductSearchField(height: 56),
+                    child: PosProductSearchField(
+                      height: layout.searchFieldHeight,
+                    ),
                   ),
                 ),
               ],

@@ -1,3 +1,5 @@
+import 'package:flutter/widgets.dart' show FontWeight;
+
 import 'brand.dart';
 
 /// تخطيطُ رأس لوحة اختيار الأصناف في شاشة البيع — وجهةٌ لكلّ علامة.
@@ -20,6 +22,10 @@ class PosLayoutPolicy {
     required this.searchBesideBarcode,
     required this.barcodeFlex,
     required this.searchFlex,
+    required this.searchFieldHeight,
+    required this.barcodeContentPaddingV,
+    required this.barcodeRowPaddingV,
+    required this.categoryLabelWeight,
   });
 
   /// هل يُرفع حقلُ البحث عن المنتج من داخل شبكة الأصناف إلى صفٍّ واحدٍ مع
@@ -38,18 +44,50 @@ class PosLayoutPolicy {
   /// المالك. والنسبةُ لا البكسل، فالصفُّ يتمدّد بعرض اللوحة على أيّ شاشة.
   final int searchFlex;
 
+  /// ارتفاعُ خانة البحث عن المنتج.
+  final double searchFieldHeight;
+
+  /// الحشوُ الرأسيُّ **داخلَ** حقل الباركود.
+  ///
+  /// هو المتحكّمُ الأكبرُ في ارتفاعه: ١٦ مع خطٍّ قياسُه ١٦ يعطي ~٥٦ بكسل.
+  final double barcodeContentPaddingV;
+
+  /// الحشوُ الرأسيُّ للشريط الحاوي للباركود (وللبحث بجانبه).
+  final double barcodeRowPaddingV;
+
+  /// وزنُ اسم التصنيف غيرِ المختار تحت أيقونته.
+  ///
+  /// المختارُ يبقى `w900` في الودجت المشترك — التمييزُ بالوزن مقصود.
+  final FontWeight categoryLabelWeight;
+
   /// الوجهةُ القائمة: الباركودُ سطراً كاملاً، والبحثُ داخلَ شبكة الأصناف.
+  ///
+  /// قيمُها هي **الحاليةُ حرفاً بحرف** — فلا يتغيّر شيءٌ لغير PicPos.
   static const PosLayoutPolicy stacked = PosLayoutPolicy(
     searchBesideBarcode: false,
     barcodeFlex: 1,
     searchFlex: 1,
+    searchFieldHeight: 48,
+    barcodeContentPaddingV: 16,
+    barcodeRowPaddingV: 12,
+    categoryLabelWeight: FontWeight.w600,
   );
 
-  /// وجهةُ PicPos: الاثنان في صفٍّ واحد، والباركودُ أصغر.
+  /// وجهةُ PicPos: الاثنان في صفٍّ واحد، والباركودُ أصغر وأقصر.
+  ///
+  /// ⚠️ والارتفاعُ غيرُ العرض: «تصغيرُ حجم خانة الباركود» في الطلب الأصليّ
+  /// فُهم عرضاً أوّلَ مرّة، وصحّحه المالكُ بعد الاختبار الميدانيّ إلى
+  /// **الارتفاع** — «تقليل ارتفاع خانتى البحث قليلاً». فالعرضُ نسبةٌ
+  /// (‏٥ مقابل ٦) والارتفاعُ يُقلَّل هنا: الحشوُ الداخليُّ ١٦→١٠ والشريطُ
+  /// ١٢→٦ والبحثُ ٤٨→٤٤ — أي ~٢٠ بكسلاً أقلَّ للصفّ كلِّه.
   static const PosLayoutPolicy picpos = PosLayoutPolicy(
     searchBesideBarcode: true,
     barcodeFlex: 5,
     searchFlex: 6,
+    searchFieldHeight: 44,
+    barcodeContentPaddingV: 10,
+    barcodeRowPaddingV: 6,
+    categoryLabelWeight: FontWeight.w800,
   );
 
   /// الفرعُ الوحيدُ على العلامة في هذا الملفّ.

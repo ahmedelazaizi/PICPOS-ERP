@@ -12,6 +12,7 @@
 // وهو ميّت. وهذا الملفُّ يقيس الوجهتَين معاً لأن العلامةَ تُمرَّر معاملاً
 // صريحاً — نفسُ علاج `ScreenRegistry.litePicpos` و`FeaturePolicy.litePicpos`.
 
+import 'package:flutter/widgets.dart' show FontWeight;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/core/config/pos_layout_policy.dart';
 
@@ -23,6 +24,41 @@ void main() {
 
     test('والافتراضيُّ يُبقيه داخلَ الشبكة كما كان', () {
       expect(PosLayoutPolicy.stacked.searchBesideBarcode, isFalse);
+    });
+
+    test('وخاناتُ البحث أقصرُ في وجهة PicPos', () {
+      // بلاغُ المالك بعد الاختبار الميدانيّ: «تقليل ارتفاع خانتى البحث قليلاً
+      // لم يتم كما اتفقنا». والطلبُ الأصليُّ «تصغيرُ حجم خانة الباركود» فُهم
+      // عرضاً، ومقصودُه الارتفاع. فالثلاثةُ تنزل معاً — وإلا بقي الصفُّ
+      // بارتفاعه لأن أطولَ عنصرٍ يحكمه.
+      expect(
+        PosLayoutPolicy.picpos.barcodeContentPaddingV,
+        lessThan(PosLayoutPolicy.stacked.barcodeContentPaddingV),
+      );
+      expect(
+        PosLayoutPolicy.picpos.barcodeRowPaddingV,
+        lessThan(PosLayoutPolicy.stacked.barcodeRowPaddingV),
+      );
+      expect(
+        PosLayoutPolicy.picpos.searchFieldHeight,
+        lessThan(PosLayoutPolicy.stacked.searchFieldHeight),
+      );
+    });
+
+    test('واسمُ التصنيف أثقلُ في وجهة PicPos', () {
+      expect(
+        PosLayoutPolicy.picpos.categoryLabelWeight.index,
+        greaterThan(PosLayoutPolicy.stacked.categoryLabelWeight.index),
+      );
+    });
+
+    test('والوجهةُ الافتراضيةُ تحمل القيمَ الحاليةَ حرفاً بحرف', () {
+      // ⚠️ الضابطُ الحاكم: لا يتسرّب قرارُ فوركٍ إلى الآخر. لو تغيّر أيٌّ من
+      // هذه الأرقام فقد تغيّر شكلُ UralCash بلا أن يطلبه أحد.
+      expect(PosLayoutPolicy.stacked.searchFieldHeight, 48);
+      expect(PosLayoutPolicy.stacked.barcodeContentPaddingV, 16);
+      expect(PosLayoutPolicy.stacked.barcodeRowPaddingV, 12);
+      expect(PosLayoutPolicy.stacked.categoryLabelWeight, FontWeight.w600);
     });
 
     test('الباركودُ أصغرُ من البحث في وجهة PicPos', () {
