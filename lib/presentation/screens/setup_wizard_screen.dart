@@ -788,6 +788,25 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
       return;
     }
 
+    // §١ — نفسُ منع `DuplicatePasswordException` لكن **هنا** لا عند الحفظ:
+    // القائمةُ تُلتزم دفعةً واحدة في نهاية المعالج، فلو تُرك التصادمُ
+    // لـ`createUser` لسقط مستخدمٌ من الدفعة والمشغّلُ قد جاوز الخطوة.
+    // والمقارنةُ نصّيّةٌ مباشرة لأن الكلماتِ هنا غيرُ مجزَّأةٍ بعد — ولا
+    // حاجةَ لـArgon2 ولا لكلفته.
+    final duplicateOf = _wizardUsers
+        .where((u) => u['password'] == password)
+        .map((u) => u['username'] as String)
+        .firstOrNull;
+    if (duplicateOf != null) {
+      AppToast.show(
+        context,
+        'كلمةُ المرور هذه مستعملةٌ سلفاً للمستخدم "$duplicateOf". اختر كلمةً '
+        'مختلفة — كلمتان متطابقتان تمنعان أحدَ صاحبَيهما من الدخول.',
+        type: ToastType.error,
+      );
+      return;
+    }
+
     // Resolve role name for display
     final roles = ref.read(allRolesProvider).value ?? [];
     final roleName = roles.where((r) => r.id == _userSelectedRoleId).map((r) => r.name).firstOrNull ?? '';
@@ -999,6 +1018,11 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
       // Create wizard users
       if (_wizardUsers.isNotEmpty) {
         final authRepo = ref.read(authRepositoryProvider);
+        // ⚠️ كان هذا `catch` يكتفي بـ`debugPrint`: فمستخدمٌ يفشل إنشاؤه يسقط
+        // من الدفعة **صامتاً** والمشغّلُ يمضي ظانّاً أن الكلَّ أُنشئ — ثم
+        // يكتشف الغيابَ يومَ يحاول ذلك الموظّفُ الدخول. والصمتُ هنا ينقض
+        // «رسالةً صريحة» في §١ من أصله.
+        final failed = <String>[];
         for (final u in _wizardUsers) {
           try {
             await authRepo.createUser(
@@ -1010,7 +1034,15 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
             );
           } catch (e) {
             debugPrint('[SetupWizard] Error creating user ${u['username']}: $e');
+            failed.add('${u['username']}: $e');
           }
+        }
+        if (failed.isNotEmpty && mounted) {
+          AppToast.show(
+            context,
+            'تعذّر إنشاءُ ${failed.length} مستخدم:\n${failed.join('\n')}',
+            type: ToastType.error,
+          );
         }
       }
 
