@@ -2117,20 +2117,22 @@ import 'package:ural_erp/core/permissions/permission_codes.dart';
 
 void main() {
   test('صلاحيةُ خصم الطاولة مسجَّلةٌ في تصنيف الطاولات', () {
-    final entry = PermissionCodes.allPermissions
+    final entry = PermissionCodes.masterList
         .firstWhere((p) => p['code'] == PermissionCodes.tablesDiscount);
     expect(entry['category'], 'tables');
     expect(entry['name'], isNotEmpty);
   });
 
   test('طباعةُ فاتورة الطاولة لم تعد محجوزة', () {
-    expect(PermissionCodes.reservedPermissions
-        .containsKey(PermissionCodes.tablesPrintBill), isFalse);
+    expect(
+        PermissionCodes.nonToggleable
+            .containsKey(PermissionCodes.tablesPrintBill),
+        isFalse);
   });
 }
 ```
 
-> إن كان اسمُ خريطة المحجوزات في الملف غيرَ `reservedPermissions`، استعمل الاسمَ الفعليَّ الموجود حول [permission_codes.dart:891](../../../lib/core/permissions/permission_codes.dart) وعدّل الاختبار قبل تشغيله.
+> الأسماءُ الفعليّةُ مقيسةٌ من الملف، لا مفترَضة: قائمةُ الصلاحيات اسمُها `masterList` ([permission_codes.dart:911](../../../lib/core/permissions/permission_codes.dart))، وخريطةُ غيرِ القابلة للتفعيل اسمُها `nonToggleable` ([permission_codes.dart:848](../../../lib/core/permissions/permission_codes.dart)).
 
 - [ ] **Step 2: شغّل وتأكّد من الفشل**
 
@@ -2380,11 +2382,40 @@ git commit -m "feat(tables): الكبسةُ تُشتقّ من الحالة — �
 
 **التمييزُ الجوهريّ في العرض:** إن كان `plan.producesSeparateInvoices` صحيحاً فكلُّ حصّةٍ تُصدر فاتورةً كاملة؛ وإلّا فالفاتورةُ واحدةٌ للأصناف كلِّها ولكلّ دافعٍ إيصالُ حصّة. اعرض هذا الفرق للكاشير نصّاً قبل التأكيد حتى لا يظنّ أنه أصدر أربعَ فواتيرَ وهو أصدر واحدة.
 
-- [ ] **Step 2: أخرِج أيَّ استيرادٍ مباشرٍ للقاعدة**
+- [ ] **Step 2: أصلح `requestTableBill` — لا تُعِد حالةً ميتة**
+
+`requestTableBill` القائمة ([tables_dao.dart:291](../../../lib/data/database/daos/tables_dao.dart)) تضع الطاولةَ على `'billing'` — وهي إحدى الحالات الثمانِ التي شطبناها في v154. تركُها يُعيد حالةً ميتةً إلى الجدول من باب الطباعة.
+
+احذف السطر:
+
+```dart
+      await updateTableStatus(tableId, 'billing');
+```
+
+فتبقى الطاولةُ على حالتها (🔵) ويتغيّر **الطلبُ** وحدَه إلى `bill_requested` — وهو الموضعُ الصحيح: طلبُ الفاتورة صفةٌ للطلب لا للطاولة. وبما أن `updateTableStatus` كان النداءَ الوحيدَ الذي يحتاج `tableId`، احذف الوسيطَ إن لم يبقَ له مستعمِلٌ في الدالّة، وحدّث نداءاتِها.
+
+أضِف اختباراً في `test/unit/table_session_service_test.dart`:
+
+```dart
+  test('طلبُ الفاتورة يغيّر الطلبَ لا الطاولة', () async {
+    final t = await newTable('ط٦٠');
+    final orderId = await service.openTable(
+        tableId: t, guestCount: 2, userId: null, userName: 'أحمد');
+
+    await db.requestTableBill(orderId, t);
+
+    expect((await readTable(t)).status, TableStatus.occupied,
+        reason: 'billing حالةٌ مشطوبةٌ من الطاولة');
+    final order = await db.getActiveOrderForTable(t);
+    expect(order!.status, 'bill_requested');
+  });
+```
+
+- [ ] **Step 3: أخرِج أيَّ استيرادٍ مباشرٍ للقاعدة**
 
 الملفُّ موجودٌ في القائمة البيضاء لحارس `presentation_db_import_guard` بصفته ملفاً قائماً؛ لا تُوسّع اعتمادَه على `data/database`. مرِّر ما تحتاجه عبر `TableCheckoutCoordinator`.
 
-- [ ] **Step 3: تحقّق**
+- [ ] **Step 4: تحقّق**
 
 ```bash
 flutter analyze lib test
@@ -2398,10 +2429,10 @@ flutter test test/structural test/static
 
 المتوقَّع: صفرُ فشل — حارسُ الاستيراد ضمنها.
 
-- [ ] **Step 4: أودِع**
+- [ ] **Step 5: أودِع**
 
 ```bash
-git add lib/presentation/screens/tables/split_table_dialog.dart
+git add lib/presentation/screens/tables/split_table_dialog.dart lib/data/database/daos/tables_dao.dart test/unit/table_session_service_test.dart
 git commit -m "feat(tables): التقسيمُ يصير تقسيمَ فاتورةٍ لا نقلَ أصناف"
 ```
 
@@ -2483,13 +2514,15 @@ git commit -m "feat(tables): سجلُّ الطاولة يُقرأ من سجلٍ�
 
 في ملفِّ المزوّدات المناسب (بجوار `restaurantRepositoryProvider`):
 
+في `lib/data/providers/repository_providers.dart`، بجوار `restaurantRepositoryProvider` (السطر ١٥٥):
+
 ```dart
 final tableSessionServiceProvider = Provider<TableSessionService>(
-  (ref) => TableSessionService(ref.read(appDatabaseProvider)),
+  (ref) => TableSessionService(ref.read(databaseProvider)),
 );
 ```
 
-استعمل اسمَ مزوّدِ القاعدة الفعليَّ في المستودع — ابحث عن `appDatabaseProvider` أو ما يقابله في `lib/data/providers/`.
+اسمُ مزوّد القاعدة `databaseProvider` مقيسٌ من [providers.dart:47](../../../lib/data/providers/providers.dart) — لا `appDatabaseProvider`.
 
 - [ ] **Step 3: احذف `finalizeTableOrder` الميتة**
 
@@ -2569,6 +2602,8 @@ git commit --allow-empty -m "chore(gate): الحدُّ على المقيس — �
 
 **تغطيةُ المواصفة:** §٣ آلةُ الحالات ← المهامّ ٣ و٩ · §٤ نموذجُ البيانات ← المهمّة ٢ · الصلاحيات ← المهمّة ٨ · السجل ← المهامّ ٣–٦ (كتابة) و١١ (عرض) · §٥ العمليات: الفتح/الإغلاق/الإلغاء/تغيير الحالة ← ٣، النقل/الدمج ← ٤، الخصم/الملاحظات ← ٥، الدفع ← ٦ و١٢، طباعةُ الفاتورة ← ٨ (الصلاحية) و١٠ · §٦ التقسيم ← ١ و٧ و١٠ · §٧ الاختبار ← منسوجٌ في كلّ مهمّة، والبوّابة في ١٣ · §٨ الملفات ← مغطّاة.
 
-**فجوةٌ واحدةٌ مقصودة:** المواصفة تعُدّ `printBill` انتقالاً في الخدمة (§٥ رقم ٤) يضع الطلب على `bill_requested`. الدالّةُ `requestTableBill` موجودةٌ في الـDAO ([tables_dao.dart:291](../../../lib/data/database/daos/tables_dao.dart)) لكنها تضع الطاولةَ على `billing` — وهي حالةٌ شطبناها. **المهمّة ١٠ يجب أن تُعدّلها** لتترك حالةَ الطاولة كما هي وتغيّر حالةَ الطلب وحدها، وإلّا أعادت حالةً ميتةً إلى الجدول.
+**فجوةٌ عولجت:** `requestTableBill` كانت تضع الطاولةَ على `billing` — حالةٌ شطبناها في v154 — فكانت الطباعةُ تُعيد حالةً ميتةً إلى الجدول. صارت **الخطوةَ ٢ في المهمّة ١٠** بنصِّها واختبارِها، لا ملاحظةً في ذيل الخطة لا يراها منفِّذُ المهمّة.
+
+**حدٌّ مُعلَن:** `checkoutController.processPayment` مقترنٌ بالسلّة بنيوياً، فإنشاءُ الفاتورة لا يُنقل إلى الخدمة. المُختبَرُ بلا واجهةٍ هو الحساب (`SplitPlan`) والتسجيل (`recordPayment`) — وهما موضعُ الخطر المحاسبيّ. مكتوبٌ في رأس المهمّة ٧.
 
 **اتّساقُ الأنواع:** `SplitPart.amount` مستعمَلةٌ في ٧ و١٠ كما عُرِّفت في ١ · `TableSessionService.recordPayment` بالتوقيع نفسِه في ٦ و٧ و١٢ · `TableStatus` من ٣ مستعمَلٌ في ٤ و٦ و٩ · `MergeOutcome.droppedDiscount` من ٤ تستهلكه واجهةُ الدمج · `effectiveTotal` عُرِّفت في ٥ وتستهلكها ٦ و٧.
