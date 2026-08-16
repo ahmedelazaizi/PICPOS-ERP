@@ -1885,9 +1885,16 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       return;
     }
 
+    // `pos_return` كان محروساً في النظير القديم وحدَه (`pos/widgets/
+    // pos_header.dart:320,384`) — ملفٌّ لا تبلغه شاشةُ PicPos. بوّابةُ دخولٍ
+    // خشنة: مَن لا يملكه لا يدخل وضعَ المرتجع أصلاً — قبل حتى اختيار فاتورة.
+    if (!await ensureQuickReturnPermission(ref, context)) return;
+    if (!mounted) return;
+
     // `sales_return_create` — نفسُ صلاحيّة الشاشة المستقلّة
     // (`sales_returns_picpos_screen.dart`)، وبنفس نمط بوّابةِ `posSave`:
-    // فحصٌ طازج ثم موافقةُ مسؤول.
+    // فحصٌ طازج ثم موافقةُ مسؤول. بوّابةٌ ثانيةٌ أدقّ من `pos_return`
+    // فوق — تخصّ إنشاءَ مستند المرتجع نفسه، لا مجرّد الدخول في وضعه.
     if (!await _userHasPermissionFresh(PermissionCodes.salesReturnCreate)) {
       if (!mounted) return;
       final approved = await requestManagerApproval(
@@ -2616,7 +2623,19 @@ class _QuickReturnLinesEditorDialogState
           ),
           IconButton(
             icon: const Icon(PhosphorIconsBold.minusCircle, size: 20),
-            onPressed: qty > 0 ? () => _setQty(line, qty - 1) : null,
+            // `pos_item_minus` — كان محروساً في النظير القديم وحدَه
+            // (`pos/widgets/cart_item_tile.dart:302`) على زرِّ «−» لكمية
+            // صنفٍ في سلّة البيع. جدولُ PicPos أُعيدت كتابتُه بلا مِسطرةِ
+            // خطوةٍ لتلك السلّة، فهذا أوّلُ سطحٍ حيٍّ للكود في PicPos.
+            onPressed: qty > 0
+                ? () async {
+                    if (!await ensureDecrementReturnLinePermission(
+                        ref, context)) {
+                      return;
+                    }
+                    _setQty(line, qty - 1);
+                  }
+                : null,
           ),
           InkWell(
             onTap:
@@ -2638,7 +2657,17 @@ class _QuickReturnLinesEditorDialogState
           ),
           IconButton(
             icon: const Icon(PhosphorIconsBold.plusCircle, size: 20),
-            onPressed: !atMax ? () => _increment(line) : null,
+            // `pos_item_plus` — نفسُ قصّة `pos_item_minus` فوق، على زرِّ «+»
+            // (`cart_item_tile.dart:381`).
+            onPressed: !atMax
+                ? () async {
+                    if (!await ensureIncrementReturnLinePermission(
+                        ref, context)) {
+                      return;
+                    }
+                    _increment(line);
+                  }
+                : null,
           ),
           if (qty > 0)
             IconButton(

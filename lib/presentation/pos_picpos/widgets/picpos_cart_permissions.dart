@@ -212,3 +212,57 @@ Future<bool> ensureDeliveryPermission(
 ) =>
     _ensure(ref, context, canSetDeliveryOrderCodes, PermissionCodes.posDelivery,
         'طلب توصيل');
+
+// ── دفعة ٥ (2026-08-16) — وضعُ المرتجع وصل، وحارسُ التكافؤ رصد ذلك ────────
+//
+// `pos_return` كان محروساً في النظير القديم وحدَه (`pos/widgets/
+// pos_header.dart:320,384`) على زرَّي «مرتجعات»/«مرتجع» — ملفٌّ لا تبلغه
+// شاشةُ PicPos. وزرُّ «مرتجع سريع» هنا يفتح وضعَ المرتجع كلَّه (اختيارُ
+// فاتورةٍ، محرِّرُ أسطر، حفظٌ يُرحِّل مرتجعاً فعلياً)، فمن لا يملك الكودَ
+// يجب ألّا يدخل الوضعَ أصلاً — لا أن يُمنع عند الحفظ فقط. (يبقى فحصُ
+// `sales_return_create` الطازجُ في `_showQuickReturn` كما هو — بوّابةٌ
+// ثانيةٌ أدقّ، تخصّ إنشاءَ مستند المرتجع نفسه لا مجرّد دخول الوضع.)
+//
+// و`pos_item_plus`/`pos_item_minus` كانا محروسَين في `pos/widgets/
+// cart_item_tile.dart:302,381` على زرَّي «+»/«−» لكميةِ صنفٍ في سلّة البيع.
+// جدولُ PicPos أُعيدت كتابتُه بأعمدةٍ ثابتةٍ بلا مِسطرةِ خطوةٍ لتلك السلّة،
+// فأوّلُ سطحٍ حيٍّ لهما في PicPos هو زرّا «+»/«−» في محرِّر أسطر المرتجع
+// (`_QuickReturnLinesEditorDialog._buildLineRow`) — نفسُ دلالة الكود
+// («زيادة/نقص كمية») على كائنٍ مختلف (سطرُ مرتجعٍ لا سطرُ سلّة).
+
+/// فتحُ «مرتجع سريع» — الدخولُ في وضع المرتجع (`pos_return`).
+bool canQuickReturnCodes(List<String> permissions) =>
+    _isAdmin(permissions) || permissions.contains(PermissionCodes.posReturn);
+
+/// يسمح بفتح «مرتجع سريع»، أو يطلب موافقةَ مسؤولٍ يملكها.
+Future<bool> ensureQuickReturnPermission(
+  WidgetRef ref,
+  BuildContext context,
+) =>
+    _ensure(ref, context, canQuickReturnCodes, PermissionCodes.posReturn,
+        'مرتجع سريع');
+
+/// زيادةُ كميةِ سطرٍ في محرِّر أسطر المرتجع (`pos_item_plus`).
+bool canIncrementReturnLineCodes(List<String> permissions) =>
+    _isAdmin(permissions) || permissions.contains(PermissionCodes.posItemPlus);
+
+/// نقصُ كميةِ سطرٍ في محرِّر أسطر المرتجع (`pos_item_minus`).
+bool canDecrementReturnLineCodes(List<String> permissions) =>
+    _isAdmin(permissions) ||
+    permissions.contains(PermissionCodes.posItemMinus);
+
+/// يسمح بزيادة كميةِ سطر مرتجعٍ خطوةً، أو يطلب موافقةَ مسؤولٍ يملكها.
+Future<bool> ensureIncrementReturnLinePermission(
+  WidgetRef ref,
+  BuildContext context,
+) =>
+    _ensure(ref, context, canIncrementReturnLineCodes,
+        PermissionCodes.posItemPlus, 'زيادة كمية سطر المرتجع');
+
+/// يسمح بنقص كميةِ سطر مرتجعٍ خطوةً، أو يطلب موافقةَ مسؤولٍ يملكها.
+Future<bool> ensureDecrementReturnLinePermission(
+  WidgetRef ref,
+  BuildContext context,
+) =>
+    _ensure(ref, context, canDecrementReturnLineCodes,
+        PermissionCodes.posItemMinus, 'نقص كمية سطر المرتجع');

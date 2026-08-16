@@ -284,11 +284,6 @@ const _absenceWitness = <String, List<String>>{
   'pos_deleted_items': ['الأصناف المحذوفة', 'DeletedItems'],
   'pos_keyboard': ['لوحة المفاتيح'],
   'pos_offers': ['العروض', 'OffersDialog'],
-  'pos_return': ['مرتجع', 'SalesReturn'],
-  // جدولُ PicPos أُعيدت كتابتُه بأعمدةٍ ثابتةٍ بلا مِسطرةِ خطوة — فظهورُ زرِّ
-  // خطوةٍ أو حسابِ خطوةٍ على الكمية هو وصولُ الميزة بعينه.
-  'pos_item_plus': ['IconsBold.plus', 'quantity + 1'],
-  'pos_item_minus': ['IconsBold.minus', 'quantity - 1'],
   'pos_table_select': ['طاولة', 'TablePos', 'table_pos'],
   'pos_table_bill': ['طاولة', 'TablePos', 'table_pos'],
   'tables_add_items': ['طاولة', 'TablePos', 'table_pos'],
