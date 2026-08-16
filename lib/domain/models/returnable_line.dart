@@ -32,6 +32,7 @@ class ReturnableLine {
 
   bool isReturnRequestValid(double requested) {
     if (requested <= 0) return false;
-    return requested <= availableQty + _epsilon;
+    final remaining = soldQty - alreadyReturnedQty;
+    return requested <= remaining + _epsilon;
   }
 }

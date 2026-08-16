@@ -41,4 +41,27 @@ void main() {
     );
     expect(l.isReturnRequestValid(0.3), isTrue);
   });
+
+  test('إرجاعٌ زائدٌ تاريخيّ: المتاح صفرٌ لكن الطلبُ يُرفَض تماماً', () {
+    // عند تجاوزِ الإرجاع للمباع تاريخياً، availableQty يبقى صفراً لأنه للعرض.
+    // لكن isReturnRequestValid تقارن بالمتبقّي غيرِ المُشبَّع (سالب) لتطابق المستودع.
+    const l = ReturnableLine(
+      invoiceItemId: 1, productId: 1, productName: 'صنف',
+      soldQty: 10, alreadyReturnedQty: 12, unitPrice: 5,
+    );
+    expect(l.availableQty, 0);
+    expect(l.isReturnRequestValid(0.0005), isFalse);
+  });
+
+  test('حدُّ السماح بالضبط: يقبل داخل الحدّ، يرفض خارجه', () {
+    // المتاحُ = 10 − 3 = 7. بسماحٍ ٠٫٠٠١:
+    // - طلبُ 7.001 مقبول (= 7 + 0.001)
+    // - طلبُ 7.002 مرفوض (> 7 + 0.001)
+    const l = ReturnableLine(
+      invoiceItemId: 1, productId: 1, productName: 'صنف',
+      soldQty: 10, alreadyReturnedQty: 3, unitPrice: 5,
+    );
+    expect(l.isReturnRequestValid(7.001), isTrue);
+    expect(l.isReturnRequestValid(7.002), isFalse);
+  });
 }
