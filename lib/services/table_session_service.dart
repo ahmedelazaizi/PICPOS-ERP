@@ -415,6 +415,11 @@ class TableSessionService {
             ..where((o) => o.id.equals(orderId)))
           .getSingle();
 
+      if (order.status != 'open' && order.status != 'bill_requested') {
+        throw TableTransitionException(
+            'لا تُسجَّل دفعةٌ على طلبٍ حالتُه ${order.status}');
+      }
+
       final due = _units(_effectiveTotalOf(order));
       final already = _units(order.paidAmount);
       if (already + _units(amount) > due) {

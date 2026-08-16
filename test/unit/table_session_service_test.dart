@@ -650,5 +650,19 @@ void main() {
       await service.closeTable(tableId: t, userId: null, userName: 'أحمد');
       expect((await readTable(t)).status, TableStatus.available);
     });
+
+    test('يرفض الدفعَ على طلبٍ مُلغًى ولا يقلب الطاولة', () async {
+      final t = await newTable('ط٥٧');
+      final orderId = await orderWithTotal(t, 100);
+      await service.cancelOrder(tableId: t, userId: null, userName: 'أحمد');
+
+      expect(
+        () => service.recordPayment(
+            orderId: orderId, invoiceId: 1, amount: 100),
+        throwsA(isA<TableTransitionException>()),
+      );
+      expect((await readTable(t)).status, TableStatus.available,
+          reason: 'الطاولةُ لم تُقلَب رغم أنّ الدفعةَ سُجِّلت على طلبٍ باطل');
+    });
   });
 }
