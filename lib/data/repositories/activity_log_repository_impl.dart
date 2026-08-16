@@ -95,4 +95,17 @@ class ActivityLogRepositoryImpl implements IActivityLogRepository {
       entityId: entityId,
     );
   }
+
+  @override
+  Future<List<ActivityLog>> logsForEntity({
+    required String entityType,
+    required int entityId,
+    int limit = 100,
+  }) {
+    return _db.logsForEntity(
+      entityType: entityType,
+      entityId: entityId,
+      limit: limit,
+    );
+  }
 }

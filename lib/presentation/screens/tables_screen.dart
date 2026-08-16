@@ -19,6 +19,7 @@ import '../widgets/permission_guard.dart';
 import 'tables/tables.dart';
 import 'tables/merge_table_dialog.dart';
 import 'tables/split_table_dialog.dart';
+import 'tables/table_log_sheet.dart';
 import 'tables/transfer_dialog.dart';
 
 // ── Part files (dialogs and mixed logic) ─────────────────────────────────

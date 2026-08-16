@@ -449,16 +449,32 @@ mixin _TableOperationsMixin on ConsumerState<TablesScreen> {
           AppToast.show(screenContext, 'لا يوجد طلبٌ لإغلاقه', type: ToastType.warning);
         }
         break;
+      case TableAction.log:
+        _showTableLog(screenContext, table);
+        break;
       case TableAction.printBill:
       case TableAction.pay:
       case TableAction.changeStatus:
       case TableAction.cancelOrder:
-      case TableAction.log:
         if (screenContext.mounted) {
           AppToast.show(screenContext, 'هذه الميزةُ قيدُ الإنجاز', type: ToastType.info);
         }
         break;
     }
+  }
+
+  /// سجلُّ الطاولة — استعلامٌ على `ActivityLogs` المسلسَل بالهاش (ICR-03)
+  /// مصفًّى على هذه الطاولة (T11)، لا جدولٌ جديد.
+  void _showTableLog(BuildContext context, RestaurantTable table) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: TableLogSheet(tableId: table.id, tableName: table.name),
+      ),
+    );
   }
 
   /// Show options for reserved table (seat guests or cancel)
