@@ -96,6 +96,11 @@ void main() {
 
       expect((await readTable(t)).status, TableStatus.available);
       expect(await db.getActiveOrderForTable(t), isNull);
+
+      final logs = await (db.select(db.activityLogs)
+            ..where((l) => l.action.equals('table_close')))
+          .get();
+      expect(logs.single.entityId, t);
     });
   });
 
@@ -123,6 +128,11 @@ void main() {
       await service.cancelOrder(tableId: t, userId: null, userName: 'أحمد');
 
       expect((await readTable(t)).status, TableStatus.available);
+
+      final logs = await (db.select(db.activityLogs)
+            ..where((l) => l.action.equals('table_order_cancel')))
+          .get();
+      expect(logs.single.entityId, t);
     });
   });
 
@@ -135,6 +145,11 @@ void main() {
           userId: null,
           userName: 'أحمد');
       expect((await readTable(t)).status, TableStatus.outOfService);
+
+      final logs = await (db.select(db.activityLogs)
+            ..where((l) => l.action.equals('table_status_change')))
+          .get();
+      expect(logs.single.entityId, t);
 
       await service.setTableStatus(
           tableId: t,
@@ -678,6 +693,22 @@ void main() {
       );
       expect((await readTable(t)).status, TableStatus.available,
           reason: 'الطاولةُ لم تُقلَب رغم أنّ الدفعةَ سُجِّلت على طلبٍ باطل');
+    });
+
+    test('يكتب سطراً واحداً في السجل بنوع الكيان ومعرّفه ومبلغه', () async {
+      final t = await newTable('ط٥٨');
+      final orderId = await orderWithTotal(t, 100);
+
+      await service.recordPayment(
+          orderId: orderId, invoiceId: 1, amount: 40, splitLabel: 'ضيف ١');
+
+      final logs = await (db.select(db.activityLogs)
+            ..where((l) => l.action.equals('table_payment')))
+          .get();
+      expect(logs, hasLength(1));
+      expect(logs.single.entityType, 'table');
+      expect(logs.single.entityId, t);
+      expect(logs.single.amount, 40);
     });
   });
 }

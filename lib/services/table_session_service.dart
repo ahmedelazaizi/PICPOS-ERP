@@ -401,11 +401,19 @@ class TableSessionService {
   /// `paidAmount` الإجماليَّ بعد الخصم، فتصير 🟠. ويترتّب على ذلك أثرٌ
   /// مقصود — إن أُضيف صنفٌ بعد دفعةٍ جزئيّة، ارتفع الإجماليُّ فوق المدفوع
   /// فعادت الطاولة 🔵 من تلقائها بلا قاعدةٍ خاصّة.
+  ///
+  /// [userId]/[userName] اختياريّان — لا مستدعيَ اليوم يملك سياقَ مستخدمٍ
+  /// حقيقيّاً (المنسّقُ `TableCheckoutCoordinator` لا يمرّره)، فتُترك
+  /// `null`/"مجهول" بدل إجبار كلِّ مستدعٍ على تمرير قيمةٍ لا يملكها. الوثيقةُ
+  /// نفسُها التي كتبت كلَّ انتقالٍ آخر في هذا الملف — لا يُترك الدفعُ
+  /// وحدَه بلا سطرٍ في `ActivityLogs`.
   Future<void> recordPayment({
     required int orderId,
     required int invoiceId,
     required double amount,
     String? splitLabel,
+    int? userId,
+    String? userName,
   }) async {
     if (amount <= 0) {
       throw const TableTransitionException('الدفعةُ يجب أن تكون موجبة');
@@ -444,6 +452,17 @@ class TableSessionService {
       if (already + _units(amount) >= due) {
         await _db.updateTableStatus(order.tableId, TableStatus.paid);
       }
+
+      await _log(
+        userId: userId,
+        userName: userName ?? 'مجهول',
+        action: 'table_payment',
+        tableId: order.tableId,
+        description: splitLabel != null
+            ? 'دفعةُ $splitLabel — فاتورة #$invoiceId'
+            : 'دفعةٌ — فاتورة #$invoiceId',
+        amount: amount,
+      );
     });
   }
 
