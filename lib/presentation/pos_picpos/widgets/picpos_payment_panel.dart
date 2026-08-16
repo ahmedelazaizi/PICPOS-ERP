@@ -819,12 +819,17 @@ class _ActionButtons extends ConsumerWidget {
             // «مرتجع سريع» (المهمّة ٧) — بجوار «الفاتورة السابقة» بنفس نمط
             // `_Action`. غيرُ معطَّلٍ على سلّةٍ فارغة عمداً: اختيارُ الفاتورة
             // للإرجاع لا يحتاج سلّةَ بيعٍ أصلاً، بعكس «دفع»/«حفظ».
+            //
+            // ومعطَّلٌ حين وضعُ المرتجع فعّالٌ بالفعل (جولةُ إصلاح ٢، ملاحظةٌ
+            // صغيرة): بلا هذا كان يمكن الضغطُ عليه ثانيةً فيستبدل الاختيارَ
+            // الحاليّ (فاتورةً وكمياتٍ ضُبطت بعنايةٍ في المحرِّر) بآخرَ صامتاً
+            // بلا تأكيد.
             SizedBox(width: 5 * scale),
             Expanded(
               child: _Action(
                 label: 'مرتجع سريع',
                 icon: PhosphorIconsBold.arrowUUpLeft,
-                onTap: onQuickReturn,
+                onTap: returnMode != null ? null : onQuickReturn,
                 height: btnHeight + 6,
                 font: btnFont,
               ),
@@ -860,7 +865,14 @@ class _ActionButtons extends ConsumerWidget {
                 child: _MiniAction(
                   label: 'معلقة',
                   icon: PhosphorIconsBold.listChecks,
-                  onTap: onHeldOrders,
+                  // وضعُ المرتجع (جولةُ إصلاح ٢ — مانعٌ ١): استرجاعُ فاتورةٍ
+                  // معلَّقة يحذفها من القاعدة فوراً (`hold_order_usecase.
+                  // executeRetrieve`)، وحفظُ المرتجع بعدها يمحو السلّةَ
+                  // (`clearCart` في `_processQuickReturnSave`) فيضيع الطلبُ
+                  // المعلَّق نهائياً بلا بيعٍ ولا رسالة. `_showHeldOrders`
+                  // نفسُها محروسةٌ أيضاً (خطُّ دفاعٍ ثانٍ)، والتعطيلُ هنا
+                  // يمنع الكاشيرَ من الدخول أصلاً.
+                  onTap: returnMode != null ? null : onHeldOrders,
                   height: btnHeight,
                   font: btnFont - 1,
                 ),

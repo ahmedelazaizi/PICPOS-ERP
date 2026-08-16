@@ -83,6 +83,45 @@ void main() {
           reason: 'تأكيدٌ أن السيناريو فعلاً يخدع المقارنة الساذجة');
       expect(picpos.computeIsFullReturn(mode), isFalse);
     });
+
+    test(
+        'صنفٌ على سطرين (مفتاحُ alreadyReturnedQty مزدوج) — لا تُختم '
+        '«كاملاً» أبداً ولو طُلِب كلُّ المتاح الظاهر', () {
+      // إعادةُ إنتاج قياس المراجع بالحرف: صنفٌ واحدٌ على سطرين (٥ و٤)،
+      // ومرتجعٌ سابقٌ حقيقيٌّ ٣ بمفتاح productId (لا بمفتاح أيّ سطرٍ بعينه) —
+      // فـ`_showQuickReturn` تنسبه لكلّ سطرٍ مستقلاً (راجع تعليقها):
+      //   سطر١: sold=5, alreadyReturned=3 (مكرَّر) ⇒ available=2
+      //   سطر٢: sold=4, alreadyReturned=3 (مكرَّر) ⇒ available=1
+      // «تحديد الكلّ» تطلب مجموع المتاح الظاهر=3 (2+1)، بينما الباقي
+      // الحقيقيّ = (5+4)-3 = 6. ختمُ هذه الحالة `true` كان يفقد 3 وحداتٍ
+      // حقيقيّةً للأبد (`processSalesReturn` تختم 'returned' نهائياً).
+      const splitLine1 = ReturnableLine(
+        invoiceItemId: 11, productId: 99, productName: 'سكر',
+        soldQty: 5, alreadyReturnedQty: 3, unitPrice: 10,
+      );
+      const splitLine2 = ReturnableLine(
+        invoiceItemId: 12, productId: 99 /* نفسُ الصنف */,
+        productName: 'سكر', soldQty: 4, alreadyReturnedQty: 3,
+        unitPrice: 10,
+      );
+      final mode = PosReturnMode.fromLines(
+        invoiceId: 1,
+        lines: [splitLine1, splitLine2],
+      );
+      // «تحديد الكلّ»: كلُّ سطرٍ يطلب متاحه الظاهر بالضبط.
+      mode.setQty(splitLine1.invoiceItemId, splitLine1.availableQty); // 2
+      mode.setQty(splitLine2.invoiceItemId, splitLine2.availableQty); // 1
+
+      final requestedTotal = mode.requestedQty.values
+          .fold<double>(0, (sum, q) => sum + q);
+      expect(requestedTotal, 3.0,
+          reason: 'تأكيدُ أرقام قياس المراجع بالحرف قبل فحص السلوك');
+
+      expect(picpos.computeIsFullReturn(mode), isFalse,
+          reason: 'صنفٌ مكرَّرٌ على سطرين ⇒ alreadyReturnedQty غيرُ موثوقة '
+              '⇒ لا يجوز الختمُ true إطلاقاً، حتى لو بلغ كلُّ سطرٍ متاحه '
+              'الظاهر');
+    });
   });
 
   group('findReturnableLineForProduct', () {
@@ -118,6 +157,44 @@ void main() {
       final found =
           picpos.findReturnableLineForProduct(mode, lineA.productId);
       expect(found?.invoiceItemId, lineA2.invoiceItemId);
+    });
+  });
+
+  group('nextIncrementedQty', () {
+    test('يزيد بمقدار خطوةٍ واحدة عادةً حين يوجد متسّع', () {
+      // متاحُ lineA = 5. عند current=3 توقّعُ الخطوةِ التالية 4 لا القفزُ
+      // للمتاح مباشرةً.
+      expect(picpos.nextIncrementedQty(lineA, 3), 4.0);
+    });
+
+    test('يقصّ الخطوةَ الأخيرة على المتاح الكسريّ بدل تجاوزه — محكُّ '
+        'المتطلَّب ٥', () {
+      const weighedLine = ReturnableLine(
+        invoiceItemId: 5, productId: 50, productName: 'موز',
+        soldQty: 2.5, alreadyReturnedQty: 0, unitPrice: 8,
+      );
+      // متاحٌ 2.5؛ عند current=2 الخطوةُ الساذجةُ (current+1=3) تتجاوز
+      // المتاح — الصحيحةُ تقصّها إلى 2.5 بالضبط.
+      expect(picpos.nextIncrementedQty(weighedLine, 2), 2.5);
+    });
+
+    test('يرجع null حين الكميةُ الحاليّةُ بلغت المتاحَ أصلاً', () {
+      expect(picpos.nextIncrementedQty(lineA, lineA.availableQty), isNull);
+    });
+
+    test('يرجع null لسطرٍ مستنفَدٍ سلفاً (متاحه صفر)', () {
+      expect(picpos.nextIncrementedQty(lineExhausted, 0), isNull);
+    });
+  });
+
+  group('blocksCartMutation', () {
+    test('لا تمنع شيئاً خارجَ وضع المرتجع (mode=null)', () {
+      expect(picpos.blocksCartMutation(null), isFalse);
+    });
+
+    test('تمنع أثناء وضع المرتجع — نفسُ الشرط وراء الحرّاس الثلاثة', () {
+      final mode = PosReturnMode.fromLines(invoiceId: 1, lines: [lineA]);
+      expect(picpos.blocksCartMutation(mode), isTrue);
     });
   });
 }

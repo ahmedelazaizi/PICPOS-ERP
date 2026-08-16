@@ -117,17 +117,36 @@ bool canEditCartQuantity(List<String> permissions) =>
 
 /// «مرتجعٌ كامل» فقط حين استُنفد المتاحُ الحاليّ (‏`ReturnableLine.
 /// availableQty`، القيمةُ نفسُها التي يسقُف بها `PosReturnMode.setQty`) على
-/// **كلّ** سطرٍ في [mode]. سطرٌ لم يُطلَب منه شيءٌ ومتاحُه > 0 يمنع الوصفَ
-/// «كامل» — قد يكون الكاشيرُ استبعده عمداً بـ`clearQty` لا أنه نسِيَه.
+/// **كلّ** سطرٍ في [mode]، **و**لا صنفَ مكرَّراً على أكثرَ من سطرٍ في نفس
+/// الفاتورة. سطرٌ لم يُطلَب منه شيءٌ ومتاحُه > 0 يمنع الوصفَ «كامل» — قد يكون
+/// الكاشيرُ استبعده عمداً بـ`clearQty` لا أنه نسِيَه.
 ///
-/// ⚠️ قيدٌ معروف يجعلها **متحفّظة**: `ReturnableLine.alreadyReturnedQty` في
-/// `_showQuickReturn` يأتي من استعلامٍ بمفتاح `productId` بينما `soldQty`
-/// بمفتاح السطر، ففاتورةٌ فيها نفسُ الصنف على أكثرَ من سطرٍ قد تُشبِّع
-/// `availableQty` لسطرٍ متبقٍّ فعلياً. فقد تُرجع هذه الدالّةُ `false` لحالةٍ
-/// كاملةٍ فعلياً — لكنها لا تصف جزئيّاً بأنه كامل أبداً، وهو الاتجاهُ الآمنُ
-/// لرايةٍ تُختم بها الفاتورةُ `'returned'` نهائياً في `processSalesReturn`.
+/// ⚠️ **تصحيحٌ (جولةُ إصلاح ٢) لتعليقٍ سابقٍ زعم اتجاهَ أمانٍ مقلوباً:**
+/// `ReturnableLine.alreadyReturnedQty` (‏`_showQuickReturn`) يأتي من استعلامٍ
+/// بمفتاح `productId` بينما `soldQty` بمفتاح **السطر**. فاتورةٌ فيها نفسُ
+/// الصنف على أكثرَ من سطرٍ (مثلاً ٥ + ٤) ومرتجعٌ سابقٌ ٣ (بمفتاح المنتَج، لا
+/// بمفتاح أيّ سطر) تُنسِب الـ٣ لِـ**كلّ** سطرٍ منفصلاً — فقياسٌ فعليّ
+/// (‏`requestedTotal=3, trueRemaining=6`) أثبت أن مقارنةً ساذجةً بين
+/// `requestedQty` الظاهرة ومتاحِ كلّ سطرٍ **تُبالغ**، لا تُقلّل: «تحديد الكلّ»
+/// كانت تُرجع `true` بينما ٣ وحداتٍ حقيقيّةً لم تُطلَب أصلاً، فتُختم
+/// الفاتورةُ `'returned'` نهائياً (`processSalesReturn`) وتفقد الثلاثةَ
+/// للأبد (`getInvoicesForReturn` تستبعد المرتجَعةَ بالكامل أبداً). المشكلةُ
+/// الحقيقيّةُ ليست «تحفّظاً» بل **مقارنةً بين مفتاحَين مختلفَين لا يجوز
+/// مقارنتُهما إطلاقاً**. فالحمايةُ الوحيدةُ الصحيحة: **رفضُ الختم `true`
+/// كلّياً** كلَّما تكرَّر `productId` على أكثرَ من سطرٍ في نفس الفاتورة — لا
+/// محاولةَ حسابٍ «أدقّ» فوق مفتاحَين متعارضَين. الإصلاحُ الجذريّ (استعلامٌ
+/// بمفتاح السطر) يحتاج تعديلَ طبقة المستودع (‏`returns_repository_impl.
+/// dart:109`) — خارج ملفّات هذه المهمّة، فلم يُصلَح هنا.
 @visibleForTesting
 bool computeIsFullReturn(PosReturnMode mode) {
+  final linesPerProduct = <int, int>{};
+  for (final line in mode.linesByItemId.values) {
+    linesPerProduct[line.productId] = (linesPerProduct[line.productId] ?? 0) + 1;
+  }
+  // صنفٌ على أكثرَ من سطرٍ ⇒ `alreadyReturnedQty` غيرُ موثوقةٍ لأيٍّ منها
+  // (مفتاحٌ مختلفٌ عن `soldQty`) ⇒ لا يجوز الختمُ `true` إطلاقاً.
+  if (linesPerProduct.values.any((count) => count > 1)) return false;
+
   return mode.linesByItemId.values.every((line) {
     final requested = mode.requestedQty[line.invoiceItemId] ?? 0;
     return (requested - line.availableQty).abs() < 0.001;
@@ -153,6 +172,39 @@ ReturnableLine? findReturnableLineForProduct(PosReturnMode mode, int productId) 
   }
   return null;
 }
+
+/// يحسب الكميّةَ التاليةَ عند زيادة سطرٍ خطوةً واحدة (‏[step])، **محدودةً
+/// بالمتاح فلا تتجاوزه أبداً** — القلبُ الحسابيُّ وراء زرّ «+» وحقلِ
+/// البحث/الباركود في `_QuickReturnLinesEditorDialog` (المتطلَّبُ ٥، جولةُ
+/// إصلاح ٢). يرجع `null` حين لا مجالَ للزيادة إطلاقاً (‏الكميةُ الحاليّةُ
+/// بلغت المتاحَ أصلاً).
+///
+/// ⚠️ بلا هذا القصّ: سطرٌ متاحُه كسريّ (‏٢٫٥ لصنفٍ موزون) عند `current=2`
+/// يطلب `2+1=3` فترفضها `PosReturnMode.setQty` **بلا أثرٍ ولا رسالة** — وهو
+/// بالضبط ما كان يحدث قبل هذا الاستخراج.
+@visibleForTesting
+double? nextIncrementedQty(
+  ReturnableLine line,
+  double currentQty, {
+  double step = 1,
+}) {
+  final available = line.availableQty;
+  if (currentQty >= available - 0.0005) return null;
+  return (currentQty + step <= available + 0.0005)
+      ? currentQty + step
+      : available;
+}
+
+/// وضعُ المرتجع يمنع أيَّ مدخلٍ يكتب على سلّة البيع أو يحذف بياناتٍ لا رجعةَ
+/// فيها — نقطةُ القرارِ الموحَّدة وراء حرّاس `_handleProductTap`
+/// (‏شبكةُ الأصناف)، `_searchBarcode` (‏حقلُ الباركود الرئيسيّ)، و
+/// `_showHeldOrders` (‏الفواتيرُ المعلَّقة، جولةُ إصلاح ٢ — مانعٌ ١: استرجاعُ
+/// طلبٍ معلَّقٍ يحذفه من القاعدة نهائياً، وحفظُ المرتجع يمحو السلّةَ بعده).
+///
+/// دالّةٌ واحدةٌ خالصةٌ لثلاثتها كي تفشل معاً وتُصلَح معاً: طفرةٌ على هذا
+/// الشرط تُسقِط اختبارَ الثلاثة، لا واحداً ينساه إعادةُ كتابةٍ لاحقة.
+@visibleForTesting
+bool blocksCartMutation(PosReturnMode? mode) => mode != null;
 
 mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
   // ── Contract the screen must satisfy ───────────────────────────────────
@@ -446,8 +498,9 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     // يضيف صنفاً **مبيعاً حقيقياً** بسعر شاشة الأصناف إلى سلّةٍ لا علاقةَ لها
     // بالمرتجع (السلّةُ لا تُكتَب من محرِّر أسطر المرتجع عمداً) ثم يُهمَل
     // صامتاً عند الحفظ — بلاغُ المراجع C2. رفضٌ صريحٌ برسالةٍ ظاهرة بدل
-    // إهمالٍ صامت.
-    if (ref.read(posReturnModeProvider) != null) {
+    // إهمالٍ صامت. `blocksCartMutation` مُختبَرةٌ في
+    // `picpos_quick_return_lines_test.dart`.
+    if (blocksCartMutation(ref.read(posReturnModeProvider))) {
       showPosToast(
         context,
         ref,
@@ -735,7 +788,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     // وضعُ المرتجع: نفسُ رفض `_handleProductTap` أعلاه — حقلُ الباركود
     // الرئيسيّ يضيف لسلّة بيعٍ، ومحرِّرُ أسطر المرتجع له حقلُ بحثٍ خاصٌّ به
     // يمرّ بـ`canAcceptProduct` (‏`_QuickReturnLinesEditorDialog`).
-    if (ref.read(posReturnModeProvider) != null) {
+    if (blocksCartMutation(ref.read(posReturnModeProvider))) {
       showPosToast(
         context,
         ref,
@@ -1690,6 +1743,24 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
   }
 
   Future<void> _showHeldOrders() async {
+    // وضعُ المرتجع (جولةُ إصلاح ٢ — مانعٌ ١): `HeldOrdersDialog.onRetrieve`
+    // يستدعي `retrieveHeldOrder`، و`executeRetrieve` في
+    // `hold_order_usecase.dart` **يحذف الطلبَ المعلَّق من القاعدة** فور
+    // تحميله في السلّة — ولا استرجاعَ بعدها. فمسارُ الكارثة: كاشيرٌ في وضع
+    // مرتجعٍ يفتح «معلّقة» ← الطلبُ يُحذف وتدخل أصنافُه سلّةً لا علاقةَ لها
+    // بالمرتجع ← «دفع/حفظ» (مفعَّلٌ الآن بفضل إصلاح C1) يحفظ المرتجعَ ثم
+    // `clearCart()` تمحو ما استُرجع ⇒ الطلبُ المعلَّق ضائعٌ نهائياً بلا بيعٍ
+    // ولا رسالة. الأزرارُ الثلاثة (لوحةُ الدفع، الشريطُ العلويّ) معطَّلةٌ
+    // بصرياً أيضاً؛ هذا الحارسُ خطُّ الدفاع الأخير عند أيّ مدخلٍ ثالثٍ يُنسى.
+    if (blocksCartMutation(ref.read(posReturnModeProvider))) {
+      showPosToast(
+        context,
+        ref,
+        'أنت في وضع المرتجع — أنهِ الحفظَ أو الإلغاءَ قبل فتح الفواتير المعلّقة',
+        type: PosNotificationType.warning,
+      );
+      return;
+    }
     await showDialog<void>(
       context: context,
       builder: (_) => HeldOrdersDialog(
@@ -1800,6 +1871,20 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
   /// ويتحوَّل مسارُ الحفظ في `_processPaymentAndSave`، وتُقفَل إضافةُ أصنافٍ
   /// للسلّة — `_handleProductTap`/`_searchBarcode` أعلاه).
   Future<void> _showQuickReturn() async {
+    // ملاحظةٌ صغيرة (جولةُ إصلاح ٢): الزرُّ نفسُه معطَّلٌ في اللوحة حين وضعُ
+    // المرتجع فعّالٌ بالفعل (‏`picpos_payment_panel.dart`)، فهذا خطُّ دفاعٍ
+    // ثانٍ فقط — بلا هذا الفحص، إعادةُ استدعاءٍ (مثلاً من اختصار كيبورد
+    // مستقبليّ) كانت ستستبدل فاتورةً وكمياتٍ ضُبطت بعنايةٍ صامتاً.
+    if (ref.read(posReturnModeProvider) != null) {
+      showPosToast(
+        context,
+        ref,
+        'أنت في وضع المرتجع بالفعل — أنهِ الحفظَ أو الإلغاءَ أوّلاً',
+        type: PosNotificationType.info,
+      );
+      return;
+    }
+
     // `sales_return_create` — نفسُ صلاحيّة الشاشة المستقلّة
     // (`sales_returns_picpos_screen.dart`)، وبنفس نمط بوّابةِ `posSave`:
     // فحصٌ طازج ثم موافقةُ مسؤول.
@@ -1864,16 +1949,18 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     };
     final nameById = <int, String>{for (final p in products) p.id: p.name};
 
-    // ⚠️ قيدٌ معروف (I2، جولةُ إصلاح ١): `returnedByProduct` من
-    // `getReturnedQuantitiesForInvoice` مجموعٌ **بمفتاح `productId`**
-    // (‏`inventory_dao.dart` يجمع بـGROUP BY productId)، بينما `soldQty` هنا
-    // بمفتاح **السطر** (‏`item.quantity`). فاتورةٌ فيها نفسُ الصنف على أكثرَ
-    // من سطرٍ (مثلاً وحدتان مختلفتان لنفس الصنف) تُنسِب كامل المرتجَع
-    // السابق لكلّ سطرٍ من سطورها **مستقلّاً**، فيَظهر متاحُ كلّ سطرٍ أقلَّ من
-    // الحقيقيّ (تحفّظٌ لا تساهل: `computeIsFullReturn` أدناه قد تمنع وصفَ
-    // «كامل» عن حالةٍ هي كذلك فعلياً، لكنها لا تصف جزئيّاً بأنه كامل). إصلاحُ
-    // هذا يحتاج استعلاماً بمفتاح السطر (`invoiceItemId`) في طبقة المستودع —
-    // خارج نطاق ملفّات هذه المهمّة.
+    // ⚠️ قيدٌ معروف (I2؛ نصُّه صُحِّح في جولة إصلاح ٢ — راجع `computeIsFullReturn`
+    // أدناه لتفصيلٍ كامل): `returnedByProduct` من `getReturnedQuantitiesForInvoice`
+    // مجموعٌ **بمفتاح `productId`** (‏`inventory_dao.dart` يجمع بـGROUP BY
+    // productId)، بينما `soldQty` هنا بمفتاح **السطر** (‏`item.quantity`).
+    // فاتورةٌ فيها نفسُ الصنف على أكثرَ من سطرٍ تُنسِب كامل المرتجَع السابق
+    // لكلّ سطرٍ من سطورها **مستقلّاً** — مقارنةٌ بين مفتاحَين مختلفَين لا
+    // يجوز الوثوقُ بناتجها. قياسٌ فعليّ أثبت أن هذا يجعل `computeIsFullReturn`
+    // **تُبالغ** (تختم «كاملٌ» بينما وحداتٌ حقيقيّةٌ لم تُطلَب)، لا تُقلّل —
+    // فالدالّةُ تلك ترفض الختمَ `true` كلّياً عند أيّ تكرارٍ لِـ`productId`
+    // بدل محاولة حسابٍ فوق مفتاحَين متعارضَين. الإصلاحُ الجذريّ (استعلامٌ
+    // بمفتاح السطر `invoiceItemId`) يحتاج تعديلَ طبقة المستودع
+    // (‏`returns_repository_impl.dart:109`) — خارج نطاق ملفّات هذه المهمّة.
     final lines = [
       for (final item in items)
         ReturnableLine(
@@ -2315,22 +2402,55 @@ class _QuickReturnLinesEditorDialogState
       return;
     }
 
-    final current = _mode.requestedQty[line.invoiceItemId] ?? 0;
-    setState(() {
-      _mode.setQty(line.invoiceItemId, current + 1);
-    });
+    _increment(line);
   }
 
   /// ٣: نقطةُ الكتابة الوحيدة على `requestedQty` — دوماً عبر `setQty` أو
   /// `clearQty`، أبداً بكتابةٍ مباشرةٍ في الخريطة.
+  ///
+  /// ⚠️ المتطلَّبُ ٥ (جولةُ إصلاح ٢): **كلُّ** رفضٍ من `setQty` يُظهر توستاً
+  /// يذكر المتاحَ — لا إهمالٌ صامت، حتى من نقطة استدعاءٍ تظنّ القيمةَ
+  /// صالحةً سلفاً (‏دفاعٌ في العمق: `_increment` تحسب هدفاً محدوداً
+  /// فلا يُفترَض بلوغُ هذا الفرع منه، والكيبورد يحصر القيمةَ بـ`min`/`max`
+  /// بنفسه — لكن كلاهما يبقى مغطّى هنا احتياطاً).
   void _setQty(ReturnableLine line, double qty) {
-    setState(() {
-      if (qty <= 0) {
-        _mode.clearQty(line.invoiceItemId);
-      } else {
-        _mode.setQty(line.invoiceItemId, qty);
-      }
-    });
+    if (qty <= 0) {
+      setState(() => _mode.clearQty(line.invoiceItemId));
+      return;
+    }
+    final ok = _mode.setQty(line.invoiceItemId, qty);
+    if (!ok) {
+      showPosToast(
+        context,
+        ref,
+        'الكميةُ مرفوضة — أقصى متاحٍ لـ«${line.productName}» '
+        '${line.availableQty.toStringAsFixed(2)}',
+        type: PosNotificationType.error,
+      );
+      return;
+    }
+    setState(() {});
+  }
+
+  /// يزيد كميّةَ [line] خطوةً واحدة عبر [nextIncrementedQty] (‏القصُّ على
+  /// المتاح خالصٌ ومُختبَرٌ هناك). أسلمُ تطبيقٍ للمتطلَّب ٥ هو ألّا يقعَ
+  /// الرفضُ إطلاقاً حين يكون العنصرُ تحت تحكّم البرنامج (زرّ «+» أو مسحةُ
+  /// باركود)، لا اختيارَ الكاشير حرفياً — فيُظهر توستاً بدل الرفض الصامت
+  /// حين لا مجالَ للزيادة.
+  void _increment(ReturnableLine line) {
+    final current = _mode.requestedQty[line.invoiceItemId] ?? 0;
+    final target = nextIncrementedQty(line, current);
+    if (target == null) {
+      showPosToast(
+        context,
+        ref,
+        'بلغتَ الحدَّ الأقصى المتاح لـ«${line.productName}» '
+        '(${line.availableQty.toStringAsFixed(2)})',
+        type: PosNotificationType.warning,
+      );
+      return;
+    }
+    _setQty(line, target);
   }
 
   Future<void> _editQtyViaKeypad(ReturnableLine line) async {
@@ -2518,7 +2638,7 @@ class _QuickReturnLinesEditorDialogState
           ),
           IconButton(
             icon: const Icon(PhosphorIconsBold.plusCircle, size: 20),
-            onPressed: !atMax ? () => _setQty(line, qty + 1) : null,
+            onPressed: !atMax ? () => _increment(line) : null,
           ),
           if (qty > 0)
             IconButton(

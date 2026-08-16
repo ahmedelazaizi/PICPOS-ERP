@@ -195,6 +195,10 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
   Widget build(BuildContext context) {
     final isProcessing =
         ref.watch(posControllerProvider.select((s) => s.isProcessing));
+    // وضعُ المرتجع (جولةُ إصلاح ٢ — مانعٌ ١): تعطيلُ زرّ «الفواتير المعلّقة»
+    // في الشريط العلويّ بصرياً، فوق حراسة `_showHeldOrders` نفسِها. راجع
+    // تعليقَ `PicPosTopBar.onHeldOrders`.
+    final returnModeActive = ref.watch(posReturnModeProvider) != null;
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -211,7 +215,7 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
                   PicPosTopBar(
                     showBackButton: widget.showBackButton,
                     onBack: () => Navigator.of(context).maybePop(),
-                    onHeldOrders: _showHeldOrders,
+                    onHeldOrders: returnModeActive ? null : _showHeldOrders,
                     // Task 10B — يسدّ فجوة إن كاشير PicPos ما عندوش أي طريقة
                     // يقفل الوردية. الفعل نفسه (10C يبدّله للمعاد تصميمه)؛
                     // حارس الصلاحية يعيش داخل `PicPosTopBar` نفسها.
