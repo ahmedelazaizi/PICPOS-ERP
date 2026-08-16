@@ -354,8 +354,33 @@ mixin _TablePosOperationsMixin on ConsumerState<TablePosScreen> {
             userName: user?.displayName,
           );
     } catch (e) {
+      // الفاتورةُ #$invoiceId صدرت ورُحِّلت بالفعل (محاسبةً ومخزوناً) قبل
+      // هذا الفشل — processPayment سبق recordPayment، فلا معاملةَ تعويضيّةً
+      // ممكنةً هنا. أقصى ما يمكن فعلُه ألّا يضيع الأثر: سطرٌ صريحٌ في سجلِّ
+      // الطاولة (يظهر في TableLogSheet) يحمل رقمَ الفاتورة والمبلغَ وسببَ
+      // الفشل، ورسالةٌ للكاشير تُسمّي الفجوةَ ولا تكتفي برسالةٍ عامّة.
+      try {
+        final activityLogRepo = ref.read(activityLogRepositoryProvider);
+        await activityLogRepo.logActivity(
+          userId: user?.id,
+          userName: user?.displayName ?? 'مجهول',
+          action: 'table_payment_reconcile_needed',
+          entityType: 'table',
+          entityId: widget.tableId,
+          description:
+              'فاتورةٌ #$invoiceId صدرت ورُحِّلت، لكن تعذّر تسجيلُ دفعتها على '
+              '${widget.tableName} — يحتاج تسويةً يدويّة. الخطأ: $e',
+          amount: total,
+        );
+      } catch (_) {}
+
       if (mounted) {
-        AppToast.show(context, 'فشل تسجيل الدفعة: $e', type: ToastType.error);
+        AppToast.show(
+          context,
+          '⚠️ فاتورة #$invoiceId صدرت ورُحِّلت لكن لم تُسجَّل على '
+          '${widget.tableName} — راجع الطاولةَ يدويّاً',
+          type: ToastType.error,
+        );
       }
       return;
     }

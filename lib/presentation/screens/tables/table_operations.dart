@@ -132,27 +132,16 @@ mixin _TableOperationsMixin on ConsumerState<TablesScreen> {
             }
           }
 
-          await restaurantRepo.partialTransferTableOrder(
-            sourceTableId: table.id,
-            targetTableId: targetTable.id,
-            itemQuantities: itemQuantities,
-          );
-
-          if (context.mounted) {
-            try {
-              final user = ref.read(authProvider).user;
-              final activityLogRepo = ref.read(activityLogRepositoryProvider);
-              await activityLogRepo.logActivity(
+          // `partialTransferOrder` تشترط ألّا يكون دُفع من الطلب شيء —
+          // نفسُ حارس النقل الكامل — وتكتب سطرَ السجلِّ بنفسها.
+          final user = ref.read(authProvider).user;
+          await ref.read(tableSessionServiceProvider).partialTransferOrder(
+                fromTableId: table.id,
+                toTableId: targetTable.id,
+                itemQuantities: itemQuantities,
                 userId: user?.id,
                 userName: user?.displayName ?? 'مجهول',
-                action: 'transfer_order',
-                entityType: 'table',
-                entityId: table.id,
-                description:
-                    'نقل ${itemIds.length} صنف من ${table.name} إلى ${targetTable.name}',
               );
-            } catch (_) {}
-          }
         }
 
         if (context.mounted) {

@@ -242,6 +242,122 @@ void main() {
     });
   });
 
+  group('partialTransferOrder', () {
+    // نفسُ سبب seed المنتج في group('mergeOrders'): tableOrderItems.productId
+    // مفتاحٌ خارجيٌّ إلى products، وforTesting() تُنفِذ القيودَ الخارجية.
+    setUp(() async {
+      await db.into(db.products).insert(
+          ProductsCompanion.insert(code: 'PTO-1', name: 'صنفُ النقل الجزئي'));
+    });
+
+    Future<int> addItem(int orderId, int productId, double qty, double price) =>
+        db.into(db.tableOrderItems).insert(
+              TableOrderItemsCompanion.insert(
+                tableOrderId: orderId,
+                productId: productId,
+                quantity: qty,
+                unitPrice: price,
+                total: qty * price,
+              ),
+            );
+
+    test('طلبٌ غيرُ مدفوعٍ: النقلُ ينجح وينقل الكمّياتِ المختارة', () async {
+      final from = await newTable('ط٥٠');
+      final to = await newTable('ط٥١');
+      final orderId = await service.openTable(
+          tableId: from, guestCount: 2, userId: null, userName: 'أحمد');
+      final itemId = await addItem(orderId, 1, 3, 10);
+
+      await service.partialTransferOrder(
+          fromTableId: from,
+          toTableId: to,
+          itemQuantities: {itemId: 2},
+          userId: null,
+          userName: 'أحمد');
+
+      final sourceItems = await db.getTableOrderItems(orderId);
+      expect(sourceItems, hasLength(1));
+      expect(sourceItems.single.quantity, 1,
+          reason: '٣ ناقص ٢ منقولة = ١ باقية على المصدر');
+
+      final targetOrder = await db.getActiveOrderForTable(to);
+      expect(targetOrder, isNotNull, reason: 'الهدفُ فتح طلباً جديداً تلقائياً');
+      final targetItems = await db.getTableOrderItems(targetOrder!.id);
+      expect(targetItems, hasLength(1));
+      expect(targetItems.single.quantity, 2);
+      expect((await readTable(to)).status, TableStatus.occupied);
+    });
+
+    test('طلبٌ دُفع منه شيء: يرفض النقلَ ولا يحرّك بنداً واحداً', () async {
+      final from = await newTable('ط٥٢');
+      final to = await newTable('ط٥٣');
+      final orderId = await service.openTable(
+          tableId: from, guestCount: 2, userId: null, userName: 'أحمد');
+      final itemId = await addItem(orderId, 1, 3, 10);
+      await (db.update(db.tableOrders)..where((o) => o.id.equals(orderId)))
+          .write(const TableOrdersCompanion(
+              total: Value(30), paidAmount: Value(10)));
+
+      await expectLater(
+        () => service.partialTransferOrder(
+            fromTableId: from,
+            toTableId: to,
+            itemQuantities: {itemId: 2},
+            userId: null,
+            userName: 'أحمد'),
+        throwsA(isA<TableTransitionException>()),
+      );
+
+      final sourceItems = await db.getTableOrderItems(orderId);
+      expect(sourceItems, hasLength(1));
+      expect(sourceItems.single.quantity, 3,
+          reason: 'لم يتحرّك شيءٌ — البندُ بكامل كمّيّته على المصدر');
+      final targetOrder = await db.getActiveOrderForTable(to);
+      expect(targetOrder, isNull, reason: 'لم يُفتح طلبٌ على الهدف أصلاً');
+    });
+
+    test('يرفض نقلَ جزءٍ من الطاولة إلى نفسها ولا يحرّك شيئاً', () async {
+      final t = await newTable('ط٥٤');
+      final orderId = await service.openTable(
+          tableId: t, guestCount: 2, userId: null, userName: 'أحمد');
+      final itemId = await addItem(orderId, 1, 2, 10);
+
+      await expectLater(
+        () => service.partialTransferOrder(
+            fromTableId: t,
+            toTableId: t,
+            itemQuantities: {itemId: 1},
+            userId: null,
+            userName: 'أحمد'),
+        throwsA(isA<TableTransitionException>()),
+      );
+
+      final items = await db.getTableOrderItems(orderId);
+      expect(items.single.quantity, 2, reason: 'لم يتحرّك شيءٌ');
+    });
+
+    test('يكتب سطراً واحداً في السجل بنوع table_partial_transfer', () async {
+      final from = await newTable('ط٥٥');
+      final to = await newTable('ط٥٦');
+      final orderId = await service.openTable(
+          tableId: from, guestCount: 2, userId: null, userName: 'أحمد');
+      final itemId = await addItem(orderId, 1, 2, 10);
+
+      await service.partialTransferOrder(
+          fromTableId: from,
+          toTableId: to,
+          itemQuantities: {itemId: 1},
+          userId: null,
+          userName: 'أحمد');
+
+      final logs = await (db.select(db.activityLogs)
+            ..where((l) => l.action.equals('table_partial_transfer')))
+          .get();
+      expect(logs, hasLength(1));
+      expect(logs.single.entityId, to);
+    });
+  });
+
   group('mergeOrders', () {
     // tableOrderItems.productId مفتاحٌ خارجيٌّ إلى products، وforTesting()
     // تُنفِذ القيودَ الخارجية — فلا بدّ من صنفٍ موجودٍ قبل أيّ addItem

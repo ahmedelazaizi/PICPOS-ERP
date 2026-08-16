@@ -313,6 +313,55 @@ class TableSessionService {
     });
   }
 
+  /// نقلُ بنودٍ مختارةٍ (بكمّياتها) من طلبٍ إلى آخر — لا الطلبَ كاملاً.
+  ///
+  /// نفسُ حارس `transferOrder`: لا نقلَ من طلبٍ دُفع منه شيء — فاتورةٌ صدرت
+  /// وتُرحَّل على أصنافٍ وإجماليٍّ صار الآن يتزحزح خلفها بلا أثر. الحركةُ
+  /// الفعليّةُ (تقسيمُ البند أو نقلُه، وتحديثُ إجماليَي الطلبين، وإغلاقُ
+  /// المصدر إن فرغ) تبقى في `partialTransferTableOrder` — لا إعادةَ تنفيذٍ
+  /// هنا، فقط الحارسُ والسجلُّ.
+  Future<void> partialTransferOrder({
+    required int fromTableId,
+    required int toTableId,
+    required Map<int, double> itemQuantities,
+    required int? userId,
+    required String userName,
+  }) async {
+    if (fromTableId == toTableId) {
+      throw const TableTransitionException(
+          'لا يُنقل جزءٌ من الطاولة إلى نفسها');
+    }
+    await _db.transaction(() async {
+      final from = await _table(fromTableId);
+      final to = await _table(toTableId);
+      final order = await _db.getActiveOrderForTable(fromTableId);
+
+      if (order == null) {
+        throw TableTransitionException('لا يوجد طلبٌ على ${from.name}');
+      }
+      if (_units(order.paidAmount) > 0) {
+        throw const TableTransitionException(
+            'لا يمكن نقلُ بنودٍ من طلبٍ دُفع منه شيء — فاتورةٌ صدرت ورُحِّلت');
+      }
+
+      await _db.partialTransferTableOrder(
+        sourceTableId: fromTableId,
+        targetTableId: toTableId,
+        itemQuantities: itemQuantities,
+      );
+      await _log(
+        userId: userId,
+        userName: userName,
+        action: 'table_partial_transfer',
+        tableId: toTableId,
+        description:
+            'نقلُ ${itemQuantities.length} صنفٍ من ${from.name} إلى ${to.name}',
+        oldValue: from.name,
+        newValue: to.name,
+      );
+    });
+  }
+
   /// الإجماليُّ بعد الخصم — وهو ما يُقسَّم ويُدفع ويُطبع.
   Future<double> effectiveTotal(int orderId) async {
     final order = await (_db.select(_db.tableOrders)
