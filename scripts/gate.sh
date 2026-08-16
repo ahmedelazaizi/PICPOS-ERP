@@ -318,6 +318,21 @@ rm -rf build/native_assets
 #    الارتفاع، و«حجم النص في التقارير» كان المقاسَ لا الوزنَ — والشاشةُ بولد
 #    أصلاً في ١٢ موضعٍ من ١٦. اقِس الموضعَ قبل أن تفسّر الكلمة.)
 #
+# تشغيلةُ 2026-08-16 بعد «المرتجع السريع» (خطةٌ من سبع مهامّ، ‏c=4، ‏--pg):
+#   analyze 6 info · unit 3430 · widget 674 · integration 710 · pg 45
+#
+#   ⚠️ ودرسٌ سادس عشر — **الحارسُ المعاكسُ للتكافؤ يستحقّ ثمنَه.** التشغيلةُ
+#   الأولى سقطت بثلاثة فواشلَ كلُّها منه: `pos_return` و`pos_item_plus` و
+#   `pos_item_minus` وصلت لها أسطحٌ في شاشة البيع **بلا حراسة**، وهي معروضةٌ
+#   في شاشة الصلاحيات فيظنّ المشغّلُ أنها تعمل. ولم تلتقطها **أيُّ** مراجعةِ
+#   مهمّةٍ من السبع لأنها تشغّل ملفّاتٍ مستهدفةً لا السويّةَ كاملة. ⇒ المراجعةُ
+#   المستهدفةُ لا تُغني عن البوابة، والحارسُ البنيويُّ يرى ما لا يراه المراجع.
+#
+#   ⚠️ ودرسٌ سابع عشر: **إنفاذُ كودٍ لا يملكه أحدٌ كسرُ شغلٍ لا تأمين.**
+#   `pos_item_plus`/`minus` لم يكن يملكهما **أيُّ دورٍ إطلاقاً** — فإنفاذُهما
+#   وحدَه كان سيجعل كلَّ ضغطةِ «+» تطلب موافقةَ مدير. فكلُّ إنفاذٍ جديدٍ يُسأل
+#   عنه: مَن يملك الكودَ اليوم؟ وقرارُ المنح قرارُ مالكٍ لا استنتاجُ مطوِّر.
+#
 # والحكمُ **بتطابق عدد النجاحات** لا بالخضرة: لو كشف التوازي هشاشةً كامنة
 # لظهر الفرقُ رقماً. وصفرُ `PathExistsException` في كلّ التشغيلات بعد تنظيف
 # `build/native_assets` أعلاه.
@@ -415,11 +430,11 @@ fi
 # على `DELETE FROM "accounts"` لأن `safes.linkedAccountId` صار يشدُّ الدليل،
 # و٢ افتراضَ أن رجلَ النقدية على `1111`. فالوصفةُ الموصوفة لو طُبّقت بالجملة
 # لَما أصلحت شيئاً — اقرأ رسالةَ الفشل، لا وصفةَ المستند.
-run_suite "unit + data + structural + services" 3397 \
+run_suite "unit + data + structural + services" 3430 \
   flutter test test/unit test/data test/structural test/services --concurrency="$LOCAL_CONCURRENCY"
 
 # الواجهات والنطاقُ والنواة — كانت **كلُّها** خارج البوابة حتى 2026-08-09.
-run_suite "widget + core + domain + presentation + security + static" 664 \
+run_suite "widget + core + domain + presentation + security + static" 674 \
   flutter test test/core test/domain test/presentation test/security \
               test/static test/widget test/widget_test.dart --concurrency="$LOCAL_CONCURRENCY"
 
