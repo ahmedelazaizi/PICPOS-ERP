@@ -170,4 +170,99 @@ void main() {
       throwsA(isA<SplitPlanException>()),
     );
   });
+
+  Future<void> seedInvoice(int id) async {
+    final warehouseId = (await db.select(db.warehouses).get()).first.id;
+    final userId = (await db.select(db.users).get()).first.id;
+    await db.into(db.salesInvoices).insert(
+          SalesInvoicesCompanion.insert(
+            id: Value(id),
+            invoiceNumber: 'INV-TEST-$id',
+            warehouseId: warehouseId,
+            userId: userId,
+            invoiceDate: DateTime.now(),
+          ),
+        );
+  }
+
+  group('unsettledParts', () {
+    test('لا شيءَ مسوًّى بعد ⇒ كلُّ الحصص باقية', () async {
+      final orderId = await orderOf(100, guests: 4);
+      final plan = await coordinator.buildSplitPlan(
+          orderId: orderId, mode: SplitMode.equal);
+
+      final unsettled =
+          await coordinator.unsettledParts(orderId: orderId, plan: plan);
+
+      expect(unsettled, plan.parts);
+    });
+
+    test('حصّتان من أربعٍ سُوِّيتا ⇒ الباقيتان فقط، بترتيبهما', () async {
+      final orderId = await orderOf(100, guests: 4);
+      final plan = await coordinator.buildSplitPlan(
+          orderId: orderId, mode: SplitMode.equal);
+      await seedInvoice(21);
+      // سُوِّيت الأولى والثالثة عمداً — لإثبات أن الترتيب في النتيجة
+      // ترتيبُ الخطّة نفسِها لا ترتيبُ التسوية.
+      await coordinator.settlePart(
+          orderId: orderId, part: plan.parts[0], invoiceId: 21);
+      await coordinator.settlePart(
+          orderId: orderId, part: plan.parts[2], invoiceId: 21);
+
+      final unsettled =
+          await coordinator.unsettledParts(orderId: orderId, plan: plan);
+
+      expect(unsettled, [plan.parts[1], plan.parts[3]]);
+    });
+
+    test('كلُّ الحصص سُوِّيت ⇒ لا شيء يبقى', () async {
+      final orderId = await orderOf(100, guests: 2);
+      final plan = await coordinator.buildSplitPlan(
+          orderId: orderId, mode: SplitMode.equal);
+      await seedInvoice(22);
+      for (final part in plan.parts) {
+        await coordinator.settlePart(
+            orderId: orderId, part: part, invoiceId: 22);
+      }
+
+      final unsettled =
+          await coordinator.unsettledParts(orderId: orderId, plan: plan);
+
+      expect(unsettled, isEmpty);
+    });
+
+    test('تسمياتٌ متكرّرةٌ في الخطّة تُرفَض لا تُسقَط بصمت', () async {
+      final orderId = await orderOf(100, guests: 2);
+      final plan = await coordinator.buildSplitPlan(
+          orderId: orderId, mode: SplitMode.equal);
+      // تلاعبٌ متعمَّدٌ لمحاكاة خطّةٍ فاسدة — مصانعُ `SplitPlan` العامّة لا
+      // تُنتج تسمياتٍ متكرّرةً أبداً؛ هذا يثبت أن الحارس يُرفض لا يُسقط بصمت
+      // لو حدث ذلك بأيّ طريقٍ أخرى مستقبلاً.
+      plan.parts[1] =
+          SplitPart(amount: plan.parts[0].amount, label: plan.parts[0].label);
+
+      await expectLater(
+        coordinator.unsettledParts(orderId: orderId, plan: plan),
+        throwsA(isA<StateError>()),
+      );
+    });
+  });
+
+  group('settledInvoiceId', () {
+    test('لا دفعاتٍ بعد ⇒ null', () async {
+      final orderId = await orderOf(100);
+      expect(await coordinator.settledInvoiceId(orderId), isNull);
+    });
+
+    test('بعد تسوية حصّةٍ ⇒ رقمُ فاتورتها', () async {
+      final orderId = await orderOf(100);
+      final plan = await coordinator.buildSplitPlan(
+          orderId: orderId, mode: SplitMode.equal);
+      await seedInvoice(33);
+      await coordinator.settlePart(
+          orderId: orderId, part: plan.parts.first, invoiceId: 33);
+
+      expect(await coordinator.settledInvoiceId(orderId), 33);
+    });
+  });
 }

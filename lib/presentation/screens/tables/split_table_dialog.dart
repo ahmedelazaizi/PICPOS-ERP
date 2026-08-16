@@ -191,18 +191,39 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
     }
   }
 
-  /// تنفيذُ الخطّة: يبني النسخةَ الرسميّةَ عبر المنسّق، ثم يملأ السلّةَ
-  /// ويدفع ويسوّي كلَّ حصّةٍ بالترتيب.
+  /// تسامحُ المقارنات النقديّة الحيّة (فروقُ التقريب لا فروقٌ حقيقيّة).
+  static const double _amountEpsilon = 0.0005;
+
+  /// تنفيذُ الخطّة: يبني النسخةَ الرسميّةَ عبر المنسّق، يتحقّق من أن الطلب لم
+  /// يتغيّر منذ ما رآه الكاشير، يسوّي الحصصَ **الباقية فقط** — لا كلَّها من
+  /// جديد — ثم يملأ السلّةَ ويدفع حيث يلزم.
   ///
-  /// بالأصناف: لكلّ حصّةٍ فاتورتُها الخاصّة — سلّةٌ بأصنافها هي فقط، دفعٌ،
-  /// ثم تسوية. بالتساوي وبمبلغ: فاتورةٌ واحدةٌ بكلّ أصناف الطلب، ثم تُسوَّى
-  /// كلُّ الحصص على نفس رقم الفاتورة — فلا تتكرّر الأصنافُ الكسريّة على
-  /// فاتورةٍ منفصلة.
+  /// **الاستئنافُ لا إعادةُ البدء**: إعادةُ الضغط بعد فشلٍ جزئيّ (اتصالٌ
+  /// انقطع بعد تسوية حصّتين من أربع، مثلاً) يجب ألّا تُسوَّى فيها الحصصُ
+  /// المُسوَّاة من جديد — فذلك يعني فاتورةً ثانيةً حقيقيّةً (مخزونٌ يُخصَم
+  /// مرّتين، قيدٌ محاسبيٌّ مضاعَف) لا مجرّد صفٍّ إضافيّ. `coordinator
+  /// .unsettledParts` يفلتر الحصصَ عبر `TableOrderPayments.splitLabel`،
+  /// و`coordinator.settledInvoiceId` يعيد رقمَ الفاتورة الأصليّة بالتساوي
+  /// وبمبلغ (فاتورةٌ واحدةٌ للجميع) بدل إصدار فاتورةٍ جديدةٍ للأصناف نفسِها.
+  ///
+  /// **الأصنافُ تُقرأ حيّةً لا من الذاكرة المخبَّأة** لحظة الدفع الفعليّ —
+  /// لا من `_orderItems` المحمَّلة عند فتح الشاشة — حتى يطابق ما يُشحَن على
+  /// الفاتورة ما يُسجَّل مبلغاً على الطلب. وقبل ذلك: إجماليُّ الخطّة الطازج
+  /// يُقارَن بما رآه الكاشير في المعاينة؛ فإن اختلف (خصمٌ عُدِّل، صنفٌ أُضيف
+  /// من طرفيّةٍ أخرى وهذه الشاشةُ مفتوحة) تُرفَض المتابعةُ بدل أن يُحصَّل
+  /// مبلغٌ ويُسجَّل غيرُه.
+  ///
+  /// بالأصناف: لكلّ حصّةٍ باقيةٍ فاتورتُها الخاصّة — سلّةٌ بأصنافها هي فقط،
+  /// دفعٌ، ثم تسوية. بالتساوي وبمبلغ: فاتورةٌ واحدةٌ (جديدةٌ إن لم يُسوَّ شيءٌ
+  /// بعد، أو الفاتورةُ الأصليّةُ نفسُها إن كانت هذه استئنافاً)، ثم تُسوَّى
+  /// كلُّ حصّةٍ باقيةٍ عليها.
   Future<void> _confirm(SplitMode mode) async {
     final order = _order;
     if (order == null || _processing) return;
     final preview = _previewFor(mode);
     if (preview.plan == null) return;
+    final previewSum =
+        preview.plan!.parts.fold<double>(0, (s, p) => s + p.amount);
 
     setState(() {
       _processing = true;
@@ -261,9 +282,28 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
             : null,
       );
 
+      final freshSum = plan.parts.fold<double>(0, (s, p) => s + p.amount);
+      if ((freshSum - previewSum).abs() > _amountEpsilon) {
+        throw Exception(
+            'تغيّر الطلبُ منذ فتح شاشة التقسيم — أعِد فتحها وحاول من جديد');
+      }
+
+      final unsettled =
+          await coordinator.unsettledParts(orderId: order.id, plan: plan);
+      if (unsettled.isEmpty) {
+        if (!mounted) return;
+        AppToast.show(context, 'التقسيمُ مكتملٌ بالفعل — كلُّ الحصص مسوّاة',
+            type: ToastType.info);
+        Navigator.pop(context, true);
+        return;
+      }
+
       if (plan.producesSeparateInvoices) {
-        for (final part in plan.parts) {
-          final relevantItems = _orderItems
+        // قراءةٌ حيّةٌ للأصناف قبل الدفع مباشرةً — لا الذاكرةُ المخبَّأة عند
+        // فتح الشاشة — حتى يطابق ما يُشحَن على الفاتورة ما بُني عليه المبلغ.
+        final freshItems = await widget.restaurantRepo.getTableOrderItems(order.id);
+        for (final part in unsettled) {
+          final relevantItems = freshItems
               .where((i) => part.itemQuantities.containsKey(i.id))
               .toList();
           final invoiceId =
@@ -273,8 +313,21 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
           if (mounted) setState(() => _paidSoFar += part.amount);
         }
       } else {
-        final invoiceId = await payAndGetInvoiceId(_orderItems, const {});
-        for (final part in plan.parts) {
+        // استئنافٌ إن سُوِّيت حصّةٌ من قبل: نفسُ الفاتورة، لا فاتورةٌ ثانية.
+        final resuming = unsettled.length < plan.parts.length;
+        final int invoiceId;
+        if (resuming) {
+          final existing = await coordinator.settledInvoiceId(order.id);
+          if (existing == null) {
+            throw Exception('تعذّر العثور على رقم الفاتورة الأصليّة للاستئناف');
+          }
+          invoiceId = existing;
+        } else {
+          final freshItems =
+              await widget.restaurantRepo.getTableOrderItems(order.id);
+          invoiceId = await payAndGetInvoiceId(freshItems, const {});
+        }
+        for (final part in unsettled) {
           await coordinator.settlePart(
               orderId: order.id, part: part, invoiceId: invoiceId);
           if (mounted) setState(() => _paidSoFar += part.amount);
@@ -428,7 +481,7 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
 
   Widget _amountsTabView() {
     final remaining = _amountsRemaining;
-    final isSettled = remaining.abs() < 0.0005;
+    final isSettled = remaining.abs() < _amountEpsilon;
     return Column(
       children: [
         Expanded(

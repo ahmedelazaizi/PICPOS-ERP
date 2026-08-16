@@ -66,4 +66,35 @@ class TableCheckoutCoordinator {
         amount: part.amount,
         splitLabel: part.label,
       );
+
+  /// الحصصُ التي لم تُسوَّ بعد.
+  ///
+  /// إعادةُ المحاولة بعد فشلٍ في منتصف التسوية يجب أن تُكمل لا أن تبدأ من
+  /// الصفر: صفُّ الدفع يحمل `splitLabel`، فما وُجد له صفٌّ فقد سُوّي.
+  Future<List<SplitPart>> unsettledParts({
+    required int orderId,
+    required SplitPlan plan,
+  }) async {
+    final labels = plan.parts.map((p) => p.label).toList();
+    if (labels.toSet().length != labels.length) {
+      throw StateError(
+          'تسمياتُ الحصص متكرّرةٌ في الخطّة — لا يمكن تمييزُ المسوَّى من الباقي');
+    }
+    final settled = (await _session.paymentsFor(orderId))
+        .map((p) => p.splitLabel)
+        .whereType<String>()
+        .toSet();
+    return plan.parts.where((p) => !settled.contains(p.label)).toList();
+  }
+
+  /// رقمُ الفاتورة الذي سُوِّيت عليه حصصُ هذا الطلب فعلاً — `null` إن لم تُسوَّ
+  /// حصّةٌ بعد.
+  ///
+  /// بالتساوي وبمبلغ فاتورةٌ واحدةٌ تُغطّي كلَّ الحصص؛ فإعادةُ المحاولة بعد
+  /// فشلٍ جزئيٍّ يجب أن تُكمل التسويةَ على نفس الفاتورة، لا أن تُصدر فاتورةً
+  /// ثانيةً لنفس الأصناف (بيعٌ مضاعَفٌ حقيقيّ — مخزونٌ وقيودٌ محاسبيّةٌ مكرّرة).
+  Future<int?> settledInvoiceId(int orderId) async {
+    final payments = await _session.paymentsFor(orderId);
+    return payments.isEmpty ? null : payments.first.invoiceId;
+  }
 }
