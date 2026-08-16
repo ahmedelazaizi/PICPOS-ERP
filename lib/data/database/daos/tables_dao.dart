@@ -300,24 +300,6 @@ extension TablesDao on AppDatabase {
     );
   }
 
-  /// Finalize table order with payment
-  Future<void> finalizeTableOrder(
-    int orderId,
-    int tableId, {
-    int? invoiceId,
-  }) async {
-    await transaction(() async {
-      await (update(tableOrders)..where((o) => o.id.equals(orderId))).write(
-        TableOrdersCompanion(
-          status: const Value('closed'),
-          closedAt: Value(DateTime.now()),
-        ),
-      );
-
-      await updateTableStatus(tableId, 'available');
-    });
-  }
-
   /// Clear all items in a table order
   Future<void> clearTableOrderItems(int orderId) async {
     await transaction(() async {

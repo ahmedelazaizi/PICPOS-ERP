@@ -331,29 +331,41 @@ mixin _TablePosOperationsMixin on ConsumerState<TablePosScreen> {
       } catch (_) {}
     }
 
-    await restaurantRepo.finalizeTableOrder(orderId, widget.tableId);
+    if (invoiceId == null) {
+      if (mounted) {
+        AppToast.show(
+          context,
+          'تم الدفع لكن تعذّر تسجيله على الطاولة — لا رقم فاتورة',
+          type: ToastType.error,
+        );
+      }
+      return;
+    }
 
+    // الطاولةُ تصير 🟠 لا 🟢: الدفعُ لا يُغلق، والإغلاقُ خطوةٌ صريحةٌ
+    // يقوم بها الموظف بعد تجهيز الطاولة. الخدمةُ تكتب سطرَ السجلِّ بنفسها.
+    final user = ref.read(authProvider).user;
     try {
-      final user = ref.read(authProvider).user;
-      final activityLogRepo = ref.read(activityLogRepositoryProvider);
-      await activityLogRepo.logActivity(
-        userId: user?.id,
-        userName: user?.displayName ?? 'مجهول',
-        action: 'checkout_table',
-        entityType: 'table_order',
-        entityId: widget.tableId,
-        description:
-            'تحصيل طاولة: ${widget.tableName} — الإجمالي: ${total.toStringAsFixed(AppConstants.decimalPlaces)} — فاتورة #$invoiceId',
-        amount: total,
-      );
-    } catch (_) {}
+      await ref.read(tableSessionServiceProvider).recordPayment(
+            orderId: orderId,
+            invoiceId: invoiceId,
+            amount: total,
+            userId: user?.id,
+            userName: user?.displayName,
+          );
+    } catch (e) {
+      if (mounted) {
+        AppToast.show(context, 'فشل تسجيل الدفعة: $e', type: ToastType.error);
+      }
+      return;
+    }
 
     if (mounted) {
       barcodeController.clear();
       barcodeFocus.requestFocus();
       AppToast.show(
         context,
-        '✅ تم تحصيل ${widget.tableName} — فاتورة #$invoiceId',
+        '✅ تم تحصيل ${widget.tableName} — فاتورة #$invoiceId — الطاولةُ مدفوعةٌ بانتظار الإغلاق',
         type: ToastType.success,
       );
       Navigator.pop(context);

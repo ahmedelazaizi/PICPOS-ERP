@@ -47,7 +47,6 @@ abstract class IRestaurantRepository {
   Future<List<TableOrderItem>> getTableOrderItems(int orderId);
 
   Future<int> createTableOrder(int tableId, {int? userId});
-  Future<void> finalizeTableOrder(int orderId, int tableId);
   Future<void> mergeTableOrders(int sourceTableId, int targetTableId);
 
   // Table order item operations (used by TablePosScreen)

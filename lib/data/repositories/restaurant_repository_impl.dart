@@ -131,10 +131,6 @@ class RestaurantRepositoryImpl implements IRestaurantRepository {
       _db.createTableOrder(tableId, userId: userId);
 
   @override
-  Future<void> finalizeTableOrder(int orderId, int tableId) =>
-      _db.finalizeTableOrder(orderId, tableId);
-
-  @override
   Future<void> mergeTableOrders(int sourceTableId, int targetTableId) =>
       _db.mergeTableOrders(sourceTableId, targetTableId);
 

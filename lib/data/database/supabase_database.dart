@@ -1140,22 +1140,6 @@ class SupabaseDatabase {
     await updateTableStatus(tableId, 'billing');
   }
 
-  Future<void> finalizeTableOrder(
-    int orderId,
-    int tableId, {
-    int? invoiceId,
-  }) async {
-    await _client
-        .from('table_orders')
-        .update({
-          'status': 'closed',
-          'closed_at': DateTime.now().toIso8601String(),
-        })
-        .eq('id', orderId);
-
-    await updateTableStatus(tableId, 'available');
-  }
-
   TableSection _mapToTableSection(Map<String, dynamic> data) {
     return TableSection(
       id: data['id'] as int,

@@ -110,7 +110,15 @@ mixin _TableOperationsMixin on ConsumerState<TablesScreen> {
 
       try {
         if (transferAll) {
-          await restaurantRepo.transferTableOrder(table.id, targetTable.id);
+          // `transferOrder` تشترط ألّا يكون دُفع من الطلب شيء، وتكتب سطرَ
+          // السجلِّ بنفسها — لا نداءَ يدويّاً بعدها.
+          final user = ref.read(authProvider).user;
+          await ref.read(tableSessionServiceProvider).transferOrder(
+                fromTableId: table.id,
+                toTableId: targetTable.id,
+                userId: user?.id,
+                userName: user?.displayName ?? 'مجهول',
+              );
         } else {
           final Map<int, double> itemQuantities = {};
           final order = await restaurantRepo.getActiveOrderForTable(table.id);
@@ -129,32 +137,32 @@ mixin _TableOperationsMixin on ConsumerState<TablesScreen> {
             targetTableId: targetTable.id,
             itemQuantities: itemQuantities,
           );
+
+          if (context.mounted) {
+            try {
+              final user = ref.read(authProvider).user;
+              final activityLogRepo = ref.read(activityLogRepositoryProvider);
+              await activityLogRepo.logActivity(
+                userId: user?.id,
+                userName: user?.displayName ?? 'مجهول',
+                action: 'transfer_order',
+                entityType: 'table',
+                entityId: table.id,
+                description:
+                    'نقل ${itemIds.length} صنف من ${table.name} إلى ${targetTable.name}',
+              );
+            } catch (_) {}
+          }
         }
 
         if (context.mounted) {
-          try {
-            final user = ref.read(authProvider).user;
-            final activityLogRepo = ref.read(activityLogRepositoryProvider);
-            await activityLogRepo.logActivity(
-              userId: user?.id,
-              userName: user?.displayName ?? 'مجهول',
-              action: 'transfer_order',
-              entityType: 'table',
-              entityId: table.id,
-              description: transferAll
-                  ? 'نقل طلب من ${table.name} إلى ${targetTable.name}'
-                  : 'نقل ${itemIds.length} صنف من ${table.name} إلى ${targetTable.name}',
-            );
-          } catch (_) {}
-          if (context.mounted) {
-            AppToast.show(
-              context,
-              transferAll
-                  ? 'تم نقل الطلب من ${table.name} إلى ${targetTable.name}'
-                  : 'تم نقل ${itemIds.length} صنف من ${table.name} إلى ${targetTable.name}',
-              type: ToastType.success,
-            );
-          }
+          AppToast.show(
+            context,
+            transferAll
+                ? 'تم نقل الطلب من ${table.name} إلى ${targetTable.name}'
+                : 'تم نقل ${itemIds.length} صنف من ${table.name} إلى ${targetTable.name}',
+            type: ToastType.success,
+          );
         }
       } catch (e) {
         if (context.mounted) {

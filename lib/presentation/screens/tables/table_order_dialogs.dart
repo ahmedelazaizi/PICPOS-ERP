@@ -419,27 +419,29 @@ mixin _TableOrderDialogsMixin on ConsumerState<TablesScreen> {
     if (_closingTable) return;
     setState(() => _closingTable = true);
     try {
-      await restaurantRepo.finalizeTableOrder(order.id, table.id);
-      try {
-        final user = ref.read(authProvider).user;
-        final activityLogRepo = ref.read(activityLogRepositoryProvider);
-        await activityLogRepo.logActivity(
-          userId: user?.id,
-          userName: user?.displayName ?? 'مجهول',
-          action: 'close_table',
-          entityType: 'table',
-          entityId: table.id,
-          description:
-              'إغلاق طاولة: ${table.name} — الإجمالي: ${order.total.toStringAsFixed(AppConstants.decimalPlaces)}',
-          amount: order.total,
-        );
-      } catch (_) {}
+      // `TableSessionService.closeTable` تكتب سطرَ السجلِّ بنفسها، وتشترط
+      // اكتمالَ الدفعِ قبل الإغلاق — كانت هذه الدالّةُ تُغلق مباشرةً بلا
+      // شرط.
+      final user = ref.read(authProvider).user;
+      await ref.read(tableSessionServiceProvider).closeTable(
+            tableId: table.id,
+            userId: user?.id,
+            userName: user?.displayName ?? 'مجهول',
+          );
 
       if (mounted) {
         AppToast.show(
           context,
           'تم إغلاق ${table.name} - الإجمالي: ${order.total.toStringAsFixed(AppConstants.decimalPlaces)}',
           type: ToastType.success,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        AppToast.show(
+          context,
+          'فشل إغلاق ${table.name}: $e',
+          type: ToastType.error,
         );
       }
     } finally {
@@ -484,29 +486,29 @@ mixin _TableOrderDialogsMixin on ConsumerState<TablesScreen> {
     if (targetTable != null && mounted) {
       setState(() => _mergingTables = true);
       try {
-        await restaurantRepo.mergeTableOrders(sourceTable.id, targetTable.id);
-        if (mounted) {
-          try {
-            final user = ref.read(authProvider).user;
-            final activityLogRepo = ref.read(activityLogRepositoryProvider);
-            await activityLogRepo.logActivity(
+        // `mergeOrders` تشترط ألّا يكون دُفع من أيٍّ من الطلبين شيء، وتكتب
+        // سطرَ السجلِّ بنفسها — لا نداءَ يدويّاً بعدها.
+        final user = ref.read(authProvider).user;
+        final outcome = await ref.read(tableSessionServiceProvider).mergeOrders(
+              sourceTableId: sourceTable.id,
+              targetTableId: targetTable.id,
               userId: user?.id,
               userName: user?.displayName ?? 'مجهول',
-              action: 'merge_tables',
-              entityType: 'table',
-              entityId: sourceTable.id,
-              description:
-                  'دمج طاولة ${sourceTable.name} مع ${targetTable.name}',
             );
-          } catch (_) {}
 
-          if (mounted) {
-            AppToast.show(
-              context,
-              'تم دمج ${sourceTable.name} بنجاح مع ${targetTable.name}',
-              type: ToastType.success,
-            );
-          }
+        if (mounted) {
+          // خصمُ الطاولة المصدر يسقط في الدمج — يجب أن يصل الكاشيرَ، لا أن
+          // يضيع صامتاً.
+          final discountNote = outcome.droppedDiscount
+              ? ' — تنبيه: أُسقط خصمُ ${sourceTable.name} (${outcome.droppedDiscountLabel})'
+              : '';
+          AppToast.show(
+            context,
+            'تم دمج ${sourceTable.name} بنجاح مع ${targetTable.name}$discountNote',
+            type: outcome.droppedDiscount
+                ? ToastType.warning
+                : ToastType.success,
+          );
         }
       } catch (e) {
         if (mounted) {

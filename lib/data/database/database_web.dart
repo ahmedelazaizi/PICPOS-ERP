@@ -226,11 +226,6 @@ class AppDatabase {
   Future<void> clearTableOrderItems(int orderId) async {}
   Future<void> closeTableOrder(int orderId) async {}
   Future<void> requestTableBill(int orderId, int tableId) async {}
-  Future<void> finalizeTableOrder(
-    int orderId,
-    int tableId, {
-    int? invoiceId,
-  }) async {}
   Future<void> updateTableInfo(
     int tableId, {
     required String name,
