@@ -1,3 +1,4 @@
+import '../../../domain/models/return_refund_calculator.dart';
 import '../../../domain/models/returnable_line.dart';
 
 /// حالةُ وضع المرتجع في سلّة PicPos — الأقفالُ الأربعة (§٥ من المواصفة):
@@ -13,25 +14,64 @@ class PosReturnMode {
   final Map<int, ReturnableLine> linesByItemId;
   final Map<int, double> requestedQty;
 
+  /// إجماليُّ الفاتورة الأصليّة (`SalesInvoiceData.total`) — أساسُ عامل
+  /// التوزيع في [refundTotal]. `null` لاختباراتٍ لا تُعنى بالاسترداد؛
+  /// عندها يُشتقّ افتراضياً من مجموع `ReturnableLine.effectiveLineTotal`
+  /// (فيصير العاملُ ١، أي بلا تعديل) — راجع [refundTotal].
+  final double? invoiceTotal;
+
+  /// رسمُ التوصيل على الفاتورة الأصليّة (`SalesInvoiceData.deliveryFee`) —
+  /// يُوزَّع نسبياً على المرتجع الجزئيّ في [refundTotal] (B2).
+  final double invoiceDeliveryFee;
+
   PosReturnMode._({
     required this.invoiceId,
     required this.linesByItemId,
     required this.requestedQty,
+    required this.invoiceTotal,
+    required this.invoiceDeliveryFee,
   });
 
   /// يبني حالةً جديدةً من سطور الفاتورة القابلة للإرجاع. الكميّاتُ المطلوبةُ
   /// تبدأ كلُّها صفراً — قرارُ مالكٍ صريح: البدءُ بالكامل يُغري بحفظٍ سريعٍ
   /// يُرجع ما لم يُحضره العميل.
+  ///
+  /// [invoiceTotal] و[invoiceDeliveryFee] اختياريّان (‏`_showQuickReturn`
+  /// يمرّرهما دوماً من ترويسة الفاتورة) كي لا تنكسر اختباراتٌ قديمةٌ لا
+  /// تُعنى بحساب [refundTotal].
   factory PosReturnMode.fromLines({
     required int invoiceId,
     required List<ReturnableLine> lines,
+    double? invoiceTotal,
+    double invoiceDeliveryFee = 0,
   }) {
     return PosReturnMode._(
       invoiceId: invoiceId,
       linesByItemId: {for (final l in lines) l.invoiceItemId: l},
       requestedQty: {for (final l in lines) l.invoiceItemId: 0},
+      invoiceTotal: invoiceTotal,
+      invoiceDeliveryFee: invoiceDeliveryFee,
     );
   }
+
+  /// مبلغُ الاسترداد الفعليّ لطلب المرتجع الحاليّ (‏[requestedQty]) — نفسُ
+  /// صيغة `ReturnsRepositoryImpl._calculateReturnTotal` بالحرف عبر
+  /// [calculateReturnRefundTotal] المشتركة، لا `Σ qty × unitPrice` (سعرُ ما
+  /// قبل الضريبة وقبل خصم السطر). العطبُ المقيسُ في مراجعة 2026-08-16: كان
+  /// المعروضُ يقلّ عمّا يخرج من الدرج فعلياً بمقدار الضريبة (ويزيد مع خصم
+  /// سطر) — فائضٌ صامتٌ في الدرج يُقيَّد لاحقاً «فائضَ نقدية».
+  double get refundTotal => calculateReturnRefundTotal(
+        lines: [
+          for (final l in linesByItemId.values)
+            (id: l.invoiceItemId, quantity: l.soldQty, lineTotal: l.effectiveLineTotal),
+        ],
+        invoiceTotal: invoiceTotal ?? _sumEffectiveLineTotals,
+        invoiceDeliveryFee: invoiceDeliveryFee,
+        returnQuantities: requestedQty,
+      );
+
+  double get _sumEffectiveLineTotals =>
+      linesByItemId.values.fold(0.0, (sum, l) => sum + l.effectiveLineTotal);
 
   /// قفلٌ: لا صنفَ خارجَ الفاتورة الأصليّة — `false` لأيّ `productId` لم
   /// يَرِد في سطورها.

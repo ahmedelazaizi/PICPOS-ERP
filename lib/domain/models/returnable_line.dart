@@ -12,6 +12,18 @@ class ReturnableLine {
   final double alreadyReturnedQty;
   final double unitPrice;
 
+  /// إجماليّ السطر الفعليّ في الفاتورة الأصليّة (`SalesInvoiceItem.total`)
+  /// — شاملُ الضريبة وصافٍ من خصم السطر، لا `unitPrice × soldQty`. هو أساسُ
+  /// حساب مبلغ الاسترداد الفعليّ (‏[calculateReturnRefundTotal])، فالعطبُ
+  /// المقيسُ في مراجعة 2026-08-16 كان استعمالَ `unitPrice` (سعرُ ما قبل
+  /// الضريبة والخصم) لحساب مبلغٍ يُفترض أن يطابق ما يخرج من الدرج فعلياً.
+  ///
+  /// اختياريٌّ: `null` لاختباراتٍ لا تُعنى بالاسترداد فتترك `effectiveLineTotal`
+  /// يشتقّ تقريباً من `unitPrice × soldQty` (صحيحٌ فقط بلا ضريبةٍ ولا خصم
+  /// سطر). المسارُ الوحيدُ في الإنتاج (`_showQuickReturn`) يمرّره صراحةً
+  /// دوماً من `item.total`.
+  final double? lineTotal;
+
   const ReturnableLine({
     required this.invoiceItemId,
     required this.productId,
@@ -19,7 +31,12 @@ class ReturnableLine {
     required this.soldQty,
     required this.alreadyReturnedQty,
     required this.unitPrice,
+    this.lineTotal,
   });
+
+  /// [lineTotal] الفعليّ حين مُرَّر، وإلا تقريبٌ من `unitPrice × soldQty` —
+  /// راجع توثيق [lineTotal] لحدود هذا التقريب.
+  double get effectiveLineTotal => lineTotal ?? (unitPrice * soldQty);
 
   /// نفسُ سماحِ `returns_repository_impl.dart` — الفاصلةُ العائمة تجعل
   /// إرجاعَ الكامل يبدو تجاوزاً بمقدارٍ لا يُرى.

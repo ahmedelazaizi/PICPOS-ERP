@@ -1977,13 +1977,26 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
           soldQty: item.quantity,
           alreadyReturnedQty: returnedByProduct[item.productId] ?? 0,
           unitPrice: item.unitPrice,
+          // مبلغُ الاسترداد (`PosReturnMode.refundTotal`) يُبنى على هذا لا
+          // على unitPrice — راجع توثيق `ReturnableLine.lineTotal`.
+          lineTotal: item.total,
         ),
     ];
 
     // الكميّاتُ تبدأ صفراً (قرارُ مالكٍ، مهمّةٌ ٦) — لا تعبئةَ تلقائية.
     // `_QuickReturnLinesEditorDialog` هو مَن يملأها، سطراً سطراً، عبر
     // `setQty`/`clearQty` تحت رؤية الكاشير وتحكّمه.
-    final mode = PosReturnMode.fromLines(invoiceId: invoice.id, lines: lines);
+    //
+    // `invoiceTotal`/`invoiceDeliveryFee` من ترويسة الفاتورة — نفسُ
+    // مدخلَي `ReturnsRepositoryImpl._calculateReturnTotal`، فمبلغُ
+    // الاسترداد المعروض (`mode.refundTotal`) يطابق ما يُصرف فعلياً عند
+    // الحفظ بالضبط.
+    final mode = PosReturnMode.fromLines(
+      invoiceId: invoice.id,
+      lines: lines,
+      invoiceTotal: invoice.total,
+      invoiceDeliveryFee: invoice.deliveryFee,
+    );
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -2358,14 +2371,16 @@ class _QuickReturnLinesEditorDialogState
 
   PosReturnMode get _mode => widget.mode;
 
-  double get _refundTotal {
-    double total = 0;
-    for (final line in _mode.linesByItemId.values) {
-      final qty = _mode.requestedQty[line.invoiceItemId] ?? 0;
-      total += qty * _mode.unitPriceOf(line.invoiceItemId);
-    }
-    return total;
-  }
+  /// ٦: مبلغُ الاسترداد المعروض — يفوّض لـ`PosReturnMode.refundTotal`
+  /// (‏نفسُ صيغة `ReturnsRepositoryImpl._calculateReturnTotal` بالحرف عبر
+  /// `calculateReturnRefundTotal` المشتركة)، **لا** `Σ qty × unitPrice`.
+  /// العطبُ المقيسُ في مراجعة 2026-08-16: `unitPrice` سعرُ البيع قبل
+  /// الضريبة وقبل خصم السطر، بينما المصروفُ فعلياً من الدرج مبنيٌّ على
+  /// `item.total` (شاملَ الضريبة وصافياً من الخصم) — فاتورةٌ بضريبة ١٤٪
+  /// كانت تعرض أقلَّ ممّا يخرج من الدرج فعلياً بمقدار الضريبة تماماً.
+  /// `unitPriceOf` **يبقى بلا تغيير** لعرض سعر السطر في `_buildLineRow` —
+  /// هذا التغييرُ في مجموع الاسترداد وحدَه.
+  double get _refundTotal => _mode.refundTotal;
 
   bool get _hasAnyQty => _mode.requestedQty.values.any((q) => q > 0);
 
