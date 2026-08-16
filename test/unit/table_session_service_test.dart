@@ -345,5 +345,54 @@ void main() {
         throwsA(isA<TableTransitionException>()),
       );
     });
+
+    test('يرفض دمجَ الطاولة في نفسها ولا يمسّ طلبها', () async {
+      final t = await newTable('ط٣٦');
+      final orderId = await service.openTable(
+          tableId: t, guestCount: 2, userId: null, userName: 'أحمد');
+
+      await expectLater(
+        () => service.mergeOrders(
+            sourceTableId: t,
+            targetTableId: t,
+            userId: null,
+            userName: 'أحمد'),
+        throwsA(isA<TableTransitionException>()),
+      );
+
+      final order = await db.getActiveOrderForTable(t);
+      expect(order!.id, orderId,
+          reason: 'الطلبُ لم يُغلَق ولم يُدمَج في نفسه');
+      expect((await readTable(t)).status, TableStatus.occupied);
+    });
+
+    test('يحفظ أصلَ البندِ الحقيقيَّ عبر دمجٍ متسلسل', () async {
+      final tA = await newTable('ط٤٠');
+      final tB = await newTable('ط٤١');
+      final tC = await newTable('ط٤٢');
+      final oA = await service.openTable(
+          tableId: tA, guestCount: 2, userId: null, userName: 'أحمد');
+      final oB = await service.openTable(
+          tableId: tB, guestCount: 2, userId: null, userName: 'أحمد');
+      final oC = await service.openTable(
+          tableId: tC, guestCount: 2, userId: null, userName: 'أحمد');
+      await addItem(oC, 1, 1, 10);
+
+      await service.mergeOrders(
+          sourceTableId: tC,
+          targetTableId: tB,
+          userId: null,
+          userName: 'أحمد');
+      await service.mergeOrders(
+          sourceTableId: tB,
+          targetTableId: tA,
+          userId: null,
+          userName: 'أحمد');
+
+      final items = await db.getTableOrderItems(oA);
+      expect(items, hasLength(1));
+      expect(items.single.sourceTableOrderId, oC,
+          reason: 'الأصلُ الحقيقيُّ (ج) يبقى لا الوسيط (ب)');
+    });
   });
 }

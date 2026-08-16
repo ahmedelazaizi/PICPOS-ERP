@@ -213,6 +213,13 @@ class TableSessionService {
     required int? userId,
     required String userName,
   }) async {
+    // دمجُ الطاولة في نفسها: كلُّ حارسٍ لاحقٍ يمرّ لأن المصدرَ والهدفَ نفسُ
+    // الطلب، فيُعاد وسمُ كلِّ بندٍ على نفسه ويُغلَق الطلبُ الحيُّ الوحيد
+    // بصمت. هذا الحارسُ يمنعه قبل فتح المعاملة.
+    if (sourceTableId == targetTableId) {
+      throw const TableTransitionException(
+          'لا تُدمج الطاولةُ في نفسها');
+    }
     return _db.transaction(() async {
       final source = await _table(sourceTableId);
       final target = await _table(targetTableId);
