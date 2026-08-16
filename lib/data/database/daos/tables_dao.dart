@@ -287,15 +287,17 @@ extension TablesDao on AppDatabase {
     });
   }
 
-  /// Request bill for table
-  Future<void> requestTableBill(int orderId, int tableId) async {
-    await transaction(() async {
-      await (update(tableOrders)..where((o) => o.id.equals(orderId))).write(
-        const TableOrdersCompanion(status: Value('bill_requested')),
-      );
-
-      await updateTableStatus(tableId, 'billing');
-    });
+  /// Request bill for table.
+  ///
+  /// طلبُ الفاتورة صفةٌ للطلب لا للطاولة — الطاولةُ تبقى على حالتها الحالية.
+  /// كانت هذه الدالّةُ تضع الطاولةَ على `'billing'`، وهي إحدى الحالات
+  /// الثمانِ التي شُطبت من مفردات الطاولة في v154؛ تركُها كان يُعيد حالةً
+  /// ميتةً إلى الجدول من باب الطباعة. `tableId` لم يعد له مستعملٌ هنا بعد
+  /// حذف نداء `updateTableStatus` الوحيد الذي احتاجه.
+  Future<void> requestTableBill(int orderId) async {
+    await (update(tableOrders)..where((o) => o.id.equals(orderId))).write(
+      const TableOrdersCompanion(status: Value('bill_requested')),
+    );
   }
 
   /// Finalize table order with payment

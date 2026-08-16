@@ -29,79 +29,44 @@ mixin _TableOperationsMixin on ConsumerState<TablesScreen> {
     IRestaurantRepository restaurantRepo,
     RestaurantTable table,
   );
+  /// تقسيمُ فاتورة — لا نقلَ أصنافٍ إلى طاولةٍ أخرى. الشاشةُ نفسُها تبني
+  /// الخطّةَ وتملأ السلّةَ وتدفع وتسوّي كلَّ حصّةٍ (عبر
+  /// `TableCheckoutCoordinator`)، فلا شيءَ يبقى لهذه الدالّة بعد إغلاقها
+  /// سوى إظهار نتيجةٍ للكاشير.
   void _handleSplitTable(
     BuildContext context,
     IRestaurantRepository restaurantRepo,
     RestaurantTable table,
   ) async {
-    final allTables = await restaurantRepo.getAllTables();
-
+    final order = await restaurantRepo.getActiveOrderForTable(table.id);
     if (!context.mounted) return;
 
-    final otherTables = allTables
-        .where((t) => t.isActive && t.id != table.id)
-        .toList();
-
-    if (otherTables.isEmpty) {
-      AppToast.show(
-        context,
-        'لا توجد طاولات أخرى متاحة للتقسيم إليها',
-        type: ToastType.warning,
-      );
+    if (order == null) {
+      AppToast.show(context, 'لا يوجد طلبٌ نشطٌ لتقسيمه', type: ToastType.warning);
       return;
     }
 
-    final result = await showDialog<Map<String, dynamic>>(
+    final result = await showDialog<bool>(
       context: context,
       builder: (ctx) => SplitTableDialog(
         sourceTable: table,
-        targetTables: otherTables.cast<RestaurantTable>(),
         restaurantRepo: restaurantRepo,
       ),
     );
 
-    if (result != null && mounted) {
-      final targetTable = result['target'] as RestaurantTable;
-      final itemQuantities = result['itemQuantities'] as Map<int, double>;
-
+    if (result == true && mounted) {
       try {
-        await restaurantRepo.partialTransferTableOrder(
-          sourceTableId: table.id,
-          targetTableId: targetTable.id,
-          itemQuantities: itemQuantities,
+        final user = ref.read(authProvider).user;
+        final activityLogRepo = ref.read(activityLogRepositoryProvider);
+        await activityLogRepo.logActivity(
+          userId: user?.id,
+          userName: user?.displayName ?? 'مجهول',
+          action: 'split_bill',
+          entityType: 'table',
+          entityId: table.id,
+          description: 'تقسيمُ فاتورة ${table.name}',
         );
-
-        if (context.mounted) {
-          try {
-            final user = ref.read(authProvider).user;
-            final activityLogRepo = ref.read(activityLogRepositoryProvider);
-            await activityLogRepo.logActivity(
-              userId: user?.id,
-              userName: user?.displayName ?? 'مجهول',
-              action: 'split_order',
-              entityType: 'table',
-              entityId: table.id,
-              description:
-                  'تقسيم أصناف من ${table.name} إلى ${targetTable.name}',
-            );
-          } catch (_) {}
-          if (context.mounted) {
-            AppToast.show(
-              context,
-              'تم تقسيم الطلب بنجاح إلى ${targetTable.name}',
-              type: ToastType.success,
-            );
-          }
-        }
-      } catch (e) {
-        if (context.mounted) {
-          AppToast.show(
-            context,
-            'خطأ في تقسيم الطلب: $e',
-            type: ToastType.error,
-          );
-        }
-      }
+      } catch (_) {}
     }
   }
 

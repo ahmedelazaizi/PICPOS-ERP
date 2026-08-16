@@ -17,6 +17,8 @@ import '../../services/reconciliation_service.dart';
 import '../../services/fingerprint_service.dart';
 import '../../services/api/api_handler_base.dart';
 import '../../services/coa_management_service.dart';
+import '../../services/table_session_service.dart';
+import '../../services/table_checkout_coordinator.dart';
 import '../../presentation/widgets/notifications/providers/notification_provider.dart';
 import 'repository_providers.dart';
 
@@ -170,6 +172,23 @@ final fingerprintServiceProvider = Provider<FingerprintService>((ref) {
 final kdsReadyOrdersProvider = StreamProvider<List<WorkOrder>>((ref) {
   final db = ref.watch(databaseProvider);
   return db.watchReadyOrders();
+});
+
+/// Table session service — آلةُ حالات الطاولة (فتح/إغلاق/دمج/نقل/دفع).
+final tableSessionServiceProvider = Provider<TableSessionService>((ref) {
+  return TableSessionService(ref.watch(databaseProvider));
+});
+
+/// منسّقُ تحصيل الطاولة — يبني خطط التقسيم ويسوّي حصصها. المصدرُ الوحيدُ
+/// المصرَّحُ به لطبقة العرض للوصول إلى منطق التقسيم بلا استيراد `data/database`
+/// مباشرةً (راجع `presentation_db_import_guard_test.dart`).
+final tableCheckoutCoordinatorProvider = Provider<TableCheckoutCoordinator>((
+  ref,
+) {
+  return TableCheckoutCoordinator(
+    db: ref.watch(databaseProvider),
+    session: ref.watch(tableSessionServiceProvider),
+  );
 });
 
 class ThemeModeNotifier extends Notifier<ThemeMode> {

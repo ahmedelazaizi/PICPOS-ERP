@@ -500,6 +500,21 @@ void main() {
     });
   });
 
+  group('requestTableBill', () {
+    test('طلبُ الفاتورة يغيّر الطلبَ لا الطاولة', () async {
+      final t = await newTable('ط٦٠');
+      final orderId = await service.openTable(
+          tableId: t, guestCount: 2, userId: null, userName: 'أحمد');
+
+      await db.requestTableBill(orderId);
+
+      expect((await readTable(t)).status, TableStatus.occupied,
+          reason: 'billing حالةٌ مشطوبةٌ من الطاولة');
+      final order = await db.getActiveOrderForTable(t);
+      expect(order!.status, 'bill_requested');
+    });
+  });
+
   group('setItemNotes', () {
     test('الملاحظةُ تُحفظ على البند', () async {
       final t = await newTable('ط٤٦');
