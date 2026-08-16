@@ -35,6 +35,7 @@ import '../../../core/utils/number_utils.dart';
 import '../../../data/providers/providers.dart';
 import '../../../domain/usecases/sales/calculate_invoice_totals_usecase.dart';
 import '../../pos/providers/cart_controller.dart';
+import '../providers/pos_return_mode_provider.dart';
 import 'picpos_cart_permissions.dart';
 import 'picpos_pos_text.dart';
 
@@ -738,8 +739,19 @@ class _ActionButtons extends ConsumerWidget {
     final showExpense = ref.watch(showExpenseButtonInPOSProvider).value ?? true;
     final showSaveOnly = ref.watch(showSaveOnlyInPOSProvider).value ?? true;
     final showHold = ref.watch(showHoldButtonInPOSProvider).value ?? true;
-    final isEmpty =
+    final cartIsEmpty =
         ref.watch(cartControllerProvider.select((s) => s.items.isEmpty));
+    // وضعُ المرتجع (المهمّة ٧، جولةُ إصلاح ١ — C1): «دفع»/«حفظ» كانا
+    // معطَّلين **دوماً** أثناء المرتجع لأنهما يقيسان فراغَ سلّة البيع، وسلّةُ
+    // المرتجع لا تكتب على `cartController` عمداً (محرِّرُ الأسطر منفصلٌ
+    // ومخصَّص). فالتفعيلُ هنا: سلّةُ بيعٍ عامرة، **أو** وضعُ مرتجعٍ فيه
+    // كميةٌ واحدةٌ مطلوبةٌ فأكثر — ومعطَّلٌ صراحةً حين تكون كلُّ كميّاتِ
+    // المرتجع أصفاراً (لا يُفترَض وصولُه فعلياً: محرِّرُ الأسطر يمنع التأكيدَ
+    // بلا كميةٍ، لكنها حمايةٌ دفاعيّةٌ لهذا الزرّ بالذات).
+    final returnMode = ref.watch(posReturnModeProvider);
+    final returnHasQty =
+        returnMode?.requestedQty.values.any((q) => q > 0) ?? false;
+    final isEmpty = returnMode != null ? !returnHasQty : cartIsEmpty;
 
     return Column(
       children: [

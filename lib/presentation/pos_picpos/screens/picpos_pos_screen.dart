@@ -51,6 +51,7 @@ import '../widgets/picpos_payment_panel.dart';
 import '../widgets/picpos_invoice_header.dart';
 import '../widgets/picpos_items_table.dart';
 import '../widgets/picpos_last_invoice_dialog.dart';
+import '../widgets/picpos_numeric_keypad_dialog.dart';
 import '../widgets/picpos_cart_permissions.dart';
 import '../widgets/picpos_pos_shortcuts.dart';
 import '../widgets/picpos_pos_text.dart';
