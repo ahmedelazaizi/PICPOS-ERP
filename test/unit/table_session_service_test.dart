@@ -395,4 +395,138 @@ void main() {
           reason: 'الأصلُ الحقيقيُّ (ج) يبقى لا الوسيط (ب)');
     });
   });
+
+  group('setOrderDiscount', () {
+    test('خصمٌ نسبيٌّ يُثبَّت ويُسجَّل بقيمته القديمة والجديدة', () async {
+      final t = await newTable('ط٤٠');
+      final orderId = await service.openTable(
+          tableId: t, guestCount: 2, userId: null, userName: 'أحمد');
+
+      await service.setOrderDiscount(
+          orderId: orderId,
+          type: 'percent',
+          value: 10,
+          userId: null,
+          userName: 'أحمد');
+
+      final order = await db.getActiveOrderForTable(t);
+      expect(order!.discountType, 'percent');
+      expect(order.discountValue, 10);
+
+      final logs = await (db.select(db.activityLogs)
+            ..where((l) => l.action.equals('table_discount')))
+          .get();
+      expect(logs.single.newValue, 'percent:10.0');
+    });
+
+    test('نسبةٌ فوق ١٠٠٪ تُرفض', () async {
+      final t = await newTable('ط٤١');
+      final orderId = await service.openTable(
+          tableId: t, guestCount: 2, userId: null, userName: 'أحمد');
+      expect(
+        () => service.setOrderDiscount(
+            orderId: orderId,
+            type: 'percent',
+            value: 120,
+            userId: null,
+            userName: 'أحمد'),
+        throwsA(isA<TableTransitionException>()),
+      );
+    });
+
+    test('خصمٌ يتجاوز الإجماليَّ يُرفض', () async {
+      final t = await newTable('ط٤٢');
+      final orderId = await service.openTable(
+          tableId: t, guestCount: 2, userId: null, userName: 'أحمد');
+      await (db.update(db.tableOrders)..where((o) => o.id.equals(orderId)))
+          .write(const TableOrdersCompanion(total: Value(50)));
+
+      expect(
+        () => service.setOrderDiscount(
+            orderId: orderId,
+            type: 'amount',
+            value: 60,
+            userId: null,
+            userName: 'أحمد'),
+        throwsA(isA<TableTransitionException>()),
+      );
+    });
+
+    test('يرفض تعديلَ خصمِ طلبٍ دُفع منه شيء', () async {
+      final t = await newTable('ط٤٣');
+      final orderId = await service.openTable(
+          tableId: t, guestCount: 2, userId: null, userName: 'أحمد');
+      await (db.update(db.tableOrders)..where((o) => o.id.equals(orderId)))
+          .write(const TableOrdersCompanion(
+              total: Value(100), paidAmount: Value(30)));
+
+      expect(
+        () => service.setOrderDiscount(
+            orderId: orderId,
+            type: 'percent',
+            value: 10,
+            userId: null,
+            userName: 'أحمد'),
+        throwsA(isA<TableTransitionException>()),
+      );
+    });
+  });
+
+  group('effectiveTotal', () {
+    test('النسبةُ تُطبَّق على الإجمالي', () async {
+      final t = await newTable('ط٤٤');
+      final orderId = await service.openTable(
+          tableId: t, guestCount: 2, userId: null, userName: 'أحمد');
+      await (db.update(db.tableOrders)..where((o) => o.id.equals(orderId)))
+          .write(const TableOrdersCompanion(
+        total: Value(100),
+        discountType: Value('percent'),
+        discountValue: Value(10),
+      ));
+      expect(await service.effectiveTotal(orderId), 90);
+    });
+
+    test('المبلغُ يُطرح كما هو', () async {
+      final t = await newTable('ط٤٥');
+      final orderId = await service.openTable(
+          tableId: t, guestCount: 2, userId: null, userName: 'أحمد');
+      await (db.update(db.tableOrders)..where((o) => o.id.equals(orderId)))
+          .write(const TableOrdersCompanion(
+        total: Value(100),
+        discountType: Value('amount'),
+        discountValue: Value(15),
+      ));
+      expect(await service.effectiveTotal(orderId), 85);
+    });
+  });
+
+  group('setItemNotes', () {
+    test('الملاحظةُ تُحفظ على البند', () async {
+      final t = await newTable('ط٤٦');
+      final orderId = await service.openTable(
+          tableId: t, guestCount: 2, userId: null, userName: 'أحمد');
+      // tableOrderItems.productId مفتاحٌ خارجيٌّ إلى products، وforTesting()
+      // تُنفِذ القيودَ الخارجية — فلا بدّ من صنفٍ موجودٍ قبل الإدراج بـ
+      // productId: 1 (نفسُ نمط setUp في مجموعة mergeOrders).
+      await db
+          .into(db.products)
+          .insert(ProductsCompanion.insert(code: 'NOTE-1', name: 'صنفُ الملاحظة'));
+      final itemId = await db.into(db.tableOrderItems).insert(
+            TableOrderItemsCompanion.insert(
+              tableOrderId: orderId,
+              productId: 1,
+              quantity: 1,
+              unitPrice: 10,
+              total: 10,
+            ),
+          );
+
+      await service.setItemNotes(orderItemId: itemId, notes: 'بلا بصل');
+
+      final item = await (db.select(db.tableOrderItems)
+            ..where((i) => i.id.equals(itemId)))
+          .getSingle();
+      expect(item.notes, 'بلا بصل');
+    });
+  });
 }

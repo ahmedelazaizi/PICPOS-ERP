@@ -33,7 +33,7 @@ class TableSessionService {
   static int _units(double value) => (value * _factor).round();
 
   static bool _isFullyPaid(TableOrder order) =>
-      _units(order.paidAmount) >= _units(order.total);
+      _units(order.paidAmount) >= _units(_effectiveTotalOf(order));
 
   Future<RestaurantTable> _table(int tableId) => (_db.select(
         _db.restaurantTables,
@@ -311,6 +311,88 @@ class TableSessionService {
         newValue: to.name,
       );
     });
+  }
+
+  /// الإجماليُّ بعد الخصم — وهو ما يُقسَّم ويُدفع ويُطبع.
+  Future<double> effectiveTotal(int orderId) async {
+    final order = await (_db.select(_db.tableOrders)
+          ..where((o) => o.id.equals(orderId)))
+        .getSingle();
+    return _effectiveTotalOf(order);
+  }
+
+  static double _effectiveTotalOf(TableOrder order) {
+    if (order.discountType == null || order.discountValue <= 0) {
+      return order.total;
+    }
+    final discount = order.discountType == 'percent'
+        ? order.total * order.discountValue / 100
+        : order.discountValue;
+    final net = _units(order.total) - _units(discount);
+    return (net < 0 ? 0 : net) / _factor;
+  }
+
+  /// تثبيتُ خصمٍ على الطلب قبل الدفع.
+  ///
+  /// تُشترط صلاحيةُ `tables_discount` عند الاستدعاء. وتثبيتُه على الطلب —
+  /// لا في السلة لحظةَ الدفع — هو ما يجعله ينتقل مع الطلب ويظهر في فاتورة
+  /// ما قبل الدفع.
+  Future<void> setOrderDiscount({
+    required int orderId,
+    required String? type,
+    required double value,
+    required int? userId,
+    required String userName,
+  }) async {
+    await _db.transaction(() async {
+      final order = await (_db.select(_db.tableOrders)
+            ..where((o) => o.id.equals(orderId)))
+          .getSingle();
+
+      if (_units(order.paidAmount) > 0) {
+        throw const TableTransitionException(
+            'لا يمكن تعديلُ خصمِ طلبٍ دُفع منه شيء');
+      }
+      if (type != null && type != 'percent' && type != 'amount') {
+        throw TableTransitionException('نوعُ خصمٍ غيرُ معروف: $type');
+      }
+      if (value < 0) {
+        throw const TableTransitionException('الخصمُ لا يكون سالباً');
+      }
+      if (type == 'percent' && value > 100) {
+        throw const TableTransitionException('النسبةُ لا تتجاوز ١٠٠٪');
+      }
+      if (type == 'amount' && _units(value) > _units(order.total)) {
+        throw TableTransitionException(
+            'الخصمُ $value يتجاوز إجماليَّ الطلب ${order.total}');
+      }
+
+      await (_db.update(_db.tableOrders)..where((o) => o.id.equals(orderId)))
+          .write(TableOrdersCompanion(
+        discountType: Value(type),
+        discountValue: Value(type == null ? 0 : value),
+      ));
+
+      await _log(
+        userId: userId,
+        userName: userName,
+        action: 'table_discount',
+        tableId: order.tableId,
+        description: 'تعديلُ خصمِ الطلب #$orderId',
+        oldValue: '${order.discountType}:${order.discountValue}',
+        newValue: type == null ? 'none' : '$type:$value',
+      );
+    });
+  }
+
+  /// ملاحظةُ بندٍ («بلا بصل») — تصل المطبخ وتُطبع.
+  Future<void> setItemNotes({
+    required int orderItemId,
+    required String? notes,
+  }) async {
+    await (_db.update(_db.tableOrderItems)
+          ..where((i) => i.id.equals(orderItemId)))
+        .write(TableOrderItemsCompanion(notes: Value(notes)));
   }
 }
 
