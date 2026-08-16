@@ -75,6 +75,7 @@ void main() {
     expect(payments, hasLength(1));
     expect(payments.single.amount, 25);
     expect(payments.single.invoiceId, 11);
+    expect(payments.single.splitLabel, plan.parts.first.label);
     final order = await (db.select(db.tableOrders)
           ..where((o) => o.id.equals(orderId)))
         .getSingle();
@@ -125,5 +126,48 @@ void main() {
     expect(plan.producesSeparateInvoices, isTrue);
     expect(plan.parts[0].amount, 60);
     expect(plan.parts[1].itemQuantities[items[1].id], 1);
+  });
+
+  test('التقسيمُ بمبلغ يحترم الخصم ولا يُصدر فواتيرَ منفصلة', () async {
+    final orderId = await orderOf(100);
+    await service.setOrderDiscount(
+        orderId: orderId,
+        type: 'percent',
+        value: 20,
+        userId: null,
+        userName: 'أحمد');
+
+    // الإجماليُّ الخام ١٠٠ والمخصومُ ٨٠ — فالمبالغُ هنا تجمع ٨٠ لا ١٠٠،
+    // لإثبات أن المنسّق يمرّر الإجماليَّ بعد الخصم لا الخام.
+    final plan = await coordinator.buildSplitPlan(
+      orderId: orderId,
+      mode: SplitMode.byAmounts,
+      amounts: [30, 50],
+    );
+
+    expect(plan.parts.map((p) => p.amount), [30, 50]);
+    expect(plan.producesSeparateInvoices, isFalse);
+  });
+
+  test('التقسيمُ بمبلغ يرفض مبالغَ تجمع الإجماليَّ الخامَ لا المخصوم',
+      () async {
+    final orderId = await orderOf(100);
+    await service.setOrderDiscount(
+        orderId: orderId,
+        type: 'percent',
+        value: 20,
+        userId: null,
+        userName: 'أحمد');
+
+    // مبالغُ تجمع ١٠٠ (الخام) بدل ٨٠ (المخصوم) يجب أن تُرفَض — وإلا مرّ
+    // خللٌ يُمرّر `order.total` مكان `effectiveTotal` بصمت.
+    await expectLater(
+      coordinator.buildSplitPlan(
+        orderId: orderId,
+        mode: SplitMode.byAmounts,
+        amounts: [60, 40],
+      ),
+      throwsA(isA<SplitPlanException>()),
+    );
   });
 }
