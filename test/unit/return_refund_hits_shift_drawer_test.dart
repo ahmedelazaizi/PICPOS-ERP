@@ -2,12 +2,35 @@
 // `getDefaultSafeByType('cash')` — خزنةً عامّةً تتجاهل الفرع — بينما البيعُ
 // والإقفالُ ينسبان للفرع. فمرتجعٌ في الفرع «ب» كان يُنقص خزنةَ الفرع «أ».
 //
-// هذا الاختبارُ يثبّت العقدَ: `resolveRefundSafe` تُرجع درجَ فرع الوردية
-// المفتوحة لمستخدم المرتجع، لا الخزنةَ الافتراضيةَ العامّة.
+// الاختبارُ الأوّل يثبّت العقدَ على مستوى الـDAO مباشرةً: `resolveRefundSafe`
+// تُرجع درجَ فرع الوردية المفتوحة لمستخدم المرتجع، لا الخزنةَ الافتراضيةَ
+// العامّة.
+//
+// جولةُ مراجعةٍ ١ (2026-08-16): الاختبارُ الأوّل ينادي `db.resolveRefundSafe`
+// مباشرةً ولا يمرّ بمسار الإنتاج الفعليّ (`ReturnsRepositoryImpl.
+// processSalesReturn` / `ProcessSalesReturnUseCase`) — فلو رُدَّت مواضعُ
+// النداء الثلاثة إلى `getDefaultSafeByType('cash')` لبقي هذا الاختبار
+// أخضر. المجموعةُ الثانية أدناه تسدّ هذه الفجوة: تنادي `processSalesReturn`
+// فعلياً وتفحص حركةَ الخزنة الناتجة.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:drift/drift.dart' show Value;
+// hide isNull/isNotNull — تصادمُ الاسم مع matcher الخاصّ بـflutter_test.
+// full import (لا `show Value` فقط) لازمٌ لعامل `&` على `Expression<bool>`
+// في شرط `refundTxnFor` أدناه — مطابقةٌ لنمط
+// `sales_return_wac_gl_drift_test.dart`.
+import 'package:drift/drift.dart' hide isNull, isNotNull;
+import 'package:ural_erp/core/logging/diagnostic_logger.dart';
 import 'package:ural_erp/data/database/database.dart';
+import 'package:ural_erp/data/repositories/drift_accounting_repository.dart';
+import 'package:ural_erp/data/repositories/returns_repository_impl.dart';
+import 'package:ural_erp/domain/entities/product_entity.dart';
+import 'package:ural_erp/domain/repositories/audit_repository_interface.dart';
+import 'package:ural_erp/domain/repositories/i_products_repository.dart';
+import 'package:ural_erp/domain/repositories/inventory_repository.dart';
+import 'package:ural_erp/domain/repositories/parties_repository.dart';
+import 'package:ural_erp/domain/repositories/settings_repository.dart';
+import 'package:ural_erp/domain/repositories/treasury_repository.dart';
+import 'package:ural_erp/services/accounting_service.dart';
 
 void main() {
   late AppDatabase db;
@@ -69,4 +92,364 @@ void main() {
     expect(resolved!.id, safeB,
         reason: 'كاشيرُ الفرع ب يجب أن يصرف من درج فرعه لا من $safeA');
   });
+
+  group('processSalesReturn عبر السلك الحقيقيّ — يحمي الإصلاح لا الدالّةَ الخالصةَ وحدها', () {
+    late ReturnsRepositoryImpl repo;
+    late int warehouseId;
+    late int productId;
+    late int roleId;
+
+    setUp(() async {
+      // جولةُ مراجعةٍ ١ — يلتقط سطورَ `DiagnosticLogger.log('REFUND-SAFE-
+      // FALLBACK', ...)` في `DiagnosticLogger.testLog` بدل كتابة ملفٍّ حقيقيّ
+      // (‏نمطٌ مستعمَلٌ فعلاً في 16 ملفَّ اختبارٍ آخر، منها
+      // `shift_sync_strategy_open_shift_test.dart`).
+      DiagnosticLogger.enableTestMode();
+      // مطلوبةٌ لتنجح `autoPostSalesReturn` (تحتاج دليلَ حساباتٍ ممتلئاً)
+      // — مطابقةٌ لإعداد `sales_return_wac_gl_drift_test.dart`.
+      await db.syncDefaultAccounts();
+      repo = ReturnsRepositoryImpl(
+        db,
+        AccountingService(
+          DriftAccountingRepository(db),
+          _StubPartiesRepo(),
+          _StubTreasuryRepo(),
+          _StubProductRepo(),
+          _StubInventoryRepo(),
+          _StubSettingsRepo(),
+          _StubAuditRepo(),
+        ),
+      );
+      roleId = await db.into(db.roles).insert(
+            RolesCompanion.insert(
+                name: 'كاشير', isSystemRole: const Value(false)),
+          );
+      warehouseId = (await db.getDefaultWarehouse())!.id;
+      productId = await db.insertProduct(
+        ProductsCompanion.insert(
+          code: 'RTN-WIRE-01',
+          name: 'منتج اختبار السلك',
+          salePrice: const Value(100.0),
+          costPrice: const Value(0),
+          currentStock: const Value(0),
+          // تبسيطٌ متعمَّد: الاختبارُ يفحص الصرفَ النقديّ لا المخزون، فتعطيلُ
+          // تتبّع المخزون يتفادى إعدادَ WAC/adjustStock غيرَ ذي الصلة.
+          trackInventory: const Value(false),
+        ),
+      );
+    });
+
+    Future<int> createCashier(String username) => db.createUser(
+          username: username,
+          password: 'x',
+          displayName: username,
+          roleId: roleId,
+        );
+
+    /// فاتورةُ بيعٍ نقديةٌ أصليةٌ بمعرّفٍ مستخدمٍ (admin، id=1) لا علاقة له
+    /// بمن يعالج المرتجعَ لاحقاً — كي لا تتلوّث حركاتُ "مَن-لمَس-الدرجَ" التي
+    /// يفحصها `resolveRefundSafe` بحركة البيع الأصليّ.
+    Future<SalesInvoiceData> makeOriginalSale({double amount = 100}) async {
+      final id = await db.createSalesInvoice(
+        invoiceNumber: 'INV-WIRE-${DateTime.now().microsecondsSinceEpoch}',
+        warehouseId: warehouseId,
+        userId: 1,
+        subtotal: amount,
+        discount: 0,
+        tax: 0,
+        total: amount,
+        paid: amount,
+        paymentMethod: 'cash',
+        items: [
+          SalesInvoiceItemsCompanion.insert(
+            invoiceId: 0,
+            productId: productId,
+            quantity: 1,
+            unitPrice: amount,
+            total: amount,
+            costPrice: const Value(0),
+          ),
+        ],
+      );
+      return (db.select(db.salesInvoices)..where((s) => s.id.equals(id)))
+          .getSingle();
+    }
+
+    Future<Map<int, ProductEntity>> productCacheFor() async {
+      final p = await db.getProductById(productId);
+      return {
+        productId: ProductEntity(
+          id: p!.id,
+          name: p.name,
+          code: p.code,
+          salePrice: p.salePrice,
+          costPrice: p.costPrice,
+          currentStock: p.currentStock,
+          minStock: p.minStock,
+          trackInventory: p.trackInventory,
+        ),
+      };
+    }
+
+    /// حركةُ الخزنة الوحيدة التي يُفترض أن يتركها مرتجعٌ نقديٌّ كامل
+    /// (‏لا عميلَ على الفاتورة ⇒ لا حركةَ AR إضافية).
+    Future<SafeTransactionData> refundTxnFor(SalesInvoiceData invoice) async {
+      final rows = await (db.select(db.safeTransactions)
+            ..where((t) =>
+                t.referenceType.equals('sales_return') &
+                t.referenceId.equals(invoice.id) &
+                t.category.equals('sales_return')))
+          .get();
+      expect(rows, hasLength(1),
+          reason:
+              'مرتجعٌ نقديٌّ كاملٌ بلا عميلٍ يجب أن يترك حركةَ خزنةٍ واحدةً '
+              'بفئة sales_return');
+      return rows.single;
+    }
+
+    test(
+        'كاشيرٌ بورديةٍ مفتوحةٍ في فرعٍ له درجُه — الحركةُ تقع على درج الفرع '
+        'لا على الخزنة العامّة', () async {
+      final invoice = await makeOriginalSale();
+
+      final branchId = await db.into(db.branches).insert(
+            BranchesCompanion.insert(name: 'فرع السلك ١'),
+          );
+      final drawerSafeId = await db.into(db.safes).insert(
+            SafesCompanion.insert(
+              name: 'درج فرع السلك ١',
+              safeType: const Value('cash'),
+              branchId: Value(branchId),
+            ),
+          );
+      final cashierId = await createCashier('wire_cashier_1');
+      await db.into(db.shifts).insert(
+            ShiftsCompanion.insert(
+              startTime: DateTime.now(),
+              userId: cashierId,
+              status: 'open',
+              branchId: Value(branchId),
+            ),
+          );
+
+      final items = await db.getSalesInvoiceItems(invoice.id);
+      final ok = await repo.processSalesReturn(
+        invoice: invoice,
+        returnQuantities: {items.first.id: 1},
+        productCache: await productCacheFor(),
+        userId: cashierId,
+        userName: 'Wire Cashier 1',
+      );
+      expect(ok, isTrue);
+
+      final txn = await refundTxnFor(invoice);
+      expect(txn.safeId, drawerSafeId,
+          reason: 'المرتجعُ يجب أن يصرف من درج الفرع لا من الخزنة العامّة '
+              '(‏«صندوق الكاشير» أو «الصندوق الرئيسي» المزروعتَين)');
+    });
+
+    test(
+        'ورديةٌ بفرعٍ null (مديرُ نظامٍ بلا سقوطٍ في الفتح) — السقوطُ إلى '
+        'فرع المستخدم لا إلى الخزنة العامّة', () async {
+      // Critical (جولة مراجعة ١): `BranchScope.fullAccess()` يعطي
+      // primaryBranchId=null، و`app_main_screen.dart:1390-1401` يفتح
+      // الورديةَ بهذا الـnull بلا سقوطٍ احتياطيّ. تمريرُ null إلى
+      // `getCashSafesForBranch` القديمة كان يتوسّع لخزائن **كلّ** الفروع
+      // ويختار «الصندوق الرئيسي» (يسبق «صندوق الكاشير» أبجدياً) بدل خزنة
+      // فرع المستخدم الحقيقية.
+      final invoice = await makeOriginalSale();
+
+      final branchId = await db.into(db.branches).insert(
+            BranchesCompanion.insert(name: 'فرع السلك ٢'),
+          );
+      final drawerSafeId = await db.into(db.safes).insert(
+            SafesCompanion.insert(
+              name: 'درج فرع السلك ٢',
+              safeType: const Value('cash'),
+              branchId: Value(branchId),
+            ),
+          );
+      final cashierId = await createCashier('wire_cashier_2');
+      await db.setUserBranchAccess(cashierId, [branchId]);
+      // الورديةُ تُفتح بلا فرعٍ — branchId غيرُ ممرَّرٍ فيبقى null.
+      await db.into(db.shifts).insert(
+            ShiftsCompanion.insert(
+              startTime: DateTime.now(),
+              userId: cashierId,
+              status: 'open',
+            ),
+          );
+
+      final items = await db.getSalesInvoiceItems(invoice.id);
+      final ok = await repo.processSalesReturn(
+        invoice: invoice,
+        returnQuantities: {items.first.id: 1},
+        productCache: await productCacheFor(),
+        userId: cashierId,
+        userName: 'Wire Cashier 2',
+      );
+      expect(ok, isTrue);
+
+      final txn = await refundTxnFor(invoice);
+      expect(txn.safeId, drawerSafeId,
+          reason: 'shift.branchId=null يجب أن يسقط إلى فرع المستخدم '
+              '(‏getUserBranchId) لا إلى الخزنة العامّة');
+    });
+
+    test('فرعٌ فيه خزنتان نقديتان — الاختيارُ بالخزنة الأكثر حركةً في الوردية',
+        () async {
+      final invoice = await makeOriginalSale();
+
+      final branchId = await db.into(db.branches).insert(
+            BranchesCompanion.insert(name: 'فرع السلك ٣'),
+          );
+      final safeLow = await db.into(db.safes).insert(
+            SafesCompanion.insert(
+              name: 'أ - درجٌ أقلّ حركة',
+              safeType: const Value('cash'),
+              branchId: Value(branchId),
+            ),
+          );
+      final safeHigh = await db.into(db.safes).insert(
+            SafesCompanion.insert(
+              name: 'ب - درجٌ أكثر حركة',
+              safeType: const Value('cash'),
+              branchId: Value(branchId),
+            ),
+          );
+      final cashierId = await createCashier('wire_cashier_3');
+      final shiftStart = DateTime.now();
+      await db.into(db.shifts).insert(
+            ShiftsCompanion.insert(
+              startTime: shiftStart,
+              userId: cashierId,
+              status: 'open',
+              branchId: Value(branchId),
+            ),
+          );
+      // حركتان فعليتان للكاشير في هذه الوردية، بمبلغَين مختلفَين — الدرجُ
+      // الأكثر حركةً (٥٠) يجب أن يفوز على الأقلّ (٣٠)، بصرف النظر عن اسم
+      // الخزنة أو ترتيب إنشائها.
+      await db.into(db.safeTransactions).insert(
+            SafeTransactionsCompanion.insert(
+              voucherNumber: 'SALE-WIRE-3-LOW',
+              safeId: safeLow,
+              transactionType: 'receipt',
+              category: 'sales',
+              amount: 30,
+              balanceAfter: 30,
+              userId: Value(cashierId),
+              createdAt: Value(shiftStart.add(const Duration(minutes: 1))),
+            ),
+          );
+      await db.into(db.safeTransactions).insert(
+            SafeTransactionsCompanion.insert(
+              voucherNumber: 'SALE-WIRE-3-HIGH',
+              safeId: safeHigh,
+              transactionType: 'receipt',
+              category: 'sales',
+              amount: 50,
+              balanceAfter: 50,
+              userId: Value(cashierId),
+              createdAt: Value(shiftStart.add(const Duration(minutes: 2))),
+            ),
+          );
+
+      final items = await db.getSalesInvoiceItems(invoice.id);
+      final ok = await repo.processSalesReturn(
+        invoice: invoice,
+        returnQuantities: {items.first.id: 1},
+        productCache: await productCacheFor(),
+        userId: cashierId,
+        userName: 'Wire Cashier 3',
+      );
+      expect(ok, isTrue);
+
+      final txn = await refundTxnFor(invoice);
+      expect(txn.safeId, safeHigh,
+          reason: 'الاختيارُ بالحركة الفعلية للوردية (٥٠ > ٣٠) لا بترتيب '
+              'اسم الخزنة أو رقم إنشائها');
+    });
+
+    test(
+        'غيابُ ورديةٍ أصلاً — نفسُ سلوك الخزنة الافتراضية العامّة القديم '
+        'بالضبط (لا انحدار)', () async {
+      final cashierId = await createCashier('wire_cashier_4');
+      // لا وردية مفتوحة لهذا المستخدم إطلاقاً.
+
+      final expectedDefault = await db.getDefaultSafeByType('cash');
+      expect(expectedDefault, isNotNull);
+
+      final invoice = await makeOriginalSale();
+      final items = await db.getSalesInvoiceItems(invoice.id);
+      final ok = await repo.processSalesReturn(
+        invoice: invoice,
+        returnQuantities: {items.first.id: 1},
+        productCache: await productCacheFor(),
+        userId: cashierId,
+        userName: 'Wire Cashier 4',
+      );
+      expect(ok, isTrue);
+
+      final txn = await refundTxnFor(invoice);
+      expect(txn.safeId, expectedDefault!.id,
+          reason:
+              'بلا وردية مفتوحة، السلوكُ القديم (الخزنة الافتراضية العامّة) '
+              'يجب أن يبقى كما هو بالضبط — هذا هو خطُّ الأساس الذي لا يجوز '
+              'كسرُه.');
+
+      // جولةُ مراجعةٍ ١ — «مطابقةُ المواصفة»: كلُّ سقوطٍ إلى الخزنة
+      // الافتراضية العامّة يجب أن يُسجَّل فعلياً، لا أن يبقى مجرّد تعليقٍ.
+      expect(
+        DiagnosticLogger.testLog
+            .any((line) => line.contains('REFUND-SAFE-FALLBACK')),
+        isTrue,
+        reason: 'سقوطُ resolveRefundSafe إلى الخزنة العامّة (بلا وردية '
+            'مفتوحة) يجب أن يترك سطرَ DiagnosticLogger كي يظهر لمراجع.',
+      );
+    });
+  });
+}
+
+// ── Collaborator stubs — مطابقةٌ لِمَا في sales_return_wac_gl_drift_test.dart
+// (نفسُ نمط الإسكات: أيُّ نداءٍ غيرِ متوقَّعٍ يرمي بدل أن يمرّ صامتاً) ──────
+
+class _StubPartiesRepo implements IPartiesRepository {
+  @override
+  dynamic noSuchMethod(Invocation inv) =>
+      throw UnsupportedError('Stub: ${inv.memberName}');
+}
+
+class _StubTreasuryRepo implements ITreasuryRepository {
+  @override
+  Future<List<Map<String, dynamic>>> getSafeAccountsForReference(
+          String referenceType, int referenceId) async =>
+      [];
+  @override
+  dynamic noSuchMethod(Invocation inv) =>
+      throw UnsupportedError('Stub: ${inv.memberName}');
+}
+
+class _StubProductRepo implements IProductRepository {
+  @override
+  dynamic noSuchMethod(Invocation inv) =>
+      throw UnsupportedError('Stub: ${inv.memberName}');
+}
+
+class _StubInventoryRepo implements InventoryRepository {
+  @override
+  dynamic noSuchMethod(Invocation inv) =>
+      throw UnsupportedError('Stub: ${inv.memberName}');
+}
+
+class _StubSettingsRepo implements ISettingsRepository {
+  @override
+  dynamic noSuchMethod(Invocation inv) =>
+      throw UnsupportedError('Stub: ${inv.memberName}');
+}
+
+class _StubAuditRepo implements IAuditRepository {
+  @override
+  dynamic noSuchMethod(Invocation inv) =>
+      throw UnsupportedError('Stub: ${inv.memberName}');
 }
