@@ -16,6 +16,12 @@ void main() {
         .join('\n');
 
     expect(
+      src.isNotEmpty,
+      isTrue,
+      reason: 'لم يُقرأ المصدر — المسارُ خطأ',
+    );
+
+    expect(
       code.contains('Duration(days: 365)'),
       isFalse,
       reason: 'قرارُ المالك 2026-08-16: الارتجاعُ جائزٌ بعد فترةٍ لا في نفس اليوم',
