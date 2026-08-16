@@ -20,6 +20,7 @@ import 'package:flutter_test/flutter_test.dart';
 // `sales_return_wac_gl_drift_test.dart`.
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:ural_erp/core/logging/diagnostic_logger.dart';
+import 'package:ural_erp/domain/models/shift_drawer_resolver.dart';
 import 'package:ural_erp/data/database/database.dart';
 import 'package:ural_erp/data/repositories/drift_accounting_repository.dart';
 import 'package:ural_erp/data/repositories/returns_repository_impl.dart';
@@ -91,6 +92,148 @@ void main() {
     expect(resolved, isNotNull);
     expect(resolved!.id, safeB,
         reason: 'كاشيرُ الفرع ب يجب أن يصرف من درج فرعه لا من $safeA');
+  });
+
+  // جولةُ مراجعةٍ ٢ (2026-08-16) — فرقُ إصلاح جولة ١ نفسُه أدخل عطبَين
+  // Important، كلاهما داخل بناء مرشَّحي `resolveRefundSafe`.
+
+  test(
+      'فرعٌ فيه درجٌ معطَّلٌ برقمٍ أصغرَ وآخرُ نشِط — الصرفُ على النشِطة لا '
+      'الأقدم رقماً', () async {
+    // عطبٌ جديد ١: إسقاطُ فلتر isActive (لمطابقة _settleShift) جعل
+    // الخزائنَ المعطَّلةَ مرشَّحةً. المعطَّلةُ تُنشأ أوّلاً عمداً كي يحمل
+    // رقمُها الأصغرَ — رتيبُ الصفّ الطبيعيّ (لا فلتر isActive) كان
+    // سيختارها.
+    final branch = await db.into(db.branches).insert(
+          BranchesCompanion.insert(name: 'فرع بدرجٍ معطَّل ودرجٍ نشِط'),
+        );
+    final inactiveSafe = await db.into(db.safes).insert(
+          SafesCompanion.insert(
+            name: 'درجٌ قديمٌ معطَّل',
+            safeType: const Value('cash'),
+            branchId: Value(branch),
+            isActive: const Value(false),
+          ),
+        );
+    final activeSafe = await db.into(db.safes).insert(
+          SafesCompanion.insert(
+            name: 'درجٌ نشِط',
+            safeType: const Value('cash'),
+            branchId: Value(branch),
+          ),
+        );
+    expect(inactiveSafe, lessThan(activeSafe),
+        reason: 'المعطَّلةُ لازمٌ رقمُها الأصغرَ كي يفحص الاختبارُ الترتيبَ '
+            'الطبيعيّ لا ترتيبَ الاسم');
+
+    final roleId = await db.into(db.roles).insert(
+          RolesCompanion.insert(
+              name: 'كاشير', isSystemRole: const Value(false)),
+        );
+    final userId = await db.createUser(
+      username: 'active_pref_cashier',
+      password: 'x',
+      displayName: 'كاشير تفضيل النشِطة',
+      roleId: roleId,
+    );
+    await db.into(db.shifts).insert(
+          ShiftsCompanion.insert(
+            startTime: DateTime.now(),
+            userId: userId,
+            status: 'open',
+            branchId: Value(branch),
+          ),
+        );
+    // بلا أيّ حركةٍ بعد — أوّلُ عمليةٍ في هذه الوردية، فالمرشَّحون يسقطون
+    // إلى خزائن الفرع كاملةً.
+
+    final resolved = await db.resolveRefundSafe(userId: userId);
+
+    expect(resolved, isNotNull);
+    expect(resolved!.id, activeSafe,
+        reason:
+            'قبل الإصلاح: المعطَّلةُ (رقمٌ أصغر) كانت تُختار، فيختفي المبلغُ '
+            'المصروفُ من getTotalCashBalance/getSafesBalancesByType '
+            '(تفلتران is_active=1) بينما الأستاذُ يسجّله — فجوةٌ صامتة.');
+  });
+
+  test(
+      'صفُّ shift_variance هو الحركةُ الوحيدةُ في النافذة — resolveRefundSafe '
+      'تختار نفسَ ما يختاره منطقُ _settleShift', () async {
+    // عطبٌ جديد ٢: حلقةُ moved في جولة ١ استثنَت shift_variance، بينما
+    // حلقةُ moved في _settleShift (المصدرُ المطلوبُ توحيدُ الدرج معه)
+    // لا تستثنيه — الاستثناءُ هناك في حلقةٍ أخرى (totalReceipts/
+    // totalPayments لحساب expectedCash) لا حلقة بناء الدرج.
+    final branch = await db.into(db.branches).insert(
+          BranchesCompanion.insert(name: 'فرع بصفّ تسويةٍ وحيد'),
+        );
+    final safeFirst = await db.into(db.safes).insert(
+          SafesCompanion.insert(
+            name: 'أ - الدرجُ الأوّل (بلا حركة)',
+            safeType: const Value('cash'),
+            branchId: Value(branch),
+          ),
+        );
+    final safeVariance = await db.into(db.safes).insert(
+          SafesCompanion.insert(
+            name: 'ب - الدرجُ الثاني (عليه التسوية)',
+            safeType: const Value('cash'),
+            branchId: Value(branch),
+          ),
+        );
+
+    final roleId = await db.into(db.roles).insert(
+          RolesCompanion.insert(
+              name: 'كاشير', isSystemRole: const Value(false)),
+        );
+    final userId = await db.createUser(
+      username: 'variance_unify_cashier',
+      password: 'x',
+      displayName: 'كاشير توحيد الدرج',
+      roleId: roleId,
+    );
+    final shiftStart = DateTime.now();
+    await db.into(db.shifts).insert(
+          ShiftsCompanion.insert(
+            startTime: shiftStart,
+            userId: userId,
+            status: 'open',
+            branchId: Value(branch),
+          ),
+        );
+    // صفُّ تسويةِ فرقٍ (كما يكتبه _postVarianceSafeTransaction من وردية
+    // سابقة) — بلا userId (مطابقةٌ لواقع صفوف التسوية القديمة، وكي لا
+    // يلتقطها فلترُ "ما لمسَه هذا المستخدم" فيُحلّ الأمرُ بمسارِ سقوط
+    // الفرع + ترجيح moved كما يفعل _settleShift تماماً).
+    await db.into(db.safeTransactions).insert(
+          SafeTransactionsCompanion.insert(
+            voucherNumber: 'SHV-VARIANCE-TEST',
+            safeId: safeVariance,
+            transactionType: 'receipt',
+            category: 'shift_variance',
+            amount: 40,
+            balanceAfter: 40,
+            createdAt: Value(shiftStart.add(const Duration(minutes: 1))),
+          ),
+        );
+
+    final resolved = await db.resolveRefundSafe(userId: userId);
+    expect(resolved, isNotNull);
+
+    // المقارنةُ المباشرة: نفسُ الدالّة الخالصة التي يستعملها _settleShift
+    // (المهمّة ١)، بنفس مرشَّحي الفرع وبنفس خريطة الحركة — يجب أن تتّفق
+    // النتيجتان تماماً، إثباتاً لتعريفٍ واحدٍ للدرج لا تعريفَين.
+    final expectedByShiftDrawerLogic = resolveShiftDrawer(
+      cashSafeIdsInBranch: {safeFirst, safeVariance},
+      movedBySafeId: {safeVariance: 40},
+    );
+    expect(resolved!.id, expectedByShiftDrawerLogic,
+        reason: 'resolveRefundSafe يجب أن يتّفق مع resolveShiftDrawer '
+            '(المستعملة فعلياً في _settleShift) على نفس المدخلات بالضبط');
+    expect(resolved.id, safeVariance,
+        reason: 'قبل الإصلاح: استثناءُ shift_variance من moved كان يُفرغ '
+            'خريطةَ الحركة فيختار resolveShiftDrawer أوّلَ خزنةٍ ($safeFirst) '
+            'بدل التي عليها التسويةُ الفعلية ($safeVariance)');
   });
 
   group('processSalesReturn عبر السلك الحقيقيّ — يحمي الإصلاح لا الدالّةَ الخالصةَ وحدها', () {
