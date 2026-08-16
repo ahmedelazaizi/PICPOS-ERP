@@ -3,6 +3,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../data/database/database_barrel.dart';
 import '../../../../../../core/constants/app_constants.dart';
+import '../../../domain/models/table_status.dart';
 
 /// Callback types for table card actions
 typedef OnTableTap = void Function(RestaurantTable table);
@@ -163,43 +164,66 @@ class TableCardWidget extends StatelessWidget {
                         future: getOpenOrder(table.id),
                         builder: (ctx, snap) {
                           final order = snap.data;
-                          return Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 3),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(colors: [
-                                statusColor.withValues(alpha: 0.2),
-                                statusColor.withValues(alpha: 0.08),
-                              ]),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                  color: statusColor
-                                      .withValues(alpha: 0.3)),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(statusIcon,
-                                    size: 10, color: statusColor),
-                                const SizedBox(width: 4),
-                                if (order != null && order.total > 0)
-                                  Text(
-                                    '${order.total.toStringAsFixed(0)} ${AppConstants.currencySymbolEn}',
-                                    style: GoogleFonts.cairo(
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 10,
-                                        color: statusColor),
-                                  )
-                                else
-                                  Text(
-                                    _getStatusLabel(),
-                                    style: GoogleFonts.cairo(
-                                        fontSize: 9,
-                                        color: statusColor,
-                                        fontWeight: FontWeight.w600),
-                                  ),
+                          // «دُفع X من Y» — دفعةٌ جزئيةٌ فقط تبقي الطاولة
+                          // 🔵 (المدفوعةُ بالكامل تصير 🟠 من تلقائها)، فهذا
+                          // العرضُ محصورٌ بحالة `occupied` كي لا يظهر على
+                          // طاولةٍ فارغة.
+                          final showsPaidProgress =
+                              table.status == TableStatus.occupied &&
+                                  order != null &&
+                                  order.paidAmount > 0;
+                          return Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 3),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(colors: [
+                                    statusColor.withValues(alpha: 0.2),
+                                    statusColor.withValues(alpha: 0.08),
+                                  ]),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                      color: statusColor
+                                          .withValues(alpha: 0.3)),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(statusIcon,
+                                        size: 10, color: statusColor),
+                                    const SizedBox(width: 4),
+                                    if (order != null && order.total > 0)
+                                      Text(
+                                        '${order.total.toStringAsFixed(0)} ${AppConstants.currencySymbolEn}',
+                                        style: GoogleFonts.cairo(
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 10,
+                                            color: statusColor),
+                                      )
+                                    else
+                                      Text(
+                                        _getStatusLabel(),
+                                        style: GoogleFonts.cairo(
+                                            fontSize: 9,
+                                            color: statusColor,
+                                            fontWeight: FontWeight.w600),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              if (showsPaidProgress) ...[
+                                const SizedBox(height: 3),
+                                Text(
+                                  'دُفع ${order.paidAmount.toStringAsFixed(0)} من ${_effectiveTotal(order).toStringAsFixed(0)}',
+                                  style: GoogleFonts.cairo(
+                                      fontSize: 8,
+                                      color: const Color(0xFFF97316),
+                                      fontWeight: FontWeight.w700),
+                                ),
                               ],
-                            ),
+                            ],
                           );
                         },
                       )
@@ -347,6 +371,10 @@ class TableCardWidget extends StatelessWidget {
         return const Color(0xFFF59E0B);
       case 'occupied':
         return const Color(0xFF3B82F6);
+      case TableStatus.paid: // 🟠
+        return const Color(0xFFF97316);
+      case TableStatus.outOfService: // ⚪
+        return const Color(0xFFCBD5E1);
       case 'seated':
         return const Color(0xFF06B6D4);
       case 'ordered':
@@ -371,6 +399,10 @@ class TableCardWidget extends StatelessWidget {
       case 'occupied':
       case 'seated':
         return PhosphorIconsBold.armchair;
+      case TableStatus.paid:
+        return PhosphorIconsBold.currencyCircleDollar;
+      case TableStatus.outOfService:
+        return PhosphorIconsBold.prohibit;
       case 'ordered':
         return PhosphorIconsBold.notepad;
       case 'eating':
@@ -393,6 +425,10 @@ class TableCardWidget extends StatelessWidget {
       case 'occupied':
       case 'seated':
         return 'جالسين';
+      case TableStatus.paid:
+        return 'مدفوعة';
+      case TableStatus.outOfService:
+        return 'خارج الخدمة';
       case 'ordered':
         return 'تم الطلب';
       case 'eating':
@@ -405,4 +441,17 @@ class TableCardWidget extends StatelessWidget {
         return 'متاحة';
     }
   }
+}
+
+/// الإجماليُّ بعد الخصم — مرآةٌ خفيفةٌ لـ`TableSessionService.effectiveTotal`
+/// لعرضٍ فوريٍّ من الطلب المحمَّل أصلاً، لا استعلامٍ آخر لقاعدة البيانات.
+double _effectiveTotal(TableOrder order) {
+  if (order.discountType == null || order.discountValue <= 0) {
+    return order.total;
+  }
+  final discount = order.discountType == 'percent'
+      ? order.total * order.discountValue / 100
+      : order.discountValue;
+  final net = order.total - discount;
+  return net < 0 ? 0 : net;
 }

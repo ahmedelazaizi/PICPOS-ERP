@@ -10,6 +10,16 @@ mixin _TableOperationsMixin on ConsumerState<TablesScreen> {
     IRestaurantRepository restaurantRepo,
     RestaurantTable table,
   );
+  Future<void> _onMergeTable(
+    IRestaurantRepository restaurantRepo,
+    RestaurantTable sourceTable,
+    TableOrder sourceOrder,
+  );
+  Future<void> _closeTable(
+    IRestaurantRepository restaurantRepo,
+    RestaurantTable table,
+    TableOrder order,
+  );
   Future<void> _confirmDeleteTable(
     IRestaurantRepository restaurantRepo,
     RestaurantTable table,
@@ -193,12 +203,93 @@ mixin _TableOperationsMixin on ConsumerState<TablesScreen> {
     }
   }
 
-  /// Show options for available table (open order or reserve)
+  /// نصوصُ الكبسات — نصُّ المواصفة حرفياً، بترتيب `TableAction`.
+  static const Map<TableAction, String> _tableActionLabels = {
+    TableAction.open: 'فتح طاولة',
+    TableAction.addItems: 'إضافة طلب',
+    TableAction.transfer: 'نقل الطلب',
+    TableAction.merge: 'دمج الطاولات',
+    TableAction.splitBill: 'تقسيم الفاتورة',
+    TableAction.printBill: 'طباعة الفاتورة',
+    TableAction.reserve: 'حجز طاولة',
+    TableAction.pay: 'الدفع',
+    TableAction.changeStatus: 'تغيير الحالة',
+    TableAction.cancelOrder: 'إلغاء الطلب',
+    TableAction.closeTable: 'إغلاق الطاولة',
+    TableAction.log: 'سجل الطاولة',
+  };
+
+  IconData _tableActionIcon(TableAction action) {
+    switch (action) {
+      case TableAction.open:
+        return PhosphorIconsBold.doorOpen;
+      case TableAction.addItems:
+        return PhosphorIconsBold.plus;
+      case TableAction.transfer:
+        return PhosphorIconsBold.arrowsLeftRight;
+      case TableAction.merge:
+        return PhosphorIconsBold.intersect;
+      case TableAction.splitBill:
+        return PhosphorIconsBold.columns;
+      case TableAction.printBill:
+        return PhosphorIconsBold.printer;
+      case TableAction.reserve:
+        return PhosphorIconsBold.calendarPlus;
+      case TableAction.pay:
+        return PhosphorIconsBold.currencyCircleDollar;
+      case TableAction.changeStatus:
+        return PhosphorIconsBold.arrowsClockwise;
+      case TableAction.cancelOrder:
+        return PhosphorIconsBold.xCircle;
+      case TableAction.closeTable:
+        return PhosphorIconsBold.checkCircle;
+      case TableAction.log:
+        return PhosphorIconsBold.clockCounterClockwise;
+    }
+  }
+
+  /// لونُ الكبسة. `cancelOrder` وحدَه بلون الخطر — يهدم طلباً حياً. أما
+  /// `closeTable` فروتينٌ: الحسابُ سُدِّد، والطاولةُ تحتاج تحريراً لا غير.
+  Color _tableActionColor(TableAction action) {
+    switch (action) {
+      case TableAction.open:
+        return AppColors.success;
+      case TableAction.addItems:
+        return AppColors.info;
+      case TableAction.transfer:
+        return AppColors.booking;
+      case TableAction.merge:
+        return AppColors.warning;
+      case TableAction.splitBill:
+        return const Color(0xFF06B6D4);
+      case TableAction.printBill:
+        return const Color(0xFF64748B);
+      case TableAction.reserve:
+        return Colors.orange;
+      case TableAction.pay:
+        return AppColors.success;
+      case TableAction.changeStatus:
+        return const Color(0xFF6366F1);
+      case TableAction.cancelOrder:
+        return AppColors.error;
+      case TableAction.closeTable:
+        return const Color(0xFF0EA5E9);
+      case TableAction.log:
+        return AppColors.textMuted;
+    }
+  }
+
+  /// Show the table's actions menu — one row per `TableAction`, derived
+  /// من `actionsForStatus(table.status)` لا شروطٌ متناثرة. غيابُ «الدفع»
+  /// عن طاولةٍ فارغة أو «النقل» عن طاولةٍ بلا طلبٍ نتيجةٌ تلقائيةٌ للقائمة
+  /// المُشتقّة، لا شرطٍ يُكتَب هنا فيُنسى في نسخةٍ تالية.
   void _showTableOptions(
     BuildContext context,
     IRestaurantRepository restaurantRepo,
     RestaurantTable table,
   ) {
+    final actions = actionsForStatus(table.status);
+
     showDialog(
       context: context,
       builder: (ctx) => Directionality(
@@ -214,88 +305,64 @@ mixin _TableOperationsMixin on ConsumerState<TablesScreen> {
               Text(table.name),
             ],
           ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Primary actions
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    _confirmOpenTable(restaurantRepo, table);
-                  },
-                  icon: const Icon(PhosphorIconsBold.users, size: 18),
-                  label: const Text('فتح طلب'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.success,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    _showReservationDialog(context, restaurantRepo, table);
-                  },
-                  icon: const Icon(PhosphorIconsBold.calendarPlus, size: 18),
-                  label: const Text('حجز'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.orange,
-                    side: const BorderSide(color: Colors.orange),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              // Secondary actions row
-              Row(
+          content: SizedBox(
+            width: 320,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Expanded(
-                    child: PermissionGuard(
-                      permission: PermissionCodes.tablesManage,
-                      allowManagerOverride: true,
-                      actionName: 'تعديل طاولة',
-                      onGranted: () {
-                        Navigator.pop(ctx);
-                        _showEditTableDialog(context, restaurantRepo, table);
-                      },
-                      child: TextButton.icon(
-                        onPressed: () {
-                          Navigator.pop(ctx);
-                          _showEditTableDialog(context, restaurantRepo, table);
-                        },
-                        icon: const Icon(PhosphorIconsBold.pencil, size: 16),
-                        label: const Text('تعديل'),
+                  for (final action in actions) ...[
+                    _buildActionButton(ctx, context, restaurantRepo, table, action),
+                    const SizedBox(height: 8),
+                  ],
+                  const SizedBox(height: 8),
+                  // Secondary actions row — تعديل/حذف الطاولة نفسها، لا
+                  // علاقةَ لهما بحالة الطلب فليسا من `TableAction`.
+                  Row(
+                    children: [
+                      Expanded(
+                        child: PermissionGuard(
+                          permission: PermissionCodes.tablesManage,
+                          allowManagerOverride: true,
+                          actionName: 'تعديل طاولة',
+                          onGranted: () {
+                            Navigator.pop(ctx);
+                            _showEditTableDialog(context, restaurantRepo, table);
+                          },
+                          child: TextButton.icon(
+                            onPressed: () {
+                              Navigator.pop(ctx);
+                              _showEditTableDialog(context, restaurantRepo, table);
+                            },
+                            icon: const Icon(PhosphorIconsBold.pencil, size: 16),
+                            label: const Text('تعديل'),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                  Expanded(
-                    child: PermissionGuard(
-                      permission: PermissionCodes.tablesManage,
-                      allowManagerOverride: true,
-                      actionName: 'حذف طاولة',
-                      onGranted: () {
-                        Navigator.pop(ctx);
-                        _confirmDeleteTable(restaurantRepo, table);
-                      },
-                      child: TextButton.icon(
-                        onPressed: () {
-                          Navigator.pop(ctx);
-                          _confirmDeleteTable(restaurantRepo, table);
-                        },
-                        icon: const Icon(PhosphorIconsBold.trash, size: 16, color: AppColors.error),
-                        label: const Text('حذف', style: TextStyle(color: AppColors.error)),
+                      Expanded(
+                        child: PermissionGuard(
+                          permission: PermissionCodes.tablesManage,
+                          allowManagerOverride: true,
+                          actionName: 'حذف طاولة',
+                          onGranted: () {
+                            Navigator.pop(ctx);
+                            _confirmDeleteTable(restaurantRepo, table);
+                          },
+                          child: TextButton.icon(
+                            onPressed: () {
+                              Navigator.pop(ctx);
+                              _confirmDeleteTable(restaurantRepo, table);
+                            },
+                            icon: const Icon(PhosphorIconsBold.trash, size: 16, color: AppColors.error),
+                            label: const Text('حذف', style: TextStyle(color: AppColors.error)),
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
           actions: [
             TextButton(
@@ -306,6 +373,127 @@ mixin _TableOperationsMixin on ConsumerState<TablesScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildActionButton(
+    BuildContext dialogContext,
+    BuildContext screenContext,
+    IRestaurantRepository restaurantRepo,
+    RestaurantTable table,
+    TableAction action,
+  ) {
+    final label = _tableActionLabels[action]!;
+    final icon = _tableActionIcon(action);
+    final color = _tableActionColor(action);
+    final isDestructive = action == TableAction.cancelOrder;
+
+    return SizedBox(
+      width: double.infinity,
+      child: isDestructive
+          ? ElevatedButton.icon(
+              onPressed: () => _handleTableAction(
+                dialogContext,
+                screenContext,
+                restaurantRepo,
+                table,
+                action,
+              ),
+              icon: Icon(icon, size: 18),
+              label: Text(label),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: color,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+            )
+          : OutlinedButton.icon(
+              onPressed: () => _handleTableAction(
+                dialogContext,
+                screenContext,
+                restaurantRepo,
+                table,
+                action,
+              ),
+              icon: Icon(icon, size: 18, color: color),
+              label: Text(label, style: TextStyle(color: color)),
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: color),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+            ),
+    );
+  }
+
+  /// تنفيذُ الكبسة. الموصولُ منها بمعالجٍ حقيقيٍّ هو ما كان موجوداً قبل
+  /// هذه المهمّة (الفتح، الإضافة، النقل، الدمج، التقسيم، الحجز، الإغلاق)؛
+  /// والباقي (الدفع، تغييرُ الحالة، الإلغاء، الطباعة، السجل) يُوصَل
+  /// بـ`TableSessionService` أو شاشة السجل في مهماتٍ لاحقة (١١، ١٢) — يظهر
+  /// بحالته وشكله الصحيحين الآن، ولا ينفّذ شيئاً بعد.
+  Future<void> _handleTableAction(
+    BuildContext dialogContext,
+    BuildContext screenContext,
+    IRestaurantRepository restaurantRepo,
+    RestaurantTable table,
+    TableAction action,
+  ) async {
+    Navigator.pop(dialogContext);
+    switch (action) {
+      case TableAction.open:
+        _confirmOpenTable(restaurantRepo, table);
+        break;
+      case TableAction.addItems:
+        if (table.status == TableStatus.paid) {
+          // الإضافةُ بعد الدفع تفتح طلباً جديداً — لا تُعدّل فاتورةً رُحِّلت.
+          _confirmOpenTable(restaurantRepo, table);
+        } else if (screenContext.mounted) {
+          Navigator.push(
+            screenContext,
+            MaterialPageRoute(
+              builder: (_) => TablePosScreen(
+                tableId: table.id,
+                tableName: table.name,
+              ),
+            ),
+          );
+        }
+        break;
+      case TableAction.transfer:
+        _handleTransferOrder(screenContext, restaurantRepo, table);
+        break;
+      case TableAction.merge:
+        final order = await restaurantRepo.getActiveOrderForTable(table.id);
+        if (!screenContext.mounted) return;
+        if (order != null) {
+          _onMergeTable(restaurantRepo, table, order);
+        } else {
+          AppToast.show(screenContext, 'لا يوجد طلبٌ لدمجه', type: ToastType.warning);
+        }
+        break;
+      case TableAction.splitBill:
+        _handleSplitTable(screenContext, restaurantRepo, table);
+        break;
+      case TableAction.reserve:
+        _showReservationDialog(screenContext, restaurantRepo, table);
+        break;
+      case TableAction.closeTable:
+        final order = await restaurantRepo.getActiveOrderForTable(table.id);
+        if (!screenContext.mounted) return;
+        if (order != null) {
+          await _closeTable(restaurantRepo, table, order);
+        } else {
+          AppToast.show(screenContext, 'لا يوجد طلبٌ لإغلاقه', type: ToastType.warning);
+        }
+        break;
+      case TableAction.printBill:
+      case TableAction.pay:
+      case TableAction.changeStatus:
+      case TableAction.cancelOrder:
+      case TableAction.log:
+        if (screenContext.mounted) {
+          AppToast.show(screenContext, 'هذه الميزةُ قيدُ الإنجاز', type: ToastType.info);
+        }
+        break;
+    }
   }
 
   /// Show options for reserved table (seat guests or cancel)

@@ -10,6 +10,8 @@ import '../../core/theme/app_colors.dart';
 import '../../core/permissions/permission_codes.dart';
 import '../../data/providers/providers.dart';
 import '../../domain/entities/product_entity.dart';
+import '../../domain/models/table_actions.dart';
+import '../../domain/models/table_status.dart';
 import '../../domain/repositories/restaurant_repository.dart';
 import '../../services/invoice_generator.dart';
 import '../pos/screens/pos_table_service_screen.dart';
