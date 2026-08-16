@@ -394,6 +394,60 @@ class TableSessionService {
           ..where((i) => i.id.equals(orderItemId)))
         .write(TableOrderItemsCompanion(notes: Value(notes)));
   }
+
+  /// تسجيلُ دفعةٍ على الطلب بعد صدور فاتورتها.
+  ///
+  /// الحالةُ مشتقّةٌ لا مخزَّنةٌ مرّتين: تبقى الطاولة 🔵 حتى يبلغ
+  /// `paidAmount` الإجماليَّ بعد الخصم، فتصير 🟠. ويترتّب على ذلك أثرٌ
+  /// مقصود — إن أُضيف صنفٌ بعد دفعةٍ جزئيّة، ارتفع الإجماليُّ فوق المدفوع
+  /// فعادت الطاولة 🔵 من تلقائها بلا قاعدةٍ خاصّة.
+  Future<void> recordPayment({
+    required int orderId,
+    required int invoiceId,
+    required double amount,
+    String? splitLabel,
+  }) async {
+    if (amount <= 0) {
+      throw const TableTransitionException('الدفعةُ يجب أن تكون موجبة');
+    }
+    await _db.transaction(() async {
+      final order = await (_db.select(_db.tableOrders)
+            ..where((o) => o.id.equals(orderId)))
+          .getSingle();
+
+      final due = _units(_effectiveTotalOf(order));
+      final already = _units(order.paidAmount);
+      if (already + _units(amount) > due) {
+        throw TableTransitionException(
+            'الدفعةُ $amount تتجاوز المتبقّي ${(due - already) / _factor}');
+      }
+
+      await _db.into(_db.tableOrderPayments).insert(
+            TableOrderPaymentsCompanion.insert(
+              tableOrderId: orderId,
+              invoiceId: invoiceId,
+              amount: amount,
+              splitLabel: Value(splitLabel),
+              paidAt: Value(DateTime.now()),
+            ),
+          );
+
+      final newPaid = (already + _units(amount)) / _factor;
+      await (_db.update(_db.tableOrders)..where((o) => o.id.equals(orderId)))
+          .write(TableOrdersCompanion(paidAmount: Value(newPaid)));
+
+      if (already + _units(amount) >= due) {
+        await _db.updateTableStatus(order.tableId, TableStatus.paid);
+      }
+    });
+  }
+
+  /// دفعاتُ الطلب مرتّبةً بترتيب حدوثها.
+  Future<List<TableOrderPayment>> paymentsFor(int orderId) =>
+      (_db.select(_db.tableOrderPayments)
+            ..where((p) => p.tableOrderId.equals(orderId))
+            ..orderBy([(p) => OrderingTerm.asc(p.id)]))
+          .get();
 }
 
 /// ما سقط في الدمج — تعرضه الواجهةُ في نافذة التأكيد.

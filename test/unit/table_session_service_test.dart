@@ -529,4 +529,126 @@ void main() {
       expect(item.notes, 'بلا بصل');
     });
   });
+
+  group('recordPayment', () {
+    // table_order_payments.invoice_id يتبع sales_invoices، والقيدُ الأجنبي
+    // مُفعَّلٌ في اختبارات forTesting() — فتُزرع فواتيرُ حقيقيّةٌ بمعرّفاتٍ
+    // صريحة (١، ٢، ٧، ٨) تغطّي كلَّ invoiceId تستخدمه اختباراتُ هذه
+    // المجموعة، بدل الاعتماد على الترقيم التلقائي (نفسُ نمط
+    // table_service_schema_test.dart). المخزنُ والمستخدمُ مبذوران سلفاً في
+    // beforeOpen فيُعاد استخدامهما.
+    setUp(() async {
+      final warehouseId = (await db.select(db.warehouses).get()).first.id;
+      final userId = (await db.select(db.users).get()).first.id;
+      for (final id in [1, 2, 7, 8]) {
+        await db.into(db.salesInvoices).insert(
+              SalesInvoicesCompanion.insert(
+                id: Value(id),
+                invoiceNumber: 'INV-TEST-$id',
+                warehouseId: warehouseId,
+                userId: userId,
+                invoiceDate: DateTime.now(),
+              ),
+            );
+      }
+    });
+
+    Future<int> orderWithTotal(int tableId, double total) async {
+      final orderId = await service.openTable(
+          tableId: tableId, guestCount: 4, userId: null, userName: 'أحمد');
+      await (db.update(db.tableOrders)..where((o) => o.id.equals(orderId)))
+          .write(TableOrdersCompanion(total: Value(total)));
+      return orderId;
+    }
+
+    test('دفعةٌ جزئيّةٌ تُبقي الطاولة مشغولة', () async {
+      final t = await newTable('ط٥٠');
+      final orderId = await orderWithTotal(t, 100);
+
+      await service.recordPayment(
+          orderId: orderId, invoiceId: 1, amount: 40, splitLabel: 'ضيف ١');
+
+      expect((await readTable(t)).status, TableStatus.occupied);
+      final order = await db.getActiveOrderForTable(t);
+      expect(order!.paidAmount, 40);
+    });
+
+    test('اكتمالُ المبلغ يقلب الطاولة إلى مدفوعة', () async {
+      final t = await newTable('ط٥١');
+      final orderId = await orderWithTotal(t, 100);
+
+      await service.recordPayment(
+          orderId: orderId, invoiceId: 1, amount: 40, splitLabel: 'ضيف ١');
+      await service.recordPayment(
+          orderId: orderId, invoiceId: 2, amount: 60, splitLabel: 'ضيف ٢');
+
+      expect((await readTable(t)).status, TableStatus.paid);
+    });
+
+    test('ثلاثُ حصصٍ من ١٠٠÷٣ تُكمل المبلغ ولا تترك مليماً', () async {
+      final t = await newTable('ط٥٢');
+      final orderId = await orderWithTotal(t, 100);
+
+      for (final amount in [33.333, 33.333, 33.334]) {
+        await service.recordPayment(
+            orderId: orderId, invoiceId: 1, amount: amount);
+      }
+
+      expect((await readTable(t)).status, TableStatus.paid,
+          reason: 'المقارنةُ بالوحدات لا بـdouble');
+    });
+
+    test('الخصمُ يخفض المبلغَ الواجب', () async {
+      final t = await newTable('ط٥٣');
+      final orderId = await orderWithTotal(t, 100);
+      await service.setOrderDiscount(
+          orderId: orderId,
+          type: 'percent',
+          value: 10,
+          userId: null,
+          userName: 'أحمد');
+
+      await service.recordPayment(
+          orderId: orderId, invoiceId: 1, amount: 90);
+
+      expect((await readTable(t)).status, TableStatus.paid);
+    });
+
+    test('دفعةٌ تتجاوز المتبقّي تُرفض', () async {
+      final t = await newTable('ط٥٤');
+      final orderId = await orderWithTotal(t, 100);
+      await service.recordPayment(
+          orderId: orderId, invoiceId: 1, amount: 60);
+
+      expect(
+        () => service.recordPayment(
+            orderId: orderId, invoiceId: 2, amount: 50),
+        throwsA(isA<TableTransitionException>()),
+      );
+    });
+
+    test('الدفعاتُ تُقرأ مرتّبةً بحصصها', () async {
+      final t = await newTable('ط٥٥');
+      final orderId = await orderWithTotal(t, 100);
+      await service.recordPayment(
+          orderId: orderId, invoiceId: 7, amount: 40, splitLabel: 'ضيف ١');
+      await service.recordPayment(
+          orderId: orderId, invoiceId: 8, amount: 60, splitLabel: 'ضيف ٢');
+
+      final payments = await service.paymentsFor(orderId);
+      expect(payments, hasLength(2));
+      expect(payments.first.invoiceId, 7);
+      expect(payments.last.splitLabel, 'ضيف ٢');
+    });
+
+    test('الإغلاقُ يصير مسموحاً بعد اكتمال الدفع', () async {
+      final t = await newTable('ط٥٦');
+      final orderId = await orderWithTotal(t, 100);
+      await service.recordPayment(
+          orderId: orderId, invoiceId: 1, amount: 100);
+
+      await service.closeTable(tableId: t, userId: null, userName: 'أحمد');
+      expect((await readTable(t)).status, TableStatus.available);
+    });
+  });
 }
