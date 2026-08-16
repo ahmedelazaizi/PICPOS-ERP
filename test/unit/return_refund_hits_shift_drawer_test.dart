@@ -157,6 +157,92 @@ void main() {
             '(تفلتران is_active=1) بينما الأستاذُ يسجّله — فجوةٌ صامتة.');
   });
 
+  // جولةُ مراجعةٍ ٣ (2026-08-16) — Important: `activeIds` في resolveRefundSafe
+  // كان تفضيلاً لا فلتراً — «يبقى المرشَّحون كلُّهم إن كانوا كلُّهم
+  // معطَّلين». مقابلٌ عملي: خزنةٌ وحيدةٌ في فرعٍ تُعطَّل في منتصف وردية
+  // **بعد** أن لمسَها الكاشير ⇒ drawerSafeIds={X} ثم activeIds={} ⇒ كلُّ
+  // مرتجعات تلك الوردية تخرج من خزنةٍ معطَّلة صامتةً (المبلغُ يختفي من
+  // getTotalCashBalance/getSafesBalancesByType، والأستاذُ يسجّله).
+  test(
+      'خزنةُ الفرع الوحيدةُ لُمِسَت ثم عُطِّلت في منتصف الوردية — السقوطُ '
+      'إلى الخزنة الافتراضية العامّة لا الصرفُ من معطَّلة', () async {
+    // خزنةٌ عامّةٌ نشِطةٌ مزروعةٌ سلفاً في `AppDatabase.forTesting()` (نفسُ
+    // ما يعتمده اختبارُ «غيابُ ورديةٍ أصلاً» أدناه) — تلعب دورَ
+    // `getDefaultSafeByType('cash')` خارجَ فرع الكاشير، فيكون السقوطُ
+    // إليها مميَّزاً عن خزنة الفرع المعطَّلة.
+    final expectedDefault = await db.getDefaultSafeByType('cash');
+    expect(expectedDefault, isNotNull);
+
+    final branch = await db.into(db.branches).insert(
+          BranchesCompanion.insert(name: 'فرعٌ بخزنةٍ وحيدةٍ ستُعطَّل'),
+        );
+    final branchSafe = await db.into(db.safes).insert(
+          SafesCompanion.insert(
+            name: 'درجُ الفرع الوحيد',
+            safeType: const Value('cash'),
+            branchId: Value(branch),
+          ),
+        );
+
+    final roleId = await db.into(db.roles).insert(
+          RolesCompanion.insert(
+              name: 'كاشير', isSystemRole: const Value(false)),
+        );
+    final userId = await db.createUser(
+      username: 'disabled_mid_shift_cashier',
+      password: 'x',
+      displayName: 'كاشيرُ تعطيلِ منتصف الوردية',
+      roleId: roleId,
+    );
+    final shiftStart = DateTime.now();
+    await db.into(db.shifts).insert(
+          ShiftsCompanion.insert(
+            startTime: shiftStart,
+            userId: userId,
+            status: 'open',
+            branchId: Value(branch),
+          ),
+        );
+    // الكاشيرُ لمسَ درجَ فرعه فعلياً (بيعةٌ سابقةٌ في نفس الوردية) —
+    // drawerSafeIds تُبنى من هذه الحركة (مسارُ userTxs، لا مسارَ السقوط
+    // لخزائن الفرع كاملةً).
+    await db.into(db.safeTransactions).insert(
+          SafeTransactionsCompanion.insert(
+            voucherNumber: 'SALE-MID-SHIFT-DISABLE',
+            safeId: branchSafe,
+            transactionType: 'receipt',
+            category: 'sales',
+            amount: 50,
+            balanceAfter: 50,
+            userId: Value(userId),
+            createdAt: Value(shiftStart.add(const Duration(minutes: 1))),
+          ),
+        );
+
+    // ثم يُعطَّل درجُ الفرع الوحيدُ في منتصف الوردية — بعد أن صار
+    // «الدرجَ الذي لمسَه الكاشير».
+    await (db.update(db.safes)..where((s) => s.id.equals(branchSafe)))
+        .write(const SafesCompanion(isActive: Value(false)));
+
+    DiagnosticLogger.enableTestMode();
+    final resolved = await db.resolveRefundSafe(userId: userId);
+
+    expect(resolved, isNotNull);
+    expect(resolved!.id, expectedDefault!.id,
+        reason: 'قبل الإصلاح: activeIds تُصبح فارغةً فيبقى drawerSafeIds '
+            'كما هو (={branchSafe} المعطَّلة) ويُصرف منها فعلياً رغم '
+            'تعطيلها — انحدارٌ سلوكيٌّ عن getDefaultSafeByType القديمة '
+            '(تفلتر isActive دوماً).');
+    expect(
+      DiagnosticLogger.testLog.any((line) =>
+          line.contains('REFUND-SAFE-FALLBACK') &&
+          line.contains('all-candidate-safes-inactive')),
+      isTrue,
+      reason: 'السقوطُ إلى الخزنة العامّة بسبب تعطُّل كلّ المرشَّحين يجب '
+          'أن يُسجَّل بسببٍ مميَّزٍ يفرّقه عن السقوطات الخمس الأخرى.',
+    );
+  });
+
   test(
       'صفُّ shift_variance هو الحركةُ الوحيدةُ في النافذة — resolveRefundSafe '
       'تختار نفسَ ما يختاره منطقُ _settleShift', () async {
