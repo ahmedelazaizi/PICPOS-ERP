@@ -27,6 +27,27 @@ void main() {
       expect(mode.setQty(l.invoiceItemId, 3.5), isFalse);
     });
 
+    test('لا تسقط تحت المقارنة الساذجة: متبقٍّ صفرٌ مُشبَّعٌ لكن السماحُ يقبل ٠٫٠٠٠٥', () {
+      // remaining = soldQty - alreadyReturnedQty = 0 بالضبط ⇒ availableQty
+      // مُشبَّعةٌ إلى صفر (قيمةُ عرض)، لكنّ isReturnRequestValid تسمح بما
+      // دون remaining + 0.001 — فتقبل ٠٫٠٠٠٥ بينما المقارنةُ الساذجةُ
+      // `qty > availableQty(=0)` ترفضها.
+      const zeroRemaining = ReturnableLine(
+        invoiceItemId: 12, productId: 23, productName: 'كاجو',
+        soldQty: 3, alreadyReturnedQty: 3, unitPrice: 1,
+      );
+      final mode = PosReturnMode.fromLines(invoiceId: 1, lines: [zeroRemaining]);
+      expect(mode.setQty(zeroRemaining.invoiceItemId, 0.0005), isTrue);
+    });
+
+    test('لا تسقط تحت المقارنة الساذجة: كميةٌ داخلَ سماح ٠٫٠٠١ فوق المتبقّي الموجب', () {
+      // المتبقّي هنا 3 (نظيفٌ غيرُ مُشبَّع). المقارنةُ الساذجةُ
+      // `qty > availableQty(=3)` ترفض 3.0005، بينما isReturnRequestValid
+      // (‏٣ + سماح ٠٫٠٠١) تقبلها.
+      final mode = PosReturnMode.fromLines(invoiceId: 1, lines: [l]);
+      expect(mode.setQty(l.invoiceItemId, 3.0005), isTrue);
+    });
+
     test('السعرُ من الفاتورة لا من شاشة الأصناف', () {
       final mode = PosReturnMode.fromLines(invoiceId: 1, lines: [l]);
       expect(mode.unitPriceOf(l.invoiceItemId), 12.5);
