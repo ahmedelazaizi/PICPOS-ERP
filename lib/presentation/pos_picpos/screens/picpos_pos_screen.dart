@@ -54,8 +54,12 @@ import '../widgets/picpos_last_invoice_dialog.dart';
 import '../widgets/picpos_cart_permissions.dart';
 import '../widgets/picpos_pos_shortcuts.dart';
 import '../widgets/picpos_pos_text.dart';
+import '../widgets/picpos_return_mode_banner.dart';
 import '../widgets/picpos_switch_user_dialog.dart';
 import '../widgets/picpos_top_bar.dart';
+import '../providers/pos_return_mode_provider.dart';
+import '../state/pos_return_mode.dart';
+import '../../../domain/models/returnable_line.dart';
 
 part 'picpos_pos_operations.dart';
 
@@ -371,8 +375,19 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
 
   /// Invoice half — header, lines, totals and the operation buttons.
   Widget _buildInvoiceColumn() {
+    // وضعُ المرتجع (المهمّة ٧): الترويسةُ الحمراءُ تظهر فوق كلِّ شيءٍ في هذا
+    // العمود طالما `posReturnModeProvider` غيرُ `null` — نفسُ الشرط الذي
+    // يحكم مسارَ الحفظ في `_processPaymentAndSave`. `_returnInvoiceNumber`
+    // نصٌّ محليٌّ يُضبط مع الوضع نفسِه في `_showQuickReturn` (`PosReturnMode`
+    // خالصةٌ ولا تحمل رقمَ الفاتورة، رأى مواصفةَ الملفّ).
+    final returnMode = ref.watch(posReturnModeProvider);
+
     return Column(
       children: [
+        if (returnMode != null)
+          PicPosReturnModeBanner(
+            invoiceNumber: _returnInvoiceNumber ?? '#${returnMode.invoiceId}',
+          ),
         PicPosInvoiceHeader(
           onPickCustomer: _pickCustomer,
           onShowLastInvoice: _showLastInvoice,
@@ -408,6 +423,7 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
           onExpense: _showExpenses,
           onHold: _holdOrder,
           onHeldOrders: _showHeldOrders,
+          onQuickReturn: _showQuickReturn,
         ),
       ],
     );

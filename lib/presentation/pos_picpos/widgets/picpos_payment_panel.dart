@@ -53,6 +53,11 @@ class PicPosPaymentPanel extends ConsumerWidget {
   final VoidCallback onHold;
   final VoidCallback onHeldOrders;
 
+  /// «مرتجع سريع» — يفتح مُحدِّدَ فاتورةٍ ثم يضبط `posReturnModeProvider`
+  /// (المهمّة ٧). القرارُ عيشُ السلكِ في الشاشة لا هنا: هذه اللوحةُ لا تعرف
+  /// شيئاً عن `PosReturnMode` أو المستودعات — نفسُ نمط بقيّة أزرار اللوحة.
+  final VoidCallback onQuickReturn;
+
   const PicPosPaymentPanel({
     super.key,
     required this.onCheckout,
@@ -65,6 +70,7 @@ class PicPosPaymentPanel extends ConsumerWidget {
     required this.onExpense,
     required this.onHold,
     required this.onHeldOrders,
+    required this.onQuickReturn,
   });
 
   @override
@@ -126,6 +132,7 @@ class PicPosPaymentPanel extends ConsumerWidget {
             onExpense: onExpense,
             onHold: onHold,
             onHeldOrders: onHeldOrders,
+            onQuickReturn: onQuickReturn,
           ),
         ],
       ),
@@ -708,6 +715,7 @@ class _ActionButtons extends ConsumerWidget {
   final VoidCallback onExpense;
   final VoidCallback onHold;
   final VoidCallback onHeldOrders;
+  final VoidCallback onQuickReturn;
 
   const _ActionButtons({
     required this.scale,
@@ -721,6 +729,7 @@ class _ActionButtons extends ConsumerWidget {
     required this.onExpense,
     required this.onHold,
     required this.onHeldOrders,
+    required this.onQuickReturn,
   });
 
   @override
@@ -791,6 +800,19 @@ class _ActionButtons extends ConsumerWidget {
                 label: 'الفاتورة السابقة',
                 icon: PhosphorIconsBold.receipt,
                 onTap: onLastInvoice,
+                height: btnHeight + 6,
+                font: btnFont,
+              ),
+            ),
+            // «مرتجع سريع» (المهمّة ٧) — بجوار «الفاتورة السابقة» بنفس نمط
+            // `_Action`. غيرُ معطَّلٍ على سلّةٍ فارغة عمداً: اختيارُ الفاتورة
+            // للإرجاع لا يحتاج سلّةَ بيعٍ أصلاً، بعكس «دفع»/«حفظ».
+            SizedBox(width: 5 * scale),
+            Expanded(
+              child: _Action(
+                label: 'مرتجع سريع',
+                icon: PhosphorIconsBold.arrowUUpLeft,
+                onTap: onQuickReturn,
                 height: btnHeight + 6,
                 font: btnFont,
               ),

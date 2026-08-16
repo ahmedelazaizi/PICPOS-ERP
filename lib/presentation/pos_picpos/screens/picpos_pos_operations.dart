@@ -117,6 +117,23 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
   int? get selectedIndex;
   set selectedIndex(int? value);
 
+  // ── وضعُ المرتجع (المهمّة ٧) ──────────────────────────────────────────
+  //
+  // `PosReturnMode` (‏`posReturnModeProvider`) خالصةٌ عمداً: تحمل `invoiceId`
+  // (رقمٌ) و`ReturnableLine` لكلّ سطر — لا كائنَ `SalesInvoiceData` ولا
+  // `ProductEntity` (‏راجع تعليقَ رأس `pos_return_mode.dart`). ومسارُ الحفظ
+  // (‏`processSalesReturn`) يحتاج الاثنين معاً: الفاتورةَ الأصليّةَ نفسَها
+  // و`productCache` مفتاحُه `productId`. فهذان محليّان في الشاشة، يُضبَطان
+  // معاً مع الوضع في `_showQuickReturn` ويُفرَّغان معاً معه في
+  // `_processQuickReturnSave`/`_cancelQuickReturn` — لا مصدرَ حقيقةٍ ثانياً
+  // لنفس البيانات، فقط بياناتٌ إضافيّةٌ لا مكانَ لها في النموذج الخالص.
+  SalesInvoiceData? _returnInvoice;
+  Map<int, ProductEntity> _returnProductCache = const {};
+
+  /// رقمُ الفاتورة المعروض في الترويسة الحمراء — نصٌّ، لا الكائن نفسُه، لأن
+  /// `PicPosReturnModeBanner` عديمةُ الحالة ولا تعرف `data/database`.
+  String? get _returnInvoiceNumber => _returnInvoice?.invoiceNumber;
+
   void _refocusScanner() {
     if (mounted) barcodeFocus.requestFocus();
   }
@@ -1021,6 +1038,17 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
   /// • `حفظ` هنا **ما بيفتحش الدرج**؛ في UralCash بيفتحه. الزرين لازم يفرقوا،
   ///   ودرج بيفتح بلا فلوس بيدرّب الكاشير إنه يتجاهل الركلة.
   Future<void> _processPaymentAndSave({required bool printAfter}) async {
+    // وضعُ المرتجع (المهمّة ٧): يأخذ المسارَ **كلَّه** — لا فحصَ سلّةٍ فارغة
+    // (فاتورةُ المرتجع ليست سلّةَ بيع)، ولا فترةً ماليّةً هنا (`processSalesReturn`
+    // يتحقّق منها بنفسه)، ولا طباعةً ولا درجاً؛ `printAfter` بلا أثرٍ في هذا
+    // الفرع عمداً — طباعةُ إيصال مرتجعٍ لها مسارُها الخاصُّ في شاشة
+    // «مرتجعات المبيعات»، وليست جزءاً من هذه المهمّة.
+    final returnMode = ref.read(posReturnModeProvider);
+    if (returnMode != null) {
+      await _processQuickReturnSave(returnMode);
+      return;
+    }
+
     final cartState = ref.read(cartControllerProvider);
     if (cartState.items.isEmpty) {
       showPosToast(context, ref, 'الفاتورة فارغة',
@@ -1529,6 +1557,25 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
   // ── Cancel the whole invoice (ESC) ─────────────────────────────────────
 
   Future<void> _cancelInvoice() async {
+    // وضعُ المرتجع (المهمّة ٧): سلّتُه فارغةٌ عادةً (‏الكاشيرُ لم يُضِف
+    // أصنافَ بيعٍ)، فالفرعُ العاديُّ تحته كان سيعود فوراً بلا شيءٍ — ويحبس
+    // الكاشيرَ في وضع المرتجع بلا مخرجٍ سوى إتمام الحفظ. `ESC` و«مسح الكل»
+    // كلاهما يصل هنا؛ نفسُ التأكيدِ المزدوج المعتاد قبل أيّ إلغاء.
+    final returnMode = ref.read(posReturnModeProvider);
+    if (returnMode != null) {
+      final ok = await AppConfirmDialog.show(
+        context,
+        title: 'إلغاء المرتجع',
+        message: 'سيُلغى وضعُ المرتجع الحاليّ بلا حفظ. متأكد؟',
+        confirmLabel: 'إلغاء المرتجع',
+        isDangerous: true,
+      );
+      if (!ok || !mounted) return;
+      _cancelQuickReturn();
+      _refocusScanner();
+      return;
+    }
+
     final items = ref.read(cartControllerProvider).items;
     if (items.isEmpty) {
       _refocusScanner();
@@ -1668,6 +1715,177 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     _refocusScanner();
   }
 
+  // ── وضعُ المرتجع: زرُّ «مرتجع سريع» (المهمّة ٧) ─────────────────────────
+
+  /// زرُّ «مرتجع سريع» في لوحة الدفع — يفتح مُحدِّدَ فاتورةٍ، يبني
+  /// [PosReturnMode] من أصنافها، ويضبط `posReturnModeProvider` فتظهر
+  /// الترويسةُ الحمراءُ ويتحوَّل مسارُ الحفظ (‏`_processPaymentAndSave`).
+  ///
+  /// ── «سريع» = مرتجعٌ كاملٌ افتراضياً ────────────────────────────────────
+  /// كلُّ سطرٍ لسه له متاحٌ يُطلَب بأقصى ما يقبله القفلُ (`setQty` يرفض ما
+  /// يتجاوز `isReturnRequestValid`)، فضغطةٌ واحدةٌ على الفاتورة تكفي —
+  /// بلا حوار تعديل كمياتٍ سطراً سطراً. تعديلُ الكميات لسطرٍ بعينه (خفضٌ أو
+  /// استبعادٌ كاملٌ عبر `PosReturnMode.clearQty`) خارج نطاق هذه المهمّة؛
+  /// انظر تقريرَها للتفصيل. المرتجعُ الجزئيّ المُحرَّر سطراً سطراً له مساره
+  /// المستقلّ أصلاً: شاشةُ «مرتجعات المبيعات» (‏`sales_returns_picpos`).
+  Future<void> _showQuickReturn() async {
+    // `sales_return_create` — نفسُ صلاحيّة الشاشة المستقلّة
+    // (`sales_returns_picpos_screen.dart`)، وبنفس نمط بوّابةِ `posSave`:
+    // فحصٌ طازج ثم موافقةُ مسؤول.
+    if (!await _userHasPermissionFresh(PermissionCodes.salesReturnCreate)) {
+      if (!mounted) return;
+      final approved = await requestManagerApproval(
+        context,
+        actionName: 'إنشاء مرتجع مبيعات',
+        permission: PermissionCodes.salesReturnCreate,
+      );
+      if (!approved) return;
+    }
+    if (!mounted) return;
+
+    final invoice = await showDialog<SalesInvoiceData>(
+      context: context,
+      builder: (_) => const _QuickReturnInvoicePickerDialog(),
+    );
+    if (invoice == null || !mounted) return;
+
+    final returnsRepo = ref.read(returnsRepositoryProvider);
+    final productRepo = ref.read(productRepositoryProvider);
+
+    final items = await returnsRepo.getSalesInvoiceItems(invoice.id);
+    if (!mounted) return;
+    if (items.isEmpty) {
+      showPosToast(context, ref, 'لا توجد أصنافٌ في هذه الفاتورة',
+          type: PosNotificationType.info);
+      return;
+    }
+
+    final productIds = items.map((it) => it.productId).toSet().toList();
+    final results = await Future.wait([
+      productRepo.getProductsByIds(productIds),
+      returnsRepo.getReturnedQuantitiesForInvoice(invoice.id),
+    ]);
+    if (!mounted) return;
+    final products = results[0] as List<ProductEntity>;
+    final returnedByProduct = results[1] as Map<int, double>;
+
+    final productCache = <int, ProductEntity>{
+      for (final p in products) p.id: p,
+    };
+    final nameById = <int, String>{for (final p in products) p.id: p.name};
+
+    final lines = [
+      for (final item in items)
+        ReturnableLine(
+          invoiceItemId: item.id,
+          productId: item.productId,
+          productName: nameById[item.productId] ?? 'صنف #${item.productId}',
+          soldQty: item.quantity,
+          alreadyReturnedQty: returnedByProduct[item.productId] ?? 0,
+          unitPrice: item.unitPrice,
+        ),
+    ];
+
+    final mode = PosReturnMode.fromLines(invoiceId: invoice.id, lines: lines);
+    for (final line in lines) {
+      // سطرٌ استُنفد سلفاً (‏`availableQty == 0`): `setQty` ترفضه دوماً
+      // (‏`isReturnRequestValid` تشترط `> 0`) فيبقى صفراً ويُسقَط لاحقاً —
+      // لا حاجةَ لفحصٍ صريح هنا، القفلُ نفسُه يكفي.
+      mode.setQty(line.invoiceItemId, line.availableQty);
+    }
+
+    if (mode.requestedQty.values.every((q) => q <= 0)) {
+      showPosToast(context, ref, 'كلُّ أصناف هذه الفاتورة مرتجعةٌ بالفعل',
+          type: PosNotificationType.info);
+      return;
+    }
+
+    setState(() {
+      _returnInvoice = invoice;
+      _returnProductCache = productCache;
+    });
+    ref.read(posReturnModeProvider.notifier).state = mode;
+    _refocusScanner();
+  }
+
+  /// يُنهي وضعَ المرتجع بلا حفظ — يفرّغ الحالةَ المحليّةَ والمزوِّدَ معاً.
+  void _cancelQuickReturn() {
+    ref.read(posReturnModeProvider.notifier).state = null;
+    setState(() {
+      _returnInvoice = null;
+      _returnProductCache = const {};
+    });
+  }
+
+  /// مسارُ حفظ المرتجع — الفرعُ الذي يأخذه `_processPaymentAndSave` كلُّه
+  /// حين يكون `posReturnModeProvider` غيرَ `null`. المسارُ الإلزاميّ
+  /// `returnsRepository.processSalesReturn` **لا** `ProcessSalesReturnUseCase`
+  /// — الأخيرُ بلا سقفِ كميةٍ في `_validate` (مقيسٌ، لا مفترَض)، فاستعمالُه
+  /// كان سيفتح ثغرةَ إرجاعٍ زائد.
+  Future<void> _processQuickReturnSave(PosReturnMode mode) async {
+    final invoice = _returnInvoice;
+    if (invoice == null || invoice.id != mode.invoiceId) {
+      // لا يجب أن يحدث: الوضعُ والفاتورةُ يُضبَطان معاً في `_showQuickReturn`
+      // ويُفرَّغان معاً في `_cancelQuickReturn`/هنا. حماية دفاعيّة فقط.
+      showPosToast(context, ref, 'تعذّر تحديد الفاتورة الأصليّة للمرتجع',
+          type: PosNotificationType.error);
+      _cancelQuickReturn();
+      return;
+    }
+
+    // إسقاطُ الأصفار: `PosReturnMode.fromLines` تبدأ كلَّ سطرٍ صفراً
+    // (قرارُ مالكٍ، مهمّةٌ ٦)، و`processSalesReturn` يعتبر أيَّ سطرٍ غيرَ
+    // مذكورٍ = لا إرجاعَ له.
+    final returnQuantities = <int, double>{
+      for (final entry in mode.requestedQty.entries)
+        if (entry.value > 0) entry.key: entry.value,
+    };
+
+    if (returnQuantities.isEmpty) {
+      showPosToast(context, ref, 'لا توجد كمياتٌ محدَّدةٌ للإرجاع',
+          type: PosNotificationType.info);
+      return;
+    }
+
+    final auth = ref.read(authProvider);
+    final userId = auth.user?.id ?? 0;
+    final userName = auth.user?.displayName ?? 'مستخدم';
+
+    bool success;
+    try {
+      success = await ref.read(returnsRepositoryProvider).processSalesReturn(
+            invoice: invoice,
+            returnQuantities: returnQuantities,
+            productCache: _returnProductCache,
+            userId: userId,
+            userName: userName,
+            isFullReturn: true,
+          );
+    } catch (e) {
+      if (mounted) {
+        showPosToast(context, ref, 'فشل حفظ المرتجع: $e',
+            type: PosNotificationType.error);
+      }
+      return;
+    }
+
+    if (!mounted) return;
+    if (!success) {
+      showPosToast(context, ref, 'تعذّر حفظ المرتجع — راجع الكمياتِ المحدَّدة',
+          type: PosNotificationType.error);
+      return;
+    }
+
+    final invoiceNumber = invoice.invoiceNumber;
+    _cancelQuickReturn();
+    ref.read(cartControllerProvider.notifier).clearCart();
+    setState(() => selectedIndex = null);
+    barcodeController.clear();
+    showPosToast(context, ref, 'تم حفظ مرتجع فاتورة $invoiceNumber',
+        type: PosNotificationType.success);
+    _refocusScanner();
+  }
+
   /// تعديل **طريقة دفع** فاتورة مرحّلة + ملاحظاتها (طلب ٥).
   ///
   /// ── إيه اللي بيتعدَّل وإيه اللي لأ ────────────────────────────────────────
@@ -1753,5 +1971,123 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     } catch (e) {
       debugPrint('[PicPos-Drawer] فشل تشغيل الدرج: $e');
     }
+  }
+}
+
+/// مُحدِّدُ الفاتورة لِـ«مرتجع سريع» — يسرد فواتير قابلةً للإرجاع (‏نفسُ
+/// استبعاد `returnsRepository.getInvoicesForReturn`: مرحّلةٌ، غيرُ ملغاة،
+/// غيرُ مرتجعةٍ بالكامل سلفاً) بلا سقفٍ زمنيّ — قرارُ المالك 2026-08-16
+/// نفسُه المتَّبَع في شاشة «مرتجعات المبيعات» المستقلّة
+/// (‏`sales_returns_picpos_logic.dart`): الإرجاعُ جائزٌ بعد فترةٍ، وسقفُ
+/// أيامٍ كان يُخفي فاتورةً أقدمَ منه.
+///
+/// يرجع الفاتورةَ المختارةَ عبر `Navigator.pop(context, invoice)`، أو
+/// `null` عند الإلغاء.
+class _QuickReturnInvoicePickerDialog extends ConsumerStatefulWidget {
+  const _QuickReturnInvoicePickerDialog();
+
+  @override
+  ConsumerState<_QuickReturnInvoicePickerDialog> createState() =>
+      _QuickReturnInvoicePickerDialogState();
+}
+
+class _QuickReturnInvoicePickerDialogState
+    extends ConsumerState<_QuickReturnInvoicePickerDialog> {
+  String _query = '';
+  late final Future<List<SalesInvoiceData>> _invoicesFuture;
+
+  // `future:` مبنيّةٌ **مرّةً واحدةً** في `initState` لا داخل `build` —
+  // لو بُنيت داخل `build` كانت ستُعاد مع كلّ `setState` (كلّ ضغطةٍ في خانة
+  // البحث)، فيرجع `FutureBuilder` إلى `ConnectionState.waiting` ويومض
+  // مؤشّرَ تحميلٍ على كلّ حرف يكتبه الكاشير. الفلترةُ نفسُها محليّةٌ
+  // (‏`_query`) فوق نتيجةٍ واحدةٍ مسحوبة.
+  @override
+  void initState() {
+    super.initState();
+    _invoicesFuture = ref.read(returnsRepositoryProvider).getInvoicesForReturn(
+          fromDate: DateTime(2000),
+          toDate: DateTime.now(),
+        );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: AlertDialog(
+        title: const Row(
+          children: [
+            Icon(PhosphorIconsBold.arrowUUpLeft, color: AppColors.error),
+            SizedBox(width: 8),
+            Text('اختر فاتورةً للمرتجع'),
+          ],
+        ),
+        content: SizedBox(
+          width: 480,
+          height: 480,
+          child: Column(
+            children: [
+              TextField(
+                decoration: const InputDecoration(
+                  hintText: 'بحث برقم الفاتورة',
+                  isDense: true,
+                  border: OutlineInputBorder(),
+                ),
+                onChanged: (v) => setState(() => _query = v),
+              ),
+              const SizedBox(height: 8),
+              Expanded(
+                child: FutureBuilder<List<SalesInvoiceData>>(
+                  future: _invoicesFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(
+                          child: CircularProgressIndicator());
+                    }
+                    if (snapshot.hasError) {
+                      return Center(
+                          child: Text('تعذّر التحميل: ${snapshot.error}'));
+                    }
+                    var invoices = snapshot.data ?? const <SalesInvoiceData>[];
+                    if (_query.isNotEmpty) {
+                      final q = _query.toLowerCase();
+                      invoices = invoices
+                          .where((inv) =>
+                              inv.invoiceNumber.toLowerCase().contains(q))
+                          .toList();
+                    }
+                    if (invoices.isEmpty) {
+                      return const Center(
+                        child: Text('لا توجد فواتيرُ قابلةٌ للإرجاع'),
+                      );
+                    }
+                    return ListView.separated(
+                      itemCount: invoices.length,
+                      separatorBuilder: (_, _) => const Divider(height: 1),
+                      itemBuilder: (context, i) {
+                        final inv = invoices[i];
+                        return ListTile(
+                          leading: const Icon(PhosphorIconsBold.receipt,
+                              color: AppColors.info),
+                          title: Text('فاتورة #${inv.invoiceNumber}'),
+                          subtitle: Text(inv.total.toStringAsFixed(2)),
+                          onTap: () => Navigator.pop(context, inv),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('إلغاء'),
+          ),
+        ],
+      ),
+    );
   }
 }

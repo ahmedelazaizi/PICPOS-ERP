@@ -52,5 +52,26 @@ void main() {
       final mode = PosReturnMode.fromLines(invoiceId: 1, lines: [l]);
       expect(mode.unitPriceOf(l.invoiceItemId), 12.5);
     });
+
+    test('clearQty تُصفِّر سطراً محدَّداً ولا تلمس غيرَه', () {
+      const other = ReturnableLine(
+        invoiceItemId: 7, productId: 3, productName: 'سكر',
+        soldQty: 2, alreadyReturnedQty: 0, unitPrice: 5,
+      );
+      final mode = PosReturnMode.fromLines(invoiceId: 1, lines: [l, other]);
+      expect(mode.setQty(l.invoiceItemId, 2), isTrue);
+      expect(mode.setQty(other.invoiceItemId, 1), isTrue);
+
+      mode.clearQty(l.invoiceItemId);
+
+      expect(mode.requestedQty[l.invoiceItemId], 0);
+      expect(mode.requestedQty[other.invoiceItemId], 1);
+    });
+
+    test('clearQty على itemId غير موجود بلا أثر ولا استثناء', () {
+      final mode = PosReturnMode.fromLines(invoiceId: 1, lines: [l]);
+      expect(() => mode.clearQty(999), returnsNormally);
+      expect(mode.requestedQty.containsKey(999), isFalse);
+    });
   });
 }
