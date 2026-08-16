@@ -2402,5 +2402,22 @@ extension Epoch3Migrations on AppDatabase {
             'isManualAmount OK');
       });
     }
+
+    // ── v154: خدمةُ الطاولات — الحالةُ المدفوعة والخصمُ والدفعاتُ المتعدّدة ──
+    if (from < 154) {
+      await _safeMigrate('v154 table service columns + table_order_payments',
+          () async {
+        await m.addColumn(tableOrders, tableOrders.guestCount);
+        await m.addColumn(tableOrders, tableOrders.notes);
+        await m.addColumn(tableOrders, tableOrders.discountType);
+        await m.addColumn(tableOrders, tableOrders.discountValue);
+        await m.addColumn(tableOrders, tableOrders.paidAmount);
+        await m.addColumn(tableOrderItems, tableOrderItems.notes);
+        await m.addColumn(
+            tableOrderItems, tableOrderItems.sourceTableOrderId);
+        await m.createTable(tableOrderPayments);
+        debugPrint('[Migration] v154 table service OK');
+      });
+    }
   }
 }

@@ -1190,6 +1190,11 @@ class SupabaseDatabase {
       status: data['status'] as String? ?? 'open',
       total: (data['total'] as num?)?.toDouble() ?? 0,
       userId: data['user_id'] as int?,
+      guestCount: (data['guest_count'] as int?) ?? 1,
+      notes: data['notes'] as String?,
+      discountType: data['discount_type'] as String?,
+      discountValue: (data['discount_value'] as num?)?.toDouble() ?? 0,
+      paidAmount: (data['paid_amount'] as num?)?.toDouble() ?? 0,
       openedAt: DateTime.parse(data['opened_at'] as String),
       closedAt: data['closed_at'] != null
           ? DateTime.parse(data['closed_at'] as String)

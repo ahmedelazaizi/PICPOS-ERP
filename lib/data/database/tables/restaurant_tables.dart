@@ -83,6 +83,22 @@ class TableOrders extends Table {
     TableOrders,
     #id,
   )(); // ID of the order this was merged into
+
+  /// عددُ الأشخاص — يُسأل عند فتح الطاولة، وهو مقامُ التقسيم بالتساوي.
+  IntColumn get guestCount => integer().withDefault(const Constant(1))();
+
+  /// ملاحظةُ الطلب — تنتقل مع الطلب عند النقل.
+  TextColumn get notes => text().nullable()();
+
+  /// نوعُ خصم الطلب: `percent` أو `amount`.
+  TextColumn get discountType => text().nullable()();
+
+  /// قيمةُ الخصم بحسب نوعه. يُثبَّت قبل الدفع فينتقل ويُطبع.
+  RealColumn get discountValue => real().withDefault(const Constant(0))();
+
+  /// مجموعُ ما حُصِّل. تُشتقّ منه حالةُ الطاولة: `occupied` حتى يبلغ
+  /// `total`، ثم `paid`. لا حالةَ سادسةً للدفع الجزئي.
+  RealColumn get paidAmount => real().withDefault(const Constant(0))();
   DateTimeColumn get openedAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get closedAt => dateTime().nullable()();
 }
@@ -96,6 +112,14 @@ class TableOrderItems extends Table {
   RealColumn get total => real()();
   RealColumn get taxRate => real().withDefault(const Constant(0))(); // NEW
   RealColumn get taxAmount => real().withDefault(const Constant(0))(); // NEW
+
+  /// ملاحظةُ البند («بلا بصل») — تصل المطبخ وتُطبع.
+  TextColumn get notes => text().nullable()();
+
+  /// الطلبُ الذي جاء منه هذا البند بعد الدمج. فارغٌ للأصناف الأصلية.
+  /// وجودُه هو ما يجعل الطباعةَ مجمَّعةً وفكَّ الدمج ممكناً.
+  IntColumn get sourceTableOrderId =>
+      integer().nullable().references(TableOrders, #id)();
   DateTimeColumn get addedAt => dateTime().withDefault(currentDateAndTime)();
 }
 
@@ -113,4 +137,19 @@ class TableReservations extends Table {
     const Constant('pending'),
   )(); // pending, confirmed, seated, cancelled, no_show
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// دفعةٌ واحدةٌ على طلبِ طاولة — صفٌّ لكلّ دافع.
+///
+/// هو ما يجعل «عدّةَ فواتيرَ لطلبٍ واحد» ممكناً (التقسيم بالأصناف)، ويحتمل
+/// في الوقت نفسه «فاتورةً واحدةً بعدّة دفعات» (التقسيم بالتساوي/بمبلغ) إذ
+/// يتكرّر `invoiceId`. ولذلك لم يُضَف عمودٌ إلى `SalesInvoices`: هي جدولٌ
+/// مشترَكٌ مع UralCash يُنقل بـpatch، ولا يعرف الطاولات.
+class TableOrderPayments extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get tableOrderId => integer().references(TableOrders, #id)();
+  IntColumn get invoiceId => integer().references(SalesInvoices, #id)();
+  RealColumn get amount => real()();
+  TextColumn get splitLabel => text().nullable()(); // «ضيف ١»
+  DateTimeColumn get paidAt => dateTime().withDefault(currentDateAndTime)();
 }
