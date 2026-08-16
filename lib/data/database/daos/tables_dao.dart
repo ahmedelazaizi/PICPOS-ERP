@@ -500,36 +500,14 @@ extension TablesDao on AppDatabase {
       final sourceItems = await getTableOrderItems(sourceOrder.id);
 
       for (final item in sourceItems) {
-        // Find existing product in target order
-        final existingInTarget =
-            await (select(tableOrderItems)
-                  ..where((i) => i.tableOrderId.equals(targetOrder.id))
-                  ..where((i) => i.productId.equals(item.productId)))
-                .getSingleOrNull();
-
-        if (existingInTarget != null) {
-          // Update quantity and total
-          final newQty = existingInTarget.quantity + item.quantity;
-          await (update(
-            tableOrderItems,
-          )..where((i) => i.id.equals(existingInTarget.id))).write(
-            TableOrderItemsCompanion(
-              quantity: Value(newQty),
-              total: Value(newQty * existingInTarget.unitPrice),
-            ),
-          );
-          // Delete item from source order
-          await (delete(
-            tableOrderItems,
-          )..where((i) => i.id.equals(item.id))).go();
-        } else {
-          // Move item to target order
-          await (update(
-            tableOrderItems,
-          )..where((i) => i.id.equals(item.id))).write(
-            TableOrderItemsCompanion(tableOrderId: Value(targetOrder.id)),
-          );
-        }
+        // لا بحثَ عن متشابهٍ في الهدف ولا جمعَ كميّات: البندُ يُنقل كما هو
+        // موسوماً بمصدره. جمعُ الكميّات يمحو أصلَ الصنف فيسقط فكُّ الدمج
+        // والطباعةُ المجمَّعة ونسبةُ الصنف إلى نادله.
+        await (update(tableOrderItems)..where((i) => i.id.equals(item.id)))
+            .write(TableOrderItemsCompanion(
+          tableOrderId: Value(targetOrder.id),
+          sourceTableOrderId: Value(item.sourceTableOrderId ?? sourceOrder.id),
+        ));
       }
 
       // Mark source order as merged
