@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../../../../data/database/database.dart';
 import '../../../../domain/repositories/restaurant_repository.dart';
 import '../providers/tables_state_provider.dart';
@@ -22,6 +23,10 @@ class TableCard extends ConsumerWidget {
     'available': _StatusInfo('متاحة', Color(0xFF10B981), PhosphorIconsBold.checkCircle),
     'reserved': _StatusInfo('محجوزة', Color(0xFFF59E0B), PhosphorIconsBold.calendarCheck),
     'occupied': _StatusInfo('مشغولة', Color(0xFF3B82F6), PhosphorIconsBold.users),
+    // 🟠 سُدِّد كاملاً ولم يُغلَق بعد.
+    'paid': _StatusInfo('مدفوعة', Color(0xFFF97316), PhosphorIconsBold.currencyCircleDollar),
+    // ⚪ خارج الخدمة.
+    'out_of_service': _StatusInfo('خارج الخدمة', Color(0xFFCBD5E1), PhosphorIconsBold.prohibit),
     'seated': _StatusInfo('مشغولة', Color(0xFF3B82F6), PhosphorIconsBold.users),
     'ordered': _StatusInfo('مشغولة', Color(0xFF3B82F6), PhosphorIconsBold.users),
     'eating': _StatusInfo('مشغولة', Color(0xFF3B82F6), PhosphorIconsBold.users),
@@ -161,6 +166,29 @@ class TableCard extends ConsumerWidget {
                     ],
                   ),
                 ),
+                // «دُفع X من Y» — دفعةٌ جزئيةٌ فقط تبقي الطاولة 🔵 (المدفوعةُ
+                // بالكامل تصير 🟠 من تلقائها)، فهذا العرضُ محصورٌ بحالة
+                // `occupied` كي لا يظهر على طاولةٍ فارغة.
+                if (table.status == 'occupied')
+                  FutureBuilder<TableOrder?>(
+                    future: restaurantRepo.getActiveOrderForTable(table.id),
+                    builder: (context, snap) {
+                      final order = snap.data;
+                      if (order == null || order.paidAmount <= 0) {
+                        return const SizedBox.shrink();
+                      }
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 3),
+                        child: Text(
+                          'دُفع ${order.paidAmount.toStringAsFixed(AppConstants.decimalPlaces)} من ${_effectiveTotal(order).toStringAsFixed(AppConstants.decimalPlaces)}',
+                          style: GoogleFonts.cairo(
+                              fontSize: 8,
+                              color: const Color(0xFFF97316),
+                              fontWeight: FontWeight.w700),
+                        ),
+                      );
+                    },
+                  ),
               ],
             ),
 
@@ -208,4 +236,17 @@ class _StatusInfo {
   final Color color;
   final IconData icon;
   const _StatusInfo(this.label, this.color, this.icon);
+}
+
+/// الإجماليُّ بعد الخصم — مرآةٌ خفيفةٌ لـ`TableSessionService.effectiveTotal`
+/// لعرضٍ فوريٍّ من الطلب المحمَّل أصلاً، لا استعلامٍ آخر لقاعدة البيانات.
+double _effectiveTotal(TableOrder order) {
+  if (order.discountType == null || order.discountValue <= 0) {
+    return order.total;
+  }
+  final discount = order.discountType == 'percent'
+      ? order.total * order.discountValue / 100
+      : order.discountValue;
+  final net = order.total - discount;
+  return net < 0 ? 0 : net;
 }
