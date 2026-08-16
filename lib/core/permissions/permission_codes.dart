@@ -481,6 +481,9 @@ class PermissionCodes {
   /// طباعة فاتورة الطاولة
   static const String tablesPrintBill = 'tables_print_bill';
 
+  /// خصمٌ على طلب الطاولة
+  static const String tablesDiscount = 'tables_discount';
+
   // ═══════════════════════════════════════════════════════════════════════════
   // KITCHEN PERMISSIONS (المطبخ)
   // ═══════════════════════════════════════════════════════════════════════════
@@ -888,7 +891,6 @@ class PermissionCodes {
     'sales_return_edit': 'محجوز — الخاصية ما اتبنتش',
     'settings_receipt': 'محجوز — الخاصية ما اتبنتش',
     'system_updates': 'محجوز — الخاصية ما اتبنتش',
-    'tables_print_bill': 'محجوز — الخاصية ما اتبنتش',
     // ── أثر داخلي جوه عملية تانية، مش فعل يقدر المستخدم يستدعيه لوحده ──
     'delete_posted_journal':
         'أثر داخلي جوه عكس قيد اليومية القديم عند تعديل أو إلغاء فاتورة '
@@ -1227,6 +1229,7 @@ class PermissionCodes {
     {'code': tablesTransfer, 'name': 'نقل طلب بين الطاولات', 'category': 'tables'},
     {'code': tablesCancel, 'name': 'إلغاء/مسح طلب الطاولة', 'category': 'tables'},
     {'code': tablesPrintBill, 'name': 'طباعة فاتورة الطاولة', 'category': 'tables'},
+    {'code': tablesDiscount, 'name': 'خصمٌ على طلب الطاولة', 'category': 'tables'},
 
     // ── Kitchen ──
     {'code': kitchenView, 'name': 'عرض شاشة المطبخ', 'category': 'kitchen'},

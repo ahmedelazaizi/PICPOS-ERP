@@ -97,6 +97,16 @@ class PermissionEnforcementRegistry {
     // (PermissionGuard بـallowManagerOverride على أفعال الإضافة/الطباعة،
     // أو fallback: SizedBox.shrink() على أكواد العرض الصرف، أو فحص صريح
     // جوه الـhandlers اللي مالهاش زرار واحد للفّه).
+    // ── الطاولات — الخصم وطباعة الفاتورة (Task 8، 2026-08-16) ──
+    // 'tables_discount' كودٌ جديدٌ في masterList: يحمي خصمَ الطلب في
+    // `TableSessionService.setOrderDiscount` (موثَّقٌ في تعليق الدالة) لكن
+    // زرَّ الخصم في واجهة الطاولات لسه ما بُنيش — تبنيه المهامّ ٩-١٢.
+    // و'tables_print_bill' كان محجوزاً في `PermissionCodes.nonToggleable`
+    // بسبب «محجوز — الخاصية ما اتبنتش»؛ Task 8 رفع الحجزَ لأن المهمتين ٩
+    // و١٠ بيبنوا طباعةَ فاتورة الطاولة فعلياً، فصار كودَ ميزةٍ مخطَّطة لا
+    // كودَ ميزةٍ مستحيلة — لكن الإنفاذَ نفسَه لسه ما وصلش لحدّ ما تُبنى.
+    'tables_discount',
+    'tables_print_bill',
   };
 
   /// أكوادٌ **محروسةٌ حراسةً صحيحة** — في شاشةٍ لا يصل إليها PicPos.
