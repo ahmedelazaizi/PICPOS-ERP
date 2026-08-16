@@ -27251,6 +27251,10 @@ class $TableOrderItemsTable extends TableOrderItems
 
 class TableOrderItem extends DataClass implements Insertable<TableOrderItem> {
   final int id;
+
+  /// أصنافُ هذا الطلب. تُسمّى صراحةً لأن البند يشير إلى `TableOrders` مرّتين
+  /// (هنا وفي `sourceTableOrderId`)، وبلا تسميةٍ صريحةٍ يتصادم الاسمان
+  /// فيُسقط المولِّد العلاقتين معاً بلا خطأ.
   final int tableOrderId;
   final int productId;
   final double quantity;
@@ -140532,6 +140536,48 @@ final class $$TableOrdersTableReferences
     );
   }
 
+  static MultiTypedResultKey<$TableOrderItemsTable, List<TableOrderItem>>
+  _orderItemsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.tableOrderItems,
+    aliasName: $_aliasNameGenerator(
+      db.tableOrders.id,
+      db.tableOrderItems.tableOrderId,
+    ),
+  );
+
+  $$TableOrderItemsTableProcessedTableManager get orderItems {
+    final manager = $$TableOrderItemsTableTableManager(
+      $_db,
+      $_db.tableOrderItems,
+    ).filter((f) => f.tableOrderId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_orderItemsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$TableOrderItemsTable, List<TableOrderItem>>
+  _mergedAwayItemsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.tableOrderItems,
+    aliasName: $_aliasNameGenerator(
+      db.tableOrders.id,
+      db.tableOrderItems.sourceTableOrderId,
+    ),
+  );
+
+  $$TableOrderItemsTableProcessedTableManager get mergedAwayItems {
+    final manager =
+        $$TableOrderItemsTableTableManager($_db, $_db.tableOrderItems).filter(
+          (f) => f.sourceTableOrderId.id.sqlEquals($_itemColumn<int>('id')!),
+        );
+
+    final cache = $_typedResult.readTableOrNull(_mergedAwayItemsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
   static MultiTypedResultKey<$TableOrderPaymentsTable, List<TableOrderPayment>>
   _tableOrderPaymentsRefsTable(_$AppDatabase db) =>
       MultiTypedResultKey.fromTable(
@@ -140704,6 +140750,56 @@ class $$TableOrdersTableFilterComposer
           ),
     );
     return composer;
+  }
+
+  Expression<bool> orderItems(
+    Expression<bool> Function($$TableOrderItemsTableFilterComposer f) f,
+  ) {
+    final $$TableOrderItemsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.tableOrderItems,
+      getReferencedColumn: (t) => t.tableOrderId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TableOrderItemsTableFilterComposer(
+            $db: $db,
+            $table: $db.tableOrderItems,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> mergedAwayItems(
+    Expression<bool> Function($$TableOrderItemsTableFilterComposer f) f,
+  ) {
+    final $$TableOrderItemsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.tableOrderItems,
+      getReferencedColumn: (t) => t.sourceTableOrderId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TableOrderItemsTableFilterComposer(
+            $db: $db,
+            $table: $db.tableOrderItems,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
   }
 
   Expression<bool> tableOrderPaymentsRefs(
@@ -141002,6 +141098,56 @@ class $$TableOrdersTableAnnotationComposer
     return composer;
   }
 
+  Expression<T> orderItems<T extends Object>(
+    Expression<T> Function($$TableOrderItemsTableAnnotationComposer a) f,
+  ) {
+    final $$TableOrderItemsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.tableOrderItems,
+      getReferencedColumn: (t) => t.tableOrderId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TableOrderItemsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.tableOrderItems,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> mergedAwayItems<T extends Object>(
+    Expression<T> Function($$TableOrderItemsTableAnnotationComposer a) f,
+  ) {
+    final $$TableOrderItemsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.tableOrderItems,
+      getReferencedColumn: (t) => t.sourceTableOrderId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TableOrderItemsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.tableOrderItems,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> tableOrderPaymentsRefs<T extends Object>(
     Expression<T> Function($$TableOrderPaymentsTableAnnotationComposer a) f,
   ) {
@@ -141071,6 +141217,8 @@ class $$TableOrdersTableTableManager
             bool tableId,
             bool userId,
             bool mergedToId,
+            bool orderItems,
+            bool mergedAwayItems,
             bool tableOrderPaymentsRefs,
             bool workOrdersRefs,
           })
@@ -141159,12 +141307,16 @@ class $$TableOrdersTableTableManager
                 tableId = false,
                 userId = false,
                 mergedToId = false,
+                orderItems = false,
+                mergedAwayItems = false,
                 tableOrderPaymentsRefs = false,
                 workOrdersRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
+                    if (orderItems) db.tableOrderItems,
+                    if (mergedAwayItems) db.tableOrderItems,
                     if (tableOrderPaymentsRefs) db.tableOrderPayments,
                     if (workOrdersRefs) db.workOrders,
                   ],
@@ -141234,6 +141386,48 @@ class $$TableOrdersTableTableManager
                       },
                   getPrefetchedDataCallback: (items) async {
                     return [
+                      if (orderItems)
+                        await $_getPrefetchedData<
+                          TableOrder,
+                          $TableOrdersTable,
+                          TableOrderItem
+                        >(
+                          currentTable: table,
+                          referencedTable: $$TableOrdersTableReferences
+                              ._orderItemsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$TableOrdersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).orderItems,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.tableOrderId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (mergedAwayItems)
+                        await $_getPrefetchedData<
+                          TableOrder,
+                          $TableOrdersTable,
+                          TableOrderItem
+                        >(
+                          currentTable: table,
+                          referencedTable: $$TableOrdersTableReferences
+                              ._mergedAwayItemsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$TableOrdersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).mergedAwayItems,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.sourceTableOrderId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                       if (tableOrderPaymentsRefs)
                         await $_getPrefetchedData<
                           TableOrder,
@@ -141300,6 +141494,8 @@ typedef $$TableOrdersTableProcessedTableManager =
         bool tableId,
         bool userId,
         bool mergedToId,
+        bool orderItems,
+        bool mergedAwayItems,
         bool tableOrderPaymentsRefs,
         bool workOrdersRefs,
       })

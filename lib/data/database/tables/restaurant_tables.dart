@@ -105,6 +105,11 @@ class TableOrders extends Table {
 
 class TableOrderItems extends Table {
   IntColumn get id => integer().autoIncrement()();
+
+  /// أصنافُ هذا الطلب. تُسمّى صراحةً لأن البند يشير إلى `TableOrders` مرّتين
+  /// (هنا وفي `sourceTableOrderId`)، وبلا تسميةٍ صريحةٍ يتصادم الاسمان
+  /// فيُسقط المولِّد العلاقتين معاً بلا خطأ.
+  @ReferenceName('orderItems')
   IntColumn get tableOrderId => integer().references(TableOrders, #id)();
   IntColumn get productId => integer().references(Products, #id)();
   RealColumn get quantity => real()();
@@ -118,6 +123,7 @@ class TableOrderItems extends Table {
 
   /// الطلبُ الذي جاء منه هذا البند بعد الدمج. فارغٌ للأصناف الأصلية.
   /// وجودُه هو ما يجعل الطباعةَ مجمَّعةً وفكَّ الدمج ممكناً.
+  @ReferenceName('mergedAwayItems')
   IntColumn get sourceTableOrderId =>
       integer().nullable().references(TableOrders, #id)();
   DateTimeColumn get addedAt => dateTime().withDefault(currentDateAndTime)();
