@@ -1881,8 +1881,10 @@ git commit -m "feat(tables): الدفعُ الجزئيُّ حالةٌ طبيعي
 ## Task 7: منسّقُ التقسيم
 
 **Files:**
-- Create: `lib/presentation/pos/providers/table_checkout_coordinator.dart`
+- Create: `lib/services/table_checkout_coordinator.dart`
 - Test: `test/unit/table_checkout_coordinator_test.dart`
+
+> **تصحيحٌ أثناء التنفيذ.** كان موضعُه في الخطة `lib/presentation/pos/providers/`، وهو مستحيل: المنسّقُ يستورد `AppDatabase`، وحارسُ `presentation_db_import_guard` يمنع أيَّ ملفِ عرضٍ **جديد** من ذلك وقائمتُه البيضاء مقفولة — وهو القيدُ الذي تنصّ عليه هذه الخطةُ نفسُها للشاشات. موضعُه الصحيح `lib/services/` بجوار `TableSessionService` الذي يأخذ `AppDatabase` بالطريقة نفسها. لا يتغيّر شيءٌ في التصميم سوى المسار والاستيرادات النسبيّة.
 
 **Interfaces:**
 - Consumes: `SplitPlan` (المهمّة ١)، `TableSessionService.recordPayment` و`effectiveTotal` (المهامّ ٥ و٦)
@@ -1898,7 +1900,7 @@ git commit -m "feat(tables): الدفعُ الجزئيُّ حالةٌ طبيعي
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/data/database/database.dart';
 import 'package:ural_erp/domain/models/split_plan.dart';
-import 'package:ural_erp/presentation/pos/providers/table_checkout_coordinator.dart';
+import 'package:ural_erp/services/table_checkout_coordinator.dart';
 import 'package:ural_erp/services/table_session_service.dart';
 
 void main() {
@@ -2007,12 +2009,12 @@ flutter test test/unit/table_checkout_coordinator_test.dart
 
 - [ ] **Step 3: نفّذ المنسّق**
 
-`lib/presentation/pos/providers/table_checkout_coordinator.dart`:
+`lib/services/table_checkout_coordinator.dart`:
 
 ```dart
-import '../../../data/database/database.dart';
-import '../../../domain/models/split_plan.dart';
-import '../../../services/table_session_service.dart';
+import '../data/database/database.dart';
+import '../domain/models/split_plan.dart';
+import 'table_session_service.dart';
 
 /// يحوّل طلبَ طاولةٍ إلى خطّةِ تقسيمٍ، ويُسوّي حصّةً بعد صدور فاتورتها.
 ///
@@ -2092,7 +2094,7 @@ flutter test test/unit/table_checkout_coordinator_test.dart
 - [ ] **Step 5: أودِع**
 
 ```bash
-git add lib/presentation/pos/providers/table_checkout_coordinator.dart test/unit/table_checkout_coordinator_test.dart
+git add lib/services/table_checkout_coordinator.dart test/unit/table_checkout_coordinator_test.dart
 git commit -m "feat(tables): خطّةُ التقسيم تُبنى من حالة الطلب، والحصّةُ تُسجَّل بفاتورتها"
 ```
 
