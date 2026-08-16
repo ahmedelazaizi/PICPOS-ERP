@@ -1,3 +1,4 @@
+import '../../../core/constants/app_constants.dart';
 import '../../../domain/models/return_refund_calculator.dart';
 import '../../../domain/models/returnable_line.dart';
 
@@ -60,6 +61,12 @@ class PosReturnMode {
   /// قبل الضريبة وقبل خصم السطر). العطبُ المقيسُ في مراجعة 2026-08-16: كان
   /// المعروضُ يقلّ عمّا يخرج من الدرج فعلياً بمقدار الضريبة (ويزيد مع خصم
   /// سطر) — فائضٌ صامتٌ في الدرج يُقيَّد لاحقاً «فائضَ نقدية».
+  ///
+  /// `decimalPlaces` يُمرَّر صراحةً من [AppConstants.decimalPlaces] — نفسُ
+  /// ما يفعله `ReturnsRepositoryImpl._calculateReturnTotal`. إغفالُه كان
+  /// يترك هذا الطرفَ على افتراضيّ [calculateReturnRefundTotal] الخاصّ (`3`)
+  /// بدل الثابت المشترك؛ متساويان اليوم بالصدفة، لكنّ تغييرَ الثابت وحدَه
+  /// كان سيُعيد فتحَ الفجوةَ بين المعروض والمصروف فعلياً في الخانة الثالثة.
   double get refundTotal => calculateReturnRefundTotal(
         lines: [
           for (final l in linesByItemId.values)
@@ -68,6 +75,7 @@ class PosReturnMode {
         invoiceTotal: invoiceTotal ?? _sumEffectiveLineTotals,
         invoiceDeliveryFee: invoiceDeliveryFee,
         returnQuantities: requestedQty,
+        decimalPlaces: AppConstants.decimalPlaces,
       );
 
   double get _sumEffectiveLineTotals =>
