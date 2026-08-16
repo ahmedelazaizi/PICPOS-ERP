@@ -727,6 +727,16 @@ extension DatabaseSeederPermissions on AppDatabase {
       // `pos_delivery`. بلا المنحة يطلب كلُّ طلبِ توصيلٍ كلمةَ مرور مسؤول.
       // ⚠️ والبذرةُ للقواعد الجديدة وحدَها — القائمةُ تحتاج منحاً يدوياً.
       'pos_delivery',
+      // 2026-08-16 — قرارُ المالك: زرُّ «مرتجع سريع» ومحرِّرُ أسطره في شاشة
+      // بيع PicPos صارا محروسَين بـ`pos_return`/`pos_item_plus`/
+      // `pos_item_minus`. أفعالٌ يوميّةٌ للكاشير الأساسي، وبلا المنحة يطلب
+      // كلُّ ضغطةِ «+»/«−» أو فتحِ وضع المرتجع كلمةَ مرور مسؤول — كسرُ شغلٍ
+      // لا تأمين، بنفس منطق `pos_delivery` فوق.
+      // ⚠️ والبذرةُ للقواعد الجديدة وحدَها كذلك — القوائمُ القائمة تحتاج
+      // منحاً يدوياً.
+      'pos_return',
+      'pos_item_plus',
+      'pos_item_minus',
       // Spec 077 Batch 0.5 — cashier opens AND closes shifts; new symmetric pair.
       'pos_shift_open',
       'pos_shift_close',
@@ -898,6 +908,9 @@ extension DatabaseSeederPermissions on AppDatabase {
       'dashboard_alerts',
       // دفعة ٩ — نفس منحة الكاشير العادي (ويورّث لمدير الفرع بالـspread).
       'sales_amounts_view', 'sales_print', 'sales_return_print',
+      // 2026-08-16 — قرارُ المالك: زرّا «+»/«−» في محرِّر أسطر المرتجع.
+      // نفسُ سبب منحة الكاشير العادي فوق (يورّث لمدير الفرع بالـspread).
+      'pos_item_plus', 'pos_item_minus',
     ];
     if (advancedCashierRoleId > 0) {
       for (final code in advancedCashierPerms) {

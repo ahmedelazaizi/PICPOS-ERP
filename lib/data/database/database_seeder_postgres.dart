@@ -365,6 +365,10 @@ extension DatabaseSeederPostgres on AppDatabase {
       'pos_shift_close',
       // 2026-08-13 — شريحةُ «توصيل» صارت محروسةً بـ`pos_delivery`.
       'pos_delivery',
+      // 2026-08-16 — قرارُ المالك: زرُّ «مرتجع سريع» ومحرِّرُ أسطره صارا
+      // محروسَين بـ`pos_return`/`pos_item_plus`/`pos_item_minus`. أفعالٌ
+      // يوميّةٌ للكاشير الأساسي، نفسُ منطق `pos_delivery` فوق.
+      'pos_return', 'pos_item_plus', 'pos_item_minus',
     ];
     const stockPerms = [
       'inventory_view', 'inventory_edit', 'products_view', 'products_add',
@@ -378,6 +382,9 @@ extension DatabaseSeederPostgres on AppDatabase {
       'pos_access', 'pos_discount', 'pos_return', 'pos_payment_cash',
       'pos_payment_card', 'pos_hold_order', 'customers_view',
       'pos_shift_close',
+      // 2026-08-16 — قرارُ المالك: زرّا «+»/«−» في محرِّر أسطر المرتجع
+      // (يورّث لمدير الفرع عبر الـspread تحت).
+      'pos_item_plus', 'pos_item_minus',
     ];
     const branchManagerPerms = [
       ...advancedCashierPerms,
