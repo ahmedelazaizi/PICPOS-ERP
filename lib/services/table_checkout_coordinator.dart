@@ -1,5 +1,6 @@
 import '../data/database/database.dart';
 import '../domain/models/split_plan.dart';
+import '../domain/models/table_charge_check.dart';
 import 'table_session_service.dart';
 
 /// يحوّل طلبَ طاولةٍ إلى خطّةِ تقسيمٍ، ويُسوّي حصّةً بعد صدور فاتورتها.
@@ -71,6 +72,14 @@ class TableCheckoutCoordinator {
   ///
   /// إعادةُ المحاولة بعد فشلٍ في منتصف التسوية يجب أن تُكمل لا أن تبدأ من
   /// الصفر: صفُّ الدفع يحمل `splitLabel`، فما وُجد له صفٌّ فقد سُوّي.
+  ///
+  /// **والتسميةُ وحدَها لا تكفي.** `TableOrderPayments` يسجّل التسميةَ
+  /// والمبلغَ ورقمَ الفاتورة، ولا يسجّل تركيبةَ الخطّة. فلو غُيِّر التقسيمُ
+  /// بعد تسويةٍ جزئيّةٍ وقبل إعادة المحاولة — مقامٌ آخر، أو مبالغُ أخرى، أو
+  /// صنفٌ نُقل بين ضيفين — لعُدَّت «ضيف ١» المسوّاةُ بالتركيبة القديمة
+  /// مسوّاةً بالتركيبة الجديدة، فتضيع أموالٌ أو أصنافٌ بلا خطأٍ يظهر. لذلك
+  /// يُقارَن مبلغُ كلّ حصّةٍ سُوِّيت بما تجعله الخطّةُ الحاليّة، ويُرفَض
+  /// الاختلافُ صراحةً.
   Future<List<SplitPart>> unsettledParts({
     required int orderId,
     required SplitPlan plan,
@@ -80,11 +89,26 @@ class TableCheckoutCoordinator {
       throw StateError(
           'تسمياتُ الحصص متكرّرةٌ في الخطّة — لا يمكن تمييزُ المسوَّى من الباقي');
     }
-    final settled = (await _session.paymentsFor(orderId))
-        .map((p) => p.splitLabel)
-        .whereType<String>()
-        .toSet();
-    return plan.parts.where((p) => !settled.contains(p.label)).toList();
+
+    final settled = <String, double>{};
+    for (final payment in await _session.paymentsFor(orderId)) {
+      final label = payment.splitLabel;
+      if (label == null) continue;
+      settled[label] = (settled[label] ?? 0) + payment.amount;
+    }
+
+    for (final part in plan.parts) {
+      final paid = settled[part.label];
+      if (paid == null) continue;
+      if (tableMoneyUnits(paid) != tableMoneyUnits(part.amount)) {
+        throw StateError(
+            'حصّةُ ${part.label} سُوِّيت بمبلغ $paid، والتقسيمُ الحاليُّ يجعلها '
+            '${part.amount} — تغيّرت تركيبةُ التقسيم بعد تسويةٍ جزئيّة. أعِد '
+            'التقسيمَ إلى ما سُوّي عليه، أو أكمِل التحصيلَ من شاشة الطاولة.');
+      }
+    }
+
+    return plan.parts.where((p) => !settled.containsKey(p.label)).toList();
   }
 
   /// رقمُ الفاتورة الذي سُوِّيت عليه حصصُ هذا الطلب فعلاً — `null` إن لم تُسوَّ

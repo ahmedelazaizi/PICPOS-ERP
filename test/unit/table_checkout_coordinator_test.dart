@@ -231,6 +231,61 @@ void main() {
       expect(unsettled, isEmpty);
     });
 
+    test('تغييرُ المقام بعد تسويةٍ جزئيّةٍ يُرفَض', () async {
+      final orderId = await orderOf(100, guests: 4);
+      final four = await coordinator.buildSplitPlan(
+          orderId: orderId, mode: SplitMode.equal);
+      await seedInvoice(41);
+      await coordinator.settlePart(
+          orderId: orderId, part: four.parts.first, invoiceId: 41);
+
+      // نفسُ التسمية «ضيف ١» بمبلغٍ آخر: سُوِّيت ٢٥ والخطّةُ الجديدة تجعلها
+      // ٥٠. لو مرّت لعُدَّت مسوّاةً فذهب فرقُها بلا تحصيل.
+      final two = await coordinator.buildSplitPlan(
+          orderId: orderId, mode: SplitMode.equal, ways: 2);
+
+      await expectLater(
+        coordinator.unsettledParts(orderId: orderId, plan: two),
+        throwsA(isA<StateError>()),
+      );
+    });
+
+    test('إعادةُ توزيعٍ بنفس الإجمالي تُرفَض أيضاً', () async {
+      final orderId = await orderOf(100, guests: 2);
+      final even = await coordinator.buildSplitPlan(
+          orderId: orderId, mode: SplitMode.equal);
+      await seedInvoice(42);
+      await coordinator.settlePart(
+          orderId: orderId, part: even.parts.first, invoiceId: 42);
+
+      // ٥٠+٥٠ ⟵ ٧٠+٣٠: الإجماليُّ لم يتغيّر، فحارسُ freshSum/previewSum
+      // يمرّ صامتاً. المقارنةُ على مستوى الحصّة وحدَها تكشفها.
+      final reshuffled = await coordinator.buildSplitPlan(
+        orderId: orderId,
+        mode: SplitMode.byAmounts,
+        amounts: [70, 30],
+      );
+
+      await expectLater(
+        coordinator.unsettledParts(orderId: orderId, plan: reshuffled),
+        throwsA(isA<StateError>()),
+      );
+    });
+
+    test('تقسيمٌ لم يتغيّر يمرّ رغم التسوية الجزئيّة', () async {
+      final orderId = await orderOf(100, guests: 4);
+      final plan = await coordinator.buildSplitPlan(
+          orderId: orderId, mode: SplitMode.equal);
+      await seedInvoice(43);
+      await coordinator.settlePart(
+          orderId: orderId, part: plan.parts.first, invoiceId: 43);
+
+      final again = await coordinator.buildSplitPlan(
+          orderId: orderId, mode: SplitMode.equal);
+      expect(await coordinator.unsettledParts(orderId: orderId, plan: again),
+          hasLength(3));
+    });
+
     test('تسمياتٌ متكرّرةٌ في الخطّة تُرفَض لا تُسقَط بصمت', () async {
       final orderId = await orderOf(100, guests: 2);
       final plan = await coordinator.buildSplitPlan(
