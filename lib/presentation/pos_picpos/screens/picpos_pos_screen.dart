@@ -36,6 +36,7 @@ import '../../pos/providers/pos_controller.dart';
 import '../../pos/providers/pos_notification_provider.dart';
 import '../../pos/providers/pos_search_controller.dart';
 import '../../pos/services/scale_barcode_handler.dart';
+import '../../pos/dialogs/quick_add_product_dialog.dart';
 import '../../pos/dialogs/unit_selection_dialog.dart';
 import '../../pos/widgets/held_orders_dialog.dart';
 import '../../pos/widgets/pos_cash_tendering_dialog.dart';

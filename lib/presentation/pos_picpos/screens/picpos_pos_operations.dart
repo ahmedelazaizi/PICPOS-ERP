@@ -206,6 +206,26 @@ double? nextIncrementedQty(
 @visibleForTesting
 bool blocksCartMutation(PosReturnMode? mode) => mode != null;
 
+/// ── الإضافةُ السريعة لصنفٍ غير مسجَّل ─────────────────────────────────────
+///
+/// بلاغُ مالكٍ (2026-08-17): «ديالوج الإضافة السريعة كان عامله في Ural بس
+/// انت مجبتهوش معاك كمنطق عمل». الديالوج نفسُه (`QuickAddProductDialog`)
+/// موجودٌ ومكتملٌ من قبل — الناقصُ كان توصيلُه بمسار مسح الباركود في هذه
+/// الشاشة (‏`_searchBarcode` تحت)، لا بناءٌ من الصفر.
+///
+/// دالّةُ قرارٍ خالصةٌ عمداً — نفسُ نمط `blocksCartMutation` فوق — كي تُختبر
+/// بلا شجرة ودجت. الشروطُ تطابق `pos_main_operations.dart:380-382` زائدَ
+/// حراسةَ وضع المرتجع الخاصّة بهذه الشاشة:
+///  1. الباركودُ غيرُ مسجَّلٍ فعلاً (`errorKind == notFound`) — لا صنفٌ
+///     معطَّل (`inactive`)، ولا باركودُ ميزانٍ فشل تحليلُه (`invalidScale`،
+///     القيد الخامس من بلاغ المالك)، ولا خطأٌ آخر (`general`).
+///  2. ليس في وضع مرتجع — `blocksCartMutation` نفسُها التي تحرس
+///     `_handleProductTap`/`_showHeldOrders` فوق، فلا يفتح الديالوجُ
+///     ويكتب على سلّة بيعٍ أثناء تحرير مرتجع.
+@visibleForTesting
+bool shouldOfferQuickAdd(BarcodeSearchErrorKind? errorKind, PosReturnMode? mode) =>
+    errorKind == BarcodeSearchErrorKind.notFound && !blocksCartMutation(mode);
+
 mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
   // ── Contract the screen must satisfy ───────────────────────────────────
   TextEditingController get barcodeController;
@@ -808,8 +828,13 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     final searchState = ref.read(posSearchControllerProvider);
     final error = searchState.error;
     if (error != null) {
-      showPosToast(context, ref, error, type: PosNotificationType.error);
-      ref.read(posSearchControllerProvider.notifier).clearSearchResults();
+      if (shouldOfferQuickAdd(
+          searchState.errorKind, ref.read(posReturnModeProvider))) {
+        await _offerQuickAdd(barcode);
+      } else {
+        showPosToast(context, ref, error, type: PosNotificationType.error);
+        ref.read(posSearchControllerProvider.notifier).clearSearchResults();
+      }
     } else if (_totalCartQuantity() == qtyBefore) {
       await _handleSilentlyRefusedScan(barcode);
     } else {
@@ -821,6 +846,84 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
 
     barcodeController.clear();
     _refocusScanner();
+  }
+
+  /// باركودٌ غيرُ مسجَّل (`shouldOfferQuickAdd` تأكّدت: `errorKind ==
+  /// notFound` وليس وضعَ مرتجع). يعرض تأكيداً، يشترط صلاحيةَ `products_add`
+  /// — نفسُ شرط `pos_main_operations.dart:423-429` — ثم يفتح
+  /// `QuickAddProductDialog` ويُعيد مسحَ **نفس** الباركود بدل الإضافة
+  /// بالمعرِّف مباشرة: تماماً كما يفعل المسارُ القديم
+  /// (`pos_main_operations.dart:442-446`)، فالمتحكّمُ المشترك هو اللي يضيف
+  /// الصنفَ المُنشأ حديثاً بمساره الطبيعيّ (وحداتٌ، وزنٌ، تكديسٌ…).
+  ///
+  /// كلُّ خروجٍ مبكر (رفضُ التأكيد، رفضُ الصلاحية، إلغاءُ الديالوج) يمسح
+  /// حالةَ الخطأ المعلَّقة بنفس ما تفعله فرعُ الخطأ العامّ في `_searchBarcode`
+  /// فوق — بدل ما تبقى رسالةُ «غير مسجَّل» عالقةً بلا داعٍ.
+  Future<void> _offerQuickAdd(String barcode) async {
+    final shouldAdd = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          title: const Row(
+            children: [
+              Icon(PhosphorIconsBold.warningCircle,
+                  color: AppColors.warning, size: 28),
+              SizedBox(width: 8),
+              Expanded(child: Text('صنف غير معرف')),
+            ],
+          ),
+          content: Text(
+            'الباركود "$barcode" غير مسجل في النظام.\n'
+            'هل تريد إضافته كصنف جديد؟',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('لا'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.success),
+              child: const Text('نعم — إضافة سريعة'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (shouldAdd != true) {
+      if (mounted) {
+        ref.read(posSearchControllerProvider.notifier).clearSearchResults();
+      }
+      return;
+    }
+    if (!mounted) return;
+
+    if (!await ensurePermission(
+        ref, context, PermissionCodes.productsAdd,
+        actionName: 'إضافة صنف جديد')) {
+      if (mounted) {
+        ref.read(posSearchControllerProvider.notifier).clearSearchResults();
+      }
+      return;
+    }
+    if (!mounted) return;
+
+    final newProductId = await QuickAddProductDialog.show(context, barcode);
+    if (!mounted) return;
+    if (newProductId == null) {
+      ref.read(posSearchControllerProvider.notifier).clearSearchResults();
+      return;
+    }
+
+    await ref
+        .read(posSearchControllerProvider.notifier)
+        .searchBarcode(barcode);
+    if (!mounted) return;
+    final items = ref.read(cartControllerProvider).items;
+    if (items.isNotEmpty) setState(() => selectedIndex = items.length - 1);
   }
 
   double _totalCartQuantity() => ref
