@@ -7,9 +7,12 @@ import 'package:path/path.dart' as p;
 import '../../core/config/app_config.dart';
 import '../../core/config/brand.dart';
 import '../../core/config/business_profile_provider.dart';
+import '../../core/enums/app_screen.dart';
 import '../../core/permissions/permission_codes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/backup_service.dart';
+import '../../domain/models/pos_shortcut_fab_gate.dart';
+import '../widgets/permission_guard.dart' show hasPermissionWithAdminBypass;
 
 import '../../data/providers/providers.dart';
 import 'dart:async';
@@ -553,6 +556,21 @@ class _AppShellState extends ConsumerState<AppShell> {
     final navItemsAsync = ref.watch(userNavItemsProvider);
     final roleAsync = ref.watch(userRoleProvider);
 
+    // اختصارُ «البيع السريع» العائم — طلبُ مالكٍ 2026-08-17: يظهر في كلّ
+    // الشاشات لمن يملك صلاحيةَ `pos_access` نفسَها التي يحرس بها عنصر
+    // القائمة (`kAllNavItemDefs` في auth_providers.dart)، إلا داخل شاشة
+    // البيع نفسها. القرارُ الفعلي معزولٌ في [shouldShowPosShortcutFab]
+    // (اختبارٌ وحدةٍ خالص) — هنا فقط قراءةُ الصلاحية والشاشة الحالية.
+    final currentUserPermissions =
+        ref.watch(currentUserPermissionsProvider).value ?? const <String>[];
+    final showPosShortcutFab = shouldShowPosShortcutFab(
+      hasPosAccess: hasPermissionWithAdminBypass(
+        currentUserPermissions,
+        PermissionCodes.posAccess,
+      ),
+      isOnPosScreen: widget.currentIndex == AppScreen.pos.value,
+    );
+
     // Auto-hide sidebar reactively on any auth transition that leaves a
     // cashier unelevated. Previously the guard only fired when
     // `!_isHidden` — so if an earlier flow ended with the sidebar still
@@ -615,14 +633,41 @@ class _AppShellState extends ConsumerState<AppShell> {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        // #12 FAB to show sidebar when hidden - requires admin password
-        floatingActionButton: _isHidden
-            ? FloatingActionButton.small(
-                backgroundColor: AppColors.secondary.withValues(alpha: 0.9),
-                onPressed: () => _requestAdminAccessToShowSidebar(),
-                child: const Icon(PhosphorIconsBold.list, color: Colors.white),
-              )
-            : null,
+        // #12 FAB to show sidebar when hidden - requires admin password.
+        // ويتراكب معه اختصار «البيع السريع» أحياناً (كاشيرٌ اتّخذ عنه مديرٌ
+        // ثم أسقط الرفع وهو على شاشةٍ غير البيع — القائمةُ تختفي والزرّان
+        // كلاهما وجيهان)، فيُكدَّسان عمودياً بنفس الموضع بدل التزاحم.
+        floatingActionButton: (!_isHidden && !showPosShortcutFab)
+            ? null
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_isHidden)
+                    FloatingActionButton.small(
+                      heroTag: 'appShellShowSidebarFab',
+                      backgroundColor:
+                          AppColors.secondary.withValues(alpha: 0.9),
+                      onPressed: () => _requestAdminAccessToShowSidebar(),
+                      child: const Icon(
+                        PhosphorIconsBold.list,
+                        color: Colors.white,
+                      ),
+                    ),
+                  if (_isHidden && showPosShortcutFab)
+                    const SizedBox(height: 10),
+                  if (showPosShortcutFab)
+                    FloatingActionButton.small(
+                      heroTag: 'appShellPosShortcutFab',
+                      backgroundColor: AppColors.primary.withValues(alpha: 0.9),
+                      tooltip: 'الذهاب إلى البيع السريع',
+                      onPressed: _navigateToPosShortcut,
+                      child: const Icon(
+                        PhosphorIconsBold.cashRegister,
+                        color: Colors.white,
+                      ),
+                    ),
+                ],
+              ),
         floatingActionButtonLocation: FloatingActionButtonLocation.startTop,
         body: Column(children: [
           // Feature 006 / MM.D — banner that surfaces when the most
@@ -1210,6 +1255,15 @@ class _AppShellState extends ConsumerState<AppShell> {
         ]), // close Column.children + close Column
       ),
     );
+  }
+
+  /// اختصارُ الزرّ العائم إلى شاشة «البيع السريع» — نفسُ مسارَ التنقّل الذي
+  /// يستعمله زرُّ «العودة للكاشير» أعلاه (بانر الرفع)، بلا فحصِ سلّةٍ لأن
+  /// هذا الزرّ لا يظهر أصلاً وأنت داخل شاشة البيع (شوف
+  /// [shouldShowPosShortcutFab]) — فلا مغادرةَ لها هنا، فقط دخولٌ إليها.
+  void _navigateToPosShortcut() {
+    appShellNestedNavigatorKey.currentState?.popUntil((route) => route.isFirst);
+    widget.onNavigate(AppScreen.pos.value);
   }
 
   Widget _buildNavItem(NavItemDef item, int index, bool isSelected) {
