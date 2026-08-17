@@ -219,7 +219,7 @@ class _ActivityLogScreenState extends ConsumerState<ActivityLogScreen>
     'table_pos': [
       'open_table', 'close_table', 'transfer_order', 'request_table_bill',
       'table_open', 'table_close', 'table_transfer', 'table_print_bill',
-      'table_payment', 'table_payment_reconcile_needed',
+      'table_tax', 'table_payment', 'table_payment_reconcile_needed',
       'sale', 'cart_add', 'cart_remove', 'cart_clear', 'pos_item_qty_change',
       'hold_order', 'retrieve_held_order', 'delete_held_order',
     ],
@@ -315,7 +315,7 @@ class _ActivityLogScreenState extends ConsumerState<ActivityLogScreen>
       'transfer_order': 'نقل طلب', 'request_table_bill': 'طلب حساب',
       'table_open': 'فتح طاولة', 'table_close': 'إغلاق طاولة',
       'table_transfer': 'نقل طلب', 'table_print_bill': 'طباعة فاتورة',
-      'table_payment': 'دفعةُ طاولة',
+      'table_tax': 'ضريبة طلب', 'table_payment': 'دفعةُ طاولة',
       'table_payment_reconcile_needed': 'دفعةٌ تحتاج تسوية',
       'sale': 'فواتير بيع', 'cart_add': 'إضافة للسلة',
       'cart_remove': 'حذف من السلة', 'cart_clear': 'إفراغ السلة',
