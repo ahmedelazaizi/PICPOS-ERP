@@ -260,6 +260,8 @@ class _TableLogRow extends StatelessWidget {
         return PhosphorIconsBold.intersect;
       case 'table_discount':
         return PhosphorIconsBold.percent;
+      case 'table_tax':
+        return PhosphorIconsBold.receipt;
       default:
         return PhosphorIconsBold.note;
     }
@@ -281,6 +283,8 @@ class _TableLogRow extends StatelessWidget {
         return AppColors.warning;
       case 'table_discount':
         return const Color(0xFF06B6D4);
+      case 'table_tax':
+        return const Color(0xFF8B5CF6);
       default:
         return AppColors.textMuted;
     }

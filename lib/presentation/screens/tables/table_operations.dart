@@ -543,7 +543,7 @@ mixin _TableOperationsMixin on ConsumerState<TablesScreen> {
     try {
       final session = ref.read(tableSessionServiceProvider);
       final user = ref.read(authProvider).user;
-      final effective = await session.effectiveTotal(order.id);
+      final totals = await session.totalsFor(order.id);
       await session.requestBill(
         orderId: order.id,
         userId: user?.id,
@@ -564,14 +564,20 @@ mixin _TableOperationsMixin on ConsumerState<TablesScreen> {
         );
       }
 
+      // الأرقامُ الثلاثةُ من `TableOrderTotals` وحدَها، لا حسابَ هنا.
+      // و`total` **شاملٌ للضريبة** بالضرورة: مولِّدُ الإيصال يشتقّ المجموعَ
+      // قبل الضريبة عكسيّاً (`subtotal = total + discount - tax`)، فتمريرُ
+      // ضريبةٍ فوق إجماليٍّ لا يحويها يطبع مجموعاً أنقصَ من الحقيقة بمقدارها
+      // ثم إجماليّاً لا يساوي ما سيُدفَع.
       await InvoiceGenerator.printThermalReceipt(
         invoiceNumber: 'T${table.id}-${order.id}',
         date: DateTime.now(),
         items: invoiceItems,
-        total: effective,
+        total: totals.total,
         paid: order.paidAmount,
         change: 0,
-        discount: order.total - effective,
+        discount: totals.discount,
+        tax: totals.taxAmount,
         customerName: table.name,
         employeeName: user?.displayName,
         notes: 'فاتورةٌ مبدئيّةٌ — ليست إيصالَ سداد',

@@ -237,6 +237,12 @@ mixin _TableOrderDialogsMixin on ConsumerState<TablesScreen> {
         final user = ref.read(authProvider).user;
         final session = ref.read(tableSessionServiceProvider);
         final userName = user?.displayName ?? 'مجهول';
+        // نسبةُ الضريبة تُلقَط **هنا** لحظةَ الفتح وتُثبَّت على الطلب. الخدمةُ
+        // لا تملك `ref` فتقرأ الإعداد بنفسها، والقارئُ هو من يمرّره. وتغييرُ
+        // الإعداد بعد الفتح لا يمسّ هذا الطلب — الوجبةُ تمتدّ ساعةً وقد
+        // عُرض الحسابُ على الضيف.
+        final taxRate =
+            ref.read(posDefaultTaxRateProvider).value ?? 0.16;
         if (table.status == TableStatus.paid) {
           await session.openNewOrderOnPaidTable(
             tableId: table.id,
@@ -244,6 +250,7 @@ mixin _TableOrderDialogsMixin on ConsumerState<TablesScreen> {
             userId: user?.id,
             userName: userName,
             waiterId: selectedEmployeeId,
+            taxRate: taxRate,
           );
         } else {
           await session.openTable(
@@ -252,6 +259,7 @@ mixin _TableOrderDialogsMixin on ConsumerState<TablesScreen> {
             userId: user?.id,
             userName: userName,
             waiterId: selectedEmployeeId,
+            taxRate: taxRate,
           );
         }
 

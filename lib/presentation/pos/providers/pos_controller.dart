@@ -171,20 +171,36 @@ class PosController extends Notifier<PosState> {
                 unitPrice: product.salePrice,
                 quantity: item.quantity,
                 customPrice: item.unitPrice,
+                // نسبةُ البند من الطلب لا من بطاقة المنتج: لقطةٌ أُخذت ساعةَ
+                // الطلب، فلا يُعاد تسعيرُ ما طُلب لو غُيّرت البطاقةُ بعده.
+                taxRate: item.taxRate,
                 isSoldByWeight: product.isSoldByWeight,
               ),
             );
           }
         }
 
-        ref.read(cartControllerProvider.notifier).state = ref
-            .read(cartControllerProvider)
-            .copyWith(items: cartItems);
+        // السلّةُ مرآةُ الطلب في الضريبة كذلك، لا في الأصناف وحدَها: الزرُّ
+        // يعرض حالةَ الطلب حين تُفتح الشاشةُ ثانيةً، وإجماليُّ الشاشة يطابق
+        // ما سيُشحَن عند التحصيل.
+        ref.read(cartControllerProvider.notifier).state =
+            ref.read(cartControllerProvider).copyWith(
+                  items: cartItems,
+                  taxEnabled: order.taxEnabled,
+                  taxRate: order.taxRate,
+                );
 
         state = state.copyWith(orderId: order.id, isProcessing: false);
       } else {
         final orderId = await restaurantRepo.createTableOrder(tableId);
-        ref.read(cartControllerProvider.notifier).clearCart();
+        // `clearCart` تحتفظ بالضريبة عمداً (سلوكُ سلّة الكاشير)، وهو هنا
+        // خطأ: الطلبُ المولودُ لتوّه ضريبتُه مطفأةٌ ونسبتُه صفر، فلو ورثت
+        // السلّةُ ضريبةَ **طاولةٍ سابقةٍ** لَعرض الزرُّ «مفعلة» على طلبٍ لا
+        // ضريبةَ فيه — واختلف المشحونُ عن المسجَّل عند التحصيل.
+        ref.read(cartControllerProvider.notifier)
+          ..clearCart()
+          ..toggleTax(false)
+          ..setTaxRate(0);
         state = state.copyWith(orderId: orderId, isProcessing: false);
       }
     } catch (e) {

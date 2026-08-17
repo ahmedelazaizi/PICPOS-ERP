@@ -122,6 +122,7 @@ class _TablePosScreenState extends ConsumerState<TablePosScreen>
                                 onCheckout: _checkoutTable,
                                 onClear: _handleClearTable,
                                 onBack: _handleBack,
+                                onToggleTax: _toggleOrderTax,
                               ),
                             ],
                           ),
