@@ -51,6 +51,7 @@ void main() {
   late int drawerSafeId;
   late int cashierId;
   late int soldProductId; // الصنفُ المباعُ أصلاً ثم المرتجَع
+  late int soldProduct2Id; // صنفٌ ثانٍ على نفس الفاتورة — لاختبار الوسم المختلط
   late int spareProductId; // البديلُ المتوفّر
 
   /// لقطةُ الحالة قبل الاستبدال — تُقارَن بها بعد الرفض.
@@ -79,10 +80,11 @@ void main() {
     return safe.balance;
   }
 
-  Future<Map<int, ProductEntity>> productCacheFor(int productId) async {
-    final p = await db.getProductById(productId);
-    return {
-      productId: ProductEntity(
+  Future<Map<int, ProductEntity>> productCacheForAll(List<int> ids) async {
+    final cache = <int, ProductEntity>{};
+    for (final productId in ids) {
+      final p = await db.getProductById(productId);
+      cache[productId] = ProductEntity(
         id: p!.id,
         name: p.name,
         code: p.code,
@@ -91,9 +93,13 @@ void main() {
         currentStock: p.currentStock,
         minStock: p.minStock,
         trackInventory: p.trackInventory,
-      ),
-    };
+      );
+    }
+    return cache;
   }
+
+  Future<Map<int, ProductEntity>> productCacheFor(int productId) =>
+      productCacheForAll([productId]);
 
   /// فاتورةُ بيعٍ نقديةٌ أصليةٌ بمستخدمٍ آخر (admin id=1) كي لا تتلوّث حركاتُ
   /// «مَن-لمَس-الدرج» التي يفحصها `resolveRefundSafe`.
@@ -102,32 +108,74 @@ void main() {
     double lineTotal = 100,
     double tax = 0,
     double taxRate = 0,
+    String paymentMethod = 'cash',
+    double? paid,
+    int? customerId,
+    List<int>? productIds,
   }) async {
+    final ids = productIds ?? [soldProductId];
     final id = await db.createSalesInvoice(
       invoiceNumber: 'INV-EXCH-${DateTime.now().microsecondsSinceEpoch}',
       warehouseId: warehouseId,
       userId: 1,
-      subtotal: unitPrice,
+      customerId: customerId,
+      subtotal: unitPrice * ids.length,
       discount: 0,
-      tax: tax,
-      total: lineTotal,
-      paid: lineTotal,
-      paymentMethod: 'cash',
+      tax: tax * ids.length,
+      total: lineTotal * ids.length,
+      paid: paid ?? lineTotal * ids.length,
+      paymentMethod: paymentMethod,
       items: [
-        SalesInvoiceItemsCompanion.insert(
-          invoiceId: 0,
-          productId: soldProductId,
-          quantity: 1,
-          unitPrice: unitPrice,
-          total: lineTotal,
-          costPrice: const Value(60),
-          taxRate: Value(taxRate),
-          taxAmount: Value(tax),
-        ),
+        for (final pid in ids)
+          SalesInvoiceItemsCompanion.insert(
+            invoiceId: 0,
+            productId: pid,
+            quantity: 1,
+            unitPrice: unitPrice,
+            total: lineTotal,
+            costPrice: const Value(60),
+            taxRate: Value(taxRate),
+            taxAmount: Value(tax),
+          ),
       ],
     );
     return (db.select(db.salesInvoices)..where((s) => s.id.equals(id)))
         .getSingle();
+  }
+
+  /// يُفرّغ رفَّ المخزن من صنفٍ تماماً — لمحاكاة «آخرُ قطعةٍ بيعت».
+  Future<void> drainShelf(int productId) async {
+    final bal = await (db.select(db.inventoryBalances)
+          ..where((b) =>
+              b.productId.equals(productId) &
+              b.warehouseId.equals(warehouseId))
+          ..limit(1))
+        .getSingleOrNull();
+    final onShelf = bal?.quantity ?? 0;
+    if (onShelf <= 0) return;
+    await db.adjustStock(
+      productId: productId,
+      warehouseId: warehouseId,
+      quantity: -onShelf,
+      type: 'adjustment',
+    );
+  }
+
+  Future<double> shelfOf(int productId) async {
+    final bal = await (db.select(db.inventoryBalances)
+          ..where((b) =>
+              b.productId.equals(productId) &
+              b.warehouseId.equals(warehouseId))
+          ..limit(1))
+        .getSingleOrNull();
+    return bal?.quantity ?? 0;
+  }
+
+  Future<int> movementCount(String type) async {
+    final rows = await (db.select(db.stockMovements)
+          ..where((m) => m.movementType.equals(type)))
+        .get();
+    return rows.length;
   }
 
   CartItemEntity spareLine({
@@ -228,16 +276,28 @@ void main() {
         trackInventory: const Value(true),
       ),
     );
-    // رصيدٌ افتتاحيٌّ للصنف المباع كي تنجح فاتورةُ البيع الأصلية (الخصمُ من
-    // مخزنٍ بلا رصيدٍ يُرفض في `_updateWarehouseBalance`). البديلُ يبقى بلا
-    // رصيدٍ عمداً — كلُّ اختبارٍ يزرع له ما يحتاجه.
-    await db.adjustStock(
-      productId: soldProductId,
-      warehouseId: warehouseId,
-      quantity: 50,
-      type: 'adjustment',
-      unitCost: 60,
+    soldProduct2Id = await db.insertProduct(
+      ProductsCompanion.insert(
+        code: 'EXCH-SOLD-2',
+        name: 'الصنفُ المباع الثاني',
+        salePrice: const Value(100),
+        costPrice: const Value(60),
+        currentStock: const Value(0),
+        trackInventory: const Value(true),
+      ),
     );
+    // رصيدٌ افتتاحيٌّ للصنفَين المباعَين كي تنجح فاتورةُ البيع الأصلية (الخصمُ
+    // من مخزنٍ بلا رصيدٍ يُرفض في `_updateWarehouseBalance`). البديلُ يبقى بلا
+    // رصيدٍ عمداً — كلُّ اختبارٍ يزرع له ما يحتاجه.
+    for (final pid in [soldProductId, soldProduct2Id]) {
+      await db.adjustStock(
+        productId: pid,
+        warehouseId: warehouseId,
+        quantity: 50,
+        type: 'adjustment',
+        unitCost: 60,
+      );
+    }
   });
 
   tearDown(() async => db.close());
@@ -527,6 +587,213 @@ void main() {
           ..where((s) => s.id.equals(r.saleInvoiceId)))
         .getSingle();
     expect(sale.tax, closeTo(14, 0.001));
+  });
+
+  // ───────────────────────────────────────────────────────────────────────
+  // ٦ — جولةُ إصلاحٍ ١ · العطبُ الأوّل: المرتجَعُ نفسُه يوفّر البديل
+  //     (قرارُ المالك 2026-08-17، الخيار ب)
+  // ───────────────────────────────────────────────────────────────────────
+
+  test('تبديلُ الصنف بمطابقٍ له ورصيدُ الرفّ صفرٌ ⇒ **ينجح**', () async {
+    // أشيعُ حالات الاستبدال: مقاسٌ بمقاس، آخرُ قطعةٍ على الرفّ بيعت.
+    final invoice = await makeOriginalSale();
+    final items = await db.getSalesInvoiceItems(invoice.id);
+    await drainShelf(soldProductId);
+    expect(await shelfOf(soldProductId), 0,
+        reason: 'التجهيزةُ تفترض رفّاً فارغاً — وإلا لم يقس الاختبارُ شيئاً');
+    final drawerBefore = await drawerBalance();
+
+    final r = await exchange.processExchange(
+      originalInvoice: invoice,
+      returnQuantities: {items.first.id: 1},
+      returnProductCache: await productCacheFor(soldProductId),
+      // البديلُ هو **نفسُ** الصنف — لا رصيدَ له إلا ما يعيده المرتجعُ نفسُه.
+      replacementItems: [spareLine(unitPrice: 100, productId: soldProductId)],
+      warehouseId: warehouseId,
+      userId: cashierId,
+      userName: 'كاشير الاستبدال',
+      taxEnabled: false,
+    );
+
+    expect(r.direction, ExchangeCashDirection.none);
+    expect(await drawerBalance(), closeTo(drawerBefore, 0.001));
+    expect(await shelfOf(soldProductId), closeTo(0, 0.001),
+        reason: 'رجع واحدٌ وخرج واحد — الرفُّ يعود لصفره');
+  });
+
+  test('نفسُه موسوماً **معيباً** ⇒ يُرفض، ولا يعود المعيبُ للمخزون', () async {
+    final invoice = await makeOriginalSale();
+    final items = await db.getSalesInvoiceItems(invoice.id);
+    await drainShelf(soldProductId);
+    final before = await snapshot();
+    final wasteBefore = await movementCount('waste');
+
+    await expectLater(
+      exchange.processExchange(
+        originalInvoice: invoice,
+        returnQuantities: {items.first.id: 1},
+        returnProductCache: await productCacheFor(soldProductId),
+        replacementItems: [spareLine(unitPrice: 100, productId: soldProductId)],
+        warehouseId: warehouseId,
+        userId: cashierId,
+        userName: 'كاشير الاستبدال',
+        // الوسمُ يسقط الاحتساب: التالفُ لا يعود للرفّ فلا يوفّر بديلاً.
+        damagedItemIds: {items.first.id},
+        taxEnabled: false,
+      ),
+      throwsA(isA<ExchangeStockUnavailableException>()),
+    );
+
+    final after = await snapshot();
+    expect(after.drawer, before.drawer);
+    expect(after.safeTxns, before.safeTxns);
+    expect(after.returnMoves, before.returnMoves);
+    expect(await movementCount('waste'), wasteBefore);
+    expect(after.invoices, before.invoices);
+    expect(await shelfOf(soldProductId), 0,
+        reason: 'الرفضُ قبل أيّ كتابة ⇒ لا شيءَ عاد للمخزون');
+  });
+
+  test('الوسمُ يمرّ إلى processSalesReturn — المعيبُ يُتلَف ولا يبقى للبيع',
+      () async {
+    final invoice = await makeOriginalSale();
+    final items = await db.getSalesInvoiceItems(invoice.id);
+    await stockSpare(5);
+    final shelfBefore = await shelfOf(soldProductId);
+    final wasteBefore = await movementCount('waste');
+
+    await exchange.processExchange(
+      originalInvoice: invoice,
+      returnQuantities: {items.first.id: 1},
+      returnProductCache: await productCacheFor(soldProductId),
+      replacementItems: [spareLine()], // بديلٌ آخرُ متوفّرٌ على الرفّ
+      warehouseId: warehouseId,
+      userId: cashierId,
+      userName: 'كاشير الاستبدال',
+      damagedItemIds: {items.first.id},
+      taxEnabled: false,
+    );
+
+    expect(await movementCount('waste'), wasteBefore + 1,
+        reason: 'isDamaged يجب أن يصل processSalesReturn فيكتب حركةَ إتلاف');
+    expect(await shelfOf(soldProductId), closeTo(shelfBefore, 0.001),
+        reason: 'رجع ثم أُتلف ⇒ صافي المخزون صفرٌ، لا قطعةٌ معيبةٌ قابلةٌ '
+            'للبيع');
+  });
+
+  test('الوسمُ لكلّ سطرٍ لا للاستبدال كلِّه — سليمٌ يعود ومعيبٌ يُتلَف',
+      () async {
+    // فاتورةٌ بسطرَين: الأوّلُ سليمٌ والثاني معيب.
+    final invoice = await makeOriginalSale(
+      productIds: [soldProductId, soldProduct2Id],
+    );
+    final items = await db.getSalesInvoiceItems(invoice.id);
+    final soundLine = items.firstWhere((i) => i.productId == soldProductId);
+    final damagedLine = items.firstWhere((i) => i.productId == soldProduct2Id);
+    await stockSpare(5);
+    final soundShelfBefore = await shelfOf(soldProductId);
+    final damagedShelfBefore = await shelfOf(soldProduct2Id);
+    final wasteBefore = await movementCount('waste');
+
+    await exchange.processExchange(
+      originalInvoice: invoice,
+      returnQuantities: {soundLine.id: 1, damagedLine.id: 1},
+      returnProductCache:
+          await productCacheForAll([soldProductId, soldProduct2Id]),
+      replacementItems: [spareLine()],
+      warehouseId: warehouseId,
+      userId: cashierId,
+      userName: 'كاشير الاستبدال',
+      damagedItemIds: {damagedLine.id},
+      taxEnabled: false,
+    );
+
+    expect(await shelfOf(soldProductId), closeTo(soundShelfBefore + 1, 0.001),
+        reason: 'السطرُ السليمُ يعود للرفّ');
+    expect(await shelfOf(soldProduct2Id), closeTo(damagedShelfBefore, 0.001),
+        reason: 'السطرُ المعيبُ لا يعود للرفّ');
+    expect(await movementCount('waste'), wasteBefore + 1,
+        reason: 'حركةُ إتلافٍ واحدةٌ فقط — للسطر المعيب وحدَه');
+
+    final flipped = await (db.select(db.salesInvoices)
+          ..where((s) => s.id.equals(invoice.id)))
+        .getSingle();
+    expect(flipped.status, 'returned',
+        reason: 'النداءُ الأخيرُ وحدَه يحمل isFullReturn المحسوبَ على '
+            'المجموعتَين معاً');
+  });
+
+  // ───────────────────────────────────────────────────────────────────────
+  // ٧ — جولةُ إصلاحٍ ١ · العطبُ الثاني: الرقمُ المعروضُ = أثرُ الدرج الفعليّ
+  // ───────────────────────────────────────────────────────────────────────
+
+  test('أصلٌ **بنكيّ** ⇒ الفرقُ المعروضُ يساوي أثرَ الدرج لا فرقَ الإجماليَّين',
+      () async {
+    final invoice = await makeOriginalSale(paymentMethod: 'transfer');
+    final items = await db.getSalesInvoiceItems(invoice.id);
+    await stockSpare(5);
+    final before = await drawerBalance();
+
+    final r = await exchange.processExchange(
+      originalInvoice: invoice,
+      returnQuantities: {items.first.id: 1},
+      returnProductCache: await productCacheFor(soldProductId),
+      replacementItems: [spareLine(unitPrice: 130)],
+      warehouseId: warehouseId,
+      userId: cashierId,
+      userName: 'كاشير الاستبدال',
+      taxEnabled: false,
+    );
+
+    final drawerDelta = (await drawerBalance()) - before;
+    // قيمتا المستندَين تبقيان للعرض — الفرقُ بينهما وبين النقد يظهر.
+    expect(r.returnTotal, closeTo(100, 0.001));
+    expect(r.saleTotal, closeTo(130, 0.001));
+    // المرتجعُ رُدَّ للخزنة البنكية، فلم يخرج من الدرج شيء.
+    expect(r.cashRefunded, closeTo(0, 0.001));
+    expect(r.cashCollected, closeTo(130, 0.001));
+    expect(r.direction, ExchangeCashDirection.collect);
+    expect(r.difference, closeTo(130, 0.001),
+        reason: 'قبل الإصلاح كان يعرض ٣٠ (فرقَ الإجماليَّين) والعميلُ يدفع '
+            '١٣٠ — الشاشةُ تكذب والدرجُ يزيد ١٠٠ عند الإقفال');
+    expect(drawerDelta, closeTo(r.difference, 0.001),
+        reason: 'ما يراه الكاشيرُ = ما يدخل الدرجَ بالضبط');
+  });
+
+  test('أصلٌ **آجلٌ** على عميلٍ مدين ⇒ نفسُ المطابقة', () async {
+    final customerId = await db.into(db.parties).insert(
+          PartiesCompanion.insert(
+            name: 'عميلٌ آجل',
+            isCustomer: const Value(true),
+          ),
+        );
+    final invoice = await makeOriginalSale(
+      paymentMethod: 'credit',
+      paid: 0,
+      customerId: customerId,
+    );
+    final items = await db.getSalesInvoiceItems(invoice.id);
+    await stockSpare(5);
+    final before = await drawerBalance();
+
+    final r = await exchange.processExchange(
+      originalInvoice: invoice,
+      returnQuantities: {items.first.id: 1},
+      returnProductCache: await productCacheFor(soldProductId),
+      replacementItems: [spareLine(unitPrice: 130)],
+      warehouseId: warehouseId,
+      userId: cashierId,
+      userName: 'كاشير الاستبدال',
+      taxEnabled: false,
+    );
+
+    final drawerDelta = (await drawerBalance()) - before;
+    expect(r.cashRefunded, closeTo(0, 0.001),
+        reason: 'المرتجعُ سُوّي على رصيد العميل المدين لا نقداً');
+    expect(r.cashCollected, closeTo(130, 0.001));
+    expect(r.direction, ExchangeCashDirection.collect);
+    expect(r.difference, closeTo(130, 0.001));
+    expect(drawerDelta, closeTo(r.difference, 0.001));
   });
 }
 

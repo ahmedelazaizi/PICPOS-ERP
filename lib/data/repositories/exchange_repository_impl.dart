@@ -35,18 +35,34 @@ class ExchangeResult {
   final int saleInvoiceId;
   final String saleInvoiceNumber;
 
-  /// إجماليُّ المرتجع من **الأساس الموحَّد** `calculateReturnRefundTotal`.
+  /// **قيمةُ مستند** المردود من الأساس الموحَّد `calculateReturnRefundTotal`.
+  /// للعرض بوصفه «إجماليَّ المرتجع» — وليس بالضرورة ما خرج من الدرج.
   final double returnTotal;
 
-  /// إجماليُّ فاتورة البيع كما حُفظ فعلاً (‏مقروءٌ من الصفّ، لا محسوبٌ هنا).
+  /// **قيمةُ مستند** البيع كما حُفظ فعلاً (‏مقروءٌ من الصفّ، لا محسوبٌ هنا).
   final double saleTotal;
 
-  /// اتّجاهُ الفرق ومقدارُه من `settleExchange` — لا اشتقاقَ محلّيّ.
+  /// ما خرج من **درج الوردية** فعلاً في شقّ الارتجاع — مقيسٌ من رصيد الدرج
+  /// لا مشتقٌّ من قيمة المستند. يقلّ عن [returnTotal] حين يردّ المرتجعُ إلى
+  /// خزنةٍ بنكيةٍ (فاتورةٌ أصليةٌ بالبطاقة/التحويل) أو يُسوّى على رصيد عميلٍ
+  /// مدين (فاتورةٌ آجلة).
+  final double cashRefunded;
+
+  /// ما دخل **درج الوردية** فعلاً في شقّ البيع — مقيسٌ من رصيد الدرج.
+  final double cashCollected;
+
+  /// اتّجاهُ ما يفعله الكاشيرُ على الدرج ومقدارُه، من `settleExchange`
+  /// مُغذّاةً بـ[cashRefunded] و[cashCollected] — **لا** بقيمتَي المستندَين.
+  ///
+  /// فما يُعرض هو ما يخرج من الدرج ويدخله بالضبط: `difference ==
+  /// (رصيدُ الدرج بعد) − (رصيدُ الدرج قبل)` بالقيمة المطلقة، والاتّجاهُ
+  /// إشارتُها. اشتقاقُه من إجماليَّي المستندَين كان يقول «اقبض ٣٠» بينما
+  /// العميلُ يدفع ١٣٠ على فاتورةٍ أصليةٍ بنكية.
   final ExchangeCashDirection direction;
   final double difference;
 
   /// درجُ الوردية الذي وقعت عليه حركتا الشقَّين.
-  final int? drawerSafeId;
+  final int drawerSafeId;
 
   const ExchangeResult({
     required this.exchangeKey,
@@ -56,6 +72,8 @@ class ExchangeResult {
     required this.saleInvoiceNumber,
     required this.returnTotal,
     required this.saleTotal,
+    required this.cashRefunded,
+    required this.cashCollected,
     required this.direction,
     required this.difference,
     required this.drawerSafeId,
@@ -127,16 +145,25 @@ class ExchangeFailedException implements Exception {
 /// بالضبط: قبضُ الفرق، أو صرفُه، أو **صفرٌ بلا أيّ صفٍّ بصفر** عند التساوي —
 /// وهذا المستودعُ لا يكتب أيَّ صفِّ تسويةٍ ثالثٍ إطلاقاً.
 ///
-/// ⚠️ حالتان يتوقّف فيهما أثرُ **الدرج** عن مطابقة الفرق — كلتاهما سلوكٌ
-/// معياريٌّ لـ`processSalesReturn` لا يُعدَّل من هنا، وموثَّقٌ لا مُبتَلَع:
+/// ## الرقمُ المعروضُ هو الرقمُ المنفَّذ — من مصدرٍ واحد
 ///
-///   ١. فاتورةٌ أصليةٌ مدفوعةٌ **بنكياً** ⇒ الردُّ يقع على الخزنة البنكية،
-///      فأثرُ الدرج `+saleTotal` وحدَه.
-///   ٢. فاتورةٌ أصليةٌ على **عميلٍ برصيدٍ مستحقّ** ⇒ جزءُ المرتجع الموازي
-///      للمستحقّ يُسوّى على رصيد العميل (`arRefund`) لا نقداً.
+/// شقُّ الارتجاع **لا يصرف نقداً دائماً**: فاتورةٌ أصليةٌ بالبطاقة/التحويل
+/// يردّها `processSalesReturn` إلى الخزنة **البنكية**، وفاتورةٌ آجلةٌ على
+/// عميلٍ مدين يسوّي جزءَها على **رصيد العميل** (`arRefund`). وشقُّ البيع يقبض
+/// `saleTotal` **كاملاً نقداً** على كلّ حال. فاشتقاقُ الفرق من إجماليَّي
+/// المستندَين يكذب على الكاشير: الشاشةُ تقول «اقبض ٣٠» والعميلُ يدفع ١٣٠
+/// والدرجُ يزيد ١٠٠ عند الإقفال.
 ///
-/// والاستبدالُ الميدانيُّ في نقطة البيع نقديٌّ بلا عميلٍ مدين، فتنطبق
-/// الحالةُ العامّة: صافي الدرج = الفرق.
+/// فـ[ExchangeResult.direction] و[ExchangeResult.difference] يُشتقّان من
+/// **الشقَّين النقديَّين فعلاً**: رصيدُ الدرج يُقاس ثلاثَ مرّاتٍ داخل
+/// المعاملة (قبل · بعد الارتجاع · بعد البيع)، فتخرج `cashRefunded` و
+/// `cashCollected` مقيستَين لا مقدَّرتَين، وتُغذَّى بهما `settleExchange`
+/// نفسُها — فيبقى الرقمُ المعروضُ والمنفَّذُ من دالّةٍ واحدة. وهذا هو الدرسُ
+/// المقيسُ من الخطة الأولى بعينه (‏عُرض ١٠٠ وصُرف ١١٤ لأن المصدرَين اثنان).
+///
+/// وقيمتا المستندَين تبقيان في [ExchangeResult.returnTotal] و
+/// [ExchangeResult.saleTotal] للعرض — فالفرقُ بين قيمة المستند وأثر الدرج
+/// **يظهر ولا يُبتلع**.
 class ExchangeRepositoryImpl {
   final AppDatabase _db;
   final ReturnsRepositoryImpl _returns;
@@ -153,6 +180,11 @@ class ExchangeRepositoryImpl {
   /// `processSalesReturn` بالضبط.
   /// [returnProductCache] بمفاتيح `products.id` للأصناف المرتجَعة.
   /// [replacementItems] سلّةُ البديل بأسعار اليوم.
+  /// [damagedItemIds] وسمُ «معيب» **لكلّ سطرٍ على حدة** بمفاتيح
+  /// `sales_invoice_items.id` (نفسُ فضاء مفاتيح [returnQuantities]) — قد
+  /// يُرجع العميلُ صنفَين أحدُهما معيبٌ والآخرُ سليم. السطرُ الموسومُ:
+  /// (أ) **لا يُحتسب** ضمن المتاح عند فحص البديل، و(ب) يمرّ بـ`isDamaged`
+  /// إلى `processSalesReturn` فيُتلَف ولا يعود للرفّ.
   /// [customerId] عميلُ فاتورة البيع — يمرّره المنادي صراحةً (‏لا يُورَّث من
   /// الفاتورة الأصلية تلقائياً كي لا يُنسَب بيعٌ نقديٌّ لعميلٍ بغير قصد).
   Future<ExchangeResult> processExchange({
@@ -163,6 +195,7 @@ class ExchangeRepositoryImpl {
     required int warehouseId,
     required int userId,
     required String userName,
+    Set<int> damagedItemIds = const <int>{},
     int? customerId,
     double taxPercent = SaleRequest.kDefaultTaxPercent,
     bool taxEnabled = true,
@@ -186,18 +219,44 @@ class ExchangeRepositoryImpl {
       );
     }
 
+    final originalItems = await _db.getSalesInvoiceItems(originalInvoice.id);
+
     // ── ١. رفضُ البديل غيرِ المتوفّر **قبل أيّ كتابة** ────────────────────
     // قرارُ المالك: يمنع لا يحذّر. ولا يُترك الأمرُ لحارس المخزون السالب
     // داخل `adjustStock`: ذاك يمرّ حين يكون `enable_negative_sales` مفعَّلاً
     // أو `allowNegativeSale` على الصنف — والاستبدالُ يشترط وجودَ البديل
     // فعلياً على الرفّ بصرف النظر عن تلك السياسة.
-    await _rejectIfReplacementUnavailable(replacementItems, warehouseId);
+    //
+    // قرارُ المالك 2026-08-17 (الخيار ب): **الكميةُ المرتجَعةُ في هذا
+    // الاستبدال نفسِه تُحتسب ضمن المتاح** — إلا إن وُسمت معيبة. وهذا ليس
+    // تساهلاً بل مطابقةٌ لترتيب التنفيذ الفعليّ: شقُّ الارتجاع يُعيد
+    // التخزين **قبل** أن يخصم شقُّ البيع، داخل نفس المعاملة. وبدونه كان
+    // تبديلُ وحدةٍ بأخرى **مطابقة** — أشيعُ حالات الاستبدال — يفشل بـ«غيرُ
+    // متوفّر» كلَّما كان رصيدُ الرفّ صفراً، رغم أن المرتجَعَ نفسَه يوفّره.
+    await _rejectIfReplacementUnavailable(
+      items: replacementItems,
+      warehouseId: warehouseId,
+      returnCredit: _returnCreditByProduct(
+        originalItems: originalItems,
+        returnQuantities: returnQuantities,
+        damagedItemIds: damagedItemIds,
+        originalWarehouseId: originalInvoice.warehouseId,
+        saleWarehouseId: warehouseId,
+      ),
+    );
 
     // ── ٢. درجُ الوردية ───────────────────────────────────────────────────
+    // الرفضُ هنا **قبل أيّ كتابة** أوضحُ من انفجارٍ عميقٍ في شقّ البيع
+    // (`_recordSalesReceipt` ترمي حين لا خزنةَ نقديةً صالحة).
     final drawer = await _db.resolveRefundSafe(userId: userId);
+    if (drawer == null) {
+      throw const ExchangeFailedException(
+        'لا توجد خزنةٌ نقديةٌ صالحةٌ لدرج الوردية — اضبط الخزائن من الإعدادات '
+        '← الخزينة قبل الاستبدال.',
+      );
+    }
 
     // ── ٣. أساسُ المرتجع الموحَّد — لا اشتقاقَ محلّيّ ─────────────────────
-    final originalItems = await _db.getSalesInvoiceItems(originalInvoice.id);
     final returnTotal = calculateReturnRefundTotal(
       lines: [
         for (final i in originalItems)
@@ -229,23 +288,63 @@ class ExchangeRepositoryImpl {
 
     final exchangeKey = UuidV7.generate();
 
+    // شقُّ الارتجاع يُقسَم بحسب الوسم: `processSalesReturn` يقبل `isDamaged`
+    // **للنداء كلِّه** لا للسطر، والوسمُ مطلوبٌ لكلّ سطر. فالنداءُ يُقسَم إلى
+    // مجموعتَين متباينتَين داخل نفس المعاملة.
+    //
+    // والانقسامُ آمنٌ من التحقّق المتقاطع (مقيس): سياجُ الكمية في
+    // `processSalesReturn` يقرأ `getAlreadyReturnedQty` وهي تعدّ
+    // `stock_movements` بـ`reference_type = 'sales_invoice'` فقط، بينما هذا
+    // المسارُ يكتب حركاتِه بـ`'sales_return'` — فلا يرى النداءُ الثاني كمياتِ
+    // الأوّل ولا يرفضها خطأً.
+    final soundQuantities = <int, double>{
+      for (final e in returnQuantities.entries)
+        if (e.value > 0 && !damagedItemIds.contains(e.key)) e.key: e.value,
+    };
+    final damagedQuantities = <int, double>{
+      for (final e in returnQuantities.entries)
+        if (e.value > 0 && damagedItemIds.contains(e.key)) e.key: e.value,
+    };
+
     // ── ٤. المستندان في معاملةٍ واحدة ─────────────────────────────────────
     return _db.transaction(() async {
+      // رصيدُ الدرج قبل أيّ شقّ — أساسُ قياس الحركة النقدية الفعلية.
+      final drawerBefore = await _drawerBalance(drawer.id);
+
       // ٤-أ · شقُّ الارتجاع — المسارُ الإلزاميّ.
-      final returnOk = await _returns.processSalesReturn(
-        invoice: originalInvoice,
-        returnQuantities: returnQuantities,
-        productCache: returnProductCache,
-        reason: reason ?? 'استبدال $exchangeKey',
-        userId: userId,
-        userName: userName,
-        isFullReturn: isFullReturn,
-      );
-      if (!returnOk) {
-        throw const ExchangeFailedException(
-          'تعذّر تنفيذ شقّ الارتجاع — لم يُحفظ أيُّ شقٍّ من الاستبدال.',
+      // حالةُ الفاتورة الأصلية يكتبها **آخرُ** نداء، فيحمل وحدَه
+      // `isFullReturn` المحسوبَ على المجموعتَين معاً.
+      final legs = <({Map<int, double> qty, bool damaged})>[
+        if (soundQuantities.isNotEmpty)
+          (qty: soundQuantities, damaged: false),
+        if (damagedQuantities.isNotEmpty)
+          (qty: damagedQuantities, damaged: true),
+      ];
+      for (var i = 0; i < legs.length; i++) {
+        final leg = legs[i];
+        final isLast = i == legs.length - 1;
+        final returnOk = await _returns.processSalesReturn(
+          invoice: originalInvoice,
+          returnQuantities: leg.qty,
+          productCache: returnProductCache,
+          reason: reason ??
+              (leg.damaged
+                  ? 'استبدال (تالف) $exchangeKey'
+                  : 'استبدال $exchangeKey'),
+          userId: userId,
+          userName: userName,
+          isFullReturn: isLast && isFullReturn,
+          isDamaged: leg.damaged,
         );
+        if (!returnOk) {
+          throw const ExchangeFailedException(
+            'تعذّر تنفيذ شقّ الارتجاع — لم يُحفظ أيُّ شقٍّ من الاستبدال.',
+          );
+        }
       }
+
+      // ما خرج من الدرج فعلاً في شقّ الارتجاع — مقيسٌ لا مقدَّر.
+      final drawerAfterReturn = await _drawerBalance(drawer.id);
 
       // ٤-ب · شقُّ البيع بأسعار اليوم وضريبةِ اليوم.
       //
@@ -262,7 +361,7 @@ class ExchangeRepositoryImpl {
         paidAmount: expectedSaleTotal,
         cashAmount: expectedSaleTotal,
         // نفسُ درج الوردية الذي صُرف منه المرتجع — لا خزنةٌ افتراضيةٌ عامّة.
-        cashSafeId: drawer?.id,
+        cashSafeId: drawer.id,
         discountPercent: discountPercent,
         taxPercent: taxPercent,
         taxEnabled: taxEnabled,
@@ -316,9 +415,20 @@ class ExchangeRepositoryImpl {
             ..limit(1))
           .getSingleOrNull();
 
+      // ٤-و · التسويةُ من **الشقَّين النقديَّين فعلاً** لا من قيمتَي
+      // المستندَين. الفاتورةُ الأصليةُ البنكيةُ تردّ إلى الخزنة البنكية،
+      // والآجلةُ تُسوّى على رصيد العميل — وفي الحالتين يبقى شقُّ البيع يقبض
+      // نقداً كاملاً. فالاشتقاقُ من الإجماليَّين يعرض «اقبض ٣٠» بينما يدفع
+      // العميلُ ١٣٠. ونفسُ الدالّة الخالصة تُستعمل كي يبقى الرقمُ المعروضُ
+      // والمنفَّذُ من مصدرٍ واحد، وكي تبقى عتبةُ «لا حركةَ بصفر» واحدةً.
+      final drawerAfterSale = await _drawerBalance(drawer.id);
+      final cashRefunded =
+          (drawerBefore - drawerAfterReturn).clamp(0.0, double.infinity);
+      final cashCollected =
+          (drawerAfterSale - drawerAfterReturn).clamp(0.0, double.infinity);
       final settlement = settleExchange(
-        returnTotal: returnTotal,
-        saleTotal: sale.total,
+        returnTotal: cashRefunded,
+        saleTotal: cashCollected,
         decimalPlaces: AppConstants.decimalPlaces,
       );
 
@@ -330,9 +440,11 @@ class ExchangeRepositoryImpl {
         saleInvoiceNumber: sale.invoiceNumber,
         returnTotal: returnTotal,
         saleTotal: sale.total,
+        cashRefunded: cashRefunded,
+        cashCollected: cashCollected,
         direction: settlement.direction,
         difference: settlement.amount,
-        drawerSafeId: drawer?.id,
+        drawerSafeId: drawer.id,
       );
     });
   }
@@ -341,15 +453,57 @@ class ExchangeRepositoryImpl {
   // مساعداتٌ داخلية
   // ─────────────────────────────────────────────────────────────────────────
 
+  Future<double> _drawerBalance(int safeId) async {
+    final safe = await (_db.select(_db.safes)..where((s) => s.id.equals(safeId)))
+        .getSingleOrNull();
+    return safe?.balance ?? 0;
+  }
+
+  /// ما يضيفه شقُّ الارتجاع إلى الرفّ **بوحدات الأساس**، بمفتاح `productId`.
+  ///
+  /// ثلاثةُ شروطٍ يسقط بأيٍّ منها الاحتساب:
+  ///  * السطرُ **موسومٌ معيباً** ⇒ `processSalesReturn(isDamaged: true)` يُعيده
+  ///    ثم يُتلفه فوراً، فلا يصل الرفَّ (قرارُ المالك ب).
+  ///  * **مخزنُ الفاتورة الأصلية ≠ مخزنُ البيع** ⇒ الارتجاعُ يعود إلى
+  ///    `invoice.warehouseId` (كما يفعل `processSalesReturn` حرفياً) فلا يوفّر
+  ///    شيئاً في مخزن البيع.
+  ///  * الصنفُ غيرُ متعقَّبِ المخزون ⇒ لا رصيدَ له أصلاً (‏`trackInventory`
+  ///    يُفحص عند الاستهلاك).
+  ///
+  /// والضربُ في `quantityInBase` مطابقٌ لـ`stockReturnQty` في
+  /// `processSalesReturn`: `costPrice`/الرصيد بوحدة الأساس والكميةُ بوحدة
+  /// البيع.
+  Map<int, double> _returnCreditByProduct({
+    required List<SalesInvoiceItem> originalItems,
+    required Map<int, double> returnQuantities,
+    required Set<int> damagedItemIds,
+    required int originalWarehouseId,
+    required int saleWarehouseId,
+  }) {
+    if (originalWarehouseId != saleWarehouseId) return const {};
+    final credit = <int, double>{};
+    for (final item in originalItems) {
+      final qty = returnQuantities[item.id] ?? 0;
+      if (qty <= 0) continue;
+      if (damagedItemIds.contains(item.id)) continue;
+      final inBase = item.quantityInBase > 0 ? item.quantityInBase : 1.0;
+      credit[item.productId] = (credit[item.productId] ?? 0) + qty * inBase;
+    }
+    return credit;
+  }
+
   /// الرصيدُ المتاحُ فعلاً في هذا المخزن = `quantity - reserved_quantity`،
   /// وهو نفسُ التعريف الذي يفرضه `_updateWarehouseBalance` في `adjustStock`
   /// (`(quantity - COALESCE(reserved_quantity, 0)) + $quantity >= 0`) وتفرضه
   /// `reserveStock`. وغيابُ صفِّ رصيدٍ للمخزن = صفرٌ متاح — مطابقةً لفرع
-  /// «الصنف غير متوفر في أي مستودع» هناك.
-  Future<void> _rejectIfReplacementUnavailable(
-    List<CartItemEntity> items,
-    int warehouseId,
-  ) async {
+  /// «الصنف غير متوفر في أي مستودع» هناك. ويُضاف إليه [returnCredit] — ما
+  /// يعيده شقُّ الارتجاع إلى الرفّ **قبل** أن يخصم شقُّ البيع في نفس
+  /// المعاملة.
+  Future<void> _rejectIfReplacementUnavailable({
+    required List<CartItemEntity> items,
+    required int warehouseId,
+    required Map<int, double> returnCredit,
+  }) async {
     // تُجمَّع الكمياتُ بالصنف: سطران لنفس الصنف يستهلكان نفسَ الرصيد.
     final neededByProduct = <int, double>{};
     for (final item in items) {
@@ -372,8 +526,9 @@ class ExchangeRepositoryImpl {
                 b.warehouseId.equals(warehouseId))
             ..limit(1))
           .getSingleOrNull();
-      final available =
+      final onShelf =
           (balance?.quantity ?? 0) - (balance?.reservedQuantity ?? 0);
+      final available = onShelf + (returnCredit[entry.key] ?? 0);
       if (available + 0.001 < entry.value) {
         throw ExchangeStockUnavailableException(
           'الصنفُ البديل "${product.name}" غيرُ متوفّرٍ بالكمية المطلوبة '
