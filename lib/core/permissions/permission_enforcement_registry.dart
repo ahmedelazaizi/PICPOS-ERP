@@ -134,7 +134,8 @@ class PermissionEnforcementRegistry {
   /// قديمٍ بلا توأمها، **ويفشل أيضاً** لمدخلٍ هنا صار منفَّذاً في التوأم —
   /// فلا تبقى القائمةُ ساكنةً بعد إصلاحها.
   ///
-  /// مقيسةٌ 2026-08-12 على `aaac482d`: ٢٣ كوداً.
+  /// مقيسةٌ 2026-08-12 على `aaac482d`: ٢٣ كوداً. ثم ٢٢ (2026-08-17: خرج
+  /// 'tables_cancel' — انظر سببَه في مكانه أدناه).
   static const Set<String> picposParityGaps = {
     // ── سلّةُ البيع ──
     // ✅ 'pos_remove_item' · 'pos_clear_cart' · 'pos_price_edit' ·
@@ -236,8 +237,13 @@ class PermissionEnforcementRegistry {
     // `pos_picpos/` كلِّه، ورأسُ الشاشة لا يعرض طاولات. الثلاثةُ محروسةٌ في
     // `pos/widgets/table_pos/table_pos_summary.dart` وهي شاشةُ UralCash.
     // فلا شيءَ يُحرَس هنا حتى تُضاف الميزة.
+    //
+    // ✅ 'tables_cancel' اتشال (مراجعةُ ما قبل الدمج، 2026-08-17): بقى
+    //    مذكوراً **خارج** زوج التوأمين — كبسةُ «إلغاء الطلب» في
+    //    `screens/tables/table_operations.dart` بتفحصه صراحةً قبل ما تنادي
+    //    `TableSessionService.cancelOrder`. الحارسُ بيقيس الذكرَ خارج
+    //    الزوج فما بقاش فجوةَ تكافؤ.
     'tables_add_items',
-    'tables_cancel',
     'tables_checkout',
 
     // ── الخزينة ──
