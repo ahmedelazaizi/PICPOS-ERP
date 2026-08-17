@@ -283,6 +283,34 @@ mixin _TablePosOperationsMixin on ConsumerState<TablePosScreen> {
     final cartState = ref.read(cartControllerProvider);
     final total = cartState.total;
 
+    // ── فحصٌ قبليّ: ما يُشحَن = ما يُسجَّل ─────────────────────────────────
+    // السلّةُ والطلبُ يحسبان بمحرّكين مختلفين: `cartState.total` يضيف
+    // الضريبةَ فوق ويطرح خصومَ السلّة والعروض، بينما `recordPayment` يقيس
+    // على `effectiveTotal(order) - paidAmount`. فإن اختلفا — ضريبةٌ مفعّلةٌ
+    // من مفتاح هذه الشاشة نفسِها، أو صنفٌ حُذف فتُخطّي من السلّة، أو تقسيمٌ
+    // جزئيٌّ سبق فالسلّةُ تُعيد شحنَ الإجماليِّ كاملاً — فالفشلُ اليوم يقع
+    // **بعد** `processPayment`، أي بعد ترحيل الفاتورة محاسبةً ومخزوناً،
+    // فتبقى فاتورةٌ يتيمةٌ وطاولةٌ لا تُغلَق ولا تُلغى.
+    //
+    // فيُنقل الرفضُ إلى ما قبل أيّ ترحيل: فاتورةٌ لم تصدر لا تحتاج تسوية.
+    final double due;
+    try {
+      due = await ref.read(tableSessionServiceProvider).amountDue(orderId);
+    } catch (e) {
+      if (mounted) {
+        AppToast.show(context, 'تعذّر قراءةُ مستحقِّ الطلب: $e',
+            type: ToastType.error);
+      }
+      return;
+    }
+    final mismatch = checkTableCharge(charged: total, expected: due);
+    if (mismatch != null) {
+      if (mounted) {
+        AppToast.show(context, mismatch.message, type: ToastType.error);
+      }
+      return;
+    }
+
     if (!mounted) return;
 
     final result = await showModalBottomSheet<PaymentResult>(

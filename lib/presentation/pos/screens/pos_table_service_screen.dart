@@ -11,6 +11,7 @@ import '../../../core/widgets/app_toast.dart';
 import '../../../data/providers/providers.dart';
 import '../../../domain/entities/product_entity.dart';
 import '../../../domain/entities/cart_item_entity.dart';
+import '../../../domain/models/table_charge_check.dart';
 import '../providers/pos_controller.dart';
 import '../providers/cart_controller.dart';
 import '../providers/checkout_controller.dart';

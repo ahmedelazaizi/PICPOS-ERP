@@ -631,6 +631,51 @@ void main() {
     });
   });
 
+  group('amountDue', () {
+    test('بلا دفعٍ سابقٍ ⇒ الإجماليُّ بعد الخصم', () async {
+      final t = await newTable('ط٨٠');
+      final orderId = await service.openTable(
+          tableId: t, guestCount: 2, userId: null, userName: 'أحمد');
+      await (db.update(db.tableOrders)..where((o) => o.id.equals(orderId)))
+          .write(const TableOrdersCompanion(
+        total: Value(100),
+        discountType: Value('percent'),
+        discountValue: Value(10),
+      ));
+
+      expect(await service.amountDue(orderId), 90);
+    });
+
+    test('بعد دفعٍ جزئيٍّ ⇒ المتبقّي وحدَه', () async {
+      final t = await newTable('ط٨١');
+      final orderId = await service.openTable(
+          tableId: t, guestCount: 2, userId: null, userName: 'أحمد');
+      await (db.update(db.tableOrders)..where((o) => o.id.equals(orderId)))
+          .write(const TableOrdersCompanion(
+        total: Value(100),
+        paidAmount: Value(40),
+      ));
+
+      // هذا هو الرقمُ الذي تقيس عليه شاشةُ التحصيل سلّتَها: بعد تقسيمٍ
+      // جزئيٍّ تُحمَّل السلّةُ بكلِّ الأصناف (١٠٠) بينما المستحقُّ ٦٠ —
+      // فالفرقُ هو ما يمنع الشحنَ مرّتين.
+      expect(await service.amountDue(orderId), 60);
+    });
+
+    test('لا يعود سالباً إن تجاوز المدفوعُ الإجمالي', () async {
+      final t = await newTable('ط٨٢');
+      final orderId = await service.openTable(
+          tableId: t, guestCount: 2, userId: null, userName: 'أحمد');
+      await (db.update(db.tableOrders)..where((o) => o.id.equals(orderId)))
+          .write(const TableOrdersCompanion(
+        total: Value(100),
+        paidAmount: Value(120),
+      ));
+
+      expect(await service.amountDue(orderId), 0);
+    });
+  });
+
   group('requestTableBill', () {
     test('طلبُ الفاتورة يغيّر الطلبَ لا الطاولة', () async {
       final t = await newTable('ط٦٠');

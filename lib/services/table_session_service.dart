@@ -370,6 +370,19 @@ class TableSessionService {
     return _effectiveTotalOf(order);
   }
 
+  /// المتبقّي على الطلب: الإجماليُّ بعد الخصم ناقصاً ما دُفع منه.
+  ///
+  /// هذا هو الرقمُ الذي تقيس عليه شاشةُ التحصيل سلّتَها **قبل** ترحيل
+  /// الفاتورة. حسابُه هنا لا في الشاشة لأنه نفسُ الحساب الذي يحكم به
+  /// [recordPayment] على الدفعة؛ ونسخُه في الشاشة يعني محرّكاً ثالثاً.
+  Future<double> amountDue(int orderId) async {
+    final order = await (_db.select(_db.tableOrders)
+          ..where((o) => o.id.equals(orderId)))
+        .getSingle();
+    final due = _units(_effectiveTotalOf(order)) - _units(order.paidAmount);
+    return (due < 0 ? 0 : due) / _factor;
+  }
+
   static double _effectiveTotalOf(TableOrder order) {
     if (order.discountType == null || order.discountValue <= 0) {
       return order.total;
