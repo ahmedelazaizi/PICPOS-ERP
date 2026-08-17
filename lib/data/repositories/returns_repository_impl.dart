@@ -8,6 +8,7 @@ import '../../services/accounting_service.dart';
 import '../../services/generators/base_generator.dart' show InvoiceItem;
 import '../../domain/entities/product_entity.dart';
 import '../../domain/entities/accounting_entities.dart';
+import '../../domain/models/sales_return_refund_split.dart';
 import '../../services/client_write_interceptor.dart';
 import '../../services/network_service.dart';
 import '../../core/utils/uuid_v7.dart';
@@ -86,6 +87,30 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
         fromDate,
         toDate,
         allowedBranchIds: allowedBranchIds,
+      );
+
+  /// تقسيمُ مرتجعٍ بقيمة [totalReturn] على [invoice] — المصدرُ الوحيد.
+  ///
+  /// يستدعيه ثلاثةُ مواضعَ بنفس الدخل فيعطي نفسَ الخرج حتماً:
+  ///   * الحارسُ قبل المعاملة (هل يخرج نقدٌ ⇒ هل تُشترط ورديّة؟)
+  ///   * التنفيذُ داخل المعاملة (كم يخرج من كلّ خزنة؟)
+  ///   * إيصالُ الطباعة (ماذا نكتب للعميل أنّه استلم؟)
+  ///
+  /// وكان الثلاثةُ حساباتٍ منفصلة، وثالثُها يخالف الأوّلَين: يقسم المرتجعَ
+  /// كلَّه بلا مقاصّةِ ذمّة، فيطبع «مرتجع نقدي ١٠٠» على بيعةٍ آجلةٍ لم يخرج
+  /// فيها قرشٌ من الدرج.
+  SalesReturnRefundSplit _refundSplitFor(
+    SalesInvoiceData invoice,
+    double totalReturn,
+  ) =>
+      SalesReturnRefundSplit.from(
+        invoiceTotal: invoice.total,
+        invoicePaid: invoice.paid,
+        paymentMethod: invoice.paymentMethod,
+        cashPaid: invoice.cashPaid,
+        bankPaid: invoice.bankPaid,
+        totalReturn: totalReturn,
+        hasCustomer: invoice.customerId != null,
       );
 
   @override
@@ -384,37 +409,19 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
         }
       }
 
-      // Financial Reconciliation
-      double actualRefundToPay = totalReturn;
-      double arRefund = 0;
+      // Financial Reconciliation — الحسابُ نفسُه الذي فحصه الحارسُ قبل فتح
+      // المعاملة (`_refundSplitFor`). نسخةٌ واحدةٌ في `domain/models`، فلا
+      // يستطيع الحارسُ أن يعِد بغير ما ينفّذ هذا السطر.
+      final refundSplit = _refundSplitFor(invoice, totalReturn);
+      final arRefund = refundSplit.arRefund;
+      final cashRefund = refundSplit.cashRefund;
+      final bankRefund = refundSplit.bankRefund;
 
-      if (invoice.customerId != null) {
-        final oldRemaining = (invoice.total - invoice.paid).clamp(0.0, double.infinity);
-        if (oldRemaining > 0) {
-          final balanceCorrection = totalReturn.clamp(0.0, oldRemaining);
-          await _db.adjustPartyBalance(invoice.customerId!, -balanceCorrection);
-          arRefund = balanceCorrection;
-          actualRefundToPay = totalReturn - balanceCorrection;
-        }
-      }
-
-      double cashRefund = 0;
-      double bankRefund = 0;
-
-      if (actualRefundToPay > 0) {
-        if (invoice.paymentMethod == 'multiple' || invoice.paymentMethod == 'mixed') {
-          final totalPaid = invoice.cashPaid + invoice.bankPaid;
-          if (totalPaid > 0) {
-            cashRefund = actualRefundToPay * (invoice.cashPaid / totalPaid);
-            bankRefund = actualRefundToPay * (invoice.bankPaid / totalPaid);
-          } else {
-            cashRefund = actualRefundToPay;
-          }
-        } else if (['transfer', 'card', 'bank'].contains(invoice.paymentMethod)) {
-          bankRefund = actualRefundToPay;
-        } else {
-          cashRefund = actualRefundToPay;
-        }
+      // المقاصّةُ أثرٌ جانبيٌّ لا يعرفه الحسابُ الخالص، فتبقى هنا. والشرطُ
+      // `arRefund > 0` مكافئٌ حرفيّاً لشرطَي الأصل (عميلٌ موجود + متبقٍّ > 0):
+      // `totalReturn > 0` مضمونٌ أعلاه، فمتى وُجد متبقٍّ كان القصُّ موجباً.
+      if (arRefund > 0 && invoice.customerId != null) {
+        await _db.adjustPartyBalance(invoice.customerId!, -arRefund);
       }
 
       // Safe Transactions
@@ -751,19 +758,13 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
     if (selectedInvoice == null) return null;
 
     String paymentMethod = selectedInvoice.paymentMethod;
-    double cashRefund = returnTotal;
-    double bankRefund = 0;
-
-    if (paymentMethod == 'multiple' || paymentMethod == 'mixed') {
-      final totalPaid = selectedInvoice.cashPaid + selectedInvoice.bankPaid;
-      if (totalPaid > 0) {
-        cashRefund = returnTotal * (selectedInvoice.cashPaid / totalPaid);
-        bankRefund = returnTotal * (selectedInvoice.bankPaid / totalPaid);
-      }
-    } else if (['transfer', 'card', 'bank'].contains(paymentMethod)) {
-      cashRefund = 0;
-      bankRefund = returnTotal;
-    }
+    // الإيصالُ يطبع ما تحرّك فعلاً، لا ما كان سيتحرّك لو كانت الفاتورةُ
+    // مسدَّدة. الحسابُ السابقُ هنا كان يقسم `returnTotal` كلَّه بلا مقاصّةِ
+    // ذمّة، فيطبع للعميل «مرتجع نقدي» بحجم المرتجع على بيعةٍ آجلةٍ لم يخرج
+    // فيها من الدرج شيء — ورقةٌ بيده تشهد بقبضٍ لم يقع.
+    final printSplit = _refundSplitFor(selectedInvoice, returnTotal);
+    final double cashRefund = printSplit.cashRefund;
+    final double bankRefund = printSplit.bankRefund;
 
     String? customerName;
     if (selectedInvoice.customerId != null) {
