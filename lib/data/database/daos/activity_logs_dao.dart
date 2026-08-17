@@ -132,4 +132,22 @@ extension ActivityLogsDao on AppDatabase {
       activityLogs,
     )..where((t) => t.createdAt.isSmallerThan(Variable(beforeDate)))).go();
   }
+
+  /// سجلُّ كيانٍ واحدٍ مرتّباً من الأحدث — يغذّي شاشةَ سجل الطاولة (T11).
+  /// يُصفّى على `entityType` و`entityId` معاً فلا تتسرّب سجلّاتُ كيانٍ آخر
+  /// يصادف نفسَ الرقم (مثلاً طاولةٌ وطلبٌ بنفس المعرّف).
+  Future<List<ActivityLog>> logsForEntity({
+    required String entityType,
+    required int entityId,
+    int limit = 100,
+  }) {
+    return (select(activityLogs)
+          ..where(
+            (t) =>
+                t.entityType.equals(entityType) & t.entityId.equals(entityId),
+          )
+          ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
+          ..limit(limit))
+        .get();
+  }
 }

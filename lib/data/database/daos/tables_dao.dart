@@ -170,9 +170,39 @@ extension TablesDao on AppDatabase {
         .watchSingleOrNull();
   }
 
-  /// Create a new table order
-  Future<int> createTableOrder(int tableId, {int? userId}) async {
+  /// Create a new table order.
+  ///
+  /// حارسٌ أخير: طلبان حيّان على طاولةٍ واحدةٍ يجعلان
+  /// [getActiveOrderForTable] — وهي `getSingleOrNull()` — ترمي `StateError`
+  /// على **كلّ** قراءةٍ لاحقةٍ للطاولة: الإغلاقُ والإلغاءُ وبطاقةُ الطاولة
+  /// ونافذةُ الطلب كلُّها تتوقّف، والطاولةُ تحمل مالاً محصَّلاً ولا تُستعاد
+  /// إلا بجراحةٍ على القاعدة. الانتقالاتُ المصونةُ تمرّ عبر
+  /// `TableSessionService`، وهذا يحمي ما بقي من مستدعين مباشرين.
+  ///
+  /// [taxRate] نسبةُ الضريبة **كسريّةً** (0.16) تُنسَخ من إعداد
+  /// `pos_default_tax_rate` وتُثبَّت على الطلب لقطةً — اقرأ
+  /// `TableOrders.taxRate`. الطبقةُ هنا لا تقرأ الإعدادَ بنفسها، فالمستدعي
+  /// يمرّره.
+  ///
+  /// وافتراضُه صفرٌ ليس «بلا ضريبة» بل «لم تُقرأ نسبةٌ بعد»، ولذلك يحرس
+  /// `TableSessionService.setOrderTax` تفعيلَ الضريبة على طلبٍ نسبتُه صفرٌ:
+  /// طلبٌ `taxEnabled=true` ونسبتُه صفرٌ حالةٌ تكذب على الكاشير — الزرُّ
+  /// يقول «مفعلة» ولا ضريبةَ تُحصَّل، ولا حارسَ يُطلق لأن المحرّكين يتّفقان
+  /// على الصفر. تُمنَع عند الكتابة لا تُكتشَف على الفاتورة.
+  Future<int> createTableOrder(
+    int tableId, {
+    int? userId,
+    double taxRate = 0,
+  }) async {
     return transaction(() async {
+      final existing = await getActiveOrderForTable(tableId);
+      if (existing != null) {
+        throw StateError(
+          'لا يُفتح طلبٌ ثانٍ على الطاولة #$tableId — الطلبُ #${existing.id} '
+          'ما زال حيّاً (${existing.status})',
+        );
+      }
+
       // Mark table as occupied
       await updateTableStatus(tableId, 'occupied');
 
@@ -180,6 +210,7 @@ extension TablesDao on AppDatabase {
         TableOrdersCompanion.insert(
           tableId: tableId,
           userId: Value(userId),
+          taxRate: Value(taxRate),
           openedAt: Value(DateTime.now()),
         ),
       );
@@ -187,11 +218,22 @@ extension TablesDao on AppDatabase {
   }
 
   /// Add item to table order
+  ///
+  /// [taxRate] نسبةُ ضريبة الصنف **مئويّةً** (16 لا 0.16) منسوخةً عن
+  /// `Products.taxRate` — نفسُ ما تفعله سلّةُ نقطة البيع لحظةَ الإضافة.
+  /// العمودُ موجودٌ من قديمٍ وكان يبقى صفراً دائماً، ولذلك لم تُطبَّق نسبةُ
+  /// صنفٍ قطُّ على طاولة.
+  ///
+  /// وعلى الصفِّ القائم **لا تُطمَس نسبةٌ محفوظة**: الموجودةُ لقطةٌ أُخذت
+  /// لحظةَ أوّل إضافة، فتغييرُ ضريبة المنتج في منتصف الوجبة لا يُعيد تسعير
+  /// ما طُلب قبله. تُملأ الخانةُ الفارغة فقط (صفرٌ ⇐ نسبةٌ موجبة)، وهو ما
+  /// يُصلح صفوفَ ما قبل هذه النسخة بلا أثرٍ جانبيّ.
   Future<void> addOrUpdateTableOrderItem({
     required int orderId,
     required int productId,
     required double quantity,
     required double unitPrice,
+    double taxRate = 0,
   }) async {
     return transaction(() async {
       final existing =
@@ -202,12 +244,14 @@ extension TablesDao on AppDatabase {
 
       if (existing != null) {
         final newQty = existing.quantity + quantity;
+        final fillsBlankRate = existing.taxRate <= 0 && taxRate > 0;
         await (update(
           tableOrderItems,
         )..where((i) => i.id.equals(existing.id))).write(
           TableOrderItemsCompanion(
             quantity: Value(newQty),
             total: Value(newQty * unitPrice),
+            taxRate: fillsBlankRate ? Value(taxRate) : const Value.absent(),
           ),
         );
       } else {
@@ -218,6 +262,7 @@ extension TablesDao on AppDatabase {
             quantity: quantity,
             unitPrice: unitPrice,
             total: quantity * unitPrice,
+            taxRate: Value(taxRate),
           ),
         );
       }
@@ -287,33 +332,17 @@ extension TablesDao on AppDatabase {
     });
   }
 
-  /// Request bill for table
-  Future<void> requestTableBill(int orderId, int tableId) async {
-    await transaction(() async {
-      await (update(tableOrders)..where((o) => o.id.equals(orderId))).write(
-        const TableOrdersCompanion(status: Value('bill_requested')),
-      );
-
-      await updateTableStatus(tableId, 'billing');
-    });
-  }
-
-  /// Finalize table order with payment
-  Future<void> finalizeTableOrder(
-    int orderId,
-    int tableId, {
-    int? invoiceId,
-  }) async {
-    await transaction(() async {
-      await (update(tableOrders)..where((o) => o.id.equals(orderId))).write(
-        TableOrdersCompanion(
-          status: const Value('closed'),
-          closedAt: Value(DateTime.now()),
-        ),
-      );
-
-      await updateTableStatus(tableId, 'available');
-    });
+  /// Request bill for table.
+  ///
+  /// طلبُ الفاتورة صفةٌ للطلب لا للطاولة — الطاولةُ تبقى على حالتها الحالية.
+  /// كانت هذه الدالّةُ تضع الطاولةَ على `'billing'`، وهي إحدى الحالات
+  /// الثمانِ التي شُطبت من مفردات الطاولة في v154؛ تركُها كان يُعيد حالةً
+  /// ميتةً إلى الجدول من باب الطباعة. `tableId` لم يعد له مستعملٌ هنا بعد
+  /// حذف نداء `updateTableStatus` الوحيد الذي احتاجه.
+  Future<void> requestTableBill(int orderId) async {
+    await (update(tableOrders)..where((o) => o.id.equals(orderId))).write(
+      const TableOrdersCompanion(status: Value('bill_requested')),
+    );
   }
 
   /// Clear all items in a table order
@@ -374,9 +403,14 @@ extension TablesDao on AppDatabase {
       var targetOrder = await getActiveOrderForTable(targetTableId);
       if (targetOrder == null) {
         // Create new order for target table
+        // ضريبةُ المصدر تنتقل مع بنوده: الطلبُ المولودُ هنا يحمل نفسَ
+        // الأصناف بنفس الأسعار، فلو وُلد بلا ضريبةٍ لَسقطت ضريبتُها بمجرّد
+        // النقل — تسريبٌ صامتٌ لا يراه أحد.
         final targetOrderId = await into(tableOrders).insert(
           TableOrdersCompanion.insert(
             tableId: targetTableId,
+            taxEnabled: Value(sourceOrder.taxEnabled),
+            taxRate: Value(sourceOrder.taxRate),
             openedAt: Value(DateTime.now()),
           ),
         );
@@ -447,6 +481,8 @@ extension TablesDao on AppDatabase {
               );
             } else {
               // Split: Create new item in target, deduct from source
+              // النسبةُ تُنقل مع الجزء المنقول: البندُ المقسومُ نصفان من
+              // صنفٍ واحدٍ بسعرٍ واحد، فلا يصحّ أن يخرج نصفُه معفىً.
               await into(tableOrderItems).insert(
                 TableOrderItemsCompanion.insert(
                   tableOrderId: targetOrder.id,
@@ -454,6 +490,7 @@ extension TablesDao on AppDatabase {
                   quantity: finalQtyToMove,
                   unitPrice: item.unitPrice,
                   total: finalQtyToMove * item.unitPrice,
+                  taxRate: Value(item.taxRate),
                 ),
               );
 
@@ -500,36 +537,14 @@ extension TablesDao on AppDatabase {
       final sourceItems = await getTableOrderItems(sourceOrder.id);
 
       for (final item in sourceItems) {
-        // Find existing product in target order
-        final existingInTarget =
-            await (select(tableOrderItems)
-                  ..where((i) => i.tableOrderId.equals(targetOrder.id))
-                  ..where((i) => i.productId.equals(item.productId)))
-                .getSingleOrNull();
-
-        if (existingInTarget != null) {
-          // Update quantity and total
-          final newQty = existingInTarget.quantity + item.quantity;
-          await (update(
-            tableOrderItems,
-          )..where((i) => i.id.equals(existingInTarget.id))).write(
-            TableOrderItemsCompanion(
-              quantity: Value(newQty),
-              total: Value(newQty * existingInTarget.unitPrice),
-            ),
-          );
-          // Delete item from source order
-          await (delete(
-            tableOrderItems,
-          )..where((i) => i.id.equals(item.id))).go();
-        } else {
-          // Move item to target order
-          await (update(
-            tableOrderItems,
-          )..where((i) => i.id.equals(item.id))).write(
-            TableOrderItemsCompanion(tableOrderId: Value(targetOrder.id)),
-          );
-        }
+        // لا بحثَ عن متشابهٍ في الهدف ولا جمعَ كميّات: البندُ يُنقل كما هو
+        // موسوماً بمصدره. جمعُ الكميّات يمحو أصلَ الصنف فيسقط فكُّ الدمج
+        // والطباعةُ المجمَّعة ونسبةُ الصنف إلى نادله.
+        await (update(tableOrderItems)..where((i) => i.id.equals(item.id)))
+            .write(TableOrderItemsCompanion(
+          tableOrderId: Value(targetOrder.id),
+          sourceTableOrderId: Value(item.sourceTableOrderId ?? sourceOrder.id),
+        ));
       }
 
       // Mark source order as merged
@@ -646,7 +661,14 @@ extension TablesDao on AppDatabase {
   }
 
   /// Seat guests from a reservation (mark as seated and open order)
-  Future<int> seatReservation(int reservationId, {int? userId}) async {
+  ///
+  /// [taxRate] كسريّةٌ تُمرَّر إلى الطلب المفتوح — حضورُ الحجز فتحُ طاولةٍ
+  /// كسائر الفتح، فلا يجوز أن يُنتج طلباً بلا نسبةٍ بينما يُنتجها زرُّ الفتح.
+  Future<int> seatReservation(
+    int reservationId, {
+    int? userId,
+    double taxRate = 0,
+  }) async {
     return transaction(() async {
       final reservation = await (select(
         tableReservations,
@@ -656,7 +678,8 @@ extension TablesDao on AppDatabase {
       await updateReservationStatus(reservationId, 'seated');
 
       // Create a table order (which marks table as occupied)
-      return createTableOrder(reservation.tableId, userId: userId);
+      return createTableOrder(reservation.tableId,
+          userId: userId, taxRate: taxRate);
     });
   }
 

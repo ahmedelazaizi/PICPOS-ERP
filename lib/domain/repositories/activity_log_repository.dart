@@ -1,3 +1,5 @@
+import '../../data/database/database.dart' show ActivityLog;
+
 /// Activity Log repository interface
 ///
 /// Defines the contract for activity logging operations.
@@ -52,5 +54,16 @@ abstract class IActivityLogRepository {
   Future<List<dynamic>> getFieldHistory({
     required String entityType,
     required int entityId,
+  });
+
+  /// سجلُّ كيانٍ واحدٍ مرتّباً من الأحدث.
+  ///
+  /// يُصفّي على `entityType` و`entityId` معاً — لا يكفي أحدُهما، وإلا
+  /// اختلطت طاولةٌ بأخرى تحمل نفس المعرّف في كيانٍ مختلف. تغذّي شاشةَ
+  /// سجل الطاولة (T11)، ويصلح الاستعلامُ نفسُه لأيّ كيانٍ آخر لاحقاً.
+  Future<List<ActivityLog>> logsForEntity({
+    required String entityType,
+    required int entityId,
+    int limit = 100,
   });
 }

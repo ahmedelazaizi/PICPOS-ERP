@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../../data/database/database.dart';
+import '../../../../core/constants/app_constants.dart';
+import '../../../../data/providers/providers.dart';
 import '../../../../domain/repositories/restaurant_repository.dart';
 import '../providers/tables_state_provider.dart';
 
@@ -22,6 +23,10 @@ class TableCard extends ConsumerWidget {
     'available': _StatusInfo('متاحة', Color(0xFF10B981), PhosphorIconsBold.checkCircle),
     'reserved': _StatusInfo('محجوزة', Color(0xFFF59E0B), PhosphorIconsBold.calendarCheck),
     'occupied': _StatusInfo('مشغولة', Color(0xFF3B82F6), PhosphorIconsBold.users),
+    // 🟠 سُدِّد كاملاً ولم يُغلَق بعد.
+    'paid': _StatusInfo('مدفوعة', Color(0xFFF97316), PhosphorIconsBold.currencyCircleDollar),
+    // ⚪ خارج الخدمة.
+    'out_of_service': _StatusInfo('خارج الخدمة', Color(0xFFCBD5E1), PhosphorIconsBold.prohibit),
     'seated': _StatusInfo('مشغولة', Color(0xFF3B82F6), PhosphorIconsBold.users),
     'ordered': _StatusInfo('مشغولة', Color(0xFF3B82F6), PhosphorIconsBold.users),
     'eating': _StatusInfo('مشغولة', Color(0xFF3B82F6), PhosphorIconsBold.users),
@@ -161,6 +166,29 @@ class TableCard extends ConsumerWidget {
                     ],
                   ),
                 ),
+                // «دُفع X من Y» — دفعةٌ جزئيةٌ فقط تبقي الطاولة 🔵 (المدفوعةُ
+                // بالكامل تصير 🟠 من تلقائها)، فهذا العرضُ محصورٌ بحالة
+                // `occupied` كي لا يظهر على طاولةٍ فارغة.
+                if (table.status == 'occupied')
+                  FutureBuilder<_PaidProgress?>(
+                    future: _paidProgress(ref, restaurantRepo, table.id),
+                    builder: (context, snap) {
+                      final progress = snap.data;
+                      if (progress == null) {
+                        return const SizedBox.shrink();
+                      }
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 3),
+                        child: Text(
+                          'دُفع ${progress.paid.toStringAsFixed(AppConstants.decimalPlaces)} من ${progress.effective.toStringAsFixed(AppConstants.decimalPlaces)}',
+                          style: GoogleFonts.cairo(
+                              fontSize: 8,
+                              color: const Color(0xFFF97316),
+                              fontWeight: FontWeight.w700),
+                        ),
+                      );
+                    },
+                  ),
               ],
             ),
 
@@ -208,4 +236,27 @@ class _StatusInfo {
   final Color color;
   final IconData icon;
   const _StatusInfo(this.label, this.color, this.icon);
+}
+
+/// ما دُفع وما هو مستحقٌّ على الطاولة — لسطر «دُفع س من ص».
+class _PaidProgress {
+  const _PaidProgress(this.paid, this.effective);
+  final double paid;
+  final double effective;
+}
+
+/// كانت هنا نسخةٌ من قاعدة الخصم تحسب بـ`double` عارية — واحدةٌ من أربع
+/// نسخٍ متطابقة. وبدخول الضريبة صار الحسابُ يحتاج **بنودَ** الطلب لا صفَّه
+/// وحدَه (لكلّ بندٍ نسبتُه)، فما عاد يُنسَخ في ودجت أصلاً. الحسابُ الآن في
+/// `TableSessionService.effectiveTotal` وحدَها، ومن ورائها `TableOrderTotals`.
+Future<_PaidProgress?> _paidProgress(
+  WidgetRef ref,
+  IRestaurantRepository repo,
+  int tableId,
+) async {
+  final order = await repo.getActiveOrderForTable(tableId);
+  if (order == null || order.paidAmount <= 0) return null;
+  final effective =
+      await ref.read(tableSessionServiceProvider).effectiveTotal(order.id);
+  return _PaidProgress(order.paidAmount, effective);
 }

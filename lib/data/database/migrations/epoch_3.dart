@@ -2403,8 +2403,24 @@ extension Epoch3Migrations on AppDatabase {
       });
     }
 
-    if (from < 154) {
-      await _safeMigrate('v154 نقلُ إغلاق الوردية إلى فئة الخزينة', () async {
+    // ══════════════════════════════════════════════════════════════════════
+    // ⚠️ الثلاثةُ التاليةُ حارسُها `from < 156` وليس رقمَها الأصليّ — عن قصد.
+    //
+    // فرعان تفرّعا من 153 وكلاهما عرّف **v154 بمحتوىً مختلف**: هذا الفرعُ نقلَ
+    // فئةَ `pos_shift_close`، وفرعُ الطاولات أضاف أعمدةَ خدمة الطاولات ثم v155
+    // لأعمدة الضريبة. فقاعدةٌ رقّاها فرعُ الصلاحيات إلى 154 كانت **ستتخطّى
+    // هجرةَ الطاولات إلى الأبد** (‏شرطُها `from < 154` لا يتحقّق)، والعكسُ كذلك.
+    //
+    // ورفعُ الحرّاس الثلاثة إلى 156 يجعل كلَّ قاعدةٍ تحت 156 تمرّ بالثلاث،
+    // والمكرَّرُ منها يسقط في `isIdempotentMigrationError` داخل `_safeMigrate`
+    // بلا ضرر: `addColumn` على عمودٍ موجودٍ خطأٌ متسامح، و`UPDATE` الفئة
+    // عديمُ الأثر عند التكرار.
+    //
+    // ولا تُرجعها لأرقامها ظنّاً أنك تُصلح ترقيماً — الترقيمُ مقصود.
+    // ══════════════════════════════════════════════════════════════════════
+
+    if (from < 156) {
+      await _safeMigrate('v156 نقلُ إغلاق الوردية إلى فئة الخزينة', () async {
         // شاشةُ الصلاحيات تقرأ الفئةَ من **صفّ القاعدة** لا من
         // `PermissionCodes.masterList` (‏`authRepo.getAllPermissions()`)،
         // و`syncAllPermissions` يتخطّى أيَّ كودٍ موجودٍ سلفاً
@@ -2418,7 +2434,38 @@ extension Epoch3Migrations on AppDatabase {
           "UPDATE permissions SET category = 'treasury' "
           "WHERE code = 'pos_shift_close'",
         );
-        debugPrint('[Migration] v154 pos_shift_close → treasury OK');
+        debugPrint('[Migration] v156 pos_shift_close → treasury OK');
+      });
+    }
+
+    // ── خدمةُ الطاولات — الحالةُ المدفوعة والخصمُ والدفعاتُ المتعدّدة ──
+    if (from < 156) {
+      await _safeMigrate('v156 table service columns + table_order_payments',
+          () async {
+        await m.addColumn(tableOrders, tableOrders.guestCount);
+        await m.addColumn(tableOrders, tableOrders.notes);
+        await m.addColumn(tableOrders, tableOrders.discountType);
+        await m.addColumn(tableOrders, tableOrders.discountValue);
+        await m.addColumn(tableOrders, tableOrders.paidAmount);
+        await m.addColumn(tableOrderItems, tableOrderItems.notes);
+        await m.addColumn(
+            tableOrderItems, tableOrderItems.sourceTableOrderId);
+        await m.createTable(tableOrderPayments);
+        debugPrint('[Migration] v156 table service OK');
+      });
+    }
+
+    // ── ضريبةُ المبيعات على طلبات الطاولات ──────────────────────────────
+    //
+    // العمودان يحملان ما كانت السلّةُ وحدَها تحمله، فيتطابق المشحونُ
+    // والمسجَّل. والقائمُ من الطلبات يأخذ الافتراضَين (`0`/`false`) — أي
+    // «بلا ضريبة»، وهو حالُها اليوم بالضبط، فلا يتغيّر حسابُ طاولةٍ مفتوحةٍ
+    // بمجرّد الترقية.
+    if (from < 156) {
+      await _safeMigrate('v156 table order tax columns', () async {
+        await m.addColumn(tableOrders, tableOrders.taxEnabled);
+        await m.addColumn(tableOrders, tableOrders.taxRate);
+        debugPrint('[Migration] v156 table order tax OK');
       });
     }
   }

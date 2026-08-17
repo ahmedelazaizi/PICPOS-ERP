@@ -87,7 +87,6 @@ void main() {
       'lib/presentation/screens/tables/merge_table_dialog.dart',
       'lib/presentation/screens/tables/qr_menu_dialog.dart',
       'lib/presentation/screens/tables/split_table_dialog.dart',
-      'lib/presentation/screens/tables/table_card_widget.dart',
       'lib/presentation/screens/tables/table_order_dialog.dart',
       'lib/presentation/screens/tables/transfer_dialog.dart',
       'lib/presentation/screens/tables/widgets/table_card.dart',

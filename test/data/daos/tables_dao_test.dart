@@ -64,6 +64,32 @@ void main() {
       expect(table.status, 'occupied');
     });
 
+    test('createTableOrder - يرفض طلباً ثانياً على طاولةٍ لها طلبٌ حيّ', () async {
+      final sectionId = await database.createSection('Dining');
+      final tableId = await database.createTable(
+        name: 'Table A2',
+        sectionId: sectionId,
+        capacity: 4,
+      );
+
+      final firstId = await database.createTableOrder(tableId);
+
+      // صفّان يطابقان getActiveOrderForTable يجعلان getSingleOrNull() ترمي
+      // StateError على كلّ قراءةٍ لاحقة — الطاولةُ تصير غيرَ قابلةٍ للإغلاق
+      // ولا للإلغاء ولا حتى للعرض.
+      await expectLater(
+        database.createTableOrder(tableId),
+        throwsA(isA<StateError>()),
+      );
+
+      final orders = await (database.select(database.tableOrders)
+            ..where((o) => o.tableId.equals(tableId)))
+          .get();
+      expect(orders, hasLength(1));
+      expect(orders.single.id, firstId);
+      expect(await database.getActiveOrderForTable(tableId), isNotNull);
+    });
+
     test('transferTableOrder - should move active order and update statuses', () async {
       final sectionId = await database.createSection('Dining');
       final fromTableId = await database.createTable(

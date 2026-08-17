@@ -212,23 +212,21 @@ class AppDatabase {
   }) async {}
   Future<void> updateTableStatus(int tableId, String status) async {}
   Future<db.TableOrder?> getActiveOrderForTable(int tableId) async => null;
-  Future<int> createTableOrder(int tableId, {int? userId}) async => 0;
+  Future<int> createTableOrder(int tableId,
+          {int? userId, double taxRate = 0}) async =>
+      0;
   Future<void> addOrUpdateTableOrderItem({
     required int orderId,
     required int productId,
     required double quantity,
     required double unitPrice,
+    double taxRate = 0,
   }) async {}
   Future<List<db.TableOrderItem>> getTableOrderItems(int orderId) async => [];
   Future<void> removeTableOrderItem(int orderId, int productId) async {}
   Future<void> clearTableOrderItems(int orderId) async {}
   Future<void> closeTableOrder(int orderId) async {}
   Future<void> requestTableBill(int orderId, int tableId) async {}
-  Future<void> finalizeTableOrder(
-    int orderId,
-    int tableId, {
-    int? invoiceId,
-  }) async {}
   Future<void> updateTableInfo(
     int tableId, {
     required String name,

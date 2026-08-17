@@ -97,6 +97,16 @@ class PermissionEnforcementRegistry {
     // (PermissionGuard بـallowManagerOverride على أفعال الإضافة/الطباعة،
     // أو fallback: SizedBox.shrink() على أكواد العرض الصرف، أو فحص صريح
     // جوه الـhandlers اللي مالهاش زرار واحد للفّه).
+    // ── الطاولات — الخصم وطباعة الفاتورة (Task 8، 2026-08-16) ──
+    // 'tables_discount' كودٌ جديدٌ في masterList: يحمي خصمَ الطلب في
+    // `TableSessionService.setOrderDiscount` (موثَّقٌ في تعليق الدالة) لكن
+    // زرَّ الخصم في واجهة الطاولات لسه ما بُنيش — تبنيه المهامّ ٩-١٢.
+    // ✅ 'tables_print_bill' اتشال (مراجعةُ ما قبل الدمج، 2026-08-17): بقى
+    // منفَّذاً فعلياً — كبسةُ «طباعة الفاتورة» في قائمة الطاولة بتعدّي على
+    // فحصٍ صريح (`_handlePrintBill` في `tables/table_operations.dart`)
+    // قبل ما تنادي `TableSessionService.requestBill` والطباعةَ. كان
+    // مسجَّلاً هنا لأن الكبسة كانت توستَ «قيدُ الإنجاز» لا غير.
+    'tables_discount',
   };
 
   /// أكوادٌ **محروسةٌ حراسةً صحيحة** — في شاشةٍ لا يصل إليها PicPos.
@@ -129,9 +139,11 @@ class PermissionEnforcementRegistry {
   /// طاولاتٍ أو عروضٍ لشاشة PicPos **لن ينبّه أحد**: سيمرّ أخضرَ لأن الكودَ
   /// مسجَّلٌ سلفاً. من يضيف ميزةً يقابلها سطرٌ هنا فعليه أن يحرسها ويشطبه.
   ///
-  /// مقيسةٌ 2026-08-13 بعد إصلاح الحارس: ١٦ كوداً. وبعد شطب `pos_delivery`
-  /// (٢٠٢٦-٠٨-١٣) ثم `pos_return`/`pos_item_plus`/`pos_item_minus`
-  /// (٢٠٢٦-٠٨-١٦): ١٢ كوداً.
+  /// ⚠️ **والعددُ أدناه بائدٌ بطبيعته — عُدّه ولا تنقله.** فرعان شطبا منه
+  /// متوازيَين ودُمجا 2026-08-18: فرعُ الصلاحيات شطب `pos_delivery` ثم
+  /// `pos_return`/`pos_item_plus`/`pos_item_minus`، وفرعُ الطاولات شطب
+  /// `tables_cancel` — وكلٌّ منهما كتب عدَّه هو فتعارض النصّان.
+
   static const Set<String> picposParityGaps = {
     // ── سلّةُ البيع ──
     // ✅ 'pos_remove_item' · 'pos_clear_cart' · 'pos_price_edit' ·
@@ -299,8 +311,13 @@ class PermissionEnforcementRegistry {
     // `pos_picpos/` كلِّه، ورأسُ الشاشة لا يعرض طاولات. الثلاثةُ محروسةٌ في
     // `pos/widgets/table_pos/table_pos_summary.dart` وهي شاشةُ UralCash.
     // فلا شيءَ يُحرَس هنا حتى تُضاف الميزة.
+    //
+    // ✅ 'tables_cancel' اتشال (مراجعةُ ما قبل الدمج، 2026-08-17): بقى
+    //    مذكوراً **خارج** زوج التوأمين — كبسةُ «إلغاء الطلب» في
+    //    `screens/tables/table_operations.dart` بتفحصه صراحةً قبل ما تنادي
+    //    `TableSessionService.cancelOrder`. الحارسُ بيقيس الذكرَ خارج
+    //    الزوج فما بقاش فجوةَ تكافؤ.
     'tables_add_items',
-    'tables_cancel',
     'tables_checkout',
 
     // ── الخزينة ──

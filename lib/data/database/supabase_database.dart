@@ -1026,7 +1026,12 @@ class SupabaseDatabase {
         });
   }
 
-  Future<int> createTableOrder(int tableId, {int? userId}) async {
+  /// [taxRate] كسريّةٌ — مرآةُ نظيرتها في `TablesDao`.
+  Future<int> createTableOrder(
+    int tableId, {
+    int? userId,
+    double taxRate = 0,
+  }) async {
     // In Supabase, we should ideally use a stored procedure or transaction
     // For now, we update the table and create the order
     await updateTableStatus(tableId, 'occupied');
@@ -1037,6 +1042,7 @@ class SupabaseDatabase {
           'table_id': tableId,
           'user_id': userId,
           'status': 'open',
+          'tax_rate': taxRate,
           'opened_at': DateTime.now().toIso8601String(),
         })
         .select('id')
@@ -1044,11 +1050,14 @@ class SupabaseDatabase {
     return data['id'] as int;
   }
 
+  /// [taxRate] مئويّةٌ (16) — مرآةُ نظيرتها في `TablesDao`، بنفس القاعدة:
+  /// تُملأ الخانةُ الفارغة ولا تُطمَس نسبةٌ محفوظة.
   Future<void> addOrUpdateTableOrderItem({
     required int orderId,
     required int productId,
     required double quantity,
     required double unitPrice,
+    double taxRate = 0,
   }) async {
     final existing = await _client
         .from('table_order_items')
@@ -1059,9 +1068,14 @@ class SupabaseDatabase {
 
     if (existing != null) {
       final newQty = (existing['quantity'] as num).toDouble() + quantity;
+      final existingRate = (existing['tax_rate'] as num?)?.toDouble() ?? 0;
       await _client
           .from('table_order_items')
-          .update({'quantity': newQty, 'total': newQty * unitPrice})
+          .update({
+            'quantity': newQty,
+            'total': newQty * unitPrice,
+            if (existingRate <= 0 && taxRate > 0) 'tax_rate': taxRate,
+          })
           .eq('id', existing['id']);
     } else {
       await _client.from('table_order_items').insert({
@@ -1070,6 +1084,7 @@ class SupabaseDatabase {
         'quantity': quantity,
         'unit_price': unitPrice,
         'total': quantity * unitPrice,
+        'tax_rate': taxRate,
       });
     }
 
@@ -1140,22 +1155,6 @@ class SupabaseDatabase {
     await updateTableStatus(tableId, 'billing');
   }
 
-  Future<void> finalizeTableOrder(
-    int orderId,
-    int tableId, {
-    int? invoiceId,
-  }) async {
-    await _client
-        .from('table_orders')
-        .update({
-          'status': 'closed',
-          'closed_at': DateTime.now().toIso8601String(),
-        })
-        .eq('id', orderId);
-
-    await updateTableStatus(tableId, 'available');
-  }
-
   TableSection _mapToTableSection(Map<String, dynamic> data) {
     return TableSection(
       id: data['id'] as int,
@@ -1190,6 +1189,15 @@ class SupabaseDatabase {
       status: data['status'] as String? ?? 'open',
       total: (data['total'] as num?)?.toDouble() ?? 0,
       userId: data['user_id'] as int?,
+      guestCount: (data['guest_count'] as int?) ?? 1,
+      notes: data['notes'] as String?,
+      discountType: data['discount_type'] as String?,
+      discountValue: (data['discount_value'] as num?)?.toDouble() ?? 0,
+      // الافتراضان يطابقان عمودَي v155: صفٌّ سحابيٌّ قديمٌ بلا العمودين
+      // يُقرأ «بلا ضريبة»، وهو حالُه فعلاً.
+      taxEnabled: data['tax_enabled'] as bool? ?? false,
+      taxRate: (data['tax_rate'] as num?)?.toDouble() ?? 0,
+      paidAmount: (data['paid_amount'] as num?)?.toDouble() ?? 0,
       openedAt: DateTime.parse(data['opened_at'] as String),
       closedAt: data['closed_at'] != null
           ? DateTime.parse(data['closed_at'] as String)

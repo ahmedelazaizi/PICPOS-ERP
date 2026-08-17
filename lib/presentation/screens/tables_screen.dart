@@ -10,6 +10,8 @@ import '../../core/theme/app_colors.dart';
 import '../../core/permissions/permission_codes.dart';
 import '../../data/providers/providers.dart';
 import '../../domain/entities/product_entity.dart';
+import '../../domain/models/table_actions.dart';
+import '../../domain/models/table_status.dart';
 import '../../domain/repositories/restaurant_repository.dart';
 import '../../services/invoice_generator.dart';
 import '../pos/screens/pos_table_service_screen.dart';
@@ -17,6 +19,7 @@ import '../widgets/permission_guard.dart';
 import 'tables/tables.dart';
 import 'tables/merge_table_dialog.dart';
 import 'tables/split_table_dialog.dart';
+import 'tables/table_log_sheet.dart';
 import 'tables/transfer_dialog.dart';
 
 // ── Part files (dialogs and mixed logic) ─────────────────────────────────

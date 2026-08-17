@@ -367,6 +367,7 @@ const String kCreateAttendanceDayDedupIndexSql =
     TableOrders, // NEW: Table orders
     TableOrderItems, // NEW: Items in table orders
     TableReservations, // NEW: Table reservations
+    TableOrderPayments, // v154: دفعةٌ لكلّ دافعٍ على طلب الطاولة
     StockMovements,
     InventoryBalances,
     Accounts,
@@ -693,8 +694,21 @@ class AppDatabase extends _$AppDatabase {
   /// `employees.hours_per_day` (مقامُ أجر الساعة)، وعمودُ
   /// `overtime_records.is_manual_amount` (تعليمُ السجلّات القائمة كي لا
   /// يُعاد اشتقاقُها).
+  ///
+  /// Schema v155: ضريبةُ المبيعات على طلبات الطاولات — عمودا
+  /// `table_orders.tax_enabled` (مرآةُ `CartState.taxEnabled`، افتراضُه
+  /// `false`) و`table_orders.tax_rate` (لقطةُ `pos_default_tax_rate` كسريّةً
+  /// لحظةَ فتح الطاولة، فلا يُعاد تسعيرُ حسابٍ عُرض على الضيف). بهما يصير
+  /// المشحونُ على الفاتورة والمسجَّلُ على الطلب رقماً واحداً، فيسكت حارسُ
+  /// `checkTableCharge` عن حقٍّ لا عن إضعاف.
   @override
-  int get schemaVersion => 154;
+  // ⚠️ 156 لا 155: فرعان تفرّعا من 153 وكلاهما عرّف **v154 بمحتوىً مختلف** —
+  // هذا الفرعُ نقلَ فئةَ `pos_shift_close`، وفرعُ الطاولات أضاف أعمدةَ خدمة
+  // الطاولات ثم v155 لأعمدة الضريبة. فقاعدةٌ رقّاها هذا الفرعُ إلى 154 كانت
+  // ستتخطّى هجرةَ الطاولات إلى الأبد، والعكس. ورفعُ السقف إلى 156 مع توسيع
+  // حرّاس الثلاثة إلى `from < 156` يجعل كلَّ قاعدةٍ تحت 156 تمرّ بالثلاث،
+  // والمكرَّرُ منها يسقط في `isIdempotentMigrationError` بلا ضرر.
+  int get schemaVersion => 156;
 
   /// PostgreSQL-specific table creation: Drift's `currentDateAndTime` generates
   /// `strftime('%s','now')` which doesn't exist in PostgreSQL.

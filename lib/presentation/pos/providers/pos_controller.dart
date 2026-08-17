@@ -171,20 +171,47 @@ class PosController extends Notifier<PosState> {
                 unitPrice: product.salePrice,
                 quantity: item.quantity,
                 customPrice: item.unitPrice,
+                // نسبةُ البند من الطلب لا من بطاقة المنتج: لقطةٌ أُخذت ساعةَ
+                // الطلب، فلا يُعاد تسعيرُ ما طُلب لو غُيّرت البطاقةُ بعده.
+                taxRate: item.taxRate,
                 isSoldByWeight: product.isSoldByWeight,
               ),
             );
           }
         }
 
-        ref.read(cartControllerProvider.notifier).state = ref
-            .read(cartControllerProvider)
-            .copyWith(items: cartItems);
+        // السلّةُ مرآةُ الطلب في الضريبة كذلك، لا في الأصناف وحدَها: الزرُّ
+        // يعرض حالةَ الطلب حين تُفتح الشاشةُ ثانيةً، وإجماليُّ الشاشة يطابق
+        // ما سيُشحَن عند التحصيل.
+        ref.read(cartControllerProvider.notifier).state =
+            ref.read(cartControllerProvider).copyWith(
+                  items: cartItems,
+                  taxEnabled: order.taxEnabled,
+                  taxRate: order.taxRate,
+                );
 
         state = state.copyWith(orderId: order.id, isProcessing: false);
       } else {
-        final orderId = await restaurantRepo.createTableOrder(tableId);
-        ref.read(cartControllerProvider.notifier).clearCart();
+        // النسبةُ تُلقَط هنا كما تُلقَط في زرّ الفتح. وهذا الفرعُ ليس ركناً
+        // نادراً: الشاشةُ تُفتح منه على كلِّ طاولةٍ لا طلبَ حيَّ عليها. وطلبٌ
+        // نسبتُه صفرٌ يقبل تفعيلَ الضريبة كان يعني زرّاً يقول «مفعلة (0%)»
+        // بينما لا ضريبةَ تُحصَّل ولا حارسَ يُطلق — نقصُ تحصيلٍ صامتٌ في
+        // الدفاتر لا رسالةَ خطأٍ فيه.
+        final snapshotRate =
+            ref.read(posDefaultTaxRateProvider).value ?? 0.16;
+        final orderId = await restaurantRepo.createTableOrder(
+          tableId,
+          taxRate: snapshotRate,
+        );
+        // `clearCart` تحتفظ بالضريبة عمداً (سلوكُ سلّة الكاشير)، وهو هنا
+        // خطأ: الطلبُ المولودُ لتوّه ضريبتُه مطفأةٌ، فلو ورثت السلّةُ ضريبةَ
+        // **طاولةٍ سابقةٍ** لَعرض الزرُّ «مفعلة» على طلبٍ لا ضريبةَ فيه —
+        // واختلف المشحونُ عن المسجَّل عند التحصيل. والنسبةُ هي المكتوبةُ
+        // على الطلب نفسِها، فلا استعلامَ لقراءتها ثانيةً.
+        ref.read(cartControllerProvider.notifier)
+          ..clearCart()
+          ..toggleTax(false)
+          ..setTaxRate(snapshotRate);
         state = state.copyWith(orderId: orderId, isProcessing: false);
       }
     } catch (e) {

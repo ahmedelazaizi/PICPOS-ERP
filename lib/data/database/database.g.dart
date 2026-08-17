@@ -26259,6 +26259,89 @@ class $TableOrdersTable extends TableOrders
       'REFERENCES table_orders (id)',
     ),
   );
+  static const VerificationMeta _guestCountMeta = const VerificationMeta(
+    'guestCount',
+  );
+  @override
+  late final GeneratedColumn<int> guestCount = GeneratedColumn<int>(
+    'guest_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _discountTypeMeta = const VerificationMeta(
+    'discountType',
+  );
+  @override
+  late final GeneratedColumn<String> discountType = GeneratedColumn<String>(
+    'discount_type',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _discountValueMeta = const VerificationMeta(
+    'discountValue',
+  );
+  @override
+  late final GeneratedColumn<double> discountValue = GeneratedColumn<double>(
+    'discount_value',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _taxEnabledMeta = const VerificationMeta(
+    'taxEnabled',
+  );
+  @override
+  late final GeneratedColumn<bool> taxEnabled = GeneratedColumn<bool>(
+    'tax_enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("tax_enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _taxRateMeta = const VerificationMeta(
+    'taxRate',
+  );
+  @override
+  late final GeneratedColumn<double> taxRate = GeneratedColumn<double>(
+    'tax_rate',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _paidAmountMeta = const VerificationMeta(
+    'paidAmount',
+  );
+  @override
+  late final GeneratedColumn<double> paidAmount = GeneratedColumn<double>(
+    'paid_amount',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _openedAtMeta = const VerificationMeta(
     'openedAt',
   );
@@ -26290,6 +26373,13 @@ class $TableOrdersTable extends TableOrders
     total,
     userId,
     mergedToId,
+    guestCount,
+    notes,
+    discountType,
+    discountValue,
+    taxEnabled,
+    taxRate,
+    paidAmount,
     openedAt,
     closedAt,
   ];
@@ -26343,6 +26433,54 @@ class $TableOrdersTable extends TableOrders
         ),
       );
     }
+    if (data.containsKey('guest_count')) {
+      context.handle(
+        _guestCountMeta,
+        guestCount.isAcceptableOrUnknown(data['guest_count']!, _guestCountMeta),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('discount_type')) {
+      context.handle(
+        _discountTypeMeta,
+        discountType.isAcceptableOrUnknown(
+          data['discount_type']!,
+          _discountTypeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('discount_value')) {
+      context.handle(
+        _discountValueMeta,
+        discountValue.isAcceptableOrUnknown(
+          data['discount_value']!,
+          _discountValueMeta,
+        ),
+      );
+    }
+    if (data.containsKey('tax_enabled')) {
+      context.handle(
+        _taxEnabledMeta,
+        taxEnabled.isAcceptableOrUnknown(data['tax_enabled']!, _taxEnabledMeta),
+      );
+    }
+    if (data.containsKey('tax_rate')) {
+      context.handle(
+        _taxRateMeta,
+        taxRate.isAcceptableOrUnknown(data['tax_rate']!, _taxRateMeta),
+      );
+    }
+    if (data.containsKey('paid_amount')) {
+      context.handle(
+        _paidAmountMeta,
+        paidAmount.isAcceptableOrUnknown(data['paid_amount']!, _paidAmountMeta),
+      );
+    }
     if (data.containsKey('opened_at')) {
       context.handle(
         _openedAtMeta,
@@ -26388,6 +26526,34 @@ class $TableOrdersTable extends TableOrders
         DriftSqlType.int,
         data['${effectivePrefix}merged_to_id'],
       ),
+      guestCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}guest_count'],
+      )!,
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      discountType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}discount_type'],
+      ),
+      discountValue: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}discount_value'],
+      )!,
+      taxEnabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}tax_enabled'],
+      )!,
+      taxRate: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}tax_rate'],
+      )!,
+      paidAmount: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}paid_amount'],
+      )!,
       openedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}opened_at'],
@@ -26412,6 +26578,43 @@ class TableOrder extends DataClass implements Insertable<TableOrder> {
   final double total;
   final int? userId;
   final int? mergedToId;
+
+  /// عددُ الأشخاص — يُسأل عند فتح الطاولة، وهو مقامُ التقسيم بالتساوي.
+  final int guestCount;
+
+  /// ملاحظةُ الطلب — تنتقل مع الطلب عند النقل.
+  final String? notes;
+
+  /// نوعُ خصم الطلب: `percent` أو `amount`.
+  final String? discountType;
+
+  /// قيمةُ الخصم بحسب نوعه. يُثبَّت قبل الدفع فينتقل ويُطبع.
+  final double discountValue;
+
+  /// هل تُحتسَب ضريبةُ المبيعات على هذا الطلب؟
+  ///
+  /// مرآةُ `CartState.taxEnabled` بحرفها — بما في ذلك الافتراضُ `false`:
+  /// الزرُّ في الشاشة هو ما يفعّلها، لا الإعداد. وتثبيتُها **على الطلب** —
+  /// لا في السلّة لحظةَ الدفع — هو ما يجعل المشحونَ على الفاتورة يطابق
+  /// المسجَّلَ على الطلب، فيسكت حارسُ [checkTableCharge] لأن الرقمين صارا
+  /// واحداً حقّاً، لا لأنه أُضعِف.
+  final bool taxEnabled;
+
+  /// نسبةُ ضريبة الطلب احتياطاً لبنودٍ لا نسبةَ لها (`TableOrderItems.taxRate`
+  /// صفرٌ) — كسريّةً لا مئويّةً (0.16 لا 16)، مرآةً لـ`CartState.taxRate`
+  /// ولإعداد `pos_default_tax_rate` الذي تُنسَخ منه. والمئويّةُ تُشتقّ عند
+  /// العرض والحساب بالضرب في ١٠٠، تماماً كما يفعل `CartState.totals`.
+  ///
+  /// **وهنا الموضعُ الوحيدُ الذي نخالف فيه سلّةَ الكاشير عمداً:** السلّةُ
+  /// تقرأ النسبةَ حيّةً فتتغيّر تحت يدها إن غُيّر الإعداد، أمّا الطاولةُ فهذه
+  /// **لقطةٌ تُؤخذ لحظةَ فتحها**. الوجبةُ تمتدّ ساعةً، والحسابُ يُعرَض على
+  /// الضيف قبل أن يُدفَع؛ فتغييرُ الإعداد في منتصف الوجبة يجب ألّا يُعيد
+  /// تسعيرَ حسابٍ رآه الضيفُ بالفعل.
+  final double taxRate;
+
+  /// مجموعُ ما حُصِّل. تُشتقّ منه حالةُ الطاولة: `occupied` حتى يبلغ
+  /// `total`، ثم `paid`. لا حالةَ سادسةً للدفع الجزئي.
+  final double paidAmount;
   final DateTime openedAt;
   final DateTime? closedAt;
   const TableOrder({
@@ -26421,6 +26624,13 @@ class TableOrder extends DataClass implements Insertable<TableOrder> {
     required this.total,
     this.userId,
     this.mergedToId,
+    required this.guestCount,
+    this.notes,
+    this.discountType,
+    required this.discountValue,
+    required this.taxEnabled,
+    required this.taxRate,
+    required this.paidAmount,
     required this.openedAt,
     this.closedAt,
   });
@@ -26437,6 +26647,17 @@ class TableOrder extends DataClass implements Insertable<TableOrder> {
     if (!nullToAbsent || mergedToId != null) {
       map['merged_to_id'] = Variable<int>(mergedToId);
     }
+    map['guest_count'] = Variable<int>(guestCount);
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    if (!nullToAbsent || discountType != null) {
+      map['discount_type'] = Variable<String>(discountType);
+    }
+    map['discount_value'] = Variable<double>(discountValue);
+    map['tax_enabled'] = Variable<bool>(taxEnabled);
+    map['tax_rate'] = Variable<double>(taxRate);
+    map['paid_amount'] = Variable<double>(paidAmount);
     map['opened_at'] = Variable<DateTime>(openedAt);
     if (!nullToAbsent || closedAt != null) {
       map['closed_at'] = Variable<DateTime>(closedAt);
@@ -26456,6 +26677,17 @@ class TableOrder extends DataClass implements Insertable<TableOrder> {
       mergedToId: mergedToId == null && nullToAbsent
           ? const Value.absent()
           : Value(mergedToId),
+      guestCount: Value(guestCount),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      discountType: discountType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(discountType),
+      discountValue: Value(discountValue),
+      taxEnabled: Value(taxEnabled),
+      taxRate: Value(taxRate),
+      paidAmount: Value(paidAmount),
       openedAt: Value(openedAt),
       closedAt: closedAt == null && nullToAbsent
           ? const Value.absent()
@@ -26475,6 +26707,13 @@ class TableOrder extends DataClass implements Insertable<TableOrder> {
       total: serializer.fromJson<double>(json['total']),
       userId: serializer.fromJson<int?>(json['userId']),
       mergedToId: serializer.fromJson<int?>(json['mergedToId']),
+      guestCount: serializer.fromJson<int>(json['guestCount']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      discountType: serializer.fromJson<String?>(json['discountType']),
+      discountValue: serializer.fromJson<double>(json['discountValue']),
+      taxEnabled: serializer.fromJson<bool>(json['taxEnabled']),
+      taxRate: serializer.fromJson<double>(json['taxRate']),
+      paidAmount: serializer.fromJson<double>(json['paidAmount']),
       openedAt: serializer.fromJson<DateTime>(json['openedAt']),
       closedAt: serializer.fromJson<DateTime?>(json['closedAt']),
     );
@@ -26489,6 +26728,13 @@ class TableOrder extends DataClass implements Insertable<TableOrder> {
       'total': serializer.toJson<double>(total),
       'userId': serializer.toJson<int?>(userId),
       'mergedToId': serializer.toJson<int?>(mergedToId),
+      'guestCount': serializer.toJson<int>(guestCount),
+      'notes': serializer.toJson<String?>(notes),
+      'discountType': serializer.toJson<String?>(discountType),
+      'discountValue': serializer.toJson<double>(discountValue),
+      'taxEnabled': serializer.toJson<bool>(taxEnabled),
+      'taxRate': serializer.toJson<double>(taxRate),
+      'paidAmount': serializer.toJson<double>(paidAmount),
       'openedAt': serializer.toJson<DateTime>(openedAt),
       'closedAt': serializer.toJson<DateTime?>(closedAt),
     };
@@ -26501,6 +26747,13 @@ class TableOrder extends DataClass implements Insertable<TableOrder> {
     double? total,
     Value<int?> userId = const Value.absent(),
     Value<int?> mergedToId = const Value.absent(),
+    int? guestCount,
+    Value<String?> notes = const Value.absent(),
+    Value<String?> discountType = const Value.absent(),
+    double? discountValue,
+    bool? taxEnabled,
+    double? taxRate,
+    double? paidAmount,
     DateTime? openedAt,
     Value<DateTime?> closedAt = const Value.absent(),
   }) => TableOrder(
@@ -26510,6 +26763,13 @@ class TableOrder extends DataClass implements Insertable<TableOrder> {
     total: total ?? this.total,
     userId: userId.present ? userId.value : this.userId,
     mergedToId: mergedToId.present ? mergedToId.value : this.mergedToId,
+    guestCount: guestCount ?? this.guestCount,
+    notes: notes.present ? notes.value : this.notes,
+    discountType: discountType.present ? discountType.value : this.discountType,
+    discountValue: discountValue ?? this.discountValue,
+    taxEnabled: taxEnabled ?? this.taxEnabled,
+    taxRate: taxRate ?? this.taxRate,
+    paidAmount: paidAmount ?? this.paidAmount,
     openedAt: openedAt ?? this.openedAt,
     closedAt: closedAt.present ? closedAt.value : this.closedAt,
   );
@@ -26523,6 +26783,23 @@ class TableOrder extends DataClass implements Insertable<TableOrder> {
       mergedToId: data.mergedToId.present
           ? data.mergedToId.value
           : this.mergedToId,
+      guestCount: data.guestCount.present
+          ? data.guestCount.value
+          : this.guestCount,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      discountType: data.discountType.present
+          ? data.discountType.value
+          : this.discountType,
+      discountValue: data.discountValue.present
+          ? data.discountValue.value
+          : this.discountValue,
+      taxEnabled: data.taxEnabled.present
+          ? data.taxEnabled.value
+          : this.taxEnabled,
+      taxRate: data.taxRate.present ? data.taxRate.value : this.taxRate,
+      paidAmount: data.paidAmount.present
+          ? data.paidAmount.value
+          : this.paidAmount,
       openedAt: data.openedAt.present ? data.openedAt.value : this.openedAt,
       closedAt: data.closedAt.present ? data.closedAt.value : this.closedAt,
     );
@@ -26537,6 +26814,13 @@ class TableOrder extends DataClass implements Insertable<TableOrder> {
           ..write('total: $total, ')
           ..write('userId: $userId, ')
           ..write('mergedToId: $mergedToId, ')
+          ..write('guestCount: $guestCount, ')
+          ..write('notes: $notes, ')
+          ..write('discountType: $discountType, ')
+          ..write('discountValue: $discountValue, ')
+          ..write('taxEnabled: $taxEnabled, ')
+          ..write('taxRate: $taxRate, ')
+          ..write('paidAmount: $paidAmount, ')
           ..write('openedAt: $openedAt, ')
           ..write('closedAt: $closedAt')
           ..write(')'))
@@ -26551,6 +26835,13 @@ class TableOrder extends DataClass implements Insertable<TableOrder> {
     total,
     userId,
     mergedToId,
+    guestCount,
+    notes,
+    discountType,
+    discountValue,
+    taxEnabled,
+    taxRate,
+    paidAmount,
     openedAt,
     closedAt,
   );
@@ -26564,6 +26855,13 @@ class TableOrder extends DataClass implements Insertable<TableOrder> {
           other.total == this.total &&
           other.userId == this.userId &&
           other.mergedToId == this.mergedToId &&
+          other.guestCount == this.guestCount &&
+          other.notes == this.notes &&
+          other.discountType == this.discountType &&
+          other.discountValue == this.discountValue &&
+          other.taxEnabled == this.taxEnabled &&
+          other.taxRate == this.taxRate &&
+          other.paidAmount == this.paidAmount &&
           other.openedAt == this.openedAt &&
           other.closedAt == this.closedAt);
 }
@@ -26575,6 +26873,13 @@ class TableOrdersCompanion extends UpdateCompanion<TableOrder> {
   final Value<double> total;
   final Value<int?> userId;
   final Value<int?> mergedToId;
+  final Value<int> guestCount;
+  final Value<String?> notes;
+  final Value<String?> discountType;
+  final Value<double> discountValue;
+  final Value<bool> taxEnabled;
+  final Value<double> taxRate;
+  final Value<double> paidAmount;
   final Value<DateTime> openedAt;
   final Value<DateTime?> closedAt;
   const TableOrdersCompanion({
@@ -26584,6 +26889,13 @@ class TableOrdersCompanion extends UpdateCompanion<TableOrder> {
     this.total = const Value.absent(),
     this.userId = const Value.absent(),
     this.mergedToId = const Value.absent(),
+    this.guestCount = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.discountType = const Value.absent(),
+    this.discountValue = const Value.absent(),
+    this.taxEnabled = const Value.absent(),
+    this.taxRate = const Value.absent(),
+    this.paidAmount = const Value.absent(),
     this.openedAt = const Value.absent(),
     this.closedAt = const Value.absent(),
   });
@@ -26594,6 +26906,13 @@ class TableOrdersCompanion extends UpdateCompanion<TableOrder> {
     this.total = const Value.absent(),
     this.userId = const Value.absent(),
     this.mergedToId = const Value.absent(),
+    this.guestCount = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.discountType = const Value.absent(),
+    this.discountValue = const Value.absent(),
+    this.taxEnabled = const Value.absent(),
+    this.taxRate = const Value.absent(),
+    this.paidAmount = const Value.absent(),
     this.openedAt = const Value.absent(),
     this.closedAt = const Value.absent(),
   }) : tableId = Value(tableId);
@@ -26604,6 +26923,13 @@ class TableOrdersCompanion extends UpdateCompanion<TableOrder> {
     Expression<double>? total,
     Expression<int>? userId,
     Expression<int>? mergedToId,
+    Expression<int>? guestCount,
+    Expression<String>? notes,
+    Expression<String>? discountType,
+    Expression<double>? discountValue,
+    Expression<bool>? taxEnabled,
+    Expression<double>? taxRate,
+    Expression<double>? paidAmount,
     Expression<DateTime>? openedAt,
     Expression<DateTime>? closedAt,
   }) {
@@ -26614,6 +26940,13 @@ class TableOrdersCompanion extends UpdateCompanion<TableOrder> {
       if (total != null) 'total': total,
       if (userId != null) 'user_id': userId,
       if (mergedToId != null) 'merged_to_id': mergedToId,
+      if (guestCount != null) 'guest_count': guestCount,
+      if (notes != null) 'notes': notes,
+      if (discountType != null) 'discount_type': discountType,
+      if (discountValue != null) 'discount_value': discountValue,
+      if (taxEnabled != null) 'tax_enabled': taxEnabled,
+      if (taxRate != null) 'tax_rate': taxRate,
+      if (paidAmount != null) 'paid_amount': paidAmount,
       if (openedAt != null) 'opened_at': openedAt,
       if (closedAt != null) 'closed_at': closedAt,
     });
@@ -26626,6 +26959,13 @@ class TableOrdersCompanion extends UpdateCompanion<TableOrder> {
     Value<double>? total,
     Value<int?>? userId,
     Value<int?>? mergedToId,
+    Value<int>? guestCount,
+    Value<String?>? notes,
+    Value<String?>? discountType,
+    Value<double>? discountValue,
+    Value<bool>? taxEnabled,
+    Value<double>? taxRate,
+    Value<double>? paidAmount,
     Value<DateTime>? openedAt,
     Value<DateTime?>? closedAt,
   }) {
@@ -26636,6 +26976,13 @@ class TableOrdersCompanion extends UpdateCompanion<TableOrder> {
       total: total ?? this.total,
       userId: userId ?? this.userId,
       mergedToId: mergedToId ?? this.mergedToId,
+      guestCount: guestCount ?? this.guestCount,
+      notes: notes ?? this.notes,
+      discountType: discountType ?? this.discountType,
+      discountValue: discountValue ?? this.discountValue,
+      taxEnabled: taxEnabled ?? this.taxEnabled,
+      taxRate: taxRate ?? this.taxRate,
+      paidAmount: paidAmount ?? this.paidAmount,
       openedAt: openedAt ?? this.openedAt,
       closedAt: closedAt ?? this.closedAt,
     );
@@ -26662,6 +27009,27 @@ class TableOrdersCompanion extends UpdateCompanion<TableOrder> {
     if (mergedToId.present) {
       map['merged_to_id'] = Variable<int>(mergedToId.value);
     }
+    if (guestCount.present) {
+      map['guest_count'] = Variable<int>(guestCount.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (discountType.present) {
+      map['discount_type'] = Variable<String>(discountType.value);
+    }
+    if (discountValue.present) {
+      map['discount_value'] = Variable<double>(discountValue.value);
+    }
+    if (taxEnabled.present) {
+      map['tax_enabled'] = Variable<bool>(taxEnabled.value);
+    }
+    if (taxRate.present) {
+      map['tax_rate'] = Variable<double>(taxRate.value);
+    }
+    if (paidAmount.present) {
+      map['paid_amount'] = Variable<double>(paidAmount.value);
+    }
     if (openedAt.present) {
       map['opened_at'] = Variable<DateTime>(openedAt.value);
     }
@@ -26680,6 +27048,13 @@ class TableOrdersCompanion extends UpdateCompanion<TableOrder> {
           ..write('total: $total, ')
           ..write('userId: $userId, ')
           ..write('mergedToId: $mergedToId, ')
+          ..write('guestCount: $guestCount, ')
+          ..write('notes: $notes, ')
+          ..write('discountType: $discountType, ')
+          ..write('discountValue: $discountValue, ')
+          ..write('taxEnabled: $taxEnabled, ')
+          ..write('taxRate: $taxRate, ')
+          ..write('paidAmount: $paidAmount, ')
           ..write('openedAt: $openedAt, ')
           ..write('closedAt: $closedAt')
           ..write(')'))
@@ -26789,6 +27164,28 @@ class $TableOrderItemsTable extends TableOrderItems
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sourceTableOrderIdMeta =
+      const VerificationMeta('sourceTableOrderId');
+  @override
+  late final GeneratedColumn<int> sourceTableOrderId = GeneratedColumn<int>(
+    'source_table_order_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES table_orders (id)',
+    ),
+  );
   static const VerificationMeta _addedAtMeta = const VerificationMeta(
     'addedAt',
   );
@@ -26811,6 +27208,8 @@ class $TableOrderItemsTable extends TableOrderItems
     total,
     taxRate,
     taxAmount,
+    notes,
+    sourceTableOrderId,
     addedAt,
   ];
   @override
@@ -26883,6 +27282,21 @@ class $TableOrderItemsTable extends TableOrderItems
         taxAmount.isAcceptableOrUnknown(data['tax_amount']!, _taxAmountMeta),
       );
     }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('source_table_order_id')) {
+      context.handle(
+        _sourceTableOrderIdMeta,
+        sourceTableOrderId.isAcceptableOrUnknown(
+          data['source_table_order_id']!,
+          _sourceTableOrderIdMeta,
+        ),
+      );
+    }
     if (data.containsKey('added_at')) {
       context.handle(
         _addedAtMeta,
@@ -26930,6 +27344,14 @@ class $TableOrderItemsTable extends TableOrderItems
         DriftSqlType.double,
         data['${effectivePrefix}tax_amount'],
       )!,
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      sourceTableOrderId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}source_table_order_id'],
+      ),
       addedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}added_at'],
@@ -26945,6 +27367,10 @@ class $TableOrderItemsTable extends TableOrderItems
 
 class TableOrderItem extends DataClass implements Insertable<TableOrderItem> {
   final int id;
+
+  /// أصنافُ هذا الطلب. تُسمّى صراحةً لأن البند يشير إلى `TableOrders` مرّتين
+  /// (هنا وفي `sourceTableOrderId`)، وبلا تسميةٍ صريحةٍ يتصادم الاسمان
+  /// فيُسقط المولِّد العلاقتين معاً بلا خطأ.
   final int tableOrderId;
   final int productId;
   final double quantity;
@@ -26952,6 +27378,13 @@ class TableOrderItem extends DataClass implements Insertable<TableOrderItem> {
   final double total;
   final double taxRate;
   final double taxAmount;
+
+  /// ملاحظةُ البند («بلا بصل») — تصل المطبخ وتُطبع.
+  final String? notes;
+
+  /// الطلبُ الذي جاء منه هذا البند بعد الدمج. فارغٌ للأصناف الأصلية.
+  /// وجودُه هو ما يجعل الطباعةَ مجمَّعةً وفكَّ الدمج ممكناً.
+  final int? sourceTableOrderId;
   final DateTime addedAt;
   const TableOrderItem({
     required this.id,
@@ -26962,6 +27395,8 @@ class TableOrderItem extends DataClass implements Insertable<TableOrderItem> {
     required this.total,
     required this.taxRate,
     required this.taxAmount,
+    this.notes,
+    this.sourceTableOrderId,
     required this.addedAt,
   });
   @override
@@ -26975,6 +27410,12 @@ class TableOrderItem extends DataClass implements Insertable<TableOrderItem> {
     map['total'] = Variable<double>(total);
     map['tax_rate'] = Variable<double>(taxRate);
     map['tax_amount'] = Variable<double>(taxAmount);
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    if (!nullToAbsent || sourceTableOrderId != null) {
+      map['source_table_order_id'] = Variable<int>(sourceTableOrderId);
+    }
     map['added_at'] = Variable<DateTime>(addedAt);
     return map;
   }
@@ -26989,6 +27430,12 @@ class TableOrderItem extends DataClass implements Insertable<TableOrderItem> {
       total: Value(total),
       taxRate: Value(taxRate),
       taxAmount: Value(taxAmount),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      sourceTableOrderId: sourceTableOrderId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourceTableOrderId),
       addedAt: Value(addedAt),
     );
   }
@@ -27007,6 +27454,8 @@ class TableOrderItem extends DataClass implements Insertable<TableOrderItem> {
       total: serializer.fromJson<double>(json['total']),
       taxRate: serializer.fromJson<double>(json['taxRate']),
       taxAmount: serializer.fromJson<double>(json['taxAmount']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      sourceTableOrderId: serializer.fromJson<int?>(json['sourceTableOrderId']),
       addedAt: serializer.fromJson<DateTime>(json['addedAt']),
     );
   }
@@ -27022,6 +27471,8 @@ class TableOrderItem extends DataClass implements Insertable<TableOrderItem> {
       'total': serializer.toJson<double>(total),
       'taxRate': serializer.toJson<double>(taxRate),
       'taxAmount': serializer.toJson<double>(taxAmount),
+      'notes': serializer.toJson<String?>(notes),
+      'sourceTableOrderId': serializer.toJson<int?>(sourceTableOrderId),
       'addedAt': serializer.toJson<DateTime>(addedAt),
     };
   }
@@ -27035,6 +27486,8 @@ class TableOrderItem extends DataClass implements Insertable<TableOrderItem> {
     double? total,
     double? taxRate,
     double? taxAmount,
+    Value<String?> notes = const Value.absent(),
+    Value<int?> sourceTableOrderId = const Value.absent(),
     DateTime? addedAt,
   }) => TableOrderItem(
     id: id ?? this.id,
@@ -27045,6 +27498,10 @@ class TableOrderItem extends DataClass implements Insertable<TableOrderItem> {
     total: total ?? this.total,
     taxRate: taxRate ?? this.taxRate,
     taxAmount: taxAmount ?? this.taxAmount,
+    notes: notes.present ? notes.value : this.notes,
+    sourceTableOrderId: sourceTableOrderId.present
+        ? sourceTableOrderId.value
+        : this.sourceTableOrderId,
     addedAt: addedAt ?? this.addedAt,
   );
   TableOrderItem copyWithCompanion(TableOrderItemsCompanion data) {
@@ -27059,6 +27516,10 @@ class TableOrderItem extends DataClass implements Insertable<TableOrderItem> {
       total: data.total.present ? data.total.value : this.total,
       taxRate: data.taxRate.present ? data.taxRate.value : this.taxRate,
       taxAmount: data.taxAmount.present ? data.taxAmount.value : this.taxAmount,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      sourceTableOrderId: data.sourceTableOrderId.present
+          ? data.sourceTableOrderId.value
+          : this.sourceTableOrderId,
       addedAt: data.addedAt.present ? data.addedAt.value : this.addedAt,
     );
   }
@@ -27074,6 +27535,8 @@ class TableOrderItem extends DataClass implements Insertable<TableOrderItem> {
           ..write('total: $total, ')
           ..write('taxRate: $taxRate, ')
           ..write('taxAmount: $taxAmount, ')
+          ..write('notes: $notes, ')
+          ..write('sourceTableOrderId: $sourceTableOrderId, ')
           ..write('addedAt: $addedAt')
           ..write(')'))
         .toString();
@@ -27089,6 +27552,8 @@ class TableOrderItem extends DataClass implements Insertable<TableOrderItem> {
     total,
     taxRate,
     taxAmount,
+    notes,
+    sourceTableOrderId,
     addedAt,
   );
   @override
@@ -27103,6 +27568,8 @@ class TableOrderItem extends DataClass implements Insertable<TableOrderItem> {
           other.total == this.total &&
           other.taxRate == this.taxRate &&
           other.taxAmount == this.taxAmount &&
+          other.notes == this.notes &&
+          other.sourceTableOrderId == this.sourceTableOrderId &&
           other.addedAt == this.addedAt);
 }
 
@@ -27115,6 +27582,8 @@ class TableOrderItemsCompanion extends UpdateCompanion<TableOrderItem> {
   final Value<double> total;
   final Value<double> taxRate;
   final Value<double> taxAmount;
+  final Value<String?> notes;
+  final Value<int?> sourceTableOrderId;
   final Value<DateTime> addedAt;
   const TableOrderItemsCompanion({
     this.id = const Value.absent(),
@@ -27125,6 +27594,8 @@ class TableOrderItemsCompanion extends UpdateCompanion<TableOrderItem> {
     this.total = const Value.absent(),
     this.taxRate = const Value.absent(),
     this.taxAmount = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.sourceTableOrderId = const Value.absent(),
     this.addedAt = const Value.absent(),
   });
   TableOrderItemsCompanion.insert({
@@ -27136,6 +27607,8 @@ class TableOrderItemsCompanion extends UpdateCompanion<TableOrderItem> {
     required double total,
     this.taxRate = const Value.absent(),
     this.taxAmount = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.sourceTableOrderId = const Value.absent(),
     this.addedAt = const Value.absent(),
   }) : tableOrderId = Value(tableOrderId),
        productId = Value(productId),
@@ -27151,6 +27624,8 @@ class TableOrderItemsCompanion extends UpdateCompanion<TableOrderItem> {
     Expression<double>? total,
     Expression<double>? taxRate,
     Expression<double>? taxAmount,
+    Expression<String>? notes,
+    Expression<int>? sourceTableOrderId,
     Expression<DateTime>? addedAt,
   }) {
     return RawValuesInsertable({
@@ -27162,6 +27637,9 @@ class TableOrderItemsCompanion extends UpdateCompanion<TableOrderItem> {
       if (total != null) 'total': total,
       if (taxRate != null) 'tax_rate': taxRate,
       if (taxAmount != null) 'tax_amount': taxAmount,
+      if (notes != null) 'notes': notes,
+      if (sourceTableOrderId != null)
+        'source_table_order_id': sourceTableOrderId,
       if (addedAt != null) 'added_at': addedAt,
     });
   }
@@ -27175,6 +27653,8 @@ class TableOrderItemsCompanion extends UpdateCompanion<TableOrderItem> {
     Value<double>? total,
     Value<double>? taxRate,
     Value<double>? taxAmount,
+    Value<String?>? notes,
+    Value<int?>? sourceTableOrderId,
     Value<DateTime>? addedAt,
   }) {
     return TableOrderItemsCompanion(
@@ -27186,6 +27666,8 @@ class TableOrderItemsCompanion extends UpdateCompanion<TableOrderItem> {
       total: total ?? this.total,
       taxRate: taxRate ?? this.taxRate,
       taxAmount: taxAmount ?? this.taxAmount,
+      notes: notes ?? this.notes,
+      sourceTableOrderId: sourceTableOrderId ?? this.sourceTableOrderId,
       addedAt: addedAt ?? this.addedAt,
     );
   }
@@ -27217,6 +27699,12 @@ class TableOrderItemsCompanion extends UpdateCompanion<TableOrderItem> {
     if (taxAmount.present) {
       map['tax_amount'] = Variable<double>(taxAmount.value);
     }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (sourceTableOrderId.present) {
+      map['source_table_order_id'] = Variable<int>(sourceTableOrderId.value);
+    }
     if (addedAt.present) {
       map['added_at'] = Variable<DateTime>(addedAt.value);
     }
@@ -27234,6 +27722,8 @@ class TableOrderItemsCompanion extends UpdateCompanion<TableOrderItem> {
           ..write('total: $total, ')
           ..write('taxRate: $taxRate, ')
           ..write('taxAmount: $taxAmount, ')
+          ..write('notes: $notes, ')
+          ..write('sourceTableOrderId: $sourceTableOrderId, ')
           ..write('addedAt: $addedAt')
           ..write(')'))
         .toString();
@@ -27800,6 +28290,415 @@ class TableReservationsCompanion extends UpdateCompanion<TableReservation> {
           ..write('notes: $notes, ')
           ..write('status: $status, ')
           ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $TableOrderPaymentsTable extends TableOrderPayments
+    with TableInfo<$TableOrderPaymentsTable, TableOrderPayment> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TableOrderPaymentsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _tableOrderIdMeta = const VerificationMeta(
+    'tableOrderId',
+  );
+  @override
+  late final GeneratedColumn<int> tableOrderId = GeneratedColumn<int>(
+    'table_order_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES table_orders (id)',
+    ),
+  );
+  static const VerificationMeta _invoiceIdMeta = const VerificationMeta(
+    'invoiceId',
+  );
+  @override
+  late final GeneratedColumn<int> invoiceId = GeneratedColumn<int>(
+    'invoice_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES sales_invoices (id)',
+    ),
+  );
+  static const VerificationMeta _amountMeta = const VerificationMeta('amount');
+  @override
+  late final GeneratedColumn<double> amount = GeneratedColumn<double>(
+    'amount',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _splitLabelMeta = const VerificationMeta(
+    'splitLabel',
+  );
+  @override
+  late final GeneratedColumn<String> splitLabel = GeneratedColumn<String>(
+    'split_label',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _paidAtMeta = const VerificationMeta('paidAt');
+  @override
+  late final GeneratedColumn<DateTime> paidAt = GeneratedColumn<DateTime>(
+    'paid_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    tableOrderId,
+    invoiceId,
+    amount,
+    splitLabel,
+    paidAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'table_order_payments';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TableOrderPayment> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('table_order_id')) {
+      context.handle(
+        _tableOrderIdMeta,
+        tableOrderId.isAcceptableOrUnknown(
+          data['table_order_id']!,
+          _tableOrderIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_tableOrderIdMeta);
+    }
+    if (data.containsKey('invoice_id')) {
+      context.handle(
+        _invoiceIdMeta,
+        invoiceId.isAcceptableOrUnknown(data['invoice_id']!, _invoiceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_invoiceIdMeta);
+    }
+    if (data.containsKey('amount')) {
+      context.handle(
+        _amountMeta,
+        amount.isAcceptableOrUnknown(data['amount']!, _amountMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_amountMeta);
+    }
+    if (data.containsKey('split_label')) {
+      context.handle(
+        _splitLabelMeta,
+        splitLabel.isAcceptableOrUnknown(data['split_label']!, _splitLabelMeta),
+      );
+    }
+    if (data.containsKey('paid_at')) {
+      context.handle(
+        _paidAtMeta,
+        paidAt.isAcceptableOrUnknown(data['paid_at']!, _paidAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  TableOrderPayment map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TableOrderPayment(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      tableOrderId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}table_order_id'],
+      )!,
+      invoiceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}invoice_id'],
+      )!,
+      amount: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}amount'],
+      )!,
+      splitLabel: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}split_label'],
+      ),
+      paidAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}paid_at'],
+      )!,
+    );
+  }
+
+  @override
+  $TableOrderPaymentsTable createAlias(String alias) {
+    return $TableOrderPaymentsTable(attachedDatabase, alias);
+  }
+}
+
+class TableOrderPayment extends DataClass
+    implements Insertable<TableOrderPayment> {
+  final int id;
+  final int tableOrderId;
+  final int invoiceId;
+  final double amount;
+  final String? splitLabel;
+  final DateTime paidAt;
+  const TableOrderPayment({
+    required this.id,
+    required this.tableOrderId,
+    required this.invoiceId,
+    required this.amount,
+    this.splitLabel,
+    required this.paidAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['table_order_id'] = Variable<int>(tableOrderId);
+    map['invoice_id'] = Variable<int>(invoiceId);
+    map['amount'] = Variable<double>(amount);
+    if (!nullToAbsent || splitLabel != null) {
+      map['split_label'] = Variable<String>(splitLabel);
+    }
+    map['paid_at'] = Variable<DateTime>(paidAt);
+    return map;
+  }
+
+  TableOrderPaymentsCompanion toCompanion(bool nullToAbsent) {
+    return TableOrderPaymentsCompanion(
+      id: Value(id),
+      tableOrderId: Value(tableOrderId),
+      invoiceId: Value(invoiceId),
+      amount: Value(amount),
+      splitLabel: splitLabel == null && nullToAbsent
+          ? const Value.absent()
+          : Value(splitLabel),
+      paidAt: Value(paidAt),
+    );
+  }
+
+  factory TableOrderPayment.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TableOrderPayment(
+      id: serializer.fromJson<int>(json['id']),
+      tableOrderId: serializer.fromJson<int>(json['tableOrderId']),
+      invoiceId: serializer.fromJson<int>(json['invoiceId']),
+      amount: serializer.fromJson<double>(json['amount']),
+      splitLabel: serializer.fromJson<String?>(json['splitLabel']),
+      paidAt: serializer.fromJson<DateTime>(json['paidAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'tableOrderId': serializer.toJson<int>(tableOrderId),
+      'invoiceId': serializer.toJson<int>(invoiceId),
+      'amount': serializer.toJson<double>(amount),
+      'splitLabel': serializer.toJson<String?>(splitLabel),
+      'paidAt': serializer.toJson<DateTime>(paidAt),
+    };
+  }
+
+  TableOrderPayment copyWith({
+    int? id,
+    int? tableOrderId,
+    int? invoiceId,
+    double? amount,
+    Value<String?> splitLabel = const Value.absent(),
+    DateTime? paidAt,
+  }) => TableOrderPayment(
+    id: id ?? this.id,
+    tableOrderId: tableOrderId ?? this.tableOrderId,
+    invoiceId: invoiceId ?? this.invoiceId,
+    amount: amount ?? this.amount,
+    splitLabel: splitLabel.present ? splitLabel.value : this.splitLabel,
+    paidAt: paidAt ?? this.paidAt,
+  );
+  TableOrderPayment copyWithCompanion(TableOrderPaymentsCompanion data) {
+    return TableOrderPayment(
+      id: data.id.present ? data.id.value : this.id,
+      tableOrderId: data.tableOrderId.present
+          ? data.tableOrderId.value
+          : this.tableOrderId,
+      invoiceId: data.invoiceId.present ? data.invoiceId.value : this.invoiceId,
+      amount: data.amount.present ? data.amount.value : this.amount,
+      splitLabel: data.splitLabel.present
+          ? data.splitLabel.value
+          : this.splitLabel,
+      paidAt: data.paidAt.present ? data.paidAt.value : this.paidAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TableOrderPayment(')
+          ..write('id: $id, ')
+          ..write('tableOrderId: $tableOrderId, ')
+          ..write('invoiceId: $invoiceId, ')
+          ..write('amount: $amount, ')
+          ..write('splitLabel: $splitLabel, ')
+          ..write('paidAt: $paidAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, tableOrderId, invoiceId, amount, splitLabel, paidAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TableOrderPayment &&
+          other.id == this.id &&
+          other.tableOrderId == this.tableOrderId &&
+          other.invoiceId == this.invoiceId &&
+          other.amount == this.amount &&
+          other.splitLabel == this.splitLabel &&
+          other.paidAt == this.paidAt);
+}
+
+class TableOrderPaymentsCompanion extends UpdateCompanion<TableOrderPayment> {
+  final Value<int> id;
+  final Value<int> tableOrderId;
+  final Value<int> invoiceId;
+  final Value<double> amount;
+  final Value<String?> splitLabel;
+  final Value<DateTime> paidAt;
+  const TableOrderPaymentsCompanion({
+    this.id = const Value.absent(),
+    this.tableOrderId = const Value.absent(),
+    this.invoiceId = const Value.absent(),
+    this.amount = const Value.absent(),
+    this.splitLabel = const Value.absent(),
+    this.paidAt = const Value.absent(),
+  });
+  TableOrderPaymentsCompanion.insert({
+    this.id = const Value.absent(),
+    required int tableOrderId,
+    required int invoiceId,
+    required double amount,
+    this.splitLabel = const Value.absent(),
+    this.paidAt = const Value.absent(),
+  }) : tableOrderId = Value(tableOrderId),
+       invoiceId = Value(invoiceId),
+       amount = Value(amount);
+  static Insertable<TableOrderPayment> custom({
+    Expression<int>? id,
+    Expression<int>? tableOrderId,
+    Expression<int>? invoiceId,
+    Expression<double>? amount,
+    Expression<String>? splitLabel,
+    Expression<DateTime>? paidAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (tableOrderId != null) 'table_order_id': tableOrderId,
+      if (invoiceId != null) 'invoice_id': invoiceId,
+      if (amount != null) 'amount': amount,
+      if (splitLabel != null) 'split_label': splitLabel,
+      if (paidAt != null) 'paid_at': paidAt,
+    });
+  }
+
+  TableOrderPaymentsCompanion copyWith({
+    Value<int>? id,
+    Value<int>? tableOrderId,
+    Value<int>? invoiceId,
+    Value<double>? amount,
+    Value<String?>? splitLabel,
+    Value<DateTime>? paidAt,
+  }) {
+    return TableOrderPaymentsCompanion(
+      id: id ?? this.id,
+      tableOrderId: tableOrderId ?? this.tableOrderId,
+      invoiceId: invoiceId ?? this.invoiceId,
+      amount: amount ?? this.amount,
+      splitLabel: splitLabel ?? this.splitLabel,
+      paidAt: paidAt ?? this.paidAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (tableOrderId.present) {
+      map['table_order_id'] = Variable<int>(tableOrderId.value);
+    }
+    if (invoiceId.present) {
+      map['invoice_id'] = Variable<int>(invoiceId.value);
+    }
+    if (amount.present) {
+      map['amount'] = Variable<double>(amount.value);
+    }
+    if (splitLabel.present) {
+      map['split_label'] = Variable<String>(splitLabel.value);
+    }
+    if (paidAt.present) {
+      map['paid_at'] = Variable<DateTime>(paidAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TableOrderPaymentsCompanion(')
+          ..write('id: $id, ')
+          ..write('tableOrderId: $tableOrderId, ')
+          ..write('invoiceId: $invoiceId, ')
+          ..write('amount: $amount, ')
+          ..write('splitLabel: $splitLabel, ')
+          ..write('paidAt: $paidAt')
           ..write(')'))
         .toString();
   }
@@ -104936,6 +105835,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $TableReservationsTable tableReservations =
       $TableReservationsTable(this);
+  late final $TableOrderPaymentsTable tableOrderPayments =
+      $TableOrderPaymentsTable(this);
   late final $StockMovementsTable stockMovements = $StockMovementsTable(this);
   late final $InventoryBalancesTable inventoryBalances =
       $InventoryBalancesTable(this);
@@ -105781,6 +106682,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     tableOrders,
     tableOrderItems,
     tableReservations,
+    tableOrderPayments,
     stockMovements,
     inventoryBalances,
     currencies,
@@ -134731,6 +135633,30 @@ final class $$SalesInvoicesTableReferences
     );
   }
 
+  static MultiTypedResultKey<$TableOrderPaymentsTable, List<TableOrderPayment>>
+  _tableOrderPaymentsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.tableOrderPayments,
+        aliasName: $_aliasNameGenerator(
+          db.salesInvoices.id,
+          db.tableOrderPayments.invoiceId,
+        ),
+      );
+
+  $$TableOrderPaymentsTableProcessedTableManager get tableOrderPaymentsRefs {
+    final manager = $$TableOrderPaymentsTableTableManager(
+      $_db,
+      $_db.tableOrderPayments,
+    ).filter((f) => f.invoiceId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _tableOrderPaymentsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
   static MultiTypedResultKey<$WorkOrdersTable, List<WorkOrder>>
   _workOrdersRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.workOrders,
@@ -135218,6 +136144,31 @@ class $$SalesInvoicesTableFilterComposer
           }) => $$SalesInvoiceItemsTableFilterComposer(
             $db: $db,
             $table: $db.salesInvoiceItems,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> tableOrderPaymentsRefs(
+    Expression<bool> Function($$TableOrderPaymentsTableFilterComposer f) f,
+  ) {
+    final $$TableOrderPaymentsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.tableOrderPayments,
+      getReferencedColumn: (t) => t.invoiceId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TableOrderPaymentsTableFilterComposer(
+            $db: $db,
+            $table: $db.tableOrderPayments,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -136082,6 +137033,32 @@ class $$SalesInvoicesTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> tableOrderPaymentsRefs<T extends Object>(
+    Expression<T> Function($$TableOrderPaymentsTableAnnotationComposer a) f,
+  ) {
+    final $$TableOrderPaymentsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.tableOrderPayments,
+          getReferencedColumn: (t) => t.invoiceId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$TableOrderPaymentsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.tableOrderPayments,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
   Expression<T> workOrdersRefs<T extends Object>(
     Expression<T> Function($$WorkOrdersTableAnnotationComposer a) f,
   ) {
@@ -136208,6 +137185,7 @@ class $$SalesInvoicesTableTableManager
             bool costCenterId,
             bool deletedBy,
             bool salesInvoiceItemsRefs,
+            bool tableOrderPaymentsRefs,
             bool workOrdersRefs,
             bool eInvoiceSubmissionsRefs,
             bool quotationsRefs,
@@ -136421,6 +137399,7 @@ class $$SalesInvoicesTableTableManager
                 costCenterId = false,
                 deletedBy = false,
                 salesInvoiceItemsRefs = false,
+                tableOrderPaymentsRefs = false,
                 workOrdersRefs = false,
                 eInvoiceSubmissionsRefs = false,
                 quotationsRefs = false,
@@ -136430,6 +137409,7 @@ class $$SalesInvoicesTableTableManager
                   db: db,
                   explicitlyWatchedTables: [
                     if (salesInvoiceItemsRefs) db.salesInvoiceItems,
+                    if (tableOrderPaymentsRefs) db.tableOrderPayments,
                     if (workOrdersRefs) db.workOrders,
                     if (eInvoiceSubmissionsRefs) db.eInvoiceSubmissions,
                     if (quotationsRefs) db.quotations,
@@ -136612,6 +137592,27 @@ class $$SalesInvoicesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (tableOrderPaymentsRefs)
+                        await $_getPrefetchedData<
+                          SalesInvoiceData,
+                          $SalesInvoicesTable,
+                          TableOrderPayment
+                        >(
+                          currentTable: table,
+                          referencedTable: $$SalesInvoicesTableReferences
+                              ._tableOrderPaymentsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$SalesInvoicesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).tableOrderPaymentsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.invoiceId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                       if (workOrdersRefs)
                         await $_getPrefetchedData<
                           SalesInvoiceData,
@@ -136727,6 +137728,7 @@ typedef $$SalesInvoicesTableProcessedTableManager =
         bool costCenterId,
         bool deletedBy,
         bool salesInvoiceItemsRefs,
+        bool tableOrderPaymentsRefs,
         bool workOrdersRefs,
         bool eInvoiceSubmissionsRefs,
         bool quotationsRefs,
@@ -139565,6 +140567,13 @@ typedef $$TableOrdersTableCreateCompanionBuilder =
       Value<double> total,
       Value<int?> userId,
       Value<int?> mergedToId,
+      Value<int> guestCount,
+      Value<String?> notes,
+      Value<String?> discountType,
+      Value<double> discountValue,
+      Value<bool> taxEnabled,
+      Value<double> taxRate,
+      Value<double> paidAmount,
       Value<DateTime> openedAt,
       Value<DateTime?> closedAt,
     });
@@ -139576,6 +140585,13 @@ typedef $$TableOrdersTableUpdateCompanionBuilder =
       Value<double> total,
       Value<int?> userId,
       Value<int?> mergedToId,
+      Value<int> guestCount,
+      Value<String?> notes,
+      Value<String?> discountType,
+      Value<double> discountValue,
+      Value<bool> taxEnabled,
+      Value<double> taxRate,
+      Value<double> paidAmount,
       Value<DateTime> openedAt,
       Value<DateTime?> closedAt,
     });
@@ -139641,7 +140657,7 @@ final class $$TableOrdersTableReferences
   }
 
   static MultiTypedResultKey<$TableOrderItemsTable, List<TableOrderItem>>
-  _tableOrderItemsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+  _orderItemsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.tableOrderItems,
     aliasName: $_aliasNameGenerator(
       db.tableOrders.id,
@@ -139649,14 +140665,57 @@ final class $$TableOrdersTableReferences
     ),
   );
 
-  $$TableOrderItemsTableProcessedTableManager get tableOrderItemsRefs {
+  $$TableOrderItemsTableProcessedTableManager get orderItems {
     final manager = $$TableOrderItemsTableTableManager(
       $_db,
       $_db.tableOrderItems,
     ).filter((f) => f.tableOrderId.id.sqlEquals($_itemColumn<int>('id')!));
 
+    final cache = $_typedResult.readTableOrNull(_orderItemsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$TableOrderItemsTable, List<TableOrderItem>>
+  _mergedAwayItemsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.tableOrderItems,
+    aliasName: $_aliasNameGenerator(
+      db.tableOrders.id,
+      db.tableOrderItems.sourceTableOrderId,
+    ),
+  );
+
+  $$TableOrderItemsTableProcessedTableManager get mergedAwayItems {
+    final manager =
+        $$TableOrderItemsTableTableManager($_db, $_db.tableOrderItems).filter(
+          (f) => f.sourceTableOrderId.id.sqlEquals($_itemColumn<int>('id')!),
+        );
+
+    final cache = $_typedResult.readTableOrNull(_mergedAwayItemsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$TableOrderPaymentsTable, List<TableOrderPayment>>
+  _tableOrderPaymentsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.tableOrderPayments,
+        aliasName: $_aliasNameGenerator(
+          db.tableOrders.id,
+          db.tableOrderPayments.tableOrderId,
+        ),
+      );
+
+  $$TableOrderPaymentsTableProcessedTableManager get tableOrderPaymentsRefs {
+    final manager = $$TableOrderPaymentsTableTableManager(
+      $_db,
+      $_db.tableOrderPayments,
+    ).filter((f) => f.tableOrderId.id.sqlEquals($_itemColumn<int>('id')!));
+
     final cache = $_typedResult.readTableOrNull(
-      _tableOrderItemsRefsTable($_db),
+      _tableOrderPaymentsRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -139706,6 +140765,41 @@ class $$TableOrdersTableFilterComposer
 
   ColumnFilters<double> get total => $composableBuilder(
     column: $table.total,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get guestCount => $composableBuilder(
+    column: $table.guestCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get discountType => $composableBuilder(
+    column: $table.discountType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get discountValue => $composableBuilder(
+    column: $table.discountValue,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get taxEnabled => $composableBuilder(
+    column: $table.taxEnabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get taxRate => $composableBuilder(
+    column: $table.taxRate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get paidAmount => $composableBuilder(
+    column: $table.paidAmount,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -139788,7 +140882,7 @@ class $$TableOrdersTableFilterComposer
     return composer;
   }
 
-  Expression<bool> tableOrderItemsRefs(
+  Expression<bool> orderItems(
     Expression<bool> Function($$TableOrderItemsTableFilterComposer f) f,
   ) {
     final $$TableOrderItemsTableFilterComposer composer = $composerBuilder(
@@ -139804,6 +140898,56 @@ class $$TableOrdersTableFilterComposer
           }) => $$TableOrderItemsTableFilterComposer(
             $db: $db,
             $table: $db.tableOrderItems,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> mergedAwayItems(
+    Expression<bool> Function($$TableOrderItemsTableFilterComposer f) f,
+  ) {
+    final $$TableOrderItemsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.tableOrderItems,
+      getReferencedColumn: (t) => t.sourceTableOrderId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TableOrderItemsTableFilterComposer(
+            $db: $db,
+            $table: $db.tableOrderItems,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> tableOrderPaymentsRefs(
+    Expression<bool> Function($$TableOrderPaymentsTableFilterComposer f) f,
+  ) {
+    final $$TableOrderPaymentsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.tableOrderPayments,
+      getReferencedColumn: (t) => t.tableOrderId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TableOrderPaymentsTableFilterComposer(
+            $db: $db,
+            $table: $db.tableOrderPayments,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -139860,6 +141004,41 @@ class $$TableOrdersTableOrderingComposer
 
   ColumnOrderings<double> get total => $composableBuilder(
     column: $table.total,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get guestCount => $composableBuilder(
+    column: $table.guestCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get discountType => $composableBuilder(
+    column: $table.discountType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get discountValue => $composableBuilder(
+    column: $table.discountValue,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get taxEnabled => $composableBuilder(
+    column: $table.taxEnabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get taxRate => $composableBuilder(
+    column: $table.taxRate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get paidAmount => $composableBuilder(
+    column: $table.paidAmount,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -139961,6 +141140,37 @@ class $$TableOrdersTableAnnotationComposer
   GeneratedColumn<double> get total =>
       $composableBuilder(column: $table.total, builder: (column) => column);
 
+  GeneratedColumn<int> get guestCount => $composableBuilder(
+    column: $table.guestCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<String> get discountType => $composableBuilder(
+    column: $table.discountType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get discountValue => $composableBuilder(
+    column: $table.discountValue,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get taxEnabled => $composableBuilder(
+    column: $table.taxEnabled,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get taxRate =>
+      $composableBuilder(column: $table.taxRate, builder: (column) => column);
+
+  GeneratedColumn<double> get paidAmount => $composableBuilder(
+    column: $table.paidAmount,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get openedAt =>
       $composableBuilder(column: $table.openedAt, builder: (column) => column);
 
@@ -140036,7 +141246,7 @@ class $$TableOrdersTableAnnotationComposer
     return composer;
   }
 
-  Expression<T> tableOrderItemsRefs<T extends Object>(
+  Expression<T> orderItems<T extends Object>(
     Expression<T> Function($$TableOrderItemsTableAnnotationComposer a) f,
   ) {
     final $$TableOrderItemsTableAnnotationComposer composer = $composerBuilder(
@@ -140058,6 +141268,57 @@ class $$TableOrdersTableAnnotationComposer
                 $removeJoinBuilderFromRootComposer,
           ),
     );
+    return f(composer);
+  }
+
+  Expression<T> mergedAwayItems<T extends Object>(
+    Expression<T> Function($$TableOrderItemsTableAnnotationComposer a) f,
+  ) {
+    final $$TableOrderItemsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.tableOrderItems,
+      getReferencedColumn: (t) => t.sourceTableOrderId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TableOrderItemsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.tableOrderItems,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> tableOrderPaymentsRefs<T extends Object>(
+    Expression<T> Function($$TableOrderPaymentsTableAnnotationComposer a) f,
+  ) {
+    final $$TableOrderPaymentsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.tableOrderPayments,
+          getReferencedColumn: (t) => t.tableOrderId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$TableOrderPaymentsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.tableOrderPayments,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
     return f(composer);
   }
 
@@ -140104,7 +141365,9 @@ class $$TableOrdersTableTableManager
             bool tableId,
             bool userId,
             bool mergedToId,
-            bool tableOrderItemsRefs,
+            bool orderItems,
+            bool mergedAwayItems,
+            bool tableOrderPaymentsRefs,
             bool workOrdersRefs,
           })
         > {
@@ -140127,6 +141390,13 @@ class $$TableOrdersTableTableManager
                 Value<double> total = const Value.absent(),
                 Value<int?> userId = const Value.absent(),
                 Value<int?> mergedToId = const Value.absent(),
+                Value<int> guestCount = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<String?> discountType = const Value.absent(),
+                Value<double> discountValue = const Value.absent(),
+                Value<bool> taxEnabled = const Value.absent(),
+                Value<double> taxRate = const Value.absent(),
+                Value<double> paidAmount = const Value.absent(),
                 Value<DateTime> openedAt = const Value.absent(),
                 Value<DateTime?> closedAt = const Value.absent(),
               }) => TableOrdersCompanion(
@@ -140136,6 +141406,13 @@ class $$TableOrdersTableTableManager
                 total: total,
                 userId: userId,
                 mergedToId: mergedToId,
+                guestCount: guestCount,
+                notes: notes,
+                discountType: discountType,
+                discountValue: discountValue,
+                taxEnabled: taxEnabled,
+                taxRate: taxRate,
+                paidAmount: paidAmount,
                 openedAt: openedAt,
                 closedAt: closedAt,
               ),
@@ -140147,6 +141424,13 @@ class $$TableOrdersTableTableManager
                 Value<double> total = const Value.absent(),
                 Value<int?> userId = const Value.absent(),
                 Value<int?> mergedToId = const Value.absent(),
+                Value<int> guestCount = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<String?> discountType = const Value.absent(),
+                Value<double> discountValue = const Value.absent(),
+                Value<bool> taxEnabled = const Value.absent(),
+                Value<double> taxRate = const Value.absent(),
+                Value<double> paidAmount = const Value.absent(),
                 Value<DateTime> openedAt = const Value.absent(),
                 Value<DateTime?> closedAt = const Value.absent(),
               }) => TableOrdersCompanion.insert(
@@ -140156,6 +141440,13 @@ class $$TableOrdersTableTableManager
                 total: total,
                 userId: userId,
                 mergedToId: mergedToId,
+                guestCount: guestCount,
+                notes: notes,
+                discountType: discountType,
+                discountValue: discountValue,
+                taxEnabled: taxEnabled,
+                taxRate: taxRate,
+                paidAmount: paidAmount,
                 openedAt: openedAt,
                 closedAt: closedAt,
               ),
@@ -140172,13 +141463,17 @@ class $$TableOrdersTableTableManager
                 tableId = false,
                 userId = false,
                 mergedToId = false,
-                tableOrderItemsRefs = false,
+                orderItems = false,
+                mergedAwayItems = false,
+                tableOrderPaymentsRefs = false,
                 workOrdersRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
-                    if (tableOrderItemsRefs) db.tableOrderItems,
+                    if (orderItems) db.tableOrderItems,
+                    if (mergedAwayItems) db.tableOrderItems,
+                    if (tableOrderPaymentsRefs) db.tableOrderPayments,
                     if (workOrdersRefs) db.workOrders,
                   ],
                   addJoins:
@@ -140247,7 +141542,7 @@ class $$TableOrdersTableTableManager
                       },
                   getPrefetchedDataCallback: (items) async {
                     return [
-                      if (tableOrderItemsRefs)
+                      if (orderItems)
                         await $_getPrefetchedData<
                           TableOrder,
                           $TableOrdersTable,
@@ -140255,13 +141550,55 @@ class $$TableOrdersTableTableManager
                         >(
                           currentTable: table,
                           referencedTable: $$TableOrdersTableReferences
-                              ._tableOrderItemsRefsTable(db),
+                              ._orderItemsTable(db),
                           managerFromTypedResult: (p0) =>
                               $$TableOrdersTableReferences(
                                 db,
                                 table,
                                 p0,
-                              ).tableOrderItemsRefs,
+                              ).orderItems,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.tableOrderId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (mergedAwayItems)
+                        await $_getPrefetchedData<
+                          TableOrder,
+                          $TableOrdersTable,
+                          TableOrderItem
+                        >(
+                          currentTable: table,
+                          referencedTable: $$TableOrdersTableReferences
+                              ._mergedAwayItemsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$TableOrdersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).mergedAwayItems,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.sourceTableOrderId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (tableOrderPaymentsRefs)
+                        await $_getPrefetchedData<
+                          TableOrder,
+                          $TableOrdersTable,
+                          TableOrderPayment
+                        >(
+                          currentTable: table,
+                          referencedTable: $$TableOrdersTableReferences
+                              ._tableOrderPaymentsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$TableOrdersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).tableOrderPaymentsRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.tableOrderId == item.id,
@@ -140313,7 +141650,9 @@ typedef $$TableOrdersTableProcessedTableManager =
         bool tableId,
         bool userId,
         bool mergedToId,
-        bool tableOrderItemsRefs,
+        bool orderItems,
+        bool mergedAwayItems,
+        bool tableOrderPaymentsRefs,
         bool workOrdersRefs,
       })
     >;
@@ -140327,6 +141666,8 @@ typedef $$TableOrderItemsTableCreateCompanionBuilder =
       required double total,
       Value<double> taxRate,
       Value<double> taxAmount,
+      Value<String?> notes,
+      Value<int?> sourceTableOrderId,
       Value<DateTime> addedAt,
     });
 typedef $$TableOrderItemsTableUpdateCompanionBuilder =
@@ -140339,6 +141680,8 @@ typedef $$TableOrderItemsTableUpdateCompanionBuilder =
       Value<double> total,
       Value<double> taxRate,
       Value<double> taxAmount,
+      Value<String?> notes,
+      Value<int?> sourceTableOrderId,
       Value<DateTime> addedAt,
     });
 
@@ -140391,6 +141734,28 @@ final class $$TableOrderItemsTableReferences
       manager.$state.copyWith(prefetchedData: [item]),
     );
   }
+
+  static $TableOrdersTable _sourceTableOrderIdTable(_$AppDatabase db) =>
+      db.tableOrders.createAlias(
+        $_aliasNameGenerator(
+          db.tableOrderItems.sourceTableOrderId,
+          db.tableOrders.id,
+        ),
+      );
+
+  $$TableOrdersTableProcessedTableManager? get sourceTableOrderId {
+    final $_column = $_itemColumn<int>('source_table_order_id');
+    if ($_column == null) return null;
+    final manager = $$TableOrdersTableTableManager(
+      $_db,
+      $_db.tableOrders,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_sourceTableOrderIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
 }
 
 class $$TableOrderItemsTableFilterComposer
@@ -140429,6 +141794,11 @@ class $$TableOrderItemsTableFilterComposer
 
   ColumnFilters<double> get taxAmount => $composableBuilder(
     column: $table.taxAmount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -140482,6 +141852,29 @@ class $$TableOrderItemsTableFilterComposer
     );
     return composer;
   }
+
+  $$TableOrdersTableFilterComposer get sourceTableOrderId {
+    final $$TableOrdersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sourceTableOrderId,
+      referencedTable: $db.tableOrders,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TableOrdersTableFilterComposer(
+            $db: $db,
+            $table: $db.tableOrders,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$TableOrderItemsTableOrderingComposer
@@ -140520,6 +141913,11 @@ class $$TableOrderItemsTableOrderingComposer
 
   ColumnOrderings<double> get taxAmount => $composableBuilder(
     column: $table.taxAmount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -140573,6 +141971,29 @@ class $$TableOrderItemsTableOrderingComposer
     );
     return composer;
   }
+
+  $$TableOrdersTableOrderingComposer get sourceTableOrderId {
+    final $$TableOrdersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sourceTableOrderId,
+      referencedTable: $db.tableOrders,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TableOrdersTableOrderingComposer(
+            $db: $db,
+            $table: $db.tableOrders,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$TableOrderItemsTableAnnotationComposer
@@ -140601,6 +142022,9 @@ class $$TableOrderItemsTableAnnotationComposer
 
   GeneratedColumn<double> get taxAmount =>
       $composableBuilder(column: $table.taxAmount, builder: (column) => column);
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
 
   GeneratedColumn<DateTime> get addedAt =>
       $composableBuilder(column: $table.addedAt, builder: (column) => column);
@@ -140650,6 +142074,29 @@ class $$TableOrderItemsTableAnnotationComposer
     );
     return composer;
   }
+
+  $$TableOrdersTableAnnotationComposer get sourceTableOrderId {
+    final $$TableOrdersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sourceTableOrderId,
+      referencedTable: $db.tableOrders,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TableOrdersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.tableOrders,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$TableOrderItemsTableTableManager
@@ -140665,7 +142112,11 @@ class $$TableOrderItemsTableTableManager
           $$TableOrderItemsTableUpdateCompanionBuilder,
           (TableOrderItem, $$TableOrderItemsTableReferences),
           TableOrderItem,
-          PrefetchHooks Function({bool tableOrderId, bool productId})
+          PrefetchHooks Function({
+            bool tableOrderId,
+            bool productId,
+            bool sourceTableOrderId,
+          })
         > {
   $$TableOrderItemsTableTableManager(
     _$AppDatabase db,
@@ -140690,6 +142141,8 @@ class $$TableOrderItemsTableTableManager
                 Value<double> total = const Value.absent(),
                 Value<double> taxRate = const Value.absent(),
                 Value<double> taxAmount = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<int?> sourceTableOrderId = const Value.absent(),
                 Value<DateTime> addedAt = const Value.absent(),
               }) => TableOrderItemsCompanion(
                 id: id,
@@ -140700,6 +142153,8 @@ class $$TableOrderItemsTableTableManager
                 total: total,
                 taxRate: taxRate,
                 taxAmount: taxAmount,
+                notes: notes,
+                sourceTableOrderId: sourceTableOrderId,
                 addedAt: addedAt,
               ),
           createCompanionCallback:
@@ -140712,6 +142167,8 @@ class $$TableOrderItemsTableTableManager
                 required double total,
                 Value<double> taxRate = const Value.absent(),
                 Value<double> taxAmount = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<int?> sourceTableOrderId = const Value.absent(),
                 Value<DateTime> addedAt = const Value.absent(),
               }) => TableOrderItemsCompanion.insert(
                 id: id,
@@ -140722,6 +142179,8 @@ class $$TableOrderItemsTableTableManager
                 total: total,
                 taxRate: taxRate,
                 taxAmount: taxAmount,
+                notes: notes,
+                sourceTableOrderId: sourceTableOrderId,
                 addedAt: addedAt,
               ),
           withReferenceMapper: (p0) => p0
@@ -140732,64 +142191,84 @@ class $$TableOrderItemsTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({tableOrderId = false, productId = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [],
-              addJoins:
-                  <
-                    T extends TableManagerState<
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic
-                    >
-                  >(state) {
-                    if (tableOrderId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.tableOrderId,
-                                referencedTable:
-                                    $$TableOrderItemsTableReferences
-                                        ._tableOrderIdTable(db),
-                                referencedColumn:
-                                    $$TableOrderItemsTableReferences
-                                        ._tableOrderIdTable(db)
-                                        .id,
-                              )
-                              as T;
-                    }
-                    if (productId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.productId,
-                                referencedTable:
-                                    $$TableOrderItemsTableReferences
-                                        ._productIdTable(db),
-                                referencedColumn:
-                                    $$TableOrderItemsTableReferences
-                                        ._productIdTable(db)
-                                        .id,
-                              )
-                              as T;
-                    }
+          prefetchHooksCallback:
+              ({
+                tableOrderId = false,
+                productId = false,
+                sourceTableOrderId = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (tableOrderId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.tableOrderId,
+                                    referencedTable:
+                                        $$TableOrderItemsTableReferences
+                                            ._tableOrderIdTable(db),
+                                    referencedColumn:
+                                        $$TableOrderItemsTableReferences
+                                            ._tableOrderIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (productId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.productId,
+                                    referencedTable:
+                                        $$TableOrderItemsTableReferences
+                                            ._productIdTable(db),
+                                    referencedColumn:
+                                        $$TableOrderItemsTableReferences
+                                            ._productIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (sourceTableOrderId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.sourceTableOrderId,
+                                    referencedTable:
+                                        $$TableOrderItemsTableReferences
+                                            ._sourceTableOrderIdTable(db),
+                                    referencedColumn:
+                                        $$TableOrderItemsTableReferences
+                                            ._sourceTableOrderIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
 
-                    return state;
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [];
                   },
-              getPrefetchedDataCallback: (items) async {
-                return [];
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -140806,7 +142285,11 @@ typedef $$TableOrderItemsTableProcessedTableManager =
       $$TableOrderItemsTableUpdateCompanionBuilder,
       (TableOrderItem, $$TableOrderItemsTableReferences),
       TableOrderItem,
-      PrefetchHooks Function({bool tableOrderId, bool productId})
+      PrefetchHooks Function({
+        bool tableOrderId,
+        bool productId,
+        bool sourceTableOrderId,
+      })
     >;
 typedef $$TableReservationsTableCreateCompanionBuilder =
     TableReservationsCompanion Function({
@@ -141221,6 +142704,452 @@ typedef $$TableReservationsTableProcessedTableManager =
       (TableReservation, $$TableReservationsTableReferences),
       TableReservation,
       PrefetchHooks Function({bool tableId})
+    >;
+typedef $$TableOrderPaymentsTableCreateCompanionBuilder =
+    TableOrderPaymentsCompanion Function({
+      Value<int> id,
+      required int tableOrderId,
+      required int invoiceId,
+      required double amount,
+      Value<String?> splitLabel,
+      Value<DateTime> paidAt,
+    });
+typedef $$TableOrderPaymentsTableUpdateCompanionBuilder =
+    TableOrderPaymentsCompanion Function({
+      Value<int> id,
+      Value<int> tableOrderId,
+      Value<int> invoiceId,
+      Value<double> amount,
+      Value<String?> splitLabel,
+      Value<DateTime> paidAt,
+    });
+
+final class $$TableOrderPaymentsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $TableOrderPaymentsTable,
+          TableOrderPayment
+        > {
+  $$TableOrderPaymentsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $TableOrdersTable _tableOrderIdTable(_$AppDatabase db) =>
+      db.tableOrders.createAlias(
+        $_aliasNameGenerator(
+          db.tableOrderPayments.tableOrderId,
+          db.tableOrders.id,
+        ),
+      );
+
+  $$TableOrdersTableProcessedTableManager get tableOrderId {
+    final $_column = $_itemColumn<int>('table_order_id')!;
+
+    final manager = $$TableOrdersTableTableManager(
+      $_db,
+      $_db.tableOrders,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_tableOrderIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $SalesInvoicesTable _invoiceIdTable(_$AppDatabase db) =>
+      db.salesInvoices.createAlias(
+        $_aliasNameGenerator(
+          db.tableOrderPayments.invoiceId,
+          db.salesInvoices.id,
+        ),
+      );
+
+  $$SalesInvoicesTableProcessedTableManager get invoiceId {
+    final $_column = $_itemColumn<int>('invoice_id')!;
+
+    final manager = $$SalesInvoicesTableTableManager(
+      $_db,
+      $_db.salesInvoices,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_invoiceIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$TableOrderPaymentsTableFilterComposer
+    extends Composer<_$AppDatabase, $TableOrderPaymentsTable> {
+  $$TableOrderPaymentsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get amount => $composableBuilder(
+    column: $table.amount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get splitLabel => $composableBuilder(
+    column: $table.splitLabel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get paidAt => $composableBuilder(
+    column: $table.paidAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$TableOrdersTableFilterComposer get tableOrderId {
+    final $$TableOrdersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.tableOrderId,
+      referencedTable: $db.tableOrders,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TableOrdersTableFilterComposer(
+            $db: $db,
+            $table: $db.tableOrders,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$SalesInvoicesTableFilterComposer get invoiceId {
+    final $$SalesInvoicesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.invoiceId,
+      referencedTable: $db.salesInvoices,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SalesInvoicesTableFilterComposer(
+            $db: $db,
+            $table: $db.salesInvoices,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TableOrderPaymentsTableOrderingComposer
+    extends Composer<_$AppDatabase, $TableOrderPaymentsTable> {
+  $$TableOrderPaymentsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get amount => $composableBuilder(
+    column: $table.amount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get splitLabel => $composableBuilder(
+    column: $table.splitLabel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get paidAt => $composableBuilder(
+    column: $table.paidAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$TableOrdersTableOrderingComposer get tableOrderId {
+    final $$TableOrdersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.tableOrderId,
+      referencedTable: $db.tableOrders,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TableOrdersTableOrderingComposer(
+            $db: $db,
+            $table: $db.tableOrders,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$SalesInvoicesTableOrderingComposer get invoiceId {
+    final $$SalesInvoicesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.invoiceId,
+      referencedTable: $db.salesInvoices,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SalesInvoicesTableOrderingComposer(
+            $db: $db,
+            $table: $db.salesInvoices,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TableOrderPaymentsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TableOrderPaymentsTable> {
+  $$TableOrderPaymentsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<double> get amount =>
+      $composableBuilder(column: $table.amount, builder: (column) => column);
+
+  GeneratedColumn<String> get splitLabel => $composableBuilder(
+    column: $table.splitLabel,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get paidAt =>
+      $composableBuilder(column: $table.paidAt, builder: (column) => column);
+
+  $$TableOrdersTableAnnotationComposer get tableOrderId {
+    final $$TableOrdersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.tableOrderId,
+      referencedTable: $db.tableOrders,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TableOrdersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.tableOrders,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$SalesInvoicesTableAnnotationComposer get invoiceId {
+    final $$SalesInvoicesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.invoiceId,
+      referencedTable: $db.salesInvoices,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SalesInvoicesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.salesInvoices,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TableOrderPaymentsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TableOrderPaymentsTable,
+          TableOrderPayment,
+          $$TableOrderPaymentsTableFilterComposer,
+          $$TableOrderPaymentsTableOrderingComposer,
+          $$TableOrderPaymentsTableAnnotationComposer,
+          $$TableOrderPaymentsTableCreateCompanionBuilder,
+          $$TableOrderPaymentsTableUpdateCompanionBuilder,
+          (TableOrderPayment, $$TableOrderPaymentsTableReferences),
+          TableOrderPayment,
+          PrefetchHooks Function({bool tableOrderId, bool invoiceId})
+        > {
+  $$TableOrderPaymentsTableTableManager(
+    _$AppDatabase db,
+    $TableOrderPaymentsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TableOrderPaymentsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TableOrderPaymentsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TableOrderPaymentsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> tableOrderId = const Value.absent(),
+                Value<int> invoiceId = const Value.absent(),
+                Value<double> amount = const Value.absent(),
+                Value<String?> splitLabel = const Value.absent(),
+                Value<DateTime> paidAt = const Value.absent(),
+              }) => TableOrderPaymentsCompanion(
+                id: id,
+                tableOrderId: tableOrderId,
+                invoiceId: invoiceId,
+                amount: amount,
+                splitLabel: splitLabel,
+                paidAt: paidAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int tableOrderId,
+                required int invoiceId,
+                required double amount,
+                Value<String?> splitLabel = const Value.absent(),
+                Value<DateTime> paidAt = const Value.absent(),
+              }) => TableOrderPaymentsCompanion.insert(
+                id: id,
+                tableOrderId: tableOrderId,
+                invoiceId: invoiceId,
+                amount: amount,
+                splitLabel: splitLabel,
+                paidAt: paidAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$TableOrderPaymentsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({tableOrderId = false, invoiceId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (tableOrderId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.tableOrderId,
+                                referencedTable:
+                                    $$TableOrderPaymentsTableReferences
+                                        ._tableOrderIdTable(db),
+                                referencedColumn:
+                                    $$TableOrderPaymentsTableReferences
+                                        ._tableOrderIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+                    if (invoiceId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.invoiceId,
+                                referencedTable:
+                                    $$TableOrderPaymentsTableReferences
+                                        ._invoiceIdTable(db),
+                                referencedColumn:
+                                    $$TableOrderPaymentsTableReferences
+                                        ._invoiceIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$TableOrderPaymentsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TableOrderPaymentsTable,
+      TableOrderPayment,
+      $$TableOrderPaymentsTableFilterComposer,
+      $$TableOrderPaymentsTableOrderingComposer,
+      $$TableOrderPaymentsTableAnnotationComposer,
+      $$TableOrderPaymentsTableCreateCompanionBuilder,
+      $$TableOrderPaymentsTableUpdateCompanionBuilder,
+      (TableOrderPayment, $$TableOrderPaymentsTableReferences),
+      TableOrderPayment,
+      PrefetchHooks Function({bool tableOrderId, bool invoiceId})
     >;
 typedef $$StockMovementsTableCreateCompanionBuilder =
     StockMovementsCompanion Function({
@@ -207747,6 +209676,8 @@ class $AppDatabaseManager {
       $$TableOrderItemsTableTableManager(_db, _db.tableOrderItems);
   $$TableReservationsTableTableManager get tableReservations =>
       $$TableReservationsTableTableManager(_db, _db.tableReservations);
+  $$TableOrderPaymentsTableTableManager get tableOrderPayments =>
+      $$TableOrderPaymentsTableTableManager(_db, _db.tableOrderPayments);
   $$StockMovementsTableTableManager get stockMovements =>
       $$StockMovementsTableTableManager(_db, _db.stockMovements);
   $$InventoryBalancesTableTableManager get inventoryBalances =>

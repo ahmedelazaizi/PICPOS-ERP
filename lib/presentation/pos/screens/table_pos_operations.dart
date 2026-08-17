@@ -248,6 +248,36 @@ mixin _TablePosOperationsMixin on ConsumerState<TablePosScreen> {
     barcodeFocus.requestFocus();
   }
 
+  /// تفعيلُ ضريبة الطلب أو إطفاؤها من زرّ الشاشة.
+  ///
+  /// تُكتب على الطلب أوّلاً، ولا تُحدَّث السلّةُ إلّا بعد نجاح الكتابة —
+  /// فمفتاحٌ يتحرّك على الشاشة بينما الطلبُ لم يتغيّر هو بالضبط الفارقُ الذي
+  /// يوقف التحصيلَ بعد ذلك برسالةٍ لا يفهمها الكاشير.
+  Future<void> _toggleOrderTax(bool enabled) async {
+    final orderId = ref.read(posControllerProvider).orderId;
+    if (orderId == null) {
+      AppToast.show(context, 'لا يوجد طلب مفتوح لهذه الطاولة',
+          type: ToastType.warning);
+      return;
+    }
+    final user = ref.read(authProvider).user;
+    try {
+      await ref.read(tableSessionServiceProvider).setOrderTax(
+            orderId: orderId,
+            enabled: enabled,
+            userId: user?.id,
+            userName: user?.displayName ?? 'مجهول',
+          );
+    } catch (e) {
+      if (mounted) {
+        AppToast.show(context, 'تعذّر تعديلُ الضريبة: $e',
+            type: ToastType.error);
+      }
+      return;
+    }
+    ref.read(cartControllerProvider.notifier).toggleTax(enabled);
+  }
+
   Future<void> _checkoutTable() async {
     final restaurantRepo = ref.read(restaurantRepositoryProvider);
     final posState = ref.read(posControllerProvider);
@@ -266,8 +296,19 @@ mixin _TablePosOperationsMixin on ConsumerState<TablePosScreen> {
       return;
     }
 
+    // ── السلّةُ تُبنى على صورة الطلب، لا على صورة المنتجات ────────────────
+    // المحرّكان (`CalculateInvoiceTotalsUseCase` هنا و`TableOrderTotals`
+    // هناك) صارا يحسبان بالقاعدة نفسِها، فلا يتطابقان إلّا إن تطابقت
+    // **مدخلاتُهما** كذلك. ولذلك تُنسَخ الضريبةُ ونسبتُها ونِسَبُ البنود
+    // وخصمُ الطلب من صفِّ الطلب لا من بطاقة المنتج: نسبةُ البند لقطةٌ أُخذت
+    // ساعةَ الطلب، وقراءتُها الآن من المنتج تُعطي رقماً آخر لو غُيّرت
+    // البطاقةُ في أثناء الوجبة — وهو الفارقُ الذي كان يوقف التحصيل.
+    final order = await restaurantRepo.getActiveOrderForTable(widget.tableId);
+
     final cartNotifier = ref.read(cartControllerProvider.notifier);
     cartNotifier.clearCart();
+    cartNotifier.toggleTax(order?.taxEnabled ?? false);
+    if (order != null) cartNotifier.setTaxRate(order.taxRate);
     final productRepo = ref.read(productRepositoryProvider);
     for (final item in tableItems) {
       final product = await productRepo.getProductById(item.productId);
@@ -276,12 +317,56 @@ mixin _TablePosOperationsMixin on ConsumerState<TablePosScreen> {
           product,
           quantity: item.quantity,
           customPrice: item.unitPrice,
+          // صفرٌ ليس «معفىً» بل «يقع على نسبة الطلب» — وهي دلالةُ
+          // `item.taxRate > 0 ? item.taxRate : taxPercent` في المحرّكين معاً.
+          taxRate: item.taxRate,
         );
+      }
+    }
+
+    // خصمُ الطلب يُنقل إلى السلّة كذلك، وإلّا شُحن الزبونُ بلا خصمٍ ثبّته
+    // له الكاشير. و«المبلغُ المقطوع» يُعبَّر عنه نسبةً لأن السلّة لا تعرف
+    // إلّا النسبة؛ والحارسُ أسفلَه يبقى الفيصلَ إن بقي فرقُ كسرٍ.
+    if (order != null && order.discountValue > 0) {
+      final gross = tableItems.fold<double>(
+          0, (sum, i) => sum + i.quantity * i.unitPrice);
+      if (order.discountType == 'percent') {
+        cartNotifier.setDiscount(order.discountValue);
+      } else if (order.discountType == 'amount' && gross > 0) {
+        cartNotifier.setDiscount(order.discountValue / gross * 100);
       }
     }
 
     final cartState = ref.read(cartControllerProvider);
     final total = cartState.total;
+
+    // ── فحصٌ قبليّ: ما يُشحَن = ما يُسجَّل ─────────────────────────────────
+    // السلّةُ والطلبُ يحسبان بمحرّكين مختلفين: `cartState.total` يضيف
+    // الضريبةَ فوق ويطرح خصومَ السلّة والعروض، بينما `recordPayment` يقيس
+    // على `effectiveTotal(order) - paidAmount`. فإن اختلفا — ضريبةٌ مفعّلةٌ
+    // من مفتاح هذه الشاشة نفسِها، أو صنفٌ حُذف فتُخطّي من السلّة، أو تقسيمٌ
+    // جزئيٌّ سبق فالسلّةُ تُعيد شحنَ الإجماليِّ كاملاً — فالفشلُ اليوم يقع
+    // **بعد** `processPayment`، أي بعد ترحيل الفاتورة محاسبةً ومخزوناً،
+    // فتبقى فاتورةٌ يتيمةٌ وطاولةٌ لا تُغلَق ولا تُلغى.
+    //
+    // فيُنقل الرفضُ إلى ما قبل أيّ ترحيل: فاتورةٌ لم تصدر لا تحتاج تسوية.
+    final double due;
+    try {
+      due = await ref.read(tableSessionServiceProvider).amountDue(orderId);
+    } catch (e) {
+      if (mounted) {
+        AppToast.show(context, 'تعذّر قراءةُ مستحقِّ الطلب: $e',
+            type: ToastType.error);
+      }
+      return;
+    }
+    final mismatch = checkTableCharge(charged: total, expected: due);
+    if (mismatch != null) {
+      if (mounted) {
+        AppToast.show(context, mismatch.message, type: ToastType.error);
+      }
+      return;
+    }
 
     if (!mounted) return;
 
@@ -331,29 +416,66 @@ mixin _TablePosOperationsMixin on ConsumerState<TablePosScreen> {
       } catch (_) {}
     }
 
-    await restaurantRepo.finalizeTableOrder(orderId, widget.tableId);
+    if (invoiceId == null) {
+      if (mounted) {
+        AppToast.show(
+          context,
+          'تم الدفع لكن تعذّر تسجيله على الطاولة — لا رقم فاتورة',
+          type: ToastType.error,
+        );
+      }
+      return;
+    }
 
+    // الطاولةُ تصير 🟠 لا 🟢: الدفعُ لا يُغلق، والإغلاقُ خطوةٌ صريحةٌ
+    // يقوم بها الموظف بعد تجهيز الطاولة. الخدمةُ تكتب سطرَ السجلِّ بنفسها.
+    final user = ref.read(authProvider).user;
     try {
-      final user = ref.read(authProvider).user;
-      final activityLogRepo = ref.read(activityLogRepositoryProvider);
-      await activityLogRepo.logActivity(
-        userId: user?.id,
-        userName: user?.displayName ?? 'مجهول',
-        action: 'checkout_table',
-        entityType: 'table_order',
-        entityId: widget.tableId,
-        description:
-            'تحصيل طاولة: ${widget.tableName} — الإجمالي: ${total.toStringAsFixed(AppConstants.decimalPlaces)} — فاتورة #$invoiceId',
-        amount: total,
-      );
-    } catch (_) {}
+      await ref.read(tableSessionServiceProvider).recordPayment(
+            orderId: orderId,
+            invoiceId: invoiceId,
+            amount: total,
+            userId: user?.id,
+            userName: user?.displayName,
+          );
+    } catch (e) {
+      // الفاتورةُ #$invoiceId صدرت ورُحِّلت بالفعل (محاسبةً ومخزوناً) قبل
+      // هذا الفشل — processPayment سبق recordPayment، فلا معاملةَ تعويضيّةً
+      // ممكنةً هنا. أقصى ما يمكن فعلُه ألّا يضيع الأثر: سطرٌ صريحٌ في سجلِّ
+      // الطاولة (يظهر في TableLogSheet) يحمل رقمَ الفاتورة والمبلغَ وسببَ
+      // الفشل، ورسالةٌ للكاشير تُسمّي الفجوةَ ولا تكتفي برسالةٍ عامّة.
+      try {
+        final activityLogRepo = ref.read(activityLogRepositoryProvider);
+        await activityLogRepo.logActivity(
+          userId: user?.id,
+          userName: user?.displayName ?? 'مجهول',
+          action: 'table_payment_reconcile_needed',
+          entityType: 'table',
+          entityId: widget.tableId,
+          description:
+              'فاتورةٌ #$invoiceId صدرت ورُحِّلت، لكن تعذّر تسجيلُ دفعتها على '
+              '${widget.tableName} — يحتاج تسويةً يدويّة. الخطأ: $e',
+          amount: total,
+        );
+      } catch (_) {}
+
+      if (mounted) {
+        AppToast.show(
+          context,
+          '⚠️ فاتورة #$invoiceId صدرت ورُحِّلت لكن لم تُسجَّل على '
+          '${widget.tableName} — راجع الطاولةَ يدويّاً',
+          type: ToastType.error,
+        );
+      }
+      return;
+    }
 
     if (mounted) {
       barcodeController.clear();
       barcodeFocus.requestFocus();
       AppToast.show(
         context,
-        '✅ تم تحصيل ${widget.tableName} — فاتورة #$invoiceId',
+        '✅ تم تحصيل ${widget.tableName} — فاتورة #$invoiceId — الطاولةُ مدفوعةٌ بانتظار الإغلاق',
         type: ToastType.success,
       );
       Navigator.pop(context);
@@ -418,6 +540,9 @@ mixin _TablePosOperationsMixin on ConsumerState<TablePosScreen> {
             productId: item.productId,
             quantity: item.quantity,
             unitPrice: item.effectivePrice,
+            // نسبةُ الصنف تُثبَّت على البند ساعةَ الطلب — هي التي تجعل
+            // حسابَ الطاولة يطابق حسابَ السلّة عند التحصيل.
+            taxRate: item.taxRate,
           );
         }
         await restaurantRepo.updateTableStatus(widget.tableId, 'occupied');

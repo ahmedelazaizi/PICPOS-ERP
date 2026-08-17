@@ -15,18 +15,22 @@ class TablePosSummary extends ConsumerWidget {
   final VoidCallback onClear;
   final VoidCallback onBack;
 
+  /// تفعيلُ الضريبة على **الطلب** أو إطفاؤها. الشاشةُ هي من تنادي
+  /// `TableSessionService.setOrderTax` — الودجت تبقى بلا خدمةٍ ولا قاعدة.
+  final ValueChanged<bool> onToggleTax;
+
   const TablePosSummary({
     super.key,
     required this.onSendToKitchen,
     required this.onCheckout,
     required this.onClear,
     required this.onBack,
+    required this.onToggleTax,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cartState = ref.watch(cartControllerProvider);
-    final cartController = ref.read(cartControllerProvider.notifier);
     final taxRatePercent = (cartState.taxRate * 100).toStringAsFixed(0);
     final total = cartState.total;
     final hasItems = cartState.items.isNotEmpty;
@@ -44,7 +48,7 @@ class TablePosSummary extends ConsumerWidget {
       child: Column(
         children: [
           // Tax button
-          _buildTaxToggle(cartState, cartController, taxRatePercent),
+          _buildTaxToggle(cartState, taxRatePercent),
           
           const SizedBox(height: 10),
 
@@ -112,9 +116,14 @@ class TablePosSummary extends ConsumerWidget {
     );
   }
 
-  Widget _buildTaxToggle(dynamic cartState, dynamic cartController, String taxRatePercent) {
+  /// زرُّ الضريبة — شكلُه ونصُّه كما هما، ومقصدُه تغيّر.
+  ///
+  /// كان يكتب في السلّة وحدَها، فيضيع بمجرّد الخروج من الشاشة ولا يعرف به
+  /// الطلب. صار يمرّ بـ[onToggleTax] التي تكتبه على `TableOrders.taxEnabled`
+  /// ثم تُحدِّث السلّةَ مرآةً له — فالمعروضُ والمسجَّلُ شيءٌ واحد.
+  Widget _buildTaxToggle(dynamic cartState, String taxRatePercent) {
     return InkWell(
-      onTap: () => cartController.toggleTax(!cartState.taxEnabled),
+      onTap: () => onToggleTax(!(cartState.taxEnabled as bool)),
       borderRadius: BorderRadius.circular(10),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
