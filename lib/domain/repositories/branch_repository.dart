@@ -58,6 +58,23 @@ abstract class IBranchRepository {
   Future<void> setUserBranchAccess(int userId, List<int> branchIds);
   Future<void> setUserWarehouseAccess(int userId, List<int> warehouseIds);
   Future<List<db.Warehouse>> getWarehouses();
+
+  /// معرّفُ الفرعِ الذي تُنسَب إليه المستنداتُ الجديدةُ على هذا الجهاز،
+  /// أو `null` = بلا حصر (خادم/مستقلّ، أو عميلٌ لم يُقترن بفرعٍ بعد).
+  ///
+  /// نطاقُ **نسبةٍ** لا رؤية — انظر `branch_assignment_scope.dart`.
+  Future<int?> getAssignmentBranchId();
+
+  /// المخازنُ التي يجوز نسبةُ مستندٍ جديدٍ إليها على هذا الجهاز:
+  /// [getWarehouses] مقصورةً بـ[getAssignmentBranchId] وفق
+  /// `restrictForAssignment` (مساواةٌ صارمة + احتياطُ عدمِ التفريغ).
+  ///
+  /// هي المصدرُ الوحيدُ لهذا القصّ — كان منسوخاً في ستِّ شاشات. ومَن أراد
+  /// مخازنَ فرعٍ **بعينه** (كإعداداتِ فرعٍ في شاشةِ إدارة) فليستعمل
+  /// [getWarehousesByBranch]: صارمٌ بلا احتياط، لأن «لا مخزنَ لهذا الفرع»
+  /// جوابٌ صحيحٌ هناك لا تعطيلٌ للعمل.
+  Future<List<db.Warehouse>> getAssignableWarehouses();
+
   Future<Map<int, double>> getWarehouseStockMap(int warehouseId);
 
   /// Get cost center ID for the active branch

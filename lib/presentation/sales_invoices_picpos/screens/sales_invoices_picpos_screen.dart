@@ -6,7 +6,7 @@ import '../../../core/permissions/permission_codes.dart';
 import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../../../domain/models/branch_assignment_scope.dart';
 
 import '../../../core/widgets/app_shortcuts.dart';
 import '../../../core/utils/app_error_handler.dart';

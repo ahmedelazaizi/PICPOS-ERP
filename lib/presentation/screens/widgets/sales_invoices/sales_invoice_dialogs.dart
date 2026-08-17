@@ -342,16 +342,15 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesScreenState {
     // Spec 103: in client mode restrict warehouses to the current branch so
     // the saved invoice's warehouseId resolves to the correct branchId and
     // appears in the branch's invoice list.
-    List<WarehouseData> filteredWarehouses = activeWarehouses;
-    if (SyncInterceptor.isClientMode) {
-      final prefs = await SharedPreferences.getInstance();
-      final clientBranchId = prefs.getInt('client_branch_id');
-      if (clientBranchId != null) {
-        final branchWarehouses =
-            activeWarehouses.where((w) => w.branchId == clientBranchId).toList();
-        if (branchWarehouses.isNotEmpty) filteredWarehouses = branchWarehouses;
-      }
-    }
+    //
+    // القاعدةُ ذاتُها انتقلت إلى `restrictForAssignment` + `getAssignmentBranchId`
+    // بعد أن تبيّن أنها منسوخةٌ في ستِّ شاشات. بلا تغييرِ سلوك: نفسُ المُحدِّد
+    // (عميلٌ ومرآة)، ونفسُ المساواةِ الصارمة، ونفسُ احتياطِ عدمِ التفريغ.
+    final filteredWarehouses = restrictForAssignment(
+      activeWarehouses,
+      await ref.read(branchRepositoryProvider).getAssignmentBranchId(),
+      branchIdOf: (w) => w.branchId,
+    );
 
     unawaited(DiagnosticLogger.log('SPEC-103-DIALOG',
         '_createNewInvoice preload done — '

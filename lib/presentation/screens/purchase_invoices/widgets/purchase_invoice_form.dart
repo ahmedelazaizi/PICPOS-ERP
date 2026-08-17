@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:ural_erp/core/utils/number_utils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:ural_erp/data/database/sync_interceptor.dart';
 import 'package:ural_erp/core/theme/app_colors.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
 import 'package:ural_erp/core/utils/financial_utils.dart';
@@ -107,10 +105,11 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
     final accountingRepo = ref.read(accountingRepositoryProvider);
 
     final cats = await productRepo.getCategories();
-    final whs = await branchRepo.getWarehouses();
+    // نطاقُ النسبة — مصدرٌ واحدٌ في المستودع بدل نسخِ الشرط في كلِّ شاشة.
+    final whs = await branchRepo.getAssignableWarehouses();
     final ccs = await accountingRepo.getCostCenters();
 
-    final visibleWarehouses = await _scopeWarehousesToBranch(whs);
+    final visibleWarehouses = await _withEditInvoiceWarehouse(whs);
 
     if (mounted) {
       setState(() {
@@ -133,40 +132,24 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
     }
   }
 
-  /// Spec 103 (منقولٌ عن `sales_invoice_dialogs.dart:436-445` — نفسُ الشرطِ
-  /// ونفسُ الاحتياط): على جهازِ العميل تُقصَر المخازنُ على مخازنِ فرعه.
+  /// تُعيد [assignable] وقد أُلحق بها مخزنُ الفاتورةِ قيدَ التعديل إن وقع
+  /// خارجَ نطاقِ النسبة.
   ///
-  /// وفرعُ الفاتورة **يُشتقُّ من مخزنها** لا يُختار:
-  /// `purchase_dao.dart:589-594` يقرأ `warehouse.branchId` ويحفظه على الفاتورة،
-  /// وقائمةُ الفواتير تقصّ على `branchId` (سطر ١٥٠) — فمخزنُ فرعٍ آخر لا يعني
-  /// حقلاً خاطئاً بل فاتورةً تغيب عن قائمةِ فرعها.
-  Future<List<db.Warehouse>> _scopeWarehousesToBranch(
-      List<db.Warehouse> all) async {
-    var visible = all;
-
-    if (SyncInterceptor.isClientMode) {
-      final prefs = await SharedPreferences.getInstance();
-      final clientBranchId = prefs.getInt('client_branch_id');
-      if (clientBranchId != null) {
-        final branchWarehouses =
-            all.where((w) => w.branchId == clientBranchId).toList();
-        // احتياطُ Spec 103 المقصود: إن أفرغ الترشيحُ القائمةَ تبقى الكاملةُ
-        // ظاهرةً بدل أن يُسلَّم المستخدمُ قائمةً خاوية.
-        if (branchWarehouses.isNotEmpty) visible = branchWarehouses;
-      }
-    }
-
-    // فاتورةٌ قيدَ التعديل تحتفظ بمخزنها ولو وقع خارجَ الترشيح: قائمةٌ لا تحوي
-    // قيمتَها المنتقاةَ تُسقط `DropdownButton` بتأكيدٍ صريح، وإسقاطُ المخزنِ
-    // صامتاً يعيد توطينَ الفاتورةِ على فرعٍ آخرَ عند الحفظ.
+  /// وهذا قيدُ التعديلِ وحدَه فلا محلَّ له في القاعدةِ المشتركة: قائمةٌ لا
+  /// تحوي قيمتَها المنتقاةَ تُسقط `DropdownButton` بتأكيدٍ صريح، وإسقاطُ
+  /// المخزنِ صامتاً يعيد توطينَ الفاتورةِ على فرعٍ آخرَ عند الحفظ — وفرعُها
+  /// يُشتقُّ من مخزنها (`purchase_dao.dart:589-594`).
+  Future<List<db.Warehouse>> _withEditInvoiceWarehouse(
+      List<db.Warehouse> assignable) async {
     final editWarehouseId = widget.editInvoice?.warehouseId;
-    if (editWarehouseId != null &&
-        !visible.any((w) => w.id == editWarehouseId)) {
-      final own = all.where((w) => w.id == editWarehouseId).firstOrNull;
-      if (own != null) visible = [own, ...visible];
+    if (editWarehouseId == null ||
+        assignable.any((w) => w.id == editWarehouseId)) {
+      return assignable;
     }
 
-    return visible;
+    final own =
+        await ref.read(branchRepositoryProvider).getWarehouseById(editWarehouseId);
+    return own == null ? assignable : [own, ...assignable];
   }
 
   /// مركزُ تكلفةِ [warehouseId] إن كان حاضراً في [costCenters] المحمَّلة.

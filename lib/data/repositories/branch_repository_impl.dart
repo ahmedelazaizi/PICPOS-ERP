@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../database/database.dart';
 import '../database/sync_interceptor.dart';
+import '../../domain/models/branch_assignment_scope.dart';
 import '../../domain/repositories/branch_repository.dart';
 import '../../services/client_write_interceptor.dart';
 import '../../services/network_service.dart';
@@ -241,6 +242,30 @@ class BranchRepositoryImpl implements IBranchRepository {
 
   @override
   Future<List<Warehouse>> getWarehouses() => _db.select(_db.warehouses).get();
+
+  @override
+  Future<int?> getAssignmentBranchId() async {
+    // نفسُ مُحدِّدِ `getActiveBranch()` أعلاه حرفياً — الجهازُ واحدٌ فلا يجوز
+    // أن يجيب عن «فرعي» بجوابين. و`isClientMode` تشمل المرآةَ كما تشمل
+    // العميل، وهو سلوكُ شرطِ Spec 103 المنقولِ عنه.
+    if (!SyncInterceptor.isClientMode) return null;
+
+    final prefs = await SharedPreferences.getInstance();
+    // ⚠️ عميلٌ بلا `client_branch_id` ⇒ بلا حصر، لا مقفول. سلوكٌ محفوظٌ عن
+    // قصد: القفلُ هنا يمنع جهازاً ناقصَ الاقتران من إصدارِ أيِّ مستند.
+    // ويختلف عن `clientScopeProvider` الذي يفشل مقفولاً لأنه سؤالُ رؤية.
+    return prefs.getInt('client_branch_id');
+  }
+
+  @override
+  Future<List<Warehouse>> getAssignableWarehouses() async {
+    final all = await getWarehouses();
+    return restrictForAssignment(
+      all,
+      await getAssignmentBranchId(),
+      branchIdOf: (w) => w.branchId,
+    );
+  }
 
   @override
   Future<Map<int, double>> getWarehouseStockMap(int warehouseId) => _db.getWarehouseStockMap(warehouseId);
