@@ -139,6 +139,22 @@ mixin _PurchaseInvoiceCrudMixin on ConsumerState<PurchaseInvoicesScreen> {
     int? safeId,
     bool printAfterSave = false,
   }) async {
+    // المخزنُ رقم ١ ليس ضمانةً: قد لا يكون مخزنَ هذا الفرع ولا موجوداً أصلاً،
+    // وفرعُ الفاتورة يُشتقُّ من مخزنها (`purchase_dao.dart:589-594`) — فكان
+    // `warehouseId ?? 1` يوطّن الفاتورةَ على فرعٍ آخرَ بلا إشعار، فتغيب عن
+    // قائمةِ فرعها. النموذجُ صار يمنع الحالةَ برسالةٍ واضحة، وهذا الحارسُ
+    // يمنع أيَّ مُنادٍ آخر من تجاوزها.
+    //
+    // ورميٌ لا رسالة: هذه الدالةُ تبتلع أخطاءَها في `catch` أدناه، فالعودةُ
+    // منها تبدو للنموذجِ نجاحاً فيُغلق ويضيع ما أدخله المستخدم. والرمي قبل
+    // `try` يبلغ `catch` النموذجِ فيبقى مفتوحاً.
+    //
+    // ومسارُ التعديل مستثنى عن قصد: `null` هناك تعني «اترك المخزنَ كما هو»
+    // (`UpdatePurchaseInvoiceParams.warehouseId` قابلٌ للعدم بهذا المعنى).
+    if (editInvoiceId == null && warehouseId == null) {
+      throw StateError('فاتورةُ مشترياتٍ بلا مخزن — الحفظُ مرفوض');
+    }
+
     try {
       final purchasesRepo = ref.read(purchasesRepositoryProvider);
 
@@ -178,7 +194,8 @@ mixin _PurchaseInvoiceCrudMixin on ConsumerState<PurchaseInvoicesScreen> {
         // Create new invoice — returns the new invoice ID so we can auto-print.
         savedInvoiceId = await purchasesRepo.createInvoice(CreatePurchaseInvoiceParams(
           supplierId: partyId ?? 0,
-          warehouseId: warehouseId ?? 1,
+          // غيرُ عادمٍ بحارسِ رأسِ الدالة — لا اختراعَ لمخزنٍ هنا.
+          warehouseId: warehouseId!,
           items: purchaseItems,
           paid: paidAmount,
           paymentMethod: paymentMethod,
