@@ -655,7 +655,7 @@ extension ProductCrudDao on AppDatabase {
     //
     // `isActive = false` يبقى مكتوباً **عمداً**: كلُّ قرّاء المنتجات الآخرين
     // (`watchAllProducts` · `getAllProducts` · `watchProductsByCategory`)
-    // يفلترون عليه، فيظلّ المحذوفُ مستبعَداً من نقطة البيع والمنتقيات بلا
+    // يفلترون عليه، فيظلّ المحذوفُ مستبعَداً من البيع السريع والمنتقيات بلا
     // تعديل سطرٍ فيها. و`deletedAt` هو ما يفصل الفعلين:
     //
     //   تعطيل: isActive=false · deletedAt=NULL  ⇒ يبقى معروضاً، يُعاد تفعيله

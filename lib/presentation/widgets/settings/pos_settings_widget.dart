@@ -597,7 +597,7 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
       ref.invalidate(activeWarehouseIdProvider);
       ref.invalidate(posCashSafeIdProvider);
       ref.invalidate(posBankSafeIdProvider);
-      AppToast.show(context, 'تم حفظ إعدادات نقطة البيع', type: ToastType.success);
+      AppToast.show(context, 'تم حفظ إعدادات البيع السريع', type: ToastType.success);
     }
   }
 
@@ -635,7 +635,7 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
 
   Widget _buildMainPOSSection() {
     return _buildSectionCard(
-      title: 'إعدادات نقطة البيع الرئيسية', icon: PhosphorIconsBold.shoppingCart, iconColor: AppColors.primary,
+      title: 'إعدادات البيع السريع الرئيسية', icon: PhosphorIconsBold.shoppingCart, iconColor: AppColors.primary,
       children: [
         // ─── إعدادات الوردية والعرض ───
         const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Text('إعدادات الوردية والعرض', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primary))),
@@ -696,7 +696,7 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
             },
           ),
         ),
-        // ─── المخزن الافتراضي لنقطة البيع ───
+        // ─── المخزن الافتراضي للبيع السريع ───
         FutureBuilder(
           future: ref.read(branchRepositoryProvider).getWarehouses(),
           builder: (context, snapshot) {
@@ -725,7 +725,7 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
                     ),
                   ),
                 ListTile(
-                  title: const Text('المخزن الافتراضي لنقطة البيع (عام)'),
+                  title: const Text('المخزن الافتراضي للبيع السريع (عام)'),
                   subtitle: const Text('يُستخدم إذا لم يكن هناك إعداد مخصّص للفرع'),
                   contentPadding: EdgeInsets.zero,
                   trailing: DropdownButton<int?>(
@@ -746,7 +746,7 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
         const Divider(thickness: 2),
 
         // ─── أزرار الإجراءات السريعة والسلة ───
-        const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Text('أزرار نقطة البيع والسلة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primary))),
+        const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Text('أزرار البيع السريع والسلة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primary))),
         Wrap(
           spacing: 8,
           runSpacing: 8,
@@ -861,7 +861,7 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
 
         // ─── أيقونة الصنف وباقي الإعدادات ───
         const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Text('عرض المنتجات', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primary))),
-        SwitchListTile(title: const Text('إظهار صور الأصناف'), subtitle: const Text('إظهار أو إخفاء صور المنتجات في شبكة نقطة البيع'), value: _showProductImagesInPOS, onChanged: (v) => setState(() => _showProductImagesInPOS = v), contentPadding: EdgeInsets.zero),
+        SwitchListTile(title: const Text('إظهار صور الأصناف'), subtitle: const Text('إظهار أو إخفاء صور المنتجات في شبكة البيع السريع'), value: _showProductImagesInPOS, onChanged: (v) => setState(() => _showProductImagesInPOS = v), contentPadding: EdgeInsets.zero),
         SwitchListTile(title: const Text('إظهار ترتيب الأصناف'), value: _showProductSortInPOS, onChanged: (v) => setState(() => _showProductSortInPOS = v), contentPadding: EdgeInsets.zero),
         SwitchListTile(title: const Text('إظهار زر طي القائمة'), subtitle: const Text('إظهار أو إخفاء زر التحكم في أماكن عرض المنتجات'), value: _showProductLayoutToggleInPOS, onChanged: (v) => setState(() => _showProductLayoutToggleInPOS = v), contentPadding: EdgeInsets.zero),
         const SizedBox(height: 8),
@@ -1106,7 +1106,7 @@ Future<void> showPosSettingsDialog(BuildContext context) {
       title: const Row(children: [
         Icon(PhosphorIconsBold.shoppingCart, color: AppColors.primary),
         SizedBox(width: 8),
-        Text('إعدادات نقطة البيع'),
+        Text('إعدادات البيع السريع'),
       ]),
       content: const SizedBox(width: 550, height: 650, child: PosSettingsWidget()),
       actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('إغلاق'))],

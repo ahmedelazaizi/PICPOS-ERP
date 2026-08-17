@@ -11,7 +11,7 @@ extension DatabaseSeederPermissions on AppDatabase {
   Future<void> seedRolesAndPermissions() async {
     final List<Map<String, String>> permissionsList = [
       // POS
-      {'code': 'pos_access', 'name': 'الوصول لنقطة البيع', 'category': 'pos'},
+      {'code': 'pos_access', 'name': 'الوصول للبيع السريع', 'category': 'pos'},
       {'code': 'pos_discount', 'name': 'تطبيق خصم', 'category': 'pos'},
       {'code': 'pos_return', 'name': 'مرتجعات المبيعات', 'category': 'pos'},
       {'code': 'pos_exchange', 'name': 'استبدال المنتجات', 'category': 'pos'},
@@ -76,7 +76,7 @@ extension DatabaseSeederPermissions on AppDatabase {
       {'code': 'pos_view_cost', 'name': 'عرض سعر التكلفة', 'category': 'pos'},
       {'code': 'pos_view_profit', 'name': 'عرض الربح', 'category': 'pos'},
       {'code': 'pos_quantity_edit', 'name': 'تعديل الكمية', 'category': 'pos'},
-      // فئةُ «الخزينة» لا «نقطة البيع» — يطابق `PermissionCodes.masterList`.
+      // فئةُ «الخزينة» لا «البيع السريع» — يطابق `PermissionCodes.masterList`.
       // قرارُ المالك 2026-08-14، ومقيسٌ في
       // `test/unit/shift_close_permission_category_test.dart`.
       {
@@ -595,7 +595,7 @@ extension DatabaseSeederPermissions on AppDatabase {
     await into(roles).insert(
       RolesCompanion.insert(
         name: 'كاشير',
-        description: const Value('نقطة البيع فقط'),
+        description: const Value('البيع السريع فقط'),
         isSystemRole: const Value(true),
         globalId: Value(UuidV7.generate()),
       ),
@@ -745,7 +745,7 @@ extension DatabaseSeederPermissions on AppDatabase {
       // so the cashier can also list their previous invoices.
       'sales_create',
       'sales_view',
-      // Spec 3c — الرئيسية بقت متبوّبة بـ`dashboard_access`؛ الكود ده
+      // Spec 3c — Dashboard بقت متبوّبة بـ`dashboard_access`؛ الكود ده
       // بيتمنح لكل دور تشغيلي عشان الترقية ما تسحبش الشاشة من حد.
       'dashboard_access',
       // دفعة ١١ — بانر تنبيه نقص المخزون بقى محروس بـ`dashboard_alerts`

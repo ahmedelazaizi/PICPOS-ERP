@@ -1219,7 +1219,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       if (!mounted) return;
       final approved = await requestManagerApproval(
         context,
-        actionName: 'حفظ فاتورة نقطة البيع',
+        actionName: 'حفظ فاتورة البيع السريع',
         permission: PermissionCodes.posSave,
       );
       if (!approved) return;

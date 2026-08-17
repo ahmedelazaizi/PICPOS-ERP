@@ -134,7 +134,7 @@ class _PurchaseReturnsReportScreenState extends ConsumerState<PurchaseReturnsRep
         ref.read(activityLoggerProvider).logReportView(
           user?.id ?? 0, 
           user?.displayName ?? 'مجهول', 
-          'تقرير مردودات المشتريات'
+          'تقرير مرتجع المشتريات'
         );
       } catch (_) {}
       
@@ -173,7 +173,7 @@ class _PurchaseReturnsReportScreenState extends ConsumerState<PurchaseReturnsRep
       textDirection: ui.TextDirection.rtl,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('تقرير مردودات المشتريات'),
+          title: const Text('تقرير مرتجع المشتريات'),
           actions: [
             buildReportExportAction(onExport: _returns.isEmpty ? null : _exportToExcel),
             buildReportPrintAsExportAction(onExport: _returns.isEmpty ? null : _printReport),
@@ -361,7 +361,7 @@ class _PurchaseReturnsReportScreenState extends ConsumerState<PurchaseReturnsRep
       branchId: _selectedBranchId,
       scopedBranchIds:
           (await ref.read(branchScopeProvider.future)).allowedBranchIds,
-        title: 'تقرير مردودات المشتريات',
+        title: 'تقرير مرتجع المشتريات',
         headers: ['رقم المرجع', 'التاريخ', 'المورد', 'المبلغ'],
         rows: _returns.map<List<dynamic>>((r) => [
           r.invoiceNumber,

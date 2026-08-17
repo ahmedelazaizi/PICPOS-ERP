@@ -52,7 +52,7 @@ class PicPosItemsTable extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final items = ref.watch(cartControllerProvider.select((s) => s.items));
-    // `pos_cart_item_scale` من «إعدادات نقطة البيع» — نفس المفتاح ونفس
+    // `pos_cart_item_scale` من «إعدادات البيع السريع» — نفس المفتاح ونفس
     // الافتراضي اللي صفوف سلة UralCash بتقراهم. شاشات الكاشير بتتفاوت من
     // ١٠″ لمسية لـ ٢٤″ بماوس، والصف اللي مريح على واحدة بيبقى مضيعة للتانية.
     final scale =

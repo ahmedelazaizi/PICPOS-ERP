@@ -331,7 +331,7 @@ class _UsersManagementPicposScreenState
                       items: const [
                         DropdownMenuItem(
                           value: 'pos',
-                          child: Text('نقطة البيع'),
+                          child: Text('البيع السريع'),
                         ),
                         DropdownMenuItem(
                           value: 'dashboard',

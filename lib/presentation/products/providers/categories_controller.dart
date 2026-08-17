@@ -273,7 +273,7 @@ class CategoriesNotifier extends Notifier<CategoriesState> {
       await _repository.setCategoryShowInPos(id, showInPos);
       _logActivity(
         'category_pos_visibility',
-        '${showInPos ? "إظهار" : "إخفاء"} تصنيف في نقطة البيع: $name',
+        '${showInPos ? "إظهار" : "إخفاء"} تصنيف في البيع السريع: $name',
         entityId: id,
       );
     } catch (e, st) {

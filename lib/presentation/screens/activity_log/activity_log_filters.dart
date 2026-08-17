@@ -116,7 +116,7 @@ mixin _ActivityLogFiltersMixin on ConsumerState<ActivityLogScreen> {
           _buildCategoryChip('الخزينة', 'treasury', PhosphorIconsBold.money),
           _buildCategoryChip('العملاء', 'customers', PhosphorIconsBold.users),
           _buildCategoryChip('الموردين', 'suppliers', PhosphorIconsBold.truck),
-          _buildCategoryChip('نقطة البيع', 'pos', PhosphorIconsBold.storefront),
+          _buildCategoryChip('البيع السريع', 'pos', PhosphorIconsBold.storefront),
           _buildCategoryChip('نقطة بيع الطاولات', 'table_pos', PhosphorIconsBold.table),
           _buildCategoryChip('العروض', 'offers', PhosphorIconsBold.tag),
           _buildCategoryChip(

@@ -526,9 +526,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // ═══ 3. نقطة البيع ═══
+                    // ═══ 3. البيع السريع ═══
                     _buildSettingsCard(
-                      title: 'إعدادات نقطة البيع',
+                      title: 'إعدادات البيع السريع',
                       children: [
                         buildPosSettingsTileGuarded(
                           onOpen: () => showPosSettingsDialog(context),
@@ -688,8 +688,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           const _StockShortagePolicyPerBranchTile(),
                           // Negative-sales toggle moved to POS settings
                           // (Feature 022 follow-up) — operators expected
-                          // it under "إعدادات نقطة البيع" → "إعدادات
-                          // نقطة البيع الرئيسية", not under Financial
+                          // it under "إعدادات البيع السريع" → "إعدادات
+                          // البيع السريع الرئيسية", not under Financial
                           // settings. The setting key is unchanged
                           // (`enable_negative_sales`); the orchestrator
                           // reads the same value.

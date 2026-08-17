@@ -141,7 +141,7 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
     assert(
       actions.length == picposShortcutLabels.length &&
           actions.keys.every(picposShortcutLabels.containsKey),
-      'اختصارات نقطة البيع اختلفت عن توثيقها: '
+      'اختصارات البيع السريع اختلفت عن توثيقها: '
       'أفعال=${actions.keys} توثيق=${picposShortcutLabels.keys}. '
       'حدِّث picpos_pos_shortcuts.dart مع أي تغيير هنا.',
     );
@@ -413,7 +413,7 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
         ),
         const SizedBox(height: 6),
         // المجاميع + طرق الدفع + أزرار الأفعال — نسخة PicPos من لوحة UralCash،
-        // بتحترم إعدادات إظهار الأزرار والمقاسات في «إعدادات نقطة البيع».
+        // بتحترم إعدادات إظهار الأزرار والمقاسات في «إعدادات البيع السريع».
         // شريط العمليات المنفصل اتشال: «فواتير» و«الدرج» و«خصم» و«العميل»
         // كانوا ظاهرين مرتين — مرة في اللوحة ومرة تحتها. التعليق والفواتير
         // المعلقة انضموا للوحة بدل ما يعيشوا في شريط لوحدهم.

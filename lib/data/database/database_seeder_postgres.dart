@@ -186,7 +186,7 @@ extension DatabaseSeederPostgres on AppDatabase {
     // (name, description, isSystemRole). Order matters only cosmetically.
     const defaults = <List<Object>>[
       ['مدير النظام', 'صلاحيات كاملة للنظام', true],
-      ['كاشير', 'نقطة البيع فقط', true],
+      ['كاشير', 'البيع السريع فقط', true],
       ['مخزني', 'إدارة المخزون والمنتجات', true],
       ['محاسب', 'التقارير والخزينة', true],
       ['مدير مالي', 'طبقة وصول غير مقيدة مالياً', true],

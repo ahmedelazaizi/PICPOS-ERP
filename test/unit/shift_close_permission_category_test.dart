@@ -1,4 +1,4 @@
-// «إغلاقُ الوردية» خارجَ فئة نقطة البيع.
+// «إغلاقُ الوردية» خارجَ فئة البيع السريع.
 //
 // ── طلبُ المالك (2026-08-14) ────────────────────────────────────────────────
 // «الإغلاقُ له صلاحيةٌ خارجَ إعداد صلاحيات نقطة البيع، بحيث يكون المديرُ هو
@@ -35,7 +35,7 @@ String _stripComments(String src) => src
     .join('\n');
 
 void main() {
-  test('الماسترُ يضع «إغلاق الوردية» في الخزينة لا في نقطة البيع', () {
+  test('الماسترُ يضع «إغلاق الوردية» في الخزينة لا في البيع السريع', () {
     final entry = PermissionCodes.masterList.firstWhere(
       (p) => p['code'] == PermissionCodes.posShiftClose,
       orElse: () => <String, String>{},
@@ -44,7 +44,7 @@ void main() {
     expect(entry['category'], equals('treasury'));
   });
 
-  test('وفتحُ الوردية يبقى في نقطة البيع — الفصلُ مقصودٌ لا سهو', () {
+  test('وفتحُ الوردية يبقى في البيع السريع — الفصلُ مقصودٌ لا سهو', () {
     final entry = PermissionCodes.masterList.firstWhere(
       (p) => p['code'] == PermissionCodes.posShiftOpen,
       orElse: () => <String, String>{},

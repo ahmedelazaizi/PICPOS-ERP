@@ -5,7 +5,7 @@
 //
 // الشاشة الأصل (lib/presentation/screens/settings_screen.dart، 1406 سطر) بلا
 // منطق مختلف — بوابة كلمة مرور الإعدادات، ثم محتوى الشاشة مقسّم لـ٦ أقسام
-// (النظام والمظهر، الأجهزة والطباعة، نقطة البيع، المستخدمين والأمان، حماية
+// (النظام والمظهر، الأجهزة والطباعة، البيع السريع، المستخدمين والأمان، حماية
 // الأقسام، الإعدادات المالية، إدارة البيانات، التكاملات والخدمات) بالإضافة لـ
 // عن البرنامج/الترخيص/أدوات المطوّر/نسخ اللوج. تُقسَّم عبر ٦ ملفات `part`
 // (general_settings_widgets.dart / scale_barcode_settings.dart /
@@ -55,7 +55,7 @@
 // البيانات، أدوات صيانة المسؤول، تدقيق مزامنة المرآة/ازدواج شيكات القبض حسب
 // الوضع، إعدادات الربط بين الفروع والسيرفر، نمط الإدخال اللمسي، المزامنة
 // الإجبارية)، الأجهزة والطباعة (إعدادات الأجهزة، إدارة الطابعات، نقاط البيع،
-// قوالب الفواتير، باركود الميزان، البصمة عند تفعيل HR)، إعدادات نقطة البيع،
+// قوالب الفواتير، باركود الميزان، البصمة عند تفعيل HR)، إعدادات البيع السريع،
 // المستخدمين والأمان (إدارة المستخدمين → PicPos، إدارة صلاحيات الأدوار، فحص
 // الصلاحيات على السيرفر، مهلة انتهاء الجلسة، كلمة مرور الإعدادات) أو الإشعار
 // في وضع العميل، حماية الأقسام بكلمات مرور بديلة (عند تفعيل المطبخ/HR)،
@@ -621,15 +621,15 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
       ),
       _SettingsSection(
         id: 'pos',
-        title: 'نقطة البيع',
+        title: 'البيع السريع',
         icon: PhosphorIconsBold.shoppingCart,
         keywords: 'تراكم أصناف ميزان وزن سلة أزرار تصنيفات شبكة منتجات '
             'إيصال طباعة تلقائية بيع بالسالب خصم ضريبة درج مصروفات وردية '
             'مخزن افتراضي بادئة ترقيم طرق الدفع نقدي بطاقة تحويل آجل متعدد',
         children: () => [
-          // ═══ 3. نقطة البيع ═══
+          // ═══ 3. البيع السريع ═══
           _buildSettingsCard(
-            title: 'إعدادات نقطة البيع',
+            title: 'إعدادات البيع السريع',
             children: [
               buildPosSettingsTileGuarded(
                 onOpen: () => showPosSettingsDialog(context),
@@ -812,8 +812,8 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
                 const _StockShortagePolicyPerBranchTile(),
                 // Negative-sales toggle moved to POS settings
                 // (Feature 022 follow-up) — operators expected
-                // it under "إعدادات نقطة البيع" → "إعدادات
-                // نقطة البيع الرئيسية", not under Financial
+                // it under "إعدادات البيع السريع" → "إعدادات
+                // البيع السريع الرئيسية", not under Financial
                 // settings. The setting key is unchanged
                 // (`enable_negative_sales`); the orchestrator
                 // reads the same value.

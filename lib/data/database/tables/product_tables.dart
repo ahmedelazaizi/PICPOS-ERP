@@ -33,14 +33,14 @@ class Categories extends Table {
   )(); // #9 قفل التصنيف - منع التعديل/البيع
   BoolColumn get isExcluded => boolean().withDefault(
     const Constant(false),
-  )(); // تصنيف مستثنى - لا يظهر في نقطة البيع إلا بالبحث
+  )(); // تصنيف مستثنى - لا يظهر في البيع السريع إلا بالبحث
   IntColumn get printerId =>
       integer().nullable().references(Printers, #id)(); // طابعة أمر الشغل
   TextColumn get printerGroup =>
       text().nullable()(); // NEW: Printer group name (e.g. 'kitchen', 'bar')
   BoolColumn get showInPos => boolean().withDefault(
     const Constant(true),
-  )(); // v100: إظهار/إخفاء التصنيف في نقطة البيع
+  )(); // v100: إظهار/إخفاء التصنيف في البيع السريع
   BoolColumn get isGlobal => boolean().withDefault(const Constant(true))();
   TextColumn get branchIds => text().nullable()(); // CSV of permitted branch IDs
   TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
@@ -147,7 +147,7 @@ class Products extends Table {
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
   IntColumn get sortOrder =>
-      integer().withDefault(const Constant(0))(); // ترتيب العرض في نقطة البيع
+      integer().withDefault(const Constant(0))(); // ترتيب العرض في البيع السريع
 
   // Phase 14: UUID for deterministic sync — prevents ID collision between branches
 

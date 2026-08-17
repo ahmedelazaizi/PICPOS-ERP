@@ -86,7 +86,7 @@ abstract class BaseGenerator {
   static Future<pw.Font> initFont() async {
     if (_arabicFont != null) return _arabicFont!;
 
-    // ① الأصلُ المحزوم (يعمل بلا إنترنت على أجهزة نقطة البيع)
+    // ① الأصلُ المحزوم (يعمل بلا إنترنت على أجهزة البيع السريع)
     try {
       final fontData =
           await rootBundle.load('assets/fonts/NotoNaskhArabic-Regular.ttf');

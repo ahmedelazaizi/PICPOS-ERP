@@ -311,7 +311,7 @@ mixin _InvoiceDesignerUIMixin on ConsumerState<InvoiceDesignerScreen> {
                 value: templateCategory, isDense: true,
                 style: const TextStyle(fontSize: 13, color: Colors.black87, fontWeight: FontWeight.w600),
                 items: const [
-                  DropdownMenuItem(value: 'receipt', child: Text('نقطة البيع')),
+                  DropdownMenuItem(value: 'receipt', child: Text('البيع السريع')),
                   DropdownMenuItem(value: 'invoice', child: Text('فواتير المبيعات')),
                   DropdownMenuItem(value: 'purchase', child: Text('فواتير المشتريات')),
                   DropdownMenuItem(value: 'kitchen', child: Text('طلبات المطبخ')),

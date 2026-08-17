@@ -16,7 +16,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/permissions/permission_codes.dart';
 import '../../../data/providers/providers.dart';
 
-/// طرقُ الدفع المؤشَّرةُ في إعدادات نقطة البيع — `null` = بلا تضييق.
+/// طرقُ الدفع المؤشَّرةُ في إعدادات البيع السريع — `null` = بلا تضييق.
 ///
 /// ⚠️ **موضعُه هنا مقصود**، لا في `data/providers/settings_providers.dart`:
 /// حارسُ التكافؤ (`picpos_permission_parity_test`) يبذر مسحَه بملفّات
@@ -58,7 +58,7 @@ const Set<String> paymentMethodsOnPermissionReadFailure = <String>{'cash'};
 /// [permissions] أكوادُ صلاحيات المستخدم، و`null` تعني **تعذّرت القراءة** —
 /// وهي الحالةُ التي كانت تفشل مفتوحةً.
 ///
-/// [enabledBySetting] الطرقُ المؤشَّرةُ في إعدادات نقطة البيع، و`null` تعني
+/// [enabledBySetting] الطرقُ المؤشَّرةُ في إعدادات البيع السريع، و`null` تعني
 /// إعداداً غيرَ مضبوطٍ بعد ⇒ لا تضييق.
 ///
 /// [isPlatformCustomer] عميلُ منصّةٍ يبيع آجلاً حصراً — قيدٌ على مستوى

@@ -176,7 +176,7 @@ class SalesInvoicesTable extends ConsumerWidget {
                           ),
                         ),
                         // Return-status badge — makes it obvious the
-                        // cashier should check "شاشة مردودات المبيعات"
+                        // cashier should check "شاشة مرتجع المبيعات"
                         // for the details. Returns invoices themselves
                         // (saleType='return') are filtered out of this
                         // list upstream; this only tags ORIGINAL
@@ -365,7 +365,7 @@ class SalesInvoicesTable extends ConsumerWidget {
 
 /// Compact badge rendered next to an invoice number when the invoice's
 /// status is `returned` or `partial_return`. Lets the cashier know to
-/// look in "شاشة مردودات المبيعات" for the matching return record
+/// look in "شاشة مرتجع المبيعات" for the matching return record
 /// without having to open the invoice.
 class _ReturnBadge extends StatelessWidget {
   final bool full;
@@ -376,8 +376,8 @@ class _ReturnBadge extends StatelessWidget {
     final color = full ? AppColors.error : AppColors.warning;
     return Tooltip(
       message: full
-          ? 'تم إرجاع الفاتورة بالكامل — راجع شاشة مردودات المبيعات للتفاصيل'
-          : 'تم إرجاع جزء من الفاتورة — راجع شاشة مردودات المبيعات للتفاصيل',
+          ? 'تم إرجاع الفاتورة بالكامل — راجع شاشة مرتجع المبيعات للتفاصيل'
+          : 'تم إرجاع جزء من الفاتورة — راجع شاشة مرتجع المبيعات للتفاصيل',
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         decoration: BoxDecoration(

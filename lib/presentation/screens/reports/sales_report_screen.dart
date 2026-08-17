@@ -510,7 +510,7 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
                     ),
                     items: const [
                       DropdownMenuItem<String?>(value: null, child: Text('الكل')),
-                      DropdownMenuItem(value: 'default', child: Text('نقطة البيع')),
+                      DropdownMenuItem(value: 'default', child: Text('البيع السريع')),
                       DropdownMenuItem(value: 'talabat', child: Text('طلبات')),
                       DropdownMenuItem(value: 'careem', child: Text('كريم')),
                       DropdownMenuItem(value: 'ashyae', child: Text('أشيائي')),

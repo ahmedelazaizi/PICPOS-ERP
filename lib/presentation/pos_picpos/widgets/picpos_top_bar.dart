@@ -22,7 +22,7 @@ class PicPosTopBar extends ConsumerWidget {
   final bool showBackButton;
 
   /// إغلاق الوردية — Task 10B: يسدّ فجوة إن كاشير PicPos ما كان عندوش أي طريقة
-  /// يقفل الوردية من نقطة البيع. المُستدعي (`picpos_pos_screen.dart`) يمرّر
+  /// يقفل الوردية من البيع السريع. المُستدعي (`picpos_pos_screen.dart`) يمرّر
   /// الفعل مباشرة (`PosCashierClosingDialog.show(context)`) بلا لف — نفس أسلوب
   /// `onCashierClosing` في `pos_main_screen.dart` → `pos_header.dart`. حارس
   /// الصلاحية (`PermissionCodes.posShiftClose` + `allowManagerOverride`) يعيش
@@ -88,7 +88,7 @@ class PicPosTopBar extends ConsumerWidget {
           const SizedBox(width: 8),
           const _InfoChip(
             icon: PhosphorIconsBold.storefront,
-            label: 'نقطة البيع',
+            label: 'البيع السريع',
           ),
           const SizedBox(width: 8),
           _HeldOrdersButton(count: heldCount, onPressed: onHeldOrders),
@@ -164,7 +164,7 @@ class _ClockBlockState extends State<_ClockBlock> {
         Text(
           date,
           // كان `white70` — باهت على شريط داكن تحت إضاءة المحل. أبيض كامل
-          // وبولد زي باقي نصوص نقطة البيع (طلب ١٠).
+          // وبولد زي باقي نصوص البيع السريع (طلب ١٠).
           style: const TextStyle(
             color: Colors.white,
             fontSize: 11,

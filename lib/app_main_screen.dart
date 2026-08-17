@@ -575,7 +575,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
             : DashboardScreen(
                 onNavigate: (index) => _navigateToScreen(index),
               ),
-        label: 'الرئيسية',
+        label: 'Dashboard',
         icon: PhosphorIconsBold.house,
       ),
       ScreenConfig(
@@ -593,7 +593,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         // cart/checkout controllers; only layout and key bindings differ.
         builder: (_) =>
             Brand.isPicPos ? const PicPosPosScreen() : const PosScreenV2(),
-        label: 'نقطة البيع',
+        label: 'البيع السريع',
         icon: PhosphorIconsBold.shoppingCart,
       ),
       ScreenConfig(
@@ -906,7 +906,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => Brand.isPicPos
             ? const SalesReturnsPicposScreen()
             : const SalesReturnsScreen(),
-        label: 'مردودات المبيعات',
+        label: 'مرتجع المبيعات',
         icon: PhosphorIconsBold.arrowUUpLeft,
       ),
       ScreenConfig(
@@ -914,7 +914,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => Brand.isPicPos
             ? const PurchaseReturnsPicposScreen()
             : const PurchaseReturnsScreen(),
-        label: 'مردودات المشتريات',
+        label: 'مرتجع المشتريات',
         icon: PhosphorIconsBold.arrowUUpLeft,
       ),
       ScreenConfig(

@@ -245,7 +245,7 @@ class _PrintersScreenState extends ConsumerState<PrintersScreen> {
                   items: const [
                     DropdownMenuItem(
                       value: 'pos_receipt',
-                      child: Text('إيصال نقطة البيع'),
+                      child: Text('إيصال البيع السريع'),
                     ),
                     DropdownMenuItem(
                       value: 'kitchen',

@@ -90,7 +90,7 @@ class PermissionEnforcementRegistry {
     // ── حرجة ماليّاً — أولوية أمنية (دفعة ١٣) ──
     // 'modify_closed_period' اتشال — بقى منفَّذ فعلياً (Task 6a، فحص صريح
     // جوه زرار «إعادة فتح الفترة» في fiscal_year_screen.dart).
-    // ── نقطة البيع — دفعة تانية (Task 7) ──
+    // ── البيع السريع — دفعة تانية (Task 7) ──
     // 'pos_customer_add', 'pos_expense_description', 'pos_grid_toggle',
     // 'pos_low_stock_alert', 'pos_note_add', 'pos_notifications',
     // 'pos_weight_dialog', 'pos_work_order' اتشالوا — بقوا منفَّذين فعلياً

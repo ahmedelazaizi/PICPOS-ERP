@@ -41,7 +41,7 @@ class _SetPinDialogState extends AppFormDialogState<bool, SetPinDialog> {
           ),
         ),
         const Text(
-          'تنبيه: يُستخدم رمز PIN لتسجيل الدخول السريع في نقطة البيع (POS).',
+          'تنبيه: يُستخدم رمز PIN لتسجيل الدخول السريع في البيع السريع (POS).',
           style: TextStyle(fontSize: 12, color: Colors.grey),
           textAlign: TextAlign.center,
         ),

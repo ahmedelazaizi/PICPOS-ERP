@@ -1183,7 +1183,7 @@ extension Epoch3Migrations on AppDatabase {
     if (from < 121) {
       await _safeMigrate('v121 backfill default roles', () async {
         final defaultRoles = [
-          ('كاشير', 'نقطة البيع فقط'),
+          ('كاشير', 'البيع السريع فقط'),
           ('مخزني', 'إدارة المخزون والمنتجات'),
           ('محاسب', 'التقارير والخزينة'),
           ('مدير مالي', 'طبقة وصول غير مقيدة مالياً'),
@@ -2409,7 +2409,7 @@ extension Epoch3Migrations on AppDatabase {
         // `PermissionCodes.masterList` (‏`authRepo.getAllPermissions()`)،
         // و`syncAllPermissions` يتخطّى أيَّ كودٍ موجودٍ سلفاً
         // (`if (existingCodes.contains(...)) continue`). فبلا هذه الجملة
-        // تبقى الصلاحيةُ في «نقطة البيع» إلى الأبد على كلّ قاعدةٍ منصَّبة —
+        // تبقى الصلاحيةُ في «البيع السريع» إلى الأبد على كلّ قاعدةٍ منصَّبة —
         // أيْ في المكان الذي طلب المالكُ إخراجَها منه.
         //
         // والصلاحيةُ نفسُها لا تُمنح ولا تُنزع هنا: الفئةُ تبويبٌ في شاشة

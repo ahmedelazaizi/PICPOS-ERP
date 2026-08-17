@@ -263,7 +263,7 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
                       items: const [
                         DropdownMenuItem(
                           value: 'pos',
-                          child: Text('نقطة البيع'),
+                          child: Text('البيع السريع'),
                         ),
                         DropdownMenuItem(
                           value: 'dashboard',

@@ -1394,7 +1394,7 @@ class _AnalyticsDashboardScreenState
         ),
         KPIData(
           icon: PhosphorIconsBold.arrowUUpLeft,
-          label: 'مردودات المبيعات',
+          label: 'مرتجع المبيعات',
           value:
               '${salesReturns.total.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
           trend: 0,
@@ -1403,7 +1403,7 @@ class _AnalyticsDashboardScreenState
         ),
         KPIData(
           icon: PhosphorIconsBold.arrowUDownLeft,
-          label: 'مردودات المشتريات',
+          label: 'مرتجع المشتريات',
           value:
               '${purchaseReturns.total.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
           trend: 0,
@@ -1462,14 +1462,14 @@ class _AnalyticsDashboardScreenState
     ),
     KPIData(
       icon: PhosphorIconsBold.arrowUUpLeft,
-      label: 'مردودات المبيعات',
+      label: 'مرتجع المبيعات',
       value: '0.00 ${AppConstants.currencySymbolEn}',
       trend: 0,
       color: Colors.orange,
     ),
     KPIData(
       icon: PhosphorIconsBold.arrowUDownLeft,
-      label: 'مردودات المشتريات',
+      label: 'مرتجع المشتريات',
       value: '0.00 ${AppConstants.currencySymbolEn}',
       trend: 0,
       color: Colors.red,

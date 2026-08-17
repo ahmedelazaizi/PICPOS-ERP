@@ -129,7 +129,7 @@ Widget buildDatabaseSettingsTileGuarded({required VoidCallback onOpen}) {
   );
 }
 
-/// «إعدادات نقطة البيع الرئيسية» — `settings_pos_edit`.
+/// «إعدادات البيع السريع الرئيسية» — `settings_pos_edit`.
 ///
 /// بوابة الدخول للديالوج كله (أزرار/شبكة/سلة/إيصال/تنبيه مخزون/بيع بالسالب/
 /// مخزن افتراضي). تبويب المدخل أبسط وأشمل من تبويب كل مفتاح جوه.
@@ -138,14 +138,14 @@ Widget buildPosSettingsTileGuarded({required VoidCallback onOpen}) {
   return PermissionGuard(
     permission: PermissionCodes.settingsPosEdit,
     allowManagerOverride: true,
-    actionName: 'إعدادات نقطة البيع',
+    actionName: 'إعدادات البيع السريع',
     onGranted: onOpen,
     child: ListTile(
       leading: const Icon(
         PhosphorIconsBold.shoppingCart,
         color: AppColors.primary,
       ),
-      title: const Text('إعدادات نقطة البيع الرئيسية'),
+      title: const Text('إعدادات البيع السريع الرئيسية'),
       subtitle: const Text('الأزرار، التصنيفات، شبكة المنتجات، السلة، الإيصال'),
       trailing: const Icon(PhosphorIconsBold.caretLeft),
       onTap: onOpen,

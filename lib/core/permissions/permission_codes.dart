@@ -7,10 +7,10 @@ class PermissionCodes {
   PermissionCodes._();
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // POS PERMISSIONS (نقطة البيع)
+  // POS PERMISSIONS (البيع السريع)
   // ═══════════════════════════════════════════════════════════════════════════
 
-  /// الوصول لنقطة البيع
+  /// الوصول للبيع السريع
   static const String posAccess = 'pos_access';
 
   /// تطبيق خصم
@@ -628,7 +628,7 @@ class PermissionCodes {
   /// الوصول لشاشة الإعدادات
   static const String settingsAccess = 'settings_access';
 
-  /// تعديل إعدادات نقطة البيع
+  /// تعديل إعدادات البيع السريع
   static const String settingsPosEdit = 'settings_pos_edit';
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -948,7 +948,7 @@ class PermissionCodes {
   /// Used by `syncAllPermissions()` to ensure full DB coverage at app startup.
   static final List<Map<String, String>> masterList = [
     // ── POS ──
-    {'code': posAccess, 'name': 'الوصول لنقطة البيع', 'category': 'pos'},
+    {'code': posAccess, 'name': 'الوصول للبيع السريع', 'category': 'pos'},
     {'code': posDiscount, 'name': 'تطبيق خصم', 'category': 'pos'},
     {'code': posReturn, 'name': 'مرتجعات المبيعات', 'category': 'pos'},
     {'code': posExchange, 'name': 'استبدال المنتجات', 'category': 'pos'},
@@ -1012,7 +1012,7 @@ class PermissionCodes {
     {'code': posRemoveItem, 'name': 'حذف صنف من السلة', 'category': 'pos'},
     {'code': posWeightDialog, 'name': 'استخدام الميزان', 'category': 'pos'},
     {'code': posShiftOpen, 'name': 'فتح الوردية', 'category': 'pos'},
-    // ⚠️ الإغلاقُ في «الخزينة» لا في «نقطة البيع» — قرارُ المالك 2026-08-14:
+    // ⚠️ الإغلاقُ في «الخزينة» لا في «البيع السريع» — قرارُ المالك 2026-08-14:
     // «الإغلاقُ له صلاحيةٌ خارجَ إعداد صلاحيات نقطة البيع، بحيث يكون المديرُ
     // هو من يجرد». والفتحُ يبقى فوقُ لأنه فعلُ كاشيرٍ يوميّ، والإغلاقُ جردٌ.
     // والكودُ نفسُه لم يتغيّر ⇒ لا يفقد دورٌ صلاحيةً يملكها. والقواعدُ
@@ -1517,7 +1517,7 @@ class PermissionCodes {
     {'code': stockAudit, 'name': 'الجرد الدوري', 'category': 'inventory'},
     {'code': partiesView, 'name': 'عرض الأطراف', 'category': 'customers'},
     {'code': settingsAccess, 'name': 'الوصول لشاشة الإعدادات', 'category': 'settings'},
-    {'code': settingsPosEdit, 'name': 'تعديل إعدادات نقطة البيع', 'category': 'settings'},
+    {'code': settingsPosEdit, 'name': 'تعديل إعدادات البيع السريع', 'category': 'settings'},
     {'code': modifiersManage, 'name': 'إدارة الإضافات والمعدلات', 'category': 'settings'},
 
     // QA D1-008 (2026-05-15): the duplicate HR block that was here is
@@ -1538,7 +1538,7 @@ class PermissionCodes {
 
   /// All category names in Arabic
   static const Map<String, String> categoryNames = {
-    'pos': 'نقطة البيع',
+    'pos': 'البيع السريع',
     'dashboard': 'لوحة التحكم',
     'inventory': 'المخزون',
     'products': 'المنتجات',

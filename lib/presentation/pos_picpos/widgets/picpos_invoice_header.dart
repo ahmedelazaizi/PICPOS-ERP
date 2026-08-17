@@ -111,7 +111,7 @@ class _Field extends StatelessWidget {
           value,
           overflow: TextOverflow.ellipsis,
           // `muted` بقى فرق **لون** بس (رمادي غامق مقروء) مش فرق وزن: كل نص في
-          // نقطة البيع بولد (طلب ١٠). الميل الحرفي بيفضل عشان يفرّق النص
+          // البيع السريع بولد (طلب ١٠). الميل الحرفي بيفضل عشان يفرّق النص
           // النائب («—»، «...») عن قيمة حقيقية.
           style: muted
               ? PicPosText.l(11, fontStyle: FontStyle.italic)

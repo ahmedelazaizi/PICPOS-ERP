@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// سجل مردودات المبيعات — parity with سجل مردودات المشتريات
+// سجل مرتجع المبيعات — parity with سجل مرتجع المشتريات
 //
 // Bug (client report 2026-07-26): the "سجل المرتجعات" dialog on the sales
 // returns screen lists nothing, while the same dialog on the purchase returns

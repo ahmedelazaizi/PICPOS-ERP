@@ -198,8 +198,8 @@ class _DefaultHomeScreenSelectorState
 
     // Define screen names mapping (must match main.dart allScreens)
     const screenNames = {
-      ScreenId.dashboard: 'الرئيسية (Dashboard)',
-      ScreenId.pos: 'نقطة البيع (POS)',
+      ScreenId.dashboard: 'Dashboard',
+      ScreenId.pos: 'البيع السريع (POS)',
       ScreenId.offers: 'العروض (Offers)',
       ScreenId.tables: 'الطاولات (Tables)',
       ScreenId.products: 'الأصناف (Products)',

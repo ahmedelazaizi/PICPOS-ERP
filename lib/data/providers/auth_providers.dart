@@ -605,36 +605,36 @@ class NavItemDef {
 /// يشغّل الـ provider بكل تبعياته (auth state, DB, إلخ).
 const kAllNavItemDefs = [
   // ═══════════════════════════════════════════
-  // 🏠 الرئيسية
+  // 🏠 Dashboard
   // ═══════════════════════════════════════════
   // كانت permission: null — أي حد يشوفها حتى لو الشاشة نفسها ممنوعة عنه.
   // قبل كده كان ده متّسق لأن لوحة التحكم كانت بتتحقن في allowedScreens
   // قسراً لكل الناس؛ دلوقتي screenPermissionMap بيربطها بـ dashboard_access
   // فعلاً، فلازم عنصر القائمة يتحكم بنفس الكود عشان مايفضلش رابط ميت لشاشة
   // ممنوعة (أو العكس).
-  NavItemDef(icon: PhosphorIconsBold.house, label: 'الرئيسية', permission: PermissionCodes.dashboardAccess, index: 0, section: 'الرئيسية', group: 'home'),
+  NavItemDef(icon: PhosphorIconsBold.house, label: 'Dashboard', permission: PermissionCodes.dashboardAccess, index: 0, section: 'Dashboard', group: 'home'),
 
   // ═══════════════════════════════════════════
   // 💰 المبيعات
   // ═══════════════════════════════════════════
-  NavItemDef(icon: PhosphorIconsBold.shoppingCart, label: 'نقطة البيع', permission: 'pos_access', index: 1, section: 'المبيعات', group: 'sales'),
+  NavItemDef(icon: PhosphorIconsBold.shoppingCart, label: 'البيع السريع', permission: 'pos_access', index: 1, section: 'المبيعات', group: 'sales'),
   NavItemDef(icon: PhosphorIconsBold.fileText, label: 'فواتير المبيعات', permission: 'sales_view', index: 17, group: 'sales'),
   NavItemDef(icon: PhosphorIconsBold.notepad, label: 'طلبات البيع', permission: 'sales_orders_view', index: 37, group: 'sales'),
   NavItemDef(icon: PhosphorIconsBold.circlesThree, label: 'الطاولات', permission: 'tables_view', index: 3, group: 'sales'),
   NavItemDef(icon: PhosphorIconsBold.tag, label: 'العروض', permission: 'offers_view', index: 2, group: 'sales'),
-  NavItemDef(icon: PhosphorIconsBold.arrowUUpLeft, label: 'مردودات المبيعات', permission: 'sales_return_view', index: 44, group: 'sales'),
+  NavItemDef(icon: PhosphorIconsBold.arrowUUpLeft, label: 'مرتجع المبيعات', permission: 'sales_return_view', index: 44, group: 'sales'),
 
   // ═══════════════════════════════════════════
   // 🛒 المشتريات
   // ═══════════════════════════════════════════
   NavItemDef(icon: PhosphorIconsBold.receipt, label: 'فواتير المشتريات', permission: 'purchases_create', index: 9, section: 'المشتريات', group: 'purchases'),
   NavItemDef(icon: PhosphorIconsBold.clipboardText, label: 'أوامر الشراء', permission: 'purchase_orders_view', index: 30, group: 'purchases'),
-  NavItemDef(icon: PhosphorIconsBold.arrowUUpLeft, label: 'مردودات المشتريات', permission: 'purchases_return_view', index: 45, group: 'purchases'),
+  NavItemDef(icon: PhosphorIconsBold.arrowUUpLeft, label: 'مرتجع المشتريات', permission: 'purchases_return_view', index: 45, group: 'purchases'),
 
   // ═══════════════════════════════════════════
-  // 📦 المخزون والإنتاج
+  // 📦 الاصناف والمخزون
   // ═══════════════════════════════════════════
-  NavItemDef(icon: PhosphorIconsBold.package, label: 'الأصناف', permission: 'products_add', index: 4, section: 'المخزون والإنتاج', group: 'inventory'),
+  NavItemDef(icon: PhosphorIconsBold.package, label: 'الأصناف', permission: 'products_add', index: 4, section: 'الاصناف والمخزون', group: 'inventory'),
   NavItemDef(icon: PhosphorIconsBold.squaresFour, label: 'التصنيفات', permission: 'products_add', index: 5, group: 'inventory'),
   NavItemDef(icon: PhosphorIconsBold.warehouse, label: 'المخزون', permission: 'inventory_view', index: 8, group: 'inventory'),
   NavItemDef(icon: PhosphorIconsBold.clipboardText, label: 'أرصدة المخزون', permission: 'inventory_view', index: 19, group: 'inventory'),
@@ -648,7 +648,7 @@ const kAllNavItemDefs = [
   // ═══════════════════════════════════════════
   // 👥 العملاء والموردين
   // ═══════════════════════════════════════════
-  NavItemDef(icon: PhosphorIconsBold.usersThree, label: 'العملاء والموردين', permission: 'customers_view', index: 6, section: 'العلاقات التجارية', group: 'relations'),
+  NavItemDef(icon: PhosphorIconsBold.usersThree, label: 'العملاء والموردين', permission: 'customers_view', index: 6, section: 'العملاء والموردين', group: 'relations'),
   NavItemDef(icon: PhosphorIconsBold.trophy, label: 'نقاط الولاء', permission: 'loyalty_view', index: 23, group: 'relations'),
   NavItemDef(icon: PhosphorIconsBold.truck, label: 'التوزيع', permission: 'distribution_view', index: 24, group: 'relations'),
 

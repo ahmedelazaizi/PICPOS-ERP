@@ -11,7 +11,7 @@ import 'picpos_pos_text.dart';
 /// عديمةُ الحالة وخالصةٌ عمداً: لا Riverpod ولا `data/database` — حارسُ
 /// `presentation_db_import_guard` يمنع أيَّ ملفِّ عرضٍ **جديد** من استيراد
 /// القاعدة، وهذا ملفٌّ جديد. القراءةُ من `posReturnModeProvider` تحدث عند
-/// المستدعي (‏شاشةُ نقطة البيع)، وهذه فقط تعرض ما تُعطاه — `invoiceNumber`
+/// المستدعي (‏شاشةُ البيع السريع)، وهذه فقط تعرض ما تُعطاه — `invoiceNumber`
 /// نصٌّ، لا `SalesInvoiceData`.
 class PicPosReturnModeBanner extends StatelessWidget {
   final String invoiceNumber;
