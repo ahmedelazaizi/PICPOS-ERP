@@ -592,6 +592,26 @@ extension _SetupWizardProvisioningExt on _SetupWizardScreenState {
               onPressed: () {
                 Navigator.of(context).pop();
                 // Exit so main.dart re-reads dbMode on next launch.
+                //
+                // #B2 (cart-close guard, 2026-08-17): مخرجُ إنهاءٍ خامسٌ،
+                // مستثنىً عمداً من `shouldBlockAppCloseForCart`. السببُ
+                // مُتحقَّقٌ لا مفترَض: هذه الشاشةُ (`SetupWizardScreen`)
+                // لا تُبنى إلا من `_SetupGate` في `main.dart`، وهي الموضعُ
+                // الوحيدُ في `lib/` الذي يُنشئها (بحثٌ نصّيٌّ عن
+                // `SetupWizardScreen(` أكّد ذلك). `_SetupGate` نفسُها لا
+                // تُعرَض إلا بعد المصادقة **و**`setup_completed != 'true'`؛
+                // وكلُّ نقاط الكتابة الأخرى لِـ`setup_completed=''`
+                // (‏`main.dart` — مسارا `onResetWizard` في شاشة الفشل
+                // القاتل) تقع **قبل** `runApp()` الشجرةِ العاديّة وتتطلّب
+                // إعادةَ تشغيل التطبيق فعلياً (معلَّقٌ في تعليق الكود
+                // هناك: «restart app to re-run wizard»). و`cartControllerProvider`
+                // حالةٌ في الذاكرة فقط بلا أيّ تخزينٍ دائم، فإعادةُ تشغيل
+                // العمليةِ تعني سلّةً فارغةً وجوباً. خلاصةً: هذه الشاشةُ
+                // تسبق تسجيلَ الدخول إلى نقطة البيع دوماً في كلّ مسارٍ
+                // موجودٍ فعلياً — فلا سلّةَ بيعٍ قائمةً يمكن أن تُفقَد هنا.
+                // إن أُضيف مستقبلاً مسارٌ يعيد فتح هذه الشاشةَ **من داخل**
+                // جلسةٍ نشطة (بلا إعادة تشغيل عمليةٍ)، فيجب حراسةُ هذا
+                // الزرّ بنفس نمط `onWindowClose`.
                 exit(0);
               },
               child: const Text('إغلاق التطبيق'),
