@@ -522,6 +522,30 @@ void main() {
       expect(order.taxRate, TaxRateBounds.minRate);
     });
 
+    test('طلبٌ مطفأٌ بلقطةٍ دون الحدِّ يُحسَب بلا إطلاقِ حارسِ الوحدات',
+        () async {
+      // ترقيةُ v157 **تُبقي** هذه اللقطةَ عمداً: القيدُ لا يطارد مطفأً. لكنّ
+      // `_totalsOfItems` تمرّر `taxPercentFromRate(0.005)` = `0.5` إلى
+      // `compute` غيرَ مشروطةٍ بالتفعيل، و`0.5` خارجُ مدى حارس الوحدات.
+      //
+      // فالحالةُ التي تحفظها الترقيةُ تُسقط حسابَ الطاولة في التطوير — وهي
+      // حالةٌ لا تصل فاتورةَ زبونٍ أصلاً لأن الضريبةَ مطفأة.
+      final tableId = await db.createTable(name: 'ط٢٢-ج');
+      final orderId = await service.openTable(
+          tableId: tableId,
+          guestCount: 2,
+          userId: null,
+          userName: 'أحمد',
+          taxRate: 0.005);
+      await addItem(orderId, quantity: 2, unitPrice: 50, taxRate: 0);
+
+      final totals = await service.totalsFor(orderId);
+
+      expect(totals.taxAmount, 0.0,
+          reason: 'الضريبةُ مطفأةٌ فلا تُحصَّل — واللقطةُ الجامدةُ لا تُحسَب');
+      expect(totals.total, greaterThan(0));
+    });
+
     test('الإطفاءُ على طلبٍ نسبتُه صفرٌ يبقى مسموحاً', () async {
       // الحارسُ على التفعيل وحدَه: إطفاءُ ما هو مطفأٌ ليس كذباً.
       final tableId = await db.createTable(name: 'ط٢٣');

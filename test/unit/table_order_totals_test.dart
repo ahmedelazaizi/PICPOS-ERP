@@ -409,6 +409,44 @@ void main() {
       expect(() => computeAt(1600), throwsA(isA<AssertionError>()));
     });
 
+    test('المطفأُ لا يُطلق الحارسَ — نسبتُه لا تدخل الحسابَ أصلاً', () {
+      // ترقيةُ v157 **تُبقي** لقطةً دون الحدّ على طلبٍ مطفأ (القيدُ لا يطارد
+      // مطفأً)، و`taxPercentFromRate(0.005)` = `0.5`. فحارسٌ غيرُ مشروطٍ
+      // بالتفعيل يُسقط حسابَ تلك الطاولة على حالةٍ قصدَها التصميم.
+      final t = TableOrderTotals.compute(
+        lines: const [TableOrderLine(quantity: 1, unitPrice: 100)],
+        taxEnabled: false,
+        taxPercent: 0.5,
+      );
+      expect(t.taxAmount, 0.0);
+      expect(t.total, 100.0);
+    });
+
+    test('نسبةُ بندٍ خارجَ المدى لا تُطلق الحارسَ متى كانت الضريبةُ مطفأة', () {
+      final t = TableOrderTotals.compute(
+        lines: const [
+          TableOrderLine(quantity: 1, unitPrice: 100, taxRate: 0.5)
+        ],
+        taxEnabled: false,
+      );
+      expect(t.taxAmount, 0.0);
+    });
+
+    test('والحارسُ ما زال يُطلق متى كانت الضريبةُ مفعَّلة', () {
+      // شرطُ التفعيل تصحيحُ مدىً لا إلغاءُ حارس: حيث تصل النسبةُ فاتورةَ
+      // زبونٍ، تبقى مفحوصة.
+      expect(
+        () => TableOrderTotals.compute(
+          lines: const [
+            TableOrderLine(quantity: 1, unitPrice: 100, taxRate: 0.5)
+          ],
+          taxEnabled: true,
+          taxPercent: 16,
+        ),
+        throwsA(isA<AssertionError>()),
+      );
+    });
+
     test('مدى الحارسِ هو مدى TaxRateBounds بعينه', () {
       // لا رقمَ عارياً بقي: المدى المقبولُ هنا يُشتقّ من المصدر لا يُكرَّر.
       expect(TaxRateBounds.isValidPercent(TaxRateBounds.minPercent), isTrue);

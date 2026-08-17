@@ -144,13 +144,22 @@ class TableOrderTotals {
     bool taxEnabled = false,
     double taxPercent = 0,
   }) {
-    _requirePercent(taxPercent, 'نسبةُ الطلب');
+    // **الحارسُ مشروطٌ بالتفعيل.** النسبتان — نسبةُ الطلب ونِسَبُ البنود — لا
+    // تدخلان الحسابَ إلّا داخل `if (taxEnabled)` أدناه، فطلبٌ مطفأٌ لا يمكن أن
+    // تظهر نسبتُه على فاتورةِ زبونٍ مهما كانت وحدتُها. ولا شيءَ يُمسَك.
+    //
+    // وهذا تصحيحُ مدىً لا إلغاءُ حارس: ترقيةُ v157 **تُبقي** لقطةً دون الحدّ
+    // على طلبٍ مطفأ — القيدُ لا يطارد مطفأً — و`taxPercentFromRate(0.005)`
+    // تساوي `0.5`. فحارسٌ غيرُ مشروطٍ كان يُسقط حسابَ تلك الطاولة في التطوير
+    // على حالةٍ **قصدَها التصميم**. مقيسٌ لا مفترض:
+    // `Failed assertion: نسبةُ الطلب = 0.5` من `totalsFor` على طلبٍ مطفأ.
+    if (taxEnabled) _requirePercent(taxPercent, 'نسبةُ الطلب');
 
     if (lines.isEmpty) return const TableOrderTotals.empty();
 
     var gross = 0.0;
     for (final line in lines) {
-      _requirePercent(line.taxRate, 'نسبةُ البند');
+      if (taxEnabled) _requirePercent(line.taxRate, 'نسبةُ البند');
       gross += line.lineNet;
     }
     if (gross < 0) gross = 0;
