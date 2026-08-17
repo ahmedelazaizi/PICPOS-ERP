@@ -55,16 +55,23 @@ CHECK (NOT tax_enabled OR tax_rate > 0)
 يحمل `minRate` (0.01 كسريّاً) و`minPercent` (1.0) و`maxPercent` (100.0)
 و`isValidPercent()`.
 
-**لماذا هنا لا في مكانٍ آخر — مقيسٌ لا مذوَّق:**
+**لماذا هنا لا في مكانٍ آخر:**
 
 | المكان | الحكم |
 |---|---|
-| `lib/domain/models/` | ✅ كلُّ ملفّاته **بلا استيرادٍ واحد** خارج `dart:` — خالصةٌ تماماً. وملفٌّ صغيرٌ مركَّزٌ يوافق نمطَها (`table_charge_check.dart`، `split_plan.dart`) |
+| `lib/domain/models/` | ✅ نمطُها القائمُ أنواعٌ صغيرةٌ مركَّزة (`table_status.dart`، `client_scope.dart`)، وهذا واحدٌ منها. ويحمل **سلوكاً** (`isValidPercent`) لا بياناً فحسب |
 | `TableOrderTotals` | ❌ الإعدادُ عامٌّ لنقطة البيع لا خاصٌّ بالطاولات. وشاشةُ الإعدادات تقرأ `TableOrderTotals.minTaxPercent` جملةٌ تقرأ خطأً |
-| `AppConstants` | ❌ يستورد `core/config/brand.dart`، فيكسر خلوصَ `domain/models` حين يشير إليه النموذج |
+| `AppConstants` | ❌ صنفٌ **متغيِّر**: `currencySymbol` و`appVersion` تُسنَد في زمن التشغيل. وقاعدةٌ ثابتةٌ لا تسكن جوارَ حقولٍ تتبدّل، ولا مكانَ فيه لسلوكٍ — لا حقولَ فحسب |
 
 وشاشةُ الإعدادات (عرض) تستورد `domain` بلا مخالفة — حارسُ
 `presentation_db_import_guard` يخصّ `data/database` وحدَه.
+
+> **تصحيحٌ لسببٍ كُتب أوّلَ مرّة.** ادّعت النسخةُ الأولى أن ملفّات
+> `domain/models` «بلا استيرادٍ واحدٍ خارج `dart:`» وأن `AppConstants` يكسر ذلك
+> الخلوص. **القياسُ يكذّب الاثنين:** `table_order_totals.dart` و`split_plan.dart`
+> و`table_charge_check.dart` تستورد `AppConstants` أصلاً، و`sales_returns_netting.dart`
+> تستورد `data/database/database.dart` نفسَها. القرارُ لم يتغيّر، وسببُه تغيّر
+> إلى ما هو صحيح: التماسكُ وتَغَيُّرُ `AppConstants`، لا خلوصٌ لا وجودَ له.
 
 **والقيدُ في SQL يبقى رقماً حرفيّاً لا استيفاءً:** `restaurant_tables.dart` هو
 `part of '../database.dart'` فلا استيراداتِ خاصّةً به، واستيفاءُ `double` في نصِّ
