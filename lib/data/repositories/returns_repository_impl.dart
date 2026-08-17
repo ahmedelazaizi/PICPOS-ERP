@@ -3,6 +3,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import '../database/database.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/errors/app_exceptions.dart';
 import '../../domain/repositories/returns_repository.dart';
 import '../../services/accounting_service.dart';
 import '../../services/generators/base_generator.dart' show InvoiceItem;
@@ -149,6 +150,26 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
     // Calculate total return amount
     double totalReturn = _calculateReturnTotal(invoice, invoiceItems, returnQuantities);
     if (totalReturn <= 0) return false;
+
+    // ── ح‑١: لا نقدَ يخرج من درجٍ إلا داخلَ نافذةِ ورديّةٍ مفتوحة ──
+    //
+    // الفحصُ **قبل** فتح المعاملة عمداً: رفضٌ مبكّرٌ بلا عملٍ يُبذَل ثمّ
+    // يُرجَع. والحسابُ هو `_refundSplitFor` نفسُه الذي ستنفّذه المعاملة، فلا
+    // يَعِد الحارسُ بغير ما يقع.
+    //
+    // ويُقرَأ في الوضعَين (standalone والعميل): الدرجُ ماديّاً أمام هذا
+    // الجهاز، والورديّةُ تُفتَح محلّيّاً أوّلاً — فالعميلُ يعرف حالتَها بلا
+    // انتظارِ شبكة، ويرى الكاشيرُ الطلبَ فوراً. أمّا صفُّ الخزنة نفسُه فيكتبه
+    // الخادمُ في وضع العميل (مصدرُ الحقيقةِ للمال) — انظر شقَّ العميل أدناه.
+    final guardSplit = _refundSplitFor(invoice, totalReturn);
+    final openShift = await _db.getCurrentOpenShift(userId);
+    if (guardSplit.requiresOpenShift && openShift == null) {
+      throw ShiftRequiredException(cashAmount: guardSplit.cashRefund);
+    }
+    // فرعُ الورديّةِ المفتوحة = الفرعُ القائمُ بالمرتجع فعلاً. و`null` مقبولٌ
+    // (مرتجعٌ بنكيٌّ بحتٌ بلا ورديّة، أو ورديّةُ مستخدمِ وصولٍ كامل بلا فرع)
+    // فينزل المُحلِّلُ إلى فرعِ المخزن ثمّ الافتراضيّةِ العامّة.
+    final operatingBranchId = openShift?.branchId;
 
     // Spec 007 / FR-003, FR-005: broadened predicate so mirror admins'
     // sales returns reach HQ.
@@ -445,8 +466,20 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
       // Fix: write the ledger row with a plain `into(...).insert(...)`
       // so no nested transaction runs and no auto balance mutation fires.
       if (cashRefund > 0) {
-        final cashSafe = await _db.getDefaultSafeByType('cash');
-        if (cashSafe != null) {
+        // ح‑٢/ح‑٣: درجُ فرعِ الورديّة، ورميٌ لا تخطٍّ صامت. كان هنا
+        // `getDefaultSafeByType('cash')` ثمّ `if (safe != null)` بلا `else`:
+        // فرعٌ بلا خزنةٍ افتراضيّةٍ عامّةٍ كان يُنتج مرتجعاً كامل الأثر
+        // (مخزونٌ يعود وقيدٌ دائنُه النقديّة) ودرجاً لم يتحرّك.
+        {
+          final cashSafe = await _db.resolveSafeForOperation(
+            safeType: 'cash',
+            preferredBranchId: operatingBranchId,
+            warehouseId: invoice.warehouseId,
+            operationLabel: 'sales-return #${invoice.invoiceNumber} (cash)',
+            noSafeMessage:
+                'لا توجد خزنة نقدية صالحة لصرف المرتجع. اضبط الخزائن من '
+                'الإعدادات ← الخزينة (المرتجع لم يُحفظ).',
+          );
           // H15 — خصمٌ ذرّيّ. و`newBalance` يبقى لقطةً لـ`balanceAfter`.
           final newBalance = cashSafe.balance - cashRefund;
           await _db.adjustSafeBalance(cashSafe.id, -cashRefund);
@@ -469,8 +502,18 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
       }
 
       if (bankRefund > 0) {
-        final bankSafe = await _db.getDefaultSafeByType('bank');
-        if (bankSafe != null) {
+        // ح‑٢/ح‑٣ للخزنة البنكيّة كذلك — لا ورديّةَ تُشترط لها (لا درجَ لها،
+        // ولا تدخل `expectedCash`)، لكنّ الفرعَ والرميَ يسريان.
+        {
+          final bankSafe = await _db.resolveSafeForOperation(
+            safeType: 'bank',
+            preferredBranchId: operatingBranchId,
+            warehouseId: invoice.warehouseId,
+            operationLabel: 'sales-return #${invoice.invoiceNumber} (bank)',
+            noSafeMessage:
+                'لا توجد خزنة بنكية صالحة لصرف المرتجع. اضبط الخزائن من '
+                'الإعدادات ← الخزينة (المرتجع لم يُحفظ).',
+          );
           // H15 — نفسُ الشقّ النقديّ أعلاه.
           final newBalance = bankSafe.balance - bankRefund;
           await _db.adjustSafeBalance(bankSafe.id, -bankRefund);
