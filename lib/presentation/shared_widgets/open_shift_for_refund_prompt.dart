@@ -103,8 +103,15 @@ Future<RefundShiftOutcome> runRefundWithShiftPrompt({
       return RefundShiftOutcome.shiftOpenFailed;
     }
 
-    // المحاولةُ الثانيةُ والأخيرة.
-    await attempt();
-    return RefundShiftOutcome.completed;
+    // المحاولةُ الثانيةُ والأخيرة. ورفضٌ ثانٍ لا يُرمى للشاشة: الشاشتان
+    // تلفّان النداءَ بـ`finally` بلا `catch`، فاستثناءٌ منتشرٌ هنا يصير خطأً
+    // طليقاً في الواجهة بدل رسالةٍ مفهومة. السببُ حينها ليس الورديّةَ أصلاً
+    // (سباقٌ، أو فتحٌ أخفق صامتاً) فيُعامَل معاملةَ «تعذّر الفتح».
+    try {
+      await attempt();
+      return RefundShiftOutcome.completed;
+    } on ShiftRequiredException {
+      return RefundShiftOutcome.shiftOpenFailed;
+    }
   }
 }

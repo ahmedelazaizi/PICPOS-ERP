@@ -261,12 +261,14 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
           // physically moved) → the customer statement showed a duplicate
           // "سند صرف" alongside the return invoice. Matches the math the
           // standalone path already runs at lines 254-285 below.
-          'paid': () {
-            final remaining = (invoice.total - invoice.paid)
-                .clamp(0.0, double.infinity);
-            final cashRefundShare = totalReturn - remaining;
-            return cashRefundShare > 0 ? cashRefundShare : 0.0;
-          }(),
+          // نفسُ `guardSplit` الذي فحصه الحارسُ قبل قليل — لا حسابٌ رابع.
+          //
+          // والخادمُ يستعمل `paid` هذه لتحريكِ الدرج (‏`createSalesInvoice` ⇒
+          // `_recordSalesReceipt` بمبلغٍ مُنفًى). فلو خالفت حسابَ الحارس لوَعَدَ
+          // الحارسُ بمبلغٍ وصرف الخادمُ غيرَه — والحسابُ السابقُ هنا كان يخالفه
+          // فعلاً على فاتورةٍ **بلا عميل** غيرِ مسدَّدة: يطرح المتبقّي وكأنّ
+          // ثمّة ذمّةً تُقاصّ، ولا ذمّةَ بلا عميل.
+          'paid': guardSplit.actualRefundToPay,
           'paymentMethod': invoice.paymentMethod,
           'reason': reason,
         }),
