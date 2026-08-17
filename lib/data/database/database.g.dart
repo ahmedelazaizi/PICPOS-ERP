@@ -26303,6 +26303,33 @@ class $TableOrdersTable extends TableOrders
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _taxEnabledMeta = const VerificationMeta(
+    'taxEnabled',
+  );
+  @override
+  late final GeneratedColumn<bool> taxEnabled = GeneratedColumn<bool>(
+    'tax_enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("tax_enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _taxRateMeta = const VerificationMeta(
+    'taxRate',
+  );
+  @override
+  late final GeneratedColumn<double> taxRate = GeneratedColumn<double>(
+    'tax_rate',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _paidAmountMeta = const VerificationMeta(
     'paidAmount',
   );
@@ -26350,6 +26377,8 @@ class $TableOrdersTable extends TableOrders
     notes,
     discountType,
     discountValue,
+    taxEnabled,
+    taxRate,
     paidAmount,
     openedAt,
     closedAt,
@@ -26434,6 +26463,18 @@ class $TableOrdersTable extends TableOrders
         ),
       );
     }
+    if (data.containsKey('tax_enabled')) {
+      context.handle(
+        _taxEnabledMeta,
+        taxEnabled.isAcceptableOrUnknown(data['tax_enabled']!, _taxEnabledMeta),
+      );
+    }
+    if (data.containsKey('tax_rate')) {
+      context.handle(
+        _taxRateMeta,
+        taxRate.isAcceptableOrUnknown(data['tax_rate']!, _taxRateMeta),
+      );
+    }
     if (data.containsKey('paid_amount')) {
       context.handle(
         _paidAmountMeta,
@@ -26501,6 +26542,14 @@ class $TableOrdersTable extends TableOrders
         DriftSqlType.double,
         data['${effectivePrefix}discount_value'],
       )!,
+      taxEnabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}tax_enabled'],
+      )!,
+      taxRate: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}tax_rate'],
+      )!,
       paidAmount: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}paid_amount'],
@@ -26542,6 +26591,27 @@ class TableOrder extends DataClass implements Insertable<TableOrder> {
   /// قيمةُ الخصم بحسب نوعه. يُثبَّت قبل الدفع فينتقل ويُطبع.
   final double discountValue;
 
+  /// هل تُحتسَب ضريبةُ المبيعات على هذا الطلب؟
+  ///
+  /// مرآةُ `CartState.taxEnabled` بحرفها — بما في ذلك الافتراضُ `false`:
+  /// الزرُّ في الشاشة هو ما يفعّلها، لا الإعداد. وتثبيتُها **على الطلب** —
+  /// لا في السلّة لحظةَ الدفع — هو ما يجعل المشحونَ على الفاتورة يطابق
+  /// المسجَّلَ على الطلب، فيسكت حارسُ [checkTableCharge] لأن الرقمين صارا
+  /// واحداً حقّاً، لا لأنه أُضعِف.
+  final bool taxEnabled;
+
+  /// نسبةُ ضريبة الطلب احتياطاً لبنودٍ لا نسبةَ لها (`TableOrderItems.taxRate`
+  /// صفرٌ) — كسريّةً لا مئويّةً (0.16 لا 16)، مرآةً لـ`CartState.taxRate`
+  /// ولإعداد `pos_default_tax_rate` الذي تُنسَخ منه. والمئويّةُ تُشتقّ عند
+  /// العرض والحساب بالضرب في ١٠٠، تماماً كما يفعل `CartState.totals`.
+  ///
+  /// **وهنا الموضعُ الوحيدُ الذي نخالف فيه سلّةَ الكاشير عمداً:** السلّةُ
+  /// تقرأ النسبةَ حيّةً فتتغيّر تحت يدها إن غُيّر الإعداد، أمّا الطاولةُ فهذه
+  /// **لقطةٌ تُؤخذ لحظةَ فتحها**. الوجبةُ تمتدّ ساعةً، والحسابُ يُعرَض على
+  /// الضيف قبل أن يُدفَع؛ فتغييرُ الإعداد في منتصف الوجبة يجب ألّا يُعيد
+  /// تسعيرَ حسابٍ رآه الضيفُ بالفعل.
+  final double taxRate;
+
   /// مجموعُ ما حُصِّل. تُشتقّ منه حالةُ الطاولة: `occupied` حتى يبلغ
   /// `total`، ثم `paid`. لا حالةَ سادسةً للدفع الجزئي.
   final double paidAmount;
@@ -26558,6 +26628,8 @@ class TableOrder extends DataClass implements Insertable<TableOrder> {
     this.notes,
     this.discountType,
     required this.discountValue,
+    required this.taxEnabled,
+    required this.taxRate,
     required this.paidAmount,
     required this.openedAt,
     this.closedAt,
@@ -26583,6 +26655,8 @@ class TableOrder extends DataClass implements Insertable<TableOrder> {
       map['discount_type'] = Variable<String>(discountType);
     }
     map['discount_value'] = Variable<double>(discountValue);
+    map['tax_enabled'] = Variable<bool>(taxEnabled);
+    map['tax_rate'] = Variable<double>(taxRate);
     map['paid_amount'] = Variable<double>(paidAmount);
     map['opened_at'] = Variable<DateTime>(openedAt);
     if (!nullToAbsent || closedAt != null) {
@@ -26611,6 +26685,8 @@ class TableOrder extends DataClass implements Insertable<TableOrder> {
           ? const Value.absent()
           : Value(discountType),
       discountValue: Value(discountValue),
+      taxEnabled: Value(taxEnabled),
+      taxRate: Value(taxRate),
       paidAmount: Value(paidAmount),
       openedAt: Value(openedAt),
       closedAt: closedAt == null && nullToAbsent
@@ -26635,6 +26711,8 @@ class TableOrder extends DataClass implements Insertable<TableOrder> {
       notes: serializer.fromJson<String?>(json['notes']),
       discountType: serializer.fromJson<String?>(json['discountType']),
       discountValue: serializer.fromJson<double>(json['discountValue']),
+      taxEnabled: serializer.fromJson<bool>(json['taxEnabled']),
+      taxRate: serializer.fromJson<double>(json['taxRate']),
       paidAmount: serializer.fromJson<double>(json['paidAmount']),
       openedAt: serializer.fromJson<DateTime>(json['openedAt']),
       closedAt: serializer.fromJson<DateTime?>(json['closedAt']),
@@ -26654,6 +26732,8 @@ class TableOrder extends DataClass implements Insertable<TableOrder> {
       'notes': serializer.toJson<String?>(notes),
       'discountType': serializer.toJson<String?>(discountType),
       'discountValue': serializer.toJson<double>(discountValue),
+      'taxEnabled': serializer.toJson<bool>(taxEnabled),
+      'taxRate': serializer.toJson<double>(taxRate),
       'paidAmount': serializer.toJson<double>(paidAmount),
       'openedAt': serializer.toJson<DateTime>(openedAt),
       'closedAt': serializer.toJson<DateTime?>(closedAt),
@@ -26671,6 +26751,8 @@ class TableOrder extends DataClass implements Insertable<TableOrder> {
     Value<String?> notes = const Value.absent(),
     Value<String?> discountType = const Value.absent(),
     double? discountValue,
+    bool? taxEnabled,
+    double? taxRate,
     double? paidAmount,
     DateTime? openedAt,
     Value<DateTime?> closedAt = const Value.absent(),
@@ -26685,6 +26767,8 @@ class TableOrder extends DataClass implements Insertable<TableOrder> {
     notes: notes.present ? notes.value : this.notes,
     discountType: discountType.present ? discountType.value : this.discountType,
     discountValue: discountValue ?? this.discountValue,
+    taxEnabled: taxEnabled ?? this.taxEnabled,
+    taxRate: taxRate ?? this.taxRate,
     paidAmount: paidAmount ?? this.paidAmount,
     openedAt: openedAt ?? this.openedAt,
     closedAt: closedAt.present ? closedAt.value : this.closedAt,
@@ -26709,6 +26793,10 @@ class TableOrder extends DataClass implements Insertable<TableOrder> {
       discountValue: data.discountValue.present
           ? data.discountValue.value
           : this.discountValue,
+      taxEnabled: data.taxEnabled.present
+          ? data.taxEnabled.value
+          : this.taxEnabled,
+      taxRate: data.taxRate.present ? data.taxRate.value : this.taxRate,
       paidAmount: data.paidAmount.present
           ? data.paidAmount.value
           : this.paidAmount,
@@ -26730,6 +26818,8 @@ class TableOrder extends DataClass implements Insertable<TableOrder> {
           ..write('notes: $notes, ')
           ..write('discountType: $discountType, ')
           ..write('discountValue: $discountValue, ')
+          ..write('taxEnabled: $taxEnabled, ')
+          ..write('taxRate: $taxRate, ')
           ..write('paidAmount: $paidAmount, ')
           ..write('openedAt: $openedAt, ')
           ..write('closedAt: $closedAt')
@@ -26749,6 +26839,8 @@ class TableOrder extends DataClass implements Insertable<TableOrder> {
     notes,
     discountType,
     discountValue,
+    taxEnabled,
+    taxRate,
     paidAmount,
     openedAt,
     closedAt,
@@ -26767,6 +26859,8 @@ class TableOrder extends DataClass implements Insertable<TableOrder> {
           other.notes == this.notes &&
           other.discountType == this.discountType &&
           other.discountValue == this.discountValue &&
+          other.taxEnabled == this.taxEnabled &&
+          other.taxRate == this.taxRate &&
           other.paidAmount == this.paidAmount &&
           other.openedAt == this.openedAt &&
           other.closedAt == this.closedAt);
@@ -26783,6 +26877,8 @@ class TableOrdersCompanion extends UpdateCompanion<TableOrder> {
   final Value<String?> notes;
   final Value<String?> discountType;
   final Value<double> discountValue;
+  final Value<bool> taxEnabled;
+  final Value<double> taxRate;
   final Value<double> paidAmount;
   final Value<DateTime> openedAt;
   final Value<DateTime?> closedAt;
@@ -26797,6 +26893,8 @@ class TableOrdersCompanion extends UpdateCompanion<TableOrder> {
     this.notes = const Value.absent(),
     this.discountType = const Value.absent(),
     this.discountValue = const Value.absent(),
+    this.taxEnabled = const Value.absent(),
+    this.taxRate = const Value.absent(),
     this.paidAmount = const Value.absent(),
     this.openedAt = const Value.absent(),
     this.closedAt = const Value.absent(),
@@ -26812,6 +26910,8 @@ class TableOrdersCompanion extends UpdateCompanion<TableOrder> {
     this.notes = const Value.absent(),
     this.discountType = const Value.absent(),
     this.discountValue = const Value.absent(),
+    this.taxEnabled = const Value.absent(),
+    this.taxRate = const Value.absent(),
     this.paidAmount = const Value.absent(),
     this.openedAt = const Value.absent(),
     this.closedAt = const Value.absent(),
@@ -26827,6 +26927,8 @@ class TableOrdersCompanion extends UpdateCompanion<TableOrder> {
     Expression<String>? notes,
     Expression<String>? discountType,
     Expression<double>? discountValue,
+    Expression<bool>? taxEnabled,
+    Expression<double>? taxRate,
     Expression<double>? paidAmount,
     Expression<DateTime>? openedAt,
     Expression<DateTime>? closedAt,
@@ -26842,6 +26944,8 @@ class TableOrdersCompanion extends UpdateCompanion<TableOrder> {
       if (notes != null) 'notes': notes,
       if (discountType != null) 'discount_type': discountType,
       if (discountValue != null) 'discount_value': discountValue,
+      if (taxEnabled != null) 'tax_enabled': taxEnabled,
+      if (taxRate != null) 'tax_rate': taxRate,
       if (paidAmount != null) 'paid_amount': paidAmount,
       if (openedAt != null) 'opened_at': openedAt,
       if (closedAt != null) 'closed_at': closedAt,
@@ -26859,6 +26963,8 @@ class TableOrdersCompanion extends UpdateCompanion<TableOrder> {
     Value<String?>? notes,
     Value<String?>? discountType,
     Value<double>? discountValue,
+    Value<bool>? taxEnabled,
+    Value<double>? taxRate,
     Value<double>? paidAmount,
     Value<DateTime>? openedAt,
     Value<DateTime?>? closedAt,
@@ -26874,6 +26980,8 @@ class TableOrdersCompanion extends UpdateCompanion<TableOrder> {
       notes: notes ?? this.notes,
       discountType: discountType ?? this.discountType,
       discountValue: discountValue ?? this.discountValue,
+      taxEnabled: taxEnabled ?? this.taxEnabled,
+      taxRate: taxRate ?? this.taxRate,
       paidAmount: paidAmount ?? this.paidAmount,
       openedAt: openedAt ?? this.openedAt,
       closedAt: closedAt ?? this.closedAt,
@@ -26913,6 +27021,12 @@ class TableOrdersCompanion extends UpdateCompanion<TableOrder> {
     if (discountValue.present) {
       map['discount_value'] = Variable<double>(discountValue.value);
     }
+    if (taxEnabled.present) {
+      map['tax_enabled'] = Variable<bool>(taxEnabled.value);
+    }
+    if (taxRate.present) {
+      map['tax_rate'] = Variable<double>(taxRate.value);
+    }
     if (paidAmount.present) {
       map['paid_amount'] = Variable<double>(paidAmount.value);
     }
@@ -26938,6 +27052,8 @@ class TableOrdersCompanion extends UpdateCompanion<TableOrder> {
           ..write('notes: $notes, ')
           ..write('discountType: $discountType, ')
           ..write('discountValue: $discountValue, ')
+          ..write('taxEnabled: $taxEnabled, ')
+          ..write('taxRate: $taxRate, ')
           ..write('paidAmount: $paidAmount, ')
           ..write('openedAt: $openedAt, ')
           ..write('closedAt: $closedAt')
@@ -140455,6 +140571,8 @@ typedef $$TableOrdersTableCreateCompanionBuilder =
       Value<String?> notes,
       Value<String?> discountType,
       Value<double> discountValue,
+      Value<bool> taxEnabled,
+      Value<double> taxRate,
       Value<double> paidAmount,
       Value<DateTime> openedAt,
       Value<DateTime?> closedAt,
@@ -140471,6 +140589,8 @@ typedef $$TableOrdersTableUpdateCompanionBuilder =
       Value<String?> notes,
       Value<String?> discountType,
       Value<double> discountValue,
+      Value<bool> taxEnabled,
+      Value<double> taxRate,
       Value<double> paidAmount,
       Value<DateTime> openedAt,
       Value<DateTime?> closedAt,
@@ -140665,6 +140785,16 @@ class $$TableOrdersTableFilterComposer
 
   ColumnFilters<double> get discountValue => $composableBuilder(
     column: $table.discountValue,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get taxEnabled => $composableBuilder(
+    column: $table.taxEnabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get taxRate => $composableBuilder(
+    column: $table.taxRate,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -140897,6 +141027,16 @@ class $$TableOrdersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get taxEnabled => $composableBuilder(
+    column: $table.taxEnabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get taxRate => $composableBuilder(
+    column: $table.taxRate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get paidAmount => $composableBuilder(
     column: $table.paidAmount,
     builder: (column) => ColumnOrderings(column),
@@ -141017,6 +141157,14 @@ class $$TableOrdersTableAnnotationComposer
     column: $table.discountValue,
     builder: (column) => column,
   );
+
+  GeneratedColumn<bool> get taxEnabled => $composableBuilder(
+    column: $table.taxEnabled,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get taxRate =>
+      $composableBuilder(column: $table.taxRate, builder: (column) => column);
 
   GeneratedColumn<double> get paidAmount => $composableBuilder(
     column: $table.paidAmount,
@@ -141246,6 +141394,8 @@ class $$TableOrdersTableTableManager
                 Value<String?> notes = const Value.absent(),
                 Value<String?> discountType = const Value.absent(),
                 Value<double> discountValue = const Value.absent(),
+                Value<bool> taxEnabled = const Value.absent(),
+                Value<double> taxRate = const Value.absent(),
                 Value<double> paidAmount = const Value.absent(),
                 Value<DateTime> openedAt = const Value.absent(),
                 Value<DateTime?> closedAt = const Value.absent(),
@@ -141260,6 +141410,8 @@ class $$TableOrdersTableTableManager
                 notes: notes,
                 discountType: discountType,
                 discountValue: discountValue,
+                taxEnabled: taxEnabled,
+                taxRate: taxRate,
                 paidAmount: paidAmount,
                 openedAt: openedAt,
                 closedAt: closedAt,
@@ -141276,6 +141428,8 @@ class $$TableOrdersTableTableManager
                 Value<String?> notes = const Value.absent(),
                 Value<String?> discountType = const Value.absent(),
                 Value<double> discountValue = const Value.absent(),
+                Value<bool> taxEnabled = const Value.absent(),
+                Value<double> taxRate = const Value.absent(),
                 Value<double> paidAmount = const Value.absent(),
                 Value<DateTime> openedAt = const Value.absent(),
                 Value<DateTime?> closedAt = const Value.absent(),
@@ -141290,6 +141444,8 @@ class $$TableOrdersTableTableManager
                 notes: notes,
                 discountType: discountType,
                 discountValue: discountValue,
+                taxEnabled: taxEnabled,
+                taxRate: taxRate,
                 paidAmount: paidAmount,
                 openedAt: openedAt,
                 closedAt: closedAt,

@@ -2419,5 +2419,19 @@ extension Epoch3Migrations on AppDatabase {
         debugPrint('[Migration] v154 table service OK');
       });
     }
+
+    // ── v155: ضريبةُ المبيعات على طلبات الطاولات ────────────────────────
+    //
+    // العمودان يحملان ما كانت السلّةُ وحدَها تحمله، فيتطابق المشحونُ
+    // والمسجَّل. والقائمُ من الطلبات يأخذ الافتراضَين (`0`/`false`) — أي
+    // «بلا ضريبة»، وهو حالُها اليوم بالضبط، فلا يتغيّر حسابُ طاولةٍ مفتوحةٍ
+    // بمجرّد الترقية.
+    if (from < 155) {
+      await _safeMigrate('v155 table order tax columns', () async {
+        await m.addColumn(tableOrders, tableOrders.taxEnabled);
+        await m.addColumn(tableOrders, tableOrders.taxRate);
+        debugPrint('[Migration] v155 table order tax OK');
+      });
+    }
   }
 }

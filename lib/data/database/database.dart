@@ -693,8 +693,15 @@ class AppDatabase extends _$AppDatabase {
   /// `employees.hours_per_day` (مقامُ أجر الساعة)، وعمودُ
   /// `overtime_records.is_manual_amount` (تعليمُ السجلّات القائمة كي لا
   /// يُعاد اشتقاقُها).
+  ///
+  /// Schema v155: ضريبةُ المبيعات على طلبات الطاولات — عمودا
+  /// `table_orders.tax_enabled` (مرآةُ `CartState.taxEnabled`، افتراضُه
+  /// `false`) و`table_orders.tax_rate` (لقطةُ `pos_default_tax_rate` كسريّةً
+  /// لحظةَ فتح الطاولة، فلا يُعاد تسعيرُ حسابٍ عُرض على الضيف). بهما يصير
+  /// المشحونُ على الفاتورة والمسجَّلُ على الطلب رقماً واحداً، فيسكت حارسُ
+  /// `checkTableCharge` عن حقٍّ لا عن إضعاف.
   @override
-  int get schemaVersion => 154;
+  int get schemaVersion => 155;
 
   /// PostgreSQL-specific table creation: Drift's `currentDateAndTime` generates
   /// `strftime('%s','now')` which doesn't exist in PostgreSQL.
