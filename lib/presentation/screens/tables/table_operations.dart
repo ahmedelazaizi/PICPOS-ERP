@@ -4,6 +4,17 @@ part of '../tables_screen.dart';
 // TABLE OPERATIONS — Split, Transfer, Options, Reservations
 // ═══════════════════════════════════════════════════════════════════════════
 
+/// هل يملك حاملُ هذه الصلاحيات تنفيذَ فعلِ طاولةٍ يلزمه [permission]؟
+///
+/// دالّةٌ خالصةٌ مُختبَرة — نفسُ نمط `canPrintPosWorkOrder` المجاور. مديرُ
+/// النظام يمرّ دوماً كما في كلّ فحصٍ صريحٍ آخر في هذا المستودع.
+@visibleForTesting
+bool hasTableActionPermission(List<String> permissions, String permission) {
+  final isAdmin =
+      permissions.contains('system_admin') || permissions.contains('*');
+  return isAdmin || permissions.contains(permission);
+}
+
 mixin _TableOperationsMixin on ConsumerState<TablesScreen> {
   // Abstract — provided by _TableOrderDialogsMixin at composition time
   void _confirmOpenTable(
@@ -165,93 +176,18 @@ mixin _TableOperationsMixin on ConsumerState<TablesScreen> {
     }
   }
 
-  /// نصوصُ الكبسات — نصُّ المواصفة حرفياً، بترتيب `TableAction`.
-  static const Map<TableAction, String> _tableActionLabels = {
-    TableAction.open: 'فتح طاولة',
-    TableAction.addItems: 'إضافة طلب',
-    TableAction.transfer: 'نقل الطلب',
-    TableAction.merge: 'دمج الطاولات',
-    TableAction.splitBill: 'تقسيم الفاتورة',
-    TableAction.printBill: 'طباعة الفاتورة',
-    TableAction.reserve: 'حجز طاولة',
-    TableAction.pay: 'الدفع',
-    TableAction.changeStatus: 'تغيير الحالة',
-    TableAction.cancelOrder: 'إلغاء الطلب',
-    TableAction.closeTable: 'إغلاق الطاولة',
-    TableAction.log: 'سجل الطاولة',
-  };
-
-  IconData _tableActionIcon(TableAction action) {
-    switch (action) {
-      case TableAction.open:
-        return PhosphorIconsBold.doorOpen;
-      case TableAction.addItems:
-        return PhosphorIconsBold.plus;
-      case TableAction.transfer:
-        return PhosphorIconsBold.arrowsLeftRight;
-      case TableAction.merge:
-        return PhosphorIconsBold.intersect;
-      case TableAction.splitBill:
-        return PhosphorIconsBold.columns;
-      case TableAction.printBill:
-        return PhosphorIconsBold.printer;
-      case TableAction.reserve:
-        return PhosphorIconsBold.calendarPlus;
-      case TableAction.pay:
-        return PhosphorIconsBold.currencyCircleDollar;
-      case TableAction.changeStatus:
-        return PhosphorIconsBold.arrowsClockwise;
-      case TableAction.cancelOrder:
-        return PhosphorIconsBold.xCircle;
-      case TableAction.closeTable:
-        return PhosphorIconsBold.checkCircle;
-      case TableAction.log:
-        return PhosphorIconsBold.clockCounterClockwise;
-    }
-  }
-
-  /// لونُ الكبسة. `cancelOrder` وحدَه بلون الخطر — يهدم طلباً حياً. أما
-  /// `closeTable` فروتينٌ: الحسابُ سُدِّد، والطاولةُ تحتاج تحريراً لا غير.
-  Color _tableActionColor(TableAction action) {
-    switch (action) {
-      case TableAction.open:
-        return AppColors.success;
-      case TableAction.addItems:
-        return AppColors.info;
-      case TableAction.transfer:
-        return AppColors.booking;
-      case TableAction.merge:
-        return AppColors.warning;
-      case TableAction.splitBill:
-        return const Color(0xFF06B6D4);
-      case TableAction.printBill:
-        return const Color(0xFF64748B);
-      case TableAction.reserve:
-        return Colors.orange;
-      case TableAction.pay:
-        return AppColors.success;
-      case TableAction.changeStatus:
-        return const Color(0xFF6366F1);
-      case TableAction.cancelOrder:
-        return AppColors.error;
-      case TableAction.closeTable:
-        return const Color(0xFF0EA5E9);
-      case TableAction.log:
-        return AppColors.textMuted;
-    }
-  }
-
   /// Show the table's actions menu — one row per `TableAction`, derived
   /// من `actionsForStatus(table.status)` لا شروطٌ متناثرة. غيابُ «الدفع»
   /// عن طاولةٍ فارغة أو «النقل» عن طاولةٍ بلا طلبٍ نتيجةٌ تلقائيةٌ للقائمة
   /// المُشتقّة، لا شرطٍ يُكتَب هنا فيُنسى في نسخةٍ تالية.
+  ///
+  /// بناءُ الكبسات نفسُه في `TableActionsMenu` — ودجتٌ مستقلّةٌ تُختبَر بلا
+  /// تركيب هذه الشاشة.
   void _showTableOptions(
     BuildContext context,
     IRestaurantRepository restaurantRepo,
     RestaurantTable table,
   ) {
-    final actions = actionsForStatus(table.status);
-
     showDialog(
       context: context,
       builder: (ctx) => Directionality(
@@ -273,10 +209,16 @@ mixin _TableOperationsMixin on ConsumerState<TablesScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  for (final action in actions) ...[
-                    _buildActionButton(ctx, context, restaurantRepo, table, action),
-                    const SizedBox(height: 8),
-                  ],
+                  TableActionsMenu(
+                    status: table.status,
+                    onSelected: (action) => _handleTableAction(
+                      ctx,
+                      context,
+                      restaurantRepo,
+                      table,
+                      action,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   // Secondary actions row — تعديل/حذف الطاولة نفسها، لا
                   // علاقةَ لهما بحالة الطلب فليسا من `TableAction`.
@@ -337,60 +279,8 @@ mixin _TableOperationsMixin on ConsumerState<TablesScreen> {
     );
   }
 
-  Widget _buildActionButton(
-    BuildContext dialogContext,
-    BuildContext screenContext,
-    IRestaurantRepository restaurantRepo,
-    RestaurantTable table,
-    TableAction action,
-  ) {
-    final label = _tableActionLabels[action]!;
-    final icon = _tableActionIcon(action);
-    final color = _tableActionColor(action);
-    final isDestructive = action == TableAction.cancelOrder;
-
-    return SizedBox(
-      width: double.infinity,
-      child: isDestructive
-          ? ElevatedButton.icon(
-              onPressed: () => _handleTableAction(
-                dialogContext,
-                screenContext,
-                restaurantRepo,
-                table,
-                action,
-              ),
-              icon: Icon(icon, size: 18),
-              label: Text(label),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: color,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
-            )
-          : OutlinedButton.icon(
-              onPressed: () => _handleTableAction(
-                dialogContext,
-                screenContext,
-                restaurantRepo,
-                table,
-                action,
-              ),
-              icon: Icon(icon, size: 18, color: color),
-              label: Text(label, style: TextStyle(color: color)),
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: color),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
-            ),
-    );
-  }
-
-  /// تنفيذُ الكبسة. الموصولُ منها بمعالجٍ حقيقيٍّ هو ما كان موجوداً قبل
-  /// هذه المهمّة (الفتح، الإضافة، النقل، الدمج، التقسيم، الحجز، الإغلاق)؛
-  /// والباقي (الدفع، تغييرُ الحالة، الإلغاء، الطباعة، السجل) يُوصَل
-  /// بـ`TableSessionService` أو شاشة السجل في مهماتٍ لاحقة (١١، ١٢) — يظهر
-  /// بحالته وشكله الصحيحين الآن، ولا ينفّذ شيئاً بعد.
+  /// تنفيذُ الكبسة. كلُّ كبسةٍ تعرضها القائمةُ موصولةٌ بمعالجٍ حقيقيّ —
+  /// القائمةُ لا تُعلن ما لا تفعل.
   Future<void> _handleTableAction(
     BuildContext dialogContext,
     BuildContext screenContext,
@@ -407,17 +297,15 @@ mixin _TableOperationsMixin on ConsumerState<TablesScreen> {
         if (table.status == TableStatus.paid) {
           // الإضافةُ بعد الدفع تفتح طلباً جديداً — لا تُعدّل فاتورةً رُحِّلت.
           _confirmOpenTable(restaurantRepo, table);
-        } else if (screenContext.mounted) {
-          Navigator.push(
-            screenContext,
-            MaterialPageRoute(
-              builder: (_) => TablePosScreen(
-                tableId: table.id,
-                tableName: table.name,
-              ),
-            ),
-          );
+        } else {
+          _openTablePos(screenContext, table);
         }
+        break;
+      case TableAction.pay:
+        // «الدفع» هو مسارُ التحصيل القائم نفسُه: شاشةُ الطاولة تحمّل أصنافَ
+        // الطلب ثم «تحصيل الحساب» — وهناك يقع الفحصُ القبليُّ الذي يقارن
+        // المشحونَ بالمستحقّ قبل ترحيل أيّ فاتورة.
+        _openTablePos(screenContext, table);
         break;
       case TableAction.transfer:
         _handleTransferOrder(screenContext, restaurantRepo, table);
@@ -450,13 +338,255 @@ mixin _TableOperationsMixin on ConsumerState<TablesScreen> {
         _showTableLog(screenContext, table);
         break;
       case TableAction.printBill:
-      case TableAction.pay:
-      case TableAction.changeStatus:
-      case TableAction.cancelOrder:
-        if (screenContext.mounted) {
-          AppToast.show(screenContext, 'هذه الميزةُ قيدُ الإنجاز', type: ToastType.info);
-        }
+        await _handlePrintBill(screenContext, restaurantRepo, table);
         break;
+      case TableAction.changeStatus:
+        await _handleChangeStatus(screenContext, table);
+        break;
+      case TableAction.cancelOrder:
+        await _handleCancelOrder(screenContext, table);
+        break;
+    }
+  }
+
+  void _openTablePos(BuildContext screenContext, RestaurantTable table) {
+    if (!screenContext.mounted) return;
+    Navigator.push(
+      screenContext,
+      MaterialPageRoute(
+        builder: (_) => TablePosScreen(
+          tableId: table.id,
+          tableName: table.name,
+        ),
+      ),
+    );
+  }
+
+  /// فحصُ صلاحيةٍ صريحٌ للأفعال التي لا زرَّ واحدَ لها يُلفّ بـ
+  /// `PermissionGuard` — نفسُ نمط `ensurePosWorkOrderPermission` في هذا
+  /// الملفّ نفسِه، ونفسُ سببه: المعالجُ يُنادى من قائمةٍ مبنيّةٍ من دالّةٍ
+  /// خالصة، فالحراسةُ تعيش عند التنفيذ لا عند الرسم.
+  Future<bool> _ensureTablePermission(
+    BuildContext screenContext,
+    String permission,
+    String actionName,
+  ) async {
+    final permissions =
+        ref.read(currentUserPermissionsProvider).asData?.value ??
+            const <String>[];
+    if (hasTableActionPermission(permissions, permission)) return true;
+    if (screenContext.mounted) {
+      AppToast.show(screenContext, 'ليس لديك صلاحية $actionName',
+          type: ToastType.error);
+    }
+    return false;
+  }
+
+  /// إلغاءُ الطلب — هدمٌ يمحو طلباً حيّاً، فيُؤكَّد صراحةً ويلزمه
+  /// `tables_cancel`. الخدمةُ ترفض إلغاءَ طلبٍ دُفع منه شيء وتكتب سطرَ
+  /// السجلِّ بنفسها.
+  Future<void> _handleCancelOrder(
+    BuildContext screenContext,
+    RestaurantTable table,
+  ) async {
+    if (!await _ensureTablePermission(
+        screenContext, PermissionCodes.tablesCancel, 'إلغاء طلب الطاولة')) {
+      return;
+    }
+    if (!screenContext.mounted) return;
+
+    final confirmed = await showDialog<bool>(
+          context: screenContext,
+          builder: (ctx) => Directionality(
+            textDirection: TextDirection.rtl,
+            child: AlertDialog(
+              title: const Row(
+                children: [
+                  Icon(PhosphorIconsBold.warning, color: AppColors.error),
+                  SizedBox(width: 8),
+                  Text('إلغاء الطلب'),
+                ],
+              ),
+              content: Text(
+                'سيُلغى طلبُ ${table.name} بالكامل وتعود الطاولةُ متاحة. '
+                'هذا هدمٌ لا رجعةَ فيه — ولا يُقبل إن كان قد دُفع من الطلب '
+                'شيء.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('تراجع'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.error,
+                  ),
+                  child: const Text('إلغاء الطلب'),
+                ),
+              ],
+            ),
+          ),
+        ) ??
+        false;
+    if (!confirmed || !mounted) return;
+
+    try {
+      final user = ref.read(authProvider).user;
+      await ref.read(tableSessionServiceProvider).cancelOrder(
+            tableId: table.id,
+            userId: user?.id,
+            userName: user?.displayName ?? 'مجهول',
+          );
+      if (screenContext.mounted) {
+        AppToast.show(screenContext, 'تم إلغاء طلب ${table.name}',
+            type: ToastType.warning);
+      }
+    } catch (e) {
+      if (screenContext.mounted) {
+        AppToast.show(screenContext, 'تعذّر إلغاءُ الطلب: $e',
+            type: ToastType.error);
+      }
+    }
+  }
+
+  /// تغييرُ الحالة يدويّاً — بين 🟢 و⚪ فقط، وهو ما تفرضه الخدمةُ نفسُها.
+  Future<void> _handleChangeStatus(
+    BuildContext screenContext,
+    RestaurantTable table,
+  ) async {
+    if (!await _ensureTablePermission(
+        screenContext, PermissionCodes.tablesManage, 'تغيير حالة الطاولة')) {
+      return;
+    }
+    if (!screenContext.mounted) return;
+
+    final target = table.status == TableStatus.outOfService
+        ? TableStatus.available
+        : TableStatus.outOfService;
+    final targetLabel =
+        target == TableStatus.available ? 'متاحة' : 'خارج الخدمة';
+
+    final confirmed = await showDialog<bool>(
+          context: screenContext,
+          builder: (ctx) => Directionality(
+            textDirection: TextDirection.rtl,
+            child: AlertDialog(
+              title: Text('تغيير حالة ${table.name}'),
+              content: Text('ستصبح الطاولةُ «$targetLabel».'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('إلغاء'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: Text(targetLabel),
+                ),
+              ],
+            ),
+          ),
+        ) ??
+        false;
+    if (!confirmed || !mounted) return;
+
+    try {
+      final user = ref.read(authProvider).user;
+      await ref.read(tableSessionServiceProvider).setTableStatus(
+            tableId: table.id,
+            status: target,
+            userId: user?.id,
+            userName: user?.displayName ?? 'مجهول',
+          );
+      if (screenContext.mounted) {
+        AppToast.show(screenContext, 'صارت ${table.name} «$targetLabel»',
+            type: ToastType.success);
+      }
+    } catch (e) {
+      if (screenContext.mounted) {
+        AppToast.show(screenContext, 'تعذّر تغييرُ الحالة: $e',
+            type: ToastType.error);
+      }
+    }
+  }
+
+  /// طباعةُ فاتورةِ ما قبل الدفع. الطلبُ يصير `bill_requested` (صفةٌ للطلب
+  /// لا للطاولة)، والطاولةُ تبقى على حالتها. وعلى طاولةٍ 🟠 هي إعادةُ
+  /// طباعةٍ فحسب فلا تُغيَّر حالةُ الطلب.
+  Future<void> _handlePrintBill(
+    BuildContext screenContext,
+    IRestaurantRepository restaurantRepo,
+    RestaurantTable table,
+  ) async {
+    if (!await _ensureTablePermission(
+        screenContext, PermissionCodes.tablesPrintBill, 'طباعة فاتورة الطاولة')) {
+      return;
+    }
+
+    final order = await restaurantRepo.getActiveOrderForTable(table.id);
+    if (order == null) {
+      if (screenContext.mounted) {
+        AppToast.show(screenContext, 'لا يوجد طلبٌ لطباعة فاتورته',
+            type: ToastType.warning);
+      }
+      return;
+    }
+    final items = await restaurantRepo.getTableOrderItems(order.id);
+    if (items.isEmpty) {
+      if (screenContext.mounted) {
+        AppToast.show(screenContext, 'لا توجد أصنافٌ في الطلب',
+            type: ToastType.warning);
+      }
+      return;
+    }
+
+    try {
+      final session = ref.read(tableSessionServiceProvider);
+      final user = ref.read(authProvider).user;
+      final effective = await session.effectiveTotal(order.id);
+      await session.requestBill(
+        orderId: order.id,
+        userId: user?.id,
+        userName: user?.displayName ?? 'مجهول',
+      );
+
+      final productRepo = ref.read(productRepositoryProvider);
+      final invoiceItems = <InvoiceItem>[];
+      for (final item in items) {
+        final product = await productRepo.getProductById(item.productId);
+        invoiceItems.add(
+          InvoiceItem(
+            name: product?.name ?? 'صنف #${item.productId}',
+            quantity: item.quantity,
+            price: item.unitPrice,
+            total: item.total,
+          ),
+        );
+      }
+
+      await InvoiceGenerator.printThermalReceipt(
+        invoiceNumber: 'T${table.id}-${order.id}',
+        date: DateTime.now(),
+        items: invoiceItems,
+        total: effective,
+        paid: order.paidAmount,
+        change: 0,
+        discount: order.total - effective,
+        customerName: table.name,
+        employeeName: user?.displayName,
+        notes: 'فاتورةٌ مبدئيّةٌ — ليست إيصالَ سداد',
+        db: ref.read(databaseProvider),
+      );
+
+      if (screenContext.mounted) {
+        AppToast.show(screenContext, 'تمت طباعةُ فاتورة ${table.name}',
+            type: ToastType.success);
+      }
+    } catch (e) {
+      if (screenContext.mounted) {
+        AppToast.show(screenContext, 'تعذّرت طباعةُ الفاتورة: $e',
+            type: ToastType.error);
+      }
     }
   }
 

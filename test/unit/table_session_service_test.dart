@@ -691,6 +691,70 @@ void main() {
     });
   });
 
+  group('requestBill', () {
+    test('يضع الطلبَ على bill_requested ويكتب سطرَه', () async {
+      final t = await newTable('ط٦١');
+      final orderId = await service.openTable(
+          tableId: t, guestCount: 2, userId: null, userName: 'أحمد');
+      await (db.update(db.tableOrders)..where((o) => o.id.equals(orderId)))
+          .write(const TableOrdersCompanion(total: Value(100)));
+
+      await service.requestBill(
+          orderId: orderId, userId: null, userName: 'أحمد');
+
+      expect((await db.getActiveOrderForTable(t))!.status, 'bill_requested');
+      expect((await readTable(t)).status, TableStatus.occupied);
+      final logs = await (db.select(db.activityLogs)
+            ..where((l) => l.action.equals('table_print_bill')))
+          .get();
+      expect(logs, hasLength(1));
+      expect(logs.single.entityId, t);
+      expect(logs.single.amount, 100);
+    });
+
+    test('إعادةُ الطباعة على طلبٍ مسدَّدٍ لا تغيّر حالتَه', () async {
+      final warehouseId = (await db.select(db.warehouses).get()).first.id;
+      final userId = (await db.select(db.users).get()).first.id;
+      await db.into(db.salesInvoices).insert(
+            SalesInvoicesCompanion.insert(
+              id: const Value(1),
+              invoiceNumber: 'INV-TEST-1',
+              warehouseId: warehouseId,
+              userId: userId,
+              invoiceDate: DateTime.now(),
+            ),
+          );
+      final t = await newTable('ط٦٢');
+      final orderId = await service.openTable(
+          tableId: t, guestCount: 2, userId: null, userName: 'أحمد');
+      await (db.update(db.tableOrders)..where((o) => o.id.equals(orderId)))
+          .write(const TableOrdersCompanion(total: Value(100)));
+      await service.recordPayment(
+          orderId: orderId, invoiceId: 1, amount: 100);
+
+      await service.requestBill(
+          orderId: orderId, userId: null, userName: 'أحمد');
+
+      // لو صار `bill_requested` بقي قابلاً للإغلاق أيضاً، لكن الحالةَ
+      // تكذب: هذا سدادٌ تامٌّ لا طلبُ فاتورة.
+      expect((await db.getActiveOrderForTable(t))!.status, 'open');
+      expect((await readTable(t)).status, TableStatus.paid);
+    });
+
+    test('يرفض طلباً غيرَ حيّ', () async {
+      final t = await newTable('ط٦٣');
+      final orderId = await service.openTable(
+          tableId: t, guestCount: 2, userId: null, userName: 'أحمد');
+      await service.cancelOrder(
+          tableId: t, userId: null, userName: 'أحمد');
+
+      await expectLater(
+        service.requestBill(orderId: orderId, userId: null, userName: 'أحمد'),
+        throwsA(isA<TableTransitionException>()),
+      );
+    });
+  });
+
   group('setItemNotes', () {
     test('الملاحظةُ تُحفظ على البند', () async {
       final t = await newTable('ط٤٦');

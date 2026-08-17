@@ -535,6 +535,44 @@ class TableSessionService {
     });
   }
 
+  /// طلبُ فاتورةِ ما قبل الدفع.
+  ///
+  /// تُشترط صلاحيةُ `tables_print_bill` عند الاستدعاء. الطلبُ يصير
+  /// `bill_requested` — وهي صفةٌ **للطلب** لا للطاولة، فالطاولةُ تبقى 🔵
+  /// (حالةُ `billing` مشطوبةٌ من مفردات الطاولة في v154). وعلى طلبٍ سُدِّد
+  /// كاملاً هي إعادةُ طباعةٍ فحسب، فلا تُغيَّر حالتُه — يبقى قابلاً
+  /// للإغلاق كما هو.
+  Future<void> requestBill({
+    required int orderId,
+    required int? userId,
+    required String userName,
+  }) async {
+    await _db.transaction(() async {
+      final order = await (_db.select(_db.tableOrders)
+            ..where((o) => o.id.equals(orderId)))
+          .getSingle();
+      if (order.status != 'open' && order.status != 'bill_requested') {
+        throw TableTransitionException(
+            'لا تُطلب فاتورةُ طلبٍ حالتُه ${order.status}');
+      }
+
+      final settled = _isFullyPaid(order);
+      if (!settled) {
+        await _db.requestTableBill(orderId);
+      }
+      await _log(
+        userId: userId,
+        userName: userName,
+        action: 'table_print_bill',
+        tableId: order.tableId,
+        description: settled
+            ? 'إعادةُ طباعة فاتورة الطلب #$orderId'
+            : 'طلبُ فاتورة الطلب #$orderId',
+        amount: _effectiveTotalOf(order),
+      );
+    });
+  }
+
   /// ملاحظةُ بندٍ («بلا بصل») — تصل المطبخ وتُطبع.
   Future<void> setItemNotes({
     required int orderItemId,

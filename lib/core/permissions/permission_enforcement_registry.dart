@@ -101,12 +101,12 @@ class PermissionEnforcementRegistry {
     // 'tables_discount' كودٌ جديدٌ في masterList: يحمي خصمَ الطلب في
     // `TableSessionService.setOrderDiscount` (موثَّقٌ في تعليق الدالة) لكن
     // زرَّ الخصم في واجهة الطاولات لسه ما بُنيش — تبنيه المهامّ ٩-١٢.
-    // و'tables_print_bill' كان محجوزاً في `PermissionCodes.nonToggleable`
-    // بسبب «محجوز — الخاصية ما اتبنتش»؛ Task 8 رفع الحجزَ لأن المهمتين ٩
-    // و١٠ بيبنوا طباعةَ فاتورة الطاولة فعلياً، فصار كودَ ميزةٍ مخطَّطة لا
-    // كودَ ميزةٍ مستحيلة — لكن الإنفاذَ نفسَه لسه ما وصلش لحدّ ما تُبنى.
+    // ✅ 'tables_print_bill' اتشال (مراجعةُ ما قبل الدمج، 2026-08-17): بقى
+    // منفَّذاً فعلياً — كبسةُ «طباعة الفاتورة» في قائمة الطاولة بتعدّي على
+    // فحصٍ صريح (`_handlePrintBill` في `tables/table_operations.dart`)
+    // قبل ما تنادي `TableSessionService.requestBill` والطباعةَ. كان
+    // مسجَّلاً هنا لأن الكبسة كانت توستَ «قيدُ الإنجاز» لا غير.
     'tables_discount',
-    'tables_print_bill',
   };
 
   /// أكوادٌ **محروسةٌ حراسةً صحيحة** — في شاشةٍ لا يصل إليها PicPos.
