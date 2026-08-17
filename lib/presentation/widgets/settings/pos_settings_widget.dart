@@ -13,6 +13,87 @@ import 'settings_permission_tiles.dart';
 // Spec 135 NOTE 1 — the POS timeout UI now drives the single canonical
 // session_timeout_minutes key (System A); invalidate its provider on save.
 import '../../../services/session_timeout_service.dart' show sessionTimeoutProvider;
+import '../../../domain/models/tax_rate_bounds.dart';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// نسبةُ الضريبة الافتراضية — الرفضُ عند المصدر
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// `pos_default_tax_rate` هو منبعُ اللقطة التي تُثبَّت على كلِّ طلبِ طاولة.
+// وv156 جعل «مفعَّلةٌ بصفر» مستحيلةَ التمثيل، وv157 شدَّ الحدَّ إلى ١٪ — لكنّ
+// الرفضَ عند فتح الطاولة رسالةٌ تحيل المستخدمَ إلى هنا. فالرفضُ **هنا** أوضح.
+
+/// يتحقّق من نسبةِ الضريبة كما يكتبها المستخدمُ — **مئويّةً** (16 لا 0.16).
+///
+/// يُعيد رسالةَ الرفض أو `null` إن قُبلت، على عقد `FormFieldValidator<String>`.
+///
+/// والفارغُ وغيرُ الرقمِ مرفوضان لا مُبتلَعان: `onChanged` تتجاهل ما لا
+/// يُحلَّل، فتبقى الحالةُ على قيمتها القديمة والحقلُ يعرض شيئاً آخر — والرفضُ
+/// يُظهر ذلك الافتراقَ بدل أن يُخفيه.
+@visibleForTesting
+String? validateDefaultTaxRatePercent(String? raw) {
+  final text = raw?.trim() ?? '';
+  if (text.isEmpty) return 'أدخل نسبةَ الضريبة';
+
+  final percent = double.tryParse(text);
+  if (percent == null) return 'أدخل رقماً';
+
+  if (!TaxRateBounds.isValidPercent(percent)) {
+    return 'النسبةُ إمّا صفرٌ (بلا ضريبة) أو ١٪ فأكثر — ولا تتجاوز ١٠٠٪';
+  }
+  return null;
+}
+
+/// هل تُمنَع «حفظُ الإعدادات» بسبب نسبةِ الضريبة؟
+///
+/// **مقيَّدٌ بـ[touched] عن قصد.** الحقلُ لا يُخفى عند نقص الصلاحية —
+/// `PermissionGuard` يقفله والقيمةُ تُحمَّل وتُرحَّل مع الحفظ. فمنعٌ مطلقٌ
+/// يعني أن مستخدماً لا يملك `settings_tax`، وقيمةً قديمةً مخالفةً ورثها،
+/// **يعجز عن حفظ كلِّ إعدادٍ آخر** بسبب حقلٍ لا يُسمح له بلمسه.
+///
+/// فيُرفَض ما يكتبه المستخدمُ الآن لا ما ورثه — والموروثُ يحرسه البابان
+/// الآخران على مسار المال: `setOrderTax` وقيدُ الجدول.
+///
+/// و[rate] **كسريّةٌ** لا مئويّة: إرجاعُها بالضرب في مئة ينزلق في ٨ من كلِّ
+/// ١٠٠ نسبةٍ صحيحة — اقرأ [TaxRateBounds.isValidRate].
+@visibleForTesting
+bool blocksSaveForTaxRate({required bool touched, required double rate}) =>
+    touched && !TaxRateBounds.isValidRate(rate);
+
+/// حقلُ النسبة داخل `Form` خاصٍّ به.
+///
+/// **الـ`Form` شرطٌ لا زينة:** `validator:` وحدَه لا يعمل — لا أحدَ يستدعي
+/// `validate()`. وهو حول هذا الحقل وحدَه كي لا يُقحَم بقيّةُ الشاشة في دورة
+/// تحقّقٍ لا تخصّها.
+///
+/// [initialRate] و[onRateChanged] **كسريّتان**، والمعروضُ والمكتوبُ مئويّ.
+@visibleForTesting
+Widget buildDefaultTaxRateFormField({
+  required GlobalKey<FormState> formKey,
+  required double initialRate,
+  required ValueChanged<double> onRateChanged,
+}) {
+  return Form(
+    key: formKey,
+    child: TextFormField(
+      initialValue: (initialRate * 100).toStringAsFixed(0),
+      decoration: const InputDecoration(
+        suffixText: '%',
+        isDense: true,
+      ),
+      keyboardType: TextInputType.number,
+      textAlign: TextAlign.center,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
+      validator: validateDefaultTaxRatePercent,
+      onChanged: (v) {
+        final val = double.tryParse(v);
+        if (val != null) {
+          onRateChanged(val / 100);
+        }
+      },
+    ),
+  );
+}
 
 /// Standalone POS Settings Widget — extracted from Hardware Settings
 class PosSettingsWidget extends ConsumerStatefulWidget {
@@ -91,6 +172,16 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
   bool _showTopBar = true;
   String _posStockAlertMode = 'zero'; // 'zero' or 'min_stock'
   double _posDefaultTaxRate = 0.16;
+
+  /// مفتاحُ الـ`Form` حول حقل النسبة — بلا استدعاءِ `validate()` لا يعمل
+  /// المُتحقِّق.
+  final GlobalKey<FormState> _taxRateFormKey = GlobalKey<FormState>();
+
+  /// هل لمس المستخدمُ حقلَ النسبة في هذه الجلسة؟
+  ///
+  /// بوّابةُ الحفظ مقيَّدةٌ به كي لا تمنع قيمةٌ **موروثةٌ** مخالفةٌ حفظَ بقيّةِ
+  /// الإعدادات — اقرأ [blocksSaveForTaxRate].
+  bool _taxRateTouched = false;
   // Category display settings
   double _catIconSize = 44.0;
   double _catFontSize = 9.0;
@@ -341,6 +432,26 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
   }
 
   Future<void> _saveSettings() async {
+    // ── نسبةُ الضريبة: الرفضُ عند المصدر ────────────────────────────────
+    //
+    // نقطةُ الحفظ واحدةٌ لكلِّ الإعدادات — المحليّةُ أدناه ومزامنةُ الخادم من
+    // خريطةٍ في آخر هذه الدالّة — فبوّابةٌ هنا تغطّي المسارين معاً.
+    //
+    // ولو مُنع الحفظُ، أُطلق المُتحقِّقُ كي يظهر السببُ في الحقل نفسِه لا في
+    // رسالةٍ عابرةٍ وحدَها.
+    if (blocksSaveForTaxRate(
+        touched: _taxRateTouched, rate: _posDefaultTaxRate)) {
+      _taxRateFormKey.currentState?.validate();
+      if (mounted) {
+        AppToast.show(
+          context,
+          'نسبةُ الضريبة الافتراضية غير صالحة — صفرٌ (بلا ضريبة) أو ١٪ فأكثر',
+          type: ToastType.error,
+        );
+      }
+      return;
+    }
+
     final s = ref.read(settingsRepositoryProvider);
     await s.saveSetting('auto_print_receipt', _autoPrint.toString());
     await s.saveSetting('enable_negative_sales', _enableNegativeSales.toString());
@@ -680,20 +791,13 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
           ),
         ),
         buildDefaultTaxRateTileGuarded(
-          field: TextFormField(
-            initialValue: (_posDefaultTaxRate * 100).toStringAsFixed(0),
-            decoration: const InputDecoration(
-              suffixText: '%',
-              isDense: true,
-            ),
-            keyboardType: TextInputType.number,
-            textAlign: TextAlign.center,
-            onChanged: (v) {
-              final val = double.tryParse(v);
-              if (val != null) {
-                setState(() => _posDefaultTaxRate = val / 100);
-              }
-            },
+          field: buildDefaultTaxRateFormField(
+            formKey: _taxRateFormKey,
+            initialRate: _posDefaultTaxRate,
+            onRateChanged: (rate) => setState(() {
+              _posDefaultTaxRate = rate;
+              _taxRateTouched = true;
+            }),
           ),
         ),
         // ─── المخزن الافتراضي لنقطة البيع ───

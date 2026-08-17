@@ -56,6 +56,29 @@ void main() {
       expect(1.0 / 100, TaxRateBounds.minRate);
     });
 
+    test('isValidRate تحكم بالكسريّة بلا ضربٍ عائدٍ في مئة', () {
+      // شاشةُ الإعدادات تحمل كسريّةً (`val / 100`). وإرجاعُها إلى المئويّة
+      // بالضرب ينزلق: ٨ من كلِّ ١٠٠ نسبةٍ صحيحةٍ تنحرف في الذهاب والإياب
+      // (٧ و١٤ و٢٨ و٢٩ و٥٥–٥٨ — مقيسٌ لا مفترض). فالحكمُ على الكسريّة رأساً.
+      expect(TaxRateBounds.isValidRate(0), isTrue);
+      expect(TaxRateBounds.isValidRate(TaxRateBounds.minRate), isTrue);
+      expect(TaxRateBounds.isValidRate(1.0 / 100), isTrue);
+      expect(TaxRateBounds.isValidRate(0.16), isTrue);
+      expect(TaxRateBounds.isValidRate(1.0), isTrue);
+
+      expect(TaxRateBounds.isValidRate(0.005), isFalse);
+      expect(TaxRateBounds.isValidRate(0.0000001), isFalse);
+      expect(TaxRateBounds.isValidRate(-0.16), isFalse);
+      expect(TaxRateBounds.isValidRate(1.6), isFalse);
+    });
+
+    test('١٤٪ تمرّ رغم انحرافِ ضربِها العائد', () {
+      // `(14 / 100) * 100 = 14.000000000000001776`. الحكمُ على الكسريّة
+      // يتجنّبه أصلاً، وهذا الاختبارُ يمنع الرجوعَ إلى الضرب العائد.
+      expect(TaxRateBounds.isValidRate(14 / 100), isTrue);
+      expect(TaxRateBounds.isValidRate(29 / 100), isTrue);
+    });
+
     test('نصُّ minRate هو ما يُكتَب في قيد SQL', () {
       // القيدُ رقمٌ حرفيٌّ في `restaurant_tables.dart` (ملفُّ `part` بلا
       // استيرادات)، فالربطُ يقع على هذا التأكيد لا على الاستيفاء.
