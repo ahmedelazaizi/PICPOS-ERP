@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:ural_erp/core/utils/number_utils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:ural_erp/data/database/sync_interceptor.dart';
 import 'package:ural_erp/core/theme/app_colors.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
 import 'package:ural_erp/core/utils/financial_utils.dart';
@@ -108,13 +110,76 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
     final whs = await branchRepo.getWarehouses();
     final ccs = await accountingRepo.getCostCenters();
 
+    final visibleWarehouses = await _scopeWarehousesToBranch(whs);
+
     if (mounted) {
       setState(() {
         _categories = cats;
-        _warehouses = whs;
+        _warehouses = visibleWarehouses;
         _costCenters = ccs;
+        // فاتورةٌ جديدة: انتقِ المخزنَ الافتراضيَّ (وإلا فأوّلَ مخزنٍ متاح)
+        // كما يفعل `SalesInvoiceForm`. بدون هذا الانتقاء يصل
+        // `warehouseId: null` إلى المستودع فيحوّله `?? 1` إلى المخزن رقم ١،
+        // وقد لا يكون مخزنَ هذا الفرع ولا موجوداً أصلاً.
+        _selectedWarehouseId ??=
+            visibleWarehouses.where((w) => w.isDefault).firstOrNull?.id ??
+                visibleWarehouses.firstOrNull?.id;
+        // ومركزُ التكلفةِ يتبع المخزنَ (نفسُ اشتقاق `SalesInvoiceForm`) —
+        // وهو ما يربطه بالفرع، إذ لا عمودَ فرعٍ في `CostCenters` أصلاً.
+        // وفي التعديل تحتفظ الفاتورةُ بمركزها المحفوظ (`??=`).
+        _selectedCostCenterId ??=
+            _costCenterFor(_selectedWarehouseId, visibleWarehouses, ccs);
       });
     }
+  }
+
+  /// Spec 103 (منقولٌ عن `sales_invoice_dialogs.dart:436-445` — نفسُ الشرطِ
+  /// ونفسُ الاحتياط): على جهازِ العميل تُقصَر المخازنُ على مخازنِ فرعه.
+  ///
+  /// وفرعُ الفاتورة **يُشتقُّ من مخزنها** لا يُختار:
+  /// `purchase_dao.dart:589-594` يقرأ `warehouse.branchId` ويحفظه على الفاتورة،
+  /// وقائمةُ الفواتير تقصّ على `branchId` (سطر ١٥٠) — فمخزنُ فرعٍ آخر لا يعني
+  /// حقلاً خاطئاً بل فاتورةً تغيب عن قائمةِ فرعها.
+  Future<List<db.Warehouse>> _scopeWarehousesToBranch(
+      List<db.Warehouse> all) async {
+    var visible = all;
+
+    if (SyncInterceptor.isClientMode) {
+      final prefs = await SharedPreferences.getInstance();
+      final clientBranchId = prefs.getInt('client_branch_id');
+      if (clientBranchId != null) {
+        final branchWarehouses =
+            all.where((w) => w.branchId == clientBranchId).toList();
+        // احتياطُ Spec 103 المقصود: إن أفرغ الترشيحُ القائمةَ تبقى الكاملةُ
+        // ظاهرةً بدل أن يُسلَّم المستخدمُ قائمةً خاوية.
+        if (branchWarehouses.isNotEmpty) visible = branchWarehouses;
+      }
+    }
+
+    // فاتورةٌ قيدَ التعديل تحتفظ بمخزنها ولو وقع خارجَ الترشيح: قائمةٌ لا تحوي
+    // قيمتَها المنتقاةَ تُسقط `DropdownButton` بتأكيدٍ صريح، وإسقاطُ المخزنِ
+    // صامتاً يعيد توطينَ الفاتورةِ على فرعٍ آخرَ عند الحفظ.
+    final editWarehouseId = widget.editInvoice?.warehouseId;
+    if (editWarehouseId != null &&
+        !visible.any((w) => w.id == editWarehouseId)) {
+      final own = all.where((w) => w.id == editWarehouseId).firstOrNull;
+      if (own != null) visible = [own, ...visible];
+    }
+
+    return visible;
+  }
+
+  /// مركزُ تكلفةِ [warehouseId] إن كان حاضراً في [costCenters] المحمَّلة.
+  /// وشرطُ الحضورِ ليس تجميلاً: `DropdownButton` ينهار على قيمةٍ ليست في عناصره.
+  int? _costCenterFor(
+    int? warehouseId,
+    List<db.Warehouse> warehouses,
+    List<db.CostCenter> costCenters,
+  ) {
+    final costCenterId =
+        warehouses.where((w) => w.id == warehouseId).firstOrNull?.costCenterId;
+    if (costCenterId == null) return null;
+    return costCenters.any((c) => c.id == costCenterId) ? costCenterId : null;
   }
 
   Future<void> _loadInvoiceItems() async {
@@ -314,7 +379,13 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
                       prefixIcon: Icon(PhosphorIconsBold.warehouse),
                     ),
                     items: _warehouses.map((w) => DropdownMenuItem(value: w.id, child: Text(w.name))).toList(),
-                    onChanged: (val) => setState(() => _selectedWarehouseId = val),
+                    // تبديلُ المخزنِ يجرّ مركزَ تكلفته — نفسُ سلوك
+                    // `SalesInvoiceForm._buildWarehouseDropdown`.
+                    onChanged: (val) => setState(() {
+                      _selectedWarehouseId = val;
+                      _selectedCostCenterId =
+                          _costCenterFor(val, _warehouses, _costCenters);
+                    }),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -569,6 +640,15 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
   }
 
   Future<void> _handleSave({required bool isDraft, bool printAfterSave = false}) async {
+    // المخزنُ أوّلاً: الحقلُ الوحيدُ الذي كان غيابُه يمرّ صامتاً. القائمةُ
+    // المنسدلةُ تُنتقى سلفاً متى وُجد مخزنٌ واحد، فلا تظهر هذه الرسالةُ إلا
+    // حين لا مخزنَ أصلاً — وحينها الرفضُ الصريحُ أوضحُ من فرعٍ خاطئٍ صامت
+    // (كان `warehouseId ?? 1` في مُعالِج الحفظ يخترع المخزنَ رقم ١).
+    if (_selectedWarehouseId == null) {
+      AppToast.show(context, 'يجب اختيار المخزن قبل حفظ الفاتورة', type: ToastType.error);
+      return;
+    }
+
     // Invoice number is optional — the backend generates a short sequential
     // one (PINV-N) when the field is left blank.
     if (_selectedSupplierId == null || _items.isEmpty) {
