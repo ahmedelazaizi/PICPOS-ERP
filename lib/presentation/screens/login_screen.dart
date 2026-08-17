@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:ural_erp/core/utils/friendly_error.dart';
 import 'package:ural_erp/presentation/widgets/dialogs/app_confirm_dialog.dart';
+import 'package:ural_erp/domain/models/app_close_cart_gate.dart';
+import 'package:ural_erp/presentation/widgets/dialogs/cart_not_empty_close_dialog.dart';
+import 'package:ural_erp/presentation/pos/providers/cart_controller.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -55,6 +58,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   // BUG-U19: confirm before quitting from the login screen (the main app
   // already confirms on exit).
   Future<void> _confirmExitApp() async {
+    // #B2: منعُ الخروجَ هنا أيضاً وسلّةُ البيع عامرة.
+    //
+    // مُثبَتٌ لا مفترَض: `cartControllerProvider` عامٌّ (`NotifierProvider`
+    // بلا `autoDispose`) فحالتُه تبقى حيّةً عبر الشاشات كلِّها. الخروجُ
+    // اليدويُّ من التطبيق (`app_shell.dart` زرّ «خروج») يمسح السلّةَ صراحةً
+    // قبل تسجيل الخروج — لكن `InactivityDetector._onInactive` (تسجيلُ
+    // خروجٍ تلقائيٌّ بسبب عدم النشاط) **لا يمسحها**؛ فلو تُرك كاشيرٌ سلّتَه
+    // عامرةً حتى انتهت مهلةُ الجلسة، تظهر شاشةُ الدخول هذه والسلّةُ لا تزال
+    // ممتلئةً. فهذا الزرُّ ينهي العمليةَ مباشرةً (`exit(0)`) بلا فحصٍ سابق.
+    final cartItemCount = ref.read(cartControllerProvider).items.length;
+    if (shouldBlockAppCloseForCart(cartItemCount)) {
+      await showCartNotEmptyCloseBlockedDialog(context);
+      return;
+    }
+
     final ok = await AppConfirmDialog.show(
       context,
       title: 'إغلاق البرنامج',

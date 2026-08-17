@@ -99,6 +99,8 @@ import 'services/network_service.dart';
 import 'core/logging/diagnostic_logger.dart';
 import 'presentation/pos/widgets/pos_opening_balance_dialog.dart';
 import 'presentation/widgets/fiscal_year_gate_dialog.dart';
+import 'domain/models/app_close_cart_gate.dart';
+import 'presentation/widgets/dialogs/cart_not_empty_close_dialog.dart';
 
 
 /// هل المستخدم يقفل البرنامج من غير ما يتطلب كلمة سر المدير؟
@@ -492,6 +494,20 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
       // Hide window: server keeps running, clients stay connected
       await windowManager.hide();
       return;
+    }
+
+    // #B2: منعُ إغلاق البرنامج وسلّةُ البيع عامرة — طلبُ مالكٍ 2026-08-17.
+    // القرارُ عمداً **بعد** فرع وضع السيرفر لا قبله: في وضع السيرفر أعلاه
+    // النافذةُ تُخفى فقط (`windowManager.hide()`) والعمليةُ تبقى حيّةً —
+    // فسلّةُ البيع لا تُفقد، ولا داعي لمنعها هناك. من هنا وأسفلَ، كلا
+    // الفرعين (مدير/كاشير) ينتهيان بـ`windowManager.destroy()` الذي يُنهي
+    // العمليةَ فعلياً — فهنا وحده يجب المنعُ قبل عرض أيّ حوار تأكيدٍ آخر.
+    if (mounted) {
+      final saleCartItemCount = ref.read(cartControllerProvider).items.length;
+      if (shouldBlockAppCloseForCart(saleCartItemCount)) {
+        await showCartNotEmptyCloseBlockedDialog(context);
+        return;
+      }
     }
 
     final authState = ref.read(authProvider);
@@ -1090,6 +1106,18 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
           }
 
           // 3. No history — show exit dialog
+          //
+          // #B2: منعُ الخروجَ هنا أيضاً وسلّةُ البيع عامرة. هذا المسارُ
+          // ينادي `platform.exitApp()` (= `dart:io exit(0)` بعد نسخة
+          // احتياطية) مباشرةً — بلا مرورٍ بـ`onWindowClose`/`windowManager`
+          // إطلاقاً — فحارسُ `onWindowClose` وحده لا يغطّيه.
+          final cartItemCountForBackExit =
+              ref.read(cartControllerProvider).items.length;
+          if (shouldBlockAppCloseForCart(cartItemCountForBackExit)) {
+            await showCartNotEmptyCloseBlockedDialog(context);
+            return;
+          }
+
           final shouldExit = await showDialog<bool>(
             context: context,
             builder: (context) => Directionality(

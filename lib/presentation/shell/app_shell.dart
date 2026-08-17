@@ -19,6 +19,8 @@ import '../../data/database/sync_interceptor.dart';
 import '../../services/sync_event_bus.dart';
 import '../pos/providers/cart_controller.dart';
 import '../pos/providers/cfd_controller.dart';
+import '../../domain/models/app_close_cart_gate.dart';
+import '../widgets/dialogs/cart_not_empty_close_dialog.dart';
 import '../pos/logic/open_shift_gate.dart';
 import '../pos/widgets/pos_cashier_closing_dialog.dart';
 import '../widgets/inactivity_detector.dart';
@@ -280,6 +282,16 @@ class _AppShellState extends ConsumerState<AppShell> {
 
   /// #3: Show exit application confirmation dialog
   void _showExitConfirmation() {
+    // #B2: منعُ الخروجَ هنا وسلّةُ البيع عامرة. هذا زرٌّ يدويٌّ («إغلاق
+    // البرنامج») ينتهي بـ`platform.exitApp()` (`exit(0)` بعد نسخة احتياطية)
+    // مباشرةً — بلا مرورٍ بـ`onWindowClose` في `app_main_screen.dart` ولا
+    // بـ`windowManager` إطلاقاً — فحارسُ `onWindowClose` وحده لا يغطّيه.
+    final cartItemCount = ref.read(cartControllerProvider).items.length;
+    if (shouldBlockAppCloseForCart(cartItemCount)) {
+      showCartNotEmptyCloseBlockedDialog(context);
+      return;
+    }
+
     showDialog(
       context: context,
       builder: (context) => Directionality(
