@@ -6,6 +6,7 @@ import '../core/constants/app_constants.dart';
 import '../data/database/database.dart';
 import '../domain/models/table_order_totals.dart';
 import '../domain/models/table_status.dart';
+import '../domain/models/tax_rate_bounds.dart';
 
 /// انتقالٌ ممنوعٌ في آلة حالات الطاولة. رسالتُه تُعرَض للمستخدم كما هي.
 class TableTransitionException implements Exception {
@@ -640,10 +641,15 @@ class TableSessionService {
       // الصفر — فتخرج الفاتورةُ بلا سطر ضريبةٍ ويُنقَص التحصيلُ في الدفاتر
       // بلا كلمةٍ عند الصندوق. ورفضٌ عالٍ عند المفتاح خيرٌ من نقصٍ صامتٍ في
       // الفاتورة، ولذلك تُمنَع الحالةُ حيث تُكتَب لا حيث تُكتشَف.
-      if (enabled && order.taxRate <= 0) {
+      //
+      // والعتبةُ [TaxRateBounds.minRate] لا الصفرَ: `tax_rate > 0` تقبل
+      // `0.0000001` — فالزرُّ «مفعَّل» والقيدُ راضٍ والمحصَّلُ صفرٌ بعد
+      // التقريب. الكذبةُ نفسُها بصورةٍ أدقَّ تمرّ من تحت قيد v156، ولا يمسكها
+      // إلّا حدٌّ يقول ما النسبةُ التي تستحقّ أن تُدَّعى.
+      if (enabled && order.taxRate < TaxRateBounds.minRate) {
         throw const TableTransitionException(
-            'لا نسبةَ ضريبةٍ على هذا الطلب — اضبط «نسبة الضريبة الافتراضية» '
-            'في الإعدادات ثم افتح الطاولةَ من جديد');
+            'نسبةُ الضريبة على هذا الطلب دون الحدّ الأدنى (١٪) — اضبط '
+            '«نسبة الضريبة الافتراضية» في الإعدادات ثم افتح الطاولةَ من جديد');
       }
       if (order.taxEnabled == enabled) return;
 
