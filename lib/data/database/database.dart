@@ -701,12 +701,17 @@ class AppDatabase extends _$AppDatabase {
   /// المشحونُ على الفاتورة والمسجَّلُ على الطلب رقماً واحداً، فيسكت حارسُ
   /// `checkTableCharge` عن حقٍّ لا عن إضعاف.
   ///
-  /// **١٥٦** — قيدُ `CHECK (tax_enabled = 0 OR tax_rate > 0)` على
+  /// **١٥٦** — قيدُ `CHECK (NOT tax_enabled OR tax_rate > 0)` على
   /// `table_orders`: ما حرسته v155 عند مفتاح التفعيل صار مستحيلَ التمثيل في
   /// الجدول نفسِه. والترقيةُ تُعيد إنشاءَ الجدول (SQLite لا تضيف قيداً
   /// بـ`ALTER TABLE`) بعد تسويةِ أيِّ صفٍّ كاذبٍ قائم.
+  ///
+  /// **١٥٧** — شدُّ ذلك القيدِ إلى `tax_rate >= 0.01`: `> 0` كانت تقبل
+  /// `0.0000001`، فالزرُّ «مفعَّل» والقيدُ راضٍ والمحصَّلُ صفرٌ بعد التقريب —
+  /// الكذبةُ نفسُها بصورةٍ تمرّ من تحت قيدِ ١٥٦. والحدُّ الآن واحدٌ عند
+  /// الأبواب الثلاثة: مدخلُ الإعدادات، و`setOrderTax`، وهذا القيد.
   @override
-  int get schemaVersion => 156;
+  int get schemaVersion => 157;
 
   /// PostgreSQL-specific table creation: Drift's `currentDateAndTime` generates
   /// `strftime('%s','now')` which doesn't exist in PostgreSQL.

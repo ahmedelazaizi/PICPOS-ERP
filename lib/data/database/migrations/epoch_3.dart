@@ -2450,14 +2450,51 @@ extension Epoch3Migrations on AppDatabase {
     // الإنشاء فيقتل الإقلاع. وهي تُطفئ الزرَّ ولا تُلفّق نسبةً — الفاتورةُ
     // خرجت بضريبةِ صفرٍ فعلاً، فإطفاءُ الزرِّ هو ما يجعل السجلَّ يطابق ما
     // حُصِّل حقّاً. واختراعُ نسبةٍ الآن يعيد تسعيرَ حسابٍ رآه الضيفُ ودُفع.
+    //
+    // **وعتبةُ التسوية هنا هي عتبةُ اليوم لا عتبةُ ١٥٦.** `m.alterTable` تبني
+    // تعريفَ الجدول **الحاليَّ** لا تعريفَه يومَ كُتبت هذه الخطوة، فالقيدُ
+    // الذي تُنشئه هذه السطورُ هو ما في [TableOrders.customConstraints] الآن.
+    // فلمّا شُدَّ القيدُ في v157 صار صفٌّ نسبتُه `0.005` — وهو ما كانت تُجيزه
+    // v156 — يُفشل إعادةَ البناء **هنا**، قبل أن تُشغَّل v157 أصلاً. مقيسٌ لا
+    // مفترض: `CHECK constraint failed: NOT tax_enabled OR tax_rate >= 0.01`
+    // من خطوة v156 على قاعدةٍ مُرقّاةٍ من ١٥٥.
+    //
+    // فأيُّ خطوةٍ تُعيد بناءَ جدولٍ تلزمها تسويةٌ تُرضي قيدَه **الحاليّ**.
     if (from < 156) {
       await _safeMigrate('v156 table_orders tax CHECK constraint', () async {
         await customStatement(
           'UPDATE table_orders SET tax_enabled = 0 '
-          'WHERE tax_enabled = 1 AND tax_rate <= 0',
+          'WHERE tax_enabled = 1 AND tax_rate < 0.01',
         );
         await m.alterTable(TableMigration(tableOrders));
         debugPrint('[Migration] v156 table_orders tax CHECK OK');
+      });
+    }
+
+    // ── v157: الحدُّ الأدنى المعقولُ للنسبة، لا مجرّد «فوق الصفر» ──────────
+    //
+    // قيدُ v156 (`tax_rate > 0`) يقبل `0.0000001`: القيدُ راضٍ، والزرُّ يقول
+    // «مفعَّلة»، والمحصَّلُ صفرٌ بعد التقريب — الكذبةُ التي أُغلقت عائدةً
+    // بصورةٍ تمرّ من تحت القيد نفسِه. والحدُّ الآن `TaxRateBounds.minRate`
+    // (١٪) عند الأبواب الثلاثة: مدخلُ الإعدادات، و`setOrderTax`، والقيد.
+    //
+    // نفسُ آليّة v156 ونفسُ ترتيبها: التسويةُ **تسبق** إعادةَ البناء
+    // بالضرورة — صفٌّ مخالفٌ قائمٌ يُفشل `m.alterTable` فيقتل الإقلاع.
+    //
+    // وتُطفئ الزرَّ ولا تُلفّق نسبةً: الفاتورةُ خرجت بضريبةٍ تُقرَّب إلى صفرٍ
+    // فعلاً، فإطفاءُ الزرِّ هو ما يجعل السجلَّ يطابق ما حُصِّل. ورفعُ اللقطة
+    // إلى الحدِّ الآن يعيد تسعيرَ حسابٍ رآه الضيفُ ودُفع.
+    //
+    // والمطفأُ لا يُمَسّ وإن كانت لقطتُه دون الحدّ — القيدُ لا يطارد مطفأً،
+    // واللقطةُ تبقى محفوظةً كما تركها v156.
+    if (from < 157) {
+      await _safeMigrate('v157 table_orders minimum tax rate', () async {
+        await customStatement(
+          'UPDATE table_orders SET tax_enabled = 0 '
+          'WHERE tax_enabled = 1 AND tax_rate < 0.01',
+        );
+        await m.alterTable(TableMigration(tableOrders));
+        debugPrint('[Migration] v157 table_orders minimum tax rate OK');
       });
     }
   }
