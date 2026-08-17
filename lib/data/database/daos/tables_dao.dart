@@ -202,11 +202,22 @@ extension TablesDao on AppDatabase {
   }
 
   /// Add item to table order
+  ///
+  /// [taxRate] نسبةُ ضريبة الصنف **مئويّةً** (16 لا 0.16) منسوخةً عن
+  /// `Products.taxRate` — نفسُ ما تفعله سلّةُ نقطة البيع لحظةَ الإضافة.
+  /// العمودُ موجودٌ من قديمٍ وكان يبقى صفراً دائماً، ولذلك لم تُطبَّق نسبةُ
+  /// صنفٍ قطُّ على طاولة.
+  ///
+  /// وعلى الصفِّ القائم **لا تُطمَس نسبةٌ محفوظة**: الموجودةُ لقطةٌ أُخذت
+  /// لحظةَ أوّل إضافة، فتغييرُ ضريبة المنتج في منتصف الوجبة لا يُعيد تسعير
+  /// ما طُلب قبله. تُملأ الخانةُ الفارغة فقط (صفرٌ ⇐ نسبةٌ موجبة)، وهو ما
+  /// يُصلح صفوفَ ما قبل هذه النسخة بلا أثرٍ جانبيّ.
   Future<void> addOrUpdateTableOrderItem({
     required int orderId,
     required int productId,
     required double quantity,
     required double unitPrice,
+    double taxRate = 0,
   }) async {
     return transaction(() async {
       final existing =
@@ -217,12 +228,14 @@ extension TablesDao on AppDatabase {
 
       if (existing != null) {
         final newQty = existing.quantity + quantity;
+        final fillsBlankRate = existing.taxRate <= 0 && taxRate > 0;
         await (update(
           tableOrderItems,
         )..where((i) => i.id.equals(existing.id))).write(
           TableOrderItemsCompanion(
             quantity: Value(newQty),
             total: Value(newQty * unitPrice),
+            taxRate: fillsBlankRate ? Value(taxRate) : const Value.absent(),
           ),
         );
       } else {
@@ -233,6 +246,7 @@ extension TablesDao on AppDatabase {
             quantity: quantity,
             unitPrice: unitPrice,
             total: quantity * unitPrice,
+            taxRate: Value(taxRate),
           ),
         );
       }
@@ -373,9 +387,14 @@ extension TablesDao on AppDatabase {
       var targetOrder = await getActiveOrderForTable(targetTableId);
       if (targetOrder == null) {
         // Create new order for target table
+        // ضريبةُ المصدر تنتقل مع بنوده: الطلبُ المولودُ هنا يحمل نفسَ
+        // الأصناف بنفس الأسعار، فلو وُلد بلا ضريبةٍ لَسقطت ضريبتُها بمجرّد
+        // النقل — تسريبٌ صامتٌ لا يراه أحد.
         final targetOrderId = await into(tableOrders).insert(
           TableOrdersCompanion.insert(
             tableId: targetTableId,
+            taxEnabled: Value(sourceOrder.taxEnabled),
+            taxRate: Value(sourceOrder.taxRate),
             openedAt: Value(DateTime.now()),
           ),
         );
@@ -446,6 +465,8 @@ extension TablesDao on AppDatabase {
               );
             } else {
               // Split: Create new item in target, deduct from source
+              // النسبةُ تُنقل مع الجزء المنقول: البندُ المقسومُ نصفان من
+              // صنفٍ واحدٍ بسعرٍ واحد، فلا يصحّ أن يخرج نصفُه معفىً.
               await into(tableOrderItems).insert(
                 TableOrderItemsCompanion.insert(
                   tableOrderId: targetOrder.id,
@@ -453,6 +474,7 @@ extension TablesDao on AppDatabase {
                   quantity: finalQtyToMove,
                   unitPrice: item.unitPrice,
                   total: finalQtyToMove * item.unitPrice,
+                  taxRate: Value(item.taxRate),
                 ),
               );
 

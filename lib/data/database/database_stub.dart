@@ -218,6 +218,7 @@ class AppDatabase {
     required int productId,
     required double quantity,
     required double unitPrice,
+    double taxRate = 0,
   }) async {}
   Future<List<db.TableOrderItem>> getTableOrderItems(int orderId) async => [];
   Future<void> removeTableOrderItem(int orderId, int productId) async {}

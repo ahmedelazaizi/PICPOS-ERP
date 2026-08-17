@@ -140,12 +140,14 @@ class RestaurantRepositoryImpl implements IRestaurantRepository {
     required int productId,
     required double quantity,
     required double unitPrice,
+    double taxRate = 0,
   }) =>
       _db.addOrUpdateTableOrderItem(
         orderId: orderId,
         productId: productId,
         quantity: quantity,
         unitPrice: unitPrice,
+        taxRate: taxRate,
       );
 
   @override
