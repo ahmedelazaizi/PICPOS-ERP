@@ -2,6 +2,8 @@ import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/data/database/database.dart';
 import 'package:ural_erp/domain/models/split_plan.dart';
+import 'package:ural_erp/domain/models/table_status.dart';
+import 'package:ural_erp/services/split_settlement_runner.dart';
 import 'package:ural_erp/services/table_checkout_coordinator.dart';
 import 'package:ural_erp/services/table_session_service.dart';
 
@@ -286,6 +288,26 @@ void main() {
           hasLength(3));
     });
 
+    test('حصّةٌ مسوّاةٌ غابت عن الخطّة تُرفَض لا تُهمَل', () async {
+      final orderId = await orderOf(100, guests: 4);
+      final four = await coordinator.buildSplitPlan(
+          orderId: orderId, mode: SplitMode.equal);
+      await seedInvoice(44);
+      await coordinator.settlePart(
+          orderId: orderId, part: four.parts[3], invoiceId: 44);
+
+      // ٤ حصصٍ ← ٣: «ضيف ٤» المسوّاةُ لم تعد في الخطّة، فلا تُقارَن بشيء.
+      // بلا هذا الحارس تعود الحصصُ الثلاثُ كلُّها «باقية» بمجموع ١٠٠، فتُشحَن
+      // أصنافُ الطلب كلُّها في فاتورةٍ ثانيةٍ ويُحصَّل ما حُصِّل.
+      final three = await coordinator.buildSplitPlan(
+          orderId: orderId, mode: SplitMode.equal, ways: 3);
+
+      await expectLater(
+        coordinator.unsettledParts(orderId: orderId, plan: three),
+        throwsA(isA<StateError>()),
+      );
+    });
+
     test('تسمياتٌ متكرّرةٌ في الخطّة تُرفَض لا تُسقَط بصمت', () async {
       final orderId = await orderOf(100, guests: 2);
       final plan = await coordinator.buildSplitPlan(
@@ -300,6 +322,147 @@ void main() {
         coordinator.unsettledParts(orderId: orderId, plan: plan),
         throwsA(isA<StateError>()),
       );
+    });
+  });
+
+  // ── استئنافُ تقسيمٍ سُوِّي جزئيّاً ثم أُغلقت شاشتُه ─────────────────────
+  //
+  // الحالةُ التي كان قفلُ التركيبة يجعلها بلا مخرج: `SplitTableDialog` لا
+  // يستعيد الإسنادَ ولا المبالغَ عند إعادة الفتح (التركيبةُ لا تُحفَظ مع
+  // الدفعات)، وكان يُعطّل القوائمَ والخاناتِ ما دام `paidAmount > 0` — فلا
+  // سبيلَ إلى التعبير عن التركيبة التي سُوِّيت عليها الحصص، ولا إلى الإغلاق
+  // أو الإلغاء أو التحصيل من أيّ بابٍ آخر. الأمانُ كان — ولا يزال — في
+  // `unsettledParts` وحدَه، والاختباران التاليان يُثبتان الطرفين معاً.
+  group('استئنافُ تقسيمٍ بالأصناف سُوِّي جزئيّاً', () {
+    /// طلبٌ ببندَين: ٦٠ + ٤٠ = ١٠٠، بمعرّفاتِ بنودٍ حقيقيّةٍ لأن ما يجب
+    /// إعادةُ إدخاله هو الإسنادُ `itemId → دافع` نفسُه.
+    Future<TableOrder> orderWithTwoItems() async {
+      final t = await db.createTable(name: 'ط-استئناف');
+      final orderId = await service.openTable(
+          tableId: t, guestCount: 2, userId: null, userName: 'أحمد');
+      final productA = await db.into(db.products).insert(
+          ProductsCompanion.insert(code: 'SPL-A', name: 'صنفُ الستّين'));
+      final productB = await db.into(db.products).insert(
+          ProductsCompanion.insert(code: 'SPL-B', name: 'صنفُ الأربعين'));
+      await db.addOrUpdateTableOrderItem(
+          orderId: orderId, productId: productA, quantity: 1, unitPrice: 60);
+      await db.addOrUpdateTableOrderItem(
+          orderId: orderId, productId: productB, quantity: 1, unitPrice: 40);
+      return (db.select(db.tableOrders)..where((o) => o.id.equals(orderId)))
+          .getSingle();
+    }
+
+    Future<double> paidOf(int orderId) async =>
+        (await (db.select(db.tableOrders)..where((o) => o.id.equals(orderId)))
+                .getSingle())
+            .paidAmount;
+
+    Future<String> statusOf(int tableId) async =>
+        (await (db.select(db.restaurantTables)
+                  ..where((t) => t.id.equals(tableId)))
+                .getSingle())
+            .status;
+
+    test('إلغاءُ الدفع عند الضيف الثاني ثم إعادةُ نفسِ الإسناد تُكمل التحصيل',
+        () async {
+      final order = await orderWithTwoItems();
+      final items = await db.getTableOrderItems(order.id);
+      final assignment = {items[0].id: 0, items[1].id: 1};
+
+      Future<SplitPlan> planOf(Map<int, int> a) => coordinator.buildSplitPlan(
+            orderId: order.id,
+            mode: SplitMode.byItems,
+            ways: 2,
+            assignment: a,
+          );
+
+      // ── الجولةُ الأولى: ضيف١ يدفع ٦٠، والكاشيرُ يُلغي ورقةَ دفع ضيف٢.
+      //    هذا هو المسارُ العاديُّ لا حالةً حدّيّة.
+      await seedInvoice(701);
+      final first = _FakeSplitPort(
+        db: db,
+        coordinator: coordinator,
+        orderId: order.id,
+        plan: await planOf(assignment),
+        payer: (charge) async => charge == 60 ? 701 : null,
+      );
+      final round1 = await SplitSettlementRunner(first).run(previewSum: 100);
+
+      expect(round1.status, SplitRunStatus.aborted);
+      expect(round1.settledCount, 1);
+      expect(await paidOf(order.id), 60);
+      expect(await statusOf(order.tableId), TableStatus.occupied,
+          reason: 'الطاولةُ عالقةٌ بين «دُفع منها شيء» و«ليست مدفوعةً بالكامل»');
+
+      // ── الشاشةُ أُغلقت فضاع الإسناد. الكاشيرُ يُعيد إدخالَه كما كان —
+      //    وهو ما كان القفلُ يمنعه.
+      await seedInvoice(702);
+      final second = _FakeSplitPort(
+        db: db,
+        coordinator: coordinator,
+        orderId: order.id,
+        plan: await planOf(assignment),
+        payer: (_) async => 702,
+      );
+      final round2 = await SplitSettlementRunner(second).run(previewSum: 100);
+
+      expect(round2.status, SplitRunStatus.success);
+      expect(second.unsettledSeen.map((p) => p.label).toList(),
+          [splitPartLabel(1)],
+          reason: 'الحصّةُ الباقيةُ وحدَها — لا إعادةَ تحصيلٍ لضيف١');
+      expect(second.unsettledSeen.single.amount, 40);
+      expect(second.charges, [40], reason: 'لم يُشحَن إلا الباقي');
+
+      expect(await paidOf(order.id), 100);
+      expect(await statusOf(order.tableId), TableStatus.paid,
+          reason: 'الطاولةُ خرجت من العلوق وصارت قابلةً للإغلاق');
+    });
+
+    test('إسنادٌ مقلوبٌ بنفس الإجمالي يُرفَض قبل إصدار أيّ فاتورة', () async {
+      final order = await orderWithTwoItems();
+      final items = await db.getTableOrderItems(order.id);
+
+      await seedInvoice(711);
+      final first = _FakeSplitPort(
+        db: db,
+        coordinator: coordinator,
+        orderId: order.id,
+        plan: await coordinator.buildSplitPlan(
+          orderId: order.id,
+          mode: SplitMode.byItems,
+          ways: 2,
+          assignment: {items[0].id: 0, items[1].id: 1},
+        ),
+        payer: (charge) async => charge == 60 ? 711 : null,
+      );
+      await SplitSettlementRunner(first).run(previewSum: 100);
+      expect(await paidOf(order.id), 60);
+
+      // البندان تبادلا صاحبَيهما: «ضيف ١» صارت ٤٠ وقد سُوِّيت ٦٠. الإجماليُّ
+      // ١٠٠ كما هو فحارسُ freshSum/previewSum يمرّ صامتاً — وهذا بالضبط ما
+      // يمسكه فحصُ المبلغ لكلّ تسميةٍ على حدة.
+      final swapped = await coordinator.buildSplitPlan(
+        orderId: order.id,
+        mode: SplitMode.byItems,
+        ways: 2,
+        assignment: {items[0].id: 1, items[1].id: 0},
+      );
+      final second = _FakeSplitPort(
+        db: db,
+        coordinator: coordinator,
+        orderId: order.id,
+        plan: swapped,
+        payer: (_) async => 712,
+      );
+
+      await expectLater(
+        SplitSettlementRunner(second).run(previewSum: 100),
+        throwsA(isA<StateError>()),
+      );
+      expect(second.charges, isEmpty,
+          reason: 'الرفضُ قبل الترحيل — لا فاتورةَ يتيمة');
+      expect(await paidOf(order.id), 60,
+          reason: 'لم يُسجَّل شيءٌ فوق ما سُوِّي');
     });
   });
 
@@ -320,4 +483,72 @@ void main() {
       expect(await coordinator.settledInvoiceId(orderId), 33);
     });
   });
+}
+
+/// منفذُ تسويةٍ يقود [SplitSettlementRunner] بمنسّقٍ **حقيقيّ** على قاعدةٍ
+/// حقيقيّة — الوهميُّ فيه شيئان فقط: السلّةُ وورقةُ الدفع.
+///
+/// [fillCart] يحسب ما تحسبه السلّةُ الحقيقيّة (مجموعُ الكميّة × سعرِ الوحدة
+/// للبنود المطلوبة) لا رقماً مُلفَّقاً، وإلّا لما اختُبر الفحصُ القبليُّ
+/// أصلاً. و[payer] يقرّر: رقمُ فاتورةٍ صدرت، أو `null` = تراجَع الكاشير.
+class _FakeSplitPort implements SplitSettlementPort {
+  _FakeSplitPort({
+    required this.db,
+    required this.coordinator,
+    required this.orderId,
+    required this.plan,
+    required this.payer,
+  });
+
+  final AppDatabase db;
+  final TableCheckoutCoordinator coordinator;
+  final int orderId;
+  final SplitPlan plan;
+  final Future<int?> Function(double chargeTotal) payer;
+
+  /// آخرُ ما أعادته [unsettledParts] — الدليلُ على أن الاستئنافَ استئنافٌ.
+  final List<SplitPart> unsettledSeen = [];
+
+  /// كلُّ مبلغٍ طُلب ترحيلُه. فراغُها = لم تصدر فاتورة.
+  final List<double> charges = [];
+
+  @override
+  Future<SplitPlan> buildPlan() async => plan;
+
+  @override
+  Future<List<SplitPart>> unsettledParts(SplitPlan p) async {
+    final parts = await coordinator.unsettledParts(orderId: orderId, plan: p);
+    unsettledSeen
+      ..clear()
+      ..addAll(parts);
+    return parts;
+  }
+
+  @override
+  Future<int?> settledInvoiceId() => coordinator.settledInvoiceId(orderId);
+
+  @override
+  Future<void> settlePart(SplitPart part, int invoiceId) => coordinator
+      .settlePart(orderId: orderId, part: part, invoiceId: invoiceId);
+
+  @override
+  Future<double> fillCart(Map<int, double>? itemQuantities) async {
+    var total = 0.0;
+    for (final item in await db.getTableOrderItems(orderId)) {
+      if (itemQuantities != null && !itemQuantities.containsKey(item.id)) {
+        continue;
+      }
+      total += (itemQuantities?[item.id] ?? item.quantity) * item.unitPrice;
+    }
+    return total;
+  }
+
+  @override
+  Future<int?> payFilledCart(double chargeTotal) {
+    charges.add(chargeTotal);
+    return payer(chargeTotal);
+  }
+
+  @override
+  void onPartSettled(SplitPart part) {}
 }

@@ -68,6 +68,24 @@ class TableCheckoutCoordinator {
         splitLabel: part.label,
       );
 
+  /// ما سُوِّي فعلاً من حصصِ هذا الطلب: `التسمية → مجموعُ ما سُجِّل عليها`.
+  ///
+  /// الدفعاتُ غيرُ المُسمّاة (تحصيلٌ من شاشة الطاولة لا من التقسيم) لا تظهر
+  /// هنا — لا حصّةَ لها تُنسَب إليها.
+  ///
+  /// تُقرَأ من الشاشة أيضاً: الكاشيرُ الذي يعود إلى تقسيمٍ سُوِّي نصفُه يحتاج
+  /// أن يرى ما سُوِّي بالاسم والمبلغ ليُعيد إدخالَ نفسِ التركيبة، لا أن
+  /// يخمّنها.
+  Future<Map<String, double>> settledShares(int orderId) async {
+    final settled = <String, double>{};
+    for (final payment in await _session.paymentsFor(orderId)) {
+      final label = payment.splitLabel;
+      if (label == null) continue;
+      settled[label] = (settled[label] ?? 0) + payment.amount;
+    }
+    return settled;
+  }
+
   /// الحصصُ التي لم تُسوَّ بعد.
   ///
   /// إعادةُ المحاولة بعد فشلٍ في منتصف التسوية يجب أن تُكمل لا أن تبدأ من
@@ -80,6 +98,12 @@ class TableCheckoutCoordinator {
   /// مسوّاةً بالتركيبة الجديدة، فتضيع أموالٌ أو أصنافٌ بلا خطأٍ يظهر. لذلك
   /// يُقارَن مبلغُ كلّ حصّةٍ سُوِّيت بما تجعله الخطّةُ الحاليّة، ويُرفَض
   /// الاختلافُ صراحةً.
+  ///
+  /// **والمقارنةُ وحدَها لا تكفي كذلك.** حصّةٌ سُوِّيت ثم اختفت تسميتُها من
+  /// الخطّة — مقامٌ نقص من أربعةٍ إلى ثلاثةٍ فذهبت «ضيف ٤» — لا تُقارَن
+  /// بشيءٍ فتُهمَل بصمت: تعود الخطّةُ بكلّ حصصها «باقية»، فتُشحَن أصنافُ
+  /// الطلب كلُّها من جديدٍ في فاتورةٍ ثانيةٍ (بيعٌ مضاعَفٌ حقيقيّ) ويُحصَّل
+  /// ما سبق تحصيلُه. لذلك تُرفَض أيُّ تسميةٍ مسوّاةٍ غائبةٍ عن الخطّة.
   Future<List<SplitPart>> unsettledParts({
     required int orderId,
     required SplitPlan plan,
@@ -90,11 +114,15 @@ class TableCheckoutCoordinator {
           'تسمياتُ الحصص متكرّرةٌ في الخطّة — لا يمكن تمييزُ المسوَّى من الباقي');
     }
 
-    final settled = <String, double>{};
-    for (final payment in await _session.paymentsFor(orderId)) {
-      final label = payment.splitLabel;
-      if (label == null) continue;
-      settled[label] = (settled[label] ?? 0) + payment.amount;
+    final settled = await settledShares(orderId);
+
+    final planLabels = labels.toSet();
+    for (final entry in settled.entries) {
+      if (planLabels.contains(entry.key)) continue;
+      throw StateError(
+          'حصّةُ ${entry.key} سُوِّيت بمبلغ ${entry.value} وهي غائبةٌ عن '
+          'التقسيم الحاليّ — نقصانُ عدد الحصص يُسقطها من الحساب فتُشحَن '
+          'أصنافُها مرّةً ثانية. أعِد عددَ الحصص إلى ما يشمل ${entry.key}.');
     }
 
     for (final part in plan.parts) {

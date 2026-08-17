@@ -12,6 +12,14 @@ class SplitPlanException implements Exception {
 
 enum SplitMode { equal, byAmounts, byItems }
 
+/// تسميةُ حصّةٍ من فهرسها (٠-based).
+///
+/// موضعٌ واحدٌ للصياغة: `TableOrderPayments.splitLabel` يحفظ هذه السلسلةَ
+/// نصّاً، فأيُّ شاشةٍ تريد أن تعرف ما سُوِّي من حصص لا بدّ أن تشتقّ التسميةَ
+/// بنفس الطريقة تماماً. نسخُها حرفيّاً في الشاشة كان يعني أن تغييرَ الصياغة
+/// هنا يقطع المطابقةَ هناك بلا خطأ ترجمة.
+String splitPartLabel(int index) => 'ضيف ${index + 1}';
+
 /// بندُ طلبٍ كما يراه الحساب — بلا أيّ ارتباطٍ بـDrift.
 class SplitItem {
   const SplitItem({
@@ -72,7 +80,7 @@ class SplitPlan {
       for (var i = 0; i < ways; i++)
         SplitPart(
           amount: (i == ways - 1 ? base + remainder : base) / _factor,
-          label: 'ضيف ${i + 1}',
+          label: splitPartLabel(i),
         ),
     ];
     return SplitPlan._(SplitMode.equal, parts);
@@ -96,7 +104,7 @@ class SplitPlan {
     }
     final parts = <SplitPart>[
       for (var i = 0; i < amounts.length; i++)
-        SplitPart(amount: amounts[i], label: 'ضيف ${i + 1}'),
+        SplitPart(amount: amounts[i], label: splitPartLabel(i)),
     ];
     return SplitPlan._(SplitMode.byAmounts, parts);
   }
@@ -127,7 +135,7 @@ class SplitPlan {
       for (var i = 0; i < ways; i++)
         SplitPart(
           amount: amounts[i] / _factor,
-          label: 'ضيف ${i + 1}',
+          label: splitPartLabel(i),
           itemQuantities: quantities[i],
         ),
     ];

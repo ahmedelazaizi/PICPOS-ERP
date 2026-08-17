@@ -91,6 +91,12 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
 
   double _paidSoFar = 0;
 
+  /// ما سُوِّي فعلاً من حصص: `التسمية → المبلغ`. يُقرأ عند الفتح من
+  /// `TableOrderPayments` عبر المنسّق، ويُستعمل لشيئين: إعلامُ الكاشير بما
+  /// سُوِّي بالاسم والمبلغ، وتعبئةُ خانات «بمبلغ» بما سُوِّي بدل صفرٍ يجب
+  /// تخمينُه.
+  Map<String, double> _settledShares = const {};
+
   @override
   void initState() {
     super.initState();
@@ -123,12 +129,18 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
             await productRepo.getProductById(item.productId);
       }
     }
+    // ما سُوِّي من حصصٍ سابقاً — تُقرأ قبل بناء الخانات لأن الخانات تُعبَّأ
+    // منها.
+    final settled = await ref
+        .read(tableCheckoutCoordinatorProvider)
+        .settledShares(order.id);
     if (!mounted) return;
     setState(() {
       _order = order;
       _orderItems = items;
       _total = _effectiveTotal(order);
       _paidSoFar = order.paidAmount;
+      _settledShares = settled;
       // التقسيمُ يحتاج دافعَين على الأقل، وطلبُ ضيفٍ واحدٍ شرعيٌّ تماماً —
       // ففتحُ الشاشة على رسالة خطأٍ لأن `guestCount == 1` عيبُ عرضٍ لا
       // عيبُ بيانات. الحدُّ الأدنى اثنان، وللكاشير أن يزيد.
@@ -138,18 +150,34 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
     });
   }
 
-  /// هل سُوِّيت حصّةٌ من هذا التقسيم بالفعل؟
+  /// هل سُوِّيت حصّةٌ من هذا الحساب بالفعل؟ **للإعلام لا للقفل.**
   ///
-  /// `TableOrderPayments` يحفظ التسميةَ والمبلغَ ولا يحفظ تركيبةَ الخطّة.
-  /// فتغييرُ التركيبة بعد تسويةٍ جزئيّة — مقامٌ آخر، مبالغُ أخرى، صنفٌ
-  /// نُقل بين ضيفين — يجعل «ضيف ١» المسوّاةَ بالقديمة تُعدّ مسوّاةً
-  /// بالجديدة. المنسّقُ يرفض ذلك عند التنفيذ، وهذا القفلُ يمنع الكاشيرَ من
-  /// الوصول إلى الرفض أصلاً.
-  bool get _compositionLocked => _paidSoFar > 0;
+  /// كان هذا قفلاً: تُعطَّل معه خاناتُ المبالغ وقوائمُ أصحاب البنود. و
+  /// `TableOrderPayments` يحفظ التسميةَ والمبلغَ ولا يحفظ تركيبةَ الخطّة،
+  /// فإعادةُ فتح الشاشة تبدأ بتركيبةٍ فارغة — لا إسنادَ بنودٍ، وخاناتٌ
+  /// صفريّة. قفلُ ما لم يُستعَد يعني أن التركيبةَ التي أنتجت الحصصَ
+  /// المسوّاةَ لا يمكن التعبيرُ عنها ثانيةً، فتعلق الطاولةُ بلا مخرج:
+  /// «بالأصناف» يرمي «بلا صاحب»، و«بمبلغ» يعاين خطأً، و«بالتساوي» يعطي
+  /// مبلغاً آخر لحصّةٍ مسوّاةٍ فيرفضه المنسّق، والتحصيلُ من شاشة الطاولة
+  /// يرفض للفارق، والإغلاقُ يرفض لأن الطلبَ ليس مدفوعاً بالكامل.
+  ///
+  /// والأمانُ لم يكن في القفل أصلاً: `TableCheckoutCoordinator.unsettledParts`
+  /// يقارن مبلغَ كلِّ حصّةٍ سُوِّيت بما تجعله الخطّةُ الحاليّة بوحداتٍ صحيحة،
+  /// ويرفض أيَّ اختلافٍ أو أيَّ تسميةٍ مسوّاةٍ غابت عن الخطّة. فإعادةُ إدخال
+  /// **نفسِ** التركيبة تمرّ، وإدخالُ تركيبةٍ أخرى يُرفَض برسالةٍ تحمل
+  /// الرقمين. القفلُ كان يمنع الأولى ولا يضيف شيئاً إلى الثانية.
+  bool get _partlySettled => _paidSoFar > 0;
 
+  /// خاناتُ «بمبلغ» تُعبَّأ بما سُوِّي لتلك الحصّة إن سُوِّي — الكاشيرُ
+  /// يستأنف ولا يخمّن. وما لم يُسوَّ يبدأ صفراً كما كان.
   void _resizeAmountControllers(int ways) {
     while (_amountControllers.length < ways) {
-      _amountControllers.add(TextEditingController(text: '0'));
+      final settled = _settledShares[splitPartLabel(_amountControllers.length)];
+      _amountControllers.add(TextEditingController(
+        text: settled == null
+            ? '0'
+            : settled.toStringAsFixed(AppConstants.decimalPlaces),
+      ));
     }
     while (_amountControllers.length > ways) {
       _amountControllers.removeLast().dispose();
@@ -157,7 +185,7 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
   }
 
   void _setWays(int newWays) {
-    if (newWays < 1 || _processing || _compositionLocked) return;
+    if (newWays < 1 || _processing) return;
     setState(() {
       _ways = newWays;
       _resizeAmountControllers(newWays);
@@ -257,6 +285,13 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
             type: ToastType.error,
           );
           setState(() => _processing = false);
+      }
+    } on StateError catch (e) {
+      // رفضُ المنسّق لتركيبةٍ تخالف ما سُوِّي — رسالتُه تحمل التسميةَ
+      // والرقمين وما يجب فعله، فتُعرَض كما هي لا مغلَّفةً بـ«Bad state:».
+      if (mounted) {
+        AppToast.show(context, e.message, type: ToastType.error);
+        setState(() => _processing = false);
       }
     } catch (e) {
       if (mounted) {
@@ -406,7 +441,7 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
         Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (_compositionLocked) _lockedBanner(),
+            if (_partlySettled) _partlySettledBanner(),
             _waysStepper(),
             const Divider(height: 20),
             TabBar(
@@ -446,8 +481,17 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
     );
   }
 
-  /// القفلُ يُقال للكاشير لا يُترك ليكتشفه بأزرارٍ لا تستجيب.
-  Widget _lockedBanner() {
+  /// ما سُوِّي يُقال بالاسم والمبلغ — لا يُترك للكاشير أن يخمّنه.
+  ///
+  /// التركيبةُ لا تُحفَظ مع الدفعات، فإعادةُ فتح الشاشة تبدأ فارغة. هذا
+  /// السطرُ يعطي الكاشيرَ ما يكفي لإعادة إدخالها: كم حُصِّل، وأيُّ الحصص
+  /// انتهت وبكم. وإن أخطأ فالمنسّقُ يرفض برسالةٍ تحمل الرقمين — لا يبتلع.
+  Widget _partlySettledBanner() {
+    final done = [
+      for (final entry in _settledShares.entries)
+        '${entry.key}: '
+            '${entry.value.toStringAsFixed(AppConstants.decimalPlaces)}',
+    ].join(' · ');
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(8),
@@ -458,17 +502,31 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
       ),
       child: Row(
         children: [
-          const Icon(PhosphorIconsBold.lock, color: AppColors.warning, size: 16),
+          const Icon(PhosphorIconsBold.info, color: AppColors.warning, size: 16),
           const SizedBox(width: 6),
           Expanded(
-            child: Text(
-              'سُوِّي من هذا الحساب '
-              '${_paidSoFar.toStringAsFixed(AppConstants.decimalPlaces)} '
-              '${AppConstants.currencySymbolEn} — فتركيبةُ التقسيم مقفولة. '
-              'تغييرُها الآن يجعل حصّةً سُوِّيت بتركيبةٍ قديمةٍ تُحسَب على '
-              'تركيبةٍ جديدة، فتضيع أموالٌ أو أصنافٌ بلا خطأٍ يظهر. أكمِل '
-              'الحصصَ الباقيةَ كما هي، أو حصِّل الباقيَ من شاشة الطاولة.',
-              style: const TextStyle(fontSize: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'هذا الحسابُ مقسَّمٌ ومُحصَّلٌ جزئيّاً: '
+                  '${_paidSoFar.toStringAsFixed(AppConstants.decimalPlaces)} '
+                  'من ${_total.toStringAsFixed(AppConstants.decimalPlaces)} '
+                  '${AppConstants.currencySymbolEn}.',
+                  style: const TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+                if (done.isNotEmpty)
+                  Text('الحصصُ المسوّاة — $done',
+                      style: const TextStyle(fontSize: 12)),
+                const Text(
+                  'أعِد إدخال نفسِ التركيبة التي سُوِّيت عليها هذه الحصص ثم '
+                  'أكمِل الباقي. تركيبةٌ مخالفةٌ تُرفَض قبل إصدار أيّ فاتورة، '
+                  'فلا يضيع مالٌ بصمت.',
+                  style: TextStyle(fontSize: 12),
+                ),
+              ],
             ),
           ),
         ],
@@ -477,7 +535,7 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
   }
 
   Widget _waysStepper() {
-    final editable = !_processing && !_compositionLocked;
+    final editable = !_processing;
     return Row(
       children: [
         const Text('عددُ الحصص: ', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -543,7 +601,7 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
               padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
               child: TextField(
                 controller: _amountControllers[i],
-                enabled: !_processing && !_compositionLocked,
+                enabled: !_processing,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 decoration: InputDecoration(
                   labelText: 'ضيف ${i + 1}',
@@ -605,7 +663,7 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
               for (var g = 0; g < _ways; g++)
                 DropdownMenuItem(value: g, child: Text('ضيف ${g + 1}')),
             ],
-            onChanged: _processing || _compositionLocked
+            onChanged: _processing
                 ? null
                 : (v) => setState(() {
                       if (v == null) {
