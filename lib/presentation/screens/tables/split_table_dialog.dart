@@ -24,21 +24,6 @@ const List<SplitMode> _tabModes = [
   SplitMode.byItems,
 ];
 
-/// الإجماليُّ بعد الخصم — مرآةٌ خفيفةٌ لـ`TableSessionService.effectiveTotal`
-/// لعرضٍ فوريٍّ من الطلب المحمَّل أصلاً، على غرار الدالّة نفسِها في
-/// `table_card_widget.dart`. هذه نسخةٌ للعرض الحيّ فقط؛ التحقّقُ الرسميُّ
-/// يبقى في `TableCheckoutCoordinator.buildSplitPlan` وقت التنفيذ الفعليّ.
-double _effectiveTotal(TableOrder order) {
-  if (order.discountType == null || order.discountValue <= 0) {
-    return order.total;
-  }
-  final discount = order.discountType == 'percent'
-      ? order.total * order.discountValue / 100
-      : order.discountValue;
-  final net = order.total - discount;
-  return net < 0 ? 0 : net;
-}
-
 /// شاشةُ تقسيم الفاتورة — لا نقلَ أصنافٍ إلى طاولةٍ أخرى.
 ///
 /// ثلاثُ طرقٍ لتقسيم حساب طاولةٍ واحدةٍ على عدّة دافعين، وكلٌّ منها يبني
@@ -134,11 +119,16 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
     final settled = await ref
         .read(tableCheckoutCoordinatorProvider)
         .settledShares(order.id);
+    // كانت هنا نسخةٌ ثالثةٌ من قاعدة الخصم. والمقسومُ الآن هو **نفسُ** الرقم
+    // الذي يقيس عليه المنسّقُ والحارسُ: الإجماليُّ بعد الخصم وفوقه الضريبة.
+    // ولولا ذلك لَقسمنا حساباً بلا ضريبةٍ ثم رفضنا كلَّ حصّةٍ منه.
+    final effective =
+        await ref.read(tableSessionServiceProvider).effectiveTotal(order.id);
     if (!mounted) return;
     setState(() {
       _order = order;
       _orderItems = items;
-      _total = _effectiveTotal(order);
+      _total = effective;
       _paidSoFar = order.paidAmount;
       _settledShares = settled;
       // التقسيمُ يحتاج دافعَين على الأقل، وطلبُ ضيفٍ واحدٍ شرعيٌّ تماماً —

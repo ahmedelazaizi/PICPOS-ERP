@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 
 import '../core/constants/app_constants.dart';
 import '../data/database/database.dart';
+import '../domain/models/table_order_totals.dart';
 import '../domain/models/table_status.dart';
 
 /// انتقالٌ ممنوعٌ في آلة حالات الطاولة. رسالتُه تُعرَض للمستخدم كما هي.
@@ -32,8 +33,8 @@ class TableSessionService {
   /// بالكامل عالقةً على 🔵 إلى الأبد.
   static int _units(double value) => (value * _factor).round();
 
-  static bool _isFullyPaid(TableOrder order) =>
-      _units(order.paidAmount) >= _units(_effectiveTotalOf(order));
+  Future<bool> _isFullyPaid(TableOrder order) async =>
+      _units(order.paidAmount) >= _units((await _totalsOf(order)).total);
 
   Future<RestaurantTable> _table(int tableId) => (_db.select(
         _db.restaurantTables,
@@ -68,12 +69,19 @@ class TableSessionService {
   /// [waiterId] فهو **النادلُ المسؤولُ عن الطلب** الذي تختاره شاشةُ الفتح.
   /// كانا شيئاً واحداً فكان اختيارُ النادل يضيع؛ وحين لا يُمرَّر نادلٌ يقع
   /// الطلبُ على الفاعل كما كان.
+  /// [taxRate] نسبةُ الضريبة **كسريّةً** (0.16) تُنسَخ من إعداد
+  /// `pos_default_tax_rate` وتُثبَّت على الطلب. الخدمةُ لا تملك `ref` فتقرأه
+  /// بنفسها؛ المستدعي يقرأه ويمرّره. وتثبيتُه لقطةً — لا قراءةً حيّةً كما
+  /// تفعل سلّةُ الكاشير — هو المقصود: الوجبةُ تمتدّ، وتغييرُ الإعداد في
+  /// منتصفها يجب ألّا يُعيد تسعيرَ حسابٍ عُرض على الضيف. وافتراضُه صفرٌ كي
+  /// تبقى المستدعياتُ القديمةُ (والاختباراتُ) تُصرَّف بلا تغيير.
   Future<int> openTable({
     required int tableId,
     required int guestCount,
     required int? userId,
     required String userName,
     int? waiterId,
+    double taxRate = 0,
   }) async {
     _requireGuestCount(guestCount);
     return _db.transaction(() async {
@@ -88,6 +96,7 @@ class TableSessionService {
         tableId: tableId,
         guestCount: guestCount,
         waiterId: waiterId ?? userId,
+        taxRate: taxRate,
       );
       await _log(
         userId: userId,
@@ -109,12 +118,14 @@ class TableSessionService {
   /// `getActiveOrderForTable`، و`getSingleOrNull()` ترمي `StateError` على
   /// **كلّ** قراءةٍ لاحقة: لا إغلاقٌ ولا إلغاءٌ ولا حتى عرضُ البطاقة. الإغلاقُ
   /// والفتحُ هنا في معاملةٍ واحدة، فلا لحظةَ تكون فيها الطاولةُ بطلبين.
+  /// [taxRate] كسريّةٌ تُنسَخ من الإعداد — اقرأ [openTable].
   Future<int> openNewOrderOnPaidTable({
     required int tableId,
     required int guestCount,
     required int? userId,
     required String userName,
     int? waiterId,
+    double taxRate = 0,
   }) async {
     _requireGuestCount(guestCount);
     return _db.transaction(() async {
@@ -127,10 +138,10 @@ class TableSessionService {
       if (settled == null) {
         throw TableTransitionException('لا يوجد طلبٌ على ${table.name}');
       }
-      if (!_isFullyPaid(settled)) {
+      if (!await _isFullyPaid(settled)) {
         throw TableTransitionException(
             'الطلبُ #${settled.id} لم يُسدَّد كاملاً — دُفع ${settled.paidAmount} '
-            'من ${settled.total}');
+            'من ${(await _totalsOf(settled)).total}');
       }
 
       await (_db.update(_db.tableOrders)
@@ -153,6 +164,7 @@ class TableSessionService {
         tableId: tableId,
         guestCount: guestCount,
         waiterId: waiterId ?? userId,
+        taxRate: taxRate,
       );
       await _log(
         userId: userId,
@@ -176,12 +188,17 @@ class TableSessionService {
     required int tableId,
     required int guestCount,
     required int? waiterId,
+    double taxRate = 0,
   }) async {
     final orderId = await _db.into(_db.tableOrders).insert(
           TableOrdersCompanion.insert(
             tableId: tableId,
             userId: Value(waiterId),
             guestCount: Value(guestCount),
+            // `taxEnabled` يبقى على افتراضه `false` — النسبةُ تُلقَط عند
+            // الفتح لكنّ تفعيلَها قرارُ الكاشير من الزرّ، تماماً كسلّة
+            // نقطة البيع.
+            taxRate: Value(taxRate),
             openedAt: Value(DateTime.now()),
           ),
         );
@@ -201,10 +218,10 @@ class TableSessionService {
       if (order == null) {
         throw TableTransitionException('لا يوجد طلبٌ على ${table.name}');
       }
-      if (!_isFullyPaid(order)) {
+      if (!await _isFullyPaid(order)) {
         throw TableTransitionException(
             'لا يمكن الإغلاق قبل اكتمال الدفع — دُفع ${order.paidAmount} '
-            'من ${order.total}');
+            'من ${(await _totalsOf(order)).total}');
       }
 
       await (_db.update(_db.tableOrders)
@@ -461,13 +478,46 @@ class TableSessionService {
     });
   }
 
-  /// الإجماليُّ بعد الخصم — وهو ما يُقسَّم ويُدفع ويُطبع.
-  Future<double> effectiveTotal(int orderId) async {
-    final order = await (_db.select(_db.tableOrders)
-          ..where((o) => o.id.equals(orderId)))
-        .getSingle();
-    return _effectiveTotalOf(order);
+  /// إجمالياتُ الطلب كاملةً — المجموعُ والخصمُ والضريبةُ والمستحقّ.
+  ///
+  /// هذه هي **نقطةُ الحساب الوحيدة** لخدمة الطاولات. الشاشةُ والبطاقةُ
+  /// وشاشةُ التقسيم والطباعةُ كلُّها تمرّ من هنا، فلا تُنسَخ قاعدةُ الخصم
+  /// ولا قاعدةُ الضريبة في أيٍّ منها. وكانت منسوخةً في أربعة مواضع.
+  Future<TableOrderTotals> totalsFor(int orderId) async =>
+      _totalsOf(await _order(orderId));
+
+  Future<TableOrder> _order(int orderId) => (_db.select(_db.tableOrders)
+        ..where((o) => o.id.equals(orderId)))
+      .getSingle();
+
+  /// الجسرُ بين صفوف القاعدة والنموذج الخالص.
+  ///
+  /// وهنا **الموضعُ الوحيدُ** الذي تُحوَّل فيه نسبةُ الطلب من كسريّةٍ
+  /// (`TableOrders.taxRate` = 0.16، لقطةُ `pos_default_tax_rate`) إلى مئويّةٍ
+  /// (16) التي يفهمها النموذج. نِسَبُ البنود مئويّةٌ أصلاً (منسوخةٌ عن
+  /// `Products.taxRate`) فتُمرَّر كما هي.
+  Future<TableOrderTotals> _totalsOf(TableOrder order) async {
+    final items = await (_db.select(_db.tableOrderItems)
+          ..where((i) => i.tableOrderId.equals(order.id)))
+        .get();
+    return TableOrderTotals.compute(
+      lines: items
+          .map((i) => TableOrderLine(
+                quantity: i.quantity,
+                unitPrice: i.unitPrice,
+                taxRate: i.taxRate,
+              ))
+          .toList(),
+      discountType: order.discountType,
+      discountValue: order.discountValue,
+      taxEnabled: order.taxEnabled,
+      taxPercent: TableOrderTotals.taxPercentFromRate(order.taxRate),
+    );
   }
+
+  /// الإجماليُّ بعد الخصم وفوقه الضريبة — وهو ما يُقسَّم ويُدفع ويُطبع.
+  Future<double> effectiveTotal(int orderId) async =>
+      (await totalsFor(orderId)).total;
 
   /// المتبقّي على الطلب: الإجماليُّ بعد الخصم ناقصاً ما دُفع منه.
   ///
@@ -475,22 +525,10 @@ class TableSessionService {
   /// الفاتورة. حسابُه هنا لا في الشاشة لأنه نفسُ الحساب الذي يحكم به
   /// [recordPayment] على الدفعة؛ ونسخُه في الشاشة يعني محرّكاً ثالثاً.
   Future<double> amountDue(int orderId) async {
-    final order = await (_db.select(_db.tableOrders)
-          ..where((o) => o.id.equals(orderId)))
-        .getSingle();
-    final due = _units(_effectiveTotalOf(order)) - _units(order.paidAmount);
+    final order = await _order(orderId);
+    final totals = await _totalsOf(order);
+    final due = _units(totals.total) - _units(order.paidAmount);
     return (due < 0 ? 0 : due) / _factor;
-  }
-
-  static double _effectiveTotalOf(TableOrder order) {
-    if (order.discountType == null || order.discountValue <= 0) {
-      return order.total;
-    }
-    final discount = order.discountType == 'percent'
-        ? order.total * order.discountValue / 100
-        : order.discountValue;
-    final net = _units(order.total) - _units(discount);
-    return (net < 0 ? 0 : net) / _factor;
   }
 
   /// تثبيتُ خصمٍ على الطلب قبل الدفع.
@@ -546,6 +584,48 @@ class TableSessionService {
     });
   }
 
+  /// تفعيلُ ضريبة المبيعات على الطلب أو إطفاؤها.
+  ///
+  /// تُكتب **على الطلب** لا في السلّة: هي التي تجعل ما يُشحَن على الفاتورة
+  /// وما يُسجَّل على الطلب رقماً واحداً، فيسكت حارسُ `checkTableCharge`.
+  /// وتنتقل مع الطلب عند النقل، وتُطبع في فاتورة ما قبل الدفع.
+  ///
+  /// والرفضُ بعد أوّل دفعةٍ ليس تشدّداً: تغييرُ الضريبة على طلبٍ سُوِّيت منه
+  /// حصّةٌ يُعيد تسعير حصصٍ حُصِّلت بالفعل وصدرت فواتيرُها — فيصير المجموعُ
+  /// المسجَّلُ لا يطابق مجموعَ الفواتير الصادرة. نفسُ حارس [setOrderDiscount]
+  /// وللسبب نفسِه.
+  Future<void> setOrderTax({
+    required int orderId,
+    required bool enabled,
+    required int? userId,
+    required String userName,
+  }) async {
+    await _db.transaction(() async {
+      final order = await _order(orderId);
+
+      if (_units(order.paidAmount) > 0) {
+        throw const TableTransitionException(
+            'لا يمكن تعديلُ ضريبةِ طلبٍ دُفع منه شيء');
+      }
+      if (order.taxEnabled == enabled) return;
+
+      await (_db.update(_db.tableOrders)..where((o) => o.id.equals(orderId)))
+          .write(TableOrdersCompanion(taxEnabled: Value(enabled)));
+
+      await _log(
+        userId: userId,
+        userName: userName,
+        action: 'table_tax',
+        tableId: order.tableId,
+        description: enabled
+            ? 'تفعيلُ ضريبةِ الطلب #$orderId'
+            : 'إطفاءُ ضريبةِ الطلب #$orderId',
+        oldValue: order.taxEnabled ? 'on' : 'off',
+        newValue: enabled ? 'on' : 'off',
+      );
+    });
+  }
+
   /// طلبُ فاتورةِ ما قبل الدفع.
   ///
   /// تُشترط صلاحيةُ `tables_print_bill` عند الاستدعاء. الطلبُ يصير
@@ -567,7 +647,7 @@ class TableSessionService {
             'لا تُطلب فاتورةُ طلبٍ حالتُه ${order.status}');
       }
 
-      final settled = _isFullyPaid(order);
+      final settled = await _isFullyPaid(order);
       if (!settled) {
         await _db.requestTableBill(orderId);
       }
@@ -579,7 +659,7 @@ class TableSessionService {
         description: settled
             ? 'إعادةُ طباعة فاتورة الطلب #$orderId'
             : 'طلبُ فاتورة الطلب #$orderId',
-        amount: _effectiveTotalOf(order),
+        amount: (await _totalsOf(order)).total,
       );
     });
   }
@@ -627,7 +707,7 @@ class TableSessionService {
             'لا تُسجَّل دفعةٌ على طلبٍ حالتُه ${order.status}');
       }
 
-      final due = _units(_effectiveTotalOf(order));
+      final due = _units((await _totalsOf(order)).total);
       final already = _units(order.paidAmount);
       if (already + _units(amount) > due) {
         throw TableTransitionException(

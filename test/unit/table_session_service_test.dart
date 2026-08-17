@@ -7,10 +7,12 @@ import 'package:ural_erp/services/table_session_service.dart';
 void main() {
   late AppDatabase db;
   late TableSessionService service;
+  int? seedProductId;
 
   setUp(() {
     db = AppDatabase.forTesting();
     service = TableSessionService(db);
+    seedProductId = null;
   });
   tearDown(() => db.close());
 
@@ -19,6 +21,36 @@ void main() {
   Future<RestaurantTable> readTable(int id) =>
       (db.select(db.restaurantTables)..where((t) => t.id.equals(id)))
           .getSingle();
+
+  /// يزرع على الطلب بنداً حقيقيّاً بقيمة [amount]، ونسبةَ ضريبته إن أُريدت.
+  ///
+  /// كانت هذه الاختباراتُ تكتب `TableOrders.total` مباشرةً بلا بنود. وذلك
+  /// ما عاد يصف حالةً ممكنة: الإجماليُّ صار يُشتقّ من البنود لأن لكلِّ بندٍ
+  /// نسبةَ ضريبته، و`total` عمودٌ **مشتقٌّ** يُعيد `_updateTableOrderTotal`
+  /// حسابَه من البنود بعد كلِّ إضافةٍ وحذف. فطلبٌ إجماليُّه ١٠٠ وبلا بندٍ
+  /// واحدٍ حالةٌ لا تقع في الإنتاج، وكان الاختبارُ يقيس عليها.
+  /// `tableOrderItems.productId` مفتاحٌ خارجيٌّ إلى `products`، و
+  /// `forTesting()` تُنفِذ القيودَ الخارجية — فيُبذَر صنفٌ مرّةً لكلِّ اختبار.
+  Future<int> productForSeed() async =>
+      seedProductId ??= await db.into(db.products).insert(
+            ProductsCompanion.insert(code: 'SEED-1', name: 'صنفُ البذر'),
+          );
+
+  Future<void> seedTotal(int orderId, double amount,
+      {double taxRate = 0}) async {
+    await db.into(db.tableOrderItems).insert(
+          TableOrderItemsCompanion.insert(
+            tableOrderId: orderId,
+            productId: await productForSeed(),
+            quantity: 1,
+            unitPrice: amount,
+            total: amount,
+            taxRate: Value(taxRate),
+          ),
+        );
+    await (db.update(db.tableOrders)..where((o) => o.id.equals(orderId)))
+        .write(TableOrdersCompanion(total: Value(amount)));
+  }
 
   group('openTable', () {
     test('يفتح طاولةً متاحةً ويثبّت عددَ الأشخاص', () async {
@@ -72,9 +104,9 @@ void main() {
       final t = await newTable('ط١١');
       final orderId = await service.openTable(
           tableId: t, guestCount: 2, userId: null, userName: 'أحمد');
+      await seedTotal(orderId, 100);
       await (db.update(db.tableOrders)..where((o) => o.id.equals(orderId)))
-          .write(const TableOrdersCompanion(
-              total: Value(100), paidAmount: Value(60)));
+          .write(const TableOrdersCompanion(paidAmount: Value(60)));
 
       expect(
         () => service.closeTable(
@@ -88,9 +120,9 @@ void main() {
       final t = await newTable('ط١٢');
       final orderId = await service.openTable(
           tableId: t, guestCount: 2, userId: null, userName: 'أحمد');
+      await seedTotal(orderId, 100);
       await (db.update(db.tableOrders)..where((o) => o.id.equals(orderId)))
-          .write(const TableOrdersCompanion(
-              total: Value(100), paidAmount: Value(100)));
+          .write(const TableOrdersCompanion(paidAmount: Value(100)));
 
       await service.closeTable(tableId: t, userId: null, userName: 'أحمد');
 
@@ -641,9 +673,9 @@ void main() {
       final t = await newTable('ط٤٤');
       final orderId = await service.openTable(
           tableId: t, guestCount: 2, userId: null, userName: 'أحمد');
+      await seedTotal(orderId, 100);
       await (db.update(db.tableOrders)..where((o) => o.id.equals(orderId)))
           .write(const TableOrdersCompanion(
-        total: Value(100),
         discountType: Value('percent'),
         discountValue: Value(10),
       ));
@@ -654,9 +686,9 @@ void main() {
       final t = await newTable('ط٤٥');
       final orderId = await service.openTable(
           tableId: t, guestCount: 2, userId: null, userName: 'أحمد');
+      await seedTotal(orderId, 100);
       await (db.update(db.tableOrders)..where((o) => o.id.equals(orderId)))
           .write(const TableOrdersCompanion(
-        total: Value(100),
         discountType: Value('amount'),
         discountValue: Value(15),
       ));
@@ -669,9 +701,9 @@ void main() {
       final t = await newTable('ط٨٠');
       final orderId = await service.openTable(
           tableId: t, guestCount: 2, userId: null, userName: 'أحمد');
+      await seedTotal(orderId, 100);
       await (db.update(db.tableOrders)..where((o) => o.id.equals(orderId)))
           .write(const TableOrdersCompanion(
-        total: Value(100),
         discountType: Value('percent'),
         discountValue: Value(10),
       ));
@@ -683,11 +715,9 @@ void main() {
       final t = await newTable('ط٨١');
       final orderId = await service.openTable(
           tableId: t, guestCount: 2, userId: null, userName: 'أحمد');
+      await seedTotal(orderId, 100);
       await (db.update(db.tableOrders)..where((o) => o.id.equals(orderId)))
-          .write(const TableOrdersCompanion(
-        total: Value(100),
-        paidAmount: Value(40),
-      ));
+          .write(const TableOrdersCompanion(paidAmount: Value(40)));
 
       // هذا هو الرقمُ الذي تقيس عليه شاشةُ التحصيل سلّتَها: بعد تقسيمٍ
       // جزئيٍّ تُحمَّل السلّةُ بكلِّ الأصناف (١٠٠) بينما المستحقُّ ٦٠ —
@@ -699,11 +729,9 @@ void main() {
       final t = await newTable('ط٨٢');
       final orderId = await service.openTable(
           tableId: t, guestCount: 2, userId: null, userName: 'أحمد');
+      await seedTotal(orderId, 100);
       await (db.update(db.tableOrders)..where((o) => o.id.equals(orderId)))
-          .write(const TableOrdersCompanion(
-        total: Value(100),
-        paidAmount: Value(120),
-      ));
+          .write(const TableOrdersCompanion(paidAmount: Value(120)));
 
       expect(await service.amountDue(orderId), 0);
     });
@@ -729,8 +757,7 @@ void main() {
       final t = await newTable('ط٦١');
       final orderId = await service.openTable(
           tableId: t, guestCount: 2, userId: null, userName: 'أحمد');
-      await (db.update(db.tableOrders)..where((o) => o.id.equals(orderId)))
-          .write(const TableOrdersCompanion(total: Value(100)));
+      await seedTotal(orderId, 100);
 
       await service.requestBill(
           orderId: orderId, userId: null, userName: 'أحمد');
@@ -760,8 +787,7 @@ void main() {
       final t = await newTable('ط٦٢');
       final orderId = await service.openTable(
           tableId: t, guestCount: 2, userId: null, userName: 'أحمد');
-      await (db.update(db.tableOrders)..where((o) => o.id.equals(orderId)))
-          .write(const TableOrdersCompanion(total: Value(100)));
+      await seedTotal(orderId, 100);
       await service.recordPayment(
           orderId: orderId, invoiceId: 1, amount: 100);
 
@@ -844,8 +870,7 @@ void main() {
     Future<int> orderWithTotal(int tableId, double total) async {
       final orderId = await service.openTable(
           tableId: tableId, guestCount: 4, userId: null, userName: 'أحمد');
-      await (db.update(db.tableOrders)..where((o) => o.id.equals(orderId)))
-          .write(TableOrdersCompanion(total: Value(total)));
+      await seedTotal(orderId, total);
       return orderId;
     }
 
@@ -990,8 +1015,7 @@ void main() {
       final t = await newTable(name);
       final orderId = await service.openTable(
           tableId: t, guestCount: 2, userId: null, userName: 'أحمد');
-      await (db.update(db.tableOrders)..where((o) => o.id.equals(orderId)))
-          .write(TableOrdersCompanion(total: Value(total)));
+      await seedTotal(orderId, total);
       await service.recordPayment(
           orderId: orderId, invoiceId: 1, amount: total);
       expect((await readTable(t)).status, TableStatus.paid);

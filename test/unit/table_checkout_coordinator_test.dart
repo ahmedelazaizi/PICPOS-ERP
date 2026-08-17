@@ -11,18 +11,45 @@ void main() {
   late AppDatabase db;
   late TableSessionService service;
   late TableCheckoutCoordinator coordinator;
+  int? seedProductId;
 
   setUp(() {
     db = AppDatabase.forTesting();
     service = TableSessionService(db);
     coordinator = TableCheckoutCoordinator(db: db, session: service);
+    seedProductId = null;
   });
   tearDown(() => db.close());
 
-  Future<int> orderOf(double total, {int guests = 4}) async {
+  /// طلبٌ إجماليُّه [total] — ببندٍ حقيقيٍّ لا بكتابةٍ على العمود.
+  ///
+  /// `total` عمودٌ مشتقٌّ من البنود، والإجماليُّ صار يُحسب منها (لكلِّ بندٍ
+  /// نسبةُ ضريبته)، فطلبٌ بلا بندٍ إجماليُّه صفرٌ مهما كُتب في العمود.
+  /// `tableOrderItems.productId` مفتاحٌ خارجيٌّ إلى `products`، و
+  /// `forTesting()` تُنفِذ القيودَ الخارجية — فيُبذَر صنفٌ مرّةً لكلِّ اختبار.
+  Future<int> productForSeed() async =>
+      seedProductId ??= await db.into(db.products).insert(
+            ProductsCompanion.insert(code: 'SEED-1', name: 'صنفُ البذر'),
+          );
+
+  /// طلبٌ مفتوحٌ بلا بنود — لمن يزرع بنودَه بنفسه.
+  Future<int> openOrder({int guests = 4}) async {
     final t = await db.createTable(name: 'ط');
-    final orderId = await service.openTable(
+    return service.openTable(
         tableId: t, guestCount: guests, userId: null, userName: 'أحمد');
+  }
+
+  Future<int> orderOf(double total, {int guests = 4}) async {
+    final orderId = await openOrder(guests: guests);
+    await db.into(db.tableOrderItems).insert(
+          TableOrderItemsCompanion.insert(
+            tableOrderId: orderId,
+            productId: await productForSeed(),
+            quantity: 1,
+            unitPrice: total,
+            total: total,
+          ),
+        );
     await (db.update(db.tableOrders)..where((o) => o.id.equals(orderId)))
         .write(TableOrdersCompanion(total: Value(total)));
     return orderId;
@@ -85,7 +112,8 @@ void main() {
   });
 
   test('التقسيمُ بالأصناف يُصدر فواتيرَ منفصلة', () async {
-    final orderId = await orderOf(100);
+    // بلا بندِ البذر: هذا الاختبارُ يزرع بنديه بنفسه، ومجموعُهما ١٠٠.
+    final orderId = await openOrder();
 
     // table_order_items.product_id يتبع products، والقيدُ الأجنبي مُفعَّلٌ في
     // اختبارات forTesting() — فتُزرع سلعتان حقيقيتان (نفسُ نمط
