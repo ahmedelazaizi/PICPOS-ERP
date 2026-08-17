@@ -159,6 +159,39 @@ void main() {
       expect((await readTable(t)).status, TableStatus.available);
     });
 
+    test('يرفض تغييرَ حالةِ طاولةٍ محجوزةٍ — لا تُمحى علامةُ الحجز', () async {
+      final t = await newTable('ط١٥ب');
+      await db.createReservation(
+        tableId: t,
+        customerName: 'زبونُ الحجز',
+        reservationTime: DateTime.now().add(const Duration(hours: 2)),
+      );
+      expect((await readTable(t)).status, TableStatus.reserved);
+
+      // الحارسُ على الحالة الحاليّة لا الهدف وحدَه: بدونه تمرّ 🟣 → ⚪ ثم
+      // ⚪ → 🟢، فتحطّ الطاولةُ «متاحة» وصفُّ الحجز باقٍ — طاولةٌ تبدو
+      // حرّةً وهي محجوزة.
+      await expectLater(
+        service.setTableStatus(
+            tableId: t,
+            status: TableStatus.outOfService,
+            userId: null,
+            userName: 'أحمد'),
+        throwsA(isA<TableTransitionException>()),
+      );
+
+      expect((await readTable(t)).status, TableStatus.reserved);
+      expect(await db.getActiveReservationForTable(t), isNotNull,
+          reason: 'الحجزُ نفسُه لم يُمَسّ');
+      expect(
+        await (db.select(db.activityLogs)
+              ..where((l) => l.action.equals('table_status_change')))
+            .get(),
+        isEmpty,
+        reason: 'رفضٌ قبل أيّ كتابة — لا سطرَ انتقالٍ كاذب',
+      );
+    });
+
     test('يرفض إخراجَ طاولةٍ عليها طلبٌ من الخدمة', () async {
       final t = await newTable('ط١٦');
       await service.openTable(

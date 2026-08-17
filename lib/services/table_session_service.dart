@@ -262,6 +262,11 @@ class TableSessionService {
   }
 
   /// إخراجُ الطاولة من الخدمة أو إعادتُها — بين 🟢 و⚪ فقط.
+  ///
+  /// والقيدُ على الطرفين لا على الهدف وحدَه. طاولةٌ 🟣 محجوزةٌ لا طلبَ عليها
+  /// كانت تمرّ من هنا: تُخرَج من الخدمة ثم تُعاد، فتحطّ على 🟢 «متاحة» وقد
+  /// ضاعت علامةُ الحجز بينما صفُّ الحجز باقٍ في `TableReservations` — طاولةٌ
+  /// تبدو حرّةً وهي محجوزةٌ فتُجلَس عليها مجموعةٌ أخرى. إلغاءُ الحجز له بابُه.
   Future<void> setTableStatus({
     required int tableId,
     required String status,
@@ -275,6 +280,12 @@ class TableSessionService {
     }
     await _db.transaction(() async {
       final table = await _table(tableId);
+      if (table.status != TableStatus.available &&
+          table.status != TableStatus.outOfService) {
+        throw TableTransitionException(
+            'تغييرُ الحالة اليدويُّ من المتاحة أو غير المتاحة فقط — '
+            '${table.name} حالتُها ${table.status}');
+      }
       final order = await _db.getActiveOrderForTable(tableId);
       if (order != null) {
         throw TableTransitionException(
