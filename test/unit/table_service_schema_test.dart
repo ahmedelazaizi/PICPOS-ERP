@@ -1,5 +1,8 @@
-// إثباتُ وصولِ مخطّط v154. `build_runner` قد ينجح ظاهرياً ويُنقص المولَّد
-// بصمتٍ، و`flutter analyze` لا يكشفها. هذا الاختبار يكشفها.
+// إثباتُ وصولِ مخطّطَي v154 وv155. `build_runner` قد ينجح ظاهرياً ويُنقص
+// المولَّد بصمتٍ، و`flutter analyze` لا يكشفها. هذا الاختبار يكشفها.
+//
+// وهو مقيَّدٌ برقمٍ بعينه بقصد: لو أُضيف عمودٌ في نسخةٍ تاليةٍ ولم يُضَف هنا
+// سطرُه، بقي الحارسُ أخضرَ على مخطّطٍ ناقص. فكلُّ نسخةٍ تجرّ اختبارَها.
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/data/database/database.dart';
@@ -42,6 +45,57 @@ void main() {
         .getSingle();
     expect(order.guestCount, 1);
     expect(order.paidAmount, 0);
+  });
+
+  test('عمودا ضريبة v155 يُكتبان ويُقرآن', () async {
+    final tableId = await db.createTable(name: 'ط٣');
+    final orderId = await db.into(db.tableOrders).insert(
+          TableOrdersCompanion.insert(
+            tableId: tableId,
+            taxEnabled: const Value(true),
+            // كسريّةٌ لا مئويّة — لقطةُ `pos_default_tax_rate`.
+            taxRate: const Value(0.16),
+          ),
+        );
+
+    final order = await (db.select(db.tableOrders)
+          ..where((o) => o.id.equals(orderId)))
+        .getSingle();
+
+    expect(order.taxEnabled, isTrue);
+    expect(order.taxRate, 0.16);
+  });
+
+  test('افتراضا الضريبة: مطفأةٌ ونسبةٌ صفرٌ ⇐ سلوكُ ما قبل v155 بحرفه', () async {
+    final tableId = await db.createTable(name: 'ط٤');
+    final orderId = await db.createTableOrder(tableId);
+    final order = await (db.select(db.tableOrders)
+          ..where((o) => o.id.equals(orderId)))
+        .getSingle();
+
+    // هذان الافتراضان هما ما يجعل الترقيةَ لا تُغيّر حسابَ طاولةٍ مفتوحة.
+    expect(order.taxEnabled, isFalse);
+    expect(order.taxRate, 0);
+  });
+
+  test('نسبةُ ضريبة البند تُكتب وتُقرأ — العمودُ ما عاد صفراً أبداً', () async {
+    final tableId = await db.createTable(name: 'ط٥');
+    final orderId = await db.createTableOrder(tableId);
+    final productId = await db.into(db.products).insert(
+          ProductsCompanion.insert(code: 'SCH-1', name: 'صنفُ المخطّط'),
+        );
+
+    await db.addOrUpdateTableOrderItem(
+      orderId: orderId,
+      productId: productId,
+      quantity: 2,
+      unitPrice: 25,
+      taxRate: 16, // مئويّةٌ هنا — مرآةُ `Products.taxRate`
+    );
+
+    final items = await db.getTableOrderItems(orderId);
+    expect(items.single.taxRate, 16);
+    expect(items.single.total, 50);
   });
 
   test('جدولُ TableOrderPayments موجودٌ ويقبل صفّاً', () async {
