@@ -225,6 +225,35 @@ void main() {
           reason: 'الدرجُ عُدَّ صفراً والمتوقَّعُ صفر — لا عجزَ وهميّ');
     });
 
+    test('مديرٌ بلا ورديّةٍ خاصّةٍ وورديّةُ الكاشير مفتوحة ⇒ يمضي', () async {
+      // مديرُ النظام لا يفتح ورديّةً لنفسه عمداً (Spec 135 NOTE 2): يلتحق
+      // بورديّة الكاشير ليقفلها. والدرجُ **له** ورديّةٌ مفتوحة، و`_settleShift`
+      // يحسب المتوقَّع بالدرج لا بالمستخدم — فحركةُ المدير تدخل توقّعَ ورديّة
+      // الكاشير ولا تُنتج عجزاً. فرفضُها كان سيكون رفضاً باطلاً.
+      final managerId = await db.createUser(
+        username: 'manager',
+        password: 'test123',
+        displayName: 'مدير',
+        roleId: (await db.select(db.roles).get()).first.id,
+      );
+      await db.openShift(userId, 0); // ورديّةُ الكاشير وحدَها
+
+      final invoice = await sell(paid: 200);
+      final items = await db.getSalesInvoiceItems(invoice.id);
+
+      final ok = await repo.processSalesReturn(
+        invoice: invoice,
+        returnQuantities: {items.first.id: items.first.quantity},
+        productCache: {productId: await productEntity()},
+        userId: managerId, // ← المديرُ هو المنفّذ، ولا ورديّةَ باسمه
+        userName: 'مدير',
+        isFullReturn: true,
+      );
+
+      expect(ok, isTrue,
+          reason: 'الدرجُ له ورديّةٌ مفتوحة وإن لم تكن باسم المنفّذ');
+    });
+
     test('مرتجعٌ آجلٌ بحتٌ بلا ورديّة ⇒ يمضي، فلا درجَ يُمَسّ', () async {
       final customerId = await db.into(db.parties).insert(
             PartiesCompanion.insert(name: 'عميل'),

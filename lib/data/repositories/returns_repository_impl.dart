@@ -162,7 +162,23 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
     // انتظارِ شبكة، ويرى الكاشيرُ الطلبَ فوراً. أمّا صفُّ الخزنة نفسُه فيكتبه
     // الخادمُ في وضع العميل (مصدرُ الحقيقةِ للمال) — انظر شقَّ العميل أدناه.
     final guardSplit = _refundSplitFor(invoice, totalReturn);
-    final openShift = await _db.getCurrentOpenShift(userId);
+    var openShift = await _db.getCurrentOpenShift(userId);
+    if (openShift == null) {
+      // ⚠️ السؤالُ «هل لهذا **الدرج** ورديّةٌ مفتوحة» لا «هل لهذا المستخدم».
+      //
+      // لأنّ `_settleShift` يحسب `expectedCash` من `drawerTxs` — **بلا فلترِ
+      // مستخدم** عن قصدٍ منصوصٍ عليه هناك: «الدرجُ واحدٌ يشترك فيه كلُّ من
+      // مسّه، والكاشيرُ يعدّ كلَّه». فحركةُ مديرٍ على درج الكاشير تدخل توقّعَ
+      // ورديّة الكاشير ولا تُنتج عجزاً.
+      //
+      // ومديرُ النظام لا يفتح ورديّةً لنفسه أصلاً — يلتحق بورديّة الكاشير
+      // ليقفلها (Spec 135 NOTE 2، ولذلك يتخطّاه `_ensureShiftOpen`). فلو
+      // اكتفى الحارسُ بورديّة المستخدم لرفض مرتجعَ المدير رفضاً باطلاً:
+      // الدرجُ **له** ورديّةٌ مفتوحة، والحركةُ ستُحتسب صحيحاً.
+      final branchId = await _db.getUserBranchId(userId);
+      final onBranch = await _db.getOpenShiftsForBranch(branchId: branchId);
+      if (onBranch.isNotEmpty) openShift = onBranch.first;
+    }
     if (guardSplit.requiresOpenShift && openShift == null) {
       throw ShiftRequiredException(cashAmount: guardSplit.cashRefund);
     }
