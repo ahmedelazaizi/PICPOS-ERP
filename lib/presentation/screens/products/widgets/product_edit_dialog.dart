@@ -794,7 +794,8 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
 
   Widget _buildWarehouseSelector() {
     return FutureBuilder<List<Warehouse>>(
-      future: ref.read(branchRepositoryProvider).getWarehouses(),
+      // نطاقُ النسبة: المخزنُ الافتراضيُّ للصنفِ هو وجهةُ حركاتِ مخزونه.
+      future: ref.read(branchRepositoryProvider).getAssignableWarehouses(),
       builder: (context, snapshot) {
         final warehouses = snapshot.data ?? [];
         return SizedBox(

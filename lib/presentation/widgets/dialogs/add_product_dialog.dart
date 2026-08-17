@@ -400,7 +400,11 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: FutureBuilder<List<Warehouse>>(
-                        future: ref.read(branchRepositoryProvider).getWarehouses(),
+                        // نطاقُ النسبة: الرصيدُ الافتتاحيُّ يُكتب حركةَ مخزونٍ
+                        // في هذا المخزن، فمخزنُ فرعٍ آخرَ يلوّث تقييمَه.
+                        future: ref
+                            .read(branchRepositoryProvider)
+                            .getAssignableWarehouses(),
                         builder: (context, snapshot) {
                           final warehouses = snapshot.data ?? [];
                           return SizedBox(

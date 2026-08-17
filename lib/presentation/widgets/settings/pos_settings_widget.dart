@@ -698,10 +698,19 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
         ),
         // ─── المخزن الافتراضي لنقطة البيع ───
         FutureBuilder(
-          future: ref.read(branchRepositoryProvider).getWarehouses(),
+          // نطاقُ النسبة لا كلُّ المخازن: هذا المنتقي يقرّر أين تُخصم بضاعةُ
+          // **كلِّ** بيعةٍ على الجهاز/الفرع، فمخزنُ فرعٍ آخرَ هنا يُخطئ نسبةَ
+          // مبيعاتٍ كاملةٍ لا فاتورةً واحدة.
+          future: ref.read(branchRepositoryProvider).getAssignableWarehouses(),
           builder: (context, snapshot) {
             final warehouses = snapshot.data ?? [];
             if (warehouses.isEmpty) return const SizedBox.shrink();
+            // والمنتقي الفرعيُّ أضيقُ من العامّ: مخازنُ هذا الفرعِ حصراً بلا
+            // احتياطٍ يوسّع — «لا مخزنَ لهذا الفرع» جوابٌ صحيحٌ في شاشةِ
+            // إعداداتٍ ولا يوقف عملاً، بخلافِ منتقي الفاتورة.
+            final branchWarehouses = _currentBranchId == null
+                ? warehouses
+                : warehouses.where((w) => w.branchId == _currentBranchId).toList();
             return Column(
               children: [
                 // Feature 006 #4: Per-branch picker. Wins over the global one
@@ -713,13 +722,13 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
                     subtitle: const Text('يُطبَّق على كل أجهزة هذا الفرع — يسبق الإعداد العام'),
                     contentPadding: EdgeInsets.zero,
                     trailing: DropdownButton<int?>(
-                      value: warehouses.any((w) => w.id == _perBranchWarehouseId)
+                      value: branchWarehouses.any((w) => w.id == _perBranchWarehouseId)
                           ? _perBranchWarehouseId : null,
                       underline: const SizedBox.shrink(),
                       hint: const Text('استخدم الإعداد العام'),
                       items: [
                         const DropdownMenuItem<int?>(value: null, child: Text('استخدم الإعداد العام')),
-                        ...warehouses.map((w) => DropdownMenuItem<int?>(value: w.id, child: Text(w.name ?? ''))),
+                        ...branchWarehouses.map((w) => DropdownMenuItem<int?>(value: w.id, child: Text(w.name ?? ''))),
                       ],
                       onChanged: (v) => setState(() => _perBranchWarehouseId = v),
                     ),

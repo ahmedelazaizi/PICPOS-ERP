@@ -523,7 +523,9 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
                     const SizedBox(height: 10),
                     // Warehouse dropdown
                     FutureBuilder<List<Warehouse>>(
-                      future: branchRepo.getWarehouses(),
+                      // نطاقُ النسبة: أمرُ الشراءِ يتحوّل فاتورةً، وفرعُها
+                      // يُشتقُّ من مخزنها.
+                      future: branchRepo.getAssignableWarehouses(),
                       builder: (context, snap) {
                         final warehouses = snap.data ?? [];
                         return DropdownButtonFormField<int>(
