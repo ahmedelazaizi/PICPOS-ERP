@@ -8,8 +8,11 @@ import '../../../domain/repositories/restaurant_repository.dart';
 import '../../../domain/entities/product_entity.dart';
 import '../../../domain/models/split_plan.dart';
 import '../../../data/providers/providers.dart';
+import '../../../services/split_settlement_runner.dart';
+import '../../../services/table_checkout_coordinator.dart';
 import '../../pos/providers/cart_controller.dart';
 import '../../pos/providers/checkout_controller.dart';
+import '../../pos/widgets/payment_sheet.dart';
 
 /// نتيجةُ محاولة بناء خطّةٍ حيّةً أثناء الكتابة — إمّا خطّةٌ صالحة أو رسالةُ
 /// الرفض من [SplitPlanException] نفسِها، لا نسخةٌ مُعاد صياغتُها هنا.
@@ -126,11 +129,23 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
       _orderItems = items;
       _total = _effectiveTotal(order);
       _paidSoFar = order.paidAmount;
-      _ways = order.guestCount;
+      // التقسيمُ يحتاج دافعَين على الأقل، وطلبُ ضيفٍ واحدٍ شرعيٌّ تماماً —
+      // ففتحُ الشاشة على رسالة خطأٍ لأن `guestCount == 1` عيبُ عرضٍ لا
+      // عيبُ بيانات. الحدُّ الأدنى اثنان، وللكاشير أن يزيد.
+      _ways = order.guestCount < 2 ? 2 : order.guestCount;
       _resizeAmountControllers(_ways);
       _loading = false;
     });
   }
+
+  /// هل سُوِّيت حصّةٌ من هذا التقسيم بالفعل؟
+  ///
+  /// `TableOrderPayments` يحفظ التسميةَ والمبلغَ ولا يحفظ تركيبةَ الخطّة.
+  /// فتغييرُ التركيبة بعد تسويةٍ جزئيّة — مقامٌ آخر، مبالغُ أخرى، صنفٌ
+  /// نُقل بين ضيفين — يجعل «ضيف ١» المسوّاةَ بالقديمة تُعدّ مسوّاةً
+  /// بالجديدة. المنسّقُ يرفض ذلك عند التنفيذ، وهذا القفلُ يمنع الكاشيرَ من
+  /// الوصول إلى الرفض أصلاً.
+  bool get _compositionLocked => _paidSoFar > 0;
 
   void _resizeAmountControllers(int ways) {
     while (_amountControllers.length < ways) {
@@ -142,7 +157,7 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
   }
 
   void _setWays(int newWays) {
-    if (newWays < 1 || _processing) return;
+    if (newWays < 1 || _processing || _compositionLocked) return;
     setState(() {
       _ways = newWays;
       _resizeAmountControllers(newWays);
@@ -194,29 +209,12 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
   /// تسامحُ المقارنات النقديّة الحيّة (فروقُ التقريب لا فروقٌ حقيقيّة).
   static const double _amountEpsilon = 0.0005;
 
-  /// تنفيذُ الخطّة: يبني النسخةَ الرسميّةَ عبر المنسّق، يتحقّق من أن الطلب لم
-  /// يتغيّر منذ ما رآه الكاشير، يسوّي الحصصَ **الباقية فقط** — لا كلَّها من
-  /// جديد — ثم يملأ السلّةَ ويدفع حيث يلزم.
+  /// تنفيذُ الخطّة عبر [SplitSettlementRunner].
   ///
-  /// **الاستئنافُ لا إعادةُ البدء**: إعادةُ الضغط بعد فشلٍ جزئيّ (اتصالٌ
-  /// انقطع بعد تسوية حصّتين من أربع، مثلاً) يجب ألّا تُسوَّى فيها الحصصُ
-  /// المُسوَّاة من جديد — فذلك يعني فاتورةً ثانيةً حقيقيّةً (مخزونٌ يُخصَم
-  /// مرّتين، قيدٌ محاسبيٌّ مضاعَف) لا مجرّد صفٍّ إضافيّ. `coordinator
-  /// .unsettledParts` يفلتر الحصصَ عبر `TableOrderPayments.splitLabel`،
-  /// و`coordinator.settledInvoiceId` يعيد رقمَ الفاتورة الأصليّة بالتساوي
-  /// وبمبلغ (فاتورةٌ واحدةٌ للجميع) بدل إصدار فاتورةٍ جديدةٍ للأصناف نفسِها.
-  ///
-  /// **الأصنافُ تُقرأ حيّةً لا من الذاكرة المخبَّأة** لحظة الدفع الفعليّ —
-  /// لا من `_orderItems` المحمَّلة عند فتح الشاشة — حتى يطابق ما يُشحَن على
-  /// الفاتورة ما يُسجَّل مبلغاً على الطلب. وقبل ذلك: إجماليُّ الخطّة الطازج
-  /// يُقارَن بما رآه الكاشير في المعاينة؛ فإن اختلف (خصمٌ عُدِّل، صنفٌ أُضيف
-  /// من طرفيّةٍ أخرى وهذه الشاشةُ مفتوحة) تُرفَض المتابعةُ بدل أن يُحصَّل
-  /// مبلغٌ ويُسجَّل غيرُه.
-  ///
-  /// بالأصناف: لكلّ حصّةٍ باقيةٍ فاتورتُها الخاصّة — سلّةٌ بأصنافها هي فقط،
-  /// دفعٌ، ثم تسوية. بالتساوي وبمبلغ: فاتورةٌ واحدةٌ (جديدةٌ إن لم يُسوَّ شيءٌ
-  /// بعد، أو الفاتورةُ الأصليّةُ نفسُها إن كانت هذه استئنافاً)، ثم تُسوَّى
-  /// كلُّ حصّةٍ باقيةٍ عليها.
+  /// الحلقةُ نفسُها — الاستئنافُ لا إعادةُ البدء، والفحصُ القبليُّ الذي
+  /// يقارن سلّةَ الشحن بحصّة الخطّة قبل أيّ ترحيل — تعيش في الخدمة لتكون
+  /// قابلةً للقيادة بمنفذٍ وهميّ. ما يبقى هنا هو الوصلُ بالعالم: السلّة،
+  /// ورقةُ الدفع، والتوستات.
   Future<void> _confirm(SplitMode mode) async {
     final order = _order;
     if (order == null || _processing) return;
@@ -230,119 +228,141 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
       _paidSoFar = order.paidAmount;
     });
 
-    final coordinator = ref.read(tableCheckoutCoordinatorProvider);
-    final cartNotifier = ref.read(cartControllerProvider.notifier);
-    final checkoutCtrl = ref.read(checkoutControllerProvider.notifier);
-    final productRepo = ref.read(productRepositoryProvider);
-
-    Future<ProductEntity?> resolveProduct(int productId) async {
-      if (_productCache.containsKey(productId)) return _productCache[productId];
-      final p = await productRepo.getProductById(productId);
-      _productCache[productId] = p;
-      return p;
-    }
-
-    // يملأ السلّة بالأصناف المُمرَّرة (كميّةً كاملةً أو مُسنَدة)، يدفع، ويعيد
-    // رقمَ الفاتورة الناتجة.
-    Future<int> payAndGetInvoiceId(
-      List<TableOrderItem> items,
-      Map<int, double> quantities,
-    ) async {
-      cartNotifier.clearCart();
-      for (final item in items) {
-        final qty = quantities[item.id] ?? item.quantity;
-        final product = await resolveProduct(item.productId);
-        if (product == null) continue; // صنفٌ محذوف — يُتخطّى كما في مسار التحصيل العادي
-        cartNotifier.addItem(product, quantity: qty, customPrice: item.unitPrice);
-      }
-      final cartTotal = ref.read(cartControllerProvider).total;
-      final success =
-          await checkoutCtrl.processPayment(method: 'cash', total: cartTotal);
-      if (!success) {
-        throw Exception(
-            ref.read(checkoutControllerProvider).error ?? 'فشل الدفع');
-      }
-      final invoiceId = ref.read(checkoutControllerProvider).lastInvoiceId;
-      if (invoiceId == null) {
-        throw Exception('تعذّر الحصول على رقم الفاتورة');
-      }
-      return invoiceId;
-    }
-
+    final port = _DialogSplitPort(this, order.id, mode);
     try {
-      final plan = await coordinator.buildSplitPlan(
-        orderId: order.id,
-        mode: mode,
-        ways: _ways,
-        assignment: mode == SplitMode.byItems ? Map.of(_itemAssignment) : null,
-        amounts: mode == SplitMode.byAmounts
-            ? _amountControllers
-                .map((c) => double.tryParse(c.text.trim()) ?? 0)
-                .toList()
-            : null,
-      );
-
-      final freshSum = plan.parts.fold<double>(0, (s, p) => s + p.amount);
-      if ((freshSum - previewSum).abs() > _amountEpsilon) {
-        throw Exception(
-            'تغيّر الطلبُ منذ فتح شاشة التقسيم — أعِد فتحها وحاول من جديد');
-      }
-
-      final unsettled =
-          await coordinator.unsettledParts(orderId: order.id, plan: plan);
-      if (unsettled.isEmpty) {
-        if (!mounted) return;
-        AppToast.show(context, 'التقسيمُ مكتملٌ بالفعل — كلُّ الحصص مسوّاة',
-            type: ToastType.info);
-        Navigator.pop(context, true);
-        return;
-      }
-
-      if (plan.producesSeparateInvoices) {
-        // قراءةٌ حيّةٌ للأصناف قبل الدفع مباشرةً — لا الذاكرةُ المخبَّأة عند
-        // فتح الشاشة — حتى يطابق ما يُشحَن على الفاتورة ما بُني عليه المبلغ.
-        final freshItems = await widget.restaurantRepo.getTableOrderItems(order.id);
-        for (final part in unsettled) {
-          final relevantItems = freshItems
-              .where((i) => part.itemQuantities.containsKey(i.id))
-              .toList();
-          final invoiceId =
-              await payAndGetInvoiceId(relevantItems, part.itemQuantities);
-          await coordinator.settlePart(
-              orderId: order.id, part: part, invoiceId: invoiceId);
-          if (mounted) setState(() => _paidSoFar += part.amount);
-        }
-      } else {
-        // استئنافٌ إن سُوِّيت حصّةٌ من قبل: نفسُ الفاتورة، لا فاتورةٌ ثانية.
-        final resuming = unsettled.length < plan.parts.length;
-        final int invoiceId;
-        if (resuming) {
-          final existing = await coordinator.settledInvoiceId(order.id);
-          if (existing == null) {
-            throw Exception('تعذّر العثور على رقم الفاتورة الأصليّة للاستئناف');
-          }
-          invoiceId = existing;
-        } else {
-          final freshItems =
-              await widget.restaurantRepo.getTableOrderItems(order.id);
-          invoiceId = await payAndGetInvoiceId(freshItems, const {});
-        }
-        for (final part in unsettled) {
-          await coordinator.settlePart(
-              orderId: order.id, part: part, invoiceId: invoiceId);
-          if (mounted) setState(() => _paidSoFar += part.amount);
-        }
-      }
-
+      final result =
+          await SplitSettlementRunner(port).run(previewSum: previewSum);
       if (!mounted) return;
-      AppToast.show(context, 'تم تقسيم الفاتورة بنجاح', type: ToastType.success);
-      Navigator.pop(context, true);
+
+      switch (result.status) {
+        case SplitRunStatus.success:
+          AppToast.show(context, 'تم تقسيم الفاتورة بنجاح',
+              type: ToastType.success);
+          Navigator.pop(context, true);
+        case SplitRunStatus.alreadyComplete:
+          AppToast.show(context, 'التقسيمُ مكتملٌ بالفعل — كلُّ الحصص مسوّاة',
+              type: ToastType.info);
+          Navigator.pop(context, true);
+        case SplitRunStatus.aborted:
+          AppToast.show(context, result.message ?? 'تعذّر إتمام التقسيم',
+              type: ToastType.error);
+          setState(() => _processing = false);
+        case SplitRunStatus.reconcileNeeded:
+          await _logReconcileNeeded(result);
+          if (!mounted) return;
+          AppToast.show(
+            context,
+            '⚠️ فاتورة #${result.orphanInvoiceId} صدرت ورُحِّلت لكن لم '
+            'تُسجَّل على ${widget.sourceTable.name} — راجع الطاولةَ يدويّاً',
+            type: ToastType.error,
+          );
+          setState(() => _processing = false);
+      }
     } catch (e) {
       if (mounted) {
         AppToast.show(context, 'تعذّر إتمام التقسيم: $e', type: ToastType.error);
         setState(() => _processing = false);
       }
     }
+  }
+
+  /// أثرٌ دائمٌ للفجوة: فاتورةٌ رُحِّلت (محاسبةً ومخزوناً) ولم تُسجَّل دفعتُها
+  /// على الطلب. نفسُ اسم الفعل ونفسُ الحقول التي يكتبها مسارُ التحصيل
+  /// العاديّ، فيظهر الاثنان في `TableLogSheet` سواءً بسواء — التوستُ يزول
+  /// والسطرُ يبقى.
+  Future<void> _logReconcileNeeded(SplitRunResult result) async {
+    try {
+      final user = ref.read(authProvider).user;
+      await ref.read(activityLogRepositoryProvider).logActivity(
+            userId: user?.id,
+            userName: user?.displayName ?? 'مجهول',
+            action: 'table_payment_reconcile_needed',
+            entityType: 'table',
+            entityId: widget.sourceTable.id,
+            description:
+                'فاتورةٌ #${result.orphanInvoiceId} صدرت ورُحِّلت في تقسيم '
+                '${widget.sourceTable.name}، لكن تعذّر تسجيلُ دفعتها — '
+                'يحتاج تسويةً يدويّة. ${result.message ?? ''}',
+            amount: result.orphanAmount,
+          );
+    } catch (_) {}
+  }
+
+  /// تقدُّمُ التسوية على شريط الانتظار.
+  void _bumpPaid(double amount) {
+    if (mounted) setState(() => _paidSoFar += amount);
+  }
+
+  Future<ProductEntity?> _resolveProduct(int productId) async {
+    if (_productCache.containsKey(productId)) return _productCache[productId];
+    final p = await ref.read(productRepositoryProvider).getProductById(productId);
+    _productCache[productId] = p;
+    return p;
+  }
+
+  /// يملأ السلّة بالأصناف الحيّة — لا المخبَّأة عند فتح الشاشة — ويعيد
+  /// إجماليَّها كما سيُشحَن.
+  Future<double> _fillCart(
+    int orderId,
+    Map<int, double>? itemQuantities,
+  ) async {
+    final cartNotifier = ref.read(cartControllerProvider.notifier);
+    cartNotifier.clearCart();
+    final freshItems = await widget.restaurantRepo.getTableOrderItems(orderId);
+    for (final item in freshItems) {
+      if (itemQuantities != null && !itemQuantities.containsKey(item.id)) {
+        continue;
+      }
+      final qty = itemQuantities?[item.id] ?? item.quantity;
+      final product = await _resolveProduct(item.productId);
+      // صنفٌ محذوف يُتخطّى، فينقص إجماليُّ السلّة عن حصّة الخطّة —
+      // والفحصُ القبليُّ في الحلقة يوقف التحصيلَ قبل أيّ ترحيل.
+      if (product == null) continue;
+      cartNotifier.addItem(product, quantity: qty, customPrice: item.unitPrice);
+    }
+    return ref.read(cartControllerProvider).total;
+  }
+
+  /// طريقةُ الدفع تُسأل، لا تُفترَض. كانت مثبَّتةً على `'cash'` فكان دافعٌ
+  /// بالبطاقة يُقيَّد على خزنة النقد بصمت.
+  Future<int?> _payFilledCart(double chargeTotal) async {
+    if (!mounted) return null;
+    final cartState = ref.read(cartControllerProvider);
+    final result = await showModalBottomSheet<PaymentResult>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: PaymentSheet(
+          total: chargeTotal,
+          subtotal: cartState.subtotal,
+          discount: cartState.totals.totalDiscount,
+          tax: cartState.totals.taxAmount,
+          onConfirm: (paymentResult) => Navigator.pop(ctx, paymentResult),
+          onCancel: () => Navigator.pop(ctx),
+        ),
+      ),
+    );
+    if (result == null) return null;
+
+    final checkoutCtrl = ref.read(checkoutControllerProvider.notifier);
+    final success = await checkoutCtrl.processPayment(
+      method: result.method,
+      total: chargeTotal,
+      cashAmount: result.cashAmount,
+      bankAmount: result.bankAmount,
+      bankSafeId: ref.read(cartControllerProvider).bankSafeId,
+      customerId: result.customerId,
+    );
+    if (!success) {
+      throw Exception(ref.read(checkoutControllerProvider).error ?? 'فشل الدفع');
+    }
+    final invoiceId = ref.read(checkoutControllerProvider).lastInvoiceId;
+    if (invoiceId == null) {
+      throw Exception('تعذّر الحصول على رقم الفاتورة');
+    }
+    return invoiceId;
   }
 
   @override
@@ -386,6 +406,7 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
         Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (_compositionLocked) _lockedBanner(),
             _waysStepper(),
             const Divider(height: 20),
             TabBar(
@@ -425,14 +446,44 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
     );
   }
 
+  /// القفلُ يُقال للكاشير لا يُترك ليكتشفه بأزرارٍ لا تستجيب.
+  Widget _lockedBanner() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(8),
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: AppColors.warning.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          const Icon(PhosphorIconsBold.lock, color: AppColors.warning, size: 16),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              'سُوِّي من هذا الحساب '
+              '${_paidSoFar.toStringAsFixed(AppConstants.decimalPlaces)} '
+              '${AppConstants.currencySymbolEn} — فتركيبةُ التقسيم مقفولة. '
+              'تغييرُها الآن يجعل حصّةً سُوِّيت بتركيبةٍ قديمةٍ تُحسَب على '
+              'تركيبةٍ جديدة، فتضيع أموالٌ أو أصنافٌ بلا خطأٍ يظهر. أكمِل '
+              'الحصصَ الباقيةَ كما هي، أو حصِّل الباقيَ من شاشة الطاولة.',
+              style: const TextStyle(fontSize: 12),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _waysStepper() {
+    final editable = !_processing && !_compositionLocked;
     return Row(
       children: [
         const Text('عددُ الحصص: ', style: TextStyle(fontWeight: FontWeight.bold)),
         IconButton(
           icon: const Icon(PhosphorIconsBold.minus, size: 16),
-          onPressed:
-              _ways > 1 && !_processing ? () => _setWays(_ways - 1) : null,
+          onPressed: _ways > 1 && editable ? () => _setWays(_ways - 1) : null,
         ),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
@@ -444,7 +495,7 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
         ),
         IconButton(
           icon: const Icon(PhosphorIconsBold.plus, size: 16),
-          onPressed: !_processing ? () => _setWays(_ways + 1) : null,
+          onPressed: editable ? () => _setWays(_ways + 1) : null,
         ),
         const Spacer(),
         Text(
@@ -492,7 +543,7 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
               padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
               child: TextField(
                 controller: _amountControllers[i],
-                enabled: !_processing,
+                enabled: !_processing && !_compositionLocked,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 decoration: InputDecoration(
                   labelText: 'ضيف ${i + 1}',
@@ -554,7 +605,7 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
               for (var g = 0; g < _ways; g++)
                 DropdownMenuItem(value: g, child: Text('ضيف ${g + 1}')),
             ],
-            onChanged: _processing
+            onChanged: _processing || _compositionLocked
                 ? null
                 : (v) => setState(() {
                       if (v == null) {
@@ -684,4 +735,53 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
       ),
     ];
   }
+}
+
+/// وصلُ الحلقة بالعالم: المنسّقُ للخطّة والتسوية، والسلّةُ وورقةُ الدفع
+/// للشحن. لا منطقَ قرارٍ هنا — كلُّه في [SplitSettlementRunner].
+class _DialogSplitPort implements SplitSettlementPort {
+  _DialogSplitPort(this._state, this._orderId, this._mode);
+
+  final _SplitTableDialogState _state;
+  final int _orderId;
+  final SplitMode _mode;
+
+  TableCheckoutCoordinator get _coordinator =>
+      _state.ref.read(tableCheckoutCoordinatorProvider);
+
+  @override
+  Future<SplitPlan> buildPlan() => _coordinator.buildSplitPlan(
+        orderId: _orderId,
+        mode: _mode,
+        ways: _state._ways,
+        assignment:
+            _mode == SplitMode.byItems ? Map.of(_state._itemAssignment) : null,
+        amounts: _mode == SplitMode.byAmounts
+            ? _state._amountControllers
+                .map((c) => double.tryParse(c.text.trim()) ?? 0)
+                .toList()
+            : null,
+      );
+
+  @override
+  Future<List<SplitPart>> unsettledParts(SplitPlan plan) =>
+      _coordinator.unsettledParts(orderId: _orderId, plan: plan);
+
+  @override
+  Future<int?> settledInvoiceId() => _coordinator.settledInvoiceId(_orderId);
+
+  @override
+  Future<void> settlePart(SplitPart part, int invoiceId) => _coordinator
+      .settlePart(orderId: _orderId, part: part, invoiceId: invoiceId);
+
+  @override
+  Future<double> fillCart(Map<int, double>? itemQuantities) =>
+      _state._fillCart(_orderId, itemQuantities);
+
+  @override
+  Future<int?> payFilledCart(double chargeTotal) =>
+      _state._payFilledCart(chargeTotal);
+
+  @override
+  void onPartSettled(SplitPart part) => _state._bumpPaid(part.amount);
 }
