@@ -2433,5 +2433,32 @@ extension Epoch3Migrations on AppDatabase {
         debugPrint('[Migration] v155 table order tax OK');
       });
     }
+
+    // ── v156: قيدُ «لا تفعيلَ بلا نسبة» على طلبات الطاولات ───────────────
+    //
+    // v155 أضاف العمودين وحرسَهما في الخدمة. وهذا يجعل الحالةَ الكاذبةَ
+    // (`tax_enabled = 1` و`tax_rate = 0`) **مستحيلةَ التمثيل** لا مرفوضةً
+    // عند بابٍ واحد — اقرأ [TableOrders.customConstraints].
+    //
+    // وSQLite لا تضيف قيداً بـ`ALTER TABLE`، فالسبيلُ الوحيدُ إعادةُ إنشاء
+    // الجدول ونقلُ بياناته. `m.alterTable` تفعلها بالخطوات الاثنتَي عشرة
+    // التي توصي بها SQLite: إطفاءُ المفاتيح، إنشاءُ بديلٍ بالشكل الجديد،
+    // نقلُ الصفوف، إسقاطُ الأصل، `legacy_alter_table` كي لا تُعاد كتابةُ
+    // إشاراتِ الأبناء عند التسمية، ثم إعادةُ الفهارس والمشغِّلات.
+    //
+    // والتسويةُ **تسبق** القيدَ بالضرورة: صفٌّ كاذبٌ قائمٌ يُفشل إعادةَ
+    // الإنشاء فيقتل الإقلاع. وهي تُطفئ الزرَّ ولا تُلفّق نسبةً — الفاتورةُ
+    // خرجت بضريبةِ صفرٍ فعلاً، فإطفاءُ الزرِّ هو ما يجعل السجلَّ يطابق ما
+    // حُصِّل حقّاً. واختراعُ نسبةٍ الآن يعيد تسعيرَ حسابٍ رآه الضيفُ ودُفع.
+    if (from < 156) {
+      await _safeMigrate('v156 table_orders tax CHECK constraint', () async {
+        await customStatement(
+          'UPDATE table_orders SET tax_enabled = 0 '
+          'WHERE tax_enabled = 1 AND tax_rate <= 0',
+        );
+        await m.alterTable(TableMigration(tableOrders));
+        debugPrint('[Migration] v156 table_orders tax CHECK OK');
+      });
+    }
   }
 }

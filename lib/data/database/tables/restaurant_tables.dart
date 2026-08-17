@@ -122,6 +122,21 @@ class TableOrders extends Table {
   RealColumn get paidAmount => real().withDefault(const Constant(0))();
   DateTimeColumn get openedAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get closedAt => dateTime().nullable()();
+
+  /// ضريبةٌ «مفعَّلةٌ» بنسبةِ صفرٍ حالةٌ **تكذب**، فلا تُمثَّل.
+  ///
+  /// `TableSessionService.setOrderTax` يرفضها عند المفتاح، لكنّ الرفضَ عند
+  /// بابٍ واحدٍ يُبقيها ممكنةَ الوجود: تصفيرُ `taxRate` من تحت الزرِّ يصنعها
+  /// بلا أن يمرَّ على الحارس، وكذلك أيُّ مسارِ كتابةٍ يُضاف غداً. وهنا
+  /// يستوي البابان: القيدُ يسري على `INSERT` و`UPDATE` وعلى كلِّ مَن يكتب.
+  ///
+  /// وهو يُصاغ بـ`taxEnabled = 0` لا بـ`taxRate > 0` وحدَها عن قصد: الطلبُ
+  /// يُفتَح مطفأً ونسبتُه ملقوطةٌ، والمطفأُ حرٌّ في نسبته — فاللقطةُ تبقى
+  /// محفوظةً بعد الإطفاء ولا تُطارَد.
+  @override
+  List<String> get customConstraints => [
+        'CHECK (tax_enabled = 0 OR tax_rate > 0)',
+      ];
 }
 
 class TableOrderItems extends Table {
