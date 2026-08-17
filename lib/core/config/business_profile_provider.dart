@@ -384,6 +384,55 @@ class ConfigService {
     _ref.read(developerSessionProvider.notifier).extend();
   }
 
+  // ─── Spec B3 — Setup Wizard exit-path hardening ───────────────────────
+  //
+  // The Setup Wizard has two exit paths, `_finishSetup()` and
+  // `_skipSetup()`. Both must leave `businessProfileProvider` /
+  // `deploymentModeProvider` / the developer-password gate reading
+  // correctly from THIS live `SettingsRepositoryCached` instance — the
+  // same one `settingsRepositoryCachedProvider` hands to Dev Tools.
+  //
+  // Originally this existed as a "Phase C2 hot-fix" duplicated inside
+  // `_finishSetup()` only, wrapped in a `try/catch` that swallowed
+  // failures into a bare `debugPrint` — invisible in a Release build.
+  // `_skipSetup()` had no equivalent at all. Extracted here so:
+  //   1. Both exit paths call the SAME code (no more drifting copies).
+  //   2. It has a direct unit-test surface (via `configServiceProvider`
+  //      + a `ProviderContainer`) that doesn't require mounting the
+  //      wizard's widget tree.
+  //   3. Failure is reported (return value + diagnostic log), not
+  //      silently swallowed — callers must surface it to the user.
+  Future<bool> rehydrateRuntimeConfigCache({required String exitPath}) async {
+    try {
+      await _settings.preload(<String>[
+        'setup_completed',
+        'setup_in_progress',
+        'business_profile',
+        'deployment_mode',
+        'developer_password_salt',
+        'developer_password_hash',
+        'feature_schema_version',
+        'runtime_config_hash',
+        ...FeatureKey.values.map((k) => k.settingKey),
+      ]);
+      // Force the notifiers to rebuild from the fresh cache. Without
+      // this, `BusinessProfileNotifier.build()`'s initial read still
+      // wins and the navigation looks like the compile-time default.
+      _ref.invalidate(businessProfileProvider);
+      _ref.invalidate(featureOverridesProvider);
+      _ref.invalidate(deploymentModeProvider);
+      return true;
+    } catch (e, st) {
+      await DiagnosticLogger.logError(
+        'SETUP-WIZARD',
+        'runtime cache rehydrate ($exitPath)',
+        e,
+        st,
+      );
+      return false;
+    }
+  }
+
   void _assertUnlocked() {
     if (_ref.read(configLockProvider)) {
       throw StateError(
