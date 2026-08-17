@@ -510,7 +510,7 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'هذا الحسابُ مقسَّمٌ ومُحصَّلٌ جزئيّاً: '
+                  '${done.isEmpty ? 'حُصِّل من هذا الحساب' : 'هذا الحسابُ مقسَّمٌ ومُحصَّلٌ جزئيّاً:'} '
                   '${_paidSoFar.toStringAsFixed(AppConstants.decimalPlaces)} '
                   'من ${_total.toStringAsFixed(AppConstants.decimalPlaces)} '
                   '${AppConstants.currencySymbolEn}.',
@@ -520,11 +520,18 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
                 if (done.isNotEmpty)
                   Text('الحصصُ المسوّاة — $done',
                       style: const TextStyle(fontSize: 12)),
-                const Text(
-                  'أعِد إدخال نفسِ التركيبة التي سُوِّيت عليها هذه الحصص ثم '
-                  'أكمِل الباقي. تركيبةٌ مخالفةٌ تُرفَض قبل إصدار أيّ فاتورة، '
-                  'فلا يضيع مالٌ بصمت.',
-                  style: TextStyle(fontSize: 12),
+                Text(
+                  done.isEmpty
+                      // تحصيلٌ بلا تسمية (من شاشة الطاولة لا من التقسيم):
+                      // لا حصّةَ تُقارَن به، والخطّةُ تُبنى على الإجماليّ
+                      // كاملاً — فالتنبيهُ هنا أن التقسيمَ قد لا يستقيم.
+                      ? 'هذا التحصيلُ ليس حصّةَ تقسيم، فلا تُقابله تسميةٌ '
+                          'تُستأنَف. راجِع المتبقّي من شاشة الطاولة قبل '
+                          'التقسيم.'
+                      : 'أعِد إدخال نفسِ التركيبة التي سُوِّيت عليها هذه '
+                          'الحصص ثم أكمِل الباقي. تركيبةٌ مخالفةٌ تُرفَض قبل '
+                          'إصدار أيّ فاتورة، فلا يضيع مالٌ بصمت.',
+                  style: const TextStyle(fontSize: 12),
                 ),
               ],
             ),
