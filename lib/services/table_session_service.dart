@@ -496,10 +496,17 @@ class TableSessionService {
   /// (`TableOrders.taxRate` = 0.16، لقطةُ `pos_default_tax_rate`) إلى مئويّةٍ
   /// (16) التي يفهمها النموذج. نِسَبُ البنود مئويّةٌ أصلاً (منسوخةٌ عن
   /// `Products.taxRate`) فتُمرَّر كما هي.
-  Future<TableOrderTotals> _totalsOf(TableOrder order) async {
-    final items = await (_db.select(_db.tableOrderItems)
-          ..where((i) => i.tableOrderId.equals(order.id)))
-        .get();
+  Future<TableOrderTotals> _totalsOf(TableOrder order) async => _totalsOfItems(
+        order,
+        await (_db.select(_db.tableOrderItems)
+              ..where((i) => i.tableOrderId.equals(order.id)))
+            .get(),
+      );
+
+  static TableOrderTotals _totalsOfItems(
+    TableOrder order,
+    List<TableOrderItem> items,
+  ) {
     return TableOrderTotals.compute(
       lines: items
           .map((i) => TableOrderLine(
@@ -518,6 +525,27 @@ class TableSessionService {
   /// الإجماليُّ بعد الخصم وفوقه الضريبة — وهو ما يُقسَّم ويُدفع ويُطبع.
   Future<double> effectiveTotal(int orderId) async =>
       (await totalsFor(orderId)).total;
+
+  /// `itemId → حصّتُه من المستحقّ` — نصيبُه من الخصم وضريبتُه فوقه.
+  ///
+  /// التقسيمُ بالأصناف يحتاجها: كان يجمع `TableOrderItems.total` الخامَ
+  /// (كميّة × سعر)، فمجموعُ الحصص لا يبلغ المستحقَّ متى كان على الطلب خصمٌ
+  /// أو ضريبة — فتُسوَّى الحصصُ كلُّها وتبقى الطاولةُ «غيرَ مدفوعة» بلا
+  /// رسالةِ خطأٍ واحدة.
+  ///
+  /// والقراءةُ هنا مرّةٌ واحدةٌ بقصد: الحصصُ تُزاوَج بالبنود بالفهرس، فلا
+  /// يجوز أن يُعاد الاستعلامُ بينهما وقد تغيّر الترتيب.
+  Future<Map<int, double>> effectiveLineTotals(int orderId) async {
+    final order = await _order(orderId);
+    final items = await (_db.select(_db.tableOrderItems)
+          ..where((i) => i.tableOrderId.equals(order.id)))
+        .get();
+    final totals = _totalsOfItems(order, items);
+    return {
+      for (var i = 0; i < items.length; i++)
+        items[i].id: totals.lineTotals[i],
+    };
+  }
 
   /// المتبقّي على الطلب: الإجماليُّ بعد الخصم ناقصاً ما دُفع منه.
   ///

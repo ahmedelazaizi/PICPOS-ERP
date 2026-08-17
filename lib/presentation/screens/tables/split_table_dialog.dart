@@ -333,6 +333,13 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
   ) async {
     final cartNotifier = ref.read(cartControllerProvider.notifier);
     cartNotifier.clearCart();
+    // السلّةُ على صورة الطلب — ضريبتُه ونسبتُه ونِسَبُ بنوده — تماماً كما
+    // تفعل `_checkoutTable`. وإلّا شحنت الحصّةَ بلا ضريبةٍ بينما الخطّةُ
+    // تحسبها بها، فيرفض الحارسُ كلَّ حصّةٍ من طاولةٍ مضرَّبة.
+    final order =
+        await widget.restaurantRepo.getActiveOrderForTable(widget.sourceTable.id);
+    cartNotifier.toggleTax(order?.taxEnabled ?? false);
+    if (order != null) cartNotifier.setTaxRate(order.taxRate);
     final freshItems = await widget.restaurantRepo.getTableOrderItems(orderId);
     for (final item in freshItems) {
       if (itemQuantities != null && !itemQuantities.containsKey(item.id)) {
@@ -343,7 +350,22 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
       // صنفٌ محذوف يُتخطّى، فينقص إجماليُّ السلّة عن حصّة الخطّة —
       // والفحصُ القبليُّ في الحلقة يوقف التحصيلَ قبل أيّ ترحيل.
       if (product == null) continue;
-      cartNotifier.addItem(product, quantity: qty, customPrice: item.unitPrice);
+      cartNotifier.addItem(
+        product,
+        quantity: qty,
+        customPrice: item.unitPrice,
+        taxRate: item.taxRate,
+      );
+    }
+    // خصمُ الطلب كذلك — الحصّةُ محسوبةٌ على الصافي بعده.
+    if (order != null && order.discountValue > 0) {
+      final gross = freshItems.fold<double>(
+          0, (sum, i) => sum + i.quantity * i.unitPrice);
+      if (order.discountType == 'percent') {
+        cartNotifier.setDiscount(order.discountValue);
+      } else if (order.discountType == 'amount' && gross > 0) {
+        cartNotifier.setDiscount(order.discountValue / gross * 100);
+      }
     }
     return ref.read(cartControllerProvider).total;
   }

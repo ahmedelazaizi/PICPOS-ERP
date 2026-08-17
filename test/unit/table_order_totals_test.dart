@@ -222,6 +222,60 @@ void main() {
     });
   });
 
+  group('TableOrderTotals — حصصُ البنود', () {
+    test('مجموعُ الحصص = المستحقُّ بالضبط، والكسرُ على الأخيرة', () {
+      // ثلاثةُ أثلاثٍ من مئةٍ: ٣٣٫٣٣٣ × ٣ = ٩٩٫٩٩٩ لا ١٠٠. الفرقُ يُحمَّل
+      // على الأخيرة، وإلّا بقي على الطلب متبقٍّ لا يُسوّيه أحد.
+      final t = TableOrderTotals.compute(
+        lines: const [
+          TableOrderLine(quantity: 1, unitPrice: 33.333),
+          TableOrderLine(quantity: 1, unitPrice: 33.333),
+          TableOrderLine(quantity: 1, unitPrice: 33.334),
+        ],
+        taxEnabled: true,
+        taxPercent: 16,
+      );
+
+      expect(t.lineTotals, hasLength(3));
+      final sum = t.lineTotals.fold<double>(0, (s, v) => s + v);
+      expect((sum * 1000).round(), (t.total * 1000).round());
+    });
+
+    test('الحصّةُ تحمل ضريبةَ بندها هي لا متوسّطاً', () {
+      final t = TableOrderTotals.compute(
+        lines: const [
+          TableOrderLine(quantity: 1, unitPrice: 60),
+          TableOrderLine(quantity: 1, unitPrice: 40, taxRate: 5),
+        ],
+        taxEnabled: true,
+        taxPercent: 16,
+      );
+
+      expect(t.lineTotals[0], 69.6); // ٦٠ + ١٦٪
+      expect(t.lineTotals[1], 42.0); // ٤٠ + ٥٪
+      expect(t.total, 111.6);
+    });
+
+    test('الخصمُ يُوزَّع على الحصص بنسبته', () {
+      final t = TableOrderTotals.compute(
+        lines: const [
+          TableOrderLine(quantity: 1, unitPrice: 60),
+          TableOrderLine(quantity: 1, unitPrice: 40),
+        ],
+        discountType: 'percent',
+        discountValue: 10,
+      );
+
+      expect(t.lineTotals[0], 54.0);
+      expect(t.lineTotals[1], 36.0);
+      expect(t.total, 90.0);
+    });
+
+    test('لا بنودَ ⇒ لا حصص', () {
+      expect(TableOrderTotals.compute(lines: const []).lineTotals, isEmpty);
+    });
+  });
+
   group('TableOrderTotals — التطابقُ مع المرجع', () {
     test('النموذجُ والـ`CalculateInvoiceTotalsUseCase` يخرجان برقمٍ واحد', () {
       // نفسُ المدخلات في المحرّكين: ثلاثةُ بنودٍ بنِسَبٍ مختلفةٍ (وواحدٌ بلا

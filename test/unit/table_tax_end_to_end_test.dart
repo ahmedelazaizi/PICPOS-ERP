@@ -2,9 +2,11 @@ import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/data/database/database.dart';
 import 'package:ural_erp/domain/entities/cart_item_entity.dart';
+import 'package:ural_erp/domain/models/split_plan.dart';
 import 'package:ural_erp/domain/models/table_charge_check.dart';
 import 'package:ural_erp/domain/models/table_status.dart';
 import 'package:ural_erp/presentation/pos/providers/cart_controller.dart';
+import 'package:ural_erp/services/table_checkout_coordinator.dart';
 import 'package:ural_erp/services/table_session_service.dart';
 
 /// ضريبةُ المبيعات على طلبات الطاولات — البرهانُ الطرفيّ.
@@ -342,6 +344,71 @@ void main() {
                 .getSingle())
             .taxEnabled,
         isFalse,
+      );
+    });
+  });
+
+  group('التقسيمُ على طاولةٍ مضرَّبة', () {
+    test('بالتساوي: مجموعُ الحصص = المستحقُّ بالضبط', () async {
+      final orderId = await openTaxedTable('ط١٢');
+      await addItem(orderId, quantity: 3, unitPrice: 19.99, taxRate: 0);
+
+      final coordinator =
+          TableCheckoutCoordinator(db: db, session: service);
+      final plan = await coordinator.buildSplitPlan(
+          orderId: orderId, mode: SplitMode.equal, ways: 3);
+
+      final sum = plan.parts.fold<double>(0, (s, p) => s + p.amount);
+      expect(tableMoneyUnits(sum),
+          tableMoneyUnits(await service.effectiveTotal(orderId)));
+    });
+
+    test('بالأصناف: الحصصُ تحمل الضريبةَ فتبلغ المستحقّ', () async {
+      final tableId = await db.createTable(name: 'ط١٣');
+      final orderId = await service.openTable(
+          tableId: tableId,
+          guestCount: 2,
+          userId: null,
+          userName: 'أحمد',
+          taxRate: 0.16);
+      await service.setOrderTax(
+          orderId: orderId, enabled: true, userId: null, userName: 'أحمد');
+
+      final p2 = await db.into(db.products).insert(
+            ProductsCompanion.insert(code: 'TAX-2', name: 'عصير'),
+          );
+      await db.addOrUpdateTableOrderItem(
+          orderId: orderId,
+          productId: await product(),
+          quantity: 1,
+          unitPrice: 60,
+          taxRate: 0);
+      await db.addOrUpdateTableOrderItem(
+          orderId: orderId,
+          productId: p2,
+          quantity: 1,
+          unitPrice: 40,
+          taxRate: 0);
+
+      final items = await db.getTableOrderItems(orderId);
+      final coordinator =
+          TableCheckoutCoordinator(db: db, session: service);
+      final plan = await coordinator.buildSplitPlan(
+        orderId: orderId,
+        mode: SplitMode.byItems,
+        assignment: {items[0].id: 0, items[1].id: 1},
+        ways: 2,
+      );
+
+      final due = await service.effectiveTotal(orderId);
+      expect(due, 116.0);
+      // ٦٠ + ١٦٪ و٤٠ + ١٦٪ — لا ٦٠ و٤٠ الخامّين.
+      expect(plan.parts[0].amount, 69.6);
+      expect(plan.parts[1].amount, 46.4);
+      expect(
+        tableMoneyUnits(plan.parts.fold<double>(0, (s, p) => s + p.amount)),
+        tableMoneyUnits(due),
+        reason: 'الحصصُ لو نقصت وحدةً لَبقيت الطاولةُ غيرَ مدفوعةٍ للأبد',
       );
     });
   });

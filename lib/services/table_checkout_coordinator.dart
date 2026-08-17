@@ -43,11 +43,17 @@ class TableCheckoutCoordinator {
         return SplitPlan.byAmounts(total: total, amounts: amounts ?? const []);
       case SplitMode.byItems:
         final items = await _db.getTableOrderItems(orderId);
+        // حصّةُ البند لا `item.total` الخام: الخام كميّةٌ × سعرٌ بلا خصمٍ ولا
+        // ضريبة، فمجموعُ الحصص كان ينقص عن المستحقّ ويبقى على الطلب متبقٍّ
+        // لا يُسوّيه أحد.
+        final shares = await _session.effectiveLineTotals(orderId);
         return SplitPlan.byItems(
           items: [
             for (final i in items)
               SplitItem(
-                  itemId: i.id, quantity: i.quantity, lineTotal: i.total),
+                  itemId: i.id,
+                  quantity: i.quantity,
+                  lineTotal: shares[i.id] ?? i.total),
           ],
           assignment: assignment ?? const {},
           ways: ways ?? order.guestCount,

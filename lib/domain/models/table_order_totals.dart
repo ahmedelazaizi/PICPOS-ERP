@@ -17,6 +17,9 @@
 // **الضريبةُ تُحسب على الصافي بعد الخصم لا على المجمل** (مواصفة ١٣٧،
 // BUG-C02/BUG-H01)، ولا تُؤخذ قطُّ من قيمةٍ مخزَّنةٍ سلفاً.
 
+import 'dart:math' as math;
+
+import '../../core/constants/app_constants.dart';
 import '../../core/utils/number_utils.dart';
 
 /// سطرٌ واحدٌ في طلبِ طاولةٍ، مجرَّداً من الجدول ومن الكيان.
@@ -60,6 +63,7 @@ class TableOrderTotals {
     required this.netAfterDiscount,
     required this.taxAmount,
     required this.total,
+    this.lineTotals = const [],
   });
 
   const TableOrderTotals.empty()
@@ -67,7 +71,8 @@ class TableOrderTotals {
         discount = 0,
         netAfterDiscount = 0,
         taxAmount = 0,
-        total = 0;
+        total = 0,
+        lineTotals = const [];
 
   /// مجموعُ صوافي البنود قبل خصم الطلب.
   final double subtotal;
@@ -84,6 +89,16 @@ class TableOrderTotals {
 
   /// المستحقُّ على الطلب: [netAfterDiscount] + [taxAmount].
   final double total;
+
+  /// حصّةُ كلِّ بندٍ من [total] بترتيب البنود الممرَّرة — نصيبُه من الخصم
+  /// وضريبتُه فوقه. **مجموعُها يساوي [total] بالضبط**، والفرقُ الكسريُّ
+  /// يُحمَّل على البند الأخير كما تفعل `SplitPlan.equal`.
+  ///
+  /// التقسيمُ بالأصناف يبني عليها. وكان يبني على `TableOrderItems.total`
+  /// الخام (كميّة × سعر)، فمجموعُ الحصص لا يبلغ المستحقَّ متى كان على
+  /// الطلب خصمٌ أو ضريبة — تُسوَّى الحصصُ كلُّها والطاولةُ لا تصير مدفوعةً
+  /// أبداً، بلا رسالةِ خطأٍ واحدة.
+  final List<double> lineTotals;
 
   /// النسبةُ المخزَّنةُ في `TableOrders.taxRate` كسريّةٌ (0.16) لأنها لقطةٌ من
   /// `pos_default_tax_rate` مرآةً لـ`CartState.taxRate`، بينما [compute]
@@ -153,21 +168,39 @@ class TableOrderTotals {
     final discountRatio = gross > 0 ? (net / gross) : 0.0;
 
     var taxAmount = 0.0;
-    if (taxEnabled) {
-      for (final line in lines) {
-        final base = line.lineNet * discountRatio;
+    // حصّةُ كلِّ بندٍ من المستحقّ — تُبنى في نفس المرور كي لا تفترق عنه.
+    final shares = <double>[];
+    for (final line in lines) {
+      final base = line.lineNet * discountRatio;
+      var lineTax = 0.0;
+      if (taxEnabled) {
         final rate = line.taxRate > 0 ? line.taxRate : taxPercent;
-        taxAmount += NumberUtils.roundCurrency(base * (rate / 100));
+        lineTax = NumberUtils.roundCurrency(base * (rate / 100));
+        taxAmount += lineTax;
       }
+      shares.add(base + lineTax);
     }
     taxAmount = NumberUtils.roundCurrency(taxAmount);
+
+    final total = NumberUtils.roundCurrency(net + taxAmount);
+
+    // الحصصُ تُقاس بوحداتٍ صحيحةٍ ويُحمَّل الفرقُ الكسريُّ على الأخيرة، فيصحّ
+    // الثابت: مجموعُ الحصص = المستحقُّ بالضبط. جمعُ `double` المقرَّبةِ
+    // إفراديّاً يُنقص وحدةً أو يزيدها، ووحدةٌ واحدةٌ تكفي لتبقى الطاولةُ
+    // «غيرَ مدفوعةٍ» بعد تسوية كلِّ حصصها.
+    final unitFactor = math.pow(10, AppConstants.decimalPlaces).toDouble();
+    final lineUnits = shares.map((s) => (s * unitFactor).round()).toList();
+    final drift =
+        (total * unitFactor).round() - lineUnits.fold<int>(0, (a, b) => a + b);
+    if (lineUnits.isNotEmpty) lineUnits[lineUnits.length - 1] += drift;
 
     return TableOrderTotals(
       subtotal: NumberUtils.roundCurrency(gross),
       discount: discount,
       netAfterDiscount: NumberUtils.roundCurrency(net),
       taxAmount: taxAmount,
-      total: NumberUtils.roundCurrency(net + taxAmount),
+      total: total,
+      lineTotals: [for (final u in lineUnits) u / unitFactor],
     );
   }
 
