@@ -413,6 +413,85 @@ void main() {
     });
   });
 
+  group('لا طلبَ يولد بلا نسبة', () {
+    test('createTableOrder يحفظ النسبةَ الممرَّرة', () async {
+      // هذا هو المسارُ الذي تسلكه `initTableOrder` حين تُفتح الشاشةُ على
+      // طاولةٍ لا طلبَ حيَّ عليها — مسارٌ اعتياديٌّ لا ركنٌ نادر.
+      final tableId = await db.createTable(name: 'ط٢٠');
+      final orderId = await db.createTableOrder(tableId, taxRate: 0.16);
+
+      final order = await (db.select(db.tableOrders)
+            ..where((o) => o.id.equals(orderId)))
+          .getSingle();
+      expect(order.taxRate, 0.16);
+      expect(order.taxEnabled, isFalse, reason: 'التفعيلُ قرارُ الكاشير');
+    });
+
+    test('seatReservation يفتح طلباً يحمل النسبة', () async {
+      final tableId = await db.createTable(name: 'ط٢١');
+      final reservationId = await db.into(db.tableReservations).insert(
+            TableReservationsCompanion.insert(
+              tableId: tableId,
+              customerName: 'ضيف',
+              reservationTime: DateTime.now(),
+            ),
+          );
+
+      final orderId =
+          await db.seatReservation(reservationId, taxRate: 0.16);
+
+      final order = await (db.select(db.tableOrders)
+            ..where((o) => o.id.equals(orderId)))
+          .getSingle();
+      expect(order.taxRate, 0.16,
+          reason: 'حضورُ الحجز فتحُ طاولةٍ، فيلزمه ما يلزم الفتح');
+    });
+
+    test('setOrderTax يرفض التفعيلَ على طلبٍ نسبتُه صفر', () async {
+      // الحالةُ المرفوضة هي بعينها ما كان يمرّ صامتاً: زرٌّ يقول «مفعلة»
+      // ولا ضريبةَ تُحصَّل ولا حارسَ يُطلق.
+      final tableId = await db.createTable(name: 'ط٢٢');
+      final orderId = await service.openTable(
+          tableId: tableId, guestCount: 2, userId: null, userName: 'أحمد');
+
+      expect(
+        () => service.setOrderTax(
+            orderId: orderId, enabled: true, userId: null, userName: 'أحمد'),
+        throwsA(isA<TableTransitionException>()),
+      );
+
+      final order = await (db.select(db.tableOrders)
+            ..where((o) => o.id.equals(orderId)))
+          .getSingle();
+      expect(order.taxEnabled, isFalse, reason: 'الطلبُ يبقى كما كان');
+      expect(order.taxRate, 0);
+      expect(
+        await (db.select(db.activityLogs)
+              ..where((l) => l.action.equals('table_tax')))
+            .get(),
+        isEmpty,
+        reason: 'رفضٌ لا يكتب سطراً',
+      );
+    });
+
+    test('الإطفاءُ على طلبٍ نسبتُه صفرٌ يبقى مسموحاً', () async {
+      // الحارسُ على التفعيل وحدَه: إطفاءُ ما هو مطفأٌ ليس كذباً.
+      final tableId = await db.createTable(name: 'ط٢٣');
+      final orderId = await service.openTable(
+          tableId: tableId, guestCount: 2, userId: null, userName: 'أحمد');
+
+      await service.setOrderTax(
+          orderId: orderId, enabled: false, userId: null, userName: 'أحمد');
+
+      expect(
+        (await (db.select(db.tableOrders)..where((o) => o.id.equals(orderId)))
+                .getSingle())
+            .taxEnabled,
+        isFalse,
+      );
+    });
+  });
+
   group('نسبةُ الصنف تصل البند', () {
     test('الإضافةُ تكتب النسبة، والإضافةُ الثانيةُ لا تطمسها', () async {
       final tableId = await db.createTable(name: 'ط١٠');

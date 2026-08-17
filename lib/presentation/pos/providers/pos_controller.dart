@@ -192,15 +192,26 @@ class PosController extends Notifier<PosState> {
 
         state = state.copyWith(orderId: order.id, isProcessing: false);
       } else {
-        final orderId = await restaurantRepo.createTableOrder(tableId);
+        // النسبةُ تُلقَط هنا كما تُلقَط في زرّ الفتح. وهذا الفرعُ ليس ركناً
+        // نادراً: الشاشةُ تُفتح منه على كلِّ طاولةٍ لا طلبَ حيَّ عليها. وطلبٌ
+        // نسبتُه صفرٌ يقبل تفعيلَ الضريبة كان يعني زرّاً يقول «مفعلة (0%)»
+        // بينما لا ضريبةَ تُحصَّل ولا حارسَ يُطلق — نقصُ تحصيلٍ صامتٌ في
+        // الدفاتر لا رسالةَ خطأٍ فيه.
+        final snapshotRate =
+            ref.read(posDefaultTaxRateProvider).value ?? 0.16;
+        final orderId = await restaurantRepo.createTableOrder(
+          tableId,
+          taxRate: snapshotRate,
+        );
         // `clearCart` تحتفظ بالضريبة عمداً (سلوكُ سلّة الكاشير)، وهو هنا
-        // خطأ: الطلبُ المولودُ لتوّه ضريبتُه مطفأةٌ ونسبتُه صفر، فلو ورثت
-        // السلّةُ ضريبةَ **طاولةٍ سابقةٍ** لَعرض الزرُّ «مفعلة» على طلبٍ لا
-        // ضريبةَ فيه — واختلف المشحونُ عن المسجَّل عند التحصيل.
+        // خطأ: الطلبُ المولودُ لتوّه ضريبتُه مطفأةٌ، فلو ورثت السلّةُ ضريبةَ
+        // **طاولةٍ سابقةٍ** لَعرض الزرُّ «مفعلة» على طلبٍ لا ضريبةَ فيه —
+        // واختلف المشحونُ عن المسجَّل عند التحصيل. والنسبةُ هي المكتوبةُ
+        // على الطلب نفسِها، فلا استعلامَ لقراءتها ثانيةً.
         ref.read(cartControllerProvider.notifier)
           ..clearCart()
           ..toggleTax(false)
-          ..setTaxRate(0);
+          ..setTaxRate(snapshotRate);
         state = state.copyWith(orderId: orderId, isProcessing: false);
       }
     } catch (e) {

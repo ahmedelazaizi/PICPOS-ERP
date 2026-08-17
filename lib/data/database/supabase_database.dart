@@ -1026,7 +1026,12 @@ class SupabaseDatabase {
         });
   }
 
-  Future<int> createTableOrder(int tableId, {int? userId}) async {
+  /// [taxRate] كسريّةٌ — مرآةُ نظيرتها في `TablesDao`.
+  Future<int> createTableOrder(
+    int tableId, {
+    int? userId,
+    double taxRate = 0,
+  }) async {
     // In Supabase, we should ideally use a stored procedure or transaction
     // For now, we update the table and create the order
     await updateTableStatus(tableId, 'occupied');
@@ -1037,6 +1042,7 @@ class SupabaseDatabase {
           'table_id': tableId,
           'user_id': userId,
           'status': 'open',
+          'tax_rate': taxRate,
           'opened_at': DateTime.now().toIso8601String(),
         })
         .select('id')

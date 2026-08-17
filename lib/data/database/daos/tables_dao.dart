@@ -178,7 +178,22 @@ extension TablesDao on AppDatabase {
   /// ونافذةُ الطلب كلُّها تتوقّف، والطاولةُ تحمل مالاً محصَّلاً ولا تُستعاد
   /// إلا بجراحةٍ على القاعدة. الانتقالاتُ المصونةُ تمرّ عبر
   /// `TableSessionService`، وهذا يحمي ما بقي من مستدعين مباشرين.
-  Future<int> createTableOrder(int tableId, {int? userId}) async {
+  ///
+  /// [taxRate] نسبةُ الضريبة **كسريّةً** (0.16) تُنسَخ من إعداد
+  /// `pos_default_tax_rate` وتُثبَّت على الطلب لقطةً — اقرأ
+  /// `TableOrders.taxRate`. الطبقةُ هنا لا تقرأ الإعدادَ بنفسها، فالمستدعي
+  /// يمرّره.
+  ///
+  /// وافتراضُه صفرٌ ليس «بلا ضريبة» بل «لم تُقرأ نسبةٌ بعد»، ولذلك يحرس
+  /// `TableSessionService.setOrderTax` تفعيلَ الضريبة على طلبٍ نسبتُه صفرٌ:
+  /// طلبٌ `taxEnabled=true` ونسبتُه صفرٌ حالةٌ تكذب على الكاشير — الزرُّ
+  /// يقول «مفعلة» ولا ضريبةَ تُحصَّل، ولا حارسَ يُطلق لأن المحرّكين يتّفقان
+  /// على الصفر. تُمنَع عند الكتابة لا تُكتشَف على الفاتورة.
+  Future<int> createTableOrder(
+    int tableId, {
+    int? userId,
+    double taxRate = 0,
+  }) async {
     return transaction(() async {
       final existing = await getActiveOrderForTable(tableId);
       if (existing != null) {
@@ -195,6 +210,7 @@ extension TablesDao on AppDatabase {
         TableOrdersCompanion.insert(
           tableId: tableId,
           userId: Value(userId),
+          taxRate: Value(taxRate),
           openedAt: Value(DateTime.now()),
         ),
       );
@@ -645,7 +661,14 @@ extension TablesDao on AppDatabase {
   }
 
   /// Seat guests from a reservation (mark as seated and open order)
-  Future<int> seatReservation(int reservationId, {int? userId}) async {
+  ///
+  /// [taxRate] كسريّةٌ تُمرَّر إلى الطلب المفتوح — حضورُ الحجز فتحُ طاولةٍ
+  /// كسائر الفتح، فلا يجوز أن يُنتج طلباً بلا نسبةٍ بينما يُنتجها زرُّ الفتح.
+  Future<int> seatReservation(
+    int reservationId, {
+    int? userId,
+    double taxRate = 0,
+  }) async {
     return transaction(() async {
       final reservation = await (select(
         tableReservations,
@@ -655,7 +678,8 @@ extension TablesDao on AppDatabase {
       await updateReservationStatus(reservationId, 'seated');
 
       // Create a table order (which marks table as occupied)
-      return createTableOrder(reservation.tableId, userId: userId);
+      return createTableOrder(reservation.tableId,
+          userId: userId, taxRate: taxRate);
     });
   }
 

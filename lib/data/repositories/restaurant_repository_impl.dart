@@ -100,8 +100,8 @@ class RestaurantRepositoryImpl implements IRestaurantRepository {
   Future<void> cancelReservation(int id) => _db.cancelReservation(id);
 
   @override
-  Future<void> seatReservation(int id, {int? userId}) =>
-      _db.seatReservation(id, userId: userId);
+  Future<void> seatReservation(int id, {int? userId, double taxRate = 0}) =>
+      _db.seatReservation(id, userId: userId, taxRate: taxRate);
 
   @override
   Future<void> transferTableOrder(int sourceTableId, int targetTableId) =>
@@ -127,8 +127,9 @@ class RestaurantRepositoryImpl implements IRestaurantRepository {
       _db.getTableOrderItems(orderId);
 
   @override
-  Future<int> createTableOrder(int tableId, {int? userId}) =>
-      _db.createTableOrder(tableId, userId: userId);
+  Future<int> createTableOrder(int tableId,
+          {int? userId, double taxRate = 0}) =>
+      _db.createTableOrder(tableId, userId: userId, taxRate: taxRate);
 
   @override
   Future<void> mergeTableOrders(int sourceTableId, int targetTableId) =>

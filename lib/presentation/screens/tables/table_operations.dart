@@ -681,9 +681,12 @@ mixin _TableOperationsMixin on ConsumerState<TablesScreen> {
               onPressed: () async {
                 Navigator.pop(ctx);
                 final authState = ref.read(authProvider);
+                // حضورُ الحجز فتحُ طاولةٍ، فيلقط النسبةَ كما يلقطها زرُّ
+                // الفتح — وإلّا وُلد طلبٌ لا يقبل تفعيلَ الضريبة.
                 await restaurantRepo.seatReservation(
                   reservation.id,
                   userId: authState.user?.id,
+                  taxRate: ref.read(posDefaultTaxRateProvider).value ?? 0.16,
                 );
                 if (context.mounted) {
                   Navigator.push(
