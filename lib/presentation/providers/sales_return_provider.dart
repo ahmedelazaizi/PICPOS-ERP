@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:ural_erp/core/constants/app_constants.dart';
+import 'package:ural_erp/core/errors/app_exceptions.dart';
 import 'package:ural_erp/core/utils/financial_utils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/providers/providers.dart';
@@ -384,6 +385,12 @@ class SalesReturnNotifier extends Notifier<SalesReturnState> {
       // from the screen without waiting for the Drift stream debounce.
       await loadInvoices();
       return success;
+    } on ShiftRequiredException {
+      // ليس عطلاً بل طلبَ إجراء: الواجهةُ تعرض فتحَ ورديّةٍ وتعيد المحاولة.
+      // ابتلاعُه في `error` نصّاً كان يحوّله إلى رسالةٍ حمراءَ لا مخرجَ منها،
+      // ويُفقِد النوعَ الذي بُني عليه (‏مواصفة 2026-08-18 ح‑١).
+      state = state.copyWith(isProcessing: false);
+      rethrow;
     } catch (e) {
       state = state.copyWith(isProcessing: false, error: e.toString());
       return false;

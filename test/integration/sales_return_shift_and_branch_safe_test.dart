@@ -321,6 +321,50 @@ void main() {
     });
   });
 
+  group('المسارُ الثاني: `createSalesInvoice(saleType:return)`', () {
+    // هذا هو المسارُ الذي يسلكه «المرتجع السريع» في نقطة البيع، **وهو نفسُه**
+    // الذي يسلكه الخادمُ حين يصله مرتجعُ عميلٍ عبر `postSalesReturn`.
+    //
+    // يُقاس هنا لأنّ قراءةَ `api_sales_handler` وحدَها تُوهم أنّ الخادمَ لا
+    // يحرّك درجاً (لا `safeTransactions` ولا `adjustSafeBalance` في نصّه):
+    // الكتابةُ تقع داخلَ `createSalesInvoice` عبر `_recordSalesReceipt`.
+    test('مرتجعٌ نقديٌّ بهذا المسار يخصم من الخزنة فعلاً', () async {
+      final before = await cashSafeBalance(1);
+
+      await db.createSalesInvoice(
+        invoiceNumber: 'SRET-QUICK',
+        warehouseId: warehouseId,
+        userId: userId,
+        subtotal: 100,
+        discount: 0,
+        tax: 0,
+        total: 100,
+        paid: 100,
+        paymentMethod: 'cash',
+        saleType: 'return',
+        items: [
+          SalesInvoiceItemsCompanion.insert(
+            invoiceId: 0,
+            productId: productId,
+            quantity: 1,
+            unitPrice: 100,
+            total: 100,
+            costPrice: const Value(60),
+          ),
+        ],
+      );
+
+      expect(await cashSafeBalance(1), closeTo(before - 100, 0.001),
+          reason: 'الخادمُ يحرّك الدرجَ لمرتجع العميل — خلافاً لما توهمه '
+              'قراءةُ معالج الـAPI وحدَه');
+
+      final tx = await (db.select(db.safeTransactions)
+            ..where((t) => t.category.equals('return')))
+          .get();
+      expect(tx, isNotEmpty, reason: 'وصفُّ خزنةٍ يُكتَب بفئة return');
+    });
+  });
+
   group('الإيصالُ يطبع ما تحرّك فعلاً', () {
     test('مرتجعُ بيعةٍ آجلة ⇒ الإيصالُ لا يزعم صرفاً نقديّاً', () async {
       final customerId = await db.into(db.parties).insert(
