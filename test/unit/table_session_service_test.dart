@@ -872,4 +872,105 @@ void main() {
       expect(logs.single.amount, 40);
     });
   });
+
+  group('openNewOrderOnPaidTable', () {
+    setUp(() async {
+      final warehouseId = (await db.select(db.warehouses).get()).first.id;
+      final userId = (await db.select(db.users).get()).first.id;
+      await db.into(db.salesInvoices).insert(
+            SalesInvoicesCompanion.insert(
+              id: const Value(1),
+              invoiceNumber: 'INV-TEST-1',
+              warehouseId: warehouseId,
+              userId: userId,
+              invoiceDate: DateTime.now(),
+            ),
+          );
+    });
+
+    /// طاولةٌ سُدِّد حسابُها كاملاً ولم تُغلَق بعد — 🟠.
+    Future<int> paidTable(String name, {double total = 100}) async {
+      final t = await newTable(name);
+      final orderId = await service.openTable(
+          tableId: t, guestCount: 2, userId: null, userName: 'أحمد');
+      await (db.update(db.tableOrders)..where((o) => o.id.equals(orderId)))
+          .write(TableOrdersCompanion(total: Value(total)));
+      await service.recordPayment(
+          orderId: orderId, invoiceId: 1, amount: total);
+      expect((await readTable(t)).status, TableStatus.paid);
+      return t;
+    }
+
+    test('يُغلق المسدَّدَ ويفتح طلباً واحداً لا ثانياً', () async {
+      final t = await paidTable('ط٩٠');
+      final settledId = (await db.getActiveOrderForTable(t))!.id;
+
+      final newId = await service.openNewOrderOnPaidTable(
+          tableId: t, guestCount: 3, userId: null, userName: 'أحمد');
+
+      expect(newId, isNot(settledId));
+      expect((await readTable(t)).status, TableStatus.occupied);
+
+      // هذه القراءةُ نفسُها هي الدليل: `getActiveOrderForTable` تستعمل
+      // `getSingleOrNull()`، فلو بقي المسدَّدُ حيّاً لرمت `StateError` هنا
+      // — وهو ما كان يشلّ الطاولةَ بالكامل.
+      final active = await db.getActiveOrderForTable(t);
+      expect(active!.id, newId);
+      expect(active.guestCount, 3);
+
+      final settled = await (db.select(db.tableOrders)
+            ..where((o) => o.id.equals(settledId)))
+          .getSingle();
+      expect(settled.status, 'closed');
+      expect(settled.closedAt, isNotNull);
+    });
+
+    test('يكتب سطرَ إغلاقٍ ثم سطرَ فتحٍ على الطاولة', () async {
+      final t = await paidTable('ط٩١');
+
+      await service.openNewOrderOnPaidTable(
+          tableId: t, guestCount: 2, userId: null, userName: 'أحمد');
+
+      final closes = await (db.select(db.activityLogs)
+            ..where((l) => l.action.equals('table_close')))
+          .get();
+      final opens = await (db.select(db.activityLogs)
+            ..where((l) => l.action.equals('table_open')))
+          .get();
+      expect(closes, hasLength(1));
+      expect(closes.single.entityId, t);
+      expect(opens, hasLength(2), reason: 'فتحُ الطاولة أوّلاً ثم الطلبُ الثاني');
+    });
+
+    test('النادلُ المختارُ يُحفَظ على الطلب لا الفاعل', () async {
+      final t = await paidTable('ط٩٢');
+      final waiter = (await db.select(db.users).get()).first.id;
+
+      final newId = await service.openNewOrderOnPaidTable(
+          tableId: t,
+          guestCount: 2,
+          userId: null,
+          userName: 'أحمد',
+          waiterId: waiter);
+
+      final order = await (db.select(db.tableOrders)
+            ..where((o) => o.id.equals(newId)))
+          .getSingle();
+      expect(order.userId, waiter);
+    });
+
+    test('يرفض طاولةً ليست مدفوعة', () async {
+      final t = await newTable('ط٩٣');
+      await service.openTable(
+          tableId: t, guestCount: 2, userId: null, userName: 'أحمد');
+
+      await expectLater(
+        service.openNewOrderOnPaidTable(
+            tableId: t, guestCount: 2, userId: null, userName: 'أحمد'),
+        throwsA(isA<TableTransitionException>()),
+      );
+      final active = await db.getActiveOrderForTable(t);
+      expect(active, isNotNull, reason: 'الطلبُ الأصليُّ لم يُمسّ');
+    });
+  });
 }

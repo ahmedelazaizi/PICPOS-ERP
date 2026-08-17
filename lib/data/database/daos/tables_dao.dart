@@ -170,9 +170,24 @@ extension TablesDao on AppDatabase {
         .watchSingleOrNull();
   }
 
-  /// Create a new table order
+  /// Create a new table order.
+  ///
+  /// حارسٌ أخير: طلبان حيّان على طاولةٍ واحدةٍ يجعلان
+  /// [getActiveOrderForTable] — وهي `getSingleOrNull()` — ترمي `StateError`
+  /// على **كلّ** قراءةٍ لاحقةٍ للطاولة: الإغلاقُ والإلغاءُ وبطاقةُ الطاولة
+  /// ونافذةُ الطلب كلُّها تتوقّف، والطاولةُ تحمل مالاً محصَّلاً ولا تُستعاد
+  /// إلا بجراحةٍ على القاعدة. الانتقالاتُ المصونةُ تمرّ عبر
+  /// `TableSessionService`، وهذا يحمي ما بقي من مستدعين مباشرين.
   Future<int> createTableOrder(int tableId, {int? userId}) async {
     return transaction(() async {
+      final existing = await getActiveOrderForTable(tableId);
+      if (existing != null) {
+        throw StateError(
+          'لا يُفتح طلبٌ ثانٍ على الطاولة #$tableId — الطلبُ #${existing.id} '
+          'ما زال حيّاً (${existing.status})',
+        );
+      }
+
       // Mark table as occupied
       await updateTableStatus(tableId, 'occupied');
 

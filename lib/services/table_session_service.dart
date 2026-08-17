@@ -63,16 +63,19 @@ class TableSessionService {
       );
 
   /// فتحُ طاولةٍ متاحةٍ أو محجوزةٍ (حضورُ الحجز) بعدد أشخاصٍ محدَّد.
+  ///
+  /// [userId] هو **الفاعل** (الموقَّع دخولُه) وإليه يُنسَب سطرُ السجل، أما
+  /// [waiterId] فهو **النادلُ المسؤولُ عن الطلب** الذي تختاره شاشةُ الفتح.
+  /// كانا شيئاً واحداً فكان اختيارُ النادل يضيع؛ وحين لا يُمرَّر نادلٌ يقع
+  /// الطلبُ على الفاعل كما كان.
   Future<int> openTable({
     required int tableId,
     required int guestCount,
     required int? userId,
     required String userName,
+    int? waiterId,
   }) async {
-    if (guestCount < 1) {
-      throw const TableTransitionException(
-          'عددُ الأشخاص يجب أن يكون واحداً فأكثر');
-    }
+    _requireGuestCount(guestCount);
     return _db.transaction(() async {
       final table = await _table(tableId);
       if (table.status != TableStatus.available &&
@@ -81,15 +84,11 @@ class TableSessionService {
             'لا يمكن فتحُ ${table.name} — حالتُها الآن ${table.status}');
       }
 
-      final orderId = await _db.into(_db.tableOrders).insert(
-            TableOrdersCompanion.insert(
-              tableId: tableId,
-              userId: Value(userId),
-              guestCount: Value(guestCount),
-              openedAt: Value(DateTime.now()),
-            ),
-          );
-      await _db.updateTableStatus(tableId, TableStatus.occupied);
+      final orderId = await _insertOrder(
+        tableId: tableId,
+        guestCount: guestCount,
+        waiterId: waiterId ?? userId,
+      );
       await _log(
         userId: userId,
         userName: userName,
@@ -99,6 +98,95 @@ class TableSessionService {
       );
       return orderId;
     });
+  }
+
+  /// إضافةُ طلبٍ إلى طاولةٍ 🟠 — الطلبُ المسدَّدُ يُغلَق أوّلاً ثم يُفتح
+  /// طلبٌ جديدٌ عليها.
+  ///
+  /// هذا ما تعنيه المواصفةُ بـ«بعد 🟠 لا تُضاف أصناف: الإضافةُ تفتح طلباً
+  /// جديداً». وكانت الشاشةُ تنادي `createTableOrder` مباشرةً — فيبقى الطلبُ
+  /// المسدَّدُ `open` ويُضاف إليه ثانٍ، فيصير على الطاولة صفّان يطابقان
+  /// `getActiveOrderForTable`، و`getSingleOrNull()` ترمي `StateError` على
+  /// **كلّ** قراءةٍ لاحقة: لا إغلاقٌ ولا إلغاءٌ ولا حتى عرضُ البطاقة. الإغلاقُ
+  /// والفتحُ هنا في معاملةٍ واحدة، فلا لحظةَ تكون فيها الطاولةُ بطلبين.
+  Future<int> openNewOrderOnPaidTable({
+    required int tableId,
+    required int guestCount,
+    required int? userId,
+    required String userName,
+    int? waiterId,
+  }) async {
+    _requireGuestCount(guestCount);
+    return _db.transaction(() async {
+      final table = await _table(tableId);
+      if (table.status != TableStatus.paid) {
+        throw TableTransitionException(
+            'لا طلبَ مسدَّداً على ${table.name} — حالتُها الآن ${table.status}');
+      }
+      final settled = await _db.getActiveOrderForTable(tableId);
+      if (settled == null) {
+        throw TableTransitionException('لا يوجد طلبٌ على ${table.name}');
+      }
+      if (!_isFullyPaid(settled)) {
+        throw TableTransitionException(
+            'الطلبُ #${settled.id} لم يُسدَّد كاملاً — دُفع ${settled.paidAmount} '
+            'من ${settled.total}');
+      }
+
+      await (_db.update(_db.tableOrders)
+            ..where((o) => o.id.equals(settled.id)))
+          .write(TableOrdersCompanion(
+        status: const Value('closed'),
+        closedAt: Value(DateTime.now()),
+      ));
+      await _log(
+        userId: userId,
+        userName: userName,
+        action: 'table_close',
+        tableId: tableId,
+        description: 'إغلاقُ الطلب #${settled.id} على ${table.name} — فُتح '
+            'عليها طلبٌ جديد',
+        amount: settled.total,
+      );
+
+      final orderId = await _insertOrder(
+        tableId: tableId,
+        guestCount: guestCount,
+        waiterId: waiterId ?? userId,
+      );
+      await _log(
+        userId: userId,
+        userName: userName,
+        action: 'table_open',
+        tableId: tableId,
+        description: 'فتحُ طلبٍ جديدٍ على ${table.name} — $guestCount أشخاص',
+      );
+      return orderId;
+    });
+  }
+
+  static void _requireGuestCount(int guestCount) {
+    if (guestCount < 1) {
+      throw const TableTransitionException(
+          'عددُ الأشخاص يجب أن يكون واحداً فأكثر');
+    }
+  }
+
+  Future<int> _insertOrder({
+    required int tableId,
+    required int guestCount,
+    required int? waiterId,
+  }) async {
+    final orderId = await _db.into(_db.tableOrders).insert(
+          TableOrdersCompanion.insert(
+            tableId: tableId,
+            userId: Value(waiterId),
+            guestCount: Value(guestCount),
+            openedAt: Value(DateTime.now()),
+          ),
+        );
+    await _db.updateTableStatus(tableId, TableStatus.occupied);
+    return orderId;
   }
 
   /// إغلاقُ طاولةٍ سُدِّد حسابُها كاملاً — روتينٌ بلا خطر.

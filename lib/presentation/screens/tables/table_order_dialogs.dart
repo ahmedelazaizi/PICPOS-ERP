@@ -60,6 +60,10 @@ mixin _TableOrderDialogsMixin on ConsumerState<TablesScreen> {
     );
     int? selectedEmployeeId =
         employeesList.isNotEmpty ? employeesList.first.id : null;
+    // عددُ الأشخاص عمودٌ على الطلب منذ v154، وهو مقامُ «التقسيم بالتساوي».
+    // كان لا يُسأل عنه فيبقى ١ دائماً، فتفتح شاشةُ التقسيم على خطأ «التقسيم
+    // يحتاج دافعَين على الأقل». المبدئيُّ سعةُ الطاولة كما في نافذة الحجز.
+    int guestCount = table.capacity > 0 ? table.capacity : 1;
     if (!mounted) return;
 
     final confirmed = await showDialog<bool>(
@@ -83,8 +87,44 @@ mixin _TableOrderDialogsMixin on ConsumerState<TablesScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('هل تريد فتح طلب جديد لهذه الطاولة؟'),
-                  const SizedBox(height: 16),
+                  Text(table.status == TableStatus.paid
+                      ? 'حسابُ هذه الطاولة سُدِّد. سيُغلَق طلبُها المدفوع '
+                          'ويُفتح طلبٌ جديدٌ بفاتورةٍ ثانية.'
+                      : 'هل تريد فتح طلب جديد لهذه الطاولة؟'),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      const Text('عدد الأشخاص: '),
+                      IconButton(
+                        onPressed: guestCount > 1
+                            ? () => setState(() => guestCount--)
+                            : null,
+                        icon: const Icon(PhosphorIconsBold.minus),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '$guestCount',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => setState(() => guestCount++),
+                        icon: const Icon(PhosphorIconsBold.plus),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
                   if (employeesList.isNotEmpty)
                     Autocomplete<Employee>(
                       optionsBuilder: (textValue) {
@@ -189,22 +229,31 @@ mixin _TableOrderDialogsMixin on ConsumerState<TablesScreen> {
       if (_openingTable) return;
       setState(() => _openingTable = true);
       try {
-        await restaurantRepo.createTableOrder(
-          table.id,
-          userId: selectedEmployeeId,
-        );
-        try {
-          final user = ref.read(authProvider).user;
-          final activityLogRepo = ref.read(activityLogRepositoryProvider);
-          await activityLogRepo.logActivity(
+        // الفتحُ يمرّ بـ`TableSessionService` لا بالمستودع مباشرةً: هي التي
+        // ترفض حالةً لا تُفتح، وتثبّت عددَ الأشخاص، وتكتب سطرَ السجل بنفسها
+        // (فلا `logActivity` يدويٌّ بعدها). وعلى الطاولة 🟠 تُغلق الطلبَ
+        // المسدَّدَ أوّلاً في المعاملة نفسِها — وإلا صار على الطاولة طلبان
+        // حيّان و`getActiveOrderForTable` ترمي على كلّ قراءةٍ بعدها.
+        final user = ref.read(authProvider).user;
+        final session = ref.read(tableSessionServiceProvider);
+        final userName = user?.displayName ?? 'مجهول';
+        if (table.status == TableStatus.paid) {
+          await session.openNewOrderOnPaidTable(
+            tableId: table.id,
+            guestCount: guestCount,
             userId: user?.id,
-            userName: user?.displayName ?? 'مجهول',
-            action: 'open_table',
-            entityType: 'table',
-            entityId: table.id,
-            description: 'فتح طاولة: ${table.name}',
+            userName: userName,
+            waiterId: selectedEmployeeId,
           );
-        } catch (_) {}
+        } else {
+          await session.openTable(
+            tableId: table.id,
+            guestCount: guestCount,
+            userId: user?.id,
+            userName: userName,
+            waiterId: selectedEmployeeId,
+          );
+        }
 
         if (mounted) {
           Navigator.push(
@@ -215,6 +264,14 @@ mixin _TableOrderDialogsMixin on ConsumerState<TablesScreen> {
                 tableName: table.name,
               ),
             ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          AppToast.show(
+            context,
+            'تعذّر فتحُ ${table.name}: $e',
+            type: ToastType.error,
           );
         }
       } finally {
