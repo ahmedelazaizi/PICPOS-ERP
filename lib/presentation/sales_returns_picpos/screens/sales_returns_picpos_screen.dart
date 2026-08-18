@@ -18,7 +18,7 @@ import '../../widgets/permission_guard.dart'; // B5: Manager approval
 import '../../../core/permissions/permission_codes.dart';
 import '../../widgets/common/common.dart';
 
-import '../../shared_widgets/open_shift_for_refund_prompt.dart';
+import '../../shared_widgets/open_shift_prompt.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../picpos_shell/picpos_content_card.dart';
 

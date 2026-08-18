@@ -30,6 +30,7 @@ import 'package:ural_erp/data/repositories/sales_transaction_orchestrator.dart';
 import 'package:ural_erp/domain/entities/cart_item_entity.dart';
 import 'package:ural_erp/domain/entities/product_entity.dart';
 import 'package:ural_erp/domain/repositories/kitchen_repository.dart';
+import 'package:ural_erp/domain/repositories/sales_repository.dart';
 import 'package:ural_erp/domain/repositories/printers_repository.dart';
 import 'package:ural_erp/services/kitchen_service.dart';
 import 'package:ural_erp/domain/repositories/audit_repository_interface.dart';
@@ -440,16 +441,127 @@ void main() {
       expect(await cashSafeBalance(1), closeTo(before - 100, 0.001));
     });
 
-    test('البيعُ الاعتياديُّ بلا ورديّة لا يُمَسّ — الحارسُ للمرتجع وحدَه',
-        () async {
-      // توسيعُه للبيع قرارٌ آخرُ لم يُتَّخذ: يمنع المديرَ من البيع، وله
-      // عطبُه الموثَّق المستقلّ (picpos_unshifted_sale_variance_test).
+    test('بيعةٌ نقديّةٌ بلا ورديّة ⇒ تُرفَض ولا يدخل الدرجَ شيء', () async {
+      // نظيرُ فجوةِ المرتجع بالإشارة المعاكسة: نقدٌ يدخل بلا نافذةٍ تحويه ⇒
+      // الكاشيرُ التالي يعدّ درجَه **زائداً** ⇒ يُقيَّد «فائض نقدية» مدين
+      // نقدية / دائن إيراد، والمبلغُ نفسُه قُيِّد بقيد البيعة. فالنقديةُ في
+      // الأستاذ مرّتين وإيرادٌ لا وجودَ له.
       final before = await cashSafeBalance(1);
+
+      await expectLater(
+        orchestrator.createSalesInvoice(
+          customerId: null,
+          warehouseId: warehouseId,
+          userId: userId,
+          subtotal: 100,
+          discount: 0,
+          tax: 0,
+          total: 100,
+          paid: 100,
+          paymentMethod: 'cash',
+          items: [
+            CartItemEntity(
+              productId: productId,
+              productName: 'منتج',
+              productCode: 'RET-01',
+              quantity: 1,
+              unitPrice: 100,
+            ),
+          ],
+        ),
+        throwsA(isA<ShiftRequiredException>()),
+      );
+
+      expect(await cashSafeBalance(1), before);
+    });
+
+    test('بيعةٌ بنكيّةٌ بلا ورديّة ⇒ تمضي، فلا درجَ يُمَسّ', () async {
+      await db.into(db.safes).insert(
+            SafesCompanion.insert(
+              name: 'بنك البيع',
+              safeType: const Value('bank'),
+              isDefault: const Value(true),
+              globalId: const Value('gid-safe-bank-sale'),
+            ),
+          );
+      final drawerBefore = await cashSafeBalance(1);
 
       await orchestrator.createSalesInvoice(
         customerId: null,
         warehouseId: warehouseId,
         userId: userId,
+        subtotal: 100,
+        discount: 0,
+        tax: 0,
+        total: 100,
+        paid: 100,
+        paymentMethod: 'bank',
+        items: [
+          CartItemEntity(
+            productId: productId,
+            productName: 'منتج',
+            productCode: 'RET-01',
+            quantity: 1,
+            unitPrice: 100,
+          ),
+        ],
+      );
+
+      expect(await cashSafeBalance(1), drawerBefore,
+          reason: 'الخزنةُ البنكيّةُ ليست درجاً — لا ورديّةَ تُشترط ولا درجَ يتغيّر');
+    });
+
+    test('المسارُ الحقيقيُّ لنقطة البيع (`completeSalesTransaction`) محروسٌ كذلك',
+        () async {
+      // ⚠️ الحارسُ في `createSalesInvoice` وحدَه **لا يكفي**: نقطةُ البيع
+      // تنادي `completeSalesTransaction`، وشقُّ وضعِ العميل فيها يكتب
+      // فاتورتَه بـ`insertSalesInvoiceWithoutStock` ولا يمرّ بـ
+      // `createSalesInvoice` إطلاقاً. فالحارسُ وُضع قبل تفرّعِ `isClientMode`.
+      final before = await cashSafeBalance(1);
+
+      // يرمي ولا يُرجِع `SaleResult.failure`: الفشلُ النصّيُّ يُضيّع النوعَ
+      // فلا تعرف الواجهةُ أن تعرض «افتح ورديّة» بدل رسالةٍ حمراءَ لا مخرجَ
+      // منها — نفسُ درسِ المزوّد في مسار المرتجع.
+      await expectLater(
+        orchestrator.completeSalesTransaction(
+          SaleRequest(
+            items: [
+              CartItemEntity(
+                productId: productId,
+                productName: 'منتج',
+                productCode: 'RET-01',
+                quantity: 1,
+                unitPrice: 100,
+              ),
+            ],
+            paymentMethod: 'cash',
+            paidAmount: 100,
+            warehouseId: warehouseId,
+            userId: userId,
+          ),
+        ),
+        throwsA(isA<ShiftRequiredException>()),
+      );
+
+      expect(await cashSafeBalance(1), before, reason: 'ولا قرشَ دخل الدرج');
+    });
+
+    test('بيعةُ مديرٍ وورديّةُ الكاشير مفتوحة ⇒ تمضي بلا سؤال', () async {
+      // لا يُحجَب المديرُ عن البيع: الدرجُ له ورديّةٌ وإن لم تكن باسمه، وهي
+      // الحالةُ التي عالجها فصلُ `txs` عن `drawerTxs` أصلاً.
+      final managerId = await db.createUser(
+        username: 'mgr_sale',
+        password: 'test123',
+        displayName: 'مدير',
+        roleId: (await db.select(db.roles).get()).first.id,
+      );
+      await db.openShift(userId, 0); // ورديّةُ الكاشير وحدَها
+      final before = await cashSafeBalance(1);
+
+      await orchestrator.createSalesInvoice(
+        customerId: null,
+        warehouseId: warehouseId,
+        userId: managerId,
         subtotal: 100,
         discount: 0,
         tax: 0,
@@ -467,8 +579,7 @@ void main() {
         ],
       );
 
-      expect(await cashSafeBalance(1), closeTo(before + 100, 0.001),
-          reason: 'البيعةُ مضت بلا ورديّة كما كانت');
+      expect(await cashSafeBalance(1), closeTo(before + 100, 0.001));
     });
 
     test('مرتجعٌ نقديٌّ بهذا المسار يخصم من الخزنة فعلاً', () async {

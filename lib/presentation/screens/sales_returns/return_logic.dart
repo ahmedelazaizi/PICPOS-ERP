@@ -143,16 +143,16 @@ mixin _ReturnLogicMixin on ConsumerState<SalesReturnsScreen> {
       // ح‑١ (مواصفة 2026-08-18): مرتجعٌ يصرف نقداً بلا ورديّةٍ مفتوحة يُرفَض
       // كاملاً. المساعدُ يترجم الرفضَ إلى عرضِ فتحِ ورديّةٍ ثمّ يعيد المحاولةَ
       // مرّةً — والتوأمُ في `sales_returns_picpos_logic` يستدعي نفسَه.
-      final outcome = await runRefundWithShiftPrompt(
+      final outcome = await runWithOpenShiftPrompt(
         context: context,
         ref: ref,
         attempt: () async => success = await notifier.processReturn(reason),
       );
-      if (outcome != RefundShiftOutcome.completed) {
+      if (outcome != ShiftPromptOutcome.completed) {
         if (mounted) {
           AppToast.show(
             context,
-            outcome == RefundShiftOutcome.cancelledByUser
+            outcome == ShiftPromptOutcome.cancelledByUser
                 ? 'أُلغي المرتجع — لم تُفتَح وردية'
                 : 'تعذّر فتح الوردية، فلم يُنفَّذ المرتجع',
             type: ToastType.warning,

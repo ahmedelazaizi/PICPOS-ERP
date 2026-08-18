@@ -119,19 +119,19 @@ class SalesReturnRefundSplit {
   /// هل يستلزم هذا المرتجعُ فتحَ درج؟ (‏ح‑١ في المواصفة)
   bool get requiresOpenShift => cashRefund > 0;
 
-  /// كم نقداً يخرج من الدرج في مرتجعٍ يُنشَأ كـ**فاتورةٍ سالبة**
-  /// (`createSalesInvoice(saleType:'return')`) — مسارُ «المرتجع السريع» في
-  /// نقطة البيع، ومسارُ الخادم لمرتجعِ العميل.
+  /// كم نقداً **يمسّ الدرج** في فاتورةٍ تمرّ بـ`createSalesInvoice` — بيعةً
+  /// كانت (نقدٌ يدخل) أو مرتجعاً سريعاً (نقدٌ يخرج). القيمةُ مطلقةٌ في
+  /// الحالتين: السؤالُ «هل يتحرّك الدرج؟» لا «في أيّ اتجاه».
   ///
-  /// هذا المسارُ لا يقاصّ ذمّةً هنا (الـDAO يعالج `remaining` على حدة)، فلا
-  /// يصلح له [SalesReturnRefundSplit.from]. الحسابُ يحاكي ما سيفعله
+  /// هذا المسارُ لا يقاصّ ذمّةً في موضعه (الـDAO يعالج `remaining` على حدة)،
+  /// فلا يصلح له [SalesReturnRefundSplit.from]. الحسابُ يحاكي ما سيفعله
   /// `_recordSalesReceipt` بالضبط:
   ///   * مختلطٌ (`multiple`/`mixed`) بمبلغَين صريحَين ⇒ الشقُّ النقديُّ وحدَه.
   ///   * وإلا ⇒ `paid` كلُّه، ما لم تكن الطريقةُ بنكيّةً أو `click`.
   ///
   /// ⚠️ متى تغيّر توزيعُ `_recordSalesReceipt` فغيّر هذا معه: حارسٌ يقول «لا
-  /// نقدَ هنا» ومسارٌ يُخرِج نقداً هو العطبُ الذي بُني الحارسُ لمنعه.
-  static double cashOutForNegativeInvoice({
+  /// نقدَ هنا» ومسارٌ يحرّك الدرجَ هو العطبُ الذي بُني الحارسُ لمنعه.
+  static double cashTouchingDrawer({
     required double paid,
     required String paymentMethod,
     double? cashAmount,

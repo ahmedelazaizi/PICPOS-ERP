@@ -1,6 +1,7 @@
 import 'dart:async' show unawaited;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/errors/app_exceptions.dart';
 import '../../../domain/usecases/sales/calculate_invoice_totals_usecase.dart';
 import '../../../domain/repositories/sales_repository.dart';
 import '../../../data/providers/providers.dart';
@@ -281,6 +282,12 @@ class CheckoutController extends Notifier<CheckoutState> {
         );
         return false;
       }
+    } on ShiftRequiredException {
+      // ليس عطلاً بل طلبَ إجراء (مواصفة 2026-08-18 ح‑١): بيعةٌ نقديّةٌ بلا
+      // ورديّةٍ على الدرج. الشاشةُ تعرض فتحَ ورديّةٍ وتعيد المحاولة، فابتلاعُه
+      // في `error` نصّاً يحوّله إلى «حدث خطأ غير متوقع» لا مخرجَ منه.
+      state = state.copyWith(isProcessing: false);
+      rethrow;
     } catch (e) {
       state = state.copyWith(
         isProcessing: false,

@@ -49,6 +49,7 @@ import '../widgets/picpos_pos_shortcuts.dart';
 import '../widgets/picpos_pos_text.dart';
 import '../widgets/picpos_switch_user_dialog.dart';
 import '../widgets/picpos_top_bar.dart';
+import '../../shared_widgets/open_shift_prompt.dart';
 
 part 'picpos_pos_operations.dart';
 

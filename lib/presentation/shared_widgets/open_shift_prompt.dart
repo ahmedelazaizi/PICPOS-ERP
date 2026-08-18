@@ -26,7 +26,7 @@ import '../../data/providers/branch_scope_provider.dart';
 import '../pos/widgets/pos_opening_balance_dialog.dart';
 
 /// نتيجةُ محاولةِ المرتجع بعد معالجةِ «لا ورديّة».
-enum RefundShiftOutcome {
+enum ShiftPromptOutcome {
   /// مضى المرتجعُ (إمّا من أوّل محاولةٍ أو بعد فتحِ ورديّة).
   completed,
 
@@ -46,20 +46,22 @@ enum RefundShiftOutcome {
 ///
 /// [attempt] يجب أن يكون **ذرّيّاً**: الحارسُ في المستودع يرمي قبل فتحِ
 /// المعاملة، فلا أثرَ جزئيّاً يبقى قبل إعادة المحاولة.
-Future<RefundShiftOutcome> runRefundWithShiftPrompt({
+Future<ShiftPromptOutcome> runWithOpenShiftPrompt({
   required BuildContext context,
   required WidgetRef ref,
   required Future<void> Function() attempt,
+  /// نصٌّ يشرح للكاشير لماذا يُسأل الآن — يختلف بين بيعةٍ ومرتجع.
+  String Function(double cashAmount)? subtitleBuilder,
 }) async {
   try {
     await attempt();
-    return RefundShiftOutcome.completed;
+    return ShiftPromptOutcome.completed;
   } on ShiftRequiredException catch (e) {
-    if (!context.mounted) return RefundShiftOutcome.cancelledByUser;
+    if (!context.mounted) return ShiftPromptOutcome.cancelledByUser;
 
     final authState = ref.read(authProvider);
     final userId = authState.user?.id;
-    if (userId == null) return RefundShiftOutcome.shiftOpenFailed;
+    if (userId == null) return ShiftPromptOutcome.shiftOpenFailed;
 
     final opening = await showDialog<double>(
       context: context,
@@ -67,13 +69,13 @@ Future<RefundShiftOutcome> runRefundWithShiftPrompt({
       builder: (_) => PosOpeningBalanceDialog(
         userName: authState.user?.displayName ?? 'كاشير',
         // المبلغُ يُعرَض ليعرف الكاشيرُ لماذا يُسأل الآن تحديداً.
-        subtitle: 'المرتجع يستلزم صرف '
-            '${e.cashAmount.toStringAsFixed(2)} نقداً من الدرج.',
+        subtitle: subtitleBuilder?.call(e.cashAmount) ??
+            'العملية تحرّك ${e.cashAmount.toStringAsFixed(2)} نقداً في الدرج.',
       ),
     );
 
     // الإلغاء = لا مرتجع. ولا شيءَ يحتاج تراجعاً: الحارسُ رمى قبل أن يُكتَب حرف.
-    if (opening == null) return RefundShiftOutcome.cancelledByUser;
+    if (opening == null) return ShiftPromptOutcome.cancelledByUser;
 
     try {
       final treasuryRepo = ref.read(treasuryRepositoryProvider);
@@ -100,7 +102,7 @@ Future<RefundShiftOutcome> runRefundWithShiftPrompt({
         );
       } catch (_) {}
     } catch (_) {
-      return RefundShiftOutcome.shiftOpenFailed;
+      return ShiftPromptOutcome.shiftOpenFailed;
     }
 
     // المحاولةُ الثانيةُ والأخيرة. ورفضٌ ثانٍ لا يُرمى للشاشة: الشاشتان
@@ -109,9 +111,9 @@ Future<RefundShiftOutcome> runRefundWithShiftPrompt({
     // (سباقٌ، أو فتحٌ أخفق صامتاً) فيُعامَل معاملةَ «تعذّر الفتح».
     try {
       await attempt();
-      return RefundShiftOutcome.completed;
+      return ShiftPromptOutcome.completed;
     } on ShiftRequiredException {
-      return RefundShiftOutcome.shiftOpenFailed;
+      return ShiftPromptOutcome.shiftOpenFailed;
     }
   }
 }
