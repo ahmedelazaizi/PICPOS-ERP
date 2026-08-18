@@ -711,7 +711,7 @@ class AppDatabase extends _$AppDatabase {
   /// الكذبةُ نفسُها بصورةٍ تمرّ من تحت قيدِ ١٥٦. والحدُّ الآن واحدٌ عند
   /// الأبواب الثلاثة: مدخلُ الإعدادات، و`setOrderTax`، وهذا القيد.
   @override
-  int get schemaVersion => 157;
+  int get schemaVersion => 158;
 
   /// PostgreSQL-specific table creation: Drift's `currentDateAndTime` generates
   /// `strftime('%s','now')` which doesn't exist in PostgreSQL.

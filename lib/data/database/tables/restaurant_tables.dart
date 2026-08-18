@@ -210,8 +210,34 @@ class TableReservations extends Table {
 class TableOrderPayments extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get tableOrderId => integer().references(TableOrders, #id)();
-  IntColumn get invoiceId => integer().references(SalesInvoices, #id)();
+
+  /// رقمُ الفاتورة — **معدومٌ ما دام الصفُّ حجزاً** (v158).
+  ///
+  /// الحجزُ يُدرَج قبل الترحيل، فلا فاتورةَ له بعد. وهو ما يجعل كلَّ الحراس
+  /// تعمل قبل أن يُرحَّل شيء: إن رفضت، لم تصدر فاتورةٌ تحتاج تسوية.
+  IntColumn get invoiceId =>
+      integer().nullable().references(SalesInvoices, #id)();
   RealColumn get amount => real()();
   TextColumn get splitLabel => text().nullable()(); // «ضيف ١»
   DateTimeColumn get paidAt => dateTime().withDefault(currentDateAndTime)();
+
+  /// `pending` = محجوزٌ ينتظر رقمَ فاتورة · `settled` = مثبَّت.
+  ///
+  /// الافتراضُ `settled` مقصود: صفوفُ ما قبل v158 كلُّها لها فواتير، فتخرج
+  /// من الترقية صحيحةً بلا تحويل.
+  TextColumn get status =>
+      text().withDefault(const Constant('settled'))();
+
+  /// نصفُ الحالة مستحيلُ التمثيل — بفلسفة قيد v156 على `TableOrders`.
+  ///
+  /// «مثبَّتٌ بلا فاتورة» يعني مالاً سُجِّل بلا سندٍ يربطه بالدفاتر، و«محجوزٌ
+  /// ومعه فاتورة» يعني حجزاً فات أوانُه ولم يُقفل. كلاهما يكذب، فلا يُمثَّل.
+  ///
+  /// و`IS NULL` لا مقارنةَ مساواة — الصيغةُ مفهومةٌ في اللهجتين بلا معامِلٍ
+  /// مُصطنَع، للسبب المشروح في [TableOrders.customConstraints].
+  @override
+  List<String> get customConstraints => [
+        "CHECK ((status = 'pending' AND invoice_id IS NULL) "
+            "OR (status = 'settled' AND invoice_id IS NOT NULL))",
+      ];
 }

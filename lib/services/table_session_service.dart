@@ -738,61 +738,224 @@ class TableSessionService {
     int? userId,
     String? userName,
   }) async {
+    // مُعادُ البناءِ فوق `reservePayment` + `confirmPayment` في معاملةٍ واحدة.
+    // سلوكُه لمن يملك فاتورةً بالفعل لم يتغيّر، وحسابُ المال بقي في مسارٍ
+    // واحدٍ لا نسختين تفترقان.
+    await _db.transaction(() async {
+      final reservationId = await _reserve(
+        orderId: orderId,
+        amount: amount,
+        splitLabel: splitLabel,
+        userId: userId,
+        userName: userName,
+        action: 'table_payment',
+        description: splitLabel != null
+            ? 'دفعةُ $splitLabel — فاتورة #$invoiceId'
+            : 'دفعةٌ — فاتورة #$invoiceId',
+      );
+      await _confirm(reservationId: reservationId, invoiceId: invoiceId);
+    });
+  }
+
+  /// يحجز المبلغَ على الطلب **قبل** أن تُرحَّل فاتورتُه.
+  ///
+  /// هنا تعمل كلُّ الحراس التي كانت تعمل بعد الترحيل: المبلغُ موجب، والطلبُ
+  /// في حالةٍ تقبل الدفع، والمجموعُ لا يتجاوز المستحقّ — **ولا شيءَ رُحِّل
+  /// بعد**. فإن رمى حارسٌ، لا فاتورةَ يتيمةَ تحتاج تسويةً يدويّة.
+  ///
+  /// ويرفع `paidAmount` فوراً ولا يُضاف عمودُ «محجوز»: حقلُ مالٍ واحدٌ ومصدرُ
+  /// حقٍّ واحد. و`paidAmount` حقلٌ تشغيليٌّ لخدمة الطاولات لا حسابٌ في
+  /// الأستاذ — الدفاترُ لا تتحرّك إلّا بترحيل الفاتورة، فأجزاءُ الثانية التي
+  /// يكون فيها «مدفوعٌ بلا فاتورة» لا تمسّ قيداً واحداً.
+  ///
+  /// يعيد رقمَ الحجز — يُمرَّر إلى [confirmPayment] أو [releaseReservation].
+  Future<int> reservePayment({
+    required int orderId,
+    required double amount,
+    String? splitLabel,
+    int? userId,
+    String? userName,
+  }) =>
+      _db.transaction(() => _reserve(
+            orderId: orderId,
+            amount: amount,
+            splitLabel: splitLabel,
+            userId: userId,
+            userName: userName,
+            action: 'table_payment_reserved',
+            description: splitLabel != null
+                ? 'حجزُ دفعةِ $splitLabel — بانتظار الفاتورة'
+                : 'حجزُ دفعةٍ — بانتظار الفاتورة',
+          ));
+
+  Future<int> _reserve({
+    required int orderId,
+    required double amount,
+    required String? splitLabel,
+    required int? userId,
+    required String? userName,
+    required String action,
+    required String description,
+  }) async {
     if (amount <= 0) {
       throw const TableTransitionException('الدفعةُ يجب أن تكون موجبة');
     }
+
+    final order = await _order(orderId);
+
+    if (order.status != 'open' && order.status != 'bill_requested') {
+      throw TableTransitionException(
+          'لا تُسجَّل دفعةٌ على طلبٍ حالتُه ${order.status}');
+    }
+
+    // حجزٌ معلّقٌ آخرُ يعني ترحيلاً جارياً أو انهياراً تركه — وحجزٌ ثانٍ فوقه
+    // يُراكم مالاً لا سندَ له. يُحرَّر الأوّلُ أو يُثبَّت قبل أن يُفتَح ثانٍ.
+    final pending = await (_db.select(_db.tableOrderPayments)
+          ..where((p) =>
+              p.tableOrderId.equals(orderId) & p.status.equals('pending'))
+          ..limit(1))
+        .getSingleOrNull();
+    if (pending != null) {
+      throw TableTransitionException(
+          'على هذا الطلب حجزٌ معلّقٌ (#${pending.id} بمبلغ ${pending.amount}) — '
+          'ثبّته أو حرّره قبل حجزٍ جديد');
+    }
+
+    final due = _units((await _totalsOf(order)).total);
+    final already = _units(order.paidAmount);
+    if (already + _units(amount) > due) {
+      throw TableTransitionException(
+          'الدفعةُ $amount تتجاوز المتبقّي ${(due - already) / _factor}');
+    }
+
+    final reservationId = await _db.into(_db.tableOrderPayments).insert(
+          TableOrderPaymentsCompanion.insert(
+            tableOrderId: orderId,
+            amount: amount,
+            splitLabel: Value(splitLabel),
+            paidAt: Value(DateTime.now()),
+            status: const Value('pending'),
+          ),
+        );
+
+    final newPaid = (already + _units(amount)) / _factor;
+    await (_db.update(_db.tableOrders)..where((o) => o.id.equals(orderId)))
+        .write(TableOrdersCompanion(paidAmount: Value(newPaid)));
+
+    if (already + _units(amount) >= due) {
+      await _db.updateTableStatus(order.tableId, TableStatus.paid);
+    }
+
+    await _log(
+      userId: userId,
+      userName: userName ?? 'مجهول',
+      action: action,
+      tableId: order.tableId,
+      description: description,
+      amount: amount,
+    );
+
+    return reservationId;
+  }
+
+  /// يكتب رقمَ الفاتورة على حجزٍ قائمٍ فيصير مثبَّتاً.
+  ///
+  /// **لا حسابَ مالٍ فيها**: المبلغُ سُجِّل عند الحجز و`paidAmount` رُفع
+  /// هناك. فلا قاعدةَ عملٍ تردّ هذه الخطوة — وهذا هو بيتُ القصيد: ما يقع
+  /// بعد الترحيل لا يمكن أن يُرفض، فلا تتباعد الدفاترُ عن الطاولة.
+  Future<void> confirmPayment({
+    required int reservationId,
+    required int invoiceId,
+  }) =>
+      _db.transaction(
+          () => _confirm(reservationId: reservationId, invoiceId: invoiceId));
+
+  Future<void> _confirm({
+    required int reservationId,
+    required int invoiceId,
+  }) async {
+    final updated = await (_db.update(_db.tableOrderPayments)
+          ..where((p) => p.id.equals(reservationId) & p.status.equals('pending')))
+        .write(TableOrderPaymentsCompanion(
+      invoiceId: Value(invoiceId),
+      status: const Value('settled'),
+    ));
+
+    if (updated == 0) {
+      throw TableTransitionException(
+          'لا حجزَ معلّقٌ بالرقم #$reservationId ليُثبَّت');
+    }
+  }
+
+  /// يُلغي حجزاً لم تصدر فاتورتُه ويردّ ما ترتّب عليه.
+  ///
+  /// يُنادى حين يفشل الترحيلُ أو يتراجع الكاشير. ولا يُنادى آلياً على حجزٍ
+  /// عالقٍ من انهيار: قد تكون فاتورتُه رُحّلت فعلاً وفشل تثبيتُها وحدَه،
+  /// فتحريرُه حينئذٍ يمحو دفعةً حقيقيّة. يبقى ظاهراً ليحسمه إنسان.
+  Future<void> releaseReservation({
+    required int reservationId,
+    required String reason,
+    int? userId,
+    String? userName,
+  }) async {
     await _db.transaction(() async {
-      final order = await (_db.select(_db.tableOrders)
-            ..where((o) => o.id.equals(orderId)))
-          .getSingle();
-
-      if (order.status != 'open' && order.status != 'bill_requested') {
+      final row = await (_db.select(_db.tableOrderPayments)
+            ..where((p) =>
+                p.id.equals(reservationId) & p.status.equals('pending')))
+          .getSingleOrNull();
+      if (row == null) {
         throw TableTransitionException(
-            'لا تُسجَّل دفعةٌ على طلبٍ حالتُه ${order.status}');
+            'لا حجزَ معلّقٌ بالرقم #$reservationId ليُحرَّر');
       }
 
+      final order = await _order(row.tableOrderId);
+
+      await (_db.delete(_db.tableOrderPayments)
+            ..where((p) => p.id.equals(reservationId)))
+          .go();
+
+      final restored = _units(order.paidAmount) - _units(row.amount);
+      await (_db.update(_db.tableOrders)
+            ..where((o) => o.id.equals(row.tableOrderId)))
+          .write(TableOrdersCompanion(
+              paidAmount: Value(restored < 0 ? 0 : restored / _factor)));
+
+      // الحالةُ تُشتقّ من جديدٍ لا تُفترَض: الطاولةُ قد تكون قُلبت «مدفوعة»
+      // عند الحجز، وردُّ المبلغِ يُعيدها مشغولةً ما لم تبلغها دفعاتٌ أخرى.
       final due = _units((await _totalsOf(order)).total);
-      final already = _units(order.paidAmount);
-      if (already + _units(amount) > due) {
-        throw TableTransitionException(
-            'الدفعةُ $amount تتجاوز المتبقّي ${(due - already) / _factor}');
-      }
-
-      await _db.into(_db.tableOrderPayments).insert(
-            TableOrderPaymentsCompanion.insert(
-              tableOrderId: orderId,
-              invoiceId: invoiceId,
-              amount: amount,
-              splitLabel: Value(splitLabel),
-              paidAt: Value(DateTime.now()),
-            ),
-          );
-
-      final newPaid = (already + _units(amount)) / _factor;
-      await (_db.update(_db.tableOrders)..where((o) => o.id.equals(orderId)))
-          .write(TableOrdersCompanion(paidAmount: Value(newPaid)));
-
-      if (already + _units(amount) >= due) {
-        await _db.updateTableStatus(order.tableId, TableStatus.paid);
+      if (restored < due) {
+        await _db.updateTableStatus(order.tableId, TableStatus.occupied);
       }
 
       await _log(
         userId: userId,
         userName: userName ?? 'مجهول',
-        action: 'table_payment',
+        action: 'table_payment_released',
         tableId: order.tableId,
-        description: splitLabel != null
-            ? 'دفعةُ $splitLabel — فاتورة #$invoiceId'
-            : 'دفعةٌ — فاتورة #$invoiceId',
-        amount: amount,
+        description: 'تحريرُ حجزٍ #$reservationId — $reason',
+        amount: row.amount,
       );
     });
   }
 
+  /// الحجوزُ المعلّقةُ على طلب — تُعرَض في سجلِّ الطاولة ليحسمها إنسان.
+  Future<List<TableOrderPayment>> pendingReservations(int orderId) =>
+      (_db.select(_db.tableOrderPayments)
+            ..where((p) =>
+                p.tableOrderId.equals(orderId) & p.status.equals('pending'))
+            ..orderBy([(p) => OrderingTerm.asc(p.id)]))
+          .get();
+
   /// دفعاتُ الطلب مرتّبةً بترتيب حدوثها.
+  /// دفعاتُ الطلب **المثبَّتةُ** وحدَها، مرتّبةً بترتيب حدوثها.
+  ///
+  /// الترشيحُ بـ`settled` شرطُ صحّةٍ محاسبيٌّ لا تحسين: الصفُّ المحجوزُ لا
+  /// فاتورةَ له بعد، فاحتسابُه هنا يربط مالاً بسندٍ لم يصدر. والحجوزُ
+  /// المعلّقةُ تُقرأ من [pendingReservations] حيث يُقصَد أن تُرى.
   Future<List<TableOrderPayment>> paymentsFor(int orderId) =>
       (_db.select(_db.tableOrderPayments)
-            ..where((p) => p.tableOrderId.equals(orderId))
+            ..where((p) =>
+                p.tableOrderId.equals(orderId) & p.status.equals('settled'))
             ..orderBy([(p) => OrderingTerm.asc(p.id)]))
           .get();
 }

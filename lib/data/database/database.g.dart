@@ -28335,9 +28335,9 @@ class $TableOrderPaymentsTable extends TableOrderPayments
   late final GeneratedColumn<int> invoiceId = GeneratedColumn<int>(
     'invoice_id',
     aliasedName,
-    false,
+    true,
     type: DriftSqlType.int,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
       'REFERENCES sales_invoices (id)',
     ),
@@ -28372,6 +28372,16 @@ class $TableOrderPaymentsTable extends TableOrderPayments
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('settled'),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -28380,6 +28390,7 @@ class $TableOrderPaymentsTable extends TableOrderPayments
     amount,
     splitLabel,
     paidAt,
+    status,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -28412,8 +28423,6 @@ class $TableOrderPaymentsTable extends TableOrderPayments
         _invoiceIdMeta,
         invoiceId.isAcceptableOrUnknown(data['invoice_id']!, _invoiceIdMeta),
       );
-    } else if (isInserting) {
-      context.missing(_invoiceIdMeta);
     }
     if (data.containsKey('amount')) {
       context.handle(
@@ -28433,6 +28442,12 @@ class $TableOrderPaymentsTable extends TableOrderPayments
       context.handle(
         _paidAtMeta,
         paidAt.isAcceptableOrUnknown(data['paid_at']!, _paidAtMeta),
+      );
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
       );
     }
     return context;
@@ -28455,7 +28470,7 @@ class $TableOrderPaymentsTable extends TableOrderPayments
       invoiceId: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}invoice_id'],
-      )!,
+      ),
       amount: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}amount'],
@@ -28467,6 +28482,10 @@ class $TableOrderPaymentsTable extends TableOrderPayments
       paidAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}paid_at'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
       )!,
     );
   }
@@ -28481,29 +28500,44 @@ class TableOrderPayment extends DataClass
     implements Insertable<TableOrderPayment> {
   final int id;
   final int tableOrderId;
-  final int invoiceId;
+
+  /// رقمُ الفاتورة — **معدومٌ ما دام الصفُّ حجزاً** (v158).
+  ///
+  /// الحجزُ يُدرَج قبل الترحيل، فلا فاتورةَ له بعد. وهو ما يجعل كلَّ الحراس
+  /// تعمل قبل أن يُرحَّل شيء: إن رفضت، لم تصدر فاتورةٌ تحتاج تسوية.
+  final int? invoiceId;
   final double amount;
   final String? splitLabel;
   final DateTime paidAt;
+
+  /// `pending` = محجوزٌ ينتظر رقمَ فاتورة · `settled` = مثبَّت.
+  ///
+  /// الافتراضُ `settled` مقصود: صفوفُ ما قبل v158 كلُّها لها فواتير، فتخرج
+  /// من الترقية صحيحةً بلا تحويل.
+  final String status;
   const TableOrderPayment({
     required this.id,
     required this.tableOrderId,
-    required this.invoiceId,
+    this.invoiceId,
     required this.amount,
     this.splitLabel,
     required this.paidAt,
+    required this.status,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
     map['table_order_id'] = Variable<int>(tableOrderId);
-    map['invoice_id'] = Variable<int>(invoiceId);
+    if (!nullToAbsent || invoiceId != null) {
+      map['invoice_id'] = Variable<int>(invoiceId);
+    }
     map['amount'] = Variable<double>(amount);
     if (!nullToAbsent || splitLabel != null) {
       map['split_label'] = Variable<String>(splitLabel);
     }
     map['paid_at'] = Variable<DateTime>(paidAt);
+    map['status'] = Variable<String>(status);
     return map;
   }
 
@@ -28511,12 +28545,15 @@ class TableOrderPayment extends DataClass
     return TableOrderPaymentsCompanion(
       id: Value(id),
       tableOrderId: Value(tableOrderId),
-      invoiceId: Value(invoiceId),
+      invoiceId: invoiceId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(invoiceId),
       amount: Value(amount),
       splitLabel: splitLabel == null && nullToAbsent
           ? const Value.absent()
           : Value(splitLabel),
       paidAt: Value(paidAt),
+      status: Value(status),
     );
   }
 
@@ -28528,10 +28565,11 @@ class TableOrderPayment extends DataClass
     return TableOrderPayment(
       id: serializer.fromJson<int>(json['id']),
       tableOrderId: serializer.fromJson<int>(json['tableOrderId']),
-      invoiceId: serializer.fromJson<int>(json['invoiceId']),
+      invoiceId: serializer.fromJson<int?>(json['invoiceId']),
       amount: serializer.fromJson<double>(json['amount']),
       splitLabel: serializer.fromJson<String?>(json['splitLabel']),
       paidAt: serializer.fromJson<DateTime>(json['paidAt']),
+      status: serializer.fromJson<String>(json['status']),
     );
   }
   @override
@@ -28540,27 +28578,30 @@ class TableOrderPayment extends DataClass
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
       'tableOrderId': serializer.toJson<int>(tableOrderId),
-      'invoiceId': serializer.toJson<int>(invoiceId),
+      'invoiceId': serializer.toJson<int?>(invoiceId),
       'amount': serializer.toJson<double>(amount),
       'splitLabel': serializer.toJson<String?>(splitLabel),
       'paidAt': serializer.toJson<DateTime>(paidAt),
+      'status': serializer.toJson<String>(status),
     };
   }
 
   TableOrderPayment copyWith({
     int? id,
     int? tableOrderId,
-    int? invoiceId,
+    Value<int?> invoiceId = const Value.absent(),
     double? amount,
     Value<String?> splitLabel = const Value.absent(),
     DateTime? paidAt,
+    String? status,
   }) => TableOrderPayment(
     id: id ?? this.id,
     tableOrderId: tableOrderId ?? this.tableOrderId,
-    invoiceId: invoiceId ?? this.invoiceId,
+    invoiceId: invoiceId.present ? invoiceId.value : this.invoiceId,
     amount: amount ?? this.amount,
     splitLabel: splitLabel.present ? splitLabel.value : this.splitLabel,
     paidAt: paidAt ?? this.paidAt,
+    status: status ?? this.status,
   );
   TableOrderPayment copyWithCompanion(TableOrderPaymentsCompanion data) {
     return TableOrderPayment(
@@ -28574,6 +28615,7 @@ class TableOrderPayment extends DataClass
           ? data.splitLabel.value
           : this.splitLabel,
       paidAt: data.paidAt.present ? data.paidAt.value : this.paidAt,
+      status: data.status.present ? data.status.value : this.status,
     );
   }
 
@@ -28585,14 +28627,22 @@ class TableOrderPayment extends DataClass
           ..write('invoiceId: $invoiceId, ')
           ..write('amount: $amount, ')
           ..write('splitLabel: $splitLabel, ')
-          ..write('paidAt: $paidAt')
+          ..write('paidAt: $paidAt, ')
+          ..write('status: $status')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, tableOrderId, invoiceId, amount, splitLabel, paidAt);
+  int get hashCode => Object.hash(
+    id,
+    tableOrderId,
+    invoiceId,
+    amount,
+    splitLabel,
+    paidAt,
+    status,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -28602,16 +28652,18 @@ class TableOrderPayment extends DataClass
           other.invoiceId == this.invoiceId &&
           other.amount == this.amount &&
           other.splitLabel == this.splitLabel &&
-          other.paidAt == this.paidAt);
+          other.paidAt == this.paidAt &&
+          other.status == this.status);
 }
 
 class TableOrderPaymentsCompanion extends UpdateCompanion<TableOrderPayment> {
   final Value<int> id;
   final Value<int> tableOrderId;
-  final Value<int> invoiceId;
+  final Value<int?> invoiceId;
   final Value<double> amount;
   final Value<String?> splitLabel;
   final Value<DateTime> paidAt;
+  final Value<String> status;
   const TableOrderPaymentsCompanion({
     this.id = const Value.absent(),
     this.tableOrderId = const Value.absent(),
@@ -28619,16 +28671,17 @@ class TableOrderPaymentsCompanion extends UpdateCompanion<TableOrderPayment> {
     this.amount = const Value.absent(),
     this.splitLabel = const Value.absent(),
     this.paidAt = const Value.absent(),
+    this.status = const Value.absent(),
   });
   TableOrderPaymentsCompanion.insert({
     this.id = const Value.absent(),
     required int tableOrderId,
-    required int invoiceId,
+    this.invoiceId = const Value.absent(),
     required double amount,
     this.splitLabel = const Value.absent(),
     this.paidAt = const Value.absent(),
+    this.status = const Value.absent(),
   }) : tableOrderId = Value(tableOrderId),
-       invoiceId = Value(invoiceId),
        amount = Value(amount);
   static Insertable<TableOrderPayment> custom({
     Expression<int>? id,
@@ -28637,6 +28690,7 @@ class TableOrderPaymentsCompanion extends UpdateCompanion<TableOrderPayment> {
     Expression<double>? amount,
     Expression<String>? splitLabel,
     Expression<DateTime>? paidAt,
+    Expression<String>? status,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -28645,16 +28699,18 @@ class TableOrderPaymentsCompanion extends UpdateCompanion<TableOrderPayment> {
       if (amount != null) 'amount': amount,
       if (splitLabel != null) 'split_label': splitLabel,
       if (paidAt != null) 'paid_at': paidAt,
+      if (status != null) 'status': status,
     });
   }
 
   TableOrderPaymentsCompanion copyWith({
     Value<int>? id,
     Value<int>? tableOrderId,
-    Value<int>? invoiceId,
+    Value<int?>? invoiceId,
     Value<double>? amount,
     Value<String?>? splitLabel,
     Value<DateTime>? paidAt,
+    Value<String>? status,
   }) {
     return TableOrderPaymentsCompanion(
       id: id ?? this.id,
@@ -28663,6 +28719,7 @@ class TableOrderPaymentsCompanion extends UpdateCompanion<TableOrderPayment> {
       amount: amount ?? this.amount,
       splitLabel: splitLabel ?? this.splitLabel,
       paidAt: paidAt ?? this.paidAt,
+      status: status ?? this.status,
     );
   }
 
@@ -28687,6 +28744,9 @@ class TableOrderPaymentsCompanion extends UpdateCompanion<TableOrderPayment> {
     if (paidAt.present) {
       map['paid_at'] = Variable<DateTime>(paidAt.value);
     }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
     return map;
   }
 
@@ -28698,7 +28758,8 @@ class TableOrderPaymentsCompanion extends UpdateCompanion<TableOrderPayment> {
           ..write('invoiceId: $invoiceId, ')
           ..write('amount: $amount, ')
           ..write('splitLabel: $splitLabel, ')
-          ..write('paidAt: $paidAt')
+          ..write('paidAt: $paidAt, ')
+          ..write('status: $status')
           ..write(')'))
         .toString();
   }
@@ -142709,19 +142770,21 @@ typedef $$TableOrderPaymentsTableCreateCompanionBuilder =
     TableOrderPaymentsCompanion Function({
       Value<int> id,
       required int tableOrderId,
-      required int invoiceId,
+      Value<int?> invoiceId,
       required double amount,
       Value<String?> splitLabel,
       Value<DateTime> paidAt,
+      Value<String> status,
     });
 typedef $$TableOrderPaymentsTableUpdateCompanionBuilder =
     TableOrderPaymentsCompanion Function({
       Value<int> id,
       Value<int> tableOrderId,
-      Value<int> invoiceId,
+      Value<int?> invoiceId,
       Value<double> amount,
       Value<String?> splitLabel,
       Value<DateTime> paidAt,
+      Value<String> status,
     });
 
 final class $$TableOrderPaymentsTableReferences
@@ -142767,9 +142830,9 @@ final class $$TableOrderPaymentsTableReferences
         ),
       );
 
-  $$SalesInvoicesTableProcessedTableManager get invoiceId {
-    final $_column = $_itemColumn<int>('invoice_id')!;
-
+  $$SalesInvoicesTableProcessedTableManager? get invoiceId {
+    final $_column = $_itemColumn<int>('invoice_id');
+    if ($_column == null) return null;
     final manager = $$SalesInvoicesTableTableManager(
       $_db,
       $_db.salesInvoices,
@@ -142808,6 +142871,11 @@ class $$TableOrderPaymentsTableFilterComposer
 
   ColumnFilters<DateTime> get paidAt => $composableBuilder(
     column: $table.paidAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -142887,6 +142955,11 @@ class $$TableOrderPaymentsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$TableOrdersTableOrderingComposer get tableOrderId {
     final $$TableOrdersTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -142956,6 +143029,9 @@ class $$TableOrderPaymentsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get paidAt =>
       $composableBuilder(column: $table.paidAt, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
 
   $$TableOrdersTableAnnotationComposer get tableOrderId {
     final $$TableOrdersTableAnnotationComposer composer = $composerBuilder(
@@ -143039,10 +143115,11 @@ class $$TableOrderPaymentsTableTableManager
               ({
                 Value<int> id = const Value.absent(),
                 Value<int> tableOrderId = const Value.absent(),
-                Value<int> invoiceId = const Value.absent(),
+                Value<int?> invoiceId = const Value.absent(),
                 Value<double> amount = const Value.absent(),
                 Value<String?> splitLabel = const Value.absent(),
                 Value<DateTime> paidAt = const Value.absent(),
+                Value<String> status = const Value.absent(),
               }) => TableOrderPaymentsCompanion(
                 id: id,
                 tableOrderId: tableOrderId,
@@ -143050,15 +143127,17 @@ class $$TableOrderPaymentsTableTableManager
                 amount: amount,
                 splitLabel: splitLabel,
                 paidAt: paidAt,
+                status: status,
               ),
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
                 required int tableOrderId,
-                required int invoiceId,
+                Value<int?> invoiceId = const Value.absent(),
                 required double amount,
                 Value<String?> splitLabel = const Value.absent(),
                 Value<DateTime> paidAt = const Value.absent(),
+                Value<String> status = const Value.absent(),
               }) => TableOrderPaymentsCompanion.insert(
                 id: id,
                 tableOrderId: tableOrderId,
@@ -143066,6 +143145,7 @@ class $$TableOrderPaymentsTableTableManager
                 amount: amount,
                 splitLabel: splitLabel,
                 paidAt: paidAt,
+                status: status,
               ),
           withReferenceMapper: (p0) => p0
               .map(

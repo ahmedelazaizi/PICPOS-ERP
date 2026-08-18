@@ -121,7 +121,9 @@ void main() {
     final paymentId = await db.into(db.tableOrderPayments).insert(
           TableOrderPaymentsCompanion.insert(
             tableOrderId: orderId,
-            invoiceId: 1,
+            // v158: `invoiceId` صار معدوماً-مسموحاً (الحجزُ يسبق الفاتورة)،
+            // فالإدراجُ يحتاج `Value` صريحة.
+            invoiceId: const Value(1),
             amount: 33.334,
             splitLabel: const Value('ضيف ٣'),
           ),

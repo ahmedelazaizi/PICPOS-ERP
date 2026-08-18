@@ -2497,5 +2497,30 @@ extension Epoch3Migrations on AppDatabase {
         debugPrint('[Migration] v157 table_orders minimum tax rate OK');
       });
     }
+
+    // ── v158: الحجزُ ثم التثبيت — دفعةٌ بلا فاتورةٍ بعد ──────────────────
+    //
+    // `invoice_id` يصير معدوماً-مسموحاً ويُضاف `status`، فيصير الصفُّ قابلاً
+    // لأن يُدرَج **قبل** الترحيل. وبه تعمل كلُّ حراس `recordPayment` قبل أن
+    // تُرحَّل فاتورةٌ — فإن رفضت، لم يصدر شيءٌ يحتاج تسوية.
+    //
+    // وإسقاطُ `NOT NULL` لا يجري بـ`ALTER TABLE` في SQLite، فالسبيلُ إعادةُ
+    // إنشاء الجدول — وهو ما تفعله `m.alterTable` بالخطوات الاثنتَي عشرة.
+    // و`addColumn` تسبقها لأن `TableMigration` تنسخ الأعمدةَ القائمةَ فحسب،
+    // فعمودٌ لم يوجد بعدُ لا يُنقَل بل يُنشَأ بافتراضه.
+    //
+    // ولا تسويةَ بيانات: الافتراضُ `settled` وكلُّ صفٍّ قائمٍ له `invoice_id`
+    // غيرُ معدوم، فالقيدُ يرضى عن الصفوف القائمة كما هي.
+    //
+    // ⚠️ ولأن `m.alterTable` تبني تعريفَ **اليوم**: أيُّ تشديدٍ لاحقٍ لهذا
+    // القيد يجب أن يُراجَع مع كلِّ خطوةٍ أقدمَ تُعيد بناءَ هذا الجدول.
+    if (from < 158) {
+      await _safeMigrate('v158 table_order_payments reserve-then-commit',
+          () async {
+        await m.addColumn(tableOrderPayments, tableOrderPayments.status);
+        await m.alterTable(TableMigration(tableOrderPayments));
+        debugPrint('[Migration] v158 table_order_payments reserve/commit OK');
+      });
+    }
   }
 }
