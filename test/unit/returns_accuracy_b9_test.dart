@@ -267,6 +267,11 @@ void main() {
         ),
       };
 
+      // شرطٌ لازمٌ منذ مواصفة 2026-08-18 (ح‑١): مرتجعٌ يصرف نقداً يستلزم
+      // ورديّةً مفتوحةً على درجه. هذا الملفُّ يقيس تناسبَ الضريبة المجمَّدة
+      // لا سلوكَ الورديّات، فالورديّةُ تهيئةٌ لا موضوعُ اختبار.
+      await db.openShift(1, 0);
+
       final ok = await repo.processSalesReturn(
         invoice: invoice,
         returnQuantities: {itemId: 10.0},

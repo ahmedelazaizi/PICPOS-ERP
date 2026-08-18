@@ -55,6 +55,11 @@ void main() {
       roleId: roleId,
     );
 
+    // شرطٌ لازمٌ منذ مواصفة 2026-08-18 (ح‑١): مرتجعٌ يصرف نقداً يستلزم
+    // ورديّةً مفتوحةً على درجه. هذا الملفُّ يقيس ظهورَ المرتجع في السجلّ لا
+    // سلوكَ الورديّات، فالورديّةُ تهيئةٌ لا موضوعُ اختبار.
+    await db.openShift(userId, 0);
+
     warehouseId = (await db.getDefaultWarehouse())!.id;
 
     productId = await db.insertProduct(
