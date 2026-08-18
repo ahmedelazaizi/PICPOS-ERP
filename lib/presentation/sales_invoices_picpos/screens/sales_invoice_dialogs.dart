@@ -432,16 +432,17 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
 
     // Spec 103: in client mode restrict warehouses to the current branch so
     // the saved invoice's warehouseId resolves to the correct branchId and
-    // appears in the branch's invoice list.
+    // appears in the branch's invoice list. القاعدةُ نفسُها في
+    // `narrowWarehousesToClientBranch` — كانت منسوخةً هنا وفي التوأم الكامل،
+    // وبقيت نافذةُ فاتورة المشتريات بلا حصر.
     List<WarehouseData> filteredWarehouses = activeWarehouses;
     if (SyncInterceptor.isClientMode) {
       final prefs = await SharedPreferences.getInstance();
-      final clientBranchId = prefs.getInt('client_branch_id');
-      if (clientBranchId != null) {
-        final branchWarehouses =
-            activeWarehouses.where((w) => w.branchId == clientBranchId).toList();
-        if (branchWarehouses.isNotEmpty) filteredWarehouses = branchWarehouses;
-      }
+      filteredWarehouses = narrowWarehousesToClientBranch<WarehouseData>(
+        warehouses: activeWarehouses,
+        clientBranchId: prefs.getInt('client_branch_id'),
+        branchIdOf: (w) => w.branchId,
+      );
     }
 
     unawaited(DiagnosticLogger.log('SPEC-103-DIALOG',

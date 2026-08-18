@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/widgets/app_shortcuts.dart';
 import '../../domain/repositories/sales_repository.dart';
 import '../../domain/repositories/inventory_repository.dart' show WarehouseData;
+import '../../domain/models/warehouse_branch_scope.dart';
 import '../../core/utils/financial_utils.dart';
 import '../../core/utils/app_error_handler.dart';
 import '../../core/logging/diagnostic_logger.dart';

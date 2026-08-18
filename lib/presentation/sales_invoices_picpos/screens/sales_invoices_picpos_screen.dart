@@ -19,6 +19,7 @@ import '../../../core/widgets/app_state_view.dart';
 
 import '../../../data/providers/providers.dart';
 import '../../../data/database/sync_interceptor.dart';
+import '../../../domain/models/warehouse_branch_scope.dart';
 import '../../../services/network_service.dart';
 import '../../../core/constants/app_constants.dart' hide InvoiceStatus;
 import '../../screens/sales_invoices_controller.dart';
