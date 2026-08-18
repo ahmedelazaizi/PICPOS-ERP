@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/permissions/permission_codes.dart';
+import '../../../domain/models/branch_assignment_scope.dart';
 // دفعة ٩ — حارس purchases_print على زرار الطباعة في قائمة الفواتير.
 import '../../widgets/permission_guard.dart';
 import '../../../core/theme/app_colors.dart';

@@ -798,9 +798,8 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
       // و`keepSelected` لازمٌ لا تجميل: الصنفُ صفٌّ **قائم** قد يشير إلى
       // مخزنٍ صار خارجَ النطاق (محذوفاً أو من فرعٍ آخر)، وحذفُه من القائمة
       // يُسقطها بتأكيدٍ صريح أو يعيد كتابةَ مخزنِ الصنفِ صامتاً.
-      future: ref
-          .read(branchRepositoryProvider)
-          .getAssignableWarehouses(keepSelected: selectedWarehouseId),
+      future:
+          ref.read(assignableWarehousesProvider(selectedWarehouseId).future),
       builder: (context, snapshot) {
         final warehouses = snapshot.data ?? [];
         return SizedBox(

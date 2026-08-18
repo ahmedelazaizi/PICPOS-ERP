@@ -25,6 +25,9 @@ import 'repository_providers.dart';
 // Domain-specific providers
 export 'auth_providers.dart';
 export 'branch_scope_provider.dart';
+// نطاقُ النسبة (assignableWarehousesProvider / assignableCostCentersProvider)
+// — تستعمله المنتقياتُ في ثماني شاشات، فيُصدَّر مع بقيّةِ نطاقات الفروع.
+export 'client_scope_provider.dart';
 export 'inventory_providers.dart';
 export '../../domain/repositories/region_repository.dart';
 export 'parties_providers.dart' hide deliveryRepositoryProvider;

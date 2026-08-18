@@ -383,7 +383,7 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
                     FutureBuilder<List<Warehouse>>(
                       // نطاقُ النسبة: أمرُ البيعِ يتحوّل فاتورةً، وفرعُها
                       // يُشتقُّ من مخزنها.
-                      future: branchRepo.getAssignableWarehouses(),
+                      future: ref.read(assignableWarehousesProvider(null).future),
                       builder: (ctx, snap) {
                         if (!snap.hasData) return const LinearProgressIndicator();
                         final warehouses = snap.data!;

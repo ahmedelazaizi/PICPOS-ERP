@@ -101,16 +101,15 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
 
   Future<void> _loadInitialData() async {
     final productRepo = ref.read(productRepositoryProvider);
-    final branchRepo = ref.read(branchRepositoryProvider);
-    final accountingRepo = ref.read(accountingRepositoryProvider);
 
     final cats = await productRepo.getCategories();
-    // نطاقُ النسبة — مصدرٌ واحدٌ في المستودع بدل نسخِ الشرط في كلِّ شاشة.
-    // و`keepSelected`: فاتورةٌ قيدَ التعديل تحتفظ بمخزنها ولو خرج عن النطاق.
-    final visibleWarehouses = await branchRepo.getAssignableWarehouses(
-      keepSelected: widget.editInvoice?.warehouseId,
+    // نطاقُ النسبة — مصدرٌ واحدٌ يحسم الأوضاعَ الأربعة (`branchScopeProvider`)
+    // بدل نسخِ الشرط في كلِّ شاشة. و`keepSelected`: فاتورةٌ قيدَ التعديل
+    // تحتفظ بمخزنها ولو خرج عن النطاق.
+    final visibleWarehouses = await ref.read(
+      assignableWarehousesProvider(widget.editInvoice?.warehouseId).future,
     );
-    final ccs = await accountingRepo.getCostCenters();
+    final ccs = await ref.read(assignableCostCentersProvider.future);
 
     if (mounted) {
       setState(() {

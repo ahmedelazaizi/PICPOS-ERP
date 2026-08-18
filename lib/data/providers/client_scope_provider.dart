@@ -3,6 +3,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../domain/models/branch_assignment_scope.dart';
 import '../../domain/models/client_scope.dart';
 import '../../services/network_service.dart';
 import 'providers.dart';
@@ -95,4 +96,109 @@ final clientScopeProvider = FutureProvider<ClientScope>((ref) async {
 
   debugPrint('[ClientScope] Resolved: $scope');
   return scope;
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// نطاقُ النسبة — «إلى أين يجوز أن يُنسَب مستندٌ جديد» في الأوضاع الأربعة
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// المصدرُ هو [branchScopeProvider] لا `client_branch_id`، لأن «فرعي» يختلف
+// بالوضع، والمزوّدُ ذاك وحدَه يحسم الأربعة بقراراتٍ موثّقةٍ للمالك:
+//
+//   مستقل/خادم ⇒ فروعُ المستخدم (فكاشيرٌ محصورٌ يبقى محصوراً، وهو ما كان
+//                يفوت `client_branch_id` لأنه لا يُكتب إلا في وضع العميل).
+//   عميل       ⇒ فرعُ الجهاز (عزلُ المرحلة ٦)، ويُستثنى المديرُ المُرقّى.
+//   مرآة       ⇒ فروعُ المستخدمِ **كلُّها** (قرارُ المالك 2026-08-04)، وهو
+//                نفسُ ما يسلّمه الخادمُ بعد FR-1. و`client_branch_id` لا
+//                يُكتب على المرآة أصلاً، فكان الحصرُ يسقط عنها بالكامل:
+//                مديرٌ لفرعَي {أ،ب} كان يُنشئ فاتورةً على مخزنِ ج ثم لا يراها.
+//
+// وسياسةُ الخلوّ ([EmptyScopePolicy]) من سابقةِ المالك 2026-08-04 نفسِها:
+// تُقفل الأجهزةُ التي تسرّب (عميل/مرآة) ولا يُوقَف محلٌّ بجهازٍ واحد.
+
+/// العميلُ والمرآةُ هما الجهازان اللذان تُقفلهما سابقةُ 2026-08-04.
+///
+/// والإشارةُ `NetworkService` لا `SyncInterceptor.isClientMode` عن قصد: هي
+/// نفسُها التي يقرؤها `branchScopeProvider` أعلاه لتحديدِ النطاق، فلا يُقرَّر
+/// النطاقُ وسياستُه بإشارتين قد تفترقان (المعترِضُ يجيب عن «أين تُكتب» لا عن
+/// «أيُّ جهازٍ هذا»، وهو معدومٌ أصلاً قبل تهيئتِه).
+bool get _isScopedDevice =>
+    NetworkService.instance.isClient || NetworkService.instance.isMirror;
+
+EmptyScopePolicy get _deviceEmptyScopePolicy =>
+    _isScopedDevice ? EmptyScopePolicy.refuse : EmptyScopePolicy.widen;
+
+/// المخازنُ التي يجوز نسبةُ مستندٍ جديدٍ إليها على هذا الجهاز، بهذا الترتيب:
+/// الصالحُ ⇒ حصرُ الفرع ⇒ حصرُ المستخدمِ للمخازن ⇒ إبقاءُ المنتقى سلفاً.
+///
+/// [keepSelected] معرّفُ مخزنٍ محفوظٍ في صفٍّ قائم (مخزنُ فاتورةٍ قيدَ التعديل،
+/// أو المخزنُ الافتراضيُّ لصنف). يُلحَق ولو خرج عن النطاق: قائمةٌ لا تحوي
+/// قيمتَها المنتقاةَ تُسقط `DropdownButton` بتأكيدٍ صريح، وإسقاطُها صامتاً
+/// يعيد كتابةَ بياناتِ صفٍّ قائمٍ عند الحفظ.
+final assignableWarehousesProvider =
+    FutureProvider.family<List<Warehouse>, int?>((ref, keepSelected) async {
+  final db = ref.watch(databaseProvider);
+  final scope = await ref.watch(branchScopeProvider.future);
+  final userId = ref.watch(authProvider.select((s) => s.user?.id));
+
+  // الصالحُ وحدَه: شاهدُ الحذفِ (`deletedAt`) يصل من الخادم عبر `DeltaPull`
+  // فيبقى الصفُّ محلّياً، فلا يكفي الحذفُ المركزيُّ لإخفائه عن المنتقيات.
+  final usable = await (db.select(db.warehouses)
+        ..where((w) => w.isActive.equals(true) & w.deletedAt.isNull())
+        ..orderBy([(w) => OrderingTerm.asc(w.name)]))
+      .get();
+
+  var result = restrictForAssignment(
+    usable,
+    scope.allowedBranchIds,
+    branchIdOf: (w) => w.branchId,
+    onEmpty: _deviceEmptyScopePolicy,
+  );
+
+  // حصرُ المستخدمِ على مستوى **المخزن** — نفسُ عقدِ `getWarehouseScopeForUser`
+  // المطبَّقِ في `allWarehousesProvider`: `null` بلا حصر، و`{}` غيرُ مميَّزٍ
+  // بلا تخصيصٍ ⇒ يُقفل على العميل/المرآة ويمرّ على المستقلّ (سابقة 2026-08-04).
+  if (userId != null) {
+    final warehouseScope = await db.getWarehouseScopeForUser(userId);
+    if (warehouseScope != null) {
+      result = warehouseScope.isEmpty
+          ? (_isScopedDevice ? <Warehouse>[] : result)
+          : result.where((w) => warehouseScope.contains(w.id)).toList();
+    }
+  }
+
+  if (keepSelected == null || result.any((w) => w.id == keepSelected)) {
+    return result;
+  }
+  final kept = await (db.select(db.warehouses)
+        ..where((w) => w.id.equals(keepSelected)))
+      .getSingleOrNull();
+  return kept == null ? result : [kept, ...result];
+});
+
+/// مراكزُ التكلفةِ التي يجوز نسبةُ مستندٍ جديدٍ إليها على هذا الجهاز.
+///
+/// و`CostCenters` بلا عمودِ فرع، فالانتماءُ **يُشتقُّ** كما يشتقّه خادمُ
+/// PicPos حرفياً في `_resolveBranchCostCenterIds` (`api_handler.dart:2111`):
+/// مركزُ الفرعِ نفسِه ∪ مراكزُ مخازنِه ∪ مراكزُ خزائنِه. والتطابقُ مقصود —
+/// الخادمُ يقصّ مزامنةَ `cost_centers` بهذا الاشتقاق، فلو خالفته الواجهةُ
+/// لعرضت مركزاً لا يصل الجهازَ أصلاً أو أخفت مركزاً وصله.
+final assignableCostCentersProvider =
+    FutureProvider<List<CostCenter>>((ref) async {
+  final db = ref.watch(databaseProvider);
+  final scope = await ref.watch(branchScopeProvider.future);
+
+  final allActive = await db.getActiveCostCenters();
+  final allowed = scope.allowedBranchIds;
+
+  if (allowed == null) return allActive;
+  if (allowed.isEmpty) return const <CostCenter>[];
+
+  final scopedIds = await db.getBranchCostCenterIds(allowed);
+  final scoped = allActive.where((c) => scopedIds.contains(c.id)).toList();
+  if (scoped.isNotEmpty) return scoped;
+
+  return _deviceEmptyScopePolicy == EmptyScopePolicy.widen
+      ? allActive
+      : const <CostCenter>[];
 });

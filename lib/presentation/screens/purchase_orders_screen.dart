@@ -525,7 +525,7 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
                     FutureBuilder<List<Warehouse>>(
                       // نطاقُ النسبة: أمرُ الشراءِ يتحوّل فاتورةً، وفرعُها
                       // يُشتقُّ من مخزنها.
-                      future: branchRepo.getAssignableWarehouses(),
+                      future: ref.read(assignableWarehousesProvider(null).future),
                       builder: (context, snap) {
                         final warehouses = snap.data ?? [];
                         return DropdownButtonFormField<int>(

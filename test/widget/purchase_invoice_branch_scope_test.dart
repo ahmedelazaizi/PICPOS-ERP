@@ -1,8 +1,8 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// نطاقُ الفرع في فاتورةِ المشتريات — نقلُ Spec 103 من مسارِ المبيعات
+// نطاقُ الفرع في فاتورةِ المشتريات — على مستوى الشاشة
 // ═══════════════════════════════════════════════════════════════════════════
 //
-// `PurchaseInvoiceForm` كان بيحمّل كلَّ المخازن بلا ترشيح، وده مش «حقلٌ فيه
+// `PurchaseInvoiceForm` كان يحمّل كلَّ المخازن بلا ترشيح، وده مش «حقلٌ فيه
 // خيارٌ زايد» — لأن فرعَ الفاتورة **يُشتقُّ من مخزنها** لا يُختار:
 //
 //     purchase_dao.dart:589-594
@@ -12,31 +12,53 @@
 // وقائمةُ الفواتير بتقصّ على `branchId.isIn(allowed) | isNull` (سطر ١٥٠)،
 // فاختيارُ مخزنِ فرعٍ آخر بيخلّي الفاتورةَ **تختفي من قائمةِ فرعها**.
 //
-// المسارُ المرجعيُّ المنقولُ عنه: sales_invoice_dialogs.dart:٤٣٦-٤٤٥ (Spec 103)
-// — `isClientMode` ثم `client_branch_id` ثم `where(branchId == …)`، ومعه
-// احتياطٌ مقصود: لو الترشيحُ طلع فاضياً تفضل القائمةُ الكاملةُ ظاهرةً بدل ما
-// نسلّم المستخدمَ قائمةً خاوية.
+// والنطاقُ مصدرُه `branchScopeProvider` (يحسم الأوضاعَ الأربعة) — فالحصرُ
+// يقع هنا على جهازٍ **مستقلّ** أيضاً متى كان المستخدمُ مخصَّصاً لفرع، وهو
+// ما كان يفوت النموذجَ حين كان يقرأ `client_branch_id` وحدَه.
+//
+// وقياسُ الاشتقاقِ والسياساتِ في الأوضاع الأربعة مكانُه
+// `test/data/providers/assignable_scope_test.dart`؛ هنا نقيس **الشاشة**.
 //
 // ⚠️ وصفةُ فتحِ الشاشة في اختبار (test/widget/_support/screen_smoke.dart):
-// فكّك الشجرةَ وادفع إطاراً بزمنٍ موجب، و**لا تُغلق القاعدة** — إغلاقُها
-// بينتظر مؤقّتَ drift في المنطقة الوهمية فما بيرجعش.
+// فكّك الشجرةَ وادفع إطاراً بزمنٍ موجب، و**لا تُغلق القاعدة**. ومعها
+// `DiagnosticLogger.enableTestMode()` — `branchScopeProvider` يسجّل في كلّ
+// نداء، وكتابةُ الملفّ تنتظر قناةَ `path_provider` فتتعلّق في الزمن الوهمي.
 
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:ural_erp/data/database/sync_interceptor.dart';
+import 'package:ural_erp/core/logging/diagnostic_logger.dart';
 import 'package:ural_erp/data/providers/providers.dart';
 import 'package:ural_erp/presentation/screens/purchase_invoices/widgets/purchase_invoice_form.dart';
+import 'package:ural_erp/services/mirror_state.dart';
+import 'package:ural_erp/services/network_service.dart';
 
-class _ClientModeInterceptor implements SyncInterceptor {
-  @override
-  bool get isClientModeImpl => true;
-  @override
-  bool get isMirrorModeImpl => false;
-  @override
-  dynamic noSuchMethod(Invocation invocation) => null;
+UserWithRole _cashier({required int userId, required int roleId}) {
+  final role = Role(
+    id: roleId,
+    name: 'كاشير',
+    isSystemRole: false,
+    createdAt: DateTime(2026),
+    rowVersion: 0,
+  );
+  final user = User(
+    id: userId,
+    username: 'cashier',
+    passwordHash: 'h',
+    passwordSalt: 's',
+    displayName: 'كاشير',
+    roleId: roleId,
+    defaultScreen: 'pos',
+    isLocked: false,
+    isActive: true,
+    discountLimitIsPercent: true,
+    forcePasswordChange: false,
+    createdAt: DateTime(2026),
+    rowVersion: 0,
+  );
+  return UserWithRole(user: user, role: role);
 }
 
 /// آخرُ نداءٍ وصل لـ`onSave` — `null` يعني الزرَّ رفض الحفظ.
@@ -66,12 +88,21 @@ Future<void> _captureSave({
 
 void main() {
   late AppDatabase db;
+  late ProviderContainer container;
   late int hqBranchId;
   late int tantaBranchId;
   late int tantaWarehouseId;
   late int tantaCostCenterId;
+  late int cashierId;
+  late int cashierRoleId;
 
   setUp(() async {
+    SharedPreferences.setMockInitialValues({});
+    DiagnosticLogger.enableTestMode();
+    NetworkService.instance.debugSetModeForTests(NetworkMode.standalone);
+    MirrorState.instance.debugSetForTests();
+    ElevationSnapshot.isCrossBranchElevated = false;
+
     _lastSave = null;
     db = AppDatabase.forTesting();
 
@@ -101,14 +132,42 @@ void main() {
             globalId: const Value('gid-wh-tanta'),
           ),
         );
+
+    cashierRoleId =
+        await db.into(db.roles).insert(RolesCompanion.insert(name: 'كاشير'));
+    cashierId = await db.into(db.users).insert(
+          UsersCompanion.insert(
+            username: 'cashier',
+            passwordHash: 'h',
+            passwordSalt: const Value('s'),
+            displayName: 'كاشير',
+            roleId: Value(cashierRoleId),
+          ),
+        );
+
+    container = ProviderContainer(
+      overrides: [databaseProvider.overrideWithValue(db)],
+    );
   });
 
-  tearDown(() async {
-    // ما نسيبش الجهازَ في وضع «عميل» للاختبارات اللي بعدها.
-    SyncInterceptor.instance = null;
+  tearDown(() {
+    container.dispose();
+    NetworkService.instance.debugSetModeForTests(NetworkMode.standalone);
     SharedPreferences.setMockInitialValues({});
-    // ⚠️ بلا `db.close()` — مقصود، انظر رأسَ الملف.
+    // ⚠️ بلا `db.close()` — مقصود، انظر رأسَ الملفّ.
   });
+
+  /// يربط الكاشيرَ بفرعٍ ثم يسجّل دخولَه — النطاقُ يأتي من هنا لا من ربطِ
+  /// الجهاز، فيقع الحصرُ في الأوضاع الأربعة كلِّها.
+  Future<void> loginCashierScopedTo(int branchId) async {
+    await db.into(db.userBranchAccess).insert(
+          UserBranchAccessCompanion.insert(userId: cashierId, branchId: branchId),
+        );
+    container.read(authProvider);
+    container
+        .read(authProvider.notifier)
+        .login(_cashier(userId: cashierId, roleId: cashierRoleId));
+  }
 
   Future<void> pumpForm(
     WidgetTester tester, {
@@ -118,8 +177,8 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
-    await tester.pumpWidget(ProviderScope(
-      overrides: [databaseProvider.overrideWithValue(db)],
+    await tester.pumpWidget(UncontrolledProviderScope(
+      container: container,
       child: MaterialApp(
         home: Scaffold(
           body: PurchaseInvoiceForm(
@@ -157,14 +216,9 @@ void main() {
           .map((i) => ((i.child as Text).data)!)
           .toList();
 
-  void enterClientMode(int branchId) {
-    SyncInterceptor.instance = _ClientModeInterceptor();
-    SharedPreferences.setMockInitialValues({'client_branch_id': branchId});
-  }
-
-  group('ترشيحُ المخازن بفرعِ العميل', () {
-    testWidgets('وضعُ العميل — مخازنُ الفرعِ وحدَها', (tester) async {
-      enterClientMode(tantaBranchId);
+  group('ترشيحُ المخازن بنطاقِ الفرع', () {
+    testWidgets('كاشيرُ فرعِ طنطا — مخازنُ فرعِه وحدَها', (tester) async {
+      await loginCashierScopedTo(tantaBranchId);
 
       await pumpForm(tester);
 
@@ -174,26 +228,26 @@ void main() {
       await disposeTree(tester);
     });
 
-    testWidgets('فرعٌ بلا مخازن — تبقى القائمةُ الكاملة (احتياطُ Spec 103)',
+    testWidgets('فرعٌ بلا مخازن — تبقى القائمةُ الكاملة على جهازٍ مستقلّ',
         (tester) async {
-      // فرعٌ ثالثٌ لا مخزنَ له.
       final emptyBranchId = await db.into(db.branches).insert(
             BranchesCompanion.insert(
               name: 'فرعٌ بلا مخازن',
               globalId: const Value('gid-branch-empty'),
             ),
           );
-      enterClientMode(emptyBranchId);
+      await loginCashierScopedTo(emptyBranchId);
 
       await pumpForm(tester);
 
       expect(warehouseNames(tester), containsAll(['المخزن الرئيسي', 'مخزن طنطا']),
-          reason: 'قائمةٌ خاويةٌ أسوأُ من قائمةٍ واسعة — الاحتياطُ مقصود');
+          reason: 'محلٌّ بجهازٍ واحدٍ ما ينفعش يقف — سابقةُ المالك 2026-08-04');
 
       await disposeTree(tester);
     });
 
-    testWidgets('الوضعُ المستقل — بلا ترشيح', (tester) async {
+    testWidgets('مستخدمٌ بلا حصرِ فروع — بلا ترشيح', (tester) async {
+      // بلا تسجيلِ دخول ⇒ `branchScopeProvider` يرجع `fullAccess`.
       await pumpForm(tester);
 
       expect(warehouseNames(tester),
@@ -211,8 +265,7 @@ void main() {
               globalId: const Value('gid-party-supplier'),
             ),
           );
-      final hqWarehouseId =
-          (await db.select(db.warehouses).get()).first.id;
+      final hqWarehouseId = (await db.select(db.warehouses).get()).first.id;
       final invoiceId = await db.into(db.purchaseInvoices).insert(
             PurchaseInvoicesCompanion.insert(
               invoiceNumber: 'PINV-1',
@@ -226,7 +279,7 @@ void main() {
             ..where((t) => t.id.equals(invoiceId)))
           .getSingle();
 
-      enterClientMode(tantaBranchId);
+      await loginCashierScopedTo(tantaBranchId);
 
       await pumpForm(tester, editInvoice: invoice);
 
@@ -241,7 +294,7 @@ void main() {
 
   group('المخزنُ الافتراضيُّ — سدُّ `warehouseId ?? 1`', () {
     testWidgets('فاتورةٌ جديدة — مخزنُ الفرعِ منتقىً سلفاً', (tester) async {
-      enterClientMode(tantaBranchId);
+      await loginCashierScopedTo(tantaBranchId);
 
       await pumpForm(tester);
 
@@ -253,7 +306,7 @@ void main() {
     });
 
     testWidgets('مركزُ التكلفةِ يُشتقُّ من المخزنِ المنتقى', (tester) async {
-      enterClientMode(tantaBranchId);
+      await loginCashierScopedTo(tantaBranchId);
 
       await pumpForm(tester);
 

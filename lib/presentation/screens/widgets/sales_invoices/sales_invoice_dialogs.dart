@@ -281,7 +281,7 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesScreenState {
       final loadedCategories = controller.getCategories();
       final loadedWarehouses = controller.getActiveWarehouses();
       final loadedCostCenters =
-          ref.read(accountingRepositoryProvider).getActiveCostCenters();
+          ref.read(assignableCostCentersProvider.future);
       await Future.wait([
         loadedCustomers,
         loadedProducts,
@@ -343,14 +343,16 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesScreenState {
     // the saved invoice's warehouseId resolves to the correct branchId and
     // appears in the branch's invoice list.
     //
-    // القاعدةُ ذاتُها انتقلت إلى `restrictForAssignment` + `getAssignmentBranchId`
-    // بعد أن تبيّن أنها منسوخةٌ في ستِّ شاشات. بلا تغييرِ سلوك: نفسُ المُحدِّد
-    // (عميلٌ ومرآة)، ونفسُ المساواةِ الصارمة، ونفسُ احتياطِ عدمِ التفريغ.
-    final filteredWarehouses = restrictForAssignment(
-      activeWarehouses,
-      await ref.read(branchRepositoryProvider).getAssignmentBranchId(),
-      branchIdOf: (w) => w.branchId,
-    );
+    // والقاعدةُ ذاتُها صارت في `assignableWarehousesProvider`: حصرُ الفرع من
+    // `branchScopeProvider` (يحسم الأوضاعَ الأربعة) ∩ حصرُ المستخدمِ للمخازن،
+    // مع إسقاطِ المحذوفِ ناعماً والمعطَّل. ونقاطعُ هنا بالمعرّفات لأن هذا
+    // المسارَ يحمل `WarehouseData` لا صفوفَ الجدول.
+    final assignableIds =
+        (await ref.read(assignableWarehousesProvider(null).future))
+            .map((w) => w.id)
+            .toSet();
+    final filteredWarehouses =
+        activeWarehouses.where((w) => assignableIds.contains(w.id)).toList();
 
     unawaited(DiagnosticLogger.log('SPEC-103-DIALOG',
         '_createNewInvoice preload done — '

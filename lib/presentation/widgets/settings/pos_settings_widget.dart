@@ -701,7 +701,7 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
           // نطاقُ النسبة لا كلُّ المخازن: هذا المنتقي يقرّر أين تُخصم بضاعةُ
           // **كلِّ** بيعةٍ على الجهاز/الفرع، فمخزنُ فرعٍ آخرَ هنا يُخطئ نسبةَ
           // مبيعاتٍ كاملةٍ لا فاتورةً واحدة.
-          future: ref.read(branchRepositoryProvider).getAssignableWarehouses(),
+          future: ref.read(assignableWarehousesProvider(null).future),
           builder: (context, snapshot) {
             final warehouses = snapshot.data ?? [];
             if (warehouses.isEmpty) return const SizedBox.shrink();
