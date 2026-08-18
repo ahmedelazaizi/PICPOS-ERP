@@ -63,7 +63,7 @@ CREATE TABLE "table_orders" (
   /// مكتوبٌ رقماً ثانياً. القيدُ في `restaurant_tables.dart` رقمٌ حرفيٌّ (ملفُّ
   /// `part` بلا استيرادات)، وهذا التأكيدُ هو ما يربطه بالمصدر: لو شُدَّ الثابتُ
   /// ولم يُشَدَّ القيدُ سقط الاختبارُ بدل أن يفترقا صامتَين.
-  final minRateSql = 'tax_rate >= ${TaxRateBounds.minRate}';
+  const minRateSql = 'tax_rate >= ${TaxRateBounds.minRate}';
 
   late AppDatabase db;
 
@@ -121,7 +121,7 @@ CREATE TABLE "table_orders" (
         db.into(db.tableOrders).insert(TableOrdersCompanion.insert(
               tableId: tableId,
               taxEnabled: const Value(true),
-              taxRate: Value(TaxRateBounds.minRate / 2),
+              taxRate: const Value(TaxRateBounds.minRate / 2),
             )),
         throwsCheckViolation(),
       );
@@ -136,7 +136,7 @@ CREATE TABLE "table_orders" (
             TableOrdersCompanion.insert(
               tableId: tableId,
               taxEnabled: const Value(true),
-              taxRate: Value(TaxRateBounds.minRate),
+              taxRate: const Value(TaxRateBounds.minRate),
             ),
           );
       expect(id, greaterThan(0));
@@ -468,7 +468,7 @@ CREATE TABLE "table_orders" (
         db.into(db.tableOrders).insert(TableOrdersCompanion.insert(
               tableId: tableId,
               taxEnabled: const Value(true),
-              taxRate: Value(TaxRateBounds.minRate / 2),
+              taxRate: const Value(TaxRateBounds.minRate / 2),
             )),
         throwsCheckViolation(),
       );
