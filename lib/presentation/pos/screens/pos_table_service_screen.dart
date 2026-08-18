@@ -25,6 +25,8 @@ import '../widgets/table_pos/table_pos_header.dart';
 import '../widgets/table_pos/table_pos_cart_panel.dart';
 import '../widgets/table_pos/table_pos_summary.dart';
 import '../dialogs/quick_add_product_dialog.dart';
+// `TableSettleStatus` / `TableSettleOutcome` — نتيجةُ حلقةِ حجز→ترحيل→تثبيت.
+import '../../../services/table_checkout_coordinator.dart';
 
 // ── Part files (logic and operations) ──────────────────────────────────
 part 'table_pos_dialogs.dart';

@@ -61,6 +61,92 @@ class TableCheckoutCoordinator {
     }
   }
 
+  /// تحصيلُ الطلب كاملاً: **حجزٌ → ترحيلٌ → تثبيت**.
+  ///
+  /// هذه هي الحلقةُ التي تُغلق نافذةَ «الترحيلُ قبل التسجيل». كان الترتيبُ
+  /// ترحيلاً ثم حراساً، فإن رمى حارسٌ بقيت فاتورةٌ مُرحَّلةٌ بلا دفعةٍ على
+  /// الطاولة. الآن كلُّ الحراس تعمل في [TableSessionService.reservePayment]
+  /// **قبل** أن يُنادى [postInvoice] أصلاً.
+  ///
+  /// [postInvoice] يُرحّل الفاتورةَ ويعيد رقمَها، أو `null` إن تراجع الكاشير.
+  /// يبقى دالّةً يمرّرها المستدعي لأن الترحيلَ يقرأ السلّةَ من Riverpod —
+  /// وبهذا تُقاد الحلقةُ كلُّها في اختبارٍ بلا واجهة.
+  ///
+  /// والحجزُ يُؤخَذ **بعد** ورقةِ الدفع (يستدعيها [postInvoice])، فعمرُه زمنُ
+  /// آلةٍ لا زمنُ إنسان — وهو ما يُبقي خطرَ الحجز العالق صغيراً.
+  Future<TableSettleOutcome> settleFull({
+    required int orderId,
+    required double amount,
+    required Future<int?> Function() postInvoice,
+    int? userId,
+    String? userName,
+  }) async {
+    final int reservationId;
+    try {
+      reservationId = await _session.reservePayment(
+        orderId: orderId,
+        amount: amount,
+        userId: userId,
+        userName: userName,
+      );
+    } on TableTransitionException catch (e) {
+      // لا شيءَ رُحِّل — لا تسويةَ تُطلَب، ورسالةٌ واحدةٌ تكفي.
+      return TableSettleOutcome(
+          status: TableSettleStatus.rejected, message: e.message);
+    }
+
+    int? invoiceId;
+    try {
+      invoiceId = await postInvoice();
+    } catch (e) {
+      await _releaseQuietly(reservationId, 'فشلَ الترحيل: $e', userId, userName);
+      return TableSettleOutcome(
+          status: TableSettleStatus.aborted, message: 'فشلَ الترحيل: $e');
+    }
+
+    if (invoiceId == null) {
+      await _releaseQuietly(
+          reservationId, 'أُلغيت طريقةُ الدفع', userId, userName);
+      return const TableSettleOutcome(
+        status: TableSettleStatus.aborted,
+        message: 'أُلغيت طريقةُ الدفع — لم تُصدَر فاتورة',
+      );
+    }
+
+    try {
+      await _session.confirmPayment(
+          reservationId: reservationId, invoiceId: invoiceId);
+    } catch (e) {
+      // الفاتورةُ رُحّلت والمالُ مسجَّلٌ على الطاولة بمبلغه الصحيح — الناقصُ
+      // رابطُ الفاتورة وحدَه. لا يُحرَّر الحجزُ هنا: تحريرُه يمحو دفعةً
+      // حقيقيّةً رُحّلت فاتورتُها.
+      return TableSettleOutcome(
+        status: TableSettleStatus.reconcileNeeded,
+        invoiceId: invoiceId,
+        message: 'فاتورةٌ #$invoiceId صدرت ورُحِّلت، والمبلغُ مسجَّلٌ على '
+            'الطاولة، لكن تعذّر ربطُهما (حجز #$reservationId) — يحتاج ربطاً '
+            'يدويّاً. الخطأ: $e',
+      );
+    }
+
+    return TableSettleOutcome(
+        status: TableSettleStatus.success, invoiceId: invoiceId);
+  }
+
+  Future<void> _releaseQuietly(
+      int reservationId, String reason, int? userId, String? userName) async {
+    // التحريرُ نفسُه قد يفشل على عطلِ قرص؛ وابتلاعُه هنا مقصود — الفشلُ
+    // الأصليُّ هو ما يُبلَّغ، والحجزُ المعلّقُ يظهر في سجلّ الطاولة.
+    try {
+      await _session.releaseReservation(
+        reservationId: reservationId,
+        reason: reason,
+        userId: userId,
+        userName: userName,
+      );
+    } catch (_) {}
+  }
+
   /// تسجيلُ حصّةٍ بعد صدور فاتورتها.
   Future<void> settlePart({
     required int orderId,
@@ -155,4 +241,31 @@ class TableCheckoutCoordinator {
     final payments = await _session.paymentsFor(orderId);
     return payments.isEmpty ? null : payments.first.invoiceId;
   }
+}
+
+/// نتيجةُ محاولة تحصيل — أربعُ حالاتٍ لا لبسَ بينها.
+enum TableSettleStatus {
+  /// رُحِّلت الفاتورةُ وسُجِّلت الدفعةُ وارتبطتا.
+  success,
+
+  /// رفضَ حارسٌ **قبل** أيِّ ترحيل. لا شيءَ يحتاج تسوية.
+  rejected,
+
+  /// لم تُرحَّل فاتورةٌ (تراجُعٌ أو فشلُ ترحيل) وحُرِّر الحجز.
+  aborted,
+
+  /// رُحِّلت الفاتورةُ والمالُ مسجَّلٌ على الطاولة، والناقصُ ربطُهما.
+  reconcileNeeded,
+}
+
+class TableSettleOutcome {
+  const TableSettleOutcome({
+    required this.status,
+    this.invoiceId,
+    this.message,
+  });
+
+  final TableSettleStatus status;
+  final int? invoiceId;
+  final String? message;
 }

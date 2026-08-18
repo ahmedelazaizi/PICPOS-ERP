@@ -389,86 +389,91 @@ mixin _TablePosOperationsMixin on ConsumerState<TablePosScreen> {
 
     if (result == null || !mounted) return;
 
+    // ── حجزٌ → ترحيلٌ → تثبيت ───────────────────────────────────────────
+    // الحلقةُ كلُّها في `TableCheckoutCoordinator.settleFull`: الحراسُ تعمل
+    // في الحجز **قبل** أن يُنادى الترحيل، فإن رفضت لم تصدر فاتورةٌ تحتاج
+    // تسوية. وما بعد الترحيل تثبيتٌ لا تردّه قاعدةُ عمل.
+    //
+    // والحجزُ يقع هنا — **بعد** ورقةِ الدفع — عن قصد: عمرُه يصير زمنَ آلةٍ
+    // (أجزاءَ الثانية التي يستغرقها الترحيل) لا زمنَ إنسان، فلا تُجمَّد
+    // طاولةٌ بحجزٍ عالقٍ لأن الكاشير تردّد أمام الورقة.
     final checkoutCtrl = ref.read(checkoutControllerProvider.notifier);
-    final success = await checkoutCtrl.processPayment(
-      method: result.method,
-      total: total,
-      cashAmount: result.cashAmount,
-      bankAmount: result.bankAmount,
-      bankSafeId: ref.read(cartControllerProvider).bankSafeId,
-      customerId: result.customerId,
-    );
-
-    if (!success) {
-      final error = ref.read(checkoutControllerProvider).error;
-      if (mounted) {
-        AppToast.show(context, 'فشل الدفع: ${error ?? "خطأ غير معروف"}',
-            type: ToastType.error);
-      }
-      return;
-    }
-
-    final invoiceId = ref.read(checkoutControllerProvider).lastInvoiceId;
-    if (invoiceId != null) {
-      try {
-        final salesRepo = ref.read(salesRepositoryProvider);
-        await salesRepo.updateSaleType(invoiceId, 'table');
-      } catch (_) {}
-    }
-
-    if (invoiceId == null) {
-      if (mounted) {
-        AppToast.show(
-          context,
-          'تم الدفع لكن تعذّر تسجيله على الطاولة — لا رقم فاتورة',
-          type: ToastType.error,
-        );
-      }
-      return;
-    }
-
-    // الطاولةُ تصير 🟠 لا 🟢: الدفعُ لا يُغلق، والإغلاقُ خطوةٌ صريحةٌ
-    // يقوم بها الموظف بعد تجهيز الطاولة. الخدمةُ تكتب سطرَ السجلِّ بنفسها.
     final user = ref.read(authProvider).user;
-    try {
-      await ref.read(tableSessionServiceProvider).recordPayment(
-            orderId: orderId,
-            invoiceId: invoiceId,
-            amount: total,
-            userId: user?.id,
-            userName: user?.displayName,
-          );
-    } catch (e) {
-      // الفاتورةُ #$invoiceId صدرت ورُحِّلت بالفعل (محاسبةً ومخزوناً) قبل
-      // هذا الفشل — processPayment سبق recordPayment، فلا معاملةَ تعويضيّةً
-      // ممكنةً هنا. أقصى ما يمكن فعلُه ألّا يضيع الأثر: سطرٌ صريحٌ في سجلِّ
-      // الطاولة (يظهر في TableLogSheet) يحمل رقمَ الفاتورة والمبلغَ وسببَ
-      // الفشل، ورسالةٌ للكاشير تُسمّي الفجوةَ ولا تكتفي برسالةٍ عامّة.
-      try {
-        final activityLogRepo = ref.read(activityLogRepositoryProvider);
-        await activityLogRepo.logActivity(
-          userId: user?.id,
-          userName: user?.displayName ?? 'مجهول',
-          action: 'table_payment_reconcile_needed',
-          entityType: 'table',
-          entityId: widget.tableId,
-          description:
-              'فاتورةٌ #$invoiceId صدرت ورُحِّلت، لكن تعذّر تسجيلُ دفعتها على '
-              '${widget.tableName} — يحتاج تسويةً يدويّة. الخطأ: $e',
+    final outcome = await ref.read(tableCheckoutCoordinatorProvider).settleFull(
+          orderId: orderId,
           amount: total,
-        );
-      } catch (_) {}
+          userId: user?.id,
+          userName: user?.displayName,
+          postInvoice: () async {
+            final success = await checkoutCtrl.processPayment(
+              method: result.method,
+              total: total,
+              cashAmount: result.cashAmount,
+              bankAmount: result.bankAmount,
+              bankSafeId: ref.read(cartControllerProvider).bankSafeId,
+              customerId: result.customerId,
+            );
+            if (!success) return null;
 
-      if (mounted) {
-        AppToast.show(
-          context,
-          '⚠️ فاتورة #$invoiceId صدرت ورُحِّلت لكن لم تُسجَّل على '
-          '${widget.tableName} — راجع الطاولةَ يدويّاً',
-          type: ToastType.error,
+            final id = ref.read(checkoutControllerProvider).lastInvoiceId;
+            if (id != null) {
+              try {
+                await ref.read(salesRepositoryProvider).updateSaleType(
+                      id,
+                      'table',
+                    );
+              } catch (_) {}
+            }
+            return id;
+          },
         );
-      }
-      return;
+
+    if (!mounted) return;
+
+    switch (outcome.status) {
+      case TableSettleStatus.rejected:
+        // لم يُرحَّل شيء — رسالةٌ واحدةٌ تكفي ولا تسويةَ تُطلَب.
+        AppToast.show(context, outcome.message ?? 'تعذّر التحصيل',
+            type: ToastType.error);
+        return;
+
+      case TableSettleStatus.aborted:
+        final error = ref.read(checkoutControllerProvider).error;
+        AppToast.show(context, outcome.message ?? 'فشل الدفع: $error',
+            type: ToastType.error);
+        return;
+
+      case TableSettleStatus.reconcileNeeded:
+        // المالُ مسجَّلٌ على الطاولة بمبلغه الصحيح والفاتورةُ صدرت — الناقصُ
+        // ربطُهما. يُسجَّل بصوتٍ عالٍ كي لا يمرّ صامتاً.
+        try {
+          await ref.read(activityLogRepositoryProvider).logActivity(
+                userId: user?.id,
+                userName: user?.displayName ?? 'مجهول',
+                action: 'table_payment_reconcile_needed',
+                entityType: 'table',
+                entityId: widget.tableId,
+                description: outcome.message ?? '',
+                amount: total,
+              );
+        } catch (_) {}
+        if (mounted) {
+          AppToast.show(
+            context,
+            '⚠️ فاتورة #${outcome.invoiceId} صدرت والمبلغُ مسجَّلٌ على '
+            '${widget.tableName}، لكن تعذّر ربطُهما — راجع الطاولةَ يدويّاً',
+            type: ToastType.error,
+          );
+        }
+        return;
+
+      case TableSettleStatus.success:
+        break;
     }
+
+    // الطاولةُ تصير 🟠 لا 🟢: الدفعُ لا يُغلق، والإغلاقُ خطوةٌ صريحةٌ يقوم
+    // بها الموظف بعد تجهيز الطاولة. والخدمةُ كتبت سطرَ السجلِّ عند الحجز.
+    final invoiceId = outcome.invoiceId;
 
     if (mounted) {
       barcodeController.clear();
