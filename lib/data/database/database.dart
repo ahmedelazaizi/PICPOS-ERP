@@ -708,7 +708,7 @@ class AppDatabase extends _$AppDatabase {
   // ستتخطّى هجرةَ الطاولات إلى الأبد، والعكس. ورفعُ السقف إلى 156 مع توسيع
   // حرّاس الثلاثة إلى `from < 156` يجعل كلَّ قاعدةٍ تحت 156 تمرّ بالثلاث،
   // والمكرَّرُ منها يسقط في `isIdempotentMigrationError` بلا ضرر.
-  int get schemaVersion => 156;
+  int get schemaVersion => 157;
 
   /// PostgreSQL-specific table creation: Drift's `currentDateAndTime` generates
   /// `strftime('%s','now')` which doesn't exist in PostgreSQL.
