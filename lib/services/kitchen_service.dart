@@ -14,51 +14,18 @@ class KitchenService {
 
   KitchenService(this._kitchenRepo, this._productRepo, this._printersRepo, this._db);
 
-  /// Generate kitchen work order(s) from sales invoice items.
-  /// Items are routed to different stations based on category→station mapping.
-  Future<void> generateKitchenWorkOrder({
-    required int invoiceId,
-    required String? tableName,
-    required List<SalesInvoiceItemsCompanion> items,
-    String? notes,
-  }) async {
-    // Group items by station based on category mapping
-    final Map<String, List<WorkOrderItemData>> itemsByStation = {};
-
-    for (final item in items) {
-      final product = await _productRepo.getProductById(item.productId.value);
-      if (product != null && product.categoryId != null) {
-        // Determine station from category mapping
-        String station = 'kitchen';
-        if (product.categoryId != null) {
-          station = await _kitchenRepo.getStationForCategory(product.categoryId!);
-        }
-
-        itemsByStation.putIfAbsent(station, () => []);
-        itemsByStation[station]!.add(WorkOrderItemData(
-          productId: item.productId.value,
-          productName: product.name,
-          quantity: item.quantity.value,
-          notes: item.note.value,
-        ));
-      }
-    }
-
-    // Create a separate work order per station
-    for (final entry in itemsByStation.entries) {
-      final station = entry.key;
-      final stationItems = entry.value;
-      final orderNumber = await _kitchenRepo.generateWorkOrderNumber();
-      await _kitchenRepo.createWorkOrder(
-        orderNumber: orderNumber,
-        invoiceId: invoiceId,
-        customerName: tableName,
-        station: station,
-        items: stationItems,
-        notes: notes, // <-- ADDED
-      );
-    }
-  }
+  // ملحوظة: `generateKitchenWorkOrder` كانت هنا وأُزيلت (2026-08-18).
+  //
+  // كانت تُنادى من `SalesTransactionOrchestrator` على **كلِّ فاتورة مبيعاتٍ
+  // بلا شرط**، فكان المرتجعُ يذهب إلى المطبخ ليُحضَّر، وكان صنفُ الطاولة
+  // يُطلَب مرّتين (مرّةً عند الطلب ومرّةً عند التحصيل لأنه يُنشئ فاتورة).
+  //
+  // وقرارُ المالك: الطاولاتُ وحدَها تُحضَّر. فلمّا زال النداءُ لم يبقَ لها
+  // مستدعٍ، وتركُها كان يُبقي نسخةً ثانيةً من منطق «التصنيف → المحطة» تُصان
+  // بجوار نسخة `table_pos_operations.dart`. يحرسه
+  // `test/structural/kitchen_work_orders_from_tables_only_test.dart`.
+  //
+  // والطباعةُ شيءٌ آخرُ لا علاقةَ له: `printKitchenOrders` أدناه باقيةٌ.
 
   /// Print kitchen orders for a specific invoice (items with kitchen printer assigned)
   Future<int> printKitchenOrders(int invoiceId) async {

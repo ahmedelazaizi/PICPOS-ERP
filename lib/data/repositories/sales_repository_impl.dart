@@ -29,15 +29,13 @@ import 'sales_transaction_orchestrator.dart';
 class SalesRepositoryImpl extends DatabaseAccessor<AppDatabase>
     implements SalesRepository {
   final AccountingService _accountingService;
-  final KitchenService _kitchenService;
   late final SalesTransactionOrchestrator _orchestrator;
 
   SalesRepositoryImpl(
     super.db,
     this._accountingService,
-    this._kitchenService,
   ) {
-    _orchestrator = SalesTransactionOrchestrator(db, _accountingService, _kitchenService);
+    _orchestrator = SalesTransactionOrchestrator(db, _accountingService);
   }
 
   void _appendDiag(String msg) {

@@ -193,8 +193,7 @@ final printersRepositoryProvider = Provider<IPrintersRepository>((ref) {
 final salesRepositoryProvider = Provider<domain.SalesRepository>((ref) {
   final db = ref.watch(databaseProvider);
   final accountingService = ref.watch(accountingServiceProvider);
-  final kitchenService = ref.watch(kitchenServiceProvider);
-  return SalesRepositoryImpl(db, accountingService, kitchenService);
+  return SalesRepositoryImpl(db, accountingService);
 });
 
 /// Returns Repository provider
