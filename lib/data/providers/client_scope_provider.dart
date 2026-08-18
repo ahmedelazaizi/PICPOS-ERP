@@ -116,17 +116,12 @@ final clientScopeProvider = FutureProvider<ClientScope>((ref) async {
 // وسياسةُ الخلوّ ([EmptyScopePolicy]) من سابقةِ المالك 2026-08-04 نفسِها:
 // تُقفل الأجهزةُ التي تسرّب (عميل/مرآة) ولا يُوقَف محلٌّ بجهازٍ واحد.
 
-/// العميلُ والمرآةُ هما الجهازان اللذان تُقفلهما سابقةُ 2026-08-04.
-///
-/// والإشارةُ `NetworkService` لا `SyncInterceptor.isClientMode` عن قصد: هي
-/// نفسُها التي يقرؤها `branchScopeProvider` أعلاه لتحديدِ النطاق، فلا يُقرَّر
-/// النطاقُ وسياستُه بإشارتين قد تفترقان (المعترِضُ يجيب عن «أين تُكتب» لا عن
-/// «أيُّ جهازٍ هذا»، وهو معدومٌ أصلاً قبل تهيئتِه).
-bool get _isScopedDevice =>
-    NetworkService.instance.isClient || NetworkService.instance.isMirror;
-
+/// العميلُ والمرآةُ هما الجهازان اللذان تُقفلهما سابقةُ 2026-08-04 — والمُحدِّدُ
+/// واحدٌ في المستودع كلِّه: [NetworkService.isBranchScopedDevice].
 EmptyScopePolicy get _deviceEmptyScopePolicy =>
-    _isScopedDevice ? EmptyScopePolicy.refuse : EmptyScopePolicy.widen;
+    NetworkService.instance.isBranchScopedDevice
+        ? EmptyScopePolicy.refuse
+        : EmptyScopePolicy.widen;
 
 /// المخازنُ التي يجوز نسبةُ مستندٍ جديدٍ إليها على هذا الجهاز، بهذا الترتيب:
 /// الصالحُ ⇒ حصرُ الفرع ⇒ حصرُ المستخدمِ للمخازن ⇒ إبقاءُ المنتقى سلفاً.
@@ -162,7 +157,9 @@ final assignableWarehousesProvider =
     final warehouseScope = await db.getWarehouseScopeForUser(userId);
     if (warehouseScope != null) {
       result = warehouseScope.isEmpty
-          ? (_isScopedDevice ? <Warehouse>[] : result)
+          ? (NetworkService.instance.isBranchScopedDevice
+              ? <Warehouse>[]
+              : result)
           : result.where((w) => warehouseScope.contains(w.id)).toList();
     }
   }

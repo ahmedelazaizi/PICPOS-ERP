@@ -293,6 +293,23 @@ void main() {
           reason: '`{}` فشلٌ مقفولٌ قرّره `branchScopeProvider`، وتوسيعُه '
               'يُبطل كلَّ حصرٍ فرعيٍّ في المستودع');
     });
+
+    // ── نافذةُ الانفتاح التي أُغلقت بتوحيدِ الإشارة ───────────────────────
+    //
+    // `SyncInterceptor.isClientMode` = `isClient || WriteRouter.isMirrorActive`،
+    // و`isMirrorActive` تشترط `MirrorState.isConfigured`. فمرآةٌ لم يكتمل
+    // تصافحُها كانت تُقرأ «جهازاً مستقلاً» ⇒ يُوسَّع لها بدل أن تُقفل.
+    // والمُحدِّدُ صار `NetworkService.isBranchScopedDevice` (هويّةُ الجهاز).
+    test('مرآةٌ لم يكتمل تصافحُها ⇒ تبقى مقفولةً لا مفتوحة', () async {
+      NetworkService.instance.debugSetModeForTests(NetworkMode.mirror);
+      MirrorState.instance.debugSetForTests(); // بلا تصافح ⇒ isConfigured=false
+      expect(MirrorState.instance.isConfigured, isFalse);
+      loginCashier(); // مخصَّصٌ لفرعِ أ وبلا تخصيصِ مخازن
+
+      expect(await warehouseIds(), isEmpty,
+          reason: 'الإشارةُ القديمةُ كانت تنفتح هنا فتُسلّمه مخازنَ فرعِه '
+              'كاملةً رغم أنه غيرُ مميَّزٍ وبلا تخصيص');
+    });
   });
 
   group('المخازن — الصلاحيةُ والصلاحُ وإبقاءُ المنتقى', () {
@@ -354,6 +371,23 @@ void main() {
       container.invalidate(branchScopeProvider);
       expect(await warehouseIds(), isEmpty,
           reason: 'الأجهزةُ التي تسرّب تُقفل، والحفظُ يرفض برسالةٍ قابلةٍ للإصلاح');
+    });
+  });
+
+  group('توحيدُ إشارةِ الجهاز — المُحدِّدُ نفسُه خارجَ منتقي الفاتورة', () {
+    // ⚠️ توأمُه `allWarehousesProvider` يحمل القرارَ نفسَه بالسطر نفسِه، ولا
+    // يُقاس هنا: مزوّدُ تدفّقٍ فوق drift لا يُصدر داخلَ `ProviderContainer`
+    // مجرّدةً من ربطِ الودجت فينتهي بمهلةِ ٣٠ث. قِيس بالتحليل لا بالاختبار.
+    test('userAccessibleWarehousesProvider يُقفل على مرآةٍ ناقصةِ التصافح',
+        () async {
+      NetworkService.instance.debugSetModeForTests(NetworkMode.mirror);
+      MirrorState.instance.debugSetForTests();
+      loginCashier();
+
+      expect(await container.read(userAccessibleWarehousesProvider.future),
+          isEmpty,
+          reason: 'نفسُ قرارِ 2026-08-04 بنفسِ الإشارة — وإلا اختلف منتقي '
+              'الفاتورةِ عن بقيّةِ الشاشات على الجهازِ نفسِه');
     });
   });
 

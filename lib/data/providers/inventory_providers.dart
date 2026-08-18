@@ -7,6 +7,7 @@ import '../../core/diagnostics/perf_trace.dart';
 import '../../core/logging/diagnostic_logger.dart';
 import '../../domain/repositories/inventory_repository.dart';
 import '../database/sync_interceptor.dart';
+import '../../services/network_service.dart';
 import '../../domain/entities/product_entity.dart';
 
 // inventoryRepositoryProvider moved to repository_providers.dart
@@ -329,7 +330,11 @@ final allWarehousesProvider = StreamProvider<List<WarehouseData>>((
       // فقط**. دول الأجهزة اللي بتسرّب فعلاً. الجهاز المستقل بيفضل بسلوكه
       // القديم عن قصد — محل بجهاز واحد وكاشير محدش خصّصله مخازن ماينفعش
       // يقف عشان حصر مالوش لازمة أصلاً على جهاز واحد.
-      if (SyncInterceptor.isClientMode) {
+      // هويّةُ الجهاز لا توجيهُ الكتابة: `SyncInterceptor.isClientMode` كانت
+      // تنفتح على مرآةٍ لم يكتمل تصافحُها وقبل تهيئةِ المعترِض، فيُسلَّم
+      // للمستخدمِ سيّئِ التزويد كلُّ المخازن — عكسُ ما يقوله هذا التعليقُ
+      // نفسُه. انظر `NetworkService.isBranchScopedDevice`.
+      if (NetworkService.instance.isBranchScopedDevice) {
         debugPrint('[WarehouseScope] ⚠ user=$userId غير مميّز وبلا تخصيص مخازن '
             'على جهاز عميل/مرآة ⇒ صفر مخازن (فشل مقفول)');
         return const <WarehouseData>[];

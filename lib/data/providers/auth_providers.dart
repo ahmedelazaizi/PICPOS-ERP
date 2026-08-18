@@ -963,7 +963,9 @@ final userAccessibleWarehousesProvider = FutureProvider<List<Warehouse>>((ref) a
 
   if (scope == null) return allWarehouses; // مميّز ⇒ بلا حصر
   if (scope.isEmpty) {
-    if (SyncInterceptor.isClientMode) {
+    // هويّةُ الجهاز لا توجيهُ الكتابة — انظر `NetworkService.isBranchScopedDevice`
+    // ونظيرَه في `allWarehousesProvider` (القرارُ واحدٌ ومينفعش يختلفوا).
+    if (NetworkService.instance.isBranchScopedDevice) {
       debugPrint('[WarehouseScope] ⚠ user=$userId غير مميّز وبلا تخصيص مخازن '
           'على جهاز عميل/مرآة ⇒ صفر مخازن (فشل مقفول)');
       return const <Warehouse>[];
