@@ -46,6 +46,56 @@ class ProcessSalesReturnUseCase {
     }
   }
 
+  /// خزنةُ الصرف على مرتجعٍ — نفسُ أولويّات مسار البيع، لا الافتراضيُّ وحدَه.
+  ///
+  /// كان هنا `getDefaultSafeByType(type)` مباشرةً: **الخزنةُ الافتراضيّة
+  /// للنظام** (الصندوق الرئيسيّ) مهما كان فرعُ الفاتورة. فمالُ فاتورةٍ دخل
+  /// خزنةَ فرعٍ عبر `_recordSalesReceipt` — وهي تحلّ الفرعَ من المخزن
+  /// (`sales_mutations_dao.dart:759-781`) — يخرج عند المرتجع من خزنةٍ أخرى،
+  /// فينتفخ رصيدُ فرعٍ ويعجز آخر بلا حركةٍ تفسّره.
+  ///
+  /// والترتيبُ منقولٌ من المسار العامل: خزنةُ فرع الفاتورة أوّلاً — والافتراضيُّ
+  /// داخلَ الفرع يسبق غيرَه (`isDefault` تنازليّاً) — ثم افتراضيُّ النظام آخرَ
+  /// ملجأ. ولا أولويّةَ صريحةً (P1) هنا: `SalesReturnRequest` لا تحمل خزنةً
+  /// يختارها المستخدم، فاختراعُ واحدةٍ توسيعٌ للمدى لا مطابقةٌ للمرجع.
+  Future<Safe?> _resolveRefundSafe(
+    SalesInvoiceData invoice,
+    String safeType,
+  ) async {
+    // `branchId` مختومٌ على الفاتورة عند الإنشاء من `warehouse.branchId`
+    // (‏L3)، لكنه فارغٌ في الصفوف الأقدم منه — فيُقرأ الفرعُ من المخزن حينئذ.
+    var branchId = invoice.branchId;
+    if (branchId == null) {
+      final warehouse = await (_db.select(_db.warehouses)
+            ..where((w) => w.id.equals(invoice.warehouseId)))
+          .getSingleOrNull();
+      branchId = warehouse?.branchId;
+    }
+
+    if (branchId != null) {
+      final resolvedBranchId = branchId;
+      final branchSafe =
+          await (_db.select(_db.safes)
+                ..where(
+                  (s) =>
+                      s.branchId.equals(resolvedBranchId) &
+                      s.safeType.equals(safeType) &
+                      s.isActive.equals(true),
+                )
+                ..orderBy([
+                  (s) => OrderingTerm(
+                    expression: s.isDefault,
+                    mode: OrderingMode.desc,
+                  ),
+                ])
+                ..limit(1))
+              .getSingleOrNull();
+      if (branchSafe != null) return branchSafe;
+    }
+
+    return _db.getDefaultSafeByType(safeType);
+  }
+
   Future<void> _processReturn(
     SalesReturnRequest request,
     ReturnTotals totals,
@@ -129,8 +179,14 @@ class ProcessSalesReturnUseCase {
 
       // Proceed with Treasury transactions
       if (cashRefund > 0) {
-        final cashSafe = await _db.getDefaultSafeByType('cash');
-        if (cashSafe != null) {
+        final cashSafe = await _resolveRefundSafe(invoice, 'cash');
+        if (cashSafe == null) {
+          throw Exception(
+            'لا توجد خزنة نقدية صالحة لصرف المرتجع. اضبط الخزائن من '
+            'الإعدادات ← الخزينة (المرتجع لم يُسجَّل).',
+          );
+        }
+        {
           // ⚠️ لا تعديلَ يدويّ للرصيد هنا. `createSafeTransaction` يطبّق
           // الحركةَ بنفسه: `payment` ⇒ `balance = balance - amount`
           // (‏`treasury_dao.dart:1470-1475`). وكان السطرُ
@@ -159,8 +215,14 @@ class ProcessSalesReturnUseCase {
       }
 
       if (bankRefund > 0) {
-        final bankSafe = await _db.getDefaultSafeByType('bank');
-        if (bankSafe != null) {
+        final bankSafe = await _resolveRefundSafe(invoice, 'bank');
+        if (bankSafe == null) {
+          throw Exception(
+            'لا توجد خزنة بنكية صالحة لصرف المرتجع. اضبط الخزائن من '
+            'الإعدادات ← الخزينة (المرتجع لم يُسجَّل).',
+          );
+        }
+        {
           // نفسُ علّة الشقّ النقديّ أعلاه: `createSafeTransaction('payment')`
           // ينقص الرصيدَ بنفسه، فالتعديلُ اليدويُّ قبله خصمٌ ثانٍ.
           final newBalance = bankSafe.balance - bankRefund;
