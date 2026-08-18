@@ -1,3 +1,4 @@
+import '../../core/errors/app_exceptions.dart';
 import 'dart:async';
 
 import 'package:drift/drift.dart';
@@ -867,10 +868,29 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
       if (cashReturnAmount > 0) {
         // Record in safe: supplier gives back money → receipt into our safe
         final isBank = ['transfer', 'card', 'bank'].contains(invoice.paymentMethod);
-        final safe = isBank
-            ? await _db.getDefaultSafeByType('bank')
-            : await _db.getDefaultSafeByType('cash');
-        if (safe != null) {
+        // مواصفة 2026-08-18 (ح‑٢/ح‑٣): خزنةُ فرعِ المخزن لا الافتراضيّةُ
+        // العامّة، ورميٌ لا تخطٍّ صامت. كان `getDefaultSafeByType` ثمّ
+        // `if (safe != null)` بلا `else`: فرعٌ بلا خزنةٍ افتراضيّةٍ عامّة كان
+        // يمضي مرتجعُه كامل الأثر — مخزونٌ يخرج وقيدٌ مدينُه النقديّة —
+        // ودرجٌ لم يتحرّك.
+        final safe = await _db.resolveSafeForOperation(
+          safeType: isBank ? 'bank' : 'cash',
+          warehouseId: invoice.warehouseId,
+          operationLabel: 'purchase-return #${invoice.invoiceNumber}',
+          noSafeMessage:
+              'لا توجد خزنة ${isBank ? 'بنكية' : 'نقدية'} صالحة لاستلام '
+              'مرتجع المشتريات. اضبط الخزائن من الإعدادات ← الخزينة '
+              '(المرتجع لم يُحفَظ).',
+        );
+        // ح‑١: نقدٌ **يدخل** الدرجَ هنا (المورّدُ يردّ المال)، فبلا نافذةٍ
+        // تحويه يعدّه الكاشيرُ التالي فائضاً ويُقيَّد «فائض نقدية».
+        //
+        // والسؤالُ عن فرعِ الخزنة لا عن المستخدم: توقيعُ
+        // `processPurchaseReturn` لا يحمل `userId` أصلاً.
+        if (!await _db.drawerMovementAllowed(safe.id)) {
+          throw ShiftRequiredException(cashAmount: cashReturnAmount);
+        }
+        {
           // 069 (D5-003): atomic delta update.
           final newBalance = safe.balance + cashReturnAmount;
           await _db.adjustSafeBalance(safe.id, cashReturnAmount);
