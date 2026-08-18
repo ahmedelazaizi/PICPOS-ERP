@@ -77,6 +77,11 @@ void main() {
     );
     warehouseId = (await db.getDefaultWarehouse())!.id;
 
+    // شرطٌ لازمٌ منذ مواصفة 2026-08-18 (ح‑١): بيعةٌ نقديّةٌ تستلزم ورديّةً
+    // مفتوحةً على الدرج. هذا الملفُّ يقيس تكلفةَ الخامات في الأستاذ لا
+    // سلوكَ الورديّات، فالورديّةُ تهيئةٌ لا موضوعُ اختبار.
+    await db.openShift(userId, 0);
+
     // الصنفُ المركّب: لا يُتابَع مخزونياً وتكلفتُه صفر — الحالةُ الطبيعية.
     mealId = await db.insertProduct(ProductsCompanion.insert(
       code: 'MEAL-E2E',
