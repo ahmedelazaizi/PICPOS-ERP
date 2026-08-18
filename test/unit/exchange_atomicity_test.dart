@@ -35,13 +35,10 @@ import 'package:ural_erp/domain/models/exchange_settlement.dart';
 import 'package:ural_erp/domain/repositories/audit_repository_interface.dart';
 import 'package:ural_erp/domain/repositories/i_products_repository.dart';
 import 'package:ural_erp/domain/repositories/inventory_repository.dart';
-import 'package:ural_erp/domain/repositories/kitchen_repository.dart';
 import 'package:ural_erp/domain/repositories/parties_repository.dart';
-import 'package:ural_erp/domain/repositories/printers_repository.dart';
 import 'package:ural_erp/domain/repositories/settings_repository.dart';
 import 'package:ural_erp/domain/repositories/treasury_repository.dart';
 import 'package:ural_erp/services/accounting_service.dart';
-import 'package:ural_erp/services/kitchen_service.dart';
 
 void main() {
   late AppDatabase db;
@@ -209,18 +206,10 @@ void main() {
       _StubSettingsRepo(),
       _StubAuditRepo(),
     );
-    // أمرُ المطبخ غيرُ قاتلٍ (‏ملفوفٌ بـtry/catch في المنسّق) فالمقاطعُ
-    // الرامية كافية.
-    final kitchen = KitchenService(
-      _StubKitchenRepo(),
-      _StubProductRepo(),
-      _StubPrintersRepo(),
-      db,
-    );
     exchange = ExchangeRepositoryImpl(
       db,
       ReturnsRepositoryImpl(db, accounting),
-      SalesTransactionOrchestrator(db, accounting, kitchen),
+      SalesTransactionOrchestrator(db, accounting),
     );
 
     warehouseId = (await db.getDefaultWarehouse())!.id;
@@ -835,18 +824,6 @@ class _StubSettingsRepo implements ISettingsRepository {
 }
 
 class _StubAuditRepo implements IAuditRepository {
-  @override
-  dynamic noSuchMethod(Invocation inv) =>
-      throw UnsupportedError('Stub: ${inv.memberName}');
-}
-
-class _StubKitchenRepo implements KitchenRepository {
-  @override
-  dynamic noSuchMethod(Invocation inv) =>
-      throw UnsupportedError('Stub: ${inv.memberName}');
-}
-
-class _StubPrintersRepo implements IPrintersRepository {
   @override
   dynamic noSuchMethod(Invocation inv) =>
       throw UnsupportedError('Stub: ${inv.memberName}');
