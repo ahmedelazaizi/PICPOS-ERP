@@ -794,8 +794,13 @@ class ApiSalesHandler extends ApiHandlerBase {
             return saleId;
           });
 
-          broadcast('sales');
-          broadcast('accounting');
+          // لا `broadcast()` يدويّاً هنا: `withBroadcast` أعلاه يبثّ كلَّ
+          // جدولٍ في `tables` بنفسه، والحارسُ الهيكليُّ
+          // `no_manual_broadcast_test` يرفض النداءَ المباشر. ونداءُ البثِّ في
+          // `postSale` ليس نظيراً — تلك لا تستعمل الغلافَ أصلاً.
+          //
+          // و`markTablesUpdated` يبقى: هو إخطارُ مجاري drift لشاشات الخادم
+          // نفسِه، لا بثُّ الشبكة — ونفسُ النمط داخل الغلاف في `postVoidSale`.
           db.markTablesUpdated({
             db.salesInvoices,
             db.salesInvoiceItems,
