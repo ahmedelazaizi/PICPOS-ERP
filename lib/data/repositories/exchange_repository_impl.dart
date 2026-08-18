@@ -5,9 +5,11 @@ import '../../core/utils/uuid_v7.dart';
 import '../../domain/entities/cart_item_entity.dart';
 import '../../domain/entities/product_entity.dart';
 import '../../domain/models/exchange_settlement.dart';
+import '../../domain/models/exchange_sync_payload.dart';
 import '../../domain/models/return_refund_calculator.dart';
 import '../../domain/repositories/sales_repository.dart';
 import '../../domain/usecases/sales/calculate_invoice_totals_usecase.dart';
+import '../../services/client_write_interceptor.dart';
 import '../database/database.dart';
 import 'returns_repository_impl.dart';
 import 'sales_transaction_orchestrator.dart';
@@ -307,7 +309,14 @@ class ExchangeRepositoryImpl {
     };
 
     // ── ٤. المستندان في معاملةٍ واحدة ─────────────────────────────────────
-    return _db.transaction(() async {
+    //
+    // ونطاقُ التجميع حولَها: شقّا الاستبدال يمرّان كلاهما بـ
+    // `ClientWriteInterceptor`، فيُلتقطان هناك بدل أن يُرسِل كلٌّ منهما حمولةً
+    // مستقلّة. والوسمُ المختلطُ يُنتج شقَّي مردودٍ فيُلتقطان معاً — حمولةٌ
+    // تحمل مردوداً واحداً كانت ستُسقط الثاني صامتاً.
+    final legs = ExchangeLegCollector();
+    final result = await ClientWriteInterceptor.runWithExchangeCollector(legs,
+        () => _db.transaction(() async {
       // رصيدُ الدرج قبل أيّ شقّ — أساسُ قياس الحركة النقدية الفعلية.
       final drawerBefore = await _drawerBalance(drawer.id);
 
@@ -446,7 +455,33 @@ class ExchangeRepositoryImpl {
         difference: settlement.amount,
         drawerSafeId: drawer.id,
       );
-    });
+    }));
+
+    // ── ٥. حمولةٌ واحدةٌ **بعد** الإيداع ──────────────────────────────────
+    //
+    // بعد المعاملة لا داخلَها: معاملةُ قاعدةٍ مفتوحةٌ عبر ذهابِ HTTP وإيابِه
+    // قاعدةٌ حمراء (‏SYNC_ARCHITECTURE §9.6) — تقفل القاعدةَ طولَ الجولة.
+    // وقبلَ هذا كان شقُّ المردود ينتظر الشبكةَ داخل المعاملة في وضع المرآة.
+    //
+    // و`hasBothLegs` كاذبٌ في الوضع المستقلّ: دوالُّ المزامنة تخرج عند
+    // `isClientMode == false` **قبل** أن تصل نقطةَ الالتقاط، فلا يُلتقط شيءٌ
+    // ولا تُبنى حمولةٌ ولا تُرسَل — وهو الصحيح، فالمستقلُّ لا يزامن.
+    //
+    // ونصفُ استبدالٍ لا يُرسَل أبداً: شقٌّ بلا شقٍّ يُسقط الشرطَ فيُمتنع
+    // الإرسالُ كلُّه بدل أن يُنشئ على الخادم مستنداً بلا نظيرِه.
+    if (legs.hasBothLegs) {
+      await ClientWriteInterceptor.dispatchWrite(
+        () => ClientWriteInterceptor.submitExchange(legs.build(
+          exchangeKey: exchangeKey,
+          originalInvoiceId: originalInvoice.id,
+          originalInvoiceGlobalId: originalInvoice.globalId,
+          originalInvoiceNumber: originalInvoice.invoiceNumber,
+        )),
+        tag: 'EXCHANGE-SYNC',
+      );
+    }
+
+    return result;
   }
 
   // ─────────────────────────────────────────────────────────────────────────

@@ -11,6 +11,7 @@ import 'write_router.dart';
 import '../core/logging/diagnostic_logger.dart';
 import '../data/database/database.dart';
 import '../data/database/sync_interceptor.dart';
+import '../domain/models/exchange_sync_payload.dart';
 
 part 'interceptor/cwi_commerce.dart';
 part 'interceptor/cwi_catalog.dart';
@@ -205,6 +206,39 @@ class ClientWriteInterceptor implements SyncInterceptor {
   /// callers must submit first, then open their local transaction. Holding a
   /// SQLite/PG transaction open across an HTTP round-trip locks the database
   /// for the duration and is a red rule in SYNC_ARCHITECTURE §9.6.
+  // ── نطاقُ تجميع الاستبدال ───────────────────────────────────────────────
+  //
+  // الاستبدالُ مستندان في معاملةٍ واحدة، وقرارُ المالك أن يصلا الخادمَ في
+  // **حمولةٍ واحدة**. وشقّاه يرسلان من مستودعَين مختلفَين لا يعرف أحدُهما
+  // الآخر، لكنّ كليهما يمرّ من هنا — فالالتقاطُ في هذه النقطة يقمع
+  // الحمولتَين المنفردتَين بلا لمسِ أيٍّ من المستودعَين.
+  //
+  // **و`Zone` لا حقلٌ ساكن:** الحقلُ الساكنُ يتسرّب إن رمى نداءٌ بين الفتح
+  // والإغلاق، فيبتلع مزامنةَ كلِّ بيعٍ تالٍ صامتاً. وقيمةُ النطاق تموت مع
+  // النطاق مهما خرج منه الاستثناء.
+  //
+  // ⚠️ **وهذا يرفع انتهاكاً قائماً لا يضيف واحداً:** [dispatchWrite] في وضع
+  // المرآة تنتظر الشبكةَ (`await submit()`)، وشقُّ المردود يُنادى **داخل**
+  // معاملة الاستبدال ⇒ معاملةُ قاعدةٍ مفتوحةٌ عبر ذهابِ HTTP وإيابِه، وهي
+  // قاعدةٌ حمراء (‏SYNC_ARCHITECTURE §9.6). والالتقاطُ لا يلمس الشبكةَ
+  // أصلاً، والإرسالُ يقع **بعد** إغلاق المعاملة.
+  static const Object _exchangeCollectorKey = #picposExchangeCollector;
+
+  /// المُجمِّعُ الفعّالُ في النطاق الحاليّ، أو `null` خارجَه — والخارجُ هو
+  /// الحالةُ الساحقة، فكلُّ بيعٍ ومردودٍ عاديٍّ يمرّ من هنا بلا تغيير.
+  static ExchangeLegCollector? get activeExchangeCollector =>
+      Zone.current[_exchangeCollectorKey] as ExchangeLegCollector?;
+
+  /// يشغّل [body] في نطاقٍ يُلتقَط فيه شقّا الاستبدال بدل إرسالهما منفردَين.
+  static Future<T> runWithExchangeCollector<T>(
+    ExchangeLegCollector collector,
+    Future<T> Function() body,
+  ) =>
+      runZoned(
+        body,
+        zoneValues: <Object?, Object?>{_exchangeCollectorKey: collector},
+      );
+
   static Future<void> dispatchWrite(
     Future<Object?> Function() submit, {
     required String tag,
@@ -467,6 +501,7 @@ class ClientWriteInterceptor implements SyncInterceptor {
   static Future<int?> submitHeldOrder(Map<String, dynamic> orderData) => _CwiTrading.submitHeldOrder(orderData);
   static Future<bool> deleteHeldOrder(int id) => _CwiTrading.deleteHeldOrder(id);
   static Future<int?> submitSalesReturn(Map<String, dynamic> returnData) => _CwiTrading.submitSalesReturn(returnData);
+  static Future<int?> submitExchange(Map<String, dynamic> exchangeData) => _CwiTrading.submitExchange(exchangeData);
   static Future<bool> deleteSalesInvoice(int id) => _CwiTrading.deleteSalesInvoice(id);
   static Future<bool> updateSalesInvoice(int id, Map<String, dynamic> data) => _CwiTrading.updateSalesInvoice(id, data);
   // C-02 (Spec 151) — sales-invoice void submit (globalId-resolved).

@@ -1126,6 +1126,15 @@ class OfflineSyncWorker {
         }
         break;
 
+      case 'sales_exchanges':
+        if (operation == 'insert') {
+          // بلا هذا الفرع تُصَفُّ حمولةُ الاستبدال ثم تسقط صامتةً عند
+          // التصريف (‏`break` → null → `markAsSyncSuccess`) — نفسُ ما وقع
+          // لـ`void` و`payment` قبلَها. والعميلُ يظنّها «مُصفَّفة» وهي مفقودة.
+          return proxy.submitExchange(payload, idempotencyKey: idempotencyKey);
+        }
+        break;
+
       case 'held_orders':
         if (operation == 'insert') {
           return proxy.submitHeldOrder(payload, idempotencyKey: idempotencyKey);
