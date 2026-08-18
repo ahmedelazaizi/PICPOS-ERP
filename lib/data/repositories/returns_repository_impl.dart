@@ -1,3 +1,4 @@
+import '../../core/constants/payment_methods.dart';
 import 'dart:async' show unawaited;
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
@@ -554,7 +555,7 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
       // memo visible in the customer's statement. This is likely the
       // freeze-on-full-return bug the user reported.
       if (arRefund > 0 && invoice.customerId != null) {
-        final arSafe = ['transfer', 'card', 'bank'].contains(invoice.paymentMethod)
+        final arSafe = isBankPaymentMethod(invoice.paymentMethod)
             ? await _db.getDefaultSafeByType('bank')
             : await _db.getDefaultSafeByType('cash');
         if (arSafe != null) {

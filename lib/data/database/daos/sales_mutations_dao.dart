@@ -475,7 +475,7 @@ extension SalesMutationsDao on AppDatabase {
               : ((paymentMethod == 'multiple' || paymentMethod == 'mixed')
                   ? (cashAmount ?? 0)
                   : 0.0);
-          final bankRefund = (['transfer', 'card', 'bank'].contains(paymentMethod))
+          final bankRefund = (isBankPaymentMethod(paymentMethod))
               ? paid
               : ((paymentMethod == 'multiple' || paymentMethod == 'mixed')
                   ? (bankAmount ?? 0)
@@ -538,7 +538,7 @@ extension SalesMutationsDao on AppDatabase {
                 : ((paymentMethod == 'multiple' || paymentMethod == 'mixed')
                     ? (cashAmount ?? 0)
                     : 0.0);
-            final bankRefundRetry = (['transfer', 'card', 'bank'].contains(paymentMethod))
+            final bankRefundRetry = (isBankPaymentMethod(paymentMethod))
                 ? paid
                 : ((paymentMethod == 'multiple' || paymentMethod == 'mixed')
                     ? (bankAmount ?? 0)

@@ -1,3 +1,4 @@
+import '../../core/constants/payment_methods.dart';
 import '../../core/errors/app_exceptions.dart';
 import 'dart:async';
 
@@ -685,7 +686,7 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
       if (balanceCorrection > 0) {
         try {
           final isBank =
-              ['transfer', 'card', 'bank'].contains(invoice.paymentMethod);
+              isBankPaymentMethod(invoice.paymentMethod);
           final balanceSafe = isBank
               ? await _db.getDefaultSafeByType('bank')
               : await _db.getDefaultSafeByType('cash');
@@ -827,7 +828,7 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
 
         // Record a balance-adjustment entry for the supplier statement.
         // No cash moves so we look up the default safe but don't change its balance.
-        final balanceSafe = ['transfer', 'card', 'bank'].contains(invoice.paymentMethod)
+        final balanceSafe = isBankPaymentMethod(invoice.paymentMethod)
             ? await _db.getDefaultSafeByType('bank')
             : await _db.getDefaultSafeByType('cash');
         if (balanceSafe != null) {
@@ -867,7 +868,7 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
       final cashReturnAmount = grossReturnAmount - balanceCorrection;
       if (cashReturnAmount > 0) {
         // Record in safe: supplier gives back money → receipt into our safe
-        final isBank = ['transfer', 'card', 'bank'].contains(invoice.paymentMethod);
+        final isBank = isBankPaymentMethod(invoice.paymentMethod);
         // مواصفة 2026-08-18 (ح‑٢/ح‑٣): خزنةُ فرعِ المخزن لا الافتراضيّةُ
         // العامّة، ورميٌ لا تخطٍّ صامت. كان `getDefaultSafeByType` ثمّ
         // `if (safe != null)` بلا `else`: فرعٌ بلا خزنةٍ افتراضيّةٍ عامّة كان
@@ -1129,7 +1130,7 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
     if (oldBalanceCorrection > 0) {
       await _db.adjustPartyBalance(invoice.supplierId, oldBalanceCorrection);
       final balanceSafe =
-          ['transfer', 'card', 'bank'].contains(invoice.paymentMethod)
+          isBankPaymentMethod(invoice.paymentMethod)
               ? await _db.getDefaultSafeByType('bank')
               : await _db.getDefaultSafeByType('cash');
       if (balanceSafe != null) {
@@ -1157,7 +1158,7 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
     //    below the un-refund amount — we never want to go negative.
     if (oldCashReturn > 0) {
       final isBank =
-          ['transfer', 'card', 'bank'].contains(invoice.paymentMethod);
+          isBankPaymentMethod(invoice.paymentMethod);
       final safe = isBank
           ? await _db.getDefaultSafeByType('bank')
           : await _db.getDefaultSafeByType('cash');

@@ -171,20 +171,28 @@ void main() {
   });
 
   group('حدودٌ ومصائد', () {
-    // ⚠️ يوثّق فرقاً قائماً لا يصحّحه: مسارُ البيع يعدّ visa بنكيّاً، ومسارُ
-    // المرتجع لا. فمرتجعُ فاتورةِ visa يخرج نقداً من الدرج.
-    test('visa تخرج نقداً — الفرقُ عن مسار البيع مثبَّتٌ لا مُصلَح', () {
-      final s = split(
-        invoiceTotal: 100,
-        invoicePaid: 100,
-        paymentMethod: 'visa',
-        totalReturn: 40,
-      );
+    // كان هذا الاختبارُ يوثّق فرقاً قائماً؛ صار يحرس توحيدَه.
+    //
+    // القائمةُ واحدةٌ الآن في `kBankPaymentMethods`، فبيعةُ visa ومرتجعُها
+    // يقعان على الخزنة نفسِها. وقبل التوحيد كانت البيعةُ تدخل الخزنةَ
+    // البنكيّة والمرتجعُ يخرج من الدرج: عجزٌ في درجٍ ورصيدٌ بنكيٌّ وهميّ، ولا
+    // يتقاصّان أبداً.
+    for (final method in ['visa', 'mastercard', 'amex', 'mada', 'stcpay']) {
+      test('$method ⇒ بنكيٌّ لا نقديّ (كان يخرج من الدرج قبل التوحيد)', () {
+        final s = split(
+          invoiceTotal: 100,
+          invoicePaid: 100,
+          paymentMethod: method,
+          totalReturn: 40,
+        );
 
-      expect(s.cashRefund, 40,
-          reason: 'bankMethods في المرتجع أضيقُ من نظيرتها في البيع');
-      expect(s.bankRefund, 0);
-    });
+        expect(s.bankRefund, 40,
+            reason: 'يعود من حيث قُبض — الخزنةُ البنكيّة');
+        expect(s.cashRefund, 0, reason: 'ولا يمسّ الدرجَ إطلاقاً');
+        expect(s.requiresOpenShift, isFalse,
+            reason: 'فلا ورديّةَ تُشترط');
+      });
+    }
 
     test('paymentMethod غائبة ⇒ نقداً', () {
       final s = split(
