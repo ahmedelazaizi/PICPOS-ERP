@@ -119,6 +119,35 @@ class SalesReturnRefundSplit {
   /// هل يستلزم هذا المرتجعُ فتحَ درج؟ (‏ح‑١ في المواصفة)
   bool get requiresOpenShift => cashRefund > 0;
 
+  /// كم نقداً يخرج من الدرج في مرتجعٍ يُنشَأ كـ**فاتورةٍ سالبة**
+  /// (`createSalesInvoice(saleType:'return')`) — مسارُ «المرتجع السريع» في
+  /// نقطة البيع، ومسارُ الخادم لمرتجعِ العميل.
+  ///
+  /// هذا المسارُ لا يقاصّ ذمّةً هنا (الـDAO يعالج `remaining` على حدة)، فلا
+  /// يصلح له [SalesReturnRefundSplit.from]. الحسابُ يحاكي ما سيفعله
+  /// `_recordSalesReceipt` بالضبط:
+  ///   * مختلطٌ (`multiple`/`mixed`) بمبلغَين صريحَين ⇒ الشقُّ النقديُّ وحدَه.
+  ///   * وإلا ⇒ `paid` كلُّه، ما لم تكن الطريقةُ بنكيّةً أو `click`.
+  ///
+  /// ⚠️ متى تغيّر توزيعُ `_recordSalesReceipt` فغيّر هذا معه: حارسٌ يقول «لا
+  /// نقدَ هنا» ومسارٌ يُخرِج نقداً هو العطبُ الذي بُني الحارسُ لمنعه.
+  static double cashOutForNegativeInvoice({
+    required double paid,
+    required String paymentMethod,
+    double? cashAmount,
+    double? bankAmount,
+  }) {
+    if ((paymentMethod == 'multiple' || paymentMethod == 'mixed') &&
+        cashAmount != null &&
+        bankAmount != null) {
+      return cashAmount.abs();
+    }
+    if (bankMethods.contains(paymentMethod) || paymentMethod == 'click') {
+      return 0;
+    }
+    return paid.abs();
+  }
+
   @override
   String toString() => 'SalesReturnRefundSplit(ar: $arRefund, '
       'cash: $cashRefund, bank: $bankRefund, pay: $actualRefundToPay)';

@@ -2,8 +2,10 @@ import 'dart:async';
 import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
+import '../../core/errors/app_exceptions.dart';
 import '../../domain/entities/cart_item_entity.dart';
 import '../../domain/entities/sync_dtos.dart';
+import '../../domain/models/sales_return_refund_split.dart';
 import '../../domain/repositories/sales_repository.dart';
 import '../../core/logging/diagnostic_logger.dart';
 import '../../core/utils/financial_utils.dart';
@@ -140,6 +142,32 @@ class SalesTransactionOrchestrator {
     // admins' invoices reach HQ. The legacy `NetworkService.isClient` was
     // false in mirror mode, silently dropping the entire push branch.
     final isClientMode = SyncInterceptor.isClientMode;
+
+    // ── ح‑١ للمسار «ب»: المرتجعُ السريع في نقطة البيع ──
+    //
+    // مواصفة 2026-08-18. المرتجعُ عبر شاشة المرتجعات يمرّ بحارسِ
+    // `processSalesReturn`، أمّا «المرتجع السريع» فيسلك هذا المسار (فاتورةٌ
+    // سالبة) ولم يكن يمرّ بحارسٍ إطلاقاً. يحرسه عمليّاً `_ensureShiftOpen`
+    // من شاشة نقطة البيع — **لكنّه يُتخطّى لمدير النظام عمداً** (Spec 135
+    // NOTE 2)، فمديرٌ يُجري مرتجعاً سريعاً بلا ورديّة كان نقدُه يخرج بلا
+    // نافذةٍ تحويه ⇒ عجزٌ وهميٌّ في ذمّة الكاشير التالي.
+    //
+    // وموضعُه هنا لا في `sales_mutations_dao.createSalesInvoice` **عن قصد**:
+    // الخادمُ ينادي الـDAO مباشرةً (`api_sales_handler`)، ولا ورديّةَ للخادم،
+    // فحارسٌ هناك كان سيرفض كلَّ مرتجعِ عميل. الأوركستريتر مسارُ الأجهزة
+    // التي أمامها درجٌ — standalone والعميل — وهو تماماً من يجب أن يُحرَس.
+    if (saleType == 'return') {
+      final cashOut = SalesReturnRefundSplit.cashOutForNegativeInvoice(
+        paid: paid,
+        paymentMethod: paymentMethod,
+        cashAmount: cashAmount,
+        bankAmount: bankAmount,
+      );
+      if (cashOut > 0 &&
+          await _db.resolveOpenShiftForDrawer(userId) == null) {
+        throw ShiftRequiredException(cashAmount: cashOut);
+      }
+    }
 
     final invoiceId = await _db.transaction(() async {
       // 1. Generate invoice number — Cluster 027 / Issue 5 (counter mix):

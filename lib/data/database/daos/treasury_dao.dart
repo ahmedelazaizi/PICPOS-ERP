@@ -1416,6 +1416,26 @@ extension TreasuryDao on AppDatabase {
         });
   }
 
+  /// الورديّةُ التي تحكم **درجَ** [userId] الآن، أو `null` إن لم توجد.
+  ///
+  /// المصدرُ الوحيد لسؤال «هل يجوز أن يخرج نقدٌ الآن؟» (‏ح‑١، مواصفة
+  /// 2026-08-18) — يستعمله حارسُ `processSalesReturn` وحارسُ المرتجع السريع
+  /// في `sales_transaction_orchestrator`.
+  ///
+  /// ⚠️ السؤالُ عن **الدرج** لا عن المستخدم، ولذلك يقبل ورديّةَ غيرِه على
+  /// فرعه: `_settleShift` يحسب `expectedCash` من `drawerTxs` **بلا فلترِ
+  /// مستخدم** عن قصدٍ منصوصٍ عليه («الدرجُ واحدٌ يشترك فيه كلُّ من مسّه»)،
+  /// فحركةُ مديرٍ على درج الكاشير تدخل توقّعَ ورديّة الكاشير ولا تُنتج عجزاً.
+  /// ومديرُ النظام لا يفتح ورديّةً لنفسه أصلاً بل يلتحق بورديّة الكاشير
+  /// (Spec 135 NOTE 2)، فحصرُ السؤال في ورديّته كان رفضاً باطلاً.
+  Future<Shift?> resolveOpenShiftForDrawer(int userId) async {
+    final own = await getCurrentOpenShift(userId);
+    if (own != null) return own;
+    final branchId = await getUserBranchId(userId);
+    final onBranch = await getOpenShiftsForBranch(branchId: branchId);
+    return onBranch.isEmpty ? null : onBranch.first;
+  }
+
   /// سُلَّمُ اختيارِ الخزنةِ لأيّ حركةِ مالٍ — المصدرُ الوحيد.
   ///
   /// استُخرج من `_recordSalesReceipt` (مسارُ البيع) ليستعمله مسارُ المرتجع

@@ -26,7 +26,12 @@ import 'package:ural_erp/core/errors/app_exceptions.dart';
 import 'package:ural_erp/data/database/database.dart';
 import 'package:ural_erp/data/repositories/drift_accounting_repository.dart';
 import 'package:ural_erp/data/repositories/returns_repository_impl.dart';
+import 'package:ural_erp/data/repositories/sales_transaction_orchestrator.dart';
+import 'package:ural_erp/domain/entities/cart_item_entity.dart';
 import 'package:ural_erp/domain/entities/product_entity.dart';
+import 'package:ural_erp/domain/repositories/kitchen_repository.dart';
+import 'package:ural_erp/domain/repositories/printers_repository.dart';
+import 'package:ural_erp/services/kitchen_service.dart';
 import 'package:ural_erp/domain/repositories/audit_repository_interface.dart';
 import 'package:ural_erp/domain/repositories/i_products_repository.dart';
 import 'package:ural_erp/domain/repositories/inventory_repository.dart';
@@ -38,6 +43,7 @@ import 'package:ural_erp/services/accounting_service.dart';
 void main() {
   late AppDatabase db;
   late ReturnsRepositoryImpl repo;
+  late SalesTransactionOrchestrator orchestrator;
   late int warehouseId;
   late int userId;
   late int productId;
@@ -46,16 +52,27 @@ void main() {
     db = AppDatabase.forTesting();
     await db.syncDefaultAccounts();
 
-    repo = ReturnsRepositoryImpl(
+    final accountingService = AccountingService(
+      DriftAccountingRepository(db),
+      _StubPartiesRepo(),
+      _StubTreasuryRepo(),
+      _StubProductRepo(),
+      _StubInventoryRepo(),
+      _StubSettingsRepo(),
+      _StubAuditRepo(),
+    );
+    repo = ReturnsRepositoryImpl(db, accountingService);
+
+    // مسارُ «المرتجع السريع» في نقطة البيع. توليدُ أوامر المطبخ غيرُ قاتلٍ
+    // (ملفوفٌ بـtry/catch في الأوركستريتر) فالمقاطعُ الرامية تكفي.
+    orchestrator = SalesTransactionOrchestrator(
       db,
-      AccountingService(
-        DriftAccountingRepository(db),
-        _StubPartiesRepo(),
-        _StubTreasuryRepo(),
+      accountingService,
+      KitchenService(
+        _StubKitchenRepo(),
         _StubProductRepo(),
-        _StubInventoryRepo(),
-        _StubSettingsRepo(),
-        _StubAuditRepo(),
+        _StubPrintersRepo(),
+        db,
       ),
     );
 
@@ -357,6 +374,103 @@ void main() {
     // يُقاس هنا لأنّ قراءةَ `api_sales_handler` وحدَها تُوهم أنّ الخادمَ لا
     // يحرّك درجاً (لا `safeTransactions` ولا `adjustSafeBalance` في نصّه):
     // الكتابةُ تقع داخلَ `createSalesInvoice` عبر `_recordSalesReceipt`.
+    test('المرتجعُ السريع بلا ورديّة ⇒ يُرفَض ولا يخصم', () async {
+      // الثغرةُ التي كانت قائمة: «المرتجع السريع» يسلك الأوركستريتر لا
+      // `processSalesReturn`، فلم يكن يمرّ بحارسٍ إطلاقاً. يحرسه عمليّاً
+      // `_ensureShiftOpen` من الشاشة — **ويُتخطّى لمدير النظام عمداً**
+      // (Spec 135 NOTE 2) — فمديرٌ يُجري مرتجعاً سريعاً بلا ورديّة كان نقدُه
+      // يخرج بلا نافذةٍ تحويه ⇒ عجزٌ وهميٌّ في ذمّة الكاشير التالي.
+      final before = await cashSafeBalance(1);
+
+      await expectLater(
+        orchestrator.createSalesInvoice(
+          customerId: null,
+          warehouseId: warehouseId,
+          userId: userId,
+          subtotal: 100,
+          discount: 0,
+          tax: 0,
+          total: 100,
+          paid: 100,
+          paymentMethod: 'cash',
+          saleType: 'return',
+          items: [
+            CartItemEntity(
+              productId: productId,
+              productName: 'منتج',
+              productCode: 'RET-01',
+              quantity: 1,
+              unitPrice: 100,
+            ),
+          ],
+        ),
+        throwsA(isA<ShiftRequiredException>()),
+      );
+
+      expect(await cashSafeBalance(1), before,
+          reason: 'لا قرشَ خرج — الرفضُ قبل فتحِ المعاملة');
+    });
+
+    test('المرتجعُ السريع بورديّةٍ مفتوحة ⇒ يمضي', () async {
+      await db.openShift(userId, 0);
+      final before = await cashSafeBalance(1);
+
+      await orchestrator.createSalesInvoice(
+        customerId: null,
+        warehouseId: warehouseId,
+        userId: userId,
+        subtotal: 100,
+        discount: 0,
+        tax: 0,
+        total: 100,
+        paid: 100,
+        paymentMethod: 'cash',
+        saleType: 'return',
+        items: [
+          CartItemEntity(
+            productId: productId,
+            productName: 'منتج',
+            productCode: 'RET-01',
+            quantity: 1,
+            unitPrice: 100,
+          ),
+        ],
+      );
+
+      expect(await cashSafeBalance(1), closeTo(before - 100, 0.001));
+    });
+
+    test('البيعُ الاعتياديُّ بلا ورديّة لا يُمَسّ — الحارسُ للمرتجع وحدَه',
+        () async {
+      // توسيعُه للبيع قرارٌ آخرُ لم يُتَّخذ: يمنع المديرَ من البيع، وله
+      // عطبُه الموثَّق المستقلّ (picpos_unshifted_sale_variance_test).
+      final before = await cashSafeBalance(1);
+
+      await orchestrator.createSalesInvoice(
+        customerId: null,
+        warehouseId: warehouseId,
+        userId: userId,
+        subtotal: 100,
+        discount: 0,
+        tax: 0,
+        total: 100,
+        paid: 100,
+        paymentMethod: 'cash',
+        items: [
+          CartItemEntity(
+            productId: productId,
+            productName: 'منتج',
+            productCode: 'RET-01',
+            quantity: 1,
+            unitPrice: 100,
+          ),
+        ],
+      );
+
+      expect(await cashSafeBalance(1), closeTo(before + 100, 0.001),
+          reason: 'البيعةُ مضت بلا ورديّة كما كانت');
+    });
+
     test('مرتجعٌ نقديٌّ بهذا المسار يخصم من الخزنة فعلاً', () async {
       final before = await cashSafeBalance(1);
 
@@ -465,6 +579,18 @@ class _StubSettingsRepo implements ISettingsRepository {
 }
 
 class _StubAuditRepo implements IAuditRepository {
+  @override
+  dynamic noSuchMethod(Invocation inv) =>
+      throw UnsupportedError('Stub: ${inv.memberName}');
+}
+
+class _StubKitchenRepo implements KitchenRepository {
+  @override
+  dynamic noSuchMethod(Invocation inv) =>
+      throw UnsupportedError('Stub: ${inv.memberName}');
+}
+
+class _StubPrintersRepo implements IPrintersRepository {
   @override
   dynamic noSuchMethod(Invocation inv) =>
       throw UnsupportedError('Stub: ${inv.memberName}');
