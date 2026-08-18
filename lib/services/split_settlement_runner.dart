@@ -55,8 +55,15 @@ abstract class SplitSettlementPort {
   /// رقمُ الفاتورة التي سُوِّيت عليها الحصصُ السابقة، أو `null`.
   Future<int?> settledInvoiceId();
 
-  /// تسجيلُ حصّةٍ على فاتورةٍ صدرت.
-  Future<void> settlePart(SplitPart part, int invoiceId);
+  /// يحجز حصّةً على الطلب — **كلُّ الحراس هنا، وقبل أيِّ ترحيل**. يعيد رقمَ
+  /// الحجز. يرمي إن رفض حارس، ولا شيءَ يكون قد رُحِّل.
+  Future<int> reservePart(SplitPart part);
+
+  /// يربط حجزاً بفاتورةٍ صدرت. لا حسابَ مالٍ فيه فلا تردّه قاعدةُ عمل.
+  Future<void> confirmPart(int reservationId, int invoiceId);
+
+  /// يُحرِّر حجوزاً لم تصدر فاتورتُها — تراجُعٌ أو فشلُ ترحيل.
+  Future<void> releaseReservations(List<int> reservationIds);
 
   /// يملأ السلّةَ بالأصناف المطلوبة ويعيد إجماليَّها **كما سيُشحَن** —
   /// بلا أيّ ترحيل. `null` تعني كلَّ أصناف الطلب.
@@ -118,8 +125,21 @@ class SplitSettlementRunner {
         );
       }
 
+      // الحجزُ قبل الترحيل: كلُّ الحراس تعمل الآن، فإن رفضت لم تصدر فاتورة.
+      final int reservationId;
+      try {
+        reservationId = await _port.reservePart(part);
+      } catch (e) {
+        return SplitRunResult(
+          status: SplitRunStatus.aborted,
+          settledCount: settledCount,
+          message: 'حصّةُ ${part.label} رُفضت قبل الترحيل: $e',
+        );
+      }
+
       final invoiceId = await _port.payFilledCart(part.amount);
       if (invoiceId == null) {
+        await _port.releaseReservations([reservationId]);
         return SplitRunResult(
           status: SplitRunStatus.aborted,
           settledCount: settledCount,
@@ -129,14 +149,16 @@ class SplitSettlementRunner {
       }
 
       try {
-        await _port.settlePart(part, invoiceId);
+        await _port.confirmPart(reservationId, invoiceId);
       } catch (e) {
+        // لا يُحرَّر الحجز: فاتورتُه صدرت، وتحريرُه يمحو دفعةً حقيقيّة.
         return SplitRunResult(
           status: SplitRunStatus.reconcileNeeded,
           settledCount: settledCount,
           orphanInvoiceId: invoiceId,
           orphanAmount: part.amount,
-          message: 'فاتورةُ حصّة ${part.label} صدرت ولم تُسجَّل: $e',
+          message: 'فاتورةُ حصّة ${part.label} صدرت والمبلغُ محجوزٌ، وتعذّر '
+              'ربطُهما: $e',
         );
       }
       settledCount++;
@@ -158,6 +180,24 @@ class SplitSettlementRunner {
     final resuming = unsettled.length < plan.parts.length;
     final expected = unsettled.fold<double>(0, (s, p) => s + p.amount);
 
+    // ── تُحجَز **كلُّ** الحصص الباقية أوّلاً ─────────────────────────────
+    // فتعمل حراسُها جميعاً قبل أن تُرحَّل فاتورةٌ واحدة. ولو رفض حارسُ الحصّة
+    // الأخيرة، حُرِّر ما قبله ولم يصدر شيء — بدل أن تُرحَّل الفاتورةُ ثم
+    // يُكتشَف الرفضُ وقد فات الأوان.
+    final reservationIds = <int>[];
+    for (final part in unsettled) {
+      try {
+        reservationIds.add(await _port.reservePart(part));
+      } catch (e) {
+        await _port.releaseReservations(reservationIds);
+        return SplitRunResult(
+          status: SplitRunStatus.aborted,
+          settledCount: 0,
+          message: 'حصّةُ ${part.label} رُفضت قبل الترحيل: $e',
+        );
+      }
+    }
+
     final int invoiceId;
     if (resuming) {
       final existing = await _port.settledInvoiceId();
@@ -174,6 +214,7 @@ class SplitSettlementRunner {
       final mismatch =
           checkTableCharge(charged: cartTotal, expected: expected);
       if (mismatch != null) {
+        await _port.releaseReservations(reservationIds);
         return SplitRunResult(
           status: SplitRunStatus.aborted,
           settledCount: 0,
@@ -182,6 +223,7 @@ class SplitSettlementRunner {
       }
       final posted = await _port.payFilledCart(expected);
       if (posted == null) {
+        await _port.releaseReservations(reservationIds);
         return const SplitRunResult(
           status: SplitRunStatus.aborted,
           settledCount: 0,
@@ -193,16 +235,17 @@ class SplitSettlementRunner {
 
     var settledCount = 0;
     var recorded = 0.0;
-    for (final part in unsettled) {
+    for (var i = 0; i < unsettled.length; i++) {
+      final part = unsettled[i];
       try {
-        await _port.settlePart(part, invoiceId);
+        await _port.confirmPart(reservationIds[i], invoiceId);
       } catch (e) {
         // استئنافٌ ⇒ لا فاتورةَ صدرت في هذه الجولة، فلا شيءَ يتيم.
         if (resuming) {
           return SplitRunResult(
             status: SplitRunStatus.aborted,
             settledCount: settledCount,
-            message: 'تعذّر تسجيلُ حصّة ${part.label}: $e',
+            message: 'تعذّر ربطُ حصّة ${part.label}: $e',
           );
         }
         return SplitRunResult(
@@ -210,7 +253,8 @@ class SplitSettlementRunner {
           settledCount: settledCount,
           orphanInvoiceId: invoiceId,
           orphanAmount: expected - recorded,
-          message: 'الفاتورةُ صدرت وتعذّر تسجيلُ حصّة ${part.label}: $e',
+          message: 'الفاتورةُ صدرت والمبالغُ محجوزةٌ، وتعذّر ربطُ حصّة '
+              '${part.label}: $e',
         );
       }
       recorded += part.amount;

@@ -482,6 +482,41 @@ extension DatabaseStartup on AppDatabase {
       }
     }
 
+    // Step 3d: محطّةُ مطبخٍ افتراضيّةٌ — بلا واحدةٍ لا يعمل KDS إطلاقاً.
+    //
+    // `kitchen_stations` لا يُبذَر في أيِّ مسار: لا في `seedInitialData` ولا
+    // في ترقية. فالسبيلُ الوحيدُ لوجود محطّةٍ هو أن يُنشئها المستخدمُ بيده من
+    // شاشة الإعدادات. ومقيسٌ على قاعدةٍ حيّة: صفرُ محطّاتٍ وصفرُ روابط.
+    //
+    // ويترتّب على ذلك عطلان يبدوان منفصلَين وأصلُهما واحد:
+    //   • قسمُ «ربطُ التصنيف بالمحطة» يعرض «أضف محطات أولاً» ولا يرسم قائمةً
+    //     منسدلةً أصلاً — فيبدو للمستخدم أن الربط «لا يُحفظ» وهو لم يُعرَض له.
+    //   • `getStationForCategory` تسقط دائماً على قيمة الارتداد `'kitchen'`،
+    //     فكلُّ أمر تحضيرٍ يُوسَم «مطبخ» — مقيسٌ: ٥ من ٥ على القاعدة الحيّة.
+    //     وهي قيمةٌ نصّيّةٌ لا تقابل صفّاً حقيقيّاً، فالنظامُ يشير إلى محطّةٍ
+    //     لا وجودَ لها.
+    //
+    // الشرطُ **خلوُّ الجدول تماماً** لا غيابُ `'kitchen'` بعينها: مَن عرّف
+    // محطّاتِه وحذف المطبخَ عمداً لا يُصارَع في قراره. والرمزُ `kitchen`
+    // يطابق قيمةَ الارتداد بالضبط فيصير الوسمُ صادقاً بدل أن يكون تخميناً.
+    //
+    // في الإقلاع لا في ترقية: لا رقمَ مخطّطٍ يُحجَز (وفرعٌ موازٍ يحتاج التالي)،
+    // والقواعدُ القائمةُ تُشفى كما تُشفى الجديدة.
+    if (!isClient) {
+      try {
+        final anyStation =
+            await (select(kitchenStations)..limit(1)).getSingleOrNull();
+        if (anyStation == null) {
+          await into(kitchenStations).insert(
+            KitchenStationsCompanion.insert(name: 'المطبخ', code: 'kitchen'),
+          );
+          debugPrint('[Startup] ✅ محطّةُ المطبخ الافتراضيّة أُنشئت');
+        }
+      } catch (e) {
+        debugPrint('[Startup] default kitchen station self-heal: $e');
+      }
+    }
+
     // Step 4: Ensure admin has correct roleId (repair broken PG seeds)
     try {
       // limit(1): `roles.name` carries no unique constraint, so duplicate names

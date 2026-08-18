@@ -122,6 +122,41 @@ class TableOrders extends Table {
   RealColumn get paidAmount => real().withDefault(const Constant(0))();
   DateTimeColumn get openedAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get closedAt => dateTime().nullable()();
+
+  /// ضريبةٌ «مفعَّلةٌ» بنسبةٍ لا تُحصَّل حالةٌ **تكذب**، فلا تُمثَّل.
+  ///
+  /// `TableSessionService.setOrderTax` يرفضها عند المفتاح، لكنّ الرفضَ عند
+  /// بابٍ واحدٍ يُبقيها ممكنةَ الوجود: تصفيرُ `taxRate` من تحت الزرِّ يصنعها
+  /// بلا أن يمرَّ على الحارس، وكذلك أيُّ مسارِ كتابةٍ يُضاف غداً. وهنا
+  /// يستوي البابان: القيدُ يسري على `INSERT` و`UPDATE` وعلى كلِّ مَن يكتب.
+  ///
+  /// وهو يُصاغ بشقٍّ للإطفاء لا بـ`taxRate > 0` وحدَها عن قصد: الطلبُ يُفتَح
+  /// مطفأً ونسبتُه ملقوطةٌ، والمطفأُ حرٌّ في نسبته — فاللقطةُ تبقى محفوظةً
+  /// بعد الإطفاء ولا تُطارَد.
+  ///
+  /// و`NOT tax_enabled` لا `tax_enabled = 0` عن قصدٍ كذلك — والفرقُ يقع على
+  /// Postgres لا على SQLite. المقارنةُ `boolean = integer` لا وجودَ لها في
+  /// Postgres إلّا بمعامِلٍ يصنعه `_createPostgresCompatLayer` بنفسه، وكلُّ
+  /// جملةٍ فيه ملفوفةٌ بـ`try/catch` لا تطبع إلّا سطراً. فلو أخفق صنعُ
+  /// المعامِل، أخفقت `m.create(tableOrders)` في المرحلة الأولى وسقط الجدولُ
+  /// إلى بديل الـDDL الخام — وذلك البديلُ يكتب الأعمدةَ وأنواعَها فقط، **بلا
+  /// أيّ `REFERENCES`**. فيُنشَأ `table_orders` على خادمٍ جديدٍ بلا مفاتيحه
+  /// الثلاثة، صامتاً. و`NOT` مفهومةٌ في اللهجتين بلا معامِلٍ مُصطنَع، فلا
+  /// تُعلَّق سلامةُ المفاتيح على `catch` يطبع سطراً. و`>=` كذلك.
+  ///
+  /// **والحدُّ `0.01` لا `0` (v157):** `tax_rate > 0` كانت تقبل `0.0000001` —
+  /// فالقيدُ راضٍ، والزرُّ «مفعَّل»، والمحصَّلُ صفرٌ بعد التقريب. الكذبةُ
+  /// نفسُها بصورةٍ أدقَّ تمرّ من تحت القيد، ولا يمسكها إلّا حدٌّ يقول ما
+  /// النسبةُ التي تستحقّ أن تُدَّعى.
+  ///
+  /// والرقمُ حرفيٌّ هنا لأن هذا ملفُّ `part` بلا استيراداتٍ خاصّةٍ به. مصدرُه
+  /// `TaxRateBounds.minRate`، ويربطهما `table_tax_check_constraint_test.dart`
+  /// بتأكيدٍ على نصِّ القيد — فلو شُدَّ الثابتُ ولم يُشَدَّ هذا سقط الاختبارُ
+  /// بدل أن يفترقا صامتَين.
+  @override
+  List<String> get customConstraints => [
+        'CHECK (NOT tax_enabled OR tax_rate >= 0.01)',
+      ];
 }
 
 class TableOrderItems extends Table {
@@ -175,8 +210,34 @@ class TableReservations extends Table {
 class TableOrderPayments extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get tableOrderId => integer().references(TableOrders, #id)();
-  IntColumn get invoiceId => integer().references(SalesInvoices, #id)();
+
+  /// رقمُ الفاتورة — **معدومٌ ما دام الصفُّ حجزاً** (v158).
+  ///
+  /// الحجزُ يُدرَج قبل الترحيل، فلا فاتورةَ له بعد. وهو ما يجعل كلَّ الحراس
+  /// تعمل قبل أن يُرحَّل شيء: إن رفضت، لم تصدر فاتورةٌ تحتاج تسوية.
+  IntColumn get invoiceId =>
+      integer().nullable().references(SalesInvoices, #id)();
   RealColumn get amount => real()();
   TextColumn get splitLabel => text().nullable()(); // «ضيف ١»
   DateTimeColumn get paidAt => dateTime().withDefault(currentDateAndTime)();
+
+  /// `pending` = محجوزٌ ينتظر رقمَ فاتورة · `settled` = مثبَّت.
+  ///
+  /// الافتراضُ `settled` مقصود: صفوفُ ما قبل v158 كلُّها لها فواتير، فتخرج
+  /// من الترقية صحيحةً بلا تحويل.
+  TextColumn get status =>
+      text().withDefault(const Constant('settled'))();
+
+  /// نصفُ الحالة مستحيلُ التمثيل — بفلسفة قيد v156 على `TableOrders`.
+  ///
+  /// «مثبَّتٌ بلا فاتورة» يعني مالاً سُجِّل بلا سندٍ يربطه بالدفاتر، و«محجوزٌ
+  /// ومعه فاتورة» يعني حجزاً فات أوانُه ولم يُقفل. كلاهما يكذب، فلا يُمثَّل.
+  ///
+  /// و`IS NULL` لا مقارنةَ مساواة — الصيغةُ مفهومةٌ في اللهجتين بلا معامِلٍ
+  /// مُصطنَع، للسبب المشروح في [TableOrders.customConstraints].
+  @override
+  List<String> get customConstraints => [
+        "CHECK ((status = 'pending' AND invoice_id IS NULL) "
+            "OR (status = 'settled' AND invoice_id IS NOT NULL))",
+      ];
 }

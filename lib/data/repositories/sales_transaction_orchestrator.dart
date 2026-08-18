@@ -8,7 +8,6 @@ import '../../domain/repositories/sales_repository.dart';
 import '../../core/logging/diagnostic_logger.dart';
 import '../../core/utils/financial_utils.dart';
 import '../../services/accounting_service.dart';
-import '../../services/kitchen_service.dart';
 import '../../services/network_service.dart';
 import '../../services/client_write_interceptor.dart';
 import '../../services/pos_terminal_registration_service.dart';
@@ -30,16 +29,17 @@ import '../database/database.dart';
 ///  - Credit-limit enforcement
 ///  - UUID-first idempotency
 ///  - Client/server mode routing (fire-and-forget sync vs. local persistence)
-///  - Accounting and kitchen-service integration
+///  - Accounting integration
+///
+/// وليس من بينها المطبخ: أوامرُ التحضير تُولَد من شاشة الطاولات وحدَها،
+/// فسقطت تبعيّةُ `KitchenService` من هنا (2026-08-18).
 class SalesTransactionOrchestrator {
   final AppDatabase _db;
   final AccountingService _accountingService;
-  final KitchenService _kitchenService;
 
   SalesTransactionOrchestrator(
     this._db,
     this._accountingService,
-    this._kitchenService,
   );
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -232,17 +232,17 @@ class SalesTransactionOrchestrator {
           .getSingleOrNull();
       if (invoice == null) return invoiceId; // U-04: Safety guard
 
-      // 4. Kitchen Service (non-fatal)
-      try {
-        await _kitchenService.generateKitchenWorkOrder(
-          invoiceId: invoiceId,
-          tableName: adhocCustomerName ?? platformOrderNumber,
-          items: itemCompanions,
-          notes: notes,
-        );
-      } catch (e) {
-        debugPrint('[KitchenService] فشل إنشاء أمر المطبخ للفاتورة $invoiceId: $e');
-      }
+      // 4. أوامرُ التحضير **لا** تُولَد هنا — الطاولاتُ وحدَها تُحضَّر.
+      //
+      // كان هنا نداءٌ لـ`generateKitchenWorkOrder` على كلِّ فاتورةٍ تُنشَأ،
+      // بلا شرطٍ على `saleType` رغم أنه متاحٌ في هذه الدالّة نفسِها. فكان:
+      //   • المرتجعُ يولّد أمرَ تحضير — أصنافٌ مرتجَعةٌ تُطلَب من الطبّاخ.
+      //   • صنفُ الطاولة يُطلَب مرّتين: مرّةً لحظةَ الطلب من شاشة الطاولة،
+      //     ومرّةً هنا لأن التحصيل يُنشئ فاتورةَ مبيعات.
+      //
+      // المصدرُ الوحيدُ لأمر التحضير الآن `table_pos_operations.dart` لحظةَ
+      // إرسال الطلب. يحرسه
+      // `test/structural/kitchen_work_orders_from_tables_only_test.dart`.
 
       // 5. Accounting — ATOMIC with invoice (P0-01 fix)
       // No try/catch: an accounting failure MUST propagate to rollback the

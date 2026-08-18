@@ -848,8 +848,16 @@ class _DialogSplitPort implements SplitSettlementPort {
   Future<int?> settledInvoiceId() => _coordinator.settledInvoiceId(_orderId);
 
   @override
-  Future<void> settlePart(SplitPart part, int invoiceId) => _coordinator
-      .settlePart(orderId: _orderId, part: part, invoiceId: invoiceId);
+  Future<int> reservePart(SplitPart part) =>
+      _coordinator.reservePart(orderId: _orderId, part: part);
+
+  @override
+  Future<void> confirmPart(int reservationId, int invoiceId) => _coordinator
+      .confirmPart(reservationId: reservationId, invoiceId: invoiceId);
+
+  @override
+  Future<void> releaseReservations(List<int> reservationIds) =>
+      _coordinator.releaseReservations(reservationIds);
 
   @override
   Future<double> fillCart(Map<int, double>? itemQuantities) =>

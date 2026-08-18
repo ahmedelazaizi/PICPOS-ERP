@@ -5,6 +5,7 @@ import 'package:ural_erp/domain/entities/cart_item_entity.dart';
 import 'package:ural_erp/domain/models/split_plan.dart';
 import 'package:ural_erp/domain/models/table_charge_check.dart';
 import 'package:ural_erp/domain/models/table_status.dart';
+import 'package:ural_erp/domain/models/tax_rate_bounds.dart';
 import 'package:ural_erp/presentation/pos/providers/cart_controller.dart';
 import 'package:ural_erp/services/table_checkout_coordinator.dart';
 import 'package:ural_erp/services/table_session_service.dart';
@@ -472,6 +473,77 @@ void main() {
         isEmpty,
         reason: 'رفضٌ لا يكتب سطراً',
       );
+    });
+
+    test('setOrderTax يرفض التفعيلَ على نسبةٍ دون الحدِّ وإن كانت فوق الصفر',
+        () async {
+      // الثغرةُ التي بقيت بعد v156: `tax_rate > 0` تقبل `0.005`، فالقيدُ راضٍ
+      // والزرُّ «مفعَّل» والمحصَّلُ صفرٌ بعد التقريب — الكذبةُ نفسُها بصورةٍ
+      // تمرّ من تحت القيد.
+      final tableId = await db.createTable(name: 'ط٢٢-أ');
+      final orderId = await service.openTable(
+          tableId: tableId,
+          guestCount: 2,
+          userId: null,
+          userName: 'أحمد',
+          taxRate: TaxRateBounds.minRate / 2);
+
+      expect(
+        () => service.setOrderTax(
+            orderId: orderId, enabled: true, userId: null, userName: 'أحمد'),
+        throwsA(isA<TableTransitionException>()),
+      );
+
+      final order = await (db.select(db.tableOrders)
+            ..where((o) => o.id.equals(orderId)))
+          .getSingle();
+      expect(order.taxEnabled, isFalse, reason: 'الطلبُ يبقى كما كان');
+      expect(order.taxRate, TaxRateBounds.minRate / 2,
+          reason: 'اللقطةُ لا تُطارَد ولا تُلفَّق — الرفضُ عند الزرِّ لا عندها');
+    });
+
+    test('setOrderTax يقبل الحدَّ الأدنى نفسَه — الميزةُ لم تُمنع', () async {
+      // ١٪ نسبةٌ مشروعة. لو رفضها الحارسُ بفارقٍ كسريٍّ لَمنع حالةً صحيحة.
+      final tableId = await db.createTable(name: 'ط٢٢-ب');
+      final orderId = await service.openTable(
+          tableId: tableId,
+          guestCount: 2,
+          userId: null,
+          userName: 'أحمد',
+          taxRate: TaxRateBounds.minRate);
+
+      await service.setOrderTax(
+          orderId: orderId, enabled: true, userId: null, userName: 'أحمد');
+
+      final order = await (db.select(db.tableOrders)
+            ..where((o) => o.id.equals(orderId)))
+          .getSingle();
+      expect(order.taxEnabled, isTrue);
+      expect(order.taxRate, TaxRateBounds.minRate);
+    });
+
+    test('طلبٌ مطفأٌ بلقطةٍ دون الحدِّ يُحسَب بلا إطلاقِ حارسِ الوحدات',
+        () async {
+      // ترقيةُ v157 **تُبقي** هذه اللقطةَ عمداً: القيدُ لا يطارد مطفأً. لكنّ
+      // `_totalsOfItems` تمرّر `taxPercentFromRate(0.005)` = `0.5` إلى
+      // `compute` غيرَ مشروطةٍ بالتفعيل، و`0.5` خارجُ مدى حارس الوحدات.
+      //
+      // فالحالةُ التي تحفظها الترقيةُ تُسقط حسابَ الطاولة في التطوير — وهي
+      // حالةٌ لا تصل فاتورةَ زبونٍ أصلاً لأن الضريبةَ مطفأة.
+      final tableId = await db.createTable(name: 'ط٢٢-ج');
+      final orderId = await service.openTable(
+          tableId: tableId,
+          guestCount: 2,
+          userId: null,
+          userName: 'أحمد',
+          taxRate: 0.005);
+      await addItem(orderId, quantity: 2, unitPrice: 50, taxRate: 0);
+
+      final totals = await service.totalsFor(orderId);
+
+      expect(totals.taxAmount, 0.0,
+          reason: 'الضريبةُ مطفأةٌ فلا تُحصَّل — واللقطةُ الجامدةُ لا تُحسَب');
+      expect(totals.total, greaterThan(0));
     });
 
     test('الإطفاءُ على طلبٍ نسبتُه صفرٌ يبقى مسموحاً', () async {

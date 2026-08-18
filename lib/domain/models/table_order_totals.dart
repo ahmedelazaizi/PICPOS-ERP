@@ -21,6 +21,7 @@ import 'dart:math' as math;
 
 import '../../core/constants/app_constants.dart';
 import '../../core/utils/number_utils.dart';
+import 'tax_rate_bounds.dart';
 
 /// سطرٌ واحدٌ في طلبِ طاولةٍ، مجرَّداً من الجدول ومن الكيان.
 ///
@@ -112,11 +113,18 @@ class TableOrderTotals {
   /// خطأُ الوحدة هو الخطأُ **الوحيد** هنا الذي يعبر كلَّ اختبارٍ ثم يظهر على
   /// فاتورة زبون: نسبةٌ كسريّةٌ (0.16) تُقرأ مئويّةً فتُحصَّل ضريبةٌ نسبتُها
   /// ١٦ من عشرة آلاف، أو مئويّةٌ (16) تُقرأ كسريّةً فتُضرب في ١٠٠ فتصير
-  /// ١٦٠٠٪. كلاهما رقمٌ «معقول» لا يرمي شيئاً. والمدى `[1, 100]` يمسكهما
-  /// معاً: لا ضريبةَ مبيعاتٍ في الدنيا دون ١٪ ولا فوق ١٠٠٪.
+  /// ١٦٠٠٪. كلاهما رقمٌ «معقول» لا يرمي شيئاً. والمدى يمسكهما معاً.
+  ///
+  /// والمدى يُقرأ من [TaxRateBounds] لا يُكتَب هنا رقمَين عاريَين: نفسُ الحدِّ
+  /// تفرضه شاشةُ الإعدادات عند المدخل، و`setOrderTax` عند المفتاح، وقيدُ
+  /// `CHECK` في الجدول. ولو بقي مكرَّراً لَجاز أن يُشَدّ في موضعٍ ويُترَك في
+  /// آخر، فيُجيز هذا الحارسُ ما ترفضه الشاشةُ — وهو بابٌ رابعٌ بلا داعٍ.
+  ///
+  /// **ولا يُعتمَد عليه وحدَه:** `assert` لا يعمل في بناء الإصدار، فالحارسُ
+  /// الحقيقيُّ على مسار المال هو القيدُ والعتبةُ لا هذا.
   static void _requirePercent(double rate, String what) {
     assert(
-      rate == 0 || (rate >= 1 && rate <= 100),
+      TaxRateBounds.isValidPercent(rate),
       'نسبةُ الضريبة تُمرَّر مئويّةً (16) لا كسريّةً (0.16): $what = $rate. '
       'الآتيةُ من TableOrders.taxRate تُمرَّر عبر '
       'TableOrderTotals.taxPercentFromRate وحدَها.',
@@ -136,13 +144,22 @@ class TableOrderTotals {
     bool taxEnabled = false,
     double taxPercent = 0,
   }) {
-    _requirePercent(taxPercent, 'نسبةُ الطلب');
+    // **الحارسُ مشروطٌ بالتفعيل.** النسبتان — نسبةُ الطلب ونِسَبُ البنود — لا
+    // تدخلان الحسابَ إلّا داخل `if (taxEnabled)` أدناه، فطلبٌ مطفأٌ لا يمكن أن
+    // تظهر نسبتُه على فاتورةِ زبونٍ مهما كانت وحدتُها. ولا شيءَ يُمسَك.
+    //
+    // وهذا تصحيحُ مدىً لا إلغاءُ حارس: ترقيةُ v157 **تُبقي** لقطةً دون الحدّ
+    // على طلبٍ مطفأ — القيدُ لا يطارد مطفأً — و`taxPercentFromRate(0.005)`
+    // تساوي `0.5`. فحارسٌ غيرُ مشروطٍ كان يُسقط حسابَ تلك الطاولة في التطوير
+    // على حالةٍ **قصدَها التصميم**. مقيسٌ لا مفترض:
+    // `Failed assertion: نسبةُ الطلب = 0.5` من `totalsFor` على طلبٍ مطفأ.
+    if (taxEnabled) _requirePercent(taxPercent, 'نسبةُ الطلب');
 
     if (lines.isEmpty) return const TableOrderTotals.empty();
 
     var gross = 0.0;
     for (final line in lines) {
-      _requirePercent(line.taxRate, 'نسبةُ البند');
+      if (taxEnabled) _requirePercent(line.taxRate, 'نسبةُ البند');
       gross += line.lineNet;
     }
     if (gross < 0) gross = 0;

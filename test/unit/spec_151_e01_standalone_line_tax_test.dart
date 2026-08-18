@@ -71,13 +71,9 @@ void main() {
       );
       // Kitchen work-order generation is non-fatal (wrapped in try/catch by the
       // orchestrator), so throwing stubs are fine — the sale still completes.
-      final kitchen = KitchenService(
-        _ThrowingKitchenRepo(),
-        _ThrowingProductRepo(),
-        _ThrowingPrintersRepo(),
-        db,
-      );
-      orch = SalesTransactionOrchestrator(db, svc, kitchen);
+      // لا `KitchenService` هنا: المنسّقُ ما عاد يولّد أوامرَ تحضير —
+      // الطاولاتُ وحدَها تُحضَّر (2026-08-18).
+      orch = SalesTransactionOrchestrator(db, svc);
 
       final roleId = await db.into(db.roles).insert(
             RolesCompanion.insert(

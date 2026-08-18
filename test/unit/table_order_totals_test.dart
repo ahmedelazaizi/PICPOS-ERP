@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/domain/entities/cart_item_entity.dart';
 import 'package:ural_erp/domain/models/table_order_totals.dart';
+import 'package:ural_erp/domain/models/tax_rate_bounds.dart';
 import 'package:ural_erp/domain/usecases/sales/calculate_invoice_totals_usecase.dart';
 
 /// ضريبةُ المبيعات على طلبات الطاولات — الطورُ أ.
@@ -376,6 +377,81 @@ void main() {
       expect(mine.taxAmount, reference.taxAmount);
       expect(mine.total, reference.total);
       expect(mine.taxAmount, 0.0);
+    });
+  });
+
+  group('حارسُ الوحدات يقرأ من TaxRateBounds — لا رقمَين يفترقان', () {
+    // `_requirePercent` كان يحمل `1` و`100` عاريَين. صارا يُقرآن من
+    // [TaxRateBounds]، فلو شُدّ الحدُّ يوماً في مصدره تحرّك الحارسُ معه بدل أن
+    // يبقى يُجيز ما ترفضه الشاشةُ والقيد. وهذا الفوجُ يمسك ذلك الافتراق.
+
+    TableOrderTotals computeAt(double taxPercent) => TableOrderTotals.compute(
+          lines: const [TableOrderLine(quantity: 1, unitPrice: 100)],
+          taxEnabled: true,
+          taxPercent: taxPercent,
+        );
+
+    test('الحدُّ الأدنى نفسُه يمرّ بلا إطلاق', () {
+      expect(computeAt(TaxRateBounds.minPercent).taxAmount, closeTo(1.0, 1e-9));
+    });
+
+    test('ما دون الحدِّ فوق الصفر يُطلق الحارس', () {
+      // كسريّةٌ (0.16) قُرئت مئويّةً تسقط هنا، وكذلك نسبةٌ تَعِد ولا تُحصّل.
+      expect(() => computeAt(0.16), throwsA(isA<AssertionError>()));
+      expect(() => computeAt(0.5), throwsA(isA<AssertionError>()));
+    });
+
+    test('الصفرُ يمرّ — «بلا ضريبة» ليست خطأَ وحدات', () {
+      expect(computeAt(0).taxAmount, 0.0);
+    });
+
+    test('ما فوق المئةِ يُطلق الحارس — مئويّةٌ ضُربت في ١٠٠', () {
+      expect(() => computeAt(1600), throwsA(isA<AssertionError>()));
+    });
+
+    test('المطفأُ لا يُطلق الحارسَ — نسبتُه لا تدخل الحسابَ أصلاً', () {
+      // ترقيةُ v157 **تُبقي** لقطةً دون الحدّ على طلبٍ مطفأ (القيدُ لا يطارد
+      // مطفأً)، و`taxPercentFromRate(0.005)` = `0.5`. فحارسٌ غيرُ مشروطٍ
+      // بالتفعيل يُسقط حسابَ تلك الطاولة على حالةٍ قصدَها التصميم.
+      final t = TableOrderTotals.compute(
+        lines: const [TableOrderLine(quantity: 1, unitPrice: 100)],
+        taxEnabled: false,
+        taxPercent: 0.5,
+      );
+      expect(t.taxAmount, 0.0);
+      expect(t.total, 100.0);
+    });
+
+    test('نسبةُ بندٍ خارجَ المدى لا تُطلق الحارسَ متى كانت الضريبةُ مطفأة', () {
+      final t = TableOrderTotals.compute(
+        lines: const [
+          TableOrderLine(quantity: 1, unitPrice: 100, taxRate: 0.5)
+        ],
+        taxEnabled: false,
+      );
+      expect(t.taxAmount, 0.0);
+    });
+
+    test('والحارسُ ما زال يُطلق متى كانت الضريبةُ مفعَّلة', () {
+      // شرطُ التفعيل تصحيحُ مدىً لا إلغاءُ حارس: حيث تصل النسبةُ فاتورةَ
+      // زبونٍ، تبقى مفحوصة.
+      expect(
+        () => TableOrderTotals.compute(
+          lines: const [
+            TableOrderLine(quantity: 1, unitPrice: 100, taxRate: 0.5)
+          ],
+          taxEnabled: true,
+          taxPercent: 16,
+        ),
+        throwsA(isA<AssertionError>()),
+      );
+    });
+
+    test('مدى الحارسِ هو مدى TaxRateBounds بعينه', () {
+      // لا رقمَ عارياً بقي: المدى المقبولُ هنا يُشتقّ من المصدر لا يُكرَّر.
+      expect(TaxRateBounds.isValidPercent(TaxRateBounds.minPercent), isTrue);
+      expect(TaxRateBounds.isValidPercent(TaxRateBounds.maxPercent), isTrue);
+      expect(computeAt(TaxRateBounds.maxPercent).taxAmount, closeTo(100.0, 1e-9));
     });
   });
 }

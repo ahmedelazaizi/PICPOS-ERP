@@ -63,7 +63,6 @@ void main() {
     orch = SalesTransactionOrchestrator(
       db,
       container.read(accountingServiceProvider),
-      container.read(kitchenServiceProvider),
     );
 
     final roleId = await db.into(db.roles).insert(

@@ -91,25 +91,38 @@ class KitchenDisplayScreen extends ConsumerStatefulWidget {
 
 class _KitchenDisplayScreenState extends ConsumerState<KitchenDisplayScreen> {
   String _selectedStation = 'all';
-  Timer? _timer;
-  DateTime _currentTime = DateTime.now();
   int _lastOrderCount = 0;
   bool _soundEnabled = true;
 
-  @override
-  void initState() {
-    super.initState();
-    // Update time every second for elapsed time display
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      setState(() => _currentTime = DateTime.now());
-    });
+  // ── مصادرُ البيانات تُحفَظ ولا تُنشَأ في `build` ────────────────────────
+  //
+  // كانت `stream:` تُستدعى داخل `build` مباشرةً، ومعها مؤقّتٌ يضرب
+  // `setState` كلَّ ثانيةٍ لعرض الساعة. فكانت كلُّ ثانيةٍ تخلق كائناتِ
+  // Stream جديدةً ⇒ يفسخ `StreamBuilder` اشتراكَه ويشترك من جديد ⇒
+  // استعلامُ قاعدةٍ جديد، ويمرّ بـ`ConnectionState.waiting` فيومض
+  // مؤشّرُ التحميل. ومع N بطاقةً معروضةً كان ذلك **١ + N استعلاماً كلَّ
+  // ثانية**.
+  //
+  // الآن: الساعةُ والزمنُ المنقضي يدقّان في ودجتٍ يملك مؤقّتَه (`_Ticker`)
+  // فلا يُعاد بناءُ الشاشة أصلاً؛ وهذه الحقولُ تُثبّت هُويّةَ الـStream
+  // فحتى إعادةُ البناءِ المشروعة (تبديلُ المحطة أو كتمُ الصوت) لا تُعيد
+  // الاشتراك.
+  Stream<List<WorkOrder>>? _ordersStream;
+  String? _ordersStreamStation;
+  final Map<int, Stream<List<WorkOrderItem>>> _itemStreams = {};
+
+  Stream<List<WorkOrder>> _ordersFor(KitchenRepository repo) {
+    if (_ordersStream == null || _ordersStreamStation != _selectedStation) {
+      _ordersStreamStation = _selectedStation;
+      _ordersStream = _selectedStation == 'all'
+          ? repo.watchPendingOrders()
+          : repo.watchOrdersByStation(_selectedStation);
+    }
+    return _ordersStream!;
   }
 
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
+  Stream<List<WorkOrderItem>> _itemsFor(KitchenRepository repo, int orderId) =>
+      _itemStreams.putIfAbsent(orderId, () => repo.watchOrderItems(orderId));
 
   /// Play alert sound when new orders arrive
   void _playNewOrderAlert() {
@@ -128,9 +141,7 @@ class _KitchenDisplayScreenState extends ConsumerState<KitchenDisplayScreen> {
         backgroundColor: AppColors.primaryDark,
         appBar: _buildAppBar(),
         body: StreamBuilder<List<WorkOrder>>(
-          stream: _selectedStation == 'all'
-              ? kitchenRepo.watchPendingOrders()
-              : kitchenRepo.watchOrdersByStation(_selectedStation),
+          stream: _ordersFor(kitchenRepo),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(
@@ -139,6 +150,11 @@ class _KitchenDisplayScreenState extends ConsumerState<KitchenDisplayScreen> {
             }
 
             final orders = snapshot.data ?? [];
+
+            // الطلبُ الذي غادر الشاشةَ يُسقَط مجرى بنوده معه، وإلّا نما
+            // الكاشُ بلا حدٍّ على مدى الوردية.
+            final liveIds = orders.map((o) => o.id).toSet();
+            _itemStreams.removeWhere((id, _) => !liveIds.contains(id));
 
             // Sound alert when new orders arrive
             if (orders.length > _lastOrderCount && _lastOrderCount > 0) {
@@ -223,12 +239,16 @@ class _KitchenDisplayScreenState extends ConsumerState<KitchenDisplayScreen> {
           const SizedBox(width: 12),
           _buildStatChip('في الانتظار', pending + preparing, AppColors.info),
           const Spacer(),
-          Text(
-            '${_currentTime.hour.toString().padLeft(2, '0')}:${_currentTime.minute.toString().padLeft(2, '0')}:${_currentTime.second.toString().padLeft(2, '0')}',
-            style: const TextStyle(
-              color: Colors.white38,
-              fontSize: 16,
-              fontFamily: 'monospace',
+          // الساعةُ وحدَها تدقّ — لا الشاشةُ من ورائها.
+          _Ticker(
+            interval: const Duration(seconds: 1),
+            builder: (_, now) => Text(
+              '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}',
+              style: const TextStyle(
+                color: Colors.white38,
+                fontSize: 16,
+                fontFamily: 'monospace',
+              ),
             ),
           ),
         ],
@@ -338,8 +358,16 @@ class _KitchenDisplayScreenState extends ConsumerState<KitchenDisplayScreen> {
     );
   }
 
-  Widget _buildOrderCard(WorkOrder order, KitchenRepository kitchenRepo) {
-    final elapsedMinutes = _currentTime.difference(order.createdAt).inMinutes;
+  /// لونُ البطاقة وإلحاحُها يتبعان الزمنَ المنقضي، فالبطاقةُ تدقّ بنفسها —
+  /// **بدقّةِ الدقيقة** لا الثانية، لأن `inMinutes` لا يتغيّر إلّا عندها.
+  Widget _buildOrderCard(WorkOrder order, KitchenRepository kitchenRepo) => _Ticker(
+        interval: const Duration(minutes: 1),
+        builder: (_, now) => _orderCardAt(order, kitchenRepo, now),
+      );
+
+  Widget _orderCardAt(
+      WorkOrder order, KitchenRepository kitchenRepo, DateTime now) {
+    final elapsedMinutes = now.difference(order.createdAt).inMinutes;
     final isUrgent = order.priority == 'urgent' || elapsedMinutes > 15;
     final isHigh = order.priority == 'high' || elapsedMinutes > 10;
 
@@ -490,7 +518,7 @@ class _KitchenDisplayScreenState extends ConsumerState<KitchenDisplayScreen> {
           // Items
           Expanded(
             child: StreamBuilder<List<WorkOrderItem>>(
-              stream: kitchenRepo.watchOrderItems(order.id),
+              stream: _itemsFor(kitchenRepo, order.id),
               builder: (context, snapshot) {
                 final items = snapshot.data ?? [];
                 return ListView.builder(
@@ -624,4 +652,43 @@ class _KitchenDisplayScreenState extends ConsumerState<KitchenDisplayScreen> {
       AppToast.show(context, 'تم استرجاع الطلب للتحضير', type: ToastType.info);
     }
   }
+}
+
+/// ودجتٌ يملك مؤقّتَه فيُعيد بناءَ **نفسِه وحدَه**.
+///
+/// وُجد لأن عرضَ الوقت كان يُكلّف شاشةَ المطبخ إعادةَ بناءٍ كاملةً كلَّ ثانية:
+/// `setState` على حالة الشاشة يُعيد تنفيذ `build`، وفيها كانت تُنشَأ مصادرُ
+/// البيانات، فيُفسَخ الاشتراكُ ويُعاد — استعلامٌ لكلِّ بطاقةٍ كلَّ ثانيةٍ
+/// ووميضُ مؤشّرِ تحميل. وحصرُ الدقّ في الورقة يُبقي الوقتَ حيّاً بلا أن يمسّ
+/// شيئاً فوقه.
+class _Ticker extends StatefulWidget {
+  const _Ticker({required this.interval, required this.builder});
+
+  final Duration interval;
+  final Widget Function(BuildContext context, DateTime now) builder;
+
+  @override
+  State<_Ticker> createState() => _TickerState();
+}
+
+class _TickerState extends State<_Ticker> {
+  DateTime _now = DateTime.now();
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(widget.interval, (_) {
+      if (mounted) setState(() => _now = DateTime.now());
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.builder(context, _now);
 }

@@ -28,8 +28,8 @@ class _FakePort implements SplitSettlementPort {
 
   /// رقمُ الفاتورة التي «تصدر» عن أيّ ترحيلٍ في هذا المنفذ.
   final int invoiceId = 900;
-  final bool cancelPayment;
-  final String? settleThrowsOnLabel;
+  bool cancelPayment;
+  String? settleThrowsOnLabel;
 
   final List<Map<int, double>?> fills = [];
   final List<double> charges = [];
@@ -45,12 +45,40 @@ class _FakePort implements SplitSettlementPort {
   @override
   Future<int?> settledInvoiceId() async => existingInvoiceId;
 
+  /// الحجوزُ المُنشأةُ في هذه الجولة: رقمُ الحجز → الحصّة.
+  final Map<int, SplitPart> reserved = {};
+  final List<int> released = [];
+  int _nextReservationId = 1;
+
+  /// تسميةٌ يرفضها الحجزُ **قبل** الترحيل (حارسٌ يرمي).
+  String? reserveThrowsOnLabel;
+
   @override
-  Future<void> settlePart(SplitPart part, int invoiceId) async {
-    if (part.label == settleThrowsOnLabel) {
+  Future<int> reservePart(SplitPart part) async {
+    if (part.label == reserveThrowsOnLabel) {
       throw StateError('الدفعةُ تتجاوز المتبقّي');
     }
+    final id = _nextReservationId++;
+    reserved[id] = part;
+    return id;
+  }
+
+  @override
+  Future<void> confirmPart(int reservationId, int invoiceId) async {
+    final part = reserved[reservationId];
+    if (part == null) throw StateError('لا حجزَ #$reservationId');
+    if (part.label == settleThrowsOnLabel) {
+      throw StateError('تعذّر الربط');
+    }
     settled.add((label: part.label, invoiceId: invoiceId));
+  }
+
+  @override
+  Future<void> releaseReservations(List<int> reservationIds) async {
+    released.addAll(reservationIds);
+    for (final id in reservationIds) {
+      reserved.remove(id);
+    }
   }
 
   @override
@@ -282,6 +310,63 @@ void main() {
       expect(result.settledCount, 1);
       expect(port.charges, [60], reason: 'الحصّةُ الثانية لم تُرحَّل');
       expect(result.message, contains('ضيف 2'));
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════
+  group('حجزٌ ثم ترحيلٌ ثم تثبيت — النافذةُ مغلقةٌ على مسار التقسيم', () {
+    test('حارسُ الحجز يرفض ⇒ لا فاتورةَ تُرحَّل أصلاً', () async {
+      final plan = SplitPlan.equal(total: 100, ways: 2);
+      final port = _FakePort(plan: plan, unsettled: plan.parts)
+        // الحصّةُ الثانيةُ يرفضها حارسٌ عند الحجز.
+        ..reserveThrowsOnLabel = plan.parts[1].label;
+
+      final result =
+          await SplitSettlementRunner(port).run(previewSum: _sum(plan));
+
+      expect(result.status, SplitRunStatus.aborted);
+      // بيتُ القصيد: الرفضُ وقع **قبل** أن تُرحَّل فاتورة.
+      expect(port.charges, isEmpty, reason: 'لا فاتورةَ صدرت');
+      expect(port.settled, isEmpty);
+    });
+
+    test('رفضُ حصّةٍ يُحرِّر ما حُجز قبلها — لا مالَ معلّقٌ بلا سبب', () async {
+      final plan = SplitPlan.equal(total: 100, ways: 3);
+      final port = _FakePort(plan: plan, unsettled: plan.parts)
+        ..reserveThrowsOnLabel = plan.parts[2].label;
+
+      await SplitSettlementRunner(port).run(previewSum: _sum(plan));
+
+      // حُجزت اثنتان قبل الرفض، فوجب تحريرُهما.
+      expect(port.released, hasLength(2));
+      expect(port.reserved, isEmpty);
+    });
+
+    test('تراجُعُ الكاشير بعد الحجز ⇒ تُحرَّر كلُّ الحجوز', () async {
+      final plan = SplitPlan.equal(total: 100, ways: 3);
+      final port = _FakePort(plan: plan, unsettled: plan.parts)
+        ..cancelPayment = true;
+
+      final result =
+          await SplitSettlementRunner(port).run(previewSum: _sum(plan));
+
+      expect(result.status, SplitRunStatus.aborted);
+      expect(port.released, hasLength(3));
+      expect(port.settled, isEmpty);
+    });
+
+    test('فشلُ الربط بعد الترحيل ⇒ تسويةٌ مطلوبةٌ ولا يُحرَّر الحجز', () async {
+      final plan = SplitPlan.equal(total: 100, ways: 2);
+      final port = _FakePort(plan: plan, unsettled: plan.parts)
+        ..settleThrowsOnLabel = plan.parts[0].label;
+
+      final result =
+          await SplitSettlementRunner(port).run(previewSum: _sum(plan));
+
+      expect(result.status, SplitRunStatus.reconcileNeeded);
+      expect(result.orphanInvoiceId, isNotNull);
+      // الفاتورةُ صدرت — تحريرُ الحجز هنا يمحو دفعةً حقيقيّة.
+      expect(port.released, isEmpty);
     });
   });
 }

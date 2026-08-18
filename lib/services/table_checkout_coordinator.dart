@@ -61,7 +61,96 @@ class TableCheckoutCoordinator {
     }
   }
 
-  /// تسجيلُ حصّةٍ بعد صدور فاتورتها.
+  /// تحصيلُ الطلب كاملاً: **حجزٌ → ترحيلٌ → تثبيت**.
+  ///
+  /// هذه هي الحلقةُ التي تُغلق نافذةَ «الترحيلُ قبل التسجيل». كان الترتيبُ
+  /// ترحيلاً ثم حراساً، فإن رمى حارسٌ بقيت فاتورةٌ مُرحَّلةٌ بلا دفعةٍ على
+  /// الطاولة. الآن كلُّ الحراس تعمل في [TableSessionService.reservePayment]
+  /// **قبل** أن يُنادى [postInvoice] أصلاً.
+  ///
+  /// [postInvoice] يُرحّل الفاتورةَ ويعيد رقمَها، أو `null` إن تراجع الكاشير.
+  /// يبقى دالّةً يمرّرها المستدعي لأن الترحيلَ يقرأ السلّةَ من Riverpod —
+  /// وبهذا تُقاد الحلقةُ كلُّها في اختبارٍ بلا واجهة.
+  ///
+  /// والحجزُ يُؤخَذ **بعد** ورقةِ الدفع (يستدعيها [postInvoice])، فعمرُه زمنُ
+  /// آلةٍ لا زمنُ إنسان — وهو ما يُبقي خطرَ الحجز العالق صغيراً.
+  Future<TableSettleOutcome> settleFull({
+    required int orderId,
+    required double amount,
+    required Future<int?> Function() postInvoice,
+    int? userId,
+    String? userName,
+  }) async {
+    final int reservationId;
+    try {
+      reservationId = await _session.reservePayment(
+        orderId: orderId,
+        amount: amount,
+        userId: userId,
+        userName: userName,
+      );
+    } on TableTransitionException catch (e) {
+      // لا شيءَ رُحِّل — لا تسويةَ تُطلَب، ورسالةٌ واحدةٌ تكفي.
+      return TableSettleOutcome(
+          status: TableSettleStatus.rejected, message: e.message);
+    }
+
+    int? invoiceId;
+    try {
+      invoiceId = await postInvoice();
+    } catch (e) {
+      await _releaseQuietly(reservationId, 'فشلَ الترحيل: $e', userId, userName);
+      return TableSettleOutcome(
+          status: TableSettleStatus.aborted, message: 'فشلَ الترحيل: $e');
+    }
+
+    if (invoiceId == null) {
+      await _releaseQuietly(
+          reservationId, 'أُلغيت طريقةُ الدفع', userId, userName);
+      return const TableSettleOutcome(
+        status: TableSettleStatus.aborted,
+        message: 'أُلغيت طريقةُ الدفع — لم تُصدَر فاتورة',
+      );
+    }
+
+    try {
+      await _session.confirmPayment(
+          reservationId: reservationId, invoiceId: invoiceId);
+    } catch (e) {
+      // الفاتورةُ رُحّلت والمالُ مسجَّلٌ على الطاولة بمبلغه الصحيح — الناقصُ
+      // رابطُ الفاتورة وحدَه. لا يُحرَّر الحجزُ هنا: تحريرُه يمحو دفعةً
+      // حقيقيّةً رُحّلت فاتورتُها.
+      return TableSettleOutcome(
+        status: TableSettleStatus.reconcileNeeded,
+        invoiceId: invoiceId,
+        message: 'فاتورةٌ #$invoiceId صدرت ورُحِّلت، والمبلغُ مسجَّلٌ على '
+            'الطاولة، لكن تعذّر ربطُهما (حجز #$reservationId) — يحتاج ربطاً '
+            'يدويّاً. الخطأ: $e',
+      );
+    }
+
+    return TableSettleOutcome(
+        status: TableSettleStatus.success, invoiceId: invoiceId);
+  }
+
+  Future<void> _releaseQuietly(
+      int reservationId, String reason, int? userId, String? userName) async {
+    // التحريرُ نفسُه قد يفشل على عطلِ قرص؛ وابتلاعُه هنا مقصود — الفشلُ
+    // الأصليُّ هو ما يُبلَّغ، والحجزُ المعلّقُ يظهر في سجلّ الطاولة.
+    try {
+      await _session.releaseReservation(
+        reservationId: reservationId,
+        reason: reason,
+        userId: userId,
+        userName: userName,
+      );
+    } catch (_) {}
+  }
+
+  /// تسجيلُ حصّةٍ على فاتورةٍ **صدرت بالفعل** — حجزٌ وتثبيتٌ في معاملةٍ واحدة.
+  ///
+  /// يبقى لمن يملك رقمَ فاتورةٍ سلفاً. وحلقةُ التقسيم لا تستعمله: هي تحجز
+  /// أوّلاً ثم تُرحّل ثم تثبّت، وذلك هو ما يُغلق النافذة.
   Future<void> settlePart({
     required int orderId,
     required SplitPart part,
@@ -73,6 +162,48 @@ class TableCheckoutCoordinator {
         amount: part.amount,
         splitLabel: part.label,
       );
+
+  /// حجزُ حصّةٍ **قبل** صدور فاتورتها — كلُّ حراسِ الدفع تعمل هنا.
+  Future<int> reservePart({
+    required int orderId,
+    required SplitPart part,
+    int? userId,
+    String? userName,
+  }) =>
+      _session.reservePayment(
+        orderId: orderId,
+        amount: part.amount,
+        splitLabel: part.label,
+        userId: userId,
+        userName: userName,
+      );
+
+  /// ربطُ حجزِ حصّةٍ بفاتورةٍ صدرت.
+  Future<void> confirmPart({
+    required int reservationId,
+    required int invoiceId,
+  }) =>
+      _session.confirmPayment(
+          reservationId: reservationId, invoiceId: invoiceId);
+
+  /// تحريرُ حجوزٍ لم تصدر فاتورتُها. لا يرمي — الفشلُ الأصليُّ هو ما يُبلَّغ.
+  Future<void> releaseReservations(
+    List<int> reservationIds, {
+    String reason = 'لم تُصدَر فاتورةٌ للحصّة',
+    int? userId,
+    String? userName,
+  }) async {
+    for (final id in reservationIds) {
+      try {
+        await _session.releaseReservation(
+          reservationId: id,
+          reason: reason,
+          userId: userId,
+          userName: userName,
+        );
+      } catch (_) {}
+    }
+  }
 
   /// ما سُوِّي فعلاً من حصصِ هذا الطلب: `التسمية → مجموعُ ما سُجِّل عليها`.
   ///
@@ -120,6 +251,29 @@ class TableCheckoutCoordinator {
           'تسمياتُ الحصص متكرّرةٌ في الخطّة — لا يمكن تمييزُ المسوَّى من الباقي');
     }
 
+    // ── الحالةُ الثالثة: محجوزةٌ تنتظر رقمَ فاتورة ────────────────────────
+    //
+    // كانت الحصّةُ إمّا مسوّاةً أو باقية. ومنذ v158 بينهما ثالثة، و
+    // `settledShares` لا يراها (يقرأ `paymentsFor` المُرشَّح بـ`settled`).
+    //
+    // فلو مرّت لَعادت في «الباقية» فحُجزت ثانيةً — أو، لولا حارسُ الحجز
+    // المزدوج، لَتضاعف `paidAmount`. وعدُّها «مسوّاة» أسوأ: يبقى رابطُ
+    // فاتورتها فارغاً للأبد.
+    //
+    // ولا تُحسَم تخميناً. صفٌّ معلّقٌ يعني — بحكم ترتيب [settleFull] — أن
+    // الفاتورةَ **رُحّلت** وفشل ربطُها وحدَه (فشلُ الترحيل يُحرِّر الحجز
+    // فوراً). فالاستئنافُ فوقه يشحن أصنافاً حُصِّلت بالفعل. يُرفَض صراحةً
+    // بذكر الرقم والمبلغ ليحسمه إنسان: يربطها أو يحرّرها.
+    final pending = await _session.pendingReservations(orderId);
+    if (pending.isNotEmpty) {
+      final p = pending.first;
+      final named = p.splitLabel != null ? ' لحصّة ${p.splitLabel}' : '';
+      throw StateError(
+          'على هذا الطلب حجزٌ معلّق (#${p.id}$named بمبلغ ${p.amount}): '
+          'فاتورتُه صدرت وتعذّر ربطُها بالطاولة. لا يُستأنَف التقسيمُ فوقه — '
+          'اربِط الحجزَ بفاتورته أو حرّره، ثم أعِد المحاولة.');
+    }
+
     final settled = await settledShares(orderId);
 
     final planLabels = labels.toSet();
@@ -155,4 +309,31 @@ class TableCheckoutCoordinator {
     final payments = await _session.paymentsFor(orderId);
     return payments.isEmpty ? null : payments.first.invoiceId;
   }
+}
+
+/// نتيجةُ محاولة تحصيل — أربعُ حالاتٍ لا لبسَ بينها.
+enum TableSettleStatus {
+  /// رُحِّلت الفاتورةُ وسُجِّلت الدفعةُ وارتبطتا.
+  success,
+
+  /// رفضَ حارسٌ **قبل** أيِّ ترحيل. لا شيءَ يحتاج تسوية.
+  rejected,
+
+  /// لم تُرحَّل فاتورةٌ (تراجُعٌ أو فشلُ ترحيل) وحُرِّر الحجز.
+  aborted,
+
+  /// رُحِّلت الفاتورةُ والمالُ مسجَّلٌ على الطاولة، والناقصُ ربطُهما.
+  reconcileNeeded,
+}
+
+class TableSettleOutcome {
+  const TableSettleOutcome({
+    required this.status,
+    this.invoiceId,
+    this.message,
+  });
+
+  final TableSettleStatus status;
+  final int? invoiceId;
+  final String? message;
 }
