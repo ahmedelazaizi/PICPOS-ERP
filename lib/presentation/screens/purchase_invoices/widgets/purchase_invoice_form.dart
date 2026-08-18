@@ -106,10 +106,11 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
 
     final cats = await productRepo.getCategories();
     // نطاقُ النسبة — مصدرٌ واحدٌ في المستودع بدل نسخِ الشرط في كلِّ شاشة.
-    final whs = await branchRepo.getAssignableWarehouses();
+    // و`keepSelected`: فاتورةٌ قيدَ التعديل تحتفظ بمخزنها ولو خرج عن النطاق.
+    final visibleWarehouses = await branchRepo.getAssignableWarehouses(
+      keepSelected: widget.editInvoice?.warehouseId,
+    );
     final ccs = await accountingRepo.getCostCenters();
-
-    final visibleWarehouses = await _withEditInvoiceWarehouse(whs);
 
     if (mounted) {
       setState(() {
@@ -130,26 +131,6 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
             _costCenterFor(_selectedWarehouseId, visibleWarehouses, ccs);
       });
     }
-  }
-
-  /// تُعيد [assignable] وقد أُلحق بها مخزنُ الفاتورةِ قيدَ التعديل إن وقع
-  /// خارجَ نطاقِ النسبة.
-  ///
-  /// وهذا قيدُ التعديلِ وحدَه فلا محلَّ له في القاعدةِ المشتركة: قائمةٌ لا
-  /// تحوي قيمتَها المنتقاةَ تُسقط `DropdownButton` بتأكيدٍ صريح، وإسقاطُ
-  /// المخزنِ صامتاً يعيد توطينَ الفاتورةِ على فرعٍ آخرَ عند الحفظ — وفرعُها
-  /// يُشتقُّ من مخزنها (`purchase_dao.dart:589-594`).
-  Future<List<db.Warehouse>> _withEditInvoiceWarehouse(
-      List<db.Warehouse> assignable) async {
-    final editWarehouseId = widget.editInvoice?.warehouseId;
-    if (editWarehouseId == null ||
-        assignable.any((w) => w.id == editWarehouseId)) {
-      return assignable;
-    }
-
-    final own =
-        await ref.read(branchRepositoryProvider).getWarehouseById(editWarehouseId);
-    return own == null ? assignable : [own, ...assignable];
   }
 
   /// مركزُ تكلفةِ [warehouseId] إن كان حاضراً في [costCenters] المحمَّلة.

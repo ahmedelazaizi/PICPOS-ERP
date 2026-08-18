@@ -795,7 +795,12 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
   Widget _buildWarehouseSelector() {
     return FutureBuilder<List<Warehouse>>(
       // نطاقُ النسبة: المخزنُ الافتراضيُّ للصنفِ هو وجهةُ حركاتِ مخزونه.
-      future: ref.read(branchRepositoryProvider).getAssignableWarehouses(),
+      // و`keepSelected` لازمٌ لا تجميل: الصنفُ صفٌّ **قائم** قد يشير إلى
+      // مخزنٍ صار خارجَ النطاق (محذوفاً أو من فرعٍ آخر)، وحذفُه من القائمة
+      // يُسقطها بتأكيدٍ صريح أو يعيد كتابةَ مخزنِ الصنفِ صامتاً.
+      future: ref
+          .read(branchRepositoryProvider)
+          .getAssignableWarehouses(keepSelected: selectedWarehouseId),
       builder: (context, snapshot) {
         final warehouses = snapshot.data ?? [];
         return SizedBox(

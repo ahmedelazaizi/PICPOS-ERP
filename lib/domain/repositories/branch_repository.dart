@@ -65,15 +65,26 @@ abstract class IBranchRepository {
   /// نطاقُ **نسبةٍ** لا رؤية — انظر `branch_assignment_scope.dart`.
   Future<int?> getAssignmentBranchId();
 
-  /// المخازنُ التي يجوز نسبةُ مستندٍ جديدٍ إليها على هذا الجهاز:
-  /// [getWarehouses] مقصورةً بـ[getAssignmentBranchId] وفق
-  /// `restrictForAssignment` (مساواةٌ صارمة + احتياطُ عدمِ التفريغ).
+  /// المخازنُ التي يجوز نسبةُ مستندٍ جديدٍ إليها على هذا الجهاز: الصالحةُ
+  /// منها (‏غيرُ محذوفةٍ ناعماً وغيرُ معطَّلة) مقصورةً بـ[getAssignmentBranchId]
+  /// وفق `restrictForAssignment` (مساواةٌ صارمة + احتياطُ عدمِ التفريغ).
+  ///
+  /// وشاهدُ الحذفِ (`deletedAt`) يصل من الخادم عبر `DeltaPull` فيبقى الصفُّ
+  /// محلّياً — لذا لا يكفي أن يُحذَف مركزيّاً لكي يختفي من المنتقيات.
+  /// و`isActive` هو مُحدِّدُ «مخزنٍ صالح» في بقيّةِ المستودع
+  /// (`getWarehousesByBranch` وغيرُها).
+  ///
+  /// [keepSelected] معرّفُ مخزنٍ منتقىً سلفاً في صفٍّ قائم (مخزنُ فاتورةٍ
+  /// قيدَ التعديل، أو المخزنُ الافتراضيُّ لصنف). يُلحَق بالقائمة إن وقع
+  /// خارجَ النطاق — لأن قائمةً لا تحوي قيمتَها المنتقاةَ تُسقط
+  /// `DropdownButton` بتأكيدٍ صريح، وإسقاطَ القيمةِ صامتاً يعيد كتابةَ
+  /// بياناتِ صفٍّ قائمٍ عند الحفظ.
   ///
   /// هي المصدرُ الوحيدُ لهذا القصّ — كان منسوخاً في ستِّ شاشات. ومَن أراد
   /// مخازنَ فرعٍ **بعينه** (كإعداداتِ فرعٍ في شاشةِ إدارة) فليستعمل
   /// [getWarehousesByBranch]: صارمٌ بلا احتياط، لأن «لا مخزنَ لهذا الفرع»
   /// جوابٌ صحيحٌ هناك لا تعطيلٌ للعمل.
-  Future<List<db.Warehouse>> getAssignableWarehouses();
+  Future<List<db.Warehouse>> getAssignableWarehouses({int? keepSelected});
 
   Future<Map<int, double>> getWarehouseStockMap(int warehouseId);
 

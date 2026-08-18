@@ -104,6 +104,59 @@ void main() {
       expect(result.map((w) => w.name), isNot(contains('مخزنٌ بلا فرع')));
     });
 
+    test('المحذوفُ ناعماً والمعطَّلُ خارجَ القائمة', () async {
+      final deletedId = await db.into(db.warehouses).insert(
+            WarehousesCompanion.insert(
+              name: 'مخزنٌ محذوف',
+              branchId: Value(tantaBranchId),
+              // شاهدُ الحذف يصل من الخادم عبر `DeltaPull`، والصفُّ يبقى محلّياً.
+              deletedAt: Value(DateTime(2026, 8, 1)),
+              globalId: const Value('gid-wh-deleted-scope'),
+            ),
+          );
+      final inactiveId = await db.into(db.warehouses).insert(
+            WarehousesCompanion.insert(
+              name: 'مخزنٌ معطَّل',
+              branchId: Value(tantaBranchId),
+              isActive: const Value(false),
+              globalId: const Value('gid-wh-inactive-scope'),
+            ),
+          );
+
+      final ids = (await repo.getAssignableWarehouses()).map((w) => w.id);
+
+      expect(ids, isNot(contains(deletedId)));
+      expect(ids, isNot(contains(inactiveId)),
+          reason: '`isActive` هو مُحدِّدُ «مخزنٍ صالح» في بقيّةِ المستودع');
+      expect(ids, contains(tantaWarehouseId));
+    });
+
+    test('keepSelected يُبقي المخزنَ الخارجَ عن النطاق حاضراً', () async {
+      final deletedId = await db.into(db.warehouses).insert(
+            WarehousesCompanion.insert(
+              name: 'مخزنٌ محذوف',
+              branchId: Value(tantaBranchId),
+              deletedAt: Value(DateTime(2026, 8, 1)),
+              globalId: const Value('gid-wh-deleted-keep'),
+            ),
+          );
+
+      final ids = (await repo.getAssignableWarehouses(keepSelected: deletedId))
+          .map((w) => w.id);
+
+      expect(ids, contains(deletedId),
+          reason: 'قائمةٌ بلا قيمتِها المنتقاةِ تُسقط `DropdownButton`، '
+              'وإسقاطُ القيمةِ صامتاً يعيد كتابةَ صفٍّ قائم');
+      expect(ids, contains(tantaWarehouseId));
+    });
+
+    test('keepSelected لمعرّفٍ لا وجودَ له لا يكسر القائمة', () async {
+      expect(
+        (await repo.getAssignableWarehouses(keepSelected: 999999)).map((w) => w.id),
+        contains(tantaWarehouseId),
+      );
+    });
+
     test('فرعٌ بلا مخازن ⇒ القائمةُ الكاملةُ لا الخاوية', () async {
       final emptyBranchId = await db.into(db.branches).insert(
             BranchesCompanion.insert(

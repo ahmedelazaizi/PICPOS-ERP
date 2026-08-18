@@ -258,13 +258,28 @@ class BranchRepositoryImpl implements IBranchRepository {
   }
 
   @override
-  Future<List<Warehouse>> getAssignableWarehouses() async {
+  Future<List<Warehouse>> getAssignableWarehouses({int? keepSelected}) async {
     final all = await getWarehouses();
-    return restrictForAssignment(
-      all,
+
+    // الصالحُ أوّلاً ثم القصُّ بالفرع — بهذا الترتيبِ عن قصد: احتياطُ
+    // `restrictForAssignment` عند خلوِّ الفرعِ يردّ القائمةَ **الصالحة** لا
+    // الخام، فلا يُبعث محذوفٌ من جديد.
+    final usable =
+        all.where((w) => w.deletedAt == null && w.isActive).toList();
+
+    final scoped = restrictForAssignment(
+      usable,
       await getAssignmentBranchId(),
       branchIdOf: (w) => w.branchId,
     );
+
+    if (keepSelected == null || scoped.any((w) => w.id == keepSelected)) {
+      return scoped;
+    }
+    // القيمةُ المنتقاةُ سلفاً تبقى ظاهرةً ولو صارت خارجَ النطاق — الشرحُ في
+    // عقدِ `IBranchRepository.getAssignableWarehouses`.
+    final kept = await getWarehouseById(keepSelected);
+    return kept == null ? scoped : [kept, ...scoped];
   }
 
   @override
