@@ -147,7 +147,10 @@ class TableCheckoutCoordinator {
     } catch (_) {}
   }
 
-  /// تسجيلُ حصّةٍ بعد صدور فاتورتها.
+  /// تسجيلُ حصّةٍ على فاتورةٍ **صدرت بالفعل** — حجزٌ وتثبيتٌ في معاملةٍ واحدة.
+  ///
+  /// يبقى لمن يملك رقمَ فاتورةٍ سلفاً. وحلقةُ التقسيم لا تستعمله: هي تحجز
+  /// أوّلاً ثم تُرحّل ثم تثبّت، وذلك هو ما يُغلق النافذة.
   Future<void> settlePart({
     required int orderId,
     required SplitPart part,
@@ -159,6 +162,48 @@ class TableCheckoutCoordinator {
         amount: part.amount,
         splitLabel: part.label,
       );
+
+  /// حجزُ حصّةٍ **قبل** صدور فاتورتها — كلُّ حراسِ الدفع تعمل هنا.
+  Future<int> reservePart({
+    required int orderId,
+    required SplitPart part,
+    int? userId,
+    String? userName,
+  }) =>
+      _session.reservePayment(
+        orderId: orderId,
+        amount: part.amount,
+        splitLabel: part.label,
+        userId: userId,
+        userName: userName,
+      );
+
+  /// ربطُ حجزِ حصّةٍ بفاتورةٍ صدرت.
+  Future<void> confirmPart({
+    required int reservationId,
+    required int invoiceId,
+  }) =>
+      _session.confirmPayment(
+          reservationId: reservationId, invoiceId: invoiceId);
+
+  /// تحريرُ حجوزٍ لم تصدر فاتورتُها. لا يرمي — الفشلُ الأصليُّ هو ما يُبلَّغ.
+  Future<void> releaseReservations(
+    List<int> reservationIds, {
+    String reason = 'لم تُصدَر فاتورةٌ للحصّة',
+    int? userId,
+    String? userName,
+  }) async {
+    for (final id in reservationIds) {
+      try {
+        await _session.releaseReservation(
+          reservationId: id,
+          reason: reason,
+          userId: userId,
+          userName: userName,
+        );
+      } catch (_) {}
+    }
+  }
 
   /// ما سُوِّي فعلاً من حصصِ هذا الطلب: `التسمية → مجموعُ ما سُجِّل عليها`.
   ///

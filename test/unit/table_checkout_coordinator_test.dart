@@ -556,8 +556,16 @@ class _FakeSplitPort implements SplitSettlementPort {
   Future<int?> settledInvoiceId() => coordinator.settledInvoiceId(orderId);
 
   @override
-  Future<void> settlePart(SplitPart part, int invoiceId) => coordinator
-      .settlePart(orderId: orderId, part: part, invoiceId: invoiceId);
+  Future<int> reservePart(SplitPart part) =>
+      coordinator.reservePart(orderId: orderId, part: part);
+
+  @override
+  Future<void> confirmPart(int reservationId, int invoiceId) => coordinator
+      .confirmPart(reservationId: reservationId, invoiceId: invoiceId);
+
+  @override
+  Future<void> releaseReservations(List<int> reservationIds) =>
+      coordinator.releaseReservations(reservationIds);
 
   @override
   Future<double> fillCart(Map<int, double>? itemQuantities) async {
