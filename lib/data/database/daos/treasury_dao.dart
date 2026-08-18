@@ -1436,6 +1436,28 @@ extension TreasuryDao on AppDatabase {
     return onBranch.isEmpty ? null : onBranch.first;
   }
 
+  /// هل [safeId] **درجٌ** يستلزم ورديّةً مفتوحة؟ (‏ح‑١، مواصفة 2026-08-18)
+  ///
+  /// الصندوقُ الرئيسيُّ مُعفًى: المحاسبُ في المقرّ يسجّل عليه سنداتِه ولا
+  /// ورديّةَ له ولا يحتاجها — وهو ليس درجاً أمام كاشير. وما عداه من الخزائن
+  /// النقديّة درجٌ يعدّه أحدٌ عند الإقفال، فحركتُه خارجَ أيّ نافذةٍ تُنتج
+  /// فرقاً وهميّاً يُقيَّد في ذمّته.
+  ///
+  /// والخزائنُ غيرُ النقديّة (بنك/كليك) ليست أدراجاً ولا تدخل `expectedCash`
+  /// أصلاً، فلا ورديّةَ تُشترط لها.
+  /// ⚠️ السؤالُ عن **فرعِ الخزنة** لا عن المستخدم — والدرجُ هو الخزنة.
+  /// وعقدُ `ITreasuryRepository` للسندات لا يحمل `userId` أصلاً، فربطُ الحكمِ
+  /// بالمستخدم كان سيقرأ صفراً دائماً ويُفتي بلا معلومة.
+  Future<bool> drawerMovementAllowed(int? safeId) async {
+    if (safeId == null) return true;
+    final safe = await getSafeById(safeId);
+    if (safe == null || safe.safeType != 'cash') return true;
+    final central = await getCentralSafe();
+    if (central != null && safe.id == central.id) return true;
+    final shifts = await getOpenShiftsForBranch(branchId: safe.branchId);
+    return shifts.isNotEmpty;
+  }
+
   /// سُلَّمُ اختيارِ الخزنةِ لأيّ حركةِ مالٍ — المصدرُ الوحيد.
   ///
   /// استُخرج من `_recordSalesReceipt` (مسارُ البيع) ليستعمله مسارُ المرتجع

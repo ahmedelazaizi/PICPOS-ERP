@@ -21,7 +21,9 @@
 // ح‑٣: تعذُّرُ الخزنةِ يرمي ولا يُتخطّى صامتاً.
 
 import 'package:drift/drift.dart' hide isNull, isNotNull;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ural_erp/data/providers/providers.dart';
 import 'package:ural_erp/core/errors/app_exceptions.dart';
 import 'package:ural_erp/data/database/database.dart';
 import 'package:ural_erp/data/repositories/drift_accounting_repository.dart';
@@ -45,7 +47,7 @@ void main() {
   late AppDatabase db;
   late ReturnsRepositoryImpl repo;
   late SalesTransactionOrchestrator orchestrator;
-  late int warehouseId;
+    late int warehouseId;
   late int userId;
   late int productId;
 
@@ -649,6 +651,118 @@ void main() {
       );
 
       expect(printData!.cashRefund, closeTo(200, 0.001));
+    });
+  });
+
+  group('ح‑١ — تمييزُ الدرج من الصندوق الرئيسي (`drawerMovementAllowed`)', () {
+    // العائقُ الذي أخّر هذا البند كان: «لا يميّز النموذجُ خزنةَ الدرج من
+    // الرئيسيّة». والقياسُ أسقطه: التمييزُ **قائمٌ** عبر `getCentralSafe()`
+    // التي تحسم الرئيسيَّ بـglobalId مشتقٍّ مستقرّ (لا بالاسم، فالاسمُ قابلٌ
+    // للتعديل). فالمحاسبُ في المقرّ مُعفًى والكاشيرُ على درجه محروس.
+    //
+    // والسؤالُ عن **فرعِ الخزنة** لا عن المستخدم: عقدُ السندات لا يحمل
+    // `userId` أصلاً، فربطُ الحكمِ بالمستخدم كان سيُفتي بلا معلومة.
+    test('درجٌ بلا ورديّة ⇒ ممنوع', () async {
+      final drawer = await db.into(db.safes).insert(
+            SafesCompanion.insert(
+              name: 'درج الكاشير',
+              safeType: const Value('cash'),
+              globalId: const Value('gid-drawer-1'),
+            ),
+          );
+      expect(await db.drawerMovementAllowed(drawer), isFalse);
+    });
+
+    test('نفسُ الدرج وورديّةٌ مفتوحة ⇒ مسموح', () async {
+      final drawer = await db.into(db.safes).insert(
+            SafesCompanion.insert(
+              name: 'درج الكاشير 2',
+              safeType: const Value('cash'),
+              globalId: const Value('gid-drawer-2'),
+            ),
+          );
+      await db.openShift(userId, 0);
+      expect(await db.drawerMovementAllowed(drawer), isTrue);
+    });
+
+    test('الصندوقُ الرئيسيُّ مُعفًى ولو لا ورديّةَ إطلاقاً', () async {
+      final central = await db.getCentralSafe();
+      expect(central, isNotNull, reason: 'مزروعٌ في التهيئة الأساسيّة');
+      expect(await db.drawerMovementAllowed(central!.id), isTrue,
+          reason: 'المحاسبُ في المقرّ يسجّل سنداتِه بلا ورديّة');
+    });
+
+    test('الخزنةُ البنكيّةُ ليست درجاً ⇒ مسموحٌ بلا ورديّة', () async {
+      final bank = await db.into(db.safes).insert(
+            SafesCompanion.insert(
+              name: 'بنك',
+              safeType: const Value('bank'),
+              globalId: const Value('gid-bank-1'),
+            ),
+          );
+      expect(await db.drawerMovementAllowed(bank), isTrue);
+    });
+
+    test('درجُ فرعٍ آخرَ لا تُجيزه ورديّةُ فرعٍ غيره', () async {
+      final branchA = await db.into(db.branches).insert(
+            BranchesCompanion.insert(
+                name: 'فرع أ', globalId: const Value('gid-br-a2')),
+          );
+      final branchB = await db.into(db.branches).insert(
+            BranchesCompanion.insert(
+                name: 'فرع ب', globalId: const Value('gid-br-b2')),
+          );
+      final drawerB = await db.into(db.safes).insert(
+            SafesCompanion.insert(
+              name: 'درج ب',
+              safeType: const Value('cash'),
+              branchId: Value(branchB),
+              globalId: const Value('gid-drawer-b'),
+            ),
+          );
+      await db.openShift(userId, 0, branchId: branchA); // ورديّةٌ على «أ» فقط
+
+      expect(await db.drawerMovementAllowed(drawerB), isFalse,
+          reason: 'ورديّةُ فرعٍ لا تفتح درجَ فرعٍ آخر');
+    });
+  });
+
+  group('قفلُ الفترة المحاسبيّة — حراسةٌ قائمةٌ تُثبَّت', () {
+    // ⚠️ اختبارُ انحدارٍ لا إصلاح. المواصفةُ زعمت (§٢‑٧) أنّ مسارَ المرتجع
+    // يتخطّى قفلَ الفترة لأنّه يكتب صفَّ الخزنة بـ`insert` مباشرٍ متجنّباً
+    // `createSafeTransaction` (ومعه `validateFinancialPeriod`). والزعمُ
+    // **دقيقٌ حرفيّاً ومضلّلٌ عمليّاً**: المعاملةُ كلُّها تُرفض قبل أن يبقى
+    // شيء — عبر `adjustStock` للصنف المخزنيّ، وعبر `createJournalEntry`
+    // للخدمة. هذان الاختباران يمنعان انكسارَ ذلك بترتيبٍ مختلفٍ لاحقاً أو
+    // بابتلاعِ استثناءٍ في مسار الترحيل.
+    Future<void> closeCurrentPeriod() async {
+      final now = DateTime.now();
+      await (db.update(db.accountingPeriods)
+            ..where((p) => p.month.equals(now.month) & p.year.equals(now.year)))
+          .write(const AccountingPeriodsCompanion(isClosed: Value(true)));
+    }
+
+    test('مرتجعُ صنفٍ مخزنيٍّ في فترةٍ مقفلة ⇒ يُرفَض بلا أثر', () async {
+      await db.openShift(userId, 0);
+      final invoice = await sell(paid: 200);
+      final safeBefore = await cashSafeBalance(1);
+      final stockBefore = (await db.getProductById(productId))!.currentStock;
+
+      await closeCurrentPeriod();
+
+      await expectLater(returnAll(invoice), throwsA(isA<Exception>()));
+      expect(await cashSafeBalance(1), safeBefore);
+      expect((await db.getProductById(productId))!.currentStock, stockBefore);
+    });
+
+    test('بيعةٌ نقديّةٌ في فترةٍ مقفلة ⇒ تُرفَض بلا أثر', () async {
+      await db.openShift(userId, 0);
+      await closeCurrentPeriod();
+      final before = await cashSafeBalance(1);
+
+      await expectLater(sell(paid: 200, number: 'INV-CLOSED'),
+          throwsA(isA<Exception>()));
+      expect(await cashSafeBalance(1), before);
     });
   });
 }
