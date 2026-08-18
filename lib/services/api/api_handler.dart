@@ -131,6 +131,9 @@ class ApiHandler {
     // Sales
     router.post('/api/sales', _sales.postSale);
     router.post('/api/sales/return', _sales.postSalesReturn);
+    // الاستبدال — حمولةٌ واحدةٌ تُفكَّك إلى مستندَين في معاملةٍ واحدة، فلا
+    // نافذةَ يصل فيها المردودُ ويسقط بديلُه.
+    router.post('/api/sales/exchange', _sales.postSalesExchange);
     router.post('/api/sales/held', _sales.postHeldOrder);
     router.delete('/api/sales/held/<id>', _sales.deleteHeldOrder);
     // C-02 (Spec 151): globalId-resolved sales void — a POST so there is no
