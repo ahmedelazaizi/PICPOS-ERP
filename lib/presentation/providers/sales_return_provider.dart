@@ -156,9 +156,20 @@ class SalesReturnNotifier extends Notifier<SalesReturnState> {
     state = state.copyWith(isLoading: true);
     try {
       final repository = ref.read(returnsRepositoryProvider);
+      // مواصفة 2026-08-18 §٣‑١٢: يرى الكاشيرُ فواتيرَ فرعِه وحدَها. بدون
+      // القصّ كان يرتجع فاتورةَ فرعٍ آخر، فيعود المخزونُ لمخزنِ ذاك الفرع
+      // بينما يخرج النقدُ من درجِ فرعِه هو — مخزونٌ هنا ونقدٌ هناك.
+      // `null` = وصولٌ كامل (مديرُ نظام)، وإخفاقُ القراءة يُبقي السلوكَ
+      // السابقَ بدل أن يُفرِغ الشاشةَ على الكاشير.
+      Set<int>? scopeIds;
+      try {
+        scopeIds = (await ref.read(branchScopeProvider.future)).allowedBranchIds;
+      } catch (_) {}
+
       final filtered = await repository.getInvoicesForReturn(
         fromDate: state.fromDate,
         toDate: state.toDate,
+        allowedBranchIds: scopeIds,
       );
 
       // Batch-load customer names in ONE query — eliminates N+1 FutureBuilder in list.

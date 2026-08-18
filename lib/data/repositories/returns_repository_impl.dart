@@ -26,8 +26,16 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
   Future<List<SalesInvoiceData>> getInvoicesForReturn({
     required DateTime fromDate,
     required DateTime toDate,
+    Set<int>? allowedBranchIds,
   }) async {
-    final invoices = await _db.getSalesByDateRange(fromDate, toDate);
+    // مواصفة 2026-08-18 §٣‑١٢: القصُّ بنطاق الفرع — نفسُ ما يفعله
+    // `getSalesReturnHistory` منذ Spec 151 Track-3. كانت القائمةُ الأصليّةُ
+    // وحدَها بلا قصّ، فسجلُّ المرتجعات محروسٌ ومصدرُها مكشوف.
+    final invoices = await _db.getSalesByDateRange(
+      fromDate,
+      toDate,
+      allowedBranchIds: allowedBranchIds,
+    );
     debugPrint('[ReturnsRepo] getInvoicesForReturn: total fetched=${invoices.length}, fromDate=$fromDate, toDate=$toDate');
     final filtered = invoices.where((invoice) {
         if (invoice.total <= 0) return false;           // skip returns & zero invoices
