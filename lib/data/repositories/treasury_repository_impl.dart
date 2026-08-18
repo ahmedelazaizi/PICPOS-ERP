@@ -147,14 +147,7 @@ class TreasuryRepositoryImpl extends BaseRepository<Safe> implements ITreasuryRe
         if (defaultSafe != null) targetSafeId = defaultSafe.id;
       }
 
-      // ح‑١ (مواصفة 2026-08-18): سندٌ نقديٌّ على **درج** يستلزم ورديّةً
-      // مفتوحةً عليه. والصندوقُ الرئيسيُّ مُعفًى — المحاسبُ في المقرّ يسجّل
-      // عليه ولا ورديّةَ له ولا يحتاجها.
-      //
-      // وموضعُه في المستودع لا في الـDAO **عن قصد**: الخادمُ ينادي
-      // `db.createReceiptVoucher` مباشرةً (`api_data_handler`)، والإقفالُ
-      // والمزامنةُ كذلك — فحارسٌ في الـDAO كان سيكسرها. المستودعُ مسارُ
-      // الواجهة وحدَه، أي الأجهزةُ التي أمامها درج.
+      // ح‑١ (مواصفة 2026-08-18 §٣‑٩): حركةُ نقدٍ على درجٍ تستلزم ورديّة.
       if (!isCheckPayment && !await db.drawerMovementAllowed(targetSafeId)) {
         throw ShiftRequiredException(cashAmount: amount);
       }
@@ -257,9 +250,7 @@ class TreasuryRepositoryImpl extends BaseRepository<Safe> implements ITreasuryRe
         }
       }
 
-      // ح‑١ — نفسُ حارسِ سند القبض أعلاه، على جهة الصرف. صرفيّةُ كاشيرٍ من
-      // درجه (مصروفٌ نثريّ مثلاً) بلا ورديّةٍ تُنتج عجزاً وهميّاً في ذمّة من
-      // يعدّ الدرجَ بعده.
+      // ح‑١ — نفسُ حارسِ سند القبض، على جهة الصرف (§٣‑٩).
       if (!isCheckPayment && !await db.drawerMovementAllowed(resolvedSafeId)) {
         throw ShiftRequiredException(cashAmount: amount);
       }
