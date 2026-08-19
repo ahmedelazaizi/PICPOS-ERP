@@ -60,7 +60,14 @@ import '../widgets/picpos_return_mode_banner.dart';
 import '../widgets/picpos_switch_user_dialog.dart';
 import '../widgets/picpos_top_bar.dart';
 import '../providers/pos_return_mode_provider.dart';
+import '../providers/pos_exchange_mode_provider.dart';
 import '../state/pos_return_mode.dart';
+import '../state/pos_exchange_mode.dart';
+import '../widgets/picpos_exchange_mode_banner.dart';
+import '../../../domain/models/exchange_settlement.dart';
+// `ExchangeResult` — نتيجةُ الاستبدال بأرقامِ الدرج المقيسة. مستودعٌ لا قاعدة:
+// حارسُ `presentation_db_import_guard` يمنع `data/database` وحدَه.
+import '../../../data/repositories/exchange_repository_impl.dart';
 import '../../../domain/models/returnable_line.dart';
 
 part 'picpos_pos_operations.dart';
@@ -199,7 +206,11 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
     // وضعُ المرتجع (جولةُ إصلاح ٢ — مانعٌ ١): تعطيلُ زرّ «الفواتير المعلّقة»
     // في الشريط العلويّ بصرياً، فوق حراسة `_showHeldOrders` نفسِها. راجع
     // تعليقَ `PicPosTopBar.onHeldOrders`.
-    final returnModeActive = ref.watch(posReturnModeProvider) != null;
+    // ووضعُ الاستبدال يعطّله كذلك: `_showHeldOrders` **يحذف الطلبَ المعلَّق
+    // من القاعدة** عند استرجاعه، فتركُه مفتوحاً أثناء استبدالٍ قائمٍ يُبيد
+    // طلباً معلَّقاً نهائياً مقابل سلّةٍ لن تُحفَظ بيعاً عاديّاً.
+    final returnModeActive = ref.watch(posReturnModeProvider) != null ||
+        ref.watch(posExchangeModeProvider) != null;
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -388,11 +399,34 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
     // خالصةٌ ولا تحمل رقمَ الفاتورة، رأى مواصفةَ الملفّ).
     final returnMode = ref.watch(posReturnModeProvider);
 
+    // الأرقامُ الثلاثةُ للاستبدال: المرتجعُ من الوضع، والبديلُ من سلّة البيع
+    // نفسِها (هي سلّةُ البديل)، والفرقُ من `settleExchange` عبر
+    // `previewSettlement` — **لا يُشتقّ هنا بطرح**، وإلّا صار حاسبٌ ثانٍ
+    // يفترق عن المنفَّذ عند أوّل تقريب.
+    final exchangeMode = ref.watch(posExchangeModeProvider);
+    final replacementTotal =
+        ref.watch(cartControllerProvider.select((s) => s.total));
+
     return Column(
       children: [
         if (returnMode != null)
           PicPosReturnModeBanner(
             invoiceNumber: _returnInvoiceNumber ?? '#${returnMode.invoiceId}',
+          ),
+        if (exchangeMode != null)
+          Builder(
+            builder: (_) {
+              final preview = exchangeMode.previewSettlement(
+                  replacementTotal: replacementTotal);
+              return PicPosExchangeModeBanner(
+                invoiceNumber:
+                    _exchangeInvoiceNumber ?? '#${exchangeMode.invoiceId}',
+                refundTotal: exchangeMode.refundTotal,
+                replacementTotal: replacementTotal,
+                direction: preview.direction,
+                difference: preview.amount,
+              );
+            },
           ),
         PicPosInvoiceHeader(
           onPickCustomer: _pickCustomer,
@@ -430,6 +464,7 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
           onHold: _holdOrder,
           onHeldOrders: _showHeldOrders,
           onQuickReturn: _showQuickReturn,
+          onExchange: _showExchange,
         ),
       ],
     );

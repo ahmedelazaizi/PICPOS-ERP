@@ -280,7 +280,10 @@ Set<String> _currentGaps() {
 // تعليقاتٍ فقط، ولولا التجريدُ لوُلد الحارسُ أحمرَ بلا سبب.
 const _absenceWitness = <String, List<String>>{
   'pos_booking': ['حجز', 'Booking'],
-  'pos_exchange': ['استبدال', 'Exchange'],
+  // ⚠️ `pos_exchange` شُطب 2026-08-19 مع مدخلِه في السجلّ: وصل سطحُ الاستبدال
+  // (زرُّ اللوحة · ترويسةُ الأرقام الثلاثة · مسارُ الحفظ) وصار الكودُ مُنفَذاً
+  // في `_showExchange`. والحارسُ المعاكسُ هو من كشف الوصولَ — أعطى الملفّاتِ
+  // الثلاثةَ بالاسم قبل أن يُشطَب أيُّ سطر.
   'pos_deleted_items': ['الأصناف المحذوفة', 'DeletedItems'],
   'pos_keyboard': ['لوحة المفاتيح'],
   'pos_offers': ['العروض', 'OffersDialog'],

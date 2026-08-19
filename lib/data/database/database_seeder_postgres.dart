@@ -369,6 +369,8 @@ extension DatabaseSeederPostgres on AppDatabase {
       // محروسَين بـ`pos_return`/`pos_item_plus`/`pos_item_minus`. أفعالٌ
       // يوميّةٌ للكاشير الأساسي، نفسُ منطق `pos_delivery` فوق.
       'pos_return', 'pos_item_plus', 'pos_item_minus',
+      // 2026-08-19 — سطحُ الاستبدال وصل، ونفسُ منطق `pos_return`.
+      'pos_exchange',
     ];
     const stockPerms = [
       'inventory_view', 'inventory_edit', 'products_view', 'products_add',
@@ -385,6 +387,8 @@ extension DatabaseSeederPostgres on AppDatabase {
       // 2026-08-16 — قرارُ المالك: زرّا «+»/«−» في محرِّر أسطر المرتجع
       // (يورّث لمدير الفرع عبر الـspread تحت).
       'pos_item_plus', 'pos_item_minus',
+      // 2026-08-19 — سطحُ الاستبدال (يورّث لمدير الفرع عبر الـspread تحت).
+      'pos_exchange',
     ];
     const branchManagerPerms = [
       ...advancedCashierPerms,

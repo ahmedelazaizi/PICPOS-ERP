@@ -38,6 +38,8 @@ import '../../domain/repositories/sales_repository.dart' as domain;
 import '../../domain/repositories/returns_repository.dart';
 import '../repositories/sales_repository_impl.dart';
 import '../repositories/returns_repository_impl.dart';
+import '../repositories/exchange_repository_impl.dart';
+import '../repositories/sales_transaction_orchestrator.dart';
 import '../../domain/repositories/accounting_repository.dart';
 import '../repositories/drift_accounting_repository.dart';
 import '../../domain/repositories/scale_repository.dart';
@@ -201,6 +203,25 @@ final returnsRepositoryProvider = Provider<IReturnsRepository>((ref) {
   final db = ref.watch(databaseProvider);
   final accountingService = ref.watch(accountingServiceProvider);
   return ReturnsRepositoryImpl(db, accountingService);
+});
+
+/// Exchange Repository provider — المردودُ وبديلُه في معاملةٍ واحدة.
+///
+/// يبني نظيرَيه بنفسه لأن `SalesTransactionOrchestrator` لا مزوّدَ مستقلَّ له:
+/// `SalesRepositoryImpl` يبنيه داخلَها بنفس السطر. وكلاهما غلافٌ بلا حالةٍ
+/// فوق `db` و`accountingService`، فبناؤه هنا لا يزدوج شيئاً ذا حالة.
+///
+/// و`ReturnsRepositoryImpl` **بنوعِه الملموس** لا `IReturnsRepository`:
+/// `ExchangeRepositoryImpl` يطلب الملموسَ عن قصد — شقُّ الارتجاع فيه يمرّ
+/// بنفس مسار المرتجع السريع حرفياً لا بواجهةٍ قد تُبدَّل بغيره.
+final exchangeRepositoryProvider = Provider<ExchangeRepositoryImpl>((ref) {
+  final db = ref.watch(databaseProvider);
+  final accountingService = ref.watch(accountingServiceProvider);
+  return ExchangeRepositoryImpl(
+    db,
+    ReturnsRepositoryImpl(db, accountingService),
+    SalesTransactionOrchestrator(db, accountingService),
+  );
 });
 
 /// Accounting Repository provider

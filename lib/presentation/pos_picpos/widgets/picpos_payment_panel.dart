@@ -35,6 +35,7 @@ import '../../../core/utils/number_utils.dart';
 import '../../../data/providers/providers.dart';
 import '../../../domain/usecases/sales/calculate_invoice_totals_usecase.dart';
 import '../../pos/providers/cart_controller.dart';
+import '../providers/pos_exchange_mode_provider.dart';
 import '../providers/pos_return_mode_provider.dart';
 import 'picpos_cart_permissions.dart';
 import 'picpos_pos_text.dart';
@@ -59,6 +60,10 @@ class PicPosPaymentPanel extends ConsumerWidget {
   /// شيئاً عن `PosReturnMode` أو المستودعات — نفسُ نمط بقيّة أزرار اللوحة.
   final VoidCallback onQuickReturn;
 
+  /// «استبدال» — يفتح نفسَ مُحدِّد الفاتورة ثم يضبط `posExchangeModeProvider`.
+  /// وبخلاف المرتجع، السلّةُ تبقى مفتوحةً للتعديل: هي سلّةُ البديل.
+  final VoidCallback onExchange;
+
   const PicPosPaymentPanel({
     super.key,
     required this.onCheckout,
@@ -72,6 +77,7 @@ class PicPosPaymentPanel extends ConsumerWidget {
     required this.onHold,
     required this.onHeldOrders,
     required this.onQuickReturn,
+    required this.onExchange,
   });
 
   @override
@@ -134,6 +140,7 @@ class PicPosPaymentPanel extends ConsumerWidget {
             onHold: onHold,
             onHeldOrders: onHeldOrders,
             onQuickReturn: onQuickReturn,
+            onExchange: onExchange,
           ),
         ],
       ),
@@ -717,6 +724,7 @@ class _ActionButtons extends ConsumerWidget {
   final VoidCallback onHold;
   final VoidCallback onHeldOrders;
   final VoidCallback onQuickReturn;
+  final VoidCallback onExchange;
 
   const _ActionButtons({
     required this.scale,
@@ -731,6 +739,7 @@ class _ActionButtons extends ConsumerWidget {
     required this.onHold,
     required this.onHeldOrders,
     required this.onQuickReturn,
+    required this.onExchange,
   });
 
   @override
@@ -751,7 +760,17 @@ class _ActionButtons extends ConsumerWidget {
     final returnMode = ref.watch(posReturnModeProvider);
     final returnHasQty =
         returnMode?.requestedQty.values.any((q) => q > 0) ?? false;
-    final isEmpty = returnMode != null ? !returnHasQty : cartIsEmpty;
+
+    // وضعُ الاستبدال: الشرطُ **مركَّبٌ** لا مفرد — مرتجَعٌ مختارٌ **و**سلّةُ
+    // بديلٍ عامرة. فأحدُهما وحدَه ليس استبدالاً: مرتجَعٌ بلا بديلٍ مردودٌ
+    // عاديّ، وبديلٌ بلا مرتجَعٍ بيعٌ عاديّ — ولكلٍّ منهما زرُّه.
+    //
+    // وهنا بالذات يقع الخطأُ المقيسُ في الخطة الأولى: `isEmpty` يُشتقّ من
+    // سلّة البيع وحدَها، فيموت «دفع/حفظ» في كلِّ وضعٍ لا يملؤها.
+    final exchangeMode = ref.watch(posExchangeModeProvider);
+    final isEmpty = exchangeMode != null
+        ? !(exchangeMode.hasReturnSelection && !cartIsEmpty)
+        : (returnMode != null ? !returnHasQty : cartIsEmpty);
 
     return Column(
       children: [
@@ -829,7 +848,24 @@ class _ActionButtons extends ConsumerWidget {
               child: _Action(
                 label: 'مرتجع سريع',
                 icon: PhosphorIconsBold.arrowUUpLeft,
-                onTap: returnMode != null ? null : onQuickReturn,
+                onTap: (returnMode != null || exchangeMode != null)
+                    ? null
+                    : onQuickReturn,
+                height: btnHeight + 6,
+                font: btnFont,
+              ),
+            ),
+            // «استبدال» — نفسُ منطق «مرتجع سريع»، وكلُّ وضعٍ يعطّل الآخرَ
+            // والنفسَ: الوضعان يقرآن فاتورةً أصليّةً واحدة، وفتحُ الثاني فوق
+            // الأوّل كان يستبدل اختياراً ضُبط بعناية بلا تأكيد.
+            SizedBox(width: 5 * scale),
+            Expanded(
+              child: _Action(
+                label: 'استبدال',
+                icon: PhosphorIconsBold.arrowsLeftRight,
+                onTap: (returnMode != null || exchangeMode != null)
+                    ? null
+                    : onExchange,
                 height: btnHeight + 6,
                 font: btnFont,
               ),

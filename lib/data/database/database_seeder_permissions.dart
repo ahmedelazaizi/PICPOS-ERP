@@ -737,6 +737,10 @@ extension DatabaseSeederPermissions on AppDatabase {
       'pos_return',
       'pos_item_plus',
       'pos_item_minus',
+      // 2026-08-19 — وصل سطحُ الاستبدال، فيُمنَح `pos_exchange` للكاشير
+      // الأساسيّ بنفس منطق `pos_return` فوق: إنفاذُ كودٍ **لا يملكه أحدٌ**
+      // كسرُ شغلٍ لا تأمين — كلُّ استبدالٍ كان سيطلب كلمةَ مرور مسؤول.
+      'pos_exchange',
       // Spec 077 Batch 0.5 — cashier opens AND closes shifts; new symmetric pair.
       'pos_shift_open',
       'pos_shift_close',
@@ -900,7 +904,7 @@ extension DatabaseSeederPermissions on AppDatabase {
     final advancedCashierPerms = [
       'pos_access', 'pos_discount', 'pos_return', 'pos_payment_cash',
       'pos_payment_card', 'pos_hold_order', 'customers_view',
-      'pos_shift_open', 'pos_shift_close',
+      'pos_shift_open', 'pos_shift_close', 'pos_exchange',
       // Spec 084 — same gap as basic cashier; spreads into branchManagerPerms below.
       'sales_create', 'sales_view',
       // Spec 3c — dashboard_access؛ يورّث لمدير الفرع عبر الـ spread تحت.
