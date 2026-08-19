@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../database/database.dart';
 import '../database/sync_interceptor.dart';
+import '../../domain/models/warehouse_branch_scope.dart';
 import '../../domain/repositories/branch_repository.dart';
 import '../../services/client_write_interceptor.dart';
 import '../../services/network_service.dart';
@@ -241,6 +242,18 @@ class BranchRepositoryImpl implements IBranchRepository {
 
   @override
   Future<List<Warehouse>> getWarehouses() => _db.select(_db.warehouses).get();
+
+  @override
+  Future<List<Warehouse>> getScopedWarehouses() async {
+    final all = await getWarehouses();
+    if (!SyncInterceptor.isClientMode) return all;
+    final prefs = await SharedPreferences.getInstance();
+    return narrowWarehousesToClientBranch<Warehouse>(
+      warehouses: all,
+      clientBranchId: prefs.getInt('client_branch_id'),
+      branchIdOf: (w) => w.branchId,
+    );
+  }
 
   @override
   Future<Map<int, double>> getWarehouseStockMap(int warehouseId) => _db.getWarehouseStockMap(warehouseId);

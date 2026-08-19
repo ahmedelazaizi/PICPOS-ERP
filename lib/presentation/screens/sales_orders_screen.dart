@@ -379,9 +379,12 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
                       },
                     ),
                     const SizedBox(height: 10),
-                    // Warehouse picker
+                    // Warehouse picker — Spec 103: على جهاز عميلٍ مربوطٍ بفرع
+                    // لا تُعرَض مخازنُ فروعٍ أخرى. وهنا آكد: أوّلُ مخزنٍ
+                    // يُنتقى تلقائيّاً أدناه، فقائمةٌ غيرُ محصورةٍ قد تختار
+                    // مخزنَ فرعٍ آخر بلا لمسةٍ من الكاشير.
                     FutureBuilder<List<Warehouse>>(
-                      future: branchRepo.getWarehouses(),
+                      future: branchRepo.getScopedWarehouses(),
                       builder: (ctx, snap) {
                         if (!snap.hasData) return const LinearProgressIndicator();
                         final warehouses = snap.data!;

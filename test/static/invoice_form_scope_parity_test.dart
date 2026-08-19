@@ -22,14 +22,22 @@ const _costCenterPickers = <String>[
   'lib/presentation/screens/sales_orders_screen.dart',
 ];
 
-/// نوافذُ الفواتير التي تختار مخزناً وتُحفَظ على فرعه.
+/// نوافذُ إدخالٍ تختار مخزناً يُورَّث إلى مستندٍ يُرحَّل على فرعه — وتحصره
+/// عبر **المستودع** (`getScopedWarehouses`)، فلا يقرأ العرضُ تفضيلاتِ الجهاز.
 ///
-/// شاشتا أمرِ البيع وأمرِ المشتريات **خارجَ** هذه القائمة عمداً: هما لا
-/// تحصران المخازن اليوم، والأمرُ مستندٌ لا فاتورةٌ تُرحَّل على فرع. إدخالُهما
-/// هنا يجعل الحارسَ أحمرَ على عملٍ لم يُقرَّر بعد — وحارسٌ يُضبَط ليطابق
-/// الواقع أسوأ من حارسٍ صادق.
-const _warehouseScopedInvoiceForms = <String>[
+/// قرارُ المالك 2026-08-19: وُسِّع الحصرُ إلى شاشتَي الأمرَين. وأمرُ البيع
+/// آكدُ من غيره — أوّلُ مخزنٍ يُنتقى تلقائيّاً فيه، فقائمةٌ غيرُ محصورةٍ قد
+/// تختار مخزنَ فرعٍ آخر بلا لمسةٍ من الكاشير.
+const _repoScopedWarehousePickers = <String>[
   'lib/presentation/screens/purchase_invoices/widgets/purchase_invoice_form.dart',
+  'lib/presentation/screens/purchase_orders_screen.dart',
+  'lib/presentation/screens/sales_orders_screen.dart',
+];
+
+/// نافذتا فاتورة المبيعات تعملان على `WarehouseData` لا `Warehouse` المولَّد،
+/// ومصدرُهما مجرى المستودع لا `getWarehouses` — فتستدعيان القاعدةَ الخالصةَ
+/// مباشرةً. الرُّقعتان مختلفتان والقاعدةُ واحدة.
+const _pureRuleWarehousePickers = <String>[
   'lib/presentation/screens/widgets/sales_invoices/sales_invoice_dialogs.dart',
   'lib/presentation/sales_invoices_picpos/screens/sales_invoice_dialogs.dart',
 ];
@@ -54,11 +62,21 @@ void main() {
       }
     });
 
-    test('نوافذُ الفواتير تحصر المخازن بفرع الجهاز (Spec 103)', () {
-      for (final path in _warehouseScopedInvoiceForms) {
+    test('منتقو المخازن يمرّون بـ getScopedWarehouses لا بالقائمة الخام', () {
+      for (final path in _repoScopedWarehousePickers) {
+        final src = _read(path);
+        expect(src.contains('getScopedWarehouses'), isTrue,
+            reason: '$path بلا حصرِ فرع — المستندُ يُحفَظ بمخزنِ فرعٍ آخر '
+                'فيغيب عن قائمة فرعه');
+        expect(RegExp(r'\.getWarehouses\(\)').hasMatch(src), isFalse,
+            reason: '$path ما زال يقرأ القائمةَ الخام في مسارِ إصدارِ مستند');
+      }
+    });
+
+    test('نافذتا فاتورة المبيعات تستدعيان القاعدةَ الخالصة', () {
+      for (final path in _pureRuleWarehousePickers) {
         expect(_read(path).contains('narrowWarehousesToClientBranch'), isTrue,
-            reason: '$path بلا حصرِ فرع — الفاتورةُ تُحفَظ بمخزنِ فرعٍ آخر '
-                'فتغيب عن قائمة فرعها');
+            reason: '$path بلا حصرِ فرع (Spec 103)');
       }
     });
 
@@ -67,7 +85,10 @@ void main() {
       final helper = File('lib/domain/models/warehouse_branch_scope.dart');
       expect(helper.existsSync(), isTrue);
 
-      for (final path in _warehouseScopedInvoiceForms) {
+      for (final path in [
+        ..._repoScopedWarehousePickers,
+        ..._pureRuleWarehousePickers,
+      ]) {
         expect(
           RegExp(r'where\(\(w\) => w\.branchId == clientBranchId\)')
               .hasMatch(_read(path)),

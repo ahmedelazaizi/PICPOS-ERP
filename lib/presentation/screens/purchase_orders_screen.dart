@@ -521,9 +521,12 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
                       },
                     ),
                     const SizedBox(height: 10),
-                    // Warehouse dropdown
+                    // Warehouse dropdown — Spec 103: على جهاز عميلٍ مربوطٍ
+                    // بفرع لا تُعرَض مخازنُ فروعٍ أخرى. أمرُ الشراء يتحوّل
+                    // إلى فاتورةٍ تُرحَّل على فرع المخزن، فاختيارُ مخزنٍ
+                    // غريبٍ هنا يُورَّث إلى المستند المالي.
                     FutureBuilder<List<Warehouse>>(
-                      future: branchRepo.getWarehouses(),
+                      future: branchRepo.getScopedWarehouses(),
                       builder: (context, snap) {
                         final warehouses = snap.data ?? [];
                         return DropdownButtonFormField<int>(

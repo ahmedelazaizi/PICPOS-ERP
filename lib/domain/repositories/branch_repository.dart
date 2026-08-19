@@ -58,6 +58,19 @@ abstract class IBranchRepository {
   Future<void> setUserBranchAccess(int userId, List<int> branchIds);
   Future<void> setUserWarehouseAccess(int userId, List<int> warehouseIds);
   Future<List<db.Warehouse>> getWarehouses();
+
+  /// المخازنُ التي يجوز لهذا **الجهاز** أن يُصدر عليها مستنداً (Spec 103).
+  ///
+  /// على جهاز عميلٍ مربوطٍ بفرع تُحصَر بمخازن فرعه؛ وفيما عدا ذلك هي
+  /// [getWarehouses] نفسُها. الجزءُ غيرُ الخالص — `isClientMode` وقراءةُ
+  /// `client_branch_id` — يعيش هنا لا في العرض، على نمط [getActiveBranch].
+  ///
+  /// **ليست بديلاً عامّاً عن [getWarehouses]:** شاشاتُ البيانات الأساسيّة
+  /// (تخصيصُ مخزنٍ لصنف، الإعدادات) ومسارُ **تحرير** فاتورةٍ قائمة تحتاج
+  /// القائمةَ كاملةً — والثاني خطِرٌ بخاصّة: لو خرج مخزنُ الفاتورة من القائمة
+  /// أعاد المحرِّرُ توجيهَها إلى أوّل مخزنٍ صامتاً.
+  Future<List<db.Warehouse>> getScopedWarehouses();
+
   Future<Map<int, double>> getWarehouseStockMap(int warehouseId);
 
   /// Get cost center ID for the active branch
