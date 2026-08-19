@@ -178,6 +178,48 @@ class TableSessionService {
     });
   }
 
+  /// حجزٌ سريعٌ للطاولة — يكتب الصفَّ **ويترك أثراً**.
+  ///
+  /// كان الودجتُ ينادي `restaurantRepo.createReservation` على المستودع
+  /// مباشرةً، فيُنشَأ الحجزُ بلا سطرِ سجلٍّ واحد: مَن حجز الطاولةَ ومتى؟ لا
+  /// جواب. والتسجيلُ هنا لا في الودجت كي لا يضيع إن نودي المسارُ من شاشةٍ
+  /// أخرى.
+  ///
+  /// وهذا **حجزُ طاولةٍ** لا موعدُ خدمة: العربونُ والخدماتُ والموظّفون
+  /// لمنظومة الحجوزات، ولها مواصفتُها.
+  ///
+  /// الخدمةُ لا تحمل مستودعاً (`_repo`) بل `AppDatabase` مباشرةً، فيُنادى
+  /// `_db.createReservation` — نفسُ ما كان الودجتُ ينادي عبر
+  /// `IRestaurantRepository`، بلا تبعيّةٍ جديدة.
+  Future<void> reserveTable({
+    required int tableId,
+    required String customerName,
+    String? customerPhone,
+    required DateTime reservationTime,
+    required int partySize,
+    String? notes,
+    required int? userId,
+    required String userName,
+  }) async {
+    await _db.createReservation(
+      tableId: tableId,
+      customerName: customerName,
+      customerPhone: customerPhone,
+      reservationTime: reservationTime,
+      partySize: partySize,
+      notes: notes,
+    );
+    final table = await _table(tableId);
+    await _log(
+      userId: userId,
+      userName: userName,
+      action: 'table_reserve',
+      tableId: tableId,
+      description: 'حجزُ ${table.name} باسم $customerName — '
+          '${reservationTime.toIso8601String()} · $partySize أشخاص',
+    );
+  }
+
   static void _requireGuestCount(int guestCount) {
     if (guestCount < 1) {
       throw const TableTransitionException(

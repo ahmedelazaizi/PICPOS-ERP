@@ -922,29 +922,26 @@ mixin _TableOperationsMixin on ConsumerState<TablesScreen> {
                   }
                   setDialogState(() => saving = true);
                   try {
-                    await restaurantRepo.createReservation(
-                      tableId: table.id,
-                      customerName: nameController.text.trim(),
-                      customerPhone: phoneController.text.trim().isNotEmpty
-                          ? phoneController.text.trim()
-                          : null,
-                      reservationTime: reservationTime,
-                      partySize: partySize,
-                      notes: notesController.text.trim().isNotEmpty
-                          ? notesController.text.trim()
-                          : null,
-                    );
+                    // نداءُ الخدمة لا المستودعِ مباشرةً: `reserveTable` تكتب
+                    // صفَّ الحجز **وتترك أثراً** في `ActivityLogs` (كان
+                    // النداءُ القديمَ على `restaurantRepo.createReservation`
+                    // يُنشئ الحجزَ بلا سطرِ سجلٍّ واحد). والمستخدمُ الحاليُّ
+                    // يُمرَّر كما يفعل بقيّةُ أفعال هذا الملفّ.
                     final user = ref.read(authProvider).user;
-                    final activityLogRepo =
-                        ref.read(activityLogRepositoryProvider);
-                    await activityLogRepo.logActivity(
-                      userId: user?.id,
-                      userName: user?.displayName ?? 'مجهول',
-                      action: 'add_reservation',
-                      entityType: 'reservation',
-                      description:
-                          'حجز ${table.name}: ${nameController.text.trim()} ($partySize أشخاص)',
-                    );
+                    await ref.read(tableSessionServiceProvider).reserveTable(
+                          tableId: table.id,
+                          customerName: nameController.text.trim(),
+                          customerPhone: phoneController.text.trim().isNotEmpty
+                              ? phoneController.text.trim()
+                              : null,
+                          reservationTime: reservationTime,
+                          partySize: partySize,
+                          notes: notesController.text.trim().isNotEmpty
+                              ? notesController.text.trim()
+                              : null,
+                          userId: user?.id,
+                          userName: user?.displayName ?? 'مجهول',
+                        );
 
                     if (ctx.mounted) {
                       Navigator.pop(ctx);
