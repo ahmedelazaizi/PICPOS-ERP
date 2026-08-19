@@ -576,6 +576,7 @@ import 'package:flutter/material.dart';
 import '../../../core/design_system/spacing.dart';
 import '../../../domain/models/table_status.dart';
 import '../../picpos_shell/picpos_stat_tile.dart';
+import '../../screens/tables/widgets/table_status_info.dart';
 
 /// عدُّ الطاولات لكلِّ حالة — **بمدخلٍ لكلِّ حالةٍ ولو كان صفراً**.
 ///
@@ -631,40 +632,74 @@ class TablesStatusRail extends StatelessWidget {
 `seated/ordered/eating/billing/cleaning`). فنسخةٌ ثالثةٌ في شاشة PicPos هي
 الانحرافُ نفسُه الذي تُصلحه هذه الخطّة.
 
-أضف في آخر `lib/domain/models/table_status.dart` — **بالقيم المقيسة من
-`table_card.dart` حرفاً، لا بقيمٍ مخترَعة**:
+**قرارُ المالك 2026-08-20: تُوحَّد الثلاثةُ الآن.** والاسمُ واللونُ والأيقونةُ
+شأنُ عرضٍ لا قاعدةُ عمل، فمكانُها ملفٌّ مشترَكٌ في العرض لا `domain/models`
+(‏وإلّا دخل `Color` و`IconData` إلى طبقة المجال بلا داعٍ).
+
+**أنشئ `lib/presentation/screens/tables/widgets/table_status_info.dart`
+بالقيم المنقولة من `table_card.dart:22-33` حرفاً — العشرةِ كلِّها:**
 
 ```dart
-/// اسمُ الحالة ولونُها — مصدرٌ واحدٌ لِما كان منسوخاً مرّتين.
-///
-/// `tables_filter_bar.dart` كان يحمل ثلاثاً من خمس، و`table_card.dart` عشرةَ
-/// مداخلَ فيها حالاتٌ لا يكتبها أحد (`seated`/`ordered`/`eating`/`billing`/
-/// `cleaning` — انظر تعليقَ رأس هذا الملفّ). القيمُ هنا منقولةٌ من البطاقة
-/// لأنها الوحيدةُ التي تغطّي الخمسَ كلَّها.
-String tableStatusLabel(String status) => switch (status) {
-      TableStatus.available => 'متاحة',
-      TableStatus.occupied => 'مشغولة',
-      TableStatus.paid => 'مدفوعة',
-      TableStatus.reserved => 'محجوزة',
-      TableStatus.outOfService => 'خارج الخدمة',
-      _ => status,
-    };
+import 'package:flutter/material.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
-Color tableStatusColor(String status) => switch (status) {
-      TableStatus.available => const Color(0xFF10B981),
-      TableStatus.occupied => const Color(0xFF3B82F6),
-      TableStatus.paid => const Color(0xFFF97316),
-      TableStatus.reserved => const Color(0xFFF59E0B),
-      TableStatus.outOfService => const Color(0xFFCBD5E1),
-      _ => const Color(0xFF6B7280),
-    };
+/// اسمُ الحالة ولونُها وأيقونتُها — مصدرٌ واحدٌ لِما كان منسوخاً ثلاثَ مرّات.
+class TableStatusInfo {
+  const TableStatusInfo(this.label, this.color, this.icon);
+  final String label;
+  final Color color;
+  final IconData icon;
+}
+
+/// الخريطةُ منقولةٌ من `table_card.dart` بلا تغييرِ قيمةٍ واحدة.
+///
+/// وفيها خمسُ حالاتٍ **لا يكتبها أحد** (`seated`/`ordered`/`eating`/`billing`/
+/// `cleaning`) — بقايا مخطّطٍ قديمٍ موثَّقةٌ في رأس `table_status.dart`.
+/// تبقى كما هي: حذفُها يغيّر ما تعرضه البطاقةُ لصفٍّ قديمٍ في قاعدةِ مالكٍ
+/// قائمة، وذلك تغييرُ سلوكٍ لا توحيدُ مصدر.
+const Map<String, TableStatusInfo> tableStatusInfoMap = {
+  'available': TableStatusInfo('متاحة', Color(0xFF10B981), PhosphorIconsBold.checkCircle),
+  'reserved': TableStatusInfo('محجوزة', Color(0xFFF59E0B), PhosphorIconsBold.calendarCheck),
+  'occupied': TableStatusInfo('مشغولة', Color(0xFF3B82F6), PhosphorIconsBold.users),
+  'paid': TableStatusInfo('مدفوعة', Color(0xFFF97316), PhosphorIconsBold.currencyCircleDollar),
+  'out_of_service': TableStatusInfo('خارج الخدمة', Color(0xFFCBD5E1), PhosphorIconsBold.prohibit),
+  'seated': TableStatusInfo('مشغولة', Color(0xFF3B82F6), PhosphorIconsBold.users),
+  'ordered': TableStatusInfo('مشغولة', Color(0xFF3B82F6), PhosphorIconsBold.users),
+  'eating': TableStatusInfo('مشغولة', Color(0xFF3B82F6), PhosphorIconsBold.users),
+  'billing': TableStatusInfo('مشغولة', Color(0xFF3B82F6), PhosphorIconsBold.users),
+  'cleaning': TableStatusInfo('تنظيف', Color(0xFF6366F1), PhosphorIconsBold.broom),
+};
+
+/// **الرجوعُ إلى `available` لا إلى الحالة نفسِها** — هكذا كانت البطاقةُ تفعل
+/// (`table_card.dart:40`: `?? _statusMap['available']!`). تغييرُه يجعل حالةً
+/// مجهولةً تُعرَض بنصِّها الإنجليزيِّ على شاشة الكاشير.
+TableStatusInfo tableStatusInfo(String status) =>
+    tableStatusInfoMap[status] ?? tableStatusInfoMap['available']!;
+
+String tableStatusLabel(String status) => tableStatusInfo(status).label;
+Color tableStatusColor(String status) => tableStatusInfo(status).color;
 ```
 
-ويلزمه `import 'package:flutter/material.dart' show Color;`.
+**ثم وحِّد المستهلكَين — والسلوكُ يجب ألّا يتغيّر بحرف:**
 
-> **لا تحدّث `TablesFilterBar` ولا `table_card.dart` في هذه المهمّة.** توحيدُهما
-> على المصدر الجديد تحسينٌ مشروعٌ لكنه يمسّ الشاشةَ القديمة، وقيدُ المواصفة أن
-> `TablesScreen` لا تُمَسّ. سجِّله بنداً في ملاحظات الدمج واتركه لقرار المالك.
+- `table_card.dart`: احذف `_statusMap` و`_StatusInfo`، وبدّل
+  `_statusMap[table.status] ?? _statusMap['available']!` بـ
+  `tableStatusInfo(table.status)`. الحقولُ الثلاثةُ بأسمائها نفسِها
+  (`label`/`color`/`icon`) فلا يتغيّر مستدعٍ.
+- `tables_filter_bar.dart`: احذف `_statusMap` و`_StatusInfo` المحلّيَّين
+  واقرأ من المصدر الجديد. **وانتبه:** شريطُ الترشيح كان يعرض **ثلاثَ حالاتٍ
+  من خمس**؛ توسيعُه إلى الخمس تغييرٌ مرئيٌّ في الشاشة القديمة — **لا تفعله**.
+  أبقِ قائمتَه الثلاثيّةَ كما هي وغيِّر مصدرَ الاسم واللون فقط.
+
+- [ ] **الخطوة ٣-ب: أثبت أن السلوك لم يتغيّر**
+
+```bash
+flutter test test/widget --concurrency=4 2>&1 | tee /tmp/task4_widget.log
+```
+
+المتوقَّع: سويّةُ الويدجت كما كانت + اختباراتُك الجديدة. أيُّ سقوطٍ في اختبارٍ
+قائمٍ يمسّ البطاقةَ أو شريطَ الترشيح يعني أن التوحيد **غيّر سلوكاً** — أصلحه
+ولا تعدّل الاختبار.
 
 - [ ] **الخطوة ٤: شغّل وتأكّد أنه يمرّ**
 
@@ -827,11 +862,15 @@ class TablesActionRail extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // `railActions` لا يحوي `log` — الفعلَ الوحيدَ بلا صلاحيّة — لكنّ
+        // `!` تجعل ذلك عقداً ضمنيّاً ينكسر صامتاً لو أُضيف فعلٌ بلا كود.
+        // فالقراءةُ صريحةٌ والتخطّي مكتوب.
         for (final action in railActions)
+          if (permissionForAction(action) case final code?)
           Padding(
             padding: const EdgeInsets.only(bottom: Spacing.sm),
             child: PermissionGuard(
-              permission: permissionForAction(action)!,
+              permission: code,
               showDisabled: true,
               actionName: tableActionLabels[action],
               child: _RailButton(
