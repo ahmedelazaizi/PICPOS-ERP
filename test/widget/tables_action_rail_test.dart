@@ -25,7 +25,6 @@ import 'package:ural_erp/domain/models/table_actions.dart';
 import 'package:ural_erp/domain/models/table_status.dart';
 import 'package:ural_erp/presentation/screens/tables/widgets/table_actions_menu.dart';
 import 'package:ural_erp/presentation/tables_picpos/widgets/tables_action_rail.dart';
-import 'package:ural_erp/presentation/widgets/permission_guard.dart';
 
 /// كلُّ الأكواد التي تحرس أفعال الشريط الثمانية — منح كاملٍ يجعل
 /// `PermissionGuard` يمرّر الابنَ كما هو، فالتعطيلُ الظاهرُ في اختبارات
@@ -175,28 +174,42 @@ void main() {
     final permsWithoutTransfer = _allRailPermissions
         .where((p) => p != PermissionCodes.tablesTransfer)
         .toList();
+    expect(actionsForStatus(TableStatus.occupied),
+        contains(TableAction.transfer));
+
+    var fired = false;
     await _pump(
       tester,
       TablesActionRail(
         tableStatus: TableStatus.occupied,
-        onAction: (_) {},
+        onAction: (_) => fired = true,
       ),
       perms: permsWithoutTransfer,
     );
 
-    expect(actionsForStatus(TableStatus.occupied),
-        contains(TableAction.transfer));
-
-    // الزرُّ يبقى ظاهراً بنصّه (`showDisabled` لا يُخفي) لكنّه معطَّلٌ فعلاً.
+    // الزرُّ يبقى ظاهراً بنصّه (`showDisabled` لا يُخفي) — لكنّ الدليلَ
+    // الحقيقيَّ على التعطيل هو الأثر لا الإعداد. لا نتحقّق من
+    // `guard.showDisabled == true` (خصيصةُ تهيئةٍ لا تُثبت شيئاً عن
+    // السلوك الفعليّ) ولا من `onPressed == null` على الـ OutlinedButton
+    // الداخليّ مباشرةً — جرّبتُ الثانية أوّلاً فسقط الاختبار: الابنُ
+    // الممرَّر لِـ`PermissionGuard` هنا هو `_RailButton` (ودجتٌ مركَّبةٌ)
+    // لا `OutlinedButton` خامٌ، و`_buildDisabledChild()` يتعرّف فقط على
+    // أنواع الأزرار الخام فيُصفِّر `onPressed` لها؛ لأيّ ودجتٍ آخر يسلك
+    // المسارَ العامّ `IgnorePointer(Opacity(...))` — فالـ`OutlinedButton`
+    // الداخليُّ يبقى `onPressed` غيرَ فارغٍ (محسوبٌ من الحالة وحدَها عبر
+    // `_RailButton.enabled`)، والتعطيلُ الفعليُّ يقع عبر `IgnorePointer`
+    // الذي يمتصّ اللمسةَ قبل أن تصل. فتحقّقُ `onPressed` هنا يثبت شيئاً
+    // خاطئاً عن هذه البنية بالذات.
+    //
+    // الدليلُ الصحيحُ إذن: نقرةٌ فعليّةٌ ثم التأكّدُ أن الفعلَ لم يُبلَّغ —
+    // نفسُ نمط الاختبار الثالث في هذا الملفّ لسيناريو الحالة، هنا لسيناريو
+    // الصلاحيّة.
     expect(find.text(tableActionLabels[TableAction.transfer]!),
         findsOneWidget);
-    final guard = tester.widget<PermissionGuard>(
-      find.ancestor(
-        of: find.text(tableActionLabels[TableAction.transfer]!),
-        matching: find.byType(PermissionGuard),
-      ),
-    );
-    expect(guard.permission, PermissionCodes.tablesTransfer);
-    expect(guard.showDisabled, isTrue);
+    await tester.tap(find.text(tableActionLabels[TableAction.transfer]!),
+        warnIfMissed: false);
+    await tester.pump();
+    expect(fired, isFalse,
+        reason: 'صلاحيّةٌ غائبةٌ يجب أن تمنع تنفيذ الفعل فعلاً');
   });
 }
