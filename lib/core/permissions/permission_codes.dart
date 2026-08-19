@@ -484,6 +484,15 @@ class PermissionCodes {
   /// خصمٌ على طلب الطاولة
   static const String tablesDiscount = 'tables_discount';
 
+  /// دمجُ طلبَي طاولتين في واحد — يهدم طلباً ويضخّ أصنافَه في آخر.
+  static const String tablesMerge = 'tables_merge';
+
+  /// تقسيمُ حساب الطاولة على عدّة دافعين.
+  static const String tablesSplitBill = 'tables_split_bill';
+
+  /// حجزُ طاولةٍ لعميلٍ في وقتٍ لاحق.
+  static const String tablesReserve = 'tables_reserve';
+
   // ═══════════════════════════════════════════════════════════════════════════
   // KITCHEN PERMISSIONS (المطبخ)
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1230,6 +1239,9 @@ class PermissionCodes {
     {'code': tablesCancel, 'name': 'إلغاء/مسح طلب الطاولة', 'category': 'tables'},
     {'code': tablesPrintBill, 'name': 'طباعة فاتورة الطاولة', 'category': 'tables'},
     {'code': tablesDiscount, 'name': 'خصمٌ على طلب الطاولة', 'category': 'tables'},
+    {'code': tablesMerge, 'name': 'دمج طلبات الطاولات', 'category': 'tables'},
+    {'code': tablesSplitBill, 'name': 'تقسيم حساب الطاولة', 'category': 'tables'},
+    {'code': tablesReserve, 'name': 'حجز طاولة', 'category': 'tables'},
 
     // ── Kitchen ──
     {'code': kitchenView, 'name': 'عرض شاشة المطبخ', 'category': 'kitchen'},
