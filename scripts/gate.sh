@@ -356,6 +356,20 @@ rm -rf build/native_assets
 #   حمراءُ بلا عطبٍ في الكود. ⇒ اقرأ نصَّ السويّة قبل أن تتّهم كوداً: صفرٌ
 #   في سويّةٍ كاملةٍ عرضٌ بيئيٌّ لا نتيجةُ قياس.
 #
+# تشغيلةُ 2026-08-19 بعد دمج main والاستبدال كاملاً (‏c=4، ‏--pg):
+#   analyze 6 info · unit 3733 · widget 698 · integration 710 · pg 45
+#   (‏`✓ البوابة كلها خضراء` و`GATE_EXIT=0` معاً على شجرةٍ ثابتة.)
+#
+#   والزيادةُ مُسوّاةٌ بالضبط — لا رقمَ بلا مصدر:
+#   · unit ‏3458 → 3733 (+275): دمجُ `main` جلب ١٧ كوميتاً باختباراتها
+#     (‏3458 → 3713 مقيسٌ بعد الدمج مباشرةً، +255)، ثم +12 لحمولة المزامنة،
+#     و+9 لحالة وضع الاستبدال، و**−1** لأن الحارسَ المعاكسَ في
+#     `picpos_permission_parity_test` يولّد اختباراً لكلِّ مدخلٍ في
+#     `_absenceWitness` — وشُطب مدخلُ `pos_exchange` لمّا وصلت الميزة.
+#     ‏255 + 12 + 9 − 1 = 275. ✓
+#   · widget ‏674 → 698 (+24): +20 من `main` (‏مقيسٌ 694 بعد الدمج)، و+4
+#     لترويسة وضع الاستبدال.
+#   · integration وpg بلا تغيير — لم يُمَسّ مسارُهما.
 # تشغيلةُ 2026-08-17 بعد حارس الإغلاق وتحصين الويزارد (‏c=4، ‏--pg):
 #   analyze 6 info · unit 3448 · widget 674 · integration 710 · pg 45
 #
@@ -465,11 +479,11 @@ fi
 # على `DELETE FROM "accounts"` لأن `safes.linkedAccountId` صار يشدُّ الدليل،
 # و٢ افتراضَ أن رجلَ النقدية على `1111`. فالوصفةُ الموصوفة لو طُبّقت بالجملة
 # لَما أصلحت شيئاً — اقرأ رسالةَ الفشل، لا وصفةَ المستند.
-run_suite "unit + data + structural + services" 3458 \
+run_suite "unit + data + structural + services" 3733 \
   flutter test test/unit test/data test/structural test/services --concurrency="$LOCAL_CONCURRENCY"
 
 # الواجهات والنطاقُ والنواة — كانت **كلُّها** خارج البوابة حتى 2026-08-09.
-run_suite "widget + core + domain + presentation + security + static" 674 \
+run_suite "widget + core + domain + presentation + security + static" 698 \
   flutter test test/core test/domain test/presentation test/security \
               test/static test/widget test/widget_test.dart --concurrency="$LOCAL_CONCURRENCY"
 
