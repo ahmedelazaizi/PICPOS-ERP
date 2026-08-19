@@ -234,7 +234,14 @@ class _ActivityLogScreenState extends ConsumerState<ActivityLogScreen>
     'tables': [
       'add_section', 'update_section', 'delete_section',
       'add_table', 'update_table', 'delete_table',
-      'add_reservation', 'cancel_reservation', 'open_table', 'close_table', 'transfer_order',
+      // `add_reservation` هو الاسمُ القديمُ لحجزِ الطاولة — صفوفٌ حقيقيّةٌ في
+      // قاعدة المالك مسجَّلةٌ به، فيبقى في القائمة ولا يُحذَف (حذفُه يُخفي
+      // تاريخاً حقيقيّاً). `table_reserve` هو الاسمُ الذي تكتبه
+      // `TableSessionService.reserveTable` منذ سدِّ ثغرة السجلّ (2026-08-20)
+      // — بلا هذا السطر تختفي كلُّ حجوزات الطاولة الجديدة من تصفية
+      // «الطاولات» هنا رغم ظهورها في سجلّ الطاولة الواحدة.
+      'add_reservation', 'table_reserve', 'cancel_reservation', 'open_table',
+      'close_table', 'transfer_order',
       'table_open', 'table_close', 'table_order_cancel', 'table_status_change',
       'table_transfer', 'table_partial_transfer', 'table_merge',
       'table_discount', 'table_tax', 'table_print_bill', 'table_payment',
