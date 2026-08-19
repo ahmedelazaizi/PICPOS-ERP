@@ -6,6 +6,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../data/providers/providers.dart';
 import '../../../../domain/repositories/restaurant_repository.dart';
 import '../providers/tables_state_provider.dart';
+import 'table_status_info.dart';
 
 class TableCard extends ConsumerWidget {
   final RestaurantTable table;
@@ -19,25 +20,10 @@ class TableCard extends ConsumerWidget {
     required this.onInteraction,
   });
 
-  static const Map<String, _StatusInfo> _statusMap = {
-    'available': _StatusInfo('متاحة', Color(0xFF10B981), PhosphorIconsBold.checkCircle),
-    'reserved': _StatusInfo('محجوزة', Color(0xFFF59E0B), PhosphorIconsBold.calendarCheck),
-    'occupied': _StatusInfo('مشغولة', Color(0xFF3B82F6), PhosphorIconsBold.users),
-    // 🟠 سُدِّد كاملاً ولم يُغلَق بعد.
-    'paid': _StatusInfo('مدفوعة', Color(0xFFF97316), PhosphorIconsBold.currencyCircleDollar),
-    // ⚪ خارج الخدمة.
-    'out_of_service': _StatusInfo('خارج الخدمة', Color(0xFFCBD5E1), PhosphorIconsBold.prohibit),
-    'seated': _StatusInfo('مشغولة', Color(0xFF3B82F6), PhosphorIconsBold.users),
-    'ordered': _StatusInfo('مشغولة', Color(0xFF3B82F6), PhosphorIconsBold.users),
-    'eating': _StatusInfo('مشغولة', Color(0xFF3B82F6), PhosphorIconsBold.users),
-    'billing': _StatusInfo('مشغولة', Color(0xFF3B82F6), PhosphorIconsBold.users),
-    'cleaning': _StatusInfo('تنظيف', Color(0xFF6366F1), PhosphorIconsBold.broom),
-  };
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final uiState = ref.watch(tablesUIProvider);
-    final statusInfo = _statusMap[table.status] ?? _statusMap['available']!;
+    final statusInfo = tableStatusInfo(table.status);
     final isSelected = uiState.selectedTableId == table.id;
     final isActive = table.status != 'available' && table.status != 'reserved' && table.status != 'cleaning';
 
@@ -229,13 +215,6 @@ class TableCard extends ConsumerWidget {
       ),
     );
   }
-}
-
-class _StatusInfo {
-  final String label;
-  final Color color;
-  final IconData icon;
-  const _StatusInfo(this.label, this.color, this.icon);
 }
 
 /// ما دُفع وما هو مستحقٌّ على الطاولة — لسطر «دُفع س من ص».

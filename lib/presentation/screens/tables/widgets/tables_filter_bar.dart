@@ -3,15 +3,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/tables_state_provider.dart';
+import 'table_status_info.dart';
 
 class TablesFilterBar extends ConsumerWidget {
   const TablesFilterBar({super.key});
 
-  static const Map<String, _StatusInfo> _statusMap = {
-    'available': _StatusInfo('متاحة', Color(0xFF10B981), PhosphorIconsBold.checkCircle),
-    'reserved': _StatusInfo('محجوزة', Color(0xFFF59E0B), PhosphorIconsBold.calendarCheck),
-    'occupied': _StatusInfo('مشغولة', Color(0xFF3B82F6), PhosphorIconsBold.users),
-  };
+  /// ثلاثُ حالاتٍ من خمسٍ عمداً — الترشيحُ لا يعرض `paid` ولا
+  /// `out_of_service`. هذا اختيارُ شاشةٍ قديمة، والمصدرُ الموحَّدُ في
+  /// `table_status_info.dart` لا يغيّره؛ يُقرأ منه الاسمُ واللونُ والأيقونةُ
+  /// فقط لهذه الحالات الثلاث.
+  static const List<String> _filterStatuses = [
+    'available',
+    'reserved',
+    'occupied',
+  ];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -20,8 +25,9 @@ class TablesFilterBar extends ConsumerWidget {
 
     final filters = [
       const MapEntry(
-          'all', _StatusInfo('الكل', Color(0xFF94A3B8), PhosphorIconsBold.stack)),
-      ..._statusMap.entries,
+          'all', TableStatusInfo('الكل', Color(0xFF94A3B8), PhosphorIconsBold.stack)),
+      for (final status in _filterStatuses)
+        MapEntry(status, tableStatusInfo(status)),
     ];
 
     return Container(
@@ -134,11 +140,4 @@ class TablesFilterBar extends ConsumerWidget {
       ),
     );
   }
-}
-
-class _StatusInfo {
-  final String label;
-  final Color color;
-  final IconData icon;
-  const _StatusInfo(this.label, this.color, this.icon);
 }
