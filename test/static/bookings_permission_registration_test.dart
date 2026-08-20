@@ -1,9 +1,10 @@
-﻿// test/static/bookings_permission_registration_test.dart
+// test/static/bookings_permission_registration_test.dart
 //
 // كودُ صلاحيةٍ في `permission_codes.dart` وحدَه **لا يمكن منحُه لأحد**:
 // شاشةُ «الأدوار والصلاحيات» تُبنى من خريطة `permissionCategories` لا من
 // القاعدة. فكودٌ غائبٌ عنها يحرس زرّاً حيّاً ويجعله ميّتاً لغير مدير النظام —
-// وهو حالُ `tables_pos_access` اليوم.
+// وهو حالُ `tables_pos_access` اليوم. ولكن الثالثُ الحاسمُ هو `masterList`:
+// مَن لا يُدرَج فيه لا يُدخَل قاعدةَ البيانات أصلاً، فلا منحةَ حتى من المدير.
 
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
@@ -23,22 +24,49 @@ const _expected = <String>[
 ];
 
 void main() {
-  test('كلُّ كودِ حجزٍ مسجَّلٌ في الملفَّين معاً', () {
+  test('كلُّ كودِ حجزٍ مسجَّلٌ في الملفَّات الثلاث معاً', () {
     final codes =
         File('lib/core/permissions/permission_codes.dart').readAsStringSync();
     final categories = File(
       'lib/presentation/screens/role_management/data/permission_categories.dart',
     ).readAsStringSync();
 
-    final missingFromCodes =
-        _expected.where((c) => !codes.contains("'$c'")).toList();
-    final missingFromCategories =
-        _expected.where((c) => !categories.contains("'$c'")).toList();
+    // ─────────────────────────────────────────────────────────────────────
+    // Check 1: في permission_codes.dart كثوابتٍ (بصيغة: static const String ...)
+    // ─────────────────────────────────────────────────────────────────────
+    final missingFromCodes = _expected
+        .where((c) => !RegExp(
+                r"static\s+const\s+String\s+\w+\s*=\s*'" + c + r"'")
+            .hasMatch(codes))
+        .toList();
 
     expect(missingFromCodes, isEmpty,
-        reason: 'غائبٌ عن permission_codes.dart: $missingFromCodes');
+        reason: 'غائبٌ عن permission_codes.dart كثابتٍ: $missingFromCodes');
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Check 2: في permission_categories.dart (بصيغة: 'bookings_*': '...')
+    // ─────────────────────────────────────────────────────────────────────
+    final missingFromCategories = _expected
+        .where((c) => !RegExp(r"'" + c + r"':")
+            .hasMatch(categories))
+        .toList();
+
     expect(missingFromCategories, isEmpty,
         reason: 'غائبٌ عن permission_categories.dart — '
             'فلا يمكن منحُه لأحد: $missingFromCategories');
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Check 3: في masterList (بصيغة: {'code': bookingsXxx, ...})
+    // ─────────────────────────────────────────────────────────────────────
+    final missingFromMasterList = _expected
+        .where((c) =>
+            !RegExp(r"'code':\s*\w+\s*,\s*'name':[^}]*'category':\s*'bookings'")
+                .hasMatch(codes) ||
+            !codes.contains("'$c'"))
+        .toList();
+
+    expect(missingFromMasterList, isEmpty,
+        reason: 'غائبٌ عن masterList في permission_codes.dart — '
+            'لن يُدرَج في قاعدة البيانات: $missingFromMasterList');
   });
 }

@@ -107,6 +107,24 @@ class PermissionEnforcementRegistry {
     // قبل ما تنادي `TableSessionService.requestBill` والطباعةَ. كان
     // مسجَّلاً هنا لأن الكبسة كانت توستَ «قيدُ الإنجاز» لا غير.
     'tables_discount',
+    // ── الحجوزات (Task 5، 2026-08-20) ──
+    // أحدَ عشرَ كودٍ جديدٍ في masterList — الشاشاتُ الخاصّة بهم (حجز، قائمة
+    // الخدمات، إدارة الموارد، التقارير، الإعدادات) لسه في طور التصميم وتأتي
+    // في مهامّ لاحقة (نهاية 2026 أو بداية 2027). هذه الأكوادُ **مؤقّتةً هنا**
+    // — يجب حذفُها من هذه القائمة وتسجيلُ إنفاذٍ حقيقيٍّ لكلٍّ منها مع انتقالِ
+    // شاشتِه للإنتاج (كلّ مهمّة تحضّر الإنفاذَ قبل الدمج). إذا مرّت سنة كاملة
+    // بلا تقدّم، فأعِد النظرَ في الأولويات.
+    'bookings_view',
+    'bookings_add',
+    'bookings_edit',
+    'bookings_cancel',
+    'bookings_status',
+    'bookings_assign',
+    'bookings_deposit',
+    'bookings_services_manage',
+    'bookings_resources_manage',
+    'bookings_reports',
+    'bookings_settings',
   };
 
   /// أكوادٌ **محروسةٌ حراسةً صحيحة** — في شاشةٍ لا يصل إليها PicPos.

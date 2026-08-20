@@ -493,24 +493,6 @@ class PermissionCodes {
   /// حجزُ طاولةٍ لعميلٍ في وقتٍ لاحق.
   static const String tablesReserve = 'tables_reserve';
 
-  // ── الحجوزات — مواعيدُ الخدمة (مستقلّةٌ عن حجز الطاولات) ──────────────
-  static const String bookingsView = 'bookings_view';
-  static const String bookingsAdd = 'bookings_add';
-  static const String bookingsEdit = 'bookings_edit';
-  static const String bookingsCancel = 'bookings_cancel';
-  static const String bookingsStatus = 'bookings_status';
-
-  /// منفصلٌ عن `bookingsEdit` عمداً: الإسنادُ والنقلُ عند الغياب عملُ مضيفٍ
-  /// يُمارَس عشراتِ المرّات يوميّاً، بينما تعديلُ الوقتِ والعربونِ أضيق.
-  /// دمجُهما يفرض إعطاءَ الأوسعِ لمن يحتاج الأضيق.
-  static const String bookingsAssign = 'bookings_assign';
-
-  static const String bookingsDeposit = 'bookings_deposit';
-  static const String bookingsServicesManage = 'bookings_services_manage';
-  static const String bookingsResourcesManage = 'bookings_resources_manage';
-  static const String bookingsReports = 'bookings_reports';
-  static const String bookingsSettings = 'bookings_settings';
-
   // ═══════════════════════════════════════════════════════════════════════════
   // KITCHEN PERMISSIONS (المطبخ)
   // ═══════════════════════════════════════════════════════════════════════════
@@ -840,6 +822,24 @@ class PermissionCodes {
 
   /// تجاوز حد الائتمان للعميل
   static const String overrideCreditLimit = 'override_credit_limit';
+
+  // ── الحجوزات — مواعيدُ الخدمة (مستقلّةٌ عن حجز الطاولات) ──────────────
+  static const String bookingsView = 'bookings_view';
+  static const String bookingsAdd = 'bookings_add';
+  static const String bookingsEdit = 'bookings_edit';
+  static const String bookingsCancel = 'bookings_cancel';
+  static const String bookingsStatus = 'bookings_status';
+
+  /// منفصلٌ عن `bookingsEdit` عمداً: الإسنادُ والنقلُ عند الغياب عملُ مضيفٍ
+  /// يُمارَس عشراتِ المرّات يوميّاً، بينما تعديلُ الوقتِ والعربونِ أضيق.
+  /// دمجُهما يفرض إعطاءَ الأوسعِ لمن يحتاج الأضيق.
+  static const String bookingsAssign = 'bookings_assign';
+
+  static const String bookingsDeposit = 'bookings_deposit';
+  static const String bookingsServicesManage = 'bookings_services_manage';
+  static const String bookingsResourcesManage = 'bookings_resources_manage';
+  static const String bookingsReports = 'bookings_reports';
+  static const String bookingsSettings = 'bookings_settings';
 
   /// Set of critical financial operations that bypass NO role — even admin
   /// must have the explicit permission assigned.
@@ -1519,6 +1519,19 @@ class PermissionCodes {
     {'code': deleteFiscalYear, 'name': 'حذف سنة مالية', 'category': 'critical_financial'},
     {'code': modifyClosedPeriod, 'name': 'تعديل فترة محاسبية مغلقة', 'category': 'critical_financial'},
     {'code': overrideCreditLimit, 'name': 'تجاوز حد الائتمان للعميل', 'category': 'critical_financial'},
+
+    // ── Bookings (الحجوزات) — مواعيدُ الخدمة ──
+    {'code': bookingsView, 'name': 'عرض الحجوزات', 'category': 'bookings'},
+    {'code': bookingsAdd, 'name': 'إضافة حجز', 'category': 'bookings'},
+    {'code': bookingsEdit, 'name': 'تعديل بيانات الحجز', 'category': 'bookings'},
+    {'code': bookingsCancel, 'name': 'إلغاء حجز', 'category': 'bookings'},
+    {'code': bookingsStatus, 'name': 'تغيير حالة الحجز', 'category': 'bookings'},
+    {'code': bookingsAssign, 'name': 'إسناد/نقل الحجز بين الموظفين', 'category': 'bookings'},
+    {'code': bookingsDeposit, 'name': 'تحصيل ورد العربون', 'category': 'bookings'},
+    {'code': bookingsServicesManage, 'name': 'إدارة الخدمات', 'category': 'bookings'},
+    {'code': bookingsResourcesManage, 'name': 'إدارة الموظفين / الموارد', 'category': 'bookings'},
+    {'code': bookingsReports, 'name': 'تقارير الحجوزات', 'category': 'bookings'},
+    {'code': bookingsSettings, 'name': 'إعدادات الحجوزات', 'category': 'bookings'},
   ];
 
   /// All category names in Arabic
