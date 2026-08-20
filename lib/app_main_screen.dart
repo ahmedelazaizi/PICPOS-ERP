@@ -43,6 +43,7 @@ import 'presentation/screens/region_management_screen.dart';
 import 'presentation/kitchen/screens/kitchen_display_screen.dart';
 import 'presentation/screens/offers_screen.dart';
 import 'presentation/screens/tables_screen.dart';
+import 'presentation/tables_picpos/screens/tables_picpos_screen.dart';
 import 'presentation/screens/products_screen.dart';
 import 'presentation/products_picpos/screens/products_picpos_screen.dart';
 import 'presentation/screens/categories_screen.dart';
@@ -604,7 +605,12 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
       ),
       ScreenConfig(
         appScreen: AppScreen.tables,
-        builder: (_) => const TablesScreen(),
+        // Brand fork, not a profile fork — same pattern as its neighbours.
+        // Tables was the only screen here without one, so PicPos landed on
+        // the UralCash layout and its view toggle drove nothing.
+        builder: (_) => Brand.isPicPos
+            ? const TablesPicposScreen()
+            : const TablesScreen(),
         label: 'الطاولات',
         icon: PhosphorIconsBold.circlesThree,
       ),

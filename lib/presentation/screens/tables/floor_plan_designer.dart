@@ -46,6 +46,36 @@ class _FloorPlanDesignerState extends ConsumerState<FloorPlanDesigner> {
   double? _guideX;
   double? _guideY;
 
+  // ─── المجرى مُخبَّأٌ بهُويّةٍ ثابتة ────────────────────────────────────
+  //
+  // كان `stream:` يُستدعى **داخل `build`**، وهو بعينه عطبُ شاشة المطبخ الذي
+  // أُصلح في 3970bde9: كلُّ إعادةِ بناءٍ تخلق كائنَ Stream جديداً ⇒ يفسخ
+  // `StreamBuilder` اشتراكَه ويشترك من جديد ⇒ استعلامُ قاعدةٍ جديدٌ ومرورٌ
+  // بـ`ConnectionState.waiting`. وهذه الشاشةُ تُعيد البناءَ مع كلِّ سحبةِ
+  // طاولةٍ وكلِّ تحريكٍ للأدلّة (`setState` في `_checkGuides` لكلِّ إطار).
+  //
+  // ولم يظهر الأثرُ لأن الودجتَ كانت بلا مستدعٍ؛ توصيلُ `TablesPicposScreen`
+  // إيّاها يُحييه — فيُرفَع المجرى إلى الحالة قبل التوصيل لا بعده.
+  late final IRestaurantRepository _repo;
+  late Stream<List<RestaurantTable>> _tablesStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _repo = ref.read(restaurantRepositoryProvider);
+    _tablesStream = _repo.watchTablesInSection(widget.sectionId);
+  }
+
+  @override
+  void didUpdateWidget(covariant FloorPlanDesigner oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // القسمُ وحدَه يبدّل المجرى. بدون هذا يبقى المضيفُ عالقاً على طاولات
+    // القسم الأوّل عند تبديل التبويب — ثمنُ التخبئة إن نُسي.
+    if (oldWidget.sectionId != widget.sectionId) {
+      _tablesStream = _repo.watchTablesInSection(widget.sectionId);
+    }
+  }
+
   @override
   void dispose() {
     _transformController.dispose();
@@ -169,10 +199,10 @@ class _FloorPlanDesignerState extends ConsumerState<FloorPlanDesigner> {
 
   @override
   Widget build(BuildContext context) {
-    final repo = ref.read(restaurantRepositoryProvider);
+    final repo = _repo;
 
     return StreamBuilder<List<RestaurantTable>>(
-      stream: repo.watchTablesInSection(widget.sectionId),
+      stream: _tablesStream,
       builder: (context, snapshot) {
         final tables = snapshot.data ?? [];
 

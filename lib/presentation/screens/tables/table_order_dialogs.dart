@@ -32,7 +32,17 @@ Future<bool> ensurePosWorkOrderPermission(
   return false;
 }
 
-mixin _TableOrderDialogsMixin on ConsumerState<TablesScreen> {
+/// ⚠️ القيدُ معمَّمٌ على `T` لا مثبَّتٌ على `TablesScreen`: مضيفُ الأفعال
+/// [TableActionsHost] يركّب هذه المخاليطَ نفسَها كي تُنادى من شاشةٍ ثانيةٍ
+/// بلا نسخِ منطق. ولا سطرَ هنا يمسّ `widget` أصلاً (مقيسٌ: صفرُ مطابقاتٍ
+/// لـ`widget.` في الملفّات الثلاثة)، فالتعميمُ لا يغيّر سلوكاً — يفتح الباب
+/// فقط. و`T` يُستنتَج من صنف الحالة عند التركيب فلا تُكتب في أيِّ مستدعٍ.
+///
+/// ولا يصلح `on ConsumerState<ConsumerStatefulWidget>` مكانَه: صنفٌ لا يقدر
+/// أن يحقّق `ConsumerState<TablesScreen>` و`ConsumerState<ConsumerStatefulWidget>`
+/// معاً (`conflicting_generic_interfaces`) — جُرّب فسقط.
+mixin _TableOrderDialogsMixin<T extends ConsumerStatefulWidget>
+    on ConsumerState<T> {
   bool _openingTable = false;
   bool _closingTable = false;
   bool _mergingTables = false;

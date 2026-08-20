@@ -243,8 +243,11 @@ class PermissionEnforcementRegistry {
     //    `screens/tables/table_operations.dart` بتفحصه صراحةً قبل ما تنادي
     //    `TableSessionService.cancelOrder`. الحارسُ بيقيس الذكرَ خارج
     //    الزوج فما بقاش فجوةَ تكافؤ.
-    'tables_add_items',
-    'tables_checkout',
+    //
+    // ✅ 'tables_add_items' و'tables_checkout' شُطبا (2026-08-20): بُنيت
+    //    `TablesPicposScreen` فبطَل نصُّ «لا ميزةَ طاولاتٍ في PicPos».
+    //    الصلاحيّتان مُنفَذتان الآن في `tables_action_rail.dart` عبر
+    //    `permissionForAction`.
 
     // ── الخزينة ──
     // ✅ 'treasury_payments_create' شُطب (دفعة ٢، 2026-08-12): زرُّ «سند صرف»

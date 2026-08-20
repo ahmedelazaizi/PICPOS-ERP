@@ -4,7 +4,9 @@ part of '../tables_screen.dart';
 // SECTION MANAGEMENT — Add, Edit, Delete sections + Table CRUD
 // ═══════════════════════════════════════════════════════════════════════════
 
-mixin _TableSectionsMixin on ConsumerState<TablesScreen> {
+/// القيدُ موسَّعٌ للسبب المشروح فوق `_TableOrderDialogsMixin`.
+mixin _TableSectionsMixin<T extends ConsumerStatefulWidget>
+    on ConsumerState<T> {
   bool _savingSection = false;
   bool _savingTable = false;
 

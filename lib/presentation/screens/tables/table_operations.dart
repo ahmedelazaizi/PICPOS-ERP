@@ -15,7 +15,9 @@ bool hasTableActionPermission(List<String> permissions, String permission) {
   return isAdmin || permissions.contains(permission);
 }
 
-mixin _TableOperationsMixin on ConsumerState<TablesScreen> {
+/// القيدُ موسَّعٌ للسبب المشروح فوق `_TableOrderDialogsMixin`.
+mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
+    on ConsumerState<T> {
   // Abstract — provided by _TableOrderDialogsMixin at composition time
   void _confirmOpenTable(
     IRestaurantRepository restaurantRepo,
@@ -211,13 +213,17 @@ mixin _TableOperationsMixin on ConsumerState<TablesScreen> {
                 children: [
                   TableActionsMenu(
                     status: table.status,
-                    onSelected: (action) => _handleTableAction(
-                      ctx,
-                      context,
-                      restaurantRepo,
-                      table,
-                      action,
-                    ),
+                    // الإغلاقُ هنا لا في المعالج: المعالجُ يُنادى كذلك من
+                    // شريط أفعال شاشة PicPos حيث لا حوارَ يُغلَق.
+                    onSelected: (action) {
+                      Navigator.pop(ctx);
+                      _handleTableAction(
+                        context,
+                        restaurantRepo,
+                        table,
+                        action,
+                      );
+                    },
                   ),
                   const SizedBox(height: 8),
                   // Secondary actions row — تعديل/حذف الطاولة نفسها، لا
@@ -281,14 +287,15 @@ mixin _TableOperationsMixin on ConsumerState<TablesScreen> {
 
   /// تنفيذُ الكبسة. كلُّ كبسةٍ تعرضها القائمةُ موصولةٌ بمعالجٍ حقيقيّ —
   /// القائمةُ لا تُعلن ما لا تفعل.
+  ///
+  /// ولا يُغلق حواراً بنفسه: مستدعوه اثنان — القائمةُ المنبثقةُ (تُغلق نفسَها
+  /// قبل النداء) وشريطُ أفعال شاشة PicPos (لا حوارَ له أصلاً).
   Future<void> _handleTableAction(
-    BuildContext dialogContext,
     BuildContext screenContext,
     IRestaurantRepository restaurantRepo,
     RestaurantTable table,
     TableAction action,
   ) async {
-    Navigator.pop(dialogContext);
     switch (action) {
       case TableAction.open:
         _confirmOpenTable(restaurantRepo, table);
@@ -970,4 +977,96 @@ mixin _TableOperationsMixin on ConsumerState<TablesScreen> {
       ),
     );
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// المنفذُ العامّ — مسارُ الأفعال نفسُه لشاشةٍ خارج هذه المكتبة
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// أفعالُ الطاولة كما يراها مَن يستضيفها.
+///
+/// المعالجاتُ الحقيقيّةُ (`_handleTableAction` وأخواتُها) تعيش في مخاليطَ
+/// **خاصّةٍ بمكتبة `tables_screen.dart`**، فلا تُستورَد. وشاشةُ PicPos تحتاج
+/// نفسَها بالضبط — ونسخُها يُنتج محرّكَي أفعالٍ يتباعدان، وهي علّةُ هذا
+/// المستودع المعروفة. فهذه الواجهةُ هي النافذةُ العامّةُ الوحيدةُ عليها.
+abstract interface class TableActionsRunner {
+  /// ينفّذ [action] على [table] بنفس مسار القائمة المنبثقة — لا نسخةَ ثانية.
+  ///
+  /// **لا يفحص صلاحيّةً ولا صلاحيّةَ حالة**: ذلك عملُ مَن يرسم الكبسة
+  /// (`TablesActionRail` عبر `PermissionGuard` و`actionsForStatus`)، تماماً
+  /// كما تفعل `TableActionsMenu`. والأفعالُ الهدّامةُ تفحص صلاحيّتَها مرّةً
+  /// ثانيةً داخل معالجها على أيّ حال.
+  Future<void> run(RestaurantTable table, TableAction action);
+
+  /// نافذةُ الطلب: طلبٌ قائمٌ ⇒ تفاصيلُه، ولا طلبَ ⇒ حوارُ الفتح — وهو نفسُ
+  /// ما تفعله نقرةُ البطاقة في الشاشة القديمة.
+  Future<void> openOrder(RestaurantTable table);
+
+  /// حوارُ إضافة طاولةٍ جديدة. الحراسةُ (`tables_manage`) على المستدعي.
+  void addTable({int? sectionId});
+
+  /// حوارُ إدارة الأقسام (تسميةٌ وحذف). الحراسةُ (`tables_manage`) على
+  /// المستدعي — ولا يفعل الحوارُ شيئاً خارجَها.
+  void manageSections();
+}
+
+/// يستضيف مخاليطَ أفعال الطاولة ويسلّم [TableActionsRunner] إلى [builder].
+///
+/// ودجتٌ بلا شكل: تبني ما يعطيه البنّاءُ حرفيّاً. وجودُها كودجتٍ لا كخدمةٍ
+/// مقصود — المعالجاتُ تحتاج `ref` و`context` و`mounted` معاً، وهي ما تملكه
+/// `ConsumerState` وحدَها.
+class TableActionsHost extends ConsumerStatefulWidget {
+  const TableActionsHost({super.key, required this.builder});
+
+  final Widget Function(BuildContext context, TableActionsRunner actions)
+      builder;
+
+  @override
+  ConsumerState<TableActionsHost> createState() => _TableActionsHostState();
+}
+
+class _TableActionsHostState extends ConsumerState<TableActionsHost>
+    with _TableOrderDialogsMixin, _TableSectionsMixin, _TableOperationsMixin
+    implements TableActionsRunner {
+  @override
+  Widget build(BuildContext context) => widget.builder(context, this);
+
+  @override
+  Future<void> run(RestaurantTable table, TableAction action) =>
+      _handleTableAction(
+        context,
+        ref.read(restaurantRepositoryProvider),
+        table,
+        action,
+      );
+
+  @override
+  Future<void> openOrder(RestaurantTable table) async {
+    final repo = ref.read(restaurantRepositoryProvider);
+    final order = await repo.getActiveOrderForTable(table.id);
+    if (!mounted) return;
+    if (order == null) {
+      _confirmOpenTable(repo, table);
+    } else {
+      _showTableOrderDialog(context, repo, table);
+    }
+  }
+
+  @override
+  void addTable({int? sectionId}) => _showAddTableDialog(
+        context,
+        ref.read(restaurantRepositoryProvider),
+        sectionId: sectionId,
+      );
+
+  @override
+  void manageSections() =>
+      _showManageSectionsDialog(ref.read(restaurantRepositoryProvider));
+
+  @override
+  Future<TableOrder?> _getOpenOrder(
+    IRestaurantRepository restaurantRepo,
+    int tableId,
+  ) =>
+      restaurantRepo.getActiveOrderForTable(tableId);
 }
