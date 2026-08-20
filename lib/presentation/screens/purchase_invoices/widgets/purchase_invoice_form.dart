@@ -119,11 +119,38 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
     // أصلاً (accounting_tables.dart:107-119)، فالحصرُ غيرُ قابلٍ للتمثيل.
     final ccs = await accountingRepo.getActiveCostCenters();
 
+    final warehouses = List<db.Warehouse>.of(whs);
+    final costCenters = List<db.CostCenter>.of(ccs);
+
+    // وضعُ التحرير — ضمُّ قيمةِ الفاتورة نفسِها إن غابت عن القائمة المحصورة.
+    //
+    // القائمتان محصورتان عمداً للإنشاء: المخازنُ بفرع الجهاز (Spec 103)،
+    // ومراكزُ التكلفة بالنشط وحدَه. لكنّ فاتورةً **قائمةً** قد تحمل مخزنَ فرعٍ
+    // آخرَ (تُحرَّر على جهاز عميل) أو مركزَ تكلفةٍ أُوقف بعد إصدارها. حينئذٍ
+    // تخرج قيمتُها من `items` فيُطلق `DropdownButtonFormField` توكيدَه في
+    // debug ويرسم حقلاً فارغاً في release — ثم يُعاد الحفظُ بقيمةٍ أخرى صامتاً،
+    // وهو بعينه الخطرُ الذي يحذّر منه `BranchRepository.getScopedWarehouses`.
+    //
+    // والضمُّ **بالمعرّف** لا برفع الحصر: صفٌّ واحدٌ هو صفُّ الفاتورة، فمسارُ
+    // الإنشاء الجديد يبقى محصوراً كما هو.
+    if (widget.editInvoice != null) {
+      final whId = widget.editInvoice!.warehouseId;
+      if (!warehouses.any((w) => w.id == whId)) {
+        final missing = await branchRepo.getWarehouseById(whId);
+        if (missing != null) warehouses.add(missing);
+      }
+      final ccId = widget.editInvoice!.costCenterId;
+      if (ccId != null && !costCenters.any((c) => c.id == ccId)) {
+        final missing = await accountingRepo.getCostCenterById(ccId);
+        if (missing != null) costCenters.add(missing);
+      }
+    }
+
     if (mounted) {
       setState(() {
         _categories = cats;
-        _warehouses = whs;
-        _costCenters = ccs;
+        _warehouses = warehouses;
+        _costCenters = costCenters;
       });
     }
   }

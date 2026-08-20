@@ -191,6 +191,18 @@ extension AccountingDaoReadsExt on AppDatabase {
   }
 
 
+  /// مركزُ تكلفةٍ بعينه — بغضِّ النظر عن `isActive`.
+  ///
+  /// لمسارِ **تحرير** مستندٍ قائم: مركزٌ أُوقف بعد إصدار الفاتورة يغيب عن
+  /// [getActiveCostCenters]، فتفقد القائمةُ قيمةَ الفاتورة نفسِها. الجلبُ
+  /// بالمعرّف يستعيد صفَّها هي وحدَه — لا يفتح البابَ للمعطَّل في الإنشاء.
+  Future<CostCenter?> getCostCenterById(int id) {
+    return (select(costCenters)
+          ..where((t) => t.id.equals(id) & t.deletedAt.isNull())
+          ..limit(1))
+        .getSingleOrNull();
+  }
+
   /// Watch all cost centers (reactive, Spec 111 — excludes soft-deleted)
   Stream<List<CostCenter>> watchCostCenters() {
     return (select(costCenters)

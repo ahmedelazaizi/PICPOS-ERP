@@ -62,6 +62,19 @@ void main() {
       }
     });
 
+    // المنعُ هنا على **القائمة** لا على الصفّ.
+    //
+    // `getScopedWarehouses` تحصر مسارَ الإنشاء، وهذا هو المقصود. أمّا مسارُ
+    // **تحرير** فاتورةٍ قائمة فيحتاج قيمةَ الفاتورة نفسِها ولو خرجت من الحصر
+    // (مخزنُ فرعٍ آخر، أو مركزُ تكلفةٍ أُوقف بعد الإصدار) — وإلّا أطلق
+    // `DropdownButtonFormField` توكيدَه في debug ورسم حقلاً فارغاً في release
+    // ثم أُعيد الحفظُ بقيمةٍ أخرى صامتاً.
+    //
+    // والاستثناءُ يُستوفى **بجلبٍ بالمعرّف** (`getWarehouseById` /
+    // `getCostCenterById`): صفٌّ واحدٌ هو صفُّ الفاتورة. فلا حاجةَ إلى رفع
+    // المنع عن `getWarehouses()` — المنعُ يبقى كما هو على مسار الإنشاء،
+    // والاستثناءُ يُنفَّذ من تحته لا فوقه. والتوكيدُ التالي يقفل الاستثناءَ
+    // إيجاباً حتّى لا يسقط في إعادة صياغةٍ لاحقة.
     test('منتقو المخازن يمرّون بـ getScopedWarehouses لا بالقائمة الخام', () {
       for (final path in _repoScopedWarehousePickers) {
         final src = _read(path);
@@ -69,8 +82,24 @@ void main() {
             reason: '$path بلا حصرِ فرع — المستندُ يُحفَظ بمخزنِ فرعٍ آخر '
                 'فيغيب عن قائمة فرعه');
         expect(RegExp(r'\.getWarehouses\(\)').hasMatch(src), isFalse,
-            reason: '$path ما زال يقرأ القائمةَ الخام في مسارِ إصدارِ مستند');
+            reason: '$path ما زال يقرأ القائمةَ **الخام** في مسارِ إصدارِ '
+                'مستند. ولتحريرِ مستندٍ قائمٍ اجلب صفَّه بالمعرّف '
+                '(`getWarehouseById`) بدل رفع الحصر عن القائمة كلِّها');
       }
+    });
+
+    test('نافذةُ تحرير المشتريات تضمّ صفَّ الفاتورة الغائبَ عن الحصر', () {
+      const path =
+          'lib/presentation/screens/purchase_invoices/widgets/purchase_invoice_form.dart';
+      final src = _read(path);
+      expect(src.contains('widget.editInvoice != null'), isTrue,
+          reason: '$path بلا فرعِ تحريرٍ في تحميل القوائم');
+      expect(src.contains('getWarehouseById'), isTrue,
+          reason: '$path لا يجلب مخزنَ الفاتورة الغائبَ عن القائمة المحصورة — '
+              'فتُعرض قيمةٌ فارغةٌ وتُحفظ الفاتورةُ بمخزنٍ آخر');
+      expect(src.contains('getCostCenterById'), isTrue,
+          reason: '$path لا يجلب مركزَ تكلفة الفاتورة إن كان قد أُوقف بعد '
+              'إصدارها — فتفقد الفاتورةُ مركزَها عند أوّل حفظ');
     });
 
     test('نافذتا فاتورة المبيعات تستدعيان القاعدةَ الخالصة', () {

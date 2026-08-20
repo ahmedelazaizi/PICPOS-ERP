@@ -723,6 +723,9 @@ class DriftAccountingRepository implements IAccountingRepository {
   Future<List<CostCenter>> getActiveCostCenters() =>
       _db.getActiveCostCenters();
 
+  @override
+  Future<CostCenter?> getCostCenterById(int id) => _db.getCostCenterById(id);
+
   // --- Journal Templates (full CRUD) ---
   @override
   Stream<List<JournalEntryTemplateData>> watchAllTemplates() =>

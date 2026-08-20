@@ -53,6 +53,9 @@ abstract class IAccountingRepository {
   // --- Cost Centers & Activity Profiles ---
   Future<List<CostCenter>> getCostCenters();
   Future<List<CostCenter>> getActiveCostCenters();
+
+  /// مركزُ تكلفةٍ بعينه ولو كان موقوفاً — لمسارِ تحرير مستندٍ قائمٍ يحمله.
+  Future<CostCenter?> getCostCenterById(int id);
   Stream<List<CostCenter>> watchCostCenters();
   Future<int> createCostCenter({required String code, required String name, int? parentId});
   Future<void> updateCostCenter(int id, {String? code, String? name, int? parentId, bool? isActive});
