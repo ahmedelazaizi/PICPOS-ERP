@@ -51,6 +51,7 @@ import 'reports/sales_by_classification_report.dart';
 import 'reports/sales_report_screen.dart';
 import 'reports/sales_returns_report_screen.dart';
 import 'reports/shifts_report_screen.dart';
+import 'reports/tables_report_screen.dart';
 import 'reports/tax_report_screen.dart';
 import 'reports/top_products_report_screen.dart';
 import 'reports/treasury_report_screen.dart';
@@ -198,6 +199,16 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             subtitle: 'نظرة سريعة بأرقام اليوم',
             permission: PermissionCodes.reportsSales,
             action: () => nav(() => const SalesReportScreen()),
+          ),
+          // ⚠️ توأمُه في `reports_picpos/screens/reports_picpos_screen.dart`
+          // لا بدّ أن يُضاف معه — كتالوجٌ واحدٌ بلا الآخر يعني تقريراً يظهر
+          // في هويّةٍ ويغيب عن الأخرى.
+          _ReportEntry(
+            id: 'tables_report',
+            title: 'تقرير الطاولات',
+            subtitle: 'الإيراد ودوران الطاولة ونصيب الضيف لكل قسم وطاولة',
+            permission: PermissionCodes.reportsSales,
+            action: () => nav(() => const TablesReportScreen()),
           ),
         ],
         shortcuts: [

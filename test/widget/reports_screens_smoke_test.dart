@@ -28,6 +28,7 @@ import 'package:ural_erp/presentation/screens/reports/purchases_report_screen.da
 import 'package:ural_erp/presentation/screens/reports/sales_report_screen.dart';
 import 'package:ural_erp/presentation/screens/reports/sales_returns_report_screen.dart';
 import 'package:ural_erp/presentation/screens/reports/shifts_report_screen.dart';
+import 'package:ural_erp/presentation/screens/reports/tables_report_screen.dart';
 import 'package:ural_erp/presentation/screens/reports/tax_report_screen.dart';
 import 'package:ural_erp/presentation/screens/reports/top_products_report_screen.dart';
 import 'package:ural_erp/presentation/screens/reports/treasury_report_screen.dart';
@@ -52,6 +53,7 @@ final Map<String, Widget Function()> reportScreens = {
   'SalesReportScreen': () => const SalesReportScreen(),
   'SalesReturnsReportScreen': () => const SalesReturnsReportScreen(),
   'ShiftsReportScreen': () => const ShiftsReportScreen(),
+  'TablesReportScreen': () => const TablesReportScreen(),
   'TaxReportScreen': () => const TaxReportScreen(),
   'TopProductsReportScreen': () => const TopProductsReportScreen(),
   'TreasuryReportScreen': () => const TreasuryReportScreen(),

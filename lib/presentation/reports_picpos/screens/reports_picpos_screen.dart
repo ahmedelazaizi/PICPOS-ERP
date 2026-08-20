@@ -64,6 +64,7 @@ import '../../screens/reports/sales_by_classification_report.dart';
 import '../../screens/reports/sales_report_screen.dart';
 import '../../screens/reports/sales_returns_report_screen.dart';
 import '../../screens/reports/shifts_report_screen.dart';
+import '../../screens/reports/tables_report_screen.dart';
 import '../../screens/reports/tax_report_screen.dart';
 import '../../screens/reports/top_products_report_screen.dart';
 import '../../screens/reports/treasury_report_screen.dart';
@@ -218,6 +219,16 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
             subtitle: 'نظرة سريعة بأرقام اليوم',
             permission: PermissionCodes.reportsSales,
             action: () => nav(() => const SalesReportScreen()),
+          ),
+          // منسوخٌ عن الأصل (`screens/reports_screen.dart`) — الشاشةُ الوجهةُ
+          // نفسُها بلا تعديل. الكتالوجُ وحدَه مفروك، فالبطاقةُ تُضاف في
+          // الاثنين معاً وإلّا ظهر التقريرُ في هويّةٍ وغاب عن الأخرى.
+          _ReportEntry(
+            id: 'tables_report',
+            title: 'تقرير الطاولات',
+            subtitle: 'الإيراد ودوران الطاولة ونصيب الضيف لكل قسم وطاولة',
+            permission: PermissionCodes.reportsSales,
+            action: () => nav(() => const TablesReportScreen()),
           ),
         ],
         shortcuts: [
