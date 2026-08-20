@@ -2522,5 +2522,16 @@ extension Epoch3Migrations on AppDatabase {
         debugPrint('[Migration] v158 table_order_payments reserve/commit OK');
       });
     }
+
+    if (from < 159) {
+      await _safeMigrate('v159 booking engine tables', () async {
+        // جداولُ جديدةٌ خالصةٌ — لا `alterTable`، فلا خطرَ إعادةِ بناءِ
+        // جدولٍ قائمٍ ولا إسقاطَ خطوةٍ أقدمَ تُعيد بناءَ نفس الجدول.
+        await m.createTable(bookingResources);
+        await m.createTable(bookingServices);
+        await m.createTable(bookings);
+        debugPrint('[Migration] v159 booking engine tables OK');
+      });
+    }
   }
 }

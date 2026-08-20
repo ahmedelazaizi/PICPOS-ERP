@@ -184,6 +184,7 @@ part 'tables/cycle_count_tables.dart';
 part 'tables/landed_cost_tables.dart';
 part 'tables/api_key_tables.dart';
 part 'tables/report_builder_tables.dart';
+part 'tables/booking_tables.dart';
 
 /// The primary industry mode for the application, controlling which
 /// screens and features are available (e.g. restaurant tables, café menus).
@@ -371,6 +372,9 @@ const String kCreateAttendanceDayDedupIndexSql =
     TableOrderItems, // NEW: Items in table orders
     TableReservations, // NEW: Table reservations
     TableOrderPayments, // v154: دفعةٌ لكلّ دافعٍ على طلب الطاولة
+    BookingResources, // v159: «الموظفون / الموارد» — مَن يُحجَز وقتُه
+    BookingServices, // v159: الخدماتُ المعروضة للحجز
+    Bookings, // v159: مواعيدُ الخدمة — مستقلّةٌ عن TableReservations
     StockMovements,
     InventoryBalances,
     Accounts,
@@ -715,7 +719,7 @@ class AppDatabase extends _$AppDatabase {
   /// الكذبةُ نفسُها بصورةٍ تمرّ من تحت قيدِ ١٥٦. والحدُّ الآن واحدٌ عند
   /// الأبواب الثلاثة: مدخلُ الإعدادات، و`setOrderTax`، وهذا القيد.
   @override
-  int get schemaVersion => 158;
+  int get schemaVersion => 159;
 
   /// PostgreSQL-specific table creation: Drift's `currentDateAndTime` generates
   /// `strftime('%s','now')` which doesn't exist in PostgreSQL.
