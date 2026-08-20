@@ -113,14 +113,55 @@ void main() {
     );
     await (db.update(db.bookings)..where((b) => b.id.equals(first)))
         .write(const BookingsCompanion(status: Value('cancelled')));
-    final id = await db.createBooking(
+    final second = await db.createBooking(
       customerName: 'سارة',
       serviceId: serviceId,
       resourceId: resourceId,
       startsAt: DateTime(2026, 8, 20, 10),
       now: now,
     );
-    expect(id, greaterThan(0));
+    expect(second, greaterThan(0));
+
+    // `no_show` يُفرّغ الوقتَ أيضاً — لا الإلغاءُ وحدَه.
+    await (db.update(db.bookings)..where((b) => b.id.equals(second)))
+        .write(const BookingsCompanion(status: Value('no_show')));
+    final third = await db.createBooking(
+      customerName: 'منى',
+      serviceId: serviceId,
+      resourceId: resourceId,
+      startsAt: DateTime(2026, 8, 20, 10),
+      now: now,
+    );
+    expect(third, greaterThan(0));
+  });
+
+  test('حجزٌ يعبر منتصفَ الليل يُكتَشف رغم أنّ الجديدَ يبدأ بعد منتصف الليل',
+      () async {
+    // مدّةٌ ٦٠ دقيقةً بلا فترة تنظيف: يبدأ ٢٣:٥٠ فينتهي ٠٠:٥٠ اليومَ التالي —
+    // يعبر منتصفَ الليل فعلاً.
+    final midnightServiceId = await db.into(db.bookingServices).insert(
+          BookingServicesCompanion.insert(
+            name: 'خدمةٌ تعبر منتصفَ الليل',
+            durationMinutes: const Value(60),
+          ),
+        );
+    await db.createBooking(
+      customerName: 'أحمد',
+      serviceId: midnightServiceId,
+      resourceId: resourceId,
+      startsAt: DateTime(2026, 8, 20, 23, 50),
+      now: now,
+    );
+    expect(
+      () => db.createBooking(
+        customerName: 'سارة',
+        serviceId: midnightServiceId,
+        resourceId: resourceId,
+        startsAt: DateTime(2026, 8, 21, 0, 10), // داخل [23:50, 00:50)
+        now: now,
+      ),
+      throwsA(isA<BookingConflictException>()),
+    );
   });
 
   test('لا حجزَ في الماضي', () async {

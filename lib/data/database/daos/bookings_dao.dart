@@ -39,8 +39,18 @@ extension BookingsDao on AppDatabase {
     DateTime endsAt, {
     int? excludeBookingId,
   }) async {
-    final windowStart = DateTime(startsAt.year, startsAt.month, startsAt.day);
-    final windowEnd = windowStart.add(const Duration(days: 2));
+    // نافذةُ المرشَّحين تُضيّق فقط ولا تقرّر — فيجب أن تحوي كلَّ صفٍّ قد
+    // تحكم عليه الدالّةُ الخالصةُ بالتداخل.
+    //
+    // إلى الوراء يوماً كاملاً: حجزٌ يبدأ ٢٣:٥٠ وينتهي ٠٠:٥٠ يعبر منتصفَ
+    // الليل، وبدايتُه تقع قبل منتصف ليل اليوم المطلوب — فبدءُ النافذة من
+    // منتصف الليل كان يُسقطه قبل أن تراه الدالّة، فيمرّ تعارضٌ صامت.
+    // (يفترض أن لا موعدَ يتجاوز ٢٤ ساعة، وهو صحيحٌ لمواعيد الخدمة.)
+    //
+    // وإلى الأمام حتى `endsAt` وحدَها: ما يبدأ عند نهاية المطلوب أو بعدها
+    // لا يمكن أن يتداخل معه — المدى نصفُ مفتوح.
+    final windowStart = startsAt.subtract(const Duration(days: 1));
+    final windowEnd = endsAt;
 
     final query = select(bookings)
       ..where((b) => b.resourceId.equals(resourceId))
