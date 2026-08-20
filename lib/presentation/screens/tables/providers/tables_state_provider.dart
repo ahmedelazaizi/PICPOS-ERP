@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../domain/models/table_designer_mode.dart';
+
 class TablesUIState {
   final String statusFilter;
   final bool isVisualView;
@@ -37,7 +39,20 @@ class TablesUIController extends Notifier<TablesUIState> {
   TablesUIState build() => const TablesUIState();
 
   void setStatusFilter(String filter) => state = state.copyWith(statusFilter: filter);
-  void toggleView() => state = state.copyWith(isVisualView: !state.isVisualView);
+
+  // مغادرةُ الخريطة تُطفئ وضعَ التصميم — `designerModeAfterViewToggle` دالّةٌ
+  // خالصةٌ مُختبَرةٌ لوحدها (البند ٥ في task-6b-brief.md).
+  void toggleView() {
+    final nextVisual = !state.isVisualView;
+    state = state.copyWith(
+      isVisualView: nextVisual,
+      isDesignerMode: designerModeAfterViewToggle(
+        wasVisualView: state.isVisualView,
+        wasDesignerMode: state.isDesignerMode,
+      ),
+    );
+  }
+
   void toggleDesignerMode() => state = state.copyWith(isDesignerMode: !state.isDesignerMode);
   void setCardSize(double size) => state = state.copyWith(tableCardSize: size.clamp(120, 320));
   void selectTable(int? id) => state = state.copyWith(selectedTableId: () => id);

@@ -25,6 +25,7 @@ import '../../../core/permissions/permission_codes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/providers.dart';
 import '../../../domain/models/table_actions.dart';
+import '../../../domain/models/table_designer_mode.dart';
 import '../../../domain/repositories/restaurant_repository.dart';
 import '../../picpos_shell/picpos_content_card.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
@@ -48,6 +49,39 @@ final _tablesInSectionProvider = StreamProvider.autoDispose
       .watch(restaurantRepositoryProvider)
       .watchTablesInSection(sectionId);
 });
+
+// ── زرُّ وضع التصميم (Task 6b) ─────────────────────────────────────────────
+// مستخرجٌ كدالّةٍ top-level على نمط `buildTablesManageAddTableButton` في
+// `tables_top_bar.dart` — يتبنى وحدَه في اختبار widget خفيف بلا
+// `TablesPicposScreen` كاملة (محتاجةٌ `AppDatabase` حقيقيّة فتتعلّق).
+//
+// الحراسةُ زرٌّ يُعطَّل فعلاً (`allowManagerOverride` مع `onGranted` صريح)
+// لا `PopupMenuItem` ملفوفٌ بحارسٍ يبقى قابلاً للاختيار مهما لُفَّ نصُّه —
+// درسُ المراجعة السابقة في هذه الخطّة.
+@visibleForTesting
+Widget buildTablesDesignerModeButton({
+  required bool isDesignerMode,
+  required VoidCallback onToggle,
+}) {
+  return PermissionGuard(
+    permission: PermissionCodes.tablesManage,
+    allowManagerOverride: true,
+    actionName: isDesignerMode ? 'حفظ تصميم الخريطة' : 'تصميم الخريطة',
+    onGranted: onToggle,
+    child: OutlinedButton.icon(
+      onPressed: onToggle,
+      icon: Icon(
+        isDesignerMode ? PhosphorIconsBold.check : PhosphorIconsBold.pencilLine,
+        size: 18,
+      ),
+      label: Text(isDesignerMode ? 'حفظ' : 'تصميم'),
+      style: OutlinedButton.styleFrom(
+        foregroundColor:
+            isDesignerMode ? AppColors.success : AppColors.warning,
+      ),
+    ),
+  );
+}
 
 /// شاشةُ الطاولات بهوية PicPos — توأمُ [TablesScreen]، تُختار بالعلامة في
 /// `app_main_screen`.
@@ -153,6 +187,15 @@ class _TablesPicposBodyState extends ConsumerState<_TablesPicposBody> {
           label: Text(uiState.isVisualView ? 'عرض الشبكة' : 'عرض الخريطة'),
           style: OutlinedButton.styleFrom(foregroundColor: AppColors.primary),
         ),
+        // وضعُ التصميم معناه ترتيبُ مخطَّطٍ — لا يظهر إلا في وضع الخريطة
+        // (`showDesignerModeToggle`، البند ٣ في task-6b-brief.md).
+        if (showDesignerModeToggle(isVisualView: uiState.isVisualView)) ...[
+          const SizedBox(width: Spacing.sm),
+          buildTablesDesignerModeButton(
+            isDesignerMode: uiState.isDesignerMode,
+            onToggle: ref.read(tablesUIProvider.notifier).toggleDesignerMode,
+          ),
+        ],
         const SizedBox(width: Spacing.sm),
         _buildScopeMenu(sections, scopeId, uiState.isVisualView),
         const SizedBox(width: Spacing.sm),
@@ -221,7 +264,7 @@ class _TablesPicposBodyState extends ConsumerState<_TablesPicposBody> {
           // مواضعُ السحب الحيّةُ من قسمٍ سابق.
           key: ValueKey(scopeId),
           sectionId: scopeId,
-          isEditMode: false,
+          isEditMode: uiState.isDesignerMode,
           onTap: _openTable,
         ),
       );
