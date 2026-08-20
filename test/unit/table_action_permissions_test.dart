@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/core/permissions/permission_codes.dart';
 import 'package:ural_erp/domain/models/table_actions.dart';
+import 'package:ural_erp/presentation/screens/role_management/data/permission_categories.dart';
 
 void main() {
   test('كلُّ فعلٍ يحرّك مالاً أو حالةً له كودُ صلاحيّة', () {
@@ -44,6 +45,24 @@ void main() {
       final p = permissionForAction(a);
       if (p != null) {
         expect(codes, contains(p), reason: 'الكودُ $p للفعل $a غيرُ مسجَّل');
+      }
+    }
+  });
+
+  // التسجيلُ في `masterList` يهيّئ الصفَّ في القاعدة فحسب؛ أمّا **المنحُ** فيمرّ
+  // من شاشة «الأدوار والصلاحيّات»، وهي تُبنى من `permissionCategories` وحدَها
+  // لا من القاعدة. فكودٌ غائبٌ عن هذه الخريطة لا مربّعَ له ⇒ لا يُمنح لأيِّ
+  // دورٍ أبداً، ويبقى حكراً على `system_admin`. هذا التوكيدُ يقيس القابليّةَ
+  // للمنح لا مجرّدَ الوجود.
+  test('كلُّ كودٍ ترجعه الخريطةُ قابلٌ للمنح من شاشة الأدوار', () {
+    final grantable = <String>{
+      for (final c in permissionCategories.values) ...c.permissions.keys,
+    };
+    for (final a in TableAction.values) {
+      final p = permissionForAction(a);
+      if (p != null) {
+        expect(grantable, contains(p),
+            reason: 'الكودُ $p للفعل $a لا مربّعَ له في شاشة الأدوار');
       }
     }
   });

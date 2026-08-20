@@ -169,6 +169,17 @@ final Map<String, PermissionCategory> permissionCategories = {
       'delivery_manage': 'إدارة شركات ومناديب التوصيل',
       'tables_view': 'عرض الطاولات (مطاعم)',
       'tables_manage': 'إدارة الطاولات',
+      // الأفعالُ الدقيقةُ للطاولة. هذه الخريطةُ **هي** مصدرُ شاشة «الأدوار
+      // والصلاحيّات» (لا القاعدة)، فكودٌ غائبٌ عنها لا مربّعَ له ⇒ يستحيل
+      // منحُه لأيِّ دور. تُبقي الأسماءُ مطابقةً لـ`PermissionCodes.masterList`.
+      'tables_add_items': 'إضافة أصناف للطاولة',
+      'tables_checkout': 'تسوية حساب الطاولة',
+      'tables_transfer': 'نقل طلب بين الطاولات',
+      'tables_merge': 'دمج طلبات الطاولات',
+      'tables_split_bill': 'تقسيم حساب الطاولة',
+      'tables_reserve': 'حجز طاولة',
+      'tables_print_bill': 'طباعة فاتورة الطاولة',
+      'tables_cancel': 'إلغاء/مسح طلب الطاولة',
       'kitchen_view': 'عرض شاشة المطبخ',
     },
   ),
