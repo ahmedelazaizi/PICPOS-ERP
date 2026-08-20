@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import '../database/database.dart';
+import '../../domain/models/tables_report_row.dart';
 import '../../domain/repositories/restaurant_repository.dart';
 
 class RestaurantRepositoryImpl implements IRestaurantRepository {
@@ -154,4 +155,24 @@ class RestaurantRepositoryImpl implements IRestaurantRepository {
   @override
   Future<void> clearTableOrderItems(int orderId) =>
       _db.clearTableOrderItems(orderId);
+
+  @override
+  Future<List<TableOrderInput>> getTableOrdersForReport({
+    required DateTime from,
+    required DateTime to,
+    int? sectionId,
+    int? tableId,
+    int? userId,
+    Set<int>? branchIds,
+    Set<int>? allowedBranchIds,
+  }) =>
+      _db.getTableOrdersForReport(
+        from: from,
+        to: to,
+        sectionId: sectionId,
+        tableId: tableId,
+        userId: userId,
+        branchIds: branchIds,
+        allowedBranchIds: allowedBranchIds,
+      );
 }

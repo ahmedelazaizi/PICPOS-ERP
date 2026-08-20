@@ -703,4 +703,136 @@ extension TablesDao on AppDatabase {
       tableReservations,
     )..where((r) => r.id.equals(reservationId))).go();
   }
+
+  // ---------------------------------------------------------------------------
+  // TABLES REPORT
+  // ---------------------------------------------------------------------------
+
+  /// طلباتُ الطاولات في مدىً زمنيّ، جاهزةً لـ`aggregateTablesReport`.
+  ///
+  /// **كلُّ ترشيحٍ هنا في SQL لا في العرض** — بما فيه [allowedBranchIds].
+  /// ترشيحُ العرض وحدَه يعني أن صفوفَ الفروع كلَّها تنزل إلى الجهاز ثم
+  /// تُخفى، وهو تسريبٌ لا ترشيح.
+  ///
+  /// [branchIds] اختيارُ المستخدم (فرعٌ أو فروعُ منطقة)، و[allowedBranchIds]
+  /// سقفُ صلاحيته. عقدُ الأخير نفسُ عقد `getSalesByDateRange`:
+  ///   • `null` → لا حدّ (وصولٌ كامل)
+  ///   • `{}`   → لا صفوف (فشلٌ مقفول)
+  ///   • `{ids}`→ تلك الفروعُ وما لا فرعَ له
+  ///
+  /// والاستبعادُ هنا لا هناك: `status = 'cancelled'` يحمل `closedAt` كذلك
+  /// (‏`TableSessionService.cancelOrder`)، فيبدو للتجميع الخالص جلسةً مغلقةً
+  /// ويدخل الإيرادَ بمالٍ لم يُحصَّل قطّ. الاستعلامُ يقرّر **ما الجلسة**،
+  /// والنموذجُ الخالص يقرّر **كيف تُجمَع**.
+  Future<List<TableOrderInput>> getTableOrdersForReport({
+    required DateTime from,
+    required DateTime to,
+    int? sectionId,
+    int? tableId,
+    int? userId,
+    Set<int>? branchIds,
+    Set<int>? allowedBranchIds,
+  }) async {
+    final query = select(tableOrders).join([
+      innerJoin(
+        restaurantTables,
+        restaurantTables.id.equalsExp(tableOrders.tableId),
+      ),
+    ])
+      ..where(tableOrders.openedAt.isBetweenValues(from, to))
+      ..where(tableOrders.status.equals('cancelled').not());
+
+    if (sectionId != null) {
+      query.where(restaurantTables.sectionId.equals(sectionId));
+    }
+    if (tableId != null) {
+      query.where(tableOrders.tableId.equals(tableId));
+    }
+    if (userId != null) {
+      query.where(tableOrders.userId.equals(userId));
+    }
+    if (branchIds != null) {
+      query.where(_tableOrderInBranches(branchIds));
+    }
+    if (allowedBranchIds != null) {
+      query.where(_tableOrderInBranches(allowedBranchIds));
+    }
+
+    query.orderBy([OrderingTerm.desc(tableOrders.openedAt)]);
+
+    final rows = await query.get();
+    return [
+      for (final row in rows)
+        _toTableOrderInput(
+          row.readTable(tableOrders),
+          row.readTable(restaurantTables),
+        ),
+    ];
+  }
+
+  /// «هذا الطلبُ يخصّ أحدَ [ids]؟» — و`table_orders` لا عمودَ فرعٍ فيه.
+  ///
+  /// فرعُ الطلب يأتي من فاتورته: `table_order_payments → sales_invoices
+  /// .branch_id`، وهو العمودُ الذي تُختم به كلُّ فاتورةٍ من مخزنها لحظةَ
+  /// الإصدار. ولا عمودَ جديدٌ يُضاف إلى `table_orders` لأجل تقرير.
+  ///
+  /// والشقُّ الثاني (`notExists`) هو نفسُ اتّفاق `_buildAuthScopeFilter`
+  /// حرفياً — «الصفُّ بلا فرعٍ يبقى مرئياً تحت أيّ نطاق». وهنا يقع عليه
+  /// الطلبُ المفتوحُ الذي لم تصدر له فاتورةٌ بعد: إخفاؤه كان سيُسقط
+  /// **الإشغالَ الجاري** من تقريرٍ نصفُ غرضه أن يقيسه.
+  Expression<bool> _tableOrderInBranches(Set<int> ids) {
+    // مجموعةٌ فارغةٌ = «لا فرعَ مسموحاً» ⇒ لا صفوف. فشلٌ مقفولٌ لا مفتوح.
+    if (ids.isEmpty) return const Constant(false);
+
+    final stampedInScope = existsQuery(
+      selectOnly(tableOrderPayments).join([
+        innerJoin(
+          salesInvoices,
+          salesInvoices.id.equalsExp(tableOrderPayments.invoiceId),
+        ),
+      ])
+        ..addColumns([tableOrderPayments.id])
+        ..where(tableOrderPayments.tableOrderId.equalsExp(tableOrders.id) &
+            salesInvoices.branchId.isIn(ids)),
+    );
+
+    final neverStamped = notExistsQuery(
+      selectOnly(tableOrderPayments).join([
+        innerJoin(
+          salesInvoices,
+          salesInvoices.id.equalsExp(tableOrderPayments.invoiceId),
+        ),
+      ])
+        ..addColumns([tableOrderPayments.id])
+        ..where(tableOrderPayments.tableOrderId.equalsExp(tableOrders.id) &
+            salesInvoices.branchId.isNotNull()),
+    );
+
+    return stampedInScope | neverStamped;
+  }
+
+  /// جسرُ الصفِّ إلى النوع الخالص.
+  ///
+  /// والخصمُ يمرّ من **المحرّك الواحد** (`TableOrderTotals.compute`) لا من
+  /// صيغةٍ منسوخةٍ في SQL: قاعدةُ الخصم دالّةٌ في المجمل ونوعِه وقيمته
+  /// وحدَها — بما فيها القصُّ عند المجمل — فسطرٌ واحدٌ صافيه `total` يكفي
+  /// لاستخراجها بلا قراءة البنود. ونسخُها هنا كان يصنع محرّكاً ثانياً
+  /// لطاولةٍ واحدة، وهو بعينه ما عالجه `table_order_totals.dart`.
+  TableOrderInput _toTableOrderInput(TableOrder order, RestaurantTable table) {
+    final totals = TableOrderTotals.compute(
+      lines: [TableOrderLine(quantity: 1, unitPrice: order.total)],
+      discountType: order.discountType,
+      discountValue: order.discountValue,
+    );
+    return TableOrderInput(
+      tableId: order.tableId,
+      tableName: table.name,
+      total: order.total,
+      guestCount: order.guestCount,
+      discount: totals.discount,
+      openedAt: order.openedAt,
+      closedAt: order.closedAt,
+      mergedToId: order.mergedToId,
+    );
+  }
 }

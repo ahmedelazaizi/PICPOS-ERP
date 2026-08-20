@@ -62,6 +62,10 @@ import '../../core/config/brand.dart';
 // قاعدةُ إشارة حركة الخزنة — مصدرٌ واحدٌ يشترك فيه الاستعلامُ والشاشة، فلا
 // تُنسخ داخل `CASE` في SQL ثم تنحرف عن نسختها بأوّل نوعٍ جديد.
 import '../../domain/models/safe_running_balance.dart';
+// تقريرُ الطاولات: النوعُ الذي يعبر إلى التقرير خالصٌ، فالتجميعُ يُختبَر بلا
+// قاعدة. و`TableOrderTotals` هو محرّكُ الخصم الوحيد — لا تُنسَخ قاعدتُه هنا.
+import '../../domain/models/table_order_totals.dart';
+import '../../domain/models/tables_report_row.dart';
 export '../../services/permission_enforcer.dart' show PermissionDeniedException;
 
 part 'database.g.dart';

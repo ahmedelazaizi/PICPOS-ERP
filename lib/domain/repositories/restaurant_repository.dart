@@ -1,4 +1,5 @@
 import '../../data/database/database.dart';
+import '../models/tables_report_row.dart';
 
 abstract class IRestaurantRepository {
   Stream<List<TableSection>> watchAllSections();
@@ -62,4 +63,20 @@ abstract class IRestaurantRepository {
     double taxRate = 0,
   });
   Future<void> clearTableOrderItems(int orderId);
+
+  /// طلباتُ الطاولات في مدىً زمنيّ، جاهزةً لـ[aggregateTablesReport].
+  ///
+  /// [allowedBranchIds] سقفُ صلاحية المستخدم، ويُحقَن في **الاستعلام** —
+  /// `null` لا حدّ، و`{}` لا صفوف، و`{ids}` تلك الفروعُ وما لا فرعَ له.
+  /// و[branchIds] اختيارُه هو (فرعٌ أو فروعُ منطقة). التفاصيل عند
+  /// `TablesDao.getTableOrdersForReport`.
+  Future<List<TableOrderInput>> getTableOrdersForReport({
+    required DateTime from,
+    required DateTime to,
+    int? sectionId,
+    int? tableId,
+    int? userId,
+    Set<int>? branchIds,
+    Set<int>? allowedBranchIds,
+  });
 }

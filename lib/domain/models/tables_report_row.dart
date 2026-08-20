@@ -28,8 +28,6 @@
 // وهو يحمل `closedAt` كذلك، فيبدو مغلقاً هنا لو وصل). الاستعلامُ يقرّر ما
 // الجلسةُ، وهذا يقرّر كيف تُجمَع الجلسات.
 
-import 'dart:collection';
-
 /// طلبُ طاولةٍ واحدٌ كما يدخل التقرير — قِيَمٌ عاريةٌ لا صفُّ Drift.
 ///
 /// النوعُ خالصٌ عن قصد: يُبنى في طبقة البيانات من `TableOrders`، ويُختبَر هنا
@@ -130,7 +128,7 @@ class TablesReportRow {
 /// الصفوفُ مرتَّبةٌ بالإيراد نزولاً ثم بالمعرّف صعوداً — ترتيبٌ حاسمٌ لا
 /// يعتمد على ترتيب الوارد، فالتصديرُ والشاشةُ يقولان نفسَ الشيء دوماً.
 List<TablesReportRow> aggregateTablesReport(List<TableOrderInput> orders) {
-  final acc = LinkedHashMap<int, _TableAccumulator>();
+  final acc = <int, _TableAccumulator>{};
 
   for (final order in orders) {
     // القاعدة ١ — المدموجُ يخرج قبل أيّ عدٍّ: لا صفَّ له ولا ضيوفَ ولا طلب.
@@ -161,6 +159,25 @@ List<TablesReportRow> aggregateTablesReport(List<TableOrderInput> orders) {
     return byRevenue != 0 ? byRevenue : a.tableId.compareTo(b.tableId);
   });
   return rows;
+}
+
+/// متوسّطُ مدّة الجلوس بالدقائق عبر **الجلسات** كلِّها لا عبر الطاولات.
+///
+/// بطاقةُ الرأس تحتاج رقماً واحداً، ومتوسّطُ متوسّطاتِ الصفوف ليس هو: طاولةٌ
+/// جلست عليها جلسةٌ واحدةٌ ساعتين تزن في ذلك المتوسّط وزنَ طاولةٍ جلست عليها
+/// عشرون جلسةً ربعَ ساعة. فالمقامُ هنا عددُ الجلسات المغلقة نفسِها.
+///
+/// و`null` حين لا جلسةَ مغلقةً — بنفس دلالة [TablesReportRow.avgTurnMinutes].
+double? overallAvgTurnMinutes(List<TableOrderInput> orders) {
+  var minutes = 0.0;
+  var closed = 0;
+  for (final order in orders) {
+    if (!order.isSettledVisit) continue;
+    minutes += order.closedAt!.difference(order.openedAt).inMilliseconds /
+        Duration.millisecondsPerMinute;
+    closed += 1;
+  }
+  return closed == 0 ? null : minutes / closed;
 }
 
 class _TableAccumulator {

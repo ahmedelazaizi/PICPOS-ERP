@@ -237,4 +237,84 @@ void main() {
   test('قائمةٌ فارغةٌ تعطي صفوفاً فارغةً لا استثناءً', () {
     expect(aggregateTablesReport(const []), isEmpty);
   });
+
+  group('overallAvgTurnMinutes — متوسّطُ الرأس', () {
+    test('المقامُ عددُ الجلسات لا عددُ الطاولات', () {
+      final avg = overallAvgTurnMinutes([
+        // طاولةٌ واحدةٌ عليها جلسةٌ واحدةٌ ١٢٠ دقيقة.
+        TableOrderInput(
+            tableId: 1,
+            tableName: 'ط١',
+            total: 100,
+            guestCount: 2,
+            discount: 0,
+            openedAt: DateTime(2026, 1, 1, 12),
+            closedAt: DateTime(2026, 1, 1, 14),
+            mergedToId: null),
+        // وطاولةٌ عليها ثلاثُ جلساتٍ ٢٠ دقيقةً لكلٍّ.
+        for (var i = 0; i < 3; i++)
+          TableOrderInput(
+              tableId: 2,
+              tableName: 'ط٢',
+              total: 10,
+              guestCount: 1,
+              discount: 0,
+              openedAt: DateTime(2026, 1, 1, 12 + i),
+              closedAt: DateTime(2026, 1, 1, 12 + i, 20),
+              mergedToId: null),
+      ]);
+      // (120 + 20×3) / 4 = 45 — لا (120 + 20) / 2 = 70.
+      expect(avg, 45);
+    });
+
+    test('المدموجُ والمفتوحُ خارج المتوسّط', () {
+      final avg = overallAvgTurnMinutes([
+        TableOrderInput(
+            tableId: 1,
+            tableName: 'ط١',
+            total: 100,
+            guestCount: 2,
+            discount: 0,
+            openedAt: DateTime(2026, 1, 1, 12),
+            closedAt: DateTime(2026, 1, 1, 13),
+            mergedToId: null),
+        TableOrderInput(
+            tableId: 2,
+            tableName: 'ط٢',
+            total: 50,
+            guestCount: 1,
+            discount: 0,
+            openedAt: DateTime(2026, 1, 1, 12),
+            closedAt: DateTime(2026, 1, 1, 15), // ١٨٠ لو حُسبت
+            mergedToId: 1),
+        TableOrderInput(
+            tableId: 3,
+            tableName: 'ط٣',
+            total: 0,
+            guestCount: 1,
+            discount: 0,
+            openedAt: DateTime(2026, 1, 1, 12),
+            closedAt: null,
+            mergedToId: null),
+      ]);
+      expect(avg, 60);
+    });
+
+    test('لا جلسةَ مغلقةً ⇒ null لا صفر', () {
+      expect(
+        overallAvgTurnMinutes([
+          TableOrderInput(
+              tableId: 1,
+              tableName: 'ط١',
+              total: 10,
+              guestCount: 1,
+              discount: 0,
+              openedAt: DateTime(2026, 1, 1, 12),
+              closedAt: null,
+              mergedToId: null),
+        ]),
+        isNull,
+      );
+    });
+  });
 }
