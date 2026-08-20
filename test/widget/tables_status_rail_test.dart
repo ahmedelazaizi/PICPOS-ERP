@@ -20,19 +20,31 @@ void main() {
   testWidgets('الضغطُ على حالةٍ يبلّغ باختيارها، وإعادةُ الضغط تُلغيه',
       (tester) async {
     String? picked = 'sentinel';
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: TablesStatusRail(
-            counts: countByStatus([TableStatus.available]),
-            selected: null,
-            onSelect: (s) => picked = s,
+
+    Future<void> pumpWith(String? selected) => tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: TablesStatusRail(
+                counts: countByStatus([TableStatus.available]),
+                selected: selected,
+                onSelect: (s) => picked = s,
+              ),
+            ),
           ),
-        ),
-      ),
-    );
+        );
+
+    await pumpWith(null);
     await tester.tap(find.text('متاحة'));
     expect(picked, TableStatus.available);
+
+    // الشقُّ الثاني من اسم الاختبار — كان بلا توكيدٍ إطلاقاً. العمودُ عديمُ
+    // الحالة، فالإلغاءُ يظهر حين يُعاد بناؤه بالحالة المختارة ثم يُضغَط عليها.
+    picked = 'sentinel';
+    await pumpWith(TableStatus.available);
+    await tester.tap(find.text('متاحة'));
+    expect(picked, isNull,
+        reason: 'إعادةُ الضغط على الحالة المختارة لا تُلغي الترشيح — '
+            'فالمستخدمُ يحبس نفسَه في حالةٍ واحدة');
   });
 
   // العمودُ كان يستقبل `selected` ولا يستعمله في الرسم إطلاقاً: يُرشَّح
