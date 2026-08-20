@@ -367,7 +367,7 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
         _handleSplitTable(screenContext, restaurantRepo, table);
         break;
       case TableAction.reserve:
-        _showReservationDialog(screenContext, restaurantRepo, table);
+        _showReservationDialog(screenContext, table);
         break;
       case TableAction.closeTable:
         final order = await restaurantRepo.getActiveOrderForTable(table.id);
@@ -780,9 +780,11 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
   }
 
   /// Show dialog to create a new reservation
+  ///
+  /// بلا `restaurantRepo`: الحجزُ صار يمرّ بالخدمة (انظر التعليقَ عند نداء
+  /// الحفظ)، فبقي المعامِلُ معلَّقاً بلا مستعمل.
   void _showReservationDialog(
     BuildContext context,
-    IRestaurantRepository restaurantRepo,
     RestaurantTable table,
   ) {
     final nameController = TextEditingController();
