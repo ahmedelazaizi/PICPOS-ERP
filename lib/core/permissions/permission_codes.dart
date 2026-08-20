@@ -493,6 +493,24 @@ class PermissionCodes {
   /// حجزُ طاولةٍ لعميلٍ في وقتٍ لاحق.
   static const String tablesReserve = 'tables_reserve';
 
+  // ── الحجوزات — مواعيدُ الخدمة (مستقلّةٌ عن حجز الطاولات) ──────────────
+  static const String bookingsView = 'bookings_view';
+  static const String bookingsAdd = 'bookings_add';
+  static const String bookingsEdit = 'bookings_edit';
+  static const String bookingsCancel = 'bookings_cancel';
+  static const String bookingsStatus = 'bookings_status';
+
+  /// منفصلٌ عن `bookingsEdit` عمداً: الإسنادُ والنقلُ عند الغياب عملُ مضيفٍ
+  /// يُمارَس عشراتِ المرّات يوميّاً، بينما تعديلُ الوقتِ والعربونِ أضيق.
+  /// دمجُهما يفرض إعطاءَ الأوسعِ لمن يحتاج الأضيق.
+  static const String bookingsAssign = 'bookings_assign';
+
+  static const String bookingsDeposit = 'bookings_deposit';
+  static const String bookingsServicesManage = 'bookings_services_manage';
+  static const String bookingsResourcesManage = 'bookings_resources_manage';
+  static const String bookingsReports = 'bookings_reports';
+  static const String bookingsSettings = 'bookings_settings';
+
   // ═══════════════════════════════════════════════════════════════════════════
   // KITCHEN PERMISSIONS (المطبخ)
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1534,5 +1552,6 @@ class PermissionCodes {
     'analytics': 'التحليلات',
     'branches': 'الفروع',
     'critical_financial': 'عمليات مالية حرجة',
+    'bookings': 'الحجوزات',
   };
 }
