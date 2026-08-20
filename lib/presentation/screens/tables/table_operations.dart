@@ -1029,10 +1029,15 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
 abstract interface class TableActionsRunner {
   /// ينفّذ [action] على [table] بنفس مسار القائمة المنبثقة — لا نسخةَ ثانية.
   ///
-  /// **لا يفحص صلاحيّةً ولا صلاحيّةَ حالة**: ذلك عملُ مَن يرسم الكبسة
-  /// (`TablesActionRail` عبر `PermissionGuard` و`actionsForStatus`)، تماماً
-  /// كما تفعل `TableActionsMenu`. والأفعالُ الهدّامةُ تفحص صلاحيّتَها مرّةً
-  /// ثانيةً داخل معالجها على أيّ حال.
+  /// **صلاحيّةُ الحالة** (`actionsForStatus`) على مَن يرسم الكبسة، تماماً كما
+  /// تفعل `TableActionsMenu`.
+  ///
+  /// أمّا **صلاحيّةُ المستخدم** فتُفحَص هنا كذلك، ولا يُتّكل على الرسم:
+  /// `PermissionGuard` يعرض طفلَه **بلا حراسة** ما دامت قائمةُ الصلاحيّات
+  /// تُحمَّل، فبين أوّل إطارٍ ووصولِ القائمة تُطفَر الأفعالُ كلُّها بنقرة.
+  /// وكان الفحصُ الثاني موجوداً لثلاثةٍ فقط — `cancelOrder` و`changeStatus`
+  /// و`printBill` — بينما `open` و`transfer` و`merge` و`splitBill`
+  /// و`closeTable` بلا فحصٍ ثانٍ في معالجها، فالنافذةُ كانت مفتوحةً لخمسة.
   Future<void> run(RestaurantTable table, TableAction action);
 
   /// نافذةُ الطلب: طلبٌ قائمٌ ⇒ تفاصيلُه، ولا طلبَ ⇒ حوارُ الفتح — وهو نفسُ
@@ -1069,13 +1074,22 @@ class _TableActionsHostState extends ConsumerState<TableActionsHost>
   Widget build(BuildContext context) => widget.builder(context, this);
 
   @override
-  Future<void> run(RestaurantTable table, TableAction action) =>
-      _handleTableAction(
-        context,
-        ref.read(restaurantRepositoryProvider),
-        table,
-        action,
-      );
+  Future<void> run(RestaurantTable table, TableAction action) async {
+    // الفحصُ الدفاعيُّ — انظر ترويسةَ [TableActionsRunner.run].
+    final code = permissionForAction(action);
+    if (code != null &&
+        !await _ensureTablePermission(
+            context, code, tableActionLabels[action]!)) {
+      return;
+    }
+    if (!mounted) return;
+    return _handleTableAction(
+      context,
+      ref.read(restaurantRepositoryProvider),
+      table,
+      action,
+    );
+  }
 
   @override
   Future<void> openOrder(RestaurantTable table) async {
