@@ -85,4 +85,101 @@ void main() {
         reason: 'غيرُ المختارة تحمل إطاراً شفّافاً لا معدوماً — وإلّا قفز '
             'مقاسُ البطاقة عند الاختيار');
   });
+
+  // العمودُ كان يقف عند خمسِ حالاتٍ فقط: من ينقر «متاحة» لا يجد سبيلاً
+  // للعودة إلى الكلّ إلّا بإعادة نقر البطاقة نفسِها — وهو غيرُ مكتشَف.
+  group('بطاقةُ «عرض الكل»', () {
+    testWidgets('موجودةٌ، وتعرض مجموعَ الطاولات، وتقع بعد الحالات الخمس',
+        (tester) async {
+      final counts = countByStatus([
+        TableStatus.available,
+        TableStatus.available,
+        TableStatus.occupied,
+      ]);
+      final total = counts.values.fold<int>(0, (a, b) => a + b);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: TablesStatusRail(
+              counts: counts,
+              selected: null,
+              onSelect: (_) {},
+            ),
+          ),
+        ),
+      );
+
+      final allTileFinder =
+          find.byKey(TablesStatusRail.tileKey(TablesStatusRail.allKey));
+      expect(allTileFinder, findsOneWidget);
+      expect(
+        find.descendant(of: allTileFinder, matching: find.text('عرض الكل')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: allTileFinder, matching: find.text('$total')),
+        findsOneWidget,
+        reason: 'مجموعُ البطاقة يجب أن يطابق مجموعَ الحالات الخمس، لا رقماً '
+            'منفصلاً قد يتباعد عنه',
+      );
+
+      // بعد آخر حالةٍ (خارج الخدمة) في الترتيب — كما في نصّ المالك.
+      final lastStatusTop = tester
+          .getTopLeft(
+              find.byKey(TablesStatusRail.tileKey(TableStatus.outOfService)))
+          .dy;
+      final allTileTop = tester.getTopLeft(allTileFinder).dy;
+      expect(allTileTop, greaterThan(lastStatusTop),
+          reason: 'بطاقةُ «عرض الكل» يجب أن تقع بعد الحالات الخمس لا بينها');
+    });
+
+    testWidgets('النقرُ عليها يُرجع المرشِّحَ إلى الكلّ', (tester) async {
+      String? picked = TableStatus.available;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: TablesStatusRail(
+              counts: countByStatus([TableStatus.available]),
+              selected: TableStatus.available,
+              onSelect: (s) => picked = s,
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('عرض الكل'));
+      expect(picked, isNull,
+          reason: 'النقرُ على «عرض الكل» يجب أن يُلغي أيَّ ترشيحٍ حالةٍ '
+              'قائم، بصرف النظر عن الحالة المختارة سلفاً');
+    });
+
+    testWidgets('تُرسَم مختارةً حين يكون المرشِّحُ null', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: TablesStatusRail(
+              counts: countByStatus([TableStatus.available]),
+              selected: null,
+              onSelect: (_) {},
+            ),
+          ),
+        ),
+      );
+
+      final decoration = tester
+          .widgetList<Container>(find.descendant(
+            of: find.byKey(TablesStatusRail.tileKey(TablesStatusRail.allKey)),
+            matching: find.byType(Container),
+          ))
+          .first
+          .decoration! as BoxDecoration;
+
+      expect(decoration.color, isNotNull,
+          reason: '«عرض الكل» بلا تظليل رغم كونها المرشِّحَ الفعّال');
+      expect(decoration.border!.top.color, isNot(Colors.transparent),
+          reason: '«عرض الكل» بلا إطارٍ ملوّن رغم كونها المرشِّحَ الفعّال');
+    });
+  });
 }

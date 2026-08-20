@@ -36,8 +36,22 @@ class TablesStatusRail extends StatelessWidget {
   static ValueKey<String> tileKey(String status) =>
       ValueKey<String>('tablesStatusTile_$status');
 
+  /// مفتاحُ بطاقةِ «عرض الكل» — نفسُ نمط [tileKey] بمعرِّفٍ لا يتقاطع مع أيّ
+  /// حالةٍ حقيقيّة في [TableStatus.all].
+  static const String allKey = 'all';
+
+  /// لونُ بطاقة «عرض الكل» — رماديٌّ محايدٌ لا يُشبه لونَ أيّ حالةٍ حقيقيّة،
+  /// نفسُ الرمادي المستعمَل لمدخل «الكل» في `tables_filter_bar.dart`
+  /// (الشاشةُ القديمة) فلا يُخترَع لونٌ ثالث لنفس المعنى.
+  static const Color _allAccent = Color(0xFF94A3B8);
+
   @override
   Widget build(BuildContext context) {
+    // مجموعُ الطاولات — لا `TableStatus.all.length` ولا عددُ الطاولات
+    // الكليّ من مصدرٍ آخر، بل مجموعُ ما تعرضه البطاقاتُ فعلاً، فلا يتباعد
+    // الرقمان أبداً.
+    final total = counts.values.fold<int>(0, (sum, c) => sum + c);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -46,12 +60,24 @@ class TablesStatusRail extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: Spacing.sm),
             child: _StatusTile(
               key: tileKey(status),
-              status: status,
+              label: tableStatusLabel(status),
+              accent: tableStatusColor(status),
               count: counts[status] ?? 0,
               isSelected: selected == status,
               onTap: () => onSelect(selected == status ? null : status),
             ),
           ),
+        // آخرُ بطاقةٍ في العمود — بعد الحالات الخمس كما في نصّ المالك.
+        // `selected == null` تعني «الكلّ» (راجع تعليقَ [selected])، والنقرُ
+        // عليها يُعيد المرشِّحَ إلى الكلّ بلا تبديلٍ — فهي مخرجٌ لا حالة.
+        _StatusTile(
+          key: tileKey(allKey),
+          label: 'عرض الكل',
+          accent: _allAccent,
+          count: total,
+          isSelected: selected == null,
+          onTap: () => onSelect(null),
+        ),
       ],
     );
   }
@@ -65,20 +91,21 @@ class TablesStatusRail extends StatelessWidget {
 class _StatusTile extends StatelessWidget {
   const _StatusTile({
     super.key,
-    required this.status,
+    required this.label,
+    required this.accent,
     required this.count,
     required this.isSelected,
     required this.onTap,
   });
 
-  final String status;
+  final String label;
+  final Color accent;
   final int count;
   final bool isSelected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final accent = tableStatusColor(status);
     return Semantics(
       button: true,
       selected: isSelected,
@@ -98,7 +125,7 @@ class _StatusTile extends StatelessWidget {
             color: isSelected ? accent.withValues(alpha: 0.10) : null,
           ),
           child: PicPosStatTile(
-            label: tableStatusLabel(status),
+            label: label,
             value: '$count',
             accent: accent,
           ),
