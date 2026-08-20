@@ -66,6 +66,7 @@ import '../../domain/models/safe_running_balance.dart';
 // قاعدة. و`TableOrderTotals` هو محرّكُ الخصم الوحيد — لا تُنسَخ قاعدتُه هنا.
 import '../../domain/models/table_order_totals.dart';
 import '../../domain/models/tables_report_row.dart';
+import '../../domain/models/booking_overlap.dart';
 export '../../services/permission_enforcer.dart' show PermissionDeniedException;
 
 part 'database.g.dart';
@@ -85,6 +86,7 @@ part 'daos/treasury_reports_dao.dart';
 part 'daos/user_dao.dart';
 part 'daos/party_dao.dart';
 part 'daos/tables_dao.dart';
+part 'daos/bookings_dao.dart';
 part 'daos/inventory_dao.dart';
 part 'daos/inventory_batch_dao.dart';
 part 'daos/inventory_transfers_dao.dart';
