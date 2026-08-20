@@ -127,4 +127,30 @@ void main() {
       throwsA(isA<BookingInPastException>()),
     );
   });
+
+  test(
+      'تغييرُ الموظَّف على حجزٍ مضى وقتُه مسموح — فحصُ الماضي مشروطٌ ببدايةٍ جديدة',
+      () async {
+    // حجزٌ أُنشئ في المستقبل بالنسبة لـ`now` وقتَ الإنشاء (الإنشاءُ يرفض
+    // الماضي، فلا يمكن زرعُه في الماضي مباشرةً).
+    final id = await db.createBooking(
+      customerName: 'سارة',
+      serviceId: serviceId,
+      resourceId: resourceA,
+      startsAt: DateTime(2026, 8, 20, 10),
+      now: now,
+    );
+    // إعادةُ الإسناد فقط — بلا `startsAt` جديد — و`now` تالٍ يجعل بدايةَ
+    // الحجزِ القديمةَ ماضياً. فحصُ الماضي مشروطٌ بوجود `startsAt` جديد،
+    // فيجب أن تنجح رغم أنّ بدايةَ الحجز الحاليةَ صارت في الماضي.
+    await db.updateBookingSlot(
+      id,
+      resourceId: resourceB,
+      now: DateTime(2026, 8, 20, 12),
+    );
+    final row =
+        await (db.select(db.bookings)..where((b) => b.id.equals(id)))
+            .getSingle();
+    expect(row.resourceId, resourceB);
+  });
 }
