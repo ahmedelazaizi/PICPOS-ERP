@@ -153,4 +153,74 @@ extension BookingsDao on AppDatabase {
       );
     });
   }
+
+  /// يبدّل الموظَّفَ أو الوقتَ أو كليهما — **ويُعيد فحصَ التعارض كاملاً**.
+  ///
+  /// القاعدةُ صيغت بالثلاثيّة `(resourceId, startsAt, endsAt)` لا
+  /// بـ«الإسناد» عمداً: **التأجيلُ خطرٌ كالإسناد تماماً** — حجزٌ سليمٌ
+  /// يُؤجَّل ساعةً قد يقع فوق حجزٍ آخرَ لنفس الموظَّف. ولو حُصر الفحصُ في
+  /// دالّةِ إسنادٍ لمرّ التأجيلُ من جانبها بلا فحص.
+  ///
+  /// وحجزٌ وُلد بلا موظَّفٍ **لم يُفحَص قطّ**: أوّلُ فحصٍ حقيقيٍّ له يقع
+  /// لحظةَ إسناده، فإن غاب هنا لم يقع أبداً.
+  ///
+  /// `clearResource` يفصل «لا تغيّر الموظَّف» (‏`resourceId: null`) عن
+  /// «أعِدْه إلى قائمة الانتظار» — وإلّا استحال التمييز بينهما.
+  Future<void> updateBookingSlot(
+    int bookingId, {
+    int? resourceId,
+    bool clearResource = false,
+    DateTime? startsAt,
+    DateTime? now,
+  }) {
+    return transaction(() async {
+      final currentTime = now ?? DateTime.now();
+      final current = await (select(bookings)
+            ..where((b) => b.id.equals(bookingId)))
+          .getSingle();
+
+      final newResourceId =
+          clearResource ? null : (resourceId ?? current.resourceId);
+      final newStartsAt = startsAt ?? current.startsAt;
+
+      if (startsAt != null && newStartsAt.isBefore(currentTime)) {
+        throw BookingInPastException(
+          'لا يمكن تأجيل الحجز إلى الماضي — الحجزُ حاضرٌ أو مستقبل',
+        );
+      }
+
+      // النهايةُ تُعاد من مدّةِ الخدمة كي يبقى الطولُ صحيحاً بعد التأجيل.
+      final service = await (select(bookingServices)
+            ..where((s) => s.id.equals(current.serviceId)))
+          .getSingle();
+      final newEndsAt = computeBookingEndsAt(
+        newStartsAt,
+        service.durationMinutes,
+        service.bufferMinutes,
+      );
+
+      if (newResourceId != null) {
+        final clashes = await getOverlappingBookings(
+          newResourceId,
+          newStartsAt,
+          newEndsAt,
+          excludeBookingId: bookingId, // لا يتعارض مع نفسِه
+        );
+        if (clashes.isNotEmpty) {
+          throw BookingConflictException(
+            'الموظَّفُ مشغولٌ في هذا الوقت — ${clashes.length} حجزٌ متعارض',
+          );
+        }
+      }
+
+      await (update(bookings)..where((b) => b.id.equals(bookingId))).write(
+        BookingsCompanion(
+          resourceId: Value(newResourceId),
+          startsAt: Value(newStartsAt),
+          endsAt: Value(newEndsAt),
+          updatedAt: Value(currentTime),
+        ),
+      );
+    });
+  }
 }
