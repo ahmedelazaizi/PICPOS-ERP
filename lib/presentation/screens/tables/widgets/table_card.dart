@@ -24,6 +24,10 @@ class TableCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final uiState = ref.watch(tablesUIProvider);
     final statusInfo = tableStatusInfo(table.status);
+    // البطاقةُ تعيش على سطحِ الشاشة، فألوانُها تُشتقُّ من الثيم. الأبيضُ
+    // المثبَّتُ كان يعمل ما دامت الشاشةُ داكنةً وحدَها؛ وفي الوضع الفاتح
+    // يذوب في السطح فيختفي اسمُ الطاولة وسعتُها.
+    final cs = Theme.of(context).colorScheme;
     final isSelected = uiState.selectedTableId == table.id;
     final isActive = table.status != 'available' && table.status != 'reserved' && table.status != 'cleaning';
 
@@ -48,8 +52,8 @@ class TableCard extends ConsumerWidget {
                     statusInfo.color.withValues(alpha: 0.05)
                   ]
                 : [
-                    Colors.white.withValues(alpha: 0.04),
-                    Colors.white.withValues(alpha: 0.01)
+                    cs.onSurfaceVariant.withValues(alpha: 0.04),
+                    cs.onSurfaceVariant.withValues(alpha: 0.01)
                   ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -96,21 +100,27 @@ class TableCard extends ConsumerWidget {
                     style: GoogleFonts.cairo(
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
-                      color: Colors.white.withValues(alpha: 0.9),
+                      // لونُ الحالة — وهو نفسُ ما تفعله بطاقةُ وضع التصميم
+                      // في `floor_plan_designer`، فتتوحّد لغةُ العرضين.
+                      // وخلفيّةُ البطاقة تدرُّجٌ بشفافيّة 0.15 فأدنى، فيبقى
+                      // الاسمُ مقروءاً محدَّداً كان أو غيرَ محدَّد.
+                      color: statusInfo.color,
                     ),
                     textAlign: TextAlign.center),
                 const SizedBox(height: 2),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    // نصٌّ ثانويّ — `onSurfaceVariant` هو دورُه في الثيم.
+                    // وكان `white @ 0.25`: باهتاً في الداكن، معدوماً في الفاتح.
                     Icon(PhosphorIconsBold.users,
                         size: 10,
-                        color: Colors.white.withValues(alpha: 0.25)),
+                        color: cs.onSurfaceVariant),
                     const SizedBox(width: 3),
                     Text('${table.capacity}',
                         style: GoogleFonts.cairo(
                             fontSize: 10,
-                            color: Colors.white.withValues(alpha: 0.25),
+                            color: cs.onSurfaceVariant,
                             fontWeight: FontWeight.w600)),
                     if (isActive) ...[
                       const SizedBox(width: 8),
