@@ -11,9 +11,14 @@
 // يُختبَر بالقيم لا بالشاشة، وكي لا تُنسَخ القاعدةُ في شاشةٍ ثانيةٍ غداً.
 //
 // ── القواعدُ الثلاث ────────────────────────────────────────────────────────
-//   ١. **المدموجُ لا يُحسَب مطلقاً** (`mergedToId != null`): لا إيرادَ ولا
-//      طلبَ ولا ضيفَ ولا مدّة. إجماليُّه انتقل إلى هدفه، وضيوفُه جلسوا على
-//      الطاولة الهدف — فصفٌّ له يعدّ الجلسةَ الواحدةَ جلستَين.
+//   ١. **المدموجُ لا يُنتج صفّاً ولا إيراداً ولا مدّة** (`mergedToId != null`)،
+//      **وضيوفُه يُطوَون في صفّ هدفه**. إجماليُّه انتقل إلى الهدف بالفعل
+//      (`TablesDao.mergeTableOrders` ينقل البنودَ ويعيد حسابَ الإجماليَّين)،
+//      فعدُّه ثانيةً يعدّ نفسَ المال مرّتين. أمّا الضيوفُ فلا ينتقلون:
+//      `guestCount` يُكتب مرّةً واحدةً عند فتح الطلب ولا يرفعه الدمجُ على
+//      الهدف. فإسقاطُ المدموج كلِّه كان يُضيّع ضيوفَه — طاولةُ ثلاثةٍ تُدمج
+//      في طاولةِ اثنين ⇒ الإيرادُ كاملٌ والضيوفُ اثنان ⇒ **نصيبُ الضيف
+//      مضخَّم**. الطيُّ يعيدهم إلى الطاولة التي جلسوا عليها فعلاً.
 //   ٢. **المفتوحُ إشغالٌ لا إيراد** (`closedAt == null`): يُحسَب في
 //      `orderCount` و`guestCount` — الطاولةُ مشغولةٌ فعلاً — ولا يدخل
 //      `revenue` ولا `discount` ولا متوسّطَ المدّة. المالُ لم يُحصَّل بعد،
@@ -35,6 +40,7 @@
 /// عمودَ جديدٌ أُضيف لأجل هذا التقرير.
 class TableOrderInput {
   const TableOrderInput({
+    required this.id,
     required this.tableId,
     required this.tableName,
     required this.total,
@@ -44,6 +50,10 @@ class TableOrderInput {
     required this.closedAt,
     required this.mergedToId,
   });
+
+  /// `TableOrders.id` — يلزم لأن [mergedToId] يشير إلى **طلبٍ** لا إلى
+  /// طاولة، فبلا معرّفِ الطلب لا يُعرَف أيُّ صفٍّ يستضيف ضيوفَ المدموج.
+  final int id;
 
   /// `RestaurantTables.id` — مفتاحُ التجميع.
   final int tableId;
@@ -129,9 +139,11 @@ class TablesReportRow {
 /// يعتمد على ترتيب الوارد، فالتصديرُ والشاشةُ يقولان نفسَ الشيء دوماً.
 List<TablesReportRow> aggregateTablesReport(List<TableOrderInput> orders) {
   final acc = <int, _TableAccumulator>{};
+  final byId = {for (final order in orders) order.id: order};
 
+  // ── المرورُ الأوّل: الجلساتُ المستقلّةُ وحدَها تصنع الصفوف ────────────────
   for (final order in orders) {
-    // القاعدة ١ — المدموجُ يخرج قبل أيّ عدٍّ: لا صفَّ له ولا ضيوفَ ولا طلب.
+    // القاعدة ١ — المدموجُ لا صفَّ له ولا طلبَ ولا مال؛ ضيوفُه في المرور الثاني.
     if (!order.isCountedVisit) continue;
 
     final bucket = acc.putIfAbsent(
@@ -153,12 +165,48 @@ List<TablesReportRow> aggregateTablesReport(List<TableOrderInput> orders) {
     }
   }
 
+  // ── المرورُ الثاني: ضيوفُ المدموج يُطوَون في صفّ الطاولة المضيفة ─────────
+  //
+  // الإيرادُ وحدَه هو ما ينتقل بالدمج؛ `guestCount` يبقى على الطلب الذي فُتح
+  // به. فبلا هذا المرور تختفي أنفسٌ جلست فعلاً، ويُقسَم إيرادٌ كاملٌ على
+  // ضيوفٍ أقلَّ ⇒ «نصيبُ الضيف» مضخَّم.
+  for (final order in orders) {
+    if (order.isCountedVisit) continue;
+    final host = _terminalMergeTarget(order, byId);
+    if (host == null) continue;
+    final bucket = acc[host.tableId];
+    if (bucket != null) bucket.guestCount += order.guestCount;
+  }
+
   final rows = [for (final b in acc.values) b.toRow()];
   rows.sort((a, b) {
     final byRevenue = b.revenue.compareTo(a.revenue);
     return byRevenue != 0 ? byRevenue : a.tableId.compareTo(b.tableId);
   });
   return rows;
+}
+
+/// الطلبُ الذي استقرّ عليه الحسابُ في آخر سلسلة الدمج — أو `null`.
+///
+/// الدمجُ قد يتسلسل (‏أ ⇐ ب ⇐ ج)، فطيُّ الضيوف على الوسيط يضعهم على طاولةٍ
+/// لم يعد عليها حساب. و`null` في حالتين، وكلتاهما إسقاطٌ مقصود:
+///   • **الهدفُ خارج مجموعة التقرير** — مدىً زمنيٌّ أو قسمٌ أو فرعٌ أخرجه.
+///     لا يُخترَع له صفٌّ من ضيوفٍ بلا إيراد.
+///   • **حلقةٌ في البيانات** — لا تُدار إلى الأبد. مستحيلةٌ بالتصميم، ومقيسةٌ
+///     لأن حلقةً في حلقةٍ لا نهائيّةٍ تُعلّق الشاشةَ لا تُخطئ رقماً.
+TableOrderInput? _terminalMergeTarget(
+  TableOrderInput start,
+  Map<int, TableOrderInput> byId,
+) {
+  var current = start;
+  final seen = <int>{start.id};
+  while (current.mergedToId != null) {
+    final next = byId[current.mergedToId];
+    if (next == null) return null;
+    if (!seen.add(next.id)) return null;
+    current = next;
+  }
+  return current;
 }
 
 /// متوسّطُ مدّة الجلوس بالدقائق عبر **الجلسات** كلِّها لا عبر الطاولات.

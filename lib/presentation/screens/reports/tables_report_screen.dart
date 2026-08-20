@@ -42,6 +42,10 @@ import '../../widgets/report_components.dart';
 import '../../widgets/report_filter_bar.dart';
 import 'report_export_guard.dart';
 
+/// ما يُكتب حيث لا مقياس — على الشاشة وفي Excel معاً، من ثابتٍ واحدٍ فلا
+/// يفترق الملفُّ عمّا رآه المستخدم.
+const String _kNoValue = '—';
+
 class TablesReportScreen extends ConsumerStatefulWidget {
   const TablesReportScreen({super.key});
 
@@ -283,6 +287,7 @@ class _TablesReportScreenState extends ConsumerState<TablesReportScreen> {
                 ),
               ],
             ),
+            _caveats(),
             Expanded(
               child: _isLoading
                   ? Padding(
@@ -410,13 +415,59 @@ class _TablesReportScreenState extends ConsumerState<TablesReportScreen> {
 
   // ── العرض ────────────────────────────────────────────────────────────────
 
+  /// قيدان مشروعان — **يُعلَنان للمستخدم** لا يُدفنان في مستند تسليم.
+  ///
+  /// كلاهما قرارُ تصميمٍ مقصود، وكلاهما يجعل هذا التقريرَ يختلف عن تقرير
+  /// المبيعات في حالاتٍ بعينها. والمستخدمُ الذي يرى الفرقَ بلا تفسيرٍ يظنّ
+  /// أحدَ التقريرَين مكسوراً — وهذا أسوأُ من القيد نفسِه.
+  Widget _caveats() => Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
+        color: AppColors.info.withValues(alpha: 0.07),
+        child: const Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: EdgeInsets.only(top: 1),
+              child: Icon(PhosphorIconsBold.info,
+                  size: 14, color: AppColors.info),
+            ),
+            SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'المدى الزمنيّ يقع على وقت فتح الجلسة لا إغلاقها — '
+                    'جلسةٌ فُتحت 23:30 وأُغلقت 01:00 يقع إيرادُها في يوم '
+                    'الفتح، فقد يختلف عن تقرير المبيعات.',
+                    style: TextStyle(fontSize: 11, color: AppColors.info),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    'الطلبات التي لم تصدر لها فاتورةٌ بعد (المفتوحة) تظهر '
+                    'تحت كل نطاق فروع — فرعُ الطلب يُعرَف من فاتورته. فعددُ '
+                    'الطلبات والضيوف قد يشمل فروعاً خارج نطاقك.',
+                    style: TextStyle(fontSize: 11, color: AppColors.info),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+
   Widget _kpiRow() {
     final currency = AppConstants.currencySymbolEn;
     return Row(
       children: [
         Expanded(
           child: ReportKpiCard(
-            title: 'إيراد الطاولات',
+            // ⚠️ الوعاءُ في الاسم لا في حاشيةٍ: هذا `total` بعد الخصم وقبل
+            // الضريبة. من يقارنه بتقرير المبيعات (وهو بالضريبة) يرى فرقاً،
+            // وعنوانٌ عارٍ «الإيراد» يجعل الفرقَ بلا تفسير.
+            title: 'الإيراد (قبل الضريبة)',
             value: '${_currencyFormat.format(_totalRevenue)} $currency',
             icon: PhosphorIconsBold.chartLineUp,
             color: AppColors.primary,
@@ -497,7 +548,7 @@ class _TablesReportScreenState extends ConsumerState<TablesReportScreen> {
               DataColumn(label: Text('الطاولة')),
               DataColumn(label: Text('عدد الطلبات'), numeric: true),
               DataColumn(label: Text('الضيوف'), numeric: true),
-              DataColumn(label: Text('الإيراد'), numeric: true),
+              DataColumn(label: Text('الإيراد (قبل الضريبة)'), numeric: true),
               DataColumn(label: Text('الخصم'), numeric: true),
               DataColumn(label: Text('نصيب الضيف'), numeric: true),
               DataColumn(label: Text('متوسط الجلوس (د)'), numeric: true),
@@ -534,12 +585,12 @@ class _TablesReportScreenState extends ConsumerState<TablesReportScreen> {
   /// «—» لا صفرٌ حين لا مقامَ: صفرٌ مطبوعٌ يُقرأ رقماً مقيساً.
   String _perGuestLabel(TablesReportRow r) {
     final share = r.revenuePerGuest;
-    return share == null ? '—' : _currencyFormat.format(share);
+    return share == null ? _kNoValue : _currencyFormat.format(share);
   }
 
   String _turnLabel(TablesReportRow r) {
     final turn = r.avgTurnMinutes;
-    return turn == null ? '—' : turn.toStringAsFixed(0);
+    return turn == null ? _kNoValue : turn.toStringAsFixed(0);
   }
 
   Future<void> _exportToExcel() async {
@@ -559,13 +610,17 @@ class _TablesReportScreenState extends ConsumerState<TablesReportScreen> {
         'الطاولة',
         'عدد الطلبات',
         'الضيوف',
-        'الإيراد',
+        'الإيراد (قبل الضريبة)',
         'الخصم',
         'نصيب الضيف',
         'متوسط الجلوس (دقيقة)',
       ],
       // نفسُ `_rows` التي يعرضها الجدولُ حرفياً — الملفُّ يقول ما تقوله
       // الشاشة، وإلّا جمع المحاسبُ عموداً لا يطابق ما رآه.
+      // ⚠️ «—» لا صفرٌ حيث لا مقياسَ — نفسُ ما تعرضه الشاشةُ حرفياً.
+      // طاولةٌ كلُّ جلساتها مفتوحةٌ لا متوسّطَ جلوسٍ لها؛ وصفرٌ في العمود
+      // يُقرأ «جلسةٌ صفرُ دقيقة» فيُفسد كلَّ متوسّطٍ يُبنى فوقه في Excel.
+      // و`null` ممنوعٌ كذلك: `excel_service` يكتبه نصّاً `"null"`.
       rows: _rows
           .map<List<dynamic>>((r) => [
                 r.tableName,
@@ -573,8 +628,8 @@ class _TablesReportScreenState extends ConsumerState<TablesReportScreen> {
                 r.guestCount,
                 r.revenue,
                 r.discount,
-                r.revenuePerGuest ?? 0,
-                r.avgTurnMinutes ?? 0,
+                r.revenuePerGuest ?? _kNoValue,
+                r.avgTurnMinutes ?? _kNoValue,
               ])
           .toList(),
     );

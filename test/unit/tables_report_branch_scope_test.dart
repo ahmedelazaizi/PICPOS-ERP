@@ -168,10 +168,14 @@ void main() {
 
   test('المدموجُ يعود من الاستعلام ويسقط في التجميع — لا في الاثنين', () async {
     final target = await insertOrder(
-        tableId: tableHall, total: 100, closedAt: DateTime(2026, 3, 10, 13));
+        tableId: tableHall,
+        total: 100,
+        guestCount: 2,
+        closedAt: DateTime(2026, 3, 10, 13));
     await insertOrder(
       tableId: tableTerrace,
       total: 50,
+      guestCount: 3,
       closedAt: DateTime(2026, 3, 10, 12, 30),
       mergedToId: target,
     );
@@ -181,9 +185,15 @@ void main() {
         reason: 'الاستعلامُ لا يخفي المدموجَ — الإسقاطُ قرارُ التجميع، '
             'ولو أخفاه الاثنان لَسقطت القاعدةُ من الاختبار الخالص بلا أن '
             'يلاحظ أحد');
+    expect(orders.map((o) => o.id).toSet(), hasLength(2),
+        reason: 'معرّفُ الطلب يصل النموذجَ — بدونه لا يُعرَف أيُّ صفٍّ '
+            'يستضيف ضيوفَ المدموج');
 
     final rows = aggregateTablesReport(orders);
     expect(rows.fold<double>(0, (s, r) => s + r.revenue), 100);
+    expect(rows.single.guestCount, 5,
+        reason: 'ضيوفُ المدموج جلسوا على الطاولة الهدف فعلاً — '
+            'الطيُّ يعمل من طرفِ القاعدة إلى الصفّ');
   });
 
   test('الخصمُ يُحلّ من المحرّك الواحد — نسبةً ومبلغاً وقصّاً', () async {

@@ -825,6 +825,9 @@ extension TablesDao on AppDatabase {
       discountValue: order.discountValue,
     );
     return TableOrderInput(
+      // معرّفُ الطلب لا الطاولة: `mergedToId` يشير إلى طلبٍ، وبه وحدَه يعرف
+      // التجميعُ أيَّ صفٍّ يستضيف ضيوفَ المدموج.
+      id: order.id,
       tableId: order.tableId,
       tableName: table.name,
       total: order.total,
