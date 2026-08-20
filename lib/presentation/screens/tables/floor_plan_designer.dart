@@ -267,7 +267,12 @@ class _FloorPlanDesignerState extends ConsumerState<FloorPlanDesigner> {
                             if (_showGrid)
                               Positioned.fill(
                                 child: CustomPaint(
-                                  painter: _GridPainter(gridSize: _gridSize),
+                                  painter: _GridPainter(
+                                    gridSize: _gridSize,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                                  ),
                                 ),
                               ),
 
@@ -382,7 +387,10 @@ class _FloorPlanDesignerState extends ConsumerState<FloorPlanDesigner> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurfaceVariant
+                  .withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(8),
             ),
             child: DropdownButton<double>(
@@ -390,7 +398,10 @@ class _FloorPlanDesignerState extends ConsumerState<FloorPlanDesigner> {
               dropdownColor: Theme.of(context).colorScheme.surface,
               underline: const SizedBox(),
               isDense: true,
-              style: GoogleFonts.cairo(fontSize: 11, color: Colors.white70),
+              style: GoogleFonts.cairo(
+                fontSize: 11,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
               items: const [
                 DropdownMenuItem(value: 20, child: Text('20px')),
                 DropdownMenuItem(value: 40, child: Text('40px')),
@@ -410,6 +421,11 @@ class _FloorPlanDesignerState extends ConsumerState<FloorPlanDesigner> {
     Color? color,
     required VoidCallback onTap,
   }) {
+    // الشريطُ يعيش على `colorScheme.surface` منذ أن صار يقرأ الثيم، فاللونُ
+    // الأبيضُ المثبَّتُ كان يذوب فيه في الوضع الفاتح — وهو عينُ ما رآه
+    // المالك: أزرارٌ «باهتة». و`onSurfaceVariant` يقلب نفسَه مع الثيم
+    // (فاتحٌ فوق الداكن، داكنٌ فوق الفاتح) فيبقى شكلُ الوضع الليليّ كما كان.
+    final tint = color ?? Theme.of(context).colorScheme.onSurfaceVariant;
     return Tooltip(
       message: label,
       child: Material(
@@ -420,22 +436,22 @@ class _FloorPlanDesignerState extends ConsumerState<FloorPlanDesigner> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: (color ?? Colors.white).withValues(alpha: 0.08),
+              color: tint.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: (color ?? Colors.white).withValues(alpha: 0.12),
+                color: tint.withValues(alpha: 0.12),
               ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(icon, size: 16, color: color ?? Colors.white70),
+                Icon(icon, size: 16, color: tint),
                 const SizedBox(width: 4),
                 Text(
                   label,
                   style: GoogleFonts.cairo(
                     fontSize: 11,
-                    color: color ?? Colors.white70,
+                    color: tint,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -451,7 +467,8 @@ class _FloorPlanDesignerState extends ConsumerState<FloorPlanDesigner> {
         width: 1,
         height: 24,
         margin: const EdgeInsets.symmetric(horizontal: 2),
-        color: Colors.white.withValues(alpha: 0.08),
+        // نفسُ رمزِ الحدّ الذي يرسم إطارَ الشريط نفسِه فوق.
+        color: Theme.of(context).colorScheme.outlineVariant,
       );
 
   // ─── Draggable Table Widget ────────────────────────────────────────
@@ -567,7 +584,11 @@ class _FloorPlanDesignerState extends ConsumerState<FloorPlanDesigner> {
                   child: Icon(
                     PhosphorIconsBold.arrowsOutCardinal,
                     size: 12,
-                    color: Colors.white.withValues(alpha: 0.3),
+                    // كلُّ إخوتِه في البطاقة (الاسمُ والسعةُ وشارةُ الحالة)
+                    // يرسمون بلون الحالة، وهذا وحدَه كان أبيضَ مثبَّتاً —
+                    // وخلفيّةُ البطاقة تدرُّجٌ شفّافٌ من لون الحالة فوق
+                    // اللوحة، فصار غيرَ مرئيٍّ لمّا صارت اللوحةُ بيضاء.
+                    color: color.withValues(alpha: 0.55),
                   ),
                 ),
             ],
@@ -689,12 +710,19 @@ class _FloorPlanDesignerState extends ConsumerState<FloorPlanDesigner> {
 class _GridPainter extends CustomPainter {
   final double gridSize;
 
-  _GridPainter({required this.gridSize});
+  /// لونُ الحبر — يُمرَّر من الثيم لا يُثبَّت.
+  ///
+  /// كان أبيضَ مثبَّتاً، وهو ما لم يُلحَظ ما دامت اللوحةُ سوداء. ولمّا صارت
+  /// اللوحةُ تقرأ `colorScheme.surface` صارت بيضاءَ في الوضع الفاتح فاختفت
+  /// الشبكةُ تماماً — أي أنّ زرَّ «إظهار الشبكة» يعمل ولا يُرى له أثر.
+  final Color color;
+
+  _GridPainter({required this.gridSize, required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {
     final dotPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.06)
+      ..color = color.withValues(alpha: 0.06)
       ..strokeWidth = 1;
 
     // Draw dots at grid intersections
@@ -706,7 +734,7 @@ class _GridPainter extends CustomPainter {
 
     // Draw subtle axis lines at every 4th grid line
     final linePaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.03)
+      ..color = color.withValues(alpha: 0.03)
       ..strokeWidth = 0.5;
 
     for (double x = 0; x <= size.width; x += gridSize * 4) {
@@ -718,5 +746,8 @@ class _GridPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_GridPainter old) => old.gridSize != gridSize;
+  // `color` جزءٌ من المقارنة عمداً: بدونه يبقى الرسمُ القديمُ معلَّقاً عند
+  // تبديل الثيم فتُرسَم شبكةٌ فاتحةٌ على لوحةٍ فاتحة.
+  bool shouldRepaint(_GridPainter old) =>
+      old.gridSize != gridSize || old.color != color;
 }
