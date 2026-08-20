@@ -241,10 +241,14 @@ class _FloorPlanDesignerState extends ConsumerState<FloorPlanDesigner> {
                   borderRadius: BorderRadius.circular(12),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0F172A),
+                      // ثيمُ الشاشة لا لونٌ مثبَّت — وإلّا ظهرت اللوحةُ
+                      // سوداءَ داخل الوضع الفاتح. `colorScheme.surface` هو
+                      // نفسُ الرمز الذي يبني عليه `PicPosTheme` كارتَه
+                      // الأبيضَ في الفاتح والداكنَ في الليليّ.
+                      color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.06),
+                        color: Theme.of(context).colorScheme.outlineVariant,
                       ),
                     ),
                     child: InteractiveViewer(
@@ -312,9 +316,10 @@ class _FloorPlanDesignerState extends ConsumerState<FloorPlanDesigner> {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        // نفسُ رمز الثيم المستعمَل للوحة الرسم — راجع الشرحَ فوق `build`.
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Wrap(
         spacing: 6,
@@ -382,7 +387,7 @@ class _FloorPlanDesignerState extends ConsumerState<FloorPlanDesigner> {
             ),
             child: DropdownButton<double>(
               value: _gridSize,
-              dropdownColor: const Color(0xFF1E293B),
+              dropdownColor: Theme.of(context).colorScheme.surface,
               underline: const SizedBox(),
               isDense: true,
               style: GoogleFonts.cairo(fontSize: 11, color: Colors.white70),
