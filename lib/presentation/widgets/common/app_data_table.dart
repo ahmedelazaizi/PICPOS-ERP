@@ -2,6 +2,11 @@ import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 
+/// يُصدَّر كي تُعلن الشاشاتُ عرضَ عمودٍ بعينه دون أن تستورد الحزمةَ كلُّ
+/// واحدةٍ بنفسها. عمودُ أزرارِ الإجراءات يحتاجه تحديداً: الأزرارُ عرضٌ
+/// ثابتٌ لا يتقلّص، فالحصّةُ المتساوية تخنقه.
+export 'package:data_table_2/data_table_2.dart' show ColumnSize, DataColumn2;
+
 /// جدول بيانات موحّد لكل شاشات النظام.
 ///
 /// يلفّ `DataTable` القياسي بحدود ناعمة، صف رأس ملوّن، تظليل صفوف بالتناوب
@@ -141,20 +146,45 @@ class AppDataTable extends StatelessWidget {
     });
   }
 
+  /// يُلبس الرأسَ مظهرَ النظام — **ويحفظ مقاسَ العمود إن كان `DataColumn2`.**
+  ///
+  /// كان يُعيد بناءَ كلِّ عمودٍ `DataColumn` عاديّاً، فيُسقط `size` و
+  /// `fixedWidth` صامتَين. وأثرُ ذلك ليس تجميليّاً: تتساوى الأعمدةُ مهما
+  /// اختلف محتواها، فتضيق خليّةُ أزرارِ الإجراءات عن أزرارها، ويفيض أوّلُ
+  /// زرٍّ خارجَ حدود خليّته — فيُرسَم ويُرى ولا يستقبل مؤشِّراً، إذ لا
+  /// يختبر Flutter الإصابةَ خارجَ حدود الأب. فتعبر النقرةُ إلى الصفّ تحته
+  /// فيُحدَّد، ويبدو الزرُّ «لا يعمل».
+  ///
+  /// بلاغٌ ميدانيّ (2026-08-20): «زرُّ عرض التفاصيل لا ردَّ فعلَ له عند
+  /// الاقتراب، والنقرُ عليه يُحدِّد الصفّ» — بينما جيرانُه يعملون.
+  /// مُعادٌ إنتاجُه في
+  /// `test/widget/app_data_table_action_button_tap_test.dart`.
   DataColumn _styleColumn(DataColumn col) {
-    final original = col.label;
+    final styledLabel = DefaultTextStyle.merge(
+      style: const TextStyle(
+        fontWeight: FontWeight.bold,
+        color: AppColors.primaryDark,
+        fontSize: 13,
+      ),
+      child: col.label,
+    );
+
+    if (col is DataColumn2) {
+      return DataColumn2(
+        label: styledLabel,
+        tooltip: col.tooltip,
+        numeric: col.numeric,
+        onSort: col.onSort,
+        size: col.size,
+        fixedWidth: col.fixedWidth,
+      );
+    }
+
     return DataColumn(
       tooltip: col.tooltip,
       numeric: col.numeric,
       onSort: col.onSort,
-      label: DefaultTextStyle.merge(
-        style: const TextStyle(
-          fontWeight: FontWeight.bold,
-          color: AppColors.primaryDark,
-          fontSize: 13,
-        ),
-        child: original,
-      ),
+      label: styledLabel,
     );
   }
 }

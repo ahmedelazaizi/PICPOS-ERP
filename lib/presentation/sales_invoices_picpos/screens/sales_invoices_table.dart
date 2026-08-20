@@ -116,7 +116,11 @@ class SalesInvoicesTable extends ConsumerWidget {
           DataColumn(label: Text('الحالة')),
           DataColumn(label: Text('الفرع / المخزن')),
           DataColumn(label: Text('مركز التكلفة')),
-          DataColumn(label: Text('الإجراءات')),
+          // عرضٌ ثابت: أربعةُ `IconButton` عرضُ كلٍّ منها 48 = 192، والحصّةُ
+          // المتساوية بين عشرة أعمدةٍ تقلّ عن ذلك فيفيض أوّلُ زرٍّ خارجَ
+          // الخليّة ويموت (لا يُختبَر بالإصابة خارجَ حدود الأب). هذا هو
+          // بلاغُ «زرُّ العين لا يستجيب والنقرُ عليه يُحدِّد الصفّ».
+          DataColumn2(label: Text('الإجراءات'), fixedWidth: 210),
         ],
         rows: filteredInvoices.map<DataRow>((invoice) {
               // Returns reduce the invoice's effective receivable, so subtract

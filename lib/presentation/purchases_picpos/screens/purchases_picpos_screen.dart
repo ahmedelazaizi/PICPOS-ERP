@@ -531,7 +531,10 @@ class _PurchasesPicposScreenState extends ConsumerState<PurchasesPicposScreen>
               DataColumn(label: Text('الحالة')),
               DataColumn(label: Text('الفرع / المخزن')),
               DataColumn(label: Text('مركز التكلفة')),
-              DataColumn(label: Text('الإجراءات')),
+              // نفسُ عطبِ شاشة المبيعات: أربعةُ أزرارٍ (192) في حصّةٍ
+              // متساويةٍ بين عشرة أعمدةٍ تقلّ عنها، فيفيض أوّلُ زرٍّ خارجَ
+              // خليّته ويموت — يُرى ولا يُلمَس، وتعبر النقرةُ إلى الصفّ.
+              DataColumn2(label: Text('الإجراءات'), fixedWidth: 210),
             ],
             rows: state.filteredInvoices.map((invoice) {
                   // Subtract any purchase return value from
