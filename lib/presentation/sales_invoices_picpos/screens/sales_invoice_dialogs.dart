@@ -11,7 +11,35 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
   // DETAILS DIALOG
   // ══════════════════════════════════════════════════════
 
+  /// غلافٌ يُظهر الإخفاقَ بدل أن يبتلعه — patch لنظيره في شاشة UralCash.
+  ///
+  /// بلاغٌ ميدانيّ (2026-08-20) على **هذه** الشاشة: «زرُّ عرض التفاصيل لا
+  /// يفتح شيئاً». والجسمُ كان `void … async` — صيغةٌ **لا يُمسَك استثناؤها
+  /// في أيّ موضع**: يُرمى في حلقة الأحداث فلا حوارَ يُفتح ولا رسالةَ تظهر،
+  /// فيبدو الزرُّ معطوباً وهو يعمل. وقبل `showDialog` انتظاران يجلبان من
+  /// القاعدة، وأيُّ إخفاقٍ فيهما كان يختفي بلا أثر.
+  ///
+  /// ومقيسٌ لا مفترَض: اختبارُ
+  /// `test/widget/app_data_table_action_button_tap_test.dart` يُثبت أن
+  /// النقرةَ تصل إلى الزرّ ولا تتسرّب إلى تحديد الصفّ — فالعطبُ هنا لا في
+  /// الإيماءات.
   void _showInvoiceDetails(InvoiceEntity invoice) async {
+    try {
+      await _showInvoiceDetailsInner(invoice);
+    } catch (e, st) {
+      debugPrint('[SalesDetails] تعذّر فتح تفاصيل ${invoice.invoiceNumber}: $e\n$st');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: AppColors.error,
+          duration: const Duration(seconds: 8),
+          content: Text('تعذّر فتح تفاصيل الفاتورة: $e'),
+        ),
+      );
+    }
+  }
+
+  Future<void> _showInvoiceDetailsInner(InvoiceEntity invoice) async {
     final controller = ref.read(salesInvoicesControllerProvider.notifier);
     final items = await controller.getInvoiceItems(invoice.id!);
     final customer = invoice.partyId != null

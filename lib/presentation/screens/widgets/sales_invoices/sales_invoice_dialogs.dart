@@ -6,7 +6,33 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesScreenState {
   // DETAILS DIALOG
   // ══════════════════════════════════════════════════════
 
+  /// غلافٌ يُظهر الإخفاقَ بدل أن يبتلعه.
+  ///
+  /// بلاغٌ ميدانيّ (2026-08-20): «زرُّ عرض التفاصيل لا يفتح شيئاً». والجسمُ
+  /// كان `void … async` — وهي صيغةٌ **لا يُمسَك استثناؤها في أيّ موضع**:
+  /// يُرمى في حلقة الأحداث فلا حوارَ يُفتح ولا رسالةَ تظهر، فيبدو الزرُّ
+  /// معطوباً وهو يعمل. وقبل `showDialog` انتظاران يجلبان من القاعدة، وأيُّ
+  /// إخفاقٍ فيهما كان يختفي بلا أثر.
+  ///
+  /// ولا يُغيَّر الجسمُ نفسُه هنا: `Future<void>` وحدَها تجعله قابلاً
+  /// للانتظار، فيصير استثناؤه ممسوكاً.
   void _showInvoiceDetails(InvoiceEntity invoice) async {
+    try {
+      await _showInvoiceDetailsInner(invoice);
+    } catch (e, st) {
+      debugPrint('[SalesDetails] تعذّر فتح تفاصيل ${invoice.invoiceNumber}: $e\n$st');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: AppColors.error,
+          duration: const Duration(seconds: 8),
+          content: Text('تعذّر فتح تفاصيل الفاتورة: $e'),
+        ),
+      );
+    }
+  }
+
+  Future<void> _showInvoiceDetailsInner(InvoiceEntity invoice) async {
     final controller = ref.read(salesInvoicesControllerProvider.notifier);
     final items = await controller.getInvoiceItems(invoice.id!);
     final customer = invoice.partyId != null
