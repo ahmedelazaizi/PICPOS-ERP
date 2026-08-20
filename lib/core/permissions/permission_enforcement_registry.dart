@@ -245,9 +245,20 @@ class PermissionEnforcementRegistry {
     //    الزوج فما بقاش فجوةَ تكافؤ.
     //
     // ✅ 'tables_add_items' و'tables_checkout' شُطبا (2026-08-20): بُنيت
-    //    `TablesPicposScreen` فبطَل نصُّ «لا ميزةَ طاولاتٍ في PicPos».
-    //    الصلاحيّتان مُنفَذتان الآن في `tables_action_rail.dart` عبر
-    //    `permissionForAction`.
+    //    `TablesPicposScreen` فبطَل نصُّ «لا ميزةَ طاولاتٍ في PicPos» —
+    //    وصارت الشاشتان تصلان إلى **موضع الإنفاذ نفسِه**.
+    //
+    //    والموضعُ هو `pos/widgets/table_pos/table_pos_summary.dart:66,76`:
+    //    زرُّ «إرسال للمطبخ» ملفوفٌ بـ`PermissionGuard(tablesAddItems)` وزرُّ
+    //    «تحصيل الحساب» بـ`PermissionGuard(tablesCheckout)`. يُبلَغ عبر
+    //    `TablePosScreen` (‏`pos/screens/pos_table_service_screen.dart:122`)،
+    //    وهي الشاشةُ التي يفتحها `_handleTableAction` لفعلَي `addItems`
+    //    و`pay` — والمسارُ واحدٌ للعلامتين لأن `TableActionsHost` يستضيف
+    //    المعالجَ نفسَه.
+    //
+    //    ⚠️ ولا يُنسَب الإنفاذُ إلى `tables_action_rail.dart`: `railActions`
+    //    يستثني `addItems` و`pay` عمداً (موثَّقٌ في رأس الملفّ) لأن فعلَهما
+    //    الطبيعيَّ داخل نافذة الطلب، فلا كودَ لهما هناك أصلاً.
 
     // ── الخزينة ──
     // ✅ 'treasury_payments_create' شُطب (دفعة ٢، 2026-08-12): زرُّ «سند صرف»

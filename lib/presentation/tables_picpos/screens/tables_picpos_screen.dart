@@ -140,7 +140,10 @@ class _TablesPicposBodyState extends ConsumerState<_TablesPicposBody> {
         ),
         const SizedBox(width: Spacing.sm),
         OutlinedButton.icon(
-          onPressed: () => _toggleView(sections),
+          // بلا مسٍّ لـ`_sectionId`: احتياطُ الخريطة محسوبٌ في `scopeId` فوق،
+          // فكتابةُ أوّلِ قسمٍ هنا كانت تُخرج مَن اختار «كل المناطق» منها
+          // صامتاً ولا تعيده عند الرجوع إلى الشبكة.
+          onPressed: ref.read(tablesUIProvider.notifier).toggleView,
           icon: Icon(
             uiState.isVisualView
                 ? PhosphorIconsBold.gridFour
@@ -264,14 +267,6 @@ class _TablesPicposBodyState extends ConsumerState<_TablesPicposBody> {
   void _openTable(RestaurantTable table) {
     ref.read(tablesUIProvider.notifier).selectTable(table.id);
     widget.actions.openOrder(table);
-  }
-
-  void _toggleView(List<TableSection> sections) {
-    final goingVisual = !ref.read(tablesUIProvider).isVisualView;
-    if (goingVisual && _sectionId == null && sections.isNotEmpty) {
-      setState(() => _sectionId = sections.first.id);
-    }
-    ref.read(tablesUIProvider.notifier).toggleView();
   }
 
   Widget _buildScopeMenu(

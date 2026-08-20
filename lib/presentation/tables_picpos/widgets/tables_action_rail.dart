@@ -32,12 +32,20 @@ const List<TableAction> railActions = [
 /// المستودع المعروفة.
 ///
 /// كلُّ زرٍّ مغلَّفٌ بـ[PermissionGuard]`(showDisabled: true)` — التعطيلُ
-/// هنا ثنائيُّ المصدر: صلاحيّةٌ غائبةٌ **أو** فعلٌ لا يصلح لحالة الطاولة
-/// الحاليّة (أو لا طاولةَ مختارة أصلاً). `showDisabled: true` معناه أن
-/// الحارس يُعطِّل الابنَ بدل أن يُخفيه — تحقّقتُ من ذلك بقراءة
-/// `permission_guard.dart` (`_buildDisabledChild`، الأسطر ٢٦٧-٣٠٤): لكلّ
-/// نوع زرٍّ معروفٍ (ومنها `OutlinedButton` المستعمَل هنا) يُعاد بناؤه بنفس
-/// الشكل والنصّ و`onPressed: null` — لا `SizedBox.shrink()`.
+/// هنا ثنائيُّ المصدر بآليّتين مختلفتين، والفرقُ مقيسٌ لا مفترَض:
+///
+/// - **فعلٌ لا يصلح للحالة** (أو لا طاولةَ مختارة): [_RailButton] نفسُه
+///   يمرّر `onPressed: null`.
+/// - **صلاحيّةٌ غائبة**: الحارسُ يبني بديلاً معطَّلاً. و`_buildDisabledChild`
+///   (‏`permission_guard.dart:267-303`) يُصفّر `onPressed` **لأربعة أنواعِ
+///   أزرارٍ خامّةٍ فقط** (`ElevatedButton`/`TextButton`/`OutlinedButton`/
+///   `IconButton`)، وابنُنا هنا `_RailButton` — ودجتٌ مركَّبةٌ لا واحدٌ منها —
+///   فيقع على الارتداد `IgnorePointer(Opacity(0.5, …))`.
+///
+/// التعطيلُ حقيقيٌّ في الحالتين (‏`IgnorePointer` يبتلع الضغطة)، والزرُّ
+/// يبقى مرئيّاً — لا `SizedBox.shrink()`. لكنّ توكيدَ `onPressed == null` في
+/// اختبارٍ **لا ينطبق** على مسار الصلاحيّة، وهذا التصحيحُ مكتوبٌ كي لا يُبنى
+/// عليه اختبارٌ يمرّ كذباً.
 class TablesActionRail extends StatelessWidget {
   const TablesActionRail({
     super.key,

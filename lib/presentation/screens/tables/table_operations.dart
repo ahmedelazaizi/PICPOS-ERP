@@ -15,6 +15,43 @@ bool hasTableActionPermission(List<String> permissions, String permission) {
   return isAdmin || permissions.contains(permission);
 }
 
+/// سببُ منعِ نقرةِ الطاولة من فتح طلبٍ جديد.
+@visibleForTesting
+enum TableTapBlock {
+  /// الحالةُ لا تقبل الفتحَ أصلاً — ليست رفضَ صلاحيّةٍ فلا تُنسَب إليها.
+  status,
+
+  /// الحالةُ تقبل، وحاملُ الصلاحيات لا يملك كودَ الفعل.
+  permission,
+}
+
+/// هل تفتح نقرةُ الطاولة طلباً جديداً؟ — `null` تعني نعم، وإلّا سببُ المنع.
+///
+/// ── فئةُ العطب التي أغلقتها ──────────────────────────────────────────────
+/// نقرةُ الطاولة في `TablesPicposScreen` كانت تصل إلى `_confirmOpenTable`
+/// **بلا فحصٍ إطلاقاً**، بينما زرُّ «فتح طاولة» المجاور في شريط الأفعال
+/// محروسٌ بـ`tables_manage` عبر [permissionForAction]. فمن لا يملك الصلاحيّةَ
+/// يرى الزرَّ معطَّلاً ثم يفتح الطلبَ بنقرةٍ على الطاولة نفسِها — وذلك يُبطل
+/// حراسةً بُنيت أصلاً لتعويض موضعَي إنفاذٍ زالا مع اللوحة اليمنى.
+/// وكانت تفتح كذلك لطاولةٍ ⚪ خارج الخدمة، والشاشةُ القديمةُ لا تفتح إلا 🟢.
+///
+/// ── ولماذا دالّةٌ خالصةٌ لا شرطان في الودجت ─────────────────────────────
+/// المحرّكُ واحدٌ: [actionsForStatus] تقرّر هل يصلح الفعلُ للحالة —
+/// **هي نفسُها** التي تقود الشريطَ والقائمةَ المنبثقة — و[permissionForAction]
+/// تعطي كودَه، و[hasTableActionPermission] تفحصه. فلا شرطَ حالةٍ موازٍ يُكتب
+/// هنا فيُنسى هناك، وهذا الشرطُ يُختبَر بلا فتح شاشة.
+@visibleForTesting
+TableTapBlock? blockOnTapOpen(String status, List<String> permissions) {
+  if (!actionsForStatus(status).contains(TableAction.open)) {
+    return TableTapBlock.status;
+  }
+  final code = permissionForAction(TableAction.open);
+  if (code != null && !hasTableActionPermission(permissions, code)) {
+    return TableTapBlock.permission;
+  }
+  return null;
+}
+
 /// القيدُ موسَّعٌ للسبب المشروح فوق `_TableOrderDialogsMixin`.
 mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
     on ConsumerState<T> {
@@ -1045,11 +1082,37 @@ class _TableActionsHostState extends ConsumerState<TableActionsHost>
     final repo = ref.read(restaurantRepositoryProvider);
     final order = await repo.getActiveOrderForTable(table.id);
     if (!mounted) return;
-    if (order == null) {
-      _confirmOpenTable(repo, table);
-    } else {
+    if (order != null) {
+      // عرضُ طلبٍ قائمٍ قراءةٌ — يحرسها دخولُ الشاشة (`tables_view`).
       _showTableOrderDialog(context, repo, table);
+      return;
     }
+
+    // لا طلبَ نشطٌ ⇒ النقرةُ تعني «افتح طاولة»، فتمرّ بما يمرّ به زرُّ الشريط.
+    final permissions =
+        ref.read(currentUserPermissionsProvider).asData?.value ??
+            const <String>[];
+    switch (blockOnTapOpen(table.status, permissions)) {
+      case TableTapBlock.status:
+        return;
+      case TableTapBlock.permission:
+        // نفسُ آليّة `_ensureTablePermission` ورسالتُها حرفاً بحرف —
+        // تُنادى لأثرها (توستُ الرفض)؛ والقرارُ سبقها في الدالّة الخالصة
+        // بنفس الفحص، فلا محرّكَ صلاحيّةٍ ثانياً.
+        final code = permissionForAction(TableAction.open);
+        if (code != null) {
+          await _ensureTablePermission(
+            context,
+            code,
+            tableActionLabels[TableAction.open]!,
+          );
+        }
+        return;
+      case null:
+        break;
+    }
+
+    _confirmOpenTable(repo, table);
   }
 
   @override
