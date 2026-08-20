@@ -541,8 +541,14 @@ class _TablesReportScreenState extends ConsumerState<TablesReportScreen> {
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: DataTable(
-            headingRowColor:
-                WidgetStateProperty.all(Theme.of(context).cardColor),
+            // لا تجاوزَ لـ`headingRowColor` هنا عمداً.
+            //
+            // `dataTableTheme` يعرّف عقداً من شقّين مقترنين: خلفيّةُ الرأس
+            // ولونُ نصِّه. PicPos أبيضُ على `primaryDark`، و UralCash داكنٌ
+            // على `surface`. وتجاوزُ الخلفيّةِ وحدَها — كما كان هنا إلى
+            // `cardColor` — يكسر الاقتران: يبقى النصُّ أبيضَ فيختفي رأسُ
+            // الجدول تماماً في الوضع الفاتح، ويُقرأ في الداكن وحدَه.
+            // بلاغٌ ميدانيّ 2026-08-21.
             columnSpacing: 24,
             columns: const [
               DataColumn(label: Text('الطاولة')),
