@@ -145,6 +145,15 @@ mixin _TableSectionsMixin<T extends ConsumerStatefulWidget>
             ),
           ),
           actions: [
+            // بلا `PermissionGuard`: بابُ هذه النافذة نفسِه (`manageSections`)
+            // محروسٌ بـ`tables_manage` في نداءَيه بشاشتَي PicPos والقديمة —
+            // فمن وصل هنا يملكها أصلاً، تماماً كزرَّي التعديل والحذف أسفلَ
+            // القائمة اللذين لا يحملان حراسةً إضافيّةً للسبب نفسه.
+            TextButton.icon(
+              onPressed: () => _showAddSectionDialog(ctx, restaurantRepo),
+              icon: const Icon(PhosphorIconsBold.plus, size: 18),
+              label: const Text('إضافة قسم'),
+            ),
             TextButton(
               onPressed: () => Navigator.pop(ctx),
               child: const Text('إغلاق'),
