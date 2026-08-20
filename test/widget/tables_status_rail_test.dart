@@ -34,4 +34,43 @@ void main() {
     await tester.tap(find.text('متاحة'));
     expect(picked, TableStatus.available);
   });
+
+  // العمودُ كان يستقبل `selected` ولا يستعمله في الرسم إطلاقاً: يُرشَّح
+  // المحتوى ولا يرى المستخدمُ أيَّ حالةٍ فعّالة.
+  testWidgets('الحالةُ المختارة تُرسَم مختارةً — لا `selected` مهمَلة',
+      (tester) async {
+    Future<BoxDecoration> decorationOf(String status) async {
+      final container = tester
+          .widgetList<Container>(find.descendant(
+            of: find.byKey(TablesStatusRail.tileKey(status)),
+            matching: find.byType(Container),
+          ))
+          .first;
+      return container.decoration! as BoxDecoration;
+    }
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: TablesStatusRail(
+            counts: countByStatus([TableStatus.available]),
+            selected: TableStatus.available,
+            onSelect: (_) {},
+          ),
+        ),
+      ),
+    );
+
+    final chosen = await decorationOf(TableStatus.available);
+    final other = await decorationOf(TableStatus.occupied);
+
+    expect(chosen.color, isNotNull,
+        reason: 'المختارةُ بلا تظليل — لا فرقَ بينها وبين غيرها');
+    expect(chosen.border!.top.color, isNot(Colors.transparent),
+        reason: 'المختارةُ بلا إطارٍ ملوّن');
+    expect(other.color, isNull);
+    expect(other.border!.top.color, Colors.transparent,
+        reason: 'غيرُ المختارة تحمل إطاراً شفّافاً لا معدوماً — وإلّا قفز '
+            'مقاسُ البطاقة عند الاختيار');
+  });
 }

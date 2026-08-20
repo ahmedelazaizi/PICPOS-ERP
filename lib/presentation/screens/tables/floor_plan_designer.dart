@@ -17,11 +17,23 @@ class FloorPlanDesigner extends ConsumerStatefulWidget {
   final bool isEditMode;
   final Function(RestaurantTable) onTap;
 
+  /// حصرُ المرسوم بحالةٍ واحدة — `null` تعني «الكلّ».
+  ///
+  /// **اختياريٌّ لا يغيّر السلوكَ الافتراضيّ:** `TablesScreen` القديمة لا
+  /// تمرّره فتبقى كما هي. أُضيف لأن عمودَ الحالات في شاشة PicPos كان يُرشِّح
+  /// فرعَ الشبكة وحدَه، فالمستخدمُ يهبط على الخريطة (`isVisualView` افتراضُها
+  /// `true`) وينقر «متاحة» فلا يتغيّر شيء.
+  ///
+  /// ويُلغى في وضع التصميم: ترتيبُ خريطةٍ ناقصةٍ يخدع العين، وأدواتُ المحاذاة
+  /// والتوزيع تعمل على القائمة كاملةً على أيّ حال.
+  final String? statusFilter;
+
   const FloorPlanDesigner({
     super.key,
     required this.sectionId,
     required this.onTap,
     this.isEditMode = false,
+    this.statusFilter,
   });
 
   @override
@@ -205,6 +217,16 @@ class _FloorPlanDesignerState extends ConsumerState<FloorPlanDesigner> {
       stream: _tablesStream,
       builder: (context, snapshot) {
         final tables = snapshot.data ?? [];
+        // المرسومُ وحدَه يُرشَّح. أدواتُ الشريط (`_autoLayout` والمحاذاةُ
+        // والتوزيع) ورفاقُ الالتقاط في `_buildDraggableTable` تبقى على
+        // [tables] كاملةً — وإلّا رتّب زرُّ «تنظيم تلقائي» جزءاً من القسم
+        // فوق جزءٍ مخفيٍّ منه.
+        final visible = (widget.statusFilter == null || widget.isEditMode)
+            ? tables
+            : [
+                for (final t in tables)
+                  if (t.status == widget.statusFilter) t,
+              ];
 
         return Directionality(
           textDirection: TextDirection.rtl,
@@ -268,7 +290,7 @@ class _FloorPlanDesignerState extends ConsumerState<FloorPlanDesigner> {
                               ),
 
                             // Tables
-                            ...tables.map((table) => _buildDraggableTable(
+                            ...visible.map((table) => _buildDraggableTable(
                                   repo, table, tables)),
                           ],
                         ),

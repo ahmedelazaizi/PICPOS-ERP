@@ -265,6 +265,11 @@ class _TablesPicposBodyState extends ConsumerState<_TablesPicposBody> {
           key: ValueKey(scopeId),
           sectionId: scopeId,
           isEditMode: uiState.isDesignerMode,
+          // مرشِّحُ عمود الحالات يسري على الخريطة كما يسري على الشبكة.
+          // كان يسري على فرع الشبكة وحدَه، و`isVisualView` افتراضُها `true`
+          // — فالمستخدمُ يهبط على الخريطة وينقر «متاحة» فلا يتغيّر شيء.
+          statusFilter:
+              uiState.statusFilter == 'all' ? null : uiState.statusFilter,
           onTap: _openTable,
         ),
       );
