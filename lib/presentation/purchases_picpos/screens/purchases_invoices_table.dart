@@ -1,0 +1,738 @@
+// ignore_for_file: library_private_types_in_public_api
+// نسخةُ PicPos من قائمة فواتير المشتريات — **مرآةُ شكلٍ** لتوأمِ المبيعات
+// في `sales_invoices_picpos/screens/sales_invoices_table.dart`: صفوفُ
+// `AppDataTable` صارت بطاقاتٍ مضغوطةً في `ListView.builder`.
+//
+// ═══ ولماذا `ListView.builder` بالذات ═══
+//
+// لأن `DataTable2` **مُفهرَسٌ أصلاً** — يلفّ صفوفَه في `ListView.builder`،
+// وذلك إصلاحٌ موثَّقٌ لتجمّدٍ فعليٍّ وقع مع `DataTable` القياسيّ. فالانتقالُ
+// إلى بطاقاتٍ في `Column` كان سيُعيد العطبَ نفسَه بعد أن حُلّ. والبطاقةُ
+// المضغوطةُ ~٥٦ بكسل مقابل ~٤٨ للصفّ، فالكثافةُ تكاد تُحفَظ.
+//
+// ⚠️ **وثلاثةُ فروقٍ مقيسةٍ لا منسوخة:**
+//
+// ‏١) **لا حجبَ على المبالغ** — لا وجودَ لـ`purchases_amounts_view`. اقرأ
+//    التفصيلَ في رأس `purchases_summary_cards.dart`.
+//
+// ‏٢) **ثلاثةُ إجراءاتٍ لا أربعة.** فورك UralCash للمشتريات لا يحمل زرَّ حذفٍ
+//    في الصفّ إطلاقاً (عرضٌ · تعديلٌ · طباعة فقط)، والحذفُ المجمَّع وحدَه في
+//    شريط التحديد. وإضافةُ زرِّ حذفٍ «مطابقةً للمبيعات» كانت ستخلق إجراءً
+//    مدمِّراً لم يكن موجوداً — لا مرآةَ شكلٍ بل توسيعُ سطحِ خطر.
+//
+// ‏٣) **بوّابةُ التعديل صلاحيةٌ لا قفل.** المبيعاتُ تُظهر زرَّ التعديل حين
+//    `!isLocked`؛ والمشترياتُ تُظهره دائماً وتُعطّله بـ`purchases_edit`
+//    (قرارُ مالكٍ 2026-07-22 — التعديلُ مسموحٌ ولو رُحِّلت، بتأكيدٍ صريح).
+part of 'purchases_picpos_screen.dart';
+
+/// أوزانُ الأعمدة — مصدرٌ واحدٌ يشترك فيه سطرُ العناوين وكلُّ بطاقة.
+///
+/// نسختان منفصلتان كانتا ستنحرفان بأوّل تعديل، فتُزاح العناوينُ عن أعمدتها
+/// بلا ما يكسر بناءً — وهو انحرافٌ لا يظهر إلا بالعين.
+const _kPurColNum = 150;
+const _kPurColParty = 130;
+const _kPurColDate = 80;
+const _kPurColPlace = 135;
+const _kPurColTotal = 100;
+const _kPurColPay = 155;
+const double _kPurColStatusW = 104;
+
+/// ثلاثةُ أزرارٍ (‏31) وفاصلان (‏5) = ‏103؛ و‏118 تترك هامشاً لا ينضغط.
+const double _kPurColActionsW = 118;
+const double _kPurColCheckW = 38;
+
+/// زرُّ إجراءٍ صغيرٌ مربَّعٌ — إطارٌ رفيعٌ وأيقونةٌ ملوّنةٌ بمعناها.
+class _PurRowAction extends StatelessWidget {
+  const _PurRowAction({
+    required this.icon,
+    required this.color,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String tooltip;
+
+  /// `null` ⇒ معطَّل. يبقى الزرُّ مرئيّاً كي يعرف المستخدمُ أن الإجراءَ موجودٌ
+  /// لكنه لا يملكه — لا أن يختفي فيبدو غيرَ مدعوم.
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onTap != null;
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(9),
+          child: Container(
+            width: 31,
+            height: 31,
+            decoration: BoxDecoration(
+              border: Border.all(color: Theme.of(context).dividerColor),
+              borderRadius: BorderRadius.circular(9),
+            ),
+            child: Icon(
+              icon,
+              size: 14,
+              color: enabled ? color : color.withValues(alpha: .32),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class PurchasesInvoicesTable extends ConsumerWidget {
+  final void Function(InvoiceEntity) onView;
+  final void Function(InvoiceEntity) onEdit;
+  final void Function(InvoiceEntity) onPrint;
+
+  /// `purchases_edit` — تُقاس مرّةً في الشاشة وتُمرَّر، لا تُقرأ لكلّ صفّ.
+  final bool canEdit;
+
+  const PurchasesInvoicesTable({
+    super.key,
+    required this.onView,
+    required this.onEdit,
+    required this.onPrint,
+    required this.canEdit,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final filteredInvoices = ref.watch(
+        purchaseInvoicesControllerProvider.select((s) => s.filteredInvoices));
+    final supplierNames = ref.watch(
+        purchaseInvoicesControllerProvider.select((s) => s.supplierNames));
+    final selectedInvoices = ref.watch(
+        purchaseInvoicesControllerProvider.select((s) => s.selectedInvoices));
+    final returnedAmounts = ref.watch(
+        purchaseInvoicesControllerProvider.select((s) => s.returnedAmounts));
+    final warehouseNames = ref.watch(
+        purchaseInvoicesControllerProvider.select((s) => s.warehouseNames));
+    final warehouseBranchId = ref.watch(
+        purchaseInvoicesControllerProvider.select((s) => s.warehouseBranchId));
+    final branchNames = ref.watch(
+        purchaseInvoicesControllerProvider.select((s) => s.branchNames));
+    final costCenterNames = ref.watch(
+        purchaseInvoicesControllerProvider.select((s) => s.costCenterNames));
+
+    final notifier = ref.read(purchaseInvoicesControllerProvider.notifier);
+
+    if (filteredInvoices.isEmpty) {
+      // تُميَّز «لا فواتيرَ إطلاقاً» من «المرشِّحاتُ ضيّقت النتيجةَ إلى الصفر»
+      // — والثانيةُ تعرض إعادةَ تعيينٍ كي لا يفكّ المستخدمُ كلَّ حبّةٍ وحدَها.
+      final hasFilters = notifier.hasActiveFilters;
+      return Expanded(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                hasFilters
+                    ? PhosphorIconsBold.funnelSimple
+                    : PhosphorIconsBold.shoppingCart,
+                size: 64,
+                color: AppColors.textMuted.withValues(alpha: 0.3),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                hasFilters
+                    ? 'لا نتائج تطابق الفلاتر الحالية'
+                    : 'لا توجد فواتير مشتريات',
+                style: const TextStyle(color: AppColors.textMuted),
+              ),
+              if (hasFilters) ...[
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  icon: const Icon(PhosphorIconsBold.arrowsCounterClockwise,
+                      size: 16),
+                  label: const Text('إعادة تعيين الفلاتر'),
+                  onPressed: notifier.clearAllFilters,
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    }
+
+    final allSelected = selectedInvoices.length == filteredInvoices.length;
+
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Column(
+          children: [
+            _PurHeaderRow(
+              allSelected: allSelected,
+              onToggleAll: notifier.toggleAllSelection,
+            ),
+            const SizedBox(height: 6),
+            Expanded(
+              // مُفهرَسٌ — لا تُبنى إلا البطاقاتُ المرئيّة. اقرأ رأسَ الملفّ
+              // لسبب هذا الاختيار بالذات.
+              child: ListView.separated(
+                itemCount: filteredInvoices.length,
+                separatorBuilder: (_, _) => const SizedBox(height: 6),
+                itemBuilder: (context, i) {
+                  final invoice = filteredInvoices[i];
+                  return _PurInvoiceCard(
+                    invoice: invoice,
+                    selected: selectedInvoices.contains(invoice.id),
+                    onToggleSelect: () {
+                      final id = invoice.id;
+                      if (id != null) notifier.toggleSelection(id);
+                    },
+                    returnedAmount: returnedAmounts[invoice.id] ?? 0.0,
+                    supplierNames: supplierNames,
+                    warehouseNames: warehouseNames,
+                    warehouseBranchId: warehouseBranchId,
+                    branchNames: branchNames,
+                    costCenterNames: costCenterNames,
+                    canEdit: canEdit,
+                    onView: onView,
+                    onEdit: onEdit,
+                    onPrint: onPrint,
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// سطرُ عناوين الأعمدة — خارجَ التمرير كي يبقى ثابتاً كرأس الجدول القديم.
+class _PurHeaderRow extends StatelessWidget {
+  const _PurHeaderRow({required this.allSelected, required this.onToggleAll});
+
+  final bool allSelected;
+  final VoidCallback onToggleAll;
+
+  @override
+  Widget build(BuildContext context) {
+    final muted = _purMuted(context);
+    Widget label(String t, int flex, {TextAlign? align}) => Expanded(
+          flex: flex,
+          child: Text(
+            t,
+            textAlign: align,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              color: muted,
+            ),
+          ),
+        );
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      child: Row(
+        children: [
+          SizedBox(
+            width: _kPurColCheckW,
+            child: Checkbox(
+              value: allSelected,
+              onChanged: (_) => onToggleAll(),
+              visualDensity: VisualDensity.compact,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          ),
+          label('رقم الفاتورة', _kPurColNum),
+          label('المورد', _kPurColParty),
+          label('التاريخ', _kPurColDate),
+          label('الفرع · المخزن · مركز التكلفة', _kPurColPlace),
+          label('الإجمالي', _kPurColTotal, align: TextAlign.end),
+          label('السداد', _kPurColPay),
+          SizedBox(
+            width: _kPurColStatusW,
+            child: Text(
+              'الحالة',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                color: muted,
+              ),
+            ),
+          ),
+          SizedBox(
+            width: _kPurColActionsW,
+            child: Text(
+              'الإجراءات',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                color: muted,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// بطاقةُ فاتورةٍ واحدة — مضغوطةٌ بارتفاعٍ ~٥٦ كي تبقى الكثافةُ قريبةً من
+/// الجدول الذي حلّت محلَّه.
+class _PurInvoiceCard extends StatelessWidget {
+  const _PurInvoiceCard({
+    required this.invoice,
+    required this.selected,
+    required this.onToggleSelect,
+    required this.returnedAmount,
+    required this.supplierNames,
+    required this.warehouseNames,
+    required this.warehouseBranchId,
+    required this.branchNames,
+    required this.costCenterNames,
+    required this.canEdit,
+    required this.onView,
+    required this.onEdit,
+    required this.onPrint,
+  });
+
+  final InvoiceEntity invoice;
+  final bool selected;
+  final VoidCallback onToggleSelect;
+  final double returnedAmount;
+  final Map<int, String> supplierNames;
+  final Map<int, String> warehouseNames;
+  final Map<int, int?> warehouseBranchId;
+  final Map<int, String> branchNames;
+  final Map<int, String> costCenterNames;
+  final bool canEdit;
+  final void Function(InvoiceEntity) onView;
+  final void Function(InvoiceEntity) onEdit;
+  final void Function(InvoiceEntity) onPrint;
+
+  /// نفسُ احتياطِ فورك UralCash حرفاً بحرف: «غير محدد» لا «مورد #N» — فاتورةُ
+  /// شراءٍ بلا مورّدٍ مسجَّلٍ حالةٌ واردةٌ لا خطأُ بحثٍ في خريطة.
+  String get _supplierName {
+    final id = invoice.partyId;
+    if (id == null) return 'غير محدد';
+    return supplierNames[id] ?? 'غير محدد';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final muted = _purMuted(context);
+
+    // المرتجعُ يخفض المستحقَّ للمورد، فيُطرَح من المتبقي المعروض. وسالبٌ يعني
+    // أن المرتجعَ تجاوز غيرَ المسدَّد فالمورّدُ مدينٌ لنا بالفرق — لونٌ مختلف.
+    final remaining = invoice.total - invoice.paid - returnedAmount;
+    final isPaid = invoice.status == InvoiceStatus.paid;
+    final isPartial = invoice.status == InvoiceStatus.partial;
+    final isCancelled = invoice.status == InvoiceStatus.cancelled;
+
+    final statusColor = isPaid
+        ? AppColors.success
+        : isPartial
+            ? AppColors.warning
+            : AppColors.error;
+    final statusLabel = isPaid
+        ? 'مدفوع'
+        : isPartial
+            ? 'جزئي'
+            : isCancelled
+                ? 'ملغي'
+                : 'غير مدفوع';
+    final statusIcon = isPaid
+        ? PhosphorIconsBold.checkCircle
+        : isPartial
+            ? PhosphorIconsBold.clock
+            : isCancelled
+                ? PhosphorIconsBold.prohibit
+                : PhosphorIconsBold.warningCircle;
+
+    final whId = invoice.warehouseId;
+    final whName = whId != null ? (warehouseNames[whId] ?? 'WH#$whId') : '—';
+    // يُفضَّل `branchId` المختوم على الفاتورة (‏L3)، ويُرجَع إلى المخزن للصفوف
+    // القديمة التي لم تُعبَّأ بعد.
+    final brId =
+        invoice.branchId ?? (whId != null ? warehouseBranchId[whId] : null);
+    final brName = brId != null ? (branchNames[brId] ?? 'فرع #$brId') : null;
+    // Spec 119 (Bug K) — «—» أنظفُ من «م.ت #6» حين يغيب مركزُ التكلفة.
+    final ccName = invoice.costCenterId != null
+        ? (costCenterNames[invoice.costCenterId] ?? '—')
+        : '—';
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        border: Border.all(
+          color: selected ? AppColors.primary : theme.dividerColor,
+        ),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      child: Row(
+        children: [
+          SizedBox(
+            width: _kPurColCheckW,
+            child: Checkbox(
+              value: selected,
+              onChanged: (_) => onToggleSelect(),
+              visualDensity: VisualDensity.compact,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          ),
+
+          // ── رقمُ الفاتورة + شارةُ المرتجع + المخزن سطراً خافتاً ────────
+          Expanded(
+            flex: _kPurColNum,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        invoice.invoiceNumber,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: theme.textTheme.bodyLarge?.color,
+                          fontFeatures: const [
+                            ui.FontFeature.tabularFigures()
+                          ],
+                        ),
+                      ),
+                    ),
+                    if (invoice.status == InvoiceStatus.returned ||
+                        invoice.status == InvoiceStatus.partialReturn) ...[
+                      const SizedBox(width: 5),
+                      _PurchaseReturnBadge(
+                        full: invoice.status == InvoiceStatus.returned,
+                      ),
+                    ],
+                    if (invoice.isLocked) ...[
+                      const SizedBox(width: 5),
+                      Tooltip(
+                        message: 'مُرحّلة محاسبياً',
+                        child: Icon(PhosphorIconsBold.lockSimple,
+                            size: 11, color: muted),
+                      ),
+                    ],
+                  ],
+                ),
+                Text(
+                  whName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                    color: muted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // ── المورد ────────────────────────────────────────────────────
+          Expanded(
+            flex: _kPurColParty,
+            child: Text(
+              _supplierName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              // برتقاليٌّ لا أزرق — نفسُ لونِ المورد في فورك UralCash، ويُبقي
+              // الطرفَ المقابلَ مميَّزاً عن العميل في شاشة المبيعات.
+              style: const TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
+                color: AppColors.warning,
+              ),
+            ),
+          ),
+
+          // ── التاريخ ───────────────────────────────────────────────────
+          Expanded(
+            flex: _kPurColDate,
+            child: Text(
+              invoice.invoiceDate.toString().substring(0, 10),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: theme.textTheme.bodyMedium?.color,
+                fontFeatures: const [ui.FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
+
+          // ── الفرع · المخزن · مركز التكلفة ─────────────────────────────
+          Expanded(
+            flex: _kPurColPlace,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    const Icon(PhosphorIconsBold.buildings,
+                        size: 11, color: AppColors.primary),
+                    const SizedBox(width: 5),
+                    Expanded(
+                      child: Text(
+                        brName ?? '—',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: theme.textTheme.bodyMedium?.color,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  '$whName · $ccName',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                    color: muted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // ── الإجمالي ──────────────────────────────────────────────────
+          Expanded(
+            flex: _kPurColTotal,
+            child: Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: Text(
+                invoice.total.toStringAsFixed(AppConstants.decimalPlaces),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -.3,
+                  color: theme.textTheme.bodyLarge?.color,
+                  fontFeatures: const [ui.FontFeature.tabularFigures()],
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(width: 10),
+
+          // ── السداد: المسدَّد · المتبقي · شريطٌ رفيع ────────────────────
+          Expanded(
+            flex: _kPurColPay,
+            child: _PurPaymentCell(
+              paid: invoice.paid,
+              remaining: remaining,
+              total: invoice.total,
+              returned: returnedAmount,
+            ),
+          ),
+
+          // ── الحالة ────────────────────────────────────────────────────
+          SizedBox(
+            width: _kPurColStatusW,
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: .12),
+                  border: Border.all(color: statusColor.withValues(alpha: .35)),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(statusIcon, size: 11, color: statusColor),
+                    const SizedBox(width: 5),
+                    Text(
+                      statusLabel,
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800,
+                        color: statusColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // ── الإجراءات — ثلاثةٌ لا أربعة (اقرأ رأسَ الملفّ) ─────────────
+          SizedBox(
+            width: _kPurColActionsW,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _PurRowAction(
+                  icon: PhosphorIconsBold.eye,
+                  color: AppColors.info,
+                  tooltip: 'عرض التفاصيل',
+                  onTap: () => onView(invoice),
+                ),
+                const SizedBox(width: 5),
+                _PurRowAction(
+                  icon: PhosphorIconsBold.pencilSimple,
+                  color: AppColors.warning,
+                  tooltip: canEdit
+                      ? (invoice.isLocked ? 'تعديل فاتورة مُرحّلة' : 'تعديل')
+                      : 'لا تملك صلاحية تعديل فواتير المشتريات',
+                  onTap: canEdit ? () => onEdit(invoice) : null,
+                ),
+                const SizedBox(width: 5),
+                // purchases_print — نفسُ حارسِ فورك UralCash، بنفس
+                // `allowManagerOverride` و`actionName`.
+                PermissionGuard(
+                  permission: PermissionCodes.purchasesPrint,
+                  allowManagerOverride: true,
+                  actionName: 'طباعة فاتورة مشتريات',
+                  onGranted: () => onPrint(invoice),
+                  child: _PurRowAction(
+                    icon: PhosphorIconsBold.printer,
+                    color: AppColors.primary,
+                    tooltip: 'طباعة',
+                    onTap: () => onPrint(invoice),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// خليّةُ السداد — المسدَّدُ والمتبقي وشريطٌ يقسم الإجماليَّ بينهما.
+class _PurPaymentCell extends StatelessWidget {
+  const _PurPaymentCell({
+    required this.paid,
+    required this.remaining,
+    required this.total,
+    required this.returned,
+  });
+
+  final double paid;
+  final double remaining;
+  final double total;
+  final double returned;
+
+  @override
+  Widget build(BuildContext context) {
+    final muted = _purMuted(context);
+    final remainingColor = remaining > 0
+        ? AppColors.error
+        : remaining < 0
+            ? AppColors.warning
+            : AppColors.success;
+
+    String fmt(double v) => v.toStringAsFixed(AppConstants.decimalPlaces);
+    final paidPct =
+        total <= 0 ? 0.0 : (paid / total * 100).clamp(0, 100).toDouble();
+    final retPct = total <= 0
+        ? 0.0
+        : (returned / total * 100).clamp(0, 100 - paidPct).toDouble();
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Flexible(
+              child: Text(
+                fmt(paid),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.success,
+                  fontFeatures: [ui.FontFeature.tabularFigures()],
+                ),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                'متبقي ${fmt(remaining)}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.end,
+                style: TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w700,
+                  color: remainingColor,
+                  fontFeatures: const [ui.FontFeature.tabularFigures()],
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        // ⚠️ عرضٌ محسوبٌ لا `Expanded(flex:)` — الوزنُ صفراً لا يُلغي القطعة
+        // (‏`Flexible` يمنح عديمَ الوزن قياسَه الطبيعيّ). نفسُ درسِ المبيعات.
+        SizedBox(
+          height: 5,
+          child: LayoutBuilder(
+            builder: (context, c) {
+              final w = c.maxWidth;
+              final paidW = (w * paidPct / 100).clamp(0.0, w);
+              final retW = (w * retPct / 100).clamp(0.0, w - paidW);
+              return ClipRRect(
+                borderRadius: BorderRadius.circular(999),
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: ColoredBox(color: muted.withValues(alpha: .18)),
+                    ),
+                    PositionedDirectional(
+                      start: 0,
+                      width: paidW,
+                      top: 0,
+                      bottom: 0,
+                      child: const ColoredBox(color: AppColors.success),
+                    ),
+                    PositionedDirectional(
+                      start: paidW,
+                      width: retW,
+                      top: 0,
+                      bottom: 0,
+                      child: const ColoredBox(color: AppColors.warning),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}

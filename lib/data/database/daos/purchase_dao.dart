@@ -7,6 +7,64 @@
 
 part of '../database.dart';
 
+/// إجمالياتُ فواتير المشتريات المطابِقةِ للمرشِّحات — **من SQL لا من الصفحة**.
+///
+/// ‏`watchAllPurchases` يسقّف بـ٥٠٠ صفّ (‏PIR P1-05)، فطيُّ الصفحة في Dart
+/// يعطي رقماً أقلَّ من الحقيقة بلا ما يشي بذلك. وهذا هو نفسُ عطبِ «ح-2» الذي
+/// عولج في جانب المبيعات بـ[SalesInvoiceSummary].
+class PurchaseInvoiceSummary {
+  /// عدد فواتير الشراء **المطابِقة** (لا المحمَّلة على الشاشة).
+  final int invoiceCount;
+
+  /// إجمالي المشتريات — شامل الضريبة، بعد الخصم، قبل المرتجعات.
+  final double totalAmount;
+
+  /// المدفوعُ للموردين من الفواتير نفسِها.
+  ///
+  /// ولا سنداتِ صرفٍ مضمومةً إليه — بخلاف «المحصّل» في المبيعات الذي يضمّ
+  /// سنداتِ القبض: `PurchaseInvoicesScreenState` لا تحمل سنداتِ صرفٍ أصلاً،
+  /// وضمُّها هنا وحدَها كان سيجعل البطاقةَ تخالف الصفوفَ تحتها.
+  final double totalPaid;
+
+  /// إجمالي مرتجعات المشتريات لفواتيرِ **هذه** النافذة والنطاق.
+  final double totalReturns;
+
+  /// عددُ الفواتير المسدَّدةِ بالكامل.
+  ///
+  /// ⚠️ والعدُّ على عمود `status` لا على `paid >= total` — بخلاف المبيعات.
+  /// السببُ مقيسٌ لا مذوَّق: `_applyFilters` في
+  /// `purchase_invoices_controller.dart` يرشِّح بـ`inv.status`، و`inv.status`
+  /// يأتي من `InvoiceEntity._mapStatus` على العمود. فلو عُدَّ هنا بالمبلغ
+  /// لأعطت الشريحةُ عدداً لا يطابق ما تُظهره حين تُنقَر — عدّادٌ يكذب على
+  /// مرشِّحه.
+  final int paidCount;
+
+  /// عددُ الفواتير المسدَّدةِ جزئيّاً — `status = 'partial'`.
+  final int partialCount;
+
+  /// عددُ الفواتير غيرِ المسدَّدة.
+  ///
+  /// وهي **حالةُ الافتراض** في `_mapStatus` لا قيمةٌ مسمّاة: أيُّ `status`
+  /// خارجَ المعروفِ يقع هنا (بما فيه `NULL` والفارغُ والمجهول). فالعدُّ
+  /// بالنفي لا بالإثبات، وإلّا سقط صفٌّ من العدّادات الثلاثة وهو معروضٌ في
+  /// القائمة.
+  final int unpaidCount;
+
+  const PurchaseInvoiceSummary({
+    required this.invoiceCount,
+    required this.totalAmount,
+    required this.totalPaid,
+    required this.totalReturns,
+    this.paidCount = 0,
+    this.partialCount = 0,
+    this.unpaidCount = 0,
+  });
+
+  /// المتبقي = الإجمالي − المدفوع − المرتجعات. نفسُ معادلةِ `_applyFilters`
+  /// حرفاً بحرف كي لا تخالف البطاقةُ مجموعَ الصفوف.
+  double get totalRemaining => totalAmount - totalPaid - totalReturns;
+}
+
 /// Extension for Purchase-related database operations
 extension PurchaseDao on AppDatabase {
   // ═══════════════════════════════════════════════════════════════════════
@@ -2171,6 +2229,122 @@ extension PurchaseDao on AppDatabase {
   /// Legacy delete — redirects to void for backward compatibility
   Future<void> deletePurchaseInvoice(int invoiceId, {int? deletedBy}) async {
     await voidPurchaseInvoice(invoiceId, reason: 'حذف (تم تحويله إلى إلغاء)', deletedBy: deletedBy);
+  }
+
+  /// إجمالياتُ فواتير المشتريات في نافذةٍ ونطاقٍ — من SQL على **كلّ** الصفوف
+  /// المطابِقة لا على الصفحة المحمَّلة.
+  ///
+  /// نظيرُ [getSalesInvoiceSummary]، وثلاثةُ فروقٍ **مقيسةٌ لا منسوخة**:
+  ///
+  /// ١. **عدّاداتُ الحالة على عمود `status`** لا على `paid >= total`.
+  ///    مرشِّحُ الشاشة (`_applyFilters`) يقارن `inv.status`، وهو مشتقٌّ من
+  ///    العمود عبر `InvoiceEntity._mapStatus`. والعدُّ بالمبلغ كان سيعطي
+  ///    شريحةً رقمُها لا يطابق ما تعرضه حين تُنقَر.
+  ///
+  /// ٢. **«غيرُ المسدَّد» يُعَدُّ بالنفي** — حالةُ الافتراض في `_mapStatus`.
+  ///    فأيُّ `status` مجهولٍ أو `NULL` يقع فيها، ومجموعُ الثلاثةِ يبقى
+  ///    ≤ [PurchaseInvoiceSummary.invoiceCount] بلا صفٍّ يسقط من العدّ
+  ///    (‏`cancelled` و`returned` و`draft` و`partial_return` لا تُعَدُّ في
+  ///    أيٍّ من الثلاثة — تماماً كما لا يُظهرها أيُّ مرشِّح).
+  ///
+  /// ٣. **المرتجعاتُ تُنسَب لنافذةِ الفاتورة الأصليّة** لا لتاريخِ المرتجع —
+  ///    بخلاف المبيعات. لأن `_applyFilters` يجمعها هكذا بالضبط
+  ///    (‏`filtered.fold(… returnedAmounts[inv.id])`)، فلو نُسبت لتاريخِ
+  ///    حدوثها لخالفت البطاقةُ مجموعَ الصفوفِ تحتها — وهو العطبُ عينُه الذي
+  ///    عولج في جانب المبيعات.
+  Future<PurchaseInvoiceSummary> getPurchaseInvoiceSummary({
+    required DateTime from,
+    required DateTime to,
+    List<int>? warehouseIds,
+    int? branchId,
+    int? costCenterId,
+  }) async {
+    final start = DateTime(from.year, from.month, from.day);
+    final endExclusive = DateTime(to.year, to.month, to.day + 1);
+    final boolFalse = sqlBool(false);
+
+    // يُبنى مرّتين — مرّةً للفواتير بلا بادئةٍ ومرّةً للمرتجعات ببادئة `pi.`
+    // — والمتغيّراتُ تُملأ بنفس الترتيب في كلٍّ منهما.
+    (String, List<Variable>) scopeFor(String p) {
+      final vars = <Variable>[dateVar(start), dateVar(endExclusive)];
+      var sql = '${p}is_deleted = $boolFalse '
+          'AND ${p}invoice_date >= ? AND ${p}invoice_date < ?';
+      if (warehouseIds != null) {
+        if (warehouseIds.isEmpty) {
+          sql += ' AND 1 = 0';
+        } else {
+          sql += ' AND ${p}warehouse_id IN '
+              '(${warehouseIds.map((_) => '?').join(', ')})';
+          vars.addAll(warehouseIds.map((id) => Variable<int>(id)));
+        }
+      }
+      if (branchId != null) {
+        // الشقُّ الثاني ليس زخرفاً: `_applyFilters` يقبل الصفَّ إذا طابق
+        // `branch_id` **أو** كان مخزنُه تابعاً للفرع (صفوفٌ قديمةٌ سابقةٌ
+        // لعمود L3 تحمل `NULL`). و`branch_id = ?` وحدَه كان سيُسقطها من
+        // البطاقة وهي معروضةٌ في القائمة.
+        sql += ' AND (${p}branch_id = ? OR (${p}branch_id IS NULL AND '
+            '${p}warehouse_id IN '
+            '(SELECT id FROM warehouses WHERE branch_id = ?)))';
+        vars.add(Variable<int>(branchId));
+        vars.add(Variable<int>(branchId));
+      }
+      if (costCenterId != null) {
+        sql += ' AND ${p}cost_center_id = ?';
+        vars.add(Variable<int>(costCenterId));
+      }
+      return (sql, vars);
+    }
+
+    final (invScope, invVars) = scopeFor('');
+
+    // الحالاتُ المعروفةُ في `_mapStatus` — تُذكَر مرّةً هنا وتُنفى في
+    // `n_unpaid` كي لا ينحرف الطرفان.
+    const known =
+        "('paid','completed','partial','cancelled','draft','returned',"
+        "'partial_return')";
+
+    final head = await customSelect(
+      'SELECT COUNT(*) AS n, '
+      'COALESCE(SUM(total), 0) AS total, '
+      'COALESCE(SUM(paid), 0) AS paid, '
+      "SUM(CASE WHEN LOWER(status) IN ('paid','completed') "
+      'THEN 1 ELSE 0 END) AS n_paid, '
+      "SUM(CASE WHEN LOWER(status) = 'partial' "
+      'THEN 1 ELSE 0 END) AS n_partial, '
+      'SUM(CASE WHEN status IS NULL OR LOWER(status) NOT IN $known '
+      'THEN 1 ELSE 0 END) AS n_unpaid '
+      'FROM purchase_invoices WHERE $invScope',
+      variables: invVars,
+      readsFrom: {purchaseInvoices},
+    ).getSingle();
+
+    // المرتجعاتُ بنفسِ صيغةِ [getPurchaseReturnedAmountsForInvoices] حرفاً
+    // بحرف (‏`ABS(quantity) * unit_cost` بلا `COALESCE` على العامل) كي
+    // يبقى مجموعُ البطاقة هو مجموعَ ما تطرحه الصفوفُ من «المتبقي».
+    final (retScope, retVars) = scopeFor('pi.');
+    final returns = await customSelect(
+      'SELECT COALESCE(SUM(ABS(sm.quantity) * sm.unit_cost), 0) AS total '
+      'FROM stock_movements sm '
+      'JOIN purchase_invoices pi ON pi.id = sm.reference_id '
+      "WHERE sm.reference_type = 'purchase_return' AND $retScope",
+      variables: retVars,
+      readsFrom: {stockMovements, purchaseInvoices},
+    ).getSingle();
+
+    double num_(String k, Map<String, dynamic> d) =>
+        (d[k] as num?)?.toDouble() ?? 0.0;
+    int int_(String k, Map<String, dynamic> d) => (d[k] as num?)?.toInt() ?? 0;
+
+    return PurchaseInvoiceSummary(
+      invoiceCount: int_('n', head.data),
+      totalAmount: num_('total', head.data),
+      totalPaid: num_('paid', head.data),
+      totalReturns: num_('total', returns.data),
+      paidCount: int_('n_paid', head.data),
+      partialCount: int_('n_partial', head.data),
+      unpaidCount: int_('n_unpaid', head.data),
+    );
   }
 }
 

@@ -5,6 +5,29 @@ import '../../../core/config/business_profile_provider.dart';
 import '../../../data/providers/providers.dart';
 import '../../../domain/entities/invoice_entity.dart';
 
+/// إجمالياتُ **الفترة السابقة** لفواتير المشتريات — نافذةٌ بنفس الطول تسبق
+/// المدى المختار مباشرةً وتُقاس بنفس المرشِّحات.
+///
+/// ‏`null` تعني «لا مقارنةَ متاحة» لا «صفر». ونظيرُها في المبيعات
+/// `SalesPreviousPeriod` — والفرقُ الوحيدُ أن «المدفوع» هنا لا يضمّ سنداتِ
+/// صرفٍ لأن الشاشةَ لا تحملها أصلاً في الفترة الحاليّة، فالطرفان يُقاسان
+/// بنفس التعريف.
+class PurchasePreviousPeriod {
+  const PurchasePreviousPeriod({
+    required this.totalAmount,
+    required this.totalPaid,
+    required this.totalRemaining,
+    required this.totalReturns,
+    required this.invoiceCount,
+  });
+
+  final double totalAmount;
+  final double totalPaid;
+  final double totalRemaining;
+  final double totalReturns;
+  final int invoiceCount;
+}
+
 class PurchaseInvoicesScreenState {
   final List<InvoiceEntity> allInvoices;
   final List<InvoiceEntity> filteredInvoices;
@@ -33,6 +56,16 @@ class PurchaseInvoicesScreenState {
   final double totalRemaining;
   final double totalReturns;
   final int invoiceCount;
+
+  /// عدّاداتُ شرائحِ الحالة — `paid`/`partial`/`unpaid` — من تجميعِ SQL.
+  ///
+  /// فارغةٌ حتى يصل التجميع، والشريحةُ لا تعرض عدّاداً حينئذٍ: «‏0» كان
+  /// سيعني «لا فواتيرَ بهذه الحالة» وهو ما لم يُقَس بعد.
+  final Map<String, int> statusCounts;
+
+  /// إجمالياتُ الفترة السابقة — `null` ⇒ لا شارةَ اتّجاه.
+  final PurchasePreviousPeriod? previousPeriod;
+
   final int displayLimit;
   final bool hasMore;
 
@@ -58,6 +91,8 @@ class PurchaseInvoicesScreenState {
     this.totalRemaining = 0,
     this.totalReturns = 0,
     this.invoiceCount = 0,
+    this.statusCounts = const {},
+    this.previousPeriod,
     this.displayLimit = 50,
     this.hasMore = false,
   });
@@ -91,6 +126,9 @@ class PurchaseInvoicesScreenState {
     double? totalRemaining,
     double? totalReturns,
     int? invoiceCount,
+    Map<String, int>? statusCounts,
+    PurchasePreviousPeriod? previousPeriod,
+    bool clearPreviousPeriod = false,
     int? displayLimit,
     bool? hasMore,
   }) {
@@ -116,6 +154,10 @@ class PurchaseInvoicesScreenState {
       totalRemaining: totalRemaining ?? this.totalRemaining,
       totalReturns: totalReturns ?? this.totalReturns,
       invoiceCount: invoiceCount ?? this.invoiceCount,
+      statusCounts: statusCounts ?? this.statusCounts,
+      previousPeriod: clearPreviousPeriod
+          ? null
+          : (previousPeriod ?? this.previousPeriod),
       displayLimit: displayLimit ?? this.displayLimit,
       hasMore: hasMore ?? this.hasMore,
     );
@@ -350,6 +392,134 @@ class PurchaseInvoicesController extends Notifier<PurchaseInvoicesScreenState> {
       invoiceCount: invoiceCount,
       hasMore: filtered.length > state.displayLimit,
     );
+
+    // الطيُّ أعلاه يمرّ على صفحةٍ سقفُها ٥٠٠ صفّ (`watchAllPurchases`)، فهو
+    // رسمةٌ أولى لا رقمٌ نهائيّ. تُعاد الاشتقاقُ من تجميعِ SQL على **كلّ**
+    // الصفوف المطابِقة — بلا انتظارٍ كي يبقى الترشيحُ سريعاً، والبطاقاتُ
+    // تتحدّث عند أوّل إشعارٍ بعد وصولِ النتيجة.
+    unawaited(_refreshSummaryTotals());
+  }
+
+  /// هل ثمّةَ مرشِّحٌ فعّالٌ الآن؟ — تُميّز «لا فواتيرَ إطلاقاً» من «المرشِّحاتُ
+  /// ضيّقت النتيجةَ إلى الصفر»، فتُعرَض إعادةُ التعيين في الحالة الثانية فقط.
+  bool get hasActiveFilters =>
+      state.searchQuery.trim().isNotEmpty ||
+      state.dateRange != null ||
+      state.statusFilter != 'all' ||
+      state.selectedWarehouseId != null ||
+      state.selectedBranchId != null ||
+      state.selectedCostCenterId != null;
+
+  /// إعادةُ تعيين كلّ المرشِّحات دفعةً واحدة — تطبيقٌ واحدٌ لا ستّة.
+  void clearAllFilters() {
+    state = state.copyWith(
+      searchQuery: '',
+      clearDateRange: true,
+      statusFilter: 'all',
+      clearWarehouse: true,
+      clearBranch: true,
+      clearCostCenter: true,
+    );
+    _applyFilters();
+  }
+
+  /// إجمالياتُ البطاقات من SQL — لا من الصفحة المحمَّلة.
+  ///
+  /// لا تعمل إلّا مع مدىً تاريخيٍّ مختار: بلا مدىً كان التجميعُ سيمسح الجدولَ
+  /// كلَّه مع كلّ تغييرِ مرشِّح، والعرضُ غيرُ المحدَّد بمدىً هو عرضُ «كلّ شيء»
+  /// الذي يكفيه طيُّ الصفحة. ومع مدىً فعّالٍ — وهو بالضبط حين يقرأ المشغّلُ
+  /// الأرقام — قد ينحرف طيُّ الصفحة بمقدارٍ غيرِ محدود.
+  ///
+  /// ولا تُربَط بصندوق البحث عمداً: البحثُ تضييقٌ للمعروض، وإعادةُ الاستعلام
+  /// مع كلّ حرفٍ كانت استعلاماً لكلّ ضغطةِ مفتاح.
+  Future<void> _refreshSummaryTotals() async {
+    if (_disposed) return;
+    final range = state.dateRange;
+    if (range == null) return;
+    if (state.searchQuery.trim().isNotEmpty) return;
+    try {
+      final db = ref.read(databaseProvider);
+      final summary = await db.getPurchaseInvoiceSummary(
+        from: range.start,
+        to: range.end,
+        warehouseIds: state.selectedWarehouseId != null
+            ? [state.selectedWarehouseId!]
+            : null,
+        branchId: state.selectedBranchId,
+        costCenterId: state.selectedCostCenterId,
+      );
+      if (_disposed) return;
+      state = state.copyWith(
+        totalAmount: summary.totalAmount,
+        totalPaid: summary.totalPaid,
+        totalReturns: summary.totalReturns,
+        totalRemaining: summary.totalRemaining,
+        invoiceCount: summary.invoiceCount,
+        statusCounts: {
+          'paid': summary.paidCount,
+          'partial': summary.partialCount,
+          'unpaid': summary.unpaidCount,
+        },
+      );
+      unawaited(_refreshPreviousPeriod(range));
+    } catch (e) {
+      // يُترَك طيُّ الصفحة مكانَه بدل تفريغ البطاقات — ويُقال ذلك صراحةً،
+      // فالسقوطُ الصامتُ إلى رقمٍ مبتورٍ هو العطبُ عينُه.
+      debugPrint(
+          '[PurchaseInvoices] SQL summary failed, showing paged totals: $e');
+    }
+  }
+
+  /// إجمالياتُ الفترة السابقة — نافذةٌ **بنفس الطول** تسبق المدى المختار
+  /// مباشرةً وبنفس المرشِّحات، كي تكون المقارنةُ على المقدار لا على المدى.
+  ///
+  /// وأيُّ إخفاقٍ يمسح المقارنةَ إلى `null` ولا يُبقي رقمَ مدىً قديمٍ معلَّقاً:
+  /// شارةُ اتّجاهٍ تقارن فترةً بفترةٍ أخرى هي الكذبةُ المحذَّرُ منها، لا غيابُ
+  /// الشارة.
+  Future<void> _refreshPreviousPeriod(DateTimeRange range) async {
+    if (_disposed) return;
+    try {
+      final startDay =
+          DateTime(range.start.year, range.start.month, range.start.day);
+      final endExclusive =
+          DateTime(range.end.year, range.end.month, range.end.day + 1);
+      final lengthDays = endExclusive.difference(startDay).inDays;
+      if (lengthDays <= 0) {
+        if (state.previousPeriod != null) {
+          state = state.copyWith(clearPreviousPeriod: true);
+        }
+        return;
+      }
+      final prevStart = startDay.subtract(Duration(days: lengthDays));
+      // نفسُ اصطلاحِ النداء الحاليّ: `to` يومٌ داخلَ النافذة لا بعدَها.
+      final prevTo = startDay.subtract(const Duration(days: 1));
+
+      final db = ref.read(databaseProvider);
+      final summary = await db.getPurchaseInvoiceSummary(
+        from: prevStart,
+        to: prevTo,
+        warehouseIds: state.selectedWarehouseId != null
+            ? [state.selectedWarehouseId!]
+            : null,
+        branchId: state.selectedBranchId,
+        costCenterId: state.selectedCostCenterId,
+      );
+      if (_disposed) return;
+      state = state.copyWith(
+        previousPeriod: PurchasePreviousPeriod(
+          totalAmount: summary.totalAmount,
+          totalPaid: summary.totalPaid,
+          totalRemaining: summary.totalRemaining,
+          totalReturns: summary.totalReturns,
+          invoiceCount: summary.invoiceCount,
+        ),
+      );
+    } catch (e) {
+      debugPrint('[PurchaseInvoices] previous-period summary failed: $e');
+      if (!_disposed && state.previousPeriod != null) {
+        state = state.copyWith(clearPreviousPeriod: true);
+      }
+    }
   }
 
   void loadMore() {
