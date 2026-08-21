@@ -246,7 +246,7 @@ void main() {
       // الكاشير ولا تُنتج عجزاً. فرفضُها كان سيكون رفضاً باطلاً.
       final managerId = await db.createUser(
         username: 'manager',
-        password: 'test123',
+        password: 'mgr_pw_249',
         displayName: 'مدير',
         roleId: (await db.select(db.roles).get()).first.id,
       );
@@ -547,7 +547,7 @@ void main() {
       // الحالةُ التي عالجها فصلُ `txs` عن `drawerTxs` أصلاً.
       final managerId = await db.createUser(
         username: 'mgr_sale',
-        password: 'test123',
+        password: 'mgr_pw_550',
         displayName: 'مدير',
         roleId: (await db.select(db.roles).get()).first.id,
       );
