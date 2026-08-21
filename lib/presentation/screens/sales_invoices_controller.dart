@@ -139,6 +139,10 @@ class SalesInvoicesScreenState {
     Map<int, double>? returnedAmounts,
     bool? isLoading,
     DateTimeRange? dateRange,
+    /// ‏`true` ⇒ امسح المدى. وعَلَمٌ صريحٌ لا `null` لأن `null` في
+    /// `copyWith` تعني «لا تغيّر» — فكان طلبُ المسح يُقرأ إغفالاً ويُبتلع
+    /// صامتاً، وزرُّ «×» يُنقَر بلا أثر (‏invoice_filters_clear_date_test).
+    bool clearDateRange = false,
     Set<String>? statusFilters,
     String? searchQuery,
     int? selectedWarehouseId,
@@ -171,7 +175,7 @@ class SalesInvoicesScreenState {
       costCenterNames: costCenterNames ?? this.costCenterNames,
       returnedAmounts: returnedAmounts ?? this.returnedAmounts,
       isLoading: isLoading ?? this.isLoading,
-      dateRange: dateRange ?? this.dateRange,
+      dateRange: clearDateRange ? null : (dateRange ?? this.dateRange),
       statusFilters: statusFilters ?? this.statusFilters,
       searchQuery: searchQuery ?? this.searchQuery,
       selectedWarehouseId: clearWarehouse ? null : (selectedWarehouseId ?? this.selectedWarehouseId),
@@ -835,7 +839,7 @@ class SalesInvoicesController extends Notifier<SalesInvoicesScreenState> {
   }
 
   void updateDateRange(DateTimeRange? range) {
-    state = state.copyWith(dateRange: range);
+    state = state.copyWith(dateRange: range, clearDateRange: range == null);
     _applyFilters();
   }
 
@@ -864,7 +868,7 @@ class SalesInvoicesController extends Notifier<SalesInvoicesScreenState> {
     state = state.copyWith(
       statusFilters: const {},
       searchQuery: '',
-      dateRange: null,
+      clearDateRange: true,
       clearWarehouse: true,
       clearBranch: true,
       clearCostCenter: true,
