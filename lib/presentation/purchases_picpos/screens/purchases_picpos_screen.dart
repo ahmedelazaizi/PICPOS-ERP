@@ -27,6 +27,8 @@ import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../invoice_form_picpos/picpos_invoice_form.dart';
 import '../../../domain/models/picpos_invoice_draft.dart';
 import '../../picpos_shell/picpos_content_card.dart';
+// نمطُ ديالوجات PicPos — الغلافُ وحوارُ التأكيد المشتركان.
+import '../../picpos_shell/picpos_dialog.dart';
 
 // ── Part files (mixin-based extraction — faithful copy of the UralCash
 // `part of` mixins; see purchases_picpos_crud.dart / purchases_picpos_details.dart
@@ -89,37 +91,22 @@ class _PurchasesPicposScreenState extends ConsumerState<PurchasesPicposScreen>
     // still see explicitly that the GL entry will be reversed and re-posted.
     if (invoice.paid > 0 || invoice.isLocked) {
       final isPosted = invoice.isLocked;
-      final confirmed = await showDialog<bool>(
-        context: context,
-        builder: (ctx) => Directionality(
-          textDirection: ui.TextDirection.rtl,
-          child: AlertDialog(
-            title: Text(isPosted
-                ? 'تعديل فاتورة مُرحّلة محاسبياً'
-                : 'تعديل فاتورة مدفوعة'),
-            content: Text(
-              isPosted
-                  ? 'هذه الفاتورة مُرحّلة إلى دفتر الأستاذ. التعديل سيعكس القيد المحاسبي وحركة المخزون والتكلفة المتوسطة ثم يعيد ترحيلها بالقيم الجديدة، وسيُسجَّل في سجل التدقيق.\n\nهل تريد المتابعة؟'
-                  : 'هذه الفاتورة تم دفع مبلغ منها. التعديل سيؤدي إلى عكس القيود المحاسبية وحركة المخزون وإعادة تطبيقها.\n\nهل تريد المتابعة؟',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('إلغاء'),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.warning,
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('تعديل الفاتورة'),
-              ),
-            ],
-          ),
-        ),
+      // نمطُ ديالوجات PicPos — ونصُّ التأكيد لم يتغيّر حرفاً.
+      final confirmed = await showPicPosConfirm(
+        context,
+        icon: PhosphorIconsBold.warning,
+        accent: AppColors.warning,
+        title: isPosted
+            ? 'تعديل فاتورة مُرحّلة محاسبياً'
+            : 'تعديل فاتورة مدفوعة',
+        message: isPosted
+            ? 'هذه الفاتورة مُرحّلة إلى دفتر الأستاذ. التعديل سيعكس القيد المحاسبي وحركة المخزون والتكلفة المتوسطة ثم يعيد ترحيلها بالقيم الجديدة، وسيُسجَّل في سجل التدقيق.\n\nهل تريد المتابعة؟'
+            : 'هذه الفاتورة تم دفع مبلغ منها. التعديل سيؤدي إلى عكس القيود المحاسبية وحركة المخزون وإعادة تطبيقها.\n\nهل تريد المتابعة؟',
+        confirmLabel: 'تعديل الفاتورة',
       );
-      if (confirmed != true) return;
+      // `bool` غيرُ لاغٍ الآن، فـ`!confirmed` تكافئ `confirmed != true`
+      // السابقةَ بلا اعتمادٍ على انتباه المستدعي إلى `null`.
+      if (!confirmed) return;
     }
     editInvoice(invoice);
   }
@@ -306,35 +293,20 @@ class _PurchasesPicposScreenState extends ConsumerState<PurchasesPicposScreen>
               const SizedBox(width: 8),
               ElevatedButton.icon(
                 onPressed: () async {
-                  final confirm = await showDialog<bool>(
-                    context: context,
-                    builder: (ctx) => Directionality(
-                      textDirection: ui.TextDirection.rtl,
-                      child: AlertDialog(
-                        title: const Row(
-                          children: [
-                            Icon(PhosphorIconsBold.warning, color: Colors.red),
-                            SizedBox(width: 8),
-                            Text('تأكيد الحذف المجمع'),
-                          ],
-                        ),
-                        content: Text('هل أنت متأكد من حذف ${state.selectedInvoices.length} فاتورة مشتريات محددة؟'),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(ctx, false),
-                            child: const Text('إلغاء'),
-                          ),
-                          ElevatedButton(
-                            onPressed: () => Navigator.pop(ctx, true),
-                            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                            child: const Text('حذف الجميع'),
-                          ),
-                        ],
-                      ),
-                    ),
+                  // حوارُ تأكيدٍ مدمِّر — أحمرُ وأيقونةُ سلّة، والافتراضُ
+                  // **الرفضُ** حتى لو أُغلق بالنقر في الفراغ.
+                  final confirm = await showPicPosConfirm(
+                    context,
+                    icon: PhosphorIconsBold.warning,
+                    danger: true,
+                    title: 'تأكيد الحذف المجمع',
+                    message: 'هل أنت متأكد من حذف '
+                        '${state.selectedInvoices.length} '
+                        'فاتورة مشتريات محددة؟',
+                    confirmLabel: 'حذف الجميع',
                   );
 
-                  if (confirm == true) {
+                  if (confirm) {
                      // Delete in batch
                      for (final invoiceId in state.selectedInvoices) {
                         final inv = state.allInvoices.firstWhere((element) => element.id == invoiceId);

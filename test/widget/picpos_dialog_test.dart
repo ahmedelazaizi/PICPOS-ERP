@@ -312,4 +312,152 @@ void main() {
       expect(picked, 'bank');
     });
   });
-}
+
+  group('حوارُ التأكيد', () {
+    Future<bool?> open(WidgetTester tester, {bool danger = false}) async {
+      bool? answer;
+      tester.view.physicalSize = const Size(900, 700);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (ctx) => ElevatedButton(
+              onPressed: () async {
+                answer = await showPicPosConfirm(
+                  ctx,
+                  icon: PhosphorIconsBold.warning,
+                  title: 'تأكيد الحذف',
+                  message: 'هل تريد المتابعة؟',
+                  danger: danger,
+                );
+              },
+              child: const Text('افتح'),
+            ),
+          ),
+        ),
+      ));
+      await tester.tap(find.text('افتح'));
+      await tester.pumpAndSettle();
+      return answer;
+    }
+
+    testWidgets('التأكيدُ يُرجع true', (tester) async {
+      await open(tester);
+      await tester.tap(find.text('تأكيد'));
+      await tester.pumpAndSettle();
+      expect(find.text('تأكيد الحذف'), findsNothing, reason: 'أُغلق');
+    });
+
+    testWidgets('الإلغاءُ يُرجع false لا null', (tester) async {
+      bool? captured;
+      tester.view.physicalSize = const Size(900, 700);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (ctx) => ElevatedButton(
+              onPressed: () async {
+                captured = await showPicPosConfirm(
+                  ctx,
+                  icon: PhosphorIconsBold.warning,
+                  title: 'تأكيد الحذف',
+                  message: 'هل تريد المتابعة؟',
+                );
+              },
+              child: const Text('افتح'),
+            ),
+          ),
+        ),
+      ));
+      await tester.tap(find.text('افتح'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('إلغاء'));
+      await tester.pumpAndSettle();
+      expect(captured, isFalse);
+      expect(captured, isNotNull,
+          reason: 'النوعُ غيرُ لاغٍ — والافتراضُ الرفضُ لا الغموض');
+    });
+
+    testWidgets('الإغلاقُ بـ«×» يُرجع false — لا موافقةً عرَضيّة',
+        (tester) async {
+      bool? captured;
+      tester.view.physicalSize = const Size(900, 700);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (ctx) => ElevatedButton(
+              onPressed: () async {
+                captured = await showPicPosConfirm(
+                  ctx,
+                  icon: PhosphorIconsBold.trash,
+                  title: 'حذف نهائيّ',
+                  message: 'لا رجعةَ في هذا.',
+                  danger: true,
+                );
+              },
+              child: const Text('افتح'),
+            ),
+          ),
+        ),
+      ));
+      await tester.tap(find.text('افتح'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(PhosphorIconsBold.x));
+      await tester.pumpAndSettle();
+      expect(captured, isFalse,
+          reason: 'إغلاقٌ عرَضيٌّ على حوارِ حذفٍ لا يُقرأ موافقة');
+    });
+
+    testWidgets('الإغلاقُ بالنقر خارجَ الحوار يُرجع false — لا null',
+        (tester) async {
+      // ⚠️ **هذا هو الاختبارُ الذي يقيس الاحتياطَ `?? false` فعلاً.**
+      //
+      // الإلغاءُ وزرُّ «×» يُغلقان بـ`Navigator.pop(ctx, false)`، فالنتيجةُ
+      // ليست `null` أصلاً ولا يُستدعى الاحتياطُ إطلاقاً. والمسارُ الوحيدُ
+      // الذي يُنتج `null` هو الإغلاقُ **بلا قيمة**: النقرُ خارجَ الحوار أو
+      // مفتاحُ الرجوع.
+      //
+      // وبدون هذا الاختبار كان قلبُ الاحتياط إلى `?? true` يمرّ على
+      // الخمسةَ عشرَ خضراء — وقد جُرِّب فمرّ. فكان الحارسُ أجوفَ حتى نزل
+      // هذا السطر.
+      bool? captured;
+      tester.view.physicalSize = const Size(900, 700);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (ctx) => ElevatedButton(
+              onPressed: () async {
+                captured = await showPicPosConfirm(
+                  ctx,
+                  icon: PhosphorIconsBold.trash,
+                  title: 'حذف نهائيّ',
+                  message: 'لا رجعةَ في هذا.',
+                  danger: true,
+                );
+              },
+              child: const Text('افتح'),
+            ),
+          ),
+        ),
+      ));
+      await tester.tap(find.text('افتح'));
+      await tester.pumpAndSettle();
+      expect(find.text('حذف نهائيّ'), findsOneWidget, reason: 'تجهيزةٌ سليمة');
+
+      // نقرةٌ في الركن — خارجَ صندوق الحوار، على الحاجب.
+      await tester.tapAt(const Offset(5, 5));
+      await tester.pumpAndSettle();
+
+      expect(find.text('حذف نهائيّ'), findsNothing, reason: 'أُغلق فعلاً');
+      expect(captured, isFalse,
+          reason: 'إغلاقٌ بلا قيمةٍ ⇒ رفضٌ. ولو قُرئ موافقةً لحُذف مستندٌ '
+              'بنقرةٍ في الفراغ.');
+    });
+  });
+}

@@ -322,6 +322,66 @@ class PicPosDialog extends StatelessWidget {
   }
 }
 
+/// حوارُ تأكيدٍ على نمط PicPos — الشكلُ الغالبُ في النظام.
+///
+/// ‏٣٩٠ موضعَ `AlertDialog` في `lib/presentation` أكثرُها عنوانٌ ورسالةٌ
+/// وزرّا إلغاءٍ وتأكيد. فبدل نقلِ كلٍّ منها يدويّاً إلى [PicPosDialog]
+/// بثلاثين سطراً، يصير النقلُ سطرَين — وكلّما رخُص النقلُ زاد ما يُنقَل.
+///
+/// ⚠️ **ويُرجِع `false` لا `null` عند الإغلاق بلا اختيار.**
+/// هذا ليس تجميلاً في نوعٍ: `showDialog<bool>` يُرجع `null` حين يُغلَق
+/// الحوارُ بالمفتاح أو بالنقر خارجَه، و`if (result == true)` تنجو منها
+/// بينما `if (result != false)` — أو `result!` — لا تنجو. وأخطرُها حوارُ
+/// حذفٍ: إغلاقٌ عرَضيٌّ يُقرأ موافقةً. فالنوعُ هنا `bool` غيرُ لاغٍ،
+/// والافتراضُ **الرفض**، فلا يُترَك القرارُ لطريقةِ فحصِ كلِّ مستدعٍ.
+Future<bool> showPicPosConfirm(
+  BuildContext context, {
+  required IconData icon,
+  required String title,
+  required String message,
+  String confirmLabel = 'تأكيد',
+  String cancelLabel = 'إلغاء',
+  String? subtitle,
+  Color accent = AppColors.primary,
+
+  /// إجراءٌ مدمِّر — يصبغ الزرَّ الرئيسيَّ بلون الخطأ.
+  bool danger = false,
+  double width = 520,
+}) async {
+  final color = danger ? AppColors.error : accent;
+  final result = await showDialog<bool>(
+    context: context,
+    // الإغلاقُ بالنقر خارجَه مسموحٌ، ويعني **رفضاً** — وهو ما يضمنه
+    // `?? false` تحت.
+    builder: (ctx) => PicPosDialog(
+      icon: icon,
+      accent: color,
+      title: title,
+      subtitle: subtitle,
+      width: width,
+      onCancel: () => Navigator.pop(ctx, false),
+      cancelLabel: cancelLabel,
+      primaryAction: PicPosDialogAction(
+        label: confirmLabel,
+        icon: danger ? PhosphorIconsBold.trash : PhosphorIconsBold.check,
+        color: color,
+        onPressed: () => Navigator.pop(ctx, true),
+      ),
+      body: [
+        Text(
+          message,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            height: 1.6,
+          ),
+        ),
+      ],
+    ),
+  );
+  return result ?? false;
+}
+
 /// حقلٌ معنوَنٌ على نمط الحوار — عنوانٌ خافتٌ ثمّ صندوقُ الحقل.
 class PicPosDialogField extends StatelessWidget {
   const PicPosDialogField({
