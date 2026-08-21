@@ -222,9 +222,9 @@ void main() {
     });
 
     testWidgets('الصفُّ ينكسر رأسيّاً تحت العتبة', (tester) async {
-      Widget row() => PicPosDialogRow(
+      Widget row() => const PicPosDialogRow(
             breakpoint: 520,
-            children: const [
+            children: [
               PicPosDialogField(label: 'أ', child: Text('١')),
               PicPosDialogField(label: 'ب', child: Text('٢')),
             ],
