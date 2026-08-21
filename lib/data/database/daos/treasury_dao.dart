@@ -2837,8 +2837,22 @@ extension TreasuryDao on AppDatabase {
               t.userId.equals(userId) &
               t.createdAt.isBiggerOrEqualValue(shift.startTime)))
         .get();
-    var drawerSafeIds =
-        userTxs.map((t) => t.safeId).where(cashSafeIds.contains).toSet();
+    // ⚠️ المرشَّحون محصورون بفرع الورديّة **قبل** ترجيح الأكثرِ حركة. كان
+    // الحصرُ غائباً فيقع المرتجعُ على خزنةٍ لمسَها المستخدمُ في فرعٍ آخر:
+    // بيعةٌ متحصَّلُها على الخزنة الافتراضيّة العامّة ثمّ مرتجعٌ في ورديّةِ
+    // فرعٍ ب كان يخصم من العامّة لا من درج ب — فرعٌ ينتفخ وفرعٌ يعجز، وهي
+    // العلّةُ عينُها التي وُجدت هذه الدالّةُ لأجلها.
+    //
+    // والترجيحُ بالأكثرِ حركةً يبقى كما هو **داخل** الفرع: فرعٌ فيه خزنتان
+    // يُنتقى بينهما بالحركة الفعلية لا بالاسم ولا برقم الإنشاء.
+    final branchCashSafeIds = {
+      for (final s in cashSafes)
+        if (s.branchId == branchId) s.id,
+    };
+    var drawerSafeIds = userTxs
+        .map((t) => t.safeId)
+        .where(branchCashSafeIds.contains)
+        .toSet();
     if (drawerSafeIds.isEmpty) {
       // مطابقةٌ لفرع `_settleShift` الاحتياطيّ — خزائنُ الفرع كاملةً. الشرطُ
       // هناك `shift.branchId == null || s.branchId == shift.branchId`؛

@@ -19,6 +19,7 @@ import 'package:flutter_test/flutter_test.dart';
 // في شرط `refundTxnFor` أدناه — مطابقةٌ لنمط
 // `sales_return_wac_gl_drift_test.dart`.
 import 'package:drift/drift.dart' hide isNull, isNotNull;
+import 'package:ural_erp/core/errors/app_exceptions.dart';
 import 'package:ural_erp/core/logging/diagnostic_logger.dart';
 import 'package:ural_erp/domain/models/shift_drawer_resolver.dart';
 import 'package:ural_erp/data/database/database.dart';
@@ -601,41 +602,35 @@ void main() {
     });
 
     test(
-        'غيابُ ورديةٍ أصلاً — نفسُ سلوك الخزنة الافتراضية العامّة القديم '
-        'بالضبط (لا انحدار)', () async {
+        'غيابُ ورديةٍ أصلاً — يُرفَض المرتجعُ النقديُّ ولا يُمَسّ درجٌ '
+        '(سياسةُ «لا نقدَ بلا ورديّة»)', () async {
       final cashierId = await createCashier('wire_cashier_4');
       // لا وردية مفتوحة لهذا المستخدم إطلاقاً.
 
-      final expectedDefault = await db.getDefaultSafeByType('cash');
-      expect(expectedDefault, isNotNull);
-
       final invoice = await makeOriginalSale();
       final items = await db.getSalesInvoiceItems(invoice.id);
-      final ok = await repo.processSalesReturn(
-        invoice: invoice,
-        returnQuantities: {items.first.id: 1},
-        productCache: await productCacheFor(),
-        userId: cashierId,
-        userName: 'Wire Cashier 4',
-      );
-      expect(ok, isTrue);
+      final txBefore = (await db.select(db.safeTransactions).get()).length;
 
-      final txn = await refundTxnFor(invoice);
-      expect(txn.safeId, expectedDefault!.id,
-          reason:
-              'بلا وردية مفتوحة، السلوكُ القديم (الخزنة الافتراضية العامّة) '
-              'يجب أن يبقى كما هو بالضبط — هذا هو خطُّ الأساس الذي لا يجوز '
-              'كسرُه.');
-
-      // جولةُ مراجعةٍ ١ — «مطابقةُ المواصفة»: كلُّ سقوطٍ إلى الخزنة
-      // الافتراضية العامّة يجب أن يُسجَّل فعلياً، لا أن يبقى مجرّد تعليقٍ.
-      expect(
-        DiagnosticLogger.testLog
-            .any((line) => line.contains('REFUND-SAFE-FALLBACK')),
-        isTrue,
-        reason: 'سقوطُ resolveRefundSafe إلى الخزنة العامّة (بلا وردية '
-            'مفتوحة) يجب أن يترك سطرَ DiagnosticLogger كي يظهر لمراجع.',
+      // ⚠️ كان هذا التأكيدُ معكوساً: «يمضي على الخزنة الافتراضية العامّة —
+      // لا انحدار»، وهو خطُّ أساسِ مهمّةِ ٣ (2026-08-16). ثمّ نسخته سياسةُ
+      // «لا نقدَ يخرج بلا ورديّة» (2026-08-18) **عمداً** — لا سهواً: الحارسُ
+      // في `processSalesReturn` يرمي `ShiftRequiredException` قبل أن يبلغ
+      // المسارُ حلَّ الخزنة أصلاً، فلا سقوطَ إلى العامّة يُقاس بعدها.
+      // فانقلب التأكيدُ مع القاعدة، ولم يُحذَف: الحالةُ نفسُها ما زالت
+      // مقيسةً، والمتوقَّعُ منها هو الذي تغيّر.
+      await expectLater(
+        repo.processSalesReturn(
+          invoice: invoice,
+          returnQuantities: {items.first.id: 1},
+          productCache: await productCacheFor(),
+          userId: cashierId,
+          userName: 'Wire Cashier 4',
+        ),
+        throwsA(isA<ShiftRequiredException>()),
       );
+
+      expect((await db.select(db.safeTransactions).get()).length, txBefore,
+          reason: 'ولا صفَّ خزنةٍ كُتب — الرفضُ كاملٌ لا جزئيّ');
     });
   });
 }

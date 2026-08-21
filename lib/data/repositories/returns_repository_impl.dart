@@ -481,20 +481,23 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
       // Fix: write the ledger row with a plain `into(...).insert(...)`
       // so no nested transaction runs and no auto balance mutation fires.
       if (cashRefund > 0) {
-        // ح‑٢/ح‑٣: درجُ فرعِ الورديّة، ورميٌ لا تخطٍّ صامت. كان هنا
+        // ح‑٢/ح‑٣: درجُ الورديّة، ورميٌ لا تخطٍّ صامت. كان هنا
         // `getDefaultSafeByType('cash')` ثمّ `if (safe != null)` بلا `else`:
         // فرعٌ بلا خزنةٍ افتراضيّةٍ عامّةٍ كان يُنتج مرتجعاً كامل الأثر
         // (مخزونٌ يعود وقيدٌ دائنُه النقديّة) ودرجاً لم يتحرّك.
+        //
+        // والمُحلِّلُ `resolveRefundSafe` لا `resolveSafeForOperation`: الدرجُ
+        // يُنتقى بالأكثرِ حركةً في الورديّة، وورديّةٌ بفرعٍ فارغ تسقط إلى فرع
+        // المستخدم لا إلى العامّة. والحارسُ أعلاه ضمن ورديّةً مفتوحةً قبل هذه
+        // النقطة (‏`ShiftRequiredException`)، فلا مسارَ «بلا ورديّة» هنا.
         {
-          final cashSafe = await _db.resolveSafeForOperation(
-            safeType: 'cash',
-            preferredBranchId: operatingBranchId,
-            warehouseId: invoice.warehouseId,
-            operationLabel: 'sales-return #${invoice.invoiceNumber} (cash)',
-            noSafeMessage:
-                'لا توجد خزنة نقدية صالحة لصرف المرتجع. اضبط الخزائن من '
-                'الإعدادات ← الخزينة (المرتجع لم يُحفظ).',
-          );
+          final cashSafe = await _db.resolveRefundSafe(userId: userId);
+          if (cashSafe == null) {
+            throw Exception(
+              'لا توجد خزنة نقدية صالحة لصرف المرتجع. اضبط الخزائن من '
+              'الإعدادات ← الخزينة (المرتجع لم يُحفظ).',
+            );
+          }
           // H15 — خصمٌ ذرّيّ. و`newBalance` يبقى لقطةً لـ`balanceAfter`.
           final newBalance = cashSafe.balance - cashRefund;
           await _db.adjustSafeBalance(cashSafe.id, -cashRefund);
