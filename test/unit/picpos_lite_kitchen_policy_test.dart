@@ -31,9 +31,17 @@ void main() {
     expect(FeaturePolicy.lite.modifiersEnabled, isFalse);
   });
 
-  test('الفرقُ محصورٌ في العلمَين — لا شيءَ آخرَ انزلق', () {
+  // قرارُ المالك 2026-08-21 (مهمّة علَم الحجوزات ٧): فتحُ الحجوزات لـ
+  // PicPos-lite صار فرقاً ثالثاً متعمَّداً عن [lite] — بجانب المطبخ
+  // والإضافات. و[lite] (UralCash) تُركت عمداً بلا مساس: مطروحةٌ وقد تكون
+  // منصَّبةً عند عميل.
+  test('الفرقُ محصورٌ في ثلاثةِ أعلامٍ — لا شيءَ آخرَ انزلق', () {
     expect(
-      FeaturePolicy.lite.copyWith(kitchenEnabled: true, modifiersEnabled: true),
+      FeaturePolicy.lite.copyWith(
+        kitchenEnabled: true,
+        modifiersEnabled: true,
+        reservationsEnabled: true,
+      ),
       FeaturePolicy.litePicpos,
     );
   });

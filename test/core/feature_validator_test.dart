@@ -105,16 +105,30 @@ void main() {
       expect(result.appliedRules, isNotEmpty);
     });
 
-    test('reservations transitively enable kitchen + posMain', () {
+    test('reservations no longer force-enable tables (a booking reserves '
+        'time, not a seat)', () {
+      // Booking feature-flag task, 2026-08-21: `FeatureDependencyGraph
+      // .requires` used to map posReservations -> [posTables], so turning
+      // on bookings force-enabled the whole tables module (and, through
+      // it, kitchen) on every install. A booking is a service appointment
+      // — it reserves a person's time, not a physical seat — and a salon
+      // or clinic has no tables at all. The rule was deleted; this locks
+      // in the new truth in place of the old requires-chain assertion.
       final base = FeaturePolicy.fromProfile(BusinessProfile.supermarket);
+      expect(base.flag(FeatureKey.posTables), isFalse);
+      expect(base.flag(FeatureKey.posKitchen), isFalse);
+
       final result = FeatureValidator.validate(
         base,
         {FeatureKey.posReservations: true},
       );
       expect(result.policy.flag(FeatureKey.posReservations), isTrue);
-      expect(result.policy.flag(FeatureKey.posTables), isTrue);
-      expect(result.policy.flag(FeatureKey.posKitchen), isTrue);
-      expect(result.policy.flag(FeatureKey.posMain), isTrue);
+      expect(result.policy.flag(FeatureKey.posTables), isFalse,
+          reason: 'tables is a physical-seat concept; reservations must '
+              'not auto-enable it');
+      expect(result.policy.flag(FeatureKey.posKitchen), isFalse,
+          reason: 'kitchen was only pulled in transitively via tables '
+              'before — with that dependency gone it must stay off too');
     });
   });
 
