@@ -115,7 +115,10 @@ class FeaturePolicy {
     tablesEnabled: false,
     kitchenEnabled: true,
     deliveryEnabled: false,
-    reservationsEnabled: false,
+    // قرارُ المالك 2026-08-20. و`lite` (UralCash) لا تُمَسّ — مطروحةٌ وقد
+    // تكون منصَّبةً عند عميل. وحذفُ تبعيّة `posReservations → posTables`
+    // شرطُ هذا الفتح: بدونه يُشغّل وحدةَ الطاولات على كلّ تنصيبات lite.
+    reservationsEnabled: true,
     scaleEnabled: false,
     offersEnabled: false,
     branchesEnabled: false,

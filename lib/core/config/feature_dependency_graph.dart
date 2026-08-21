@@ -31,7 +31,10 @@ class FeatureDependencyGraph {
     // Tables service obviously needs the POS surface and the kitchen
     // pipeline; you can't run tables without the order engine behind them.
     FeatureKey.posTables: [FeatureKey.posMain, FeatureKey.posKitchen],
-    FeatureKey.posReservations: [FeatureKey.posTables],
+
+    // لا `posReservations: [posTables]`: الحجزُ موعدُ خدمةٍ يحجز وقتَ إنسان،
+    // والطاولةُ تحجز مكاناً — وصالونٌ أو عيادةٌ لا طاولاتِ فيها. وإبقاؤها
+    // كان يُشغّل وحدةَ الطاولات قسراً على كلّ تنصيبٍ يفتح الحجوزات.
 
     // Delivery routing pulls orders from the POS.
     FeatureKey.posDelivery: [FeatureKey.posMain],
