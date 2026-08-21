@@ -1412,6 +1412,169 @@ extension TreasuryDao on AppDatabase {
         });
   }
 
+  /// الورديّةُ التي تحكم **درجَ** [userId] الآن، أو `null` إن لم توجد.
+  ///
+  /// المصدرُ الوحيد لسؤال «هل يجوز أن يخرج نقدٌ الآن؟» (‏ح‑١، مواصفة
+  /// 2026-08-18) — يستعمله حارسُ `processSalesReturn` وحارسُ المرتجع السريع
+  /// في `sales_transaction_orchestrator`.
+  ///
+  /// ⚠️ السؤالُ عن **الدرج** لا عن المستخدم، ولذلك يقبل ورديّةَ غيرِه على
+  /// فرعه: `_settleShift` يحسب `expectedCash` من `drawerTxs` **بلا فلترِ
+  /// مستخدم** عن قصدٍ منصوصٍ عليه («الدرجُ واحدٌ يشترك فيه كلُّ من مسّه»)،
+  /// فحركةُ مديرٍ على درج الكاشير تدخل توقّعَ ورديّة الكاشير ولا تُنتج عجزاً.
+  /// ومديرُ النظام لا يفتح ورديّةً لنفسه أصلاً بل يلتحق بورديّة الكاشير
+  /// (Spec 135 NOTE 2)، فحصرُ السؤال في ورديّته كان رفضاً باطلاً.
+  Future<Shift?> resolveOpenShiftForDrawer(int userId) async {
+    final own = await getCurrentOpenShift(userId);
+    if (own != null) return own;
+    final branchId = await getUserBranchId(userId);
+    final onBranch = await getOpenShiftsForBranch(branchId: branchId);
+    return onBranch.isEmpty ? null : onBranch.first;
+  }
+
+  /// هل [safeId] **درجٌ** يستلزم ورديّةً مفتوحة؟ (‏ح‑١، مواصفة 2026-08-18)
+  ///
+  /// الصندوقُ الرئيسيُّ مُعفًى: المحاسبُ في المقرّ يسجّل عليه سنداتِه ولا
+  /// ورديّةَ له ولا يحتاجها — وهو ليس درجاً أمام كاشير. وما عداه من الخزائن
+  /// النقديّة درجٌ يعدّه أحدٌ عند الإقفال، فحركتُه خارجَ أيّ نافذةٍ تُنتج
+  /// فرقاً وهميّاً يُقيَّد في ذمّته.
+  ///
+  /// والخزائنُ غيرُ النقديّة (بنك/كليك) ليست أدراجاً ولا تدخل `expectedCash`
+  /// أصلاً، فلا ورديّةَ تُشترط لها.
+  /// ⚠️ السؤالُ عن **فرعِ الخزنة** لا عن المستخدم — والدرجُ هو الخزنة.
+  /// وعقدُ `ITreasuryRepository` للسندات لا يحمل `userId` أصلاً، فربطُ الحكمِ
+  /// بالمستخدم كان سيقرأ صفراً دائماً ويُفتي بلا معلومة.
+  Future<bool> drawerMovementAllowed(int? safeId) async {
+    if (safeId == null) return true;
+    final safe = await getSafeById(safeId);
+    if (safe == null || safe.safeType != 'cash') return true;
+    final central = await getCentralSafe();
+    if (central != null && safe.id == central.id) return true;
+    final shifts = await getOpenShiftsForBranch(branchId: safe.branchId);
+    return shifts.isNotEmpty;
+  }
+
+  /// سُلَّمُ اختيارِ الخزنةِ لأيّ حركةِ مالٍ — المصدرُ الوحيد.
+  ///
+  /// استُخرج من `_recordSalesReceipt` (مسارُ البيع) ليستعمله مسارُ المرتجع
+  /// أيضاً: كان المرتجعُ ينادي `getDefaultSafeByType` مباشرةً، فيخصم من
+  /// **الخزنةِ الافتراضيّةِ العامّة** أيّاً كان فرعُ من يُجري المرتجع — نقدٌ
+  /// يخرج من درجِ فرعٍ ورقٌ يُسلَّم في فرعٍ آخر.
+  ///
+  /// الأولويّات:
+  ///   * P1 — [specificSafeId] صريحٌ ونشط.
+  ///   * P2‑أ — [preferredBranchId]: فرعٌ يعرفه النداءُ يقيناً (فرعُ الورديّة
+  ///     المفتوحة في مسار المرتجع = الفرعُ القائمُ بالعمليّة فعلاً).
+  ///   * P2‑ب — الفرعُ المشتقُّ من [warehouseId] (سلوكُ مسار البيع القائم).
+  ///   * P3 — الافتراضيّةُ العامّة.
+  ///
+  /// ولا تُرجِع `null` أبداً: تعذُّرُ الخزنةِ **يرمي**. وهذا مقصودٌ بنيويّاً —
+  /// نداءٌ يُرجَع له `null` يُغري بـ`if (safe != null)` بلا `else`، فتمضي
+  /// العمليّةُ ويُرحَّل قيدٌ يقول «تحرّك نقد» والدرجُ ساكن. وهو ما كان يفعله
+  /// مسارُ المرتجع بالضبط. (‏ح‑٣ في مواصفة 2026-08-18.)
+  ///
+  /// [operationLabel] و[noSafeMessage] للتشخيص ولرسالةِ المستخدم — تختلف
+  /// بين بيعةٍ («الفاتورة لم تُحفظ») ومرتجعٍ («المرتجع لم يُحفظ»).
+  Future<Safe> resolveSafeForOperation({
+    required String safeType,
+    required String operationLabel,
+    required String noSafeMessage,
+    int? specificSafeId,
+    int? preferredBranchId,
+    int? warehouseId,
+  }) async {
+    Safe? targetSafe;
+    var reason = 'unknown';
+
+    // ── P1: تجاوزٌ صريح ──
+    if (specificSafeId != null) {
+      targetSafe = await (select(safes)
+            ..where((s) => s.id.equals(specificSafeId) & s.isActive.equals(true)))
+          .getSingleOrNull();
+      if (targetSafe != null) {
+        reason = 'P1-explicit(id=$specificSafeId)';
+      } else {
+        debugPrint('[SafeRoute] ⚠ P1: explicit safeId=$specificSafeId '
+            'not found/inactive, falling through');
+      }
+    }
+
+    // ── P2‑أ: فرعٌ يعرفه النداءُ يقيناً ──
+    if (targetSafe == null && preferredBranchId != null) {
+      targetSafe = await _safeForBranch(preferredBranchId, safeType);
+      if (targetSafe != null) {
+        reason = 'P2a-preferredBranch(branchId=$preferredBranchId,type=$safeType)';
+      } else {
+        debugPrint('[SafeRoute] ⚠ P2a: no $safeType safe for '
+            'preferredBranchId=$preferredBranchId — trying warehouse branch');
+      }
+    }
+
+    // ── P2‑ب: الفرعُ المشتقُّ من المخزن ──
+    if (targetSafe == null && warehouseId != null) {
+      final warehouse = await (select(warehouses)
+            ..where((w) => w.id.equals(warehouseId)))
+          .getSingleOrNull();
+      final whBranchId = warehouse?.branchId;
+      if (whBranchId != null) {
+        targetSafe = await _safeForBranch(whBranchId, safeType);
+        if (targetSafe != null) {
+          reason = 'P2-branch(branchId=$whBranchId,type=$safeType)';
+        } else {
+          debugPrint('[SafeRoute] ⚠ P2: no $safeType safe for '
+              'branchId=$whBranchId (warehouseId=$warehouseId) — '
+              'falling to system default');
+        }
+      } else {
+        debugPrint('[SafeRoute] ⚠ P2: warehouseId=$warehouseId has no branchId '
+            '— skipping branch-aware lookup');
+      }
+    }
+
+    // ── P3: الافتراضيّةُ العامّة — آخرُ ملاذ ──
+    if (targetSafe == null) {
+      targetSafe = await getDefaultSafeByType(safeType);
+      if (targetSafe != null) {
+        reason = 'P3-systemDefault(type=$safeType,id=${targetSafe.id})';
+        debugPrint('[SafeRoute] ⚠ P3 used for $operationLabel → '
+            'safe "${targetSafe.name}" (${targetSafe.id})');
+      }
+    }
+
+    if (targetSafe == null) {
+      // H1 · كان `return` صامتاً في مسار البيع: الفاتورةُ تُحفظ وقيدُها
+      // يُقيَّد (مدين نقدية) **والدرجُ لا يتحرّك إطلاقاً** ⇒ عجزٌ عند الإقفال
+      // بحجم البيعة، وحسابُ النقدية في الأستاذ ينفصل عن الخزائن. ولا رسالةَ
+      // للكاشير ولا صفَّ فشلٍ يُراجَع — البيعةُ تبدو ناجحة.
+      //
+      // والرميُ يرجّع المعاملةَ كلَّها (النداءاتُ كلُّها من داخل معاملة)، فلا
+      // يبقى نصفُ عملية: إما عمليّةٌ كاملةٌ بنقديةٍ مقيَّدة، أو لا شيء.
+      debugPrint('[SafeRoute] ✗ No safe found for $operationLabel '
+          'safeType=$safeType warehouseId=$warehouseId '
+          'preferredBranchId=$preferredBranchId');
+      throw Exception(noSafeMessage);
+    }
+
+    debugPrint('[SafeRoute] ✓ $operationLabel → safe "${targetSafe.name}" '
+        '(id=${targetSafe.id}, type=${targetSafe.safeType}, '
+        'branch=${targetSafe.branchId}) [$reason]');
+    return targetSafe;
+  }
+
+  /// أنشطُ خزائنِ [branchId] من [safeType]، والمعلَّمةُ افتراضيّةً أوّلاً.
+  Future<Safe?> _safeForBranch(int branchId, String safeType) {
+    return (select(safes)
+          ..where((s) =>
+              s.branchId.equals(branchId) &
+              s.safeType.equals(safeType) &
+              s.isActive.equals(true))
+          ..orderBy([
+            (s) => OrderingTerm(expression: s.isDefault, mode: OrderingMode.desc)
+          ])
+          ..limit(1))
+        .getSingleOrNull();
+  }
+
   /// Get total cash balance across all safes (legacy, merges all types)
   Future<double> getTotalCashBalance() async {
     final result = await customSelect(

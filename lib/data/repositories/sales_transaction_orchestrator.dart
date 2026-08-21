@@ -2,8 +2,10 @@ import 'dart:async';
 import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
+import '../../core/errors/app_exceptions.dart';
 import '../../domain/entities/cart_item_entity.dart';
 import '../../domain/entities/sync_dtos.dart';
+import '../../domain/models/sales_return_refund_split.dart';
 import '../../domain/repositories/sales_repository.dart';
 import '../../core/logging/diagnostic_logger.dart';
 import '../../core/utils/financial_utils.dart';
@@ -140,6 +142,37 @@ class SalesTransactionOrchestrator {
     // admins' invoices reach HQ. The legacy `NetworkService.isClient` was
     // false in mirror mode, silently dropping the entire push branch.
     final isClientMode = SyncInterceptor.isClientMode;
+
+    // ── ح‑١: لا يتحرّك درجٌ إلا وعليه ورديّةٌ مفتوحة ──
+    //
+    // مواصفة 2026-08-18. يسري على **البيع والمرتجع السريع** كليهما: كلاهما
+    // يمرّ من هنا، وكلاهما يحرّك نقداً ماديّاً في درجٍ أمام الجهاز.
+    //   * مرتجعٌ سريعٌ بلا ورديّة ⇒ نقدٌ يخرج بلا نافذة ⇒ عجزٌ وهميّ.
+    //   * بيعةٌ بلا ورديّة ⇒ نقدٌ يدخل بلا نافذة ⇒ **فائضٌ وهميّ**: يُقيَّد
+    //     مدين نقدية / دائن إيراد فائض، والمبلغُ نفسُه قُيِّد بقيد البيعة —
+    //     فالنقديةُ في الأستاذ مرّتين وإيرادٌ لا وجودَ له.
+    //
+    // ولا يُحجَب المديرُ عن البيع: `resolveOpenShiftForDrawer` يقبل ورديّةَ
+    // الكاشير على فرعه، فبيعتُه تمضي بلا سؤالٍ متى كان على الدرج ورديّةٌ
+    // (وهي الحالةُ التي عالجها فصلُ `txs` عن `drawerTxs` أصلاً). ولا يُسأل
+    // إلا حين لا ورديّةَ إطلاقاً — وحينها لا شيءَ يلتحق به، ففتحُها هو
+    // الصوابُ الوحيد لا استثناءٌ من Spec 135 NOTE 2.
+    //
+    // وموضعُه هنا لا في `sales_mutations_dao.createSalesInvoice` **عن قصد**:
+    // الخادمُ ينادي الـDAO مباشرةً (`api_sales_handler`)، ولا ورديّةَ للخادم،
+    // فحارسٌ هناك كان سيرفض كلَّ بيعةٍ ومرتجعٍ يصله من عميل. الأوركستريتر
+    // مسارُ الأجهزة التي أمامها درجٌ — standalone والعميل — وهو من يُحرَس.
+    //
+    // والآجلُ والبنكيُّ و`click` تمرّ بلا عائق: لا درجَ لها.
+    final drawerCash = SalesReturnRefundSplit.cashTouchingDrawer(
+      paid: paid,
+      paymentMethod: paymentMethod,
+      cashAmount: cashAmount,
+      bankAmount: bankAmount,
+    );
+    if (drawerCash > 0 && await _db.resolveOpenShiftForDrawer(userId) == null) {
+      throw ShiftRequiredException(cashAmount: drawerCash);
+    }
 
     final invoiceId = await _db.transaction(() async {
       // 1. Generate invoice number — Cluster 027 / Issue 5 (counter mix):
@@ -702,6 +735,26 @@ class SalesTransactionOrchestrator {
           }
         }
       }
+    }
+
+    // ── ح‑١ لمسار نقطة البيع ──
+    //
+    // **قبل تفرّعِ `isClientMode` عمداً**، تماماً كحارسِ `processSalesReturn`:
+    // شقُّ العميل يكتب فاتورتَه بـ`insertSalesInvoiceWithoutStock` ولا يمرّ
+    // بـ`createSalesInvoice` إطلاقاً، فحارسٌ هناك وحدَه كان يترك بيعَ العميل
+    // بلا حراسة. والدرجُ أمام الجهاز في الوضعَين، فالحكمُ واحد.
+    //
+    // ويُقاس على المبالغ **الفعليّة** لا المطلوبة: تجاوزُ شركةِ التوصيل أعلاه
+    // يحوّل البيعةَ إلى `credit` ويصفّر المقبوض، فبيعةُ توصيلٍ لا تمسّ درجاً
+    // ولا تستلزم ورديّة.
+    final drawerCash = SalesReturnRefundSplit.cashTouchingDrawer(
+      paid: effectivePaid,
+      paymentMethod: effectivePaymentMethod,
+      cashAmount: effectiveCash,
+      bankAmount: effectiveBank,
+    );
+    if (drawerCash > 0 && await _db.resolveOpenShiftForDrawer(request.userId) == null) {
+      throw ShiftRequiredException(cashAmount: drawerCash);
     }
 
     // 3. UUID-First — mint one globalId shared between server and local cache

@@ -69,6 +69,7 @@ import '../../../domain/models/exchange_settlement.dart';
 // حارسُ `presentation_db_import_guard` يمنع `data/database` وحدَه.
 import '../../../data/repositories/exchange_repository_impl.dart';
 import '../../../domain/models/returnable_line.dart';
+import '../../shared_widgets/open_shift_prompt.dart';
 
 part 'picpos_pos_operations.dart';
 

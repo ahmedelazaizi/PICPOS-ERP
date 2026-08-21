@@ -32,9 +32,16 @@ class ReturnPrintData {
 /// Interface for Sales and Purchase Returns repository
 abstract class IReturnsRepository {
   /// Load sales invoices for return with filters
+  ///
+  /// [allowedBranchIds] — سقفُ نطاق الفرع، كما في [getSalesReturnHistory]
+  /// (‏Spec 151 Track-3). بدونه يرى كاشيرُ فرعٍ فواتيرَ فرعٍ آخرَ ويرتجعها،
+  /// فيعود المخزونُ لمخزنِ الفاتورة الأصليّة بينما يخرج النقدُ من درجِ فرعِ
+  /// ورديّته هو — مخزونٌ في فرعٍ ونقدٌ في آخر (مواصفة 2026-08-18 §٣‑١٢).
+  /// `null` = وصولٌ كامل (مديرُ نظام).
   Future<List<SalesInvoiceData>> getInvoicesForReturn({
     required DateTime fromDate,
     required DateTime toDate,
+    Set<int>? allowedBranchIds,
   });
 
   /// Load purchase invoices for return with filters.

@@ -45,6 +45,7 @@ import '../../../services/shift_dialog_session_guard.dart';
 import '../../../core/logging/diagnostic_logger.dart';
 import '../../../core/permissions/permission_codes.dart';
 import '../../widgets/permission_guard.dart' show requestManagerApproval;
+import '../../shared_widgets/open_shift_prompt.dart';
 
 // ── Part files (dialogs and operations) ────────────────────────────────
 part 'pos_main_dialogs.dart';

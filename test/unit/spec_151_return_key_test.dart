@@ -241,6 +241,11 @@ void main() {
         ),
       };
 
+      // شرطٌ لازمٌ منذ مواصفة 2026-08-18 (ح‑١): مرتجعٌ يصرف نقداً يستلزم
+      // ورديّةً مفتوحةً على درجه. الموضوعُ هنا تمييزُ قيدَي مرتجعَين
+      // متساويَي المبلغ، لا الورديّات.
+      await db.openShift(1, 0);
+
       // First partial return of qty 3.
       final r1 = await repo.processSalesReturn(
         invoice: invoice,

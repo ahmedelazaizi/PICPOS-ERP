@@ -8,7 +8,17 @@ import '../../../core/theme/app_colors.dart';
 class PosOpeningBalanceDialog extends StatefulWidget {
   final String userName;
 
-  const PosOpeningBalanceDialog({super.key, required this.userName});
+  /// سببُ ظهورِ الديالوج الآن، حين لا يكون فتحَ ورديّةٍ اعتياديّاً عند الدخول.
+  ///
+  /// مثالُه: كاشيرٌ ضغط «تنفيذ المرتجع» فوجد ديالوجَ ورديّةٍ بلا مقدّمة —
+  /// بدون سطرٍ يشرح، يبدو الأمرُ عطلاً لا إجراءً مطلوباً.
+  final String? subtitle;
+
+  const PosOpeningBalanceDialog({
+    super.key,
+    required this.userName,
+    this.subtitle,
+  });
 
   @override
   State<PosOpeningBalanceDialog> createState() => _PosOpeningBalanceDialogState();
@@ -67,6 +77,23 @@ class _PosOpeningBalanceDialogState extends State<PosOpeningBalanceDialog> {
                   ],
                 ),
               ),
+              if (widget.subtitle != null) ...[
+                const SizedBox(height: 12),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(PhosphorIconsBold.info,
+                        size: 16, color: AppColors.warning),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        widget.subtitle!,
+                        style: const TextStyle(color: AppColors.warning),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 16),
               const Text(
                 'أدخل الرصيد الافتتاحي للصندوق:',

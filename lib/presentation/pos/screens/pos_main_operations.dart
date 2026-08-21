@@ -525,16 +525,41 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
   }
 
   Future<void> _executePayment(dynamic paymentResult, dynamic cartState) async {
-    final success = await ref.read(checkoutControllerProvider.notifier).processPayment(
-      method: paymentResult.method,
-      total: paymentResult.total,
-      cashAmount: paymentResult.cashAmount,
-      bankAmount: paymentResult.bankAmount,
-      clickAmount: paymentResult.clickAmount,
-      bankSafeId: cartState.bankSafeId,
-      customerId: paymentResult.customerId ?? cartState.selectedCustomerId,
+    // ح‑١ (مواصفة 2026-08-18): بيعةٌ نقديّةٌ بلا ورديّةٍ على الدرج تُرفَض،
+    // فنعرض فتحَها ونعيد المحاولةَ مرّةً. والتوأمُ في `picpos_pos_operations`
+    // يستدعي نفسَ المساعد (مصيدةُ النسخ §٥.٥).
+    bool success = false;
+    final outcome = await runWithOpenShiftPrompt(
+      context: context,
+      ref: ref,
+      subtitleBuilder: (amount) =>
+          'البيعة تُدخل ${amount.toStringAsFixed(2)} نقداً إلى الدرج.',
+      attempt: () async => success = await ref
+          .read(checkoutControllerProvider.notifier)
+          .processPayment(
+            method: paymentResult.method,
+            total: paymentResult.total,
+            cashAmount: paymentResult.cashAmount,
+            bankAmount: paymentResult.bankAmount,
+            clickAmount: paymentResult.clickAmount,
+            bankSafeId: cartState.bankSafeId,
+            customerId: paymentResult.customerId ?? cartState.selectedCustomerId,
+          ),
     );
-       
+
+    if (!mounted) return;
+    if (outcome != ShiftPromptOutcome.completed) {
+      showPosToast(
+        context,
+        ref,
+        outcome == ShiftPromptOutcome.cancelledByUser
+            ? 'أُلغيت البيعة — لم تُفتَح وردية'
+            : 'تعذّر فتح الوردية، فلم تُحفَظ الفاتورة',
+        type: PosNotificationType.error,
+      );
+      return;
+    }
+
     if (success) {
       _onCheckoutSuccess();
       // Cluster 025 / Issue 1 — surface the JE rounding adjustment when
@@ -773,17 +798,38 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
       if (confirmed != true || !mounted) return;
     }
 
-    final success = await ref.read(checkoutControllerProvider.notifier).processPayment(
-      method: paymentResult.method,
-      total: paymentResult.total,
-      cashAmount: paymentResult.cashAmount,
-      bankAmount: paymentResult.bankAmount,
-      clickAmount: paymentResult.clickAmount,
-      bankSafeId: cartState.bankSafeId,
-      customerId: paymentResult.customerId ?? cartState.selectedCustomerId,
+    // ح‑١ — نفسُ حارسِ `_executePayment` أعلاه، على مسار «حفظ وطباعة».
+    bool success = false;
+    final outcome = await runWithOpenShiftPrompt(
+      context: context,
+      ref: ref,
+      subtitleBuilder: (amount) =>
+          'البيعة تُدخل ${amount.toStringAsFixed(2)} نقداً إلى الدرج.',
+      attempt: () async => success = await ref
+          .read(checkoutControllerProvider.notifier)
+          .processPayment(
+            method: paymentResult.method,
+            total: paymentResult.total,
+            cashAmount: paymentResult.cashAmount,
+            bankAmount: paymentResult.bankAmount,
+            clickAmount: paymentResult.clickAmount,
+            bankSafeId: cartState.bankSafeId,
+            customerId: paymentResult.customerId ?? cartState.selectedCustomerId,
+          ),
     );
 
     if (!mounted) return;
+    if (outcome != ShiftPromptOutcome.completed) {
+      showPosToast(
+        context,
+        ref,
+        outcome == ShiftPromptOutcome.cancelledByUser
+            ? 'أُلغيت البيعة — لم تُفتَح وردية'
+            : 'تعذّر فتح الوردية، فلم تُحفَظ الفاتورة',
+        type: PosNotificationType.error,
+      );
+      return;
+    }
 
     if (success) {
       if (printAfter) {

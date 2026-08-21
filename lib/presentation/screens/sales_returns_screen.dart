@@ -17,6 +17,7 @@ import '../widgets/permission_guard.dart'; // B5: Manager approval
 // دفعة ٩ — حرّاس sales_return_delete و sales_return_print في return_logic.dart.
 import '../../core/permissions/permission_codes.dart';
 import '../widgets/common/common.dart';
+import '../shared_widgets/open_shift_prompt.dart';
 
 // ── Part files (mixin-based extraction) ─────────────────────────────────
 part 'sales_returns/return_logic.dart';

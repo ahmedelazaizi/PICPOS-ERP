@@ -4,6 +4,7 @@
 //
 // Extracted from ApiDataHandler for maintainability (PIR C-01).
 
+import '../../core/constants/payment_methods.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io' show File, FileMode;
@@ -458,7 +459,7 @@ class ApiPurchaseHandler extends ApiHandlerBase {
           // Direct INSERT (not createSafeTransaction): we must NOT mutate the
           // safe balance (no cash moved) nor re-adjust the supplier balance
           // (already done above).
-          final balanceSafe = ['transfer', 'card', 'bank'].contains(invoice.paymentMethod)
+          final balanceSafe = isBankPaymentMethod(invoice.paymentMethod)
               ? await db.getDefaultSafeByType('bank')
               : await db.getDefaultSafeByType('cash');
           if (balanceSafe != null) {
@@ -501,7 +502,7 @@ class ApiPurchaseHandler extends ApiHandlerBase {
 
         final cashReturnAmount = grossReturn - balanceCorrection;
         if (cashReturnAmount > 0) {
-          final isBank = ['transfer', 'card', 'bank'].contains(invoice.paymentMethod);
+          final isBank = isBankPaymentMethod(invoice.paymentMethod);
           final safe = isBank
               ? await db.getDefaultSafeByType('bank')
               : await db.getDefaultSafeByType('cash');
@@ -769,7 +770,7 @@ class ApiPurchaseHandler extends ApiHandlerBase {
         if (oldBalanceCorrection > 0) {
           await db.adjustPartyBalance(invoice.supplierId, oldBalanceCorrection);
           final balanceSafe =
-              ['transfer', 'card', 'bank'].contains(invoice.paymentMethod)
+              isBankPaymentMethod(invoice.paymentMethod)
                   ? await db.getDefaultSafeByType('bank')
                   : await db.getDefaultSafeByType('cash');
           if (balanceSafe != null) {
@@ -797,7 +798,7 @@ class ApiPurchaseHandler extends ApiHandlerBase {
         //     un-refund amount (we never want to push the safe negative).
         if (oldCashReturn > 0) {
           final isBank =
-              ['transfer', 'card', 'bank'].contains(invoice.paymentMethod);
+              isBankPaymentMethod(invoice.paymentMethod);
           final safe = isBank
               ? await db.getDefaultSafeByType('bank')
               : await db.getDefaultSafeByType('cash');
@@ -934,7 +935,7 @@ class ApiPurchaseHandler extends ApiHandlerBase {
         if (newBalanceCorrection > 0) {
           await db.adjustPartyBalance(invoice.supplierId, -newBalanceCorrection);
           final balanceSafe =
-              ['transfer', 'card', 'bank'].contains(invoice.paymentMethod)
+              isBankPaymentMethod(invoice.paymentMethod)
                   ? await db.getDefaultSafeByType('bank')
                   : await db.getDefaultSafeByType('cash');
           if (balanceSafe != null) {
@@ -961,7 +962,7 @@ class ApiPurchaseHandler extends ApiHandlerBase {
         final newCashReturnAmount = newGross - newBalanceCorrection;
         if (newCashReturnAmount > 0) {
           final isBank =
-              ['transfer', 'card', 'bank'].contains(invoice.paymentMethod);
+              isBankPaymentMethod(invoice.paymentMethod);
           final safe = isBank
               ? await db.getDefaultSafeByType('bank')
               : await db.getDefaultSafeByType('cash');

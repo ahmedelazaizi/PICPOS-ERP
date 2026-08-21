@@ -1437,18 +1437,41 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     );
     if (!mounted) return;
 
-    final success =
-        await ref.read(checkoutControllerProvider.notifier).processPayment(
-              method: method,
-              total: paidTotal,
-              cashAmount: cashAmount,
-              bankAmount: bankAmount,
-              clickAmount: clickAmount,
-              bankSafeId: bankSafeId,
-              customerId: resultCustomerId ?? cartState.selectedCustomerId,
-            );
+    // ح‑١ (مواصفة 2026-08-18): بيعةٌ نقديّةٌ بلا ورديّةٍ على الدرج تُرفَض،
+    // فنعرض فتحَها ونعيد المحاولةَ مرّةً — لا رسالةٌ حمراءُ لا مخرجَ منها.
+    // ويُصيب هذا مديرَ النظام تحديداً: `_ensureShiftOpen` يتخطّاه عمداً
+    // (Spec 135 NOTE 2) فيصل إلى هنا بلا ورديّة.
+    bool success = false;
+    final outcome = await runWithOpenShiftPrompt(
+      context: context,
+      ref: ref,
+      subtitleBuilder: (amount) =>
+          'البيعة تُدخل ${amount.toStringAsFixed(2)} نقداً إلى الدرج.',
+      attempt: () async => success = await ref
+          .read(checkoutControllerProvider.notifier)
+          .processPayment(
+            method: method,
+            total: paidTotal,
+            cashAmount: cashAmount,
+            bankAmount: bankAmount,
+            clickAmount: clickAmount,
+            bankSafeId: bankSafeId,
+            customerId: resultCustomerId ?? cartState.selectedCustomerId,
+          ),
+    );
 
     if (!mounted) return;
+    if (outcome != ShiftPromptOutcome.completed) {
+      showPosToast(
+        context,
+        ref,
+        outcome == ShiftPromptOutcome.cancelledByUser
+            ? 'أُلغيت البيعة — لم تُفتَح وردية'
+            : 'تعذّر فتح الوردية، فلم تُحفَظ الفاتورة',
+        type: PosNotificationType.error,
+      );
+      return;
+    }
     if (!success) {
       final err =
           ref.read(checkoutControllerProvider).error ?? 'فشل حفظ الفاتورة';

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:ural_erp/core/constants/app_constants.dart';
+import 'package:ural_erp/core/errors/app_exceptions.dart';
 import 'package:ural_erp/core/utils/financial_utils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/providers/providers.dart';
@@ -155,9 +156,20 @@ class SalesReturnNotifier extends Notifier<SalesReturnState> {
     state = state.copyWith(isLoading: true);
     try {
       final repository = ref.read(returnsRepositoryProvider);
+      // مواصفة 2026-08-18 §٣‑١٢: يرى الكاشيرُ فواتيرَ فرعِه وحدَها. بدون
+      // القصّ كان يرتجع فاتورةَ فرعٍ آخر، فيعود المخزونُ لمخزنِ ذاك الفرع
+      // بينما يخرج النقدُ من درجِ فرعِه هو — مخزونٌ هنا ونقدٌ هناك.
+      // `null` = وصولٌ كامل (مديرُ نظام)، وإخفاقُ القراءة يُبقي السلوكَ
+      // السابقَ بدل أن يُفرِغ الشاشةَ على الكاشير.
+      Set<int>? scopeIds;
+      try {
+        scopeIds = (await ref.read(branchScopeProvider.future)).allowedBranchIds;
+      } catch (_) {}
+
       final filtered = await repository.getInvoicesForReturn(
         fromDate: state.fromDate,
         toDate: state.toDate,
+        allowedBranchIds: scopeIds,
       );
 
       // Batch-load customer names in ONE query — eliminates N+1 FutureBuilder in list.
@@ -384,6 +396,12 @@ class SalesReturnNotifier extends Notifier<SalesReturnState> {
       // from the screen without waiting for the Drift stream debounce.
       await loadInvoices();
       return success;
+    } on ShiftRequiredException {
+      // ليس عطلاً بل طلبَ إجراء: الواجهةُ تعرض فتحَ ورديّةٍ وتعيد المحاولة.
+      // ابتلاعُه في `error` نصّاً كان يحوّله إلى رسالةٍ حمراءَ لا مخرجَ منها،
+      // ويُفقِد النوعَ الذي بُني عليه (‏مواصفة 2026-08-18 ح‑١).
+      state = state.copyWith(isProcessing: false);
+      rethrow;
     } catch (e) {
       state = state.copyWith(isProcessing: false, error: e.toString());
       return false;

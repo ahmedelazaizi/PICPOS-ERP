@@ -118,6 +118,11 @@ void main() {
       expect(invoice.total, closeTo(1000, 0.001), reason: 'sanity');
       expect(invoice.paid, closeTo(400, 0.001), reason: 'sanity');
 
+      // شرطٌ لازمٌ منذ مواصفة 2026-08-18 (ح‑١): مرتجعُ مشترياتٍ نقديٌّ يُدخِل
+      // نقداً الدرجَ فيستلزم ورديّةً مفتوحةً عليه. الموضوعُ هنا تقسيمُ القيد
+      // بين الذمّة والنقد، فالورديّةُ تهيئةٌ لا فرضيّة.
+      await db.openShift(1, 0);
+
       await repo.processPurchaseReturn(
         invoice: invoice,
         returnItems: [
@@ -266,6 +271,11 @@ void main() {
           minStock: 0,
         ),
       };
+
+      // شرطٌ لازمٌ منذ مواصفة 2026-08-18 (ح‑١): مرتجعٌ يصرف نقداً يستلزم
+      // ورديّةً مفتوحةً على درجه. هذا الملفُّ يقيس تناسبَ الضريبة المجمَّدة
+      // لا سلوكَ الورديّات، فالورديّةُ تهيئةٌ لا موضوعُ اختبار.
+      await db.openShift(1, 0);
 
       final ok = await repo.processSalesReturn(
         invoice: invoice,

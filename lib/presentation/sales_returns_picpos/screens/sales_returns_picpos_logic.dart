@@ -142,9 +142,28 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
     final capturedCache = Map<int, ProductEntity>.from(state.productCache);
 
     setState(() => _savingReturn = true);
-    late final bool success;
+    bool success = false;
     try {
-      success = await notifier.processReturn(reason);
+      // ح‑١ (مواصفة 2026-08-18) — نسخةُ المنطقِ واحدةٌ في
+      // `runWithOpenShiftPrompt`، والتوأمُ في `screens/sales_returns` يستدعي
+      // نفسَه. لا تنسخ هنا (مصيدةُ النسخ §٥.٥).
+      final outcome = await runWithOpenShiftPrompt(
+        context: context,
+        ref: ref,
+        attempt: () async => success = await notifier.processReturn(reason),
+      );
+      if (outcome != ShiftPromptOutcome.completed) {
+        if (mounted) {
+          AppToast.show(
+            context,
+            outcome == ShiftPromptOutcome.cancelledByUser
+                ? 'أُلغي المرتجع — لم تُفتَح وردية'
+                : 'تعذّر فتح الوردية، فلم يُنفَّذ المرتجع',
+            type: ToastType.warning,
+          );
+        }
+        return;
+      }
     } finally {
       if (mounted) setState(() => _savingReturn = false);
     }

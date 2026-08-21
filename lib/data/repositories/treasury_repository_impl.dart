@@ -1,3 +1,4 @@
+import '../../core/errors/app_exceptions.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'base_repository.dart';
@@ -146,6 +147,11 @@ class TreasuryRepositoryImpl extends BaseRepository<Safe> implements ITreasuryRe
         if (defaultSafe != null) targetSafeId = defaultSafe.id;
       }
 
+      // ح‑١ (مواصفة 2026-08-18 §٣‑٩): حركةُ نقدٍ على درجٍ تستلزم ورديّة.
+      if (!isCheckPayment && !await db.drawerMovementAllowed(targetSafeId)) {
+        throw ShiftRequiredException(cashAmount: amount);
+      }
+
       final transactionId = await db.createReceiptVoucher(
         amount: amount,
         category: category,
@@ -242,6 +248,11 @@ class TreasuryRepositoryImpl extends BaseRepository<Safe> implements ITreasuryRe
           final defaultSafe = await (db.select(db.safes)..where((s) => s.isDefault.equals(true))).getSingleOrNull();
           if (defaultSafe != null) resolvedSafeId = defaultSafe.id;
         }
+      }
+
+      // ح‑١ — نفسُ حارسِ سند القبض، على جهة الصرف (§٣‑٩).
+      if (!isCheckPayment && !await db.drawerMovementAllowed(resolvedSafeId)) {
+        throw ShiftRequiredException(cashAmount: amount);
       }
 
       final transactionId = await db.createPaymentVoucher(

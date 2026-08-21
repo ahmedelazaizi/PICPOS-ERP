@@ -15,6 +15,7 @@ import 'package:ural_erp/data/repositories/drift_accounting_repository.dart';
 import 'package:ural_erp/data/repositories/purchases_repository_impl.dart';
 import 'package:ural_erp/domain/repositories/audit_repository_interface.dart';
 import 'package:ural_erp/domain/repositories/i_products_repository.dart';
+import 'package:ural_erp/core/errors/app_exceptions.dart';
 import 'package:ural_erp/domain/repositories/inventory_repository.dart';
 import 'package:ural_erp/domain/repositories/parties_repository.dart';
 import 'package:ural_erp/domain/repositories/purchases_repository.dart';
@@ -371,6 +372,10 @@ void main() {
 
   test('Edge: cash refund reversal fails closed when safe balance is below '
       'the un-refund amount', () async {
+    // شرطٌ لازمٌ منذ مواصفة 2026-08-18 (ح‑١): مرتجعُ مشترياتٍ نقديٌّ يُدخِل
+    // نقداً الدرجَ فيستلزم ورديّةً مفتوحةً عليه. الموضوعُ هنا رفضُ عكسِ
+    // الاسترداد عند قصورِ الرصيد، فالورديّةُ تهيئةٌ لا فرضيّة.
+    await db.openShift(1, 0);
     // Mark the invoice as PAID so the original return triggers the cash
     // refund branch (safe balance grows by the refund amount).
     const paidTotal = 1000.0;

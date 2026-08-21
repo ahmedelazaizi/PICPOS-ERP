@@ -1,3 +1,5 @@
+import '../../core/constants/payment_methods.dart';
+import '../../core/errors/app_exceptions.dart';
 import 'dart:async';
 
 import 'package:drift/drift.dart';
@@ -684,7 +686,7 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
       if (balanceCorrection > 0) {
         try {
           final isBank =
-              ['transfer', 'card', 'bank'].contains(invoice.paymentMethod);
+              isBankPaymentMethod(invoice.paymentMethod);
           final balanceSafe = isBank
               ? await _db.getDefaultSafeByType('bank')
               : await _db.getDefaultSafeByType('cash');
@@ -826,7 +828,7 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
 
         // Record a balance-adjustment entry for the supplier statement.
         // No cash moves so we look up the default safe but don't change its balance.
-        final balanceSafe = ['transfer', 'card', 'bank'].contains(invoice.paymentMethod)
+        final balanceSafe = isBankPaymentMethod(invoice.paymentMethod)
             ? await _db.getDefaultSafeByType('bank')
             : await _db.getDefaultSafeByType('cash');
         if (balanceSafe != null) {
@@ -866,11 +868,30 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
       final cashReturnAmount = grossReturnAmount - balanceCorrection;
       if (cashReturnAmount > 0) {
         // Record in safe: supplier gives back money → receipt into our safe
-        final isBank = ['transfer', 'card', 'bank'].contains(invoice.paymentMethod);
-        final safe = isBank
-            ? await _db.getDefaultSafeByType('bank')
-            : await _db.getDefaultSafeByType('cash');
-        if (safe != null) {
+        final isBank = isBankPaymentMethod(invoice.paymentMethod);
+        // مواصفة 2026-08-18 (ح‑٢/ح‑٣): خزنةُ فرعِ المخزن لا الافتراضيّةُ
+        // العامّة، ورميٌ لا تخطٍّ صامت. كان `getDefaultSafeByType` ثمّ
+        // `if (safe != null)` بلا `else`: فرعٌ بلا خزنةٍ افتراضيّةٍ عامّة كان
+        // يمضي مرتجعُه كامل الأثر — مخزونٌ يخرج وقيدٌ مدينُه النقديّة —
+        // ودرجٌ لم يتحرّك.
+        final safe = await _db.resolveSafeForOperation(
+          safeType: isBank ? 'bank' : 'cash',
+          warehouseId: invoice.warehouseId,
+          operationLabel: 'purchase-return #${invoice.invoiceNumber}',
+          noSafeMessage:
+              'لا توجد خزنة ${isBank ? 'بنكية' : 'نقدية'} صالحة لاستلام '
+              'مرتجع المشتريات. اضبط الخزائن من الإعدادات ← الخزينة '
+              '(المرتجع لم يُحفَظ).',
+        );
+        // ح‑١: نقدٌ **يدخل** الدرجَ هنا (المورّدُ يردّ المال)، فبلا نافذةٍ
+        // تحويه يعدّه الكاشيرُ التالي فائضاً ويُقيَّد «فائض نقدية».
+        //
+        // والسؤالُ عن فرعِ الخزنة لا عن المستخدم: توقيعُ
+        // `processPurchaseReturn` لا يحمل `userId` أصلاً.
+        if (!await _db.drawerMovementAllowed(safe.id)) {
+          throw ShiftRequiredException(cashAmount: cashReturnAmount);
+        }
+        {
           // 069 (D5-003): atomic delta update.
           final newBalance = safe.balance + cashReturnAmount;
           await _db.adjustSafeBalance(safe.id, cashReturnAmount);
@@ -1109,7 +1130,7 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
     if (oldBalanceCorrection > 0) {
       await _db.adjustPartyBalance(invoice.supplierId, oldBalanceCorrection);
       final balanceSafe =
-          ['transfer', 'card', 'bank'].contains(invoice.paymentMethod)
+          isBankPaymentMethod(invoice.paymentMethod)
               ? await _db.getDefaultSafeByType('bank')
               : await _db.getDefaultSafeByType('cash');
       if (balanceSafe != null) {
@@ -1137,7 +1158,7 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
     //    below the un-refund amount — we never want to go negative.
     if (oldCashReturn > 0) {
       final isBank =
-          ['transfer', 'card', 'bank'].contains(invoice.paymentMethod);
+          isBankPaymentMethod(invoice.paymentMethod);
       final safe = isBank
           ? await _db.getDefaultSafeByType('bank')
           : await _db.getDefaultSafeByType('cash');

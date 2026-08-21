@@ -475,7 +475,7 @@ extension SalesMutationsDao on AppDatabase {
               : ((paymentMethod == 'multiple' || paymentMethod == 'mixed')
                   ? (cashAmount ?? 0)
                   : 0.0);
-          final bankRefund = (['transfer', 'card', 'bank'].contains(paymentMethod))
+          final bankRefund = (isBankPaymentMethod(paymentMethod))
               ? paid
               : ((paymentMethod == 'multiple' || paymentMethod == 'mixed')
                   ? (bankAmount ?? 0)
@@ -538,7 +538,7 @@ extension SalesMutationsDao on AppDatabase {
                 : ((paymentMethod == 'multiple' || paymentMethod == 'mixed')
                     ? (cashAmount ?? 0)
                     : 0.0);
-            final bankRefundRetry = (['transfer', 'card', 'bank'].contains(paymentMethod))
+            final bankRefundRetry = (isBankPaymentMethod(paymentMethod))
                 ? paid
                 : ((paymentMethod == 'multiple' || paymentMethod == 'mixed')
                     ? (bankAmount ?? 0)
@@ -739,77 +739,19 @@ extension SalesMutationsDao on AppDatabase {
         ? 'bank'
         : 'cash';
 
-    // ── Priority 1: Explicit safe override ──
-    Safe? targetSafe;
-    String safeResolutionReason = 'unknown';
-    if (specificSafeId != null) {
-      targetSafe = await (select(safes)
-            ..where((s) => s.id.equals(specificSafeId) & s.isActive.equals(true)))
-          .getSingleOrNull();
-      if (targetSafe != null) {
-        safeResolutionReason = 'P1-explicit(id=$specificSafeId)';
-      } else {
-        debugPrint('[SafeRoute] ⚠ P1: explicit safeId=$specificSafeId not found/inactive, falling through');
-      }
-    }
-
-    // ── Priority 2: Branch-aware default ──
-    // Fixes: clients that don't pass safeId are routed to the branch's own safe
-    // instead of the system-wide default (الصندوق الرئيسي).
-    if (targetSafe == null && warehouseId != null) {
-      final warehouse = await (select(warehouses)
-            ..where((w) => w.id.equals(warehouseId)))
-          .getSingleOrNull();
-      if (warehouse?.branchId != null) {
-        targetSafe = await (select(safes)
-              ..where((s) =>
-                  s.branchId.equals(warehouse!.branchId!) &
-                  s.safeType.equals(safeType) &
-                  s.isActive.equals(true))
-              ..orderBy([(s) => OrderingTerm(expression: s.isDefault, mode: OrderingMode.desc)])
-              ..limit(1))
-            .getSingleOrNull();
-        if (targetSafe != null) {
-          safeResolutionReason = 'P2-branch(branchId=${warehouse!.branchId},type=$safeType)';
-        } else {
-          debugPrint('[SafeRoute] ⚠ P2: no $safeType safe for branchId=${warehouse!.branchId} '
-              '(warehouseId=$warehouseId) — falling to system default');
-        }
-      } else {
-        debugPrint('[SafeRoute] ⚠ P2: warehouseId=$warehouseId has no branchId — skipping branch-aware lookup');
-      }
-    }
-
-    // ── Priority 3: System-wide default (main cash register) — last resort ──
-    if (targetSafe == null) {
-      targetSafe = await getDefaultSafeByType(safeType);
-      if (targetSafe != null) {
-        safeResolutionReason = 'P3-systemDefault(type=$safeType,id=${targetSafe.id})';
-        debugPrint('[SafeRoute] ⚠ P3 used for invoice #$invoiceId/$paymentMethod → safe "${targetSafe.name}" (${targetSafe.id})');
-      }
-    }
-
-    if (targetSafe == null) {
-      // H1 · كان `return` صامتاً هنا: الفاتورةُ تُحفظ وقيدُها يُقيَّد (مدين
-      // نقدية) **والدرجُ لا يتحرّك إطلاقاً** ⇒ عجزٌ عند الإقفال بحجم البيعة،
-      // وحسابُ النقدية في الأستاذ ينفصل عن الخزائن. ولا رسالةَ للكاشير ولا
-      // صفَّ فشلٍ يُراجَع — البيعةُ تبدو ناجحة.
-      //
-      // والرميُ هنا يرجّع المعاملةَ كلَّها (هذه الدالةُ تُنادى من داخل
-      // `createSalesInvoice`'s transaction)، فلا يبقى نصفُ عملية: إما بيعةٌ
-      // كاملةٌ بنقديةٍ مقيَّدة، أو لا بيعة. وهو ما يفعله المسارُ نفسُه لنقص
-      // المخزون وغيره.
-      debugPrint('[SafeRoute] ✗ No safe found for invoice #$invoiceId '
-          'paymentMethod=$paymentMethod safeType=$safeType warehouseId=$warehouseId');
-      throw Exception(
-        'لا توجد خزنة ${safeType == 'cash' ? 'نقدية' : safeType} صالحة '
-        'لتسجيل المتحصَّل. اضبط الخزائن من الإعدادات ← الخزينة قبل البيع '
-        '(الفاتورة لم تُحفظ).',
-      );
-    }
-
-    debugPrint('[SafeRoute] ✓ invoice #$invoiceId/$paymentMethod → safe "${targetSafe.name}" '
-        '(id=${targetSafe.id}, type=${targetSafe.safeType}, branch=${targetSafe.branchId}) [$safeResolutionReason]');
+    // سُلَّمُ الاختيار (P1/P2/P3) مشتركٌ الآن مع مسار المرتجع — انظر
+    // `resolveSafeForOperation` في treasury_dao. لا `preferredBranchId` هنا:
+    // البيعةُ تشتقّ فرعَها من مخزنها كما كانت دائماً، فسلوكُها محفوظٌ حرفيّاً.
+    final targetSafe = await resolveSafeForOperation(
+      safeType: safeType,
+      warehouseId: warehouseId,
+      specificSafeId: specificSafeId,
+      operationLabel: 'invoice #$invoiceId/$paymentMethod',
+      noSafeMessage:
+          'لا توجد خزنة ${safeType == 'cash' ? 'نقدية' : safeType} صالحة '
+          'لتسجيل المتحصَّل. اضبط الخزائن من الإعدادات ← الخزينة قبل البيع '
+          '(الفاتورة لم تُحفظ).',
+    );
 
     final newBalance = targetSafe.balance + amount; // negative if return
     // allow-bare-generateInvoiceNumber: _recordSalesReceipt is a private

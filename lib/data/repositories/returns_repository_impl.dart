@@ -1,14 +1,17 @@
+import '../../core/constants/payment_methods.dart';
 import 'dart:async' show unawaited;
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import '../database/database.dart';
 import '../../core/constants/app_constants.dart';
 import '../../domain/models/return_refund_calculator.dart';
+import '../../core/errors/app_exceptions.dart';
 import '../../domain/repositories/returns_repository.dart';
 import '../../services/accounting_service.dart';
 import '../../services/generators/base_generator.dart' show InvoiceItem;
 import '../../domain/entities/product_entity.dart';
 import '../../domain/entities/accounting_entities.dart';
+import '../../domain/models/sales_return_refund_split.dart';
 import '../../services/client_write_interceptor.dart';
 import '../../services/network_service.dart';
 import '../../core/utils/uuid_v7.dart';
@@ -24,8 +27,16 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
   Future<List<SalesInvoiceData>> getInvoicesForReturn({
     required DateTime fromDate,
     required DateTime toDate,
+    Set<int>? allowedBranchIds,
   }) async {
-    final invoices = await _db.getSalesByDateRange(fromDate, toDate);
+    // مواصفة 2026-08-18 §٣‑١٢: القصُّ بنطاق الفرع — نفسُ ما يفعله
+    // `getSalesReturnHistory` منذ Spec 151 Track-3. كانت القائمةُ الأصليّةُ
+    // وحدَها بلا قصّ، فسجلُّ المرتجعات محروسٌ ومصدرُها مكشوف.
+    final invoices = await _db.getSalesByDateRange(
+      fromDate,
+      toDate,
+      allowedBranchIds: allowedBranchIds,
+    );
     debugPrint('[ReturnsRepo] getInvoicesForReturn: total fetched=${invoices.length}, fromDate=$fromDate, toDate=$toDate');
     final filtered = invoices.where((invoice) {
         if (invoice.total <= 0) return false;           // skip returns & zero invoices
@@ -89,6 +100,30 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
         allowedBranchIds: allowedBranchIds,
       );
 
+  /// تقسيمُ مرتجعٍ بقيمة [totalReturn] على [invoice] — المصدرُ الوحيد.
+  ///
+  /// يستدعيه ثلاثةُ مواضعَ بنفس الدخل فيعطي نفسَ الخرج حتماً:
+  ///   * الحارسُ قبل المعاملة (هل يخرج نقدٌ ⇒ هل تُشترط ورديّة؟)
+  ///   * التنفيذُ داخل المعاملة (كم يخرج من كلّ خزنة؟)
+  ///   * إيصالُ الطباعة (ماذا نكتب للعميل أنّه استلم؟)
+  ///
+  /// وكان الثلاثةُ حساباتٍ منفصلة، وثالثُها يخالف الأوّلَين: يقسم المرتجعَ
+  /// كلَّه بلا مقاصّةِ ذمّة، فيطبع «مرتجع نقدي ١٠٠» على بيعةٍ آجلةٍ لم يخرج
+  /// فيها قرشٌ من الدرج.
+  SalesReturnRefundSplit _refundSplitFor(
+    SalesInvoiceData invoice,
+    double totalReturn,
+  ) =>
+      SalesReturnRefundSplit.from(
+        invoiceTotal: invoice.total,
+        invoicePaid: invoice.paid,
+        paymentMethod: invoice.paymentMethod,
+        cashPaid: invoice.cashPaid,
+        bankPaid: invoice.bankPaid,
+        totalReturn: totalReturn,
+        hasCustomer: invoice.customerId != null,
+      );
+
   @override
   Future<bool> processSalesReturn({
     required SalesInvoiceData invoice,
@@ -125,6 +160,29 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
     // Calculate total return amount
     double totalReturn = _calculateReturnTotal(invoice, invoiceItems, returnQuantities);
     if (totalReturn <= 0) return false;
+
+    // ── ح‑١: لا نقدَ يخرج من درجٍ إلا داخلَ نافذةِ ورديّةٍ مفتوحة ──
+    //
+    // الفحصُ **قبل** فتح المعاملة عمداً: رفضٌ مبكّرٌ بلا عملٍ يُبذَل ثمّ
+    // يُرجَع. والحسابُ هو `_refundSplitFor` نفسُه الذي ستنفّذه المعاملة، فلا
+    // يَعِد الحارسُ بغير ما يقع.
+    //
+    // ويُقرَأ في الوضعَين (standalone والعميل): الدرجُ ماديّاً أمام هذا
+    // الجهاز، والورديّةُ تُفتَح محلّيّاً أوّلاً — فالعميلُ يعرف حالتَها بلا
+    // انتظارِ شبكة، ويرى الكاشيرُ الطلبَ فوراً. أمّا صفُّ الخزنة نفسُه فيكتبه
+    // الخادمُ في وضع العميل (مصدرُ الحقيقةِ للمال) — انظر شقَّ العميل أدناه.
+    // السؤالُ عن **الدرج** لا عن المستخدم — التفصيلُ في
+    // `resolveOpenShiftForDrawer`، وهو المصدرُ الوحيد يشاركه حارسُ المرتجع
+    // السريع في `sales_transaction_orchestrator`.
+    final guardSplit = _refundSplitFor(invoice, totalReturn);
+    final openShift = await _db.resolveOpenShiftForDrawer(userId);
+    if (guardSplit.requiresOpenShift && openShift == null) {
+      throw ShiftRequiredException(cashAmount: guardSplit.cashRefund);
+    }
+    // فرعُ الورديّةِ المفتوحة = الفرعُ القائمُ بالمرتجع فعلاً. و`null` مقبولٌ
+    // (مرتجعٌ بنكيٌّ بحتٌ بلا ورديّة، أو ورديّةُ مستخدمِ وصولٍ كامل بلا فرع)
+    // فينزل المُحلِّلُ إلى فرعِ المخزن ثمّ الافتراضيّةِ العامّة.
+    final operatingBranchId = openShift?.branchId;
 
     // Spec 007 / FR-003, FR-005: broadened predicate so mirror admins'
     // sales returns reach HQ.
@@ -200,12 +258,14 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
           // physically moved) → the customer statement showed a duplicate
           // "سند صرف" alongside the return invoice. Matches the math the
           // standalone path already runs at lines 254-285 below.
-          'paid': () {
-            final remaining = (invoice.total - invoice.paid)
-                .clamp(0.0, double.infinity);
-            final cashRefundShare = totalReturn - remaining;
-            return cashRefundShare > 0 ? cashRefundShare : 0.0;
-          }(),
+          // نفسُ `guardSplit` الذي فحصه الحارسُ قبل قليل — لا حسابٌ رابع.
+          //
+          // والخادمُ يستعمل `paid` هذه لتحريكِ الدرج (‏`createSalesInvoice` ⇒
+          // `_recordSalesReceipt` بمبلغٍ مُنفًى). فلو خالفت حسابَ الحارس لوَعَدَ
+          // الحارسُ بمبلغٍ وصرف الخادمُ غيرَه — والحسابُ السابقُ هنا كان يخالفه
+          // فعلاً على فاتورةٍ **بلا عميل** غيرِ مسدَّدة: يطرح المتبقّي وكأنّ
+          // ثمّة ذمّةً تُقاصّ، ولا ذمّةَ بلا عميل.
+          'paid': guardSplit.actualRefundToPay,
           'paymentMethod': invoice.paymentMethod,
           'reason': reason,
         }),
@@ -385,37 +445,19 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
         }
       }
 
-      // Financial Reconciliation
-      double actualRefundToPay = totalReturn;
-      double arRefund = 0;
+      // Financial Reconciliation — الحسابُ نفسُه الذي فحصه الحارسُ قبل فتح
+      // المعاملة (`_refundSplitFor`). نسخةٌ واحدةٌ في `domain/models`، فلا
+      // يستطيع الحارسُ أن يعِد بغير ما ينفّذ هذا السطر.
+      final refundSplit = _refundSplitFor(invoice, totalReturn);
+      final arRefund = refundSplit.arRefund;
+      final cashRefund = refundSplit.cashRefund;
+      final bankRefund = refundSplit.bankRefund;
 
-      if (invoice.customerId != null) {
-        final oldRemaining = (invoice.total - invoice.paid).clamp(0.0, double.infinity);
-        if (oldRemaining > 0) {
-          final balanceCorrection = totalReturn.clamp(0.0, oldRemaining);
-          await _db.adjustPartyBalance(invoice.customerId!, -balanceCorrection);
-          arRefund = balanceCorrection;
-          actualRefundToPay = totalReturn - balanceCorrection;
-        }
-      }
-
-      double cashRefund = 0;
-      double bankRefund = 0;
-
-      if (actualRefundToPay > 0) {
-        if (invoice.paymentMethod == 'multiple' || invoice.paymentMethod == 'mixed') {
-          final totalPaid = invoice.cashPaid + invoice.bankPaid;
-          if (totalPaid > 0) {
-            cashRefund = actualRefundToPay * (invoice.cashPaid / totalPaid);
-            bankRefund = actualRefundToPay * (invoice.bankPaid / totalPaid);
-          } else {
-            cashRefund = actualRefundToPay;
-          }
-        } else if (['transfer', 'card', 'bank'].contains(invoice.paymentMethod)) {
-          bankRefund = actualRefundToPay;
-        } else {
-          cashRefund = actualRefundToPay;
-        }
+      // المقاصّةُ أثرٌ جانبيٌّ لا يعرفه الحسابُ الخالص، فتبقى هنا. والشرطُ
+      // `arRefund > 0` مكافئٌ حرفيّاً لشرطَي الأصل (عميلٌ موجود + متبقٍّ > 0):
+      // `totalReturn > 0` مضمونٌ أعلاه، فمتى وُجد متبقٍّ كان القصُّ موجباً.
+      if (arRefund > 0 && invoice.customerId != null) {
+        await _db.adjustPartyBalance(invoice.customerId!, -arRefund);
       }
 
       // Safe Transactions
@@ -439,10 +481,20 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
       // Fix: write the ledger row with a plain `into(...).insert(...)`
       // so no nested transaction runs and no auto balance mutation fires.
       if (cashRefund > 0) {
-        // مهمّة ٣ (2026-08-16): درجُ وردية المستخدم المفتوحة لا الخزنةُ
-        // النقديةُ العامّة — راجع `TreasuryDao.resolveRefundSafe`.
-        final cashSafe = await _db.resolveRefundSafe(userId: userId);
-        if (cashSafe != null) {
+        // ح‑٢/ح‑٣: درجُ فرعِ الورديّة، ورميٌ لا تخطٍّ صامت. كان هنا
+        // `getDefaultSafeByType('cash')` ثمّ `if (safe != null)` بلا `else`:
+        // فرعٌ بلا خزنةٍ افتراضيّةٍ عامّةٍ كان يُنتج مرتجعاً كامل الأثر
+        // (مخزونٌ يعود وقيدٌ دائنُه النقديّة) ودرجاً لم يتحرّك.
+        {
+          final cashSafe = await _db.resolveSafeForOperation(
+            safeType: 'cash',
+            preferredBranchId: operatingBranchId,
+            warehouseId: invoice.warehouseId,
+            operationLabel: 'sales-return #${invoice.invoiceNumber} (cash)',
+            noSafeMessage:
+                'لا توجد خزنة نقدية صالحة لصرف المرتجع. اضبط الخزائن من '
+                'الإعدادات ← الخزينة (المرتجع لم يُحفظ).',
+          );
           // H15 — خصمٌ ذرّيّ. و`newBalance` يبقى لقطةً لـ`balanceAfter`.
           final newBalance = cashSafe.balance - cashRefund;
           await _db.adjustSafeBalance(cashSafe.id, -cashRefund);
@@ -465,8 +517,18 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
       }
 
       if (bankRefund > 0) {
-        final bankSafe = await _db.getDefaultSafeByType('bank');
-        if (bankSafe != null) {
+        // ح‑٢/ح‑٣ للخزنة البنكيّة كذلك — لا ورديّةَ تُشترط لها (لا درجَ لها،
+        // ولا تدخل `expectedCash`)، لكنّ الفرعَ والرميَ يسريان.
+        {
+          final bankSafe = await _db.resolveSafeForOperation(
+            safeType: 'bank',
+            preferredBranchId: operatingBranchId,
+            warehouseId: invoice.warehouseId,
+            operationLabel: 'sales-return #${invoice.invoiceNumber} (bank)',
+            noSafeMessage:
+                'لا توجد خزنة بنكية صالحة لصرف المرتجع. اضبط الخزائن من '
+                'الإعدادات ← الخزينة (المرتجع لم يُحفظ).',
+          );
           // H15 — نفسُ الشقّ النقديّ أعلاه.
           final newBalance = bankSafe.balance - bankRefund;
           await _db.adjustSafeBalance(bankSafe.id, -bankRefund);
@@ -502,9 +564,7 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
       // memo visible in the customer's statement. This is likely the
       // freeze-on-full-return bug the user reported.
       if (arRefund > 0 && invoice.customerId != null) {
-        // مهمّة ٣ — الشقُّ النقديُّ فقط يوجَّه لدرج الوردية؛ الشقُّ البنكيُّ
-        // ليس درجاً فيبقى على الخزنة الافتراضية.
-        final arSafe = ['transfer', 'card', 'bank'].contains(invoice.paymentMethod)
+        final arSafe = isBankPaymentMethod(invoice.paymentMethod)
             ? await _db.getDefaultSafeByType('bank')
             : await _db.resolveRefundSafe(userId: userId);
         if (arSafe != null) {
@@ -756,19 +816,13 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
     if (selectedInvoice == null) return null;
 
     String paymentMethod = selectedInvoice.paymentMethod;
-    double cashRefund = returnTotal;
-    double bankRefund = 0;
-
-    if (paymentMethod == 'multiple' || paymentMethod == 'mixed') {
-      final totalPaid = selectedInvoice.cashPaid + selectedInvoice.bankPaid;
-      if (totalPaid > 0) {
-        cashRefund = returnTotal * (selectedInvoice.cashPaid / totalPaid);
-        bankRefund = returnTotal * (selectedInvoice.bankPaid / totalPaid);
-      }
-    } else if (['transfer', 'card', 'bank'].contains(paymentMethod)) {
-      cashRefund = 0;
-      bankRefund = returnTotal;
-    }
+    // الإيصالُ يطبع ما تحرّك فعلاً، لا ما كان سيتحرّك لو كانت الفاتورةُ
+    // مسدَّدة. الحسابُ السابقُ هنا كان يقسم `returnTotal` كلَّه بلا مقاصّةِ
+    // ذمّة، فيطبع للعميل «مرتجع نقدي» بحجم المرتجع على بيعةٍ آجلةٍ لم يخرج
+    // فيها من الدرج شيء — ورقةٌ بيده تشهد بقبضٍ لم يقع.
+    final printSplit = _refundSplitFor(selectedInvoice, returnTotal);
+    final double cashRefund = printSplit.cashRefund;
+    final double bankRefund = printSplit.bankRefund;
 
     String? customerName;
     if (selectedInvoice.customerId != null) {
