@@ -310,9 +310,6 @@ mixin _ScalePanelsMixin on ConsumerState<ScalePluExportScreen> {
 
                 return SingleChildScrollView(
                   child: DataTable(
-                    headingRowColor: WidgetStateProperty.all(
-                      isDark ? Colors.grey.shade800 : Colors.grey.shade50,
-                    ),
                     columnSpacing: 16,
                     columns: const [
                       DataColumn(label: Text('ترحيل', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
@@ -595,9 +592,6 @@ mixin _ScalePanelsMixin on ConsumerState<ScalePluExportScreen> {
                     scrollDirection: Axis.horizontal,
                     child: DataTable(
                       columnSpacing: 20,
-                      headingRowColor: WidgetStateProperty.all(
-                        isDark ? Colors.grey.shade800 : Colors.grey.shade50,
-                      ),
                       columns: const [
                         DataColumn(label: Text('', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
                         DataColumn(label: Text('الميزان', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),

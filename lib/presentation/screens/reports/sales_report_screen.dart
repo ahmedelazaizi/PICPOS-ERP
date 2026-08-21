@@ -738,9 +738,6 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
                             child: SingleChildScrollView(
                               scrollDirection: Axis.horizontal,
                               child: DataTable(
-                                headingRowColor: WidgetStateProperty.all(
-                                  Theme.of(context).cardColor,
-                                ),
                                 columnSpacing: 24,
                                 columns: const [
                                   DataColumn(label: Text('رقم الفاتورة')),

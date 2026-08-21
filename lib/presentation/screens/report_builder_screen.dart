@@ -256,7 +256,6 @@ class _ReportBuilderScreenState extends ConsumerState<ReportBuilderScreen> {
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: DataTable(
-            headingRowColor: WidgetStateProperty.all(theme.colorScheme.surfaceContainerLow),
             columns: columns
                 .map((c) => DataColumn(
                     label: Text(_fmtCol(c), style: const TextStyle(fontWeight: FontWeight.bold))))

@@ -576,9 +576,6 @@ class _FinancialStatementsScreenState
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: DataTable(
-                    headingRowColor: WidgetStateProperty.all(
-                      AppColors.primary.withValues(alpha: 0.06),
-                    ),
                     columnSpacing: 16,
                     horizontalMargin: 12,
                     columns: const [
@@ -1062,9 +1059,6 @@ class _FinancialStatementsScreenState
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: DataTable(
-                      headingRowColor: WidgetStateProperty.all(
-                        (_showReceivables ? AppColors.primary : AppColors.warning).withValues(alpha: 0.06),
-                      ),
                       columnSpacing: 20,
                       columns: const [
                         DataColumn(label: Text('الطرف', style: TextStyle(fontWeight: FontWeight.bold))),

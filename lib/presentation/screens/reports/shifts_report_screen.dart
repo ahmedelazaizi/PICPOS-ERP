@@ -359,9 +359,6 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
                             child: SizedBox(
                               width: double.infinity,
                               child: DataTable(
-                                headingRowColor: WidgetStateProperty.all(
-                                  Theme.of(context).cardColor,
-                                ),
                                 columns: const [
                                   DataColumn(label: Text('# الوردية')),
                                   DataColumn(label: Text('المستخدم')),
@@ -640,8 +637,6 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
           SizedBox(
             width: double.infinity,
             child: DataTable(
-              headingRowColor:
-                  WidgetStateProperty.all(Theme.of(context).cardColor),
               columns: const [
                 DataColumn(label: Text('المستخدم')),
                 DataColumn(label: Text('الورديات')),

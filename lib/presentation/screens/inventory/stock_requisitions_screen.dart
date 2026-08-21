@@ -125,7 +125,6 @@ class _StockRequisitionsScreenState extends ConsumerState<StockRequisitionsScree
                               scrollDirection: Axis.horizontal,
                               child: SingleChildScrollView(
                                 child: DataTable(
-                                  headingRowColor: WidgetStateProperty.all(AppColors.surface),
                                   columns: const [
                                     DataColumn(label: Text('رقم الطلب', style: TextStyle(fontWeight: FontWeight.bold))),
                                     DataColumn(label: Text('التاريخ', style: TextStyle(fontWeight: FontWeight.bold))),

@@ -4,6 +4,8 @@ import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
+// نمطُ ديالوجات PicPos — الغلافُ المشترك.
+import '../../picpos_shell/picpos_dialog.dart';
 
 import '../../../data/providers/providers.dart';
 import '../../../services/generators/generators.dart';
@@ -163,21 +165,39 @@ class _PaymentVoucherDialogState extends ConsumerState<PaymentVoucherDialog> {
     final safes = ref.watch(scopedSafesProvider).value ?? [];
     final localizations = AppLocalizations.of(context)!;
 
-    return Directionality(
-      textDirection: ui.TextDirection.rtl,
-      child: AlertDialog(
-        title: Row(
-          children: [
-            const Icon(PhosphorIconsBold.arrowCircleUp, color: AppColors.error),
-            const SizedBox(width: 8),
-            Text(localizations.paymentVoucher),
-          ],
+    // نمطُ ديالوجات PicPos (تصميمُ 2026-08-21) — الغلافُ وحدَه تبدّل،
+    // **والمحتوى لم يُمَسّ**. اللونُ المميّز أحمرُ لا أخضر: هذا صرفٌ لا قبض،
+    // والفرقُ بينهما اتّجاهُ المال — فلا يُترَك للعنوان وحدَه.
+    //
+    // Issue 13 — landscape dialog (mirrors receipt_voucher_dialog).
+    return PicPosDialog(
+      icon: PhosphorIconsBold.arrowCircleUp,
+      accent: AppColors.error,
+      title: localizations.paymentVoucher,
+      width: 760,
+      onCancel: () => Navigator.pop(context),
+      cancelLabel: localizations.cancel,
+      secondaryActions: [
+        PicPosDialogAction(
+          label: 'طباعة A4',
+          icon: PhosphorIconsBold.printer,
+          onPressed: () => _printA4Preview(),
         ),
-        // Issue 13 — landscape dialog (mirrors receipt_voucher_dialog).
-        content: SizedBox(
-          width: 720,
-          child: SingleChildScrollView(
-            child: Column(
+        PicPosDialogAction(
+          label: 'حفظ + حراري',
+          icon: PhosphorIconsBold.receipt,
+          onPressed: () =>
+              _saveVoucher(context, ref, localizations, printMode: 'thermal'),
+        ),
+      ],
+      primaryAction: PicPosDialogAction(
+        label: localizations.save,
+        icon: PhosphorIconsBold.check,
+        onPressed: () =>
+            _saveVoucher(context, ref, localizations, printMode: 'none'),
+      ),
+      body: [
+            Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -642,50 +662,7 @@ class _PaymentVoucherDialogState extends ConsumerState<PaymentVoucherDialog> {
                 ),
               ],
             ),
-          ),
-        ),
-        actions: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              TextButton.icon(
-                icon: const Icon(PhosphorIconsBold.printer),
-                label: const Text('طباعة A4'),
-                onPressed: () => _printA4Preview(),
-              ),
-              Row(
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text(localizations.cancel),
-                  ),
-                  const SizedBox(width: 8),
-                  // Print + Save button
-                  OutlinedButton.icon(
-                    icon: const Icon(PhosphorIconsBold.printer, size: 18),
-                    label: const Text('حفظ + حراري'),
-                    style:
-                        OutlinedButton.styleFrom(foregroundColor: AppColors.error),
-                    onPressed: () =>
-                        _saveVoucher(context, ref, localizations, printMode: 'thermal'),
-                  ),
-                  const SizedBox(width: 8),
-                  ElevatedButton.icon(
-                    icon: const Icon(PhosphorIconsBold.check),
-                    label: Text(localizations.save),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.error,
-                      foregroundColor: Colors.white,
-                    ),
-                    onPressed: () =>
-                        _saveVoucher(context, ref, localizations, printMode: 'none'),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
-      ),
+      ],
     );
   }
 

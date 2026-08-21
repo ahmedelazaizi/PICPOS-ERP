@@ -105,9 +105,6 @@ class SalesItemsTable extends ConsumerWidget {
             clipBehavior: Clip.antiAlias,
             child: DataTable(
               columnSpacing: 12,
-              headingRowColor: WidgetStateProperty.all(
-                AppColors.primary.withValues(alpha: 0.05),
-              ),
               columns: const [
                 DataColumn(label: Text('الصنف')),
                 DataColumn(label: Text('الوحدة')),

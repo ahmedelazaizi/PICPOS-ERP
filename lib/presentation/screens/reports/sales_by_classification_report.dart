@@ -709,9 +709,6 @@ class _SalesByClassificationReportState
                             SingleChildScrollView(
                               scrollDirection: Axis.horizontal,
                               child: DataTable(
-                                headingRowColor: WidgetStatePropertyAll(
-                                  color.withValues(alpha: 0.08),
-                                ),
                                 columnSpacing: 16,
                                 dataRowMinHeight: 36,
                                 dataRowMaxHeight: 40,

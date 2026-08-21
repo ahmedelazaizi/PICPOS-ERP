@@ -245,8 +245,6 @@ class LandedCostScreen extends ConsumerWidget {
               : SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: DataTable(
-                    headingRowColor:
-                        WidgetStateProperty.all(theme.colorScheme.surfaceContainerLow),
                     columns: const [
                       DataColumn(label: Text('الصنف')),
                       DataColumn(label: Text('الكمية'), numeric: true),

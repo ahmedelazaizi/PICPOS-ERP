@@ -333,7 +333,6 @@ class _GeneralLedgerScreenState extends ConsumerState<GeneralLedgerScreen> {
         isVerticalScrollBarVisible: true,
         isHorizontalScrollBarVisible: true,
         minWidth: 900,
-        headingRowColor: WidgetStateProperty.all(isDark ? const Color(0xFF263238) : const Color(0xFFF5F5F5)),
         headingRowHeight: 44,
         dataRowHeight: 40,
         columnSpacing: 20,

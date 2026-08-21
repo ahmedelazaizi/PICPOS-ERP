@@ -15,6 +15,8 @@ import 'package:ural_erp/l10n/app_localizations.dart';
 import '../../../../../../core/constants/app_constants.dart';
 import '../../../core/permissions/permission_codes.dart';
 import '../../widgets/permission_guard.dart';
+// نمطُ ديالوجات PicPos — الغلافُ المشترك.
+import '../../picpos_shell/picpos_dialog.dart';
 
 class ReceiptVoucherDialog extends ConsumerStatefulWidget {
   final Party? initialParty;
@@ -165,29 +167,45 @@ class _ReceiptVoucherDialogState extends ConsumerState<ReceiptVoucherDialog> {
     final safes = ref.watch(scopedSafesProvider).value ?? [];
     final localizations = AppLocalizations.of(context)!;
 
-    return Directionality(
-      textDirection: ui.TextDirection.rtl,
-      child: AlertDialog(
-        title: Row(
-          children: [
-            const Icon(
-              PhosphorIconsBold.arrowCircleDown,
-              color: AppColors.success,
-            ),
-            const SizedBox(width: 8),
-            Text(localizations.receiptVoucher),
-          ],
+    // نمطُ ديالوجات PicPos (تصميمُ 2026-08-21) — الغلافُ وحدَه تبدّل:
+    // رأسٌ بأيقونةٍ ملوّنةٍ وسطرٍ خافت، وتذييلٌ بخلفيّةِ الحقل.
+    // **ومحتوى الحوار لم يُمَسّ** — لا حقلٌ أُضيف ولا نداءُ حفظٍ تغيّر.
+    //
+    // Issue 13 — landscape dialog. Wider footprint + paired short
+    // fields (amount/discount, safe/cost-center) sit side-by-side
+    // so the form fits one screen height instead of forcing a long
+    // vertical scroll. The wider rendering also matches the printed
+    // A4 voucher orientation, so what the cashier sees on screen
+    // visually previews the print. والعرضُ الآن سقفٌ لا إلزام، فلا يخرج
+    // الحوارُ عن حدّ شاشةٍ أضيقَ منه.
+    return PicPosDialog(
+      icon: PhosphorIconsBold.arrowCircleDown,
+      accent: AppColors.success,
+      title: localizations.receiptVoucher,
+      width: 760,
+      onCancel: () => Navigator.pop(context),
+      cancelLabel: localizations.cancel,
+      secondaryActions: [
+        PicPosDialogAction(
+          label: 'طباعة A4',
+          icon: PhosphorIconsBold.printer,
+          onPressed: () => _printA4Preview(),
         ),
-        // Issue 13 — landscape dialog. Wider footprint + paired short
-        // fields (amount/discount, safe/cost-center) sit side-by-side
-        // so the form fits one screen height instead of forcing a long
-        // vertical scroll. The wider rendering also matches the printed
-        // A4 voucher orientation, so what the cashier sees on screen
-        // visually previews the print.
-        content: SizedBox(
-          width: 720,
-          child: SingleChildScrollView(
-            child: Column(
+        PicPosDialogAction(
+          label: 'حفظ + حراري',
+          icon: PhosphorIconsBold.receipt,
+          onPressed: () =>
+              _saveVoucher(context, ref, localizations, printMode: 'thermal'),
+        ),
+      ],
+      primaryAction: PicPosDialogAction(
+        label: localizations.save,
+        icon: PhosphorIconsBold.check,
+        onPressed: () =>
+            _saveVoucher(context, ref, localizations, printMode: 'none'),
+      ),
+      body: [
+            Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -718,44 +736,7 @@ class _ReceiptVoucherDialogState extends ConsumerState<ReceiptVoucherDialog> {
                 ),
               ],
             ),
-          ),
-        ),
-        actions: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              TextButton.icon(
-                icon: const Icon(PhosphorIconsBold.printer),
-                label: const Text('طباعة A4'),
-                onPressed: () => _printA4Preview(),
-              ),
-              Row(
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text(localizations.cancel),
-                  ),
-                  const SizedBox(width: 8),
-                  // Print + Save button
-                  OutlinedButton.icon(
-                    icon: const Icon(PhosphorIconsBold.printer, size: 18),
-                    label: const Text('حفظ + حراري'),
-                    onPressed: () =>
-                        _saveVoucher(context, ref, localizations, printMode: 'thermal'),
-                  ),
-                  const SizedBox(width: 8),
-                  ElevatedButton.icon(
-                    icon: const Icon(PhosphorIconsBold.check),
-                    label: Text(localizations.save),
-                    onPressed: () =>
-                        _saveVoucher(context, ref, localizations, printMode: 'none'),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
-      ),
+      ],
     );
   }
 
