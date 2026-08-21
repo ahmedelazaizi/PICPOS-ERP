@@ -11,11 +11,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/core/constants/app_constants.dart';
+import 'package:ural_erp/core/theme/app_colors.dart';
 import 'package:ural_erp/core/permissions/permission_codes.dart';
 import 'package:ural_erp/data/providers/providers.dart';
 import 'package:ural_erp/presentation/widgets/permission_guard.dart';
 import 'package:ural_erp/presentation/sales_invoices_picpos/screens/sales_invoices_picpos_screen.dart'
     as picpos;
+
+/// عرضُ قطعةِ الشريط ذاتِ [color] — صفرٌ إن لم تُرسم أصلاً.
+///
+/// المطابقةُ باللون لا بالموضع: `find.byType(ColoredBox)` وحدَه يلتقط صناديقَ
+/// `Scaffold` الداخليّةَ فيقيس ما ليس شريطاً — وهو ما أوقعني في قراءةٍ كاذبة.
+double _segmentWidth(WidgetTester tester, Color color) {
+  final f = find.byWidgetPredicate(
+    (w) => w is ColoredBox && w.color == color,
+  );
+  if (f.evaluate().isEmpty) return 0;
+  return tester.getSize(f.first).width;
+}
 
 void main() {
   // ‏١٠٠٠ إجمالي · ٢٠٠ مرتجع · ٥٠٠ محصَّل ⇒ صافي ٨٠٠ ونسبةُ تحصيلٍ ٥٠٪.
@@ -88,6 +101,33 @@ void main() {
       // العناوينُ تبقى — المستخدمُ يعرف أن ثمّةَ بياناتٍ لا أن القيمةَ صفر.
       expect(find.text('صافي المبيعات'), findsOneWidget);
       expect(find.text('المحصّل'), findsOneWidget);
+    });
+
+    // شريطُ النِّسَب السفليُّ يرسم **عرضَه** من نفس الأرقام. فحجبُ النصِّ
+    // وحدَه لا يكفي: مسطرةٌ على الشاشة تقرأ ٥٠٪ من طول القطعة الزرقاء كما
+    // تقرؤها من الرقم. والقياسُ هنا على العرض المرسوم لا على وجود الودجت —
+    // قطعةٌ بوزنٍ صفر تبقى في الشجرة ولا تشغل بكسلاً.
+    testWidgets('بلا صلاحية — شريطُ النِّسَب لا يرسم مقداراً', (tester) async {
+      await pump(tester, const []);
+
+      expect(_segmentWidth(tester, AppColors.primaryLight), 0,
+          reason: 'قطعةُ المحصَّل مرسومةٌ بعرضٍ يقرؤه المسطرةُ نسبةً — '
+              'بعد أن حُجبت النسبةُ بالنصّ');
+      expect(_segmentWidth(tester, AppColors.warning), 0,
+          reason: 'وقطعةُ المرتجع كذلك');
+    });
+
+    testWidgets('بالصلاحية — الشريطُ يرسم القطعَ فعلاً (ضابطٌ للاختبار السابق)',
+        (tester) async {
+      await pump(tester, const [PermissionCodes.salesAmountsView]);
+
+      // ضابط: لولاه لمرّ اختبارُ الحجب على شريطٍ لا يُرسم أصلاً.
+      // ‏٥٠٪ محصَّل و٢٠٪ مرتجع من عرضٍ ٤٣٦ ⇒ ٢١٨ و٨٧٫٢ تقريباً.
+      expect(_segmentWidth(tester, AppColors.primaryLight), closeTo(218, 1),
+          reason: 'بالصلاحية تُرسم قطعةُ المحصَّل بنصف العرض — وإلّا كان '
+              'اختبارُ الحجب يقيس عدماً');
+      expect(_segmentWidth(tester, AppColors.warning), closeTo(87.2, 1),
+          reason: 'وقطعةُ المرتجع بخُمسه');
     });
   });
 }

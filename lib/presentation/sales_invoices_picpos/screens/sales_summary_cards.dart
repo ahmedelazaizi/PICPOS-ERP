@@ -227,25 +227,42 @@ class _SalesHeroCard extends StatelessWidget {
               bottom: 0,
               child: SizedBox(
                 height: 5,
-                child: Row(
-                  children: [
-                    Expanded(
-                      flex: (paidPct * 10).round().clamp(0, 1000),
-                      child: const ColoredBox(color: AppColors.primaryLight),
-                    ),
-                    Expanded(
-                      flex: (retPct * 10).round().clamp(0, 1000),
-                      child: const ColoredBox(color: AppColors.warning),
-                    ),
-                    Expanded(
-                      // الباقي — وأدنى وزنٍ ١ كي لا ينهار `Row` حين تبلغ
-                      // النسبتان ١٠٠٪ فتصير الأوزانُ الثلاثةُ أصفاراً.
-                      flex: ((100 - paidPct - retPct) * 10).round().clamp(1, 1000),
-                      child: ColoredBox(
-                        color: Colors.white.withValues(alpha: .14),
-                      ),
-                    ),
-                  ],
+                // ⚠️ عرضٌ محسوبٌ صراحةً لا `Expanded(flex:)`. الوزنُ صفراً
+                // **لا يُلغي** القطعة: `Flexible` يعامل عديمَ الوزن معاملةَ
+                // غيرِ المرن فيمنحه قياسَه الطبيعيّ لا عدماً — فكانت القطعُ
+                // الثلاثُ تُرسم ولو حُجبت النسب، فيُقرأ المقدارُ بالمسطرة
+                // بعد أن حُجب بالنصّ. مقيسٌ باختبارِ الشريط.
+                child: LayoutBuilder(
+                  builder: (context, c) {
+                    final w = c.maxWidth;
+                    final paidW = (w * paidPct / 100).clamp(0.0, w);
+                    final retW = (w * retPct / 100).clamp(0.0, w - paidW);
+                    return Stack(
+                      children: [
+                        Positioned.fill(
+                          child: ColoredBox(
+                            color: Colors.white.withValues(alpha: .14),
+                          ),
+                        ),
+                        PositionedDirectional(
+                          start: 0,
+                          width: paidW,
+                          top: 0,
+                          bottom: 0,
+                          child: const ColoredBox(
+                            color: AppColors.primaryLight,
+                          ),
+                        ),
+                        PositionedDirectional(
+                          start: paidW,
+                          width: retW,
+                          top: 0,
+                          bottom: 0,
+                          child: const ColoredBox(color: AppColors.warning),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
             ),
