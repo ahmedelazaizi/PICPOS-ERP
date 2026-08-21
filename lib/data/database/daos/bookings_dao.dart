@@ -21,6 +21,13 @@ class BookingInPastException implements Exception {
   String toString() => messageAr;
 }
 
+/// الحالتان اللتان **تُفرّغان** الوقت — وما عداهما حيٌّ يشغل الموظَّف.
+///
+/// مصدرٌ واحدٌ لاستعلامِ التعارض ولـ`setBookingStatus` معاً: لو كُتبت
+/// القائمةُ في الموضعين لافترقتا عند أوّل قيمةٍ تُضاف، فإمّا صار الإحياءُ
+/// لا يُفحَص وإمّا صار الاستعلامُ يعدّ المفرَّغَ مشغولاً.
+const List<String> kBookingFreeingStatuses = ['cancelled', 'no_show'];
+
 extension BookingsDao on AppDatabase {
   /// الحجوزاتُ المتداخلةُ مع مدًى على موظَّفٍ بعينه.
   ///
@@ -54,7 +61,7 @@ extension BookingsDao on AppDatabase {
 
     final query = select(bookings)
       ..where((b) => b.resourceId.equals(resourceId))
-      ..where((b) => b.status.isNotIn(['cancelled', 'no_show']))
+      ..where((b) => b.status.isNotIn(kBookingFreeingStatuses))
       ..where((b) => b.startsAt.isBiggerOrEqualValue(windowStart))
       ..where((b) => b.startsAt.isSmallerThanValue(windowEnd));
     if (excludeBookingId != null) {
@@ -72,6 +79,14 @@ extension BookingsDao on AppDatabase {
   }
 
   /// حجوزاتُ مدًى زمنيّ — ونطاقُ الفرع يُحقَن **في الاستعلام** لا في العرض.
+  ///
+  /// **الترشيحُ على `startsAt` وحدَها — لا على التداخل.** فحجزٌ يبدأ ٢٣:٥٠
+  /// وينتهي ٠٠:٥٠ يظهر في يومِه ولا يظهر في مدى اليوم التالي. وهي دلالةٌ
+  /// مقصودةٌ («ما يبدأ في هذا المدى») تكفي القوائمَ وبطاقاتِ «الحجوزات
+  /// القادمة»؛ ومَن أراد تقويماً يوميّاً يعرض «ما **يشغل** هذا اليوم» يحتاج
+  /// دلالةَ تداخلٍ صريحةً (`startsAt < to && endsAt > from`) — وذاك تغييرٌ
+  /// واعٍ في المستدعي لا تصحيحُ خطأٍ هنا.
+  /// (يثبّتها `test/unit/bookings_range_scope_test.dart`.)
   Future<List<Booking>> getBookingsInRange(
     DateTime from,
     DateTime to, {
@@ -81,10 +96,22 @@ extension BookingsDao on AppDatabase {
       ..where((b) => b.startsAt.isBiggerOrEqualValue(from))
       ..where((b) => b.startsAt.isSmallerThanValue(to))
       ..orderBy([(b) => OrderingTerm.asc(b.startsAt)]);
+
+    // نفسُ عقدِ نطاقِ الفرع في المستودع كلِّه (`sales_dao.getSalesInvoices`
+    // و`purchase_dao`)، ثلاثيُّ الحالات: معدومٌ = وصولٌ كامل · **فارغٌ =
+    // يفشل مغلقاً** · `{ids}` = تلك الفروعُ أو صفوفُ الفرعِ المعدوم.
+    //
+    // والحالةُ الفارغةُ هي بيتُ القصيد: لو بقي `| branchId.isNull()` فيها
+    // لرأى مَن لا فرعَ له كلَّ حجزٍ فرعُه معدوم — وفي تنصيبٍ بفرعٍ واحدٍ
+    // ذلك **كلُّ** الحجوزات، فتُعرَض «لا وصول» على أنّها «الكلّ».
     if (allowedBranchIds != null) {
-      query.where(
-        (b) => b.branchId.isIn(allowedBranchIds) | b.branchId.isNull(),
-      );
+      if (allowedBranchIds.isEmpty) {
+        query.where((b) => b.branchId.isIn(const <int>[]));
+      } else {
+        query.where(
+          (b) => b.branchId.isIn(allowedBranchIds) | b.branchId.isNull(),
+        );
+      }
     }
     return query.get();
   }
@@ -156,10 +183,17 @@ extension BookingsDao on AppDatabase {
 
   /// يبدّل الموظَّفَ أو الوقتَ أو كليهما — **ويُعيد فحصَ التعارض كاملاً**.
   ///
-  /// القاعدةُ صيغت بالثلاثيّة `(resourceId, startsAt, endsAt)` لا
+  /// القاعدةُ صيغت بالرباعيّة `(resourceId, startsAt, endsAt, status)` لا
   /// بـ«الإسناد» عمداً: **التأجيلُ خطرٌ كالإسناد تماماً** — حجزٌ سليمٌ
   /// يُؤجَّل ساعةً قد يقع فوق حجزٍ آخرَ لنفس الموظَّف. ولو حُصر الفحصُ في
   /// دالّةِ إسنادٍ لمرّ التأجيلُ من جانبها بلا فحص.
+  ///
+  /// **و`status` حقلٌ رابعٌ ذو أثرٍ على التعارض لا ثلاثةٌ فحسب**: استعلامُ
+  /// التعارض يستثني `cancelled` و`no_show`، فالانتقالُ إليهما **أو منهما**
+  /// يبدّل شَغلَ الوقت. الانتقالُ إليهما يُفرّغ فلا يحتاج فحصاً؛ و**الإحياءُ
+  /// منهما يشغل** فيحتاجه، ومحلُّه `setBookingStatus` أدناه. ولا تُكتب
+  /// الحالةُ بـ`update(bookings).write(...)` الخام من أيّ مسارٍ آخر —
+  /// ذاك يتجاوز الفحصَ بالبناء.
   ///
   /// وحجزٌ وُلد بلا موظَّفٍ **لم يُفحَص قطّ**: أوّلُ فحصٍ حقيقيٍّ له يقع
   /// لحظةَ إسناده، فإن غاب هنا لم يقع أبداً.
@@ -189,15 +223,23 @@ extension BookingsDao on AppDatabase {
         );
       }
 
-      // النهايةُ تُعاد من مدّةِ الخدمة كي يبقى الطولُ صحيحاً بعد التأجيل.
-      final service = await (select(bookingServices)
-            ..where((s) => s.id.equals(current.serviceId)))
-          .getSingle();
-      final newEndsAt = computeBookingEndsAt(
-        newStartsAt,
-        service.durationMinutes,
-        service.bufferMinutes,
-      );
+      // الطولُ **المخزَّنُ** هو ما يجب أن يبقى صحيحاً — لا مدّةُ الخدمة
+      // اليوم. فالصفُّ ينتقل كتلةً واحدةً بطولِه كما وُلد.
+      //
+      // ولو أُعيد اشتقاقُ النهاية من `service.durationMinutes` هنا لعاد
+      // **الأثرُ الرجعيُّ** الذي وُجد تخزينُ `endsAt` أصلاً لمنعه (§٥) — ومن
+      // أكثرِ المسارات استعمالاً: قصُّ شعرٍ ٤٥+١٥ محجوزٌ ١٠:٠٠–١١:٠٠، ثم
+      // يقصّر المالكُ الخدمةَ إلى ٣٠ بعد شهور، ثم ينقل المضيفُ الحجزَ من
+      // أحمدَ إلى ريم **بلا تغيير وقت** — فيصير الصفُّ ١٠:٠٠–١٠:٣٠ صامتاً
+      // ويُفتح ١٠:٣٠–١١:٠٠ للحجز والموظَّفةُ ما تزال تعمل. ولو طالت المدّةُ
+      // بدل أن تقصر لرُمي `BookingConflictException` كاذبٌ يقول للمضيف إنّ
+      // الموظَّفَ مشغولٌ بلا سببٍ ظاهر.
+      //
+      // و`createBooking` تشتقّ من الخدمة — وذاك صحيحٌ لحجزٍ **جديد**: هناك
+      // لا طولَ مخزَّناً بعدُ، ومدّةُ الخدمة اليومَ هي مصدرُ الحقيقة. لا
+      // تُوحَّد الدالّتان.
+      final newEndsAt =
+          newStartsAt.add(current.endsAt.difference(current.startsAt));
 
       if (newResourceId != null) {
         final clashes = await getOverlappingBookings(
@@ -218,6 +260,66 @@ extension BookingsDao on AppDatabase {
           resourceId: Value(newResourceId),
           startsAt: Value(newStartsAt),
           endsAt: Value(newEndsAt),
+          updatedAt: Value(currentTime),
+        ),
+      );
+    });
+  }
+
+  /// يبدّل حالةَ الحجز — **والإحياءُ يُعيد فحصَ التعارض داخل نفس المعاملة**.
+  ///
+  /// `status` هو الحقلُ الرابعُ ذو الأثر على التعارض: استعلامُ التداخل
+  /// يستثني `cancelled` و`no_show` (`kBookingFreeingStatuses`)، فالانتقالُ
+  /// **من** إحداهما إلى حالةٍ حيّةٍ يُعيد شَغلَ وقتٍ كان قد فُرِّغ.
+  ///
+  /// والتسريبُ الملموس: حجزُ «أ» على الموظَّف R في ١٠:٠٠ يُلغى، فيُنشأ
+  /// حجزُ «ب» على R في ١٠:٠٠ **بحقّ** (اختبارٌ يثبّت جوازَه). ثم يتراجع
+  /// أحدُهم عن الإلغاء — أو يقلب `no_show` إلى `confirmed`، وهو ما تنصّ
+  /// عليه §٦ صراحةً — فيحمل R حجزين حيَّين متداخلين ولم يجرِ فحصٌ قطّ.
+  ///
+  /// والاتّجاهُ المعاكس — إلى `cancelled`/`no_show` — **يُفرّغ** فحسب فلا
+  /// يحتاج فحصاً ولا يرمي أبداً.
+  ///
+  /// وهذه هي الدالّةُ التي تُكتب منها الحالة: `update(bookings).write(...)`
+  /// الخامُّ يتجاوز الفحصَ بالبناء.
+  ///
+  /// (`cancelledAt` و`cancelReason` لا تُكتبان هنا عمداً: حوارُ الإلغاء
+  /// بمخارجه الثلاثة — ردٌّ · مصادرةٌ · تأجيل — مشروعُ العربون ٣، وهو
+  /// صاحبُ السببِ والوقت.)
+  Future<void> setBookingStatus(
+    int bookingId,
+    String status, {
+    DateTime? now,
+  }) {
+    return transaction(() async {
+      final currentTime = now ?? DateTime.now();
+      final current = await (select(bookings)
+            ..where((b) => b.id.equals(bookingId)))
+          .getSingle();
+
+      final wasFreeing = kBookingFreeingStatuses.contains(current.status);
+      final becomesFreeing = kBookingFreeingStatuses.contains(status);
+
+      // إحياءٌ: كان مفرَّغاً فصار حيّاً. والوقتُ الذي أُفرغ ربّما شُغل في
+      // الأثناء. وحجزٌ بلا موظَّفٍ لا يشارك في الفحص كعادته.
+      if (wasFreeing && !becomesFreeing && current.resourceId != null) {
+        final clashes = await getOverlappingBookings(
+          current.resourceId!,
+          current.startsAt,
+          current.endsAt,
+          excludeBookingId: bookingId, // لا يتعارض مع نفسِه
+        );
+        if (clashes.isNotEmpty) {
+          throw BookingConflictException(
+            'تعذّرت إعادةُ الحجز — الوقتُ شُغل بعد إلغائه: '
+            '${clashes.length} حجزٌ متعارض',
+          );
+        }
+      }
+
+      await (update(bookings)..where((b) => b.id.equals(bookingId))).write(
+        BookingsCompanion(
+          status: Value(status),
           updatedAt: Value(currentTime),
         ),
       );

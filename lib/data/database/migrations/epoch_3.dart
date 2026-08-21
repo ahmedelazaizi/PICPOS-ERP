@@ -2530,6 +2530,16 @@ extension Epoch3Migrations on AppDatabase {
         await m.createTable(bookingResources);
         await m.createTable(bookingServices);
         await m.createTable(bookings);
+
+        // فهرسُ المسار الساخن `(resource_id, starts_at)` — فهرسٌ خامٌّ لا
+        // كيانُ drift، فلا `createTable` ولا `createAll` بيصدّروه. وهو
+        // **غير فريد** عمداً: التداخلُ يُمنَع بالفحص في الـDAO لا بقيد،
+        // وصفّان في نفس اللحظة مشروعان ما دام أحدُهما ملغًى أو لم يحضر.
+        //
+        // وهنا **قاتلٌ** بخلاف فهرسَي v152: الجدولُ أُنشئ في هذه الخطوةِ
+        // نفسِها قبل سطرين، فلا بياناتٌ قائمةٌ تُفشله، وفشلُه يعني خللاً
+        // حقيقيّاً يجب أن يظهر.
+        await m.database.customStatement(kCreateBookingResourceSlotIndexSql);
         debugPrint('[Migration] v159 booking engine tables OK');
       });
     }

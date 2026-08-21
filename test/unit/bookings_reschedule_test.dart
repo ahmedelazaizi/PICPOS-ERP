@@ -110,6 +110,95 @@ void main() {
     expect(row.endsAt, DateTime(2026, 8, 20, 11, 30));
   });
 
+  test('تقصيرُ مدّةِ الخدمة لاحقاً لا يقصّر حجزاً قائماً عند إعادة الإسناد',
+      () async {
+    // `endsAt` **يُخزَّن ولا يُحسَب** (§٥). ولو أعادت `updateBookingSlot`
+    // اشتقاقَه من مدّةِ الخدمة **الحاليّة** لعاد الأثرُ الرجعيُّ من أكثرِ
+    // المسارات استعمالاً: قصُّ شعرٍ ٦٠ دقيقةً محجوزٌ ١٠:٠٠–١١:٠٠، ثم يقصّر
+    // المالكُ الخدمةَ إلى ٣٠، ثم ينقل المضيفُ الحجزَ من محمدٍ إلى ريم بلا
+    // تغييرِ وقتٍ — فيصير الصفُّ ١٠:٠٠–١٠:٣٠ ويُفتح ١٠:٣٠–١١:٠٠ للحجز
+    // والموظَّفةُ ما تزال تعمل.
+    final id = await db.createBooking(
+      customerName: 'سارة',
+      serviceId: serviceId,
+      resourceId: resourceA,
+      startsAt: DateTime(2026, 8, 20, 10),
+      now: now,
+    );
+
+    // المالكُ يقصّر الخدمةَ تحت الحجز القائم.
+    await (db.update(db.bookingServices)..where((s) => s.id.equals(serviceId)))
+        .write(const BookingServicesCompanion(durationMinutes: Value(30)));
+
+    // إعادةُ إسنادٍ خالصة — لا `startsAt` جديد.
+    await db.updateBookingSlot(id, resourceId: resourceB, now: now);
+
+    final row = await (db.select(db.bookings)..where((b) => b.id.equals(id)))
+        .getSingle();
+    expect(row.resourceId, resourceB);
+    expect(row.startsAt, DateTime(2026, 8, 20, 10));
+    expect(row.endsAt, DateTime(2026, 8, 20, 11),
+        reason: 'الطولُ المخزَّنُ هو المرجع — لا مدّةُ الخدمة اليوم');
+  });
+
+  test('إطالةُ مدّةِ الخدمة لاحقاً لا تختلق تعارضاً عند إعادة الإسناد',
+      () async {
+    // الوجهُ الآخرُ لنفس الخلل: لو طالت الخدمةُ بدل أن تقصر، لرمت إعادةُ
+    // الإسنادِ `BookingConflictException` بلا سببٍ ظاهرٍ للمضيف.
+    final blocking = await db.createBooking(
+      customerName: 'أحمد',
+      serviceId: serviceId,
+      resourceId: resourceB,
+      startsAt: DateTime(2026, 8, 20, 11, 30),
+      now: now,
+    );
+    expect(blocking, greaterThan(0));
+
+    final mine = await db.createBooking(
+      customerName: 'سارة',
+      serviceId: serviceId,
+      resourceId: resourceA,
+      startsAt: DateTime(2026, 8, 20, 10),
+      now: now,
+    );
+
+    // المالكُ يطيل الخدمةَ من ٦٠ إلى ١٢٠ — فلو أُعيد الاشتقاقُ لامتدّ حجزُ
+    // سارة إلى ١٢:٠٠ ووقع فوق حجز أحمد على ريم.
+    await (db.update(db.bookingServices)..where((s) => s.id.equals(serviceId)))
+        .write(const BookingServicesCompanion(durationMinutes: Value(120)));
+
+    await db.updateBookingSlot(mine, resourceId: resourceB, now: now);
+
+    final row = await (db.select(db.bookings)..where((b) => b.id.equals(mine)))
+        .getSingle();
+    expect(row.resourceId, resourceB);
+    expect(row.endsAt, DateTime(2026, 8, 20, 11));
+  });
+
+  test('التأجيلُ يحفظ الطولَ المخزَّنَ لا مدّةَ الخدمة الحاليّة', () async {
+    final id = await db.createBooking(
+      customerName: 'سارة',
+      serviceId: serviceId,
+      resourceId: resourceA,
+      startsAt: DateTime(2026, 8, 20, 10),
+      now: now,
+    );
+    await (db.update(db.bookingServices)..where((s) => s.id.equals(serviceId)))
+        .write(const BookingServicesCompanion(durationMinutes: Value(15)));
+
+    await db.updateBookingSlot(
+      id,
+      startsAt: DateTime(2026, 8, 20, 14),
+      now: now,
+    );
+
+    final row = await (db.select(db.bookings)..where((b) => b.id.equals(id)))
+        .getSingle();
+    // ينتقل الصفُّ كتلةً واحدةً بطولِه المخزَّن (٦٠ دقيقة) لا بمدّةِ اليوم.
+    expect(row.startsAt, DateTime(2026, 8, 20, 14));
+    expect(row.endsAt, DateTime(2026, 8, 20, 15));
+  });
+
   test('التأجيلُ إلى الماضي يُرفض', () async {
     final mine = await db.createBooking(
       customerName: 'سارة',

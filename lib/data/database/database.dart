@@ -337,6 +337,23 @@ const String kCreateAttendanceDayDedupIndexSql =
     'CREATE UNIQUE INDEX IF NOT EXISTS $kAttendanceDayDedupIndexName '
     'ON employee_attendance(employee_id, date)';
 
+/// v159 — المسارُ الساخنُ لمحرِّك الحجز: `getOverlappingBookings`.
+///
+/// كلُّ إنشاءِ حجزٍ وكلُّ نقلٍ أو تأجيلٍ أو إحياءٍ يشغّل استعلامَ مرشَّحين
+/// على `(resource_id, starts_at)` بالضبط — داخل معاملةٍ تحجز الكتابة. وبلا
+/// فهرسٍ فهو مسحُ جدولٍ كاملٍ ينمو بعمر المنشأة.
+///
+/// **وليس فريداً** — بخلاف فهرسَي B1/B2: التداخلُ يُمنَع بالفحص في الـDAO
+/// لا بقيدٍ، وصفّان على نفس الموظَّف في نفس اللحظةِ **مشروعان** ما دام
+/// أحدُهما `cancelled` أو `no_show`. فهرسٌ فريدٌ هنا كان سيمنع الصحيح.
+///
+/// ومحلُّه v159 عينُها: الجدولُ جديدٌ لم يُشحَن، فالتنصيبُ الجديدُ يأخذه من
+/// `onCreate` والمُرقّى من الهجرة، بلا نسخةِ مخطّطٍ ثانية.
+const String kBookingResourceSlotIndexName = 'idx_bookings_resource_starts_at';
+const String kCreateBookingResourceSlotIndexSql =
+    'CREATE INDEX IF NOT EXISTS $kBookingResourceSlotIndexName '
+    'ON bookings(resource_id, starts_at)';
+
 // ═══════════════════════════════════════════════════════════════════════════
 // DATABASE CLASS
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1809,6 +1826,9 @@ class AppDatabase extends _$AppDatabase {
           // التنصيبات الجديدة لازم تاخد نفس حراسة B1/B2 اللي بتاخدها المُرقّاة.
           await customStatement(kCreateSalaryPaymentDedupIndexSql);
           await customStatement(kCreateAttendanceDayDedupIndexSql);
+          // v159: فهرسُ المسار الساخن لمحرِّك الحجز — نفسُ المنطق، فهرسٌ
+          // خامٌّ لا كيانُ drift فـ`createAll()` ما بيصدّرهوش.
+          await customStatement(kCreateBookingResourceSlotIndexSql);
         }
         // seedInitialData + syncDefaultAccounts moved to beforeOpen
         // (after defensive v110 column additions)

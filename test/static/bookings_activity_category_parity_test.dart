@@ -7,7 +7,7 @@
 // `_categoryActions` على الاسم القديم `add_reservation` وحده — فمن يصفّي
 // بتصنيف «الطاولات» لا يرى شيئاً
 // (test/static/activity_log_tables_category_parity_test.dart). نفسُ
-// الفجوة ممكنةٌ هنا: `BookingService` تكتب `booking_create` وأخواتِها،
+// الفجوة ممكنةٌ هنا: `BookingActionsService` تكتب `booking_create` وأخواتِها،
 // وإن غابت خريطةُ `_categoryActions['bookings']` عن إحدى الشاشتين — أو
 // نقص منها فعلٌ واحد — بقي السطرُ مكتوباً في القاعدة ولا يراه من يصفّي
 // بتصنيف «الحجوزات» في سجلّ النشاط العامّ.
@@ -26,7 +26,7 @@ const _screens = <String>[
   'lib/presentation/activity_log_picpos/screens/activity_log_picpos_screen.dart',
 ];
 
-/// أفعالُ `BookingService` — `lib/services/booking_service.dart`.
+/// أفعالُ `BookingActionsService` — `lib/services/booking_actions_service.dart`.
 const _actions = <String>[
   'booking_create',
   'booking_reassign',

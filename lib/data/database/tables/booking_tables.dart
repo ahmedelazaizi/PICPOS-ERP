@@ -65,6 +65,30 @@ class BookingServices extends Table {
       integer().nullable().references(Branches, #id)();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get deletedAt => dateTime().nullable()();
+
+  /// حدَّان يحميان **محرِّكَ التعارض** نفسَه — لا مجرّدَ نظافةِ بيانات.
+  ///
+  /// `duration_minutes > 0`: مدّةٌ صفريّةٌ أو سالبةٌ تُنتج
+  /// `endsAt <= startsAt`، وعندها ترجع `bookingSlotsOverlap` كاذبةً في وجه
+  /// كلِّ شيء — فالحجزُ موجودٌ ويشغل موظَّفاً و**لا يراه المحرِّكُ أبداً**.
+  ///
+  /// `duration + buffer <= 1440`: نافذةُ ترشيحِ المرشَّحين تبدأ من
+  /// `startsAt - يوم` (انظر `getOverlappingBookings`)، فموعدٌ يتجاوز
+  /// أربعاً وعشرين ساعةً يقع خارجَها فلا تصل صفوفُه إلى الدالّة الخالصة
+  /// ويمرّ التعارضُ صامتاً. الحدُّ يجعل الافتراضَ الذي تقوم عليه النافذةُ
+  /// **مُنفَذاً** لا مأمولاً.
+  ///
+  /// و`customConstraints` يُركَّب في زمن التشغيل فلا يكلّف `build_runner`
+  /// شيئاً — على سُنّة `TableOrders` (`restaurant_tables.dart`) و
+  /// `Holidays` (`hr_tables.dart`). ومحلُّه v159 **قبل الطرح**: الجدولان
+  /// جديدان لم يُشحَنا بعدُ، فالتنصيبُ الجديدُ يأخذه من `createAll` والمُرقّى
+  /// من `m.createTable`. وبعد الدمج يكلّف v160 و`m.alterTable` بإعادة بناءِ
+  /// جدول.
+  @override
+  List<String> get customConstraints => [
+        'CHECK (duration_minutes > 0 AND buffer_minutes >= 0 '
+        'AND duration_minutes + buffer_minutes <= 1440)',
+      ];
 }
 
 /// الموعد.
@@ -119,4 +143,20 @@ class Bookings extends Table {
   DateTimeColumn get updatedAt => dateTime().nullable()();
   DateTimeColumn get cancelledAt => dateTime().nullable()();
   TextColumn get cancelReason => text().nullable()();
+
+  /// القيمتان المذكورتان أعلاه مُنفَذتان لا موصوفتان فحسب.
+  ///
+  /// و`status` تحديداً **حقلٌ ذو أثرٍ على التعارض**: استعلامُ التداخل
+  /// يستثني `cancelled` و`no_show`، فقيمةٌ مكتوبةٌ بخطأٍ إملائيّ
+  /// (`canceled` مثلاً) تجعل الحجزَ حيّاً في نظر المحرِّك أو ميتاً على غير
+  /// وجهٍ — بلا صوت. والقيدُ يمنعها عند الكتابة.
+  ///
+  /// ومحلُّهما هذا التعديلُ عينُه لا تعديلٌ لاحق: قيدٌ منفصلٌ بعد الطرح
+  /// يكلّف نسخةَ مخطّطٍ ثانيةً و`m.alterTable` بإعادة بناءِ جدول.
+  @override
+  List<String> get customConstraints => [
+        "CHECK (status IN ('pending', 'confirmed', 'in_service', "
+            "'completed', 'cancelled', 'no_show'))",
+        "CHECK (deposit_status IN ('held', 'refunded', 'forfeited'))",
+      ];
 }

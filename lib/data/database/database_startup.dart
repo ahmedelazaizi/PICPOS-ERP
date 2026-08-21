@@ -139,6 +139,10 @@ extension DatabaseStartup on AppDatabase {
       // والتسوية اليدوية شغل محاسب مش شغل إقلاع.
       kCreateSalaryPaymentDedupIndexSql,
       kCreateAttendanceDayDedupIndexSql,
+      // v159: نفسُ الشفاء الذاتي لفهرس المسار الساخن في محرِّك الحجز. تمريرةُ
+      // `allSchemaEntities` تحت بتغطّي **الجداول** بس، والفهارس الخامّة مش
+      // كيانات drift فما بتوصلهاش — فلو جدولٌ وصل من هناك بقي بلا فهرسه.
+      kCreateBookingResourceSlotIndexSql,
     ]) {
       try {
         await customStatement(stmt);
