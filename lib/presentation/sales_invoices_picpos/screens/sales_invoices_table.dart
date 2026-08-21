@@ -1,6 +1,26 @@
 // ignore_for_file: library_private_types_in_public_api
-// منسوخ من lib/presentation/screens/widgets/sales_invoices/sales_invoices_table.dart
-// — أي إصلاح منطقي يتصلّح في المصدر أولاً ثم patch (مصيدة النسخ §٥.٨).
+// نسخةُ PicPos من قائمة فواتير البيع. المنطقُ (الحقولُ المعروضة، حجبُ
+// المبالغ، الاختيارُ، الإجراءاتُ وحرّاسُها، شارةُ المرتجع) يبقى مطابقاً
+// لتوأمِ UralCash في
+// `screens/widgets/sales_invoices/sales_invoices_table.dart` — وأيُّ إصلاحٍ
+// منطقيٍّ يتصلّح في المصدر أوّلاً ثمّ patch (مصيدة النسخ §٥.٨).
+//
+// ⚠️ **والشكلُ وحدَه هو الذي تباعد** (تصميمُ PicPos 2026-08-21): صفوفُ
+// `DataTable2` صارت بطاقاتٍ في `ListView.builder`.
+//
+// ═══ ولماذا `ListView.builder` بالذات ═══
+//
+// لأن `DataTable2` **مُفهرَسٌ أصلاً** — يلفّ صفوفَه في `ListView.builder`،
+// وذلك إصلاحٌ موثَّقٌ لتجمّدٍ فعليٍّ وقع مع `DataTable` القياسيّ. فالانتقالُ
+// إلى بطاقاتٍ في `Column` كان سيُعيد العطبَ نفسَه بعد أن حُلّ. والقياسُ
+// (2026-08-21): البطاقةُ المضغوطةُ ~٥٦ بكسل مقابل ~٤٨ للصفّ، فالكثافةُ
+// تكاد تُحفَظ — بخلاف بطاقة التصميم الكاملة (~٨٠) التي كانت ستُضيّع ثلثَ
+// المرئيّ.
+//
+// ولا طيَّ داخلَ الصفّ عن قصد: `lines` لا تصل مع الفاتورة
+// (‏`sales_invoices_controller.dart` يبنيها `[]` مع تعليقِ «Need separate
+// fetch»)، فكلُّ فتحةٍ كانت استعلاماً إضافيّاً. و«عرضُ التفاصيل» يبقى على
+// زرّ العين كما كان.
 part of 'sales_invoices_picpos_screen.dart';
 
 /// زرار طباعة فاتورة البيع — `sales_print`. نسخة مطابقة لنسخة فورك UralCash
@@ -22,6 +42,58 @@ Widget buildSalesPrintButtonGuarded({required VoidCallback onPrint}) {
   );
 }
 
+/// أوزانُ الأعمدة — مصدرٌ واحدٌ يشترك فيه سطرُ العناوين وكلُّ بطاقة.
+///
+/// نسختان منفصلتان كانتا ستنحرفان بأوّل تعديل، فتُزاح العناوينُ عن أعمدتها
+/// بلا ما يكسر بناءً — وهو انحرافٌ لا يظهر إلا بالعين.
+const _kColNum = 150;
+const _kColParty = 120;
+const _kColDate = 80;
+const _kColPlace = 135;
+const _kColTotal = 100;
+const _kColCollect = 155;
+const double _kColStatusW = 104;
+const double _kColActionsW = 172;
+const double _kColCheckW = 38;
+
+/// زرُّ إجراءٍ صغيرٌ مربَّعٌ — إطارٌ رفيعٌ وأيقونةٌ ملوّنةٌ بمعناها.
+class _RowAction extends StatelessWidget {
+  const _RowAction({
+    required this.icon,
+    required this.color,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(9),
+          child: Container(
+            width: 31,
+            height: 31,
+            decoration: BoxDecoration(
+              border: Border.all(color: Theme.of(context).dividerColor),
+              borderRadius: BorderRadius.circular(9),
+            ),
+            child: Icon(icon, size: 14, color: color),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class SalesInvoicesTable extends ConsumerWidget {
   final Function(InvoiceEntity) onView;
   final Function(InvoiceEntity) onEdit;
@@ -38,10 +110,14 @@ class SalesInvoicesTable extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final filteredInvoices = ref.watch(salesInvoicesControllerProvider.select((s) => s.filteredInvoices));
-    final customerNames = ref.watch(salesInvoicesControllerProvider.select((s) => s.customerNames));
-    final selectedInvoices = ref.watch(salesInvoicesControllerProvider.select((s) => s.selectedInvoices));
-    final returnedAmounts = ref.watch(salesInvoicesControllerProvider.select((s) => s.returnedAmounts));
+    final filteredInvoices = ref.watch(
+        salesInvoicesControllerProvider.select((s) => s.filteredInvoices));
+    final customerNames = ref.watch(
+        salesInvoicesControllerProvider.select((s) => s.customerNames));
+    final selectedInvoices = ref.watch(
+        salesInvoicesControllerProvider.select((s) => s.selectedInvoices));
+    final returnedAmounts = ref.watch(
+        salesInvoicesControllerProvider.select((s) => s.returnedAmounts));
 
     // Build warehouse name map for branch indicator on all devices
     final warehousesList = ref.watch(allWarehousesProvider).value ?? [];
@@ -68,26 +144,32 @@ class SalesInvoicesTable extends ConsumerWidget {
       // Issue 8 — distinguish "no invoices at all" from "filters narrowed
       // the result set to empty". The latter offers a reset so the user
       // doesn't have to clear each chip individually.
-      final hasFilters = ref.read(salesInvoicesControllerProvider.notifier).hasActiveFilters;
+      final hasFilters =
+          ref.read(salesInvoicesControllerProvider.notifier).hasActiveFilters;
       return Expanded(
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                hasFilters ? PhosphorIconsBold.funnelSimple : PhosphorIconsBold.receipt,
+                hasFilters
+                    ? PhosphorIconsBold.funnelSimple
+                    : PhosphorIconsBold.receipt,
                 size: 64,
                 color: AppColors.textMuted.withValues(alpha: 0.3),
               ),
               const SizedBox(height: 16),
               Text(
-                hasFilters ? 'لا نتائج تطابق الفلاتر الحالية' : 'لا توجد فواتير مبيعات',
+                hasFilters
+                    ? 'لا نتائج تطابق الفلاتر الحالية'
+                    : 'لا توجد فواتير مبيعات',
                 style: const TextStyle(color: AppColors.textMuted),
               ),
               if (hasFilters) ...[
                 const SizedBox(height: 12),
                 OutlinedButton.icon(
-                  icon: const Icon(PhosphorIconsBold.arrowsCounterClockwise, size: 16),
+                  icon: const Icon(PhosphorIconsBold.arrowsCounterClockwise,
+                      size: 16),
                   label: const Text('إعادة تعيين الفلاتر'),
                   onPressed: () => ref
                       .read(salesInvoicesControllerProvider.notifier)
@@ -100,269 +182,605 @@ class SalesInvoicesTable extends ConsumerWidget {
       );
     }
 
-    return Expanded(
-      child: AppDataTable(
-        showCheckboxColumn: true,
-        onSelectAll: (_) {
-          ref.read(salesInvoicesControllerProvider.notifier).toggleAllSelection();
-        },
-        columns: const [
-          DataColumn(label: Text('رقم الفاتورة')),
-          DataColumn(label: Text('العميل')),
-          DataColumn(label: Text('التاريخ')),
-          DataColumn(label: Text('الإجمالي')),
-          DataColumn(label: Text('المدفوع')),
-          DataColumn(label: Text('المتبقي')),
-          DataColumn(label: Text('الحالة')),
-          DataColumn(label: Text('الفرع / المخزن')),
-          DataColumn(label: Text('مركز التكلفة')),
-          // عرضٌ ثابت: أربعةُ `IconButton` عرضُ كلٍّ منها 48 = 192، والحصّةُ
-          // المتساوية بين عشرة أعمدةٍ تقلّ عن ذلك فيفيض أوّلُ زرٍّ خارجَ
-          // الخليّة ويموت (لا يُختبَر بالإصابة خارجَ حدود الأب). هذا هو
-          // بلاغُ «زرُّ العين لا يستجيب والنقرُ عليه يُحدِّد الصفّ».
-          DataColumn2(label: Text('الإجراءات'), fixedWidth: 210),
-        ],
-        rows: filteredInvoices.map<DataRow>((invoice) {
-              // Returns reduce the invoice's effective receivable, so subtract
-              // them from the displayed remaining. A negative value means the
-              // refund exceeds the unpaid balance and we owe the customer the
-              // difference — color it accordingly so the cashier notices.
-              final returnedForInvoice = returnedAmounts[invoice.id] ?? 0.0;
-              final remaining =
-                  invoice.total - invoice.paid - returnedForInvoice;
-              final isPaid = invoice.status == InvoiceStatus.paid;
-              final isPartial = invoice.status == InvoiceStatus.partial;
-              final isCancelled = invoice.status == InvoiceStatus.cancelled;
-              final customerName = invoice.partyId != null
-                  ? (customerNames[invoice.partyId] ??
-                        () {
-                          // Spec 002 (B4): the lookup map should resolve
-                          // every existing FK now that we load inactive
-                          // customers too. If we still hit the fallback,
-                          // the party row itself is missing locally —
-                          // log it so operators can see chronic gaps.
-                          debugPrint(
-                            '[SalesList] customer name fallback for '
-                            'partyId=${invoice.partyId} on invoice '
-                            '${invoice.invoiceNumber}',
-                          );
-                          return 'عميل #${invoice.partyId}';
-                        }())
-                  : 'عميل نقدي';
+    final notifier = ref.read(salesInvoicesControllerProvider.notifier);
+    final allSelected = selectedInvoices.length == filteredInvoices.length;
 
-              return DataRow(
-                selected: selectedInvoices.contains(invoice.id),
-                onSelectChanged: (selected) {
-                  if (selected != null) {
-                    ref.read(salesInvoicesControllerProvider.notifier).toggleSelection(invoice.id!);
-                  }
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Column(
+          children: [
+            _HeaderRow(
+              allSelected: allSelected,
+              onToggleAll: notifier.toggleAllSelection,
+            ),
+            const SizedBox(height: 6),
+            Expanded(
+              // مُفهرَسٌ — لا تُبنى إلا البطاقاتُ المرئيّة. اقرأ رأسَ الملفّ
+              // لسبب هذا الاختيار بالذات.
+              child: ListView.separated(
+                itemCount: filteredInvoices.length,
+                separatorBuilder: (_, _) => const SizedBox(height: 6),
+                itemBuilder: (context, i) {
+                  final invoice = filteredInvoices[i];
+                  return _InvoiceCard(
+                    invoice: invoice,
+                    selected: selectedInvoices.contains(invoice.id),
+                    onToggleSelect: () => notifier.toggleSelection(invoice.id!),
+                    returnedAmount: returnedAmounts[invoice.id] ?? 0.0,
+                    customerNames: customerNames,
+                    warehouseNames: warehouseNames,
+                    warehouseBranchId: warehouseBranchId,
+                    branchNames: branchNames,
+                    costCenterNames: costCenterNames,
+                    onView: onView,
+                    onEdit: onEdit,
+                    onPrint: onPrint,
+                    onDelete: onDelete,
+                  );
                 },
-                cells: [
-                  DataCell(
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Flexible(
-                          child: Text.rich(
-                            TextSpan(
-                              children: [
-                                TextSpan(
-                                  text: invoice.invoiceNumber,
-                                  style: const TextStyle(fontWeight: FontWeight.w600),
-                                ),
-                                TextSpan(
-                                  text: ' — ${warehouseNames[invoice.warehouseId] ?? 'WH#${invoice.warehouseId ?? 0}'}',
-                                  style: TextStyle(fontSize: 11, color: warehouseNames.containsKey(invoice.warehouseId) ? AppColors.info : AppColors.textMuted),
-                                ),
-                              ],
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        // Return-status badge — makes it obvious the
-                        // cashier should check "شاشة مرتجع المبيعات"
-                        // for the details. Returns invoices themselves
-                        // (saleType='return') are filtered out of this
-                        // list upstream; this only tags ORIGINAL
-                        // invoices whose status was changed to
-                        // returned / partial_return by the returns-screen.
-                        if (invoice.status == InvoiceStatus.returned ||
-                            invoice.status == InvoiceStatus.partialReturn) ...[
-                          const SizedBox(width: 6),
-                          _ReturnBadge(full: invoice.status == InvoiceStatus.returned),
-                        ],
-                      ],
-                    ),
-                  ),
-                  DataCell(
-                    Text(
-                      customerName,
-                      style: const TextStyle(color: AppColors.info),
-                    ),
-                  ),
-                  DataCell(
-                    Text((invoice.createdAt ?? invoice.invoiceDate).toString().substring(0, 10)),
-                  ),
-                  // sales_amounts_view — الإجمالي والمدفوع والمتبقي. المتبقي
-                  // مشتقّ من الاتنين، فسيبانه مكشوف كان بيسرّبهم.
-                  DataCell(
-                    PermissionMaskedText(
-                      permission: PermissionCodes.salesAmountsView,
-                      text: invoice.total
-                          .toStringAsFixed(AppConstants.decimalPlaces),
-                    ),
-                  ),
-                  DataCell(
-                    PermissionMaskedText(
-                      permission: PermissionCodes.salesAmountsView,
-                      text: invoice.paid
-                          .toStringAsFixed(AppConstants.decimalPlaces),
-                      style: const TextStyle(color: AppColors.success),
-                    ),
-                  ),
-                  DataCell(
-                    PermissionMaskedText(
-                      permission: PermissionCodes.salesAmountsView,
-                      text: remaining
-                          .toStringAsFixed(AppConstants.decimalPlaces),
-                      style: TextStyle(
-                        color: remaining > 0
-                            ? AppColors.error
-                            : remaining < 0
-                                ? AppColors.warning
-                                : AppColors.success,
-                        fontWeight: remaining < 0 ? FontWeight.w600 : null,
-                      ),
-                    ),
-                  ),
-                  DataCell(
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isPaid
-                            ? AppColors.success.withValues(alpha: 0.1)
-                            : isPartial
-                            ? AppColors.warning.withValues(alpha: 0.1)
-                            : isCancelled
-                            ? AppColors.error.withValues(alpha: 0.1)
-                            : AppColors.error.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// سطرُ عناوين الأعمدة — خارجَ التمرير كي يبقى ثابتاً كرأس الجدول القديم.
+class _HeaderRow extends StatelessWidget {
+  const _HeaderRow({required this.allSelected, required this.onToggleAll});
+
+  final bool allSelected;
+  final VoidCallback onToggleAll;
+
+  @override
+  Widget build(BuildContext context) {
+    final muted = _mutedOf(context);
+    Widget label(String t, int flex, {TextAlign? align}) => Expanded(
+          flex: flex,
+          child: Text(
+            t,
+            textAlign: align,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              color: muted,
+            ),
+          ),
+        );
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      child: Row(
+        children: [
+          SizedBox(
+            width: _kColCheckW,
+            child: Checkbox(
+              value: allSelected,
+              onChanged: (_) => onToggleAll(),
+              visualDensity: VisualDensity.compact,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          ),
+          label('رقم الفاتورة', _kColNum),
+          label('العميل', _kColParty),
+          label('التاريخ', _kColDate),
+          label('الفرع · المخزن · مركز التكلفة', _kColPlace),
+          label('الإجمالي', _kColTotal, align: TextAlign.end),
+          label('التحصيل', _kColCollect),
+          SizedBox(
+            width: _kColStatusW,
+            child: Text(
+              'الحالة',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                color: muted,
+              ),
+            ),
+          ),
+          SizedBox(
+            width: _kColActionsW,
+            child: Text(
+              'الإجراءات',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                color: muted,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// بطاقةُ فاتورةٍ واحدة — مضغوطةٌ بارتفاعٍ ~٥٦ كي تبقى الكثافةُ قريبةً من
+/// الجدول الذي حلّت محلَّه.
+class _InvoiceCard extends StatelessWidget {
+  const _InvoiceCard({
+    required this.invoice,
+    required this.selected,
+    required this.onToggleSelect,
+    required this.returnedAmount,
+    required this.customerNames,
+    required this.warehouseNames,
+    required this.warehouseBranchId,
+    required this.branchNames,
+    required this.costCenterNames,
+    required this.onView,
+    required this.onEdit,
+    required this.onPrint,
+    required this.onDelete,
+  });
+
+  final InvoiceEntity invoice;
+  final bool selected;
+  final VoidCallback onToggleSelect;
+  final double returnedAmount;
+  final Map<int, String> customerNames;
+  final Map<int, String> warehouseNames;
+  final Map<int, int?> warehouseBranchId;
+  final Map<int, String> branchNames;
+  final Map<int, String> costCenterNames;
+  final Function(InvoiceEntity) onView;
+  final Function(InvoiceEntity) onEdit;
+  final Function(InvoiceEntity) onPrint;
+  final Function(InvoiceEntity) onDelete;
+
+  String get _customerName {
+    if (invoice.partyId == null) return 'عميل نقدي';
+    final found = customerNames[invoice.partyId];
+    if (found != null) return found;
+    // Spec 002 (B4): the lookup map should resolve every existing FK now
+    // that we load inactive customers too. If we still hit the fallback,
+    // the party row itself is missing locally — log it so operators can
+    // see chronic gaps.
+    debugPrint('[SalesList] customer name fallback for '
+        'partyId=${invoice.partyId} on invoice ${invoice.invoiceNumber}');
+    return 'عميل #${invoice.partyId}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final muted = _mutedOf(context);
+
+    // Returns reduce the invoice's effective receivable, so subtract them
+    // from the displayed remaining. A negative value means the refund
+    // exceeds the unpaid balance and we owe the customer the difference —
+    // color it accordingly so the cashier notices.
+    final remaining = invoice.total - invoice.paid - returnedAmount;
+    final isPaid = invoice.status == InvoiceStatus.paid;
+    final isPartial = invoice.status == InvoiceStatus.partial;
+    final isCancelled = invoice.status == InvoiceStatus.cancelled;
+
+    final statusColor = isPaid
+        ? AppColors.success
+        : isPartial
+            ? AppColors.warning
+            : AppColors.error;
+    final statusLabel = isPaid
+        ? 'مدفوع'
+        : isPartial
+            ? 'جزئي'
+            : isCancelled
+                ? 'ملغي'
+                : 'غير مدفوع';
+    final statusIcon = isPaid
+        ? PhosphorIconsBold.checkCircle
+        : isPartial
+            ? PhosphorIconsBold.clock
+            : isCancelled
+                ? PhosphorIconsBold.prohibit
+                : PhosphorIconsBold.warningCircle;
+
+    final whId = invoice.warehouseId;
+    final whName = whId != null ? (warehouseNames[whId] ?? 'WH#$whId') : '—';
+    // Prefer the direct branchId stamped on the invoice (L3). Falls back to
+    // resolving via warehouse → branch FK for legacy rows not yet backfilled.
+    final brId =
+        invoice.branchId ?? (whId != null ? warehouseBranchId[whId] : null);
+    final brName = brId != null ? (branchNames[brId] ?? 'فرع #$brId') : null;
+    // Spec 119 (Bug K) — «—» أنظفُ من «م.ت #6» حين يغيب مركزُ التكلفة من
+    // الخريطة (سباقٌ مع delta pull، أو مركزٌ محذوف).
+    final ccName = invoice.costCenterId != null
+        ? (costCenterNames[invoice.costCenterId] ?? '—')
+        : '—';
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        border: Border.all(
+          color: selected ? AppColors.primary : theme.dividerColor,
+        ),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      child: Row(
+        children: [
+          SizedBox(
+            width: _kColCheckW,
+            child: Checkbox(
+              value: selected,
+              onChanged: (_) => onToggleSelect(),
+              visualDensity: VisualDensity.compact,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          ),
+
+          // ── رقمُ الفاتورة + شارةُ المرتجع + المخزن سطراً خافتاً ────────
+          Expanded(
+            flex: _kColNum,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
                       child: Text(
-                        isPaid
-                            ? 'مدفوع'
-                            : isPartial
-                            ? 'جزئي'
-                            : isCancelled
-                            ? 'ملغي'
-                            : 'غير مدفوع',
+                        invoice.invoiceNumber,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: isPaid
-                              ? AppColors.success
-                              : isPartial
-                              ? AppColors.warning
-                              : AppColors.error,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ),
-                  // Branch / Warehouse cell — prefer the direct branchId
-                  // stamped on the invoice (L3). Falls back to resolving via
-                  // warehouse → branch FK for legacy rows that haven't been
-                  // backfilled yet.
-                  DataCell(
-                    Builder(builder: (_) {
-                      final whId = invoice.warehouseId;
-                      final whName = whId != null
-                          ? (warehouseNames[whId] ?? 'WH#$whId')
-                          : '—';
-                      final brId = invoice.branchId ??
-                          (whId != null ? warehouseBranchId[whId] : null);
-                      final brName = brId != null
-                          ? (branchNames[brId] ?? 'فرع #$brId')
-                          : null;
-                      return Text.rich(
-                        TextSpan(
-                          children: [
-                            if (brName != null) ...[
-                              TextSpan(
-                                text: brName,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.primary,
-                                ),
-                              ),
-                              const TextSpan(text: ' / '),
-                            ],
-                            TextSpan(
-                              text: whName,
-                              style: const TextStyle(color: AppColors.info),
-                            ),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: theme.textTheme.bodyLarge?.color,
+                          fontFeatures: const [
+                            ui.FontFeature.tabularFigures()
                           ],
                         ),
-                        style: const TextStyle(fontSize: 12),
-                      );
-                    }),
+                      ),
+                    ),
+                    // Return-status badge — makes it obvious the cashier
+                    // should check "شاشة مرتجع المبيعات" for the details.
+                    if (invoice.status == InvoiceStatus.returned ||
+                        invoice.status == InvoiceStatus.partialReturn) ...[
+                      const SizedBox(width: 5),
+                      _ReturnBadge(
+                          full: invoice.status == InvoiceStatus.returned),
+                    ],
+                    if (invoice.isLocked) ...[
+                      const SizedBox(width: 5),
+                      Tooltip(
+                        message: 'مُرحّلة محاسبياً',
+                        child: Icon(PhosphorIconsBold.lockSimple,
+                            size: 11, color: muted),
+                      ),
+                    ],
+                  ],
+                ),
+                Text(
+                  whName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                    color: muted,
                   ),
-                  DataCell(
+                ),
+              ],
+            ),
+          ),
+
+          // ── العميل ────────────────────────────────────────────────────
+          Expanded(
+            flex: _kColParty,
+            child: Text(
+              _customerName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
+                color: AppColors.info,
+              ),
+            ),
+          ),
+
+          // ── التاريخ ───────────────────────────────────────────────────
+          Expanded(
+            flex: _kColDate,
+            child: Text(
+              (invoice.createdAt ?? invoice.invoiceDate)
+                  .toString()
+                  .substring(0, 10),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: theme.textTheme.bodyMedium?.color,
+                fontFeatures: const [ui.FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
+
+          // ── الفرع · المخزن · مركز التكلفة ─────────────────────────────
+          Expanded(
+            flex: _kColPlace,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    const Icon(PhosphorIconsBold.buildings,
+                        size: 11, color: AppColors.primary),
+                    const SizedBox(width: 5),
+                    Expanded(
+                      child: Text(
+                        brName ?? '—',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: theme.textTheme.bodyMedium?.color,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  '$whName · $ccName',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                    color: muted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // ── الإجمالي (محجوبٌ بـ`sales_amounts_view`) ──────────────────
+          Expanded(
+            flex: _kColTotal,
+            child: Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: PermissionMaskedText(
+                permission: PermissionCodes.salesAmountsView,
+                text: invoice.total.toStringAsFixed(AppConstants.decimalPlaces),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -.3,
+                  color: theme.textTheme.bodyLarge?.color,
+                  fontFeatures: const [ui.FontFeature.tabularFigures()],
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(width: 10),
+
+          // ── التحصيل: المدفوع · المتبقي · شريطٌ رفيع ───────────────────
+          //
+          // الثلاثةُ محجوبةٌ بنفس الكود: المتبقي مشتقٌّ من الإجمالي والمدفوع،
+          // فكشفُه وحدَه كان يسرّبهما. والشريطُ يُرسم من النسبة نفسِها،
+          // فيُسطَّح عند الحجب — نفسُ قاعدة شريط البطاقة الرئيسيّة.
+          Expanded(
+            flex: _kColCollect,
+            child: _CollectionCell(
+              paid: invoice.paid,
+              remaining: remaining,
+              total: invoice.total,
+              returned: returnedAmount,
+            ),
+          ),
+
+          // ── الحالة ────────────────────────────────────────────────────
+          SizedBox(
+            width: _kColStatusW,
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: .12),
+                  border: Border.all(color: statusColor.withValues(alpha: .35)),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(statusIcon, size: 11, color: statusColor),
+                    const SizedBox(width: 5),
                     Text(
-                      invoice.costCenterId != null
-                          // Spec 119 (Bug K) — fallback أنظف عندما الـ cost
-                          // center غير موجود في الـ map (race condition مع
-                          // delta pull على mirror، أو cost center محذوف).
-                          // قبلاً: "م.ت #6" كان يُربك المستخدم. الآن: "—".
-                          ? (costCenterNames[invoice.costCenterId] ?? '—')
-                          : '—',
-                      style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                      statusLabel,
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800,
+                        color: statusColor,
+                      ),
                     ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // ── الإجراءات ─────────────────────────────────────────────────
+          SizedBox(
+            width: _kColActionsW,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _RowAction(
+                  icon: PhosphorIconsBold.eye,
+                  color: AppColors.info,
+                  tooltip: 'عرض التفاصيل',
+                  onTap: () => onView(invoice),
+                ),
+                const SizedBox(width: 5),
+                if (!invoice.isLocked) ...[
+                  _RowAction(
+                    icon: PhosphorIconsBold.pencilSimple,
+                    color: AppColors.warning,
+                    tooltip: 'تعديل الدفع / وسيلة الدفع',
+                    onTap: () => onEdit(invoice),
                   ),
-                  DataCell(
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(
-                            PhosphorIconsBold.eye,
-                            size: 18,
-                          ),
-                          color: AppColors.info,
-                          tooltip: 'عرض التفاصيل',
-                          onPressed: () => onView(invoice),
-                        ),
-                        if (!invoice.isLocked)
-                          IconButton(
-                            icon: const Icon(
-                              PhosphorIconsBold.pencilSimple,
-                              size: 18,
-                              color: AppColors.warning,
-                            ),
-                            tooltip: 'تعديل الدفع / وسيلة الدفع',
-                            onPressed: () => onEdit(invoice),
-                          ),
-                        buildSalesPrintButtonGuarded(
-                          onPrint: () => onPrint(invoice),
-                        ),
-                        if (!invoice.isLocked)
-                          IconButton(
-                            icon: const Icon(
-                              PhosphorIconsBold.trash,
-                              size: 18,
-                            ),
-                            color: AppColors.error,
-                            tooltip: 'حذف',
-                            onPressed: () => onDelete(invoice),
-                          ),
-                      ],
-                    ),
+                  const SizedBox(width: 5),
+                ],
+                buildSalesPrintButtonGuarded(onPrint: () => onPrint(invoice)),
+                if (!invoice.isLocked) ...[
+                  const SizedBox(width: 5),
+                  _RowAction(
+                    icon: PhosphorIconsBold.trash,
+                    color: AppColors.error,
+                    tooltip: 'حذف',
+                    onTap: () => onDelete(invoice),
                   ),
                 ],
-              );
-        }).toList(),
+              ],
+            ),
+          ),
+        ],
       ),
+    );
+  }
+}
+
+/// خليّةُ التحصيل — المدفوعُ والمتبقي وشريطٌ يقسم الإجماليَّ بينهما.
+class _CollectionCell extends StatelessWidget {
+  const _CollectionCell({
+    required this.paid,
+    required this.remaining,
+    required this.total,
+    required this.returned,
+  });
+
+  final double paid;
+  final double remaining;
+  final double total;
+  final double returned;
+
+  @override
+  Widget build(BuildContext context) {
+    final muted = _mutedOf(context);
+    // متبقٍّ سالبٌ يعني أن المرتجعَ تجاوز الرصيدَ غيرَ المسدَّد، فنحن مدينون
+    // للعميل بالفرق — لونٌ مختلفٌ كي ينتبه الكاشير.
+    final remainingColor = remaining > 0
+        ? AppColors.error
+        : remaining < 0
+            ? AppColors.warning
+            : AppColors.success;
+
+    return PermissionGuard(
+      permission: PermissionCodes.salesAmountsView,
+      fallback: _body(context, muted, masked: true, remainingColor: muted),
+      child: _body(context, muted,
+          masked: false, remainingColor: remainingColor),
+    );
+  }
+
+  Widget _body(
+    BuildContext context,
+    Color muted, {
+    required bool masked,
+    required Color remainingColor,
+  }) {
+    String fmt(double v) => masked
+        ? kMaskedValuePlaceholder
+        : v.toStringAsFixed(AppConstants.decimalPlaces);
+    final paidPct = (masked || total <= 0)
+        ? 0.0
+        : (paid / total * 100).clamp(0, 100).toDouble();
+    final retPct = (masked || total <= 0)
+        ? 0.0
+        : (returned / total * 100).clamp(0, 100 - paidPct).toDouble();
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Flexible(
+              child: Text(
+                fmt(paid),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.success,
+                  fontFeatures: [ui.FontFeature.tabularFigures()],
+                ),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                'متبقي ${fmt(remaining)}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.end,
+                style: TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w700,
+                  color: remainingColor,
+                  fontFeatures: const [ui.FontFeature.tabularFigures()],
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        // ⚠️ عرضٌ محسوبٌ لا `Expanded(flex:)` — الوزنُ صفراً لا يُلغي القطعة
+        // (‏`Flexible` يمنح عديمَ الوزن قياسَه الطبيعيّ)، فكان الشريطُ يفشي
+        // النسبةَ بالعرض بعد أن حُجبت بالنصّ. نفسُ درسِ البطاقة الرئيسيّة.
+        SizedBox(
+          height: 5,
+          child: LayoutBuilder(
+            builder: (context, c) {
+              final w = c.maxWidth;
+              final paidW = (w * paidPct / 100).clamp(0.0, w);
+              final retW = (w * retPct / 100).clamp(0.0, w - paidW);
+              return ClipRRect(
+                borderRadius: BorderRadius.circular(999),
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: ColoredBox(
+                        color: muted.withValues(alpha: .18),
+                      ),
+                    ),
+                    PositionedDirectional(
+                      start: 0,
+                      width: paidW,
+                      top: 0,
+                      bottom: 0,
+                      child: const ColoredBox(color: AppColors.success),
+                    ),
+                    PositionedDirectional(
+                      start: paidW,
+                      width: retW,
+                      top: 0,
+                      bottom: 0,
+                      child: const ColoredBox(color: AppColors.warning),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }
@@ -383,10 +801,10 @@ class _ReturnBadge extends StatelessWidget {
           ? 'تم إرجاع الفاتورة بالكامل — راجع شاشة مرتجع المبيعات للتفاصيل'
           : 'تم إرجاع جزء من الفاتورة — راجع شاشة مرتجع المبيعات للتفاصيل',
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(999),
           border: Border.all(color: color.withValues(alpha: 0.4)),
         ),
         child: Row(
@@ -394,14 +812,14 @@ class _ReturnBadge extends StatelessWidget {
           children: [
             Icon(
               full ? Icons.undo_rounded : Icons.rotate_left_rounded,
-              size: 12,
+              size: 10,
               color: color,
             ),
             const SizedBox(width: 3),
             Text(
               full ? 'مُرتجعة' : 'مُرتجعة جزئياً',
               style: TextStyle(
-                fontSize: 10,
+                fontSize: 9.5,
                 fontWeight: FontWeight.bold,
                 color: color,
               ),
