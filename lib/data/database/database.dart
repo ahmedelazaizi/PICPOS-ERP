@@ -67,6 +67,7 @@ import '../../domain/models/safe_running_balance.dart';
 import '../../domain/models/table_order_totals.dart';
 import '../../domain/models/tables_report_row.dart';
 import '../../domain/models/booking_overlap.dart';
+import '../../domain/models/shift_drawer_resolver.dart';
 export '../../services/permission_enforcer.dart' show PermissionDeniedException;
 
 part 'database.g.dart';
@@ -738,7 +739,12 @@ class AppDatabase extends _$AppDatabase {
   /// الكذبةُ نفسُها بصورةٍ تمرّ من تحت قيدِ ١٥٦. والحدُّ الآن واحدٌ عند
   /// الأبواب الثلاثة: مدخلُ الإعدادات، و`setOrderTax`، وهذا القيد.
   @override
-  int get schemaVersion => 159;
+  // ⚠️ ‏160: ١٥٩ أخذته جداولُ محرِّك الحجز حين دخلت `main`، وفرعُ
+  // `pos-flexible-permissions` كان قد أخذ ١٥٩ نفسَه لترقيةٍ أخرى — نقلِ فئة
+  // `pos_shift_close` إلى الخزينة. فرُفعت تلك إلى **١٦٠** عند الدمج، ورُفع
+  // حارسُها في [epoch_3] إلى `from < 160` معها. ولا تفصل بينهما: رقمٌ يُرفَع
+  // وحارسٌ يبقى قديماً = ترقيةٌ لا تُطبَّق أبداً وتمرّ صامتة.
+  int get schemaVersion => 160;
 
   /// PostgreSQL-specific table creation: Drift's `currentDateAndTime` generates
   /// `strftime('%s','now')` which doesn't exist in PostgreSQL.

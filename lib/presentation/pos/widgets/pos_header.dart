@@ -150,7 +150,7 @@ class PosHeader extends ConsumerWidget {
                   ? 'طاولة: $tableName'
                   : (posState.industryMode == IndustryMode.restaurant
                         ? 'الصالات والطاولات'
-                        : (isBooking ? 'حجز مسبق' : 'نقطة البيع')),
+                        : (isBooking ? 'حجز مسبق' : 'البيع السريع')),
               style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w800,

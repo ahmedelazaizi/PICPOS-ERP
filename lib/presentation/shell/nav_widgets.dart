@@ -165,11 +165,11 @@ class _GroupMeta {
 }
 
 const _groupMeta = <String, _GroupMeta>{
-  'home': _GroupMeta('الرئيسية', PhosphorIconsBold.house),
+  'home': _GroupMeta('Dashboard', PhosphorIconsBold.house),
   'sales': _GroupMeta('المبيعات', PhosphorIconsBold.shoppingCart),
   'purchases': _GroupMeta('المشتريات', PhosphorIconsBold.receipt),
-  'inventory': _GroupMeta('المخزون والإنتاج', PhosphorIconsBold.package),
-  'relations': _GroupMeta('العلاقات التجارية', PhosphorIconsBold.usersThree),
+  'inventory': _GroupMeta('الاصناف والمخزون', PhosphorIconsBold.package),
+  'relations': _GroupMeta('العملاء والموردين', PhosphorIconsBold.usersThree),
   'accounting': _GroupMeta('المالية والمحاسبة', PhosphorIconsBold.wallet),
   'reports': _GroupMeta('التقارير', PhosphorIconsBold.chartBar),
   'system': _GroupMeta('النظام', PhosphorIconsBold.gear),

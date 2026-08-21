@@ -733,7 +733,7 @@ mixin _PosMainOperationsMixin on ConsumerState<PosScreenV2> {
     if (!hasPermission) {
       final approved = await requestManagerApproval(
         context,
-        actionName: 'حفظ فاتورة نقطة البيع',
+        actionName: 'حفظ فاتورة البيع السريع',
         permission: PermissionCodes.posSave,
       );
       if (!approved) return;

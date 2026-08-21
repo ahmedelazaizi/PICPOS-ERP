@@ -24,6 +24,7 @@
 
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/core/permissions/permission_enforcement_registry.dart';
 
@@ -68,50 +69,92 @@ final Map<String, String> _sources = () {
   return out;
 }();
 
-/// ملفاتُ النظير القديم التي **يستوردها** التوأمُ صراحةً.
+final _importRe = RegExp("(?:import|part)\\s+'([^']+\\.dart)'");
+
+/// نصُّ الملفّ بلا تعليقات.
 ///
-/// ⚠️ بلا هذا يُحسب زوراً فجوةً كلُّ كودٍ محروسٍ في ملفٍ مُعادِ استخدامه: توأمُ
-/// الخزينة يستورد `treasury/widgets/receipt_voucher_dialog.dart` بحراسته كما
-/// هي، فالحراسةُ تصل إلى الشاشة فعلاً. قياسُ **المجلد** وحدَه كان سيطالب
-/// بتكرار حراسةٍ قائمة — وهو ضدُّ غرض الحارس.
-/// ⚠️ والبلوغُ **متعدٍّ**: قفزةٌ واحدةٌ كانت تفوّت الحراسةَ الواصلةَ عبر
-/// وسيط. `pos_customer_add` مثالُه المقيس — PicPos يستورد
-/// `pos/widgets/pos_customer_selection_dialog.dart`، وهو بدورِه يستورد
-/// `customer_selector_v2.dart` حيث الحارسُ فعلاً. فحسبه الحارسُ فجوةً وهو
-/// منفَّذٌ على المسار الحيّ منذ Task 7.
-Set<String> _legacyFilesImportedBy(String twin, String legacy) {
-  final root = 'lib/presentation/$legacy/';
+/// ⚠️ التعليقاتُ **لا تُحتسب إشارة**: توجيهةُ `import` في تعليقٍ ليست استيراداً،
+/// وذكرُ `PermissionCodes.posX` في تعليقٍ ليس حراسة. (‏وثيقةُ الحارس في
+/// `permission_guard.dart:58` تذكر `PermissionCodes.posExpense` في **مثالٍ
+/// توضيحيّ** — وهو أحدُ ما كان يُسكت هذا الحارس.)
+///
+/// ولا نلمس السلاسلَ النصّية: ماسحٌ يدويٌّ لها قد يفقد التزامنَ على استقراءٍ
+/// متداخلٍ فيبتلع بقيةَ الملفّ — أي يُخفي حراسةً قائمة، وهو اتجاهُ الخطأ
+/// الخطر. والأكوادُ نفسُها تُكتب سلاسلَ (`'pos_save'`) فحذفُها خطأ أصلاً.
+final Map<String, String> _codeOnlyCache = {};
+String _codeOnly(String path) =>
+    _codeOnlyCache.putIfAbsent(path, () => stripComments(_sources[path] ?? ''));
+
+@visibleForTesting
+String stripComments(String src) {
+  final out = StringBuffer();
+  var i = 0;
+  while (i < src.length) {
+    final c = src[i];
+    if (c == '/' && i + 1 < src.length && src[i + 1] == '/') {
+      while (i < src.length && src[i] != '\n') {
+        i++;
+      }
+      continue;
+    }
+    if (c == '/' && i + 1 < src.length && src[i + 1] == '*') {
+      i += 2;
+      while (i + 1 < src.length && !(src[i] == '*' && src[i + 1] == '/')) {
+        i++;
+      }
+      i += 2;
+      continue;
+    }
+    out.write(c);
+    i++;
+  }
+  return out.toString();
+}
+
+/// نصُّ الملفّ **مع أجزائه** — المكتبةُ وحدةُ القياس لا الملفّ.
+///
+/// ⚠️ بلا هذا يسقط الحارسُ في سلبٍ كاذب: `picpos_pos_screen.dart` يستورد
+/// `held_orders_dialog.dart` والاستعمالُ في جزئه `picpos_pos_operations.dart`،
+/// فشرطُ «يذكر رمزاً من المستورَد» يفشل على الأصل وحدَه فتُقطع الحافة.
+final Map<String, String> _withPartsCache = {};
+String _codeOnlyWithParts(String path) =>
+    _withPartsCache.putIfAbsent(path, () {
+      final own = _codeOnly(path);
+      final buf = StringBuffer(own);
+      for (final m in RegExp("part\\s+'([^']+\\.dart)'").allMatches(own)) {
+        final p = _resolveImport(path, m.group(1)!);
+        if (p != null && _sources.containsKey(p)) buf.write(_codeOnly(p));
+      }
+      return buf.toString();
+    });
+
+/// كلُّ ملفٍّ **يبلغه** توأمُ PicPos عبر رسم الاستيراد.
+///
+/// ⚠️ الاستيرادُ وحدَه لا يكفي: البراميلُ والاستيرادُ العارض يجرّان رسماً
+/// كاملاً فيُعَدُّ محروساً ما لا يُرسم — وهذا اتجاهُ الخطأ الخطر (فجوةٌ
+/// حقيقيةٌ تُخفى). فلا تُتبَع الحافةُ إلا إن كانت المكتبةُ المستورِدة **تذكر
+/// فعلاً** رمزاً معرَّفاً في المستورَد.
+Set<String> _reachableFrom(String twin) {
   final seen = <String>{};
   final queue = <String>[];
 
-  final re = RegExp("(?:import|part)\\s+'([^']+\\.dart)'");
-
   void enqueue(String path) {
-    if (!path.startsWith(root)) return;
+    if (!_sources.containsKey(path)) return;
     if (!seen.add(path)) return;
     queue.add(path);
   }
 
-  for (final e in _sources.entries) {
-    if (!e.key.startsWith('lib/presentation/$twin/')) continue;
-    for (final m in re.allMatches(e.value)) {
-      final resolved = _resolveImport(e.key, m.group(1)!);
-      if (resolved != null) enqueue(resolved);
-    }
+  for (final key in _sources.keys) {
+    if (key.startsWith('lib/presentation/$twin/')) enqueue(key);
   }
 
   while (queue.isNotEmpty) {
     final current = queue.removeLast();
-    final src = _sources[current];
-    if (src == null) continue;
-    for (final m in re.allMatches(src)) {
+    final text = _codeOnlyWithParts(current);
+    for (final m in _importRe.allMatches(text)) {
       final resolved = _resolveImport(current, m.group(1)!);
       if (resolved == null) continue;
-      // ⚠️ الاستيرادُ وحدَه لا يكفي بعد القفزة الأولى: البراميلُ والاستيرادُ
-      // العارض يجرّان رسمَ استيرادٍ كاملاً فيُعَدُّ محروساً ما لا يُرسم —
-      // وهذا اتجاهُ الخطأ الخطر (فجوةٌ حقيقيةٌ تُخفى). فلا تُتبَع الحافةُ إلا
-      // إن كان الملفُّ المستورِد **يذكر فعلاً** رمزاً معرَّفاً في المستورَد.
-      if (_referencesSymbolOf(src, resolved)) enqueue(resolved);
+      if (_referencesSymbolOf(text, resolved)) enqueue(resolved);
     }
   }
 
@@ -159,60 +202,195 @@ String? _resolveImport(String from, String raw) {
   return segments.join('/');
 }
 
-/// هل يُذكر الكودُ (نصّاً خاماً أو ثابتاً) في ملفٍّ تحت [dir]؟
+/// هل يُذكر الكودُ في [text] ذكراً **يصلح أن يكون حراسة**؟
 ///
-/// ⚠️ المرجعُ قد يُلَفّ على سطرين (`PermissionCodes.\n  posSave`) — فالبحثُ
-/// عن الثابت **بلا** بادئته، مقيَّداً بحدّ كلمة. البحثُ عن السطر الكامل كان
-/// يفوّت الملفوفَ ويعطي إيجاباً كاذباً بأن الحراسةَ غائبة.
-bool _mentionedIn(String dir, String code, String? constName) {
-  final prefix = 'lib/presentation/$dir/';
-  for (final e in _sources.entries) {
-    if (!e.key.startsWith(prefix)) continue;
-    if (e.value.contains("'$code'")) return true;
-    if (constName != null && RegExp('\\b$constName\\b').hasMatch(e.value)) {
-      return true;
-    }
-  }
-  return false;
+/// صورتان لا ثالثة: السلسلةُ الخام `'pos_save'`، أو الثابتُ **مؤهَّلاً**
+/// بـ`PermissionCodes.`.
+///
+/// ⚠️ والتأهيلُ ليس تجميلاً — هو إصلاحُ سلبٍ كاذبٍ مقيس: كان البحثُ عن اسم
+/// الثابت وحدَه (`\bposDiscount\b`)، فطابق **لوناً** اسمُه
+/// `AppColors.posDiscount` في `core/theme/app_colors.dart`، فمرّ `pos_discount`
+/// «محروساً» وهو غيرُ محروسٍ في PicPos إطلاقاً — وثلاثةُ أبوابٍ مفتوحةٍ عليه.
+/// **لونٌ أسكتَ حارساً أمنياً.** (مقيسٌ 2026-08-13)
+///
+/// و`\s*` حول النقطة تحفظ المرجعَ الملفوفَ على سطرين
+/// (`PermissionCodes.\n  posSave`) الذي كان سببَ إسقاط البادئة أصلاً.
+@visibleForTesting
+bool mentionsCode(String text, String code, String? constName) {
+  if (text.contains("'$code'")) return true;
+  if (constName == null) return false;
+  return RegExp('PermissionCodes\\s*\\.\\s*$constName\\b').hasMatch(text);
 }
 
-/// هل يُذكر في أيّ موضعٍ **خارج** النظير القديم وتوأمه؟
-bool _mentionedElsewhere(String legacy, String twin, String code, String? c) {
-  for (final e in _sources.entries) {
-    if (e.key.startsWith('lib/presentation/$legacy/')) continue;
-    if (e.key.startsWith('lib/presentation/$twin/')) continue;
-    if (e.value.contains("'$code'")) return true;
-    if (c != null && RegExp('\\b$c\\b').hasMatch(e.value)) return true;
-  }
-  return false;
-}
+/// هل الملفُّ موضعَ حراسةٍ مُحتمَل — أي في طبقة العرض؟
+///
+/// ⚠️ ثلاثةُ أصنافٍ من الملفات كانت تُسكت هذا الحارسَ وهي **ليست شاشة**:
+///   · `lib/services/api/api_sales_handler.dart` — يفرض `pos_hold_order` على
+///     سطح HTTP. وهو إنفاذٌ حقيقيّ، لكن لعميلٍ بعيدٍ لا لزرّ الشاشة. وعلى
+///     تنصيبةٍ مستقلّةٍ لا وجودَ لهذا المسار أصلاً.
+///   · `lib/data/database/migrations/epoch_3.dart` — قائمةُ منحٍ افتراضيّةٍ
+///     تذكر `'pos_hold_order'` نصّاً. بياناتُ منحٍ لا إنفاذ.
+///   · `lib/services/logging/…` — سلاسلُ أفعالٍ في سجلّ النشاط.
+bool _isEnforcementSurface(String path) =>
+    path.startsWith('lib/presentation/') || path.startsWith('lib/core/');
 
 Set<String> _currentGaps() {
   final byCode = _constantNameByCode();
+  // ⚠️ المدى **كلُّ توائم PicPos معاً** لا كلُّ زوجٍ وحدَه: التطبيقُ واحد،
+  // فحراسةُ `products_add` في توأم الأصناف تحمي الفعلَ ولو ذُكر الكودُ في
+  // نظير البيع القديم. قياسُ الزوج وحدَه كان يعطي فجوةً عابرةً للأزواج.
+  final reachable = <String>{
+    for (final twin in _twins.values) ..._reachableFrom(twin),
+  };
   final gaps = <String>{};
-  for (final entry in _twins.entries) {
-    final legacy = entry.key, twin = entry.value;
-    final reused = _legacyFilesImportedBy(twin, legacy);
+  for (final legacy in _twins.keys) {
     for (final code in byCode.keys) {
       final c = byCode[code];
-      if (!_mentionedIn(legacy, code, c)) continue;
-      if (_mentionedIn(twin, code, c)) continue;
-      // ملفٌّ قديمٌ يستورده التوأمُ = حراستُه تصل إلى الشاشة.
-      final viaImport = reused.any((p) {
-        final src = _sources[p];
-        if (src == null) return false;
-        return src.contains("'$code'") ||
-            (c != null && RegExp('\\b$c\\b').hasMatch(src));
-      });
-      if (viaImport) continue;
-      if (_mentionedElsewhere(legacy, twin, code, c)) continue;
+      final inLegacy = _sources.keys
+          .where((p) => p.startsWith('lib/presentation/$legacy/'))
+          .any((p) => mentionsCode(_codeOnly(p), code, c));
+      if (!inLegacy) continue;
+      final reaches = reachable
+          .where(_isEnforcementSurface)
+          .any((p) => mentionsCode(_codeOnly(p), code, c));
+      if (reaches) continue;
       gaps.add(code);
     }
   }
   return gaps;
 }
 
+// ── الحارسُ المعاكس ────────────────────────────────────────────────────────
+//
+// `picposParityGaps` يقول «لا سطحَ يُحرَس اليوم». وهو حكمُ **غياب**، ولا شيءَ
+// في الحارس أعلاه يمنعه من أن يبطل صامتاً: يومَ يُضاف زرُّ مرتجعٍ أو طاولاتٍ
+// لشاشة PicPos **بلا حراسة** لن يذكر أحدٌ الكود، فيبقى الكودُ «غيرَ واصل» أي
+// فجوةً مسجَّلة، فيمرّ الاختبارُ أخضرَ وقد وُلد ثقبٌ جديد.
+//
+// والاختبارُ الثالث («السجلُّ يتقلّص») لا يسدّ هذا: هو يفشل لمدخلٍ **صار
+// محروساً** — أي للحالة السعيدة. أمّا الميزةُ التي تصل بلا حراسة فلا أثرَ لها
+// في مطابقات الكود إطلاقاً.
+//
+// فالحارسُ لا يجوز أن يرصد **ذكرَ الكود** بل **وصولَ الميزة**. ولكلّ مدخلٍ في
+// السجلّ شاهدُ غيابٍ مكتوبٌ نثراً هناك («لا مِسطرةَ زيادةٍ ونقص» · «صفرُ
+// مطابقاتٍ لـ`TablePos`»). وهذه الخريطةُ تحوّل ذلك النثرَ إلى تأكيدٍ تنفيذيّ.
+//
+// ⚠️ الشواهدُ تُقاس على الكود **بلا تعليقات**: خمسٌ منها (`استبدال` ·
+// `العروض` · `applyOffer` · `TouchKeyboard` · `Return`) لها اليومَ مطابقاتٌ في
+// تعليقاتٍ فقط، ولولا التجريدُ لوُلد الحارسُ أحمرَ بلا سبب.
+const _absenceWitness = <String, List<String>>{
+  'pos_booking': ['حجز', 'Booking'],
+  // ⚠️ `pos_exchange` شُطب 2026-08-19 مع مدخلِه في السجلّ: وصل سطحُ الاستبدال
+  // (زرُّ اللوحة · ترويسةُ الأرقام الثلاثة · مسارُ الحفظ) وصار الكودُ مُنفَذاً
+  // في `_showExchange`. والحارسُ المعاكسُ هو من كشف الوصولَ — أعطى الملفّاتِ
+  // الثلاثةَ بالاسم قبل أن يُشطَب أيُّ سطر.
+  'pos_deleted_items': ['الأصناف المحذوفة', 'DeletedItems'],
+  'pos_keyboard': ['لوحة المفاتيح'],
+  'pos_offers': ['العروض', 'OffersDialog'],
+  'pos_table_select': ['طاولة', 'TablePos', 'table_pos'],
+  'pos_table_bill': ['طاولة', 'TablePos', 'table_pos'],
+  'tables_add_items': ['طاولة', 'TablePos', 'table_pos'],
+  'tables_cancel': ['طاولة', 'TablePos', 'table_pos'],
+  'tables_checkout': ['طاولة', 'TablePos', 'table_pos'],
+};
+
+/// مدخلاتٌ بلا شاهدٍ **بسببٍ صريح** — لا بالإهمال.
+///
+/// الاثنان غيرُ محسومَين أصلاً: لم يُثبَت لأيٍّ منهما زرٌّ مقابلٌ في PicPos،
+/// ويحتاجان لقطةَ شاشةٍ من المالك (‏لا بحثاً نصّياً — أخطأ خمسَ مرّاتٍ في هذه
+/// المسألة وحدَها). ولا يصلح لهما شاهدٌ نصّيّ بعد: `Notification` يطابق
+/// `PosNotificationType` وهو نظامُ التوست القائم، فالشاهدُ كان سيولد أحمرَ
+/// كاذباً — ومن يضيف شاهداً كاذباً يُدرّب القارئَ على تجاهل الأحمر.
+const _witnessExempt = <String>{
+  'pos_low_stock_alert',
+  'pos_notifications',
+};
+
+/// المجلدُ الذي **ستهبط فيه** الميزةُ لو وصلت.
+///
+/// ⚠️ مقيسٌ لا مفترَض: مسحُ التوائم الأربعة كلِّها ولّد أربعَ حمراواتٍ كاذبة
+/// من أوّل تشغيلة — `IconsBold.plus` أيقونةُ زرِّ «إضافة صنف» في شاشة الأصناف،
+/// و«لوحة المفاتيح» تسميةٌ في الإعدادات، و«العروض» كلمةٌ في شاشة الرئيسية.
+/// ولا واحدةَ منها تقول شيئاً عن سلّة البيع.
+///
+/// وكلُّ المدخلات الثلاثةَ عشرَ ميزاتُ **شاشة بيع**: مِسطرةُ الكمية · زرُّ
+/// المرتجع · الطاولات · العروض · الحجز · الاستبدال · لوحة المفاتيح. فمداها
+/// `pos_picpos/` وحدَه — وهو نفسُ ما تقوله أسبابُ السجلّ نثراً («جدولُ PicPos
+/// بلا مِسطرة» · «رأسُ شاشة PicPos لا يعرض طاولات»).
+///
+/// ومن يضيف مدخلاً لميزةٍ في توأمٍ آخر فليوسّع هذا **لمجلده هو**، لا للأربعة.
+const _witnessScope = <String>['pos_picpos'];
+
+/// مواضعُ [marker] في كود المجلدات المعطاة، بلا تعليقات.
+@visibleForTesting
+List<String> witnessHitsIn(Iterable<String> twinDirs, String marker) {
+  final hits = <String>[];
+  for (final e in _sources.keys) {
+    if (!twinDirs.any((d) => e.startsWith('lib/presentation/$d/'))) continue;
+    if (_codeOnly(e).contains(marker)) hits.add(e);
+  }
+  return hits;
+}
+
 void main() {
+  // ── حراسةُ الحارس ────────────────────────────────────────────────────────
+  // في حارسٍ أمنيّ الإيجابُ الكاذبُ أرخصُ من السلب الكاذب: الأولُ ضجيجٌ
+  // يُراجَع، والثاني ثقبٌ يسقط من الرادار. وقد وقع الثاني فعلاً — أربعةُ
+  // أكوادٍ مرّت خضراءَ وأفعالُها مفتوحة. فهذه المجموعةُ تثبّت الاتجاه.
+  group('قواعدُ المطابقة نفسُها', () {
+    test('اسمُ الثابت بلا بادئةٍ لا يُحتسب — حالةُ `AppColors.posDiscount`', () {
+      const colour = 'static const Color posDiscount = error;';
+      expect(mentionsCode(colour, 'pos_discount', 'posDiscount'), isFalse,
+          reason: 'لونٌ يحمل نفسَ الاسم كان يمرّر `pos_discount` «محروساً» '
+              'وهو مفتوحٌ من ثلاثة أبواب');
+      expect(
+        mentionsCode('permission: PermissionCodes.posDiscount,', 'pos_discount',
+            'posDiscount'),
+        isTrue,
+        reason: 'والحراسةُ الحقيقيةُ يجب أن تبقى معدودة',
+      );
+    });
+
+    test('والمرجعُ الملفوفُ على سطرين يبقى معدوداً', () {
+      // سببُ إسقاط البادئة أصلاً — فلا يُعاد كسرُه بإصلاح الاصطدام.
+      expect(
+        mentionsCode('PermissionCodes.\n      posSave', 'pos_save', 'posSave'),
+        isTrue,
+      );
+    });
+
+    test('والسلسلةُ الخام تكفي', () {
+      expect(mentionsCode("'pos_save'", 'pos_save', 'posSave'), isTrue);
+    });
+
+    test('التعليقُ ليس حراسةً ولا استيراداً', () {
+      const src = "/// permission: PermissionCodes.posExpense,\n"
+          "// import 'x.dart';\n"
+          "/* PermissionCodes.posSave */\n"
+          "final int x = 1;";
+      final stripped = stripComments(src);
+      expect(mentionsCode(stripped, 'pos_expense', 'posExpense'), isFalse,
+          reason: 'مثالٌ توضيحيٌّ في وثيقة `PermissionGuard` كان يُسكت '
+              '`pos_expense` وهو مفتوح');
+      expect(mentionsCode(stripped, 'pos_save', 'posSave'), isFalse);
+      expect(stripped.contains("import 'x.dart'"), isFalse);
+      expect(stripped.contains('final int x = 1;'), isTrue);
+    });
+
+    test('ولا يُحتسب إنفاذاً ما ليس على سطح العرض', () {
+      // `api_sales_handler` و`migrations/epoch_3` كانا يُخفيان
+      // `pos_hold_order` — سطحُ HTTP وقائمةُ منحٍ، لا زرَّ شاشة.
+      expect(_isEnforcementSurface('lib/services/api/api_sales_handler.dart'),
+          isFalse);
+      expect(_isEnforcementSurface('lib/data/database/migrations/epoch_3.dart'),
+          isFalse);
+      expect(
+          _isEnforcementSurface(
+              'lib/presentation/pos/widgets/held_orders_dialog.dart'),
+          isTrue);
+    });
+  });
+
   test('كلُّ توأمٍ في المجلدات موجودٌ فعلاً — وإلا فالخريطةُ بائتة', () {
     for (final e in _twins.entries) {
       expect(Directory('lib/presentation/${e.key}').existsSync(), isTrue,
@@ -236,6 +414,64 @@ void main() {
           'على المسار الحيّ. إمّا تُحرَس في التوأم، أو تُسجَّل في '
           '`picposParityGaps` بسببٍ صريح.',
     );
+  });
+
+  group('الحارسُ المعاكس: ميزةٌ وصلت وسطرُها ما زال مسجَّلاً «بلا ميزة»', () {
+    test('لكلّ مدخلٍ في السجلّ شاهدُ غيابٍ أو إعفاءٌ مُعلَّل', () {
+      final unwitnessed = PermissionEnforcementRegistry.picposParityGaps
+          .where((c) =>
+              !_absenceWitness.containsKey(c) && !_witnessExempt.contains(c))
+          .toList()
+        ..sort();
+      expect(
+        unwitnessed,
+        isEmpty,
+        reason: 'مدخلٌ في `picposParityGaps` بلا شاهدِ غياب. السجلُّ يقول «لا '
+            'ميزةَ تُحرَس»، وهذا حكمٌ يبطل صامتاً يومَ تصل الميزة. أضِف '
+            'عباراتٍ تدلّ على وصولها في `_absenceWitness`، أو أعفِه في '
+            '`_witnessExempt` بسببٍ مكتوب.',
+      );
+    });
+
+    test('ولا شاهدَ بائتٌ لمدخلٍ شُطب', () {
+      // سجلٌّ يحمل شواهدَ لأكوادٍ لم تعد فيه يضلّل القارئَ ويكذب على الجديد.
+      final orphan = {..._absenceWitness.keys, ..._witnessExempt}
+          .where((c) => !PermissionEnforcementRegistry.picposParityGaps
+              .contains(c))
+          .toList()
+        ..sort();
+      expect(orphan, isEmpty,
+          reason: 'شاهدٌ لكودٍ لم يعد مسجَّلاً فجوةً — احذفه');
+    });
+
+    test('والآليّةُ ترصد فعلاً — ضابطٌ على مصدرٍ صناعيّ', () {
+      // بلا هذا قد تمرّ الخريطةُ كلُّها خضراءَ لأن المطابقةَ معطوبة، لا لأن
+      // الميزةَ غائبة. وهو الفرقُ بين حارسٍ يعمل وحارسٍ يبدو أنه يعمل.
+      const arrived = "IconButton(icon: Icon(PhosphorIconsBold.plus), "
+          "onPressed: () => cart.updateQuantity(i, item.quantity + 1))";
+      expect(arrived.contains('IconsBold.plus'), isTrue);
+      expect(arrived.contains('quantity + 1'), isTrue);
+      // والتعليقُ لا يُرصد — وإلا وُلد الحارسُ أحمرَ على وثائقَ قائمة.
+      expect(stripComments('// زرُّ طاولة TablePos').contains('TablePos'),
+          isFalse);
+    });
+
+    for (final entry in _absenceWitness.entries) {
+      test('${entry.key} — الميزةُ لم تصل بعد', () {
+        for (final marker in entry.value) {
+          final hits = witnessHitsIn(_witnessScope, marker);
+          expect(
+            hits,
+            isEmpty,
+            reason: 'الشاهدُ «$marker» ظهر في توأم PicPos ⇒ يبدو أن ميزةَ '
+                '«${entry.key}» وصلت. والكودُ مسجَّلٌ في `picposParityGaps` '
+                'بوصفه «بلا ميزة»، فحارسُ التكافؤ يمرّ أخضرَ وهو مفتوح.\n'
+                'إمّا تُحرَس الميزةُ ويُشطب السطرُ من السجلّ، وإمّا كانت '
+                'المطابقةُ عرضيةً فيُضيَّق الشاهد — ولا يُحذف بلا قياس.',
+          );
+        }
+      });
+    }
   });
 
   test('والسجلُّ يتقلّص: لا مدخلَ صار منفَّذاً وبقي مكتوباً', () {

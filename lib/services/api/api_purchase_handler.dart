@@ -349,7 +349,7 @@ class ApiPurchaseHandler extends ApiHandlerBase {
       // When the client retries submitPurchaseReturn (timeout-without-response),
       // each retry would re-reverse stock, re-update supplier balance, and
       // create duplicate journal/safe entries — the user would see the return
-      // appear twice on the مردودات المشتريات screen and the financial impact
+      // appear twice on the مرتجع المشتريات screen and the financial impact
       // would double. Block replay using the processed_messages table.
       final returnGlobalId = data['globalId'] as String?;
       if (returnGlobalId != null && returnGlobalId.isNotEmpty) {

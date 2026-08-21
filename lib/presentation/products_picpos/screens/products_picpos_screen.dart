@@ -67,6 +67,17 @@ class _ProductsPicposScreenState extends ConsumerState<ProductsPicposScreen> {
   }
 
   Future<void> _addProduct() async {
+    // ⚠️ الفحصُ في **الدالّة** لا في الزرّ وحدَه: `AppShortcuts(onNew:)` أدناه
+    // يستدعيها بـ**F5** فيتخطّى `PermissionGuard` الملفوفَ حول الزرّ كلياً.
+    // (مقيسٌ 2026-08-13 — ونفسُ النمط في المشتريات وفواتير البيع.)
+    //
+    // ولا يُسأل المسؤولُ مرّتين: `ensurePermission` تستهلك موافقةَ الحارس من
+    // `ManagerApprovalCache`.
+    if (!await ensurePermission(ref, context, PermissionCodes.productsAdd,
+        actionName: 'إضافة صنف')) {
+      return;
+    }
+    if (!mounted) return;
     final result = await AddProductDialog.show(context);
     if (result != null) {
       await ref.read(productsControllerProvider.notifier).loadNextPage(isRefresh: true);

@@ -971,8 +971,8 @@ class _CategoriesPicposScreenState
                           AppToast.show(
                             context,
                             cat.showInPos
-                                ? 'تم إخفاء التصنيف من نقطة البيع'
-                                : 'تم إظهار التصنيف في نقطة البيع',
+                                ? 'تم إخفاء التصنيف من البيع السريع'
+                                : 'تم إظهار التصنيف في البيع السريع',
                             type: cat.showInPos
                                 ? ToastType.warning
                                 : ToastType.success,

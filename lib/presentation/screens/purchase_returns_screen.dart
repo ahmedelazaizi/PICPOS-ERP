@@ -103,7 +103,7 @@ class _PurchaseReturnsScreenState extends ConsumerState<PurchaseReturnsScreen>
                             Icon(PhosphorIconsBold.arrowUUpLeft, size: 22, color: AppColors.primary),
                             SizedBox(width: 8),
                             Text(
-                              'مردودات المشتريات',
+                              'مرتجع المشتريات',
                               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                             ),
                           ],

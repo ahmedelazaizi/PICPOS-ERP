@@ -276,8 +276,8 @@ class GuidedTourService {
   /// POS tour steps
   static List<TourStep> get posTour => [
     const TourStep(
-      title: 'نقطة البيع',
-      description: 'شاشة نقطة البيع مصممة للبيع السريع. ابحث عن الأصناف بالاسم أو بقراءة الباركود.',
+      title: 'البيع السريع',
+      description: 'شاشة البيع السريع مصممة للبيع السريع. ابحث عن الأصناف بالاسم أو بقراءة الباركود.',
       icon: Icons.point_of_sale,
     ),
     const TourStep(

@@ -64,6 +64,12 @@ class _CwiTrading {
     }
     await ClientWriteInterceptor._enrichItemsWithProductGlobalId(saleData);
 
+    // نطاقُ الاستبدال — اقرأ نظيرَه في `submitSalesReturn` تحت.
+    final exchangeCollector = ClientWriteInterceptor.activeExchangeCollector;
+    if (exchangeCollector != null) {
+      exchangeCollector.setSale(saleData);
+      return null;
+    }
     return ClientWriteInterceptor._tryOrQueue(
       tableName: 'sales',
       operation: 'insert',
@@ -112,12 +118,39 @@ class _CwiTrading {
     }
     await ClientWriteInterceptor._enrichItemsWithProductGlobalId(returnData);
 
+    // نطاقُ الاستبدال: تُلتقَط الحمولةُ **بعد إثرائها** ولا تُرسَل وحدَها —
+    // يرسلها `submitExchange` مع شقِّ البيع في حمولةٍ واحدة. والوسمُ المختلط
+    // يمرّ من هنا مرّتين، فتُجمَع الحمولتان لا تُستبدل إحداهما بالأخرى.
+    final exchangeCollector = ClientWriteInterceptor.activeExchangeCollector;
+    if (exchangeCollector != null) {
+      exchangeCollector.addReturnLeg(returnData);
+      return null;
+    }
     return ClientWriteInterceptor._tryOrQueue(
       tableName: 'sales_returns',
       operation: 'insert',
       payload: returnData,
       serverCall: (reqIdemKey) => ClientWriteInterceptor._proxy
           .submitSalesReturn(returnData, idempotencyKey: reqIdemKey),
+    );
+  }
+
+  /// يرسل الاستبدالَ **حمولةً واحدة** يفكّها الخادمُ إلى مستندَين في معاملةٍ
+  /// واحدة (‏قرارُ المالك ٥).
+  ///
+  /// و`tableName: 'sales_exchanges'` جدولٌ **منطقيٌّ** لا صفَّ له في القاعدة —
+  /// هو مفتاحُ التوزيع في طابور `offline_sync_worker`. ونوعٌ بلا فرعٍ هناك
+  /// يسقط صامتاً من الطابور (وقع مع `void` من قبل)، فالفرعُ مضافٌ معه.
+  static Future<int?> submitExchange(Map<String, dynamic> exchangeData) async {
+    if (!SyncInterceptor.isClientMode) return null;
+    debugPrint('[ClientInterceptor] Routing exchange to server '
+        '(key=${exchangeData['exchangeKey']})');
+    return ClientWriteInterceptor._tryOrQueue(
+      tableName: 'sales_exchanges',
+      operation: 'insert',
+      payload: exchangeData,
+      serverCall: (reqIdemKey) => ClientWriteInterceptor._proxy
+          .submitExchange(exchangeData, idempotencyKey: reqIdemKey),
     );
   }
 

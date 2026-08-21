@@ -629,19 +629,15 @@ extension TreasuryDao on AppDatabase {
         ),
       );
 
-      // الدرجُ الذي تحرّك أكثر — وإن لم يتحرّك شيءٌ فأوّلُ أدراج النطاق.
-      int? primaryDrawer;
-      if (drawerSafeIds.isNotEmpty) {
-        final moved = <int, double>{};
-        for (final t in drawerTxs) {
-          moved[t.safeId] = (moved[t.safeId] ?? 0) + t.amount.abs();
-        }
-        primaryDrawer = moved.isEmpty
-            ? drawerSafeIds.first
-            : moved.entries
-                .reduce((a, b) => a.value >= b.value ? a : b)
-                .key;
+      // موضعٌ واحدٌ لتعريف الدرج — راجع `domain/models/shift_drawer_resolver.dart`.
+      final moved = <int, double>{};
+      for (final t in drawerTxs) {
+        moved[t.safeId] = (moved[t.safeId] ?? 0) + t.amount.abs();
       }
+      final primaryDrawer = resolveShiftDrawer(
+        cashSafeIdsInBranch: drawerSafeIds,
+        movedBySafeId: moved,
+      );
 
       return _ShiftSettlementResult(
         variance: variance,
@@ -2566,6 +2562,184 @@ extension TreasuryDao on AppDatabase {
     }
     query.orderBy([(s) => OrderingTerm.asc(s.name)]);
     return query.get();
+  }
+
+  /// خزنةُ صرف المرتجع: درجُ فرع وردية المستخدم المفتوحة.
+  ///
+  /// كان المرتجعُ يضرب `getDefaultSafeByType('cash')` — خزنةً **عامّةً**
+  /// تتجاهل الفرع — بينما البيعَ والإقفالَ ينسبان للفرع. فمرتجعٌ في فرعٍ
+  /// كان يُنقص خزنةَ فرعٍ آخر (مقيسٌ 2026-08-16).
+  ///
+  /// مرشِّحو الدرج هنا مطابقون لـ`_settleShift` (أعلاه) في مصدر الخزائن
+  /// (كلُّ الخزائن النقدية في النظام، بلا فلتر فرعٍ عند الجلب — الفرعُ
+  /// يُطبَّق فقط عند بناء مجموعة السقوط، تماماً كما هناك) وبلا `orderBy`
+  /// (فيرجع رتيبُ الصفّ الطبيعيّ لا ترتيبَ الاسم) — لا `getCashSafesForBranch`
+  /// (كانت تُفلتر وترتّب بالاسم، فتختار درجاً مختلفاً عمّا يسوّيه الإقفالُ
+  /// لنفس الوردية). وما لمسَته حركاتُ المستخدم فعلاً يُفضَّل أوّلاً، وإلا
+  /// فخزائنُ الفرع المُقفَل عليه كاملةً — بنفس شرط `_settleShift` بعد أن
+  /// صار `branchId` هنا مضموناً غيرَ null (اقرأ سقوطَ الفرع أدناه).
+  ///
+  /// ثلاثةُ فروقٍ بنيويّةٍ باقيةٌ **مقصودة**، بعد جولة مراجعة ٣ (2026-08-16):
+  ///
+  /// ١. **النافذةُ مفتوحة**: `_settleShift` نافذتُه مغلقةٌ
+  ///    `[startTime, endTime]` لأن الورديةَ أُقفلت فعلاً؛ وهذه الدالّةُ
+  ///    نافذتُها مفتوحةٌ `[startTime, الآن]` — الورديةُ لسه شغّالة والمرتجعُ
+  ///    يحصل أثناءها بلا `endTime` معروف.
+  ///
+  /// ٢. **فلترُ الخزنة النشِطة**: `_settleShift` لا يفلتر `isActive` (يكتب
+  ///    تسويةً محاسبيةً فقط، لا يصرف نقداً). وهذه الدالّةُ **تصرف نقداً
+  ///    فعلياً** — فلا يجوز الاختيارُ خزنةً أخرجها المشغّلُ من الخدمة.
+  ///    قياسٌ فعليٌّ (جولة مراجعة ٢): فرعٌ بدرجَين، أحدُهما معطَّلٌ برقمٍ
+  ///    أصغرَ والآخرُ نشِطٌ، ووردية بلا حركةٍ بعد ⇒ كان الاختيارُ يقع على
+  ///    المعطَّلة (رتيبُ الصفّ الطبيعيّ لا يعرف `isActive`)، والمبلغُ
+  ///    المصروفُ يختفي من `getTotalCashBalance`/`getSafesBalancesByType`
+  ///    (يفلتران `is_active = 1`) بينما الأستاذُ يسجّله — فجوةٌ صامتة.
+  ///    فبعد بناء المرشَّحين (لمسٌ أو فرعٌ) تُفلتر الخزائنُ النشِطةُ منهم:
+  ///    لو وُجدت واحدةٌ نشِطةٌ على الأقل تُستبعد المعطَّلة؛ وإلا (كلُّ خزائن
+  ///    المجموعة معطَّلة — حالةٌ شاذّة) سقوطٌ كاملٌ إلى الخزنة الافتراضية
+  ///    العامّة (جولةُ مراجعة ٣ — راجع أسفله) بدل إبقائها كلِّها مرشَّحةً:
+  ///    الإبقاءُ كان يسمح بصرفٍ فعليٍّ من خزنةٍ معطَّلة، وهذا الانحدارُ
+  ///    نفسُه الذي صحَّحه هذا التعليق قبل الإصلاح مباشرةً — `getDefaultSafeByType`
+  ///    (السلوكُ القديمُ قبل جولة المراجعة الأولى) كان يفلتر `isActive`
+  ///    **دوماً** فما كان يصرف من معطَّلةٍ أبداً.
+  ///
+  /// ٣. **مصدرُ سقوط الفرع عند `shift.branchId == null`**: `_settleShift`
+  ///    (سطرا ٥٧٦-٥٨١ أعلاه) يتوسّع عندها لخزائن **كلّ فروع النظام**
+  ///    (الشرطُ `shift.branchId == null || ...` يصير `true` دوماً — تسويةٌ
+  ///    محاسبيةٌ فقط، فاتساعُ النطاق لا يصرف نقداً من فرعٍ غيرِ المستخدم).
+  ///    وهذه الدالّةُ **لا** تتوسّع أبداً: تسقط أوّلاً إلى
+  ///    `getUserBranchId(userId)` (أعلاه) قبل بناء أيّ مجموعةِ مرشَّحين،
+  ///    فيبقى `branchId` مضموناً غيرَ null دوماً بعد تلك النقطة — خزنةٌ
+  ///    يُصرف منها نقداً فعلياً يجب أن تنتسب لفرع المستخدم تحديداً، لا أن
+  ///    تُختار من مجموع خزائن كلّ الفروع.
+  ///
+  /// وحلقةُ `moved` هنا **لا تستثني** `shift_variance` — مطابقةٌ لحلقة
+  /// `moved` نفسِها في `_settleShift` (أعلاه، بعد حساب `expectedCash`)
+  /// التي لا تستثنيه هي الأخرى. الاستثناءُ في `_settleShift` موجودٌ في
+  /// حلقةٍ **مختلفة** (‏`totalReceipts`/`totalPayments` لحساب
+  /// `expectedCash`)، لا في حلقة بناء الدرج؛ جولةُ مراجعة ١ خلطت بين
+  /// الحلقتَين فأنتجت تعريفَين مختلفَين للدرج — أُصلح ذلك.
+  ///
+  /// كلُّ سقوطٍ إلى الخزنة الافتراضية العامّة **مُسجَّلٌ فعلياً** عبر
+  /// `DiagnosticLogger` (تاگ `REFUND-SAFE-FALLBACK`) كي يظهر لمراجع — لا في
+  /// وصف حركة الخزنة: صفُّ `safe_transactions` لا يحمل أيَّ إشارة سقوطٍ،
+  /// فالسجلُّ التشخيصيُّ هو الأثرُ القابلُ للتدقيق.
+  Future<Safe?> resolveRefundSafe({required int userId}) async {
+    final shift = await getCurrentOpenShift(userId);
+    if (shift == null) {
+      unawaited(DiagnosticLogger.log('REFUND-SAFE-FALLBACK',
+          'userId=$userId reason=no-open-shift → default cash safe'));
+      return getDefaultSafeByType('cash');
+    }
+
+    // جولةُ مراجعةٍ ١ (2026-08-16) — Critical: `shift.branchId` قد يكون
+    // null. `BranchScope.fullAccess()` (مدير النظام) يعطي `primaryBranchId
+    // == null`، و`app_main_screen.dart:1390-1401` يفتح الورديةَ بهذا الـ
+    // null **بلا سقوطٍ احتياطيّ**. وتمريرُ null إلى `getCashSafesForBranch`
+    // القديمة كان **يتوسّع** إلى خزائن **كلّ** الفروع بدل أن ينهار — وبلا
+    // حركةٍ في النافذة يختار `resolveShiftDrawer` أوّلَ عنصرٍ بترتيب
+    // الاسم، فيقع على «الصندوق الرئيسي» (يسبق «صندوق الكاشير» أبجدياً)
+    // بدل خزنة الفرع الحقيقية — قياسٌ فعليّ على بذرةٍ قياسيةٍ بفرعَين.
+    // الإصلاح: نفسُ سقوطِ `pos_main_dialogs.dart:107-111` عند فتح
+    // الوردية — `getUserBranchId`، وتعليقُ `Shifts.branchId`
+    // (‏`audit_tables.dart:31-33`) يوصي بنفس الشيء. **لا يُمرَّر null إلى
+    // أيّ استعلامٍ بالفرع بعد هذه النقطة إطلاقاً.**
+    var branchId = shift.branchId;
+    branchId ??= await getUserBranchId(userId);
+    if (branchId == null) {
+      unawaited(DiagnosticLogger.log('REFUND-SAFE-FALLBACK',
+          'userId=$userId shiftId=${shift.id} '
+          'reason=no-branch(shift-and-user) → default cash safe'));
+      return getDefaultSafeByType('cash');
+    }
+
+    // مطابقةٌ لاستعلام `cashSafes` في `_settleShift`: كلُّ الخزائن النقدية
+    // في النظام، بلا فلتر فرعٍ هنا (الفرعُ يُطبَّق أدناه عند بناء مجموعة
+    // السقوط فقط، تماماً كما هناك) وبلا فلتر `isActive`.
+    final cashSafes =
+        await (select(safes)..where((s) => s.safeType.equals('cash'))).get();
+    final cashSafeIds = {for (final s in cashSafes) s.id};
+    if (cashSafeIds.isEmpty) {
+      unawaited(DiagnosticLogger.log('REFUND-SAFE-FALLBACK',
+          'userId=$userId shiftId=${shift.id} '
+          'reason=no-cash-safes-at-all → default cash safe'));
+      return getDefaultSafeByType('cash');
+    }
+
+    // مطابقةٌ لـ`txs` في `_settleShift`: ما لمسَه هذا المستخدمُ فعلاً منذ
+    // بداية الوردية (بلا سقفٍ زمنيّ أعلى — الورديةُ مفتوحةٌ، خلافاً
+    // لـ`_settleShift` صاحبةِ `endTime` المعروف).
+    final userTxs = await (select(safeTransactions)
+          ..where((t) =>
+              t.userId.equals(userId) &
+              t.createdAt.isBiggerOrEqualValue(shift.startTime)))
+        .get();
+    var drawerSafeIds =
+        userTxs.map((t) => t.safeId).where(cashSafeIds.contains).toSet();
+    if (drawerSafeIds.isEmpty) {
+      // مطابقةٌ لفرع `_settleShift` الاحتياطيّ — خزائنُ الفرع كاملةً. الشرطُ
+      // هناك `shift.branchId == null || s.branchId == shift.branchId`؛
+      // هنا `branchId` مضمونٌ غيرُ null فوق فيبسَّط إلى المساواة فقط.
+      drawerSafeIds = {
+        for (final s in cashSafes)
+          if (s.branchId == branchId) s.id,
+      };
+    }
+    if (drawerSafeIds.isEmpty) {
+      unawaited(DiagnosticLogger.log('REFUND-SAFE-FALLBACK',
+          'userId=$userId shiftId=${shift.id} branchId=$branchId '
+          'reason=no-cash-safes-for-branch → default cash safe'));
+      return getDefaultSafeByType('cash');
+    }
+
+    // جولةُ مراجعةٍ ٣ (2026-08-16) — فلترُ الخزنة النشِطة (اقرأ التعليقَ فوق
+    // الدالّة، الفرقُ البنيويّ ٢): المرتجعُ يصرف نقداً فعلياً، فلا يجوز
+    // الاختيارُ خزنةً معطَّلة، لا تفضيلاً ولا اضطراراً. جولةُ مراجعة ٢ كانت
+    // تُبقي كلَّ المرشَّحين حين تعطُّلهم جميعاً — انحدارٌ سلوكيٌّ فعليّ عن
+    // `getDefaultSafeByType` القديمة (تفلتر `isActive` **دوماً**) يسمح
+    // بصرفٍ صامتٍ من خزنةٍ عُطِّلت في منتصف وردية بعد أن لمسَها الكاشير:
+    // `getTotalCashBalance`/`getSafesBalancesByType` يفلتران `is_active=1`
+    // فيختفي المبلغُ من لوحات الخزينة بينما الأستاذُ يسجّله. فبدل الإبقاء،
+    // خزائنُ المجموعة كلُّها معطَّلةٌ ⇒ سقوطٌ كاملٌ إلى الخزنة الافتراضية
+    // العامّة (السلوكُ القديمُ بالضبط)، مسجَّلاً بسطر REFUND-SAFE-FALLBACK
+    // بسببٍ مميَّز — كبقيّة السقوطات الخمس.
+    final activeIds = {
+      for (final s in cashSafes)
+        if (drawerSafeIds.contains(s.id) && s.isActive) s.id,
+    };
+    if (activeIds.isEmpty) {
+      unawaited(DiagnosticLogger.log('REFUND-SAFE-FALLBACK',
+          'userId=$userId shiftId=${shift.id} branchId=$branchId '
+          'reason=all-candidate-safes-inactive → default cash safe'));
+      return getDefaultSafeByType('cash');
+    }
+    drawerSafeIds = activeIds;
+
+    // مطابقةٌ لـ`drawerTxs` في `_settleShift`: حركاتُ **أيّ** مستخدمٍ على
+    // الدرج المرشَّح — لا حركاتُ هذا المستخدم وحده — كي يعكس ما بالدرج
+    // فعلياً.
+    final drawerTxs = await (select(safeTransactions)
+          ..where((t) =>
+              t.safeId.isIn(drawerSafeIds) &
+              t.createdAt.isBiggerOrEqualValue(shift.startTime)))
+        .get();
+    // جولةُ مراجعةٍ ٢: بلا استثناء `shift_variance` — مطابقةٌ لحلقة
+    // `moved` نفسِها في `_settleShift` (لا لحلقة `totalReceipts`/
+    // `totalPayments` المختلفة). اقرأ تعليقَ الدالّة فوق.
+    final moved = <int, double>{};
+    for (final t in drawerTxs) {
+      moved[t.safeId] = (moved[t.safeId] ?? 0) + t.amount.abs();
+    }
+
+    final drawerId = resolveShiftDrawer(
+        cashSafeIdsInBranch: drawerSafeIds, movedBySafeId: moved);
+    if (drawerId == null) {
+      unawaited(DiagnosticLogger.log('REFUND-SAFE-FALLBACK',
+          'userId=$userId shiftId=${shift.id} branchId=$branchId '
+          'reason=resolver-returned-null → default cash safe'));
+      return getDefaultSafeByType('cash');
+    }
+    return cashSafes.firstWhere((s) => s.id == drawerId);
   }
 
   /// Resolve the "primary" branch ID for a given user from UserBranchAccess.

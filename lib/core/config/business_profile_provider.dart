@@ -26,6 +26,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/providers/providers.dart';
 import '../../data/repositories/settings_repository_cached.dart';
+import 'brand.dart';
+import 'industry_tables_policy.dart';
 import '../../services/admin_password_service.dart';
 import '../../services/audit_log.dart';
 import '../../services/developer_auth_service.dart';
@@ -128,7 +130,30 @@ final featureCorrectionBus =
 
 final featureFlagsProvider = Provider<FeaturePolicy>((ref) {
   final profile = ref.watch(businessProfileProvider);
-  final overrides = ref.watch(featureOverridesProvider);
+  var overrides = ref.watch(featureOverridesProvider);
+
+  // ── «نوع النشاط التجاري» يحكم رايةَ الطاولات في PicPos ──────────────────
+  //
+  // العطبُ المقيس 2026-08-15: الإعداداتُ تعرض «مطعم (طاولات وصالات)»
+  // واختيارُه لا يُظهر شيئاً — `industry_mode` منفصلٌ تماماً عن البروفايل
+  // وعن السياسة، وقارئوه ثلاثةٌ لا رابعَ لهم وليس فيهم PicPos.
+  //
+  // وقرارُ المالك: وصلُ الضابط القائم لا مفتاحٌ ثانٍ بجواره.
+  //
+  // ⚠️ يُحقن **تجاوزاً** لا يُفرض بعد التصديق: كي تجري عليه قواعدُ
+  // `FeatureDependencyGraph` (‏`posTables` يستلزم `posMain`+`posKitchen`،
+  // ويستبعد `enterpriseInvoiceMode`) بدل تخطّيها.
+  //
+  // ⚠️ والقراءةُ من المستودع المخزَّن **مباشرةً** لا من `industryModeProvider`:
+  // ذاك يبني حالتَه بـ`supermarket` ثم يحمّل من القاعدة لاحقاً، فمراقبتُه
+  // كانت ستُظهر التنقّلَ بلا طاولاتٍ لحظةً ثم يقفز — ووميضٌ في شريط التنقّل
+  // يُقرأ عطباً.
+  overrides = withIndustryTablesOverride(
+    overrides,
+    ref.watch(settingsRepositoryCachedProvider).get('industry_mode'),
+    isPicPos: Brand.isPicPos,
+  );
+
   final result = FeatureValidator.validate(
     FeaturePolicy.fromProfile(profile),
     overrides,
@@ -357,6 +382,55 @@ class ConfigService {
       level: AuditLevel.critical,
     );
     _ref.read(developerSessionProvider.notifier).extend();
+  }
+
+  // ─── Spec B3 — Setup Wizard exit-path hardening ───────────────────────
+  //
+  // The Setup Wizard has two exit paths, `_finishSetup()` and
+  // `_skipSetup()`. Both must leave `businessProfileProvider` /
+  // `deploymentModeProvider` / the developer-password gate reading
+  // correctly from THIS live `SettingsRepositoryCached` instance — the
+  // same one `settingsRepositoryCachedProvider` hands to Dev Tools.
+  //
+  // Originally this existed as a "Phase C2 hot-fix" duplicated inside
+  // `_finishSetup()` only, wrapped in a `try/catch` that swallowed
+  // failures into a bare `debugPrint` — invisible in a Release build.
+  // `_skipSetup()` had no equivalent at all. Extracted here so:
+  //   1. Both exit paths call the SAME code (no more drifting copies).
+  //   2. It has a direct unit-test surface (via `configServiceProvider`
+  //      + a `ProviderContainer`) that doesn't require mounting the
+  //      wizard's widget tree.
+  //   3. Failure is reported (return value + diagnostic log), not
+  //      silently swallowed — callers must surface it to the user.
+  Future<bool> rehydrateRuntimeConfigCache({required String exitPath}) async {
+    try {
+      await _settings.preload(<String>[
+        'setup_completed',
+        'setup_in_progress',
+        'business_profile',
+        'deployment_mode',
+        'developer_password_salt',
+        'developer_password_hash',
+        'feature_schema_version',
+        'runtime_config_hash',
+        ...FeatureKey.values.map((k) => k.settingKey),
+      ]);
+      // Force the notifiers to rebuild from the fresh cache. Without
+      // this, `BusinessProfileNotifier.build()`'s initial read still
+      // wins and the navigation looks like the compile-time default.
+      _ref.invalidate(businessProfileProvider);
+      _ref.invalidate(featureOverridesProvider);
+      _ref.invalidate(deploymentModeProvider);
+      return true;
+    } catch (e, st) {
+      await DiagnosticLogger.logError(
+        'SETUP-WIZARD',
+        'runtime cache rehydrate ($exitPath)',
+        e,
+        st,
+      );
+      return false;
+    }
   }
 
   void _assertUnlocked() {

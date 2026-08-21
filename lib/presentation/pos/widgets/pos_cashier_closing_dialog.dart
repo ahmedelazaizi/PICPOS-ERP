@@ -152,7 +152,7 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
                             ),
                             SizedBox(height: 8),
                             Text(
-                              'افتح وردية جديدة من شاشة نقطة البيع قبل '
+                              'افتح وردية جديدة من شاشة البيع السريع قبل '
                               'محاولة إغلاقها. القيم التي تظهر هنا '
                               'تُحسب فقط على معاملات الوردية الحالية '
                               'لتمنع اختلاط أرقام ورديات سابقة.',

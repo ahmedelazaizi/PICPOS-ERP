@@ -562,7 +562,7 @@ class PosSearchController extends Notifier<PosSearchState> {
       debugPrint('[BarcodeSearch] ! Diagnostic: Product exists but is INACTIVE: ${inactiveProduct.name}');
       _playErrorBeep();
       state = state.copyWith(
-        error: 'عفواً، الصنف (${inactiveProduct.name}) موجود ولكنه "غير نشط".\nيرجى تفعيله من شاشة الأصناف ليظهر في نقطة البيع.',
+        error: 'عفواً، الصنف (${inactiveProduct.name}) موجود ولكنه "غير نشط".\nيرجى تفعيله من شاشة الأصناف ليظهر في البيع السريع.',
         errorKind: BarcodeSearchErrorKind.inactive,
         searchResults: [],
         isSearchActive: false,

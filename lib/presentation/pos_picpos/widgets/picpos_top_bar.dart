@@ -12,12 +12,17 @@ import '../../widgets/permission_guard.dart';
 
 /// Top strip: logo · clock/date · user · POS name · held invoices · close shift.
 class PicPosTopBar extends ConsumerWidget {
-  final VoidCallback onHeldOrders;
+  /// `null` يعطّل الزرَّ بصرياً (باهتٌ بلا `onTap`) — المهمّة ٧، جولةُ إصلاح
+  /// ٢: استرجاعُ فاتورةٍ معلَّقةٍ أثناء وضع المرتجع يحذفها نهائياً من القاعدة
+  /// ثم تُمحى مع السلّة عند حفظ المرتجع، فلا سبيلَ لاستعادتها. المستدعي
+  /// (‏`picpos_pos_screen.dart`) يمرّر `null` طالما `posReturnModeProvider`
+  /// فعّال.
+  final VoidCallback? onHeldOrders;
   final VoidCallback onBack;
   final bool showBackButton;
 
   /// إغلاق الوردية — Task 10B: يسدّ فجوة إن كاشير PicPos ما كان عندوش أي طريقة
-  /// يقفل الوردية من نقطة البيع. المُستدعي (`picpos_pos_screen.dart`) يمرّر
+  /// يقفل الوردية من البيع السريع. المُستدعي (`picpos_pos_screen.dart`) يمرّر
   /// الفعل مباشرة (`PosCashierClosingDialog.show(context)`) بلا لف — نفس أسلوب
   /// `onCashierClosing` في `pos_main_screen.dart` → `pos_header.dart`. حارس
   /// الصلاحية (`PermissionCodes.posShiftClose` + `allowManagerOverride`) يعيش
@@ -83,7 +88,7 @@ class PicPosTopBar extends ConsumerWidget {
           const SizedBox(width: 8),
           const _InfoChip(
             icon: PhosphorIconsBold.storefront,
-            label: 'نقطة البيع',
+            label: 'البيع السريع',
           ),
           const SizedBox(width: 8),
           _HeldOrdersButton(count: heldCount, onPressed: onHeldOrders),
@@ -159,7 +164,7 @@ class _ClockBlockState extends State<_ClockBlock> {
         Text(
           date,
           // كان `white70` — باهت على شريط داكن تحت إضاءة المحل. أبيض كامل
-          // وبولد زي باقي نصوص نقطة البيع (طلب ١٠).
+          // وبولد زي باقي نصوص البيع السريع (طلب ١٠).
           style: const TextStyle(
             color: Colors.white,
             fontSize: 11,
@@ -206,38 +211,42 @@ class _InfoChip extends StatelessWidget {
 
 class _HeldOrdersButton extends StatelessWidget {
   final int count;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
 
   const _HeldOrdersButton({required this.count, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onPressed,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-        decoration: BoxDecoration(
-          color: count > 0
-              ? AppColors.warning
-              : Colors.white.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(PhosphorIconsBold.pauseCircle,
-                size: 16, color: Colors.white),
-            const SizedBox(width: 6),
-            Text(
-              'فواتير معلقة ($count)',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
+    final enabled = onPressed != null;
+    return Opacity(
+      opacity: enabled ? 1 : 0.4,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          decoration: BoxDecoration(
+            color: enabled && count > 0
+                ? AppColors.warning
+                : Colors.white.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(PhosphorIconsBold.pauseCircle,
+                  size: 16, color: Colors.white),
+              const SizedBox(width: 6),
+              Text(
+                'فواتير معلقة ($count)',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

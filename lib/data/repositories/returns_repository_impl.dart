@@ -3,6 +3,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import '../database/database.dart';
 import '../../core/constants/app_constants.dart';
+import '../../domain/models/return_refund_calculator.dart';
 import '../../domain/repositories/returns_repository.dart';
 import '../../services/accounting_service.dart';
 import '../../services/generators/base_generator.dart' show InvoiceItem;
@@ -438,7 +439,9 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
       // Fix: write the ledger row with a plain `into(...).insert(...)`
       // so no nested transaction runs and no auto balance mutation fires.
       if (cashRefund > 0) {
-        final cashSafe = await _db.getDefaultSafeByType('cash');
+        // مهمّة ٣ (2026-08-16): درجُ وردية المستخدم المفتوحة لا الخزنةُ
+        // النقديةُ العامّة — راجع `TreasuryDao.resolveRefundSafe`.
+        final cashSafe = await _db.resolveRefundSafe(userId: userId);
         if (cashSafe != null) {
           // H15 — خصمٌ ذرّيّ. و`newBalance` يبقى لقطةً لـ`balanceAfter`.
           final newBalance = cashSafe.balance - cashRefund;
@@ -499,9 +502,11 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
       // memo visible in the customer's statement. This is likely the
       // freeze-on-full-return bug the user reported.
       if (arRefund > 0 && invoice.customerId != null) {
+        // مهمّة ٣ — الشقُّ النقديُّ فقط يوجَّه لدرج الوردية؛ الشقُّ البنكيُّ
+        // ليس درجاً فيبقى على الخزنة الافتراضية.
         final arSafe = ['transfer', 'card', 'bank'].contains(invoice.paymentMethod)
             ? await _db.getDefaultSafeByType('bank')
-            : await _db.getDefaultSafeByType('cash');
+            : await _db.resolveRefundSafe(userId: userId);
         if (arSafe != null) {
           await _db.into(_db.safeTransactions).insert(
             SafeTransactionsCompanion.insert(
@@ -816,32 +821,26 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
     );
   }
 
+  /// يفوّض إلى `calculateReturnRefundTotal` المشتركة (‏`lib/domain/models/
+  /// return_refund_calculator.dart`) — نفسُ الدالّة التي يحسب بها
+  /// `PosReturnMode.refundTotal` مبلغَ الاسترداد المعروضَ للكاشير، فيستحيل
+  /// أن يفترقا ثانيةً (العطبُ المقيسُ في مراجعة 2026-08-16: كانا يفترقان
+  /// بمقدار الضريبة/الخصم لأنّ العرضَ كان يستعمل `unitPrice` بدل
+  /// `item.total`).
   double _calculateReturnTotal(
     SalesInvoiceData invoice,
     List<SalesInvoiceItem> items,
     Map<int, double> returnQuantities,
   ) {
-    double sumItemTotals = items.fold(0.0, (sum, i) => sum + i.total);
-    double factor = sumItemTotals > 0
-        ? (invoice.total - invoice.deliveryFee) / sumItemTotals
-        : 1.0;
-
-    double refundTotal = 0;
-    double returnedRawTotal = 0;
-    for (final item in items) {
-      final qty = returnQuantities[item.id] ?? 0;
-      if (qty <= 0) continue;
-      final unitItemPrice = item.total / item.quantity;
-      returnedRawTotal += qty * unitItemPrice;
-      refundTotal += qty * unitItemPrice * factor;
-    }
-
-    // B2: Proportional delivery fee refund for partial returns
-    if (invoice.deliveryFee > 0 && sumItemTotals > 0) {
-      final deliveryFeeRefund = invoice.deliveryFee * (returnedRawTotal / sumItemTotals);
-      refundTotal += double.parse(deliveryFeeRefund.toStringAsFixed(AppConstants.decimalPlaces));
-    }
-
-    return double.parse(refundTotal.toStringAsFixed(AppConstants.decimalPlaces));
+    return calculateReturnRefundTotal(
+      lines: [
+        for (final i in items)
+          (id: i.id, quantity: i.quantity, lineTotal: i.total),
+      ],
+      invoiceTotal: invoice.total,
+      invoiceDeliveryFee: invoice.deliveryFee,
+      returnQuantities: returnQuantities,
+      decimalPlaces: AppConstants.decimalPlaces,
+    );
   }
 }

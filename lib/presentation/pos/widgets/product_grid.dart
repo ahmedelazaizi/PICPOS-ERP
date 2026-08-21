@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../../core/config/brand.dart';
+import '../../../core/config/pos_layout_policy.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/permissions/permission_codes.dart';
 import '../providers/pos_controller.dart';
@@ -59,10 +60,19 @@ class ProductGrid extends ConsumerStatefulWidget {
   /// 4.1: Configurable grid columns (1-8), defaults to 4
   final int gridColumns;
 
+  /// هل تُرسم خانةُ البحث داخلَ رأس الشبكة؟
+  ///
+  /// §٢ — حين يرفعها `PosProductSelectionPanel` إلى صفّ الباركود
+  /// (‏`PosLayoutPolicy.searchBesideBarcode`) تُطفأ هنا، وإلا ظهر حقلا بحثٍ
+  /// اثنان يكتبان في نفس الحالة. والافتراضيُّ `true` فلا يتغيّر شيءٌ لمن لا
+  /// يمرّرها.
+  final bool showInlineSearch;
+
   const ProductGrid({
     super.key,
     required this.onProductTap,
     this.gridColumns = 8, // عرض 8 أصناف في الصف
+    this.showInlineSearch = true,
   });
 
   @override
@@ -87,10 +97,35 @@ class _ProductGridState extends ConsumerState<ProductGrid> {
   // lifetime so the filter predicate stays synchronous.
   Map<String, int> _barcodeToProductId = {};
 
+  /// ── بلاغُ المالك 2026-08-15 ────────────────────────────────────────────
+  /// «عند البحث عن المنتج لا يمكن حذف البحث حتى بعد اختيار المنتج.»
+  ///
+  /// والجذرُ مقيس: حقلُ البحث كان **بلا `TextEditingController` إطلاقاً** —
+  /// `onChanged: controller.setSearchQuery` وحدَه. فالنصُّ يعيش في الودجت
+  /// الداخليّ ولا يملك أحدٌ تفريغَه برمجياً: لا زرَّ مسحٍ يعمل، ولا اختيارُ
+  /// منتجٍ يُنظّفه. المتحكّمُ يُصفَّر والحقلُ يبقى مكتوباً — فيبدو البحثُ
+  /// «عالقاً».
+  final TextEditingController _searchController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
     _loadBarcodeIndex();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  /// يُفرغ خانةَ البحث والمتحكّمَ معاً.
+  ///
+  /// ⚠️ الاثنان معاً لا أحدُهما: تفريغُ المتحكّم وحدَه يترك النصَّ معروضاً
+  /// (وهو العطبُ الأصليّ)، وتفريغُ الحقل وحدَه يترك الشبكةَ مرشَّحة.
+  void _clearSearch() {
+    _searchController.clear();
+    ref.read(posControllerProvider.notifier).setSearchQuery('');
   }
 
   Future<void> _loadBarcodeIndex() async {
@@ -285,7 +320,12 @@ class _ProductGridState extends ConsumerState<ProductGrid> {
             buildPosGridToggleActionButton(
               onToggle: () => controller.toggleGridCollapse(),
             ),
-          if (ref.watch(showSearchInPOSProvider).value ?? true) ...[
+          // §٢ — `showInlineSearch: false` يعني أن اللوحةَ رفعت الحقلَ إلى
+          // صفّ الباركود. و`Spacer` بديلُ `Expanded` المفقود كي يبقى زرُّ
+          // إعادة الترتيب في طرف الصفّ لا ملتصقاً بزرّ التخطيط.
+          if (!widget.showInlineSearch) const Spacer(),
+          if (widget.showInlineSearch &&
+              (ref.watch(showSearchInPOSProvider).value ?? true)) ...[
             const SizedBox(width: 12),
             Expanded(
               child: PermissionGuard(
@@ -301,6 +341,11 @@ class _ProductGridState extends ConsumerState<ProductGrid> {
                     ),
                   ),
                   child: TextField(
+                    // ⚠️ بلا هذا السطر كان الحقلُ **غيرَ متحكَّمٍ به**: زرُّ
+                    // المسح (×) أدناه يستدعي `setSearchQuery('')` فيمسح
+                    // الحالةَ ويترك النصَّ معروضاً — فيبدو الزرُّ معطوباً،
+                    // وهو بلاغُ المالك 2026-08-15 بالحرف.
+                    controller: _searchController,
                     onChanged: controller.setSearchQuery,
                     style: const TextStyle(
                       fontSize: 14,
@@ -326,7 +371,7 @@ class _ProductGridState extends ConsumerState<ProductGrid> {
                                 PhosphorIconsBold.xCircle,
                                 size: 20,
                               ),
-                              onPressed: () => controller.setSearchQuery(''),
+                              onPressed: _clearSearch,
                             )
                           : null,
                     ),
@@ -444,6 +489,10 @@ class _ProductGridState extends ConsumerState<ProductGrid> {
       labelWidth: catLabelWidth,
       iconShape: catShape,
       maxHeight: catMaxHeight,
+      // بلاغُ المالك 2026-08-15: «نفس الأمر على نص ايقونات اسماء التصنيفات».
+      // والوزنُ من السياسة لا رقماً هنا — فالفرعُ على العلامة يبقى في موضعٍ
+      // واحدٍ مقيس.
+      labelWeight: PosLayoutPolicy.current.categoryLabelWeight,
     );
   }
 
@@ -496,7 +545,13 @@ class _ProductGridState extends ConsumerState<ProductGrid> {
         return ProductCard(
           key: ValueKey(product.id),
           product: product,
-          onTap: () => widget.onProductTap(product),
+          // طلبُ المالك 2026-08-15: «عند البحث والاختيار تفريغُ خانة البحث
+          // ليبدأ من جديد». الاختيارُ هو نهايةُ البحثة — وإبقاءُ النصّ يجبر
+          // الكاشيرَ على مسحه يدوياً قبل كلّ صنف.
+          onTap: () {
+            widget.onProductTap(product);
+            _clearSearch();
+          },
           showImages: showImages,
           nameFontSize: nameFontSize,
           priceFontSize: priceFontSize,

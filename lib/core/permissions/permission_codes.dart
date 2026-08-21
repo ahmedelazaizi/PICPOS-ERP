@@ -7,10 +7,10 @@ class PermissionCodes {
   PermissionCodes._();
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // POS PERMISSIONS (نقطة البيع)
+  // POS PERMISSIONS (البيع السريع)
   // ═══════════════════════════════════════════════════════════════════════════
 
-  /// الوصول لنقطة البيع
+  /// الوصول للبيع السريع
   static const String posAccess = 'pos_access';
 
   /// تطبيق خصم
@@ -640,7 +640,7 @@ class PermissionCodes {
   /// الوصول لشاشة الإعدادات
   static const String settingsAccess = 'settings_access';
 
-  /// تعديل إعدادات نقطة البيع
+  /// تعديل إعدادات البيع السريع
   static const String settingsPosEdit = 'settings_pos_edit';
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -674,6 +674,18 @@ class PermissionCodes {
 
   /// تحديث النظام
   static const String systemUpdates = 'system_updates';
+
+  /// فتحُ القائمة الجانبية بلا كلمة مرور المدير.
+  ///
+  /// ⚠️ **إعفاءٌ لا منع.** الزرُّ العائمُ في `AppShell` محروسٌ منذ #12 بحوار
+  /// كلمة مرور المدير، ويُعفى منه من كان **أصلاً** مديراً أو مشرفاً. وهذا
+  /// الكودُ يجعل الإعفاءَ صلاحيةً تُمنح لمن يشاء المالك بدل أن يكون صفةً
+  /// ملازمةً للمنصب — وهو طلبُه في §٤.
+  ///
+  /// ومن **لا** يملكه يبقى أمامه الحوارُ كما اليوم فلا يُحبس أحد: زرُّ
+  /// «تسجيل الخروج» يعيش داخلَ القائمة الجانبية، فمنعُها منعاً تامّاً كان
+  /// سيترك الكاشيرَ بلا مخرجٍ من النظام. (قرارُ المالك 2026-08-15.)
+  static const String systemSidebarOpen = 'system_sidebar_open';
 
   // ═══════════════════════════════════════════════════════════════════════════
   // AUDIT PERMISSIONS (المراجعة والتدقيق)
@@ -876,6 +888,32 @@ class PermissionCodes {
   /// الأول — اختبار ثبات المجموعتين بيتأكد إن مفيش كود يقع بين الاتنين
   /// (`permission_nontoggleable_registry_test.dart`).
   static const Map<String, String> nonToggleable = {
+    // ── عشرةٌ كان مرجعُها الوحيدُ ملفاً ميّتاً (2026-08-13) ──────────────────
+    // `lib/services/role_based_sidebar_service.dart` (٢١٢ سطراً) كان يبني
+    // شريطاً جانبياً حسب الدور، وله **صفرُ مستوردين** في `lib/` و`test/` و
+    // `tool/` — مقيسٌ لا مفترَض. فحُذف الملفّ.
+    //
+    // وكان وجودُه يجعل `permission_enforcement_coverage_test` يعدّ هذه
+    // العشرةَ «منفَّذة»، فتظهر للمدير في شاشة الصلاحيات بمربّعِ اختيارٍ
+    // يقلّبه بلا أثر. وهو بعينه بلاغُ «بغيّر صلاحية ومش بيحصل حاجة».
+    //
+    // ولا واحدٌ منها ثغرةٌ حقيقية: شاشاتُها **مبوّبةٌ بكودٍ آخرَ فعلاً** في
+    // `screenPermissionMap`. فالنقلُ هنا يُخفي المربّعَ (`nonToggleable`
+    // بلا شيك بوكس) ويُبقي السببَ مكتوباً.
+    'products_view': 'الشاشة كلها مبوّبة بـ products_add',
+    'parties_view': 'الشاشة كلها مبوّبة بـ customers_view',
+    'purchases_view': 'الشاشة كلها مبوّبة بـ purchases_create',
+    'quotes_view': 'تبويب داخل فواتير البيع، والشاشة مبوّبة بـ sales_view',
+    'returns_view': 'شاشة المرتجعات مبوّبة بـ sales_return_view',
+    'stock_view': 'حركة المخزون مبوّبة بـ inventory_view',
+    'stock_audit': 'الجرد الدوري مبوّب بـ inventory_view',
+    'settings_access': 'الشاشة كلها مبوّبة بـ settings_view',
+    'accounting_view': 'شاشات المحاسبة كلها مبوّبة بـ settings_view',
+    // ⚠️ وهذا وحدَه ليس تكراراً بل **ميزةٌ غائبة**: لا `ScreenId.warehouses`
+    // في `screen_registry` ولا مدخلَ له في `screenPermissionMap` — لا شاشةَ
+    // مخازنَ في التطبيق أصلاً. ولو أُضيفت فتُبوَّب ويُشطب هذا السطر.
+    'warehouses_view': 'لا شاشة مخازن في التطبيق — لا سطح يُحرَس',
+
     // ── مغطّى بكود/آلية تانية (تكرار اسمي، مش ثغرة) ──
     'audit_invoice_unlock': 'مغطّى بـ modify_locked_invoice',
     'audit_shift_blind': 'مغطّى بـ pos_closing_view_details',
@@ -939,7 +977,7 @@ class PermissionCodes {
   /// Used by `syncAllPermissions()` to ensure full DB coverage at app startup.
   static final List<Map<String, String>> masterList = [
     // ── POS ──
-    {'code': posAccess, 'name': 'الوصول لنقطة البيع', 'category': 'pos'},
+    {'code': posAccess, 'name': 'الوصول للبيع السريع', 'category': 'pos'},
     {'code': posDiscount, 'name': 'تطبيق خصم', 'category': 'pos'},
     {'code': posReturn, 'name': 'مرتجعات المبيعات', 'category': 'pos'},
     {'code': posExchange, 'name': 'استبدال المنتجات', 'category': 'pos'},
@@ -1003,7 +1041,12 @@ class PermissionCodes {
     {'code': posRemoveItem, 'name': 'حذف صنف من السلة', 'category': 'pos'},
     {'code': posWeightDialog, 'name': 'استخدام الميزان', 'category': 'pos'},
     {'code': posShiftOpen, 'name': 'فتح الوردية', 'category': 'pos'},
-    {'code': posShiftClose, 'name': 'إغلاق الوردية', 'category': 'pos'},
+    // ⚠️ الإغلاقُ في «الخزينة» لا في «البيع السريع» — قرارُ المالك 2026-08-14:
+    // «الإغلاقُ له صلاحيةٌ خارجَ إعداد صلاحيات نقطة البيع، بحيث يكون المديرُ
+    // هو من يجرد». والفتحُ يبقى فوقُ لأنه فعلُ كاشيرٍ يوميّ، والإغلاقُ جردٌ.
+    // والكودُ نفسُه لم يتغيّر ⇒ لا يفقد دورٌ صلاحيةً يملكها. والقواعدُ
+    // القائمةُ تُنقَل بهجرة v154 لأن `syncAllPermissions` يتخطّى الموجودَ.
+    {'code': posShiftClose, 'name': 'إغلاق الوردية', 'category': 'treasury'},
     {'code': posClearCart, 'name': 'مسح السلة بالكامل', 'category': 'pos'},
     {'code': posSearch, 'name': 'البحث اليدوي والباركود', 'category': 'pos'},
     {'code': posQuickPay, 'name': 'الدفع السريع', 'category': 'pos'},
@@ -1390,6 +1433,11 @@ class PermissionCodes {
     },
     {'code': systemLicense, 'name': 'إدارة الترخيص', 'category': 'system'},
     {'code': systemUpdates, 'name': 'تحديث النظام', 'category': 'system'},
+    {
+      'code': systemSidebarOpen,
+      'name': 'فتح القائمة الجانبية بلا كلمة مرور',
+      'category': 'system',
+    },
 
     // ── Audit ──
     {'code': auditView, 'name': 'عرض سجل العمليات', 'category': 'audit'},
@@ -1502,7 +1550,7 @@ class PermissionCodes {
     {'code': stockAudit, 'name': 'الجرد الدوري', 'category': 'inventory'},
     {'code': partiesView, 'name': 'عرض الأطراف', 'category': 'customers'},
     {'code': settingsAccess, 'name': 'الوصول لشاشة الإعدادات', 'category': 'settings'},
-    {'code': settingsPosEdit, 'name': 'تعديل إعدادات نقطة البيع', 'category': 'settings'},
+    {'code': settingsPosEdit, 'name': 'تعديل إعدادات البيع السريع', 'category': 'settings'},
     {'code': modifiersManage, 'name': 'إدارة الإضافات والمعدلات', 'category': 'settings'},
 
     // QA D1-008 (2026-05-15): the duplicate HR block that was here is
@@ -1536,7 +1584,7 @@ class PermissionCodes {
 
   /// All category names in Arabic
   static const Map<String, String> categoryNames = {
-    'pos': 'نقطة البيع',
+    'pos': 'البيع السريع',
     'dashboard': 'لوحة التحكم',
     'inventory': 'المخزون',
     'products': 'المنتجات',

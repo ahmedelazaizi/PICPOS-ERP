@@ -15,8 +15,21 @@ import '../../pos/providers/checkout_controller.dart';
 /// 1. **`lastInvoiceId` من `checkoutControllerProvider`** لو مضبوط — ده معرّف
 ///    الفاتورة اللي **هذه العملية** رحّلتها، وهو الإشارة الوحيدة في النظام اللي
 ///    بتفرّق هذا التِل عن غيره.
-/// 2. وإلا **أحدث فاتورة `userId == المستخدم الحالي`** داخل نافذة الوردية
-///    المفتوحة — نفس تحديد ديالوج الفواتير السابقة.
+/// 2. وإلا **أحدث فاتورة `userId == المستخدم الحالي`** — بلا أيّ حدٍّ زمنيّ.
+///
+/// ⚠️ **كان هنا حدُّ «نافذة الوردية المفتوحة» وأُزيل (بلاغُ المالك
+/// 2026-08-15).** كان السطرُ `since = shift?.startTime`، وهو يناقض الوعدَ
+/// المكتوب بعده بأربعة أسطر («قبل أوّل بيعة في الجلسة الترويسةُ بتعرض آخر
+/// فاتورة للحساب ده»): ورديةٌ فُتحت للتوّ لا فاتورةَ فيها، فالترويسةُ تفرغ
+/// حتماً حتى أوّل بيعة. والعَرَضُ الميدانيُّ كان بالحرف: «يظهر بعد البيع
+/// فقط، ويختفي مع ورديةٍ جديدة».
+///
+/// والعنوانُ هو الذي حسم أيَّ الوعدَين يبقى: الترويسةُ مكتوبٌ عليها «آخر
+/// فاتورة» لا «آخر فاتورة في الوردية»، والحاجةُ المذكورةُ في المواصفة أعلاه
+/// إعادةُ طباعةِ آخرِ فاتورةٍ للكاشير — وهي حاجةٌ قائمةٌ في أوّل الوردية كما
+/// في آخرها. فالحدُّ بالمستخدم يبقى وحدُ الوردية يسقط.
+///
+/// محروسٌ في `test/unit/picpos_last_invoice_not_shift_bound_test.dart`.
 ///
 /// ── حدود التصميم: نفس الحساب على تِلّين ──────────────────────────────────
 /// جدول `salesInvoices` فيه `userId` و `branchId` و**مفيش عمود جهاز/طرفية**.
@@ -41,18 +54,8 @@ final picposLastInvoiceProvider =
       ref.watch(checkoutControllerProvider.select((s) => s.lastInvoiceId));
   final repo = ref.watch(salesRepositoryProvider);
 
-  DateTime? since;
-  try {
-    final shift = await ref
-        .read(treasuryRepositoryProvider)
-        .getCurrentOpenShift(userId);
-    since = shift?.startTime;
-  } catch (_) {
-    // وردية مش مقروءة ما تصحّش تخفي الفاتورة — نكمّل بلا حد أدنى.
-    since = null;
-  }
-
-  yield* repo.watchLastInvoiceForUser(userId, since: since).asyncMap(
+  // بلا حدٍّ زمنيّ — انظر الشرحَ على رأس الملفّ.
+  yield* repo.watchLastInvoiceForUser(userId, since: null).asyncMap(
     (newest) async {
       if (sessionInvoiceId == null || newest?.id == sessionInvoiceId) {
         return newest;

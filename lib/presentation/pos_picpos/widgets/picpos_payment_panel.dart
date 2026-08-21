@@ -16,8 +16,8 @@
 // والصناديق والخصم والضريبة، و`checkout_controller` للترحيل، و`PaymentSheet`
 // للدفع المتعدد. الملف ده تخطيط وشكل وقراءة إعدادات — مفيش حساب فلوس فيه.
 //
-// ── إعدادات نقطة البيع ────────────────────────────────────────────────────
-// اللوحة بتحترم إعدادات الإظهار والمقاسات اللي في «إعدادات نقطة البيع»:
+// ── إعدادات البيع السريع ────────────────────────────────────────────────────
+// اللوحة بتحترم إعدادات الإظهار والمقاسات اللي في «إعدادات البيع السريع»:
 //   الأزرار:  ضريبة · خصم · درج · مصاريف · حفظ-فقط · إجمالي فرعي
 //   العميل:   إضافة عميل · عميل عابر · نوع الطلب
 //   المقاسات: posBottomPanelScale · posButtonHeight · posButtonFontSize ·
@@ -35,6 +35,8 @@ import '../../../core/utils/number_utils.dart';
 import '../../../data/providers/providers.dart';
 import '../../../domain/usecases/sales/calculate_invoice_totals_usecase.dart';
 import '../../pos/providers/cart_controller.dart';
+import '../providers/pos_exchange_mode_provider.dart';
+import '../providers/pos_return_mode_provider.dart';
 import 'picpos_cart_permissions.dart';
 import 'picpos_pos_text.dart';
 
@@ -53,6 +55,15 @@ class PicPosPaymentPanel extends ConsumerWidget {
   final VoidCallback onHold;
   final VoidCallback onHeldOrders;
 
+  /// «مرتجع سريع» — يفتح مُحدِّدَ فاتورةٍ ثم يضبط `posReturnModeProvider`
+  /// (المهمّة ٧). القرارُ عيشُ السلكِ في الشاشة لا هنا: هذه اللوحةُ لا تعرف
+  /// شيئاً عن `PosReturnMode` أو المستودعات — نفسُ نمط بقيّة أزرار اللوحة.
+  final VoidCallback onQuickReturn;
+
+  /// «استبدال» — يفتح نفسَ مُحدِّد الفاتورة ثم يضبط `posExchangeModeProvider`.
+  /// وبخلاف المرتجع، السلّةُ تبقى مفتوحةً للتعديل: هي سلّةُ البديل.
+  final VoidCallback onExchange;
+
   const PicPosPaymentPanel({
     super.key,
     required this.onCheckout,
@@ -65,6 +76,8 @@ class PicPosPaymentPanel extends ConsumerWidget {
     required this.onExpense,
     required this.onHold,
     required this.onHeldOrders,
+    required this.onQuickReturn,
+    required this.onExchange,
   });
 
   @override
@@ -126,6 +139,8 @@ class PicPosPaymentPanel extends ConsumerWidget {
             onExpense: onExpense,
             onHold: onHold,
             onHeldOrders: onHeldOrders,
+            onQuickReturn: onQuickReturn,
+            onExchange: onExchange,
           ),
         ],
       ),
@@ -228,7 +243,21 @@ class _OrderTypeRow extends ConsumerWidget {
               label: 'توصيل',
               icon: PhosphorIconsBold.moped,
               selected: cart.orderType == 'delivery',
-              onTap: () => controller.setOrderType('delivery'),
+              // ── `pos_delivery` — قرارُ المالك 2026-08-13 ─────────────────
+              // هذه الشريحةُ **هي** ميزةُ التوصيل في PicPos. وكانت الكودُ
+              // محروساً في `pos/widgets/pos_header.dart:247` وحدَه (زرُّ لوح
+              // طلبات التوصيل) — شاشةُ UralCash التي لا تبلغها PicPos.
+              // وأخفاه الحارسُ البنيويُّ لأن `FeatureKey.posDelivery` في
+              // `core/config/feature_key.dart` يحمل نفسَ الاسم — تعدادُ
+              // رايات، لا حراسة.
+              //
+              // ⚠️ و«داخلي» بلا حراسةٍ عن قصد: الرجوعُ للوضع الافتراضيّ
+              // ليس فعلاً يُراقَب، وحراستُه كانت ستحبس الكاشيرَ في «توصيل»
+              // بعد لمسةٍ خاطئة.
+              onTap: () async {
+                if (!await ensureDeliveryPermission(ref, context)) return;
+                controller.setOrderType('delivery');
+              },
               scale: scale,
             ),
           ),
@@ -694,6 +723,8 @@ class _ActionButtons extends ConsumerWidget {
   final VoidCallback onExpense;
   final VoidCallback onHold;
   final VoidCallback onHeldOrders;
+  final VoidCallback onQuickReturn;
+  final VoidCallback onExchange;
 
   const _ActionButtons({
     required this.scale,
@@ -707,6 +738,8 @@ class _ActionButtons extends ConsumerWidget {
     required this.onExpense,
     required this.onHold,
     required this.onHeldOrders,
+    required this.onQuickReturn,
+    required this.onExchange,
   });
 
   @override
@@ -715,8 +748,29 @@ class _ActionButtons extends ConsumerWidget {
     final showExpense = ref.watch(showExpenseButtonInPOSProvider).value ?? true;
     final showSaveOnly = ref.watch(showSaveOnlyInPOSProvider).value ?? true;
     final showHold = ref.watch(showHoldButtonInPOSProvider).value ?? true;
-    final isEmpty =
+    final cartIsEmpty =
         ref.watch(cartControllerProvider.select((s) => s.items.isEmpty));
+    // وضعُ المرتجع (المهمّة ٧، جولةُ إصلاح ١ — C1): «دفع»/«حفظ» كانا
+    // معطَّلين **دوماً** أثناء المرتجع لأنهما يقيسان فراغَ سلّة البيع، وسلّةُ
+    // المرتجع لا تكتب على `cartController` عمداً (محرِّرُ الأسطر منفصلٌ
+    // ومخصَّص). فالتفعيلُ هنا: سلّةُ بيعٍ عامرة، **أو** وضعُ مرتجعٍ فيه
+    // كميةٌ واحدةٌ مطلوبةٌ فأكثر — ومعطَّلٌ صراحةً حين تكون كلُّ كميّاتِ
+    // المرتجع أصفاراً (لا يُفترَض وصولُه فعلياً: محرِّرُ الأسطر يمنع التأكيدَ
+    // بلا كميةٍ، لكنها حمايةٌ دفاعيّةٌ لهذا الزرّ بالذات).
+    final returnMode = ref.watch(posReturnModeProvider);
+    final returnHasQty =
+        returnMode?.requestedQty.values.any((q) => q > 0) ?? false;
+
+    // وضعُ الاستبدال: الشرطُ **مركَّبٌ** لا مفرد — مرتجَعٌ مختارٌ **و**سلّةُ
+    // بديلٍ عامرة. فأحدُهما وحدَه ليس استبدالاً: مرتجَعٌ بلا بديلٍ مردودٌ
+    // عاديّ، وبديلٌ بلا مرتجَعٍ بيعٌ عاديّ — ولكلٍّ منهما زرُّه.
+    //
+    // وهنا بالذات يقع الخطأُ المقيسُ في الخطة الأولى: `isEmpty` يُشتقّ من
+    // سلّة البيع وحدَها، فيموت «دفع/حفظ» في كلِّ وضعٍ لا يملؤها.
+    final exchangeMode = ref.watch(posExchangeModeProvider);
+    final isEmpty = exchangeMode != null
+        ? !(exchangeMode.hasReturnSelection && !cartIsEmpty)
+        : (returnMode != null ? !returnHasQty : cartIsEmpty);
 
     return Column(
       children: [
@@ -781,6 +835,41 @@ class _ActionButtons extends ConsumerWidget {
                 font: btnFont,
               ),
             ),
+            // «مرتجع سريع» (المهمّة ٧) — بجوار «الفاتورة السابقة» بنفس نمط
+            // `_Action`. غيرُ معطَّلٍ على سلّةٍ فارغة عمداً: اختيارُ الفاتورة
+            // للإرجاع لا يحتاج سلّةَ بيعٍ أصلاً، بعكس «دفع»/«حفظ».
+            //
+            // ومعطَّلٌ حين وضعُ المرتجع فعّالٌ بالفعل (جولةُ إصلاح ٢، ملاحظةٌ
+            // صغيرة): بلا هذا كان يمكن الضغطُ عليه ثانيةً فيستبدل الاختيارَ
+            // الحاليّ (فاتورةً وكمياتٍ ضُبطت بعنايةٍ في المحرِّر) بآخرَ صامتاً
+            // بلا تأكيد.
+            SizedBox(width: 5 * scale),
+            Expanded(
+              child: _Action(
+                label: 'مرتجع سريع',
+                icon: PhosphorIconsBold.arrowUUpLeft,
+                onTap: (returnMode != null || exchangeMode != null)
+                    ? null
+                    : onQuickReturn,
+                height: btnHeight + 6,
+                font: btnFont,
+              ),
+            ),
+            // «استبدال» — نفسُ منطق «مرتجع سريع»، وكلُّ وضعٍ يعطّل الآخرَ
+            // والنفسَ: الوضعان يقرآن فاتورةً أصليّةً واحدة، وفتحُ الثاني فوق
+            // الأوّل كان يستبدل اختياراً ضُبط بعناية بلا تأكيد.
+            SizedBox(width: 5 * scale),
+            Expanded(
+              child: _Action(
+                label: 'استبدال',
+                icon: PhosphorIconsBold.arrowsLeftRight,
+                onTap: (returnMode != null || exchangeMode != null)
+                    ? null
+                    : onExchange,
+                height: btnHeight + 6,
+                font: btnFont,
+              ),
+            ),
           ],
         ),
         SizedBox(height: 5 * scale),
@@ -812,7 +901,14 @@ class _ActionButtons extends ConsumerWidget {
                 child: _MiniAction(
                   label: 'معلقة',
                   icon: PhosphorIconsBold.listChecks,
-                  onTap: onHeldOrders,
+                  // وضعُ المرتجع (جولةُ إصلاح ٢ — مانعٌ ١): استرجاعُ فاتورةٍ
+                  // معلَّقة يحذفها من القاعدة فوراً (`hold_order_usecase.
+                  // executeRetrieve`)، وحفظُ المرتجع بعدها يمحو السلّةَ
+                  // (`clearCart` في `_processQuickReturnSave`) فيضيع الطلبُ
+                  // المعلَّق نهائياً بلا بيعٍ ولا رسالة. `_showHeldOrders`
+                  // نفسُها محروسةٌ أيضاً (خطُّ دفاعٍ ثانٍ)، والتعطيلُ هنا
+                  // يمنع الكاشيرَ من الدخول أصلاً.
+                  onTap: returnMode != null ? null : onHeldOrders,
                   height: btnHeight,
                   font: btnFont - 1,
                 ),

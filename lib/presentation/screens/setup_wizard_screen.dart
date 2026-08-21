@@ -18,8 +18,8 @@ import '../../core/theme/app_colors.dart';
 import '../../data/database/connection_io.dart'
     show openPostgresConnection, testPostgresConnection;
 import '../../data/database/pg_config.dart';
+import '../../core/config/runtime_config_snapshot.dart';
 import '../../data/providers/providers.dart';
-import '../../data/repositories/settings_repository_cached.dart';
 import '../../services/audit_log.dart';
 import '../../services/developer_auth_service.dart';
 import '../../services/network_service.dart';
@@ -788,6 +788,25 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
       return;
     }
 
+    // §١ — نفسُ منع `DuplicatePasswordException` لكن **هنا** لا عند الحفظ:
+    // القائمةُ تُلتزم دفعةً واحدة في نهاية المعالج، فلو تُرك التصادمُ
+    // لـ`createUser` لسقط مستخدمٌ من الدفعة والمشغّلُ قد جاوز الخطوة.
+    // والمقارنةُ نصّيّةٌ مباشرة لأن الكلماتِ هنا غيرُ مجزَّأةٍ بعد — ولا
+    // حاجةَ لـArgon2 ولا لكلفته.
+    final duplicateOf = _wizardUsers
+        .where((u) => u['password'] == password)
+        .map((u) => u['username'] as String)
+        .firstOrNull;
+    if (duplicateOf != null) {
+      AppToast.show(
+        context,
+        'كلمةُ المرور هذه مستعملةٌ سلفاً للمستخدم "$duplicateOf". اختر كلمةً '
+        'مختلفة — كلمتان متطابقتان تمنعان أحدَ صاحبَيهما من الدخول.',
+        type: ToastType.error,
+      );
+      return;
+    }
+
     // Resolve role name for display
     final roles = ref.read(allRolesProvider).value ?? [];
     final roleName = roles.where((r) => r.id == _userSelectedRoleId).map((r) => r.name).firstOrNull ?? '';
@@ -834,7 +853,30 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
     }
 
     await settingsRepo.saveSetting('setup_completed', 'true');
+
+    // Owner decision 2026-08-17: hardening applies to EITHER exit path —
+    // shared with `_finishSetup()` via
+    // `ConfigService.rehydrateRuntimeConfigCache` (Spec B3) instead of a
+    // wizard-private copy that only `_finishSetup()` used to have. Skip
+    // writes nothing for business_profile/deployment_mode/developer
+    // password by design (the whole point of "skip" is "use the
+    // compiled defaults"), so DB and cache already agree on those; this
+    // call keeps `setup_completed` (written above through the uncached
+    // repo) in lock-step and guards against any future step that starts
+    // writing more state before Skip is reachable.
+    final cacheOk = await ref
+        .read(configServiceProvider)
+        .rehydrateRuntimeConfigCache(exitPath: 'skip');
+
     if (mounted) {
+      if (!cacheOk) {
+        AppToast.show(
+          context,
+          'تم تخطي الإعداد، لكن تعذّر تحديث ذاكرة الإعدادات المؤقتة. '
+          'يُفضَّل إعادة تشغيل التطبيق قبل استخدام أدوات المطوّر.',
+          type: ToastType.warning,
+        );
+      }
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const MainScreen()),
         (r) => false,
@@ -844,8 +886,24 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
 
   Future<void> _finishSetup() async {
     setState(() => _isSaving = true);
+    // Non-fatal warnings collected along the way; surfaced to the user as
+    // ONE consolidated toast at the end instead of vanishing into
+    // `debugPrint` (owner decision 2026-08-17 — a silent `try/catch` here
+    // is exactly what let the reported bug hide as long as it did).
+    final warnings = <String>[];
     try {
       final settingsRepo = ref.read(settingsRepositoryProvider);
+      // Spec B3 hardening: `business_profile`, `deployment_mode` and the
+      // developer password are written through THIS SAME live
+      // `SettingsRepositoryCached` instance — the one
+      // `settingsRepositoryCachedProvider` also hands to every Dev Tools
+      // provider — instead of the plain uncached repo followed by a
+      // later cache patch-up. Correct by construction: there is no
+      // window where the DB has the new value and the live cache still
+      // has the old one for these three keys specifically.
+      // `rehydrateRuntimeConfigCache` below remains a safety net for
+      // every other key this function still writes through `settingsRepo`.
+      final cache = ref.read(settingsRepositoryCachedProvider);
       final branchRepo = ref.read(branchRepositoryProvider);
       final productRepo = ref.read(productRepositoryProvider);
 
@@ -855,20 +913,22 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
       await settingsRepo.saveSetting('setup_in_progress', 'true');
 
       // Phase B: persist the runtime business profile choice so the
-      // feature-flag providers load it at boot.
-      await settingsRepo.saveSetting(
-          'business_profile', _selectedProfile.name);
+      // feature-flag providers load it at boot. Written through `cache`
+      // — see comment above.
+      await cache.save('business_profile', _selectedProfile.name);
 
-      // Phase B: seed the developer password. Uses the cached settings
-      // repository wrapped around the same DAO the rest of the wizard
-      // is writing through.
+      // Phase B: seed the developer password through the SAME live
+      // cache (previously a throwaway `SettingsRepositoryCached(db)` —
+      // the DB write landed correctly, but that instance was never the
+      // one wired to any provider; it only happened to "work" because
+      // the old hot-fix re-preloaded these two keys from the DB
+      // afterwards).
       try {
-        final db = ref.read(databaseProvider);
-        final cache = SettingsRepositoryCached(db);
         final devAuth = DeveloperAuthService(cache);
         await devAuth.setPassword(_developerPasswordController.text.trim());
       } catch (e, st) {
         debugPrint('[SetupWizard] developer password save failed: $e\n$st');
+        warnings.add('لم يُحفَظ كلمة مرور المطوّر');
       }
 
       // Save company info
@@ -999,6 +1059,11 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
       // Create wizard users
       if (_wizardUsers.isNotEmpty) {
         final authRepo = ref.read(authRepositoryProvider);
+        // ⚠️ كان هذا `catch` يكتفي بـ`debugPrint`: فمستخدمٌ يفشل إنشاؤه يسقط
+        // من الدفعة **صامتاً** والمشغّلُ يمضي ظانّاً أن الكلَّ أُنشئ — ثم
+        // يكتشف الغيابَ يومَ يحاول ذلك الموظّفُ الدخول. والصمتُ هنا ينقض
+        // «رسالةً صريحة» في §١ من أصله.
+        final failed = <String>[];
         for (final u in _wizardUsers) {
           try {
             await authRepo.createUser(
@@ -1010,7 +1075,15 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
             );
           } catch (e) {
             debugPrint('[SetupWizard] Error creating user ${u['username']}: $e');
+            failed.add('${u['username']}: $e');
           }
+        }
+        if (failed.isNotEmpty && mounted) {
+          AppToast.show(
+            context,
+            'تعذّر إنشاءُ ${failed.length} مستخدم:\n${failed.join('\n')}',
+            type: ToastType.error,
+          );
         }
       }
 
@@ -1058,6 +1131,25 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
       }
       // CommitOk — proceed to finalise wizard (setup_completed flag below).
 
+      // Spec B3 hardening: `deployment_mode` (the `DeploymentMode` enum
+      // key `DeploymentModeNotifier`/Dev Tools read) is a SEPARATE
+      // setting from `network_mode` (`NetworkMode` enum, owned by
+      // NetworkService/the committer above). Verified by text search —
+      // nothing in the wizard or the committer ever wrote it, in either
+      // the cached or uncached repo. Every wizard completion therefore
+      // left Dev Tools' mode selector reading the compile-time default
+      // (`standalone`) no matter which mode was actually picked. The
+      // explicit switch (rather than `.name`) keeps this exhaustive
+      // against future enum drift between the two mode types.
+      await cache.save(
+        'deployment_mode',
+        switch (_networkMode) {
+          NetworkMode.standalone => DeploymentMode.standalone,
+          NetworkMode.server => DeploymentMode.server,
+          NetworkMode.client => DeploymentMode.client,
+          NetworkMode.mirror => DeploymentMode.mirror,
+        }.key,
+      );
 
       if (_networkMode == NetworkMode.client && _selectedBranchId != null) {
         final prefs = await SharedPreferences.getInstance();
@@ -1145,44 +1237,38 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
         },
       );
 
-      // Phase C2 hot-fix: every wizard write went through the regular
-      // `settingsRepo` (uncached). The runtime-profile providers, on
-      // the other hand, read from `SettingsRepositoryCached` which was
-      // warmed at app startup before any of these writes existed.
-      //
-      // Re-preload the cache with the keys we just wrote AND invalidate
-      // the dependent providers so the navigation, feature flags and
-      // mode selectors all reflect the new state immediately when the
-      // user lands on the main screen — without requiring a restart.
-      try {
-        final cache = ref.read(settingsRepositoryCachedProvider);
-        await cache.preload(<String>[
-          'setup_completed',
-          'setup_in_progress',
-          'business_profile',
-          'deployment_mode',
-          'developer_password_salt',
-          'developer_password_hash',
-          'feature_schema_version',
-          'runtime_config_hash',
-          ...FeatureKey.values.map((k) => k.settingKey),
-        ]);
-        // Force the notifiers to rebuild from the fresh cache. Without
-        // this, `BusinessProfileNotifier.build()`'s initial read still
-        // wins and the navigation looks like the compile-time default.
-        ref.invalidate(businessProfileProvider);
-        ref.invalidate(featureOverridesProvider);
-        ref.invalidate(deploymentModeProvider);
-      } catch (e, st) {
-        debugPrint('[SetupWizard] cache invalidation failed: $e\n$st');
+      // Shared with `_skipSetup()` — see
+      // `ConfigService.rehydrateRuntimeConfigCache` doc (Spec B3). Most
+      // of the keys it re-preloads were already written correctly above
+      // via `cache` directly; this remains the safety net for the rest
+      // (`setup_completed`/`setup_in_progress`/feature overrides/hash),
+      // plus the notifier-rebuild step that a raw cache write alone
+      // cannot trigger.
+      if (!await ref
+          .read(configServiceProvider)
+          .rehydrateRuntimeConfigCache(exitPath: 'finish')) {
+        warnings.add('تعذّر تحديث ذاكرة الإعدادات المؤقتة');
       }
 
       if (mounted) {
-        AppToast.show(
-          context,
-          'تم إعداد النظام بنجاح! مرحباً بك 🎉',
-          type: ToastType.success,
-        );
+        if (warnings.isEmpty) {
+          AppToast.show(
+            context,
+            'تم إعداد النظام بنجاح! مرحباً بك 🎉',
+            type: ToastType.success,
+          );
+        } else {
+          // Visible, not swallowed — the whole point of this hardening
+          // pass. The DB writes above already committed; only the live
+          // cache/refresh step is in question, so we still proceed into
+          // the app rather than trap the user on the wizard.
+          AppToast.show(
+            context,
+            'اكتمل الإعداد، لكن مع تحذيرات: ${warnings.join('، ')}. '
+            'يُفضَّل إعادة تشغيل التطبيق.',
+            type: ToastType.warning,
+          );
+        }
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (_) => const MainScreen()),
           (r) => false,

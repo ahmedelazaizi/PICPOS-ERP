@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════════════════════════
 // End-to-end repro of the reported defect: process a sales return exactly the
-// way the «مردودات المبيعات» screen does (standalone path), then open the
+// way the «مرتجع المبيعات» screen does (standalone path), then open the
 // «سجل المرتجعات» dialog's query. Pre-fix it returned NOTHING, because the
 // standalone path writes no `sale_type='return'` row and the dialog's query
 // (`getSalesReturns`) matched only that shape. The purchases dialog keys off

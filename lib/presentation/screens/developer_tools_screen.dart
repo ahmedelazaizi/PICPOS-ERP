@@ -804,7 +804,7 @@ class _FeatureOverridesSection extends ConsumerWidget {
 
   String _moduleLabel(String module) {
     switch (module) {
-      case 'pos':         return 'نقطة البيع';
+      case 'pos':         return 'البيع السريع';
       case 'restaurant':  return 'المطعم';
       case 'enterprise':  return 'المؤسسة';
       default:            return module;

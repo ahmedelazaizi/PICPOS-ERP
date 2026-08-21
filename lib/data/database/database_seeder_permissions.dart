@@ -11,7 +11,7 @@ extension DatabaseSeederPermissions on AppDatabase {
   Future<void> seedRolesAndPermissions() async {
     final List<Map<String, String>> permissionsList = [
       // POS
-      {'code': 'pos_access', 'name': 'الوصول لنقطة البيع', 'category': 'pos'},
+      {'code': 'pos_access', 'name': 'الوصول للبيع السريع', 'category': 'pos'},
       {'code': 'pos_discount', 'name': 'تطبيق خصم', 'category': 'pos'},
       {'code': 'pos_return', 'name': 'مرتجعات المبيعات', 'category': 'pos'},
       {'code': 'pos_exchange', 'name': 'استبدال المنتجات', 'category': 'pos'},
@@ -76,7 +76,14 @@ extension DatabaseSeederPermissions on AppDatabase {
       {'code': 'pos_view_cost', 'name': 'عرض سعر التكلفة', 'category': 'pos'},
       {'code': 'pos_view_profit', 'name': 'عرض الربح', 'category': 'pos'},
       {'code': 'pos_quantity_edit', 'name': 'تعديل الكمية', 'category': 'pos'},
-      {'code': 'pos_shift_close', 'name': 'إغلاق الوردية', 'category': 'pos'},
+      // فئةُ «الخزينة» لا «البيع السريع» — يطابق `PermissionCodes.masterList`.
+      // قرارُ المالك 2026-08-14، ومقيسٌ في
+      // `test/unit/shift_close_permission_category_test.dart`.
+      {
+        'code': 'pos_shift_close',
+        'name': 'إغلاق الوردية',
+        'category': 'treasury',
+      },
 
       // POS Header \u0026 Screen (v35)
       {'code': 'pos_table_select', 'name': 'اختيار طاولة', 'category': 'pos'},
@@ -545,6 +552,11 @@ extension DatabaseSeederPermissions on AppDatabase {
       },
       {'code': 'system_license', 'name': 'إدارة الترخيص', 'category': 'system'},
       {'code': 'system_updates', 'name': 'تحديث النظام', 'category': 'system'},
+      {
+        'code': 'system_sidebar_open',
+        'name': 'فتح القائمة الجانبية بلا كلمة مرور',
+        'category': 'system',
+      },
 
       // BRANCHES & ANALYTICS
       {'code': 'branches_manage', 'name': 'إدارة الفروع', 'category': 'settings'},
@@ -583,7 +595,7 @@ extension DatabaseSeederPermissions on AppDatabase {
     await into(roles).insert(
       RolesCompanion.insert(
         name: 'كاشير',
-        description: const Value('نقطة البيع فقط'),
+        description: const Value('البيع السريع فقط'),
         isSystemRole: const Value(true),
         globalId: Value(UuidV7.generate()),
       ),
@@ -711,6 +723,24 @@ extension DatabaseSeederPermissions on AppDatabase {
       'pos_hold_order',
       'pos_save',
       'pos_print',
+      // 2026-08-13 — شريحةُ «توصيل» في لوحة دفع PicPos صارت محروسةً بـ
+      // `pos_delivery`. بلا المنحة يطلب كلُّ طلبِ توصيلٍ كلمةَ مرور مسؤول.
+      // ⚠️ والبذرةُ للقواعد الجديدة وحدَها — القائمةُ تحتاج منحاً يدوياً.
+      'pos_delivery',
+      // 2026-08-16 — قرارُ المالك: زرُّ «مرتجع سريع» ومحرِّرُ أسطره في شاشة
+      // بيع PicPos صارا محروسَين بـ`pos_return`/`pos_item_plus`/
+      // `pos_item_minus`. أفعالٌ يوميّةٌ للكاشير الأساسي، وبلا المنحة يطلب
+      // كلُّ ضغطةِ «+»/«−» أو فتحِ وضع المرتجع كلمةَ مرور مسؤول — كسرُ شغلٍ
+      // لا تأمين، بنفس منطق `pos_delivery` فوق.
+      // ⚠️ والبذرةُ للقواعد الجديدة وحدَها كذلك — القوائمُ القائمة تحتاج
+      // منحاً يدوياً.
+      'pos_return',
+      'pos_item_plus',
+      'pos_item_minus',
+      // 2026-08-19 — وصل سطحُ الاستبدال، فيُمنَح `pos_exchange` للكاشير
+      // الأساسيّ بنفس منطق `pos_return` فوق: إنفاذُ كودٍ **لا يملكه أحدٌ**
+      // كسرُ شغلٍ لا تأمين — كلُّ استبدالٍ كان سيطلب كلمةَ مرور مسؤول.
+      'pos_exchange',
       // Spec 077 Batch 0.5 — cashier opens AND closes shifts; new symmetric pair.
       'pos_shift_open',
       'pos_shift_close',
@@ -719,7 +749,7 @@ extension DatabaseSeederPermissions on AppDatabase {
       // so the cashier can also list their previous invoices.
       'sales_create',
       'sales_view',
-      // Spec 3c — الرئيسية بقت متبوّبة بـ`dashboard_access`؛ الكود ده
+      // Spec 3c — Dashboard بقت متبوّبة بـ`dashboard_access`؛ الكود ده
       // بيتمنح لكل دور تشغيلي عشان الترقية ما تسحبش الشاشة من حد.
       'dashboard_access',
       // دفعة ١١ — بانر تنبيه نقص المخزون بقى محروس بـ`dashboard_alerts`
@@ -848,6 +878,11 @@ extension DatabaseSeederPermissions on AppDatabase {
     // for any future FM-specific permissions.
     final financialManagerExtraPerms = [
       'commercial_papers_manage',
+      // §٤ — الأدوارُ المسمّاةُ «مدير…» مُعفاةٌ اليومَ من حوار كلمة مرور
+      // القائمة الجانبية باسمها (`isOriginallyManager` فحصُ نصٍّ على الاسم).
+      // فالمنحةُ هنا تجعل مربّعَ الاختيار في شاشة الصلاحيات **صادقاً**: لو
+      // بقي فارغاً لرآه المديرُ مطفأً والدورُ مُعفىً فعلاً.
+      'system_sidebar_open',
     ];
     if (financialManagerRoleId > 0) {
       for (final code in financialManagerExtraPerms) {
@@ -869,7 +904,7 @@ extension DatabaseSeederPermissions on AppDatabase {
     final advancedCashierPerms = [
       'pos_access', 'pos_discount', 'pos_return', 'pos_payment_cash',
       'pos_payment_card', 'pos_hold_order', 'customers_view',
-      'pos_shift_open', 'pos_shift_close',
+      'pos_shift_open', 'pos_shift_close', 'pos_exchange',
       // Spec 084 — same gap as basic cashier; spreads into branchManagerPerms below.
       'sales_create', 'sales_view',
       // Spec 3c — dashboard_access؛ يورّث لمدير الفرع عبر الـ spread تحت.
@@ -877,6 +912,9 @@ extension DatabaseSeederPermissions on AppDatabase {
       'dashboard_alerts',
       // دفعة ٩ — نفس منحة الكاشير العادي (ويورّث لمدير الفرع بالـspread).
       'sales_amounts_view', 'sales_print', 'sales_return_print',
+      // 2026-08-16 — قرارُ المالك: زرّا «+»/«−» في محرِّر أسطر المرتجع.
+      // نفسُ سبب منحة الكاشير العادي فوق (يورّث لمدير الفرع بالـspread).
+      'pos_item_plus', 'pos_item_minus',
     ];
     if (advancedCashierRoleId > 0) {
       for (final code in advancedCashierPerms) {
@@ -899,6 +937,9 @@ extension DatabaseSeederPermissions on AppDatabase {
       'inventory_view', 'reports_view', 'treasury_view',
       'pos_closing_view_details', 'products_add', 'branches_manage',
       'users_manage', 'sales_view', 'purchases_create', 'settings_view',
+      // §٤ — نفسُ سبب منحة «مدير مالي»: الدورُ مُعفىً باسمه اليومَ فيلزم أن
+      // يظهر المربّعُ مؤشَّراً.
+      'system_sidebar_open',
       // Task 3d — نفس منطق analytics_view في accountantPermsIndices فوق.
       'analytics_view',
       // دفعة ٨ — نفس سبب منحة أمين المخزن فوق: الدور ده عنده `products_add`
@@ -969,6 +1010,8 @@ extension DatabaseSeederPermissions on AppDatabase {
       // دفعة ٩ — `sales_view` + `purchases_create`.
       'sales_amounts_view', 'sales_print', 'sales_return_print',
       'purchases_print', 'purchases_return_print',
+      // §٤ — نفسُ سبب منحتَي «مدير مالي» و«مدير فرع».
+      'system_sidebar_open',
     ];
     if (inventoryManagerRoleId > 0) {
       for (final code in inventoryManagerPerms) {

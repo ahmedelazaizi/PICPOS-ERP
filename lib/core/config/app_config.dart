@@ -182,8 +182,14 @@ class AppConfig {
   static bool get showPOS => features.posEnabled;
 
   /// Stable screen identifiers for the current profile.
+  ///
+  /// تمريرُ [features] هو ما يجعل «وضعَ المطاعم» يصل التنقّلَ فعلاً: الرايةُ
+  /// `tablesEnabled` كانت تُضيء الميزةَ بينما السجلُّ يقرأ البروفايلَ وحدَه،
+  /// فتبقى شاشتا الطاولات والمطبخ خارجَ القائمة مهما أُشعلت (مقيسٌ
+  /// 2026-08-14). و`featuresListenable` يُخطر الشجرةَ عند كلّ تغيّر، فالقائمةُ
+  /// تُعاد قراءتُها بلا إعادة تشغيل.
   static List<ScreenId> get allowedScreenIds =>
-      ScreenRegistry.forProfile(profile);
+      ScreenRegistry.forProfile(profile, features: features);
 
   /// Screens to show based on flavor (indices from main.dart)
   /// Backward-compatibility bridge until navigation fully migrates to [ScreenId].

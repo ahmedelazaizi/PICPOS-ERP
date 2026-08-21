@@ -14,10 +14,17 @@ import '../../../data/providers/providers.dart';
 import '../../../services/client_write_interceptor.dart';
 import '../../../services/manager_approval_cache.dart';
 import '../../../services/shift_dialog_session_guard.dart';
-import '../../widgets/permission_guard.dart' show requestManagerApproval;
+import '../../widgets/permission_guard.dart'
+    show requestManagerApproval, ensurePermission;
 import '../../pos/widgets/pos_opening_balance_dialog.dart';
 import '../../../domain/entities/cart_item_entity.dart';
 import '../../../domain/entities/product_entity.dart';
+import '../widgets/picpos_payment_methods.dart';
+import '../widgets/picpos_shift_conflict_dialog.dart';
+import '../../../domain/models/shift_open_gate.dart';
+import '../../../services/delta_pull_service.dart';
+import '../../../services/network_service.dart';
+import '../../shift_close_picpos/screens/shift_close_picpos_screen.dart';
 import '../../../domain/usecases/sales/add_to_cart_usecase.dart'
     show resolveStackingFlags;
 import '../../../services/cash_drawer_service.dart';
@@ -29,6 +36,7 @@ import '../../pos/providers/pos_controller.dart';
 import '../../pos/providers/pos_notification_provider.dart';
 import '../../pos/providers/pos_search_controller.dart';
 import '../../pos/services/scale_barcode_handler.dart';
+import '../../pos/dialogs/quick_add_product_dialog.dart';
 import '../../pos/dialogs/unit_selection_dialog.dart';
 import '../../pos/widgets/held_orders_dialog.dart';
 import '../../pos/widgets/pos_cash_tendering_dialog.dart';
@@ -44,11 +52,23 @@ import '../widgets/picpos_payment_panel.dart';
 import '../widgets/picpos_invoice_header.dart';
 import '../widgets/picpos_items_table.dart';
 import '../widgets/picpos_last_invoice_dialog.dart';
+import '../widgets/picpos_numeric_keypad_dialog.dart';
 import '../widgets/picpos_cart_permissions.dart';
 import '../widgets/picpos_pos_shortcuts.dart';
 import '../widgets/picpos_pos_text.dart';
+import '../widgets/picpos_return_mode_banner.dart';
 import '../widgets/picpos_switch_user_dialog.dart';
 import '../widgets/picpos_top_bar.dart';
+import '../providers/pos_return_mode_provider.dart';
+import '../providers/pos_exchange_mode_provider.dart';
+import '../state/pos_return_mode.dart';
+import '../state/pos_exchange_mode.dart';
+import '../widgets/picpos_exchange_mode_banner.dart';
+import '../../../domain/models/exchange_settlement.dart';
+// `ExchangeResult` — نتيجةُ الاستبدال بأرقامِ الدرج المقيسة. مستودعٌ لا قاعدة:
+// حارسُ `presentation_db_import_guard` يمنع `data/database` وحدَه.
+import '../../../data/repositories/exchange_repository_impl.dart';
+import '../../../domain/models/returnable_line.dart';
 
 part 'picpos_pos_operations.dart';
 
@@ -129,7 +149,7 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
     assert(
       actions.length == picposShortcutLabels.length &&
           actions.keys.every(picposShortcutLabels.containsKey),
-      'اختصارات نقطة البيع اختلفت عن توثيقها: '
+      'اختصارات البيع السريع اختلفت عن توثيقها: '
       'أفعال=${actions.keys} توثيق=${picposShortcutLabels.keys}. '
       'حدِّث picpos_pos_shortcuts.dart مع أي تغيير هنا.',
     );
@@ -183,6 +203,14 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
   Widget build(BuildContext context) {
     final isProcessing =
         ref.watch(posControllerProvider.select((s) => s.isProcessing));
+    // وضعُ المرتجع (جولةُ إصلاح ٢ — مانعٌ ١): تعطيلُ زرّ «الفواتير المعلّقة»
+    // في الشريط العلويّ بصرياً، فوق حراسة `_showHeldOrders` نفسِها. راجع
+    // تعليقَ `PicPosTopBar.onHeldOrders`.
+    // ووضعُ الاستبدال يعطّله كذلك: `_showHeldOrders` **يحذف الطلبَ المعلَّق
+    // من القاعدة** عند استرجاعه، فتركُه مفتوحاً أثناء استبدالٍ قائمٍ يُبيد
+    // طلباً معلَّقاً نهائياً مقابل سلّةٍ لن تُحفَظ بيعاً عاديّاً.
+    final returnModeActive = ref.watch(posReturnModeProvider) != null ||
+        ref.watch(posExchangeModeProvider) != null;
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -199,7 +227,7 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
                   PicPosTopBar(
                     showBackButton: widget.showBackButton,
                     onBack: () => Navigator.of(context).maybePop(),
-                    onHeldOrders: _showHeldOrders,
+                    onHeldOrders: returnModeActive ? null : _showHeldOrders,
                     // Task 10B — يسدّ فجوة إن كاشير PicPos ما عندوش أي طريقة
                     // يقفل الوردية. الفعل نفسه (10C يبدّله للمعاد تصميمه)؛
                     // حارس الصلاحية يعيش داخل `PicPosTopBar` نفسها.
@@ -364,8 +392,42 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
 
   /// Invoice half — header, lines, totals and the operation buttons.
   Widget _buildInvoiceColumn() {
+    // وضعُ المرتجع (المهمّة ٧): الترويسةُ الحمراءُ تظهر فوق كلِّ شيءٍ في هذا
+    // العمود طالما `posReturnModeProvider` غيرُ `null` — نفسُ الشرط الذي
+    // يحكم مسارَ الحفظ في `_processPaymentAndSave`. `_returnInvoiceNumber`
+    // نصٌّ محليٌّ يُضبط مع الوضع نفسِه في `_showQuickReturn` (`PosReturnMode`
+    // خالصةٌ ولا تحمل رقمَ الفاتورة، رأى مواصفةَ الملفّ).
+    final returnMode = ref.watch(posReturnModeProvider);
+
+    // الأرقامُ الثلاثةُ للاستبدال: المرتجعُ من الوضع، والبديلُ من سلّة البيع
+    // نفسِها (هي سلّةُ البديل)، والفرقُ من `settleExchange` عبر
+    // `previewSettlement` — **لا يُشتقّ هنا بطرح**، وإلّا صار حاسبٌ ثانٍ
+    // يفترق عن المنفَّذ عند أوّل تقريب.
+    final exchangeMode = ref.watch(posExchangeModeProvider);
+    final replacementTotal =
+        ref.watch(cartControllerProvider.select((s) => s.total));
+
     return Column(
       children: [
+        if (returnMode != null)
+          PicPosReturnModeBanner(
+            invoiceNumber: _returnInvoiceNumber ?? '#${returnMode.invoiceId}',
+          ),
+        if (exchangeMode != null)
+          Builder(
+            builder: (_) {
+              final preview = exchangeMode.previewSettlement(
+                  replacementTotal: replacementTotal);
+              return PicPosExchangeModeBanner(
+                invoiceNumber:
+                    _exchangeInvoiceNumber ?? '#${exchangeMode.invoiceId}',
+                refundTotal: exchangeMode.refundTotal,
+                replacementTotal: replacementTotal,
+                direction: preview.direction,
+                difference: preview.amount,
+              );
+            },
+          ),
         PicPosInvoiceHeader(
           onPickCustomer: _pickCustomer,
           onShowLastInvoice: _showLastInvoice,
@@ -386,7 +448,7 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
         ),
         const SizedBox(height: 6),
         // المجاميع + طرق الدفع + أزرار الأفعال — نسخة PicPos من لوحة UralCash،
-        // بتحترم إعدادات إظهار الأزرار والمقاسات في «إعدادات نقطة البيع».
+        // بتحترم إعدادات إظهار الأزرار والمقاسات في «إعدادات البيع السريع».
         // شريط العمليات المنفصل اتشال: «فواتير» و«الدرج» و«خصم» و«العميل»
         // كانوا ظاهرين مرتين — مرة في اللوحة ومرة تحتها. التعليق والفواتير
         // المعلقة انضموا للوحة بدل ما يعيشوا في شريط لوحدهم.
@@ -401,6 +463,8 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
           onExpense: _showExpenses,
           onHold: _holdOrder,
           onHeldOrders: _showHeldOrders,
+          onQuickReturn: _showQuickReturn,
+          onExchange: _showExchange,
         ),
       ],
     );

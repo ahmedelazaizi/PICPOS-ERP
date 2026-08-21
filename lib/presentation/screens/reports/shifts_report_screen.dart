@@ -10,6 +10,7 @@ import '../../../core/logging/diagnostic_logger.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import '../../../data/providers/providers.dart';
+import '../../../domain/models/user_shift_summary.dart';
 import '../../widgets/report_components.dart';
 import '../../widgets/report_filter_bar.dart';
 import '../../../../../../core/constants/app_constants.dart';
@@ -40,6 +41,15 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
 
   bool _isLoading = false;
   List<ShiftReportDto> _shifts = [];
+
+  /// تلخيصُ `_shifts` حسب المستخدم — طلبُ المالك 2026-08-14: «تقريرٌ خاصٌّ
+  /// باسم المستخدم مع الإغلاق والطباعة، أوضحُ من تقرير المبيعات حسب
+  /// المستخدم».
+  ///
+  /// ⚠️ مشتقٌّ من `_shifts` نفسِها — لا استعلامَ ثانٍ ولا مصدرَ ثانٍ. مصدران
+  /// لنفس الرقم يفترقان، وهو بعينه ما جعل «الشاشةُ تقول غيرَ الورقة» عطباً
+  /// متكرّراً في هذا المستودع.
+  List<UserShiftSummary> _byUser = const [];
   final _dateFormat = DateFormat('yyyy-MM-dd HH:mm');
   final _currencyFormat = NumberFormat.currency(symbol: '', decimalDigits: AppConstants.decimalPlaces);
   int? _selectedUserId;
@@ -139,6 +149,16 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
 
       setState(() {
         _shifts = shifts;
+        _byUser = summarizeShiftsByUser(shifts.map(
+          (s) => ShiftSummaryInput(
+            userName: s.userName,
+            status: s.status,
+            openingBalance: s.openingBalance,
+            expectedCash: s.expectedCash,
+            actualCash: s.actualCash,
+            variance: s.variance,
+          ),
+        ));
         _truncated = truncated;
         _allUsers = users;
       });
@@ -328,6 +348,8 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
                           ),
                           const SizedBox(height: 16),
 
+                          _buildByUserCard(),
+                          const SizedBox(height: 16),
                           Card(
                             elevation: 0,
                             shape: RoundedRectangleBorder(
@@ -584,6 +606,103 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
     );
   }
 
+  /// «الإغلاق حسب المستخدم» — سطرٌ لكلّ مستخدمٍ فوق جدول الورديات.
+  ///
+  /// العجزُ والزيادةُ **عمودان منفصلان** لا صافٍ واحد: كاشيرٌ عجز ١٠٠ في
+  /// وردية وزاد ١٠٠ في أخرى يظهر صافيه صفراً فيُقرأ منضبطاً، وهو خطآن
+  /// يتقاصّان. والمديرُ الذي يجرد يحتاج الرقمَين — وهذا هو «أوضح» الذي طلبه.
+  Widget _buildByUserCard() {
+    if (_byUser.isEmpty) return const SizedBox.shrink();
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 16, 16, 4),
+            child: Text(
+              'الإغلاق حسب المستخدم',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: Text(
+              'العجز والزيادة منفصلان — الصافي وحده يخفي خطأين يتقاصّان.',
+              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            ),
+          ),
+          SizedBox(
+            width: double.infinity,
+            child: DataTable(
+              headingRowColor:
+                  WidgetStateProperty.all(Theme.of(context).cardColor),
+              columns: const [
+                DataColumn(label: Text('المستخدم')),
+                DataColumn(label: Text('الورديات')),
+                DataColumn(label: Text('مغلقة')),
+                DataColumn(label: Text('مفتوحة')),
+                DataColumn(label: Text('نقدي متوقع')),
+                DataColumn(label: Text('نقدي فعلي')),
+                DataColumn(label: Text('العجز')),
+                DataColumn(label: Text('الزيادة')),
+                DataColumn(label: Text('الصافي')),
+              ],
+              rows: _byUser
+                  .map(
+                    (u) => DataRow(
+                      cells: [
+                        DataCell(Text(u.userName,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold))),
+                        DataCell(Text('${u.shiftCount}')),
+                        DataCell(Text('${u.closedCount}')),
+                        DataCell(Text(
+                          '${u.openCount}',
+                          style: TextStyle(
+                            color: u.openCount > 0 ? AppColors.warning : null,
+                            fontWeight:
+                                u.openCount > 0 ? FontWeight.bold : null,
+                          ),
+                        )),
+                        DataCell(
+                            Text(_currencyFormat.format(u.expectedCashTotal))),
+                        DataCell(
+                            Text(_currencyFormat.format(u.actualCashTotal))),
+                        DataCell(Text(
+                          _currencyFormat.format(u.shortageTotal),
+                          style: TextStyle(
+                            color:
+                                u.shortageTotal > 0 ? AppColors.error : null,
+                          ),
+                        )),
+                        DataCell(Text(
+                          _currencyFormat.format(u.surplusTotal),
+                          style: TextStyle(
+                            color:
+                                u.surplusTotal > 0 ? AppColors.warning : null,
+                          ),
+                        )),
+                        DataCell(Text(
+                          _currencyFormat.format(u.varianceTotal),
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        )),
+                      ],
+                    ),
+                  )
+                  .toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _exportToExcel() async {
     if (_shifts.isEmpty) {
       AppToast.show(context, 'لا توجد بيانات للتصدير', type: ToastType.error);
@@ -597,28 +716,58 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
       scopedBranchIds:
           (await ref.read(branchScopeProvider.future)).allowedBranchIds,
       title: 'تقرير الورديات',
-      headers: [
-        '# الوردية',
+      // الورقةُ تحمل الجدولَين بنفس ترتيب الشاشة: التلخيصُ حسب المستخدم
+      // أوّلاً ثم التفصيل. وكلاهما تسعةُ أعمدةٍ فيتّسقان في ورقةٍ واحدة.
+      // ⚠️ ولا يُبنى أيٌّ منهما من استعلامٍ ثانٍ — كلاهما من `_shifts`
+      // نفسِها، وإلا افترقت الورقةُ عن الشاشة كما وقع مراراً في هذا
+      // المستودع (`report_export_matches_screen_test`).
+      headers: const [
         'المستخدم',
-        'بداية الشفت',
-        'نهاية الشفت',
-        'رصيد الإفتتاح',
+        'عدد الورديات',
+        'مغلقة',
+        'مفتوحة',
         'نقدي متوقع',
         'نقدي فعلي',
-        'الفرق',
-        'الحالة',
+        'العجز',
+        'الزيادة',
+        'الصافي',
       ],
-      rows: _shifts.map<List<dynamic>>((s) => [
-        s.id,
-        s.userName,
-        _dateFormat.format(s.startTime),
-        s.endTime != null ? _dateFormat.format(s.endTime!) : '---',
-        s.openingBalance,
-        s.expectedCash ?? 0,
-        s.actualCash ?? 0,
-        s.variance ?? 0,
-        s.status == 'closed' ? 'مغلق' : 'مفتوح',
-      ]).toList(),
+      rows: <List<dynamic>>[
+        ..._byUser.map<List<dynamic>>((u) => [
+              u.userName,
+              u.shiftCount,
+              u.closedCount,
+              u.openCount,
+              u.expectedCashTotal,
+              u.actualCashTotal,
+              u.shortageTotal,
+              u.surplusTotal,
+              u.varianceTotal,
+            ]),
+        const <dynamic>['', '', '', '', '', '', '', '', ''],
+        const <dynamic>[
+          '# الوردية',
+          'المستخدم',
+          'بداية الشفت',
+          'نهاية الشفت',
+          'رصيد الإفتتاح',
+          'نقدي متوقع',
+          'نقدي فعلي',
+          'الفرق',
+          'الحالة',
+        ],
+        ..._shifts.map<List<dynamic>>((s) => [
+              s.id,
+              s.userName,
+              _dateFormat.format(s.startTime),
+              s.endTime != null ? _dateFormat.format(s.endTime!) : '---',
+              s.openingBalance,
+              s.expectedCash ?? 0,
+              s.actualCash ?? 0,
+              s.variance ?? 0,
+              s.status == 'closed' ? 'مغلق' : 'مفتوح',
+            ]),
+      ],
     );
     if (path != null && mounted) {
       AppToast.show(context, 'تم تصدير التقرير بنجاح: \$path', type: ToastType.success);

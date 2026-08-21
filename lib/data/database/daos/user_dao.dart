@@ -15,6 +15,29 @@ class UserWithRole {
   UserWithRole({required this.user, this.role});
 }
 
+/// تُرمى حين تُكتب كلمةُ مرورٍ يحملها سلفاً مستخدمٌ **نشطٌ غيرُ مقفول**.
+///
+/// المنعُ عند الكتابة لا عند القراءة، لأن القراءة لا تملك علاجاً:
+/// [AppDatabase.authenticateByPasswordOrCard] يرجع **أوّلَ** من يتحقّق هاشُه
+/// بلا `orderBy`، فالثاني لا يصادق إطلاقاً، وحوارُ موافقة المدير ينسب
+/// الموافقةَ لغير صاحبها. راجع
+/// `test/unit/duplicate_password_blocked_test.dart` للسبب كاملاً.
+class DuplicatePasswordException implements Exception {
+  const DuplicatePasswordException(this.conflictingUsername);
+
+  /// اسمُ المستخدم الذي يحمل الكلمةَ سلفاً. المسارُ إداريٌّ محضٌ خلف صلاحيات
+  /// إدارة المستخدمين — ومن يستطيع إنشاءَ مستخدمٍ يرى قائمةَ المستخدمين
+  /// كلَّها أصلاً، فالتسميةُ لا تكشف ما هو محجوب، وبدونها لا يعرف المديرُ
+  /// أيَّ كلمةٍ يبدّل.
+  final String conflictingUsername;
+
+  @override
+  String toString() =>
+      'كلمةُ المرور هذه مستعملةٌ سلفاً للمستخدم «$conflictingUsername». '
+      'اختر كلمةً مختلفة — كلمتان متطابقتان تمنعان أحدَ صاحبَيهما من '
+      'الدخول وتنسبان موافقاتِ المدير لغير صاحبها.';
+}
+
 /// Spec 151 P1-8b — constant-time-ish user-enumeration defense.
 ///
 /// A fixed, valid Argon2id PHC string used ONLY as the target of a throwaway
@@ -114,7 +137,20 @@ extension UserDao on AppDatabase {
     // identity after sync. If omitted, we mint a fresh v7 UUID.
     String? globalId,
   }) async {
-    // PIR-08: Removed global password uniqueness check (security anti-pattern)
+    // ⚠️ `PIR-08` كان أزال فحصَ التفرّد وسمّاه «نمطاً أمنياً مضادّاً»، وأُعيد
+    // هنا بعد قياسِ ما يكلّفه غيابُه. والحكمان لا يتناقضان: منعُ التكرار على
+    // بوّابة دخولٍ عامّةٍ يكشف كلماتِ الغير، وهذا مسارٌ إداريٌّ محضٌ خلف
+    // صلاحيات إدارة المستخدمين. والبديلُ عنه ليس خصوصيةً بل
+    // **مصادقةٌ مكسورة**: `authenticateByPasswordOrCard` يرجع أوّلَ مطابقةٍ
+    // بلا `orderBy`، فصاحبُ الكلمة المكرَّرة الثاني لا يدخل أبداً، وحوارُ
+    // موافقةِ المدير يوقّع باسم الأوّل. راجع
+    // `test/unit/duplicate_password_blocked_test.dart`.
+    //
+    // والفحصُ **قبل** الإدراج: لو أُدرج الصفُّ ثم رُمي الاستثناءُ لبقي في
+    // القاعدة مستخدمٌ لا يقدر يصادق — العطبُ نفسُه الذي نمنعه.
+    final clash = await _usernameHoldingPassword(password);
+    if (clash != null) throw DuplicatePasswordException(clash);
+
     // Week-8: New users always get Argon2id hashes. The legacy passwordSalt
     // column is stored empty — Argon2id embeds the salt inside the PHC string.
 
@@ -209,6 +245,12 @@ extension UserDao on AppDatabase {
     // plaintext is identical to the existing password — no real change).
     final oldUser = await (select(users)..where((row) => row.id.equals(userId)))
         .getSingleOrNull();
+
+    // نفسُ منع §١، مع استثناء صاحبِ الصفّ: بدونه يصير كلُّ حفظٍ لا يغيّر
+    // الكلمةَ رفضاً — فيحبس المستخدمُ نفسَه عن تعديل اسمه أو دورِه.
+    final clash =
+        await _usernameHoldingPassword(newPassword, excludeUserId: userId);
+    if (clash != null) throw DuplicatePasswordException(clash);
 
     // Week-8: All password changes now use Argon2id.
     // Legacy passwordSalt column is cleared — salt lives inside the PHC string.
@@ -393,14 +435,40 @@ extension UserDao on AppDatabase {
   /// Replaces the old deprecated authenticateByPassword() method.
   Future<UserWithRole?> authenticateByPasswordOrCard(String input) async {
     // Step 1: Try matching password against all active, non-locked users
+    final row = await _firstActiveUserVerifying(input, rehashOnMatch: true);
+    if (row != null) {
+      final user = row.readTable(users);
+      debugPrint('[AUTH] ✅ Password matched for "${user.username}" via unified auth');
+      return UserWithRole(user: user, role: row.readTableOrNull(roles));
+    }
+
+    // Step 2: Fall back to card code lookup
+    debugPrint('[AUTH] Password didn\'t match any user, trying card code...');
+    return authenticateByCardCode(input);
+  }
+
+  /// الحلقةُ الواحدةُ التي تجرّب نصّاً على كلّ مستخدمٍ نشطٍ غيرِ مقفول.
+  ///
+  /// مشتركةٌ عن قصدٍ بين المصادقة و[_usernameHoldingPassword]: **نفسُ
+  /// المجموعة** هي التي تُنتج العطبَ وهي التي تُفحص. ولو انحرف الفحصُ عن
+  /// المصادقة — بمُرشِّحٍ يزيد أو ينقص — لعاد التصادمُ من بابٍ لا يحرسه أحد:
+  /// مستخدمٌ يُقبل إنشاؤه ثم يبتلع مصادقةَ غيره.
+  ///
+  /// ولا يمكن الفحصُ بمقارنة الهاش: لكلّ صفٍّ ملحُه (وArgon2id يخبّئه داخل
+  /// سلسلة PHC)، فهاشا كلمتين متطابقتين مختلفان. التجريبُ واحداً واحداً هو
+  /// الفحصُ الوحيدُ الممكن — وكلفتُه `n × ~40ms`.
+  Future<TypedResult?> _firstActiveUserVerifying(
+    String input, {
+    int? excludeUserId,
+    bool rehashOnMatch = false,
+  }) async {
     final query = select(users).join([
       leftOuterJoin(roles, roles.id.equalsExp(users.roleId)),
     ])..where(users.isActive.equals(true) & users.isLocked.equals(false));
 
-    final rows = await query.get();
-
-    for (final row in rows) {
+    for (final row in await query.get()) {
       final user = row.readTable(users);
+      if (excludeUserId != null && user.id == excludeUserId) continue;
       // Week-8: support both Argon2id (new) and PBKDF2-SHA256 (legacy) hashes.
       final authResult = await SecurityService.verifyPasswordFull(
         input,
@@ -408,17 +476,25 @@ extension UserDao on AppDatabase {
         user.passwordHash,
       );
       if (authResult.verified) {
-        if (authResult.needsRehash) {
+        if (rehashOnMatch && authResult.needsRehash) {
           unawaited(_rehashToArgon2(user.id, input));
         }
-        debugPrint('[AUTH] ✅ Password matched for "${user.username}" via unified auth');
-        return UserWithRole(user: user, role: row.readTableOrNull(roles));
+        return row;
       }
     }
+    return null;
+  }
 
-    // Step 2: Fall back to card code lookup
-    debugPrint('[AUTH] Password didn\'t match any user, trying card code...');
-    return authenticateByCardCode(input);
+  /// اسمُ المستخدم الذي يحمل [password] سلفاً، أو `null` إن كانت فريدة.
+  Future<String?> _usernameHoldingPassword(
+    String password, {
+    int? excludeUserId,
+  }) async {
+    final row = await _firstActiveUserVerifying(
+      password,
+      excludeUserId: excludeUserId,
+    );
+    return row?.readTable(users).username;
   }
 
   /// Check if username exists

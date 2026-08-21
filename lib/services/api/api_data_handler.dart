@@ -98,6 +98,16 @@ class ApiDataHandler extends ApiHandlerBase {
       debugPrint('[API] ⚠ _resolveUserId: clientUserId=$clientUserId '
           '(username="$fallbackUsername") not found — attributing to admin '
           '(id=${admin.id}) to preserve data');
+      // ⚠️ أثرٌ **باقٍ** لا `debugPrint` وحدَه: هذا السطرُ يجعل سجلّاً يُنسب
+      // إلى مديرِ النظام بدل صاحبِه، فيصير رقمٌ في «المبيعات حسب الكاشير»
+      // كاذباً بلا أن يعلم أحد. و`debugPrint` يختفي في الإصدار — فبلاغُ
+      // المالك «التقريرُ غيرُ دقيق» كان بلا أيّ أثرٍ يُقاس عليه.
+      // (‏مقيسٌ في `test/unit/user_attribution_fallback_visible_test.dart`.)
+      unawaited(DiagnosticLogger.log(
+          'USER-ATTRIBUTION',
+          '⚠ سجلٌّ أُسنِد إلى admin(id=${admin.id}) لأن '
+          'clientUserId=$clientUserId username="$fallbackUsername" '
+          'غيرُ موجودٍ على السيرفر — تقاريرُ «حسب المستخدم» ستنسبه للمدير'));
       return admin.id;
     }
 

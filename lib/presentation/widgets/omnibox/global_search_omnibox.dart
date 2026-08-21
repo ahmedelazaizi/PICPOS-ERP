@@ -113,8 +113,8 @@ class _SearchOverlayState extends ConsumerState<_SearchOverlay> {
     
     // Quick static search for screens (can be expanded via GlobalSearchService later)
     final allScreens = [
-      {'title': 'الشاشة الرئيسية (الداشبورد)', 'screenIndex': 0, 'icon': PhosphorIconsBold.house},
-      {'title': 'نقطة البيع (الكاشير)', 'screenIndex': 1, 'icon': PhosphorIconsBold.shoppingCart},
+      {'title': 'Dashboard', 'screenIndex': 0, 'icon': PhosphorIconsBold.house},
+      {'title': 'البيع السريع (الكاشير)', 'screenIndex': 1, 'icon': PhosphorIconsBold.shoppingCart},
       {'title': 'إدارة المبيعات والفواتير', 'screenIndex': 16, 'icon': PhosphorIconsBold.fileText},
       {'title': 'المشتريات', 'screenIndex': 8, 'icon': PhosphorIconsBold.receipt},
       {'title': 'المخازن والمستودعات', 'screenIndex': 7, 'icon': PhosphorIconsBold.warehouse},

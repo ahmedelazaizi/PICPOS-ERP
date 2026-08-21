@@ -384,6 +384,17 @@ class ServerProxy {
     return result['serverId'] as int?;
   }
 
+  /// الاستبدال — حمولةٌ واحدةٌ يفكّها الخادمُ إلى مستندَين في معاملةٍ واحدة.
+  ///
+  /// لا مسارَين مرتبطَين: مسارٌ واحدٌ يعني أن نصفَ الاستبدال لا يصل وحدَه،
+  /// فلا نافذةَ يبقى فيها العميلُ دائناً ببضاعةٍ أخذها.
+  Future<int?> submitExchange(Map<String, dynamic> exchangeData,
+      {String? idempotencyKey}) async {
+    final result = await post('/api/sales/exchange', exchangeData,
+        idempotencyKey: idempotencyKey);
+    return result['serverId'] as int?;
+  }
+
   Future<int?> submitHeldOrder(Map<String, dynamic> orderData, {String? idempotencyKey}) async {
     final result = await post('/api/sales/held', orderData, idempotencyKey: idempotencyKey);
     return result['serverId'] as int?;

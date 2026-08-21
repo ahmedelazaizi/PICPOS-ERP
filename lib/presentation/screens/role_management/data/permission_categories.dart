@@ -5,11 +5,11 @@ import '../models/permission_category.dart';
 
 final Map<String, PermissionCategory> permissionCategories = {
   'pos': const PermissionCategory(
-    name: 'نقطة البيع',
+    name: 'البيع السريع',
     icon: PhosphorIconsBold.shoppingCart,
     color: AppColors.primary,
     permissions: {
-      'pos_access': 'الوصول لنقطة البيع',
+      'pos_access': 'الوصول للبيع السريع',
       'pos_discount': 'تطبيق خصم على الفاتورة',
       'pos_return': 'إجراء مرتجعات المبيعات',
       'pos_exchange': 'استبدال المنتجات',
@@ -259,6 +259,7 @@ final Map<String, PermissionCategory> permissionCategories = {
       'system_database': 'إدارة قاعدة البيانات',
       'system_license': 'إدارة الترخيص',
       'system_updates': 'تحديث النظام',
+      'system_sidebar_open': 'فتح القائمة الجانبية بلا كلمة مرور',
     },
   ),
   'audit': const PermissionCategory(

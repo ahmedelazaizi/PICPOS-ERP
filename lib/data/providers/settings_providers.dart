@@ -1,4 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/config/business_profile_provider.dart';
+import '../../core/config/industry_tables_policy.dart';
+import '../repositories/settings_repository_cached.dart';
 import 'providers.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -265,6 +268,17 @@ final posShiftDialogEnabledProvider = FutureProvider<bool>((ref) async {
   return value != 'false'; // default true
 });
 
+/// إظهارُ شريحة «إغلاق سريع» في حوار إغلاق الوردية (الافتراضي: يظهر).
+///
+/// طلبُ المالك 2026-08-14: «الإغلاقُ السريعُ له في الإعدادات إظهارٌ أو
+/// إخفاء». وهو الطريقُ الوحيدُ **بلا أيّ مصادقة**، ويُصفّر الفرقَ
+/// (`actual = system`) — فإخفاؤه قرارٌ محاسبيّ.
+final posQuickCloseEnabledProvider = FutureProvider<bool>((ref) async {
+  final db = ref.watch(databaseProvider);
+  final value = await db.getSettingValue('pos_quick_close_enabled');
+  return value != 'false'; // default true — لا يتغيّر سلوكُ تنصيبةٍ قائمة
+});
+
 /// Show top bar (breadcrumbs / notifications) (default: true)
 final showTopBarProvider = FutureProvider<bool>((ref) async {
   final db = ref.watch(databaseProvider);
@@ -309,9 +323,22 @@ class IndustryModeNotifier extends Notifier<IndustryMode> {
     }
   }
 
-  void setMode(IndustryMode mode) {
+  Future<void> setMode(IndustryMode mode) async {
     state = mode;
-    ref.read(settingsRepositoryProvider).saveSetting('industry_mode', mode.name);
+    // ── الكتابةُ عبر المستودع **المخزَّن** ──────────────────────────────
+    //
+    // `SettingsRepositoryCached.save` يكتب القاعدةَ **ويحدّث الكاش** معاً.
+    // والكتابةُ عبر `settingsRepositoryProvider` غيرِ المخزَّن كانت تترك
+    // الكاشَ بائتاً — و«نوع النشاط» صار يحكم رايةَ الطاولات في PicPos،
+    // و`featureFlagsProvider` يقرؤه **متزامناً** من ذلك الكاش. فالمالكُ كان
+    // سيختار «مطعم» ولا يرى شاشةَ طاولاتٍ حتى يُعيد التشغيل — وهو بعينه
+    // العَرَضُ الذي جاء هذا العملُ ليمنعَه.
+    await ref
+        .read(settingsRepositoryCachedProvider)
+        .save(industryModeSettingKey, mode.name);
+
+    // والمزوّدُ لا يُعاد بناؤه بمجرّد تغيّرِ كاشٍ داخلَ كائنٍ يراقبُه.
+    ref.invalidate(featureFlagsProvider);
   }
 }
 
@@ -352,7 +379,9 @@ final posButtonHeightProvider = FutureProvider<double>((ref) async {
 final posButtonFontSizeProvider = FutureProvider<double>((ref) async {
   final db = ref.watch(databaseProvider);
   final value = await db.getSettingValue('pos_button_font_size');
-  final parsed = double.tryParse(value ?? '') ?? 13.0;
+  // نفسُ بلاغ 2026-08-15 — والمدى (‏١٠–١٦) يسمح بأكثر، لكنّ ١٥ يقصّ نصوصاً
+  // كـ«الفاتورة السابقة» في زرٍّ ضيّق. فـ١٤ هو أكبرُ ما يتّسع بلا قصّ.
+  final parsed = double.tryParse(value ?? '') ?? 14.0;
   return parsed.clamp(10.0, 16.0);
 });
 
@@ -434,7 +463,10 @@ final posCategoryIconSizeProvider = FutureProvider<double>((ref) async {
 final posCategoryFontSizeProvider = FutureProvider<double>((ref) async {
   final db = ref.watch(databaseProvider);
   final value = await db.getSettingValue('pos_category_font_size');
-  final parsed = double.tryParse(value ?? '') ?? 9.0;
+  // بلاغُ المالك 2026-08-15 بعد الاختبار الميدانيّ: أسماءُ التصنيفات صغيرة.
+  // و٩ كان أدنى المدى تقريباً (‏٨–١٨) — فالافتراضيُّ نفسُه هو العطب لا
+  // المدى. ومن يشاء يضبطه من ديالوج إعدادات العرض وهو يرى شاشةَ التِل.
+  final parsed = double.tryParse(value ?? '') ?? 12.0;
   return parsed.clamp(8.0, 18.0);
 });
 

@@ -242,7 +242,7 @@ extension AccountingAutopostDao on AppDatabase {
     //
     // المسار اللي كان بيعمل كده: `api_sales_handler.dart` بينده الدالة دي
     // بلا شرط بعد `createSalesInvoice` اللي بترحّل المرتجع جوّاها — أي
-    // «المرتجع السريع» من نقطة البيع في وضع client/mirror.
+    // «المرتجع السريع» من البيع السريع في وضع client/mirror.
     if (sale.saleType == 'return') return null;
     if (sale.total <= 0) return null;
     // APG-04: Defer revenue for undelivered delivery orders

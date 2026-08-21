@@ -52,7 +52,7 @@ class PicPosItemsTable extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final items = ref.watch(cartControllerProvider.select((s) => s.items));
-    // `pos_cart_item_scale` من «إعدادات نقطة البيع» — نفس المفتاح ونفس
+    // `pos_cart_item_scale` من «إعدادات البيع السريع» — نفس المفتاح ونفس
     // الافتراضي اللي صفوف سلة UralCash بتقراهم. شاشات الكاشير بتتفاوت من
     // ١٠″ لمسية لـ ٢٤″ بماوس، والصف اللي مريح على واحدة بيبقى مضيعة للتانية.
     final scale =
@@ -356,6 +356,20 @@ class _ItemRow extends ConsumerWidget {
     final unitSuffix =
         item.selectedUnitName != null ? ' (${item.selectedUnitName})' : '';
 
+    // ── «إظهارٌ وإخفاء» — طلبُ المالك 2026-08-12 ──────────────────────────
+    // كان الفحصُ يقع في `onSubmitted` وحدَه، فالكاشيرُ يكتب الرقمَ ثم يُسأل
+    // كلمةَ السرّ ثم يُرفض. المطلوبُ أن تُعطَّل الخانةُ أصلاً لمن لا يملك
+    // الصلاحية، والسؤالُ عند اللمس **قبل** أيّ جهد.
+    //
+    // ⚠️ و`onSubmitted` يبقى هو الحدُّ الأمنيَّ ولا يُستغنى عنه: القيمةُ قد
+    // تصل من مسارٍ لا يمرّ باللمس (فقدُ التركيز، Enter من كيبورد فيزيائيّ).
+    // والسؤالُ لا يتكرّر لأن `_ensure` صار يستهلك موافقةَ المسؤول من ذاكرتها.
+    final perms = ref.watch(currentUserPermissionsProvider).asData?.value ??
+        const <String>[];
+    final canQty = canEditCartQuantityCodes(perms);
+    final canPrice = canEditCartPriceCodes(perms);
+    final canDiscount = canApplyDiscountCodes(perms);
+
     return InkWell(
       onTap: onSelect,
       child: Container(
@@ -408,6 +422,9 @@ class _ItemRow extends ConsumerWidget {
                 label: 'الكمية',
                 min: item.isSoldByWeight ? 0.001 : 0.01,
                 onEditComplete: onEditComplete,
+                canEdit: canQty,
+                requestAccess: () =>
+                    ensureCartQuantityPermission(ref, context),
                 // التعديلُ المباشرُ في الجدول مسارٌ ثانٍ لنفس الفعل — حوارُ
                 // «تعديل الصنف» هو الأول. حراسةُ أحدِهما وحدَه تترك البابَ
                 // الآخرَ مفتوحاً، وهو بالضبط ما جعل الحراسةَ في `pos/` بلا
@@ -429,6 +446,8 @@ class _ItemRow extends ConsumerWidget {
                 label: 'السعر',
                 min: 0,
                 onEditComplete: onEditComplete,
+                canEdit: canPrice,
+                requestAccess: () => ensureCartPricePermission(ref, context),
                 onSubmitted: (v) async {
                   if (v < 0) return;
                   if (!await ensureCartPricePermission(ref, context)) return;
@@ -448,8 +467,16 @@ class _ItemRow extends ConsumerWidget {
                 max: 100,
                 suffix: '%',
                 onEditComplete: onEditComplete,
-                onSubmitted: (v) {
-                  if (v >= 0 && v <= 100) cart.setItemDiscount(index, v);
+                canEdit: canDiscount,
+                requestAccess: () => ensureCartDiscountPermission(ref, context),
+                // ⚠️ كانت هذه الخانةُ **بلا فحصٍ إطلاقاً** حتى 2026-08-13 —
+                // وجارتاها فوقها محروستان في نفس الملفّ، فالنمطُ كان موجوداً
+                // ولم يُطبَّق عليها. ولم يكشفها الحارسُ البنيويُّ لأنه عَدَّ
+                // لوناً اسمُه `AppColors.posDiscount` إنفاذاً للكود.
+                onSubmitted: (v) async {
+                  if (v < 0 || v > 100) return;
+                  if (!await ensureCartDiscountPermission(ref, context)) return;
+                  cart.setItemDiscount(index, v);
                 },
               ),
             ),
@@ -542,6 +569,16 @@ class _NumberCell extends StatefulWidget {
   /// بعد قفل الكيبورد بقيمة مؤكَّدة — الشاشة بترجّع الفوكس للباركود.
   final VoidCallback? onEditComplete;
 
+  /// هل يملك المستخدمُ صلاحيةَ تعديل هذه الخانة؟
+  ///
+  /// `false` ⇒ الخانةُ معطَّلةٌ بصرياً ولا تُكتَب مباشرةً، واللمسُ يستأذن
+  /// **قبل** فتح الكيبورد. وهذا طلبُ المالك الصريح: «إظهارٌ وإخفاء، لا رفضٌ
+  /// بعد الجهد».
+  final bool canEdit;
+
+  /// يُستدعى عند لمس خانةٍ معطَّلة — يطلب موافقةَ مسؤولٍ ويعيد نتيجتَها.
+  final Future<bool> Function() requestAccess;
+
   const _NumberCell({
     super.key,
     required this.value,
@@ -549,6 +586,8 @@ class _NumberCell extends StatefulWidget {
     required this.scale,
     required this.onSubmitted,
     required this.label,
+    required this.canEdit,
+    required this.requestAccess,
     this.min,
     this.max,
     this.suffix,
@@ -602,6 +641,17 @@ class _NumberCellState extends State<_NumberCell> {
   /// الشاشة. بنسيب الفوكس قبل ما نفتح الديالوج فيبقى واحد بس.
   Future<void> _openKeypad() async {
     _focus.unfocus();
+    // الاستئذانُ **قبل** الكيبورد: بلا هذا يكتب الكاشيرُ الرقمَ ثم يُرفض.
+    if (!widget.canEdit) {
+      final granted = await widget.requestAccess();
+      if (!mounted) return;
+      if (!granted) {
+        widget.onEditComplete?.call();
+        return;
+      }
+      // الموافقةُ محفوظةٌ في `ManagerApprovalCache` ويستهلكها `onSubmitted`،
+      // فلا يُسأل المسؤولُ مرّتين للتعديل الواحد.
+    }
     final v = await PicPosNumericKeypadDialog.show(
       context,
       title: widget.label,
@@ -633,13 +683,19 @@ class _NumberCellState extends State<_NumberCell> {
         inputFormatters: [
           FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
         ],
-        style: PicPosText.v(13 * widget.scale),
-        decoration: const InputDecoration(
+        style: PicPosText.v(13 * widget.scale,
+            color: widget.canEdit ? null : AppColors.textMuted),
+        // `readOnly` لا `enabled: false`: المعطَّلُ لا يستقبل `onTap` أصلاً،
+        // فيضيع بابُ موافقة المسؤول. والقراءةُ فقط تمنع الكتابةَ المباشرة
+        // (‏كيبورد فيزيائيّ) وتُبقي اللمسَ يستأذن.
+        readOnly: !widget.canEdit,
+        decoration: InputDecoration(
           isDense: true,
-          contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-          border: OutlineInputBorder(),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+          border: const OutlineInputBorder(),
           filled: true,
-          fillColor: Colors.white,
+          fillColor: widget.canEdit ? Colors.white : AppColors.border,
         ),
         onTap: _openKeypad,
         onSubmitted: (_) => _commit(),

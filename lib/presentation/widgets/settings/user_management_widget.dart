@@ -297,7 +297,7 @@ class _UserManagementWidgetState extends ConsumerState<UserManagementWidget> {
                         prefixIcon: Icon(PhosphorIconsBold.monitor, size: 18),
                       ),
                       items: const [
-                        DropdownMenuItem(value: 'pos', child: Text('نقطة البيع')),
+                        DropdownMenuItem(value: 'pos', child: Text('البيع السريع')),
                         DropdownMenuItem(value: 'dashboard', child: Text('لوحة التحكم')),
                         DropdownMenuItem(value: 'tables', child: Text('الطاولات')),
                       ],
@@ -475,7 +475,7 @@ class _UserManagementWidgetState extends ConsumerState<UserManagementWidget> {
                     prefixIcon: Icon(PhosphorIconsBold.monitor, size: 18),
                   ),
                   items: const [
-                    DropdownMenuItem(value: 'pos', child: Text('نقطة البيع')),
+                    DropdownMenuItem(value: 'pos', child: Text('البيع السريع')),
                     DropdownMenuItem(value: 'dashboard', child: Text('لوحة التحكم')),
                     DropdownMenuItem(value: 'tables', child: Text('الطاولات')),
                   ],

@@ -186,7 +186,7 @@ extension DatabaseSeederPostgres on AppDatabase {
     // (name, description, isSystemRole). Order matters only cosmetically.
     const defaults = <List<Object>>[
       ['مدير النظام', 'صلاحيات كاملة للنظام', true],
-      ['كاشير', 'نقطة البيع فقط', true],
+      ['كاشير', 'البيع السريع فقط', true],
       ['مخزني', 'إدارة المخزون والمنتجات', true],
       ['محاسب', 'التقارير والخزينة', true],
       ['مدير مالي', 'طبقة وصول غير مقيدة مالياً', true],
@@ -355,9 +355,22 @@ extension DatabaseSeederPostgres on AppDatabase {
     }
 
     // ── Defaults (mirror of seedRolesAndPermissions in database_seeder_permissions.dart) ──
+    // ⚠️ «مرآة» بالاسم لا بالمضمون: هذه القائمةُ متأخّرةٌ عن نظيرتها في
+    // `database_seeder_permissions.dart` (‏ينقصها `pos_shift_open` و
+    // `sales_create` و`sales_view` و`dashboard_*` و`sales_amounts_view` …).
+    // انحرافٌ قائمٌ سابقٌ لهذه الدفعة، مسجَّلٌ ولم يُصلَح هنا كي لا يُخلط
+    // بإصلاح الصلاحيات.
     const cashierPerms = [
       'pos_access', 'pos_hold_order', 'pos_save', 'pos_print',
       'pos_shift_close',
+      // 2026-08-13 — شريحةُ «توصيل» صارت محروسةً بـ`pos_delivery`.
+      'pos_delivery',
+      // 2026-08-16 — قرارُ المالك: زرُّ «مرتجع سريع» ومحرِّرُ أسطره صارا
+      // محروسَين بـ`pos_return`/`pos_item_plus`/`pos_item_minus`. أفعالٌ
+      // يوميّةٌ للكاشير الأساسي، نفسُ منطق `pos_delivery` فوق.
+      'pos_return', 'pos_item_plus', 'pos_item_minus',
+      // 2026-08-19 — سطحُ الاستبدال وصل، ونفسُ منطق `pos_return`.
+      'pos_exchange',
     ];
     const stockPerms = [
       'inventory_view', 'inventory_edit', 'products_view', 'products_add',
@@ -371,6 +384,11 @@ extension DatabaseSeederPostgres on AppDatabase {
       'pos_access', 'pos_discount', 'pos_return', 'pos_payment_cash',
       'pos_payment_card', 'pos_hold_order', 'customers_view',
       'pos_shift_close',
+      // 2026-08-16 — قرارُ المالك: زرّا «+»/«−» في محرِّر أسطر المرتجع
+      // (يورّث لمدير الفرع عبر الـspread تحت).
+      'pos_item_plus', 'pos_item_minus',
+      // 2026-08-19 — سطحُ الاستبدال (يورّث لمدير الفرع عبر الـspread تحت).
+      'pos_exchange',
     ];
     const branchManagerPerms = [
       ...advancedCashierPerms,

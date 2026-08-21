@@ -10,6 +10,7 @@ import '../../../domain/entities/user_entity.dart';
 import '../../pos/logic/open_shift_gate.dart';
 import '../../pos/providers/cart_controller.dart';
 import '../../shift_close_picpos/widgets/picpos_cashier_closing_dialog.dart';
+import '../providers/pos_return_mode_provider.dart';
 
 /// Hand the till to another cashier without leaving the application.
 ///
@@ -118,6 +119,18 @@ class _PicposSwitchUserDialogState
       // The cart belongs to the outgoing cashier's session. Carrying it over
       // would ring their half-built sale up under the new cashier's name.
       ref.read(cartControllerProvider.notifier).clearCart();
+
+      // وضعُ المرتجع (المهمّة ٧، جولةُ إصلاح ٢ — ملاحظةٌ صغيرة) ينتمي
+      // للكاشير الخارج تماماً كالسلّة. بلا هذا يرث الكاشيرُ الجديدُ اختيارَ
+      // سلفِه (فاتورةً وكمياتٍ ضُبطت باسمه)، وأيّ حفظٍ لاحقٍ عبر «دفع»/«حفظ»
+      // يُسجَّل بـ`userId`/`userName` الكاشير **الجديد** (‏`_processQuickReturnSave`
+      // تقرأ `authProvider` وقتَ الحفظ لا وقتَ الاختيار) — مرتجعٌ حقيقيٌّ
+      // منسوبٌ لموظَّفٍ لم يفتحه. مسحُ المزوِّد وحدَه يكفي: الترويسةُ ومسارُ
+      // الحفظ كلاهما يقرآن `posReturnModeProvider` مباشرةً، فحالةُ الشاشة
+      // المحليّة (`_returnInvoice`/`_returnProductCache`) تبقى بلا أثرٍ طالما
+      // المزوِّد `null` وتُستبدَل بالكامل عند أوّل استعمالٍ تالٍ لِـ«مرتجع
+      // سريع».
+      ref.read(posReturnModeProvider.notifier).state = null;
 
       // Every user-scoped provider must be dropped, not just the obvious
       // ones — leaving any of these cached hands the incoming cashier the

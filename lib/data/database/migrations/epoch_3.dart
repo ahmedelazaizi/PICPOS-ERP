@@ -1183,7 +1183,7 @@ extension Epoch3Migrations on AppDatabase {
     if (from < 121) {
       await _safeMigrate('v121 backfill default roles', () async {
         final defaultRoles = [
-          ('كاشير', 'نقطة البيع فقط'),
+          ('كاشير', 'البيع السريع فقط'),
           ('مخزني', 'إدارة المخزون والمنتجات'),
           ('محاسب', 'التقارير والخزينة'),
           ('مدير مالي', 'طبقة وصول غير مقيدة مالياً'),
@@ -2541,6 +2541,23 @@ extension Epoch3Migrations on AppDatabase {
         // حقيقيّاً يجب أن يظهر.
         await m.database.customStatement(kCreateBookingResourceSlotIndexSql);
         debugPrint('[Migration] v159 booking engine tables OK');
+      });
+    }
+
+    // ── v160: نقلُ إغلاق الوردية إلى فئة الخزينة ──────────────────────────
+    //
+    // ⚠️ ‏160 لا 159: هذه الترقيةُ وردت من فرع `pos-flexible-permissions`
+    // برقم ١٥٩، وكان ١٥٩ قد أُخذ سلفاً لجداول محرِّك الحجز التي دخلت `main`
+    // قبلَها. فرُفعت إلى **١٦٠** — ومعها حارسُها `from < 160`. والشقُّ الثاني
+    // هو الذي يُنسى: لو مرَّ الرقمُ وبقي الحارسُ عند ١٥٩ لما طُبِّقت أبداً على
+    // قاعدةٍ بلغت ١٥٩ بمحرِّك الحجز.
+    if (from < 160) {
+      await _safeMigrate('v160 نقلُ إغلاق الوردية إلى فئة الخزينة', () async {
+        await m.database.customStatement(
+          "UPDATE permissions SET category = 'treasury' "
+          "WHERE code = 'pos_shift_close'",
+        );
+        debugPrint('[Migration] v160 pos_shift_close → treasury OK');
       });
     }
   }

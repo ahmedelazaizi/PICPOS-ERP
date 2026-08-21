@@ -37,7 +37,8 @@ void main() {
     userId = await db.createUser(
       username: 'rp_a', password: 'pw', displayName: 'أ', roleId: roleId);
     otherUserId = await db.createUser(
-      username: 'rp_b', password: 'pw', displayName: 'ب', roleId: roleId);
+      // مغايرةٌ عن `rp_a` — `createUser` يرفض تكرارَ كلمة المرور (§١).
+      username: 'rp_b', password: 'pw-b', displayName: 'ب', roleId: roleId);
     productId = await db.insertProduct(ProductsCompanion.insert(
       code: 'RP-1',
       name: 'صنف',

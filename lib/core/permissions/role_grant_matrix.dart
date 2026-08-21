@@ -55,7 +55,7 @@ class RoleGrantMatrix {
       'branches_manage',
       'pos_shift_open',
       'pos_shift_close',
-      // الرئيسية بقت متبوّبة بـ`dashboard_access` بدل `pos_access`. الكود ده
+      // Dashboard بقت متبوّبة بـ`dashboard_access` بدل `pos_access`. الكود ده
       // بيتمنح لكل دور تشغيلي عشان الترقية ما تسحبش الشاشة من حد — السحب
       // قرار المدير، مش أثر جانبي للإصلاح.
       'dashboard_access',
@@ -89,10 +89,10 @@ class RoleGrantMatrix {
       'offers_edit',
       'offers_delete',
       'tables_manage',
-      // Task 7 — نفس المنطق بالظبط: الأكواد التمانية دي (نقطة البيع) مش في
+      // Task 7 — نفس المنطق بالظبط: الأكواد التمانية دي (البيع السريع) مش في
       // أي قايمة أدوار ثابتة في السيدر أصلاً — حتى الأكواد الشقيقة المنفَّذة
       // فعلاً من قبل زي pos_search/pos_table_select/pos_clear_cart مش موجودة
-      // هناك برضه. الوضع الطبيعي لأكواد نقطة البيع الدقيقة دي إن المدير هو
+      // هناك برضه. الوضع الطبيعي لأكواد البيع السريع الدقيقة دي إن المدير هو
       // اللي يفعّلها لكل دور من شاشة «الأدوار والصلاحيات» حسب احتياج الفرع —
       // مش منحة افتراضية للأدوار المزروعة. إضافتها هنا خط دفاع تاني بس
       // (زي سبب٠٨٦) عشان زرار «منح الصلاحيات الافتراضية» يقدر يصلّح مدير
@@ -157,6 +157,21 @@ class RoleGrantMatrix {
       'pos_print',
       'pos_shift_open',
       'pos_shift_close',
+      // 2026-08-13 — شريحةُ «توصيل» في لوحة الدفع صارت محروسةً بـ
+      // `pos_delivery` (قرارُ المالك). وبلا المنحة يطلب **كلُّ** طلبِ توصيلٍ
+      // كلمةَ مرور مسؤول — كسرُ شغلٍ لا تأمين، وهو نفسُ منطق منحة
+      // `sales_amounts_view` أدناه.
+      'pos_delivery',
+      // 2026-08-16 — قرارُ المالك: زرُّ «مرتجع سريع» ومحرِّرُ أسطره في
+      // شاشة بيع PicPos صارا محروسَين بـ`pos_return`/`pos_item_plus`/
+      // `pos_item_minus` (حارسُ التكافؤ رصد وصولَهما). هذه أفعالٌ يوميّةٌ
+      // للكاشير الأساسي، وإنفاذُها بلا منحٍ كان سيجعل كلَّ ضغطةِ «+» أو
+      // فتحِ وضع المرتجع تطلب موافقةَ مسؤول — كسرُ شغلٍ لا تأمين، بنفس
+      // منطق `pos_delivery` فوق. (‏`pos_return` كان ممنوحاً سلفاً لـ«كاشير
+      // متقدم»/«مدير فرع» وحدهما؛ القرارُ اليوم يضيف الكاشيرَ الأساسيّ.)
+      'pos_return',
+      'pos_item_plus',
+      'pos_item_minus',
       // Spec 084 — Spec 077 gates `/api/sales` POST on `sales_create`.
       // Without it the entire POS path dies (4× DEAD-LETTER per session).
       // `sales_view` lets the cashier list their previous invoices.
@@ -246,6 +261,11 @@ class RoleGrantMatrix {
       'sales_return_print',
       'purchases_print',
       'purchases_return_print',
+      // §٤ — `isOriginallyManager` فحصُ نصٍّ على اسم الدور، فكلُّ دورٍ اسمُه
+      // يحوي «مدير» مُعفىً اليومَ من حوار كلمة مرور القائمة الجانبية بلا نظرٍ
+      // في صلاحياته. والمنحةُ هنا تجعل المربّعَ في شاشة الصلاحيات موافقاً
+      // للواقع بدل أن يظهر مطفأً والدورُ مُعفىً فعلاً.
+      'system_sidebar_open',
     },
     'كاشير متقدم': {
       'pos_access',
@@ -266,6 +286,10 @@ class RoleGrantMatrix {
       'sales_amounts_view',
       'sales_print',
       'sales_return_print',
+      // 2026-08-16 — قرارُ المالك: زرّا «+»/«−» في محرِّر أسطر المرتجع
+      // (شاشة PicPos) صارا محروسَين. نفسُ سبب منحة «كاشير» فوق.
+      'pos_item_plus',
+      'pos_item_minus',
     },
     'مدير فرع': {
       // Inherits advanced cashier
@@ -278,6 +302,10 @@ class RoleGrantMatrix {
       'customers_view',
       'pos_shift_open',
       'pos_shift_close',
+      // 2026-08-16 — قرارُ المالك: نفسُ سبب منحة «كاشير متقدم» (الدورُ يرثه
+      // مفهومياً هنا).
+      'pos_item_plus',
+      'pos_item_minus',
       // Spec 084 — branch manager must be able to ring sales too.
       'sales_create',
       // Plus branch-manager extras
@@ -310,6 +338,8 @@ class RoleGrantMatrix {
       'sales_return_print',
       'purchases_print',
       'purchases_return_print',
+      // §٤ — نفسُ سبب منحة «مدير مالي» فوق.
+      'system_sidebar_open',
     },
     'محاسب متقدم': {
       'treasury_view',
@@ -358,6 +388,8 @@ class RoleGrantMatrix {
       'sales_return_print',
       'purchases_print',
       'purchases_return_print',
+      // §٤ — نفسُ سبب منحتَي «مدير مالي» و«مدير فرع» فوق.
+      'system_sidebar_open',
     },
   };
 

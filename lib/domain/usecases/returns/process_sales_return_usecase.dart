@@ -179,14 +179,10 @@ class ProcessSalesReturnUseCase {
 
       // Proceed with Treasury transactions
       if (cashRefund > 0) {
-        final cashSafe = await _resolveRefundSafe(invoice, 'cash');
-        if (cashSafe == null) {
-          throw Exception(
-            'لا توجد خزنة نقدية صالحة لصرف المرتجع. اضبط الخزائن من '
-            'الإعدادات ← الخزينة (المرتجع لم يُسجَّل).',
-          );
-        }
-        {
+        // مهمّة ٣ (2026-08-16): درجُ وردية المستخدم المفتوحة لا الخزنةُ
+        // النقديةُ العامّة — راجع `TreasuryDao.resolveRefundSafe`.
+        final cashSafe = await _db.resolveRefundSafe(userId: request.userId);
+        if (cashSafe != null) {
           // ⚠️ لا تعديلَ يدويّ للرصيد هنا. `createSafeTransaction` يطبّق
           // الحركةَ بنفسه: `payment` ⇒ `balance = balance - amount`
           // (‏`treasury_dao.dart:1470-1475`). وكان السطرُ

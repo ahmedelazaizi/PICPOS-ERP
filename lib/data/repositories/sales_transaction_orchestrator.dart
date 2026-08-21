@@ -707,6 +707,21 @@ class SalesTransactionOrchestrator {
     // 3. UUID-First — mint one globalId shared between server and local cache
     final saleGlobalId = UuidV7.generate();
 
+    // ── رقمٌ واحدٌ للبيعة الواحدة ───────────────────────────────────────────
+    // ⚠️ كان يُولَّد **مرّتين** بمقدّمتَين مختلفتَين: الرقمُ المُرسَل للسيرفر
+    // ببادئة `Receipt` (عدّاد POS)، والرقمُ المحفوظُ محلياً **والمطبوع**
+    // ببادئة `INV` (عدّاد SINV). فالورقةُ في يد العميل تحمل رقماً لا يعرفه
+    // السيرفر، وعدّادان يتقدّمان لكلّ بيعة ⇒ فجواتٌ دائمةٌ في السلسلتَين
+    // (وفجوةُ الترقيم مسألةٌ ضريبيةٌ لا تجميلية، ويرصدها `auditNumberingGaps`).
+    //
+    // وأسوأُ منه: السحبُ التالي يطابق بـ`global_id` ويستبدل `invoice_number`
+    // المحليَّ بما عند السيرفر — فالرقمُ المطبوعُ لا يعود موجوداً في أيّ مكان.
+    //
+    // والتعليقُ عند الإدخال المحليّ يقول صراحةً «المخبأُ المحليُّ يعكس البادئةَ
+    // التي سيسندها السيرفر» — والكودُ كان يفعل عكسَه. فالإصلاحُ يحقّق النيّةَ
+    // المكتوبة: يُولَّد **مرّةً** ويُستعمل في الاثنين.
+    String? clientSaleNumber;
+
     // 4. Client Mode: fire-and-forget sync to server
     if (isClientMode) {
       // Cluster 027 / Issue 5 — same branching as the standalone path above:
@@ -721,6 +736,8 @@ class SalesTransactionOrchestrator {
           await _db.transaction(
             () => _db.generateInvoiceNumber(isReturn ? 'RET-' : 'Receipt'),
           );
+      // يُحتفظ به ليستعمله الإدخالُ المحليُّ أدناه بدل توليدِ رقمٍ ثانٍ.
+      clientSaleNumber = localInvoiceNumber;
 
       // P5 (Issue #6): Look up the cashier's username/globalId so the server
       // can resolve the user even when client/server IDs diverge — typical
@@ -835,8 +852,11 @@ class SalesTransactionOrchestrator {
         // inner transaction() — Drift makes that a SAVEPOINT under this
         // outer txn so counter + invoice + items roll back together.
         invoiceId = await _db.transaction(() async {
-        final invoiceNumber =
-            await _db.generateInvoiceNumber(isReturn ? 'RET-' : 'INV');
+        // نفسُ الرقم المُرسَل للسيرفر — لا رقمٌ ثانٍ من عدّادٍ آخر.
+        // و`??` احتياطٌ لا أكثر: المسارُ الوحيدُ الذي يبلغ هنا يمرّ بكتلة
+        // العميل أعلاه فيُسند القيمة.
+        final invoiceNumber = clientSaleNumber ??
+            await _db.generateInvoiceNumber(isReturn ? 'RET-' : 'Receipt');
         final remaining = finalTotal - effectivePaid;
         final status = remaining <= 0.01 ? 'completed' : 'pending';
 

@@ -39,7 +39,7 @@ String localReturnLinkNote(int originalInvoiceId, {String? originalGlobalId}) {
   return '$base|gid:$originalGlobalId';
 }
 
-/// صف واحد في «سجل مردودات المبيعات».
+/// صف واحد في «سجل مرتجع المبيعات».
 ///
 /// A sales return is persisted in one of two mutually exclusive shapes (see
 /// the doc on [SalesDao.getReturnedAmountsForInvoices]): either as a separate
@@ -640,7 +640,7 @@ extension SalesDao on AppDatabase {
     return query.get();
   }
 
-  /// «سجل مردودات المبيعات» — every sales return in the window, whichever of
+  /// «سجل مرتجع المبيعات» — every sales return in the window, whichever of
   /// the two storage shapes it was written in.
   ///
   /// Why this exists on top of [getSalesReturns]: that query matches only

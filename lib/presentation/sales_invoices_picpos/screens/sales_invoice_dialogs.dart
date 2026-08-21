@@ -317,6 +317,15 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
     QuotationEntity? editQuotation,
     bool isConvert = false,
   }) async {
+    // ⚠️ انحرافٌ مقصودٌ عن الأصل المنسوخ: `sales_create` لم يكن له إنفاذٌ
+    // محليٌّ — لا على الزرّ ولا على **F5** — وموضعُه الوحيد
+    // `api_sales_handler` خلف رايةٍ مطفأةٍ افتراضياً. والفحصُ في القِمع
+    // يغطّي المدخلَين وتحويلَ عرض السعر معاً.
+    if (!await ensurePermission(ref, context, PermissionCodes.salesCreate,
+        actionName: 'فاتورة بيع جديدة')) {
+      return;
+    }
+    if (!mounted) return;
     final controller = ref.read(salesInvoicesControllerProvider.notifier);
 
     unawaited(DiagnosticLogger.log('SPEC-090-DIALOG',

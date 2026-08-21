@@ -36,14 +36,14 @@ const _globalShortcuts = [
 
 /// POS-specific shortcuts
 const posShortcuts = [
-  HelpShortcut(keys: 'F2', description: 'بحث الأصناف', category: 'نقطة البيع'),
-  HelpShortcut(keys: 'F3', description: 'العملاء', category: 'نقطة البيع'),
-  HelpShortcut(keys: 'F4', description: 'تعليق الطلب', category: 'نقطة البيع'),
-  HelpShortcut(keys: 'F5', description: 'استرجاع طلب معلق', category: 'نقطة البيع'),
-  HelpShortcut(keys: 'F8', description: 'خصم', category: 'نقطة البيع'),
-  HelpShortcut(keys: 'F9', description: 'طريقة الدفع', category: 'نقطة البيع'),
-  HelpShortcut(keys: 'F12', description: 'إتمام البيع', category: 'نقطة البيع'),
-  HelpShortcut(keys: '+/-', description: 'زيادة/تقليل الكمية', category: 'نقطة البيع'),
+  HelpShortcut(keys: 'F2', description: 'بحث الأصناف', category: 'البيع السريع'),
+  HelpShortcut(keys: 'F3', description: 'العملاء', category: 'البيع السريع'),
+  HelpShortcut(keys: 'F4', description: 'تعليق الطلب', category: 'البيع السريع'),
+  HelpShortcut(keys: 'F5', description: 'استرجاع طلب معلق', category: 'البيع السريع'),
+  HelpShortcut(keys: 'F8', description: 'خصم', category: 'البيع السريع'),
+  HelpShortcut(keys: 'F9', description: 'طريقة الدفع', category: 'البيع السريع'),
+  HelpShortcut(keys: 'F12', description: 'إتمام البيع', category: 'البيع السريع'),
+  HelpShortcut(keys: '+/-', description: 'زيادة/تقليل الكمية', category: 'البيع السريع'),
 ];
 
 /// Accounting-specific shortcuts

@@ -580,7 +580,7 @@ class _PurchasesPicposScreenState extends ConsumerState<PurchasesPicposScreen>
                             // the sales-invoice list so the
                             // user knows this purchase
                             // invoice has a linked return in
-                            // "شاشة مردودات المشتريات".
+                            // "شاشة مرتجع المشتريات".
                             if (invoice.status ==
                                     InvoiceStatus.returned ||
                                 invoice.status ==
@@ -925,8 +925,8 @@ class _PurchaseReturnBadge extends StatelessWidget {
     final color = full ? AppColors.error : AppColors.warning;
     return Tooltip(
       message: full
-          ? 'تم إرجاع الفاتورة بالكامل — راجع شاشة مردودات المشتريات للتفاصيل'
-          : 'تم إرجاع جزء من الفاتورة — راجع شاشة مردودات المشتريات للتفاصيل',
+          ? 'تم إرجاع الفاتورة بالكامل — راجع شاشة مرتجع المشتريات للتفاصيل'
+          : 'تم إرجاع جزء من الفاتورة — راجع شاشة مرتجع المشتريات للتفاصيل',
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         decoration: BoxDecoration(

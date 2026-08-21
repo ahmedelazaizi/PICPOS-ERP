@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 /// `pos_picpos/` بس.
 ///
 /// ── ليه مفيش مقاسات جوه الكلاس ────────────────────────────────────────────
-/// المقاسات في نقطة البيع **بيانات** مش ثوابت: `posCartItemScaleProvider` و
+/// المقاسات في البيع السريع **بيانات** مش ثوابت: `posCartItemScaleProvider` و
 /// `posButtonFontSizeProvider` و `posBottomPanelScaleProvider` وغيرهم
 /// (`settings_providers.dart`) بيضبطهم المدير من ديالوج إعدادات العرض وهو شايف
 /// النتيجة على شاشة التِل. فالمستدعي هو اللي بيحدّد المقاس دايماً، والكلاس ده

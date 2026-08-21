@@ -14,6 +14,7 @@ import 'package:drift/drift.dart';
 import '../../core/logging/diagnostic_logger.dart';
 import '../../core/permissions/permission_codes.dart';
 import '../../data/database/database.dart';
+import '../../domain/models/exchange_sync_payload.dart';
 import 'api_user_context.dart';
 import '../stock_shortage_policy_service.dart';
 import 'api_handler_base.dart';
@@ -662,6 +663,381 @@ class ApiSalesHandler extends ApiHandlerBase {
   }
 
   // ═══════════════════════════════════════════════════════════════
+  // Exchange — المردودُ وبديلُه في معاملةٍ واحدة
+  // ═══════════════════════════════════════════════════════════════
+
+  /// يفكّ حمولةَ الاستبدال **الواحدة** إلى مستندَين داخل معاملةٍ واحدة.
+  ///
+  /// **لماذا مسارٌ ثالثٌ لا نداءان لـ[postSalesReturn] و[postSale]:** النداءان
+  /// معاملتان منفصلتان، فسقوطُ الثاني يترك الأوّلَ مُودَعاً — وهي بعينِها
+  /// نافذةُ الانفصال التي أُنشئت الحمولةُ الواحدةُ لإغلاقها. وهنا كلُّ
+  /// الكتابات في `db.transaction` واحدة: تنجح كاملةً أو لا يبقى منها أثر.
+  ///
+  /// **ولا حسابَ ماليٌّ مكرَّر:** المالُ كلُّه يُحسب في طبقة `db.*` نفسِها
+  /// التي ينادينها المعالجان الآخران — `createSalesInvoice` و
+  /// `applyAutoDepleteForSale` و`autoPostCashSale` و`reverseSaleConsumption`.
+  /// المكرَّرُ هنا هو الفكُّ والحلُّ فقط، وكلاهما يمرّ بنفس المساعدات
+  /// المشتركة (`resolveProductId` · `resolvePartyId` · [_resolveWarehouseId] ·
+  /// [_resolveUserId]) فلا تنزلق نسختان من منطق الحلّ.
+  ///
+  /// **وشقوقُ المردود قائمةٌ لا مستندٌ واحد:** `processSalesReturn` على العميل
+  /// يقبل `isDamaged` للنداء كلِّه لا للسطر، فالوسمُ المختلط يُنتج سندَي
+  /// مردودٍ. وحقلٌ مفردٌ هنا كان سيُسقط الشقَّ الثاني صامتاً.
+  ///
+  /// **وعكسُ استهلاك BOM داخل المعاملة لا خارجَها:** في [postSalesReturn] هو
+  /// أفضلُ جهدٍ ملفوفٌ بـ`try/catch` لأن سندَ المردود كان قد أُودع فعلاً. هنا
+  /// لا شيءَ أُودع بعد، فالسقوطُ يُرجِع الكلَّ ولا يترك نصفَ استبدال.
+  Future<Response> postSalesExchange(Request request) async {
+    try {
+      // الاستبدالُ يرتجع **ويبيع** — فالصلاحيتان معاً لا إحداهما. ومن يملك
+      // المردودَ وحدَه لا يفتح بابَ بيعٍ من هنا.
+      final permReturn = await ApiUserCtx.requirePermission(
+          request, db, PermissionCodes.salesReturnCreate);
+      if (permReturn != null) return permReturn;
+      final permSale = await ApiUserCtx.requirePermission(
+          request, db, PermissionCodes.salesCreate);
+      if (permSale != null) return permSale;
+
+      return await ApiHandlerBase.withBroadcast<Response>(
+        endpointLabel: 'postSalesExchange',
+        tables: const {
+          'sales_invoices', 'sales_invoice_items',
+          'inventory', 'stock_movements',
+          'parties', 'accounting', 'journal_entries',
+        },
+        body: () async {
+          final data =
+              json.decode(await request.readAsString()) as Map<String, dynamic>;
+
+          final exchangeKey =
+              (data['exchangeKey'] ?? data['globalId']) as String?;
+          if (exchangeKey == null || exchangeKey.isEmpty) {
+            throw Exception('Validation Error: exchangeKey is required');
+          }
+          final rawLegs = (data['returnLegs'] as List?) ?? const <dynamic>[];
+          final saleData = (data['sale'] as Map?)?.cast<String, dynamic>();
+          if (rawLegs.isEmpty || saleData == null || saleData.isEmpty) {
+            throw Exception('Validation Error: exchange needs BOTH returnLegs '
+                'and sale — نصفُ استبدالٍ لا يُودَع');
+          }
+
+          // Idempotency — على `globalId` فاتورةِ البيع البديلة، نفسِ مفتاح
+          // [postSale]. فإعادةُ الإرسال من الطابور لا تُنشئ استبدالاً ثانياً.
+          final saleGlobalId = saleData['globalId'] as String?;
+          if (saleGlobalId != null && saleGlobalId.isNotEmpty) {
+            final existing = await (db.select(db.salesInvoices)
+                  ..where((s) => s.globalId.equals(saleGlobalId))
+                  ..limit(1))
+                .getSingleOrNull();
+            if (existing != null) {
+              debugPrint('[API] postSalesExchange: sale globalId=$saleGlobalId '
+                  'already exists as serverId=${existing.id} — idempotent');
+              return jsonResponse({
+                'success': true,
+                'serverId': existing.id,
+                'duplicate': true,
+              });
+            }
+          }
+
+          // حلُّ الأصلية **قبل** أيّ كتابة: مفتاحُ الربط يُبنى على معرِّف
+          // الخادم، وكتابتُه بمعرِّف العميل تُسنِد المردودَ إلى صفٍّ لا يطابق
+          // شيئاً هنا — نفسُ عطبِ العميل #3 الموثَّق في [postSalesReturn].
+          final fallbackOriginalId = parseInt(data['originalInvoiceId']);
+          final originalGlobalId = data['originalInvoiceGlobalId'] as String?;
+          SalesInvoiceData? lookedUp;
+          if (originalGlobalId != null && originalGlobalId.isNotEmpty) {
+            lookedUp = await (db.select(db.salesInvoices)
+                  ..where((s) => s.globalId.equals(originalGlobalId))
+                  ..limit(1))
+                .getSingleOrNull();
+          }
+          lookedUp ??= await (db.select(db.salesInvoices)
+                ..where((s) => s.id.equals(fallbackOriginalId))
+                ..limit(1))
+              .getSingleOrNull();
+          // نسخةٌ نهائيّةٌ كي يترقّى النوعُ داخل المُغلَقات.
+          final original = lookedUp;
+
+          final serverId = await db.transaction(() async {
+            for (final rawLeg in rawLegs) {
+              await _applyExchangeReturnLeg(
+                (rawLeg as Map).cast<String, dynamic>(),
+                original: original,
+                fallbackOriginalId: fallbackOriginalId,
+                exchangeKey: exchangeKey,
+              );
+            }
+
+            final saleId = await _applyExchangeSale(
+              saleData,
+              exchangeKey: exchangeKey,
+              returnDocumentId: original?.id ?? fallbackOriginalId,
+            );
+
+            // حالةُ الأصلية ووسمُها — كتابةٌ **واحدة** بعد الشقَّين، فتحمل
+            // `isFullReturn` المحسوبَ على المجموعتَين معاً لا على شقٍّ وحدَه.
+            if (original != null) {
+              final isFullReturn = (data['isFullReturn'] as bool?) ?? false;
+              await (db.update(db.salesInvoices)
+                    ..where((s) => s.id.equals(original.id)))
+                  .write(SalesInvoicesCompanion(
+                status: Value(isFullReturn ? 'returned' : 'partial_return'),
+                notes: Value('${original.notes ?? 'استبدال'}'
+                    '${exchangeLinkTag(exchangeKey)}'
+                    '${exchangeSaleTag(saleId)}'),
+              ));
+            } else {
+              debugPrint('[API] postSalesExchange: original invoice '
+                  '(id=$fallbackOriginalId) not found — status flip skipped');
+            }
+            return saleId;
+          });
+
+          // لا `broadcast()` يدويّاً هنا: `withBroadcast` أعلاه يبثّ كلَّ
+          // جدولٍ في `tables` بنفسه، والحارسُ الهيكليُّ
+          // `no_manual_broadcast_test` يرفض النداءَ المباشر. ونداءُ البثِّ في
+          // `postSale` ليس نظيراً — تلك لا تستعمل الغلافَ أصلاً.
+          //
+          // و`markTablesUpdated` يبقى: هو إخطارُ مجاري drift لشاشات الخادم
+          // نفسِه، لا بثُّ الشبكة — ونفسُ النمط داخل الغلاف في `postVoidSale`.
+          db.markTablesUpdated({
+            db.salesInvoices,
+            db.salesInvoiceItems,
+            db.journalEntries,
+            db.journalEntryLines,
+            db.safeTransactions,
+          });
+
+          return jsonResponse({
+            'success': true,
+            'serverId': serverId,
+            'exchangeKey': exchangeKey,
+          });
+        },
+      );
+    } catch (e, st) {
+      debugPrint('[API] postSalesExchange error: $e\n$st');
+      return errorResponse('Failed to process exchange: $e');
+    }
+  }
+
+  /// بنودُ فاتورةٍ من حمولةٍ خام — مشتركةٌ بين شقَّي الاستبدال كي لا تنزلق
+  /// نسختان من التحويل (‏`quantityInBase` وحدَه أسقط استعادةَ المخزون مرّةً
+  /// حين غاب — اقرأ SAL-2 في [postSalesReturn]).
+  Future<List<SalesInvoiceItemsCompanion>> _parseExchangeItems(
+    List<dynamic> rawItems,
+    String label,
+  ) async {
+    final items = <SalesInvoiceItemsCompanion>[];
+    for (final item in rawItems) {
+      final m = (item as Map).cast<String, dynamic>();
+      final resolvedProductId = await resolveProductId(
+        clientProductId: parseIntNullable(m['productId']),
+        productGlobalId: m['productGlobalId'] as String?,
+        fallbackCode: m['productCode'] as String?,
+        fallbackName: m['productName'] as String?,
+      );
+      if (resolvedProductId == null) {
+        throw Exception(
+            'Validation Error: $label item missing productId/productGlobalId');
+      }
+      items.add(SalesInvoiceItemsCompanion(
+        productId: Value(resolvedProductId),
+        quantity: Value(parseDouble(m['quantity'])),
+        unitPrice: Value(parseDouble(m['unitPrice'])),
+        discount: Value(parseDoubleNullable(m['discount']) ?? 0.0),
+        total: Value(parseDouble(m['total'])),
+        costPrice: Value(parseDoubleNullable(m['costPrice']) ?? 0.0),
+        quantityInBase: Value(parseDoubleNullable(m['quantityInBase']) ?? 1.0),
+        taxRate: Value(parseDoubleNullable(m['taxRate']) ?? 0.0),
+        taxAmount: Value(parseDoubleNullable(m['taxAmount']) ?? 0.0),
+      ));
+    }
+    return items;
+  }
+
+  /// شقُّ مردودٍ واحدٌ — يُنادى **داخل** معاملة [postSalesExchange].
+  Future<int> _applyExchangeReturnLeg(
+    Map<String, dynamic> leg, {
+    required SalesInvoiceData? original,
+    required int fallbackOriginalId,
+    required String exchangeKey,
+  }) async {
+    final rawItems = (leg['items'] as List?) ?? const <dynamic>[];
+    final items = await _parseExchangeItems(rawItems, 'exchange return');
+
+    final clientWarehouseId = parseInt(leg['warehouseId']);
+    if (clientWarehouseId == 0) {
+      throw Exception('Validation Error: exchange return needs warehouseId');
+    }
+    final clientBranchId = parseIntNullable(leg['branchId']);
+    final resolvedWarehouseId =
+        await _resolveWarehouseId(clientWarehouseId, branchId: clientBranchId);
+    final clientUserId = parseInt(leg['userId']);
+    if (clientUserId == 0) {
+      throw Exception('Validation Error: exchange return needs userId');
+    }
+    final resolvedUserId = await _resolveUserId(clientUserId,
+        fallbackUsername: leg['createdByUsername'] as String?);
+    final resolvedCustomerId = await resolvePartyId(
+      clientPartyId: parseIntNullable(leg['customerId']),
+      partyGlobalId: leg['customerGlobalId'] as String?,
+      isCustomer: true,
+    );
+
+    final linkedOriginalId = original?.id ?? fallbackOriginalId;
+    final returnId = await db.createSalesInvoice(
+      invoiceNumber: leg['invoiceNumber'] as String?,
+      customerId: resolvedCustomerId,
+      warehouseId: resolvedWarehouseId,
+      userId: resolvedUserId,
+      subtotal: (parseDoubleNullable(leg['subtotal']))?.toDouble() ?? 0,
+      discount: (parseDoubleNullable(leg['discount']))?.toDouble() ?? 0,
+      tax: (parseDoubleNullable(leg['tax']))?.toDouble() ?? 0,
+      total: (parseDoubleNullable(leg['total']))?.toDouble() ?? 0,
+      paid: (parseDoubleNullable(leg['paid']))?.toDouble() ?? 0,
+      paymentMethod: leg['paymentMethod'] as String? ?? 'cash',
+      saleType: 'return',
+      // الوسمان معاً: [localReturnLinkNote] يُبقي
+      // `getReturnedAmountsForInvoices` عاملةً كما هي، و[exchangeLinkTag]
+      // يربط المستندَ باستبداله. وحذفُ الأوّل كان سيُخفي المردودَ عن
+      // «المتبقّي» على الخادم.
+      notes: '${localReturnLinkNote(linkedOriginalId, originalGlobalId: original?.globalId)}'
+          '${exchangeLinkTag(exchangeKey)}',
+      items: items,
+      globalId: leg['globalId'] as String?,
+    );
+
+    // عكسُ استهلاك BOM — بلا `try/catch` هنا عن قصد: نحن داخل معاملةٍ لم
+    // يُودَع منها شيءٌ بعد، فالسقوطُ يُرجِع الاستبدالَ كلَّه بدل أن يترك
+    // مردوداً بمخزونٍ خامٍ لم يعُد.
+    if (original != null) {
+      final originalItems = await (db.select(db.salesInvoiceItems)
+            ..where((i) => i.invoiceId.equals(original.id)))
+          .get();
+      final origByProduct = <int, SalesInvoiceItem>{};
+      for (final oi in originalItems) {
+        origByProduct[oi.productId] = oi;
+      }
+      final fractionByOriginalItemId = <int, double>{};
+      for (final ri in rawItems) {
+        final m = (ri as Map).cast<String, dynamic>();
+        final pid = parseIntNullable(m['productId']);
+        final qty = parseDouble(m['quantity']);
+        if (pid == null || qty <= 0) continue;
+        final origItem = origByProduct[pid];
+        if (origItem == null || origItem.quantity <= 0) continue;
+        fractionByOriginalItemId[origItem.id] =
+            (qty / origItem.quantity).clamp(0.0, 1.0).toDouble();
+      }
+      if (fractionByOriginalItemId.isNotEmpty) {
+        await db.reverseSaleConsumption(
+          saleInvoiceId: original.id,
+          salesReturnId: returnId,
+          itemReturnFractions: fractionByOriginalItemId,
+        );
+      }
+    }
+    return returnId;
+  }
+
+  /// شقُّ البيع البديل — يُنادى **داخل** معاملة [postSalesExchange].
+  Future<int> _applyExchangeSale(
+    Map<String, dynamic> sale, {
+    required String exchangeKey,
+    required int returnDocumentId,
+  }) async {
+    final rawItems = (sale['items'] as List?) ?? const <dynamic>[];
+    if (rawItems.isEmpty) {
+      throw Exception('Validation Error: exchange sale has no items');
+    }
+    final items = await _parseExchangeItems(rawItems, 'exchange sale');
+
+    final clientWarehouseId = parseInt(sale['warehouseId']);
+    if (clientWarehouseId == 0) {
+      throw Exception('Validation Error: exchange sale needs warehouseId');
+    }
+    final clientBranchId = parseIntNullable(sale['branchId']);
+    final resolvedWarehouseId =
+        await _resolveWarehouseId(clientWarehouseId, branchId: clientBranchId);
+    final clientUserId = parseInt(sale['userId']);
+    if (clientUserId == 0) {
+      throw Exception('Validation Error: exchange sale needs userId');
+    }
+    final resolvedUserId = await _resolveUserId(clientUserId,
+        fallbackUsername: sale['createdByUsername'] as String?);
+    final resolvedCustomerId = await resolvePartyId(
+      clientPartyId: parseIntNullable(sale['customerId']),
+      partyGlobalId: sale['customerGlobalId'] as String?,
+      isCustomer: true,
+    );
+    final clientCostCenterId = parseIntNullable(sale['costCenterId']);
+    final saleGlobalId = sale['globalId'] as String?;
+
+    final saleId = await db.createSalesInvoice(
+      globalId: saleGlobalId,
+      invoiceNumber: sale['invoiceNumber'] as String?,
+      customerId: resolvedCustomerId,
+      warehouseId: resolvedWarehouseId,
+      userId: resolvedUserId,
+      subtotal: (parseDoubleNullable(sale['subtotal']))?.toDouble() ?? 0,
+      discount: (parseDoubleNullable(sale['discount']))?.toDouble() ?? 0,
+      tax: (parseDoubleNullable(sale['tax']))?.toDouble() ?? 0,
+      total: (parseDoubleNullable(sale['total']))?.toDouble() ?? 0,
+      paid: (parseDoubleNullable(sale['paid']))?.toDouble() ?? 0,
+      paymentMethod: sale['paymentMethod'] as String? ?? 'cash',
+      saleType: sale['saleType'] as String? ?? 'default',
+      notes: '${(sale['notes'] as String?)?.isNotEmpty == true ? sale['notes'] : 'استبدال'}'
+          '${exchangeLinkTag(exchangeKey)}'
+          '${exchangeReturnTag(returnDocumentId)}',
+      items: items,
+      cashAmount: (parseDoubleNullable(sale['cashAmount']))?.toDouble(),
+      bankAmount: (parseDoubleNullable(sale['bankAmount']))?.toDouble(),
+      clickAmount: (parseDoubleNullable(sale['clickAmount']))?.toDouble(),
+      cashSafeId: parseIntNullable(sale['cashSafeId']),
+      bankSafeId: parseIntNullable(sale['bankSafeId']),
+      clickSafeId: parseIntNullable(sale['clickSafeId']),
+      costCenterId: clientCostCenterId,
+      branchId: clientBranchId,
+    );
+
+    // استنزافُ المكوّنات — نفسُ شرطِ [postSale] وسببِه: بلا `globalId` لا
+    // هُويّةَ ثابتةً تُشتقّ منها معرِّفاتُ الاستهلاك.
+    if (saleGlobalId != null && saleGlobalId.isNotEmpty) {
+      final savedItems = await (db.select(db.salesInvoiceItems)
+            ..where((it) => it.invoiceId.equals(saleId)))
+          .get();
+      final serverPolicy = await StockShortagePolicyService.resolveWith(
+        get: db.getSettingValue,
+        terminalId: null,
+        branchId: clientBranchId,
+      );
+      await db.applyAutoDepleteForSale(
+        saleInvoiceId: saleId,
+        items: savedItems
+            .map((it) => SaleLineRef(
+                  saleItemId: it.id,
+                  productId: it.productId,
+                  qty: it.quantity,
+                  warehouseId: resolvedWarehouseId,
+                ))
+            .toList(),
+        branchId: clientBranchId,
+        shortagePolicy: serverPolicy.wireName,
+        saleGlobalId: saleGlobalId,
+      );
+    }
+
+    // المحاسبة — بلا `try/catch`: فشلُها يُرجِع الاستبدالَ كلَّه.
+    final createdInv = await db.getSalesInvoiceById(saleId);
+    if (createdInv != null) {
+      await db.autoPostCashSale(createdInv, costCenterId: clientCostCenterId);
+    }
+    return saleId;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
   // Held Orders
   // ═══════════════════════════════════════════════════════════════
 
@@ -1071,6 +1447,14 @@ class ApiSalesHandler extends ApiHandlerBase {
       debugPrint('[API] ⚠ _resolveUserId: clientUserId=$clientUserId '
           '(username="$fallbackUsername") not found on server — '
           'attributing invoice to admin (id=${admin.id}) to preserve data');
+      // ⚠️ أثرٌ **باقٍ** — انظر النظيرَ في `api_data_handler.dart`. الفاتورةُ
+      // تُحفظ (وفقدُها أسوأ)، لكنها تُنسب لغير بائعها فيكذب تقريرُ «حسب
+      // الكاشير» بلا أثرٍ يبقى بعد الإصدار. بلاغُ المالك 2026-08-14.
+      unawaited(DiagnosticLogger.log(
+          'USER-ATTRIBUTION',
+          '⚠ فاتورةٌ أُسنِدت إلى admin(id=${admin.id}) لأن '
+          'clientUserId=$clientUserId username="$fallbackUsername" '
+          'غيرُ موجودٍ على السيرفر — تقاريرُ «حسب المستخدم» ستنسبها للمدير'));
       return admin.id;
     }
 

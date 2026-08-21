@@ -994,7 +994,7 @@ class _ProductActions extends ConsumerWidget {
       AppToast.show(
         context,
         !product.isLocked
-            ? 'تم استثناء الصنف - سيظهر في نقطة البيع حتى لو التصنيف مقفل'
+            ? 'تم استثناء الصنف - سيظهر في البيع السريع حتى لو التصنيف مقفل'
             : 'تم إلغاء الاستثناء - الصنف يتبع حالة التصنيف',
         type: ToastType.warning,
       );

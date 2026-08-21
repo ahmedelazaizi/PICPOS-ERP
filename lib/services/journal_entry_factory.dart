@@ -744,9 +744,9 @@ class JournalEntryFactory {
       // 1. Reverse Stock
       //
       // ⚠️ مسارا المرتجع يكتبان مرجعَين مختلفَين لنفس الحركة:
-      //   * `ProcessSalesReturnUseCase` (شاشةُ مردودات المبيعات — المسارُ
+      //   * `ProcessSalesReturnUseCase` (شاشةُ مرتجع المبيعات — المسارُ
       //     الرئيسيّ) يكتب `'sales_return'`.
-      //   * المرتجعُ السريع من نقطة البيع (`sales_mutations_dao`) يكتب
+      //   * المرتجعُ السريع من البيع السريع (`sales_mutations_dao`) يكتب
       //     `'sales_invoice'`.
       // وكان هذا يستعلم بـ`'sales_invoice'` وحدَه، بينما الخطوتان ٢ و٣ تحته
       // تستعلمان بـ`'sales_return'`. فعلى المسار الرئيسيِّ لم تدر الحلقةُ

@@ -24,7 +24,7 @@ class _RoleManagementScreenState extends ConsumerState<RoleManagementScreen> {
   bool _isSaving = false;
 
   final Map<String, String> _categoryLabels = {
-    'pos': 'نقطة البيع',
+    'pos': 'البيع السريع',
     'dashboard': 'لوحة التحكم',
     'inventory': 'المخزون',
     'products': 'المنتجات',

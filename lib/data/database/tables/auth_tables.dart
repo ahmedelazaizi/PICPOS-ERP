@@ -23,7 +23,7 @@ class Roles extends Table {
 class Permissions extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get code => text().unique()(); // pos_access, inventory_view
-  TextColumn get name => text()(); // الوصول لنقطة البيع
+  TextColumn get name => text()(); // الوصول للبيع السريع
   TextColumn get category => text()(); // pos, inventory, settings
 }
 

@@ -5,7 +5,7 @@
 //
 // الشاشة الأصل (lib/presentation/screens/settings_screen.dart، 1406 سطر) بلا
 // منطق مختلف — بوابة كلمة مرور الإعدادات، ثم محتوى الشاشة مقسّم لـ٦ أقسام
-// (النظام والمظهر، الأجهزة والطباعة، نقطة البيع، المستخدمين والأمان، حماية
+// (النظام والمظهر، الأجهزة والطباعة، البيع السريع، المستخدمين والأمان، حماية
 // الأقسام، الإعدادات المالية، إدارة البيانات، التكاملات والخدمات) بالإضافة لـ
 // عن البرنامج/الترخيص/أدوات المطوّر/نسخ اللوج. تُقسَّم عبر ٦ ملفات `part`
 // (general_settings_widgets.dart / scale_barcode_settings.dart /
@@ -55,7 +55,7 @@
 // البيانات، أدوات صيانة المسؤول، تدقيق مزامنة المرآة/ازدواج شيكات القبض حسب
 // الوضع، إعدادات الربط بين الفروع والسيرفر، نمط الإدخال اللمسي، المزامنة
 // الإجبارية)، الأجهزة والطباعة (إعدادات الأجهزة، إدارة الطابعات، نقاط البيع،
-// قوالب الفواتير، باركود الميزان، البصمة عند تفعيل HR)، إعدادات نقطة البيع،
+// قوالب الفواتير، باركود الميزان، البصمة عند تفعيل HR)، إعدادات البيع السريع،
 // المستخدمين والأمان (إدارة المستخدمين → PicPos، إدارة صلاحيات الأدوار، فحص
 // الصلاحيات على السيرفر، مهلة انتهاء الجلسة، كلمة مرور الإعدادات) أو الإشعار
 // في وضع العميل، حماية الأقسام بكلمات مرور بديلة (عند تفعيل المطبخ/HR)،
@@ -98,6 +98,7 @@ import '../../../core/design_system/typography.dart';
 import '../../../core/permissions/permission_codes.dart';
 import '../../../core/config/business_profile_provider.dart';
 import '../../../data/providers/providers.dart';
+import '../../pos_picpos/widgets/picpos_payment_methods.dart';
 import '../../widgets/permission_guard.dart';
 // دفعة ١٠ — تايلات الإعدادات المحروسة، مشتركة بين البراندين.
 import '../../widgets/settings/settings_permission_tiles.dart';
@@ -158,6 +159,7 @@ part 'admin_home_settings_picpos.dart';
 part 'cfd_settings_card_picpos.dart';
 part 'network_mode_settings_picpos.dart';
 part 'touch_input_settings_picpos.dart';
+part 'payment_methods_settings_picpos.dart';
 
 /// شاشة الإعدادات بهوية PicPos. تُختار في `app_main_screen.dart` بالعلامة
 /// (`Brand.isPicPos`). تعيد استخدام منطق `settings_screen.dart` بالكامل —
@@ -619,20 +621,30 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
       ),
       _SettingsSection(
         id: 'pos',
-        title: 'نقطة البيع',
+        title: 'البيع السريع',
         icon: PhosphorIconsBold.shoppingCart,
         keywords: 'تراكم أصناف ميزان وزن سلة أزرار تصنيفات شبكة منتجات '
             'إيصال طباعة تلقائية بيع بالسالب خصم ضريبة درج مصروفات وردية '
-            'مخزن افتراضي بادئة ترقيم',
+            'مخزن افتراضي بادئة ترقيم طرق الدفع نقدي بطاقة تحويل آجل متعدد',
         children: () => [
-          // ═══ 3. نقطة البيع ═══
+          // ═══ 3. البيع السريع ═══
           _buildSettingsCard(
-            title: 'إعدادات نقطة البيع',
+            title: 'إعدادات البيع السريع',
             children: [
               buildPosSettingsTileGuarded(
                 onOpen: () => showPosSettingsDialog(context),
               ),
             ],
+          ),
+          const SizedBox(height: 16),
+          _buildSettingsCard(
+            title: 'طرق الدفع الظاهرة',
+            children: const [_PaymentMethodsSettingsCard()],
+          ),
+          const SizedBox(height: 16),
+          _buildSettingsCard(
+            title: 'إغلاق الوردية',
+            children: const [_QuickCloseSettingTile()],
           ),
         ],
       ),
@@ -800,8 +812,8 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
                 const _StockShortagePolicyPerBranchTile(),
                 // Negative-sales toggle moved to POS settings
                 // (Feature 022 follow-up) — operators expected
-                // it under "إعدادات نقطة البيع" → "إعدادات
-                // نقطة البيع الرئيسية", not under Financial
+                // it under "إعدادات البيع السريع" → "إعدادات
+                // البيع السريع الرئيسية", not under Financial
                 // settings. The setting key is unchanged
                 // (`enable_negative_sales`); the orchestrator
                 // reads the same value.

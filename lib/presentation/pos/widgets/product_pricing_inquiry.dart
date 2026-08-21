@@ -63,9 +63,21 @@ class _ProductPricingDialog extends ConsumerStatefulWidget {
 }
 
 class _ProductPricingDialogState extends ConsumerState<_ProductPricingDialog> {
+  /// سقفُ نتائج البحث بالاسم.
+  ///
+  /// كان `1` — وهو جذرُ بلاغ المالك: البحثُ بالاسم كان يجلب واحداً ويعرضه
+  /// بلا أن يعلم المستخدمُ أن هناك غيرَه. والرقمُ سقفُ عرضٍ لا سقفُ مطابقة:
+  /// من يبحث بكلمةٍ عامّةٍ يضيّقها، ولائحةٌ بلا حدٍّ تُبطئ الحوارَ في قاعدةٍ
+  /// كبيرة.
+  static const int _nameSearchLimit = 25;
+
   final _searchController = TextEditingController();
   final _searchFocusNode = FocusNode();
   ProductEntity? _foundProduct;
+
+  /// مطابقاتُ البحث بالاسم حين تكون أكثرَ من واحدة — تُعرض ليختار المستخدم.
+  /// وتُفرَّغ فورَ الاختيار فلا تبقى القائمةُ فوق التفاصيل.
+  List<ProductEntity> _candidates = const [];
   bool _isSearching = false;
 
   @override
@@ -91,6 +103,7 @@ class _ProductPricingDialogState extends ConsumerState<_ProductPricingDialog> {
       if (mounted) {
         setState(() {
           _foundProduct = null;
+          _candidates = const [];
           _isSearching = false;
         });
       }
@@ -100,22 +113,46 @@ class _ProductPricingDialogState extends ConsumerState<_ProductPricingDialog> {
 
     final productRepo = ref.read(productRepositoryProvider);
 
-    // Try barcode first, then code, then name search
+    // الباركودُ ثم الكودُ يبقيان **مطابقةً واحدةً مباشرة**: هذا مسحٌ سريعٌ
+    // بقارئ، وإقحامُ قائمةٍ بينه وبين النتيجة يبطّئ الاستعمالَ الأساسيَّ
+    // للحوار.
     var product = await productRepo.getProductByBarcode(query);
     product ??= await productRepo.getProductByCode(query);
+
+    var candidates = const <ProductEntity>[];
     if (product == null) {
-      final results = await productRepo.getProducts(query: query, limit: 1);
-      if (results.isNotEmpty) product = results.first;
+      final results =
+          await productRepo.getProducts(query: query, limit: _nameSearchLimit);
+      if (results.length == 1) {
+        // اختيارٌ من عنصرٍ واحدٍ ليس اختياراً — والقائمةُ هنا خطوةٌ زائدة.
+        product = results.first;
+      } else {
+        candidates = results;
+      }
     }
 
     if (mounted) {
       setState(() {
         _foundProduct = product;
+        _candidates = candidates;
         _isSearching = false;
       });
-      // Select all text in search field for quick next scan without manual clear
-      _searchController.selection = TextSelection(baseOffset: 0, extentOffset: _searchController.text.length);
+      // تحديدُ النصّ كلِّه ليمسحه المسحُ التالي بلا تفريغٍ يدويّ.
+      //
+      // ⚠️ ومشروطٌ بغياب القائمة عن قصد: لو حُدّد والقائمةُ معروضةٌ لابتلع
+      // أوّلُ حرفٍ يكتبه المستخدمُ — أو أوّلُ مسحةِ قارئ — اختيارَه قبل أن
+      // يختار.
+      if (candidates.isEmpty) {
+        _searchController.selection = TextSelection(baseOffset: 0, extentOffset: _searchController.text.length);
+      }
     }
+  }
+
+  void _selectCandidate(ProductEntity product) {
+    setState(() {
+      _foundProduct = product;
+      _candidates = const [];
+    });
   }
 
   @override
@@ -168,7 +205,10 @@ class _ProductPricingDialogState extends ConsumerState<_ProductPricingDialog> {
                           icon: const Icon(PhosphorIconsBold.xCircle, size: 20),
                           onPressed: () {
                             _searchController.clear();
-                            setState(() => _foundProduct = null);
+                            setState(() {
+                              _foundProduct = null;
+                              _candidates = const [];
+                            });
                             _searchFocusNode.requestFocus();
                           },
                         )
@@ -199,7 +239,12 @@ class _ProductPricingDialogState extends ConsumerState<_ProductPricingDialog> {
                   child: Center(child: CircularProgressIndicator()),
                 ),
 
-              if (_foundProduct == null && _searchController.text.isNotEmpty && !_isSearching)
+              if (_candidates.isNotEmpty && !_isSearching) _buildCandidateList(),
+
+              if (_foundProduct == null &&
+                  _candidates.isEmpty &&
+                  _searchController.text.isNotEmpty &&
+                  !_isSearching)
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
@@ -230,6 +275,75 @@ class _ProductPricingDialogState extends ConsumerState<_ProductPricingDialog> {
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('إغلاق', style: TextStyle(color: AppColors.textPrimary)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// قائمةُ المطابقات حين يرجع البحثُ بالاسم أكثرَ من صنف.
+  ///
+  /// محدودةُ الارتفاع لأنها داخل `Column` في `AlertDialog`: بلا حدٍّ يفيض
+  /// الحوارُ عن الشاشة على قوائمَ طويلة.
+  Widget _buildCandidateList() {
+    return Container(
+      constraints: const BoxConstraints(maxHeight: 280),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(
+              children: [
+                const Icon(PhosphorIconsBold.listMagnifyingGlass,
+                    size: 18, color: AppColors.primary),
+                const SizedBox(width: 8),
+                Text(
+                  'اختر الصنفَ المطلوب (${_candidates.length})',
+                  style: const TextStyle(
+                      fontSize: 13, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          Flexible(
+            child: ListView.separated(
+              shrinkWrap: true,
+              padding: EdgeInsets.zero,
+              itemCount: _candidates.length,
+              separatorBuilder: (context, index) => const Divider(height: 1),
+              itemBuilder: (context, index) {
+                final product = _candidates[index];
+                return ListTile(
+                  dense: true,
+                  onTap: () => _selectCandidate(product),
+                  title: Text(
+                    product.name,
+                    style: const TextStyle(
+                        fontSize: 14, fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text(
+                    product.code,
+                    style: const TextStyle(
+                        fontSize: 12, color: AppColors.textMuted),
+                  ),
+                  trailing: Text(
+                    '${product.salePrice.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbol}',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
         ],
       ),

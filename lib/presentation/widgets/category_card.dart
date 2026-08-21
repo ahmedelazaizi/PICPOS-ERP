@@ -391,8 +391,8 @@ class _CategoryCardState extends State<CategoryCard> {
                 const SizedBox(width: 10),
                 Text(
                   widget.cat.showInPos
-                      ? 'إخفاء من نقطة البيع'
-                      : 'إظهار في نقطة البيع',
+                      ? 'إخفاء من البيع السريع'
+                      : 'إظهار في البيع السريع',
                   style: const TextStyle(fontSize: 13),
                 ),
               ],

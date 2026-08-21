@@ -276,7 +276,24 @@ class SyncService {
               await strategy.syncFromJson(result);
               return true;
             }
-            return false;
+            // ⚠️ `null` لا `false` — ثقبٌ مقيسٌ في «H-2 FIX» أدناه.
+            //
+            // `_fetchJson` يبتلع **كلَّ** ردٍّ غيرِ 200 وكلَّ خطأِ شبكةٍ ويعيد
+            // `null` (‏:629). فكان الفشلُ الحقيقيُّ يعود `false` هنا، و`false`
+            // لا يُحتسب لا نجاحاً ولا فشلاً — فيبقى `totalFailed == 0`،
+            // فتُبذَر مؤشّراتُ الزمن على «مُزامَنٌ حتى الآن»، ويُكتب علمُ
+            // «اكتملت المزامنةُ الأولى».
+            //
+            // والنتيجةُ عميلٌ كتالوجُه **فارغٌ إلى الأبد**: السحبُ التالي يطلب
+            // ما تغيّر بعد تلك اللحظة، والمزامنةُ الأولى لا تُعاد. وهو نقضٌ
+            // مباشرٌ لعقد «إمّا مُزامَنٌ كلياً أو فارغٌ كلياً، ولا حالةَ بين
+            // بين».
+            //
+            // و`false` يبقى محجوزاً لمعناه الوحيد: **تخطٍّ مقصود** (‏سبيك 151
+            // فوق) — وذاك وحدَه ما لا يُحتسب فشلاً.
+            debugPrint('[Sync] ⚠ ${strategy.tableName}: fetch returned no '
+                'payload (HTTP error or timeout) — counted as FAILED');
+            return null;
           } catch (e) {
             debugPrint('[Sync] Error syncing table ${strategy.tableName}: $e');
             return null; // null = error (distinct from "no data")
@@ -318,9 +335,15 @@ class SyncService {
       }
 
       _isSyncing = false;
+      // ⚠️ `success` مشروطٌ الآن. كان `true` **بلا شرط** حتى مع
+      // `totalFailed > 0` — و`ClientFirstSyncService.performFirstSync` يحرس
+      // بـ`if (!syncResult.success) throw` ثم يكتب علمَ الاكتمال. فكان
+      // الحارسُ يفحص علماً لا يُطفأ أبداً.
       return SyncResult(
-        success: true,
-        message: 'تمت المزامنة بنجاح',
+        success: totalFailed == 0,
+        message: totalFailed == 0
+            ? 'تمت المزامنة بنجاح'
+            : 'فشلت مزامنة $totalFailed جدولاً — أعد المحاولة',
         itemsSynced: totalSynced,
       );
     } catch (e) {

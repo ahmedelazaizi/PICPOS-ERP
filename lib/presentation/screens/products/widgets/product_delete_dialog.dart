@@ -77,7 +77,7 @@ class _ProductDeleteDialogState extends ConsumerState<ProductDeleteDialog> {
                     ),
                     SizedBox(height: 8),
                     Text('• اختفاء الصنف من شاشة الأصناف'),
-                    Text('• عدم ظهوره في نقطة البيع'),
+                    Text('• عدم ظهوره في البيع السريع'),
                     Text('• الاحتفاظ ببيانات الفواتير السابقة'),
                   ],
                 ),

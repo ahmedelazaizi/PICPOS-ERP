@@ -1,4 +1,4 @@
-// Task 7 — نقطة البيع: جرس الإشعارات وتنبيه نقص المخزون في الهيدر.
+// Task 7 — البيع السريع: جرس الإشعارات وتنبيه نقص المخزون في الهيدر.
 //
 // `pos_notifications` و`pos_low_stock_alert` كانا الودجتين (`PosNotificationBell`،
 // `PosLowStockIndicator`) بيتركّبوا في `pos_header.dart` من غير أي فحص

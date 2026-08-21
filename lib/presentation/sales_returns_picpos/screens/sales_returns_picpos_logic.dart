@@ -305,8 +305,9 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
   /// cancel/reprint must act on.
   void showReturnsHistoryDialog() {
     final repository = ref.read(returnsRepositoryProvider);
-    // Use a 1-year lookback so recently processed returns always appear.
-    final historyFrom = DateTime.now().subtract(const Duration(days: 365));
+    // قرارُ المالك 2026-08-16: بلا سقفٍ زمنيّ — الارتجاعُ جائزٌ بعد فترةٍ
+    // وليس في نفس اليوم. وكان السقفُ ٣٦٥ يوماً فيُخفي فاتورةً أقدمَ من سنة.
+    final historyFrom = DateTime(2000);
     final historyTo = DateTime.now();
 
     showDialog(

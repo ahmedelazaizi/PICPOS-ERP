@@ -297,7 +297,7 @@ class DashboardScreen extends ConsumerWidget {
               // dashboard_alerts — بانر تنبيه نقص المخزون. عرض بحت:
               // `fallback` بلا تجاوز مدير — ديالوج كلمة سر عشان يظهر بانر
               // تنبيه غلط (نفس قرار `pos_low_stock_alert` في دفعة ٧، وهو
-              // حرفياً نفس التنبيه في نقطة البيع).
+              // حرفياً نفس التنبيه في البيع السريع).
               PermissionGuard(
                 permission: PermissionCodes.dashboardAlerts,
                 fallback: const SizedBox.shrink(),
