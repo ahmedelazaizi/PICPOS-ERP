@@ -25,6 +25,17 @@ Color _mutedOf(BuildContext context) =>
         ? const Color(0xFF94A3B8)
         : AppColors.textMuted;
 
+/// نسبةُ التغيّر بين [current] و[previous].
+///
+/// ‏`null` حين لا تُحسَب: لا فترةَ سابقة، أو كانت صفراً — والقسمةُ على صفرٍ
+/// ليست «‏+100%» بل «لا أساسَ للمقارنة». وشارةٌ لا تُعرض أصدقُ من شارةٍ
+/// تدّعي نموّاً لا مقامَ له.
+@visibleForTesting
+double? salesDeltaPct(double current, double? previous) {
+  if (previous == null || previous == 0) return null;
+  return (current - previous) / previous * 100;
+}
+
 /// كارت مبلغ محجوب بـ`sales_amounts_view`.
 ///
 /// الشكلُ صار بطاقةَ التصميم الثانويّة، والعقدُ لم يتغيّر: الحجبُ بنفس الكود،
@@ -35,18 +46,79 @@ Widget buildMaskedAmountKpiCard({
   required String label,
   required String value,
   required Color color,
+  double? deltaPct,
 }) {
-  Widget tile(String v) => _SalesKpiTile(
+  Widget tile(String v, {double? delta}) => _SalesKpiTile(
         icon: icon,
         label: label,
         value: v,
         dot: color,
+        deltaPct: delta,
       );
   return PermissionGuard(
     permission: PermissionCodes.salesAmountsView,
+    // ولا شارةَ اتّجاهٍ عند الحجب: النسبةُ مشتقّةٌ من مبلغَين، فمن يعرف أحدَ
+    // الطرفين يستنتج الآخرَ منها — نفسُ قاعدة نسبة التحصيل في البطاقة الأمّ.
     fallback: tile(kMaskedValuePlaceholder),
-    child: tile(value),
+    child: tile(value, delta: deltaPct),
   );
+}
+
+/// شارةُ الاتّجاه — سهمٌ ونسبةٌ ملوّنةٌ بمعناها.
+class _TrendBadge extends StatelessWidget {
+  const _TrendBadge({required this.pct, this.compact = false});
+
+  final double pct;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final up = pct >= 0;
+    final color = up ? const Color(0xFF5EE49A) : AppColors.error;
+    final text = '${up ? '+' : ''}${pct.toStringAsFixed(0)}%';
+    final icon = up ? PhosphorIconsBold.trendUp : PhosphorIconsBold.trendDown;
+
+    if (compact) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 11, color: color),
+          const SizedBox(width: 5),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 10.5,
+              fontWeight: FontWeight.w800,
+              color: color,
+            ),
+          ),
+        ],
+      );
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: .18),
+        border: Border.all(color: color.withValues(alpha: .35)),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 /// البطاقةُ الرئيسيّة للاختبار — نفسُ نمطِ [buildMaskedAmountKpiCard]:
@@ -66,12 +138,16 @@ class _SalesKpiTile extends StatelessWidget {
     required this.label,
     required this.value,
     required this.dot,
+    this.deltaPct,
   });
 
   final IconData icon;
   final String label;
   final String value;
   final Color dot;
+
+  /// `null` ⇒ لا صفَّ اتّجاهٍ إطلاقاً — لا صفرٌ ولا شرطة.
+  final double? deltaPct;
 
   @override
   Widget build(BuildContext context) {
@@ -129,6 +205,27 @@ class _SalesKpiTile extends StatelessWidget {
               ),
             ),
           ),
+          if (deltaPct != null) ...[
+            const SizedBox(height: 2),
+            Row(
+              children: [
+                _TrendBadge(pct: deltaPct!, compact: true),
+                const SizedBox(width: 5),
+                Expanded(
+                  child: Text(
+                    'مقابل الفترة السابقة',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: muted,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -145,11 +242,15 @@ class _SalesHeroCard extends StatelessWidget {
     required this.total,
     required this.returns,
     required this.collected,
+    this.deltaPct,
   });
 
   final double total;
   final double returns;
   final double collected;
+
+  /// تغيّرُ الإجماليّ عن الفترة السابقة — `null` ⇒ لا شارة.
+  final double? deltaPct;
 
   static const _amber = Color(0xFFFCD34D);
   static const _sky = Color(0xFF7FB0FF);
@@ -184,6 +285,8 @@ class _SalesHeroCard extends StatelessWidget {
   }) {
     String amount(double v) => masked ? kMaskedValuePlaceholder : _fmt(v);
     final pctLabel = masked ? kMaskedValuePlaceholder : '${paidPct.round()}%';
+    // الشارةُ تختفي مع المبالغ — نفسُ قاعدة نسبة التحصيل.
+    final trend = masked ? null : deltaPct;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(14),
@@ -210,7 +313,7 @@ class _SalesHeroCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _headline(amount(total)),
+                  _headline(amount(total), trend),
                   _equation(
                     amount(total),
                     amount(returns),
@@ -272,7 +375,7 @@ class _SalesHeroCard extends StatelessWidget {
     );
   }
 
-  Widget _headline(String value) {
+  Widget _headline(String value, double? trend) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -339,6 +442,10 @@ class _SalesHeroCard extends StatelessWidget {
             ],
           ),
         ),
+        if (trend != null) ...[
+          const SizedBox(width: 8),
+          _TrendBadge(pct: trend),
+        ],
       ],
     );
   }
@@ -464,10 +571,14 @@ class SalesSummaryRow extends ConsumerWidget {
         '${v.toStringAsFixed(AppConstants.decimalPlaces)} '
         '${AppConstants.currencySymbolEn}';
 
+    final prev = ref.watch(
+        salesInvoicesControllerProvider.select((s) => s.previousPeriod));
+
     final hero = _SalesHeroCard(
       total: totalAmount,
       returns: totalReturns,
       collected: collected,
+      deltaPct: salesDeltaPct(totalAmount, prev?.totalAmount),
     );
 
     final tiles = <Widget>[
@@ -484,6 +595,7 @@ class SalesSummaryRow extends ConsumerWidget {
           icon: PhosphorIconsBold.wallet,
           label: 'المحصّل',
           value: money(collected),
+          deltaPct: salesDeltaPct(collected, prev?.collected),
           color: AppColors.success,
         ),
       ),
@@ -491,20 +603,27 @@ class SalesSummaryRow extends ConsumerWidget {
         icon: PhosphorIconsBold.clock,
         label: 'المتبقي',
         value: money(totalRemaining),
+        deltaPct: salesDeltaPct(totalRemaining, prev?.totalRemaining),
         color: AppColors.warning,
       ),
       buildMaskedAmountKpiCard(
         icon: PhosphorIconsBold.arrowUUpLeft,
         label: 'إجمالي المرتجعات',
         value: money(totalReturns),
+        deltaPct: salesDeltaPct(totalReturns, prev?.totalReturns),
         color: AppColors.error,
       ),
       // العددُ لا يُحجَب: `sales_amounts_view` تحرس المبالغَ لا وجودَ العمل.
+      // وشارتُه كذلك — عددُ الفواتير ليس مبلغاً ولا يُشتقّ منه مبلغ.
       _SalesKpiTile(
         icon: PhosphorIconsBold.receipt,
         label: 'عدد الفواتير',
         value: '$invoiceCount',
         dot: AppColors.info,
+        deltaPct: salesDeltaPct(
+          invoiceCount.toDouble(),
+          prev?.invoiceCount.toDouble(),
+        ),
       ),
     ];
 

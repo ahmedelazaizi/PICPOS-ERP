@@ -22,6 +22,31 @@ enum SalesInvoiceSortMode {
   byClientReceiveOrder,
 }
 
+/// إجمالياتُ **الفترة السابقة** — نافذةٌ بنفس طولِ المدى المختار تسبقه
+/// مباشرةً وتُقاس بنفس المرشِّحات (الفرع · مركز التكلفة · المخزن).
+///
+/// ‏`null` تعني «لا مقارنةَ متاحة» لا «صفر»: لا مدى تاريخٍ مختار، أو أخفق
+/// الاستعلام. والفرقُ جوهريّ — شارةُ «‏0%» تدّعي ثباتاً لم يُقَس.
+class SalesPreviousPeriod {
+  const SalesPreviousPeriod({
+    required this.totalAmount,
+    required this.collected,
+    required this.totalRemaining,
+    required this.totalReturns,
+    required this.invoiceCount,
+  });
+
+  final double totalAmount;
+
+  /// بنفس تعريفِ الفترة الحاليّة: مدفوعاتُ الفواتير + سنداتُ القبض (‏Issue 10).
+  /// وإسقاطُ السندات هنا وحدَها كان سيجعل المقارنةَ كاذبةً في اتّجاهٍ واحد.
+  final double collected;
+
+  final double totalRemaining;
+  final double totalReturns;
+  final int invoiceCount;
+}
+
 class SalesInvoicesScreenState {
   final List<InvoiceEntity> allInvoices;
   final List<InvoiceEntity> filteredInvoices;
@@ -63,6 +88,9 @@ class SalesInvoicesScreenState {
   final int displayLimit;
   final bool hasMore;
 
+  /// مقارنةُ الفترة السابقة — `null` = غيرُ متاحة، لا صفر.
+  final SalesPreviousPeriod? previousPeriod;
+
   SalesInvoicesScreenState({
     this.allInvoices = const [],
     this.filteredInvoices = const [],
@@ -89,6 +117,7 @@ class SalesInvoicesScreenState {
     this.invoiceCount = 0,
     this.displayLimit = 50,
     this.hasMore = false,
+    this.previousPeriod,
   });
 
   SalesInvoicesScreenState copyWith({
@@ -120,6 +149,8 @@ class SalesInvoicesScreenState {
     int? invoiceCount,
     int? displayLimit,
     bool? hasMore,
+    SalesPreviousPeriod? previousPeriod,
+    bool clearPreviousPeriod = false,
   }) {
     return SalesInvoicesScreenState(
       allInvoices: allInvoices ?? this.allInvoices,
@@ -147,6 +178,9 @@ class SalesInvoicesScreenState {
       invoiceCount: invoiceCount ?? this.invoiceCount,
       displayLimit: displayLimit ?? this.displayLimit,
       hasMore: hasMore ?? this.hasMore,
+      previousPeriod: clearPreviousPeriod
+          ? null
+          : (previousPeriod ?? this.previousPeriod),
     );
   }
 }
@@ -656,10 +690,78 @@ class SalesInvoicesController extends Notifier<SalesInvoicesScreenState> {
         totalRemaining: summary.totalRemaining,
         invoiceCount: summary.invoiceCount,
       );
+      unawaited(_refreshPreviousPeriod(window));
     } catch (e) {
       // Leave the paged fold in place rather than blanking the cards, but say
       // so — a silent fallback to a truncated number is what ح-2 was about.
       debugPrint('[SalesInvoices] SQL summary failed, showing paged totals: $e');
+    }
+  }
+
+  /// إجمالياتُ الفترة السابقة — نافذةٌ **بنفس الطول** تسبق المدى المختار
+  /// مباشرةً، وبنفس المرشِّحات كي تكون المقارنةُ على المقدار لا على المدى.
+  ///
+  /// مثال: ‏١–٢١ أغسطس (٢١ يوماً) ⇒ السابقةُ ‏١١–٣١ يوليو (٢١ يوماً).
+  ///
+  /// وأيُّ إخفاقٍ يمسح المقارنةَ إلى `null` ولا يُبقي رقمَ مدىً قديمٍ معلَّقاً:
+  /// شارةُ اتّجاهٍ تقارن فترةَ اليوم بفترةِ الأمس هي **الكذبةُ** التي يُحذَر
+  /// منها، لا غيابُ الشارة.
+  Future<void> _refreshPreviousPeriod(
+    ({DateTime start, DateTime endExclusive}) window,
+  ) async {
+    if (_disposed) return;
+    try {
+      final db = ref.read(databaseProvider);
+      final lengthDays = window.endExclusive.difference(window.start).inDays;
+      if (lengthDays <= 0) {
+        if (state.previousPeriod != null) {
+          state = state.copyWith(clearPreviousPeriod: true);
+        }
+        return;
+      }
+      final prevStart = window.start.subtract(Duration(days: lengthDays));
+      // نفسُ اصطلاح النداء الحاليّ: `to` هو بدايةُ آخرِ يومٍ داخلَ النافذة.
+      final prevTo = window.start.subtract(const Duration(days: 1));
+
+      final summary = await db.getSalesInvoiceSummary(
+        from: prevStart,
+        to: prevTo,
+        warehouseIds: state.selectedWarehouseId != null
+            ? [state.selectedWarehouseId!]
+            : null,
+        branchId: state.selectedBranchId,
+        costCenterId: state.selectedCostCenterId,
+      );
+      if (_disposed) return;
+
+      // «المحصّل» يجب أن يُقاس بنفس تعريفه في الفترة الحاليّة — مدفوعاتٌ +
+      // سنداتُ قبض. ولو قورنت مدفوعاتٌ وحدَها بمدفوعاتٍ وسنداتٍ لظهر هبوطٌ
+      // وهميٌّ في كلّ فترةٍ فيها سندات.
+      final scope = await ref.read(branchScopeProvider.future);
+      if (_disposed) return;
+      final prevVouchers = await db.getReceiptVouchersTotal(
+        from: prevStart,
+        to: prevTo,
+        branchId: state.selectedBranchId,
+        costCenterId: state.selectedCostCenterId,
+        allowedBranchIds: scope.hasFullAccess ? null : scope.allowedBranchIds,
+      );
+      if (_disposed) return;
+
+      state = state.copyWith(
+        previousPeriod: SalesPreviousPeriod(
+          totalAmount: summary.totalAmount,
+          collected: summary.totalPaid + prevVouchers,
+          totalRemaining: summary.totalRemaining,
+          totalReturns: summary.totalReturns,
+          invoiceCount: summary.invoiceCount,
+        ),
+      );
+    } catch (e) {
+      debugPrint('[SalesInvoices] previous-period summary failed: $e');
+      if (!_disposed && state.previousPeriod != null) {
+        state = state.copyWith(clearPreviousPeriod: true);
+      }
     }
   }
 

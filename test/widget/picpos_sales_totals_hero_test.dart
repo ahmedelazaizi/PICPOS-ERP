@@ -66,6 +66,28 @@ void main() {
     await tester.pump();
   }
 
+  group('نسبةُ التغيّر عن الفترة السابقة', () {
+    test('لا فترةَ سابقة ⇒ لا نسبة (لا صفر)', () {
+      expect(picpos.salesDeltaPct(1000, null), isNull,
+          reason: 'شارةُ «‏0%» تدّعي ثباتاً لم يُقَس أصلاً');
+    });
+
+    test('الفترةُ السابقة صفرٌ ⇒ لا نسبة', () {
+      // القسمةُ على صفرٍ في Dart تعطي `Infinity` لا استثناءً، فتُطبَع
+      // «‏+Infinity%» على شاشةٍ ماليّةٍ لو مرّت. وهي ليست نموّاً بل غيابُ
+      // أساسٍ للمقارنة.
+      expect(picpos.salesDeltaPct(1000, 0), isNull);
+      expect(picpos.salesDeltaPct(0, 0), isNull);
+    });
+
+    test('الاتّجاهان يُحسبان على الأساس السابق لا الحاليّ', () {
+      // ‏١٥٠ عن ١٠٠ = +٥٠٪ (لا +٣٣٪ الذي ينتج من القسمة على الحاليّ).
+      expect(picpos.salesDeltaPct(150, 100), closeTo(50, 0.001));
+      expect(picpos.salesDeltaPct(50, 100), closeTo(-50, 0.001));
+      expect(picpos.salesDeltaPct(100, 100), closeTo(0, 0.001));
+    });
+  });
+
   group('بطاقةُ إجماليات المبيعات الرئيسيّة', () {
     testWidgets('بالصلاحية — المعادلةُ الأربعةُ كاملةً بأرقامها',
         (tester) async {
