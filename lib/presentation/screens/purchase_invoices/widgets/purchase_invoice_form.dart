@@ -119,7 +119,20 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
     // أصلاً (accounting_tables.dart:107-119)، فالحصرُ غيرُ قابلٍ للتمثيل.
     final ccs = await accountingRepo.getActiveCostCenters();
 
-    final warehouses = List<db.Warehouse>.of(whs);
+    // ⊕ نطاقُ المستخدم **فوق** نطاقِ الجهاز — الاثنان معاً لا أحدُهما.
+    // `getScopedWarehouses` تحصر بفرع **الجهاز** (وضعُ العميل، Spec 103)،
+    // وهي لا ترى مستخدماً مخصَّصاً لفرعٍ على جهازٍ **مستقلّ**.
+    // و`assignableWarehousesProvider` يحسم الأوضاعَ الأربعة من
+    // `branchScopeProvider` ويُسقط المحذوفَ ناعماً والمعطَّل.
+    //
+    // فالتقاطعُ يُرضي الحدَّين ولا يوسّع أيَّهما: كلُّ ما يمنعه أحدُهما ممنوع.
+    final assignableIds =
+        (await ref.read(assignableWarehousesProvider(null).future))
+            .map((w) => w.id)
+            .toSet();
+    final warehouses = List<db.Warehouse>.of(
+      whs.where((w) => assignableIds.contains(w.id)),
+    );
     final costCenters = List<db.CostCenter>.of(ccs);
 
     // وضعُ التحرير — ضمُّ قيمةِ الفاتورة نفسِها إن غابت عن القائمة المحصورة.
@@ -151,8 +164,34 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
         _categories = cats;
         _warehouses = warehouses;
         _costCenters = costCenters;
+        // فاتورةٌ جديدة: انتقِ المخزنَ الافتراضيَّ (وإلا أوّلَ متاح). بدون
+        // هذا الانتقاء يصل `warehouseId: null` إلى المستودع فيحوّله `?? 1`
+        // إلى المخزن رقم ١ — وقد لا يكون مخزنَ هذا الفرع ولا موجوداً أصلاً.
+        // وبلا مخازنَ إطلاقاً يبقى `null` فيرفض الزرُّ بدل أن يخترع مخزناً.
+        _selectedWarehouseId ??= warehouses
+                .where((w) => w.isDefault)
+                .firstOrNull
+                ?.id ??
+            warehouses.firstOrNull?.id;
+        // ومركزُ التكلفةِ يتبع المخزنَ المنتقى — وهو ما يربطه بالفرع، إذ لا
+        // عمودَ فرعٍ في `CostCenters`. وفي التحرير تحتفظ الفاتورةُ بمركزها.
+        _selectedCostCenterId ??=
+            _costCenterFor(_selectedWarehouseId, warehouses, costCenters);
       });
     }
+  }
+
+  /// مركزُ تكلفةِ [warehouseId] إن كان حاضراً في [costCenters] المحمَّلة.
+  /// وشرطُ الحضورِ ليس تجميلاً: `DropdownButton` ينهار على قيمةٍ ليست في عناصره.
+  int? _costCenterFor(
+    int? warehouseId,
+    List<db.Warehouse> warehouses,
+    List<db.CostCenter> costCenters,
+  ) {
+    final costCenterId =
+        warehouses.where((w) => w.id == warehouseId).firstOrNull?.costCenterId;
+    if (costCenterId == null) return null;
+    return costCenters.any((c) => c.id == costCenterId) ? costCenterId : null;
   }
 
   Future<void> _loadInvoiceItems() async {
@@ -352,7 +391,11 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
                       prefixIcon: Icon(PhosphorIconsBold.warehouse),
                     ),
                     items: _warehouses.map((w) => DropdownMenuItem(value: w.id, child: Text(w.name))).toList(),
-                    onChanged: (val) => setState(() => _selectedWarehouseId = val),
+                    onChanged: (val) => setState(() {
+                      _selectedWarehouseId = val;
+                      _selectedCostCenterId =
+                          _costCenterFor(val, _warehouses, _costCenters);
+                    }),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -607,6 +650,16 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
   }
 
   Future<void> _handleSave({required bool isDraft, bool printAfterSave = false}) async {
+    // المخزنُ أوّلاً: الحقلُ الوحيدُ الذي كان غيابُه يمرّ صامتاً. القائمةُ
+    // تُنتقى سلفاً متى وُجد مخزنٌ واحدٌ في النطاق، فلا تظهر هذه الرسالةُ إلا
+    // حين لا مخزنَ أصلاً — وحينها الرفضُ الصريحُ أوضحُ من فرعٍ خاطئٍ صامت
+    // (كان `warehouseId ?? 1` في مُعالِج الحفظ يخترع المخزنَ رقم ١).
+    if (_selectedWarehouseId == null) {
+      AppToast.show(context, 'يجب اختيار المخزن قبل حفظ الفاتورة',
+          type: ToastType.error);
+      return;
+    }
+
     // Invoice number is optional — the backend generates a short sequential
     // one (PINV-N) when the field is left blank.
     if (_selectedSupplierId == null || _items.isEmpty) {
