@@ -51,6 +51,7 @@ class PicPosDialogAction {
     required this.onPressed,
     this.icon,
     this.color,
+    this.busy = false,
   });
 
   final String label;
@@ -63,6 +64,13 @@ class PicPosDialogAction {
 
   /// لونُ الزرّ الرئيسيّ — يُهمَل في الأزرار الثانويّة.
   final Color? color;
+
+  /// الإجراءُ قيد التنفيذ — تحلّ دوّارةٌ محلَّ الأيقونة.
+  ///
+  /// ولا يكفي [onPressed] الفارغُ وحدَه: زرٌّ معطَّلٌ بلا إشارةِ انشغالٍ
+  /// يُقرأ «مكسور» لا «يعمل الآن»، فيُنقَر ثانيةً — وفي إجراءٍ يمسّ أرصدةً
+  /// تكون النقرةُ الثانيةُ تشغيلاً ثانياً لو رُفع التعطيل يوماً.
+  final bool busy;
 }
 
 /// غلافُ حوارٍ على هويّة PicPos: رأسٌ بأيقونةٍ ملوّنة، جسمٌ، وتذييلُ أزرار.
@@ -272,15 +280,31 @@ class PicPosDialog extends StatelessWidget {
     );
   }
 
+  /// أيقونةُ الزرّ — أو دوّارةٌ بمقاسها حين يكون الإجراءُ قيد التنفيذ.
+  ///
+  /// المقاسُ ثابتٌ في الحالتين كي لا يقفز عرضُ الزرّ حين يبدأ العمل.
+  static Widget _leading(PicPosDialogAction a, double size, Color spinner) {
+    if (a.busy) {
+      return SizedBox(
+        width: size,
+        height: size,
+        child: CircularProgressIndicator(strokeWidth: 2, color: spinner),
+      );
+    }
+    return a.icon == null ? const SizedBox.shrink() : Icon(a.icon, size: size);
+  }
+
   Widget _secondary(BuildContext context, PicPosDialogAction a) {
     final theme = Theme.of(context);
     return SizedBox(
       height: 40,
       child: OutlinedButton.icon(
         onPressed: a.onPressed,
-        icon: a.icon == null
-            ? const SizedBox.shrink()
-            : Icon(a.icon, size: 15),
+        icon: _leading(
+          a,
+          15,
+          theme.textTheme.bodyMedium?.color ?? AppColors.primary,
+        ),
         label: Text(
           a.label,
           style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
@@ -302,9 +326,7 @@ class PicPosDialog extends StatelessWidget {
       height: 40,
       child: ElevatedButton.icon(
         onPressed: a.onPressed,
-        icon: a.icon == null
-            ? const SizedBox.shrink()
-            : Icon(a.icon, size: 16),
+        icon: _leading(a, 16, Colors.white),
         label: Text(
           a.label,
           style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800),

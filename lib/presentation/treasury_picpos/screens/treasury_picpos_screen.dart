@@ -49,6 +49,8 @@ import '../../providers/breadcrumb_provider.dart';
 import '../../../domain/usecases/accounting/get_cashflow_statement_usecase.dart';
 import '../../screens/treasury_screen.dart' show safeTransactionsProvider;
 import '../../picpos_shell/picpos_screen_scaffold.dart';
+// نمطُ ديالوجات PicPos — غلافُ الحوارات المشترك.
+import '../../picpos_shell/picpos_dialog.dart';
 
 /// شاشة الصناديق والخزينة بهوية PicPos. تُختار بالعلامة في app_main_screen
 /// (`Brand.isPicPos`). تعيد استخدام نفس `scopedSafesProvider`/
@@ -622,43 +624,51 @@ class _ReconciliationDialogState extends ConsumerState<_ReconciliationDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Row(
-        children: [
-          const Icon(PhosphorIconsBold.scales, color: AppColors.info, size: 22),
-          const SizedBox(width: 8),
-          Text('مراجعة الأرصدة',
-              style: GoogleFonts.cairo(fontWeight: FontWeight.w700, fontSize: 18)),
-        ],
-      ),
-      content: SizedBox(
-        width: 520,
-        height: 380,
-        child: _loading
-            ? const Center(child: CircularProgressIndicator())
-            : _reports == null
-                ? const Center(child: Text('لم يتم تشغيل المراجعة بعد'))
-                : _buildReportsView(),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('إغلاق'),
-        ),
-        OutlinedButton.icon(
+    // نمطُ ديالوجات PicPos (تصميمُ 2026-08-21) — والعرضُ ٦٦٠ كما في التصميم
+    // لا ٧٦٠: هذا حوارُ مراجعةٍ لا سندُ إدخال.
+    //
+    // ‏`scrollable: false` بقصد: الجسمُ يحمل قائمةً لها ارتفاعُها وتمريرُها
+    // الداخليّ، فتمريرٌ خارجيٌّ فوقه يعطي شريطَي تمريرٍ متداخلَين.
+    final hasDiscrepancies =
+        _reports != null && _reports!.any((r) => r.discrepanciesFound > 0);
+
+    return PicPosDialog(
+      icon: PhosphorIconsBold.scales,
+      accent: AppColors.info,
+      title: 'مراجعة الأرصدة',
+      subtitle: 'مطابقة الأرصدة الفعلية مع دفتر الأستاذ',
+      width: 660,
+      scrollable: false,
+      onCancel: () => Navigator.pop(context),
+      cancelLabel: 'إغلاق',
+      secondaryActions: [
+        PicPosDialogAction(
+          label: 'إعادة الفحص',
+          icon: PhosphorIconsBold.arrowsClockwise,
           onPressed: _loading ? null : () => _runReconciliation(),
-          icon: const Icon(PhosphorIconsBold.arrowsClockwise, size: 16),
-          label: const Text('إعادة الفحص'),
         ),
-        if (_reports != null && _reports!.any((r) => r.discrepanciesFound > 0))
-          ElevatedButton.icon(
-            onPressed: _fixing ? null : () => _runReconciliation(autoFix: true),
-            icon: _fixing
-                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : const Icon(PhosphorIconsBold.wrench, size: 16),
-            label: const Text('إصلاح تلقائي'),
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.warning),
-          ),
+      ],
+      // لا زرَّ إصلاحٍ حين لا فرقَ يُصلَح — إجراءٌ بلا أثرٍ أسوأُ من غيابه.
+      primaryAction: hasDiscrepancies
+          ? PicPosDialogAction(
+              label: 'إصلاح تلقائي',
+              icon: PhosphorIconsBold.wrench,
+              color: AppColors.warning,
+              // الدوّارةُ تبقى كما كانت: الإصلاحُ يمسّ أرصدةً، فإخفاءُ
+              // انشغاله كان يغري بنقرةٍ ثانية.
+              busy: _fixing,
+              onPressed: _fixing ? null : () => _runReconciliation(autoFix: true),
+            )
+          : null,
+      body: [
+        SizedBox(
+          height: 380,
+          child: _loading
+              ? const Center(child: CircularProgressIndicator())
+              : _reports == null
+                  ? const Center(child: Text('لم يتم تشغيل المراجعة بعد'))
+                  : _buildReportsView(),
+        ),
       ],
     );
   }

@@ -460,4 +460,55 @@ void main() {
               'بنقرةٍ في الفراغ.');
     });
   });
-}
+
+  group('الانشغال', () {
+    testWidgets('busy يُظهر دوّارةً بدل الأيقونة', (tester) async {
+      tester.view.physicalSize = const Size(900, 700);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(const MaterialApp(
+        home: Scaffold(
+          body: PicPosDialog(
+            icon: PhosphorIconsBold.scales,
+            title: 'مراجعة الأرصدة',
+            body: [Text('جسم')],
+            primaryAction: PicPosDialogAction(
+              label: 'إصلاح تلقائي',
+              icon: PhosphorIconsBold.wrench,
+              busy: true,
+              onPressed: null,
+            ),
+          ),
+        ),
+      ));
+      await tester.pump();
+      expect(find.byType(CircularProgressIndicator), findsOneWidget,
+          reason: 'زرٌّ معطَّلٌ بلا إشارةِ انشغالٍ يُقرأ «مكسور» لا «يعمل الآن»');
+      expect(find.byIcon(PhosphorIconsBold.wrench), findsNothing,
+          reason: 'الدوّارةُ تحلّ محلَّ الأيقونة لا تُضاف إليها');
+    });
+
+    testWidgets('بلا busy تظهر الأيقونةُ ولا دوّارة', (tester) async {
+      tester.view.physicalSize = const Size(900, 700);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: PicPosDialog(
+            icon: PhosphorIconsBold.scales,
+            title: 'مراجعة الأرصدة',
+            body: const [Text('جسم')],
+            primaryAction: PicPosDialogAction(
+              label: 'إصلاح تلقائي',
+              icon: PhosphorIconsBold.wrench,
+              onPressed: () {},
+            ),
+          ),
+        ),
+      ));
+      await tester.pump();
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.byIcon(PhosphorIconsBold.wrench), findsOneWidget);
+    });
+  });
+}
