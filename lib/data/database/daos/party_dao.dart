@@ -187,6 +187,83 @@ extension PartyDao on AppDatabase {
         ._coalesced; // Spec 115 L1+L2
   }
 
+  /// صفحةٌ من العملاء أو الموردين — **بسقفٍ وبحثٍ في SQL**.
+  ///
+  /// ═══ لماذا وُجدت ═══
+  ///
+  /// `watchCustomers`/`watchSuppliers` و`_watchPartiesForBranches` تُرجع
+  /// **كلَّ** الصفوف بلا `LIMIT`، مبثوثةً في `StreamProvider`. والعرضُ مسقوفٌ
+  /// بـ«تحميل المزيد» في الشاشة، لكنّ ذلك يسقّف **الرسمَ** لا **البيانات**:
+  /// عشرةُ آلاف طرفٍ تعني عشرةَ آلاف كائنٍ يُبنى في كلّ بثّةٍ من جدول
+  /// `parties`، ويُمرَّر عليه فلترُ Dart مع **كلّ ضغطة مفتاح** في خانة البحث.
+  ///
+  /// فالسقفُ والبحثُ نزلا إلى الاستعلام. والدلالةُ لم تتغيّر: البحثُ على
+  /// الاسم أو الهاتف — نفسُ ما كان فلترُ Dart يفعله بالضبط — والترتيبُ
+  /// بالاسم كما كان.
+  ///
+  /// [limit] سقفُ الصفوف المعادة. [search] فارغاً ⇒ لا شرطَ بحث.
+  Stream<List<Party>> watchPartiesPage({
+    required bool isCustomer,
+    Set<int>? allowedBranchIds,
+    String search = '',
+    int limit = 200,
+  }) {
+    // فارغةٌ لا تحدث (الوصولُ الكاملُ يُخرَّج null فوق) لكنّ الحراسةَ تبقى:
+    // `OR ` بلا بنودٍ خطأٌ نحويٌّ لا قائمةٌ فارغة.
+    if (allowedBranchIds != null && allowedBranchIds.isEmpty) {
+      return Stream<List<Party>>.value(const []);
+    }
+
+    final typeFilter =
+        isCustomer ? 'AND is_customer = ${sqlBool(true)}' : 'AND is_supplier = ${sqlBool(true)}';
+
+    final vars = <Variable>[];
+    var branchClause = '';
+    if (allowedBranchIds != null) {
+      final ids = allowedBranchIds.toList();
+      final orClauses = ids
+          .map((_) => "(',' || COALESCE(branch_ids, '') || ',') LIKE ?")
+          .join(' OR ');
+      branchClause = 'AND (is_global = ${sqlBool(true)} OR $orClauses)';
+      vars.addAll([for (final id in ids) Variable.withString('%,$id,%')]);
+    }
+
+    var searchClause = '';
+    final q = search.trim();
+    if (q.isNotEmpty) {
+      // `COALESCE` على الهاتف **دفاعيّةٌ لا مُصلِحةٌ لعطب**: `NULL LIKE ?`
+      // تُنتج NULL، لكنّ `TRUE OR NULL` = TRUE في منطق SQL الثلاثيّ — فصفٌّ
+      // بلا هاتفٍ يطابق اسمُه يظهر بالحالتين. (قِيس: إزالتُها لم تُحمِّر
+      // اختباراً، وهو ما صحّح تبريراً كان مكتوباً هنا خطأً.)
+      //
+      // وتبقى لأنها تُثبِّت الدلالةَ إن أُعيدت صياغةُ الشرط لاحقاً — ‏`AND`
+      // بدل `OR`، أو نقلُ الهاتف إلى شرطٍ مستقلّ — فحينها يصير NULL قاتلاً.
+      searchClause =
+          "AND (name LIKE ? OR COALESCE(phone, '') LIKE ?)";
+      vars.add(Variable.withString('%$q%'));
+      vars.add(Variable.withString('%$q%'));
+    }
+
+    vars.add(Variable.withInt(limit));
+
+    return customSelect(
+      '''
+      SELECT * FROM parties
+      WHERE is_active = ${sqlBool(true)}
+        $typeFilter
+        $branchClause
+        $searchClause
+      ORDER BY name ASC
+      LIMIT ?
+      ''',
+      variables: vars,
+      readsFrom: {parties},
+    )
+        .watch()
+        .map((rows) => rows.map((row) => parties.map(row.data)).toList())
+        ._coalesced; // Spec 115 L1+L2
+  }
+
   /// Get party by ID
   Future<Party?> getPartyById(int id) {
     return (select(parties)..where((p) => p.id.equals(id))).getSingleOrNull();
