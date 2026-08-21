@@ -152,6 +152,13 @@ Future<void> _pumpForm(
         branchRepositoryProvider.overrideWithValue(branchRepo),
         accountingRepositoryProvider.overrideWithValue(accountingRepo),
         purchasesRepositoryProvider.overrideWithValue(_StubPurchasesRepo()),
+        // النموذجُ صار يتقاطع مع نطاقِ المستخدم فوق نطاقِ الجهاز، فلا بدّ من
+        // تثبيت الطرفِ الثاني هنا أيضاً — وإلّا قرأ المزوِّدُ الحقيقيُّ قاعدةً
+        // غيرَ مهيّأةٍ فأفرغ التقاطعَ وسقط الاختبارُ لسببٍ ليس موضوعَه.
+        // ونُثبِّته على **نفسِ** محتوى الحصر: التقاطعُ يُقاس لا يُوسَّع.
+        assignableWarehousesProvider(null).overrideWith(
+          (ref) async => [_warehouse(_inScopeWarehouseId, 'مخزن الفرع')],
+        ),
       ],
       child: MaterialApp(
         home: Scaffold(
