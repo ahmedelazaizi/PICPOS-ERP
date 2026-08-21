@@ -23,6 +23,28 @@ const _expected = <String>[
   'bookings_settings',
 ];
 
+/// خريطةُ تحويلِ الكودِ إلى اسمِ الثابتِ (snake_case → lowerCamelCase)
+Map<String, String> _codeToConstantName(List<String> codes) {
+  final result = <String, String>{};
+  for (final code in codes) {
+    final parts = code.split('_');
+    final constantName =
+        parts[0] + parts.skip(1).map((p) => p[0].toUpperCase() + p.substring(1)).join();
+    result[code] = constantName;
+  }
+  return result;
+}
+
+/// استخراجُ قسمِ masterList من ملف permission_codes.dart
+String _extractMasterList(String src) {
+  final match = RegExp(r'static final List<Map<String, String>> masterList = \[([\s\S]*?)\];')
+      .firstMatch(src);
+  expect(match, isNotNull,
+      reason: 'تعذّر العثورُ على masterList في permission_codes.dart — تغيّرَ '
+          'شكلُ القائمة، حدِّث نمطَ البحث في هذا الحارس');
+  return match!.group(1)!;
+}
+
 void main() {
   test('كلُّ كودِ حجزٍ مسجَّلٌ في الملفَّات الثلاث معاً', () {
     final codes =
@@ -57,12 +79,18 @@ void main() {
 
     // ─────────────────────────────────────────────────────────────────────
     // Check 3: في masterList (بصيغة: {'code': bookingsXxx, ...})
+    // استخراجٌ من الأول — الكود لا يشتغل إن القائمةُ الشكل غيّرت
     // ─────────────────────────────────────────────────────────────────────
+    final masterListSection = _extractMasterList(codes);
+    final codeToConstant = _codeToConstantName(_expected);
+
     final missingFromMasterList = _expected
-        .where((c) =>
-            !RegExp(r"'code':\s*\w+\s*,\s*'name':[^}]*'category':\s*'bookings'")
-                .hasMatch(codes) ||
-            !codes.contains("'$c'"))
+        .where((code) {
+          final constantName = codeToConstant[code]!;
+          // ابحث عن {'code': bookingsXxx, ... في قسم masterList فقط
+          return !RegExp(r"'code':\s*" + constantName + r"\s*,")
+              .hasMatch(masterListSection);
+        })
         .toList();
 
     expect(missingFromMasterList, isEmpty,
