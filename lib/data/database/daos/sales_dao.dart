@@ -106,11 +106,27 @@ class SalesInvoiceSummary {
   /// إجمالي المرتجعات في نفس المدى والنطاق.
   final double totalReturns;
 
+  /// عددُ الفواتير المدفوعةِ بالكامل في نفس المدى والنطاق.
+  ///
+  /// الثلاثةُ تُحسَب في **نفس** استعلام الإجماليات، ومجموعُها
+  /// [invoiceCount] بالضبط: الحدودُ متتابعةٌ لا متداخلة
+  /// (‏`paid >= total` ثمّ `0 < paid < total` ثمّ `paid <= 0`).
+  final int paidCount;
+
+  /// عددُ الفواتير المدفوعةِ جزئيّاً.
+  final int partialCount;
+
+  /// عددُ الفواتير غيرِ المدفوعة.
+  final int unpaidCount;
+
   const SalesInvoiceSummary({
     required this.invoiceCount,
     required this.totalAmount,
     required this.totalPaid,
     required this.totalReturns,
+    this.paidCount = 0,
+    this.partialCount = 0,
+    this.unpaidCount = 0,
   });
 
   /// البند 2 — «صافي المبيعات» الذي طلبه العميل صراحةً.
@@ -1048,10 +1064,21 @@ extension SalesDao on AppDatabase {
         'AND invoice_date >= ? AND invoice_date < ?'
         '$whFilter$brFilter$ccFilter';
 
+    // عدّاداتُ الحالة في **نفس** الاستعلام لا في ثلاثةٍ بعده: الشرائحُ في
+    // شريط الترشيح تعرضها، ولو حُسبت من الصفحة المحمَّلة (سقفُها ٥٠٠ صفّ)
+    // لأعطت عدداً أقلَّ من الحقيقة بلا ما يشي بذلك.
+    //
+    // والحدُّ `paid >= total` لا `paid == total`: دفعةٌ زائدةٌ بقروشٍ
+    // (تقريبُ ضريبةٍ أو تحصيلٌ مدوَّر) تجعل الفاتورةَ مدفوعةً لا «جزئيّة».
+    // ونفسُ ترتيب `_applyFilters` — مدفوعٌ أوّلاً ثمّ جزئيٌّ ثمّ غيرُ مدفوع —
+    // كي لا تُعَدَّ فاتورةٌ في خانتين.
     final sales = await customSelect(
       'SELECT COUNT(*) AS n, '
       'COALESCE(SUM(total), 0) AS total, '
-      'COALESCE(SUM(paid), 0) AS paid '
+      'COALESCE(SUM(paid), 0) AS paid, '
+      'SUM(CASE WHEN paid >= total THEN 1 ELSE 0 END) AS n_paid, '
+      'SUM(CASE WHEN paid > 0 AND paid < total THEN 1 ELSE 0 END) AS n_partial, '
+      'SUM(CASE WHEN paid <= 0 THEN 1 ELSE 0 END) AS n_unpaid '
       'FROM sales_invoices WHERE $scope',
       variables: vars,
       readsFrom: {salesInvoices},
@@ -1150,6 +1177,9 @@ extension SalesDao on AppDatabase {
       totalAmount: total,
       totalPaid: paid,
       totalReturns: returned,
+      paidCount: (sales.data['n_paid'] as num?)?.toInt() ?? 0,
+      partialCount: (sales.data['n_partial'] as num?)?.toInt() ?? 0,
+      unpaidCount: (sales.data['n_unpaid'] as num?)?.toInt() ?? 0,
     );
   }
 

@@ -91,6 +91,13 @@ class SalesInvoicesScreenState {
   /// مقارنةُ الفترة السابقة — `null` = غيرُ متاحة، لا صفر.
   final SalesPreviousPeriod? previousPeriod;
 
+  /// عدّاداتُ الحالة لشرائح الترشيح — `{'paid': n, 'partial': n, 'unpaid': n}`.
+  ///
+  /// مصدرُها تجميعُ SQL على **كلّ** المطابق لا على الصفحة المحمَّلة: العدُّ
+  /// من `allInvoices` كان سيتوقّف عند سقف الصفحة (٥٠٠) فيعطي رقماً أقلَّ من
+  /// الحقيقة بلا ما يشي بذلك. وفارغةٌ ⇒ لا عدّادَ يُعرض، لا صفر.
+  final Map<String, int> statusCounts;
+
   SalesInvoicesScreenState({
     this.allInvoices = const [],
     this.filteredInvoices = const [],
@@ -118,6 +125,7 @@ class SalesInvoicesScreenState {
     this.displayLimit = 50,
     this.hasMore = false,
     this.previousPeriod,
+    this.statusCounts = const {},
   });
 
   SalesInvoicesScreenState copyWith({
@@ -151,6 +159,7 @@ class SalesInvoicesScreenState {
     bool? hasMore,
     SalesPreviousPeriod? previousPeriod,
     bool clearPreviousPeriod = false,
+    Map<String, int>? statusCounts,
   }) {
     return SalesInvoicesScreenState(
       allInvoices: allInvoices ?? this.allInvoices,
@@ -181,6 +190,7 @@ class SalesInvoicesScreenState {
       previousPeriod: clearPreviousPeriod
           ? null
           : (previousPeriod ?? this.previousPeriod),
+      statusCounts: statusCounts ?? this.statusCounts,
     );
   }
 }
@@ -689,6 +699,11 @@ class SalesInvoicesController extends Notifier<SalesInvoicesScreenState> {
         totalReturns: summary.totalReturns,
         totalRemaining: summary.totalRemaining,
         invoiceCount: summary.invoiceCount,
+        statusCounts: {
+          'paid': summary.paidCount,
+          'partial': summary.partialCount,
+          'unpaid': summary.unpaidCount,
+        },
       );
       unawaited(_refreshPreviousPeriod(window));
     } catch (e) {
