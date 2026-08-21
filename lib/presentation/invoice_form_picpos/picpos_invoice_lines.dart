@@ -1,0 +1,804 @@
+// سطرُ الإدخال السريع وجدولُ البنود — الجزءُ الأيمنُ من شاشة «فاتورة جديدة».
+part of 'picpos_invoice_form.dart';
+
+/// نِسَبُ الأعمدة كما في التصميم — مصدرٌ واحدٌ للرأس والصفوف معاً.
+///
+/// نسختان منفصلتان كانتا ستنحرفان بأوّل تعديلٍ فتُزاح العناوينُ عن أعمدتها
+/// بلا ما يكسر بناءً — انحرافٌ لا يظهر إلا بالعين.
+const _kIdxW = 4;
+const _kNameW = 33;
+const _kUnitW = 10;
+const _kQtyW = 13;
+const _kPriceW = 12;
+const _kTaxW = 10;
+const _kTotalW = 13;
+const double _kDelW = 42;
+
+/// مفتاحُ حقلِ البحث في سطر الإدخال السريع — يستهدفه الاختبارُ بالاسم لا
+/// بالترتيب.
+@visibleForTesting
+const quickAddSearchKey = Key('picpos_quick_add_search');
+
+/// سطرُ الإدخال السريع — باركودٌ عريضٌ ثمّ كمّيّةٌ ثمّ إضافة.
+class _PicPosQuickAdd extends StatelessWidget {
+  const _PicPosQuickAdd({required this.state});
+  final _PicPosInvoiceFormState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final muted = _fMuted(context);
+    final field = _fField(context);
+
+    return Container(
+      height: 62,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        border: Border.all(color: theme.dividerColor),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          // ── الباركود / البحث ────────────────────────────────────────
+          Expanded(
+            child: Container(
+              height: 42,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: field,
+                border: Border.all(
+                  color: AppColors.primary.withValues(alpha: .55),
+                  width: 1.5,
+                ),
+                borderRadius: BorderRadius.circular(11),
+              ),
+              child: Row(
+                children: [
+                  const Icon(PhosphorIconsBold.barcode,
+                      size: 18, color: AppColors.primary),
+                  const SizedBox(width: 9),
+                  Expanded(
+                    child: TextField(
+                      // مفتاحٌ صريحٌ لا ترتيبٌ في الشجرة: في نمط المشتريات
+                      // يسبق حقلُ «رقم فاتورة المورد» هذا الحقلَ، فاستهدافُه
+                      // بـ`byType(TextField).first` كان يكتب في الحقل الخطأ —
+                      // ويمرّ الاختبارُ في نمطٍ ويسقط في الآخر لسببٍ لا علاقةَ
+                      // له بما يُقاس.
+                      key: quickAddSearchKey,
+                      controller: state._searchController,
+                      focusNode: state._searchFocus,
+                      style: const TextStyle(
+                          fontSize: 12.5, fontWeight: FontWeight.w600),
+                      decoration: InputDecoration(
+                        isDense: true,
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.zero,
+                        hintText: 'امسح الباركود أو اكتب اسم الصنف…',
+                        hintStyle: TextStyle(fontSize: 12.5, color: muted),
+                      ),
+                      onSubmitted: (_) => _submit(context),
+                    ),
+                  ),
+                  // شارةُ F2 — والاختصارُ موصولٌ فعلاً أدناه، لا مرسومٌ فقط.
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: theme.cardColor,
+                      border: Border.all(color: theme.dividerColor),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      'F2',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: muted,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 9),
+
+          // ── الكمّيّة ────────────────────────────────────────────────
+          _box(
+            context,
+            width: 112,
+            label: 'الكمية',
+            child: TextField(
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              controller: TextEditingController(
+                text: state._quickQty == state._quickQty.roundToDouble()
+                    ? state._quickQty.toInt().toString()
+                    : state._quickQty.toString(),
+              ),
+              style: const TextStyle(
+                  fontSize: 12.5, fontWeight: FontWeight.w700),
+              decoration: const InputDecoration(
+                isDense: true,
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
+              ),
+              onChanged: (v) =>
+                  state._quickQty = NumberUtils.tryParseLocale(v) ?? 1,
+            ),
+          ),
+          const SizedBox(width: 9),
+
+          // ── زرُّ الإضافة ────────────────────────────────────────────
+          Material(
+            color: AppColors.primary,
+            borderRadius: BorderRadius.circular(11),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(11),
+              onTap: () => _submit(context),
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(PhosphorIconsBold.plus, size: 15, color: Colors.white),
+                    SizedBox(width: 7),
+                    Text('إضافة',
+                        style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 9),
+
+          // ── بحثٌ متقدّم ─────────────────────────────────────────────
+          OutlinedButton.icon(
+            onPressed: () => _openPicker(context),
+            icon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 15),
+            label: const Text('بحث متقدم'),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _box(
+    BuildContext context, {
+    required double width,
+    required String label,
+    required Widget child,
+  }) {
+    final muted = _fMuted(context);
+    return Container(
+      width: width,
+      height: 42,
+      padding: const EdgeInsets.symmetric(horizontal: 11),
+      decoration: BoxDecoration(
+        color: _fField(context),
+        border: Border.all(color: Theme.of(context).dividerColor),
+        borderRadius: BorderRadius.circular(11),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label,
+              style: TextStyle(
+                  fontSize: 9, fontWeight: FontWeight.w800, color: muted)),
+          SizedBox(height: 18, child: child),
+        ],
+      ),
+    );
+  }
+
+  /// إدخالٌ من الحقل: باركودٌ مطابقٌ تماماً يُضاف فوراً، وإلّا فُتح المنتقي
+  /// على النصّ المكتوب.
+  ///
+  /// والمطابقةُ الحرفيّةُ للباركود أوّلاً بقصد: قارئُ الباركود يُنهي بـEnter،
+  /// ففتحُ حوارٍ عند كلّ مسحةٍ كان سيُبطل الغرضَ من القارئ.
+  void _submit(BuildContext context) {
+    final q = state._searchController.text.trim();
+    if (q.isEmpty) {
+      _openPicker(context);
+      return;
+    }
+    final byBarcode = state.widget.products
+        .where((p) => p.barcode.isNotEmpty && p.barcode == q)
+        .firstOrNull;
+    if (byBarcode != null) {
+      state._addProduct(byBarcode);
+      return;
+    }
+    final exact = state.widget.products
+        .where((p) => p.name.toLowerCase() == q.toLowerCase())
+        .firstOrNull;
+    if (exact != null) {
+      state._addProduct(exact);
+      return;
+    }
+    _openPicker(context);
+  }
+
+  Future<void> _openPicker(BuildContext context) async {
+    final picked = await showDialog<int>(
+      context: context,
+      builder: (ctx) => _SearchPickerDialog(
+        title: 'اختر صنفاً',
+        items: [
+          for (final p in state.widget.products)
+            (
+              id: p.id,
+              title: p.name,
+              subtitle: p.sub.isNotEmpty
+                  ? p.sub
+                  : p.priceFor(state.widget.kind)
+                      .toStringAsFixed(AppConstants.decimalPlaces),
+            ),
+        ],
+      ),
+    );
+    if (picked == null) return;
+    final p = state.widget.products.where((x) => x.id == picked).firstOrNull;
+    if (p != null) state._addProduct(p);
+  }
+}
+
+/// جدولُ البنود — رأسٌ ثابتٌ، صفوفٌ مُفهرَسة، وتذييلُ إحصاء.
+class _PicPosLinesTable extends StatelessWidget {
+  const _PicPosLinesTable({required this.state});
+  final _PicPosInvoiceFormState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final lines = state._lines;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        border: Border.all(color: theme.dividerColor),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: [
+          _header(context),
+          Expanded(
+            child: lines.isEmpty
+                ? _empty(context)
+                // مُفهرَسٌ لا `Column` في `SingleChildScrollView`: فاتورةُ
+                // جملةٍ قد تحمل مئاتِ البنود، وبناءُ كلِّها في كلِّ إطارٍ هو
+                // العطبُ نفسُه الذي عولج في قائمة الفواتير.
+                : ListView.builder(
+                    itemCount: lines.length,
+                    itemBuilder: (context, i) => _LineRow(
+                      state: state,
+                      index: i,
+                      line: lines[i],
+                    ),
+                  ),
+          ),
+          _footer(context),
+        ],
+      ),
+    );
+  }
+
+  Widget _header(BuildContext context) {
+    final theme = Theme.of(context);
+    final muted = _fMuted(context);
+    Widget cell(String t, int flex, {TextAlign? align}) => Expanded(
+          flex: flex,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Text(
+              t,
+              textAlign: align,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w800,
+                color: muted,
+              ),
+            ),
+          ),
+        );
+
+    return Container(
+      height: 38,
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      decoration: BoxDecoration(
+        color: _fField(context),
+        border: Border(bottom: BorderSide(color: theme.dividerColor)),
+      ),
+      child: Row(
+        children: [
+          cell('#', _kIdxW),
+          cell('الصنف', _kNameW),
+          cell('الوحدة', _kUnitW),
+          cell('الكمية', _kQtyW),
+          cell(state.widget.kind.priceLabel, _kPriceW),
+          cell('الضريبة', _kTaxW),
+          cell('الإجمالي', _kTotalW, align: TextAlign.end),
+          const SizedBox(width: _kDelW),
+        ],
+      ),
+    );
+  }
+
+  Widget _empty(BuildContext context) {
+    final muted = _fMuted(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(PhosphorIconsBold.plusCircle, size: 15, color: muted),
+            const SizedBox(width: 10),
+            Flexible(
+              child: Text(
+                'استخدم سطر الإدخال أعلاه أو اضغط F2 لإضافة صنف جديد للفاتورة',
+                style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                  color: muted,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _footer(BuildContext context) {
+    final theme = Theme.of(context);
+    final muted = _fMuted(context);
+    final t = state._totals;
+    String n(double v) => v == v.roundToDouble()
+        ? v.toInt().toString()
+        : v.toStringAsFixed(AppConstants.decimalPlaces);
+
+    Widget sep() => Container(
+          width: 1,
+          height: 16,
+          margin: const EdgeInsets.symmetric(horizontal: 10),
+          color: theme.dividerColor,
+        );
+
+    return Container(
+      height: 46,
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      decoration: BoxDecoration(
+        color: _fField(context),
+        border: Border(top: BorderSide(color: theme.dividerColor)),
+      ),
+      // ⚠️ **مجموعةُ الإحصاء في `Flexible` بقصد.** كانت ثلاثةَ نصوصٍ عاريةً
+      // مع `Spacer` في صفٍّ واحد، فتفيض بـ١١٣ بكسل على شاشةِ ٨٠٠ — وهو
+      // مقاسُ كثيرٍ من شاشات نقاط البيع لا حالةٌ نادرة. والفيضُ في Flutter
+      // ليس قصّاً صامتاً بل شريطٌ أصفرُ وأسودُ فوق الواجهة.
+      child: Row(
+        children: [
+          Flexible(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Flexible(
+                  child: Text('${t.lineCount} بند',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          fontSize: 11.5, fontWeight: FontWeight.w700)),
+                ),
+                sep(),
+                Flexible(
+                  child: Text('إجمالي الكمية ${n(t.quantityTotal)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          fontSize: 11.5, fontWeight: FontWeight.w700)),
+                ),
+                sep(),
+                Flexible(
+                  child: Text(
+                    // متوسّطٌ على صفرِ بنودٍ يعطي `NaN` لا استثناءً — فيُحرَس.
+                    'متوسط قيمة البند '
+                    '${n(t.lineCount == 0 ? 0 : t.subtotal / t.lineCount)}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                        color: muted),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text('المجموع الفرعي',
+              maxLines: 1,
+              style: TextStyle(
+                  fontSize: 11.5, fontWeight: FontWeight.w600, color: muted)),
+          const SizedBox(width: 9),
+          Text(
+            t.subtotal.toStringAsFixed(AppConstants.decimalPlaces),
+            maxLines: 1,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+              fontFeatures: [ui.FontFeature.tabularFigures()],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// صفُّ بندٍ واحد — كمّيّةٌ بمُنقِصٍ ومُزيد، وسعرٌ محرَّر، وحبّةُ ضريبةٍ تُنقَر.
+class _LineRow extends StatelessWidget {
+  const _LineRow({
+    required this.state,
+    required this.index,
+    required this.line,
+  });
+
+  final _PicPosInvoiceFormState state;
+  final int index;
+  final PicPosInvoiceLine line;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final muted = _fMuted(context);
+    final field = _fField(context);
+
+    return Container(
+      constraints: const BoxConstraints(minHeight: 56),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: theme.dividerColor)),
+      ),
+      child: Row(
+        children: [
+          // ── الترتيب ─────────────────────────────────────────────────
+          Expanded(
+            flex: _kIdxW,
+            child: Center(
+              child: Container(
+                width: 22,
+                height: 22,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: field,
+                  border: Border.all(color: theme.dividerColor),
+                  borderRadius: BorderRadius.circular(7),
+                ),
+                child: Text(
+                  '${index + 1}',
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w800,
+                    color: muted,
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // ── الصنف ───────────────────────────────────────────────────
+          Expanded(
+            flex: _kNameW,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Text(
+                line.productName,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                    fontSize: 13, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ),
+
+          // ── الوحدة ──────────────────────────────────────────────────
+          Expanded(
+            flex: _kUnitW,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Container(
+                height: 28,
+                padding: const EdgeInsets.symmetric(horizontal: 9),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppColors.info.withValues(alpha: .12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  line.unitName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.info,
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // ── الكمّيّة ────────────────────────────────────────────────
+          Expanded(
+            flex: _kQtyW,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Container(
+                height: 32,
+                decoration: BoxDecoration(
+                  color: field,
+                  border: Border.all(color: theme.dividerColor),
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _step(
+                      icon: PhosphorIconsBold.minus,
+                      color: muted,
+                      // الكمّيّةُ لا تنزل تحت واحد: صفرٌ يعني سطراً بلا
+                      // أثرٍ ماليّ، وسالبٌ يقلب اتّجاهَ حركة المخزون.
+                      onTap: line.quantity <= 1
+                          ? null
+                          : () => state._updateLine(
+                                index,
+                                line.copyWith(quantity: line.quantity - 1),
+                              ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        line.quantity == line.quantity.roundToDouble()
+                            ? line.quantity.toInt().toString()
+                            : line.quantity.toString(),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w800,
+                          fontFeatures: [ui.FontFeature.tabularFigures()],
+                        ),
+                      ),
+                    ),
+                    _step(
+                      icon: PhosphorIconsBold.plus,
+                      color: AppColors.primary,
+                      onTap: () => state._updateLine(
+                        index,
+                        line.copyWith(quantity: line.quantity + 1),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // ── السعر ───────────────────────────────────────────────────
+          Expanded(
+            flex: _kPriceW,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Container(
+                height: 32,
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                decoration: BoxDecoration(
+                  color: field,
+                  border: Border.all(color: theme.dividerColor),
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                alignment: Alignment.centerRight,
+                child: TextField(
+                  key: ValueKey('price_${line.productId}'),
+                  controller: TextEditingController(
+                    text: line.unitPrice
+                        .toStringAsFixed(AppConstants.decimalPlaces),
+                  ),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  textAlign: TextAlign.right,
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    fontFeatures: [ui.FontFeature.tabularFigures()],
+                  ),
+                  decoration: const InputDecoration(
+                    isDense: true,
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  onSubmitted: (v) => state._updateLine(
+                    index,
+                    line.copyWith(
+                        unitPrice: NumberUtils.tryParseLocale(v) ??
+                            line.unitPrice),
+                  ),
+                  onTapOutside: (_) => FocusScope.of(context).unfocus(),
+                ),
+              ),
+            ),
+          ),
+
+          // ── الضريبة — حبّةٌ تُنقَر للتبديل ──────────────────────────
+          Expanded(
+            flex: _kTaxW,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: _TaxPill(
+                enabled: line.taxEnabled,
+                rate: line.taxRate,
+                onTap: () => state._updateLine(
+                  index,
+                  line.copyWith(taxEnabled: !line.taxEnabled),
+                ),
+              ),
+            ),
+          ),
+
+          // ── الإجمالي ────────────────────────────────────────────────
+          Expanded(
+            flex: _kTotalW,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    line.lineTotalWithTax
+                        .toStringAsFixed(AppConstants.decimalPlaces),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      fontFeatures: [ui.FontFeature.tabularFigures()],
+                    ),
+                  ),
+                  if (line.taxEnabled && line.taxAmount > 0)
+                    Text(
+                      'منها ضريبة '
+                      '${line.taxAmount.toStringAsFixed(AppConstants.decimalPlaces)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w600,
+                        color: muted,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+
+          // ── الحذف ───────────────────────────────────────────────────
+          SizedBox(
+            width: _kDelW,
+            child: Center(
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(9),
+                  onTap: () => state._removeLine(index),
+                  child: Container(
+                    width: 30,
+                    height: 30,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: theme.dividerColor),
+                      borderRadius: BorderRadius.circular(9),
+                    ),
+                    child: const Icon(PhosphorIconsBold.trash,
+                        size: 13, color: AppColors.error),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _step({
+    required IconData icon,
+    required Color color,
+    required VoidCallback? onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: SizedBox(
+        width: 28,
+        height: 30,
+        child: Icon(
+          icon,
+          size: 11,
+          color: onTap == null ? color.withValues(alpha: .3) : color,
+        ),
+      ),
+    );
+  }
+}
+
+/// حبّةُ الضريبة — مشتعلةٌ أو مطفأة، والنسبةُ تُعرض حين تُشتعل.
+class _TaxPill extends StatelessWidget {
+  const _TaxPill({
+    required this.enabled,
+    required this.rate,
+    required this.onTap,
+  });
+
+  final bool enabled;
+  final double rate;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final muted = _fMuted(context);
+    final on = enabled && rate > 0;
+    final color = on ? AppColors.info : muted;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          height: 28,
+          padding: const EdgeInsets.symmetric(horizontal: 9),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: .12),
+            border: Border.all(color: color.withValues(alpha: .35)),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                on ? PhosphorIconsBold.checkCircle : PhosphorIconsBold.prohibit,
+                size: 11,
+                color: color,
+              ),
+              const SizedBox(width: 5),
+              Flexible(
+                child: Text(
+                  // النسبةُ من الصنف أو من إعداد النظام — لا «١٤٪» مطبوعة.
+                  on ? '${rate.toStringAsFixed(0)}%' : 'بلا',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: color,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

@@ -23,6 +23,9 @@ import '../../../data/services/excel_service.dart';
 import '../../screens/purchase_invoices/widgets/purchase_invoice_form.dart';
 import '../../widgets/common/common.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
+// تصميمُ 2026-08-21 — شاشةُ «فاتورة جديدة» المشتركة بين النمطَين.
+import '../../invoice_form_picpos/picpos_invoice_form.dart';
+import '../../../domain/models/picpos_invoice_draft.dart';
 import '../../picpos_shell/picpos_content_card.dart';
 
 // ── Part files (mixin-based extraction — faithful copy of the UralCash
@@ -136,7 +139,7 @@ class _PurchasesPicposScreenState extends ConsumerState<PurchasesPicposScreen>
     return AppShortcuts(
       searchFocusNode: _searchFocusNode,
       searchController: _searchController,
-      onNew: createNewInvoice, // من الـ mixin المنسوخ
+      onNew: createNewInvoicePicPos, // شاشةُ التصميم الجديدة
       child: PicPosScreenScaffold(
         title: 'المشتريات',
         icon: PhosphorIconsBold.receipt,
@@ -160,7 +163,7 @@ class _PurchasesPicposScreenState extends ConsumerState<PurchasesPicposScreen>
           ),
           const SizedBox(width: 8),
           ElevatedButton.icon(
-            onPressed: createNewInvoice,
+            onPressed: createNewInvoicePicPos,
             icon: const Icon(PhosphorIconsBold.plus, size: 18),
             label: const Text('فاتورة جديدة'),
           ),

@@ -75,6 +75,152 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
     );
   }
 
+  /// «فاتورة جديدة» على تصميم PicPos (‏2026-08-21).
+  ///
+  /// ⚠️ **ولا تلمس مسارَ المال**: تنتهي إلى `_handleSavePurchaseSimple`
+  /// نفسِها التي ينتهي إليها [createNewInvoice] القديم، بنفس الوسائط. فما
+  /// تبدّل هو العرضُ وحدَه.
+  ///
+  /// والقديمُ [createNewInvoice] يبقى موصولاً بـ«تعديل» ولم يُحذَف: النموذجُ
+  /// الجديدُ للإنشاء فقط (اقرأ رأس `picpos_invoice_form.dart`).
+  Future<void> createNewInvoicePicPos() async {
+    if (!mounted) return;
+    // نفسُ حارسِ [createNewInvoice] — يغطّي الزرَّ و**F5** معاً.
+    if (!await ensurePermission(
+        ref, context, PermissionCodes.purchasesCreate,
+        actionName: 'فاتورة مشتريات جديدة')) {
+      return;
+    }
+    if (!mounted) return;
+
+    final controller = ref.read(purchaseInvoicesControllerProvider.notifier);
+    final suppliers = await controller.getSuppliers();
+    final products = await controller.getProducts();
+    final warehouses = await ref.read(allWarehousesProvider.future);
+    final costCenters = await ref.read(allCostCentersProvider.future);
+    // النسبةُ من الإعداد لا رقمٌ مطبوع — «١٤٪» في التصميم قيمةُ عيّنة.
+    final taxRate = await ref.read(posDefaultTaxRateProvider.future);
+    if (!mounted) return;
+
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierLabel: 'PicPos Purchase Invoice',
+      transitionDuration: const Duration(milliseconds: 200),
+      pageBuilder: (dialogContext, anim1, anim2) => Scaffold(
+        body: PicPosInvoiceForm(
+          kind: PicPosInvoiceKind.purchase,
+          parties: [
+            for (final s in suppliers)
+              PicPosPartyOption(
+                id: s.id,
+                name: s.name,
+                meta: s.phone ?? '',
+              ),
+          ],
+          products: [
+            for (final p in products)
+              PicPosProductOption(
+                id: p.id,
+                name: p.name,
+                sub: p.barcode ?? '',
+                salePrice: p.salePrice,
+                costPrice: p.costPrice,
+                categoryId: p.categoryId,
+                taxRate: p.taxRate,
+                barcode: p.barcode ?? '',
+              ),
+          ],
+          warehouses: [
+            for (final w in warehouses)
+              PicPosNamedOption(id: w.id, name: w.name),
+          ],
+          costCenters: [
+            for (final c in costCenters)
+              PicPosNamedOption(id: c.id, name: c.name),
+          ],
+          systemTaxRate: taxRate,
+          // الرقمُ يولّده الخادمُ تسلسليّاً عند الحفظ، فلا يُدَّعى رقمٌ
+          // بعينه قبل أن يُحجَز.
+          invoiceNumberPreview: 'يُولَّد تلقائياً',
+          initialWarehouseId:
+              warehouses.length == 1 ? warehouses.first.id : null,
+          onCancel: () => Navigator.pop(dialogContext),
+          onSave: ({
+            required int? partyId,
+            required String supplierInvoiceNumber,
+            required DateTime date,
+            required double subtotal,
+            required double discount,
+            required double tax,
+            required double net,
+            required double paid,
+            required String notes,
+            required List<Map<String, dynamic>> items,
+            required int? warehouseId,
+            required int? costCenterId,
+            required String paymentMethod,
+            required bool printAfterSave,
+          }) async {
+            await _handleSavePurchaseSimple(
+              partyId: partyId,
+              // فارغٌ ⇒ يولّد الخادمُ `PINV-N` — نفسُ سلوك النموذج القديم.
+              invoiceNumber: '',
+              supplierInvoiceNumber: supplierInvoiceNumber,
+              date: date,
+              total: subtotal,
+              discount: discount,
+              tax: tax,
+              netAmount: net,
+              paidAmount: paid,
+              notes: notes,
+              items: items,
+              warehouseId: warehouseId,
+              costCenterId: costCenterId,
+              isDraft: false,
+              paymentMethod: paymentMethod,
+              safeId: null,
+              printAfterSave: printAfterSave,
+            );
+            if (dialogContext.mounted) Navigator.pop(dialogContext);
+          },
+          onSaveDraft: ({
+            required int? partyId,
+            required String notes,
+            required List<Map<String, dynamic>> items,
+            required double subtotal,
+            required double discount,
+            required double tax,
+            required double net,
+          }) async {
+            // مسودّةٌ: لا تحرّك مخزوناً ولا مالاً، فالمسدَّدُ صفرٌ والمخزنُ
+            // يُترَك كما اختير.
+            await _handleSavePurchaseSimple(
+              partyId: partyId,
+              invoiceNumber: '',
+              supplierInvoiceNumber: '',
+              date: DateTime.now(),
+              total: subtotal,
+              discount: discount,
+              tax: tax,
+              netAmount: net,
+              paidAmount: 0,
+              notes: notes,
+              items: items,
+              warehouseId: null,
+              costCenterId: null,
+              isDraft: true,
+              paymentMethod: 'credit',
+              safeId: null,
+              printAfterSave: false,
+            );
+            if (dialogContext.mounted) Navigator.pop(dialogContext);
+          },
+        ),
+      ),
+    );
+  }
+
   /// Edit existing invoice
   void editInvoice(InvoiceEntity invoice) async {
     final purchasesRepo = ref.read(purchasesRepositoryProvider);

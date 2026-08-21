@@ -499,7 +499,8 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
       barrierLabel: 'Sales Invoice',
       transitionDuration: const Duration(milliseconds: 200),
       pageBuilder: (ctx, _, _) => Scaffold(
-        body: SalesInvoiceForm(
+        body: editQuotation != null
+            ? SalesInvoiceForm(
           customers: customersList,
           initialProducts: products,
           categories: categories,
@@ -572,7 +573,15 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
               costCenterId: costCenterId,
             );
           },
-        ),
+            )
+            : _buildPicPosNewInvoice(
+                ctx,
+                customers: customersList,
+                rawProducts: products,
+                warehouses: filteredWarehouses,
+                costCenters: costCentersList,
+                systemTaxRate: systemTaxRate,
+              ),
       ),
     );
 
@@ -580,6 +589,119 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
       unawaited(DiagnosticLogger.log('SPEC-090-DIALOG',
           'showGeneralDialog Future completed — sales-invoice form route popped'));
     }));
+  }
+
+  /// شاشةُ «فاتورة جديدة» على تصميم PicPos — للإنشاء وحدَه.
+  ///
+  /// ⚠️ **ولا تلمس مسارَ المال**: تنتهي إلى `_saveInvoice` و`_saveQuotation`
+  /// نفسِهما بنفس الوسائط. وما تبدّل هو العرضُ وحدَه.
+  ///
+  /// و«حفظ كمسودة» هنا **عرضُ سعر** لا مسودّةُ فاتورة (قرارُ المالك
+  /// 2026-08-21): يُحفَظ فيظهر في تبويب «عروض الأسعار»، فيُعدَّل لاحقاً أو
+  /// يُحوَّل إلى فاتورة. والمسارُ قائمٌ بالكامل فلا سطرَ جديدٌ في أيّ عقد.
+  Widget _buildPicPosNewInvoice(
+    BuildContext ctx, {
+    required List<Party> customers,
+    required List<Product> rawProducts,
+    required List<WarehouseData> warehouses,
+    required List<CostCenter> costCenters,
+    required double systemTaxRate,
+  }) {
+    return PicPosInvoiceForm(
+      kind: PicPosInvoiceKind.sales,
+      parties: [
+        for (final c in customers)
+          PicPosPartyOption(id: c.id, name: c.name, meta: c.phone ?? ''),
+      ],
+      products: [
+        for (final p in rawProducts)
+          PicPosProductOption(
+            id: p.id,
+            name: p.name,
+            sub: p.barcode ?? '',
+            salePrice: p.salePrice,
+            costPrice: p.costPrice,
+            categoryId: p.categoryId,
+            taxRate: p.taxRate,
+            barcode: p.barcode ?? '',
+          ),
+      ],
+      warehouses: [
+        for (final w in warehouses) PicPosNamedOption(id: w.id, name: w.name),
+      ],
+      costCenters: [
+        for (final c in costCenters)
+          PicPosNamedOption(id: c.id, name: c.name),
+      ],
+      systemTaxRate: systemTaxRate,
+      invoiceNumberPreview: 'يُولَّد تلقائياً',
+      userName: ref.read(authProvider).user?.displayName ?? '',
+      initialWarehouseId: warehouses.length == 1 ? warehouses.first.id : null,
+      // الأرصدةُ الحقيقيّةُ من `Products.currentStock` — فتنبيهُ الكفاية
+      // يقول ما قِيس لا ما يُظنّ. ولولاها لَما ظهر التنبيهُ إطلاقاً.
+      availableStock: {for (final p in rawProducts) p.id: p.currentStock},
+      onCancel: () => Navigator.pop(ctx),
+      onSave: ({
+        required int? partyId,
+        required String supplierInvoiceNumber,
+        required DateTime date,
+        required double subtotal,
+        required double discount,
+        required double tax,
+        required double net,
+        required double paid,
+        required String notes,
+        required List<Map<String, dynamic>> items,
+        required int? warehouseId,
+        required int? costCenterId,
+        required String paymentMethod,
+        required bool printAfterSave,
+      }) async {
+        await _saveInvoice(
+          context: ctx,
+          customerId: partyId,
+          paymentMethod: paymentMethod,
+          notes: notes,
+          invoiceItems: items,
+          subtotal: subtotal,
+          discount: discount,
+          tax: tax,
+          total: net,
+          paid: paid,
+          isReturnMode: false,
+          printAfterSave: printAfterSave,
+          // الضريبةُ مفعَّلةٌ على مستوى السطر في هذه الشاشة، والمجموعُ
+          // محسوبٌ منها. فالرايةُ صادقةٌ متى وُجدت ضريبةٌ فعليّة.
+          taxEnabled: tax > 0,
+          convertingQuotationId: null,
+          products: rawProducts,
+          warehouseId: warehouseId,
+          costCenterId: costCenterId,
+        );
+      },
+      onSaveDraft: ({
+        required int? partyId,
+        required String notes,
+        required List<Map<String, dynamic>> items,
+        required double subtotal,
+        required double discount,
+        required double tax,
+        required double net,
+      }) async {
+        await _saveQuotation(
+          context: ctx,
+          existingId: null,
+          existingNumber: null,
+          customerId: partyId,
+          notes: notes,
+          invoiceItems: items,
+          subtotal: subtotal,
+          discount: discount,
+          tax: tax,
+          total: net,
+        );
+      },
+    );
   }
 
   // ======================================================
