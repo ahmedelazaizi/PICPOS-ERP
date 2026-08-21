@@ -279,6 +279,12 @@ class _ActivityLogPicposScreenState
       'table_discount', 'table_tax', 'table_print_bill', 'table_payment',
       'table_payment_reconcile_needed',
     ],
+    // الحجوزات — مواعيدُ الخدمة. أفعالُها منفصلةٌ عن أفعال الطاولات لأنّ
+    // الجدولين منفصلان: ذاك يحجز مكاناً وهذا يحجز وقتَ إنسان.
+    'bookings': [
+      'booking_create', 'booking_reassign', 'booking_reschedule',
+      'booking_cancel', 'booking_status',
+    ],
     'delivery': [
       'add_delivery_company', 'update_delivery_company', 'delete_delivery_company',
       'add_courier', 'update_courier', 'delete_courier',
