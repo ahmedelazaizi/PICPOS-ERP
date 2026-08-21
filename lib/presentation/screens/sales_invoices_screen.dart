@@ -18,6 +18,7 @@ import '../../core/widgets/app_state_view.dart';
 import '../../core/widgets/shimmer_loading.dart';
 
 import '../../data/providers/providers.dart';
+import '../../domain/models/branch_assignment_scope.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/database/sync_interceptor.dart';
 import '../../services/network_service.dart';

@@ -142,6 +142,19 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesScreenState {
       return;
     }
 
+    // كان `warehouseId ?? 1` أدناه يخترع المخزنَ رقم ١ حين لا مخزنَ منتقى —
+    // معرّفٌ قد لا يكون مخزنَ هذا الفرع ولا موجوداً أصلاً. والنموذجُ ينتقي
+    // سلفاً دائماً، فلا يُبلَغ هذا الرفضُ إلا حين تخلو القائمةُ فعلاً — وعندها
+    // الرفضُ الصريحُ أوضحُ من حركةِ مخزونٍ على مخزنٍ مخترع.
+    if (warehouseId == null) {
+      AppToast.show(
+        context,
+        'لا يوجد مخزن صالح لهذا الفرع — أضِف مخزناً قبل إصدار الفاتورة',
+        type: ToastType.error,
+      );
+      return;
+    }
+
     // Cluster 034 / Issue 2 fix — read providers via ProviderScope on the
     // dialog's BuildContext, NOT via `this.ref`. The screen's State can
     // be disposed (route navigation, provider-driven rebuild) while the
@@ -215,7 +228,7 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesScreenState {
       final request = SaleRequest(
         customerId: customerId,
         userId: userId,
-        warehouseId: warehouseId ?? 1,
+        warehouseId: warehouseId,
         paidAmount: paid,
         paymentMethod: paymentMethod,
         isReturn: isReturnMode,

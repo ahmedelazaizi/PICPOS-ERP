@@ -182,6 +182,43 @@ extension AccountingDaoReadsExt on AppDatabase {
   }
 
 
+  /// مراكزُ التكلفةِ التابعةُ لـ[branchIds] — **اشتقاقاً لا عموداً**.
+  ///
+  /// توأمُ `_resolveBranchCostCenterIds` في `api_handler.dart:2111` حرفياً:
+  /// مركزُ الفرعِ نفسِه ∪ مراكزُ مخازنِه ∪ مراكزُ خزائنِه. والخادمُ يقصّ
+  /// مزامنةَ `cost_centers` بهذا الاشتقاقِ نفسِه (مثبَّتاً بثلاثةِ اختبارات
+  /// PostgreSQL)، فأيُّ اختلافٍ هنا يجعل الواجهةَ تَعِد بما لا يصل الجهازَ
+  /// أو تُخفي ما وصله.
+  ///
+  /// ⚠️ فإن تغيّر أحدُهما فليتغيّر الآخر — لا عمودَ `branch_id` في
+  /// `CostCenters` يحسم الخلافَ بينهما.
+  Future<Set<int>> getBranchCostCenterIds(Set<int> branchIds) async {
+    if (branchIds.isEmpty) return const <int>{};
+
+    final ids = <int>{};
+
+    final branchRows =
+        await (select(branches)..where((b) => b.id.isIn(branchIds))).get();
+    for (final branch in branchRows) {
+      if (branch.costCenterId != null) ids.add(branch.costCenterId!);
+    }
+
+    final warehouseRows = await (select(warehouses)
+          ..where((w) => w.branchId.isIn(branchIds)))
+        .get();
+    for (final warehouse in warehouseRows) {
+      if (warehouse.costCenterId != null) ids.add(warehouse.costCenterId!);
+    }
+
+    final safeRows =
+        await (select(safes)..where((s) => s.branchId.isIn(branchIds))).get();
+    for (final safe in safeRows) {
+      if (safe.costCenterId != null) ids.add(safe.costCenterId!);
+    }
+
+    return ids;
+  }
+
   /// Get active cost centers only (Spec 111 — excludes soft-deleted)
   Future<List<CostCenter>> getActiveCostCenters() {
     return (select(costCenters)

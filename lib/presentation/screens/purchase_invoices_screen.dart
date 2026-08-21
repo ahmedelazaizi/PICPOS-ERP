@@ -14,6 +14,7 @@ import '../../core/widgets/shimmer_loading.dart';
 import '../../data/providers/providers.dart';
 import '../../services/invoice_generator.dart';
 import '../../core/constants/app_constants.dart' hide InvoiceStatus;
+import '../../domain/models/branch_assignment_scope.dart';
 import '../../domain/entities/invoice_entity.dart';
 import '../../domain/repositories/purchases_repository.dart';
 import 'purchases/purchase_invoices_controller.dart';

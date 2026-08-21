@@ -29,6 +29,7 @@ import 'package:intl/intl.dart';
 import '../../../data/database/database.dart' as db;
 import '../../../data/providers/providers.dart';
 import '../../../domain/repositories/cycle_count_repository.dart';
+import '../../../services/network_service.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../screens/cycle_count/cycle_count_controller.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
@@ -320,7 +321,11 @@ class _CycleCountPicposScreenState extends ConsumerState<CycleCountPicposScreen>
                   : () async {
                       // Option B: block finalize on client/mirror (not sync-aware
                       // yet — would apply adjustments + JE local-only, reverted on pull).
-                      if (ref.read(isClientModeProvider)) {
+                      //
+                      // وهويّةُ الجهاز لا توجيهُ الكتابة: `isClientModeProvider`
+                      // كانت تنفتح على مرآةٍ لم يكتمل تصافحُها، فيُعتمد جردٌ
+                      // محلّيٌّ يمحوه أوّلُ سحب — وهو ما يمنعه هذا الحارسُ أصلاً.
+                      if (NetworkService.instance.isBranchScopedDevice) {
                         AppToast.show(context,
                             'لا يمكن اعتماد الجرد من جهاز عميل أو مرآة — نفّذه على الخادم الرئيسي');
                         return;

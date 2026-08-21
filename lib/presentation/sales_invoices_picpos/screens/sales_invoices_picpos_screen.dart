@@ -6,7 +6,7 @@ import '../../../core/permissions/permission_codes.dart';
 import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../../../domain/models/branch_assignment_scope.dart';
 
 import '../../../core/widgets/app_shortcuts.dart';
 import '../../../core/utils/app_error_handler.dart';
@@ -18,6 +18,7 @@ import '../../../core/utils/number_utils.dart';
 import '../../../core/widgets/app_state_view.dart';
 
 import '../../../data/providers/providers.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../data/database/sync_interceptor.dart';
 import '../../../domain/models/warehouse_branch_scope.dart';
 import '../../../services/network_service.dart';

@@ -69,6 +69,23 @@ class NetworkService {
   bool get isClient => _mode == NetworkMode.client;
   bool get isStandalone => _mode == NetworkMode.standalone;
   bool get isMirror => _mode == NetworkMode.mirror;
+
+  /// الجهازُ محصورُ النطاق: عميلٌ أو مرآة — وهما الجهازان اللذان تُقفلهما
+  /// سابقةُ المالك 2026-08-04 («الأجهزةُ اللي بتسرّب فعلاً هي العميلُ
+  /// والمرآة؛ والجهازُ المستقلُّ يبقى بسلوكه القديم عن قصد»).
+  ///
+  /// وهو سؤالُ **هويّةِ الجهاز**، غيرُ سؤالِ **توجيهِ الكتابة** الذي يجيبه
+  /// `SyncInterceptor.isClientMode`. والفرقُ ليس نظرياً: ذاك يساوي
+  /// `isClient || WriteRouter.isMirrorActive`، و`isMirrorActive` تشترط
+  /// `MirrorState.isConfigured`، والمعترِضُ نفسُه معدومٌ قبل
+  /// `ClientWriteInterceptor.setup()`. فكان يُخطئ إلى **الانفتاح** في
+  /// نافذتين — مرآةٌ لم يكتمل تصافحُها، وأيُّ قراءةٍ قبل التهيئة — فيُعامَل
+  /// جهازٌ محصورٌ معاملةَ المستقلّ ويأخذ المستخدمُ سيّئُ التزويد كلَّ
+  /// المخازن بدل صفر.
+  ///
+  /// ⇒ لقراراتِ النطاقِ والصلاحية: هذا. ولتوجيهِ الكتابة: المعترِض.
+  bool get isBranchScopedDevice => isClient || isMirror;
+
   bool get isServerRunning => _httpServer != null;
   String? get serverAddress => _serverAddress;
   int get serverPort => _serverPort;
