@@ -18,6 +18,8 @@ import '../../widgets/common/common.dart';
 
 import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../picpos_shell/picpos_content_card.dart';
+import '../../picpos_shell/picpos_returns_panel.dart';
+import '../../../domain/models/picpos_return_view.dart';
 
 // ── Part files (منسوخة حرفياً من lib/presentation/screens/purchase_returns/ —
 // الشاشة الأصل `part of` خاص فما ينفعش تتعمل import، فبتنتقل بنسخ حرفي هنا؛
@@ -111,197 +113,183 @@ class _PurchaseReturnsPicposScreenState
           label: const Text('سجل المرتجعات'),
         ),
       ],
-      body: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Left side - Purchase invoice list
-          Expanded(
-            flex: 2,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SyncPendingBanner(
-                  tableName: 'purchase_returns',
-                  label: 'مرتجع مشتريات',
-                ),
-                const SizedBox(height: 12),
-                // Filters card
-                PicPosContentCard(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Row(
-                        children: [
-                          Icon(
-                            PhosphorIconsBold.funnel,
-                            size: 18,
-                            color: AppColors.primary,
-                          ),
-                          SizedBox(width: 8),
-                          Text(
-                            'تصفية',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: InkWell(
-                              onTap: _selectFromDate,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 10,
-                                ),
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: AppColors.textMuted
-                                        .withValues(alpha: 0.3),
-                                  ),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  children: [
-                                    const Icon(
-                                      PhosphorIconsBold.calendar,
-                                      size: 16,
-                                      color: AppColors.textMuted,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'من: ${state.fromDate.day}/${state.fromDate.month}/${state.fromDate.year}',
-                                      style: const TextStyle(fontSize: 13),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: InkWell(
-                              onTap: _selectToDate,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 10,
-                                ),
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: AppColors.textMuted
-                                        .withValues(alpha: 0.3),
-                                  ),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  children: [
-                                    const Icon(
-                                      PhosphorIconsBold.calendar,
-                                      size: 16,
-                                      color: AppColors.textMuted,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'إلى: ${state.toDate.day}/${state.toDate.month}/${state.toDate.year}',
-                                      style: const TextStyle(fontSize: 13),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      // البند 7: البحث يذهب الآن إلى SQL. سابقاً كان
-                      // `contains()` في الذاكرة فوق أحدث 500 فاتورة —
-                      // فيفشل صامتاً على أي فاتورة أقدم.
-                      TextField(
-                        controller: _searchController,
-                        decoration: InputDecoration(
-                          hintText: 'البحث برقم الفاتورة (رقمنا أو رقم المورد)...',
-                          prefixIcon: const Icon(
-                            PhosphorIconsBold.magnifyingGlass,
-                            size: 16,
-                          ),
-                          isDense: true,
-                          contentPadding: const EdgeInsets.symmetric(
-                            vertical: 10,
-                            horizontal: 12,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        onChanged: (v) => ref
-                            .read(purchaseReturnProvider.notifier)
-                            .setInvoiceQuery(v),
-                      ),
-                      const SizedBox(height: 10),
-                      // البند 7: فلترا المورد والصنف.
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildSupplierFilter(state.supplierId),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _buildProductFilter(state.productId),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
+      body: _buildBody(state, notifier),
+    );
+  }
 
-                // Invoice list header
-                Row(
-                  children: [
-                    const Icon(
-                      PhosphorIconsBold.listDashes,
-                      size: 18,
-                      color: AppColors.primary,
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'الفواتير',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const Spacer(),
-                    Text(
-                      '${state.invoices.length} فاتورة',
-                      style: const TextStyle(color: AppColors.textMuted),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
+  /// تحويلُ صفِّ فاتورة المشتريات إلى صورةِ العرض المحايدة.
+  ///
+  /// ⚠️ **بلا اسمِ مورّد**: `PurchaseReturnState` لا تحمل خريطةَ أسماءٍ نظيرةً
+  /// لـ`customerNames` في المبيعات، والشاشةُ اليوم تعرض التاريخَ وحدَه.
+  /// فاشتقاقُ الاسم كان سيعني استعلاماً لكلّ صفّ (N+1) أو اختلاقاً — وكلاهما
+  /// أسوأُ من سطرٍ أقصر. يُرفَع حين تحمل الحالةُ الأسماءَ كما في التوأم.
+  PicPosReturnInvoiceRow _toRow(PurchaseInvoiceData inv) =>
+      PicPosReturnInvoiceRow(
+        id: inv.id,
+        number: '# ${inv.invoiceNumber}',
+        date: inv.invoiceDate,
+        total: inv.total,
+        status: PicPosReturnStatus.fromCode(inv.status),
+      );
 
-                // Invoice list
-                Expanded(
-                  child: PicPosContentCard(
-                    padding: const EdgeInsets.all(8),
-                    child: _buildInvoiceList(state, notifier),
+  Widget _buildBody(
+    PurchaseReturnState state,
+    PurchaseReturnNotifier notifier,
+  ) {
+    // ‏لا ترشيحَ في الذاكرة: كلُّ الفلاتر (المدى · الرقم · المورد · الصنف)
+    // نُفِّذت في SQL، فما يصل هنا هو النتيجةُ الكاملةُ لا شريحةٌ مبتورةٌ منها.
+    // فالعدّاداتُ والقائمةُ يقرآن نفسَ القائمة — بخلاف توأم المبيعات الذي
+    // يرشّح بالبحث في الذاكرة فيفترقان.
+    final rows = [for (final inv in state.invoices) _toRow(inv)];
+    final kpis = PicPosReturnKpis.from(rows);
+    final byId = {for (final inv in state.invoices) inv.id: inv};
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        PicPosReturnsSummaryCards(kpis: kpis, isSales: false),
+        const SizedBox(height: 12),
+        const SyncPendingBanner(
+          tableName: 'purchase_returns',
+          label: 'مرتجع مشتريات',
+        ),
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // عمودُ القائمة أعرضُ قليلاً من توأم المبيعات (‏٤٤٠ لا ٤٠٠):
+              // شريطُ الترشيح هنا يحمل منتقيَي المورد والصنف زيادةً.
+              final listWidth = constraints.maxWidth < 1040
+                  ? constraints.maxWidth * .40
+                  : 440.0;
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  SizedBox(
+                    width: listWidth,
+                    child: PicPosReturnsInvoicePanel(
+                      rows: rows,
+                      selectedId: state.selectedInvoice?.id,
+                      isLoading: state.isLoading,
+                      emptyMessage: 'لا توجد فواتير مشتريات في هذه الفترة',
+                      onSelect: (r) {
+                        final inv = byId[r.id];
+                        if (inv != null) notifier.selectInvoice(inv);
+                      },
+                      filters: _buildListFilters(state),
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 12),
+                  Expanded(child: buildReturnDetailsPanel(state, notifier)),
+                ],
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// شريطُ ترشيح القائمة — مدىً وبحثٌ ومنتقيا المورد والصنف.
+  Widget _buildListFilters(PurchaseReturnState state) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _dateField(
+                label: 'من ${state.fromDate.day}/${state.fromDate.month}',
+                onTap: _selectFromDate,
+              ),
             ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _dateField(
+                label: 'إلى ${state.toDate.day}/${state.toDate.month}',
+                onTap: _selectToDate,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        // البحثُ يذهب إلى SQL — سابقاً كان `contains()` في الذاكرة فوق أحدث
+        // ‏٥٠٠ فاتورة، فيفشل صامتاً على أيّ فاتورةٍ أقدم.
+        SizedBox(
+          height: 36,
+          child: TextField(
+            controller: _searchController,
+            style: const TextStyle(fontSize: 12),
+            decoration: InputDecoration(
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(vertical: 8),
+              hintText: 'البحث برقم الفاتورة (رقمنا أو رقم المورد)...',
+              hintStyle: TextStyle(
+                fontSize: 12,
+                color: picposReturnsMuted(context),
+              ),
+              prefixIcon: Icon(
+                PhosphorIconsBold.magnifyingGlass,
+                size: 14,
+                color: picposReturnsMuted(context),
+              ),
+              prefixIconConstraints:
+                  const BoxConstraints(minWidth: 34, minHeight: 34),
+              filled: true,
+              fillColor: Theme.of(context).scaffoldBackgroundColor,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide.none,
+              ),
+            ),
+            onChanged: (v) =>
+                ref.read(purchaseReturnProvider.notifier).setInvoiceQuery(v),
           ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(child: _buildSupplierFilter(state.supplierId)),
+            const SizedBox(width: 8),
+            Expanded(child: _buildProductFilter(state.productId)),
+          ],
+        ),
+      ],
+    );
+  }
 
-          const SizedBox(width: 16),
-
-          // Right side - Return details
-          Expanded(
-            flex: 3,
-            child: buildReturnDetailsPanel(state, notifier),
+  Widget _dateField({required String label, required VoidCallback onTap}) {
+    final theme = Theme.of(context);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          height: 36,
+          padding: const EdgeInsets.symmetric(horizontal: 11),
+          decoration: BoxDecoration(
+            border: Border.all(color: theme.dividerColor),
+            borderRadius: BorderRadius.circular(10),
           ),
-        ],
+          child: Row(
+            children: [
+              Icon(PhosphorIconsBold.calendar,
+                  size: 13, color: picposReturnsMuted(context)),
+              const SizedBox(width: 7),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                    color: theme.textTheme.bodyMedium?.color,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -381,63 +369,6 @@ class _PurchaseReturnsPicposScreenState
         ],
         onChanged: (v) =>
             ref.read(purchaseReturnProvider.notifier).setProductFilter(v),
-      ),
-    );
-  }
-
-  Widget _buildInvoiceList(
-    PurchaseReturnState state,
-    PurchaseReturnNotifier notifier,
-  ) {
-    // البند 7: لا ترشيح في الذاكرة بعد الآن — كل الفلاتر نُفِّذت في SQL، فما
-    // يصل هنا هو النتيجة الكاملة لا شريحة مبتورة منها.
-    final invoices = state.invoices;
-
-    // Day 11: unified loading / empty states via AppStateView.
-    return AppStateView(
-      isLoading: state.isLoading && invoices.isEmpty,
-      isEmpty: invoices.isEmpty,
-      emptyMessage: 'لا توجد فواتير مشتريات في هذه الفترة',
-      emptyIcon: PhosphorIconsBold.receipt,
-      child: ListView.builder(
-        itemCount: invoices.length,
-        itemBuilder: (ctx, index) {
-          final invoice = invoices[index];
-          final isSelected = state.selectedInvoice?.id == invoice.id;
-
-          return Card(
-            color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : null,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-              side: isSelected
-                  ? const BorderSide(color: AppColors.primary, width: 2)
-                  : BorderSide.none,
-            ),
-            child: ListTile(
-              onTap: () => notifier.selectInvoice(invoice),
-              leading: CircleAvatar(
-                backgroundColor:
-                    isSelected ? AppColors.primary : AppColors.info.withValues(alpha: 0.1),
-                child: Icon(PhosphorIconsBold.receipt,
-                    size: 18, color: isSelected ? Colors.white : AppColors.info),
-              ),
-              title: Text(
-                '# ${invoice.invoiceNumber}',
-                style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: isSelected ? AppColors.primary : null),
-              ),
-              subtitle: Text(
-                '${invoice.invoiceDate.day}/${invoice.invoiceDate.month}/${invoice.invoiceDate.year}',
-                style: const TextStyle(fontSize: 12),
-              ),
-              trailing: Text(
-                '${invoice.total.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-          );
-        },
       ),
     );
   }
