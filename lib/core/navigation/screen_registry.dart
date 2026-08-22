@@ -267,6 +267,37 @@ class ScreenRegistry {
   /// brand-gated ADDITION, not a replacement. See `forProfile` below.
   static const List<ScreenId> litePicpos = [...lite, ScreenId.scalePlu];
 
+  /// PicPos-only widening of `restaurant` (و`cafe` لأنه اسمٌ آخرُ له).
+  ///
+  /// ═══ العطبُ الميدانيُّ الذي أوجبها (بلاغُ المالك 2026-08-22) ═══
+  ///
+  /// «شاشةُ ميزان التسعير PLU لا تظهر في النظام، وبالتالي مديرُ PLU كذلك».
+  ///
+  /// والقياسُ على التنصيبة الحيّة: `settings.business_profile = restaurant`،
+  /// و**`restaurant` هي التشكيلةُ الوحيدةُ التي لا تحمل [ScreenId.scalePlu]**
+  /// من بين السبع (supermarket · supermarketPro · supermarketPlus ·
+  /// commercial · unified · litePicpos كلُّها تحملها).
+  ///
+  /// وكلُّ ما عداها كان سليماً وقد فُحص واحداً واحداً قبل هذا التعديل:
+  ///  • صفُّ الصلاحية موجودٌ (`permissions.code='settings_scale'`, id=133)
+  ///  • ودورُ «مدير النظام» يملكها فعلاً (‏٢٣١ صلاحيةً من ٢٣٧)
+  ///  • ومدخلُ التنقّل موجودٌ (`kAllNavItemDefs`، `index: 21`)
+  ///  • وباني الشاشة موصولٌ (`app_main_screen.dart` ⇒ `ScalePluPicposScreen`)
+  ///  • ودليلُ الفهارس متطابقٌ (`AppScreen.scalePlu(21)` = `ScreenId(21)`)
+  ///
+  /// ⇒ فالسببُ تشكيلةُ الشاشات وحدَها، لا صلاحيةٌ ولا توصيلة.
+  ///
+  /// ومطاعمُ كثيرةٌ تزن (السلطات · المشويّات · الحلويات بالوزن)، فحضورُ
+  /// الميزان فيها ليس ترفاً.
+  ///
+  /// ⚠️ **و`restaurant` أعلاه تبقى بلا حرفٍ لـUralCash** — إضافةٌ محكومةٌ
+  /// بالعلامة لا استبدال، وهو نفسُ عقدِ [litePicpos] وقرارِ المالك
+  /// 2026-08-22 بألّا تُشارَك تعديلاتُ PicPos مع UralCash.
+  static const List<ScreenId> restaurantPicpos = [
+    ...restaurant,
+    ScreenId.scalePlu,
+  ];
+
   /// `litePicpos` بعد تطبيق «وضع المطاعم».
   ///
   /// طلبُ المالك 2026-08-14: «شاشةُ الطاولات وأوامرُ المطاعم والمطبخ يجب أن
@@ -295,10 +326,11 @@ class ScreenRegistry {
     FeaturePolicy? features,
   }) {
     switch (profile) {
+      // المطعمُ والمقهى: PicPos يضيف شاشةَ الميزان — راجع [restaurantPicpos]
+      // للقياس الذي أوجبها. و`cafe` اسمٌ آخرُ لـ`restaurant` فيتبعها.
       case BusinessProfile.restaurant:
-        return restaurant;
       case BusinessProfile.cafe:
-        return cafe;
+        return Brand.isPicPos ? restaurantPicpos : restaurant;
       case BusinessProfile.supermarket:
         return supermarket;
       case BusinessProfile.supermarketPro:

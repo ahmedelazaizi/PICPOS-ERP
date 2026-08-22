@@ -1301,9 +1301,25 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
               style: TextStyle(color: AppColors.textMuted),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'الإصدار 1.0.0',
-              style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+            // ⚠️ **كان نصّاً ثابتاً `'الإصدار 1.0.0'`** — بلاغُ المالك
+            // 2026-08-22: «رقمُ الإصدار لا يظهر تحديثُه في إعدادات النظام».
+            //
+            // والسببُ ليس أن القيمةَ غيرُ متاحة: `AppVersionService.initialize()`
+            // تُنادى في `main.dart` **قبل** `runApp` وتملأ
+            // [AppConstants.appVersion] من `pubspec` عبر `package_info_plus`
+            // (‏وهي اليومَ 3.1.3+248). الكارتُ وحدَه كان يطبع حرفاً محفوراً
+            // فلا يتحرّك مهما تغيّرت النسخة — فيقرأ المشغّلُ نسخةً غيرَ التي
+            // يشغّلها، وهو أسوأُ من ألّا يُعرض رقمٌ أصلاً.
+            //
+            // ورقمُ البناء يُعرض معه: نسختان بنفس الرقم وبناءَين مختلفَين
+            // تقعان فعلاً بين إصدارَين تجريبيَّين، والرقمُ وحدَه لا يفرّقهما.
+            Text(
+              'الإصدار ${AppConstants.appVersion} '
+              '(${AppConstants.appBuildNumber})',
+              style: const TextStyle(
+                color: AppColors.textMuted,
+                fontSize: 12,
+              ),
             ),
             // Vendor block — values from `Brand`. A brand that declares no
             // vendor info renders nothing here; printing another product's
