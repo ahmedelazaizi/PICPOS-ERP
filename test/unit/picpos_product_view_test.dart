@@ -147,4 +147,66 @@ void main() {
       expect(k.missingCost, 2);
     });
   });
+
+  group('picposStockFillRatio — شريطُ المخزون', () {
+    test('النسبةُ إلى الحدّ الأدنى لا إلى سعةٍ مخترَعة', () {
+      expect(picposStockFillRatio(currentStock: 5, minStock: 10),
+          closeTo(0.5, 1e-9));
+      expect(picposStockFillRatio(currentStock: 10, minStock: 10),
+          closeTo(1.0, 1e-9));
+    });
+
+    // بلا القصّ كان رصيدٌ أضعافَ الحدِّ يمدُّ الشريطَ خارجَ إطاره.
+    test('يُقَصُّ عند ١ فوق الحدِّ وعند صفرٍ تحت السالب', () {
+      expect(picposStockFillRatio(currentStock: 500, minStock: 10),
+          closeTo(1.0, 1e-9));
+      expect(picposStockFillRatio(currentStock: -8, minStock: 10),
+          closeTo(0.0, 1e-9));
+    });
+
+    // ⚠️ نفسُ منطقِ حدّ الائتمان: العمودُ افتراضُه صفرٌ لمن لا حدَّ له.
+    // فبلا هذا الحارس كان كلُّ صنفٍ يُرسم له شريطٌ يدّعي قياساً لا مرجعَ له.
+    test('حدٌّ أدنى صفريٌّ ⇒ null فلا شريطَ أصلاً', () {
+      expect(picposStockFillRatio(currentStock: 5, minStock: 0), isNull);
+      expect(picposStockFillRatio(currentStock: 5, minStock: -1), isNull);
+    });
+
+    test('صنفٌ لا يُتابَع مخزونُه ⇒ null', () {
+      expect(
+        picposStockFillRatio(
+            currentStock: 5, minStock: 10, trackInventory: false),
+        isNull,
+      );
+    });
+  });
+
+  group('picposStockBand', () {
+    test('النفادُ يُقاس قبل الحدِّ — صفرٌ نفادٌ ولو بلا حدٍّ مضبوط', () {
+      expect(picposStockBand(currentStock: 0, minStock: 0),
+          PicPosStockBand.out);
+      expect(picposStockBand(currentStock: -3, minStock: 10),
+          PicPosStockBand.out);
+    });
+
+    test('دون الحدِّ منخفضٌ، وعنده فأعلى سليم', () {
+      expect(picposStockBand(currentStock: 4, minStock: 10),
+          PicPosStockBand.low);
+      expect(picposStockBand(currentStock: 10, minStock: 10),
+          PicPosStockBand.ok);
+      expect(picposStockBand(currentStock: 99, minStock: 10),
+          PicPosStockBand.ok);
+    });
+
+    test('بلا حدٍّ مضبوطٍ ورصيدٌ موجبٌ ⇒ سليم لا منخفض', () {
+      expect(picposStockBand(currentStock: 1, minStock: 0),
+          PicPosStockBand.ok);
+    });
+
+    test('غيرُ المتابَع صنفُه بندٌ مستقلٌّ لا «نفاد»', () {
+      expect(
+        picposStockBand(currentStock: 0, minStock: 0, trackInventory: false),
+        PicPosStockBand.untracked,
+      );
+    });
+  });
 }

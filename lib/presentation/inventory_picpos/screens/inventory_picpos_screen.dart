@@ -8,12 +8,16 @@ import '../../../services/dual_approval_service.dart';
 import '../../../data/providers/providers.dart';
 import '../../../domain/entities/product_entity.dart';
 import '../../screens/products/widgets/barcode_print_dialog.dart';
+// الحالةُ مشتركةٌ عمداً (‏`inventory_notifier` منطقٌ لا تصميم)، والجداولُ
+// الثلاثةُ فوركٌ خاصٌّ بـPicPos بقرار المالك 2026-08-22.
 import '../../screens/inventory/inventory_notifier.dart';
-import '../../screens/inventory/widgets/stock_balances_table.dart';
-import '../../screens/inventory/widgets/stock_movements_table.dart';
-import '../../screens/inventory/widgets/inventory_summary_row.dart';
+import '../widgets/stock_balances_table_picpos.dart';
+import '../widgets/stock_movements_table_picpos.dart';
+import '../widgets/inventory_summary_row_picpos.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../picpos_shell/picpos_content_card.dart';
+import '../../picpos_shell/picpos_kpi_row.dart';
+import '../../../domain/models/picpos_product_view.dart';
 
 /// شاشة المخزون بهوية PicPos. تُختار بالعلامة في app_main_screen. fork متوسط:
 /// تنظيم الصفحات (paging) للتبويب الأول منسوخ حرفياً من `InventoryScreen`
@@ -119,7 +123,9 @@ class _InventoryPicposScreenState extends ConsumerState<InventoryPicposScreen>
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
         child: Column(
           children: [
-            const InventorySummaryRow(),
+            _buildKpiRow(),
+            const SizedBox(height: 12),
+            const InventorySummaryRowPicpos(),
             const SizedBox(height: 12),
             Row(children: [
               Expanded(child: _buildSearchField(context, ref)),
@@ -151,6 +157,57 @@ class _InventoryPicposScreenState extends ConsumerState<InventoryPicposScreen>
           _buildMovementsTab(),
         ],
       ),
+    );
+  }
+
+  /// صفُّ العدّادات — `invKpis` في التصميم.
+  ///
+  /// ⚠️ **على الصفحة المحمَّلة لا على المستودع كلِّه.** تبويبُ الأرصدة مُصفَّحٌ
+  /// (`_pagedItems` + `loadNextPage`)، فما في الذاكرة شريحةٌ لا الكلّ —
+  /// والتسمياتُ تقول «في الصفحة» صراحةً. نفسُ قرارِ شاشة الأصناف.
+  ///
+  /// وصفُّ [InventorySummaryRowPicpos] أسفلَه شيءٌ آخر: يعرض قيمةَ المخزون
+  /// وتكلفتَه من مزوِّدٍ يجمعها في SQL، فهو إجماليٌّ حقيقيٌّ ولا يُخلط بهذه.
+  Widget _buildKpiRow() {
+    final kpis = PicPosProductKpis.from([
+      for (final p in _pagedItems)
+        (
+          salePrice: p.salePrice,
+          costPrice: p.costPrice,
+          currentStock: p.currentStock,
+          minStock: p.minStock,
+          trackInventory: p.trackInventory,
+          isActive: p.isActive,
+        ),
+    ]);
+
+    return PicPosKpiRow(
+      kpis: [
+        PicPosKpi(
+          label: 'أصناف في الصفحة',
+          value: '${kpis.loaded}',
+          icon: PhosphorIconsBold.package,
+          tint: AppColors.primary,
+        ),
+        PicPosKpi(
+          label: 'نشط في الصفحة',
+          value: '${kpis.active}',
+          icon: PhosphorIconsBold.checkCircle,
+          tint: AppColors.success,
+        ),
+        PicPosKpi(
+          label: 'تحت الحد الأدنى',
+          value: '${kpis.belowMinStock}',
+          icon: PhosphorIconsBold.warningCircle,
+          tint: kpis.belowMinStock > 0 ? AppColors.warning : AppColors.success,
+        ),
+        PicPosKpi(
+          label: 'بلا تكلفة مسجّلة',
+          value: '${kpis.missingCost}',
+          icon: PhosphorIconsBold.currencyCircleDollar,
+          tint: kpis.missingCost > 0 ? AppColors.warning : AppColors.success,
+        ),
+      ],
     );
   }
 
@@ -333,7 +390,7 @@ class _InventoryPicposScreenState extends ConsumerState<InventoryPicposScreen>
               ),
             ),
           Expanded(
-            child: StockBalancesTable(
+            child: StockBalancesTablePicpos(
               productsAsync: productsAsync,
               expiryMap: const {},
               categoryMap: categoryMap,
@@ -379,7 +436,7 @@ class _InventoryPicposScreenState extends ConsumerState<InventoryPicposScreen>
         const SizedBox(height: 12),
         Expanded(
           child: PicPosContentCard(
-            child: StockMovementsTable(
+            child: StockMovementsTablePicpos(
               productNameMap: productNameMap,
               movementsAsync: movementsAsync.when(
                 data: (list) {

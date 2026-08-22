@@ -130,3 +130,50 @@ class PicPosProductKpis {
 /// نصُّ مبلغٍ بعملة النظام — يُستعمل في خلايا التكلفة والسعر.
 String picposMoneyLabel(double v) =>
     v.toStringAsFixed(AppConstants.decimalPlaces);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// شريطُ امتلاء المخزون — `barW`/`barC` في تصميم شاشة المخزون
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// نسبةُ امتلاء شريط المخزون، في المدى `[0, 1]`.
+///
+/// ═══ ما الذي يقيسه الشريطُ أصلاً ═══
+///
+/// المرجعُ هو **الحدُّ الأدنى** لا سعةُ المخزن: النظامُ لا يحمل «سعةً قصوى»
+/// لأيّ صنف، فالشريطُ يقول «أين أنت من حدِّك الأدنى» لا «كم امتلأ رفُّك».
+/// وامتلاءٌ كاملٌ يعني **بلوغَ الحدِّ الأدنى فأكثر** — لا أنّ المخزنَ ملآن.
+///
+/// `null` حين لا مرجعَ للقياس:
+///  • `minStock <= 0` ⇒ لا حدَّ أدنى مضبوطاً (وهو الافتراضُ في القاعدة)، فرسمُ
+///    شريطٍ ممتلئٍ أو فارغٍ ادّعاءٌ لا أساسَ له. والشاشةُ تُخفي الشريطَ حينها.
+///  • `trackInventory == false` ⇒ صنفٌ لا يُتابَع مخزونُه أصلاً.
+///
+/// والقصُّ عند ١ مقصود: رصيدٌ أضعافَ الحدِّ لا يمدّ الشريطَ خارجَ إطاره.
+/// والسالبُ يُقصّ إلى صفرٍ — رصيدٌ سالبٌ ممكنٌ (البيعُ بالسالب مسموحٌ لبعض
+/// الأصناف) ولا يُرسم شريطاً معكوساً.
+double? picposStockFillRatio({
+  required double currentStock,
+  required double minStock,
+  bool trackInventory = true,
+}) {
+  if (!trackInventory) return null;
+  if (minStock <= 0) return null;
+  final raw = currentStock / minStock;
+  if (raw.isNaN) return null;
+  return raw.clamp(0.0, 1.0);
+}
+
+/// حالةُ المخزون — تحكم لونَ الشريط ونصَّ الشارة.
+enum PicPosStockBand { untracked, out, low, ok }
+
+PicPosStockBand picposStockBand({
+  required double currentStock,
+  required double minStock,
+  bool trackInventory = true,
+}) {
+  if (!trackInventory) return PicPosStockBand.untracked;
+  // النفادُ يُقاس قبل الحدّ: صفرٌ نفادٌ حتى لو لم يُضبط حدٌّ أدنى.
+  if (currentStock <= 0) return PicPosStockBand.out;
+  if (minStock > 0 && currentStock < minStock) return PicPosStockBand.low;
+  return PicPosStockBand.ok;
+}
