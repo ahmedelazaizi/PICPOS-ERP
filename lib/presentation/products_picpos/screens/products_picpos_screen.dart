@@ -11,8 +11,14 @@ import '../../../data/providers/providers.dart';
 import '../../../data/services/excel_service.dart';
 import '../../products/providers/products_controller.dart';
 import '../../screens/units_management_screen.dart';
-import '../../screens/products/widgets/products_table.dart';
+// جدولُ الأصناف صار فوركاً في PicPos (قرارُ المالك 2026-08-22) — شاشةُ
+// UralCash تبقى على `screens/products/widgets/products_table.dart` بلا مساس.
+// وشريطُ الإجراءات الجماعيّة **لم يُفرَك**: لم يطلب التصميمُ تغييرَه.
+import '../widgets/products_table_picpos.dart';
 import '../../screens/products/widgets/products_bulk_action_bar.dart';
+import '../../../domain/models/picpos_product_view.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../picpos_shell/picpos_kpi_row.dart';
 import '../../widgets/dialogs/add_product_dialog.dart';
 import '../../widgets/permission_guard.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
@@ -114,6 +120,56 @@ class _ProductsPicposScreenState extends ConsumerState<ProductsPicposScreen> {
     }
   }
 
+  /// صفُّ العدّادات — `prodKpis` في التصميم.
+  ///
+  /// ⚠️ **على الصفحة المحمَّلة لا على الجدول كلِّه.** الشاشةُ مُصفَّحةٌ
+  /// (`loadNextPage`)، فما في `state.items` شريحةٌ لا الكلّ — والتسمياتُ تقول
+  /// «في الصفحة» صراحةً. عدٌّ إجماليٌّ صادقٌ يحتاج `COUNT(*)` في SQL وهو بندٌ
+  /// مستقلّ، وكتابةُ «إجمالي الأصناف» فوق عدّادِ شريحةٍ كانت ستكذب.
+  Widget _buildKpiRow() {
+    final items = ref.watch(productsControllerProvider.select((s) => s.items));
+    final kpis = PicPosProductKpis.from([
+      for (final p in items)
+        (
+          salePrice: p.salePrice,
+          costPrice: p.costPrice,
+          currentStock: p.currentStock,
+          minStock: p.minStock,
+          trackInventory: p.trackInventory,
+          isActive: p.isActive,
+        ),
+    ]);
+
+    return PicPosKpiRow(
+      kpis: [
+        PicPosKpi(
+          label: 'أصناف في الصفحة',
+          value: '${kpis.loaded}',
+          icon: PhosphorIconsBold.package,
+          tint: AppColors.primary,
+        ),
+        PicPosKpi(
+          label: 'نشط في الصفحة',
+          value: '${kpis.active}',
+          icon: PhosphorIconsBold.checkCircle,
+          tint: AppColors.success,
+        ),
+        PicPosKpi(
+          label: 'تحت الحد الأدنى',
+          value: '${kpis.belowMinStock}',
+          icon: PhosphorIconsBold.warning,
+          tint: kpis.belowMinStock > 0 ? AppColors.error : AppColors.success,
+        ),
+        PicPosKpi(
+          label: 'بلا تكلفة مسجّلة',
+          value: '${kpis.missingCost}',
+          icon: PhosphorIconsBold.currencyCircleDollar,
+          tint: kpis.missingCost > 0 ? AppColors.warning : AppColors.success,
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final selectedCategoryId =
@@ -192,9 +248,13 @@ class _ProductsPicposScreenState extends ConsumerState<ProductsPicposScreen> {
         ]),
         body: Column(
           children: [
+            _buildKpiRow(),
+            const SizedBox(height: 12),
             Expanded(
               child: PicPosContentCard(
-                child: ProductsTable(scrollController: _scrollController),
+                child: ProductsTablePicpos(
+                  scrollController: _scrollController,
+                ),
               ),
             ),
             const ProductsBulkActionBar(),
