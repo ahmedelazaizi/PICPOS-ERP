@@ -182,6 +182,16 @@ class _PicPosInvoiceFormState extends State<PicPosInvoiceForm> {
   String _paymentMethod = 'cash';
   bool _saving = false;
 
+  /// هل كتب المستخدمُ «المحصَّل» بيده؟ يوقف التهيئةَ التلقائيّة إلى الأبد
+  /// (اقرأ [picPosAutoPaid]). ويُرفع من `onChanged` وحدَه — الإسنادُ
+  /// البرمجيُّ على `controller.text` **لا** يستدعيه، وهذا بالضبط ما يفرّق
+  /// بين رقمِ المستخدم ورقمِ التهيئة.
+  bool _paidTouched = false;
+
+  /// حارسُ عدمِ الارتداد: الكتابةُ في `_paidController` تُوقظ مستمعَها،
+  /// فبلا هذا الحارس تُنادي التهيئةُ نفسَها.
+  bool _syncingPaid = false;
+
   /// كميّةُ سطرِ الإدخال السريع.
   double _quickQty = 1;
 
@@ -211,7 +221,31 @@ class _PicPosInvoiceFormState extends State<PicPosInvoiceForm> {
     super.dispose();
   }
 
-  void _onMoneyFieldChanged() => setState(() {});
+  void _onMoneyFieldChanged() {
+    // الخصمُ يغيّر الصافيَ، والصافي يقود التهيئةَ — فتُعاد الحسبةُ قبل
+    // إعادة الرسم لا بعدها.
+    _syncAutoPaid();
+    if (mounted) setState(() {});
+  }
+
+  /// يُعيد «المحصَّل» إلى ما تفرضه طريقةُ الدفع ما لم يكتبه المستخدمُ بيده.
+  ///
+  /// يُنادى بعد كلِّ ما يحرّك الصافيَ — إضافةُ بندٍ أو تعديلُه أو حذفُه
+  /// أو تغيُّرُ الخصم — وعند اختيار طريقةِ دفعٍ صراحةً.
+  void _syncAutoPaid() {
+    if (_syncingPaid) return;
+    final auto = picPosAutoPaid(
+      paymentMethod: _paymentMethod,
+      net: _totals.net,
+      userEdited: _paidTouched,
+    );
+    if (auto == null) return;
+    final text = auto.toStringAsFixed(AppConstants.decimalPlaces);
+    if (_paidController.text == text) return;
+    _syncingPaid = true;
+    _paidController.text = text;
+    _syncingPaid = false;
+  }
 
   double get _headerDiscount =>
       NumberUtils.tryParseLocale(_discountController.text) ?? 0;
@@ -254,13 +288,19 @@ class _PicPosInvoiceFormState extends State<PicPosInvoiceForm> {
       _quickQty = 1;
       _searchController.clear();
     });
+    _syncAutoPaid();
     _searchFocus.requestFocus();
   }
 
-  void _updateLine(int i, PicPosInvoiceLine next) =>
-      setState(() => _lines[i] = next);
+  void _updateLine(int i, PicPosInvoiceLine next) {
+    setState(() => _lines[i] = next);
+    _syncAutoPaid();
+  }
 
-  void _removeLine(int i) => setState(() => _lines.removeAt(i));
+  void _removeLine(int i) {
+    setState(() => _lines.removeAt(i));
+    _syncAutoPaid();
+  }
 
   /// التحقّقُ قبل الحفظ — يعيد رسالةَ المنع أو `null`.
   ///

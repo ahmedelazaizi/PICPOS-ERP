@@ -245,6 +245,10 @@ class _PicPosMoneyPanel extends StatelessWidget {
                         label: state.widget.kind.paidLabel,
                         child: TextField(
                           controller: state._paidController,
+                          // رقمُ المستخدمِ يوقف التهيئةَ التلقائيّة. و`onChanged`
+                          // لا يُستدعى على الإسناد البرمجيّ، فهو الفارقُ
+                          // الوحيدُ الموثوقُ بين يدِ المستخدم ويدِ الشاشة.
+                          onChanged: (_) => state._paidTouched = true,
                           keyboardType: const TextInputType.numberWithOptions(
                               decimal: true),
                           style: const TextStyle(
@@ -398,20 +402,21 @@ class _PicPosMoneyPanel extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(8),
-                  onTap: () => state.setState(() {
-                    state._paymentMethod = key;
+                  onTap: () {
                     // ‏«آجل» يُصفِّر المدفوع و«نقدي» يملؤه بالكامل — **تهيئةً
                     // لا إلزاماً**. الحقلُ يبقى مصدرَ الحقيقة الوحيد لِما
                     // يُحفَظ، وهو الدرسُ المكتوبُ في `_handleSave` القائم:
                     // وضعُ الدفع كان يفرض سداداً كاملاً فيُنشئ سنداً لم
                     // يُصدره أحد.
-                    if (key == 'credit') {
-                      state._paidController.text = '0';
-                    } else {
-                      state._paidController.text = state._totals.net
-                          .toStringAsFixed(AppConstants.decimalPlaces);
-                    }
-                  }),
+                    //
+                    // واختيارُ الطريقةِ صراحةً **يُعيد تسليحَ التهيئة**: من
+                    // نقر الحبّةَ يطلب رقمَها، فيُنسى ما كتبه قبلها.
+                    state.setState(() {
+                      state._paymentMethod = key;
+                      state._paidTouched = false;
+                    });
+                    state._syncAutoPaid();
+                  },
                   child: SizedBox(
                     height: 34,
                     child: Row(

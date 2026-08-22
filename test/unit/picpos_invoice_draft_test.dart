@@ -158,4 +158,51 @@ void main() {
       expect(s.payTitle, isNot(p.payTitle));
     });
   });
+
+  // بلاغُ المالك 2026-08-23: فاتورةٌ «نقدي» ظهرت غيرَ مدفوعةٍ ومديونيّةً على
+  // العميل. القرارُ استُخرج خالصاً هنا لأنّ عيشَه داخل `onTap` هو ما جعله
+  // غيرَ مقيسٍ أصلاً — ونفسُ علاجِ `_allowedPaymentMethods`.
+  group('تهيئةُ المحصَّل تتبع طريقةَ الدفع', () {
+    test('نقديٌّ يملأ الصافيَ كاملاً', () {
+      expect(
+        picPosAutoPaid(paymentMethod: 'cash', net: 114, userEdited: false),
+        114,
+      );
+    });
+
+    test('تحويلٌ مالٌ وصل فعلاً ⇒ يتبع الصافيَ كالنقد', () {
+      expect(
+        picPosAutoPaid(paymentMethod: 'transfer', net: 114, userEdited: false),
+        114,
+      );
+    });
+
+    test('آجلٌ يُصفِّر — الدَّينُ مقصود', () {
+      expect(
+        picPosAutoPaid(paymentMethod: 'credit', net: 114, userEdited: false),
+        0,
+      );
+    });
+
+    test('رقمُ المستخدمِ يوقف التهيئةَ مهما كانت الطريقة', () {
+      expect(
+        picPosAutoPaid(paymentMethod: 'cash', net: 114, userEdited: true),
+        isNull,
+        reason: 'الحقلُ مصدرُ الحقيقة — تهيئةٌ لا إلزام',
+      );
+      expect(
+        picPosAutoPaid(paymentMethod: 'credit', net: 114, userEdited: true),
+        isNull,
+      );
+    });
+
+    test('صافٍ سالبٌ لا يُنتج محصَّلاً سالباً', () {
+      // خصمُ مستندٍ يتجاوز الفرعيَّ يعطي صافياً سالباً — و`clampPaid` يحرس
+      // الحفظَ، لكنّ التهيئةَ لا يجوز أن تكتب سالباً في الحقل أصلاً.
+      expect(
+        picPosAutoPaid(paymentMethod: 'cash', net: -30, userEdited: false),
+        0,
+      );
+    });
+  });
 }

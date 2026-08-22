@@ -9,6 +9,7 @@
 //  ‏٤) **تنبيهُ كفايةِ الرصيد لا يُطبَع بلا أرصدة** — ادّعاءٌ عن المخزون لا
 //     يُقال إلّا بقياس.
 import 'package:flutter/material.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:ural_erp/core/constants/app_constants.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/domain/models/picpos_invoice_draft.dart';
@@ -283,5 +284,89 @@ void main() {
     expect(find.text('ضريبة 5%'), findsOneWidget);
     expect(find.text('ضريبة 14%'), findsNothing,
         reason: 'الرقمُ يأتي من الإعداد — و«١٤٪» في التصميم قيمةُ عيّنة');
+  });
+
+  /// يختار الطرفَ عبر حوار الاختيار — الحفظُ ممنوعٌ بدونه.
+  Future<void> pickParty(WidgetTester tester) async {
+    await tester.tap(find.text('اختر العميل'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('شركة النيل'));
+    await tester.pumpAndSettle();
+  }
+
+  /// حبّاتُ طريقةِ الدفع تُنقَر **بأيقونتها** لا بنصّها: نصُّ «آجل» يظهر
+  /// أيضاً وصفاً للطرف (`meta`)، فالبحثُ بالنصّ يجد اثنين ويفشل غامضاً.
+  Future<void> tapMethod(WidgetTester tester, IconData icon) async {
+    await tester.tap(find.byIcon(icon));
+    await tester.pumpAndSettle();
+  }
+
+  // ── بلاغُ المالك (2026-08-23) ─────────────────────────────────────────────
+  // «عميلٌ تم إعدادُ فاتورة مبيعات له واختيارُ وسيلة الدفع نقدي، بتظهر على
+  //  شاشة الفواتير أنها غير مدفوعة، وبتظهر في الحسابات وكشف الحساب أنها
+  //  مديونيةٌ على العميل».
+  //
+  // السببُ المقيس: `_paymentMethod` يبدأ `'cash'` و`_paidController` يبدأ
+  // `'0'`، والتهيئةُ التي تملأ المبلغَ تعيش **داخل `onTap` الحبّة وحدَها**.
+  // فمن قبِل الافتراضَ ولم ينقر «نقدي» يحفظ بـ`paid = 0` — فتُقيَّد الفاتورةُ
+  // ديناً على العميل. والحبّةُ معروضةٌ مختارةً طوالَ الوقت، فالشاشةُ تقول
+  // «نقدي» والمالُ يقول «آجل».
+  group('«نقدي» المعروضُ يساوي «نقدي» المحفوظ', () {
+    testWidgets('نقديٌّ افتراضيٌّ بلا نقرةٍ ⇒ المحصَّلُ يساوي الصافي',
+        (tester) async {
+      final saves = await pump(
+        tester,
+        kind: PicPosInvoiceKind.sales,
+        initialWarehouseId: 2,
+      );
+      await pickParty(tester);
+      await addLine(tester);
+      await tester.tap(find.text('حفظ الفاتورة'));
+      await tester.pump();
+
+      expect(saves, hasLength(1), reason: 'التجهيزةُ سليمةٌ: الحفظُ وصل فعلاً');
+      expect(saves.single['paid'], saves.single['net'],
+          reason: 'الحبّةُ تُعرَض مختارةً، فالمالُ يجب أن يتبعها بلا نقرة');
+      expect(saves.single['paid'], greaterThan(0),
+          reason: 'صفرٌ هنا يعني ديناً على عميلٍ دفع نقداً');
+    });
+
+    testWidgets('بندٌ يُضاف بعد اختيار «نقدي» ⇒ المحصَّلُ يلحق الصافي',
+        (tester) async {
+      final saves = await pump(
+        tester,
+        kind: PicPosInvoiceKind.sales,
+        initialWarehouseId: 2,
+      );
+      await pickParty(tester);
+      await addLine(tester);
+      await tapMethod(tester, PhosphorIconsBold.money);
+      // بندٌ ثانٍ بعد النقرة: القيمةُ المجمّدةُ عند لحظةِ النقر كانت تترك
+      // فرقَ البندِ الثاني ديناً.
+      await addLine(tester);
+      await tester.tap(find.text('حفظ الفاتورة'));
+      await tester.pump();
+
+      expect(saves, hasLength(1));
+      expect(saves.single['paid'], saves.single['net'],
+          reason: 'التهيئةُ تتبع الصافيَ ما دام المستخدمُ لم يكتب رقماً بيده');
+    });
+
+    testWidgets('«آجل» يُصفِّر المحصَّل', (tester) async {
+      final saves = await pump(
+        tester,
+        kind: PicPosInvoiceKind.sales,
+        initialWarehouseId: 2,
+      );
+      await pickParty(tester);
+      await addLine(tester);
+      await tapMethod(tester, PhosphorIconsBold.calendarDot);
+      await tester.tap(find.text('حفظ الفاتورة'));
+      await tester.pump();
+
+      expect(saves, hasLength(1));
+      expect(saves.single['paid'], 0,
+          reason: 'الآجلُ دينٌ مقصود — ولا يجوز أن تفرض التهيئةُ سداداً');
+    });
   });
 }
