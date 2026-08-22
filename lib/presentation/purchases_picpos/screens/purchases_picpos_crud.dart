@@ -103,20 +103,29 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
     // يراقبها شريطُ الفلاتر. ولهذا يعمل ذاك ويموت هذا — وهو الفرقُ الوحيدُ
     // بينهما.
     //
-    // فالعلاجُ شقّان: مهلةٌ تمنع التعلّقَ الأبديّ، وإمساكُ الرميِ وإظهارُه.
-    // ولا يبقى مسارٌ يفشل بلا أن يقول.
-    // ═══ 🔴 «الزرُّ لا يستجيب» — بلاغُ المالك على البناء المنشور ═══
+    // ═══ 🔴 والسببُ المقيسُ من بلاغ المالك الثاني ═══
     //
-    // كانت خمسةُ `await` عاريةٍ تسبق فتحَ الحوار. وأيُّ واحدٍ منها يرمي أو
-    // يتعلّق يجعل الزرَّ **ميّتاً بصمت**: `onPressed` يرجع `Future` فلا أحدَ
-    // يمسك رميَه، ولا رسالةَ ولا دوّارة — نقرةٌ لا يتبعها شيء.
+    // الرسالةُ التي أظهرها `try/catch` قالتها بالحرف:
     //
-    // ونظيرُ المبيعات **لا ينتظر أصلاً**: يقرأ `.value ?? []` من مزوِّداتٍ
-    // يراقبها شريطُ الفلاتر. ولهذا يعمل ذاك ويموت هذا — وهو الفرقُ الوحيدُ
-    // بينهما.
+    //     Bad state: The provider StreamProvider<List<CostCenter>> was
+    //     disposed during loading state, yet no value could be emitted.
     //
-    // فالعلاجُ شقّان: مهلةٌ تمنع التعلّقَ الأبديّ، وإمساكُ الرميِ وإظهارُه.
-    // ولا يبقى مسارٌ يفشل بلا أن يقول.
+    // `allCostCentersProvider` **`autoDispose`**، و`ref.read(p.future)` **لا
+    // يُنشئ مستمعاً يُبقيه حيّاً**. فتُبنى نسختُه، ويبدأ البثُّ، وتُرمى
+    // النسخةُ قبل أن يصل أوّلُ عنصر — فلا يكتمل المستقبَلُ أبداً.
+    //
+    // وقاعدةُ المالك بلا مراكزِ تكلفةٍ أصلاً (`costCenters=0` في سجلّ
+    // المبيعات)، فالبثُّ يتأخّر لحظةً قبل أن يُصدر قائمةً فارغة — وتلك
+    // اللحظةُ تكفي.
+    //
+    // فالعلاجُ **إبقاءُ المزوِّدات حيّةً طوالَ الانتظار** بـ`listenManual`،
+    // وإغلاقُها في `finally` فلا تتسرّب. والمهلةُ و`try/catch` يبقيان: هما
+    // ما حوّلا الصمتَ إلى رسالةٍ قادت إلى هذا السطر.
+    final keepAlive = <ProviderSubscription<Object?>>[
+      ref.listenManual(allWarehousesProvider, (_, _) {}),
+      ref.listenManual(allCostCentersProvider, (_, _) {}),
+      ref.listenManual(posDefaultTaxRateProvider, (_, _) {}),
+    ];
     try {
       final controller = ref.read(purchaseInvoicesControllerProvider.notifier);
       // ⚠️ `getSuppliers()` تنتظر **أوّلَ بثٍّ** (`watchSuppliers().first`).
@@ -268,6 +277,10 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
           'تعذّر فتحُ فاتورة المشتريات: $e',
           type: ToastType.error,
         );
+      }
+    } finally {
+      for (final s in keepAlive) {
+        s.close();
       }
     }
   }

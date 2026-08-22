@@ -215,6 +215,22 @@ class ScreenRegistry {
     ScreenId.reportBuilder,
     ScreenId.salesReturns,
     ScreenId.purchaseReturns,
+    // ⚠️ **كانت ساقطةً من `unified` وحدَها** — بلاغُ المالك 2026-08-22:
+    // «شاشةُ إغلاق الوردية لا تظهر في القائمة الجانبية».
+    //
+    // والسجلُّ أثبته بلا تخمين: `allowedIndices=[0…45, 60]` — الرقمُ **٦٠**
+    // (`regions`) حاضرٌ و**٥٦** (`shiftClose`) غائب. وهما جارَان في هذه
+    // القائمة بالضبط.
+    //
+    // وحضورُها في الستّ الأخرى (`restaurant` · `supermarket` · `…Pro` ·
+    // `…Plus` · `commercial` · `lite`) يُثبت أن الغيابَ سهوٌ لا سياسة —
+    // و`unified` **أوسعُ** النطاقات، فلا يُعقل أن تنقصها شاشةٌ تحملها
+    // `lite`. وإغلاقُ الورديّة وظيفةُ نقطةِ بيعٍ جوهريّة، لا زينة.
+    //
+    // ولا يكفي وجودُها في `screenPermissionMap`: الحلقةُ في
+    // `userAllowedScreensProvider` تُرشِّح بـ`flavorAllowedScreenIds` **قبل**
+    // فحصِ الصلاحية، فما ليس في نطاق الملفّ يسقط حتى مع تجاوزِ مدير النظام.
+    ScreenId.shiftClose,
   ];
 
   /// أصغر نطاق نشحنه: نقطة بيع + مخازن + صناديق + تقارير.

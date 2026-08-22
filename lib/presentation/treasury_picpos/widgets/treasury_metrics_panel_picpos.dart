@@ -239,8 +239,12 @@ class PicPosTreasurySplitChips extends StatelessWidget {
       children: [
         for (final s in split.slices)
           Container(
-            constraints: const BoxConstraints(minWidth: 104),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            // بلاغُ المالك 2026-08-22: «البطاقاتُ صغيرةٌ جدّاً والكارتُ مش
+            // متناسق». والسببُ أن `IntrinsicHeight` رفعت ارتفاعَ البطاقة
+            // الداكنة لتساوي شبكةَ الأزرار (صفَّان ≈ ١٢٢ بكسل) — وهو ما يفعله
+            // التصميمُ نفسُه — فبقيت الشرائحُ بمقاسِ بطاقةٍ أقصر فبدت ضائعة.
+            constraints: const BoxConstraints(minWidth: 124),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
               color: chipBg,
               borderRadius: BorderRadius.circular(11),
@@ -267,7 +271,7 @@ class PicPosTreasurySplitChips extends StatelessWidget {
                     Text(
                       s.label,
                       style: TextStyle(
-                        fontSize: 10,
+                        fontSize: 11,
                         fontWeight: FontWeight.w700,
                         color: labelColor,
                       ),
@@ -287,13 +291,28 @@ class PicPosTreasurySplitChips extends StatelessWidget {
                     ],
                   ],
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 5),
                 Text(
-                  s.valueLabel,
+                  // ⚠️ **نفسُ تنسيق بقيّة الشاشة، لا `valueLabel`.**
+                  //
+                  // `PicPosTreasurySlice.valueLabel` يستعمل
+                  // `AppConstants.decimalPlaces` وهو **ثابتُ ترجمةٍ = ٣**
+                  // (دقّةُ الدينار)، بينما المجموعَ وبطاقاتِ الصناديق وصفوفَ
+                  // الحركات كلُّها `NumberFormat('#,##0.00')`. فظهر على
+                  // الشاشة الواحدة رقمان بدقّتَين: «0.00» فوق و«0.000» تحته
+                  // — وهو ما رآه المالك.
+                  //
+                  // 🔴 **والجذرُ أعمقُ من العرض ولا يُصلَح هنا:**
+                  // `setCurrency` يبدّل الرمزَ والكودَ و**لا يمسّ**
+                  // `decimalPlaces`، فتنصيبةٌ بالجنيه تحسب بثلاث خانات.
+                  // و`FinancialUtils._precision` مبنيٌّ عليه — أي أنّ تبديلَه
+                  // يغيّر تدويرَ المحرّك المحاسبيّ كلِّه وحدَّ اتّزان القيود.
+                  // فهو قرارٌ يُعرَض لا تعديلٌ يُدسّ في إصلاح بطاقة.
+                  NumberFormat('#,##0.00', 'ar').format(s.value),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 16,
                     height: 1.15,
                     fontWeight: FontWeight.w800,
                     color: valueColor,
