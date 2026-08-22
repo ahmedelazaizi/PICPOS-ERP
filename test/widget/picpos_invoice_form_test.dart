@@ -369,4 +369,99 @@ void main() {
           reason: 'الآجلُ دينٌ مقصود — ولا يجوز أن تفرض التهيئةُ سداداً');
     });
   });
+
+  // ── بلاغُ المالك (2026-08-23) ─────────────────────────────────────────────
+  // «الكمّيّةُ لا تُكتب في فاتورة جديدة» — كانت `Text` بين زرَّي `+`/`−`،
+  // فإدخالُ ٥٠ يعني ٤٩ نقرة.
+  //
+  // والحدُّ المحفوظُ عمداً: صفرٌ سطرٌ بلا أثرٍ ماليّ، وسالبٌ يقلب اتّجاهَ
+  // حركةِ المخزون — فكلاهما مرفوضٌ ولو كُتب بالحرف.
+  group('الكمّيّةُ تُكتب لا تُنقَر', () {
+    /// يكتب في حقلِ كمّيّةِ الصنفِ ١ ثمّ يُنهي التحرير.
+    Future<void> typeQty(WidgetTester tester, String value) async {
+      await tester.enterText(find.byKey(const ValueKey('qty_1')), value);
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+    }
+
+    Future<List<Map<String, dynamic>>> pumpWithLine(WidgetTester tester) async {
+      final saves = await pump(
+        tester,
+        kind: PicPosInvoiceKind.sales,
+        initialWarehouseId: 2,
+      );
+      await pickParty(tester);
+      await addLine(tester);
+      return saves;
+    }
+
+    Future<void> save(WidgetTester tester) async {
+      await tester.tap(find.text('حفظ الفاتورة'));
+      await tester.pump();
+    }
+
+    /// كمّيّةُ البندِ الوحيدِ في نداءِ الحفظ — مُنمَّطةً، فخريطةُ الحفظ
+    /// `dynamic` و`avoid_dynamic_calls` يعدّها خرقاً.
+    double savedQty(List<Map<String, dynamic>> saves) {
+      final items = saves.single['items'] as List<Map<String, dynamic>>;
+      return items.single['quantity'] as double;
+    }
+
+    testWidgets('٥٠ تُكتب مرّةً واحدةً لا ٤٩ نقرة', (tester) async {
+      final saves = await pumpWithLine(tester);
+      await typeQty(tester, '50');
+      await save(tester);
+      expect(savedQty(saves),50);
+    });
+
+    testWidgets('الكسرُ يُقبل — الوزنُ ‎1.25 قائم', (tester) async {
+      final saves = await pumpWithLine(tester);
+      await typeQty(tester, '1.25');
+      await save(tester);
+      expect(savedQty(saves),1.25);
+    });
+
+    testWidgets('الأرقامُ العربيّةُ تُقبل', (tester) async {
+      final saves = await pumpWithLine(tester);
+      await typeQty(tester, '٧');
+      await save(tester);
+      expect(savedQty(saves),7,
+          reason: 'الحقلُ يقرأ بـtryParseLocale لا بـdouble.parse');
+    });
+
+    testWidgets('الصفرُ يُرفَض ويعود إلى ما كان', (tester) async {
+      final saves = await pumpWithLine(tester);
+      await typeQty(tester, '3');
+      await typeQty(tester, '0');
+      await save(tester);
+      expect(savedQty(saves),3,
+          reason: 'صفرٌ سطرٌ بلا أثرٍ ماليّ — الحدُّ محفوظٌ ولو كُتب بالحرف');
+    });
+
+    testWidgets('السالبُ يُرفَض — لا يقلب اتّجاهَ حركةِ المخزون',
+        (tester) async {
+      final saves = await pumpWithLine(tester);
+      await typeQty(tester, '4');
+      await typeQty(tester, '-2');
+      await save(tester);
+      expect(savedQty(saves),4);
+    });
+
+    testWidgets('نصٌّ لا يُقرأ رقماً يعود إلى ما كان', (tester) async {
+      final saves = await pumpWithLine(tester);
+      await typeQty(tester, '5');
+      await typeQty(tester, 'أبجد');
+      await save(tester);
+      expect(savedQty(saves),5);
+    });
+
+    testWidgets('تغييرُ الكمّيّةِ كتابةً يجرّ المحصَّلَ معه', (tester) async {
+      // تقاطعُ الإصلاحين: الكمّيّةُ تغيّر الصافيَ، والتهيئةُ تتبعه.
+      final saves = await pumpWithLine(tester);
+      await typeQty(tester, '3');
+      await save(tester);
+      expect(saves.single['paid'], saves.single['net'],
+          reason: 'وإلّا عاد الدَّينُ من بابِ الكمّيّة');
+    });
+  });
 }

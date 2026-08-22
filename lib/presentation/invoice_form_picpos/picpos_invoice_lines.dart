@@ -567,17 +567,12 @@ class _LineRow extends StatelessWidget {
                               ),
                     ),
                     Expanded(
-                      child: Text(
-                        line.quantity == line.quantity.roundToDouble()
-                            ? line.quantity.toInt().toString()
-                            : line.quantity.toString(),
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w800,
-                          fontFeatures: [ui.FontFeature.tabularFigures()],
+                      child: _QtyField(
+                        key: ValueKey('qty_${line.productId}'),
+                        quantity: line.quantity,
+                        onCommit: (q) => state._updateLine(
+                          index,
+                          line.copyWith(quantity: q),
                         ),
                       ),
                     ),
@@ -737,6 +732,111 @@ class _LineRow extends StatelessWidget {
           size: 11,
           color: onTap == null ? color.withValues(alpha: .3) : color,
         ),
+      ),
+    );
+  }
+}
+
+/// حقلُ الكمّيّة — يُكتب ويُنقَر.
+///
+/// ── بلاغُ المالك (2026-08-23) ─────────────────────────────────────────────
+/// «الكمّيّةُ لا تُكتب في فاتورة جديدة» — كانت `Text` بين زرَّي `+`/`−`،
+/// فإدخالُ ٥٠ يعني ٤٩ نقرة.
+///
+/// ── ولماذا ودجتٌ بحالةٍ لا `TextField` في مكانها ─────────────────────────
+/// المتحكّمُ المبنيُّ داخل `build` — كحقلِ السعرِ المجاور — يُعاد إنشاؤه مع
+/// كلّ إعادةِ رسم. وتثبيتُ الكمّيّةِ يُعيد رسمَ الصفِّ كلِّه، فالمؤشّرُ يقفز
+/// ويضيع نصفُ ما كُتب. فالحالةُ هنا تملك متحكّمَها وتُزامنه من النموذج
+/// **حين لا يكون الحقلُ تحت التحرير** وحدَها.
+///
+/// والتثبيتُ يقع على `done` **وعلى فقدِ التركيز** معاً: من كتب ٥٠ ثمّ نقر
+/// خارجَ الحقلِ بلا `Enter` كان يفقد ما كتب — وهو نفسُ البلاغ من بابٍ آخر.
+class _QtyField extends StatefulWidget {
+  const _QtyField({
+    super.key,
+    required this.quantity,
+    required this.onCommit,
+  });
+
+  final double quantity;
+  final ValueChanged<double> onCommit;
+
+  @override
+  State<_QtyField> createState() => _QtyFieldState();
+}
+
+class _QtyFieldState extends State<_QtyField> {
+  late final TextEditingController _controller;
+  late final FocusNode _focus;
+
+  /// صحيحةٌ تُعرَض بلا كسر، وكسريّةٌ تُعرَض بكسرها — الوزنُ `1.25` قائم.
+  static String _format(double q) =>
+      q == q.roundToDouble() ? q.toInt().toString() : q.toString();
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: _format(widget.quantity));
+    _focus = FocusNode()
+      ..addListener(() {
+        if (!_focus.hasFocus) _commit();
+      });
+  }
+
+  @override
+  void didUpdateWidget(covariant _QtyField old) {
+    super.didUpdateWidget(old);
+    // زرَّا `+`/`−` يغيّران الكمّيّةَ من خارج الحقل، فيُعرَض الجديد. أمّا
+    // والمستخدمُ يكتب فلا يُنتزَع منه ما بين يديه.
+    if (widget.quantity != old.quantity && !_focus.hasFocus) {
+      _controller.text = _format(widget.quantity);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focus.dispose();
+    super.dispose();
+  }
+
+  /// يقرأ المكتوبَ ويثبّته — أو يُرجع المعروضَ إلى آخرِ قيمةٍ صحيحة.
+  ///
+  /// والحدُّ محفوظٌ كما كان على زرّ `−`: صفرٌ سطرٌ بلا أثرٍ ماليّ، وسالبٌ
+  /// يقلب اتّجاهَ حركةِ المخزون. فما لا يُقرأ رقماً موجباً يُرفَض ويُردّ
+  /// المعروضُ — ولا تُكتب قيمةٌ صامتةٌ خلفَ المستخدم.
+  ///
+  /// والقراءةُ بـ`tryParseLocale` لا `double.parse`: الأرقامُ العربيّةُ
+  /// مقبولةٌ، و`parse` كانت ترمي عليها.
+  void _commit() {
+    final parsed = NumberUtils.tryParseLocale(_controller.text);
+    if (parsed == null || parsed <= 0) {
+      _controller.text = _format(widget.quantity);
+      return;
+    }
+    _controller.text = _format(parsed);
+    if (parsed != widget.quantity) widget.onCommit(parsed);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: _controller,
+      focusNode: _focus,
+      textAlign: TextAlign.center,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      textInputAction: TextInputAction.done,
+      onSubmitted: (_) => _commit(),
+      onTapOutside: (_) => _focus.unfocus(),
+      style: const TextStyle(
+        fontSize: 12.5,
+        fontWeight: FontWeight.w800,
+        fontFeatures: [ui.FontFeature.tabularFigures()],
+      ),
+      decoration: const InputDecoration(
+        isDense: true,
+        border: InputBorder.none,
+        contentPadding: EdgeInsets.zero,
       ),
     );
   }
