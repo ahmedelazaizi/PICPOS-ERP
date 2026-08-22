@@ -87,7 +87,11 @@ class TreasuryMetricsPanelPicpos extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(width: 14),
-                Flexible(
+                // ⚠️ `Expanded` لا `Flexible`: هو ما يبتلع الفراغَ فيدفع
+                // الشرائحَ إلى آخر الصفّ — ويُغني عن `Spacer` الذي كان
+                // **ينازعها العرضَ** فيُجبرها على الالتفاف سطرَين.
+                Expanded(
+                  flex: 5,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
@@ -108,14 +112,18 @@ class TreasuryMetricsPanelPicpos extends ConsumerWidget {
                     ],
                   ),
                 ),
-                const SizedBox(width: 14),
-                const Spacer(),
+                const SizedBox(width: 16),
                 // الشرائحُ **داخل** البطاقة الداكنة — لا تحتها على الفاتح.
                 // راجع تعليقَ [PicPosTreasurySplitChips]: وضعُها خارجاً هو ما
                 // أنتج «أبيضَ على فاتح» في لقطة المالك. والتصميمُ يضعها في
                 // آخر الصفّ (`margin-inline-start:auto`) لا تحت الرقم.
+                //
+                // ونسبةٌ ثابتةٌ من الصفّ (٤ مقابل ٥) لا عرضٌ طبيعيّ: بها تبقى
+                // الشرائحُ **متناسبةً مع مساحة البطاقة** على أيّ عرضِ نافذة،
+                // وتقسم ما تأخذه بالتساوي فلا تلتفّ ولا تفيض.
                 if (split != null)
-                  Flexible(
+                  Expanded(
+                    flex: 4,
                     child: PicPosTreasurySplitChips(split: split!),
                   ),
               ],
@@ -230,20 +238,26 @@ class PicPosTreasurySplitChips extends StatelessWidget {
         ? Colors.white.withValues(alpha: .10)
         : Theme.of(context).scaffoldBackgroundColor;
 
-    return Wrap(
-      spacing: 10,
-      runSpacing: 10,
-      // في آخر الصفّ كما يضعها التصميم — والالتفافُ يبقى فهو ما يمنع
-      // الفيضانَ على النوافذ الضيّقة (مقيسٌ في `picpos_treasury_metrics_test`).
-      alignment: WrapAlignment.end,
+    // ═══ 🔴 صفٌّ واحدٌ لا التفاف — بلاغُ المالك 2026-08-23 ═══
+    //
+    // كانت `Wrap`، فحين ضاق العرضُ نزلت «كليك» سطراً ثانياً: ثلاثُ شرائحَ
+    // في سطرَين داخل بطاقةٍ عاليةٍ فبدت صغيرةً ضائعةً — وهو ما أرسله المالك
+    // مقارَناً بالمطلوب (ثلاثتُها في سطرٍ واحد).
+    //
+    // والعلاجُ **ليس تصغيرَها**: `Row` بأبناءٍ مرنين (`Flexible`) يبقيها في
+    // سطرٍ واحدٍ دائماً، وتتقلّص بالتساوي عند الضيق بدل أن تلتفّ. والنصُّ
+    // داخلَها يقصُّ نفسَه (`ellipsis`) فلا فيضان — وهو ما يحفظه اختبارُ
+    // العرضِ الضيّق في `picpos_treasury_metrics_test`.
+    return Row(
       children: [
         for (final s in split.slices)
-          Container(
-            // بلاغُ المالك 2026-08-22: «البطاقاتُ صغيرةٌ جدّاً والكارتُ مش
-            // متناسق». والسببُ أن `IntrinsicHeight` رفعت ارتفاعَ البطاقة
-            // الداكنة لتساوي شبكةَ الأزرار (صفَّان ≈ ١٢٢ بكسل) — وهو ما يفعله
-            // التصميمُ نفسُه — فبقيت الشرائحُ بمقاسِ بطاقةٍ أقصر فبدت ضائعة.
-            constraints: const BoxConstraints(minWidth: 124),
+          // `Expanded` لا `Flexible` بحدٍّ أدنى: الحدُّ الأدنى هو ما جعل
+          // الثلاثةَ تفيض عند عرضٍ ضيّق (٣×١١٦ > المتاح) — مقيسٌ في اختبار
+          // العرض الضيّق. والتقسيمُ بالتساوي يبقيها سطراً واحداً على أيّ
+          // عرضٍ ويجعلها **متناسبةً** مع مساحة البطاقة لا ضائعةً فيها.
+          Expanded(
+            child: Container(
+            margin: const EdgeInsetsDirectional.only(start: 10),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
               color: chipBg,
@@ -257,7 +271,7 @@ class PicPosTreasurySplitChips extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Row(
-                  mainAxisSize: MainAxisSize.min,
+
                   children: [
                     Container(
                       width: 6,
@@ -268,12 +282,19 @@ class PicPosTreasurySplitChips extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 5),
-                    Text(
-                      s.label,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: labelColor,
+                    // ⚠️ `Flexible` على الاسم: الشريحةُ صارت تقتسم عرضَ
+                    // البطاقة، فعلى نافذةٍ ضيّقةٍ يضيق سطرُ الاسم والنسبة.
+                    // والقصُّ أهونُ من الشريط الأصفر والأسود.
+                    Flexible(
+                      child: Text(
+                        s.label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: labelColor,
+                        ),
                       ),
                     ),
                     // النسبةُ تُعرض فقط حين يكون لها معنى — مجموعٌ غيرُ موجبٍ
@@ -320,6 +341,7 @@ class PicPosTreasurySplitChips extends StatelessWidget {
                   ),
                 ),
               ],
+            ),
             ),
           ),
       ],
