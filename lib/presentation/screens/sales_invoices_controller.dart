@@ -254,9 +254,18 @@ class SalesInvoicesController extends Notifier<SalesInvoicesScreenState> {
     _disposed = false;
 
     // Listen for table-level changes (same proven pattern as SalesReturnNotifier).
-    // salesInvoicesChangeProvider is autoDispose, so it always creates a fresh
-    // .watch() stream that reliably detects inserts from any source (local POS,
+    // One always-on .watch() stream detects inserts from any source (local POS,
     // client sync via API, etc.). When it fires, we debounce and do a fresh .get().
+    //
+    // ⚠️ The provider is NOT autoDispose — an earlier version of this comment
+    // said it was, and the two readings imply opposite lifetimes. See its own
+    // doc in providers.dart: it is deliberately kept alive so an insert that
+    // happens while this screen is dormant is still reflected on return.
+    //
+    // ⚠️ And it must emit a DISTINCT value per change. It used to be
+    // StreamProvider<void>, so every emission compared equal and Riverpod
+    // notified only once — the measured cause of "the list doesn't refresh
+    // after save" (2026-08-23). Do not collapse it back to a constant.
     ref.listen(salesInvoicesChangeProvider, (_, _) {
       _scheduleRefresh();
     });
