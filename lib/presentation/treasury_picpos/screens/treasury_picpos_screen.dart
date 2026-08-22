@@ -34,7 +34,10 @@ import '../../widgets/permission_guard.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/providers.dart';
 import '../../treasury/widgets/treasury_cash_tab.dart';
-import '../../treasury/widgets/treasury_metrics_panel.dart';
+// لوحُ المقاييس صار فوركاً في PicPos (قرارُ المالك 2026-08-22) — يضيف شريطَ
+// تقسيم الرصيد، وشاشةُ UralCash تبقى على الأصل.
+import '../widgets/treasury_metrics_panel_picpos.dart';
+import '../../../domain/models/picpos_treasury_view.dart';
 import '../../treasury/widgets/treasury_closing_tab.dart';
 import '../../treasury/widgets/treasury_bank_tab.dart';
 import '../../treasury/widgets/daily_closing_dialog.dart';
@@ -220,7 +223,23 @@ class _TreasuryPicposScreenState extends ConsumerState<TreasuryPicposScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Total Balance Card
-          const TreasuryMetricsPanel(),
+          const TreasuryMetricsPanelPicpos(),
+          const SizedBox(height: 12),
+          // شريطُ تقسيم الرصيد — يُبنى من **نفس** `scopedSafesProvider` الذي
+          // تقرؤه بطاقاتُ الصناديق، فالمجموعُ هنا هو مجموعُ ما يُعرض تحته
+          // بالضبط (مسقوفٌ بنطاق الفرع كما هو).
+          safes.when(
+            data: (rows) => Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: PicPosTreasurySplitBar(
+                split: PicPosTreasurySplit.from([
+                  for (final s in rows) (kind: s.safeType, balance: s.balance),
+                ]),
+              ),
+            ),
+            loading: () => const SizedBox(height: 8),
+            error: (_, _) => const SizedBox.shrink(),
+          ),
           const SizedBox(height: 16),
 
           // Search bar

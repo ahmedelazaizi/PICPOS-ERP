@@ -33,15 +33,10 @@ mixin _ScaleLogicPicposMixin on ConsumerState<ScalePluPicposScreen> {
   ISettingsRepository get _settingsRepo => ref.read(settingsRepositoryProvider);
 
   List<ProductEntity> filterProducts(List<ProductEntity> all) {
-    var filtered = all
-        .where(
-          (p) =>
-              p.scaleType == 'weight' ||
-              p.scaleType == 'weightByPiece' ||
-              p.scaleType == 'display' ||
-              p.isSoldByWeight,
-        )
-        .toList();
+    // الشرطُ نفسُه صار في [picposIsScaleItem] ليقرأه **العدّادُ والجدولُ
+    // معاً**: نسخُه في العدّاد كان يعني تعريفَين ينحرفان بأوّل نوعِ ميزانٍ
+    // يُضاف، فيعرض العدّادُ رقماً والجدولُ صفوفاً لا تطابقه.
+    var filtered = all.where(picposIsScaleItem).toList();
 // ... (rest of the filterProducts logic remains same)
     if (selectedCategoryIds.isNotEmpty) {
       filtered = filtered

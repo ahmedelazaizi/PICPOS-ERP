@@ -13,6 +13,8 @@ import '../../../domain/repositories/settings_repository.dart';
 import '../../../services/label_scale_service.dart';
 import '../../../services/scale_transport.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
+import '../../picpos_shell/picpos_kpi_row.dart';
+import '../../../domain/models/picpos_scale_view.dart';
 import '../../screens/plu_manager_screen.dart';
 
 // ── Part files (mixin-based extraction) ─────────────────────────────────
@@ -139,6 +141,8 @@ class _ScalePluPicposScreenState extends ConsumerState<ScalePluPicposScreen>
       icon: PhosphorIconsBold.scales,
       body: Column(
         children: [
+          _buildScaleStats(productsAsync.value ?? const []),
+          const SizedBox(height: 12),
           buildHeader(),
           const SizedBox(height: 16),
           Expanded(
@@ -158,6 +162,50 @@ class _ScalePluPicposScreenState extends ConsumerState<ScalePluPicposScreen>
           SizedBox(height: 200, child: buildScalePanel(isDark)),
         ],
       ),
+    );
+  }
+
+  /// عدّاداتُ التصميم (`scaleStats`).
+  ///
+  /// ⚠️ **تُعدُّ بنفس شرطِ الجدول** ([picposIsScaleItem]) لا بشرطٍ مكتوبٍ
+  /// هنا — وإلّا عرض العدّادُ رقماً والجدولُ صفوفاً لا تطابقه.
+  ///
+  /// و«محدَّد للترحيل» يُقرأ من `selectedProductIds` مباشرةً: هو ما سيُرسَل
+  /// فعلاً عند الضغط على «ترحيل للميزان»، لا تقديرٌ له.
+  Widget _buildScaleStats(List<ProductEntity> products) {
+    final stats = PicPosScaleStats.from(
+      products: products,
+      selectedForExport: selectedProductIds.length,
+      definedScales: scales.length,
+    );
+
+    return PicPosKpiRow(
+      kpis: [
+        PicPosKpi(
+          label: 'أصناف الميزان',
+          value: '${stats.scaleItems}',
+          icon: PhosphorIconsBold.scales,
+          tint: AppColors.primary,
+        ),
+        PicPosKpi(
+          label: 'محدَّد للترحيل',
+          value: '${stats.selectedForExport}',
+          icon: PhosphorIconsBold.checkSquare,
+          tint: AppColors.success,
+        ),
+        PicPosKpi(
+          label: 'بلا رقم PLU',
+          value: '${stats.missingPlu}',
+          icon: PhosphorIconsBold.listNumbers,
+          tint: stats.missingPlu > 0 ? AppColors.warning : AppColors.success,
+        ),
+        PicPosKpi(
+          label: 'موازين معرَّفة',
+          value: '${stats.definedScales}',
+          icon: PhosphorIconsBold.wifiHigh,
+          tint: stats.definedScales > 0 ? AppColors.info : AppColors.error,
+        ),
+      ],
     );
   }
 }
