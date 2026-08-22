@@ -30,6 +30,7 @@ import '../../../core/logging/diagnostic_logger.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import '../../../data/providers/providers.dart';
 import '../../../domain/models/picpos_party_view.dart';
+import '../dialogs/add_party_dialog_picpos.dart';
 import '../../screens/party_statement_screen.dart';
 import '../../treasury/widgets/receipt_voucher_dialog.dart';
 import '../../treasury/widgets/payment_voucher_dialog.dart';
@@ -146,7 +147,9 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
         ),
         const SizedBox(width: 12),
         ElevatedButton.icon(
-          onPressed: () => showAddPartyDialog(context, ref),
+          // فوركُ الحوار بهويّة PicPos — بلاغُ المالك 2026-08-22: الشاشةُ
+          // كانت على التصميم والحوارُ وحدَه بقي `AlertDialog` خاماً.
+          onPressed: () => showAddPartyDialogPicpos(context, ref),
           icon: const Icon(PhosphorIconsBold.plus),
           label: const Text('إضافة'),
           style: ElevatedButton.styleFrom(
