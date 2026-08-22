@@ -162,6 +162,21 @@ class _UsersManagementPicposScreenState
     );
   }
 
+  // ═══════════════════════════════════════════════════════════════════════
+  // شبكةُ بطاقاتِ المستخدمين — تصميم `isUsers`
+  //
+  // ⚠️ **حلّت محلَّ `ListView` من `ExpansionTile`، ولم تُسقط قدرةً واحدة.**
+  // البطاقةُ في التصميم تحمل زرَّين ونقاطاً؛ والشاشةُ كانت تحمل **ثمانيةَ
+  // إجراءاتٍ** (تعديل · تفعيل/تعطيل · قفل/فتح · كلمة مرور · PIN · الفروع ·
+  // المخازن · حذف) **وثلاثةَ محرّراتٍ داخل الطيّ** (الدور · الشاشة
+  // الافتراضية · حدّ الخصم).
+  //
+  // فالزرّان الظاهران هما الأكثرُ استعمالاً، والستّةُ الباقيةُ تحت النقاط،
+  // والمحرّراتُ الثلاثةُ انتقلت **بجسمها الحرفيّ** إلى حوارٍ يفتحه بندُ
+  // «الدور والإعدادات» — لا نسخةٍ مُعاد كتابتها. حذفُ إجراءٍ إداريٍّ لأن
+  // مخطّطاً لا يرسمه ليس إعادةَ تصميم.
+  // ═══════════════════════════════════════════════════════════════════════
+
   Widget _buildUsersList(
     List<UserWithRole> users,
     List<Role> roles,
@@ -176,103 +191,400 @@ class _UsersManagementPicposScreenState
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: users.length,
-      itemBuilder: (context, index) {
-        final userWithRole = users[index];
-        final user = userWithRole.user;
-        final role = userWithRole.role;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = switch (constraints.maxWidth) {
+          < 720 => 1,
+          < 1100 => 2,
+          _ => 3,
+        };
+        return GridView.builder(
+          padding: const EdgeInsets.all(16),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: columns,
+            crossAxisSpacing: 11,
+            mainAxisSpacing: 11,
+            // ارتفاعٌ صريحٌ: البطاقةُ ثابتةُ المحتوى (رأسٌ + ثلاثةُ سطورٍ +
+            // صفُّ أزرار)، والنسبةُ المحسوبةُ من العرض كانت تقصّها في العمود
+            // الضيّق — نفسُ عطبِ بطاقاتِ العدّادات المقيس.
+            mainAxisExtent: 196,
+          ),
+          itemCount: users.length,
+          itemBuilder: (context, index) => _buildUserCard(
+            users[index],
+            roles,
+            theme,
+            userBranchNames,
+          ),
+        );
+      },
+    );
+  }
 
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          elevation: 2,
-          child: ExpansionTile(
-            leading: CircleAvatar(
-              backgroundColor: user.isActive
-                  ? _getRoleColor(role?.name).withValues(alpha: 0.15)
-                  : Colors.grey.withValues(alpha: 0.15),
-              child: Icon(
-                _getRoleIcon(role?.name),
-                color: user.isActive ? _getRoleColor(role?.name) : Colors.grey,
-              ),
-            ),
-            title: Row(
-              children: [
-                Text(
-                  user.displayName,
+  Widget _buildUserCard(
+    UserWithRole userWithRole,
+    List<Role> roles,
+    ThemeData theme,
+    Map<int, List<String>> userBranchNames,
+  ) {
+    final user = userWithRole.user;
+    final role = userWithRole.role;
+    final tint = user.isActive ? _getRoleColor(role?.name) : Colors.grey;
+    final tintBg = tint.withValues(alpha: 31 / 255);
+
+    // شارةُ الحالة: المقفولُ أخصُّ من المعطَّل، والمعطَّلُ أخصُّ من النشط —
+    // فمستخدمٌ معطَّلٌ ومقفولٌ يُعرَض «مقفول» لأنه العائقُ الأقربُ للحلّ.
+    final (String stLabel, Color stColor) = user.isLocked
+        ? ('مقفول', Colors.orange)
+        : (!user.isActive ? ('معطل', Colors.red) : ('نشط', AppColors.success));
+
+    final branches = userBranchNames[user.id] ?? const <String>[];
+    final branchLabel = branches.isEmpty ? 'كل الفروع' : branches.join('، ');
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        border: Border.all(color: theme.dividerColor),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: tintBg,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  _initialsOf(user.displayName),
                   style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: user.isActive ? null : Colors.grey,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    color: tint,
                   ),
                 ),
-                const SizedBox(width: 8),
-                if (user.isLocked)
-                  const Icon(
-                    PhosphorIconsBold.lock,
-                    size: 16,
-                    color: Colors.orange,
-                  ),
-              ],
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('@${user.username}'),
-                Wrap(
-                  spacing: 8,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (role != null)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        margin: const EdgeInsets.only(top: 4),
-                        decoration: BoxDecoration(
-                          color: _getRoleColor(
-                            role.name,
-                          ).withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          role.name,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: _getRoleColor(role.name),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
+                    Text(
+                      user.displayName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w800,
+                        color: theme.textTheme.bodyLarge?.color,
                       ),
-                    if (!user.isActive)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        margin: const EdgeInsets.only(top: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.red.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Text(
-                          'معطل',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.red,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
+                    ),
+                    Text(
+                      '@${user.username}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textMuted,
                       ),
-                    // Branch badge
-                    _buildBranchBadge(user.id, userBranchNames),
+                    ),
                   ],
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 6),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                decoration: BoxDecoration(
+                  color: stColor.withValues(alpha: 31 / 255),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  stLabel,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    color: stColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 11),
+          _userMetaLine(
+            PhosphorIconsBold.shieldCheck,
+            role?.name ?? 'بلا دور',
+            tint,
+            bold: true,
+          ),
+          const SizedBox(height: 6),
+          _userMetaLine(
+            PhosphorIconsBold.buildings,
+            branchLabel,
+            AppColors.textMuted,
+          ),
+          const SizedBox(height: 6),
+          _userMetaLine(
+            PhosphorIconsBold.house,
+            'الشاشة الافتراضية: ${_homeScreenLabel(user.defaultScreen)}',
+            AppColors.textMuted,
+          ),
+          const Spacer(),
+          Row(
             children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
+              Expanded(
+                child: _userCardButton(
+                  theme,
+                  key: Key('user-edit-${user.id}'),
+                  icon: PhosphorIconsBold.pencilSimple,
+                  iconColor: AppColors.warning,
+                  label: 'تعديل البيانات',
+                  onPressed: () => _showEditUserDialog(user),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: _userCardButton(
+                  theme,
+                  key: Key('user-password-${user.id}'),
+                  icon: PhosphorIconsBold.key,
+                  iconColor: AppColors.primary,
+                  label: 'كلمة المرور',
+                  onPressed: () => _showResetPasswordDialog(user),
+                ),
+              ),
+              const SizedBox(width: 6),
+              SizedBox(
+                width: 32,
+                height: 32,
+                child: PopupMenuButton<String>(
+                  key: Key('user-more-${user.id}'),
+                  tooltip: 'المزيد',
+                  padding: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  icon: const Icon(
+                    PhosphorIconsBold.dotsThreeVertical,
+                    size: 13,
+                    color: AppColors.textMuted,
+                  ),
+                  onSelected: (v) => _onUserMenu(v, userWithRole, roles),
+                  itemBuilder: (_) => [
+                    const PopupMenuItem(
+                      value: 'settings',
+                      child: Text('الدور والإعدادات',
+                          style: TextStyle(fontSize: 12)),
+                    ),
+                    PopupMenuItem(
+                      value: 'toggle',
+                      child: Text(user.isActive ? 'تعطيل' : 'تفعيل',
+                          style: const TextStyle(fontSize: 12)),
+                    ),
+                    PopupMenuItem(
+                      value: 'lock',
+                      child: Text(user.isLocked ? 'فتح القفل' : 'قفل',
+                          style: const TextStyle(fontSize: 12)),
+                    ),
+                    const PopupMenuItem(
+                      value: 'pin',
+                      child: Text('تعيين PIN',
+                          style: TextStyle(fontSize: 12)),
+                    ),
+                    const PopupMenuItem(
+                      value: 'branches',
+                      child:
+                          Text('إدارة الفروع', style: TextStyle(fontSize: 12)),
+                    ),
+                    const PopupMenuItem(
+                      value: 'warehouses',
+                      child: Text('إدارة المخازن',
+                          style: TextStyle(fontSize: 12)),
+                    ),
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Text('حذف',
+                          style: TextStyle(fontSize: 12, color: Colors.red)),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _userMetaLine(
+    IconData icon,
+    String text,
+    Color color, {
+    bool bold = false,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, size: 13, color: color),
+        const SizedBox(width: 7),
+        Expanded(
+          child: Text(
+            text,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: bold ? FontWeight.w700 : FontWeight.w600,
+              color: bold ? null : AppColors.textMuted,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _userCardButton(
+    ThemeData theme, {
+    required Key key,
+    required IconData icon,
+    required Color iconColor,
+    required String label,
+    required VoidCallback onPressed,
+  }) {
+    return SizedBox(
+      height: 32,
+      child: OutlinedButton.icon(
+        key: key,
+        onPressed: onPressed,
+        icon: Icon(icon, size: 13, color: iconColor),
+        label: Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: 11.5,
+            fontWeight: FontWeight.w700,
+            color: theme.textTheme.bodyMedium?.color,
+          ),
+        ),
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          side: BorderSide(color: theme.dividerColor),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(9),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// أوّلُ حرفٍ من أوّل كلمتَين — القطعُ بـ`runes` لا بـ`[0]` كي لا يُشطر
+  /// زوجٌ بديلٌ نصفَ محرف.
+  String _initialsOf(String name) {
+    final words = name.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty);
+    if (words.isEmpty) return '؟';
+    return words
+        .take(2)
+        .map((w) => String.fromCharCodes(w.runes.take(1)))
+        .join();
+  }
+
+  /// تسميةُ الشاشة الافتراضية — نفسُ خيارات القائمة المنسدلة في حوار
+  /// الإعدادات، فلا يختلف الوصفُ عن المحرِّر.
+  String _homeScreenLabel(String? screen) {
+    switch (screen) {
+      case 'pos':
+        return 'البيع السريع';
+      case 'dashboard':
+        return 'لوحة القيادة';
+      case 'products':
+        return 'المنتجات';
+      case 'inventory':
+        return 'المخزون';
+      default:
+        return 'غير محددة';
+    }
+  }
+
+  /// ⚠️ **القفلُ يؤكَّد قبل تنفيذه** — و`_toggleUserLock` لا تؤكّد داخلها.
+  ///
+  /// كان التأكيدُ في **المستدعي** (زرُّ القفل في جسم الطيّ)، فنقلُ الإجراء
+  /// إلى قائمة النقاط أسقطه أوّلَ مرّة: نقرةٌ واحدةٌ كانت تمنع مستخدماً من
+  /// الدخول بلا سؤال. النصُّ والأيقونةُ واللونُ منقولةٌ حرفيّاً عن الأصل.
+  ///
+  /// (‏`_deleteUser` تؤكّد داخلها، و`_toggleUserActive` لم تكن تؤكّد أصلاً —
+  /// قِيس كلاهما قبل النقل ولم يُغيَّر سلوكُهما.)
+  Future<void> _confirmToggleLock(User user) async {
+    final confirmed = await AppConfirmDialog.show(
+      context,
+      title: user.isLocked ? 'فك قفل المستخدم' : 'قفل المستخدم',
+      message: user.isLocked
+          ? 'هل أنت متأكد من فك قفل المستخدم ${user.displayName}؟'
+          : 'هل أنت متأكد من قفل المستخدم ${user.displayName}؟ لن يتمكن من تسجيل الدخول.',
+      confirmLabel: user.isLocked ? 'فك القفل' : 'قفل',
+      icon: user.isLocked ? PhosphorIconsBold.lockOpen : PhosphorIconsBold.lock,
+      color: user.isLocked ? AppColors.info : Colors.orange,
+    );
+    if (confirmed) await _toggleUserLock(user);
+  }
+
+  void _onUserMenu(String action, UserWithRole uwr, List<Role> roles) {
+    final user = uwr.user;
+    switch (action) {
+      case 'settings':
+        _showUserSettingsDialog(uwr, roles);
+      case 'toggle':
+        _toggleUserActive(user);
+      case 'lock':
+        _confirmToggleLock(user);
+      case 'pin':
+        _showSetPinDialog(user);
+      case 'branches':
+        _showBranchAccessDialog(user);
+      case 'warehouses':
+        _showWarehouseAccessDialog(user);
+      case 'delete':
+        _deleteUser(user);
+    }
+  }
+
+  /// حوارُ «الدور والإعدادات» — يحمل **جسمَ الطيّ السابق حرفيّاً**.
+  ///
+  /// لم يُعد بناؤه: محرّرُ الدور فيه حارسُ المسؤول الجذر (Spec 061) وحدُّ
+  /// الخصم والشاشةُ الافتراضية، وإعادةُ كتابتها كانت ستُسقط حارساً بصمت.
+  void _showUserSettingsDialog(UserWithRole userWithRole, List<Role> roles) {
+    final user = userWithRole.user;
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('الدور والإعدادات — ${user.displayName}'),
+        content: SizedBox(
+          width: 520,
+          child: SingleChildScrollView(
+            child: _buildUserSettingsBody(user, roles),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('إغلاق'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUserSettingsBody(User user, List<Role> roles) {
+    return Padding(
+      padding: const EdgeInsets.all(4),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -395,155 +707,11 @@ class _UsersManagementPicposScreenState
                           ),
                       ],
                     ),
-                    const SizedBox(height: 16),
-
-                    // Actions
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        // Issue 7 (Feature 018): edit display_name / username /
-                        // MSR card. Other identity fields (role, branches,
-                        // PIN, password) keep their dedicated buttons below.
-                        ElevatedButton.icon(
-                          onPressed: () => _showEditUserDialog(user),
-                          icon: const Icon(PhosphorIconsBold.pencilSimple),
-                          label: const Text('تعديل البيانات'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            foregroundColor: Colors.white,
-                          ),
-                        ),
-                        // Toggle Active
-                        ElevatedButton.icon(
-                          onPressed: () => _toggleUserActive(user),
-                          icon: Icon(
-                            user.isActive
-                                ? PhosphorIconsBold.prohibit
-                                : PhosphorIconsBold.check,
-                          ),
-                          label: Text(user.isActive ? 'تعطيل' : 'تفعيل'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: user.isActive
-                                ? Colors.orange
-                                : AppColors.success,
-                            foregroundColor: Colors.white,
-                          ),
-                        ),
-                        // Toggle Lock
-                        ElevatedButton.icon(
-                          onPressed: () async {
-                            final confirmed = await AppConfirmDialog.show(
-                              context,
-                              title: user.isLocked ? 'فك قفل المستخدم' : 'قفل المستخدم',
-                              message: user.isLocked
-                                  ? 'هل أنت متأكد من فك قفل المستخدم ${user.displayName}؟'
-                                  : 'هل أنت متأكد من قفل المستخدم ${user.displayName}؟ لن يتمكن من تسجيل الدخول.',
-                              confirmLabel: user.isLocked ? 'فك القفل' : 'قفل',
-                              icon: user.isLocked ? PhosphorIconsBold.lockOpen : PhosphorIconsBold.lock,
-                              color: user.isLocked ? AppColors.info : Colors.orange,
-                            );
-                            if (confirmed) _toggleUserLock(user);
-                          },
-                          icon: Icon(
-                            user.isLocked
-                                ? PhosphorIconsBold.lockOpen
-                                : PhosphorIconsBold.lock,
-                          ),
-                          label: Text(user.isLocked ? 'فك القفل' : 'قفل'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: user.isLocked
-                                ? AppColors.info
-                                : Colors.orange,
-                            foregroundColor: Colors.white,
-                          ),
-                        ),
-                        // Reset Password
-                        ElevatedButton.icon(
-                          onPressed: () => _showResetPasswordDialog(user),
-                          icon: const Icon(PhosphorIconsBold.key),
-                          label: const Text('إعادة كلمة المرور'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.secondary,
-                            foregroundColor: Colors.white,
-                          ),
-                        ),
-                        // Set PIN
-                        ElevatedButton.icon(
-                          onPressed: () => _showSetPinDialog(user),
-                          icon: const Icon(PhosphorIconsBold.password),
-                          label: Text(
-                            user.pin != null ? 'تغيير PIN' : 'تعيين PIN',
-                          ),
-                        ),
-                        // Delete User (soft delete)
-                        if (user.id != 1)
-                          ElevatedButton.icon(
-                            onPressed: () => _deleteUser(user),
-                            icon: const Icon(PhosphorIconsBold.trash),
-                            label: const Text('حذف'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
-                              foregroundColor: Colors.white,
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // N3: Branch & Warehouse Access
-                    if (user.id != 1) ...[
-                      const Text(
-                        'صلاحيات الفروع والمخازن:',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: () => _showBranchAccessDialog(user),
-                              icon: const Icon(PhosphorIconsBold.buildings, size: 16),
-                              label: const Text('إدارة الفروع'),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: () => _showWarehouseAccessDialog(user),
-                              icon: const Icon(PhosphorIconsBold.warehouse, size: 16),
-                              label: const Text('إدارة المخازن'),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ] else ...[
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
-                        ),
-                        child: const Row(
-                          children: [
-                            Icon(PhosphorIconsBold.shieldStar, color: AppColors.primary, size: 16),
-                            SizedBox(width: 8),
-                            Text('مدير النظام — وصول كامل لجميع الفروع والمخازن',
-                              style: TextStyle(fontSize: 12, color: AppColors.primary)),
-                          ],
-                        ),
-                      ),
-                    ],
                   ],
                 ),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
+
 
   /// شاشةُ المنع — بنفس الترويسة كي يعرف المستخدمُ أين هو ويرجع، لا صفحةً
   /// بيضاءَ تُقرأ عطلاً. والرسالةُ تسمّي الصلاحيةَ الناقصةَ كي يعرف المديرُ
