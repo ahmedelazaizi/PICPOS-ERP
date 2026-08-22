@@ -78,15 +78,47 @@ String windowFrom(String src, String signature, [int chars = 2500]) {
 }
 
 void main() {
-  group('سندُ القبض في ترويسة الخزينة', () {
-    test('محروسٌ كجاره «سند صرف»', () {
-      final src = _code(
-          'lib/presentation/treasury_picpos/screens/treasury_picpos_screen.dart');
-      final receipt = at(src, 'ReceiptVoucherDialog()');
+  // ⚠️ **الحارسُ انتقل ولم يسقط — والمرساةُ تتبعه.**
+  //
+  // كان الزرّان في `headerActions` بملفّ الشاشة، فكان يكفي قياسُ «الحارسُ قبل
+  // الزرّ» في ملفٍّ واحد. وقد نزلا إلى شبكةِ ٢×٢
+  // (`treasury_actions_grid_picpos.dart`) كما يرسم التصميم، فصارت الخاصّيّةُ
+  // موزّعةً على ملفَّين: الشاشةُ تمرّر الفعلَ، والشبكةُ تحرسه.
+  //
+  // ونُقلت المرساةُ **ولم تُخفَّف**: القياسُ الآن أقوى لأنه يضيف ما لم يكن
+  // مقيساً — أن الحوارَ **لا يُفتح من بابٍ ثانٍ** خارج الفعل المحروس.
+  group('سندُ القبض في شاشة الخزينة', () {
+    const screenPath =
+        'lib/presentation/treasury_picpos/screens/treasury_picpos_screen.dart';
+    const gridPath =
+        'lib/presentation/treasury_picpos/widgets/treasury_actions_grid_picpos.dart';
+
+    test('لا بابَ ثانياً — الحوارُ يُفتح من الفعل المُمرَّر للشبكة وحدَه', () {
+      final src = _code(screenPath);
+      expect(
+        'ReceiptVoucherDialog('.allMatches(src).length,
+        1,
+        reason: 'موضعٌ ثانٍ يفتح الحوارَ يتجاوز حارسَ الشبكة — وهي بالضبط '
+            'فئةُ «البابِ الثاني» التي وُجد هذا الملفُّ لأجلها',
+      );
+      expect(
+        at(src, 'TreasuryActionsGridPicpos('),
+        lessThan(at(src, 'ReceiptVoucherDialog(')),
+        reason: 'الفعلُ يُبنى داخلَ استدعاء الشبكة لا خارجَه',
+      );
+    });
+
+    test('محروسٌ كجاره «سند صرف» — والفعلُ موصولٌ بـ`onGranted`', () {
+      final src = _code(gridPath);
       final guard = at(src, 'PermissionCodes.treasuryReceiptsCreate');
-      expect(guard, lessThan(receipt),
+      final action = at(src, 'onGranted: onReceipt');
+      expect(guard, lessThan(action),
           reason: 'الحارسُ يجب أن يلفّ الزرَّ لا أن يأتي بعده. وكان الزرُّ '
               'مفتوحاً بينما جارُه «سند صرف» محروس.');
+
+      // الجارُ الذي أثبت أن النيّةَ كانت الحراسة — يبقى محروساً هو الآخر.
+      expect(at(src, 'PermissionCodes.treasuryPaymentsCreate'),
+          lessThan(at(src, 'onGranted: onPayment')));
     });
   });
 
