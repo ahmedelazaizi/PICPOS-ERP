@@ -18,14 +18,17 @@ mixin _ActivityLogItemsPicposMixin on ConsumerState<ActivityLogPicposScreen> {
   Map<String, String> get entityLabels;
   List<ActivityLog> get logs;
 
-  Widget buildLogItem(ActivityLog log) {
-    final actionLabel = actionLabels[log.action] ?? log.action;
-    final entityLabel = entityLabels[log.entityType] ?? log.entityType;
-
+  /// أيقونةُ الإجراء ولونُه.
+  ///
+  /// استُخرجت من جسم `buildLogItem` **بلا تعديلِ حالةٍ واحدة** ليستعملها
+  /// جدولُ التصميم كذلك. الشاشةُ تعرض عرضَين (قائمةً وزمنيّاً) وثالثاً الآن،
+  /// ونسخُ مئتَي سطرِ `switch` مرّةً ثانيةً كان يضمن انحرافَ اللونَين بأوّل
+  /// إجراءٍ يُضاف.
+  ({IconData icon, Color color}) actionVisual(String action) {
     IconData icon;
     Color iconColor;
 
-    switch (log.action) {
+    switch (action) {
       case 'sale':
         icon = PhosphorIconsBold.shoppingCart;
         iconColor = AppColors.success;
@@ -220,6 +223,15 @@ mixin _ActivityLogItemsPicposMixin on ConsumerState<ActivityLogPicposScreen> {
         icon = PhosphorIconsBold.note;
         iconColor = AppColors.textMuted;
     }
+    return (icon: icon, color: iconColor);
+  }
+
+  Widget buildLogItem(ActivityLog log) {
+    final actionLabel = actionLabels[log.action] ?? log.action;
+    final entityLabel = entityLabels[log.entityType] ?? log.entityType;
+    final visual = actionVisual(log.action);
+    final icon = visual.icon;
+    final iconColor = visual.color;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),

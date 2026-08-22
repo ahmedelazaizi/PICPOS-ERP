@@ -27,6 +27,7 @@
 //
 // راجع lib/presentation/screens/activity_log_screen.dart (الأصل).
 import 'dart:io';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -40,11 +41,15 @@ import '../../widgets/activity_timeline.dart';
 import '../../widgets/enhanced_components.dart';
 import '../../widgets/field_audit_history_widget.dart';
 
+import '../../../domain/models/picpos_activity_view.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
+import '../../picpos_shell/picpos_empty_state.dart';
+import '../../picpos_shell/picpos_kpi_row.dart' show picposMuted;
 
 // ── Part files (mixin-based extraction, copied & retargeted) ────────────
 part 'activity_log_filters_picpos.dart';
 part 'activity_log_items_picpos.dart';
+part 'activity_log_table_picpos.dart';
 
 /// View mode for activity log display
 enum ActivityViewModePicpos { list, timeline }
@@ -624,19 +629,69 @@ class _ActivityLogPicposScreenState
                     actionLabels: actionLabels,
                     entityLabels: entityLabels,
                   )
-                : logs.isEmpty
-                ? const EmptyStateWidget(
-                    icon: PhosphorIconsBold.clipboardText,
-                    message: 'لا توجد عمليات مسجلة',
-                  )
-                : ListView.builder(
-                    itemCount: logs.length,
-                    itemBuilder: (context, index) =>
-                        buildLogItem(logs[index]),
-                  ),
+                : _buildLogTable(),
           ),
         ],
       ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // جدولُ التصميم — عرضُ «القائمة»
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /// تحويلُ سجلٍّ إلى صفِّ عرض.
+  ///
+  /// خرائطُ البحث تُبنى **مرّةً لكلّ رسمٍ** لا لكلّ صفّ: `logs` قد تحمل مئاتِ
+  /// السجلّات، والبحثُ الخطّيُّ داخلَ `itemBuilder` كان سيصير O(n²).
+  PicPosActivityRow _toActivityRow(
+    ActivityLog log, {
+    required Map<int, String> branchNames,
+    required Map<int, String> roleByUserId,
+  }) {
+    return PicPosActivityRow(
+      id: log.id,
+      actionLabel: actionLabels[log.action] ?? log.action,
+      entityLabel: entityLabels[log.entityType] ?? log.entityType,
+      detail: log.description,
+      userName: log.userName,
+      time: log.createdAt,
+      branchName: log.branchId == null ? null : branchNames[log.branchId],
+      roleName: log.userId == null ? null : roleByUserId[log.userId],
+      entityId: log.entityId,
+      amount: log.amount,
+    );
+  }
+
+  Widget _buildLogTable() {
+    final branches = ref.watch(allBranchesProvider).value ?? const [];
+    final users = ref.watch(allUsersProvider).value ?? const [];
+
+    final branchNames = {for (final b in branches) b.id: b.name};
+    // ‏`allUsersProvider` يعطي `UserWithRole` — الدورُ **مضمومٌ سلفاً** في
+    // الاستعلام، فلا حاجةَ لـ`allRolesProvider` ولا لقفزةٍ ثانية. (‏قِيس بعد
+    // أن كتبتُ القفزتَين ثمّ رفضهما المحلّل.)
+    //
+    // وغيابُ الدور يُترك فارغاً (`roleLabel` فارغ) ولا يُكتب «غير معروف».
+    final roleByUserId = <int, String>{
+      for (final u in users)
+        if (u.role != null) u.user.id: u.role!.name,
+    };
+
+    final rows = [
+      for (final log in logs)
+        _toActivityRow(log,
+            branchNames: branchNames, roleByUserId: roleByUserId),
+    ];
+    final byId = {for (final log in logs) log.id: log};
+
+    return PicPosActivityTable(
+      rows: rows,
+      visualFor: (r) => actionVisual(byId[r.id]?.action ?? ''),
+      onRowTap: (r) {
+        final log = byId[r.id];
+        if (log != null) showLogDetails(log);
+      },
     );
   }
 }
