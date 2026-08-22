@@ -118,7 +118,7 @@ class _ProductionOrderDialogState
                 Row(
                   children: [
                     const Icon(PhosphorIconsBold.gearSix,
-                        color: Color(0xFF14B8A6)),
+                        color: AppColors.primary),
                     const SizedBox(width: 10),
                     Text(_isEditing ? 'تعديل أمر الإنتاج' : 'أمر إنتاج جديد',
                         style: const TextStyle(
@@ -221,7 +221,7 @@ class _ProductionOrderDialogState
                   child: ElevatedButton(
                     onPressed: _save,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF14B8A6),
+                      backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(

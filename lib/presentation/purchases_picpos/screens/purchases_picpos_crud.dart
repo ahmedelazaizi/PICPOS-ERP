@@ -93,14 +93,55 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
     }
     if (!mounted) return;
 
-    final controller = ref.read(purchaseInvoicesControllerProvider.notifier);
-    final suppliers = await controller.getSuppliers();
-    final products = await controller.getProducts();
-    final warehouses = await ref.read(allWarehousesProvider.future);
-    final costCenters = await ref.read(allCostCentersProvider.future);
-    // النسبةُ من الإعداد لا رقمٌ مطبوع — «١٤٪» في التصميم قيمةُ عيّنة.
-    final taxRate = await ref.read(posDefaultTaxRateProvider.future);
-    if (!mounted) return;
+    // ═══ 🔴 «الزرُّ لا يستجيب» — بلاغُ المالك على البناء المنشور ═══
+    //
+    // كانت خمسةُ `await` عاريةٍ تسبق فتحَ الحوار. وأيُّ واحدٍ منها يرمي أو
+    // يتعلّق يجعل الزرَّ **ميّتاً بصمت**: `onPressed` يرجع `Future` فلا أحدَ
+    // يمسك رميَه، ولا رسالةَ ولا دوّارة — نقرةٌ لا يتبعها شيء.
+    //
+    // ونظيرُ المبيعات **لا ينتظر أصلاً**: يقرأ `.value ?? []` من مزوِّداتٍ
+    // يراقبها شريطُ الفلاتر. ولهذا يعمل ذاك ويموت هذا — وهو الفرقُ الوحيدُ
+    // بينهما.
+    //
+    // فالعلاجُ شقّان: مهلةٌ تمنع التعلّقَ الأبديّ، وإمساكُ الرميِ وإظهارُه.
+    // ولا يبقى مسارٌ يفشل بلا أن يقول.
+    // ═══ 🔴 «الزرُّ لا يستجيب» — بلاغُ المالك على البناء المنشور ═══
+    //
+    // كانت خمسةُ `await` عاريةٍ تسبق فتحَ الحوار. وأيُّ واحدٍ منها يرمي أو
+    // يتعلّق يجعل الزرَّ **ميّتاً بصمت**: `onPressed` يرجع `Future` فلا أحدَ
+    // يمسك رميَه، ولا رسالةَ ولا دوّارة — نقرةٌ لا يتبعها شيء.
+    //
+    // ونظيرُ المبيعات **لا ينتظر أصلاً**: يقرأ `.value ?? []` من مزوِّداتٍ
+    // يراقبها شريطُ الفلاتر. ولهذا يعمل ذاك ويموت هذا — وهو الفرقُ الوحيدُ
+    // بينهما.
+    //
+    // فالعلاجُ شقّان: مهلةٌ تمنع التعلّقَ الأبديّ، وإمساكُ الرميِ وإظهارُه.
+    // ولا يبقى مسارٌ يفشل بلا أن يقول.
+    try {
+      final controller = ref.read(purchaseInvoicesControllerProvider.notifier);
+      // ⚠️ `getSuppliers()` تنتظر **أوّلَ بثٍّ** (`watchSuppliers().first`).
+      // وبثٌّ لا يُصدر شيئاً يجعل هذا الانتظارَ أبديّاً — وهو أرجحُ مواضع
+      // التعلّق في هذا المسار.
+      final suppliers =
+          await controller.getSuppliers().timeout(const Duration(seconds: 10));
+      final products =
+          await controller.getProducts().timeout(const Duration(seconds: 10));
+
+      // ⚠️ `allCostCentersProvider` مزوِّدُ بثٍّ **`autoDispose`**، و
+      // `ref.read(p.future)` عليه لا يُبقيه حيّاً بنفسِه. فإن لم يكن أحدٌ
+      // يراقبه في تلك اللحظة، تُرمى نسختُه فور القراءة ولا يكتمل المستقبَلُ
+      // أبداً. والمهلةُ تحوّل ذلك من تعلّقٍ صامتٍ إلى رسالةٍ تُقرأ.
+      final warehouses = await ref
+          .read(allWarehousesProvider.future)
+          .timeout(const Duration(seconds: 10));
+      final costCenters = await ref
+          .read(allCostCentersProvider.future)
+          .timeout(const Duration(seconds: 10));
+      // النسبةُ من الإعداد لا رقمٌ مطبوع — «١٤٪» في التصميم قيمةُ عيّنة.
+      final taxRate = await ref
+          .read(posDefaultTaxRateProvider.future)
+          .timeout(const Duration(seconds: 10));
+      if (!mounted) return;
 
     showGeneralDialog(
       context: context,
@@ -218,7 +259,17 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
           },
         ),
       ),
-    );
+      );
+    } catch (e) {
+      // لا يبقى مسارٌ يفشل بلا أن يقول — راجع تعليقَ رأسِ الدالّة.
+      if (mounted) {
+        AppToast.show(
+          context,
+          'تعذّر فتحُ فاتورة المشتريات: $e',
+          type: ToastType.error,
+        );
+      }
+    }
   }
 
   /// Edit existing invoice

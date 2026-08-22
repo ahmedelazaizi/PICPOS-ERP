@@ -153,7 +153,11 @@ class _TreasuryPicposScreenState extends ConsumerState<TreasuryPicposScreen>
               // التصميم: `1fr 620px`. وعلى نافذةٍ أضيقَ يُقلَّص العمودُ الثابت
               // بدل أن يُصفَّر عرضُ البطاقة الداكنة أو يفيض الصفّ.
               final actionsWidth = math.min(620.0, constraints.maxWidth * .45);
-              return Row(
+              // ⚠️ `IntrinsicHeight` إلزاميّة: `stretch` داخلَ `Column` تطلب
+              // ارتفاعاً غيرَ محدودٍ فتُرمى — وفي الإصدار تُرسم شاشةٌ بيضاء.
+              // مقيسٌ في `picpos_treasury_layout_test`.
+              return IntrinsicHeight(
+                child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // Total Balance Card
@@ -195,6 +199,7 @@ class _TreasuryPicposScreenState extends ConsumerState<TreasuryPicposScreen>
                     ),
                   ),
                 ],
+                ),
               );
             },
           ),

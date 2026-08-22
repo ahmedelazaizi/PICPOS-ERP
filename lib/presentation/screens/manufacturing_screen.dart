@@ -55,11 +55,11 @@ class _ManufacturingScreenState extends ConsumerState<ManufacturingScreen>
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF14B8A6).withValues(alpha: 0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(PhosphorIconsBold.factory,
-                        color: Color(0xFF14B8A6), size: 24),
+                        color: AppColors.primary, size: 24),
                   ),
                   const SizedBox(width: 14),
                   Text(
@@ -81,7 +81,7 @@ class _ManufacturingScreenState extends ConsumerState<ManufacturingScreen>
                       isScrollable: true,
                       indicatorSize: TabBarIndicatorSize.tab,
                       indicator: BoxDecoration(
-                        color: const Color(0xFF14B8A6),
+                        color: AppColors.primary,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       labelColor: Colors.white,

@@ -86,25 +86,43 @@ class TreasuryActionsGridPicpos extends StatelessWidget {
       ),
     ];
 
+    // ═══ 🔴 `IntrinsicHeight` ليست تجميلاً — بدونها الشاشةُ بيضاء ═══
+    //
+    // `CrossAxisAlignment.stretch` في `Row` تُلزم الأبناءَ بملء المحور
+    // العرضيّ (الارتفاع). وهذا الصفُّ يعيش داخل `Column(mainAxisSize: min)`
+    // التي تمنح أبناءَها ارتفاعاً **غيرَ محدود** — فتُطلَب أبناءٌ بارتفاعٍ
+    // لا نهائيّ وتُرمى `BoxConstraints forces an infinite height` في طور
+    // التخطيط.
+    //
+    // وفي بناء الإصدار **لا تظهر الشاشةُ الحمراء**: يُرسم بياض. وهو ما رآه
+    // المالكُ على البناء المنشور — ترويسةٌ وبحثٌ وجسمٌ فارغ.
+    //
+    // و`IntrinsicHeight` تقيس أطولَ بطاقةٍ في الصفّ وتُثبّت الارتفاعَ عليه،
+    // فتصير `stretch` مطلباً محدوداً — وتؤدّي غرضَها الأصليّ: بطاقتان
+    // متساويتا الارتفاع مهما طال عنوانٌ فرعيّ.
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(child: cells[0]),
-            const SizedBox(width: 10),
-            Expanded(child: cells[1]),
-          ],
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: cells[0]),
+              const SizedBox(width: 10),
+              Expanded(child: cells[1]),
+            ],
+          ),
         ),
         const SizedBox(height: 10),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(child: cells[2]),
-            const SizedBox(width: 10),
-            Expanded(child: cells[3]),
-          ],
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: cells[2]),
+              const SizedBox(width: 10),
+              Expanded(child: cells[3]),
+            ],
+          ),
         ),
       ],
     );

@@ -15,7 +15,7 @@ Widget buildManufacturingManageBomButton({required VoidCallback onPressed}) {
       icon: const Icon(PhosphorIconsBold.plus, size: 18),
       label: const Text('قائمة مواد جديدة'),
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF14B8A6),
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -174,11 +174,11 @@ class _BomCard extends ConsumerWidget {
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: const Color(0xFF14B8A6).withValues(alpha: 0.1),
+            color: AppColors.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: const Icon(PhosphorIconsBold.listDashes,
-              color: Color(0xFF14B8A6), size: 20),
+              color: AppColors.primary, size: 20),
         ),
         title: Text(
           productName,
@@ -203,7 +203,7 @@ class _BomCard extends ConsumerWidget {
               actionName: 'تعديل قائمة مواد',
               onGranted: onEdit,
               child: IconButton(
-                icon: const Icon(PhosphorIconsBold.pencilSimple, size: 18, color: Color(0xFF14B8A6)),
+                icon: const Icon(PhosphorIconsBold.pencilSimple, size: 18, color: AppColors.primary),
                 onPressed: onEdit,
                 tooltip: 'تعديل',
               ),
@@ -538,7 +538,7 @@ class _BomDialogState extends ConsumerState<_BomDialog> {
                 Row(
                   children: [
                     const Icon(PhosphorIconsBold.listDashes,
-                        color: Color(0xFF14B8A6)),
+                        color: AppColors.primary),
                     const SizedBox(width: 10),
                     Text(
                       widget.existing == null
@@ -905,7 +905,7 @@ class _BomDialogState extends ConsumerState<_BomDialog> {
                                         fontSize: 11,
                                         fontWeight: FontWeight.w600,
                                         color: (comp['cost'] as num?)?.toDouble() != null && (comp['cost'] as num).toDouble() > 0
-                                            ? const Color(0xFF14B8A6)
+                                            ? AppColors.primary
                                             : Colors.grey,
                                       ),
                                     ),
@@ -935,7 +935,7 @@ class _BomDialogState extends ConsumerState<_BomDialog> {
                           style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w800,
-                            color: Color(0xFF14B8A6),
+                            color: AppColors.primary,
                           ),
                         ),
                       ],
@@ -1084,7 +1084,7 @@ class _BomDialogState extends ConsumerState<_BomDialog> {
                   child: ElevatedButton(
                     onPressed: _save,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF14B8A6),
+                      backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(

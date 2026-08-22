@@ -45,7 +45,7 @@ class _ProductionOrdersTab extends ConsumerWidget {
                       icon: const Icon(PhosphorIconsBold.plus, size: 18),
                       label: const Text('أمر إنتاج جديد'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF14B8A6),
+                        backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(
                             horizontal: 20, vertical: 12),
@@ -120,8 +120,8 @@ class _ProductionOrdersTab extends ConsumerWidget {
           selected: isSelected,
           onSelected: (_) =>
               ref.read(manufacturingStatusFilterProvider.notifier).set(e.key),
-          selectedColor: const Color(0xFF14B8A6).withValues(alpha: 0.15),
-          checkmarkColor: const Color(0xFF14B8A6),
+          selectedColor: AppColors.primary.withValues(alpha: 0.15),
+          checkmarkColor: AppColors.primary,
           backgroundColor: Colors.grey.shade100,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
@@ -324,7 +324,7 @@ class _ProductionOrderCard extends ConsumerWidget {
                 ref,
                 icon: PhosphorIconsBold.pencilSimple,
                 label: 'تعديل',
-                color: const Color(0xFF14B8A6),
+                color: AppColors.primary,
                 onTap: () => _editOrder(context, ref),
               ),
             ),
