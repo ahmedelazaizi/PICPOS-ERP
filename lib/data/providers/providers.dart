@@ -9,6 +9,7 @@ export '../database/database_barrel.dart';
 import '../database/supabase_database.dart';
 import '../../services/accounting_service.dart';
 import '../../services/accounting_validator.dart';
+import '../../services/booking_actions_service.dart';
 import '../../services/journal_entry_factory.dart';
 import '../../services/cost_center_resolver.dart';
 import '../../services/kitchen_service.dart';
@@ -99,6 +100,20 @@ final isWebProvider = Provider<bool>((ref) => kIsWeb);
 // ═══════════════════════════════════════════════════════════════════════════
 
 final themeServiceProvider = Provider<ThemeService>((ref) => ThemeService());
+
+/// أفعالُ الحجز التي تُكتب في سجلّ النشاط.
+///
+/// ⚠️ **كان الصنفُ بلا مزوِّدٍ واحد** — لا يُذكر إلّا في ملفّه، فلا شاشةَ
+/// تصل إليه. وهو أحدُ الثلاثةِ الناقصةِ في محرِّك الحجز (المزوِّد · غلافُ
+/// `setBookingStatus` · الشاشة).
+///
+/// و`BookingActionsService` **لا يُعاد تسميتُه** إلى `BookingService`: drift
+/// يولّد `class BookingService` صفَّ جدولِ `BookingServices` مفرَداً، وهذا
+/// الملفُّ يعيد تصديرَ حزمة القاعدة — فالاسمان يتصادمان بـ`ambiguous_import`
+/// في أوّل ملفٍّ يجمعهما. وهذا الملفُّ **هو** ذلك الملفّ.
+final bookingActionsServiceProvider = Provider<BookingActionsService>((ref) {
+  return BookingActionsService(db: ref.watch(databaseProvider));
+});
 
 /// Accounting Service provider
 final accountingServiceProvider = Provider<AccountingService>((ref) {
