@@ -15,12 +15,11 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../domain/models/picpos_return_view.dart';
+import 'picpos_kpi_row.dart';
 
-/// لونُ النصِّ الخافت — `--muted` في الوضعَين.
-Color picposReturnsMuted(BuildContext context) =>
-    Theme.of(context).brightness == Brightness.dark
-        ? const Color(0xFF94A3B8)
-        : AppColors.textMuted;
+/// لونُ النصِّ الخافت — يُعاد تصديرُه باسمٍ محلّيٍّ كي لا تتغيّر مواضعُ
+/// الاستعمال في شاشتَي المرتجعات.
+Color picposReturnsMuted(BuildContext context) => picposMuted(context);
 
 /// لونُ شارةِ الحالة — منقولٌ حرفيّاً عن `_getStatusColor` في شاشة مرتجع
 /// المبيعات، فلا تختلف دلالةُ اللون بين الشاشتين.
@@ -43,80 +42,14 @@ Color picposReturnStatusColor(PicPosReturnStatus s) {
 // العدّادات
 // ═══════════════════════════════════════════════════════════════════════════
 
-class _ReturnKpiCard extends StatelessWidget {
-  const _ReturnKpiCard({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.tint,
-  });
-
-  final String label;
-  final String value;
-  final IconData icon;
-  final Color tint;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        border: Border.all(color: theme.dividerColor),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              color: tint.withValues(alpha: 31 / 255),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, size: 17, color: tint),
-          ),
-          const SizedBox(width: 11),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: picposReturnsMuted(context),
-                  ),
-                ),
-                Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 19,
-                    height: 1.2,
-                    fontWeight: FontWeight.w800,
-                    color: theme.textTheme.bodyLarge?.color,
-                    fontFeatures: const [ui.FontFeature.tabularFigures()],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 /// صفُّ العدّاداتِ الأربعة.
 ///
-/// [isSales] يقلب التسميةَ وحدَها — «مرتجع مبيعات» أو «مرتجع مشتريات».
+/// البطاقةُ نفسُها مشتركةٌ في [PicPosKpiRow]؛ هذا الصنفُ يختار **ما يُعدّ**.
+///
+/// [isSales] محفوظٌ في العقد ولا يقلب اليومَ تسميةً: العدّاداتُ الأربعةُ تصف
+/// **الفواتيرَ في المدى** لا المرتجعاتِ نفسَها، ووصفُها واحدٌ في الشاشتين.
+/// ويبقى الوسيطُ لأن الشاشتين تمرّرانه أصلاً، ولأنّ أوّلَ عدّادٍ يختلف بينهما
+/// (‏قيمةُ المرتجعات حين تحملها الحالة) سيحتاجه.
 class PicPosReturnsSummaryCards extends StatelessWidget {
   const PicPosReturnsSummaryCards({
     super.key,
@@ -129,49 +62,33 @@ class PicPosReturnsSummaryCards extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cards = <Widget>[
-      _ReturnKpiCard(
-        label: 'فواتير الفترة',
-        value: '${kpis.invoiceCount}',
-        icon: PhosphorIconsBold.receipt,
-        tint: AppColors.primary,
-      ),
-      _ReturnKpiCard(
-        label: 'إجمالي فواتير الفترة',
-        value: kpis.invoicesTotalLabel,
-        icon: PhosphorIconsBold.coins,
-        tint: AppColors.info,
-      ),
-      _ReturnKpiCard(
-        label: 'مرتجعة كليّاً',
-        value: '${kpis.fullyReturned}',
-        icon: PhosphorIconsBold.arrowUUpLeft,
-        tint: Colors.red,
-      ),
-      _ReturnKpiCard(
-        label: 'مرتجعة جزئيّاً',
-        value: '${kpis.partiallyReturned}',
-        icon: PhosphorIconsBold.arrowsClockwise,
-        tint: Colors.orange,
-      ),
-    ];
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final columns = constraints.maxWidth < 720 ? 2 : 4;
-        return GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: columns,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            mainAxisExtent: 68,
-          ),
-          itemCount: cards.length,
-          itemBuilder: (context, i) => cards[i],
-        );
-      },
+    return PicPosKpiRow(
+      kpis: [
+        PicPosKpi(
+          label: 'فواتير الفترة',
+          value: '${kpis.invoiceCount}',
+          icon: PhosphorIconsBold.receipt,
+          tint: AppColors.primary,
+        ),
+        PicPosKpi(
+          label: 'إجمالي فواتير الفترة',
+          value: kpis.invoicesTotalLabel,
+          icon: PhosphorIconsBold.coins,
+          tint: AppColors.info,
+        ),
+        PicPosKpi(
+          label: 'مرتجعة كليّاً',
+          value: '${kpis.fullyReturned}',
+          icon: PhosphorIconsBold.arrowUUpLeft,
+          tint: Colors.red,
+        ),
+        PicPosKpi(
+          label: 'مرتجعة جزئيّاً',
+          value: '${kpis.partiallyReturned}',
+          icon: PhosphorIconsBold.arrowsClockwise,
+          tint: Colors.orange,
+        ),
+      ],
     );
   }
 }

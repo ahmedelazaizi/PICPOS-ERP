@@ -39,6 +39,7 @@ import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../picpos_shell/picpos_content_card.dart';
 import '../../picpos_shell/picpos_dialog.dart';
 import '../../picpos_shell/picpos_empty_state.dart';
+import '../../picpos_shell/picpos_kpi_row.dart';
 
 part 'parties_summary_cards.dart';
 part 'parties_filter_bar.dart';
