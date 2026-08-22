@@ -1,51 +1,56 @@
 // الأصل: lib/presentation/screens/treasury_screen.dart (719 سطر، مونوليث
-// بلا `part of`). ثلاث كلاسات داخلية خاصة فيه — `_TreasuryClickTab`
-// (تبويب ٣: تحويل كليك)، `_CashFlowTab` (تبويب ٥: تحليل التدفقات النقدية)،
-// و`_ReconciliationDialog`+`_ReconciliationDialogState` (حوار مراجعة
-// الأرصدة) — منسوخة هنا حرفياً بلا أي تعديل منطقي (بما فيها التعليقات
-// وأسماء الحقول). أي إصلاح منطقي حقيقي (باج) لازم يتصلّح في المصدر
-// (treasury_screen.dart) أولاً ثم يتنقل بـ patch (مصيدة النسخ §٥.٨) —
-// من غير ما نلمس D:\URAL-ERP.
+// بلا `part of`). كلاسان داخليان منسوخان منه حرفياً — `_CashFlowTab`
+// (تبويب ٥: تحليل التدفقات النقدية) و`_ReconciliationDialog`+
+// `_ReconciliationDialogState` (حوار مراجعة الأرصدة) — بلا أي تعديل منطقي.
 //
-// الودجتس المعيارية (`TreasuryMetricsPanel`، `TreasuryCashTab`،
-// `TreasuryBankTab`، `TreasuryClosingTab`، `TreasurySafeCard`،
-// `TreasuryTransactionsList`) والحوارات (`ReceiptVoucherDialog`،
-// `PaymentVoucherDialog`، `DailyClosingDialog`، `SafeManagementScreen`) من
-// `treasury/widgets/` مُعاد استخدامها بالـ import كما هي — مش منسوخة.
-// كذلك `scopedSafesProvider`/`safeTransactionsProvider` (الأخير مستورد
-// حرفياً من treasury_screen.dart بدل ما يتكرر تعريفه)،
+// ⚠️ **وتعليقُ «مصيدة النسخ §٥.٨» الذي كان هنا حُذف**: كان يوجب إصلاحَ أيّ
+// باجٍ في المصدر أوّلاً ثمّ نقلَه بـ patch — وقد كُتب حين كان النقلُ إلى
+// UralCash هدفاً. وقرارُ المالك 2026-08-22 ألغى ذلك صراحةً: «العملُ على
+// UralCash موقوف، فإذا أردتَ أن تعمل بشيءٍ على PicPos فانسخه إلى PicPos ولا
+// تشارك تعديلاتِ PicPos على UralCash».
+//
+// ── ما صار فوركاً بهذا القرار ────────────────────────────────────────────
+//   • `treasury_metrics_panel_picpos.dart`  — البطاقةُ الداكنة + التقسيم
+//   • `treasury_actions_grid_picpos.dart`   — شبكةُ الأزرار ٢×٢ + حرّاسُها
+//   • `treasury_tab_bar_picpos.dart`        — شريطُ التبويبات + البحث
+//   • `treasury_panes_picpos.dart`          — لوحا الصناديق والحركات
+//   • `treasury_safe_card_picpos.dart` · `treasury_movements_list_picpos.dart`
+//
+// و`TreasuryPanesPicpos` **تحلُّ محلَّ ثلاثِ ودجتات** كان الأصلُ يكتبها نسخاً
+// متطابقةً (`TreasuryCashTab` · `TreasuryBankTab` · `_TreasuryClickTab`) —
+// القرارُ يمنع المشاركةَ مع UralCash، لا يأمر بالنسخ ثلاثاً داخلَ PicPos.
+//
+// ويبقى معادَ استخدامه بالـ import كما هو: `TreasuryClosingTab` والحوارات
+// (`ReceiptVoucherDialog`، `PaymentVoucherDialog`، `DailyClosingDialog`،
+// `SafeManagementScreen`)، و`scopedSafesProvider`/`safeTransactionsProvider`
+// (الأخير مستورد حرفياً من treasury_screen.dart بدل ما يتكرر تعريفه)،
 // `reconciliationServiceProvider`، `getCashFlowStatementUseCaseProvider`،
-// و`breadcrumbProvider` معاد استخدامهم بالـ import.
-//
-// اللي اتغيّر هو طبقة العرض فقط: هيدر + تخطيط الشاشة يستخدموا
-// `PicPosScreenScaffold` بدل الـ Scaffold+Directionality+Padding اليدوي في
-// الأصل. أزرار الهيدر الأربعة (سند قبض/سند صرف/إدارة الصناديق/مراجعة
-// الأرصدة) انتقلوا لـ headerActions بنفس الأيقونات والألوان والمنطق.
+// و`breadcrumbProvider`.
 //
 // راجع lib/presentation/screens/treasury_screen.dart (الأصل).
 import 'package:ural_erp/core/constants/app_constants.dart';
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../core/permissions/permission_codes.dart';
-import '../../widgets/permission_guard.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/providers.dart';
-import '../../treasury/widgets/treasury_cash_tab.dart';
 // لوحُ المقاييس صار فوركاً في PicPos (قرارُ المالك 2026-08-22) — يضيف شريطَ
 // تقسيم الرصيد، وشاشةُ UralCash تبقى على الأصل.
 import '../widgets/treasury_metrics_panel_picpos.dart';
+// شبكةُ الأزرار ٢×٢ وشريطُ التبويبات ولوحا الصناديق/الحركات — كلُّها من
+// التصميم، وكلُّها فوركٌ داخلَ مجلد التوأم.
+import '../widgets/treasury_actions_grid_picpos.dart';
+import '../widgets/treasury_panes_picpos.dart';
+import '../widgets/treasury_tab_bar_picpos.dart';
 import '../../../domain/models/picpos_treasury_view.dart';
 import '../../treasury/widgets/treasury_closing_tab.dart';
-import '../../treasury/widgets/treasury_bank_tab.dart';
 import '../../treasury/widgets/daily_closing_dialog.dart';
 import '../../treasury/widgets/receipt_voucher_dialog.dart';
 import '../../treasury/widgets/payment_voucher_dialog.dart';
 import 'package:ural_erp/l10n/app_localizations.dart';
-import '../../treasury/widgets/treasury_transactions_list.dart';
-import '../../treasury/widgets/treasury_safe_card.dart';
 import '../../treasury/widgets/safe_management_dialog.dart';
 import '../../../services/reconciliation_service.dart';
 import '../../providers/breadcrumb_provider.dart';
@@ -135,186 +140,121 @@ class _TreasuryPicposScreenState extends ConsumerState<TreasuryPicposScreen>
       title: 'الصناديق والخزينة',
       subtitle: 'النقدية والبنوك وإغلاق اليوم',
       icon: PhosphorIconsBold.wallet,
-      headerActions: [
-        // ⚠️ هذا الزرُّ كان **بلا حراسة** بينما جارُه «سند صرف» محروس، وبينما
-        // نفسُ الحوار محروسٌ بـ`treasury_receipts_create` في
-        // `treasury/widgets/treasury_metrics_panel.dart:100` — واللوحةُ تلك
-        // مرسومةٌ **على هذه الشاشة نفسِها** (`:209` أدناه).
-        //
-        // فبابان لنفس الفعل على شاشةٍ واحدة، أحدُهما محروسٌ والآخرُ لا. وهو
-        // سهوٌ لا سياسة: الجارُ يثبت أن النيّةَ كانت الحراسة.
-        PermissionGuard(
-          permission: PermissionCodes.treasuryReceiptsCreate,
-          allowManagerOverride: true,
-          actionName: 'إنشاء سند قبض',
-          child: OutlinedButton.icon(
-            onPressed: () => showDialog(
-              context: context,
-              builder: (context) => const ReceiptVoucherDialog(),
-            ),
-            icon: const Icon(
-              PhosphorIconsBold.arrowCircleDown,
-              color: AppColors.success,
-            ),
-            label: const Text('سند قبض'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.success,
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        // `treasury_payments_create` كان محروساً في
-        // `treasury/widgets/treasury_metrics_panel.dart` وحدَه — وهي شاشةٌ لا
-        // يصل إليها PicPos، فسندُ الصرف كان يُفتح هنا بلا أيّ فحص.
-        //
-        // نفسُ لفّة النظير القديم بالحرف: `PermissionGuard` بـ
-        // `allowManagerOverride` — فمن ينقصه الكودُ يرى حوارَ كلمة مرور
-        // المسؤول بدل زرٍّ صامت.
-        PermissionGuard(
-          permission: PermissionCodes.treasuryPaymentsCreate,
-          allowManagerOverride: true,
-          actionName: 'إنشاء سند صرف',
-          child: OutlinedButton.icon(
-            onPressed: () => showDialog(
-              context: context,
-              builder: (context) => const PaymentVoucherDialog(),
-            ),
-            icon: const Icon(
-              PhosphorIconsBold.arrowCircleUp,
-              color: AppColors.error,
-            ),
-            label: const Text('سند صرف'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.error,
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        OutlinedButton.icon(
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const SafeManagementScreen(),
-            ),
-          ),
-          icon: const Icon(
-            PhosphorIconsBold.vault,
-            color: AppColors.primary,
-          ),
-          label: const Text('إدارة الصناديق'),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: AppColors.primary,
-          ),
-        ),
-        const SizedBox(width: 8),
-        OutlinedButton.icon(
-          onPressed: () => _showReconciliationDialog(context),
-          icon: const Icon(
-            PhosphorIconsBold.scales,
-            color: AppColors.info,
-          ),
-          label: const Text('مراجعة الأرصدة'),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: AppColors.info,
-          ),
-        ),
-      ],
+      // ⚠️ **الأزرارُ الأربعةُ لم تعد هنا.** التصميمُ يضعها شبكةَ ٢×٢ يسارَ
+      // البطاقة الداكنة (`grid-template-columns: 1fr 620px`) لا في شريط
+      // الهيدر — وحرّاسُها انتقلت معها إلى
+      // `widgets/treasury_actions_grid_picpos.dart`. راجع تعليقَ ذلك الملفّ:
+      // النقلُ وحدَه كان سيُسقط الفعلَ بعد موافقة المدير.
       body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Total Balance Card
-          // تقسيمُ الرصيد يُمرَّر إلى اللوح فيرسمه **داخل** بطاقته الداكنة —
-          // كما في التصميم، وكما يوجب عقدُ الألوان.
-          //
-          // ويُبنى من **نفس** `scopedSafesProvider` الذي تقرؤه بطاقاتُ
-          // الصناديق، فالمجموعُ هو مجموعُ ما يُعرض تحته بالضبط (مسقوفاً
-          // بنطاق الفرع كما هو).
-          TreasuryMetricsPanelPicpos(
-            split: safes.whenOrNull(
-              data: (rows) => PicPosTreasurySplit.from([
-                for (final s in rows) (kind: s.safeType, balance: s.balance),
-              ]),
-            ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              // التصميم: `1fr 620px`. وعلى نافذةٍ أضيقَ يُقلَّص العمودُ الثابت
+              // بدل أن يُصفَّر عرضُ البطاقة الداكنة أو يفيض الصفّ.
+              final actionsWidth = math.min(620.0, constraints.maxWidth * .45);
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Total Balance Card
+                  // تقسيمُ الرصيد يُمرَّر إلى اللوح فيرسمه **داخل** بطاقته
+                  // الداكنة — كما في التصميم، وكما يوجب عقدُ الألوان.
+                  //
+                  // ويُبنى من **نفس** `scopedSafesProvider` الذي تقرؤه بطاقاتُ
+                  // الصناديق، فالمجموعُ هو مجموعُ ما يُعرض تحته بالضبط
+                  // (مسقوفاً بنطاق الفرع كما هو).
+                  Expanded(
+                    child: TreasuryMetricsPanelPicpos(
+                      split: safes.whenOrNull(
+                        data: (rows) => PicPosTreasurySplit.from([
+                          for (final s in rows)
+                            (kind: s.safeType, balance: s.balance),
+                        ]),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  SizedBox(
+                    width: actionsWidth,
+                    child: TreasuryActionsGridPicpos(
+                      onReceipt: () => showDialog(
+                        context: context,
+                        builder: (_) => const ReceiptVoucherDialog(),
+                      ),
+                      onPayment: () => showDialog(
+                        context: context,
+                        builder: (_) => const PaymentVoucherDialog(),
+                      ),
+                      onSafes: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const SafeManagementScreen(),
+                        ),
+                      ),
+                      onReconcile: () => _showReconciliationDialog(context),
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
-          // Search bar
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'بحث في الخزينة (سندات، صناديق)...',
-                prefixIcon:
-                    const Icon(PhosphorIconsBold.magnifyingGlass, size: 18),
-                suffixIcon: _searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear, size: 18),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() => _searchQuery = '');
-                        })
-                    : null,
-                isDense: true,
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          // شريطُ التبويبات على شكل التصميم، وبحثُ الشاشة في آخره.
+          TreasuryTabBarPicpos(
+            controller: _tabController,
+            searchController: _searchController,
+            searchQuery: _searchQuery,
+            onSearchChanged: (v) =>
+                setState(() => _searchQuery = v.trim().toLowerCase()),
+            tabs: [
+              (
+                label: AppLocalizations.of(context)!.cashSafes,
+                icon: PhosphorIconsBold.money
               ),
-              onChanged: (v) => setState(() => _searchQuery = v.trim().toLowerCase()),
-            ),
+              (
+                label: AppLocalizations.of(context)!.bankAccounts,
+                icon: PhosphorIconsBold.bank
+              ),
+              (label: 'تحويل كليك', icon: PhosphorIconsBold.cellSignalFull),
+              (
+                label: AppLocalizations.of(context)!.dailyClosing,
+                icon: PhosphorIconsBold.lockKey
+              ),
+              (label: 'تدفقات نقدية', icon: PhosphorIconsBold.chartLineUp),
+            ],
           ),
-
-          // Tab Bar for Cash / Bank / Daily Closing
-          Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: TabBar(
-              controller: _tabController,
-              labelColor: AppColors.primary,
-              unselectedLabelColor: AppColors.textMuted,
-              indicatorColor: AppColors.primary,
-              indicatorSize: TabBarIndicatorSize.tab,
-              tabs: [
-                Tab(
-                  icon: const Icon(PhosphorIconsBold.money),
-                  text: AppLocalizations.of(context)!.cashSafes,
-                ),
-                Tab(
-                  icon: const Icon(PhosphorIconsBold.bank),
-                  text: AppLocalizations.of(context)!.bankAccounts,
-                ),
-                const Tab(
-                  icon: Icon(PhosphorIconsBold.cellSignalFull),
-                  text: 'تحويل كليك',
-                ),
-                Tab(
-                  icon: const Icon(PhosphorIconsBold.lockKey),
-                  text: AppLocalizations.of(context)!.dailyClosing,
-                ),
-                const Tab(
-                  icon: Icon(PhosphorIconsBold.chartLineUp),
-                  text: 'تدفقات نقدية',
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // Tab Content
           Expanded(
             child: TabBarView(
               controller: _tabController,
               children: [
-                // Tab 1: Cash Report
-                TreasuryCashTab(safes: safes, transactions: transactions),
-
-                // Tab 2: Bank Transfers
-                TreasuryBankTab(safes: safes, transactions: transactions),
-
-                // Tab 3: Click Transfer
-                _TreasuryClickTab(safes: safes, transactions: transactions),
+                // التبويباتُ الثلاثةُ الأولى **لوحٌ واحدٌ مرشَّح** لا ثلاثُ
+                // نسخ — كما يقول التصميمُ نفسُه
+                // (`list = tab==='bank' ? bank : tab==='click' ? click : …`).
+                TreasuryPanesPicpos(
+                  safes: safes,
+                  transactions: transactions,
+                  safeType: 'cash',
+                  emptyLabel: 'لا توجد صناديق نقدية',
+                  searchQuery: _searchQuery,
+                ),
+                TreasuryPanesPicpos(
+                  safes: safes,
+                  transactions: transactions,
+                  safeType: 'bank',
+                  emptyLabel: AppLocalizations.of(context)!.noBankAccounts,
+                  searchQuery: _searchQuery,
+                ),
+                TreasuryPanesPicpos(
+                  safes: safes,
+                  transactions: transactions,
+                  safeType: 'click',
+                  emptyLabel: 'لا توجد صناديق كليك',
+                  searchQuery: _searchQuery,
+                ),
 
                 // Tab 4: Daily Closing
                 TreasuryClosingTab(
@@ -346,100 +286,6 @@ class _TreasuryPicposScreenState extends ConsumerState<TreasuryPicposScreen>
         textDirection: ui.TextDirection.rtl,
         child: _ReconciliationDialog(),
       ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// TAB 3: CLICK TRANSFER — تحويل كليك
-// ═══════════════════════════════════════════════════════════════════════════
-
-class _TreasuryClickTab extends StatelessWidget {
-  final AsyncValue<List<SafeData>> safes;
-  final AsyncValue<List<TransactionData>> transactions;
-
-  const _TreasuryClickTab({
-    required this.safes,
-    required this.transactions,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Click Safes List
-        Expanded(
-          flex: 1,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'صناديق تحويل كليك',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: safes.when(
-                  data: (list) {
-                    final clickSafes = list
-                        .where((s) => s.safeType == 'click')
-                        .toList();
-                    if (clickSafes.isEmpty) {
-                      return const Center(
-                        child: Text(
-                          'لا توجد صناديق كليك',
-                          style: TextStyle(color: AppColors.textMuted),
-                        ),
-                      );
-                    }
-                    return ListView.builder(
-                      itemCount: clickSafes.length,
-                      itemBuilder: (context, index) {
-                        return TreasurySafeCard(
-                          safe: clickSafes[index],
-                        );
-                      },
-                    );
-                  },
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
-                  error: (e, _) => Center(child: Text('Error: $e')),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 24),
-        // Click Transactions
-        Expanded(
-          flex: 2,
-          child: safes.when(
-            data: (list) {
-              final clickSafeIds = list
-                  .where((s) => s.safeType == 'click')
-                  .map((s) => s.id)
-                  .toList();
-              return TreasuryTransactionsList(
-                transactions: transactions,
-                typeFilter: 'click',
-                safeIds: clickSafeIds,
-              );
-            },
-            loading: () => TreasuryTransactionsList(
-              transactions: transactions,
-              typeFilter: 'click',
-            ),
-            error: (_, _) => TreasuryTransactionsList(
-              transactions: transactions,
-              typeFilter: 'click',
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

@@ -5,12 +5,13 @@
 // لشاشة UralCash.
 //
 // **الجديدُ من التصميم:** شريطُ تقسيمِ الرصيد (`trSplit`) — نقديٌّ وبنكيٌّ
-// بنسبتَيهما. والأصلُ يعرض المجموعَ وحدَه.
+// وكليك بنسبهم. والأصلُ يعرض المجموعَ وحدَه.
 //
-// ⚠️ **وحرّاسُ السندَين نُقلا كما هما** (`treasury_receipts_create` و
-// `treasury_payments_create` بـ`allowManagerOverride`). حذفُ حارسٍ أثناء
-// النسخ هو بالضبط فئةُ العطب التي وُجد `picpos_permission_parity_test`
-// لأجلها — ومُقاسةٌ هنا في `picpos_treasury_metrics_test`.
+// ⚠️ **وسندا القبض والصرف لم يعودا هنا** — انتقلا بحرّاسهما إلى
+// `treasury_actions_grid_picpos.dart` (شبكةُ ٢×٢ يسارَ هذه البطاقة كما في
+// التصميم)، وهي **داخلَ مجلد التوأم** فلا تنكسر حافةُ
+// `picpos_permission_parity_test`. والحارسان هناك يُمرَّر لهما `onGranted`
+// صراحةً — راجع تعليقَ ذلك الملفّ: تخمينُ الحارس لا يعرف بطاقةً مخصَّصة.
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -19,10 +20,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:intl/intl.dart';
 import '../../../domain/models/picpos_treasury_view.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/permissions/permission_codes.dart';
-import '../../treasury/widgets/receipt_voucher_dialog.dart';
-import '../../treasury/widgets/payment_voucher_dialog.dart';
-import '../../widgets/permission_guard.dart';
+import 'treasury_picpos_tokens.dart';
 
 import 'package:ural_erp/l10n/app_localizations.dart';
 import '../../../data/providers/providers.dart';
@@ -37,20 +35,6 @@ class TreasuryMetricsPanelPicpos extends ConsumerWidget {
   /// شرائحَ بدل أن تُرسم شرائحُ أصفارٍ تُقرأ خبراً.
   final PicPosTreasurySplit? split;
 
-  void _showReceiptVoucherDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => const ReceiptVoucherDialog(),
-    );
-  }
-
-  void _showPaymentVoucherDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => const PaymentVoucherDialog(),
-    );
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final totalBalance = ref.watch(totalCashBalanceProvider);
@@ -58,10 +42,10 @@ class TreasuryMetricsPanelPicpos extends ConsumerWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         gradient: AppColors.primaryGradient,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
             color: AppColors.primary.withValues(alpha: 0.3),
@@ -70,95 +54,134 @@ class TreasuryMetricsPanelPicpos extends ConsumerWidget {
           ),
         ],
       ),
-      child: Row(
+      child: Stack(
         children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(15),
-            ),
-            child: const Icon(
-              PhosphorIconsBold.wallet,
-              color: Colors.white,
-              size: 30,
+          // القرصُ الزخرفيّ في التصميم — يُقصّ بحدّ البطاقة (`overflow:hidden`).
+          PositionedDirectional(
+            start: -30,
+            top: -50,
+            child: Container(
+              width: 160,
+              height: 160,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: TreasuryPicposTokens.bankTint.withValues(alpha: .18),
+              ),
             ),
           ),
-          const SizedBox(width: 20),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                localizations.totalTreasuryBalance,
-                style: const TextStyle(color: Colors.white70, fontSize: 16),
-              ),
-              const SizedBox(height: 4),
-              totalBalance.when(
-                data: (balance) => Text(
-                  '${NumberFormat('#,##0.00', 'ar').format(balance)} ${AppConstants.currencySymbolEn}',
-                  style: const TextStyle(
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.16),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    PhosphorIconsBold.wallet,
                     color: Colors.white,
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
+                    size: 22,
                   ),
                 ),
-                loading: () => const Text(
-                  '...',
-                  style: TextStyle(color: Colors.white, fontSize: 32),
+                const SizedBox(width: 14),
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        localizations.totalTreasuryBalance,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: .72),
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      totalBalance.when(
+                        data: (balance) => TreasuryHeroAmountPicpos(amount: balance),
+                        loading: () => const TreasuryHeroAmountPicpos(amount: null),
+                        error: (e, s) => const TreasuryHeroAmountPicpos(amount: 0),
+                      ),
+                    ],
+                  ),
                 ),
-                error: (e, s) => Text(
-                  '0.00 ${AppConstants.currencySymbolEn}',
-                  style: const TextStyle(color: Colors.white, fontSize: 32),
-                ),
-              ),
-              // الشرائحُ **داخل** البطاقة الداكنة — لا تحتها على الفاتح.
-              // راجع تعليقَ [PicPosTreasurySplitChips]: وضعُها خارجاً هو ما
-              // أنتج «أبيضَ على فاتح» في لقطة المالك.
-              if (split != null) ...[
-                const SizedBox(height: 14),
-                PicPosTreasurySplitChips(split: split!),
+                const SizedBox(width: 14),
+                const Spacer(),
+                // الشرائحُ **داخل** البطاقة الداكنة — لا تحتها على الفاتح.
+                // راجع تعليقَ [PicPosTreasurySplitChips]: وضعُها خارجاً هو ما
+                // أنتج «أبيضَ على فاتح» في لقطة المالك. والتصميمُ يضعها في
+                // آخر الصفّ (`margin-inline-start:auto`) لا تحت الرقم.
+                if (split != null)
+                  Flexible(
+                    child: PicPosTreasurySplitChips(split: split!),
+                  ),
               ],
-            ],
-          ),
-          const SizedBox(width: 20),
-          const Spacer(),
-          Column(
-            children: [
-              // Receipt Voucher - Requires permission
-              PermissionGuard(
-                permission: PermissionCodes.treasuryReceiptsCreate,
-                allowManagerOverride: true,
-                actionName: 'إنشاء سند قبض',
-                child: ElevatedButton.icon(
-                  onPressed: () => _showReceiptVoucherDialog(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.success,
-                  ),
-                  icon: const Icon(PhosphorIconsBold.plus),
-                  label: Text(localizations.receiptVoucher),
-                ),
-              ),
-              const SizedBox(height: 8),
-              // Payment Voucher - Requires permission
-              PermissionGuard(
-                permission: PermissionCodes.treasuryPaymentsCreate,
-                allowManagerOverride: true,
-                actionName: 'إنشاء سند صرف',
-                child: OutlinedButton.icon(
-                  onPressed: () => _showPaymentVoucherDialog(context),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    side: const BorderSide(color: Colors.white),
-                  ),
-                  icon: const Icon(PhosphorIconsBold.minus),
-                  label: Text(localizations.paymentVoucher),
-                ),
-              ),
-            ],
+            ),
           ),
         ],
       ),
+    );
+  }
+}
+
+/// الرقمُ الكبير في البطاقة الداكنة، وكودُ العملة صغيراً بجانبه.
+///
+/// ═══ ⚠️ لماذا صفٌّ لا سلسلةٌ واحدة ═══
+///
+/// كان يُكتب `'$number $currency'` في `Text` واحدة. وفي فقرةٍ عربيّةٍ (RTL)
+/// تُشكّل الأرقامُ والحروفُ اللاتينيّةُ **مقطعاً واحداً يساريّاً**، فيُرسم
+/// الرقمُ ثمّ الكودُ يمينَه — أي الكودُ **بعد** الرقم بصريّاً. والتصميمُ يضعه
+/// **قبلَه** (`{{trTotal}}<span>EGP</span>` في حاوٍ RTL: الرقمُ يميناً والكودُ
+/// يسارَه).
+///
+/// فالصفُّ يحسم الترتيبَ بالتخطيط لا بخوارزمية bidi: أوّلُ عنصرٍ في `Row`
+/// تحت RTL يقع أقصى اليمين.
+///
+/// و[AppConstants.currencySymbolEn] **كودُ عملةِ المنشأة** لا `EGP` محفورة —
+/// التصميمُ مصريُّ العيّنة، والتنصيبةُ قد تكون أردنيّة.
+@visibleForTesting
+class TreasuryHeroAmountPicpos extends StatelessWidget {
+  const TreasuryHeroAmountPicpos({super.key, required this.amount});
+
+  /// `null` أثناء التحميل — فتُعرض نقاطٌ بدل صفرٍ يُقرأ خبراً.
+  final double? amount;
+
+  @override
+  Widget build(BuildContext context) {
+    final a = amount;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
+      children: [
+        Flexible(
+          child: Text(
+            a == null ? '...' : NumberFormat('#,##0.00', 'ar').format(a),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 28,
+              height: 1.15,
+              letterSpacing: -.5,
+              fontWeight: FontWeight.w800,
+              fontFeatures: [ui.FontFeature.tabularFigures()],
+            ),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          AppConstants.currencySymbolEn,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: .6),
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -192,12 +215,11 @@ class PicPosTreasurySplitChips extends StatelessWidget {
   /// الصنف: استنتاجُه ضمناً هو ما أنتج «أبيضَ على فاتح».
   final bool onDark;
 
-  /// ألوانُ الأنواع الثلاثة — نفسُ دلالة ألوان بطاقات الصناديق.
-  static const _colors = <String, Color>{
-    'cash': Color(0xFF22C55E),
-    'bank': Color(0xFF4A80E8),
-    'click': Color(0xFFA78BFA),
-  };
+  /// ألوانُ الأنواع — تُقرأ من [TreasuryPicposTokens] فتطابق **بالبناء** لونَ
+  /// بطاقة الصندوق تحتها.
+  ///
+  /// ⚠️ كانت مكتوبةً هنا حرفيّاً، وكليك فيها `#A78BFA` بينما البطاقةُ
+  /// والتصميمُ `#8B5CF6` — لونان لنفس النوع على نفس الشاشة.
 
   @override
   Widget build(BuildContext context) {
@@ -211,13 +233,20 @@ class PicPosTreasurySplitChips extends StatelessWidget {
     return Wrap(
       spacing: 10,
       runSpacing: 10,
+      // في آخر الصفّ كما يضعها التصميم — والالتفافُ يبقى فهو ما يمنع
+      // الفيضانَ على النوافذ الضيّقة (مقيسٌ في `picpos_treasury_metrics_test`).
+      alignment: WrapAlignment.end,
       children: [
         for (final s in split.slices)
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+            constraints: const BoxConstraints(minWidth: 104),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: chipBg,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(11),
+              border: onDark
+                  ? Border.all(color: Colors.white.withValues(alpha: .14))
+                  : null,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -226,9 +255,27 @@ class PicPosTreasurySplitChips extends StatelessWidget {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: TreasuryPicposTokens.tintFor(s.kind),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      s.label,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: labelColor,
+                      ),
+                    ),
                     // النسبةُ تُعرض فقط حين يكون لها معنى — مجموعٌ غيرُ موجبٍ
                     // يجعل «0%» تُقرأ كأن الرصيدَ صفر. راجع [hasBar].
                     if (split.hasBar) ...[
+                      const SizedBox(width: 10),
                       Text(
                         s.percentLabel,
                         style: TextStyle(
@@ -237,25 +284,7 @@ class PicPosTreasurySplitChips extends StatelessWidget {
                           color: labelColor,
                         ),
                       ),
-                      const SizedBox(width: 8),
                     ],
-                    Container(
-                      width: 7,
-                      height: 7,
-                      decoration: BoxDecoration(
-                        color: _colors[s.kind] ?? AppColors.textMuted,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 5),
-                    Text(
-                      s.label,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: labelColor,
-                      ),
-                    ),
                   ],
                 ),
                 const SizedBox(height: 3),
@@ -264,7 +293,7 @@ class PicPosTreasurySplitChips extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: 14,
                     height: 1.15,
                     fontWeight: FontWeight.w800,
                     color: valueColor,
