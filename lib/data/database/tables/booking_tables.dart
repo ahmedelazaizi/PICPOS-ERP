@@ -27,12 +27,48 @@ class BookingResources extends Table {
   IntColumn get employeeId =>
       integer().nullable().references(Employees, #id)();
 
+  /// الدورُ كما يُعرض تحت الاسم في التصميم («حلاق أول» · «خبيرة بشرة»).
+  ///
+  /// نصٌّ حرٌّ لا قائمةٌ مقيَّدة: المهنُ تختلف بين صالونٍ وعيادةٍ وورشة،
+  /// وتقييدُها يجعل التطبيقَ يُملي على المنشأة مسمَّياتِها.
+  TextColumn get role => text().withLength(max: 60).nullable()();
+
+  /// `staff` (إنسان) · `device` (كرسيٌّ · غرفةٌ · جهازُ ليزر).
+  ///
+  /// التصميمُ يميّزهما بصريّاً («مورد — جهاز»)، والفرقُ ليس تجميليّاً: رسالةُ
+  /// تذكيرٍ تُنسب إلى إنسانٍ ولا تُنسب إلى كابينة.
+  TextColumn get kind => text().withDefault(const Constant('staff'))();
+
+  /// الورديّةُ **دقائقُ من منتصف الليل** لا نصّاً ولا ربطاً بمنظومة الورديّات.
+  ///
+  /// ⚠️ قرارُ المالك 2026-08-22: عمودان هنا، **لا** ربطٌ بمنظومة الورديّات
+  /// القائمة. تلك دورةُ فتحٍ وإغلاقٍ يوميّةٍ لدرج الكاشير ومسيَّجةٌ بـ
+  /// `hrEnabled` — وهي **مطفأةٌ** في ملفَّي `restaurant` و`cafe` اللذين
+  /// يفتحان الحجوزات. فربطُها كان يشدّ الحجوزاتِ إلى وحدةٍ مطفأة.
+  ///
+  /// ودقائقُ لا `TimeOfDay` نصّاً: المقارنةُ («أهذا الموعدُ داخلَ الدوام؟»)
+  /// تصير حسابَ أعدادٍ صحيحةٍ في SQL بدل تحليلِ نصٍّ محلّيّ.
+  IntColumn get shiftStartMinutes => integer().nullable()();
+  IntColumn get shiftEndMinutes => integer().nullable()();
+
   BoolColumn get isActive => boolean().withDefault(const Constant(true))();
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
   IntColumn get branchId =>
       integer().nullable().references(Branches, #id)();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get deletedAt => dateTime().nullable()();
+
+  /// ⚠️ لا قيدَ على ترتيب طرفَي الورديّة (‏`end > start`): ورديّةٌ تعبر منتصفَ
+  /// الليل (‏٢٠:٠٠ → ٠٢:٠٠) قائمةٌ فعلاً في المطاعم، فقيدٌ يمنعها يمنع
+  /// استعمالاً صحيحاً. والمدى يُفسَّر دائريّاً في الحساب لا في القاعدة.
+  @override
+  List<String> get customConstraints => [
+        "CHECK (kind IN ('staff', 'device'))",
+        'CHECK (shift_start_minutes IS NULL OR '
+            '(shift_start_minutes >= 0 AND shift_start_minutes < 1440))',
+        'CHECK (shift_end_minutes IS NULL OR '
+            '(shift_end_minutes >= 0 AND shift_end_minutes < 1440))',
+      ];
 }
 
 /// الخدمةُ المعروضة للحجز.
@@ -119,8 +155,16 @@ class Bookings extends Table {
   /// تعارضاتٍ لم تكن.
   DateTimeColumn get endsAt => dateTime()();
 
-  /// `pending` · `confirmed` · `in_service` · `completed` · `cancelled` ·
-  /// `no_show`. مستقلّةٌ عن مفردات `TableReservations`.
+  /// `pending` · `confirmed` · **`seated`** · `in_service` · `completed` ·
+  /// `cancelled` · `no_show`. مستقلّةٌ عن مفردات `TableReservations`.
+  ///
+  /// ⚠️ **و`seated` أُضيفت في v161 لا في الأصل** — قرارُ المالك 2026-08-22.
+  /// التصميمُ يرسم «تم الحضور» بطاقةً مستقلّةً في لقطة المالك، وكتابتُها كانت
+  /// **ترمي** على القيد الأوّل. وهي حالةٌ حقيقيّةٌ لا مرادفٌ: «حضر ولم تبدأ
+  /// خدمتُه» غيرُ «مؤكَّدٌ ولم يأتِ» وغيرُ «قيد الخدمة».
+  ///
+  /// و`completed` **بقيت** ولم تُستبدَل — يحتاجها تحويلُ الحجز إلى فاتورة،
+  /// والإضافةُ لا تُخالف صفّاً قائماً بينما الاستبدالُ يُخالف.
   TextColumn get status => text().withDefault(const Constant('pending'))();
 
   RealColumn get depositAmount => real().withDefault(const Constant(0))();
@@ -155,8 +199,60 @@ class Bookings extends Table {
   /// يكلّف نسخةَ مخطّطٍ ثانيةً و`m.alterTable` بإعادة بناءِ جدول.
   @override
   List<String> get customConstraints => [
-        "CHECK (status IN ('pending', 'confirmed', 'in_service', "
+        "CHECK (status IN ('pending', 'confirmed', 'seated', 'in_service', "
             "'completed', 'cancelled', 'no_show'))",
         "CHECK (deposit_status IN ('held', 'refunded', 'forfeited'))",
+      ];
+}
+
+/// تذكيرُ موعدٍ — `rem` في التصميم.
+///
+/// ═══ ⚠️ «فُتحت» لا «أُرسلت» — والتسميةُ هي الصدق ═══
+///
+/// قرارُ المالك 2026-08-22: الإرسالُ عبر **رابط `wa.me` برسالةٍ مُعبّأة** —
+/// يفتح واتساب بالنصّ جاهزاً والموظَّفُ يضغط «إرسال». وهذا يعني أنّ التطبيقَ
+/// **لا يعلم** أنّ الرسالةَ وصلت ولا أنّها أُرسلت أصلاً؛ يعلم فقط أنّ أحداً
+/// فتح الرابط.
+///
+/// فالحالاتُ سُمّيت بما يُعرَف لا بما يُشتهى: `opened` لا `sent`. وشارةُ
+/// «أُرسلت» فوق فعلٍ لم يُتحقَّق منه كذبٌ على المشغّل — وهو نفسُ صنفِ العطب
+/// الذي جعل ترويسةَ الحركات تكتب العددَ المقيسَ بدل «اليوم وأمس».
+///
+/// و«المستحقُّ» (‏`due` في التصميم) **يُحسَب ولا يُخزَّن**: `scheduled_at`
+/// ماضٍ والحالةُ `scheduled`. عمودٌ يقول «مستحقّ» يحتاج من يُحدّثه كلَّ
+/// دقيقة، وينحرف عن الساعة بصمتٍ إن لم يُحدَّث.
+class BookingReminders extends Table {
+  IntColumn get id => integer().autoIncrement()();
+
+  IntColumn get bookingId => integer().references(Bookings, #id)();
+
+  /// `whatsapp` · `sms`. القناةُ تُخزَّن ولو كان المنفَذُ اليومَ واحداً —
+  /// التصميمُ يعرض عمودَ القناة، ومَن أضاف مزوِّداً غداً لا يهاجر بيانات.
+  TextColumn get channel =>
+      text().withDefault(const Constant('whatsapp'))();
+
+  /// كم دقيقةً **قبل** الموعد يُرسل. يُخزَّن ليبقى التذكيرُ مفهوماً بعد
+  /// تأجيل الموعد — ويُعاد جدولتُه منه.
+  IntColumn get offsetMinutes => integer().withDefault(const Constant(60))();
+
+  /// لحظةُ الاستحقاق = `booking.startsAt - offsetMinutes`، **مخزَّنةً**
+  /// لأن الترشيحَ عليها استعلامٌ لا مسحٌ في الذاكرة.
+  DateTimeColumn get scheduledAt => dateTime()();
+
+  /// `scheduled` · `opened` · `dismissed`.
+  TextColumn get state => text().withDefault(const Constant('scheduled'))();
+
+  DateTimeColumn get openedAt => dateTime().nullable()();
+  IntColumn get openedBy => integer().nullable().references(Users, #id)();
+
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+
+  @override
+  List<String> get customConstraints => [
+        "CHECK (channel IN ('whatsapp', 'sms'))",
+        "CHECK (state IN ('scheduled', 'opened', 'dismissed'))",
+        // تذكيرٌ **بعد** الموعد لا معنى له، وسالبُ الإزاحة يُنتجه.
+        'CHECK (offset_minutes >= 0)',
       ];
 }

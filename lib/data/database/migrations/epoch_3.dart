@@ -2560,5 +2560,35 @@ extension Epoch3Migrations on AppDatabase {
         debugPrint('[Migration] v160 pos_shift_close → treasury OK');
       });
     }
+
+    // ── v161: واجهةُ الحجوزات — حالةُ الحضور وأعمدةُ المورد وجدولُ التذكير ──
+    //
+    // ثلاثةُ تغييراتٍ في **ترقيةٍ واحدة** عن قصد: قيدُ `bookings.status`
+    // وأعمدةُ `booking_resources` كلاهما يستدعي `m.alterTable` بإعادةِ بناءِ
+    // جدول. ودفعُها في ترقيتين يدفع الكلفةَ مرّتين على قواعدَ حيّة.
+    //
+    // ⚠️ و`m.alterTable` تبني تعريفَ **اليوم** لا تعريفَ لحظةِ الترقية. فأيُّ
+    // خطوةٍ أقدمَ تعيد بناءَ نفسِ الجدولين تصير تابعةً لهذا التعريف — وهي
+    // هنا `v159` التي أنشأتهما بـ`createTable` (وتبني تعريفَ اليوم كذلك)،
+    // فلا تعارض. **ومن أضاف عموداً لاحقاً فليقرأ هذا قبل أن يكتب خطوةً
+    // بينهما.**
+    if (from < 161) {
+      await _safeMigrate('v161 حالةُ الحضور وأعمدةُ المورد والتذكيرات',
+          () async {
+        // ‏١) `bookings.status` يقبل `seated`. إضافةٌ لا استبدال، فلا صفٌّ
+        //    قائمٌ يصير مخالفاً — ولا تسويةَ بياناتٍ مطلوبةٌ قبلها.
+        await m.alterTable(TableMigration(bookings));
+
+        // ‏٢) أعمدةُ المورد. `addColumn` لا تكفي وحدَها لأن القيدَ على `kind`
+        //    جزءٌ من تعريف الجدول، و`alterTable` تحمل الاثنين معاً.
+        await m.alterTable(TableMigration(bookingResources));
+
+        // ‏٣) جدولُ التذكيرات — جديدٌ فلا إعادةَ بناء.
+        await m.createTable(bookingReminders);
+
+        debugPrint('[Migration] v161 bookings seated + resource cols + '
+            'reminders OK');
+      });
+    }
   }
 }

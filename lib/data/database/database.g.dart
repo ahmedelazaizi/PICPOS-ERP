@@ -29486,6 +29486,48 @@ class $BookingResourcesTable extends BookingResources
       'REFERENCES employees (id)',
     ),
   );
+  static const VerificationMeta _roleMeta = const VerificationMeta('role');
+  @override
+  late final GeneratedColumn<String> role = GeneratedColumn<String>(
+    'role',
+    aliasedName,
+    true,
+    additionalChecks: GeneratedColumn.checkTextLength(maxTextLength: 60),
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('staff'),
+  );
+  static const VerificationMeta _shiftStartMinutesMeta = const VerificationMeta(
+    'shiftStartMinutes',
+  );
+  @override
+  late final GeneratedColumn<int> shiftStartMinutes = GeneratedColumn<int>(
+    'shift_start_minutes',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _shiftEndMinutesMeta = const VerificationMeta(
+    'shiftEndMinutes',
+  );
+  @override
+  late final GeneratedColumn<int> shiftEndMinutes = GeneratedColumn<int>(
+    'shift_end_minutes',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _isActiveMeta = const VerificationMeta(
     'isActive',
   );
@@ -29557,6 +29599,10 @@ class $BookingResourcesTable extends BookingResources
     colorHex,
     phone,
     employeeId,
+    role,
+    kind,
+    shiftStartMinutes,
+    shiftEndMinutes,
     isActive,
     sortOrder,
     branchId,
@@ -29602,6 +29648,36 @@ class $BookingResourcesTable extends BookingResources
       context.handle(
         _employeeIdMeta,
         employeeId.isAcceptableOrUnknown(data['employee_id']!, _employeeIdMeta),
+      );
+    }
+    if (data.containsKey('role')) {
+      context.handle(
+        _roleMeta,
+        role.isAcceptableOrUnknown(data['role']!, _roleMeta),
+      );
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    }
+    if (data.containsKey('shift_start_minutes')) {
+      context.handle(
+        _shiftStartMinutesMeta,
+        shiftStartMinutes.isAcceptableOrUnknown(
+          data['shift_start_minutes']!,
+          _shiftStartMinutesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('shift_end_minutes')) {
+      context.handle(
+        _shiftEndMinutesMeta,
+        shiftEndMinutes.isAcceptableOrUnknown(
+          data['shift_end_minutes']!,
+          _shiftEndMinutesMeta,
+        ),
       );
     }
     if (data.containsKey('is_active')) {
@@ -29663,6 +29739,22 @@ class $BookingResourcesTable extends BookingResources
         DriftSqlType.int,
         data['${effectivePrefix}employee_id'],
       ),
+      role: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}role'],
+      ),
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      shiftStartMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}shift_start_minutes'],
+      ),
+      shiftEndMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}shift_end_minutes'],
+      ),
       isActive: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_active'],
@@ -29705,6 +29797,30 @@ class BookingResource extends DataClass implements Insertable<BookingResource> {
   /// مهما كان العلَم (العلَمُ يحجب الواجهةَ لا الجدول) فالمفتاحُ غيرُ ضارّ.
   /// فمَن أطفأ الموارد البشريّة يتركه فارغاً ويعمل، ومَن فعّلها يربط.
   final int? employeeId;
+
+  /// الدورُ كما يُعرض تحت الاسم في التصميم («حلاق أول» · «خبيرة بشرة»).
+  ///
+  /// نصٌّ حرٌّ لا قائمةٌ مقيَّدة: المهنُ تختلف بين صالونٍ وعيادةٍ وورشة،
+  /// وتقييدُها يجعل التطبيقَ يُملي على المنشأة مسمَّياتِها.
+  final String? role;
+
+  /// `staff` (إنسان) · `device` (كرسيٌّ · غرفةٌ · جهازُ ليزر).
+  ///
+  /// التصميمُ يميّزهما بصريّاً («مورد — جهاز»)، والفرقُ ليس تجميليّاً: رسالةُ
+  /// تذكيرٍ تُنسب إلى إنسانٍ ولا تُنسب إلى كابينة.
+  final String kind;
+
+  /// الورديّةُ **دقائقُ من منتصف الليل** لا نصّاً ولا ربطاً بمنظومة الورديّات.
+  ///
+  /// ⚠️ قرارُ المالك 2026-08-22: عمودان هنا، **لا** ربطٌ بمنظومة الورديّات
+  /// القائمة. تلك دورةُ فتحٍ وإغلاقٍ يوميّةٍ لدرج الكاشير ومسيَّجةٌ بـ
+  /// `hrEnabled` — وهي **مطفأةٌ** في ملفَّي `restaurant` و`cafe` اللذين
+  /// يفتحان الحجوزات. فربطُها كان يشدّ الحجوزاتِ إلى وحدةٍ مطفأة.
+  ///
+  /// ودقائقُ لا `TimeOfDay` نصّاً: المقارنةُ («أهذا الموعدُ داخلَ الدوام؟»)
+  /// تصير حسابَ أعدادٍ صحيحةٍ في SQL بدل تحليلِ نصٍّ محلّيّ.
+  final int? shiftStartMinutes;
+  final int? shiftEndMinutes;
   final bool isActive;
   final int sortOrder;
   final int? branchId;
@@ -29716,6 +29832,10 @@ class BookingResource extends DataClass implements Insertable<BookingResource> {
     required this.colorHex,
     this.phone,
     this.employeeId,
+    this.role,
+    required this.kind,
+    this.shiftStartMinutes,
+    this.shiftEndMinutes,
     required this.isActive,
     required this.sortOrder,
     this.branchId,
@@ -29733,6 +29853,16 @@ class BookingResource extends DataClass implements Insertable<BookingResource> {
     }
     if (!nullToAbsent || employeeId != null) {
       map['employee_id'] = Variable<int>(employeeId);
+    }
+    if (!nullToAbsent || role != null) {
+      map['role'] = Variable<String>(role);
+    }
+    map['kind'] = Variable<String>(kind);
+    if (!nullToAbsent || shiftStartMinutes != null) {
+      map['shift_start_minutes'] = Variable<int>(shiftStartMinutes);
+    }
+    if (!nullToAbsent || shiftEndMinutes != null) {
+      map['shift_end_minutes'] = Variable<int>(shiftEndMinutes);
     }
     map['is_active'] = Variable<bool>(isActive);
     map['sort_order'] = Variable<int>(sortOrder);
@@ -29757,6 +29887,14 @@ class BookingResource extends DataClass implements Insertable<BookingResource> {
       employeeId: employeeId == null && nullToAbsent
           ? const Value.absent()
           : Value(employeeId),
+      role: role == null && nullToAbsent ? const Value.absent() : Value(role),
+      kind: Value(kind),
+      shiftStartMinutes: shiftStartMinutes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(shiftStartMinutes),
+      shiftEndMinutes: shiftEndMinutes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(shiftEndMinutes),
       isActive: Value(isActive),
       sortOrder: Value(sortOrder),
       branchId: branchId == null && nullToAbsent
@@ -29780,6 +29918,10 @@ class BookingResource extends DataClass implements Insertable<BookingResource> {
       colorHex: serializer.fromJson<String>(json['colorHex']),
       phone: serializer.fromJson<String?>(json['phone']),
       employeeId: serializer.fromJson<int?>(json['employeeId']),
+      role: serializer.fromJson<String?>(json['role']),
+      kind: serializer.fromJson<String>(json['kind']),
+      shiftStartMinutes: serializer.fromJson<int?>(json['shiftStartMinutes']),
+      shiftEndMinutes: serializer.fromJson<int?>(json['shiftEndMinutes']),
       isActive: serializer.fromJson<bool>(json['isActive']),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
       branchId: serializer.fromJson<int?>(json['branchId']),
@@ -29796,6 +29938,10 @@ class BookingResource extends DataClass implements Insertable<BookingResource> {
       'colorHex': serializer.toJson<String>(colorHex),
       'phone': serializer.toJson<String?>(phone),
       'employeeId': serializer.toJson<int?>(employeeId),
+      'role': serializer.toJson<String?>(role),
+      'kind': serializer.toJson<String>(kind),
+      'shiftStartMinutes': serializer.toJson<int?>(shiftStartMinutes),
+      'shiftEndMinutes': serializer.toJson<int?>(shiftEndMinutes),
       'isActive': serializer.toJson<bool>(isActive),
       'sortOrder': serializer.toJson<int>(sortOrder),
       'branchId': serializer.toJson<int?>(branchId),
@@ -29810,6 +29956,10 @@ class BookingResource extends DataClass implements Insertable<BookingResource> {
     String? colorHex,
     Value<String?> phone = const Value.absent(),
     Value<int?> employeeId = const Value.absent(),
+    Value<String?> role = const Value.absent(),
+    String? kind,
+    Value<int?> shiftStartMinutes = const Value.absent(),
+    Value<int?> shiftEndMinutes = const Value.absent(),
     bool? isActive,
     int? sortOrder,
     Value<int?> branchId = const Value.absent(),
@@ -29821,6 +29971,14 @@ class BookingResource extends DataClass implements Insertable<BookingResource> {
     colorHex: colorHex ?? this.colorHex,
     phone: phone.present ? phone.value : this.phone,
     employeeId: employeeId.present ? employeeId.value : this.employeeId,
+    role: role.present ? role.value : this.role,
+    kind: kind ?? this.kind,
+    shiftStartMinutes: shiftStartMinutes.present
+        ? shiftStartMinutes.value
+        : this.shiftStartMinutes,
+    shiftEndMinutes: shiftEndMinutes.present
+        ? shiftEndMinutes.value
+        : this.shiftEndMinutes,
     isActive: isActive ?? this.isActive,
     sortOrder: sortOrder ?? this.sortOrder,
     branchId: branchId.present ? branchId.value : this.branchId,
@@ -29836,6 +29994,14 @@ class BookingResource extends DataClass implements Insertable<BookingResource> {
       employeeId: data.employeeId.present
           ? data.employeeId.value
           : this.employeeId,
+      role: data.role.present ? data.role.value : this.role,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      shiftStartMinutes: data.shiftStartMinutes.present
+          ? data.shiftStartMinutes.value
+          : this.shiftStartMinutes,
+      shiftEndMinutes: data.shiftEndMinutes.present
+          ? data.shiftEndMinutes.value
+          : this.shiftEndMinutes,
       isActive: data.isActive.present ? data.isActive.value : this.isActive,
       sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
       branchId: data.branchId.present ? data.branchId.value : this.branchId,
@@ -29852,6 +30018,10 @@ class BookingResource extends DataClass implements Insertable<BookingResource> {
           ..write('colorHex: $colorHex, ')
           ..write('phone: $phone, ')
           ..write('employeeId: $employeeId, ')
+          ..write('role: $role, ')
+          ..write('kind: $kind, ')
+          ..write('shiftStartMinutes: $shiftStartMinutes, ')
+          ..write('shiftEndMinutes: $shiftEndMinutes, ')
           ..write('isActive: $isActive, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('branchId: $branchId, ')
@@ -29868,6 +30038,10 @@ class BookingResource extends DataClass implements Insertable<BookingResource> {
     colorHex,
     phone,
     employeeId,
+    role,
+    kind,
+    shiftStartMinutes,
+    shiftEndMinutes,
     isActive,
     sortOrder,
     branchId,
@@ -29883,6 +30057,10 @@ class BookingResource extends DataClass implements Insertable<BookingResource> {
           other.colorHex == this.colorHex &&
           other.phone == this.phone &&
           other.employeeId == this.employeeId &&
+          other.role == this.role &&
+          other.kind == this.kind &&
+          other.shiftStartMinutes == this.shiftStartMinutes &&
+          other.shiftEndMinutes == this.shiftEndMinutes &&
           other.isActive == this.isActive &&
           other.sortOrder == this.sortOrder &&
           other.branchId == this.branchId &&
@@ -29896,6 +30074,10 @@ class BookingResourcesCompanion extends UpdateCompanion<BookingResource> {
   final Value<String> colorHex;
   final Value<String?> phone;
   final Value<int?> employeeId;
+  final Value<String?> role;
+  final Value<String> kind;
+  final Value<int?> shiftStartMinutes;
+  final Value<int?> shiftEndMinutes;
   final Value<bool> isActive;
   final Value<int> sortOrder;
   final Value<int?> branchId;
@@ -29907,6 +30089,10 @@ class BookingResourcesCompanion extends UpdateCompanion<BookingResource> {
     this.colorHex = const Value.absent(),
     this.phone = const Value.absent(),
     this.employeeId = const Value.absent(),
+    this.role = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.shiftStartMinutes = const Value.absent(),
+    this.shiftEndMinutes = const Value.absent(),
     this.isActive = const Value.absent(),
     this.sortOrder = const Value.absent(),
     this.branchId = const Value.absent(),
@@ -29919,6 +30105,10 @@ class BookingResourcesCompanion extends UpdateCompanion<BookingResource> {
     this.colorHex = const Value.absent(),
     this.phone = const Value.absent(),
     this.employeeId = const Value.absent(),
+    this.role = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.shiftStartMinutes = const Value.absent(),
+    this.shiftEndMinutes = const Value.absent(),
     this.isActive = const Value.absent(),
     this.sortOrder = const Value.absent(),
     this.branchId = const Value.absent(),
@@ -29931,6 +30121,10 @@ class BookingResourcesCompanion extends UpdateCompanion<BookingResource> {
     Expression<String>? colorHex,
     Expression<String>? phone,
     Expression<int>? employeeId,
+    Expression<String>? role,
+    Expression<String>? kind,
+    Expression<int>? shiftStartMinutes,
+    Expression<int>? shiftEndMinutes,
     Expression<bool>? isActive,
     Expression<int>? sortOrder,
     Expression<int>? branchId,
@@ -29943,6 +30137,10 @@ class BookingResourcesCompanion extends UpdateCompanion<BookingResource> {
       if (colorHex != null) 'color_hex': colorHex,
       if (phone != null) 'phone': phone,
       if (employeeId != null) 'employee_id': employeeId,
+      if (role != null) 'role': role,
+      if (kind != null) 'kind': kind,
+      if (shiftStartMinutes != null) 'shift_start_minutes': shiftStartMinutes,
+      if (shiftEndMinutes != null) 'shift_end_minutes': shiftEndMinutes,
       if (isActive != null) 'is_active': isActive,
       if (sortOrder != null) 'sort_order': sortOrder,
       if (branchId != null) 'branch_id': branchId,
@@ -29957,6 +30155,10 @@ class BookingResourcesCompanion extends UpdateCompanion<BookingResource> {
     Value<String>? colorHex,
     Value<String?>? phone,
     Value<int?>? employeeId,
+    Value<String?>? role,
+    Value<String>? kind,
+    Value<int?>? shiftStartMinutes,
+    Value<int?>? shiftEndMinutes,
     Value<bool>? isActive,
     Value<int>? sortOrder,
     Value<int?>? branchId,
@@ -29969,6 +30171,10 @@ class BookingResourcesCompanion extends UpdateCompanion<BookingResource> {
       colorHex: colorHex ?? this.colorHex,
       phone: phone ?? this.phone,
       employeeId: employeeId ?? this.employeeId,
+      role: role ?? this.role,
+      kind: kind ?? this.kind,
+      shiftStartMinutes: shiftStartMinutes ?? this.shiftStartMinutes,
+      shiftEndMinutes: shiftEndMinutes ?? this.shiftEndMinutes,
       isActive: isActive ?? this.isActive,
       sortOrder: sortOrder ?? this.sortOrder,
       branchId: branchId ?? this.branchId,
@@ -29994,6 +30200,18 @@ class BookingResourcesCompanion extends UpdateCompanion<BookingResource> {
     }
     if (employeeId.present) {
       map['employee_id'] = Variable<int>(employeeId.value);
+    }
+    if (role.present) {
+      map['role'] = Variable<String>(role.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (shiftStartMinutes.present) {
+      map['shift_start_minutes'] = Variable<int>(shiftStartMinutes.value);
+    }
+    if (shiftEndMinutes.present) {
+      map['shift_end_minutes'] = Variable<int>(shiftEndMinutes.value);
     }
     if (isActive.present) {
       map['is_active'] = Variable<bool>(isActive.value);
@@ -30021,6 +30239,10 @@ class BookingResourcesCompanion extends UpdateCompanion<BookingResource> {
           ..write('colorHex: $colorHex, ')
           ..write('phone: $phone, ')
           ..write('employeeId: $employeeId, ')
+          ..write('role: $role, ')
+          ..write('kind: $kind, ')
+          ..write('shiftStartMinutes: $shiftStartMinutes, ')
+          ..write('shiftEndMinutes: $shiftEndMinutes, ')
           ..write('isActive: $isActive, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('branchId: $branchId, ')
@@ -31261,8 +31483,16 @@ class Booking extends DataClass implements Insertable<Booking> {
   /// تعارضاتٍ لم تكن.
   final DateTime endsAt;
 
-  /// `pending` · `confirmed` · `in_service` · `completed` · `cancelled` ·
-  /// `no_show`. مستقلّةٌ عن مفردات `TableReservations`.
+  /// `pending` · `confirmed` · **`seated`** · `in_service` · `completed` ·
+  /// `cancelled` · `no_show`. مستقلّةٌ عن مفردات `TableReservations`.
+  ///
+  /// ⚠️ **و`seated` أُضيفت في v161 لا في الأصل** — قرارُ المالك 2026-08-22.
+  /// التصميمُ يرسم «تم الحضور» بطاقةً مستقلّةً في لقطة المالك، وكتابتُها كانت
+  /// **ترمي** على القيد الأوّل. وهي حالةٌ حقيقيّةٌ لا مرادفٌ: «حضر ولم تبدأ
+  /// خدمتُه» غيرُ «مؤكَّدٌ ولم يأتِ» وغيرُ «قيد الخدمة».
+  ///
+  /// و`completed` **بقيت** ولم تُستبدَل — يحتاجها تحويلُ الحجز إلى فاتورة،
+  /// والإضافةُ لا تُخالف صفّاً قائماً بينما الاستبدالُ يُخالف.
   final String status;
   final double depositAmount;
 
@@ -31835,6 +32065,624 @@ class BookingsCompanion extends UpdateCompanion<Booking> {
           ..write('updatedAt: $updatedAt, ')
           ..write('cancelledAt: $cancelledAt, ')
           ..write('cancelReason: $cancelReason')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $BookingRemindersTable extends BookingReminders
+    with TableInfo<$BookingRemindersTable, BookingReminder> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $BookingRemindersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _bookingIdMeta = const VerificationMeta(
+    'bookingId',
+  );
+  @override
+  late final GeneratedColumn<int> bookingId = GeneratedColumn<int>(
+    'booking_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES bookings (id)',
+    ),
+  );
+  static const VerificationMeta _channelMeta = const VerificationMeta(
+    'channel',
+  );
+  @override
+  late final GeneratedColumn<String> channel = GeneratedColumn<String>(
+    'channel',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('whatsapp'),
+  );
+  static const VerificationMeta _offsetMinutesMeta = const VerificationMeta(
+    'offsetMinutes',
+  );
+  @override
+  late final GeneratedColumn<int> offsetMinutes = GeneratedColumn<int>(
+    'offset_minutes',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(60),
+  );
+  static const VerificationMeta _scheduledAtMeta = const VerificationMeta(
+    'scheduledAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> scheduledAt = GeneratedColumn<DateTime>(
+    'scheduled_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _stateMeta = const VerificationMeta('state');
+  @override
+  late final GeneratedColumn<String> state = GeneratedColumn<String>(
+    'state',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('scheduled'),
+  );
+  static const VerificationMeta _openedAtMeta = const VerificationMeta(
+    'openedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> openedAt = GeneratedColumn<DateTime>(
+    'opened_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _openedByMeta = const VerificationMeta(
+    'openedBy',
+  );
+  @override
+  late final GeneratedColumn<int> openedBy = GeneratedColumn<int>(
+    'opened_by',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES users (id)',
+    ),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    bookingId,
+    channel,
+    offsetMinutes,
+    scheduledAt,
+    state,
+    openedAt,
+    openedBy,
+    createdAt,
+    deletedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'booking_reminders';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<BookingReminder> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('booking_id')) {
+      context.handle(
+        _bookingIdMeta,
+        bookingId.isAcceptableOrUnknown(data['booking_id']!, _bookingIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bookingIdMeta);
+    }
+    if (data.containsKey('channel')) {
+      context.handle(
+        _channelMeta,
+        channel.isAcceptableOrUnknown(data['channel']!, _channelMeta),
+      );
+    }
+    if (data.containsKey('offset_minutes')) {
+      context.handle(
+        _offsetMinutesMeta,
+        offsetMinutes.isAcceptableOrUnknown(
+          data['offset_minutes']!,
+          _offsetMinutesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('scheduled_at')) {
+      context.handle(
+        _scheduledAtMeta,
+        scheduledAt.isAcceptableOrUnknown(
+          data['scheduled_at']!,
+          _scheduledAtMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_scheduledAtMeta);
+    }
+    if (data.containsKey('state')) {
+      context.handle(
+        _stateMeta,
+        state.isAcceptableOrUnknown(data['state']!, _stateMeta),
+      );
+    }
+    if (data.containsKey('opened_at')) {
+      context.handle(
+        _openedAtMeta,
+        openedAt.isAcceptableOrUnknown(data['opened_at']!, _openedAtMeta),
+      );
+    }
+    if (data.containsKey('opened_by')) {
+      context.handle(
+        _openedByMeta,
+        openedBy.isAcceptableOrUnknown(data['opened_by']!, _openedByMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  BookingReminder map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return BookingReminder(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      bookingId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}booking_id'],
+      )!,
+      channel: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}channel'],
+      )!,
+      offsetMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}offset_minutes'],
+      )!,
+      scheduledAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}scheduled_at'],
+      )!,
+      state: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}state'],
+      )!,
+      openedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}opened_at'],
+      ),
+      openedBy: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}opened_by'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+    );
+  }
+
+  @override
+  $BookingRemindersTable createAlias(String alias) {
+    return $BookingRemindersTable(attachedDatabase, alias);
+  }
+}
+
+class BookingReminder extends DataClass implements Insertable<BookingReminder> {
+  final int id;
+  final int bookingId;
+
+  /// `whatsapp` · `sms`. القناةُ تُخزَّن ولو كان المنفَذُ اليومَ واحداً —
+  /// التصميمُ يعرض عمودَ القناة، ومَن أضاف مزوِّداً غداً لا يهاجر بيانات.
+  final String channel;
+
+  /// كم دقيقةً **قبل** الموعد يُرسل. يُخزَّن ليبقى التذكيرُ مفهوماً بعد
+  /// تأجيل الموعد — ويُعاد جدولتُه منه.
+  final int offsetMinutes;
+
+  /// لحظةُ الاستحقاق = `booking.startsAt - offsetMinutes`، **مخزَّنةً**
+  /// لأن الترشيحَ عليها استعلامٌ لا مسحٌ في الذاكرة.
+  final DateTime scheduledAt;
+
+  /// `scheduled` · `opened` · `dismissed`.
+  final String state;
+  final DateTime? openedAt;
+  final int? openedBy;
+  final DateTime createdAt;
+  final DateTime? deletedAt;
+  const BookingReminder({
+    required this.id,
+    required this.bookingId,
+    required this.channel,
+    required this.offsetMinutes,
+    required this.scheduledAt,
+    required this.state,
+    this.openedAt,
+    this.openedBy,
+    required this.createdAt,
+    this.deletedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['booking_id'] = Variable<int>(bookingId);
+    map['channel'] = Variable<String>(channel);
+    map['offset_minutes'] = Variable<int>(offsetMinutes);
+    map['scheduled_at'] = Variable<DateTime>(scheduledAt);
+    map['state'] = Variable<String>(state);
+    if (!nullToAbsent || openedAt != null) {
+      map['opened_at'] = Variable<DateTime>(openedAt);
+    }
+    if (!nullToAbsent || openedBy != null) {
+      map['opened_by'] = Variable<int>(openedBy);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    return map;
+  }
+
+  BookingRemindersCompanion toCompanion(bool nullToAbsent) {
+    return BookingRemindersCompanion(
+      id: Value(id),
+      bookingId: Value(bookingId),
+      channel: Value(channel),
+      offsetMinutes: Value(offsetMinutes),
+      scheduledAt: Value(scheduledAt),
+      state: Value(state),
+      openedAt: openedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(openedAt),
+      openedBy: openedBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(openedBy),
+      createdAt: Value(createdAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+    );
+  }
+
+  factory BookingReminder.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return BookingReminder(
+      id: serializer.fromJson<int>(json['id']),
+      bookingId: serializer.fromJson<int>(json['bookingId']),
+      channel: serializer.fromJson<String>(json['channel']),
+      offsetMinutes: serializer.fromJson<int>(json['offsetMinutes']),
+      scheduledAt: serializer.fromJson<DateTime>(json['scheduledAt']),
+      state: serializer.fromJson<String>(json['state']),
+      openedAt: serializer.fromJson<DateTime?>(json['openedAt']),
+      openedBy: serializer.fromJson<int?>(json['openedBy']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'bookingId': serializer.toJson<int>(bookingId),
+      'channel': serializer.toJson<String>(channel),
+      'offsetMinutes': serializer.toJson<int>(offsetMinutes),
+      'scheduledAt': serializer.toJson<DateTime>(scheduledAt),
+      'state': serializer.toJson<String>(state),
+      'openedAt': serializer.toJson<DateTime?>(openedAt),
+      'openedBy': serializer.toJson<int?>(openedBy),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+    };
+  }
+
+  BookingReminder copyWith({
+    int? id,
+    int? bookingId,
+    String? channel,
+    int? offsetMinutes,
+    DateTime? scheduledAt,
+    String? state,
+    Value<DateTime?> openedAt = const Value.absent(),
+    Value<int?> openedBy = const Value.absent(),
+    DateTime? createdAt,
+    Value<DateTime?> deletedAt = const Value.absent(),
+  }) => BookingReminder(
+    id: id ?? this.id,
+    bookingId: bookingId ?? this.bookingId,
+    channel: channel ?? this.channel,
+    offsetMinutes: offsetMinutes ?? this.offsetMinutes,
+    scheduledAt: scheduledAt ?? this.scheduledAt,
+    state: state ?? this.state,
+    openedAt: openedAt.present ? openedAt.value : this.openedAt,
+    openedBy: openedBy.present ? openedBy.value : this.openedBy,
+    createdAt: createdAt ?? this.createdAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+  );
+  BookingReminder copyWithCompanion(BookingRemindersCompanion data) {
+    return BookingReminder(
+      id: data.id.present ? data.id.value : this.id,
+      bookingId: data.bookingId.present ? data.bookingId.value : this.bookingId,
+      channel: data.channel.present ? data.channel.value : this.channel,
+      offsetMinutes: data.offsetMinutes.present
+          ? data.offsetMinutes.value
+          : this.offsetMinutes,
+      scheduledAt: data.scheduledAt.present
+          ? data.scheduledAt.value
+          : this.scheduledAt,
+      state: data.state.present ? data.state.value : this.state,
+      openedAt: data.openedAt.present ? data.openedAt.value : this.openedAt,
+      openedBy: data.openedBy.present ? data.openedBy.value : this.openedBy,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BookingReminder(')
+          ..write('id: $id, ')
+          ..write('bookingId: $bookingId, ')
+          ..write('channel: $channel, ')
+          ..write('offsetMinutes: $offsetMinutes, ')
+          ..write('scheduledAt: $scheduledAt, ')
+          ..write('state: $state, ')
+          ..write('openedAt: $openedAt, ')
+          ..write('openedBy: $openedBy, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    bookingId,
+    channel,
+    offsetMinutes,
+    scheduledAt,
+    state,
+    openedAt,
+    openedBy,
+    createdAt,
+    deletedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is BookingReminder &&
+          other.id == this.id &&
+          other.bookingId == this.bookingId &&
+          other.channel == this.channel &&
+          other.offsetMinutes == this.offsetMinutes &&
+          other.scheduledAt == this.scheduledAt &&
+          other.state == this.state &&
+          other.openedAt == this.openedAt &&
+          other.openedBy == this.openedBy &&
+          other.createdAt == this.createdAt &&
+          other.deletedAt == this.deletedAt);
+}
+
+class BookingRemindersCompanion extends UpdateCompanion<BookingReminder> {
+  final Value<int> id;
+  final Value<int> bookingId;
+  final Value<String> channel;
+  final Value<int> offsetMinutes;
+  final Value<DateTime> scheduledAt;
+  final Value<String> state;
+  final Value<DateTime?> openedAt;
+  final Value<int?> openedBy;
+  final Value<DateTime> createdAt;
+  final Value<DateTime?> deletedAt;
+  const BookingRemindersCompanion({
+    this.id = const Value.absent(),
+    this.bookingId = const Value.absent(),
+    this.channel = const Value.absent(),
+    this.offsetMinutes = const Value.absent(),
+    this.scheduledAt = const Value.absent(),
+    this.state = const Value.absent(),
+    this.openedAt = const Value.absent(),
+    this.openedBy = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+  });
+  BookingRemindersCompanion.insert({
+    this.id = const Value.absent(),
+    required int bookingId,
+    this.channel = const Value.absent(),
+    this.offsetMinutes = const Value.absent(),
+    required DateTime scheduledAt,
+    this.state = const Value.absent(),
+    this.openedAt = const Value.absent(),
+    this.openedBy = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+  }) : bookingId = Value(bookingId),
+       scheduledAt = Value(scheduledAt);
+  static Insertable<BookingReminder> custom({
+    Expression<int>? id,
+    Expression<int>? bookingId,
+    Expression<String>? channel,
+    Expression<int>? offsetMinutes,
+    Expression<DateTime>? scheduledAt,
+    Expression<String>? state,
+    Expression<DateTime>? openedAt,
+    Expression<int>? openedBy,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? deletedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (bookingId != null) 'booking_id': bookingId,
+      if (channel != null) 'channel': channel,
+      if (offsetMinutes != null) 'offset_minutes': offsetMinutes,
+      if (scheduledAt != null) 'scheduled_at': scheduledAt,
+      if (state != null) 'state': state,
+      if (openedAt != null) 'opened_at': openedAt,
+      if (openedBy != null) 'opened_by': openedBy,
+      if (createdAt != null) 'created_at': createdAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+    });
+  }
+
+  BookingRemindersCompanion copyWith({
+    Value<int>? id,
+    Value<int>? bookingId,
+    Value<String>? channel,
+    Value<int>? offsetMinutes,
+    Value<DateTime>? scheduledAt,
+    Value<String>? state,
+    Value<DateTime?>? openedAt,
+    Value<int?>? openedBy,
+    Value<DateTime>? createdAt,
+    Value<DateTime?>? deletedAt,
+  }) {
+    return BookingRemindersCompanion(
+      id: id ?? this.id,
+      bookingId: bookingId ?? this.bookingId,
+      channel: channel ?? this.channel,
+      offsetMinutes: offsetMinutes ?? this.offsetMinutes,
+      scheduledAt: scheduledAt ?? this.scheduledAt,
+      state: state ?? this.state,
+      openedAt: openedAt ?? this.openedAt,
+      openedBy: openedBy ?? this.openedBy,
+      createdAt: createdAt ?? this.createdAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (bookingId.present) {
+      map['booking_id'] = Variable<int>(bookingId.value);
+    }
+    if (channel.present) {
+      map['channel'] = Variable<String>(channel.value);
+    }
+    if (offsetMinutes.present) {
+      map['offset_minutes'] = Variable<int>(offsetMinutes.value);
+    }
+    if (scheduledAt.present) {
+      map['scheduled_at'] = Variable<DateTime>(scheduledAt.value);
+    }
+    if (state.present) {
+      map['state'] = Variable<String>(state.value);
+    }
+    if (openedAt.present) {
+      map['opened_at'] = Variable<DateTime>(openedAt.value);
+    }
+    if (openedBy.present) {
+      map['opened_by'] = Variable<int>(openedBy.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BookingRemindersCompanion(')
+          ..write('id: $id, ')
+          ..write('bookingId: $bookingId, ')
+          ..write('channel: $channel, ')
+          ..write('offsetMinutes: $offsetMinutes, ')
+          ..write('scheduledAt: $scheduledAt, ')
+          ..write('state: $state, ')
+          ..write('openedAt: $openedAt, ')
+          ..write('openedBy: $openedBy, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('deletedAt: $deletedAt')
           ..write(')'))
         .toString();
   }
@@ -108324,6 +109172,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     this,
   );
   late final $BookingsTable bookings = $BookingsTable(this);
+  late final $BookingRemindersTable bookingReminders = $BookingRemindersTable(
+    this,
+  );
   late final $StockMovementsTable stockMovements = $StockMovementsTable(this);
   late final $InventoryBalancesTable inventoryBalances =
       $InventoryBalancesTable(this);
@@ -109173,6 +110024,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     bookingResources,
     bookingServices,
     bookings,
+    bookingReminders,
     stockMovements,
     inventoryBalances,
     currencies,
@@ -110980,6 +111832,26 @@ final class $$UsersTableReferences
     );
   }
 
+  static MultiTypedResultKey<$BookingRemindersTable, List<BookingReminder>>
+  _bookingRemindersRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.bookingReminders,
+    aliasName: $_aliasNameGenerator(db.users.id, db.bookingReminders.openedBy),
+  );
+
+  $$BookingRemindersTableProcessedTableManager get bookingRemindersRefs {
+    final manager = $$BookingRemindersTableTableManager(
+      $_db,
+      $_db.bookingReminders,
+    ).filter((f) => f.openedBy.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _bookingRemindersRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
   static MultiTypedResultKey<$StockMovementsTable, List<StockMovement>>
   _stockMovementsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.stockMovements,
@@ -111758,6 +112630,31 @@ class $$UsersTableFilterComposer extends Composer<_$AppDatabase, $UsersTable> {
           }) => $$BookingsTableFilterComposer(
             $db: $db,
             $table: $db.bookings,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> bookingRemindersRefs(
+    Expression<bool> Function($$BookingRemindersTableFilterComposer f) f,
+  ) {
+    final $$BookingRemindersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.bookingReminders,
+      getReferencedColumn: (t) => t.openedBy,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BookingRemindersTableFilterComposer(
+            $db: $db,
+            $table: $db.bookingReminders,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -112806,6 +113703,31 @@ class $$UsersTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> bookingRemindersRefs<T extends Object>(
+    Expression<T> Function($$BookingRemindersTableAnnotationComposer a) f,
+  ) {
+    final $$BookingRemindersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.bookingReminders,
+      getReferencedColumn: (t) => t.openedBy,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BookingRemindersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.bookingReminders,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> stockMovementsRefs<T extends Object>(
     Expression<T> Function($$StockMovementsTableAnnotationComposer a) f,
   ) {
@@ -113481,6 +114403,7 @@ class $$UsersTableTableManager
             bool purchaseInvoicesRefs,
             bool tableOrdersRefs,
             bool bookingsRefs,
+            bool bookingRemindersRefs,
             bool stockMovementsRefs,
             bool journalEntriesRefs,
             bool safeTransactionsRefs,
@@ -113623,6 +114546,7 @@ class $$UsersTableTableManager
                 purchaseInvoicesRefs = false,
                 tableOrdersRefs = false,
                 bookingsRefs = false,
+                bookingRemindersRefs = false,
                 stockMovementsRefs = false,
                 journalEntriesRefs = false,
                 safeTransactionsRefs = false,
@@ -113659,6 +114583,7 @@ class $$UsersTableTableManager
                     if (purchaseInvoicesRefs) db.purchaseInvoices,
                     if (tableOrdersRefs) db.tableOrders,
                     if (bookingsRefs) db.bookings,
+                    if (bookingRemindersRefs) db.bookingReminders,
                     if (stockMovementsRefs) db.stockMovements,
                     if (journalEntriesRefs) db.journalEntries,
                     if (safeTransactionsRefs) db.safeTransactions,
@@ -113839,6 +114764,27 @@ class $$UsersTableTableManager
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.createdBy == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (bookingRemindersRefs)
+                        await $_getPrefetchedData<
+                          User,
+                          $UsersTable,
+                          BookingReminder
+                        >(
+                          currentTable: table,
+                          referencedTable: $$UsersTableReferences
+                              ._bookingRemindersRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$UsersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).bookingRemindersRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.openedBy == item.id,
                               ),
                           typedResults: items,
                         ),
@@ -114392,6 +115338,7 @@ typedef $$UsersTableProcessedTableManager =
         bool purchaseInvoicesRefs,
         bool tableOrdersRefs,
         bool bookingsRefs,
+        bool bookingRemindersRefs,
         bool stockMovementsRefs,
         bool journalEntriesRefs,
         bool safeTransactionsRefs,
@@ -148246,6 +149193,10 @@ typedef $$BookingResourcesTableCreateCompanionBuilder =
       Value<String> colorHex,
       Value<String?> phone,
       Value<int?> employeeId,
+      Value<String?> role,
+      Value<String> kind,
+      Value<int?> shiftStartMinutes,
+      Value<int?> shiftEndMinutes,
       Value<bool> isActive,
       Value<int> sortOrder,
       Value<int?> branchId,
@@ -148259,6 +149210,10 @@ typedef $$BookingResourcesTableUpdateCompanionBuilder =
       Value<String> colorHex,
       Value<String?> phone,
       Value<int?> employeeId,
+      Value<String?> role,
+      Value<String> kind,
+      Value<int?> shiftStartMinutes,
+      Value<int?> shiftEndMinutes,
       Value<bool> isActive,
       Value<int> sortOrder,
       Value<int?> branchId,
@@ -148362,6 +149317,26 @@ class $$BookingResourcesTableFilterComposer
 
   ColumnFilters<String> get phone => $composableBuilder(
     column: $table.phone,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get role => $composableBuilder(
+    column: $table.role,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get shiftStartMinutes => $composableBuilder(
+    column: $table.shiftStartMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get shiftEndMinutes => $composableBuilder(
+    column: $table.shiftEndMinutes,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -148486,6 +149461,26 @@ class $$BookingResourcesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get role => $composableBuilder(
+    column: $table.role,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get shiftStartMinutes => $composableBuilder(
+    column: $table.shiftStartMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get shiftEndMinutes => $composableBuilder(
+    column: $table.shiftEndMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isActive => $composableBuilder(
     column: $table.isActive,
     builder: (column) => ColumnOrderings(column),
@@ -148573,6 +149568,22 @@ class $$BookingResourcesTableAnnotationComposer
 
   GeneratedColumn<String> get phone =>
       $composableBuilder(column: $table.phone, builder: (column) => column);
+
+  GeneratedColumn<String> get role =>
+      $composableBuilder(column: $table.role, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<int> get shiftStartMinutes => $composableBuilder(
+    column: $table.shiftStartMinutes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get shiftEndMinutes => $composableBuilder(
+    column: $table.shiftEndMinutes,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<bool> get isActive =>
       $composableBuilder(column: $table.isActive, builder: (column) => column);
@@ -148697,6 +149708,10 @@ class $$BookingResourcesTableTableManager
                 Value<String> colorHex = const Value.absent(),
                 Value<String?> phone = const Value.absent(),
                 Value<int?> employeeId = const Value.absent(),
+                Value<String?> role = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<int?> shiftStartMinutes = const Value.absent(),
+                Value<int?> shiftEndMinutes = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 Value<int?> branchId = const Value.absent(),
@@ -148708,6 +149723,10 @@ class $$BookingResourcesTableTableManager
                 colorHex: colorHex,
                 phone: phone,
                 employeeId: employeeId,
+                role: role,
+                kind: kind,
+                shiftStartMinutes: shiftStartMinutes,
+                shiftEndMinutes: shiftEndMinutes,
                 isActive: isActive,
                 sortOrder: sortOrder,
                 branchId: branchId,
@@ -148721,6 +149740,10 @@ class $$BookingResourcesTableTableManager
                 Value<String> colorHex = const Value.absent(),
                 Value<String?> phone = const Value.absent(),
                 Value<int?> employeeId = const Value.absent(),
+                Value<String?> role = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<int?> shiftStartMinutes = const Value.absent(),
+                Value<int?> shiftEndMinutes = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 Value<int?> branchId = const Value.absent(),
@@ -148732,6 +149755,10 @@ class $$BookingResourcesTableTableManager
                 colorHex: colorHex,
                 phone: phone,
                 employeeId: employeeId,
+                role: role,
+                kind: kind,
+                shiftStartMinutes: shiftStartMinutes,
+                shiftEndMinutes: shiftEndMinutes,
                 isActive: isActive,
                 sortOrder: sortOrder,
                 branchId: branchId,
@@ -149654,6 +150681,29 @@ final class $$BookingsTableReferences
       manager.$state.copyWith(prefetchedData: [item]),
     );
   }
+
+  static MultiTypedResultKey<$BookingRemindersTable, List<BookingReminder>>
+  _bookingRemindersRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.bookingReminders,
+    aliasName: $_aliasNameGenerator(
+      db.bookings.id,
+      db.bookingReminders.bookingId,
+    ),
+  );
+
+  $$BookingRemindersTableProcessedTableManager get bookingRemindersRefs {
+    final manager = $$BookingRemindersTableTableManager(
+      $_db,
+      $_db.bookingReminders,
+    ).filter((f) => f.bookingId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _bookingRemindersRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$BookingsTableFilterComposer
@@ -149866,6 +150916,31 @@ class $$BookingsTableFilterComposer
           ),
     );
     return composer;
+  }
+
+  Expression<bool> bookingRemindersRefs(
+    Expression<bool> Function($$BookingRemindersTableFilterComposer f) f,
+  ) {
+    final $$BookingRemindersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.bookingReminders,
+      getReferencedColumn: (t) => t.bookingId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BookingRemindersTableFilterComposer(
+            $db: $db,
+            $table: $db.bookingReminders,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
   }
 }
 
@@ -150279,6 +151354,31 @@ class $$BookingsTableAnnotationComposer
     );
     return composer;
   }
+
+  Expression<T> bookingRemindersRefs<T extends Object>(
+    Expression<T> Function($$BookingRemindersTableAnnotationComposer a) f,
+  ) {
+    final $$BookingRemindersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.bookingReminders,
+      getReferencedColumn: (t) => t.bookingId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BookingRemindersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.bookingReminders,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$BookingsTableTableManager
@@ -150301,6 +151401,7 @@ class $$BookingsTableTableManager
             bool branchId,
             bool invoiceId,
             bool createdBy,
+            bool bookingRemindersRefs,
           })
         > {
   $$BookingsTableTableManager(_$AppDatabase db, $BookingsTable table)
@@ -150414,10 +151515,13 @@ class $$BookingsTableTableManager
                 branchId = false,
                 invoiceId = false,
                 createdBy = false,
+                bookingRemindersRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
-                  explicitlyWatchedTables: [],
+                  explicitlyWatchedTables: [
+                    if (bookingRemindersRefs) db.bookingReminders,
+                  ],
                   addJoins:
                       <
                         T extends TableManagerState<
@@ -150516,7 +151620,29 @@ class $$BookingsTableTableManager
                         return state;
                       },
                   getPrefetchedDataCallback: (items) async {
-                    return [];
+                    return [
+                      if (bookingRemindersRefs)
+                        await $_getPrefetchedData<
+                          Booking,
+                          $BookingsTable,
+                          BookingReminder
+                        >(
+                          currentTable: table,
+                          referencedTable: $$BookingsTableReferences
+                              ._bookingRemindersRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$BookingsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).bookingRemindersRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.bookingId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
                   },
                 );
               },
@@ -150543,7 +151669,518 @@ typedef $$BookingsTableProcessedTableManager =
         bool branchId,
         bool invoiceId,
         bool createdBy,
+        bool bookingRemindersRefs,
       })
+    >;
+typedef $$BookingRemindersTableCreateCompanionBuilder =
+    BookingRemindersCompanion Function({
+      Value<int> id,
+      required int bookingId,
+      Value<String> channel,
+      Value<int> offsetMinutes,
+      required DateTime scheduledAt,
+      Value<String> state,
+      Value<DateTime?> openedAt,
+      Value<int?> openedBy,
+      Value<DateTime> createdAt,
+      Value<DateTime?> deletedAt,
+    });
+typedef $$BookingRemindersTableUpdateCompanionBuilder =
+    BookingRemindersCompanion Function({
+      Value<int> id,
+      Value<int> bookingId,
+      Value<String> channel,
+      Value<int> offsetMinutes,
+      Value<DateTime> scheduledAt,
+      Value<String> state,
+      Value<DateTime?> openedAt,
+      Value<int?> openedBy,
+      Value<DateTime> createdAt,
+      Value<DateTime?> deletedAt,
+    });
+
+final class $$BookingRemindersTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $BookingRemindersTable, BookingReminder> {
+  $$BookingRemindersTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $BookingsTable _bookingIdTable(_$AppDatabase db) =>
+      db.bookings.createAlias(
+        $_aliasNameGenerator(db.bookingReminders.bookingId, db.bookings.id),
+      );
+
+  $$BookingsTableProcessedTableManager get bookingId {
+    final $_column = $_itemColumn<int>('booking_id')!;
+
+    final manager = $$BookingsTableTableManager(
+      $_db,
+      $_db.bookings,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_bookingIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $UsersTable _openedByTable(_$AppDatabase db) => db.users.createAlias(
+    $_aliasNameGenerator(db.bookingReminders.openedBy, db.users.id),
+  );
+
+  $$UsersTableProcessedTableManager? get openedBy {
+    final $_column = $_itemColumn<int>('opened_by');
+    if ($_column == null) return null;
+    final manager = $$UsersTableTableManager(
+      $_db,
+      $_db.users,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_openedByTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$BookingRemindersTableFilterComposer
+    extends Composer<_$AppDatabase, $BookingRemindersTable> {
+  $$BookingRemindersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get channel => $composableBuilder(
+    column: $table.channel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get offsetMinutes => $composableBuilder(
+    column: $table.offsetMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get scheduledAt => $composableBuilder(
+    column: $table.scheduledAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get state => $composableBuilder(
+    column: $table.state,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get openedAt => $composableBuilder(
+    column: $table.openedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$BookingsTableFilterComposer get bookingId {
+    final $$BookingsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bookingId,
+      referencedTable: $db.bookings,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BookingsTableFilterComposer(
+            $db: $db,
+            $table: $db.bookings,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$UsersTableFilterComposer get openedBy {
+    final $$UsersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.openedBy,
+      referencedTable: $db.users,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UsersTableFilterComposer(
+            $db: $db,
+            $table: $db.users,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$BookingRemindersTableOrderingComposer
+    extends Composer<_$AppDatabase, $BookingRemindersTable> {
+  $$BookingRemindersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get channel => $composableBuilder(
+    column: $table.channel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get offsetMinutes => $composableBuilder(
+    column: $table.offsetMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get scheduledAt => $composableBuilder(
+    column: $table.scheduledAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get state => $composableBuilder(
+    column: $table.state,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get openedAt => $composableBuilder(
+    column: $table.openedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$BookingsTableOrderingComposer get bookingId {
+    final $$BookingsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bookingId,
+      referencedTable: $db.bookings,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BookingsTableOrderingComposer(
+            $db: $db,
+            $table: $db.bookings,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$UsersTableOrderingComposer get openedBy {
+    final $$UsersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.openedBy,
+      referencedTable: $db.users,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UsersTableOrderingComposer(
+            $db: $db,
+            $table: $db.users,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$BookingRemindersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $BookingRemindersTable> {
+  $$BookingRemindersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get channel =>
+      $composableBuilder(column: $table.channel, builder: (column) => column);
+
+  GeneratedColumn<int> get offsetMinutes => $composableBuilder(
+    column: $table.offsetMinutes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get scheduledAt => $composableBuilder(
+    column: $table.scheduledAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get state =>
+      $composableBuilder(column: $table.state, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get openedAt =>
+      $composableBuilder(column: $table.openedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  $$BookingsTableAnnotationComposer get bookingId {
+    final $$BookingsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bookingId,
+      referencedTable: $db.bookings,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BookingsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.bookings,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$UsersTableAnnotationComposer get openedBy {
+    final $$UsersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.openedBy,
+      referencedTable: $db.users,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UsersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.users,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$BookingRemindersTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $BookingRemindersTable,
+          BookingReminder,
+          $$BookingRemindersTableFilterComposer,
+          $$BookingRemindersTableOrderingComposer,
+          $$BookingRemindersTableAnnotationComposer,
+          $$BookingRemindersTableCreateCompanionBuilder,
+          $$BookingRemindersTableUpdateCompanionBuilder,
+          (BookingReminder, $$BookingRemindersTableReferences),
+          BookingReminder,
+          PrefetchHooks Function({bool bookingId, bool openedBy})
+        > {
+  $$BookingRemindersTableTableManager(
+    _$AppDatabase db,
+    $BookingRemindersTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$BookingRemindersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$BookingRemindersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$BookingRemindersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> bookingId = const Value.absent(),
+                Value<String> channel = const Value.absent(),
+                Value<int> offsetMinutes = const Value.absent(),
+                Value<DateTime> scheduledAt = const Value.absent(),
+                Value<String> state = const Value.absent(),
+                Value<DateTime?> openedAt = const Value.absent(),
+                Value<int?> openedBy = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+              }) => BookingRemindersCompanion(
+                id: id,
+                bookingId: bookingId,
+                channel: channel,
+                offsetMinutes: offsetMinutes,
+                scheduledAt: scheduledAt,
+                state: state,
+                openedAt: openedAt,
+                openedBy: openedBy,
+                createdAt: createdAt,
+                deletedAt: deletedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int bookingId,
+                Value<String> channel = const Value.absent(),
+                Value<int> offsetMinutes = const Value.absent(),
+                required DateTime scheduledAt,
+                Value<String> state = const Value.absent(),
+                Value<DateTime?> openedAt = const Value.absent(),
+                Value<int?> openedBy = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+              }) => BookingRemindersCompanion.insert(
+                id: id,
+                bookingId: bookingId,
+                channel: channel,
+                offsetMinutes: offsetMinutes,
+                scheduledAt: scheduledAt,
+                state: state,
+                openedAt: openedAt,
+                openedBy: openedBy,
+                createdAt: createdAt,
+                deletedAt: deletedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$BookingRemindersTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({bookingId = false, openedBy = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (bookingId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.bookingId,
+                                referencedTable:
+                                    $$BookingRemindersTableReferences
+                                        ._bookingIdTable(db),
+                                referencedColumn:
+                                    $$BookingRemindersTableReferences
+                                        ._bookingIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+                    if (openedBy) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.openedBy,
+                                referencedTable:
+                                    $$BookingRemindersTableReferences
+                                        ._openedByTable(db),
+                                referencedColumn:
+                                    $$BookingRemindersTableReferences
+                                        ._openedByTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$BookingRemindersTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $BookingRemindersTable,
+      BookingReminder,
+      $$BookingRemindersTableFilterComposer,
+      $$BookingRemindersTableOrderingComposer,
+      $$BookingRemindersTableAnnotationComposer,
+      $$BookingRemindersTableCreateCompanionBuilder,
+      $$BookingRemindersTableUpdateCompanionBuilder,
+      (BookingReminder, $$BookingRemindersTableReferences),
+      BookingReminder,
+      PrefetchHooks Function({bool bookingId, bool openedBy})
     >;
 typedef $$StockMovementsTableCreateCompanionBuilder =
     StockMovementsCompanion Function({
@@ -215264,6 +216901,8 @@ class $AppDatabaseManager {
       $$BookingServicesTableTableManager(_db, _db.bookingServices);
   $$BookingsTableTableManager get bookings =>
       $$BookingsTableTableManager(_db, _db.bookings);
+  $$BookingRemindersTableTableManager get bookingReminders =>
+      $$BookingRemindersTableTableManager(_db, _db.bookingReminders);
   $$StockMovementsTableTableManager get stockMovements =>
       $$StockMovementsTableTableManager(_db, _db.stockMovements);
   $$InventoryBalancesTableTableManager get inventoryBalances =>

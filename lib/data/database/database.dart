@@ -396,6 +396,7 @@ const String kCreateBookingResourceSlotIndexSql =
     BookingResources, // v159: «الموظفون / الموارد» — مَن يُحجَز وقتُه
     BookingServices, // v159: الخدماتُ المعروضة للحجز
     Bookings, // v159: مواعيدُ الخدمة — مستقلّةٌ عن TableReservations
+    BookingReminders, // v161: تذكيرُ الموعد — «فُتحت» لا «أُرسلت»
     StockMovements,
     InventoryBalances,
     Accounts,
@@ -745,7 +746,7 @@ class AppDatabase extends _$AppDatabase {
   // `pos_shift_close` إلى الخزينة. فرُفعت تلك إلى **١٦٠** عند الدمج، ورُفع
   // حارسُها في [epoch_3] إلى `from < 160` معها. ولا تفصل بينهما: رقمٌ يُرفَع
   // وحارسٌ يبقى قديماً = ترقيةٌ لا تُطبَّق أبداً وتمرّ صامتة.
-  int get schemaVersion => 160;
+  int get schemaVersion => 161;
 
   /// PostgreSQL-specific table creation: Drift's `currentDateAndTime` generates
   /// `strftime('%s','now')` which doesn't exist in PostgreSQL.
