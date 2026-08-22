@@ -21,16 +21,17 @@ void main() {
     WidgetTester tester,
     PicPosTreasurySplit split, {
     double width = 700,
+    bool onDark = true,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          backgroundColor: Colors.black,
+          backgroundColor: onDark ? Colors.black : Colors.white,
           body: Directionality(
             textDirection: TextDirection.rtl,
             child: SizedBox(
               width: width,
-              child: PicPosTreasurySplitBar(split: split),
+              child: PicPosTreasurySplitChips(split: split, onDark: onDark),
             ),
           ),
         ),
@@ -49,33 +50,70 @@ void main() {
         split([(kind: 'cash', balance: 750), (kind: 'bank', balance: 250)]),
       );
       expect(find.text('نقدي'), findsOneWidget);
-      expect(find.text('بنكي'), findsOneWidget);
+      expect(find.text('بنوك'), findsOneWidget);
       expect(find.text('75%'), findsOneWidget);
       expect(find.text('25%'), findsOneWidget);
     });
 
-    // ⚠️ الحارسُ الأهمّ: مجموعٌ صفريٌّ أو سالبٌ لا يُرسم له شريط، ولا تُعرض
-    // نسبةُ «0%» التي تُقرأ خطأً كأن الرصيدَ صفر.
-    testWidgets('مجموعٌ صفريٌّ ⇒ لا شريطَ ولا نسب', (tester) async {
+    // ⚠️ كليك شريحةٌ مستقلّة — كانت تُضمّ إلى النقديّ في أوّل نسخة، فيظهر
+    // مجموعٌ صحيحٌ بتوزيعٍ خاطئ. والنوعُ قائمٌ في التنصيبة الحيّة لا مفترَض.
+    testWidgets('يعرض الشرائحَ الثلاثَ بما فيها كليك', (tester) async {
+      await show(
+        tester,
+        split([
+          (kind: 'cash', balance: 200),
+          (kind: 'bank', balance: 700),
+          (kind: 'click', balance: 100),
+        ]),
+      );
+      expect(find.text('نقدي'), findsOneWidget);
+      expect(find.text('بنوك'), findsOneWidget);
+      expect(find.text('كليك'), findsOneWidget);
+      expect(find.text('70%'), findsOneWidget);
+      expect(find.text('10%'), findsOneWidget);
+    });
+
+    // ⚠️ الحارسُ الأهمّ: مجموعٌ صفريٌّ أو سالبٌ لا تُعرض له نسبٌ — «0%» تُقرأ
+    // خطأً كأن الرصيدَ صفر. والأرقامُ نفسُها تبقى ظاهرة.
+    testWidgets('مجموعٌ صفريٌّ ⇒ لا نسب، والأرقامُ باقية', (tester) async {
       await show(
         tester,
         split([(kind: 'cash', balance: 500), (kind: 'bank', balance: -500)]),
       );
-      expect(find.byType(ClipRRect), findsNothing);
       expect(find.textContaining('%'), findsNothing);
-      // والأرقامُ نفسُها تبقى ظاهرة.
       expect(find.text('نقدي'), findsOneWidget);
     });
 
-    testWidgets('مجموعٌ سالبٌ ⇒ لا شريط', (tester) async {
+    testWidgets('مجموعٌ سالبٌ ⇒ لا نسب', (tester) async {
       await show(tester, split([(kind: 'cash', balance: -200)]));
-      expect(find.byType(ClipRRect), findsNothing);
+      expect(find.textContaining('%'), findsNothing);
     });
 
-    testWidgets('قائمةٌ فارغةٌ لا ترمي ولا ترسم شريطاً', (tester) async {
+    testWidgets('قائمةٌ فارغةٌ لا ترمي', (tester) async {
       await show(tester, split(const []));
       expect(tester.takeException(), isNull);
-      expect(find.byType(ClipRRect), findsNothing);
+      expect(find.textContaining('%'), findsNothing);
+    });
+
+    // ═══ عقدُ الألوان — الحارسُ الذي كان ناقصاً ═══
+    //
+    // النسخةُ الأولى شُحنت بنصٍّ أبيضَ على خلفيّةٍ فاتحةٍ فصار غيرَ مقروء.
+    // فاللونُ صار مشروطاً بـ`onDark` **المُمرَّر**، ويُقاس الطرفان.
+    testWidgets('على الداكن: النصُّ أبيض', (tester) async {
+      await show(tester, split([(kind: 'cash', balance: 100)]));
+      final label = tester.widget<Text>(find.text('نقدي'));
+      expect(label.style?.color, Colors.white70);
+    });
+
+    testWidgets('على الفاتح: النصُّ ليس أبيضَ', (tester) async {
+      await show(
+        tester,
+        split([(kind: 'cash', balance: 100)]),
+        onDark: false,
+      );
+      final label = tester.widget<Text>(find.text('نقدي'));
+      expect(label.style?.color, isNot(Colors.white70));
+      expect(label.style?.color, isNot(Colors.white));
     });
 
     testWidgets('لا يفيض عند عرضٍ ضيّقٍ بأرقامٍ كبيرة', (tester) async {

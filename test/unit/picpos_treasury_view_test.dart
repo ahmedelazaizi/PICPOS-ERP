@@ -71,6 +71,36 @@ void main() {
           closeTo(-200, 1e-9));
     });
 
+    // ⚠️ عطبٌ شُحن ثمّ صُحّح: النسخةُ الأولى ضمّت «كلَّ ما ليس بنكاً» إلى
+    // النقديّ، فكانت محفظةُ كليك تختفي في خانة النقد — مجموعٌ صحيحٌ وتوزيعٌ
+    // خاطئ. و`click` نوعٌ قائمٌ في التنصيبة الحيّة لا مفترَض.
+    test('كليك شريحةٌ مستقلّةٌ لا تُضمّ إلى النقديّ', () {
+      final s = PicPosTreasurySplit.from([
+        _safe('cash', 100),
+        _safe('click', 300),
+      ]);
+      expect(s.slices.firstWhere((x) => x.kind == 'click').value,
+          closeTo(300, 1e-9));
+      expect(s.slices.firstWhere((x) => x.kind == 'cash').value,
+          closeTo(100, 1e-9));
+    });
+
+    test('الشرائحُ ثلاثٌ دائماً بترتيبٍ ثابت', () {
+      final s = PicPosTreasurySplit.from(const []);
+      expect(s.slices.map((x) => x.kind).toList(), ['cash', 'bank', 'click']);
+    });
+
+    test('النسبُ الثلاثُ تجمع إلى واحد', () {
+      final s = PicPosTreasurySplit.from([
+        _safe('cash', 200),
+        _safe('bank', 700),
+        _safe('click', 100),
+      ]);
+      expect(s.slices.fold<double>(0, (a, x) => a + x.fraction),
+          closeTo(1.0, 1e-9));
+      expect(s.slices.firstWhere((x) => x.kind == 'bank').percentLabel, '70%');
+    });
+
     // نوعٌ يُضاف لاحقاً يجب أن يظهر في المجموع لا أن يسقط منه بصمت.
     test('نوعٌ مجهولٌ يُعدُّ نقداً فلا يختفي رصيدُه', () {
       final s = PicPosTreasurySplit.from([_safe('wallet', 400)]);

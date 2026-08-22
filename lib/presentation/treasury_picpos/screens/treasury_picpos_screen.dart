@@ -223,22 +223,18 @@ class _TreasuryPicposScreenState extends ConsumerState<TreasuryPicposScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Total Balance Card
-          const TreasuryMetricsPanelPicpos(),
-          const SizedBox(height: 12),
-          // شريطُ تقسيم الرصيد — يُبنى من **نفس** `scopedSafesProvider` الذي
-          // تقرؤه بطاقاتُ الصناديق، فالمجموعُ هنا هو مجموعُ ما يُعرض تحته
-          // بالضبط (مسقوفٌ بنطاق الفرع كما هو).
-          safes.when(
-            data: (rows) => Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: PicPosTreasurySplitBar(
-                split: PicPosTreasurySplit.from([
-                  for (final s in rows) (kind: s.safeType, balance: s.balance),
-                ]),
-              ),
+          // تقسيمُ الرصيد يُمرَّر إلى اللوح فيرسمه **داخل** بطاقته الداكنة —
+          // كما في التصميم، وكما يوجب عقدُ الألوان.
+          //
+          // ويُبنى من **نفس** `scopedSafesProvider` الذي تقرؤه بطاقاتُ
+          // الصناديق، فالمجموعُ هو مجموعُ ما يُعرض تحته بالضبط (مسقوفاً
+          // بنطاق الفرع كما هو).
+          TreasuryMetricsPanelPicpos(
+            split: safes.whenOrNull(
+              data: (rows) => PicPosTreasurySplit.from([
+                for (final s in rows) (kind: s.safeType, balance: s.balance),
+              ]),
             ),
-            loading: () => const SizedBox(height: 8),
-            error: (_, _) => const SizedBox.shrink(),
           ),
           const SizedBox(height: 16),
 

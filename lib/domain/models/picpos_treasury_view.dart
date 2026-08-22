@@ -41,43 +41,62 @@ class PicPosTreasurySplit {
   /// [PicPosTreasurySlice.fraction] **صفرٌ لا `NaN`** — القسمةُ على صفرٍ في
   /// Dart تعطي `NaN`/`Infinity` لا استثناءً، فشريطٌ بعرض `NaN` كان يرمي في
   /// طبقة الرسم لا في الحساب، فيصعب تتبّعه.
+  /// ⚠️ **ثلاثُ شرائحَ لا اثنتان — وهذا تصحيحُ عطبٍ شُحن.**
+  ///
+  /// كُتبت هذه الدالّةُ أوّلاً بشريحتَين (نقدي/بنكي) وضمَّت «كلَّ ما ليس بنكاً»
+  /// إلى النقديّ، بتعليقٍ يبرّر ذلك بأن نوعاً يُضاف لاحقاً «يظهر ولا يختفي».
+  /// والتبريرُ كان باطلاً: `click` **نوعٌ قائمٌ لا مفترَض** — له تبويبُه في
+  /// شاشة الخزينة، وشريحتُه في التصميم، وصندوقُه في التنصيبة الحيّة
+  /// (‏قِيس 2026-08-22: `bank`×1 · `cash`×2 · `click`×1). فكانت محفظةُ كليك
+  /// تُجمَع في خانة النقديّ صامتةً — رقمٌ صحيحُ المجموع خاطئُ التوزيع.
+  ///
+  /// و`multiple` **ليس نوعَ صندوقٍ** بل تصنيفَ طريقةِ دفعٍ في
+  /// `sales_payment_calculator` — فلا شريحةَ له.
+  ///
+  /// وما لا يُعرَف نوعُه يبقى في النقديّ (افتراضُ العمود `withDefault('cash')`)
+  /// كي لا يسقط رصيدٌ من المجموع.
   factory PicPosTreasurySplit.from(
     Iterable<({String kind, double balance})> safes,
   ) {
     var cashMinor = 0;
     var bankMinor = 0;
+    var clickMinor = 0;
+
     for (final s in safes) {
       final m = FinancialUtils.toMinorUnits(s.balance);
-      if (s.kind == 'bank') {
-        bankMinor += m;
-      } else {
-        // أيُّ نوعٍ غيرِ `bank` يُعدُّ نقداً — نفسُ افتراضِ العمود
-        // (‏`withDefault('cash')`)، فنوعٌ يُضاف لاحقاً يظهر ولا يختفي.
-        cashMinor += m;
+      switch (s.kind) {
+        case 'bank':
+          bankMinor += m;
+        case 'click':
+          clickMinor += m;
+        default:
+          cashMinor += m;
       }
     }
 
-    final cash = FinancialUtils.fromMinorUnits(cashMinor);
-    final bank = FinancialUtils.fromMinorUnits(bankMinor);
-    final totalMinor = cashMinor + bankMinor;
-    final total = FinancialUtils.fromMinorUnits(totalMinor);
-
+    final totalMinor = cashMinor + bankMinor + clickMinor;
     double frac(int part) => totalMinor <= 0 ? 0 : part / totalMinor;
 
     return PicPosTreasurySplit(
-      total: total,
+      total: FinancialUtils.fromMinorUnits(totalMinor),
       slices: [
         PicPosTreasurySlice(
           kind: 'cash',
           label: 'نقدي',
-          value: cash,
+          value: FinancialUtils.fromMinorUnits(cashMinor),
           fraction: frac(cashMinor),
         ),
         PicPosTreasurySlice(
           kind: 'bank',
-          label: 'بنكي',
-          value: bank,
+          label: 'بنوك',
+          value: FinancialUtils.fromMinorUnits(bankMinor),
           fraction: frac(bankMinor),
+        ),
+        PicPosTreasurySlice(
+          kind: 'click',
+          label: 'كليك',
+          value: FinancialUtils.fromMinorUnits(clickMinor),
+          fraction: frac(clickMinor),
         ),
       ],
     );
