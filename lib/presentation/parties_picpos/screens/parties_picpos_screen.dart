@@ -21,22 +21,28 @@
 // و`PartyStatementScreen`/`PartyGroupsScreen` مُعاد استخدامهم من UralCash زي
 // ما هم (import، مش نسخ).
 import 'dart:async' show unawaited;
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/logging/diagnostic_logger.dart';
 import '../../../core/widgets/shimmer_loading.dart';
-import '../../../core/constants/app_constants.dart';
 import '../../../data/providers/providers.dart';
+import '../../../domain/models/picpos_party_view.dart';
 import '../../screens/party_statement_screen.dart';
 import '../../treasury/widgets/receipt_voucher_dialog.dart';
 import '../../treasury/widgets/payment_voucher_dialog.dart';
-import '../../screens/parties/party_helpers.dart';
 import '../../screens/parties/party_dialogs.dart';
 import '../../screens/parties/party_groups_screen.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../picpos_shell/picpos_content_card.dart';
+import '../../picpos_shell/picpos_dialog.dart';
+import '../../picpos_shell/picpos_empty_state.dart';
+
+part 'parties_summary_cards.dart';
+part 'parties_filter_bar.dart';
+part 'parties_card_grid.dart';
 
 /// شاشة العملاء والموردين بهوية PicPos. تُختار بالعلامة في app_main_screen
 /// (`Brand.isPicPos`). تعيد استخدام نفس `allPartiesProvider` (عبر Consumer
@@ -62,15 +68,34 @@ class PartiesPicposScreen extends ConsumerStatefulWidget {
       _PartiesPicposScreenState();
 }
 
+
 class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
   final _searchController = TextEditingController();
-  String _typeFilter = 'all'; // all, customer, supplier, both
+  PicPosPartyFilter _typeFilter = PicPosPartyFilter.all;
+  String _query = '';
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
   }
+
+  /// تحويلُ صفِّ القاعدة إلى صورةِ العرض.
+  ///
+  /// هنا — وهنا وحدَه — يلتقي `Party` بـ[PicPosPartyCard]. الملفّاتُ الثلاثةُ
+  /// الأخرى (البطاقات · الشريط · الشبكة) لا تعرف القاعدةَ إطلاقاً، فتُختبَر
+  /// بلا فتحِ قاعدةٍ ولا حقنِ مزوِّد.
+  PicPosPartyCard _toCard(Party p) => PicPosPartyCard(
+        id: p.id,
+        name: p.name,
+        balance: p.balance,
+        creditLimit: p.creditLimit,
+        phone: p.phone,
+        address: p.address,
+        isCustomer: p.isCustomer,
+        isSupplier: p.isSupplier,
+        isDeliveryCompany: p.isDeliveryCompany == true,
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -107,23 +132,6 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
           ),
         ),
         const SizedBox(width: 8),
-        // Phase 2: entry point to the Party Groups management screen. Lives
-        // in the same header as the statement buttons because groups are a
-        // peer master-data entity to parties themselves.
-        OutlinedButton.icon(
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const PartyGroupsScreen(),
-            ),
-          ),
-          icon: const Icon(PhosphorIconsBold.usersThree, size: 18),
-          label: const Text('المجموعات'),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: AppColors.info,
-          ),
-        ),
-        const SizedBox(width: 8),
         OutlinedButton.icon(
           onPressed: () => showExcelOptionsDialog(context, ref, isExport: true),
           icon: const Icon(PhosphorIconsBold.fileArrowUp, size: 18),
@@ -150,326 +158,148 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
           ),
         ),
       ],
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildFilters(context),
-          const SizedBox(height: 16),
-          Expanded(
-            child: PicPosContentCard(
-              child: RepaintBoundary(
-                child: Consumer(
-                  builder: (context, ref, _) {
-                    final partiesAsync = ref.watch(allPartiesProvider);
-                    return partiesAsync.when(
-                      data: (list) => _buildPartiesList(list),
-                      loading: () => Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: ShimmerLoading.list(itemCount: 6),
-                      ),
-                      error: (e, _) => Center(child: Text('خطأ: $e')),
-                    );
-                  },
-                ),
+      body: RepaintBoundary(
+        child: Consumer(
+          builder: (context, ref, _) {
+            final partiesAsync = ref.watch(allPartiesProvider);
+            return partiesAsync.when(
+              data: _buildLoaded,
+              loading: () => Padding(
+                padding: const EdgeInsets.all(16),
+                child: ShimmerLoading.list(itemCount: 6),
               ),
-            ),
-          ),
-        ],
+              error: (e, _) => Center(child: Text('خطأ: $e')),
+            );
+          },
+        ),
       ),
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // FILTERS
-  // ═══════════════════════════════════════════════════════════════════════
+  Widget _buildLoaded(List<Party> rows) {
+    final cards = rows.map(_toCard).toList();
+    // العدّاداتُ من القائمة **الكاملة**؛ الشبكةُ من المرشَّحة.
+    final kpis = PicPosPartyKpis.from(cards);
+    final filtered =
+        cards.where((c) => c.matches(_typeFilter, _query)).toList();
 
-  Widget _buildFilters(BuildContext context) {
-    return Row(
+    // خريطةُ الرجوع إلى صفِّ القاعدة: الحوارُ والسندُ يحتاجان `Party` كاملاً،
+    // والبطاقةُ لا تحمله. البحثُ بالمعرّف لا بالفهرس — الترشيحُ يُزيح
+    // الفهارسَ فيُفتَح حوارُ طرفٍ غيرِ الذي نُقر.
+    final byId = {for (final p in rows) p.id: p};
+    Party? lookup(PicPosPartyCard c) => byId[c.id];
+
+    final actions = PartyCardActions(
+      onStatement: (c) => _openStatement(lookup(c)),
+      onEdit: (c) => _openEdit(lookup(c)),
+      onVoucher: (c) => _openVoucher(lookup(c)),
+      onDelete: (c) => _openDelete(lookup(c)),
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          flex: 2,
-          child: TextField(
-            controller: _searchController,
-            decoration: InputDecoration(
-              hintText: 'البحث بالاسم أو رقم الهاتف...',
-              prefixIcon: const Icon(
-                PhosphorIconsBold.magnifyingGlass,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              filled: true,
-              fillColor: Theme.of(context).cardColor,
-              isDense: true,
-            ),
-            onChanged: (_) => setState(() {}),
+        PartiesSummaryCards(kpis: kpis),
+        const SizedBox(height: 12),
+        PartiesFilterBar(
+          controller: _searchController,
+          filter: _typeFilter,
+          onFilterChanged: (f) => setState(() => _typeFilter = f),
+          onSearchChanged: (v) => setState(() => _query = v),
+          onGroupsPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const PartyGroupsScreen()),
           ),
         ),
-        const SizedBox(width: 16),
-        SegmentedButton<String>(
-          segments: const [
-            ButtonSegment(value: 'all', label: Text('الكل')),
-            ButtonSegment(
-              value: 'customer',
-              label: Text('عملاء'),
-              icon: Icon(PhosphorIconsBold.user, size: 16),
-            ),
-            ButtonSegment(
-              value: 'supplier',
-              label: Text('موردين'),
-              icon: Icon(PhosphorIconsBold.truck, size: 16),
-            ),
-            ButtonSegment(
-              value: 'delivery',
-              label: Text('توصيل'),
-              icon: Icon(PhosphorIconsBold.moped, size: 16),
-            ),
-            ButtonSegment(
-              value: 'both',
-              label: Text('عميل مورد'),
-              icon: Icon(PhosphorIconsBold.usersThree, size: 16),
-            ),
-          ],
-          selected: {_typeFilter},
-          onSelectionChanged: (val) {
-            setState(() => _typeFilter = val.first);
-          },
+        const SizedBox(height: 12),
+        Expanded(
+          child: PicPosContentCard(
+            child: PartiesCardGrid(parties: filtered, actions: actions),
+          ),
         ),
       ],
     );
   }
 
   // ═══════════════════════════════════════════════════════════════════════
-  // PARTIES LIST
+  // ACTIONS — أجسامُها منقولةٌ كما هي من الشاشة قبل إعادة التصميم، بما فيها
+  // سجلّاتُ `DiagnosticLogger` (Spec 115): هي تشخيصُ عطبٍ ميدانيٍّ قائم،
+  // وحذفُها مع تبديل الشكل كان سيُعمي التشخيصَ بلا سبب.
+  //
+  // والحارسُ `party == null` جديدٌ: خريطةُ المعرّفات قد لا تجد صفّاً لو بُثّت
+  // قائمةٌ أحدثُ بين الرسم والنقر. الصمتُ هنا أصحُّ من `!` تنهار.
   // ═══════════════════════════════════════════════════════════════════════
 
-  Widget _buildPartiesList(List<Party> list) {
-    var filtered = list.where((p) {
-      if (_typeFilter == 'customer' && !p.isCustomer) return false;
-      if (_typeFilter == 'supplier' && !p.isSupplier) return false;
-      if (_typeFilter == 'delivery' && (p.isDeliveryCompany != true)) return false;
-      if (_typeFilter == 'both' && !(p.isCustomer && p.isSupplier)) return false;
-
-      if (_searchController.text.isNotEmpty) {
-        final query = _searchController.text.toLowerCase();
-        if (!p.name.toLowerCase().contains(query) &&
-            !(p.phone?.contains(query) ?? false)) {
-          return false;
-        }
-      }
-      return true;
-    }).toList();
-
-    if (filtered.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              PhosphorIconsBold.users,
-              size: 64,
-              color: AppColors.textMuted.withValues(alpha: 0.3),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'لا يوجد أطراف',
-              style: TextStyle(color: AppColors.textMuted),
-            ),
-          ],
+  void _openStatement(Party? party) {
+    if (party == null) return;
+    unawaited(DiagnosticLogger.log(
+        'PARTIES-ACTION',
+        'statement tap partyId=${party.id} name="${party.name}" '
+            'isSupplier=${party.isSupplier}'));
+    try {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PartyStatementScreen(
+            isSupplier: party.isSupplier,
+            partyId: party.id,
+            partyName: party.name,
+          ),
         ),
-      );
+      ).then((_) => unawaited(DiagnosticLogger.log(
+          'PARTIES-ACTION', 'statement route popped partyId=${party.id}')));
+    } catch (e, st) {
+      unawaited(DiagnosticLogger.log('PARTIES-ACTION',
+          'statement route threw partyId=${party.id}: $e\n$st'));
     }
-
-    return ListView.separated(
-      padding: const EdgeInsets.all(16),
-      itemCount: filtered.length,
-      separatorBuilder: (_, index) => const Divider(),
-      itemBuilder: (context, index) {
-        final party = filtered[index];
-        return _buildPartyTile(party);
-      },
-    );
   }
 
-  Widget _buildPartyTile(Party party) {
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: getPartyTypeColor(party).withValues(alpha: 0.1),
-        child: Icon(
-          getPartyIcon(party),
-          color: getPartyTypeColor(party),
-        ),
-      ),
-      title: Row(
-        children: [
-          Text(
-            party.name,
-            style: const TextStyle(fontWeight: FontWeight.w500),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: getPartyTypeColor(party).withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Text(
-              getPartyTypeLabel(party),
-              style: TextStyle(
-                fontSize: 10,
-                color: getPartyTypeColor(party),
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
-      // Spec 029 corrective patch (2026-05-10) — moved balance + credit
-      // limit OUT of `ListTile.trailing` and into the subtitle. The
-      // previous layout stuffed [balance Column] + [4 IconButtons] into
-      // `trailing`; total intrinsic width was ~400px which overflowed
-      // the ListTile's default trailing constraint on RTL desktop. The
-      // inner icons (money + statement) ended up clipped/unhittable
-      // while the outer two (edit + trash) stayed visible — exactly the
-      // symptom the operator reported on 2026-05-10. Putting balance in
-      // the subtitle row keeps it visually adjacent to the party name
-      // (and its credit limit), and frees `trailing` for compact icons.
-      subtitle: Row(
-        children: [
-          Expanded(
-            child: Text(
-              party.phone ?? 'لا يوجد رقم',
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            '${party.balance.toStringAsFixed(AppConstants.decimalPlaces)} '
-                '${AppConstants.currencySymbolEn}',
-            style: TextStyle(
-              color: party.balance >= 0
-                  ? AppColors.success
-                  : AppColors.error,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            '(حد ${party.creditLimit.toStringAsFixed(0)})',
-            style: const TextStyle(
-              fontSize: 11,
-              color: AppColors.textMuted,
-            ),
-          ),
-        ],
-      ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Compact icons — `padding: zero` + `constraints` keep each
-          // button at ~32×32, so all four together stay well under the
-          // ListTile's trailing width budget. Removes the clipping that
-          // made the inner icons (money + statement) unhittable.
-          IconButton(
-            icon: const Icon(PhosphorIconsBold.money),
-            iconSize: 20,
-            color: AppColors.success,
-            tooltip: 'سند مالي',
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-            onPressed: () {
-              // Spec 115 diagnostic — DiagnosticLogger writes to the log
-              // file in release builds; debugPrint does not, which is why
-              // build 182 produced no log lines despite the user tapping.
-              unawaited(DiagnosticLogger.log('PARTIES-ACTION',
-                  'voucher tap partyId=${party.id} name="${party.name}" '
-                  'isSupplier=${party.isSupplier} '
-                  'isCustomer=${party.isCustomer}'));
-              try {
-                showDialog(
-                  context: context,
-                  builder: (context) {
-                    if (party.isSupplier && !party.isCustomer) {
-                      return PaymentVoucherDialog(initialParty: party);
-                    } else {
-                      return ReceiptVoucherDialog(initialParty: party);
-                    }
-                  },
-                ).then((_) => unawaited(DiagnosticLogger.log('PARTIES-ACTION',
-                    'voucher dialog closed partyId=${party.id}')));
-              } catch (e, st) {
-                unawaited(DiagnosticLogger.log('PARTIES-ACTION',
-                    'voucher dialog threw partyId=${party.id}: $e\n$st'));
-              }
-            },
-          ),
-          IconButton(
-            icon: const Icon(PhosphorIconsBold.fileText),
-            iconSize: 20,
-            color: AppColors.info,
-            tooltip: 'كشف حساب',
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-            onPressed: () {
-              unawaited(DiagnosticLogger.log('PARTIES-ACTION',
-                  'statement tap partyId=${party.id} name="${party.name}" '
-                  'isSupplier=${party.isSupplier}'));
-              try {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => PartyStatementScreen(
-                      isSupplier: party.isSupplier,
-                      partyId: party.id,
-                      partyName: party.name,
-                    ),
-                  ),
-                ).then((_) => unawaited(DiagnosticLogger.log('PARTIES-ACTION',
-                    'statement route popped partyId=${party.id}')));
-              } catch (e, st) {
-                unawaited(DiagnosticLogger.log('PARTIES-ACTION',
-                    'statement route threw partyId=${party.id}: $e\n$st'));
-              }
-            },
-          ),
-          IconButton(
-            icon: const Icon(PhosphorIconsBold.pencil),
-            iconSize: 20,
-            color: AppColors.primary,
-            tooltip: 'تعديل',
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-            onPressed: () {
-              unawaited(DiagnosticLogger.log('PARTIES-ACTION',
-                  'edit tap partyId=${party.id} name="${party.name}"'));
-              try {
-                showEditPartyDialog(context, ref, party);
-              } catch (e, st) {
-                unawaited(DiagnosticLogger.log('PARTIES-ACTION',
-                    'edit dialog threw partyId=${party.id}: $e\n$st'));
-              }
-            },
-          ),
-          IconButton(
-            icon: const Icon(PhosphorIconsBold.trash),
-            iconSize: 20,
-            color: AppColors.error,
-            tooltip: 'حذف',
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-            onPressed: () {
-              unawaited(DiagnosticLogger.log('PARTIES-ACTION',
-                  'delete tap partyId=${party.id} name="${party.name}"'));
-              try {
-                showDeletePartyDialog(context, ref, party);
-              } catch (e, st) {
-                unawaited(DiagnosticLogger.log('PARTIES-ACTION',
-                    'delete dialog threw partyId=${party.id}: $e\n$st'));
-              }
-            },
-          ),
-        ],
-      ),
-    );
+  void _openEdit(Party? party) {
+    if (party == null) return;
+    unawaited(DiagnosticLogger.log('PARTIES-ACTION',
+        'edit tap partyId=${party.id} name="${party.name}"'));
+    try {
+      showEditPartyDialog(context, ref, party);
+    } catch (e, st) {
+      unawaited(DiagnosticLogger.log(
+          'PARTIES-ACTION', 'edit dialog threw partyId=${party.id}: $e\n$st'));
+    }
+  }
+
+  void _openVoucher(Party? party) {
+    if (party == null) return;
+    unawaited(DiagnosticLogger.log(
+        'PARTIES-ACTION',
+        'voucher tap partyId=${party.id} name="${party.name}" '
+            'isSupplier=${party.isSupplier} '
+            'isCustomer=${party.isCustomer}'));
+    try {
+      showDialog(
+        context: context,
+        builder: (context) {
+          if (party.isSupplier && !party.isCustomer) {
+            return PaymentVoucherDialog(initialParty: party);
+          } else {
+            return ReceiptVoucherDialog(initialParty: party);
+          }
+        },
+      ).then((_) => unawaited(DiagnosticLogger.log(
+          'PARTIES-ACTION', 'voucher dialog closed partyId=${party.id}')));
+    } catch (e, st) {
+      unawaited(DiagnosticLogger.log('PARTIES-ACTION',
+          'voucher dialog threw partyId=${party.id}: $e\n$st'));
+    }
+  }
+
+  void _openDelete(Party? party) {
+    if (party == null) return;
+    unawaited(DiagnosticLogger.log('PARTIES-ACTION',
+        'delete tap partyId=${party.id} name="${party.name}"'));
+    try {
+      showDeletePartyDialog(context, ref, party);
+    } catch (e, st) {
+      unawaited(DiagnosticLogger.log('PARTIES-ACTION',
+          'delete dialog threw partyId=${party.id}: $e\n$st'));
+    }
   }
 }
