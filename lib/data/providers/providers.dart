@@ -403,16 +403,32 @@ final fiscalPeriodValidationProvider = FutureProvider.autoDispose
 /// dormant) are still reflected when the screen returns — the current
 /// subscriber always sees the latest Drift watch snapshot on subscribe.
 /// Cost: one always-on watch query; negligible memory overhead.
-final salesInvoicesChangeProvider = StreamProvider<void>((ref) {
+///
+/// ── لماذا عدّادٌ لا `void` (‏بلاغُ المالك 2026-08-23) ─────────────────────
+/// كانت `StreamProvider<void>` نهايتُها `.map((_) {})`، فكلُّ بثٍّ يحمل نفسَ
+/// القيمة. وRiverpod لا يُخطر المستمعَ إلّا حين تتبدّل الحالةُ بالمساواة،
+/// و`AsyncData<void>(null) == AsyncData<void>(null)`. فالبثُّ الأوّلُ يوقظ
+/// المستمعَ و**ما بعده يُبتلَع صامتاً** — وهو بالضبط «جدولُ الفواتير لا
+/// يتحدّث بعد الحفظ».
+///
+/// وهذا يفسّر ما بدا متناقضاً في السجلّ: بيعُ نقطةِ البيع يظهر فوراً لأنّ
+/// `checkout_controller` يُبطل المزوِّدَ صراحةً فتمرّ الحالةُ بـ`AsyncLoading`
+/// — تبدّلٌ حقيقيّ. أمّا الحفظُ من «فاتورة جديدة» فلا يُبطل شيئاً.
+///
+/// ⚠️ والعدّادُ ليس زينةً: أيُّ قيمةٍ ثابتةٍ تُعيد العطبَ. والمستهلكون كلُّهم
+///    يتجاهلون القيمةَ (`(_, _) =>`)، فالتبديلُ لا يمسّ عقدَ أحد.
+final salesInvoicesChangeProvider = StreamProvider<int>((ref) {
   final db = ref.watch(databaseProvider);
-  return db.select(db.salesInvoices).watch().map((_) {});
+  var tick = 0;
+  return db.select(db.salesInvoices).watch().map((_) => ++tick);
 });
 
 /// Same rationale as salesInvoicesChangeProvider — live notifications for
-/// the purchase invoices list.
-final purchaseInvoicesChangeProvider = StreamProvider<void>((ref) {
+/// the purchase invoices list. والعدّادُ لنفس السبب المكتوبِ فوق.
+final purchaseInvoicesChangeProvider = StreamProvider<int>((ref) {
   final db = ref.watch(databaseProvider);
-  return db.select(db.purchaseInvoices).watch().map((_) {});
+  var tick = 0;
+  return db.select(db.purchaseInvoices).watch().map((_) => ++tick);
 });
 
 /// CoA management service provider for chart of accounts import/export.
