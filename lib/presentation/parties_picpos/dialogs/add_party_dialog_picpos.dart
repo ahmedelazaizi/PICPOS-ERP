@@ -31,7 +31,18 @@ import 'package:ural_erp/core/widgets/app_toast.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../data/database/sync_interceptor.dart';
+// ⚠️ **لا `import 'data/database/sync_interceptor.dart'` هنا.**
+//
+// `presentation_db_import_guard` يمنع أيَّ ملفِّ عرضٍ **جديد** من استيراد
+// `data/database` وقائمتُه البيضاء مقفولة — والأصلُ المنسوخُ منه مُدرَجٌ فيها
+// فسُمح له، وهذا الفوركُ جديدٌ فلا يُسمح. (‏سقطت البوّابةُ عليه فعلاً.)
+//
+// و`isClientModeProvider` موجودٌ سلفاً في طبقة المزوِّدات لهذا الغرض بعينه،
+// فيُقرأ منه — والقيمةُ **هي هي** (`SyncInterceptor.isClientMode`)، فلا
+// ينحرف السلوكُ عن الأصل: عميلٌ **ومرآةٌ** معاً.
+//
+// ويصل عبر `providers.dart` وحدَه (يعيد تصديرَ `inventory_providers`)،
+// فاستيرادُه صراحةً يُنتج `unnecessary_import` ويكسر خطَّ الأساس ٦ info.
 import '../../../data/providers/providers.dart';
 import '../../../services/client_write_interceptor.dart';
 import '../../picpos_shell/picpos_dialog.dart';
@@ -101,7 +112,7 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
               // للعميل **والمرآة** معاً). و`NetworkService.instance.isClient`
               // كاذبةٌ في وضع المرآة، فأطرافُ مديرِ المرآة ما كانت تصل
               // المركزَ أبداً.
-              if (SyncInterceptor.isClientMode) {
+              if (ref.read(isClientModeProvider)) {
                 await ClientWriteInterceptor.createParty(
                   name: nameController.text,
                   code: partyCode,

@@ -63,13 +63,21 @@ void main() {
     //
     // فنسخةٌ تستعمل الأولى تعمل على المستقلّ والخادم وتفقد بياناتِ المرآة
     // صامتةً — ولا اختبارَ سلوكٍ محلّيٍّ يراها.
-    test('يستعمل `SyncInterceptor.isClientMode` لا `NetworkService.isClient`',
-        () {
+    // ⚠️ **والطريقُ إليها مزوِّدٌ لا استيرادٌ مباشر.**
+    // `presentation_db_import_guard` يمنع ملفَّ عرضٍ **جديداً** من استيراد
+    // `data/database`، والأصلُ المنسوخُ منه مُدرَجٌ في القائمة البيضاء
+    // فسُمح له وحدَه. (‏سقطت البوّابةُ على هذا الفورك فعلاً.)
+    // و`isClientModeProvider` يُرجع **نفسَ** `SyncInterceptor.isClientMode`،
+    // فالقيمةُ لم تتبدّل — الطريقُ إليها هو الذي تبدّل.
+    test('بوّابةُ المزامنة تشمل المرآةَ — عبر `isClientModeProvider`', () {
       final src = code(forkPath);
-      expect(src, contains('SyncInterceptor.isClientMode'),
+      expect(src, contains('isClientModeProvider'),
           reason: 'بوّابةُ المزامنة يجب أن تشمل وضعَ المرآة');
       expect(src, isNot(contains('NetworkService.instance.isClient')),
           reason: 'هذه البوّابةُ تُسقط أطرافَ المرآة صامتةً');
+      // ولا يعود إلى الاستيراد المباشر — حارسُ الطبقات يسقط عليه.
+      expect(src, isNot(contains("data/database/sync_interceptor.dart")),
+          reason: 'ملفُّ عرضٍ جديدٌ لا يستورد `data/database`');
     });
 
     // الأرقامُ العربيّةُ والفاصلةُ تُقبَل — BUG-U10/U14.
