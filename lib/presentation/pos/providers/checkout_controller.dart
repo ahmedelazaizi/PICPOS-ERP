@@ -148,6 +148,25 @@ class CheckoutController extends Notifier<CheckoutState> {
         'itemTypes=${cartState.items.map((i) => i.itemType.name).toList()}');
 
     try {
+      // ── لا بيعَ بنطاقٍ فارغ (‏قرارُ المالك 2026-08-23) ──────────────────
+      // فرعُ البيعة هنا يُشتقّ من **الفرع النشِط** (‏`_resolveBranchId`)،
+      // ونطاقُ الرؤية يُشتقّ من **إسنادات المستخدم**. فكاشيرٌ بلا إسنادٍ
+      // كان يبيع فعلاً ثمّ لا يرى بيعتَه — مصدرا حقيقةٍ متضادّان.
+      //
+      // ويُقال السببُ نصّاً صريحاً لا عبر `throw`: الـcatch أدناه يلفّ كلَّ
+      // استثناءٍ في «حدث خطأ غير متوقع»، وهذا سببٌ متوقَّعٌ تماماً وله
+      // إجراءٌ واضح.
+      final scope = await ref.read(branchScopeProvider.future);
+      if (scope.isEmptyScope) {
+        state = state.copyWith(
+          isProcessing: false,
+          error: 'لا فروعَ مُسنَدةٌ لحسابك — لا يمكن إتمام البيع. اطلب من '
+              'مدير النظام إسنادَ فرعٍ واحدٍ على الأقل، وإلّا سُجّلت البيعةُ '
+              'ثمّ اختفت عنك.',
+        );
+        return false;
+      }
+
       // ── PERF FIX: Resolve all provider values in parallel instead of sequentially ──
       final results = await Future.wait([
         ref.read(activeWarehouseIdProvider.future),        // [0] warehouseId

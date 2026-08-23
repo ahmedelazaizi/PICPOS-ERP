@@ -182,6 +182,24 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
       final authState = container.read(authProvider);
       final userId = authState.user?.id ?? 1;
 
+      // ── لا كتابةَ بنطاقٍ فارغ (‏قرارُ المالك 2026-08-23) ────────────────
+      // فرعُ الفاتورة يُشتقّ من **المخزن** (‏`sales_mutations_dao`)، ونطاقُ
+      // الرؤية يُشتقّ من **إسنادات المستخدم** (‏`branchScopeProvider`).
+      // فمستخدمٌ غيرُ مميّزٍ بلا إسنادٍ كان يبيع فعلاً ثمّ لا يرى ما باع —
+      // مصدرا حقيقةٍ متضادّان لنفس السؤال (مقيسٌ في سجلّ 2026-08-22).
+      //
+      // والمنعُ هنا يقطع التناقضَ من طرفه الصحيح: لا تُنشَأ فاتورةٌ لن يراها
+      // صاحبُها. ويُقال السببُ صراحةً — الرسالةُ تصل المستخدمَ عبر
+      // `AppErrorHandler` في الـcatch الخارجيّ.
+      final scope = await container.read(branchScopeProvider.future);
+      if (scope.isEmptyScope) {
+        throw Exception(
+          'لا يمكن حفظ الفاتورة: لا فروعَ مُسنَدةٌ لحسابك. اطلب من مدير '
+          'النظام إسنادَ فرعٍ واحدٍ على الأقل قبل البيع — وإلّا حُفظت '
+          'الفاتورةُ ثمّ اختفت عنك.',
+        );
+      }
+
       final validItems = <CartItemEntity>[];
       for (final item in invoiceItems) {
         final pId = item['productId'] as int;

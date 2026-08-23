@@ -7,6 +7,7 @@ import '../../../../services/security_service.dart';
 import '../../../../services/network_service.dart';
 import '../../../../data/providers/providers.dart';
 import '../../../../data/database/sync_interceptor.dart';
+import '../../../../domain/models/branch_assignment_scope.dart';
 import '../../../widgets/dialogs/app_form_dialog.dart';
 import 'package:ural_erp/l10n/app_localizations.dart';
 import 'add_role_dialog.dart';
@@ -160,8 +161,21 @@ class _AddUserDialogState extends AppFormDialogState<bool, AddUserDialog> {
           const SizedBox(height: 16),
           const Text('الفرع', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
           const SizedBox(height: 8),
+          // ⚠️ «كل الفروع» لا يكتب إسناداً، والفراغُ يعني «الكلَّ» للأدوار
+          // المميَّزة وحدَها. فيُقال ذلك **قبل** الحفظ لا بعده: الحارسُ في
+          // `onSave` يمنع، وهذا السطرُ يشرح لماذا قبل أن يُمنَع أحد.
           RadioListTile<bool>(
             title: const Text('كل الفروع (مدير / إدارة)'),
+            subtitle: fullBranchAccessRoleNames.contains(
+              roles.where((r) => r.id == selectedRoleId).firstOrNull?.name,
+            )
+                ? null
+                : const Text(
+                    'غيرُ متاحٍ لهذا الدور — بلا إسنادِ فرعٍ لن يرى '
+                    'المستخدمُ أيَّ فاتورةٍ ولو أصدرها بنفسه.',
+                    style:
+                        TextStyle(fontSize: 11, color: AppColors.warning),
+                  ),
             value: true,
             groupValue: _allBranches,
             onChanged: (v) => setState(() { _allBranches = true; selectedBranchIds.clear(); }),
@@ -283,6 +297,27 @@ class _AddUserDialogState extends AppFormDialogState<bool, AddUserDialog> {
 
     if (selectedRoleId == null) {
       throw 'يجب اختيار دور للمستخدم';
+    }
+
+    // ── لا تُولَد تجهيزةٌ بنطاقٍ فارغ (‏قرارُ المالك 2026-08-23) ──────────
+    // «كل الفروع» لا يكتب صفَّ إسنادٍ واحد، والفراغُ يعني «الكلَّ» للأدوار
+    // المميَّزة وحدَها؛ ولغيرِها يعني `no-assignments-fail-closed`. فكاشيرٌ
+    // أُنشئ على الافتراضِ كان يبيع ولا يرى ما باع (وقع فعلاً لـ`userId=2`).
+    //
+    // ⚠️ ولا يُحرَس إلّا حين تكون هناك فروعٌ أصلاً: تنصيبةٌ بلا فروعٍ لا
+    // تعرض المنتقي، فحراستُها كانت ستمنع إنشاءَ أيِّ مستخدم.
+    final branchesNow = ref.read(allBranchesProvider).value ?? [];
+    if (branchesNow.isNotEmpty) {
+      final roleName = (ref.read(allRolesProvider).value ?? [])
+          .where((r) => r.id == selectedRoleId)
+          .firstOrNull
+          ?.name;
+      final blocker = branchAssignmentBlocker(
+        roleHasFullBranchAccess: fullBranchAccessRoleNames.contains(roleName),
+        allBranchesChosen: _allBranches,
+        selectedBranchCount: selectedBranchIds.length,
+      );
+      if (blocker != null) throw blocker;
     }
 
     // Password strength is shown as guidance only — not enforced

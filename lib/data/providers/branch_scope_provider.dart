@@ -34,6 +34,19 @@ class BranchScope {
 
   bool get hasFullAccess => allowedBranchIds == null;
 
+  /// نطاقٌ فارغ: مستخدمٌ **غيرُ مميّزٍ** بلا إسنادِ فرعٍ واحد.
+  ///
+  /// ── لماذا اسمٌ مستقلٌّ لا `!hasFullAccess` ────────────────────────────
+  /// هذه ليست «صلاحيةً ضيّقة» بل **تجهيزةٌ ناقصة**. ومن يقع فيها يعيش
+  /// تناقضاً مقيساً (2026-08-23): يبيع فعلاً — لأنّ فرعَ الفاتورة يُشتقّ من
+  /// **المخزن** (‏`sales_mutations_dao`) — ثمّ لا يرى ما باع، لأنّ النطاقَ
+  /// يُشتقّ من **إسناداته**. مصدرا حقيقةٍ متضادّان لنفس السؤال.
+  ///
+  /// وسياسةُ «الفشلُ يُقفِل» صحيحةٌ أمنيّاً وتبقى؛ الخطأُ كان أن نتيجتَها
+  /// شاشةٌ فارغةٌ بلا تفسير. فتُسمَّى الحالةُ هنا ليُحرَس عليها في ثلاثة
+  /// مواضعَ: منعُ التجهيزة الناقصة أصلاً، ومنعُ الكتابة، وشرحُ الفراغ.
+  bool get isEmptyScope => !hasFullAccess && allowedBranchIds!.isEmpty;
+
   /// True when [branchId] is visible under this scope. Null branchId is
   /// always allowed (legacy rows without a branch link must remain visible
   /// rather than disappear from a restricted user's lists).

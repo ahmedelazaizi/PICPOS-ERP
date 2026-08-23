@@ -146,6 +146,54 @@ class SalesInvoicesTable extends ConsumerWidget {
       // doesn't have to clear each chip individually.
       final hasFilters =
           ref.read(salesInvoicesControllerProvider.notifier).hasActiveFilters;
+
+      // ── فراغٌ لا يُفسَّر بالفلاتر (‏قرارُ المالك 2026-08-23) ──────────────
+      // مستخدمٌ غيرُ مميّزٍ بلا إسنادِ فرعٍ يحصل على نطاقٍ فارغ، فيُحجَب عنه
+      // **كلُّ** صفٍّ موسومٍ بفرع — حتى فاتورةٌ باعها بنفسه. والسياسةُ
+      // «الفشلُ يُقفِل» مقصودةٌ أمنيّاً وتبقى، لكنّ نتيجتَها كانت شاشةً
+      // فارغةً تقول «لا توجد فواتير» — وهي **كذبة**: الفواتيرُ موجودةٌ
+      // ومحجوبة. فيُقال السببُ صراحةً بدل أن يُتَّهَم النظامُ بالضياع.
+      final emptyScope = ref.watch(branchScopeProvider.select((s) => s.value))
+              ?.isEmptyScope ??
+          false;
+
+      if (emptyScope && !hasFilters) {
+        return Expanded(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    PhosphorIconsBold.lockKey,
+                    size: 64,
+                    color: AppColors.warning.withValues(alpha: 0.35),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'لا فروعَ مُسنَدةٌ لحسابك',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'الفواتيرُ المرتبطةُ بفرعٍ مخفيّةٌ عنك حتى يُسنِد لك مديرُ '
+                    'النظام فرعاً واحداً على الأقل. وهذا ليس عطباً في '
+                    'البيانات — الفواتيرُ موجودةٌ ومحجوبة.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }
+
       return Expanded(
         child: Center(
           child: Column(
