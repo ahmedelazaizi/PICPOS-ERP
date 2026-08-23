@@ -17,6 +17,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/data/providers/providers.dart';
 import 'package:ural_erp/domain/repositories/offers_repository.dart';
 import 'package:ural_erp/presentation/offers_picpos/offers_picpos_screen.dart';
+import 'package:ural_erp/presentation/picpos_shell/picpos_dialog.dart';
 
 class _FakeOffersRepo implements IOffersRepository {
   _FakeOffersRepo(this._offers);
@@ -75,6 +76,10 @@ void main() {
                   ),
                 ]),
           ),
+          // ⚠️ بلا هذا يبتلع `PermissionGuard` الضغطةَ ويُظهر رسالةَ منعٍ
+          //    بدل أن يفتح الحوار — فيبدو الفشلُ كأنّ الحوارَ لا يُبنى.
+          currentUserPermissionsProvider
+              .overrideWith((ref) async => const ['system_admin']),
         ],
         child: const MaterialApp(home: OffersPicPosScreen()),
       ),
@@ -110,6 +115,31 @@ void main() {
     expect(find.text('3'), findsWidgets, reason: 'الإجمالي');
     // «فعّالة الآن» = ١: الموقوفُ يخرج بعلَمه والمنتهي بتاريخه.
     expect(find.text('1'), findsWidgets);
+  });
+
+  testWidgets('حوارُ «إضافة عرض» يُفتح بهويّة PicPos لا بـAlertDialog خام',
+      (tester) async {
+    // ⚠️ الشاشةُ صارت بالهويّة والحوارُ كان يبقى بالشكل القديم — فيُقاس
+    //    الفتحُ فعلاً لا وجودُ الصنف في الكود. و`PicPosDialog` هو ما يميّزه:
+    //    عنوانٌ وسطرٌ خافتٌ تحته وزرٌّ أساسيٌّ موسوم.
+    await pump(tester, 1280, offers: const []);
+
+    await tester.tap(find.text('إضافة عرض').first);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(tester.takeException(), isNull);
+    expect(find.byType(PicPosDialog), findsOneWidget);
+    expect(find.text('إضافة عرض جديد'), findsWidgets);
+    // ⚠️ زرُّ الإلغاء: `onCancel` افتراضُها `null` = لا زرَّ إلغاء، فحوارٌ
+    //    بلا مخرجٍ غيرِ الحفظ. يُقاس صراحةً.
+    expect(find.text('إلغاء'), findsWidgets);
+
+    // ⚠️ الحوارُ يفتح مؤقّتاتٍ (حركةٌ وقراءاتٌ من المستودع) تبقى معلَّقةً
+    //    فيسقط الاختبارُ بـ`!timersPending`. فكِّك الشجرةَ وادفع إطاراً —
+    //    **داخلَ جسم الاختبار** لا في `addTearDown` (تلك تعمل بعد الفحص).
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 2));
   });
 
   testWidgets('لا عروضَ ⇒ حالةُ فراغٍ تشرح ولا تترك الشاشةَ بيضاء',

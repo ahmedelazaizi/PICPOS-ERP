@@ -104,21 +104,16 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
 
           return Directionality(
             textDirection: TextDirection.rtl,
-          child: AlertDialog(
-            title: Row(
-              children: [
-                const Icon(PhosphorIconsBold.tag, color: AppColors.warning),
-                const SizedBox(width: 8),
-                Text(existingOffer == null ? 'إضافة عرض جديد' : 'تعديل العرض'),
-              ],
-            ),
-            content: SizedBox(
-              width: 600,
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+          child: PicPosDialog(
+            icon: PhosphorIconsBold.tag,
+            title: existingOffer == null ? 'إضافة عرض جديد' : 'تعديل العرض',
+            subtitle: 'الباقةُ تظهر في نقطة البيع ما دامت فعّالةً وفي مدّتها',
+            width: 700,
+            // ⚠️ `onCancel` افتراضُها `null` = **لا زرَّ إلغاء**. الحوارُ
+            //    القديمُ كان يحمل «إلغاء» صراحةً، فإسقاطُها هنا يترك
+            //    المستخدمَ بلا مخرجٍ غيرِ الحفظ.
+            onCancel: () => Navigator.pop(ctx),
+            body: [
                     // Name
                     TextField(
                       controller: nameController,
@@ -654,17 +649,15 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                         orElse: () => const SizedBox.shrink(),
                       );
                     }),
-                  ],
-                ),
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('إلغاء'),
-              ),
-              ElevatedButton(
-                onPressed: isLoading
+            ],
+            primaryAction: PicPosDialogAction(
+              label: existingOffer == null ? 'إضافة' : 'حفظ',
+              icon: PhosphorIconsBold.check,
+              // ⚠️ `busy` تُغني عن مؤشّرِ التحميل المحقونِ في `child` — وهي
+              //    التي تُعطّل الزرَّ أيضاً، فالقفلُ ضدّ الدوسة المزدوجة
+              //    باقٍ كما كان.
+              busy: isLoading,
+              onPressed: isLoading
                     ? null
                     : () async {
                         // Validation
@@ -893,22 +886,8 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                           }
                         }
                       },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.warning,
-                ),
-                child: isLoading
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : Text(existingOffer == null ? 'إضافة' : 'حفظ'),
-              ),
-            ],
             ),
+          ),
           );
         },
       ),
@@ -929,18 +908,18 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => Directionality(
           textDirection: TextDirection.rtl,
-          child: AlertDialog(
-            title: const Row(
-              children: [
-                Icon(
-                  PhosphorIconsBold.magnifyingGlass,
-                  color: AppColors.primary,
-                ),
-                SizedBox(width: 8),
-                Text('اختر صنف'),
-              ],
-            ),
-            content: SizedBox(
+          child: PicPosDialog(
+            icon: PhosphorIconsBold.magnifyingGlass,
+            title: 'اختر صنف',
+            subtitle: 'امسح الباركودَ أو ابحث بالاسم',
+            width: 560,
+            onCancel: () => Navigator.pop(ctx),
+            // ⚠️ `scrollable: false` مقصودة: الجسمُ عمودٌ بارتفاعٍ ثابتٍ
+            //    يحمل `Expanded` للقائمة. ولو لُفَّ في تمريرةٍ لَطلب ارتفاعاً
+            //    لا نهائيّاً وانهار — وهو بعينه عطبُ الخزينة البيضاء.
+            scrollable: false,
+            body: [
+            SizedBox(
               width: 500,
               height: 450,
               child: Column(
@@ -1087,11 +1066,6 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                 ],
               ),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('إلغاء'),
-              ),
             ],
           ),
         ),

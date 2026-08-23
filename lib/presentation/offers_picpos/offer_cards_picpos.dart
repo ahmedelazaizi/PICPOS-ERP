@@ -463,26 +463,24 @@ mixin _OfferCardsMixin on ConsumerState<OffersPicPosScreen> {
       context: context,
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
-        child: AlertDialog(
-          title: const Row(
-            children: [
-              Icon(PhosphorIconsBold.warning, color: AppColors.error),
-              SizedBox(width: 8),
-              Text('حذف العرض'),
-            ],
-          ),
-          content: Text('هل أنت متأكد من حذف العرض "${offer.name}"؟'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('إلغاء'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-              child: const Text('حذف'),
-            ),
+        child: PicPosDialog(
+          icon: PhosphorIconsBold.warning,
+          title: 'حذف العرض',
+          accent: AppColors.error,
+          width: 460,
+          // ⚠️ الإلغاءُ يُرجع `false` صراحةً لا `null`: الشرطُ تحت
+          //    `confirmed == true` فالعدمُ آمنٌ — لكنّ التصريحَ يبقي المعنى
+          //    ظاهراً لمن يبدّل الشرطَ لاحقاً.
+          onCancel: () => Navigator.pop(ctx, false),
+          body: [
+            Text('هل أنت متأكد من حذف العرض "${offer.name}"؟'),
           ],
+          primaryAction: PicPosDialogAction(
+            label: 'حذف',
+            icon: PhosphorIconsBold.trash,
+            color: AppColors.error,
+            onPressed: () => Navigator.pop(ctx, true),
+          ),
         ),
       ),
     );
@@ -524,36 +522,31 @@ mixin _OfferCardsMixin on ConsumerState<OffersPicPosScreen> {
       context: context,
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
-        child: AlertDialog(
-          title: const Row(
-            children: [
-              Icon(PhosphorIconsBold.printer, color: AppColors.primary),
-              SizedBox(width: 8),
-              Text('طباعة باركود العرض'),
-            ],
-          ),
-          content: TextField(
-            controller: copiesController,
-            keyboardType: TextInputType.number,
-            autofocus: true,
-            decoration: const InputDecoration(
-              labelText: 'عدد النسخ',
-              prefixIcon: Icon(PhosphorIconsBold.copy),
-            ),
-            onSubmitted: (_) =>
-                Navigator.pop(ctx, int.tryParse(copiesController.text) ?? 1),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('إلغاء'),
-            ),
-            ElevatedButton(
-              onPressed: () =>
+        child: PicPosDialog(
+          icon: PhosphorIconsBold.printer,
+          title: 'طباعة باركود العرض',
+          subtitle: offer.name,
+          width: 460,
+          onCancel: () => Navigator.pop(ctx),
+          body: [
+            TextField(
+              controller: copiesController,
+              keyboardType: TextInputType.number,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: 'عدد النسخ',
+                prefixIcon: Icon(PhosphorIconsBold.copy),
+              ),
+              onSubmitted: (_) =>
                   Navigator.pop(ctx, int.tryParse(copiesController.text) ?? 1),
-              child: const Text('طباعة'),
             ),
           ],
+          primaryAction: PicPosDialogAction(
+            label: 'طباعة',
+            icon: PhosphorIconsBold.printer,
+            onPressed: () =>
+                Navigator.pop(ctx, int.tryParse(copiesController.text) ?? 1),
+          ),
         ),
       ),
     );

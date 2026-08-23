@@ -27,6 +27,7 @@ import 'package:drift/drift.dart' hide Column;
 import '../../core/constants/app_constants.dart';
 import '../../core/permissions/permission_codes.dart';
 import '../widgets/permission_guard.dart';
+import '../picpos_shell/picpos_dialog.dart';
 import '../picpos_shell/picpos_empty_state.dart';
 import '../picpos_shell/picpos_screen_scaffold.dart';
 import '../picpos_shell/picpos_kpi_row.dart';
