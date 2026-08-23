@@ -212,6 +212,78 @@ class BookingBoardRow {
   int get durationMinutes => endsAt.difference(startsAt).inMinutes;
 }
 
+/// عرضُ حالةِ الحجز — التسميةُ والأيقونةُ ونغمةُ اللون.
+///
+/// ═══ ⚠️ سبعٌ لا ستٌّ — والسابعةُ هي المصيدة ═══
+///
+/// التصميمُ يسمّي **ستّاً** (`confirmed` · `pending` · `seated` ·
+/// `in_service` · `cancelled` · `no_show`) بينما القيدُ في القاعدة يقبل
+/// **سبعاً**: `completed` موجودةٌ ويحتاجها تحويلُ الحجز إلى فاتورة. فحالةٌ
+/// بلا تسميةٍ تُرسم **فارغةً** على الشاشة — صفٌّ يقول عن نفسه لا شيء.
+///
+/// ولهذا الخريطةُ مقفولةٌ بحارسٍ يقارنها بمفردات القيد نفسِها: أيُّ حالةٍ
+/// تُضاف للقاعدة ولا تُسمَّى هنا تُسقط الاختبار بدل أن تظهر فراغاً.
+enum BookingStatusTone { neutral, info, success, warning, danger }
+
+class BookingStatusView {
+  const BookingStatusView(this.label, this.tone);
+  final String label;
+  final BookingStatusTone tone;
+}
+
+/// مفرداتُ الحالة كما يقبلها قيدُ `Bookings.status` — **بالترتيب نفسِه**.
+const bookingStatusCodes = <String>[
+  'pending',
+  'confirmed',
+  'seated',
+  'in_service',
+  'completed',
+  'cancelled',
+  'no_show',
+];
+
+const _bookingStatusViews = <String, BookingStatusView>{
+  'pending': BookingStatusView('بانتظار التأكيد', BookingStatusTone.warning),
+  'confirmed': BookingStatusView('مؤكد', BookingStatusTone.info),
+  'seated': BookingStatusView('تم الحضور', BookingStatusTone.info),
+  'in_service': BookingStatusView('قيد الخدمة', BookingStatusTone.success),
+  'completed': BookingStatusView('مكتمل', BookingStatusTone.success),
+  'cancelled': BookingStatusView('ملغي', BookingStatusTone.danger),
+  'no_show': BookingStatusView('لم يحضر', BookingStatusTone.danger),
+};
+
+/// عرضُ الحالة — وحالةٌ غيرُ معروفةٍ تُسمّى بنصّها لا تُبتلع.
+BookingStatusView bookingStatusView(String status) =>
+    _bookingStatusViews[status] ??
+    BookingStatusView(status, BookingStatusTone.neutral);
+
+/// الفعلُ التالي المعروضُ على الصفّ — أو `null` حين لا فعلَ منطقيّ.
+///
+/// السلسلةُ: بانتظار ⇒ «تأكيد» · مؤكَّدٌ ⇒ «تسجيل حضور» · حاضرٌ ⇒ «بدء
+/// الخدمة» · قيد الخدمة ⇒ «إنهاء» · مكتملٌ ⇒ «تفويتر» (ما لم يُفوتَر).
+/// والملغى والمتخلّفُ بلا فعل.
+({String label, String next})? bookingNextAction({
+  required String status,
+  required bool isInvoiced,
+}) {
+  switch (status) {
+    case 'pending':
+      return (label: 'تأكيد', next: 'confirmed');
+    case 'confirmed':
+      return (label: 'تسجيل حضور', next: 'seated');
+    case 'seated':
+      return (label: 'بدء الخدمة', next: 'in_service');
+    case 'in_service':
+      return (label: 'إنهاء', next: 'completed');
+    case 'completed':
+      // التفويترُ ليس تبديلَ حالةٍ — يفتح مسارَ نقطة البيع. و`next` فارغةٌ
+      // تميّزه، فلا يُنادى `setStatus` بقيمةٍ لا يقبلها القيد.
+      return isInvoiced ? null : (label: 'تفويتر', next: '');
+    default:
+      return null;
+  }
+}
+
 /// الحرفان الأوّلان من أوّل كلمتين — «محمد علي» ⇒ «م.ع».
 ///
 /// يُشتقّ ولا يُخزَّن: عمودٌ ثالثٌ للأحرف يتباعد عن الاسم عند إعادة التسمية.
