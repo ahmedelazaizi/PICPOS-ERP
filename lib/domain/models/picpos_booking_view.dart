@@ -290,6 +290,86 @@ BookingStatusView bookingStatusView(String status) =>
   }
 }
 
+/// صفُّ عميلٍ في وجهة «العملاء» — مُجمَّعٌ من تاريخ حجوزاته.
+class BookingCustomerRow {
+  const BookingCustomerRow({
+    required this.name,
+    required this.visits,
+    required this.spend,
+    this.phone,
+    this.partyId,
+    this.favouriteService,
+    this.lastVisit,
+  });
+
+  final String name;
+  final String? phone;
+  final int? partyId;
+
+  /// عددُ الزياراتِ **المنعقدة** — الملغى والمتخلّفُ ليسا زيارة.
+  final int visits;
+
+  /// إجماليُّ الإنفاق — من أسعار الخدمات المحجوزة.
+  final double spend;
+
+  final String? favouriteService;
+  final DateTime? lastVisit;
+
+  BookingCustomerTier get tier => bookingTierFor(spend);
+}
+
+/// صفُّ تذكيرٍ في وجهة «التذكيرات» — موصولٌ بحجزه وخدمته.
+class BookingReminderRow {
+  const BookingReminderRow({
+    required this.id,
+    required this.bookingId,
+    required this.customerName,
+    required this.serviceName,
+    required this.bookingStartsAt,
+    required this.scheduledAt,
+    required this.channel,
+    required this.state,
+    required this.offsetMinutes,
+    this.customerPhone,
+  });
+
+  final int id;
+  final int bookingId;
+  final String customerName;
+  final String? customerPhone;
+  final String serviceName;
+  final DateTime bookingStartsAt;
+  final DateTime scheduledAt;
+
+  /// `whatsapp` · `sms`.
+  final String channel;
+
+  /// `scheduled` · `opened` · `dismissed` — **ولا `sent`**.
+  final String state;
+
+  final int offsetMinutes;
+
+  /// هل حان وقتُه؟ — مجدولٌ ومرّ موعدُ جدولته.
+  bool isDue(DateTime now) =>
+      state == 'scheduled' && !scheduledAt.isAfter(now);
+}
+
+/// تسميةُ حالة التذكير.
+///
+/// ⚠️ **«فُتِح» لا «أُرسل»** — قرارُ المالك 2026-08-22: الإرسالُ عبر رابط
+/// `wa.me` يفتح واتساب بالنصّ جاهزاً والموظَّفُ يضغط «إرسال». فالتطبيقُ لا
+/// يعلم أنّ الرسالةَ وصلت ولا أنّها أُرسلت أصلاً؛ يعلم أنّ أحداً فتح الرابط.
+/// والتصميمُ يكتب `sent` — والتسميةُ هنا تتبع الصدقَ لا التصميم.
+String bookingReminderStateLabel(String state) => switch (state) {
+      'opened' => 'فُتِح الرابط',
+      'dismissed' => 'أُلغي',
+      _ => 'بانتظار الإرسال',
+    };
+
+/// قناةُ التذكير بالعربيّة.
+String bookingReminderChannelLabel(String channel) =>
+    channel == 'sms' ? 'رسالة نصّيّة' : 'واتساب';
+
 /// وجهاتُ شاشة الحجوزات الثمانِ — كما في التصميم.
 enum BookingsDestination {
   board('لوحة اليوم'),

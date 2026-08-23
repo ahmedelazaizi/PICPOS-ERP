@@ -159,6 +159,28 @@ final bookingsBoardProvider =
   );
 });
 
+/// عملاءُ الحجوزات مُجمَّعين — بنفس نطاق فرعِ اللوحة.
+final bookingCustomersProvider =
+    StreamProvider.autoDispose<List<BookingCustomerRow>>((ref) async* {
+  final db = ref.watch(databaseProvider);
+  final scope = await ref.watch(branchScopeProvider.future);
+  yield* db.watchBookingCustomers(
+    allowedBranchIds:
+        scope.hasFullAccess ? null : scope.allowedBranchIds!.toList(),
+  );
+});
+
+/// تذكيراتُ الحجوزات — بنفس نطاق فرعِ اللوحة.
+final bookingRemindersProvider =
+    StreamProvider.autoDispose<List<BookingReminderRow>>((ref) async* {
+  final db = ref.watch(databaseProvider);
+  final scope = await ref.watch(branchScopeProvider.future);
+  yield* db.watchBookingReminders(
+    allowedBranchIds:
+        scope.hasFullAccess ? null : scope.allowedBranchIds!.toList(),
+  );
+});
+
 /// الوجهةُ المعروضةُ من وجهات الحجوزات الثمانِ.
 ///
 /// ⚠️ `Notifier` لا `StateProvider`: الأخيرةُ ليست ضمن Riverpod 3 المستعملةِ

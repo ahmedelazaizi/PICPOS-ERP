@@ -193,6 +193,108 @@ extension BookingsDao on AppDatabase {
     });
   }
 
+  /// عملاءُ الحجوزات مُجمَّعين — زياراتٌ وإنفاقٌ وآخرُ زيارةٍ وخدمةٌ مفضَّلة.
+  ///
+  /// ═══ التجميعُ على الهاتف لا على الاسم ═══
+  ///
+  /// الاسمُ يُكتب مرّتين بهجاءٍ مختلفٍ («أحمد محمد» و«احمد محمد») فينقسم
+  /// العميلُ الواحدُ صفَّين، ورقمُ الهاتف هو ما يكتبه الموظَّفُ ثابتاً.
+  /// ومن لا هاتفَ له يُجمَّع على اسمه — أهونُ من إسقاطه.
+  ///
+  /// ⚠️ **والملغى والمتخلّفُ ليسا زيارة**: عدُّهما يضخّم ولاءَ العميل ويرفعه
+  /// فئةً لم يبلغها، وهي نفسُ قاعدةِ `occupiesTime` في اللوحة.
+  Stream<List<BookingCustomerRow>> watchBookingCustomers({
+    List<int>? allowedBranchIds,
+  }) {
+    final query = select(bookings).join([
+      innerJoin(
+        bookingServices,
+        bookingServices.id.equalsExp(bookings.serviceId),
+      ),
+    ])
+      ..where(bookings.status.isNotIn(const ['cancelled', 'no_show']));
+
+    if (allowedBranchIds != null) {
+      if (allowedBranchIds.isEmpty) {
+        query.where(bookings.branchId.isIn(const <int>[]));
+      } else {
+        query.where(
+          bookings.branchId.isIn(allowedBranchIds) |
+              bookings.branchId.isNull(),
+        );
+      }
+    }
+
+    return query.watch().map((rows) {
+      final byKey = <String, _CustomerAgg>{};
+      for (final row in rows) {
+        final b = row.readTable(bookings);
+        final s = row.readTable(bookingServices);
+        final key = (b.customerPhone?.trim().isNotEmpty ?? false)
+            ? 'p:${b.customerPhone!.trim()}'
+            : 'n:${b.customerName.trim()}';
+        final agg = byKey.putIfAbsent(
+          key,
+          () => _CustomerAgg(b.customerName, b.customerPhone, b.partyId),
+        );
+        agg.add(s.name, s.price, b.startsAt);
+      }
+
+      final out = byKey.values.map((a) => a.toRow()).toList()
+        // الأكثرُ إنفاقاً أوّلاً — وهو ترتيبُ التصميم.
+        ..sort((x, y) => y.spend.compareTo(x.spend));
+      return out;
+    });
+  }
+
+  /// تذكيراتُ الحجوزات — مع اسمِ العميل وموعدِه.
+  ///
+  /// ⚠️ الحالاتُ `scheduled` · `opened` · `dismissed` — **لا `sent`**. رابطُ
+  /// `wa.me` يفتح واتساب برسالةٍ مُعبّأةٍ ولا يُثبت إرسالاً، فتسميةُ
+  /// «أُرسلت» ادّعاءٌ لا يملكه التطبيق.
+  Stream<List<BookingReminderRow>> watchBookingReminders({
+    List<int>? allowedBranchIds,
+  }) {
+    final query = select(bookingReminders).join([
+      innerJoin(bookings, bookings.id.equalsExp(bookingReminders.bookingId)),
+      innerJoin(
+        bookingServices,
+        bookingServices.id.equalsExp(bookings.serviceId),
+      ),
+    ])
+      ..where(bookingReminders.deletedAt.isNull())
+      ..orderBy([OrderingTerm.asc(bookingReminders.scheduledAt)]);
+
+    if (allowedBranchIds != null) {
+      if (allowedBranchIds.isEmpty) {
+        query.where(bookings.branchId.isIn(const <int>[]));
+      } else {
+        query.where(
+          bookings.branchId.isIn(allowedBranchIds) |
+              bookings.branchId.isNull(),
+        );
+      }
+    }
+
+    return query.watch().map((rows) => rows.map((row) {
+          final rem = row.readTable(bookingReminders);
+          final b = row.readTable(bookings);
+          final s = row.readTable(bookingServices);
+          return BookingReminderRow(
+            id: rem.id,
+            bookingId: b.id,
+            customerName: b.customerName,
+            customerPhone: b.customerPhone,
+            serviceName: s.name,
+            bookingStartsAt: b.startsAt,
+            scheduledAt: rem.scheduledAt,
+            channel: rem.channel,
+            state: rem.state,
+            offsetMinutes: rem.offsetMinutes,
+          );
+        }).toList());
+  }
+
   /// ينشئ حجزاً بعد إنفاذ القاعدتين داخل معاملةٍ واحدة.
   ///
   /// SQLite لا يملك قيدَ استبعاد (`EXCLUDE`) كما PostgreSQL، فالإنفاذُ هنا
@@ -554,4 +656,50 @@ extension BookingsDao on AppDatabase {
       );
     });
   }
+}
+
+/// مُجمِّعُ عميلٍ أثناء المسح — داخليٌّ لا يُصدَّر.
+class _CustomerAgg {
+  _CustomerAgg(this.name, this.phone, this.partyId);
+
+  final String name;
+  final String? phone;
+  final int? partyId;
+
+  int visits = 0;
+  double spend = 0;
+  DateTime? last;
+
+  /// عددُ مرّاتِ كلِّ خدمة — لاشتقاق «المفضَّلة».
+  final Map<String, int> _services = {};
+
+  void add(String serviceName, double price, DateTime at) {
+    visits++;
+    spend += price;
+    if (last == null || at.isAfter(last!)) last = at;
+    _services[serviceName] = (_services[serviceName] ?? 0) + 1;
+  }
+
+  /// الأكثرُ تكراراً — وعند التعادل يفوز الأسبقُ إدراجاً (ثابتٌ لا عشوائيّ).
+  String? get favourite {
+    String? best;
+    var bestCount = 0;
+    for (final e in _services.entries) {
+      if (e.value > bestCount) {
+        best = e.key;
+        bestCount = e.value;
+      }
+    }
+    return best;
+  }
+
+  BookingCustomerRow toRow() => BookingCustomerRow(
+        name: name,
+        phone: phone,
+        partyId: partyId,
+        visits: visits,
+        spend: spend,
+        favouriteService: favourite,
+        lastVisit: last,
+      );
 }

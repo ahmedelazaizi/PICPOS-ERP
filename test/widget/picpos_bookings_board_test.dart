@@ -17,6 +17,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/data/providers/providers.dart';
 import 'package:ural_erp/domain/models/picpos_booking_view.dart';
 import 'package:ural_erp/presentation/bookings_picpos/screens/bookings_picpos_screen.dart';
+import 'package:ural_erp/presentation/bookings_picpos/widgets/bookings_settings_view.dart';
 
 void main() {
   final day = DateTime(2026, 9, 1);
@@ -71,6 +72,30 @@ void main() {
               .overrideWith((ref) => Stream.value([_resource()])),
           bookingServicesProvider
               .overrideWith((ref) => Stream.value([_service()])),
+          bookingCustomersProvider.overrideWith((ref) => Stream.value([
+                const BookingCustomerRow(
+                  name: 'سارة محمود',
+                  phone: '0798765432',
+                  visits: 26,
+                  spend: 18450,
+                  favouriteService: 'صبغة شعر',
+                ),
+              ])),
+          bookingRemindersProvider.overrideWith((ref) => Stream.value([
+                BookingReminderRow(
+                  id: 1,
+                  bookingId: 1,
+                  customerName: 'خالد يوسف',
+                  customerPhone: '0791112233',
+                  serviceName: 'جلسة ليزر',
+                  bookingStartsAt: day.add(const Duration(hours: 17)),
+                  scheduledAt: day.add(const Duration(hours: 16)),
+                  channel: 'whatsapp',
+                  state: 'scheduled',
+                  offsetMinutes: 60,
+                ),
+              ])),
+          bookingReminderOffsetProvider.overrideWith((ref) async => 60),
         ],
         child: const MaterialApp(home: BookingsPicPosScreen()),
       ),
@@ -163,11 +188,27 @@ void main() {
     testWidgets('كلُّ وجهةٍ تُفتَح بلا استثناءِ تخطيط', (tester) async {
       await pump(tester, [row(), row(id: 2, hour: 11, resource: null)]);
 
+      // ⚠️ ولا يكفي «لم تنهر»: وجهةٌ تُفتَح فارغةً تمرّ بذلك الشرط وحدَه.
+      // فلكلِّ وجهةٍ نصٌّ **من محتواها هي** يُقاس حضورُه.
+      const marker = <BookingsDestination, String>{
+        BookingsDestination.board: 'الإجراءات',
+        BookingsDestination.waitlist: 'الخدمة المطلوبة',
+        BookingsDestination.resources: 'حجوزات اليوم',
+        BookingsDestination.services: 'المدة',
+        BookingsDestination.customers: 'الخدمة المفضلة',
+        BookingsDestination.reminders: 'موعد الحجز',
+        BookingsDestination.reports: 'الخدماتُ الأعلى إيراداً',
+        BookingsDestination.settings: 'مهلة التذكير الافتراضية',
+      };
+
       for (final d in BookingsDestination.values) {
         await tester.tap(find.text(d.label));
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull,
             reason: 'وجهةُ «${d.label}» تنهار عند فتحها');
+        expect(find.text(marker[d]!), findsWidgets,
+            reason: 'وجهةُ «${d.label}» فُتحت بلا محتواها — و«لم تنهر» وحدَها '
+                'تمرّ على وجهةٍ فارغة');
       }
     });
 

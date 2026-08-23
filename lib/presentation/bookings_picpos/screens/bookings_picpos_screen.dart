@@ -27,7 +27,9 @@ import '../../picpos_shell/picpos_kpi_row.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../widgets/bookings_board_table.dart';
 import '../widgets/bookings_day_bar.dart';
+import '../widgets/bookings_data_views.dart';
 import '../widgets/bookings_destination_tabs.dart';
+import '../widgets/bookings_settings_view.dart';
 import '../widgets/bookings_simple_views.dart';
 
 class BookingsPicPosScreen extends ConsumerWidget {
@@ -98,6 +100,7 @@ class BookingsPicPosScreen extends ConsumerWidget {
                         destination,
                         _filter(list, query),
                         day,
+                        query: query,
                       ),
                     ),
                   ),
@@ -129,8 +132,9 @@ class BookingsPicPosScreen extends ConsumerWidget {
     BuildContext context,
     BookingsDestination destination,
     List<BookingBoardRow> rows,
-    DateTime day,
-  ) {
+    DateTime day, {
+    String query = '',
+  }) {
     switch (destination) {
       case BookingsDestination.board:
         return rows.isEmpty
@@ -147,14 +151,13 @@ class BookingsPicPosScreen extends ConsumerWidget {
       case BookingsDestination.services:
         return BookingsServicesView(rows: rows);
       case BookingsDestination.customers:
+        return BookingsCustomersView(query: query);
       case BookingsDestination.reminders:
+        return const BookingsRemindersView();
       case BookingsDestination.reports:
+        return BookingsReportsView(rows: rows, day: day);
       case BookingsDestination.settings:
-        return PicPosEmptyState(
-          icon: PhosphorIconsBold.hammer,
-          title: '«${destination.label}» تحت الإنشاء',
-          hint: 'تأتي في المرحلة التالية من هذه الشاشة.',
-        );
+        return const BookingsSettingsView();
     }
   }
 
