@@ -116,6 +116,80 @@ extension BookingsDao on AppDatabase {
     return query.get();
   }
 
+  /// لوحةُ الحجوزات **حيّةً** — كلُّ حجزٍ موصولٌ بخدمته ومورده.
+  ///
+  /// ═══ لماذا `watch` لا `get` ═══
+  ///
+  /// اللوحةُ تعرض «الآن»: حجزٌ يُنشأ من جهازٍ آخرَ أو حالةٌ تتبدّل من نافذةٍ
+  /// أخرى يجب أن تظهر بلا أن يُحدِّث أحدٌ بيده. وهو نفسُ الدرسِ المقيسِ في
+  /// قائمة الفواتير (2026-08-23) حيث كان التحديثُ يقع بيدِ المستخدم وحدَه.
+  ///
+  /// ═══ والوصلُ يساريٌّ عن قصد ═══
+  ///
+  /// حجزٌ بلا موردٍ مسموحٌ (لا أحدَ يتعارض عليه)، ووصلٌ داخليٌّ كان
+  /// **يُسقطه من اللوحة صامتاً** — فيختفي موعدٌ قائمٌ لأنّ أحداً لم يُسنِده
+  /// لموظَّف. والخدمةُ مطلوبةٌ بالمخطّط فوصلُها داخليٌّ بلا خطر.
+  ///
+  /// ونطاقُ الفرع بنفس عقد [getBookingsInRange] الثلاثيّ: معدومٌ = وصولٌ
+  /// كامل · فارغٌ = يفشل مغلقاً · `{ids}` = تلك الفروعُ أو الفرعُ المعدوم.
+  Stream<List<BookingBoardRow>> watchBookingsBoard(
+    DateTime from,
+    DateTime to, {
+    List<int>? allowedBranchIds,
+  }) {
+    final query = select(bookings).join([
+      innerJoin(
+        bookingServices,
+        bookingServices.id.equalsExp(bookings.serviceId),
+      ),
+      leftOuterJoin(
+        bookingResources,
+        bookingResources.id.equalsExp(bookings.resourceId),
+      ),
+    ])
+      ..where(bookings.startsAt.isBiggerOrEqualValue(from))
+      ..where(bookings.startsAt.isSmallerThanValue(to))
+      ..orderBy([OrderingTerm.asc(bookings.startsAt)]);
+
+    if (allowedBranchIds != null) {
+      if (allowedBranchIds.isEmpty) {
+        query.where(bookings.branchId.isIn(const <int>[]));
+      } else {
+        query.where(
+          bookings.branchId.isIn(allowedBranchIds) |
+              bookings.branchId.isNull(),
+        );
+      }
+    }
+
+    return query.watch().map((rows) {
+      return rows.map((row) {
+        final b = row.readTable(bookings);
+        final s = row.readTable(bookingServices);
+        final r = row.readTableOrNull(bookingResources);
+        return BookingBoardRow(
+          id: b.id,
+          startsAt: b.startsAt,
+          endsAt: b.endsAt,
+          customerName: b.customerName,
+          customerPhone: b.customerPhone,
+          partyId: b.partyId,
+          invoiceId: b.invoiceId,
+          status: b.status,
+          depositAmount: b.depositAmount,
+          depositStatus: b.depositStatus,
+          serviceName: s.name,
+          serviceColorHex: s.colorHex,
+          servicePrice: s.price,
+          resourceName: r?.name,
+          resourceRole: r?.role,
+          resourceKind: r?.kind,
+          resourceColorHex: r?.colorHex,
+        );
+      }).toList();
+    });
+  }
+
   /// ينشئ حجزاً بعد إنفاذ القاعدتين داخل معاملةٍ واحدة.
   ///
   /// SQLite لا يملك قيدَ استبعاد (`EXCLUDE`) كما PostgreSQL، فالإنفاذُ هنا

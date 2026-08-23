@@ -10,6 +10,10 @@ import '../database/supabase_database.dart';
 import '../../services/accounting_service.dart';
 import '../../services/accounting_validator.dart';
 import '../../services/booking_actions_service.dart';
+import 'branch_scope_provider.dart';
+// ‏`OrderingTerm` و`&` على تعبيرات drift — الحزمةُ ليست ضمن barrel القاعدة.
+import 'package:drift/drift.dart' show OrderingTerm, BooleanExpressionOperators;
+import '../../domain/models/picpos_booking_view.dart';
 import '../../services/journal_entry_factory.dart';
 import '../../services/cost_center_resolver.dart';
 import '../../services/kitchen_service.dart';
@@ -113,6 +117,65 @@ final themeServiceProvider = Provider<ThemeService>((ref) => ThemeService());
 /// في أوّل ملفٍّ يجمعهما. وهذا الملفُّ **هو** ذلك الملفّ.
 final bookingActionsServiceProvider = Provider<BookingActionsService>((ref) {
   return BookingActionsService(db: ref.watch(databaseProvider));
+});
+
+/// اليومُ المعروضُ على لوحة الحجوزات — منتصفُ ليلِه.
+///
+/// يُطبَّع إلى منتصف الليل عند الضبط: قيمةٌ تحمل ساعةً تجعل «اليوم» نافذةً
+/// متحرّكةً بـ٢٤ ساعةً من لحظة الفتح، فيظهر حجزُ الغدِ الباكرِ في يومِ أمس.
+class BookingBoardDayNotifier extends Notifier<DateTime> {
+  @override
+  DateTime build() => _midnight(DateTime.now());
+
+  static DateTime _midnight(DateTime d) => DateTime(d.year, d.month, d.day);
+
+  void set(DateTime day) => state = _midnight(day);
+  void shift(int days) => state = state.add(Duration(days: days));
+  void today() => state = _midnight(DateTime.now());
+}
+
+final bookingBoardDayProvider =
+    NotifierProvider<BookingBoardDayNotifier, DateTime>(
+        BookingBoardDayNotifier.new);
+
+/// حجوزاتُ اليوم المعروض — **حيّةً** وبنطاق فرع المستخدم.
+///
+/// ⚠️ والنطاقُ يُقرأ من `branchScopeProvider` لا يُفترَض: مستخدمٌ بلا إسنادٍ
+/// نطاقُه فارغٌ ويجب أن **يفشل مغلقاً** هنا كما في القوائم الأخرى — وإلّا
+/// رأى مَن لا فرعَ له كلَّ حجزٍ بفرعٍ معدوم، وفي تنصيبةٍ بفرعٍ واحدٍ ذلك
+/// كلُّ الحجوزات.
+final bookingsBoardProvider =
+    StreamProvider.autoDispose<List<BookingBoardRow>>((ref) async* {
+  final db = ref.watch(databaseProvider);
+  final day = ref.watch(bookingBoardDayProvider);
+  final scope = await ref.watch(branchScopeProvider.future);
+
+  yield* db.watchBookingsBoard(
+    day,
+    day.add(const Duration(days: 1)),
+    allowedBranchIds: scope.hasFullAccess
+        ? null
+        : scope.allowedBranchIds!.toList(),
+  );
+});
+
+/// الموارد (موظَّفون وأجهزة) — للوحة وللمنتقيات.
+final bookingResourcesProvider =
+    StreamProvider<List<BookingResource>>((ref) {
+  final db = ref.watch(databaseProvider);
+  return (db.select(db.bookingResources)
+        ..where((r) => r.deletedAt.isNull())
+        ..orderBy([(r) => OrderingTerm.asc(r.sortOrder)]))
+      .watch();
+});
+
+/// الخدماتُ المعروضة — النشِطةُ وحدَها.
+final bookingServicesProvider = StreamProvider<List<BookingService>>((ref) {
+  final db = ref.watch(databaseProvider);
+  return (db.select(db.bookingServices)
+        ..where((s) => s.deletedAt.isNull() & s.isActive.equals(true))
+        ..orderBy([(s) => OrderingTerm.asc(s.sortOrder)]))
+      .watch();
 });
 
 /// Accounting Service provider

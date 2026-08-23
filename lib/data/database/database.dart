@@ -68,6 +68,7 @@ import '../../domain/models/safe_running_balance.dart';
 import '../../domain/models/table_order_totals.dart';
 import '../../domain/models/tables_report_row.dart';
 import '../../domain/models/booking_overlap.dart';
+import '../../domain/models/picpos_booking_view.dart';
 import '../../domain/models/shift_drawer_resolver.dart';
 export '../../services/permission_enforcer.dart' show PermissionDeniedException;
 

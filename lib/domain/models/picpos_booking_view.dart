@@ -144,3 +144,81 @@ String? whatsappReminderLink({
   if (digits.isEmpty) return null;
   return 'https://wa.me/$digits?text=${Uri.encodeComponent(message)}';
 }
+
+/// صفُّ لوحةِ الحجوزات — حجزٌ **موصولٌ** بخدمته ومورده، جاهزٌ للعرض.
+///
+/// ═══ لماذا نموذجٌ هنا لا صفُّ drift ═══
+///
+/// حارسُ `presentation_db_import_guard` يمنع أيَّ ملفِّ عرضٍ **جديد** من
+/// استيراد `data/database`، والقائمةُ البيضاء مقفولة. فلو مُرِّر `Booking`
+/// كما هو لَاحتاجت الشاشةُ استيراداً محظوراً. والوصلُ يقع في طبقة البيانات
+/// مرّةً واحدةً بدل استعلامٍ لكلّ صفّ.
+class BookingBoardRow {
+  const BookingBoardRow({
+    required this.id,
+    required this.startsAt,
+    required this.endsAt,
+    required this.customerName,
+    required this.status,
+    required this.depositAmount,
+    required this.depositStatus,
+    this.customerPhone,
+    this.partyId,
+    this.invoiceId,
+    this.serviceName = '',
+    this.serviceColorHex = '#0250D3',
+    this.servicePrice = 0,
+    this.resourceName,
+    this.resourceRole,
+    this.resourceKind,
+    this.resourceColorHex,
+  });
+
+  final int id;
+  final DateTime startsAt;
+  final DateTime endsAt;
+  final String customerName;
+  final String? customerPhone;
+  final int? partyId;
+  final int? invoiceId;
+
+  /// إحدى: `pending` · `confirmed` · `seated` · `in_service` · `completed`
+  /// · `cancelled` · `no_show`.
+  final String status;
+
+  final double depositAmount;
+  final String depositStatus;
+
+  final String serviceName;
+  final String serviceColorHex;
+  final double servicePrice;
+
+  /// معدومٌ حين لا مورد — حجزٌ بلا موظَّفٍ مسموحٌ (لا أحدَ يتعارض عليه).
+  final String? resourceName;
+  final String? resourceRole;
+  final String? resourceKind;
+  final String? resourceColorHex;
+
+  /// هل فُوتِر هذا الحجز؟ — `invoiceId` وحدَه هو الجواب.
+  bool get isInvoiced => invoiceId != null;
+
+  /// هل يشغل هذا الحجزُ وقتاً فعليّاً؟ الملغى والمتخلّف لا يشغلان — وهو
+  /// نفسُ استثناءِ استعلامِ التداخل، فلا يفترق المعروضُ عن المحسوب.
+  bool get occupiesTime => status != 'cancelled' && status != 'no_show';
+
+  /// دقائقُ البداية من منتصف الليل — لتموضع الشريط على التقويم.
+  int get startMinuteOfDay => minuteOfDayFor(startsAt);
+
+  int get durationMinutes => endsAt.difference(startsAt).inMinutes;
+}
+
+/// الحرفان الأوّلان من أوّل كلمتين — «محمد علي» ⇒ «م.ع».
+///
+/// يُشتقّ ولا يُخزَّن: عمودٌ ثالثٌ للأحرف يتباعد عن الاسم عند إعادة التسمية.
+String initialsFor(String name) {
+  final parts =
+      name.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+  if (parts.isEmpty) return '';
+  if (parts.length == 1) return parts.first.substring(0, 1);
+  return '${parts[0].substring(0, 1)}.${parts[1].substring(0, 1)}';
+}
