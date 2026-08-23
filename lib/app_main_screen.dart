@@ -17,6 +17,7 @@ import 'core/config/brand.dart';
 import 'presentation/pos/screens/pos_main_screen.dart';
 import 'presentation/pos_picpos/screens/picpos_pos_screen.dart';
 import 'presentation/offers_picpos/offers_picpos_screen.dart';
+import 'presentation/accounting_picpos/accounting_hub_picpos_screen.dart';
 import 'presentation/accounting_picpos/chart_of_accounts_picpos_screen.dart';
 import 'presentation/accounting_picpos/financial_statements_picpos_screen.dart';
 import 'presentation/screens/reports/financial_statements_screen.dart';
@@ -975,6 +976,12 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
             : const FinancialStatementsScreen(),
         label: 'القوائم المالية',
         icon: PhosphorIconsBold.scales,
+      ),
+      ScreenConfig(
+        appScreen: AppScreen.accountingHub,
+        builder: (_) => const AccountingHubPicPosScreen(),
+        label: 'الحسابات',
+        icon: PhosphorIconsBold.bookOpen,
       ),
       ScreenConfig(
         appScreen: AppScreen.syncConflicts,

@@ -63,7 +63,10 @@ enum AppScreen {
   bookings(61),
 
   /// القوائمُ المالية — يجب أن تطابق `ScreenId.financialStatements`.
-  financialStatements(62);
+  financialStatements(62),
+
+  /// حاويةُ «الحسابات» بتبويباتها — يجب أن تطابق `ScreenId.accountingHub`.
+  accountingHub(63);
 
   /// The integer index for this screen, used in permission maps and storage.
   final int value;

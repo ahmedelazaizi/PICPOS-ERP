@@ -11,6 +11,7 @@ import 'package:ural_erp/core/enums/app_screen.dart';
 import 'package:ural_erp/core/navigation/screen_id.dart';
 import 'package:ural_erp/core/navigation/screen_registry.dart';
 import 'package:ural_erp/data/providers/auth_providers.dart';
+import 'package:ural_erp/presentation/accounting_picpos/accounting_hub_picpos_screen.dart';
 
 void main() {
   group('القوائمُ المالية موصولةٌ في المواضع الستّة', () {
@@ -45,7 +46,7 @@ void main() {
       expect(ScreenRegistry.unified, contains(ScreenId.generalLedger));
     });
 
-    test('٦) ولها مدخلٌ في القائمة الجانبيّة بنفس كود الصلاحية', () {
+    test('٦) وتعريفُ مدخلِها باقٍ بنفس كود الصلاحية', () {
       final item = kAllNavItemDefs
           .where((n) => n.index == ScreenId.financialStatements.navigationIndex)
           .toList();
@@ -56,6 +57,18 @@ void main() {
           reason: 'مدخلٌ بكودٍ يخالف الشاشةَ = رابطٌ ميتٌ أو ثغرةٌ مفتوحة');
       expect(item.single.group, 'accounting',
           reason: 'قرارُ المالك 2026-08-23: مكانُها مجموعةُ الحسابات');
+    });
+
+    test('٧) وفي PicPos المدخلُ **مطويٌّ** — يُبلَغ من تبويبِ الحاوية', () {
+      // ⚠️ التعريفُ باقٍ (‏الاختبارُ السادسُ) لأنّ `kAllNavItemDefs` ملاحةٌ
+      //    مشتركةٌ مع UralCash — والطيُّ يقع في `userNavItemsProvider`
+      //    مسيَّجاً بالعلامة. فحارسٌ يقيس التعريفَ وحدَه يقول «موصولة» عن
+      //    مدخلٍ لا يظهر لمستخدمِ PicPos أبداً.
+      expect(kPicPosFoldedIntoAccountingHub,
+          contains(ScreenId.financialStatements.navigationIndex));
+      expect(AccountingTab.tb.screenId, ScreenId.financialStatements,
+          reason: 'تبويبُ «ميزان المراجعة» يحمل القوائمَ المالية كاملةً — '
+              'قرارُ المالك: لا يُشطَر الملفُّ ولا تُنقَل قائمةُ الدخل');
     });
   });
 

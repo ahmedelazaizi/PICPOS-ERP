@@ -16,8 +16,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/core/config/app_config.dart';
 import 'package:ural_erp/core/config/brand.dart';
+import 'package:ural_erp/core/navigation/screen_id.dart';
 import 'package:ural_erp/core/theme/app_theme.dart';
 import 'package:ural_erp/data/database/connection_io.dart';
+import 'package:ural_erp/data/providers/auth_providers.dart';
 
 void main() {
   group('Brand — العلامة الافتراضية', () {
@@ -144,6 +146,24 @@ void main() {
 
     test('كل الأسماء فريدة — منتجان ما بيشاركوش ملف', () {
       expect(expected.values.toSet(), hasLength(expected.length));
+    });
+  });
+
+  group('طيُّ «الحسابات» لا يمسّ UralCash', () {
+    // ⚠️ `kAllNavItemDefs` ملاحةٌ **مشتركة**. الطيُّ سيّجَ نفسَه
+    // بـ`Brand.isPicPos`، وهذا الاختبارُ يمسك رفعَ السياج: بغيرِه تختفي
+    // ستّةُ مداخلَ محاسبيّةٍ عن UralCash بلا حاويةٍ تفتحها.
+    test('مداخلُها المحاسبيّةُ الستّةُ باقيةٌ ظاهرة', () {
+      for (final folded in kPicPosFoldedIntoAccountingHub) {
+        expect(navItemVisibleForBrand(folded), isTrue,
+            reason: 'المدخلُ $folded اختفى عن UralCash — سياجُ العلامة مرفوع');
+      }
+    });
+
+    test('وحاويةُ PicPos لا تظهر عندها', () {
+      expect(navItemVisibleForBrand(ScreenId.accountingHub.navigationIndex),
+          isFalse,
+          reason: 'حاويةٌ بتبويباتِ PicPos في قائمة UralCash = مدخلٌ مكرَّر');
     });
   });
 }

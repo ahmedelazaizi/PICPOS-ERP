@@ -24,6 +24,7 @@ import 'package:ural_erp/core/navigation/screen_id.dart';
 import 'package:ural_erp/core/theme/app_colors.dart';
 import 'package:ural_erp/core/theme/app_theme.dart';
 import 'package:ural_erp/data/database/connection_io.dart';
+import 'package:ural_erp/data/providers/auth_providers.dart';
 
 void main() {
   // مفيش `skip` على مستوى الملف في flutter_test، فالبوابة على مستوى الجروب.
@@ -166,6 +167,22 @@ void main() {
 
       // ⚠️ وشاشةُ المطبخ تبقى خارجَ التنقّل — مؤكَّدٌ فوق في اختبار نطاق
       // الشاشات. العلَمُ يفتح الإعداداتِ وحوارَ السلّة لا شاشةَ KDS.
+    });
+
+    test('طيُّ «الحسابات» يقع فعلاً — والحاويةُ وحدَها تظهر', () {
+      // ⚠️ هذا هو الموضعُ الوحيدُ الذي يُنفَّذ فيه فرعُ PicPos من
+      // `navItemVisibleForBrand`: البوّابةُ تشتغل على `uralcash`، فطيٌّ
+      // مكسورٌ يمرّ خضراءَ عندها ويظهر للمستخدم وحدَه.
+      expect(navItemVisibleForBrand(ScreenId.accountingHub.navigationIndex),
+          isTrue);
+
+      for (final folded in kPicPosFoldedIntoAccountingHub) {
+        expect(navItemVisibleForBrand(folded), isFalse,
+            reason: 'المدخلُ $folded ما زال يظهر في PicPos — الطيُّ لم يقع');
+      }
+
+      // «الخزينة» مدخلٌ مستقلٌّ في التصميم ولا تُطوى.
+      expect(navItemVisibleForBrand(ScreenId.treasury.navigationIndex), isTrue);
     });
   }, skip: skipReason);
 }

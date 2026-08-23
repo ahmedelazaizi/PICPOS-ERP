@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/config/app_config.dart';
+import '../../core/config/brand.dart';
 import '../../core/config/business_profile_provider.dart';
 import '../../core/navigation/screen_id.dart';
 import '../../core/permissions/permission_codes.dart';
@@ -663,6 +664,9 @@ const kAllNavItemDefs = [
   // ═══════════════════════════════════════════
   NavItemDef(icon: PhosphorIconsBold.wallet, label: 'الخزينة', permission: 'treasury_view', index: 10, section: 'المالية والمحاسبة', group: 'accounting'),
   NavItemDef(icon: PhosphorIconsBold.lockKey, label: 'إغلاق الوردية', permission: PermissionCodes.posShiftClose, index: 56, group: 'accounting'),
+  // حاويةُ «الحسابات» — مدخلٌ واحدٌ يفتح تبويباتِ التصميم السبعة. تظهر في
+  // PicPos وحدَها، وتُطوى تحتها مداخلُ [kPicPosFoldedIntoAccountingHub].
+  NavItemDef(icon: PhosphorIconsBold.bookOpen, label: 'الحسابات', permission: 'settings_view', index: 63, section: 'المالية والمحاسبة', group: 'accounting'),
   NavItemDef(icon: PhosphorIconsBold.treeStructure, label: 'دليل الحسابات', permission: 'settings_view', index: 27, group: 'accounting'),
   NavItemDef(icon: PhosphorIconsBold.notebook, label: 'دفتر اليومية', permission: 'settings_view', index: 32, group: 'accounting'),
   NavItemDef(icon: PhosphorIconsBold.book, label: 'دفتر الأستاذ', permission: 'settings_view', index: 36, group: 'accounting'),
@@ -709,6 +713,41 @@ const kAllNavItemDefs = [
   NavItemDef(icon: PhosphorIconsBold.question, label: 'مركز المساعدة', permission: 'pos_access', index: 40, group: 'system'),
 ];
 
+/// مداخلُ القائمة الجانبيّة التي طُويت داخل حاويةِ «الحسابات» في PicPos —
+/// تبويباتُ التصميم السبعةُ التي كان لكلٍّ منها مدخلٌ مستقلّ. والسابعُ
+/// (‏قوالبُ القيود) لم يكن له مدخلٌ أصلاً، فالمطويُّ **ستّة**.
+///
+/// ⚠️ الطيُّ يمسّ المدخلَ لا المسار: `ScreenId` وصلاحيّتُه و`ScreenConfig`
+/// كلُّها باقية، فالشاشةُ تُبلَغ من تبويبِها ومن أيّ بلوغٍ مباشرٍ قائم.
+///
+/// ⚠️ ومسيَّجٌ بـ[Brand.isPicPos]: `kAllNavItemDefs` ملاحةٌ **مشتركةٌ** مع
+/// UralCash، ورفعُ السياج يُخفي المداخلَ الستّةَ عنها أيضاً — وهي لا حاويةَ
+/// عندها تفتحها.
+const kPicPosFoldedIntoAccountingHub = <int>{
+  27, // دليل الحسابات
+  31, // ربط الحسابات
+  32, // دفتر اليومية  → قيود اليومية
+  33, // مراكز التكلفة
+  36, // دفتر الأستاذ
+  62, // القوائم المالية → ميزان المراجعة
+};
+
+/// هل يظهر مدخلُ القائمة صاحبُ [index] لهذه العلامة؟
+///
+/// دالّةٌ خالصةٌ عن قصد: الفرعُ داخلَها ثابتُ ترجمةٍ (`Brand.isPicPos`)،
+/// والبوّابةُ تشتغل على الافتراضي `uralcash` — فلو بقي الشرطُ مدفوناً في
+/// حلقةِ [userNavItemsProvider] ما نُفِّذ فرعُ PicPos في أيّ اختبار.
+/// وهكذا يقيسه `brand_picpos_test.dart` (‏يشغّله سكربتُ بناء PicPos) ويقيس
+/// نقيضَه `brand_isolation_test.dart`.
+bool navItemVisibleForBrand(int index) {
+  // طيُّ «الحسابات»: في PicPos تختفي المداخلُ الستّةُ لصالح الحاوية، وفي
+  // UralCash تختفي الحاويةُ لصالح المداخل. وكلُّ شاشةٍ مبلوغةٌ في الحالتين.
+  if (Brand.isPicPos) {
+    return !kPicPosFoldedIntoAccountingHub.contains(index);
+  }
+  return index != ScreenId.accountingHub.navigationIndex;
+}
+
 final userNavItemsProvider = FutureProvider<List<NavItemDef>>((ref) async {
   const allNavItems = kAllNavItemDefs;
 
@@ -751,6 +790,8 @@ final userNavItemsProvider = FutureProvider<List<NavItemDef>>((ref) async {
   for (final item in allNavItems) {
     final screenId = ScreenId.fromIndex(item.index);
     if (screenId == null || !allowedScreenIds.contains(screenId)) continue;
+
+    if (!navItemVisibleForBrand(item.index)) continue;
     if (item.index == ScreenId.dashboard.navigationIndex && authState.isCashier && !authState.isAdmin) continue;
 
     // Special handling for E-Invoicing
@@ -851,6 +892,10 @@ const screenPermissionMap = <ScreenId, String>{
   //    فعلاً. واختيارُ كودٍ آخرَ يبدّل **مَن يرى القوائمَ المالية** صامتاً
   //    في الاتّجاهين — والنقلُ إعادةُ تصنيفٍ لا إعادةُ تصريح.
   ScreenId.financialStatements: 'reports_view',
+  // الحاويةُ على 'settings_view' — صلاحيّةُ ستٍّ من تبويباتها السبعة. والسابعُ
+  // (‏ميزانُ المراجعة/القوائمُ المالية) يحرسه 'reports_view' داخلَ الحاوية،
+  // فلا يوسّع دخولُها دائرةَ مَن يرى القوائمَ المالية.
+  ScreenId.accountingHub: 'settings_view',
   ScreenId.shiftClose: PermissionCodes.posShiftClose,
 };
 
