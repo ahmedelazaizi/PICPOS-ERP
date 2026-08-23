@@ -101,7 +101,23 @@ class PicPosTopBar extends ConsumerWidget {
           _HeldOrdersButton(count: heldCount, onPressed: onHeldOrders),
           if (onBookings != null) ...[
             const SizedBox(width: 8),
-            _BookingsButton(onPressed: onBookings!),
+            // ⚠️ **الصلاحيةُ شرطٌ ثانٍ فوق نطاق الملفّ**: النطاقُ يقول «هذه
+            // التنصيبةُ تحجز» والصلاحيةُ تقول «وهذا المستخدمُ يحجز». وبلا
+            // هذه كان كلُّ كاشيرٍ في مطعمٍ يفتح الحجوزات.
+            //
+            // وأمسكه `picpos_permission_parity_test` فورَ وصول السطح: كان
+            // `pos_booking` مسجَّلاً «بلا ميزةٍ تُحرَس»، فلمّا وصلت الميزةُ
+            // بلا حراسةٍ احمرَّ الحارسُ المعاكس. نفسُ ما وقع لـ`pos_exchange`.
+            //
+            // ⚠️ **وبلا `allowManagerOverride` عن قصد**: هو يبحث في الشجرة
+            // عن `onTap` ويتعرّف على عناصر Flutter القياسيّة وحدَها، و
+            // `_BookingsButton` كلاسٌ خاصّ — فالتصريحُ الناجحُ كان سيُنفّذ
+            // لا شيءَ بصمت (‏نفسُ الفخّ الموصوفُ عند `_HeldOrdersButton`).
+            // وفتحُ شاشةِ حجوزاتٍ ليس فعلاً هدّاماً يستحقّ تجاوزَ مدير.
+            PermissionGuard(
+              permission: PermissionCodes.posBooking,
+              child: _BookingsButton(onPressed: onBookings!),
+            ),
           ],
           const SizedBox(width: 8),
           // ملحوظة تصميم: الحارس هنا يبني الـ InkWell/Container مباشرة (بدل
