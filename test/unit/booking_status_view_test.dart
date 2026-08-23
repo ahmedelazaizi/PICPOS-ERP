@@ -87,4 +87,82 @@ void main() {
       expect(bookingNextAction(status: 'no_show', isInvoiced: false), isNull);
     });
   });
+
+  group('حِملُ المورد', () {
+    final day = DateTime(2026, 9, 1);
+
+    BookingBoardRow r({
+      int id = 1,
+      int? resourceId = 1,
+      String status = 'confirmed',
+      double price = 100,
+      int hour = 10,
+      int minutes = 60,
+    }) =>
+        BookingBoardRow(
+          id: id,
+          startsAt: day.add(Duration(hours: hour)),
+          endsAt: day.add(Duration(hours: hour, minutes: minutes)),
+          customerName: 'ع',
+          status: status,
+          depositAmount: 0,
+          depositStatus: 'held',
+          servicePrice: price,
+          resourceId: resourceId,
+          resourceName: resourceId == null ? null : 'مورد',
+        );
+
+    test('يجمع حجوزاتِ المورد وحدَه', () {
+      final load = resourceDayLoad(
+        resourceId: 1,
+        rows: [r(), r(id: 2, resourceId: 2, hour: 11), r(id: 3, hour: 12)],
+      );
+      expect(load.bookings, 2);
+      expect(load.revenue, 200);
+    });
+
+    test('الملغى والمتخلّفُ لا يُحسبان', () {
+      final load = resourceDayLoad(
+        resourceId: 1,
+        rows: [
+          r(status: 'cancelled'),
+          r(id: 2, status: 'no_show', hour: 11),
+          r(id: 3, hour: 12),
+        ],
+      );
+      expect(load.bookings, 1,
+          reason: 'نسبةُ إشغالٍ تعدّ حجزاً ملغىً تقول «مشغول» عن ساعةٍ فارغة');
+      expect(load.revenue, 100);
+    });
+
+    test('النسبةُ تُقاس على الورديّة', () {
+      // ورديّةٌ ٦٠٠→١٢٠٠ = ٦٠٠ دقيقة، وحجزٌ ٦٠ دقيقة ⇒ ١٠٪.
+      final load = resourceDayLoad(
+        resourceId: 1,
+        rows: [r(minutes: 60)],
+        shiftStartMinutes: 600,
+        shiftEndMinutes: 1200,
+      );
+      expect(load.bookedMinutes, 60);
+      expect(load.loadPct, closeTo(10, 0.001));
+    });
+
+    test('بلا ورديّةٍ معرّفةٍ ⇒ صفرٌ لا Infinity', () {
+      final load = resourceDayLoad(resourceId: 1, rows: [r()]);
+      expect(load.loadPct, 0,
+          reason: 'القسمةُ على صفرٍ في دارت تعطي Infinity — فتُرسم شريطاً '
+              'بلا نهاية');
+      expect(load.loadPct.isFinite, isTrue);
+    });
+
+    test('الحملُ لا يتجاوز مئةً ولو زاد الحجز', () {
+      final load = resourceDayLoad(
+        resourceId: 1,
+        rows: [r(minutes: 600), r(id: 2, hour: 20, minutes: 600)],
+        shiftStartMinutes: 600,
+        shiftEndMinutes: 1200,
+      );
+      expect(load.loadPct, 100);
+    });
+  });
 }

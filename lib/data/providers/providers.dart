@@ -159,6 +159,30 @@ final bookingsBoardProvider =
   );
 });
 
+/// الوجهةُ المعروضةُ من وجهات الحجوزات الثمانِ.
+///
+/// ⚠️ `Notifier` لا `StateProvider`: الأخيرةُ ليست ضمن Riverpod 3 المستعملةِ
+/// هنا، وهذا هو نمطُ الحالة البسيطة في المستودع كلِّه.
+class BookingsDestinationNotifier extends Notifier<BookingsDestination> {
+  @override
+  BookingsDestination build() => BookingsDestination.board;
+  void set(BookingsDestination d) => state = d;
+}
+
+final bookingsDestinationProvider =
+    NotifierProvider<BookingsDestinationNotifier, BookingsDestination>(
+        BookingsDestinationNotifier.new);
+
+/// نصُّ البحث السريع في شاشة الحجوزات.
+class BookingsQueryNotifier extends Notifier<String> {
+  @override
+  String build() => '';
+  void set(String q) => state = q;
+}
+
+final bookingsQueryProvider =
+    NotifierProvider<BookingsQueryNotifier, String>(BookingsQueryNotifier.new);
+
 /// الموارد (موظَّفون وأجهزة) — للوحة وللمنتقيات.
 final bookingResourcesProvider =
     StreamProvider<List<BookingResource>>((ref) {

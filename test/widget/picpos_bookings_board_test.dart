@@ -28,6 +28,7 @@ void main() {
     String status = 'confirmed',
     double deposit = 0,
     String? resource = 'محمد علي',
+    int? resourceId = 1,
     int? invoiceId,
     int hour = 10,
     double price = 120,
@@ -43,6 +44,7 @@ void main() {
         depositStatus: 'held',
         serviceName: 'قصّ شعر',
         servicePrice: price,
+        resourceId: resource == null ? null : resourceId,
         resourceName: resource,
         resourceRole: 'حلاق أول',
         invoiceId: invoiceId,
@@ -62,6 +64,13 @@ void main() {
         overrides: [
           bookingsBoardProvider.overrideWith((ref) => Stream.value(rows)),
           bookingBoardDayProvider.overrideWith(() => _FixedDay(day)),
+          // ⚠️ لا بدّ من تبديل هذين أيضاً: بلا قاعدةٍ يبقيان `loading` أبداً،
+          // فتدور دائرةُ الانتظار بلا نهايةٍ و`pumpAndSettle` تنتهي بمهلة —
+          // عطلٌ في التجهيزة يُقرأ عطلاً في الشاشة.
+          bookingResourcesProvider
+              .overrideWith((ref) => Stream.value([_resource()])),
+          bookingServicesProvider
+              .overrideWith((ref) => Stream.value([_service()])),
         ],
         child: const MaterialApp(home: BookingsPicPosScreen()),
       ),
@@ -149,6 +158,46 @@ void main() {
       expect(find.text('بلا إسناد'), findsOneWidget);
     });
   });
+
+  group('الوجهاتُ تتبدّل ولا تنهار', () {
+    testWidgets('كلُّ وجهةٍ تُفتَح بلا استثناءِ تخطيط', (tester) async {
+      await pump(tester, [row(), row(id: 2, hour: 11, resource: null)]);
+
+      for (final d in BookingsDestination.values) {
+        await tester.tap(find.text(d.label));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull,
+            reason: 'وجهةُ «${d.label}» تنهار عند فتحها');
+      }
+    });
+
+    testWidgets('قائمةُ الانتظارِ تعرض غيرَ المُسنَدين وحدَهم',
+        (tester) async {
+      await pump(tester, [
+        row(customer: 'مُسنَد'),
+        row(id: 2, hour: 11, customer: 'منتظِر', resource: null),
+      ]);
+      await tester.tap(find.text('قائمة الانتظار'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('منتظِر'), findsOneWidget);
+      expect(find.text('مُسنَد'), findsNothing,
+          reason: 'المُسنَدُ ليس منتظِراً — وخلطُهما يُفقد القائمةَ معناها');
+    });
+
+    testWidgets('البحثُ يمسّ اللوحةَ فعلاً', (tester) async {
+      await pump(tester, [
+        row(customer: 'أحمد محمد'),
+        row(id: 2, hour: 11, customer: 'سارة محمود'),
+      ]);
+      await tester.enterText(find.byType(TextField).first, 'سارة');
+      await tester.pumpAndSettle();
+
+      expect(find.text('سارة محمود'), findsOneWidget);
+      expect(find.text('أحمد محمد'), findsNothing,
+          reason: 'مربعُ بحثٍ لا يُرشِّح أسوأُ من غيابه');
+    });
+  });
 }
 
 class _FixedDay extends BookingBoardDayNotifier {
@@ -157,3 +206,28 @@ class _FixedDay extends BookingBoardDayNotifier {
   @override
   DateTime build() => _day;
 }
+
+BookingResource _resource() => BookingResource(
+      id: 1,
+      name: 'محمد علي',
+      colorHex: '#0250D3',
+      role: 'حلاق أول',
+      kind: 'staff',
+      shiftStartMinutes: 600, // 10:00 ص
+      shiftEndMinutes: 1200, // 08:00 م
+      isActive: true,
+      sortOrder: 0,
+      createdAt: DateTime(2026, 1, 1),
+    );
+
+BookingService _service() => BookingService(
+      id: 1,
+      name: 'قصّ شعر',
+      durationMinutes: 45,
+      bufferMinutes: 10,
+      price: 120,
+      colorHex: '#0250D3',
+      isActive: true,
+      sortOrder: 0,
+      createdAt: DateTime(2026, 1, 1),
+    );

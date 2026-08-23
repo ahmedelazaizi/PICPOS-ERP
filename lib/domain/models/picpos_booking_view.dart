@@ -165,9 +165,12 @@ class BookingBoardRow {
     this.customerPhone,
     this.partyId,
     this.invoiceId,
+    this.notes,
+    this.serviceId = 0,
     this.serviceName = '',
     this.serviceColorHex = '#0250D3',
     this.servicePrice = 0,
+    this.resourceId,
     this.resourceName,
     this.resourceRole,
     this.resourceKind,
@@ -181,6 +184,7 @@ class BookingBoardRow {
   final String? customerPhone;
   final int? partyId;
   final int? invoiceId;
+  final String? notes;
 
   /// إحدى: `pending` · `confirmed` · `seated` · `in_service` · `completed`
   /// · `cancelled` · `no_show`.
@@ -189,11 +193,13 @@ class BookingBoardRow {
   final double depositAmount;
   final String depositStatus;
 
+  final int serviceId;
   final String serviceName;
   final String serviceColorHex;
   final double servicePrice;
 
   /// معدومٌ حين لا مورد — حجزٌ بلا موظَّفٍ مسموحٌ (لا أحدَ يتعارض عليه).
+  final int? resourceId;
   final String? resourceName;
   final String? resourceRole;
   final String? resourceKind;
@@ -282,6 +288,78 @@ BookingStatusView bookingStatusView(String status) =>
     default:
       return null;
   }
+}
+
+/// وجهاتُ شاشة الحجوزات الثمانِ — كما في التصميم.
+enum BookingsDestination {
+  board('لوحة اليوم'),
+  waitlist('قائمة الانتظار'),
+  resources('الموارد'),
+  services('الخدمات'),
+  customers('العملاء'),
+  reminders('التذكيرات'),
+  reports('التقارير'),
+  settings('الإعدادات');
+
+  const BookingsDestination(this.label);
+  final String label;
+}
+
+/// حِملُ موردٍ في يومٍ واحد — يُشتقّ من الصفوف المعروضة لا من استعلامٍ ثانٍ.
+class ResourceDayLoad {
+  const ResourceDayLoad({
+    required this.bookings,
+    required this.revenue,
+    required this.bookedMinutes,
+    required this.loadPct,
+  });
+
+  final int bookings;
+  final double revenue;
+  final int bookedMinutes;
+
+  /// نسبةُ إشغال الورديّة — `0` حين لا ورديّةَ معرّفة.
+  final double loadPct;
+}
+
+/// يحسب حِملَ موردٍ من صفوف اليوم.
+///
+/// ⚠️ **الملغى والمتخلّفُ لا يُحسبان**: نسبةُ إشغالٍ تعدّ حجزاً ملغىً تكذب
+/// على المدير — تقول «مشغول» عن ساعةٍ فارغة. وهو نفسُ استثناءِ استعلام
+/// التداخل، فلا يفترق المعروضُ عن المحجوز فعلاً.
+///
+/// و[shiftStartMinutes]/[shiftEndMinutes] معدومان ⇒ لا ورديّةَ معرّفةٌ ⇒
+/// النسبةُ صفر. والقسمةُ على صفرٍ في دارت لا ترمي بل تعطي `Infinity`، فتُرسم
+/// شريطاً بلا نهاية — فتُحرَس صراحةً.
+ResourceDayLoad resourceDayLoad({
+  required int resourceId,
+  required List<BookingBoardRow> rows,
+  int? shiftStartMinutes,
+  int? shiftEndMinutes,
+}) {
+  var count = 0;
+  var revenue = 0.0;
+  var minutes = 0;
+  for (final r in rows) {
+    if (!r.occupiesTime) continue;
+    if (r.resourceId != resourceId) continue;
+    count++;
+    revenue += r.servicePrice;
+    minutes += r.durationMinutes;
+  }
+
+  var pct = 0.0;
+  if (shiftStartMinutes != null && shiftEndMinutes != null) {
+    final span = shiftEndMinutes - shiftStartMinutes;
+    if (span > 0) pct = (minutes / span * 100).clamp(0, 100).toDouble();
+  }
+
+  return ResourceDayLoad(
+    bookings: count,
+    revenue: revenue,
+    bookedMinutes: minutes,
+    loadPct: pct,
+  );
 }
 
 /// الحرفان الأوّلان من أوّل كلمتين — «محمد علي» ⇒ «م.ع».

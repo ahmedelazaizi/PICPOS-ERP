@@ -27,6 +27,8 @@ import '../../picpos_shell/picpos_kpi_row.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../widgets/bookings_board_table.dart';
 import '../widgets/bookings_day_bar.dart';
+import '../widgets/bookings_destination_tabs.dart';
+import '../widgets/bookings_simple_views.dart';
 
 class BookingsPicPosScreen extends ConsumerWidget {
   const BookingsPicPosScreen({super.key});
@@ -35,6 +37,8 @@ class BookingsPicPosScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final day = ref.watch(bookingBoardDayProvider);
     final rowsAsync = ref.watch(bookingsBoardProvider);
+    final destination = ref.watch(bookingsDestinationProvider);
+    final query = ref.watch(bookingsQueryProvider);
     final rows = rowsAsync.value ?? const <BookingBoardRow>[];
 
     return PicPosScreenScaffold(
@@ -55,35 +59,103 @@ class BookingsPicPosScreen extends ConsumerWidget {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          BookingsDayBar(
-            day: day,
-            onPrev: () => ref.read(bookingBoardDayProvider.notifier).shift(-1),
-            onNext: () => ref.read(bookingBoardDayProvider.notifier).shift(1),
-            onToday: () => ref.read(bookingBoardDayProvider.notifier).today(),
-          ),
-          const SizedBox(height: 10),
+          // شريطُ اليوم يخصّ اللوحةَ وحدَها: بقيّةُ الوجهات لا تتغيّر
+          // بتبديل اليوم، وشريطٌ لا أثرَ له يُوهم بأنّ له أثراً.
+          if (destination == BookingsDestination.board) ...[
+            BookingsDayBar(
+              day: day,
+              onPrev: () =>
+                  ref.read(bookingBoardDayProvider.notifier).shift(-1),
+              onNext: () => ref.read(bookingBoardDayProvider.notifier).shift(1),
+              onToday: () => ref.read(bookingBoardDayProvider.notifier).today(),
+            ),
+            const SizedBox(height: 10),
+          ],
           Expanded(
-            child: rowsAsync.when(
-              // خطأُ الاستعلام يُقال ولا يُبتلَع: شاشةٌ فارغةٌ عند عطلٍ
-              // تُقرأ «لا حجوزات» — وهي كذبة.
-              error: (e, _) => PicPosEmptyState(
-                icon: PhosphorIconsBold.warningCircle,
-                title: 'تعذّر تحميل الحجوزات',
-                hint: '$e',
+            child: Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                border: Border.all(color: Theme.of(context).dividerColor),
+                borderRadius: BorderRadius.circular(13),
               ),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              data: (list) => list.isEmpty
-                  ? PicPosEmptyState(
-                      icon: PhosphorIconsBold.calendarX,
-                      title: 'لا حجوزات في ${bookingDayLabel(day)}',
-                      hint: 'اختر يوماً آخر أو أضف حجزاً جديداً.',
-                    )
-                  : BookingsBoardTable(rows: list),
+              clipBehavior: Clip.antiAlias,
+              child: Column(
+                children: [
+                  const BookingsDestinationTabs(),
+                  Expanded(
+                    child: rowsAsync.when(
+                      // خطأُ الاستعلام يُقال ولا يُبتلَع: شاشةٌ فارغةٌ عند
+                      // عطلٍ تُقرأ «لا حجوزات» — وهي كذبة.
+                      error: (e, _) => PicPosEmptyState(
+                        icon: PhosphorIconsBold.warningCircle,
+                        title: 'تعذّر تحميل الحجوزات',
+                        hint: '$e',
+                      ),
+                      loading: () =>
+                          const Center(child: CircularProgressIndicator()),
+                      data: (list) => _destinationBody(
+                        context,
+                        destination,
+                        _filter(list, query),
+                        day,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  /// البحثُ السريعُ يمسّ الصفوفَ وحدَها — الاسمُ والهاتفُ والخدمةُ والمورد.
+  ///
+  /// ⚠️ ويُطبَّق على **كلّ** وجهةٍ تقرأ الصفوف، فلا يبقى مربعُ بحثٍ ظاهراً
+  /// بلا أثرٍ في وجهةٍ ما — وحقلٌ لا يفعل شيئاً أسوأُ من غيابه.
+  List<BookingBoardRow> _filter(List<BookingBoardRow> rows, String query) {
+    final q = query.trim().toLowerCase();
+    if (q.isEmpty) return rows;
+    return rows.where((r) {
+      return r.customerName.toLowerCase().contains(q) ||
+          (r.customerPhone ?? '').toLowerCase().contains(q) ||
+          r.serviceName.toLowerCase().contains(q) ||
+          (r.resourceName ?? '').toLowerCase().contains(q);
+    }).toList();
+  }
+
+  Widget _destinationBody(
+    BuildContext context,
+    BookingsDestination destination,
+    List<BookingBoardRow> rows,
+    DateTime day,
+  ) {
+    switch (destination) {
+      case BookingsDestination.board:
+        return rows.isEmpty
+            ? PicPosEmptyState(
+                icon: PhosphorIconsBold.calendarX,
+                title: 'لا حجوزات في ${bookingDayLabel(day)}',
+                hint: 'اختر يوماً آخر أو أضف حجزاً جديداً.',
+              )
+            : BookingsBoardTable(rows: rows);
+      case BookingsDestination.waitlist:
+        return BookingsWaitlistView(rows: rows);
+      case BookingsDestination.resources:
+        return BookingsResourcesView(rows: rows);
+      case BookingsDestination.services:
+        return BookingsServicesView(rows: rows);
+      case BookingsDestination.customers:
+      case BookingsDestination.reminders:
+      case BookingsDestination.reports:
+      case BookingsDestination.settings:
+        return PicPosEmptyState(
+          icon: PhosphorIconsBold.hammer,
+          title: '«${destination.label}» تحت الإنشاء',
+          hint: 'تأتي في المرحلة التالية من هذه الشاشة.',
+        );
+    }
   }
 
   void _notYet(BuildContext context) {
