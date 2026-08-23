@@ -56,6 +56,8 @@ import '../../screens/reports/category_profit_report_screen.dart';
 import '../../screens/reports/consumption_report_screen.dart';
 import '../../screens/reports/delivery_report_screen.dart';
 import '../../screens/reports/expenses_report_screen.dart';
+import '../../../core/config/brand.dart';
+import '../../accounting_picpos/financial_statements_picpos_screen.dart';
 import '../../screens/reports/financial_statements_screen.dart';
 import '../../screens/reports/inventory_report_screen.dart';
 import '../../screens/reports/purchase_returns_report_screen.dart';
@@ -673,7 +675,9 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
             id: 'an_financial',
             title: 'القوائم المالية الختامية',
             subtitle: 'الميزانية، قائمة الدخل، وميزان المراجعة (Real-time)',
-            action: () => nav(() => const FinancialStatementsScreen()),
+            action: () => nav(() => Brand.isPicPos
+                ? const FinancialStatementsPicPosScreen()
+                : const FinancialStatementsScreen()),
           ),
           _ReportEntry(
             id: 'an_customers',

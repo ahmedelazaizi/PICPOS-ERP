@@ -670,6 +670,11 @@ const kAllNavItemDefs = [
   NavItemDef(icon: PhosphorIconsBold.treeStructure, label: 'مراكز التكلفة', permission: 'settings_view', index: 33, group: 'accounting'),
   NavItemDef(icon: PhosphorIconsBold.checks, label: 'الشيكات', permission: 'treasury_view', index: 34, group: 'accounting'),
   NavItemDef(icon: PhosphorIconsBold.buildings, label: 'الأصول الثابتة', permission: 'assets_view', index: 35, group: 'accounting'),
+  // ⚠️ مصدرُ توصيلٍ **سادسٌ مستقلٌّ** لا يُشتقّ من الخمسة قبله: شاشةٌ صحيحةٌ
+  //    في `ScreenId` و`AppScreen` وخريطةِ الصلاحيات والنطاقِ و`ScreenConfig`
+  //    تبقى **غائبةً عن القائمة الجانبيّة** بلا هذا السطر. وقع فعلاً مع
+  //    الحجوزات 2026-08-22 وكلُّ الحرّاس خضراء.
+  NavItemDef(icon: PhosphorIconsBold.scales, label: 'القوائم المالية', permission: 'reports_view', index: 62, group: 'accounting'),
   NavItemDef(icon: PhosphorIconsBold.invoice, label: 'الفوترة الإلكترونية', permission: 'einvoice_view', index: 22, group: 'accounting'),
   NavItemDef(icon: PhosphorIconsBold.calendar, label: 'السنوات المالية', permission: 'settings_view', index: 28, group: 'accounting'),
   NavItemDef(icon: PhosphorIconsBold.coins, label: 'المصروفات التشغيلية', permission: 'settings_view', index: 26, group: 'accounting'),
@@ -841,6 +846,11 @@ const screenPermissionMap = <ScreenId, String>{
   // الحجوزاتُ تعرض عملاءَ ومبالغَ وتفتح مسارَ تفويترٍ — فصلاحيّتُها
   // `tables_view` نفسُها: من يدير الطاولاتِ يدير المواعيد.
   ScreenId.bookings: 'tables_view',
+  // ⚠️ `reports_view` عن قصد لا `settings_view` كأخواتها في مجموعة
+  //    الحسابات: الشاشةُ تُفتَح اليومَ من شاشة التقارير، فهذا ما يحرسها
+  //    فعلاً. واختيارُ كودٍ آخرَ يبدّل **مَن يرى القوائمَ المالية** صامتاً
+  //    في الاتّجاهين — والنقلُ إعادةُ تصنيفٍ لا إعادةُ تصريح.
+  ScreenId.financialStatements: 'reports_view',
   ScreenId.shiftClose: PermissionCodes.posShiftClose,
 };
 

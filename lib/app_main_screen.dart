@@ -18,6 +18,8 @@ import 'presentation/pos/screens/pos_main_screen.dart';
 import 'presentation/pos_picpos/screens/picpos_pos_screen.dart';
 import 'presentation/offers_picpos/offers_picpos_screen.dart';
 import 'presentation/accounting_picpos/chart_of_accounts_picpos_screen.dart';
+import 'presentation/accounting_picpos/financial_statements_picpos_screen.dart';
+import 'presentation/screens/reports/financial_statements_screen.dart';
 import 'services/shift_dialog_session_guard.dart';
 // Spec 135 NOTE 1 — SessionTimeoutWrapper (POS lock screen, System B) retired;
 // session timeout is handled app-wide by InactivityDetector (System A).
@@ -964,6 +966,15 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => const BookingsPicPosScreen(),
         label: 'الحجوزات',
         icon: PhosphorIconsBold.calendarCheck,
+      ),
+      ScreenConfig(
+        appScreen: AppScreen.financialStatements,
+        // Brand fork, not a profile fork — same pattern as its neighbours.
+        builder: (_) => Brand.isPicPos
+            ? const FinancialStatementsPicPosScreen()
+            : const FinancialStatementsScreen(),
+        label: 'القوائم المالية',
+        icon: PhosphorIconsBold.scales,
       ),
       ScreenConfig(
         appScreen: AppScreen.syncConflicts,

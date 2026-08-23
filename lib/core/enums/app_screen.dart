@@ -60,7 +60,10 @@ enum AppScreen {
   auditDashboard(59),
   // Phase 8: Region Layer
   regions(60),
-  bookings(61);
+  bookings(61),
+
+  /// القوائمُ المالية — يجب أن تطابق `ScreenId.financialStatements`.
+  financialStatements(62);
 
   /// The integer index for this screen, used in permission maps and storage.
   final int value;
