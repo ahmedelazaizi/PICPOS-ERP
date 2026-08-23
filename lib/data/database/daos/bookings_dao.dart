@@ -163,7 +163,7 @@ extension BookingsDao on AppDatabase {
         }
       }
 
-      return into(bookings).insert(
+      final bookingId = await into(bookings).insert(
         BookingsCompanion.insert(
           customerName: customerName,
           customerPhone: Value(customerPhone),
@@ -178,6 +178,158 @@ extension BookingsDao on AppDatabase {
           createdBy: Value(createdBy),
         ),
       );
+
+      // ── العربونُ مالٌ حقيقيّ (‏ق-٢، قرارُ المالك 2026-08-22) ────────────
+      // كان عموداً يُذكَر في سجلّ النشاط فقط: لا حركةَ خزنةٍ ولا قيد. فمن
+      // دفع ٣٠٠ عربوناً كان النقدُ في الدرج ورصيدُ الخزنة لا يعرف والدفاترُ
+      // لا تعرف.
+      //
+      // والمقابلُ **حسابُ التزامٍ** `2134` لا إيراد: قبضُ العربون ليس بيعاً،
+      // والاعترافُ بالإيراد يقع عند التفويتر. ولو تُرك للتصنيف الافتراضيّ
+      // لسقط على `4299` (إيراد) — بل و**أُنشئ** إن لم يوجد.
+      //
+      // و`skipPartyBalance` عن قصد: الالتزامُ يُطفأ عند التفويتر بـ«مدين
+      // الالتزام / دائن حساب العميل»، فتحريكُ الرصيد هنا أيضاً يعدّ الدفعةَ
+      // مرّتين (‏قرارُ المالك 2026-08-23).
+      //
+      // ⚠️ وداخلَ نفسِ المعاملة: حجزٌ نجح وعربونُه فشل يترك مالاً مقبوضاً
+      //    بلا أثرٍ في أيّ دفتر — وهو أسوأُ من رفض الحجز.
+      if (depositAmount > 0) {
+        final advances = await getAccountByCode(
+          AccountingDaoReadsExt.accountPurposes['customer_advances']!,
+        );
+        await createReceiptVoucher(
+          amount: depositAmount,
+          category: 'booking_deposit',
+          description: 'عربون حجز #$bookingId — $customerName',
+          partyId: partyId,
+          userId: createdBy,
+          linkedAccountId: advances?.id,
+          skipPartyBalance: true,
+          operatingBranchId: branchId,
+        );
+      }
+
+      return bookingId;
+    });
+  }
+
+  /// يرفض تفويترَ حجزٍ خدمتُه غيرُ مربوطةٍ بصنف.
+  ///
+  /// ‏قرارُ المالك: «وخدمةٌ بلا صنفٍ مربوطٍ لا تُفوتَر». والبديلُ — اختراعُ
+  /// صنفٍ لحظةَ التفويتر — يُنشئ أصنافاً شبحيّةً لا تُدار ولا تُسعَّر ولا
+  /// تدخل تقريراً، ويجعل رقمَ الفاتورة بلا مرجعٍ في كتالوج الأصناف.
+  Future<void> assertBookingInvoiceable(int bookingId) async {
+    final booking = await (select(bookings)
+          ..where((b) => b.id.equals(bookingId)))
+        .getSingle();
+    final service = await (select(bookingServices)
+          ..where((s) => s.id.equals(booking.serviceId)))
+        .getSingle();
+
+    if (service.productId == null) {
+      throw StateError(
+        'لا يمكن تفويتر الحجز: الخدمة «${service.name}» غير مربوطة بصنف. '
+        'اربطها بصنف من نوع «خدمة» من شاشة الخدمات ثم أعد المحاولة.',
+      );
+    }
+
+    final product = await (select(products)
+          ..where((p) => p.id.equals(service.productId!)))
+        .getSingleOrNull();
+    if (product == null) {
+      throw StateError(
+        'لا يمكن تفويتر الحجز: صنف الخدمة «${service.name}» محذوف أو غير '
+        'موجود. أعد ربط الخدمة بصنف قائم.',
+      );
+    }
+  }
+
+  /// يُطفئ التزامَ العربون على فاتورةٍ بعينها — **بلا حركةِ نقدٍ ثانية**.
+  ///
+  /// النقدُ دخل الخزنةَ لحظةَ الحجز، فتكرارُه هنا يضخّم الدرج. الواقعُ
+  /// المحاسبيُّ الوحيدُ المتبقّي هو: **مدين `2134` / دائن حساب العميل** —
+  /// الالتزامُ يُطفأ ودَينُ العميل ينقص بما دفعه مقدَّماً. وهذا بعينه ما
+  /// يمنع محاسبتَه مرّتين.
+  ///
+  /// ورصيدُ الطرف يتحرّك **هنا** لا عند القبض (‏قرارُ المالك 2026-08-23).
+  ///
+  /// ⚠️ و`Bookings.invoiceId` يُكتب في نفس المعاملة: بدونه لا يُعرَف أنّ
+  ///    الحجزَ فُوتِر، فيُطبَّق العربونُ ثانيةً على فاتورةٍ أخرى.
+  Future<void> applyBookingDepositToInvoice({
+    required int bookingId,
+    required int invoiceId,
+    int? userId,
+  }) async {
+    return transaction(() async {
+      final booking = await (select(bookings)
+            ..where((b) => b.id.equals(bookingId)))
+          .getSingle();
+
+      if (booking.depositAmount <= 0) {
+        throw StateError('لا عربون على هذا الحجز.');
+      }
+      if (booking.invoiceId != null) {
+        throw StateError(
+          'عربون هذا الحجز مُطبَّقٌ سلفاً على الفاتورة #${booking.invoiceId}.',
+        );
+      }
+      final partyId = booking.partyId;
+      if (partyId == null) {
+        throw StateError(
+          'لا يمكن خصم العربون: الحجز غير مرتبط بعميل مسجَّل.',
+        );
+      }
+
+      final invoice = await (select(salesInvoices)
+            ..where((i) => i.id.equals(invoiceId)))
+          .getSingle();
+      if (invoice.customerId != partyId) {
+        throw StateError(
+          'لا يمكن خصم العربون: الفاتورة ليست على نفس عميل الحجز.',
+        );
+      }
+
+      final party =
+          await (select(parties)..where((p) => p.id.equals(partyId))).getSingle();
+      final advances = await getAccountByCode(
+        AccountingDaoReadsExt.accountPurposes['customer_advances']!,
+      );
+      if (advances == null || party.accountId == null) {
+        throw StateError(
+          'لا يمكن خصم العربون: حساب الدفعات المقدمة أو حساب العميل غير مهيّأ.',
+        );
+      }
+
+      final amount = booking.depositAmount;
+
+      await createJournalEntry(
+        description: 'خصم عربون حجز #$bookingId من الفاتورة '
+            '#${invoice.invoiceNumber}',
+        date: DateTime.now(),
+        isAutoPosted: true,
+        referenceType: 'booking_deposit_applied',
+        referenceId: bookingId,
+        branchId: booking.branchId ?? invoice.branchId,
+        lines: [
+          JournalLine(accountId: advances.id, debit: amount, credit: 0),
+          JournalLine(accountId: party.accountId!, debit: 0, credit: amount),
+        ],
+      );
+
+      final newPaid = invoice.paid + amount;
+      final newStatus = (invoice.total - newPaid) <= 0 ? 'paid' : 'partial';
+      await (update(salesInvoices)..where((i) => i.id.equals(invoiceId))).write(
+        SalesInvoicesCompanion(
+          paid: Value(newPaid),
+          status: Value(newStatus),
+        ),
+      );
+
+      await adjustPartyBalance(partyId, -amount);
+
+      await (update(bookings)..where((b) => b.id.equals(bookingId)))
+          .write(BookingsCompanion(invoiceId: Value(invoiceId)));
     });
   }
 

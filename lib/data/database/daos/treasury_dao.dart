@@ -1833,6 +1833,16 @@ extension TreasuryDao on AppDatabase {
     // no JE belongs here).
     bool skipJournalEntry = false,
     bool skipSafeTransaction = false,
+
+    /// ‏ق-٢ — يُنسَب السندُ للطرف على صفّه (تتبّعاً) **دون** أن يُنقص دَينَه.
+    ///
+    /// لعربون الحجز: المقابلُ حسابُ التزامٍ (`2134 عملاء - دفعات مقدمة`)
+    /// يُطفأ عند التفويتر بـ«مدين الالتزام / دائن حساب العميل». فلو حُرِّك
+    /// الرصيدُ عند القبض أيضاً لَعُدَّت الدفعةُ مرّتين.
+    ///
+    /// ⚠️ ولا تُستعمل مع سندٍ مقابلُه حسابُ العميل نفسُه — هناك تحريكُ
+    /// الرصيد هو المقصود.
+    bool skipPartyBalance = false,
     // Spec 135 BUG-C — the branch the OPERATOR is working in, threaded from
     // the voucher dialog (activeBranchIdProvider) and, on the server, from the
     // client's branchId. The voucher JE was attributed to targetSafe.branchId,
@@ -1932,7 +1942,11 @@ extension TreasuryDao on AppDatabase {
         // `_cpApplyBalanceSideEffects` (commercial_papers_dao.dart); running
         // it here too caused parties.balance to decrement twice (mirrors
         // the Spec 081 fix on the payment side).
-        if (partyId != null) {
+        // ‏ق-٢ (‏قرارُ المالك 2026-08-23): عربونُ الحجز يُنسَب للعميل على
+        // صفّ السند **للتتبّع** لكنّه لا يُنقص دَينَه — مقابلُه حسابُ التزامٍ
+        // (`2134`) يُطفأ عند التفويتر بـ«مدين الالتزام / دائن حساب العميل».
+        // فتحريكُ الرصيد هنا **وأيضاً** هناك كان سيعدّ الدفعةَ مرّتين.
+        if (partyId != null && !skipPartyBalance) {
           await adjustPartyBalance(partyId, -(amount + discount));
         }
 
