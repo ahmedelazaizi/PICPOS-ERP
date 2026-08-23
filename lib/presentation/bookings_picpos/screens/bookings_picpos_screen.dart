@@ -27,10 +27,12 @@ import '../../picpos_shell/picpos_kpi_row.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../widgets/bookings_board_table.dart';
 import '../widgets/bookings_day_bar.dart';
+import '../widgets/booking_invoice_dialog.dart';
 import '../widgets/bookings_data_views.dart';
 import '../widgets/bookings_destination_tabs.dart';
 import '../widgets/bookings_settings_view.dart';
 import '../widgets/bookings_simple_views.dart';
+import '../widgets/new_booking_panel.dart';
 
 class BookingsPicPosScreen extends ConsumerWidget {
   const BookingsPicPosScreen({super.key});
@@ -49,7 +51,7 @@ class BookingsPicPosScreen extends ConsumerWidget {
       icon: PhosphorIconsBold.calendarCheck,
       headerActions: [
         FilledButton.icon(
-          onPressed: () => _notYet(context),
+          onPressed: () => showNewBookingPanel(context, onDay: day),
           icon: const Icon(PhosphorIconsBold.calendarPlus, size: 17),
           label: const Text('حجز جديد'),
         ),
@@ -101,6 +103,8 @@ class BookingsPicPosScreen extends ConsumerWidget {
                         _filter(list, query),
                         day,
                         query: query,
+                        onAction: (row, next) =>
+                            _onRowAction(context, ref, row, next),
                       ),
                     ),
                   ),
@@ -134,6 +138,7 @@ class BookingsPicPosScreen extends ConsumerWidget {
     List<BookingBoardRow> rows,
     DateTime day, {
     String query = '',
+    void Function(BookingBoardRow row, String next)? onAction,
   }) {
     switch (destination) {
       case BookingsDestination.board:
@@ -143,7 +148,7 @@ class BookingsPicPosScreen extends ConsumerWidget {
                 title: 'لا حجوزات في ${bookingDayLabel(day)}',
                 hint: 'اختر يوماً آخر أو أضف حجزاً جديداً.',
               )
-            : BookingsBoardTable(rows: rows);
+            : BookingsBoardTable(rows: rows, onAction: onAction);
       case BookingsDestination.waitlist:
         return BookingsWaitlistView(rows: rows);
       case BookingsDestination.resources:
@@ -161,10 +166,45 @@ class BookingsPicPosScreen extends ConsumerWidget {
     }
   }
 
-  void _notYet(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('لوحُ «حجز جديد» يأتي في المرحلة التالية')),
-    );
+  /// فعلُ الصفّ — تبديلُ حالةٍ، أو تسليمٌ لنقطة البيع حين تكون `next` فارغة.
+  ///
+  /// ⚠️ والتفويترُ **ليس تبديلَ حالة**: `next` الفارغةُ تميّزه، فلا يُنادى
+  /// `setStatus` بقيمةٍ يرفضها القيدُ ولا يُخترَع لها اسمٌ في المفردات.
+  Future<void> _onRowAction(
+    BuildContext context,
+    WidgetRef ref,
+    BookingBoardRow row,
+    String next,
+  ) async {
+    if (next.isEmpty) {
+      final handed = await showBookingInvoiceDialog(context, row: row);
+      if (handed == true && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('افتح نقطة البيع لإتمام الفاتورة — العربون سيُخصَم '
+                'تلقائيّاً.'),
+          ),
+        );
+      }
+      return;
+    }
+
+    try {
+      final auth = ref.read(authProvider);
+      await ref.read(bookingActionsServiceProvider).setStatus(
+            row.id,
+            next,
+            userId: auth.user?.id,
+            userName: auth.user?.displayName ?? '',
+          );
+    } catch (e) {
+      // ⚠️ يُقال ولا يُبتلَع: فعلٌ يفشل صامتاً يجعل المستخدمَ يضغط مراراً.
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('تعذّر تنفيذ الإجراء: $e')),
+        );
+      }
+    }
   }
 
   /// العدّاداتُ الستّةُ كما في التصميم — **محسوبةٌ من الصفوف المعروضة**.

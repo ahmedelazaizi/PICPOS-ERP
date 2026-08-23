@@ -59,7 +59,8 @@ enum AppScreen {
   syncConflicts(58),
   auditDashboard(59),
   // Phase 8: Region Layer
-  regions(60);
+  regions(60),
+  bookings(61);
 
   /// The integer index for this screen, used in permission maps and storage.
   final int value;

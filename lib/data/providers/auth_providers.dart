@@ -832,6 +832,9 @@ const screenPermissionMap = <ScreenId, String>{
   ScreenId.salesReturns: 'sales_return_view',
   ScreenId.purchaseReturns: 'purchases_return_view',
   ScreenId.regions: 'settings_view',
+  // الحجوزاتُ تعرض عملاءَ ومبالغَ وتفتح مسارَ تفويترٍ — فصلاحيّتُها
+  // `tables_view` نفسُها: من يدير الطاولاتِ يدير المواعيد.
+  ScreenId.bookings: 'tables_view',
   ScreenId.shiftClose: PermissionCodes.posShiftClose,
 };
 

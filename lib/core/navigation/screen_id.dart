@@ -66,7 +66,16 @@ enum ScreenId {
   syncConflicts(58),
   auditDashboard(59),
   // Phase 8: Region Layer
-  regions(60);
+  regions(60),
+
+  /// شاشةُ الحجوزات (‏PicPos — مطاعم ومقاهٍ وصالونات).
+  ///
+  /// ⚠️ ولا يكفي إضافتُها هنا ولا في `screenPermissionMap`: الحلقةُ في
+  /// `userAllowedScreensProvider` تُرشِّح بـ`flavorAllowedScreenIds` **قبل**
+  /// فحصِ الصلاحية، فما ليس في نطاق الملفّ يسقط حتى مع تجاوزِ مدير النظام.
+  /// وهو بالضبط ما وقع لإغلاق الورديّة. ويقيسه
+  /// `test/unit/bookings_screen_wiring_test.dart`.
+  bookings(61);
 
   const ScreenId(this.navigationIndex);
   final int navigationIndex;

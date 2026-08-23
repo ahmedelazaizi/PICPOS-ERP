@@ -32,6 +32,10 @@ class ScreenRegistry {
     ScreenId.taxReports,
     ScreenId.salesReturns,
     ScreenId.purchaseReturns,
+    // الحجوزات: المطعمُ والمقهى والصالونُ هي التي تحجز مواعيد. ولا يكفي
+    // إدراجُها في `screenPermissionMap` — الحلقةُ ترشِّح بنطاق الملفّ
+    // **قبل** فحص الصلاحية، وهو ما أسقط إغلاقَ الورديّة من `unified`.
+    ScreenId.bookings,
   ];
 
   static const List<ScreenId> cafe = restaurant;
@@ -231,6 +235,8 @@ class ScreenRegistry {
     // `userAllowedScreensProvider` تُرشِّح بـ`flavorAllowedScreenIds` **قبل**
     // فحصِ الصلاحية، فما ليس في نطاق الملفّ يسقط حتى مع تجاوزِ مدير النظام.
     ScreenId.shiftClose,
+    // و`unified` أوسعُ النطاقات، فما تحمله `restaurant` تحمله هي.
+    ScreenId.bookings,
   ];
 
   /// أصغر نطاق نشحنه: نقطة بيع + مخازن + صناديق + تقارير.

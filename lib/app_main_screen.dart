@@ -34,6 +34,7 @@ import 'presentation/screens/purchase_invoices_screen.dart';
 import 'presentation/purchases_picpos/screens/purchases_picpos_screen.dart';
 import 'presentation/screens/treasury_screen.dart';
 import 'presentation/treasury_picpos/screens/treasury_picpos_screen.dart';
+import 'presentation/bookings_picpos/screens/bookings_picpos_screen.dart';
 import 'presentation/screens/reports_screen.dart';
 import 'presentation/reports_picpos/screens/reports_picpos_screen.dart';
 import 'presentation/screens/settings_screen.dart';
@@ -946,6 +947,14 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
             : const ShiftCloseScreen(),
         label: 'إغلاق الوردية',
         icon: PhosphorIconsBold.lockKey,
+      ),
+      // الحجوزات — PicPos وحدَها اليوم: لا نظيرَ لها في UralCash، والشاشةُ
+      // مبنيّةٌ على `picpos_shell`. ونطاقُها `restaurant`/`cafe`/`unified`.
+      ScreenConfig(
+        appScreen: AppScreen.bookings,
+        builder: (_) => const BookingsPicPosScreen(),
+        label: 'الحجوزات',
+        icon: PhosphorIconsBold.calendarCheck,
       ),
       ScreenConfig(
         appScreen: AppScreen.syncConflicts,

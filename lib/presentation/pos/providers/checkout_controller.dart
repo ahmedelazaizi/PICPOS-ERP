@@ -2,6 +2,7 @@ import 'dart:async' show unawaited;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/errors/app_exceptions.dart';
+import '../../../core/logging/diagnostic_logger.dart';
 import '../../../domain/usecases/sales/calculate_invoice_totals_usecase.dart';
 import '../../../domain/repositories/sales_repository.dart';
 import '../../../data/providers/providers.dart';
@@ -273,6 +274,40 @@ class CheckoutController extends Notifier<CheckoutState> {
             );
           } catch (e) {
             debugPrint('[E-INVOICE] Auto-submit setup failed: $e');
+          }
+        }
+
+        // ── تفويترُ حجزٍ لا بيعةٌ عاديّة (‏ق-٢) ──────────────────────────
+        // بيعةُ نقطةِ البيع وتفويترُ الحجز يمرّان بنفس الشِّفرة وأثرُهما
+        // المحاسبيُّ مختلف: التفويترُ وحدَه يُطفئ التزامَ العربون (مدين
+        // `2134` / دائن حساب العميل) ويكتب `Bookings.invoiceId`.
+        //
+        // والعلامةُ **صريحةٌ لا مستنتَجة**: استنتاجُها من «العميل له حجزٌ
+        // اليوم» كان سيُطبِّق العربونَ على بيعةٍ عابرةٍ لا علاقةَ لها به.
+        // و`takeIfAny` تقرأ وتُفرِّغ ذرّيّاً، فالبيعةُ التالية عاديّةٌ ولا
+        // تُطبِّق نفسَ العربون ثانيةً.
+        //
+        // ⚠️ وفشلُ الخصمِ **لا يُسقط بيعةً نجحت**: الفاتورةُ مُرحَّلةٌ فعلاً
+        // والمخزونُ تحرّك. فيُسجَّل الخطأُ ويُقال للمستخدم، ولا يُرمى فوق
+        // بيعٍ تمّ.
+        final pendingBookingId =
+            ref.read(bookingInvoicingProvider.notifier).takeIfAny();
+        if (pendingBookingId != null && result.invoiceId != null) {
+          try {
+            await ref.read(databaseProvider).applyBookingDepositToInvoice(
+                  bookingId: pendingBookingId,
+                  invoiceId: result.invoiceId!,
+                  userId: userId,
+                );
+          } catch (e) {
+            await DiagnosticLogger.log(
+              'BOOKING-INVOICE',
+              '⚠ تعذّر خصمُ عربون الحجز #$pendingBookingId على الفاتورة '
+              '${result.invoiceId} — $e',
+            );
+            state = state.copyWith(
+              error: 'تمّ البيع، لكن تعذّر خصمُ عربون الحجز: $e',
+            );
           }
         }
 
