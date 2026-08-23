@@ -190,11 +190,48 @@ void main() {
       await tester.pumpAndSettle();
     }
 
+    /// نفسُ اللوح بلا خدماتٍ معرَّفةٍ أصلاً — لا «لم تختر بعد».
+    Future<void> pumpPanelWithNoServices(WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            databaseProvider.overrideWithValue(db),
+            bookingServicesProvider
+                .overrideWith((ref) => Stream.value(const [])),
+            bookingResourcesProvider
+                .overrideWith((ref) => Stream.value(const [])),
+          ],
+          child: MaterialApp(home: Scaffold(body: NewBookingPanel(onDay: day))),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
     testWidgets('يُبنى بلا استثناءِ تخطيط', (tester) async {
       await pumpPanel(tester);
       expect(tester.takeException(), isNull);
       expect(find.text('حجز جديد'), findsWidgets);
       expect(find.text('اسم العميل'), findsOneWidget);
+    });
+
+    testWidgets('بلا خدماتٍ معرَّفةٍ ⇒ يقول إنها غيرُ معرَّفةٍ ويدلّ على مكانها',
+        (tester) async {
+      // ⚠️ بلاغُ المالك 2026-08-23: أنشأ أصنافاً من نوع «خدمة» وموظَّفين ثم
+      // لم يجدهما في القوائم. والحجوزاتُ لها جدولاها المستقلّان
+      // (`booking_services` · `booking_resources`) — والصنفُ والموظَّفُ
+      // ارتباطان اختياريّان لا مصدرٌ للقائمة.
+      //
+      // و«اختر الخدمة» فوق قائمةٍ فارغةٍ تقول للمستخدم إنه **لم يختر**، وهو
+      // قد اختار ما يظنّه الخدمة. فالرسالةُ تسمّي الحقيقةَ وتدلّ على الزرّ.
+      await pumpPanelWithNoServices(tester);
+
+      expect(find.textContaining('لا خدمات معرَّفة'), findsWidgets);
+      expect(find.text('اختر الخدمة'), findsNothing,
+          reason: 'لا يُطلب اختيارٌ من قائمةٍ لا تحمل شيئاً');
     });
 
     testWidgets('بلا خدمةٍ ⇒ الحفظُ ممنوعٌ ويُقال السبب', (tester) async {

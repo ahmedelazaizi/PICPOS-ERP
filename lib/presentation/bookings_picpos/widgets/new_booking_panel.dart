@@ -71,6 +71,14 @@ class _NewBookingPanelState extends ConsumerState<NewBookingPanel> {
   /// رسالةُ المنع أو `null`. الترتيبُ مقصود: الخدمةُ أوّلاً لأنّ كلَّ ما
   /// بعدها (المدّةُ والسعرُ) يُشتقّ منها.
   String? _blockingReason(List<BookingService> services) {
+    // ⚠️ «اختر الخدمة» فوق قائمةٍ فارغةٍ تتّهم المستخدمَ بأنه لم يختر، وهو
+    //    قد أنشأ ما يظنّه الخدمة. والحجوزاتُ لها جدولُها المستقلُّ
+    //    (`booking_services`): صنفُ المخزون من نوع «خدمة» ارتباطٌ اختياريٌّ
+    //    للتفويتر لا مصدرٌ لهذه القائمة. فالرسالةُ تسمّي الحقيقةَ وتدلّ على
+    //    الزرّ الذي يُنشئها (‏بلاغُ المالك 2026-08-23).
+    if (services.isEmpty) {
+      return 'لا خدمات معرَّفة — أضِفها من زرّ «الخدمات» أعلى الشاشة';
+    }
     if (_serviceId == null) return 'اختر الخدمة';
     if (_name.text.trim().isEmpty) return 'اكتب اسم العميل';
     if (_startsAt.isBefore(DateTime.now())) {
@@ -123,7 +131,11 @@ class _NewBookingPanelState extends ConsumerState<NewBookingPanel> {
                   initialValue: _serviceId,
                   isExpanded: true,
                   decoration: _decoration(),
-                  hint: const Text('اختر الخدمة'),
+                  // ⚠️ والتلميحُ يتبع الحقيقةَ كالمنع: «اختر» فوق قائمةٍ
+                  //    فارغةٍ دعوةٌ إلى فعلٍ غيرِ ممكن.
+                  hint: Text(services.isEmpty
+                      ? 'لا خدمات معرَّفة'
+                      : 'اختر الخدمة'),
                   items: [
                     for (final s in services)
                       DropdownMenuItem(value: s.id, child: Text(s.name)),

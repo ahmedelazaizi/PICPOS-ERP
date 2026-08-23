@@ -2581,13 +2581,66 @@ extension Epoch3Migrations on AppDatabase {
 
         // ‏٢) أعمدةُ المورد. `addColumn` لا تكفي وحدَها لأن القيدَ على `kind`
         //    جزءٌ من تعريف الجدول، و`alterTable` تحمل الاثنين معاً.
-        await m.alterTable(TableMigration(bookingResources));
+        //
+        // ⚠️ و`newColumns` **إلزاميّة** هنا: `alterTable` تنسخ البياناتِ بـ
+        //    `INSERT INTO new SELECT <أعمدةِ اليوم> FROM old`، فعمودٌ لم يكن
+        //    في الجدول القديم يُطلَب من مصدرٍ لا يملكه فترمي
+        //    `no such column: "role"`. وتصريحُها يجعل drift يكتب الافتراضَ
+        //    بدل أن يقرأ. وبدونها ابتلعها `_safeMigrate` (تعدّ
+        //    «no such column» خطأً عديمَ الأثر) فخُتمت قاعدةُ المالك 161
+        //    بلا أعمدةٍ وسقطت شاشةُ الحجوزات كلُّها.
+        await m.alterTable(TableMigration(
+          bookingResources,
+          newColumns: [
+            bookingResources.role,
+            bookingResources.kind,
+            bookingResources.shiftStartMinutes,
+            bookingResources.shiftEndMinutes,
+          ],
+        ));
 
         // ‏٣) جدولُ التذكيرات — جديدٌ فلا إعادةَ بناء.
         await m.createTable(bookingReminders);
 
         debugPrint('[Migration] v161 bookings seated + resource cols + '
             'reminders OK');
+      });
+    }
+
+    // ‏١٦٢ — إنقاذُ القواعد التي خُتمت 161 وأعمدةُ المورد ناقصةٌ فيها.
+    //
+    // ⚠️ إصلاحُ خطوةِ 161 أعلاه **لا يكفي**: قاعدةٌ ختمت 161 لا يعود
+    //    `from < 161` يفحصها أبداً، فتبقى بلا أعمدةٍ إلى الأبد وشاشةُ
+    //    الحجوزات ساقطةٌ بـ`no such column: booking_resources.role`.
+    //    (وقع على قاعدة المالك 2026-08-23.)
+    //
+    // ⚠️ و**بفحصٍ قبل الإصلاح**: تنصيبةٌ وُلدت بـ`onCreate` عند 161 تملك
+    //    الأعمدةَ وقد تحمل بياناتٍ فيها. وإعادةُ البناء بـ`newColumns`
+    //    تكتب الافتراضاتِ فوقَ القيم — أي أنّ «إصلاحاً» غيرَ مشروطٍ يمسح
+    //    أدوارَ الموظّفين ومواعيدَ ورديّاتهم صامتاً.
+    if (from < 162) {
+      await _safeMigrate('v162 إنقاذُ أعمدةِ المورد الناقصة', () async {
+        final info = await customSelect(
+          'PRAGMA table_info(booking_resources)',
+        ).get();
+        final present =
+            info.map((r) => r.data['name'] as String).toSet();
+
+        if (present.contains('role')) {
+          debugPrint('[Migration] v162 skipped — أعمدةُ المورد موجودةٌ أصلاً');
+          return;
+        }
+
+        await m.alterTable(TableMigration(
+          bookingResources,
+          newColumns: [
+            bookingResources.role,
+            bookingResources.kind,
+            bookingResources.shiftStartMinutes,
+            bookingResources.shiftEndMinutes,
+          ],
+        ));
+        debugPrint('[Migration] v162 أعمدةُ المورد أُضيفت — إنقاذُ 161 OK');
       });
     }
   }

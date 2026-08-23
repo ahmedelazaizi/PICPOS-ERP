@@ -747,7 +747,11 @@ class AppDatabase extends _$AppDatabase {
   // `pos_shift_close` إلى الخزينة. فرُفعت تلك إلى **١٦٠** عند الدمج، ورُفع
   // حارسُها في [epoch_3] إلى `from < 160` معها. ولا تفصل بينهما: رقمٌ يُرفَع
   // وحارسٌ يبقى قديماً = ترقيةٌ لا تُطبَّق أبداً وتمرّ صامتة.
-  int get schemaVersion => 161;
+  // ⚠️ ‏162: ليست ميزةً بل إنقاذ. خطوةُ 161 كانت تنادي `alterTable` بلا
+  // `newColumns`، فرمت `no such column: "role"` وابتلعها `_safeMigrate`
+  // (تعدُّها خطأً عديمَ الأثر) — فخُتمت القواعدُ 161 وأعمدةُ المورد لم تُضَف،
+  // و`from < 161` لا يعود يفحصها. الخطوةُ الجديدةُ تفحص ثمّ تُصلح.
+  int get schemaVersion => 162;
 
   /// PostgreSQL-specific table creation: Drift's `currentDateAndTime` generates
   /// `strftime('%s','now')` which doesn't exist in PostgreSQL.
