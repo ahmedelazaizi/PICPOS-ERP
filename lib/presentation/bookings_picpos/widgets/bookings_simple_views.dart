@@ -14,6 +14,7 @@ import '../../../data/providers/providers.dart';
 import '../../../domain/models/picpos_booking_view.dart';
 import '../../picpos_shell/picpos_empty_state.dart';
 import '../screens/bookings_picpos_screen.dart';
+import 'booking_catalog_editors.dart';
 
 // ═════════════════════════ قائمة الانتظار ═════════════════════════
 
@@ -153,6 +154,64 @@ class _WaitCard extends StatelessWidget {
   }
 }
 
+/// بطاقةُ «أضف» في ذيل الشبكة — أقربُ ما تكون إلى موضع التفكير بالإضافة.
+class _AddCard extends StatelessWidget {
+  const _AddCard({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(13),
+      child: DottedBorderBox(
+        color: theme.dividerColor,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 22, color: AppColors.primary),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w800,
+                color: AppColors.primary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// إطارٌ خافتٌ يميّز «أضف» عن البطاقات الحقيقيّة بلا رسمِ خطٍّ متقطّعٍ يدويّاً.
+class DottedBorderBox extends StatelessWidget {
+  const DottedBorderBox({super.key, required this.color, required this.child});
+
+  final Color color;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: color, width: 1.5),
+          borderRadius: BorderRadius.circular(13),
+          color: AppColors.primary.withValues(alpha: .04),
+        ),
+        child: child,
+      );
+}
+
 // ═════════════════════════ الموارد ═════════════════════════
 
 class BookingsResourcesView extends ConsumerWidget {
@@ -172,24 +231,39 @@ class BookingsResourcesView extends ConsumerWidget {
       ),
       data: (list) {
         if (list.isEmpty) {
-          return const PicPosEmptyState(
+          return PicPosEmptyState(
             icon: PhosphorIconsBold.users,
             title: 'لا موارد معرَّفة',
             hint: 'أضف موظَّفاً أو جهازاً ليمكن إسنادُ الحجوزات إليه.',
+            action: FilledButton.icon(
+              onPressed: () => showResourceEditor(context),
+              icon: const Icon(PhosphorIconsBold.plus, size: 16),
+              label: const Text('مورد جديد'),
+            ),
           );
         }
         return GridView.builder(
           padding: const EdgeInsets.all(12),
           gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
             maxCrossAxisExtent: 340,
-            mainAxisExtent: 132,
+            mainAxisExtent: 148,
             crossAxisSpacing: 10,
             mainAxisSpacing: 10,
           ),
-          itemCount: list.length,
+          itemCount: list.length + 1,
           itemBuilder: (_, i) {
+            // البطاقةُ الأخيرةُ زرُّ إضافة — أقربُ ما يكون إلى المكان الذي
+            // يفكّر فيه المستخدمُ بالإضافة.
+            if (i == list.length) {
+              return _AddCard(
+                label: 'مورد جديد',
+                icon: PhosphorIconsBold.userPlus,
+                onTap: () => showResourceEditor(context),
+              );
+            }
             final r = list[i];
             return _ResourceCard(
+              onEdit: () => showResourceEditor(context, existing: r),
               name: r.name,
               role: r.role,
               kind: r.kind,
@@ -232,8 +306,10 @@ class _ResourceCard extends StatelessWidget {
     required this.colorHex,
     required this.load,
     required this.shiftLabel,
+    required this.onEdit,
   });
 
+  final VoidCallback onEdit;
   final String name;
   final String? role;
   final String kind;
@@ -299,6 +375,12 @@ class _ResourceCard extends StatelessWidget {
                     ),
                   ],
                 ),
+              ),
+              IconButton(
+                onPressed: onEdit,
+                icon: const Icon(PhosphorIconsBold.pencilSimple, size: 15),
+                tooltip: 'تعديل',
+                visualDensity: VisualDensity.compact,
               ),
             ],
           ),
@@ -403,26 +485,39 @@ class BookingsServicesView extends ConsumerWidget {
       ),
       data: (list) {
         if (list.isEmpty) {
-          return const PicPosEmptyState(
+          return PicPosEmptyState(
             icon: PhosphorIconsBold.scissors,
             title: 'لا خدمات معرَّفة',
             hint: 'أضف خدمةً بمدّتها وسعرها ليمكن الحجزُ عليها.',
+            action: FilledButton.icon(
+              onPressed: () => showServiceEditor(context),
+              icon: const Icon(PhosphorIconsBold.plus, size: 16),
+              label: const Text('خدمة جديدة'),
+            ),
           );
         }
         return GridView.builder(
           padding: const EdgeInsets.all(12),
           gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
             maxCrossAxisExtent: 300,
-            mainAxisExtent: 124,
+            mainAxisExtent: 140,
             crossAxisSpacing: 10,
             mainAxisSpacing: 10,
           ),
-          itemCount: list.length,
+          itemCount: list.length + 1,
           itemBuilder: (_, i) {
+            if (i == list.length) {
+              return _AddCard(
+                label: 'خدمة جديدة',
+                icon: PhosphorIconsBold.plus,
+                onTap: () => showServiceEditor(context),
+              );
+            }
             final s = list[i];
             final count =
                 rows.where((r) => r.serviceId == s.id && r.occupiesTime).length;
             return _ServiceCard(
+              onEdit: () => showServiceEditor(context, existing: s),
               name: s.name,
               durationMinutes: s.durationMinutes,
               bufferMinutes: s.bufferMinutes,
@@ -442,6 +537,7 @@ class BookingsServicesView extends ConsumerWidget {
 
 class _ServiceCard extends StatelessWidget {
   const _ServiceCard({
+    required this.onEdit,
     required this.name,
     required this.durationMinutes,
     required this.bufferMinutes,
@@ -451,6 +547,7 @@ class _ServiceCard extends StatelessWidget {
     required this.linked,
   });
 
+  final VoidCallback onEdit;
   final String name;
   final int durationMinutes;
   final int bufferMinutes;
@@ -499,6 +596,12 @@ class _ServiceCard extends StatelessWidget {
                   child: Icon(PhosphorIconsBold.linkBreak,
                       size: 15, color: AppColors.warning),
                 ),
+              IconButton(
+                onPressed: onEdit,
+                icon: const Icon(PhosphorIconsBold.pencilSimple, size: 15),
+                tooltip: 'تعديل / ربط بصنف',
+                visualDensity: VisualDensity.compact,
+              ),
             ],
           ),
           const Spacer(),

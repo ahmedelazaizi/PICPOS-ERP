@@ -70,6 +70,8 @@ import '../../../domain/models/exchange_settlement.dart';
 import '../../../data/repositories/exchange_repository_impl.dart';
 import '../../../domain/models/returnable_line.dart';
 import '../../shared_widgets/open_shift_prompt.dart';
+import '../../../core/navigation/screen_id.dart';
+import '../../bookings_picpos/screens/bookings_picpos_screen.dart';
 
 part 'picpos_pos_operations.dart';
 
@@ -234,6 +236,17 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
                     // حارس الصلاحية يعيش داخل `PicPosTopBar` نفسها.
                     onCloseShift: () => PicposCashierClosingDialog.show(context),
                     onSwitchUser: _switchUser,
+                    // ⚠️ **مشروطٌ بنطاق الملفّ لا معروضٌ دائماً**: تنصيبةُ
+                    // سوبرماركت لا تحجز مواعيد، وزرٌّ يفتح شاشةً خارجَ
+                    // نطاقها يقود إلى فراغ. والنطاقُ هو نفسُ المصدر الذي
+                    // تُبنى منه القائمةُ الجانبيّة، فلا يفترق الاثنان.
+                    onBookings: ref
+                            .watch(userAllowedScreensProvider)
+                            .value
+                            ?.contains(ScreenId.bookings.navigationIndex) ??
+                            false
+                        ? _openBookings
+                        : null,
                   ),
                   Expanded(
                     child: Padding(

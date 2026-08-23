@@ -35,12 +35,19 @@ class PicPosTopBar extends ConsumerWidget {
   /// لتغيير الكاشير كانت خروج كامل ورجوع لشاشة الدخول.
   final VoidCallback onSwitchUser;
 
+  /// فتحُ شاشة الحجوزات من شريط نقطة البيع (‏طلبُ المالك 2026-08-23).
+  ///
+  /// ‏`null` ⇒ لا يُعرَض الزرُّ. وهو الصحيحُ لتنصيبةٍ لا تحجز مواعيد: زرٌّ
+  /// يفتح شاشةً خارجَ نطاق الملفّ يقود إلى فراغ.
+  final VoidCallback? onBookings;
+
   const PicPosTopBar({
     super.key,
     required this.onHeldOrders,
     required this.onBack,
     required this.onCloseShift,
     required this.onSwitchUser,
+    this.onBookings,
     this.showBackButton = false,
   });
 
@@ -92,6 +99,10 @@ class PicPosTopBar extends ConsumerWidget {
           ),
           const SizedBox(width: 8),
           _HeldOrdersButton(count: heldCount, onPressed: onHeldOrders),
+          if (onBookings != null) ...[
+            const SizedBox(width: 8),
+            _BookingsButton(onPressed: onBookings!),
+          ],
           const SizedBox(width: 8),
           // ملحوظة تصميم: الحارس هنا يبني الـ InkWell/Container مباشرة (بدل
           // كلاس خاص زي `_HeldOrdersButton`) لأن `PermissionGuard` مع
@@ -245,6 +256,81 @@ class _HeldOrdersButton extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// زرُّ «الحجوزات» في شريط نقطة البيع — طلبُ المالك 2026-08-23.
+///
+/// ═══ ⚠️ والعدّادُ **قابلٌ للتصرّف** لا مجرّدُ عدد ═══
+///
+/// شارةٌ تعرض «كلَّ حجوزات اليوم» تبقى مشتعلةً طوال اليوم فتُصبح زينةً
+/// يتعلّم الكاشيرُ تجاهلَها. فالمعروضُ هنا **ما ينتظر فعلاً منه**: الحجوزاتُ
+/// التي لم تُؤكَّد بعد. تُطفأ الشارةُ حين لا يبقى شيءٌ يُفعَل.
+class _BookingsButton extends ConsumerWidget {
+  const _BookingsButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pending = ref.watch(bookingsBoardProvider).value
+            ?.where((b) => b.status == 'pending')
+            .length ??
+        0;
+
+    return Tooltip(
+      message: pending == 0
+          ? 'الحجوزات'
+          : '$pending حجزاً بانتظار التأكيد اليوم',
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(PhosphorIconsBold.calendarCheck,
+                  size: 16, color: Colors.white),
+              const SizedBox(width: 6),
+              const Text(
+                'الحجوزات',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              if (pending > 0) ...[
+                const SizedBox(width: 7),
+                Container(
+                  constraints: const BoxConstraints(minWidth: 20),
+                  height: 20,
+                  alignment: Alignment.center,
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.error,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    '$pending',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),

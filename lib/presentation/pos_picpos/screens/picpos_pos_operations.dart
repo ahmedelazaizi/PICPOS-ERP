@@ -445,6 +445,20 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     }
   }
 
+  /// يفتح شاشةَ الحجوزات فوق نقطة البيع — طلبُ المالك 2026-08-23.
+  ///
+  /// ⚠️ **دفعٌ فوق الشاشة لا استبدالٌ لها**: السلّةُ القائمةُ تبقى كما هي،
+  /// والرجوعُ يعيد الكاشيرَ إليها بلا فقدِ سطر. واستبدالُ المسار كان
+  /// سيُفرِّغ سلّةً نصفَ مكتملةٍ بلا سؤال.
+  ///
+  /// وهو أيضاً ما يجعل التفويترَ يعمل: الحوارُ يرفع علامةَ الحجز ثمّ يعود
+  /// المستخدمُ إلى **نفس** جلسة نقطة البيع فيُتِمّ البيع.
+  Future<void> _openBookings() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const BookingsPicPosScreen()),
+    );
+  }
+
   /// Hand the till to another cashier. وردية الخارج بتفضل مفتوحة — الديالوج
   /// بيبلّغ بيها بس (`notifyOpenShift`)، ونفس الإشعار بيتنادى عند الخروج.
   Future<void> _switchUser() async {

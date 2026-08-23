@@ -295,6 +295,145 @@ extension BookingsDao on AppDatabase {
         }).toList());
   }
 
+  // ════════════════════ إدارةُ الخدمات والموارد ════════════════════
+  //
+  // ⚠️ **كانت غائبةً تماماً** حتى بلاغِ المالك 2026-08-23 «ازاى هربط الخدمة
+  // بمورد او جهاز». الجداولُ مشحونةٌ والشاشةُ تقرأ، ولا موضعَ واحدٌ في
+  // المستودع **يكتب** خدمةً أو مورداً. فلا سبيلَ لتعريف أيٍّ منهما إلّا
+  // بالكتابة المباشرة في القاعدة — أي أنّ الحجوزاتِ كلَّها غيرُ قابلةٍ
+  // للاستعمال عمليّاً.
+
+  /// يُنشئ خدمةً أو يعدّلها. `id` معدومٌ ⇒ إنشاء.
+  ///
+  /// و[productId] هو ما يجعل حجوزَها **قابلةً للتفويتر**
+  /// (‏`assertBookingInvoiceable`) — ويجب أن يشير إلى صنفٍ من نوع `service`.
+  Future<int> upsertBookingService({
+    int? id,
+    required String name,
+    required int durationMinutes,
+    required int bufferMinutes,
+    required double price,
+    required String colorHex,
+    int? productId,
+    bool isActive = true,
+  }) async {
+    if (durationMinutes <= 0) {
+      throw ArgumentError('مدّة الخدمة يجب أن تكون أكبر من صفر');
+    }
+    if (bufferMinutes < 0) throw ArgumentError('الفاصل لا يكون سالباً');
+    if (price < 0) throw ArgumentError('السعر لا يكون سالباً');
+
+    // ⚠️ يُتحقَّق من **نوع** الصنف لا وجودِه فحسب: ربطُ خدمةٍ بصنفٍ مخزونيٍّ
+    // يجعل تفويترَها يخصم من المخزون شيئاً لا يُخزَّن.
+    if (productId != null) {
+      final p = await (select(products)..where((x) => x.id.equals(productId)))
+          .getSingleOrNull();
+      if (p == null) throw ArgumentError('الصنف المختار غير موجود');
+      if (p.productType != 'service') {
+        throw ArgumentError(
+          'الصنف «${p.name}» ليس من نوع «خدمة» — اختر صنفاً خدميّاً، وإلّا '
+          'خصم تفويترُ الحجز من المخزون صنفاً لا يُخزَّن.',
+        );
+      }
+    }
+
+    final companion = BookingServicesCompanion(
+      id: id == null ? const Value.absent() : Value(id),
+      name: Value(name.trim()),
+      durationMinutes: Value(durationMinutes),
+      bufferMinutes: Value(bufferMinutes),
+      price: Value(price),
+      colorHex: Value(colorHex),
+      productId: Value(productId),
+      isActive: Value(isActive),
+    );
+
+    if (id == null) return into(bookingServices).insert(companion);
+    await (update(bookingServices)..where((s) => s.id.equals(id)))
+        .write(companion);
+    return id;
+  }
+
+  /// يُنشئ مورداً (موظَّفاً أو جهازاً) أو يعدّله.
+  ///
+  /// والورديّةُ **دقائقُ من منتصف الليل** — والقيدُ في الجدول يرفض ما خرج
+  /// عن المدى، فيُتحقَّق هنا برسالةٍ مفهومةٍ بدل استثناءِ SQL.
+  Future<int> upsertBookingResource({
+    int? id,
+    required String name,
+    String? role,
+    required String kind,
+    required String colorHex,
+    int? shiftStartMinutes,
+    int? shiftEndMinutes,
+    String? phone,
+    bool isActive = true,
+  }) async {
+    if (kind != 'staff' && kind != 'device') {
+      throw ArgumentError('نوع المورد يكون «موظَّف» أو «جهاز»');
+    }
+    for (final m in [shiftStartMinutes, shiftEndMinutes]) {
+      if (m != null && (m < 0 || m > 1440)) {
+        throw ArgumentError('وقت الورديّة خارج اليوم');
+      }
+    }
+
+    final companion = BookingResourcesCompanion(
+      id: id == null ? const Value.absent() : Value(id),
+      name: Value(name.trim()),
+      role: Value(role?.trim().isEmpty ?? true ? null : role!.trim()),
+      kind: Value(kind),
+      colorHex: Value(colorHex),
+      shiftStartMinutes: Value(shiftStartMinutes),
+      shiftEndMinutes: Value(shiftEndMinutes),
+      phone: Value(phone?.trim().isEmpty ?? true ? null : phone!.trim()),
+      isActive: Value(isActive),
+    );
+
+    if (id == null) return into(bookingResources).insert(companion);
+    await (update(bookingResources)..where((r) => r.id.equals(id)))
+        .write(companion);
+    return id;
+  }
+
+  /// حذفٌ منطقيٌّ لخدمة — **ويُرفَض إن كانت مستعملةً في حجزٍ قائم**.
+  ///
+  /// الحذفُ الصلبُ كان سيكسر المفتاحَ الأجنبيّ لحجوزٍ ماضية، والحذفُ المنطقيُّ
+  /// بلا فحصٍ يترك حجزاً حيّاً يشير إلى خدمةٍ مخفيّةٍ فيُعرَض بلا اسم.
+  Future<void> softDeleteBookingService(int id, {DateTime? now}) async {
+    final live = await (select(bookings)
+          ..where((b) =>
+              b.serviceId.equals(id) &
+              b.status.isNotIn(const ['cancelled', 'no_show', 'completed']))
+          ..limit(1))
+        .getSingleOrNull();
+    if (live != null) {
+      throw StateError(
+        'لا يمكن حذف الخدمة: عليها حجزٌ قائم. ألغِ الحجزَ أو أكمِله أوّلاً.',
+      );
+    }
+    await (update(bookingServices)..where((s) => s.id.equals(id)))
+        .write(BookingServicesCompanion(deletedAt: Value(now ?? DateTime.now())));
+  }
+
+  /// حذفٌ منطقيٌّ لمورد — بنفس الحارس.
+  Future<void> softDeleteBookingResource(int id, {DateTime? now}) async {
+    final live = await (select(bookings)
+          ..where((b) =>
+              b.resourceId.equals(id) &
+              b.status.isNotIn(const ['cancelled', 'no_show', 'completed']))
+          ..limit(1))
+        .getSingleOrNull();
+    if (live != null) {
+      throw StateError(
+        'لا يمكن حذف المورد: عليه حجزٌ قائم. انقل الحجزَ أو ألغِه أوّلاً.',
+      );
+    }
+    await (update(bookingResources)..where((r) => r.id.equals(id)))
+        .write(
+            BookingResourcesCompanion(deletedAt: Value(now ?? DateTime.now())));
+  }
+
   /// ينشئ حجزاً بعد إنفاذ القاعدتين داخل معاملةٍ واحدة.
   ///
   /// SQLite لا يملك قيدَ استبعاد (`EXCLUDE`) كما PostgreSQL، فالإنفاذُ هنا

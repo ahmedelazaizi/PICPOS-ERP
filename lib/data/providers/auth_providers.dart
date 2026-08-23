@@ -621,6 +621,12 @@ const kAllNavItemDefs = [
   NavItemDef(icon: PhosphorIconsBold.fileText, label: 'فواتير المبيعات', permission: 'sales_view', index: 17, group: 'sales'),
   NavItemDef(icon: PhosphorIconsBold.notepad, label: 'طلبات البيع', permission: 'sales_orders_view', index: 37, group: 'sales'),
   NavItemDef(icon: PhosphorIconsBold.circlesThree, label: 'الطاولات', permission: 'tables_view', index: 3, group: 'sales'),
+  // ⚠️ **الموضعُ السادس** — لا الخامس. حارسُ `bookings_screen_wiring_test`
+  // كان يقيس خمسةً (`ScreenId` · `AppScreen` · `screenPermissionMap` ·
+  // نطاقاتُ الملفّات · `ScreenConfig`) والشاشةُ **ما زالت غائبةً عن القائمة
+  // الجانبيّة**: هذه القائمةُ مصدرٌ مستقلٌّ لا يُشتقّ من تلك الخمسة.
+  // بلاغُ المالك 2026-08-23. والحارسُ وُسِّع ليقيسها.
+  NavItemDef(icon: PhosphorIconsBold.calendarCheck, label: 'الحجوزات', permission: 'tables_view', index: 61, group: 'sales'),
   NavItemDef(icon: PhosphorIconsBold.tag, label: 'العروض', permission: 'offers_view', index: 2, group: 'sales'),
   NavItemDef(icon: PhosphorIconsBold.arrowUUpLeft, label: 'مرتجع المبيعات', permission: 'sales_return_view', index: 44, group: 'sales'),
 
