@@ -260,14 +260,44 @@ class SystemCurrencyNotifier extends Notifier<String> {
     }
   }
 
-  /// Change currency and persist
+  /// Change currency and persist.
+  ///
+  /// ⚠️ **يُرفَض بعد أوّل حركةٍ ماليّة** (‏م-٢، قرارُ المالك 2026-08-23).
+  /// دقّةُ العملة تتبع العملةَ الآن (الدينارُ ٣ والجنيهُ ٢)، فالتبديلُ بعد
+  /// أن تُكتب أرقامٌ في الدفاتر يُعيد `12.345` إلى `12.35` وقد يُخلّ قيداً
+  /// اتّزن بثلاث خانات. العملةُ قرارُ تنصيبٍ لا تفضيلُ عرض.
+  ///
+  /// والرفضُ هنا **لا في الواجهة وحدَها**: المنتقي مُعطَّلٌ في الإعدادات،
+  /// لكنّ الواجهةَ تُلتَفّ (استدعاءٌ برمجيّ، مزامنة، سكربت) — فالحارسُ
+  /// الحقيقيُّ يقع عند الكتابة. وتبديلٌ إلى نفس العملة الحاليّة يمرّ: ليس
+  /// تبديلاً أصلاً.
   Future<void> setCurrency(String code) async {
     final db = ref.read(databaseProvider);
+    final normalized = CurrencyInfo.fromCode(code).code;
+    if (normalized != AppConstants.currencyCode &&
+        await db.hasAnyFinancialMovement()) {
+      throw StateError(
+        'لا يمكن تبديل عملة النظام بعد تسجيل حركات مالية. العملة تحدَّد عند '
+        'التنصيب لأن دقّتها العشرية جزءٌ من كل مبلغ محفوظ وكل قيد مرحَّل — '
+        'وتبديلها الآن يعيد تقريب المبالغ القائمة وقد يُخلّ قيوداً متّزنة.',
+      );
+    }
     await db.setSetting('system_currency', code);
     AppConstants.setCurrency(code);
     state = code; // triggers rebuild of all watchers
   }
 }
+
+/// هل تبديلُ العملة مقفولٌ الآن؟ — للواجهة كي تُعطّل المنتقيَ وتشرح السبب.
+///
+/// والحارسُ الحقيقيُّ في `SystemCurrencyNotifier.setCurrency`؛ هذا للعرض.
+final currencyChangeLockedProvider = FutureProvider<bool>((ref) async {
+  // يُعاد حسابُه مع كلّ تغيّرٍ في المبيعات أو المشتريات، فالقفلُ يظهر فور
+  // أوّل فاتورةٍ بلا إعادةِ تشغيل.
+  ref.watch(salesInvoicesChangeProvider);
+  ref.watch(purchaseInvoicesChangeProvider);
+  return ref.read(databaseProvider).hasAnyFinancialMovement();
+});
 
 final systemCurrencyProvider = NotifierProvider<SystemCurrencyNotifier, String>(
   () {

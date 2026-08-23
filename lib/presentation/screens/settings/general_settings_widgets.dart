@@ -131,6 +131,7 @@ class _CurrencySelector extends ConsumerWidget {
 
     return buildCurrencyTileGuarded(
       subtitle: '${info.nameAr} (${info.code})',
+      locked: ref.watch(currencyChangeLockedProvider).value ?? false,
       onOpen: () => _showCurrencySelector(context, ref, currentCode),
     );
   }

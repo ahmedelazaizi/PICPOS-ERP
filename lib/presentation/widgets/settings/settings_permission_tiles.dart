@@ -82,11 +82,35 @@ Widget buildCompanyInfoTileGuarded({required VoidCallback onOpen}) {
 ///
 /// معالج التنصيب (`setup_wizard_screen.dart`) بيكتب العملة برضه، ومقصود إنه
 /// يفضل مكشوف: فعل تركيب أول مرة قبل ما يبقى فيه مستخدمين وأدوار أصلاً.
+/// و[locked] يعني أنّ حركةً ماليّةً وقعت، فالعملةُ لم تعد قابلةً للتبديل
+/// (‏م-٢، قرارُ المالك 2026-08-23): دقّتُها العشريّةُ جزءٌ من كلّ مبلغٍ
+/// محفوظٍ وكلّ قيدٍ مرحَّل. والمنعُ يُشرَح هنا، ويُنفَّذ في
+/// `SystemCurrencyNotifier.setCurrency` — الواجهةُ وحدَها تُلتَفّ.
 @visibleForTesting
 Widget buildCurrencyTileGuarded({
   required String subtitle,
   required VoidCallback onOpen,
+  bool locked = false,
 }) {
+  if (locked) {
+    return ListTile(
+      enabled: false,
+      leading: const Icon(
+        PhosphorIconsBold.lockSimple,
+        color: AppColors.textMuted,
+      ),
+      title: const Text('عملة النظام'),
+      subtitle: Text(
+        '$subtitle — مقفولة بعد تسجيل حركات مالية.\n'
+        'الدقة العشرية للعملة جزءٌ من كل مبلغ محفوظ، فتبديلها الآن يعيد '
+        'تقريب المبالغ القائمة وقد يُخلّ قيوداً متّزنة.',
+        style: const TextStyle(fontSize: 11.5),
+      ),
+      isThreeLine: true,
+      trailing: const Icon(PhosphorIconsBold.lockSimple, size: 16),
+    );
+  }
+
   return PermissionGuard(
     permission: PermissionCodes.settingsCurrency,
     allowManagerOverride: true,

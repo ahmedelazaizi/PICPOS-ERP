@@ -138,6 +138,9 @@ class _CurrencySelector extends ConsumerWidget {
 
     return buildCurrencyTileGuarded(
       subtitle: '${info.nameAr} (${info.code})',
+      // ‏`false` أثناء التحميل: القفلُ يُشدّ حين يُعرَف أنه قفل، والحارسُ
+      // الحقيقيُّ عند الكتابة على أيّ حال.
+      locked: ref.watch(currencyChangeLockedProvider).value ?? false,
       onOpen: () => _showCurrencySelector(context, ref, currentCode),
     );
   }
