@@ -7,9 +7,26 @@ import 'package:ural_erp/core/constants/app_constants.dart';
 class FinancialUtils {
   FinancialUtils._();
 
-  /// Defines the precision for financial storage and calculation
-  static const int _precision = AppConstants.decimalPlaces;
-  static final double _multiplier = math.pow(10, _precision).toDouble();
+  /// Defines the precision for financial storage and calculation.
+  ///
+  /// ⚠️ **getters عن قصدٍ لا `static final`** (‏قرارُ المالك 2026-08-23).
+  /// كانا:
+  ///
+  /// ```dart
+  /// static const int _precision = AppConstants.decimalPlaces;
+  /// static final double _multiplier = math.pow(10, _precision).toDouble();
+  /// ```
+  ///
+  /// و`static final` في دارت **كسولٌ يُحسب عند أوّل وصولٍ ثمّ يثبت للأبد**.
+  /// و`setCurrency` تقع **بعد** إقلاعٍ كامل (‏`init()` تقرأ القاعدة)، فأيُّ
+  /// لمسٍ لـ`FinancialUtils` قبلها كان يجمّد المضاعفَ على ١٠٠٠ — فتبقى
+  /// الحساباتُ كلُّها بثلاث خاناتٍ رغم اختيار الجنيه، **صامتةً وبلا أثرٍ في
+  /// أيّ سجلّ**. وهي أخطرُ من الخطأ الظاهر لأنها تصيب المالَ لا العرض.
+  ///
+  /// والقراءةُ الديناميّةُ كلفتُها `math.pow` لكلّ نداء — ولا تُحوَّل إلى
+  /// كاشٍ إلّا بمُبطِلٍ يُستدعى من `setCurrency`، وإلّا عاد العطبُ نفسُه.
+  static int get _precision => AppConstants.decimalPlaces;
+  static double get _multiplier => math.pow(10, _precision).toDouble();
 
   // ── Spec 139: single source of truth for the journal-entry balance cap ──
   // The ONE allowed debit-vs-credit tolerance. A residual within this cap is a

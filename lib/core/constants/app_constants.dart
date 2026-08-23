@@ -22,7 +22,22 @@ class AppConstants {
   static const int maxPageSize = 200;
 
   // Financial
-  static const int decimalPlaces = 3;
+  /// عددُ الخانات العشريّة للعملة النشِطة — **متغيّرٌ يتبع العملة** لا ثابت.
+  ///
+  /// ── لماذا ليست `const` (‏قرارُ المالك 2026-08-23) ──────────────────────
+  /// «ممكن المستخدم يحتاج تنصيب النظام على عملة مختلفة». والدينارُ ثلاثُ
+  /// خاناتٍ والجنيهُ خانتان، فثابتٌ واحدٌ يعني أنّ تنصيبةَ الجنيه تحسب
+  /// وتعرض بثلاث خانات.
+  ///
+  /// ⚠️ **ولا تُخزَّن هذه القيمةُ في `static final` عند أيِّ مستهلك** —
+  /// ‏`static final` في دارت كسولٌ يُحسب مرّةً ثمّ يثبت للأبد، و`setCurrency`
+  /// تقع **بعد** إقلاعٍ كامل (‏`init()` تقرأ القاعدة). فأيُّ لمسٍ سابقٍ
+  /// يجمّد القيمةَ على ٣ ويُبقي الحسابَ بثلاث خاناتٍ **صامتاً**. تُقرَأ
+  /// ديناميّاً عند كلّ استعمال (اقرأ `FinancialUtils`).
+  ///
+  /// والافتراضُ `JOD`/٣ ولا يُبدَّل: سويّةُ الاختبارات كلُّها مبنيّةٌ عليه.
+  static int decimalPlaces = CurrencyInfo.jod.decimals;
+
   // Currency fields — mutable, set from settings on app startup
   static String currencySymbol = 'د.أ';
   static String currencySymbolAr = 'د.أ';
@@ -38,6 +53,8 @@ class AppConstants {
     currencySymbolEn = info.code;
     currencyNameAr = info.nameAr;
     currencyCode = info.code;
+    // الدقّةُ جزءٌ من العملة لا إعدادٌ مستقلّ — وإغفالُها هنا كان العطبَ.
+    decimalPlaces = info.decimals;
   }
 
   // Invoices
@@ -139,21 +156,31 @@ class CurrencyInfo {
   final String symbolAr;
   final String nameAr;
 
+  /// عددُ الخانات العشريّة لهذه العملة — **مصدرُ الدقّة الوحيد**.
+  ///
+  /// الدينارُ الأردنيُّ ثلاثُ خاناتٍ (الفلس) والجنيهُ المصريُّ خانتان
+  /// (القرش). وقبل هذا الحقلِ كانت الدقّةُ ثابتاً واحداً (٣) لكلّ العملات،
+  /// فتنصيبةٌ بالجنيه تحسب وتعرض بثلاث خانات.
+  final int decimals;
+
   const CurrencyInfo({
     required this.code,
     required this.symbolAr,
     required this.nameAr,
+    required this.decimals,
   });
 
   static const CurrencyInfo jod = CurrencyInfo(
     code: 'JOD',
     symbolAr: 'د.أ',
     nameAr: 'دينار أردني',
+    decimals: 3,
   );
   static const CurrencyInfo egp = CurrencyInfo(
     code: 'EGP',
     symbolAr: 'ج.م',
     nameAr: 'جنيه مصري',
+    decimals: 2,
   );
 
   static const List<CurrencyInfo> all = [jod, egp];

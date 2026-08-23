@@ -99,13 +99,18 @@ class PosExchangeMode {
   /// **غيرُ نقديّة** تُردّ إلى قناتها (بنكاً أو رصيدَ عميل) بينما شقُّ البيع
   /// يقبض نقداً كاملاً، فأثرُ الدرج الفعليُّ يخالف هذا الفرق. ولذلك تُعرَض
   /// بعد الحفظ أرقامُ `ExchangeResult` المقيسةُ داخل المعاملة لا هذه.
+  ///
+  /// ⚠️ و[decimalPlaces] **قابلٌ للإغفال لا ذو قيمةٍ افتراضيّةٍ ثابتة**:
+  /// دقّةُ العملة صارت متغيّرةً تتبع العملةَ (‏قرارُ المالك 2026-08-23)،
+  /// وقيمةٌ افتراضيّةٌ في التوقيع تُحسم **عند الترجمة** فتتجمّد على ٣ — وهو
+  /// نفسُ عطبِ `static final` من الطرف الآخر. فتُقرَأ عند النداء.
   ({ExchangeCashDirection direction, double amount}) previewSettlement({
     required double replacementTotal,
-    int decimalPlaces = AppConstants.decimalPlaces,
+    int? decimalPlaces,
   }) =>
       settleExchange(
         returnTotal: refundTotal,
         saleTotal: replacementTotal,
-        decimalPlaces: decimalPlaces,
+        decimalPlaces: decimalPlaces ?? AppConstants.decimalPlaces,
       );
 }
