@@ -243,13 +243,13 @@ class BookingsRemindersView extends ConsumerWidget {
   }
 }
 
-class _ReminderCard extends StatelessWidget {
+class _ReminderCard extends ConsumerWidget {
   const _ReminderCard({required this.row});
 
   final BookingReminderRow row;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final due = row.isDue(DateTime.now());
     final color = due ? AppColors.warning : AppColors.textMuted;
@@ -324,8 +324,18 @@ class _ReminderCard extends StatelessWidget {
           FilledButton.icon(
             onPressed: link == null
                 ? null
-                : () => launchUrl(Uri.parse(link),
-                    mode: LaunchMode.externalApplication),
+                : () async {
+                    await launchUrl(Uri.parse(link),
+                        mode: LaunchMode.externalApplication);
+                    // ⚠️ الختمُ بعد الفتح وإلّا بقي الصفُّ `scheduled` أبداً:
+                    // تتراكم القائمةُ بما عُولج فعلاً ولا يميّز المضيفُ ما
+                    // أرسله ممّا لم يُرسله.
+                    final auth = ref.read(authProvider);
+                    await ref
+                        .read(databaseProvider)
+                        .markBookingReminderOpened(row.id,
+                            userId: auth.user?.id);
+                  },
             icon: const Icon(PhosphorIconsBold.paperPlaneTilt, size: 14),
             label: const Text('فتح الرابط'),
             style: FilledButton.styleFrom(

@@ -452,8 +452,8 @@ extension BookingsDao on AppDatabase {
     int? branchId,
     int? createdBy,
     DateTime? now,
-  }) {
-    return transaction(() async {
+  }) async {
+    final newBookingId = await transaction(() async {
       final currentTime = now ?? DateTime.now();
       if (startsAt.isBefore(currentTime)) {
         throw BookingInPastException(
@@ -530,6 +530,92 @@ extension BookingsDao on AppDatabase {
 
       return bookingId;
     });
+
+    // ── التذكيرُ **خارجَ** المعاملة عمداً ────────────────────────────────
+    // العربونُ أعلاه داخلَها لأنّ فشلَه يترك مالاً مقبوضاً بلا أثرٍ في أيّ
+    // دفتر. والتذكيرُ نقيضُه: لا مالَ فيه، وإسقاطُ حجزٍ مؤكَّدٍ لأنّ صفَّ
+    // تذكيرٍ تعذّر ضررٌ محضٌ بلا مقابل. فيُبتلَع فشلُه ويبقى الحجز.
+    try {
+      await _scheduleBookingReminder(
+        bookingId: newBookingId,
+        customerPhone: customerPhone,
+        startsAt: startsAt,
+      );
+    } catch (e) {
+      unawaited(DiagnosticLogger.log(
+        'BOOKING-REMINDER',
+        'تعذّر جدولةُ تذكيرٍ للحجز #$newBookingId — الحجزُ قائم: $e',
+      ));
+    }
+
+    return newBookingId;
+  }
+
+  /// المهلةُ المحفوظةُ للتذكير بالدقائق — أو الافتراضُ عند غيابٍ أو فساد.
+  ///
+  /// ⚠️ **قراءةٌ غيرُ متزامنة عن قصد.** القراءةُ المتزامنة
+  /// (`SettingsRepositoryCached.get`) ترجع `null` عند إخفاق الكاش بنفس ما
+  /// ترجعه عند غياب المفتاح، فتموت الميزةُ صامتةً ما لم يُسجَّل المفتاحُ في
+  /// `preloadKeys`. وهذا المسارُ `async` أصلاً فلا يدفع ثمناً.
+  ///
+  /// ⚠️ و**السالبُ يسقط على الافتراض** لا يُمرَّر: القيدُ
+  /// `offset_minutes >= 0` يرفضه، فتمريرُه يحوّل إعداداً فاسداً إلى حجزٍ
+  /// بلا تذكيرٍ بدل تذكيرٍ بالافتراض.
+  Future<int> _bookingReminderOffsetMinutes() async {
+    final raw = await getSettingValue(bookingReminderOffsetKey);
+    final parsed = int.tryParse(raw ?? '');
+    if (parsed == null || parsed < 0) return bookingReminderOffsetDefault;
+    return parsed;
+  }
+
+  /// يُدرج صفَّ تذكيرٍ واحداً لحجزٍ جديد.
+  ///
+  /// ⚠️ **ولا تذكيرَ بلا هاتف**: `whatsappReminderLink` ترجع `null` بلا رقم،
+  /// فالصفُّ يظهر في القائمة بزرٍّ لا يعمل — زينةٌ تُوهم المضيفَ أنّ العميلَ
+  /// سيُذكَّر (‏قرارُ المالك 2026-08-23).
+  ///
+  /// ⚠️ و**المستحقُّ فوراً يُنشَأ ولا يُتخطّى**: حجزٌ بعد عشر دقائقَ ومهلةٌ
+  /// ستّون يعطي `scheduledAt` في الماضي. العميلُ ما زال يستحقّ تذكيراً،
+  /// و`isReminderDue` تعرضه مستحقّاً فيراه المضيفُ ويرسله (‏قرارُ المالك).
+  Future<void> _scheduleBookingReminder({
+    required int bookingId,
+    required String? customerPhone,
+    required DateTime startsAt,
+  }) async {
+    if (customerPhone == null || customerPhone.trim().isEmpty) return;
+
+    final offset = await _bookingReminderOffsetMinutes();
+    await into(bookingReminders).insert(
+      BookingRemindersCompanion.insert(
+        bookingId: bookingId,
+        offsetMinutes: Value(offset),
+        scheduledAt: reminderScheduleFor(startsAt, offset),
+      ),
+    );
+  }
+
+  /// يختم تذكيراً بأنّ رابطَه فُتح — بمن فتحه ومتى.
+  ///
+  /// ⚠️ **`opened` لا `sent`.** رابطُ `wa.me` يفتح واتساب برسالةٍ مُعبّأةٍ
+  /// ولا يُثبت إرسالاً، والقيدُ يرفض `sent` أصلاً. فما يُسجَّل هو ما يملك
+  /// التطبيقُ إثباتَه.
+  ///
+  /// ⚠️ وبدونه يبقى كلُّ صفٍّ `scheduled` أبداً: `isReminderDue` تعرضه
+  /// مستحقّاً بلا نهاية، فتتراكم القائمةُ بما عُولج فعلاً ولا يميّز المضيفُ
+  /// ما أرسله ممّا لم يُرسله — أي أنّ المولِّدَ يملأ قائمةً لا تُفرَّغ.
+  Future<void> markBookingReminderOpened(
+    int reminderId, {
+    int? userId,
+    DateTime? now,
+  }) async {
+    await (update(bookingReminders)..where((r) => r.id.equals(reminderId)))
+        .write(
+      BookingRemindersCompanion(
+        state: const Value('opened'),
+        openedAt: Value(now ?? DateTime.now()),
+        openedBy: Value(userId),
+      ),
+    );
   }
 
   /// يرفض تفويترَ حجزٍ خدمتُه غيرُ مربوطةٍ بصنف.
@@ -733,6 +819,36 @@ extension BookingsDao on AppDatabase {
           updatedAt: Value(currentTime),
         ),
       );
+
+      // ── التذكيرُ يتبع الموعدَ وإلّا صار يتيماً ──────────────────────────
+      // صفٌّ بقي على موعدٍ لم يعد قائماً أسوأُ من لا صفّ: المضيفُ يرسل
+      // للعميل ساعةً خطأ.
+      //
+      // ⚠️ و**بالمهلة المخزَّنة في الصفّ** لا بالإعداد اليوم — وهذا نصُّ
+      // تعليقِ العمود: «يُخزَّن ليبقى التذكيرُ مفهوماً بعد تأجيل الموعد،
+      // ويُعاد جدولتُه منه». ولو قُرئ الإعدادُ هنا لَغيّر تبديلُه تذكيراتٍ
+      // قديمةً بأثرٍ رجعيٍّ عند أوّل نقل.
+      //
+      // ⚠️ و`scheduled` وحدَها: تذكيرٌ `opened` تاريخٌ وقع فعلاً، وتحريكُ
+      // موعدِه يكذب على سجلٍّ تمّ.
+      if (startsAt != null) {
+        final live = await (select(bookingReminders)
+              ..where((r) =>
+                  r.bookingId.equals(bookingId) &
+                  r.deletedAt.isNull() &
+                  r.state.equals('scheduled')))
+            .get();
+        for (final reminder in live) {
+          await (update(bookingReminders)..where((r) => r.id.equals(reminder.id)))
+              .write(
+            BookingRemindersCompanion(
+              scheduledAt: Value(
+                reminderScheduleFor(newStartsAt, reminder.offsetMinutes),
+              ),
+            ),
+          );
+        }
+      }
     });
   }
 

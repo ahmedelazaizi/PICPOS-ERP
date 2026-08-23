@@ -221,6 +221,19 @@ class Bookings extends Table {
 /// و«المستحقُّ» (‏`due` في التصميم) **يُحسَب ولا يُخزَّن**: `scheduled_at`
 /// ماضٍ والحالةُ `scheduled`. عمودٌ يقول «مستحقّ» يحتاج من يُحدّثه كلَّ
 /// دقيقة، وينحرف عن الساعة بصمتٍ إن لم يُحدَّث.
+
+/// مفتاحُ مهلةِ التذكير الافتراضيّة — دقائقُ قبل الموعد.
+///
+/// ⚠️ **مكانُه هنا لا في طبقة العرض.** كان معرَّفاً في
+/// `bookings_settings_view.dart`، فلمّا احتاجه مولِّدُ التذكيرات في الـDAO
+/// لم يكن أمامَه إلّا أن تستوردَ **البياناتُ من العرض** — عكسُ اتّجاه
+/// الطبقات. والمفتاحُ يصف عموداً في هذا الجدول، فمَوضِعُه معه.
+const bookingReminderOffsetKey = 'booking_reminder_offset_minutes';
+
+/// ⚠️ ويجب أن يطابق `BookingReminders.offsetMinutes.withDefault` أدناه —
+/// قيمتان تفترقان تعنيان صفّاً يُولد بمهلةٍ وتُقرأ بأخرى.
+const bookingReminderOffsetDefault = 60;
+
 class BookingReminders extends Table {
   IntColumn get id => integer().autoIncrement()();
 

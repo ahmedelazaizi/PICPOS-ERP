@@ -19,9 +19,10 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/providers.dart';
 
-/// مفتاحُ مهلةِ التذكير الافتراضيّة — دقائقُ قبل الموعد.
-const bookingReminderOffsetKey = 'booking_reminder_offset_minutes';
-const bookingReminderOffsetDefault = 60;
+// ⚠️ `bookingReminderOffsetKey` و`bookingReminderOffsetDefault` انتقلا إلى
+// `data/database/tables/booking_tables.dart` — يحتاجهما مولِّدُ التذكيرات في
+// الـDAO، ولا يجوز أن تستوردَ طبقةُ البيانات من طبقة العرض. وهما يصلان هنا
+// عبر `providers.dart` المستوردةِ أصلاً.
 
 final bookingReminderOffsetProvider = FutureProvider<int>((ref) async {
   final raw =
