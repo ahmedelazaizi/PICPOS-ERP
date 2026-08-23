@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
+import '../../../core/config/app_config.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/number_utils.dart';
@@ -26,6 +27,16 @@ const _palette = [
   '#EF4444',
   '#22C55E',
 ];
+
+/// موظَّفو الموارد البشريّة — لربطِ موردِ الحجز بملفّه.
+///
+/// ⚠️ الربطُ **اختياريٌّ وفي اتّجاهٍ واحد**: لا كلُّ موظَّفٍ يُحجَز وقتُه
+/// (المحاسبُ وأمينُ المخزن)، ولا كلُّ موردٍ موظَّفٌ (الأجهزةُ والغرف). ولذلك
+/// يُختار من هنا ولا تُبنى القائمةُ من `employees` تلقائيّاً.
+final bookingLinkableEmployeesProvider =
+    StreamProvider.autoDispose<List<Employee>>(
+  (ref) => ref.watch(databaseProvider).watchAllEmployees(),
+);
 
 Future<bool?> showServiceEditor(BuildContext context, {BookingService? existing}) =>
     showDialog<bool>(
@@ -242,6 +253,7 @@ class _ResourceEditorState extends ConsumerState<_ResourceEditor> {
   late final _phone = TextEditingController(text: widget.existing?.phone ?? '');
 
   late String _kind = widget.existing?.kind ?? 'staff';
+  late int? _employeeId = widget.existing?.employeeId;
   late String _color = widget.existing?.colorHex ?? _palette.first;
   late TimeOfDay? _start = _toTime(widget.existing?.shiftStartMinutes);
   late TimeOfDay? _end = _toTime(widget.existing?.shiftEndMinutes);
@@ -265,6 +277,37 @@ class _ResourceEditorState extends ConsumerState<_ResourceEditor> {
 
   String? get _blocked =>
       _name.text.trim().isEmpty ? 'اكتب اسم الموظَّف أو الجهاز' : null;
+
+  /// مُنتقي الموظَّف — و«بلا ربط» خيارٌ صريحٌ لا غيابُ اختيار.
+  ///
+  /// ⚠️ واختيارُ موظَّفٍ يملأ الاسمَ **إن كان فارغاً فقط**: الكتابةُ فوقَ اسمٍ
+  /// كتبه المستخدمُ بيده مصادرةٌ لقراره — قد يسمّي الموردَ «كرسي محمد».
+  Widget _employeePicker() {
+    final employees =
+        ref.watch(bookingLinkableEmployeesProvider).value ?? const <Employee>[];
+
+    // موظَّفٌ مربوطٌ ثمّ حُذف: قيمةٌ لا تقابل عنصراً تُسقط `DropdownButton`.
+    final known = employees.any((e) => e.id == _employeeId);
+    final value = known ? _employeeId : null;
+
+    return DropdownButtonFormField<int?>(
+      initialValue: value,
+      isExpanded: true,
+      decoration: _dec(),
+      hint: Text(employees.isEmpty ? 'لا موظَّفين مسجَّلين' : 'بلا ربط'),
+      items: [
+        const DropdownMenuItem<int?>(value: null, child: Text('بلا ربط')),
+        for (final e in employees)
+          DropdownMenuItem<int?>(value: e.id, child: Text(e.name)),
+      ],
+      onChanged: (v) => setState(() {
+        _employeeId = v;
+        if (v != null && _name.text.trim().isEmpty) {
+          _name.text = employees.firstWhere((e) => e.id == v).name;
+        }
+      }),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -308,6 +351,36 @@ class _ResourceEditorState extends ConsumerState<_ResourceEditor> {
                 child: _text('الهاتف (اختياري)', _phone, keyboard: TextInputType.phone, onChanged: _rebuild)),
           ],
         ),
+        // ⚠️ يظهر فقط حين تكون الموارد البشريّة مفعَّلةً وحين يكون النوعُ
+        //    «موظَّف»: ملفّا `restaurant` و`cafe` يفتحان الحجوزاتِ
+        //    و`hrEnabled` مطفأةٌ عندهما، وحقلٌ يشير إلى وحدةٍ محجوبةٍ تشويشٌ.
+        //    والجهازُ لا ملفَّ له في الرواتب.
+        if (AppConfig.showHR && _kind == 'staff') ...[
+          const SizedBox(height: 12),
+          _labelled('الموظَّف في الموارد البشريّة (اختياري)', _employeePicker()),
+          const SizedBox(height: 8),
+          _note(
+            PhosphorIconsBold.info,
+            'الربطُ للتعريف فقط: الموظَّفُ يبقى كيانَ الرواتب والحضور، '
+            'والموردُ تقويمَه القابلَ للحجز. وإنشاءُ موردٍ لا يُنشئ موظَّفاً '
+            'ولا يدخل مسيّرَ الرواتب.',
+            AppColors.textMuted,
+          ),
+        ],
+        // ⚠️ قرارُ المالك 2026-08-23: لا ربطَ بين موردِ الجهاز والأصول
+        //    الثابتة. الجهازُ هنا موعدٌ يُحجَز، وفي الأصول قيمةٌ تُهلَك —
+        //    دورتان مختلفتان. وكثيرٌ ممّا يُحجَز ليس أصلاً أصلاً (غرفةٌ
+        //    مستأجَرة). ويُقال صراحةً وإلّا بحث المستخدمُ عن الربط.
+        if (_kind == 'device') ...[
+          const SizedBox(height: 12),
+          _note(
+            PhosphorIconsBold.info,
+            'الجهازُ هنا موردٌ يُحجَز وقتُه فقط — لا يدخل الأصولَ الثابتة '
+            'ولا دورةَ الإهلاك. سجِّله في «الأصول الثابتة» على حدة إن كان '
+            'أصلاً يُهلَك.',
+            AppColors.textMuted,
+          ),
+        ],
         const SizedBox(height: 12),
         Row(
           children: [
@@ -410,6 +483,9 @@ class _ResourceEditorState extends ConsumerState<_ResourceEditor> {
             name: _name.text,
             role: _role.text,
             kind: _kind,
+            // الجهازُ لا ملفَّ له في الرواتب — فتبديلُ النوع إلى «جهاز» يفكّ
+            // الربطَ بدل أن يتركه معلَّقاً على صفٍّ لا يُرى حقلُه.
+            employeeId: _kind == 'staff' ? _employeeId : null,
             colorHex: _color,
             shiftStartMinutes: _toMinutes(_start),
             shiftEndMinutes: _toMinutes(_end),

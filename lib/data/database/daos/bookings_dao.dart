@@ -368,6 +368,13 @@ extension BookingsDao on AppDatabase {
     int? shiftEndMinutes,
     String? phone,
     bool isActive = true,
+    // ⚠️ ربطٌ **اختياريٌّ** بموظَّفِ الموارد البشريّة (‏قرارُ المالك
+    //    2026-08-23). لا مزامنةَ في الاتّجاهين: المحاسبُ وأمينُ المخزن
+    //    موظَّفان ولا يُحجَز وقتُهما، وملفّا `restaurant` و`cafe` يفتحان
+    //    الحجوزاتِ و`hrEnabled` مطفأةٌ عندهما — فالمورد لا بدّ أن يعمل
+    //    قائماً بذاته. والموظَّفُ يبقى كيانَ الرواتب، والمورد تقويمَه
+    //    القابلَ للحجز.
+    int? employeeId,
   }) async {
     if (kind != 'staff' && kind != 'device') {
       throw ArgumentError('نوع المورد يكون «موظَّف» أو «جهاز»');
@@ -388,6 +395,8 @@ extension BookingsDao on AppDatabase {
       shiftEndMinutes: Value(shiftEndMinutes),
       phone: Value(phone?.trim().isEmpty ?? true ? null : phone!.trim()),
       isActive: Value(isActive),
+      // ‏`Value(null)` لا `Value.absent()`: الفكُّ فعلٌ مقصودٌ يجب أن يقع.
+      employeeId: Value(employeeId),
     );
 
     if (id == null) return into(bookingResources).insert(companion);
