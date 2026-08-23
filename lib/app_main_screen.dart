@@ -16,6 +16,7 @@ import 'presentation/shell/app_shell.dart';
 import 'core/config/brand.dart';
 import 'presentation/pos/screens/pos_main_screen.dart';
 import 'presentation/pos_picpos/screens/picpos_pos_screen.dart';
+import 'presentation/offers_picpos/offers_picpos_screen.dart';
 import 'services/shift_dialog_session_guard.dart';
 // Spec 135 NOTE 1 — SessionTimeoutWrapper (POS lock screen, System B) retired;
 // session timeout is handled app-wide by InactivityDetector (System A).
@@ -616,7 +617,9 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
       ),
       ScreenConfig(
         appScreen: AppScreen.offers,
-        builder: (_) => const OffersScreen(),
+        // Brand fork, not a profile fork — same pattern as its neighbours.
+        builder: (_) =>
+            Brand.isPicPos ? const OffersPicPosScreen() : const OffersScreen(),
         label: 'العروض',
         icon: PhosphorIconsBold.tag,
       ),
