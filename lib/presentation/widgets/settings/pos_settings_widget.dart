@@ -4,6 +4,8 @@ import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../picpos_shell/picpos_body_handle.dart';
+import '../../picpos_shell/picpos_dialog.dart';
 import '../../../data/providers/providers.dart';
 import '../../../core/config/app_config.dart';
 import '../../../services/client_write_interceptor.dart';
@@ -97,7 +99,17 @@ Widget buildDefaultTaxRateFormField({
 
 /// Standalone POS Settings Widget — extracted from Hardware Settings
 class PosSettingsWidget extends ConsumerStatefulWidget {
-  const PosSettingsWidget({super.key});
+  /// جسمٌ بلا زرِّ حفظٍ داخليّ — الزرُّ في تذييل `PicPosDialog`.
+  final bool picposChrome;
+
+  /// تسجّل فيه الحالةُ إجراءَ الحفظ ليبلغه زرُّ التذييل.
+  final PicPosBodyHandle? saveHandle;
+
+  const PosSettingsWidget({
+    super.key,
+    this.picposChrome = false,
+    this.saveHandle,
+  });
   @override
   ConsumerState<PosSettingsWidget> createState() => _PosSettingsWidgetState();
 }
@@ -204,6 +216,7 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
   @override
   void initState() {
     super.initState();
+    widget.saveHandle?.register(_saveSettings);
     _loadSettings();
   }
 
@@ -715,25 +728,30 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) return const Center(child: CircularProgressIndicator());
+
+    final sections = SingleChildScrollView(
+      child: Column(children: [
+        _buildMainPOSSection(),
+        const SizedBox(height: 16),
+        _buildCategoryDisplaySection(),
+        const SizedBox(height: 16),
+        _buildProductGridSection(),
+        const SizedBox(height: 16),
+        _buildReceiptSection(),
+        const SizedBox(height: 16),
+        _buildTablePOSSection(),
+      ]),
+    );
+
+    // في غلاف PicPos: لا زرَّ حفظٍ هنا ولا `Directionality` — الغلافُ يوفّر
+    // الاثنين، وزرّان للحفظ في حوارٍ واحدٍ يربكان.
+    if (widget.picposChrome) return sections;
+
     return Directionality(
       textDirection: ui.TextDirection.rtl,
       child: Column(
         children: [
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(children: [
-                _buildMainPOSSection(),
-                const SizedBox(height: 16),
-                _buildCategoryDisplaySection(),
-                const SizedBox(height: 16),
-                _buildProductGridSection(),
-                const SizedBox(height: 16),
-                _buildReceiptSection(),
-                const SizedBox(height: 16),
-                _buildTablePOSSection(),
-              ]),
-            ),
-          ),
+          Expanded(child: sections),
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity, height: 48,
@@ -1212,7 +1230,43 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
 }
 
 /// Helper to show POS settings in a dialog
-Future<void> showPosSettingsDialog(BuildContext context) {
+/// [picpos] `true` ⇒ لوحةُ `BENCH.quicksale` بغلاف `PicPosDialog`.
+///
+/// ⚠️ **والأقسامُ الخمسةُ تبقى كما هي عن قصد.** التصميمُ يرسم اللوحةَ
+/// «طرقَ دفعٍ مؤشَّرة + خمسةَ صفوفِ سياسة»، وهذا **نموذجٌ لا تملكه الشاشة**:
+/// أقسامُها الخمسةُ (‏الرئيسيّة · عرض الأقسام · شبكة الأصناف · الإيصال ·
+/// بيعُ الطاولات) أوسعُ من طرق الدفع وحدَها، وطرقُ الدفع نفسُها تُدار من
+/// `picpos_payment_methods.dart` في قسمٍ آخرَ من المركز. فإعادةُ رسمها هنا
+/// تكرارٌ لواجهةٍ قائمةٍ لا تنسيق. الغلافُ وحدَه ما تبدّل.
+Future<void> showPosSettingsDialog(BuildContext context,
+    {bool picpos = false}) {
+  if (picpos) {
+    final handle = PicPosBodyHandle();
+    return showDialog(
+      context: context,
+      builder: (_) => ValueListenableBuilder<bool>(
+        valueListenable: handle.isReady,
+        builder: (_, ready, _) => PicPosDialog(
+          icon: PhosphorIconsBold.lightning,
+          title: 'إعدادات البيع السريع',
+          subtitle: 'ما يظهر للكاشير وما يُطبَع على الإيصال',
+          width: 760,
+          primaryAction: PicPosDialogAction(
+            label: 'حفظ إعدادات البيع',
+            icon: PhosphorIconsBold.check,
+            onPressed: ready ? handle.invoke : null,
+          ),
+          body: [
+            SizedBox(
+              height: 600,
+              child:
+                  PosSettingsWidget(picposChrome: true, saveHandle: handle),
+            ),
+          ],
+        ),
+      ),
+    ).whenComplete(handle.dispose);
+  }
   return showDialog(
     context: context,
     builder: (context) => AlertDialog(

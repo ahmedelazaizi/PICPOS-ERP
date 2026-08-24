@@ -476,7 +476,7 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
                           icon: PhosphorIconsBold.buildings,
                           title: 'معلومات الشركة',
                           sub: 'الاسم، السجل التجاري، الرقم الضريبي، الشعار',
-                          onTap: () => showCompanyInfoDialog(context),
+                          onTap: () => showCompanyInfoDialog(context, picpos: true),
                         ),
                       ),
                       // الودجتاتُ القائمةُ نفسُها — بُدِّل رسمُها إلى صفِّ
@@ -595,7 +595,7 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
                   title: 'إعدادات البيع السريع',
                   subtitle: 'سلوكُ شاشة الكاشير وحدودُ الخصم',
                   child: buildPosSettingsTileGuarded(
-                    onOpen: () => showPosSettingsDialog(context),
+                    onOpen: () => showPosSettingsDialog(context, picpos: true),
                   ),
                 ),
               ),
@@ -1474,7 +1474,7 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
           trailing: isActivated
               ? null
               : buildLicenseActivateButtonGuarded(
-                  onOpen: () => showActivationDialog(context),
+                  onOpen: () => showActivationDialog(context, picpos: true),
                 ),
         ),
       ),
@@ -2053,7 +2053,7 @@ class _UserTiles extends ConsumerWidget {
           onTap: () => guarded(
             PermissionCodes.rolesManage,
             'إدارة صلاحيات الأدوار',
-            () => showPermissionsManagementDialog(context),
+            () => showPermissionsManagementDialog(context, picpos: true),
           ),
         ),
       ],
@@ -2104,7 +2104,7 @@ class _DeviceTiles extends ConsumerWidget {
           onTap: () => guarded(
             PermissionCodes.settingsPrinter,
             'إعدادات الأجهزة',
-            () => showHardwareSettingsDialog(context),
+            () => showHardwareSettingsDialog(context, picpos: true),
           ),
         ),
         SettingsTile(

@@ -28,6 +28,12 @@ class _ResetPasswordDialogState extends AppFormDialogState<bool, ResetPasswordDi
   IconData get dialogIcon => PhosphorIconsBold.key;
 
   @override
+  String? get dialogSubtitle => 'كلمةٌ جديدةٌ تسري من أوّل تسجيل دخول';
+
+  @override
+  String? get dialogSaveLabel => 'حفظ كلمة المرور';
+
+  @override
   Widget buildFormContent(BuildContext context, AppLocalizations localizations) {
     return Column(
       mainAxisSize: MainAxisSize.min,

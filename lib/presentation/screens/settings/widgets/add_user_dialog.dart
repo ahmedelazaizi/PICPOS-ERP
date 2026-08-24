@@ -36,6 +36,12 @@ class _AddUserDialogState extends AppFormDialogState<bool, AddUserDialog> {
   IconData get dialogIcon => PhosphorIconsBold.userPlus;
 
   @override
+  String? get dialogSubtitle => 'أنشئ حساباً واربطه بدورٍ وفروعٍ ومخازنَ محدّدة';
+
+  @override
+  String? get dialogSaveLabel => 'حفظ المستخدم';
+
+  @override
   Widget buildFormContent(BuildContext context, AppLocalizations localizations) {
     final roles = ref.watch(allRolesProvider).value ?? [];
     final branches = ref.watch(allBranchesProvider).value ?? [];

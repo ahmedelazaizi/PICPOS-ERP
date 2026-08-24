@@ -21,6 +21,16 @@ class _AddRoleDialogState extends AppFormDialogState<bool, AddRoleDialog> {
   @override
   IconData get dialogIcon => PhosphorIconsBold.shieldPlus;
 
+  /// ⚠️ التصميمُ يعطي لوحةَ `role` مجموعتَي «نسخ الصلاحيات من» و«مجموعات
+  /// الصلاحيات». وهذا الحوارُ **يُنشئ الدورَ وحدَه** ثمّ تُضبَط صلاحياتُه من
+  /// «إدارة الصلاحيات» — فالوصفُ يقول ذلك بدل أن يعد بما لا يفعله.
+  @override
+  String? get dialogSubtitle =>
+      'عرِّف الدورَ ثمّ اضبط صلاحياته من «إدارة الصلاحيات»';
+
+  @override
+  String? get dialogSaveLabel => 'إنشاء الدور';
+
   @override
   Widget buildFormContent(BuildContext context, AppLocalizations localizations) {
     return TextField(

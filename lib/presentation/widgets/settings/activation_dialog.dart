@@ -1,4 +1,9 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
+import '../../picpos_shell/picpos_dialog.dart';
+import '../../picpos_shell/picpos_panel_groups.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../picpos_shell/picpos_surface.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
 import 'package:flutter/services.dart';
@@ -9,7 +14,16 @@ import '../../../core/theme/app_colors.dart';
 import '../../../services/license_service.dart';
 
 class ActivationDialog extends ConsumerStatefulWidget {
-  const ActivationDialog({super.key});
+  /// غلافُ PicPos (`PANELS.activate` في ملفّ التصميم) بدل `AlertDialog`.
+  ///
+  /// ⚠️ **رايةٌ لا استخراجُ جسم**، خلافاً لشاشات الإعدادات الفرعيّة: حوارٌ
+  /// ورقةٌ في الشجرة، ومنطقُه (`_machineId` · `_handleActivate` · `_loading`)
+  /// كلُّه في حالةٍ خاصّة. فاستخراجُ «جسمٍ» منه يعني تفكيكَ الحالة لا نقلَ
+  /// ودجت. والرايةُ تبلغ الغرضَ بالشرط نفسِه: افتراضيّاً `false`، فحوارُ
+  /// UralCash لا يتبدّل فيه بايت.
+  final bool picposChrome;
+
+  const ActivationDialog({super.key, this.picposChrome = false});
 
   @override
   ConsumerState<ActivationDialog> createState() => _ActivationDialogState();
@@ -62,8 +76,128 @@ class _ActivationDialogState extends ConsumerState<ActivationDialog> {
     }
   }
 
+  /// لوحةُ `PANELS.activate` على هويّة PicPos.
+  ///
+  /// ⚠️ **وثلاثةُ فروقٍ عن التصميم، كلُّها لأنّ التصميمَ يصف ما لا يفعله
+  /// البرنامج — ورسمُ ما لا يعمل أسوأُ من عدم رسمه:**
+  ///
+  /// ١. التصميمُ يعطي مجموعةَ مفاتيحَ «تفعيل عبر الإنترنت / تفعيل بملف
+  ///    ترخيص». والتفعيلُ بملفٍّ **موجودٌ فعلاً** لكنّه ليس وضعاً يُبدَّل:
+  ///    `LicenseService.isActivated()` يفحص `license.txt`/`activation.key`/
+  ///    `license.key` بجانب التنفيذيّ **تلقائيّاً** في كلّ إقلاع. فمفتاحٌ
+  ///    يوهم بالاختيار كذب — والصوابُ بيانٌ يشرح أين يوضع الملفّ.
+  ///
+  /// ٢. وتنبيهُ التصميم يقول إنّ النقلَ لجهازٍ آخر «يحتاج فك التفعيل أولاً
+  ///    من الدعم الفني». و`deactivate` غيرُ موجودةٍ في البرنامج أصلاً، فما
+  ///    يحتاجه النقلُ مفتاحٌ جديدٌ لا فكُّ تفعيل. صيغَ التنبيهُ على الواقع.
+  ///
+  /// ٣. ومجموعةُ `key` في التصميم أربعةُ صناديقَ من أربع خانات. المدخلُ هنا
+  ///    حقلٌ واحدٌ بنفس القناع `XXXX-XXXX-XXXX-XXXX` وبنفس الخطّ الأحاديّ —
+  ///    وظيفيّاً هو هو، والتقسيمُ إلى أربعةٍ بندٌ مفتوحٌ لا عطب.
+  Widget _buildPicposDialog(BuildContext context) {
+    final muted = picposDialogMuted(context);
+    return PicPosDialog(
+      icon: PhosphorIconsBold.key,
+      title: 'تفعيل الترخيص',
+      subtitle: 'أدخل مفتاح الترخيص المرسل من الدعم الفني',
+      width: 660,
+      primaryAction: PicPosDialogAction(
+        label: 'تفعيل الآن',
+        icon: PhosphorIconsBold.sealCheck,
+        busy: _loading,
+        onPressed: _loading ? null : _handleActivate,
+      ),
+      body: [
+        PicPosPanelGroup(
+          label: 'مفتاح الترخيص',
+          hint: '١٦ خانة',
+          child: TextField(
+            controller: _keyController,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontFamily: 'monospace',
+              fontSize: 18,
+              letterSpacing: 2.0,
+              fontWeight: FontWeight.bold,
+            ),
+            decoration: InputDecoration(
+              hintText: 'XXXX-XXXX-XXXX-XXXX',
+              hintStyle: TextStyle(color: muted, fontSize: 14),
+              prefixIcon: const Icon(PhosphorIconsBold.keyhole),
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        PicPosPanelGroup(
+          label: 'بيانات هذا الجهاز',
+          hint: 'أرسلها للدعم الفنّي',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              PicPosDialogSummary(
+                rows: [
+                  (
+                    label: 'رقم الجهاز',
+                    value: _machineId ?? 'جاري التحميل...',
+                    color: AppColors.primary,
+                  ),
+                  (
+                    label: 'اسم الجهاز',
+                    value: Platform.localHostname,
+                    color: null,
+                  ),
+                  (
+                    label: 'نظام التشغيل',
+                    value: Platform.operatingSystem,
+                    color: null,
+                  ),
+                  (
+                    label: 'إصدار البرنامج',
+                    value: AppConstants.appVersion,
+                    color: null,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: TextButton.icon(
+                  icon: const Icon(PhosphorIconsBold.copy, size: 15),
+                  label: const Text('نسخ رقم التعريف'),
+                  onPressed: _machineId == null
+                      ? null
+                      : () {
+                          Clipboard.setData(ClipboardData(text: _machineId!));
+                          AppToast.show(context, 'تم نسخ رقم التعريف');
+                        },
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        const PicPosDialogBanner(
+          icon: PhosphorIconsBold.fileText,
+          color: AppColors.info,
+          text: 'للأجهزة المعزولة عن الإنترنت: ضع ملفّ الترخيص باسم '
+              '«license.txt» أو «activation.key» أو «license.key» في نفس مجلّد '
+              'البرنامج — يُقرأ تلقائيّاً عند التشغيل بلا إدخال مفتاح.',
+        ),
+        const SizedBox(height: 12),
+        const PicPosDialogBanner(
+          icon: PhosphorIconsBold.warning,
+          color: AppColors.warning,
+          text: 'المفتاحُ مرتبطٌ برقم هذا الجهاز وحدَه. تشغيلُ البرنامج على '
+              'جهازٍ آخر يحتاج مفتاحاً جديداً من الدعم الفنّي.',
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (widget.picposChrome) return _buildPicposDialog(context);
     return Directionality(
       textDirection: TextDirection.rtl,
       child: AlertDialog(
@@ -191,6 +325,11 @@ class _ActivationDialogState extends ConsumerState<ActivationDialog> {
   }
 }
 
-void showActivationDialog(BuildContext context) {
-  showDialog(context: context, builder: (context) => const ActivationDialog());
+/// [picpos] `true` ⇒ غلافُ `PicPosDialog` بلوحة التصميم. الافتراضُ `false`
+/// فنداءُ UralCash يبقى كما هو.
+void showActivationDialog(BuildContext context, {bool picpos = false}) {
+  showDialog(
+    context: context,
+    builder: (context) => ActivationDialog(picposChrome: picpos),
+  );
 }

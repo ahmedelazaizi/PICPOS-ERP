@@ -51,6 +51,12 @@ class _BranchAccessDialogState extends AppFormDialogState<bool, BranchAccessDial
   IconData get dialogIcon => PhosphorIconsBold.buildings;
 
   @override
+  String? get dialogSubtitle => 'تحديدُ نطاق العمل — الفروعُ التي يراها المستخدم';
+
+  @override
+  String? get dialogSaveLabel => 'حفظ النطاق';
+
+  @override
   Widget buildFormContent(BuildContext context, AppLocalizations localizations) {
     if (isLoading && allBranches.isEmpty) {
       return const Center(child: CircularProgressIndicator());

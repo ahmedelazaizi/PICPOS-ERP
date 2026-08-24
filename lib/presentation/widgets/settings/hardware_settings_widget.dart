@@ -5,6 +5,8 @@ import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../picpos_shell/picpos_body_handle.dart';
+import '../../picpos_shell/picpos_dialog.dart';
 
 import '../../../core/config/app_config.dart';
 import '../../../data/providers/providers.dart';
@@ -16,7 +18,17 @@ part 'hardware/hardware_scale.dart';
 
 /// Widget for managing hardware devices (Scanner, Printer, Scale)
 class HardwareSettingsWidget extends ConsumerStatefulWidget {
-  const HardwareSettingsWidget({super.key});
+  /// جسمٌ بلا زرِّ حفظٍ داخليّ — الزرُّ انتقل إلى تذييل `PicPosDialog`.
+  final bool picposChrome;
+
+  /// تسجّل فيه الحالةُ إجراءَ الحفظ ليبلغه زرُّ التذييل.
+  final PicPosBodyHandle? saveHandle;
+
+  const HardwareSettingsWidget({
+    super.key,
+    this.picposChrome = false,
+    this.saveHandle,
+  });
 
   @override
   ConsumerState<HardwareSettingsWidget> createState() =>
@@ -76,6 +88,7 @@ class _HardwareSettingsWidgetState extends ConsumerState<HardwareSettingsWidget>
   @override
   void initState() {
     super.initState();
+    widget.saveHandle?.register(_saveSettings);
     scaleConnected = ScaleService.instance.isConnected;
     availablePorts = ScaleService.getAvailablePorts();
     _loadSettings();
@@ -195,20 +208,24 @@ class _HardwareSettingsWidgetState extends ConsumerState<HardwareSettingsWidget>
   Widget build(BuildContext context) {
     if (_isLoading) return const Center(child: CircularProgressIndicator());
 
+    final sections = SingleChildScrollView(
+      child: Column(children: [
+        _buildScannerSection(), const SizedBox(height: 16),
+        _buildPrinterSection(), const SizedBox(height: 16),
+        _buildCashDrawerSection(), const SizedBox(height: 16),
+        buildScaleSection(), const SizedBox(height: 16),
+      ]),
+    );
+
+    // في غلاف PicPos: لا زرَّ حفظٍ هنا ولا `Directionality` — الغلافُ يوفّر
+    // الاثنين، وزرٌّ ثانٍ في الجسم يجعل للحوار زرَّي حفظٍ لا يُعرف أيُّهما.
+    if (widget.picposChrome) return sections;
+
     return Directionality(
       textDirection: ui.TextDirection.rtl,
       child: Column(
         children: [
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(children: [
-                _buildScannerSection(), const SizedBox(height: 16),
-                _buildPrinterSection(), const SizedBox(height: 16),
-                _buildCashDrawerSection(), const SizedBox(height: 16),
-                buildScaleSection(), const SizedBox(height: 16),
-              ]),
-            ),
-          ),
+          Expanded(child: sections),
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity, height: 48,
@@ -389,7 +406,46 @@ class _HardwareSettingsWidgetState extends ConsumerState<HardwareSettingsWidget>
 }
 
 /// Helper method to show hardware settings in a dialog
-Future<void> showHardwareSettingsDialog(BuildContext context) {
+///
+/// [picpos] `true` ⇒ غلافُ `PicPosDialog`: رأسٌ بأيقونةٍ وعنوانٍ ووصف، وزرُّ
+/// الحفظ في التذييل بدل زرٍّ داخلَ الجسم. الافتراضُ `false` فحوارُ UralCash
+/// لا يتبدّل فيه بايت.
+///
+/// ⚠️ **والأقسامُ الأربعةُ تبقى كما هي**: `buildSectionCard` يرسم بطاقةً
+/// معنونةً بأرضيّةِ `picposField` — أي أنّها على الهويّة أصلاً منذ جلسةِ
+/// الوضع الغامق. الناقصُ كان الغلافَ وحدَه، فلا يُعاد رسمُ ما هو مرسوم.
+Future<void> showHardwareSettingsDialog(BuildContext context,
+    {bool picpos = false}) {
+  if (picpos) {
+    final handle = PicPosBodyHandle();
+    return showDialog(
+      context: context,
+      builder: (_) => ValueListenableBuilder<bool>(
+        valueListenable: handle.isReady,
+        builder: (_, ready, _) => PicPosDialog(
+          icon: PhosphorIconsBold.printer,
+          accent: AppColors.info,
+          title: 'إعدادات الأجهزة',
+          subtitle: 'الماسح والطابعة الحرارية ودرج النقد والميزان',
+          width: 660,
+          primaryAction: PicPosDialogAction(
+            label: 'حفظ الإعدادات',
+            icon: PhosphorIconsBold.check,
+            onPressed: ready ? handle.invoke : null,
+          ),
+          body: [
+            SizedBox(
+              height: 560,
+              child: HardwareSettingsWidget(
+                picposChrome: true,
+                saveHandle: handle,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ).whenComplete(handle.dispose);
+  }
   return showDialog(
     context: context,
     builder: (context) => AlertDialog(

@@ -48,6 +48,13 @@ class _WarehouseAccessDialogState extends AppFormDialogState<bool, WarehouseAcce
   IconData get dialogIcon => PhosphorIconsBold.warehouse;
 
   @override
+  String? get dialogSubtitle =>
+      'تحديدُ نطاق العمل — المخازنُ التي يراها المستخدم';
+
+  @override
+  String? get dialogSaveLabel => 'حفظ النطاق';
+
+  @override
   Widget buildFormContent(BuildContext context, AppLocalizations localizations) {
     if (isLoading) {
       return const Center(child: CircularProgressIndicator());

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../picpos_shell/picpos_dialog.dart';
 import '../../../core/design_system/typography.dart';
 import '../../../core/permissions/permission_codes.dart';
 import '../../../data/providers/providers.dart';
@@ -1129,7 +1130,32 @@ class _ActionButton extends StatelessWidget {
 }
 
 /// Helper to show permissions management as a full dialog
-void showPermissionsManagementDialog(BuildContext context) {
+/// [picpos] `true` ⇒ غلافُ `PicPosDialog` بدل `AlertDialog`.
+///
+/// ⚠️ **ولا مصفوفةَ أدوارٍ هنا.** التصميم (`BENCH.perms`) يرسم «مصفوفةَ
+/// الأدوار والصلاحيات»: الأدوارُ أعمدةٌ والصلاحياتُ صفوفٌ وتبديلٌ في مكانه.
+/// وهذه الشاشةُ اليومَ **دورٌ واحدٌ في كلّ مرّة** (‏قائمةُ أدوارٍ على اليمين
+/// ولوحةُ صلاحياتٍ على اليسار)، وتحويلُها مصفوفةً يعني نموذجَ تحريرٍ جديداً
+/// بحالةٍ معلّقةٍ لستّة أدوارٍ × ١٤٢ صلاحيةً معاً — بناءٌ لا إعادةُ تنسيق،
+/// ويمسّ أخطرَ ما في النظام. فالغلافُ وحدَه ما تبدّل، والمصفوفةُ بندٌ مفتوح.
+void showPermissionsManagementDialog(BuildContext context,
+    {bool picpos = false}) {
+  if (picpos) {
+    showDialog(
+      context: context,
+      builder: (_) => const PicPosDialog(
+        icon: PhosphorIconsBold.shieldCheck,
+        title: 'إدارة الصلاحيات',
+        subtitle: 'اختر دوراً ثمّ عدّل صلاحياته — يسري فوراً على كل مستخدميه',
+        width: 980,
+        scrollable: false,
+        body: [
+          SizedBox(height: 600, child: PermissionsManagementWidget()),
+        ],
+      ),
+    );
+    return;
+  }
   showDialog(
     context: context,
     builder: (context) => AlertDialog(

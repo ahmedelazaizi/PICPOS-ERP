@@ -26,6 +26,12 @@ class _SetPinDialogState extends AppFormDialogState<bool, SetPinDialog> {
   IconData get dialogIcon => PhosphorIconsBold.password;
 
   @override
+  String? get dialogSubtitle => 'أربعةُ أرقامٍ للدخول السريع على نقطة البيع';
+
+  @override
+  String? get dialogSaveLabel => 'حفظ الـ PIN';
+
+  @override
   Widget buildFormContent(BuildContext context, AppLocalizations localizations) {
     return Column(
       mainAxisSize: MainAxisSize.min,
