@@ -4,6 +4,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/permissions/permission_codes.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../picpos_shell/picpos_surface.dart';
 // `ModifierGroupWithItems` يصل عبر البرميل الذي يُصدّره `providers.dart`،
 // فاستيراد `data/database/database.dart` صار زائداً وأزيل.
 import '../../../data/providers/providers.dart';
@@ -437,7 +438,7 @@ class _ModifierSelectionDialogState extends State<ModifierSelectionDialog> {
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 decoration: BoxDecoration(
                   color: theme.cardColor,
-                  border: const Border(top: BorderSide(color: AppColors.border)),
+                  border: Border(top: BorderSide(color: context.picposHairline)),
                   borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
                 ),
                 child: Column(
@@ -648,7 +649,7 @@ class _ModifierSelectionDialogState extends State<ModifierSelectionDialog> {
                       border: Border.all(
                         color: isSelected
                             ? chipColor.withValues(alpha: 0.6)
-                            : AppColors.border,
+                            : context.picposHairline,
                         width: isSelected ? 2 : 1,
                       ),
                     ),

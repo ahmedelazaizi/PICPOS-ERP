@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../picpos_shell/picpos_surface.dart';
 
 import '../../../core/permissions/permission_codes.dart';
 import '../../widgets/permission_guard.dart';
@@ -140,9 +141,9 @@ class _DailyClosingDialogState extends ConsumerState<DailyClosingDialog> {
                 child: Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: context.picposField,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.border),
+                    border: Border.all(color: context.picposHairline),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

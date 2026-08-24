@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../picpos_shell/picpos_surface.dart';
 // نمطُ ديالوجات PicPos — الغلافُ المشترك.
 import '../../picpos_shell/picpos_dialog.dart';
 
@@ -680,7 +681,7 @@ class _PaymentVoucherDialogState extends ConsumerState<PaymentVoucherDialog> {
           padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
             color: isSelected ? color : Colors.transparent,
-            border: Border.all(color: isSelected ? color : AppColors.border),
+            border: Border.all(color: isSelected ? color : context.picposHairline),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Column(

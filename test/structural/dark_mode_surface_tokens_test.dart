@@ -45,6 +45,21 @@ const _scope = <String>[
   'lib/presentation/screens/inventory/stock_requisition_create_screen.dart',
   'lib/presentation/treasury_picpos',
   'lib/presentation/pos_picpos',
+  // ── ودجتاتٌ مشتركةٌ **ترسمها** هاتان الشاشتان ──────────────────────────
+  //
+  // ⚠️ النطاقُ يُقاس بالاعتماديات لا بالمجلّد. `treasury_picpos_screen.dart`
+  // فيه **صفرُ** ألوانٍ صريحةٍ وكان لا يأخذ الغامق، لأنّ العطبَ في ودجتاته.
+  // فمَن يصلح مجلّدَ الشاشةِ وحدَه يترك بقعاً فاتحة.
+  //
+  // وهذه مشتركةٌ مع UralCash، وتعديلُها هنا آمنٌ لأنّ قيمَ المُلحقِ الفاتحةَ
+  // **هي عينُ** ثوابتِ `AppColors` المستبدَلة — فالفاتحُ لا يتبدّل بايتاً.
+  'lib/presentation/treasury/screens/treasury_closing_screen.dart',
+  'lib/presentation/treasury/widgets/daily_closing_dialog.dart',
+  'lib/presentation/treasury/widgets/payment_voucher_dialog.dart',
+  'lib/presentation/treasury/widgets/receipt_voucher_dialog.dart',
+  'lib/presentation/treasury/widgets/safe_management_dialog.dart',
+  'lib/presentation/widgets/searchable_dropdown.dart',
+  'lib/presentation/pos/widgets/modifier_selection_dialog.dart',
 ];
 
 /// ثوابتُ الأسطحِ الفاتحةِ وحدَها — بلا نظائرِها الداكنة.

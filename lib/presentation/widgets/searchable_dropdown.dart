@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
+import '../picpos_shell/picpos_surface.dart';
 
 /// A dropdown widget with search functionality for large lists
 class SearchableDropdown<T> extends StatefulWidget {
@@ -151,7 +152,8 @@ class _SearchableDropdownState<T> extends State<SearchableDropdown<T>> {
                 child: Container(
                   constraints: BoxConstraints(maxHeight: maxHeight),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    // خلفيّةُ القائمة المنسدلة — سطحٌ لا مقدّمة، فتتبع الوضعَ.
+                    color: context.picposCard,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
                   ),
@@ -217,7 +219,7 @@ class _SearchableDropdownState<T> extends State<SearchableDropdown<T>> {
                                             : null,
                                         border: Border(
                                           bottom: BorderSide(
-                                            color: AppColors.border.withValues(alpha: 0.5),
+                                            color: context.picposHairline.withValues(alpha: 0.5),
                                             width: 0.5,
                                           ),
                                         ),
@@ -282,13 +284,15 @@ class _SearchableDropdownState<T> extends State<SearchableDropdown<T>> {
               decoration: BoxDecoration(
                 border: Border.all(
                   color: !widget.enabled
-                      ? AppColors.border.withValues(alpha: 0.5)
+                      ? context.picposHairline.withValues(alpha: 0.5)
                       : _isOpen
                           ? AppColors.primary
-                          : AppColors.border,
+                          : context.picposHairline,
                 ),
                 borderRadius: BorderRadius.circular(8),
-                color: widget.enabled ? Colors.white : AppColors.surface,
+                // أرضيّةُ الحقل — لا نصَّه: المفعَّلُ يأخذ سطحَ البطاقة
+                // والمعطَّلُ يأخذ السطحَ الخافت، وكلاهما يتبع الوضعَ.
+                color: widget.enabled ? context.picposCard : context.picposField,
               ),
               child: Row(
                 children: [

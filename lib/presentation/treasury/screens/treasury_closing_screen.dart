@@ -3,6 +3,7 @@ import 'package:ural_erp/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../picpos_shell/picpos_surface.dart';
 
 import '../../../data/providers/providers.dart';
 import '../../../services/client_write_interceptor.dart';
@@ -145,7 +146,7 @@ class _TreasuryClosingScreenState extends ConsumerState<TreasuryClosingScreen> {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.border),
+        side: BorderSide(color: context.picposHairline),
       ),
       child: Padding(
         padding: const EdgeInsets.all(20),
