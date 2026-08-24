@@ -149,6 +149,7 @@ import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../picpos_shell/picpos_content_card.dart';
 import '../../picpos_shell/picpos_section_header.dart';
 import '../../picpos_shell/picpos_empty_state.dart';
+import '../widgets/settings_nav_rail.dart';
 import '../widgets/settings_section_pane.dart';
 
 // Part files — copied verbatim from lib/presentation/screens/settings/*
@@ -403,6 +404,8 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
         id: 'system',
         title: 'النظام والمظهر',
         icon: PhosphorIconsBold.slidersHorizontal,
+        group: 'التشغيل',
+        desc: 'الشركة · العملة · المظهر',
         keywords: 'شركة صناعة عملة مظهر ثيم داكن نهاري شاشة رئيسية قاعدة '
             'بيانات صيانة مزامنة مرآة شيكات فروع سيرفر شبكة لمس كيبورد',
         children: () => [
@@ -530,6 +533,8 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
         id: 'devices',
         title: 'الأجهزة والطباعة',
         icon: PhosphorIconsBold.printer,
+        group: 'التشغيل',
+        desc: 'طابعات · نقاط بيع · قوالب',
         keywords: 'طابعة باركود ماسح ميزان حراري قوالب فواتير نقاط بيع '
             'بصمة تصميم',
         children: () => [
@@ -623,6 +628,8 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
         id: 'pos',
         title: 'البيع السريع',
         icon: PhosphorIconsBold.shoppingCart,
+        group: 'التشغيل',
+        desc: 'الكاشير · الدفع · الخصم',
         keywords: 'تراكم أصناف ميزان وزن سلة أزرار تصنيفات شبكة منتجات '
             'إيصال طباعة تلقائية بيع بالسالب خصم ضريبة درج مصروفات وردية '
             'مخزن افتراضي بادئة ترقيم طرق الدفع نقدي بطاقة تحويل آجل متعدد',
@@ -652,6 +659,8 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
         id: 'users',
         title: 'المستخدمون والأمان',
         icon: PhosphorIconsBold.shieldCheck,
+        group: 'الأمان',
+        desc: 'الحسابات · الأدوار · الصلاحيات',
         keywords: 'مستخدمين صلاحيات أدوار كلمة مرور جلسة مهلة حماية أقسام',
         children: () => [
           // ═══ 4. المستخدمين والأمان ═══
@@ -782,6 +791,8 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
         id: 'finance',
         title: 'المالية والمحاسبة',
         icon: PhosphorIconsBold.bank,
+        group: 'المال والبيانات',
+        desc: 'ربط الحسابات · التكلفة · الفوترة',
         keywords: 'حسابات ربط تلقائي تكلفة تسعير نقص مخزون فوترة إلكترونية '
             'ضريبة قيمة مضافة',
         children: () => [
@@ -831,6 +842,10 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
         id: 'hr',
         title: 'شؤون الموظفين',
         icon: PhosphorIconsBold.calendarCheck,
+        // ⚠️ قسمٌ **لا يذكره التصميم** — فلا يقرّره. باقٍ كما هو، ومسيَّجٌ
+        //    أصلاً بـ`features.hrEnabled` (‏قرارُ المالك: lite تؤجّل الأجور).
+        group: 'المال والبيانات',
+        desc: 'الورديات · الإجازات · الرواتب',
         keywords: 'عطلات عطل إجازات أسبوعية أعياد أيام العمل رواتب '
             'أجر الساعة إضافي وقت',
         children: () => [
@@ -858,6 +873,8 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
         id: 'data',
         title: 'إدارة البيانات',
         icon: PhosphorIconsBold.database,
+        group: 'المال والبيانات',
+        desc: 'النسخ الاحتياطي · الاستعادة',
         keywords: 'نسخ احتياطي استعادة باك اب backup restore تصدير',
         children: () => [
           // ═══ 6. إدارة البيانات ═══
@@ -876,6 +893,8 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
         id: 'integrations',
         title: 'التكاملات والخدمات',
         icon: PhosphorIconsBold.plugsConnected,
+        group: 'الامتدادات',
+        desc: 'شاشة العميل · المطبخ · التوصيل',
         keywords: 'توصيل مناديب شاشة عميل CFD مطبخ KDS إضافات معدلات',
         children: () => [
           // ═══ 7. التكاملات والخدمات ═══
@@ -954,6 +973,8 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
         id: 'about',
         title: 'عن البرنامج',
         icon: PhosphorIconsBold.info,
+        group: 'الامتدادات',
+        desc: 'الإصدار · الترخيص · التشخيص',
         keywords: 'إصدار نسخة ترخيص تفعيل لوج تشخيصي مطور دعم',
         children: () => [
           // ═══ 8. عن البرنامج والترخيص ═══
@@ -1019,42 +1040,50 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
       title: 'الإعدادات',
       subtitle: 'تهيئة النظام والأجهزة والصلاحيات',
       icon: PhosphorIconsBold.gear,
-      headerSearch: SizedBox(
-        width: 260,
-        child: TextField(
-          controller: _searchController,
-          onChanged: (v) => setState(() => _searchQuery = v),
-          decoration: InputDecoration(
-            hintText: 'ابحث في الإعدادات…',
-            prefixIcon:
-                const Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
-            isDense: true,
-            suffixIcon: _searchQuery.isEmpty
-                ? null
-                : IconButton(
-                    icon: const Icon(PhosphorIconsBold.x, size: 14),
-                    onPressed: () {
-                      _searchController.clear();
-                      setState(() => _searchQuery = '');
-                    },
-                  ),
-          ),
-        ),
-      ),
+      // ⚠️ البحثُ انتقل من ترويسة الصفحة إلى **رأس العمود** كما في التصميم.
+      //    وترويسةُ `PicPosPageHeader` صفٌّ بلا تقييد، فإخلاؤها يبعد عنها
+      //    خطرَ الفيضان الذي وقع مرّتين في تبويبات الحسابات.
       bodyPadding: EdgeInsets.zero,
       body: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _SettingsNavRail(
-            sections: sections,
+          SettingsNavRail(
+            items: [
+              for (final s in sections)
+                SettingsNavRailItem(
+                  id: s.id,
+                  title: s.title,
+                  icon: s.icon,
+                  group: s.group,
+                  desc: s.desc,
+                ),
+            ],
             selectedId: selected.id,
             onSelect: (id) => setState(() {
               _selectedSectionId = id;
               _searchController.clear();
               _searchQuery = '';
             }),
+            search: TextField(
+              controller: _searchController,
+              onChanged: (v) => setState(() => _searchQuery = v),
+              decoration: InputDecoration(
+                hintText: 'بحث في الإعدادات…',
+                prefixIcon:
+                    const Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
+                isDense: true,
+                suffixIcon: _searchQuery.isEmpty
+                    ? null
+                    : IconButton(
+                        icon: const Icon(PhosphorIconsBold.x, size: 14),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() => _searchQuery = '');
+                        },
+                      ),
+              ),
+            ),
           ),
-          const VerticalDivider(width: 1, color: AppColors.border),
           Expanded(
             child: query.isEmpty
                 ? _buildSectionPane(selected)
@@ -1069,12 +1098,8 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
     return SettingsSectionPane(
       sectionId: section.id,
       children: [
-        PicPosSectionHeader(
-          title: section.title,
-          icon: section.icon,
-          showDivider: false,
-        ),
-        const SizedBox(height: 14),
+        _SectionHeader(section: section),
+        const SizedBox(height: 20),
         for (final child in section.children()) ...[
           child,
           const SizedBox(height: 16),
@@ -1240,17 +1265,54 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
 
   /// إعادة تأطير — PicPosContentCard بدل Card(elevation:2, shape:
   /// RoundedRectangleBorder(...)) الأصلي. المحتوى/التوابع نفسها بلا تغيير.
+  /// بطاقةُ إعداداتٍ على شكل «بلوك» التصميم: شريطةٌ لونيّةٌ رفيعةٌ ثمّ
+  /// العنوانُ وسطرٌ خافتٌ تحتَه، بلا فاصلٍ عرضيّ.
   Widget _buildSettingsCard({
     required String title,
     required List<Widget> children,
+    String? subtitle,
+    Color tint = AppColors.primary,
   }) {
     return PicPosContentCard(
+      padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(title, style: AppTypography.h4),
+            padding: const EdgeInsets.fromLTRB(18, 15, 18, 13),
+            child: Row(
+              children: [
+                Container(
+                  width: 3.5,
+                  height: 17,
+                  decoration: BoxDecoration(
+                    color: tint,
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+                const SizedBox(width: 11),
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: AppTypography.h4),
+                      if (subtitle != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 1),
+                          child: Text(
+                            subtitle,
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelSmall
+                                ?.copyWith(color: AppColors.textMuted),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
           const Divider(height: 1),
           ...children,
@@ -1729,6 +1791,18 @@ class _SettingsSection {
   final String title;
   final IconData icon;
 
+  /// مجموعةُ القسم في عمود التصميم — أربعُ مجموعاتٍ تجمع الأقسام التسعة.
+  ///
+  /// ⚠️ **ولا عدّادَ إعداداتٍ هنا.** التصميمُ يعرض رقماً لكلّ قسم (‏١٤ · ١٢ ·
+  /// ١١ …) ومجموعَه ٩٤ في نصّ البحث، وهو رقمٌ **لا يمكن قياسُه من الشجرة**:
+  /// معظمُ الإعدادات داخلَ حواراتٍ وبطاقاتٍ متداخلةٍ بلا هويّةٍ مُعنوَنة.
+  /// ورقمٌ مكتوبٌ بيدٍ يبطُل عند أوّل إضافة — فالعدُّ مُسقَطٌ عمداً بدل عرضِ
+  /// عددٍ يكذب.
+  final String group;
+
+  /// سطرُ الوصف تحت العنوان في العمود — يشرح ما يضمّه القسم.
+  final String desc;
+
   /// كلمات البحث. بتظهر كمان كسطر وصف تحت اسم القسم في نتايج البحث، فهي
   /// مش مخفية — المستخدم بيشوف ليه القسم ده طلع.
   final String keywords;
@@ -1739,98 +1813,62 @@ class _SettingsSection {
     required this.id,
     required this.title,
     required this.icon,
+    required this.group,
+    required this.desc,
     required this.keywords,
     required this.children,
   });
 }
 
-/// عمود أقسام الإعدادات على اليمين (RTL).
-class _SettingsNavRail extends StatelessWidget {
-  final List<_SettingsSection> sections;
-  final String selectedId;
-  final ValueChanged<String> onSelect;
+/// ترتيبُ مجموعات العمود كما في التصميم.
+const _kSettingsGroupOrder = <String>[
+  'التشغيل',
+  'الأمان',
+  'المال والبيانات',
+  'الامتدادات',
+];
 
-  const _SettingsNavRail({
-    required this.sections,
-    required this.selectedId,
-    required this.onSelect,
-  });
+/// ترويسةُ القسم — أيقونةٌ ٥٦px وعنوانٌ كبيرٌ وسطرُ وصف، كما في التصميم.
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.section});
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 208,
-      color: AppColors.surface,
-      child: ListView(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-        children: [
-          for (final s in sections)
-            _NavItem(
-              section: s,
-              selected: s.id == selectedId,
-              onTap: () => onSelect(s.id),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _NavItem extends StatelessWidget {
   final _SettingsSection section;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _NavItem({
-    required this.section,
-    required this.selected,
-    required this.onTap,
-  });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+    final text = Theme.of(context).textTheme;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 56,
+          height: 56,
           decoration: BoxDecoration(
-            color: selected
-                ? AppColors.primary.withValues(alpha: 0.10)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: selected
-                  ? AppColors.primary.withValues(alpha: 0.35)
-                  : Colors.transparent,
-            ),
+            color: AppColors.primary.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(16),
           ),
-          child: Row(
+          child: Icon(section.icon, size: 27, color: AppColors.primary),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(
-                section.icon,
-                size: 16,
-                color: selected ? AppColors.primary : AppColors.textMuted,
+              Text(
+                section.title,
+                style: text.headlineSmall
+                    ?.copyWith(fontWeight: FontWeight.w800),
               ),
-              const SizedBox(width: 9),
-              Expanded(
-                child: Text(
-                  section.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: selected ? FontWeight.bold : FontWeight.w500,
-                    color: selected ? AppColors.primary : null,
-                  ),
-                ),
+              const SizedBox(height: 3),
+              Text(
+                section.desc,
+                style: text.bodySmall?.copyWith(color: AppColors.textMuted),
               ),
             ],
           ),
         ),
-      ),
+      ],
     );
   }
 }
