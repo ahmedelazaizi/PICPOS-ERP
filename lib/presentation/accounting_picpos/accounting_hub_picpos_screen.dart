@@ -6,14 +6,14 @@ import '../../core/navigation/screen_id.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/providers/auth_providers.dart';
 import '../picpos_shell/picpos_empty_state.dart';
-import '../screens/account_mapping_settings_screen.dart';
-import '../screens/cost_centers_screen.dart';
-import '../screens/general_ledger_screen.dart';
-import '../screens/journal_entries_screen.dart';
-import '../screens/journal_templates_screen.dart';
 import '../widgets/auth/security_gate_wrapper.dart';
+import 'account_mapping_picpos_screen.dart';
 import 'chart_of_accounts_picpos_screen.dart';
+import 'cost_centers_picpos_screen.dart';
 import 'financial_statements_picpos_screen.dart';
+import 'general_ledger_picpos_screen.dart';
+import 'journal_entries_picpos_screen.dart';
+import 'journal_templates_picpos_screen.dart';
 
 /// حاويةُ «الحسابات» — مدخلٌ واحدٌ في القائمة الجانبيّة يفتح سبعةَ تبويبات.
 ///
@@ -65,20 +65,20 @@ enum AccountingTab {
   /// أسقط الطيُّ ضابطَ أمانٍ قائماً بصمت.
   Widget build() => switch (this) {
         AccountingTab.coa => const ChartOfAccountsPicPosScreen(),
-        AccountingTab.cc => const CostCentersScreen(),
+        AccountingTab.cc => const CostCentersPicPosScreen(),
         AccountingTab.je => const SecurityScreenGate(
             settingKey: 'accounting_access_password',
             title: 'دفتر اليومية',
-            child: JournalEntriesScreen(),
+            child: JournalEntriesPicPosScreen(),
           ),
         AccountingTab.gl => const SecurityScreenGate(
             settingKey: 'accounting_access_password',
             title: 'دفتر الأستاذ',
-            child: GeneralLedgerScreen(),
+            child: GeneralLedgerPicPosScreen(),
           ),
         AccountingTab.tb => const FinancialStatementsPicPosScreen(),
-        AccountingTab.tpl => const JournalTemplatesScreen(),
-        AccountingTab.map => const AccountMappingSettingsScreen(),
+        AccountingTab.tpl => const JournalTemplatesPicPosScreen(),
+        AccountingTab.map => const AccountMappingPicPosScreen(),
       };
 }
 
