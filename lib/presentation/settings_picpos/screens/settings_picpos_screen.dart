@@ -149,6 +149,7 @@ import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../picpos_shell/picpos_content_card.dart';
 import '../../picpos_shell/picpos_section_header.dart';
 import '../../picpos_shell/picpos_empty_state.dart';
+import '../widgets/settings_blocks.dart';
 import '../widgets/settings_nav_rail.dart';
 import '../widgets/settings_section_pane.dart';
 
@@ -409,39 +410,103 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
         keywords: 'شركة صناعة عملة مظهر ثيم داكن نهاري شاشة رئيسية قاعدة '
             'بيانات صيانة مزامنة مرآة شيكات فروع سيرفر شبكة لمس كيبورد',
         children: () => [
-          // ═══ 1. النظام والمظهر ═══
-          _buildSettingsCard(
-            title: 'إعدادات النظام والمظهر',
-            children: [
-              buildCompanyInfoTileGuarded(
-                onOpen: () => showCompanyInfoDialog(context),
-              ),
-              const _IndustryModeToggle(),
-              const _CurrencySelector(),
-              ListTile(
-                leading: Icon(
-                  themeMode == ThemeMode.dark
-                      ? PhosphorIconsBold.moon
-                      : themeMode == ThemeMode.light
-                      ? PhosphorIconsBold.sun
-                      : PhosphorIconsBold.monitor,
-                  color: themeMode == ThemeMode.dark
-                      ? Colors.amber
-                      : themeMode == ThemeMode.light
-                      ? Colors.orange
-                      : AppColors.primary,
+          // ═══ 1. النظام والمظهر — على بلوكات التصميم ═══
+          SettingsBlockGrid(
+            blocks: [
+              SettingsBlockSpan(
+                span: 12,
+                child: SettingsBlock(
+                  title: 'مظهر البرنامج',
+                  subtitle: 'يُطبَّق على كل الشاشات وشاشة العميل',
+                  child: SettingsChoiceBlock<ThemeMode>(
+                    selected: themeMode,
+                    onSelect: (m) =>
+                        ref.read(themeModeProvider.notifier).setMode(m),
+                    options: const [
+                      SettingsChoiceOption(
+                        value: ThemeMode.light,
+                        label: 'فاتح',
+                        sub: 'الأنسب للإضاءة القوية والطباعة من الشاشة',
+                      ),
+                      SettingsChoiceOption(
+                        value: ThemeMode.dark,
+                        label: 'غامق',
+                        sub: 'مريح للكاشير في الورديات الليلية',
+                      ),
+                      SettingsChoiceOption(
+                        value: ThemeMode.system,
+                        label: 'تلقائي',
+                        sub: 'يتبع مظهر ويندوز',
+                      ),
+                    ],
+                  ),
                 ),
-                title: const Text('مظهر التطبيق'),
-                subtitle: Text(_getThemeModeLabel(themeMode)),
-                trailing: const Icon(PhosphorIconsBold.caretLeft),
-                onTap: () =>
-                    _showThemeSelector(context, ref, themeMode),
               ),
-              const _DefaultHomeScreenSelector(),
-              buildDatabaseSettingsTileGuarded(
-                onOpen: () => showDatabaseSettingsDialog(context),
+              SettingsBlockSpan(
+                span: 7,
+                child: SettingsBlock(
+                  title: 'هوية الشركة والتشغيل',
+                  subtitle: 'تظهر في الفواتير والتقارير المطبوعة',
+                  tint: AppColors.info,
+                  child: SettingsRowsBody(
+                    children: [
+                      // ⚠️ الحُرّاسُ باقون: `settingsCompany` هنا و
+                      //    `systemDatabase` في مربّع قاعدة البيانات أسفل.
+                      PermissionGuard(
+                        permission: PermissionCodes.settingsCompany,
+                        fallback: const SizedBox.shrink(),
+                        child: SettingsValueRow(
+                          first: true,
+                          icon: PhosphorIconsBold.buildings,
+                          title: 'معلومات الشركة',
+                          sub: 'الاسم، السجل التجاري، الرقم الضريبي، الشعار',
+                          onTap: () => showCompanyInfoDialog(context),
+                        ),
+                      ),
+                      // الودجتاتُ القائمةُ نفسُها — بُدِّل رسمُها إلى صفِّ
+                      // بلوك، ومنتقياتُها ومعالجةُ القفل فيها كما هي.
+                      const _IndustryModeToggle(),
+                      const _CurrencySelector(),
+                      const _DefaultHomeScreenSelector(),
+                    ],
+                  ),
+                ),
               ),
-              const Divider(height: 1),
+              const SettingsBlockSpan(
+                span: 5,
+                child: SettingsBlock(
+                  title: 'سلوك التشغيل',
+                  subtitle: 'خيارات تسري على هذا الجهاز فقط',
+                  tint: AppColors.warning,
+                  child: SettingsRowsBody(
+                    children: [
+                      // ⚠️ مفتاحٌ واحدٌ لا ثلاثة: التصميمُ يعرض معه
+                      //    «المزامنة الإجبارية» و«بدء تلقائي مع ويندوز»،
+                      //    والأولى في التطبيق **زرُّ إجراءٍ** لا مفتاحاً
+                      //    (‏لوحةُ المزامنة أسفل)، والثانيةُ لا وجودَ لها
+                      //    أصلاً. ومفتاحٌ لا يبدّل شيئاً أسوأُ من غيابه.
+                      _TouchModeSwitchRow(),
+                    ],
+                  ),
+                ),
+              ),
+              const SettingsBlockSpan(
+                span: 12,
+                child: SettingsBlock(
+                  title: 'الشاشات المتقدمة',
+                  subtitle: 'قاعدة البيانات، الربط، وأدوات الصيانة',
+                  tint: AppColors.textMuted,
+                  child: _AdvancedTiles(),
+                ),
+              ),
+            ],
+          ),
+          // ⚠️ المظهرُ والشاشةُ الافتراضيّةُ وقاعدةُ البيانات انتقلت إلى
+          //    البلوكات أعلاه — ولم تُكرَّر هنا كي لا يظهر الإعدادُ مرّتين
+          //    بواجهتَين مختلفتين.
+          _buildSettingsCard(
+            title: 'أدوات وتشخيص',
+            children: [
               // Phase 5C admin tools — branch-scope cleanup +
               // orphan-JE diagnostic. Read-only by default; the
               // destructive cleanup step requires explicit
@@ -500,30 +565,8 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
                       showChequeReceiptDriftAdminDialog(context),
                 ),
               const Divider(height: 1),
-              // ── Network/Sync Settings (Client ↔ Server) ──
-              const ExpansionTile(
-                leading: Icon(
-                  PhosphorIconsBold.wifiHigh,
-                  color: AppColors.success,
-                ),
-                title: Text('إعدادات الربط بين الفروع والسيرفر'),
-                subtitle: Text(
-                  'ربط العميل بالسيرفر ومزامنة البيانات',
-                ),
-                children: [_NetworkModeSettings()],
-              ),
-              // Feature 031 — per-device on-screen touch keyboard.
-              const ExpansionTile(
-                leading: Icon(
-                  PhosphorIconsBold.handTap,
-                  color: AppColors.primary,
-                ),
-                title: Text('نمط الإدخال (لوحة المفاتيح اللمسية)'),
-                subtitle: Text(
-                  'تفعيل لوحة المفاتيح على الشاشة لأجهزة POS واللمس',
-                ),
-                children: [_TouchInputSettings()],
-              ),
+              // ⚠️ نمطُ الإدخال صار مفتاحاً في بلوك «سلوك التشغيل»، فلا
+              //    يُكرَّر هنا. والربطُ بين الفروع يُفتَح من مربّعه أعلاه.
               const _ForceSyncPanel(),
             ],
           ),
@@ -1867,6 +1910,88 @@ class _SectionHeader extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ],
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// صفوفُ بلوكات قسم «النظام والمظهر»
+// ═══════════════════════════════════════════════════════════════════════════
+
+class _TouchModeSwitchRow extends ConsumerWidget {
+  const _TouchModeSwitchRow();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final on = ref.watch(touchModeProvider);
+    return SettingsSwitchRow(
+      first: true,
+      icon: PhosphorIconsBold.handTap,
+      title: 'نمط الإدخال اللمسي',
+      sub: 'لوحة مفاتيح على الشاشة في حقول الأرقام',
+      value: on,
+      onChanged: (v) => ref.read(touchModeProvider.notifier).set(v),
+    );
+  }
+}
+
+/// مربّعاتُ «الشاشات المتقدمة» — بحالةٍ مقيسةٍ لا مفترَضة.
+class _AdvancedTiles extends ConsumerWidget {
+  const _AdvancedTiles();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final mode = NetworkService.instance.mode;
+    final isServer = NetworkService.instance.isServer;
+
+    return SettingsTilesBlock(
+      tiles: [
+        SettingsTile(
+          icon: PhosphorIconsBold.database,
+          title: 'قاعدة البيانات',
+          sub: 'نوع القاعدة ومسارها',
+          meta: 'إعدادات الاتصال',
+          tint: AppColors.success,
+          dot: AppColors.success,
+          onTap: () => showDatabaseSettingsDialog(context),
+        ),
+        SettingsTile(
+          icon: PhosphorIconsBold.wifiHigh,
+          title: 'الربط بين الفروع والسيرفر',
+          sub: 'وضع الشبكة والمزامنة',
+          // ⚠️ الحالةُ من `NetworkService` الحيّ لا نصٌّ ثابت.
+          meta: switch (mode) {
+            NetworkMode.server => 'سيرفر رئيسي',
+            NetworkMode.client => 'عميل مرتبط',
+            NetworkMode.mirror => 'مرآة',
+            _ => 'مستقل',
+          },
+          tint: AppColors.primary,
+          dot: isServer ? AppColors.success : AppColors.primary,
+          // ‏`_NetworkModeSettings` لوحةٌ كانت داخلَ `ExpansionTile`، فتُفتَح
+          // هنا في حوارٍ بدل أن تُبنى نسخةٌ ثانيةٌ من منطقها.
+          onTap: () => showDialog<void>(
+            context: context,
+            builder: (ctx) => Dialog(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 720),
+                child: const SingleChildScrollView(
+                  padding: EdgeInsets.all(16),
+                  child: _NetworkModeSettings(),
+                ),
+              ),
+            ),
+          ),
+        ),
+        SettingsTile(
+          icon: PhosphorIconsBold.shield,
+          title: 'أدوات صيانة المسؤول',
+          sub: 'حصر الفروع وتشخيص القيود',
+          meta: 'أدوات تشخيصية',
+          tint: AppColors.warning,
+          onTap: () => showBranchScopeAdminDialog(context),
         ),
       ],
     );

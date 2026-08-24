@@ -19,16 +19,30 @@ class _IndustryModeToggle extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final mode = ref.watch(industryModeProvider);
 
-    return ListTile(
-      leading: const Icon(
-        PhosphorIconsBold.storefront,
-        color: AppColors.primary,
-      ),
-      title: const Text('نوع النشاط التجاري'),
-      subtitle: Text(_getModeLabel(mode)),
-      trailing: const Icon(PhosphorIconsBold.caretLeft),
+    // صفُّ بلوكٍ لا `ListTile`: المحتوى في تصميم الإعدادات بطاقاتٌ مقسَّمةٌ
+    // بشرائحِ قيم. والمنتقي أدناه كما هو.
+    return SettingsValueRow(
+      icon: PhosphorIconsBold.storefront,
+      title: 'نوع النشاط',
+      sub: 'يحدد الشاشات والحسابات المتاحة',
+      value: _getShortModeLabel(mode),
       onTap: () => _showModeSelector(context, ref, mode),
     );
+  }
+
+  /// تسميةٌ قصيرةٌ تسع شريحةَ القيمة — الطويلةُ في [_getModeLabel] تُعرض
+  /// داخلَ المنتقي حيث لا يضيق بها المكان.
+  String _getShortModeLabel(IndustryMode mode) {
+    switch (mode) {
+      case IndustryMode.supermarket:
+        return 'تجزئة';
+      case IndustryMode.restaurant:
+        return 'مطعم';
+      case IndustryMode.cafe:
+        return 'كافيه';
+      default:
+        return _getModeLabel(mode);
+    }
   }
 
   String _getModeLabel(IndustryMode mode) {
@@ -135,13 +149,36 @@ class _CurrencySelector extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentCode = ref.watch(systemCurrencyProvider);
     final info = CurrencyInfo.fromCode(currentCode);
+    // ‏`false` أثناء التحميل: القفلُ يُشدّ حين يُعرَف أنه قفل، والمنعُ
+    // الحقيقيُّ عند الكتابة على أيّ حال.
+    final locked = ref.watch(currencyChangeLockedProvider).value ?? false;
 
-    return buildCurrencyTileGuarded(
-      subtitle: '${info.nameAr} (${info.code})',
-      // ‏`false` أثناء التحميل: القفلُ يُشدّ حين يُعرَف أنه قفل، والحارسُ
-      // الحقيقيُّ عند الكتابة على أيّ حال.
-      locked: ref.watch(currencyChangeLockedProvider).value ?? false,
-      onOpen: () => _showCurrencySelector(context, ref, currentCode),
+    // ⚠️ `buildCurrencyTileGuarded` **مشتركٌ مع UralCash** فلا يُبدَّل رسمُه
+    //    هناك. والحارسُ يُعاد بناؤه هنا حرفاً بحرف: القفلُ يمنع التبديل بعد
+    //    تسجيل حركاتٍ ماليّة، والصلاحيةُ `settingsCurrency` مع تجاوز المدير.
+    if (locked) {
+      return SettingsValueRow(
+        icon: PhosphorIconsBold.lockSimple,
+        title: 'عملة النظام',
+        sub: 'مقفولة بعد تسجيل حركات مالية — الدقة العشرية جزءٌ من كل '
+            'مبلغ محفوظ',
+        value: info.code,
+        tint: AppColors.textMuted,
+      );
+    }
+
+    return PermissionGuard(
+      permission: PermissionCodes.settingsCurrency,
+      allowManagerOverride: true,
+      actionName: 'تغيير عملة النظام',
+      onGranted: () => _showCurrencySelector(context, ref, currentCode),
+      child: SettingsValueRow(
+        icon: PhosphorIconsBold.currencyCircleDollar,
+        title: 'عملة النظام',
+        sub: 'كل المبالغ والتقارير',
+        value: info.code,
+        onTap: () => _showCurrencySelector(context, ref, currentCode),
+      ),
     );
   }
 
