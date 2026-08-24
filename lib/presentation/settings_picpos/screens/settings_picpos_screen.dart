@@ -81,6 +81,7 @@ import '../../picpos_shell/picpos_surface.dart';
 // يخدم أجزاءَ هذه المكتبة كلَّها (`part of`): حوارات المدير والعميل
 // والإعدادات العامّة تستعمل `PicPosDialog` من هنا.
 import '../../picpos_shell/picpos_dialog.dart';
+import '../guarded_sections.dart';
 import 'dart:convert';
 import 'dart:io' show File;
 import 'package:flutter/foundation.dart' show kDebugMode;
@@ -697,70 +698,41 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
             ],
           ),
           const SizedBox(height: 16),
-
-          // ═══ 4.1 حماية الأقسام ═══
-          // Hidden for basic supermarket — only relevant for editions with multiple sections
-          if (features.kitchenEnabled || features.hrEnabled) ...[
-            SettingsBlockGrid(
-              blocks: [
-                SettingsBlockSpan(
-                  span: 12,
-                  child: SettingsBlock(
-                    title: 'حماية الأقسام',
-                    subtitle: 'كلماتُ مرورٍ بديلةٌ لأقسامٍ بعينها',
-                    tint: AppColors.warning,
-                    child: SettingsRowsBody(
-                      children: [
-                        SettingsValueRow(
-                          first: true,
-                          icon: PhosphorIconsBold.archive,
-                          title: 'المخازن والمخزون',
-                          sub: 'كلمةُ مرورٍ لدخول القسم',
-                          tint: AppColors.info,
-                          onTap: () => _showSectionPasswordDialog(
-                              'inventory_access_password', 'المخازن والمخزون'),
-                        ),
-                        SettingsValueRow(
-                          icon: PhosphorIconsBold.bank,
-                          title: 'الحسابات والمالية',
-                          sub: 'كلمةُ مرورٍ لدخول القسم',
-                          tint: AppColors.success,
-                          onTap: () => _showSectionPasswordDialog(
-                              'accounting_access_password', 'الحسابات والمالية'),
-                        ),
-                        SettingsValueRow(
-                          icon: PhosphorIconsBold.shoppingBagOpen,
-                          // كان «المشلريات» — خطأٌ مطبعيٌّ صُحّح في النقل.
-                          title: 'المشتريات',
-                          sub: 'كلمةُ مرورٍ لدخول القسم',
-                          tint: AppColors.primary,
-                          onTap: () => _showSectionPasswordDialog(
-                              'purchases_access_password', 'المشتريات'),
-                        ),
-                        SettingsValueRow(
-                          icon: PhosphorIconsBold.chartPieSlice,
-                          title: 'التقارير',
-                          sub: 'كلمةُ مرورٍ لدخول القسم',
-                          tint: AppColors.warning,
-                          onTap: () => _showSectionPasswordDialog(
-                              'reports_access_password', 'التقارير'),
-                        ),
-                        if (features.hrEnabled)
-                          SettingsValueRow(
-                            icon: PhosphorIconsBold.users,
-                            title: 'شؤون الموظفين',
-                            sub: 'كلمةُ مرورٍ لدخول القسم',
-                            tint: AppColors.secondary,
-                            onTap: () => _showSectionPasswordDialog(
-                                'hr_access_password', 'شؤون الموظفين'),
-                          ),
-                      ],
-                    ),
-                  ),
+        ],
+      ),
+      // ═══ ٤-ب. حماية الأقسام — قسمٌ مستقلٌّ على التصميم الجديد ═══
+      //
+      // كان بلوكاً داخلَ «المستخدمون والأمان»، وفصلَه التصميمُ لأنّ حراستَه
+      // **مستقلّةٌ عن الصلاحيات**: كلمةٌ يعرفها من يجلس على الجهاز، لا دورٌ
+      // يُسنَد لحساب. فخلطُهما في قسمٍ واحدٍ يوحي بأنّ أحدَهما يُغني عن الآخر.
+      //
+      // ⚠️ **ولا تسييجَ بـ`kitchenEnabled || hrEnabled` بعد اليوم.** كان
+      //    القسمُ كلُّه مخفيّاً في بروفايل السوبرماركت، فيختفي معه قفلُ
+      //    **المخازن والمشتريات والتقارير** — وهي أقسامٌ موجودةٌ في كلّ
+      //    بروفايل. التسييجُ صار على البند: `hr_access_password` وحدَه يتبع
+      //    `features.hrEnabled`.
+      _SettingsSection(
+        id: 'guards',
+        title: 'حماية الأقسام',
+        icon: PhosphorIconsBold.lockKey,
+        group: 'الأمان',
+        desc: 'أقفال الشاشات',
+        keywords: 'قفل كلمة مرور حماية اقسام مخازن مشتريات تقارير حسابات '
+            'موظفين بديلة',
+        children: () => [
+          SettingsBlockGrid(
+            blocks: [
+              SettingsBlockSpan(
+                span: 12,
+                child: SettingsBlock(
+                  title: 'الأقسام المحميّة',
+                  subtitle: 'تُطلَب كلمةٌ عند الدخول لكلِّ قسمٍ مفعَّل',
+                  tint: AppColors.error,
+                  child: _GuardedSectionRows(features: features),
                 ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ],
       ),
       _SettingsSection(
@@ -1897,6 +1869,134 @@ class _TouchModeSwitchRow extends ConsumerWidget {
 }
 
 /// مربّعاتُ «الشاشات المتقدمة» — بحالةٍ مقيسةٍ لا مفترَضة.
+/// صفوفُ «الأقسام المحميّة» — تُبنى من [kPicPosGuardedSections] لا من قائمةٍ
+/// مكتوبةٍ هنا.
+///
+/// ⚠️ **ولماذا سجلٌّ في ملفٍّ آخر:** لأنّ المفتاحَ المعروضَ وعدٌ، والوفاءُ به
+/// عند `SecurityScreenGate` في `app_main_screen.dart`. والسجلُّ هو الرابطُ
+/// الذي يقيسه `guarded_sections_have_real_gates_test` — فلا يُعرَض قفلٌ لقسمٍ
+/// بلا بوّابة.
+///
+/// و**الحالةُ تُقرأ لا تُفترَض**: مفتاحٌ مضبوطٌ ⇒ «مفعَّل»، وفارغٌ ⇒ «مفتوح».
+class _GuardedSectionRows extends ConsumerWidget {
+  const _GuardedSectionRows({required this.features});
+
+  final FeaturePolicy features;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(_guardedSectionStateProvider);
+
+    // `hr_access_password` وحدَه يتبع `features.hrEnabled`: الوحدةُ نفسُها
+    // غيرُ موجودةٍ في `lite`، فقفلُها بلا معنى. وبقيّةُ الأقسام في كلّ
+    // بروفايل.
+    final sections = kPicPosGuardedSections.where((s) {
+      if (s.settingKey == 'hr_access_password') return features.hrEnabled;
+      return true;
+    }).toList();
+
+    return SettingsRowsBody(
+      children: [
+        for (var i = 0; i < sections.length; i++)
+          SettingsValueRow(
+            first: i == 0,
+            icon: sections[i].icon,
+            title: sections[i].title,
+            sub: sections[i].sub,
+            // ⚠️ القيمةُ من الحالة الحيّة لا من افتراض. وقبل وصولِها
+            //    تُترك فارغةً بدل أن تُعرض «مفتوح» تفاؤلاً — فقفلٌ يُقرأ
+            //    مفتوحاً وهو مقفولٌ يُقلق، والعكسُ يُطمئن كذباً.
+            value: state.when(
+              data: (m) => (m[sections[i].settingKey] ?? false)
+                  ? 'مفعَّل'
+                  : 'مفتوح',
+              loading: () => null,
+              error: (_, _) => null,
+            ),
+            tint: state.value?[sections[i].settingKey] == true
+                ? AppColors.error
+                : AppColors.textMuted,
+            onTap: () => _showSectionPasswordDialogFor(
+              context,
+              ref,
+              sections[i].settingKey,
+              sections[i].title,
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// حالةُ الأقفال — `true` يعني أنّ للقسم كلمةً مضبوطة.
+final _guardedSectionStateProvider =
+    FutureProvider.autoDispose<Map<String, bool>>((ref) async {
+  final repo = ref.watch(settingsRepositoryProvider);
+  final out = <String, bool>{};
+  for (final s in kPicPosGuardedSections) {
+    final pw = await repo.getSetting(s.settingKey);
+    out[s.settingKey] = pw != null && pw.isNotEmpty;
+  }
+  return out;
+});
+
+/// نسخةٌ حرّةٌ من حوار كلمة القسم تصلح خارجَ حالةِ الشاشة.
+///
+/// ⚠️ وتُبطِل [_guardedSectionStateProvider] بعد الحفظ: بلا ذلك يبقى الصفُّ
+/// يقول «مفتوح» بعد ضبطِ كلمةٍ للتوّ — والحالةُ الكاذبةُ هنا تُطمئن بغير حقّ.
+Future<void> _showSectionPasswordDialogFor(
+  BuildContext context,
+  WidgetRef ref,
+  String key,
+  String title,
+) async {
+  final repo = ref.read(settingsRepositoryProvider);
+  final current = await repo.getSetting(key);
+  if (!context.mounted) return;
+
+  final controller = TextEditingController(text: current ?? '');
+  final result = await showDialog<String?>(
+    context: context,
+    builder: (ctx) => Directionality(
+      textDirection: ui.TextDirection.rtl,
+      child: PicPosDialog(
+        icon: PhosphorIconsBold.lockKey,
+        title: 'كلمة مرور $title',
+        subtitle: 'اتركها فارغةً لفتح القسم بلا كلمة',
+        width: 460,
+        onCancel: () => Navigator.pop(ctx),
+        body: [
+          PicPosDialogField(
+            label: 'كلمة المرور',
+            child: TextField(
+              controller: controller,
+              autofocus: true,
+              decoration: const InputDecoration(border: OutlineInputBorder()),
+            ),
+          ),
+        ],
+        primaryAction: PicPosDialogAction(
+          label: 'حفظ',
+          icon: PhosphorIconsBold.floppyDisk,
+          onPressed: () => Navigator.pop(ctx, controller.text),
+        ),
+      ),
+    ),
+  );
+  controller.dispose();
+
+  if (result == null) return;
+  await repo.saveSetting(key, result);
+  ref.invalidate(_guardedSectionStateProvider);
+  if (context.mounted) {
+    AppToast.show(
+      context,
+      result.isEmpty ? 'فُتح القسم — بلا كلمة' : 'حُفظت كلمة $title',
+      type: ToastType.success,
+    );
+  }
+}
+
 /// مربّعاتُ «المستخدمون والأدوار».
 ///
 /// الحارسُ على الضغطة لا على العرض — لنفس سببِ [_DeviceTiles]، وبنفس
