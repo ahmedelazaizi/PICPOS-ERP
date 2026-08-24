@@ -92,6 +92,26 @@ const _definesBothModes = <String>{
   'lib/presentation/pos_picpos/widgets/picpos_payment_panel.dart',
 };
 
+/// `Colors.white` **مباشرةً** أرضيّةً لـ`BoxDecoration`.
+///
+/// ═══ لماذا هذا الشكلُ وحدَه من الأبيض ═══
+///
+/// لأنّ أرضيّةَ `BoxDecoration` سطحٌ دائماً — لا تكون نصّاً ولا أيقونةً أبداً،
+/// فلا إيجابيّةَ كاذبةَ فيها. أمّا بقيّةُ الأبيض فملتبسٌ، وقد قِيس في نطاق
+/// الشاشات العشر 2026-08-24: من **٢٧** موضعاً يبدو خلفيّةً بفحصٍ سطريّ،
+/// **١٧ ليست عطباً** — ١٣ مقدّمةٌ داخلَ `Icon(`/`TextStyle(` تمتدُّ سطرَين،
+/// و٤ أزرارٌ مقلوبةٌ (`backgroundColor: Colors.white` مع
+/// `foregroundColor: AppColors.primary`) على ترويسةٍ ملوّنة. أي أنّ الفحصَ
+/// السطريَّ يخطئ في **٦٣٪** من الحالات — ولو صُدِّق لقلب سبعةَ عشرَ موضعاً
+/// صحيحاً إلى داكنٍ على داكن.
+///
+/// و`Colors.white.withValues(alpha: …)` مستثناةٌ عمداً: تلك طبقةٌ شفّافةٌ فوق
+/// سطحٍ ملوَّنٍ (‏ترويسةُ الخزينة مثلاً) وهي صحيحةٌ في الوضعَين.
+final _whiteBoxDecoration = RegExp(
+  r'BoxDecoration\(\s*(?://[^\n]*\n\s*)*color:\s*Colors\.white\s*,',
+  multiLine: true,
+);
+
 Iterable<File> _dartFilesUnder(String path) sync* {
   final dir = Directory(path);
   if (dir.existsSync()) {
@@ -169,6 +189,32 @@ void main() {
           'تماماً كثوابتِ `AppColors` الفاتحة.\n'
           'إن كان الرمزُ يخصُّ ملفَّه فاكتب شرطَ وضعٍ يحفظ القيمةَ الفاتحةَ '
           'كما هي؛ وإن كان عامّاً فاستعمل مُلحقَ `picpos_surface.dart`.\n'
+          'المواضع (${offenders.length}):\n  ${offenders.join('\n  ')}',
+    );
+  });
+
+  test('ولا أبيضَ أرضيّةً لـ BoxDecoration', () {
+    final offenders = <String>[];
+
+    for (final entry in _scope) {
+      for (final file in _dartFilesUnder(entry)) {
+        final rel = file.path.replaceAll(r'\', '/');
+        final src = file.readAsStringSync();
+        for (final m in _whiteBoxDecoration.allMatches(src)) {
+          // رقمُ السطرِ من عددِ الأسطر قبل الموضع — الملفّاتُ هنا CRLF
+          // وLF معاً، فالعدُّ على `\n` وحدَه يصحُّ في الحالتين.
+          final line = '\n'.allMatches(src.substring(0, m.start)).length + 1;
+          offenders.add('$rel:$line');
+        }
+      }
+    }
+
+    expect(
+      offenders,
+      isEmpty,
+      reason: 'أرضيّةُ `BoxDecoration` سطحٌ دائماً، فأبيضُها يبقى أبيضَ في '
+          'الوضع الغامق ويترك كرتاً ناصعاً على خلفيّةٍ داكنة.\n'
+          'الإصلاحُ `context.picposCard`.\n'
           'المواضع (${offenders.length}):\n  ${offenders.join('\n  ')}',
     );
   });

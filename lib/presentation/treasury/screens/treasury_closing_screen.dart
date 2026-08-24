@@ -270,7 +270,7 @@ class _TreasuryClosingScreenState extends ConsumerState<TreasuryClosingScreen> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.picposCard,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(

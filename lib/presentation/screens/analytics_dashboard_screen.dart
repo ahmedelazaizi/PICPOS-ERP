@@ -232,7 +232,7 @@ class _AnalyticsDashboardScreenState
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.picposCard,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -437,7 +437,7 @@ class _AnalyticsDashboardScreenState
       padding: const EdgeInsets.all(20),
       // ...
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.picposCard,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -590,7 +590,7 @@ class _AnalyticsDashboardScreenState
       padding: const EdgeInsets.all(20),
       // ... same decoration
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.picposCard,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -736,7 +736,7 @@ class _AnalyticsDashboardScreenState
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.picposCard,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -902,7 +902,7 @@ class _AnalyticsDashboardScreenState
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.picposCard,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -966,7 +966,7 @@ class _AnalyticsDashboardScreenState
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.picposCard,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -1081,7 +1081,7 @@ class _AnalyticsDashboardScreenState
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.picposCard,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(

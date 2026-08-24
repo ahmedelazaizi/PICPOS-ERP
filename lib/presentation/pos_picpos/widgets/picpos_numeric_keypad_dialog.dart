@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import '../../picpos_shell/picpos_surface.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/number_utils.dart';
@@ -201,7 +202,7 @@ class _PicPosNumericKeypadDialogState
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                 border: const OutlineInputBorder(),
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: context.picposCard,
                 suffixText: widget.suffix,
                 errorText: error,
                 errorStyle: PicPosText.v(12, color: AppColors.error),

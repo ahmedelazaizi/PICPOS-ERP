@@ -84,12 +84,15 @@ class HRDashboardTab extends ConsumerWidget {
     );
   }
 
+  // `Builder` لنفس سببِ [_sectionCard]: الودجتُ عديمةُ الحالة والدالّةُ
+  // لا تحمل `BuildContext`.
   Widget _kpiCard(String label, String value, IconData icon, Color color) {
     return Expanded(
-      child: Container(
+      child: Builder(
+        builder: (context) => Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.picposCard,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: color.withValues(alpha: 0.15)),
           boxShadow: [
@@ -122,6 +125,7 @@ class HRDashboardTab extends ConsumerWidget {
                     fontSize: 11, color: AppColors.textMuted)),
           ],
         ),
+      ),
       ),
     );
   }

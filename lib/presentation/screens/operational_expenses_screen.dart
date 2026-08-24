@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/widgets/app_toast.dart';
 import '../../core/theme/app_colors.dart';
+import '../picpos_shell/picpos_surface.dart';
 import '../../core/constants/app_constants.dart';
 import '../../data/providers/providers.dart';
 import '../../data/providers/manufacturing_providers.dart';
@@ -51,8 +52,10 @@ class _OperationalExpensesScreenState
         appBar: AppBar(
           title: const Text('المصروفات التشغيلية',
               style: TextStyle(fontWeight: FontWeight.bold)),
-          backgroundColor: Colors.white,
-          foregroundColor: AppColors.textPrimary,
+          // الشقّان مقترنان: خلفيّةٌ بيضاءُ ونصٌّ داكنٌ صحيحان في الفاتح
+          // وحدَه. ويتبعان الوضعَ معاً — تجاوزُ أحدِهما يكسر الاقتران.
+          backgroundColor: context.picposCard,
+          foregroundColor: context.picposText,
           elevation: 0,
           bottom: TabBar(
             controller: _tabController,
