@@ -46,8 +46,8 @@ class _OperationalExpensesScreenState
   Widget build(BuildContext context) {
     return Directionality(
       textDirection: TextDirection.rtl,
+      // لا تجاوزَ للخلفيّة: الثيمُ يعرّف `scaffoldBackgroundColor` للوضعَين.
       child: Scaffold(
-        backgroundColor: const Color(0xFFF8F9FA),
         appBar: AppBar(
           title: const Text('المصروفات التشغيلية',
               style: TextStyle(fontWeight: FontWeight.bold)),

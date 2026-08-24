@@ -32,8 +32,8 @@ class _HRScreenState extends ConsumerState<HRScreen>
 
   @override
   Widget build(BuildContext context) {
+    // لا تجاوزَ للخلفيّة: الثيمُ يعرّف `scaffoldBackgroundColor` للوضعَين.
     return Scaffold(
-      backgroundColor: AppColors.surface,
       appBar: AppBar(
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,

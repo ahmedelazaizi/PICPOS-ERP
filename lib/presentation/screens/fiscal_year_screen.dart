@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import '../../core/config/business_profile_provider.dart';
 import '../../core/theme/app_colors.dart';
+import '../picpos_shell/picpos_surface.dart';
 import '../../data/providers/providers.dart';
 import '../../domain/repositories/accounting_repository.dart';
 import '../../core/widgets/app_toast.dart';
@@ -41,8 +42,8 @@ class _FiscalYearScreenState extends ConsumerState<FiscalYearScreen> {
 
     return Directionality(
       textDirection: TextDirection.rtl,
+      // لا تجاوزَ للخلفيّة: الثيمُ يعرّف `scaffoldBackgroundColor` للوضعَين.
       child: Scaffold(
-        backgroundColor: AppColors.surface,
         body: Column(
           children: [
             _buildHeader(context),
@@ -152,7 +153,7 @@ class _FiscalYearScreenState extends ConsumerState<FiscalYearScreen> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: isCurrent ? AppColors.primary : (isClosed ? AppColors.error.withValues(alpha: 0.3) : AppColors.border),
+          color: isCurrent ? AppColors.primary : (isClosed ? AppColors.error.withValues(alpha: 0.3) : context.picposHairline),
           width: isCurrent ? 2 : 1,
         ),
       ),
@@ -238,7 +239,7 @@ class _FiscalYearScreenState extends ConsumerState<FiscalYearScreen> {
                 final data = snapshot.data;
                 return Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  color: AppColors.surface,
+                  color: context.picposField,
                   child: Row(
                     children: [
                       _summaryChip('الإيرادات', data?['revenue'] ?? 0, AppColors.success),
@@ -341,7 +342,7 @@ class _FiscalYearScreenState extends ConsumerState<FiscalYearScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.border.withValues(alpha: 0.5))),
+        border: Border(bottom: BorderSide(color: context.picposHairline.withValues(alpha: 0.5))),
       ),
       child: Row(
         children: [

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../picpos_shell/picpos_surface.dart';
 import '../../../../data/providers/providers.dart';
 import '../hr_notifier.dart';
 import '../../../../domain/repositories/hr_repository_interface.dart';
@@ -483,13 +484,17 @@ class HRDashboardTab extends ConsumerWidget {
     );
   }
 
+  // `Builder` لا تمريرُ `context` عبر خمسِ دوالٍّ: الودجتُ عديمةُ الحالة
+  // ودوالُّ البناءِ الخمسُ لا تحمل `BuildContext`، فتمريرُه يغيّر خمسَ
+  // بصماتٍ ونداءاتِها. و`Builder` تعطي سياقاً تحتَ الحاليِّ يحمل الثيمَ.
   Widget _sectionCard(String title, IconData icon, {required Widget child}) {
-    return Container(
+    return Builder(
+      builder: (context) => Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.picposCard,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.picposHairline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -508,6 +513,7 @@ class HRDashboardTab extends ConsumerWidget {
           const SizedBox(height: 12),
           child,
         ],
+      ),
       ),
     );
   }

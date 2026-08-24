@@ -27,6 +27,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import 'package:flutter/material.dart';
+import '../../picpos_shell/picpos_surface.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -39,6 +40,18 @@ import '../providers/pos_exchange_mode_provider.dart';
 import '../providers/pos_return_mode_provider.dart';
 import 'picpos_cart_permissions.dart';
 import 'picpos_pos_text.dart';
+
+/// `--field` من التصميم تابعاً للوضع.
+///
+/// ⚠️ القيمةُ الفاتحةُ **هي هي** (`#F4F7FC`) لا `AppColors.surface`: اللوحةُ
+/// رُسمت على رمز التصميم، و`context.picposField` تعطي `#F8FAFC` — فرقٌ لا
+/// يُرى لكنّه يبدّل الفاتحَ، والعقدُ أن يبقى الفاتحُ كما هو بايتاً ببايت.
+///
+/// وكان الخمسةُ مكتوبين بالرقم مباشرةً، فبقيت أرضيّاتُ اللوحة بيضاءَ في
+/// الوضع الغامق — أحدُ مواضعِ بلاغ المالك 2026-08-24 عن «البيع السريع».
+Color _fieldOf(BuildContext context) => context.picposIsDark
+    ? const Color(0xFF18243A)
+    : const Color(0xFFF4F7FC);
 
 class PicPosPaymentPanel extends ConsumerWidget {
   final VoidCallback onCheckout;
@@ -97,8 +110,8 @@ class PicPosPaymentPanel extends ConsumerWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.card,
-        border: Border.all(color: AppColors.border),
+        color: context.picposCard,
+        border: Border.all(color: context.picposHairline),
         borderRadius: BorderRadius.circular(12),
       ),
       padding: EdgeInsets.all(7 * scale),
@@ -176,10 +189,10 @@ class _CustomerRow extends ConsumerWidget {
           decoration: BoxDecoration(
             color: isSet
                 ? AppColors.primary.withValues(alpha: 0.07)
-                : const Color(0xFFF4F7FC),
+                : _fieldOf(context),
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: isSet ? AppColors.primary : AppColors.border,
+              color: isSet ? AppColors.primary : context.picposHairline,
             ),
           ),
           child: Row(
@@ -290,10 +303,10 @@ class _TypeChip extends StatelessWidget {
       child: Container(
         padding: EdgeInsets.symmetric(vertical: 7 * scale),
         decoration: BoxDecoration(
-          color: selected ? AppColors.primary : const Color(0xFFF4F7FC),
+          color: selected ? AppColors.primary : _fieldOf(context),
           borderRadius: BorderRadius.circular(999),
           border: Border.all(
-            color: selected ? AppColors.primary : AppColors.border,
+            color: selected ? AppColors.primary : context.picposHairline,
           ),
         ),
         child: Row(
@@ -388,7 +401,7 @@ class _TotalsBlock extends ConsumerWidget {
         Container(
           padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8 * scale),
           decoration: BoxDecoration(
-            color: const Color(0xFFF4F7FC),
+            color: _fieldOf(context),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Column(
@@ -514,10 +527,10 @@ class _ToggleTile extends StatelessWidget {
         decoration: BoxDecoration(
           color: active
               ? AppColors.primary.withValues(alpha: 0.10)
-              : const Color(0xFFF4F7FC),
+              : _fieldOf(context),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: active ? AppColors.primary : AppColors.border,
+            color: active ? AppColors.primary : context.picposHairline,
           ),
         ),
         child: Row(
@@ -787,7 +800,7 @@ class _ActionButtons extends ConsumerWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.success,
                     foregroundColor: Colors.white,
-                    disabledBackgroundColor: AppColors.border,
+                    disabledBackgroundColor: context.picposHairline,
                     padding: EdgeInsets.zero,
                   ),
                   child: Row(
@@ -972,9 +985,9 @@ class _MiniAction extends StatelessWidget {
         child: Container(
           height: height,
           decoration: BoxDecoration(
-            color: const Color(0xFFF4F7FC),
+            color: _fieldOf(context),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: context.picposHairline),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -1019,7 +1032,7 @@ class _Action extends StatelessWidget {
         onPressed: onTap,
         style: OutlinedButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 4),
-          side: const BorderSide(color: AppColors.border),
+          side: BorderSide(color: context.picposHairline),
           foregroundColor: AppColors.primaryDark,
         ),
         child: Row(

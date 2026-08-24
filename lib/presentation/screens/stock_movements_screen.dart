@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:path_provider/path_provider.dart';
 import '../../core/theme/app_colors.dart';
+import '../picpos_shell/picpos_surface.dart';
 import '../../data/providers/providers.dart';
 import '../../domain/repositories/inventory_repository.dart';
 import '../../core/widgets/app_toast.dart';
@@ -120,8 +121,10 @@ class _StockMovementsScreenState
 
     return Directionality(
       textDirection: TextDirection.rtl,
+      // لا تجاوزَ للخلفيّة: الثيمُ يعرّف `scaffoldBackgroundColor` للوضعَين،
+      // وتثبيتُها على `AppColors.surface` الفاتحةِ هو ما كان يُبقي الشاشةَ
+      // بيضاءَ في الوضع الغامق.
       child: Scaffold(
-        backgroundColor: AppColors.surface,
         body: Column(
           children: [
             _buildHeader(),
@@ -275,9 +278,9 @@ class _StockMovementsScreenState
   Widget _buildFilters(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: AppColors.border)),
+      decoration: BoxDecoration(
+        color: context.picposCard,
+        border: Border(bottom: BorderSide(color: context.picposHairline)),
       ),
       child: Column(
         children: [
@@ -458,7 +461,7 @@ class _StockMovementsScreenState
         // Summary bar
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          color: AppColors.surface,
+          color: context.picposField,
           child: Row(
             children: [
               _statChip('إجمالي الحركات', '${filteredMovements.length}', AppColors.primary),
@@ -494,7 +497,7 @@ class _StockMovementsScreenState
         Expanded(
           child: ListView.separated(
             itemCount: filteredMovements.length,
-            separatorBuilder: (context, i) => Divider(height: 1, color: AppColors.border.withValues(alpha: 0.5)),
+            separatorBuilder: (context, i) => Divider(height: 1, color: context.picposHairline.withValues(alpha: 0.5)),
             itemBuilder: (context, index) {
               final m = filteredMovements[index];
               return _buildMovementRow(context, repo, m);

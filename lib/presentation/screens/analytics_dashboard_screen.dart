@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../core/theme/app_colors.dart';
+import '../picpos_shell/picpos_surface.dart';
 import '../../data/providers/providers.dart';
 import '../../data/providers/dashboard_filter_provider.dart';
 import '../../domain/repositories/reporting_repository.dart';
@@ -250,7 +251,7 @@ class _AnalyticsDashboardScreenState
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                border: Border.all(color: AppColors.border),
+                border: Border.all(color: context.picposHairline),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -368,17 +369,19 @@ class _AnalyticsDashboardScreenState
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : AppColors.surface,
+          color: isSelected ? AppColors.primary : context.picposField,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.border,
+            color: isSelected ? AppColors.primary : context.picposHairline,
             width: isSelected ? 1.5 : 1,
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? Colors.white : AppColors.textPrimary,
+            // الأبيضُ للمحدَّدِ صحيحٌ — نصٌّ على `primary`. وغيرُ المحدَّدِ
+            // يقع على سطحِ البطاقة، فيتبع الوضعَ وإلّا صار داكناً على داكن.
+            color: isSelected ? Colors.white : context.picposText,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
             fontSize: 13,
           ),

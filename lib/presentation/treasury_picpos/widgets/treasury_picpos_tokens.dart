@@ -13,15 +13,23 @@ import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../picpos_shell/picpos_surface.dart';
 
 /// رموزُ الأسطح والحدود في شاشة الخزينة بهويّة PicPos.
 abstract final class TreasuryPicposTokens {
   /// `--field` — أرضيّةُ ترويسات الكروت وحقلِ البحث.
-  static const Color field = Color(0xFFF4F7FC);
+  ///
+  /// ⚠️ **دالّةٌ لا ثابت.** الثابتُ كان قيمةَ الوضع الفاتحِ وحدَها، فبقيت
+  /// ترويساتُ الكروت بيضاءَ في الغامق — وهو أحدُ سببَي بلاغِ المالك
+  /// 2026-08-24 أنّ الخزينةَ لا تأخذ الغامق. والقيمةُ الفاتحةُ **هي هي**
+  /// (`#F4F7FC`) فلا يتبدّل الفاتحُ بايتاً.
+  static Color fieldOf(BuildContext context) => context.picposIsDark
+      ? const Color(0xFF18243A)
+      : const Color(0xFFF4F7FC);
 
   /// حدُّ الكروت. يُقرأ من [AppColors] كي لا تختلف الخزينةُ عن بقيّةِ كروت
-  /// PicPos (`PicPosContentCard` تستعمل نفسَه).
-  static const Color hairline = AppColors.border;
+  /// PicPos (`PicPosContentCard` تستعمل نفسَه) — وبنظيرِه الداكنِ في الغامق.
+  static Color hairlineOf(BuildContext context) => context.picposHairline;
 
   // ── ألوانُ أنواع الصناديق ───────────────────────────────────────────────
   //

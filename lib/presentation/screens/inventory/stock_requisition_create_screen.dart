@@ -4,6 +4,7 @@ import 'package:ural_erp/presentation/widgets/dialogs/app_confirm_dialog.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../picpos_shell/picpos_surface.dart';
 import '../../../../core/widgets/app_toast.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 import '../../../../domain/entities/stock_requisition_item_entity.dart';
@@ -222,7 +223,7 @@ class _StockRequisitionCreateScreenState extends ConsumerState<StockRequisitionC
               // Items Table
               Expanded(
                 child: Container(
-                  color: AppColors.surface,
+                  color: context.picposField,
                   child: ListView(
                     padding: const EdgeInsets.all(16),
                     children: [

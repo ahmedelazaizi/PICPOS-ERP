@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../picpos_shell/picpos_surface.dart';
 import '../../../core/constants/payment_methods.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -82,9 +83,9 @@ class PicPosLastInvoiceDialog extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: context.picposField,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppColors.border),
+                    border: Border.all(color: context.picposHairline),
                   ),
                   child: Row(
                     children: [

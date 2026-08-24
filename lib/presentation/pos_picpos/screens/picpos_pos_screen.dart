@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
+import '../../picpos_shell/picpos_surface.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -299,8 +301,8 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
       height: 30,
       padding: const EdgeInsets.symmetric(horizontal: 6),
       decoration: BoxDecoration(
-        color: AppColors.card,
-        border: Border.all(color: AppColors.border),
+        color: context.picposCard,
+        border: Border.all(color: context.picposHairline),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -368,7 +370,7 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
           child: Container(
             width: 4,
             decoration: BoxDecoration(
-              color: AppColors.border,
+              color: context.picposHairline,
               borderRadius: BorderRadius.circular(999),
             ),
             child: const Center(
@@ -392,8 +394,8 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
   Widget _buildBrowsePanel() {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.card,
-        border: Border.all(color: AppColors.border),
+        color: context.picposCard,
+        border: Border.all(color: context.picposHairline),
       ),
       child: PosProductSelectionPanel(
         barcodeController: barcodeController,
@@ -589,7 +591,7 @@ class _MiniToggle extends StatelessWidget {
             color: active ? AppColors.primary : Colors.transparent,
             borderRadius: BorderRadius.circular(5),
             border: Border.all(
-              color: active ? AppColors.primary : AppColors.border,
+              color: active ? AppColors.primary : context.picposHairline,
             ),
           ),
           child: Text(

@@ -5,6 +5,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import '../../core/theme/app_colors.dart';
+import '../picpos_shell/picpos_surface.dart';
 import '../../data/providers/providers.dart';
 import '../../domain/repositories/purchase_orders_repository.dart';
 import '../../domain/repositories/parties_repository.dart';
@@ -50,8 +51,8 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
 
     return Directionality(
       textDirection: TextDirection.rtl,
+      // لا تجاوزَ للخلفيّة: الثيمُ يعرّف `scaffoldBackgroundColor` للوضعَين.
       child: Scaffold(
-        backgroundColor: AppColors.surface,
         body: Column(
           children: [
             _buildHeader(context, poRepo, partiesRepo, branchRepo),
@@ -176,9 +177,9 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
   Widget _buildStatusFilters() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: AppColors.border)),
+      decoration: BoxDecoration(
+        color: context.picposCard,
+        border: Border(bottom: BorderSide(color: context.picposHairline)),
       ),
       child: SizedBox(
         height: 36,

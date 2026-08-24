@@ -3132,7 +3132,7 @@ class _QuickReturnLinesEditorDialogState
               alignment: Alignment.center,
               padding: const EdgeInsets.symmetric(vertical: 4),
               decoration: BoxDecoration(
-                border: Border.all(color: AppColors.border),
+                border: Border.all(color: context.picposHairline),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(

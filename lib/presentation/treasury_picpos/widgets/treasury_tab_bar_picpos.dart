@@ -6,6 +6,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../picpos_shell/picpos_surface.dart';
 import 'treasury_picpos_tokens.dart';
 
 /// تبويبٌ واحد.
@@ -34,8 +35,8 @@ class TreasuryTabBarPicpos extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: AppColors.card,
-        border: Border.all(color: TreasuryPicposTokens.hairline),
+        color: context.picposCard,
+        border: Border.all(color: TreasuryPicposTokens.hairlineOf(context)),
         borderRadius: BorderRadius.circular(14),
       ),
       // `AnimatedBuilder` على المتحكّم: التبويبُ النشطُ يتبدّل من الشريط
@@ -81,7 +82,7 @@ class TreasuryTabBarPicpos extends StatelessWidget {
                           },
                         ),
                   filled: true,
-                  fillColor: TreasuryPicposTokens.field,
+                  fillColor: TreasuryPicposTokens.fieldOf(context),
                   isDense: true,
                   contentPadding: const EdgeInsets.symmetric(vertical: 8),
                   border: OutlineInputBorder(

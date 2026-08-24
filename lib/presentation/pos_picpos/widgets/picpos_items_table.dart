@@ -1,5 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../picpos_shell/picpos_surface.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -64,8 +65,8 @@ class PicPosItemsTable extends ConsumerWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.card,
-        border: Border.all(color: AppColors.border),
+        color: context.picposCard,
+        border: Border.all(color: context.picposHairline),
       ),
       child: Column(
         children: [
@@ -377,9 +378,9 @@ class _ItemRow extends ConsumerWidget {
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.primary.withValues(alpha: 0.10)
-              : (index.isEven ? AppColors.card : AppColors.surface),
+              : (index.isEven ? context.picposCard : context.picposField),
           border: Border(
-            bottom: const BorderSide(color: AppColors.border),
+            bottom: BorderSide(color: context.picposHairline),
             right: BorderSide(
               color: isSelected ? AppColors.primary : Colors.transparent,
               width: 3,
@@ -695,7 +696,9 @@ class _NumberCellState extends State<_NumberCell> {
               const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
           border: const OutlineInputBorder(),
           filled: true,
-          fillColor: widget.canEdit ? Colors.white : AppColors.border,
+          // أرضيّةُ الحقل — لا نصَّه: القابلُ للتحرير يأخذ سطحَ البطاقة،
+          // والمعطَّلُ يأخذ لونَ الحدّ. وكلاهما يتبع الوضعَ الآن.
+          fillColor: widget.canEdit ? context.picposCard : context.picposHairline,
         ),
         onTap: _openKeypad,
         onSubmitted: (_) => _commit(),

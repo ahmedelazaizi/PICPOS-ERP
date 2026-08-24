@@ -42,8 +42,8 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
 
     return Directionality(
       textDirection: ui.TextDirection.rtl,
+      // لا تجاوزَ للخلفيّة: الثيمُ يعرّف `scaffoldBackgroundColor` للوضعَين.
       child: Scaffold(
-        backgroundColor: AppColors.surface,
         appBar: AppBar(
           title: const Text('طلبات البيع'),
           backgroundColor: AppColors.primary,

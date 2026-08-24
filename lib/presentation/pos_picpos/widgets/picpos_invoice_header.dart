@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../picpos_shell/picpos_surface.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -33,8 +34,8 @@ class PicPosInvoiceHeader extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.card,
-        border: Border.all(color: AppColors.border),
+        color: context.picposCard,
+        border: Border.all(color: context.picposHairline),
       ),
       child: Row(
         children: [
@@ -74,7 +75,7 @@ class _Divider extends StatelessWidget {
         width: 1,
         height: 34,
         margin: const EdgeInsets.symmetric(horizontal: 8),
-        color: AppColors.border,
+        color: context.picposHairline,
       );
 }
 

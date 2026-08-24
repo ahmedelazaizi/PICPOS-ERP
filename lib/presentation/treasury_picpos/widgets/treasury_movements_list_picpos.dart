@@ -25,6 +25,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/providers.dart';
 import '../../../services/generators/thermal_receipt_generator.dart';
+import '../../picpos_shell/picpos_surface.dart';
 import 'treasury_picpos_tokens.dart';
 
 /// أسماءُ الأطراف الظاهرةِ في قائمة الحركات — **دفعةٌ واحدةٌ لا استعلامٌ لكلّ
@@ -253,18 +254,18 @@ class _MovementsFrame extends StatelessWidget {
     return Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: AppColors.card,
-        border: Border.all(color: TreasuryPicposTokens.hairline),
+        color: context.picposCard,
+        border: Border.all(color: TreasuryPicposTokens.hairlineOf(context)),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Column(
         children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
-            decoration: const BoxDecoration(
-              color: TreasuryPicposTokens.field,
+            decoration: BoxDecoration(
+              color: TreasuryPicposTokens.fieldOf(context),
               border: Border(
-                bottom: BorderSide(color: TreasuryPicposTokens.hairline),
+                bottom: BorderSide(color: TreasuryPicposTokens.hairlineOf(context)),
               ),
             ),
             child: Row(
@@ -322,9 +323,9 @@ class TreasuryMovementRowPicpos extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: TreasuryPicposTokens.hairline),
+          bottom: BorderSide(color: TreasuryPicposTokens.hairlineOf(context)),
         ),
       ),
       child: Row(

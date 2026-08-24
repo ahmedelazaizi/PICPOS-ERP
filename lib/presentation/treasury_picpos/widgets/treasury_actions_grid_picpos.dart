@@ -22,6 +22,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/permissions/permission_codes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../widgets/permission_guard.dart';
+import '../../picpos_shell/picpos_surface.dart';
 import 'treasury_picpos_tokens.dart';
 
 class TreasuryActionsGridPicpos extends StatelessWidget {
@@ -155,7 +156,7 @@ class TreasuryActionCardPicpos extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.card,
+      color: context.picposCard,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: onTap,
@@ -167,7 +168,7 @@ class TreasuryActionCardPicpos extends StatelessWidget {
             border: Border.all(
               color: borderTinted
                   ? tint.withValues(alpha: .35)
-                  : TreasuryPicposTokens.hairline,
+                  : TreasuryPicposTokens.hairlineOf(context),
             ),
           ),
           child: Row(
