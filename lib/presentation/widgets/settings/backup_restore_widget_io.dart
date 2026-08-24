@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import '../../picpos_shell/picpos_danger_confirm.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/repository_providers.dart';
@@ -156,74 +157,38 @@ class BackupRestoreWidget extends ConsumerWidget {
     }
   }
 
-  void _confirmRestore(
+  /// ⚠️ **حاجزُ كلمةٍ لا زرَّ تأكيد.** الاستعادةُ تستبدل قاعدةَ البيانات
+  /// كلَّها، وكانت تُنفَّذ بضغطةٍ واحدة.
+  ///
+  /// والعرضُ هنا **عمودٌ واحدٌ بتسلسل الخطوات** لا قائمتَي أثر: ما يقلق
+  /// المستعيدَ هو ترتيبُ ما سيحدث ومتى يفقد جلسته، لا مقابلةُ محذوفٍ بباقٍ.
+  /// وهو نفسُ ما يعرضه التصميمُ في `restore`.
+  Future<void> _confirmRestore(
     BuildContext context,
     WidgetRef ref,
     String backupPath,
     String filename,
-  ) {
-    showDialog(
-      context: context,
-      builder: (context) => Directionality(
-        textDirection: ui.TextDirection.rtl,
-        child: AlertDialog(
-          title: const Row(
-            children: [
-              Icon(PhosphorIconsBold.warning, color: AppColors.warning),
-              SizedBox(width: 8),
-              Text('تأكيد الاستعادة'),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('هل تريد استعادة النسخة: $filename؟'),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.warning.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(PhosphorIconsBold.warning, color: AppColors.warning),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'سيتم استبدال جميع البيانات الحالية. الاستعادة تُطبَّق '
-                        'عند إعادة تشغيل البرنامج — قبلها لا يتغيّر شيء. '
-                        'وتُؤخذ نسخة احتياطية من الحالة الراهنة أولاً.',
-                        style: TextStyle(
-                          color: AppColors.warning,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('إلغاء'),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.warning,
-              ),
-              onPressed: () async {
-                Navigator.pop(context);
-                await _restoreDatabase(context, ref, backupPath);
-              },
-              child: const Text('استعادة'),
-            ),
-          ],
-        ),
-      ),
+  ) async {
+    final confirmed = await showPicPosDangerConfirm(
+      context,
+      icon: PhosphorIconsBold.arrowCounterClockwise,
+      title: 'استعادة نسخة احتياطية',
+      subtitle: filename,
+      message: 'يُستبدل محتوى قاعدة البيانات الحاليّة بمحتوى النسخة '
+          'المختارة. والاستعادةُ تكتمل عند إعادة تشغيل البرنامج — قبلها '
+          'لا يتغيّر شيءٌ على الشاشة.',
+      actionLabel: 'استعادة النسخة',
+      typedWord: 'استعادة',
+      warnTone: true,
+      willDeleteLabel: 'ما سيحدث بالترتيب',
+      willDelete: const [
+        'تُؤخذ نسخةُ أمانٍ تلقائيّةٌ من الوضع الحاليّ أوّلاً',
+        'يُستبدَل ملفُّ قاعدة البيانات بمحتوى النسخة المختارة',
+        'تكتمل الاستعادةُ عند إعادة تشغيل البرنامج',
+      ],
     );
+    if (!confirmed || !context.mounted) return;
+    await _restoreDatabase(context, ref, backupPath);
   }
 
   Future<void> _restoreDatabase(

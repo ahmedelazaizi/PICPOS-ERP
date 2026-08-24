@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../picpos_shell/picpos_danger_confirm.dart';
 import '../../picpos_shell/picpos_surface.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -306,42 +307,42 @@ class _BranchScopeAdminDialogState
   Future<void> _confirmAndWipe() async {
     final counts = _foreignCounts!;
     final total = counts.values.fold<int>(0, (s, v) => s + v);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => Directionality(
-        textDirection: TextDirection.rtl,
-        child: AlertDialog(
-          title: const Row(
-            children: [
-              Icon(PhosphorIconsBold.warning, color: AppColors.error),
-              SizedBox(width: 8),
-              Text('تأكيد التنظيف'),
-            ],
-          ),
-          content: Text(
-            'سيتم حذف $total صف من قاعدة البيانات المحلية '
-            'لأنها تتبع فروع غير مسموحة لهذا الجهاز.\n\n'
-            'هذا الإجراء لا يمكن التراجع عنه.\n\n'
-            'تأكد من وجود نسخة احتياطية حديثة قبل المتابعة.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('إلغاء'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.error,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('تأكيد الحذف'),
-            ),
-          ],
-        ),
-      ),
+
+    // ⚠️ **حاجزُ كلمةٍ لا زرَّ تأكيد.** الحذفُ هنا فعليٌّ وبلا رجعة
+    //    (`wipeForeignBranchData`)، وتوثيقُ الـDAO نفسِه يُحمِّل المستدعيَ
+    //    مسؤوليّةَ التأكيد. وكان زرّاً واحداً — ضغطةٌ تحذف صفوفاً من القاعدة.
+    //
+    //    والأرقامُ أدناه من **الفحص الجافّ** الذي سبق (`_foreignCounts`) لا
+    //    من تقدير: أكبرُ ثلاثةِ جداولَ أثراً، فالقائمةُ الكاملةُ تطول.
+    final topTables = counts.entries.where((e) => e.value > 0).toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    final confirmed = await showPicPosDangerConfirm(
+      context,
+      icon: PhosphorIconsBold.warning,
+      title: 'تنظيف بيانات الفروع غير المسموحة',
+      subtitle: '$total صفّاً في ${topTables.length} جدولاً',
+      message: 'تُحذف من القاعدة المحليّة الصفوفُ التابعةُ لفروعٍ غيرِ '
+          'مسموحةٍ لهذا الجهاز. تأكّد من وجود نسخةٍ احتياطيّةٍ حديثة.',
+      actionLabel: 'تنفيذ التنظيف',
+      typedWord: 'تنظيف',
+      willDeleteLabel: 'سيُحذف',
+      willDelete: [
+        for (final e in topTables.take(3)) '${e.key} — ${e.value} صفّاً',
+        if (topTables.length > 3) 'و${topTables.length - 3} جدولاً آخر',
+      ],
+      willRemainLabel: 'يبقى كما هو',
+      willRemain: const [
+        'بياناتُ الفروع المسموحة لهذا الجهاز',
+        'الإعداداتُ والمستخدمون والصلاحيات',
+        'ما على السيرفر — الحذفُ محلّيٌّ فقط',
+      ],
+      metaRows: [
+        (label: 'إجمالي الصفوف المتأثّرة', value: '$total'),
+        (label: 'عدد الجداول', value: '${topTables.length}'),
+      ],
     );
-    if (confirmed != true) return;
+    if (!confirmed) return;
 
     setState(() => _wiping = true);
     try {

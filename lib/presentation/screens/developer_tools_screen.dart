@@ -41,6 +41,7 @@ import '../../services/deployment/deployment_mode_committer.dart';
 import '../../services/deployment/setup_contract.dart';
 import '../../services/mirror_state.dart';
 import '../../services/network_service.dart';
+import '../picpos_shell/picpos_danger_confirm.dart';
 import '../widgets/settings/mirror_pairing_dialog.dart';
 
 class DeveloperToolsScreen extends ConsumerWidget {
@@ -1149,17 +1150,40 @@ class _DataWipeSectionState extends ConsumerState<_DataWipeSection> {
               ),
             ),
             const SizedBox(height: 12),
+            // ⚠️ قوائمُ الأثرِ مأخوذةٌ من توثيق `DataWipeService` نفسِه لا
+            //    من التخمين — وكلُّ بندٍ هنا يقابل سطراً في تلك الدوالّ.
             _wipeTile(
               label: 'حذف جميع فواتير المبيعات',
               detail: 'الفواتير وبنودها والدفعات وقيود اليومية وحركات المخزون',
               confirmWord: 'حذف المبيعات',
               action: (s) => s.wipeSalesInvoices(),
+              willDelete: const [
+                'فواتير المبيعات وبنودها',
+                'دفعاتُها',
+                'قيودُ اليومية المرتبطة بها',
+                'حركاتُ المخزون الناتجةُ عنها',
+              ],
+              willRemain: const [
+                'الأصناف والعملاء',
+                'فواتير المشتريات',
+                'الإعدادات والمستخدمون',
+              ],
             ),
             _wipeTile(
               label: 'حذف جميع فواتير المشتريات',
               detail: 'الفواتير وبنودها والتكاليف المحملة وقيودها وحركاتها',
               confirmWord: 'حذف المشتريات',
               action: (s) => s.wipePurchaseInvoices(),
+              willDelete: const [
+                'فواتير المشتريات وبنودها',
+                'التكاليفُ المحمَّلة عليها',
+                'قيودُها وحركاتُها المخزنيّة',
+              ],
+              willRemain: const [
+                'الأصناف والموردون',
+                'فواتير المبيعات',
+                'الإعدادات والمستخدمون',
+              ],
             ),
             _wipeTile(
               label: 'حذف جميع الأصناف',
@@ -1167,6 +1191,15 @@ class _DataWipeSectionState extends ConsumerState<_DataWipeSection> {
                   'بنود فواتير مرتبطة',
               confirmWord: 'حذف الأصناف',
               action: (s) => s.wipeProducts(),
+              willDelete: const [
+                'الأصناف وأرصدتُها',
+                'باركوداتُها ووحداتُها',
+              ],
+              willRemain: const [
+                'الفواتير — بل تُرفَض العمليةُ إن وُجدت',
+                'العملاء والموردون',
+                'الإعدادات والمستخدمون',
+              ],
             ),
             _wipeTile(
               label: 'حذف جميع العملاء',
@@ -1174,12 +1207,28 @@ class _DataWipeSectionState extends ConsumerState<_DataWipeSection> {
                   'العميل عنه فقط ومبيتحذفش',
               confirmWord: 'حذف العملاء',
               action: (s) => s.wipeParties(customers: true),
+              willDelete: const [
+                'الأطرافُ التي هي عملاءُ فقط',
+              ],
+              willRemain: const [
+                'الطرفُ الذي هو عميلٌ ومورّدٌ معاً — تُلغى صفةُ العميل فقط',
+                'الفواتير والأصناف',
+                'الإعدادات والمستخدمون',
+              ],
             ),
             _wipeTile(
               label: 'حذف جميع الموردين',
               detail: 'بنفس قاعدة الأطراف المزدوجة',
               confirmWord: 'حذف الموردين',
               action: (s) => s.wipeParties(customers: false),
+              willDelete: const [
+                'الأطرافُ التي هي موردون فقط',
+              ],
+              willRemain: const [
+                'الطرفُ الذي هو عميلٌ ومورّدٌ معاً — تُلغى صفةُ المورّد فقط',
+                'الفواتير والأصناف',
+                'الإعدادات والمستخدمون',
+              ],
             ),
             _wipeTile(
               label: 'حذف الحسابات المضافة في دليل الحسابات',
@@ -1187,6 +1236,16 @@ class _DataWipeSectionState extends ConsumerState<_DataWipeSection> {
                   'يومية مرتبطة',
               confirmWord: 'حذف الحسابات',
               action: (s) => s.wipeChartOfAccounts(),
+              willDelete: const [
+                'الحساباتُ المُضافة',
+                'ربطُها بالعمليات',
+                'قوالبُ اليومية',
+              ],
+              willRemain: const [
+                'القيود — بل تُرفَض العمليةُ إن وُجدت بنودٌ مرتبطة',
+                'الحساباتُ الأصليّة',
+                'الإعدادات والمستخدمون',
+              ],
             ),
             const Divider(height: 24),
             _wipeTile(
@@ -1197,6 +1256,19 @@ class _DataWipeSectionState extends ConsumerState<_DataWipeSection> {
               confirmWord: 'تصفير كامل',
               action: (s) => s.wipeAllTransactionalData(),
               extraDanger: true,
+              willDelete: const [
+                'كلُّ الفواتير — مبيعاتٍ ومشترياتٍ ومرتجعات',
+                'حركاتُ المخزون والجرد',
+                'القيودُ المحاسبيّةُ وأرصدةُ العملاء والموردين',
+                'حركةُ الخزائن وسنداتُ القبض والصرف',
+                'سجلُّ العمليات والورديات',
+              ],
+              willRemain: const [
+                'الإعداداتُ كلُّها',
+                'المستخدمون والأدوارُ والصلاحيات',
+                'الفروعُ والمستودعاتُ وتعريفاتُ الصناديق',
+                'الأصنافُ والعملاءُ والموردون',
+              ],
             ),
           ],
         ),
@@ -1209,12 +1281,22 @@ class _DataWipeSectionState extends ConsumerState<_DataWipeSection> {
     required String detail,
     required String confirmWord,
     required Future<WipeResult> Function(DataWipeService) action,
+    List<String> willDelete = const [],
+    List<String> willRemain = const [],
     bool extraDanger = false,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: OutlinedButton(
-        onPressed: _busy ? null : () => _confirmAndRun(label, confirmWord, action),
+        onPressed: _busy
+            ? null
+            : () => _confirmAndRun(
+                  label,
+                  confirmWord,
+                  action,
+                  willDelete: willDelete,
+                  willRemain: willRemain,
+                ),
         style: OutlinedButton.styleFrom(
           alignment: Alignment.centerRight,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -1255,88 +1337,34 @@ class _DataWipeSectionState extends ConsumerState<_DataWipeSection> {
     );
   }
 
-  /// تأكيد بالكتابة: زرار «موافق» ينضغط بالغلط، وكتابة كلمة بالحرف لأ.
+  /// تأكيدٌ بالكتابة ثمّ تنفيذ.
+  ///
+  /// ⚠️ **الحوارُ موحَّدٌ الآن** (`showPicPosDangerConfirm`) بعد أن كان
+  /// `AlertDialog` محلّيّاً هنا: نفسُ حاجزِ الكلمة، ومعه قائمتا الأثر —
+  /// «سيُحذف» و«سيبقى كما هو». وأكثرُ التردّد أمامَ زرِّ التصفير سببُه
+  /// الجهلُ بما **يبقى** لا بما يُحذف.
+  ///
+  /// والقوائمُ تأتي من المستدعي لأنها تختلف لكلِّ عملية، ونصُّها مأخوذٌ من
+  /// توثيق `DataWipeService` نفسِه لا من التخمين.
   Future<void> _confirmAndRun(
     String label,
     String confirmWord,
-    Future<WipeResult> Function(DataWipeService) action,
-  ) async {
-    final controller = TextEditingController();
-    final confirmed = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => Directionality(
-        textDirection: TextDirection.rtl,
-        child: StatefulBuilder(
-          builder: (ctx, setLocal) => AlertDialog(
-            title: Row(
-              children: [
-                const Icon(PhosphorIconsBold.warningOctagon,
-                    color: AppColors.error, size: 22),
-                const SizedBox(width: 8),
-                Expanded(child: Text(label, style: const TextStyle(fontSize: 15))),
-              ],
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'العملية دي بلا رجعة. اكتب الكلمة التالية بالحرف للتأكيد:',
-                  style: TextStyle(fontSize: 13),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppColors.error.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    confirmWord,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                        color: AppColors.error),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: controller,
-                  autofocus: true,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                  onChanged: (_) => setLocal(() {}),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('إلغاء'),
-              ),
-              ElevatedButton(
-                onPressed: controller.text.trim() == confirmWord
-                    ? () => Navigator.pop(ctx, true)
-                    : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.error,
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('نفّذ'),
-              ),
-            ],
-          ),
-        ),
-      ),
+    Future<WipeResult> Function(DataWipeService) action, {
+    List<String> willDelete = const [],
+    List<String> willRemain = const [],
+  }) async {
+    final confirmed = await showPicPosDangerConfirm(
+      context,
+      icon: PhosphorIconsBold.warningOctagon,
+      title: label,
+      message: 'العمليةُ بلا رجعة. تُؤخَذ نسخةٌ احتياطيّةٌ تلقائيّاً قبل '
+          'التنفيذ، وفشلُها يوقف العملية.',
+      actionLabel: 'نفّذ',
+      typedWord: confirmWord,
+      willDelete: willDelete,
+      willRemain: willRemain,
     );
-    controller.dispose();
-    if (confirmed != true || !mounted) return;
+    if (!confirmed || !mounted) return;
 
     setState(() => _busy = true);
     final result = await action(DataWipeService(ref.read(databaseProvider)));

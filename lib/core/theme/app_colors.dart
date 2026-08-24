@@ -55,8 +55,17 @@ class AppColors {
   static const Color surfaceDark =
       Brand.isPicPos ? Color(0xFF012258) : Color(0xFF134657);
   static const Color card = Colors.white;
+  /// ⚠️ **فرعُ PicPos يطابق `PicPosTheme._cardDark` عمداً.**
+  ///
+  /// كان `#0A2E63` وهو **لا يظهر في أيّ مكانٍ آخرَ من الشجرة**: ثيمُ PicPos
+  /// يرسم بطاقاته بـ`#121C2E`. فكانت الشاشةُ الواحدةُ تحمل لونَي بطاقةٍ —
+  /// ما يأخذ لونَه من الثيم، وما يأخذه من `picposCard` عبر هذا الثابت.
+  /// وهو ما ظهر في صور المالك 2026-08-24.
+  ///
+  /// والقيمةُ الجديدةُ هي عينُ `--card` الداكنة في تصميم الإعدادات.
+  /// وفرعُ UralCash لم يُمَسّ.
   static const Color cardDark =
-      Brand.isPicPos ? Color(0xFF0A2E63) : Color(0xFF1E4A5A);
+      Brand.isPicPos ? Color(0xFF121C2E) : Color(0xFF1E4A5A);
 
   // Text Colors - Light Mode (All text should be BLACK for maximum readability)
   static const Color textPrimary = Color(
@@ -77,8 +86,17 @@ class AppColors {
 
   // Border Colors
   static const Color border = Color(0xFFE2E8F0);
+  /// ⚠️ **فرعُ PicPos يطابق `PicPosTheme._hairlineDark` عمداً.**
+  ///
+  /// كان `#0250D3` — وهو لونُ العلامةِ الأساسيُّ لا لونَ حدّ. وثيمُ PicPos
+  /// يرسم حدودَه بـ`#243247`، فكانت الشاشةُ الواحدةُ تحمل حدَّين: رماديّاً
+  /// خافتاً من الثيم، وأزرقَ ساطعاً ممّا يقرأ هذا الثابت. والحدُّ بلونِ
+  /// العلامةِ يسحب العينَ إلى الإطار بدلَ المحتوى.
+  ///
+  /// والقيمةُ الجديدةُ هي عينُ `--hairline` الداكنة في تصميم الإعدادات.
+  /// وفرعُ UralCash لم يُمَسّ.
   static const Color borderDark =
-      Brand.isPicPos ? Color(0xFF0250D3) : Color(0xFF2B737F);
+      Brand.isPicPos ? Color(0xFF243247) : Color(0xFF2B737F);
 
   // Gradients - UralCash Brand
   static const LinearGradient primaryGradient = LinearGradient(

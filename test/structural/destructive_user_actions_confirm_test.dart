@@ -70,7 +70,30 @@ void main() {
       dotAll: true,
     ).firstMatch(src);
     expect(del, isNotNull);
-    expect(del!.group(1), contains('AppConfirmDialog.show'),
-        reason: 'لو نُقل تأكيدُ الحذف إلى المستدعي فهذا الحارسُ يجب أن يتبعه');
+    final body = del!.group(1)!;
+
+    // ⚠️ **يُقاس المعنى لا اسمُ الدالّة.** اشترطت الصياغةُ الأولى
+    //    `AppConfirmDialog.show` بالحرف، فاحمرَّ الحارسُ حين نُقل التأكيدُ
+    //    إلى `showPicPosDangerConfirm` — وهو **أقوى**: يعرض قائمتَي الأثر
+    //    ويُرجع `bool` غيرَ لاغٍ افتراضُه الرفض. وحارسٌ يمنع التحسينَ
+    //    ليس حارساً.
+    expect(
+      body,
+      anyOf(
+        contains('AppConfirmDialog.show'),
+        contains('showPicPosDangerConfirm'),
+        contains('showPicPosConfirm'),
+      ),
+      reason: 'الحذفُ ينفَّذ بلا تأكيدٍ إطلاقاً — نقرةٌ واحدةٌ تُقفل حساباً',
+    );
+
+    // والتأكيدُ يجب أن **يحكم** التنفيذَ لا أن يسبقه ويُهمَل — وهذا شرطٌ
+    // لم يكن هنا، وهو الأهمُّ: حوارٌ يُعرَض ثمّ تُهمَل نتيجتُه أسوأُ من
+    // لا حوار، لأنه يوهم بالحماية.
+    expect(
+      body,
+      anyOf(contains('if (!confirmed)'), contains('if (confirmed)')),
+      reason: 'نتيجةُ التأكيد تُقرأ ولا تُهمَل',
+    );
   });
 }

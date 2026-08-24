@@ -51,6 +51,7 @@ import '../../screens/settings/widgets/security_alerts_panel.dart';
 import '../../screens/settings/widgets/set_pin_dialog.dart';
 import '../../screens/settings/widgets/branch_access_dialog.dart';
 import '../../screens/settings/widgets/warehouse_access_dialog.dart';
+import '../../picpos_shell/picpos_danger_confirm.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
 
 /// شاشة إدارة المستخدمين بهوية PicPos. تُختار في مواقع الـ
@@ -1017,14 +1018,29 @@ class _UsersManagementPicposScreenState
           type: ToastType.error);
       return;
     }
-    final confirmed = await AppConfirmDialog.show(
+    // ⚠️ **العنوانُ يقول ما يحدث فعلاً.** هذا حذفٌ ناعم: الصفُّ يبقى
+    //    و`isActive`/`isLocked` وحدَهما يتبدّلان (انظر أسفلَه). فكتابةُ
+    //    «سيُحذف» فوقَ أثرٍ لا يحذف تضليلٌ في أخطرِ موضع — ومن ظنّ الحساب
+    //    ممحوّاً استغرب بقاءَ اسمه في السجلّ وظنّه عطباً.
+    final confirmed = await showPicPosDangerConfirm(
       context,
-      title: 'حذف المستخدم',
-      message: 'هل أنت متأكد من حذف المستخدم "${user.displayName}"؟\n'
-          'سيتم تعطيل الحساب وقفله نهائياً.',
-      confirmLabel: 'حذف',
-      icon: PhosphorIconsBold.trash,
-      color: Colors.red,
+      icon: PhosphorIconsBold.userMinus,
+      title: 'تعطيل المستخدم',
+      subtitle: user.displayName,
+      message: 'يُقفَل الحساب فلا يستطيع صاحبُه الدخول. وحركاتُه السابقة '
+          'تبقى مسجّلةً باسمه كما هي.',
+      actionLabel: 'تعطيل الحساب',
+      willDeleteLabel: 'سيحدث',
+      willDelete: const [
+        'تعطيل الحساب فلا يظهر في قوائم المستخدمين النشطين',
+        'قفلُه فلا يُقبَل منه تسجيلُ دخول',
+      ],
+      willRemainLabel: 'يبقى كما هو',
+      willRemain: const [
+        'فواتيره وحركاته السابقة',
+        'أثرُه في سجلّ العمليات',
+        'الورديات المغلقة باسمه',
+      ],
     );
     if (!confirmed) return;
 
@@ -1052,7 +1068,7 @@ class _UsersManagementPicposScreenState
       debugPrint('[ActivityLog] Error: $e');
     }
     if (!mounted) return;
-    AppToast.show(context, 'تم حذف المستخدم', type: ToastType.success);
+    AppToast.show(context, 'تم تعطيل الحساب وقفله', type: ToastType.success);
     ref.invalidate(allUsersProvider);
     ref.invalidate(allUserBranchNamesProvider);
   }
