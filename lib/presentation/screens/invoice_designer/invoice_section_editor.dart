@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
+import '../../picpos_shell/picpos_surface.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/template_json_flags.dart';
@@ -602,8 +603,8 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+        color: context.picposCard,
+        border: Border(bottom: BorderSide(color: context.picposHairline)),
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 3, offset: const Offset(0, 1))],
       ),
       child: Row(
@@ -634,7 +635,7 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
         side: BorderSide(
-          color: section.isExpanded ? section.color.withValues(alpha: 0.5) : Colors.grey.shade200,
+          color: section.isExpanded ? section.color.withValues(alpha: 0.5) : context.picposHairline,
           width: section.isExpanded ? 1.5 : 1,
         ),
       ),
@@ -650,7 +651,7 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               decoration: BoxDecoration(
-                color: section.isExpanded ? section.color.withValues(alpha: 0.06) : Colors.white,
+                color: section.isExpanded ? section.color.withValues(alpha: 0.06) : context.picposCard,
                 borderRadius: BorderRadius.vertical(
                   top: const Radius.circular(10),
                   bottom: section.isExpanded ? Radius.zero : const Radius.circular(10),
@@ -1293,8 +1294,8 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
             decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+              color: context.picposCard,
+              border: Border(bottom: BorderSide(color: context.picposHairline)),
             ),
             child: Row(
               children: [
@@ -1319,6 +1320,7 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
                   width: paperWidthPx,
                   constraints: const BoxConstraints(minHeight: 300),
                   decoration: BoxDecoration(
+                    // ورقٌ مطبوع — الورقةُ نفسُها بعرضِ `paperWidthPx`.
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(3),
                     boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.12), blurRadius: 10, offset: const Offset(0, 3))],
@@ -1550,6 +1552,7 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
                   decoration: BoxDecoration(
+                    // ورقٌ مطبوع — تخطيطُ صفوفِ جدولِ الفاتورة على الورقة.
                     color: i.isEven ? Colors.white : Colors.grey.shade50,
                     border: Border(top: BorderSide(color: Colors.grey.shade200)),
                   ),

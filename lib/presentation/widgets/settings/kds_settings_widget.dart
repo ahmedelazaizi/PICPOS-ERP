@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../picpos_shell/picpos_surface.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
@@ -70,7 +71,7 @@ class _KdsSettingsWidgetState extends ConsumerState<KdsSettingsWidget> {
                 return Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: context.picposField,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Center(

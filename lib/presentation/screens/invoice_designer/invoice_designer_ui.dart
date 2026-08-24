@@ -247,7 +247,7 @@ mixin _InvoiceDesignerUIMixin on ConsumerState<InvoiceDesignerScreen> {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.picposField,
         appBar: buildAppBar(),
         body: Column(
           children: [
@@ -303,7 +303,7 @@ mixin _InvoiceDesignerUIMixin on ConsumerState<InvoiceDesignerScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
-              color: Colors.white, borderRadius: BorderRadius.circular(8),
+              color: context.picposCard, borderRadius: BorderRadius.circular(8),
               border: Border.all(color: AppColors.primary, width: 2),
             ),
             child: DropdownButtonHideUnderline(
@@ -329,7 +329,7 @@ mixin _InvoiceDesignerUIMixin on ConsumerState<InvoiceDesignerScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
           decoration: BoxDecoration(
-            color: Colors.white, borderRadius: BorderRadius.circular(8),
+            color: context.picposCard, borderRadius: BorderRadius.circular(8),
             border: Border.all(color: AppColors.primary, width: 2),
           ),
           child: Row(

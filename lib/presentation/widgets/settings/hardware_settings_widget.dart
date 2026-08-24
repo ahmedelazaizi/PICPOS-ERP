@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../picpos_shell/picpos_surface.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
 import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -296,7 +297,7 @@ class _HardwareSettingsWidgetState extends ConsumerState<HardwareSettingsWidget>
   Widget buildSectionCard({required String title, required IconData icon, required Color iconColor, required List<Widget> children}) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(color: context.picposField, borderRadius: BorderRadius.circular(12)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

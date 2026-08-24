@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../picpos_shell/picpos_surface.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -193,7 +194,7 @@ class _AccountMappingSettingsScreenState
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.picposField,
         body: Column(
           children: [
             _buildHeader(),
@@ -360,7 +361,7 @@ class _AccountMappingSettingsScreenState
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.border.withValues(alpha: 0.3))),
+        border: Border(bottom: BorderSide(color: context.picposHairline.withValues(alpha: 0.3))),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

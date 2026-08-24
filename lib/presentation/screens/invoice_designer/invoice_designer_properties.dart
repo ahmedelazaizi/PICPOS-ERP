@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../../picpos_shell/picpos_surface.dart';
 import 'package:drift/drift.dart' show Value;
 import '../../../../data/database/database.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -134,8 +135,8 @@ class _InvoiceDesignerPropertiesState extends State<InvoiceDesignerProperties> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
+              color: context.picposCard,
+              border: Border(bottom: BorderSide(color: context.picposHairline)),
             ),
             child: Row(
               children: [

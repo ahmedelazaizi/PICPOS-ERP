@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../picpos_shell/picpos_surface.dart';
 import 'dart:convert';
 import '../../../../core/utils/template_json_flags.dart';
 import '../../../../data/database/database.dart';
@@ -58,7 +59,7 @@ class InvoicePreviewDialog extends StatelessWidget {
         width: 800,
         height: 900,
         padding: const EdgeInsets.all(32),
-        color: Colors.white,
+        color: context.picposCard,
         child: Column(
           children: [
             Row(
@@ -86,6 +87,7 @@ class InvoicePreviewDialog extends StatelessWidget {
                     width: paperWidthPx,
                     constraints: const BoxConstraints(minHeight: 300),
                     decoration: BoxDecoration(
+                      // ورقٌ مطبوع — الورقةُ نفسُها بعرضِ `paperWidthPx`.
                       color: Colors.white,
                       border: Border.all(color: Colors.grey.shade300),
                       boxShadow: [

@@ -60,6 +60,21 @@ const _scope = <String>[
   'lib/presentation/treasury/widgets/safe_management_dialog.dart',
   'lib/presentation/widgets/searchable_dropdown.dart',
   'lib/presentation/pos/widgets/modifier_selection_dialog.dart',
+  // ── ما تفتحه شاشةُ الإعدادات — بلاغُ المالك 2026-08-24 بالصور ──────────
+  //
+  // الحوارُ يملأ الشاشةَ ساعةَ فتحِه، فبياضُه أظهرُ من بياضِ أيِّ لوحة.
+  // وهذه خارجَ الشاشات العشر، فلم يرَها الحارسُ في جولته الأولى — ونطاقُ
+  // الوضع الغامق يُقاس بما **يُفتَح** من الشاشة لا بمجلّدها.
+  'lib/presentation/widgets/settings/hardware_settings_widget.dart',
+  'lib/presentation/widgets/settings/kds_settings_widget.dart',
+  'lib/presentation/widgets/settings/activation_dialog.dart',
+  'lib/presentation/widgets/settings/branch_scope_admin_dialog.dart',
+  'lib/presentation/settings_picpos/screens/cfd_settings_card_picpos.dart',
+  // مصمّمُ الفواتير — واجهةُ المحرّر تتبع الوضعَ، والورقةُ لا. الفصلُ
+  // بوسم `ورقٌ مطبوع` في السطر لا باستثناء الملفّ (انظر [_paperMark]).
+  'lib/presentation/screens/invoice_designer',
+  'lib/presentation/screens/printers_screen.dart',
+  'lib/presentation/screens/account_mapping_settings_screen.dart',
 ];
 
 /// ثوابتُ الأسطحِ الفاتحةِ وحدَها — بلا نظائرِها الداكنة.
@@ -107,10 +122,32 @@ const _definesBothModes = <String>{
 ///
 /// و`Colors.white.withValues(alpha: …)` مستثناةٌ عمداً: تلك طبقةٌ شفّافةٌ فوق
 /// سطحٍ ملوَّنٍ (‏ترويسةُ الخزينة مثلاً) وهي صحيحةٌ في الوضعَين.
+/// ⚠️ **الشرطيُّ يُمسَك كالمباشر.** أوّلُ صياغةٍ اشترطت
+/// `color: Colors.white,` مباشرةً، فنجا منها
+/// `color: x.isExpanded ? tint : Colors.white` — وهو **عينُ** الموضعِ الذي
+/// بلّغ عنه المالكُ بالصورة (بطاقاتُ أقسام مصمّم الفواتير). وقد مرّ
+/// الحارسُ عليه أخضرَ في اختبارِ العضّ، فوُسِّع.
+///
+/// و`Colors.white` غيرُ المتبوعةِ بنقطة: يُخرج `Colors.white70` و
+/// `Colors.white.withValues(alpha:)` — تلك طبقاتٌ شفّافةٌ فوق سطحٍ ملوَّنٍ
+/// وهي صحيحةٌ في الوضعَين.
 final _whiteBoxDecoration = RegExp(
-  r'BoxDecoration\(\s*(?://[^\n]*\n\s*)*color:\s*Colors\.white\s*,',
+  r'BoxDecoration\(\s*(?://[^\n]*\n\s*)*color:[^\n]*\bColors\.white\b(?!\.)',
   multiLine: true,
 );
+
+/// وسمُ الاستثناء — يُكتب تعليقاً **داخلَ** `BoxDecoration` فوقَ سطر اللون.
+///
+/// ═══ لماذا وسمٌ في السطر لا استثناءُ ملفّ ═══
+///
+/// لأنّ مصمّمَ الفواتير يخلط الأمرَين في الملفّ الواحد: `_buildLivePreview`
+/// يرسم **ورقةً مطبوعة** (‏`paperWidthPx` وصفوفَ جدولٍ مخطَّطة) وهي بيضاءُ
+/// في الوضعَين لأنها تحاكي المطبوع، بينما رأسُ المحرّر وبطاقاتُ الأقسام
+/// أسطحُ واجهةٍ تتبع الوضع. فاستثناءُ الملفّ كلِّه يُعمي الحارسَ عن نصفِه.
+///
+/// ⚠️ وكتابةُ الوسم تعهّدٌ لا إعفاء: معناها أنّ هذا البياضَ **يُطبَع** أو
+/// يقع على مطبوع. راجعه بعينك قبل أن تكتبه.
+const _paperMark = 'ورقٌ مطبوع';
 
 Iterable<File> _dartFilesUnder(String path) sync* {
   final dir = Directory(path);
@@ -201,6 +238,8 @@ void main() {
         final rel = file.path.replaceAll(r'\', '/');
         final src = file.readAsStringSync();
         for (final m in _whiteBoxDecoration.allMatches(src)) {
+          // الوسمُ يقع بين `BoxDecoration(` و`color:`، فهو داخلَ المطابقة.
+          if (m.group(0)!.contains(_paperMark)) continue;
           // رقمُ السطرِ من عددِ الأسطر قبل الموضع — الملفّاتُ هنا CRLF
           // وLF معاً، فالعدُّ على `\n` وحدَه يصحُّ في الحالتين.
           final line = '\n'.allMatches(src.substring(0, m.start)).length + 1;

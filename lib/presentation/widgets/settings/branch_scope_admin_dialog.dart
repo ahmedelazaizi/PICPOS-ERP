@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../picpos_shell/picpos_surface.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
@@ -185,7 +186,7 @@ class _BranchScopeAdminDialogState
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: AppColors.border),
+        side: BorderSide(color: context.picposHairline),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -370,7 +371,7 @@ class _BranchScopeAdminDialogState
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: AppColors.border),
+        side: BorderSide(color: context.picposHairline),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -473,7 +474,7 @@ class _BranchScopeAdminDialogState
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: AppColors.border),
+        side: BorderSide(color: context.picposHairline),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -666,7 +667,7 @@ class _BranchScopeAdminDialogState
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: AppColors.border),
+        side: BorderSide(color: context.picposHairline),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -938,7 +939,7 @@ class _BranchScopeAdminDialogState
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: AppColors.border),
+        side: BorderSide(color: context.picposHairline),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -1196,7 +1197,7 @@ class _BranchScopeAdminDialogState
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: AppColors.border),
+        side: BorderSide(color: context.picposHairline),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -1296,7 +1297,7 @@ class _BranchScopeAdminDialogState
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: AppColors.border),
+        side: BorderSide(color: context.picposHairline),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -1384,7 +1385,7 @@ class _BranchScopeAdminDialogState
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: AppColors.border),
+        side: BorderSide(color: context.picposHairline),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -1478,7 +1479,7 @@ class _BranchScopeAdminDialogState
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: AppColors.border),
+        side: BorderSide(color: context.picposHairline),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),

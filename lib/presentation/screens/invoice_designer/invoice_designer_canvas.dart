@@ -71,6 +71,7 @@ class InvoiceDesignerCanvas extends StatelessWidget {
               width: canvasWidth,
               height: canvasHeight,
               decoration: BoxDecoration(
+                // ورقٌ مطبوع — تحاكي المطبوعَ فتبقى بيضاءَ في الوضعَين.
                 color: Colors.white,
                 border: Border.all(
                   color: isHovering ? AppColors.primary : Colors.grey.shade300,
@@ -405,6 +406,7 @@ class InvoiceDesignerCanvas extends StatelessWidget {
           width: 10,
           height: 10,
           decoration: BoxDecoration(
+            // ورقٌ مطبوع — مقبضُ تحجيمٍ فوقَ اللوحة البيضاء.
             color: Colors.white,
             border: Border.all(color: AppColors.primary, width: 1.5),
             borderRadius: BorderRadius.circular(2),

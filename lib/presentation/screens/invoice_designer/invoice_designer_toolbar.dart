@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../picpos_shell/picpos_surface.dart';
 import '../../../../data/database/database.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -28,8 +29,8 @@ class InvoiceDesignerToolbar extends StatelessWidget {
       height: 60,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
+        color: context.picposCard,
+        border: Border(bottom: BorderSide(color: context.picposHairline)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),

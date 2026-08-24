@@ -146,7 +146,7 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
                 ),
                 selected: isSelected,
                 selectedColor: AppColors.primary,
-                backgroundColor: AppColors.surface,
+                backgroundColor: context.picposField,
                 onSelected: (selected) {
                   if (selected) {
                     setState(() => _selectedType = type);
@@ -276,9 +276,9 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.picposField,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.picposHairline),
       ),
       child: ExpansionTile(
         leading: const Icon(
@@ -472,9 +472,9 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.picposField,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.picposHairline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -532,9 +532,9 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.picposField,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.picposHairline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -665,9 +665,9 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.picposField,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.picposHairline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
