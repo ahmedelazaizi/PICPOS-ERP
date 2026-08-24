@@ -831,29 +831,17 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
       context: context,
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
-        child: AlertDialog(
-          title: Row(
-            children: [
-              Icon(
-                success ? PhosphorIconsBold.checkCircle : PhosphorIconsBold.warningCircle,
-                color: success ? AppColors.success : AppColors.error,
-                size: 24,
-              ),
-              const SizedBox(width: 8),
-              Text(success ? 'اتصال ناجح' : 'فشل الاتصال'),
-            ],
-          ),
-          content: SizedBox(
-            width: 400,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'تشخيص الاتصال:',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                ),
-                const SizedBox(height: 8),
+        child: PicPosDialog(
+          icon: success
+              ? PhosphorIconsBold.checkCircle
+              : PhosphorIconsBold.warningCircle,
+          title: success ? 'اتصال ناجح' : 'فشل الاتصال',
+          subtitle: 'تشخيص الاتصال',
+          accent: success ? AppColors.success : AppColors.error,
+          width: 520,
+          onCancel: () => Navigator.pop(ctx),
+          cancelLabel: 'إغلاق',
+          body: [
                 ...diagnostics.entries.map((e) => Padding(
                   padding: const EdgeInsets.symmetric(vertical: 2),
                   child: Row(
@@ -907,14 +895,6 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
                     ),
                   ),
                 ],
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('إغلاق'),
-            ),
           ],
         ),
       ),

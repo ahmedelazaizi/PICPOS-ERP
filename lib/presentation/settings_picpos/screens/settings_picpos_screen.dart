@@ -78,6 +78,9 @@
 // ---------------------------------------------------------------------------
 
 import '../../picpos_shell/picpos_surface.dart';
+// يخدم أجزاءَ هذه المكتبة كلَّها (`part of`): حوارات المدير والعميل
+// والإعدادات العامّة تستعمل `PicPosDialog` من هنا.
+import '../../picpos_shell/picpos_dialog.dart';
 import 'dart:convert';
 import 'dart:io' show File;
 import 'package:flutter/foundation.dart' show kDebugMode;
@@ -217,40 +220,50 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
       barrierDismissible: false,
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
-        child: AlertDialog(
-          title: const Text('🔒 كلمة مرور الإعدادات'),
-          content: TextField(
-            controller: controller,
-            obscureText: true,
-            autofocus: true,
-            decoration: const InputDecoration(
-              labelText: 'أدخل كلمة المرور',
-              border: OutlineInputBorder(),
+        child: PicPosDialog(
+          icon: PhosphorIconsBold.lockKey,
+          title: 'كلمة مرور الإعدادات',
+          subtitle: 'الشاشةُ محميّةٌ بكلمةِ مرور',
+          width: 460,
+          // ⚠️ الإلغاءُ يخرج من **الشاشة** لا من الحوار وحدَه: الحوارُ
+          //    `barrierDismissible: false` وهو بوّابةُ الدخول، فإغلاقُه
+          //    وحدَه كان يترك الشاشةَ مفتوحةً بلا قفلٍ ولا محتوى.
+          onCancel: () {
+            Navigator.pop(ctx);
+            Navigator.pop(context);
+          },
+          body: [
+            PicPosDialogField(
+              label: 'أدخل كلمة المرور',
+              child: TextField(
+                controller: controller,
+                obscureText: true,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                ),
+                onSubmitted: (val) {
+                  if (val == correctPassword) {
+                    Navigator.pop(ctx);
+                    setState(() => _isUnlocked = true);
+                  }
+                },
+              ),
             ),
-            onSubmitted: (val) {
-              if (val == correctPassword) {
+          ],
+          primaryAction: PicPosDialogAction(
+            label: 'دخول',
+            icon: PhosphorIconsBold.signIn,
+            onPressed: () {
+              if (controller.text == correctPassword) {
                 Navigator.pop(ctx);
                 setState(() => _isUnlocked = true);
+              } else {
+                AppToast.show(ctx, 'كلمة المرور غير صحيحة',
+                    type: ToastType.error);
               }
             },
           ),
-          actions: [
-            TextButton(
-              onPressed: () { Navigator.pop(ctx); Navigator.pop(context); },
-              child: const Text('إلغاء'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (controller.text == correctPassword) {
-                  Navigator.pop(ctx);
-                  setState(() => _isUnlocked = true);
-                } else {
-                  AppToast.show(ctx, 'كلمة المرور غير صحيحة', type: ToastType.error);
-                }
-              },
-              child: const Text('دخول'),
-            ),
-          ],
         ),
       ),
     );
@@ -265,33 +278,29 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
       context: context,
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
-        child: AlertDialog(
-          title: const Text('🔑 تغيير كلمة مرور الإعدادات'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
+        child: PicPosDialog(
+          icon: PhosphorIconsBold.key,
+          title: 'تغيير كلمة مرور الإعدادات',
+          subtitle: 'اتركها فارغةً لإلغاء الحماية بالكامل',
+          width: 460,
+          onCancel: () => Navigator.pop(ctx),
+          body: [
+            PicPosDialogField(
+              label: 'كلمة المرور الجديدة',
+              child: TextField(
                 controller: controller,
                 autofocus: true,
                 decoration: const InputDecoration(
-                  labelText: 'كلمة المرور الجديدة (اتركها فارغة لإلغاء الحماية)',
                   border: OutlineInputBorder(),
                 ),
               ),
-              const SizedBox(height: 8),
-              const Text(
-                'اتركها فارغة لإلغاء حماية كلمة المرور بالكامل',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(ctx, controller.text),
-              child: const Text('حفظ'),
             ),
           ],
+          primaryAction: PicPosDialogAction(
+            label: 'حفظ',
+            icon: PhosphorIconsBold.floppyDisk,
+            onPressed: () => Navigator.pop(ctx, controller.text),
+          ),
         ),
       ),
     );
@@ -313,29 +322,29 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
       context: context,
       builder: (ctx) => Directionality(
         textDirection: ui.TextDirection.rtl,
-        child: AlertDialog(
-          title: Text('🔑 كلمة مرور $title'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
+        child: PicPosDialog(
+          icon: PhosphorIconsBold.key,
+          title: 'كلمة مرور $title',
+          subtitle: 'اتركها فارغةً لإلغاء الحماية عن هذا القسم',
+          width: 460,
+          onCancel: () => Navigator.pop(ctx),
+          body: [
+            PicPosDialogField(
+              label: 'كلمة المرور الجديدة لـ $title',
+              child: TextField(
                 controller: controller,
                 autofocus: true,
-                decoration: InputDecoration(
-                  labelText: 'كلمة المرور الجديدة لـ $title',
-                  border: const OutlineInputBorder(),
-                  helperText: 'اتركها فارغة لإلغاء الحماية عن هذا القسم',
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
                 ),
               ),
-            ],
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(ctx, controller.text),
-              child: const Text('حفظ'),
             ),
           ],
+          primaryAction: PicPosDialogAction(
+            label: 'حفظ',
+            icon: PhosphorIconsBold.floppyDisk,
+            onPressed: () => Navigator.pop(ctx, controller.text),
+          ),
         ),
       ),
     );
@@ -500,75 +509,17 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
                   child: _AdvancedTiles(),
                 ),
               ),
-            ],
-          ),
-          // ⚠️ المظهرُ والشاشةُ الافتراضيّةُ وقاعدةُ البيانات انتقلت إلى
-          //    البلوكات أعلاه — ولم تُكرَّر هنا كي لا يظهر الإعدادُ مرّتين
-          //    بواجهتَين مختلفتين.
-          _buildSettingsCard(
-            title: 'أدوات وتشخيص',
-            children: [
-              // Phase 5C admin tools — branch-scope cleanup +
-              // orphan-JE diagnostic. Read-only by default; the
-              // destructive cleanup step requires explicit
-              // confirmation inside the dialog.
-              // Spec 114 + 114b — party sub-account repair and
-              // invoice JE re-post tools are surfaced inside the
-              // admin tools dialog (not as separate Settings
-              // rows) so all maintenance lives in one place.
-              ListTile(
-                leading: const Icon(
-                  PhosphorIconsBold.shield,
-                  color: AppColors.primary,
+              // ⚠️ لوحةُ الدفع اليدويِّ بلوكٌ لا مربّع: لها حالةُ تشغيلٍ
+              //    وزرٌّ يخمُد أثناء العمل، ولا تُختصر في سطرِ حالة.
+              const SettingsBlockSpan(
+                span: 12,
+                child: SettingsBlock(
+                  title: 'مزامنة يدويّة',
+                  subtitle: 'دفعُ التغييرات إلى السيرفر عند الحاجة',
+                  tint: AppColors.info,
+                  child: _ForceSyncPanel(),
                 ),
-                title: const Text('أدوات صيانة المسؤول'),
-                subtitle: const Text(
-                  'حصر بيانات الفروع، تشخيص القيود، إصلاح حسابات الأطراف، إعادة ترحيل القيود',
-                ),
-                trailing: const Icon(PhosphorIconsBold.caretLeft),
-                onTap: () => showBranchScopeAdminDialog(context),
               ),
-              // Spec 131 FR-010 — mirror-only audit entry. Caller
-              // gates by mirror mode; the dialog itself shows an
-              // Arabic notice when invoked outside mirror mode.
-              if (NetworkService.instance.mode == NetworkMode.mirror)
-                ListTile(
-                  leading: const Icon(
-                    PhosphorIconsBold.arrowsCounterClockwise,
-                    color: AppColors.primary,
-                  ),
-                  title: const Text('تدقيق مزامنة المرآة'),
-                  subtitle: const Text(
-                    'مقارنة البيانات الأساسية محلياً مع السيرفر + '
-                    'إعادة المزامنة الكاملة عند الحاجة',
-                  ),
-                  trailing:
-                      const Icon(PhosphorIconsBold.caretLeft),
-                  onTap: () =>
-                      showMirrorParityAuditDialog(context),
-                ),
-              // Spec 133 FR-011 — server-only audit for historical
-              // double-credit cheques. Read-only; repair deferred.
-              if (NetworkService.instance.isServer)
-                ListTile(
-                  leading: const Icon(
-                    PhosphorIconsBold.magnifyingGlass,
-                    color: AppColors.warning,
-                  ),
-                  title: const Text('تدقيق ازدواج شيكات القبض'),
-                  subtitle: const Text(
-                    'سرد العملاء الذين تأثرت أرصدتهم بازدواج تسجيل '
-                    'سندات قبض الشيكات قبل الإصلاح',
-                  ),
-                  trailing:
-                      const Icon(PhosphorIconsBold.caretLeft),
-                  onTap: () =>
-                      showChequeReceiptDriftAdminDialog(context),
-                ),
-              const Divider(height: 1),
-              // ⚠️ نمطُ الإدخال صار مفتاحاً في بلوك «سلوك التشغيل»، فلا
-              //    يُكرَّر هنا. والربطُ بين الفروع يُفتَح من مربّعه أعلاه.
-              const _ForceSyncPanel(),
             ],
           ),
         ],
@@ -582,88 +533,36 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
         keywords: 'طابعة باركود ماسح ميزان حراري قوالب فواتير نقاط بيع '
             'بصمة تصميم',
         children: () => [
-          // ═══ 2. الأجهزة والطباعة ═══
-          _buildSettingsCard(
-            title: 'الأجهزة والطباعة',
-            children: [
-              PermissionGuard(
-                permission: PermissionCodes.settingsPrinter,
-                allowManagerOverride: true,
-                actionName: 'إعدادات الأجهزة',
-                child: ListTile(
-                  leading: const Icon(
-                    PhosphorIconsBold.printer,
-                    color: AppColors.info,
-                  ),
-                  title: const Text('إعدادات الأجهزة'),
-                  subtitle: const Text(
-                    'ماسح الباركود، الطابعة الحرارية، والميزان',
-                  ),
-                  trailing: const Icon(PhosphorIconsBold.caretLeft),
-                  onTap: () => showHardwareSettingsDialog(context),
+          // ═══ 2. الأجهزة والطباعة — شبكةُ بلوكاتِ التصميم ═══
+          SettingsBlockGrid(
+            blocks: [
+              const SettingsBlockSpan(
+                span: 12,
+                child: SettingsBlock(
+                  title: 'إدارة الأجهزة',
+                  subtitle: 'كل جهاز طرفي مربوط بالنظام',
+                  child: _DeviceTiles(),
                 ),
               ),
-              PermissionGuard(
-                permission: PermissionCodes.settingsPrinter,
-                allowManagerOverride: true,
-                actionName: 'إدارة الطابعات',
-                child: ListTile(
-                  leading: const Icon(
-                    PhosphorIconsBold.printer,
-                    color: AppColors.secondary,
-                  ),
-                  title: const Text('إدارة الطابعات'),
-                  subtitle: const Text('طابعات أوامر الشغل للأقسام'),
-                  trailing: const Icon(PhosphorIconsBold.caretLeft),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const PrintersScreen(),
-                    ),
-                  ),
+              const SettingsBlockSpan(
+                span: 12,
+                child: SettingsBlock(
+                  title: 'باركود الميزان',
+                  subtitle: 'بادئةُ الملصق وتوزيعُ خاناته',
+                  tint: AppColors.textMuted,
+                  child: _ScaleBarcodeSettings(),
                 ),
               ),
-              // Feature 009 / T028b — POS terminals registry +
-              // per-terminal stock-shortage policy.
-              PermissionGuard(
-                permission: PermissionCodes.settingsPrinter,
-                allowManagerOverride: true,
-                actionName: 'نقاط البيع',
-                child: ListTile(
-                  leading: const Icon(
-                    PhosphorIconsBold.cashRegister,
-                    color: AppColors.primary,
-                  ),
-                  title: const Text('نقاط البيع'),
-                  subtitle: const Text(
-                      'إدارة الماكينات + سياسة نقص الخامات لكل ماكينة'),
-                  trailing: const Icon(PhosphorIconsBold.caretLeft),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const PosTerminalsScreen(),
-                    ),
-                  ),
-                ),
-              ),
-              ListTile(
-                leading: const Icon(
-                  PhosphorIconsBold.paintBrush,
-                  color: AppColors.info,
-                ),
-                title: const Text('قوالب الفواتير'),
-                subtitle: const Text('إدارة وتخصيص قوالب الطباعة'),
-                trailing: const Icon(PhosphorIconsBold.caretLeft),
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const InvoiceDesignerScreen(),
-                  ),
-                ),
-              ),
-              const _ScaleBarcodeSettings(),
               if (features.hrEnabled)
-                const FingerprintSettingsWidget(),
+                const SettingsBlockSpan(
+                  span: 12,
+                  child: SettingsBlock(
+                    title: 'جهاز البصمة',
+                    subtitle: 'ربطُ الحضور والانصراف',
+                    tint: AppColors.info,
+                    child: FingerprintSettingsWidget(),
+                  ),
+                ),
             ],
           ),
         ],
@@ -678,24 +577,41 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
             'إيصال طباعة تلقائية بيع بالسالب خصم ضريبة درج مصروفات وردية '
             'مخزن افتراضي بادئة ترقيم طرق الدفع نقدي بطاقة تحويل آجل متعدد',
         children: () => [
-          // ═══ 3. البيع السريع ═══
-          _buildSettingsCard(
-            title: 'إعدادات البيع السريع',
-            children: [
-              buildPosSettingsTileGuarded(
-                onOpen: () => showPosSettingsDialog(context),
+          // ═══ 3. البيع السريع — شبكةُ بلوكاتِ التصميم ═══
+          //
+          // ⚠️ الحارسُ `buildPosSettingsTileGuarded` يبقى كما هو: هو نفسُه
+          //    ودجتٌ يحمل فحصَ الصلاحية، فيُوضَع جسماً للبلوك لا يُفكَّك.
+          SettingsBlockGrid(
+            blocks: [
+              SettingsBlockSpan(
+                span: 12,
+                child: SettingsBlock(
+                  title: 'إعدادات البيع السريع',
+                  subtitle: 'سلوكُ شاشة الكاشير وحدودُ الخصم',
+                  child: buildPosSettingsTileGuarded(
+                    onOpen: () => showPosSettingsDialog(context),
+                  ),
+                ),
+              ),
+              const SettingsBlockSpan(
+                span: 7,
+                child: SettingsBlock(
+                  title: 'طرق الدفع الظاهرة',
+                  subtitle: 'ما يراه الكاشير في لوحة الدفع',
+                  tint: AppColors.success,
+                  child: _PaymentMethodsSettingsCard(),
+                ),
+              ),
+              const SettingsBlockSpan(
+                span: 5,
+                child: SettingsBlock(
+                  title: 'إغلاق الوردية',
+                  subtitle: 'الإغلاقُ السريع بلا جرد',
+                  tint: AppColors.warning,
+                  child: _QuickCloseSettingTile(),
+                ),
               ),
             ],
-          ),
-          const SizedBox(height: 16),
-          _buildSettingsCard(
-            title: 'طرق الدفع الظاهرة',
-            children: const [_PaymentMethodsSettingsCard()],
-          ),
-          const SizedBox(height: 16),
-          _buildSettingsCard(
-            title: 'إغلاق الوردية',
-            children: const [_QuickCloseSettingTile()],
           ),
         ],
       ),
@@ -707,88 +623,76 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
         desc: 'الحسابات · الأدوار · الصلاحيات',
         keywords: 'مستخدمين صلاحيات أدوار كلمة مرور جلسة مهلة حماية أقسام',
         children: () => [
-          // ═══ 4. المستخدمين والأمان ═══
-          // User + role management are server-authoritative. In
-          // client mode these are hidden — the client cannot create
-          // users (would cause ID collisions) or edit permissions
-          // (they are pulled from the server on every sync).
-          _buildSettingsCard(
-            title: 'المستخدمين والأمان',
-            children: [
+          // ═══ 4. المستخدمون والأمان — شبكةُ بلوكاتِ التصميم ═══
+          //
+          // إدارةُ المستخدمين والأدوار سلطتُها على السيرفر: العميلُ لا
+          // يُنشئ مستخدماً (تصادمُ معرّفات) ولا يحرّر صلاحيةً (تُسحَب من
+          // السيرفر كلَّ مزامنة) — فيرى بلوكاً إعلاميّاً مكانَها.
+          SettingsBlockGrid(
+            blocks: [
               if (!NetworkService.instance.isClient) ...[
-                PermissionGuard(
-                  permission: PermissionCodes.usersManage,
-                  allowManagerOverride: true,
-                  actionName: 'إدارة المستخدمين',
-                  child: ListTile(
-                    leading: const Icon(
-                      PhosphorIconsBold.usersThree,
-                      color: AppColors.primary,
-                    ),
-                    title: const Text('إدارة المستخدمين'),
-                    subtitle: const Text(
-                      'إضافة مستخدمين وتغيير كلمات المرور',
-                    ),
-                    trailing: const Icon(PhosphorIconsBold.caretLeft),
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const UsersManagementPicposScreen()),
+                const SettingsBlockSpan(
+                  span: 12,
+                  child: SettingsBlock(
+                    title: 'المستخدمون والأدوار',
+                    subtitle: 'الحساباتُ وصلاحياتُ كل دور',
+                    child: _UserTiles(),
+                  ),
+                ),
+                SettingsBlockSpan(
+                  span: 12,
+                  child: SettingsBlock(
+                    title: 'فحص الصلاحيات على السيرفر',
+                    subtitle: 'تفعيلُ التحقّق من الصلاحية عند السيرفر',
+                    tint: AppColors.warning,
+                    // ⚠️ الحارسُ باقٍ بحرفه: `rolesManage` — من يغيّر صلاحياتِ
+                    //    الأدوار هو وحدَه من يفتح فرضَها على السيرفر.
+                    child: PermissionGuard(
+                      permission: PermissionCodes.rolesManage,
+                      allowManagerOverride: true,
+                      actionName: 'فحص الصلاحيات على السيرفر',
+                      child: _ServerPermsToggleTile(),
                     ),
                   ),
                 ),
-                PermissionGuard(
-                  permission: PermissionCodes.rolesManage,
-                  allowManagerOverride: true,
-                  actionName: 'إدارة صلاحيات الأدوار',
-                  child: ListTile(
-                    leading: const Icon(
-                      PhosphorIconsBold.shieldPlus,
-                      color: AppColors.warning,
-                    ),
-                    title: const Text('إدارة صلاحيات الأدوار'),
-                    subtitle: const Text(
-                      'تحديد صلاحيات كل دور بشكل تفصيلي',
-                    ),
-                    trailing: const Icon(PhosphorIconsBold.caretLeft),
-                    onTap: () =>
-                        showPermissionsManagementDialog(context),
-                  ),
-                ),
-                // Spec 078: server-side per-user permission toggle
-                // (Spec 060 Phase 2 slice 3). Same rolesManage gate
-                // — operators who can change role permissions can
-                // also flip the server enforcement of those perms.
-                PermissionGuard(
-                  permission: PermissionCodes.rolesManage,
-                  allowManagerOverride: true,
-                  actionName: 'فحص الصلاحيات على السيرفر',
-                  child: _ServerPermsToggleTile(),
-                ),
-                const Divider(height: 1),
               ] else
-                // Client mode — show an informational tile instead
-                const ListTile(
-                  leading: Icon(
-                    PhosphorIconsBold.usersThree,
-                    color: AppColors.info,
+                const SettingsBlockSpan(
+                  span: 12,
+                  child: SettingsBlock(
+                    title: 'إدارة المستخدمين والصلاحيات',
+                    subtitle: 'تتم إدارتها من السيرفر — وضع العميل للعرض فقط',
+                    tint: AppColors.info,
+                    child: SizedBox.shrink(),
                   ),
-                  title: Text('إدارة المستخدمين والصلاحيات'),
-                  subtitle: Text(
-                    'تتم إدارتها من السيرفر — وضع العميل للقراءة فقط',
-                    style: TextStyle(fontSize: 12),
+                ),
+              const SettingsBlockSpan(
+                span: 7,
+                child: SettingsBlock(
+                  title: 'انتهاء الجلسة',
+                  subtitle: 'إغلاقٌ تلقائيٌّ بعد خمولٍ',
+                  tint: AppColors.info,
+                  child: _SessionTimeoutSetting(),
+                ),
+              ),
+              SettingsBlockSpan(
+                span: 5,
+                child: SettingsBlock(
+                  title: 'كلمة مرور الإعدادات',
+                  subtitle: 'حمايةُ هذه الشاشة',
+                  tint: AppColors.error,
+                  child: SettingsRowsBody(
+                    children: [
+                      SettingsValueRow(
+                        first: true,
+                        icon: PhosphorIconsBold.lockKey,
+                        title: 'تغيير كلمة المرور',
+                        sub: 'اتركها فارغةً لإلغاء الحماية',
+                        tint: AppColors.error,
+                        onTap: _showChangePasswordDialog,
+                      ),
+                    ],
                   ),
-                  enabled: false,
                 ),
-              const _SessionTimeoutSetting(),
-              const Divider(height: 1),
-              ListTile(
-                leading: const Icon(
-                  PhosphorIconsBold.lockKey,
-                  color: AppColors.error,
-                ),
-                title: const Text('كلمة مرور الإعدادات'),
-                subtitle: const Text('حماية الإعدادات بكلمة مرور'),
-                trailing: const Icon(PhosphorIconsBold.caretLeft),
-                onTap: _showChangePasswordDialog,
               ),
             ],
           ),
@@ -797,35 +701,63 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
           // ═══ 4.1 حماية الأقسام ═══
           // Hidden for basic supermarket — only relevant for editions with multiple sections
           if (features.kitchenEnabled || features.hrEnabled) ...[
-            _buildSettingsCard(
-              title: 'حماية الأقسام (كلمات مرور بديلة)',
-              children: [
-                ListTile(
-                  leading: const Icon(PhosphorIconsBold.archive, color: AppColors.info),
-                  title: const Text('كلمة مرور المخازن والمخزون'),
-                  onTap: () => _showSectionPasswordDialog('inventory_access_password', 'المخازن والمخزون'),
-                ),
-                ListTile(
-                  leading: const Icon(PhosphorIconsBold.bank, color: AppColors.success),
-                  title: const Text('كلمة مرور الحسابات والمالية'),
-                  onTap: () => _showSectionPasswordDialog('accounting_access_password', 'الحسابات والمالية'),
-                ),
-                ListTile(
-                  leading: const Icon(PhosphorIconsBold.shoppingBagOpen, color: AppColors.primary),
-                  title: const Text('كلمة مرور المشلريات'),
-                  onTap: () => _showSectionPasswordDialog('purchases_access_password', 'المشتريات'),
-                ),
-                ListTile(
-                  leading: const Icon(PhosphorIconsBold.chartPieSlice, color: AppColors.warning),
-                  title: const Text('كلمة مرور التقارير'),
-                  onTap: () => _showSectionPasswordDialog('reports_access_password', 'التقارير'),
-                ),
-                if (features.hrEnabled)
-                  ListTile(
-                    leading: const Icon(PhosphorIconsBold.users, color: AppColors.secondary),
-                    title: const Text('كلمة مرور شؤون الموظفين'),
-                    onTap: () => _showSectionPasswordDialog('hr_access_password', 'شؤون الموظفين'),
+            SettingsBlockGrid(
+              blocks: [
+                SettingsBlockSpan(
+                  span: 12,
+                  child: SettingsBlock(
+                    title: 'حماية الأقسام',
+                    subtitle: 'كلماتُ مرورٍ بديلةٌ لأقسامٍ بعينها',
+                    tint: AppColors.warning,
+                    child: SettingsRowsBody(
+                      children: [
+                        SettingsValueRow(
+                          first: true,
+                          icon: PhosphorIconsBold.archive,
+                          title: 'المخازن والمخزون',
+                          sub: 'كلمةُ مرورٍ لدخول القسم',
+                          tint: AppColors.info,
+                          onTap: () => _showSectionPasswordDialog(
+                              'inventory_access_password', 'المخازن والمخزون'),
+                        ),
+                        SettingsValueRow(
+                          icon: PhosphorIconsBold.bank,
+                          title: 'الحسابات والمالية',
+                          sub: 'كلمةُ مرورٍ لدخول القسم',
+                          tint: AppColors.success,
+                          onTap: () => _showSectionPasswordDialog(
+                              'accounting_access_password', 'الحسابات والمالية'),
+                        ),
+                        SettingsValueRow(
+                          icon: PhosphorIconsBold.shoppingBagOpen,
+                          // كان «المشلريات» — خطأٌ مطبعيٌّ صُحّح في النقل.
+                          title: 'المشتريات',
+                          sub: 'كلمةُ مرورٍ لدخول القسم',
+                          tint: AppColors.primary,
+                          onTap: () => _showSectionPasswordDialog(
+                              'purchases_access_password', 'المشتريات'),
+                        ),
+                        SettingsValueRow(
+                          icon: PhosphorIconsBold.chartPieSlice,
+                          title: 'التقارير',
+                          sub: 'كلمةُ مرورٍ لدخول القسم',
+                          tint: AppColors.warning,
+                          onTap: () => _showSectionPasswordDialog(
+                              'reports_access_password', 'التقارير'),
+                        ),
+                        if (features.hrEnabled)
+                          SettingsValueRow(
+                            icon: PhosphorIconsBold.users,
+                            title: 'شؤون الموظفين',
+                            sub: 'كلمةُ مرورٍ لدخول القسم',
+                            tint: AppColors.secondary,
+                            onTap: () => _showSectionPasswordDialog(
+                                'hr_access_password', 'شؤون الموظفين'),
+                          ),
+                      ],
+                    ),
                   ),
+                ),
               ],
             ),
           ],
@@ -845,38 +777,64 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
             permission: PermissionCodes.settingsBackup,
             allowManagerOverride: true,
             actionName: 'إعدادات المحاسبة',
-            child: _buildSettingsCard(
-              title: 'الإعدادات المالية والمحاسبية',
-              children: [
-                ListTile(
-                  leading: const Icon(PhosphorIconsBold.bookOpen, color: AppColors.primary),
-                  title: const Text('ربط الحسابات التلقائي'),
-                  subtitle: const Text('تحديد الحسابات الدفترية للعمليات المؤتمتة (متقدم)'),
-                  trailing: const Icon(PhosphorIconsBold.caretLeft),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const AccountMappingSettingsScreen()),
+            child: SettingsBlockGrid(
+              blocks: [
+                SettingsBlockSpan(
+                  span: 12,
+                  child: SettingsBlock(
+                    title: 'ربط الحسابات',
+                    subtitle: 'تحديد الحسابات الدفترية للعمليات',
+                    child: SettingsRowsBody(
+                      children: [
+                        SettingsValueRow(
+                          first: true,
+                          icon: PhosphorIconsBold.bookOpen,
+                          title: 'ربط الحسابات التلقائي',
+                          sub: 'حسابُ كلِّ عمليةٍ في الدفتر',
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  const AccountMappingSettingsScreen(),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                const _CostingMethodToggle(),
-                // Feature 009 / T027 + T028 — global default
-                // shortage policy + per-branch overrides.
-                // Per-terminal overrides live on the new
-                // POS terminals screen (T028b).
-                const _StockShortagePolicyToggle(),
-                const _StockShortagePolicyPerBranchTile(),
-                // Negative-sales toggle moved to POS settings
-                // (Feature 022 follow-up) — operators expected
-                // it under "إعدادات البيع السريع" → "إعدادات
-                // البيع السريع الرئيسية", not under Financial
-                // settings. The setting key is unchanged
-                // (`enable_negative_sales`); the orchestrator
-                // reads the same value.
-                // ETA e-invoicing toggles — hidden for basic supermarket
-                if (profile != BusinessProfile.supermarket) ...[
-                  const Divider(height: 1),
-                  const _EInvoiceVisibilityToggles(),
-                ],
+                const SettingsBlockSpan(
+                  span: 12,
+                  child: SettingsBlock(
+                    title: 'التكلفة والمخزون',
+                    subtitle: 'طريقةُ التسعير وسياسةُ نقص الخامات',
+                    tint: AppColors.info,
+                    // ⚠️ الثلاثةُ ودجتاتٌ لها حالتُها ومزوّداتُها، فتُوضَع
+                    //    كما هي جسماً للبلوك ولا تُفكَّك إلى صفوفِ قيمة.
+                    //    وتبديلُ «البيع بالسالب» ليس هنا: نُقل إلى إعدادات
+                    //    البيع السريع بطلبِ المشغّلين، والمفتاحُ نفسُه
+                    //    (`enable_negative_sales`) لم يتبدّل.
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _CostingMethodToggle(),
+                        _StockShortagePolicyToggle(),
+                        _StockShortagePolicyPerBranchTile(),
+                      ],
+                    ),
+                  ),
+                ),
+                // الفوترةُ الإلكترونيّةُ مخفيّةٌ في بروفايل السوبرماركت.
+                if (profile != BusinessProfile.supermarket)
+                  const SettingsBlockSpan(
+                    span: 12,
+                    child: SettingsBlock(
+                      title: 'الفوترة الإلكترونية',
+                      subtitle: 'حقولُ مصلحة الضرائب في المستندات',
+                      tint: AppColors.warning,
+                      child: _EInvoiceVisibilityToggles(),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -899,14 +857,22 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
           // فالوحدةُ غيرُ موجودةٍ في هذا المنتج. المدخلُ هنا لأن الشاشتين
           // فوركان من نفس الكود ويعملان لبروفايلاتٍ أخرى.
           if (features.hrEnabled)
-            _buildSettingsCard(
-              title: 'شؤون الموظفين',
-              children: [
-                buildWorkHolidaysTileGuarded(
-                  onOpen: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const WorkHolidaysScreen()),
+            SettingsBlockGrid(
+              blocks: [
+                SettingsBlockSpan(
+                  span: 12,
+                  child: SettingsBlock(
+                    title: 'العطلات وأيام العمل',
+                    subtitle: 'الأيامُ التي لا يقع عليها غياب',
+                    tint: AppColors.secondary,
+                    // الحارسُ ودجتٌ يحمل فحصَه، فيُوضَع جسماً للبلوك.
+                    child: buildWorkHolidaysTileGuarded(
+                      onOpen: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const WorkHolidaysScreen()),
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -922,13 +888,25 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
         keywords: 'نسخ احتياطي استعادة باك اب backup restore تصدير',
         children: () => [
           // ═══ 6. إدارة البيانات ═══
-          PermissionGuard(
+          // ⚠️ الحارسُ يلفُّ الشبكةَ كلَّها لا بلوكاً فيها: النسخُ
+          //    والاستعادةُ عمليّةٌ واحدة، وإظهارُ نصفِها بلا صلاحيةٍ يوهم
+          //    بأن الشاشةَ ناقصةٌ لا محميّة.
+          const PermissionGuard(
             permission: PermissionCodes.settingsBackup,
             allowManagerOverride: true,
             actionName: 'إدارة البيانات',
-            child: _buildSettingsCard(
-              title: 'إدارة البيانات',
-              children: [const BackupRestoreWidget()],
+            child: SettingsBlockGrid(
+              blocks: [
+                SettingsBlockSpan(
+                  span: 12,
+                  child: SettingsBlock(
+                    title: 'النسخ الاحتياطي والاستعادة',
+                    subtitle: 'حفظُ نسخةٍ من القاعدة واستعادتُها',
+                    tint: AppColors.success,
+                    child: BackupRestoreWidget(),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -942,68 +920,106 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
         keywords: 'توصيل مناديب شاشة عميل CFD مطبخ KDS إضافات معدلات',
         children: () => [
           // ═══ 7. التكاملات والخدمات ═══
-          _buildSettingsCard(
-            title: 'التكاملات والخدمات',
-            children: [
-              if (features.deliveryEnabled) ...[
-                const _DeliveryToggle(),
-                PermissionGuard(
-                  permission: PermissionCodes.deliveryManage,
-                  allowManagerOverride: true,
-                  actionName: 'إدارة التوصيل',
-                  child: ListTile(
-                    leading: const Icon(
-                      PhosphorIconsBold.moped,
-                      color: AppColors.success,
-                    ),
-                    title: const Text('إدارة التوصيل'),
-                    subtitle: const Text('شركات التوصيل والمناديب'),
-                    trailing: const Icon(PhosphorIconsBold.caretLeft),
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            const DeliveryManagementScreen(),
-                      ),
+          SettingsBlockGrid(
+            blocks: [
+              if (features.deliveryEnabled)
+                SettingsBlockSpan(
+                  span: 12,
+                  child: SettingsBlock(
+                    title: 'التوصيل',
+                    subtitle: 'شركاتُ التوصيل والمناديب',
+                    tint: AppColors.success,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const _DeliveryToggle(),
+                        // ⚠️ الحارسُ باقٍ بحرفه — `deliveryManage` مع
+                        //    تجاوزِ المدير، كما كان قبل النقل.
+                        PermissionGuard(
+                          permission: PermissionCodes.deliveryManage,
+                          allowManagerOverride: true,
+                          actionName: 'إدارة التوصيل',
+                          child: SettingsRowsBody(
+                            children: [
+                              SettingsValueRow(
+                                first: true,
+                                icon: PhosphorIconsBold.moped,
+                                title: 'إدارة التوصيل',
+                                sub: 'شركات التوصيل والمناديب',
+                                tint: AppColors.success,
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        const DeliveryManagementScreen(),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                const Divider(height: 1),
-              ],
-              const _CFDSettingsCard(),
+              const SettingsBlockSpan(
+                span: 12,
+                child: SettingsBlock(
+                  title: 'شاشة العميل',
+                  subtitle: 'العرضُ الخارجيُّ ووصلتُه',
+                  tint: AppColors.info,
+                  child: _CFDSettingsCard(),
+                ),
+              ),
               if (features.kitchenEnabled) ...[
-                const Divider(height: 1),
-                const PermissionGuard(
-                  permission: PermissionCodes.kdsSettings,
-                  allowManagerOverride: true,
-                  actionName: 'إعدادات شاشة المطبخ',
-                  child: KdsSettingsWidget(),
-                ),
-                const Divider(height: 1),
-                PermissionGuard(
-                  permission: PermissionCodes.modifiersManage,
-                  allowManagerOverride: true,
-                  actionName: 'إدارة الإضافات والمعدلات',
-                  onGranted: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const ModifierManagementWidget(),
+                const SettingsBlockSpan(
+                  span: 12,
+                  child: SettingsBlock(
+                    title: 'شاشة المطبخ',
+                    subtitle: 'توزيعُ أوامر الشغل على الأقسام',
+                    tint: AppColors.warning,
+                    child: PermissionGuard(
+                      permission: PermissionCodes.kdsSettings,
+                      allowManagerOverride: true,
+                      actionName: 'إعدادات شاشة المطبخ',
+                      child: KdsSettingsWidget(),
                     ),
                   ),
-                  child: ListTile(
-                    leading: const Icon(
-                      PhosphorIconsBold.forkKnife,
-                      color: AppColors.warning,
-                    ),
-                    title: const Text('إدارة الإضافات والمعدلات'),
-                    subtitle: const Text(
-                      'مجموعات الإضافات والخيارات للأصناف (صوصات، أحجام..)',
-                    ),
-                    trailing: const Icon(PhosphorIconsBold.caretLeft),
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const ModifierManagementWidget(),
+                ),
+                SettingsBlockSpan(
+                  span: 12,
+                  child: SettingsBlock(
+                    title: 'الإضافات والمعدلات',
+                    subtitle: 'مجموعات الإضافات والخيارات للأصناف',
+                    tint: AppColors.warning,
+                    // ⚠️ `onGranted` باقٍ: هو المسارُ الذي يفتح الشاشةَ بعد
+                    //    موافقةِ المسؤول، وحذفُه يجعل الموافقةَ بلا أثر.
+                    child: PermissionGuard(
+                      permission: PermissionCodes.modifiersManage,
+                      allowManagerOverride: true,
+                      actionName: 'إدارة الإضافات والمعدلات',
+                      onGranted: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ModifierManagementWidget(),
+                        ),
+                      ),
+                      child: SettingsRowsBody(
+                        children: [
+                          SettingsValueRow(
+                            first: true,
+                            icon: PhosphorIconsBold.forkKnife,
+                            title: 'إدارة الإضافات والمعدلات',
+                            sub: 'مجموعات الإضافات والخيارات للأصناف',
+                            tint: AppColors.warning,
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const ModifierManagementWidget(),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -1304,64 +1320,6 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
         }
         Navigator.pop(context);
       },
-    );
-  }
-
-  /// إعادة تأطير — PicPosContentCard بدل Card(elevation:2, shape:
-  /// RoundedRectangleBorder(...)) الأصلي. المحتوى/التوابع نفسها بلا تغيير.
-  /// بطاقةُ إعداداتٍ على شكل «بلوك» التصميم: شريطةٌ لونيّةٌ رفيعةٌ ثمّ
-  /// العنوانُ وسطرٌ خافتٌ تحتَه، بلا فاصلٍ عرضيّ.
-  Widget _buildSettingsCard({
-    required String title,
-    required List<Widget> children,
-    String? subtitle,
-    Color tint = AppColors.primary,
-  }) {
-    return PicPosContentCard(
-      padding: EdgeInsets.zero,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(18, 15, 18, 13),
-            child: Row(
-              children: [
-                Container(
-                  width: 3.5,
-                  height: 17,
-                  decoration: BoxDecoration(
-                    color: tint,
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                ),
-                const SizedBox(width: 11),
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(title, style: AppTypography.h4),
-                      if (subtitle != null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 1),
-                          child: Text(
-                            subtitle,
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelSmall
-                                ?.copyWith(color: AppColors.textMuted),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 1),
-          ...children,
-        ],
-      ),
     );
   }
 
@@ -1939,6 +1897,157 @@ class _TouchModeSwitchRow extends ConsumerWidget {
 }
 
 /// مربّعاتُ «الشاشات المتقدمة» — بحالةٍ مقيسةٍ لا مفترَضة.
+/// مربّعاتُ «المستخدمون والأدوار».
+///
+/// الحارسُ على الضغطة لا على العرض — لنفس سببِ [_DeviceTiles]، وبنفس
+/// أكواد الصلاحيات: `usersManage` للحسابات و`rolesManage` للأدوار.
+class _UserTiles extends ConsumerWidget {
+  const _UserTiles();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    Future<void> guarded(
+      String permission,
+      String actionName,
+      VoidCallback open,
+    ) async {
+      final ok = await ensurePermission(
+        ref,
+        context,
+        permission,
+        actionName: actionName,
+      );
+      if (ok && context.mounted) open();
+    }
+
+    return SettingsTilesBlock(
+      columns: 2,
+      tiles: [
+        SettingsTile(
+          icon: PhosphorIconsBold.usersThree,
+          title: 'إدارة المستخدمين',
+          sub: 'إضافة مستخدمين وتغيير كلمات المرور',
+          meta: 'الحساباتُ والدخول',
+          tint: AppColors.primary,
+          onTap: () => guarded(
+            PermissionCodes.usersManage,
+            'إدارة المستخدمين',
+            () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const UsersManagementPicposScreen(),
+              ),
+            ),
+          ),
+        ),
+        SettingsTile(
+          icon: PhosphorIconsBold.shieldPlus,
+          title: 'إدارة صلاحيات الأدوار',
+          sub: 'تحديد صلاحيات كل دور بشكل تفصيلي',
+          meta: 'صلاحيةٌ لكل دور',
+          tint: AppColors.warning,
+          onTap: () => guarded(
+            PermissionCodes.rolesManage,
+            'إدارة صلاحيات الأدوار',
+            () => showPermissionsManagementDialog(context),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// مربّعاتُ «إدارة الأجهزة» — بلوكُ `tiles` في قسم الأجهزة من التصميم.
+///
+/// ⚠️ **الحارسُ انتقل من العرض إلى الضغطة، وهذا تشديدٌ لا تخفيف.**
+/// كانت الصفوفُ ملفوفةً بـ`PermissionGuard(allowManagerOverride: true)`،
+/// وهو يحرس **الودجت**: يُخفي الصفَّ أو يطلب موافقةَ مسؤول. و`SettingsTile`
+/// وصفُ بياناتٍ لا ودجت، فلا يُلفّ.
+///
+/// فبدل إسقاطِ الحراسة أو إخفاءِ المربّع، تُحرَس الضغطةُ بـ`ensurePermission`
+/// — وهي **القِمع** الذي تمرُّ منه كلُّ المداخل، وتستهلك موافقةَ المسؤول من
+/// `ManagerApprovalCache` فلا يُسأل مرّتين. أي أنّ `allowManagerOverride`
+/// محفوظٌ بحرفه، والحمايةُ صارت فعليّةً لا بصريّة.
+class _DeviceTiles extends ConsumerWidget {
+  const _DeviceTiles();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    Future<void> guarded(
+      String permission,
+      String actionName,
+      VoidCallback open,
+    ) async {
+      final ok = await ensurePermission(
+        ref,
+        context,
+        permission,
+        actionName: actionName,
+      );
+      if (ok && context.mounted) open();
+    }
+
+    return SettingsTilesBlock(
+      tiles: [
+        SettingsTile(
+          icon: PhosphorIconsBold.printer,
+          title: 'إعدادات الأجهزة',
+          sub: 'الماسح والطابعة الحرارية والميزان',
+          // ⚠️ وصفٌ لا عدّاد: التصميمُ يعرض «٤ طابعات معرّفة» وهو رقمُ
+          //    عرضٍ في ملفّ التصميم لا شيءٌ تحمله القاعدةُ اليوم.
+          meta: 'ماسح · طابعة · ميزان',
+          tint: AppColors.info,
+          onTap: () => guarded(
+            PermissionCodes.settingsPrinter,
+            'إعدادات الأجهزة',
+            () => showHardwareSettingsDialog(context),
+          ),
+        ),
+        SettingsTile(
+          icon: PhosphorIconsBold.printer,
+          title: 'إدارة الطابعات',
+          sub: 'طابعات أوامر الشغل للأقسام',
+          meta: 'توزيعُ الطباعة على الأقسام',
+          tint: AppColors.secondary,
+          onTap: () => guarded(
+            PermissionCodes.settingsPrinter,
+            'إدارة الطابعات',
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const PrintersScreen()),
+            ),
+          ),
+        ),
+        SettingsTile(
+          icon: PhosphorIconsBold.cashRegister,
+          title: 'نقاط البيع',
+          sub: 'إدارة الماكينات وسياسة نقص الخامات',
+          meta: 'سياسةٌ لكل نقطة',
+          tint: AppColors.primary,
+          onTap: () => guarded(
+            PermissionCodes.settingsPrinter,
+            'نقاط البيع',
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const PosTerminalsScreen()),
+            ),
+          ),
+        ),
+        SettingsTile(
+          icon: PhosphorIconsBold.paintBrush,
+          title: 'قوالب الفواتير',
+          sub: 'إدارة وتخصيص قوالب الطباعة',
+          meta: 'تصميمُ المطبوعات',
+          tint: AppColors.info,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const InvoiceDesignerScreen()),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _AdvancedTiles extends ConsumerWidget {
   const _AdvancedTiles();
 
@@ -1994,6 +2103,27 @@ class _AdvancedTiles extends ConsumerWidget {
           tint: AppColors.warning,
           onTap: () => showBranchScopeAdminDialog(context),
         ),
+        // ⚠️ التدقيقان مشروطان بالوضع لا معطَّلَين فيه: تدقيقُ المرآة
+        //    يقارن بالسيرفر فلا معنى له في وضعٍ مستقلّ، وتدقيقُ الشيكات
+        //    يقرأ سجلَّ السيرفر. ومربّعٌ حاضرٌ لا يعمل يُسأل عنه.
+        if (mode == NetworkMode.mirror)
+          SettingsTile(
+            icon: PhosphorIconsBold.arrowsCounterClockwise,
+            title: 'تدقيق مزامنة المرآة',
+            sub: 'مقارنة البيانات الأساسية بالسيرفر',
+            meta: 'قراءةٌ ثمّ إعادةُ مزامنة',
+            tint: AppColors.primary,
+            onTap: () => showMirrorParityAuditDialog(context),
+          ),
+        if (isServer)
+          SettingsTile(
+            icon: PhosphorIconsBold.magnifyingGlass,
+            title: 'تدقيق ازدواج شيكات القبض',
+            sub: 'أرصدةٌ تأثّرت بازدواج سندات القبض',
+            meta: 'قراءةٌ فقط — الإصلاحُ مؤجَّل',
+            tint: AppColors.warning,
+            onTap: () => showChequeReceiptDriftAdminDialog(context),
+          ),
       ],
     );
   }

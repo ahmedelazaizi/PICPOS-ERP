@@ -554,9 +554,18 @@ class _ShortagePolicyPerBranchDialogState
   @override
   Widget build(BuildContext context) {
     final branchesAsync = ref.watch(allBranchesProvider);
-    return AlertDialog(
-      title: const Text('سياسة نقص الخامات لكل فرع'),
-      content: SizedBox(
+    return PicPosDialog(
+      icon: PhosphorIconsBold.warningDiamond,
+      title: 'سياسة نقص الخامات لكل فرع',
+      subtitle: 'اترك «افتراضى» للفروع التى تستخدم السياسة العامّة',
+      width: 560,
+      // ⚠️ حارسٌ داخليٌّ لا `null`: `onCancel: null` **يُخفي** زرَّ الإلغاء
+      //    ولا يعطّله، فكان الزرُّ يختفي أثناء الحفظ بدل أن يخمُد.
+      onCancel: () {
+        if (!_saving) Navigator.pop(context);
+      },
+      body: [
+        SizedBox(
         width: 500,
         child: _loading
             ? const Center(child: CircularProgressIndicator())
@@ -609,29 +618,26 @@ class _ShortagePolicyPerBranchDialogState
                 error: (e, _) => Text('خطأ فى تحميل الفروع: $e'),
               ),
       ),
-      actions: [
-        TextButton(
-          onPressed: _saving ? null : () => Navigator.pop(context),
-          child: const Text('إلغاء'),
-        ),
-        ElevatedButton(
-          onPressed: _saving
-              ? null
-              : () async {
-                  setState(() => _saving = true);
-                  try {
-                    await StockShortagePolicyService.savePerBranch(
-                      ref.read(settingsRepositoryProvider),
-                      _selections,
-                    );
-                    if (context.mounted) Navigator.pop(context);
-                  } finally {
-                    if (mounted) setState(() => _saving = false);
-                  }
-                },
-          child: const Text('حفظ'),
-        ),
       ],
+      primaryAction: PicPosDialogAction(
+        label: 'حفظ',
+        icon: PhosphorIconsBold.floppyDisk,
+        busy: _saving,
+        onPressed: _saving
+            ? null
+            : () async {
+                setState(() => _saving = true);
+                try {
+                  await StockShortagePolicyService.savePerBranch(
+                    ref.read(settingsRepositoryProvider),
+                    _selections,
+                  );
+                  if (context.mounted) Navigator.pop(context);
+                } finally {
+                  if (mounted) setState(() => _saving = false);
+                }
+              },
+      ),
     );
   }
 }

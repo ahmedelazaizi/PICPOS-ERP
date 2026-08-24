@@ -30,63 +30,53 @@ class _AdminPasswordSettingState extends ConsumerState<_AdminPasswordSetting> {
       context: context,
       builder: (ctx) => Directionality(
         textDirection: ui.TextDirection.rtl,
-        child: AlertDialog(
-          title: const Row(
-            children: [
-              Icon(PhosphorIconsBold.lock, color: AppColors.primary),
-              SizedBox(width: 8),
-              Text('تغيير كلمة سر المدير'),
-            ],
-          ),
-          content: SizedBox(
-            width: 350,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'تُستخدم هذه الكلمة لتأكيد حذف الفواتير',
-                  style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+        child: PicPosDialog(
+          icon: PhosphorIconsBold.lock,
+          title: 'تغيير كلمة سر المدير',
+          subtitle: 'تُستخدم هذه الكلمة لتأكيد حذف الفواتير',
+          width: 460,
+          onCancel: () => Navigator.pop(ctx),
+          body: [
+            PicPosDialogField(
+              label: 'كلمة السر الحالية',
+              child: TextField(
+                controller: oldPasswordController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  prefixIcon: Icon(PhosphorIconsBold.lock),
+                  border: OutlineInputBorder(),
                 ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: oldPasswordController,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'كلمة السر الحالية',
-                    prefixIcon: Icon(PhosphorIconsBold.lock),
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: newPasswordController,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'كلمة السر الجديدة',
-                    prefixIcon: Icon(PhosphorIconsBold.lockKey),
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: confirmPasswordController,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'تأكيد كلمة السر الجديدة',
-                    prefixIcon: Icon(PhosphorIconsBold.lockKey),
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('إلغاء'),
+            const SizedBox(height: 12),
+            PicPosDialogField(
+              label: 'كلمة السر الجديدة',
+              child: TextField(
+                controller: newPasswordController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  prefixIcon: Icon(PhosphorIconsBold.lockKey),
+                  border: OutlineInputBorder(),
+                ),
+              ),
             ),
-            ElevatedButton.icon(
-              onPressed: () async {
+            const SizedBox(height: 12),
+            PicPosDialogField(
+              label: 'تأكيد كلمة السر الجديدة',
+              child: TextField(
+                controller: confirmPasswordController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  prefixIcon: Icon(PhosphorIconsBold.lockKey),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ),
+          ],
+          primaryAction: PicPosDialogAction(
+            label: 'حفظ',
+            icon: PhosphorIconsBold.floppyDisk,
+            onPressed: () async {
                 final adminPwd = ref.read(adminPasswordServiceProvider);
                 // Validate
                 if (!adminPwd.verify(oldPasswordController.text)) {
@@ -138,14 +128,9 @@ class _AdminPasswordSettingState extends ConsumerState<_AdminPasswordSetting> {
                     type: ToastType.success,
                   );
                 }
-              },
-              icon: const Icon(PhosphorIconsBold.check),
-              label: const Text('حفظ'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.success,
-              ),
-            ),
-          ],
+            },
+            color: AppColors.success,
+          ),
         ),
       ),
     );
