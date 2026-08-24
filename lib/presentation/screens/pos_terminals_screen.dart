@@ -16,14 +16,51 @@ import '../../services/stock_shortage_policy_service.dart';
 /// `pos_terminals` entry), lets the admin rename / activate / deactivate
 /// each one, and per-terminal override the stock-shortage policy
 /// (FR-017 — wins over per-branch + global).
-class PosTerminalsScreen extends ConsumerStatefulWidget {
+class PosTerminalsScreen extends StatelessWidget {
   const PosTerminalsScreen({super.key});
 
   @override
-  ConsumerState<PosTerminalsScreen> createState() => _PosTerminalsScreenState();
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        title: const Row(
+          children: [
+            Icon(PhosphorIconsBold.cashRegister),
+            SizedBox(width: 8),
+            Text('نقاط البيع'),
+          ],
+        ),
+      ),
+      body: const PosTerminalsBody(),
+    );
+  }
 }
 
-class _PosTerminalsScreenState extends ConsumerState<PosTerminalsScreen> {
+/// جسمُ الشاشة بلا قشرة (‏بلا `Scaffold` ولا `AppBar`) — كلُّ منطقِ نقاط
+/// البيع يعيش هنا، والقشرةُ تُركَّب فوقه.
+///
+/// استُخرج ليركب عليه إطارُ العلامتَين معاً بلا نسخِ منطق: `PosTerminalsScreen`
+/// أعلاه (‏قشرةُ UralCash: `Scaffold` + `AppBar`، وهي حرفاً بحرفٍ ما كانت
+/// عليه قبل الاستخراج) و`PosTerminalsPicposScreen` في
+/// `settings_picpos/screens/` (‏قشرةُ PicPos: `PicPosScreenScaffold`).
+///
+/// ولهذا لا تنطبق «مصيدةُ النسخ §٥.٨» هنا: لا نسخةَ ثانيةً من المنطق تُصان،
+/// وشاشةُ UralCash لم يتبدّل فيها بايت — نفسُ الجسمِ ونفسُ الـ`AppBar`.
+///
+/// [searchQuery] ترشيحٌ اختياريٌّ بالاسم/الفرع/`device_id`. فارغاً (‏وهو
+/// الافتراضيُّ الذي تمرّره قشرةُ UralCash) لا يُرشِّح شيئاً.
+class PosTerminalsBody extends ConsumerStatefulWidget {
+  final String searchQuery;
+
+  const PosTerminalsBody({super.key, this.searchQuery = ''});
+
+  @override
+  ConsumerState<PosTerminalsBody> createState() => _PosTerminalsBodyState();
+}
+
+class _PosTerminalsBodyState extends ConsumerState<PosTerminalsBody> {
   late Future<_TerminalsData> _future;
 
   @override
@@ -65,42 +102,52 @@ class _PosTerminalsScreenState extends ConsumerState<PosTerminalsScreen> {
     });
   }
 
+  /// ترشيحٌ بالاسم أو اسمِ الفرع أو `device_id`. استعلامٌ فارغٌ يُرجع القائمةَ
+  /// كما هي بالمرجع نفسِه — فقشرةُ UralCash (‏التي لا تمرّر استعلاماً) تبني
+  /// عينَ ما كانت تبنيه.
+  List<PosTerminalData> _filter(_TerminalsData data) {
+    final q = widget.searchQuery.trim();
+    if (q.isEmpty) return data.terminals;
+    return data.terminals.where((t) {
+      final branch = data.branches[t.branchId] ?? '';
+      return t.name.contains(q) ||
+          branch.contains(q) ||
+          t.deviceId.contains(q);
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        title: const Row(
-          children: [
-            Icon(PhosphorIconsBold.cashRegister),
-            SizedBox(width: 8),
-            Text('نقاط البيع'),
-          ],
-        ),
-      ),
-      body: FutureBuilder<_TerminalsData>(
-        future: _future,
-        builder: (context, snap) {
-          if (snap.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snap.hasError) {
-            return Center(child: Text('خطأ فى التحميل: ${snap.error}'));
-          }
-          final data = snap.data!;
-          if (data.terminals.isEmpty) {
-            return _buildEmptyState();
-          }
-          return ListView.separated(
-            padding: const EdgeInsets.all(12),
-            itemCount: data.terminals.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 8),
-            itemBuilder: (_, i) =>
-                _buildTerminalCard(data.terminals[i], data),
+    return FutureBuilder<_TerminalsData>(
+      future: _future,
+      builder: (context, snap) {
+        if (snap.connectionState != ConnectionState.done) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snap.hasError) {
+          return Center(child: Text('خطأ فى التحميل: ${snap.error}'));
+        }
+        final data = snap.data!;
+        if (data.terminals.isEmpty) {
+          return _buildEmptyState();
+        }
+        final shown = _filter(data);
+        if (shown.isEmpty) {
+          return Center(
+            child: Text(
+              'لا توجد نقطة بيع تطابق «${widget.searchQuery.trim()}»',
+              style: const TextStyle(
+                  fontSize: 14, color: AppColors.textMuted),
+            ),
           );
-        },
-      ),
+        }
+        return ListView.separated(
+          padding: const EdgeInsets.all(12),
+          itemCount: shown.length,
+          separatorBuilder: (_, _) => const SizedBox(height: 8),
+          itemBuilder: (_, i) => _buildTerminalCard(shown[i], data),
+        );
+      },
     );
   }
 

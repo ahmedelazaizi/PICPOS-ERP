@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../picpos_shell/picpos_body_handle.dart';
 import '../picpos_shell/picpos_surface.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,19 +11,26 @@ import '../../data/providers/providers.dart';
 
 /// Printers Management Screen
 /// Allows adding, editing, and managing work order printers
-class PrintersScreen extends ConsumerStatefulWidget {
+class PrintersScreen extends StatefulWidget {
   const PrintersScreen({super.key});
 
   @override
-  ConsumerState<PrintersScreen> createState() => _PrintersScreenState();
+  State<PrintersScreen> createState() => _PrintersScreenState();
 }
 
-class _PrintersScreenState extends ConsumerState<PrintersScreen> {
+class _PrintersScreenState extends State<PrintersScreen> {
+  /// تُملَك هنا لا في `build` — وصلةٌ تُبنى مع كلِّ إطارٍ تترك الجسمَ مسجَّلاً
+  /// على وصلةٍ متروكة فيموت الزرّ.
+  final _addHandle = PicPosBodyHandle();
+
+  @override
+  void dispose() {
+    _addHandle.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final printersAsync = ref.watch(allPrintersProvider);
-    final theme = Theme.of(context);
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppColors.primary,
@@ -37,21 +45,88 @@ class _PrintersScreenState extends ConsumerState<PrintersScreen> {
         actions: [
           IconButton(
             icon: const Icon(PhosphorIconsBold.plus),
-            onPressed: () => _showPrinterDialog(null),
+            onPressed: _addHandle.invoke,
             tooltip: 'إضافة طابعة',
           ),
         ],
       ),
-      body: printersAsync.when(
-        data: (printers) => printers.isEmpty
-            ? _buildEmptyState()
-            : _buildPrintersList(printers, theme),
-        loading: () => Padding(
-          padding: const EdgeInsets.all(16),
-          child: ShimmerLoading.list(itemCount: 4),
-        ),
-        error: (e, _) => Center(child: Text('خطأ: $e')),
+      body: PrintersBody(addHandle: _addHandle),
+    );
+  }
+}
+
+/// جسمُ شاشة الطابعات بلا قشرة (‏بلا `Scaffold`/`AppBar`).
+///
+/// استُخرج ليركب عليه إطارُ العلامتَين معاً بلا نسخِ منطق: `PrintersScreen`
+/// أعلاه (‏قشرةُ UralCash — حرفاً بحرفٍ ما كانت عليه) و`PrintersPicposScreen`
+/// (‏قشرةُ PicPos). فلا تنطبق «مصيدةُ النسخ §٥.٨»: لا نسخةَ ثانيةً تُصان،
+/// وشاشةُ UralCash لم يتبدّل فيها بايت.
+///
+/// [addHandle] تسجّل فيه الحالةُ إجراءَ «إضافة طابعة» ليبلغه زرُّ القشرة.
+/// [searchQuery] ترشيحٌ اختياريٌّ بالاسم/النوع/المنفذ؛ فارغاً لا يُرشِّح شيئاً.
+class PrintersBody extends ConsumerStatefulWidget {
+  final PicPosBodyHandle? addHandle;
+  final String searchQuery;
+
+  const PrintersBody({super.key, this.addHandle, this.searchQuery = ''});
+
+  @override
+  ConsumerState<PrintersBody> createState() => _PrintersBodyState();
+}
+
+class _PrintersBodyState extends ConsumerState<PrintersBody> {
+  @override
+  void initState() {
+    super.initState();
+    widget.addHandle?.register(() => _showPrinterDialog(null));
+  }
+
+  @override
+  void dispose() {
+    widget.addHandle?.register(null);
+    super.dispose();
+  }
+
+  /// ترشيحٌ بالاسم أو النوع أو الغرض أو المنفذ/العنوان أو الوصف. استعلامٌ
+  /// فارغٌ يُرجع القائمةَ بالمرجع نفسِه، فقشرةُ UralCash تبني عينَ ما كانت
+  /// تبنيه.
+  List<Printer> _filter(List<Printer> printers) {
+    final q = widget.searchQuery.trim();
+    if (q.isEmpty) return printers;
+    return printers.where((p) {
+      return p.name.contains(q) ||
+          p.printerType.contains(q) ||
+          p.purpose.contains(q) ||
+          (p.port ?? '').contains(q) ||
+          (p.ipAddress ?? '').contains(q) ||
+          (p.description ?? '').contains(q);
+    }).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final printersAsync = ref.watch(allPrintersProvider);
+    final theme = Theme.of(context);
+
+    return printersAsync.when(
+      data: (printers) {
+        if (printers.isEmpty) return _buildEmptyState();
+        final shown = _filter(printers);
+        if (shown.isEmpty) {
+          return Center(
+            child: Text(
+              'لا توجد طابعةٌ تطابق «${widget.searchQuery.trim()}»',
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            ),
+          );
+        }
+        return _buildPrintersList(shown, theme);
+      },
+      loading: () => Padding(
+        padding: const EdgeInsets.all(16),
+        child: ShimmerLoading.list(itemCount: 4),
       ),
+      error: (e, _) => Center(child: Text('خطأ: $e')),
     );
   }
 

@@ -6,6 +6,7 @@ import 'dart:ui' as ui;
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../data/providers/providers.dart';
+import '../../picpos_shell/picpos_body_handle.dart';
 import '../../widgets/dialogs/app_confirm_dialog.dart';
 
 /// أسماءُ أيام الأسبوع باصطلاح `DateTime.weekday` (‏١ = الاثنين … ٧ = الأحد).
@@ -25,22 +26,81 @@ const List<String> _kWeekdayNames = [
 /// (‏`AppDatabase.workingDaysInMonth`) الذي عليه يقوم أجرُ الساعة والوقتُ
 /// الإضافي المحسوب. العطلةُ إمّا يومٌ أسبوعيٌّ متكرّر وإمّا تاريخٌ بعينه،
 /// ومحصورةٌ بفرعٍ أو عامّةٌ لكل الفروع (‏`branchId == null`).
-class WorkHolidaysScreen extends ConsumerStatefulWidget {
+class WorkHolidaysScreen extends StatefulWidget {
   const WorkHolidaysScreen({super.key});
 
   @override
-  ConsumerState<WorkHolidaysScreen> createState() =>
-      _WorkHolidaysScreenState();
+  State<WorkHolidaysScreen> createState() => _WorkHolidaysScreenState();
 }
 
-class _WorkHolidaysScreenState extends ConsumerState<WorkHolidaysScreen> {
+class _WorkHolidaysScreenState extends State<WorkHolidaysScreen> {
+  /// تُملَك هنا لا في `build`: وصلةٌ تُبنى مع كلِّ إطارٍ تترك الجسمَ مسجَّلاً
+  /// على وصلةٍ متروكة، فيموت زرُّ الـ`AppBar` بعد أوّلِ إعادةِ بناء.
+  final _addHandle = PicPosBodyHandle();
+
+  @override
+  void dispose() {
+    _addHandle.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final handle = _addHandle;
+    return Directionality(
+      textDirection: ui.TextDirection.rtl,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('عطلات العمل'),
+          actions: [
+            IconButton(
+              icon: const Icon(PhosphorIconsBold.plus),
+              tooltip: 'إضافة عطلة',
+              onPressed: handle.invoke,
+            ),
+          ],
+        ),
+        body: WorkHolidaysBody(addHandle: handle),
+      ),
+    );
+  }
+}
+
+/// جسمُ شاشة العطلات بلا قشرة (‏بلا `Scaffold`/`AppBar`/`Directionality`).
+///
+/// استُخرج ليركب عليه إطارُ العلامتَين معاً بلا نسخِ منطق: `WorkHolidaysScreen`
+/// أعلاه (‏قشرةُ UralCash — حرفاً بحرفٍ ما كانت عليه) و
+/// `WorkHolidaysPicposScreen` (‏قشرةُ PicPos: `PicPosScreenScaffold`).
+/// فلا تنطبق «مصيدةُ النسخ §٥.٨»: لا نسخةَ ثانيةً تُصان، وشاشةُ UralCash لم
+/// يتبدّل فيها بايت.
+///
+/// [addHandle] تسجّل فيه الحالةُ إجراءَ «إضافة عطلة» ليبلغه زرُّ القشرة.
+/// [searchQuery] ترشيحٌ اختياريٌّ بالاسم/الوصف/الفرع؛ فارغاً لا يُرشِّح شيئاً.
+class WorkHolidaysBody extends ConsumerStatefulWidget {
+  final PicPosBodyHandle? addHandle;
+  final String searchQuery;
+
+  const WorkHolidaysBody({super.key, this.addHandle, this.searchQuery = ''});
+
+  @override
+  ConsumerState<WorkHolidaysBody> createState() => _WorkHolidaysBodyState();
+}
+
+class _WorkHolidaysBodyState extends ConsumerState<WorkHolidaysBody> {
   List<WorkHoliday> _holidays = [];
   bool _loading = true;
 
   @override
   void initState() {
     super.initState();
+    widget.addHandle?.register(_showAddDialog);
     _load();
+  }
+
+  @override
+  void dispose() {
+    widget.addHandle?.register(null);
+    super.dispose();
   }
 
   /// H6 — نطاقُ الفروع يُحلّ مرّةً واحدةً هنا (مطابقٌ لـ`hrEmployeesProvider`)
@@ -226,25 +286,28 @@ class _WorkHolidaysScreenState extends ConsumerState<WorkHolidaysScreen> {
     return DateFormat('yyyy/MM/dd', 'ar').format(h.date!);
   }
 
+  /// ترشيحٌ بالاسم أو الوصف (‏اليوم/التاريخ) أو اسمِ الفرع. استعلامٌ فارغٌ
+  /// يُرجع القائمةَ بالمرجع نفسِه، فقشرةُ UralCash تبني عينَ ما كانت تبنيه.
+  List<WorkHoliday> _filter(Map<int, String> branchNames) {
+    final q = widget.searchQuery.trim();
+    if (q.isEmpty) return _holidays;
+    return _holidays.where((h) {
+      final branchLabel = h.branchId == null
+          ? 'كل الفروع'
+          : (branchNames[h.branchId] ?? 'فرعٌ محذوف');
+      return h.name.contains(q) ||
+          _describe(h).contains(q) ||
+          branchLabel.contains(q);
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     final allBranches = ref.watch(allBranchesProvider).value ?? const [];
     final branchNames = {for (final b in allBranches) b.id: b.name};
+    final shown = _filter(branchNames);
 
-    return Directionality(
-      textDirection: ui.TextDirection.rtl,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('عطلات العمل'),
-          actions: [
-            IconButton(
-              icon: const Icon(PhosphorIconsBold.plus),
-              tooltip: 'إضافة عطلة',
-              onPressed: _showAddDialog,
-            ),
-          ],
-        ),
-        body: _loading
+    return _loading
             ? const Center(child: CircularProgressIndicator())
             : _holidays.isEmpty
                 ? Center(
@@ -268,14 +331,22 @@ class _WorkHolidaysScreenState extends ConsumerState<WorkHolidaysScreen> {
                       ],
                     ),
                   )
+                : shown.isEmpty
+                ? Center(
+                    child: Text(
+                      'لا توجد عطلةٌ تطابق «${widget.searchQuery.trim()}»',
+                      style: TextStyle(
+                          fontSize: 14, color: Colors.grey.shade600),
+                    ),
+                  )
                 : Padding(
                     padding: const EdgeInsets.all(24),
                     child: Card(
                       child: ListView.separated(
-                        itemCount: _holidays.length,
+                        itemCount: shown.length,
                         separatorBuilder: (_, _) => const Divider(height: 1),
                         itemBuilder: (context, index) {
-                          final holiday = _holidays[index];
+                          final holiday = shown[index];
                           final branchLabel = holiday.branchId == null
                               ? 'كل الفروع'
                               : (branchNames[holiday.branchId] ?? 'فرعٌ محذوف');
@@ -310,8 +381,6 @@ class _WorkHolidaysScreenState extends ConsumerState<WorkHolidaysScreen> {
                         },
                       ),
                     ),
-                  ),
-      ),
-    );
+                  );
   }
 }

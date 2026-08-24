@@ -17,7 +17,7 @@
 //   • Change / clear developer password.
 //
 // Access:
-//   `_DeveloperPasswordGate` wraps the whole screen. If the
+//   `DeveloperPasswordGate` wraps the whole screen. If the
 //   `developerSessionProvider` is active, the gate is invisible. Else
 //   a password prompt is shown and the screen mounts only on success.
 //   The session uses a sliding 10-minute window.
@@ -52,7 +52,7 @@ class DeveloperToolsScreen extends ConsumerWidget {
     return const Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        body: _DeveloperPasswordGate(child: _DeveloperToolsBody()),
+        body: DeveloperPasswordGate(child: _DeveloperToolsBody()),
       ),
     );
   }
@@ -62,17 +62,21 @@ class DeveloperToolsScreen extends ConsumerWidget {
 // PASSWORD GATE — verifies the developer password before mounting body
 // ═════════════════════════════════════════════════════════════════════════
 
-class _DeveloperPasswordGate extends ConsumerStatefulWidget {
+/// بوّابةُ كلمةِ مرور المطوّر — لا تُركَّب [child] إلّا بعد التحقّق.
+///
+/// عامّةٌ عن قصد: قشرةُ PicPos (`DeveloperToolsPicposScreen`) تُعيد استعمالها
+/// كما هي بدل نسخِها. وبوّابةٌ منسوخةٌ بوّابةٌ تتخلّف عن أصلها.
+class DeveloperPasswordGate extends ConsumerStatefulWidget {
   final Widget child;
-  const _DeveloperPasswordGate({required this.child});
+  const DeveloperPasswordGate({super.key, required this.child});
 
   @override
-  ConsumerState<_DeveloperPasswordGate> createState() =>
+  ConsumerState<DeveloperPasswordGate> createState() =>
       _DeveloperPasswordGateState();
 }
 
 class _DeveloperPasswordGateState
-    extends ConsumerState<_DeveloperPasswordGate> {
+    extends ConsumerState<DeveloperPasswordGate> {
   final _pwdCtl = TextEditingController();
   final _confirmCtl = TextEditingController();
   bool _visible = false;
@@ -302,24 +306,71 @@ class _DeveloperToolsBody extends ConsumerWidget {
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _SnapshotPanel(snapshot: snapshot, hash: hash, session: session),
-          const SizedBox(height: 16),
-          _ChangeProfileSection(snapshot: snapshot),
-          const SizedBox(height: 16),
-          _ChangeModeSection(snapshot: snapshot),
-          const SizedBox(height: 16),
-          const _FeatureOverridesSection(),
-          const SizedBox(height: 16),
-          const _ChangeDeveloperPasswordSection(),
-          const SizedBox(height: 16),
-          const _ResetWizardSection(),
-          const SizedBox(height: 16),
-          const _DataWipeSection(),
-        ],
+      body: const DeveloperToolsPanels(),
+    );
+  }
+}
+
+/// لوحاتُ أدوات المطوّر بلا قشرة (‏بلا `Scaffold`/`AppBar`).
+///
+/// استُخرجت ليركب عليها إطارُ العلامتَين معاً بلا نسخِ منطق: `_DeveloperToolsBody`
+/// أعلاه (‏قشرةُ UralCash — حرفاً بحرفٍ ما كانت عليه) و
+/// `DeveloperToolsPicposScreen` (‏قشرةُ PicPos). فلا تنطبق «مصيدةُ النسخ
+/// §٥.٨»: لا نسخةَ ثانيةً تُصان، وشاشةُ UralCash لم يتبدّل فيها بايت.
+///
+/// ⚠️ **ولا تُركَّب إلّا خلفَ [DeveloperPasswordGate]** — هي بوّابةُ كلمةِ
+/// مرور المطوّر، وتركيبُ اللوحات بدونها يفتح تبديلَ نمطِ التشغيل ومسحَ
+/// البيانات بلا تحقّق.
+///
+/// [searchQuery] ترشيحٌ اختياريٌّ بعنوان اللوحة؛ فارغاً (‏وهو ما تمرّره قشرةُ
+/// UralCash) يعرض السبعَ كلَّها بترتيبها.
+class DeveloperToolsPanels extends ConsumerWidget {
+  final String searchQuery;
+
+  const DeveloperToolsPanels({super.key, this.searchQuery = ''});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final snapshot = ref.watch(runtimeConfigSnapshotProvider);
+    final hash = ref.watch(runtimeConfigHashProvider);
+    final session = ref.watch(developerSessionProvider);
+
+    // العنوانُ هنا هو عينُ العنوان الذي ترسمه كلُّ لوحةٍ في `_SectionHeader`
+    // — لو تبدّل هناك فليتبدّل هنا، وإلّا رشّح البحثُ باسمٍ لا يراه المستخدم.
+    final panels = <(String, Widget)>[
+      (
+        'الحالة الحالية',
+        _SnapshotPanel(snapshot: snapshot, hash: hash, session: session)
       ),
+      ('تغيير ملف النشاط', _ChangeProfileSection(snapshot: snapshot)),
+      ('تغيير نمط التشغيل', _ChangeModeSection(snapshot: snapshot)),
+      ('تخصيص الميزات', const _FeatureOverridesSection()),
+      ('تغيير كلمة مرور المطوّر', const _ChangeDeveloperPasswordSection()),
+      ('منطقة الخطر — إعادة ضبط', const _ResetWizardSection()),
+      ('تصفير البيانات — بلا رجعة', const _DataWipeSection()),
+    ];
+
+    final q = searchQuery.trim();
+    final shown =
+        q.isEmpty ? panels : panels.where((p) => p.$1.contains(q)).toList();
+
+    if (shown.isEmpty) {
+      return Center(
+        child: Text(
+          'لا توجد أداةٌ تطابق «$q»',
+          style: const TextStyle(fontSize: 14, color: AppColors.textMuted),
+        ),
+      );
+    }
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        for (var i = 0; i < shown.length; i++) ...[
+          if (i > 0) const SizedBox(height: 16),
+          shown[i].$2,
+        ],
+      ],
     );
   }
 }

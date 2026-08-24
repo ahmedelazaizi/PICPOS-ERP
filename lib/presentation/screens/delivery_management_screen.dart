@@ -8,25 +8,24 @@ import 'package:drift/drift.dart' show Value;
 import '../../core/theme/app_colors.dart';
 import '../../data/providers/providers.dart';
 import '../../core/permissions/permission_codes.dart';
+import '../picpos_shell/picpos_body_handle.dart';
 import '../widgets/permission_guard.dart';
 import 'party_statement_screen.dart';
 
-class DeliveryManagementScreen extends ConsumerStatefulWidget {
+class DeliveryManagementScreen extends StatefulWidget {
   const DeliveryManagementScreen({super.key});
 
   @override
-  ConsumerState<DeliveryManagementScreen> createState() =>
+  State<DeliveryManagementScreen> createState() =>
       _DeliveryManagementScreenState();
 }
 
-class _DeliveryManagementScreenState
-    extends ConsumerState<DeliveryManagementScreen>
+class _DeliveryManagementScreenState extends State<DeliveryManagementScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  bool _savingCompany = false;
-  bool _savingCourier = false;
-  bool _deletingCompany = false;
-  bool _deletingCourier = false;
+
+  /// تُملَك هنا لا في `build` — انظر توثيق [PicPosBodyHandle].
+  final _addCourierHandle = PicPosBodyHandle();
 
   @override
   void initState() {
@@ -38,6 +37,7 @@ class _DeliveryManagementScreenState
   @override
   void dispose() {
     _tabController.dispose();
+    _addCourierHandle.dispose();
     super.dispose();
   }
 
@@ -65,21 +65,89 @@ class _DeliveryManagementScreenState
             ],
           ),
         ),
-        body: TabBarView(
-          controller: _tabController,
-          children: [_buildCompaniesTab(), _buildCouriersTab()],
+        body: DeliveryManagementBody(
+          tabController: _tabController,
+          addCourierHandle: _addCourierHandle,
         ),
         floatingActionButton: _tabController.index == 1
             ? PermissionGuard(
                 permission: PermissionCodes.deliveryCourierManage,
                 child: FloatingActionButton(
-                  onPressed: _showAddCourierDialog,
+                  onPressed: _addCourierHandle.invoke,
                   backgroundColor: AppColors.primary,
                   child: const Icon(PhosphorIconsBold.plus, color: Colors.white),
                 ),
               )
             : null,
       ),
+    );
+  }
+}
+
+/// جسمُ شاشة التوصيل بلا قشرة: `TabBarView` وحدَه بتبويبَيه.
+///
+/// استُخرج ليركب عليه إطارُ العلامتَين معاً بلا نسخِ منطق:
+/// `DeliveryManagementScreen` أعلاه (‏قشرةُ UralCash — حرفاً بحرفٍ ما كانت
+/// عليه: `AppBar` أزرقُ بـ`TabBar` في ذيله و`FAB`) و
+/// `DeliveryManagementPicposScreen` (‏قشرةُ PicPos: ترويسةٌ موحّدةٌ و`TabBar`
+/// في `subHeader` وزرُّ CTA في الترويسة).
+///
+/// ⚠️ **الـ`TabController` تملكه القشرةُ لا الجسم** — وذلك مقصود: لو انتقل
+/// إلى الجسم لوجب أن ينتقل معه الـ`TabBar`، فيخرج من ذيلِ `AppBar` الأزرقِ
+/// في UralCash ويفقد بياضَه — أي تبدُّلٌ في شاشةِ UralCash، وهو ما يمنعه
+/// شرطُ الاستخراج. فكلُّ قشرةٍ ترسم `TabBar`ها في موضعها وتشتركان في المتحكّم.
+///
+/// [addCourierHandle] يسجّل الجسمُ فيه «إضافة مندوب» **فقط** حين يكون تبويبُ
+/// المناديب هو النشط — فيتبع زرُّ القشرة التبويبَ من غير أن تعرف القشرةُ
+/// شيئاً عن دواخل الجسم.
+class DeliveryManagementBody extends ConsumerStatefulWidget {
+  final TabController tabController;
+  final PicPosBodyHandle? addCourierHandle;
+
+  const DeliveryManagementBody({
+    super.key,
+    required this.tabController,
+    this.addCourierHandle,
+  });
+
+  @override
+  ConsumerState<DeliveryManagementBody> createState() =>
+      _DeliveryManagementBodyState();
+}
+
+class _DeliveryManagementBodyState
+    extends ConsumerState<DeliveryManagementBody> {
+  bool _savingCompany = false;
+  bool _savingCourier = false;
+  bool _deletingCompany = false;
+  bool _deletingCourier = false;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.tabController.addListener(_syncCourierHandle);
+    _syncCourierHandle();
+  }
+
+  @override
+  void dispose() {
+    widget.tabController.removeListener(_syncCourierHandle);
+    widget.addCourierHandle?.register(null);
+    super.dispose();
+  }
+
+  /// «إضافة مندوب» متاحةٌ في تبويب المناديب وحدَه — تماماً كما كان الـ`FAB`
+  /// يظهر عند `index == 1` فقط.
+  void _syncCourierHandle() {
+    widget.addCourierHandle
+        ?.register(widget.tabController.index == 1 ? _showAddCourierDialog : null);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TabBarView(
+      controller: widget.tabController,
+      children: [_buildCompaniesTab(), _buildCouriersTab()],
     );
   }
 

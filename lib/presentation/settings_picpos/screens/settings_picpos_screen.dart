@@ -45,10 +45,15 @@
 // `showDatabaseSettingsDialog`/`showActivationDialog`/
 // `showBranchScopeAdminDialog`/`showMirrorParityAuditDialog`/
 // `showChequeReceiptDriftAdminDialog`/`ServerPermsToggleDialog`) كما هي —
-// وشاشات الوجهة (`PrintersScreen`/`PosTerminalsScreen`/
-// `DeliveryManagementScreen`/`InvoiceDesignerScreen`/
-// `AccountMappingSettingsScreen`/`DeveloperToolsScreen`) تُستورد كما هي بلا
-// أي تعديل وتأخذ شكلها من الثيم.
+// وشاشات الوجهة تُفتح بقشرة PicPos ذات الترويسة الموحّدة (`HEADS` في ملفّ
+// التصميم): `PrintersPicposScreen`/`PosTerminalsPicposScreen`/
+// `WorkHolidaysPicposScreen`/`DeliveryManagementPicposScreen`/
+// `DeveloperToolsPicposScreen`، و`InvoiceDesignerScreen(picposChrome: true)`،
+// و`AccountMappingPicPosScreen` (فوركُ الحسابات القائمُ أصلاً).
+//
+// ⚠️ **وكلُّها قشرةٌ لا نسخة**: المنطقُ باقٍ في ملفّات `screens/` المشتركة
+// وتستورده القشرتان معاً (`*Body`)، فشاشةُ UralCash لم يتبدّل فيها بايت ولا
+// نسخةَ ثانيةً تُصان. يحرس ذلك `settings_unified_header_test`.
 //
 // FULL PARITY مع الأصل — كل قسم موجود بلا حذف: إعدادات النظام والمظهر (معلومات
 // الشركة، نوع النشاط، العملة، المظهر، الشاشة الرئيسية الافتراضية، قاعدة
@@ -115,17 +120,17 @@ import '../../widgets/settings/pos_settings_widget.dart';
 import '../../widgets/settings/user_management_widget.dart';
 import '../../widgets/settings/permissions_management_widget.dart';
 import '../../screens/settings/widgets/server_perms_toggle_dialog.dart';
-import '../../screens/account_mapping_settings_screen.dart';
-import '../../screens/settings/work_holidays_screen.dart';
+import '../../accounting_picpos/account_mapping_picpos_screen.dart';
+import 'work_holidays_picpos_screen.dart';
 
-import '../../screens/printers_screen.dart';
-import '../../screens/pos_terminals_screen.dart';
-import '../../screens/delivery_management_screen.dart';
+import 'printers_picpos_screen.dart';
+import 'pos_terminals_picpos_screen.dart';
+import 'delivery_management_picpos_screen.dart';
 import '../../screens/invoice_designer_screen.dart';
 import '../../widgets/settings/activation_dialog.dart';
 import '../../../services/license_service.dart';
 import '../../../core/config/app_config.dart';
-import '../../screens/developer_tools_screen.dart';
+import 'developer_tools_picpos_screen.dart';
 import '../../../core/navigation/screen_id.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../services/network_service.dart';
@@ -767,7 +772,7 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
                             context,
                             MaterialPageRoute(
                               builder: (_) =>
-                                  const AccountMappingSettingsScreen(),
+                                  const AccountMappingPicPosScreen(),
                             ),
                           ),
                         ),
@@ -842,7 +847,7 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
                       onOpen: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (_) => const WorkHolidaysScreen()),
+                            builder: (_) => const WorkHolidaysPicposScreen()),
                       ),
                     ),
                   ),
@@ -923,7 +928,7 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (_) =>
-                                        const DeliveryManagementScreen(),
+                                        const DeliveryManagementPicposScreen(),
                                   ),
                                 ),
                               ),
@@ -1510,7 +1515,7 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => const DeveloperToolsScreen(),
+            builder: (_) => const DeveloperToolsPicposScreen(),
           ),
         ),
       ),
@@ -2113,7 +2118,7 @@ class _DeviceTiles extends ConsumerWidget {
             'إدارة الطابعات',
             () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const PrintersScreen()),
+              MaterialPageRoute(builder: (_) => const PrintersPicposScreen()),
             ),
           ),
         ),
@@ -2128,7 +2133,8 @@ class _DeviceTiles extends ConsumerWidget {
             'نقاط البيع',
             () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const PosTerminalsScreen()),
+              MaterialPageRoute(
+                  builder: (_) => const PosTerminalsPicposScreen()),
             ),
           ),
         ),
@@ -2140,7 +2146,9 @@ class _DeviceTiles extends ConsumerWidget {
           tint: AppColors.info,
           onTap: () => Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const InvoiceDesignerScreen()),
+            MaterialPageRoute(
+              builder: (_) => const InvoiceDesignerScreen(picposChrome: true),
+            ),
           ),
         ),
       ],

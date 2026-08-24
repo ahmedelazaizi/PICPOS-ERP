@@ -244,44 +244,94 @@ mixin _InvoiceDesignerUIMixin on ConsumerState<InvoiceDesignerScreen> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
+    if (widget.picposChrome) return _buildPicposBody();
+
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: context.picposField,
         appBar: buildAppBar(),
-        body: Column(
-          children: [
-            InvoiceDesignerToolbar(
-              onAddElement: onAddElement,
-              onSave: saveTemplate,
-              onPreview: showPreview,
-              onReset: onReset,
-              currentTemplate: template,
-              currentLanguage: printLanguage,
-              onLanguageChanged: (lang) async {
-                setState(() => printLanguage = lang);
-                // ISS-09: Use repository instead of direct DB access
-                await ref.read(settingsRepositoryProvider).saveSetting('print_language', lang);
-                ref.invalidate(printLanguageProvider);
-              },
-            ),
-            Expanded(
-              child: InvoiceSectionEditor(
-                elements: elements,
-                tableSettings: tableSettings,
-                templateType: templateType,
-                templateCategory: templateCategory,
-                paperWidth: template?.paperWidth.toDouble() ?? 80,
-                onAddElement: (type, {variableContent}) =>
-                    onAddElement(type, variableContent: variableContent),
-                onElementUpdated: (el, {bool suppressHasChanges = false}) => onElementUpdated(el, suppressHasChanges: suppressHasChanges),
-                onElementDeleted: onElementDeleted,
-                onUpdateTableSettings: onTableSettingsUpdated,
-              ),
-            ),
-          ],
+        body: _buildEditorColumn(),
+      ),
+    );
+  }
+
+  /// عمودُ المحرّر — شريطُ الأدوات ومحرّرُ الأقسام. مشتركٌ بين القشرتَين
+  /// حرفيّاً، فلا نسخةَ ثانيةً منه.
+  Widget _buildEditorColumn() {
+    return Column(
+      children: [
+        InvoiceDesignerToolbar(
+          onAddElement: onAddElement,
+          onSave: saveTemplate,
+          onPreview: showPreview,
+          onReset: onReset,
+          currentTemplate: template,
+          currentLanguage: printLanguage,
+          onLanguageChanged: (lang) async {
+            setState(() => printLanguage = lang);
+            // ISS-09: Use repository instead of direct DB access
+            await ref.read(settingsRepositoryProvider).saveSetting('print_language', lang);
+            ref.invalidate(printLanguageProvider);
+          },
+        ),
+        Expanded(
+          child: InvoiceSectionEditor(
+            elements: elements,
+            tableSettings: tableSettings,
+            templateType: templateType,
+            templateCategory: templateCategory,
+            paperWidth: template?.paperWidth.toDouble() ?? 80,
+            onAddElement: (type, {variableContent}) =>
+                onAddElement(type, variableContent: variableContent),
+            onElementUpdated: (el, {bool suppressHasChanges = false}) => onElementUpdated(el, suppressHasChanges: suppressHasChanges),
+            onElementDeleted: onElementDeleted,
+            onUpdateTableSettings: onTableSettingsUpdated,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// قشرةُ PicPos: ترويسةٌ موحّدةٌ فوقَ **عينِ** أدوات `AppBar` المشتركة.
+  ///
+  /// الأدواتُ لا تُنسَخ ولا تُختصَر: `buildAppBar()` نفسُها تُبنى وتوضع في
+  /// `subHeader` عبر `AppBar` بلا خلفيّةٍ ولا ظلٍّ ولا زرِّ رجوعٍ تلقائيّ —
+  /// فالرجوعُ تعطيه ترويسةُ PicPos وحدَها، ووجودُ اثنين يربك.
+  ///
+  /// ولا حقلَ بحثٍ هنا رغم أنّ `HEADS.designer` يعطي `hint: 'بحث في
+  /// العناصر...'`: العناصرُ تعيش داخل `InvoiceSectionEditor` ولا يرشّحها شيء،
+  /// فحقلٌ لا يرشّح كزرٍّ لا يعمل. يُبنى حين يُبنى الترشيحُ في المحرّر.
+  Widget _buildPicposBody() {
+    return PicPosScreenScaffold(
+      title: 'مصمم الفواتير',
+      subtitle: 'الإعدادات ← الأجهزة والطباعة',
+      icon: PhosphorIconsBold.fileText,
+      headerActions: [
+        ElevatedButton.icon(
+          onPressed: saveTemplate,
+          icon: const Icon(PhosphorIconsBold.check, size: 15),
+          label: const Text('حفظ القالب'),
+        ),
+      ],
+      subHeader: SizedBox(
+        height: kToolbarHeight,
+        child: Builder(
+          builder: (_) {
+            final bar = buildAppBar() as AppBar;
+            return AppBar(
+              automaticallyImplyLeading: false,
+              backgroundColor: context.picposCard,
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              title: bar.title,
+              actions: bar.actions,
+            );
+          },
         ),
       ),
+      bodyPadding: EdgeInsets.zero,
+      body: _buildEditorColumn(),
     );
   }
 

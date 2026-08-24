@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import '../picpos_shell/picpos_screen_scaffold.dart';
 import '../picpos_shell/picpos_surface.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -25,7 +26,25 @@ part 'invoice_designer/invoice_designer_ui.dart';
 class InvoiceDesignerScreen extends ConsumerStatefulWidget {
   final int? templateId; // لتعديل قالب موجود
 
-  const InvoiceDesignerScreen({super.key, this.templateId});
+  /// ترويسةُ PicPos الموحّدة بدل `AppBar` المشتركة (`HEADS.designer`).
+  ///
+  /// ⚠️ **رايةٌ هنا لا استخراجُ جسمٍ كبقيّة الشاشات** — وذلك لسببٍ بنيويّ:
+  /// حالةُ هذه الشاشة مبنيّةٌ على mixins (`_InvoiceDesignerTemplatesMixin` و
+  /// `_InvoiceDesignerUIMixin`) في ملفّات `part`، فكلُّ حقلٍ ودالّةٍ يعيش في
+  /// الحالة نفسِها؛ واستخراجُ «جسمٍ» منها يقتضي تفكيكَ الـmixins أو نسخَها.
+  /// والرايةُ تبلغ الغرضَ نفسَه بالشرط نفسِه: افتراضيّاً `false`، فشاشةُ
+  /// UralCash لا يتبدّل فيها بايت.
+  ///
+  /// ⚠️ **و`AppBar` هنا أداةُ تحريرٍ عاملةٌ لا زينة**: اسمُ القالب وتصنيفُه
+  /// ونوعُه والتصديرُ والاستيرادُ والقوالبُ المحفوظة. فهي تنزل إلى
+  /// `subHeader` كاملةً — لا تُحذَف ولا يُستبدَل بها زرٌّ.
+  final bool picposChrome;
+
+  const InvoiceDesignerScreen({
+    super.key,
+    this.templateId,
+    this.picposChrome = false,
+  });
 
   @override
   ConsumerState<InvoiceDesignerScreen> createState() =>
