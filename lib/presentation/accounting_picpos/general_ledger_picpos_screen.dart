@@ -16,6 +16,7 @@ import '../picpos_shell/picpos_empty_state.dart';
 import '../picpos_shell/picpos_screen_scaffold.dart';
 import '../picpos_shell/picpos_toolbar.dart';
 import '../widgets/report_components.dart' show DateRangeFilter;
+import '../picpos_shell/picpos_surface.dart';
 
 /// دفترُ الأستاذ بهويّة PicPos — تبويبُ `gl` في حاويةِ الحسابات.
 ///
@@ -186,8 +187,8 @@ class _GeneralLedgerPicPosScreenState
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.card,
-        border: Border.all(color: AppColors.border),
+        color: context.picposCard,
+        border: Border.all(color: context.picposHairline),
         borderRadius: BorderRadius.circular(14),
       ),
       clipBehavior: Clip.antiAlias,
@@ -523,9 +524,9 @@ class _AccountPickerButton extends StatelessWidget {
         constraints: const BoxConstraints(minWidth: 320, maxWidth: 460),
         padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: context.picposField,
           border: Border.all(
-            color: selected ? AppColors.primary : AppColors.border,
+            color: selected ? AppColors.primary : context.picposHairline,
             width: 1.5,
           ),
           borderRadius: BorderRadius.circular(10),
@@ -588,7 +589,7 @@ class _FilterChip extends StatelessWidget {
               ? AppColors.primary.withValues(alpha: 0.06)
               : Colors.transparent,
           border: Border.all(
-              color: active ? AppColors.primary : AppColors.border),
+              color: active ? AppColors.primary : context.picposHairline),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
@@ -626,9 +627,9 @@ class _LedgerHeaderRow extends StatelessWidget {
     return Container(
       height: 34,
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(bottom: BorderSide(color: AppColors.border)),
+      decoration: BoxDecoration(
+        color: context.picposField,
+        border: Border(bottom: BorderSide(color: context.picposHairline)),
       ),
       child: Row(
         children: [
@@ -682,7 +683,7 @@ class _LedgerRow extends StatelessWidget {
         color: isOpening
             ? AppColors.primary.withValues(alpha: 0.06)
             : Colors.transparent,
-        border: const Border(bottom: BorderSide(color: AppColors.border)),
+        border: Border(bottom: BorderSide(color: context.picposHairline)),
       ),
       child: Row(
         children: [
@@ -747,7 +748,7 @@ class _LedgerRow extends StatelessWidget {
               textAlign: TextAlign.end,
               style: text.labelMedium?.copyWith(
                 fontWeight: FontWeight.w800,
-                color: balance >= 0 ? AppColors.textPrimary : AppColors.error,
+                color: balance >= 0 ? context.picposText : AppColors.error,
               ),
             ),
           ),
@@ -776,9 +777,10 @@ class _LedgerTotalsRow extends StatelessWidget {
     return Container(
       height: 56,
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(top: BorderSide(color: AppColors.primary, width: 2)),
+      decoration: BoxDecoration(
+        color: context.picposField,
+        border: const Border(
+            top: BorderSide(color: AppColors.primary, width: 2)),
       ),
       child: Row(
         children: [

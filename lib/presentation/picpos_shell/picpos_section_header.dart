@@ -1,3 +1,4 @@
+import 'picpos_surface.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/design_system/spacing.dart';
@@ -69,7 +70,7 @@ class PicPosSectionHeader extends StatelessWidget {
         ),
         if (showDivider) ...[
           const SizedBox(height: Spacing.md),
-          const Divider(height: 1, color: AppColors.border),
+          Divider(height: 1, color: context.picposHairline),
         ],
       ],
     );

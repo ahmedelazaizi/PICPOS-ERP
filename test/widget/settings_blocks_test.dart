@@ -187,6 +187,106 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  group('الوضعُ الغامقُ يتعمّم على البلوكات', () {
+    // ⚠️ بلاغُ المالك: «الوضعُ الداكن مش بيتعمّم على النظام ككل». والسببُ أنّ
+    //    `AppColors.card` و`.surface` و`.border` ثوابتُ **الوضع الفاتح
+    //    وحدَه** — فأيُّ ودجتٍ تكتبها مباشرةً تبقى بيضاءَ والشريطُ الجانبيُّ
+    //    وحدَه يتبع الثيم. والقياسُ هنا يقارن اللونَ في الوضعين: تساويهما
+    //    يعني أنّ اللونَ عاد مثبَّتاً.
+    Future<Color?> blockColor(WidgetTester tester, Brightness brightness) async {
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(brightness: brightness),
+          home: const Directionality(
+            textDirection: TextDirection.rtl,
+            child: Scaffold(
+              body: SettingsBlock(
+                key: Key('probe'),
+                title: 'بلوك',
+                child: SizedBox(height: 40),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // البطاقةُ الخارجيّةُ تُعرَف بنصفِ قطرها ١٨ — لا بترتيبها في الشجرة،
+      // فترتيبٌ يتبدّل بإعادةِ تنسيقٍ يجعل الاختبارَ يقيس صندوقاً آخر.
+      final containers = tester.widgetList<Container>(
+        find.descendant(
+          of: find.byKey(const Key('probe')),
+          matching: find.byType(Container),
+        ),
+      );
+      final outer = containers.firstWhere((c) {
+        final d = c.decoration;
+        return d is BoxDecoration &&
+            d.borderRadius == BorderRadius.circular(18);
+      });
+      return (outer.decoration as BoxDecoration).color;
+    }
+
+    // ⚠️ وضعٌ واحدٌ لكلِّ اختبار. ضخُّ الوضعين في اختبارٍ واحدٍ لا يقيس شيئاً:
+    //    البلوكُ `const` فيُعاد استعمالُ نفسِ النسخة، فلا يُعاد بناءُ العنصر
+    //    ويُقرأ لونُ الضخّة الأولى مرّتين — وقد أعطى ذلك «أبيضَ في الغامق»
+    //    وهو خطأُ قياسٍ لا عطبُ كود.
+    testWidgets('الفاتحُ فاتحٌ فعلاً', (tester) async {
+      final light = await blockColor(tester, Brightness.light);
+      expect(light, isNotNull);
+      // اللمعانُ مقياسٌ موضوعيٌّ لا يربط الاختبارَ بقيمةٍ بعينها.
+      expect(light!.computeLuminance(), greaterThan(0.7));
+    });
+
+    testWidgets('والغامقُ داكنٌ فعلاً لا فاتحٌ باسمٍ آخر', (tester) async {
+      final dark = await blockColor(tester, Brightness.dark);
+      expect(dark, isNotNull);
+      expect(dark!.computeLuminance(), lessThan(0.2),
+          reason: 'بطاقةٌ فاتحةٌ في الوضع الغامق = لونٌ مثبَّتٌ لا يتبع الثيم');
+    });
+  });
+
+  testWidgets('شريحةُ القيمة والسهمُ في **طرف** الصفّ لا في منتصفه',
+      (tester) async {
+    // ⚠️ بلاغُ المالك: «مكانُ أسهم التوجيه مش مظبوط». والسببُ كان `Flexible`
+    //    حول الشريحة: حصّتُه `flex: 1` مثلُ `Expanded` فوقه فيقتسمان الفراغ،
+    //    فتقع الشريحةُ والسهمُ في المنتصف. والقياسُ هنا على المسافة من طرف
+    //    الصفّ لا على قيمةٍ مطلقة.
+    await _pump(
+      tester,
+      1920,
+      SettingsBlock(
+        title: 'قياس',
+        child: SettingsRowsBody(
+          children: [
+            SettingsValueRow(
+              first: true,
+              icon: PhosphorIconsBold.storefront,
+              title: 'نوع النشاط',
+              sub: 'يحدد الشاشات المتاحة',
+              value: 'تجزئة',
+              onTap: () {},
+            ),
+          ],
+        ),
+      ),
+    );
+
+    // في RTL طرفُ الصفّ هو حافتُه اليسرى.
+    final rowLeft = tester.getTopLeft(find.byType(SettingsRowsBody)).dx;
+    final chipLeft = tester.getTopLeft(find.text('تجزئة')).dx;
+    final gap = chipLeft - rowLeft;
+
+    expect(gap, lessThan(120),
+        reason: 'الشريحةُ بعيدةٌ عن طرف الصفّ بـ$gap — علامةُ أنّها تقتسم '
+            'الفراغَ مع العنوان بدل أن تلتصق بالطرف');
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('وصفٌّ بلا قيمةٍ لا يرسم شريحةً فارغة', (tester) async {
     await _pump(
       tester,

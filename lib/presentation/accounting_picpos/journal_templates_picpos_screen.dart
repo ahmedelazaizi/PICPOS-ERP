@@ -13,6 +13,7 @@ import '../picpos_shell/picpos_empty_state.dart';
 import '../picpos_shell/picpos_screen_scaffold.dart';
 import '../screens/create_journal_template_dialog.dart';
 import '../widgets/permission_guard.dart';
+import '../picpos_shell/picpos_surface.dart';
 
 /// قوالبُ القيود بهويّة PicPos — تبويبُ `tpl` في حاويةِ الحسابات.
 ///
@@ -252,8 +253,8 @@ class _TemplateCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.card,
-        border: Border.all(color: AppColors.border),
+        color: context.picposCard,
+        border: Border.all(color: context.picposHairline),
         borderRadius: BorderRadius.circular(14),
       ),
       child: FutureBuilder<List<Map<String, dynamic>>>(
@@ -287,7 +288,7 @@ class _TemplateCard extends StatelessWidget {
                           style: text.titleSmall?.copyWith(
                             fontWeight: FontWeight.w800,
                             color: template.isActive
-                                ? AppColors.textPrimary
+                                ? context.picposText
                                 : AppColors.textMuted,
                           ),
                         ),
@@ -433,7 +434,7 @@ class _LineChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.picposField,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -469,7 +470,7 @@ class _LineChip extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: text.labelSmall
-                  ?.copyWith(color: AppColors.textPrimary),
+                  ?.copyWith(color: context.picposText),
             ),
           ),
           Text(

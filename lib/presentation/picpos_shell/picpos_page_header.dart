@@ -1,3 +1,4 @@
+import 'picpos_surface.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 
@@ -28,9 +29,9 @@ class PicPosPageHeader extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
-      decoration: const BoxDecoration(
-        color: AppColors.card,
-        border: Border(
+      decoration: BoxDecoration(
+        color: context.picposCard,
+        border: const Border(
           bottom: BorderSide(color: AppColors.primary, width: 2.5),
         ),
       ),

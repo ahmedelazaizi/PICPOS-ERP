@@ -11,6 +11,7 @@ import '../picpos_shell/picpos_dialog.dart';
 import '../picpos_shell/picpos_empty_state.dart';
 import '../picpos_shell/picpos_screen_scaffold.dart';
 import 'account_mapping_purposes.dart';
+import '../picpos_shell/picpos_surface.dart';
 
 /// ربطُ الحسابات بالعمليات بهويّة PicPos — تبويبُ `map` في حاويةِ الحسابات.
 ///
@@ -300,9 +301,9 @@ class _GroupStrip extends StatelessWidget {
     return Container(
       height: 52,
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: const BoxDecoration(
-        color: AppColors.card,
-        border: Border(bottom: BorderSide(color: AppColors.border)),
+      decoration: BoxDecoration(
+        color: context.picposCard,
+        border: Border(bottom: BorderSide(color: context.picposHairline)),
       ),
       child: Row(
         children: [
@@ -330,7 +331,7 @@ class _GroupStrip extends StatelessWidget {
                           ? g.color.withValues(alpha: 0.10)
                           : Colors.transparent,
                       border:
-                          Border.all(color: on ? g.color : AppColors.border),
+                          Border.all(color: on ? g.color : context.picposHairline),
                       borderRadius: BorderRadius.circular(9),
                     ),
                     child: Row(
@@ -565,7 +566,7 @@ class _MappingChip extends StatelessWidget {
       margin: const EdgeInsets.only(top: 6),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.picposField,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -583,7 +584,7 @@ class _MappingChip extends StatelessWidget {
               style: text.labelMedium?.copyWith(
                 fontWeight: FontWeight.w700,
                 color:
-                    account == null ? AppColors.error : AppColors.textPrimary,
+                    account == null ? AppColors.error : context.picposText,
               ),
             ),
           ),

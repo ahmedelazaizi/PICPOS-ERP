@@ -22,6 +22,7 @@ import '../../services/excel_export_helper.dart';
 import '../widgets/branch_chip.dart';
 import '../widgets/compact_date_picker.dart';
 import 'journal_templates_picpos_screen.dart';
+import '../picpos_shell/picpos_surface.dart';
 
 // ⚠️ حوارُ الإنشاء وودجتاتُ السطور **امتداداتٌ خاصّةٌ على حالة الشاشة** في
 //    الأصل (‏`part of`)، فلا تُستورَد ولا تُستدعى من خارج مكتبتها. ولذلك
@@ -622,7 +623,7 @@ class _Chip extends StatelessWidget {
               ? AppColors.primary.withValues(alpha: 0.06)
               : Colors.transparent,
           border:
-              Border.all(color: active ? AppColors.primary : AppColors.border),
+              Border.all(color: active ? AppColors.primary : context.picposHairline),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
@@ -781,8 +782,8 @@ class _EntryCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.card,
-        border: Border.all(color: AppColors.border),
+        color: context.picposCard,
+        border: Border.all(color: context.picposHairline),
         borderRadius: BorderRadius.circular(12),
       ),
       clipBehavior: Clip.antiAlias,
@@ -941,13 +942,13 @@ class _LinesTable extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: (head ? text.labelSmall : text.labelMedium)?.copyWith(
-            color: head ? AppColors.textMuted : AppColors.textPrimary,
+            color: head ? AppColors.textMuted : context.picposText,
             fontWeight: head ? FontWeight.w800 : FontWeight.w600,
           ),
         );
 
     return Container(
-      color: AppColors.surface,
+      color: context.picposField,
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

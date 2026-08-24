@@ -5,6 +5,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../services/license_service.dart';
+import '../../picpos_shell/picpos_surface.dart';
 
 /// ترتيبُ مجموعات عمود الإعدادات كما في التصميم.
 const kSettingsGroupOrder = <String>[
@@ -69,9 +70,9 @@ class SettingsNavRail extends StatelessWidget {
 
     return Container(
       width: 326,
-      decoration: const BoxDecoration(
-        color: AppColors.card,
-        border: BorderDirectional(start: BorderSide(color: AppColors.border)),
+      decoration: BoxDecoration(
+        color: context.picposCard,
+        border: BorderDirectional(start: BorderSide(color: context.picposHairline)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -153,7 +154,7 @@ class _NavItem extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: selected
                       ? AppColors.primary.withValues(alpha: 0.12)
-                      : AppColors.surface,
+                      : context.picposField,
                   borderRadius: BorderRadius.circular(11),
                 ),
                 child: Icon(
@@ -212,8 +213,8 @@ class SettingsRailFooter extends ConsumerWidget {
 
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
-      decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: AppColors.border)),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: context.picposHairline)),
       ),
       child: Row(
         children: [

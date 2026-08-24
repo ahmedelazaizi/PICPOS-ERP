@@ -1,3 +1,4 @@
+import 'picpos_surface.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/design_system/spacing.dart';
@@ -44,8 +45,8 @@ class PicPosStatTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(Spacing.md),
       decoration: BoxDecoration(
-        color: AppColors.card,
-        border: Border.all(color: AppColors.border),
+        color: context.picposCard,
+        border: Border.all(color: context.picposHairline),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(

@@ -14,6 +14,7 @@ import '../picpos_shell/picpos_screen_scaffold.dart';
 import '../picpos_shell/picpos_section_header.dart';
 import '../picpos_shell/picpos_toolbar.dart';
 import '../screens/widgets/dialogs/cost_center_edit_dialog.dart';
+import '../picpos_shell/picpos_surface.dart';
 
 /// مراكزُ التكلفة بهويّة PicPos — تبويبُ `cc` في حاويةِ الحسابات.
 ///
@@ -437,7 +438,7 @@ class _TreeTile extends StatelessWidget {
           // ‏`BorderDirectional` لا `Border`: الحدُّ المميِّزُ للمحدَّد يجب
           // أن يتبع اتجاهَ RTL فيقع يميناً.
           border: BorderDirectional(
-            bottom: const BorderSide(color: AppColors.border),
+            bottom: BorderSide(color: context.picposHairline),
             start: BorderSide(
               color: selected ? AppColors.primary : Colors.transparent,
               width: 2.5,
@@ -467,7 +468,7 @@ class _TreeTile extends StatelessWidget {
                       fontWeight:
                           selected ? FontWeight.w800 : FontWeight.w700,
                       color: center.isActive
-                          ? AppColors.textPrimary
+                          ? context.picposText
                           : AppColors.textMuted,
                     ),
                   ),
@@ -572,8 +573,8 @@ class _EntityChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        border: Border.all(color: AppColors.border),
+        color: context.picposField,
+        border: Border.all(color: context.picposHairline),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -655,8 +656,8 @@ class _MovementRow extends StatelessWidget {
       decoration: BoxDecoration(
         color: isOpening
             ? AppColors.primary.withValues(alpha: 0.06)
-            : (striped ? AppColors.surface : Colors.transparent),
-        border: const Border(bottom: BorderSide(color: AppColors.border)),
+            : (striped ? context.picposField : Colors.transparent),
+        border: Border(bottom: BorderSide(color: context.picposHairline)),
       ),
       child: Row(
         children: [

@@ -77,6 +77,7 @@
 // part تحت lib/presentation/screens/settings/.
 // ---------------------------------------------------------------------------
 
+import '../../picpos_shell/picpos_surface.dart';
 import 'dart:convert';
 import 'dart:io' show File;
 import 'package:flutter/foundation.dart' show kDebugMode;
@@ -1510,7 +1511,7 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
       data: (isActivated) => Container(
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          color: AppColors.card,
+          color: context.picposCard,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: isActivated
@@ -1676,9 +1677,9 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.picposField,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.picposHairline),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

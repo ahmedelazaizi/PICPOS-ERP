@@ -14,6 +14,7 @@ import 'financial_statements_picpos_screen.dart';
 import 'general_ledger_picpos_screen.dart';
 import 'journal_entries_picpos_screen.dart';
 import 'journal_templates_picpos_screen.dart';
+import '../picpos_shell/picpos_surface.dart';
 
 /// حاويةُ «الحسابات» — مدخلٌ واحدٌ في القائمة الجانبيّة يفتح سبعةَ تبويبات.
 ///
@@ -180,9 +181,9 @@ class _AccountingTabStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 48,
-      decoration: const BoxDecoration(
-        color: AppColors.card,
-        border: Border(bottom: BorderSide(color: AppColors.border)),
+      decoration: BoxDecoration(
+        color: context.picposCard,
+        border: Border(bottom: BorderSide(color: context.picposHairline)),
       ),
       child: Row(
         children: [
@@ -250,7 +251,7 @@ class _TabChip extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(9),
             border: Border.all(
-              color: selected ? AppColors.primary : AppColors.border,
+              color: selected ? AppColors.primary : context.picposHairline,
             ),
           ),
           child: Row(

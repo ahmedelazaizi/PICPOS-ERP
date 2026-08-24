@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../picpos_shell/picpos_surface.dart';
 
 /// بلوكاتُ شاشة الإعدادات — على تصميم `PicPos-Settings`.
 ///
@@ -103,8 +104,8 @@ class SettingsBlock extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.card,
-        border: Border.all(color: AppColors.border),
+        color: context.picposCard,
+        border: Border.all(color: context.picposHairline),
         borderRadius: BorderRadius.circular(18),
       ),
       clipBehavior: Clip.antiAlias,
@@ -256,9 +257,9 @@ class _ChoiceCard<T> extends StatelessWidget {
         decoration: BoxDecoration(
           color: selected
               ? AppColors.primary.withValues(alpha: 0.06)
-              : AppColors.surface,
+              : context.picposField,
           border: Border.all(
-            color: selected ? AppColors.primary : AppColors.border,
+            color: selected ? AppColors.primary : context.picposHairline,
             width: 1.5,
           ),
           borderRadius: BorderRadius.circular(14),
@@ -364,7 +365,7 @@ class SettingsValueRow extends StatelessWidget {
         decoration: BoxDecoration(
           border: first
               ? null
-              : const Border(top: BorderSide(color: AppColors.border)),
+              : Border(top: BorderSide(color: context.picposHairline)),
         ),
         child: Row(
           children: [
@@ -372,7 +373,7 @@ class SettingsValueRow extends StatelessWidget {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: context.picposField,
                 borderRadius: BorderRadius.circular(11),
               ),
               child: Icon(icon, size: 17, color: tint),
@@ -400,7 +401,12 @@ class SettingsValueRow extends StatelessWidget {
             ),
             const SizedBox(width: 9),
             if (value != null)
-              Flexible(
+              // ⚠️ **لا `Flexible` هنا.** `Flexible` حصّتُه `flex: 1` مثلُ
+              //    `Expanded` فوقه، فيقتسمان الفراغَ ويقع الشريحةُ والسهمُ
+              //    في **منتصف** الصفّ لا في طرفه — وهو ما ظهر في الشاشة.
+              //    والسقفُ يمنع الفيضانَ بلا مشاركةٍ في التوزيع.
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 180),
                 child: Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -481,7 +487,7 @@ class SettingsSwitchRow extends StatelessWidget {
       decoration: BoxDecoration(
         border: first
             ? null
-            : const Border(top: BorderSide(color: AppColors.border)),
+            : Border(top: BorderSide(color: context.picposHairline)),
       ),
       child: Row(
         children: [
@@ -601,8 +607,8 @@ class _Tile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(15),
         decoration: BoxDecoration(
-          color: AppColors.surface,
-          border: Border.all(color: AppColors.border),
+          color: context.picposField,
+          border: Border.all(color: context.picposHairline),
           borderRadius: BorderRadius.circular(14),
         ),
         child: Column(

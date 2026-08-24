@@ -1,3 +1,4 @@
+import 'picpos_surface.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/design_system/spacing.dart';
@@ -38,9 +39,9 @@ class PicPosEmptyState extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(Spacing.lg),
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: context.picposField,
                 shape: BoxShape.circle,
-                border: Border.all(color: AppColors.border),
+                border: Border.all(color: context.picposHairline),
               ),
               child: Icon(icon, size: 30, color: AppColors.textMuted),
             ),
