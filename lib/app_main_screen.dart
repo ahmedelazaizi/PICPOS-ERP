@@ -69,6 +69,7 @@ import 'presentation/scale_plu_picpos/screens/scale_plu_picpos_screen.dart';
 import 'presentation/screens/e_invoice_dashboard_screen.dart';
 import 'presentation/screens/loyalty_screen.dart';
 import 'presentation/screens/distribution_screen.dart';
+import 'presentation/settings_picpos/screens/distribution_picpos_screen.dart';
 
 import 'presentation/screens/manufacturing_screen.dart';
 import 'presentation/screens/operational_expenses_screen.dart';
@@ -810,7 +811,11 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
       ),
       ScreenConfig(
         appScreen: AppScreen.distribution,
-        builder: (_) => const DistributionScreen(),
+        // فوركُ PicPos يأخذ وحدةَ `regions` من التصميم بتبويباتها الأربع،
+        // وشاشةُ UralCash تبقى كما هي بلا مساس.
+        builder: (_) => Brand.isPicPos
+            ? const DistributionPicposScreen()
+            : const DistributionScreen(),
         label: 'التوزيع',
         icon: PhosphorIconsBold.truck,
       ),
