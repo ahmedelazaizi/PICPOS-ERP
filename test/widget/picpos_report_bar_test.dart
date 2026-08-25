@@ -169,6 +169,50 @@ void main() {
               'الشريط الآخر، والتقريرُ يُحسَب من الحدود لا من العنوان.');
     });
 
+    test('و`reportScaffold` تتفرّع وتُبقي `AppBar` لـUralCash', () {
+      final src = code('lib/presentation/screens/reports/report_scaffold.dart');
+      expect(src.contains('Brand.isPicPos'), isTrue);
+      expect(src.contains('PicPosScreenScaffold('), isTrue);
+      expect(src.contains('appBar: AppBar('), isTrue,
+          reason: 'فرعُ UralCash فقد `AppBar` — وهو ما كانت تبنيه الشاشاتُ '
+              'حرفاً بحرف قبل النقل.');
+    });
+
+    test('والشاشاتُ المنقولةُ لا تبني ترويستَها بيدها', () {
+      const moved = [
+        'sales_report_screen',
+        'inventory_report_screen',
+        'shifts_report_screen',
+        'treasury_report_screen',
+      ];
+      for (final f in moved) {
+        final src = code('lib/presentation/screens/reports/$f.dart');
+        expect(src.contains('reportScaffold('), isTrue,
+            reason: '$f: لا تمرّ من الإطار المشترك.');
+        expect(src.contains('appBar: AppBar('), isFalse,
+            reason: '$f: عادت تبني `AppBar` بيدها — فأيُّ تعديلٍ في الهويّة '
+                'يفوتها.');
+      }
+    });
+
+    test('ولا تُضاف ترويسةٌ مرسومةٌ بيدٍ إلى شاشةِ تقريرٍ جديدة', () {
+      // عدّادُ تقدّمٍ لا حكمٌ نهائيّ: الباقياتُ أربعَ عشرةَ شاشةً تنتظر
+      // النقلَ في دفعاتٍ تالية. والحارسُ يمنع أن يزيد العددُ لا أن يبقى.
+      final raw = Directory('lib/presentation/screens/reports')
+          .listSync()
+          .whereType<File>()
+          .where((f) =>
+              f.path.endsWith('.dart') &&
+              // الإطارُ المشترك نفسُه يبني `AppBar` لفرع UralCash — وهو
+              // المكانُ الذي يُفترَض أن تُبنى فيه، فلا يُعَدُّ مخالفة.
+              !f.path.endsWith('report_scaffold.dart') &&
+              f.readAsStringSync().contains('appBar: AppBar('))
+          .length;
+      expect(raw, lessThanOrEqualTo(14),
+          reason: 'عددُ شاشات التقارير التي ترسم ترويستَها بيدها ارتفع إلى '
+              '$raw — استعمل `reportScaffold` بدل `Scaffold(appBar: …)`.');
+    });
+
     test('وشاشاتُ التقارير ما زالت تمرّ من الشريط المشترك', () {
       final n = Directory('lib/presentation/screens/reports')
           .listSync()

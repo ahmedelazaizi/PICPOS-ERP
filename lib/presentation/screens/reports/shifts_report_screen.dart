@@ -16,6 +16,7 @@ import '../../widgets/report_filter_bar.dart';
 import '../../../../../../core/constants/app_constants.dart';
 import '../../widgets/branch_warehouse_filter.dart';
 import 'report_export_guard.dart';
+import 'report_scaffold.dart';
 
 /// سقفُ صفحةِ تقرير الورديات.
 ///
@@ -191,21 +192,16 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
     final scope = scopeAsync.requireValue;
     _allowedBranchIds = scope.hasFullAccess ? null : scope.allowedBranchIds;
 
-    return Directionality(
-      textDirection: ui.TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        appBar: AppBar(
-          title: const Text('تقرير الورديات المطول'),
-          backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          actions: [
+    return reportScaffold(
+      context: context,
+      title: 'تقرير الورديات المطول',
+      subtitle: 'فتحُ الورديّات وإغلاقُها والفروقُ النقديّة',
+      icon: PhosphorIconsBold.clockCountdown,
+      actions: [
             buildReportExportAction(onExport: _exportToExcel),
             buildReportPrintAsExportAction(onExport: _printReport),
             const SizedBox(width: 8),
           ],
-        ),
         body: Column(
           children: [
             // Spec 076: unified two-row filter bar.
@@ -495,7 +491,6 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
             ),
           ],
         ),
-      ),
     );
   }
 

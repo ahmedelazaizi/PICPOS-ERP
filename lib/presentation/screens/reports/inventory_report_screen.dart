@@ -12,6 +12,7 @@ import '../../../core/logging/diagnostic_logger.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import 'report_export_guard.dart';
+import 'report_scaffold.dart';
 
 import '../../../data/providers/providers.dart';
 import '../../widgets/report_components.dart';
@@ -257,16 +258,12 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
     final scope = scopeAsync.requireValue;
     _allowedBranchIds = scope.hasFullAccess ? null : scope.allowedBranchIds;
 
-    return Directionality(
-      textDirection: ui.TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        appBar: AppBar(
-          title: const Text('تقرير قيمة المخزون الحالية'),
-          backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          actions: [
+    return reportScaffold(
+      context: context,
+      title: 'تقرير قيمة المخزون الحالية',
+      subtitle: 'أرصدةُ المخازن وقيمتُها بالتكلفة',
+      icon: PhosphorIconsBold.package,
+      actions: [
             IconButton(
               onPressed: _loadData,
               icon: const Icon(PhosphorIconsBold.arrowsClockwise),
@@ -279,7 +276,6 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
               tooltip: 'طباعة/PDF',
             ),
           ],
-        ),
         body: _isLoading
             ? Padding(
                 padding: const EdgeInsets.all(16),
@@ -502,7 +498,6 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
                   ],
                 ),
               ),
-      ),
     );
   }
 

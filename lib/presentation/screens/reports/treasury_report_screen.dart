@@ -10,6 +10,7 @@ import '../../../core/logging/diagnostic_logger.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import 'report_export_guard.dart';
+import 'report_scaffold.dart';
 
 import '../../../domain/models/safe_running_balance.dart';
 import '../../../data/providers/providers.dart';
@@ -250,16 +251,12 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: ui.TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        appBar: AppBar(
-          title: const Text('تقرير حركة الخزينة والتدفق النقدي'),
-          backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          actions: [
+    return reportScaffold(
+      context: context,
+      title: 'تقرير حركة الخزينة والتدفق النقدي',
+      subtitle: 'الوارد والمنصرف وأرصدةُ الخزائن في المدى المحدَّد',
+      icon: PhosphorIconsBold.vault,
+      actions: [
             buildReportExportAction(onExport: _exportToExcel),
             IconButton(
               onPressed: _printReport,
@@ -268,7 +265,6 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
             ),
             const SizedBox(width: 8),
           ],
-        ),
         body: Column(
           children: [
             // Spec 076: unified two-row filter bar.
@@ -748,7 +744,6 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
             ),
           ],
         ),
-      ),
     );
   }
 
