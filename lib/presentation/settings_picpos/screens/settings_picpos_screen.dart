@@ -160,6 +160,7 @@ import '../../picpos_shell/picpos_content_card.dart';
 import '../../picpos_shell/picpos_section_header.dart';
 import '../../picpos_shell/picpos_empty_state.dart';
 import '../widgets/settings_blocks.dart';
+import '../widgets/settings_count.dart';
 import '../widgets/settings_nav_rail.dart';
 import '../widgets/settings_section_pane.dart';
 
@@ -1093,6 +1094,15 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
                   icon: s.icon,
                   group: s.group,
                   desc: s.desc,
+                  // ⚠️ مقيسٌ من الشجرة لا مكتوبٌ بيد: `s.children()` هي عينُ
+                  //    ما يُبنى في اللوح، فالرقمُ يتبع الواقعَ دوماً. انظر
+                  //    `settings_count.dart` لسببِ رفضِ رقم التصميم.
+                  //
+                  // ⚠️ **وصفرٌ ⇒ لا شارة، لا شارةُ «٠».** قسمُ «عن البرنامج»
+                  //    يبني بطاقاتٍ خاصّةً (‏الإصدار · الترخيص · نسخُ السجلّ)
+                  //    لا يعرفها العدّاد، فيعود بصفر. و«٠ إعداد» بجانب قسمٍ
+                  //    فيه أربعُ بطاقاتٍ كذبٌ من نوعٍ آخر — فالصمتُ أصدق.
+                  count: countVisibleSettingsOrNull(s.children()),
                 ),
             ],
             selectedId: selected.id,

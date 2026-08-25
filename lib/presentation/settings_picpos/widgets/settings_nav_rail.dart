@@ -27,6 +27,7 @@ class SettingsNavRailItem {
     required this.icon,
     required this.group,
     required this.desc,
+    this.count,
   });
 
   final String id;
@@ -34,6 +35,10 @@ class SettingsNavRailItem {
   final IconData icon;
   final String group;
   final String desc;
+
+  /// عددُ الإعدادات الظاهرة في القسم — يُقاس بـ`countVisibleSettings` ولا
+  /// يُكتَب بيد. `null` ⇒ لا شارة.
+  final int? count;
 }
 
 /// عمودُ أقسام الإعدادات (RTL) — على تصميم `PicPos-Settings`.
@@ -41,10 +46,17 @@ class SettingsNavRailItem {
 /// ‏٣٢٦px كما في `grid-template-columns:326px 1fr`: بحثٌ أعلاه، ثمّ الأقسامُ
 /// في مجموعاتها، ثمّ تذييلٌ بالنسخة وحالةِ الترخيص.
 ///
-/// ⚠️ **ولا عدّادَ إعداداتٍ على القسم.** التصميمُ يعرض رقماً لكلٍّ (‏١٤ · ١٢ ·
-/// ١١ …) ومجموعَه ٩٤، وهو رقمٌ لا يُقاس من الشجرة: معظمُ الإعدادات داخلَ
-/// حواراتٍ متداخلةٍ بلا هويّةٍ مُعنوَنة. ورقمٌ مكتوبٌ بيدٍ يبطُل عند أوّل
-/// إضافة — فالعدُّ مُسقَطٌ عمداً بدل عرضِ عددٍ يكذب.
+/// ═══ عدّادُ القسم ═══
+///
+/// التصميمُ يعرض رقماً لكلِّ قسمٍ (‏١٤ · ١٢ · ١١ …) ومجموعَه ٩٤. وقد قِيس
+/// 2026-08-25 أنّ تلك أرقامُ **نموذجٍ** لا تقابل شيئاً: حوارُ «البيع السريع»
+/// وحدَه فيه ٦٣ مفتاحاً والتصميمُ يكتب بجانبه «١١».
+///
+/// فالرقمُ هنا **مقيسٌ من الشجرة** عبر `countVisibleSettings` — عددُ ما
+/// يُعرَض فعلاً في القسم (‏قرارُ المالك 2026-08-25). لا يمكنه أن يبطُل: يرتفع
+/// بإضافة صفٍّ وينزل بحذفه بلا تدخّل.
+///
+/// و[count] `null` ⇒ لا شارة. يقيسه `settings_count_test`.
 class SettingsNavRail extends StatelessWidget {
   const SettingsNavRail({
     super.key,
@@ -189,6 +201,19 @@ class _NavItem extends StatelessWidget {
                   ],
                 ),
               ),
+              // شارةُ العدد — على أوّل الصفّ (يسارُه في RTL) كما في التصميم.
+              // مقيسةٌ لا مكتوبة؛ انظر توثيقَ `SettingsNavRailItem.count`.
+              if (item.count != null) ...[
+                const SizedBox(width: 8),
+                Text(
+                  '${item.count}',
+                  style: text.labelSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color:
+                        selected ? AppColors.primary : AppColors.textMuted,
+                  ),
+                ),
+              ],
             ],
           ),
         ),
