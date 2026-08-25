@@ -5,6 +5,8 @@ import '../../../../services/security_service.dart';
 import '../../../../data/providers/providers.dart';
 import '../../../../services/client_write_interceptor.dart';
 import '../../../widgets/dialogs/app_form_dialog.dart';
+import '../../../picpos_shell/picpos_panel_groups.dart';
+import '../../../settings_picpos/widgets/settings_blocks.dart';
 import 'package:ural_erp/l10n/app_localizations.dart';
 
 class ResetPasswordDialog extends AppFormDialog<bool> {
@@ -33,20 +35,74 @@ class _ResetPasswordDialogState extends AppFormDialogState<bool, ResetPasswordDi
   @override
   String? get dialogSaveLabel => 'حفظ كلمة المرور';
 
+  /// لوحةُ `PANELS.resetpw` — مجموعةُ القوّة ثمّ مجموعةُ الخيارات.
+  ///
+  /// ⚠️ **ومفتاحان من ثلاثةٍ في التصميم لم يُرسَما**: «إنهاء جلساته
+  /// المفتوحة» و«إبلاغه على واتساب» لا مقابلَ لهما في الحفظ — والحفظُ هنا
+  /// يكتب كلمةَ المرور وعلمَ التغيير الإجباريِّ وحدَهما. ومفتاحٌ لا يفعل
+  /// شيئاً أسوأُ من غيابه.
+  ///
+  /// وشبكةُ القواعد تُقرأ من `SecurityService.passwordRules` لا تُحسَب هنا،
+  /// فتبقى السياسةُ في مكانٍ واحد.
+  @override
+  List<PicPosPanelGroup> buildPicposGroups(BuildContext context) {
+    final pwd = passwordController.text;
+    final result = SecurityService.validatePassword(pwd);
+    return [
+      PicPosPanelGroup(
+        label: 'كلمة المرور الجديدة',
+        hint: 'مؤشّرُ القوّة إرشاديٌّ وليس إلزاميّاً',
+        child: PicPosPanelStrength(
+          field: _passwordField(),
+          strength: pwd.isEmpty ? 0 : result.strength,
+          strengthLabel: pwd.isEmpty
+              ? ''
+              : SecurityService.getPasswordStrengthLabel(result.strength),
+          // ⚠️ لا شبكةَ قواعدَ قبل أن يكتب شيئاً: ستُّ قواعدَ حمراءَ على حقلٍ
+          //    فارغٍ تُقرأ خطأً لا إرشاداً.
+          rules: pwd.isEmpty
+              ? const []
+              : [
+                  for (final r in SecurityService.passwordRules(pwd))
+                    (label: r.label, ok: r.ok),
+                ],
+        ),
+      ),
+      PicPosPanelGroup(
+        label: 'خيارات',
+        child: PicPosPanelBox(
+          children: [
+            SettingsSwitchRow(
+              first: true,
+              icon: PhosphorIconsBold.arrowsClockwise,
+              title: 'فرض التغيير عند الدخول القادم',
+              sub: 'سيُطلب منه تعيينُ كلمةٍ يعرفها هو وحدَه',
+              value: forcePasswordChange,
+              onChanged: (v) => setState(() => forcePasswordChange = v),
+            ),
+          ],
+        ),
+      ),
+    ];
+  }
+
+  Widget _passwordField() => TextField(
+        controller: passwordController,
+        obscureText: true,
+        onChanged: (_) => setState(() {}),
+        decoration: const InputDecoration(
+          labelText: 'كلمة المرور الجديدة',
+          prefixIcon: Icon(PhosphorIconsLight.lock),
+        ),
+      );
+
   @override
   Widget buildFormContent(BuildContext context, AppLocalizations localizations) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        TextField(
-          controller: passwordController,
-          obscureText: true,
-          onChanged: (_) => setState(() {}),
-          decoration: const InputDecoration(
-            labelText: 'كلمة المرور الجديدة',
-            prefixIcon: Icon(PhosphorIconsLight.lock),
-          ),
-        ),
+        // الحقلُ نفسُه الذي يلفّه صندوقُ القوّة في فرع PicPos.
+        _passwordField(),
         if (passwordController.text.isNotEmpty) ...[
           const SizedBox(height: 10),
           _buildPasswordStrength(),

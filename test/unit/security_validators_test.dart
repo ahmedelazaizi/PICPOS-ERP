@@ -245,4 +245,55 @@ void main() {
       expect(InputValidators.cleanNumericString('abc123'), equals('123'));
     });
   });
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // سياسةُ كلمة المرور — قائمةُ القواعد هي مصدرُ الرسائل لا نسخةٌ ثانيةٌ منها
+  // ═══════════════════════════════════════════════════════════════════════
+  //
+  // شبكةُ القواعد في لوحة PicPos تحتاج **القواعدَ المتحقّقةَ أيضاً**، لا
+  // الأخطاءَ وحدَها. وأسهلُ طريقٍ لذلك كان أن تعيد الواجهةُ كتابةَ نفس
+  // التعابير النمطيّة — فتصير السياسةُ في مكانين ينحرفان صامتَين. فصارت
+  // `passwordRules` مصدرَ `errors`، وهذا الحارسُ يقيس أنّها بقيت كذلك.
+  group('قواعدُ كلمة المرور', () {
+    const samples = [
+      '',
+      'abc',
+      'abcdefgh',
+      'Abcdefgh',
+      'Abcdefg1',
+      r'Abcdefg1!',
+      r'Abc defg1!',
+      'ABCDEFGH1!',
+    ];
+
+    test('الأخطاءُ هي رسائلُ القواعد غيرِ المتحقّقة — بترتيبها', () {
+      for (final p in samples) {
+        final rules = SecurityService.passwordRules(p);
+        final expected = [
+          for (final r in rules)
+            if (!r.ok) r.message,
+        ];
+        expect(SecurityService.validatePassword(p).errors, expected,
+            reason: 'انحرفت رسائلُ `validatePassword` عن `passwordRules` '
+                'على «$p» — فشبكةُ القواعد في اللوحة تعرض سياسةً غيرَ التي '
+                'يطبّقها الحفظ.');
+      }
+    });
+
+    test('وكلمةٌ سليمةٌ: كلُّ قاعدةٍ متحقّقةٌ ولا أخطاء', () {
+      const good = r'Abcdefg1!';
+      final rules = SecurityService.passwordRules(good);
+      expect(rules.every((r) => r.ok), isTrue);
+      expect(SecurityService.validatePassword(good).isValid, isTrue);
+    });
+
+    test('ولكلِّ قاعدةٍ عنوانٌ قصيرٌ ورسالةٌ كاملة', () {
+      for (final r in SecurityService.passwordRules('x')) {
+        expect(r.label, isNotEmpty);
+        expect(r.message, isNotEmpty);
+        // العنوانُ للخانة ذات العمودَين — جملةٌ كاملةٌ فيها تُقصَّ.
+        expect(r.label.length, lessThan(r.message.length));
+      }
+    });
+  });
 }

@@ -276,6 +276,8 @@ void main() {
       'warehouse_access_dialog': 'CheckboxListTile',
       'set_pin_dialog': 'تنبيه: يُستخدم رمز PIN',
       'add_role_dialog': 'buildFormContent',
+      'reset_password_dialog': 'CheckboxListTile',
+      'add_user_dialog': 'RadioListTile',
     };
 
     for (final e in panels.entries) {
@@ -291,6 +293,46 @@ void main() {
                 'هويّة PicPos مشروطٌ بأنّ الفرعَ الآخرَ لا يتبدّل فيه بايت.');
       });
     }
+
+    test('ولوحةُ إعادة التعيين تقرأ القواعدَ من `SecurityService`', () {
+      // ⚠️ البديلُ السهلُ أن ترسم اللوحةُ قواعدَها بنفس التعابير النمطيّة —
+      //    فتصير سياسةُ كلمة المرور في مكانين ينحرفان صامتَين.
+      for (final f in ['reset_password_dialog', 'add_user_dialog']) {
+        final src = _code(
+          File('lib/presentation/screens/settings/widgets/$f.dart')
+              .readAsStringSync(),
+        );
+        expect(src.contains('SecurityService.passwordRules'), isTrue,
+            reason: '$f: شبكةُ القواعد لا تُقرأ من `SecurityService`.');
+        expect(RegExp(r"RegExp\(r?'\[A-Z\]").hasMatch(src), isFalse,
+            reason: '$f: أعادت اللوحةُ كتابةَ قاعدةٍ من قواعد السياسة — '
+                'وهي في `SecurityService` وحدَه.');
+      }
+    });
+
+    test('وتحذيرُ «كل الفروع» انتقل بشرطه إلى لوحة PicPos', () {
+      final src = _code(
+        File('lib/presentation/screens/settings/widgets/add_user_dialog.dart')
+            .readAsStringSync(),
+      );
+      // ⚠️ **لا يُفحَص الملفُّ كلُّه.** الرمزُ فيه ثلاثَ مرّات: فرعُ PicPos،
+      //    وفرعُ UralCash، و`onSave`. فـ`contains` على الملفّ يمرّ ولو سقط
+      //    الشرطُ من فرعٍ كامل — ومرّت عليه طفرةٌ فعلاً قبل أن يُحصَر
+      //    الفحصُ في جسم `buildPicposGroups` وحدَه.
+      final from = src.indexOf('List<PicPosPanelGroup> buildPicposGroups');
+      final to = src.indexOf('Widget buildFormContent');
+      expect(from, greaterThan(0), reason: 'لوحةُ PicPos غائبةٌ عن الحوار.');
+      expect(to, greaterThan(from),
+          reason: 'ترتيبُ الملفّ تبدّل — أصلح حدودَ الفحص لا تتجاوزه.');
+      final picpos = src.substring(from, to);
+
+      expect(picpos.contains('fullBranchAccessRoleNames'), isTrue,
+          reason: 'لوحةُ PicPos لا تحسب شرطَ «كل الفروع» — فالتحذيرُ إمّا '
+              'دائمٌ أو غائب.');
+      expect(picpos.contains('لن يرى'), isTrue,
+          reason: 'نصُّ التحذير سقط من لوحة PicPos: «كل الفروع» بلا إسنادٍ '
+              'يُخرج المستخدمَ بلا فرعٍ فلا يرى فاتورةً أصدرها بنفسه.');
+    });
 
     test('ولوحتا النطاق تستعملان الشرائحَ لا مربّعاتِ الاختيار', () {
       for (final f in ['branch_access_dialog', 'warehouse_access_dialog']) {

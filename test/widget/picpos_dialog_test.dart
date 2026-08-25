@@ -711,4 +711,76 @@ void main() {
           reason: 'تلميحٌ بنصٍّ فارغٍ صندوقٌ أسودُ فارغٌ عند المرور.');
     });
   });
+
+  // ═══════════ مجموعةُ قوّة كلمة المرور (`kind:'strength'`) ═══════════
+  group('صندوقُ قوّة كلمة المرور', () {
+    Future<void> box(
+      WidgetTester tester, {
+      required int strength,
+      List<({String label, bool ok})> rules = const [],
+    }) async {
+      tester.view.physicalSize = const Size(900, 700);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: PicPosPanelStrength(
+            field: const Text('حقل'),
+            strength: strength,
+            strengthLabel: 'وصف',
+            rules: rules,
+          ),
+        ),
+      ));
+      await tester.pumpAndSettle();
+    }
+
+    /// عددُ الأشرطة الملوّنةِ بلونِ الحالة — لا الفارغة.
+    int filled(WidgetTester tester, Color tone) => tester
+        .widgetList<Container>(find.byType(Container))
+        .where((c) {
+          final d = c.decoration;
+          return d is BoxDecoration && d.color == tone;
+        })
+        .length;
+
+    testWidgets('عددُ الأشرطة يتبع القوّة', (tester) async {
+      await box(tester, strength: 0);
+      expect(filled(tester, AppColors.error), 0,
+          reason: 'قوّةُ صفرٍ ⇒ لا شريطَ ملوّن.');
+
+      await box(tester, strength: 20);
+      expect(filled(tester, AppColors.error), 1);
+
+      await box(tester, strength: 100);
+      expect(filled(tester, AppColors.success), 5);
+    });
+
+    testWidgets('واللونُ يتبع النطاق لا لوحةَ Material', (tester) async {
+      await box(tester, strength: 25);
+      expect(filled(tester, AppColors.error), greaterThan(0));
+      await box(tester, strength: 50);
+      expect(filled(tester, AppColors.warning), greaterThan(0));
+      await box(tester, strength: 80);
+      expect(filled(tester, AppColors.success), greaterThan(0));
+    });
+
+    testWidgets('وشبكةُ القواعد تفرّق المتحقّقَ من غيره', (tester) async {
+      await box(tester, strength: 60, rules: const [
+        (label: '٨ أحرف على الأقل', ok: true),
+        (label: 'رمز خاص', ok: false),
+      ]);
+      expect(find.text('٨ أحرف على الأقل'), findsOneWidget);
+      expect(find.text('رمز خاص'), findsOneWidget);
+      expect(find.byIcon(PhosphorIconsBold.checkCircle), findsOneWidget);
+      expect(find.byIcon(PhosphorIconsBold.circleDashed), findsOneWidget);
+    });
+
+    testWidgets('وبلا قواعدَ لا شبكةَ أصلاً', (tester) async {
+      await box(tester, strength: 0);
+      expect(find.byIcon(PhosphorIconsBold.circleDashed), findsNothing,
+          reason: 'ستُّ قواعدَ غيرِ متحقّقةٍ على حقلٍ فارغٍ تُقرأ خطأً '
+              'لا إرشاداً.');
+    });
+  });
 }

@@ -21,6 +21,29 @@ class PasswordValidationResult {
   });
 }
 
+/// قاعدةٌ واحدةٌ من سياسة كلمة المرور، وحالُها على كلمةٍ بعينها.
+///
+/// ⚠️ **لماذا عنوانان لا واحد.** [message] هي رسالةُ الخطأ الكاملةُ التي
+/// تدخل `errors` ولا يجوز أن تتبدّل. و[label] عنوانٌ قصيرٌ لشبكة القواعد في
+/// لوحة التصميم — «٨ أحرف على الأقل» في خانةٍ من عمودَين لا تسع جملة.
+/// وبديلُ ذلك أن ترسم الواجهةُ قواعدَها بنفسها بنفس التعابير النمطيّة، فتصير
+/// السياسةُ في مكانين ينحرفان صامتَين.
+class PasswordRule {
+  const PasswordRule({
+    required this.label,
+    required this.message,
+    required this.ok,
+  });
+
+  /// عنوانٌ قصيرٌ للعرض في شبكة القواعد.
+  final String label;
+
+  /// الرسالةُ الكاملة — تدخل `errors` حين لا تتحقّق القاعدة.
+  final String message;
+
+  final bool ok;
+}
+
 /// Secure password hashing service using PBKDF2-like approach
 /// with SHA-256 and multiple iterations for enhanced security.
 class SecurityService {
@@ -236,39 +259,49 @@ class SecurityService {
   /// Minimum password length
   static const int minPasswordLength = 8;
 
+  /// قواعدُ السياسة وحالُ كلٍّ منها على [password] — بترتيبها.
+  ///
+  /// هي **مصدرُ** `errors` في [validatePassword]، لا نسخةٌ ثانيةٌ منها:
+  /// الرسائلُ ونصُّها وترتيبُها تخرج من هنا وحدَه.
+  static List<PasswordRule> passwordRules(String password) => [
+        PasswordRule(
+          label: '$minPasswordLength أحرف على الأقل',
+          message: 'كلمة المرور يجب أن تكون $minPasswordLength أحرف على الأقل',
+          ok: password.length >= minPasswordLength,
+        ),
+        PasswordRule(
+          label: 'حرف كبير (A-Z)',
+          message: 'يجب أن تحتوي على حرف كبير واحد على الأقل (A-Z)',
+          ok: RegExp(r'[A-Z]').hasMatch(password),
+        ),
+        PasswordRule(
+          label: 'حرف صغير (a-z)',
+          message: 'يجب أن تحتوي على حرف صغير واحد على الأقل (a-z)',
+          ok: RegExp(r'[a-z]').hasMatch(password),
+        ),
+        PasswordRule(
+          label: 'رقم واحد على الأقل',
+          message: 'يجب أن تحتوي على رقم واحد على الأقل (0-9)',
+          ok: RegExp(r'[0-9]').hasMatch(password),
+        ),
+        PasswordRule(
+          label: 'رمز خاص',
+          message: 'يجب أن تحتوي على رمز خاص واحد على الأقل (!@#\$%^&*)',
+          ok: RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(password),
+        ),
+        PasswordRule(
+          label: 'بلا مسافات',
+          message: 'كلمة المرور لا يجب أن تحتوي على مسافات',
+          ok: !password.contains(' '),
+        ),
+      ];
+
   /// Password validation result
   static PasswordValidationResult validatePassword(String password) {
-    final errors = <String>[];
-
-    // Length check
-    if (password.length < minPasswordLength) {
-      errors.add('كلمة المرور يجب أن تكون $minPasswordLength أحرف على الأقل');
-    }
-
-    // Contains uppercase letter
-    if (!RegExp(r'[A-Z]').hasMatch(password)) {
-      errors.add('يجب أن تحتوي على حرف كبير واحد على الأقل (A-Z)');
-    }
-
-    // Contains lowercase letter
-    if (!RegExp(r'[a-z]').hasMatch(password)) {
-      errors.add('يجب أن تحتوي على حرف صغير واحد على الأقل (a-z)');
-    }
-
-    // Contains number
-    if (!RegExp(r'[0-9]').hasMatch(password)) {
-      errors.add('يجب أن تحتوي على رقم واحد على الأقل (0-9)');
-    }
-
-    // Contains special character
-    if (!RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(password)) {
-      errors.add('يجب أن تحتوي على رمز خاص واحد على الأقل (!@#\$%^&*)');
-    }
-
-    // No spaces
-    if (password.contains(' ')) {
-      errors.add('كلمة المرور لا يجب أن تحتوي على مسافات');
-    }
+    final errors = [
+      for (final r in passwordRules(password))
+        if (!r.ok) r.message,
+    ];
 
     return PasswordValidationResult(
       isValid: errors.isEmpty,

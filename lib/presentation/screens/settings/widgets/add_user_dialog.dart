@@ -9,6 +9,9 @@ import '../../../../data/providers/providers.dart';
 import '../../../../data/database/sync_interceptor.dart';
 import '../../../../domain/models/branch_assignment_scope.dart';
 import '../../../widgets/dialogs/app_form_dialog.dart';
+import '../../../picpos_shell/picpos_dialog.dart';
+import '../../../picpos_shell/picpos_panel_groups.dart';
+import '../../../settings_picpos/widgets/settings_blocks.dart';
 import 'package:ural_erp/l10n/app_localizations.dart';
 import 'add_role_dialog.dart';
 
@@ -41,6 +44,201 @@ class _AddUserDialogState extends AppFormDialogState<bool, AddUserDialog> {
   @override
   String? get dialogSaveLabel => 'حفظ المستخدم';
 
+  // ── حقولٌ يتشاركها الفرعان ────────────────────────────────────────────
+  //
+  // نسخةٌ واحدةٌ من كلِّ حقلٍ يستعملها جسمُ UralCash وجسمُ PicPos معاً: الفرقُ
+  // بينهما التجميعُ والترتيبُ، لا الحقول.
+
+  Widget _nameField() => TextField(
+        controller: nameController,
+        decoration: const InputDecoration(
+          labelText: 'الاسم الكامل *',
+          prefixIcon: Icon(PhosphorIconsLight.user),
+        ),
+      );
+
+  Widget _usernameField() => TextField(
+        controller: usernameController,
+        decoration: const InputDecoration(
+          labelText: 'اسم المستخدم *',
+          prefixIcon: Icon(PhosphorIconsLight.at),
+        ),
+      );
+
+  Widget _passwordField() => TextField(
+        controller: passwordController,
+        obscureText: true,
+        onChanged: (_) => setState(() {}),
+        decoration: const InputDecoration(
+          labelText: 'كلمة المرور *',
+          prefixIcon: Icon(PhosphorIconsLight.lock),
+        ),
+      );
+
+  // Issue 4 (Feature 018): MSR card code field — admins can either swipe
+  // a card (the MSR keyboard-emulation feeds the field naturally) or
+  // type the code manually. Stored on Users.cardCode and used by
+  // user_dao.authenticateByCardCode at the login screen.
+  Widget _cardCodeField() => TextField(
+        controller: cardCodeController,
+        decoration: const InputDecoration(
+          labelText: 'كود كارت MSR (اختياري)',
+          hintText: 'مرر الكارت أو اكتب الكود يدوياً',
+          prefixIcon: Icon(PhosphorIconsLight.identificationCard),
+        ),
+      );
+
+  /// لوحةُ `PANELS.user` — أربعُ مجموعاتٍ من خمسٍ في التصميم.
+  ///
+  /// ⚠️ **ومجموعةُ «المخازن المسموحة» غائبةٌ عن عمد**: هذا الحوارُ يُنشئ
+  /// الحساب، ونطاقُ المخازن يُضبَط من حوارٍ مستقلٍّ (`WarehouseAccessDialog`)
+  /// يكتب في `user_warehouse_access`. ومجموعةٌ هنا لن يقرأها الحفظُ وعدٌ
+  /// كاذب.
+  ///
+  /// و«تأكيدُ كلمة المرور» و«الهاتف» و«البريد» في التصميم لا أعمدةَ لها في
+  /// إنشاء المستخدم هنا، فلم تُرسَم.
+  ///
+  /// ⚠️ **وتحذيرُ «كل الفروع» بقي**: كان سطراً أحمرَ تحت زرِّ الاختيار، وصار
+  /// لافتةَ هويّةٍ تظهر بنفس الشرط. حذفُه عند النقل كان سيُخفي أنّ المستخدمَ
+  /// قد يخرج بلا فرعٍ فلا يرى فاتورةً أصدرها بنفسه.
+  @override
+  List<PicPosPanelGroup> buildPicposGroups(BuildContext context) {
+    final roles = ref.watch(allRolesProvider).value ?? [];
+    final branches = ref.watch(allBranchesProvider).value ?? [];
+    final pwd = passwordController.text;
+    final check = SecurityService.validatePassword(pwd);
+    final roleName =
+        roles.where((r) => r.id == selectedRoleId).firstOrNull?.name;
+    final allBranchesAllowed = fullBranchAccessRoleNames.contains(roleName);
+
+    return [
+      PicPosPanelGroup(
+        label: 'بيانات الحساب',
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            PicPosDialogRow(children: [_nameField(), _usernameField()]),
+            const SizedBox(height: 12),
+            PicPosPanelStrength(
+              field: _passwordField(),
+              strength: pwd.isEmpty ? 0 : check.strength,
+              strengthLabel: pwd.isEmpty
+                  ? ''
+                  : SecurityService.getPasswordStrengthLabel(check.strength),
+              rules: pwd.isEmpty
+                  ? const []
+                  : [
+                      for (final r in SecurityService.passwordRules(pwd))
+                        (label: r.label, ok: r.ok),
+                    ],
+            ),
+            const SizedBox(height: 12),
+            _cardCodeField(),
+          ],
+        ),
+      ),
+      PicPosPanelGroup(
+        label: 'الدور',
+        hint: 'دورٌ واحدٌ لكلّ مستخدم',
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            PicPosPanelChips(
+              children: [
+                PicPosPanelChip(
+                  label: 'بدون دور',
+                  selected: selectedRoleId == null,
+                  onTap: () => setState(() => selectedRoleId = null),
+                ),
+                for (final r in roles)
+                  PicPosPanelChip(
+                    label: r.name,
+                    tooltip: r.isSystemRole ? 'دورُ نظامٍ مبنيٌّ مسبقاً' : null,
+                    selected: selectedRoleId == r.id,
+                    onTap: () => setState(() => selectedRoleId = r.id),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            TextButton.icon(
+              icon: const Icon(PhosphorIconsBold.plus, size: 15),
+              label: const Text('دور جديد بصلاحيات مخصّصة'),
+              onPressed: () async {
+                final added = await showDialog<bool>(
+                  context: context,
+                  builder: (_) => const AddRoleDialog(),
+                );
+                if (added == true && mounted) setState(() {});
+              },
+            ),
+          ],
+        ),
+      ),
+      if (branches.isNotEmpty)
+        PicPosPanelGroup(
+          label: 'الفروع المسموحة',
+          hint: 'اختر فرعاً أو أكثر',
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              PicPosPanelChips(
+                children: [
+                  for (final b in branches)
+                    PicPosPanelChip(
+                      label: b.name,
+                      tooltip: b.address,
+                      selected:
+                          !_allBranches && selectedBranchIds.contains(b.id),
+                      onTap: () => setState(() {
+                        _allBranches = false;
+                        if (!selectedBranchIds.remove(b.id)) {
+                          selectedBranchIds.add(b.id);
+                        }
+                      }),
+                    ),
+                  PicPosPanelChip(
+                    label: 'كل الفروع (مدير / إدارة)',
+                    selected: _allBranches,
+                    onTap: () => setState(() {
+                      _allBranches = true;
+                      selectedBranchIds.clear();
+                    }),
+                  ),
+                ],
+              ),
+              if (_allBranches && !allBranchesAllowed) ...[
+                const SizedBox(height: 12),
+                const PicPosDialogBanner(
+                  icon: PhosphorIconsBold.warning,
+                  color: AppColors.warning,
+                  text: 'غيرُ متاحٍ لهذا الدور — وبلا إسنادِ فرعٍ لن يرى '
+                      'المستخدمُ أيَّ فاتورةٍ ولو أصدرها بنفسه.',
+                ),
+              ],
+            ],
+          ),
+        ),
+      PicPosPanelGroup(
+        label: 'خيارات الحساب',
+        child: PicPosPanelBox(
+          children: [
+            SettingsSwitchRow(
+              first: true,
+              icon: PhosphorIconsBold.arrowsClockwise,
+              title: 'فرض تغيير كلمة المرور عند أوّل دخول',
+              sub: 'سيُطلب منه تغييرُها فورَ تسجيل الدخول',
+              value: forcePasswordChange,
+              onChanged: (v) => setState(() => forcePasswordChange = v),
+            ),
+          ],
+        ),
+      ),
+    ];
+  }
+
   @override
   Widget buildFormContent(BuildContext context, AppLocalizations localizations) {
     final roles = ref.watch(allRolesProvider).value ?? [];
@@ -49,48 +247,18 @@ class _AddUserDialogState extends AppFormDialogState<bool, AddUserDialog> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        TextField(
-          controller: nameController,
-          decoration: const InputDecoration(
-            labelText: 'الاسم الكامل *',
-            prefixIcon: Icon(PhosphorIconsLight.user),
-          ),
-        ),
+        // الحقولُ نفسُها التي تجمّعها لوحةُ PicPos — نسخةٌ واحدةٌ لا اثنتان.
+        _nameField(),
         const SizedBox(height: 12),
-        TextField(
-          controller: usernameController,
-          decoration: const InputDecoration(
-            labelText: 'اسم المستخدم *',
-            prefixIcon: Icon(PhosphorIconsLight.at),
-          ),
-        ),
+        _usernameField(),
         const SizedBox(height: 12),
-        TextField(
-          controller: passwordController,
-          obscureText: true,
-          onChanged: (_) => setState(() {}),
-          decoration: const InputDecoration(
-            labelText: 'كلمة المرور *',
-            prefixIcon: Icon(PhosphorIconsLight.lock),
-          ),
-        ),
+        _passwordField(),
         if (passwordController.text.isNotEmpty) ...[
           const SizedBox(height: 8),
           _buildPasswordStrength(),
         ],
         const SizedBox(height: 12),
-        // Issue 4 (Feature 018): MSR card code field — admins can either swipe
-        // a card (the MSR keyboard-emulation feeds the field naturally) or
-        // type the code manually. Stored on Users.cardCode and used by
-        // user_dao.authenticateByCardCode at the login screen.
-        TextField(
-          controller: cardCodeController,
-          decoration: const InputDecoration(
-            labelText: 'كود كارت MSR (اختياري)',
-            hintText: 'مرر الكارت أو اكتب الكود يدوياً',
-            prefixIcon: Icon(PhosphorIconsLight.identificationCard),
-          ),
-        ),
+        _cardCodeField(),
         const SizedBox(height: 12),
         // Role dropdown + action buttons
         Row(

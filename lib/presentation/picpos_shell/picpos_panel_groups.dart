@@ -291,3 +291,128 @@ List<Widget> picposPanelBody(List<PicPosPanelGroup> groups) => [
         groups[i],
       ],
     ];
+
+/// جسمُ مجموعةِ «قوّة كلمة المرور» (`kind:'strength'` في التصميم).
+///
+/// صندوقٌ بأرضيّةِ الحقل يضمّ: حقلَ الكلمة، ثمّ خمسةَ أشرطةٍ ومعها وصفُ
+/// القوّة، ثمّ شبكةَ القواعد في عمودَين بعلامةِ تحقّقٍ لكلٍّ.
+///
+/// ⚠️ **لا يحسب قوّةً ولا قاعدة.** يأخذهما جاهزَين كي تبقى سياسةُ كلمة
+/// المرور في `SecurityService` وحدَه — وواجهةٌ تعيد تطبيقَ نفس التعابير
+/// النمطيّة تنحرف عن السياسة صامتةً أوّلَ ما تُعدَّل إحداهما.
+///
+/// ⚠️ **والقياساتُ من التصميم**: الصندوقُ استدارتُه ١٤ وحشوُه ١٦، والشريطُ
+/// ارتفاعُه ٧ باستدارة ٤ وبينها ٥، والشبكةُ عمودان بفاصل ٨.
+class PicPosPanelStrength extends StatelessWidget {
+  const PicPosPanelStrength({
+    super.key,
+    required this.field,
+    required this.strength,
+    required this.strengthLabel,
+    required this.rules,
+  });
+
+  /// حقلُ الكلمة نفسُه — يُمرَّر كما هو ليبقى واحداً في الفرعَين.
+  final Widget field;
+
+  /// ‏٠..١٠٠ كما يعطيها `SecurityService`.
+  final int strength;
+
+  final String strengthLabel;
+
+  final List<({String label, bool ok})> rules;
+
+  /// ⚠️ التصميمُ يرسم الحالةَ القويّةَ وحدَها (‏`#22C55E`)، فألوانُ الحالات
+  /// الأضعف ليست فيه — وأُخذت من لوحة العلامة لا من `Colors.red` وأخواتها
+  /// التي لا تتبع الثيم.
+  Color get _tone => strength < 30
+      ? AppColors.error
+      : (strength < 70 ? AppColors.warning : AppColors.success);
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final filled = (strength / 20).ceil().clamp(0, 5);
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: context.picposField,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: context.picposHairline),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          field,
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              for (var i = 0; i < 5; i++) ...[
+                if (i > 0) const SizedBox(width: 5),
+                Expanded(
+                  child: Container(
+                    height: 7,
+                    decoration: BoxDecoration(
+                      color: i < filled ? _tone : context.picposHairline,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(width: 11),
+              Text(
+                strengthLabel,
+                style: text.labelMedium
+                    ?.copyWith(color: _tone, fontWeight: FontWeight.w800),
+              ),
+            ],
+          ),
+          if (rules.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            // ⚠️ `Wrap` بعرضٍ محسوبٍ لا `GridView`: الشبكةُ داخلَ عمودٍ
+            //    متمرِّرٍ تحتاج ارتفاعاً مقيَّداً، و`shrinkWrap` عليها يعيد
+            //    حسابَ كلِّ خانةٍ في كلّ إطار.
+            LayoutBuilder(
+              builder: (context, c) {
+                final w = (c.maxWidth - 8) / 2;
+                return Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final r in rules)
+                      SizedBox(width: w, child: _rule(context, r)),
+                  ],
+                );
+              },
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _rule(BuildContext context, ({String label, bool ok}) r) {
+    final fg = r.ok ? AppColors.success : context.picposMuted;
+    return Row(
+      children: [
+        Icon(
+          r.ok ? PhosphorIconsBold.checkCircle : PhosphorIconsBold.circleDashed,
+          size: 14,
+          color: fg,
+        ),
+        const SizedBox(width: 7),
+        Expanded(
+          child: Text(
+            r.label,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context)
+                .textTheme
+                .labelSmall
+                ?.copyWith(color: fg, fontWeight: FontWeight.w600),
+          ),
+        ),
+      ],
+    );
+  }
+}
