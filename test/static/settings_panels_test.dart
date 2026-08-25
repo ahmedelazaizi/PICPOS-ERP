@@ -350,4 +350,69 @@ void main() {
       }
     });
   });
+
+  // ═══════════ اللوحتان اللتان كانتا `AlertDialog` خاماً ═══════════
+  //
+  // «طابعة جديدة» و«عطلة جديدة» لوحتان في التصميم، وكانتا حوارَي Material
+  // عاريَين داخلَ شاشتَين **مشتركتَين** — فخرجتا من حارس `settings_picpos`
+  // الذي يمسح مجلَّدَ الفورك وحدَه.
+  //
+  // ⚠️ والخطرُ هنا ليس الشكلَ بل **الحقلَ الذي يسقط في الطريق**: فرعٌ جديدٌ
+  //    يستدعي نفسَ دالّة الحفظ بمعاملاتٍ أقلَّ يحفظ طابعةً بلا منفذٍ أو عطلةً
+  //    بلا فرعٍ — بلا خطأٍ ولا إنذار.
+  group('لوحتا الطابعة والعطلة — فرعٌ لـPicPos وحفظٌ بلا نقصان', () {
+    String read(String p) => _code(File(p).readAsStringSync());
+
+    const printers = 'lib/presentation/screens/printers_screen.dart';
+    const holidays =
+        'lib/presentation/screens/settings/work_holidays_screen.dart';
+
+    for (final e in {'الطابعة': printers, 'العطلة': holidays}.entries) {
+      test('لوحةُ ${e.key}: غلافُ PicPos مضافٌ وحوارُ UralCash باقٍ', () {
+        final src = read(e.value);
+        expect(src.contains('Brand.isPicPos'), isTrue,
+            reason: '${e.value}: لا فرعَ لهويّة PicPos — فاللوحةُ تظهر '
+                'حوارَ Material خاماً في أظهرِ لحظة.');
+        expect(src.contains('PicPosDialog('), isTrue);
+        expect(src.contains('AlertDialog('), isTrue,
+            reason: '${e.value}: حوارُ UralCash حُذف — والنقلُ مشروطٌ بأنّ '
+                'الفرعَ الآخرَ لا يتبدّل فيه بايت.');
+      });
+    }
+
+    test('وحفظُ الطابعة يمرّر كلَّ حقولها في الفرعَين', () {
+      final src = read(printers);
+      // ⚠️ لا يُفحَص اسمُ المعامل وحدَه: `printerType: printerType` مكرّرٌ
+      //    داخلَ `_savePrinter` نفسِها، فعدُّه يمرّ ولو سقط من نداءٍ كامل.
+      //    فالمفحوصُ الصيغُ التي لا تظهر إلّا في موضعَي النداء.
+      const args = [
+        'name: nameController.text',
+        'port: portController.text',
+        'ipAddress: ipController.text',
+        'portNumber: int.tryParse(portNumberController.text)',
+        'description: descriptionController.text',
+        'purpose: printerPurpose',
+      ];
+      for (final a in args) {
+        expect(RegExp(RegExp.escape(a)).allMatches(src).length, 2,
+            reason: 'المعاملُ «$a» ليس في موضعَي النداء كلَيهما — فأحدُ '
+                'الفرعَين يحفظ طابعةً ناقصةَ حقلٍ بلا خطأ.');
+      }
+    });
+
+    test('وحفظُ العطلة يمرّر كلَّ حقولها في الفرعَين', () {
+      final src = read(holidays);
+      const args = [
+        'name: nameCtrl.text',
+        'weekday: isWeekday ? weekday : null',
+        'date: isWeekday ? null : date',
+        'branchId: branchId',
+      ];
+      for (final a in args) {
+        expect(RegExp(RegExp.escape(a)).allMatches(src).length, 2,
+            reason: 'المعاملُ «$a» ليس في موضعَي النداء كلَيهما — فأحدُ '
+                'الفرعَين يحفظ عطلةً ناقصةَ حقل.');
+      }
+    });
+  });
 }

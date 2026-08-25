@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import '../../core/config/brand.dart';
 import '../picpos_shell/picpos_body_handle.dart';
+import '../picpos_shell/picpos_dialog.dart';
+import '../picpos_shell/picpos_panel_groups.dart';
 import '../picpos_shell/picpos_surface.dart';
+import '../settings_picpos/widgets/settings_blocks.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -275,6 +279,186 @@ class _PrintersBodyState extends ConsumerState<PrintersBody> {
     String printerType = printer?.printerType ?? 'thermal';
     String printerPurpose = printer?.purpose ?? 'pos_receipt';
     bool isActive = printer?.isActive ?? true;
+
+    // ═══ لوحةُ `PANELS.printer` بغلاف PicPos ═══
+    //
+    // ⚠️ **خروجٌ مبكّرٌ لا تفريعٌ داخل الشجرة**: حوارُ UralCash تحت هذا السطرِ
+    //    لا يُمَسّ حرفاً.
+    //
+    // ⚠️ **وثلاثُ مجموعاتٍ من التصميم لم تُنقَل**: «عرض الورق» و«الربط بنقاط
+    //    البيع» لا عمودَ لهما في `printers`، و«خيارات» التصميم (‏افتراضيّة ·
+    //    فتحُ الدرج · قطعُ الورق) كذلك. وتنبيهُ التصميم يحيل إلى «طباعة
+    //    تجريبيّة من كارت الطابعة» — ولا زرَّ تجريبيّاً في هذه الشاشة، فلم
+    //    يُنقَل التنبيهُ أيضاً.
+    if (Brand.isPicPos) {
+      const purposes = {
+        'pos_receipt': 'إيصال البيع السريع',
+        'kitchen': 'طابعة المطبخ',
+        'tables': 'طابعة الطاولات',
+        'barcode': 'طابعة الباركود',
+      };
+      const links = {'usb': 'USB', 'thermal': 'COM', 'network': 'شبكة'};
+
+      await showDialog(
+        context: context,
+        builder: (dialogCtx) => StatefulBuilder(
+          builder: (ctx, setDialogState) {
+            final groups = <PicPosPanelGroup>[
+              PicPosPanelGroup(
+                label: 'تعريف الطابعة',
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextField(
+                      controller: nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'اسم الطابعة *',
+                        hintText: 'مثال: طابعة المطبخ',
+                        prefixIcon: Icon(PhosphorIconsLight.tag),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: descriptionController,
+                      maxLines: 2,
+                      decoration: const InputDecoration(
+                        labelText: 'وصف (اختياري)',
+                        hintText: 'مثال: للأطعمة الساخنة',
+                        prefixIcon: Icon(PhosphorIconsLight.noteBlank),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              PicPosPanelGroup(
+                label: 'الغرض من الطابعة',
+                hint: 'غرضٌ واحدٌ لكلّ طابعة',
+                child: PicPosPanelChips(
+                  children: [
+                    for (final e in purposes.entries)
+                      PicPosPanelChip(
+                        label: e.value,
+                        selected: printerPurpose == e.key,
+                        onTap: () =>
+                            setDialogState(() => printerPurpose = e.key),
+                      ),
+                  ],
+                ),
+              ),
+              PicPosPanelGroup(
+                label: 'الاتّصال',
+                hint: 'يحدّد الحقلَ المطلوبَ تحته',
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    PicPosPanelChips(
+                      children: [
+                        for (final e in links.entries)
+                          PicPosPanelChip(
+                            label: e.value,
+                            selected: printerType == e.key,
+                            onTap: () =>
+                                setDialogState(() => printerType = e.key),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    if (printerType == 'usb')
+                      TextField(
+                        controller: portController,
+                        decoration: const InputDecoration(
+                          labelText: 'اسم الطابعة في النظام',
+                          hintText: 'اختر من طابعات Windows',
+                          prefixIcon: Icon(PhosphorIconsLight.plug),
+                          helperText:
+                              'اسم الطابعة كما يظهر في إعدادات الطابعات',
+                        ),
+                      )
+                    else if (printerType == 'thermal')
+                      TextField(
+                        controller: portController,
+                        decoration: const InputDecoration(
+                          labelText: 'منفذ COM',
+                          hintText: 'مثال: COM3',
+                          prefixIcon: Icon(PhosphorIconsLight.plugsConnected),
+                        ),
+                      )
+                    else
+                      PicPosDialogRow(children: [
+                        TextField(
+                          controller: ipController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'عنوان IP',
+                            hintText: 'مثال: 192.168.1.100',
+                            prefixIcon: Icon(PhosphorIconsLight.wifiHigh),
+                          ),
+                        ),
+                        TextField(
+                          controller: portNumberController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'رقم المنفذ',
+                            hintText: '9100',
+                            prefixIcon: Icon(PhosphorIconsLight.hash),
+                          ),
+                        ),
+                      ]),
+                  ],
+                ),
+              ),
+              PicPosPanelGroup(
+                label: 'خيارات',
+                child: PicPosPanelBox(
+                  children: [
+                    SettingsSwitchRow(
+                      first: true,
+                      icon: PhosphorIconsBold.power,
+                      title: 'طابعة نشطة',
+                      sub: 'تعطيلُها يوقفها مؤقّتاً عن الطباعة',
+                      value: isActive,
+                      onChanged: (v) => setDialogState(() => isActive = v),
+                    ),
+                  ],
+                ),
+              ),
+            ];
+
+            return PicPosDialog(
+              icon: isEditing
+                  ? PhosphorIconsBold.pencil
+                  : PhosphorIconsBold.printer,
+              title: isEditing ? 'تعديل طابعة' : 'إضافة طابعة جديدة',
+              subtitle: 'عرّف الطابعةَ واربطها بغرضِ طباعةٍ ونوعِ اتّصال',
+              width: 660,
+              onCancel: () => Navigator.pop(dialogCtx),
+              primaryAction: PicPosDialogAction(
+                label: isEditing ? 'حفظ' : 'إضافة الطابعة',
+                icon: isEditing
+                    ? PhosphorIconsBold.floppyDisk
+                    : PhosphorIconsBold.check,
+                onPressed: () => _savePrinter(
+                  printer: printer,
+                  name: nameController.text,
+                  port: portController.text,
+                  ipAddress: ipController.text,
+                  portNumber: int.tryParse(portNumberController.text),
+                  printerType: printerType,
+                  purpose: printerPurpose,
+                  description: descriptionController.text,
+                  isActive: isActive,
+                ),
+              ),
+              indexLabels: picposPanelLabels(groups),
+              body: picposPanelBody(groups),
+            );
+          },
+        ),
+      );
+      return;
+    }
 
     await showDialog(
       context: context,

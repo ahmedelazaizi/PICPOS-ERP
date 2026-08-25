@@ -3,10 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'dart:ui' as ui;
+import '../../../core/config/brand.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../data/providers/providers.dart';
 import '../../picpos_shell/picpos_body_handle.dart';
+import '../../picpos_shell/picpos_dialog.dart';
+import '../../picpos_shell/picpos_panel_groups.dart';
 import '../../widgets/dialogs/app_confirm_dialog.dart';
 
 /// أسماءُ أيام الأسبوع باصطلاح `DateTime.weekday` (‏١ = الاثنين … ٧ = الأحد).
@@ -162,6 +165,148 @@ class _WorkHolidaysBodyState extends ConsumerState<WorkHolidaysBody> {
     int weekday = DateTime.friday;
     DateTime date = DateTime.now();
     int? branchId;
+
+    // ═══ لوحةُ `PANELS.holiday` بغلاف PicPos ═══
+    //
+    // ⚠️ **خروجٌ مبكّرٌ لا تفريعٌ داخل الشجرة**: حوارُ UralCash تحت هذا
+    //    السطرِ لا يُمَسّ حرفاً — والشرطُ الذي يجعل النقلَ مشروعاً أنّ الفرعَ
+    //    الآخرَ لا يتبدّل فيه بايت.
+    //
+    // ⚠️ **ونصفُ مجموعات التصميم لم تُنقَل لأنّ الجدولَ لا يحملها**: «النوع»
+    //    (رسميّةٌ مدفوعة …) و«من/إلى تاريخ» و«سلوك النظام في العطلة» (منعُ
+    //    فتح ورديّاتٍ · حسابُ الحضور إضافيّاً · تكرارٌ سنويّ) — وصفُّ
+    //    `work_holidays` اسمٌ، ويومُ أسبوعٍ **أو** تاريخٌ واحد، وفرعٌ اختياريّ.
+    //    ومجموعةٌ لا يقرأها الحفظُ وعدٌ كاذب.
+    if (Brand.isPicPos) {
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (dialogCtx) => StatefulBuilder(
+          builder: (ctx, setDialogState) {
+            final groups = <PicPosPanelGroup>[
+              PicPosPanelGroup(
+                label: 'بيانات العطلة',
+                child: TextField(
+                  controller: nameCtrl,
+                  autofocus: true,
+                  decoration: const InputDecoration(
+                    labelText: 'اسم العطلة',
+                    hintText: 'مثال: عيد الفطر',
+                    prefixIcon: Icon(PhosphorIconsLight.calendarStar),
+                  ),
+                ),
+              ),
+              PicPosPanelGroup(
+                label: 'التكرار',
+                hint: 'يومٌ أسبوعيٌّ يتكرّر، أو تاريخٌ واحد',
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    PicPosPanelChips(children: [
+                      PicPosPanelChip(
+                        label: 'يومٌ أسبوعيٌّ متكرّر',
+                        selected: isWeekday,
+                        onTap: () => setDialogState(() => isWeekday = true),
+                      ),
+                      PicPosPanelChip(
+                        label: 'تاريخٌ محدَّد',
+                        selected: !isWeekday,
+                        onTap: () => setDialogState(() => isWeekday = false),
+                      ),
+                    ]),
+                    const SizedBox(height: 12),
+                    if (isWeekday)
+                      PicPosPanelChips(children: [
+                        for (var d = 1; d <= 7; d++)
+                          PicPosPanelChip(
+                            label: _kWeekdayNames[d],
+                            selected: weekday == d,
+                            onTap: () => setDialogState(() => weekday = d),
+                          ),
+                      ])
+                    else
+                      Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: OutlinedButton.icon(
+                          icon: const Icon(PhosphorIconsBold.calendar),
+                          label: Text(
+                            DateFormat('yyyy/MM/dd', 'ar').format(date),
+                          ),
+                          onPressed: () async {
+                            final picked = await showDatePicker(
+                              context: ctx,
+                              initialDate: date,
+                              firstDate: DateTime(2000),
+                              lastDate: DateTime(2100),
+                            );
+                            if (picked != null) {
+                              setDialogState(() => date = picked);
+                            }
+                          },
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              PicPosPanelGroup(
+                label: 'الفرع المتأثّر',
+                hint: 'فرعٌ واحدٌ أو كلُّ الفروع',
+                child: PicPosPanelChips(children: [
+                  PicPosPanelChip(
+                    label: 'كل الفروع',
+                    selected: branchId == null,
+                    onTap: () => setDialogState(() => branchId = null),
+                  ),
+                  for (final b in visibleBranches)
+                    PicPosPanelChip(
+                      label: b.name,
+                      selected: branchId == b.id,
+                      onTap: () => setDialogState(() => branchId = b.id),
+                    ),
+                ]),
+              ),
+            ];
+
+            return PicPosDialog(
+              icon: PhosphorIconsBold.calendarPlus,
+              title: 'إضافة عطلة',
+              // ⚠️ وصفُ التصميم «يُغلق البيع في هذه المدة ويُحسب الأجر حسب
+              //    النوع» لم يُنقَل: العطلةُ تُقرأ من `holidaysInMonth` في
+              //    حساب الرواتب، ولا يمنع البيعَ شيءٌ بسببها.
+              subtitle: 'يومُ العطلة يُستثنى من حسم الغياب في حساب الرواتب',
+              width: 660,
+              onCancel: () => Navigator.pop(dialogCtx, false),
+              primaryAction: PicPosDialogAction(
+                label: 'إضافة العطلة',
+                icon: PhosphorIconsBold.check,
+                onPressed: () async {
+                  if (nameCtrl.text.trim().isEmpty) return;
+                  try {
+                    final repo = ref.read(hrRepositoryProvider);
+                    await repo.addWorkHoliday(
+                      name: nameCtrl.text,
+                      weekday: isWeekday ? weekday : null,
+                      date: isWeekday ? null : date,
+                      branchId: branchId,
+                    );
+                    if (dialogCtx.mounted) Navigator.pop(dialogCtx, true);
+                  } catch (e) {
+                    // ArgumentError من `addWorkHoliday` — يُعرَض لا يُبتلَع.
+                    if (dialogCtx.mounted) {
+                      AppToast.show(dialogCtx, '$e', type: ToastType.error);
+                    }
+                  }
+                },
+              ),
+              indexLabels: picposPanelLabels(groups),
+              body: picposPanelBody(groups),
+            );
+          },
+        ),
+      );
+      if (ok == true) _load();
+      return;
+    }
 
     final saved = await showDialog<bool>(
       context: context,
