@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import '../../../../core/config/brand.dart';
 import '../../../../core/permissions/permission_codes.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/uuid_v7.dart';
@@ -26,9 +27,14 @@ class _AddUserDialogState extends AppFormDialogState<bool, AddUserDialog> {
   late final nameController = registerController();
   late final usernameController = registerController();
   late final passwordController = registerController();
+  late final confirmController = registerController();
   late final cardCodeController = registerController();
   int? selectedRoleId;
   bool forcePasswordChange = true;
+
+  /// «الحساب نشط» في `PANELS.user` — عمودٌ قائمٌ (`Users.isActive`) يضبطه
+  /// `toggleUserActive`. والإنشاءُ يبدأ نشطاً كما في التصميم.
+  bool isActive = true;
   bool _allBranches = true;
   final List<int> selectedBranchIds = [];
 
@@ -60,8 +66,29 @@ class _AddUserDialogState extends AppFormDialogState<bool, AddUserDialog> {
   Widget _usernameField() => TextField(
         controller: usernameController,
         decoration: const InputDecoration(
-          labelText: 'اسم المستخدم *',
+          // نصُّ التصميم: «اسم الدخول». وهو أدقُّ ممّا كان («اسم المستخدم»)
+          // لأنّ الحقلَ الآخرَ «الاسم الكامل» هو اسمُ المستخدم فعلاً.
+          labelText: 'اسم الدخول *',
           prefixIcon: Icon(PhosphorIconsLight.at),
+        ),
+      );
+
+  /// «تأكيد كلمة المرور» في `PANELS.user`.
+  ///
+  /// ⚠️ **حقلٌ بلا عمودٍ — وهذا مشروعٌ هنا خلافاً للهاتف والبريد.** لا يُحفَظ
+  /// التأكيدُ في القاعدة أصلاً؛ عملُه أن يمنع خطأً مطبعيّاً يقفل الحسابَ على
+  /// صاحبه قبل أن يدخل مرّة. فهو تحقّقٌ لا حقلُ بيانات.
+  Widget _confirmField() => TextField(
+        controller: confirmController,
+        obscureText: true,
+        onChanged: (_) => setState(() {}),
+        decoration: InputDecoration(
+          labelText: 'تأكيد كلمة المرور *',
+          prefixIcon: const Icon(PhosphorIconsLight.lock),
+          errorText: confirmController.text.isNotEmpty &&
+                  confirmController.text != passwordController.text
+              ? 'لا تطابق كلمةَ المرور'
+              : null,
         ),
       );
 
@@ -95,8 +122,9 @@ class _AddUserDialogState extends AppFormDialogState<bool, AddUserDialog> {
   /// يكتب في `user_warehouse_access`. ومجموعةٌ هنا لن يقرأها الحفظُ وعدٌ
   /// كاذب.
   ///
-  /// و«تأكيدُ كلمة المرور» و«الهاتف» و«البريد» في التصميم لا أعمدةَ لها في
-  /// إنشاء المستخدم هنا، فلم تُرسَم.
+  /// ⚠️ **و«الهاتف» و«البريد» وحدَهما بلا أعمدةٍ** في `Users` — فلم تُرسَما.
+  /// أمّا «تأكيدُ كلمة المرور» فرُسم: هو تحقّقٌ لا عمودٌ، ولا يحتاج قاعدةً كي
+  /// يمنع خطأً مطبعيّاً يقفل الحسابَ على صاحبه قبل أوّل دخول.
   ///
   /// ⚠️ **وتحذيرُ «كل الفروع» بقي**: كان سطراً أحمرَ تحت زرِّ الاختيار، وصار
   /// لافتةَ هويّةٍ تظهر بنفس الشرط. حذفُه عند النقل كان سيُخفي أنّ المستخدمَ
@@ -133,6 +161,8 @@ class _AddUserDialogState extends AppFormDialogState<bool, AddUserDialog> {
                         (label: r.label, ok: r.ok),
                     ],
             ),
+            const SizedBox(height: 12),
+            _confirmField(),
             const SizedBox(height: 12),
             _cardCodeField(),
           ],
@@ -227,8 +257,15 @@ class _AddUserDialogState extends AppFormDialogState<bool, AddUserDialog> {
           children: [
             SettingsSwitchRow(
               first: true,
+              icon: PhosphorIconsBold.checkCircle,
+              title: 'الحساب نشط',
+              sub: 'يمكنه تسجيل الدخول فوراً',
+              value: isActive,
+              onChanged: (v) => setState(() => isActive = v),
+            ),
+            SettingsSwitchRow(
               icon: PhosphorIconsBold.arrowsClockwise,
-              title: 'فرض تغيير كلمة المرور عند أوّل دخول',
+              title: 'تغيير كلمة المرور أول دخول',
               sub: 'سيُطلب منه تغييرُها فورَ تسجيل الدخول',
               value: forcePasswordChange,
               onChanged: (v) => setState(() => forcePasswordChange = v),
@@ -469,6 +506,13 @@ class _AddUserDialogState extends AppFormDialogState<bool, AddUserDialog> {
       throw 'يجب ملء جميع الحقول المطلوبة';
     }
 
+    // ⚠️ **يُفحَص التأكيدُ في فرع PicPos وحدَه** — لأنّ حقلَه يُرسَم هناك
+    //    وحدَه. وفرضُه على جسم UralCash يمنع كلَّ إنشاءٍ فيه بحقلٍ لا يراه
+    //    المشغّل: الشرطُ يقرأ متحكّماً فارغاً أبداً فيرفض دوماً.
+    if (Brand.isPicPos && confirmController.text != password) {
+      throw 'تأكيدُ كلمة المرور لا يطابقها';
+    }
+
     if (selectedRoleId == null) {
       throw 'يجب اختيار دور للمستخدم';
     }
@@ -553,6 +597,12 @@ class _AddUserDialogState extends AppFormDialogState<bool, AddUserDialog> {
     );
     if (!_allBranches && selectedBranchIds.isNotEmpty) {
       await authRepo.setUserBranchAccess(newUserId, selectedBranchIds);
+    }
+
+    // «الحساب نشط» — الإنشاءُ ينشئ نشطاً (‏`Users.isActive` افتراضُها `true`)،
+    // فلا يُنادى المبدِّلُ إلّا حين يُطفئه المشغّلُ صراحةً.
+    if (!isActive) {
+      await authRepo.toggleUserActive(userId: newUserId, isActive: false);
     }
 
     // #Forensic Log: User create

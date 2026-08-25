@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../data/providers/providers.dart';
 import '../../../../services/client_write_interceptor.dart';
+import '../../../../services/login_rate_limiter.dart';
 import '../../../widgets/dialogs/app_form_dialog.dart';
 import '../../../picpos_shell/picpos_dialog.dart';
 import '../../../picpos_shell/picpos_panel_groups.dart';
+import '../../../settings_picpos/widgets/settings_blocks.dart';
 import '../../../../core/theme/app_colors.dart';
 import 'package:ural_erp/l10n/app_localizations.dart';
 
@@ -28,13 +30,17 @@ class _SetPinDialogState extends AppFormDialogState<bool, SetPinDialog> {
   @override
   IconData get dialogIcon => PhosphorIconsBold.password;
 
+  // ⚠️ كان «أربعةُ أرقام» بينما التلميحُ والحفظُ يقبلان من أربعةٍ إلى ستّة —
+  //    سطران في الحوار نفسِه يقولان عددَين. والمقيسُ هو ما يقبله الحفظ.
   @override
-  String? get dialogSubtitle => 'أربعةُ أرقامٍ للدخول السريع على نقطة البيع';
+  String? get dialogSubtitle =>
+      '${widget.user.displayName} — من ٤ إلى ٦ أرقامٍ للدخول السريع على '
+      'نقطة البيع';
 
   @override
   String? get dialogSaveLabel => 'حفظ الـ PIN';
 
-  /// لوحةُ `PANELS.pin` — الرقمُ ثمّ التنبيه.
+  /// لوحةُ `PANELS.pin` — الرقمُ ثمّ الخياراتُ ثمّ التنبيه.
   ///
   /// ⚠️ **ولوحةُ المفاتيح الرقميّةُ في التصميم لم تُنقَل**: هي في التصميم
   /// أربعُ نقاطٍ ولوحةُ ٣×٤، وهنا حقلٌ يقبل من أربعة إلى ستّة أرقامٍ —
@@ -50,6 +56,31 @@ class _SetPinDialogState extends AppFormDialogState<bool, SetPinDialog> {
           label: 'الرقم السري الجديد',
           hint: 'من ٤ إلى ٦ أرقام',
           child: _pinField(),
+        ),
+        PicPosPanelGroup(
+          label: 'خيارات',
+          child: PicPosPanelBox(
+            children: [
+              // ⚠️ **مفتاحٌ معطَّلٌ لا مفتاحٌ يعمل — والفرقُ مقصود.** التصميمُ
+              //    يرسم «قفل الحساب بعد ٥ محاولات» مفتاحاً لكلّ مستخدم،
+              //    والبرنامجُ ينفّذه **سياسةً عامّةً دائمةَ التفعيل** في
+              //    `LoginRateLimiter` — لا عمودَ لكلّ مستخدم يُطفئها.
+              //
+              //    فإخفاؤه كان سيُخفي حمايةً قائمةً، ورسمُه قابلاً للتبديل
+              //    كان سيَعِد بتحكّمٍ لا وجودَ له. والعددان مقروءان من الثابت
+              //    نفسِه فلا يكذبان لو تغيّر.
+              SettingsSwitchRow(
+                first: true,
+                icon: PhosphorIconsBold.shieldWarning,
+                title: 'قفل الحساب بعد '
+                    '${LoginRateLimiter.maxAttempts} محاولاتٍ فاشلة',
+                sub: 'سياسةٌ عامّةٌ مفعَّلةٌ دائماً — القفلُ '
+                    '${LoginRateLimiter.lockoutDuration.inMinutes} دقيقة',
+                value: true,
+                onChanged: null,
+              ),
+            ],
+          ),
         ),
         const PicPosPanelGroup(
           label: 'تنبيه',

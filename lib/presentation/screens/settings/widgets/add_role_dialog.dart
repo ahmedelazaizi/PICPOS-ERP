@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../data/providers/providers.dart';
 import '../../../../data/database/sync_interceptor.dart';
 import '../../../widgets/dialogs/app_form_dialog.dart';
+import '../../../picpos_shell/picpos_dialog.dart';
 import '../../../picpos_shell/picpos_panel_groups.dart';
 import 'package:ural_erp/l10n/app_localizations.dart';
 
@@ -15,6 +17,10 @@ class AddRoleDialog extends AppFormDialog<bool> {
 
 class _AddRoleDialogState extends AppFormDialogState<bool, AddRoleDialog> {
   late final nameController = registerController('');
+  late final descController = registerController('');
+
+  /// «نسخ الصلاحيات من» — معرِّفُ الدور المصدر، أو `null` = ابدأ فارغاً.
+  int? copyFromRoleId;
 
   @override
   String get dialogTitle => 'إضافة دور جديد';
@@ -22,28 +28,74 @@ class _AddRoleDialogState extends AppFormDialogState<bool, AddRoleDialog> {
   @override
   IconData get dialogIcon => PhosphorIconsBold.shieldPlus;
 
-  /// ⚠️ التصميمُ يعطي لوحةَ `role` مجموعتَي «نسخ الصلاحيات من» و«مجموعات
-  /// الصلاحيات». وهذا الحوارُ **يُنشئ الدورَ وحدَه** ثمّ تُضبَط صلاحياتُه من
-  /// «إدارة الصلاحيات» — فالوصفُ يقول ذلك بدل أن يعد بما لا يفعله.
   @override
   String? get dialogSubtitle =>
-      'عرِّف الدورَ ثمّ اضبط صلاحياته من «إدارة الصلاحيات»';
+      'ابدأ من دورٍ قائمٍ ثمّ عدّل الصلاحيات من «مصفوفة الأدوار»';
 
   @override
   String? get dialogSaveLabel => 'إنشاء الدور';
 
-  /// لوحةُ `PANELS.role` — مجموعةٌ واحدةٌ لأنّ الحوارَ يُنشئ الدورَ وحدَه.
+  /// لوحةُ `PANELS.role`.
   ///
-  /// ⚠️ **ومجموعتا التصميم الأخريان لم تُنقلا عمداً**: «نسخ الصلاحيات من»
-  /// و«مجموعات الصلاحيات» تَعِدان بضبطِ ١٤٢ صلاحيةً من هنا، والحوارُ يكتب
-  /// اسمَ الدور فقط ثمّ تُضبَط صلاحياتُه من «إدارة الصلاحيات». ومجموعةٌ لا
-  /// تُحفَظ أسوأُ من غيابها.
+  /// ⚠️ **«نسخ الصلاحيات من» نُقلت لأنّها مسنودةٌ فعلاً**: القراءةُ
+  /// `getPermissionsForRole` والكتابةُ `setRolePermissions` كلتاهما قائمتان،
+  /// فالنسخُ نداءان لا ميزةٌ تُبنى. وكانت مُسقطةً في الجولة السابقة على أنّ
+  /// «الحوارَ يكتب الاسمَ فقط» — وهذا وصفُ ما كان لا حدُّ ما يمكن.
   ///
-  /// ومجموعةٌ واحدةٌ ⇒ لا عمودَ أرقام — فهرسٌ برقمٍ واحدٍ لا يفهرس شيئاً.
+  /// ⚠️ **و«الأولوية» ما زالت غائبة**: لا عمودَ لها في `Roles`، وحقلٌ لا
+  /// يقرأه الحفظُ وعدٌ كاذب.
+  ///
+  /// ⚠️ **و«مجموعات الصلاحيات» بندُ سؤالٍ للمالك لا إسقاطٌ صامت**: التصميمُ
+  /// يعرض ستَّ مجموعاتٍ بمفاتيح، والمزروعُ في البرنامج **تسعٌ وعشرون** فئةً.
+  /// وقائمةٌ بتسعٍ وعشرين مفتاحاً في حوارِ إنشاءٍ تُكرّر ما تفعله «مصفوفة
+  /// الأدوار والصلاحيات» بدقّةٍ أعلى. ونسخُ دورٍ قائمٍ يغطّي حاجةَ البداية.
   @override
-  List<PicPosPanelGroup> buildPicposGroups(BuildContext context) => [
-        PicPosPanelGroup(label: 'تعريف الدور', child: _nameField()),
-      ];
+  List<PicPosPanelGroup> buildPicposGroups(BuildContext context) {
+    final roles = ref.watch(allRolesProvider).value ?? const <Role>[];
+    return [
+      PicPosPanelGroup(
+        label: 'تعريف الدور',
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _nameField(),
+            const SizedBox(height: 12),
+            _descField(),
+          ],
+        ),
+      ),
+      PicPosPanelGroup(
+        label: 'نسخ الصلاحيات من',
+        hint: 'يبدأ الدورُ الجديدُ بنفس صلاحيات المختار',
+        child: PicPosPanelChips(
+          children: [
+            PicPosPanelChip(
+              label: 'ابدأ فارغاً',
+              selected: copyFromRoleId == null,
+              onTap: () => setState(() => copyFromRoleId = null),
+            ),
+            for (final r in roles)
+              PicPosPanelChip(
+                label: r.name,
+                selected: copyFromRoleId == r.id,
+                onTap: () => setState(() => copyFromRoleId = r.id),
+              ),
+          ],
+        ),
+      ),
+      const PicPosPanelGroup(
+        label: 'تنبيه',
+        child: PicPosDialogBanner(
+          icon: PhosphorIconsBold.warning,
+          color: AppColors.warning,
+          text: 'تعديلُ صلاحيات دورٍ يسري فوراً على كلّ مستخدميه، وأيُّ '
+              'مستخدمٍ مفتوحةٌ له جلسةٌ يُطبَّق عليه التغييرُ عند العملية '
+              'التالية.',
+        ),
+      ),
+    ];
+  }
 
   Widget _nameField() => TextField(
         controller: nameController,
@@ -52,6 +104,16 @@ class _AddRoleDialogState extends AppFormDialogState<bool, AddRoleDialog> {
           labelText: 'اسم الدور',
           hintText: 'مثلاً: مدير صالة، محاسب ثان',
           prefixIcon: Icon(PhosphorIconsLight.identificationCard, size: 20),
+        ),
+      );
+
+  /// «الوصف» في التصميم — و`Roles.description` عمودٌ قائمٌ يقبله `insertRole`.
+  Widget _descField() => TextField(
+        controller: descController,
+        decoration: const InputDecoration(
+          labelText: 'الوصف',
+          hintText: 'وصفٌ مختصرٌ لمهامّ الدور',
+          prefixIcon: Icon(PhosphorIconsLight.textAlignRight, size: 20),
         ),
       );
 
@@ -70,6 +132,7 @@ class _AddRoleDialogState extends AppFormDialogState<bool, AddRoleDialog> {
     if (name.isEmpty) {
       throw 'يرجى إدخال اسم الدور';
     }
+    final desc = descController.text.trim();
 
     // In client mode: push role to server first so it gets a server-authoritative ID.
     // The server then broadcasts the role back via sync, and the local insertRole
@@ -80,7 +143,34 @@ class _AddRoleDialogState extends AppFormDialogState<bool, AddRoleDialog> {
     }
 
     final authRepo = ref.read(authRepositoryProvider);
-    await authRepo.insertRole(name: name);
+    final newRoleId = await authRepo.insertRole(
+      name: name,
+      description: desc.isEmpty ? null : desc,
+    );
+
+    // «نسخ الصلاحيات من» — قراءةٌ ثمّ كتابةٌ بواجهتَين قائمتَين.
+    //
+    // ومأمونٌ في وضع العميل رغم أنّ `newRoleId` معرِّفٌ **محلّيّ**:
+    // `setRolePermissions` في المستودع تُرسل `roleGlobalId` و`roleName` مع
+    // الطلب، فيحلُّ الخادمُ الدورَ بالمعرِّف العالميِّ لا بالرقم — و`insertRole`
+    // تسكّ globalId عند الإنشاء.
+    //
+    // ⚠️ **ولا يُبتلَع فشلُ النسخ صامتاً.** الدورُ أُنشئ فعلاً قبل هذا
+    //    السطر؛ فلو فشل النسخُ وسكتنا لخرج المشغّلُ بدورٍ **فارغِ
+    //    الصلاحيات** وهو يظنّه نسخةً من المصدر. فيُبلَّغ بالفشل ويبقى
+    //    الدورُ قائماً ليُكمله من المصفوفة.
+    if (copyFromRoleId != null) {
+      try {
+        final src = await authRepo.getPermissionsForRole(copyFromRoleId!);
+        await authRepo.setRolePermissions(
+          newRoleId,
+          src.map((p) => p.id).toList(),
+        );
+      } catch (e) {
+        throw 'أُنشئ الدورُ «$name» لكن تعذّر نسخُ الصلاحيات: $e — '
+            'اضبطها من «مصفوفة الأدوار والصلاحيات».';
+      }
+    }
     return true;
   }
 }

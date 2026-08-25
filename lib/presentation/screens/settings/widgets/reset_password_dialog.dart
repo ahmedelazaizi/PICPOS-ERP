@@ -5,6 +5,7 @@ import '../../../../services/security_service.dart';
 import '../../../../data/providers/providers.dart';
 import '../../../../services/client_write_interceptor.dart';
 import '../../../widgets/dialogs/app_form_dialog.dart';
+import '../../../picpos_shell/picpos_dialog.dart';
 import '../../../picpos_shell/picpos_panel_groups.dart';
 import '../../../settings_picpos/widgets/settings_blocks.dart';
 import 'package:ural_erp/l10n/app_localizations.dart';
@@ -30,12 +31,15 @@ class _ResetPasswordDialogState extends AppFormDialogState<bool, ResetPasswordDi
   IconData get dialogIcon => PhosphorIconsBold.key;
 
   @override
-  String? get dialogSubtitle => 'كلمةٌ جديدةٌ تسري من أوّل تسجيل دخول';
+  // نصُّ التصميم: يقول أثرَ الحفظ على المستخدم بدل وصفٍ عامّ.
+  String? get dialogSubtitle =>
+      ' — لن يستطيع الدخولَ بكلمته القديمة بعد '
+      'الحفظ';
 
   @override
   String? get dialogSaveLabel => 'حفظ كلمة المرور';
 
-  /// لوحةُ `PANELS.resetpw` — مجموعةُ القوّة ثمّ مجموعةُ الخيارات.
+  /// لوحةُ `PANELS.resetpw` — القوّةُ ثمّ الخياراتُ ثمّ التنبيه.
   ///
   /// ⚠️ **ومفتاحان من ثلاثةٍ في التصميم لم يُرسَما**: «إنهاء جلساته
   /// المفتوحة» و«إبلاغه على واتساب» لا مقابلَ لهما في الحفظ — والحفظُ هنا
@@ -81,6 +85,18 @@ class _ResetPasswordDialogState extends AppFormDialogState<bool, ResetPasswordDi
               onChanged: (v) => setState(() => forcePasswordChange = v),
             ),
           ],
+        ),
+      ),
+      // «تنبيه» في `PANELS.resetpw` — ونصُّه مقيسٌ لا منقولٌ على عواهنه:
+      // كلمةُ المرور تُحفَظ بـ`updateUserPassword`، والـPIN يُحفَظ بـ
+      // `updateUserPin` من حوارٍ آخر. فالجملةُ تصف فصلاً قائماً في الكود.
+      const PicPosPanelGroup(
+        label: 'تنبيه',
+        child: PicPosDialogBanner(
+          icon: PhosphorIconsBold.info,
+          color: AppColors.info,
+          text: 'كلمةُ المرور للدخول للبرنامج، وهي غيرُ الـPIN المستخدَم على '
+              'نقطة البيع — عيّنِ الـPIN من زرِّ القفل في صفِّ المستخدم.',
         ),
       ),
     ];
