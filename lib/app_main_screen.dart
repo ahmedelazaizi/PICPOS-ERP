@@ -45,6 +45,7 @@ import 'presentation/reports_picpos/screens/reports_picpos_screen.dart';
 import 'presentation/screens/settings_screen.dart';
 import 'presentation/settings_picpos/screens/settings_picpos_screen.dart';
 import 'presentation/screens/branch_management_screen.dart';
+import 'presentation/settings_picpos/screens/branches_picpos_screen.dart';
 import 'presentation/screens/region_management_screen.dart';
 import 'presentation/kitchen/screens/kitchen_display_screen.dart';
 import 'presentation/screens/offers_screen.dart';
@@ -713,7 +714,11 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
       ),
       ScreenConfig(
         appScreen: AppScreen.branches,
-        builder: (_) => const BranchManagementScreen(),
+        // فوركُ PicPos يأخذ تصميمَ «الفروع والمنشآت» بتبويباته الخمس،
+        // وشاشةُ UralCash تبقى كما هي بلا مساس.
+        builder: (_) => Brand.isPicPos
+            ? const BranchesPicposScreen()
+            : const BranchManagementScreen(),
         label: 'الفروع',
         icon: PhosphorIconsBold.buildings,
       ),

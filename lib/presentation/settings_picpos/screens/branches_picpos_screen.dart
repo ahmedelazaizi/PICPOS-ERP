@@ -1,0 +1,583 @@
+// «الفروع والمنشآت» — نسخةُ PicPos على تصميم `PicPos Branches.dc.html`.
+//
+// ═══ ما قِيس قبل الكتابة ═══
+//
+// ⚠️ **ملفّاتُ التصميم الأربعةُ ملفٌّ واحدٌ لا أربعة.** «الفروع» و«المناطق»
+// و«التحليلات» و«الموظفون» تحمل نفسَ `MODULES` الأربع ونفسَ العشرين تبويبةً،
+// ولا تختلف إلّا في الوحدة المفتوحة افتراضيّاً (`get mod()`) وسطرِ الشريط
+// الجانبيّ — قِيس بـ`diff` لا بالنظر: ثمانيةُ أسطرِ فرقٍ بين ثلاثةٍ منها.
+// و«الفروع» **أحدثُها** (‏١٦٤ سطرَ فرقٍ فيها تبويبةُ مخازنَ أغنى)، فهي المصدر.
+//
+// وأمرُ المالك 2026-08-25 بعد عرض القياس: **أربعُ شاشاتٍ منفصلةٌ بلغة
+// التصميم** لا مركزٌ واحدٌ بمنتقي وحدات. فهذه الشاشةُ تأخذ وحدةَ `branches`
+// وحدَها بتبويباتها الخمس، ولا تحمل منتقيَ الوحدات.
+//
+// ═══ قشرةٌ حيث يوجد جسمٌ، وبناءٌ حيث لا يوجد ═══
+//
+// • «نقاط البيع» و«تقويم العطلات» لهما `PosTerminalsBody` و`WorkHolidaysBody`
+//   جاهزان ومستعمَلان في شاشتَيهما — فيُركَبان كما هما، ولا نسخةَ ثانيةً
+//   تُصان. وهذا نفسُ نمط `PrintersPicposScreen`.
+//
+// • «الفروع» و«المخازن» و«صلاحيات الوصول» تُبنى هنا على لبنات التصميم
+//   (`PicPosHubKpiRow` · `PicPosEntityCard` · `PicPosDataTable`) من مزوِّداتٍ
+//   قائمة.
+//
+// ⚠️ **وكلُّ رقمٍ مشتقٌّ من الشجرة لا مكتوبٌ بجانبها**: شاراتُ التبويبات
+// وعدّاداتُ المؤشّرات وشرائحُ الترشيح كلُّها تُحسَب من نفس القوائم التي
+// تُرسَم. ومؤشّراتُ التصميم التي لا مصدرَ لها في البرنامج (‏«مبيعات اليوم»
+// لكلّ فرعٍ · «الموظفون الموزّعون») **لم تُخترَع**، فرقمٌ يكذب أسوأُ من
+// لا رقم.
+//
+// ⚠️ **ولا مصدرَ لـ«ساعات العمل» ولا «الوردية المفتوحة»** في `Branches` —
+// فرقائقُ التصميم تلك غيرُ مرسومة. والمرسومُ ما يقرأه العمود.
+//
+// ⚠️ **وعمودُ «إجراء» في جدول المخازن غيرُ مرسومٍ بقياس، لا بإغفال.**
+// التصميمُ يضع فيه زرَّ «تعديل» يفتح حوارَ المخزن. و`WarehouseEditDialog`
+// يستقبل صفَّ drift (`Warehouse`)، بينما `allWarehousesProvider` يعطي
+// **DTO نطاقٍ** (`WarehouseData`) بحقولٍ أقلَّ ولا `isActive` فيه. وجلبُ
+// الصفِّ يقتضي استيرادَ `data/database` من طبقة العرض، وهو ما يمنعه
+// `presentation_db_import_guard` على كلّ ملفٍّ **جديد** — والقائمةُ البيضاءُ
+// مجمَّدة. فكشفُ الصفِّ عبر المستودع بندُ عملٍ في طبقة البيانات لا تفصيلٌ
+// في هذه الشاشة، ومسجَّلٌ للمالك. والتعديلُ متاحٌ اليومَ من شاشة الفروع
+// والمخازن القائمة.
+//
+// و«الحالة» في التصميم صارت «مركز التكلفة» للسبب نفسِه: `WarehouseData`
+// لا يحمل `isActive`، وعمودٌ يقرأ حقلاً غيرَ موجودٍ لا يُكتَب.
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
+
+import '../../../core/theme/app_colors.dart';
+import '../../../data/providers/providers.dart';
+import '../../../domain/repositories/inventory_repository.dart'
+    show WarehouseData;
+import '../../picpos_shell/picpos_body_handle.dart';
+import '../../picpos_shell/picpos_data_table.dart';
+import '../../picpos_shell/picpos_entity_card.dart';
+import '../../picpos_shell/picpos_hub_kpi.dart';
+import '../../picpos_shell/picpos_report_tabs.dart';
+import '../../picpos_shell/picpos_screen_scaffold.dart';
+import '../../picpos_shell/picpos_surface.dart';
+import '../../screens/widgets/dialogs/branch_edit_dialog.dart';
+import '../../screens/widgets/dialogs/warehouse_edit_dialog.dart';
+import '../../screens/pos_terminals_screen.dart' show PosTerminalsBody;
+import '../../screens/settings/work_holidays_screen.dart'
+    show WorkHolidaysBody;
+
+/// ملاحظاتُ التبويبات — نصوصُ `TABS.branches[].note` حرفيّاً.
+///
+/// كلُّ واحدةٍ منها **قاعدةُ عملٍ** تشرح سلوكاً قد يبدو خطأً للمشغّل، لا
+/// جملةً تزيينيّة. وقِيس أنّ ثلاثاً منها تصف الكودَ كما هو:
+/// `Warehouses.branchId` قابلٌ للإفراغ، وعطلاتُ الفرع تُدمَج مع العامّة في
+/// `getWorkHolidays`، وغيابُ صفوف `user_branch_access` يعني وصولاً كاملاً.
+const _tabNotes = [
+  'الفرع يملك نقاط بيع ومخازن وتقويم عطلات مستقلاً',
+  'كل نقطة بيع مرتبطة بفرع وطابعة وخزينة',
+  'المخزن يتبع فرعاً واحداً — وبلا فرع يكون عاماً على المنشأة',
+  'عطلات الفرع = صفوفه + الصفوف العامة (دمج تراكمي)',
+  'بلا صفوف = وصول لكل الفروع (توافق خلفي)',
+];
+
+class BranchesPicposScreen extends ConsumerStatefulWidget {
+  const BranchesPicposScreen({super.key});
+
+  @override
+  ConsumerState<BranchesPicposScreen> createState() =>
+      _BranchesPicposScreenState();
+}
+
+class _BranchesPicposScreenState extends ConsumerState<BranchesPicposScreen>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabs = TabController(length: 5, vsync: this);
+  final _searchCtrl = TextEditingController();
+  final _holidayHandle = PicPosBodyHandle();
+  String _query = '';
+
+  /// شريحةُ الترشيح المختارةُ في كلّ تبويبةٍ لها جدول — مفتاحُها رقمُ التبويبة.
+  final Map<int, int> _chip = {};
+
+  @override
+  void initState() {
+    super.initState();
+    // الترويسةُ والملاحظةُ والإجراءُ كلُّها تتبع التبويبةَ النشطة.
+    _tabs.addListener(_onTab);
+  }
+
+  void _onTab() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _tabs.removeListener(_onTab);
+    _tabs.dispose();
+    _searchCtrl.dispose();
+    _holidayHandle.dispose();
+    super.dispose();
+  }
+
+  bool _hit(String? s) =>
+      _query.isEmpty || (s ?? '').toLowerCase().contains(_query);
+
+  @override
+  Widget build(BuildContext context) {
+    final List<Branche> branches =
+        ref.watch(allBranchesProvider).value ?? const [];
+    final List<WarehouseData> warehouses =
+        ref.watch(allWarehousesProvider).value ?? const [];
+    final List<UserWithRole> users =
+        ref.watch(allUsersProvider).value ?? const [];
+
+    return PicPosScreenScaffold(
+      title: 'الفروع والمنشآت',
+      subtitle:
+          'الفروع ونقاط البيع والمخازن وتقويم العطلات وصلاحيات الوصول',
+      icon: PhosphorIconsBold.buildings,
+      headerSearch: TextField(
+        controller: _searchCtrl,
+        onChanged: (v) => setState(() => _query = v.trim().toLowerCase()),
+        decoration: InputDecoration(
+          isDense: true,
+          hintText: 'ابحث عن فرع أو نقطة بيع...',
+          prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
+          suffixIcon: _query.isEmpty
+              ? null
+              : IconButton(
+                  icon: const Icon(PhosphorIconsBold.x, size: 14),
+                  onPressed: () {
+                    _searchCtrl.clear();
+                    setState(() => _query = '');
+                  },
+                ),
+        ),
+      ),
+      headerActions: _actions(),
+      subHeader: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          PicPosReportTabs(
+            controller: _tabs,
+            tabs: [
+              (
+                label: 'الفروع',
+                icon: PhosphorIconsBold.buildings,
+                badge: '${branches.length}'
+              ),
+              (
+                label: 'نقاط البيع',
+                icon: PhosphorIconsBold.desktopTower,
+                badge: null
+              ),
+              (
+                label: 'المخازن',
+                icon: PhosphorIconsBold.warehouse,
+                badge: '${warehouses.length}'
+              ),
+              (
+                label: 'تقويم العطلات',
+                icon: PhosphorIconsBold.calendarX,
+                badge: null
+              ),
+              (
+                label: 'صلاحيات الوصول',
+                icon: PhosphorIconsBold.lockKey,
+                badge: '${users.length}'
+              ),
+            ],
+          ),
+          PicPosTabNote(note: _tabNotes[_tabs.index]),
+        ],
+      ),
+      bodyPadding: EdgeInsets.zero,
+      body: TabBarView(
+        controller: _tabs,
+        children: [
+          _scroll(_branchesTab(context, branches, warehouses)),
+          PosTerminalsBody(searchQuery: _query),
+          _scroll(_warehousesTab(context, branches, warehouses)),
+          WorkHolidaysBody(addHandle: _holidayHandle, searchQuery: _query),
+          _scroll(_accessTab(context, branches, users)),
+        ],
+      ),
+    );
+  }
+
+  Widget _scroll(Widget child) => SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 26),
+        child: child,
+      );
+
+  /// إجراءُ الترويسة يتبع التبويبةَ — `action`/`dlg` لكلّ تبويبةٍ في التصميم.
+  ///
+  /// ⚠️ **ولا زرَّ لتبويبةٍ لا يملك جسمُها إضافةً**: «نقاط البيع» جسمُها
+  /// المشتركُ لا يعرض مقبضَ إضافة، فزرٌّ هنا لا ينادي شيئاً. و«صلاحيات
+  /// الوصول» تُمنَح من صفِّ المستخدم لا من الترويسة.
+  List<Widget> _actions() {
+    switch (_tabs.index) {
+      case 0:
+        return [
+          ElevatedButton.icon(
+            onPressed: () async {
+              final ok = await showDialog<bool>(
+                context: context,
+                builder: (_) => const BranchEditDialog(),
+              );
+              if (ok == true && mounted) setState(() {});
+            },
+            icon: const Icon(PhosphorIconsBold.plus, size: 15),
+            label: const Text('فرع جديد'),
+          ),
+        ];
+      case 2:
+        return [
+          ElevatedButton.icon(
+            onPressed: () async {
+              final ok = await showDialog<bool>(
+                context: context,
+                builder: (_) => const WarehouseEditDialog(),
+              );
+              if (ok == true && mounted) setState(() {});
+            },
+            icon: const Icon(PhosphorIconsBold.plus, size: 15),
+            label: const Text('مخزن جديد'),
+          ),
+        ];
+      case 3:
+        return [
+          ValueListenableBuilder<bool>(
+            valueListenable: _holidayHandle.isReady,
+            builder: (_, ready, _) => ElevatedButton.icon(
+              onPressed: ready ? _holidayHandle.invoke : null,
+              icon: const Icon(PhosphorIconsBold.plus, size: 15),
+              label: const Text('عطلة جديدة'),
+            ),
+          ),
+        ];
+      default:
+        return const [];
+    }
+  }
+
+  // ── تبويبةُ الفروع ─────────────────────────────────────────────────────
+
+  Widget _branchesTab(
+    BuildContext context,
+    List<Branche> branches,
+    List<WarehouseData> warehouses,
+  ) {
+    final shown = branches.where((b) => _hit(b.name) || _hit(b.code)).toList();
+    final active = branches.where((b) => b.isActive == true).length;
+    final linked = warehouses.where((w) => w.branchId != null).length;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        PicPosHubKpiRow(
+          items: [
+            PicPosHubKpi(
+              icon: PhosphorIconsBold.buildings,
+              label: 'الفروع النشطة',
+              value: '$active',
+              tint: AppColors.primary,
+              vs: 'من ${branches.length} مسجلة',
+            ),
+            PicPosHubKpi(
+              icon: PhosphorIconsBold.warehouse,
+              label: 'المخازن',
+              value: '${warehouses.length}',
+              tint: AppColors.warning,
+              vs: '$linked مرتبطٌ بفرع',
+            ),
+            PicPosHubKpi(
+              icon: PhosphorIconsBold.mapPin,
+              label: 'فروعٌ بمنطقة',
+              value: '${branches.where((b) => b.regionId != null).length}',
+              tint: const Color(0xFF8B5CF6),
+              vs: 'مرتبطةٌ بمنطقةٍ جغرافيّة',
+            ),
+            PicPosHubKpi(
+              icon: PhosphorIconsBold.star,
+              label: 'الفرع الافتراضيّ',
+              value: branches.any((b) => b.isSystemDefault == true)
+                  ? 'مضبوط'
+                  : 'غير مضبوط',
+              tint: branches.any((b) => b.isSystemDefault == true)
+                  ? AppColors.success
+                  : AppColors.error,
+              vs: 'يُنشأ تلقائيّاً عند غيابه',
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        // ⚠️ بلا سطرٍ خافتٍ هنا: نصُّ القاعدة يقوله شريطُ ملاحظة التبويبة
+        // فوقَه، وتكرارُه يجعل نفسَ الجملة مرّتين في شاشةٍ واحدة.
+        const PicPosBlockHeader(title: 'الفروع'),
+        if (shown.isEmpty)
+          _empty(context, 'لا فروعَ مطابقة')
+        else
+          PicPosEntityCardGrid(
+            children: [
+              for (final b in shown)
+                PicPosEntityCard(
+                  title: b.name,
+                  subtitle: _branchSub(b),
+                  tint: b.isActive == true
+                      ? AppColors.success
+                      : AppColors.textMuted,
+                  icon: PhosphorIconsBold.storefront,
+                  status: b.isSystemDefault == true
+                      ? 'افتراضيّ'
+                      : (b.isActive == true ? 'نشط' : 'موقوف'),
+                  statusTint: b.isSystemDefault == true
+                      ? AppColors.primary
+                      : (b.isActive == true
+                          ? AppColors.success
+                          : AppColors.textMuted),
+                  stats: [
+                    PicPosEntityStat(
+                      'المخازن',
+                      '${warehouses.where((w) => w.branchId == b.id).length}',
+                    ),
+                    PicPosEntityStat('الرمز', b.code ?? '—'),
+                    PicPosEntityStat(
+                      'مركز التكلفة',
+                      b.costCenterId != null ? 'مرتبط' : '—',
+                    ),
+                  ],
+                  chips: [
+                    if (b.phone?.isNotEmpty ?? false)
+                      PicPosEntityChip(
+                          PhosphorIconsBold.phone, b.phone!),
+                    if (b.regionId != null)
+                      const PicPosEntityChip(
+                          PhosphorIconsBold.mapTrifold, 'ضمن منطقة'),
+                  ],
+                ),
+            ],
+          ),
+      ],
+    );
+  }
+
+  String? _branchSub(Branche b) {
+    final addr = b.address;
+    if (addr != null && addr.isNotEmpty) return addr;
+    return null;
+  }
+
+  // ── تبويبةُ المخازن ────────────────────────────────────────────────────
+
+  static const _whTypes = {
+    'raw_materials': ('خامات', Color(0xFFEA580C)),
+    'finished_goods': ('منتج تام', AppColors.info),
+    'retail': ('بيع', Color(0xFF8B5CF6)),
+  };
+
+  Widget _warehousesTab(
+    BuildContext context,
+    List<Branche> branches,
+    List<WarehouseData> warehouses,
+  ) {
+    final names = {for (final b in branches) b.id: b.name};
+
+    // شرائحُ الترشيح — نفسُ شرائح التصميم، وعدّادُ كلٍّ منها **محسوب**.
+    final chipDefs = <(String, bool Function(WarehouseData))>[
+      ('كل المخازن', (w) => true),
+      ('يُباع منه', (w) => w.type == 'retail'),
+      ('خامات', (w) => w.type == 'raw_materials'),
+      ('بلا فرع', (w) => w.branchId == null),
+    ];
+    final pick = _chip[2] ?? 0;
+    final shown = warehouses
+        .where((w) => chipDefs[pick].$2(w) && _hit(w.name))
+        .toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        PicPosHubKpiRow(
+          items: [
+            PicPosHubKpi(
+              icon: PhosphorIconsBold.warehouse,
+              label: 'المخازن المسجَّلة',
+              value: '${warehouses.length}',
+              tint: AppColors.primary,
+              vs: '${warehouses.map((w) => w.type).toSet().length} نوعاً',
+            ),
+            PicPosHubKpi(
+              icon: PhosphorIconsBold.link,
+              label: 'مربوطة بفرع',
+              value: '${warehouses.where((w) => w.branchId != null).length}',
+              tint: AppColors.success,
+              vs: '${warehouses.where((w) => w.branchId == null).length} عامٌّ '
+                  'على المنشأة',
+            ),
+            PicPosHubKpi(
+              icon: PhosphorIconsBold.star,
+              label: 'مخازنُ افتراضيّة',
+              value: '${warehouses.where((w) => w.isDefault == true).length}',
+              tint: AppColors.warning,
+              vs: 'تُختار تلقائيّاً في العمليات',
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        PicPosDataTable(
+          title: 'المخازن',
+          // النصفُ الثاني من `sub` في التصميم — أمّا نصفُه الأوّلُ فهو نصُّ
+          // ملاحظة التبويبة فوقَه، وتكرارُه يعيد الجملةَ مرّتين.
+          subtitle: 'المخزن الافتراضيُّ للفرع يُختار في كلّ عمليةٍ تلقائياً',
+          columns: const [
+            PicPosTableColumn('المخزن', flex: 1.9),
+            PicPosTableColumn('الفرع المرتبط', flex: 1.4),
+            PicPosTableColumn('النوع', flex: 1.2),
+            PicPosTableColumn('مركز التكلفة', flex: 1.3),
+          ],
+          chips: [
+            for (var i = 0; i < chipDefs.length; i++)
+              PicPosTableChip(
+                label: chipDefs[i].$1,
+                count: '${warehouses.where(chipDefs[i].$2).length}',
+                onTap: () => setState(() => _chip[2] = i),
+              ),
+          ],
+          selectedChip: pick,
+          emptyLabel: 'لا مخازنَ مطابقة',
+          rows: [
+            for (final w in shown)
+              PicPosTableRow(
+                cells: [
+                  PicPosTextCell(
+                    w.name,
+                    sub: w.isDefault == true ? 'افتراضيّ للفرع' : null,
+                    icon: PhosphorIconsBold.warehouse,
+                    tint: AppColors.primary,
+                  ),
+                  PicPosTextCell(
+                    w.branchId == null
+                        ? 'عامٌّ على المنشأة'
+                        : (names[w.branchId] ?? '—'),
+                  ),
+                  PicPosPillCell(
+                    _whTypes[w.type]?.$1 ?? 'عام',
+                    _whTypes[w.type]?.$2 ?? AppColors.textMuted,
+                  ),
+                  PicPosPillCell(
+                    w.costCenterId != null ? 'مركزُ تكلفة' : 'بلا مركز',
+                    w.costCenterId != null
+                        ? AppColors.success
+                        : AppColors.textMuted,
+                  ),
+                ],
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // ── تبويبةُ صلاحيات الوصول ─────────────────────────────────────────────
+
+  Widget _accessTab(
+    BuildContext context,
+    List<Branche> branches,
+    List<UserWithRole> users,
+  ) {
+    final shown = users
+        .where((u) => _hit(u.user.displayName) || _hit(u.user.username))
+        .toList();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // ⚠️ **قراءةٌ لكلّ مستخدمٍ عند فتح التبويبة** — لا واجهةَ دفعةٍ في
+        //    المستودع تقرأ نطاقَ كلِّ المستخدمين معاً، وبناءُ واحدةٍ يمسّ
+        //    طبقةَ البيانات. والقراءةُ تقع مرّةً لا في كلّ إطار.
+        FutureBuilder<Map<int, List<int>>>(
+          future: _loadAccess(shown),
+          builder: (context, snap) {
+            if (!snap.hasData) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 40),
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+            final access = snap.data!;
+            final names = {
+              for (final b in branches) b.id: b.name
+            };
+            return PicPosDataTable(
+              title: 'صلاحيات الوصول للفروع',
+              subtitle: 'بلا صفوف = وصول لكل الفروع (توافق خلفي)',
+              columns: const [
+                PicPosTableColumn('المستخدم', flex: 1.8),
+                PicPosTableColumn('الدور', flex: 1.2),
+                PicPosTableColumn('الفروع المسموحة', flex: 2.4),
+                PicPosTableColumn('النطاق', flex: 1.2),
+              ],
+              emptyLabel: 'لا مستخدمينَ مطابقين',
+              rows: [
+                for (final u in shown)
+                  PicPosTableRow(
+                    cells: [
+                      PicPosTextCell(
+                        u.user.displayName,
+                        sub: u.user.username,
+                        icon: PhosphorIconsBold.userCircle,
+                        tint: AppColors.primary,
+                      ),
+                      PicPosTextCell(
+                        u.role?.name ?? 'بدون دور',
+                      ),
+                      PicPosTextCell(
+                        (access[u.user.id] ?? const <int>[]).isEmpty
+                            ? 'كل الفروع'
+                            : (access[u.user.id]!)
+                                .map((id) => names[id] ?? '#$id')
+                                .join(' · '),
+                      ),
+                      PicPosPillCell(
+                        (access[u.user.id] ?? const <int>[]).isEmpty
+                            ? 'مفتوح'
+                            : 'محصور',
+                        (access[u.user.id] ?? const <int>[]).isEmpty
+                            ? AppColors.warning
+                            : AppColors.success,
+                      ),
+                    ],
+                  ),
+              ],
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Future<Map<int, List<int>>> _loadAccess(List<UserWithRole> users) async {
+    final repo = ref.read(authRepositoryProvider);
+    final out = <int, List<int>>{};
+    for (final u in users) {
+      out[u.user.id] =
+          await repo.getUserAccessibleBranchIds(u.user.id);
+    }
+    return out;
+  }
+
+  Widget _empty(BuildContext context, String label) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 40),
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w700,
+              color: context.picposMuted,
+            ),
+          ),
+        ),
+      );
+}

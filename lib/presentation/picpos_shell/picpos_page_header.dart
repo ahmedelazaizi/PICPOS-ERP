@@ -64,14 +64,34 @@ class PicPosPageHeader extends StatelessWidget {
             ),
             const SizedBox(width: 12),
           ],
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(title, style: text.headlineSmall),
-              if (subtitle != null)
-                Text(subtitle!, style: text.bodySmall),
-            ],
+          // ⚠️ **`Flexible` لازمةٌ لا زينة.** كان العمودُ عارياً في الصفّ،
+          // فيأخذ عرضَه الطبيعيَّ كاملاً ولا ينضغط. وسطرٌ خافتٌ طويلٌ
+          // («الفروع ونقاط البيع والمخازن وتقويم العطلات وصلاحيات الوصول»)
+          // يدفع البحثَ والأزرارَ خارجَ الشاشة: فيضٌ ٤٧٥ بكسل على عرض ٨٢٠،
+          // أمسكه اختبارُ تركيب شاشة الفروع لا التحليل.
+          //
+          // والقصُّ بسطرٍ واحدٍ ونقاطٍ يُبقي الترويسةَ صفّاً واحداً كما في
+          // التصميم بدل أن تنمو رأسيّاً على الشاشات الضيّقة.
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: text.headlineSmall,
+                ),
+                if (subtitle != null)
+                  Text(
+                    subtitle!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: text.bodySmall,
+                  ),
+              ],
+            ),
           ),
           const Spacer(),
           if (search != null) ...[
