@@ -139,6 +139,28 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
       ),
       child: Row(
         children: [
+          // زرُّ رجوعٍ بنفس عقد `PicPosPageHeader`: يظهر حين تكون الشاشةُ
+          // **مدفوعةً** على راوت، ويختفي حين تُفتَح من الشريط الجانبيّ
+          // (`canPop == false`) لأنّ التنقّلَ هناك بالشريط لا بالرجوع.
+          //
+          // ⚠️ بلاغُ المالك 2026-08-26: الشاشةُ تُفتَح من **أربعة** مواضعَ،
+          // ثلاثةٌ منها `push` (مركزُ تقارير PicPos · فواتيرُ مشترياته ·
+          // فواتيرُ مشتريات UralCash) وواحدٌ من الشريط. فكانت الثلاثةُ تقع
+          // في شاشةٍ لا مخرجَ منها إلّا مفتاحُ لوحةِ المفاتيح.
+          //
+          // وفي RTL «رجوع» سهمٌ إلى اليمين (→) مطابقةً لبقيّة الشاشات.
+          if (Navigator.canPop(context)) ...[
+            IconButton(
+              onPressed: () => Navigator.maybePop(context),
+              icon: const Icon(Icons.arrow_forward),
+              color: Colors.white,
+              tooltip: 'رجوع',
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.white.withValues(alpha: 0.15),
+              ),
+            ),
+            const SizedBox(width: 10),
+          ],
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
