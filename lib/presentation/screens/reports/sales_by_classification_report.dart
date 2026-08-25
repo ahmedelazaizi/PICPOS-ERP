@@ -10,6 +10,8 @@ import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import 'report_export_guard.dart';
+import 'report_scaffold.dart';
+import '../../picpos_shell/picpos_report_tabs.dart';
 
 import '../../../core/logging/diagnostic_logger.dart';
 import '../../../data/providers/providers.dart';
@@ -279,13 +281,42 @@ class _SalesByClassificationReportState
 
     final dateFormat = DateFormat('yyyy/MM/dd');
 
-    return Directionality(
-      textDirection: ui.TextDirection.rtl,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('تقرير المبيعات حسب التصنيف'),
-          centerTitle: false,
-          actions: [
+    return reportScaffold(
+      context: context,
+      title: 'تقرير المبيعات حسب التصنيف',
+      subtitle: 'المبيعاتُ حسبَ تصنيف الأصناف ونوعِ البيع',
+      icon: PhosphorIconsBold.chartPieSlice,
+      // ⚠️ **لا لونَ علامةٍ هنا**: هذه الشاشةُ لم تكن تكتب لوناً لـ`AppBar`
+      //    فتتبع الثيم، وفرضُ لون العلامة عليها تبديلٌ في مسار UralCash.
+      //    و`centerTitle: false` هو الافتراضُ على هذه المنصّة فسقط بلا أثر.
+      brandedAppBar: false,
+      // تبويباتُ التصميم لفرع PicPos، وشريطُ UralCash كما هو حرفاً بحرف.
+      subHeader: PicPosReportTabs(
+        controller: _tabController,
+        tabs: const [
+          (
+            label: 'حسب تصنيف الأصناف (Categories)',
+            icon: PhosphorIconsBold.tag,
+            badge: null
+          ),
+          (
+            label: 'حسب نوع البيع (Classification)',
+            icon: PhosphorIconsBold.storefront,
+            badge: null
+          ),
+        ],
+      ),
+      appBarBottom: TabBar(
+        controller: _tabController,
+        tabs: const [
+          Tab(text: 'حسب تصنيف الأصناف (Categories)'),
+          Tab(text: 'حسب نوع البيع (Classification)'),
+        ],
+        indicatorColor: AppColors.primary,
+        labelColor: AppColors.primary,
+        unselectedLabelColor: AppColors.textPrimary,
+      ),
+      actions: [
             buildReportExportAction(onExport: _exportToExcel),
             IconButton(
               onPressed: _printReport,
@@ -308,17 +339,6 @@ class _SalesByClassificationReportState
               ),
             ),
           ],
-          bottom: TabBar(
-            controller: _tabController,
-            tabs: const [
-              Tab(text: 'حسب تصنيف الأصناف (Categories)'),
-              Tab(text: 'حسب نوع البيع (Classification)'),
-            ],
-            indicatorColor: AppColors.primary,
-            labelColor: AppColors.primary,
-            unselectedLabelColor: AppColors.textPrimary,
-          ),
-        ),
         body: Column(
           children: [
             // Spec 076: unified two-row filter bar.
@@ -405,7 +425,6 @@ class _SalesByClassificationReportState
             ),
           ],
         ),
-      ),
     );
   }
 

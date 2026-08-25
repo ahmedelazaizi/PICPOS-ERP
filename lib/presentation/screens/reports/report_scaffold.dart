@@ -35,6 +35,10 @@ Widget reportScaffold({
   String? subtitle,
   IconData? icon,
   List<Widget> actions = const [],
+  Widget? subHeader,
+  PreferredSizeWidget? appBarBottom,
+  Widget? appBarLeading,
+  bool brandedAppBar = true,
 }) {
   if (Brand.isPicPos) {
     return PicPosScreenScaffold(
@@ -42,6 +46,8 @@ Widget reportScaffold({
       subtitle: subtitle,
       icon: icon,
       headerActions: actions,
+      // تبويباتُ التصميم — شريطٌ تحت الترويسة لا `bottom` على `AppBar`.
+      subHeader: subHeader,
       // ⚠️ **بلا حشو**: شريطُ المرشِّحات أوّلُ ما في جسم التقرير، وهو في
       //    التصميم ممتدٌّ من حافّةٍ إلى حافّةٍ بحشوه الخاصّ. وحشوُ الإطار
       //    الافتراضيُّ كان سيُدخله عن الحافّتَين فيُقرأ بطاقةً لا شريطاً.
@@ -54,12 +60,18 @@ Widget reportScaffold({
     textDirection: ui.TextDirection.rtl,
     child: Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      // ⚠️ **نسخةٌ حرفيّةٌ لا تقريب.** الشاشاتُ لم تكن كلُّها تكتب لوناً:
+      //    منها ما يتبع الثيمَ، ومنها ما يحمل زرَّ رجوعٍ صريحاً أو شريطَ
+      //    تبويباتٍ بتنسيقه الخاصّ. فكلُّ ما يختلف يُمرَّر كما هو، ولا يُفرَض
+      //    عليها شكلٌ لم تكن عليه.
       appBar: AppBar(
+        leading: appBarLeading,
         title: Text(title),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        elevation: 0,
+        backgroundColor: brandedAppBar ? AppColors.primary : null,
+        foregroundColor: brandedAppBar ? Colors.white : null,
+        elevation: brandedAppBar ? 0 : null,
         actions: actions,
+        bottom: appBarBottom,
       ),
       body: body,
     ),
