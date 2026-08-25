@@ -43,6 +43,7 @@ import '../../../data/providers/reconciliation_provider.dart';
 import '../../widgets/permission_guard.dart';
 import '../../picpos_shell/picpos_content_card.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
+import '../../picpos_shell/picpos_surface.dart';
 
 // Destination screens — existing in the codebase, unchanged by this fork.
 import '../../screens/activity_log_screen.dart';
@@ -712,57 +713,86 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
             .toList()
         : const <_FlatItem>[];
 
+    // الفئةُ المعروضةُ في لوحة التفصيل — أوّلُ فئةٍ ما لم يُختَر غيرُها.
+    final selected = _categories.firstWhere(
+      (c) => c.id == _expandedCatId,
+      orElse: () => _categories.first,
+    );
+
     return PicPosScreenScaffold(
       title: 'التقارير',
-      subtitle: 'كل تقارير المبيعات والمخزون والمالية',
+      // ⚠️ العددُ **مقيسٌ من الشجرة** لا مكتوبٌ نصّاً: «كل تقارير المبيعات
+      //    والمخزون والمالية» جملةٌ لا تتغيّر مهما أُضيف أو حُذف.
+      subtitle: '${_allItems.length} تقريراً واختصاراً '
+          'في ${_categories.length} فئة',
       icon: PhosphorIconsBold.chartBar,
+      headerSearch: _searchBar(),
+      headerActions: [_customReportButton()],
+      // ⚠️ بلا حشو: الشريطُ الجانبيُّ يلتصق بالحافّة وله حدُّه الخاصّ، كما
+      //    في التصميم — وحشوُ الإطار كان يجعله بطاقةً عائمةً لا عموداً.
+      bodyPadding: EdgeInsets.zero,
       body: LayoutBuilder(
         builder: (context, c) {
-          final catCols = _catColumnsFor(c.maxWidth);
-          final reportCols = _reportColumnsFor(c.maxWidth);
-          return SingleChildScrollView(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _searchBarRow(),
-                const SizedBox(height: 18),
-                if (isSearching)
-                  _searchResultsSection(results, reportCols)
-                else ...[
-                  if (_favorites.isNotEmpty) ...[
-                    _miniHeader(PhosphorIconsBold.star, 'المفضلة',
-                        AppColors.warning),
-                    const SizedBox(height: 8),
-                    _chipsForIds(_favorites.toList()),
-                    const SizedBox(height: 16),
-                  ],
-                  if (_recent.isNotEmpty) ...[
-                    _miniHeader(PhosphorIconsBold.clockCounterClockwise,
-                        'آخر ما فتحت', AppColors.primary),
-                    const SizedBox(height: 8),
-                    _chipsForIds(_recent),
-                    const SizedBox(height: 20),
-                  ],
-                  _miniHeader(PhosphorIconsBold.squaresFour,
-                      'فئات التقارير', AppColors.textSecondary),
-                  const SizedBox(height: 10),
-                  _categoriesSection(catCols),
-                ],
-              ],
-            ),
+          if (isSearching) {
+            return SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(26, 18, 26, 26),
+              child:
+                  _searchResultsSection(results, _reportColumnsFor(c.maxWidth)),
+            );
+          }
+          // الشريطُ ٣١٨ في التصميم، ويضيق على الشاشات الصغيرة بدل أن يبتلع
+          // نصفَ العرض.
+          final railWidth = c.maxWidth < 900 ? 250.0 : 318.0;
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SizedBox(width: railWidth, child: _categoryRail()),
+              Expanded(
+                child: _detailPane(
+                  selected,
+                  _detailColumnsFor(c.maxWidth - railWidth),
+                ),
+              ),
+            ],
           );
         },
       ),
     );
   }
 
-  int _catColumnsFor(double w) {
-    if (w >= 1500) return 6;
-    if (w >= 1200) return 5;
-    if (w >= 900) return 4;
-    if (w >= 640) return 3;
-    return 2;
+  /// أعمدةُ بطاقات التقارير — ثلاثةٌ في التصميم على العرض الكامل.
+  int _detailColumnsFor(double w) {
+    if (w >= 1150) return 3;
+    if (w >= 760) return 2;
+    return 1;
+  }
+
+  /// «تقرير مخصص» — يفتح مُنشئَ التقارير القائم.
+  ///
+  /// ⚠️ زرٌّ في التصميم ولم يكن في الشاشة، و`ReportBuilderScreen` **موجودةٌ
+  /// فعلاً** ويصل إليها المستخدمُ من مكانٍ آخر — فهذا كشفُ ما هو قائمٌ لا
+  /// وعدٌ بما ليس كذلك.
+  Widget _customReportButton() {
+    return ElevatedButton.icon(
+      onPressed: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => const ReportBuilderScreen(),
+        ),
+      ),
+      icon: const Icon(PhosphorIconsBold.plus, size: 17),
+      label: const Text('تقرير مخصص'),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        minimumSize: const Size(0, 44),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        textStyle: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700),
+      ),
+    );
   }
 
   int _reportColumnsFor(double w) {
@@ -771,34 +801,6 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
     if (w >= 900) return 3;
     if (w >= 640) return 2;
     return 1;
-  }
-
-  // -----------------------------------------------------------------------
-  // Search bar — نفس منطق الأصل، مع عداد إجمالي التقارير بجانبها بدل ما كان
-  // شارة داخل _header() القديم (اللي بقى دلوقتي هيدر PicPosScreenScaffold).
-  // -----------------------------------------------------------------------
-  Widget _searchBarRow() {
-    return Row(
-      children: [
-        Flexible(child: _searchBar()),
-        const SizedBox(width: 10),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-          decoration: BoxDecoration(
-            color: AppColors.primary.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(
-            '${_allItems.length} تقرير',
-            style: const TextStyle(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w600,
-              color: AppColors.primary,
-            ),
-          ),
-        ),
-      ],
-    );
   }
 
   Widget _searchBar() {
@@ -871,47 +873,6 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
     );
   }
 
-  Widget _chipsForIds(List<String> ids) {
-    final items = ids
-        .map((id) => _allItems.where((i) => i.id == id).cast<_FlatItem?>().firstOrNull)
-        .whereType<_FlatItem>()
-        .toList();
-    return Wrap(
-      spacing: 6,
-      runSpacing: 6,
-      children: items.map(_chip).toList(),
-    );
-  }
-
-  Widget _chip(_FlatItem item) {
-    final c = item.category.color;
-    return InkWell(
-      borderRadius: BorderRadius.circular(16),
-      onTap: () => _openFlatItem(item),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-        decoration: BoxDecoration(
-          color: c.withValues(alpha: 0.08),
-          border: Border.all(color: c.withValues(alpha: 0.28)),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(item.category.icon, size: 11, color: c),
-            const SizedBox(width: 5),
-            Text(item.title,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: c,
-                )),
-          ],
-        ),
-      ),
-    );
-  }
-
   /// Resolves a flat item back to a real entry/shortcut and invokes its action
   /// while recording the open. Used by chip taps (favorites, recents, and
   /// search results).
@@ -939,255 +900,424 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
   }
 
   // -----------------------------------------------------------------------
-  // Categories — تُعرض كصفوف من الكروت مع لوحة موسّعة inline تحت الصف الذي
-  // يحتوي الفئة المفتوحة حالياً. مُغلّفة بـ PicPosContentCard (هوية PicPos)
-  // بدل ما كانت طليقة على خلفية الشاشة مباشرة.
+  // الشريطُ الجانبيُّ للفئات — عمودُ ٣١٨ في التصميم.
+  //
+  // ⚠️ **الفئاتُ مجمَّعةٌ لا مسطَّحة.** التصميمُ يرتّبها في خمس مجموعات، وثلاثَ
+  //    عشرةَ بطاقةً في شبكةٍ واحدةٍ بلا تجميعٍ تُقرأ قائمةً لا بنية. والمجموعةُ
+  //    تُقرأ من [_kCatGroup]، وحارسٌ يمنع أن تُضاف فئةٌ بلا مجموعةٍ فتسقط
+  //    صامتةً خارجَ الشريط.
   // -----------------------------------------------------------------------
-  Widget _categoriesSection(int cols) {
-    return PicPosContentCard(
-      padding: const EdgeInsets.all(14),
-      child: _categoryGrid(cols),
+  Widget _categoryRail() {
+    final byGroup = <String, List<_ReportCategory>>{};
+    for (final c in _categories) {
+      byGroup.putIfAbsent(_kCatGroup[c.id] ?? _kGroupOrder.last, () => [])
+          .add(c);
+    }
+    final side = BorderSide(color: context.picposHairline);
+    final rtl = Directionality.of(context) == ui.TextDirection.rtl;
+    return Container(
+      decoration: BoxDecoration(
+        color: context.picposCard,
+        // الحدُّ على الحافّة المواجهة للمحتوى — يسارٌ في RTL.
+        border: rtl ? Border(left: side) : Border(right: side),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
+              children: [
+                for (final g in _kGroupOrder)
+                  if ((byGroup[g] ?? const []).isNotEmpty) ...[
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 12, 8, 6),
+                      child: Text(
+                        g,
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: .4,
+                          color: context.picposMuted,
+                        ),
+                      ),
+                    ),
+                    for (final c in byGroup[g]!) _railItem(c),
+                  ],
+              ],
+            ),
+          ),
+          _railFooter(),
+        ],
+      ),
     );
   }
 
-  Widget _categoryGrid(int cols) {
-    final rows = <List<_ReportCategory>>[];
-    for (int i = 0; i < _categories.length; i += cols) {
-      rows.add(_categories.skip(i).take(cols).toList());
+  Widget _railItem(_ReportCategory cat) {
+    final on = cat.id == _expandedCatId;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 3),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(13),
+          onTap: () => setState(() => _expandedCatId = cat.id),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
+            decoration: BoxDecoration(
+              color:
+                  on ? cat.color.withValues(alpha: 0.10) : Colors.transparent,
+              borderRadius: BorderRadius.circular(13),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: cat.color.withValues(alpha: on ? 0.18 : 0.10),
+                    borderRadius: BorderRadius.circular(11),
+                  ),
+                  child: Icon(cat.icon, size: 17, color: cat.color),
+                ),
+                const SizedBox(width: 11),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        cat.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: on ? FontWeight.w800 : FontWeight.w700,
+                          color: on ? cat.color : context.picposText,
+                        ),
+                      ),
+                      const SizedBox(height: 1),
+                      Text(
+                        _catMeta(cat),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w600,
+                          color: context.picposMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '${cat.mainReports.length}',
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w800,
+                    color: on ? cat.color : context.picposMuted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// «٣ تقارير · ٨ اختصارات» — **مقيسٌ من الفئة** لا مكتوبٌ بيد.
+  String _catMeta(_ReportCategory c) {
+    final r = '${c.mainReports.length} تقرير';
+    return c.shortcuts.isEmpty ? r : '$r · ${c.shortcuts.length} اختصار';
+  }
+
+  /// تذييلُ الشريط.
+  ///
+  /// ⚠️ التصميمُ يكتب هنا «آخر مزامنة 14:32 · ٣ فروع»، ولا مقياسَ لوقت
+  /// المزامنة في هذه الشاشة — فما يُكتب هو ما يُعَدّ فعلاً: عددُ ما في
+  /// الشاشة، وأنّ كلَّ تقريرٍ يُحسَب لحظةَ فتحه (وهو ما تفعله الشاشاتُ فعلاً).
+  Widget _railFooter() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: context.picposHairline)),
+      ),
+      child: Row(
+        children: [
+          Icon(PhosphorIconsBold.clockCounterClockwise,
+              size: 17, color: context.picposMuted),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '${_allItems.length} تقريراً واختصاراً '
+                  'في ${_categories.length} فئة',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                    color: context.picposText,
+                  ),
+                ),
+                Text(
+                  'كلُّ تقريرٍ يُحسَب لحظةَ فتحه',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: context.picposMuted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // -----------------------------------------------------------------------
+  // لوحةُ التفصيل — الفئةُ المختارةُ وحدَها، كما في التصميم.
+  // -----------------------------------------------------------------------
+  Widget _detailPane(_ReportCategory cat, int cols) {
+    final pinned = _pinnedItems();
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(26, 22, 26, 30),
+      children: [
+        if (pinned.isNotEmpty) ...[
+          _pinnedCard(pinned),
+          const SizedBox(height: 18),
+        ],
+        _detailHeader(cat),
+        const SizedBox(height: 14),
+        _detailReports(cat, cols),
+        if (cat.shortcuts.isNotEmpty) ...[
+          const SizedBox(height: 14),
+          _shortcutsBar(cat),
+        ],
+      ],
+    );
+  }
+
+  Widget _detailHeader(_ReportCategory cat) {
+    final desc = _kCatDesc[cat.id];
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 50,
+          height: 50,
+          decoration: BoxDecoration(
+            color: cat.color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: Icon(cat.icon, size: 25, color: cat.color),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                cat.title,
+                style: TextStyle(
+                  fontSize: 21,
+                  fontWeight: FontWeight.w800,
+                  height: 1.25,
+                  color: context.picposText,
+                ),
+              ),
+              if (desc != null) ...[
+                const SizedBox(height: 3),
+                Text(
+                  desc,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: context.picposMuted,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _detailReports(_ReportCategory cat, int cols) {
+    final rows = <List<_ReportEntry>>[];
+    for (var i = 0; i < cat.mainReports.length; i += cols) {
+      rows.add(cat.mainReports.skip(i).take(cols).toList());
     }
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        for (final row in rows) ...[
-          _categoryRow(row, cols),
-          if (row.any((c) => c.id == _expandedCatId))
-            AnimatedSize(
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOut,
-              alignment: Alignment.topCenter,
-              child: _expandedPanel(
-                _categories.firstWhere((c) => c.id == _expandedCatId),
-              ),
+        for (var r = 0; r < rows.length; r++) ...[
+          if (r > 0) const SizedBox(height: 13),
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (var i = 0; i < cols; i++) ...[
+                  if (i > 0) const SizedBox(width: 13),
+                  Expanded(
+                    child: i < rows[r].length
+                        ? _detailReportCard(cat, rows[r][i])
+                        : const SizedBox.shrink(),
+                  ),
+                ],
+              ],
             ),
-          const SizedBox(height: 10),
+          ),
         ],
       ],
     );
   }
 
-  Widget _categoryRow(List<_ReportCategory> row, int cols) {
-    return Row(
-      children: [
-        for (var i = 0; i < row.length; i++) ...[
-          Expanded(child: _categoryCard(row[i])),
-          if (i < row.length - 1) const SizedBox(width: 10),
-        ],
-        // Pad the trailing slots so the last (partial) row stays aligned
-        // with the rows above.
-        for (var i = row.length; i < cols; i++) ...[
-          const SizedBox(width: 10),
-          const Expanded(child: SizedBox.shrink()),
-        ],
-      ],
-    );
-  }
+  /// بطاقةُ تقريرٍ كما في التصميم.
+  ///
+  /// ⚠️ **الشرائحُ السفليّةُ اختصاراتُ التقرير الحقيقيّة** لا «تبويبات»:
+  /// التصميمُ يرسم `tabs` لكلّ بطاقةٍ، ولا حقلَ تبويباتٍ في `_ReportEntry`
+  /// — فكتابتُها كانت ستكون اختراعاً. والاختصاراتُ التي أبوها هذا التقرير
+  /// بيانٌ قائمٌ يعطي نفسَ الشكل ويصدُق.
+  Widget _detailReportCard(_ReportCategory cat, _ReportEntry r) {
+    final isFav = _favorites.contains(r.id);
+    final tags = cat.shortcuts.where((s) => s.parentReportId == r.id).toList();
+    final shown = tags.take(3).toList();
+    final rest = tags.length - shown.length;
 
-  Widget _categoryCard(_ReportCategory cat) {
-    final isOpen = _expandedCatId == cat.id;
-    return _HoverCard(
-      highlighted: isOpen,
-      onTap: () => _toggleAccordion(cat),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(10, 8, 8, 8),
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: cat.color.withValues(alpha: isOpen ? 0.18 : 0.12),
-                borderRadius: BorderRadius.circular(9),
-              ),
-              child: Icon(cat.icon, color: cat.color, size: 18),
-            ),
-            const SizedBox(width: 9),
-            Expanded(
-              child: Column(
+    final card = Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () {
+          _registerOpen(r.id);
+          r.action();
+        },
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: context.picposCard,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: context.picposHairline),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(cat.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14.5,
-                      )),
-                  const SizedBox(height: 1),
-                  Text(
-                    cat.shortcuts.isEmpty
-                        ? '${cat.mainReports.length} تقرير'
-                        : '${cat.mainReports.length} تقرير • ${cat.shortcuts.length} اختصار',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textMuted,
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: cat.color.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(11),
+                    ),
+                    child: Icon(cat.icon, size: 19, color: cat.color),
+                  ),
+                  const SizedBox(width: 11),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          r.title,
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w800,
+                            height: 1.4,
+                            color: context.picposText,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          r.subtitle,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            height: 1.6,
+                            color: context.picposMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: () => _toggleFavorite(r.id),
+                      child: Padding(
+                        padding: const EdgeInsets.all(3),
+                        child: Icon(
+                          isFav
+                              ? PhosphorIconsFill.star
+                              : PhosphorIconsBold.star,
+                          size: 15,
+                          color:
+                              isFav ? AppColors.warning : context.picposMuted,
+                        ),
+                      ),
                     ),
                   ),
                 ],
               ),
-            ),
-            AnimatedRotation(
-              turns: isOpen ? -0.25 : 0,
-              duration: const Duration(milliseconds: 180),
-              child: Icon(PhosphorIconsBold.caretLeft,
-                  size: 12, color: cat.color.withValues(alpha: 0.6)),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // -----------------------------------------------------------------------
-  // Inline expanded panel (نفس منطق الأصل حرفياً).
-  // -----------------------------------------------------------------------
-  Widget _expandedPanel(_ReportCategory cat) {
-    return Container(
-      margin: const EdgeInsets.only(top: 10),
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-      decoration: BoxDecoration(
-        color: cat.color.withValues(alpha: 0.04),
-        border: Border.all(color: cat.color.withValues(alpha: 0.25)),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(cat.icon, size: 16, color: cat.color),
-              const SizedBox(width: 6),
-              Text('التقارير الأساسية',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: cat.color,
-                  )),
-              const Spacer(),
-              InkWell(
-                onTap: () => setState(() => _expandedCatId = null),
-                borderRadius: BorderRadius.circular(6),
-                child: Padding(
-                  padding: const EdgeInsets.all(4),
-                  child: Icon(PhosphorIconsBold.x,
-                      size: 14, color: cat.color.withValues(alpha: 0.7)),
+              if (shown.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.only(top: 11),
+                  decoration: BoxDecoration(
+                    border:
+                        Border(top: BorderSide(color: context.picposHairline)),
+                  ),
+                  child: Wrap(
+                    spacing: 7,
+                    runSpacing: 6,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      for (final s in shown)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: context.picposField,
+                            borderRadius: BorderRadius.circular(7),
+                            border:
+                                Border.all(color: context.picposHairline),
+                          ),
+                          child: Text(
+                            s.title,
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w700,
+                              color: context.picposMuted,
+                            ),
+                          ),
+                        ),
+                      if (rest > 0)
+                        Text(
+                          '+$rest',
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w800,
+                            color: context.picposBrandInk,
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final r in cat.mainReports) _expandedReportButton(cat, r),
-            ],
-          ),
-          if (cat.shortcuts.isNotEmpty) ...[
-            const SizedBox(height: 14),
-            const Row(
-              children: [
-                Icon(PhosphorIconsBold.lightning,
-                    size: 13, color: AppColors.warningDark),
-                SizedBox(width: 5),
-                Text('اختصارات سريعة',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.warningDark,
-                    )),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: [
-                for (final s in cat.shortcuts) _expandedShortcutChip(cat, s),
-              ],
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _expandedReportButton(_ReportCategory cat, _ReportEntry r) {
-    final isFav = _favorites.contains(r.id);
-    final button = InkWell(
-      borderRadius: BorderRadius.circular(10),
-      onTap: () {
-        _registerOpen(r.id);
-        r.action();
-      },
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(10, 8, 6, 8),
-        constraints: const BoxConstraints(minWidth: 220, maxWidth: 320),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          border: Border.all(color: cat.color.withValues(alpha: 0.25)),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: cat.color.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(7),
-              ),
-              child: Icon(cat.icon, color: cat.color, size: 15),
-            ),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(r.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      )),
-                  Text(r.subtitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textMuted,
-                        height: 1.2,
-                      )),
-                ],
-              ),
-            ),
-            const SizedBox(width: 4),
-            InkWell(
-              borderRadius: BorderRadius.circular(20),
-              onTap: () => _toggleFavorite(r.id),
-              child: Padding(
-                padding: const EdgeInsets.all(3),
-                child: Icon(
-                  isFav ? PhosphorIconsFill.star : PhosphorIconsBold.star,
-                  size: 13,
-                  color: isFav ? AppColors.warning : AppColors.textMuted,
-                ),
-              ),
-            ),
-          ],
         ),
       ),
     );
@@ -1197,10 +1327,192 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
         permission: r.permission!,
         allowManagerOverride: r.allowManagerOverride,
         actionName: r.title,
-        child: button,
+        child: card,
       );
     }
-    return button;
+    return card;
+  }
+
+  Widget _shortcutsBar(_ReportCategory cat) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+      decoration: BoxDecoration(
+        color: context.picposCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: context.picposHairline),
+      ),
+      child: Wrap(
+        spacing: 11,
+        runSpacing: 11,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          Text(
+            'اختصارات سريعة',
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w800,
+              color: context.picposMuted,
+            ),
+          ),
+          for (final s in cat.shortcuts) _expandedShortcutChip(cat, s),
+        ],
+      ),
+    );
+  }
+
+  // -----------------------------------------------------------------------
+  // «المفضّلة وآخر ما فُتح» — بطاقةٌ واحدةٌ ببلاطات، لا سطرا رقائقَ منفصلان.
+  // -----------------------------------------------------------------------
+
+  /// المفضّلةُ أوّلاً ثمّ آخرُ ما فُتح بلا تكرار، بحدٍّ أعلى ستّ بلاطاتٍ كما
+  /// في التصميم (`repeat(6,1fr)`).
+  List<({_FlatItem item, bool fav})> _pinnedItems() {
+    final out = <({_FlatItem item, bool fav})>[];
+    final seen = <String>{};
+    void add(String id, bool fav) {
+      if (!seen.add(id) || out.length >= 6) return;
+      for (final i in _allItems) {
+        if (i.id == id) {
+          out.add((item: i, fav: fav));
+          return;
+        }
+      }
+      seen.remove(id);
+    }
+
+    for (final id in _favorites) {
+      add(id, true);
+    }
+    for (final id in _recent) {
+      add(id, false);
+    }
+    return out;
+  }
+
+  Widget _pinnedCard(List<({_FlatItem item, bool fav})> pinned) {
+    return Container(
+      decoration: BoxDecoration(
+        color: context.picposCard,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: context.picposHairline),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
+            decoration: BoxDecoration(
+              border: Border(
+                  bottom: BorderSide(color: context.picposHairline)),
+            ),
+            child: Row(
+              children: [
+                const Icon(PhosphorIconsBold.star,
+                    size: 18, color: AppColors.warning),
+                const SizedBox(width: 11),
+                Expanded(
+                  child: Text(
+                    'المفضّلة وآخر ما فُتح',
+                    style: TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w800,
+                      color: context.picposText,
+                    ),
+                  ),
+                ),
+                Text(
+                  'تُحفظ لكل مستخدم على حدة',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: context.picposMuted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
+            child: Wrap(
+              spacing: 11,
+              runSpacing: 11,
+              children: [
+                for (final p in pinned) _pinnedTile(p.item, p.fav),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _pinnedTile(_FlatItem item, bool fav) {
+    return SizedBox(
+      width: 190,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: () => _openFlatItem(item),
+          child: Container(
+            padding: const EdgeInsets.all(13),
+            decoration: BoxDecoration(
+              color: context.picposField,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: context.picposHairline),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Icon(item.category.icon,
+                        size: 17, color: item.category.color),
+                    const Spacer(),
+                    Icon(
+                      fav
+                          ? PhosphorIconsFill.star
+                          : PhosphorIconsBold.clockCounterClockwise,
+                      size: 13,
+                      color: fav ? AppColors.warning : context.picposMuted,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 9),
+                Text(
+                  item.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w800,
+                    height: 1.4,
+                    color: context.picposText,
+                  ),
+                ),
+                const SizedBox(height: 9),
+                Text(
+                  // ⚠️ التصميمُ يكتب «مفضّل · فُتح 14:20»، ولا وقتَ فتحٍ
+                  //    مخزَّناً — المحفوظُ ترتيبٌ لا طابعُ وقت. فيُكتب ما
+                  //    يُعرَف: أمفضّلٌ هو أم مفتوحٌ مؤخّراً، واسمُ فئته.
+                  fav ? 'مفضّل · ${item.category.title}'
+                      : 'فُتح مؤخّراً · ${item.category.title}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                    color: context.picposMuted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _expandedShortcutChip(_ReportCategory cat, _ReportShortcut s) {
@@ -1792,12 +2104,13 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
 class _HoverCard extends StatefulWidget {
   final Widget child;
   final VoidCallback onTap;
-  final bool highlighted;
 
+  // ملحوظة: كان لها `highlighted` يُبرزها حين تكون فئتُها مفتوحةً في
+  // الأكورديون. وقد حلّ محلَّ الأكورديون شريطٌ جانبيٌّ يُبرز الفئةَ المختارةَ
+  // في مكانه — فلم يبقَ من يمرّر الرايةَ، وبقاؤها معطَّلةً يوهم بخيارٍ لا أثرَ له.
   const _HoverCard({
     required this.child,
     required this.onTap,
-    this.highlighted = false,
   });
 
   @override
@@ -1809,7 +2122,7 @@ class _HoverCardState extends State<_HoverCard> {
 
   @override
   Widget build(BuildContext context) {
-    final showActive = widget.highlighted || _hover;
+    final showActive = _hover;
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hover = true),
@@ -1858,6 +2171,65 @@ class _HoverCardState extends State<_HoverCard> {
 // ---------------------------------------------------------------------------
 // Data classes (منسوخة حرفياً من الأصل).
 // ---------------------------------------------------------------------------
+/// مجموعاتُ فئات التقارير في الشريط الجانبيّ — ترتيبُها ترتيبُ العرض.
+const List<String> _kGroupOrder = [
+  'البيع والربح',
+  'المخزون والشراء',
+  'العملاء والموردون',
+  'المال والضرائب',
+  'المتابعة والتحليل',
+];
+
+/// فئةُ التقارير ← مجموعتُها.
+///
+/// ⚠️ **كلُّ فئةٍ لا بدّ لها من مدخلٍ هنا**: الشريطُ يرسم المجموعاتِ بترتيب
+/// [_kGroupOrder]، وفئةٌ بلا مجموعةٍ تسقط في آخر مجموعةٍ صامتةً. يقيس ذلك
+/// حارسٌ في `test/widget/picpos_reports_hub_test.dart`.
+const Map<String, String> _kCatGroup = {
+  'sales': 'البيع والربح',
+  'profit': 'البيع والربح',
+  'returns': 'البيع والربح',
+  'inventory': 'المخزون والشراء',
+  'purchases': 'المخزون والشراء',
+  'customers': 'العملاء والموردون',
+  'suppliers': 'العملاء والموردون',
+  'cashbox': 'المال والضرائب',
+  'taxes': 'المال والضرائب',
+  'users': 'المتابعة والتحليل',
+  'branches': 'المتابعة والتحليل',
+  'audit': 'المتابعة والتحليل',
+  'analytics': 'المتابعة والتحليل',
+};
+
+/// وصفُ الفئة في رأس لوحة التفصيل.
+///
+/// ⚠️ **مقصوصٌ على ما تحويه الفئةُ فعلاً.** أوصافُ التصميم تَعِد في أربعة
+/// مواضعَ بما لا وجودَ له هنا: «ربح كل فاتورة» في الأرباح، و«أسباب الإرجاع»
+/// في المرتجعات، و«الأصناف الراكدة» في المخزون، و«المديونية والدفعات» في
+/// الموردين — فحُذفت تلك الجملُ وحدَها وبقي ما تُقابله تقاريرُ قائمة.
+///
+/// و«القوائم المالية» فئةٌ مستقلّةٌ في التصميم وهي هنا **تقريرٌ داخل
+/// التحليلات** — فلم تُخترَع فئةٌ جديدةٌ لتطابق الرسم.
+const Map<String, String> _kCatDesc = {
+  'sales': 'كل ما يخص حركة البيع: الفواتير، الكاشير، الأصناف، المجموعات، '
+      'وطرق الدفع',
+  'profit': 'تكلفة المبيعات وصافي الربح وهامش الربح على مستوى الصنف والتصنيف',
+  'returns': 'مرتجعات المبيعات والمشتريات والمبالغ المستردة',
+  'inventory': 'أرصدة وقيم المخزون، كرت الصنف، الجرد، والصلاحيات',
+  'purchases': 'المشتريات بفلاتر كاملة ومتابعة أوامر الشراء المفتوحة',
+  'customers': 'كشوف الحساب، تقادم الذمم، سلوك الشراء، وتسوية الذمم مع '
+      'الأستاذ العام',
+  'suppliers': 'كشوف حساب الموردين وحجم التعامل',
+  'cashbox': 'حركة الخزينة، الورديات وعجز النقدية، التوصيل، والمصروفات '
+      'التشغيلية',
+  'taxes': 'الضريبة المحصلة والمدفوعة وصافي الالتزام وحالة الفاتورة '
+      'الإلكترونية',
+  'users': 'نشاط المستخدمين وسجل الدخول ومصفوفة الصلاحيات لكل دور',
+  'branches': 'مقارنة أداء الفروع والتحويلات المخزنية بينها',
+  'audit': 'سجل العمليات والتعديلات والطباعة والإلغاءات — أثر كامل لكل حركة',
+  'analytics': 'اتجاهات وأنماط المبيعات وتقسيم العملاء ودوران المخزون',
+};
+
 class _ReportCategory {
   final String id;
   final String title;
