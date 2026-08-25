@@ -86,6 +86,7 @@ import '../../picpos_shell/picpos_surface.dart';
 // يخدم أجزاءَ هذه المكتبة كلَّها (`part of`): حوارات المدير والعميل
 // والإعدادات العامّة تستعمل `PicPosDialog` من هنا.
 import '../../picpos_shell/picpos_dialog.dart';
+import '../../picpos_shell/picpos_option_picker.dart';
 import '../guarded_sections.dart';
 import 'dart:convert';
 import 'dart:io' show File;
@@ -1228,86 +1229,63 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
     }
   }
 
-  void _showThemeSelector(
+  /// ⚠️ كان `SimpleDialog` — بلاغُ المالك بالصورة 2026-08-25. والأوصافُ
+  /// أدناه من التصميم (‏`SECTIONS.system` → بلوكُ «مظهر البرنامج»).
+  Future<void> _showThemeSelector(
     BuildContext context,
     WidgetRef ref,
     ThemeMode current,
-  ) {
-    showDialog(
-      context: context,
-      builder: (ctx) => Directionality(
-        textDirection: ui.TextDirection.rtl,
-        child: SimpleDialog(
-          title: const Text('اختر مظهر التطبيق'),
-          children: [
-            _buildThemeOption(
-              ctx,
-              ref,
-              ThemeMode.system,
-              'تلقائي (النظام)',
-              PhosphorIconsBold.monitor,
-              current,
-            ),
-            _buildThemeOption(
-              ctx,
-              ref,
-              ThemeMode.light,
-              'الوضع النهاري',
-              PhosphorIconsBold.sun,
-              current,
-            ),
-            _buildThemeOption(
-              ctx,
-              ref,
-              ThemeMode.dark,
-              'الوضع الليلي',
-              PhosphorIconsBold.moon,
-              current,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  ) async {
+    const labels = {
+      ThemeMode.system: 'تلقائي',
+      ThemeMode.light: 'فاتح',
+      ThemeMode.dark: 'غامق',
+    };
 
-  Widget _buildThemeOption(
-    BuildContext context,
-    WidgetRef ref,
-    ThemeMode mode,
-    String label,
-    IconData icon,
-    ThemeMode current,
-  ) {
-    final isSelected = mode == current;
-    return ListTile(
-      leading: Icon(icon, color: isSelected ? AppColors.primary : null),
-      title: Text(
-        label,
-        style: TextStyle(
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+    final picked = await showPicPosOptionPicker<ThemeMode>(
+      context: context,
+      icon: PhosphorIconsBold.palette,
+      title: 'مظهر البرنامج',
+      subtitle: 'يُطبَّق على كل الشاشات وشاشة العميل',
+      selected: current,
+      options: const [
+        PicPosOption(
+          value: ThemeMode.light,
+          label: 'فاتح',
+          sub: 'الأنسب للإضاءة القويّة والطباعة من الشاشة',
+          icon: PhosphorIconsBold.sun,
         ),
-      ),
-      trailing: isSelected
-          ? const Icon(PhosphorIconsBold.check, color: AppColors.success)
-          : null,
-      onTap: () {
-        ref.read(themeModeProvider.notifier).setMode(mode);
-        // #Forensic Log: Theme change
-        try {
-          final auth = ref.read(authProvider);
-          final logger = ref.read(activityLoggerProvider);
-          logger.logSettingsChange(
-            auth.user?.id ?? 0,
-            auth.user?.displayName ?? '',
-            'مظهر التطبيق',
-            newValue: label,
-          );
-        } catch (e) {
-          debugPrint('[ActivityLog] Error: $e');
-        }
-        Navigator.pop(context);
-      },
+        PicPosOption(
+          value: ThemeMode.dark,
+          label: 'غامق',
+          sub: 'مريحٌ للكاشير في الورديات الليليّة',
+          icon: PhosphorIconsBold.moon,
+        ),
+        PicPosOption(
+          value: ThemeMode.system,
+          label: 'تلقائي',
+          sub: 'يتبع مظهرَ ويندوز',
+          icon: PhosphorIconsBold.monitor,
+        ),
+      ],
     );
+
+    if (picked == null || picked == current) return;
+    ref.read(themeModeProvider.notifier).setMode(picked);
+
+    // #Forensic Log: Theme change
+    try {
+      final auth = ref.read(authProvider);
+      final logger = ref.read(activityLoggerProvider);
+      logger.logSettingsChange(
+        auth.user?.id ?? 0,
+        auth.user?.displayName ?? '',
+        'مظهر التطبيق',
+        newValue: labels[picked] ?? '',
+      );
+    } catch (e) {
+      debugPrint('[ActivityLog] Error: $e');
+    }
   }
 
   Widget _buildAboutCard() {

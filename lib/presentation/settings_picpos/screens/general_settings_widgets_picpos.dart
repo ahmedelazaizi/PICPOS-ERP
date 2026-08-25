@@ -58,86 +58,62 @@ class _IndustryModeToggle extends ConsumerWidget {
     }
   }
 
-  void _showModeSelector(
+  /// ⚠️ كان `SimpleDialog` بشكل Material الافتراضيّ — وهو عينُ ما بلّغ عنه
+  /// المالكُ بالصورة 2026-08-25 («التصميم القديم لا زال موجوداً»). صار
+  /// `showPicPosOptionPicker` فيأخذ رأسَ `PicPosDialog` وتذييلَه.
+  ///
+  /// ⚠️ **وتبدّل السلوكُ عن قصد**: كانت النقرةُ تُطبِّق وتُغلق فوراً، فنقرةٌ
+  /// خاطئةٌ هنا تبدّل شاشاتِ النظام كلَّها بلا تأكيد. صارت النقرةُ تُعلِّم
+  /// وزرُّ «تطبيق» يُنفِّذ.
+  Future<void> _showModeSelector(
     BuildContext context,
     WidgetRef ref,
     IndustryMode current,
-  ) {
-    showDialog(
+  ) async {
+    final picked = await showPicPosOptionPicker<IndustryMode>(
       context: context,
-      builder: (ctx) => Directionality(
-        textDirection: ui.TextDirection.rtl,
-        child: SimpleDialog(
-          title: const Text('اختر نوع النشاط'),
-          children: [
-            _buildOption(
-              ctx,
-              ref,
-              IndustryMode.supermarket,
-              'سوبر ماركت / بيع بالتجزئة',
-              PhosphorIconsBold.barcode,
-              current,
-            ),
-            _buildOption(
-              ctx,
-              ref,
-              IndustryMode.restaurant,
-              'مطعم / صالات طعام',
-              PhosphorIconsBold.cookingPot,
-              current,
-            ),
-            _buildOption(
-              ctx,
-              ref,
-              IndustryMode.cafe,
-              'كافيه / طلبات سريعة',
-              PhosphorIconsBold.coffee,
-              current,
-            ),
-          ],
+      icon: PhosphorIconsBold.storefront,
+      title: 'نوع النشاط',
+      subtitle: 'يحدّد الشاشاتِ والحساباتِ المتاحة',
+      selected: current,
+      options: const [
+        PicPosOption(
+          value: IndustryMode.supermarket,
+          label: 'سوبر ماركت / بيع بالتجزئة',
+          sub: 'بيعٌ سريعٌ وباركود وميزان PLU',
+          icon: PhosphorIconsBold.barcode,
         ),
-      ),
+        PicPosOption(
+          value: IndustryMode.restaurant,
+          label: 'مطعم / صالات طعام',
+          sub: 'طاولاتٌ وحجوزاتٌ وتذاكرُ مطبخ',
+          icon: PhosphorIconsBold.cookingPot,
+        ),
+        PicPosOption(
+          value: IndustryMode.cafe,
+          label: 'كافيه / طلبات سريعة',
+          sub: 'طلباتٌ سريعةٌ بلا طاولات',
+          icon: PhosphorIconsBold.coffee,
+        ),
+      ],
     );
-  }
 
-  Widget _buildOption(
-    BuildContext context,
-    WidgetRef ref,
-    IndustryMode mode,
-    String label,
-    IconData icon,
-    IndustryMode current,
-  ) {
-    final isSelected = mode == current;
-    return ListTile(
-      leading: Icon(icon, color: isSelected ? AppColors.primary : null),
-      title: Text(
-        label,
-        style: TextStyle(
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-        ),
-      ),
-      trailing: isSelected
-          ? const Icon(PhosphorIconsBold.check, color: AppColors.success)
-          : null,
-      onTap: () {
-        ref.read(industryModeProvider.notifier).setMode(mode);
-        // #Forensic Log: Industry mode change
-        try {
-          final auth = ref.read(authProvider);
-          final logger = ref.read(activityLoggerProvider);
-          logger.logSettingsChange(
-            auth.user?.id ?? 0,
-            auth.user?.displayName ?? '',
-            'نوع النشاط التجاري',
-            newValue: label,
-          );
-        } catch (e) {
-          debugPrint('[ActivityLog] Error: $e');
-        }
-        Navigator.pop(context);
-      },
-    );
+    if (picked == null || picked == current) return;
+    ref.read(industryModeProvider.notifier).setMode(picked);
+
+    // #Forensic Log: Industry mode change
+    try {
+      final auth = ref.read(authProvider);
+      final logger = ref.read(activityLoggerProvider);
+      logger.logSettingsChange(
+        auth.user?.id ?? 0,
+        auth.user?.displayName ?? '',
+        'نوع النشاط التجاري',
+        newValue: _getModeLabel(picked),
+      );
+    } catch (e) {
+      debugPrint('[ActivityLog] Error: $e');
+    }
   }
 }
 
@@ -182,65 +158,46 @@ class _CurrencySelector extends ConsumerWidget {
     );
   }
 
-  void _showCurrencySelector(
+  /// ⚠️ **والعملةُ قرارٌ شبهُ نهائيّ** — التصميمُ يقول «لا تتغيّر بعد أوّل
+  /// فاتورة». فتحويلُها من `SimpleDialog` (‏تُطبِّق باللمس) إلى منتقٍ بزرِّ
+  /// «تطبيق» ليس تجميلاً: نقرةٌ خاطئةٌ كانت تبدّل عملةَ النظام كلِّه صامتةً.
+  Future<void> _showCurrencySelector(
     BuildContext context,
     WidgetRef ref,
     String currentCode,
-  ) {
-    showDialog(
+  ) async {
+    final picked = await showPicPosOptionPicker<String>(
       context: context,
-      builder: (ctx) => Directionality(
-        textDirection: ui.TextDirection.rtl,
-        child: SimpleDialog(
-          title: const Text('اختر عملة النظام'),
-          children: CurrencyInfo.all.map((c) {
-            final isSelected = c.code == currentCode;
-            return ListTile(
-              leading: Text(
-                c.symbolAr,
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  color: isSelected ? AppColors.primary : null,
-                ),
-              ),
-              title: Text(
-                c.nameAr,
-                style: TextStyle(
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                ),
-              ),
-              subtitle: Text(c.code),
-              trailing: isSelected
-                  ? const Icon(
-                      PhosphorIconsBold.check,
-                      color: AppColors.success,
-                    )
-                  : null,
-              onTap: () async {
-                await ref
-                    .read(systemCurrencyProvider.notifier)
-                    .setCurrency(c.code);
-                // Log activity
-                try {
-                  final auth = ref.read(authProvider);
-                  final logger = ref.read(activityLoggerProvider);
-                  logger.logSettingsChange(
-                    auth.user?.id ?? 0,
-                    auth.user?.displayName ?? '',
-                    'عملة النظام',
-                    newValue: '${c.nameAr} (${c.code})',
-                  );
-                } catch (e) {
-                  debugPrint('[ActivityLog] Error: $e');
-                }
-                if (ctx.mounted) Navigator.pop(ctx);
-              },
-            );
-          }).toList(),
-        ),
-      ),
+      icon: PhosphorIconsBold.currencyCircleDollar,
+      title: 'عملة النظام',
+      subtitle: 'كلُّ المبالغ والتقارير — راجعها قبل أوّل فاتورة',
+      selected: currentCode,
+      options: [
+        for (final c in CurrencyInfo.all)
+          PicPosOption(
+            value: c.code,
+            label: c.nameAr,
+            sub: '${c.code} · ${c.symbolAr}',
+          ),
+      ],
     );
+
+    if (picked == null || picked == currentCode) return;
+    await ref.read(systemCurrencyProvider.notifier).setCurrency(picked);
+
+    try {
+      final info = CurrencyInfo.all.firstWhere((c) => c.code == picked);
+      final auth = ref.read(authProvider);
+      final logger = ref.read(activityLoggerProvider);
+      logger.logSettingsChange(
+        auth.user?.id ?? 0,
+        auth.user?.displayName ?? '',
+        'عملة النظام',
+        newValue: '${info.nameAr} (${info.code})',
+      );
+    } catch (e) {
+      debugPrint('[ActivityLog] Error: $e');
+    }
   }
 }
 
@@ -417,46 +374,30 @@ class _StockShortagePolicyToggleState
     );
   }
 
-  void _showSelector() {
-    showDialog(
+  Future<void> _showSelector() async {
+    final picked = await showPicPosOptionPicker<StockShortagePolicy>(
       context: context,
-      builder: (ctx) => Directionality(
-        textDirection: ui.TextDirection.rtl,
-        child: SimpleDialog(
-          title: const Text('اختر السياسة الافتراضية'),
-          children: [
-            for (final policy in StockShortagePolicy.values)
-              _buildOption(ctx, policy),
-          ],
-        ),
-      ),
+      icon: PhosphorIconsBold.warning,
+      title: 'سياسة نقص الخامات',
+      subtitle: 'ماذا يحدث حين لا تكفي الكميّةُ عند البيع',
+      selected: _policy,
+      options: [
+        for (final p in StockShortagePolicy.values)
+          PicPosOption(
+            value: p,
+            label: p.arabicLabel,
+            sub: _describe(p).$1,
+            icon: _describe(p).$2,
+          ),
+      ],
     );
-  }
 
-  Widget _buildOption(BuildContext context, StockShortagePolicy policy) {
-    final isSelected = policy == _policy;
-    final (subtitle, icon) = _describe(policy);
-    return ListTile(
-      leading: Icon(icon, color: isSelected ? AppColors.primary : null),
-      title: Text(
-        policy.arabicLabel,
-        style: TextStyle(
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-        ),
-      ),
-      subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
-      trailing: isSelected
-          ? const Icon(PhosphorIconsBold.check, color: AppColors.success)
-          : null,
-      onTap: () async {
-        await StockShortagePolicyService.saveGlobal(
-          ref.read(settingsRepositoryProvider),
-          policy,
-        );
-        setState(() => _policy = policy);
-        if (context.mounted) Navigator.pop(context);
-      },
+    if (picked == null || picked == _policy) return;
+    await StockShortagePolicyService.saveGlobal(
+      ref.read(settingsRepositoryProvider),
+      picked,
     );
+    if (mounted) setState(() => _policy = picked);
   }
 
   static (String, IconData) _describe(StockShortagePolicy policy) {
@@ -708,60 +649,53 @@ class _SessionTimeoutSettingState extends ConsumerState<_SessionTimeoutSetting> 
     );
   }
 
-  void _showSelector(BuildContext context) {
-    showDialog(
+  Future<void> _showSelector(BuildContext context) async {
+    final picked = await showPicPosOptionPicker<int>(
       context: context,
-      builder: (ctx) => Directionality(
-        textDirection: ui.TextDirection.rtl,
-        child: SimpleDialog(
-          title: const Text('مهلة انتهاء الجلسة'),
-          children: _options.map((opt) {
-            final isSelected = opt.value == _timeoutMinutes;
-            return ListTile(
-              leading: Icon(
-                opt.value == 0 ? PhosphorIconsBold.prohibit : PhosphorIconsBold.timer,
-                color: isSelected ? AppColors.primary : null,
-              ),
-              title: Text(
-                opt.label,
-                style: TextStyle(
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                ),
-              ),
-              trailing: isSelected
-                  ? const Icon(PhosphorIconsBold.check, color: AppColors.success)
-                  : null,
-              onTap: () async {
-                setState(() => _timeoutMinutes = opt.value);
-                await ref
-                    .read(settingsRepositoryProvider)
-                    .saveSetting('session_timeout_minutes', opt.value.toString());
-                // Push the new value to the live detector. Without this the
-                // FutureProvider (no autoDispose, nothing else invalidates it
-                // from here) kept serving the OLD duration until the app was
-                // restarted — so choosing "معطل" here did not actually stop
-                // the auto sign-out. The POS settings screen already did this;
-                // this screen did not.
-                ref.invalidate(sessionTimeoutProvider);
-                // #Forensic Log
-                try {
-                  final auth = ref.read(authProvider);
-                  final logger = ref.read(activityLoggerProvider);
-                  await logger.logSettingsChange(
-                    auth.user?.id ?? 0,
-                    auth.user?.displayName ?? '',
-                    'مهلة انتهاء الجلسة',
-                    newValue: opt.label,
-                  );
-                } catch (e) {
-                  debugPrint('[ActivityLog] Error: $e');
-                }
-                if (ctx.mounted) Navigator.pop(ctx);
-              },
-            );
-          }).toList(),
-        ),
-      ),
+      icon: PhosphorIconsBold.timer,
+      title: 'مهلة انتهاء الجلسة',
+      subtitle: 'تسجيلُ خروجٍ تلقائيٍّ بعد سكونٍ بهذه المدّة',
+      selected: _timeoutMinutes,
+      options: [
+        for (final opt in _options)
+          PicPosOption(
+            value: opt.value,
+            label: opt.label,
+            icon: opt.value == 0
+                ? PhosphorIconsBold.prohibit
+                : PhosphorIconsBold.timer,
+            sub: opt.value == 0
+                ? 'الجلسةُ لا تنتهي — لا تستعمله على جهازٍ مشترك'
+                : null,
+          ),
+      ],
     );
+
+    if (picked == null || picked == _timeoutMinutes) return;
+    setState(() => _timeoutMinutes = picked);
+    await ref
+        .read(settingsRepositoryProvider)
+        .saveSetting('session_timeout_minutes', picked.toString());
+    // Push the new value to the live detector. Without this the
+    // FutureProvider (no autoDispose, nothing else invalidates it
+    // from here) kept serving the OLD duration until the app was
+    // restarted — so choosing "معطل" here did not actually stop
+    // the auto sign-out. The POS settings screen already did this;
+    // this screen did not.
+    ref.invalidate(sessionTimeoutProvider);
+    // #Forensic Log
+    try {
+      final label = _options.firstWhere((o) => o.value == picked).label;
+      final auth = ref.read(authProvider);
+      final logger = ref.read(activityLoggerProvider);
+      await logger.logSettingsChange(
+        auth.user?.id ?? 0,
+        auth.user?.displayName ?? '',
+        'مهلة انتهاء الجلسة',
+        newValue: label,
+      );
+    } catch (e) {
+      debugPrint('[ActivityLog] Error: $e');
+    }
   }
 }

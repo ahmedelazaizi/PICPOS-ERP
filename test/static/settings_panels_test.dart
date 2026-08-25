@@ -153,4 +153,46 @@ void main() {
       });
     }
   });
+
+  group('لا حواراتِ Material الافتراضيّة في واجهة PicPos', () {
+    /// ═══ البلاغُ ═══
+    ///
+    /// أرسل المالكُ صوراً 2026-08-25 لمنتقي «اختر نوع النشاط» بشكل
+    /// `SimpleDialog` العاري، وقال إنّ «حوارات ونوافذ التصميم القديم لا زالت
+    /// موجودة، وهذا غير مطابق للتصميم الجديد المميّز الذي يجعل النظام فريداً
+    /// لذاته وليس مشابهاً لشكل UralCash مع فرق الألوان».
+    ///
+    /// ومقيسٌ أنّها كانت **خمسةً** في فورك الإعدادات: نوعُ النشاط · عملةُ
+    /// النظام · سياسةُ نقص الخامات · مهلةُ الجلسة · مظهرُ التطبيق. وكلُّها
+    /// صارت `showPicPosOptionPicker`.
+    ///
+    /// ⚠️ ولا يُقاس `AlertDialog` هنا: بعضُ حوارات التأكيد الصغيرة تستعملها
+    /// مشروعةً عبر `AppConfirmDialog` وغيرِه. المقيسُ `SimpleDialog` وحدَها —
+    /// وهي **منتقي خيارٍ** بالتعريف، وله بديلٌ واحدٌ على الهويّة.
+    const forkFiles = [
+      'lib/presentation/settings_picpos/screens/settings_picpos_screen.dart',
+      'lib/presentation/settings_picpos/screens/general_settings_widgets_picpos.dart',
+      'lib/presentation/settings_picpos/screens/admin_home_settings_picpos.dart',
+      'lib/presentation/settings_picpos/screens/cfd_settings_card_picpos.dart',
+      'lib/presentation/settings_picpos/screens/network_mode_settings_picpos.dart',
+      'lib/presentation/settings_picpos/screens/payment_methods_settings_picpos.dart',
+      'lib/presentation/settings_picpos/screens/scale_barcode_settings_picpos.dart',
+      'lib/presentation/settings_picpos/screens/touch_input_settings_picpos.dart',
+    ];
+
+    for (final path in forkFiles) {
+      test('${path.split('/').last} بلا SimpleDialog', () {
+        final f = File(path);
+        if (!f.existsSync()) return;
+        // `_code` يُسقط أسطرَ التعليق — فالتعليقُ الذي يشرح التحويلَ لا
+        // يُحسَب حواراً عائداً. (وقع ذلك فعلاً في حارسٍ سابق.)
+        final src = _code(f.readAsStringSync());
+        expect(src.contains('SimpleDialog'), isFalse,
+            reason: 'عاد `SimpleDialog` إلى ${path.split('/').last}. '
+                'منتقي الخيار في واجهة PicPos هو '
+                '`showPicPosOptionPicker` — يأخذ رأسَ `PicPosDialog` '
+                'وتذييلَه، ولا يُطبِّق الاختيارَ باللمس بل بزرِّ «تطبيق».');
+      });
+    }
+  });
 }
