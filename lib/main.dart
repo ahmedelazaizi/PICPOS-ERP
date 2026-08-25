@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async' show unawaited;
+import 'services/printing/pdf_compute_helper.dart';
 import 'services/app_version_service.dart';
 import 'services/client_write_interceptor.dart';
 import 'services/id_namespace_service.dart';
@@ -255,6 +256,22 @@ void main() async {
     // downstream component so SQLite never sees parallel handles on the
     // same file from this process.
     sharedDb = pgDb ?? AppDatabase();
+
+    // تسجيلُ طباعة التقارير — يُضبَط مرّةً هنا لأنّ `PdfComputeHelper` في
+    // طبقةِ خدماتٍ لا تعرف قاعدةً ولا مستخدماً. والخطّافُ فارغٌ بالبناء،
+    // فبلا هذا السطر لا يُسجَّل شيءٌ ولا يتغيّر سلوكُ الطباعة إطلاقاً.
+    //
+    // ⚠️ والفواتيرُ **ليست هنا**: `PrintingServiceImpl` يسجّلها بمعرِّفها
+    // ومبلغها، وتسجيلُها هنا أيضاً يكتب سطرَين لطباعةٍ واحدة. ولذلك
+    // `documentLabel` غيرُ ممرَّرٍ في مساري الفاتورتين.
+    final auditDb = sharedDb;
+    PdfComputeHelper.onPrinted = (label) => auditDb.logActivity(
+          userId: ActorSnapshot.userId,
+          userName: ActorSnapshot.userName,
+          action: 'print_report',
+          entityType: 'report',
+          description: 'طباعةُ $label',
+        );
 
     // Spec 089 — reconcile network_mode between SharedPreferences (legacy)
     // and the DB settings table (canonical). Repairs the split-brain

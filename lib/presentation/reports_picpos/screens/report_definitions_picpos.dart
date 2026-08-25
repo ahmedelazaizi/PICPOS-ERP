@@ -73,13 +73,17 @@ Color _marginTint(double margin) =>
 /// استعلاماتٍ إضافيّةً لرسمٍ واحد. والبيانةُ المتاحةُ من نفس الاستعلام
 /// (‏الهامشُ لكلّ تصنيف) تجيب السؤالَ نفسَه: أينَ يضيع الربح.
 ///
-/// ⚠️ **والجدولُ تصنيفاتٌ لا أصناف.** التصميمُ يسرد الأصنافَ التي تحتاج
-/// مراجعةَ سعر، و`getCategoryProfitReport` يجمع على مستوى التصنيف. وجدولُ
-/// أصنافٍ بهامشٍ حقيقيٍّ يحتاج تكلفةً لكلّ سطرِ بيع — استعلامٌ لا يوجد.
+/// وتبويبةُ «هامش الربح» **أصنافٌ لا تصنيفات** كما في التصميم (أمرُ المالك
+/// 2026-08-26). وكان الظنُّ أنّ تكلفةَ سطرِ البيع غيرُ متاحة، والمقيسُ أنّها
+/// موجودةٌ في `sales_invoice_items.cost_price` — لقطةُ التكلفة **وقتَ البيع**
+/// — فلم تكن فجوةَ بيانات بل تجميعاً على `product_id` بدل `category_id`.
+///
+/// ⚠️ **والتكلفةُ لقطةُ وقتِ البيع لا تكلفةُ اليوم**: صنفٌ ارتفعت تكلفتُه
+/// اليومَ لم يكن يبيع بخسارةٍ الشهرَ الماضي، وتقييمُه بتكلفة اليوم يتّهمه.
 PicPosReportDefinition profitMarginReport() => PicPosReportDefinition(
       id: 'profit_margin',
       title: 'هامش الربح',
-      subtitle: 'تكلفةُ المبيعات وصافي الربح لكلّ تصنيف',
+      subtitle: 'تكلفةُ المبيعات وصافي الربح — تصنيفاً وصنفاً',
       icon: PhosphorIconsBold.percent,
       tabs: [
         PicPosReportTabDef(
@@ -185,12 +189,18 @@ PicPosReportDefinition profitMarginReport() => PicPosReportDefinition(
           id: 'margin',
           label: 'هامش الربح',
           icon: PhosphorIconsBold.percent,
-          note: 'التصنيفاتُ التي هامشُها سالبٌ أو أقلُّ من ٥٪ — تحتاج مراجعةَ سعر.',
+          note: 'الأصنافُ التي هامشُها سالبٌ أو أقلُّ من ٥٪ — تحتاج مراجعةَ سعر. '
+              'والتكلفةُ لقطةُ **وقتِ البيع** لا تكلفةُ اليوم.',
           load: (ref, range) async {
-            final all = await _categoryRows(ref, range);
+            final repo = ref.read(reportingRepositoryProvider);
+            final all = await repo.getProductProfitReport(
+              from: range.start,
+              to: range.end,
+              allowedBranchIds: await _scope(ref),
+            );
+            if (all.isEmpty) return const PicPosReportTabContent();
             final weak = all.where((r) => r.margin < 5).toList()
               ..sort((a, b) => a.margin.compareTo(b.margin));
-            if (all.isEmpty) return const PicPosReportTabContent();
             final negative = all.where((r) => r.margin < 0).length;
             final best = all.reduce((a, b) => a.margin >= b.margin ? a : b);
             final worst = all.reduce((a, b) => a.margin <= b.margin ? a : b);
@@ -204,40 +214,42 @@ PicPosReportDefinition profitMarginReport() => PicPosReportDefinition(
                   label: 'الهامش الإجمالي',
                   value: _pct(_ratio(profit, sales)),
                   tint: _marginTint(_ratio(profit, sales)),
-                  vs: 'على كلّ التصنيفات',
+                  vs: 'على ${all.length} صنفاً بيع',
                 ),
                 PicPosHubKpi(
                   icon: PhosphorIconsBold.arrowUp,
                   label: 'أعلى هامش',
                   value: _pct(best.margin),
                   tint: _tintOk,
-                  vs: best.categoryName,
+                  vs: best.productName,
                 ),
                 PicPosHubKpi(
                   icon: PhosphorIconsBold.arrowDown,
                   label: 'أدنى هامش',
                   value: _pct(worst.margin),
                   tint: _tintErr,
-                  vs: worst.categoryName,
+                  vs: worst.productName,
                 ),
                 PicPosHubKpi(
                   icon: PhosphorIconsBold.warning,
-                  label: 'تصنيفاتٌ بهامشٍ سالب',
+                  label: 'أصنافٌ بهامشٍ سالب',
                   value: _int(negative),
                   tint: negative > 0 ? _tintErr : _tintOk,
                   vs: 'تبيع بخسارة',
                 ),
               ],
               chart: PicPosReportChart(
-                title: 'الهامشُ لكلّ تصنيف',
+                title: 'أضعفُ الأصناف هامشاً',
                 subtitle: 'النسبةُ المئويّةُ من المبيعات',
                 series: const [
                   PicPosChartSeries(label: 'الهامش', color: _tintBrand),
                 ],
                 bars: [
-                  for (final r in all.take(8))
+                  // الأضعفُ أوّلاً — الرسمُ يجيب «أين تضيع النقود»، فصدارةُ
+                  // الأصناف الرابحةِ فيه تدفع المطلوبَ خارجَ الصورة.
+                  for (final r in (weak.isEmpty ? all : weak).take(8))
                     PicPosChartBar(
-                      label: r.categoryName,
+                      label: r.productName,
                       // السالبُ يُرسَم بقيمته المطلقة ونصُّه يحمل الإشارة،
                       // فالعمودُ لا ينزل تحت المحور وتبقى الإشارةُ مقروءة.
                       value: r.margin,
@@ -246,36 +258,50 @@ PicPosReportDefinition profitMarginReport() => PicPosReportDefinition(
                 ],
               ),
               table: PicPosDataTable(
-                title: 'تحتاج مراجعةَ سعر',
+                title: 'أصنافٌ تحتاج مراجعةَ سعر',
                 subtitle: 'هامشٌ أقلُّ من ٥٪ أو سالب',
-                emptyLabel: 'لا تصنيفَ هامشُه دون ٥٪ — كلُّها سليمة',
+                emptyLabel: 'لا صنفَ هامشُه دون ٥٪ — كلُّها سليمة',
                 columns: const [
-                  PicPosTableColumn('التصنيف', flex: 2.4),
-                  PicPosTableColumn('المبيعات',
+                  PicPosTableColumn('الصنف', flex: 2.4),
+                  PicPosTableColumn('متوسّطُ التكلفة',
                       flex: 1.3, align: PicPosCellAlign.end),
-                  PicPosTableColumn('التكلفة',
+                  PicPosTableColumn('متوسّطُ البيع',
                       flex: 1.3, align: PicPosCellAlign.end),
                   PicPosTableColumn('الهامش', flex: 1.4),
+                  PicPosTableColumn('المتاح',
+                      flex: 1.0, align: PicPosCellAlign.end),
                   PicPosTableColumn('الحالة', flex: 1.2),
                 ],
                 rows: [
                   for (final r in weak)
                     PicPosTableRow(cells: [
-                      PicPosTextCell(r.categoryName,
-                          icon: PhosphorIconsBold.tag,
+                      PicPosTextCell(r.productName,
+                          sub: r.categoryName,
+                          icon: PhosphorIconsBold.package,
                           tint: _marginTint(r.margin)),
-                      PicPosTextCell(_money(r.totalSales)),
-                      PicPosTextCell(_money(r.totalCost)),
+                      PicPosTextCell(_money(r.averageCost)),
+                      PicPosTextCell(_money(r.averagePrice)),
                       PicPosBarCell(
                         _pct(r.margin),
                         (r.margin / 100).clamp(0.0, 1.0),
                         _marginTint(r.margin),
                       ),
+                      PicPosTextCell(r.currentStock.toStringAsFixed(0)),
                       PicPosPillCell(
                         r.margin < 0 ? 'يبيع بخسارة' : 'هامشٌ ضعيف',
                         _marginTint(r.margin),
                       ),
                     ]),
+                ],
+                totals: [
+                  '${weak.length} صنفاً',
+                  '',
+                  '',
+                  '',
+                  weak
+                      .fold<double>(0, (a, r) => a + r.currentStock)
+                      .toStringAsFixed(0),
+                  '',
                 ],
               ),
             );
@@ -748,11 +774,18 @@ PicPosReportDefinition salesTrendReport() => PicPosReportDefinition(
 // ٦) دوران المخزون — `an_inventory`
 // ═══════════════════════════════════════════════════════════════════════════
 
-/// ⚠️ **معدّلُ الدوران تقريبٌ معلَنٌ لا رقمٌ محاسبيّ.** الصيغةُ الدقيقةُ
-/// `COGS ÷ متوسّطِ المخزون` بين أوّلِ المدى وآخرِه، ولا يوجد استعلامُ
-/// «قيمةِ المخزون بتاريخٍ ماضٍ». فالمقسومُ عليه هو قيمةُ المخزون **الآن**،
-/// وهذا مكتوبٌ في سطر ملاحظة التبويبة كي لا يُقرأ الرقمُ على أنّه أدقُّ
-/// ممّا هو. رقمٌ يكذب أسوأُ من لا رقم — ورقمٌ يقول حدَّه ليس كاذباً.
+/// **الدورانُ على متوسّط المدى** — `COGS ÷ ((قيمةُ أوّلِ المدى + قيمةُ آخرِه) ÷ ٢)`.
+///
+/// كان يقسم على قيمة المخزون **الآن** لأنّه لا استعلامَ للقيمة في الماضي،
+/// فبُني `getInventoryCostValueAt` (أمرُ المالك 2026-08-26): الرصيدُ اليومَ
+/// ناقصَ صافي حركات المخزون بعد التاريخ.
+///
+/// ⚠️ **والمتغيّرُ تاريخيّاً هو الكمّيّةُ لا التكلفة.** التقييمُ يقع على
+/// `products.cost_price` — المتوسّطُ المرجّحُ العامُّ — في الطرفَين، وهو
+/// قرارُ المالك 2026-07-12 المكتوبُ في `getInventoryReportAnalytics`: عليه
+/// تُقيَّم صفوفُ تقرير المخزون وتُقيَّد تكلفةُ المبيعات في الأستاذ. وتقييمُ
+/// الطرفِ الماضي بأساسٍ آخرَ كان ينتج بسطاً ومقاماً على مسطرتين — وهو أسوأُ
+/// من حدٍّ معلَن. فالحدُّ الباقي مكتوبٌ في سطر ملاحظة التبويبة.
 PicPosReportDefinition inventoryTurnoverReport() => PicPosReportDefinition(
       id: 'an_inventory',
       title: 'دوران وكفاءة المخزون',
@@ -764,8 +797,8 @@ PicPosReportDefinition inventoryTurnoverReport() => PicPosReportDefinition(
           label: 'الدوران',
           icon: PhosphorIconsBold.arrowsClockwise,
           note:
-              'الدورانُ = تكلفةُ المبيعات ÷ قيمةِ المخزون **الحاليّة** — تقريبٌ، '
-              'إذ لا تُقرأ قيمةُ المخزون بتاريخٍ ماضٍ.',
+              'الدورانُ = تكلفةُ المبيعات ÷ متوسّطِ المخزون بين طرفَي المدى. '
+              'والكمّيّةُ تاريخيّةٌ والتكلفةُ متوسّطٌ مرجّحٌ حاليّ.',
           load: (ref, range) async {
             final repo = ref.read(reportingRepositoryProvider);
             final scope = await _scope(ref);
@@ -773,8 +806,12 @@ PicPosReportDefinition inventoryTurnoverReport() => PicPosReportDefinition(
             final sales = await repo.getSalesAnalytics(range.start, range.end,
                 allowedBranchIds: scope);
             final low = await repo.getLowStockProducts();
+            // قيمةُ **أوّل** المدى — الطرفُ الذي كان مفقوداً.
+            final openingValue =
+                await repo.getInventoryCostValueAt(range.start);
+            final averageValue = (openingValue + inv.totalCostValue) / 2;
             final turnover =
-                inv.totalCostValue == 0 ? 0.0 : sales.totalCOGS / inv.totalCostValue;
+                averageValue == 0 ? 0.0 : sales.totalCOGS / averageValue;
             final top = await repo.getTopProductsReport(
                 from: range.start,
                 to: range.end,
@@ -795,7 +832,7 @@ PicPosReportDefinition inventoryTurnoverReport() => PicPosReportDefinition(
                   label: 'معدّلُ الدوران',
                   value: turnover.toStringAsFixed(2),
                   tint: turnover >= 1 ? _tintOk : _tintWarn,
-                  vs: 'مرّةً في المدى — تقريبيّ',
+                  vs: 'مرّةً على متوسّطِ ${_money(averageValue)}',
                 ),
                 PicPosHubKpi(
                   icon: PhosphorIconsBold.receipt,
@@ -888,7 +925,14 @@ PicPosReportDefinition userActivityReport() => PicPosReportDefinition(
           icon: PhosphorIconsBold.users,
           note: 'العددُ من سجلّ النشاط — والسجلُّ لا يُحذَف.',
           load: (ref, range) async {
-            final users = await ref.read(allUsersProvider.future);
+            // ⚠️ **لا `allUsersProvider.future` ولا `watchAllUsers().first`.**
+            // الأوّلُ `StreamProvider.autoDispose` و`ref.read` لا يترك
+            // مستمعاً، فقد يُرمى قبل أن يبثّ. والثاني مجرى drift لا يستقرّ
+            // في المنطقة الوهميّة لاختبارات الودجت فتعلّق الشاشةُ على
+            // دوّارةٍ لا تنتهي — وقع ذلك فعلاً وأمسكه اختبارُ التركيب.
+            // والتقريرُ يريد لقطةً لا بثّاً.
+            final repo = ref.read(reportingRepositoryProvider);
+            final users = await repo.getAllUsersWithRoles();
             final logs = ref.read(activityLogRepositoryProvider);
             final counts = <({String name, String role, int ops})>[];
             for (final u in users) {

@@ -8,4 +8,10 @@ abstract class IInventoryReportingRepository {
   Future<InventoryAnalytics> getInventoryReportAnalytics({
     List<int>? warehouseIds,
   });
+
+  /// قيمةُ المخزون بالتكلفة بتاريخٍ ماضٍ — مقامُ معدّل الدوران.
+  Future<double> getInventoryCostValueAt(
+    DateTime at, {
+    List<int>? warehouseIds,
+  });
 }

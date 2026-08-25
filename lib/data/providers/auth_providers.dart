@@ -297,6 +297,13 @@ class AuthNotifier extends Notifier<AuthState> {
   /// the static snapshot stays in step with the auth state for the DAO
   /// activity-log prefix.
   void _recomputeElevation() {
+    // الفاعلُ يُنشَر مع كلّ تغيُّرِ حالةِ دخول — تنسب إليه الخدماتُ التي لا
+    // تملك `ref` سطورَ سجلّها (طباعةُ الفواتير والتقارير). ومكانُه هنا لأنّ
+    // هذه الدالّةَ تُنادى من كلّ مسارٍ يغيّر الحالة: الدخولُ والخروجُ
+    // وتبديلُ المستخدم وتغيُّرُ الاتّصال.
+    final actor = state.isAuthenticated ? state.userWithRole?.user : null;
+    ActorSnapshot.set(actor?.id, actor?.displayName);
+
     final role = state.userWithRole?.role;
     final isAdmin = role != null &&
         role.isSystemRole &&

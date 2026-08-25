@@ -73,12 +73,17 @@ abstract final class ActivityLogPresets {
 
   /// «متى طُبع كل مستند ومن قبل من» — كلُّ فعلٍ تسميتُه تبدأ بـ«طباعة».
   ///
-  /// ⚠️ فجوةٌ مقيسةٌ لا نقصٌ في القائمة: `print_report` و`print_return`
-  /// موجودان في `actionLabels` (‏موروثان من UralCash) لكنّ **لا موضعَ واحداً
-  /// في `lib` يكتبهما**. فطباعةُ الفواتير والتقارير غيرُ مسجَّلةٍ أصلاً،
-  /// والتقريرُ يعرض ما يُكتَب فعلاً: فاتورةَ الطاولة وباركودَ العرض. إدراجُهما
-  /// هنا كان سيُنتج استعلامَين يعودان فارغَين دائماً ويوهمان بتغطيةٍ لا توجد.
+  /// كانت الفجوةُ هنا مقيسةً ومعلَنة: `print_report` و`print_return` تسميتان
+  /// موروثتان من UralCash **بلا كاتب**، فطباعةُ الفواتير والتقارير لم تكن
+  /// تُسجَّل إطلاقاً. وقد بُنيت (‏أمرُ المالك 2026-08-26): `PrintingServiceImpl`
+  /// يكتب الفواتيرَ من مَخنقها الوحيد، و`PdfComputeHelper.onPrinted` يكتب
+  /// التقارير. فالمفاتيحُ الأربعةُ الأولى صارت حيّةً ولها كاتبٌ حقيقيّ —
+  /// ويحرس ذلك `activity_log_presets_test`.
   static const List<String> printed = [
+    'print_invoice',
+    'print_return',
+    'print_purchase_invoice',
+    'print_report',
     'table_print_bill',
     'offer_print',
   ];
@@ -223,6 +228,8 @@ class _ActivityLogPicposScreenState
     'category_upload_scale': 'ترحيل للميزان',
     'product_reorder': 'إعادة ترتيب منتجات',
     'print_return': 'طباعة إيصال مرتجع',
+    'print_invoice': 'طباعة فاتورة',
+    'print_purchase_invoice': 'طباعة فاتورة مشتريات',
     'user_create': 'إنشاء مستخدم',
     'user_edit': 'تعديل مستخدم',
     'user_activate': 'تفعيل مستخدم',
@@ -301,8 +308,12 @@ class _ActivityLogPicposScreenState
     'sales': [
       'sale', 'refund', 'return', 'cancel_return', 'void', 'delete_invoice',
       'discount', 'pos_discount', 'sales_return', 'update_payment', 'print_return',
+      'print_invoice',
     ],
-    'purchases': ['add_purchase', 'purchase', 'purchase_return', 'delete_purchase'],
+    'purchases': [
+      'add_purchase', 'purchase', 'purchase_return', 'delete_purchase',
+      'print_purchase_invoice',
+    ],
     'treasury': ['expense', 'receipt', 'delete_expense', 'daily_closing', 'safe_adjustment'],
     'customers': ['add_customer', 'update_customer', 'delete_customer', 'export_template', 'import_data'],
     'suppliers': ['add_supplier', 'update_supplier', 'delete_supplier', 'export_template', 'import_data'],

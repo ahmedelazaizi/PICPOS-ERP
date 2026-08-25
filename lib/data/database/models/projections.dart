@@ -405,3 +405,45 @@ class PartyPeriodAggregateRow {
   /// الداخليّ أصلاً، والحارسُ هنا لأنّ الصفرَ أرخصُ من انهيار.
   double get averageValue => invoiceCount > 0 ? totalValue / invoiceCount : 0;
 }
+
+/// ربحُ صنفٍ واحدٍ في فترة — نظيرُ [CategoryProfitRow] درجةً أدنى.
+///
+/// التكلفةُ من `sales_invoice_items.cost_price` — لقطةُ التكلفة **وقتَ
+/// البيع** لا التكلفةُ الحاليّة. وهذا هو الصحيح: صنفٌ ارتفعت تكلفتُه اليومَ
+/// لم يكن يُباع بخسارةٍ الشهرَ الماضي، وتقييمُه بتكلفة اليوم كان سيتّهمه.
+class ProductProfitRow {
+  const ProductProfitRow({
+    required this.productId,
+    required this.productName,
+    required this.categoryName,
+    required this.quantity,
+    required this.totalSales,
+    required this.totalCost,
+    required this.currentStock,
+  });
+
+  final int productId;
+  final String productName;
+  final String categoryName;
+
+  /// الكمّيّةُ المباعةُ في المدى.
+  final double quantity;
+
+  /// الإيرادُ **صافي الضريبة** — كي يقابل تكلفةً صافيةً أصلاً.
+  final double totalSales;
+  final double totalCost;
+
+  /// الرصيدُ المتاحُ الآن — يجيب «كم بقي من صنفٍ يبيع بخسارة».
+  final double currentStock;
+
+  double get profit => totalSales - totalCost;
+
+  /// الهامشُ نسبةً مئويّة. لا قسمةَ على صفر: صنفٌ بيع بصفرِ إيرادٍ (‏هديّةٌ
+  /// أو خصمٌ كامل) هامشُه صفرٌ لا لانهاية.
+  double get margin => totalSales == 0 ? 0 : profit / totalSales * 100;
+
+  /// متوسّطُ سعر البيع للوحدة — يُقرأ بجانب متوسّط التكلفة فيُفهَم الهامش.
+  double get averagePrice => quantity == 0 ? 0 : totalSales / quantity;
+
+  double get averageCost => quantity == 0 ? 0 : totalCost / quantity;
+}

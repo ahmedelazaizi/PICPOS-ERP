@@ -8,13 +8,21 @@
 //  ‏١) مفتاحٌ بلا تسميةٍ في `actionLabels` ⇒ صفوفٌ بلا اسمٍ مقروء.
 //  ‏٢) مفتاحٌ **لا يكتبه التطبيقُ في أيّ موضع** ⇒ استعلامٌ يعود فارغاً
 //     دائماً، فيبدو التقريرُ مغطّياً وهو لا يغطّي. وقعت ثلاثةُ مفاتيحَ في
-//     هذا بالضبط (`print_report` · `print_return` · `update_payment`)
-//     فاستُبعدت — وهذا الفحصُ يمنع عودتَها.
+//     هذا بالضبط؛ اثنان منها (`print_report` · `print_return`) صارا حيَّين
+//     ببناء تسجيل الطباعة (أمرُ المالك 2026-08-26)، وبقي `update_payment`
+//     تسميةً موروثةً بلا كاتب — وهذا الفحصُ يمنع إدراجَه.
 //  ‏٣) قائمةٌ فارغةٌ ⇒ `presetActions` يسقط إلى فرع «بلا ترشيح» في
 //     `loadLogs`، فيفتح التقريرُ السجلَّ كاملاً بلا أن يشتكيَ أحد.
 //
-// والقياسُ من المصدر لا من نسخةٍ ثانيةٍ للقائمة: لو كُتبت التوقّعاتُ هنا
-// يدويّاً لصارتا نسختَين تنحرفان.
+// ═══ لماذا «ملفٌّ كاتب» لا «سطرُ `action:` حرفيّ» ═══
+//
+// كان الفحصُ يبحث عن `action: '<key>'` حرفيّاً. وطباعةُ الإيصال تختار
+// مفتاحَها بحسب نوع المستند (`isReturn ? 'print_return' : 'print_invoice'`)،
+// فالمفتاحان يوجدان في الكود ولا يوجدان بذلك النمط — أي أنّ الفحصَ كان
+// سيحكم عليهما بالموت **وهما حيّان**. فالمعيارُ صار: المفتاحُ يظهر نصّاً في
+// ملفٍّ **ينادي `logActivity(`** فعلاً. وهذا يستبعد ملفّاتِ العرض التي تحمل
+// المفتاحَ في `switch` للتسمية ولا تكتب شيئاً — وقد قِيس أنّ
+// `activity_timeline.dart` منها.
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -22,6 +30,19 @@ import 'package:ural_erp/presentation/activity_log_picpos/screens/activity_log_p
 
 const _screen =
     'lib/presentation/activity_log_picpos/screens/activity_log_picpos_screen.dart';
+
+/// خرائطُ التسميات — تحمل كلَّ مفتاحٍ ولا تكتب شيئاً، فتُستثنى من عدّ الكتّاب.
+bool _isLabelMap(String path) {
+  final p = path.replaceAll('\\', '/');
+  return p.contains('activity_log_picpos_screen.dart') ||
+      p.contains('screens/activity_log_screen.dart');
+}
+
+List<File> _libDartFiles() => Directory('lib')
+    .listSync(recursive: true)
+    .whereType<File>()
+    .where((f) => f.path.endsWith('.dart'))
+    .toList();
 
 /// كلُّ مفاتيح `actionLabels` مقروءةً من الشاشة نفسِها.
 Set<String> _actionLabelKeys() {
@@ -38,22 +59,23 @@ Set<String> _actionLabelKeys() {
       .toSet();
 }
 
-/// عددُ المواضع التي **تكتب** الفعلَ سجلّاً — أي `action: '<key>'` في `lib`
-/// خارجَ ملفَّي شاشتَي السجلّ (‏فهما خرائطُ تسمياتٍ لا كتابة).
-int _writeSites(String action) {
+/// عددُ الملفّات التي تكتب هذا الفعلَ سجلّاً — بأيٍّ من صورتَين:
+///
+///  ‏١) `action: '<key>'` حرفيّاً — أوضحُها وأكثرُها شيوعاً.
+///  ‏٢) المفتاحُ نصّاً في ملفٍّ ينادي `logActivity(` — يلتقط ما يُبنى في
+///     متغيّرٍ (‏`isReturn ? 'print_return' : 'print_invoice'`).
+///
+/// والاتّحادُ ضروريٌّ لا احتياطيّ: النمطُ الأوّلُ وحدَه يُميت مفتاحَي
+/// الطباعة الحيَّين، والثاني وحدَه يفوته مرفقُ `services/logging` الذي
+/// يمرّر الفعلَ إلى دالّةٍ اسمُها `log` لا `logActivity`.
+int _writerFiles(String action) {
   var n = 0;
-  for (final f in Directory('lib')
-      .listSync(recursive: true)
-      .whereType<File>()
-      .where((f) => f.path.endsWith('.dart'))) {
-    final p = f.path.replaceAll('\\', '/');
-    if (p.contains('activity_log_picpos_screen.dart') ||
-        p.contains('screens/activity_log_screen.dart')) {
-      continue;
-    }
-    // الشرطةُ مضاعفةٌ عمداً — واحدةٌ في نصٍّ عاديٍّ تجعل الحرفَ عاديّاً
-    // فيقرأ الفحصُ صفراً ويمرّ كاذباً. أمسكته المرساةُ أدناه.
-    n += RegExp("action:\\s*'$action'").allMatches(f.readAsStringSync()).length;
+  for (final f in _libDartFiles()) {
+    if (_isLabelMap(f.path)) continue;
+    final src = f.readAsStringSync();
+    final literal = src.contains("action: '$action'");
+    final viaLogger = src.contains("'$action'") && src.contains('logActivity(');
+    if (literal || viaLogger) n++;
   }
   return n;
 }
@@ -85,24 +107,50 @@ void main() {
     }
   });
 
-  test('كلُّ مفتاحٍ يكتبه التطبيقُ فعلاً في موضعٍ واحدٍ على الأقلّ', () {
-    // مرساة: فعلٌ معروفُ الكتابة — لو قرأ صفراً فالبحثُ نفسُه معطوب.
-    expect(_writeSites('table_partial_transfer'), greaterThan(0),
+  test('كلُّ مفتاحٍ يكتبه التطبيقُ فعلاً في ملفٍّ واحدٍ على الأقلّ', () {
+    // مرساةٌ مزدوجة: فعلٌ معروفُ الكتابة لا بدّ أن يُقرأ، وملفُّ عرضٍ معروفٌ
+    // لا بدّ ألّا يُعَدَّ كاتباً — وإلّا صار الفحصُ يمرّ على كلّ شيء.
+    expect(_writerFiles('table_partial_transfer'), greaterThan(0),
         reason: 'مرساةُ البحث سقطت — النمطُ أو المسارُ غلط');
+    expect(
+        File('lib/presentation/widgets/activity_timeline.dart')
+            .readAsStringSync()
+            .contains('logActivity('),
+        isFalse,
+        reason: 'ملفُّ العرض صار يكتب — معيارُ «الكاتب» لم يعد مميِّزاً');
+
     for (final e in presets.entries) {
       for (final key in e.value) {
-        expect(_writeSites(key), greaterThan(0),
+        expect(_writerFiles(key), greaterThan(0),
             reason: '${e.key}: «$key» تسميةٌ بلا كاتب — تقريرٌ يعود فارغاً');
       }
     }
   });
 
-  test('المفاتيحُ الميّتةُ الثلاثةُ لا تعود', () {
-    for (final dead in ['print_report', 'print_return', 'update_payment']) {
-      for (final e in presets.entries) {
-        expect(e.value, isNot(contains(dead)),
-            reason: '${e.key}: «$dead» لا يكتبه التطبيق');
-      }
+  test('«update_payment» تسميةٌ بلا كاتبٍ فلا تدخل نطاقاً', () {
+    // بقيت وحدَها بعد أن بُني تسجيلُ الطباعة. ولو كُتبت يوماً فهذا الفحصُ
+    // هو الذي يُسقط ويقول: أدخِلها في `documentEdits`.
+    expect(_writerFiles('update_payment'), 0,
+        reason: 'صار لها كاتبٌ — أضِفها إلى ActivityLogPresets.documentEdits');
+    for (final e in presets.entries) {
+      expect(e.value, isNot(contains('update_payment')),
+          reason: '${e.key}: «update_payment» لا يكتبه التطبيق');
+    }
+  });
+
+  test('طباعةُ الفواتير والتقارير صارت مسجَّلةً — الفجوةُ سُدّت', () {
+    // الحارسُ العكسيّ لأمر المالك 2026-08-26: لو حُذف تسجيلُ الطباعة يوماً
+    // عاد «سجل الطباعة» يعرض فاتورةَ الطاولة وباركودَ العرض وحدَهما، ولا
+    // يحمرّ شيءٌ آخر.
+    for (final key in const [
+      'print_invoice',
+      'print_return',
+      'print_purchase_invoice',
+      'print_report',
+    ]) {
+      expect(ActivityLogPresets.printed, contains(key));
+      expect(_writerFiles(key), greaterThan(0),
+          reason: 'كاتبُ «$key» اختفى — تسجيلُ الطباعة انحسر');
     }
   });
 }

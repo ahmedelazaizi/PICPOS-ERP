@@ -190,4 +190,14 @@ abstract class ISalesReportingRepository {
     List<int>? warehouseIds,
     Set<int>? allowedBranchIds,
   });
+
+  /// ربحُ كلّ صنفٍ في الفترة — «الأصناف التي تحتاج مراجعة سعر».
+  Future<List<ProductProfitRow>> getProductProfitReport({
+    required DateTime from,
+    required DateTime to,
+    int limit,
+    List<int>? warehouseIds,
+    Set<int>? allowedBranchIds,
+    int? costCenterId,
+  });
 }

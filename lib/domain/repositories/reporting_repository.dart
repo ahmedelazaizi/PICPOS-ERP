@@ -23,6 +23,9 @@ abstract class IReportingRepository
   /// Watch all system users (admin utility)
   Stream<List<UserWithRole>> watchAllUsers();
 
+  /// لقطةُ المستخدمين للتقارير — بلا مجرى.
+  Future<List<UserWithRole>> getAllUsersWithRoles();
+
   // ── Custom Reports ────────────────────────────────────────────────────
 
   /// Get all custom reports

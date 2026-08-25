@@ -343,7 +343,7 @@ class ReportPdfGenerator {
         ],
       ),
     );
-    await PdfComputeHelper.layoutPdf(pdf);
+    await PdfComputeHelper.layoutPdf(pdf, documentLabel: 'كشف حساب');
   }
 
   /// ترويسة الشركة: الاسم ثم الهاتف والعنوان ثم الرقم الضريبي.
@@ -461,7 +461,7 @@ class ReportPdfGenerator {
         ],
       ),
     );
-    await PdfComputeHelper.layoutPdf(pdf);
+    await PdfComputeHelper.layoutPdf(pdf, documentLabel: 'تقرير المخزون');
   }
 
   static Future<void> printTreasuryReport({
@@ -503,7 +503,7 @@ class ReportPdfGenerator {
         ],
       ),
     );
-    await PdfComputeHelper.layoutPdf(pdf);
+    await PdfComputeHelper.layoutPdf(pdf, documentLabel: 'تقرير الخزينة');
   }
 
   static Future<void> printSalesReport({
@@ -544,7 +544,7 @@ class ReportPdfGenerator {
         ],
       ),
     );
-    await PdfComputeHelper.layoutPdf(pdf);
+    await PdfComputeHelper.layoutPdf(pdf, documentLabel: 'تقرير المبيعات');
   }
 
   static Future<void> printFixedAssetsRegister({
@@ -622,7 +622,7 @@ class ReportPdfGenerator {
         ],
       ),
     );
-    await PdfComputeHelper.layoutPdf(pdf);
+    await PdfComputeHelper.layoutPdf(pdf, documentLabel: 'سجل الأصول الثابتة');
   }
 
   static Future<void> printGeneralLedger({
@@ -689,7 +689,7 @@ class ReportPdfGenerator {
         ],
       ),
     );
-    await PdfComputeHelper.layoutPdf(pdf);
+    await PdfComputeHelper.layoutPdf(pdf, documentLabel: 'دفتر الأستاذ');
   }
 
   // --- Helper Widgets ---
@@ -935,7 +935,7 @@ class ReportPdfGenerator {
         ],
       ),
     );
-    await PdfComputeHelper.layoutPdf(pdf);
+    await PdfComputeHelper.layoutPdf(pdf, documentLabel: 'تقرير التصنيفات');
   }
 
   static Future<void> printFinancialStatement({
@@ -974,7 +974,7 @@ class ReportPdfGenerator {
         ],
       ),
     );
-    await PdfComputeHelper.layoutPdf(pdf);
+    await PdfComputeHelper.layoutPdf(pdf, documentLabel: 'القوائم المالية');
   }
 
   static Future<void> printTreasuryClosingReport({
@@ -1056,7 +1056,7 @@ class ReportPdfGenerator {
         ],
       ),
     );
-    await PdfComputeHelper.layoutPdf(pdf);
+    await PdfComputeHelper.layoutPdf(pdf, documentLabel: 'تقرير إغلاق الخزينة');
   }
 
   static Future<void> printBarcodeLabel({
@@ -1122,7 +1122,7 @@ class ReportPdfGenerator {
         ),
       );
     }
-    await PdfComputeHelper.layoutPdf(pdf);
+    await PdfComputeHelper.layoutPdf(pdf, documentLabel: 'ملصق باركود');
   }
 
   static String _fmtNum(dynamic val) {
@@ -1462,9 +1462,9 @@ class ReportPdfGenerator {
         ],
       ),
     );
-    await printing_pkg.Printing.layoutPdf(
-      onLayout: (format) async => pdf.save(),
-    );
+    // يمرّ عبر الغلاف كبقيّة التقارير: يكسب سجلَّ تشخيص الطباعة
+    // ونداءَ خطّاف التسجيل معاً.
+    await PdfComputeHelper.layoutPdf(pdf, documentLabel: 'تقرير المشتريات');
   }
 
   static pw.Widget _buildPurchasesSummary(double total, int count) {
@@ -1750,9 +1750,9 @@ class ReportPdfGenerator {
         ),
       ),
     );
-    await printing_pkg.Printing.layoutPdf(
-      onLayout: (format) async => pdf.save(),
-    );
+    // يمرّ عبر الغلاف كبقيّة التقارير: يكسب سجلَّ تشخيص الطباعة
+    // ونداءَ خطّاف التسجيل معاً.
+    await PdfComputeHelper.layoutPdf(pdf, documentLabel: 'قيد يوميّة');
   }
 
   static pw.Widget _buildReportHeader(
@@ -2268,7 +2268,7 @@ class ReportPdfGenerator {
         ),
       ),
     );
-    await PdfComputeHelper.layoutPdf(pdf);
+    await PdfComputeHelper.layoutPdf(pdf, documentLabel: 'سند شيك');
   }
 
   static pw.Widget _voucherRow(String label, String value) {

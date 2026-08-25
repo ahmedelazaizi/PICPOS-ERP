@@ -25,7 +25,24 @@ class PdfComputeHelper {
   /// (`err=null`), so the crash is in the native Windows print-preview
   /// teardown. Adding the try/catch + breadcrumbs here so the next
   /// repro lands a usable trace instead of disappearing into the void.
-  static Future<void> layoutPdf(pw.Document pdf) async {
+  /// خطّافُ تسجيلِ الطباعة — يُضبَط مرّةً عند الإقلاع في `main.dart`.
+  ///
+  /// ── لماذا خطّافٌ لا نداءٌ مباشر ───────────────────────────────────────
+  /// هذا الملفُّ في `services/printing` ولا يعرف قاعدةً ولا مستخدماً، وحقنُ
+  /// `AppDatabase` في كلّ مولّدِ PDF كان يقلب اعتماديّةَ الطبقة رأساً على
+  /// عقب. والخطّافُ **فارغٌ بالبناء**، فمن لا يضبطه لا يتغيّر سلوكُه إطلاقاً.
+  ///
+  /// ⚠️ **ولا يُنادى إلّا بعد خروج الورقة**: بعد عودة حوار الطباعة الأصليّ
+  /// بلا رمي. فمستندٌ ألغى المستخدمُ طباعتَه في الحوار يُسجَّل — وهذا حدُّ
+  /// معلَنٌ لا سهو: النظامُ لا يرى ما بعد الحوار، وسطرُ «أُرسل إلى الطباعة»
+  /// أصدقُ ممّا يدّعي معرفةَ ما خرج من الطابعة فعلاً.
+  static Future<void> Function(String documentLabel)? onPrinted;
+
+  /// [documentLabel] اسمُ المستند كما يُقرأ في السجلّ. `null` ⇒ لا تسجيل —
+  /// وهو الوضعُ الصحيحُ للفواتير، فـ`PrintingServiceImpl` يسجّلها بنفسه
+  /// بمعرِّفِ الفاتورة ومبلغِها، وتسجيلُها هنا أيضاً يكتب سطرَين لطباعةٍ
+  /// واحدة.
+  static Future<void> layoutPdf(pw.Document pdf, {String? documentLabel}) async {
     final Uint8List bytes = await saveToBytes(pdf);
     unawaited(DiagnosticLogger.log(
         'PDF-PRINT', 'layoutPdf invoking native dialog (bytes=${bytes.length})'));
@@ -34,6 +51,16 @@ class PdfComputeHelper {
         onLayout: (format) async => bytes,
       );
       unawaited(DiagnosticLogger.log('PDF-PRINT', 'layoutPdf returned OK'));
+      final hook = onPrinted;
+      if (hook != null && documentLabel != null) {
+        // إخفاقُ التسجيل لا يُسقط الطباعة — الورقةُ خرجت فعلاً.
+        try {
+          await hook(documentLabel);
+        } catch (e) {
+          unawaited(
+              DiagnosticLogger.log('PDF-PRINT', 'print-audit hook failed: $e'));
+        }
+      }
     } catch (e, st) {
       unawaited(DiagnosticLogger.log(
           'PDF-PRINT', 'layoutPdf threw: $e\n$st'));

@@ -581,6 +581,10 @@ class ReportingRepositoryImpl implements IReportingRepository {
   Stream<List<UserWithRole>> watchAllUsers() => _db.watchAllUsers();
 
   @override
+  Future<List<UserWithRole>> getAllUsersWithRoles() =>
+      _db.getAllUsersWithRoles();
+
+  @override
   Future<List<CustomReportData>> getCustomReports() => _db.getCustomReports();
 
   @override
@@ -646,4 +650,29 @@ class ReportingRepositoryImpl implements IReportingRepository {
         warehouseIds: warehouseIds,
         allowedBranchIds: allowedBranchIds,
       );
+
+  @override
+  Future<List<ProductProfitRow>> getProductProfitReport({
+    required DateTime from,
+    required DateTime to,
+    int limit = 300,
+    List<int>? warehouseIds,
+    Set<int>? allowedBranchIds,
+    int? costCenterId,
+  }) =>
+      _db.getProductProfitReport(
+        from: from,
+        to: to,
+        limit: limit,
+        warehouseIds: warehouseIds,
+        allowedBranchIds: allowedBranchIds,
+        costCenterId: costCenterId,
+      );
+
+  @override
+  Future<double> getInventoryCostValueAt(
+    DateTime at, {
+    List<int>? warehouseIds,
+  }) =>
+      _db.getInventoryCostValueAt(at, warehouseIds: warehouseIds);
 }

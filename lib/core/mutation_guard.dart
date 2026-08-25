@@ -52,6 +52,32 @@ class ElevationSnapshot {
   static bool isCrossBranchElevated = false;
 }
 
+/// مرآةٌ ساكنةٌ للفاعل الموقَّع دخولُه. تحدّثها `AuthNotifier` مع كلّ تغيُّرٍ
+/// في حالة الدخول، تماماً كما تفعل مع [ElevationSnapshot].
+///
+/// ── لماذا مرآةٌ ساكنةٌ لا `ref` ────────────────────────────────────────
+/// الخدماتُ التي تطبع (`PrintingServiceImpl` · `ReportPdfGenerator`) لا
+/// تملك `ref` ولا تعرف من يشغّلها. وتمريرُ `userId`/`userName` عبر توقيعاتها
+/// كان يعني تعديلَ **خمسةَ عشرَ** موضعَ نداءٍ في الشاشات — وموضعٌ واحدٌ
+/// يُنسى يكتب سطرَ سجلٍّ منسوباً إلى «النظام»، وهو أسوأُ من لا سطر: يقول
+/// إنّ أحداً طبع ولا يقول من.
+///
+/// ⚠️ **و[userName] لا يكون فارغاً أبداً.** حقلُ `activity_logs.user_name`
+/// غيرُ فارغٍ بالتعريف، وسطرٌ باسمٍ فارغٍ يظهر في السجلّ صفّاً بلا فاعل.
+/// فالقيمةُ الابتدائيّةُ «النظام» — وهي الصادقةُ قبل أوّل تسجيلِ دخولٍ
+/// وبعد الخروج.
+class ActorSnapshot {
+  static int? userId;
+  static String userName = 'النظام';
+
+  /// يُنادى من `AuthNotifier` وحدَه.
+  static void set(int? id, String? name) {
+    userId = id;
+    final n = name?.trim();
+    userName = (n == null || n.isEmpty) ? 'النظام' : n;
+  }
+}
+
 /// Feature 004 (US3, FR-025) — prefix DAO-emitted activity-log descriptions
 /// with `[ELEVATED]` when the session is a cross-branch-elevated System
 /// Admin. Centralised so every touched DAO emits the same marker.

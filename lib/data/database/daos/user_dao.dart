@@ -85,6 +85,30 @@ extension UserDao on AppDatabase {
     });
   }
 
+  /// لقطةُ المستخدمين — نظيرُ [watchAllUsers] بلا مجرى، بنفسِ الترشيح
+  /// والترتيب حرفيّاً.
+  ///
+  /// ⚠️ **التقريرُ يريد صورةَ لحظةٍ لا بثّاً.** و`watchAllUsers().first` بديلٌ
+  /// يبدو مكافئاً وليس كذلك: مجرى drift لا يستقرّ في المنطقة الوهميّة
+  /// لاختبارات الودجت، فتعلّق الشاشةُ على دوّارةٍ لا تنتهي و`pumpAndSettle`
+  /// تنفد مهلتُها. وقع ذلك فعلاً في «نشاط المستخدمين» وأمسكه اختبارُ
+  /// التركيب وحدَه — لا التحليلُ ولا اختبارُ الوحدة.
+  Future<List<UserWithRole>> getAllUsersWithRoles() async {
+    final query = select(
+      users,
+    ).join([leftOuterJoin(roles, roles.id.equalsExp(users.roleId))]);
+    query.where(users.isActive.equals(true) | users.isLocked.equals(false));
+    query.orderBy([OrderingTerm.asc(users.displayName)]);
+
+    final rows = await query.get();
+    return rows
+        .map((row) => UserWithRole(
+              user: row.readTable(users),
+              role: row.readTableOrNull(roles),
+            ))
+        .toList();
+  }
+
   /// Get user by ID with role
   Future<UserWithRole?> getUserById(int id) async {
     final query = select(users).join([

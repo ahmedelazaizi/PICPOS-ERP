@@ -57,6 +57,13 @@ class PrintingServiceImpl implements IPrintingService {
         notes: printData.notes,
         db: db,
       );
+      await _logPrint(
+        action: 'print_invoice',
+        entityType: 'sales_invoice',
+        entityId: invoiceId,
+        description: 'طباعةُ فاتورة مبيعات A4 رقم ${printData.invoiceNumber}',
+        amount: printData.total,
+      );
     } catch (e, stack) {
       logger.error('Failed to print A4 sales invoice', e, stack, 'PrintingService');
     }
@@ -92,6 +99,13 @@ class PrintingServiceImpl implements IPrintingService {
         companyName: companyName,
         db: db,
       );
+      await _logPrint(
+        action: 'print_purchase_invoice',
+        entityType: 'purchase_invoice',
+        entityId: invoiceId,
+        description: 'طباعةُ فاتورة مشتريات A4 رقم ${invoice.invoiceNumber}',
+        amount: invoice.total,
+      );
     } catch (e, stack) {
       logger.error('Failed to print A4 purchase invoice', e, stack, 'PrintingService');
     }
@@ -108,6 +122,13 @@ class PrintingServiceImpl implements IPrintingService {
       }
 
       final receiptSettings = printData.receiptSettings;
+
+      // مرتجعٌ أم بيع؟ الفعلُ يتبع **المستندَ** لا الطابعة: «سجل
+      // الطباعة» و«سجل الإلغاءات» يقرآن مفتاحَين مختلفين، ومفتاحٌ واحدٌ
+      // للاثنين يخلط إيصالَ مرتجعٍ بفاتورةِ بيعٍ في كلَيهما.
+      final isReturn = printData.saleType == 'return';
+      final printAction = isReturn ? 'print_return' : 'print_invoice';
+      final docLabel = isReturn ? 'إيصال مرتجع' : 'فاتورة';
 
       // Read invoice language preference
       String locale = 'ar';
@@ -166,6 +187,13 @@ class PrintingServiceImpl implements IPrintingService {
             orderNumber: printData.platformOrderNumber ?? printData.orderNumber?.toString(),
             locale: locale,
           );
+          await _logPrint(
+            action: printAction,
+            entityType: 'sales_invoice',
+            entityId: invoiceId,
+            description: 'طباعةُ $docLabel حراريّة رقم ${printData.invoiceNumber}',
+            amount: printData.total,
+          );
           return;
         } catch (e) {
           logger.error('Template print failed, falling back to default', e);
@@ -217,8 +245,52 @@ class PrintingServiceImpl implements IPrintingService {
         notes: printData.notes,
         locale: locale,
       );
+      await _logPrint(
+        action: printAction,
+        entityType: 'sales_invoice',
+        entityId: invoiceId,
+        description: 'طباعةُ $docLabel حراريّة رقم ${printData.invoiceNumber}',
+        amount: printData.total,
+      );
     } catch (e, stack) {
       logger.error('Failed to print invoice', e, stack, 'PrintingService');
+    }
+  }
+
+  /// يسجّل طباعةَ مستندٍ في سجلّ النشاط.
+  ///
+  /// ── لماذا هنا لا في الشاشات ──────────────────────────────────────────
+  /// الطباعةُ تُنادى من خمسةَ عشرَ موضعاً في الشاشات (نقطةُ البيع · الفواتير
+  /// · المشتريات · حوارُ آخر فاتورة · إعادةُ الطباعة …). والتسجيلُ عند كلّ
+  /// مُنادٍ يعني خمسةَ عشرَ تعديلاً وموضعاً يُنسى — والمنسيُّ لا يحمرّ، بل
+  /// يترك ثغرةً في سجلٍّ يُفترَض أنّه كامل. فالمَخنقُ الوحيدُ هو هذه الخدمة.
+  ///
+  /// ⚠️ **ولا يُسجَّل إلّا ما طُبع فعلاً**: النداءُ بعد نجاح التوليد، وداخلَ
+  /// `try` الذي يبتلع الإخفاق. فطباعةٌ فشلت لا تُكتب، وسطرُ سجلٍّ لطباعةٍ لم
+  /// تقع أسوأُ من غيابه.
+  ///
+  /// ⚠️ **وإخفاقُ التسجيل لا يُسقط الطباعة**: القاعدةُ قد تكون مقفولةً أو
+  /// المستخدمُ محذوفاً، والورقةُ خرجت من الطابعة فعلاً. فالخطأُ يُدوَّن ولا
+  /// يُرمى.
+  Future<void> _logPrint({
+    required String action,
+    required String entityType,
+    required int entityId,
+    required String description,
+    double? amount,
+  }) async {
+    try {
+      await db.logActivity(
+        userId: ActorSnapshot.userId,
+        userName: ActorSnapshot.userName,
+        action: action,
+        entityType: entityType,
+        entityId: entityId,
+        description: description,
+        amount: amount,
+      );
+    } catch (e, stack) {
+      logger.error('Failed to log print activity', e, stack, 'PrintingService');
     }
   }
 }

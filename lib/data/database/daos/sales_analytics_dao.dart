@@ -1122,4 +1122,84 @@ extension SalesAnalyticsDao on AppDatabase {
       lastInvoiceDate: at('last_date'),
     );
   }
+
+  /// ربحُ كلّ **صنف** في الفترة — نظيرُ [getCategoryProfitReport] درجةً أدنى.
+  ///
+  /// كان جدولُ «هامش الربح» يعرض تصنيفاتٍ لا أصنافاً، والتصميمُ يريد الأصناف
+  /// («الأصناف التي تحتاج مراجعة سعر»). والتكلفةُ موجودةٌ فعلاً في
+  /// `sales_invoice_items.cost_price` — لقطةُ التكلفة وقتَ البيع — فلا حاجةَ
+  /// إلى بياناتٍ جديدة، بل إلى تجميعٍ على `product_id` بدل `category_id`.
+  ///
+  /// ⚠️ **الإيرادُ صافي الضريبة** (`total - tax_amount`) كي يقابل تكلفةً هي
+  /// صافيةٌ أصلاً — وإلّا انتفخ الهامشُ بنسبة الضريبة على كلّ صنف. وهذا
+  /// عينُ ما يفعله نظيرُه على التصنيفات.
+  ///
+  /// ⚠️ **وخصمُ رأس الفاتورة غيرُ موزَّعٍ على السطور**، فهو غيرُ منعكسٍ هنا
+  /// كما في نظيره. القائمةُ المالية هي المرجعُ للرقم الصافي تماماً.
+  Future<List<ProductProfitRow>> getProductProfitReport({
+    required DateTime from,
+    required DateTime to,
+    int limit = 300,
+    List<int>? warehouseIds,
+    Set<int>? allowedBranchIds,
+    int? costCenterId,
+  }) async {
+    final az = _buildAuthScopeFilter(allowedBranchIds, tableAlias: 'inv');
+    final cc = await _buildCostCenterFilter(costCenterId, tableAlias: 'inv');
+
+    final vars = <Variable>[dateVar(from), dateVar(to)];
+    var warehouseFilter = '';
+    if (warehouseIds != null) {
+      if (warehouseIds.isEmpty) {
+        warehouseFilter = 'AND 1 = 0';
+      } else {
+        warehouseFilter =
+            'AND inv.warehouse_id IN (${warehouseIds.map((_) => '?').join(', ')})';
+        vars.addAll(warehouseIds.map((id) => Variable<int>(id)));
+      }
+    }
+    vars.addAll(az.vars);
+    vars.addAll(cc.vars);
+    vars.add(Variable(limit));
+
+    final results = await customSelect(
+      '''
+      SELECT
+          p.id,
+          p.name,
+          COALESCE(c.name, 'بدون تصنيف') as category_name,
+          SUM(si.quantity) as total_qty,
+          SUM(si.total - si.tax_amount) as total_sales,
+          SUM(si.quantity * si.quantity_in_base * si.cost_price) as total_cost,
+          p.current_stock as current_stock
+      FROM sales_invoice_items si
+      JOIN products p ON si.product_id = p.id
+      LEFT JOIN categories c ON p.category_id = c.id
+      JOIN sales_invoices inv ON si.invoice_id = inv.id
+      WHERE inv.invoice_date BETWEEN ? AND ?
+        AND inv.is_deleted = 0
+        AND inv.status NOT IN ('returned', 'cancelled', 'voided')${_saleReturnExclusion('inv')}
+        $warehouseFilter${az.filter} ${cc.filter}
+      GROUP BY p.id, p.name, c.name, p.current_stock
+      ORDER BY total_sales DESC
+      LIMIT ?
+      ''',
+      variables: vars,
+      readsFrom: {salesInvoiceItems, products, categories, salesInvoices},
+    ).get();
+
+    return results.map((row) {
+      final sales = (row.data['total_sales'] as num?)?.toDouble() ?? 0.0;
+      final cost = (row.data['total_cost'] as num?)?.toDouble() ?? 0.0;
+      return ProductProfitRow(
+        productId: (row.data['id'] as num?)?.toInt() ?? 0,
+        productName: row.data['name'] as String? ?? '',
+        categoryName: row.data['category_name'] as String? ?? '',
+        quantity: (row.data['total_qty'] as num?)?.toDouble() ?? 0.0,
+        totalSales: sales,
+        totalCost: cost,
+        currentStock: (row.data['current_stock'] as num?)?.toDouble() ?? 0.0,
+      );
+    }).toList();
+  }
 }

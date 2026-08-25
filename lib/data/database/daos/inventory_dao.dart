@@ -1570,4 +1570,71 @@ extension InventoryDao on AppDatabase {
       debugPrint('[INVENTORY] fixProductStockDrift error: $e');
     }
   }
+
+  /// قيمةُ المخزون بالتكلفة **بتاريخٍ ماضٍ**.
+  ///
+  /// كان معدّلُ الدوران يقسم على قيمة المخزون **الآن** لأنّه لا استعلامَ
+  /// لقيمتها في الماضي — فكان تقريباً معلَناً. وهذا يجعله محسوباً على
+  /// **متوسّط** المدى كما تقتضي الصيغة: `COGS ÷ متوسّطِ المخزون`.
+  ///
+  /// الطريقة: الرصيدُ اليومَ ناقصَ صافي الحركات **بعد** [at]. و
+  /// `stock_movements.quantity` موجبةٌ للوارد وسالبةٌ للصادر، فطرحُ مجموعِها
+  /// يعيد الرصيدَ إلى الوراء.
+  ///
+  /// ⚠️ **والتقييمُ بـ`products.cost_price` عمداً** — لا بـ`unit_cost` في
+  /// الحركة ولا بـ`inventory_balances.average_cost`. وهو قرارُ المالك
+  /// 2026-07-12 المكتوبُ في [getInventoryReportAnalytics]: المتوسّطُ المرجّحُ
+  /// العامُّ هو مصدرُ الحقيقة، وعليه تُقيَّم صفوفُ تقرير المخزون وتُقيَّد
+  /// تكلفةُ المبيعات في الأستاذ. فتقييمٌ بأساسٍ آخرَ هنا كان سينتج بسطاً
+  /// ومقاماً على مسطرتين، وهو أسوأُ من تقريبٍ معلَن.
+  ///
+  /// فالمتغيّرُ تاريخيّاً هو **الكمّيّة**، والتكلفةُ لقطةُ اليوم — وهذا
+  /// مكتوبٌ حيث يُقرأ الرقم.
+  ///
+  /// [warehouseIds] `null` ⇒ الرصيدُ العامُّ من `products.current_stock`؛
+  /// وقائمةٌ ⇒ مجموعُ `inventory_balances` لتلك المخازن. وقائمةٌ **فارغةٌ**
+  /// تعني «لا شيء» لا «الكلّ» — نفسُ عقد FIL-3.
+  Future<double> getInventoryCostValueAt(
+    DateTime at, {
+    List<int>? warehouseIds,
+  }) async {
+    if (warehouseIds != null && warehouseIds.isEmpty) return 0;
+
+    final vars = <Variable>[dateVar(at)];
+    var movementScope = '';
+    var balanceSource = 'p.current_stock';
+    var balanceJoin = '';
+
+    if (warehouseIds != null) {
+      final ph = warehouseIds.map((_) => '?').join(', ');
+      movementScope = 'AND sm.warehouse_id IN ($ph)';
+      vars.addAll(warehouseIds.map((id) => Variable<int>(id)));
+      balanceSource = 'COALESCE(b.qty, 0)';
+      balanceJoin = '''
+      LEFT JOIN (
+        SELECT product_id, SUM(quantity) AS qty
+        FROM inventory_balances
+        WHERE warehouse_id IN ($ph)
+        GROUP BY product_id
+      ) b ON b.product_id = p.id''';
+      vars.addAll(warehouseIds.map((id) => Variable<int>(id)));
+    }
+
+    final rows = await customSelect(
+      '''
+      SELECT COALESCE(SUM(($balanceSource - COALESCE(m.delta, 0)) * p.cost_price), 0) AS value
+      FROM products p
+      LEFT JOIN (
+        SELECT sm.product_id, SUM(sm.quantity) AS delta
+        FROM stock_movements sm
+        WHERE sm.created_at > ? AND sm.deleted_at IS NULL $movementScope
+        GROUP BY sm.product_id
+      ) m ON m.product_id = p.id$balanceJoin
+      ''',
+      variables: vars,
+      readsFrom: {products, stockMovements, inventoryBalances},
+    ).get();
+
+    return (rows.first.data['value'] as num?)?.toDouble() ?? 0.0;
+  }
 }
