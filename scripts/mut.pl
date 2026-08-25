@@ -1,0 +1,13 @@
+use strict; use warnings;
+my ($p) = @ARGV;
+my $find = $ENV{FIND}; my $repl = $ENV{REPL};
+open(my $i,'<:raw',$p) or die "open $p: $!";
+local $/; my $b = <$i>; close $i;
+my $crlf = ($b =~ /\r\n/) ? 1 : 0;
+$b =~ s/\r\n/\n/g if $crlf;
+my $n = ($b =~ s/\Q$find\E/$repl/g);
+die "MUTATION DID NOT APPLY in $p\n" unless $n;
+$b =~ s/\n/\r\n/g if $crlf;
+open(my $o,'>:raw',$p) or die "write $p: $!";
+print $o $b; close $o;
+print "  [mutation applied: $n site(s)]\n";
