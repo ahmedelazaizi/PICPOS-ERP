@@ -41,6 +41,7 @@ import '../../widgets/branch_warehouse_filter.dart';
 import '../../widgets/report_components.dart';
 import '../../widgets/report_filter_bar.dart';
 import 'report_export_guard.dart';
+import 'report_scaffold.dart';
 
 /// ما يُكتب حيث لا مقياس — على الشاشة وفي Excel معاً، من ثابتٍ واحدٍ فلا
 /// يفترق الملفُّ عمّا رآه المستخدم.
@@ -218,22 +219,17 @@ class _TablesReportScreenState extends ConsumerState<TablesReportScreen> {
     final scope = scopeAsync.requireValue;
     _allowedBranchIds = scope.hasFullAccess ? null : scope.allowedBranchIds;
 
-    return Directionality(
-      textDirection: ui.TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        appBar: AppBar(
-          title: const Text('تقرير الطاولات'),
-          backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          actions: [
+    return reportScaffold(
+      context: context,
+      title: 'تقرير الطاولات',
+      subtitle: 'الإيرادُ ودورانُ الطاولة لكلّ قسم',
+      icon: PhosphorIconsBold.armchair,
+      actions: [
             buildReportExportAction(
               onExport: _rows.isEmpty ? null : _exportToExcel,
             ),
             const SizedBox(width: 8),
           ],
-        ),
         body: Column(
           children: [
             ReportFilterBar(
@@ -318,7 +314,6 @@ class _TablesReportScreenState extends ConsumerState<TablesReportScreen> {
             ),
           ],
         ),
-      ),
     );
   }
 

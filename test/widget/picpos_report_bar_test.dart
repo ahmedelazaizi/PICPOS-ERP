@@ -184,6 +184,8 @@ void main() {
         'inventory_report_screen',
         'shifts_report_screen',
         'treasury_report_screen',
+        'purchases_report_screen',
+        'tables_report_screen',
       ];
       for (final f in moved) {
         final src = code('lib/presentation/screens/reports/$f.dart');
@@ -208,7 +210,7 @@ void main() {
               !f.path.endsWith('report_scaffold.dart') &&
               f.readAsStringSync().contains('appBar: AppBar('))
           .length;
-      expect(raw, lessThanOrEqualTo(14),
+      expect(raw, lessThanOrEqualTo(12),
           reason: 'عددُ شاشات التقارير التي ترسم ترويستَها بيدها ارتفع إلى '
               '$raw — استعمل `reportScaffold` بدل `Scaffold(appBar: …)`.');
     });
