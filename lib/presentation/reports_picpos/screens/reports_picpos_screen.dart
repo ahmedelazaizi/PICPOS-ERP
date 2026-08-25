@@ -49,8 +49,8 @@ import '../../picpos_shell/picpos_surface.dart';
 
 // Destination screens — existing in the codebase, unchanged by this fork.
 import '../../activity_log_picpos/screens/activity_log_picpos_screen.dart';
-import '../../screens/activity_log_screen.dart';
-import '../../screens/analytics_dashboard_screen.dart';
+import 'report_definitions_picpos.dart';
+import 'report_view_picpos_screen.dart';
 import '../../screens/branch_performance_screen.dart';
 import '../../screens/e_invoice_dashboard_screen.dart';
 import '../../screens/party_statement_screen.dart';
@@ -288,7 +288,9 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
             id: 'profit_margin',
             title: 'هامش الربح',
             subtitle: 'تحليل هامش الربح حسب الفئة',
-            action: () => nav(() => const AnalyticsDashboardScreen()),
+            action: () => nav(
+              () => ReportViewPicposScreen(definition: profitMarginReport()),
+            ),
           ),
         ],
         shortcuts: [
@@ -447,7 +449,9 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
             id: 'cust_behavior',
             title: 'تحليل سلوك العملاء',
             subtitle: 'تكرار الشراء ومتوسط الفاتورة',
-            action: () => nav(() => const AnalyticsDashboardScreen()),
+            action: () => nav(
+              () => ReportViewPicposScreen(definition: partyBehaviorReport(suppliers: false)),
+            ),
           ),
           _ReportEntry(
             id: 'cust_reconciliation',
@@ -484,7 +488,9 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
             title: 'تحليل سلوك الموردين',
             subtitle: 'الموردون النشطون وحجم التعامل',
             permission: PermissionCodes.reportsSuppliers,
-            action: () => nav(() => const AnalyticsDashboardScreen()),
+            action: () => nav(
+              () => ReportViewPicposScreen(definition: partyBehaviorReport(suppliers: true)),
+            ),
           ),
         ],
         shortcuts: const [
@@ -551,7 +557,9 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
             title: 'نشاط المستخدمين',
             subtitle: 'العمليات لكل مستخدم',
             permission: PermissionCodes.auditView,
-            action: () => nav(() => const ActivityLogScreen()),
+            action: () => nav(
+              () => ReportViewPicposScreen(definition: userActivityReport()),
+            ),
           ),
           _ReportEntry(
             id: 'u_login',
@@ -696,7 +704,9 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
             id: 'an_sales',
             title: 'تحليل المبيعات',
             subtitle: 'اتجاهات وأنماط المبيعات',
-            action: () => nav(() => const AnalyticsDashboardScreen()),
+            action: () => nav(
+              () => ReportViewPicposScreen(definition: salesTrendReport()),
+            ),
           ),
           _ReportEntry(
             id: 'an_classifications',
@@ -717,13 +727,17 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
             id: 'an_customers',
             title: 'تحليل العملاء',
             subtitle: 'تقسيم العملاء (RFM)',
-            action: () => nav(() => const AnalyticsDashboardScreen()),
+            action: () => nav(
+              () => ReportViewPicposScreen(definition: customerSegmentsReport()),
+            ),
           ),
           _ReportEntry(
             id: 'an_inventory',
             title: 'تحليل المخزون',
             subtitle: 'دوران وكفاءة المخزون',
-            action: () => nav(() => const AnalyticsDashboardScreen()),
+            action: () => nav(
+              () => ReportViewPicposScreen(definition: inventoryTurnoverReport()),
+            ),
           ),
         ],
       ),
