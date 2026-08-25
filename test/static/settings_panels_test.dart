@@ -27,7 +27,6 @@ void main() {
       'showCompanyInfoDialog': 'معلومات الشركة',
       'showHardwareSettingsDialog': 'إعدادات الأجهزة',
       'showPosSettingsDialog': 'إعدادات البيع السريع',
-      'showPermissionsManagementDialog': 'إدارة الصلاحيات',
       'showActivationDialog': 'تفعيل الترخيص',
     };
 
@@ -41,6 +40,40 @@ void main() {
             reason: 'لا نداءَ لـ`${e.key}` بـ`picpos: true` في المركز.');
       });
     }
+  });
+
+  group('مصفوفةُ الصلاحيات — نسخةُ PicPos', () {
+    // ⚠️ **حلّ محلَّ حارسٍ أقدم.** كان يشترط أن ينادي المركزُ
+    // `showPermissionsManagementDialog(context, picpos: true)` — أي الشاشةَ
+    // المشتركةَ بغلاف PicPos. وبلّغ المالكُ 2026-08-25 أنّ ذلك **ليس
+    // التصميمَ المطلوب**: `BENCH.perms` مصفوفةٌ لا دورٌ واحدٌ في كلّ مرّة.
+    //
+    // فالعقدُ الآن أضيقُ لا أوسع: المركزُ يفتح **نسخةَ PicPos**، والشاشةُ
+    // المشتركةُ تبقى لمسار UralCash وحدَه ولا يمسّها المركز.
+    test('المركزُ يفتح `showPermissionsMatrixPicpos` لا الشاشةَ المشتركة', () {
+      expect(hub.contains('showPermissionsMatrixPicpos(context)'), isTrue,
+          reason: 'مركزُ إعدادات PicPos لا يفتح مصفوفةَ الأدوار — '
+              'رجع إلى شاشةٍ بدورٍ واحدٍ في كلّ مرّة.');
+      expect(hub.contains('showPermissionsManagementDialog'), isFalse,
+          reason: 'المركزُ ما زال ينادي الشاشةَ المشتركة — والنسخةُ تصير '
+              'ملفّاً ميّتاً لا يراه المالك.');
+    });
+
+    test('والشاشةُ المشتركةُ باقيةٌ ومركزُ UralCash يفتحها', () {
+      // النسخُ لا يعني الحذف: مسارُ UralCash يجب أن يبقى عاملاً.
+      expect(
+        File('lib/presentation/widgets/settings/permissions_management_widget.dart')
+            .existsSync(),
+        isTrue,
+        reason: 'حُذفت الشاشةُ المشتركةُ — ومسارُ UralCash يفقد إدارةَ '
+            'الصلاحيات كلَّها.',
+      );
+      final ural = _code(
+        File('lib/presentation/screens/settings_screen.dart').readAsStringSync(),
+      );
+      expect(ural.contains('showPermissionsManagementDialog'), isTrue,
+          reason: 'مركزُ إعدادات UralCash لم يعد يفتح شاشةَ الصلاحيات.');
+    });
   });
 
   group('AppFormDialog — الرافعةُ المشتركة', () {

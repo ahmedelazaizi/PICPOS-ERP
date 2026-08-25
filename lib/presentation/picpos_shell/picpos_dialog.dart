@@ -45,6 +45,19 @@ Color picposDialogField(BuildContext context) =>
         ? const Color(0xFF18243A)
         : const Color(0xFFF4F7FC));
 
+/// رقاقةُ حالةٍ في ترويسة الحوار — `bench.chips` في ملفّ التصميم.
+///
+/// تُستعمل في «منضدة العمل» (‏الحوارُ العريضُ ذو العمودَين): رقاقةٌ تُلخّص
+/// حالةً مقيسةً بجانب العنوان — «٣ تعديلات غير محفوظة» مثلاً. و[tint] لونُ
+/// النصّ والإطار؛ فإن كان `null` رُسمت رقاقةً محايدةً بلون الحقل.
+class PicPosDialogChip {
+  const PicPosDialogChip({required this.icon, required this.label, this.tint});
+
+  final IconData icon;
+  final String label;
+  final Color? tint;
+}
+
 /// زرٌّ في تذييل الحوار.
 class PicPosDialogAction {
   const PicPosDialogAction({
@@ -90,6 +103,9 @@ class PicPosDialog extends StatelessWidget {
     this.onCancel,
     this.scrollable = true,
     this.indexLabels = const [],
+    this.headerChips = const [],
+    this.footerHint,
+    this.bodyFill = false,
   });
 
   final IconData icon;
@@ -120,6 +136,29 @@ class PicPosDialog extends StatelessWidget {
   /// ⚠️ **اشتقّها من المجموعات نفسِها** بـ`picposPanelLabels` — لا تكتبها
   /// بيدٍ ثانيةً بجانب الجسم فتنحرف عنه.
   final List<String> indexLabels;
+
+  /// رقائقُ الحالة في الترويسة — تُرسَم بين العنوان وزرِّ الإغلاق.
+  final List<PicPosDialogChip> headerChips;
+
+  /// سطرُ التلميح في التذييل — `bench.hint` في التصميم.
+  ///
+  /// حين يُمرَّر، يتحوّل التذييلُ من `Wrap` إلى صفٍّ بثلاثة مواضع كما في
+  /// التصميم: الإلغاءُ يميناً، والتلميحُ يتمدّد في الوسط، والإجراءُ الأساسيُّ
+  /// يساراً. وبدونه يبقى `Wrap` كما هو لكلّ الحوارات القائمة.
+  final String? footerHint;
+
+  /// الجسمُ يملأ الارتفاعَ المتاحَ بدل أن يُقاس بمحتواه — لمنضدة العمل.
+  ///
+  /// ⚠️ **علَمٌ لا زخرفة.** الجسمُ في الوضع العاديّ داخلَ `Column` بـ
+  /// `mainAxisSize: min`، و`Column` يمنح أبناءه ارتفاعاً **غيرَ محدود** —
+  /// فأيُّ `LayoutBuilder` داخله يقرأ `maxHeight == infinity` ولا يستطيع أن
+  /// يقيس المتاح. وُقع في ذلك فعلاً: الجسمُ سقط على قيمةٍ احتياطيّةٍ فطفح
+  /// ١٠٧ بكسل، وأمسكه اختبارُ التركيب لا التحليل.
+  ///
+  /// فحين يكون `true` يُلغى العمودُ من المسار ويُسلَّم الطفلُ الأوّلُ وحدَه
+  /// إلى `Flexible` — فيصل إليه القيدُ الحقيقيُّ ويقيسه بنفسه. ويقتضي جسماً
+  /// بطفلٍ واحدٍ و`scrollable: false`.
+  final bool bodyFill;
 
   @override
   Widget build(BuildContext context) {
@@ -153,7 +192,8 @@ class PicPosDialog extends StatelessWidget {
                 Flexible(child: _bodyArea()),
                 if (primaryAction != null ||
                     secondaryActions.isNotEmpty ||
-                    onCancel != null)
+                    onCancel != null ||
+                    footerHint != null)
                   _footer(context, muted),
               ],
             ),
@@ -189,7 +229,17 @@ class PicPosDialog extends StatelessWidget {
     );
   }
 
-  Widget _body() => Padding(
+  Widget _body() {
+    if (bodyFill && body.length == 1) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: body.first,
+      );
+    }
+    return _bodyColumn();
+  }
+
+  Widget _bodyColumn() => Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -249,6 +299,10 @@ class PicPosDialog extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
+          for (final c in headerChips) ...[
+            _chip(context, c, muted),
+            const SizedBox(width: 8),
+          ],
           Material(
             color: Colors.transparent,
             child: InkWell(
@@ -271,8 +325,105 @@ class PicPosDialog extends StatelessWidget {
     );
   }
 
+  /// رقاقةُ الترويسة — إطارٌ وأرضيّةٌ مشتقّان من [PicPosDialogChip.tint].
+  Widget _chip(BuildContext context, PicPosDialogChip c, Color muted) {
+    final tint = c.tint;
+    final fg = tint ?? muted;
+    return Container(
+      height: 30,
+      padding: const EdgeInsets.symmetric(horizontal: 11),
+      decoration: BoxDecoration(
+        color: tint == null
+            ? picposDialogField(context)
+            : tint.withValues(alpha: .10),
+        border: Border.all(
+          color: tint == null
+              ? Theme.of(context).dividerColor
+              : tint.withValues(alpha: .28),
+        ),
+        borderRadius: BorderRadius.circular(9),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(c.icon, size: 13, color: fg),
+          const SizedBox(width: 6),
+          Text(
+            c.label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: fg,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _footer(BuildContext context, Color muted) {
     final theme = Theme.of(context);
+    final hint = footerHint;
+    if (hint != null) {
+      // تذييلُ «منضدة العمل»: إلغاءٌ ثمّ تلميحٌ متمدِّدٌ ثمّ الإجراءُ الأساسيّ.
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
+        decoration: BoxDecoration(
+          color: picposDialogField(context),
+          border: Border(top: BorderSide(color: theme.dividerColor)),
+        ),
+        child: Row(
+          children: [
+            if (onCancel != null)
+              TextButton(
+                onPressed: onCancel,
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(0, 40),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: Text(
+                  cancelLabel,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    color: muted,
+                  ),
+                ),
+              ),
+            for (final a in secondaryActions) ...[
+              const SizedBox(width: 9),
+              _secondary(context, a),
+            ],
+            const SizedBox(width: 12),
+            Expanded(
+              child: Row(
+                children: [
+                  Icon(PhosphorIconsBold.info, size: 14, color: muted),
+                  const SizedBox(width: 7),
+                  Expanded(
+                    child: Text(
+                      hint,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                        color: muted,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            if (primaryAction != null) _primary(context, primaryAction!),
+          ],
+        ),
+      );
+    }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
       decoration: BoxDecoration(

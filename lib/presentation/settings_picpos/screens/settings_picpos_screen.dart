@@ -38,10 +38,10 @@
 // `sessionTimeoutProvider`/`touchModeProvider`)، ودجتس الأقسام المستوردة من
 // presentation/widgets/settings/* (`BackupRestoreWidget`/`CompanyInfoWidget`/
 // `HardwareSettingsWidget`/`PosSettingsWidget`/`UserManagementWidget`/
-// `PermissionsManagementWidget`/`FingerprintSettingsWidget`/
+// `FingerprintSettingsWidget`/
 // `KdsSettingsWidget`/`ModifierManagementWidget`/`DatabaseSettingsWidget`)،
 // والحوارات/دوال الفتح (`showCompanyInfoDialog`/`showHardwareSettingsDialog`/
-// `showPosSettingsDialog`/`showPermissionsManagementDialog`/
+// `showPosSettingsDialog`/
 // `showDatabaseSettingsDialog`/`showActivationDialog`/
 // `showBranchScopeAdminDialog`/`showMirrorParityAuditDialog`/
 // `showChequeReceiptDriftAdminDialog`/`ServerPermsToggleDialog`) كما هي —
@@ -119,7 +119,7 @@ import '../../users_picpos/screens/users_management_picpos_screen.dart';
 import '../../widgets/settings/hardware_settings_widget.dart';
 import '../../widgets/settings/pos_settings_widget.dart';
 import '../../widgets/settings/user_management_widget.dart';
-import '../../widgets/settings/permissions_management_widget.dart';
+import '../widgets/permissions_matrix_picpos.dart';
 import '../../screens/settings/widgets/server_perms_toggle_dialog.dart';
 import '../../accounting_picpos/account_mapping_picpos_screen.dart';
 import 'work_holidays_picpos_screen.dart';
@@ -2033,15 +2033,15 @@ class _UserTiles extends ConsumerWidget {
           ),
         ),
         SettingsTile(
-          icon: PhosphorIconsBold.shieldPlus,
-          title: 'إدارة صلاحيات الأدوار',
-          sub: 'تحديد صلاحيات كل دور بشكل تفصيلي',
-          meta: 'صلاحيةٌ لكل دور',
+          icon: PhosphorIconsBold.table,
+          title: 'مصفوفة الأدوار والصلاحيات',
+          sub: 'قارن الأدوار جنباً إلى جنب وبدّل الصلاحية في مكانها',
+          meta: 'مصفوفةٌ لا دورٌ واحد',
           tint: AppColors.warning,
           onTap: () => guarded(
             PermissionCodes.rolesManage,
             'إدارة صلاحيات الأدوار',
-            () => showPermissionsManagementDialog(context, picpos: true),
+            () => showPermissionsMatrixPicpos(context),
           ),
         ),
       ],
