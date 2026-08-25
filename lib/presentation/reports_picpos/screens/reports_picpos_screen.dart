@@ -39,9 +39,11 @@ import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/e_invoicing_providers.dart';
 import '../../../data/providers/providers.dart';
 import '../../../data/providers/report_providers.dart';
+import '../../../data/providers/reports_hub_kpi_provider.dart';
 import '../../../data/providers/reconciliation_provider.dart';
 import '../../widgets/permission_guard.dart';
 import '../../picpos_shell/picpos_content_card.dart';
+import '../../picpos_shell/picpos_dialog.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../picpos_shell/picpos_surface.dart';
 
@@ -1087,6 +1089,8 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(26, 22, 26, 30),
       children: [
+        _kpiRow(cols),
+        const SizedBox(height: 18),
         if (pinned.isNotEmpty) ...[
           _pinnedCard(pinned),
           const SizedBox(height: 18),
@@ -1099,6 +1103,187 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
           _shortcutsBar(cat),
         ],
       ],
+    );
+  }
+
+  // -----------------------------------------------------------------------
+  // صفُّ المؤشّرات — أربعُ بطاقاتٍ في صدر التصميم.
+  //
+  // ⚠️ **الأرقامُ من قائمة الدخل لا من عدّادٍ في الشاشة**، ومحصورةٌ بصلاحية
+  //    فروع المستخدم داخلَ الاستعلام نفسِه.
+  //
+  // ⚠️ **والنسبةُ تختفي حين لا أساسَ لها.** التصميمُ يرسم «١٢٪ ▲» دائماً،
+  //    ويومُ أمسٍ بلا حركةٍ يجعلها قسمةً على صفر — و«٠٪» تُقرأ «لم يتغيّر»
+  //    بينما الحقيقةُ «لا مقارنة». فيُحذَف السهمُ كلُّه لا يُكتَب صفر.
+  // -----------------------------------------------------------------------
+  Widget _kpiRow(int cols) {
+    final async = ref.watch(reportsHubKpiProvider);
+    return async.when(
+      loading: () => _kpiSkeleton(cols),
+      // ⚠️ لا تُبتلَع: مؤشّرٌ فارغٌ بلا سبب يُقرأ «صفرُ مبيعات».
+      error: (e, _) => PicPosDialogBanner(
+        icon: PhosphorIconsBold.warningCircle,
+        color: AppColors.warning,
+        text: 'تعذّر حسابُ مؤشّرات اليوم: $e',
+      ),
+      data: (k) {
+        final cards = <Widget>[
+          _kpiCard(PhosphorIconsBold.currencyCircleDollar, 'مبيعات اليوم',
+              _money(k.revenue.today), 'ج.م', k.revenue, AppColors.success),
+          _kpiCard(PhosphorIconsBold.trendUp, 'صافي الربح',
+              _money(k.netProfit.today), 'ج.م', k.netProfit, AppColors.primary),
+          _kpiCard(PhosphorIconsBold.receipt, 'عدد الفواتير',
+              k.invoices.today.toStringAsFixed(0), 'فاتورة', k.invoices,
+              AppColors.info),
+          _kpiCard(PhosphorIconsBold.arrowUUpLeft, 'المرتجعات',
+              _money(k.salesReturns.today), 'ج.م', k.salesReturns,
+              AppColors.error,
+              upIsGood: false),
+        ];
+        return _kpiGrid(cards, cols);
+      },
+    );
+  }
+
+  /// أربعةُ أعمدةٍ في التصميم، وتنكسر مع ضيق لوحة التفصيل.
+  Widget _kpiGrid(List<Widget> cards, int cols) {
+    final n = cols >= 3 ? 4 : (cols == 2 ? 2 : 1);
+    final rows = <List<Widget>>[];
+    for (var i = 0; i < cards.length; i += n) {
+      rows.add(cards.skip(i).take(n).toList());
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var r = 0; r < rows.length; r++) ...[
+          if (r > 0) const SizedBox(height: 14),
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (var i = 0; i < n; i++) ...[
+                  if (i > 0) const SizedBox(width: 14),
+                  Expanded(
+                    child: i < rows[r].length
+                        ? rows[r][i]
+                        : const SizedBox.shrink(),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _kpiSkeleton(int cols) => _kpiGrid(
+        [
+          for (var i = 0; i < 4; i++)
+            Container(
+              height: 86,
+              decoration: BoxDecoration(
+                color: context.picposCard,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: context.picposHairline),
+              ),
+            ),
+        ],
+        cols,
+      );
+
+  String _money(double v) =>
+      NumberFormat('#,##0', 'en').format(v.roundToDouble());
+
+  Widget _kpiCard(
+    IconData icon,
+    String label,
+    String value,
+    String unit,
+    ReportsKpiValue pair,
+    Color tint, {
+    bool upIsGood = true,
+  }) {
+    final delta = ReportsHubKpi.deltaPercent(pair);
+    final up = (delta ?? 0) >= 0;
+    final good = up == upIsGood;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(17, 15, 17, 15),
+      decoration: BoxDecoration(
+        color: context.picposCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: context.picposHairline),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 16, color: tint),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                    color: context.picposMuted,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 9),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Flexible(
+                child: Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 25,
+                    fontWeight: FontWeight.w800,
+                    height: 1,
+                    color: context.picposText,
+                    fontFeatures: const [ui.FontFeature.tabularFigures()],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 9),
+              Text(
+                unit,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: context.picposMuted,
+                ),
+              ),
+              if (delta != null) ...[
+                const Spacer(),
+                Icon(
+                  up ? PhosphorIconsBold.trendUp : PhosphorIconsBold.trendDown,
+                  size: 13,
+                  color: good ? AppColors.success : AppColors.error,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '${delta.abs().toStringAsFixed(0)}٪',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: good ? AppColors.success : AppColors.error,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
     );
   }
 
