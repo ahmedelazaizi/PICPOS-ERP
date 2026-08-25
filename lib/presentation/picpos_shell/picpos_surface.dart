@@ -35,4 +35,17 @@ extension PicPosSurface on BuildContext {
   /// النصُّ الخافت — نفسُ قيمةِ `picposDialogMuted`.
   Color get picposMuted =>
       picposIsDark ? const Color(0xFF94A3B8) : AppColors.textMuted;
+
+  /// حبرُ العلامة — `--brand-ink` في التصميم.
+  ///
+  /// ⚠️ **ليس `AppColors.primary`.** لونُ العلامة `#0250D3` أزرقُ داكن، ويُقرأ
+  /// على أرضيّةٍ فاتحةٍ ولا يُقرأ على أرضيّةٍ داكنة. ولذلك يعرّف التصميمُ
+  /// رمزاً ثانياً يفتحُ في الوضع الغامق (`#7DA6F5`) ويستعمله في **كلّ نصٍّ
+  /// وأيقونةٍ** بلون العلامة — لا في الأرضيّات.
+  ///
+  /// ⚠️ **وتعميمُه على ما بُني بندٌ مفتوح**: ودجتاتُ PicPos القائمةُ تكتب
+  /// `AppColors.primary` في المقدّمة، وتحويلُها يمسّ عشراتِ المواضع فيُقاس
+  /// على حدة. المستعمَلُ هنا هو شريطُ التقارير وحدَه.
+  Color get picposBrandInk =>
+      picposIsDark ? const Color(0xFF7DA6F5) : AppColors.primary;
 }

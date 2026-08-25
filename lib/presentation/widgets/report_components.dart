@@ -200,6 +200,7 @@ class DateRangeFilter extends StatelessWidget {
     final dateFormat = DateFormat('yyyy/MM/dd');
     final rangeText =
         '${dateFormat.format(selectedRange.start)} - ${dateFormat.format(selectedRange.end)}';
+    final ps = presets();
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -222,13 +223,10 @@ class DateRangeFilter extends StatelessWidget {
           // Spec 065: every preset window is normalized to full-day-inclusive
           // [00:00:00.000, 23:59:59.999] via normalizeRange so the chip click
           // matches what the operator expects.
-          _buildFilterChip(context, 'اليوم', _todayRange()),
-          const SizedBox(width: 8),
-          _buildFilterChip(context, 'أمس', _yesterdayRange()),
-          const SizedBox(width: 8),
-          _buildFilterChip(context, 'الشهر', _monthToDateRange()),
-          const SizedBox(width: 8),
-          _buildFilterChip(context, 'السنة', _yearToDateRange()),
+          for (var i = 0; i < ps.length; i++) ...[
+            if (i > 0) const SizedBox(width: 8),
+            _buildFilterChip(context, ps[i].label, ps[i].range),
+          ],
           const SizedBox(width: 16),
           Container(
             width: 1,
@@ -290,14 +288,71 @@ class DateRangeFilter extends StatelessWidget {
     return normalizeRange(DateTime(now.year, 1, 1), now);
   }
 
+  /// الفتراتُ الجاهزةُ وحدودُها بترتيبها.
+  ///
+  /// ⚠️ **مصدرٌ واحدٌ لشريطَي المرشِّحات.** شريطُ PicPos يرسم الفتراتِ بشكلٍ
+  /// آخر، ولو حسب حدودَها بنفسه لأمكن أن يعني «الشهر» في أحدهما شيئاً وفي
+  /// الآخر شيئاً آخر — والتقريرُ كلُّه يُحسَب من هذه الحدود، فالانحرافُ هنا
+  /// أرقامٌ خاطئةٌ لا اختلافُ شكل.
+  static List<({String label, DateTimeRange range})> presets() => [
+        (label: 'اليوم', range: _todayRange()),
+        (label: 'أمس', range: _yesterdayRange()),
+        (label: 'الشهر', range: _monthToDateRange()),
+        (label: 'السنة', range: _yearToDateRange()),
+      ];
+
+  /// هل [range] هو المدى المعروض حاليّاً؟ مقارنةُ **يومٍ** لا لحظة.
+  static bool isPresetSelected(DateTimeRange selected, DateTimeRange range) =>
+      _sameDay(selected.start, range.start) &&
+      _sameDay(selected.end, range.end);
+
+  static bool _sameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+
+  /// منتقي المدى المخصّص — يستدعيه الشريطان.
+  ///
+  /// و‏Spec 065 محفوظٌ هنا: `showDateRangePicker` يُرجع منتصفَ الليل للطرفين،
+  /// فيُسوّى المدى كي يدخل اليومُ الأخيرُ كاملاً.
+  static Future<void> pickCustomRange(
+    BuildContext context,
+    DateTimeRange current,
+    void Function(DateTime start, DateTime end) onRangeChanged,
+  ) async {
+    final range = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      initialDateRange: current,
+      locale: const Locale('ar'),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+              primary: AppColors.primary,
+              onPrimary: Colors.white,
+            ),
+          ),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 400, maxHeight: 500),
+              child: child!,
+            ),
+          ),
+        );
+      },
+    );
+    if (range != null) {
+      final normalized = normalizeRange(range.start, range.end);
+      onRangeChanged(normalized.start, normalized.end);
+    }
+  }
+
   Widget _buildFilterChip(
     BuildContext context,
     String label,
     DateTimeRange range,
   ) {
-    final isSelected =
-        _isSameDay(selectedRange.start, range.start) &&
-        _isSameDay(selectedRange.end, range.end);
+    final isSelected = isPresetSelected(selectedRange, range);
 
     return ChoiceChip(
       label: Text(label),
@@ -325,39 +380,6 @@ class DateRangeFilter extends StatelessWidget {
     );
   }
 
-  bool _isSameDay(DateTime d1, DateTime d2) {
-    return d1.year == d2.year && d1.month == d2.month && d1.day == d2.day;
-  }
-
-  Future<void> _showCustomRangePicker(BuildContext context) async {
-    final range = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
-      initialDateRange: selectedRange,
-      locale: const Locale('ar'),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: Theme.of(context).colorScheme.copyWith(
-              primary: AppColors.primary,
-              onPrimary: Colors.white,
-            ),
-          ),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 400, maxHeight: 500),
-              child: child!,
-            ),
-          ),
-        );
-      },
-    );
-    if (range != null) {
-      // Spec 065: showDateRangePicker returns midnight values for both ends;
-      // normalize so the final day is included up to 23:59:59.999.
-      final normalized = normalizeRange(range.start, range.end);
-      onRangeChanged(normalized.start, normalized.end);
-    }
-  }
+  Future<void> _showCustomRangePicker(BuildContext context) =>
+      pickCustomRange(context, selectedRange, onRangeChanged);
 }

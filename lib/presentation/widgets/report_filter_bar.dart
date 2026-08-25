@@ -37,6 +37,8 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import 'package:flutter/material.dart';
+import 'package:ural_erp/core/config/brand.dart';
+import '../picpos_shell/picpos_report_bar.dart';
 import 'report_components.dart' show DateRangeFilter;
 
 class ReportFilterBar extends StatefulWidget {
@@ -83,6 +85,19 @@ class _ReportFilterBarState extends State<ReportFilterBar> {
 
   @override
   Widget build(BuildContext context) {
+    // ═══ فرعُ هويّة PicPos ═══
+    //
+    // ⚠️ **هذا السطرُ يُلبس ثلاثَ عشرةَ شاشةَ تقريرٍ الهويّةَ دفعةً**، لأنّها
+    //    كلَّها تمرّ من هنا. وحوارُ UralCash تحته لا يتبدّل فيه بايت.
+    if (Brand.isPicPos) {
+      return PicPosReportFilterBar(
+        selectedRange: widget.selectedRange,
+        onRangeChanged: widget.onRangeChanged,
+        trailing: widget.trailing,
+        padding: widget.padding,
+      );
+    }
+
     final effectivePadding = widget.padding ??
         const EdgeInsets.symmetric(horizontal: 16, vertical: 8);
 
