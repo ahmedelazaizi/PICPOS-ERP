@@ -368,3 +368,40 @@ class TreasuryAnalytics {
     required this.totalPayments,
   });
 }
+
+/// تجميعُ فترةٍ لطرفٍ واحد — عميلاً كان أو مورّداً.
+///
+/// يخدم ثلاثةَ تقارير: «تحليل سلوك العملاء» و«تقسيم العملاء (RFM)»
+/// و«تحليل سلوك الموردين». والثلاثةُ كانت تفتح شاشةً نائبةً لأنّ الاستعلامَ
+/// الوحيدَ القائم (`getPurchasesBySupplier`) يعطي المجموعَ والعددَ فقط —
+/// وتقسيمُ RFM يحتاج **آخرَ تاريخ** قبل كلّ شيء.
+///
+/// [lastInvoiceDate] هو حداثةُ التعامل (R)، و[invoiceCount] تكرارُه (F)،
+/// و[totalValue] قيمتُه (M). و`null` في التاريخ تعني طرفاً بلا فاتورةٍ في
+/// المدى — وهو لا يظهر أصلاً لأنّ الضمَّ داخليّ.
+class PartyPeriodAggregateRow {
+  const PartyPeriodAggregateRow({
+    required this.partyId,
+    required this.partyName,
+    required this.invoiceCount,
+    required this.totalValue,
+    required this.paidValue,
+    required this.firstInvoiceDate,
+    required this.lastInvoiceDate,
+  });
+
+  final int partyId;
+  final String partyName;
+  final int invoiceCount;
+  final double totalValue;
+  final double paidValue;
+  final DateTime? firstInvoiceDate;
+  final DateTime? lastInvoiceDate;
+
+  /// المتبقّي على الطرف في هذا المدى — لا رصيدُه الكلّيّ.
+  double get unpaidValue => totalValue - paidValue;
+
+  /// متوسّطُ الفاتورة. لا قسمةَ على صفر: صفرُ فواتيرَ لا يمرّ عبر الضمّ
+  /// الداخليّ أصلاً، والحارسُ هنا لأنّ الصفرَ أرخصُ من انهيار.
+  double get averageValue => invoiceCount > 0 ? totalValue / invoiceCount : 0;
+}

@@ -253,4 +253,61 @@ extension PurchaseReportsDao on AppDatabase {
     }).toList();
   }
 
+
+  /// تجميعُ مشترياتِ الفترة لكلّ **مورّد** — يخدم «تحليل سلوك الموردين».
+  ///
+  /// نظيرُ `getCustomerPeriodAggregates` على `purchase_invoices`. والقائمُ
+  /// `getPurchasesBySupplier` لا يعطي إلّا المجموعَ والعدد، فتحليلُ السلوك
+  /// (آخرُ تعامل · المتبقّي · متوسّطُ الفاتورة) لا يقوم عليه.
+  Future<List<PartyPeriodAggregateRow>> getSupplierPeriodAggregates({
+    DateTime? from,
+    DateTime? to,
+    int limit = 200,
+    List<int>? warehouseIds,
+    Set<int>? allowedBranchIds,
+  }) async {
+    from ??= DateTime.now().subtract(const Duration(days: 30));
+    to ??= DateTime.now().add(const Duration(days: 1));
+    final az = _buildAuthScopeFilter(allowedBranchIds, tableAlias: 'pi');
+
+    final vars = <Variable>[dateVar(from), dateVar(to)];
+    var warehouseFilter = '';
+    if (warehouseIds != null) {
+      if (warehouseIds.isEmpty) {
+        warehouseFilter = 'AND 1 = 0';
+      } else {
+        warehouseFilter =
+            'AND pi.warehouse_id IN (${warehouseIds.map((_) => '?').join(', ')})';
+        vars.addAll(warehouseIds.map((id) => Variable<int>(id)));
+      }
+    }
+    vars.addAll(az.vars);
+    vars.add(Variable(limit));
+
+    final results = await customSelect(
+      '''
+      SELECT
+          p.id,
+          p.name,
+          COUNT(pi.id) as invoice_count,
+          SUM(pi.total) as total_value,
+          SUM(pi.paid) as paid_value,
+          MIN(pi.invoice_date) as first_date,
+          MAX(pi.invoice_date) as last_date
+      FROM purchase_invoices pi
+      JOIN parties p ON pi.supplier_id = p.id
+      WHERE pi.invoice_date BETWEEN ? AND ?
+        AND pi.is_deleted = 0
+        $warehouseFilter${az.filter}
+      GROUP BY p.id, p.name
+      ORDER BY total_value DESC
+      LIMIT ?
+      ''',
+      variables: vars,
+      readsFrom: {purchaseInvoices, parties},
+    ).get();
+
+    // نفسُ التحويل — والتواريخُ ثوانٍ لا مِلّي (انظر التحذير في نظيره).
+    return results.map(_mapPartyAggregate).toList();
+  }
 }

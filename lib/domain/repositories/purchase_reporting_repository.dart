@@ -25,4 +25,13 @@ abstract class IPurchaseReportingRepository {
     int? costCenterId,
     Set<int>? allowedBranchIds,
   });
+
+  /// تجميعُ مشترياتِ الفترة لكلّ مورّد — «تحليل سلوك الموردين».
+  Future<List<PartyPeriodAggregateRow>> getSupplierPeriodAggregates({
+    DateTime? from,
+    DateTime? to,
+    int limit,
+    List<int>? warehouseIds,
+    Set<int>? allowedBranchIds,
+  });
 }

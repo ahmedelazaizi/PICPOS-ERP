@@ -181,4 +181,13 @@ abstract class ISalesReportingRepository {
     List<int>? warehouseIds,
     Set<int>? allowedBranchIds,
   });
+
+  /// تجميعُ مبيعاتِ الفترة لكلّ عميل — «تحليل سلوك العملاء» و«تقسيم RFM».
+  Future<List<PartyPeriodAggregateRow>> getCustomerPeriodAggregates({
+    DateTime? from,
+    DateTime? to,
+    int limit,
+    List<int>? warehouseIds,
+    Set<int>? allowedBranchIds,
+  });
 }

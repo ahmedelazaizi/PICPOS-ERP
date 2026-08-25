@@ -1038,4 +1038,88 @@ extension SalesAnalyticsDao on AppDatabase {
       total: (result.data['return_total'] as num?)?.toDouble() ?? 0.0,
     );
   }
+
+  /// تجميعُ مبيعاتِ الفترة لكلّ **عميل** — يخدم «تحليل سلوك العملاء»
+  /// و«تقسيم العملاء (RFM)».
+  ///
+  /// الضمُّ داخليٌّ على `customer_id` عمداً: فاتورةٌ بلا عميلٍ مسجَّل (بيعٌ
+  /// نقديٌّ عابر) ليست سلوكَ عميلٍ يُحلَّل، وإدراجُها تحت اسمٍ واحدٍ يصنع
+  /// «عميلاً» وهميّاً يتصدّر كلَّ تقرير.
+  ///
+  /// والمرتجعاتُ مستبعَدةٌ بـ[_saleReturnExclusion] كبقيّة تقارير المبيعات —
+  /// وإلّا خُصمت من التكرار مرّةً وأُضيفت إلى القيمة سالبةً مرّةً أخرى.
+  Future<List<PartyPeriodAggregateRow>> getCustomerPeriodAggregates({
+    DateTime? from,
+    DateTime? to,
+    int limit = 200,
+    List<int>? warehouseIds,
+    Set<int>? allowedBranchIds,
+  }) async {
+    from ??= DateTime.now().subtract(const Duration(days: 30));
+    to ??= DateTime.now().add(const Duration(days: 1));
+    final az = _buildAuthScopeFilter(allowedBranchIds, tableAlias: 'inv');
+
+    final vars = <Variable>[dateVar(from), dateVar(to)];
+    var warehouseFilter = '';
+    if (warehouseIds != null) {
+      if (warehouseIds.isEmpty) {
+        warehouseFilter = 'AND 1 = 0';
+      } else {
+        warehouseFilter =
+            'AND inv.warehouse_id IN (${warehouseIds.map((_) => '?').join(', ')})';
+        vars.addAll(warehouseIds.map((id) => Variable<int>(id)));
+      }
+    }
+    vars.addAll(az.vars);
+    vars.add(Variable(limit));
+
+    final results = await customSelect(
+      '''
+      SELECT
+          p.id,
+          p.name,
+          COUNT(inv.id) as invoice_count,
+          SUM(inv.total) as total_value,
+          SUM(inv.paid) as paid_value,
+          MIN(inv.invoice_date) as first_date,
+          MAX(inv.invoice_date) as last_date
+      FROM sales_invoices inv
+      JOIN parties p ON inv.customer_id = p.id
+      WHERE inv.invoice_date BETWEEN ? AND ?
+        AND inv.is_deleted = 0${_saleReturnExclusion('inv')}
+        $warehouseFilter${az.filter}
+      GROUP BY p.id, p.name
+      ORDER BY total_value DESC
+      LIMIT ?
+      ''',
+      variables: vars,
+      readsFrom: {salesInvoices, parties},
+    ).get();
+
+    return results.map(_mapPartyAggregate).toList();
+  }
+
+  /// تحويلُ صفٍّ خامٍّ إلى [PartyPeriodAggregateRow].
+  ///
+  /// ⚠️ التواريخُ مخزَّنةٌ **ثوانيَ** حِقبةً (انظر `dateVar`)، فالضربُ في ألف
+  /// قبل `fromMillisecondsSinceEpoch` ليس زينة: بدونه يقع كلُّ تاريخٍ في
+  /// يناير ١٩٧٠ فتصير حداثةُ التعامل عشرين ألفَ يوم.
+  PartyPeriodAggregateRow _mapPartyAggregate(QueryRow row) {
+    DateTime? at(String key) {
+      final secs = (row.data[key] as num?)?.toInt();
+      return secs == null
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(secs * 1000);
+    }
+
+    return PartyPeriodAggregateRow(
+      partyId: (row.data['id'] as num?)?.toInt() ?? 0,
+      partyName: row.data['name'] as String? ?? '',
+      invoiceCount: (row.data['invoice_count'] as num?)?.toInt() ?? 0,
+      totalValue: (row.data['total_value'] as num?)?.toDouble() ?? 0.0,
+      paidValue: (row.data['paid_value'] as num?)?.toDouble() ?? 0.0,
+      firstInvoiceDate: at('first_date'),
+      lastInvoiceDate: at('last_date'),
+    );
+  }
 }

@@ -614,4 +614,36 @@ class ReportingRepositoryImpl implements IReportingRepository {
   @override
   List<Map<String, String>> getFilterOperators(String fieldType) =>
       _db.getFilterOperators(fieldType);
+
+  @override
+  Future<List<PartyPeriodAggregateRow>> getCustomerPeriodAggregates({
+    DateTime? from,
+    DateTime? to,
+    int limit = 200,
+    List<int>? warehouseIds,
+    Set<int>? allowedBranchIds,
+  }) =>
+      _db.getCustomerPeriodAggregates(
+        from: from,
+        to: to,
+        limit: limit,
+        warehouseIds: warehouseIds,
+        allowedBranchIds: allowedBranchIds,
+      );
+
+  @override
+  Future<List<PartyPeriodAggregateRow>> getSupplierPeriodAggregates({
+    DateTime? from,
+    DateTime? to,
+    int limit = 200,
+    List<int>? warehouseIds,
+    Set<int>? allowedBranchIds,
+  }) =>
+      _db.getSupplierPeriodAggregates(
+        from: from,
+        to: to,
+        limit: limit,
+        warehouseIds: warehouseIds,
+        allowedBranchIds: allowedBranchIds,
+      );
 }
