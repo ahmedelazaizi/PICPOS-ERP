@@ -81,6 +81,7 @@ import 'presentation/screens/cost_centers_screen.dart';
 import 'presentation/screens/stock_movements_screen.dart';
 import 'presentation/screens/purchase_orders_screen.dart';
 import 'presentation/screens/commercial_papers_screen.dart';
+import 'presentation/settings_picpos/screens/cheques_picpos_screen.dart';
 import 'presentation/screens/fixed_assets_screen.dart';
 import 'presentation/screens/general_ledger_screen.dart';
 import 'presentation/screens/sales_orders_screen.dart';
@@ -888,7 +889,11 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
       ),
       ScreenConfig(
         appScreen: AppScreen.commercialPapers,
-        builder: (_) => const CommercialPapersScreen(),
+        // فوركُ PicPos على «PicPos Cheques.dc.html» بتبويباته الخمس،
+        // وشاشةُ UralCash تبقى كما هي بلا مساس.
+        builder: (_) => Brand.isPicPos
+            ? const ChequesPicposScreen()
+            : const CommercialPapersScreen(),
         label: 'الشيكات',
         icon: PhosphorIconsBold.receipt,
       ),
