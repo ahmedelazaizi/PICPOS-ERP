@@ -6,6 +6,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../picpos_shell/picpos_surface.dart';
 import '../../data/database/database.dart';
 import '../../data/providers/repository_providers.dart';
 import '../../domain/repositories/accounting_repository.dart';
@@ -243,9 +244,12 @@ class _CreateJournalTemplateDialogState extends ConsumerState<CreateJournalTempl
                     margin: const EdgeInsets.only(bottom: 8),
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: AppColors.surface,
+                      // ⚠️ كان `AppColors.surface` — ثابتٌ فاتحٌ لا يتبع
+                      //    الثيم، فتظهر بطاقةُ كلِّ بندٍ **بيضاءَ فاقعةً** على
+                      //    خلفيّةٍ داكنة (بلاغُ المالك بالصورة 2026-08-25).
+                      color: context.picposField,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+                      border: Border.all(color: context.picposHairline),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -517,7 +521,9 @@ class _TemplateAccountAutocompleteState extends State<_TemplateAccountAutocomple
               child: Container(
                 width: constraints.maxWidth,
                 constraints: const BoxConstraints(maxHeight: 250),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.primary.withValues(alpha: 0.3))),
+                // قائمةُ اقتراحاتِ الحساب — كانت `Colors.white` فتظهر لوحاً
+                // أبيضَ فوقَ حوارٍ داكن.
+                decoration: BoxDecoration(color: context.picposCard, borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.primary.withValues(alpha: 0.3))),
                 child: ListView.builder(
                   padding: EdgeInsets.zero,
                   shrinkWrap: true,

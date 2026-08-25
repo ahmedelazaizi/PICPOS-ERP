@@ -219,7 +219,7 @@ mixin _PurchaseReturnsPicposDetailsPanel
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.picposField,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(

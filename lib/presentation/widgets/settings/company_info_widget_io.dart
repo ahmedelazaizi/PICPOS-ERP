@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../picpos_shell/picpos_surface.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';
 import 'dart:io';
 import 'dart:typed_data';
@@ -291,9 +292,12 @@ class _CompanyInfoWidgetState extends ConsumerState<CompanyInfoWidget> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        // ⚠️ كان `AppColors.surface` — ثابتٌ فاتحٌ لا يتبع الثيم، فيظهر
+        //    الصندوقُ **أبيضَ على خلفيّةٍ داكنة** (بلاغُ المالك بالصورة
+        //    2026-08-25). و`picposField` تتبع الوضعَين.
+        color: context.picposField,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.picposHairline),
       ),
       child: Column(
         children: [
@@ -311,10 +315,18 @@ class _CompanyInfoWidgetState extends ConsumerState<CompanyInfoWidget> {
               width: 120,
               height: 120,
               decoration: BoxDecoration(
-                color: Colors.white,
+                // ⚠️ **أبيضُ هنا مشروطٌ لا مطلق.** شعارُ الشركة PNG بخلفيّةٍ
+                //    شفّافةٍ غالباً وأغلبُ الشعارات داكنةُ الحبر — فعرضُها
+                //    على أرضيّةٍ داكنةٍ يخفيها. فالأبيضُ يبقى **تحت الصورة
+                //    وحدَها**؛ أمّا الحالةُ الفارغةُ (‏«اضغط لاختيار») فتتبع
+                //    الثيم، وهي التي كانت تظهر مربّعاً أبيضَ فاقعاً في الوضع
+                //    الغامق — بلاغُ المالك بالصورة 2026-08-25.
+                color: _selectedLogo != null
+                    ? Colors.white
+                    : context.picposCard,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: AppColors.border,
+                  color: context.picposHairline,
                   width: 2,
                   style: BorderStyle.solid,
                 ),

@@ -154,7 +154,7 @@ mixin _HardwareScaleMixin on ConsumerState<HardwareSettingsWidget> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface, borderRadius: BorderRadius.circular(12),
+        color: context.picposField, borderRadius: BorderRadius.circular(12),
         border: scaleConnected ? Border.all(color: AppColors.success, width: 2) : null,
       ),
       child: Column(

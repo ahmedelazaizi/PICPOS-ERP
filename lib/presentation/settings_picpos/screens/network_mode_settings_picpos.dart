@@ -381,7 +381,7 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.picposField,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.border),
       ),

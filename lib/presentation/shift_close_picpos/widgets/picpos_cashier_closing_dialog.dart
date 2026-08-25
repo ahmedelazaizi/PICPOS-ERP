@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../picpos_shell/picpos_surface.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
@@ -637,7 +638,7 @@ class _PicposCashierClosingDialogState
                                 horizontal: 4, vertical: 1),
                             margin: const EdgeInsets.only(left: 6),
                             decoration: BoxDecoration(
-                              color: AppColors.surface,
+                              color: context.picposField,
                               borderRadius: BorderRadius.circular(3),
                               border:
                                   Border.all(color: AppColors.border),
@@ -737,7 +738,7 @@ class _PicposCashierClosingDialogState
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.picposField,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.border),
       ),
@@ -763,7 +764,7 @@ class _PicposCashierClosingDialogState
       return Card(
         // PicPos chrome: بطاقة مسطحة بحدود بدل اللون الرمادي الخام.
         elevation: 0,
-        color: AppColors.surface,
+        color: context.picposField,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: const BorderSide(color: AppColors.border),
@@ -793,7 +794,7 @@ class _PicposCashierClosingDialogState
     return Card(
       // PicPos chrome: بطاقة مسطحة بحدود بدل اللون الرمادي الخام.
       elevation: 0,
-      color: AppColors.surface,
+      color: context.picposField,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: const BorderSide(color: AppColors.border),

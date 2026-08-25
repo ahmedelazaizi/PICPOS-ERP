@@ -1,4 +1,5 @@
 // ignore_for_file: avoid_dynamic_calls
+import 'setup_wizard/setup_step_meta.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
@@ -299,38 +300,64 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
                 child: Row(
                   children: [
                     // Side Steps
+                    //
+                    // ⚠️ **يُبنى من `_activeSteps` لا من قائمةٍ مكتوبةٍ بيد.**
+                    //    كانت القائمةُ تُكتَب سطراً سطراً وتُغفل الخطوتَين `8`
+                    //    (نوع النشاط) و`7` (كلمة مرور المطوّر) رغم أنّهما في
+                    //    `_activeSteps` وتُحسبان في `_totalSteps` — فيقف
+                    //    المستخدمُ على إحداهما فيقرأ «الخطوة ٢ من ٨» ولا
+                    //    يُضاء شيءٌ أمامه في العمود. والبناءُ من المصدر يجعل
+                    //    ذلك مستحيلاً: ما يُزار يظهر.
                     Container(
-                      width: 280,
+                      width: 300,
                       color: Theme.of(context).cardColor,
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        children: [
-                          _buildStepItem(0, 'معلومات الشركة', PhosphorIconsBold.buildings),
-                          _buildStepItem(1, 'الفرع ووضع التشغيل', PhosphorIconsBold.mapPin),
-                          if (_activeSteps.contains(9))
-                            _buildStepItem(9, 'نمط الإدخال', PhosphorIconsBold.handTap),
-                          if (_activeSteps.contains(5))
-                            _buildStepItem(5, 'إعدادات PostgreSQL', PhosphorIconsBold.database),
-                          if (_activeSteps.contains(6))
-                            _buildStepItem(6, 'تهيئة القاعدة', PhosphorIconsBold.hardDrives),
-                          if (_activeSteps.contains(2))
-                            _buildStepItem(2, 'المنتجات الأولى', PhosphorIconsBold.package),
-                          if (_activeSteps.contains(3))
-                            _buildStepItem(3, 'المستخدمين', PhosphorIconsBold.users),
-                          if (_activeSteps.contains(4))
-                            _buildStepItem(4, 'الضرائب والإعدادات', PhosphorIconsBold.gear),
-                        ],
+                      padding: const EdgeInsets.all(20),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            for (final s in _activeSteps)
+                              if (kSetupSteps[s] != null)
+                                _buildStepItem(kSetupSteps[s]!),
+                          ],
+                        ),
                       ),
                     ),
                     // Content
                     Expanded(
                       child: Padding(
-                        padding: const EdgeInsets.all(40),
+                        padding: const EdgeInsets.fromLTRB(30, 26, 30, 24),
                         child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
+                            _buildStepHeader(),
+                            const SizedBox(height: 20),
                             Expanded(
-                              child: SingleChildScrollView(
-                                child: _buildCurrentStep(),
+                              // جسمُ الخطوة على اليمين ولوحةُ الشرح على اليسار،
+                              // كما في التصميم. وتنهار اللوحةُ تحت ١٤٠٠px بدل
+                              // أن تسحق الجسمَ إلى عرضٍ لا يُدخَل فيه.
+                              child: LayoutBuilder(
+                                builder: (context, c) {
+                                  final body = SingleChildScrollView(
+                                    child: _buildCurrentStep(),
+                                  );
+                                  final aside = _buildStepAside();
+                                  if (c.maxWidth < 1400 || aside == null) {
+                                    return body;
+                                  }
+                                  return Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      Expanded(child: body),
+                                      const SizedBox(width: 18),
+                                      SizedBox(
+                                        width: 330,
+                                        child: SingleChildScrollView(
+                                            child: aside),
+                                      ),
+                                    ],
+                                  );
+                                },
                               ),
                             ),
                             const SizedBox(height: 24),
@@ -436,54 +463,282 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
     );
   }
 
-  Widget _buildStepItem(int index, String title, IconData icon) {
-    final isActive = _currentStep == index;
-    final myStepIdx = _activeSteps.indexOf(index);
+  /// ترويسةُ الخطوة — أيقونةٌ في مربّعٍ ملوّنٍ ثمّ العنوانُ الكبيرُ ووصفُه،
+  /// وشارةٌ على الطرف تقول موضعَ الخطوة من المسار.
+  Widget _buildStepHeader() {
+    final meta = kSetupSteps[_currentStep];
+    if (meta == null) return const SizedBox.shrink();
+    final text = Theme.of(context).textTheme;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 48,
+          height: 48,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Icon(meta.icon, size: 24, color: AppColors.primary),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(meta.title, style: text.headlineSmall),
+              const SizedBox(height: 2),
+              Text(
+                meta.sub,
+                style: text.bodySmall?.copyWith(color: AppColors.textMuted),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 12),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(999),
+            border:
+                Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
+          ),
+          child: Text(
+            'الخطوة ${_activeStepIndex + 1} من $_totalSteps',
+            style: text.labelSmall?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: AppColors.primary,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// لوحةُ الشرح — «لماذا هذه الخطوة» وقائمةُ التحقّق والملاحظة.
+  ///
+  /// ⚠️ **ليست زينةً**: تصميمُ المعالج يعطي لكلّ خطوةٍ `why` و`checks`
+  /// و`note`، وهي ما يحوّل المعالجَ من سلسلةِ حقولٍ إلى شرحٍ للأثر. وأخطرُ ما
+  /// فيها الملاحظاتُ التي تقول ما لا رجعةَ فيه (‏العملة · تصفير البيانات ·
+  /// كلمة مرور المطوّر) — وإخفاؤها يجعل المستخدمَ يقرّر بلا علم.
+  ///
+  /// تعود `null` لخطوةٍ بلا سجلّ، فلا تُرسَم لوحةٌ فارغة.
+  Widget? _buildStepAside() {
+    final meta = kSetupSteps[_currentStep];
+    if (meta == null) return null;
+    final text = Theme.of(context).textTheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Theme.of(context).dividerColor),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  const Icon(PhosphorIconsBold.lightbulb,
+                      size: 17, color: AppColors.primary),
+                  const SizedBox(width: 8),
+                  Text('لماذا هذه الخطوة',
+                      style: text.labelLarge
+                          ?.copyWith(fontWeight: FontWeight.w800)),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Text(
+                meta.why,
+                style: text.bodySmall?.copyWith(
+                  color: AppColors.textMuted,
+                  height: 1.7,
+                ),
+              ),
+              const Divider(height: 24),
+              Text('تحقّقْ قبل المتابعة',
+                  style:
+                      text.labelLarge?.copyWith(fontWeight: FontWeight.w800)),
+              const SizedBox(height: 8),
+              for (final c in meta.checks)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 7),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        c.required
+                            ? PhosphorIconsBold.checkCircle
+                            : PhosphorIconsBold.circleDashed,
+                        size: 15,
+                        color: c.required
+                            ? AppColors.success
+                            : AppColors.textMuted,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          c.label,
+                          style: text.labelSmall?.copyWith(
+                            height: 1.5,
+                            color: c.required ? null : AppColors.textMuted,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: meta.note.tone.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: meta.note.tone.withValues(alpha: 0.35)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Icon(meta.note.icon, size: 17, color: meta.note.tone),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      meta.note.title,
+                      style: text.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: meta.note.tone,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 7),
+              Text(
+                meta.note.body,
+                style: text.labelSmall?.copyWith(
+                  height: 1.6,
+                  color: meta.note.tone,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// بندُ خطوةٍ في العمود — على تخطيط التصميم: مربّعُ رقمٍ (أو علامةُ تمامٍ)
+  /// ثمّ العنوانُ وتلميحُه ثمّ أيقونةُ الخطوة.
+  ///
+  /// ⚠️ **الرقمُ ترتيبيٌّ في المسار لا الرقمُ الداخليّ**: `_activeSteps` تعيد
+  /// `[0, 8, 7, 1, …]`، فعرضُ `8` بجانب الخطوة الثانية يقرأ خطأً. المعروضُ هو
+  /// موضعُها في المسار + ١ — وهو عينُ ما يقوله شريطُ «الخطوة N من M».
+  Widget _buildStepItem(SetupStepMeta meta) {
+    final isActive = _currentStep == meta.index;
+    final myStepIdx = _activeSteps.indexOf(meta.index);
     final isCompleted = myStepIdx >= 0 && _activeStepIndex > myStepIdx;
+    final text = Theme.of(context).textTheme;
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 4),
       child: InkWell(
-        onTap: () => setState(() => _currentStep = index),
-        borderRadius: BorderRadius.circular(12),
+        onTap: () => setState(() => _currentStep = meta.index),
+        borderRadius: BorderRadius.circular(13),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
           decoration: BoxDecoration(
             color: isActive
-                ? AppColors.primary.withValues(alpha: 0.1)
+                ? AppColors.primary.withValues(alpha: 0.10)
                 : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-            border: isActive
-                ? Border.all(color: AppColors.primary.withValues(alpha: 0.3))
-                : null,
+            borderRadius: BorderRadius.circular(13),
+            border: Border.all(
+              color: isActive
+                  ? AppColors.primary.withValues(alpha: 0.30)
+                  : Colors.transparent,
+            ),
           ),
           child: Row(
             children: [
               Container(
                 width: 32,
                 height: 32,
+                alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  shape: BoxShape.circle,
+                  borderRadius: BorderRadius.circular(10),
                   color: isCompleted
                       ? AppColors.success
                       : isActive
                           ? AppColors.primary
-                          : AppColors.border,
+                          : Colors.transparent,
+                  border: Border.all(
+                    color: isCompleted
+                        ? AppColors.success
+                        : isActive
+                            ? AppColors.primary
+                            : AppColors.textMuted.withValues(alpha: 0.35),
+                    width: 1.5,
+                  ),
                 ),
-                child: Icon(
-                  isCompleted ? PhosphorIconsBold.check : icon,
-                  color: Colors.white,
-                  size: 16,
-                ),
+                child: isCompleted
+                    ? const Icon(PhosphorIconsBold.check,
+                        color: Colors.white, size: 15)
+                    : Text(
+                        '${myStepIdx + 1}',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w800,
+                          color:
+                              isActive ? Colors.white : AppColors.textMuted,
+                        ),
+                      ),
               ),
               const SizedBox(width: 12),
-              Text(
-                title,
-                style: TextStyle(
-                  fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-                  color: isActive
-                      ? AppColors.primary
-                      : Theme.of(context).textTheme.bodyLarge?.color,
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      meta.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: text.labelLarge?.copyWith(
+                        fontWeight:
+                            isActive ? FontWeight.w800 : FontWeight.w600,
+                        color: isActive ? AppColors.primary : null,
+                      ),
+                    ),
+                    Text(
+                      meta.hint,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: text.labelSmall
+                          ?.copyWith(color: AppColors.textMuted),
+                    ),
+                  ],
                 ),
+              ),
+              const SizedBox(width: 8),
+              Icon(
+                meta.icon,
+                size: 17,
+                color: isActive ? AppColors.primary : AppColors.textMuted,
               ),
             ],
           ),

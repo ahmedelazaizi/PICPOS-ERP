@@ -179,7 +179,7 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
                         margin: const EdgeInsets.only(bottom: 8),
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: AppColors.surface,
+                          color: context.picposField,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
                         ),
