@@ -161,8 +161,26 @@ extension PermissionsDao on AppDatabase {
         .go();
   }
 
+  /// أنماطُ منح الدور — معرِّفُ الصلاحية → `allow` أو `conditional`.
+  ///
+  /// لا يحوي إلّا الصلاحياتِ الممنوحةَ فعلاً (‏لها صفٌّ)، فالغائبُ ممنوعٌ
+  /// ولا نمطَ له.
+  Future<Map<int, String>> getRolePermissionModes(int roleId) async {
+    final rows = await (select(
+      rolePermissions,
+    )..where((rp) => rp.roleId.equals(roleId))).get();
+    return {for (final r in rows) r.permissionId: r.grantMode};
+  }
+
   /// Set permissions for role (replace all)
-  Future<void> setRolePermissions(int roleId, List<int> permissionIds) async {
+  ///
+  /// [modes] معرِّفُ الصلاحية → نمطُ المنح. وما لا مدخلَ له فيها يُكتَب
+  /// `allow` — فالمُستدعي القديمُ الذي لا يعرف الأنماطَ يبقى صحيحاً.
+  Future<void> setRolePermissions(
+    int roleId,
+    List<int> permissionIds, {
+    Map<int, String>? modes,
+  }) async {
     await transaction(() async {
       // Remove existing permissions
       await (delete(
@@ -172,7 +190,15 @@ extension PermissionsDao on AppDatabase {
       // Add new permissions
       for (final permId in permissionIds) {
         await into(rolePermissions).insert(
-          RolePermissionsCompanion.insert(roleId: roleId, permissionId: permId),
+          RolePermissionsCompanion.insert(
+            roleId: roleId,
+            permissionId: permId,
+            grantMode: Value(
+              modes?[permId] == PermissionCodes.grantConditional
+                  ? PermissionCodes.grantConditional
+                  : PermissionCodes.grantAllow,
+            ),
+          ),
         );
       }
     });
@@ -247,14 +273,44 @@ extension PermissionsDao on AppDatabase {
                 assignedCodes.contains(code))
             .toList();
         // Add system_admin marker for PermissionGuard bypass
-        return ['system_admin', ...grantedCodes];
+        //
+        // ⚠️ **والمشروطُ يُعلَّم حتّى لمدير النظام**: التجاوزُ يمنحه كلَّ
+        //    غيرِ الحرج تلقائيّاً، لكنّ صفّاً مسنَداً صراحةً قد يكون
+        //    مشروطاً — وإسقاطُ علامته هنا يعني أنّ أخطرَ دورٍ في النظام هو
+        //    الوحيدُ الذي لا يمرّ بالموافقة.
+        return [
+          'system_admin',
+          ...grantedCodes,
+          ...await _conditionalMarkers(user.roleId!),
+        ];
       }
 
       final perms = await getPermissionsForRole(user.roleId!);
-      return perms.map((p) => p.code).toList();
+      return [
+        ...perms.map((p) => p.code),
+        ...await _conditionalMarkers(user.roleId!),
+      ];
     }
 
     return [];
+  }
+
+  /// علاماتُ `cond:<code>` لصلاحيات الدور المشروطة.
+  ///
+  /// تُحمَل داخلَ **نفس** قائمة الأكواد لا في مزوِّدٍ ثانٍ — والسببُ مكتوبٌ
+  /// عند [PermissionCodes.conditionalPrefix]: مزوِّدٌ ثانٍ يعني موضعَ إبطالٍ
+  /// ثانياً في كلّ موضعٍ يُبطِل الأكواد، ونسيانُ واحدٍ يعني صلاحيةً مشروطةً
+  /// تُنفَّذ بلا موافقة.
+  Future<List<String>> _conditionalMarkers(int roleId) async {
+    final modes = await getRolePermissionModes(roleId);
+    final condIds = modes.entries
+        .where((e) => e.value == PermissionCodes.grantConditional)
+        .map((e) => e.key)
+        .toList();
+    if (condIds.isEmpty) return const [];
+    final perms =
+        await (select(permissions)..where((p) => p.id.isIn(condIds))).get();
+    return perms.map((p) => PermissionCodes.conditionalMarker(p.code)).toList();
   }
 
   /// Assign role to user.

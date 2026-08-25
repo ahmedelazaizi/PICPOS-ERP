@@ -958,8 +958,20 @@ class $RolePermissionsTable extends RolePermissions
       'REFERENCES permissions (id)',
     ),
   );
+  static const VerificationMeta _grantModeMeta = const VerificationMeta(
+    'grantMode',
+  );
   @override
-  List<GeneratedColumn> get $columns => [roleId, permissionId];
+  late final GeneratedColumn<String> grantMode = GeneratedColumn<String>(
+    'grant_mode',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('allow'),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [roleId, permissionId, grantMode];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -991,6 +1003,12 @@ class $RolePermissionsTable extends RolePermissions
     } else if (isInserting) {
       context.missing(_permissionIdMeta);
     }
+    if (data.containsKey('grant_mode')) {
+      context.handle(
+        _grantModeMeta,
+        grantMode.isAcceptableOrUnknown(data['grant_mode']!, _grantModeMeta),
+      );
+    }
     return context;
   }
 
@@ -1008,6 +1026,10 @@ class $RolePermissionsTable extends RolePermissions
         DriftSqlType.int,
         data['${effectivePrefix}permission_id'],
       )!,
+      grantMode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}grant_mode'],
+      )!,
     );
   }
 
@@ -1020,12 +1042,38 @@ class $RolePermissionsTable extends RolePermissions
 class RolePermission extends DataClass implements Insertable<RolePermission> {
   final int roleId;
   final int permissionId;
-  const RolePermission({required this.roleId, required this.permissionId});
+
+  /// نمطُ المنح — `allow` أو `conditional`.
+  ///
+  /// ═══ لماذا عمودٌ ولم يكن ═══
+  ///
+  /// كان الجدولُ **جدولَ وجودٍ لا حالة**: صفٌّ موجودٌ = ممنوح، وغيابُه =
+  /// ممنوع. وتصميمُ «مصفوفة الأدوار والصلاحيات» (`BENCH.perms`) يرسم خليّةً
+  /// **ثلاثيّة**: مسموح · **مشروط** · ممنوع، ويصف المشروطَ بأنّه «يحتاج
+  /// موافقةً أو حدّاً». وأمرُ المالك 2026-08-25: ابنِها.
+  ///
+  /// ═══ ما يعنيه «مشروط» بدقّة ═══
+  ///
+  /// الصلاحيةُ **ممنوحةٌ** (‏فصفُّها موجودٌ والشاشاتُ تظهر)، لكنّ تنفيذَها
+  /// يمرّ بموافقة مسؤولٍ في كلّ مرّة. وهذا ليس اختراعَ آليّةٍ جديدة:
+  /// `ensurePermission` تملك مسارَ `requestManagerApproval` منذ اليوم،
+  /// والمشروطُ يمنعها من الاختصار عند فحص المِلك ويُنزلها إليه.
+  ///
+  /// ⚠️ **والافتراضُ `allow` لا `conditional`** — والفرقُ أمنيٌّ في اتّجاهه:
+  /// ترقيةُ قاعدةٍ قائمةٍ تُبقي كلَّ منحةٍ كما كانت. ولو كان الافتراضُ
+  /// مشروطاً لتحوّل كلُّ نظامٍ قائمٍ فجأةً إلى سؤال مسؤولٍ في كلّ ضغطة.
+  final String grantMode;
+  const RolePermission({
+    required this.roleId,
+    required this.permissionId,
+    required this.grantMode,
+  });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['role_id'] = Variable<int>(roleId);
     map['permission_id'] = Variable<int>(permissionId);
+    map['grant_mode'] = Variable<String>(grantMode);
     return map;
   }
 
@@ -1033,6 +1081,7 @@ class RolePermission extends DataClass implements Insertable<RolePermission> {
     return RolePermissionsCompanion(
       roleId: Value(roleId),
       permissionId: Value(permissionId),
+      grantMode: Value(grantMode),
     );
   }
 
@@ -1044,6 +1093,7 @@ class RolePermission extends DataClass implements Insertable<RolePermission> {
     return RolePermission(
       roleId: serializer.fromJson<int>(json['roleId']),
       permissionId: serializer.fromJson<int>(json['permissionId']),
+      grantMode: serializer.fromJson<String>(json['grantMode']),
     );
   }
   @override
@@ -1052,12 +1102,18 @@ class RolePermission extends DataClass implements Insertable<RolePermission> {
     return <String, dynamic>{
       'roleId': serializer.toJson<int>(roleId),
       'permissionId': serializer.toJson<int>(permissionId),
+      'grantMode': serializer.toJson<String>(grantMode),
     };
   }
 
-  RolePermission copyWith({int? roleId, int? permissionId}) => RolePermission(
+  RolePermission copyWith({
+    int? roleId,
+    int? permissionId,
+    String? grantMode,
+  }) => RolePermission(
     roleId: roleId ?? this.roleId,
     permissionId: permissionId ?? this.permissionId,
+    grantMode: grantMode ?? this.grantMode,
   );
   RolePermission copyWithCompanion(RolePermissionsCompanion data) {
     return RolePermission(
@@ -1065,6 +1121,7 @@ class RolePermission extends DataClass implements Insertable<RolePermission> {
       permissionId: data.permissionId.present
           ? data.permissionId.value
           : this.permissionId,
+      grantMode: data.grantMode.present ? data.grantMode.value : this.grantMode,
     );
   }
 
@@ -1072,44 +1129,51 @@ class RolePermission extends DataClass implements Insertable<RolePermission> {
   String toString() {
     return (StringBuffer('RolePermission(')
           ..write('roleId: $roleId, ')
-          ..write('permissionId: $permissionId')
+          ..write('permissionId: $permissionId, ')
+          ..write('grantMode: $grantMode')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(roleId, permissionId);
+  int get hashCode => Object.hash(roleId, permissionId, grantMode);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is RolePermission &&
           other.roleId == this.roleId &&
-          other.permissionId == this.permissionId);
+          other.permissionId == this.permissionId &&
+          other.grantMode == this.grantMode);
 }
 
 class RolePermissionsCompanion extends UpdateCompanion<RolePermission> {
   final Value<int> roleId;
   final Value<int> permissionId;
+  final Value<String> grantMode;
   final Value<int> rowid;
   const RolePermissionsCompanion({
     this.roleId = const Value.absent(),
     this.permissionId = const Value.absent(),
+    this.grantMode = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   RolePermissionsCompanion.insert({
     required int roleId,
     required int permissionId,
+    this.grantMode = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : roleId = Value(roleId),
        permissionId = Value(permissionId);
   static Insertable<RolePermission> custom({
     Expression<int>? roleId,
     Expression<int>? permissionId,
+    Expression<String>? grantMode,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (roleId != null) 'role_id': roleId,
       if (permissionId != null) 'permission_id': permissionId,
+      if (grantMode != null) 'grant_mode': grantMode,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1117,11 +1181,13 @@ class RolePermissionsCompanion extends UpdateCompanion<RolePermission> {
   RolePermissionsCompanion copyWith({
     Value<int>? roleId,
     Value<int>? permissionId,
+    Value<String>? grantMode,
     Value<int>? rowid,
   }) {
     return RolePermissionsCompanion(
       roleId: roleId ?? this.roleId,
       permissionId: permissionId ?? this.permissionId,
+      grantMode: grantMode ?? this.grantMode,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1135,6 +1201,9 @@ class RolePermissionsCompanion extends UpdateCompanion<RolePermission> {
     if (permissionId.present) {
       map['permission_id'] = Variable<int>(permissionId.value);
     }
+    if (grantMode.present) {
+      map['grant_mode'] = Variable<String>(grantMode.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1146,6 +1215,7 @@ class RolePermissionsCompanion extends UpdateCompanion<RolePermission> {
     return (StringBuffer('RolePermissionsCompanion(')
           ..write('roleId: $roleId, ')
           ..write('permissionId: $permissionId, ')
+          ..write('grantMode: $grantMode, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -111281,12 +111351,14 @@ typedef $$RolePermissionsTableCreateCompanionBuilder =
     RolePermissionsCompanion Function({
       required int roleId,
       required int permissionId,
+      Value<String> grantMode,
       Value<int> rowid,
     });
 typedef $$RolePermissionsTableUpdateCompanionBuilder =
     RolePermissionsCompanion Function({
       Value<int> roleId,
       Value<int> permissionId,
+      Value<String> grantMode,
       Value<int> rowid,
     });
 
@@ -111349,6 +111421,11 @@ class $$RolePermissionsTableFilterComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
+  ColumnFilters<String> get grantMode => $composableBuilder(
+    column: $table.grantMode,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$RolesTableFilterComposer get roleId {
     final $$RolesTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -111405,6 +111482,11 @@ class $$RolePermissionsTableOrderingComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
+  ColumnOrderings<String> get grantMode => $composableBuilder(
+    column: $table.grantMode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$RolesTableOrderingComposer get roleId {
     final $$RolesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -111461,6 +111543,9 @@ class $$RolePermissionsTableAnnotationComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
+  GeneratedColumn<String> get grantMode =>
+      $composableBuilder(column: $table.grantMode, builder: (column) => column);
+
   $$RolesTableAnnotationComposer get roleId {
     final $$RolesTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -111540,20 +111625,24 @@ class $$RolePermissionsTableTableManager
               ({
                 Value<int> roleId = const Value.absent(),
                 Value<int> permissionId = const Value.absent(),
+                Value<String> grantMode = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RolePermissionsCompanion(
                 roleId: roleId,
                 permissionId: permissionId,
+                grantMode: grantMode,
                 rowid: rowid,
               ),
           createCompanionCallback:
               ({
                 required int roleId,
                 required int permissionId,
+                Value<String> grantMode = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RolePermissionsCompanion.insert(
                 roleId: roleId,
                 permissionId: permissionId,
+                grantMode: grantMode,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

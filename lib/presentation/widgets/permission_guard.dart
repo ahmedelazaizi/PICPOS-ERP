@@ -211,13 +211,20 @@ class PermissionGuard extends ConsumerWidget {
 
     final hasPermission = _checkPermission(userPermissions);
 
-    if (hasPermission) {
+    // ⚠️ **المشروطُ يُظهر الودجتَ ويطلب الموافقةَ عند اللمس.**
+    //    التصميمُ يصفه «يحتاج موافقةً أو حدّاً» — فالمشغّلُ **يرى** الإجراءَ
+    //    (‏إخفاؤه كان سيجعله ممنوعاً لا مشروطاً) ولا يُنفَّذ إلّا بموافقة.
+    //    وهذا عينُ ما يفعله `allowManagerOverride`، فيُعاد استعمالُ مساره
+    //    بدل بناء ثانٍ.
+    final conditional = _isConditional(userPermissions);
+
+    if (hasPermission && !conditional) {
       return child;
     }
 
     // If manager override is allowed, show the widget with override wrapper.
     // `fallback` (لو موجود) هو اللي بيتعرض قبل الموافقة — شوف توثيق الحقل.
-    if (allowManagerOverride) {
+    if (allowManagerOverride || conditional) {
       return _ManagerOverrideWrapper(
         permission: permission.isNotEmpty
             ? permission
@@ -234,6 +241,19 @@ class PermissionGuard extends ConsumerWidget {
     }
 
     return fallback ?? const SizedBox.shrink();
+  }
+
+  /// هل أيٌّ من الأكواد التي يحرسها هذا الحارسُ ممنوحٌ **مشروطاً**؟
+  ///
+  /// وواحدٌ مشروطٌ يكفي: الحارسُ بابٌ واحدٌ، فلو مرّ لأنّ بقيّةَ الأكواد
+  /// غيرُ مشروطةٍ لسقط الشرطُ عن الكود المشروط.
+  bool _isConditional(List<String> userPermissions) {
+    bool cond(String c) =>
+        c.isNotEmpty && PermissionCodes.isConditionalIn(userPermissions, c);
+    if (permission.isNotEmpty) return cond(permission);
+    if (allOf != null && allOf!.isNotEmpty) return allOf!.any(cond);
+    if (anyOf != null && anyOf!.isNotEmpty) return anyOf!.any(cond);
+    return false;
   }
 
   bool _checkPermission(List<String> userPermissions) {
@@ -796,11 +816,20 @@ Future<bool> ensurePermission(
   required String actionName,
 }) async {
   if (ManagerApprovalCache.instance.consume(permission)) return true;
+  // ⚠️ **المشروطُ يُفحَص قبل المِلك، والترتيبُ هو الميزةُ كلُّها.**
+  //    الصلاحيةُ المشروطةُ **ممنوحةٌ** فعلاً — صفُّها موجودٌ في
+  //    `role_permissions` — فلو فُحص المِلكُ أوّلاً لعاد `true` ولما سُئل
+  //    مسؤولٌ أبداً، وصار «مشروط» مفتاحاً لا يفعل شيئاً. راجع
+  //    `test/unit/conditional_permission_test.dart`: طفرةٌ تعكس السطرَين
+  //    تُسقط فحصاً صريحاً.
   // `.value` لا `asData?.value`: الثاني يرجع `null` في كلّ إعادة تحميل، وهنا
   // ذلك يعني سؤالَ المسؤول بلا داعٍ لا فتحَ الباب — لكنّ الاتّساق مقصود.
   final perms =
       ref.read(currentUserPermissionsProvider).value ?? const <String>[];
-  if (hasPermissionWithAdminBypass(perms, permission)) return true;
+  if (!PermissionCodes.isConditionalIn(perms, permission) &&
+      hasPermissionWithAdminBypass(perms, permission)) {
+    return true;
+  }
   if (!context.mounted) return false;
   return requestManagerApproval(
     context,

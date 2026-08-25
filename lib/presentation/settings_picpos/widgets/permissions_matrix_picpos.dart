@@ -12,26 +12,18 @@
 // و`PermissionsManagementWidget` المشتركةُ تبقى كما هي لمسار UralCash
 // (‏`settings_screen.dart`)، وهذه تخدم مسارَ PicPos وحدَه.
 //
-// ═══ ⚠️ الحالةُ الثالثةُ في التصميم لا مقابلَ لها في النموذج ═══
+// ═══ الحالاتُ الثلاث — والثالثةُ بُنيت بأمر المالك ═══
 //
-// يرسم التصميمُ خليّةً **ثلاثيّة**: مسموح (‏✓ أخضر) · مشروط (‏− كهرمانيّ)
-// · ممنوع (‏✕ رماديّ)، ويصف المشروطَ بأنّه «يحتاج موافقةً أو حدّاً».
+// الخليّةُ ثلاثيّةٌ كما في التصميم: مسموح (‏✓ أخضر) · مشروط (‏− كهرمانيّ) ·
+// ممنوع (‏✕ رماديّ). ودورتُها ترتيبُ الشِّدّة: ممنوع ← مسموح ← مشروط.
 //
-// والمقيسُ أنّ `RolePermissions` **جدولُ وجودٍ لا حالة**:
+// وكان `RolePermissions` **جدولَ وجودٍ لا حالة** (‏صفٌّ = ممنوح، وغيابُه =
+// ممنوع)، فرُفض رسمُ خليّةٍ كهرمانيّةٍ تُحفَظ «ممنوحة» — كذبٌ أمنيّ. ثمّ أمر
+// المالكُ ببنائها 2026-08-25، فأُضيف `grant_mode` (‏هجرة v163).
 //
-//     class RolePermissions extends Table {
-//       IntColumn get roleId => integer().references(Roles, #id)();
-//       IntColumn get permissionId => integer().references(Permissions, #id)();
-//       Set<Column> get primaryKey => {roleId, permissionId};
-//     }
-//
-// صفٌّ موجودٌ = ممنوح، وغيابُه = ممنوع. لا عمودَ ثالثاً ولا نقطةَ إنفاذٍ
-// تقرأ «مشروط» في أيّ حارس. فرسمُ خليّةٍ كهرمانيّةٍ تُحفَظ في النهاية
-// «ممنوحة» **كذبٌ أمنيّ** — المديرُ يظنّ أنّه اشترط موافقةً ولم يشترط شيئاً.
-//
-// فالمصفوفةُ هنا **ثنائيّةٌ** بحالتَي التصميم الأولى والثالثة حرفيّاً، وبناءُ
-// «المشروط» ميزةٌ تُطلب لا نصٌّ يُنقَل: تحتاج عموداً في الجدول وهجرةً وقراءةً
-// في كلّ حارس. مسجَّلةٌ بنداً للمالك في تسليم الجلسة.
+// **و«مشروط» = ممنوحةٌ ويمرّ تنفيذُها بموافقة مسؤولٍ في كلّ مرّة.** ولم
+// تُبنَ لها آليّةٌ جديدة: `ensurePermission` تملك مسارَ `requestManagerApproval`
+// منذ اليوم، والمشروطُ يمنعها من الاختصار عند فحص المِلك فتنزل إليه.
 //
 // ═══ ما نُقل من التصميم بمقياسٍ من الشجرة ═══
 //
@@ -89,16 +81,29 @@ class _MatrixGroup {
   String get label => PermissionCodes.categoryNames[category] ?? category;
 }
 
+/// حالةُ الخليّة الثلاثيّة — حالاتُ التصميم نفسُها بترتيبها.
+enum _Grant {
+  /// ✕ رماديّ — لا صفَّ في `role_permissions`.
+  denied,
+
+  /// ✓ أخضر — صفٌّ بنمط `allow`.
+  allowed,
+
+  /// − كهرمانيّ — صفٌّ بنمط `conditional`: ممنوحةٌ ويمرّ تنفيذُها بموافقة
+  /// مسؤولٍ في كلّ مرّة.
+  conditional,
+}
+
 /// تعديلٌ معلَّقٌ واحد — ما تعرضه لوحةُ «التعديلات غير المحفوظة».
 class _PendingChange {
   const _PendingChange({
-    required this.grant,
+    required this.to,
     required this.roleName,
     required this.permName,
     required this.risky,
   });
 
-  final bool grant;
+  final _Grant to;
   final String roleName;
   final String permName;
   final bool risky;
@@ -114,12 +119,14 @@ class _PermissionsMatrixDialogState
   List<Role> _roles = const [];
   List<_MatrixGroup> _groups = const [];
 
-  /// خطُّ الأساس المحمَّل من القاعدة: معرِّفُ الدور → معرِّفاتُ صلاحياته.
-  final Map<int, Set<int>> _baseline = {};
+  /// خطُّ الأساس المحمَّل من القاعدة: الدور → الصلاحية → حالتُها.
+  ///
+  /// الغائبُ من الخريطة الداخليّة ممنوعٌ — فلا تُخزَّن حالاتُ المنع.
+  final Map<int, Map<int, _Grant>> _baseline = {};
 
-  /// المعلَّق: `roleId:permId` → القيمةُ المطلوبة. لا يحوي إلّا ما يخالف
+  /// المعلَّق: `roleId:permId` → الحالةُ المطلوبة. لا يحوي إلّا ما يخالف
   /// خطَّ الأساس — فالضغطةُ التي تُعيد الخليّةَ لأصلها **تحذف** المفتاح.
-  final Map<String, bool> _pending = {};
+  final Map<String, _Grant> _pending = {};
 
   bool _loading = true;
   bool _saving = false;
@@ -144,8 +151,13 @@ class _PermissionsMatrixDialogState
       //    المستودع تقرأ صلاحياتِ كلِّ الأدوار معاً.
       _baseline.clear();
       for (final r in roles) {
-        final rp = await repo.getPermissionsForRole(r.id);
-        _baseline[r.id] = rp.map((p) => p.id).toSet();
+        final modes = await repo.getRolePermissionModes(r.id);
+        _baseline[r.id] = {
+          for (final e in modes.entries)
+            e.key: e.value == PermissionCodes.grantConditional
+                ? _Grant.conditional
+                : _Grant.allowed,
+        };
       }
 
       final toggleable = perms
@@ -180,15 +192,21 @@ class _PermissionsMatrixDialogState
     if (mounted) setState(() => _loading = false);
   }
 
-  bool _isGranted(int roleId, int permId) =>
+  _Grant _grantOf(int roleId, int permId) =>
       _pending[_key(roleId, permId)] ??
-      (_baseline[roleId]?.contains(permId) ?? false);
+      _baseline[roleId]?[permId] ??
+      _Grant.denied;
 
+  /// دورةُ الحالات: ممنوع ← مسموح ← مشروط ← ممنوع.
+  ///
+  /// وترتيبُها ترتيبُ الشِّدّة: الضغطةُ الأولى تمنح، والثانيةُ تُقيّد المنحَ
+  /// بموافقةٍ، والثالثةُ تسحب. فمن يضغط مرّةً لا يقع على «مشروط» بغير قصد.
   void _toggle(int roleId, int permId) {
     if (_saving) return;
     final k = _key(roleId, permId);
-    final base = _baseline[roleId]?.contains(permId) ?? false;
-    final next = !_isGranted(roleId, permId);
+    final base = _baseline[roleId]?[permId] ?? _Grant.denied;
+    const cycle = [_Grant.denied, _Grant.allowed, _Grant.conditional];
+    final next = cycle[(cycle.indexOf(_grantOf(roleId, permId)) + 1) % 3];
     setState(() {
       if (next == base) {
         _pending.remove(k);
@@ -207,7 +225,7 @@ class _PermissionsMatrixDialogState
     var n = 0;
     for (final g in _groups) {
       for (final p in g.perms) {
-        if (_isGranted(roleId, p.id)) n++;
+        if (_grantOf(roleId, p.id) != _Grant.denied) n++;
       }
     }
     return n;
@@ -230,7 +248,7 @@ class _PermissionsMatrixDialogState
       }
       if (role == null || perm == null) continue;
       out.add(_PendingChange(
-        grant: e.value,
+        to: e.value,
         roleName: role.name,
         permName: perm.name,
         risky: PermissionCodes.criticalFinancialOps.contains(perm.code),
@@ -261,14 +279,25 @@ class _PermissionsMatrixDialogState
         final parts = e.key.split(':');
         if (int.parse(parts.first) != roleId) continue;
         final permId = int.parse(parts.last);
-        if (e.value) {
-          next.add(permId);
-        } else {
+        if (e.value == _Grant.denied) {
           next.remove(permId);
+        } else {
+          next[permId] = e.value;
         }
       }
       try {
-        await repo.setRolePermissions(roleId, next.toList());
+        // ⚠️ **المعرِّفاتُ والأنماطُ من نفس الخريطة** — فلا يقع أن تُكتَب
+        //    صلاحيةٌ ممنوحةً بنمطٍ يخصُّ غيرَها، ولا أن يُمنَح صفٌّ بلا نمط.
+        await repo.setRolePermissions(
+          roleId,
+          next.keys.toList(),
+          modes: {
+            for (final e in next.entries)
+              e.key: e.value == _Grant.conditional
+                  ? PermissionCodes.grantConditional
+                  : PermissionCodes.grantAllow,
+          },
+        );
         _baseline[roleId] = next;
         ref.invalidate(rolePermissionsProvider(roleId));
         saved++;
@@ -598,13 +627,42 @@ class _PermissionsMatrixDialogState
     );
   }
 
+  /// ألوانُ الحالة الثلاث — نفسُ ترميز التصميم حرفيّاً.
+  static ({IconData icon, Color box, Color fg, Color wash}) _skin(
+    BuildContext context,
+    _Grant g,
+  ) {
+    switch (g) {
+      case _Grant.allowed:
+        return (
+          icon: PhosphorIconsBold.check,
+          box: AppColors.success,
+          fg: Colors.white,
+          wash: AppColors.success.withValues(alpha: .06),
+        );
+      case _Grant.conditional:
+        return (
+          icon: PhosphorIconsBold.minus,
+          box: AppColors.warning,
+          fg: Colors.white,
+          wash: AppColors.warning.withValues(alpha: .08),
+        );
+      case _Grant.denied:
+        return (
+          icon: PhosphorIconsBold.x,
+          box: context.picposField,
+          fg: context.picposMuted,
+          wash: Colors.transparent,
+        );
+    }
+  }
+
   Widget _cell(BuildContext context, int roleId, int permId) {
-    final on = _isGranted(roleId, permId);
+    final g = _grantOf(roleId, permId);
+    final s = _skin(context, g);
     final dirty = _pending.containsKey(_key(roleId, permId));
     return Material(
-      color: on
-          ? AppColors.success.withValues(alpha: .06)
-          : Colors.transparent,
+      color: s.wash,
       child: InkWell(
         // مفتاحٌ للخليّة — الجدولُ ثنائيُّ البعد، والوصولُ إليه بـ`ancestor`
         // يلتقط صفَّ العنوان الداخليَّ لا الصفَّ الحامل. والمفتاحُ يقصد
@@ -623,17 +681,16 @@ class _PermissionsMatrixDialogState
               width: 26,
               height: 26,
               decoration: BoxDecoration(
-                color: on ? AppColors.success : context.picposField,
+                color: s.box,
                 borderRadius: BorderRadius.circular(9),
+                // ⚠️ إطارُ «معلَّق» أزرقُ لا كهرمانيّ — الكهرمانيُّ صار لونَ
+                //    حالةِ «مشروط» نفسِها، فإطارٌ بنفس اللون يجعل خليّةً
+                //    مشروطةً محفوظةً تبدو معلَّقةً وبالعكس.
                 border: dirty
-                    ? Border.all(color: AppColors.warning, width: 2)
+                    ? Border.all(color: AppColors.primary, width: 2)
                     : null,
               ),
-              child: Icon(
-                on ? PhosphorIconsBold.check : PhosphorIconsBold.x,
-                size: 14,
-                color: on ? Colors.white : context.picposMuted,
-              ),
+              child: Icon(s.icon, size: 14, color: s.fg),
             ),
           ),
         ),
@@ -707,7 +764,26 @@ class _PermissionsMatrixDialogState
   }
 
   Widget _changeCard(BuildContext context, _PendingChange c) {
-    final tint = c.grant ? AppColors.success : AppColors.error;
+    final tint = switch (c.to) {
+      _Grant.allowed => AppColors.success,
+      _Grant.conditional => AppColors.warning,
+      _Grant.denied => AppColors.error,
+    };
+    final icon = switch (c.to) {
+      _Grant.allowed => PhosphorIconsBold.plusCircle,
+      _Grant.conditional => PhosphorIconsBold.shieldWarning,
+      _Grant.denied => PhosphorIconsBold.minusCircle,
+    };
+    // ⚠️ **النصُّ يقول ما سيقع لا «تغيَّر»**: «مشروط» ممنوحةٌ في القاعدة،
+    //    فلو قيل «منح» لظنّها المشغّلُ منحاً كاملاً ولم يعلم أنّه اشترط
+    //    موافقةً على كلّ تنفيذ.
+    final label = switch (c.to) {
+      _Grant.allowed => 'منح «${c.permName}» لدور ${c.roleName}',
+      _Grant.conditional =>
+        'جعل «${c.permName}» مشروطاً لدور ${c.roleName} — موافقةُ مسؤولٍ '
+            'في كلّ مرّة',
+      _Grant.denied => 'سحب «${c.permName}» من دور ${c.roleName}',
+    };
     return Container(
       padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
@@ -720,19 +796,11 @@ class _PermissionsMatrixDialogState
         children: [
           Row(
             children: [
-              Icon(
-                c.grant
-                    ? PhosphorIconsBold.plusCircle
-                    : PhosphorIconsBold.minusCircle,
-                size: 16,
-                color: tint,
-              ),
+              Icon(icon, size: 16, color: tint),
               const SizedBox(width: 9),
               Expanded(
                 child: Text(
-                  c.grant
-                      ? 'منح «${c.permName}» لدور ${c.roleName}'
-                      : 'سحب «${c.permName}» من دور ${c.roleName}',
+                  label,
                   style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w800,
@@ -840,7 +908,9 @@ class _PermissionsMatrixDialogState
             ),
           ),
           row(PhosphorIconsBold.check, AppColors.success, Colors.white,
-              'مسموح'),
+              'مسموح بلا شرط'),
+          row(PhosphorIconsBold.minus, AppColors.warning, Colors.white,
+              'مشروط — موافقةُ مسؤولٍ في كلّ مرّة'),
           row(PhosphorIconsBold.x, context.picposCard, context.picposMuted,
               'ممنوع'),
         ],

@@ -855,6 +855,41 @@ class PermissionCodes {
 
   /// Set of critical financial operations that bypass NO role — even admin
   /// must have the explicit permission assigned.
+  // ── نمطُ منح الصلاحية ───────────────────────────────────────────────────
+
+  /// منحٌ بلا شرط — الافتراض.
+  static const String grantAllow = 'allow';
+
+  /// منحٌ **مشروط**: الصلاحيةُ ممنوحةٌ ويمرّ تنفيذُها بموافقة مسؤولٍ في كلّ
+  /// مرّة. عمودُها `role_permissions.grant_mode` (‏هجرة v163).
+  static const String grantConditional = 'conditional';
+
+  /// بادئةُ علامةِ «مشروط» داخلَ قائمة أكواد المستخدم.
+  ///
+  /// ═══ لماذا علامةٌ في نفس القائمة لا مزوِّدٌ ثانٍ ═══
+  ///
+  /// `currentUserPermissionsProvider` يُبطَل في مواضعَ كثيرةٍ متفرّقة — بعد
+  /// كلّ حفظِ فاتورةٍ وكلّ تعديلِ صلاحيةٍ وكلّ تبديلِ دور. ومزوِّدٌ ثانٍ
+  /// للمشروطة يعني موضعَ إبطالٍ ثانياً في **كلٍّ** منها؛ يُنسى واحدٌ فتبقى
+  /// القائمةُ المشروطةُ بائدةً بينما الأكوادُ محدَّثة — أي صلاحيةٌ مشروطةٌ
+  /// تُنفَّذ بلا موافقة. والعلامةُ في نفس القائمة تجعلها تحميلاً واحداً
+  /// وإبطالاً واحداً، فلا موضعَ يُنسى أصلاً.
+  ///
+  /// والسابقةُ قائمةٌ في هذا الكود: القائمةُ تحمل `'system_admin'` علامةً
+  /// اصطناعيّةً لا كودَ صلاحية.
+  ///
+  /// ⚠️ **ومقيسٌ أنّ ذلك مأمون**: لا مستهلكَ واحدٌ في `lib/` يمرّ على القائمة
+  /// (`.map`/`.length`/`for`) — كلُّهم `.contains`. فمن يُضيف مستهلكاً يعدّ
+  /// عناصرَها عليه أن يرشّح هذه البادئة.
+  static const String conditionalPrefix = 'cond:';
+
+  /// علامةُ الكود المشروط كما تُوضَع في قائمة أكواد المستخدم.
+  static String conditionalMarker(String code) => '$conditionalPrefix$code';
+
+  /// هل [code] ممنوحٌ **مشروطاً** لهذا المستخدم؟
+  static bool isConditionalIn(List<String> codes, String code) =>
+      codes.contains('$conditionalPrefix$code');
+
   static const Set<String> criticalFinancialOps = {
     deletePostedJournal,
     voidPaidInvoice,

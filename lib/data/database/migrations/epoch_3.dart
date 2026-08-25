@@ -2643,5 +2643,31 @@ extension Epoch3Migrations on AppDatabase {
         debugPrint('[Migration] v162 أعمدةُ المورد أُضيفت — إنقاذُ 161 OK');
       });
     }
+
+    // ‏١٦٣ — نمطُ منح الصلاحية (`role_permissions.grant_mode`).
+    //
+    // «مشروط» في مصفوفة الأدوار: الصلاحيةُ ممنوحةٌ ويمرّ تنفيذُها بموافقة
+    // مسؤول. والعمودُ بافتراض `allow`، فكلُّ منحةٍ قائمةٍ تبقى كما كانت —
+    // والاتّجاهُ مقصود: افتراضٌ مشروطٌ كان سيحوّل كلَّ نظامٍ قائمٍ إلى سؤال
+    // مسؤولٍ في كلّ ضغطة.
+    //
+    // ⚠️ **و`addColumn` لا `alterTable`**: الأخيرةُ تعيد بناءَ الجدول من
+    //    تعريفِ **اليوم**، و`role_permissions` مفتاحُه مركّبٌ بمرجعَين —
+    //    فإعادةُ بنائه تُخاطر بصفوفٍ قائمةٍ بلا مقابل. والإضافةُ بعمودٍ ذي
+    //    افتراضٍ لا تحتاج إعادةَ بناءٍ أصلاً.
+    if (from < 163) {
+      await _safeMigrate('v163 نمطُ منح الصلاحية', () async {
+        final info = await customSelect(
+          'PRAGMA table_info(role_permissions)',
+        ).get();
+        final present = info.map((r) => r.data['name'] as String).toSet();
+        if (present.contains('grant_mode')) {
+          debugPrint('[Migration] v163 skipped — grant_mode موجودٌ أصلاً');
+          return;
+        }
+        await m.addColumn(rolePermissions, rolePermissions.grantMode);
+        debugPrint('[Migration] v163 grant_mode أُضيف');
+      });
+    }
   }
 }

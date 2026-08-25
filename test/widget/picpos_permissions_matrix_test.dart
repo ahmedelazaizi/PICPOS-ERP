@@ -38,8 +38,11 @@ class _FakeAuthRepo implements IAuthRepository {
   final List<Permission> perms;
   final Map<int, Set<int>> grants;
 
+  /// أنماطُ المنح — الدور → الصلاحية → `allow` أو `conditional`.
+  final Map<int, Map<int, String>> modes = {};
+
   /// ما وصل إلى الحفظ فعلاً — يقيسه الاختبارُ بدل أن يفترض النجاح.
-  final List<(int, List<int>)> saved = [];
+  final List<(int, List<int>, Map<int, String>?)> saved = [];
 
   @override
   Future<List<Role>> getAllRoles() async => roles;
@@ -54,10 +57,21 @@ class _FakeAuthRepo implements IAuthRepository {
   }
 
   @override
-  Future<void> setRolePermissions(int roleId, List<int> permissionIds) async {
-    saved.add((roleId, permissionIds));
+  Future<void> setRolePermissions(
+    int roleId,
+    List<int> permissionIds, {
+    Map<int, String>? modes,
+  }) async {
+    saved.add((roleId, permissionIds, modes));
     grants[roleId] = permissionIds.toSet();
+    if (modes != null) this.modes[roleId] = modes;
   }
+
+  @override
+  Future<Map<int, String>> getRolePermissionModes(int roleId) async => {
+        for (final id in grants[roleId] ?? const <int>{})
+          id: modes[roleId]?[id] ?? 'allow',
+      };
 
   @override
   dynamic noSuchMethod(Invocation invocation) =>
@@ -210,8 +224,8 @@ void main() {
       expect(find.textContaining('0 تعديل معلّق'), findsOneWidget);
       expect(find.textContaining('تعديل غير محفوظ'), findsNothing);
 
-      // خليّةُ «تطبيق خصم» (‏١١) لدور «مدير النظام» (‏١) — وهو يملكها،
-      // فالضغطةُ **سحبٌ**.
+      // خليّةُ «تطبيق خصم» (‏١١) لدور «مدير النظام» (‏١) — وهو يملكها
+      // **مسموحةً**، فالدورةُ منها: مسموح ← مشروط ← ممنوع ← مسموح.
       final cell = find.byKey(const ValueKey('mx-cell-1-11'));
       expect(cell, findsOneWidget);
       await tester.tap(cell);
@@ -219,19 +233,39 @@ void main() {
 
       expect(find.textContaining('1 تعديل معلّق'), findsOneWidget);
       expect(find.textContaining('1 تعديل غير محفوظ'), findsOneWidget);
+      // ⚠️ **النصُّ يجب أن يقول «مشروطاً» لا «منح»**: الصلاحيةُ ممنوحةٌ في
+      //    الحالتين، والفرقُ أنّ التنفيذَ يمرّ بموافقة. فنصٌّ يقول «منح»
+      //    يُخفي عن المديرِ أنّه اشترط شيئاً.
       expect(
-        find.textContaining('«تطبيق خصم»'),
+        find.textContaining('جعل «تطبيق خصم» مشروطاً'),
         findsOneWidget,
-        reason: 'بطاقةُ التعديل لا تسمّي الصلاحيةَ التي بُدِّلت',
+        reason: 'بطاقةُ التعديل لا تصف الانتقالَ إلى «مشروط».',
       );
 
-      // والضغطةُ الثانيةُ تُعيد الخليّةَ لأصلها فيختفي التعديلُ تماماً —
-      // لا يبقى مدخلٌ معلَّقٌ يساوي خطَّ الأساس.
+      // ← ممنوع
+      await tester.tap(cell);
+      await tester.pumpAndSettle();
+      expect(find.textContaining('سحب «تطبيق خصم»'), findsOneWidget);
+      expect(find.textContaining('1 تعديل معلّق'), findsOneWidget);
+
+      // ← مسموح = خطُّ الأساس، فيختفي التعديلُ تماماً ولا يبقى مدخلٌ معلَّقٌ
+      //   يساوي أصلَه.
       await tester.tap(cell);
       await tester.pumpAndSettle();
       expect(find.textContaining('0 تعديل معلّق'), findsOneWidget);
       expect(find.textContaining('تعديل غير محفوظ'), findsNothing);
 
+      await teardownTree(tester);
+    });
+
+    testWidgets('⚠️ ومفتاحُ الرموز يعلن الحالاتِ الثلاثَ لا حالتين',
+        (tester) async {
+      // مفتاحٌ ناقصٌ يجعل الخليّةَ الكهرمانيّةَ لغزاً — والمشغّلُ لا يعرف
+      // أنّها ممنوحةٌ بشرطٍ لا ممنوعة.
+      await open(tester, const Size(1600, 900));
+      expect(find.text('مسموح بلا شرط'), findsOneWidget);
+      expect(find.text('مشروط — موافقةُ مسؤولٍ في كلّ مرّة'), findsOneWidget);
+      expect(find.text('ممنوع'), findsOneWidget);
       await teardownTree(tester);
     });
 
@@ -247,7 +281,7 @@ void main() {
         reason: 'الحفظُ مفعَّلٌ بلا تعديلٍ معلَّق',
       );
 
-      // سحبُ «تطبيق خصم» (‏١١) من «مدير النظام» (‏١) — تعديلٌ في دورٍ واحد.
+      // «تطبيق خصم» (‏١١) لدور «مدير النظام» (‏١): ضغطةٌ ⇒ **مشروط**.
       await tester.tap(find.byKey(const ValueKey('mx-cell-1-11')));
       await tester.pumpAndSettle();
 
@@ -256,13 +290,24 @@ void main() {
       await tester.pumpAndSettle();
 
       // ‏`setRolePermissions` تكتب المجموعةَ كاملةً — فالمقيسُ أنّ نداءً
-      // واحداً وقع لدورٍ واحدٍ وأنّ الصلاحيةَ المسحوبةَ ليست فيه، والباقيةُ فيه.
+      // واحداً وقع لدورٍ واحد.
       expect(repo.saved.length, 1, reason: 'نداءُ حفظٍ لكلّ خليّةٍ لا لكلّ دور');
-      final (roleId, ids) = repo.saved.single;
+      final (roleId, ids, modes) = repo.saved.single;
       expect(roleId, 1);
-      expect(ids, isNot(contains(11)));
+
+      // ⚠️ **المشروطُ يبقى في قائمة المعرِّفات** — فهو ممنوحٌ. وإسقاطُه منها
+      //    كان سيحوّل «مشروط» إلى «ممنوع» صامتاً، وهو أخطرُ خطأٍ ممكنٍ هنا.
+      expect(ids, contains(11),
+          reason: 'الصلاحيةُ المشروطةُ سقطت من المنح — صارت ممنوعةً بدل '
+              'أن تصير مشروطة.');
       expect(ids, contains(10));
       expect(ids, contains(20));
+
+      // والنمطُ وصل مع المعرِّفات.
+      expect(modes, isNotNull, reason: 'حُفظت المعرِّفاتُ بلا أنماطٍ.');
+      expect(modes![11], PermissionCodes.grantConditional);
+      expect(modes[10], PermissionCodes.grantAllow);
+      expect(modes[20], PermissionCodes.grantAllow);
 
       // ⚠️ الحفظُ يُظهر توستاً بمؤقّتٍ (‏٥ ثوانٍ للنجاح في `AppToast`).
       //    وتفكيكُ الشجرة ومؤقّتٌ معلَّقٌ = فشلُ `!timersPending` — والفحوصُ

@@ -31,26 +31,23 @@
 // ⚠️ **ولا مصدرَ لـ«ساعات العمل» ولا «الوردية المفتوحة»** في `Branches` —
 // فرقائقُ التصميم تلك غيرُ مرسومة. والمرسومُ ما يقرأه العمود.
 //
-// ⚠️ **وعمودُ «إجراء» في جدول المخازن غيرُ مرسومٍ بقياس، لا بإغفال.**
-// التصميمُ يضع فيه زرَّ «تعديل» يفتح حوارَ المخزن. و`WarehouseEditDialog`
-// يستقبل صفَّ drift (`Warehouse`)، بينما `allWarehousesProvider` يعطي
-// **DTO نطاقٍ** (`WarehouseData`) بحقولٍ أقلَّ ولا `isActive` فيه. وجلبُ
-// الصفِّ يقتضي استيرادَ `data/database` من طبقة العرض، وهو ما يمنعه
-// `presentation_db_import_guard` على كلّ ملفٍّ **جديد** — والقائمةُ البيضاءُ
-// مجمَّدة. فكشفُ الصفِّ عبر المستودع بندُ عملٍ في طبقة البيانات لا تفصيلٌ
-// في هذه الشاشة، ومسجَّلٌ للمالك. والتعديلُ متاحٌ اليومَ من شاشة الفروع
-// والمخازن القائمة.
+// ⚠️ **ومصدرُ المخازن مستودعُ الفروع لا `allWarehousesProvider`.** الأخيرُ
+// يعطي DTO نطاقٍ (`WarehouseData`) بلا `isActive`، و`WarehouseEditDialog`
+// يستقبل صفَّ drift. فأوّلُ كتابةٍ أسقطت عمودَي «الحالة» و«إجراء» من
+// التصميم لهذا السبب — ثمّ أمر المالكُ بزرّ التعديل، فقِيس أنّ
+// `IBranchRepository.watchAllWarehouses()` يعطي الصفوفَ أصلاً، فعاد
+// العمودان معاً.
 //
-// و«الحالة» في التصميم صارت «مركز التكلفة» للسبب نفسِه: `WarehouseData`
-// لا يحمل `isActive`، وعمودٌ يقرأ حقلاً غيرَ موجودٍ لا يُكتَب.
+// ولا مخالفةَ لحارس الاستيراد: نوعُ `Warehouse` يصل عبر
+// `data/providers/providers.dart` (‏يُعيد تصدير `database_barrel.dart`) لا
+// عبر `data/database/...` مباشرةً — وهذا نفسُ ما يفعله الحوارُ نفسُه.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:ural_erp/core/widgets/app_toast.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/providers.dart';
-import '../../../domain/repositories/inventory_repository.dart'
-    show WarehouseData;
 import '../../picpos_shell/picpos_body_handle.dart';
 import '../../picpos_shell/picpos_data_table.dart';
 import '../../picpos_shell/picpos_entity_card.dart';
@@ -63,6 +60,15 @@ import '../../screens/widgets/dialogs/warehouse_edit_dialog.dart';
 import '../../screens/pos_terminals_screen.dart' show PosTerminalsBody;
 import '../../screens/settings/work_holidays_screen.dart'
     show WorkHolidaysBody;
+
+/// صفوفُ المخازن من مستودع الفروع — **صفوفُ drift** لا DTO النطاق.
+///
+/// `allWarehousesProvider` القائمُ يحوّلها إلى `WarehouseData` فيُسقط
+/// `isActive` و`isSystemDefault`، وهما ما يحتاجه عمودُ «الحالة» وحوارُ
+/// التعديل. وتحويلٌ عكسيٌّ من الـDTO مستحيلٌ: الحقولُ غيرُ موجودةٍ فيه أصلاً.
+final _warehouseRowsProvider = StreamProvider.autoDispose<List<Warehouse>>(
+  (ref) => ref.watch(branchRepositoryProvider).watchAllWarehouses(),
+);
 
 /// ملاحظاتُ التبويبات — نصوصُ `TABS.branches[].note` حرفيّاً.
 ///
@@ -123,8 +129,12 @@ class _BranchesPicposScreenState extends ConsumerState<BranchesPicposScreen>
   Widget build(BuildContext context) {
     final List<Branche> branches =
         ref.watch(allBranchesProvider).value ?? const [];
-    final List<WarehouseData> warehouses =
-        ref.watch(allWarehousesProvider).value ?? const [];
+    // ⚠️ **صفوفُ drift لا DTO النطاق.** `allWarehousesProvider` يعطي
+    //    `WarehouseData` بحقولٍ أقلَّ ولا `isActive` فيه، و`WarehouseEditDialog`
+    //    يستقبل صفَّ drift. فالمصدرُ هنا مستودعُ الفروع — وبه يعود عمودا
+    //    «الحالة» و«إجراء» من التصميم، وكانا ساقطَين لهذا السبب وحدَه.
+    final List<Warehouse> warehouses =
+        ref.watch(_warehouseRowsProvider).value ?? const [];
     final List<UserWithRole> users =
         ref.watch(allUsersProvider).value ?? const [];
 
@@ -264,7 +274,7 @@ class _BranchesPicposScreenState extends ConsumerState<BranchesPicposScreen>
   Widget _branchesTab(
     BuildContext context,
     List<Branche> branches,
-    List<WarehouseData> warehouses,
+    List<Warehouse> warehouses,
   ) {
     final shown = branches.where((b) => _hit(b.name) || _hit(b.code)).toList();
     final active = branches.where((b) => b.isActive == true).length;
@@ -378,12 +388,12 @@ class _BranchesPicposScreenState extends ConsumerState<BranchesPicposScreen>
   Widget _warehousesTab(
     BuildContext context,
     List<Branche> branches,
-    List<WarehouseData> warehouses,
+    List<Warehouse> warehouses,
   ) {
     final names = {for (final b in branches) b.id: b.name};
 
     // شرائحُ الترشيح — نفسُ شرائح التصميم، وعدّادُ كلٍّ منها **محسوب**.
-    final chipDefs = <(String, bool Function(WarehouseData))>[
+    final chipDefs = <(String, bool Function(Warehouse))>[
       ('كل المخازن', (w) => true),
       ('يُباع منه', (w) => w.type == 'retail'),
       ('خامات', (w) => w.type == 'raw_materials'),
@@ -402,10 +412,10 @@ class _BranchesPicposScreenState extends ConsumerState<BranchesPicposScreen>
           items: [
             PicPosHubKpi(
               icon: PhosphorIconsBold.warehouse,
-              label: 'المخازن المسجَّلة',
-              value: '${warehouses.length}',
+              label: 'المخازن النشطة',
+              value: '${warehouses.where((w) => w.isActive).length}',
               tint: AppColors.primary,
-              vs: '${warehouses.map((w) => w.type).toSet().length} نوعاً',
+              vs: 'من ${warehouses.length} مسجلة',
             ),
             PicPosHubKpi(
               icon: PhosphorIconsBold.link,
@@ -434,7 +444,8 @@ class _BranchesPicposScreenState extends ConsumerState<BranchesPicposScreen>
             PicPosTableColumn('المخزن', flex: 1.9),
             PicPosTableColumn('الفرع المرتبط', flex: 1.4),
             PicPosTableColumn('النوع', flex: 1.2),
-            PicPosTableColumn('مركز التكلفة', flex: 1.3),
+            PicPosTableColumn('الحالة', flex: 1.1),
+            PicPosTableColumn('إجراء', flex: 1.1),
           ],
           chips: [
             for (var i = 0; i < chipDefs.length; i++)
@@ -466,10 +477,14 @@ class _BranchesPicposScreenState extends ConsumerState<BranchesPicposScreen>
                     _whTypes[w.type]?.$2 ?? AppColors.textMuted,
                   ),
                   PicPosPillCell(
-                    w.costCenterId != null ? 'مركزُ تكلفة' : 'بلا مركز',
-                    w.costCenterId != null
-                        ? AppColors.success
-                        : AppColors.textMuted,
+                    w.isActive ? 'نشط' : 'موقوف',
+                    w.isActive ? AppColors.success : AppColors.textMuted,
+                  ),
+                  PicPosButtonCell(
+                    'تعديل',
+                    icon: PhosphorIconsBold.pencilSimple,
+                    tint: AppColors.primary,
+                    onPressed: () => _editWarehouse(w),
                   ),
                 ],
               ),
@@ -477,6 +492,20 @@ class _BranchesPicposScreenState extends ConsumerState<BranchesPicposScreen>
         ),
       ],
     );
+  }
+
+  /// «تعديل» في عمود الإجراء — يفتح حوارَ المخزن نفسَه الذي تفتحه شاشةُ
+  /// الفروع القائمة، فلا نسخةَ ثانيةً من النموذج تُصان.
+  Future<void> _editWarehouse(Warehouse w) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => WarehouseEditDialog(existing: w),
+    );
+    // لا `setState` بعد النجاح: المصدرُ `StreamProvider` على الجدول، فيصل
+    // الصفُّ المحدَّثُ من تلقائه. واستدعاؤها كان سيُعيد بناءً بلا سبب.
+    if (ok == true && mounted) {
+      AppToast.show(context, 'تم تعديل المخزن', type: ToastType.success);
+    }
   }
 
   // ── تبويبةُ صلاحيات الوصول ─────────────────────────────────────────────

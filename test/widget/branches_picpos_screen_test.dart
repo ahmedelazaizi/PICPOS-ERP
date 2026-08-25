@@ -19,8 +19,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/domain/repositories/inventory_repository.dart'
-    show WarehouseData;
+import 'package:ural_erp/domain/repositories/branch_repository.dart';
 import 'package:ural_erp/presentation/settings_picpos/screens/branches_picpos_screen.dart';
 
 Branche _branch(int id, String name, {bool active = true, String? code}) =>
@@ -33,6 +32,42 @@ Branche _branch(int id, String name, {bool active = true, String? code}) =>
       rowVersion: 0,
     );
 
+Warehouse _wh(
+  int id,
+  String name, {
+  int? branchId,
+  String type = 'general',
+  bool isDefault = false,
+  bool active = true,
+}) =>
+    Warehouse(
+      id: id,
+      name: name,
+      branchId: branchId,
+      type: type,
+      isDefault: isDefault,
+      isActive: active,
+      isSystemDefault: false,
+      rowVersion: 0,
+    );
+
+/// مستودعُ فروعٍ زائفٌ يخدم `watchAllWarehouses` وحدَها.
+///
+/// `noSuchMethod` تغطّي الباقي: أيُّ نداءٍ آخرَ يرمي — وهذا مقصود، فالشاشةُ
+/// لا يجوز أن تنادي غيرَها من هذا المستودع.
+class _FakeBranchRepo implements IBranchRepository {
+  _FakeBranchRepo(this.warehouses);
+
+  final List<Warehouse> warehouses;
+
+  @override
+  Stream<List<Warehouse>> watchAllWarehouses() => Stream.value(warehouses);
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      super.noSuchMethod(invocation);
+}
+
 void main() {
   final branches = [
     _branch(1, 'فرع المعادي', code: 'CAI'),
@@ -40,13 +75,10 @@ void main() {
     _branch(3, 'فرع أكتوبر', active: false),
   ];
 
-  const warehouses = [
-    WarehouseData(id: 1, name: 'المخزن الرئيسي', isDefault: true, branchId: 1,
-        type: 'retail'),
-    WarehouseData(id: 2, name: 'مخزن التالف', isDefault: false, branchId: 1,
-        type: 'general'),
-    WarehouseData(id: 3, name: 'مخزن الخامات', isDefault: false,
-        type: 'raw_materials'),
+  final warehouses = [
+    _wh(1, 'المخزن الرئيسي', branchId: 1, type: 'retail', isDefault: true),
+    _wh(2, 'مخزن التالف', branchId: 1),
+    _wh(3, 'مخزن الخامات', type: 'raw_materials', active: false),
   ];
 
   Future<void> open(WidgetTester tester, Size size) async {
@@ -57,8 +89,10 @@ void main() {
       ProviderScope(
         overrides: [
           allBranchesProvider.overrideWith((ref) => Stream.value(branches)),
-          allWarehousesProvider
-              .overrideWith((ref) => Stream.value(warehouses)),
+          // ⚠️ **يُتجاوَز المستودعُ لا المزوِّد**: مزوِّدُ صفوف المخازن خاصٌّ
+          //    بالشاشة، وتجاوزُه يقتضي كشفَه. وتجاوزُ المستودع يمرّ بمنطق
+          //    المزوِّد نفسِه فيختبر التوصيلَ لا يلتفّ عليه.
+          branchRepositoryProvider.overrideWithValue(_FakeBranchRepo(warehouses)),
           allUsersProvider
               .overrideWith((ref) => Stream.value(const <UserWithRole>[])),
         ],
@@ -132,6 +166,27 @@ void main() {
 
     // وجدولُ المخازن يميّز المخزنَ بلا فرعٍ بالنصّ لا بفراغ.
     expect(find.text('عامٌّ على المنشأة'), findsOneWidget);
+    await teardownTree(tester);
+  });
+
+  testWidgets('جدولُ المخازن يحمل «الحالة» و«إجراء» من التصميم',
+      (tester) async {
+    // ⚠️ العمودان كانا ساقطَين لأنّ المصدرَ كان DTO نطاقٍ بلا `isActive`
+    //    ولا يصلح لحوار التعديل. فهذا الفحصُ يحرس **مصدرَ البيانات** عبر
+    //    ما يظهر منه: من يعيده إلى `allWarehousesProvider` يفقد العمودَين.
+    await open(tester, const Size(1500, 900));
+    await tester.tap(find.text('المخازن').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('الحالة'), findsOneWidget);
+    expect(find.text('إجراء'), findsOneWidget);
+
+    // مخزنان نشطان وواحدٌ موقوفٌ في التجهيزة.
+    expect(find.text('نشط'), findsNWidgets(2));
+    expect(find.text('موقوف'), findsOneWidget);
+
+    // وزرُّ التعديل لكلّ صفّ.
+    expect(find.text('تعديل'), findsNWidgets(3));
     await teardownTree(tester);
   });
 

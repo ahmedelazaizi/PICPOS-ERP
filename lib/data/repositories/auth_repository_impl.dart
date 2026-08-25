@@ -387,7 +387,15 @@ class AuthRepositoryImpl implements IAuthRepository {
       db.getUserPermissionCodes(userId);
 
   @override
-  Future<void> setRolePermissions(int roleId, List<int> permissionIds) async {
+  Future<Map<int, String>> getRolePermissionModes(int roleId) =>
+      db.getRolePermissionModes(roleId);
+
+  @override
+  Future<void> setRolePermissions(
+    int roleId,
+    List<int> permissionIds, {
+    Map<int, String>? modes,
+  }) async {
     // Client mode: server is the source of truth. Push to the server BEFORE
     // touching the local DB. Reasoning:
     //   • If we wrote locally first and the network failed, the local DB
@@ -443,7 +451,13 @@ class AuthRepositoryImpl implements IAuthRepository {
       }
       // Mirror to local DB for instant UI feedback. The server's broadcast
       // will reach this client too and re-sync (no-op when data matches).
-      await db.setRolePermissions(roleId, permissionIds);
+      // ⚠️ **الأنماطُ تُكتَب في المرآة المحلّيّة رغم أنّها لا تعبر السلك**:
+      //    رسالةُ الخادم تحمل `permissionCodes` وحدَها، فالنمطُ لا ينتشر
+      //    إلى الخادم ولا إلى جهازٍ آخر (‏بندٌ مفتوح). لكنّ سحبَ المزامنة
+      //    **لا يُسقطه**: `role_permission_sync_strategy` يبني الـcompanion
+      //    بلا `grantMode`، و`insertOnConflictUpdate` لا يحدّث إلّا الأعمدةَ
+      //    المعطاة. فالنمطُ يبقى صادقاً على هذا الجهاز بدل أن يُمحى.
+      await db.setRolePermissions(roleId, permissionIds, modes: modes);
       return;
     }
     // Standalone / server mode: write directly, then explicitly broadcast.
@@ -461,7 +475,7 @@ class AuthRepositoryImpl implements IAuthRepository {
     // We trigger broadcastChange() unconditionally here. It's a no-op when
     // no clients are connected (standalone mode) and idempotent when the
     // change came in via HTTP (clients pull a no-op delta).
-    await db.setRolePermissions(roleId, permissionIds);
+    await db.setRolePermissions(roleId, permissionIds, modes: modes);
     try {
       NetworkService.instance.broadcastChange('role_permissions');
     } catch (e) {

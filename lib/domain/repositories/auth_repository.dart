@@ -73,7 +73,16 @@ abstract class IAuthRepository {
   Future<List<Permission>> getPermissionsForRole(int roleId);
   Future<bool> userHasPermission(int userId, String permissionCode);
   Future<List<String>> getUserPermissionCodes(int userId);
-  Future<void> setRolePermissions(int roleId, List<int> permissionIds);
+  /// [modes] معرِّفُ الصلاحية → `allow` أو `conditional`. وما لا مدخلَ له
+  /// فيها يُكتَب `allow`.
+  Future<void> setRolePermissions(
+    int roleId,
+    List<int> permissionIds, {
+    Map<int, String>? modes,
+  });
+
+  /// أنماطُ منح الدور — معرِّفُ الصلاحية → نمطُ المنح.
+  Future<Map<int, String>> getRolePermissionModes(int roleId);
   
   // PIN tokens
   Future<bool> updateUserPin(int userId, String? pin);
