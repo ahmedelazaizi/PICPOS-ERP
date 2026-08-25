@@ -5,6 +5,8 @@ import '../../../../data/providers/providers.dart';
 import '../../../../services/api/api_handler_base.dart';
 import '../../../../services/network_service.dart';
 import '../../../widgets/dialogs/app_form_dialog.dart';
+import '../../../picpos_shell/picpos_dialog.dart';
+import '../../../picpos_shell/picpos_panel_groups.dart';
 import 'package:ural_erp/l10n/app_localizations.dart';
 
 class WarehouseAccessDialog extends AppFormDialog<bool> {
@@ -53,6 +55,47 @@ class _WarehouseAccessDialogState extends AppFormDialogState<bool, WarehouseAcce
 
   @override
   String? get dialogSaveLabel => 'حفظ النطاق';
+
+  /// لوحةُ `PANELS.access` — مجموعةُ المخازن، كما في فرعِها للفروع.
+  ///
+  /// ⚠️ **ونجمةُ «الافتراضيّ» لم تُحذَف** حين حلّت الشريحةُ محلَّ الصفّ: هي
+  /// وموقعُ المخزن صارا تلميحَ الشريحة. حذفُ بيانٍ يعرضه البرنامجُ اليومَ
+  /// ليس نقلاً إلى التصميم.
+  @override
+  List<PicPosPanelGroup> buildPicposGroups(BuildContext context) {
+    final all = ref.watch(allWarehousesProvider).value ?? [];
+    if (all.isEmpty) return const [];
+    return [
+      PicPosPanelGroup(
+        label: 'المخازن',
+        hint: 'المخازنُ التي يراها المستخدم',
+        child: PicPosPanelChips(
+          children: [
+            for (final wh in all)
+              PicPosPanelChip(
+                label: wh.name,
+                tooltip: [
+                  if (wh.isDefault) 'المخزن الافتراضيّ',
+                  if ((wh.location ?? '').isNotEmpty) wh.location!,
+                ].join(' · '),
+                selected: selected.contains(wh.id),
+                onTap: () => setState(() {
+                  if (!selected.remove(wh.id)) selected.add(wh.id);
+                }),
+              ),
+          ],
+        ),
+      ),
+      const PicPosPanelGroup(
+        label: 'تنبيه',
+        child: PicPosDialogBanner(
+          icon: PhosphorIconsBold.info,
+          color: AppColors.warning,
+          text: 'عدمُ تحديد أيّ مخزنٍ = وصولٌ لكلّ المخازن تلقائيّاً.',
+        ),
+      ),
+    ];
+  }
 
   @override
   Widget buildFormContent(BuildContext context, AppLocalizations localizations) {

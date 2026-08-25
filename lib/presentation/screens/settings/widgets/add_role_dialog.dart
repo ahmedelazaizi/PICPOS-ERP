@@ -3,6 +3,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../data/providers/providers.dart';
 import '../../../../data/database/sync_interceptor.dart';
 import '../../../widgets/dialogs/app_form_dialog.dart';
+import '../../../picpos_shell/picpos_panel_groups.dart';
 import 'package:ural_erp/l10n/app_localizations.dart';
 
 class AddRoleDialog extends AppFormDialog<bool> {
@@ -31,17 +32,36 @@ class _AddRoleDialogState extends AppFormDialogState<bool, AddRoleDialog> {
   @override
   String? get dialogSaveLabel => 'إنشاء الدور';
 
+  /// لوحةُ `PANELS.role` — مجموعةٌ واحدةٌ لأنّ الحوارَ يُنشئ الدورَ وحدَه.
+  ///
+  /// ⚠️ **ومجموعتا التصميم الأخريان لم تُنقلا عمداً**: «نسخ الصلاحيات من»
+  /// و«مجموعات الصلاحيات» تَعِدان بضبطِ ١٤٢ صلاحيةً من هنا، والحوارُ يكتب
+  /// اسمَ الدور فقط ثمّ تُضبَط صلاحياتُه من «إدارة الصلاحيات». ومجموعةٌ لا
+  /// تُحفَظ أسوأُ من غيابها.
+  ///
+  /// ومجموعةٌ واحدةٌ ⇒ لا عمودَ أرقام — فهرسٌ برقمٍ واحدٍ لا يفهرس شيئاً.
+  @override
+  List<PicPosPanelGroup> buildPicposGroups(BuildContext context) => [
+        PicPosPanelGroup(label: 'تعريف الدور', child: _nameField()),
+      ];
+
+  Widget _nameField() => TextField(
+        controller: nameController,
+        autofocus: true,
+        decoration: const InputDecoration(
+          labelText: 'اسم الدور',
+          hintText: 'مثلاً: مدير صالة، محاسب ثان',
+          prefixIcon: Icon(PhosphorIconsLight.identificationCard, size: 20),
+        ),
+      );
+
+  /// جسمُ UralCash — الحقلُ نفسُه بلا رأسِ مجموعة.
+  ///
+  /// وهو **عينُ** الحقل الذي تلفّه المجموعةُ في فرع PicPos، فلا نسختان منه:
+  /// الفرقُ بين الفرعَين هنا رأسُ المجموعة وحدَه، لا الحقل.
   @override
   Widget buildFormContent(BuildContext context, AppLocalizations localizations) {
-    return TextField(
-      controller: nameController,
-      autofocus: true,
-      decoration: const InputDecoration(
-        labelText: 'اسم الدور',
-        hintText: 'مثلاً: مدير صالة، محاسب ثان',
-        prefixIcon: Icon(PhosphorIconsLight.identificationCard, size: 20),
-      ),
-    );
+    return _nameField();
   }
 
   @override

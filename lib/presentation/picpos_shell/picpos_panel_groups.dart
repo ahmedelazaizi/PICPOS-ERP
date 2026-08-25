@@ -110,11 +110,19 @@ class PicPosPanelChip extends StatelessWidget {
     required this.label,
     required this.selected,
     this.onTap,
+    this.tooltip,
   });
 
   final String label;
   final bool selected;
   final VoidCallback? onTap;
+
+  /// سطرٌ يظهر عند المرور — عنوانُ الفرع، أو موقعُ المخزن وكونُه الافتراضيّ.
+  ///
+  /// ⚠️ **سببُ وجوده**: شريحةُ التصميم عنوانٌ وحدَه، بينما تعرض قوائمُ
+  /// `CheckboxListTile` التي تحلّ الشريحةُ محلَّها سطراً ثانياً فيه بيانٌ
+  /// حقيقيّ. فلولا هذا لكان النقلُ إلى التصميم **حذفاً لمعلومة** لا تنسيقاً.
+  final String? tooltip;
 
   @override
   Widget build(BuildContext context) {
@@ -122,6 +130,12 @@ class PicPosPanelChip extends StatelessWidget {
     // مطابقةُ التصميم: المحدّدةُ بحدِّ العلامة وأرضيّةِ الغسل ونصِّ العلامة،
     // وغيرُها بحدِّ الشعرة وأرضيّةِ الحقل ونصٍّ ثانويّ.
     final fg = on ? AppColors.primary : context.picposText;
+    final chip = _chip(context, on, fg);
+    final t = tooltip;
+    return t == null || t.isEmpty ? chip : Tooltip(message: t, child: chip);
+  }
+
+  Widget _chip(BuildContext context, bool on, Color fg) {
     return Material(
       color: Colors.transparent,
       child: InkWell(

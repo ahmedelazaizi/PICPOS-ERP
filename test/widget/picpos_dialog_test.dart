@@ -638,5 +638,77 @@ void main() {
               'بطول الشاشة وجسمُه سطر.');
       expect(h, greaterThan(100));
     });
+
+    testWidgets('ومجموعةٌ واحدةٌ لا عمودَ لها', (tester) async {
+      await show(
+        tester,
+        const PicPosDialog(
+          icon: PhosphorIconsBold.shieldPlus,
+          title: 'دور جديد',
+          indexLabels: ['تعريف الدور'],
+          body: [PicPosPanelGroup(label: 'تعريف الدور', child: Text('أ'))],
+        ),
+      );
+      expect(find.byType(PicPosPanelIndexRail), findsNothing,
+          reason: 'فهرسٌ برقمٍ واحدٍ لا يفهرس شيئاً، ويقتطع ٦٤ من عرض الجسم.');
+      expect(find.text('تعريف الدور'), findsOneWidget);
+    });
+  });
+
+  // ═══════════ شريحةُ المجموعة (`kind:'chips'`) ═══════════
+  //
+  // الشريحةُ بديلُ `CheckboxListTile` في لوحات النطاق. والعطبُ الذي يُحرَس
+  // هنا أنّ البديلَ **ينقص بياناً**: الصفُّ كان يعرض سطراً ثانياً (عنوانَ
+  // الفرع · موقعَ المخزن · نجمةَ الافتراضيّ) والشريحةُ عنوانٌ وحدَه.
+  group('شريحةُ المجموعة', () {
+    Future<void> chip(
+      WidgetTester tester, {
+      required bool selected,
+      String? tooltip,
+      VoidCallback? onTap,
+    }) async {
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: PicPosPanelChips(
+            children: [
+              PicPosPanelChip(
+                label: 'فرع المعادي',
+                selected: selected,
+                tooltip: tooltip,
+                onTap: onTap,
+              ),
+            ],
+          ),
+        ),
+      ));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('المنتقاةُ بعلامةِ صحٍّ وغيرُها بدائرةٍ فارغة', (tester) async {
+      await chip(tester, selected: true);
+      expect(find.byIcon(PhosphorIconsBold.checkCircle), findsOneWidget);
+      await chip(tester, selected: false);
+      expect(find.byIcon(PhosphorIconsBold.circle), findsOneWidget);
+    });
+
+    testWidgets('واللمسُ يُنادى', (tester) async {
+      var taps = 0;
+      await chip(tester, selected: false, onTap: () => taps++);
+      await tester.tap(find.text('فرع المعادي'));
+      await tester.pump();
+      expect(taps, 1);
+    });
+
+    testWidgets('والسطرُ الثاني لم يضِع — يظهر تلميحاً', (tester) async {
+      await chip(tester, selected: false, tooltip: 'شارع النصر، المعادي');
+      final t = tester.widget<Tooltip>(find.byType(Tooltip));
+      expect(t.message, 'شارع النصر، المعادي');
+    });
+
+    testWidgets('وبلا سطرٍ ثانٍ لا تلميحَ فارغ', (tester) async {
+      await chip(tester, selected: false, tooltip: '');
+      expect(find.byType(Tooltip), findsNothing,
+          reason: 'تلميحٌ بنصٍّ فارغٍ صندوقٌ أسودُ فارغٌ عند المرور.');
+    });
   });
 }

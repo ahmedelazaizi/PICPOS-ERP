@@ -240,6 +240,17 @@ void main() {
           reason: 'حوارُ الشركة لا يمرّر `indexLabels` — فاللوحةُ بلا عمود.');
     });
 
+    test('ورافعةُ `AppFormDialog` تشتقُّه من `buildPicposGroups`', () {
+      final base = _code(
+        File('lib/presentation/widgets/dialogs/app_form_dialog.dart')
+            .readAsStringSync(),
+      );
+      expect(base.contains('indexLabels: picposPanelLabels(groups)'), isTrue,
+          reason: 'رافعةُ اللوحات لا تمرّر عمودَ الأرقام.');
+      expect(base.contains('picposPanelBody(groups)'), isTrue,
+          reason: 'رافعةُ اللوحات لا تبني الجسمَ من المجموعات.');
+    });
+
     test('ولوحةُ التفعيل تشتقُّها بـ`picposPanelLabels`', () {
       final src = _code(
         File('lib/presentation/widgets/settings/activation_dialog.dart')
@@ -247,6 +258,54 @@ void main() {
       );
       expect(src.contains('indexLabels: picposPanelLabels(groups)'), isTrue,
           reason: 'لوحةُ التفعيل لا تشتقُّ عمودَها من مجموعاتها.');
+    });
+  });
+
+  // ═══════════ بنيةُ اللوحة تُضاف ولا تحلّ محلَّ جسم UralCash ═══════════
+  //
+  // الحواراتُ الأربعةُ هنا **مشتركة**: فرعُ UralCash يقرأ `buildFormContent`
+  // وفرعُ PicPos يقرأ `buildPicposGroups`. والشرطُ الذي يجعل النقلَ مشروعاً
+  // أنّ الأوّلَ لا يتبدّل فيه بايت — فهذا الحارسُ يمسك «التنظيفَ» الذي يحذف
+  // الجسمَ القديمَ بعد أن صار له بديلٌ يبدو أجمل.
+  //
+  // ⚠️ ولا يُقاس بالعينِ ولا بـ`git`: أثرُ الحذف علامتُه سطرٌ يختفي، وهذا
+  //    ما يُفحَص — وجودُ العلامة التي لا يعرفها إلّا جسمُ UralCash.
+  group('لوحاتُ AppFormDialog — جسمان لا جسمٌ واحد', () {
+    const panels = {
+      'branch_access_dialog': 'CheckboxListTile',
+      'warehouse_access_dialog': 'CheckboxListTile',
+      'set_pin_dialog': 'تنبيه: يُستخدم رمز PIN',
+      'add_role_dialog': 'buildFormContent',
+    };
+
+    for (final e in panels.entries) {
+      test('${e.key}: بنيةُ PicPos مضافةٌ وجسمُ UralCash باقٍ', () {
+        final src = _code(
+          File('lib/presentation/screens/settings/widgets/${e.key}.dart')
+              .readAsStringSync(),
+        );
+        expect(src.contains('List<PicPosPanelGroup> buildPicposGroups'), isTrue,
+            reason: '${e.key} لم تعد لوحةً بمجموعاتٍ في غلاف PicPos.');
+        expect(src.contains(e.value), isTrue,
+            reason: 'جسمُ UralCash في ${e.key} تبدّل أو حُذف — والنقلُ إلى '
+                'هويّة PicPos مشروطٌ بأنّ الفرعَ الآخرَ لا يتبدّل فيه بايت.');
+      });
+    }
+
+    test('ولوحتا النطاق تستعملان الشرائحَ لا مربّعاتِ الاختيار', () {
+      for (final f in ['branch_access_dialog', 'warehouse_access_dialog']) {
+        final src = _code(
+          File('lib/presentation/screens/settings/widgets/$f.dart')
+              .readAsStringSync(),
+        );
+        expect(src.contains('PicPosPanelChip('), isTrue,
+            reason: '$f: التصميمُ يرسم النطاقَ `kind:\'chips\'`، والمبنيُّ '
+                'صفوفُ `CheckboxListTile`.');
+        expect(src.contains('tooltip:'), isTrue,
+            reason: '$f: الشريحةُ عنوانٌ وحدَه — والسطرُ الثاني الذي كان '
+                'يعرضه الصفُّ لا بدّ أن يبقى مقروءاً في التلميح، وإلّا كان '
+                'النقلُ حذفَ بيان.');
+      }
     });
   });
 }

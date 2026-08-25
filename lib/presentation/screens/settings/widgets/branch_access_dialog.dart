@@ -5,6 +5,9 @@ import '../../../../services/api/api_handler_base.dart';
 import '../../../../services/client_write_interceptor.dart';
 import '../../../../services/network_service.dart';
 import '../../../widgets/dialogs/app_form_dialog.dart';
+import '../../../picpos_shell/picpos_dialog.dart';
+import '../../../picpos_shell/picpos_panel_groups.dart';
+import '../../../../core/theme/app_colors.dart';
 import 'package:ural_erp/l10n/app_localizations.dart';
 
 class BranchAccessDialog extends AppFormDialog<bool> {
@@ -55,6 +58,46 @@ class _BranchAccessDialogState extends AppFormDialogState<bool, BranchAccessDial
 
   @override
   String? get dialogSaveLabel => 'حفظ النطاق';
+
+  /// لوحةُ `PANELS.access` — مجموعةُ شرائحَ ثمّ تنبيه، كما في التصميم.
+  ///
+  /// ⚠️ **الشريحةُ بديلُ `CheckboxListTile` لا زينةٌ فوقه**: التصميمُ يرسم
+  /// الفروعَ `kind:'chips'`، وصفٌّ من مربّعات اختيارٍ بارتفاع ٥٦ لكلِّ فرعٍ
+  /// يملأ اللوحةَ بثلاثة فروع. والعنوانُ الثاني (‏عنوانُ الفرع) لم يُحذَف
+  /// بل صار تلميحاً — فالنقلُ تنسيقٌ لا إنقاصُ بيان.
+  ///
+  /// وقائمةٌ فارغةٌ أثناء التحميل ⇒ يتولّى [buildFormContent] عرضَ الدوّارة.
+  @override
+  List<PicPosPanelGroup> buildPicposGroups(BuildContext context) {
+    if (allBranches.isEmpty) return const [];
+    return [
+      PicPosPanelGroup(
+        label: 'الفروع',
+        hint: 'الفروعُ التي يراها المستخدم',
+        child: PicPosPanelChips(
+          children: [
+            for (final b in allBranches)
+              PicPosPanelChip(
+                label: b.name,
+                tooltip: b.address,
+                selected: selected.contains(b.id),
+                onTap: () => setState(() {
+                  if (!selected.remove(b.id)) selected.add(b.id);
+                }),
+              ),
+          ],
+        ),
+      ),
+      const PicPosPanelGroup(
+        label: 'تنبيه',
+        child: PicPosDialogBanner(
+          icon: PhosphorIconsBold.info,
+          color: AppColors.warning,
+          text: 'المسؤولون (Admins) لديهم وصولٌ كاملٌ لكلّ الفروع تلقائيّاً.',
+        ),
+      ),
+    ];
+  }
 
   @override
   Widget buildFormContent(BuildContext context, AppLocalizations localizations) {

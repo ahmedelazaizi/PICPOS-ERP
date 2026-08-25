@@ -6,6 +6,7 @@ import 'package:ural_erp/l10n/app_localizations.dart';
 import 'package:ural_erp/core/theme/app_colors.dart';
 import 'package:ural_erp/core/config/brand.dart';
 import '../../picpos_shell/picpos_dialog.dart';
+import '../../picpos_shell/picpos_panel_groups.dart';
 
 /// Standard form-based dialog for the UralCash ERP system.
 /// Extends the logic of base forms with a more premium design.
@@ -34,6 +35,20 @@ abstract class AppFormDialogState<T, W extends AppFormDialog<T>>
   String? get dialogSaveLabel => null;
 
   Widget buildFormContent(BuildContext context, AppLocalizations localizations);
+
+  /// مجموعاتُ الجسم في غلاف PicPos — لوحةُ التصميم بمجموعاتٍ معنونةٍ بدل
+  /// قائمةِ حقولٍ عارية. قائمةٌ فارغةٌ ⇒ يبقى [buildFormContent] كما هو.
+  ///
+  /// ⚠️ **ولا يُلمَس [buildFormContent] حين تُتجاوَز هذه.** الحواراتُ هنا
+  /// مشتركةٌ مع UralCash، والشرطُ الذي يجعل النقلَ إلى هويّة PicPos مشروعاً
+  /// أنّ مسارَ UralCash لا يتبدّل فيه بايت — فالبنيةُ الجديدةُ **تُضاف**
+  /// بجانب القديمة لا تحلّ محلَّها.
+  ///
+  /// ⚠️ **ومنها يُبنى الجسمُ وعمودُ الأرقام معاً** — مصدرٌ واحدٌ لا اثنان،
+  /// فلا يستطيع العمودُ أن يعِد بمجموعةٍ لا وجودَ لها.
+  ///
+  /// وتُستدعى مرّةً واحدةً في كلّ بناء، فلا بأسَ بأن تُنشئ ودجتاتِها فيها.
+  List<PicPosPanelGroup> buildPicposGroups(BuildContext context) => const [];
 
   Future<T> onSave();
 
@@ -82,6 +97,14 @@ abstract class AppFormDialogState<T, W extends AppFormDialog<T>>
   /// و`Form` باقٍ حولَ المحتوى: `formKey.currentState?.validate()` في
   /// [_handleSave] يقرأ منه، وإسقاطُه يجعل كلَّ تحقّقٍ من الحقول يمرّ صامتاً.
   Widget _buildPicposDialog(BuildContext context, AppLocalizations l) {
+    final groups = buildPicposGroups(context);
+    final content = groups.isEmpty
+        ? buildFormContent(context, l)
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: picposPanelBody(groups),
+          );
     return PicPosDialog(
       icon: dialogIcon,
       accent: dialogIconColor,
@@ -96,8 +119,9 @@ abstract class AppFormDialogState<T, W extends AppFormDialog<T>>
         busy: isLoading,
         onPressed: isLoading ? null : _handleSave,
       ),
+      indexLabels: picposPanelLabels(groups),
       body: [
-        Form(key: formKey, child: buildFormContent(context, l)),
+        Form(key: formKey, child: content),
       ],
     );
   }

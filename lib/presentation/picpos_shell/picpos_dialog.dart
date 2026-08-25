@@ -114,8 +114,8 @@ class PicPosDialog extends StatelessWidget {
   final bool scrollable;
 
   /// عناوينُ مجموعات الجسم — تُرسم عموداً مرقّماً على جانب اللوحة كما في
-  /// التصميم (`panel.index`). فارغةٌ ⇒ لا عمود، وهو حالُ الحوارات التي ليست
-  /// لوحاتِ مجموعات.
+  /// التصميم (`panel.index`). أقلُّ من عنوانَين ⇒ لا عمود، وهو حالُ الحوارات
+  /// التي ليست لوحاتِ مجموعات وحالُ اللوحة ذاتِ المجموعة الواحدة.
   ///
   /// ⚠️ **اشتقّها من المجموعات نفسِها** بـ`picposPanelLabels` — لا تكتبها
   /// بيدٍ ثانيةً بجانب الجسم فتنحرف عنه.
@@ -175,7 +175,9 @@ class PicPosDialog extends StatelessWidget {
   /// مع الطويل، والعمودُ ممتدٌّ بكامل الطول في الحالتين.
   Widget _bodyArea() {
     final content = scrollable ? SingleChildScrollView(child: _body()) : _body();
-    if (indexLabels.isEmpty) return content;
+    // عمودٌ برقمٍ واحدٍ فهرسٌ لا يفهرس شيئاً — وشريطٌ بعرض ٦٤ يقتطع من عرض
+    // الجسم بلا مقابل. ولوحاتُ التصميم كلُّها مجموعتان فأكثر.
+    if (indexLabels.length < 2) return content;
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
