@@ -48,11 +48,13 @@ import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../picpos_shell/picpos_surface.dart';
 
 // Destination screens — existing in the codebase, unchanged by this fork.
+import '../../activity_log_picpos/screens/activity_log_picpos_screen.dart';
 import '../../screens/activity_log_screen.dart';
 import '../../screens/analytics_dashboard_screen.dart';
 import '../../screens/branch_performance_screen.dart';
 import '../../screens/e_invoice_dashboard_screen.dart';
 import '../../screens/party_statement_screen.dart';
+import '../../screens/purchase_orders_screen.dart';
 import '../../screens/report_builder_screen.dart';
 import 'ar_aging_report_picpos_screen.dart';
 import '../../screens/reports/category_profit_report_screen.dart';
@@ -412,7 +414,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
             id: 'purch_orders',
             title: 'أوامر الشراء',
             subtitle: 'متابعة أوامر الشراء المفتوحة',
-            action: () => nav(() => const ReportBuilderScreen()),
+            action: () => nav(() => const PurchaseOrdersScreen()),
           ),
         ],
         shortcuts: const [
@@ -556,7 +558,13 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
             title: 'سجل دخول المستخدمين',
             subtitle: 'متى دخل كل مستخدم وخرج',
             permission: PermissionCodes.auditView,
-            action: () => nav(() => const ActivityLogScreen()),
+            action: () => nav(
+              () => const ActivityLogPicposScreen(
+                presetTitle: 'سجل دخول المستخدمين',
+                presetSubtitle: 'من دخل ومتى خرج — بما فيه ترقية الصلاحيات',
+                presetCategory: 'auth',
+              ),
+            ),
           ),
           _ReportEntry(
             id: 'u_perms',
@@ -633,25 +641,48 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
             id: 'a_ops',
             title: 'سجل العمليات',
             subtitle: 'كل العمليات في النظام',
-            action: () => nav(() => const ActivityLogScreen()),
+            action: () => nav(
+              () => const ActivityLogPicposScreen(
+                presetTitle: 'سجل العمليات',
+                presetSubtitle: 'كل ما جرى على النظام بلا ترشيح',
+              ),
+            ),
           ),
           _ReportEntry(
             id: 'a_edits',
             title: 'سجل التعديلات',
             subtitle: 'الفواتير والمستندات المعدلة',
-            action: () => nav(() => const ActivityLogScreen()),
+            action: () => nav(
+              () => const ActivityLogPicposScreen(
+                presetTitle: 'سجل التعديلات',
+                presetSubtitle: 'تعديلٌ وقع على مستندٍ صادر',
+                presetActions: ActivityLogPresets.documentEdits,
+              ),
+            ),
           ),
           _ReportEntry(
             id: 'a_print',
             title: 'سجل الطباعة',
             subtitle: 'متى طُبع كل مستند ومن قبل من',
-            action: () => nav(() => const ActivityLogScreen()),
+            action: () => nav(
+              () => const ActivityLogPicposScreen(
+                presetTitle: 'سجل الطباعة',
+                presetSubtitle: 'كل طباعةٍ بمن نفّذها ووقتها',
+                presetActions: ActivityLogPresets.printed,
+              ),
+            ),
           ),
           _ReportEntry(
             id: 'a_void',
             title: 'سجل الإلغاءات',
             subtitle: 'الفواتير الملغاة وأسبابها',
-            action: () => nav(() => const ActivityLogScreen()),
+            action: () => nav(
+              () => const ActivityLogPicposScreen(
+                presetTitle: 'سجل الإلغاءات',
+                presetSubtitle: 'إلغاءُ مستندٍ صادرٍ أو حذفُه',
+                presetActions: ActivityLogPresets.voided,
+              ),
+            ),
           ),
         ],
       ),

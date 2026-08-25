@@ -54,12 +54,74 @@ part 'activity_log_table_picpos.dart';
 /// View mode for activity log display
 enum ActivityViewModePicpos { list, timeline }
 
+/// نطاقاتُ تقارير السجلّ في مركز التقارير.
+///
+/// كلُّ قائمةٍ مشتقّةٌ من تسميات `_ActivityLogPicposScreenState.actionLabels`
+/// نفسِها لا من تخمين: أُخذت المفاتيحُ التي تحمل الفعلَ العربيَّ المقصود
+/// («إلغاء/حذف» لمستند · «طباعة» · تعديلٌ على مستندٍ صادر). فإن أُضيف فعلٌ
+/// جديدٌ إلى `actionLabels` بنفس المعنى فمكانُه هنا أيضاً — ويحرسه
+/// `test/unit/activity_log_presets_test.dart`.
+abstract final class ActivityLogPresets {
+  /// «الفواتير الملغاة وأسبابها» — إلغاءُ مستندٍ صادرٍ أو حذفُه.
+  static const List<String> voided = [
+    'void',
+    'delete_invoice',
+    'cancel_return',
+    'delete_purchase',
+    'table_order_cancel',
+  ];
+
+  /// «متى طُبع كل مستند ومن قبل من» — كلُّ فعلٍ تسميتُه تبدأ بـ«طباعة».
+  ///
+  /// ⚠️ فجوةٌ مقيسةٌ لا نقصٌ في القائمة: `print_report` و`print_return`
+  /// موجودان في `actionLabels` (‏موروثان من UralCash) لكنّ **لا موضعَ واحداً
+  /// في `lib` يكتبهما**. فطباعةُ الفواتير والتقارير غيرُ مسجَّلةٍ أصلاً،
+  /// والتقريرُ يعرض ما يُكتَب فعلاً: فاتورةَ الطاولة وباركودَ العرض. إدراجُهما
+  /// هنا كان سيُنتج استعلامَين يعودان فارغَين دائماً ويوهمان بتغطيةٍ لا توجد.
+  static const List<String> printed = [
+    'table_print_bill',
+    'offer_print',
+  ];
+
+  /// «الفواتير والمستندات المعدلة» — تعديلٌ يقع على مستندٍ **صادرٍ** لا على
+  /// بياناتٍ أساسيّة. تعديلُ صنفٍ أو مستخدمٍ ليس منها عمداً.
+  /// ⚠️ و`update_payment` مستبعَدٌ للسبب نفسِه: تسميةٌ بلا كاتب.
+  static const List<String> documentEdits = [
+    'price_override',
+    'table_discount',
+    'table_tax',
+    'table_transfer',
+    'table_partial_transfer',
+    'table_merge',
+  ];
+}
+
 /// شاشة سجل النشاط بهوية PicPos. تُختار بالعلامة في app_main_screen
 /// (`Brand.isPicPos`). تعيد استخدام نفس `activityLogRepositoryProvider`
 /// و`branchRepositoryProvider` و`allUsersProvider`/`allBranchesProvider` —
 /// فقط طبقة العرض تبدّلت لـ `picpos_shell`.
 class ActivityLogPicposScreen extends ConsumerStatefulWidget {
-  const ActivityLogPicposScreen({super.key});
+  const ActivityLogPicposScreen({
+    super.key,
+    this.presetTitle,
+    this.presetSubtitle,
+    this.presetCategory,
+    this.presetActions,
+  });
+
+  /// عنوانُ الشاشة حين تُفتَح كتقريرٍ من مركز التقارير. بلا قيمةٍ تبقى
+  /// «سجل النشاط» — أي الشاشةُ العامّةُ كما كانت.
+  final String? presetTitle;
+  final String? presetSubtitle;
+
+  /// مفتاحٌ من `_categoryActions` يُملأ في `selectedCategory` عند الفتح،
+  /// فيبدأ التقريرُ مرشَّحاً ويبقى المرشِّحُ قابلاً للتغيير.
+  final String? presetCategory;
+
+  /// قائمةُ أفعالٍ حرّةٌ لتقريرٍ لا تقابله فئةٌ واحدةٌ في `_categoryActions`
+  /// (‏الإلغاءات والطباعة والتعديلات تقع في فئاتٍ متفرّقة). تُطبَّق ما دام
+  /// المستخدمُ لم يختر فئةً بنفسه — فاختيارُه يغلب التقريرَ ولا يُلغى.
+  final List<String>? presetActions;
 
   @override
   ConsumerState<ActivityLogPicposScreen> createState() =>
@@ -454,6 +516,12 @@ class _ActivityLogPicposScreenState
     super.initState();
     toDate = DateTime.now();
     fromDate = toDate!.subtract(const Duration(days: 7));
+    // الترشيحُ المسبقُ يُطبَّق قبل أوّل `loadLogs` وإلّا ظهرت الشاشةُ غيرَ
+    // مرشَّحةٍ لحظةً ثمّ قفزت — والفئةُ تُقبل فقط إن كانت مفتاحاً حقيقيّاً.
+    if (widget.presetCategory != null &&
+        _categoryActions.containsKey(widget.presetCategory)) {
+      selectedCategory = widget.presetCategory;
+    }
     _bootstrap();
   }
 
@@ -551,6 +619,21 @@ class _ActivityLogPicposScreenState
           }
           result.sort((a, b) => b.createdAt.compareTo(a.createdAt));
         }
+      } else if (widget.presetActions != null &&
+          widget.presetActions!.isNotEmpty &&
+          selectedAction == null) {
+        // نطاقُ التقرير: قائمةُ أفعالٍ لا تقابلها فئةٌ واحدة. نفسُ حلقةِ
+        // الفئة أعلاه — استعلامٌ لكلّ فعلٍ ثمّ ترتيبٌ زمنيٌّ واحد.
+        result = [];
+        for (final action in widget.presetActions!) {
+          result.addAll((await db.getActivityLogs(
+            fromDate: effectiveFrom, toDate: effectiveTo,
+            userId: selectedUserId, action: action,
+            entityType: _selectedEntityType, branchId: selectedBranchId,
+            limit: 500,
+          )).cast<ActivityLog>());
+        }
+        result.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       } else {
         result = (await db.getActivityLogs(
           fromDate: effectiveFrom, toDate: effectiveTo,
@@ -574,8 +657,9 @@ class _ActivityLogPicposScreenState
   @override
   Widget build(BuildContext context) {
     return PicPosScreenScaffold(
-      title: 'سجل النشاط',
-      subtitle: 'متابعة عمليات المستخدمين على النظام',
+      title: widget.presetTitle ?? 'سجل النشاط',
+      subtitle:
+          widget.presetSubtitle ?? 'متابعة عمليات المستخدمين على النظام',
       icon: PhosphorIconsBold.clipboardText,
       headerActions: [
         Container(
