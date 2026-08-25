@@ -16,14 +16,16 @@ extension DataMaintenanceDao on AppDatabase {
     final cutoff = DateTime.now().subtract(Duration(days: retentionDays));
     final count = await customSelect(
       'SELECT COUNT(*) as cnt FROM activity_logs WHERE created_at < ?',
-      variables: [Variable(cutoff)],
+      variables: [dateVar(cutoff)],
     ).getSingle();
     final toDelete = (count.data['cnt'] as int?) ?? 0;
 
     if (toDelete > 0) {
-      await customStatement(
+      await customUpdate(
         'DELETE FROM activity_logs WHERE created_at < ?',
-        [cutoff.millisecondsSinceEpoch ~/ 1000],
+        variables: [dateVar(cutoff)],
+        updates: {activityLogs},
+        updateKind: UpdateKind.delete,
       );
       debugPrint('[MAINTENANCE] Purged $toDelete activity logs older than $retentionDays days');
     }
@@ -59,16 +61,18 @@ extension DataMaintenanceDao on AppDatabase {
     final cutoff = DateTime.now().subtract(Duration(days: retentionMonths * 30));
     final count = await customSelect(
       'SELECT COUNT(*) as cnt FROM safe_transactions WHERE created_at < ?',
-      variables: [Variable(cutoff)],
+      variables: [dateVar(cutoff)],
     ).getSingle();
     final toArchive = (count.data['cnt'] as int?) ?? 0;
 
     if (toArchive > 0) {
       // Archive by deleting old detail transactions
       // (Summary data is preserved in journal entries)
-      await customStatement(
+      await customUpdate(
         'DELETE FROM safe_transactions WHERE created_at < ?',
-        [cutoff.millisecondsSinceEpoch ~/ 1000],
+        variables: [dateVar(cutoff)],
+        updates: {safeTransactions},
+        updateKind: UpdateKind.delete,
       );
       debugPrint('[MAINTENANCE] Archived $toArchive safe transactions older than $retentionMonths months');
     }
@@ -76,18 +80,26 @@ extension DataMaintenanceDao on AppDatabase {
   }
 
   /// Archive old stock movements (detail preserved in inventory_balances)
+  ///
+  /// ⚠️ العمودُ `created_at` لا `movement_date`: جدولُ `StockMovements` يعرِّف
+  /// `createdAt` فقط، ولا وجودَ لـ`movement_date` في المخطَّط المولَّد. وكان
+  /// الاسمُ الخاطئُ يرمي «no such column» في كلِّ نداءٍ لهذه الدالّة.
+  /// والربطُ عبر [AppDatabase.dateVar] في الموضعين معاً — ثوانيَ الحقبة —
+  /// وإلّا اختلف ما يعدُّه `SELECT` عمّا يحذفه `DELETE` على PostgreSQL.
   Future<int> archiveOldStockMovements({int retentionMonths = 24}) async {
     final cutoff = DateTime.now().subtract(Duration(days: retentionMonths * 30));
     final count = await customSelect(
-      'SELECT COUNT(*) as cnt FROM stock_movements WHERE movement_date < ?',
-      variables: [Variable(cutoff)],
+      'SELECT COUNT(*) as cnt FROM stock_movements WHERE created_at < ?',
+      variables: [dateVar(cutoff)],
     ).getSingle();
     final toArchive = (count.data['cnt'] as int?) ?? 0;
 
     if (toArchive > 0) {
-      await customStatement(
-        'DELETE FROM stock_movements WHERE movement_date < ?',
-        [cutoff.millisecondsSinceEpoch ~/ 1000],
+      await customUpdate(
+        'DELETE FROM stock_movements WHERE created_at < ?',
+        variables: [dateVar(cutoff)],
+        updates: {stockMovements},
+        updateKind: UpdateKind.delete,
       );
       debugPrint('[MAINTENANCE] Archived $toArchive stock movements older than $retentionMonths months');
     }

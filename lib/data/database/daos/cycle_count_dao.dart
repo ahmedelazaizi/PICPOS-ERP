@@ -102,7 +102,7 @@ extension CycleCountDao on AppDatabase {
            FROM stock_movements sm 
            WHERE sm.product_id = p.id 
              AND sm.warehouse_id = ?
-             AND sm.created_at > datetime('now', '-90 days')),
+             AND sm.created_at > ?),
           0
         ) as movement_value
       FROM products p
@@ -112,10 +112,19 @@ extension CycleCountDao on AppDatabase {
       LIMIT ?
     ''';
 
+    // نافذةُ الـ٩٠ يوماً تُربَط بثواني الحقبة عبر [AppDatabase.dateVar]، لا
+    // بـ`datetime('now', '-90 days')`: drift يخزِّن `created_at` عدداً صحيحاً،
+    // وترتيبُ الأنواع في SQLite يضع كلَّ عددٍ قبل أيِّ نصّ — فالشرطُ النصّيُّ
+    // كان كاذباً دائماً، فتُصفَّر `movement_value` ويسقط ترتيبُ ABC صامتاً إلى
+    // ترتيب rowid. (ولا وجودَ لـ`datetime()` على PostgreSQL أصلاً.)
+    final movementWindowStart =
+        DateTime.now().subtract(const Duration(days: 90));
+
     final results = await customSelect(
       productQuery,
       variables: [
         Variable(warehouseId),
+        dateVar(movementWindowStart),
         Variable(warehouseId),
         Variable(productsPerTask),
       ],
