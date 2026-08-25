@@ -36,6 +36,18 @@ class CompanyInfoWidget extends ConsumerStatefulWidget {
     this.saveHandle,
   });
 
+  /// عناوينُ مجموعات اللوحة بترتيبها.
+  ///
+  /// ⚠️ **مصدرٌ واحدٌ لا اثنان.** عمودُ الأرقام يُرسم في غلاف الحوار والجسمُ
+  /// يُبنى في الحالة، وهما موضعان لا يرى أحدُهما الآخر — فلو كُتبت العناوينُ
+  /// مرّتين لانحرف العمودُ عن اللوحة أوّلَ ما تُضاف مجموعة. الحالةُ تبني
+  /// مجموعاتِها من هذه القائمة، والحوارُ يرسم أرقامَه منها.
+  static const List<String> picposGroupLabels = [
+    'هويّة الشركة',
+    'البيانات الأساسية',
+    'ما يظهر في الفاتورة',
+  ];
+
   @override
   ConsumerState<CompanyInfoWidget> createState() => _CompanyInfoWidgetState();
 }
@@ -133,16 +145,15 @@ class _CompanyInfoWidgetState extends ConsumerState<CompanyInfoWidget> {
   ///
   /// و«رسالة الشكر» في التصميم مفتاحٌ، وهي في القاعدة **نصٌّ** (`footerText`)
   /// — فرُسمت حقلَ نصٍّ لا مفتاحاً: مفتاحٌ يخفي النصَّ الذي يُطبَع فعلاً.
-  List<Widget> _picposGroups() {
+  List<PicPosPanelGroup> _picposGroups() {
     return [
       PicPosPanelGroup(
-        label: 'هويّة الشركة',
+        label: CompanyInfoWidget.picposGroupLabels[0],
         hint: 'تظهر في ترويسة كل فاتورة وتقرير مطبوع',
         child: _buildLogoSection(),
       ),
-      const SizedBox(height: 20),
       PicPosPanelGroup(
-        label: 'البيانات الأساسية',
+        label: CompanyInfoWidget.picposGroupLabels[1],
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -168,9 +179,8 @@ class _CompanyInfoWidgetState extends ConsumerState<CompanyInfoWidget> {
           ],
         ),
       ),
-      const SizedBox(height: 20),
       PicPosPanelGroup(
-        label: 'ما يظهر في الفاتورة',
+        label: CompanyInfoWidget.picposGroupLabels[2],
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -228,7 +238,7 @@ class _CompanyInfoWidgetState extends ConsumerState<CompanyInfoWidget> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
-        children: _picposGroups(),
+        children: picposPanelBody(_picposGroups()),
       );
     }
 
@@ -494,6 +504,7 @@ Future<void> _showCompanyInfoPicpos(BuildContext context) {
           icon: PhosphorIconsBold.check,
           onPressed: ready ? handle.invoke : null,
         ),
+        indexLabels: CompanyInfoWidget.picposGroupLabels,
         body: [CompanyInfoWidget(picposChrome: true, saveHandle: handle)],
       ),
     ),

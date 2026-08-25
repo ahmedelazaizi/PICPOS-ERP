@@ -12,6 +12,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:ural_erp/core/theme/app_colors.dart';
 import 'package:ural_erp/presentation/picpos_shell/picpos_dialog.dart';
+import 'package:ural_erp/presentation/picpos_shell/picpos_panel_groups.dart';
 
 void main() {
   Future<void> show(
@@ -509,6 +510,133 @@ void main() {
       await tester.pump();
       expect(find.byType(CircularProgressIndicator), findsNothing);
       expect(find.byIcon(PhosphorIconsBold.wrench), findsOneWidget);
+    });
+  });
+
+  // ═══════════ عمودُ أرقام المجموعات (`panel.index` في التصميم) ═══════════
+  //
+  // العطبُ المحروسُ هنا ليس «العمودُ غائب» — بل **العمودُ يكذب**: رقمٌ زائدٌ
+  // عن مجموعةٍ لا وجودَ لها، أو مجموعةٌ بلا رقم. ولهذا يُقاس الطرفان من
+  // الشجرة معاً لا من عددٍ مكتوب.
+  group('عمودُ أرقام المجموعات', () {
+    List<PicPosPanelGroup> threeGroups() => const [
+          PicPosPanelGroup(label: 'البيانات الأساسية', child: Text('أ')),
+          PicPosPanelGroup(label: 'العنوان', child: Text('ب')),
+          PicPosPanelGroup(label: 'ما يظهر في الفاتورة', child: Text('ج')),
+        ];
+
+    Finder badges() => find.descendant(
+          of: find.byType(PicPosPanelIndexRail),
+          matching: find.byType(Tooltip),
+        );
+
+    testWidgets('رقمٌ لكلّ مجموعةٍ — لا أكثرَ ولا أقلّ', (tester) async {
+      final groups = threeGroups();
+      await show(
+        tester,
+        PicPosDialog(
+          icon: PhosphorIconsBold.buildings,
+          title: 'معلومات الشركة',
+          indexLabels: picposPanelLabels(groups),
+          body: picposPanelBody(groups),
+        ),
+      );
+
+      // الطرفان مقيسان من الشجرة: المجموعاتُ المرسومةُ فعلاً، والأرقامُ
+      // المرسومةُ فعلاً — لا عددٌ ثابتٌ في الاختبار يوافق الاثنين وهما مخطئان.
+      final drawn = tester.widgetList<PicPosPanelGroup>(
+        find.byType(PicPosPanelGroup),
+      );
+      expect(badges(), findsNWidgets(drawn.length),
+          reason: 'عددُ الأرقام في العمود يخالف عددَ المجموعات في اللوحة — '
+              'ورقمٌ يكذب أسوأُ من لا رقم.');
+      expect(drawn.length, 3);
+
+      for (var i = 1; i <= 3; i++) {
+        expect(find.text('$i'), findsOneWidget);
+      }
+      expect(find.text('4'), findsNothing);
+    });
+
+    testWidgets('والتلميحُ على الرقم عنوانُ مجموعته', (tester) async {
+      final groups = threeGroups();
+      await show(
+        tester,
+        PicPosDialog(
+          icon: PhosphorIconsBold.buildings,
+          title: 'معلومات الشركة',
+          indexLabels: picposPanelLabels(groups),
+          body: picposPanelBody(groups),
+        ),
+      );
+      final messages =
+          tester.widgetList<Tooltip>(badges()).map((t) => t.message).toList();
+      expect(messages, [for (final g in groups) g.label]);
+    });
+
+    testWidgets('بلا عناوينَ لا يُرسم عمودٌ أصلاً', (tester) async {
+      await show(
+        tester,
+        const PicPosDialog(
+          icon: PhosphorIconsBold.scales,
+          title: 'مراجعة الأرصدة',
+          body: [Text('جسم')],
+        ),
+      );
+      expect(find.byType(PicPosPanelIndexRail), findsNothing);
+    });
+
+    testWidgets('العمودُ ثابتٌ لا يزحف مع تمرير المحتوى', (tester) async {
+      await show(
+        tester,
+        PicPosDialog(
+          icon: PhosphorIconsBold.buildings,
+          title: 'معلومات الشركة',
+          indexLabels: const ['أوّل', 'ثانٍ'],
+          body: [
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (var i = 0; i < 60; i++)
+                  SizedBox(height: 24, child: Text('سطر $i')),
+              ],
+            ),
+          ],
+        ),
+        size: const Size(1000, 700),
+      );
+
+      expect(find.byType(SingleChildScrollView), findsOneWidget);
+      final before = tester.getTopLeft(find.text('1'));
+      await tester.drag(find.byType(SingleChildScrollView), const Offset(0, -200));
+      await tester.pumpAndSettle();
+      final after = tester.getTopLeft(find.text('1'));
+
+      expect(after.dy, before.dy,
+          reason: 'العمودُ زحف مع المحتوى — وهو في التصميم عمودٌ ثابتٌ '
+              'بجانب ناحيةِ التمرير لا جزءٌ منها.');
+    });
+
+    testWidgets('ولوحةٌ قصيرةٌ لا تمتدّ بطول الشاشة', (tester) async {
+      // ⚠️ الفخُّ المحروس: `CrossAxisAlignment.stretch` وحدَها تُجبر الصفَّ
+      //    على **كامل** الارتفاع المتاح، فيصير حوارٌ جسمُه سطرٌ واحدٌ بطول
+      //    الشاشة. `IntrinsicHeight` هي ما يمنع ذلك.
+      await show(
+        tester,
+        const PicPosDialog(
+          icon: PhosphorIconsBold.key,
+          title: 'تفعيل الترخيص',
+          indexLabels: ['أوّل', 'ثانٍ'],
+          body: [Text('جسم')],
+        ),
+        size: const Size(1000, 800),
+      );
+      final h = tester.getSize(find.byType(PicPosPanelIndexRail)).height;
+      // ‏٢٠ حشواً + (‏٣٤ رقماً + ١٢ وصلةً) × ٢ + ٢٠ حشواً = ١٣٢.
+      expect(h, lessThan(200),
+          reason: 'العمودُ امتدّ بكامل الارتفاع المتاح ($h) — فالحوارُ صار '
+              'بطول الشاشة وجسمُه سطر.');
+      expect(h, greaterThan(100));
     });
   });
 }

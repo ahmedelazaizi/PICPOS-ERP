@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ural_erp/presentation/widgets/settings/company_info_widget.dart';
 
 /// يُسقط أسطرَ التعليق قبل الفحص — حارسُ نصٍّ يقرأ التعليقاتِ يقيس كلاماً لا
 /// واجهة. (وقع ذلك فعلاً في `settings_unified_header_test`.)
@@ -194,5 +195,58 @@ void main() {
                 'وتذييلَه، ولا يُطبِّق الاختيارَ باللمس بل بزرِّ «تطبيق».');
       });
     }
+  });
+
+  // ═══════════ عمودُ أرقام المجموعات (`panel.index`) ═══════════
+  //
+  // اختبارُ الودجت يقيس أنّ العمودَ يوافق المجموعاتِ **في الشجرة**. وما لا
+  // يراه هو المصدر: قائمةٌ حرفيّةٌ تُكتب بجانب الجسم، ثمّ تُضاف مجموعةٌ ولا
+  // تُضاف معها — فيمرّ اختبارُ الودجت على لوحةٍ يبنيها هو، ويكذب العمودُ في
+  // اللوحة الحقيقيّة. هذا الحارسُ يقفل ذلك البابَ في `lib/` كلِّه.
+  group('عمودُ الأرقام مشتقٌّ من المجموعات لا مكتوبٌ بيد', () {
+    test('لا موضعَ في lib يكتب `indexLabels` قائمةً حرفيّة', () {
+      final offenders = <String>[];
+      for (final e in Directory('lib').listSync(recursive: true)) {
+        if (e is! File || !e.path.endsWith('.dart')) continue;
+        if (RegExp(r'indexLabels:\s*(const\s+)?\[')
+            .hasMatch(_code(e.readAsStringSync()))) {
+          offenders.add(e.path.replaceAll(r'\', '/'));
+        }
+      }
+      expect(offenders, isEmpty,
+          reason: 'قائمةٌ حرفيّةٌ في `indexLabels` — اشتقّها من المجموعات '
+              'بـ`picposPanelLabels(groups)`، أو من ثابتٍ واحدٍ تبني منه '
+              'المجموعاتُ عناوينَها. الرقمُ الذي يكذب أسوأُ من لا رقم.');
+    });
+
+    test('لوحةُ الشركة: كلُّ مجموعةٍ عنوانُها من `picposGroupLabels`', () {
+      final src = _code(
+        File('lib/presentation/widgets/settings/company_info_widget_io.dart')
+            .readAsStringSync(),
+      );
+      final groups = RegExp(r'PicPosPanelGroup\(').allMatches(src).length;
+      final fromConst =
+          RegExp(r'picposGroupLabels\[\d+\]').allMatches(src).length;
+      expect(groups, greaterThan(0));
+      expect(fromConst, groups,
+          reason: 'مجموعةٌ في لوحة الشركة عنوانُها مكتوبٌ حرفيّاً لا مأخوذٌ '
+              'من `CompanyInfoWidget.picposGroupLabels` — فالعمودُ يُرسم من '
+              'الثابت والجسمُ من مكانٍ آخر، وهما ينحرفان.');
+      expect(CompanyInfoWidget.picposGroupLabels.length, groups,
+          reason: 'طولُ `picposGroupLabels` يخالف عددَ المجموعات المبنيّة — '
+              'فالعمودُ يعِد برقمٍ لا مجموعةَ تحته.');
+      expect(src.contains('indexLabels: CompanyInfoWidget.picposGroupLabels'),
+          isTrue,
+          reason: 'حوارُ الشركة لا يمرّر `indexLabels` — فاللوحةُ بلا عمود.');
+    });
+
+    test('ولوحةُ التفعيل تشتقُّها بـ`picposPanelLabels`', () {
+      final src = _code(
+        File('lib/presentation/widgets/settings/activation_dialog.dart')
+            .readAsStringSync(),
+      );
+      expect(src.contains('indexLabels: picposPanelLabels(groups)'), isTrue,
+          reason: 'لوحةُ التفعيل لا تشتقُّ عمودَها من مجموعاتها.');
+    });
   });
 }

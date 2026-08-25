@@ -178,3 +178,102 @@ class PicPosPanelChips extends StatelessWidget {
     return Wrap(spacing: 9, runSpacing: 9, children: children);
   }
 }
+
+/// عمودُ أرقام المجموعات على جانب اللوحة — `panel.index` في ملفّ التصميم.
+///
+/// رقمٌ لكلّ مجموعةٍ في اللوحة: الأوّلُ بأرضيّةِ العلامة وحدِّها ونصٍّ أبيض،
+/// والباقي بأرضيّةِ البطاقة وحدِّ الشعرة ونصٍّ خافت. وبين كلِّ رقمٍ وتاليه
+/// وصلةٌ شعريّةٌ رأسيّة.
+///
+/// ⚠️ **يأخذ العناوينَ لا العدد.** الرقمُ الذي يكذب أسوأُ من لا رقم، فمصدرُ
+/// العمود هو قائمةُ المجموعات نفسُها عبر [picposPanelLabels] — لا عددٌ يُكتب
+/// بيدٍ فينحرف أوّلَ ما تُضاف مجموعة.
+///
+/// ⚠️ **القياساتُ من التصميم لا مخترَعة**: عرضُ العمود ٦٤ وحشوُه الرأسيُّ ٢٠،
+/// والرقمُ ٣٤×٣٤ باستدارة ١١ وحدٍّ ١.٥ وخطٍّ ١٢.٥ وزنُه ٨٠٠، والوصلةُ ١.٥×١٢.
+///
+/// ولا يُنقَل بالنقر: التصميمُ نموذجٌ ساكنٌ ولا يعرّف وجهةَ النقرة، وزرٌّ
+/// يبدو قابلاً للنقر ولا يفعل شيئاً أسوأُ من رقمٍ ساكنٍ صريح. والعنوانُ يظهر
+/// تلميحاً عند المرور.
+class PicPosPanelIndexRail extends StatelessWidget {
+  const PicPosPanelIndexRail({super.key, required this.labels});
+
+  /// عناوينُ المجموعات بترتيبها — طولُها هو عددُ الأرقام.
+  final List<String> labels;
+
+  /// عرضُ العمود في التصميم.
+  static const double width = 64;
+
+  @override
+  Widget build(BuildContext context) {
+    final hairline = context.picposHairline;
+    final side = BorderSide(color: hairline);
+    // `border-inline-end` في التصميم: الحدُّ على الحافّة المواجهة للمحتوى،
+    // وهي اليسرى في RTL واليمنى في LTR.
+    final rtl = Directionality.of(context) == TextDirection.rtl;
+    return Container(
+      width: width,
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      decoration: BoxDecoration(
+        color: context.picposField,
+        border: rtl ? Border(left: side) : Border(right: side),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (var i = 0; i < labels.length; i++) ...[
+            _badge(context, i),
+            // الوصلةُ بعد كلِّ رقمٍ — كما يبثّها `sc-for` في التصميم.
+            Container(width: 1.5, height: 12, color: hairline),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _badge(BuildContext context, int i) {
+    final first = i == 0;
+    return Tooltip(
+      message: labels[i],
+      child: Container(
+        width: 34,
+        height: 34,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: first ? AppColors.primary : context.picposCard,
+          borderRadius: BorderRadius.circular(11),
+          border: Border.all(
+            color: first ? AppColors.primary : context.picposHairline,
+            width: 1.5,
+          ),
+        ),
+        child: Text(
+          '${i + 1}',
+          style: TextStyle(
+            fontSize: 12.5,
+            fontWeight: FontWeight.w800,
+            // ⚠️ أبيضُ **مقدّمةٍ** على أرضيّةِ العلامة لا أرضيّةُ سطح: يبقى
+            //    أبيضَ في الوضعين، وخريطةُ الحبر الداكن في التصميم لا تمسّ
+            //    `#FFFFFF`.
+            color: first ? Colors.white : context.picposMuted,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// عناوينُ المجموعات بترتيبها — مصدرُ أرقام [PicPosPanelIndexRail].
+///
+/// تُقرأ من المجموعات المبنيّة نفسِها، فلا يمكن أن يختلف عددُ الأرقام عن عدد
+/// المجموعات ولا نصُّ التلميح عن عنوانها.
+List<String> picposPanelLabels(List<PicPosPanelGroup> groups) =>
+    [for (final g in groups) g.label];
+
+/// المجموعاتُ متباعدةً بمسافة التصميم بين المجموعات (‏`gap:20px`).
+List<Widget> picposPanelBody(List<PicPosPanelGroup> groups) => [
+      for (var i = 0; i < groups.length; i++) ...[
+        if (i > 0) const SizedBox(height: 20),
+        groups[i],
+      ],
+    ];

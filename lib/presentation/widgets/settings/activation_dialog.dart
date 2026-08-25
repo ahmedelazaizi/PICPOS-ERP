@@ -96,6 +96,7 @@ class _ActivationDialogState extends ConsumerState<ActivationDialog> {
   ///    وظيفيّاً هو هو، والتقسيمُ إلى أربعةٍ بندٌ مفتوحٌ لا عطب.
   Widget _buildPicposDialog(BuildContext context) {
     final muted = picposDialogMuted(context);
+    final groups = _picposGroups(muted);
     return PicPosDialog(
       icon: PhosphorIconsBold.key,
       title: 'تفعيل الترخيص',
@@ -107,7 +108,14 @@ class _ActivationDialogState extends ConsumerState<ActivationDialog> {
         busy: _loading,
         onPressed: _loading ? null : _handleActivate,
       ),
-      body: [
+      indexLabels: picposPanelLabels(groups),
+      body: picposPanelBody(groups),
+    );
+  }
+
+  /// مجموعاتُ لوحة `PANELS.activate` بترتيبها — وهي **وحدَها** مصدرُ عمود
+  /// الأرقام على جانب اللوحة، فلا يمكن أن يعِدَ العمودُ بمجموعةٍ لا وجودَ لها.
+  List<PicPosPanelGroup> _picposGroups(Color muted) => [
         PicPosPanelGroup(
           label: 'مفتاح الترخيص',
           hint: '١٦ خانة',
@@ -127,7 +135,6 @@ class _ActivationDialogState extends ConsumerState<ActivationDialog> {
             ),
           ),
         ),
-        const SizedBox(height: 20),
         PicPosPanelGroup(
           label: 'بيانات هذا الجهاز',
           hint: 'أرسلها للدعم الفنّي',
@@ -176,24 +183,34 @@ class _ActivationDialogState extends ConsumerState<ActivationDialog> {
             ],
           ),
         ),
-        const SizedBox(height: 20),
-        const PicPosDialogBanner(
-          icon: PhosphorIconsBold.fileText,
-          color: AppColors.info,
-          text: 'للأجهزة المعزولة عن الإنترنت: ضع ملفّ الترخيص باسم '
-              '«license.txt» أو «activation.key» أو «license.key» في نفس مجلّد '
-              'البرنامج — يُقرأ تلقائيّاً عند التشغيل بلا إدخال مفتاح.',
+        // ⚠️ التنبيهُ **مجموعةٌ بعنوان** لا لافتتان عاريتان: في التصميم
+        //    `{label:'تنبيه', kind:'note'}`. ولو بقي بلا عنوانٍ لصار في
+        //    اللوحة كتلةٌ ظاهرةٌ بلا رقمٍ يقابلها في العمود.
+        const PicPosPanelGroup(
+          label: 'تنبيه',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              PicPosDialogBanner(
+                icon: PhosphorIconsBold.fileText,
+                color: AppColors.info,
+                text: 'للأجهزة المعزولة عن الإنترنت: ضع ملفّ الترخيص باسم '
+                    '«license.txt» أو «activation.key» أو «license.key» في نفس '
+                    'مجلّد البرنامج — يُقرأ تلقائيّاً عند التشغيل بلا إدخال '
+                    'مفتاح.',
+              ),
+              SizedBox(height: 12),
+              PicPosDialogBanner(
+                icon: PhosphorIconsBold.warning,
+                color: AppColors.warning,
+                text: 'المفتاحُ مرتبطٌ برقم هذا الجهاز وحدَه. تشغيلُ البرنامج '
+                    'على جهازٍ آخر يحتاج مفتاحاً جديداً من الدعم الفنّي.',
+              ),
+            ],
+          ),
         ),
-        const SizedBox(height: 12),
-        const PicPosDialogBanner(
-          icon: PhosphorIconsBold.warning,
-          color: AppColors.warning,
-          text: 'المفتاحُ مرتبطٌ برقم هذا الجهاز وحدَه. تشغيلُ البرنامج على '
-              'جهازٍ آخر يحتاج مفتاحاً جديداً من الدعم الفنّي.',
-        ),
-      ],
-    );
-  }
+      ];
 
   @override
   Widget build(BuildContext context) {

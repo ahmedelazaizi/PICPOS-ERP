@@ -30,6 +30,7 @@ import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../core/theme/app_colors.dart';
+import 'picpos_panel_groups.dart';
 
 /// لونُ النصِّ الخافت — `--muted` في الوضعين.
 Color picposDialogMuted(BuildContext context) =>
@@ -88,6 +89,7 @@ class PicPosDialog extends StatelessWidget {
     this.cancelLabel = 'إلغاء',
     this.onCancel,
     this.scrollable = true,
+    this.indexLabels = const [],
   });
 
   final IconData icon;
@@ -110,6 +112,14 @@ class PicPosDialog extends StatelessWidget {
   final VoidCallback? onCancel;
 
   final bool scrollable;
+
+  /// عناوينُ مجموعات الجسم — تُرسم عموداً مرقّماً على جانب اللوحة كما في
+  /// التصميم (`panel.index`). فارغةٌ ⇒ لا عمود، وهو حالُ الحوارات التي ليست
+  /// لوحاتِ مجموعات.
+  ///
+  /// ⚠️ **اشتقّها من المجموعات نفسِها** بـ`picposPanelLabels` — لا تكتبها
+  /// بيدٍ ثانيةً بجانب الجسم فتنحرف عنه.
+  final List<String> indexLabels;
 
   @override
   Widget build(BuildContext context) {
@@ -140,11 +150,7 @@ class PicPosDialog extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 _header(context, muted),
-                Flexible(
-                  child: scrollable
-                      ? SingleChildScrollView(child: _body())
-                      : _body(),
-                ),
+                Flexible(child: _bodyArea()),
                 if (primaryAction != null ||
                     secondaryActions.isNotEmpty ||
                     onCancel != null)
@@ -153,6 +159,30 @@ class PicPosDialog extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  /// منطقةُ الجسم: الجسمُ وحدَه، أو الجسمُ وبجانبه عمودُ أرقام المجموعات.
+  ///
+  /// ⚠️ **العمودُ خارجَ ناحيةِ التمرير** — في التصميم هو عمودٌ ثابتٌ بجانب
+  /// المحتوى المتمرِّر، لا جزءٌ منه يزحف معه.
+  ///
+  /// و`IntrinsicHeight` هي ما يجعل الأمرَين يجتمعان: `CrossAxisAlignment
+  /// .stretch` وحدَها تُجبر الصفَّ على **كامل** الارتفاع المتاح فيصير كلُّ
+  /// حوارٍ بطولِ الشاشة ولو كان جسمُه سطرَين؛ ومع `IntrinsicHeight` يصير
+  /// الارتفاعُ ارتفاعَ المحتوى مقصوصاً عند المتاح — فيقصر مع القصير ويتمرّر
+  /// مع الطويل، والعمودُ ممتدٌّ بكامل الطول في الحالتين.
+  Widget _bodyArea() {
+    final content = scrollable ? SingleChildScrollView(child: _body()) : _body();
+    if (indexLabels.isEmpty) return content;
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          PicPosPanelIndexRail(labels: indexLabels),
+          Expanded(child: content),
+        ],
       ),
     );
   }
