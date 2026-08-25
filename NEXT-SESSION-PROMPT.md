@@ -2,23 +2,21 @@
 
 الشغلُ كلُّه على:
 
-    D:\PICPOS-ERP\.claude\worktrees\picpos-settings-design-c25f5b
-    الفرع: claude/picpos-settings-design-c25f5b
+    D:\PICPOS-ERP\.claude\worktrees\picpos-settings-design-ca69a4
+    الفرع: claude/picpos-settings-design-ca69a4
 
 **أوّلُ أمرٍ تشغّله:**
 
 ```bash
-cd "D:/PICPOS-ERP/.claude/worktrees/picpos-settings-design-c25f5b" && pwd && git rev-parse --short HEAD && git status --porcelain
+cd "D:/PICPOS-ERP/.claude/worktrees/picpos-settings-design-ca69a4" && pwd && git rev-parse --short HEAD && git status --porcelain
 ```
 
-المتوقَّع: المسارُ أعلاه، `85160567`، وشجرةٌ نظيفة.
-
-⚠️ **ولو فُتحت الجلسةُ في worktree آخر** (حدث في أربع جلسات متتالية): لا تنتقل
-يدويّاً. تحقّق أوّلاً أنّ فرعَك بلا شغلٍ خاصّ ثمّ قدّمه:
+⚠️ **ولو فُتحت الجلسةُ في worktree آخر** (وقع في **خمس** جلساتٍ متتالية،
+منها هذه): لا تنتقل يدويّاً. تحقّق أوّلاً أنّ فرعَك بلا شغلٍ خاصٍّ ثمّ قدّمه:
 
 ```bash
-git rev-list --count HEAD ^claude/picpos-settings-design-c25f5b   # لازم 0
-git merge --ff-only claude/picpos-settings-design-c25f5b
+git rev-list --count HEAD ^claude/picpos-settings-design-ca69a4   # لازم 0
+git merge --ff-only claude/picpos-settings-design-ca69a4
 ```
 
 صفرٌ يعني لا شيءَ يضيع. غيرُ الصفر ⇒ **قف واسأل المالك**.
@@ -26,274 +24,207 @@ git merge --ff-only claude/picpos-settings-design-c25f5b
 ⚠️ **والشِّلُّ يرتدّ إلى جذر المستودع في منتصف الجلسة** — استعمل المسارات
 الكاملة، وتحقّق بـ`pwd` قبل أيّ قياسٍ تبني عليه قراراً.
 
-⚠️ **وأعِد قياسَ كلّ رقمٍ هنا بنفسك.** أرقامُ التسليم تبطُل.
+⚠️ **وأعِد قياسَ كلّ رقمٍ هنا بنفسك.** أرقامُ التسليم تبطُل — وهذه الجلسةُ
+وجدت في تسليم سابقها **خطأَ ربطٍ حقيقيّاً** (‏«المناطق» كانت مسنودةً إلى
+`region_management_screen.dart` وهي في الحقيقة `distribution_screen.dart`).
 
-⚠️ **والمالك يريد الشرحَ بالعربيّة** في كلّ ما يقرأه. الرموزُ وأسماءُ الملفّات
-والأوامرُ تبقى بالإنجليزيّة.
+⚠️ **والمالك يريد الشرحَ بالعربيّة** في كلّ ما يقرأه. الرموزُ وأسماءُ
+الملفّات والأوامرُ تبقى بالإنجليزيّة.
 
 ---
 
-## الحالة المقيسة (2026-08-25، آخرُ بوّابةٍ خضراء)
+## الحالة المقيسة (آخرُ بوّابةٍ خضراء في هذه الجلسة)
 
 | السويّة | العدد |
 |---|---|
 | analyze | **٦ info بالضبط** (كلُّها في `test/`) |
 | unit + data + structural + services | **4301** |
-| widget + core + domain + presentation + security + static | **1094** |
+| widget + core + domain + presentation + security + static | **1129** |
 | integration | **735** |
 
-⚠️ الأعدادُ ارتفعت في هذه الجلسة بـ**٦٦ حارساً جديداً** — فلا تظنّها انحرافاً.
+⚠️ سويّةُ الودجت ارتفعت من ١٠٩٤ إلى ١١٢٩ (‏**٣٥ حارساً جديداً** في هذه
+الجلسة) — فلا تظنّها انحرافاً.
 
-**البناءُ المنشور**: `app.so = ca61ae37d26a812917a893ccaf4e5dbb` — بُني من
-`cc46054b`، أي أنّ **آخر ٤ كوميتات ليست فيه** (مركزُ التقارير الجديد ·
-المؤشّرات · التبويبات · أوّلُ نسخة). نسخةٌ احتياطيّة:
-`FlavorBuilds/PicPos.bak-2026-08-25-1545`.
-أعِد القياس: `md5sum "D:/PICPOS-ERP/FlavorBuilds/PicPos/data/app.so"`.
+**البناءُ المنشور**: لم يُبنَ في هذه الجلسة. أعِد القياس:
+`md5sum "D:/PICPOS-ERP/FlavorBuilds/PicPos/data/app.so"` — وآخرُ ما سُجِّل
+`ca61ae37d26a812917a893ccaf4e5dbb` من `cc46054b`، أي أنّ **كلَّ ما بعده
+ليس في البناء** (مركز التقارير · المؤشّرات · التبويبات · نسخةُ التقادم ·
+مصفوفةُ الصلاحيات · محتوى اللوحات · اللبنات الثلاث · شاشةُ الفروع).
 
 ---
 
-## ما أُنجز في الجلسة السابقة — لا تُعِد فتحه
+## ما أُنجز في هذه الجلسة — لا تُعِد فتحه
 
 | البند | الحال |
 |---|---|
-| عمودُ أرقام المجموعات في اللوحات (`panel.index`) | ✅ |
-| **لوحاتُ الإعدادات التسع** على الهويّة | ✅ تسعٌ من تسع |
-| رافعةُ `AppFormDialog.buildPicposGroups` | ✅ خمسُ لوحاتٍ بمُتجاوَزٍ واحد |
-| شريطُ مرشِّحات التقارير (`ReportFilterBar` → PicPos) | ✅ يخدم ١٣ شاشة |
-| إطارُ `reportScaffold` | ✅ **٧ من ١٨** شاشةَ تقرير |
-| **مركزُ التقارير** على تخطيط التصميم | ✅ شريطٌ مجمَّعٌ + لوحةُ تفصيل + مؤشّرات |
-| تبويباتُ `PicPosReportTabs` | ✅ + أوّلُ شاشةٍ تركبها |
-| أوّلُ نسخةِ PicPos مستقلّة (تقادم الذمم) | ✅ بعقدٍ محروس |
+| **مصفوفةُ الأدوار والصلاحيات** (‏بلاغُ المالك الأوّل) | ✅ نسخةُ PicPos مستقلّةٌ بـ٦ اختبارات |
+| **محتوى لوحات الإعدادات** مقابلَ التصميم (‏بلاغُه الثاني) | ✅ أربعُ لوحاتٍ صُوِّبت + حارسٌ بـ١١ فحصاً |
+| لبناتُ شاشات التصميم الثلاث | ✅ `PicPosHubKpi` · `PicPosDataTable` · `PicPosEntityCard` + `PicPosTabNote` |
+| شاشةُ «الفروع والمنشآت» على التصميم | ✅ خمسُ تبويباتٍ + ٦ اختبارات |
+| عطبُ الترويسة المشتركة (‏فيض ٤٧٥ بكسل) | ✅ أُصلح في `PicPosPageHeader` |
 
 ---
 
-## 🔴 البندُ الأوّل — مراجعةُ المالك لتصميم الإعدادات
+## 🔴 بندُ سؤالٍ للمالك — لم يُنفَّذ عمداً
 
-قال المالكُ 2026-08-25: **«خيار إدارة الصلاحيات ليس كما هو مطلوب تصميمه،
-والعديد من الديالوجات والحوارات ليست كما المحتوى المطلوب في ملف التصميم»**.
+### ١) الحالةُ الثالثةُ في مصفوفة الصلاحيات: «مشروط»
 
-### ١) مصفوفةُ الأدوار والصلاحيات
+التصميمُ (`BENCH.perms`) يرسم خليّةً **ثلاثيّة**: مسموح (‏✓ أخضر) · **مشروط**
+(‏− كهرمانيّ، «يحتاج موافقةً أو حدّاً») · ممنوع (‏✕ رماديّ).
 
-التصميمُ (`BENCH.perms`) يرسم **الأدوارَ أعمدةً والصلاحياتِ صفوفاً وتبديلاً في
-مكانه**، مع «٣ تعديلات معلّقة» تُحفَظ دفعةً. والمبنيُّ اليومَ **دورٌ واحدٌ في
-كلّ مرّة**، وقد أخذ غلافَ `PicPosDialog` وحدَه.
+والمقيسُ أنّ `RolePermissions` **جدولُ وجودٍ لا حالة**:
 
-⚠️ **وهذا بناءٌ لا تنسيق**: حالةٌ معلّقةٌ لستّة أدوارٍ × ١٤٢ صلاحيةً معاً،
-ويمسّ أخطرَ ما في النظام. اقرأ `BENCH.perms` و`MX_ROLES`/`MX_GROUPS`/
-`MX_CHANGES` في التصميم الحيّ قبل أن تقدّر.
-
-### ٢) محتوى الحوارات مقابل ملفّ التصميم
-
-راجعْ حواراً حواراً مقابلَ `PicPos Settings.dc.html`. والجلسةُ السابقةُ نقلت
-**البنية** (مجموعاتٌ وشرائحُ وعمودُ أرقام) ولم تراجع **نصوصَ المحتوى** بندَاً
-بنداً.
-
-⚠️ **وثمانيةُ مواضعَ لم تُنقَل عمداً لأنّ البرنامج لا يفعلها** — لا تُعِدها
-بلا قياس:
-
-- «تفعيل بملف ترخيص» مفتاحاً — الميزةُ **كشفٌ تلقائيّ** لا وضعٌ يُبدَّل.
-- «فك التفعيل» — `deactivate` غيرُ موجودةٍ أصلاً.
-- «الاسم القانوني» و«السجل التجاري» — لا عمودَ لهما في `CompanySettings`.
-- لوحةُ مفاتيح الـPIN من أربع خانات — والحفظُ يقبل ٤–٦.
-- «نسخ الصلاحيات من» و«مجموعات الصلاحيات» في لوحة الدور — الحوارُ يكتب الاسمَ فقط.
-- «إنهاء الجلسات المفتوحة» و«إبلاغ واتساب» في إعادة التعيين — لا مقابلَ في الحفظ.
-- «عرض الورق» و«الربط بنقاط البيع» في لوحة الطابعة — لا عمودَ لهما.
-- «يُغلق البيعُ في مدّة العطلة» — العطلُ تدخل **حسابَ الرواتب** وحدَه (مقيس).
-
-فإن أمر المالكُ بأيٍّ منها فهي **ميزةٌ تُبنى** لا نصٌّ يُكتَب.
-
-### كيف تقرأ التصميمَ الحيّ (الوصفةُ التي نجحت)
-
-```
-projectId = 2c7b6006-4708-4883-95b7-59612cd6b517
+```dart
+class RolePermissions extends Table {
+  IntColumn get roleId => integer().references(Roles, #id)();
+  IntColumn get permissionId => integer().references(Permissions, #id)();
+  Set<Column> get primaryKey => {roleId, permissionId};
+}
 ```
 
-1. `DesignSync` بـ`method: get_file` و`path: 'PicPos Settings.dc.html'`.
-2. المخرَجُ أكبرُ من الحدّ فيحفظه الـharness في ملفٍّ ويعطيك مساره — **لا
-   تحاول قراءتَه في السياق**.
-3. فُكَّ ترميزَه بالسكربت الجاهز:
+صفٌّ موجودٌ = ممنوح، وغيابُه = ممنوع. **ولا نقطةَ إنفاذٍ واحدةً** تقرأ
+«مشروط» في أيّ حارس. فخليّةٌ كهرمانيّةٌ تُحفَظ في النهاية «ممنوحة» كذبٌ
+أمنيّ — المديرُ يظنّ أنّه اشترط موافقةً ولم يشترط شيئاً.
+
+**فالمصفوفةُ اليومَ ثنائيّةٌ** بحالتَي التصميم الأولى والثالثة حرفيّاً.
+وبناءُ «المشروط» ميزةٌ تُطلَب: عمودٌ في الجدول + هجرة + قراءةٌ في **كلّ**
+حارس. تقديرٌ: يمسّ أخطرَ ما في النظام.
+
+### ٢) «مجموعات الصلاحيات» في حوار إنشاء الدور
+
+التصميمُ يعرض **ستَّ** مجموعاتٍ بمفاتيح. والمزروعُ في البرنامج **تسعٌ
+وعشرون** فئة. وقائمةٌ بتسعٍ وعشرين مفتاحاً في حوارِ إنشاءٍ تُكرّر ما تفعله
+المصفوفةُ بدقّةٍ أعلى — و«نسخ الصلاحيات من» (‏نُفِّذت) تغطّي حاجةَ البداية.
+
+### ٣) عمودُ «إجراء» في جدول المخازن
+
+`WarehouseEditDialog` يستقبل صفَّ drift (`Warehouse`)، و`allWarehousesProvider`
+يعطي **DTO نطاقٍ** (`WarehouseData` في `domain/repositories/inventory_repository.dart`)
+بحقولٍ أقلَّ ولا `isActive` فيه. وجلبُ الصفِّ يقتضي استيراد `data/database`
+من طبقة العرض — ويمنعه `presentation_db_import_guard` على كلّ ملفٍّ **جديد**،
+والقائمةُ البيضاءُ مجمَّدة. فكشفُ الصفِّ عبر المستودع **بندُ عملٍ في طبقة
+البيانات**، والتعديلُ متاحٌ اليومَ من شاشة الفروع والمخازن القائمة.
+
+### ٤) ثمانيةُ مواضعَ في لوحات الإعدادات لم تُنقَل (‏من الجلسة السابقة، ما زالت قائمة)
+
+«فك التفعيل» · «الاسم القانوني» و«السجل التجاري» · «إلزام تغيير الـPIN كلّ
+٣٠ يوماً» · «إنهاء الجلسات المفتوحة» و«إبلاغ واتساب» · «عرض الورق»
+و«الربط بنقاط البيع» في لوحة الطابعة · «يُغلق البيعُ في مدّة العطلة» ·
+«الهاتف» و«البريد» في إنشاء المستخدم · «الأولوية» في الدور.
+**كلُّها بلا عمودٍ ولا واجهة.** فإن أمر المالكُ بأيٍّ منها فهي **ميزةٌ
+تُبنى** لا نصٌّ يُكتَب.
+
+---
+
+## 🔴 البندُ الأوّل — بقيّةُ شاشات التصميم الجديدة
+
+### ⚠️⚠️ اقرأ هذا قبل أن تفتح ملفّ تصميم
+
+**ملفّاتُ التصميم الأربعةُ الأولى ملفٌّ واحدٌ لا أربعة** — قِيس بـ`diff`:
+
+| الملفّ | الفرقُ عن `Distribution` |
+|---|---|
+| `PicPos Distribution.dc.html` | الأصل (‏٢١٠٣ سطراً) |
+| `PicPos Employees.dc.html` | **٨ أسطر** (‏`get mod()` وسطرُ الشريط) |
+| `PicPos Analytics.dc.html` | **٨ أسطر** (‏نفسُ الشيء) |
+| `PicPos Branches.dc.html` | **١٦٤ سطراً** — نسخةٌ **أحدثُ** بتبويبة مخازنَ أغنى |
+
+كلُّها تحمل نفسَ `MODULES` الأربع (‏`branches` · `regions` · `analytics` ·
+`staff`) ونفسَ العشرين تبويبة. **و`Branches.dc.html` هو المصدرُ الصحيح.**
+
+**وقرارُ المالك 2026-08-25 بعد عرض القياس: أربعُ شاشاتٍ منفصلةٌ بلغة
+التصميم** — لا مركزٌ واحدٌ بمنتقي وحدات. و«القشرةُ أوّلاً ثمّ التبويبات».
+
+### الخريطةُ الصحيحةُ للشاشات (‏مقيسةٌ في هذه الجلسة)
+
+| # | وحدةُ التصميم | المقابلُ في التطبيق | الحال |
+|---|---|---|---|
+| ١ | `branches` — ٥ تبويبات | `screens/branch_management_screen.dart` | ✅ **مُنجَزةٌ**: `settings_picpos/screens/branches_picpos_screen.dart` |
+| ٢ | `regions` — ٤ تبويبات | **`screens/distribution_screen.dart`** ‏(٩٨ + ٤ تبويبات ≈ ١٣٩٠) | ⬜ |
+| ٣ | `analytics` — ٤ تبويبات | `screens/analytics_dashboard_screen.dart` (‏١٥٠٠) | ⬜ |
+| ٤ | `staff` — ٧ تبويبات | `screens/hr_screen.dart` + `screens/hr/widgets/` | ⬜ |
+| ٥ | الشيكات — **٥** تبويبات | `screens/commercial_papers_screen.dart` + `_dialogs.dart` | ⬜ |
+| ٦ | الأصول الثابتة — **٥** تبويبات | `screens/fixed_assets_screen.dart` (‏٦٥٥) | ⬜ |
+| ٧ | نقاط الولاء — **٤** تبويبات | `screens/loyalty_screen.dart` + ٣ تبويبات `part` | ⬜ |
+
+**والثلاثةُ الأخيرةُ ملفّاتٌ مستقلّةٌ مقيسة** (`MODULES = []` في كلٍّ منها)،
+فهي أصغرُ وأوضحُ من الأربعة الأولى. وتبويباتُها:
+
+- **الشيكات**: الواردة · الصادرة · جدول الاستحقاق · المرتجعة · سجل الحالات
+- **الأصول**: الأصول · الإهلاك الدوري · الفئات · الاستبعاد والبيع · التوزيع والمواقع
+- **الولاء**: البرامج · أرصدة العملاء · الحركات · الالتزام والتحليل
+
+⚠️⚠️ **التصحيحُ في الصفّ ٢**: التسليمُ السابقُ سند «المناطق» إلى
+`region_management_screen.dart` — وهو **خطأ**. ذاك يعرض جدولَ `Regions`
+(مناطقُ جغرافيّةٌ لها فروع)، بينما تبويباتُ التصميم مسارُ توزيعٍ وزياراتٌ
+وأهدافٌ وشركاتُ توصيل — وهي `distribution_screen.dart` وله **نفسُ الأربع
+تبويبات** تقريباً (‏المسارات · الزيارات · الأهداف · التحصيلات).
+
+### كلُّ العشرين تبويبةً مسنودةٌ بجداولَ قائمة (‏مقيس)
+
+`SalesRoutes` · `RouteVisits` · `SalesRepTargets` · `DeliveryCompanies` ·
+`Budgets` · `ApprovalWorkflows` · `EmployeeAttendance` · `SalaryPayments` ·
+`EmployeeTransactions` · `EmployeeLeaves` · `LeaveBalances` ·
+`PerformanceGoals` · `PerformanceReviews` · `EmployeeContracts` ·
+`Branches` · `PosTerminals` · `Warehouses` · `WorkHolidays` ·
+`UserBranchAccess` · `Regions`.
+
+⚠️ **وصفرُ المطابقات نمطٌ غلطٌ قبل أن يكون غياباً**: بحثتُ عن `Attendance`
+و`Payroll` و`Leaves` فوجدتُ صفراً، وهي كلُّها موجودةٌ بأسماءٍ أخرى.
+**اسردْ أسماءَ الجداول الحقيقيّةَ ثمّ رشِّح**:
+
+```bash
+grep -rho "class [A-Za-z]* extends Table" lib/data/database/tables/ | sed 's/class //;s/ extends Table//' | sort
+```
+
+### الوصفةُ التي نجحت في شاشة الفروع — اتبعها
+
+1. **افتح التصميمَ الحيَّ** (‏لا النسخةَ المحلّيّة، فهي أقدم):
+   `projectId = 2c7b6006-4708-4883-95b7-59612cd6b517`، ثمّ `DesignSync`
+   بـ`method: get_file`. المخرَجُ أكبرُ من الحدّ فيُحفَظ في ملفٍّ — **لا
+   تقرأه في السياق**، فُكَّه بـnode:
+
    ```bash
-   perl <scratchpad>/decode.pl <tool-results-file> <out.dc.html>
+   node <scratchpad>/decode.js <tool-results-file> <out.dc.html>
    ```
-   (‏يقرأ بـ`<:encoding(UTF-8)`، يطابق `"content":"(.*)","contentType"`،
-   ويفكّ `\uXXXX` ثمّ `\n` ثمّ `\"`.)
 
-⚠️ **ولا تقرأ النسخةَ المحلّيّة** في
-`D:/PICPOS-ERP/تصميم شاشات فواتير PicPos-handoff/` — هي **أقدم** (١٨٨٤ سطراً
-مقابل ٣٠٩٩ في الحيّ)، و`PANELS` فيها ستٌّ بينما الحيُّ تسع.
+   ⚠️ **ولا تستعمل perl مع heredoc**: الـheredoc يبتلع الشراطاتِ المائلةَ
+   العكسيّةَ (`\\n` تصير `\n`) فينكسر السكربت صامتاً. و`JSON.parse` في node
+   لا يحتاج مهارب أصلاً.
 
----
+2. **اقرأ من الملفّ المفكوك**: `HEADS` (‏الترويسة) · `TABS` (‏العنوان
+   والأيقونة والشارة و**الملاحظة**) · `BLOCKS['mod:tab']` (‏الكتل).
 
-## 🔴 البندُ الثاني — سبعُ شاشاتٍ بتصميمٍ جديد
+3. **قِسْ ما يسنده البرنامجُ قبل أن ترسم**: أيُّ مؤشّرٍ أو عمودٍ لا مصدرَ
+   له **لا يُخترَع**. اكتبه بنداً للمالك في التسليم.
 
-**قِستُ السبعَ كلَّها: جميعُها موجودةٌ في التطبيق. المطلوبُ إعادةُ تصميمٍ لا
-بناءٌ من صفر.**
+4. **ابنِ على اللبنات** ولا تخترع بديلاً:
 
-| # | الشاشة | المقابلُ في التطبيق | الحجم | فوركُ PicPos |
-|---|---|---|---|---|
-| ١ | الفروع | `screens/branch_management_screen.dart` | ٤٠٩ | ✗ |
-| ٢ | المناطق | `screens/region_management_screen.dart` | ٢٧٧ | ✗ |
-| ٣ | التحليلات | `screens/analytics_dashboard_screen.dart` | ١٥٠٠ | ✗ |
-| ٤ | الموظفون | `screens/hr_screen.dart` + `screens/hr/widgets/` (‏١٠ تبويبات) | ١٠٠+٢٥٠٠ | ✗ |
-| ٥ | الشيكات | `screens/commercial_papers_screen.dart` + `commercial_papers_dialogs.dart` | ٦٤٩ | ✗ |
-| ٦ | الأصول الثابتة | `screens/fixed_assets_screen.dart` | ٦٥٥ | ✗ |
-| ٧ | نقاط الولاء | `screens/loyalty_screen.dart` + ٣ تبويبات `part` | ١٠٥١ | ✗ |
+   | اللبنة | الملفّ |
+   |---|---|
+   | إطارُ الشاشة (ترويسة + بحث + إجراءات + `subHeader`) | `picpos_shell/picpos_screen_scaffold.dart` |
+   | تبويباتٌ بشارة | `picpos_shell/picpos_report_tabs.dart` |
+   | **سطرُ ملاحظة التبويبة** | `picpos_shell/picpos_data_table.dart` ‏(`PicPosTabNote`) |
+   | **صفُّ المؤشّرات بحدٍّ جانبيٍّ وفرق** | `picpos_shell/picpos_hub_kpi.dart` |
+   | **جدولُ البيانات بشرائحَ ومجاميع** | `picpos_shell/picpos_data_table.dart` |
+   | **بطاقةُ الكيان + شبكتُها + رأسُ الكتلة** | `picpos_shell/picpos_entity_card.dart` |
+   | غلافُ الحوار (‏+ `headerChips` و`footerHint` و`bodyFill`) | `picpos_shell/picpos_dialog.dart` |
+   | مجموعاتُ اللوحة والشرائح وصندوقُ القوّة | `picpos_shell/picpos_panel_groups.dart` |
+   | ألوانُ الأسطح تابعةً للثيم | `picpos_shell/picpos_surface.dart` |
 
-⚠️⚠️ **حذّرْ نفسَك من هذا قبل أيّ قياس**: بحثتُ عن
-`class Cheques extends Table` فوجدتُ **صفراً** وكدتُ أكتب «الشيكات ميزةٌ غيرُ
-موجودةٍ تحتاج بناءَ جداولَ ومستودعٍ وشاشة». والحقيقةُ أنّ الجدولَ اسمُه
-`CommercialPapers` (‏الأوراق التجارية) وأنّ الشاشةَ والحوارات والمستودعَ
-والـusecase **كلَّها موجودة**. ونفسُ الشيء وقع مع الولاء: `class Loyalty`
-صفرٌ، والجداولُ ثلاثةٌ بأسماءٍ أخرى (`LoyaltyPrograms` ·
-`CustomerLoyaltyPoints` · `LoyaltyTransactions`).
+5. **اركبْ جسماً مشتركاً حيث وُجد** بدل نسخِه — `PosTerminalsBody` و
+   `WorkHolidaysBody` و`PrintersBody` أمثلةٌ قائمة. ابحث عن `class \w*Body`.
 
-**صفرُ المطابقات نمطٌ غلطٌ قبل أن يكون غياباً — والخطأُ هنا يكلّف جلسةً كاملةً
-في بناء ما هو مبنيّ.**
+6. **اكتب اختبارَ تركيبٍ على عرضين** قبل أن تقول «تمّت». وقع في هذه الجلسة
+   **أربعُ** أعطالِ تخطيطٍ لم يمسكها التحليلُ إطلاقاً (‏٧ · ١٠٧ · ٤٧٥ بكسل
+   + تكرارُ جملةٍ مرّتين).
 
-### روابطُ الاستيراد كما أعطاها المالك
-
-<details>
-<summary>١ — شاشة الفروع</summary>
-
-```
-Use the claude_design MCP (https://api.anthropic.com/v1/design/mcp, auth via /design-login) to import this project:
-https://claude.ai/design/p/2c7b6006-4708-4883-95b7-59612cd6b517?file=PicPos+Branches.dc.html
-
-Focus on these files (the whole project is readable):
-- `PicPos Branches.dc.html`
-
-Also read these files the selection imports:
-- `assets/picpos-logo.png`
-- `support.js`
-
-Implement: `PicPos Branches.dc.html`
-```
-</details>
-
-<details>
-<summary>٢ — شاشة المناطق</summary>
-
-```
-Use the claude_design MCP (https://api.anthropic.com/v1/design/mcp, auth via /design-login) to import this project:
-https://claude.ai/design/p/2c7b6006-4708-4883-95b7-59612cd6b517?file=PicPos+Distribution.dc.html
-
-Focus on these files (the whole project is readable):
-- `PicPos Distribution.dc.html`
-
-Also read these files the selection imports:
-- `assets/picpos-logo.png`
-- `support.js`
-
-Implement: `PicPos Distribution.dc.html`
-```
-</details>
-
-<details>
-<summary>٣ — شاشة التحليلات</summary>
-
-```
-Use the claude_design MCP (https://api.anthropic.com/v1/design/mcp, auth via /design-login) to import this project:
-https://claude.ai/design/p/2c7b6006-4708-4883-95b7-59612cd6b517?file=PicPos+Analytics.dc.html
-
-Focus on these files (the whole project is readable):
-- `PicPos Analytics.dc.html`
-
-Also read these files the selection imports:
-- `assets/picpos-logo.png`
-- `support.js`
-
-Implement: `PicPos Analytics.dc.html`
-```
-</details>
-
-<details>
-<summary>٤ — شاشة الموظفين</summary>
-
-```
-Use the claude_design MCP (https://api.anthropic.com/v1/design/mcp, auth via /design-login) to import this project:
-https://claude.ai/design/p/2c7b6006-4708-4883-95b7-59612cd6b517?file=PicPos+Employees.dc.html
-
-Focus on these files (the whole project is readable):
-- `PicPos Employees.dc.html`
-
-Also read these files the selection imports:
-- `assets/picpos-logo.png`
-- `support.js`
-
-Implement: `PicPos Employees.dc.html`
-```
-</details>
-
-<details>
-<summary>٥ — الشيكات (الأوراق التجارية)</summary>
-
-```
-Use the claude_design MCP (https://api.anthropic.com/v1/design/mcp, auth via /design-login) to import this project:
-https://claude.ai/design/p/2c7b6006-4708-4883-95b7-59612cd6b517?file=PicPos+Cheques.dc.html
-
-Focus on these files (the whole project is readable):
-- `PicPos Cheques.dc.html`
-
-Also read these files the selection imports:
-- `assets/picpos-logo.png`
-- `support.js`
-
-Implement: `PicPos Cheques.dc.html`
-```
-</details>
-
-<details>
-<summary>٦ — الأصول الثابتة والإهلاك</summary>
-
-```
-Use the claude_design MCP (https://api.anthropic.com/v1/design/mcp, auth via /design-login) to import this project:
-https://claude.ai/design/p/2c7b6006-4708-4883-95b7-59612cd6b517?file=PicPos+Fixed+Assets.dc.html
-
-Focus on these files (the whole project is readable):
-- `PicPos Fixed Assets.dc.html`
-
-Also read these files the selection imports:
-- `assets/picpos-logo.png`
-- `support.js`
-
-Implement: `PicPos Fixed Assets.dc.html`
-```
-</details>
-
-<details>
-<summary>٧ — نقاط الولاء</summary>
-
-```
-Use the claude_design MCP (https://api.anthropic.com/v1/design/mcp, auth via /design-login) to import this project:
-https://claude.ai/design/p/2c7b6006-4708-4883-95b7-59612cd6b517?file=PicPos+Loyalty.dc.html
-
-Focus on these files (the whole project is readable):
-- `PicPos Loyalty.dc.html`
-
-Also read these files the selection imports:
-- `assets/picpos-logo.png`
-- `support.js`
-
-Implement: `PicPos Loyalty.dc.html`
-```
-</details>
-
-### وثامنٌ في المشروع لم يطلبه المالك
-
-`PicPos Operating Expenses.dc.html` موجودٌ في مشروع التصميم، وله في التطبيق
-`screens/operational_expenses_screen.dart`. **لا تبدأه بلا أمر.**
-
-### ما يطلبه المالك في التنفيذ
-
-> «يكون تنفيذك للتصميمات نفسَ التصميم المطلوب تنفيذه، مع **توثيق المطالب**
-> ومراجعتي في المطلوب لنمط المحتوى التنفيذيّ.»
-
-أي: نفّذ التصميمَ كما هو، ووثّق **لكلّ شاشة** ما نُقل وما لم يُنقَل ولماذا،
-واعرض على المالك ما تحتاج مراجعتَه قبل أن تفترض.
+7. **صِلِ الشاشةَ في `app_main_screen.dart`** بتفريعٍ على `Brand.isPicPos`
+   فتبقى شاشةُ UralCash بلا مساس — وهذا ما فُعل في `AppScreen.branches`.
 
 ---
 
-## 🟡 البندُ الثالث — بقيّةُ شاشات التقارير
+## 🟡 البندُ الثاني — بقيّةُ شاشات التقارير
 
 **١١ شاشةً ما زالت ترسم `AppBar` بيدها** (‏عدّادُ التقدّم في
 `test/widget/picpos_report_bar_test.dart` يمنع أن **يزيد** العددُ عن ١١):
@@ -311,9 +242,9 @@ vat_reconciliation_screen 260
 جاهزةٌ ومربوطةٌ بمركز PicPos.
 
 **والأثقلُ فيها ما مرشِّحاتُه داخلَ الترويسة**: `financial_statements`
-(‏منتقيا منطقةٍ وفرعٍ بأرضيّةِ `Colors.white/.15` مصمَّمةٍ لشريطٍ أزرق) و
-`tax_report_screen` (‏منتقي مركز تكلفةٍ + زرُّ رجوعٍ صريح Spec 057). وأمرُ
-المالك: **تنزل إلى شريط المرشِّحات كما في التصميم**.
+(‏منتقيا منطقةٍ وفرعٍ بأرضيّةِ `Colors.white/.15`) و`tax_report_screen`
+(‏منتقي مركز تكلفةٍ + زرُّ رجوعٍ صريح Spec 057). وأمرُ المالك: **تنزل إلى
+شريط المرشِّحات كما في التصميم**.
 
 ---
 
@@ -321,84 +252,89 @@ vat_reconciliation_screen 260
 
 ### ١) 🔴 «نسخةٌ مستقلّةٌ لا تفريع» — أمرُ المالك 2026-08-25
 
-> «لا تربط أيَّ أمورٍ من UralCash. إذا كان هناك أمرٌ مشتركٌ ولا نريد أن نعدّل
-> على UralCash فقم بنسخه إلى PicPos بشكلٍ منفصلٍ وثبّت التصميمَ الجديدَ الخاصَّ
-> بـPicPos.»
+> «لا تربط أيَّ أمورٍ من UralCash. إذا كان هناك أمرٌ مشتركٌ ولا نريد أن
+> نعدّل على UralCash فقم بنسخه إلى PicPos بشكلٍ منفصلٍ وثبّت التصميمَ
+> الجديدَ الخاصَّ بـPicPos.»
 
-النموذجُ المنفَّذ: `reports_picpos/screens/ar_aging_report_picpos_screen.dart`.
-وعقدُه محروسٌ في `test/static/reports_picpos_forks_test.dart` — **أضف كلَّ
-نسخةٍ جديدةٍ إلى `_forks` هناك**، فالحارسُ يمسك أربعَ طرقٍ للانحراف:
-
-- الأصلُ باقٍ ومركزُ UralCash يفتحه.
-- ومركزُ PicPos يفتح **النسخةَ** لا الأصل (وإلّا كان الفوركُ ملفّاً ميّتاً).
-- والمرشِّحاتُ في الشريط لا في الترويسة.
-- **ولا لونَ سطحٍ ثابتٍ في النسخة** — وهو سببُ النسخ أصلاً.
+نموذجان منفَّذان: `reports_picpos/screens/ar_aging_report_picpos_screen.dart`
+و`settings_picpos/widgets/permissions_matrix_picpos.dart`. وعقدُ نسخِ
+التقارير محروسٌ في `test/static/reports_picpos_forks_test.dart` — **أضف كلَّ
+نسخةِ تقريرٍ جديدةٍ إلى `_forks` هناك**.
 
 ⚠️⚠️ **والنسخُ يورّث المخالفاتِ كما يورّث الشكل.** أوّلُ نسخةٍ احمرَّت في
-`presentation_db_import_guard` لأنّها ورّثت `import 'data/database'`: الأصلُ
-ناجٍ بالتقادم (قائمةٌ بيضاءُ **مجمَّدةٌ** نصُّها «إضافةُ مخالفين جدد ممنوعة»)،
-والنسخةُ جديدةٌ فلا تنجو. **الإصلاحُ في النسخة لا في الحارس**: اشتقّ ما تعرضه
-من المزوِّد بلا أن تسمّي نوعَ القاعدة. وستّةُ ملفّاتٍ في تلك القائمة تخصّ
-`commercial_papers` وحدَه — فاحسبها قبل أن تنسخ.
+`presentation_db_import_guard` لأنّها ورّثت `import 'data/database'`:
+الأصلُ ناجٍ بالتقادم (‏قائمةٌ بيضاءُ **مجمَّدة**)، والنسخةُ جديدةٌ فلا تنجو.
+**الإصلاحُ في النسخة لا في الحارس.**
 
-⚠️ **وأضف كلَّ نسخةٍ إلى** `test/structural/report_screens_resolve_branch_scope_test.dart`
-إن كانت شاشةَ تقرير: هي **خارج** مجلّد `reports/` فما كانت لتُمسَح، وتسقط من
-حارس حصر الفروع صامتةً.
+⚠️ **وأضف كلَّ نسخةِ تقريرٍ إلى**
+`test/structural/report_screens_resolve_branch_scope_test.dart` — هي **خارج**
+مجلّد `reports/` فما كانت لتُمسَح، وتسقط من حارس حصر الفروع صامتةً.
 
-### ٢) لبناتُ PicPos الجاهزة — لا تبنِ بديلاً
+### ٢) الأرقامُ تُقاس من الشجرة لا تُكتَب
 
-| اللبنة | الملفّ |
-|---|---|
-| إطارُ الشاشة (ترويسة + بحث + إجراءات + `subHeader`) | `picpos_shell/picpos_screen_scaffold.dart` |
-| شريطُ المرشِّحات (مدىً + فتراتٌ جاهزة) | `picpos_shell/picpos_report_bar.dart` |
-| **غلافُ شريط المرشِّحات العامّ + المرشِّحُ الواحد** | `picpos_shell/picpos_filter_strip.dart` |
-| تبويباتُ التقرير | `picpos_shell/picpos_report_tabs.dart` |
-| مجموعاتُ اللوحة + عمودُ الأرقام + الشرائح + صندوقُ القوّة | `picpos_shell/picpos_panel_groups.dart` |
-| غلافُ الحوار + اللافتة + الصفّ + الملخّص | `picpos_shell/picpos_dialog.dart` |
-| ألوانُ الأسطح تابعةً للثيم | `picpos_shell/picpos_surface.dart` |
-| إطارُ شاشة التقرير (للمشتركة) | `screens/reports/report_scaffold.dart` |
-
-### ٣) الأرقامُ تُقاس من الشجرة لا تُكتَب
-
-عمودُ الأرقام يأخذ **العناوين** لا العدد؛ وعدّادُ الفئات يُشتقّ من
-`mainReports.length`؛ وعنوانُ مركز التقارير الفرعيُّ يُشتقّ من `_allItems`.
+عمودُ الأرقام يأخذ **العناوين** لا العدد؛ وشاراتُ التبويبات وعدّاداتُ
+المؤشّرات وشرائحُ الترشيح تُشتقّ من نفس القوائم التي تُرسَم.
 **رقمٌ يكذب أسوأُ من لا رقم.**
 
-### ٤) لا تنقل من التصميم ما لا يفعله البرنامج
+### ٣) لا تنقل من التصميم ما لا يفعله البرنامج
 
 قِسْ قبل أن تنقل. وإن كان التصميمُ يَعِد بما ليس موجوداً فاكتبْه في التسليم
-بندَ سؤالٍ للمالك — لا تنفّذه ولا تحذفه صامتاً.
+بندَ سؤالٍ للمالك — لا تنفّذه ولا تحذفه صامتاً. **وإن كان موجوداً بصورةٍ
+أخرى فارسمْه بصورته الحقيقيّة**: «قفل الحساب بعد ٥ محاولات» في التصميم مفتاحٌ
+لكلّ مستخدم، وفي البرنامج سياسةٌ عامّةٌ في `LoginRateLimiter` — فرُسم مفتاحاً
+**معطَّلاً** بعددَين مقروءَين من الثابت. إخفاؤه يُخفي حمايةً قائمة،
+وتشغيلُه يَعِد بتحكّمٍ لا وجودَ له.
 
 ---
 
-## دروسٌ كلّفت عطباً — اقرأها قبل أوّل سطرِ كود
+## دروسٌ كلّفت عطباً في هذه الجلسة — اقرأها قبل أوّل سطرِ كود
 
-**١) صفرُ المطابقات نمطٌ غلطٌ غالباً — والمطابقةُ الناجحةُ كذلك.**
-- `class Cheques extends Table` صفرٌ والميزةُ كاملةٌ باسم `CommercialPapers`.
-- `contains('branchScopeProvider')` طابق `branchScopeProviderXX` **كسابقة**،
-  فبدا حارسُ تسريبٍ ماليٍّ معطَّلاً وهو سليم. **اكسر السلسلةَ في وسطها** حين
-  تطفّر رمزاً لتختبر حارساً.
-- `contains('fullBranchAccessRoleNames')` مرّ على إسقاط الشرط من فرعٍ كاملٍ
-  لأنّ الرمزَ في الملفّ **ثلاثَ مرّات**. **عُدّ مرّاتِ ظهور الرمز قبل أن تثق
-  بفحصِ وجوده**، واحصر الفحصَ في جسم الدالّة (`indexOf` بين اسمَي دالّتَين).
+**١) `Column` يمنح أبناءه ارتفاعاً غيرَ محدود.** فأيُّ `LayoutBuilder`
+داخلَه يقرأ `maxHeight == infinity` ولا يقيس المتاح. سقط الجسمُ على قيمةٍ
+احتياطيّةٍ فطفح **١٠٧** بكسل. الحلُّ `bodyFill` في `PicPosDialog`: يُلغي
+العمودَ ويسلّم الطفلَ إلى `Flexible` مباشرةً.
 
-**٢) أثبت أنّ الطفرةَ دخلت الملفَّ قبل أن تصدّق «أخضر».** مرّتان في هذه الجلسة
-لم تدخل طفرةٌ (اختلافُ إزاحة) — والسكربتُ الذي يموت عند صفر مطابقاتٍ هو ما
-أمسكها. استعمل `scratchpad/mut.pl`.
+**٢) `CrossAxisAlignment.stretch` في ارتفاعٍ غيرِ محدودٍ ينهار.** والـstretch
+مطلوبةٌ كي يمتدّ فاصلُ العمود بكامل الارتفاع — فالحلُّ **حدُّ الارتفاع** لا
+إسقاطُ الفاصل: `IntrinsicHeight` لصفٍّ واحدٍ، وارتفاعٌ ثابتٌ لمئات الصفوف.
 
-**٣) استعِد بالنسخة الاحتياطيّة لا بـ`git checkout`** — و`diff -q` بعدها.
+**٣) ودجتٌ مشتركةٌ قد تحمل عطباً لم يظهر بعد.** `PicPosPageHeader` كان
+عمودُ عنوانه عارياً بلا `Flexible` منذ كُتب — ولم يظهر لأنّ أحداً لم يمرّر
+سطراً خافتاً بهذا الطول. **٤٧٥ بكسلَ فيضٍ** أمسكها اختبارُ تركيبِ شاشةٍ
+جديدة. فحين تفيض شاشةٌ جديدةٌ، اسألْ: العطبُ فيها أم في اللبنة؟
 
-**٤) الحارسُ قد يكون هو المخطئ.** `toUpperCase()` حوّل `0x` إلى `0X` فأبلغ عن
-ألوانٍ مسموحةٍ كمخالفات. ولو صدّقتُه لغيّرتُ كوداً سليماً.
+**٤) صفرُ المطابقات نمطٌ غلطٌ غالباً — والمطابقةُ الناجحةُ كذلك.**
+- `class Cheques` صفرٌ والميزةُ كاملةٌ باسم `CommercialPapers`.
+- `Attendance`/`Payroll`/`Leaves` أصفارٌ وكلُّها موجودةٌ بأسماءٍ أخرى.
+- واخترتُ `deletePostedJournal` صلاحيةً حرجةً لاختبار مثلَّث التحذير،
+  فقرأ الفحصُ صفراً — لأنّها حرجةٌ **و**في `nonToggleable` معاً فتستبعدها
+  المصفوفةُ بحقّ. **الفرضيّةُ تُقاس لا تُفترَض**، والفحصُ الآن يشترط الاثنين.
 
-**٥) `flutter analyze` يعدّ **كلَّ** ملفٍّ في مجلّد الحارس شاشةً.** ملفُّ
-`report_scaffold.dart` أُبلغ عنه «شاشةُ تقريرٍ بلا حصر فروع» وهو دالّةُ غلاف.
-الاستثناءُ يُكتب في `_notAScreen` بوسمٍ يفرّق: **ملفٌّ ليس شاشةً، لا شاشةٌ
-مستثناةٌ من الحصر**.
+**٥) ابحث عن الصيغة الكوديّة لا عن العبارة.** فحصٌ استعمل
+`src.indexOf('قفل الحساب بعد')` أمسك **التعليقَ الشارح** فوقَ الصفّ وقاس
+النافذةَ منه، فسقط على كودٍ سليم. الصوابُ `indexOf("title: 'قفل الحساب بعد ")`.
 
-**٦) `dart format` ممنوع** — والتحويلُ من `Scaffold` إلى نداء دالّةٍ ينقص
-مستوى تعشيشٍ واحداً؛ **لا تُعِد إزاحةَ الجسم**، فالفرقُ يصير غيرَ قابلٍ
-للمراجعة. اترك الجسمَ حيث هو.
+**٦) أثبت أنّ الطفرةَ دخلت الملفَّ قبل أن تصدّق «أخضر».** استعمل سكربتاً
+يموت عند صفر مطابقات (`die "NO MATCH" if $n == 0`) — وأمسك في هذه الجلسة
+نقشَين لم يدخلا بسبب CRLF.
+
+**٧) وقِسِ الحارسَ بطفرة.** حارسُ سياسة القفل قِيس بطفرةِ
+`onChanged: null → onChanged: (_) {}` وأُثبت أنّه احمرّ ثمّ استُعيد الملفّ.
+
+**٨) `expect` خارجَ اختبارٍ ترمي `OutsideTestException`** فيسقط تحميلُ
+الملفّ كلِّه. الدوالُّ التي تُنادى في جسم `group` **ترمي** ولا تستعمل
+`expect`.
+
+**٩) والتأكيدُ داخلَ `build` يُلتقَط بـ`tester.takeException()`** لا بـ
+`throwsA` — لأنّه لا يخرج من `pumpWidget` استثناءً يُمسَك بالمُطابِق.
+
+**١٠) توستُ الحفظ مؤقّتٌ معلَّق.** تفكيكُ الشجرة ومؤقّتٌ حيٌّ = فشلُ
+`!timersPending` بعد أن تكون كلُّ الفحوصِ خضراء. استنفدِ المؤقّتَ
+(`pump(Duration(seconds: 6))`) قبل التفكيك.
+
+**١١) `pgrep` غيرُ موجودٍ في هذا الشِّل.** حلقةُ انتظارٍ بشرط
+`! pgrep -f gate.sh` تخرج **فوراً** بإشارةٍ كاذبة. انتظرِ البوّابةَ بعلامةِ
+النصّ الخضراء أو بتوقّف نموِّ السجلّ.
 
 ---
 
@@ -406,16 +342,17 @@ vat_reconciliation_screen 260
 
 - ممنوع `dart format` · ممنوع تحرير `database.g.dart` · `build_runner` ~٤٥ د.
 - ممنوع `git checkout` للتراجع — استعِد بـ`git show HEAD:` أو بنسخةِ ملفّ.
-- **البوّابة** `bash scripts/gate.sh` ‏~١٢ دقيقة، `run_in_background: true`،
-  وتحلّل **`lib test`**.
+- **البوّابة** `bash scripts/gate.sh` ‏~١٢ دقيقة، في الخلفيّة، وتحلّل
+  **`lib test`**.
 - ولا تحكم بكود الخروج عبر أنبوب — اقرأ `✓ البوابة كلها خضراء`، **واشترط
   عددَ ناجحين > صفر** في كلِّ سويّة، وافحص `errno = 183` و`Failed host lookup`
-  = صفر. ولا تعدّ `✗` في السجلّ فشلاً: بعضُها سجلُّ تطبيقٍ من اختباراتٍ تختبر
-  مساراتِ الفشل عمداً.
-- **ولا تعدّل ملفاً والبوّابةُ تعمل.**
+  = صفر. ولا تعدّ `✗` في السجلّ فشلاً: بعضُها سجلُّ تطبيقٍ من اختباراتٍ
+  تختبر مساراتِ الفشل عمداً.
+- **ولا تعدّل ملفاً والبوّابةُ تعمل** — سوّدْ في الـscratchpad ثمّ انسخ.
 - البناء: `build_picpos.bat` **من الـworktree** عبر PowerShell بالمسار الكامل
   (‏~٤ دقائق). والسكربتُ ينسخ إلى `FlavorBuilds` **الـworktree** لا الجذر —
   فالنشرُ خطوةٌ بيدك: انقل الجذرَ إلى `PicPos.bak-<stamp>` ثمّ انسخ وتحقّق
   بـ`md5sum` على **`app.so`** (‏`PicPos.exe` حجمُه ثابتٌ دوماً فلا يدلّ).
-- **والتشغيلُ بعين المالك يمسك ما لا يمسكه اختبار** — بلاغُ «مركز التقارير مش
-  زي التصميم» جاء بصورةٍ منه، ولم يمسكه حارسٌ واحد.
+- **والتشغيلُ بعين المالك يمسك ما لا يمسكه اختبار** — بلاغا هذه الجلسة
+  («الصلاحيات ليست كما التصميم» و«محتوى الحوارات ناقص») جاءا منه، ولم
+  يمسكهما حارسٌ واحد. والحارسان اللذان أُضيفا الآن يمسكان الارتداد.
