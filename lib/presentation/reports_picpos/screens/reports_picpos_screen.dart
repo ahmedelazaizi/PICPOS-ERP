@@ -54,7 +54,7 @@ import '../../screens/branch_performance_screen.dart';
 import '../../screens/e_invoice_dashboard_screen.dart';
 import '../../screens/party_statement_screen.dart';
 import '../../screens/report_builder_screen.dart';
-import '../../screens/reports/ar_aging_report_screen.dart';
+import 'ar_aging_report_picpos_screen.dart';
 import '../../screens/reports/category_profit_report_screen.dart';
 import '../../screens/reports/consumption_report_screen.dart';
 import '../../screens/reports/delivery_report_screen.dart';
@@ -439,7 +439,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
             id: 'cust_aging',
             title: 'تقادم ذمم العملاء',
             subtitle: 'الذمم المتأخرة بشرائح الأيام',
-            action: () => nav(() => const ArAgingReportScreen()),
+            action: () => nav(() => const ArAgingReportPicposScreen()),
           ),
           _ReportEntry(
             id: 'cust_behavior',

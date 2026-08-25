@@ -28,6 +28,9 @@ const _extraReportScreens = <String>[
   'lib/presentation/screens/report_builder_screen.dart',
   'lib/presentation/screens/party_statement_screen.dart',
   'lib/presentation/screens/stock_movements_screen.dart',
+  // نسخُ PicPos من شاشات التقارير — في مجلّدٍ آخر، فتُذكَر صراحةً وإلّا
+  // خرجت من الحارس وهي تقرأ نفسَ البيانات المالية.
+  'lib/presentation/reports_picpos/screens/ar_aging_report_picpos_screen.dart',
 ];
 
 /// مش شاشة — زرار تصدير مشترك بين ١٣ شاشة، بيحرس صلاحية `reports_export`
@@ -61,6 +64,11 @@ const _notAScreen = <String>{
 /// هيبطّل الكاش ويعيد الاستعلام مع كل rebuild.
 const _scopedViaProvider = <String, String>{
   'lib/presentation/screens/reports/ar_aging_report_screen.dart':
+      'arAgingReportProvider',
+  // نسخةُ PicPos من نفس التقرير — تقرأ نفسَ المزوّد، فتخضع لنفس الفحص.
+  // ⚠️ وهي **خارج** مجلّد `reports/` فما كانت لتُمسَح لولا هذا السطر: نسخةٌ
+  //    جديدةٌ من شاشةِ تقريرٍ تسقط من الحارس صامتةً لأنّها في مجلّدٍ آخر.
+  'lib/presentation/reports_picpos/screens/ar_aging_report_picpos_screen.dart':
       'arAgingReportProvider',
 };
 
