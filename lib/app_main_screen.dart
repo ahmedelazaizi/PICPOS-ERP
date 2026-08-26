@@ -83,6 +83,7 @@ import 'presentation/screens/purchase_orders_screen.dart';
 import 'presentation/screens/commercial_papers_screen.dart';
 import 'presentation/settings_picpos/screens/cheques_picpos_screen.dart';
 import 'presentation/screens/fixed_assets_screen.dart';
+import 'presentation/fixed_assets_picpos/screens/fixed_assets_picpos_screen.dart';
 import 'presentation/screens/general_ledger_screen.dart';
 import 'presentation/screens/sales_orders_screen.dart';
 import 'presentation/screens/branch_performance_screen.dart';
@@ -900,7 +901,12 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
       ),
       ScreenConfig(
         appScreen: AppScreen.fixedAssets,
-        builder: (_) => const FixedAssetsScreen(),
+        // فوركُ PicPos على «PicPos Fixed Assets.dc.html» بتبويباته الخمسة —
+        // الأصول والإهلاك الدوري والفئات والاستبعاد والتوزيع على المواقع،
+        // وشاشةُ UralCash تبقى كما هي بلا مساس.
+        builder: (_) => Brand.isPicPos
+            ? const FixedAssetsPicposScreen()
+            : const FixedAssetsScreen(),
         label: 'الأصول الثابتة',
         icon: PhosphorIconsBold.buildings,
       ),
