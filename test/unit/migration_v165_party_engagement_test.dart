@@ -106,8 +106,11 @@ void main() {
     expect(claims, isEmpty);
   });
 
-  test('رقمُ المخطَّط ١٦٥', () async {
-    expect(db.schemaVersion, 165);
+  test('رقمُ المخطَّط بلغ ١٦٥ فأكثر', () async {
+    // ⚠️ **«بلغ» لا «تجمّد»** — والدرسُ من `migration_v164` الذي سقط بتوكيدٍ
+    //    مساوٍ لحظةَ رُفع المخطَّط هنا. الجدولان أعلاه هما دليلُ أنّ الخطوةَ
+    //    جرت، والرقمُ حدٌّ أدنى لا سقف.
+    expect(db.schemaVersion, greaterThanOrEqualTo(165));
   });
 
   test('الافتراضاتُ كما أُعلنت — والحالةُ تبدأ مسوّدة', () async {
