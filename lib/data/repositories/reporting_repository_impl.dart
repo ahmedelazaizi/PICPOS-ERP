@@ -24,6 +24,21 @@ class ReportingRepositoryImpl implements IReportingRepository {
   );
 
   @override
+  Future<List<Map<String, dynamic>>> getMonthlyPerformanceSeries({
+    required DateTime from,
+    required DateTime to,
+    int? costCenterId,
+    List<int>? warehouseIds,
+    Set<int>? allowedBranchIds,
+  }) => _db.getMonthlyPerformanceSeries(
+    from: from,
+    to: to,
+    costCenterId: costCenterId,
+    warehouseIds: warehouseIds,
+    allowedBranchIds: allowedBranchIds,
+  );
+
+  @override
   Future<List<TopSellingProductRow>> getTopSellingProducts({
     required int limit,
     required DateTime from,

@@ -56,6 +56,7 @@ import 'presentation/products_picpos/screens/products_picpos_screen.dart';
 import 'presentation/screens/categories_screen.dart';
 import 'presentation/categories_picpos/screens/categories_picpos_screen.dart';
 import 'presentation/screens/analytics_dashboard_screen.dart';
+import 'presentation/analytics_picpos/screens/analytics_picpos_screen.dart';
 import 'presentation/screens/hr_screen.dart';
 import 'presentation/screens/activity_log_screen.dart';
 import 'presentation/activity_log_picpos/screens/activity_log_picpos_screen.dart';
@@ -741,7 +742,13 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
       ),
       ScreenConfig(
         appScreen: AppScreen.analytics,
-        builder: (_) => const AnalyticsDashboardScreen(),
+        // فوركُ PicPos على «PicPos Performance Analytics.dc.html» — خمسةُ
+        // مؤشّراتٍ بسلاسلَ شهريّةٍ وانحدارٍ خطّيٍّ وتنبّؤٍ وموسميّة، محسوبةٌ
+        // كلُّها بـ`PerformanceAnalyticsService` القائم. وشاشةُ UralCash تبقى
+        // كما هي بلا مساس.
+        builder: (_) => Brand.isPicPos
+            ? const AnalyticsPicposScreen()
+            : const AnalyticsDashboardScreen(),
         label: 'التحليلات',
         icon: PhosphorIconsBold.chartPie,
       ),

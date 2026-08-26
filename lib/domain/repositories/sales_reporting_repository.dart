@@ -27,6 +27,18 @@ abstract class ISalesReportingRepository {
     Set<int>? allowedBranchIds,
   });
 
+  /// Monthly performance series for the analytics screen.
+  ///
+  /// One row per month that has activity, keyed
+  /// `ym` / `net_sales` / `invoice_count` / `cogs` / `expenses`.
+  Future<List<Map<String, dynamic>>> getMonthlyPerformanceSeries({
+    required DateTime from,
+    required DateTime to,
+    int? costCenterId,
+    List<int>? warehouseIds,
+    Set<int>? allowedBranchIds,
+  });
+
   Future<double> getTotalSales({required DateTime from, required DateTime to});
 
   Future<int> getSalesCount({required DateTime from, required DateTime to});

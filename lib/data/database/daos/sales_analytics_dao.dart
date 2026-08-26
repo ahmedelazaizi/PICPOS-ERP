@@ -418,6 +418,131 @@ extension SalesAnalyticsDao on AppDatabase {
         .toList();
   }
 
+  /// السلسلةُ الشهريّةُ لمؤشّرات الأداء — أساسُ شاشة التحليلات.
+  ///
+  /// تعيد صفّاً لكلّ شهرٍ فيه حركةٌ بالمفاتيح:
+  /// `ym` · `net_sales` · `invoice_count` · `cogs` · `expenses`
+  ///
+  /// ── ⚠️ ثلاثةُ استعلاماتٍ لا واحدٌ موصول ──────────────────────────────
+  ///
+  /// ضمُّ `sales_invoice_items` إلى `sales_invoices` في استعلامٍ واحدٍ
+  /// **يُفسد المبيعاتِ والعدّ معاً**: الصفُّ يتكرّر بعدد بنود الفاتورة،
+  /// فـ`SUM(total)` تجمع الإجماليَّ مرّةً لكلّ بند و`COUNT` تعدّ البنودَ لا
+  /// الفواتير. فالمبيعاتُ والعدُّ من جدول الفواتير، والتكلفةُ من جدول البنود،
+  /// والمصروفُ من جدوله — وتُدمَج بالشهر في Dart.
+  ///
+  /// ── ⚠️ وصيغةُ الشهر تختلف بالخلفيّة ─────────────────────────────────
+  ///
+  /// `strftime` دالّةُ SQLite وحدَها، والمستودعُ يعمل على PostgreSQL كذلك —
+  /// فالتعبيرُ يُفرَّع كما في [getDailySalesForRange] تماماً. ونمطُ الناتج
+  /// `YYYY-MM` في الحالتين فيصلح مفتاحَ دمج.
+  Future<List<Map<String, dynamic>>> getMonthlyPerformanceSeries({
+    required DateTime from,
+    required DateTime to,
+    int? costCenterId,
+    List<int>? warehouseIds,
+    Set<int>? allowedBranchIds,
+  }) async {
+    final cc =
+        await _buildCostCenterFilter(costCenterId, tableAlias: 'sales_invoices');
+    final az = _buildAuthScopeFilter(allowedBranchIds, tableAlias: 'sales_invoices');
+
+    String whFilter = '';
+    final whVars = <Variable>[];
+    if (warehouseIds != null) {
+      if (warehouseIds.isEmpty) {
+        whFilter = 'AND 1 = 0';
+      } else {
+        whFilter =
+            'AND sales_invoices.warehouse_id IN (${warehouseIds.map((_) => '?').join(', ')})';
+        whVars.addAll(warehouseIds.map((id) => Variable<int>(id)));
+      }
+    }
+
+    String monthOf(String col) => isPostgres
+        ? "to_char(to_timestamp($col), 'YYYY-MM')"
+        : "strftime('%Y-%m', $col, 'unixepoch', 'localtime')";
+
+    // نفسُ مرشِّحات [getDailySalesForRange] حرفاً بحرف — المحذوفُ والمرتجعُ
+    // خارجَ الحساب، وإلّا خالفت التحليلاتُ تقريرَ المبيعات على نفس المدى.
+    const invoiceScope = '''
+        AND is_deleted = 0
+        AND (sale_type IS NULL OR sale_type != 'return')''';
+
+    final salesRows = await customSelect(
+      '''
+      SELECT ${monthOf('invoice_date')} as ym,
+             SUM(total)  as net_sales,
+             COUNT(id)   as invoice_count
+      FROM sales_invoices
+      WHERE invoice_date BETWEEN ? AND ?$invoiceScope
+        ${cc.filter} $whFilter${az.filter}
+      GROUP BY ym
+      ''',
+      variables: [dateVar(from), dateVar(to), ...cc.vars, ...whVars, ...az.vars],
+      readsFrom: {salesInvoices},
+    ).get();
+
+    final cogsRows = await customSelect(
+      '''
+      SELECT ${monthOf('sales_invoices.invoice_date')} as ym,
+             SUM(sales_invoice_items.quantity * sales_invoice_items.cost_price) as cogs
+      FROM sales_invoice_items
+      JOIN sales_invoices ON sales_invoices.id = sales_invoice_items.invoice_id
+      WHERE sales_invoices.invoice_date BETWEEN ? AND ?$invoiceScope
+        ${cc.filter} $whFilter${az.filter}
+      GROUP BY ym
+      ''',
+      variables: [dateVar(from), dateVar(to), ...cc.vars, ...whVars, ...az.vars],
+      readsFrom: {salesInvoices, salesInvoiceItems},
+    ).get();
+
+    final expenseRows = await customSelect(
+      '''
+      SELECT ${monthOf('expense_date')} as ym,
+             COALESCE(SUM(amount), 0) as expenses
+      FROM op_expenses
+      WHERE expense_date BETWEEN ? AND ?
+      GROUP BY ym
+      ''',
+      variables: [dateVar(from), dateVar(to)],
+      readsFrom: {opExpenses},
+    ).get();
+
+    final byMonth = <String, Map<String, dynamic>>{};
+    Map<String, dynamic> slot(String ym) => byMonth.putIfAbsent(
+        ym,
+        () => <String, dynamic>{
+              'ym': ym,
+              'net_sales': 0.0,
+              'invoice_count': 0,
+              'cogs': 0.0,
+              'expenses': 0.0,
+            });
+
+    for (final r in salesRows) {
+      final ym = r.data['ym'] as String?;
+      if (ym == null) continue;
+      final s = slot(ym);
+      s['net_sales'] = (r.data['net_sales'] as num?)?.toDouble() ?? 0.0;
+      s['invoice_count'] = (r.data['invoice_count'] as num?)?.toInt() ?? 0;
+    }
+    for (final r in cogsRows) {
+      final ym = r.data['ym'] as String?;
+      if (ym == null) continue;
+      slot(ym)['cogs'] = (r.data['cogs'] as num?)?.toDouble() ?? 0.0;
+    }
+    for (final r in expenseRows) {
+      final ym = r.data['ym'] as String?;
+      if (ym == null) continue;
+      slot(ym)['expenses'] = (r.data['expenses'] as num?)?.toDouble() ?? 0.0;
+    }
+
+    final out = byMonth.values.toList()
+      ..sort((a, b) => (a['ym'] as String).compareTo(b['ym'] as String));
+    return out;
+  }
+
   // ═══════════════════════════════════════════════════════════════════════
   // PAYMENT & CATEGORY ANALYTICS
   // ═══════════════════════════════════════════════════════════════════════
