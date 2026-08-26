@@ -109,6 +109,22 @@ PartyOpenInvoiceRow _open(
       daysLate: daysLate,
     );
 
+PartyPaymentMatchRow _pay(
+  String number,
+  double amount,
+  double allocated,
+  int invoiceCount,
+) =>
+    PartyPaymentMatchRow(
+      paymentId: number.hashCode,
+      paymentNumber: number,
+      paymentDate: DateTime(2026, 8, 20),
+      amount: amount,
+      allocated: allocated,
+      method: 'نقدي',
+      invoiceCount: invoiceCount,
+    );
+
 CommercialPaperData _paper(int id, String number, String status, double amt) =>
     CommercialPaperData(
       id: id,
@@ -357,6 +373,84 @@ void main() {
       findsNothing,
       reason: 'الشريحةُ رُسمت ولم تُرشِّح — وهي تكذب كزرٍّ لا يفعل',
     );
+    await teardownTree(tester);
+  });
+
+  // ═══ بحثُ الترويسة — `HEADS.hint` في التصميم ════════════════════════════
+  //
+  // ⚠️ يُفحَص على **تبويبتين مختلفتَين** لأنّ آليّتَهما مختلفة: الجدولُ يرشِّح
+  //    صفوفاً واللوحةُ ترشِّح بطاقات. وفحصُ إحداهما وحدَها كان سيمرّ أخضرَ
+  //    بينما البحثُ معطَّلٌ على نصف الشاشة.
+  testWidgets('بحثُ الترويسة يُرشِّح صفوفَ الجدول', (tester) async {
+    await open2(tester, const Size(1500, 900), asSupplier: false);
+
+    expect(find.text('INV-0842'), findsOneWidget);
+    expect(find.text('RCP-0498'), findsOneWidget);
+
+    await tester.enterText(
+      find.widgetWithText(TextField, 'ابحث بمستند أو مبلغ داخل الكشف...'),
+      'RCP',
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('RCP-0498'), findsOneWidget);
+    expect(find.text('INV-0842'), findsNothing,
+        reason: 'البحثُ رُسم ولم يُرشِّح');
+
+    // ومجاميعُ الجدول تتبع البحث — «٥ حركة» فوق صفٍّ واحدٍ رقمٌ يكذب.
+    //
+    // ⚠️ ولا يُفحَص هنا **شارةُ التبويبة**: هي عددُ حركات **الفترة** لا عددُ
+    //    ما يظهر، والبحثُ عدسةٌ عابرةٌ لا يغيّر ما تحمله الفترة. فبقاؤها ٥
+    //    صوابٌ لا عطب.
+    expect(find.text('1 حركة'), findsOneWidget,
+        reason: 'مجموعُ الجدول لم يتبع البحث');
+    expect(find.text('5 حركة'), findsNothing);
+    await teardownTree(tester);
+  });
+
+  testWidgets('بحثُ الترويسة يُرشِّح بطاقاتِ لوحة المطابقة', (tester) async {
+    await open2(
+      tester,
+      const Size(1500, 900),
+      asSupplier: false,
+      repo: _FakePartiesRepo(
+        parties: [customer],
+        entries: entries,
+        open: open,
+        payments: [
+          _pay('RCP-0552', 11540, 0, 0),
+          _pay('RCP-0410', 34180, 34180, 1),
+        ],
+      ),
+    );
+    await tester.tap(find.text('مطابقة الدفعات').first);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('RCP-0552'), findsWidgets);
+    expect(find.textContaining('RCP-0410'), findsWidgets);
+
+    await tester.enterText(
+      find.widgetWithText(TextField, 'ابحث بمستند أو مبلغ داخل الكشف...'),
+      '0410',
+    );
+    await tester.pumpAndSettle();
+    expect(find.textContaining('RCP-0410'), findsWidgets);
+    expect(
+      find.textContaining('RCP-0552'),
+      findsNothing,
+      reason: 'اللوحةُ لا تسمع البحثَ — فتبويبةٌ كاملةٌ يبدو البحثُ فيها معطَّلاً',
+    );
+    await teardownTree(tester);
+  });
+
+  testWidgets('بحثٌ بلا نتيجةٍ يقول ذلك ولا يُرى جدولاً فارغاً',
+      (tester) async {
+    await open2(tester, const Size(1500, 900), asSupplier: false);
+    await tester.enterText(
+      find.widgetWithText(TextField, 'ابحث بمستند أو مبلغ داخل الكشف...'),
+      'لا-يوجد-مثل-هذا',
+    );
+    await tester.pumpAndSettle();
+    expect(find.textContaining('لا نتيجةَ للبحث'), findsWidgets);
     await teardownTree(tester);
   });
 

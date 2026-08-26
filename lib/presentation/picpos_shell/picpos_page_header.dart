@@ -94,14 +94,41 @@ class PicPosPageHeader extends StatelessWidget {
             ),
           ),
           const Spacer(),
-          if (search != null) ...[
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 320),
-              child: search!,
+          // ⚠️ **مجموعةُ الذيل تتمرّر بدل أن تفيض.** البحثُ والأزرارُ كانا
+          // ودجتاتٍ عاريةً في الصفّ، فيأخذان عرضَهما الطبيعيَّ كاملاً مهما
+          // ضاقت الشاشة. وشاشةٌ تجمع بحثاً (٣٢٠) ومنتقيَ طرفٍ وزرَّي تصديرٍ
+          // وطباعةٍ تفيض ٢٧٤ بكسل على عرض ٨٢٠ — أمسكه اختبارُ تركيب كشف
+          // الحساب لا التحليل.
+          //
+          // والسقفُ نسبةٌ من العرض المتاح، فهو **بلا أثرٍ حين يتّسع المقام**:
+          // المجموعةُ تأخذ حجمَها الطبيعيَّ كما كانت، ولا تتمرّر إلّا حين
+          // كانت ستفيض. وتُبقى ٢٨٪ للعنوان فلا يُقصّ إلى نقطتين.
+          LayoutBuilder(
+            builder: (context, c) => ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: c.maxWidth.isFinite ? c.maxWidth * 0.72 : 720,
+              ),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                // الأزرارُ آخرَ المجموعة، وهي المقصودةُ بالضغط — فتبقى ظاهرةً
+                // ويتوارى البحثُ أوّلاً عند الضيق.
+                reverse: true,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (search != null) ...[
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 320),
+                        child: search!,
+                      ),
+                      const SizedBox(width: 12),
+                    ],
+                    ...actions,
+                  ],
+                ),
+              ),
             ),
-            const SizedBox(width: 12),
-          ],
-          ...actions,
+          ),
         ],
       ),
     );

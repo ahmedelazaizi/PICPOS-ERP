@@ -126,6 +126,9 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
   DateTimeRange get range;
   DateFormat get df;
 
+  /// نصُّ البحث في الترويسة — يُرشِّح المحمَّلَ ولا يُعيد الاستعلام.
+  ValueListenable<String> get query;
+
   IPartiesRepository get _repo => ref.read(partiesRepositoryProvider);
 
   Future<_TabData> loadTab(String id) {
@@ -283,6 +286,7 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
       blocks: [
         PicPosHubKpiRow(items: kpis),
         _FilterableTable<PartyStatementEntry>(
+          query: query,
           title: 'كشف الحركة — الرصيد الجاري',
           subtitle: isSupplier
               ? 'الدائن يزيد ما علينا للمورد والمدين ينقصه · الرصيد الجاري تراكمي'
@@ -460,6 +464,7 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
           ],
         ),
         _FilterableTable<PartyOpenInvoiceRow>(
+          query: query,
           title: 'الفواتير القائمة وأعمارها',
           subtitle: 'كل فاتورة بما سُدّد منها وما تبقّى وعمر تأخرها',
           columns: const [
@@ -614,6 +619,7 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
       blocks: [
         PicPosHubKpiRow(items: kpis),
         _FilterableTable<PartyOpenInvoiceRow>(
+          query: query,
           title: 'المستحق للمورد وتواريخه',
           subtitle: 'الخصم النقدي المتاح يُقارن بتكلفة الاحتفاظ بالنقد',
           columns: const [
@@ -799,7 +805,11 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
           icon: PhosphorIconsBold.link,
           showDivider: false,
         ),
-        PicPosStatusBoard(
+        // ⚠️ **تُمرَّر البطاقاتُ كاملةً بلا `take`**: القصُّ يقع في
+        //    `_FilterableBoard` **بعد** الترشيح، وإلّا بحث المشغّلُ في ستٍّ
+        //    وهو يظنّ أنّه يبحث في الكلّ.
+        _FilterableBoard(
+          query: query,
           columns: [
             PicPosBoardColumn(
               label: 'دفعات غير مطابَقة',
@@ -807,7 +817,7 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
               tint: _tintWarn,
               total: loose.length,
               cards: [
-                for (final p in loose.take(6))
+                for (final p in loose)
                   PicPosBoardCard(
                     title: '${p.paymentNumber} · ${_money(p.amount)}',
                     subtitle: '${df.format(p.paymentDate)} · ${p.method}',
@@ -829,7 +839,7 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
               tint: _tintOk,
               total: matched.length,
               cards: [
-                for (final p in matched.take(6))
+                for (final p in matched)
                   PicPosBoardCard(
                     title: p.paymentNumber,
                     subtitle: '${df.format(p.paymentDate)} · ${p.method}',
@@ -904,7 +914,8 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
       icon: PhosphorIconsBold.lightbulb,
       tint: _tintBrand,
       total: cards.length,
-      cards: cards.take(6).toList(),
+      // بلا `take` — القصُّ في `_FilterableBoard` بعد الترشيح.
+      cards: cards,
     );
   }
 
@@ -973,6 +984,7 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
       blocks: [
         PicPosHubKpiRow(items: kpis),
         _FilterableTable<PoMatchRow>(
+          query: query,
           title: 'مطابقة أمر الشراء بالمستلم بالمفوتر',
           subtitle: 'الفرق بين المستلم والمفوتر هو ما يُطالَب به المورد · كميات',
           minWidth: 860,
@@ -1113,6 +1125,7 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
       blocks: [
         PicPosHubKpiRow(items: kpis),
         _FilterableTable<CommercialPaperData>(
+          query: query,
           title: isSupplier
               ? 'الأوراق الصادرة والمقايضات'
               : 'الأوراق التجارية والضمانات',
@@ -1391,22 +1404,25 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
     return _TabData(
       blocks: [
         PicPosHubKpiRow(items: kpis),
-        PicPosDataTable(
+        // مجموعةٌ واحدةٌ («البيانات» في التصميم) — والحاويةُ هنا لأجل البحث
+        // لا لأجل الشرائح: بحثُ الترويسة يجب أن يعمل في كلّ تبويبة، وتبويبةٌ
+        // واحدةٌ لا يعمل فيها تجعل المشغّلَ يظنّ البحثَ معطَّلاً.
+        _FilterableTable<PicPosTableRow>(
+          query: query,
           title: isSupplier
               ? 'ملف المورد وشروط التعامل'
               : 'ملف العميل وشروط التعامل',
           subtitle: isSupplier
               ? 'الشروط المتفقة تُطبَّق تلقائياً على كل أمر شراء'
               : 'حد الائتمان يُفحص لحظياً قبل كل فاتورة آجلة',
-          chips: [PicPosTableChip(label: 'البيانات', count: '${rows.length}')],
-          selectedChip: 0,
           minWidth: 560,
           columns: const [
             PicPosTableColumn('البند', flex: 1.6),
             PicPosTableColumn('القيمة', flex: 2.2),
             PicPosTableColumn('الحالة', flex: 1.4),
           ],
-          rows: rows,
+          groups: [(label: 'البيانات', items: rows)],
+          buildRow: (r) => r,
         ),
       ],
     );
@@ -1436,7 +1452,29 @@ class _Pending {
   double left;
 }
 
-/// جدولٌ شرائحُه **تُرشِّح فعلاً**.
+/// هل يطابق الصفُّ نصَّ البحث؟
+///
+/// يُقرأ **ما يراه المشغّلُ في الصفّ** — نصوصُ الخلايا الستّ كلُّها ومعها
+/// أسطرُها الخافتة. والبحثُ في الكائن المصدر بدلاً منها كان سيجد ما لا يظهر
+/// ويُخفق فيما يظهر (رقمُ المستند مثلاً مُنسَّقٌ في الخليّة لا في الصفّ).
+///
+/// و`PicPosCell` مغلقةٌ (`sealed`)، فالتبديلُ شاملٌ بالبناء: خليّةٌ جديدةٌ في
+/// اللبنة تكسر الترجمةَ هنا بدل أن تسقط من البحث صامتة.
+bool _rowMatches(PicPosTableRow row, String q) {
+  for (final c in row.cells) {
+    final text = switch (c) {
+      PicPosTextCell(:final text, :final sub) => '$text ${sub ?? ''}',
+      PicPosPillCell(:final text) => text,
+      PicPosBarCell(:final text) => text,
+      PicPosTrendCell(:final text) => text,
+      PicPosButtonCell(:final text) => text,
+    };
+    if (text.toLowerCase().contains(q)) return true;
+  }
+  return false;
+}
+
+/// جدولٌ شرائحُه **تُرشِّح فعلاً**، ويسمع بحثَ الترويسة.
 ///
 /// `PicPosDataTable` بلا حالة (‏تأخذ `rows` و`selectedChip` جاهزَين)، وتحميلُ
 /// التبويبة يقع في دالّةٍ غيرِ متزامنةٍ لا في `build`. فبلا هذه الحاويةِ كانت
@@ -1447,6 +1485,7 @@ class _FilterableTable<T> extends StatefulWidget {
     required this.columns,
     required this.groups,
     required this.buildRow,
+    required this.query,
     this.subtitle,
     this.totals,
     this.minWidth = 760,
@@ -1456,13 +1495,15 @@ class _FilterableTable<T> extends StatefulWidget {
   final String? subtitle;
   final List<PicPosTableColumn> columns;
 
-  /// شريحةٌ لكلّ مجموعة، وعدّادُها طولُها.
+  /// شريحةٌ لكلّ مجموعة، وعدّادُها طولُها بعدَ البحث.
   final List<({String label, List<T> items})> groups;
 
   final PicPosTableRow Function(T) buildRow;
 
-  /// مجاميعُ **المعروض** — تُعاد لكلّ شريحةٍ على حدة.
+  /// مجاميعُ **المعروض** — تُعاد لكلّ شريحةٍ وبحثٍ على حدة.
   final List<String> Function(List<T>)? totals;
+
+  final ValueListenable<String> query;
 
   final double minWidth;
 
@@ -1475,25 +1516,110 @@ class _FilterableTableState<T> extends State<_FilterableTable<T>> {
 
   @override
   Widget build(BuildContext context) {
-    // مدىً آمنٌ بعد تبديل الطرف أو المدى: عددُ المجموعات قد يتغيّر.
-    final sel = _sel < widget.groups.length ? _sel : 0;
-    final items = widget.groups.isEmpty ? <T>[] : widget.groups[sel].items;
-    return PicPosDataTable(
-      title: widget.title,
-      subtitle: widget.subtitle,
-      minWidth: widget.minWidth,
-      columns: widget.columns,
-      selectedChip: sel,
-      chips: [
-        for (var i = 0; i < widget.groups.length; i++)
-          PicPosTableChip(
-            label: widget.groups[i].label,
-            count: '${widget.groups[i].items.length}',
-            onTap: () => setState(() => _sel = i),
-          ),
-      ],
-      rows: [for (final it in items) widget.buildRow(it)],
-      totals: widget.totals?.call(items),
+    return ValueListenableBuilder<String>(
+      valueListenable: widget.query,
+      builder: (context, raw, _) {
+        final q = raw.trim().toLowerCase();
+        // مدىً آمنٌ بعد تبديل الطرف أو المدى: عددُ المجموعات قد يتغيّر.
+        final sel = _sel < widget.groups.length ? _sel : 0;
+
+        /// يبني صفوفَ المجموعة ويُبقي المطابقَ منها وحدَه.
+        List<({T item, PicPosTableRow row})> pairs(List<T> src) {
+          final out = <({T item, PicPosTableRow row})>[];
+          for (final it in src) {
+            final row = widget.buildRow(it);
+            if (q.isEmpty || _rowMatches(row, q)) out.add((item: it, row: row));
+          }
+          return out;
+        }
+
+        // النوعُ صريحٌ: `const []` في طرفِ الشرطيّة كانت تُنزل الاستدلالَ إلى
+        // `dynamic` فتضيع أنواعُ الخانات في السطرين التاليين.
+        final List<({T item, PicPosTableRow row})> shown =
+            widget.groups.isEmpty ? [] : pairs(widget.groups[sel].items);
+
+        return PicPosDataTable(
+          title: widget.title,
+          subtitle: widget.subtitle,
+          minWidth: widget.minWidth,
+          columns: widget.columns,
+          selectedChip: sel,
+          chips: [
+            for (var i = 0; i < widget.groups.length; i++)
+              PicPosTableChip(
+                label: widget.groups[i].label,
+                // ⚠️ **العدّادُ يُحسَب بعد البحث.** ولو بقي طولَ المجموعة
+                //    الكاملةِ لقرأ المشغّلُ «فواتير ١٨» فوقَ ثلاثة صفوف.
+                count: q.isEmpty
+                    ? '${widget.groups[i].items.length}'
+                    : '${pairs(widget.groups[i].items).length}',
+                onTap: () => setState(() => _sel = i),
+              ),
+          ],
+          rows: [for (final p in shown) p.row],
+          totals: widget.totals?.call([for (final p in shown) p.item]),
+          emptyLabel: q.isEmpty
+              ? 'لا صفوفَ لعرضها'
+              : 'لا نتيجةَ للبحث عن «$raw»',
+        );
+      },
+    );
+  }
+}
+
+/// هل تطابق بطاقةُ اللوحة نصَّ البحث؟ — نفسُ قاعدةِ الصفّ: ما يُقرأ فيها.
+bool _cardMatches(PicPosBoardCard c, String q) =>
+    '${c.title} ${c.subtitle} ${c.value} ${c.meta}'.toLowerCase().contains(q);
+
+/// لوحةُ حالاتٍ تسمع بحثَ الترويسة.
+///
+/// ⚠️ **بلا هذه الحاوية كان البحثُ يبدو معطَّلاً على تبويبةٍ كاملة**: تبويبةُ
+/// «مطابقة الدفعات» لوحةٌ لا جدول، فكتابةُ رقمِ سندٍ فيها ما كانت تفعل شيئاً
+/// ولا تقول لماذا.
+///
+/// ⚠️ **والقصُّ يقع هنا لا عند البناء**: تصلها البطاقاتُ **كاملةً** فتُرشِّحها
+/// ثمّ تعرض منها [maxCards]. ولو قُصَّت قبلها لبحث المشغّلُ في ستٍّ ظانّاً
+/// أنّه يبحث في الكلّ.
+class _FilterableBoard extends StatelessWidget {
+  const _FilterableBoard({required this.columns, required this.query});
+
+  /// أعمدةٌ تحمل بطاقاتِها **كلَّها**، و`total` عددُها الكلّيّ.
+  final List<PicPosBoardColumn> columns;
+  final ValueListenable<String> query;
+
+  /// ما يُعرَض من كلّ عمود — والعدّادُ في الرأس يقول الباقي.
+  static const int _maxCards = 6;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<String>(
+      valueListenable: query,
+      builder: (context, raw, _) {
+        final q = raw.trim().toLowerCase();
+        return PicPosStatusBoard(
+          emptyLabel: q.isEmpty ? 'لا شيءَ هنا' : 'لا نتيجةَ للبحث',
+          columns: [
+            for (final col in columns)
+              () {
+                final kept = q.isEmpty
+                    ? col.cards
+                    : [
+                        for (final c in col.cards)
+                          if (_cardMatches(c, q)) c,
+                      ];
+                return PicPosBoardColumn(
+                  label: col.label,
+                  icon: col.icon,
+                  tint: col.tint,
+                  // العدّادُ يقول عددَ ما يخصّ الحالةَ الآن: الكلَّ بلا بحثٍ،
+                  // والمطابقَ مع بحث.
+                  total: q.isEmpty ? col.total : kept.length,
+                  cards: kept.take(_maxCards).toList(),
+                );
+              }(),
+          ],
+        );
+      },
     );
   }
 }

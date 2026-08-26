@@ -33,7 +33,7 @@
 // والطباعةُ وهما فعلان لهما كودٌ عاملٌ يُنقَل.
 import 'dart:async' show unawaited;
 
-import 'package:flutter/foundation.dart' show Uint8List;
+import 'package:flutter/foundation.dart' show Uint8List, ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
@@ -133,6 +133,23 @@ class _PartyStatementPicposScreenState
 
   final DateFormat _df = DateFormat('yyyy/MM/dd');
 
+  final TextEditingController _searchCtrl = TextEditingController();
+
+  /// نصُّ البحث — `HEADS.hint` في التصميم: «ابحث بمستند أو مبلغ داخل الكشف».
+  ///
+  /// ⚠️ **مُبلِّغٌ لا حقلُ حالة**، لأنّ لبناتِ التبويبة تُبنى داخلَ دالّةِ
+  /// التحميل غيرِ المتزامنة وتُخزَّن في `_futures`. فقيمةٌ تُمرَّر وقتَ البناء
+  /// تتجمّد عند لحظة التحميل ولا تتحرّك بعدها، و`setState` لا يُعيد بناءَها
+  /// لأنّ المستقبلَ مخزَّن. والمُبلِّغُ ثابتٌ عبر عمر الشاشة فتسمعه اللبناتُ
+  /// مهما قَدُم بناؤها.
+  ///
+  /// ⚠️ **والبحثُ لا يُعيد الاستعلام**: يُرشِّح المحمَّلَ في الذاكرة. فمفتاحُ
+  /// `_futures` لا يحمله، وكتابةُ حرفٍ لا تضرب القاعدة.
+  final ValueNotifier<String> _queryVN = ValueNotifier<String>('');
+
+  @override
+  ValueListenable<String> get query => _queryVN;
+
   @override
   bool get isSupplier => widget.isSupplier;
 
@@ -164,6 +181,8 @@ class _PartyStatementPicposScreenState
   @override
   void dispose() {
     _tabs.dispose();
+    _searchCtrl.dispose();
+    _queryVN.dispose();
     super.dispose();
   }
 
@@ -274,6 +293,31 @@ class _PartyStatementPicposScreenState
           ? PhosphorIconsBold.truck
           : PhosphorIconsBold.userList,
       bodyPadding: EdgeInsets.zero,
+      headerSearch: hasParty
+          ? TextField(
+              controller: _searchCtrl,
+              onChanged: (v) => _queryVN.value = v,
+              decoration: InputDecoration(
+                isDense: true,
+                hintText: 'ابحث بمستند أو مبلغ داخل الكشف...',
+                prefixIcon:
+                    const Icon(PhosphorIconsBold.magnifyingGlass, size: 16),
+                suffixIcon: ValueListenableBuilder<String>(
+                  valueListenable: _queryVN,
+                  builder: (context, q, _) => q.isEmpty
+                      ? const SizedBox.shrink()
+                      : IconButton(
+                          icon: const Icon(PhosphorIconsBold.x, size: 14),
+                          tooltip: 'امسح البحث',
+                          onPressed: () {
+                            _searchCtrl.clear();
+                            _queryVN.value = '';
+                          },
+                        ),
+                ),
+              ),
+            )
+          : null,
       headerActions: [
         OutlinedButton.icon(
           onPressed: _loadingParties ? null : _pickParty,
@@ -283,7 +327,17 @@ class _PartyStatementPicposScreenState
                 : PhosphorIconsBold.storefront,
             size: 18,
           ),
-          label: Text(hasParty ? name : 'اختر $label'),
+          // ⚠️ **اسمُ الطرف مقصوصٌ بسقف.** الحقلُ `name` طولُه ٢٠٠ حرفاً في
+          // الجدول، واسمٌ طويلٌ في زرِّ ترويسةٍ يدفع بقيّةَ الأزرار خارجَ
+          // الشاشة مهما اتّسعت — عطبٌ لا علاقةَ له بالعرض.
+          label: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 150),
+            child: Text(
+              hasParty ? name : 'اختر $label',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
           style: OutlinedButton.styleFrom(
             foregroundColor:
                 widget.isSupplier ? AppColors.warning : AppColors.primary,
