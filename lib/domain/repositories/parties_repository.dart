@@ -144,4 +144,60 @@ abstract class IPartiesRepository {
     required bool supplier,
     int limit,
   });
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // متابعةُ التحصيل ومطالبةُ المورد (v165)
+  // ═══════════════════════════════════════════════════════════════════════
+  //
+  // ⚠️ **سجلّا تواصلٍ لا قيدَين ماليَّين**: لا يحرّكان خزنةً ولا ذمّةً ولا
+  // يكتبان قيداً. والمالُ يتحرّك بسندِ قبضٍ أو صرفٍ أو بإشعارٍ دائنٍ حين يصل.
+
+  /// متابعاتُ تحصيلِ طرفٍ من الأحدث — كلُّها أو ما يخصّ فاتورةً بعينها.
+  Future<List<PartyFollowUp>> getPartyFollowUps(
+    int partyId, {
+    int? invoiceId,
+    int limit,
+  });
+
+  /// عددُ المحاولات السابقة — «محاولات سابقة» في حوار المتابعة.
+  Future<int> countPartyFollowUps(int partyId, {int? invoiceId});
+
+  /// ⚠️ **وسائطُ عاديّةٌ لا `Companion`**: الـcompanion نوعٌ من drift، وتمريرُه
+  /// عبر الواجهة يجعل الحوارَ في طبقة العرض يعرف شكلَ الجدول. والبناءُ يقع في
+  /// الطبقة البيانيّة حيث يعيش الجدول.
+  Future<int> insertPartyFollowUp({
+    required int partyId,
+    required DateTime contactedAt,
+    required String outcome,
+    required double amountDue,
+    int? invoiceId,
+    String? invoiceNumber,
+    DateTime? promisedDate,
+    double? promisedAmount,
+    String? contactPerson,
+    DateTime? nextActionAt,
+    String? notes,
+    int? createdBy,
+  });
+
+  /// مطالباتُ مورّدٍ من الأحدث.
+  Future<List<SupplierClaim>> getSupplierClaims(int supplierId, {int limit});
+
+  /// مطالباتٌ لم تُقبَل ولم تُرفَض ولم تُسوَّ بعد.
+  Future<List<SupplierClaim>> getOpenSupplierClaims(int supplierId);
+
+  Future<int> insertSupplierClaim({
+    required int supplierId,
+    required DateTime claimDate,
+    required String settlementKind,
+    required double ledgerBalance,
+    required double netAmount,
+    required int lineCount,
+    String? linesJson,
+    DateTime? replyDueAt,
+    String? notes,
+    int? createdBy,
+  });
+
+  Future<void> updateSupplierClaimStatus(int id, String status);
 }

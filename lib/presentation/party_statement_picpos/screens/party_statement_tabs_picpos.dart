@@ -160,6 +160,52 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
     reloadTabs();
   }
 
+  /// «متابعة تحصيل» — سجلُّ محاولةٍ على فاتورةٍ بعينها.
+  ///
+  /// ⚠️ **لا يُعاد تحميلُ التبويبات إلّا إن حُفظت متابعة**: المتابعةُ لا تحرّك
+  /// رصيداً، فإلغاءُ الحوار لا يغيّر رقماً — وإعادةُ تحميلٍ بلا سببٍ تومض
+  /// الشاشةَ وتُوهم أنّ شيئاً وقع.
+  Future<void> openFollowUp(PartyOpenInvoiceRow invoice) async {
+    final p = party;
+    if (p == null) return;
+    final prior = await _repo.countPartyFollowUps(
+      p.id,
+      invoiceId: invoice.invoiceId,
+    );
+    if (!mounted) return;
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (_) => _FollowUpDialog(
+        party: p,
+        invoice: invoice,
+        priorAttempts: prior,
+      ),
+    );
+    if (saved == true && mounted) reloadTabs();
+  }
+
+  /// «تسوية ومطالبة المورد» — على فروق المطابقة الثلاثيّة.
+  ///
+  /// ⚠️ **يُفتَح على الفروق وحدَها**: الأسطرُ السليمةُ لا يُطالَب بها، وعرضُها
+  /// في الحوار كان يُغرق ما يُطالَب به فعلاً.
+  Future<void> openClaim(List<PoMatchRow> gaps) async {
+    final p = party;
+    if (p == null) return;
+    if (gaps.isEmpty) {
+      AppToast.show(context, 'لا فروقَ يُطالَب بها', type: ToastType.warning);
+      return;
+    }
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (_) => _SupplierClaimDialog(
+        party: p,
+        gaps: gaps,
+        ledgerBalance: p.balance,
+      ),
+    );
+    if (saved == true && mounted) reloadTabs();
+  }
+
   Future<_TabData> loadTab(String id) {
     if (partyId == null) return Future.value(const _TabData());
     return switch (id) {
@@ -496,6 +542,12 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
           query: query,
           title: 'الفواتير القائمة وأعمارها',
           subtitle: 'كل فاتورة بما سُدّد منها وما تبقّى وعمر تأخرها',
+          // ⚠️ **عمودا إجراءٍ لا واحدٌ كالتصميم.** التصميمُ يضع «تحصيل» وحدَه
+          //    ويفتح «متابعة» من مكانٍ لا يظهر في الصورة. والفعلان مختلفان
+          //    تماماً — أحدُهما يحرّك مالاً والآخرُ يسجّل مكالمة — فدمجُهما
+          //    في زرٍّ واحدٍ كان يُخفي أحدَهما. والحدُّ الأدنى رُفع فيتمرّر
+          //    الجدولُ أفقيّاً بدل أن تزدحم تسعةُ أعمدةٍ على شاشةٍ ضيّقة.
+          minWidth: 940,
           columns: const [
             PicPosTableColumn('الفاتورة', flex: 1.5),
             PicPosTableColumn('التاريخ', flex: 1.2),
@@ -508,6 +560,7 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
                 flex: 1.2, align: PicPosCellAlign.end),
             PicPosTableColumn('عمر التأخر', flex: 1.3),
             PicPosTableColumn('إجراء', flex: 1.2),
+            PicPosTableColumn('متابعة', flex: 1.2),
           ],
           groups: [
             (label: 'القائمة', items: open),
@@ -549,6 +602,12 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
             tint: _tintOk,
             onPressed: openVoucher,
           ),
+          PicPosButtonCell(
+            'متابعة',
+            icon: PhosphorIconsBold.phone,
+            tint: _tintBrand,
+            onPressed: () => openFollowUp(o),
+          ),
         ],
       );
 
@@ -568,6 +627,7 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
       _money(t),
       _money(p),
       _money(r),
+      '',
       '',
       '',
     ];
@@ -1045,6 +1105,7 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
             PicPosTableColumn('الفرق',
                 flex: 1.2, align: PicPosCellAlign.end),
             PicPosTableColumn('نوع الفرق', flex: 1.5),
+            PicPosTableColumn('إجراء', flex: 1.2),
           ],
           groups: [
             (label: 'الكل', items: rows),
@@ -1076,6 +1137,18 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
               r.gapKind,
               tint: r.clean ? _tintOk : _tintErr,
             ),
+            // ⚠️ **السطرُ السليمُ بلا زرّ**: لا مطالبةَ على ما طابق. والزرُّ
+            //    يفتح المطالبةَ على **كلّ** الفروق لا على سطره وحدَه — فهي
+            //    مراسلةٌ واحدةٌ تجمعها، وإرسالُ مطالبةٍ لكلّ سطرٍ يُغرق المورد.
+            if (r.clean)
+              const PicPosTextCell('—')
+            else
+              PicPosButtonCell(
+                'مطالبة',
+                icon: PhosphorIconsBold.bell,
+                tint: _tintWarn,
+                onPressed: () => openClaim(gaps),
+              ),
           ]),
           totals: (list) {
             var o = 0.0;
@@ -1093,6 +1166,7 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
               _qty(rc),
               _qty(iv),
               _qty(iv - rc),
+              '',
               '',
             ];
           },

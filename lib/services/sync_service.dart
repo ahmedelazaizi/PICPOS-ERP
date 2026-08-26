@@ -52,6 +52,8 @@ import 'sync/strategies/sales_order_sync_strategy.dart';
 import 'sync/strategies/purchase_order_sync_strategy.dart';
 // Feature 009 / T012b + T012c — Auto-Deplete BOM consumption log + POS terminals
 import 'sync/strategies/sale_bom_consumption_sync_strategy.dart';
+import 'sync/strategies/party_follow_up_sync_strategy.dart';
+import 'sync/strategies/supplier_claim_sync_strategy.dart';
 import 'sync/strategies/pos_terminal_sync_strategy.dart';
 import '../core/config/brand.dart';
 
@@ -138,6 +140,10 @@ class SyncService {
     '/api/product-batches',
     '/api/sales-orders',
     '/api/purchase-orders',
+    // v165 — يتبعان `parties` أعلاه: يُرسَل `branch_id` وإن كان المعالجُ لا
+    // يقرؤه بعد، فلا يبقى الحصرُ يوماً معلَّقاً على تعديلِ طرفَين.
+    '/api/party-follow-ups',
+    '/api/supplier-claims',
   };
 
   SyncService({required this.serverUrl, required this.localDb}) {
@@ -203,6 +209,19 @@ class SyncService {
         // tier), bill_of_materials (master sync TBD with T015), products,
         // warehouses, branches.
         SaleBomConsumptionSyncStrategy(localDb),
+        // v165 — سجلّا تواصلٍ يتبعان `parties` (المزامَنةِ في طبقةٍ أسبق).
+        //
+        // وهما في `_scopedEndpoints` كأصلهما: العميلُ يُلحق `branch_id`
+        // بالنداء. والمعالجان اليومَ لا يقرآنه — كحالِ `_getParties` بالضبط —
+        // لكنّ إرسالَه يجعل حصرَ الخادم يوماً تعديلَ معالجٍ واحدٍ لا تعديلَ
+        // طرفَين.
+        //
+        // ⚠️ **ولا يُدرَجان في `_branchScopedFullSyncEndpoints`**: تلك مسارات
+        //    **معاملاتٍ** يُصفّرها الخادمُ بلا جلسة، وإدراجُ مسارٍ مرجعيٍّ
+        //    فيها يمنع سحبَه قبل الدخول ويُخاطر بتسميم علامته — كما يحذّر
+        //    التعليقُ فوقَها. و`/api/parties` نفسُه غائبٌ عنها.
+        PartyFollowUpSyncStrategy(localDb),   // → Parties
+        SupplierClaimSyncStrategy(localDb),   // → Parties
       ],
     ];
     _strategies = [for (final tier in _tieredStrategies) ...tier];

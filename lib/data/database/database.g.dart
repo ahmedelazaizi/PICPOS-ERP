@@ -109596,6 +109596,2161 @@ class FailedAutopostsCompanion extends UpdateCompanion<FailedAutopost> {
   }
 }
 
+class $PartyFollowUpsTable extends PartyFollowUps
+    with TableInfo<$PartyFollowUpsTable, PartyFollowUp> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PartyFollowUpsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _partyIdMeta = const VerificationMeta(
+    'partyId',
+  );
+  @override
+  late final GeneratedColumn<int> partyId = GeneratedColumn<int>(
+    'party_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES parties (id)',
+    ),
+  );
+  static const VerificationMeta _invoiceIdMeta = const VerificationMeta(
+    'invoiceId',
+  );
+  @override
+  late final GeneratedColumn<int> invoiceId = GeneratedColumn<int>(
+    'invoice_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _invoiceNumberMeta = const VerificationMeta(
+    'invoiceNumber',
+  );
+  @override
+  late final GeneratedColumn<String> invoiceNumber = GeneratedColumn<String>(
+    'invoice_number',
+    aliasedName,
+    true,
+    additionalChecks: GeneratedColumn.checkTextLength(maxTextLength: 50),
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _amountDueMeta = const VerificationMeta(
+    'amountDue',
+  );
+  @override
+  late final GeneratedColumn<double> amountDue = GeneratedColumn<double>(
+    'amount_due',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _contactedAtMeta = const VerificationMeta(
+    'contactedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> contactedAt = GeneratedColumn<DateTime>(
+    'contacted_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _outcomeMeta = const VerificationMeta(
+    'outcome',
+  );
+  @override
+  late final GeneratedColumn<String> outcome = GeneratedColumn<String>(
+    'outcome',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(maxTextLength: 20),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _promisedDateMeta = const VerificationMeta(
+    'promisedDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> promisedDate = GeneratedColumn<DateTime>(
+    'promised_date',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _promisedAmountMeta = const VerificationMeta(
+    'promisedAmount',
+  );
+  @override
+  late final GeneratedColumn<double> promisedAmount = GeneratedColumn<double>(
+    'promised_amount',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _contactPersonMeta = const VerificationMeta(
+    'contactPerson',
+  );
+  @override
+  late final GeneratedColumn<String> contactPerson = GeneratedColumn<String>(
+    'contact_person',
+    aliasedName,
+    true,
+    additionalChecks: GeneratedColumn.checkTextLength(maxTextLength: 120),
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _nextActionAtMeta = const VerificationMeta(
+    'nextActionAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> nextActionAt = GeneratedColumn<DateTime>(
+    'next_action_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdByMeta = const VerificationMeta(
+    'createdBy',
+  );
+  @override
+  late final GeneratedColumn<int> createdBy = GeneratedColumn<int>(
+    'created_by',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES users (id)',
+    ),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _globalIdMeta = const VerificationMeta(
+    'globalId',
+  );
+  @override
+  late final GeneratedColumn<String> globalId = GeneratedColumn<String>(
+    'global_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _lastModifiedAtMeta = const VerificationMeta(
+    'lastModifiedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastModifiedAt =
+      GeneratedColumn<DateTime>(
+        'last_modified_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _originClientIdMeta = const VerificationMeta(
+    'originClientId',
+  );
+  @override
+  late final GeneratedColumn<String> originClientId = GeneratedColumn<String>(
+    'origin_client_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _rowVersionMeta = const VerificationMeta(
+    'rowVersion',
+  );
+  @override
+  late final GeneratedColumn<int> rowVersion = GeneratedColumn<int>(
+    'row_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    partyId,
+    invoiceId,
+    invoiceNumber,
+    amountDue,
+    contactedAt,
+    outcome,
+    promisedDate,
+    promisedAmount,
+    contactPerson,
+    nextActionAt,
+    notes,
+    createdBy,
+    createdAt,
+    globalId,
+    lastModifiedAt,
+    deletedAt,
+    originClientId,
+    rowVersion,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'party_follow_ups';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PartyFollowUp> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('party_id')) {
+      context.handle(
+        _partyIdMeta,
+        partyId.isAcceptableOrUnknown(data['party_id']!, _partyIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_partyIdMeta);
+    }
+    if (data.containsKey('invoice_id')) {
+      context.handle(
+        _invoiceIdMeta,
+        invoiceId.isAcceptableOrUnknown(data['invoice_id']!, _invoiceIdMeta),
+      );
+    }
+    if (data.containsKey('invoice_number')) {
+      context.handle(
+        _invoiceNumberMeta,
+        invoiceNumber.isAcceptableOrUnknown(
+          data['invoice_number']!,
+          _invoiceNumberMeta,
+        ),
+      );
+    }
+    if (data.containsKey('amount_due')) {
+      context.handle(
+        _amountDueMeta,
+        amountDue.isAcceptableOrUnknown(data['amount_due']!, _amountDueMeta),
+      );
+    }
+    if (data.containsKey('contacted_at')) {
+      context.handle(
+        _contactedAtMeta,
+        contactedAt.isAcceptableOrUnknown(
+          data['contacted_at']!,
+          _contactedAtMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_contactedAtMeta);
+    }
+    if (data.containsKey('outcome')) {
+      context.handle(
+        _outcomeMeta,
+        outcome.isAcceptableOrUnknown(data['outcome']!, _outcomeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_outcomeMeta);
+    }
+    if (data.containsKey('promised_date')) {
+      context.handle(
+        _promisedDateMeta,
+        promisedDate.isAcceptableOrUnknown(
+          data['promised_date']!,
+          _promisedDateMeta,
+        ),
+      );
+    }
+    if (data.containsKey('promised_amount')) {
+      context.handle(
+        _promisedAmountMeta,
+        promisedAmount.isAcceptableOrUnknown(
+          data['promised_amount']!,
+          _promisedAmountMeta,
+        ),
+      );
+    }
+    if (data.containsKey('contact_person')) {
+      context.handle(
+        _contactPersonMeta,
+        contactPerson.isAcceptableOrUnknown(
+          data['contact_person']!,
+          _contactPersonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('next_action_at')) {
+      context.handle(
+        _nextActionAtMeta,
+        nextActionAt.isAcceptableOrUnknown(
+          data['next_action_at']!,
+          _nextActionAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('created_by')) {
+      context.handle(
+        _createdByMeta,
+        createdBy.isAcceptableOrUnknown(data['created_by']!, _createdByMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('global_id')) {
+      context.handle(
+        _globalIdMeta,
+        globalId.isAcceptableOrUnknown(data['global_id']!, _globalIdMeta),
+      );
+    }
+    if (data.containsKey('last_modified_at')) {
+      context.handle(
+        _lastModifiedAtMeta,
+        lastModifiedAt.isAcceptableOrUnknown(
+          data['last_modified_at']!,
+          _lastModifiedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    if (data.containsKey('origin_client_id')) {
+      context.handle(
+        _originClientIdMeta,
+        originClientId.isAcceptableOrUnknown(
+          data['origin_client_id']!,
+          _originClientIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('row_version')) {
+      context.handle(
+        _rowVersionMeta,
+        rowVersion.isAcceptableOrUnknown(data['row_version']!, _rowVersionMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PartyFollowUp map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PartyFollowUp(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      partyId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}party_id'],
+      )!,
+      invoiceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}invoice_id'],
+      ),
+      invoiceNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}invoice_number'],
+      ),
+      amountDue: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}amount_due'],
+      )!,
+      contactedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}contacted_at'],
+      )!,
+      outcome: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}outcome'],
+      )!,
+      promisedDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}promised_date'],
+      ),
+      promisedAmount: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}promised_amount'],
+      ),
+      contactPerson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}contact_person'],
+      ),
+      nextActionAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}next_action_at'],
+      ),
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      createdBy: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_by'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      globalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}global_id'],
+      ),
+      lastModifiedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_modified_at'],
+      ),
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+      originClientId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origin_client_id'],
+      ),
+      rowVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}row_version'],
+      )!,
+    );
+  }
+
+  @override
+  $PartyFollowUpsTable createAlias(String alias) {
+    return $PartyFollowUpsTable(attachedDatabase, alias);
+  }
+}
+
+class PartyFollowUp extends DataClass implements Insertable<PartyFollowUp> {
+  final int id;
+  final int partyId;
+
+  /// الفاتورةُ موضوعُ المتابعة. تقبل الفراغَ عمداً: المتابعةُ قد تكون على
+  /// الرصيد كلِّه لا على مستندٍ بعينه.
+  final int? invoiceId;
+  final String? invoiceNumber;
+
+  /// **لقطةُ** المتبقّي وقتَ المتابعة — لا يُعاد حسابُه لاحقاً.
+  ///
+  /// المتبقّي اليومَ رقمٌ آخر (سُدِّد جزءٌ أو صدرت فاتورةٌ جديدة)، وقراءةُ
+  /// المتابعة بأرقام اليوم تجعل سجلَّ الأمس يكذب عن نفسه.
+  final double amountDue;
+  final DateTime contactedAt;
+
+  /// `promise` · `no_answer` · `disputed` · `refused` — بطاقاتُ «نتيجة
+  /// الاتصال» الأربع.
+  final String outcome;
+
+  /// تفاصيلُ الوعد — تقبل الفراغَ لأنّ ثلاثاً من النتائج الأربع بلا وعد.
+  final DateTime? promisedDate;
+  final double? promisedAmount;
+
+  /// من تُكُلِّم معه عند الطرف — نصٌّ حرٌّ لأنّه ليس مستخدمَ نظام.
+  final String? contactPerson;
+
+  /// موعدُ الإجراء التالي — يُشتقّ من النتيجة (وعدٌ ⇒ تاريخُه، لم يُردّ ⇒
+  /// بعد يومين) ويُعرَض في القائمة. **ولا مؤقّتَ يوقظه**: هو تاريخٌ يُقرأ لا
+  /// تنبيهٌ يُطلَق، والفرقُ مذكورٌ في الحوار.
+  final DateTime? nextActionAt;
+  final String? notes;
+  final int? createdBy;
+  final DateTime createdAt;
+  final String? globalId;
+  final DateTime? lastModifiedAt;
+  final DateTime? deletedAt;
+  final String? originClientId;
+  final int rowVersion;
+  const PartyFollowUp({
+    required this.id,
+    required this.partyId,
+    this.invoiceId,
+    this.invoiceNumber,
+    required this.amountDue,
+    required this.contactedAt,
+    required this.outcome,
+    this.promisedDate,
+    this.promisedAmount,
+    this.contactPerson,
+    this.nextActionAt,
+    this.notes,
+    this.createdBy,
+    required this.createdAt,
+    this.globalId,
+    this.lastModifiedAt,
+    this.deletedAt,
+    this.originClientId,
+    required this.rowVersion,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['party_id'] = Variable<int>(partyId);
+    if (!nullToAbsent || invoiceId != null) {
+      map['invoice_id'] = Variable<int>(invoiceId);
+    }
+    if (!nullToAbsent || invoiceNumber != null) {
+      map['invoice_number'] = Variable<String>(invoiceNumber);
+    }
+    map['amount_due'] = Variable<double>(amountDue);
+    map['contacted_at'] = Variable<DateTime>(contactedAt);
+    map['outcome'] = Variable<String>(outcome);
+    if (!nullToAbsent || promisedDate != null) {
+      map['promised_date'] = Variable<DateTime>(promisedDate);
+    }
+    if (!nullToAbsent || promisedAmount != null) {
+      map['promised_amount'] = Variable<double>(promisedAmount);
+    }
+    if (!nullToAbsent || contactPerson != null) {
+      map['contact_person'] = Variable<String>(contactPerson);
+    }
+    if (!nullToAbsent || nextActionAt != null) {
+      map['next_action_at'] = Variable<DateTime>(nextActionAt);
+    }
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    if (!nullToAbsent || createdBy != null) {
+      map['created_by'] = Variable<int>(createdBy);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || globalId != null) {
+      map['global_id'] = Variable<String>(globalId);
+    }
+    if (!nullToAbsent || lastModifiedAt != null) {
+      map['last_modified_at'] = Variable<DateTime>(lastModifiedAt);
+    }
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || originClientId != null) {
+      map['origin_client_id'] = Variable<String>(originClientId);
+    }
+    map['row_version'] = Variable<int>(rowVersion);
+    return map;
+  }
+
+  PartyFollowUpsCompanion toCompanion(bool nullToAbsent) {
+    return PartyFollowUpsCompanion(
+      id: Value(id),
+      partyId: Value(partyId),
+      invoiceId: invoiceId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(invoiceId),
+      invoiceNumber: invoiceNumber == null && nullToAbsent
+          ? const Value.absent()
+          : Value(invoiceNumber),
+      amountDue: Value(amountDue),
+      contactedAt: Value(contactedAt),
+      outcome: Value(outcome),
+      promisedDate: promisedDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(promisedDate),
+      promisedAmount: promisedAmount == null && nullToAbsent
+          ? const Value.absent()
+          : Value(promisedAmount),
+      contactPerson: contactPerson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(contactPerson),
+      nextActionAt: nextActionAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(nextActionAt),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      createdBy: createdBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(createdBy),
+      createdAt: Value(createdAt),
+      globalId: globalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(globalId),
+      lastModifiedAt: lastModifiedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastModifiedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      originClientId: originClientId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(originClientId),
+      rowVersion: Value(rowVersion),
+    );
+  }
+
+  factory PartyFollowUp.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PartyFollowUp(
+      id: serializer.fromJson<int>(json['id']),
+      partyId: serializer.fromJson<int>(json['partyId']),
+      invoiceId: serializer.fromJson<int?>(json['invoiceId']),
+      invoiceNumber: serializer.fromJson<String?>(json['invoiceNumber']),
+      amountDue: serializer.fromJson<double>(json['amountDue']),
+      contactedAt: serializer.fromJson<DateTime>(json['contactedAt']),
+      outcome: serializer.fromJson<String>(json['outcome']),
+      promisedDate: serializer.fromJson<DateTime?>(json['promisedDate']),
+      promisedAmount: serializer.fromJson<double?>(json['promisedAmount']),
+      contactPerson: serializer.fromJson<String?>(json['contactPerson']),
+      nextActionAt: serializer.fromJson<DateTime?>(json['nextActionAt']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      createdBy: serializer.fromJson<int?>(json['createdBy']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      globalId: serializer.fromJson<String?>(json['globalId']),
+      lastModifiedAt: serializer.fromJson<DateTime?>(json['lastModifiedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      originClientId: serializer.fromJson<String?>(json['originClientId']),
+      rowVersion: serializer.fromJson<int>(json['rowVersion']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'partyId': serializer.toJson<int>(partyId),
+      'invoiceId': serializer.toJson<int?>(invoiceId),
+      'invoiceNumber': serializer.toJson<String?>(invoiceNumber),
+      'amountDue': serializer.toJson<double>(amountDue),
+      'contactedAt': serializer.toJson<DateTime>(contactedAt),
+      'outcome': serializer.toJson<String>(outcome),
+      'promisedDate': serializer.toJson<DateTime?>(promisedDate),
+      'promisedAmount': serializer.toJson<double?>(promisedAmount),
+      'contactPerson': serializer.toJson<String?>(contactPerson),
+      'nextActionAt': serializer.toJson<DateTime?>(nextActionAt),
+      'notes': serializer.toJson<String?>(notes),
+      'createdBy': serializer.toJson<int?>(createdBy),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'globalId': serializer.toJson<String?>(globalId),
+      'lastModifiedAt': serializer.toJson<DateTime?>(lastModifiedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'originClientId': serializer.toJson<String?>(originClientId),
+      'rowVersion': serializer.toJson<int>(rowVersion),
+    };
+  }
+
+  PartyFollowUp copyWith({
+    int? id,
+    int? partyId,
+    Value<int?> invoiceId = const Value.absent(),
+    Value<String?> invoiceNumber = const Value.absent(),
+    double? amountDue,
+    DateTime? contactedAt,
+    String? outcome,
+    Value<DateTime?> promisedDate = const Value.absent(),
+    Value<double?> promisedAmount = const Value.absent(),
+    Value<String?> contactPerson = const Value.absent(),
+    Value<DateTime?> nextActionAt = const Value.absent(),
+    Value<String?> notes = const Value.absent(),
+    Value<int?> createdBy = const Value.absent(),
+    DateTime? createdAt,
+    Value<String?> globalId = const Value.absent(),
+    Value<DateTime?> lastModifiedAt = const Value.absent(),
+    Value<DateTime?> deletedAt = const Value.absent(),
+    Value<String?> originClientId = const Value.absent(),
+    int? rowVersion,
+  }) => PartyFollowUp(
+    id: id ?? this.id,
+    partyId: partyId ?? this.partyId,
+    invoiceId: invoiceId.present ? invoiceId.value : this.invoiceId,
+    invoiceNumber: invoiceNumber.present
+        ? invoiceNumber.value
+        : this.invoiceNumber,
+    amountDue: amountDue ?? this.amountDue,
+    contactedAt: contactedAt ?? this.contactedAt,
+    outcome: outcome ?? this.outcome,
+    promisedDate: promisedDate.present ? promisedDate.value : this.promisedDate,
+    promisedAmount: promisedAmount.present
+        ? promisedAmount.value
+        : this.promisedAmount,
+    contactPerson: contactPerson.present
+        ? contactPerson.value
+        : this.contactPerson,
+    nextActionAt: nextActionAt.present ? nextActionAt.value : this.nextActionAt,
+    notes: notes.present ? notes.value : this.notes,
+    createdBy: createdBy.present ? createdBy.value : this.createdBy,
+    createdAt: createdAt ?? this.createdAt,
+    globalId: globalId.present ? globalId.value : this.globalId,
+    lastModifiedAt: lastModifiedAt.present
+        ? lastModifiedAt.value
+        : this.lastModifiedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    originClientId: originClientId.present
+        ? originClientId.value
+        : this.originClientId,
+    rowVersion: rowVersion ?? this.rowVersion,
+  );
+  PartyFollowUp copyWithCompanion(PartyFollowUpsCompanion data) {
+    return PartyFollowUp(
+      id: data.id.present ? data.id.value : this.id,
+      partyId: data.partyId.present ? data.partyId.value : this.partyId,
+      invoiceId: data.invoiceId.present ? data.invoiceId.value : this.invoiceId,
+      invoiceNumber: data.invoiceNumber.present
+          ? data.invoiceNumber.value
+          : this.invoiceNumber,
+      amountDue: data.amountDue.present ? data.amountDue.value : this.amountDue,
+      contactedAt: data.contactedAt.present
+          ? data.contactedAt.value
+          : this.contactedAt,
+      outcome: data.outcome.present ? data.outcome.value : this.outcome,
+      promisedDate: data.promisedDate.present
+          ? data.promisedDate.value
+          : this.promisedDate,
+      promisedAmount: data.promisedAmount.present
+          ? data.promisedAmount.value
+          : this.promisedAmount,
+      contactPerson: data.contactPerson.present
+          ? data.contactPerson.value
+          : this.contactPerson,
+      nextActionAt: data.nextActionAt.present
+          ? data.nextActionAt.value
+          : this.nextActionAt,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      createdBy: data.createdBy.present ? data.createdBy.value : this.createdBy,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      globalId: data.globalId.present ? data.globalId.value : this.globalId,
+      lastModifiedAt: data.lastModifiedAt.present
+          ? data.lastModifiedAt.value
+          : this.lastModifiedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      originClientId: data.originClientId.present
+          ? data.originClientId.value
+          : this.originClientId,
+      rowVersion: data.rowVersion.present
+          ? data.rowVersion.value
+          : this.rowVersion,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PartyFollowUp(')
+          ..write('id: $id, ')
+          ..write('partyId: $partyId, ')
+          ..write('invoiceId: $invoiceId, ')
+          ..write('invoiceNumber: $invoiceNumber, ')
+          ..write('amountDue: $amountDue, ')
+          ..write('contactedAt: $contactedAt, ')
+          ..write('outcome: $outcome, ')
+          ..write('promisedDate: $promisedDate, ')
+          ..write('promisedAmount: $promisedAmount, ')
+          ..write('contactPerson: $contactPerson, ')
+          ..write('nextActionAt: $nextActionAt, ')
+          ..write('notes: $notes, ')
+          ..write('createdBy: $createdBy, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('globalId: $globalId, ')
+          ..write('lastModifiedAt: $lastModifiedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('originClientId: $originClientId, ')
+          ..write('rowVersion: $rowVersion')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    partyId,
+    invoiceId,
+    invoiceNumber,
+    amountDue,
+    contactedAt,
+    outcome,
+    promisedDate,
+    promisedAmount,
+    contactPerson,
+    nextActionAt,
+    notes,
+    createdBy,
+    createdAt,
+    globalId,
+    lastModifiedAt,
+    deletedAt,
+    originClientId,
+    rowVersion,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PartyFollowUp &&
+          other.id == this.id &&
+          other.partyId == this.partyId &&
+          other.invoiceId == this.invoiceId &&
+          other.invoiceNumber == this.invoiceNumber &&
+          other.amountDue == this.amountDue &&
+          other.contactedAt == this.contactedAt &&
+          other.outcome == this.outcome &&
+          other.promisedDate == this.promisedDate &&
+          other.promisedAmount == this.promisedAmount &&
+          other.contactPerson == this.contactPerson &&
+          other.nextActionAt == this.nextActionAt &&
+          other.notes == this.notes &&
+          other.createdBy == this.createdBy &&
+          other.createdAt == this.createdAt &&
+          other.globalId == this.globalId &&
+          other.lastModifiedAt == this.lastModifiedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.originClientId == this.originClientId &&
+          other.rowVersion == this.rowVersion);
+}
+
+class PartyFollowUpsCompanion extends UpdateCompanion<PartyFollowUp> {
+  final Value<int> id;
+  final Value<int> partyId;
+  final Value<int?> invoiceId;
+  final Value<String?> invoiceNumber;
+  final Value<double> amountDue;
+  final Value<DateTime> contactedAt;
+  final Value<String> outcome;
+  final Value<DateTime?> promisedDate;
+  final Value<double?> promisedAmount;
+  final Value<String?> contactPerson;
+  final Value<DateTime?> nextActionAt;
+  final Value<String?> notes;
+  final Value<int?> createdBy;
+  final Value<DateTime> createdAt;
+  final Value<String?> globalId;
+  final Value<DateTime?> lastModifiedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<String?> originClientId;
+  final Value<int> rowVersion;
+  const PartyFollowUpsCompanion({
+    this.id = const Value.absent(),
+    this.partyId = const Value.absent(),
+    this.invoiceId = const Value.absent(),
+    this.invoiceNumber = const Value.absent(),
+    this.amountDue = const Value.absent(),
+    this.contactedAt = const Value.absent(),
+    this.outcome = const Value.absent(),
+    this.promisedDate = const Value.absent(),
+    this.promisedAmount = const Value.absent(),
+    this.contactPerson = const Value.absent(),
+    this.nextActionAt = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdBy = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.lastModifiedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.originClientId = const Value.absent(),
+    this.rowVersion = const Value.absent(),
+  });
+  PartyFollowUpsCompanion.insert({
+    this.id = const Value.absent(),
+    required int partyId,
+    this.invoiceId = const Value.absent(),
+    this.invoiceNumber = const Value.absent(),
+    this.amountDue = const Value.absent(),
+    required DateTime contactedAt,
+    required String outcome,
+    this.promisedDate = const Value.absent(),
+    this.promisedAmount = const Value.absent(),
+    this.contactPerson = const Value.absent(),
+    this.nextActionAt = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdBy = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.lastModifiedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.originClientId = const Value.absent(),
+    this.rowVersion = const Value.absent(),
+  }) : partyId = Value(partyId),
+       contactedAt = Value(contactedAt),
+       outcome = Value(outcome);
+  static Insertable<PartyFollowUp> custom({
+    Expression<int>? id,
+    Expression<int>? partyId,
+    Expression<int>? invoiceId,
+    Expression<String>? invoiceNumber,
+    Expression<double>? amountDue,
+    Expression<DateTime>? contactedAt,
+    Expression<String>? outcome,
+    Expression<DateTime>? promisedDate,
+    Expression<double>? promisedAmount,
+    Expression<String>? contactPerson,
+    Expression<DateTime>? nextActionAt,
+    Expression<String>? notes,
+    Expression<int>? createdBy,
+    Expression<DateTime>? createdAt,
+    Expression<String>? globalId,
+    Expression<DateTime>? lastModifiedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? originClientId,
+    Expression<int>? rowVersion,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (partyId != null) 'party_id': partyId,
+      if (invoiceId != null) 'invoice_id': invoiceId,
+      if (invoiceNumber != null) 'invoice_number': invoiceNumber,
+      if (amountDue != null) 'amount_due': amountDue,
+      if (contactedAt != null) 'contacted_at': contactedAt,
+      if (outcome != null) 'outcome': outcome,
+      if (promisedDate != null) 'promised_date': promisedDate,
+      if (promisedAmount != null) 'promised_amount': promisedAmount,
+      if (contactPerson != null) 'contact_person': contactPerson,
+      if (nextActionAt != null) 'next_action_at': nextActionAt,
+      if (notes != null) 'notes': notes,
+      if (createdBy != null) 'created_by': createdBy,
+      if (createdAt != null) 'created_at': createdAt,
+      if (globalId != null) 'global_id': globalId,
+      if (lastModifiedAt != null) 'last_modified_at': lastModifiedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (originClientId != null) 'origin_client_id': originClientId,
+      if (rowVersion != null) 'row_version': rowVersion,
+    });
+  }
+
+  PartyFollowUpsCompanion copyWith({
+    Value<int>? id,
+    Value<int>? partyId,
+    Value<int?>? invoiceId,
+    Value<String?>? invoiceNumber,
+    Value<double>? amountDue,
+    Value<DateTime>? contactedAt,
+    Value<String>? outcome,
+    Value<DateTime?>? promisedDate,
+    Value<double?>? promisedAmount,
+    Value<String?>? contactPerson,
+    Value<DateTime?>? nextActionAt,
+    Value<String?>? notes,
+    Value<int?>? createdBy,
+    Value<DateTime>? createdAt,
+    Value<String?>? globalId,
+    Value<DateTime?>? lastModifiedAt,
+    Value<DateTime?>? deletedAt,
+    Value<String?>? originClientId,
+    Value<int>? rowVersion,
+  }) {
+    return PartyFollowUpsCompanion(
+      id: id ?? this.id,
+      partyId: partyId ?? this.partyId,
+      invoiceId: invoiceId ?? this.invoiceId,
+      invoiceNumber: invoiceNumber ?? this.invoiceNumber,
+      amountDue: amountDue ?? this.amountDue,
+      contactedAt: contactedAt ?? this.contactedAt,
+      outcome: outcome ?? this.outcome,
+      promisedDate: promisedDate ?? this.promisedDate,
+      promisedAmount: promisedAmount ?? this.promisedAmount,
+      contactPerson: contactPerson ?? this.contactPerson,
+      nextActionAt: nextActionAt ?? this.nextActionAt,
+      notes: notes ?? this.notes,
+      createdBy: createdBy ?? this.createdBy,
+      createdAt: createdAt ?? this.createdAt,
+      globalId: globalId ?? this.globalId,
+      lastModifiedAt: lastModifiedAt ?? this.lastModifiedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      originClientId: originClientId ?? this.originClientId,
+      rowVersion: rowVersion ?? this.rowVersion,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (partyId.present) {
+      map['party_id'] = Variable<int>(partyId.value);
+    }
+    if (invoiceId.present) {
+      map['invoice_id'] = Variable<int>(invoiceId.value);
+    }
+    if (invoiceNumber.present) {
+      map['invoice_number'] = Variable<String>(invoiceNumber.value);
+    }
+    if (amountDue.present) {
+      map['amount_due'] = Variable<double>(amountDue.value);
+    }
+    if (contactedAt.present) {
+      map['contacted_at'] = Variable<DateTime>(contactedAt.value);
+    }
+    if (outcome.present) {
+      map['outcome'] = Variable<String>(outcome.value);
+    }
+    if (promisedDate.present) {
+      map['promised_date'] = Variable<DateTime>(promisedDate.value);
+    }
+    if (promisedAmount.present) {
+      map['promised_amount'] = Variable<double>(promisedAmount.value);
+    }
+    if (contactPerson.present) {
+      map['contact_person'] = Variable<String>(contactPerson.value);
+    }
+    if (nextActionAt.present) {
+      map['next_action_at'] = Variable<DateTime>(nextActionAt.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (createdBy.present) {
+      map['created_by'] = Variable<int>(createdBy.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (globalId.present) {
+      map['global_id'] = Variable<String>(globalId.value);
+    }
+    if (lastModifiedAt.present) {
+      map['last_modified_at'] = Variable<DateTime>(lastModifiedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (originClientId.present) {
+      map['origin_client_id'] = Variable<String>(originClientId.value);
+    }
+    if (rowVersion.present) {
+      map['row_version'] = Variable<int>(rowVersion.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PartyFollowUpsCompanion(')
+          ..write('id: $id, ')
+          ..write('partyId: $partyId, ')
+          ..write('invoiceId: $invoiceId, ')
+          ..write('invoiceNumber: $invoiceNumber, ')
+          ..write('amountDue: $amountDue, ')
+          ..write('contactedAt: $contactedAt, ')
+          ..write('outcome: $outcome, ')
+          ..write('promisedDate: $promisedDate, ')
+          ..write('promisedAmount: $promisedAmount, ')
+          ..write('contactPerson: $contactPerson, ')
+          ..write('nextActionAt: $nextActionAt, ')
+          ..write('notes: $notes, ')
+          ..write('createdBy: $createdBy, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('globalId: $globalId, ')
+          ..write('lastModifiedAt: $lastModifiedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('originClientId: $originClientId, ')
+          ..write('rowVersion: $rowVersion')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $SupplierClaimsTable extends SupplierClaims
+    with TableInfo<$SupplierClaimsTable, SupplierClaim> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SupplierClaimsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _supplierIdMeta = const VerificationMeta(
+    'supplierId',
+  );
+  @override
+  late final GeneratedColumn<int> supplierId = GeneratedColumn<int>(
+    'supplier_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES parties (id)',
+    ),
+  );
+  static const VerificationMeta _claimDateMeta = const VerificationMeta(
+    'claimDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> claimDate = GeneratedColumn<DateTime>(
+    'claim_date',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ledgerBalanceMeta = const VerificationMeta(
+    'ledgerBalance',
+  );
+  @override
+  late final GeneratedColumn<double> ledgerBalance = GeneratedColumn<double>(
+    'ledger_balance',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _settlementKindMeta = const VerificationMeta(
+    'settlementKind',
+  );
+  @override
+  late final GeneratedColumn<String> settlementKind = GeneratedColumn<String>(
+    'settlement_kind',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(maxTextLength: 24),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('draft'),
+  );
+  static const VerificationMeta _netAmountMeta = const VerificationMeta(
+    'netAmount',
+  );
+  @override
+  late final GeneratedColumn<double> netAmount = GeneratedColumn<double>(
+    'net_amount',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _linesJsonMeta = const VerificationMeta(
+    'linesJson',
+  );
+  @override
+  late final GeneratedColumn<String> linesJson = GeneratedColumn<String>(
+    'lines_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lineCountMeta = const VerificationMeta(
+    'lineCount',
+  );
+  @override
+  late final GeneratedColumn<int> lineCount = GeneratedColumn<int>(
+    'line_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _replyDueAtMeta = const VerificationMeta(
+    'replyDueAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> replyDueAt = GeneratedColumn<DateTime>(
+    'reply_due_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdByMeta = const VerificationMeta(
+    'createdBy',
+  );
+  @override
+  late final GeneratedColumn<int> createdBy = GeneratedColumn<int>(
+    'created_by',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES users (id)',
+    ),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _globalIdMeta = const VerificationMeta(
+    'globalId',
+  );
+  @override
+  late final GeneratedColumn<String> globalId = GeneratedColumn<String>(
+    'global_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _lastModifiedAtMeta = const VerificationMeta(
+    'lastModifiedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastModifiedAt =
+      GeneratedColumn<DateTime>(
+        'last_modified_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _originClientIdMeta = const VerificationMeta(
+    'originClientId',
+  );
+  @override
+  late final GeneratedColumn<String> originClientId = GeneratedColumn<String>(
+    'origin_client_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _rowVersionMeta = const VerificationMeta(
+    'rowVersion',
+  );
+  @override
+  late final GeneratedColumn<int> rowVersion = GeneratedColumn<int>(
+    'row_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    supplierId,
+    claimDate,
+    ledgerBalance,
+    settlementKind,
+    status,
+    netAmount,
+    linesJson,
+    lineCount,
+    replyDueAt,
+    notes,
+    createdBy,
+    createdAt,
+    globalId,
+    lastModifiedAt,
+    deletedAt,
+    originClientId,
+    rowVersion,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'supplier_claims';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SupplierClaim> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('supplier_id')) {
+      context.handle(
+        _supplierIdMeta,
+        supplierId.isAcceptableOrUnknown(data['supplier_id']!, _supplierIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_supplierIdMeta);
+    }
+    if (data.containsKey('claim_date')) {
+      context.handle(
+        _claimDateMeta,
+        claimDate.isAcceptableOrUnknown(data['claim_date']!, _claimDateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_claimDateMeta);
+    }
+    if (data.containsKey('ledger_balance')) {
+      context.handle(
+        _ledgerBalanceMeta,
+        ledgerBalance.isAcceptableOrUnknown(
+          data['ledger_balance']!,
+          _ledgerBalanceMeta,
+        ),
+      );
+    }
+    if (data.containsKey('settlement_kind')) {
+      context.handle(
+        _settlementKindMeta,
+        settlementKind.isAcceptableOrUnknown(
+          data['settlement_kind']!,
+          _settlementKindMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_settlementKindMeta);
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
+    if (data.containsKey('net_amount')) {
+      context.handle(
+        _netAmountMeta,
+        netAmount.isAcceptableOrUnknown(data['net_amount']!, _netAmountMeta),
+      );
+    }
+    if (data.containsKey('lines_json')) {
+      context.handle(
+        _linesJsonMeta,
+        linesJson.isAcceptableOrUnknown(data['lines_json']!, _linesJsonMeta),
+      );
+    }
+    if (data.containsKey('line_count')) {
+      context.handle(
+        _lineCountMeta,
+        lineCount.isAcceptableOrUnknown(data['line_count']!, _lineCountMeta),
+      );
+    }
+    if (data.containsKey('reply_due_at')) {
+      context.handle(
+        _replyDueAtMeta,
+        replyDueAt.isAcceptableOrUnknown(
+          data['reply_due_at']!,
+          _replyDueAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('created_by')) {
+      context.handle(
+        _createdByMeta,
+        createdBy.isAcceptableOrUnknown(data['created_by']!, _createdByMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('global_id')) {
+      context.handle(
+        _globalIdMeta,
+        globalId.isAcceptableOrUnknown(data['global_id']!, _globalIdMeta),
+      );
+    }
+    if (data.containsKey('last_modified_at')) {
+      context.handle(
+        _lastModifiedAtMeta,
+        lastModifiedAt.isAcceptableOrUnknown(
+          data['last_modified_at']!,
+          _lastModifiedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    if (data.containsKey('origin_client_id')) {
+      context.handle(
+        _originClientIdMeta,
+        originClientId.isAcceptableOrUnknown(
+          data['origin_client_id']!,
+          _originClientIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('row_version')) {
+      context.handle(
+        _rowVersionMeta,
+        rowVersion.isAcceptableOrUnknown(data['row_version']!, _rowVersionMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SupplierClaim map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SupplierClaim(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      supplierId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}supplier_id'],
+      )!,
+      claimDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}claim_date'],
+      )!,
+      ledgerBalance: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}ledger_balance'],
+      )!,
+      settlementKind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}settlement_kind'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      netAmount: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}net_amount'],
+      )!,
+      linesJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}lines_json'],
+      ),
+      lineCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}line_count'],
+      )!,
+      replyDueAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}reply_due_at'],
+      ),
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      createdBy: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_by'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      globalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}global_id'],
+      ),
+      lastModifiedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_modified_at'],
+      ),
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+      originClientId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origin_client_id'],
+      ),
+      rowVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}row_version'],
+      )!,
+    );
+  }
+
+  @override
+  $SupplierClaimsTable createAlias(String alias) {
+    return $SupplierClaimsTable(attachedDatabase, alias);
+  }
+}
+
+class SupplierClaim extends DataClass implements Insertable<SupplierClaim> {
+  final int id;
+  final int supplierId;
+  final DateTime claimDate;
+
+  /// **لقطةُ** رصيد المورد في دفاترنا وقتَ المطالبة — «رصيده في دفاترنا».
+  /// ونظيرُه «رصيدنا لديه» بيانةٌ عند المورد لا عندنا، فلا عمودَ لها.
+  final double ledgerBalance;
+
+  /// `credit_note` · `goods` · `invoice_discount` · `cash_refund` — بطاقاتُ
+  /// «شكل التسوية» الأربع.
+  final String settlementKind;
+
+  /// `draft` · `sent` · `accepted` · `rejected` · `settled`.
+  final String status;
+
+  /// صافي المطالبة: **موجبٌ = لنا على المورد**، سالبٌ = عليه لنا.
+  final double netAmount;
+
+  /// الفروقُ المطالَبُ بها مسلسلةً JSON — لكلٍّ رقمُ الأمر والصنفُ ونوعُ
+  /// الفرق وكمّيّتُه.
+  ///
+  /// ⚠️ **ولمَ عمودٌ لا جدولُ أسطر؟** المطالبةُ **مراسلةٌ لا قيدٌ**: لا
+  /// تُرحَّل إلى دفترٍ ولا تُجمَع في تقريرٍ ماليّ، والأسطرُ تُقرأ مع مطالبتها
+  /// ولا تُستعلَم عبرها. وجدولٌ ثالثٌ كان يجرّ استراتيجيّةَ مزامنةٍ ومسارَ
+  /// خادمٍ وهجرةً مقابلَ لا شيءٍ يُكسَب. فإن صارت تُرحَّل يوماً فهي هجرةٌ
+  /// تُخطَّط، لا دَينٌ خفيّ.
+  final String? linesJson;
+
+  /// عددُ الفروق — يُقرأ بلا فكِّ [linesJson] في القوائم.
+  final int lineCount;
+
+  /// مهلةُ الردّ المتّفقة — تاريخٌ يُعرَض لا تنبيهٌ يُطلَق.
+  final DateTime? replyDueAt;
+  final String? notes;
+  final int? createdBy;
+  final DateTime createdAt;
+  final String? globalId;
+  final DateTime? lastModifiedAt;
+  final DateTime? deletedAt;
+  final String? originClientId;
+  final int rowVersion;
+  const SupplierClaim({
+    required this.id,
+    required this.supplierId,
+    required this.claimDate,
+    required this.ledgerBalance,
+    required this.settlementKind,
+    required this.status,
+    required this.netAmount,
+    this.linesJson,
+    required this.lineCount,
+    this.replyDueAt,
+    this.notes,
+    this.createdBy,
+    required this.createdAt,
+    this.globalId,
+    this.lastModifiedAt,
+    this.deletedAt,
+    this.originClientId,
+    required this.rowVersion,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['supplier_id'] = Variable<int>(supplierId);
+    map['claim_date'] = Variable<DateTime>(claimDate);
+    map['ledger_balance'] = Variable<double>(ledgerBalance);
+    map['settlement_kind'] = Variable<String>(settlementKind);
+    map['status'] = Variable<String>(status);
+    map['net_amount'] = Variable<double>(netAmount);
+    if (!nullToAbsent || linesJson != null) {
+      map['lines_json'] = Variable<String>(linesJson);
+    }
+    map['line_count'] = Variable<int>(lineCount);
+    if (!nullToAbsent || replyDueAt != null) {
+      map['reply_due_at'] = Variable<DateTime>(replyDueAt);
+    }
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    if (!nullToAbsent || createdBy != null) {
+      map['created_by'] = Variable<int>(createdBy);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || globalId != null) {
+      map['global_id'] = Variable<String>(globalId);
+    }
+    if (!nullToAbsent || lastModifiedAt != null) {
+      map['last_modified_at'] = Variable<DateTime>(lastModifiedAt);
+    }
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || originClientId != null) {
+      map['origin_client_id'] = Variable<String>(originClientId);
+    }
+    map['row_version'] = Variable<int>(rowVersion);
+    return map;
+  }
+
+  SupplierClaimsCompanion toCompanion(bool nullToAbsent) {
+    return SupplierClaimsCompanion(
+      id: Value(id),
+      supplierId: Value(supplierId),
+      claimDate: Value(claimDate),
+      ledgerBalance: Value(ledgerBalance),
+      settlementKind: Value(settlementKind),
+      status: Value(status),
+      netAmount: Value(netAmount),
+      linesJson: linesJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(linesJson),
+      lineCount: Value(lineCount),
+      replyDueAt: replyDueAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(replyDueAt),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      createdBy: createdBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(createdBy),
+      createdAt: Value(createdAt),
+      globalId: globalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(globalId),
+      lastModifiedAt: lastModifiedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastModifiedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      originClientId: originClientId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(originClientId),
+      rowVersion: Value(rowVersion),
+    );
+  }
+
+  factory SupplierClaim.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SupplierClaim(
+      id: serializer.fromJson<int>(json['id']),
+      supplierId: serializer.fromJson<int>(json['supplierId']),
+      claimDate: serializer.fromJson<DateTime>(json['claimDate']),
+      ledgerBalance: serializer.fromJson<double>(json['ledgerBalance']),
+      settlementKind: serializer.fromJson<String>(json['settlementKind']),
+      status: serializer.fromJson<String>(json['status']),
+      netAmount: serializer.fromJson<double>(json['netAmount']),
+      linesJson: serializer.fromJson<String?>(json['linesJson']),
+      lineCount: serializer.fromJson<int>(json['lineCount']),
+      replyDueAt: serializer.fromJson<DateTime?>(json['replyDueAt']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      createdBy: serializer.fromJson<int?>(json['createdBy']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      globalId: serializer.fromJson<String?>(json['globalId']),
+      lastModifiedAt: serializer.fromJson<DateTime?>(json['lastModifiedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      originClientId: serializer.fromJson<String?>(json['originClientId']),
+      rowVersion: serializer.fromJson<int>(json['rowVersion']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'supplierId': serializer.toJson<int>(supplierId),
+      'claimDate': serializer.toJson<DateTime>(claimDate),
+      'ledgerBalance': serializer.toJson<double>(ledgerBalance),
+      'settlementKind': serializer.toJson<String>(settlementKind),
+      'status': serializer.toJson<String>(status),
+      'netAmount': serializer.toJson<double>(netAmount),
+      'linesJson': serializer.toJson<String?>(linesJson),
+      'lineCount': serializer.toJson<int>(lineCount),
+      'replyDueAt': serializer.toJson<DateTime?>(replyDueAt),
+      'notes': serializer.toJson<String?>(notes),
+      'createdBy': serializer.toJson<int?>(createdBy),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'globalId': serializer.toJson<String?>(globalId),
+      'lastModifiedAt': serializer.toJson<DateTime?>(lastModifiedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'originClientId': serializer.toJson<String?>(originClientId),
+      'rowVersion': serializer.toJson<int>(rowVersion),
+    };
+  }
+
+  SupplierClaim copyWith({
+    int? id,
+    int? supplierId,
+    DateTime? claimDate,
+    double? ledgerBalance,
+    String? settlementKind,
+    String? status,
+    double? netAmount,
+    Value<String?> linesJson = const Value.absent(),
+    int? lineCount,
+    Value<DateTime?> replyDueAt = const Value.absent(),
+    Value<String?> notes = const Value.absent(),
+    Value<int?> createdBy = const Value.absent(),
+    DateTime? createdAt,
+    Value<String?> globalId = const Value.absent(),
+    Value<DateTime?> lastModifiedAt = const Value.absent(),
+    Value<DateTime?> deletedAt = const Value.absent(),
+    Value<String?> originClientId = const Value.absent(),
+    int? rowVersion,
+  }) => SupplierClaim(
+    id: id ?? this.id,
+    supplierId: supplierId ?? this.supplierId,
+    claimDate: claimDate ?? this.claimDate,
+    ledgerBalance: ledgerBalance ?? this.ledgerBalance,
+    settlementKind: settlementKind ?? this.settlementKind,
+    status: status ?? this.status,
+    netAmount: netAmount ?? this.netAmount,
+    linesJson: linesJson.present ? linesJson.value : this.linesJson,
+    lineCount: lineCount ?? this.lineCount,
+    replyDueAt: replyDueAt.present ? replyDueAt.value : this.replyDueAt,
+    notes: notes.present ? notes.value : this.notes,
+    createdBy: createdBy.present ? createdBy.value : this.createdBy,
+    createdAt: createdAt ?? this.createdAt,
+    globalId: globalId.present ? globalId.value : this.globalId,
+    lastModifiedAt: lastModifiedAt.present
+        ? lastModifiedAt.value
+        : this.lastModifiedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    originClientId: originClientId.present
+        ? originClientId.value
+        : this.originClientId,
+    rowVersion: rowVersion ?? this.rowVersion,
+  );
+  SupplierClaim copyWithCompanion(SupplierClaimsCompanion data) {
+    return SupplierClaim(
+      id: data.id.present ? data.id.value : this.id,
+      supplierId: data.supplierId.present
+          ? data.supplierId.value
+          : this.supplierId,
+      claimDate: data.claimDate.present ? data.claimDate.value : this.claimDate,
+      ledgerBalance: data.ledgerBalance.present
+          ? data.ledgerBalance.value
+          : this.ledgerBalance,
+      settlementKind: data.settlementKind.present
+          ? data.settlementKind.value
+          : this.settlementKind,
+      status: data.status.present ? data.status.value : this.status,
+      netAmount: data.netAmount.present ? data.netAmount.value : this.netAmount,
+      linesJson: data.linesJson.present ? data.linesJson.value : this.linesJson,
+      lineCount: data.lineCount.present ? data.lineCount.value : this.lineCount,
+      replyDueAt: data.replyDueAt.present
+          ? data.replyDueAt.value
+          : this.replyDueAt,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      createdBy: data.createdBy.present ? data.createdBy.value : this.createdBy,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      globalId: data.globalId.present ? data.globalId.value : this.globalId,
+      lastModifiedAt: data.lastModifiedAt.present
+          ? data.lastModifiedAt.value
+          : this.lastModifiedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      originClientId: data.originClientId.present
+          ? data.originClientId.value
+          : this.originClientId,
+      rowVersion: data.rowVersion.present
+          ? data.rowVersion.value
+          : this.rowVersion,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SupplierClaim(')
+          ..write('id: $id, ')
+          ..write('supplierId: $supplierId, ')
+          ..write('claimDate: $claimDate, ')
+          ..write('ledgerBalance: $ledgerBalance, ')
+          ..write('settlementKind: $settlementKind, ')
+          ..write('status: $status, ')
+          ..write('netAmount: $netAmount, ')
+          ..write('linesJson: $linesJson, ')
+          ..write('lineCount: $lineCount, ')
+          ..write('replyDueAt: $replyDueAt, ')
+          ..write('notes: $notes, ')
+          ..write('createdBy: $createdBy, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('globalId: $globalId, ')
+          ..write('lastModifiedAt: $lastModifiedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('originClientId: $originClientId, ')
+          ..write('rowVersion: $rowVersion')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    supplierId,
+    claimDate,
+    ledgerBalance,
+    settlementKind,
+    status,
+    netAmount,
+    linesJson,
+    lineCount,
+    replyDueAt,
+    notes,
+    createdBy,
+    createdAt,
+    globalId,
+    lastModifiedAt,
+    deletedAt,
+    originClientId,
+    rowVersion,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SupplierClaim &&
+          other.id == this.id &&
+          other.supplierId == this.supplierId &&
+          other.claimDate == this.claimDate &&
+          other.ledgerBalance == this.ledgerBalance &&
+          other.settlementKind == this.settlementKind &&
+          other.status == this.status &&
+          other.netAmount == this.netAmount &&
+          other.linesJson == this.linesJson &&
+          other.lineCount == this.lineCount &&
+          other.replyDueAt == this.replyDueAt &&
+          other.notes == this.notes &&
+          other.createdBy == this.createdBy &&
+          other.createdAt == this.createdAt &&
+          other.globalId == this.globalId &&
+          other.lastModifiedAt == this.lastModifiedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.originClientId == this.originClientId &&
+          other.rowVersion == this.rowVersion);
+}
+
+class SupplierClaimsCompanion extends UpdateCompanion<SupplierClaim> {
+  final Value<int> id;
+  final Value<int> supplierId;
+  final Value<DateTime> claimDate;
+  final Value<double> ledgerBalance;
+  final Value<String> settlementKind;
+  final Value<String> status;
+  final Value<double> netAmount;
+  final Value<String?> linesJson;
+  final Value<int> lineCount;
+  final Value<DateTime?> replyDueAt;
+  final Value<String?> notes;
+  final Value<int?> createdBy;
+  final Value<DateTime> createdAt;
+  final Value<String?> globalId;
+  final Value<DateTime?> lastModifiedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<String?> originClientId;
+  final Value<int> rowVersion;
+  const SupplierClaimsCompanion({
+    this.id = const Value.absent(),
+    this.supplierId = const Value.absent(),
+    this.claimDate = const Value.absent(),
+    this.ledgerBalance = const Value.absent(),
+    this.settlementKind = const Value.absent(),
+    this.status = const Value.absent(),
+    this.netAmount = const Value.absent(),
+    this.linesJson = const Value.absent(),
+    this.lineCount = const Value.absent(),
+    this.replyDueAt = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdBy = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.lastModifiedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.originClientId = const Value.absent(),
+    this.rowVersion = const Value.absent(),
+  });
+  SupplierClaimsCompanion.insert({
+    this.id = const Value.absent(),
+    required int supplierId,
+    required DateTime claimDate,
+    this.ledgerBalance = const Value.absent(),
+    required String settlementKind,
+    this.status = const Value.absent(),
+    this.netAmount = const Value.absent(),
+    this.linesJson = const Value.absent(),
+    this.lineCount = const Value.absent(),
+    this.replyDueAt = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdBy = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.lastModifiedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.originClientId = const Value.absent(),
+    this.rowVersion = const Value.absent(),
+  }) : supplierId = Value(supplierId),
+       claimDate = Value(claimDate),
+       settlementKind = Value(settlementKind);
+  static Insertable<SupplierClaim> custom({
+    Expression<int>? id,
+    Expression<int>? supplierId,
+    Expression<DateTime>? claimDate,
+    Expression<double>? ledgerBalance,
+    Expression<String>? settlementKind,
+    Expression<String>? status,
+    Expression<double>? netAmount,
+    Expression<String>? linesJson,
+    Expression<int>? lineCount,
+    Expression<DateTime>? replyDueAt,
+    Expression<String>? notes,
+    Expression<int>? createdBy,
+    Expression<DateTime>? createdAt,
+    Expression<String>? globalId,
+    Expression<DateTime>? lastModifiedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? originClientId,
+    Expression<int>? rowVersion,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (supplierId != null) 'supplier_id': supplierId,
+      if (claimDate != null) 'claim_date': claimDate,
+      if (ledgerBalance != null) 'ledger_balance': ledgerBalance,
+      if (settlementKind != null) 'settlement_kind': settlementKind,
+      if (status != null) 'status': status,
+      if (netAmount != null) 'net_amount': netAmount,
+      if (linesJson != null) 'lines_json': linesJson,
+      if (lineCount != null) 'line_count': lineCount,
+      if (replyDueAt != null) 'reply_due_at': replyDueAt,
+      if (notes != null) 'notes': notes,
+      if (createdBy != null) 'created_by': createdBy,
+      if (createdAt != null) 'created_at': createdAt,
+      if (globalId != null) 'global_id': globalId,
+      if (lastModifiedAt != null) 'last_modified_at': lastModifiedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (originClientId != null) 'origin_client_id': originClientId,
+      if (rowVersion != null) 'row_version': rowVersion,
+    });
+  }
+
+  SupplierClaimsCompanion copyWith({
+    Value<int>? id,
+    Value<int>? supplierId,
+    Value<DateTime>? claimDate,
+    Value<double>? ledgerBalance,
+    Value<String>? settlementKind,
+    Value<String>? status,
+    Value<double>? netAmount,
+    Value<String?>? linesJson,
+    Value<int>? lineCount,
+    Value<DateTime?>? replyDueAt,
+    Value<String?>? notes,
+    Value<int?>? createdBy,
+    Value<DateTime>? createdAt,
+    Value<String?>? globalId,
+    Value<DateTime?>? lastModifiedAt,
+    Value<DateTime?>? deletedAt,
+    Value<String?>? originClientId,
+    Value<int>? rowVersion,
+  }) {
+    return SupplierClaimsCompanion(
+      id: id ?? this.id,
+      supplierId: supplierId ?? this.supplierId,
+      claimDate: claimDate ?? this.claimDate,
+      ledgerBalance: ledgerBalance ?? this.ledgerBalance,
+      settlementKind: settlementKind ?? this.settlementKind,
+      status: status ?? this.status,
+      netAmount: netAmount ?? this.netAmount,
+      linesJson: linesJson ?? this.linesJson,
+      lineCount: lineCount ?? this.lineCount,
+      replyDueAt: replyDueAt ?? this.replyDueAt,
+      notes: notes ?? this.notes,
+      createdBy: createdBy ?? this.createdBy,
+      createdAt: createdAt ?? this.createdAt,
+      globalId: globalId ?? this.globalId,
+      lastModifiedAt: lastModifiedAt ?? this.lastModifiedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      originClientId: originClientId ?? this.originClientId,
+      rowVersion: rowVersion ?? this.rowVersion,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (supplierId.present) {
+      map['supplier_id'] = Variable<int>(supplierId.value);
+    }
+    if (claimDate.present) {
+      map['claim_date'] = Variable<DateTime>(claimDate.value);
+    }
+    if (ledgerBalance.present) {
+      map['ledger_balance'] = Variable<double>(ledgerBalance.value);
+    }
+    if (settlementKind.present) {
+      map['settlement_kind'] = Variable<String>(settlementKind.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (netAmount.present) {
+      map['net_amount'] = Variable<double>(netAmount.value);
+    }
+    if (linesJson.present) {
+      map['lines_json'] = Variable<String>(linesJson.value);
+    }
+    if (lineCount.present) {
+      map['line_count'] = Variable<int>(lineCount.value);
+    }
+    if (replyDueAt.present) {
+      map['reply_due_at'] = Variable<DateTime>(replyDueAt.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (createdBy.present) {
+      map['created_by'] = Variable<int>(createdBy.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (globalId.present) {
+      map['global_id'] = Variable<String>(globalId.value);
+    }
+    if (lastModifiedAt.present) {
+      map['last_modified_at'] = Variable<DateTime>(lastModifiedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (originClientId.present) {
+      map['origin_client_id'] = Variable<String>(originClientId.value);
+    }
+    if (rowVersion.present) {
+      map['row_version'] = Variable<int>(rowVersion.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SupplierClaimsCompanion(')
+          ..write('id: $id, ')
+          ..write('supplierId: $supplierId, ')
+          ..write('claimDate: $claimDate, ')
+          ..write('ledgerBalance: $ledgerBalance, ')
+          ..write('settlementKind: $settlementKind, ')
+          ..write('status: $status, ')
+          ..write('netAmount: $netAmount, ')
+          ..write('linesJson: $linesJson, ')
+          ..write('lineCount: $lineCount, ')
+          ..write('replyDueAt: $replyDueAt, ')
+          ..write('notes: $notes, ')
+          ..write('createdBy: $createdBy, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('globalId: $globalId, ')
+          ..write('lastModifiedAt: $lastModifiedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('originClientId: $originClientId, ')
+          ..write('rowVersion: $rowVersion')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -109880,6 +112035,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $FailedAutopostsTable failedAutoposts = $FailedAutopostsTable(
     this,
   );
+  late final $PartyFollowUpsTable partyFollowUps = $PartyFollowUpsTable(this);
+  late final $SupplierClaimsTable supplierClaims = $SupplierClaimsTable(this);
   late final Index idxProductsBarcode = Index(
     'idx_products_barcode',
     'CREATE INDEX idx_products_barcode ON products (barcode)',
@@ -110633,6 +112790,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     processedMessages,
     remoteIdMappings,
     failedAutoposts,
+    partyFollowUps,
+    supplierClaims,
     idxProductsBarcode,
     idxProductsCategory,
     idxProductsCode,
@@ -112873,6 +115032,42 @@ final class $$UsersTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$PartyFollowUpsTable, List<PartyFollowUp>>
+  _partyFollowUpsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.partyFollowUps,
+    aliasName: $_aliasNameGenerator(db.users.id, db.partyFollowUps.createdBy),
+  );
+
+  $$PartyFollowUpsTableProcessedTableManager get partyFollowUpsRefs {
+    final manager = $$PartyFollowUpsTableTableManager(
+      $_db,
+      $_db.partyFollowUps,
+    ).filter((f) => f.createdBy.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_partyFollowUpsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$SupplierClaimsTable, List<SupplierClaim>>
+  _supplierClaimsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.supplierClaims,
+    aliasName: $_aliasNameGenerator(db.users.id, db.supplierClaims.createdBy),
+  );
+
+  $$SupplierClaimsTableProcessedTableManager get supplierClaimsRefs {
+    final manager = $$SupplierClaimsTableTableManager(
+      $_db,
+      $_db.supplierClaims,
+    ).filter((f) => f.createdBy.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_supplierClaimsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$UsersTableFilterComposer extends Composer<_$AppDatabase, $UsersTable> {
@@ -113817,6 +116012,56 @@ class $$UsersTableFilterComposer extends Composer<_$AppDatabase, $UsersTable> {
           }) => $$FailedAutopostsTableFilterComposer(
             $db: $db,
             $table: $db.failedAutoposts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> partyFollowUpsRefs(
+    Expression<bool> Function($$PartyFollowUpsTableFilterComposer f) f,
+  ) {
+    final $$PartyFollowUpsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.partyFollowUps,
+      getReferencedColumn: (t) => t.createdBy,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PartyFollowUpsTableFilterComposer(
+            $db: $db,
+            $table: $db.partyFollowUps,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> supplierClaimsRefs(
+    Expression<bool> Function($$SupplierClaimsTableFilterComposer f) f,
+  ) {
+    final $$SupplierClaimsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.supplierClaims,
+      getReferencedColumn: (t) => t.createdBy,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SupplierClaimsTableFilterComposer(
+            $db: $db,
+            $table: $db.supplierClaims,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -114892,6 +117137,56 @@ class $$UsersTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> partyFollowUpsRefs<T extends Object>(
+    Expression<T> Function($$PartyFollowUpsTableAnnotationComposer a) f,
+  ) {
+    final $$PartyFollowUpsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.partyFollowUps,
+      getReferencedColumn: (t) => t.createdBy,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PartyFollowUpsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.partyFollowUps,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> supplierClaimsRefs<T extends Object>(
+    Expression<T> Function($$SupplierClaimsTableAnnotationComposer a) f,
+  ) {
+    final $$SupplierClaimsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.supplierClaims,
+      getReferencedColumn: (t) => t.createdBy,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SupplierClaimsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.supplierClaims,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$UsersTableTableManager
@@ -114942,6 +117237,8 @@ class $$UsersTableTableManager
             bool apiKeysRefs,
             bool customReportsRefs,
             bool failedAutopostsRefs,
+            bool partyFollowUpsRefs,
+            bool supplierClaimsRefs,
           })
         > {
   $$UsersTableTableManager(_$AppDatabase db, $UsersTable table)
@@ -115085,6 +117382,8 @@ class $$UsersTableTableManager
                 apiKeysRefs = false,
                 customReportsRefs = false,
                 failedAutopostsRefs = false,
+                partyFollowUpsRefs = false,
+                supplierClaimsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -115122,6 +117421,8 @@ class $$UsersTableTableManager
                     if (apiKeysRefs) db.apiKeys,
                     if (customReportsRefs) db.customReports,
                     if (failedAutopostsRefs) db.failedAutoposts,
+                    if (partyFollowUpsRefs) db.partyFollowUps,
+                    if (supplierClaimsRefs) db.supplierClaims,
                   ],
                   addJoins:
                       <
@@ -115822,6 +118123,48 @@ class $$UsersTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (partyFollowUpsRefs)
+                        await $_getPrefetchedData<
+                          User,
+                          $UsersTable,
+                          PartyFollowUp
+                        >(
+                          currentTable: table,
+                          referencedTable: $$UsersTableReferences
+                              ._partyFollowUpsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$UsersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).partyFollowUpsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.createdBy == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (supplierClaimsRefs)
+                        await $_getPrefetchedData<
+                          User,
+                          $UsersTable,
+                          SupplierClaim
+                        >(
+                          currentTable: table,
+                          referencedTable: $$UsersTableReferences
+                              ._supplierClaimsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$UsersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).supplierClaimsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.createdBy == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -115877,6 +118220,8 @@ typedef $$UsersTableProcessedTableManager =
         bool apiKeysRefs,
         bool customReportsRefs,
         bool failedAutopostsRefs,
+        bool partyFollowUpsRefs,
+        bool supplierClaimsRefs,
       })
     >;
 typedef $$CostCentersTableCreateCompanionBuilder =
@@ -134045,6 +136390,45 @@ final class $$PartiesTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$PartyFollowUpsTable, List<PartyFollowUp>>
+  _partyFollowUpsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.partyFollowUps,
+    aliasName: $_aliasNameGenerator(db.parties.id, db.partyFollowUps.partyId),
+  );
+
+  $$PartyFollowUpsTableProcessedTableManager get partyFollowUpsRefs {
+    final manager = $$PartyFollowUpsTableTableManager(
+      $_db,
+      $_db.partyFollowUps,
+    ).filter((f) => f.partyId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_partyFollowUpsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$SupplierClaimsTable, List<SupplierClaim>>
+  _supplierClaimsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.supplierClaims,
+    aliasName: $_aliasNameGenerator(
+      db.parties.id,
+      db.supplierClaims.supplierId,
+    ),
+  );
+
+  $$SupplierClaimsTableProcessedTableManager get supplierClaimsRefs {
+    final manager = $$SupplierClaimsTableTableManager(
+      $_db,
+      $_db.supplierClaims,
+    ).filter((f) => f.supplierId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_supplierClaimsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$PartiesTableFilterComposer
@@ -134587,6 +136971,56 @@ class $$PartiesTableFilterComposer
           }) => $$LandedCostItemsTableFilterComposer(
             $db: $db,
             $table: $db.landedCostItems,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> partyFollowUpsRefs(
+    Expression<bool> Function($$PartyFollowUpsTableFilterComposer f) f,
+  ) {
+    final $$PartyFollowUpsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.partyFollowUps,
+      getReferencedColumn: (t) => t.partyId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PartyFollowUpsTableFilterComposer(
+            $db: $db,
+            $table: $db.partyFollowUps,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> supplierClaimsRefs(
+    Expression<bool> Function($$SupplierClaimsTableFilterComposer f) f,
+  ) {
+    final $$SupplierClaimsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.supplierClaims,
+      getReferencedColumn: (t) => t.supplierId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SupplierClaimsTableFilterComposer(
+            $db: $db,
+            $table: $db.supplierClaims,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -135343,6 +137777,56 @@ class $$PartiesTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> partyFollowUpsRefs<T extends Object>(
+    Expression<T> Function($$PartyFollowUpsTableAnnotationComposer a) f,
+  ) {
+    final $$PartyFollowUpsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.partyFollowUps,
+      getReferencedColumn: (t) => t.partyId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PartyFollowUpsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.partyFollowUps,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> supplierClaimsRefs<T extends Object>(
+    Expression<T> Function($$SupplierClaimsTableAnnotationComposer a) f,
+  ) {
+    final $$SupplierClaimsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.supplierClaims,
+      getReferencedColumn: (t) => t.supplierId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SupplierClaimsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.supplierClaims,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$PartiesTableTableManager
@@ -135375,6 +137859,8 @@ class $$PartiesTableTableManager
             bool salesOrdersRefs,
             bool paymentsRefs,
             bool landedCostItemsRefs,
+            bool partyFollowUpsRefs,
+            bool supplierClaimsRefs,
           })
         > {
   $$PartiesTableTableManager(_$AppDatabase db, $PartiesTable table)
@@ -135550,6 +138036,8 @@ class $$PartiesTableTableManager
                 salesOrdersRefs = false,
                 paymentsRefs = false,
                 landedCostItemsRefs = false,
+                partyFollowUpsRefs = false,
+                supplierClaimsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -135567,6 +138055,8 @@ class $$PartiesTableTableManager
                     if (salesOrdersRefs) db.salesOrders,
                     if (paymentsRefs) db.payments,
                     if (landedCostItemsRefs) db.landedCostItems,
+                    if (partyFollowUpsRefs) db.partyFollowUps,
+                    if (supplierClaimsRefs) db.supplierClaims,
                   ],
                   addJoins:
                       <
@@ -135901,6 +138391,48 @@ class $$PartiesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (partyFollowUpsRefs)
+                        await $_getPrefetchedData<
+                          Party,
+                          $PartiesTable,
+                          PartyFollowUp
+                        >(
+                          currentTable: table,
+                          referencedTable: $$PartiesTableReferences
+                              ._partyFollowUpsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$PartiesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).partyFollowUpsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.partyId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (supplierClaimsRefs)
+                        await $_getPrefetchedData<
+                          Party,
+                          $PartiesTable,
+                          SupplierClaim
+                        >(
+                          currentTable: table,
+                          referencedTable: $$PartiesTableReferences
+                              ._supplierClaimsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$PartiesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).supplierClaimsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.supplierId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -135938,6 +138470,8 @@ typedef $$PartiesTableProcessedTableManager =
         bool salesOrdersRefs,
         bool paymentsRefs,
         bool landedCostItemsRefs,
+        bool partyFollowUpsRefs,
+        bool supplierClaimsRefs,
       })
     >;
 typedef $$PurchaseInvoicesTableCreateCompanionBuilder =
@@ -217472,6 +220006,1365 @@ typedef $$FailedAutopostsTableProcessedTableManager =
       FailedAutopost,
       PrefetchHooks Function({bool resolvedBy})
     >;
+typedef $$PartyFollowUpsTableCreateCompanionBuilder =
+    PartyFollowUpsCompanion Function({
+      Value<int> id,
+      required int partyId,
+      Value<int?> invoiceId,
+      Value<String?> invoiceNumber,
+      Value<double> amountDue,
+      required DateTime contactedAt,
+      required String outcome,
+      Value<DateTime?> promisedDate,
+      Value<double?> promisedAmount,
+      Value<String?> contactPerson,
+      Value<DateTime?> nextActionAt,
+      Value<String?> notes,
+      Value<int?> createdBy,
+      Value<DateTime> createdAt,
+      Value<String?> globalId,
+      Value<DateTime?> lastModifiedAt,
+      Value<DateTime?> deletedAt,
+      Value<String?> originClientId,
+      Value<int> rowVersion,
+    });
+typedef $$PartyFollowUpsTableUpdateCompanionBuilder =
+    PartyFollowUpsCompanion Function({
+      Value<int> id,
+      Value<int> partyId,
+      Value<int?> invoiceId,
+      Value<String?> invoiceNumber,
+      Value<double> amountDue,
+      Value<DateTime> contactedAt,
+      Value<String> outcome,
+      Value<DateTime?> promisedDate,
+      Value<double?> promisedAmount,
+      Value<String?> contactPerson,
+      Value<DateTime?> nextActionAt,
+      Value<String?> notes,
+      Value<int?> createdBy,
+      Value<DateTime> createdAt,
+      Value<String?> globalId,
+      Value<DateTime?> lastModifiedAt,
+      Value<DateTime?> deletedAt,
+      Value<String?> originClientId,
+      Value<int> rowVersion,
+    });
+
+final class $$PartyFollowUpsTableReferences
+    extends BaseReferences<_$AppDatabase, $PartyFollowUpsTable, PartyFollowUp> {
+  $$PartyFollowUpsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $PartiesTable _partyIdTable(_$AppDatabase db) =>
+      db.parties.createAlias(
+        $_aliasNameGenerator(db.partyFollowUps.partyId, db.parties.id),
+      );
+
+  $$PartiesTableProcessedTableManager get partyId {
+    final $_column = $_itemColumn<int>('party_id')!;
+
+    final manager = $$PartiesTableTableManager(
+      $_db,
+      $_db.parties,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_partyIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $UsersTable _createdByTable(_$AppDatabase db) => db.users.createAlias(
+    $_aliasNameGenerator(db.partyFollowUps.createdBy, db.users.id),
+  );
+
+  $$UsersTableProcessedTableManager? get createdBy {
+    final $_column = $_itemColumn<int>('created_by');
+    if ($_column == null) return null;
+    final manager = $$UsersTableTableManager(
+      $_db,
+      $_db.users,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_createdByTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$PartyFollowUpsTableFilterComposer
+    extends Composer<_$AppDatabase, $PartyFollowUpsTable> {
+  $$PartyFollowUpsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get invoiceId => $composableBuilder(
+    column: $table.invoiceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get invoiceNumber => $composableBuilder(
+    column: $table.invoiceNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get amountDue => $composableBuilder(
+    column: $table.amountDue,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get contactedAt => $composableBuilder(
+    column: $table.contactedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get outcome => $composableBuilder(
+    column: $table.outcome,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get promisedDate => $composableBuilder(
+    column: $table.promisedDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get promisedAmount => $composableBuilder(
+    column: $table.promisedAmount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get contactPerson => $composableBuilder(
+    column: $table.contactPerson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get nextActionAt => $composableBuilder(
+    column: $table.nextActionAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$PartiesTableFilterComposer get partyId {
+    final $$PartiesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.partyId,
+      referencedTable: $db.parties,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PartiesTableFilterComposer(
+            $db: $db,
+            $table: $db.parties,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$UsersTableFilterComposer get createdBy {
+    final $$UsersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.createdBy,
+      referencedTable: $db.users,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UsersTableFilterComposer(
+            $db: $db,
+            $table: $db.users,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PartyFollowUpsTableOrderingComposer
+    extends Composer<_$AppDatabase, $PartyFollowUpsTable> {
+  $$PartyFollowUpsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get invoiceId => $composableBuilder(
+    column: $table.invoiceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get invoiceNumber => $composableBuilder(
+    column: $table.invoiceNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get amountDue => $composableBuilder(
+    column: $table.amountDue,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get contactedAt => $composableBuilder(
+    column: $table.contactedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get outcome => $composableBuilder(
+    column: $table.outcome,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get promisedDate => $composableBuilder(
+    column: $table.promisedDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get promisedAmount => $composableBuilder(
+    column: $table.promisedAmount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get contactPerson => $composableBuilder(
+    column: $table.contactPerson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get nextActionAt => $composableBuilder(
+    column: $table.nextActionAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$PartiesTableOrderingComposer get partyId {
+    final $$PartiesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.partyId,
+      referencedTable: $db.parties,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PartiesTableOrderingComposer(
+            $db: $db,
+            $table: $db.parties,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$UsersTableOrderingComposer get createdBy {
+    final $$UsersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.createdBy,
+      referencedTable: $db.users,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UsersTableOrderingComposer(
+            $db: $db,
+            $table: $db.users,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PartyFollowUpsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PartyFollowUpsTable> {
+  $$PartyFollowUpsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get invoiceId =>
+      $composableBuilder(column: $table.invoiceId, builder: (column) => column);
+
+  GeneratedColumn<String> get invoiceNumber => $composableBuilder(
+    column: $table.invoiceNumber,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get amountDue =>
+      $composableBuilder(column: $table.amountDue, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get contactedAt => $composableBuilder(
+    column: $table.contactedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get outcome =>
+      $composableBuilder(column: $table.outcome, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get promisedDate => $composableBuilder(
+    column: $table.promisedDate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get promisedAmount => $composableBuilder(
+    column: $table.promisedAmount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get contactPerson => $composableBuilder(
+    column: $table.contactPerson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get nextActionAt => $composableBuilder(
+    column: $table.nextActionAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get globalId =>
+      $composableBuilder(column: $table.globalId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
+    builder: (column) => column,
+  );
+
+  $$PartiesTableAnnotationComposer get partyId {
+    final $$PartiesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.partyId,
+      referencedTable: $db.parties,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PartiesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.parties,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$UsersTableAnnotationComposer get createdBy {
+    final $$UsersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.createdBy,
+      referencedTable: $db.users,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UsersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.users,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PartyFollowUpsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PartyFollowUpsTable,
+          PartyFollowUp,
+          $$PartyFollowUpsTableFilterComposer,
+          $$PartyFollowUpsTableOrderingComposer,
+          $$PartyFollowUpsTableAnnotationComposer,
+          $$PartyFollowUpsTableCreateCompanionBuilder,
+          $$PartyFollowUpsTableUpdateCompanionBuilder,
+          (PartyFollowUp, $$PartyFollowUpsTableReferences),
+          PartyFollowUp,
+          PrefetchHooks Function({bool partyId, bool createdBy})
+        > {
+  $$PartyFollowUpsTableTableManager(
+    _$AppDatabase db,
+    $PartyFollowUpsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PartyFollowUpsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PartyFollowUpsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PartyFollowUpsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> partyId = const Value.absent(),
+                Value<int?> invoiceId = const Value.absent(),
+                Value<String?> invoiceNumber = const Value.absent(),
+                Value<double> amountDue = const Value.absent(),
+                Value<DateTime> contactedAt = const Value.absent(),
+                Value<String> outcome = const Value.absent(),
+                Value<DateTime?> promisedDate = const Value.absent(),
+                Value<double?> promisedAmount = const Value.absent(),
+                Value<String?> contactPerson = const Value.absent(),
+                Value<DateTime?> nextActionAt = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<int?> createdBy = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<DateTime?> lastModifiedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> originClientId = const Value.absent(),
+                Value<int> rowVersion = const Value.absent(),
+              }) => PartyFollowUpsCompanion(
+                id: id,
+                partyId: partyId,
+                invoiceId: invoiceId,
+                invoiceNumber: invoiceNumber,
+                amountDue: amountDue,
+                contactedAt: contactedAt,
+                outcome: outcome,
+                promisedDate: promisedDate,
+                promisedAmount: promisedAmount,
+                contactPerson: contactPerson,
+                nextActionAt: nextActionAt,
+                notes: notes,
+                createdBy: createdBy,
+                createdAt: createdAt,
+                globalId: globalId,
+                lastModifiedAt: lastModifiedAt,
+                deletedAt: deletedAt,
+                originClientId: originClientId,
+                rowVersion: rowVersion,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int partyId,
+                Value<int?> invoiceId = const Value.absent(),
+                Value<String?> invoiceNumber = const Value.absent(),
+                Value<double> amountDue = const Value.absent(),
+                required DateTime contactedAt,
+                required String outcome,
+                Value<DateTime?> promisedDate = const Value.absent(),
+                Value<double?> promisedAmount = const Value.absent(),
+                Value<String?> contactPerson = const Value.absent(),
+                Value<DateTime?> nextActionAt = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<int?> createdBy = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<DateTime?> lastModifiedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> originClientId = const Value.absent(),
+                Value<int> rowVersion = const Value.absent(),
+              }) => PartyFollowUpsCompanion.insert(
+                id: id,
+                partyId: partyId,
+                invoiceId: invoiceId,
+                invoiceNumber: invoiceNumber,
+                amountDue: amountDue,
+                contactedAt: contactedAt,
+                outcome: outcome,
+                promisedDate: promisedDate,
+                promisedAmount: promisedAmount,
+                contactPerson: contactPerson,
+                nextActionAt: nextActionAt,
+                notes: notes,
+                createdBy: createdBy,
+                createdAt: createdAt,
+                globalId: globalId,
+                lastModifiedAt: lastModifiedAt,
+                deletedAt: deletedAt,
+                originClientId: originClientId,
+                rowVersion: rowVersion,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$PartyFollowUpsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({partyId = false, createdBy = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (partyId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.partyId,
+                                referencedTable: $$PartyFollowUpsTableReferences
+                                    ._partyIdTable(db),
+                                referencedColumn:
+                                    $$PartyFollowUpsTableReferences
+                                        ._partyIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+                    if (createdBy) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.createdBy,
+                                referencedTable: $$PartyFollowUpsTableReferences
+                                    ._createdByTable(db),
+                                referencedColumn:
+                                    $$PartyFollowUpsTableReferences
+                                        ._createdByTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$PartyFollowUpsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PartyFollowUpsTable,
+      PartyFollowUp,
+      $$PartyFollowUpsTableFilterComposer,
+      $$PartyFollowUpsTableOrderingComposer,
+      $$PartyFollowUpsTableAnnotationComposer,
+      $$PartyFollowUpsTableCreateCompanionBuilder,
+      $$PartyFollowUpsTableUpdateCompanionBuilder,
+      (PartyFollowUp, $$PartyFollowUpsTableReferences),
+      PartyFollowUp,
+      PrefetchHooks Function({bool partyId, bool createdBy})
+    >;
+typedef $$SupplierClaimsTableCreateCompanionBuilder =
+    SupplierClaimsCompanion Function({
+      Value<int> id,
+      required int supplierId,
+      required DateTime claimDate,
+      Value<double> ledgerBalance,
+      required String settlementKind,
+      Value<String> status,
+      Value<double> netAmount,
+      Value<String?> linesJson,
+      Value<int> lineCount,
+      Value<DateTime?> replyDueAt,
+      Value<String?> notes,
+      Value<int?> createdBy,
+      Value<DateTime> createdAt,
+      Value<String?> globalId,
+      Value<DateTime?> lastModifiedAt,
+      Value<DateTime?> deletedAt,
+      Value<String?> originClientId,
+      Value<int> rowVersion,
+    });
+typedef $$SupplierClaimsTableUpdateCompanionBuilder =
+    SupplierClaimsCompanion Function({
+      Value<int> id,
+      Value<int> supplierId,
+      Value<DateTime> claimDate,
+      Value<double> ledgerBalance,
+      Value<String> settlementKind,
+      Value<String> status,
+      Value<double> netAmount,
+      Value<String?> linesJson,
+      Value<int> lineCount,
+      Value<DateTime?> replyDueAt,
+      Value<String?> notes,
+      Value<int?> createdBy,
+      Value<DateTime> createdAt,
+      Value<String?> globalId,
+      Value<DateTime?> lastModifiedAt,
+      Value<DateTime?> deletedAt,
+      Value<String?> originClientId,
+      Value<int> rowVersion,
+    });
+
+final class $$SupplierClaimsTableReferences
+    extends BaseReferences<_$AppDatabase, $SupplierClaimsTable, SupplierClaim> {
+  $$SupplierClaimsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $PartiesTable _supplierIdTable(_$AppDatabase db) =>
+      db.parties.createAlias(
+        $_aliasNameGenerator(db.supplierClaims.supplierId, db.parties.id),
+      );
+
+  $$PartiesTableProcessedTableManager get supplierId {
+    final $_column = $_itemColumn<int>('supplier_id')!;
+
+    final manager = $$PartiesTableTableManager(
+      $_db,
+      $_db.parties,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_supplierIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $UsersTable _createdByTable(_$AppDatabase db) => db.users.createAlias(
+    $_aliasNameGenerator(db.supplierClaims.createdBy, db.users.id),
+  );
+
+  $$UsersTableProcessedTableManager? get createdBy {
+    final $_column = $_itemColumn<int>('created_by');
+    if ($_column == null) return null;
+    final manager = $$UsersTableTableManager(
+      $_db,
+      $_db.users,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_createdByTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$SupplierClaimsTableFilterComposer
+    extends Composer<_$AppDatabase, $SupplierClaimsTable> {
+  $$SupplierClaimsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get claimDate => $composableBuilder(
+    column: $table.claimDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get ledgerBalance => $composableBuilder(
+    column: $table.ledgerBalance,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get settlementKind => $composableBuilder(
+    column: $table.settlementKind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get netAmount => $composableBuilder(
+    column: $table.netAmount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get linesJson => $composableBuilder(
+    column: $table.linesJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lineCount => $composableBuilder(
+    column: $table.lineCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get replyDueAt => $composableBuilder(
+    column: $table.replyDueAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$PartiesTableFilterComposer get supplierId {
+    final $$PartiesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.supplierId,
+      referencedTable: $db.parties,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PartiesTableFilterComposer(
+            $db: $db,
+            $table: $db.parties,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$UsersTableFilterComposer get createdBy {
+    final $$UsersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.createdBy,
+      referencedTable: $db.users,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UsersTableFilterComposer(
+            $db: $db,
+            $table: $db.users,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SupplierClaimsTableOrderingComposer
+    extends Composer<_$AppDatabase, $SupplierClaimsTable> {
+  $$SupplierClaimsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get claimDate => $composableBuilder(
+    column: $table.claimDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get ledgerBalance => $composableBuilder(
+    column: $table.ledgerBalance,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get settlementKind => $composableBuilder(
+    column: $table.settlementKind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get netAmount => $composableBuilder(
+    column: $table.netAmount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get linesJson => $composableBuilder(
+    column: $table.linesJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get lineCount => $composableBuilder(
+    column: $table.lineCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get replyDueAt => $composableBuilder(
+    column: $table.replyDueAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$PartiesTableOrderingComposer get supplierId {
+    final $$PartiesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.supplierId,
+      referencedTable: $db.parties,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PartiesTableOrderingComposer(
+            $db: $db,
+            $table: $db.parties,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$UsersTableOrderingComposer get createdBy {
+    final $$UsersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.createdBy,
+      referencedTable: $db.users,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UsersTableOrderingComposer(
+            $db: $db,
+            $table: $db.users,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SupplierClaimsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SupplierClaimsTable> {
+  $$SupplierClaimsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get claimDate =>
+      $composableBuilder(column: $table.claimDate, builder: (column) => column);
+
+  GeneratedColumn<double> get ledgerBalance => $composableBuilder(
+    column: $table.ledgerBalance,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get settlementKind => $composableBuilder(
+    column: $table.settlementKind,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<double> get netAmount =>
+      $composableBuilder(column: $table.netAmount, builder: (column) => column);
+
+  GeneratedColumn<String> get linesJson =>
+      $composableBuilder(column: $table.linesJson, builder: (column) => column);
+
+  GeneratedColumn<int> get lineCount =>
+      $composableBuilder(column: $table.lineCount, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get replyDueAt => $composableBuilder(
+    column: $table.replyDueAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get globalId =>
+      $composableBuilder(column: $table.globalId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
+    builder: (column) => column,
+  );
+
+  $$PartiesTableAnnotationComposer get supplierId {
+    final $$PartiesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.supplierId,
+      referencedTable: $db.parties,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PartiesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.parties,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$UsersTableAnnotationComposer get createdBy {
+    final $$UsersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.createdBy,
+      referencedTable: $db.users,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UsersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.users,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SupplierClaimsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SupplierClaimsTable,
+          SupplierClaim,
+          $$SupplierClaimsTableFilterComposer,
+          $$SupplierClaimsTableOrderingComposer,
+          $$SupplierClaimsTableAnnotationComposer,
+          $$SupplierClaimsTableCreateCompanionBuilder,
+          $$SupplierClaimsTableUpdateCompanionBuilder,
+          (SupplierClaim, $$SupplierClaimsTableReferences),
+          SupplierClaim,
+          PrefetchHooks Function({bool supplierId, bool createdBy})
+        > {
+  $$SupplierClaimsTableTableManager(
+    _$AppDatabase db,
+    $SupplierClaimsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SupplierClaimsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SupplierClaimsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SupplierClaimsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> supplierId = const Value.absent(),
+                Value<DateTime> claimDate = const Value.absent(),
+                Value<double> ledgerBalance = const Value.absent(),
+                Value<String> settlementKind = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<double> netAmount = const Value.absent(),
+                Value<String?> linesJson = const Value.absent(),
+                Value<int> lineCount = const Value.absent(),
+                Value<DateTime?> replyDueAt = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<int?> createdBy = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<DateTime?> lastModifiedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> originClientId = const Value.absent(),
+                Value<int> rowVersion = const Value.absent(),
+              }) => SupplierClaimsCompanion(
+                id: id,
+                supplierId: supplierId,
+                claimDate: claimDate,
+                ledgerBalance: ledgerBalance,
+                settlementKind: settlementKind,
+                status: status,
+                netAmount: netAmount,
+                linesJson: linesJson,
+                lineCount: lineCount,
+                replyDueAt: replyDueAt,
+                notes: notes,
+                createdBy: createdBy,
+                createdAt: createdAt,
+                globalId: globalId,
+                lastModifiedAt: lastModifiedAt,
+                deletedAt: deletedAt,
+                originClientId: originClientId,
+                rowVersion: rowVersion,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int supplierId,
+                required DateTime claimDate,
+                Value<double> ledgerBalance = const Value.absent(),
+                required String settlementKind,
+                Value<String> status = const Value.absent(),
+                Value<double> netAmount = const Value.absent(),
+                Value<String?> linesJson = const Value.absent(),
+                Value<int> lineCount = const Value.absent(),
+                Value<DateTime?> replyDueAt = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<int?> createdBy = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<DateTime?> lastModifiedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> originClientId = const Value.absent(),
+                Value<int> rowVersion = const Value.absent(),
+              }) => SupplierClaimsCompanion.insert(
+                id: id,
+                supplierId: supplierId,
+                claimDate: claimDate,
+                ledgerBalance: ledgerBalance,
+                settlementKind: settlementKind,
+                status: status,
+                netAmount: netAmount,
+                linesJson: linesJson,
+                lineCount: lineCount,
+                replyDueAt: replyDueAt,
+                notes: notes,
+                createdBy: createdBy,
+                createdAt: createdAt,
+                globalId: globalId,
+                lastModifiedAt: lastModifiedAt,
+                deletedAt: deletedAt,
+                originClientId: originClientId,
+                rowVersion: rowVersion,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$SupplierClaimsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({supplierId = false, createdBy = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (supplierId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.supplierId,
+                                referencedTable: $$SupplierClaimsTableReferences
+                                    ._supplierIdTable(db),
+                                referencedColumn:
+                                    $$SupplierClaimsTableReferences
+                                        ._supplierIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+                    if (createdBy) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.createdBy,
+                                referencedTable: $$SupplierClaimsTableReferences
+                                    ._createdByTable(db),
+                                referencedColumn:
+                                    $$SupplierClaimsTableReferences
+                                        ._createdByTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$SupplierClaimsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SupplierClaimsTable,
+      SupplierClaim,
+      $$SupplierClaimsTableFilterComposer,
+      $$SupplierClaimsTableOrderingComposer,
+      $$SupplierClaimsTableAnnotationComposer,
+      $$SupplierClaimsTableCreateCompanionBuilder,
+      $$SupplierClaimsTableUpdateCompanionBuilder,
+      (SupplierClaim, $$SupplierClaimsTableReferences),
+      SupplierClaim,
+      PrefetchHooks Function({bool supplierId, bool createdBy})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -217800,4 +221693,8 @@ class $AppDatabaseManager {
       $$RemoteIdMappingsTableTableManager(_db, _db.remoteIdMappings);
   $$FailedAutopostsTableTableManager get failedAutoposts =>
       $$FailedAutopostsTableTableManager(_db, _db.failedAutoposts);
+  $$PartyFollowUpsTableTableManager get partyFollowUps =>
+      $$PartyFollowUpsTableTableManager(_db, _db.partyFollowUps);
+  $$SupplierClaimsTableTableManager get supplierClaims =>
+      $$SupplierClaimsTableTableManager(_db, _db.supplierClaims);
 }

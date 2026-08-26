@@ -123,6 +123,11 @@ class ApiHandler {
     router.get('/api/product-batches', _getProductBatches);
     router.get('/api/sales-orders', _getSalesOrders);
     router.get('/api/purchase-orders', _getPurchaseOrders);
+    // v165 — سجلّا تواصلٍ يتبعان `parties`، وسياستُهما سياستُه بالضبط:
+    // العميلُ يُرسل `branch_id` والمعالجُ لا يقرؤه بعد، ولا فشلَ مقفولاً على
+    // غياب الجلسة (انظر `_getParties`).
+    router.get('/api/party-follow-ups', _getPartyFollowUps);
+    router.get('/api/supplier-claims', _getSupplierClaims);
     router.get('/api/accounting-periods', _getAccountingPeriods);
 
     // ── Write endpoints — delegated to sub-handlers ──
@@ -2759,6 +2764,81 @@ class ApiHandler {
       return _json({'payment_allocations': jsonList, 'count': jsonList.length});
     } catch (e) {
       return _error('Failed to fetch payment allocations: $e');
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // v165 — متابعةُ التحصيل ومطالبةُ المورد
+  // ═══════════════════════════════════════════════════════════════
+  //
+  // ⚠️ **بلا حصرِ فرعٍ — كأصلهما.** الجدولان يتعلّقان بـ`parties`، ولا عمودَ
+  // فرعٍ فيهما. والعميلُ يُرسل `branch_id` (‏المساران في `_scopedEndpoints`)
+  // لكنّ `_getParties` نفسَه لا يقرؤه ويعيد الأطرافَ كلَّها. فحصرُ التابعِ
+  // بفرعٍ لا يُحصَر به أصلُه كان يُنتج فرعاً يرى الطرفَ ولا يرى متابعاتِه —
+  // وهو أسوأُ من الحالتين. ويومَ يُحصَر مسارُ الأطراف يُحصَر هذان معه.
+  //
+  // ⚠️ **والمحذوفُ ناعماً يُرسَل** ولا يُرشَّح هنا: المزامنةُ تحتاج الصفَّ
+  // بعمود `deletedAt` لتحذفه عند الطرف الآخر، وإخفاؤه يُبقيه حيّاً هناك
+  // إلى الأبد.
+
+  Future<Response> _getPartyFollowUps(Request request) async {
+    try {
+      final rows = await _db.select(_db.partyFollowUps).get();
+      final jsonList = rows
+          .map((f) => <String, dynamic>{
+                'id': f.id,
+                'globalId': f.globalId,
+                'partyId': f.partyId,
+                'invoiceId': f.invoiceId,
+                'invoiceNumber': f.invoiceNumber,
+                'amountDue': f.amountDue,
+                'contactedAt': f.contactedAt.toIso8601String(),
+                'outcome': f.outcome,
+                'promisedDate': f.promisedDate?.toIso8601String(),
+                'promisedAmount': f.promisedAmount,
+                'contactPerson': f.contactPerson,
+                'nextActionAt': f.nextActionAt?.toIso8601String(),
+                'notes': f.notes,
+                'createdBy': f.createdBy,
+                'createdAt': f.createdAt.toIso8601String(),
+                'lastModifiedAt': f.lastModifiedAt?.toIso8601String(),
+                'deletedAt': f.deletedAt?.toIso8601String(),
+                'rowVersion': f.rowVersion,
+              })
+          .toList();
+      return _json({'party_follow_ups': jsonList, 'count': jsonList.length});
+    } catch (e) {
+      return _error('Failed to fetch party follow-ups: $e');
+    }
+  }
+
+  Future<Response> _getSupplierClaims(Request request) async {
+    try {
+      final rows = await _db.select(_db.supplierClaims).get();
+      final jsonList = rows
+          .map((c) => <String, dynamic>{
+                'id': c.id,
+                'globalId': c.globalId,
+                'supplierId': c.supplierId,
+                'claimDate': c.claimDate.toIso8601String(),
+                'ledgerBalance': c.ledgerBalance,
+                'settlementKind': c.settlementKind,
+                'status': c.status,
+                'netAmount': c.netAmount,
+                'linesJson': c.linesJson,
+                'lineCount': c.lineCount,
+                'replyDueAt': c.replyDueAt?.toIso8601String(),
+                'notes': c.notes,
+                'createdBy': c.createdBy,
+                'createdAt': c.createdAt.toIso8601String(),
+                'lastModifiedAt': c.lastModifiedAt?.toIso8601String(),
+                'deletedAt': c.deletedAt?.toIso8601String(),
+                'rowVersion': c.rowVersion,
+              })
+          .toList();
+      return _json({'supplier_claims': jsonList, 'count': jsonList.length});
+    } catch (e) {
+      return _error('Failed to fetch supplier claims: $e');
     }
   }
 

@@ -145,6 +145,7 @@ part 'daos/notification_dao.dart';
 part 'daos/operational_expenses_dao.dart';
 part 'daos/fk_resolver_dao.dart';
 part 'daos/work_holidays_dao.dart';
+part 'daos/party_engagement_dao.dart';
 // Seeding & Projections
 part 'database_seeder.dart';
 part 'database_seeder_permissions.dart';
@@ -177,6 +178,7 @@ part 'tables/manufacturing_assets_tables.dart';
 part 'tables/e_invoicing_tables.dart';
 part 'tables/loyalty_tables.dart';
 part 'tables/distribution_tables.dart';
+part 'tables/party_engagement_tables.dart';
 part 'tables/document_sequences.dart';
 part 'tables/quotation_tables.dart';
 part 'tables/operational_expenses_tables.dart';
@@ -554,6 +556,9 @@ const String kCreateBookingResourceSlotIndexSql =
     RemoteIdMappings,
     // PIR P0-04: Failed Autopost monitoring
     FailedAutoposts,
+    // v165 — سجلّا تواصلٍ لا قيدَين: متابعةُ التحصيل ومطالبةُ المورد.
+    PartyFollowUps,
+    SupplierClaims,
   ],
 )
 /// MonixaERP ERP Core Database.
@@ -751,7 +756,7 @@ class AppDatabase extends _$AppDatabase {
   // `newColumns`، فرمت `no such column: "role"` وابتلعها `_safeMigrate`
   // (تعدُّها خطأً عديمَ الأثر) — فخُتمت القواعدُ 161 وأعمدةُ المورد لم تُضَف،
   // و`from < 161` لا يعود يفحصها. الخطوةُ الجديدةُ تفحص ثمّ تُصلح.
-  int get schemaVersion => 164;
+  int get schemaVersion => 165;
 
   /// PostgreSQL-specific table creation: Drift's `currentDateAndTime` generates
   /// `strftime('%s','now')` which doesn't exist in PostgreSQL.

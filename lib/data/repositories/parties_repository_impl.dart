@@ -229,4 +229,89 @@ class PartiesRepositoryImpl implements IPartiesRepository {
         supplier: supplier,
         limit: limit,
       );
+
+  // ═══ متابعةُ التحصيل ومطالبةُ المورد — تمريرٌ خالص ═════════════════════
+
+  @override
+  Future<List<PartyFollowUp>> getPartyFollowUps(
+    int partyId, {
+    int? invoiceId,
+    int limit = 50,
+  }) => _db.getPartyFollowUps(partyId, invoiceId: invoiceId, limit: limit);
+
+  @override
+  Future<int> countPartyFollowUps(int partyId, {int? invoiceId}) =>
+      _db.countPartyFollowUps(partyId, invoiceId: invoiceId);
+
+  @override
+  Future<int> insertPartyFollowUp({
+    required int partyId,
+    required DateTime contactedAt,
+    required String outcome,
+    required double amountDue,
+    int? invoiceId,
+    String? invoiceNumber,
+    DateTime? promisedDate,
+    double? promisedAmount,
+    String? contactPerson,
+    DateTime? nextActionAt,
+    String? notes,
+    int? createdBy,
+  }) => _db.insertPartyFollowUp(
+        PartyFollowUpsCompanion.insert(
+          partyId: partyId,
+          contactedAt: contactedAt,
+          outcome: outcome,
+          amountDue: Value(amountDue),
+          invoiceId: Value(invoiceId),
+          invoiceNumber: Value(invoiceNumber),
+          promisedDate: Value(promisedDate),
+          promisedAmount: Value(promisedAmount),
+          contactPerson: Value(contactPerson),
+          nextActionAt: Value(nextActionAt),
+          notes: Value(notes),
+          createdBy: Value(createdBy),
+        ),
+      );
+
+  @override
+  Future<List<SupplierClaim>> getSupplierClaims(
+    int supplierId, {
+    int limit = 50,
+  }) => _db.getSupplierClaims(supplierId, limit: limit);
+
+  @override
+  Future<List<SupplierClaim>> getOpenSupplierClaims(int supplierId) =>
+      _db.getOpenSupplierClaims(supplierId);
+
+  @override
+  Future<int> insertSupplierClaim({
+    required int supplierId,
+    required DateTime claimDate,
+    required String settlementKind,
+    required double ledgerBalance,
+    required double netAmount,
+    required int lineCount,
+    String? linesJson,
+    DateTime? replyDueAt,
+    String? notes,
+    int? createdBy,
+  }) => _db.insertSupplierClaim(
+        SupplierClaimsCompanion.insert(
+          supplierId: supplierId,
+          claimDate: claimDate,
+          settlementKind: settlementKind,
+          ledgerBalance: Value(ledgerBalance),
+          netAmount: Value(netAmount),
+          lineCount: Value(lineCount),
+          linesJson: Value(linesJson),
+          replyDueAt: Value(replyDueAt),
+          notes: Value(notes),
+          createdBy: Value(createdBy),
+        ),
+      );
+
+  @override
+  Future<void> updateSupplierClaimStatus(int id, String status) =>
+      _db.updateSupplierClaimStatus(id, status);
 }

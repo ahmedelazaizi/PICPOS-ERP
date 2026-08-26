@@ -2728,5 +2728,36 @@ extension Epoch3Migrations on AppDatabase {
         debugPrint('[Migration] v164 الاستحقاقُ وشروطُ التعامل — تمّت');
       });
     }
+
+    // ═══ v165 — متابعةُ التحصيل ومطالبةُ المورد ═══════════════════════════
+    //
+    // جدولان **جديدان** لا أعمدةٌ على قائم، فلا `alterTable` ولا تسويةَ
+    // بيانات: `createTable` وحدَها، ولا صفَّ واحدٌ يُكتَب.
+    //
+    // ⚠️ **والفحصُ بوجود الجدول لا بالنسخة**: تشغيلةٌ سابقةٌ انقطعت بعد أوّلِ
+    //    جدولٍ تترك النسخةَ ٦٤١ والجدولَ الأوّلَ قائماً، فـ`createTable`
+    //    عليه يرمي «table already exists» ويُسقط الخطوةَ كلَّها. والفحصُ
+    //    المستقلُّ لكلٍّ يجعلها قابلةً للإعادة.
+    if (from < 165) {
+      await _safeMigrate('v165 متابعةُ التحصيل ومطالبةُ المورد', () async {
+        Future<bool> tableExists(String name) async {
+          final rows = await customSelect(
+            "SELECT name FROM sqlite_master "
+            "WHERE type = 'table' AND name = ?",
+            variables: [Variable(name)],
+          ).get();
+          return rows.isNotEmpty;
+        }
+
+        if (!await tableExists('party_follow_ups')) {
+          await m.createTable(partyFollowUps);
+        }
+        if (!await tableExists('supplier_claims')) {
+          await m.createTable(supplierClaims);
+        }
+
+        debugPrint('[Migration] v165 متابعةُ التحصيل ومطالبةُ المورد — تمّت');
+      });
+    }
   }
 }

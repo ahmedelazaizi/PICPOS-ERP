@@ -197,6 +197,7 @@ class _FakePartiesRepo implements IPartiesRepository {
     this.poRows = const [],
     this.papers = const [],
     this.settlements = const [],
+    this.priorAttempts = 2,
     this.metrics = const PartyProfileMetrics(
       settledInvoices: 4,
       avgSettlementDays: 6,
@@ -214,6 +215,7 @@ class _FakePartiesRepo implements IPartiesRepository {
   final List<PoMatchRow> poRows;
   final List<CommercialPaperData> papers;
   final List<PartySettlementRow> settlements;
+  final int priorAttempts;
   final PartyProfileMetrics metrics;
 
   /// يحاكي الطرفَ المحذوفَ أو الخارجَ عن النطاق.
@@ -278,6 +280,86 @@ class _FakePartiesRepo implements IPartiesRepository {
     int limit = 6,
   }) async =>
       settlements;
+
+  // ── v165: سجلّا التواصل ────────────────────────────────────────────────
+
+  /// ما كُتب فعلاً — يُفحَص بدل مراقبة نداءٍ صامت.
+  final List<Map<String, Object?>> written = [];
+
+  @override
+  Future<int> countPartyFollowUps(int partyId, {int? invoiceId}) async =>
+      priorAttempts;
+
+  @override
+  Future<List<PartyFollowUp>> getPartyFollowUps(
+    int partyId, {
+    int? invoiceId,
+    int limit = 50,
+  }) async =>
+      const [];
+
+  @override
+  Future<int> insertPartyFollowUp({
+    required int partyId,
+    required DateTime contactedAt,
+    required String outcome,
+    required double amountDue,
+    int? invoiceId,
+    String? invoiceNumber,
+    DateTime? promisedDate,
+    double? promisedAmount,
+    String? contactPerson,
+    DateTime? nextActionAt,
+    String? notes,
+    int? createdBy,
+  }) async {
+    written.add({
+      'kind': 'followUp',
+      'partyId': partyId,
+      'outcome': outcome,
+      'amountDue': amountDue,
+      'invoiceNumber': invoiceNumber,
+      'promisedAmount': promisedAmount,
+      'nextActionAt': nextActionAt,
+    });
+    return written.length;
+  }
+
+  @override
+  Future<List<SupplierClaim>> getSupplierClaims(int supplierId,
+          {int limit = 50}) async =>
+      const [];
+
+  @override
+  Future<List<SupplierClaim>> getOpenSupplierClaims(int supplierId) async =>
+      const [];
+
+  @override
+  Future<int> insertSupplierClaim({
+    required int supplierId,
+    required DateTime claimDate,
+    required String settlementKind,
+    required double ledgerBalance,
+    required double netAmount,
+    required int lineCount,
+    String? linesJson,
+    DateTime? replyDueAt,
+    String? notes,
+    int? createdBy,
+  }) async {
+    written.add({
+      'kind': 'claim',
+      'supplierId': supplierId,
+      'settlementKind': settlementKind,
+      'netAmount': netAmount,
+      'lineCount': lineCount,
+      'linesJson': linesJson,
+    });
+    return written.length;
+  }
+
+  @override
+  Future<void> updateSupplierClaimStatus(int id, String status) async {}
 
   @override
   dynamic noSuchMethod(Invocation invocation) =>
@@ -572,29 +654,121 @@ void main() {
     await teardownTree(tester);
   });
 
-  // ⚠️ **المرساةُ المعاكسة**: التبويباتُ التي لم يُبنَ فعلُها بعد يجب أن تبقى
-  //    بلا عمودِ إجراء. وبلا هذا الفحص كان يكفي أن يعود العمودُ في كلّ مكانٍ
-  //    ليمرّ الفحصان أعلاه أخضرَين.
-  testWidgets('لا عمودَ إجراءٍ حيث الفعلُ لم يُبنَ بعد', (tester) async {
-    final cases = <({bool supplier, String tab, String anchor})>[
-      (supplier: false, tab: 'الأوراق والضمانات', anchor: 'الاستحقاق'),
-      (supplier: true, tab: 'الأوراق والمقايضات', anchor: 'الاستحقاق'),
-      (
-        supplier: true,
-        tab: 'مطابقة الفواتير بالاستلام',
-        anchor: 'نوع الفرق'
-      ),
+  // ⚠️ **المرساةُ المعاكسة**: تبويبةُ الأوراق لم يُبنَ فعلُها بعد (تغييرُ
+  //    حالةِ ورقةٍ مسارٌ آخر)، فتبقى بلا عمودِ إجراء. وبلا هذا الفحص كان
+  //    يكفي أن يعود العمودُ في كلّ مكانٍ ليمرّ ما قبله أخضرَ.
+  testWidgets('لا عمودَ إجراءٍ في الأوراق — فعلُها لم يُبنَ', (tester) async {
+    final cases = <({bool supplier, String tab})>[
+      (supplier: false, tab: 'الأوراق والضمانات'),
+      (supplier: true, tab: 'الأوراق والمقايضات'),
     ];
     for (final c in cases) {
       await open2(tester, const Size(1500, 900), asSupplier: c.supplier);
       await tester.tap(find.text(c.tab).first);
       await tester.pumpAndSettle();
-      expect(find.text(c.anchor), findsWidgets,
+      expect(find.text('الاستحقاق'), findsWidgets,
           reason: 'الجدولُ لم يُرسَم في «${c.tab}» — فغيابُ «إجراء» بلا دلالة');
       expect(find.text('إجراء'), findsNothing,
           reason: 'عمودُ «إجراء» ظهر في «${c.tab}» وفعلُه لم يُبنَ بعد');
       await teardownTree(tester);
     }
+  });
+
+  // ═══ متابعةُ التحصيل — v165 ═════════════════════════════════════════════
+  //
+  // ⚠️ **الفعلُ يُقاس بما كُتب** لا بأنّ الحوارَ فُتح: حوارٌ يُرسَم ثمّ لا
+  //    يكتب شيئاً عند «حفظ» أسوأُ من زرٍّ غائب.
+  testWidgets('حوارُ المتابعة يكتب ما اختاره المشغّل', (tester) async {
+    final repo = _FakePartiesRepo(
+      parties: [customer],
+      entries: entries,
+      open: open,
+      settlements: settlements,
+      priorAttempts: 2,
+    );
+    await open2(tester, const Size(1500, 900), asSupplier: false, repo: repo);
+    await tester.tap(find.text('أعمار الدين').first);
+    await tester.pumpAndSettle();
+
+    // ⚠️ **داخلَ الزرّ لا في الجدول كلِّه**: عنوانُ العمود «متابعة» أيضاً،
+    //    وهو يسبق الصفوفَ في الشجرة — فـ`.first` كانت تضغط رأسَ عمودٍ لا
+    //    يفعل شيئاً، ويمرّ الفحصُ كأنّ الحوارَ لم يُبنَ.
+    await tester.tap(
+      find.descendant(of: find.byType(InkWell), matching: find.text('متابعة')).first,
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('متابعة تحصيل'), findsOneWidget);
+    // «محاولاتٌ سابقة» **عدٌّ مقيسٌ** من المستودع لا رقمٌ مكتوب.
+    expect(find.text('محاولات سابقة'), findsOneWidget);
+    expect(find.text('2'), findsWidgets);
+
+    // النتيجةُ الافتراضيّةُ وعدٌ، فتظهر تفاصيلُه؛ ونتيجةٌ أخرى تُخفيها.
+    expect(find.text('تفاصيل الوعد'), findsOneWidget);
+    await tester.tap(find.text('لم يُرد'));
+    await tester.pumpAndSettle();
+    expect(find.text('تفاصيل الوعد'), findsNothing,
+        reason: 'تفاصيلُ الوعد بقيت مع نتيجةٍ لا وعدَ فيها');
+
+    await tester.tap(find.text('حفظ المتابعة'));
+    await tester.pumpAndSettle();
+    // ⚠️ رسالةُ النجاح مؤقّتُها ٢٫٥ ثانية، ويبقى معلّقاً بعد `pumpAndSettle`
+    //    فيسقط الاختبارُ بـ«Pending timers» لا بخطأٍ في الشِّفرة. يُدفَع الزمنُ
+    //    حتى ينطفئ.
+    await tester.pump(const Duration(seconds: 3));
+
+    expect(repo.written, hasLength(1), reason: 'الحفظُ لم يكتب شيئاً');
+    final row = repo.written.single;
+    expect(row['kind'], 'followUp');
+    expect(row['outcome'], 'no_answer', reason: 'النتيجةُ المختارةُ لم تُحفظ');
+    // ⚠️ لا وعدَ ⇒ لا مبلغَ موعود — ولا يُكتَب صفرٌ يُقرأ «وعد بصفر».
+    expect(row['promisedAmount'], isNull);
+    // والمتبقّي **لقطةٌ** من الصفّ لا رقمٌ مخترَع.
+    expect(row['amountDue'], open.first.remaining);
+    expect(row['nextActionAt'], isNotNull,
+        reason: 'موعدُ الإجراء التالي لم يُشتقّ من النتيجة');
+    await teardownTree(tester);
+  });
+
+  // ═══ مطالبةُ المورد — v165 ══════════════════════════════════════════════
+  testWidgets('حوارُ المطالبة يجمع الفروقَ وحدَها ويكتبها', (tester) async {
+    final repo = _FakePartiesRepo(
+      parties: [supplier],
+      entries: entries,
+      open: open,
+      poRows: poRows,
+      settlements: settlements,
+    );
+    await open2(tester, const Size(1500, 900), asSupplier: true, repo: repo);
+    await tester.tap(find.text('مطابقة الفواتير بالاستلام').first);
+    await tester.pumpAndSettle();
+
+    // ⚠️ **السطرُ السليمُ بلا زرّ**: ثلاثةُ أسطرٍ في التجهيزة، اثنان بفروق.
+    expect(find.text('مطالبة'), findsNWidgets(2),
+        reason: 'ظهر زرُّ مطالبةٍ على سطرٍ مطابق');
+
+    await tester.tap(
+      find.descendant(of: find.byType(InkWell), matching: find.text('مطالبة')).first,
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('تسوية ومطالبة المورد'), findsOneWidget);
+    expect(find.text('عدد الفروق'), findsOneWidget);
+
+    await tester.tap(find.text('حفظ المطالبة'));
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 3)); // مؤقّتُ رسالة النجاح
+
+    expect(repo.written, hasLength(1), reason: 'الحفظُ لم يكتب شيئاً');
+    final row = repo.written.single;
+    expect(row['kind'], 'claim');
+    expect(row['settlementKind'], 'credit_note');
+    // الفروقُ وحدَها تُطالَب — لا الأسطرُ السليمة.
+    expect(row['lineCount'], 2,
+        reason: 'دخل سطرٌ مطابقٌ في المطالبة أو سقط سطرُ فرق');
+    expect(row['linesJson'], isNotNull);
+    // ⚠️ والصافي صفرٌ ما لم يُكتَب — ولا يُشتقّ من كمّيّاتٍ بلا أسعار.
+    expect(row['netAmount'], 0);
+    await teardownTree(tester);
   });
 
   // ═══ حارسُ عمودِ «إجراء» — بمرساةٍ تُسقطه إن انكسر معياره ═══════════════

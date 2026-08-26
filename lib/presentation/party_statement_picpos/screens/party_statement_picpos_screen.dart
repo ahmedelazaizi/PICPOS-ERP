@@ -32,6 +32,7 @@
 // من زرٍّ غائب — فحُذف العمودُ كلُّه من الجداول الأربعة، وبقي التصديرُ
 // والطباعةُ وهما فعلان لهما كودٌ عاملٌ يُنقَل.
 import 'dart:async' show unawaited;
+import 'dart:convert' show jsonEncode;
 
 import 'package:flutter/foundation.dart' show Uint8List, ValueListenable;
 import 'package:flutter/material.dart';
@@ -54,6 +55,9 @@ import '../../../domain/repositories/parties_repository.dart';
 import '../../../services/invoice_generator.dart';
 import '../../picpos_shell/picpos_bar_list.dart';
 import '../../picpos_shell/picpos_data_table.dart';
+// لبناتُ الحوارَين الجديدَين — «متابعة تحصيل» و«تسوية ومطالبة المورد».
+import '../../picpos_shell/picpos_dialog.dart';
+import '../../picpos_shell/picpos_panel_groups.dart';
 import '../../picpos_shell/picpos_hub_kpi.dart';
 import '../../picpos_shell/picpos_report_bar.dart';
 import '../../picpos_shell/picpos_report_tabs.dart';
@@ -68,6 +72,8 @@ import '../../treasury/widgets/receipt_voucher_dialog.dart';
 
 part 'party_statement_tabs_picpos.dart';
 part 'party_statement_export_picpos.dart';
+part 'party_followup_dialog_picpos.dart';
+part 'supplier_claim_dialog_picpos.dart';
 
 /// تبويبةٌ واحدة — تعريفٌ خالصٌ بلا حالة.
 typedef _StatementTab = ({
