@@ -208,10 +208,18 @@ extension SalesMutationsDao on AppDatabase {
         } catch (_) {/* non-fatal */}
       }
 
+      // v164 — الاستحقاقُ لقطةٌ تُكتَب مرّةً من مهلةِ الطرف وقتَ الإصدار.
+      // و`null` تعني «بلا مهلة» فتُقرأ كتاريخ الإصدار.
+      final dueAt = await resolveInvoiceDueDate(
+        partyId: customerId,
+        invoiceDate: effectiveInvoiceDate,
+      );
+
       final invoiceId = await into(salesInvoices).insert(
         SalesInvoicesCompanion.insert(
           invoiceNumber: invNumber,
           customerId: Value(customerId),
+          dueDate: Value(dueAt),
           warehouseId: warehouseId,
           branchId: Value(resolvedBranchId),
           userId: userId,

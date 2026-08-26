@@ -265,6 +265,28 @@ extension PartyDao on AppDatabase {
   }
 
   /// Get party by ID
+
+  /// استحقاقُ فاتورةٍ تُصدَر الآن لطرفٍ — **لقطةٌ تُكتَب مرّةً**.
+  ///
+  /// يُقرأ `payment_terms_days` من الطرف ويُضاف إلى تاريخ الفاتورة. وصفرٌ
+  /// (وهو الافتراض) يعطي `null` لا تاريخاً مساوياً للإصدار — والفرقُ مقصود:
+  /// `null` تعني «بلا مهلة» فتقرؤها كلُّ الاستعلامات
+  /// `COALESCE(due_date, invoice_date)`، وكتابةُ تاريخٍ مطابقٍ كانت تملأ
+  /// عموداً بلا بيانةٍ زائدة.
+  ///
+  /// و[partyId] فارغاً (بيعٌ نقديٌّ عابر) ⇒ `null` — لا طرفَ فلا مهلة.
+  Future<DateTime?> resolveInvoiceDueDate({
+    required int? partyId,
+    required DateTime invoiceDate,
+  }) async {
+    if (partyId == null) return null;
+    final party = await (select(parties)..where((p) => p.id.equals(partyId)))
+        .getSingleOrNull();
+    final days = party?.paymentTermsDays ?? 0;
+    if (days <= 0) return null;
+    return invoiceDate.add(Duration(days: days));
+  }
+
   Future<Party?> getPartyById(int id) {
     return (select(parties)..where((p) => p.id.equals(id))).getSingleOrNull();
   }
@@ -1775,13 +1797,13 @@ extension PartyDao on AppDatabase {
           p.id,
           p.name,
           p.balance,
-          COALESCE(SUM(CASE WHEN julianday(?, 'unixepoch') - julianday(si.invoice_date, 'unixepoch') <= 30
+          COALESCE(SUM(CASE WHEN julianday(?, 'unixepoch') - julianday(COALESCE(si.due_date, si.invoice_date), 'unixepoch') <= 30
             THEN MAX(si.total - si.paid, 0) ELSE 0 END), 0) AS bucket_0_30,
-          COALESCE(SUM(CASE WHEN julianday(?, 'unixepoch') - julianday(si.invoice_date, 'unixepoch') BETWEEN 31 AND 60
+          COALESCE(SUM(CASE WHEN julianday(?, 'unixepoch') - julianday(COALESCE(si.due_date, si.invoice_date), 'unixepoch') BETWEEN 31 AND 60
             THEN MAX(si.total - si.paid, 0) ELSE 0 END), 0) AS bucket_31_60,
-          COALESCE(SUM(CASE WHEN julianday(?, 'unixepoch') - julianday(si.invoice_date, 'unixepoch') BETWEEN 61 AND 90
+          COALESCE(SUM(CASE WHEN julianday(?, 'unixepoch') - julianday(COALESCE(si.due_date, si.invoice_date), 'unixepoch') BETWEEN 61 AND 90
             THEN MAX(si.total - si.paid, 0) ELSE 0 END), 0) AS bucket_61_90,
-          COALESCE(SUM(CASE WHEN julianday(?, 'unixepoch') - julianday(si.invoice_date, 'unixepoch') > 90
+          COALESCE(SUM(CASE WHEN julianday(?, 'unixepoch') - julianday(COALESCE(si.due_date, si.invoice_date), 'unixepoch') > 90
             THEN MAX(si.total - si.paid, 0) ELSE 0 END), 0) AS bucket_90_plus
         FROM parties p
         LEFT JOIN sales_invoices si
@@ -1816,13 +1838,13 @@ extension PartyDao on AppDatabase {
           p.id,
           p.name,
           p.balance,
-          COALESCE(SUM(CASE WHEN julianday(?, 'unixepoch') - julianday(pi.invoice_date, 'unixepoch') <= 30
+          COALESCE(SUM(CASE WHEN julianday(?, 'unixepoch') - julianday(COALESCE(pi.due_date, pi.invoice_date), 'unixepoch') <= 30
             THEN MAX(pi.total - pi.paid, 0) ELSE 0 END), 0) AS bucket_0_30,
-          COALESCE(SUM(CASE WHEN julianday(?, 'unixepoch') - julianday(pi.invoice_date, 'unixepoch') BETWEEN 31 AND 60
+          COALESCE(SUM(CASE WHEN julianday(?, 'unixepoch') - julianday(COALESCE(pi.due_date, pi.invoice_date), 'unixepoch') BETWEEN 31 AND 60
             THEN MAX(pi.total - pi.paid, 0) ELSE 0 END), 0) AS bucket_31_60,
-          COALESCE(SUM(CASE WHEN julianday(?, 'unixepoch') - julianday(pi.invoice_date, 'unixepoch') BETWEEN 61 AND 90
+          COALESCE(SUM(CASE WHEN julianday(?, 'unixepoch') - julianday(COALESCE(pi.due_date, pi.invoice_date), 'unixepoch') BETWEEN 61 AND 90
             THEN MAX(pi.total - pi.paid, 0) ELSE 0 END), 0) AS bucket_61_90,
-          COALESCE(SUM(CASE WHEN julianday(?, 'unixepoch') - julianday(pi.invoice_date, 'unixepoch') > 90
+          COALESCE(SUM(CASE WHEN julianday(?, 'unixepoch') - julianday(COALESCE(pi.due_date, pi.invoice_date), 'unixepoch') > 90
             THEN MAX(pi.total - pi.paid, 0) ELSE 0 END), 0) AS bucket_90_plus
         FROM parties p
         LEFT JOIN purchase_invoices pi

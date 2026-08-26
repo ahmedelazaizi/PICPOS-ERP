@@ -1158,10 +1158,10 @@ extension AccountingReportsDao on AppDatabase {
     final results = await customSelect(
       '''
       SELECT p.id, p.name, p.balance,
-             COALESCE(SUM(CASE WHEN (? - pi.invoice_date) / 86400 <= 30 THEN pi.total - pi.paid ELSE 0 END), 0) as current_30,
-             COALESCE(SUM(CASE WHEN (? - pi.invoice_date) / 86400 BETWEEN 31 AND 60 THEN pi.total - pi.paid ELSE 0 END), 0) as days_31_60,
-             COALESCE(SUM(CASE WHEN (? - pi.invoice_date) / 86400 BETWEEN 61 AND 90 THEN pi.total - pi.paid ELSE 0 END), 0) as days_61_90,
-             COALESCE(SUM(CASE WHEN (? - pi.invoice_date) / 86400 > 90 THEN pi.total - pi.paid ELSE 0 END), 0) as over_90
+             COALESCE(SUM(CASE WHEN (? - COALESCE(pi.due_date, pi.invoice_date)) / 86400 <= 30 THEN pi.total - pi.paid ELSE 0 END), 0) as current_30,
+             COALESCE(SUM(CASE WHEN (? - COALESCE(pi.due_date, pi.invoice_date)) / 86400 BETWEEN 31 AND 60 THEN pi.total - pi.paid ELSE 0 END), 0) as days_31_60,
+             COALESCE(SUM(CASE WHEN (? - COALESCE(pi.due_date, pi.invoice_date)) / 86400 BETWEEN 61 AND 90 THEN pi.total - pi.paid ELSE 0 END), 0) as days_61_90,
+             COALESCE(SUM(CASE WHEN (? - COALESCE(pi.due_date, pi.invoice_date)) / 86400 > 90 THEN pi.total - pi.paid ELSE 0 END), 0) as over_90
       FROM parties p
       LEFT JOIN purchase_invoices pi ON pi.supplier_id = p.id AND pi.total > pi.paid $ccFilter$scopeFilter
       WHERE p.is_supplier = $boolTrue AND p.balance > 0.01
@@ -1237,10 +1237,10 @@ extension AccountingReportsDao on AppDatabase {
     final results = await customSelect(
       '''
       SELECT p.id, p.name, p.balance,
-             COALESCE(SUM(CASE WHEN (? - si.invoice_date) / 86400 <= 30 THEN si.total - si.paid ELSE 0 END), 0) as current_30,
-             COALESCE(SUM(CASE WHEN (? - si.invoice_date) / 86400 BETWEEN 31 AND 60 THEN si.total - si.paid ELSE 0 END), 0) as days_31_60,
-             COALESCE(SUM(CASE WHEN (? - si.invoice_date) / 86400 BETWEEN 61 AND 90 THEN si.total - si.paid ELSE 0 END), 0) as days_61_90,
-             COALESCE(SUM(CASE WHEN (? - si.invoice_date) / 86400 > 90 THEN si.total - si.paid ELSE 0 END), 0) as over_90
+             COALESCE(SUM(CASE WHEN (? - COALESCE(si.due_date, si.invoice_date)) / 86400 <= 30 THEN si.total - si.paid ELSE 0 END), 0) as current_30,
+             COALESCE(SUM(CASE WHEN (? - COALESCE(si.due_date, si.invoice_date)) / 86400 BETWEEN 31 AND 60 THEN si.total - si.paid ELSE 0 END), 0) as days_31_60,
+             COALESCE(SUM(CASE WHEN (? - COALESCE(si.due_date, si.invoice_date)) / 86400 BETWEEN 61 AND 90 THEN si.total - si.paid ELSE 0 END), 0) as days_61_90,
+             COALESCE(SUM(CASE WHEN (? - COALESCE(si.due_date, si.invoice_date)) / 86400 > 90 THEN si.total - si.paid ELSE 0 END), 0) as over_90
       FROM parties p
       LEFT JOIN sales_invoices si ON si.customer_id = p.id AND si.total > si.paid $ccFilter$scopeFilter
       WHERE p.is_customer = $boolTrue AND p.balance > 0.01

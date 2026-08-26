@@ -653,6 +653,11 @@ extension PurchaseDao on AppDatabase {
       } catch (_) {/* non-fatal — branch stays null */}
 
       // Insert invoice
+      // v164 — الاستحقاقُ لقطةٌ من مهلةِ المورد وقتَ الإصدار.
+      final dueAt = await resolveInvoiceDueDate(
+        partyId: supplierId,
+        invoiceDate: invoiceDate ?? DateTime.now(),
+      );
       final invoiceId = await into(purchaseInvoices).insert(
         PurchaseInvoicesCompanion.insert(
           invoiceNumber: invoiceNumber,
@@ -660,6 +665,7 @@ extension PurchaseDao on AppDatabase {
           warehouseId: warehouseId,
           branchId: Value(resolvedBranchId),
           invoiceDate: invoiceDate ?? DateTime.now(),
+          dueDate: Value(dueAt),
           subtotal: Value(subtotalSum),
           discount: Value(effectiveDiscount),
           tax: Value(taxTotal),
@@ -1075,12 +1081,18 @@ extension PurchaseDao on AppDatabase {
       final status = remaining <= 0.01 ? 'paid' : (paid > 0 ? 'partial' : 'pending');
       final invoiceNumber = await generateInvoiceNumber('PUR');
 
+      // v164 — الاستحقاقُ لقطةٌ من مهلةِ المورد وقتَ الإصدار.
+      final dueAt = await resolveInvoiceDueDate(
+        partyId: supplierId,
+        invoiceDate: invoiceDate ?? DateTime.now(),
+      );
       final invoiceId = await into(purchaseInvoices).insert(
         PurchaseInvoicesCompanion.insert(
           invoiceNumber: invoiceNumber,
           supplierId: supplierId,
           warehouseId: warehouseId,
           invoiceDate: invoiceDate ?? DateTime.now(),
+          dueDate: Value(dueAt),
           subtotal: Value(subtotalSum),
           discount: Value(effectiveDiscount),
           tax: Value(taxTotal),
