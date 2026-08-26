@@ -95,4 +95,45 @@ abstract class IPartiesRepository {
 
   /// Get parties with optional filters
   Future<List<Party>> getParties({bool? isCustomer, bool? isSupplier});
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // كشفُ حساب الطرف — تبويباتُ ما بعد «الحركة والرصيد»
+  // ═══════════════════════════════════════════════════════════════════════
+  //
+  // الخمسةُ كانت تعيش في `PartyDao` بلا منفذٍ إلى طبقة العرض، فتبويبةُ
+  // «الحركة والرصيد» وحدَها كانت قابلةً للبناء. وكشفُهنّ هنا هو الشرطُ
+  // الذي يجعل التبويباتِ الأربعَ الباقيةَ ممكنةً بلا كسر طبقيّة:
+  // `lib/presentation` ممنوعٌ عليه استيرادُ `data/database` مباشرةً
+  // (‏حارسُ D4-001)، فالطريقُ الوحيدُ المشروع هو مستودعٌ يُحقَن بمزوِّد.
+
+  /// فواتيرُ طرفٍ **القائمةُ** بأعمارها — «أعمارُ الدين» للعميل و«المستحقُّ
+  /// والاستحقاق» للمورد.
+  Future<List<PartyOpenInvoiceRow>> getPartyOpenInvoices({
+    required int partyId,
+    required bool supplier,
+    DateTime? asOf,
+  });
+
+  /// دفعاتُ طرفٍ ومقدارُ المربوطِ منها بفواتير — «مطابقةُ الدفعات».
+  Future<List<PartyPaymentMatchRow>> getPartyPaymentMatches({
+    required int partyId,
+    DateTime? from,
+    DateTime? to,
+  });
+
+  /// مطابقةُ أمرِ الشراء بالمستلَم بالمفوتَر — «مطابقةُ الفواتير بالاستلام».
+  Future<List<PoMatchRow>> getPurchaseOrderMatches({
+    required int supplierId,
+    DateTime? from,
+    DateTime? to,
+  });
+
+  /// أوراقُ طرفٍ التجاريّة — «الأوراقُ والضمانات» / «الأوراقُ والمقايضات».
+  Future<List<CommercialPaperData>> getPartyPapers(int partyId);
+
+  /// معدّلاتُ ملفّ الطرف المشتقّةُ من تواريخَ حقيقيّة — «الملفُّ والائتمان».
+  Future<PartyProfileMetrics> getPartyProfileMetrics({
+    required int partyId,
+    required bool supplier,
+  });
 }

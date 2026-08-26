@@ -18,8 +18,10 @@
 // `showExcelOptionsDialog`) من `parties/party_dialogs.dart`، الـ helpers
 // (`getPartyTypeLabel`/`getPartyTypeColor`/`getPartyIcon`) من
 // `parties/party_helpers.dart`، و`ReceiptVoucherDialog`/`PaymentVoucherDialog`
-// و`PartyStatementScreen`/`PartyGroupsScreen` مُعاد استخدامهم من UralCash زي
-// ما هم (import، مش نسخ).
+// و`PartyGroupsScreen` مُعاد استخدامهم من UralCash زي ما هم (import، مش نسخ).
+//
+// أمّا كشفُ الحساب فبقى له نسخةُ PicPos المستقلّة `PartyStatementPicposScreen`
+// (تصميمُ 2026-08-26): خمسُ تبويباتٍ لا شاشةٌ واحدة، وشاشةُ UralCash بلا مساس.
 import 'dart:async' show unawaited;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -31,7 +33,10 @@ import '../../../core/widgets/shimmer_loading.dart';
 import '../../../data/providers/providers.dart';
 import '../../../domain/models/picpos_party_view.dart';
 import '../dialogs/add_party_dialog_picpos.dart';
-import '../../screens/party_statement_screen.dart';
+// كشفُ الحساب صار نسخةَ PicPos المستقلّة (تصميمُ 2026-08-26): خمسُ تبويباتٍ
+// على لبنات `picpos_shell` بدل الشاشة الواحدة. وشاشةُ UralCash تبقى بلا مساس
+// وتُفتَح من مساراتها هي.
+import '../../party_statement_picpos/screens/party_statement_picpos_screen.dart';
 import '../../treasury/widgets/receipt_voucher_dialog.dart';
 import '../../treasury/widgets/payment_voucher_dialog.dart';
 import '../../screens/parties/party_dialogs.dart';
@@ -50,10 +55,12 @@ part 'parties_card_grid.dart';
 /// (`Brand.isPicPos`). تعيد استخدام نفس `allPartiesProvider` (عبر Consumer
 /// يلفّ الكارت فقط، مش على مستوى الشاشة كلها) والحوارات من
 /// `parties/party_dialogs.dart` وHelpers من `parties/party_helpers.dart`
-/// و`ReceiptVoucherDialog`/`PaymentVoucherDialog` و`PartyStatementScreen`/
-/// `PartyGroupsScreen` من UralCash — فقط طبقة العرض تبدّلت لـ picpos_shell
-/// (هيدر PicPosScreenScaffold بدل Row يدوي، وPicPosContentCard حول القائمة
-/// بدل Card+elevation).
+/// و`ReceiptVoucherDialog`/`PaymentVoucherDialog` و`PartyGroupsScreen` من
+/// UralCash — فقط طبقة العرض تبدّلت لـ picpos_shell (هيدر PicPosScreenScaffold
+/// بدل Row يدوي، وPicPosContentCard حول القائمة بدل Card+elevation).
+///
+/// وأزرار كشف الحساب الثلاثة تفتح `PartyStatementPicposScreen` — نسخة PicPos
+/// المستقلة بتبويباتها الخمس، مش شاشة UralCash.
 ///
 /// FULL PARITY مع الأصل: فلتر نوع الطرف (الكل/عملاء/موردين/توصيل/عميل مورد
 /// عبر SegmentedButton)، البحث بالاسم أو الهاتف، قائمة الأطراف مع بطاقة كل
@@ -110,7 +117,7 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
           onPressed: () => Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => const PartyStatementScreen(isCustomer: true),
+              builder: (_) => const PartyStatementPicposScreen(),
             ),
           ),
           icon: const Icon(PhosphorIconsBold.user, size: 18),
@@ -124,7 +131,7 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
           onPressed: () => Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => const PartyStatementScreen(isSupplier: true),
+              builder: (_) => const PartyStatementPicposScreen(isSupplier: true),
             ),
           ),
           icon: const Icon(PhosphorIconsBold.truck, size: 18),
@@ -244,7 +251,7 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => PartyStatementScreen(
+          builder: (context) => PartyStatementPicposScreen(
             isSupplier: party.isSupplier,
             partyId: party.id,
             partyName: party.name,

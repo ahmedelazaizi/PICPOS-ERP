@@ -53,7 +53,10 @@ import 'report_definitions_picpos.dart';
 import 'report_view_picpos_screen.dart';
 import '../../screens/branch_performance_screen.dart';
 import '../../screens/e_invoice_dashboard_screen.dart';
-import '../../screens/party_statement_screen.dart';
+// مدخلا «كشف حساب العميل» و«كشف حساب المورد» في مركز التقارير يفتحان نسخةَ
+// PicPos ذاتَ التبويبات الخمس — وهما موضعان ممّا فات جردَ التسليم (ظنَّها
+// ثلاثةً في `parties_picpos` وحدَها).
+import '../../party_statement_picpos/screens/party_statement_picpos_screen.dart';
 import '../../screens/purchase_orders_screen.dart';
 import '../../screens/report_builder_screen.dart';
 import 'ar_aging_report_picpos_screen.dart';
@@ -436,8 +439,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
             id: 'cust_statement',
             title: 'كشف حساب العميل',
             subtitle: 'كشف حساب تفصيلي بالحركات',
-            action: () =>
-                nav(() => const PartyStatementScreen(isCustomer: true)),
+            action: () => nav(() => const PartyStatementPicposScreen()),
           ),
           _ReportEntry(
             id: 'cust_aging',
@@ -481,7 +483,7 @@ class _ReportsPicposScreenState extends ConsumerState<ReportsPicposScreen> {
             // (حقل permission اختياري، ولما يبقى null التايل بيظهر بلا فحص).
             permission: PermissionCodes.reportsSuppliers,
             action: () =>
-                nav(() => const PartyStatementScreen(isSupplier: true)),
+                nav(() => const PartyStatementPicposScreen(isSupplier: true)),
           ),
           _ReportEntry(
             id: 'sup_behavior',

@@ -173,4 +173,49 @@ class PartiesRepositoryImpl implements IPartiesRepository {
     }
     return query.get();
   }
+
+  // ═══ كشفُ حساب الطرف — تمريرٌ خالصٌ إلى `PartyDao` ═══════════════════════
+  //
+  // بلا منطقٍ هنا عمداً: الحسابُ كلُّه في SQL داخل الـDAO (‏شرائحُ العمر،
+  // والمربوطُ من الدفعة، وثلاثيّةُ المطابقة، والمعدّلات)، وإعادةُ أيٍّ منه
+  // في طبقةٍ ثانيةٍ كانت ستُنتج رقمين لنفس السؤال.
+
+  @override
+  Future<List<PartyOpenInvoiceRow>> getPartyOpenInvoices({
+    required int partyId,
+    required bool supplier,
+    DateTime? asOf,
+  }) => _db.getPartyOpenInvoices(
+        partyId: partyId,
+        supplier: supplier,
+        asOf: asOf,
+      );
+
+  @override
+  Future<List<PartyPaymentMatchRow>> getPartyPaymentMatches({
+    required int partyId,
+    DateTime? from,
+    DateTime? to,
+  }) => _db.getPartyPaymentMatches(partyId: partyId, from: from, to: to);
+
+  @override
+  Future<List<PoMatchRow>> getPurchaseOrderMatches({
+    required int supplierId,
+    DateTime? from,
+    DateTime? to,
+  }) => _db.getPurchaseOrderMatches(
+        supplierId: supplierId,
+        from: from,
+        to: to,
+      );
+
+  @override
+  Future<List<CommercialPaperData>> getPartyPapers(int partyId) =>
+      _db.getPartyPapers(partyId);
+
+  @override
+  Future<PartyProfileMetrics> getPartyProfileMetrics({
+    required int partyId,
+    required bool supplier,
+  }) => _db.getPartyProfileMetrics(partyId: partyId, supplier: supplier);
 }
