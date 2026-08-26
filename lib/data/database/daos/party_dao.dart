@@ -530,6 +530,92 @@ extension PartyDao on AppDatabase {
     );
   }
 
+  /// آخرُ فواتيرِ طرفٍ **صفّاً صفّاً** بتاريخ آخرِ سدادٍ لكلٍّ منها.
+  ///
+  /// يسند رسمَي «سلوك السداد — آخر ٦ فواتير» في كشف العميل و«الخصم النقدي —
+  /// المُستغَل مقابل المُهدَر» في كشف المورد. وكلاهما كان متعذّراً لأنّ
+  /// [getPartyProfileMetrics] يعود بمتوسّطاتٍ مجمَّعةٍ لا بصفوف.
+  ///
+  /// ⚠️ **آخرُ سدادٍ لا أوّلُه**: `MAX(payment_date)` على تخصيصات الفاتورة.
+  /// الفاتورةُ قد تُسدَّد على دفعات، و«سُدّدت في كم يوماً» تعني حتى **إقفالها**
+  /// لا حتى أوّلِ قسطٍ منها.
+  ///
+  /// ⚠️ **والضمُّ يقع على `invoice_type` أيضاً**: `payment_allocations` يخدم
+  /// جدولَي البيع والشراء معاً، ومعرِّفُ الفاتورة يتكرّر بينهما. فبلا النوع
+  /// تُنسَب دفعةُ فاتورةِ شراءٍ إلى فاتورةِ بيعٍ تحمل نفسَ الرقم.
+  ///
+  /// ⚠️ **والمرتجعُ مستبعَد**: `sale_type='return'` ليس فاتورةً يُقاس سلوكُ
+  /// سدادها — ولا وجودَ للعمود على جدول الشراء، فالاستبعادُ على البيع وحدَه.
+  Future<List<PartySettlementRow>> getPartySettlementRows({
+    required int partyId,
+    required bool supplier,
+    int limit = 6,
+  }) async {
+    final table = supplier ? 'purchase_invoices' : 'sales_invoices';
+    final fk = supplier ? 'supplier_id' : 'customer_id';
+    final invType = supplier ? 'purchase' : 'sales';
+    final returnFilter = supplier
+        ? ''
+        : " AND (inv.sale_type IS NULL OR inv.sale_type != 'return')";
+
+    final rows = await customSelect(
+      '''
+      SELECT
+        inv.id, inv.invoice_number, inv.invoice_date,
+        COALESCE(inv.due_date, inv.invoice_date) AS due_at,
+        inv.total, inv.paid,
+        (SELECT MAX(pay.payment_date)
+           FROM payment_allocations a
+           JOIN payments pay ON pay.id = a.payment_id AND pay.is_deleted = 0
+          WHERE a.invoice_id = inv.id
+            AND a.invoice_type = ?
+            AND a.deleted_at IS NULL) AS last_paid_at,
+        (SELECT COUNT(*)
+           FROM payment_allocations a2
+          WHERE a2.invoice_id = inv.id
+            AND a2.invoice_type = ?
+            AND a2.deleted_at IS NULL) AS alloc_count
+      FROM $table inv
+      WHERE inv.$fk = ?
+        AND inv.is_deleted = 0$returnFilter
+      ORDER BY inv.invoice_date DESC, inv.id DESC
+      LIMIT ?
+      ''',
+      variables: [
+        Variable(invType),
+        Variable(invType),
+        Variable(partyId),
+        Variable(limit),
+      ],
+      readsFrom: {
+        if (supplier) purchaseInvoices else salesInvoices,
+        paymentAllocations,
+        payments,
+      },
+    ).get();
+
+    DateTime at(QueryRow r, String key) => DateTime.fromMillisecondsSinceEpoch(
+        ((r.data[key] as num?)?.toInt() ?? 0) * 1000);
+
+    return rows.map((r) {
+      final lastPaid = (r.data['last_paid_at'] as num?)?.toInt();
+      return PartySettlementRow(
+        invoiceId: (r.data['id'] as num?)?.toInt() ?? 0,
+        invoiceNumber: r.data['invoice_number'] as String? ?? '',
+        invoiceDate: at(r, 'invoice_date'),
+        dueDate: at(r, 'due_at'),
+        total: (r.data['total'] as num?)?.toDouble() ?? 0,
+        paid: (r.data['paid'] as num?)?.toDouble() ?? 0,
+        // صفرٌ من `MAX` على مجموعةٍ فارغةٍ لا يقع (تعود `NULL`)، لكنّ صفراً
+        // مخزَّناً يعني ١٩٧٠ — وهو ليس تاريخَ سدادٍ فيُقرأ «لم يُسدَّد».
+        lastPaymentDate: (lastPaid == null || lastPaid <= 0)
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(lastPaid * 1000),
+        allocationCount: (r.data['alloc_count'] as num?)?.toInt() ?? 0,
+      );
+    }).toList();
+  }
+
   /// أوراقُ طرفٍ التجاريّة — «الأوراق والضمانات» / «الأوراق والمقايضات».
   Future<List<CommercialPaperData>> getPartyPapers(int partyId) {
     return (select(commercialPapers)

@@ -129,7 +129,36 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
   /// نصُّ البحث في الترويسة — يُرشِّح المحمَّلَ ولا يُعيد الاستعلام.
   ValueListenable<String> get query;
 
+  /// يُفرغ كاشَ التبويبات ويُعيد الاستعلام — **بعد أيّ فعلٍ يحرّك مالاً**.
+  void reloadTabs();
+
   IPartiesRepository get _repo => ref.read(partiesRepositoryProvider);
+
+  /// سندُ قبضٍ للعميل أو صرفٍ للمورد — «تحصيل» و«سداد» في التصميم.
+  ///
+  /// ⚠️ **يُعاد استعمالُ حوارَي الخزينة القائمَين** لا يُبنى بديل: هما اللذان
+  /// يكتبان في الخزنة والذمّة والقيد المحاسبيّ فعلاً، ونسخُهما كان سيُنتج
+  /// مسارَ مالٍ ثانياً ينحرف عن الأوّل بأوّل إصلاح.
+  ///
+  /// ⚠️ **والسندُ على مستوى الطرف لا الفاتورة.** التصميمُ يضع الزرَّ في صفّ
+  /// الفاتورة فيوحي بتحصيلٍ مخصَّصٍ لها، و`ReceiptVoucherDialog` يأخذ الطرفَ
+  /// وحدَه. والتخصيصُ يقع بقاعدة «الأقدمُ أوّلاً» المعلَنةِ في تبويبة المطابقة
+  /// — فالنتيجةُ هي هي حين تكون الفاتورةُ أقدمَ القائم، وتختلف حين لا تكون.
+  /// والربطُ اليدويُّ للدفعة بفاتورةٍ بعينها ليس مبنيّاً بعد.
+  Future<void> openVoucher() async {
+    final p = party;
+    if (p == null) return;
+    await showDialog<void>(
+      context: context,
+      builder: (_) => isSupplier
+          ? PaymentVoucherDialog(initialParty: p)
+          : ReceiptVoucherDialog(initialParty: p),
+    );
+    if (!mounted) return;
+    // ⚠️ يُعاد التحميلُ **دائماً** لا عند «حفظ» وحدَه: الحوارُ لا يعود بنتيجة،
+    //    وسندٌ حُفظ ثمّ كشفٌ لم يتحرّك يقرؤه المشغّلُ عطباً في السند.
+    reloadTabs();
+  }
 
   Future<_TabData> loadTab(String id) {
     if (partyId == null) return Future.value(const _TabData());
@@ -478,6 +507,7 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
             PicPosTableColumn('المتبقي',
                 flex: 1.2, align: PicPosCellAlign.end),
             PicPosTableColumn('عمر التأخر', flex: 1.3),
+            PicPosTableColumn('إجراء', flex: 1.2),
           ],
           groups: [
             (label: 'القائمة', items: open),
@@ -513,6 +543,12 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
             o.overdue ? (o.daysLate / 90).clamp(0.0, 1.0) : 0.0,
             _bucketTint(o.bucket),
           ),
+          PicPosButtonCell(
+            'تحصيل',
+            icon: PhosphorIconsBold.handCoins,
+            tint: _tintOk,
+            onPressed: openVoucher,
+          ),
         ],
       );
 
@@ -532,6 +568,7 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
       _money(t),
       _money(p),
       _money(r),
+      '',
       '',
     ];
   }
@@ -633,6 +670,7 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
             PicPosTableColumn('المتبقي',
                 flex: 1.4, align: PicPosCellAlign.end),
             PicPosTableColumn('خصم نقدي', flex: 1.3),
+            PicPosTableColumn('إجراء', flex: 1.2),
           ],
           groups: [
             (label: 'كل المستحق', items: open),
@@ -664,6 +702,12 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
             discountOf(o) > 0
                 ? PicPosTrendCell(_money(discountOf(o)), up: true)
                 : const PicPosTextCell('—'),
+            PicPosButtonCell(
+              'سداد',
+              icon: PhosphorIconsBold.handCoins,
+              tint: _tintOk,
+              onPressed: openVoucher,
+            ),
           ]),
           totals: (rows) {
             var t = 0.0;
@@ -684,6 +728,7 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
               _money(p),
               _money(r),
               d > 0 ? _money(d) : '',
+              '',
             ];
           },
         ),
@@ -1212,17 +1257,21 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
 
   // ═══ ٥) ملفُّ الطرف ══════════════════════════════════════════════════════
   //
-  // ⚠️ **رسمُ «سلوك السداد — آخر ٦ فواتير» غيرُ مبنيّ**، وكذلك «الخصمُ النقديُّ
-  //    المُستغَلُّ مقابلَ المُهدَر» في كشف المورد. كلاهما يحتاج **أيّامَ سدادِ
-  //    كلِّ فاتورةٍ على حدة**، و`getPartyProfileMetrics` يعود بمتوسّطاتٍ
-  //    وعدّاداتٍ مجمَّعةٍ لا بصفوف. واصطناعُ ستّةِ أعمدةٍ من متوسّطٍ واحدٍ كان
-  //    سيرسم بياناتٍ لا وجودَ لها. فالبيانةُ المجمَّعةُ تظهر في المؤشّرات،
-  //    والرسمُ ينتظر استعلامَ صفوفٍ لم يُطلَب بعد.
+  // رسمُ «سلوك السداد — آخر ٦ فواتير» (عميل) و«الخصم النقدي — المُستغَل مقابلَ
+  // المُهدَر» (مورد) صارا مبنيَّين على `getPartySettlementRows`: **صفٌّ لكلّ
+  // فاتورةٍ** بتاريخ آخرِ سدادٍ لها. وكان الاثنان متعذّرَين ما دام المصدرُ
+  // متوسّطاتٍ مجمَّعة.
+  //
+  // ⚠️ **والعمودُ لا يُرسَم لفاتورةٍ لم تُسدَّد بعد بقيمةٍ صفريّة**: «لم تُسدَّد»
+  //    ليست «سُدّدت في صفرِ يوم». تُرسَم بقيمةِ عمرها الجاري وتُوسَم بذلك،
+  //    فيُقرأ الفرق.
   Future<_TabData> _profileTab() async {
     final p = party;
     if (p == null) return const _TabData();
     final metrics =
         await _repo.getPartyProfileMetrics(partyId: p.id, supplier: isSupplier);
+    final settlements =
+        await _repo.getPartySettlementRows(partyId: p.id, supplier: isSupplier);
 
     final terms = p.paymentTermsDays;
     final discPct = p.earlyPaymentDiscountPct;
@@ -1424,6 +1473,127 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
           groups: [(label: 'البيانات', items: rows)],
           buildRow: (r) => r,
         ),
+        // التصميمُ يضع الرسمَ **تحتَ** الجدول في هذه التبويبة وحدَها —
+        // ولذلك كانت اللبناتُ قائمةً مرتَّبةً لا خاناتٍ مسمّاة.
+        if (settlements.isNotEmpty)
+          isSupplier
+              ? _discountBars(settlements, discPct, discDays)
+              : _settlementBars(settlements, terms),
+      ],
+    );
+  }
+
+  /// «سلوك السداد — آخر ٦ فواتير» في كشف العميل.
+  ///
+  /// العمودُ **أيّامُ السداد الفعليّة**، والمقارنةُ بمهلة السداد المتّفقة.
+  /// وفاتورةٌ لم تُسدَّد تُرسَم بعمرها الجاري لا بصفر — فالصفرُ يُقرأ «سُدّدت
+  /// فوراً» وهو عكسُ الحقيقة.
+  PicPosBarList _settlementBars(List<PartySettlementRow> rows, int terms) {
+    final now = DateTime.now();
+    return PicPosBarList(
+      title: 'سلوك السداد — آخر ${rows.length} فواتير',
+      subtitle: terms == 0
+          ? 'أيام السداد الفعلية · لا مهلة متفقة'
+          : 'أيام السداد الفعلية مقابل مهلة $terms يوماً',
+      items: [
+        for (final r in rows.reversed)
+          () {
+            final paidDays = r.daysToPay;
+            final ageDays = now.difference(r.invoiceDate).inDays;
+            final days = paidDays ?? ageDays;
+            final late = terms > 0 && days > terms;
+            return PicPosBarItem(
+              icon: paidDays == null
+                  ? PhosphorIconsBold.clock
+                  : (late
+                      ? PhosphorIconsBold.warning
+                      : PhosphorIconsBold.checkCircle),
+              tint: paidDays == null
+                  ? _tintIdle
+                  : (late ? _tintErr : _tintOk),
+              label: r.invoiceNumber,
+              sub: paidDays == null
+                  ? (r.paid > 0
+                      ? 'سُدّد جزء منها — والباقي معلّق'
+                      : 'لم تُسدَّد بعد')
+                  : 'سُدّدت في ${_count(paidDays, 'يوماً')}',
+              value: days.toDouble(),
+              caption: _count(days, 'يوماً'),
+              display: paidDays == null
+                  ? 'جارية'
+                  : (late ? 'تجاوز ${days - terms}' : 'داخل المهلة'),
+            );
+          }(),
+      ],
+    );
+  }
+
+  /// «الخصم النقدي — المُستغَل مقابل المُهدَر» في كشف المورد.
+  ///
+  /// ⚠️ **بلا شرطِ خصمٍ متّفقٍ لا رسم**: نسبةٌ صفرٌ أو مهلةٌ صفرٌ تعني «لا خصمَ
+  /// معجَّل»، ورسمُ «فات الخصم» على فواتيرَ لا خصمَ لها أصلاً اتّهامٌ بلا سبب.
+  /// فتُعرَض حينَها أيّامُ السداد وحدَها.
+  PicPosBarList _discountBars(
+    List<PartySettlementRow> rows,
+    double pct,
+    int days,
+  ) {
+    final has = pct > 0 && days > 0;
+    if (!has) {
+      return PicPosBarList(
+        title: 'سلوك السداد — آخر ${rows.length} فواتير',
+        subtitle: 'لا خصم معجَّل متفق عليه — تُعرض أيام السداد وحدها',
+        items: [
+          for (final r in rows.reversed)
+            PicPosBarItem(
+              icon: r.daysToPay == null
+                  ? PhosphorIconsBold.clock
+                  : PhosphorIconsBold.checkCircle,
+              tint: r.daysToPay == null ? _tintIdle : _tintOk,
+              label: r.invoiceNumber,
+              sub: r.daysToPay == null
+                  ? 'لم تُسدَّد بعد'
+                  : 'سُدّدت في ${_count(r.daysToPay!, 'يوماً')}',
+              value: (r.daysToPay ?? 0).toDouble(),
+              caption: r.daysToPay == null ? '' : _count(r.daysToPay!, 'يوماً'),
+              display: r.daysToPay == null ? 'جارية' : _money(r.total),
+            ),
+        ],
+      );
+    }
+
+    return PicPosBarList(
+      title: 'الخصم النقدي — المُستغَل مقابل المُهدَر',
+      subtitle:
+          '${pct.toStringAsFixed(pct % 1 == 0 ? 0 : 1)}٪ خلال $days يوماً · آخر ${rows.length} فواتير',
+      items: [
+        for (final r in rows.reversed)
+          () {
+            final captured = r.discountCaptured(days);
+            final value = r.total * pct / 100;
+            return PicPosBarItem(
+              icon: captured == null
+                  ? PhosphorIconsBold.clock
+                  : (captured
+                      ? PhosphorIconsBold.checkCircle
+                      : PhosphorIconsBold.xCircle),
+              tint: captured == null
+                  ? _tintIdle
+                  : (captured ? _tintOk : _tintErr),
+              label: r.invoiceNumber,
+              sub: r.daysToPay == null
+                  ? 'لم تُسدَّد بعد — الخصم ما زال ممكناً'
+                  : 'سُدّدت في ${_count(r.daysToPay!, 'يوماً')}',
+              value: value,
+              caption: captured == null
+                  ? 'متاح'
+                  : (captured ? 'استُغل الخصم' : 'فات الخصم'),
+              // الإشارةُ تقول الاتّجاه: ما استُغلّ وفرٌ، وما فات خسارةٌ مقيسة.
+              display: captured == null
+                  ? _money(value)
+                  : (captured ? '+${_money(value)}' : '−${_money(value)}'),
+            );
+          }(),
       ],
     );
   }

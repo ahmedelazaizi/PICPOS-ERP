@@ -136,4 +136,12 @@ abstract class IPartiesRepository {
     required int partyId,
     required bool supplier,
   });
+
+  /// آخرُ فواتيرِ طرفٍ **صفّاً صفّاً** بتاريخ آخرِ سدادٍ لكلٍّ — تسند رسمَي
+  /// «سلوك السداد» و«الخصم النقدي» في تبويبة الملفّ.
+  Future<List<PartySettlementRow>> getPartySettlementRows({
+    required int partyId,
+    required bool supplier,
+    int limit,
+  });
 }

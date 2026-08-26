@@ -616,3 +616,61 @@ class PartyProfileMetrics {
   double? get onTimeDeliveryPct =>
       receivedOrders == 0 ? null : onTimeOrders / receivedOrders * 100;
 }
+
+/// فاتورةٌ **بصفٍّ واحدٍ لسلوك سدادها** — متى صدرت ومتى استُحقّت ومتى سُدِّدت.
+///
+/// ⚠️ **صفوفٌ لا متوسّطات.** [PartyProfileMetrics] يعود بمعدّلاتٍ مجمَّعةٍ
+/// تكفي المؤشّرات، ولا يكفي لرسم «آخرِ ستّ فواتير» عموداً عموداً. واصطناعُ
+/// ستّةِ أعمدةٍ من متوسّطٍ واحدٍ كان يرسم بياناتٍ لا وجودَ لها — فهذا الصفُّ
+/// هو ما كان ينقص.
+class PartySettlementRow {
+  const PartySettlementRow({
+    required this.invoiceId,
+    required this.invoiceNumber,
+    required this.invoiceDate,
+    required this.dueDate,
+    required this.total,
+    required this.paid,
+    required this.lastPaymentDate,
+    required this.allocationCount,
+  });
+
+  final int invoiceId;
+  final String invoiceNumber;
+  final DateTime invoiceDate;
+
+  /// `COALESCE(due_date, invoice_date)` — كسائرِ استعلامات التقادم، فلا
+  /// يختلف رقمان لنفس الفاتورة.
+  final DateTime dueDate;
+
+  final double total;
+  final double paid;
+
+  /// آخرُ دفعةٍ خُصّصت لهذه الفاتورة. `null` = لم تُسدَّد بعدُ ولو جزئيّاً —
+  /// وهي حالةٌ مختلفةٌ عن «سُدّدت في صفرِ يوم».
+  final DateTime? lastPaymentDate;
+
+  final int allocationCount;
+
+  double get remaining => total - paid;
+
+  bool get settled => paid >= total - 0.01;
+
+  /// أيّامٌ من **الإصدار** إلى آخرِ سداد — وهو «سلوكُ السداد» في التصميم.
+  /// `null` حين لا سداد.
+  int? get daysToPay => lastPaymentDate?.difference(invoiceDate).inDays;
+
+  /// أيّامٌ عن **الاستحقاق**: موجبٌ = تأخّر، سالبٌ = سدّد قبله.
+  int? get daysVsDue => lastPaymentDate?.difference(dueDate).inDays;
+
+  /// هل وقع السدادُ داخلَ نافذة الخصم المعجَّل؟
+  ///
+  /// `null` حين لا شرطَ خصمٍ متّفقٌ عليه ([days] صفرٌ أو أقلّ) أو حين لا
+  /// سدادَ بعد — و«لا شرط» ليست «فات الخصم».
+  bool? discountCaptured(int days) {
+    if (days <= 0) return null;
+    final d = daysToPay;
+    if (d == null) return null;
+    return d <= days;
+  }
+}

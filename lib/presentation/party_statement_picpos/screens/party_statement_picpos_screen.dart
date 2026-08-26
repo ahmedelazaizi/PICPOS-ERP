@@ -61,6 +61,10 @@ import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../picpos_shell/picpos_section_header.dart';
 import '../../picpos_shell/picpos_status_board.dart';
 import '../../picpos_shell/picpos_surface.dart';
+// حوارا الخزينة القائمان — «تحصيل» و«سداد» في التصميم. يُعادان استعمالاً لا
+// نسخاً: هما مسارُ المال الوحيدُ الذي يكتب في الخزنة والذمّة والقيد.
+import '../../treasury/widgets/payment_voucher_dialog.dart';
+import '../../treasury/widgets/receipt_voucher_dialog.dart';
 
 part 'party_statement_tabs_picpos.dart';
 part 'party_statement_export_picpos.dart';
@@ -266,6 +270,17 @@ class _PartyStatementPicposScreenState
       _loaded.clear();
       // مفاتيحُ التحميل تحمل معرِّفَ الطرف، فالخريطةُ لا تُصفَّر — والتبويبةُ
       // المفتوحةُ تُعيد الاستعلامَ وحدَها بمفتاحها الجديد.
+    });
+  }
+
+  /// بعد سندِ قبضٍ أو صرفٍ: الرصيدُ والذمّةُ تحرّكا، فكلُّ تبويبةٍ محمَّلةٍ
+  /// صارت قديمة. والمفتاحُ لا يحمل «حدَثَ فعلٍ»، فتُفرَغ الخريطةُ صراحةً.
+  @override
+  void reloadTabs() {
+    if (!mounted) return;
+    setState(() {
+      _futures.clear();
+      _loaded.clear();
     });
   }
 

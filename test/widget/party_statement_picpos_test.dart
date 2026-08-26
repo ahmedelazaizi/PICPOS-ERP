@@ -18,8 +18,13 @@
 //    دالّةٍ غيرِ متزامنة — فبلا الحاويةِ الحاملةِ للحالة كانت الشريحةُ
 //    تُرسَم ولا تفعل، وهي تكذب كزرٍّ لا يفعل.
 //
-// ‏٥) **أزرارُ التصميم محذوفةٌ لا معطَّلة**: «تحصيل» و«سداد» و«مطالبة» أفعالٌ
-//    ماليّةٌ لم تُبنَ، فلا يجوز أن تظهر في أيّ صفّ.
+// ‏٥) **الزرُّ يظهر حيث يفعل ويغيب حيث لا**: «تحصيل» و«سداد» مبنيّان على
+//    حوارَي الخزينة، فيُفحَص حضورُهما **و`onTap` غيرُ فارغ** — زرٌّ بلا فعلٍ
+//    يُرسَم كما يُرسَم الموصول. وما لم يُبنَ فعلُه يبقى بلا عمودِ إجراء،
+//    ومرساتُه عمودٌ آخرُ في نفس الجدول.
+//
+// ‏٦) **رسما تبويبة الملفّ من صفوفٍ لا من متوسّطات**: «لم تُسدَّد» ليست
+//    «سُدّدت في صفرِ يوم»، و«لا خصمَ متّفقٌ» ليست «فات الخصم».
 //
 // ‏٦) **الطرفُ المفقودُ يُعلَن**: العطبُ الميدانيُّ السابق كان جسماً فارغاً بلا
 //    رسالةٍ حين يعود `getPartyById` بـ`null`.
@@ -125,6 +130,44 @@ PartyPaymentMatchRow _pay(
       invoiceCount: invoiceCount,
     );
 
+PoMatchRow _po(
+  String order,
+  String product,
+  double ordered,
+  double received,
+  double invoiced,
+) =>
+    PoMatchRow(
+      orderId: order.hashCode,
+      orderNumber: order,
+      productName: product,
+      ordered: ordered,
+      received: received,
+      invoiced: invoiced,
+      orderDate: DateTime(2026, 8, 1),
+      expectedDate: DateTime(2026, 8, 10),
+      receivedAt: DateTime(2026, 8, 12),
+    );
+
+PartySettlementRow _settle(
+  String number,
+  double total, {
+  required double paid,
+  int? paidAfterDays,
+}) =>
+    PartySettlementRow(
+      invoiceId: number.hashCode,
+      invoiceNumber: number,
+      invoiceDate: DateTime(2026, 7, 1),
+      dueDate: DateTime(2026, 7, 31),
+      total: total,
+      paid: paid,
+      lastPaymentDate: paidAfterDays == null
+          ? null
+          : DateTime(2026, 7, 1).add(Duration(days: paidAfterDays)),
+      allocationCount: paidAfterDays == null ? 0 : 1,
+    );
+
 CommercialPaperData _paper(int id, String number, String status, double amt) =>
     CommercialPaperData(
       id: id,
@@ -153,6 +196,7 @@ class _FakePartiesRepo implements IPartiesRepository {
     this.payments = const [],
     this.poRows = const [],
     this.papers = const [],
+    this.settlements = const [],
     this.metrics = const PartyProfileMetrics(
       settledInvoices: 4,
       avgSettlementDays: 6,
@@ -169,6 +213,7 @@ class _FakePartiesRepo implements IPartiesRepository {
   final List<PartyPaymentMatchRow> payments;
   final List<PoMatchRow> poRows;
   final List<CommercialPaperData> papers;
+  final List<PartySettlementRow> settlements;
   final PartyProfileMetrics metrics;
 
   /// يحاكي الطرفَ المحذوفَ أو الخارجَ عن النطاق.
@@ -227,6 +272,14 @@ class _FakePartiesRepo implements IPartiesRepository {
       metrics;
 
   @override
+  Future<List<PartySettlementRow>> getPartySettlementRows({
+    required int partyId,
+    required bool supplier,
+    int limit = 6,
+  }) async =>
+      settlements;
+
+  @override
   dynamic noSuchMethod(Invocation invocation) =>
       super.noSuchMethod(invocation);
 }
@@ -265,6 +318,21 @@ void main() {
     _paper(3, 'CHQ-5501', 'cashed', 25000),
   ];
 
+  // سطرٌ سليمٌ وسطرٌ بفرق استلامٍ وثالثٌ بفرق فوترة.
+  final poRows = <PoMatchRow>[
+    _po('PO-0288', 'ألبان', 100, 100, 100),
+    _po('PO-0274', 'عصائر', 60, 52, 52),
+    _po('PO-0261', 'أجبان', 40, 40, 46),
+  ];
+
+  // فاتورتان سُدّدتا داخل نافذة الخصم وواحدةٌ خارجَها ورابعةٌ لم تُسدَّد.
+  final settlements = <PartySettlementRow>[
+    _settle('INV-0710', 10000, paid: 10000, paidAfterDays: 8),
+    _settle('INV-0788', 12000, paid: 12000, paidAfterDays: 9),
+    _settle('INV-0842', 15000, paid: 15000, paidAfterDays: 41),
+    _settle('INV-1041', 10620, paid: 0),
+  ];
+
   Future<void> open2(
     WidgetTester tester,
     Size size, {
@@ -281,6 +349,8 @@ void main() {
           entries: entries,
           open: open,
           papers: papers,
+          poRows: poRows,
+          settlements: settlements,
         );
     await tester.pumpWidget(
       ProviderScope(
@@ -463,40 +533,68 @@ void main() {
     await teardownTree(tester);
   });
 
-  // ⚠️ **يُفحَص على التبويبات التي يضع التصميمُ الأزرارَ فيها**، لا على
-  //    «الحركة والرصيد» وحدَها — فهي التبويبةُ الوحيدةُ التي لا عمودَ إجراءٍ
-  //    لها في التصميم أصلاً، وفحصُها كان سيمرّ أخضرَ بلا معنى.
-  testWidgets('لا أزرارَ إجراءٍ في أيّ تبويبة — محذوفةٌ لا معطَّلة',
+  // ═══ عمودُ الإجراء — يظهر حيث الفعلُ مبنيّ ويغيب حيث ليس ═════════════════
+  //
+  // القاعدةُ ثابتةٌ منذ البداية: **زرٌّ يظهر ولا يفعل أسوأُ من زرٍّ غائب.**
+  // وقد بُني «تحصيل» و«سداد» على حوارَي الخزينة القائمَين، فعاد العمودُ إلى
+  // «أعمار الدين» و«المستحق والاستحقاق». وبقي غائباً حيث الفعلُ لم يُبنَ.
+  testWidgets('زرُّ التحصيل حاضرٌ في «أعمار الدين» وموصولٌ بفعل',
       (tester) async {
-    const actionLabels = ['تحصيل', 'سداد', 'مطالبة', 'إيداع', 'تأكيد الخصم'];
-
     await open2(tester, const Size(1500, 900), asSupplier: false);
-    for (final tab in const ['أعمار الدين', 'الأوراق والضمانات']) {
-      await tester.tap(find.text(tab).first);
-      await tester.pumpAndSettle();
-      for (final label in actionLabels) {
-        expect(
-          find.text(label),
-          findsNothing,
-          reason: 'زرُّ «$label» ظهر في تبويبة «$tab» وهو فعلٌ ماليٌّ لم '
-              'يُبنَ — وزرٌّ يظهر ولا يفعل أسوأُ من زرٍّ غائب',
-        );
-      }
-      // والتبويبةُ رُسمت فعلاً — وإلّا كان الغيابُ غيابَ الشجرة كلِّها.
-      expect(tester.takeException(), isNull);
-    }
-    await teardownTree(tester);
+    await tester.tap(find.text('أعمار الدين').first);
+    await tester.pumpAndSettle();
 
+    expect(find.text('إجراء'), findsOneWidget, reason: 'عمودُ الإجراء غائب');
+    expect(find.text('تحصيل'), findsWidgets, reason: 'زرُّ التحصيل غائب');
+
+    // **وموصولٌ فعلاً**: زرٌّ بلا `onPressed` يُرسَم كما يُرسَم الموصول.
+    final btn = find
+        .ancestor(of: find.text('تحصيل').first, matching: find.byType(InkWell))
+        .first;
+    expect(tester.widget<InkWell>(btn).onTap, isNotNull,
+        reason: 'الزرُّ مرسومٌ بلا فعل — وهو عينُ ما مُنع');
+    await teardownTree(tester);
+  });
+
+  testWidgets('زرُّ السداد حاضرٌ في «المستحق والاستحقاق» وموصولٌ بفعل',
+      (tester) async {
     await open2(tester, const Size(1500, 900), asSupplier: true);
     await tester.tap(find.text('المستحق والاستحقاق').first);
     await tester.pumpAndSettle();
-    for (final label in actionLabels) {
-      expect(find.text(label), findsNothing,
-          reason: 'زرُّ «$label» ظهر في «المستحق والاستحقاق»');
-    }
-    expect(find.text('المستحق للمورد وتواريخه'), findsOneWidget,
-        reason: 'التبويبةُ لم تُرسَم — فغيابُ الأزرار بلا دلالة');
+
+    expect(find.text('المستحق للمورد وتواريخه'), findsOneWidget);
+    expect(find.text('إجراء'), findsOneWidget);
+    expect(find.text('سداد'), findsWidgets);
+    final btn = find
+        .ancestor(of: find.text('سداد').first, matching: find.byType(InkWell))
+        .first;
+    expect(tester.widget<InkWell>(btn).onTap, isNotNull);
     await teardownTree(tester);
+  });
+
+  // ⚠️ **المرساةُ المعاكسة**: التبويباتُ التي لم يُبنَ فعلُها بعد يجب أن تبقى
+  //    بلا عمودِ إجراء. وبلا هذا الفحص كان يكفي أن يعود العمودُ في كلّ مكانٍ
+  //    ليمرّ الفحصان أعلاه أخضرَين.
+  testWidgets('لا عمودَ إجراءٍ حيث الفعلُ لم يُبنَ بعد', (tester) async {
+    final cases = <({bool supplier, String tab, String anchor})>[
+      (supplier: false, tab: 'الأوراق والضمانات', anchor: 'الاستحقاق'),
+      (supplier: true, tab: 'الأوراق والمقايضات', anchor: 'الاستحقاق'),
+      (
+        supplier: true,
+        tab: 'مطابقة الفواتير بالاستلام',
+        anchor: 'نوع الفرق'
+      ),
+    ];
+    for (final c in cases) {
+      await open2(tester, const Size(1500, 900), asSupplier: c.supplier);
+      await tester.tap(find.text(c.tab).first);
+      await tester.pumpAndSettle();
+      expect(find.text(c.anchor), findsWidgets,
+          reason: 'الجدولُ لم يُرسَم في «${c.tab}» — فغيابُ «إجراء» بلا دلالة');
+      expect(find.text('إجراء'), findsNothing,
+          reason: 'عمودُ «إجراء» ظهر في «${c.tab}» وفعلُه لم يُبنَ بعد');
+      await teardownTree(tester);
+    }
   });
 
   // ═══ حارسُ عمودِ «إجراء» — بمرساةٍ تُسقطه إن انكسر معياره ═══════════════
@@ -508,35 +606,6 @@ void main() {
   //    فالمعيارُ **عنوانُ العمود**: التصميمُ يسمّيه «إجراء» في أربعة جداول.
   //    وعودتُه تعني عودةَ العمود. والمرساةُ عناوينُ الأعمدة الأخرى في نفس
   //    الجدول — إن غابت فالجدولُ لم يُرسَم أصلاً وغيابُ «إجراء» بلا دلالة.
-  testWidgets('عمودُ «إجراء» غائبٌ عن جداول الكشف الأربعة', (tester) async {
-    final cases = <({bool supplier, String tab, String anchor})>[
-      (supplier: false, tab: 'أعمار الدين', anchor: 'عمر التأخر'),
-      (supplier: false, tab: 'الأوراق والضمانات', anchor: 'الاستحقاق'),
-      (supplier: true, tab: 'المستحق والاستحقاق', anchor: 'خصم نقدي'),
-      (supplier: true, tab: 'الأوراق والمقايضات', anchor: 'الاستحقاق'),
-    ];
-
-    for (final c in cases) {
-      await open2(tester, const Size(1500, 900), asSupplier: c.supplier);
-      await tester.tap(find.text(c.tab).first);
-      await tester.pumpAndSettle();
-
-      // المرساة: آخرُ عمودٍ باقٍ في الجدول بعد حذف «إجراء».
-      expect(
-        find.text(c.anchor),
-        findsWidgets,
-        reason: 'عمودُ «${c.anchor}» غائبٌ عن «${c.tab}» — الجدولُ لم يُرسَم، '
-            'فغيابُ «إجراء» لا يثبت شيئاً',
-      );
-      expect(
-        find.text('إجراء'),
-        findsNothing,
-        reason: 'عمودُ «إجراء» عاد إلى «${c.tab}»',
-      );
-      await teardownTree(tester);
-    }
-  });
-
   testWidgets('الطرفُ المفقودُ يُعلَن ولا يُترَك جسماً فارغاً',
       (tester) async {
     await open2(
@@ -560,6 +629,81 @@ void main() {
     // واحدة.
     expect(find.text('مودع'), findsOneWidget);
     expect(find.text('محصَّل'), findsOneWidget);
+    await teardownTree(tester);
+  });
+
+  // ═══ رسما تبويبة الملفّ — من صفوفٍ لا من متوسّطات ════════════════════════
+  testWidgets('رسمُ سلوك السداد يميّز غيرَ المسدَّدة عن المسدَّدة فوراً',
+      (tester) async {
+    await open2(tester, const Size(1500, 900), asSupplier: false);
+    await tester.tap(find.text('ملف العميل والائتمان').first);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+
+    // العنوانُ بالضبط لا `textContaining`: ملاحظةُ التبويبة نفسُها تحوي
+    // «سلوك السداد»، فالبحثُ الجزئيُّ يجد اثنين ولا يثبت أنّ الرسمَ رُسم.
+    expect(find.text('سلوك السداد — آخر ${settlements.length} فواتير'),
+        findsOneWidget);
+    // أربعةُ صفوفٍ في التجهيزة، ثلاثةٌ مسدَّدةٌ وواحدةٌ لا.
+    expect(find.text('INV-0710'), findsOneWidget);
+    expect(find.text('سُدّدت في 8 يوماً'), findsOneWidget);
+    expect(find.text('سُدّدت في 41 يوماً'), findsOneWidget);
+
+    // ⚠️ الفاتورةُ غيرُ المسدَّدة تقول ذلك — ولا تُرسَم «سُدّدت في 0 يوماً».
+    expect(find.text('لم تُسدَّد بعد'), findsOneWidget);
+    expect(find.text('سُدّدت في 0 يوماً'), findsNothing,
+        reason: '«لم تُسدَّد» رُسمت صفراً — وهو عكسُ الحقيقة');
+
+    // ومهلةُ السداد ٣٠، فـ٤١ يوماً تجاوزٌ و٨ داخلَها.
+    expect(find.text('داخل المهلة'), findsWidgets);
+    expect(find.text('تجاوز 11'), findsOneWidget);
+    await teardownTree(tester);
+  });
+
+  testWidgets('رسمُ الخصم النقدي يفرّق المُستغَل عن المُهدَر', (tester) async {
+    await open2(tester, const Size(1500, 900), asSupplier: true);
+    await tester.tap(find.text('ملف المورد والتقييم').first);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+
+    // المورّدُ في التجهيزة خصمُه ٢٪ خلال ١٠ أيّام.
+    expect(find.textContaining('الخصم النقدي'), findsWidgets);
+    expect(find.text('استُغل الخصم'), findsNWidgets(2),
+        reason: 'فاتورتان سُدّدتا في ٨ و٩ أيّام — داخلَ النافذة');
+    expect(find.text('فات الخصم'), findsOneWidget,
+        reason: 'فاتورةٌ سُدّدت في ٤١ يوماً — خارجَ النافذة');
+    expect(find.text('متاح'), findsOneWidget,
+        reason: 'فاتورةٌ لم تُسدَّد بعد — الخصمُ ما زال ممكناً لا فائتاً');
+    await teardownTree(tester);
+  });
+
+  testWidgets('بلا شرطِ خصمٍ متفقٍ لا يُتَّهَم المورّدُ بتفويته', (tester) async {
+    final noDiscount = _party(
+      id: 2,
+      name: 'مورد بلا خصم',
+      customer: false,
+      supplier: true,
+    );
+    await open2(
+      tester,
+      const Size(1500, 900),
+      asSupplier: true,
+      repo: _FakePartiesRepo(
+        parties: [noDiscount],
+        entries: entries,
+        open: open,
+        settlements: settlements,
+      ),
+    );
+    await tester.tap(find.text('ملف المورد والتقييم').first);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(
+      find.text('فات الخصم'),
+      findsNothing,
+      reason: 'اتُّهم مورّدٌ بتفويت خصمٍ لا وجودَ له أصلاً',
+    );
+    expect(find.textContaining('لا خصم معجَّل متفق عليه'), findsOneWidget);
     await teardownTree(tester);
   });
 

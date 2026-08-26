@@ -218,4 +218,15 @@ class PartiesRepositoryImpl implements IPartiesRepository {
     required int partyId,
     required bool supplier,
   }) => _db.getPartyProfileMetrics(partyId: partyId, supplier: supplier);
+
+  @override
+  Future<List<PartySettlementRow>> getPartySettlementRows({
+    required int partyId,
+    required bool supplier,
+    int limit = 6,
+  }) => _db.getPartySettlementRows(
+        partyId: partyId,
+        supplier: supplier,
+        limit: limit,
+      );
 }
