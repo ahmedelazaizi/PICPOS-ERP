@@ -108,7 +108,7 @@ require('fs').writeFileSync(outp, obj.content, 'utf8');
 
 | البند | القيمة |
 |---|---|
-| HEAD | `538f955f` |
+| HEAD | `538f955f` + كوميتُ هذا البرومت — **أعِد قياسَه** |
 | schemaVersion | **164** |
 | `database.g.dart` | `5daf47f36802d8c71078f02a0626d201` · ٢١٧٨٠٣ سطراً |
 | البناءُ المنشور | `app.so = ccce2f7dddcb89adc8e0d47a5a3f11b7` |
