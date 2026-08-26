@@ -12,6 +12,17 @@
 // مصدرٍ يفسّره — لا يُراجَع ولا يُعكَس من جهازٍ آخر. وجهازٌ ثانٍ لا يعرف أنّ
 // الورقةَ طُبِّقت فيطبّقها ثانية.
 //
+// ═══ تصحيحان 2026-08-27 ═══
+//
+// **١) الرقمُ كان ٩١ وهو ٩٤.** الكشفُ كان يقرأ نصَّ ملفّات المزامنة كلَّه
+// بما فيه التعليقات، فثلاثةُ جداولٍ بدت مغطّاةً بذكرِ اسمها في تعليقٍ:
+// `BillOfMaterials` و`SyncOutbox` و`WarehousePrices`. [_stripComments]
+// يسدّ ذلك، وفحصٌ في «حراسةِ الحارس» يثبته على البلاغ نفسِه.
+//
+// **٢) واثنا عشرَ جدولاً خرجت من القائمة.** المرحلة ٢ (v166) أعطت
+// مستنداتِ الأثر المحاسبيّ أعمدةَ المزامنة الخمسةَ ووصلتها بمساري
+// السحب. فالباقي **٨٢ من ١٥٩** — ٩٤ ناقص ١٢.
+//
 // ═══ ما يفعله هذا الملفّ ═══
 //
 // يجمّد الـ٩١ خطَّ أساسٍ صريحاً. جدولٌ **جديدٌ** بلا مزامنةٍ يُسقط الحارسَ
@@ -33,12 +44,14 @@ import 'package:flutter_test/flutter_test.dart';
 ///   🟡 **قرارُ مالكٍ مؤجَّل** — ميزةٌ لم تُطرح بعد أو مؤجَّلةٌ بقرار.
 ///   ⚪ **محلّيٌّ بطبعه** — لا معنى لمزامنته.
 const _unsyncedBaseline = <String>{
-  // ═══ 🔴 أثرٌ محاسبيٌّ مباشر — القيدُ يُزامَن ومستندُه لا ═══
-  // هذه أعلى الأولويّات: التفاوتُ يجعل دفترَ الخادم غيرَ قابلٍ للمراجعة.
-  'LandedCostSheets', 'LandedCostItems', 'LandedCostAllocations',
-  'FixedAssets', 'AssetCategories', 'AssetDepreciations',
-  'OpExpenses', 'OpExpenseCategories',
-  'ManufacturingOrders', 'MfgOrderCosts', 'BomComponents',
+  // ═══ ✅ أثرٌ محاسبيٌّ مباشر — سُدَّت 2026-08-27 (المرحلة ٢ / v166) ═══
+  //
+  // كانت أحدَ عشرَ جدولاً هنا: أوراقُ التحميل والأصولُ والإهلاكُ
+  // والمصروفاتُ التشغيليّةُ وأوامرُ التصنيع. صارت كلُّها تحمل أعمدةَ
+  // المزامنة الخمسةَ وتُدرَج في مساري السحب، فلا سطرَ لها هنا.
+  //
+  // ومعها `BillOfMaterials` — ولم يكن لها سطرٌ أصلاً لأنّ الحارسَ كان
+  // يقرأ التعليقاتِ فيعدّها مُزامَنةً وهي ليست كذلك. انظر [_stripComments].
 
   // ═══ 🔴 تشغيلٌ عابرٌ للأجهزة — مطعمٌ بجهازين لا يرى أحدُهما الآخر ═══
   'TableOrders', 'TableOrderItems', 'TableOrderPayments',
@@ -93,6 +106,18 @@ const _unsyncedBaseline = <String>{
   // · `Notifications` إشعاراتُ جهازٍ لا رسائلُ نظام.
   'SavedReportRuns', 'ProcessedMessages', 'LabelScales', 'ReceiptSettings',
   'ApiKeys', 'Notifications',
+
+  // `SyncOutbox` طابورُ الدفعِ نفسُه — مزامنتُه تُنتج دوراً كـ
+  // `ProcessedMessages` بالضبط.
+  'SyncOutbox',
+
+  // ═══ 🔴 كشفهما نزعُ التعليقات 2026-08-27 ═══
+  //
+  // `WarehousePrices` سعرُ بيعٍ وتكلفةٍ لكلّ صنفٍ في كلّ مخزن. جهازٌ يبيع
+  // بسعرٍ عدّله جهازٌ آخرُ ولا يراه ⇒ فرقُ إيرادٍ لا يُفسَّر. تستحقّ
+  // استراتيجيّةً، وهي خارجُ نطاق المرحلة ٢ المعلَن (‏مستنداتُ الأثر
+  // المحاسبيّ) فتُسجَّل هنا بحكمها بدل أن تمرّ صامتة.
+  'WarehousePrices',
 };
 
 /// جداولُ نعلم يقيناً أنّها تُزامَن — **مرساةُ الحارس**.
@@ -124,17 +149,40 @@ List<String> _allTables() {
   return out..sort();
 }
 
+/// ينزع التعليقاتِ قبلَ قياس التغطية.
+///
+/// ⚠️ **بلا هذا يكذب الحارسُ في الاتّجاه الخطر**: اسمُ جدولٍ يرد في تعليقٍ
+/// يُعَدّ تغطيةً. وقع فعلاً — `bill_of_materials` كانت «مغطّاةً» بسطرَي
+/// تعليقٍ في `sale_bom_consumption_sync_strategy.dart` يقولان صراحةً إنّ
+/// مزامنتَها **لم تصل بعد**. فالحارسُ قرأ وعداً بالمزامنة وحسبه مزامنة،
+/// ولم يكن لها سطرٌ في خطّ الأساس فمرّت بلا قرار.
+///
+/// و`://` مستثناةٌ: قطعُ السطرِ عند مسارٍ في نصٍّ حرفيٍّ يحذف كوداً بعده
+/// فيُنتج «غيرَ مغطّى» كاذباً في الاتّجاه المعاكس.
+String _stripComments(String src) {
+  final noBlock = src.replaceAll(RegExp(r'/\*[\s\S]*?\*/'), ' ');
+  return noBlock.split('\n').map((line) {
+    var i = line.indexOf('//');
+    while (i > 0 && line[i - 1] == ':') {
+      i = line.indexOf('//', i + 2);
+    }
+    return i < 0 ? line : line.substring(0, i);
+  }).join('\n');
+}
+
 String _syncSurface() {
   final buf = StringBuffer();
   for (final f in Directory('lib/services/sync').listSync(recursive: true)) {
-    if (f is File && f.path.endsWith('.dart')) buf.write(f.readAsStringSync());
+    if (f is File && f.path.endsWith('.dart')) {
+      buf.write(_stripComments(f.readAsStringSync()));
+    }
   }
   for (final p in const [
     'lib/services/api/api_data_handler.dart',
     'lib/services/delta_pull_service.dart',
   ]) {
     final f = File(p);
-    if (f.existsSync()) buf.write(f.readAsStringSync());
+    if (f.existsSync()) buf.write(_stripComments(f.readAsStringSync()));
   }
   return buf.toString();
 }
@@ -151,6 +199,28 @@ void main() {
       expect(tables.length, greaterThan(100),
           reason: 'قُرئ ${tables.length} جدولاً فقط — مسارُ التعريفات تغيّر '
               'غالباً، والحارسُ صار يقيس لا شيء.');
+    });
+
+    test('ذكرٌ في تعليقٍ ليس تغطيةً — على البلاغ نفسِه', () {
+      const commentOnly = '/// FK dependencies: sales_invoices, '
+          'bill_of_materials, products.\n'
+          'const x = 1;';
+      expect(
+        _stripComments(commentOnly).contains('bill_of_materials'),
+        isFalse,
+        reason: 'اسمٌ في تعليقٍ ما زال يُحسَب تغطيةً ⇒ الحارسُ يكذب في '
+            'الاتّجاه الخطر: يمرّ جدولٌ غيرُ مُزامَنٍ بلا قرار.',
+      );
+      expect(
+        _stripComments(commentOnly).contains('const x = 1;'),
+        isTrue,
+        reason: 'النزعُ ابتلع كوداً ⇒ سيُبلَّغ عن فجواتٍ وهميّة.',
+      );
+      expect(
+        _stripComments("const u = 'https://x/y'; // hi").contains('https'),
+        isTrue,
+        reason: 'قُطع السطرُ عند `://` داخلَ نصٍّ حرفيّ ⇒ كودٌ ضائع.',
+      );
     });
 
     test('وسطحُ المزامنة مقروءٌ — مرساةٌ موجبة', () {

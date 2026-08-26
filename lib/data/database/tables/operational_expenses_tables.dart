@@ -28,6 +28,13 @@ class OpExpenseCategories extends Table {
   TextColumn get accountCode => text().withDefault(const Constant('5299'))();
   BoolColumn get isActive => boolean().withDefault(const Constant(true))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  // === v166 — أعمدةُ المزامنة (المرحلة ٢) ===
+  TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
+  DateTimeColumn get lastModifiedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get originClientId => text().nullable()();
+  IntColumn get rowVersion => integer().withDefault(const Constant(0))();
 }
 
 /// Operational Expenses — سجل المصروفات التشغيلية
@@ -55,6 +62,13 @@ class OpExpenses extends Table {
   TextColumn get paymentMethod => text().withDefault(const Constant('cash'))(); // F-12: cash | bank
   IntColumn get userId => integer().references(Users, #id)();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  // === v166 — أعمدةُ المزامنة (المرحلة ٢) ===
+  TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
+  DateTimeColumn get lastModifiedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get originClientId => text().nullable()();
+  IntColumn get rowVersion => integer().withDefault(const Constant(0))();
 }
 
 /// Manufacturing Order Costs — تفصيل تكاليف أمر التصنيع
@@ -76,4 +90,11 @@ class MfgOrderCosts extends Table {
     #id,
   )(); // ربط بسجل المصروف (اختياري)
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  // === v166 — أعمدةُ المزامنة (المرحلة ٢) ===
+  TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
+  DateTimeColumn get lastModifiedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get originClientId => text().nullable()();
+  IntColumn get rowVersion => integer().withDefault(const Constant(0))();
 }

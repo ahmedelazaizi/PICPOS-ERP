@@ -25,6 +25,10 @@ extension LandedCostDao on AppDatabase {
         allocationMethod: Value(allocationMethod),
         notes: Value(notes),
         createdBy: Value(createdBy),
+        // v166 — هويّةٌ تسبق أوّلَ مزامنة. تُسكّ هنا لا على الخادم: الورقةُ
+        // قد تُنشَأ دون اتّصالٍ وتُدفَع لاحقاً، ولا بدّ أن تحمل حينها نفسَ
+        // المعرّف الذي عُرضت به محلّيّاً.
+        globalId: Value(UuidV7.generate()),
       ),
     );
   }
@@ -60,6 +64,7 @@ extension LandedCostDao on AppDatabase {
         description: description,
         amount: amount,
         supplierPartyId: Value(supplierPartyId),
+        globalId: Value(UuidV7.generate()), // v166
       ),
     );
 
@@ -229,6 +234,7 @@ extension LandedCostDao on AppDatabase {
           allocatedAmount: allocation,
           newUnitCost: newUnitCost,
           quantity: qty,
+          globalId: Value(UuidV7.generate()), // v166
         ),
       );
 
@@ -242,6 +248,9 @@ extension LandedCostDao on AppDatabase {
         allocatedAmount: allocation,
         newUnitCost: newUnitCost,
         quantity: qty,
+        // v166 — الصفُّ أُدرِج للتوّ فنسختُه صفرٌ كافتراضِ العمود؛ وهذا
+        // بناءُ صنفِ بياناتٍ يدويٌّ للإرجاع لا كتابةٌ ثانيةٌ في القاعدة.
+        rowVersion: 0,
       ));
     }
 
@@ -302,6 +311,34 @@ extension LandedCostDao on AppDatabase {
         warehouseId != null ? await getWarehouseById(warehouseId) : null;
     final int? branchId = warehouse?.branchId;
     final int? ccId = invoice?.costCenterId ?? warehouse?.costCenterId;
+
+    // ── مسارُ العميل: الخادمُ مصدرُ الحقيقة للمال ───────────────────────
+    //
+    // نفسُ القاعدة المعلنة في `purchases_repository_impl.dart`: «الخادمُ
+    // مصدرُ الحقيقة للمال والأستاذ والخزينة». فلا نمزج متوسّطاً مرجّحاً
+    // ولا نُرحّل قيداً هنا — نُرسل المستندَ كاملاً ونكتفي بعلامةٍ خفيفة،
+    // والأرقامُ المعتمَدةُ تعود بسحب الدلتا (‏`products` وجداولُ التحميل
+    // الثلاثةُ كلُّها في `DeltaPullService.pullTables`).
+    //
+    // ⚠️ **ولا يُرحَّل القيدُ محلّيّاً بحال.** إزالةُ تكرار القيد المُرحَّل
+    //    تلقائيّاً مفتاحُها `(referenceType, referenceId)` — و`referenceId`
+    //    هنا رقمُ الورقة **المحلّيّ**، وهو يخالف رقمَها على الخادم. فلو
+    //    رحّل الطرفان لظهر قيدان لحدثٍ واحد، ولما أمسكهما تكرارٌ: المفتاحان
+    //    مختلفان. و`globalId` لا يتجاوز ذلك المفتاح (‏موثَّقٌ في
+    //    `accounting_dao_writes.dart` عند عكس القيود).
+    if (SyncInterceptor.isClientMode) {
+      await SyncInterceptor.instance
+          ?.submitLandedCostApply(await _buildLandedCostDocument(
+        sheet: sheet,
+        items: items,
+        allocations: allocations,
+      ));
+      // علامةٌ خفيفةٌ لا حساب: تمنع تطبيقاً ثانياً من هذا الجهاز، وتُصحَّح
+      // بصفّ الخادم عند أوّل سحبٍ لو رفضه.
+      await (update(landedCostSheets)..where((s) => s.id.equals(sheetId)))
+          .write(const LandedCostSheetsCompanion(status: Value('applied')));
+      return;
+    }
 
     await transaction(() async {
       // TOCTOU (FR-008): the pre-check above races a concurrent apply. Re-read
@@ -446,6 +483,74 @@ extension LandedCostDao on AppDatabase {
       await (update(landedCostSheets)..where((s) => s.id.equals(sheetId)))
           .write(const LandedCostSheetsCompanion(status: Value('applied')));
     });
+  }
+
+  /// يبني مستندَ ورقة التحميل للدفع إلى الخادم.
+  ///
+  /// ⚠️ **كلُّ مفتاحٍ خارجيٍّ يُمرَّر بمعرّفه العالميِّ لا برقمه المحلّيّ.**
+  /// رقمُ العميل ورقمُ الخادم يتباعدان بالتصميم، ورقمٌ محلّيٌّ يصل الخادمَ
+  /// قد يُطابِق صفّاً **آخر** تماماً. و`null` هنا ليس إهمالاً: صفٌّ لم
+  /// يُزامَن بعد لا معرّفَ عالميَّ له، والخادمُ يردّ الطلبَ بدل أن يخمّن.
+  Future<Map<String, dynamic>> _buildLandedCostDocument({
+    required LandedCostSheetData sheet,
+    required List<LandedCostItemData> items,
+    required List<LandedCostAllocationData> allocations,
+  }) async {
+    Future<String?> partyGid(int? id) async {
+      if (id == null) return null;
+      final row = await (select(parties)..where((t) => t.id.equals(id)))
+          .getSingleOrNull();
+      return row?.globalId;
+    }
+
+    Future<String?> productGid(int id) async {
+      final row = await (select(products)..where((t) => t.id.equals(id)))
+          .getSingleOrNull();
+      return row?.globalId;
+    }
+
+    Future<String?> purchaseItemGid(int id) async {
+      final row = await (select(purchaseInvoiceItems)
+            ..where((t) => t.id.equals(id)))
+          .getSingleOrNull();
+      return row?.globalId;
+    }
+
+    final invoice = await (select(purchaseInvoices)
+          ..where((t) => t.id.equals(sheet.purchaseInvoiceId)))
+        .getSingleOrNull();
+
+    return <String, dynamic>{
+      'globalId': sheet.globalId,
+      'sheetNumber': sheet.sheetNumber,
+      'purchaseInvoiceGlobalId': invoice?.globalId,
+      'allocationMethod': sheet.allocationMethod,
+      'totalAdditionalCost': sheet.totalAdditionalCost,
+      'notes': sheet.notes,
+      'createdAt': sheet.createdAt.toIso8601String(),
+      'items': [
+        for (final it in items)
+          <String, dynamic>{
+            'globalId': it.globalId,
+            'costType': it.costType,
+            'description': it.description,
+            'amount': it.amount,
+            'supplierPartyGlobalId': await partyGid(it.supplierPartyId),
+          },
+      ],
+      'allocations': [
+        for (final al in allocations)
+          <String, dynamic>{
+            'globalId': al.globalId,
+            'productGlobalId': await productGid(al.productId),
+            'purchaseItemGlobalId': await purchaseItemGid(al.purchaseItemId),
+            'originalCost': al.originalCost,
+            'allocatedAmount': al.allocatedAmount,
+            'newUnitCost': al.newUnitCost,
+            'quantity': al.quantity,
+          },
+      ],
+    };
   }
 
   /// Get allocations with product names

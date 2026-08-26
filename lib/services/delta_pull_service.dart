@@ -85,6 +85,28 @@ class DeltaPullService {
     'purchase_order_items',    // → purchase_orders, products
     'quotation_items',         // → quotations, products
     'payment_allocations',     // → payments
+
+    // ── Tier 5: مستنداتُ الأثر المحاسبيّ (v166 / المرحلة ٢) ──
+    //
+    // القيدُ كان يُزامَن ومستندُه لا، فدفترُ الخادم يحمل أثراً بلا مصدرٍ
+    // يفسّره. والترتيبُ هنا يتبع المفاتيحَ حرفاً — الأبُ قبل ابنه — لأنّ
+    // `_upsertRow` يكتب بالترتيب، وابنٌ يسبق أباه يكسر مفتاحَه.
+    //
+    // ⚠️ و`bill_of_materials` هنا وإن لم تكن من الأحدَ عشرَ الأصليّة:
+    //    `manufacturing_orders` و`bom_components` تشيران إليها، وكانت
+    //    تبدو مُزامَنةً لأنّ اسمَها يرد في **تعليقٍ** فحسب.
+    'asset_categories',        // → accounts
+    'op_expense_categories',
+    'bill_of_materials',       // → products
+    'fixed_assets',            // → asset_categories, cost_centers, accounts
+    'manufacturing_orders',    // → bill_of_materials, warehouses
+    'bom_components',          // → bill_of_materials, products
+    'op_expenses',             // → op_expense_categories, branches, cost_centers
+    'asset_depreciations',     // → fixed_assets
+    'mfg_order_costs',         // → manufacturing_orders
+    'landed_cost_sheets',      // → purchase_invoices, users
+    'landed_cost_items',       // → landed_cost_sheets, parties
+    'landed_cost_allocations', // → landed_cost_sheets, products, purchase_invoice_items
   ];
 
   /// Spec 151 P1-8b — the TRANSACTIONAL delta-pull tables (Tier 3 + Tier 4 +
@@ -106,6 +128,15 @@ class DeltaPullService {
     'activity_logs', 'sales_invoice_items', 'purchase_invoice_items',
     'held_order_items', 'sales_order_items', 'purchase_order_items',
     'quotation_items', 'payment_allocations',
+    // v166 / المرحلة ٢ — مستنداتُ الأثر المحاسبيّ. بياناتُ عملٍ لا
+    // بياناتٌ مرجعيّة: سجلُّ أصولِ الشركة وتكاليفُها ومصروفاتُها لا
+    // يُسلَّم لمستدعٍ بلا هويّةٍ متحقَّقة. والفئاتُ وقوائمُ المكوّنات
+    // (`asset_categories` · `op_expense_categories` · `bill_of_materials`
+    // · `bom_components`) مرجعيّةٌ عمداً فتبقى خارجَ هذه القائمة ليعمل
+    // التزويدُ قبلَ الدخول.
+    'landed_cost_sheets', 'landed_cost_items', 'landed_cost_allocations',
+    'fixed_assets', 'asset_depreciations', 'op_expenses',
+    'manufacturing_orders', 'mfg_order_costs',
   };
 
   /// المرحلة ١ (W1) — الجداول الأساسية التي صار الخادم يقصّها على الفرع
@@ -130,6 +161,30 @@ class DeltaPullService {
   /// ومقابله أن أي تشديد مستقبلي على مسار انعدام الهوية لا يُعيد فتح تسميم
   /// العلامة المائية من تلقاء نفسه. اختبارات قائمة تثبّت السلوك — لا تُزِله
   /// بحجة أنه صار زائداً.
+  /// جداولُ **الدلتا وحدَها** — لا استراتيجيّةَ لها في
+  /// [SyncService.fullSync]، فالإقلاعُ الأوّلُ لا يملؤها.
+  ///
+  /// ⚠️ **ولذلك لا تُبذَر علامتُها المائيّة أبداً.** [seedWatermarks] يبذر
+  /// بحجّةِ أنّ `fullSync` نزّل الجدولَ للتوّ؛ وهي حجّةٌ باطلةٌ هنا. علامةٌ
+  /// مبذورةٌ على جدولٍ لم يُملأ تعني أنّ السحبَ التالي يطلب ما تغيّر **بعد**
+  /// تلك اللحظة، فكلُّ صفٍّ أقدمَ منها يُتخطّى ولا يُطلَب ثانيةً — نفسُ
+  /// «تسميم العلامة» الذي يحذّر منه [branchScopedPullTables] أعلاه، لكن
+  /// من بابٍ آخر: ذاك سببُه ردٌّ مقصوص، وهذا سببُه بذرٌ بلا تنزيل.
+  ///
+  /// وتركُها بلا بذرٍ يعني `since = null` في أوّل سحبِ دلتا = تفريغٌ كامل —
+  /// وهو بالضبط ما كانت `fullSync` ستفعله لو كانت لها استراتيجيّة.
+  ///
+  /// v166 / المرحلة ٢ — مستنداتُ الأثر المحاسبيّ. صارت مُصلَّبةً للمزامنة
+  /// (‏`global_id` + أعمدةُ الدلتا الأربعة) فمكانُها مسارُ الدلتا لا مسارُ
+  /// الاستراتيجيّات — وذاك شبكةُ أمانٍ للجداول **غيرِ** المصلَّبة، كما يقول
+  /// تعليقُ المؤقّت الدوريّ في `main_desktop.dart`.
+  static const Set<String> deltaOnlyTables = {
+    'asset_categories', 'op_expense_categories', 'bill_of_materials',
+    'fixed_assets', 'manufacturing_orders', 'bom_components',
+    'op_expenses', 'asset_depreciations', 'mfg_order_costs',
+    'landed_cost_sheets', 'landed_cost_items', 'landed_cost_allocations',
+  };
+
   static const Set<String> branchScopedMasterPullTables = {
     'branches', 'warehouses', 'safes', 'cost_centers',
   };
@@ -847,6 +902,9 @@ class DeltaPullService {
     var seeded = 0;
     for (final table in pullTables) {
       if (!hasToken && branchScopedPullTables.contains(table)) continue;
+      // v166 — جدولٌ لا تملؤه `fullSync` لا يُبذَر مهما كان التوكن: البذرُ
+      // يفترض تنزيلاً لم يقع. انظر [deltaOnlyTables].
+      if (deltaOnlyTables.contains(table)) continue;
       await _saveWatermark(table, epochSeconds);
       seeded++;
     }

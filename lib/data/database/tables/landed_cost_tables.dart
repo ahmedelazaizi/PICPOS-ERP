@@ -28,6 +28,13 @@ class LandedCostSheets extends Table {
   TextColumn get notes => text().nullable()();
   IntColumn get createdBy => integer().nullable().references(Users, #id)();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  // === v166 — أعمدةُ المزامنة (المرحلة ٢) ===
+  TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
+  DateTimeColumn get lastModifiedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get originClientId => text().nullable()();
+  IntColumn get rowVersion => integer().withDefault(const Constant(0))();
 }
 
 /// Individual cost items within a landed cost sheet
@@ -45,6 +52,13 @@ class LandedCostItems extends Table {
   RealColumn get amount => real()();
   IntColumn get supplierPartyId =>
       integer().nullable().references(Parties, #id)();
+
+  // === v166 — أعمدةُ المزامنة (المرحلة ٢) ===
+  TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
+  DateTimeColumn get lastModifiedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get originClientId => text().nullable()();
+  IntColumn get rowVersion => integer().withDefault(const Constant(0))();
 }
 
 /// Allocation of costs to individual products
@@ -61,4 +75,11 @@ class LandedCostAllocations extends Table {
   RealColumn get allocatedAmount => real()();
   RealColumn get newUnitCost => real()();
   RealColumn get quantity => real()();
+
+  // === v166 — أعمدةُ المزامنة (المرحلة ٢) ===
+  TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
+  DateTimeColumn get lastModifiedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get originClientId => text().nullable()();
+  IntColumn get rowVersion => integer().withDefault(const Constant(0))();
 }

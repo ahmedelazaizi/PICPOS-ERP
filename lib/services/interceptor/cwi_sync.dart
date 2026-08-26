@@ -57,6 +57,24 @@ class _CwiSync {
     );
   }
 
+  // ── Landed Cost (v166) ────────────────────────────────────────────────────
+
+  static Future<void> submitLandedCostApply(
+      Map<String, dynamic> document) async {
+    if (!SyncInterceptor.isClientMode) return;
+    debugPrint('[ClientInterceptor] Routing landed-cost apply to server');
+    await ClientWriteInterceptor._tryOrQueueVoid(
+      tableName: 'landed_cost_sheets',
+      operation: 'apply',
+      payload: Map<String, dynamic>.from(document),
+      serverCall: (reqIdemKey) =>
+          ClientWriteInterceptor._proxy.submitLandedCostApply(
+        document,
+        idempotencyKey: reqIdemKey,
+      ),
+    );
+  }
+
   // ── Safe Transactions ─────────────────────────────────────────────────────
 
   static Future<void> submitSafeTransaction({

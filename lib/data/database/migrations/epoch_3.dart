@@ -2759,5 +2759,121 @@ extension Epoch3Migrations on AppDatabase {
         debugPrint('[Migration] v165 متابعةُ التحصيل ومطالبةُ المورد — تمّت');
       });
     }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // v166 — المرحلة ٢: أعمدةُ المزامنة لأحدَ عشرَ جدولاً ذاتِ أثرٍ محاسبيّ
+    // ═══════════════════════════════════════════════════════════════════
+    //
+    // ═══ العطبُ الذي تسدّه ═══
+    //
+    // تطبيقُ ورقةِ تحميلٍ وترحيلُ إهلاكٍ وتسجيلُ مصروفٍ تشغيليٍّ **تقيّد
+    // قيوداً تُزامَن** (‏`journal` استراتيجيّةٌ قائمة) بينما المستندُ
+    // المولِّدُ يبقى محلّيّاً. فالخادمُ يرى أثراً ماليّاً بلا مصدرٍ يفسّره —
+    // لا يُراجَع ولا يُعكَس من جهازٍ آخر. وجهازٌ ثانٍ لا يعرف أنّ الورقةَ
+    // طُبِّقت فيطبّقها ثانيةً، فيتضاعف التحميل على التكلفة.
+    //
+    // ═══ لماذا هذه الصيغةُ بالذات ═══
+    //
+    // ١) `ADD COLUMN … UNIQUE` **مرفوضةٌ في SQLite** (‏الجدولُ قد يحمل
+    //    مكرَّراً أصلاً). فالعمودُ عاديٌّ ثمّ **فهرسٌ فريدٌ جزئيّ** — نفسُ
+    //    علاجِ v119 وv128 بعد أن كُشف أنّ الخطأَ كان مبلوعاً والعمودُ لا
+    //    يُنشَأ على أيِّ جدول.
+    //
+    // ٢) و`row_version` بلا مُشغِّلٍ رقمٌ ميّت: لا شيءَ يرفعه فيبدو كلُّ صفٍّ
+    //    أزليّاً وتُبتلَع التعديلات. فالمُشغِّلُ هنا نسخةُ v129، وحارسُ
+    //    `WHEN` يمنع الدورَ — التحديثُ داخلَ المُشغِّل يوقظه ثانيةً لولاه.
+    //
+    // ٣) والتعبئةُ بـ`UuidV7` لا `v4`: مرتّبةٌ زمنيّاً فتبقى الصفوفُ القديمةُ
+    //    مرتّبةً عند أوّلِ دفعةٍ إلى الخادم.
+    //
+    // ⚠️ و`fixed_assets` له `global_id` سلفاً — الـsafe-skip يتكفّل به،
+    //    والتعبئةُ تملأ ما كان فارغاً لا غير.
+    if (from < 166) {
+      await _safeMigrate('v166 أعمدةُ مزامنةٍ للمستندات المحاسبيّة', () async {
+        const phase2Tables = [
+          // التكاليفُ المحمَّلة
+          'landed_cost_sheets', 'landed_cost_items', 'landed_cost_allocations',
+          // الأصولُ والإهلاك
+          'fixed_assets', 'asset_categories', 'asset_depreciations',
+          // المصروفاتُ التشغيليّة
+          'op_expenses', 'op_expense_categories',
+          // التصنيعُ وتكاليفُه — و`bill_of_materials` أبٌ لاثنين منها
+          'bill_of_materials',
+          'manufacturing_orders', 'mfg_order_costs', 'bom_components',
+        ];
+
+        for (final t in phase2Tables) {
+          // ١. المعرّفُ العالميّ — عمودٌ عاديٌّ ثمّ فهرسٌ فريدٌ جزئيّ.
+          try {
+            await m.database.customStatement(
+              'ALTER TABLE $t ADD COLUMN global_id TEXT',
+            );
+          } catch (e) {
+            debugPrint('[Migration] v166 ADD $t.global_id (safe-skip): $e');
+          }
+          try {
+            await m.database.customStatement(
+              'CREATE UNIQUE INDEX IF NOT EXISTS idx_${t}_global_id '
+              'ON $t(global_id) WHERE global_id IS NOT NULL',
+            );
+          } catch (e) {
+            debugPrint('[Migration] v166 IX $t.global_id (safe-skip): $e');
+          }
+
+          // ٢. تعبئةُ الصفوفِ القائمة — **قبلَ** المُشغِّل عمداً: صفٌّ بلا
+          //    معرّفٍ عالميٍّ لا يُدفَع أصلاً، والتعبئةُ بعد المُشغِّل تُشعله
+          //    مرّةً لكلِّ صفٍّ بلا فائدة.
+          try {
+            final existing = await m.database
+                .customSelect(
+                  "SELECT id FROM $t WHERE global_id IS NULL OR global_id = ''",
+                )
+                .get();
+            for (final row in existing) {
+              await m.database.customStatement(
+                'UPDATE $t SET global_id = ? WHERE id = ?',
+                [UuidV7.generate(), row.data['id']],
+              );
+            }
+          } catch (e) {
+            debugPrint('[Migration] v166 backfill $t.global_id (safe-skip): $e');
+          }
+
+          // ٣. أعمدةُ الدلتا الأربعة.
+          for (final ddl in [
+            'ALTER TABLE $t ADD COLUMN last_modified_at INTEGER',
+            'ALTER TABLE $t ADD COLUMN deleted_at INTEGER',
+            'ALTER TABLE $t ADD COLUMN origin_client_id TEXT',
+            'ALTER TABLE $t ADD COLUMN row_version INTEGER NOT NULL DEFAULT 0',
+          ]) {
+            try {
+              await m.database.customStatement(ddl);
+            } catch (_) {} // safe-skip: العمودُ موجودٌ سلفاً
+          }
+
+          // ٤. مُشغِّلُ رفعِ النسخة.
+          try {
+            await m.database.customStatement('''
+              CREATE TRIGGER IF NOT EXISTS ${t}_bump_version
+              AFTER UPDATE ON $t FOR EACH ROW
+              WHEN NEW.row_version = OLD.row_version
+              BEGIN
+                UPDATE $t SET
+                  last_modified_at = strftime('%s', 'now'),
+                  row_version = OLD.row_version + 1
+                WHERE id = NEW.id;
+              END
+            ''');
+          } catch (e) {
+            debugPrint('[Migration] v166 trigger $t: $e');
+          }
+        }
+
+        debugPrint(
+          '[Migration] v166: أعمدةُ المزامنة على '
+          '${phase2Tables.length} جدولاً محاسبيّاً',
+        );
+      });
+    }
   }
 }

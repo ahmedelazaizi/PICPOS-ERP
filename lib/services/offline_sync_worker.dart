@@ -1577,6 +1577,18 @@ class OfflineSyncWorker {
         }
         break;
 
+      // v166 — ورقةُ تحميلٍ مطبَّقة. الحمولةُ هي المستندُ نفسُه، فتُعاد
+      // كما هي: الخادمُ يزيل التكرارَ بمعرّف الورقة العالميّ، فإعادةُ
+      // الإرسال بعد انقطاعٍ لا تُنتج تطبيقاً ثانياً ولا قيداً ثانياً.
+      case 'landed_cost_sheets':
+        if (operation == 'apply') {
+          return proxy.submitLandedCostApply(
+            payload,
+            idempotencyKey: idempotencyKey,
+          );
+        }
+        throw StateError('Unhandled op $operation for table $table');
+
       case 'safe_transactions':
         if (operation == 'insert') {
           return proxy.submitSafeTransaction(

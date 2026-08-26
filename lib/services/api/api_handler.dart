@@ -198,6 +198,8 @@ class ApiHandler {
     router.post('/api/safes/set-default', _data.postSetDefaultSafe);
     // Journal Entries (Client → Server sync)
     router.post('/api/journals', _data.postJournalEntry);
+    // v166 / المرحلة ٢ — تطبيقُ ورقة تحميلٍ واردةٍ من عميل.
+    router.post('/api/landed-costs/apply', _data.postLandedCostApply);
     // Settings
     router.post('/api/settings', _data.postSettings);
     // Categories
@@ -2197,6 +2199,13 @@ class ApiHandler {
     'sales_invoice_items', 'purchase_invoice_items', 'held_order_items',
     'sales_order_items', 'purchase_order_items', 'quotation_items',
     'payment_allocations',
+    // Tier 5 — v166 / المرحلة ٢: مستنداتُ الأثر المحاسبيّ.
+    // تقابل الكتلةَ نفسَها في [DeltaPullService.pullTables]؛ هنا مجموعةٌ
+    // فالترتيبُ لا يعني شيئاً، والقائمةُ هناك مرتّبةٌ بالمفاتيح.
+    'asset_categories', 'op_expense_categories', 'bill_of_materials',
+    'fixed_assets', 'manufacturing_orders', 'bom_components',
+    'op_expenses', 'asset_depreciations', 'mfg_order_costs',
+    'landed_cost_sheets', 'landed_cost_items', 'landed_cost_allocations',
   };
 
   /// Phase 5A.1 (Issue 5) — per-table branch column for the `/api/sync/pull`
@@ -2289,6 +2298,15 @@ class ApiHandler {
     'activity_logs', 'sales_invoice_items', 'purchase_invoice_items',
     'held_order_items', 'sales_order_items', 'purchase_order_items',
     'quotation_items', 'payment_allocations',
+    // v166 / المرحلة ٢ — مستنداتُ الأثر المحاسبيّ. بياناتُ عملٍ لا
+    // بياناتٌ مرجعيّة: سجلُّ أصولِ الشركة وتكاليفُها ومصروفاتُها لا
+    // يُسلَّم لمستدعٍ بلا هويّةٍ متحقَّقة. والفئاتُ وقوائمُ المكوّنات
+    // (`asset_categories` · `op_expense_categories` · `bill_of_materials`
+    // · `bom_components`) مرجعيّةٌ عمداً فتبقى خارجَ هذه القائمة ليعمل
+    // التزويدُ قبلَ الدخول.
+    'landed_cost_sheets', 'landed_cost_items', 'landed_cost_allocations',
+    'fixed_assets', 'asset_depreciations', 'op_expenses',
+    'manufacturing_orders', 'mfg_order_costs',
   };
 
   /// Spec 151 P1-8b — exposed so a guard test can assert this stays IDENTICAL

@@ -67238,6 +67238,64 @@ class $BillOfMaterialsTable extends BillOfMaterials
     requiredDuringInsert: false,
     defaultValue: const Constant('prefer_finished_stock'),
   );
+  static const VerificationMeta _globalIdMeta = const VerificationMeta(
+    'globalId',
+  );
+  @override
+  late final GeneratedColumn<String> globalId = GeneratedColumn<String>(
+    'global_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _lastModifiedAtMeta = const VerificationMeta(
+    'lastModifiedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastModifiedAt =
+      GeneratedColumn<DateTime>(
+        'last_modified_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _originClientIdMeta = const VerificationMeta(
+    'originClientId',
+  );
+  @override
+  late final GeneratedColumn<String> originClientId = GeneratedColumn<String>(
+    'origin_client_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _rowVersionMeta = const VerificationMeta(
+    'rowVersion',
+  );
+  @override
+  late final GeneratedColumn<int> rowVersion = GeneratedColumn<int>(
+    'row_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -67250,6 +67308,11 @@ class $BillOfMaterialsTable extends BillOfMaterials
     createdAt,
     autoDepleteOnSale,
     depletionPolicy,
+    globalId,
+    lastModifiedAt,
+    deletedAt,
+    originClientId,
+    rowVersion,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -67339,6 +67402,42 @@ class $BillOfMaterialsTable extends BillOfMaterials
         ),
       );
     }
+    if (data.containsKey('global_id')) {
+      context.handle(
+        _globalIdMeta,
+        globalId.isAcceptableOrUnknown(data['global_id']!, _globalIdMeta),
+      );
+    }
+    if (data.containsKey('last_modified_at')) {
+      context.handle(
+        _lastModifiedAtMeta,
+        lastModifiedAt.isAcceptableOrUnknown(
+          data['last_modified_at']!,
+          _lastModifiedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    if (data.containsKey('origin_client_id')) {
+      context.handle(
+        _originClientIdMeta,
+        originClientId.isAcceptableOrUnknown(
+          data['origin_client_id']!,
+          _originClientIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('row_version')) {
+      context.handle(
+        _rowVersionMeta,
+        rowVersion.isAcceptableOrUnknown(data['row_version']!, _rowVersionMeta),
+      );
+    }
     return context;
   }
 
@@ -67388,6 +67487,26 @@ class $BillOfMaterialsTable extends BillOfMaterials
         DriftSqlType.string,
         data['${effectivePrefix}depletion_policy'],
       )!,
+      globalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}global_id'],
+      ),
+      lastModifiedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_modified_at'],
+      ),
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+      originClientId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origin_client_id'],
+      ),
+      rowVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}row_version'],
+      )!,
     );
   }
 
@@ -67409,6 +67528,11 @@ class BillOfMaterialData extends DataClass
   final DateTime createdAt;
   final bool autoDepleteOnSale;
   final String depletionPolicy;
+  final String? globalId;
+  final DateTime? lastModifiedAt;
+  final DateTime? deletedAt;
+  final String? originClientId;
+  final int rowVersion;
   const BillOfMaterialData({
     required this.id,
     required this.finishedProductId,
@@ -67420,6 +67544,11 @@ class BillOfMaterialData extends DataClass
     required this.createdAt,
     required this.autoDepleteOnSale,
     required this.depletionPolicy,
+    this.globalId,
+    this.lastModifiedAt,
+    this.deletedAt,
+    this.originClientId,
+    required this.rowVersion,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -67436,6 +67565,19 @@ class BillOfMaterialData extends DataClass
     map['created_at'] = Variable<DateTime>(createdAt);
     map['auto_deplete_on_sale'] = Variable<bool>(autoDepleteOnSale);
     map['depletion_policy'] = Variable<String>(depletionPolicy);
+    if (!nullToAbsent || globalId != null) {
+      map['global_id'] = Variable<String>(globalId);
+    }
+    if (!nullToAbsent || lastModifiedAt != null) {
+      map['last_modified_at'] = Variable<DateTime>(lastModifiedAt);
+    }
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || originClientId != null) {
+      map['origin_client_id'] = Variable<String>(originClientId);
+    }
+    map['row_version'] = Variable<int>(rowVersion);
     return map;
   }
 
@@ -67453,6 +67595,19 @@ class BillOfMaterialData extends DataClass
       createdAt: Value(createdAt),
       autoDepleteOnSale: Value(autoDepleteOnSale),
       depletionPolicy: Value(depletionPolicy),
+      globalId: globalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(globalId),
+      lastModifiedAt: lastModifiedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastModifiedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      originClientId: originClientId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(originClientId),
+      rowVersion: Value(rowVersion),
     );
   }
 
@@ -67472,6 +67627,11 @@ class BillOfMaterialData extends DataClass
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       autoDepleteOnSale: serializer.fromJson<bool>(json['autoDepleteOnSale']),
       depletionPolicy: serializer.fromJson<String>(json['depletionPolicy']),
+      globalId: serializer.fromJson<String?>(json['globalId']),
+      lastModifiedAt: serializer.fromJson<DateTime?>(json['lastModifiedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      originClientId: serializer.fromJson<String?>(json['originClientId']),
+      rowVersion: serializer.fromJson<int>(json['rowVersion']),
     );
   }
   @override
@@ -67488,6 +67648,11 @@ class BillOfMaterialData extends DataClass
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'autoDepleteOnSale': serializer.toJson<bool>(autoDepleteOnSale),
       'depletionPolicy': serializer.toJson<String>(depletionPolicy),
+      'globalId': serializer.toJson<String?>(globalId),
+      'lastModifiedAt': serializer.toJson<DateTime?>(lastModifiedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'originClientId': serializer.toJson<String?>(originClientId),
+      'rowVersion': serializer.toJson<int>(rowVersion),
     };
   }
 
@@ -67502,6 +67667,11 @@ class BillOfMaterialData extends DataClass
     DateTime? createdAt,
     bool? autoDepleteOnSale,
     String? depletionPolicy,
+    Value<String?> globalId = const Value.absent(),
+    Value<DateTime?> lastModifiedAt = const Value.absent(),
+    Value<DateTime?> deletedAt = const Value.absent(),
+    Value<String?> originClientId = const Value.absent(),
+    int? rowVersion,
   }) => BillOfMaterialData(
     id: id ?? this.id,
     finishedProductId: finishedProductId ?? this.finishedProductId,
@@ -67513,6 +67683,15 @@ class BillOfMaterialData extends DataClass
     createdAt: createdAt ?? this.createdAt,
     autoDepleteOnSale: autoDepleteOnSale ?? this.autoDepleteOnSale,
     depletionPolicy: depletionPolicy ?? this.depletionPolicy,
+    globalId: globalId.present ? globalId.value : this.globalId,
+    lastModifiedAt: lastModifiedAt.present
+        ? lastModifiedAt.value
+        : this.lastModifiedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    originClientId: originClientId.present
+        ? originClientId.value
+        : this.originClientId,
+    rowVersion: rowVersion ?? this.rowVersion,
   );
   BillOfMaterialData copyWithCompanion(BillOfMaterialsCompanion data) {
     return BillOfMaterialData(
@@ -67536,6 +67715,17 @@ class BillOfMaterialData extends DataClass
       depletionPolicy: data.depletionPolicy.present
           ? data.depletionPolicy.value
           : this.depletionPolicy,
+      globalId: data.globalId.present ? data.globalId.value : this.globalId,
+      lastModifiedAt: data.lastModifiedAt.present
+          ? data.lastModifiedAt.value
+          : this.lastModifiedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      originClientId: data.originClientId.present
+          ? data.originClientId.value
+          : this.originClientId,
+      rowVersion: data.rowVersion.present
+          ? data.rowVersion.value
+          : this.rowVersion,
     );
   }
 
@@ -67551,7 +67741,12 @@ class BillOfMaterialData extends DataClass
           ..write('notes: $notes, ')
           ..write('createdAt: $createdAt, ')
           ..write('autoDepleteOnSale: $autoDepleteOnSale, ')
-          ..write('depletionPolicy: $depletionPolicy')
+          ..write('depletionPolicy: $depletionPolicy, ')
+          ..write('globalId: $globalId, ')
+          ..write('lastModifiedAt: $lastModifiedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('originClientId: $originClientId, ')
+          ..write('rowVersion: $rowVersion')
           ..write(')'))
         .toString();
   }
@@ -67568,6 +67763,11 @@ class BillOfMaterialData extends DataClass
     createdAt,
     autoDepleteOnSale,
     depletionPolicy,
+    globalId,
+    lastModifiedAt,
+    deletedAt,
+    originClientId,
+    rowVersion,
   );
   @override
   bool operator ==(Object other) =>
@@ -67582,7 +67782,12 @@ class BillOfMaterialData extends DataClass
           other.notes == this.notes &&
           other.createdAt == this.createdAt &&
           other.autoDepleteOnSale == this.autoDepleteOnSale &&
-          other.depletionPolicy == this.depletionPolicy);
+          other.depletionPolicy == this.depletionPolicy &&
+          other.globalId == this.globalId &&
+          other.lastModifiedAt == this.lastModifiedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.originClientId == this.originClientId &&
+          other.rowVersion == this.rowVersion);
 }
 
 class BillOfMaterialsCompanion extends UpdateCompanion<BillOfMaterialData> {
@@ -67596,6 +67801,11 @@ class BillOfMaterialsCompanion extends UpdateCompanion<BillOfMaterialData> {
   final Value<DateTime> createdAt;
   final Value<bool> autoDepleteOnSale;
   final Value<String> depletionPolicy;
+  final Value<String?> globalId;
+  final Value<DateTime?> lastModifiedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<String?> originClientId;
+  final Value<int> rowVersion;
   const BillOfMaterialsCompanion({
     this.id = const Value.absent(),
     this.finishedProductId = const Value.absent(),
@@ -67607,6 +67817,11 @@ class BillOfMaterialsCompanion extends UpdateCompanion<BillOfMaterialData> {
     this.createdAt = const Value.absent(),
     this.autoDepleteOnSale = const Value.absent(),
     this.depletionPolicy = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.lastModifiedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.originClientId = const Value.absent(),
+    this.rowVersion = const Value.absent(),
   });
   BillOfMaterialsCompanion.insert({
     this.id = const Value.absent(),
@@ -67619,6 +67834,11 @@ class BillOfMaterialsCompanion extends UpdateCompanion<BillOfMaterialData> {
     this.createdAt = const Value.absent(),
     this.autoDepleteOnSale = const Value.absent(),
     this.depletionPolicy = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.lastModifiedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.originClientId = const Value.absent(),
+    this.rowVersion = const Value.absent(),
   }) : finishedProductId = Value(finishedProductId),
        bomCode = Value(bomCode);
   static Insertable<BillOfMaterialData> custom({
@@ -67632,6 +67852,11 @@ class BillOfMaterialsCompanion extends UpdateCompanion<BillOfMaterialData> {
     Expression<DateTime>? createdAt,
     Expression<bool>? autoDepleteOnSale,
     Expression<String>? depletionPolicy,
+    Expression<String>? globalId,
+    Expression<DateTime>? lastModifiedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? originClientId,
+    Expression<int>? rowVersion,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -67644,6 +67869,11 @@ class BillOfMaterialsCompanion extends UpdateCompanion<BillOfMaterialData> {
       if (createdAt != null) 'created_at': createdAt,
       if (autoDepleteOnSale != null) 'auto_deplete_on_sale': autoDepleteOnSale,
       if (depletionPolicy != null) 'depletion_policy': depletionPolicy,
+      if (globalId != null) 'global_id': globalId,
+      if (lastModifiedAt != null) 'last_modified_at': lastModifiedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (originClientId != null) 'origin_client_id': originClientId,
+      if (rowVersion != null) 'row_version': rowVersion,
     });
   }
 
@@ -67658,6 +67888,11 @@ class BillOfMaterialsCompanion extends UpdateCompanion<BillOfMaterialData> {
     Value<DateTime>? createdAt,
     Value<bool>? autoDepleteOnSale,
     Value<String>? depletionPolicy,
+    Value<String?>? globalId,
+    Value<DateTime?>? lastModifiedAt,
+    Value<DateTime?>? deletedAt,
+    Value<String?>? originClientId,
+    Value<int>? rowVersion,
   }) {
     return BillOfMaterialsCompanion(
       id: id ?? this.id,
@@ -67670,6 +67905,11 @@ class BillOfMaterialsCompanion extends UpdateCompanion<BillOfMaterialData> {
       createdAt: createdAt ?? this.createdAt,
       autoDepleteOnSale: autoDepleteOnSale ?? this.autoDepleteOnSale,
       depletionPolicy: depletionPolicy ?? this.depletionPolicy,
+      globalId: globalId ?? this.globalId,
+      lastModifiedAt: lastModifiedAt ?? this.lastModifiedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      originClientId: originClientId ?? this.originClientId,
+      rowVersion: rowVersion ?? this.rowVersion,
     );
   }
 
@@ -67706,6 +67946,21 @@ class BillOfMaterialsCompanion extends UpdateCompanion<BillOfMaterialData> {
     if (depletionPolicy.present) {
       map['depletion_policy'] = Variable<String>(depletionPolicy.value);
     }
+    if (globalId.present) {
+      map['global_id'] = Variable<String>(globalId.value);
+    }
+    if (lastModifiedAt.present) {
+      map['last_modified_at'] = Variable<DateTime>(lastModifiedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (originClientId.present) {
+      map['origin_client_id'] = Variable<String>(originClientId.value);
+    }
+    if (rowVersion.present) {
+      map['row_version'] = Variable<int>(rowVersion.value);
+    }
     return map;
   }
 
@@ -67721,7 +67976,12 @@ class BillOfMaterialsCompanion extends UpdateCompanion<BillOfMaterialData> {
           ..write('notes: $notes, ')
           ..write('createdAt: $createdAt, ')
           ..write('autoDepleteOnSale: $autoDepleteOnSale, ')
-          ..write('depletionPolicy: $depletionPolicy')
+          ..write('depletionPolicy: $depletionPolicy, ')
+          ..write('globalId: $globalId, ')
+          ..write('lastModifiedAt: $lastModifiedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('originClientId: $originClientId, ')
+          ..write('rowVersion: $rowVersion')
           ..write(')'))
         .toString();
   }
@@ -67818,6 +68078,64 @@ class $BomComponentsTable extends BomComponents
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _globalIdMeta = const VerificationMeta(
+    'globalId',
+  );
+  @override
+  late final GeneratedColumn<String> globalId = GeneratedColumn<String>(
+    'global_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _lastModifiedAtMeta = const VerificationMeta(
+    'lastModifiedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastModifiedAt =
+      GeneratedColumn<DateTime>(
+        'last_modified_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _originClientIdMeta = const VerificationMeta(
+    'originClientId',
+  );
+  @override
+  late final GeneratedColumn<String> originClientId = GeneratedColumn<String>(
+    'origin_client_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _rowVersionMeta = const VerificationMeta(
+    'rowVersion',
+  );
+  @override
+  late final GeneratedColumn<int> rowVersion = GeneratedColumn<int>(
+    'row_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -67827,6 +68145,11 @@ class $BomComponentsTable extends BomComponents
     unit,
     quantityInBase,
     wastagePercent,
+    globalId,
+    lastModifiedAt,
+    deletedAt,
+    originClientId,
+    rowVersion,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -67894,6 +68217,42 @@ class $BomComponentsTable extends BomComponents
         ),
       );
     }
+    if (data.containsKey('global_id')) {
+      context.handle(
+        _globalIdMeta,
+        globalId.isAcceptableOrUnknown(data['global_id']!, _globalIdMeta),
+      );
+    }
+    if (data.containsKey('last_modified_at')) {
+      context.handle(
+        _lastModifiedAtMeta,
+        lastModifiedAt.isAcceptableOrUnknown(
+          data['last_modified_at']!,
+          _lastModifiedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    if (data.containsKey('origin_client_id')) {
+      context.handle(
+        _originClientIdMeta,
+        originClientId.isAcceptableOrUnknown(
+          data['origin_client_id']!,
+          _originClientIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('row_version')) {
+      context.handle(
+        _rowVersionMeta,
+        rowVersion.isAcceptableOrUnknown(data['row_version']!, _rowVersionMeta),
+      );
+    }
     return context;
   }
 
@@ -67931,6 +68290,26 @@ class $BomComponentsTable extends BomComponents
         DriftSqlType.double,
         data['${effectivePrefix}wastage_percent'],
       )!,
+      globalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}global_id'],
+      ),
+      lastModifiedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_modified_at'],
+      ),
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+      originClientId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origin_client_id'],
+      ),
+      rowVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}row_version'],
+      )!,
     );
   }
 
@@ -67949,6 +68328,11 @@ class BomComponentData extends DataClass
   final String unit;
   final double quantityInBase;
   final double wastagePercent;
+  final String? globalId;
+  final DateTime? lastModifiedAt;
+  final DateTime? deletedAt;
+  final String? originClientId;
+  final int rowVersion;
   const BomComponentData({
     required this.id,
     required this.bomId,
@@ -67957,6 +68341,11 @@ class BomComponentData extends DataClass
     required this.unit,
     required this.quantityInBase,
     required this.wastagePercent,
+    this.globalId,
+    this.lastModifiedAt,
+    this.deletedAt,
+    this.originClientId,
+    required this.rowVersion,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -67968,6 +68357,19 @@ class BomComponentData extends DataClass
     map['unit'] = Variable<String>(unit);
     map['quantity_in_base'] = Variable<double>(quantityInBase);
     map['wastage_percent'] = Variable<double>(wastagePercent);
+    if (!nullToAbsent || globalId != null) {
+      map['global_id'] = Variable<String>(globalId);
+    }
+    if (!nullToAbsent || lastModifiedAt != null) {
+      map['last_modified_at'] = Variable<DateTime>(lastModifiedAt);
+    }
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || originClientId != null) {
+      map['origin_client_id'] = Variable<String>(originClientId);
+    }
+    map['row_version'] = Variable<int>(rowVersion);
     return map;
   }
 
@@ -67980,6 +68382,19 @@ class BomComponentData extends DataClass
       unit: Value(unit),
       quantityInBase: Value(quantityInBase),
       wastagePercent: Value(wastagePercent),
+      globalId: globalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(globalId),
+      lastModifiedAt: lastModifiedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastModifiedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      originClientId: originClientId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(originClientId),
+      rowVersion: Value(rowVersion),
     );
   }
 
@@ -67996,6 +68411,11 @@ class BomComponentData extends DataClass
       unit: serializer.fromJson<String>(json['unit']),
       quantityInBase: serializer.fromJson<double>(json['quantityInBase']),
       wastagePercent: serializer.fromJson<double>(json['wastagePercent']),
+      globalId: serializer.fromJson<String?>(json['globalId']),
+      lastModifiedAt: serializer.fromJson<DateTime?>(json['lastModifiedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      originClientId: serializer.fromJson<String?>(json['originClientId']),
+      rowVersion: serializer.fromJson<int>(json['rowVersion']),
     );
   }
   @override
@@ -68009,6 +68429,11 @@ class BomComponentData extends DataClass
       'unit': serializer.toJson<String>(unit),
       'quantityInBase': serializer.toJson<double>(quantityInBase),
       'wastagePercent': serializer.toJson<double>(wastagePercent),
+      'globalId': serializer.toJson<String?>(globalId),
+      'lastModifiedAt': serializer.toJson<DateTime?>(lastModifiedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'originClientId': serializer.toJson<String?>(originClientId),
+      'rowVersion': serializer.toJson<int>(rowVersion),
     };
   }
 
@@ -68020,6 +68445,11 @@ class BomComponentData extends DataClass
     String? unit,
     double? quantityInBase,
     double? wastagePercent,
+    Value<String?> globalId = const Value.absent(),
+    Value<DateTime?> lastModifiedAt = const Value.absent(),
+    Value<DateTime?> deletedAt = const Value.absent(),
+    Value<String?> originClientId = const Value.absent(),
+    int? rowVersion,
   }) => BomComponentData(
     id: id ?? this.id,
     bomId: bomId ?? this.bomId,
@@ -68028,6 +68458,15 @@ class BomComponentData extends DataClass
     unit: unit ?? this.unit,
     quantityInBase: quantityInBase ?? this.quantityInBase,
     wastagePercent: wastagePercent ?? this.wastagePercent,
+    globalId: globalId.present ? globalId.value : this.globalId,
+    lastModifiedAt: lastModifiedAt.present
+        ? lastModifiedAt.value
+        : this.lastModifiedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    originClientId: originClientId.present
+        ? originClientId.value
+        : this.originClientId,
+    rowVersion: rowVersion ?? this.rowVersion,
   );
   BomComponentData copyWithCompanion(BomComponentsCompanion data) {
     return BomComponentData(
@@ -68044,6 +68483,17 @@ class BomComponentData extends DataClass
       wastagePercent: data.wastagePercent.present
           ? data.wastagePercent.value
           : this.wastagePercent,
+      globalId: data.globalId.present ? data.globalId.value : this.globalId,
+      lastModifiedAt: data.lastModifiedAt.present
+          ? data.lastModifiedAt.value
+          : this.lastModifiedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      originClientId: data.originClientId.present
+          ? data.originClientId.value
+          : this.originClientId,
+      rowVersion: data.rowVersion.present
+          ? data.rowVersion.value
+          : this.rowVersion,
     );
   }
 
@@ -68056,7 +68506,12 @@ class BomComponentData extends DataClass
           ..write('quantity: $quantity, ')
           ..write('unit: $unit, ')
           ..write('quantityInBase: $quantityInBase, ')
-          ..write('wastagePercent: $wastagePercent')
+          ..write('wastagePercent: $wastagePercent, ')
+          ..write('globalId: $globalId, ')
+          ..write('lastModifiedAt: $lastModifiedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('originClientId: $originClientId, ')
+          ..write('rowVersion: $rowVersion')
           ..write(')'))
         .toString();
   }
@@ -68070,6 +68525,11 @@ class BomComponentData extends DataClass
     unit,
     quantityInBase,
     wastagePercent,
+    globalId,
+    lastModifiedAt,
+    deletedAt,
+    originClientId,
+    rowVersion,
   );
   @override
   bool operator ==(Object other) =>
@@ -68081,7 +68541,12 @@ class BomComponentData extends DataClass
           other.quantity == this.quantity &&
           other.unit == this.unit &&
           other.quantityInBase == this.quantityInBase &&
-          other.wastagePercent == this.wastagePercent);
+          other.wastagePercent == this.wastagePercent &&
+          other.globalId == this.globalId &&
+          other.lastModifiedAt == this.lastModifiedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.originClientId == this.originClientId &&
+          other.rowVersion == this.rowVersion);
 }
 
 class BomComponentsCompanion extends UpdateCompanion<BomComponentData> {
@@ -68092,6 +68557,11 @@ class BomComponentsCompanion extends UpdateCompanion<BomComponentData> {
   final Value<String> unit;
   final Value<double> quantityInBase;
   final Value<double> wastagePercent;
+  final Value<String?> globalId;
+  final Value<DateTime?> lastModifiedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<String?> originClientId;
+  final Value<int> rowVersion;
   const BomComponentsCompanion({
     this.id = const Value.absent(),
     this.bomId = const Value.absent(),
@@ -68100,6 +68570,11 @@ class BomComponentsCompanion extends UpdateCompanion<BomComponentData> {
     this.unit = const Value.absent(),
     this.quantityInBase = const Value.absent(),
     this.wastagePercent = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.lastModifiedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.originClientId = const Value.absent(),
+    this.rowVersion = const Value.absent(),
   });
   BomComponentsCompanion.insert({
     this.id = const Value.absent(),
@@ -68109,6 +68584,11 @@ class BomComponentsCompanion extends UpdateCompanion<BomComponentData> {
     this.unit = const Value.absent(),
     this.quantityInBase = const Value.absent(),
     this.wastagePercent = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.lastModifiedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.originClientId = const Value.absent(),
+    this.rowVersion = const Value.absent(),
   }) : bomId = Value(bomId),
        rawMaterialId = Value(rawMaterialId),
        quantity = Value(quantity);
@@ -68120,6 +68600,11 @@ class BomComponentsCompanion extends UpdateCompanion<BomComponentData> {
     Expression<String>? unit,
     Expression<double>? quantityInBase,
     Expression<double>? wastagePercent,
+    Expression<String>? globalId,
+    Expression<DateTime>? lastModifiedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? originClientId,
+    Expression<int>? rowVersion,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -68129,6 +68614,11 @@ class BomComponentsCompanion extends UpdateCompanion<BomComponentData> {
       if (unit != null) 'unit': unit,
       if (quantityInBase != null) 'quantity_in_base': quantityInBase,
       if (wastagePercent != null) 'wastage_percent': wastagePercent,
+      if (globalId != null) 'global_id': globalId,
+      if (lastModifiedAt != null) 'last_modified_at': lastModifiedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (originClientId != null) 'origin_client_id': originClientId,
+      if (rowVersion != null) 'row_version': rowVersion,
     });
   }
 
@@ -68140,6 +68630,11 @@ class BomComponentsCompanion extends UpdateCompanion<BomComponentData> {
     Value<String>? unit,
     Value<double>? quantityInBase,
     Value<double>? wastagePercent,
+    Value<String?>? globalId,
+    Value<DateTime?>? lastModifiedAt,
+    Value<DateTime?>? deletedAt,
+    Value<String?>? originClientId,
+    Value<int>? rowVersion,
   }) {
     return BomComponentsCompanion(
       id: id ?? this.id,
@@ -68149,6 +68644,11 @@ class BomComponentsCompanion extends UpdateCompanion<BomComponentData> {
       unit: unit ?? this.unit,
       quantityInBase: quantityInBase ?? this.quantityInBase,
       wastagePercent: wastagePercent ?? this.wastagePercent,
+      globalId: globalId ?? this.globalId,
+      lastModifiedAt: lastModifiedAt ?? this.lastModifiedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      originClientId: originClientId ?? this.originClientId,
+      rowVersion: rowVersion ?? this.rowVersion,
     );
   }
 
@@ -68176,6 +68676,21 @@ class BomComponentsCompanion extends UpdateCompanion<BomComponentData> {
     if (wastagePercent.present) {
       map['wastage_percent'] = Variable<double>(wastagePercent.value);
     }
+    if (globalId.present) {
+      map['global_id'] = Variable<String>(globalId.value);
+    }
+    if (lastModifiedAt.present) {
+      map['last_modified_at'] = Variable<DateTime>(lastModifiedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (originClientId.present) {
+      map['origin_client_id'] = Variable<String>(originClientId.value);
+    }
+    if (rowVersion.present) {
+      map['row_version'] = Variable<int>(rowVersion.value);
+    }
     return map;
   }
 
@@ -68188,7 +68703,12 @@ class BomComponentsCompanion extends UpdateCompanion<BomComponentData> {
           ..write('quantity: $quantity, ')
           ..write('unit: $unit, ')
           ..write('quantityInBase: $quantityInBase, ')
-          ..write('wastagePercent: $wastagePercent')
+          ..write('wastagePercent: $wastagePercent, ')
+          ..write('globalId: $globalId, ')
+          ..write('lastModifiedAt: $lastModifiedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('originClientId: $originClientId, ')
+          ..write('rowVersion: $rowVersion')
           ..write(')'))
         .toString();
   }
@@ -68351,6 +68871,64 @@ class $ManufacturingOrdersTable extends ManufacturingOrders
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
+  static const VerificationMeta _globalIdMeta = const VerificationMeta(
+    'globalId',
+  );
+  @override
+  late final GeneratedColumn<String> globalId = GeneratedColumn<String>(
+    'global_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _lastModifiedAtMeta = const VerificationMeta(
+    'lastModifiedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastModifiedAt =
+      GeneratedColumn<DateTime>(
+        'last_modified_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _originClientIdMeta = const VerificationMeta(
+    'originClientId',
+  );
+  @override
+  late final GeneratedColumn<String> originClientId = GeneratedColumn<String>(
+    'origin_client_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _rowVersionMeta = const VerificationMeta(
+    'rowVersion',
+  );
+  @override
+  late final GeneratedColumn<int> rowVersion = GeneratedColumn<int>(
+    'row_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -68366,6 +68944,11 @@ class $ManufacturingOrdersTable extends ManufacturingOrders
     totalCost,
     notes,
     createdAt,
+    globalId,
+    lastModifiedAt,
+    deletedAt,
+    originClientId,
+    rowVersion,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -68476,6 +69059,42 @@ class $ManufacturingOrdersTable extends ManufacturingOrders
         createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
       );
     }
+    if (data.containsKey('global_id')) {
+      context.handle(
+        _globalIdMeta,
+        globalId.isAcceptableOrUnknown(data['global_id']!, _globalIdMeta),
+      );
+    }
+    if (data.containsKey('last_modified_at')) {
+      context.handle(
+        _lastModifiedAtMeta,
+        lastModifiedAt.isAcceptableOrUnknown(
+          data['last_modified_at']!,
+          _lastModifiedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    if (data.containsKey('origin_client_id')) {
+      context.handle(
+        _originClientIdMeta,
+        originClientId.isAcceptableOrUnknown(
+          data['origin_client_id']!,
+          _originClientIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('row_version')) {
+      context.handle(
+        _rowVersionMeta,
+        rowVersion.isAcceptableOrUnknown(data['row_version']!, _rowVersionMeta),
+      );
+    }
     return context;
   }
 
@@ -68537,6 +69156,26 @@ class $ManufacturingOrdersTable extends ManufacturingOrders
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      globalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}global_id'],
+      ),
+      lastModifiedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_modified_at'],
+      ),
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+      originClientId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origin_client_id'],
+      ),
+      rowVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}row_version'],
+      )!,
     );
   }
 
@@ -68561,6 +69200,11 @@ class ManufacturingOrderData extends DataClass
   final double totalCost;
   final String? notes;
   final DateTime createdAt;
+  final String? globalId;
+  final DateTime? lastModifiedAt;
+  final DateTime? deletedAt;
+  final String? originClientId;
+  final int rowVersion;
   const ManufacturingOrderData({
     required this.id,
     required this.orderNumber,
@@ -68575,6 +69219,11 @@ class ManufacturingOrderData extends DataClass
     required this.totalCost,
     this.notes,
     required this.createdAt,
+    this.globalId,
+    this.lastModifiedAt,
+    this.deletedAt,
+    this.originClientId,
+    required this.rowVersion,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -68596,6 +69245,19 @@ class ManufacturingOrderData extends DataClass
       map['notes'] = Variable<String>(notes);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || globalId != null) {
+      map['global_id'] = Variable<String>(globalId);
+    }
+    if (!nullToAbsent || lastModifiedAt != null) {
+      map['last_modified_at'] = Variable<DateTime>(lastModifiedAt);
+    }
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || originClientId != null) {
+      map['origin_client_id'] = Variable<String>(originClientId);
+    }
+    map['row_version'] = Variable<int>(rowVersion);
     return map;
   }
 
@@ -68618,6 +69280,19 @@ class ManufacturingOrderData extends DataClass
           ? const Value.absent()
           : Value(notes),
       createdAt: Value(createdAt),
+      globalId: globalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(globalId),
+      lastModifiedAt: lastModifiedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastModifiedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      originClientId: originClientId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(originClientId),
+      rowVersion: Value(rowVersion),
     );
   }
 
@@ -68640,6 +69315,11 @@ class ManufacturingOrderData extends DataClass
       totalCost: serializer.fromJson<double>(json['totalCost']),
       notes: serializer.fromJson<String?>(json['notes']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      globalId: serializer.fromJson<String?>(json['globalId']),
+      lastModifiedAt: serializer.fromJson<DateTime?>(json['lastModifiedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      originClientId: serializer.fromJson<String?>(json['originClientId']),
+      rowVersion: serializer.fromJson<int>(json['rowVersion']),
     );
   }
   @override
@@ -68659,6 +69339,11 @@ class ManufacturingOrderData extends DataClass
       'totalCost': serializer.toJson<double>(totalCost),
       'notes': serializer.toJson<String?>(notes),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'globalId': serializer.toJson<String?>(globalId),
+      'lastModifiedAt': serializer.toJson<DateTime?>(lastModifiedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'originClientId': serializer.toJson<String?>(originClientId),
+      'rowVersion': serializer.toJson<int>(rowVersion),
     };
   }
 
@@ -68676,6 +69361,11 @@ class ManufacturingOrderData extends DataClass
     double? totalCost,
     Value<String?> notes = const Value.absent(),
     DateTime? createdAt,
+    Value<String?> globalId = const Value.absent(),
+    Value<DateTime?> lastModifiedAt = const Value.absent(),
+    Value<DateTime?> deletedAt = const Value.absent(),
+    Value<String?> originClientId = const Value.absent(),
+    int? rowVersion,
   }) => ManufacturingOrderData(
     id: id ?? this.id,
     orderNumber: orderNumber ?? this.orderNumber,
@@ -68690,6 +69380,15 @@ class ManufacturingOrderData extends DataClass
     totalCost: totalCost ?? this.totalCost,
     notes: notes.present ? notes.value : this.notes,
     createdAt: createdAt ?? this.createdAt,
+    globalId: globalId.present ? globalId.value : this.globalId,
+    lastModifiedAt: lastModifiedAt.present
+        ? lastModifiedAt.value
+        : this.lastModifiedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    originClientId: originClientId.present
+        ? originClientId.value
+        : this.originClientId,
+    rowVersion: rowVersion ?? this.rowVersion,
   );
   ManufacturingOrderData copyWithCompanion(ManufacturingOrdersCompanion data) {
     return ManufacturingOrderData(
@@ -68716,6 +69415,17 @@ class ManufacturingOrderData extends DataClass
       totalCost: data.totalCost.present ? data.totalCost.value : this.totalCost,
       notes: data.notes.present ? data.notes.value : this.notes,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      globalId: data.globalId.present ? data.globalId.value : this.globalId,
+      lastModifiedAt: data.lastModifiedAt.present
+          ? data.lastModifiedAt.value
+          : this.lastModifiedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      originClientId: data.originClientId.present
+          ? data.originClientId.value
+          : this.originClientId,
+      rowVersion: data.rowVersion.present
+          ? data.rowVersion.value
+          : this.rowVersion,
     );
   }
 
@@ -68734,7 +69444,12 @@ class ManufacturingOrderData extends DataClass
           ..write('additionalCosts: $additionalCosts, ')
           ..write('totalCost: $totalCost, ')
           ..write('notes: $notes, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('globalId: $globalId, ')
+          ..write('lastModifiedAt: $lastModifiedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('originClientId: $originClientId, ')
+          ..write('rowVersion: $rowVersion')
           ..write(')'))
         .toString();
   }
@@ -68754,6 +69469,11 @@ class ManufacturingOrderData extends DataClass
     totalCost,
     notes,
     createdAt,
+    globalId,
+    lastModifiedAt,
+    deletedAt,
+    originClientId,
+    rowVersion,
   );
   @override
   bool operator ==(Object other) =>
@@ -68771,7 +69491,12 @@ class ManufacturingOrderData extends DataClass
           other.additionalCosts == this.additionalCosts &&
           other.totalCost == this.totalCost &&
           other.notes == this.notes &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.globalId == this.globalId &&
+          other.lastModifiedAt == this.lastModifiedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.originClientId == this.originClientId &&
+          other.rowVersion == this.rowVersion);
 }
 
 class ManufacturingOrdersCompanion
@@ -68789,6 +69514,11 @@ class ManufacturingOrdersCompanion
   final Value<double> totalCost;
   final Value<String?> notes;
   final Value<DateTime> createdAt;
+  final Value<String?> globalId;
+  final Value<DateTime?> lastModifiedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<String?> originClientId;
+  final Value<int> rowVersion;
   const ManufacturingOrdersCompanion({
     this.id = const Value.absent(),
     this.orderNumber = const Value.absent(),
@@ -68803,6 +69533,11 @@ class ManufacturingOrdersCompanion
     this.totalCost = const Value.absent(),
     this.notes = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.lastModifiedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.originClientId = const Value.absent(),
+    this.rowVersion = const Value.absent(),
   });
   ManufacturingOrdersCompanion.insert({
     this.id = const Value.absent(),
@@ -68818,6 +69553,11 @@ class ManufacturingOrdersCompanion
     this.totalCost = const Value.absent(),
     this.notes = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.lastModifiedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.originClientId = const Value.absent(),
+    this.rowVersion = const Value.absent(),
   }) : orderNumber = Value(orderNumber),
        bomId = Value(bomId),
        orderedQty = Value(orderedQty),
@@ -68837,6 +69577,11 @@ class ManufacturingOrdersCompanion
     Expression<double>? totalCost,
     Expression<String>? notes,
     Expression<DateTime>? createdAt,
+    Expression<String>? globalId,
+    Expression<DateTime>? lastModifiedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? originClientId,
+    Expression<int>? rowVersion,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -68852,6 +69597,11 @@ class ManufacturingOrdersCompanion
       if (totalCost != null) 'total_cost': totalCost,
       if (notes != null) 'notes': notes,
       if (createdAt != null) 'created_at': createdAt,
+      if (globalId != null) 'global_id': globalId,
+      if (lastModifiedAt != null) 'last_modified_at': lastModifiedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (originClientId != null) 'origin_client_id': originClientId,
+      if (rowVersion != null) 'row_version': rowVersion,
     });
   }
 
@@ -68869,6 +69619,11 @@ class ManufacturingOrdersCompanion
     Value<double>? totalCost,
     Value<String?>? notes,
     Value<DateTime>? createdAt,
+    Value<String?>? globalId,
+    Value<DateTime?>? lastModifiedAt,
+    Value<DateTime?>? deletedAt,
+    Value<String?>? originClientId,
+    Value<int>? rowVersion,
   }) {
     return ManufacturingOrdersCompanion(
       id: id ?? this.id,
@@ -68884,6 +69639,11 @@ class ManufacturingOrdersCompanion
       totalCost: totalCost ?? this.totalCost,
       notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
+      globalId: globalId ?? this.globalId,
+      lastModifiedAt: lastModifiedAt ?? this.lastModifiedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      originClientId: originClientId ?? this.originClientId,
+      rowVersion: rowVersion ?? this.rowVersion,
     );
   }
 
@@ -68929,6 +69689,21 @@ class ManufacturingOrdersCompanion
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (globalId.present) {
+      map['global_id'] = Variable<String>(globalId.value);
+    }
+    if (lastModifiedAt.present) {
+      map['last_modified_at'] = Variable<DateTime>(lastModifiedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (originClientId.present) {
+      map['origin_client_id'] = Variable<String>(originClientId.value);
+    }
+    if (rowVersion.present) {
+      map['row_version'] = Variable<int>(rowVersion.value);
+    }
     return map;
   }
 
@@ -68947,7 +69722,12 @@ class ManufacturingOrdersCompanion
           ..write('additionalCosts: $additionalCosts, ')
           ..write('totalCost: $totalCost, ')
           ..write('notes: $notes, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('globalId: $globalId, ')
+          ..write('lastModifiedAt: $lastModifiedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('originClientId: $originClientId, ')
+          ..write('rowVersion: $rowVersion')
           ..write(')'))
         .toString();
   }
@@ -69034,6 +69814,64 @@ class $AssetCategoriesTable extends AssetCategories
       'REFERENCES accounts (id)',
     ),
   );
+  static const VerificationMeta _globalIdMeta = const VerificationMeta(
+    'globalId',
+  );
+  @override
+  late final GeneratedColumn<String> globalId = GeneratedColumn<String>(
+    'global_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _lastModifiedAtMeta = const VerificationMeta(
+    'lastModifiedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastModifiedAt =
+      GeneratedColumn<DateTime>(
+        'last_modified_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _originClientIdMeta = const VerificationMeta(
+    'originClientId',
+  );
+  @override
+  late final GeneratedColumn<String> originClientId = GeneratedColumn<String>(
+    'origin_client_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _rowVersionMeta = const VerificationMeta(
+    'rowVersion',
+  );
+  @override
+  late final GeneratedColumn<int> rowVersion = GeneratedColumn<int>(
+    'row_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -69042,6 +69880,11 @@ class $AssetCategoriesTable extends AssetCategories
     defaultDepreciationMethod,
     accountId,
     depreciationAccountId,
+    globalId,
+    lastModifiedAt,
+    deletedAt,
+    originClientId,
+    rowVersion,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -69099,6 +69942,42 @@ class $AssetCategoriesTable extends AssetCategories
         ),
       );
     }
+    if (data.containsKey('global_id')) {
+      context.handle(
+        _globalIdMeta,
+        globalId.isAcceptableOrUnknown(data['global_id']!, _globalIdMeta),
+      );
+    }
+    if (data.containsKey('last_modified_at')) {
+      context.handle(
+        _lastModifiedAtMeta,
+        lastModifiedAt.isAcceptableOrUnknown(
+          data['last_modified_at']!,
+          _lastModifiedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    if (data.containsKey('origin_client_id')) {
+      context.handle(
+        _originClientIdMeta,
+        originClientId.isAcceptableOrUnknown(
+          data['origin_client_id']!,
+          _originClientIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('row_version')) {
+      context.handle(
+        _rowVersionMeta,
+        rowVersion.isAcceptableOrUnknown(data['row_version']!, _rowVersionMeta),
+      );
+    }
     return context;
   }
 
@@ -69132,6 +70011,26 @@ class $AssetCategoriesTable extends AssetCategories
         DriftSqlType.int,
         data['${effectivePrefix}depreciation_account_id'],
       ),
+      globalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}global_id'],
+      ),
+      lastModifiedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_modified_at'],
+      ),
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+      originClientId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origin_client_id'],
+      ),
+      rowVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}row_version'],
+      )!,
     );
   }
 
@@ -69148,6 +70047,11 @@ class AssetCategory extends DataClass implements Insertable<AssetCategory> {
   final String defaultDepreciationMethod;
   final int? accountId;
   final int? depreciationAccountId;
+  final String? globalId;
+  final DateTime? lastModifiedAt;
+  final DateTime? deletedAt;
+  final String? originClientId;
+  final int rowVersion;
   const AssetCategory({
     required this.id,
     required this.name,
@@ -69155,6 +70059,11 @@ class AssetCategory extends DataClass implements Insertable<AssetCategory> {
     required this.defaultDepreciationMethod,
     this.accountId,
     this.depreciationAccountId,
+    this.globalId,
+    this.lastModifiedAt,
+    this.deletedAt,
+    this.originClientId,
+    required this.rowVersion,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -69171,6 +70080,19 @@ class AssetCategory extends DataClass implements Insertable<AssetCategory> {
     if (!nullToAbsent || depreciationAccountId != null) {
       map['depreciation_account_id'] = Variable<int>(depreciationAccountId);
     }
+    if (!nullToAbsent || globalId != null) {
+      map['global_id'] = Variable<String>(globalId);
+    }
+    if (!nullToAbsent || lastModifiedAt != null) {
+      map['last_modified_at'] = Variable<DateTime>(lastModifiedAt);
+    }
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || originClientId != null) {
+      map['origin_client_id'] = Variable<String>(originClientId);
+    }
+    map['row_version'] = Variable<int>(rowVersion);
     return map;
   }
 
@@ -69186,6 +70108,19 @@ class AssetCategory extends DataClass implements Insertable<AssetCategory> {
       depreciationAccountId: depreciationAccountId == null && nullToAbsent
           ? const Value.absent()
           : Value(depreciationAccountId),
+      globalId: globalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(globalId),
+      lastModifiedAt: lastModifiedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastModifiedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      originClientId: originClientId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(originClientId),
+      rowVersion: Value(rowVersion),
     );
   }
 
@@ -69205,6 +70140,11 @@ class AssetCategory extends DataClass implements Insertable<AssetCategory> {
       depreciationAccountId: serializer.fromJson<int?>(
         json['depreciationAccountId'],
       ),
+      globalId: serializer.fromJson<String?>(json['globalId']),
+      lastModifiedAt: serializer.fromJson<DateTime?>(json['lastModifiedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      originClientId: serializer.fromJson<String?>(json['originClientId']),
+      rowVersion: serializer.fromJson<int>(json['rowVersion']),
     );
   }
   @override
@@ -69219,6 +70159,11 @@ class AssetCategory extends DataClass implements Insertable<AssetCategory> {
       ),
       'accountId': serializer.toJson<int?>(accountId),
       'depreciationAccountId': serializer.toJson<int?>(depreciationAccountId),
+      'globalId': serializer.toJson<String?>(globalId),
+      'lastModifiedAt': serializer.toJson<DateTime?>(lastModifiedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'originClientId': serializer.toJson<String?>(originClientId),
+      'rowVersion': serializer.toJson<int>(rowVersion),
     };
   }
 
@@ -69229,6 +70174,11 @@ class AssetCategory extends DataClass implements Insertable<AssetCategory> {
     String? defaultDepreciationMethod,
     Value<int?> accountId = const Value.absent(),
     Value<int?> depreciationAccountId = const Value.absent(),
+    Value<String?> globalId = const Value.absent(),
+    Value<DateTime?> lastModifiedAt = const Value.absent(),
+    Value<DateTime?> deletedAt = const Value.absent(),
+    Value<String?> originClientId = const Value.absent(),
+    int? rowVersion,
   }) => AssetCategory(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -69239,6 +70189,15 @@ class AssetCategory extends DataClass implements Insertable<AssetCategory> {
     depreciationAccountId: depreciationAccountId.present
         ? depreciationAccountId.value
         : this.depreciationAccountId,
+    globalId: globalId.present ? globalId.value : this.globalId,
+    lastModifiedAt: lastModifiedAt.present
+        ? lastModifiedAt.value
+        : this.lastModifiedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    originClientId: originClientId.present
+        ? originClientId.value
+        : this.originClientId,
+    rowVersion: rowVersion ?? this.rowVersion,
   );
   AssetCategory copyWithCompanion(AssetCategoriesCompanion data) {
     return AssetCategory(
@@ -69254,6 +70213,17 @@ class AssetCategory extends DataClass implements Insertable<AssetCategory> {
       depreciationAccountId: data.depreciationAccountId.present
           ? data.depreciationAccountId.value
           : this.depreciationAccountId,
+      globalId: data.globalId.present ? data.globalId.value : this.globalId,
+      lastModifiedAt: data.lastModifiedAt.present
+          ? data.lastModifiedAt.value
+          : this.lastModifiedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      originClientId: data.originClientId.present
+          ? data.originClientId.value
+          : this.originClientId,
+      rowVersion: data.rowVersion.present
+          ? data.rowVersion.value
+          : this.rowVersion,
     );
   }
 
@@ -69265,7 +70235,12 @@ class AssetCategory extends DataClass implements Insertable<AssetCategory> {
           ..write('defaultUsefulLife: $defaultUsefulLife, ')
           ..write('defaultDepreciationMethod: $defaultDepreciationMethod, ')
           ..write('accountId: $accountId, ')
-          ..write('depreciationAccountId: $depreciationAccountId')
+          ..write('depreciationAccountId: $depreciationAccountId, ')
+          ..write('globalId: $globalId, ')
+          ..write('lastModifiedAt: $lastModifiedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('originClientId: $originClientId, ')
+          ..write('rowVersion: $rowVersion')
           ..write(')'))
         .toString();
   }
@@ -69278,6 +70253,11 @@ class AssetCategory extends DataClass implements Insertable<AssetCategory> {
     defaultDepreciationMethod,
     accountId,
     depreciationAccountId,
+    globalId,
+    lastModifiedAt,
+    deletedAt,
+    originClientId,
+    rowVersion,
   );
   @override
   bool operator ==(Object other) =>
@@ -69288,7 +70268,12 @@ class AssetCategory extends DataClass implements Insertable<AssetCategory> {
           other.defaultUsefulLife == this.defaultUsefulLife &&
           other.defaultDepreciationMethod == this.defaultDepreciationMethod &&
           other.accountId == this.accountId &&
-          other.depreciationAccountId == this.depreciationAccountId);
+          other.depreciationAccountId == this.depreciationAccountId &&
+          other.globalId == this.globalId &&
+          other.lastModifiedAt == this.lastModifiedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.originClientId == this.originClientId &&
+          other.rowVersion == this.rowVersion);
 }
 
 class AssetCategoriesCompanion extends UpdateCompanion<AssetCategory> {
@@ -69298,6 +70283,11 @@ class AssetCategoriesCompanion extends UpdateCompanion<AssetCategory> {
   final Value<String> defaultDepreciationMethod;
   final Value<int?> accountId;
   final Value<int?> depreciationAccountId;
+  final Value<String?> globalId;
+  final Value<DateTime?> lastModifiedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<String?> originClientId;
+  final Value<int> rowVersion;
   const AssetCategoriesCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -69305,6 +70295,11 @@ class AssetCategoriesCompanion extends UpdateCompanion<AssetCategory> {
     this.defaultDepreciationMethod = const Value.absent(),
     this.accountId = const Value.absent(),
     this.depreciationAccountId = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.lastModifiedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.originClientId = const Value.absent(),
+    this.rowVersion = const Value.absent(),
   });
   AssetCategoriesCompanion.insert({
     this.id = const Value.absent(),
@@ -69313,6 +70308,11 @@ class AssetCategoriesCompanion extends UpdateCompanion<AssetCategory> {
     this.defaultDepreciationMethod = const Value.absent(),
     this.accountId = const Value.absent(),
     this.depreciationAccountId = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.lastModifiedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.originClientId = const Value.absent(),
+    this.rowVersion = const Value.absent(),
   }) : name = Value(name);
   static Insertable<AssetCategory> custom({
     Expression<int>? id,
@@ -69321,6 +70321,11 @@ class AssetCategoriesCompanion extends UpdateCompanion<AssetCategory> {
     Expression<String>? defaultDepreciationMethod,
     Expression<int>? accountId,
     Expression<int>? depreciationAccountId,
+    Expression<String>? globalId,
+    Expression<DateTime>? lastModifiedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? originClientId,
+    Expression<int>? rowVersion,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -69331,6 +70336,11 @@ class AssetCategoriesCompanion extends UpdateCompanion<AssetCategory> {
       if (accountId != null) 'account_id': accountId,
       if (depreciationAccountId != null)
         'depreciation_account_id': depreciationAccountId,
+      if (globalId != null) 'global_id': globalId,
+      if (lastModifiedAt != null) 'last_modified_at': lastModifiedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (originClientId != null) 'origin_client_id': originClientId,
+      if (rowVersion != null) 'row_version': rowVersion,
     });
   }
 
@@ -69341,6 +70351,11 @@ class AssetCategoriesCompanion extends UpdateCompanion<AssetCategory> {
     Value<String>? defaultDepreciationMethod,
     Value<int?>? accountId,
     Value<int?>? depreciationAccountId,
+    Value<String?>? globalId,
+    Value<DateTime?>? lastModifiedAt,
+    Value<DateTime?>? deletedAt,
+    Value<String?>? originClientId,
+    Value<int>? rowVersion,
   }) {
     return AssetCategoriesCompanion(
       id: id ?? this.id,
@@ -69351,6 +70366,11 @@ class AssetCategoriesCompanion extends UpdateCompanion<AssetCategory> {
       accountId: accountId ?? this.accountId,
       depreciationAccountId:
           depreciationAccountId ?? this.depreciationAccountId,
+      globalId: globalId ?? this.globalId,
+      lastModifiedAt: lastModifiedAt ?? this.lastModifiedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      originClientId: originClientId ?? this.originClientId,
+      rowVersion: rowVersion ?? this.rowVersion,
     );
   }
 
@@ -69379,6 +70399,21 @@ class AssetCategoriesCompanion extends UpdateCompanion<AssetCategory> {
         depreciationAccountId.value,
       );
     }
+    if (globalId.present) {
+      map['global_id'] = Variable<String>(globalId.value);
+    }
+    if (lastModifiedAt.present) {
+      map['last_modified_at'] = Variable<DateTime>(lastModifiedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (originClientId.present) {
+      map['origin_client_id'] = Variable<String>(originClientId.value);
+    }
+    if (rowVersion.present) {
+      map['row_version'] = Variable<int>(rowVersion.value);
+    }
     return map;
   }
 
@@ -69390,7 +70425,12 @@ class AssetCategoriesCompanion extends UpdateCompanion<AssetCategory> {
           ..write('defaultUsefulLife: $defaultUsefulLife, ')
           ..write('defaultDepreciationMethod: $defaultDepreciationMethod, ')
           ..write('accountId: $accountId, ')
-          ..write('depreciationAccountId: $depreciationAccountId')
+          ..write('depreciationAccountId: $depreciationAccountId, ')
+          ..write('globalId: $globalId, ')
+          ..write('lastModifiedAt: $lastModifiedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('originClientId: $originClientId, ')
+          ..write('rowVersion: $rowVersion')
           ..write(')'))
         .toString();
   }
@@ -69623,6 +70663,52 @@ class $FixedAssetsTable extends FixedAssets
     requiredDuringInsert: false,
     defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
   );
+  static const VerificationMeta _lastModifiedAtMeta = const VerificationMeta(
+    'lastModifiedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastModifiedAt =
+      GeneratedColumn<DateTime>(
+        'last_modified_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _originClientIdMeta = const VerificationMeta(
+    'originClientId',
+  );
+  @override
+  late final GeneratedColumn<String> originClientId = GeneratedColumn<String>(
+    'origin_client_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _rowVersionMeta = const VerificationMeta(
+    'rowVersion',
+  );
+  @override
+  late final GeneratedColumn<int> rowVersion = GeneratedColumn<int>(
+    'row_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -69644,6 +70730,10 @@ class $FixedAssetsTable extends FixedAssets
     costCenterId,
     linkedAccountId,
     globalId,
+    lastModifiedAt,
+    deletedAt,
+    originClientId,
+    rowVersion,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -69810,6 +70900,36 @@ class $FixedAssetsTable extends FixedAssets
         globalId.isAcceptableOrUnknown(data['global_id']!, _globalIdMeta),
       );
     }
+    if (data.containsKey('last_modified_at')) {
+      context.handle(
+        _lastModifiedAtMeta,
+        lastModifiedAt.isAcceptableOrUnknown(
+          data['last_modified_at']!,
+          _lastModifiedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    if (data.containsKey('origin_client_id')) {
+      context.handle(
+        _originClientIdMeta,
+        originClientId.isAcceptableOrUnknown(
+          data['origin_client_id']!,
+          _originClientIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('row_version')) {
+      context.handle(
+        _rowVersionMeta,
+        rowVersion.isAcceptableOrUnknown(data['row_version']!, _rowVersionMeta),
+      );
+    }
     return context;
   }
 
@@ -69895,6 +71015,22 @@ class $FixedAssetsTable extends FixedAssets
         DriftSqlType.string,
         data['${effectivePrefix}global_id'],
       ),
+      lastModifiedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_modified_at'],
+      ),
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+      originClientId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origin_client_id'],
+      ),
+      rowVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}row_version'],
+      )!,
     );
   }
 
@@ -69924,6 +71060,10 @@ class FixedAssetData extends DataClass implements Insertable<FixedAssetData> {
   final int? costCenterId;
   final int? linkedAccountId;
   final String? globalId;
+  final DateTime? lastModifiedAt;
+  final DateTime? deletedAt;
+  final String? originClientId;
+  final int rowVersion;
   const FixedAssetData({
     required this.id,
     required this.code,
@@ -69944,6 +71084,10 @@ class FixedAssetData extends DataClass implements Insertable<FixedAssetData> {
     this.costCenterId,
     this.linkedAccountId,
     this.globalId,
+    this.lastModifiedAt,
+    this.deletedAt,
+    this.originClientId,
+    required this.rowVersion,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -69981,6 +71125,16 @@ class FixedAssetData extends DataClass implements Insertable<FixedAssetData> {
     if (!nullToAbsent || globalId != null) {
       map['global_id'] = Variable<String>(globalId);
     }
+    if (!nullToAbsent || lastModifiedAt != null) {
+      map['last_modified_at'] = Variable<DateTime>(lastModifiedAt);
+    }
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || originClientId != null) {
+      map['origin_client_id'] = Variable<String>(originClientId);
+    }
+    map['row_version'] = Variable<int>(rowVersion);
     return map;
   }
 
@@ -70019,6 +71173,16 @@ class FixedAssetData extends DataClass implements Insertable<FixedAssetData> {
       globalId: globalId == null && nullToAbsent
           ? const Value.absent()
           : Value(globalId),
+      lastModifiedAt: lastModifiedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastModifiedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      originClientId: originClientId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(originClientId),
+      rowVersion: Value(rowVersion),
     );
   }
 
@@ -70051,6 +71215,10 @@ class FixedAssetData extends DataClass implements Insertable<FixedAssetData> {
       costCenterId: serializer.fromJson<int?>(json['costCenterId']),
       linkedAccountId: serializer.fromJson<int?>(json['linkedAccountId']),
       globalId: serializer.fromJson<String?>(json['globalId']),
+      lastModifiedAt: serializer.fromJson<DateTime?>(json['lastModifiedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      originClientId: serializer.fromJson<String?>(json['originClientId']),
+      rowVersion: serializer.fromJson<int>(json['rowVersion']),
     );
   }
   @override
@@ -70078,6 +71246,10 @@ class FixedAssetData extends DataClass implements Insertable<FixedAssetData> {
       'costCenterId': serializer.toJson<int?>(costCenterId),
       'linkedAccountId': serializer.toJson<int?>(linkedAccountId),
       'globalId': serializer.toJson<String?>(globalId),
+      'lastModifiedAt': serializer.toJson<DateTime?>(lastModifiedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'originClientId': serializer.toJson<String?>(originClientId),
+      'rowVersion': serializer.toJson<int>(rowVersion),
     };
   }
 
@@ -70101,6 +71273,10 @@ class FixedAssetData extends DataClass implements Insertable<FixedAssetData> {
     Value<int?> costCenterId = const Value.absent(),
     Value<int?> linkedAccountId = const Value.absent(),
     Value<String?> globalId = const Value.absent(),
+    Value<DateTime?> lastModifiedAt = const Value.absent(),
+    Value<DateTime?> deletedAt = const Value.absent(),
+    Value<String?> originClientId = const Value.absent(),
+    int? rowVersion,
   }) => FixedAssetData(
     id: id ?? this.id,
     code: code ?? this.code,
@@ -70126,6 +71302,14 @@ class FixedAssetData extends DataClass implements Insertable<FixedAssetData> {
         ? linkedAccountId.value
         : this.linkedAccountId,
     globalId: globalId.present ? globalId.value : this.globalId,
+    lastModifiedAt: lastModifiedAt.present
+        ? lastModifiedAt.value
+        : this.lastModifiedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    originClientId: originClientId.present
+        ? originClientId.value
+        : this.originClientId,
+    rowVersion: rowVersion ?? this.rowVersion,
   );
   FixedAssetData copyWithCompanion(FixedAssetsCompanion data) {
     return FixedAssetData(
@@ -70170,6 +71354,16 @@ class FixedAssetData extends DataClass implements Insertable<FixedAssetData> {
           ? data.linkedAccountId.value
           : this.linkedAccountId,
       globalId: data.globalId.present ? data.globalId.value : this.globalId,
+      lastModifiedAt: data.lastModifiedAt.present
+          ? data.lastModifiedAt.value
+          : this.lastModifiedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      originClientId: data.originClientId.present
+          ? data.originClientId.value
+          : this.originClientId,
+      rowVersion: data.rowVersion.present
+          ? data.rowVersion.value
+          : this.rowVersion,
     );
   }
 
@@ -70194,13 +71388,17 @@ class FixedAssetData extends DataClass implements Insertable<FixedAssetData> {
           ..write('createdAt: $createdAt, ')
           ..write('costCenterId: $costCenterId, ')
           ..write('linkedAccountId: $linkedAccountId, ')
-          ..write('globalId: $globalId')
+          ..write('globalId: $globalId, ')
+          ..write('lastModifiedAt: $lastModifiedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('originClientId: $originClientId, ')
+          ..write('rowVersion: $rowVersion')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     code,
     name,
@@ -70220,7 +71418,11 @@ class FixedAssetData extends DataClass implements Insertable<FixedAssetData> {
     costCenterId,
     linkedAccountId,
     globalId,
-  );
+    lastModifiedAt,
+    deletedAt,
+    originClientId,
+    rowVersion,
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -70243,7 +71445,11 @@ class FixedAssetData extends DataClass implements Insertable<FixedAssetData> {
           other.createdAt == this.createdAt &&
           other.costCenterId == this.costCenterId &&
           other.linkedAccountId == this.linkedAccountId &&
-          other.globalId == this.globalId);
+          other.globalId == this.globalId &&
+          other.lastModifiedAt == this.lastModifiedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.originClientId == this.originClientId &&
+          other.rowVersion == this.rowVersion);
 }
 
 class FixedAssetsCompanion extends UpdateCompanion<FixedAssetData> {
@@ -70266,6 +71472,10 @@ class FixedAssetsCompanion extends UpdateCompanion<FixedAssetData> {
   final Value<int?> costCenterId;
   final Value<int?> linkedAccountId;
   final Value<String?> globalId;
+  final Value<DateTime?> lastModifiedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<String?> originClientId;
+  final Value<int> rowVersion;
   const FixedAssetsCompanion({
     this.id = const Value.absent(),
     this.code = const Value.absent(),
@@ -70286,6 +71496,10 @@ class FixedAssetsCompanion extends UpdateCompanion<FixedAssetData> {
     this.costCenterId = const Value.absent(),
     this.linkedAccountId = const Value.absent(),
     this.globalId = const Value.absent(),
+    this.lastModifiedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.originClientId = const Value.absent(),
+    this.rowVersion = const Value.absent(),
   });
   FixedAssetsCompanion.insert({
     this.id = const Value.absent(),
@@ -70307,6 +71521,10 @@ class FixedAssetsCompanion extends UpdateCompanion<FixedAssetData> {
     this.costCenterId = const Value.absent(),
     this.linkedAccountId = const Value.absent(),
     this.globalId = const Value.absent(),
+    this.lastModifiedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.originClientId = const Value.absent(),
+    this.rowVersion = const Value.absent(),
   }) : code = Value(code),
        name = Value(name),
        categoryId = Value(categoryId),
@@ -70333,6 +71551,10 @@ class FixedAssetsCompanion extends UpdateCompanion<FixedAssetData> {
     Expression<int>? costCenterId,
     Expression<int>? linkedAccountId,
     Expression<String>? globalId,
+    Expression<DateTime>? lastModifiedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? originClientId,
+    Expression<int>? rowVersion,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -70355,6 +71577,10 @@ class FixedAssetsCompanion extends UpdateCompanion<FixedAssetData> {
       if (costCenterId != null) 'cost_center_id': costCenterId,
       if (linkedAccountId != null) 'linked_account_id': linkedAccountId,
       if (globalId != null) 'global_id': globalId,
+      if (lastModifiedAt != null) 'last_modified_at': lastModifiedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (originClientId != null) 'origin_client_id': originClientId,
+      if (rowVersion != null) 'row_version': rowVersion,
     });
   }
 
@@ -70378,6 +71604,10 @@ class FixedAssetsCompanion extends UpdateCompanion<FixedAssetData> {
     Value<int?>? costCenterId,
     Value<int?>? linkedAccountId,
     Value<String?>? globalId,
+    Value<DateTime?>? lastModifiedAt,
+    Value<DateTime?>? deletedAt,
+    Value<String?>? originClientId,
+    Value<int>? rowVersion,
   }) {
     return FixedAssetsCompanion(
       id: id ?? this.id,
@@ -70400,6 +71630,10 @@ class FixedAssetsCompanion extends UpdateCompanion<FixedAssetData> {
       costCenterId: costCenterId ?? this.costCenterId,
       linkedAccountId: linkedAccountId ?? this.linkedAccountId,
       globalId: globalId ?? this.globalId,
+      lastModifiedAt: lastModifiedAt ?? this.lastModifiedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      originClientId: originClientId ?? this.originClientId,
+      rowVersion: rowVersion ?? this.rowVersion,
     );
   }
 
@@ -70465,6 +71699,18 @@ class FixedAssetsCompanion extends UpdateCompanion<FixedAssetData> {
     if (globalId.present) {
       map['global_id'] = Variable<String>(globalId.value);
     }
+    if (lastModifiedAt.present) {
+      map['last_modified_at'] = Variable<DateTime>(lastModifiedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (originClientId.present) {
+      map['origin_client_id'] = Variable<String>(originClientId.value);
+    }
+    if (rowVersion.present) {
+      map['row_version'] = Variable<int>(rowVersion.value);
+    }
     return map;
   }
 
@@ -70489,7 +71735,11 @@ class FixedAssetsCompanion extends UpdateCompanion<FixedAssetData> {
           ..write('createdAt: $createdAt, ')
           ..write('costCenterId: $costCenterId, ')
           ..write('linkedAccountId: $linkedAccountId, ')
-          ..write('globalId: $globalId')
+          ..write('globalId: $globalId, ')
+          ..write('lastModifiedAt: $lastModifiedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('originClientId: $originClientId, ')
+          ..write('rowVersion: $rowVersion')
           ..write(')'))
         .toString();
   }
@@ -70595,6 +71845,64 @@ class $AssetDepreciationsTable extends AssetDepreciations
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
+  static const VerificationMeta _globalIdMeta = const VerificationMeta(
+    'globalId',
+  );
+  @override
+  late final GeneratedColumn<String> globalId = GeneratedColumn<String>(
+    'global_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _lastModifiedAtMeta = const VerificationMeta(
+    'lastModifiedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastModifiedAt =
+      GeneratedColumn<DateTime>(
+        'last_modified_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _originClientIdMeta = const VerificationMeta(
+    'originClientId',
+  );
+  @override
+  late final GeneratedColumn<String> originClientId = GeneratedColumn<String>(
+    'origin_client_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _rowVersionMeta = const VerificationMeta(
+    'rowVersion',
+  );
+  @override
+  late final GeneratedColumn<int> rowVersion = GeneratedColumn<int>(
+    'row_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -70605,6 +71913,11 @@ class $AssetDepreciationsTable extends AssetDepreciations
     bookValue,
     journalEntryId,
     createdAt,
+    globalId,
+    lastModifiedAt,
+    deletedAt,
+    originClientId,
+    rowVersion,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -70682,6 +71995,42 @@ class $AssetDepreciationsTable extends AssetDepreciations
         createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
       );
     }
+    if (data.containsKey('global_id')) {
+      context.handle(
+        _globalIdMeta,
+        globalId.isAcceptableOrUnknown(data['global_id']!, _globalIdMeta),
+      );
+    }
+    if (data.containsKey('last_modified_at')) {
+      context.handle(
+        _lastModifiedAtMeta,
+        lastModifiedAt.isAcceptableOrUnknown(
+          data['last_modified_at']!,
+          _lastModifiedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    if (data.containsKey('origin_client_id')) {
+      context.handle(
+        _originClientIdMeta,
+        originClientId.isAcceptableOrUnknown(
+          data['origin_client_id']!,
+          _originClientIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('row_version')) {
+      context.handle(
+        _rowVersionMeta,
+        rowVersion.isAcceptableOrUnknown(data['row_version']!, _rowVersionMeta),
+      );
+    }
     return context;
   }
 
@@ -70723,6 +72072,26 @@ class $AssetDepreciationsTable extends AssetDepreciations
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      globalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}global_id'],
+      ),
+      lastModifiedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_modified_at'],
+      ),
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+      originClientId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origin_client_id'],
+      ),
+      rowVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}row_version'],
+      )!,
     );
   }
 
@@ -70742,6 +72111,11 @@ class AssetDepreciationData extends DataClass
   final double bookValue;
   final int? journalEntryId;
   final DateTime createdAt;
+  final String? globalId;
+  final DateTime? lastModifiedAt;
+  final DateTime? deletedAt;
+  final String? originClientId;
+  final int rowVersion;
   const AssetDepreciationData({
     required this.id,
     required this.assetId,
@@ -70751,6 +72125,11 @@ class AssetDepreciationData extends DataClass
     required this.bookValue,
     this.journalEntryId,
     required this.createdAt,
+    this.globalId,
+    this.lastModifiedAt,
+    this.deletedAt,
+    this.originClientId,
+    required this.rowVersion,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -70765,6 +72144,19 @@ class AssetDepreciationData extends DataClass
       map['journal_entry_id'] = Variable<int>(journalEntryId);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || globalId != null) {
+      map['global_id'] = Variable<String>(globalId);
+    }
+    if (!nullToAbsent || lastModifiedAt != null) {
+      map['last_modified_at'] = Variable<DateTime>(lastModifiedAt);
+    }
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || originClientId != null) {
+      map['origin_client_id'] = Variable<String>(originClientId);
+    }
+    map['row_version'] = Variable<int>(rowVersion);
     return map;
   }
 
@@ -70780,6 +72172,19 @@ class AssetDepreciationData extends DataClass
           ? const Value.absent()
           : Value(journalEntryId),
       createdAt: Value(createdAt),
+      globalId: globalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(globalId),
+      lastModifiedAt: lastModifiedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastModifiedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      originClientId: originClientId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(originClientId),
+      rowVersion: Value(rowVersion),
     );
   }
 
@@ -70801,6 +72206,11 @@ class AssetDepreciationData extends DataClass
       bookValue: serializer.fromJson<double>(json['bookValue']),
       journalEntryId: serializer.fromJson<int?>(json['journalEntryId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      globalId: serializer.fromJson<String?>(json['globalId']),
+      lastModifiedAt: serializer.fromJson<DateTime?>(json['lastModifiedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      originClientId: serializer.fromJson<String?>(json['originClientId']),
+      rowVersion: serializer.fromJson<int>(json['rowVersion']),
     );
   }
   @override
@@ -70817,6 +72227,11 @@ class AssetDepreciationData extends DataClass
       'bookValue': serializer.toJson<double>(bookValue),
       'journalEntryId': serializer.toJson<int?>(journalEntryId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'globalId': serializer.toJson<String?>(globalId),
+      'lastModifiedAt': serializer.toJson<DateTime?>(lastModifiedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'originClientId': serializer.toJson<String?>(originClientId),
+      'rowVersion': serializer.toJson<int>(rowVersion),
     };
   }
 
@@ -70829,6 +72244,11 @@ class AssetDepreciationData extends DataClass
     double? bookValue,
     Value<int?> journalEntryId = const Value.absent(),
     DateTime? createdAt,
+    Value<String?> globalId = const Value.absent(),
+    Value<DateTime?> lastModifiedAt = const Value.absent(),
+    Value<DateTime?> deletedAt = const Value.absent(),
+    Value<String?> originClientId = const Value.absent(),
+    int? rowVersion,
   }) => AssetDepreciationData(
     id: id ?? this.id,
     assetId: assetId ?? this.assetId,
@@ -70841,6 +72261,15 @@ class AssetDepreciationData extends DataClass
         ? journalEntryId.value
         : this.journalEntryId,
     createdAt: createdAt ?? this.createdAt,
+    globalId: globalId.present ? globalId.value : this.globalId,
+    lastModifiedAt: lastModifiedAt.present
+        ? lastModifiedAt.value
+        : this.lastModifiedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    originClientId: originClientId.present
+        ? originClientId.value
+        : this.originClientId,
+    rowVersion: rowVersion ?? this.rowVersion,
   );
   AssetDepreciationData copyWithCompanion(AssetDepreciationsCompanion data) {
     return AssetDepreciationData(
@@ -70860,6 +72289,17 @@ class AssetDepreciationData extends DataClass
           ? data.journalEntryId.value
           : this.journalEntryId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      globalId: data.globalId.present ? data.globalId.value : this.globalId,
+      lastModifiedAt: data.lastModifiedAt.present
+          ? data.lastModifiedAt.value
+          : this.lastModifiedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      originClientId: data.originClientId.present
+          ? data.originClientId.value
+          : this.originClientId,
+      rowVersion: data.rowVersion.present
+          ? data.rowVersion.value
+          : this.rowVersion,
     );
   }
 
@@ -70873,7 +72313,12 @@ class AssetDepreciationData extends DataClass
           ..write('accumulatedDepreciation: $accumulatedDepreciation, ')
           ..write('bookValue: $bookValue, ')
           ..write('journalEntryId: $journalEntryId, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('globalId: $globalId, ')
+          ..write('lastModifiedAt: $lastModifiedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('originClientId: $originClientId, ')
+          ..write('rowVersion: $rowVersion')
           ..write(')'))
         .toString();
   }
@@ -70888,6 +72333,11 @@ class AssetDepreciationData extends DataClass
     bookValue,
     journalEntryId,
     createdAt,
+    globalId,
+    lastModifiedAt,
+    deletedAt,
+    originClientId,
+    rowVersion,
   );
   @override
   bool operator ==(Object other) =>
@@ -70900,7 +72350,12 @@ class AssetDepreciationData extends DataClass
           other.accumulatedDepreciation == this.accumulatedDepreciation &&
           other.bookValue == this.bookValue &&
           other.journalEntryId == this.journalEntryId &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.globalId == this.globalId &&
+          other.lastModifiedAt == this.lastModifiedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.originClientId == this.originClientId &&
+          other.rowVersion == this.rowVersion);
 }
 
 class AssetDepreciationsCompanion
@@ -70913,6 +72368,11 @@ class AssetDepreciationsCompanion
   final Value<double> bookValue;
   final Value<int?> journalEntryId;
   final Value<DateTime> createdAt;
+  final Value<String?> globalId;
+  final Value<DateTime?> lastModifiedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<String?> originClientId;
+  final Value<int> rowVersion;
   const AssetDepreciationsCompanion({
     this.id = const Value.absent(),
     this.assetId = const Value.absent(),
@@ -70922,6 +72382,11 @@ class AssetDepreciationsCompanion
     this.bookValue = const Value.absent(),
     this.journalEntryId = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.lastModifiedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.originClientId = const Value.absent(),
+    this.rowVersion = const Value.absent(),
   });
   AssetDepreciationsCompanion.insert({
     this.id = const Value.absent(),
@@ -70932,6 +72397,11 @@ class AssetDepreciationsCompanion
     required double bookValue,
     this.journalEntryId = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.lastModifiedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.originClientId = const Value.absent(),
+    this.rowVersion = const Value.absent(),
   }) : assetId = Value(assetId),
        periodDate = Value(periodDate),
        depreciationAmount = Value(depreciationAmount),
@@ -70946,6 +72416,11 @@ class AssetDepreciationsCompanion
     Expression<double>? bookValue,
     Expression<int>? journalEntryId,
     Expression<DateTime>? createdAt,
+    Expression<String>? globalId,
+    Expression<DateTime>? lastModifiedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? originClientId,
+    Expression<int>? rowVersion,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -70957,6 +72432,11 @@ class AssetDepreciationsCompanion
       if (bookValue != null) 'book_value': bookValue,
       if (journalEntryId != null) 'journal_entry_id': journalEntryId,
       if (createdAt != null) 'created_at': createdAt,
+      if (globalId != null) 'global_id': globalId,
+      if (lastModifiedAt != null) 'last_modified_at': lastModifiedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (originClientId != null) 'origin_client_id': originClientId,
+      if (rowVersion != null) 'row_version': rowVersion,
     });
   }
 
@@ -70969,6 +72449,11 @@ class AssetDepreciationsCompanion
     Value<double>? bookValue,
     Value<int?>? journalEntryId,
     Value<DateTime>? createdAt,
+    Value<String?>? globalId,
+    Value<DateTime?>? lastModifiedAt,
+    Value<DateTime?>? deletedAt,
+    Value<String?>? originClientId,
+    Value<int>? rowVersion,
   }) {
     return AssetDepreciationsCompanion(
       id: id ?? this.id,
@@ -70980,6 +72465,11 @@ class AssetDepreciationsCompanion
       bookValue: bookValue ?? this.bookValue,
       journalEntryId: journalEntryId ?? this.journalEntryId,
       createdAt: createdAt ?? this.createdAt,
+      globalId: globalId ?? this.globalId,
+      lastModifiedAt: lastModifiedAt ?? this.lastModifiedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      originClientId: originClientId ?? this.originClientId,
+      rowVersion: rowVersion ?? this.rowVersion,
     );
   }
 
@@ -71012,6 +72502,21 @@ class AssetDepreciationsCompanion
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (globalId.present) {
+      map['global_id'] = Variable<String>(globalId.value);
+    }
+    if (lastModifiedAt.present) {
+      map['last_modified_at'] = Variable<DateTime>(lastModifiedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (originClientId.present) {
+      map['origin_client_id'] = Variable<String>(originClientId.value);
+    }
+    if (rowVersion.present) {
+      map['row_version'] = Variable<int>(rowVersion.value);
+    }
     return map;
   }
 
@@ -71025,7 +72530,12 @@ class AssetDepreciationsCompanion
           ..write('accumulatedDepreciation: $accumulatedDepreciation, ')
           ..write('bookValue: $bookValue, ')
           ..write('journalEntryId: $journalEntryId, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('globalId: $globalId, ')
+          ..write('lastModifiedAt: $lastModifiedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('originClientId: $originClientId, ')
+          ..write('rowVersion: $rowVersion')
           ..write(')'))
         .toString();
   }
@@ -81247,6 +82757,64 @@ class $OpExpenseCategoriesTable extends OpExpenseCategories
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
+  static const VerificationMeta _globalIdMeta = const VerificationMeta(
+    'globalId',
+  );
+  @override
+  late final GeneratedColumn<String> globalId = GeneratedColumn<String>(
+    'global_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _lastModifiedAtMeta = const VerificationMeta(
+    'lastModifiedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastModifiedAt =
+      GeneratedColumn<DateTime>(
+        'last_modified_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _originClientIdMeta = const VerificationMeta(
+    'originClientId',
+  );
+  @override
+  late final GeneratedColumn<String> originClientId = GeneratedColumn<String>(
+    'origin_client_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _rowVersionMeta = const VerificationMeta(
+    'rowVersion',
+  );
+  @override
+  late final GeneratedColumn<int> rowVersion = GeneratedColumn<int>(
+    'row_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -81258,6 +82826,11 @@ class $OpExpenseCategoriesTable extends OpExpenseCategories
     accountCode,
     isActive,
     createdAt,
+    globalId,
+    lastModifiedAt,
+    deletedAt,
+    originClientId,
+    rowVersion,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -81336,6 +82909,42 @@ class $OpExpenseCategoriesTable extends OpExpenseCategories
         createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
       );
     }
+    if (data.containsKey('global_id')) {
+      context.handle(
+        _globalIdMeta,
+        globalId.isAcceptableOrUnknown(data['global_id']!, _globalIdMeta),
+      );
+    }
+    if (data.containsKey('last_modified_at')) {
+      context.handle(
+        _lastModifiedAtMeta,
+        lastModifiedAt.isAcceptableOrUnknown(
+          data['last_modified_at']!,
+          _lastModifiedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    if (data.containsKey('origin_client_id')) {
+      context.handle(
+        _originClientIdMeta,
+        originClientId.isAcceptableOrUnknown(
+          data['origin_client_id']!,
+          _originClientIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('row_version')) {
+      context.handle(
+        _rowVersionMeta,
+        rowVersion.isAcceptableOrUnknown(data['row_version']!, _rowVersionMeta),
+      );
+    }
     return context;
   }
 
@@ -81381,6 +82990,26 @@ class $OpExpenseCategoriesTable extends OpExpenseCategories
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      globalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}global_id'],
+      ),
+      lastModifiedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_modified_at'],
+      ),
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+      originClientId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origin_client_id'],
+      ),
+      rowVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}row_version'],
+      )!,
     );
   }
 
@@ -81404,6 +83033,11 @@ class OpExpenseCategoryData extends DataClass
   final String accountCode;
   final bool isActive;
   final DateTime createdAt;
+  final String? globalId;
+  final DateTime? lastModifiedAt;
+  final DateTime? deletedAt;
+  final String? originClientId;
+  final int rowVersion;
   const OpExpenseCategoryData({
     required this.id,
     required this.name,
@@ -81414,6 +83048,11 @@ class OpExpenseCategoryData extends DataClass
     required this.accountCode,
     required this.isActive,
     required this.createdAt,
+    this.globalId,
+    this.lastModifiedAt,
+    this.deletedAt,
+    this.originClientId,
+    required this.rowVersion,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -81427,6 +83066,19 @@ class OpExpenseCategoryData extends DataClass
     map['account_code'] = Variable<String>(accountCode);
     map['is_active'] = Variable<bool>(isActive);
     map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || globalId != null) {
+      map['global_id'] = Variable<String>(globalId);
+    }
+    if (!nullToAbsent || lastModifiedAt != null) {
+      map['last_modified_at'] = Variable<DateTime>(lastModifiedAt);
+    }
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || originClientId != null) {
+      map['origin_client_id'] = Variable<String>(originClientId);
+    }
+    map['row_version'] = Variable<int>(rowVersion);
     return map;
   }
 
@@ -81441,6 +83093,19 @@ class OpExpenseCategoryData extends DataClass
       accountCode: Value(accountCode),
       isActive: Value(isActive),
       createdAt: Value(createdAt),
+      globalId: globalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(globalId),
+      lastModifiedAt: lastModifiedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastModifiedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      originClientId: originClientId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(originClientId),
+      rowVersion: Value(rowVersion),
     );
   }
 
@@ -81461,6 +83126,11 @@ class OpExpenseCategoryData extends DataClass
       accountCode: serializer.fromJson<String>(json['accountCode']),
       isActive: serializer.fromJson<bool>(json['isActive']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      globalId: serializer.fromJson<String?>(json['globalId']),
+      lastModifiedAt: serializer.fromJson<DateTime?>(json['lastModifiedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      originClientId: serializer.fromJson<String?>(json['originClientId']),
+      rowVersion: serializer.fromJson<int>(json['rowVersion']),
     );
   }
   @override
@@ -81476,6 +83146,11 @@ class OpExpenseCategoryData extends DataClass
       'accountCode': serializer.toJson<String>(accountCode),
       'isActive': serializer.toJson<bool>(isActive),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'globalId': serializer.toJson<String?>(globalId),
+      'lastModifiedAt': serializer.toJson<DateTime?>(lastModifiedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'originClientId': serializer.toJson<String?>(originClientId),
+      'rowVersion': serializer.toJson<int>(rowVersion),
     };
   }
 
@@ -81489,6 +83164,11 @@ class OpExpenseCategoryData extends DataClass
     String? accountCode,
     bool? isActive,
     DateTime? createdAt,
+    Value<String?> globalId = const Value.absent(),
+    Value<DateTime?> lastModifiedAt = const Value.absent(),
+    Value<DateTime?> deletedAt = const Value.absent(),
+    Value<String?> originClientId = const Value.absent(),
+    int? rowVersion,
   }) => OpExpenseCategoryData(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -81499,6 +83179,15 @@ class OpExpenseCategoryData extends DataClass
     accountCode: accountCode ?? this.accountCode,
     isActive: isActive ?? this.isActive,
     createdAt: createdAt ?? this.createdAt,
+    globalId: globalId.present ? globalId.value : this.globalId,
+    lastModifiedAt: lastModifiedAt.present
+        ? lastModifiedAt.value
+        : this.lastModifiedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    originClientId: originClientId.present
+        ? originClientId.value
+        : this.originClientId,
+    rowVersion: rowVersion ?? this.rowVersion,
   );
   OpExpenseCategoryData copyWithCompanion(OpExpenseCategoriesCompanion data) {
     return OpExpenseCategoryData(
@@ -81519,6 +83208,17 @@ class OpExpenseCategoryData extends DataClass
           : this.accountCode,
       isActive: data.isActive.present ? data.isActive.value : this.isActive,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      globalId: data.globalId.present ? data.globalId.value : this.globalId,
+      lastModifiedAt: data.lastModifiedAt.present
+          ? data.lastModifiedAt.value
+          : this.lastModifiedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      originClientId: data.originClientId.present
+          ? data.originClientId.value
+          : this.originClientId,
+      rowVersion: data.rowVersion.present
+          ? data.rowVersion.value
+          : this.rowVersion,
     );
   }
 
@@ -81533,7 +83233,12 @@ class OpExpenseCategoryData extends DataClass
           ..write('defaultRate: $defaultRate, ')
           ..write('accountCode: $accountCode, ')
           ..write('isActive: $isActive, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('globalId: $globalId, ')
+          ..write('lastModifiedAt: $lastModifiedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('originClientId: $originClientId, ')
+          ..write('rowVersion: $rowVersion')
           ..write(')'))
         .toString();
   }
@@ -81549,6 +83254,11 @@ class OpExpenseCategoryData extends DataClass
     accountCode,
     isActive,
     createdAt,
+    globalId,
+    lastModifiedAt,
+    deletedAt,
+    originClientId,
+    rowVersion,
   );
   @override
   bool operator ==(Object other) =>
@@ -81562,7 +83272,12 @@ class OpExpenseCategoryData extends DataClass
           other.defaultRate == this.defaultRate &&
           other.accountCode == this.accountCode &&
           other.isActive == this.isActive &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.globalId == this.globalId &&
+          other.lastModifiedAt == this.lastModifiedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.originClientId == this.originClientId &&
+          other.rowVersion == this.rowVersion);
 }
 
 class OpExpenseCategoriesCompanion
@@ -81576,6 +83291,11 @@ class OpExpenseCategoriesCompanion
   final Value<String> accountCode;
   final Value<bool> isActive;
   final Value<DateTime> createdAt;
+  final Value<String?> globalId;
+  final Value<DateTime?> lastModifiedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<String?> originClientId;
+  final Value<int> rowVersion;
   const OpExpenseCategoriesCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -81586,6 +83306,11 @@ class OpExpenseCategoriesCompanion
     this.accountCode = const Value.absent(),
     this.isActive = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.lastModifiedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.originClientId = const Value.absent(),
+    this.rowVersion = const Value.absent(),
   });
   OpExpenseCategoriesCompanion.insert({
     this.id = const Value.absent(),
@@ -81597,6 +83322,11 @@ class OpExpenseCategoriesCompanion
     this.accountCode = const Value.absent(),
     this.isActive = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.lastModifiedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.originClientId = const Value.absent(),
+    this.rowVersion = const Value.absent(),
   }) : name = Value(name);
   static Insertable<OpExpenseCategoryData> custom({
     Expression<int>? id,
@@ -81608,6 +83338,11 @@ class OpExpenseCategoriesCompanion
     Expression<String>? accountCode,
     Expression<bool>? isActive,
     Expression<DateTime>? createdAt,
+    Expression<String>? globalId,
+    Expression<DateTime>? lastModifiedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? originClientId,
+    Expression<int>? rowVersion,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -81620,6 +83355,11 @@ class OpExpenseCategoriesCompanion
       if (accountCode != null) 'account_code': accountCode,
       if (isActive != null) 'is_active': isActive,
       if (createdAt != null) 'created_at': createdAt,
+      if (globalId != null) 'global_id': globalId,
+      if (lastModifiedAt != null) 'last_modified_at': lastModifiedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (originClientId != null) 'origin_client_id': originClientId,
+      if (rowVersion != null) 'row_version': rowVersion,
     });
   }
 
@@ -81633,6 +83373,11 @@ class OpExpenseCategoriesCompanion
     Value<String>? accountCode,
     Value<bool>? isActive,
     Value<DateTime>? createdAt,
+    Value<String?>? globalId,
+    Value<DateTime?>? lastModifiedAt,
+    Value<DateTime?>? deletedAt,
+    Value<String?>? originClientId,
+    Value<int>? rowVersion,
   }) {
     return OpExpenseCategoriesCompanion(
       id: id ?? this.id,
@@ -81644,6 +83389,11 @@ class OpExpenseCategoriesCompanion
       accountCode: accountCode ?? this.accountCode,
       isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
+      globalId: globalId ?? this.globalId,
+      lastModifiedAt: lastModifiedAt ?? this.lastModifiedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      originClientId: originClientId ?? this.originClientId,
+      rowVersion: rowVersion ?? this.rowVersion,
     );
   }
 
@@ -81677,6 +83427,21 @@ class OpExpenseCategoriesCompanion
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (globalId.present) {
+      map['global_id'] = Variable<String>(globalId.value);
+    }
+    if (lastModifiedAt.present) {
+      map['last_modified_at'] = Variable<DateTime>(lastModifiedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (originClientId.present) {
+      map['origin_client_id'] = Variable<String>(originClientId.value);
+    }
+    if (rowVersion.present) {
+      map['row_version'] = Variable<int>(rowVersion.value);
+    }
     return map;
   }
 
@@ -81691,7 +83456,12 @@ class OpExpenseCategoriesCompanion
           ..write('defaultRate: $defaultRate, ')
           ..write('accountCode: $accountCode, ')
           ..write('isActive: $isActive, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('globalId: $globalId, ')
+          ..write('lastModifiedAt: $lastModifiedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('originClientId: $originClientId, ')
+          ..write('rowVersion: $rowVersion')
           ..write(')'))
         .toString();
   }
@@ -81867,6 +83637,64 @@ class $OpExpensesTable extends OpExpenses
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
+  static const VerificationMeta _globalIdMeta = const VerificationMeta(
+    'globalId',
+  );
+  @override
+  late final GeneratedColumn<String> globalId = GeneratedColumn<String>(
+    'global_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _lastModifiedAtMeta = const VerificationMeta(
+    'lastModifiedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastModifiedAt =
+      GeneratedColumn<DateTime>(
+        'last_modified_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _originClientIdMeta = const VerificationMeta(
+    'originClientId',
+  );
+  @override
+  late final GeneratedColumn<String> originClientId = GeneratedColumn<String>(
+    'origin_client_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _rowVersionMeta = const VerificationMeta(
+    'rowVersion',
+  );
+  @override
+  late final GeneratedColumn<int> rowVersion = GeneratedColumn<int>(
+    'row_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -81883,6 +83711,11 @@ class $OpExpensesTable extends OpExpenses
     paymentMethod,
     userId,
     createdAt,
+    globalId,
+    lastModifiedAt,
+    deletedAt,
+    originClientId,
+    rowVersion,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -81997,6 +83830,42 @@ class $OpExpensesTable extends OpExpenses
         createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
       );
     }
+    if (data.containsKey('global_id')) {
+      context.handle(
+        _globalIdMeta,
+        globalId.isAcceptableOrUnknown(data['global_id']!, _globalIdMeta),
+      );
+    }
+    if (data.containsKey('last_modified_at')) {
+      context.handle(
+        _lastModifiedAtMeta,
+        lastModifiedAt.isAcceptableOrUnknown(
+          data['last_modified_at']!,
+          _lastModifiedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    if (data.containsKey('origin_client_id')) {
+      context.handle(
+        _originClientIdMeta,
+        originClientId.isAcceptableOrUnknown(
+          data['origin_client_id']!,
+          _originClientIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('row_version')) {
+      context.handle(
+        _rowVersionMeta,
+        rowVersion.isAcceptableOrUnknown(data['row_version']!, _rowVersionMeta),
+      );
+    }
     return context;
   }
 
@@ -82062,6 +83931,26 @@ class $OpExpensesTable extends OpExpenses
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      globalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}global_id'],
+      ),
+      lastModifiedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_modified_at'],
+      ),
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+      originClientId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origin_client_id'],
+      ),
+      rowVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}row_version'],
+      )!,
     );
   }
 
@@ -82086,6 +83975,11 @@ class OpExpenseData extends DataClass implements Insertable<OpExpenseData> {
   final String paymentMethod;
   final int userId;
   final DateTime createdAt;
+  final String? globalId;
+  final DateTime? lastModifiedAt;
+  final DateTime? deletedAt;
+  final String? originClientId;
+  final int rowVersion;
   const OpExpenseData({
     required this.id,
     required this.categoryId,
@@ -82101,6 +83995,11 @@ class OpExpenseData extends DataClass implements Insertable<OpExpenseData> {
     required this.paymentMethod,
     required this.userId,
     required this.createdAt,
+    this.globalId,
+    this.lastModifiedAt,
+    this.deletedAt,
+    this.originClientId,
+    required this.rowVersion,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -82129,6 +84028,19 @@ class OpExpenseData extends DataClass implements Insertable<OpExpenseData> {
     map['payment_method'] = Variable<String>(paymentMethod);
     map['user_id'] = Variable<int>(userId);
     map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || globalId != null) {
+      map['global_id'] = Variable<String>(globalId);
+    }
+    if (!nullToAbsent || lastModifiedAt != null) {
+      map['last_modified_at'] = Variable<DateTime>(lastModifiedAt);
+    }
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || originClientId != null) {
+      map['origin_client_id'] = Variable<String>(originClientId);
+    }
+    map['row_version'] = Variable<int>(rowVersion);
     return map;
   }
 
@@ -82158,6 +84070,19 @@ class OpExpenseData extends DataClass implements Insertable<OpExpenseData> {
       paymentMethod: Value(paymentMethod),
       userId: Value(userId),
       createdAt: Value(createdAt),
+      globalId: globalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(globalId),
+      lastModifiedAt: lastModifiedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastModifiedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      originClientId: originClientId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(originClientId),
+      rowVersion: Value(rowVersion),
     );
   }
 
@@ -82183,6 +84108,11 @@ class OpExpenseData extends DataClass implements Insertable<OpExpenseData> {
       paymentMethod: serializer.fromJson<String>(json['paymentMethod']),
       userId: serializer.fromJson<int>(json['userId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      globalId: serializer.fromJson<String?>(json['globalId']),
+      lastModifiedAt: serializer.fromJson<DateTime?>(json['lastModifiedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      originClientId: serializer.fromJson<String?>(json['originClientId']),
+      rowVersion: serializer.fromJson<int>(json['rowVersion']),
     );
   }
   @override
@@ -82203,6 +84133,11 @@ class OpExpenseData extends DataClass implements Insertable<OpExpenseData> {
       'paymentMethod': serializer.toJson<String>(paymentMethod),
       'userId': serializer.toJson<int>(userId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'globalId': serializer.toJson<String?>(globalId),
+      'lastModifiedAt': serializer.toJson<DateTime?>(lastModifiedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'originClientId': serializer.toJson<String?>(originClientId),
+      'rowVersion': serializer.toJson<int>(rowVersion),
     };
   }
 
@@ -82221,6 +84156,11 @@ class OpExpenseData extends DataClass implements Insertable<OpExpenseData> {
     String? paymentMethod,
     int? userId,
     DateTime? createdAt,
+    Value<String?> globalId = const Value.absent(),
+    Value<DateTime?> lastModifiedAt = const Value.absent(),
+    Value<DateTime?> deletedAt = const Value.absent(),
+    Value<String?> originClientId = const Value.absent(),
+    int? rowVersion,
   }) => OpExpenseData(
     id: id ?? this.id,
     categoryId: categoryId ?? this.categoryId,
@@ -82238,6 +84178,15 @@ class OpExpenseData extends DataClass implements Insertable<OpExpenseData> {
     paymentMethod: paymentMethod ?? this.paymentMethod,
     userId: userId ?? this.userId,
     createdAt: createdAt ?? this.createdAt,
+    globalId: globalId.present ? globalId.value : this.globalId,
+    lastModifiedAt: lastModifiedAt.present
+        ? lastModifiedAt.value
+        : this.lastModifiedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    originClientId: originClientId.present
+        ? originClientId.value
+        : this.originClientId,
+    rowVersion: rowVersion ?? this.rowVersion,
   );
   OpExpenseData copyWithCompanion(OpExpensesCompanion data) {
     return OpExpenseData(
@@ -82265,6 +84214,17 @@ class OpExpenseData extends DataClass implements Insertable<OpExpenseData> {
           : this.paymentMethod,
       userId: data.userId.present ? data.userId.value : this.userId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      globalId: data.globalId.present ? data.globalId.value : this.globalId,
+      lastModifiedAt: data.lastModifiedAt.present
+          ? data.lastModifiedAt.value
+          : this.lastModifiedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      originClientId: data.originClientId.present
+          ? data.originClientId.value
+          : this.originClientId,
+      rowVersion: data.rowVersion.present
+          ? data.rowVersion.value
+          : this.rowVersion,
     );
   }
 
@@ -82284,7 +84244,12 @@ class OpExpenseData extends DataClass implements Insertable<OpExpenseData> {
           ..write('status: $status, ')
           ..write('paymentMethod: $paymentMethod, ')
           ..write('userId: $userId, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('globalId: $globalId, ')
+          ..write('lastModifiedAt: $lastModifiedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('originClientId: $originClientId, ')
+          ..write('rowVersion: $rowVersion')
           ..write(')'))
         .toString();
   }
@@ -82305,6 +84270,11 @@ class OpExpenseData extends DataClass implements Insertable<OpExpenseData> {
     paymentMethod,
     userId,
     createdAt,
+    globalId,
+    lastModifiedAt,
+    deletedAt,
+    originClientId,
+    rowVersion,
   );
   @override
   bool operator ==(Object other) =>
@@ -82323,7 +84293,12 @@ class OpExpenseData extends DataClass implements Insertable<OpExpenseData> {
           other.status == this.status &&
           other.paymentMethod == this.paymentMethod &&
           other.userId == this.userId &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.globalId == this.globalId &&
+          other.lastModifiedAt == this.lastModifiedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.originClientId == this.originClientId &&
+          other.rowVersion == this.rowVersion);
 }
 
 class OpExpensesCompanion extends UpdateCompanion<OpExpenseData> {
@@ -82341,6 +84316,11 @@ class OpExpensesCompanion extends UpdateCompanion<OpExpenseData> {
   final Value<String> paymentMethod;
   final Value<int> userId;
   final Value<DateTime> createdAt;
+  final Value<String?> globalId;
+  final Value<DateTime?> lastModifiedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<String?> originClientId;
+  final Value<int> rowVersion;
   const OpExpensesCompanion({
     this.id = const Value.absent(),
     this.categoryId = const Value.absent(),
@@ -82356,6 +84336,11 @@ class OpExpensesCompanion extends UpdateCompanion<OpExpenseData> {
     this.paymentMethod = const Value.absent(),
     this.userId = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.lastModifiedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.originClientId = const Value.absent(),
+    this.rowVersion = const Value.absent(),
   });
   OpExpensesCompanion.insert({
     this.id = const Value.absent(),
@@ -82372,6 +84357,11 @@ class OpExpensesCompanion extends UpdateCompanion<OpExpenseData> {
     this.paymentMethod = const Value.absent(),
     required int userId,
     this.createdAt = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.lastModifiedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.originClientId = const Value.absent(),
+    this.rowVersion = const Value.absent(),
   }) : categoryId = Value(categoryId),
        amount = Value(amount),
        expenseDate = Value(expenseDate),
@@ -82391,6 +84381,11 @@ class OpExpensesCompanion extends UpdateCompanion<OpExpenseData> {
     Expression<String>? paymentMethod,
     Expression<int>? userId,
     Expression<DateTime>? createdAt,
+    Expression<String>? globalId,
+    Expression<DateTime>? lastModifiedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? originClientId,
+    Expression<int>? rowVersion,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -82408,6 +84403,11 @@ class OpExpensesCompanion extends UpdateCompanion<OpExpenseData> {
       if (paymentMethod != null) 'payment_method': paymentMethod,
       if (userId != null) 'user_id': userId,
       if (createdAt != null) 'created_at': createdAt,
+      if (globalId != null) 'global_id': globalId,
+      if (lastModifiedAt != null) 'last_modified_at': lastModifiedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (originClientId != null) 'origin_client_id': originClientId,
+      if (rowVersion != null) 'row_version': rowVersion,
     });
   }
 
@@ -82426,6 +84426,11 @@ class OpExpensesCompanion extends UpdateCompanion<OpExpenseData> {
     Value<String>? paymentMethod,
     Value<int>? userId,
     Value<DateTime>? createdAt,
+    Value<String?>? globalId,
+    Value<DateTime?>? lastModifiedAt,
+    Value<DateTime?>? deletedAt,
+    Value<String?>? originClientId,
+    Value<int>? rowVersion,
   }) {
     return OpExpensesCompanion(
       id: id ?? this.id,
@@ -82442,6 +84447,11 @@ class OpExpensesCompanion extends UpdateCompanion<OpExpenseData> {
       paymentMethod: paymentMethod ?? this.paymentMethod,
       userId: userId ?? this.userId,
       createdAt: createdAt ?? this.createdAt,
+      globalId: globalId ?? this.globalId,
+      lastModifiedAt: lastModifiedAt ?? this.lastModifiedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      originClientId: originClientId ?? this.originClientId,
+      rowVersion: rowVersion ?? this.rowVersion,
     );
   }
 
@@ -82490,6 +84500,21 @@ class OpExpensesCompanion extends UpdateCompanion<OpExpenseData> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (globalId.present) {
+      map['global_id'] = Variable<String>(globalId.value);
+    }
+    if (lastModifiedAt.present) {
+      map['last_modified_at'] = Variable<DateTime>(lastModifiedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (originClientId.present) {
+      map['origin_client_id'] = Variable<String>(originClientId.value);
+    }
+    if (rowVersion.present) {
+      map['row_version'] = Variable<int>(rowVersion.value);
+    }
     return map;
   }
 
@@ -82509,7 +84534,12 @@ class OpExpensesCompanion extends UpdateCompanion<OpExpenseData> {
           ..write('status: $status, ')
           ..write('paymentMethod: $paymentMethod, ')
           ..write('userId: $userId, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('globalId: $globalId, ')
+          ..write('lastModifiedAt: $lastModifiedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('originClientId: $originClientId, ')
+          ..write('rowVersion: $rowVersion')
           ..write(')'))
         .toString();
   }
@@ -82620,6 +84650,64 @@ class $MfgOrderCostsTable extends MfgOrderCosts
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
+  static const VerificationMeta _globalIdMeta = const VerificationMeta(
+    'globalId',
+  );
+  @override
+  late final GeneratedColumn<String> globalId = GeneratedColumn<String>(
+    'global_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _lastModifiedAtMeta = const VerificationMeta(
+    'lastModifiedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastModifiedAt =
+      GeneratedColumn<DateTime>(
+        'last_modified_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _originClientIdMeta = const VerificationMeta(
+    'originClientId',
+  );
+  @override
+  late final GeneratedColumn<String> originClientId = GeneratedColumn<String>(
+    'origin_client_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _rowVersionMeta = const VerificationMeta(
+    'rowVersion',
+  );
+  @override
+  late final GeneratedColumn<int> rowVersion = GeneratedColumn<int>(
+    'row_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -82630,6 +84718,11 @@ class $MfgOrderCostsTable extends MfgOrderCosts
     expenseCategoryId,
     expenseId,
     createdAt,
+    globalId,
+    lastModifiedAt,
+    deletedAt,
+    originClientId,
+    rowVersion,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -82702,6 +84795,42 @@ class $MfgOrderCostsTable extends MfgOrderCosts
         createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
       );
     }
+    if (data.containsKey('global_id')) {
+      context.handle(
+        _globalIdMeta,
+        globalId.isAcceptableOrUnknown(data['global_id']!, _globalIdMeta),
+      );
+    }
+    if (data.containsKey('last_modified_at')) {
+      context.handle(
+        _lastModifiedAtMeta,
+        lastModifiedAt.isAcceptableOrUnknown(
+          data['last_modified_at']!,
+          _lastModifiedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    if (data.containsKey('origin_client_id')) {
+      context.handle(
+        _originClientIdMeta,
+        originClientId.isAcceptableOrUnknown(
+          data['origin_client_id']!,
+          _originClientIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('row_version')) {
+      context.handle(
+        _rowVersionMeta,
+        rowVersion.isAcceptableOrUnknown(data['row_version']!, _rowVersionMeta),
+      );
+    }
     return context;
   }
 
@@ -82743,6 +84872,26 @@ class $MfgOrderCostsTable extends MfgOrderCosts
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      globalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}global_id'],
+      ),
+      lastModifiedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_modified_at'],
+      ),
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+      originClientId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origin_client_id'],
+      ),
+      rowVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}row_version'],
+      )!,
     );
   }
 
@@ -82762,6 +84911,11 @@ class MfgOrderCostData extends DataClass
   final int? expenseCategoryId;
   final int? expenseId;
   final DateTime createdAt;
+  final String? globalId;
+  final DateTime? lastModifiedAt;
+  final DateTime? deletedAt;
+  final String? originClientId;
+  final int rowVersion;
   const MfgOrderCostData({
     required this.id,
     required this.orderId,
@@ -82771,6 +84925,11 @@ class MfgOrderCostData extends DataClass
     this.expenseCategoryId,
     this.expenseId,
     required this.createdAt,
+    this.globalId,
+    this.lastModifiedAt,
+    this.deletedAt,
+    this.originClientId,
+    required this.rowVersion,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -82787,6 +84946,19 @@ class MfgOrderCostData extends DataClass
       map['expense_id'] = Variable<int>(expenseId);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || globalId != null) {
+      map['global_id'] = Variable<String>(globalId);
+    }
+    if (!nullToAbsent || lastModifiedAt != null) {
+      map['last_modified_at'] = Variable<DateTime>(lastModifiedAt);
+    }
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || originClientId != null) {
+      map['origin_client_id'] = Variable<String>(originClientId);
+    }
+    map['row_version'] = Variable<int>(rowVersion);
     return map;
   }
 
@@ -82804,6 +84976,19 @@ class MfgOrderCostData extends DataClass
           ? const Value.absent()
           : Value(expenseId),
       createdAt: Value(createdAt),
+      globalId: globalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(globalId),
+      lastModifiedAt: lastModifiedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastModifiedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      originClientId: originClientId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(originClientId),
+      rowVersion: Value(rowVersion),
     );
   }
 
@@ -82821,6 +85006,11 @@ class MfgOrderCostData extends DataClass
       expenseCategoryId: serializer.fromJson<int?>(json['expenseCategoryId']),
       expenseId: serializer.fromJson<int?>(json['expenseId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      globalId: serializer.fromJson<String?>(json['globalId']),
+      lastModifiedAt: serializer.fromJson<DateTime?>(json['lastModifiedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      originClientId: serializer.fromJson<String?>(json['originClientId']),
+      rowVersion: serializer.fromJson<int>(json['rowVersion']),
     );
   }
   @override
@@ -82835,6 +85025,11 @@ class MfgOrderCostData extends DataClass
       'expenseCategoryId': serializer.toJson<int?>(expenseCategoryId),
       'expenseId': serializer.toJson<int?>(expenseId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'globalId': serializer.toJson<String?>(globalId),
+      'lastModifiedAt': serializer.toJson<DateTime?>(lastModifiedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'originClientId': serializer.toJson<String?>(originClientId),
+      'rowVersion': serializer.toJson<int>(rowVersion),
     };
   }
 
@@ -82847,6 +85042,11 @@ class MfgOrderCostData extends DataClass
     Value<int?> expenseCategoryId = const Value.absent(),
     Value<int?> expenseId = const Value.absent(),
     DateTime? createdAt,
+    Value<String?> globalId = const Value.absent(),
+    Value<DateTime?> lastModifiedAt = const Value.absent(),
+    Value<DateTime?> deletedAt = const Value.absent(),
+    Value<String?> originClientId = const Value.absent(),
+    int? rowVersion,
   }) => MfgOrderCostData(
     id: id ?? this.id,
     orderId: orderId ?? this.orderId,
@@ -82858,6 +85058,15 @@ class MfgOrderCostData extends DataClass
         : this.expenseCategoryId,
     expenseId: expenseId.present ? expenseId.value : this.expenseId,
     createdAt: createdAt ?? this.createdAt,
+    globalId: globalId.present ? globalId.value : this.globalId,
+    lastModifiedAt: lastModifiedAt.present
+        ? lastModifiedAt.value
+        : this.lastModifiedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    originClientId: originClientId.present
+        ? originClientId.value
+        : this.originClientId,
+    rowVersion: rowVersion ?? this.rowVersion,
   );
   MfgOrderCostData copyWithCompanion(MfgOrderCostsCompanion data) {
     return MfgOrderCostData(
@@ -82873,6 +85082,17 @@ class MfgOrderCostData extends DataClass
           : this.expenseCategoryId,
       expenseId: data.expenseId.present ? data.expenseId.value : this.expenseId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      globalId: data.globalId.present ? data.globalId.value : this.globalId,
+      lastModifiedAt: data.lastModifiedAt.present
+          ? data.lastModifiedAt.value
+          : this.lastModifiedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      originClientId: data.originClientId.present
+          ? data.originClientId.value
+          : this.originClientId,
+      rowVersion: data.rowVersion.present
+          ? data.rowVersion.value
+          : this.rowVersion,
     );
   }
 
@@ -82886,7 +85106,12 @@ class MfgOrderCostData extends DataClass
           ..write('amount: $amount, ')
           ..write('expenseCategoryId: $expenseCategoryId, ')
           ..write('expenseId: $expenseId, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('globalId: $globalId, ')
+          ..write('lastModifiedAt: $lastModifiedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('originClientId: $originClientId, ')
+          ..write('rowVersion: $rowVersion')
           ..write(')'))
         .toString();
   }
@@ -82901,6 +85126,11 @@ class MfgOrderCostData extends DataClass
     expenseCategoryId,
     expenseId,
     createdAt,
+    globalId,
+    lastModifiedAt,
+    deletedAt,
+    originClientId,
+    rowVersion,
   );
   @override
   bool operator ==(Object other) =>
@@ -82913,7 +85143,12 @@ class MfgOrderCostData extends DataClass
           other.amount == this.amount &&
           other.expenseCategoryId == this.expenseCategoryId &&
           other.expenseId == this.expenseId &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.globalId == this.globalId &&
+          other.lastModifiedAt == this.lastModifiedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.originClientId == this.originClientId &&
+          other.rowVersion == this.rowVersion);
 }
 
 class MfgOrderCostsCompanion extends UpdateCompanion<MfgOrderCostData> {
@@ -82925,6 +85160,11 @@ class MfgOrderCostsCompanion extends UpdateCompanion<MfgOrderCostData> {
   final Value<int?> expenseCategoryId;
   final Value<int?> expenseId;
   final Value<DateTime> createdAt;
+  final Value<String?> globalId;
+  final Value<DateTime?> lastModifiedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<String?> originClientId;
+  final Value<int> rowVersion;
   const MfgOrderCostsCompanion({
     this.id = const Value.absent(),
     this.orderId = const Value.absent(),
@@ -82934,6 +85174,11 @@ class MfgOrderCostsCompanion extends UpdateCompanion<MfgOrderCostData> {
     this.expenseCategoryId = const Value.absent(),
     this.expenseId = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.lastModifiedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.originClientId = const Value.absent(),
+    this.rowVersion = const Value.absent(),
   });
   MfgOrderCostsCompanion.insert({
     this.id = const Value.absent(),
@@ -82944,6 +85189,11 @@ class MfgOrderCostsCompanion extends UpdateCompanion<MfgOrderCostData> {
     this.expenseCategoryId = const Value.absent(),
     this.expenseId = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.lastModifiedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.originClientId = const Value.absent(),
+    this.rowVersion = const Value.absent(),
   }) : orderId = Value(orderId),
        costType = Value(costType),
        description = Value(description),
@@ -82957,6 +85207,11 @@ class MfgOrderCostsCompanion extends UpdateCompanion<MfgOrderCostData> {
     Expression<int>? expenseCategoryId,
     Expression<int>? expenseId,
     Expression<DateTime>? createdAt,
+    Expression<String>? globalId,
+    Expression<DateTime>? lastModifiedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? originClientId,
+    Expression<int>? rowVersion,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -82967,6 +85222,11 @@ class MfgOrderCostsCompanion extends UpdateCompanion<MfgOrderCostData> {
       if (expenseCategoryId != null) 'expense_category_id': expenseCategoryId,
       if (expenseId != null) 'expense_id': expenseId,
       if (createdAt != null) 'created_at': createdAt,
+      if (globalId != null) 'global_id': globalId,
+      if (lastModifiedAt != null) 'last_modified_at': lastModifiedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (originClientId != null) 'origin_client_id': originClientId,
+      if (rowVersion != null) 'row_version': rowVersion,
     });
   }
 
@@ -82979,6 +85239,11 @@ class MfgOrderCostsCompanion extends UpdateCompanion<MfgOrderCostData> {
     Value<int?>? expenseCategoryId,
     Value<int?>? expenseId,
     Value<DateTime>? createdAt,
+    Value<String?>? globalId,
+    Value<DateTime?>? lastModifiedAt,
+    Value<DateTime?>? deletedAt,
+    Value<String?>? originClientId,
+    Value<int>? rowVersion,
   }) {
     return MfgOrderCostsCompanion(
       id: id ?? this.id,
@@ -82989,6 +85254,11 @@ class MfgOrderCostsCompanion extends UpdateCompanion<MfgOrderCostData> {
       expenseCategoryId: expenseCategoryId ?? this.expenseCategoryId,
       expenseId: expenseId ?? this.expenseId,
       createdAt: createdAt ?? this.createdAt,
+      globalId: globalId ?? this.globalId,
+      lastModifiedAt: lastModifiedAt ?? this.lastModifiedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      originClientId: originClientId ?? this.originClientId,
+      rowVersion: rowVersion ?? this.rowVersion,
     );
   }
 
@@ -83019,6 +85289,21 @@ class MfgOrderCostsCompanion extends UpdateCompanion<MfgOrderCostData> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (globalId.present) {
+      map['global_id'] = Variable<String>(globalId.value);
+    }
+    if (lastModifiedAt.present) {
+      map['last_modified_at'] = Variable<DateTime>(lastModifiedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (originClientId.present) {
+      map['origin_client_id'] = Variable<String>(originClientId.value);
+    }
+    if (rowVersion.present) {
+      map['row_version'] = Variable<int>(rowVersion.value);
+    }
     return map;
   }
 
@@ -83032,7 +85317,12 @@ class MfgOrderCostsCompanion extends UpdateCompanion<MfgOrderCostData> {
           ..write('amount: $amount, ')
           ..write('expenseCategoryId: $expenseCategoryId, ')
           ..write('expenseId: $expenseId, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('globalId: $globalId, ')
+          ..write('lastModifiedAt: $lastModifiedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('originClientId: $originClientId, ')
+          ..write('rowVersion: $rowVersion')
           ..write(')'))
         .toString();
   }
@@ -105120,6 +107410,64 @@ class $LandedCostSheetsTable extends LandedCostSheets
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
+  static const VerificationMeta _globalIdMeta = const VerificationMeta(
+    'globalId',
+  );
+  @override
+  late final GeneratedColumn<String> globalId = GeneratedColumn<String>(
+    'global_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _lastModifiedAtMeta = const VerificationMeta(
+    'lastModifiedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastModifiedAt =
+      GeneratedColumn<DateTime>(
+        'last_modified_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _originClientIdMeta = const VerificationMeta(
+    'originClientId',
+  );
+  @override
+  late final GeneratedColumn<String> originClientId = GeneratedColumn<String>(
+    'origin_client_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _rowVersionMeta = const VerificationMeta(
+    'rowVersion',
+  );
+  @override
+  late final GeneratedColumn<int> rowVersion = GeneratedColumn<int>(
+    'row_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -105131,6 +107479,11 @@ class $LandedCostSheetsTable extends LandedCostSheets
     notes,
     createdBy,
     createdAt,
+    globalId,
+    lastModifiedAt,
+    deletedAt,
+    originClientId,
+    rowVersion,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -105211,6 +107564,42 @@ class $LandedCostSheetsTable extends LandedCostSheets
         createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
       );
     }
+    if (data.containsKey('global_id')) {
+      context.handle(
+        _globalIdMeta,
+        globalId.isAcceptableOrUnknown(data['global_id']!, _globalIdMeta),
+      );
+    }
+    if (data.containsKey('last_modified_at')) {
+      context.handle(
+        _lastModifiedAtMeta,
+        lastModifiedAt.isAcceptableOrUnknown(
+          data['last_modified_at']!,
+          _lastModifiedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    if (data.containsKey('origin_client_id')) {
+      context.handle(
+        _originClientIdMeta,
+        originClientId.isAcceptableOrUnknown(
+          data['origin_client_id']!,
+          _originClientIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('row_version')) {
+      context.handle(
+        _rowVersionMeta,
+        rowVersion.isAcceptableOrUnknown(data['row_version']!, _rowVersionMeta),
+      );
+    }
     return context;
   }
 
@@ -105256,6 +107645,26 @@ class $LandedCostSheetsTable extends LandedCostSheets
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      globalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}global_id'],
+      ),
+      lastModifiedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_modified_at'],
+      ),
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+      originClientId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origin_client_id'],
+      ),
+      rowVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}row_version'],
+      )!,
     );
   }
 
@@ -105282,6 +107691,11 @@ class LandedCostSheetData extends DataClass
   final String? notes;
   final int? createdBy;
   final DateTime createdAt;
+  final String? globalId;
+  final DateTime? lastModifiedAt;
+  final DateTime? deletedAt;
+  final String? originClientId;
+  final int rowVersion;
   const LandedCostSheetData({
     required this.id,
     required this.purchaseInvoiceId,
@@ -105292,6 +107706,11 @@ class LandedCostSheetData extends DataClass
     this.notes,
     this.createdBy,
     required this.createdAt,
+    this.globalId,
+    this.lastModifiedAt,
+    this.deletedAt,
+    this.originClientId,
+    required this.rowVersion,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -105309,6 +107728,19 @@ class LandedCostSheetData extends DataClass
       map['created_by'] = Variable<int>(createdBy);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || globalId != null) {
+      map['global_id'] = Variable<String>(globalId);
+    }
+    if (!nullToAbsent || lastModifiedAt != null) {
+      map['last_modified_at'] = Variable<DateTime>(lastModifiedAt);
+    }
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || originClientId != null) {
+      map['origin_client_id'] = Variable<String>(originClientId);
+    }
+    map['row_version'] = Variable<int>(rowVersion);
     return map;
   }
 
@@ -105327,6 +107759,19 @@ class LandedCostSheetData extends DataClass
           ? const Value.absent()
           : Value(createdBy),
       createdAt: Value(createdAt),
+      globalId: globalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(globalId),
+      lastModifiedAt: lastModifiedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastModifiedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      originClientId: originClientId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(originClientId),
+      rowVersion: Value(rowVersion),
     );
   }
 
@@ -105347,6 +107792,11 @@ class LandedCostSheetData extends DataClass
       notes: serializer.fromJson<String?>(json['notes']),
       createdBy: serializer.fromJson<int?>(json['createdBy']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      globalId: serializer.fromJson<String?>(json['globalId']),
+      lastModifiedAt: serializer.fromJson<DateTime?>(json['lastModifiedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      originClientId: serializer.fromJson<String?>(json['originClientId']),
+      rowVersion: serializer.fromJson<int>(json['rowVersion']),
     );
   }
   @override
@@ -105362,6 +107812,11 @@ class LandedCostSheetData extends DataClass
       'notes': serializer.toJson<String?>(notes),
       'createdBy': serializer.toJson<int?>(createdBy),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'globalId': serializer.toJson<String?>(globalId),
+      'lastModifiedAt': serializer.toJson<DateTime?>(lastModifiedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'originClientId': serializer.toJson<String?>(originClientId),
+      'rowVersion': serializer.toJson<int>(rowVersion),
     };
   }
 
@@ -105375,6 +107830,11 @@ class LandedCostSheetData extends DataClass
     Value<String?> notes = const Value.absent(),
     Value<int?> createdBy = const Value.absent(),
     DateTime? createdAt,
+    Value<String?> globalId = const Value.absent(),
+    Value<DateTime?> lastModifiedAt = const Value.absent(),
+    Value<DateTime?> deletedAt = const Value.absent(),
+    Value<String?> originClientId = const Value.absent(),
+    int? rowVersion,
   }) => LandedCostSheetData(
     id: id ?? this.id,
     purchaseInvoiceId: purchaseInvoiceId ?? this.purchaseInvoiceId,
@@ -105385,6 +107845,15 @@ class LandedCostSheetData extends DataClass
     notes: notes.present ? notes.value : this.notes,
     createdBy: createdBy.present ? createdBy.value : this.createdBy,
     createdAt: createdAt ?? this.createdAt,
+    globalId: globalId.present ? globalId.value : this.globalId,
+    lastModifiedAt: lastModifiedAt.present
+        ? lastModifiedAt.value
+        : this.lastModifiedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    originClientId: originClientId.present
+        ? originClientId.value
+        : this.originClientId,
+    rowVersion: rowVersion ?? this.rowVersion,
   );
   LandedCostSheetData copyWithCompanion(LandedCostSheetsCompanion data) {
     return LandedCostSheetData(
@@ -105405,6 +107874,17 @@ class LandedCostSheetData extends DataClass
       notes: data.notes.present ? data.notes.value : this.notes,
       createdBy: data.createdBy.present ? data.createdBy.value : this.createdBy,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      globalId: data.globalId.present ? data.globalId.value : this.globalId,
+      lastModifiedAt: data.lastModifiedAt.present
+          ? data.lastModifiedAt.value
+          : this.lastModifiedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      originClientId: data.originClientId.present
+          ? data.originClientId.value
+          : this.originClientId,
+      rowVersion: data.rowVersion.present
+          ? data.rowVersion.value
+          : this.rowVersion,
     );
   }
 
@@ -105419,7 +107899,12 @@ class LandedCostSheetData extends DataClass
           ..write('status: $status, ')
           ..write('notes: $notes, ')
           ..write('createdBy: $createdBy, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('globalId: $globalId, ')
+          ..write('lastModifiedAt: $lastModifiedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('originClientId: $originClientId, ')
+          ..write('rowVersion: $rowVersion')
           ..write(')'))
         .toString();
   }
@@ -105435,6 +107920,11 @@ class LandedCostSheetData extends DataClass
     notes,
     createdBy,
     createdAt,
+    globalId,
+    lastModifiedAt,
+    deletedAt,
+    originClientId,
+    rowVersion,
   );
   @override
   bool operator ==(Object other) =>
@@ -105448,7 +107938,12 @@ class LandedCostSheetData extends DataClass
           other.status == this.status &&
           other.notes == this.notes &&
           other.createdBy == this.createdBy &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.globalId == this.globalId &&
+          other.lastModifiedAt == this.lastModifiedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.originClientId == this.originClientId &&
+          other.rowVersion == this.rowVersion);
 }
 
 class LandedCostSheetsCompanion extends UpdateCompanion<LandedCostSheetData> {
@@ -105461,6 +107956,11 @@ class LandedCostSheetsCompanion extends UpdateCompanion<LandedCostSheetData> {
   final Value<String?> notes;
   final Value<int?> createdBy;
   final Value<DateTime> createdAt;
+  final Value<String?> globalId;
+  final Value<DateTime?> lastModifiedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<String?> originClientId;
+  final Value<int> rowVersion;
   const LandedCostSheetsCompanion({
     this.id = const Value.absent(),
     this.purchaseInvoiceId = const Value.absent(),
@@ -105471,6 +107971,11 @@ class LandedCostSheetsCompanion extends UpdateCompanion<LandedCostSheetData> {
     this.notes = const Value.absent(),
     this.createdBy = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.lastModifiedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.originClientId = const Value.absent(),
+    this.rowVersion = const Value.absent(),
   });
   LandedCostSheetsCompanion.insert({
     this.id = const Value.absent(),
@@ -105482,6 +107987,11 @@ class LandedCostSheetsCompanion extends UpdateCompanion<LandedCostSheetData> {
     this.notes = const Value.absent(),
     this.createdBy = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.lastModifiedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.originClientId = const Value.absent(),
+    this.rowVersion = const Value.absent(),
   }) : purchaseInvoiceId = Value(purchaseInvoiceId),
        sheetNumber = Value(sheetNumber);
   static Insertable<LandedCostSheetData> custom({
@@ -105494,6 +108004,11 @@ class LandedCostSheetsCompanion extends UpdateCompanion<LandedCostSheetData> {
     Expression<String>? notes,
     Expression<int>? createdBy,
     Expression<DateTime>? createdAt,
+    Expression<String>? globalId,
+    Expression<DateTime>? lastModifiedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? originClientId,
+    Expression<int>? rowVersion,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -105506,6 +108021,11 @@ class LandedCostSheetsCompanion extends UpdateCompanion<LandedCostSheetData> {
       if (notes != null) 'notes': notes,
       if (createdBy != null) 'created_by': createdBy,
       if (createdAt != null) 'created_at': createdAt,
+      if (globalId != null) 'global_id': globalId,
+      if (lastModifiedAt != null) 'last_modified_at': lastModifiedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (originClientId != null) 'origin_client_id': originClientId,
+      if (rowVersion != null) 'row_version': rowVersion,
     });
   }
 
@@ -105519,6 +108039,11 @@ class LandedCostSheetsCompanion extends UpdateCompanion<LandedCostSheetData> {
     Value<String?>? notes,
     Value<int?>? createdBy,
     Value<DateTime>? createdAt,
+    Value<String?>? globalId,
+    Value<DateTime?>? lastModifiedAt,
+    Value<DateTime?>? deletedAt,
+    Value<String?>? originClientId,
+    Value<int>? rowVersion,
   }) {
     return LandedCostSheetsCompanion(
       id: id ?? this.id,
@@ -105530,6 +108055,11 @@ class LandedCostSheetsCompanion extends UpdateCompanion<LandedCostSheetData> {
       notes: notes ?? this.notes,
       createdBy: createdBy ?? this.createdBy,
       createdAt: createdAt ?? this.createdAt,
+      globalId: globalId ?? this.globalId,
+      lastModifiedAt: lastModifiedAt ?? this.lastModifiedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      originClientId: originClientId ?? this.originClientId,
+      rowVersion: rowVersion ?? this.rowVersion,
     );
   }
 
@@ -105565,6 +108095,21 @@ class LandedCostSheetsCompanion extends UpdateCompanion<LandedCostSheetData> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (globalId.present) {
+      map['global_id'] = Variable<String>(globalId.value);
+    }
+    if (lastModifiedAt.present) {
+      map['last_modified_at'] = Variable<DateTime>(lastModifiedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (originClientId.present) {
+      map['origin_client_id'] = Variable<String>(originClientId.value);
+    }
+    if (rowVersion.present) {
+      map['row_version'] = Variable<int>(rowVersion.value);
+    }
     return map;
   }
 
@@ -105579,7 +108124,12 @@ class LandedCostSheetsCompanion extends UpdateCompanion<LandedCostSheetData> {
           ..write('status: $status, ')
           ..write('notes: $notes, ')
           ..write('createdBy: $createdBy, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('globalId: $globalId, ')
+          ..write('lastModifiedAt: $lastModifiedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('originClientId: $originClientId, ')
+          ..write('rowVersion: $rowVersion')
           ..write(')'))
         .toString();
   }
@@ -105664,6 +108214,64 @@ class $LandedCostItemsTable extends LandedCostItems
       'REFERENCES parties (id)',
     ),
   );
+  static const VerificationMeta _globalIdMeta = const VerificationMeta(
+    'globalId',
+  );
+  @override
+  late final GeneratedColumn<String> globalId = GeneratedColumn<String>(
+    'global_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _lastModifiedAtMeta = const VerificationMeta(
+    'lastModifiedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastModifiedAt =
+      GeneratedColumn<DateTime>(
+        'last_modified_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _originClientIdMeta = const VerificationMeta(
+    'originClientId',
+  );
+  @override
+  late final GeneratedColumn<String> originClientId = GeneratedColumn<String>(
+    'origin_client_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _rowVersionMeta = const VerificationMeta(
+    'rowVersion',
+  );
+  @override
+  late final GeneratedColumn<int> rowVersion = GeneratedColumn<int>(
+    'row_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -105672,6 +108280,11 @@ class $LandedCostItemsTable extends LandedCostItems
     description,
     amount,
     supplierPartyId,
+    globalId,
+    lastModifiedAt,
+    deletedAt,
+    originClientId,
+    rowVersion,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -105730,6 +108343,42 @@ class $LandedCostItemsTable extends LandedCostItems
         ),
       );
     }
+    if (data.containsKey('global_id')) {
+      context.handle(
+        _globalIdMeta,
+        globalId.isAcceptableOrUnknown(data['global_id']!, _globalIdMeta),
+      );
+    }
+    if (data.containsKey('last_modified_at')) {
+      context.handle(
+        _lastModifiedAtMeta,
+        lastModifiedAt.isAcceptableOrUnknown(
+          data['last_modified_at']!,
+          _lastModifiedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    if (data.containsKey('origin_client_id')) {
+      context.handle(
+        _originClientIdMeta,
+        originClientId.isAcceptableOrUnknown(
+          data['origin_client_id']!,
+          _originClientIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('row_version')) {
+      context.handle(
+        _rowVersionMeta,
+        rowVersion.isAcceptableOrUnknown(data['row_version']!, _rowVersionMeta),
+      );
+    }
     return context;
   }
 
@@ -105763,6 +108412,26 @@ class $LandedCostItemsTable extends LandedCostItems
         DriftSqlType.int,
         data['${effectivePrefix}supplier_party_id'],
       ),
+      globalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}global_id'],
+      ),
+      lastModifiedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_modified_at'],
+      ),
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+      originClientId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origin_client_id'],
+      ),
+      rowVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}row_version'],
+      )!,
     );
   }
 
@@ -105782,6 +108451,11 @@ class LandedCostItemData extends DataClass
   final String description;
   final double amount;
   final int? supplierPartyId;
+  final String? globalId;
+  final DateTime? lastModifiedAt;
+  final DateTime? deletedAt;
+  final String? originClientId;
+  final int rowVersion;
   const LandedCostItemData({
     required this.id,
     required this.sheetId,
@@ -105789,6 +108463,11 @@ class LandedCostItemData extends DataClass
     required this.description,
     required this.amount,
     this.supplierPartyId,
+    this.globalId,
+    this.lastModifiedAt,
+    this.deletedAt,
+    this.originClientId,
+    required this.rowVersion,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -105801,6 +108480,19 @@ class LandedCostItemData extends DataClass
     if (!nullToAbsent || supplierPartyId != null) {
       map['supplier_party_id'] = Variable<int>(supplierPartyId);
     }
+    if (!nullToAbsent || globalId != null) {
+      map['global_id'] = Variable<String>(globalId);
+    }
+    if (!nullToAbsent || lastModifiedAt != null) {
+      map['last_modified_at'] = Variable<DateTime>(lastModifiedAt);
+    }
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || originClientId != null) {
+      map['origin_client_id'] = Variable<String>(originClientId);
+    }
+    map['row_version'] = Variable<int>(rowVersion);
     return map;
   }
 
@@ -105814,6 +108506,19 @@ class LandedCostItemData extends DataClass
       supplierPartyId: supplierPartyId == null && nullToAbsent
           ? const Value.absent()
           : Value(supplierPartyId),
+      globalId: globalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(globalId),
+      lastModifiedAt: lastModifiedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastModifiedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      originClientId: originClientId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(originClientId),
+      rowVersion: Value(rowVersion),
     );
   }
 
@@ -105829,6 +108534,11 @@ class LandedCostItemData extends DataClass
       description: serializer.fromJson<String>(json['description']),
       amount: serializer.fromJson<double>(json['amount']),
       supplierPartyId: serializer.fromJson<int?>(json['supplierPartyId']),
+      globalId: serializer.fromJson<String?>(json['globalId']),
+      lastModifiedAt: serializer.fromJson<DateTime?>(json['lastModifiedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      originClientId: serializer.fromJson<String?>(json['originClientId']),
+      rowVersion: serializer.fromJson<int>(json['rowVersion']),
     );
   }
   @override
@@ -105841,6 +108551,11 @@ class LandedCostItemData extends DataClass
       'description': serializer.toJson<String>(description),
       'amount': serializer.toJson<double>(amount),
       'supplierPartyId': serializer.toJson<int?>(supplierPartyId),
+      'globalId': serializer.toJson<String?>(globalId),
+      'lastModifiedAt': serializer.toJson<DateTime?>(lastModifiedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'originClientId': serializer.toJson<String?>(originClientId),
+      'rowVersion': serializer.toJson<int>(rowVersion),
     };
   }
 
@@ -105851,6 +108566,11 @@ class LandedCostItemData extends DataClass
     String? description,
     double? amount,
     Value<int?> supplierPartyId = const Value.absent(),
+    Value<String?> globalId = const Value.absent(),
+    Value<DateTime?> lastModifiedAt = const Value.absent(),
+    Value<DateTime?> deletedAt = const Value.absent(),
+    Value<String?> originClientId = const Value.absent(),
+    int? rowVersion,
   }) => LandedCostItemData(
     id: id ?? this.id,
     sheetId: sheetId ?? this.sheetId,
@@ -105860,6 +108580,15 @@ class LandedCostItemData extends DataClass
     supplierPartyId: supplierPartyId.present
         ? supplierPartyId.value
         : this.supplierPartyId,
+    globalId: globalId.present ? globalId.value : this.globalId,
+    lastModifiedAt: lastModifiedAt.present
+        ? lastModifiedAt.value
+        : this.lastModifiedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    originClientId: originClientId.present
+        ? originClientId.value
+        : this.originClientId,
+    rowVersion: rowVersion ?? this.rowVersion,
   );
   LandedCostItemData copyWithCompanion(LandedCostItemsCompanion data) {
     return LandedCostItemData(
@@ -105873,6 +108602,17 @@ class LandedCostItemData extends DataClass
       supplierPartyId: data.supplierPartyId.present
           ? data.supplierPartyId.value
           : this.supplierPartyId,
+      globalId: data.globalId.present ? data.globalId.value : this.globalId,
+      lastModifiedAt: data.lastModifiedAt.present
+          ? data.lastModifiedAt.value
+          : this.lastModifiedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      originClientId: data.originClientId.present
+          ? data.originClientId.value
+          : this.originClientId,
+      rowVersion: data.rowVersion.present
+          ? data.rowVersion.value
+          : this.rowVersion,
     );
   }
 
@@ -105884,14 +108624,30 @@ class LandedCostItemData extends DataClass
           ..write('costType: $costType, ')
           ..write('description: $description, ')
           ..write('amount: $amount, ')
-          ..write('supplierPartyId: $supplierPartyId')
+          ..write('supplierPartyId: $supplierPartyId, ')
+          ..write('globalId: $globalId, ')
+          ..write('lastModifiedAt: $lastModifiedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('originClientId: $originClientId, ')
+          ..write('rowVersion: $rowVersion')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, sheetId, costType, description, amount, supplierPartyId);
+  int get hashCode => Object.hash(
+    id,
+    sheetId,
+    costType,
+    description,
+    amount,
+    supplierPartyId,
+    globalId,
+    lastModifiedAt,
+    deletedAt,
+    originClientId,
+    rowVersion,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -105901,7 +108657,12 @@ class LandedCostItemData extends DataClass
           other.costType == this.costType &&
           other.description == this.description &&
           other.amount == this.amount &&
-          other.supplierPartyId == this.supplierPartyId);
+          other.supplierPartyId == this.supplierPartyId &&
+          other.globalId == this.globalId &&
+          other.lastModifiedAt == this.lastModifiedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.originClientId == this.originClientId &&
+          other.rowVersion == this.rowVersion);
 }
 
 class LandedCostItemsCompanion extends UpdateCompanion<LandedCostItemData> {
@@ -105911,6 +108672,11 @@ class LandedCostItemsCompanion extends UpdateCompanion<LandedCostItemData> {
   final Value<String> description;
   final Value<double> amount;
   final Value<int?> supplierPartyId;
+  final Value<String?> globalId;
+  final Value<DateTime?> lastModifiedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<String?> originClientId;
+  final Value<int> rowVersion;
   const LandedCostItemsCompanion({
     this.id = const Value.absent(),
     this.sheetId = const Value.absent(),
@@ -105918,6 +108684,11 @@ class LandedCostItemsCompanion extends UpdateCompanion<LandedCostItemData> {
     this.description = const Value.absent(),
     this.amount = const Value.absent(),
     this.supplierPartyId = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.lastModifiedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.originClientId = const Value.absent(),
+    this.rowVersion = const Value.absent(),
   });
   LandedCostItemsCompanion.insert({
     this.id = const Value.absent(),
@@ -105926,6 +108697,11 @@ class LandedCostItemsCompanion extends UpdateCompanion<LandedCostItemData> {
     required String description,
     required double amount,
     this.supplierPartyId = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.lastModifiedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.originClientId = const Value.absent(),
+    this.rowVersion = const Value.absent(),
   }) : sheetId = Value(sheetId),
        description = Value(description),
        amount = Value(amount);
@@ -105936,6 +108712,11 @@ class LandedCostItemsCompanion extends UpdateCompanion<LandedCostItemData> {
     Expression<String>? description,
     Expression<double>? amount,
     Expression<int>? supplierPartyId,
+    Expression<String>? globalId,
+    Expression<DateTime>? lastModifiedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? originClientId,
+    Expression<int>? rowVersion,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -105944,6 +108725,11 @@ class LandedCostItemsCompanion extends UpdateCompanion<LandedCostItemData> {
       if (description != null) 'description': description,
       if (amount != null) 'amount': amount,
       if (supplierPartyId != null) 'supplier_party_id': supplierPartyId,
+      if (globalId != null) 'global_id': globalId,
+      if (lastModifiedAt != null) 'last_modified_at': lastModifiedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (originClientId != null) 'origin_client_id': originClientId,
+      if (rowVersion != null) 'row_version': rowVersion,
     });
   }
 
@@ -105954,6 +108740,11 @@ class LandedCostItemsCompanion extends UpdateCompanion<LandedCostItemData> {
     Value<String>? description,
     Value<double>? amount,
     Value<int?>? supplierPartyId,
+    Value<String?>? globalId,
+    Value<DateTime?>? lastModifiedAt,
+    Value<DateTime?>? deletedAt,
+    Value<String?>? originClientId,
+    Value<int>? rowVersion,
   }) {
     return LandedCostItemsCompanion(
       id: id ?? this.id,
@@ -105962,6 +108753,11 @@ class LandedCostItemsCompanion extends UpdateCompanion<LandedCostItemData> {
       description: description ?? this.description,
       amount: amount ?? this.amount,
       supplierPartyId: supplierPartyId ?? this.supplierPartyId,
+      globalId: globalId ?? this.globalId,
+      lastModifiedAt: lastModifiedAt ?? this.lastModifiedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      originClientId: originClientId ?? this.originClientId,
+      rowVersion: rowVersion ?? this.rowVersion,
     );
   }
 
@@ -105986,6 +108782,21 @@ class LandedCostItemsCompanion extends UpdateCompanion<LandedCostItemData> {
     if (supplierPartyId.present) {
       map['supplier_party_id'] = Variable<int>(supplierPartyId.value);
     }
+    if (globalId.present) {
+      map['global_id'] = Variable<String>(globalId.value);
+    }
+    if (lastModifiedAt.present) {
+      map['last_modified_at'] = Variable<DateTime>(lastModifiedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (originClientId.present) {
+      map['origin_client_id'] = Variable<String>(originClientId.value);
+    }
+    if (rowVersion.present) {
+      map['row_version'] = Variable<int>(rowVersion.value);
+    }
     return map;
   }
 
@@ -105997,7 +108808,12 @@ class LandedCostItemsCompanion extends UpdateCompanion<LandedCostItemData> {
           ..write('costType: $costType, ')
           ..write('description: $description, ')
           ..write('amount: $amount, ')
-          ..write('supplierPartyId: $supplierPartyId')
+          ..write('supplierPartyId: $supplierPartyId, ')
+          ..write('globalId: $globalId, ')
+          ..write('lastModifiedAt: $lastModifiedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('originClientId: $originClientId, ')
+          ..write('rowVersion: $rowVersion')
           ..write(')'))
         .toString();
   }
@@ -106108,6 +108924,64 @@ class $LandedCostAllocationsTable extends LandedCostAllocations
     type: DriftSqlType.double,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _globalIdMeta = const VerificationMeta(
+    'globalId',
+  );
+  @override
+  late final GeneratedColumn<String> globalId = GeneratedColumn<String>(
+    'global_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _lastModifiedAtMeta = const VerificationMeta(
+    'lastModifiedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastModifiedAt =
+      GeneratedColumn<DateTime>(
+        'last_modified_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _originClientIdMeta = const VerificationMeta(
+    'originClientId',
+  );
+  @override
+  late final GeneratedColumn<String> originClientId = GeneratedColumn<String>(
+    'origin_client_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _rowVersionMeta = const VerificationMeta(
+    'rowVersion',
+  );
+  @override
+  late final GeneratedColumn<int> rowVersion = GeneratedColumn<int>(
+    'row_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -106118,6 +108992,11 @@ class $LandedCostAllocationsTable extends LandedCostAllocations
     allocatedAmount,
     newUnitCost,
     quantity,
+    globalId,
+    lastModifiedAt,
+    deletedAt,
+    originClientId,
+    rowVersion,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -106202,6 +109081,42 @@ class $LandedCostAllocationsTable extends LandedCostAllocations
     } else if (isInserting) {
       context.missing(_quantityMeta);
     }
+    if (data.containsKey('global_id')) {
+      context.handle(
+        _globalIdMeta,
+        globalId.isAcceptableOrUnknown(data['global_id']!, _globalIdMeta),
+      );
+    }
+    if (data.containsKey('last_modified_at')) {
+      context.handle(
+        _lastModifiedAtMeta,
+        lastModifiedAt.isAcceptableOrUnknown(
+          data['last_modified_at']!,
+          _lastModifiedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    if (data.containsKey('origin_client_id')) {
+      context.handle(
+        _originClientIdMeta,
+        originClientId.isAcceptableOrUnknown(
+          data['origin_client_id']!,
+          _originClientIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('row_version')) {
+      context.handle(
+        _rowVersionMeta,
+        rowVersion.isAcceptableOrUnknown(data['row_version']!, _rowVersionMeta),
+      );
+    }
     return context;
   }
 
@@ -106246,6 +109161,26 @@ class $LandedCostAllocationsTable extends LandedCostAllocations
         DriftSqlType.double,
         data['${effectivePrefix}quantity'],
       )!,
+      globalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}global_id'],
+      ),
+      lastModifiedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_modified_at'],
+      ),
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+      originClientId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origin_client_id'],
+      ),
+      rowVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}row_version'],
+      )!,
     );
   }
 
@@ -106265,6 +109200,11 @@ class LandedCostAllocationData extends DataClass
   final double allocatedAmount;
   final double newUnitCost;
   final double quantity;
+  final String? globalId;
+  final DateTime? lastModifiedAt;
+  final DateTime? deletedAt;
+  final String? originClientId;
+  final int rowVersion;
   const LandedCostAllocationData({
     required this.id,
     required this.sheetId,
@@ -106274,6 +109214,11 @@ class LandedCostAllocationData extends DataClass
     required this.allocatedAmount,
     required this.newUnitCost,
     required this.quantity,
+    this.globalId,
+    this.lastModifiedAt,
+    this.deletedAt,
+    this.originClientId,
+    required this.rowVersion,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -106286,6 +109231,19 @@ class LandedCostAllocationData extends DataClass
     map['allocated_amount'] = Variable<double>(allocatedAmount);
     map['new_unit_cost'] = Variable<double>(newUnitCost);
     map['quantity'] = Variable<double>(quantity);
+    if (!nullToAbsent || globalId != null) {
+      map['global_id'] = Variable<String>(globalId);
+    }
+    if (!nullToAbsent || lastModifiedAt != null) {
+      map['last_modified_at'] = Variable<DateTime>(lastModifiedAt);
+    }
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || originClientId != null) {
+      map['origin_client_id'] = Variable<String>(originClientId);
+    }
+    map['row_version'] = Variable<int>(rowVersion);
     return map;
   }
 
@@ -106299,6 +109257,19 @@ class LandedCostAllocationData extends DataClass
       allocatedAmount: Value(allocatedAmount),
       newUnitCost: Value(newUnitCost),
       quantity: Value(quantity),
+      globalId: globalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(globalId),
+      lastModifiedAt: lastModifiedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastModifiedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      originClientId: originClientId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(originClientId),
+      rowVersion: Value(rowVersion),
     );
   }
 
@@ -106316,6 +109287,11 @@ class LandedCostAllocationData extends DataClass
       allocatedAmount: serializer.fromJson<double>(json['allocatedAmount']),
       newUnitCost: serializer.fromJson<double>(json['newUnitCost']),
       quantity: serializer.fromJson<double>(json['quantity']),
+      globalId: serializer.fromJson<String?>(json['globalId']),
+      lastModifiedAt: serializer.fromJson<DateTime?>(json['lastModifiedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      originClientId: serializer.fromJson<String?>(json['originClientId']),
+      rowVersion: serializer.fromJson<int>(json['rowVersion']),
     );
   }
   @override
@@ -106330,6 +109306,11 @@ class LandedCostAllocationData extends DataClass
       'allocatedAmount': serializer.toJson<double>(allocatedAmount),
       'newUnitCost': serializer.toJson<double>(newUnitCost),
       'quantity': serializer.toJson<double>(quantity),
+      'globalId': serializer.toJson<String?>(globalId),
+      'lastModifiedAt': serializer.toJson<DateTime?>(lastModifiedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'originClientId': serializer.toJson<String?>(originClientId),
+      'rowVersion': serializer.toJson<int>(rowVersion),
     };
   }
 
@@ -106342,6 +109323,11 @@ class LandedCostAllocationData extends DataClass
     double? allocatedAmount,
     double? newUnitCost,
     double? quantity,
+    Value<String?> globalId = const Value.absent(),
+    Value<DateTime?> lastModifiedAt = const Value.absent(),
+    Value<DateTime?> deletedAt = const Value.absent(),
+    Value<String?> originClientId = const Value.absent(),
+    int? rowVersion,
   }) => LandedCostAllocationData(
     id: id ?? this.id,
     sheetId: sheetId ?? this.sheetId,
@@ -106351,6 +109337,15 @@ class LandedCostAllocationData extends DataClass
     allocatedAmount: allocatedAmount ?? this.allocatedAmount,
     newUnitCost: newUnitCost ?? this.newUnitCost,
     quantity: quantity ?? this.quantity,
+    globalId: globalId.present ? globalId.value : this.globalId,
+    lastModifiedAt: lastModifiedAt.present
+        ? lastModifiedAt.value
+        : this.lastModifiedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    originClientId: originClientId.present
+        ? originClientId.value
+        : this.originClientId,
+    rowVersion: rowVersion ?? this.rowVersion,
   );
   LandedCostAllocationData copyWithCompanion(
     LandedCostAllocationsCompanion data,
@@ -106372,6 +109367,17 @@ class LandedCostAllocationData extends DataClass
           ? data.newUnitCost.value
           : this.newUnitCost,
       quantity: data.quantity.present ? data.quantity.value : this.quantity,
+      globalId: data.globalId.present ? data.globalId.value : this.globalId,
+      lastModifiedAt: data.lastModifiedAt.present
+          ? data.lastModifiedAt.value
+          : this.lastModifiedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      originClientId: data.originClientId.present
+          ? data.originClientId.value
+          : this.originClientId,
+      rowVersion: data.rowVersion.present
+          ? data.rowVersion.value
+          : this.rowVersion,
     );
   }
 
@@ -106385,7 +109391,12 @@ class LandedCostAllocationData extends DataClass
           ..write('originalCost: $originalCost, ')
           ..write('allocatedAmount: $allocatedAmount, ')
           ..write('newUnitCost: $newUnitCost, ')
-          ..write('quantity: $quantity')
+          ..write('quantity: $quantity, ')
+          ..write('globalId: $globalId, ')
+          ..write('lastModifiedAt: $lastModifiedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('originClientId: $originClientId, ')
+          ..write('rowVersion: $rowVersion')
           ..write(')'))
         .toString();
   }
@@ -106400,6 +109411,11 @@ class LandedCostAllocationData extends DataClass
     allocatedAmount,
     newUnitCost,
     quantity,
+    globalId,
+    lastModifiedAt,
+    deletedAt,
+    originClientId,
+    rowVersion,
   );
   @override
   bool operator ==(Object other) =>
@@ -106412,7 +109428,12 @@ class LandedCostAllocationData extends DataClass
           other.originalCost == this.originalCost &&
           other.allocatedAmount == this.allocatedAmount &&
           other.newUnitCost == this.newUnitCost &&
-          other.quantity == this.quantity);
+          other.quantity == this.quantity &&
+          other.globalId == this.globalId &&
+          other.lastModifiedAt == this.lastModifiedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.originClientId == this.originClientId &&
+          other.rowVersion == this.rowVersion);
 }
 
 class LandedCostAllocationsCompanion
@@ -106425,6 +109446,11 @@ class LandedCostAllocationsCompanion
   final Value<double> allocatedAmount;
   final Value<double> newUnitCost;
   final Value<double> quantity;
+  final Value<String?> globalId;
+  final Value<DateTime?> lastModifiedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<String?> originClientId;
+  final Value<int> rowVersion;
   const LandedCostAllocationsCompanion({
     this.id = const Value.absent(),
     this.sheetId = const Value.absent(),
@@ -106434,6 +109460,11 @@ class LandedCostAllocationsCompanion
     this.allocatedAmount = const Value.absent(),
     this.newUnitCost = const Value.absent(),
     this.quantity = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.lastModifiedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.originClientId = const Value.absent(),
+    this.rowVersion = const Value.absent(),
   });
   LandedCostAllocationsCompanion.insert({
     this.id = const Value.absent(),
@@ -106444,6 +109475,11 @@ class LandedCostAllocationsCompanion
     required double allocatedAmount,
     required double newUnitCost,
     required double quantity,
+    this.globalId = const Value.absent(),
+    this.lastModifiedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.originClientId = const Value.absent(),
+    this.rowVersion = const Value.absent(),
   }) : sheetId = Value(sheetId),
        productId = Value(productId),
        purchaseItemId = Value(purchaseItemId),
@@ -106460,6 +109496,11 @@ class LandedCostAllocationsCompanion
     Expression<double>? allocatedAmount,
     Expression<double>? newUnitCost,
     Expression<double>? quantity,
+    Expression<String>? globalId,
+    Expression<DateTime>? lastModifiedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? originClientId,
+    Expression<int>? rowVersion,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -106470,6 +109511,11 @@ class LandedCostAllocationsCompanion
       if (allocatedAmount != null) 'allocated_amount': allocatedAmount,
       if (newUnitCost != null) 'new_unit_cost': newUnitCost,
       if (quantity != null) 'quantity': quantity,
+      if (globalId != null) 'global_id': globalId,
+      if (lastModifiedAt != null) 'last_modified_at': lastModifiedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (originClientId != null) 'origin_client_id': originClientId,
+      if (rowVersion != null) 'row_version': rowVersion,
     });
   }
 
@@ -106482,6 +109528,11 @@ class LandedCostAllocationsCompanion
     Value<double>? allocatedAmount,
     Value<double>? newUnitCost,
     Value<double>? quantity,
+    Value<String?>? globalId,
+    Value<DateTime?>? lastModifiedAt,
+    Value<DateTime?>? deletedAt,
+    Value<String?>? originClientId,
+    Value<int>? rowVersion,
   }) {
     return LandedCostAllocationsCompanion(
       id: id ?? this.id,
@@ -106492,6 +109543,11 @@ class LandedCostAllocationsCompanion
       allocatedAmount: allocatedAmount ?? this.allocatedAmount,
       newUnitCost: newUnitCost ?? this.newUnitCost,
       quantity: quantity ?? this.quantity,
+      globalId: globalId ?? this.globalId,
+      lastModifiedAt: lastModifiedAt ?? this.lastModifiedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      originClientId: originClientId ?? this.originClientId,
+      rowVersion: rowVersion ?? this.rowVersion,
     );
   }
 
@@ -106522,6 +109578,21 @@ class LandedCostAllocationsCompanion
     if (quantity.present) {
       map['quantity'] = Variable<double>(quantity.value);
     }
+    if (globalId.present) {
+      map['global_id'] = Variable<String>(globalId.value);
+    }
+    if (lastModifiedAt.present) {
+      map['last_modified_at'] = Variable<DateTime>(lastModifiedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (originClientId.present) {
+      map['origin_client_id'] = Variable<String>(originClientId.value);
+    }
+    if (rowVersion.present) {
+      map['row_version'] = Variable<int>(rowVersion.value);
+    }
     return map;
   }
 
@@ -106535,7 +109606,12 @@ class LandedCostAllocationsCompanion
           ..write('originalCost: $originalCost, ')
           ..write('allocatedAmount: $allocatedAmount, ')
           ..write('newUnitCost: $newUnitCost, ')
-          ..write('quantity: $quantity')
+          ..write('quantity: $quantity, ')
+          ..write('globalId: $globalId, ')
+          ..write('lastModifiedAt: $lastModifiedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('originClientId: $originClientId, ')
+          ..write('rowVersion: $rowVersion')
           ..write(')'))
         .toString();
   }
@@ -182634,6 +185710,11 @@ typedef $$BillOfMaterialsTableCreateCompanionBuilder =
       Value<DateTime> createdAt,
       Value<bool> autoDepleteOnSale,
       Value<String> depletionPolicy,
+      Value<String?> globalId,
+      Value<DateTime?> lastModifiedAt,
+      Value<DateTime?> deletedAt,
+      Value<String?> originClientId,
+      Value<int> rowVersion,
     });
 typedef $$BillOfMaterialsTableUpdateCompanionBuilder =
     BillOfMaterialsCompanion Function({
@@ -182647,6 +185728,11 @@ typedef $$BillOfMaterialsTableUpdateCompanionBuilder =
       Value<DateTime> createdAt,
       Value<bool> autoDepleteOnSale,
       Value<String> depletionPolicy,
+      Value<String?> globalId,
+      Value<DateTime?> lastModifiedAt,
+      Value<DateTime?> deletedAt,
+      Value<String?> originClientId,
+      Value<int> rowVersion,
     });
 
 final class $$BillOfMaterialsTableReferences
@@ -182814,6 +185900,31 @@ class $$BillOfMaterialsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$ProductsTableFilterComposer get finishedProductId {
     final $$ProductsTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -182967,6 +186078,31 @@ class $$BillOfMaterialsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$ProductsTableOrderingComposer get finishedProductId {
     final $$ProductsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -183032,6 +186168,27 @@ class $$BillOfMaterialsTableAnnotationComposer
 
   GeneratedColumn<String> get depletionPolicy => $composableBuilder(
     column: $table.depletionPolicy,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get globalId =>
+      $composableBuilder(column: $table.globalId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
     builder: (column) => column,
   );
 
@@ -183181,6 +186338,11 @@ class $$BillOfMaterialsTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<bool> autoDepleteOnSale = const Value.absent(),
                 Value<String> depletionPolicy = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<DateTime?> lastModifiedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> originClientId = const Value.absent(),
+                Value<int> rowVersion = const Value.absent(),
               }) => BillOfMaterialsCompanion(
                 id: id,
                 finishedProductId: finishedProductId,
@@ -183192,6 +186354,11 @@ class $$BillOfMaterialsTableTableManager
                 createdAt: createdAt,
                 autoDepleteOnSale: autoDepleteOnSale,
                 depletionPolicy: depletionPolicy,
+                globalId: globalId,
+                lastModifiedAt: lastModifiedAt,
+                deletedAt: deletedAt,
+                originClientId: originClientId,
+                rowVersion: rowVersion,
               ),
           createCompanionCallback:
               ({
@@ -183205,6 +186372,11 @@ class $$BillOfMaterialsTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<bool> autoDepleteOnSale = const Value.absent(),
                 Value<String> depletionPolicy = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<DateTime?> lastModifiedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> originClientId = const Value.absent(),
+                Value<int> rowVersion = const Value.absent(),
               }) => BillOfMaterialsCompanion.insert(
                 id: id,
                 finishedProductId: finishedProductId,
@@ -183216,6 +186388,11 @@ class $$BillOfMaterialsTableTableManager
                 createdAt: createdAt,
                 autoDepleteOnSale: autoDepleteOnSale,
                 depletionPolicy: depletionPolicy,
+                globalId: globalId,
+                lastModifiedAt: lastModifiedAt,
+                deletedAt: deletedAt,
+                originClientId: originClientId,
+                rowVersion: rowVersion,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -183374,6 +186551,11 @@ typedef $$BomComponentsTableCreateCompanionBuilder =
       Value<String> unit,
       Value<double> quantityInBase,
       Value<double> wastagePercent,
+      Value<String?> globalId,
+      Value<DateTime?> lastModifiedAt,
+      Value<DateTime?> deletedAt,
+      Value<String?> originClientId,
+      Value<int> rowVersion,
     });
 typedef $$BomComponentsTableUpdateCompanionBuilder =
     BomComponentsCompanion Function({
@@ -183384,6 +186566,11 @@ typedef $$BomComponentsTableUpdateCompanionBuilder =
       Value<String> unit,
       Value<double> quantityInBase,
       Value<double> wastagePercent,
+      Value<String?> globalId,
+      Value<DateTime?> lastModifiedAt,
+      Value<DateTime?> deletedAt,
+      Value<String?> originClientId,
+      Value<int> rowVersion,
     });
 
 final class $$BomComponentsTableReferences
@@ -183468,6 +186655,31 @@ class $$BomComponentsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$BillOfMaterialsTableFilterComposer get bomId {
     final $$BillOfMaterialsTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -183549,6 +186761,31 @@ class $$BomComponentsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$BillOfMaterialsTableOrderingComposer get bomId {
     final $$BillOfMaterialsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -183621,6 +186858,27 @@ class $$BomComponentsTableAnnotationComposer
 
   GeneratedColumn<double> get wastagePercent => $composableBuilder(
     column: $table.wastagePercent,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get globalId =>
+      $composableBuilder(column: $table.globalId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
     builder: (column) => column,
   );
 
@@ -183706,6 +186964,11 @@ class $$BomComponentsTableTableManager
                 Value<String> unit = const Value.absent(),
                 Value<double> quantityInBase = const Value.absent(),
                 Value<double> wastagePercent = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<DateTime?> lastModifiedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> originClientId = const Value.absent(),
+                Value<int> rowVersion = const Value.absent(),
               }) => BomComponentsCompanion(
                 id: id,
                 bomId: bomId,
@@ -183714,6 +186977,11 @@ class $$BomComponentsTableTableManager
                 unit: unit,
                 quantityInBase: quantityInBase,
                 wastagePercent: wastagePercent,
+                globalId: globalId,
+                lastModifiedAt: lastModifiedAt,
+                deletedAt: deletedAt,
+                originClientId: originClientId,
+                rowVersion: rowVersion,
               ),
           createCompanionCallback:
               ({
@@ -183724,6 +186992,11 @@ class $$BomComponentsTableTableManager
                 Value<String> unit = const Value.absent(),
                 Value<double> quantityInBase = const Value.absent(),
                 Value<double> wastagePercent = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<DateTime?> lastModifiedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> originClientId = const Value.absent(),
+                Value<int> rowVersion = const Value.absent(),
               }) => BomComponentsCompanion.insert(
                 id: id,
                 bomId: bomId,
@@ -183732,6 +187005,11 @@ class $$BomComponentsTableTableManager
                 unit: unit,
                 quantityInBase: quantityInBase,
                 wastagePercent: wastagePercent,
+                globalId: globalId,
+                lastModifiedAt: lastModifiedAt,
+                deletedAt: deletedAt,
+                originClientId: originClientId,
+                rowVersion: rowVersion,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -183828,6 +187106,11 @@ typedef $$ManufacturingOrdersTableCreateCompanionBuilder =
       Value<double> totalCost,
       Value<String?> notes,
       Value<DateTime> createdAt,
+      Value<String?> globalId,
+      Value<DateTime?> lastModifiedAt,
+      Value<DateTime?> deletedAt,
+      Value<String?> originClientId,
+      Value<int> rowVersion,
     });
 typedef $$ManufacturingOrdersTableUpdateCompanionBuilder =
     ManufacturingOrdersCompanion Function({
@@ -183844,6 +187127,11 @@ typedef $$ManufacturingOrdersTableUpdateCompanionBuilder =
       Value<double> totalCost,
       Value<String?> notes,
       Value<DateTime> createdAt,
+      Value<String?> globalId,
+      Value<DateTime?> lastModifiedAt,
+      Value<DateTime?> deletedAt,
+      Value<String?> originClientId,
+      Value<int> rowVersion,
     });
 
 final class $$ManufacturingOrdersTableReferences
@@ -184009,6 +187297,31 @@ class $$ManufacturingOrdersTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$BillOfMaterialsTableFilterComposer get bomId {
     final $$BillOfMaterialsTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -184170,6 +187483,31 @@ class $$ManufacturingOrdersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$BillOfMaterialsTableOrderingComposer get bomId {
     final $$BillOfMaterialsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -184266,6 +187604,27 @@ class $$ManufacturingOrdersTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get globalId =>
+      $composableBuilder(column: $table.globalId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
+    builder: (column) => column,
+  );
 
   $$BillOfMaterialsTableAnnotationComposer get bomId {
     final $$BillOfMaterialsTableAnnotationComposer composer = $composerBuilder(
@@ -184418,6 +187777,11 @@ class $$ManufacturingOrdersTableTableManager
                 Value<double> totalCost = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<DateTime?> lastModifiedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> originClientId = const Value.absent(),
+                Value<int> rowVersion = const Value.absent(),
               }) => ManufacturingOrdersCompanion(
                 id: id,
                 orderNumber: orderNumber,
@@ -184432,6 +187796,11 @@ class $$ManufacturingOrdersTableTableManager
                 totalCost: totalCost,
                 notes: notes,
                 createdAt: createdAt,
+                globalId: globalId,
+                lastModifiedAt: lastModifiedAt,
+                deletedAt: deletedAt,
+                originClientId: originClientId,
+                rowVersion: rowVersion,
               ),
           createCompanionCallback:
               ({
@@ -184448,6 +187817,11 @@ class $$ManufacturingOrdersTableTableManager
                 Value<double> totalCost = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<DateTime?> lastModifiedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> originClientId = const Value.absent(),
+                Value<int> rowVersion = const Value.absent(),
               }) => ManufacturingOrdersCompanion.insert(
                 id: id,
                 orderNumber: orderNumber,
@@ -184462,6 +187836,11 @@ class $$ManufacturingOrdersTableTableManager
                 totalCost: totalCost,
                 notes: notes,
                 createdAt: createdAt,
+                globalId: globalId,
+                lastModifiedAt: lastModifiedAt,
+                deletedAt: deletedAt,
+                originClientId: originClientId,
+                rowVersion: rowVersion,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -184612,6 +187991,11 @@ typedef $$AssetCategoriesTableCreateCompanionBuilder =
       Value<String> defaultDepreciationMethod,
       Value<int?> accountId,
       Value<int?> depreciationAccountId,
+      Value<String?> globalId,
+      Value<DateTime?> lastModifiedAt,
+      Value<DateTime?> deletedAt,
+      Value<String?> originClientId,
+      Value<int> rowVersion,
     });
 typedef $$AssetCategoriesTableUpdateCompanionBuilder =
     AssetCategoriesCompanion Function({
@@ -184621,6 +188005,11 @@ typedef $$AssetCategoriesTableUpdateCompanionBuilder =
       Value<String> defaultDepreciationMethod,
       Value<int?> accountId,
       Value<int?> depreciationAccountId,
+      Value<String?> globalId,
+      Value<DateTime?> lastModifiedAt,
+      Value<DateTime?> deletedAt,
+      Value<String?> originClientId,
+      Value<int> rowVersion,
     });
 
 final class $$AssetCategoriesTableReferences
@@ -184726,6 +188115,31 @@ class $$AssetCategoriesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$AccountsTableFilterComposer get accountId {
     final $$AccountsTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -184827,6 +188241,31 @@ class $$AssetCategoriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$AccountsTableOrderingComposer get accountId {
     final $$AccountsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -184896,6 +188335,27 @@ class $$AssetCategoriesTableAnnotationComposer
 
   GeneratedColumn<String> get defaultDepreciationMethod => $composableBuilder(
     column: $table.defaultDepreciationMethod,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get globalId =>
+      $composableBuilder(column: $table.globalId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
     builder: (column) => column,
   );
 
@@ -185011,6 +188471,11 @@ class $$AssetCategoriesTableTableManager
                 Value<String> defaultDepreciationMethod = const Value.absent(),
                 Value<int?> accountId = const Value.absent(),
                 Value<int?> depreciationAccountId = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<DateTime?> lastModifiedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> originClientId = const Value.absent(),
+                Value<int> rowVersion = const Value.absent(),
               }) => AssetCategoriesCompanion(
                 id: id,
                 name: name,
@@ -185018,6 +188483,11 @@ class $$AssetCategoriesTableTableManager
                 defaultDepreciationMethod: defaultDepreciationMethod,
                 accountId: accountId,
                 depreciationAccountId: depreciationAccountId,
+                globalId: globalId,
+                lastModifiedAt: lastModifiedAt,
+                deletedAt: deletedAt,
+                originClientId: originClientId,
+                rowVersion: rowVersion,
               ),
           createCompanionCallback:
               ({
@@ -185027,6 +188497,11 @@ class $$AssetCategoriesTableTableManager
                 Value<String> defaultDepreciationMethod = const Value.absent(),
                 Value<int?> accountId = const Value.absent(),
                 Value<int?> depreciationAccountId = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<DateTime?> lastModifiedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> originClientId = const Value.absent(),
+                Value<int> rowVersion = const Value.absent(),
               }) => AssetCategoriesCompanion.insert(
                 id: id,
                 name: name,
@@ -185034,6 +188509,11 @@ class $$AssetCategoriesTableTableManager
                 defaultDepreciationMethod: defaultDepreciationMethod,
                 accountId: accountId,
                 depreciationAccountId: depreciationAccountId,
+                globalId: globalId,
+                lastModifiedAt: lastModifiedAt,
+                deletedAt: deletedAt,
+                originClientId: originClientId,
+                rowVersion: rowVersion,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -185173,6 +188653,10 @@ typedef $$FixedAssetsTableCreateCompanionBuilder =
       Value<int?> costCenterId,
       Value<int?> linkedAccountId,
       Value<String?> globalId,
+      Value<DateTime?> lastModifiedAt,
+      Value<DateTime?> deletedAt,
+      Value<String?> originClientId,
+      Value<int> rowVersion,
     });
 typedef $$FixedAssetsTableUpdateCompanionBuilder =
     FixedAssetsCompanion Function({
@@ -185195,6 +188679,10 @@ typedef $$FixedAssetsTableUpdateCompanionBuilder =
       Value<int?> costCenterId,
       Value<int?> linkedAccountId,
       Value<String?> globalId,
+      Value<DateTime?> lastModifiedAt,
+      Value<DateTime?> deletedAt,
+      Value<String?> originClientId,
+      Value<int> rowVersion,
     });
 
 final class $$FixedAssetsTableReferences
@@ -185372,6 +188860,26 @@ class $$FixedAssetsTableFilterComposer
 
   ColumnFilters<String> get globalId => $composableBuilder(
     column: $table.globalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -185559,6 +189067,26 @@ class $$FixedAssetsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$AssetCategoriesTableOrderingComposer get categoryId {
     final $$AssetCategoriesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -185701,6 +189229,24 @@ class $$FixedAssetsTableAnnotationComposer
 
   GeneratedColumn<String> get globalId =>
       $composableBuilder(column: $table.globalId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
+    builder: (column) => column,
+  );
 
   $$AssetCategoriesTableAnnotationComposer get categoryId {
     final $$AssetCategoriesTableAnnotationComposer composer = $composerBuilder(
@@ -185850,6 +189396,10 @@ class $$FixedAssetsTableTableManager
                 Value<int?> costCenterId = const Value.absent(),
                 Value<int?> linkedAccountId = const Value.absent(),
                 Value<String?> globalId = const Value.absent(),
+                Value<DateTime?> lastModifiedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> originClientId = const Value.absent(),
+                Value<int> rowVersion = const Value.absent(),
               }) => FixedAssetsCompanion(
                 id: id,
                 code: code,
@@ -185870,6 +189420,10 @@ class $$FixedAssetsTableTableManager
                 costCenterId: costCenterId,
                 linkedAccountId: linkedAccountId,
                 globalId: globalId,
+                lastModifiedAt: lastModifiedAt,
+                deletedAt: deletedAt,
+                originClientId: originClientId,
+                rowVersion: rowVersion,
               ),
           createCompanionCallback:
               ({
@@ -185892,6 +189446,10 @@ class $$FixedAssetsTableTableManager
                 Value<int?> costCenterId = const Value.absent(),
                 Value<int?> linkedAccountId = const Value.absent(),
                 Value<String?> globalId = const Value.absent(),
+                Value<DateTime?> lastModifiedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> originClientId = const Value.absent(),
+                Value<int> rowVersion = const Value.absent(),
               }) => FixedAssetsCompanion.insert(
                 id: id,
                 code: code,
@@ -185912,6 +189470,10 @@ class $$FixedAssetsTableTableManager
                 costCenterId: costCenterId,
                 linkedAccountId: linkedAccountId,
                 globalId: globalId,
+                lastModifiedAt: lastModifiedAt,
+                deletedAt: deletedAt,
+                originClientId: originClientId,
+                rowVersion: rowVersion,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -186057,6 +189619,11 @@ typedef $$AssetDepreciationsTableCreateCompanionBuilder =
       required double bookValue,
       Value<int?> journalEntryId,
       Value<DateTime> createdAt,
+      Value<String?> globalId,
+      Value<DateTime?> lastModifiedAt,
+      Value<DateTime?> deletedAt,
+      Value<String?> originClientId,
+      Value<int> rowVersion,
     });
 typedef $$AssetDepreciationsTableUpdateCompanionBuilder =
     AssetDepreciationsCompanion Function({
@@ -186068,6 +189635,11 @@ typedef $$AssetDepreciationsTableUpdateCompanionBuilder =
       Value<double> bookValue,
       Value<int?> journalEntryId,
       Value<DateTime> createdAt,
+      Value<String?> globalId,
+      Value<DateTime?> lastModifiedAt,
+      Value<DateTime?> deletedAt,
+      Value<String?> originClientId,
+      Value<int> rowVersion,
     });
 
 final class $$AssetDepreciationsTableReferences
@@ -186147,6 +189719,31 @@ class $$AssetDepreciationsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$FixedAssetsTableFilterComposer get assetId {
     final $$FixedAssetsTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -186215,6 +189812,31 @@ class $$AssetDepreciationsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$FixedAssetsTableOrderingComposer get assetId {
     final $$FixedAssetsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -186276,6 +189898,27 @@ class $$AssetDepreciationsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get globalId =>
+      $composableBuilder(column: $table.globalId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
+    builder: (column) => column,
+  );
 
   $$FixedAssetsTableAnnotationComposer get assetId {
     final $$FixedAssetsTableAnnotationComposer composer = $composerBuilder(
@@ -186342,6 +189985,11 @@ class $$AssetDepreciationsTableTableManager
                 Value<double> bookValue = const Value.absent(),
                 Value<int?> journalEntryId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<DateTime?> lastModifiedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> originClientId = const Value.absent(),
+                Value<int> rowVersion = const Value.absent(),
               }) => AssetDepreciationsCompanion(
                 id: id,
                 assetId: assetId,
@@ -186351,6 +189999,11 @@ class $$AssetDepreciationsTableTableManager
                 bookValue: bookValue,
                 journalEntryId: journalEntryId,
                 createdAt: createdAt,
+                globalId: globalId,
+                lastModifiedAt: lastModifiedAt,
+                deletedAt: deletedAt,
+                originClientId: originClientId,
+                rowVersion: rowVersion,
               ),
           createCompanionCallback:
               ({
@@ -186362,6 +190015,11 @@ class $$AssetDepreciationsTableTableManager
                 required double bookValue,
                 Value<int?> journalEntryId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<DateTime?> lastModifiedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> originClientId = const Value.absent(),
+                Value<int> rowVersion = const Value.absent(),
               }) => AssetDepreciationsCompanion.insert(
                 id: id,
                 assetId: assetId,
@@ -186371,6 +190029,11 @@ class $$AssetDepreciationsTableTableManager
                 bookValue: bookValue,
                 journalEntryId: journalEntryId,
                 createdAt: createdAt,
+                globalId: globalId,
+                lastModifiedAt: lastModifiedAt,
+                deletedAt: deletedAt,
+                originClientId: originClientId,
+                rowVersion: rowVersion,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -194014,6 +197677,11 @@ typedef $$OpExpenseCategoriesTableCreateCompanionBuilder =
       Value<String> accountCode,
       Value<bool> isActive,
       Value<DateTime> createdAt,
+      Value<String?> globalId,
+      Value<DateTime?> lastModifiedAt,
+      Value<DateTime?> deletedAt,
+      Value<String?> originClientId,
+      Value<int> rowVersion,
     });
 typedef $$OpExpenseCategoriesTableUpdateCompanionBuilder =
     OpExpenseCategoriesCompanion Function({
@@ -194026,6 +197694,11 @@ typedef $$OpExpenseCategoriesTableUpdateCompanionBuilder =
       Value<String> accountCode,
       Value<bool> isActive,
       Value<DateTime> createdAt,
+      Value<String?> globalId,
+      Value<DateTime?> lastModifiedAt,
+      Value<DateTime?> deletedAt,
+      Value<String?> originClientId,
+      Value<int> rowVersion,
     });
 
 final class $$OpExpenseCategoriesTableReferences
@@ -194138,6 +197811,31 @@ class $$OpExpenseCategoriesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
   Expression<bool> opExpensesRefs(
     Expression<bool> Function($$OpExpensesTableFilterComposer f) f,
   ) {
@@ -194242,6 +197940,31 @@ class $$OpExpenseCategoriesTableOrderingComposer
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$OpExpenseCategoriesTableAnnotationComposer
@@ -194287,6 +198010,27 @@ class $$OpExpenseCategoriesTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get globalId =>
+      $composableBuilder(column: $table.globalId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
+    builder: (column) => column,
+  );
 
   Expression<T> opExpensesRefs<T extends Object>(
     Expression<T> Function($$OpExpensesTableAnnotationComposer a) f,
@@ -194384,6 +198128,11 @@ class $$OpExpenseCategoriesTableTableManager
                 Value<String> accountCode = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<DateTime?> lastModifiedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> originClientId = const Value.absent(),
+                Value<int> rowVersion = const Value.absent(),
               }) => OpExpenseCategoriesCompanion(
                 id: id,
                 name: name,
@@ -194394,6 +198143,11 @@ class $$OpExpenseCategoriesTableTableManager
                 accountCode: accountCode,
                 isActive: isActive,
                 createdAt: createdAt,
+                globalId: globalId,
+                lastModifiedAt: lastModifiedAt,
+                deletedAt: deletedAt,
+                originClientId: originClientId,
+                rowVersion: rowVersion,
               ),
           createCompanionCallback:
               ({
@@ -194406,6 +198160,11 @@ class $$OpExpenseCategoriesTableTableManager
                 Value<String> accountCode = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<DateTime?> lastModifiedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> originClientId = const Value.absent(),
+                Value<int> rowVersion = const Value.absent(),
               }) => OpExpenseCategoriesCompanion.insert(
                 id: id,
                 name: name,
@@ -194416,6 +198175,11 @@ class $$OpExpenseCategoriesTableTableManager
                 accountCode: accountCode,
                 isActive: isActive,
                 createdAt: createdAt,
+                globalId: globalId,
+                lastModifiedAt: lastModifiedAt,
+                deletedAt: deletedAt,
+                originClientId: originClientId,
+                rowVersion: rowVersion,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -194516,6 +198280,11 @@ typedef $$OpExpensesTableCreateCompanionBuilder =
       Value<String> paymentMethod,
       required int userId,
       Value<DateTime> createdAt,
+      Value<String?> globalId,
+      Value<DateTime?> lastModifiedAt,
+      Value<DateTime?> deletedAt,
+      Value<String?> originClientId,
+      Value<int> rowVersion,
     });
 typedef $$OpExpensesTableUpdateCompanionBuilder =
     OpExpensesCompanion Function({
@@ -194533,6 +198302,11 @@ typedef $$OpExpensesTableUpdateCompanionBuilder =
       Value<String> paymentMethod,
       Value<int> userId,
       Value<DateTime> createdAt,
+      Value<String?> globalId,
+      Value<DateTime?> lastModifiedAt,
+      Value<DateTime?> deletedAt,
+      Value<String?> originClientId,
+      Value<int> rowVersion,
     });
 
 final class $$OpExpensesTableReferences
@@ -194715,6 +198489,31 @@ class $$OpExpensesTableFilterComposer
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -194913,6 +198712,31 @@ class $$OpExpensesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$OpExpenseCategoriesTableOrderingComposer get categoryId {
     final $$OpExpenseCategoriesTableOrderingComposer composer =
         $composerBuilder(
@@ -195070,6 +198894,27 @@ class $$OpExpensesTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get globalId =>
+      $composableBuilder(column: $table.globalId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
+    builder: (column) => column,
+  );
 
   $$OpExpenseCategoriesTableAnnotationComposer get categoryId {
     final $$OpExpenseCategoriesTableAnnotationComposer composer =
@@ -195263,6 +199108,11 @@ class $$OpExpensesTableTableManager
                 Value<String> paymentMethod = const Value.absent(),
                 Value<int> userId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<DateTime?> lastModifiedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> originClientId = const Value.absent(),
+                Value<int> rowVersion = const Value.absent(),
               }) => OpExpensesCompanion(
                 id: id,
                 categoryId: categoryId,
@@ -195278,6 +199128,11 @@ class $$OpExpensesTableTableManager
                 paymentMethod: paymentMethod,
                 userId: userId,
                 createdAt: createdAt,
+                globalId: globalId,
+                lastModifiedAt: lastModifiedAt,
+                deletedAt: deletedAt,
+                originClientId: originClientId,
+                rowVersion: rowVersion,
               ),
           createCompanionCallback:
               ({
@@ -195295,6 +199150,11 @@ class $$OpExpensesTableTableManager
                 Value<String> paymentMethod = const Value.absent(),
                 required int userId,
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<DateTime?> lastModifiedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> originClientId = const Value.absent(),
+                Value<int> rowVersion = const Value.absent(),
               }) => OpExpensesCompanion.insert(
                 id: id,
                 categoryId: categoryId,
@@ -195310,6 +199170,11 @@ class $$OpExpensesTableTableManager
                 paymentMethod: paymentMethod,
                 userId: userId,
                 createdAt: createdAt,
+                globalId: globalId,
+                lastModifiedAt: lastModifiedAt,
+                deletedAt: deletedAt,
+                originClientId: originClientId,
+                rowVersion: rowVersion,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -195484,6 +199349,11 @@ typedef $$MfgOrderCostsTableCreateCompanionBuilder =
       Value<int?> expenseCategoryId,
       Value<int?> expenseId,
       Value<DateTime> createdAt,
+      Value<String?> globalId,
+      Value<DateTime?> lastModifiedAt,
+      Value<DateTime?> deletedAt,
+      Value<String?> originClientId,
+      Value<int> rowVersion,
     });
 typedef $$MfgOrderCostsTableUpdateCompanionBuilder =
     MfgOrderCostsCompanion Function({
@@ -195495,6 +199365,11 @@ typedef $$MfgOrderCostsTableUpdateCompanionBuilder =
       Value<int?> expenseCategoryId,
       Value<int?> expenseId,
       Value<DateTime> createdAt,
+      Value<String?> globalId,
+      Value<DateTime?> lastModifiedAt,
+      Value<DateTime?> deletedAt,
+      Value<String?> originClientId,
+      Value<int> rowVersion,
     });
 
 final class $$MfgOrderCostsTableReferences
@@ -195604,6 +199479,31 @@ class $$MfgOrderCostsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$ManufacturingOrdersTableFilterComposer get orderId {
     final $$ManufacturingOrdersTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -195708,6 +199608,31 @@ class $$MfgOrderCostsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$ManufacturingOrdersTableOrderingComposer get orderId {
     final $$ManufacturingOrdersTableOrderingComposer composer =
         $composerBuilder(
@@ -195805,6 +199730,27 @@ class $$MfgOrderCostsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get globalId =>
+      $composableBuilder(column: $table.globalId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
+    builder: (column) => column,
+  );
 
   $$ManufacturingOrdersTableAnnotationComposer get orderId {
     final $$ManufacturingOrdersTableAnnotationComposer composer =
@@ -195918,6 +199864,11 @@ class $$MfgOrderCostsTableTableManager
                 Value<int?> expenseCategoryId = const Value.absent(),
                 Value<int?> expenseId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<DateTime?> lastModifiedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> originClientId = const Value.absent(),
+                Value<int> rowVersion = const Value.absent(),
               }) => MfgOrderCostsCompanion(
                 id: id,
                 orderId: orderId,
@@ -195927,6 +199878,11 @@ class $$MfgOrderCostsTableTableManager
                 expenseCategoryId: expenseCategoryId,
                 expenseId: expenseId,
                 createdAt: createdAt,
+                globalId: globalId,
+                lastModifiedAt: lastModifiedAt,
+                deletedAt: deletedAt,
+                originClientId: originClientId,
+                rowVersion: rowVersion,
               ),
           createCompanionCallback:
               ({
@@ -195938,6 +199894,11 @@ class $$MfgOrderCostsTableTableManager
                 Value<int?> expenseCategoryId = const Value.absent(),
                 Value<int?> expenseId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<DateTime?> lastModifiedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> originClientId = const Value.absent(),
+                Value<int> rowVersion = const Value.absent(),
               }) => MfgOrderCostsCompanion.insert(
                 id: id,
                 orderId: orderId,
@@ -195947,6 +199908,11 @@ class $$MfgOrderCostsTableTableManager
                 expenseCategoryId: expenseCategoryId,
                 expenseId: expenseId,
                 createdAt: createdAt,
+                globalId: globalId,
+                lastModifiedAt: lastModifiedAt,
+                deletedAt: deletedAt,
+                originClientId: originClientId,
+                rowVersion: rowVersion,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -216118,6 +220084,11 @@ typedef $$LandedCostSheetsTableCreateCompanionBuilder =
       Value<String?> notes,
       Value<int?> createdBy,
       Value<DateTime> createdAt,
+      Value<String?> globalId,
+      Value<DateTime?> lastModifiedAt,
+      Value<DateTime?> deletedAt,
+      Value<String?> originClientId,
+      Value<int> rowVersion,
     });
 typedef $$LandedCostSheetsTableUpdateCompanionBuilder =
     LandedCostSheetsCompanion Function({
@@ -216130,6 +220101,11 @@ typedef $$LandedCostSheetsTableUpdateCompanionBuilder =
       Value<String?> notes,
       Value<int?> createdBy,
       Value<DateTime> createdAt,
+      Value<String?> globalId,
+      Value<DateTime?> lastModifiedAt,
+      Value<DateTime?> deletedAt,
+      Value<String?> originClientId,
+      Value<int> rowVersion,
     });
 
 final class $$LandedCostSheetsTableReferences
@@ -216281,6 +220257,31 @@ class $$LandedCostSheetsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$PurchaseInvoicesTableFilterComposer get purchaseInvoiceId {
     final $$PurchaseInvoicesTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -216423,6 +220424,31 @@ class $$LandedCostSheetsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$PurchaseInvoicesTableOrderingComposer get purchaseInvoiceId {
     final $$PurchaseInvoicesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -216505,6 +220531,27 @@ class $$LandedCostSheetsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get globalId =>
+      $composableBuilder(column: $table.globalId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
+    builder: (column) => column,
+  );
 
   $$PurchaseInvoicesTableAnnotationComposer get purchaseInvoiceId {
     final $$PurchaseInvoicesTableAnnotationComposer composer = $composerBuilder(
@@ -216648,6 +220695,11 @@ class $$LandedCostSheetsTableTableManager
                 Value<String?> notes = const Value.absent(),
                 Value<int?> createdBy = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<DateTime?> lastModifiedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> originClientId = const Value.absent(),
+                Value<int> rowVersion = const Value.absent(),
               }) => LandedCostSheetsCompanion(
                 id: id,
                 purchaseInvoiceId: purchaseInvoiceId,
@@ -216658,6 +220710,11 @@ class $$LandedCostSheetsTableTableManager
                 notes: notes,
                 createdBy: createdBy,
                 createdAt: createdAt,
+                globalId: globalId,
+                lastModifiedAt: lastModifiedAt,
+                deletedAt: deletedAt,
+                originClientId: originClientId,
+                rowVersion: rowVersion,
               ),
           createCompanionCallback:
               ({
@@ -216670,6 +220727,11 @@ class $$LandedCostSheetsTableTableManager
                 Value<String?> notes = const Value.absent(),
                 Value<int?> createdBy = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<DateTime?> lastModifiedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> originClientId = const Value.absent(),
+                Value<int> rowVersion = const Value.absent(),
               }) => LandedCostSheetsCompanion.insert(
                 id: id,
                 purchaseInvoiceId: purchaseInvoiceId,
@@ -216680,6 +220742,11 @@ class $$LandedCostSheetsTableTableManager
                 notes: notes,
                 createdBy: createdBy,
                 createdAt: createdAt,
+                globalId: globalId,
+                lastModifiedAt: lastModifiedAt,
+                deletedAt: deletedAt,
+                originClientId: originClientId,
+                rowVersion: rowVersion,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -216830,6 +220897,11 @@ typedef $$LandedCostItemsTableCreateCompanionBuilder =
       required String description,
       required double amount,
       Value<int?> supplierPartyId,
+      Value<String?> globalId,
+      Value<DateTime?> lastModifiedAt,
+      Value<DateTime?> deletedAt,
+      Value<String?> originClientId,
+      Value<int> rowVersion,
     });
 typedef $$LandedCostItemsTableUpdateCompanionBuilder =
     LandedCostItemsCompanion Function({
@@ -216839,6 +220911,11 @@ typedef $$LandedCostItemsTableUpdateCompanionBuilder =
       Value<String> description,
       Value<double> amount,
       Value<int?> supplierPartyId,
+      Value<String?> globalId,
+      Value<DateTime?> lastModifiedAt,
+      Value<DateTime?> deletedAt,
+      Value<String?> originClientId,
+      Value<int> rowVersion,
     });
 
 final class $$LandedCostItemsTableReferences
@@ -216925,6 +221002,31 @@ class $$LandedCostItemsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$LandedCostSheetsTableFilterComposer get sheetId {
     final $$LandedCostSheetsTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -217001,6 +221103,31 @@ class $$LandedCostItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$LandedCostSheetsTableOrderingComposer get sheetId {
     final $$LandedCostSheetsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -217070,6 +221197,27 @@ class $$LandedCostItemsTableAnnotationComposer
 
   GeneratedColumn<double> get amount =>
       $composableBuilder(column: $table.amount, builder: (column) => column);
+
+  GeneratedColumn<String> get globalId =>
+      $composableBuilder(column: $table.globalId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
+    builder: (column) => column,
+  );
 
   $$LandedCostSheetsTableAnnotationComposer get sheetId {
     final $$LandedCostSheetsTableAnnotationComposer composer = $composerBuilder(
@@ -217154,6 +221302,11 @@ class $$LandedCostItemsTableTableManager
                 Value<String> description = const Value.absent(),
                 Value<double> amount = const Value.absent(),
                 Value<int?> supplierPartyId = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<DateTime?> lastModifiedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> originClientId = const Value.absent(),
+                Value<int> rowVersion = const Value.absent(),
               }) => LandedCostItemsCompanion(
                 id: id,
                 sheetId: sheetId,
@@ -217161,6 +221314,11 @@ class $$LandedCostItemsTableTableManager
                 description: description,
                 amount: amount,
                 supplierPartyId: supplierPartyId,
+                globalId: globalId,
+                lastModifiedAt: lastModifiedAt,
+                deletedAt: deletedAt,
+                originClientId: originClientId,
+                rowVersion: rowVersion,
               ),
           createCompanionCallback:
               ({
@@ -217170,6 +221328,11 @@ class $$LandedCostItemsTableTableManager
                 required String description,
                 required double amount,
                 Value<int?> supplierPartyId = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<DateTime?> lastModifiedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> originClientId = const Value.absent(),
+                Value<int> rowVersion = const Value.absent(),
               }) => LandedCostItemsCompanion.insert(
                 id: id,
                 sheetId: sheetId,
@@ -217177,6 +221340,11 @@ class $$LandedCostItemsTableTableManager
                 description: description,
                 amount: amount,
                 supplierPartyId: supplierPartyId,
+                globalId: globalId,
+                lastModifiedAt: lastModifiedAt,
+                deletedAt: deletedAt,
+                originClientId: originClientId,
+                rowVersion: rowVersion,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -217272,6 +221440,11 @@ typedef $$LandedCostAllocationsTableCreateCompanionBuilder =
       required double allocatedAmount,
       required double newUnitCost,
       required double quantity,
+      Value<String?> globalId,
+      Value<DateTime?> lastModifiedAt,
+      Value<DateTime?> deletedAt,
+      Value<String?> originClientId,
+      Value<int> rowVersion,
     });
 typedef $$LandedCostAllocationsTableUpdateCompanionBuilder =
     LandedCostAllocationsCompanion Function({
@@ -217283,6 +221456,11 @@ typedef $$LandedCostAllocationsTableUpdateCompanionBuilder =
       Value<double> allocatedAmount,
       Value<double> newUnitCost,
       Value<double> quantity,
+      Value<String?> globalId,
+      Value<DateTime?> lastModifiedAt,
+      Value<DateTime?> deletedAt,
+      Value<String?> originClientId,
+      Value<int> rowVersion,
     });
 
 final class $$LandedCostAllocationsTableReferences
@@ -217399,6 +221577,31 @@ class $$LandedCostAllocationsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$LandedCostSheetsTableFilterComposer get sheetId {
     final $$LandedCostSheetsTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -217503,6 +221706,31 @@ class $$LandedCostAllocationsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$LandedCostSheetsTableOrderingComposer get sheetId {
     final $$LandedCostSheetsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -217603,6 +221831,27 @@ class $$LandedCostAllocationsTableAnnotationComposer
 
   GeneratedColumn<double> get quantity =>
       $composableBuilder(column: $table.quantity, builder: (column) => column);
+
+  GeneratedColumn<String> get globalId =>
+      $composableBuilder(column: $table.globalId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
+    builder: (column) => column,
+  );
 
   $$LandedCostSheetsTableAnnotationComposer get sheetId {
     final $$LandedCostSheetsTableAnnotationComposer composer = $composerBuilder(
@@ -217726,6 +221975,11 @@ class $$LandedCostAllocationsTableTableManager
                 Value<double> allocatedAmount = const Value.absent(),
                 Value<double> newUnitCost = const Value.absent(),
                 Value<double> quantity = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<DateTime?> lastModifiedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> originClientId = const Value.absent(),
+                Value<int> rowVersion = const Value.absent(),
               }) => LandedCostAllocationsCompanion(
                 id: id,
                 sheetId: sheetId,
@@ -217735,6 +221989,11 @@ class $$LandedCostAllocationsTableTableManager
                 allocatedAmount: allocatedAmount,
                 newUnitCost: newUnitCost,
                 quantity: quantity,
+                globalId: globalId,
+                lastModifiedAt: lastModifiedAt,
+                deletedAt: deletedAt,
+                originClientId: originClientId,
+                rowVersion: rowVersion,
               ),
           createCompanionCallback:
               ({
@@ -217746,6 +222005,11 @@ class $$LandedCostAllocationsTableTableManager
                 required double allocatedAmount,
                 required double newUnitCost,
                 required double quantity,
+                Value<String?> globalId = const Value.absent(),
+                Value<DateTime?> lastModifiedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> originClientId = const Value.absent(),
+                Value<int> rowVersion = const Value.absent(),
               }) => LandedCostAllocationsCompanion.insert(
                 id: id,
                 sheetId: sheetId,
@@ -217755,6 +222019,11 @@ class $$LandedCostAllocationsTableTableManager
                 allocatedAmount: allocatedAmount,
                 newUnitCost: newUnitCost,
                 quantity: quantity,
+                globalId: globalId,
+                lastModifiedAt: lastModifiedAt,
+                deletedAt: deletedAt,
+                originClientId: originClientId,
+                rowVersion: rowVersion,
               ),
           withReferenceMapper: (p0) => p0
               .map(

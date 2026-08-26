@@ -93,6 +93,15 @@ abstract class SyncInterceptor {
     String? globalId, // NEW: UUID-First sync
   });
 
+  /// v166 — يُرسل ورقةَ تحميلٍ **مطبَّقةً** إلى الخادم.
+  ///
+  /// تطبيقُ الورقة حدثٌ ماليّ: يمزج المتوسّطَ المرجّح على الصنف وعلى
+  /// المخزن ويُرحّل قيداً. وقاعدةُ المستودع أنّ **الخادمَ مصدرُ الحقيقة
+  /// للمال والأستاذ والخزينة**، فالعميلُ يُرسل المستندَ ولا يحسب شيئاً.
+  ///
+  /// و[document] يحمل الورقةَ وبنودَها وتوزيعاتِها بمعرّفاتٍ عالميّة.
+  Future<void> submitLandedCostApply(Map<String, dynamic> document);
+
   /// Submit a safe transaction to the server for sync.
   ///
   /// Phase 5B.4 (Issue 7) — `safeGlobalId` and `costCenterId` are added so

@@ -27,6 +27,19 @@ class BillOfMaterials extends Table {
   TextColumn get depletionPolicy => text()
       .withLength(max: 30)
       .withDefault(const Constant('prefer_finished_stock'))();
+
+  // === v166 — أعمدةُ المزامنة (المرحلة ٢) ===
+  //
+  // أُضيفت مع أبنائها لا بعدَها: `manufacturing_orders` و`bom_components`
+  // تشيران إليها، فجهازٌ يستقبل الابنَ بلا الأبِ يكسر مفتاحَه. وحارسُ
+  // التغطية كان يعدّها مُزامَنةً لأنّ اسمَها يرد في **تعليقٍ** داخلَ
+  // `sale_bom_consumption_sync_strategy.dart` — والحارسُ يقرأ نصَّ الملفّ
+  // كلَّه بما فيه التعليقات.
+  TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
+  DateTimeColumn get lastModifiedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get originClientId => text().nullable()();
+  IntColumn get rowVersion => integer().withDefault(const Constant(0))();
 }
 
 /// BOM Components — مكونات كل قائمة تصنيع
@@ -43,6 +56,13 @@ class BomComponents extends Table {
       real().withDefault(const Constant(1))(); // معامل التحويل للوحدة الأساسية
   RealColumn get wastagePercent =>
       real().withDefault(const Constant(0))(); // نسبة الهالك
+
+  // === v166 — أعمدةُ المزامنة (المرحلة ٢) ===
+  TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
+  DateTimeColumn get lastModifiedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get originClientId => text().nullable()();
+  IntColumn get rowVersion => integer().withDefault(const Constant(0))();
 }
 
 /// Manufacturing Orders — أوامر الإنتاج
@@ -63,6 +83,13 @@ class ManufacturingOrders extends Table {
   RealColumn get totalCost => real().withDefault(const Constant(0))();
   TextColumn get notes => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  // === v166 — أعمدةُ المزامنة (المرحلة ٢) ===
+  TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
+  DateTimeColumn get lastModifiedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get originClientId => text().nullable()();
+  IntColumn get rowVersion => integer().withDefault(const Constant(0))();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -81,6 +108,13 @@ class AssetCategories extends Table {
       integer().nullable().references(Accounts, #id)(); // حساب الأصل
   IntColumn get depreciationAccountId =>
       integer().nullable().references(Accounts, #id)(); // حساب الإهلاك
+
+  // === v166 — أعمدةُ المزامنة (المرحلة ٢) ===
+  TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
+  DateTimeColumn get lastModifiedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get originClientId => text().nullable()();
+  IntColumn get rowVersion => integer().withDefault(const Constant(0))();
 }
 
 /// Fixed Assets — بطاقة الأصل الثابت
@@ -114,6 +148,12 @@ class FixedAssets extends Table {
   // (Constitution I — Behavior Preservation). Per-asset GL flows out of scope.
   IntColumn get linkedAccountId => integer().nullable().references(Accounts, #id)();
   TextColumn get globalId => text().nullable().unique()();
+
+  // === v166 — أعمدةُ المزامنة (المرحلة ٢) ===
+  DateTimeColumn get lastModifiedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get originClientId => text().nullable()();
+  IntColumn get rowVersion => integer().withDefault(const Constant(0))();
 }
 
 /// Asset Depreciation entries — سجل الإهلاك الدوري
@@ -128,4 +168,11 @@ class AssetDepreciations extends Table {
   RealColumn get bookValue => real()(); // القيمة الدفترية
   IntColumn get journalEntryId => integer().nullable()(); // قيد الإهلاك
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  // === v166 — أعمدةُ المزامنة (المرحلة ٢) ===
+  TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
+  DateTimeColumn get lastModifiedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get originClientId => text().nullable()();
+  IntColumn get rowVersion => integer().withDefault(const Constant(0))();
 }

@@ -58,6 +58,7 @@ db.FixedAssetData _asset({
       disposalDate: disposalDate,
       disposalValue: disposalValue,
       createdAt: DateTime(2020, 1, 1),
+      rowVersion: 0,
     );
 
 /// ٨٦٬٠٠٠ على ٧ سنواتٍ قسطاً ثابتاً ⇒ ٨٦٠٠٠ ÷ ٨٤ = **١٬٠٢٣٫٨١** شهريّاً.
@@ -103,6 +104,7 @@ const _categories = [
     defaultDepreciationMethod: 'straight_line',
     accountId: 100,
     depreciationAccountId: 200,
+    rowVersion: 0,
   ),
   db.AssetCategory(
     id: 11,
@@ -111,6 +113,7 @@ const _categories = [
     defaultDepreciationMethod: 'declining_balance',
     accountId: 101,
     depreciationAccountId: 201,
+    rowVersion: 0,
   ),
 ];
 
