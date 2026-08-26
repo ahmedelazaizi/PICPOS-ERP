@@ -144,8 +144,15 @@ Set<String> _reachableFrom(String twin) {
     queue.add(path);
   }
 
+  // ⚠️ **البذرةُ مجلّدٌ أو ملفٌّ مفرد.** الخريطةُ اليدويّةُ تربط مجلّداً
+  //    بمجلّد، لكنّ أغلبَ فوركات PicPos أصلُها **ملفٌّ مفردٌ** تحت
+  //    `screens/` (‏`fixed_assets_screen.dart` …). فبلا الفرع الثاني يعجز
+  //    الحارسُ بنيويّاً عن رؤية ٢١ فوركاً من ٢٥ — وهو ما كان.
   for (final key in _sources.keys) {
-    if (key.startsWith('lib/presentation/$twin/')) enqueue(key);
+    if (key == 'lib/presentation/$twin' ||
+        key.startsWith('lib/presentation/$twin/')) {
+      enqueue(key);
+    }
   }
 
   while (queue.isNotEmpty) {
@@ -234,6 +241,50 @@ bool mentionsCode(String text, String code, String? constName) {
 bool _isEnforcementSurface(String path) =>
     path.startsWith('lib/presentation/') || path.startsWith('lib/core/');
 
+/// أزواجُ (الأصل ↔ فورك PicPos) **مشتقّةً من الموجّه نفسِه**.
+///
+/// ═══ لماذا تُشتقّ ولا تُكتَب ═══
+///
+/// [_twins] خريطةٌ يدويّةٌ فيها أربعةُ مداخل، وفوركاتُ PicPos اليومَ **٢٥**.
+/// كُتبت يومَ كانت أربعةً ولم تكبر مع المشروع، فبقي الحارسُ يغطّي ١٦٪ وهو
+/// يبدو شاملاً — وهذا عينُ الصنف الذي بُني الحارسُ لمنعه: ضابطٌ يبدو مفعَّلاً
+/// وهو غيرُ موجودٍ على المسار الحيّ.
+///
+/// و`app_main_screen.dart` هو **المصدرُ الوحيدُ للحقيقة** في التفريع: ما لم
+/// يُذكر فيه لا يُفتَح لمستخدم PicPos أصلاً. فاشتقاقُ الأزواج منه يجعل
+/// الخريطةَ تكبر تلقائيّاً مع كلّ فوركٍ جديد، ولا يمكن أن تبيت.
+///
+/// وتُعاد **مساراتٍ** لا أسماءَ صفوف: الأصلُ ملفٌّ مفردٌ غالباً والفوركُ
+/// كذلك، و[_reachableFrom] يتبع رسمَ الاستيراد فيبلغ بقيّةَ مجلّد الفورك.
+final List<({String legacy, String fork})> _routerPairs = () {
+  final src = File('lib/app_main_screen.dart').readAsStringSync();
+  final re = RegExp(
+    r'Brand\.isPicPos[\s\S]{0,80}?\?[\s\S]{0,80}?const\s+(\w+)\(\)'
+    r'[\s\S]{0,80}?:[\s\S]{0,80}?const\s+(\w+)\(\)',
+  );
+  String? fileOf(String cls) {
+    for (final entry in _sources.entries) {
+      if (_declaredTypes(entry.key).contains(cls)) return entry.key;
+    }
+    return null;
+  }
+
+  final out = <({String legacy, String fork})>[];
+  for (final m in re.allMatches(src)) {
+    final forkFile = fileOf(m.group(1)!);
+    final legacyFile = fileOf(m.group(2)!);
+    if (forkFile == null || legacyFile == null) continue;
+    // المسارُ نسبيٌّ إلى `lib/presentation/` لأنّ الباقيَ يبنيه المنادي.
+    const prefix = 'lib/presentation/';
+    if (!forkFile.startsWith(prefix) || !legacyFile.startsWith(prefix)) continue;
+    out.add((
+      legacy: legacyFile.substring(prefix.length),
+      fork: forkFile.substring(prefix.length),
+    ));
+  }
+  return out;
+}();
+
 Set<String> _currentGaps() {
   final byCode = _constantNameByCode();
   // ⚠️ المدى **كلُّ توائم PicPos معاً** لا كلُّ زوجٍ وحدَه: التطبيقُ واحد،
@@ -241,13 +292,21 @@ Set<String> _currentGaps() {
   // نظير البيع القديم. قياسُ الزوج وحدَه كان يعطي فجوةً عابرةً للأزواج.
   final reachable = <String>{
     for (final twin in _twins.values) ..._reachableFrom(twin),
+    // والفوركاتُ المشتقّةُ من الموجّه — راجع [_routerPairs].
+    for (final p in _routerPairs) ..._reachableFrom(p.fork),
+  };
+  final legacies = <String>{
+    ..._twins.keys,
+    for (final p in _routerPairs) p.legacy,
   };
   final gaps = <String>{};
-  for (final legacy in _twins.keys) {
+  for (final legacy in legacies) {
     for (final code in byCode.keys) {
       final c = byCode[code];
       final inLegacy = _sources.keys
-          .where((p) => p.startsWith('lib/presentation/$legacy/'))
+          .where((p) =>
+              p == 'lib/presentation/$legacy' ||
+              p.startsWith('lib/presentation/$legacy/'))
           .any((p) => mentionsCode(_codeOnly(p), code, c));
       if (!inLegacy) continue;
       final reaches = reachable
@@ -295,6 +354,25 @@ const _absenceWitness = <String, List<String>>{
   'tables_add_items': ['طاولة', 'TablePos', 'table_pos'],
   'tables_cancel': ['طاولة', 'TablePos', 'table_pos'],
   'tables_checkout': ['طاولة', 'TablePos', 'table_pos'],
+
+  // ── الفوركاتُ الخمسةُ الجديدة (2026-08-26) ────────────────────────────
+  //
+  // ⚠️ الشاهدان مختاران **بمرساةٍ في الطرفَين**: صفرُ مطابقاتٍ في سطح
+  // PicPos، و٣ مطابقاتٍ في الشاشة الأصل لكلٍّ منهما. فلو كان الشاهدُ نادراً
+  // في الأصل أيضاً لكان يقيس نفسَه لا الميزة.
+  //
+  // ⚠️ ولا يصلح `disposeAsset` ولا «إلغاء المستند» شاهداً: كلاهما مذكورٌ في
+  // **تعليقات** الفورك (‏حيث وُثِّق سببُ الغياب). والحارسُ يجرّد التعليقاتِ
+  // فيمرّان — لكنّ من يقرأ الشاهدَ لاحقاً سيظنّهما مكسورَين. فالمختارُ رمزٌ
+  // لا يُذكر إلّا في الشِّفرة.
+
+  // إنشاءُ الأصل وتعديلُه واستبعادُه: كلُّها في `fixed_assets_dialogs.dart`
+  // (‏جزءٌ من الشاشة الأصل) ولا يستوردها الفورك.
+  'assets_manage': ['showCreateAssetDialog', 'showEditAssetDialog'],
+
+  // إلغاءُ مستندٍ مقبولٍ لدى المنظومة — المنطقُ مستخرجٌ في الأصل باسمٍ صريح،
+  // و`EInvoiceServiceWrapper` لا يكشف مسارَ إلغاءٍ أصلاً.
+  'einvoice_cancel': ['canCancelEInvoice'],
 };
 
 /// مدخلاتٌ بلا شاهدٍ **بسببٍ صريح** — لا بالإهمال.
@@ -391,6 +469,54 @@ void main() {
           _isEnforcementSurface(
               'lib/presentation/pos/widgets/held_orders_dialog.dart'),
           isTrue);
+    });
+  });
+
+  // ── مرساةُ الاشتقاق ──────────────────────────────────────────────────────
+  //
+  // ⚠️ **بلا هذه المجموعةِ يكون التوسيعُ بلا أثرٍ ولا أحدَ يعلم.** لو تغيّر
+  // تنسيقُ `Brand.isPicPos ? … : …` في الموجّه — أو كُسر النمطُ بمسافةٍ —
+  // لعادت `_routerPairs` فارغةً، فيسقط المدى إلى الأربعةِ القديمة **ويمرّ
+  // الاختبارُ أخضرَ**. وهو عينُ العطب الذي نصلحه: تغطيةٌ تنكمش صامتة.
+  //
+  // والعددُ يُقاس مقابلَ `Brand.isPicPos` في الموجّه لا مقابلَ رقمٍ مكتوب،
+  // فلا يبيت بإضافة فوركٍ جديد.
+  group('اشتقاقُ الأزواج من الموجّه', () {
+    test('الأزواجُ المشتقّةُ تغطّي أغلبَ تفريعات `Brand.isPicPos`', () {
+      final router = File('lib/app_main_screen.dart').readAsStringSync();
+      final branches = RegExp(r'Brand\.isPicPos').allMatches(router).length;
+
+      expect(_routerPairs.length, greaterThanOrEqualTo(20),
+          reason: 'الاشتقاقُ أعطى ${_routerPairs.length} زوجاً فقط — النمطُ '
+              'مكسورٌ غالباً، والمدى انكمش إلى خريطة المجلّدات صامتاً.');
+      expect(_routerPairs.length, lessThanOrEqualTo(branches),
+          reason: 'أزواجٌ أكثرُ من تفريعات الموجّه ⇒ النمطُ يلتقط ما ليس '
+              'تفريعَ علامة.');
+    });
+
+    test('وكلُّ مسارٍ مشتقٍّ موجودٌ فعلاً على القرص', () {
+      for (final p in _routerPairs) {
+        expect(_sources.containsKey('lib/presentation/${p.legacy}'), isTrue,
+            reason: 'الأصلُ «${p.legacy}» غيرُ مقروء');
+        expect(_sources.containsKey('lib/presentation/${p.fork}'), isTrue,
+            reason: 'الفوركُ «${p.fork}» غيرُ مقروء');
+      }
+    });
+
+    test('والفوركاتُ الخمسُ الجديدةُ داخلَ المدى', () {
+      // مرساةٌ صريحةٌ على ما بُني في هذه الجولة — فلو خرج أحدُها من المدى
+      // لعاد بلا حراسةٍ بلا أن يلاحظ أحد.
+      final forks = _routerPairs.map((p) => p.fork).join(' ');
+      for (final f in const [
+        'landed_cost_picpos',
+        'fixed_assets_picpos',
+        'e_invoicing_picpos',
+        'analytics_picpos',
+        'report_builder_picpos',
+      ]) {
+        expect(forks, contains(f),
+            reason: 'الفوركُ «$f» خارجَ مدى حارس التكافؤ.');
+      }
     });
   });
 
