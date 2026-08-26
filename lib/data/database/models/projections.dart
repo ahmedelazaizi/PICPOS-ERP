@@ -447,3 +447,172 @@ class ProductProfitRow {
 
   double get averageCost => quantity == 0 ? 0 : totalCost / quantity;
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// كشفُ حساب الطرف — إسقاطاتُ التبويبات (تصميمُ 2026-08-26)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// فاتورةٌ **قائمةٌ** لطرف — لم يُسدَّد كاملُها بعد.
+///
+/// تخدم «أعمار الدين» للعميل و«المستحق والاستحقاق» للمورد: تبويبتان
+/// بنيتُهما واحدةٌ على جدولَين.
+class PartyOpenInvoiceRow {
+  const PartyOpenInvoiceRow({
+    required this.invoiceId,
+    required this.invoiceNumber,
+    required this.invoiceDate,
+    required this.dueDate,
+    required this.total,
+    required this.paid,
+    required this.daysLate,
+  });
+
+  final int invoiceId;
+  final String invoiceNumber;
+  final DateTime invoiceDate;
+
+  /// `COALESCE(due_date, invoice_date)` — فراغُ العمود يعني «يستحق يومَ
+  /// إصداره»، فلا تفرّق القراءةُ بين فاتورةٍ سابقةٍ لـv164 وأخرى بلا مهلة.
+  final DateTime dueDate;
+
+  final double total;
+  final double paid;
+
+  /// أيّامُ التأخّر عن الاستحقاق. **سالبٌ = لم يحن بعد** — ولا تُقصّ إلى صفرٍ
+  /// هنا: «يستحق بعد خمسةِ أيّام» بيانةٌ يحتاجها جدولُ الالتزامات القادمة،
+  /// وقصُّها في الاستعلام يُفقدها بلا رجعة.
+  final int daysLate;
+
+  double get remaining => total - paid;
+
+  bool get overdue => daysLate > 0;
+
+  /// شريحةُ العمر — نفسُ حدود تقرير التقادم كي لا يختلف رقمان لنفس الفاتورة.
+  String get bucket {
+    if (daysLate <= 0) return 'لم يحن';
+    if (daysLate <= 30) return '١—٣٠';
+    if (daysLate <= 60) return '٣١—٦٠';
+    return 'فوق ٦٠';
+  }
+}
+
+/// دفعةٌ لطرفٍ ومقدارُ ما رُبط منها بفواتير.
+///
+/// «مطابقةُ الدفعات» في كشف العميل: الدفعةُ تُخصم من أقدم فاتورةٍ ما لم
+/// تُربَط يدويّاً، فالفرقُ بين [amount] و[allocated] هو ما لم يُربَط بعد.
+class PartyPaymentMatchRow {
+  const PartyPaymentMatchRow({
+    required this.paymentId,
+    required this.paymentNumber,
+    required this.paymentDate,
+    required this.amount,
+    required this.allocated,
+    required this.method,
+    required this.invoiceCount,
+  });
+
+  final int paymentId;
+  final String paymentNumber;
+  final DateTime paymentDate;
+  final double amount;
+
+  /// مجموعُ `payment_allocations.allocated_amount` لهذه الدفعة.
+  final double allocated;
+
+  final String method;
+
+  /// عددُ الفواتير التي وُزّعت عليها.
+  final int invoiceCount;
+
+  /// ما لم يُربَط. سالبٌ لا يقع نظريّاً، ويُقصّ لأنّ عرضَ «−٥٠ غيرُ مطابَق»
+  /// يُقرأ عطلاً لا بيانة.
+  double get unallocated {
+    final v = amount - allocated;
+    return v < 0 ? 0 : v;
+  }
+
+  bool get fullyMatched => unallocated <= 0.01;
+}
+
+/// سطرُ مطابقةٍ ثلاثيّة: أمرُ شراءٍ ← مستلَمٌ ← مفوتَر.
+///
+/// ولا حاجةَ إلى جدول «إذن استلام»: الكمّيّةُ المستلَمةُ تعيش على سطر الأمر
+/// نفسِه (`purchase_order_items.received_quantity`)، والفاتورةُ تُربَط بالأمر
+/// عبر `purchase_orders.converted_to_invoice_id`.
+class PoMatchRow {
+  const PoMatchRow({
+    required this.orderId,
+    required this.orderNumber,
+    required this.productName,
+    required this.ordered,
+    required this.received,
+    required this.invoiced,
+    required this.orderDate,
+    required this.expectedDate,
+    required this.receivedAt,
+  });
+
+  final int orderId;
+  final String orderNumber;
+  final String productName;
+  final double ordered;
+  final double received;
+
+  /// المفوتَرُ فعلاً — صفرٌ إن لم يُحوَّل الأمرُ إلى فاتورةٍ بعد.
+  final double invoiced;
+
+  final DateTime orderDate;
+  final DateTime? expectedDate;
+  final DateTime? receivedAt;
+
+  double get qtyGap => received - ordered;
+  double get billingGap => invoiced - received;
+
+  bool get clean => qtyGap.abs() < 0.001 && billingGap.abs() < 0.001;
+
+  /// نوعُ الفرق كما في التصميم — والترتيبُ مقصود: فرقُ الكمّيّة يسبق فرقَ
+  /// الفوترة لأنّه سببُه في الغالب.
+  String get gapKind {
+    if (clean) return 'مطابق';
+    if (qtyGap.abs() >= 0.001) return qtyGap < 0 ? 'نقصُ استلام' : 'زيادةُ استلام';
+    return billingGap > 0 ? 'فوترةٌ زائدة' : 'فوترةٌ ناقصة';
+  }
+}
+
+/// معدّلاتٌ **تُحسَب** لملفّ الطرف — لا تُخزَّن ولا تُكتَب بيد.
+///
+/// ⚠️ رقمُ التزامٍ يكتبه إنسانٌ يكذب. وهذه كلُّها مشتقّةٌ من تواريخَ حقيقيّة:
+/// السدادُ من `payment_allocations` مقابلَ استحقاق الفاتورة، والتوريدُ من
+/// `purchase_orders.received_at` مقابلَ `expected_date`.
+class PartyProfileMetrics {
+  const PartyProfileMetrics({
+    required this.settledInvoices,
+    required this.avgSettlementDays,
+    required this.onTimeSettlements,
+    required this.receivedOrders,
+    required this.onTimeOrders,
+  });
+
+  /// عددُ الفواتير المسدَّدةِ كاملاً التي دخلت الحساب.
+  final int settledInvoices;
+
+  /// متوسّطُ الأيّام بين استحقاق الفاتورة وآخرِ دفعةٍ سدّدتها. سالبٌ = يسدّد
+  /// **قبل** الاستحقاق، وهو خبرٌ جيّدٌ لا عطب.
+  final double avgSettlementDays;
+
+  final int onTimeSettlements;
+
+  /// أوامرُ الشراء التي اكتمل استلامُها — وحدَها تدخل نسبةَ الالتزام.
+  /// وأمرٌ مفتوحٌ ليس تأخّراً.
+  final int receivedOrders;
+
+  final int onTimeOrders;
+
+  /// `null` حين لا فاتورةَ مسدَّدة — و«لا بيانات» ليست «صفر٪».
+  double? get onTimeSettlementPct => settledInvoices == 0
+      ? null
+      : onTimeSettlements / settledInvoices * 100;
+
+  double? get onTimeDeliveryPct =>
+      receivedOrders == 0 ? null : onTimeOrders / receivedOrders * 100;
+}
