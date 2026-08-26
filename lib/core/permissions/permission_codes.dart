@@ -773,6 +773,23 @@ class PermissionCodes {
   static const String assetsDepreciation = 'assets_depreciation';
 
   // ═══════════════════════════════════════════════════════════════════════════
+  // LANDED COST PERMISSIONS (التكاليف المحمَّلة)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// تطبيق ورقة التكاليف المحمَّلة على المخزون
+  ///
+  /// ⚠️ **فعلُ كتابةٍ ماليٌّ لا عرض.** `applyLandedCost` تفعل أربعةً دفعةً
+  /// واحدة: تمزج `products.costPrice` بالمتوسّط المرجَّح، وتمزج
+  /// `inventory_balances.average_cost`، وترحّل قيدَ يوميّةٍ متوازناً (‏مدين
+  /// المخزون / دائن ذمم المورد أو النقديّة)، وتختم الورقةَ `applied`.
+  ///
+  /// وفتحُ الشاشة محكومٌ بـ`purchases_create` (‏`ScreenId.landedCost` في
+  /// `auth_providers.dart`) — وهو إذنُ **قراءةٍ** للورقة لا إذنُ ترحيلِ
+  /// قيدٍ وتحريكِ تكلفة. فالتطبيقُ درجةٌ أعلى، بكودِه هو — نفسُ تفريق
+  /// [assetsView] عن [assetsDepreciation] فوق حرفاً بحرف.
+  static const String landedCostApply = 'landed_cost_apply';
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // ANALYTICS PERMISSIONS (التحليلات)
   // ═══════════════════════════════════════════════════════════════════════════
 
@@ -1566,6 +1583,15 @@ class PermissionCodes {
       'category': 'assets',
     },
     {'code': assetsDepreciation, 'name': 'تشغيل الإهلاك', 'category': 'assets'},
+
+    // ── Landed Cost ──
+    // فئةُ «المشتريات» لا «المخزون»: الورقةُ تتبع فاتورةَ شراءٍ بعينها،
+    // وفتحُ الشاشة نفسِه محكومٌ بـ`purchases_create`.
+    {
+      'code': landedCostApply,
+      'name': 'تطبيق ورقة التكاليف المحمَّلة',
+      'category': 'purchases',
+    },
 
     // ── Analytics ──
     {

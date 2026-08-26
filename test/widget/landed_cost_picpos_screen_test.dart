@@ -22,6 +22,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:ural_erp/data/database/database.dart' as db;
+import 'package:ural_erp/data/providers/auth_providers.dart';
 import 'package:ural_erp/data/providers/repository_providers.dart';
 import 'package:ural_erp/domain/entities/invoice_entity.dart';
 import 'package:ural_erp/domain/repositories/landed_cost_repository.dart';
@@ -36,6 +37,7 @@ final _sheet = db.LandedCostSheetData(
   allocationMethod: 'by_value',
   status: 'draft',
   createdAt: DateTime(2026, 8, 24),
+  rowVersion: 0,
 );
 
 const _items = [
@@ -45,6 +47,7 @@ const _items = [
     costType: 'shipping',
     description: 'شحن بحري — حاوية ٤٠ قدم',
     amount: 12400,
+    rowVersion: 0,
   ),
   db.LandedCostItemData(
     id: 2,
@@ -52,6 +55,7 @@ const _items = [
     costType: 'customs',
     description: 'رسوم جمركية وضريبة إفراج',
     amount: 15200,
+    rowVersion: 0,
   ),
 ];
 
@@ -120,7 +124,17 @@ class _FakePurchasesRepo implements PurchasesRepository {
       super.noSuchMethod(invocation);
 }
 
-Future<void> _pump(WidgetTester tester, double width) async {
+Future<void> _pump(
+  WidgetTester tester,
+  double width, {
+  /// `purchases_create` يفتح الشاشةَ (‏`ScreenId.landedCost`)، و
+  /// `landed_cost_apply` وحدَه هو ما يحرس زرَّ التطبيق.
+  ///
+  /// ⚠️ والمنحُ افتراضيٌّ عن قصد: زرُّ التطبيق جزءٌ من حِمل شريط الملخّص
+  /// الذي تقيسه فحوصُ الفيضان أعلاه — فإخفاؤه كان سيخفّف الحملَ ويجعلها
+  /// تقيس تخطيطاً غيرَ الذي يراه المستخدم.
+  List<String> perms = const ['purchases_create', 'landed_cost_apply'],
+}) async {
   tester.view.physicalSize = Size(width, 1000);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);
@@ -130,12 +144,24 @@ Future<void> _pump(WidgetTester tester, double width) async {
       overrides: [
         landedCostRepositoryProvider.overrideWithValue(_FakeLandedCostRepo()),
         purchasesRepositoryProvider.overrideWithValue(_FakePurchasesRepo()),
+        currentUserPermissionsProvider.overrideWith((ref) async => perms),
       ],
       child: const MaterialApp(home: LandedCostPicposScreen()),
     ),
   );
   // الحالةُ تُحمَّل في `Future.microtask` داخلَ `build()` للـNotifier،
   // فالإطارُ الأوّلُ يعرض المؤشّرَ والثاني يعرض القائمة.
+  await tester.pump();
+  await tester.pump();
+}
+
+/// يفتح تفصيلَ الورقة بالضغط على بطاقتها — زرُّ التطبيق في شريط الملخّص
+/// داخلَ التفصيل لا في القائمة.
+Future<void> _openSheet(WidgetTester tester) async {
+  await tester.tap(find.descendant(
+    of: find.byType(InkWell),
+    matching: find.text('LC-2026-0042'),
+  ));
   await tester.pump();
   await tester.pump();
 }
@@ -237,5 +263,43 @@ void main() {
     expect(find.textContaining('فرق التقريب يُحمَّل على أكبر بند'),
         findsOneWidget,
         reason: 'قاعدةُ التقريب غيرُ مكتوبةٍ في رأس جدول التوزيع.');
+  });
+
+  // ── حارسُ زرِّ التطبيق ────────────────────────────────────────────────────
+  //
+  // ⚠️ **فحصان لا واحد.** نداءُ `_pump` مرّتين في اختبارٍ واحدٍ لا يقيس
+  //    المنع: `ProviderScope` يُعاد استعمالُ عنصره، و`PermissionGuard` يقرأ
+  //    `permissionsAsync.value` الذي **يُبقي القيمةَ السابقة** عبر
+  //    `copyWithPrevious` أثناء إعادة التحميل — سلوكٌ مقصودٌ وموثَّقٌ في
+  //    الحارس (يمنع ومضةَ الأزرار عند كلّ `invalidate`). فالشجرةُ الثانيةُ
+  //    كانت سترث صلاحيةَ الأولى ويمرّ النفيُ زوراً. لكلِّ حالةٍ شجرةٌ من
+  //    الصفر — نفسُ ترتيب فحصَي `assets_depreciation`.
+
+  testWidgets('المرساة: زرُّ التطبيق يظهر **مع** صلاحية landed_cost_apply',
+      (tester) async {
+    await _pump(tester, 1920);
+    await _openSheet(tester);
+
+    expect(find.text('تطبيق الورقة'), findsOneWidget,
+        reason: 'الزرُّ غائبٌ حتّى مع الصلاحيّة — فنفيُ الفحص التالي '
+            'سيقيس نمطَ البحث لا الحارس.');
+  });
+
+  testWidgets('🔴 وبلا صلاحية landed_cost_apply لا يظهر إطلاقاً',
+      (tester) async {
+    // `applyLandedCost` تمزج `products.costPrice` و`inventory_balances.
+    // average_cost` وترحّل قيدَ يوميّةٍ متوازناً وتختم الورقةَ `applied` —
+    // فإذنُ فتحِ الشاشة (`purchases_create`) لا يكفي لها.
+    await _pump(tester, 1920, perms: const ['purchases_create']);
+    await _openSheet(tester);
+
+    // المرساةُ أوّلاً: التفصيلُ مفتوحٌ فعلاً — وإلّا لكان الغيابُ لأنّ
+    // الشاشةَ ما زالت على القائمة، لا لأنّ الحارسَ عمل.
+    expect(find.text('بنود التكلفة'), findsOneWidget,
+        reason: 'تفصيلُ الورقة لم يُفتَح — فالنفيُ أدناه بلا معنى.');
+
+    expect(find.text('تطبيق الورقة'), findsNothing,
+        reason: 'زرُّ التطبيق ظهر لمستخدمٍ بلا `landed_cost_apply` — أي أنّ '
+            'تكلفةَ كلِّ صنفٍ تُمزَج وقيدَ يوميّةٍ يُرحَّل بلا صلاحية.');
   });
 }

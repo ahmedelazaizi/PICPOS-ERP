@@ -45,6 +45,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
+import '../../../core/permissions/permission_codes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../data/providers/providers.dart';
@@ -56,6 +57,7 @@ import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../picpos_shell/picpos_section_header.dart';
 import '../../picpos_shell/picpos_surface.dart';
 import '../../screens/landed_cost/landed_cost_controller.dart';
+import '../../widgets/permission_guard.dart';
 
 final _money = NumberFormat('#,##0.00', 'en');
 final _money0 = NumberFormat('#,##0', 'en');
@@ -578,13 +580,35 @@ class _LandedCostPicposScreenState
             ),
           // ⚠️ زرُّ التطبيق حاضرٌ **موصولاً** لأنّ `applyLandedCost` مبنيّةٌ
           //    فعلاً في الـDAO. و`isApplying` يقفله فلا يُقيَّد مرّتين.
-          FilledButton.icon(
-            onPressed:
-                applied || busy || !c.hasLines ? null : () => _confirmApply(s),
-            icon: const Icon(PhosphorIconsBold.checkCircle, size: 16),
-            label: Text(applied ? 'مُطبَّقة' : 'تطبيق الورقة'),
-            style:
-                FilledButton.styleFrom(backgroundColor: applied ? _idle : _ok),
+          //
+          // 🔴 **وحارسُ الصلاحيّة ليس زينةً هنا.** `applyLandedCost` تفعل
+          //    أربعةً ماليّةً دفعةً واحدة: تمزج `products.costPrice` بالمتوسّط
+          //    المرجَّح، وتمزج `inventory_balances.average_cost`، وترحّل قيدَ
+          //    يوميّةٍ متوازناً (‏مدين المخزون / دائن ذمم المورد أو النقديّة)،
+          //    وتختم الورقةَ `applied`. وأوّلُ صيغةٍ لهذا الفورك جاءت بلا أيِّ
+          //    ذكرٍ لـ`PermissionCodes` إطلاقاً — فصار الترحيلُ مباحاً لكلِّ
+          //    مَن يفتح الشاشة.
+          //
+          //    وحصرُ التنقّل وحدَه لا يكفي: `ScreenId.landedCost` محكومٌ
+          //    بـ`purchases_create` وهو إذنُ قراءةِ الورقة، والتطبيقُ فعلُ
+          //    كتابةٍ أعلى. نفسُ تفريقِ `assets_view` عن `assets_depreciation`
+          //    في `fixed_assets_picpos_screen.dart` حرفاً بحرف.
+          //
+          //    ⚠️ وبلا `allowManagerOverride`: الإخفاءُ التامُّ مقصود. تجاوزُ
+          //    المسؤول يُظهر الزرَّ ويطلب كلمةَ مرور، وقيدُ اليوميّة لا رجوعَ
+          //    عنه إلّا بإلغاء التطبيق — فهو منعٌ لا اشتراط، تماماً كزرِّ
+          //    ترحيل الإهلاك المجاور.
+          PermissionGuard(
+            permission: PermissionCodes.landedCostApply,
+            child: FilledButton.icon(
+              onPressed: applied || busy || !c.hasLines
+                  ? null
+                  : () => _confirmApply(s),
+              icon: const Icon(PhosphorIconsBold.checkCircle, size: 16),
+              label: Text(applied ? 'مُطبَّقة' : 'تطبيق الورقة'),
+              style: FilledButton.styleFrom(
+                  backgroundColor: applied ? _idle : _ok),
+            ),
           ),
         ],
       ),
