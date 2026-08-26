@@ -58,6 +58,11 @@ class LandedCostRepositoryImpl implements ILandedCostRepository {
   }
 
   @override
+  Future<void> updateAllocationMethod(int sheetId, String method) {
+    return _db.updateAllocationMethod(sheetId, method);
+  }
+
+  @override
   Future<List<db.LandedCostAllocationData>> calculateAllocations(int sheetId) {
     return _db.calculateAllocations(sheetId);
   }

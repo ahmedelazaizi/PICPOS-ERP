@@ -31,6 +31,13 @@ abstract class ILandedCostRepository {
   /// Delete a cost item
   Future<void> deleteLandedCostItem(int itemId);
 
+  /// Change a draft sheet's allocation method, then recalculate its rows.
+  ///
+  /// Throws [ArgumentError] for an unsupported method (`by_weight` is
+  /// deferred — it needs a per-product weight) and [StateError] when the
+  /// sheet is no longer a draft.
+  Future<void> updateAllocationMethod(int sheetId, String method);
+
   /// Calculate allocations based on the chosen method
   Future<List<db.LandedCostAllocationData>> calculateAllocations(int sheetId);
 

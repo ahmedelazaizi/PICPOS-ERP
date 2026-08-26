@@ -100,6 +100,33 @@ extension LandedCostDao on AppDatabase {
   // ALLOCATION
   // ─────────────────────────────────────────────────────────────────────────
 
+  /// تغييرُ طريقة التوزيع لورقةٍ **مسوّدة**، ثمّ إعادةُ حساب توزيعها.
+  ///
+  /// ⚠️ **المسوّدةُ وحدَها.** الورقةُ المطبَّقةُ لها قيدٌ منشورٌ وتكلفةُ وحدةٍ
+  /// اندمجت فعلاً في المتوسّط المرجَّح (`applyLandedCost`)، فتغييرُ طريقتها
+  /// يجعل الجدولَ المعروضَ يخالف ما قُيِّد — أرقامٌ تكذب.
+  ///
+  /// ⚠️ **و`by_weight` مرفوضةٌ هنا لا في العرض وحدَه.** `calculateAllocations`
+  /// لا تعرفها فتسقط على `by_value` في فرع `default` **صامتةً** — فتُكتَب في
+  /// العمود طريقةٌ والمحسوبُ طريقةٌ أخرى. فالمنعُ عند الكتابة لا عند الزرّ.
+  Future<void> updateAllocationMethod(int sheetId, String method) async {
+    const allowed = {'by_value', 'by_quantity', 'equal'};
+    if (!allowed.contains(method)) {
+      throw ArgumentError.value(
+          method, 'method', 'طريقةُ توزيعٍ غيرُ مدعومة');
+    }
+    final sheet = await (select(landedCostSheets)
+          ..where((s) => s.id.equals(sheetId)))
+        .getSingle();
+    if (sheet.status != 'draft') {
+      throw StateError(
+          'لا تُغيَّر طريقةُ التوزيع إلّا على مسوّدة — حالةُ الورقة ${sheet.status}');
+    }
+    await (update(landedCostSheets)..where((s) => s.id.equals(sheetId)))
+        .write(LandedCostSheetsCompanion(allocationMethod: Value(method)));
+    await calculateAllocations(sheetId);
+  }
+
   /// Calculate allocations based on the chosen method
   Future<List<LandedCostAllocationData>> calculateAllocations(int sheetId) async {
     final sheet = await (select(landedCostSheets)

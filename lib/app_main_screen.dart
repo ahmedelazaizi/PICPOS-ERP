@@ -88,6 +88,7 @@ import 'presentation/screens/sales_orders_screen.dart';
 import 'presentation/screens/branch_performance_screen.dart';
 import 'presentation/screens/help_center_screen.dart';
 import 'presentation/screens/landed_cost_screen.dart';
+import 'presentation/landed_cost_picpos/screens/landed_cost_picpos_screen.dart';
 import 'presentation/screens/cycle_count_screen.dart';
 import 'presentation/cycle_count_picpos/screens/cycle_count_picpos_screen.dart';
 import 'presentation/screens/report_builder_screen.dart';
@@ -933,7 +934,12 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
       ),
       ScreenConfig(
         appScreen: AppScreen.landedCost,
-        builder: (_) => const LandedCostScreen(),
+        // فوركُ PicPos على «PicPos Landed Costs.dc.html» — ورقةُ التحميل
+        // بملخّصها وبنودِها وطرقِ توزيعها الأربع وجدولِ التوزيع وبطاقةِ القيد،
+        // وشاشةُ UralCash تبقى كما هي بلا مساس.
+        builder: (_) => Brand.isPicPos
+            ? const LandedCostPicposScreen()
+            : const LandedCostScreen(),
         label: 'التكاليف المحملة',
         icon: PhosphorIconsBold.money,
       ),
