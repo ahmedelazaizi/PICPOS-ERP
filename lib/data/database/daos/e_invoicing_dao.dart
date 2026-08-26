@@ -89,6 +89,31 @@ extension EInvoicingDao on AppDatabase {
     return q.watch();
   }
 
+  /// طابورُ الإرسال موصولاً بفاتورته وعميلِها.
+  ///
+  /// ⚠️ **لماذا استعلامٌ واحدٌ موصولٌ لا قراءةٌ لكلّ صفّ.** `EInvoiceSubmissions`
+  /// تحمل `saleId` وحدَه، وشاشةُ الطابور تعرض رقمَ الفاتورة واسمَ العميل
+  /// وقيمتَها لكلّ سطر. وقراءةُ الفاتورة لكلّ صفٍّ على حدة تعطي N+1 على
+  /// طابورٍ قد يبلغ مئاتِ المستندات — فالوصلُ في SQL مرّةً واحدة.
+  ///
+  /// و`LEFT JOIN` لا `INNER`: المستندُ يبقى في الطابور وإن حُذفت فاتورتُه
+  /// أو كان بلا عميلٍ مسجَّل (‏بيعٌ نقديٌّ لعابر)، فالإخفاءُ يجعل الطابورَ
+  /// يكذب.
+  Stream<List<Map<String, dynamic>>> watchSubmissionsWithInvoice() {
+    return customSelect(
+      '''SELECT e.*,
+                si.invoice_number AS invoice_number,
+                si.total          AS invoice_total,
+                si.invoice_date   AS invoice_date,
+                p.name            AS customer_name
+           FROM e_invoice_submissions e
+           LEFT JOIN sales_invoices si ON si.id = e.sale_id
+           LEFT JOIN parties p         ON p.id = si.customer_id
+          ORDER BY e.created_at DESC''',
+      readsFrom: {eInvoiceSubmissions, salesInvoices, parties},
+    ).watch().map((rows) => rows.map((r) => r.data).toList());
+  }
+
   /// Get submission for a specific sale
   Future<EInvoiceSubmissionData?> getSubmissionBySaleId(int saleId) {
     return (select(

@@ -21,6 +21,15 @@ abstract class IEInvoiceRepository {
     String? platform,
   });
 
+  /// Submission queue joined to its sales invoice and customer, so the queue
+  /// screen renders invoice number / customer / value without an N+1 read.
+  Stream<List<Map<String, dynamic>>> watchSubmissionsWithInvoice();
+
+  /// Append-only status trail for one submission, oldest first.
+  ///
+  /// The log is never edited or deleted — `logStatusChange` only inserts.
+  Future<List<Map<String, dynamic>>> getStatusAuditTrail(int submissionId);
+
   Future<List<EInvoiceSubmissionData>> getPendingSubmissions({String? platform});
   Future<Map<String, int>> getSubmissionStats({String? platform});
 

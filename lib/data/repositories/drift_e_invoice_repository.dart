@@ -94,6 +94,16 @@ class DriftEInvoiceRepository implements IEInvoiceRepository {
   }
 
   @override
+  Stream<List<Map<String, dynamic>>> watchSubmissionsWithInvoice() {
+    return _db.watchSubmissionsWithInvoice();
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getStatusAuditTrail(int submissionId) {
+    return _db.getStatusAuditTrail(submissionId);
+  }
+
+  @override
   Future<List<EInvoiceSubmissionData>> getPendingSubmissions({String? platform}) {
     return _db.getPendingSubmissions(platform: platform);
   }

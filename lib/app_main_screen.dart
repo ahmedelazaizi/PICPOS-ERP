@@ -67,6 +67,7 @@ import 'presentation/screens/inventory/stock_requisitions_screen.dart';
 import 'presentation/screens/scale_plu_export_screen.dart';
 import 'presentation/scale_plu_picpos/screens/scale_plu_picpos_screen.dart';
 import 'presentation/screens/e_invoice_dashboard_screen.dart';
+import 'presentation/e_invoicing_picpos/screens/e_invoicing_picpos_screen.dart';
 import 'presentation/screens/loyalty_screen.dart';
 import 'presentation/screens/distribution_screen.dart';
 import 'presentation/settings_picpos/screens/distribution_picpos_screen.dart';
@@ -802,7 +803,12 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
       ),
       ScreenConfig(
         appScreen: AppScreen.eInvoice,
-        builder: (_) => const EInvoiceDashboardScreen(),
+        // فوركُ PicPos على «PicPos E-Invoicing.dc.html» — طابورُ الإرسال
+        // بمراحله الستّ ولوحةُ التفصيل بمعرّفاتها وحِملها وسجلِّ حالاتها،
+        // وشاشةُ UralCash تبقى كما هي بلا مساس.
+        builder: (_) => Brand.isPicPos
+            ? const EInvoicingPicposScreen()
+            : const EInvoiceDashboardScreen(),
         label: 'الفوترة الإلكترونية',
         icon: PhosphorIconsBold.invoice,
       ),
