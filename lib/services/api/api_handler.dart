@@ -200,6 +200,11 @@ class ApiHandler {
     router.post('/api/journals', _data.postJournalEntry);
     // v166 / المرحلة ٢ — تطبيقُ ورقة تحميلٍ واردةٍ من عميل.
     router.post('/api/landed-costs/apply', _data.postLandedCostApply);
+    // v166 / المرحلة ٢ — اقتناءُ أصلٍ وترحيلُ إهلاكٍ واردان من عميل.
+    router.post('/api/fixed-assets', _data.postFixedAsset);
+    router.post('/api/op-expenses', _data.postOperationalExpense);
+    router.post('/api/fixed-assets/depreciation/run',
+        _data.postAssetDepreciationRun);
     // Settings
     router.post('/api/settings', _data.postSettings);
     // Categories

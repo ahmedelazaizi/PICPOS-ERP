@@ -75,6 +75,58 @@ class _CwiSync {
     );
   }
 
+  // ── Fixed Assets (v166) ───────────────────────────────────────────────────
+
+  static Future<void> submitFixedAssetCreate(
+      Map<String, dynamic> document) async {
+    if (!SyncInterceptor.isClientMode) return;
+    debugPrint('[ClientInterceptor] Routing fixed-asset create to server');
+    await ClientWriteInterceptor._tryOrQueueVoid(
+      tableName: 'fixed_assets',
+      operation: 'insert',
+      payload: Map<String, dynamic>.from(document),
+      serverCall: (reqIdemKey) =>
+          ClientWriteInterceptor._proxy.submitFixedAssetCreate(
+        document,
+        idempotencyKey: reqIdemKey,
+      ),
+    );
+  }
+
+  static Future<void> submitAssetDepreciationRun(
+      Map<String, dynamic> request) async {
+    if (!SyncInterceptor.isClientMode) return;
+    debugPrint('[ClientInterceptor] Routing depreciation run to server');
+    await ClientWriteInterceptor._tryOrQueueVoid(
+      tableName: 'asset_depreciations',
+      operation: 'run',
+      payload: Map<String, dynamic>.from(request),
+      serverCall: (reqIdemKey) =>
+          ClientWriteInterceptor._proxy.submitAssetDepreciationRun(
+        request,
+        idempotencyKey: reqIdemKey,
+      ),
+    );
+  }
+
+  // ── Operational Expenses (v166) ───────────────────────────────────────────
+
+  static Future<void> submitOperationalExpense(
+      Map<String, dynamic> document) async {
+    if (!SyncInterceptor.isClientMode) return;
+    debugPrint('[ClientInterceptor] Routing operational expense to server');
+    await ClientWriteInterceptor._tryOrQueueVoid(
+      tableName: 'op_expenses',
+      operation: 'insert',
+      payload: Map<String, dynamic>.from(document),
+      serverCall: (reqIdemKey) =>
+          ClientWriteInterceptor._proxy.submitOperationalExpense(
+        document,
+        idempotencyKey: reqIdemKey,
+      ),
+    );
+  }
+
   // ── Safe Transactions ─────────────────────────────────────────────────────
 
   static Future<void> submitSafeTransaction({

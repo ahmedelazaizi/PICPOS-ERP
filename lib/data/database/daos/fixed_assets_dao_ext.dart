@@ -33,6 +33,9 @@ extension FixedAssetsDao on AppDatabase {
     String defaultDepreciationMethod = 'straight_line',
     int? accountId,
     int? depreciationAccountId,
+    /// v166 — يُمرَّر حين يُعيد الخادمُ بناءَ فئةٍ سكّها عميل، فتحمل
+    /// الهويّةَ نفسَها على الجهازين ولا تتضاعف عند سحب الدلتا.
+    String? globalId,
   }) async {
     if (accountId == null || depreciationAccountId == null) {
       throw Exception(
@@ -46,6 +49,7 @@ extension FixedAssetsDao on AppDatabase {
         defaultDepreciationMethod: Value(defaultDepreciationMethod),
         accountId: Value(accountId),
         depreciationAccountId: Value(depreciationAccountId),
+        globalId: Value(globalId ?? UuidV7.generate()),
       ),
     );
     // Feature 014 / Issue 5 — explicit notification so the
@@ -130,6 +134,12 @@ extension FixedAssetsDao on AppDatabase {
     String? notes,
     int? costCenterId,
     int? contraAccountId, // Optional: overrides default cash/bank credit account
+    /// v166 — هويّةُ الأصل. تُسَكّ هنا حين تكون `null`، وتُمرَّر حين
+    /// يُنفّذ الخادمُ نداءَ عميلٍ سكّها بالفعل.
+    String? globalId,
+    /// v166 — وهويّةُ حسابه الفرعيِّ في شجرة الحسابات. منفصلةٌ لأنّ
+    /// الصفَّين جدولان مختلفان يُزامَنان استقلالاً.
+    String? linkedAccountGlobalId,
   }) async {
     // Feature 004 (US3, FR-023b) — fail fast before opening the transaction
     // when the elevated-admin session has lost the server connection. The
@@ -142,7 +152,7 @@ extension FixedAssetsDao on AppDatabase {
     // Ensure fixed-asset GL accounts exist before use (idempotent — outside transaction)
     await accountingDao.syncDefaultAccounts();
 
-    return transaction(() async {
+    final createdId = await transaction(() async {
       // ── Feature 004 (US1): atomic per-asset CoA sub-account linkage ──
       //
       // Resolve the category's existing asset account first — it serves as
@@ -196,7 +206,7 @@ extension FixedAssetsDao on AppDatabase {
           accountType: parentAccount.accountType,
           parentId: Value(parentAccount.id),
           isSystem: const Value(false),
-          globalId: Value(UuidV7.generate()),
+          globalId: Value(linkedAccountGlobalId ?? UuidV7.generate()),
         ),
       );
 
@@ -215,7 +225,7 @@ extension FixedAssetsDao on AppDatabase {
           notes: Value(notes),
           costCenterId: Value(costCenterId),
           linkedAccountId: Value(perAssetAccountId),
-          globalId: Value(UuidV7.generate()),
+          globalId: Value(globalId ?? UuidV7.generate()),
         ),
       );
 
@@ -232,7 +242,11 @@ extension FixedAssetsDao on AppDatabase {
       }
       creditAccount ??= await _assetGetAccountByCode('1111');
 
-      if (creditAccount != null) {
+      // v166 — العميلُ لا يُرحّل: `referenceId` هنا رقمُ الأصل **المحلّيّ**،
+      // ومفتاحُ إزالة تكرار القيد `(referenceType, referenceId)`. فلو رحّل
+      // الطرفان لصار للاقتناء الواحد قيدان لا يمسكهما شيءٌ لأنّ مفتاحَيهما
+      // مختلفان — وأصلٌ يظهر في الأستاذ بضعف قيمته.
+      if (creditAccount != null && !SyncInterceptor.isClientMode) {
         await accountingDao.createJournalEntry(
           date: purchaseDate,
           description: 'شراء أصل ثابت: $name',
@@ -259,6 +273,63 @@ extension FixedAssetsDao on AppDatabase {
       }
 
       return assetId;
+    });
+
+    // خارجَ المعاملة عمداً — انظر [_pushFixedAssetCreate].
+    await _pushFixedAssetCreate(createdId);
+    return createdId;
+  }
+
+  /// v166 — يُرسل اقتناءَ الأصل إلى الخادم ليُرحّله هو.
+  ///
+  /// يُنادى **بعد** التزام المعاملة لا داخلَها: نداءُ HTTP داخلَ معاملةٍ
+  /// يحجز قفلَ الكتابة طوالَ زمن الشبكة (‏نفسُ علاج `SqliteException 517`
+  /// في `accounting_dao_writes`).
+  Future<void> _pushFixedAssetCreate(int assetId) async {
+    if (!SyncInterceptor.isClientMode) return;
+    final asset = await (select(fixedAssets)
+          ..where((a) => a.id.equals(assetId)))
+        .getSingleOrNull();
+    if (asset == null) return;
+
+    final category = await (select(assetCategories)
+          ..where((c) => c.id.equals(asset.categoryId)))
+        .getSingleOrNull();
+    final linkedAccount = asset.linkedAccountId == null
+        ? null
+        : await (select(accounts)
+              ..where((a) => a.id.equals(asset.linkedAccountId!)))
+            .getSingleOrNull();
+    final costCenter = asset.costCenterId == null
+        ? null
+        : await (select(costCenters)
+              ..where((c) => c.id.equals(asset.costCenterId!)))
+            .getSingleOrNull();
+
+    await SyncInterceptor.instance?.submitFixedAssetCreate(<String, dynamic>{
+      'globalId': asset.globalId,
+      'linkedAccountGlobalId': linkedAccount?.globalId,
+      'code': asset.code,
+      'name': asset.name,
+      // الفئةُ تُرسَل كاملةً لا بمعرّفها وحدَه: فئةٌ أنشأها هذا الجهازُ لا
+      // وجودَ لها على الخادم، ولو أرسلنا المعرّفَ فقط لرُدَّ الأصلُ أبداً.
+      'category': category == null
+          ? null
+          : <String, dynamic>{
+              'globalId': category.globalId,
+              'name': category.name,
+              'defaultUsefulLife': category.defaultUsefulLife,
+              'defaultDepreciationMethod':
+                  category.defaultDepreciationMethod,
+            },
+      'location': asset.location,
+      'purchasePrice': asset.purchasePrice,
+      'purchaseDate': asset.purchaseDate.toIso8601String(),
+      'usefulLifeYears': asset.usefulLifeYears,
+      'salvageValue': asset.salvageValue,
+      'depreciationMethod': asset.depreciationMethod,
+      'notes': asset.notes,
+      'costCenterGlobalId': costCenter?.globalId,
     });
   }
 
@@ -339,6 +410,27 @@ extension FixedAssetsDao on AppDatabase {
 
   /// Calculate and post monthly depreciation for all active assets
   Future<int> runMonthlyDepreciation(DateTime periodDate, {int? costCenterId}) async {
+    // v166 — على عميلٍ: يُطلَب من الخادم ولا يُحسَب هنا.
+    //
+    // الترحيلُ دفعةٌ على **كلّ** أصلٍ نشط، ومفتاحُ إزالة التكرار داخلَ
+    // القاعدة `(assetId, periodDate)` يحمي القاعدةَ الواحدةَ لا الاثنتين.
+    // فجهازان يشغّلانه لنفس الشهر يُنتجان مجموعتَي قيودٍ كاملتَين على
+    // الخادم — إهلاكٌ مضاعفٌ لشهرٍ واحد. ولذلك الطالبُ واحدٌ والمنفّذُ واحد.
+    //
+    // ويُرسَل التاريخُ لا قائمةُ الأصول: قائمةُ العميل قد تنقص أصولاً لم
+    // تصله بعد، والخادمُ يعرف أصولَه كلَّها.
+    if (SyncInterceptor.isClientMode) {
+      await SyncInterceptor.instance?.submitAssetDepreciationRun(
+        <String, dynamic>{
+          'periodDate': periodDate.toIso8601String(),
+          'costCenterId': costCenterId,
+        },
+      );
+      // صفرٌ صادق: هذا الجهازُ لم يُرحّل شيئاً. والعددُ الحقيقيُّ يظهر
+      // بصفوف الإهلاك حين تصل بسحب الدلتا.
+      return 0;
+    }
+
     int count = 0;
     // Ensure all required GL accounts (6213, 1218, 1219, …) exist before looping.
     await accountingDao.syncDefaultAccounts();
@@ -423,6 +515,10 @@ extension FixedAssetsDao on AppDatabase {
               accumulatedDepreciation: newAccumulated,
               bookValue: newBookValue,
               journalEntryId: Value(journalEntryId),
+              // v166 — الصفُّ يُزامَن، فيحتاج هويّةً. والمفتاحُ الطبيعيُّ
+              // `(assetId, periodDate)` يمنع التكرارَ داخلَ القاعدة، لكنّه
+              // لا يُغني عن هويّةٍ تعبر الأجهزة.
+              globalId: Value(UuidV7.generate()),
             ),
           );
 

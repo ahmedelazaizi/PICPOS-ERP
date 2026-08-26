@@ -102,6 +102,18 @@ abstract class SyncInterceptor {
   /// و[document] يحمل الورقةَ وبنودَها وتوزيعاتِها بمعرّفاتٍ عالميّة.
   Future<void> submitLandedCostApply(Map<String, dynamic> document);
 
+  /// v166 — اقتناءُ أصلٍ ثابت. يحمل [document] هويّةَ الأصل وهويّةَ حسابه
+  /// الفرعيّ وفئتَه **كاملةً** — لأنّ فئةً أنشأها هذا الجهازُ قد لا تكون
+  /// على الخادم، فإرسالُ معرّفها وحدَه يجعل الأصلَ مردوداً أبداً.
+  Future<void> submitFixedAssetCreate(Map<String, dynamic> document);
+
+  /// v166 — طلبُ ترحيلِ إهلاكِ شهر. الطالبُ كثيرٌ والمنفّذُ واحد.
+  Future<void> submitAssetDepreciationRun(Map<String, dynamic> request);
+
+  /// v166 — مصروفٌ تشغيليٌّ بأثره الماليِّ كاملاً: قيدٌ وسندُ صرفٍ وخصمُ
+  /// رصيد. الخادمُ ينفّذ الثلاثةَ، والعميلُ يُرسل فحسب.
+  Future<void> submitOperationalExpense(Map<String, dynamic> document);
+
   /// Submit a safe transaction to the server for sync.
   ///
   /// Phase 5B.4 (Issue 7) — `safeGlobalId` and `costCenterId` are added so

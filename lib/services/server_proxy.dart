@@ -1324,6 +1324,37 @@ class ServerProxy {
   }
 
   // ═══════════════════════════════════════════════════════════════
+  // Fixed Assets — اقتناءٌ وإهلاك (Client → Server) · v166
+  // ═══════════════════════════════════════════════════════════════
+
+  Future<void> submitFixedAssetCreate(
+    Map<String, dynamic> document, {
+    String? idempotencyKey,
+  }) async {
+    await post('/api/fixed-assets', document, idempotencyKey: idempotencyKey);
+  }
+
+  /// طلبُ ترحيلِ إهلاكِ شهرٍ — التاريخُ وحدَه، لا قائمةُ الأصول.
+  Future<void> submitAssetDepreciationRun(
+    Map<String, dynamic> request, {
+    String? idempotencyKey,
+  }) async {
+    await post('/api/fixed-assets/depreciation/run', request,
+        idempotencyKey: idempotencyKey);
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Operational Expenses (Client → Server) · v166
+  // ═══════════════════════════════════════════════════════════════
+
+  Future<void> submitOperationalExpense(
+    Map<String, dynamic> document, {
+    String? idempotencyKey,
+  }) async {
+    await post('/api/op-expenses', document, idempotencyKey: idempotencyKey);
+  }
+
+  // ═══════════════════════════════════════════════════════════════
   // Safe Transactions (Client → Server)
   // ═══════════════════════════════════════════════════════════════
 

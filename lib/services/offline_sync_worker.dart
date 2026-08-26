@@ -1589,6 +1589,31 @@ class OfflineSyncWorker {
         }
         throw StateError('Unhandled op $operation for table $table');
 
+      // v166 — اقتناءُ أصلٍ وترحيلُ إهلاك. الحمولةُ هي الطلبُ نفسُه:
+      // الخادمُ يزيل تكرارَ الأصل بمعرّفه، ويزيل تكرارَ الإهلاك بمفتاحه
+      // الطبيعيّ `(asset_id, period_date)`.
+      case 'fixed_assets':
+        if (operation == 'insert') {
+          return proxy.submitFixedAssetCreate(payload,
+              idempotencyKey: idempotencyKey);
+        }
+        throw StateError('Unhandled op $operation for table $table');
+
+      case 'asset_depreciations':
+        if (operation == 'run') {
+          return proxy.submitAssetDepreciationRun(payload,
+              idempotencyKey: idempotencyKey);
+        }
+        throw StateError('Unhandled op $operation for table $table');
+
+      // v166 — مصروفٌ تشغيليّ. الخادمُ يزيل التكرارَ بمعرّفه.
+      case 'op_expenses':
+        if (operation == 'insert') {
+          return proxy.submitOperationalExpense(payload,
+              idempotencyKey: idempotencyKey);
+        }
+        throw StateError('Unhandled op $operation for table $table');
+
       case 'safe_transactions':
         if (operation == 'insert') {
           return proxy.submitSafeTransaction(

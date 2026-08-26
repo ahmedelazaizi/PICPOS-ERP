@@ -192,6 +192,8 @@ extension OperationalExpensesDao on AppDatabase {
     String allocationMethod = 'fixed_monthly',
     double defaultRate = 0,
     String accountCode = '6214', // EXP-1: GL account code (was '5299', never seeded)
+    /// v166 — تُمرَّر حين يُعيد الخادمُ بناءَ فئةٍ سكّها عميل.
+    String? globalId,
   }) =>
       into(opExpenseCategories).insert(OpExpenseCategoriesCompanion.insert(
         name: name,
@@ -200,6 +202,7 @@ extension OperationalExpensesDao on AppDatabase {
         allocationMethod: Value(allocationMethod),
         defaultRate: Value(defaultRate),
         accountCode: Value(accountCode),
+        globalId: Value(globalId ?? UuidV7.generate()),
       ));
 
   /// Update expense category
@@ -267,6 +270,9 @@ extension OperationalExpensesDao on AppDatabase {
     String? notes,
     required int userId,
     int? branchId,
+    /// v166 — هويّةُ المصروف. يسكّها العميلُ ويمرّرها الخادمُ كما وصلته،
+    /// فيندمج الصفّان بدل أن يتضاعفا عند سحب الدلتا.
+    String? globalId,
   }) =>
       into(opExpenses).insert(OpExpensesCompanion.insert(
         categoryId: categoryId,
@@ -278,6 +284,7 @@ extension OperationalExpensesDao on AppDatabase {
         notes: Value(notes),
         userId: userId,
         branchId: Value(branchId),
+        globalId: Value(globalId ?? UuidV7.generate()),
       ));
 
   /// EXP-2 (batch B7 / S-FAILLOUD): atomic record + GL-post for an
@@ -336,7 +343,64 @@ extension OperationalExpensesDao on AppDatabase {
     // B13 (EXP-3): optional explicit safe for a CASH expense. Omitted →
     // resolves the default cash safe (getDefaultSafeByType('cash')).
     int? safeId,
+    /// v166 — تُمرَّر من الخادم حين ينفّذ نداءَ عميل.
+    String? globalId,
   }) async {
+    // v166 — على عميلٍ: يُرسَل ولا يُحسَب.
+    //
+    // ثلاثةُ آثارٍ ماليّةٍ هنا لا واحد: قيدُ يوميّةٍ وسندُ صرفٍ من الخزنة
+    // وخصمُ رصيدها. ومفتاحُ إزالة تكرار القيد `(referenceType, referenceId)`
+    // و`referenceId` رقمُ المصروف **المحلّيّ** — فترحيلُ الطرفين يُنتج
+    // قيدَين وسندَي صرفٍ وخصمَين من الخزنة لمصروفٍ واحد.
+    //
+    // ولا يُكتَب صفٌّ محلّيٌّ هنا أصلاً: بخلاف الأصل الثابت، المصروفُ لا
+    // معنى له بلا سنده وخصمه، وصفٌّ يتيمٌ يجعل تقريرَ المصروفات يخالف
+    // الخزنةَ حتّى أوّل سحب. والصفُّ المعتمَدُ يصل بالدلتا.
+    if (SyncInterceptor.isClientMode) {
+      final category = await (select(opExpenseCategories)
+            ..where((c) => c.id.equals(categoryId)))
+          .getSingleOrNull();
+      final safe = safeId == null
+          ? null
+          : await (select(safes)..where((s) => s.id.equals(safeId)))
+              .getSingleOrNull();
+      final costCenter = costCenterId == null
+          ? null
+          : await (select(costCenters)
+                ..where((c) => c.id.equals(costCenterId)))
+              .getSingleOrNull();
+
+      await SyncInterceptor.instance
+          ?.submitOperationalExpense(<String, dynamic>{
+        'globalId': globalId ?? UuidV7.generate(),
+        'category': category == null
+            ? null
+            : <String, dynamic>{
+                'globalId': category.globalId,
+                'name': category.name,
+                'type': category.type,
+                'isProductionRelated': category.isProductionRelated,
+                'allocationMethod': category.allocationMethod,
+                'defaultRate': category.defaultRate,
+                'accountCode': category.accountCode,
+              },
+        'amount': amount,
+        'expenseDate': expenseDate.toIso8601String(),
+        'description': description,
+        'expenseAccountCode': expenseAccountCode,
+        'period': period,
+        'reference': reference,
+        'notes': notes,
+        'userId': userId,
+        'branchId': branchId,
+        'costCenterGlobalId': costCenter?.globalId,
+        'paymentMethod': paymentMethod,
+        'safeGlobalId': safe?.globalId,
+      });
+      // صفرٌ صادق: لا صفَّ محلّيّاً، فلا رقمَ يُرجَع.
+      return 0;
+    }
+
     return transaction(() async {
       final expenseId = await recordExpense(
         categoryId: categoryId,
@@ -348,6 +412,7 @@ extension OperationalExpensesDao on AppDatabase {
         notes: notes,
         userId: userId,
         branchId: branchId,
+        globalId: globalId,
       );
 
       // EXP-1: throws (never silently returns null) when a required GL
