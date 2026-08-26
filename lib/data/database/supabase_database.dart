@@ -295,6 +295,11 @@ class SupabaseDatabase {
       phone: data['phone'] as String?,
       address: data['address'] as String?,
       taxId: data['tax_id'] as String?,
+      paymentTermsDays: data['payment_terms_days'] as int? ?? 0,
+      earlyPaymentDiscountPct:
+          (data['early_payment_discount_pct'] as num?)?.toDouble() ?? 0,
+      earlyPaymentDiscountDays: data['early_payment_discount_days'] as int? ?? 0,
+      supplierRating: data['supplier_rating'] as int?,
       isCustomer: data['is_customer'] as bool? ?? true,
       isSupplier: data['is_supplier'] as bool? ?? false,
       isDeliveryCompany: data['is_delivery_company'] as bool? ?? false,

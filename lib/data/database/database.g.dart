@@ -15049,6 +15049,53 @@ class $PartiesTable extends Parties with TableInfo<$PartiesTable, Party> {
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _paymentTermsDaysMeta = const VerificationMeta(
+    'paymentTermsDays',
+  );
+  @override
+  late final GeneratedColumn<int> paymentTermsDays = GeneratedColumn<int>(
+    'payment_terms_days',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _earlyPaymentDiscountPctMeta =
+      const VerificationMeta('earlyPaymentDiscountPct');
+  @override
+  late final GeneratedColumn<double> earlyPaymentDiscountPct =
+      GeneratedColumn<double>(
+        'early_payment_discount_pct',
+        aliasedName,
+        false,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(0),
+      );
+  static const VerificationMeta _earlyPaymentDiscountDaysMeta =
+      const VerificationMeta('earlyPaymentDiscountDays');
+  @override
+  late final GeneratedColumn<int> earlyPaymentDiscountDays =
+      GeneratedColumn<int>(
+        'early_payment_discount_days',
+        aliasedName,
+        false,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(0),
+      );
+  static const VerificationMeta _supplierRatingMeta = const VerificationMeta(
+    'supplierRating',
+  );
+  @override
+  late final GeneratedColumn<int> supplierRating = GeneratedColumn<int>(
+    'supplier_rating',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _fixedDiscountMeta = const VerificationMeta(
     'fixedDiscount',
   );
@@ -15245,6 +15292,10 @@ class $PartiesTable extends Parties with TableInfo<$PartiesTable, Party> {
     isFavorite,
     balance,
     creditLimit,
+    paymentTermsDays,
+    earlyPaymentDiscountPct,
+    earlyPaymentDiscountDays,
+    supplierRating,
     fixedDiscount,
     priceLevel,
     accountId,
@@ -15358,6 +15409,42 @@ class $PartiesTable extends Parties with TableInfo<$PartiesTable, Party> {
         creditLimit.isAcceptableOrUnknown(
           data['credit_limit']!,
           _creditLimitMeta,
+        ),
+      );
+    }
+    if (data.containsKey('payment_terms_days')) {
+      context.handle(
+        _paymentTermsDaysMeta,
+        paymentTermsDays.isAcceptableOrUnknown(
+          data['payment_terms_days']!,
+          _paymentTermsDaysMeta,
+        ),
+      );
+    }
+    if (data.containsKey('early_payment_discount_pct')) {
+      context.handle(
+        _earlyPaymentDiscountPctMeta,
+        earlyPaymentDiscountPct.isAcceptableOrUnknown(
+          data['early_payment_discount_pct']!,
+          _earlyPaymentDiscountPctMeta,
+        ),
+      );
+    }
+    if (data.containsKey('early_payment_discount_days')) {
+      context.handle(
+        _earlyPaymentDiscountDaysMeta,
+        earlyPaymentDiscountDays.isAcceptableOrUnknown(
+          data['early_payment_discount_days']!,
+          _earlyPaymentDiscountDaysMeta,
+        ),
+      );
+    }
+    if (data.containsKey('supplier_rating')) {
+      context.handle(
+        _supplierRatingMeta,
+        supplierRating.isAcceptableOrUnknown(
+          data['supplier_rating']!,
+          _supplierRatingMeta,
         ),
       );
     }
@@ -15525,6 +15612,22 @@ class $PartiesTable extends Parties with TableInfo<$PartiesTable, Party> {
         DriftSqlType.double,
         data['${effectivePrefix}credit_limit'],
       )!,
+      paymentTermsDays: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}payment_terms_days'],
+      )!,
+      earlyPaymentDiscountPct: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}early_payment_discount_pct'],
+      )!,
+      earlyPaymentDiscountDays: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}early_payment_discount_days'],
+      )!,
+      supplierRating: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}supplier_rating'],
+      ),
       fixedDiscount: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}fixed_discount'],
@@ -15605,6 +15708,25 @@ class Party extends DataClass implements Insertable<Party> {
   final bool isFavorite;
   final double balance;
   final double creditLimit;
+
+  /// مهلةُ السداد المتّفقةُ بالأيّام — «مدّةُ السماح» للعميل و«مدّةُ السداد»
+  /// للمورد. تُشتقّ منها استحقاقُ الفاتورة **عند إصدارها**.
+  ///
+  /// والافتراضُ صفرٌ عمداً: يبقى استحقاقُ كلّ فاتورةٍ قائمةٍ يومَ إصدارها،
+  /// فلا تتحرّك أرقامُ التقادم لحظةَ الترقية.
+  final int paymentTermsDays;
+
+  /// نسبةُ خصم السداد المعجَّل — «٢٪ خلال ١٠ أيّام» شرطان لا واحد، ولذلك
+  /// حقلان: النسبةُ هنا والمهلةُ في [earlyPaymentDiscountDays]. ونسبةٌ بلا
+  /// مهلةٍ لا معنى لها، فكلتاهما صفرٌ = لا خصمَ معجَّل.
+  final double earlyPaymentDiscountPct;
+
+  /// عددُ الأيّام التي يسري فيها [earlyPaymentDiscountPct] من تاريخ الفاتورة.
+  final int earlyPaymentDiscountDays;
+
+  /// تقييمُ المورد ١..٥ — حكمٌ بشريٌّ لا يُشتقّ من بيانات. `null` = لم يُقيَّم
+  /// بعد، وهي حالةٌ مختلفةٌ عن «تقييمٌ منخفض» فلا تُطوى إلى صفر.
+  final int? supplierRating;
   final double fixedDiscount;
   final String priceLevel;
   final int? accountId;
@@ -15634,6 +15756,10 @@ class Party extends DataClass implements Insertable<Party> {
     required this.isFavorite,
     required this.balance,
     required this.creditLimit,
+    required this.paymentTermsDays,
+    required this.earlyPaymentDiscountPct,
+    required this.earlyPaymentDiscountDays,
+    this.supplierRating,
     required this.fixedDiscount,
     required this.priceLevel,
     this.accountId,
@@ -15678,6 +15804,16 @@ class Party extends DataClass implements Insertable<Party> {
     map['is_favorite'] = Variable<bool>(isFavorite);
     map['balance'] = Variable<double>(balance);
     map['credit_limit'] = Variable<double>(creditLimit);
+    map['payment_terms_days'] = Variable<int>(paymentTermsDays);
+    map['early_payment_discount_pct'] = Variable<double>(
+      earlyPaymentDiscountPct,
+    );
+    map['early_payment_discount_days'] = Variable<int>(
+      earlyPaymentDiscountDays,
+    );
+    if (!nullToAbsent || supplierRating != null) {
+      map['supplier_rating'] = Variable<int>(supplierRating);
+    }
     map['fixed_discount'] = Variable<double>(fixedDiscount);
     map['price_level'] = Variable<String>(priceLevel);
     if (!nullToAbsent || accountId != null) {
@@ -15733,6 +15869,12 @@ class Party extends DataClass implements Insertable<Party> {
       isFavorite: Value(isFavorite),
       balance: Value(balance),
       creditLimit: Value(creditLimit),
+      paymentTermsDays: Value(paymentTermsDays),
+      earlyPaymentDiscountPct: Value(earlyPaymentDiscountPct),
+      earlyPaymentDiscountDays: Value(earlyPaymentDiscountDays),
+      supplierRating: supplierRating == null && nullToAbsent
+          ? const Value.absent()
+          : Value(supplierRating),
       fixedDiscount: Value(fixedDiscount),
       priceLevel: Value(priceLevel),
       accountId: accountId == null && nullToAbsent
@@ -15784,6 +15926,14 @@ class Party extends DataClass implements Insertable<Party> {
       isFavorite: serializer.fromJson<bool>(json['isFavorite']),
       balance: serializer.fromJson<double>(json['balance']),
       creditLimit: serializer.fromJson<double>(json['creditLimit']),
+      paymentTermsDays: serializer.fromJson<int>(json['paymentTermsDays']),
+      earlyPaymentDiscountPct: serializer.fromJson<double>(
+        json['earlyPaymentDiscountPct'],
+      ),
+      earlyPaymentDiscountDays: serializer.fromJson<int>(
+        json['earlyPaymentDiscountDays'],
+      ),
+      supplierRating: serializer.fromJson<int?>(json['supplierRating']),
       fixedDiscount: serializer.fromJson<double>(json['fixedDiscount']),
       priceLevel: serializer.fromJson<String>(json['priceLevel']),
       accountId: serializer.fromJson<int?>(json['accountId']),
@@ -15818,6 +15968,14 @@ class Party extends DataClass implements Insertable<Party> {
       'isFavorite': serializer.toJson<bool>(isFavorite),
       'balance': serializer.toJson<double>(balance),
       'creditLimit': serializer.toJson<double>(creditLimit),
+      'paymentTermsDays': serializer.toJson<int>(paymentTermsDays),
+      'earlyPaymentDiscountPct': serializer.toJson<double>(
+        earlyPaymentDiscountPct,
+      ),
+      'earlyPaymentDiscountDays': serializer.toJson<int>(
+        earlyPaymentDiscountDays,
+      ),
+      'supplierRating': serializer.toJson<int?>(supplierRating),
       'fixedDiscount': serializer.toJson<double>(fixedDiscount),
       'priceLevel': serializer.toJson<String>(priceLevel),
       'accountId': serializer.toJson<int?>(accountId),
@@ -15850,6 +16008,10 @@ class Party extends DataClass implements Insertable<Party> {
     bool? isFavorite,
     double? balance,
     double? creditLimit,
+    int? paymentTermsDays,
+    double? earlyPaymentDiscountPct,
+    int? earlyPaymentDiscountDays,
+    Value<int?> supplierRating = const Value.absent(),
     double? fixedDiscount,
     String? priceLevel,
     Value<int?> accountId = const Value.absent(),
@@ -15879,6 +16041,14 @@ class Party extends DataClass implements Insertable<Party> {
     isFavorite: isFavorite ?? this.isFavorite,
     balance: balance ?? this.balance,
     creditLimit: creditLimit ?? this.creditLimit,
+    paymentTermsDays: paymentTermsDays ?? this.paymentTermsDays,
+    earlyPaymentDiscountPct:
+        earlyPaymentDiscountPct ?? this.earlyPaymentDiscountPct,
+    earlyPaymentDiscountDays:
+        earlyPaymentDiscountDays ?? this.earlyPaymentDiscountDays,
+    supplierRating: supplierRating.present
+        ? supplierRating.value
+        : this.supplierRating,
     fixedDiscount: fixedDiscount ?? this.fixedDiscount,
     priceLevel: priceLevel ?? this.priceLevel,
     accountId: accountId.present ? accountId.value : this.accountId,
@@ -15924,6 +16094,18 @@ class Party extends DataClass implements Insertable<Party> {
       creditLimit: data.creditLimit.present
           ? data.creditLimit.value
           : this.creditLimit,
+      paymentTermsDays: data.paymentTermsDays.present
+          ? data.paymentTermsDays.value
+          : this.paymentTermsDays,
+      earlyPaymentDiscountPct: data.earlyPaymentDiscountPct.present
+          ? data.earlyPaymentDiscountPct.value
+          : this.earlyPaymentDiscountPct,
+      earlyPaymentDiscountDays: data.earlyPaymentDiscountDays.present
+          ? data.earlyPaymentDiscountDays.value
+          : this.earlyPaymentDiscountDays,
+      supplierRating: data.supplierRating.present
+          ? data.supplierRating.value
+          : this.supplierRating,
       fixedDiscount: data.fixedDiscount.present
           ? data.fixedDiscount.value
           : this.fixedDiscount,
@@ -15972,6 +16154,10 @@ class Party extends DataClass implements Insertable<Party> {
           ..write('isFavorite: $isFavorite, ')
           ..write('balance: $balance, ')
           ..write('creditLimit: $creditLimit, ')
+          ..write('paymentTermsDays: $paymentTermsDays, ')
+          ..write('earlyPaymentDiscountPct: $earlyPaymentDiscountPct, ')
+          ..write('earlyPaymentDiscountDays: $earlyPaymentDiscountDays, ')
+          ..write('supplierRating: $supplierRating, ')
           ..write('fixedDiscount: $fixedDiscount, ')
           ..write('priceLevel: $priceLevel, ')
           ..write('accountId: $accountId, ')
@@ -16006,6 +16192,10 @@ class Party extends DataClass implements Insertable<Party> {
     isFavorite,
     balance,
     creditLimit,
+    paymentTermsDays,
+    earlyPaymentDiscountPct,
+    earlyPaymentDiscountDays,
+    supplierRating,
     fixedDiscount,
     priceLevel,
     accountId,
@@ -16039,6 +16229,10 @@ class Party extends DataClass implements Insertable<Party> {
           other.isFavorite == this.isFavorite &&
           other.balance == this.balance &&
           other.creditLimit == this.creditLimit &&
+          other.paymentTermsDays == this.paymentTermsDays &&
+          other.earlyPaymentDiscountPct == this.earlyPaymentDiscountPct &&
+          other.earlyPaymentDiscountDays == this.earlyPaymentDiscountDays &&
+          other.supplierRating == this.supplierRating &&
           other.fixedDiscount == this.fixedDiscount &&
           other.priceLevel == this.priceLevel &&
           other.accountId == this.accountId &&
@@ -16070,6 +16264,10 @@ class PartiesCompanion extends UpdateCompanion<Party> {
   final Value<bool> isFavorite;
   final Value<double> balance;
   final Value<double> creditLimit;
+  final Value<int> paymentTermsDays;
+  final Value<double> earlyPaymentDiscountPct;
+  final Value<int> earlyPaymentDiscountDays;
+  final Value<int?> supplierRating;
   final Value<double> fixedDiscount;
   final Value<String> priceLevel;
   final Value<int?> accountId;
@@ -16099,6 +16297,10 @@ class PartiesCompanion extends UpdateCompanion<Party> {
     this.isFavorite = const Value.absent(),
     this.balance = const Value.absent(),
     this.creditLimit = const Value.absent(),
+    this.paymentTermsDays = const Value.absent(),
+    this.earlyPaymentDiscountPct = const Value.absent(),
+    this.earlyPaymentDiscountDays = const Value.absent(),
+    this.supplierRating = const Value.absent(),
     this.fixedDiscount = const Value.absent(),
     this.priceLevel = const Value.absent(),
     this.accountId = const Value.absent(),
@@ -16129,6 +16331,10 @@ class PartiesCompanion extends UpdateCompanion<Party> {
     this.isFavorite = const Value.absent(),
     this.balance = const Value.absent(),
     this.creditLimit = const Value.absent(),
+    this.paymentTermsDays = const Value.absent(),
+    this.earlyPaymentDiscountPct = const Value.absent(),
+    this.earlyPaymentDiscountDays = const Value.absent(),
+    this.supplierRating = const Value.absent(),
     this.fixedDiscount = const Value.absent(),
     this.priceLevel = const Value.absent(),
     this.accountId = const Value.absent(),
@@ -16159,6 +16365,10 @@ class PartiesCompanion extends UpdateCompanion<Party> {
     Expression<bool>? isFavorite,
     Expression<double>? balance,
     Expression<double>? creditLimit,
+    Expression<int>? paymentTermsDays,
+    Expression<double>? earlyPaymentDiscountPct,
+    Expression<int>? earlyPaymentDiscountDays,
+    Expression<int>? supplierRating,
     Expression<double>? fixedDiscount,
     Expression<String>? priceLevel,
     Expression<int>? accountId,
@@ -16189,6 +16399,12 @@ class PartiesCompanion extends UpdateCompanion<Party> {
       if (isFavorite != null) 'is_favorite': isFavorite,
       if (balance != null) 'balance': balance,
       if (creditLimit != null) 'credit_limit': creditLimit,
+      if (paymentTermsDays != null) 'payment_terms_days': paymentTermsDays,
+      if (earlyPaymentDiscountPct != null)
+        'early_payment_discount_pct': earlyPaymentDiscountPct,
+      if (earlyPaymentDiscountDays != null)
+        'early_payment_discount_days': earlyPaymentDiscountDays,
+      if (supplierRating != null) 'supplier_rating': supplierRating,
       if (fixedDiscount != null) 'fixed_discount': fixedDiscount,
       if (priceLevel != null) 'price_level': priceLevel,
       if (accountId != null) 'account_id': accountId,
@@ -16221,6 +16437,10 @@ class PartiesCompanion extends UpdateCompanion<Party> {
     Value<bool>? isFavorite,
     Value<double>? balance,
     Value<double>? creditLimit,
+    Value<int>? paymentTermsDays,
+    Value<double>? earlyPaymentDiscountPct,
+    Value<int>? earlyPaymentDiscountDays,
+    Value<int?>? supplierRating,
     Value<double>? fixedDiscount,
     Value<String>? priceLevel,
     Value<int?>? accountId,
@@ -16251,6 +16471,12 @@ class PartiesCompanion extends UpdateCompanion<Party> {
       isFavorite: isFavorite ?? this.isFavorite,
       balance: balance ?? this.balance,
       creditLimit: creditLimit ?? this.creditLimit,
+      paymentTermsDays: paymentTermsDays ?? this.paymentTermsDays,
+      earlyPaymentDiscountPct:
+          earlyPaymentDiscountPct ?? this.earlyPaymentDiscountPct,
+      earlyPaymentDiscountDays:
+          earlyPaymentDiscountDays ?? this.earlyPaymentDiscountDays,
+      supplierRating: supplierRating ?? this.supplierRating,
       fixedDiscount: fixedDiscount ?? this.fixedDiscount,
       priceLevel: priceLevel ?? this.priceLevel,
       accountId: accountId ?? this.accountId,
@@ -16312,6 +16538,22 @@ class PartiesCompanion extends UpdateCompanion<Party> {
     }
     if (creditLimit.present) {
       map['credit_limit'] = Variable<double>(creditLimit.value);
+    }
+    if (paymentTermsDays.present) {
+      map['payment_terms_days'] = Variable<int>(paymentTermsDays.value);
+    }
+    if (earlyPaymentDiscountPct.present) {
+      map['early_payment_discount_pct'] = Variable<double>(
+        earlyPaymentDiscountPct.value,
+      );
+    }
+    if (earlyPaymentDiscountDays.present) {
+      map['early_payment_discount_days'] = Variable<int>(
+        earlyPaymentDiscountDays.value,
+      );
+    }
+    if (supplierRating.present) {
+      map['supplier_rating'] = Variable<int>(supplierRating.value);
     }
     if (fixedDiscount.present) {
       map['fixed_discount'] = Variable<double>(fixedDiscount.value);
@@ -16375,6 +16617,10 @@ class PartiesCompanion extends UpdateCompanion<Party> {
           ..write('isFavorite: $isFavorite, ')
           ..write('balance: $balance, ')
           ..write('creditLimit: $creditLimit, ')
+          ..write('paymentTermsDays: $paymentTermsDays, ')
+          ..write('earlyPaymentDiscountPct: $earlyPaymentDiscountPct, ')
+          ..write('earlyPaymentDiscountDays: $earlyPaymentDiscountDays, ')
+          ..write('supplierRating: $supplierRating, ')
           ..write('fixedDiscount: $fixedDiscount, ')
           ..write('priceLevel: $priceLevel, ')
           ..write('accountId: $accountId, ')
@@ -16489,6 +16735,17 @@ class $PurchaseInvoicesTable extends PurchaseInvoices
     false,
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dueDateMeta = const VerificationMeta(
+    'dueDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> dueDate = GeneratedColumn<DateTime>(
+    'due_date',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _subtotalMeta = const VerificationMeta(
     'subtotal',
@@ -16746,6 +17003,7 @@ class $PurchaseInvoicesTable extends PurchaseInvoices
     warehouseId,
     branchId,
     invoiceDate,
+    dueDate,
     subtotal,
     discount,
     tax,
@@ -16838,6 +17096,12 @@ class $PurchaseInvoicesTable extends PurchaseInvoices
       );
     } else if (isInserting) {
       context.missing(_invoiceDateMeta);
+    }
+    if (data.containsKey('due_date')) {
+      context.handle(
+        _dueDateMeta,
+        dueDate.isAcceptableOrUnknown(data['due_date']!, _dueDateMeta),
+      );
     }
     if (data.containsKey('subtotal')) {
       context.handle(
@@ -17020,6 +17284,10 @@ class $PurchaseInvoicesTable extends PurchaseInvoices
         DriftSqlType.dateTime,
         data['${effectivePrefix}invoice_date'],
       )!,
+      dueDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}due_date'],
+      ),
       subtotal: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}subtotal'],
@@ -17122,6 +17390,18 @@ class PurchaseInvoiceData extends DataClass
   final int warehouseId;
   final int? branchId;
   final DateTime invoiceDate;
+
+  /// v164 — تاريخُ الاستحقاق. **لقطةٌ وقتَ الإصدار لا حسابٌ حيّ.**
+  ///
+  /// ⚠️ لا يُشتقّ من `parties.payment_terms_days` عند القراءة: تغييرُ مهلةِ
+  /// طرفٍ اليومَ كان سيُزحزح استحقاقَ كلّ فاتورةٍ قديمةٍ له بأثرٍ رجعيّ،
+  /// فتتبدّل أعمارُ الدين لمستنداتٍ أُغلقت. نفسُ مبدأ
+  /// `sales_invoice_items.cost_price`.
+  ///
+  /// ⚠️ و`null` تعني **بلا مهلة** = يستحق يومَ إصداره، فتُقرأ دائماً
+  /// `COALESCE(due_date, invoice_date)`. وبهذا لا تكتب الهجرةُ صفّاً واحداً
+  /// ويبقى سلوكُ ما قبلَها حرفيّاً.
+  final DateTime? dueDate;
   final double subtotal;
   final double discount;
   final double tax;
@@ -17151,6 +17431,7 @@ class PurchaseInvoiceData extends DataClass
     required this.warehouseId,
     this.branchId,
     required this.invoiceDate,
+    this.dueDate,
     required this.subtotal,
     required this.discount,
     required this.tax,
@@ -17187,6 +17468,9 @@ class PurchaseInvoiceData extends DataClass
       map['branch_id'] = Variable<int>(branchId);
     }
     map['invoice_date'] = Variable<DateTime>(invoiceDate);
+    if (!nullToAbsent || dueDate != null) {
+      map['due_date'] = Variable<DateTime>(dueDate);
+    }
     map['subtotal'] = Variable<double>(subtotal);
     map['discount'] = Variable<double>(discount);
     map['tax'] = Variable<double>(tax);
@@ -17242,6 +17526,9 @@ class PurchaseInvoiceData extends DataClass
           ? const Value.absent()
           : Value(branchId),
       invoiceDate: Value(invoiceDate),
+      dueDate: dueDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dueDate),
       subtotal: Value(subtotal),
       discount: Value(discount),
       tax: Value(tax),
@@ -17299,6 +17586,7 @@ class PurchaseInvoiceData extends DataClass
       warehouseId: serializer.fromJson<int>(json['warehouseId']),
       branchId: serializer.fromJson<int?>(json['branchId']),
       invoiceDate: serializer.fromJson<DateTime>(json['invoiceDate']),
+      dueDate: serializer.fromJson<DateTime?>(json['dueDate']),
       subtotal: serializer.fromJson<double>(json['subtotal']),
       discount: serializer.fromJson<double>(json['discount']),
       tax: serializer.fromJson<double>(json['tax']),
@@ -17335,6 +17623,7 @@ class PurchaseInvoiceData extends DataClass
       'warehouseId': serializer.toJson<int>(warehouseId),
       'branchId': serializer.toJson<int?>(branchId),
       'invoiceDate': serializer.toJson<DateTime>(invoiceDate),
+      'dueDate': serializer.toJson<DateTime?>(dueDate),
       'subtotal': serializer.toJson<double>(subtotal),
       'discount': serializer.toJson<double>(discount),
       'tax': serializer.toJson<double>(tax),
@@ -17367,6 +17656,7 @@ class PurchaseInvoiceData extends DataClass
     int? warehouseId,
     Value<int?> branchId = const Value.absent(),
     DateTime? invoiceDate,
+    Value<DateTime?> dueDate = const Value.absent(),
     double? subtotal,
     double? discount,
     double? tax,
@@ -17398,6 +17688,7 @@ class PurchaseInvoiceData extends DataClass
     warehouseId: warehouseId ?? this.warehouseId,
     branchId: branchId.present ? branchId.value : this.branchId,
     invoiceDate: invoiceDate ?? this.invoiceDate,
+    dueDate: dueDate.present ? dueDate.value : this.dueDate,
     subtotal: subtotal ?? this.subtotal,
     discount: discount ?? this.discount,
     tax: tax ?? this.tax,
@@ -17447,6 +17738,7 @@ class PurchaseInvoiceData extends DataClass
       invoiceDate: data.invoiceDate.present
           ? data.invoiceDate.value
           : this.invoiceDate,
+      dueDate: data.dueDate.present ? data.dueDate.value : this.dueDate,
       subtotal: data.subtotal.present ? data.subtotal.value : this.subtotal,
       discount: data.discount.present ? data.discount.value : this.discount,
       tax: data.tax.present ? data.tax.value : this.tax,
@@ -17495,6 +17787,7 @@ class PurchaseInvoiceData extends DataClass
           ..write('warehouseId: $warehouseId, ')
           ..write('branchId: $branchId, ')
           ..write('invoiceDate: $invoiceDate, ')
+          ..write('dueDate: $dueDate, ')
           ..write('subtotal: $subtotal, ')
           ..write('discount: $discount, ')
           ..write('tax: $tax, ')
@@ -17529,6 +17822,7 @@ class PurchaseInvoiceData extends DataClass
     warehouseId,
     branchId,
     invoiceDate,
+    dueDate,
     subtotal,
     discount,
     tax,
@@ -17562,6 +17856,7 @@ class PurchaseInvoiceData extends DataClass
           other.warehouseId == this.warehouseId &&
           other.branchId == this.branchId &&
           other.invoiceDate == this.invoiceDate &&
+          other.dueDate == this.dueDate &&
           other.subtotal == this.subtotal &&
           other.discount == this.discount &&
           other.tax == this.tax &&
@@ -17593,6 +17888,7 @@ class PurchaseInvoicesCompanion extends UpdateCompanion<PurchaseInvoiceData> {
   final Value<int> warehouseId;
   final Value<int?> branchId;
   final Value<DateTime> invoiceDate;
+  final Value<DateTime?> dueDate;
   final Value<double> subtotal;
   final Value<double> discount;
   final Value<double> tax;
@@ -17622,6 +17918,7 @@ class PurchaseInvoicesCompanion extends UpdateCompanion<PurchaseInvoiceData> {
     this.warehouseId = const Value.absent(),
     this.branchId = const Value.absent(),
     this.invoiceDate = const Value.absent(),
+    this.dueDate = const Value.absent(),
     this.subtotal = const Value.absent(),
     this.discount = const Value.absent(),
     this.tax = const Value.absent(),
@@ -17652,6 +17949,7 @@ class PurchaseInvoicesCompanion extends UpdateCompanion<PurchaseInvoiceData> {
     required int warehouseId,
     this.branchId = const Value.absent(),
     required DateTime invoiceDate,
+    this.dueDate = const Value.absent(),
     this.subtotal = const Value.absent(),
     this.discount = const Value.absent(),
     this.tax = const Value.absent(),
@@ -17685,6 +17983,7 @@ class PurchaseInvoicesCompanion extends UpdateCompanion<PurchaseInvoiceData> {
     Expression<int>? warehouseId,
     Expression<int>? branchId,
     Expression<DateTime>? invoiceDate,
+    Expression<DateTime>? dueDate,
     Expression<double>? subtotal,
     Expression<double>? discount,
     Expression<double>? tax,
@@ -17716,6 +18015,7 @@ class PurchaseInvoicesCompanion extends UpdateCompanion<PurchaseInvoiceData> {
       if (warehouseId != null) 'warehouse_id': warehouseId,
       if (branchId != null) 'branch_id': branchId,
       if (invoiceDate != null) 'invoice_date': invoiceDate,
+      if (dueDate != null) 'due_date': dueDate,
       if (subtotal != null) 'subtotal': subtotal,
       if (discount != null) 'discount': discount,
       if (tax != null) 'tax': tax,
@@ -17748,6 +18048,7 @@ class PurchaseInvoicesCompanion extends UpdateCompanion<PurchaseInvoiceData> {
     Value<int>? warehouseId,
     Value<int?>? branchId,
     Value<DateTime>? invoiceDate,
+    Value<DateTime?>? dueDate,
     Value<double>? subtotal,
     Value<double>? discount,
     Value<double>? tax,
@@ -17779,6 +18080,7 @@ class PurchaseInvoicesCompanion extends UpdateCompanion<PurchaseInvoiceData> {
       warehouseId: warehouseId ?? this.warehouseId,
       branchId: branchId ?? this.branchId,
       invoiceDate: invoiceDate ?? this.invoiceDate,
+      dueDate: dueDate ?? this.dueDate,
       subtotal: subtotal ?? this.subtotal,
       discount: discount ?? this.discount,
       tax: tax ?? this.tax,
@@ -17828,6 +18130,9 @@ class PurchaseInvoicesCompanion extends UpdateCompanion<PurchaseInvoiceData> {
     }
     if (invoiceDate.present) {
       map['invoice_date'] = Variable<DateTime>(invoiceDate.value);
+    }
+    if (dueDate.present) {
+      map['due_date'] = Variable<DateTime>(dueDate.value);
     }
     if (subtotal.present) {
       map['subtotal'] = Variable<double>(subtotal.value);
@@ -17905,6 +18210,7 @@ class PurchaseInvoicesCompanion extends UpdateCompanion<PurchaseInvoiceData> {
           ..write('warehouseId: $warehouseId, ')
           ..write('branchId: $branchId, ')
           ..write('invoiceDate: $invoiceDate, ')
+          ..write('dueDate: $dueDate, ')
           ..write('subtotal: $subtotal, ')
           ..write('discount: $discount, ')
           ..write('tax: $tax, ')
@@ -20623,6 +20929,17 @@ class $SalesInvoicesTable extends SalesInvoices
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _dueDateMeta = const VerificationMeta(
+    'dueDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> dueDate = GeneratedColumn<DateTime>(
+    'due_date',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _subtotalMeta = const VerificationMeta(
     'subtotal',
   );
@@ -21048,6 +21365,7 @@ class $SalesInvoicesTable extends SalesInvoices
     branchId,
     userId,
     invoiceDate,
+    dueDate,
     subtotal,
     discount,
     tax,
@@ -21151,6 +21469,12 @@ class $SalesInvoicesTable extends SalesInvoices
       );
     } else if (isInserting) {
       context.missing(_invoiceDateMeta);
+    }
+    if (data.containsKey('due_date')) {
+      context.handle(
+        _dueDateMeta,
+        dueDate.isAcceptableOrUnknown(data['due_date']!, _dueDateMeta),
+      );
     }
     if (data.containsKey('subtotal')) {
       context.handle(
@@ -21444,6 +21768,10 @@ class $SalesInvoicesTable extends SalesInvoices
         DriftSqlType.dateTime,
         data['${effectivePrefix}invoice_date'],
       )!,
+      dueDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}due_date'],
+      ),
       subtotal: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}subtotal'],
@@ -21602,6 +21930,18 @@ class SalesInvoiceData extends DataClass
   final int? branchId;
   final int userId;
   final DateTime invoiceDate;
+
+  /// v164 — تاريخُ الاستحقاق. **لقطةٌ وقتَ الإصدار لا حسابٌ حيّ.**
+  ///
+  /// ⚠️ لا يُشتقّ من `parties.payment_terms_days` عند القراءة: تغييرُ مهلةِ
+  /// طرفٍ اليومَ كان سيُزحزح استحقاقَ كلّ فاتورةٍ قديمةٍ له بأثرٍ رجعيّ،
+  /// فتتبدّل أعمارُ الدين لمستنداتٍ أُغلقت. نفسُ مبدأ
+  /// `sales_invoice_items.cost_price`.
+  ///
+  /// ⚠️ و`null` تعني **بلا مهلة** = يستحق يومَ إصداره، فتُقرأ دائماً
+  /// `COALESCE(due_date, invoice_date)`. وبهذا لا تكتب الهجرةُ صفّاً واحداً
+  /// ويبقى سلوكُ ما قبلَها حرفيّاً.
+  final DateTime? dueDate;
   final double subtotal;
   final double discount;
   final double tax;
@@ -21645,6 +21985,7 @@ class SalesInvoiceData extends DataClass
     this.branchId,
     required this.userId,
     required this.invoiceDate,
+    this.dueDate,
     required this.subtotal,
     required this.discount,
     required this.tax,
@@ -21695,6 +22036,9 @@ class SalesInvoiceData extends DataClass
     }
     map['user_id'] = Variable<int>(userId);
     map['invoice_date'] = Variable<DateTime>(invoiceDate);
+    if (!nullToAbsent || dueDate != null) {
+      map['due_date'] = Variable<DateTime>(dueDate);
+    }
     map['subtotal'] = Variable<double>(subtotal);
     map['discount'] = Variable<double>(discount);
     map['tax'] = Variable<double>(tax);
@@ -21782,6 +22126,9 @@ class SalesInvoiceData extends DataClass
           : Value(branchId),
       userId: Value(userId),
       invoiceDate: Value(invoiceDate),
+      dueDate: dueDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dueDate),
       subtotal: Value(subtotal),
       discount: Value(discount),
       tax: Value(tax),
@@ -21869,6 +22216,7 @@ class SalesInvoiceData extends DataClass
       branchId: serializer.fromJson<int?>(json['branchId']),
       userId: serializer.fromJson<int>(json['userId']),
       invoiceDate: serializer.fromJson<DateTime>(json['invoiceDate']),
+      dueDate: serializer.fromJson<DateTime?>(json['dueDate']),
       subtotal: serializer.fromJson<double>(json['subtotal']),
       discount: serializer.fromJson<double>(json['discount']),
       tax: serializer.fromJson<double>(json['tax']),
@@ -21927,6 +22275,7 @@ class SalesInvoiceData extends DataClass
       'branchId': serializer.toJson<int?>(branchId),
       'userId': serializer.toJson<int>(userId),
       'invoiceDate': serializer.toJson<DateTime>(invoiceDate),
+      'dueDate': serializer.toJson<DateTime?>(dueDate),
       'subtotal': serializer.toJson<double>(subtotal),
       'discount': serializer.toJson<double>(discount),
       'tax': serializer.toJson<double>(tax),
@@ -21973,6 +22322,7 @@ class SalesInvoiceData extends DataClass
     Value<int?> branchId = const Value.absent(),
     int? userId,
     DateTime? invoiceDate,
+    Value<DateTime?> dueDate = const Value.absent(),
     double? subtotal,
     double? discount,
     double? tax,
@@ -22016,6 +22366,7 @@ class SalesInvoiceData extends DataClass
     branchId: branchId.present ? branchId.value : this.branchId,
     userId: userId ?? this.userId,
     invoiceDate: invoiceDate ?? this.invoiceDate,
+    dueDate: dueDate.present ? dueDate.value : this.dueDate,
     subtotal: subtotal ?? this.subtotal,
     discount: discount ?? this.discount,
     tax: tax ?? this.tax,
@@ -22091,6 +22442,7 @@ class SalesInvoiceData extends DataClass
       invoiceDate: data.invoiceDate.present
           ? data.invoiceDate.value
           : this.invoiceDate,
+      dueDate: data.dueDate.present ? data.dueDate.value : this.dueDate,
       subtotal: data.subtotal.present ? data.subtotal.value : this.subtotal,
       discount: data.discount.present ? data.discount.value : this.discount,
       tax: data.tax.present ? data.tax.value : this.tax,
@@ -22171,6 +22523,7 @@ class SalesInvoiceData extends DataClass
           ..write('branchId: $branchId, ')
           ..write('userId: $userId, ')
           ..write('invoiceDate: $invoiceDate, ')
+          ..write('dueDate: $dueDate, ')
           ..write('subtotal: $subtotal, ')
           ..write('discount: $discount, ')
           ..write('tax: $tax, ')
@@ -22219,6 +22572,7 @@ class SalesInvoiceData extends DataClass
     branchId,
     userId,
     invoiceDate,
+    dueDate,
     subtotal,
     discount,
     tax,
@@ -22266,6 +22620,7 @@ class SalesInvoiceData extends DataClass
           other.branchId == this.branchId &&
           other.userId == this.userId &&
           other.invoiceDate == this.invoiceDate &&
+          other.dueDate == this.dueDate &&
           other.subtotal == this.subtotal &&
           other.discount == this.discount &&
           other.tax == this.tax &&
@@ -22311,6 +22666,7 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceData> {
   final Value<int?> branchId;
   final Value<int> userId;
   final Value<DateTime> invoiceDate;
+  final Value<DateTime?> dueDate;
   final Value<double> subtotal;
   final Value<double> discount;
   final Value<double> tax;
@@ -22354,6 +22710,7 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceData> {
     this.branchId = const Value.absent(),
     this.userId = const Value.absent(),
     this.invoiceDate = const Value.absent(),
+    this.dueDate = const Value.absent(),
     this.subtotal = const Value.absent(),
     this.discount = const Value.absent(),
     this.tax = const Value.absent(),
@@ -22398,6 +22755,7 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceData> {
     this.branchId = const Value.absent(),
     required int userId,
     required DateTime invoiceDate,
+    this.dueDate = const Value.absent(),
     this.subtotal = const Value.absent(),
     this.discount = const Value.absent(),
     this.tax = const Value.absent(),
@@ -22445,6 +22803,7 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceData> {
     Expression<int>? branchId,
     Expression<int>? userId,
     Expression<DateTime>? invoiceDate,
+    Expression<DateTime>? dueDate,
     Expression<double>? subtotal,
     Expression<double>? discount,
     Expression<double>? tax,
@@ -22489,6 +22848,7 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceData> {
       if (branchId != null) 'branch_id': branchId,
       if (userId != null) 'user_id': userId,
       if (invoiceDate != null) 'invoice_date': invoiceDate,
+      if (dueDate != null) 'due_date': dueDate,
       if (subtotal != null) 'subtotal': subtotal,
       if (discount != null) 'discount': discount,
       if (tax != null) 'tax': tax,
@@ -22538,6 +22898,7 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceData> {
     Value<int?>? branchId,
     Value<int>? userId,
     Value<DateTime>? invoiceDate,
+    Value<DateTime?>? dueDate,
     Value<double>? subtotal,
     Value<double>? discount,
     Value<double>? tax,
@@ -22582,6 +22943,7 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceData> {
       branchId: branchId ?? this.branchId,
       userId: userId ?? this.userId,
       invoiceDate: invoiceDate ?? this.invoiceDate,
+      dueDate: dueDate ?? this.dueDate,
       subtotal: subtotal ?? this.subtotal,
       discount: discount ?? this.discount,
       tax: tax ?? this.tax,
@@ -22644,6 +23006,9 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceData> {
     }
     if (invoiceDate.present) {
       map['invoice_date'] = Variable<DateTime>(invoiceDate.value);
+    }
+    if (dueDate.present) {
+      map['due_date'] = Variable<DateTime>(dueDate.value);
     }
     if (subtotal.present) {
       map['subtotal'] = Variable<double>(subtotal.value);
@@ -22767,6 +23132,7 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceData> {
           ..write('branchId: $branchId, ')
           ..write('userId: $userId, ')
           ..write('invoiceDate: $invoiceDate, ')
+          ..write('dueDate: $dueDate, ')
           ..write('subtotal: $subtotal, ')
           ..write('discount: $discount, ')
           ..write('tax: $tax, ')
@@ -83557,6 +83923,17 @@ class $PurchaseOrdersTable extends PurchaseOrders
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _receivedAtMeta = const VerificationMeta(
+    'receivedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> receivedAt = GeneratedColumn<DateTime>(
+    'received_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _subtotalMeta = const VerificationMeta(
     'subtotal',
   );
@@ -83725,6 +84102,7 @@ class $PurchaseOrdersTable extends PurchaseOrders
     warehouseId,
     orderDate,
     expectedDate,
+    receivedAt,
     subtotal,
     discount,
     tax,
@@ -83800,6 +84178,12 @@ class $PurchaseOrdersTable extends PurchaseOrders
           data['expected_date']!,
           _expectedDateMeta,
         ),
+      );
+    }
+    if (data.containsKey('received_at')) {
+      context.handle(
+        _receivedAtMeta,
+        receivedAt.isAcceptableOrUnknown(data['received_at']!, _receivedAtMeta),
       );
     }
     if (data.containsKey('subtotal')) {
@@ -83931,6 +84315,10 @@ class $PurchaseOrdersTable extends PurchaseOrders
         DriftSqlType.dateTime,
         data['${effectivePrefix}expected_date'],
       ),
+      receivedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}received_at'],
+      ),
       subtotal: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}subtotal'],
@@ -84004,6 +84392,13 @@ class PurchaseOrderData extends DataClass
   final int warehouseId;
   final DateTime orderDate;
   final DateTime? expectedDate;
+
+  /// v164 — تاريخُ اكتمال الاستلام فعليّاً.
+  ///
+  /// وجودُه هو ما يجعل «الالتزامَ بمواعيد التوريد» رقماً **مقيساً** لا
+  /// مكتوباً: النسبةُ = أوامرُ استُلمت في موعدها ÷ أوامرُ استُلمت. و`null`
+  /// تعني «لم يكتمل استلامُه بعد» — لا «تأخّر»، فأمرٌ مفتوحٌ ليس تأخّراً.
+  final DateTime? receivedAt;
   final double subtotal;
   final double discount;
   final double tax;
@@ -84025,6 +84420,7 @@ class PurchaseOrderData extends DataClass
     required this.warehouseId,
     required this.orderDate,
     this.expectedDate,
+    this.receivedAt,
     required this.subtotal,
     required this.discount,
     required this.tax,
@@ -84050,6 +84446,9 @@ class PurchaseOrderData extends DataClass
     map['order_date'] = Variable<DateTime>(orderDate);
     if (!nullToAbsent || expectedDate != null) {
       map['expected_date'] = Variable<DateTime>(expectedDate);
+    }
+    if (!nullToAbsent || receivedAt != null) {
+      map['received_at'] = Variable<DateTime>(receivedAt);
     }
     map['subtotal'] = Variable<double>(subtotal);
     map['discount'] = Variable<double>(discount);
@@ -84092,6 +84491,9 @@ class PurchaseOrderData extends DataClass
       expectedDate: expectedDate == null && nullToAbsent
           ? const Value.absent()
           : Value(expectedDate),
+      receivedAt: receivedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(receivedAt),
       subtotal: Value(subtotal),
       discount: Value(discount),
       tax: Value(tax),
@@ -84135,6 +84537,7 @@ class PurchaseOrderData extends DataClass
       warehouseId: serializer.fromJson<int>(json['warehouseId']),
       orderDate: serializer.fromJson<DateTime>(json['orderDate']),
       expectedDate: serializer.fromJson<DateTime?>(json['expectedDate']),
+      receivedAt: serializer.fromJson<DateTime?>(json['receivedAt']),
       subtotal: serializer.fromJson<double>(json['subtotal']),
       discount: serializer.fromJson<double>(json['discount']),
       tax: serializer.fromJson<double>(json['tax']),
@@ -84163,6 +84566,7 @@ class PurchaseOrderData extends DataClass
       'warehouseId': serializer.toJson<int>(warehouseId),
       'orderDate': serializer.toJson<DateTime>(orderDate),
       'expectedDate': serializer.toJson<DateTime?>(expectedDate),
+      'receivedAt': serializer.toJson<DateTime?>(receivedAt),
       'subtotal': serializer.toJson<double>(subtotal),
       'discount': serializer.toJson<double>(discount),
       'tax': serializer.toJson<double>(tax),
@@ -84187,6 +84591,7 @@ class PurchaseOrderData extends DataClass
     int? warehouseId,
     DateTime? orderDate,
     Value<DateTime?> expectedDate = const Value.absent(),
+    Value<DateTime?> receivedAt = const Value.absent(),
     double? subtotal,
     double? discount,
     double? tax,
@@ -84208,6 +84613,7 @@ class PurchaseOrderData extends DataClass
     warehouseId: warehouseId ?? this.warehouseId,
     orderDate: orderDate ?? this.orderDate,
     expectedDate: expectedDate.present ? expectedDate.value : this.expectedDate,
+    receivedAt: receivedAt.present ? receivedAt.value : this.receivedAt,
     subtotal: subtotal ?? this.subtotal,
     discount: discount ?? this.discount,
     tax: tax ?? this.tax,
@@ -84245,6 +84651,9 @@ class PurchaseOrderData extends DataClass
       expectedDate: data.expectedDate.present
           ? data.expectedDate.value
           : this.expectedDate,
+      receivedAt: data.receivedAt.present
+          ? data.receivedAt.value
+          : this.receivedAt,
       subtotal: data.subtotal.present ? data.subtotal.value : this.subtotal,
       discount: data.discount.present ? data.discount.value : this.discount,
       tax: data.tax.present ? data.tax.value : this.tax,
@@ -84281,6 +84690,7 @@ class PurchaseOrderData extends DataClass
           ..write('warehouseId: $warehouseId, ')
           ..write('orderDate: $orderDate, ')
           ..write('expectedDate: $expectedDate, ')
+          ..write('receivedAt: $receivedAt, ')
           ..write('subtotal: $subtotal, ')
           ..write('discount: $discount, ')
           ..write('tax: $tax, ')
@@ -84300,13 +84710,14 @@ class PurchaseOrderData extends DataClass
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     orderNumber,
     supplierId,
     warehouseId,
     orderDate,
     expectedDate,
+    receivedAt,
     subtotal,
     discount,
     tax,
@@ -84321,7 +84732,7 @@ class PurchaseOrderData extends DataClass
     deletedAt,
     originClientId,
     rowVersion,
-  );
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -84332,6 +84743,7 @@ class PurchaseOrderData extends DataClass
           other.warehouseId == this.warehouseId &&
           other.orderDate == this.orderDate &&
           other.expectedDate == this.expectedDate &&
+          other.receivedAt == this.receivedAt &&
           other.subtotal == this.subtotal &&
           other.discount == this.discount &&
           other.tax == this.tax &&
@@ -84355,6 +84767,7 @@ class PurchaseOrdersCompanion extends UpdateCompanion<PurchaseOrderData> {
   final Value<int> warehouseId;
   final Value<DateTime> orderDate;
   final Value<DateTime?> expectedDate;
+  final Value<DateTime?> receivedAt;
   final Value<double> subtotal;
   final Value<double> discount;
   final Value<double> tax;
@@ -84376,6 +84789,7 @@ class PurchaseOrdersCompanion extends UpdateCompanion<PurchaseOrderData> {
     this.warehouseId = const Value.absent(),
     this.orderDate = const Value.absent(),
     this.expectedDate = const Value.absent(),
+    this.receivedAt = const Value.absent(),
     this.subtotal = const Value.absent(),
     this.discount = const Value.absent(),
     this.tax = const Value.absent(),
@@ -84398,6 +84812,7 @@ class PurchaseOrdersCompanion extends UpdateCompanion<PurchaseOrderData> {
     required int warehouseId,
     required DateTime orderDate,
     this.expectedDate = const Value.absent(),
+    this.receivedAt = const Value.absent(),
     this.subtotal = const Value.absent(),
     this.discount = const Value.absent(),
     this.tax = const Value.absent(),
@@ -84423,6 +84838,7 @@ class PurchaseOrdersCompanion extends UpdateCompanion<PurchaseOrderData> {
     Expression<int>? warehouseId,
     Expression<DateTime>? orderDate,
     Expression<DateTime>? expectedDate,
+    Expression<DateTime>? receivedAt,
     Expression<double>? subtotal,
     Expression<double>? discount,
     Expression<double>? tax,
@@ -84445,6 +84861,7 @@ class PurchaseOrdersCompanion extends UpdateCompanion<PurchaseOrderData> {
       if (warehouseId != null) 'warehouse_id': warehouseId,
       if (orderDate != null) 'order_date': orderDate,
       if (expectedDate != null) 'expected_date': expectedDate,
+      if (receivedAt != null) 'received_at': receivedAt,
       if (subtotal != null) 'subtotal': subtotal,
       if (discount != null) 'discount': discount,
       if (tax != null) 'tax': tax,
@@ -84470,6 +84887,7 @@ class PurchaseOrdersCompanion extends UpdateCompanion<PurchaseOrderData> {
     Value<int>? warehouseId,
     Value<DateTime>? orderDate,
     Value<DateTime?>? expectedDate,
+    Value<DateTime?>? receivedAt,
     Value<double>? subtotal,
     Value<double>? discount,
     Value<double>? tax,
@@ -84492,6 +84910,7 @@ class PurchaseOrdersCompanion extends UpdateCompanion<PurchaseOrderData> {
       warehouseId: warehouseId ?? this.warehouseId,
       orderDate: orderDate ?? this.orderDate,
       expectedDate: expectedDate ?? this.expectedDate,
+      receivedAt: receivedAt ?? this.receivedAt,
       subtotal: subtotal ?? this.subtotal,
       discount: discount ?? this.discount,
       tax: tax ?? this.tax,
@@ -84529,6 +84948,9 @@ class PurchaseOrdersCompanion extends UpdateCompanion<PurchaseOrderData> {
     }
     if (expectedDate.present) {
       map['expected_date'] = Variable<DateTime>(expectedDate.value);
+    }
+    if (receivedAt.present) {
+      map['received_at'] = Variable<DateTime>(receivedAt.value);
     }
     if (subtotal.present) {
       map['subtotal'] = Variable<double>(subtotal.value);
@@ -84586,6 +85008,7 @@ class PurchaseOrdersCompanion extends UpdateCompanion<PurchaseOrderData> {
           ..write('warehouseId: $warehouseId, ')
           ..write('orderDate: $orderDate, ')
           ..write('expectedDate: $expectedDate, ')
+          ..write('receivedAt: $receivedAt, ')
           ..write('subtotal: $subtotal, ')
           ..write('discount: $discount, ')
           ..write('tax: $tax, ')
@@ -133233,6 +133656,10 @@ typedef $$PartiesTableCreateCompanionBuilder =
       Value<bool> isFavorite,
       Value<double> balance,
       Value<double> creditLimit,
+      Value<int> paymentTermsDays,
+      Value<double> earlyPaymentDiscountPct,
+      Value<int> earlyPaymentDiscountDays,
+      Value<int?> supplierRating,
       Value<double> fixedDiscount,
       Value<String> priceLevel,
       Value<int?> accountId,
@@ -133264,6 +133691,10 @@ typedef $$PartiesTableUpdateCompanionBuilder =
       Value<bool> isFavorite,
       Value<double> balance,
       Value<double> creditLimit,
+      Value<int> paymentTermsDays,
+      Value<double> earlyPaymentDiscountPct,
+      Value<int> earlyPaymentDiscountDays,
+      Value<int?> supplierRating,
       Value<double> fixedDiscount,
       Value<String> priceLevel,
       Value<int?> accountId,
@@ -133692,6 +134123,26 @@ class $$PartiesTableFilterComposer
 
   ColumnFilters<double> get creditLimit => $composableBuilder(
     column: $table.creditLimit,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get paymentTermsDays => $composableBuilder(
+    column: $table.paymentTermsDays,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get earlyPaymentDiscountPct => $composableBuilder(
+    column: $table.earlyPaymentDiscountPct,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get earlyPaymentDiscountDays => $composableBuilder(
+    column: $table.earlyPaymentDiscountDays,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get supplierRating => $composableBuilder(
+    column: $table.supplierRating,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -134225,6 +134676,26 @@ class $$PartiesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get paymentTermsDays => $composableBuilder(
+    column: $table.paymentTermsDays,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get earlyPaymentDiscountPct => $composableBuilder(
+    column: $table.earlyPaymentDiscountPct,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get earlyPaymentDiscountDays => $composableBuilder(
+    column: $table.earlyPaymentDiscountDays,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get supplierRating => $composableBuilder(
+    column: $table.supplierRating,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get fixedDiscount => $composableBuilder(
     column: $table.fixedDiscount,
     builder: (column) => ColumnOrderings(column),
@@ -134408,6 +134879,26 @@ class $$PartiesTableAnnotationComposer
 
   GeneratedColumn<double> get creditLimit => $composableBuilder(
     column: $table.creditLimit,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get paymentTermsDays => $composableBuilder(
+    column: $table.paymentTermsDays,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get earlyPaymentDiscountPct => $composableBuilder(
+    column: $table.earlyPaymentDiscountPct,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get earlyPaymentDiscountDays => $composableBuilder(
+    column: $table.earlyPaymentDiscountDays,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get supplierRating => $composableBuilder(
+    column: $table.supplierRating,
     builder: (column) => column,
   );
 
@@ -134913,6 +135404,10 @@ class $$PartiesTableTableManager
                 Value<bool> isFavorite = const Value.absent(),
                 Value<double> balance = const Value.absent(),
                 Value<double> creditLimit = const Value.absent(),
+                Value<int> paymentTermsDays = const Value.absent(),
+                Value<double> earlyPaymentDiscountPct = const Value.absent(),
+                Value<int> earlyPaymentDiscountDays = const Value.absent(),
+                Value<int?> supplierRating = const Value.absent(),
                 Value<double> fixedDiscount = const Value.absent(),
                 Value<String> priceLevel = const Value.absent(),
                 Value<int?> accountId = const Value.absent(),
@@ -134942,6 +135437,10 @@ class $$PartiesTableTableManager
                 isFavorite: isFavorite,
                 balance: balance,
                 creditLimit: creditLimit,
+                paymentTermsDays: paymentTermsDays,
+                earlyPaymentDiscountPct: earlyPaymentDiscountPct,
+                earlyPaymentDiscountDays: earlyPaymentDiscountDays,
+                supplierRating: supplierRating,
                 fixedDiscount: fixedDiscount,
                 priceLevel: priceLevel,
                 accountId: accountId,
@@ -134973,6 +135472,10 @@ class $$PartiesTableTableManager
                 Value<bool> isFavorite = const Value.absent(),
                 Value<double> balance = const Value.absent(),
                 Value<double> creditLimit = const Value.absent(),
+                Value<int> paymentTermsDays = const Value.absent(),
+                Value<double> earlyPaymentDiscountPct = const Value.absent(),
+                Value<int> earlyPaymentDiscountDays = const Value.absent(),
+                Value<int?> supplierRating = const Value.absent(),
                 Value<double> fixedDiscount = const Value.absent(),
                 Value<String> priceLevel = const Value.absent(),
                 Value<int?> accountId = const Value.absent(),
@@ -135002,6 +135505,10 @@ class $$PartiesTableTableManager
                 isFavorite: isFavorite,
                 balance: balance,
                 creditLimit: creditLimit,
+                paymentTermsDays: paymentTermsDays,
+                earlyPaymentDiscountPct: earlyPaymentDiscountPct,
+                earlyPaymentDiscountDays: earlyPaymentDiscountDays,
+                supplierRating: supplierRating,
                 fixedDiscount: fixedDiscount,
                 priceLevel: priceLevel,
                 accountId: accountId,
@@ -135442,6 +135949,7 @@ typedef $$PurchaseInvoicesTableCreateCompanionBuilder =
       required int warehouseId,
       Value<int?> branchId,
       required DateTime invoiceDate,
+      Value<DateTime?> dueDate,
       Value<double> subtotal,
       Value<double> discount,
       Value<double> tax,
@@ -135473,6 +135981,7 @@ typedef $$PurchaseInvoicesTableUpdateCompanionBuilder =
       Value<int> warehouseId,
       Value<int?> branchId,
       Value<DateTime> invoiceDate,
+      Value<DateTime?> dueDate,
       Value<double> subtotal,
       Value<double> discount,
       Value<double> tax,
@@ -135726,6 +136235,11 @@ class $$PurchaseInvoicesTableFilterComposer
 
   ColumnFilters<DateTime> get invoiceDate => $composableBuilder(
     column: $table.invoiceDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get dueDate => $composableBuilder(
+    column: $table.dueDate,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -136069,6 +136583,11 @@ class $$PurchaseInvoicesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<DateTime> get dueDate => $composableBuilder(
+    column: $table.dueDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get subtotal => $composableBuilder(
     column: $table.subtotal,
     builder: (column) => ColumnOrderings(column),
@@ -136306,6 +136825,9 @@ class $$PurchaseInvoicesTableAnnotationComposer
     column: $table.invoiceDate,
     builder: (column) => column,
   );
+
+  GeneratedColumn<DateTime> get dueDate =>
+      $composableBuilder(column: $table.dueDate, builder: (column) => column);
 
   GeneratedColumn<double> get subtotal =>
       $composableBuilder(column: $table.subtotal, builder: (column) => column);
@@ -136640,6 +137162,7 @@ class $$PurchaseInvoicesTableTableManager
                 Value<int> warehouseId = const Value.absent(),
                 Value<int?> branchId = const Value.absent(),
                 Value<DateTime> invoiceDate = const Value.absent(),
+                Value<DateTime?> dueDate = const Value.absent(),
                 Value<double> subtotal = const Value.absent(),
                 Value<double> discount = const Value.absent(),
                 Value<double> tax = const Value.absent(),
@@ -136669,6 +137192,7 @@ class $$PurchaseInvoicesTableTableManager
                 warehouseId: warehouseId,
                 branchId: branchId,
                 invoiceDate: invoiceDate,
+                dueDate: dueDate,
                 subtotal: subtotal,
                 discount: discount,
                 tax: tax,
@@ -136700,6 +137224,7 @@ class $$PurchaseInvoicesTableTableManager
                 required int warehouseId,
                 Value<int?> branchId = const Value.absent(),
                 required DateTime invoiceDate,
+                Value<DateTime?> dueDate = const Value.absent(),
                 Value<double> subtotal = const Value.absent(),
                 Value<double> discount = const Value.absent(),
                 Value<double> tax = const Value.absent(),
@@ -136729,6 +137254,7 @@ class $$PurchaseInvoicesTableTableManager
                 warehouseId: warehouseId,
                 branchId: branchId,
                 invoiceDate: invoiceDate,
+                dueDate: dueDate,
                 subtotal: subtotal,
                 discount: discount,
                 tax: tax,
@@ -139438,6 +139964,7 @@ typedef $$SalesInvoicesTableCreateCompanionBuilder =
       Value<int?> branchId,
       required int userId,
       required DateTime invoiceDate,
+      Value<DateTime?> dueDate,
       Value<double> subtotal,
       Value<double> discount,
       Value<double> tax,
@@ -139483,6 +140010,7 @@ typedef $$SalesInvoicesTableUpdateCompanionBuilder =
       Value<int?> branchId,
       Value<int> userId,
       Value<DateTime> invoiceDate,
+      Value<DateTime?> dueDate,
       Value<double> subtotal,
       Value<double> discount,
       Value<double> tax,
@@ -139884,6 +140412,11 @@ class $$SalesInvoicesTableFilterComposer
 
   ColumnFilters<DateTime> get invoiceDate => $composableBuilder(
     column: $table.invoiceDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get dueDate => $composableBuilder(
+    column: $table.dueDate,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -140444,6 +140977,11 @@ class $$SalesInvoicesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<DateTime> get dueDate => $composableBuilder(
+    column: $table.dueDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get subtotal => $composableBuilder(
     column: $table.subtotal,
     builder: (column) => ColumnOrderings(column),
@@ -140823,6 +141361,9 @@ class $$SalesInvoicesTableAnnotationComposer
     column: $table.invoiceDate,
     builder: (column) => column,
   );
+
+  GeneratedColumn<DateTime> get dueDate =>
+      $composableBuilder(column: $table.dueDate, builder: (column) => column);
 
   GeneratedColumn<double> get subtotal =>
       $composableBuilder(column: $table.subtotal, builder: (column) => column);
@@ -141379,6 +141920,7 @@ class $$SalesInvoicesTableTableManager
                 Value<int?> branchId = const Value.absent(),
                 Value<int> userId = const Value.absent(),
                 Value<DateTime> invoiceDate = const Value.absent(),
+                Value<DateTime?> dueDate = const Value.absent(),
                 Value<double> subtotal = const Value.absent(),
                 Value<double> discount = const Value.absent(),
                 Value<double> tax = const Value.absent(),
@@ -141422,6 +141964,7 @@ class $$SalesInvoicesTableTableManager
                 branchId: branchId,
                 userId: userId,
                 invoiceDate: invoiceDate,
+                dueDate: dueDate,
                 subtotal: subtotal,
                 discount: discount,
                 tax: tax,
@@ -141467,6 +142010,7 @@ class $$SalesInvoicesTableTableManager
                 Value<int?> branchId = const Value.absent(),
                 required int userId,
                 required DateTime invoiceDate,
+                Value<DateTime?> dueDate = const Value.absent(),
                 Value<double> subtotal = const Value.absent(),
                 Value<double> discount = const Value.absent(),
                 Value<double> tax = const Value.absent(),
@@ -141510,6 +142054,7 @@ class $$SalesInvoicesTableTableManager
                 branchId: branchId,
                 userId: userId,
                 invoiceDate: invoiceDate,
+                dueDate: dueDate,
                 subtotal: subtotal,
                 discount: discount,
                 tax: tax,
@@ -194059,6 +194604,7 @@ typedef $$PurchaseOrdersTableCreateCompanionBuilder =
       required int warehouseId,
       required DateTime orderDate,
       Value<DateTime?> expectedDate,
+      Value<DateTime?> receivedAt,
       Value<double> subtotal,
       Value<double> discount,
       Value<double> tax,
@@ -194082,6 +194628,7 @@ typedef $$PurchaseOrdersTableUpdateCompanionBuilder =
       Value<int> warehouseId,
       Value<DateTime> orderDate,
       Value<DateTime?> expectedDate,
+      Value<DateTime?> receivedAt,
       Value<double> subtotal,
       Value<double> discount,
       Value<double> tax,
@@ -194239,6 +194786,11 @@ class $$PurchaseOrdersTableFilterComposer
 
   ColumnFilters<DateTime> get expectedDate => $composableBuilder(
     column: $table.expectedDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get receivedAt => $composableBuilder(
+    column: $table.receivedAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -194449,6 +195001,11 @@ class $$PurchaseOrdersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<DateTime> get receivedAt => $composableBuilder(
+    column: $table.receivedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get subtotal => $composableBuilder(
     column: $table.subtotal,
     builder: (column) => ColumnOrderings(column),
@@ -194624,6 +195181,11 @@ class $$PurchaseOrdersTableAnnotationComposer
 
   GeneratedColumn<DateTime> get expectedDate => $composableBuilder(
     column: $table.expectedDate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get receivedAt => $composableBuilder(
+    column: $table.receivedAt,
     builder: (column) => column,
   );
 
@@ -194830,6 +195392,7 @@ class $$PurchaseOrdersTableTableManager
                 Value<int> warehouseId = const Value.absent(),
                 Value<DateTime> orderDate = const Value.absent(),
                 Value<DateTime?> expectedDate = const Value.absent(),
+                Value<DateTime?> receivedAt = const Value.absent(),
                 Value<double> subtotal = const Value.absent(),
                 Value<double> discount = const Value.absent(),
                 Value<double> tax = const Value.absent(),
@@ -194851,6 +195414,7 @@ class $$PurchaseOrdersTableTableManager
                 warehouseId: warehouseId,
                 orderDate: orderDate,
                 expectedDate: expectedDate,
+                receivedAt: receivedAt,
                 subtotal: subtotal,
                 discount: discount,
                 tax: tax,
@@ -194874,6 +195438,7 @@ class $$PurchaseOrdersTableTableManager
                 required int warehouseId,
                 required DateTime orderDate,
                 Value<DateTime?> expectedDate = const Value.absent(),
+                Value<DateTime?> receivedAt = const Value.absent(),
                 Value<double> subtotal = const Value.absent(),
                 Value<double> discount = const Value.absent(),
                 Value<double> tax = const Value.absent(),
@@ -194895,6 +195460,7 @@ class $$PurchaseOrdersTableTableManager
                 warehouseId: warehouseId,
                 orderDate: orderDate,
                 expectedDate: expectedDate,
+                receivedAt: receivedAt,
                 subtotal: subtotal,
                 discount: discount,
                 tax: tax,

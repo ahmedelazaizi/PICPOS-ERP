@@ -52,6 +52,35 @@ class Parties extends Table {
   RealColumn get balance =>
       real().withDefault(const Constant(0))(); // +debit / -credit
   RealColumn get creditLimit => real().withDefault(const Constant(0))();
+
+  // ═══ v164 — شروطُ التعامل (أمرُ المالك 2026-08-26) ═══════════════════════
+  //
+  // أربعةُ حقولٍ **متّفقٌ عليها** لا مشتقّة. وما يُشتقّ لا يُخزَّن هنا عمداً:
+  // «الالتزامُ بمواعيد التوريد» يُقاس من `purchase_orders.received_at` مقابلَ
+  // `expected_date`، و«متوسّطُ السداد الفعليّ» من `payment_allocations`
+  // مقابلَ تواريخ الفواتير. رقمُ التزامٍ يكتبه إنسانٌ يكذب؛ والتاريخان
+  // يقولان الحقيقةَ وحدَهما.
+
+  /// مهلةُ السداد المتّفقةُ بالأيّام — «مدّةُ السماح» للعميل و«مدّةُ السداد»
+  /// للمورد. تُشتقّ منها استحقاقُ الفاتورة **عند إصدارها**.
+  ///
+  /// والافتراضُ صفرٌ عمداً: يبقى استحقاقُ كلّ فاتورةٍ قائمةٍ يومَ إصدارها،
+  /// فلا تتحرّك أرقامُ التقادم لحظةَ الترقية.
+  IntColumn get paymentTermsDays => integer().withDefault(const Constant(0))();
+
+  /// نسبةُ خصم السداد المعجَّل — «٢٪ خلال ١٠ أيّام» شرطان لا واحد، ولذلك
+  /// حقلان: النسبةُ هنا والمهلةُ في [earlyPaymentDiscountDays]. ونسبةٌ بلا
+  /// مهلةٍ لا معنى لها، فكلتاهما صفرٌ = لا خصمَ معجَّل.
+  RealColumn get earlyPaymentDiscountPct =>
+      real().withDefault(const Constant(0))();
+
+  /// عددُ الأيّام التي يسري فيها [earlyPaymentDiscountPct] من تاريخ الفاتورة.
+  IntColumn get earlyPaymentDiscountDays =>
+      integer().withDefault(const Constant(0))();
+
+  /// تقييمُ المورد ١..٥ — حكمٌ بشريٌّ لا يُشتقّ من بيانات. `null` = لم يُقيَّم
+  /// بعد، وهي حالةٌ مختلفةٌ عن «تقييمٌ منخفض» فلا تُطوى إلى صفر.
+  IntColumn get supplierRating => integer().nullable()();
   RealColumn get fixedDiscount => real().withDefault(
     const Constant(0),
   )(); // NEW: Default discount percentage for this party
@@ -99,6 +128,18 @@ class PurchaseInvoices extends Table {
   // Nullable for backward-compat with rows created before this column existed.
   IntColumn get branchId => integer().nullable().references(Branches, #id)();
   DateTimeColumn get invoiceDate => dateTime()();
+
+  /// v164 — تاريخُ الاستحقاق. **لقطةٌ وقتَ الإصدار لا حسابٌ حيّ.**
+  ///
+  /// ⚠️ لا يُشتقّ من `parties.payment_terms_days` عند القراءة: تغييرُ مهلةِ
+  /// طرفٍ اليومَ كان سيُزحزح استحقاقَ كلّ فاتورةٍ قديمةٍ له بأثرٍ رجعيّ،
+  /// فتتبدّل أعمارُ الدين لمستنداتٍ أُغلقت. نفسُ مبدأ
+  /// `sales_invoice_items.cost_price`.
+  ///
+  /// ⚠️ و`null` تعني **بلا مهلة** = يستحق يومَ إصداره، فتُقرأ دائماً
+  /// `COALESCE(due_date, invoice_date)`. وبهذا لا تكتب الهجرةُ صفّاً واحداً
+  /// ويبقى سلوكُ ما قبلَها حرفيّاً.
+  DateTimeColumn get dueDate => dateTime().nullable()();
   RealColumn get subtotal => real().withDefault(const Constant(0))();
   RealColumn get discount => real().withDefault(const Constant(0))();
   RealColumn get tax => real().withDefault(const Constant(0))();
@@ -185,6 +226,18 @@ class SalesInvoices extends Table {
   IntColumn get branchId => integer().nullable().references(Branches, #id)();
   IntColumn get userId => integer().references(Users, #id)();
   DateTimeColumn get invoiceDate => dateTime()();
+
+  /// v164 — تاريخُ الاستحقاق. **لقطةٌ وقتَ الإصدار لا حسابٌ حيّ.**
+  ///
+  /// ⚠️ لا يُشتقّ من `parties.payment_terms_days` عند القراءة: تغييرُ مهلةِ
+  /// طرفٍ اليومَ كان سيُزحزح استحقاقَ كلّ فاتورةٍ قديمةٍ له بأثرٍ رجعيّ،
+  /// فتتبدّل أعمارُ الدين لمستنداتٍ أُغلقت. نفسُ مبدأ
+  /// `sales_invoice_items.cost_price`.
+  ///
+  /// ⚠️ و`null` تعني **بلا مهلة** = يستحق يومَ إصداره، فتُقرأ دائماً
+  /// `COALESCE(due_date, invoice_date)`. وبهذا لا تكتب الهجرةُ صفّاً واحداً
+  /// ويبقى سلوكُ ما قبلَها حرفيّاً.
+  DateTimeColumn get dueDate => dateTime().nullable()();
   RealColumn get subtotal => real().withDefault(const Constant(0))();
   RealColumn get discount => real().withDefault(const Constant(0))();
   RealColumn get tax => real().withDefault(const Constant(0))();
@@ -333,6 +386,13 @@ class PurchaseOrders extends Table {
   IntColumn get warehouseId => integer().references(Warehouses, #id)();
   DateTimeColumn get orderDate => dateTime()();
   DateTimeColumn get expectedDate => dateTime().nullable()(); // تاريخ التسليم المتوقع
+
+  /// v164 — تاريخُ اكتمال الاستلام فعليّاً.
+  ///
+  /// وجودُه هو ما يجعل «الالتزامَ بمواعيد التوريد» رقماً **مقيساً** لا
+  /// مكتوباً: النسبةُ = أوامرُ استُلمت في موعدها ÷ أوامرُ استُلمت. و`null`
+  /// تعني «لم يكتمل استلامُه بعد» — لا «تأخّر»، فأمرٌ مفتوحٌ ليس تأخّراً.
+  DateTimeColumn get receivedAt => dateTime().nullable()();
   RealColumn get subtotal => real().withDefault(const Constant(0))();
   RealColumn get discount => real().withDefault(const Constant(0))();
   RealColumn get tax => real().withDefault(const Constant(0))();

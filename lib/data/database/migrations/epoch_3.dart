@@ -2669,5 +2669,64 @@ extension Epoch3Migrations on AppDatabase {
         debugPrint('[Migration] v163 grant_mode أُضيف');
       });
     }
+
+    // ‏١٦٤ — الاستحقاقُ وشروطُ التعامل (أمرُ المالك 2026-08-26).
+    //
+    // سبعةُ أعمدةٍ في أربعة جداول تجعل «أعمار الدين» و«المستحق» و«ملفَّ
+    // الطرف» أرقاماً حقيقيّةً بدل نصوصٍ في تصميم. وقبلها كان التقادمُ
+    // يُحسب من **تاريخ الإصدار** لأنّ الاستحقاقَ لا وجودَ له، فيقرأ
+    // المشغّلُ عمراً أقصرَ من الحقيقة لكلّ فاتورةٍ لها مهلةُ سداد.
+    //
+    // ⚠️ **ولا صفَّ واحدٌ يُكتَب هنا.** `due_date` يقبل الفراغَ والفراغُ يعني
+    //    «بلا مهلة»، فتُقرأ `COALESCE(due_date, invoice_date)` — وأرقامُ
+    //    التقادم لا تتحرّك لحظةَ الترقية. الاتّجاهُ مقصود: ترقيةٌ تُبدّل
+    //    أرقامَ دفاترِ المالك بلا أن يطلب ذلك أسوأُ من ترقيةٍ لا تفعل شيئاً.
+    //
+    // ⚠️ **و`addColumn` لا `alterTable`**: الأخيرةُ تعيد بناءَ الجدول من
+    //    تعريفِ **اليوم**، وجداولُ الفواتير والأوامر مرجعيّاتُها كثيرةٌ
+    //    وفهارسُها عديدة. والإضافةُ بعمودٍ ذي افتراضٍ أو يقبل الفراغَ لا
+    //    تحتاج إعادةَ بناءٍ أصلاً.
+    //
+    // ⚠️ **وفحصٌ مستقلٌّ لكلّ جدول**: لو أُضيف بعضُها في تشغيلٍ سابقٍ انقطع
+    //    قبل تمامه، لا تسقط الخطوةُ كلُّها ولا تُعاد إضافةُ الموجود.
+    if (from < 164) {
+      await _safeMigrate('v164 الاستحقاقُ وشروطُ التعامل', () async {
+        Future<Set<String>> columnsOf(String table) async {
+          final info = await customSelect('PRAGMA table_info($table)').get();
+          return info.map((r) => r.data['name'] as String).toSet();
+        }
+
+        final partyCols = await columnsOf('parties');
+        if (!partyCols.contains('payment_terms_days')) {
+          await m.addColumn(parties, parties.paymentTermsDays);
+        }
+        if (!partyCols.contains('early_payment_discount_pct')) {
+          await m.addColumn(parties, parties.earlyPaymentDiscountPct);
+        }
+        if (!partyCols.contains('early_payment_discount_days')) {
+          await m.addColumn(parties, parties.earlyPaymentDiscountDays);
+        }
+        if (!partyCols.contains('supplier_rating')) {
+          await m.addColumn(parties, parties.supplierRating);
+        }
+
+        final salesCols = await columnsOf('sales_invoices');
+        if (!salesCols.contains('due_date')) {
+          await m.addColumn(salesInvoices, salesInvoices.dueDate);
+        }
+
+        final purchaseCols = await columnsOf('purchase_invoices');
+        if (!purchaseCols.contains('due_date')) {
+          await m.addColumn(purchaseInvoices, purchaseInvoices.dueDate);
+        }
+
+        final poCols = await columnsOf('purchase_orders');
+        if (!poCols.contains('received_at')) {
+          await m.addColumn(purchaseOrders, purchaseOrders.receivedAt);
+        }
+
+        debugPrint('[Migration] v164 الاستحقاقُ وشروطُ التعامل — تمّت');
+      });
+    }
   }
 }
