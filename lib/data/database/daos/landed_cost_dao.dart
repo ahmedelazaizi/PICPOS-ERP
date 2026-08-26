@@ -173,24 +173,49 @@ extension LandedCostDao on AppDatabase {
           ..where((a) => a.sheetId.equals(sheetId)))
         .go();
 
-    // Calculate and insert allocations
+    // ── التقريبُ وفرقُه ────────────────────────────────────────────────
+    //
+    // ⚠️ **مجموعُ ما وُزِّع يجب أن يساوي إجماليَّ الورقة بالضبط.** القسمةُ
+    // النسبيّةُ تعطي كسوراً بلا نهاية (‏تكلفةٌ ÷ ثلاثةِ بنودٍ مثلاً)، فتقريبُ
+    // كلِّ سطرٍ على حدةٍ يترك فرقاً بين مجموعِ الأسطر وإجماليِّ الورقة.
+    // وذلك الفرقُ ليس تجميليّاً: `applyLandedCost` يقيّد **إجماليَّ الورقة**
+    // مديناً على المخزون بينما يُبلبل الأسطرَ على متوسّطات التكلفة — فيبقى
+    // فرقٌ في حساب المخزون لا يقابله تحريكُ تكلفةٍ في أيّ صنف.
+    //
+    // فالفرقُ يُحمَّل على **أكبر بند**: أقلُّ الأسطر تأثّراً نسبيّاً بقرشٍ
+    // زائدٍ أو ناقص. وهو ما يصفه التصميمُ نصّاً في رأس جدول التوزيع.
+    final bases = <double>[];
     for (final item in items) {
-      double itemBase;
       switch (sheet.allocationMethod) {
-        case 'by_value':
-          itemBase = (item.data['line_total'] as num).toDouble();
-          break;
         case 'by_quantity':
-          itemBase = (item.data['quantity'] as num).toDouble();
+          bases.add((item.data['quantity'] as num).toDouble());
           break;
         case 'equal':
-          itemBase = 1.0;
+          bases.add(1.0);
           break;
+        case 'by_value':
         default:
-          itemBase = (item.data['line_total'] as num).toDouble();
+          bases.add((item.data['line_total'] as num).toDouble());
       }
+    }
 
-      final allocation = totalCost * (itemBase / totalBase);
+    // تقريبٌ إلى قرشَين، ثمّ يُلقى الباقي على أكبر سطر.
+    final amounts = bases
+        .map((b) => (totalCost * (b / totalBase) * 100).roundToDouble() / 100)
+        .toList();
+    var biggest = 0;
+    for (var i = 1; i < amounts.length; i++) {
+      if (amounts[i] > amounts[biggest]) biggest = i;
+    }
+    final sum = amounts.fold<double>(0, (s, v) => s + v);
+    final drift = ((totalCost - sum) * 100).roundToDouble() / 100;
+    amounts[biggest] =
+        ((amounts[biggest] + drift) * 100).roundToDouble() / 100;
+
+    // Calculate and insert allocations
+    for (var i = 0; i < items.length; i++) {
+      final item = items[i];
+      final allocation = amounts[i];
       final qty = (item.data['quantity'] as num).toDouble();
       final unitPrice = (item.data['unit_price'] as num).toDouble();
       final newUnitCost = unitPrice + (qty > 0 ? allocation / qty : 0);
