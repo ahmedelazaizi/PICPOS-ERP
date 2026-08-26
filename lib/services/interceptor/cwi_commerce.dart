@@ -260,6 +260,9 @@ class _CwiCommerce {
     bool isDeliveryCompany = false,
     String? taxId,
     double creditLimit = 0,
+    // v164 — مهلةُ السداد. تمرّ إلى الخادم وإلى المرآة معاً: حقلٌ يُكتَب
+    // محلّيّاً ولا يصل المركزَ يعود مختلفاً بأوّل سحبِ دلتا.
+    int paymentTermsDays = 0,
     double balance = 0,
     double fixedDiscount = 0,
     String priceLevel = 'default',
@@ -353,6 +356,7 @@ class _CwiCommerce {
       'isDeliveryCompany': isDeliveryCompany,
       'taxId': taxId,
       'creditLimit': creditLimit,
+      'paymentTermsDays': paymentTermsDays,
       'balance': balance,
       'fixedDiscount': fixedDiscount,
       'priceLevel': priceLevel,
@@ -389,6 +393,7 @@ class _CwiCommerce {
             taxId: Value(taxId),
             balance: Value(balance),
             creditLimit: Value(creditLimit),
+            paymentTermsDays: Value(paymentTermsDays),
             fixedDiscount: Value(fixedDiscount),
             priceLevel: Value(priceLevel),
             groupId: groupId != null ? Value(groupId) : const Value.absent(),

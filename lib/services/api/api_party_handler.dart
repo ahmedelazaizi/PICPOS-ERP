@@ -136,6 +136,8 @@ class ApiPartyHandler extends ApiHandlerBase {
           isDeliveryCompany: Value(parseBool(data['isDeliveryCompany'], false)),
           taxId: Value(data['taxId'] as String?),
           creditLimit: Value(parseDoubleNullable(data['creditLimit']) ?? 0),
+          paymentTermsDays:
+              Value((data['paymentTermsDays'] as num?)?.toInt() ?? 0),
           balance: Value(parseDoubleNullable(data['balance']) ?? 0),
           fixedDiscount: Value(
             parseDoubleNullable(data['fixedDiscount']) ?? 0,
@@ -183,6 +185,9 @@ class ApiPartyHandler extends ApiHandlerBase {
           taxId: Value(data['taxId'] as String? ?? party.taxId),
           creditLimit:
               parseDoubleNullable(data['creditLimit']) ?? party.creditLimit,
+          paymentTermsDays:
+              (data['paymentTermsDays'] as num?)?.toInt() ??
+                  party.paymentTermsDays,
           balance: parseDoubleNullable(data['balance']) ?? party.balance,
           fixedDiscount:
               parseDoubleNullable(data['fixedDiscount']) ??

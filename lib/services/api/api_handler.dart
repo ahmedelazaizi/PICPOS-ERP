@@ -1380,6 +1380,7 @@ class ApiHandler {
               'isFavorite': p.isFavorite,
               'balance': p.balance,
               'creditLimit': p.creditLimit,
+              'paymentTermsDays': p.paymentTermsDays,
               'fixedDiscount': p.fixedDiscount,
               'priceLevel': p.priceLevel,
               'isActive': p.isActive,

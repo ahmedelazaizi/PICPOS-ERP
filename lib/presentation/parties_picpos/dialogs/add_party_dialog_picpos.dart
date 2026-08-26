@@ -56,6 +56,9 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
   final phoneController = TextEditingController();
   final openingBalanceController = TextEditingController(text: '0');
   final creditLimitController = TextEditingController(text: '0');
+  // v164 — مهلةُ السداد المتّفقة. صفرٌ = يستحق يومَ الإصدار، وهو ما
+  // كان عليه كلُّ طرفٍ قبل هذا الحقل.
+  final paymentTermsController = TextEditingController(text: '0');
   String selectedType = 'customer';
   String selectedPriceLevel = 'default';
   int? selectedGroupId;
@@ -103,6 +106,13 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
                 NumberUtils.tryParseLocale(openingBalanceController.text) ?? 0;
             final creditLimit =
                 NumberUtils.tryParseLocale(creditLimitController.text) ?? 0;
+            // سالبٌ لا معنى له — مهلةٌ بالسالب تجعل الفاتورةَ مستحقّةً
+            // قبل صدورها. فيُقصّ إلى صفرٍ لا يُرفَض الإدخال.
+            final paymentTermsDays = (
+                    NumberUtils.tryParseLocale(paymentTermsController.text) ??
+                        0)
+                .round()
+                .clamp(0, 3650);
 
             final enteredCode = codeController.text.trim();
             final partyCode = enteredCode.isEmpty ? null : enteredCode;
@@ -125,6 +135,7 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
                   isDeliveryCompany: selectedType == 'delivery',
                   balance: openingBalance,
                   creditLimit: creditLimit,
+                  paymentTermsDays: paymentTermsDays,
                   priceLevel: selectedPriceLevel,
                   groupId: selectedGroupId,
                   branchIds: selectedBranchIds,
@@ -150,6 +161,7 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
                     isActive: const Value(true),
                     balance: Value(openingBalance),
                     creditLimit: Value(creditLimit),
+                    paymentTermsDays: Value(paymentTermsDays),
                     priceLevel: Value(selectedPriceLevel),
                     groupId: selectedGroupId != null
                         ? Value(selectedGroupId)
@@ -307,6 +319,19 @@ void showAddPartyDialogPicpos(BuildContext context, WidgetRef ref) {
                         labelText: 'الحد الائتماني',
                         prefixIcon: const Icon(PhosphorIconsBold.creditCard),
                         suffixText: AppConstants.currencySymbolEn,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: paymentTermsController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'مهلة السداد',
+                        prefixIcon: Icon(PhosphorIconsBold.calendarCheck),
+                        suffixText: 'يوم',
+                        helperText: 'صفر = يستحق فور الإصدار',
                       ),
                     ),
                   ),
