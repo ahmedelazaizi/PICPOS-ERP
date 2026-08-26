@@ -19,6 +19,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:ural_erp/data/database/database.dart' as db;
+import 'package:ural_erp/data/providers/auth_providers.dart';
 import 'package:ural_erp/data/providers/repository_providers.dart';
 import 'package:ural_erp/domain/repositories/accounting_repository.dart';
 import 'package:ural_erp/domain/repositories/fixed_assets_repository.dart';
@@ -163,7 +164,12 @@ class _FakeAccountingRepo implements IAccountingRepository {
       super.noSuchMethod(invocation);
 }
 
-Future<void> _pump(WidgetTester tester, double width) async {
+Future<void> _pump(
+  WidgetTester tester,
+  double width, {
+  /// `assets_depreciation` هو ما يحرس زرَّ ترحيل الإهلاك.
+  List<String> perms = const ['assets_view', 'assets_depreciation'],
+}) async {
   tester.view.physicalSize = Size(width, 1000);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);
@@ -173,10 +179,12 @@ Future<void> _pump(WidgetTester tester, double width) async {
       overrides: [
         fixedAssetsRepositoryProvider.overrideWithValue(_FakeAssetsRepo()),
         accountingRepositoryProvider.overrideWithValue(_FakeAccountingRepo()),
+        currentUserPermissionsProvider.overrideWith((ref) async => perms),
       ],
       child: const MaterialApp(home: FixedAssetsPicposScreen()),
     ),
   );
+  await tester.pump();
   await tester.pump();
   await tester.pump();
 }
@@ -241,6 +249,31 @@ void main() {
       expect(find.textContaining('AST-001'), findsOneWidget);
     });
   }
+
+  // ⚠️ **فحصان لا واحد.** نداءُ `_pump` مرّتين في اختبارٍ واحدٍ لا يعمل:
+  //    `ProviderScope` يُعاد استعمالُ عنصره، و`PermissionGuard` يقرأ
+  //    `permissionsAsync.value` الذي **يُبقي القيمةَ السابقة** عبر
+  //    `copyWithPrevious` أثناء إعادة التحميل — وذلك سلوكٌ مقصودٌ وموثَّقٌ
+  //    في الحارس (يمنع ومضةَ الأزرار عند كلّ `invalidate`). فقياسُ المنع
+  //    يحتاج شجرةً جديدةً من الصفر.
+
+  testWidgets('المرساة: زرُّ الترحيل يظهر **مع** صلاحية assets_depreciation',
+      (tester) async {
+    await _pump(tester, 1920);
+    expect(find.text('ترحيل إهلاك الشهر'), findsOneWidget,
+        reason: 'الزرُّ غائبٌ حتّى مع الصلاحيّة — فنفيُ الفحص التالي '
+            'سيقيس نمطَ البحث لا الحارس.');
+  });
+
+  testWidgets('🔴 وبلا صلاحية assets_depreciation لا يظهر إطلاقاً',
+      (tester) async {
+    // ترحيلُ الإهلاك يقيّد قيوداً ويزيد مجمعَ الإهلاك لكلّ أصل — فقراءةُ
+    // الشاشة (`assets_view`) لا تكفي له.
+    await _pump(tester, 1920, perms: const ['assets_view']);
+    expect(find.text('ترحيل إهلاك الشهر'), findsNothing,
+        reason: 'زرُّ الترحيل ظهر لمستخدمٍ بلا `assets_depreciation` — '
+            'أي أنّ قيوداً محاسبيّةً تُنشَأ بلا صلاحية.');
+  });
 
   testWidgets('«قارب الانتهاء» يُحسب من نسبة الإهلاك لا من التاريخ',
       (tester) async {

@@ -47,6 +47,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
+import '../../../core/permissions/permission_codes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/e_invoicing_providers.dart';
 import '../../../data/providers/providers.dart';
@@ -57,6 +58,7 @@ import '../../picpos_shell/picpos_empty_state.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../picpos_shell/picpos_section_header.dart';
 import '../../picpos_shell/picpos_surface.dart';
+import '../../widgets/permission_guard.dart';
 
 final _money = NumberFormat('#,##0.00', 'en');
 final _money0 = NumberFormat('#,##0', 'en');
@@ -305,12 +307,21 @@ class _EInvoicingPicposScreenState
           'إرسال الفواتير لمنظومة الضرائب ومتابعة حالتها — كل تغيير حالة يُسجَّل ولا يُحذف',
       icon: PhosphorIconsBold.broadcast,
       headerActions: [
-        // ⚠️ العدّادُ مقيسٌ من الصفوف، فالزرُّ يُعطَّل حين لا معلَّقَ — بدل
+        // 🔴 **حارسُ `einvoiceSubmit` واجب.** الإرسالُ فعلٌ خارجيٌّ قانونيّ:
+        //    يبعث المستندَ لمنظومة الضرائب ويُنشئ له معرّفاً لا يُلغى إلّا
+        //    بمسارٍ آخر. والشاشةُ الأصلُ تحرسه (`buildEinvoiceSubmitButton`)،
+        //    وأوّلُ صيغةٍ لهذا الفورك أسقطت الحارسَ — وحصرُ التنقّل
+        //    (`einvoice_view`) يفتح الشاشةَ للقراءة لا للإرسال.
+        //
+        // ⚠️ والعدّادُ مقيسٌ من الصفوف، فالزرُّ يُعطَّل حين لا معلَّقَ — بدل
         //    أن يَعِد بإرسالٍ لا شيءَ فيه.
-        FilledButton.icon(
-          onPressed: pending == 0 ? null : () => _submitPending(pending),
-          icon: const Icon(PhosphorIconsBold.paperPlaneTilt, size: 15),
-          label: Text('إرسال المعلَّقة (${_ar(pending)})'),
+        PermissionGuard(
+          permission: PermissionCodes.einvoiceSubmit,
+          child: FilledButton.icon(
+            onPressed: pending == 0 ? null : () => _submitPending(pending),
+            icon: const Icon(PhosphorIconsBold.paperPlaneTilt, size: 15),
+            label: Text('إرسال المعلَّقة (${_ar(pending)})'),
+          ),
         ),
       ],
       bodyPadding: EdgeInsets.zero,
@@ -937,11 +948,21 @@ class _EInvoicingPicposScreenState
         r.status == 'submitted';
     return Row(
       children: [
+        // 🔴 نفسُ حارس زرِّ الإرسال الجماعيّ — والمسارُ واحدٌ فالحراسةُ واحدة.
+        //    و`fallback` يشرح الغيابَ بدل أن يختفيَ الزرُّ بلا تفسير.
         Expanded(
-          child: FilledButton.icon(
-            onPressed: canSend ? () => _submitOne(r) : null,
-            icon: const Icon(PhosphorIconsBold.paperPlaneTilt, size: 14),
-            label: Text(r.status == 'pending' ? 'إرسال الآن' : 'إعادة إرسال'),
+          child: PermissionGuard(
+            permission: PermissionCodes.einvoiceSubmit,
+            fallback: OutlinedButton.icon(
+              onPressed: null,
+              icon: const Icon(PhosphorIconsBold.lockSimple, size: 14),
+              label: const Text('الإرسال يحتاج صلاحية'),
+            ),
+            child: FilledButton.icon(
+              onPressed: canSend ? () => _submitOne(r) : null,
+              icon: const Icon(PhosphorIconsBold.paperPlaneTilt, size: 14),
+              label: Text(r.status == 'pending' ? 'إرسال الآن' : 'إعادة إرسال'),
+            ),
           ),
         ),
         const SizedBox(width: 8),

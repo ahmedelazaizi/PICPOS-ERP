@@ -37,6 +37,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
+import '../../../core/permissions/permission_codes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/providers.dart';
 import '../../../domain/repositories/accounting_repository.dart';
@@ -49,6 +50,7 @@ import '../../picpos_shell/picpos_report_tabs.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../picpos_shell/picpos_stat_tile.dart';
 import '../../picpos_shell/picpos_surface.dart';
+import '../../widgets/permission_guard.dart';
 
 final _money = NumberFormat('#,##0.00', 'en');
 final _money0 = NumberFormat('#,##0', 'en');
@@ -234,10 +236,19 @@ class _FixedAssetsPicposScreenState
         ),
       ),
       headerActions: [
-        OutlinedButton.icon(
-          onPressed: () => _confirmRunDepreciation(onBooks, deprs),
-          icon: const Icon(PhosphorIconsBold.arrowDownRight, size: 15),
-          label: const Text('ترحيل إهلاك الشهر'),
+        // 🔴 **حارسُ الصلاحيّة ليس زينةً هنا.** «ترحيل إهلاك الشهر» يقيّد
+        //    قيوداً محاسبيّةً ويزيد مجمعَ الإهلاك لكلّ أصل. والشاشةُ الأصلُ
+        //    (`fixed_assets_screen.dart`) تحرسه بـ`assetsDepreciation` —
+        //    وأوّلُ صيغةٍ لهذا الفورك أسقطت الحارسَ فصار الترحيلُ مبلوغاً
+        //    لأيّ مَن يفتح الشاشة. وحصرُ التنقّل وحدَه لا يكفي: `assets_view`
+        //    يفتح الشاشةَ للقراءة، والترحيلُ فعلُ كتابةٍ أعلى.
+        PermissionGuard(
+          permission: PermissionCodes.assetsDepreciation,
+          child: OutlinedButton.icon(
+            onPressed: () => _confirmRunDepreciation(onBooks, deprs),
+            icon: const Icon(PhosphorIconsBold.arrowDownRight, size: 15),
+            label: const Text('ترحيل إهلاك الشهر'),
+          ),
         ),
       ],
       subHeader: Column(

@@ -16,6 +16,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:ural_erp/data/database/database.dart' as db;
+import 'package:ural_erp/data/providers/auth_providers.dart';
 import 'package:ural_erp/data/providers/repository_providers.dart';
 import 'package:ural_erp/domain/repositories/e_invoice_repository.dart';
 import 'package:ural_erp/presentation/e_invoicing_picpos/screens/e_invoicing_picpos_screen.dart';
@@ -124,7 +125,12 @@ class _FakeEInvoiceRepo implements IEInvoiceRepository {
       super.noSuchMethod(invocation);
 }
 
-Future<void> _pump(WidgetTester tester, double width) async {
+Future<void> _pump(
+  WidgetTester tester,
+  double width, {
+  /// الصلاحيّاتُ الممنوحةُ للمستخدم. `einvoice_submit` هو ما يحرس الإرسال.
+  List<String> perms = const ['einvoice_submit'],
+}) async {
   tester.view.physicalSize = Size(width, 1000);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);
@@ -133,10 +139,12 @@ Future<void> _pump(WidgetTester tester, double width) async {
     ProviderScope(
       overrides: [
         eInvoiceRepositoryProvider.overrideWithValue(_FakeEInvoiceRepo()),
+        currentUserPermissionsProvider.overrideWith((ref) async => perms),
       ],
       child: const MaterialApp(home: EInvoicingPicposScreen()),
     ),
   );
+  await tester.pump();
   await tester.pump();
   await tester.pump();
 }
@@ -207,6 +215,23 @@ void main() {
       expect(find.widgetWithText(TextButton, forbidden), findsNothing,
           reason: 'ظهر زرُّ «$forbidden» في لوحةٍ عقدُها الإضافةُ فقط.');
     }
+  });
+
+  testWidgets('🔴 بلا صلاحية `einvoice_submit` لا يظهر زرُّ الإرسال إطلاقاً',
+      (tester) async {
+    // ⚠️ **المرساةُ في الفحص السابق**: الزرُّ يظهر بالصلاحيّة (‏مقيسٌ أعلاه
+    //    بعدّاده «١»). فغيابُه هنا يقيس الحارسَ لا نمطَ البحث.
+    //
+    //    والإرسالُ فعلٌ خارجيٌّ قانونيّ: يبعث المستندَ لمنظومة الضرائب
+    //    ويُنشئ معرّفاً لا يُلغى بسهولة. وحصرُ التنقّل (`einvoice_view`)
+    //    يفتح الشاشةَ للقراءة — فلو كفى وحدَه لأرسل كلُّ من يقرأ.
+    await _pump(tester, 1920, perms: const ['einvoice_view']);
+
+    expect(find.textContaining('إرسال المعلَّقة'), findsNothing,
+        reason: 'زرُّ الإرسال الجماعيّ ظهر لمستخدمٍ بلا `einvoice_submit`.');
+    expect(find.text('الإرسال يحتاج صلاحية'), findsWidgets,
+        reason: 'البديلُ لا يشرح سببَ غياب الزرّ — فيبدو النظامُ معطوباً '
+            'بدل أن يبدو محروساً.');
   });
 
   testWidgets('الضرائبُ تُقرأ من الحِمل — وتُقال صراحةً حين لا حِمل',
