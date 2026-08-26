@@ -37,11 +37,23 @@ abstract class IReportingRepository
   /// `[{"field":"price","op":">","value":100}]`. اسمُ الحقل من
   /// [getAvailableFields] والعاملُ من [getFilterOperators] — قائمتان مغلقتان،
   /// والقيمةُ تُربَط معاملاً داخل المحرِّك فلا تصل الاستعلامَ نصّاً.
+  /// [groupBy] / [sortBy] — أسماءُ حقولٍ من [getAvailableFields] مفصولةً
+  /// بفواصل، و[sortBy] يقبل `field asc` / `field desc`.
+  ///
+  /// 🔴 **الاثنان يُركَّبان في نصّ SQL حرفيّاً** (‏`GROUP BY ?` ليس SQL
+  /// صالحاً فلا سبيلَ لربطهما معاملَين)، ولذلك يصفّيهما المحرّكُ على سجلّ
+  /// الحقول المغلق قبل الاستعمال ويرفض التقريرَ كلَّه على أوّل حقلٍ مجهول.
+  /// فلا تُمرَّر إليهما مدخلاتُ مستخدمٍ حرّة.
   Future<int> createCustomReport({
     required String name,
     required String sourceEntity,
     required String columns,
+    String? description,
     String? filters,
+    String? groupBy,
+    String? sortBy,
+    String? aggregates,
+    bool isShared,
   });
 
   /// Delete a custom report

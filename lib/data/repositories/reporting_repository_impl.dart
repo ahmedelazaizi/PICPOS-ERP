@@ -607,12 +607,22 @@ class ReportingRepositoryImpl implements IReportingRepository {
     required String name,
     required String sourceEntity,
     required String columns,
+    String? description,
     String? filters,
+    String? groupBy,
+    String? sortBy,
+    String? aggregates,
+    bool isShared = false,
   }) => _db.createCustomReport(
         name: name,
         sourceEntity: sourceEntity,
         columns: columns,
+        description: description,
         filters: filters,
+        groupBy: groupBy,
+        sortBy: sortBy,
+        aggregates: aggregates,
+        isShared: isShared,
       );
 
   @override

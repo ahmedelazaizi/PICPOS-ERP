@@ -410,14 +410,52 @@ extension ReportBuilderDao on AppDatabase {
       query += ' WHERE ${conditions.join(' AND ')}';
     }
 
-    // Add group by
+    // ── التجميعُ والترتيب ─────────────────────────────────────────────
+    //
+    // 🔴 **يُصفَّيان على سجلّ الحقول قبل أن يلمسا SQL.** هذان العمودان
+    // يُركَّبان في نصّ الاستعلام حرفيّاً (‏لا يُربَطان معاملاتٍ — لا يمكن:
+    // `GROUP BY ?` ليس SQL صالحاً)، فأيُّ نصٍّ يصلهما يصل المحرّك. وحتّى
+    // اليوم لم يكن ذلك مبلوغاً لأنّ `createCustomReport` على المستودع لا
+    // تقبلهما أصلاً، فهما `null` دائماً. ومع فتحِ لوحتَي «تجميع حسب»
+    // و«الترتيب» في واجهة PicPos صار لهما كاتبٌ — فلزم الحارس.
+    //
+    // و`_fieldType` سجلٌّ **مغلق**: يعيد `null` لأيّ مفتاحٍ ليس من حقول
+    // الكيان. فالمقبولُ هو ما أعلنه السجلُّ وحدَه، والباقي يُرفَض التقريرُ
+    // كلُّه لأجله — نفسُ سياسة الفلتر المرفوض فوق.
     if (report.groupBy != null && report.groupBy!.isNotEmpty) {
-      query += ' GROUP BY ${report.groupBy}';
+      final fields = report.groupBy!.split(',').map((f) => f.trim()).toList();
+      for (final f in fields) {
+        if (_fieldType(report.sourceEntity, f) == null) {
+          debugPrint('[ReportBuilder] رُفض: حقلُ تجميعٍ "$f" ليس من حقول '
+              '"${report.sourceEntity}"');
+          return null;
+        }
+      }
+      final exprs =
+          fields.map((f) => _fieldSqlExpression(report.sourceEntity, f));
+      query += ' GROUP BY ${exprs.join(', ')}';
     }
 
-    // Add sort
     if (report.sortBy != null && report.sortBy!.isNotEmpty) {
-      query += ' ORDER BY ${report.sortBy}';
+      final terms = <String>[];
+      for (final raw in report.sortBy!.split(',')) {
+        final parts = raw.trim().split(RegExp(r'\s+'));
+        if (parts.isEmpty || parts.first.isEmpty) continue;
+        final field = parts.first;
+        if (_fieldType(report.sourceEntity, field) == null) {
+          debugPrint('[ReportBuilder] رُفض: حقلُ ترتيبٍ "$field" ليس من حقول '
+              '"${report.sourceEntity}"');
+          return null;
+        }
+        // الاتّجاهُ كلمتان لا غير — و`ASC` هو الافتراض حين يُترَك.
+        final dir = parts.length > 1 ? parts[1].toUpperCase() : 'ASC';
+        if (dir != 'ASC' && dir != 'DESC') {
+          debugPrint('[ReportBuilder] رُفض: اتّجاهُ ترتيبٍ "$dir" غيرُ معروف');
+          return null;
+        }
+        terms.add('${_fieldSqlExpression(report.sourceEntity, field)} $dir');
+      }
+      if (terms.isNotEmpty) query += ' ORDER BY ${terms.join(', ')}';
     }
 
     // ‏`rowLimit + 1` عن قصد: `LIMIT n` وحده لا يفرّق بين «توجد n صفوفٍ

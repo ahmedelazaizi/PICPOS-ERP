@@ -95,6 +95,7 @@ import 'presentation/landed_cost_picpos/screens/landed_cost_picpos_screen.dart';
 import 'presentation/screens/cycle_count_screen.dart';
 import 'presentation/cycle_count_picpos/screens/cycle_count_picpos_screen.dart';
 import 'presentation/screens/report_builder_screen.dart';
+import 'presentation/report_builder_picpos/screens/report_builder_picpos_screen.dart';
 import 'presentation/screens/sales_returns_screen.dart';
 import 'presentation/sales_returns_picpos/screens/sales_returns_picpos_screen.dart';
 import 'presentation/screens/purchase_returns_screen.dart';
@@ -972,7 +973,12 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
       ),
       ScreenConfig(
         appScreen: AppScreen.reportBuilder,
-        builder: (_) => const ReportBuilderScreen(),
+        // فوركُ PicPos على «PicPos Custom Reports.dc.html» — بانٍ بصريٌّ
+        // بجهةِ بياناتٍ وأعمدةٍ وشروطٍ وتجميعٍ وترتيبٍ ومعاينةٍ حيّة،
+        // وشاشةُ UralCash تبقى كما هي بلا مساس.
+        builder: (_) => Brand.isPicPos
+            ? const ReportBuilderPicposScreen()
+            : const ReportBuilderScreen(),
         label: 'تقارير مخصصة',
         icon: PhosphorIconsBold.chartBar,
       ),
