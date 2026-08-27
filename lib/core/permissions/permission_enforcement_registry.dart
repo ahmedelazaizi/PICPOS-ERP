@@ -120,7 +120,11 @@ class PermissionEnforcementRegistry {
     'bookings_cancel',
     'bookings_status',
     'bookings_assign',
-    'bookings_deposit',
+    // ⚠️ و`bookings_deposit` خرجت من هنا في v167 (‏المرحلة ٣، 2026-08-27):
+    //    نقطةُ `/api/bookings/apply-deposit` تحرسها بـ
+    //    `ApiUserCtx.requirePermission`. وهي أوّلُ أكواد الحجوزات تنال
+    //    إنفاذاً حقيقيّاً — لأنّ خصمَ العربون حدثٌ **ماليّ** سبق شاشتَه.
+    //    والعشرةُ الباقيةُ على حالها حتّى تصل شاشاتُها.
     'bookings_services_manage',
     'bookings_resources_manage',
     'bookings_reports',
