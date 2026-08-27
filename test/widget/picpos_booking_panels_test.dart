@@ -178,6 +178,7 @@ void main() {
                   isActive: true,
                   sortOrder: 0,
                   createdAt: DateTime(2026, 1, 1),
+                  rowVersion: 0, // v167
                 ),
               ]),
             ),

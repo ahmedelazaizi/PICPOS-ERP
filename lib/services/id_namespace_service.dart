@@ -57,6 +57,33 @@ class IdNamespaceService {
     'sales_invoice_items', 'purchase_invoice_items', 'held_order_items',
     'sales_order_items', 'purchase_order_items', 'quotation_items',
     'payment_allocations',
+
+    // ── v166 / المرحلة ٢ — مستنداتُ الأثر المحاسبيّ ──
+    //
+    // ⚠️ هذه الكتلةُ **فاتت** المرحلةَ ٢: اثنا عشرَ جدولاً دخلت
+    // `pullTables` ولم تدخل هنا، ومعها `activity_logs` من قبلها. والعقدُ
+    // المعلَنُ في وثيقةِ القائمة أعلاه هو «اتّحادُ `pullTables` مع حفنةِ
+    // جداولٍ محلّيّة» — فالفجوةُ انحرافٌ لا تصميم.
+    //
+    // وأثرُها ليس ضياعَ بيانات: حارسُ التصادم في `_upsertRow` عامٌّ لكلِّ
+    // جدولٍ ويستدعي [renumberLocalRow] عند الحاجة. لكنّه علاجٌ **بعد**
+    // وقوعِ التصادم، وثمنُه إعادةُ ترقيمٍ تُتابِع كلَّ مفتاحٍ يشير للصفّ
+    // داخلَ معاملة. والأرضيّةُ تمنع التصادمَ أصلاً.
+    'activity_logs',
+    'asset_categories', 'op_expense_categories', 'bill_of_materials',
+    'fixed_assets', 'manufacturing_orders', 'bom_components',
+    'op_expenses', 'asset_depreciations', 'mfg_order_costs',
+    'landed_cost_sheets', 'landed_cost_items', 'landed_cost_allocations',
+
+    // ── v167 / المرحلة ٣ — الفئةُ التشغيليّة ──
+    'employees',
+    'table_sections', 'restaurant_tables', 'table_orders',
+    'table_order_items', 'table_reservations', 'table_order_payments',
+    'kitchen_stations', 'category_station_mappings',
+    'work_orders', 'work_order_items',
+    'booking_resources', 'booking_services', 'bookings', 'booking_reminders',
+    'sales_routes', 'route_visits', 'sales_rep_targets',
+    'sales_rep_collections',
   ];
 
   /// Raise the `sqlite_sequence` row for every namespaced table to

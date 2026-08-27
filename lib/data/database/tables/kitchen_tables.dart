@@ -43,6 +43,13 @@ class WorkOrders extends Table {
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get preparedAt => dateTime().nullable()();
   DateTimeColumn get servedAt => dateTime().nullable()();
+
+  // === v167 — أعمدةُ المزامنة (المرحلة ٣: الفئةُ التشغيليّة) ===
+  TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
+  DateTimeColumn get lastModifiedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get originClientId => text().nullable()();
+  IntColumn get rowVersion => integer().withDefault(const Constant(0))();
 }
 
 /// Work Order Items - Individual items in a work order
@@ -68,6 +75,13 @@ class WorkOrderItems extends Table {
 
   DateTimeColumn get startedAt => dateTime().nullable()();
   DateTimeColumn get completedAt => dateTime().nullable()();
+
+  // === v167 — أعمدةُ المزامنة (المرحلة ٣: الفئةُ التشغيليّة) ===
+  TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
+  DateTimeColumn get lastModifiedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get originClientId => text().nullable()();
+  IntColumn get rowVersion => integer().withDefault(const Constant(0))();
 }
 
 /// Kitchen Stations - Define kitchen areas/stations
@@ -78,6 +92,13 @@ class KitchenStations extends Table {
   IntColumn get displayOrder => integer().withDefault(const Constant(0))();
   BoolColumn get isActive => boolean().withDefault(const Constant(true))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  // === v167 — أعمدةُ المزامنة (المرحلة ٣: الفئةُ التشغيليّة) ===
+  TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
+  DateTimeColumn get lastModifiedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get originClientId => text().nullable()();
+  IntColumn get rowVersion => integer().withDefault(const Constant(0))();
 }
 
 /// Category → Station mapping for intelligent order routing
@@ -91,5 +112,12 @@ class CategoryStationMappings extends Table {
 
   @override
   List<Set<Column>> get uniqueKeys => [{categoryId, stationId}];
+
+  // === v167 — أعمدةُ المزامنة (المرحلة ٣: الفئةُ التشغيليّة) ===
+  TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
+  DateTimeColumn get lastModifiedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get originClientId => text().nullable()();
+  IntColumn get rowVersion => integer().withDefault(const Constant(0))();
 }
 

@@ -26,6 +26,25 @@ class Employees extends Table {
   /// ويبقى يدوياً. ولا تُخمَّن قيمةٌ افتراضية — تخمينُ المقام يعطي رقماً
   /// يبدو صحيحاً وليس كذلك.
   RealColumn get hoursPerDay => real().nullable()();
+
+  // === v167 — أعمدةُ المزامنة (المرحلة ٣: الفئةُ التشغيليّة) ===
+  //
+  // ⚠️ **الموظَّفُ وحدَه من جداول شؤون الموظّفين** — ولا يعني ذلك فتحَ
+  // الميزة (‏مؤجَّلةٌ بقرار مالك 2026-08-10 خلفَ `features.hrEnabled`).
+  // السببُ مفاتيح: `route_visits` و`sales_rep_targets` و
+  // `sales_rep_collections` تشير إليه بإشارةٍ **غيرِ قابلةٍ للإفراغ**،
+  // و`PRAGMA foreign_keys = ON` في الإنتاج بينما `_upsertRow` يبتلع خطأَ
+  // المفتاح بـ`debugPrint` ويمضي — فبدونه كان كلُّ صفِّ زيارةِ مندوبٍ أو
+  // تحصيلٍ يُسقَط صامتاً ولا يظهر في أيّ اختبار.
+  //
+  // 🔴 وهو في `_transactionalPullTables` **لسببٍ أمنيّ**: يحمل `salary`
+  // و`salaryType`. تلك قائمةُ **منعٍ لا سماح** — جدولٌ غائبٌ عنها يُسلَّم
+  // كاملاً لمستدعٍ بلا توكن، أي رواتبُ الموظّفين قبلَ الدخول.
+  TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
+  DateTimeColumn get lastModifiedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get originClientId => text().nullable()();
+  IntColumn get rowVersion => integer().withDefault(const Constant(0))();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

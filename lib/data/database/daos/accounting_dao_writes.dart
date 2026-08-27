@@ -52,18 +52,14 @@ extension AccountingDaoWritesExt on AppDatabase {
       // create one JE per status transition (pending → deposited → cashed), so
       // blocking them would silently swallow every status-change entry after the
       // first one.
-      const multiJeReferenceTypes = <String>{
-        'commercial_paper',       // one JE per lifecycle status
-        'partial_collection',     // separate JE per collection instalment
-        // Spec 151 (A-01/F-02): return JEs are keyed on the ORIGINATING invoice
-        // id so cancelSalesReturn / editPurchaseReturn can reverse them by that
-        // id — but one invoice legitimately carries MULTIPLE partial-return JEs.
-        // Their per-event uniqueness is enforced by the deterministic globalId
-        // (UNIQUE), not by (refType,refId), so they must be exempt here or the
-        // second partial return would be silently collapsed onto the first.
-        'sales_return',
-        'purchase_return',
-      };
+      //
+      // ⚠️ والقائمةُ **واحدةٌ لا اثنتان**: [kMultiJeReferenceTypes] في
+      // `database.dart`، وهي نفسُها التي يُبنى منها `NOT IN` في
+      // [kCreateJeAutopostDedupIndexSql]. كانتا مكتوبتَين مرّتين، فأُضيف
+      // `asset_depreciation` هنا وحدَه 2026-08-27 ⇒ مرّ الحارسُ واصطدم
+      // القيدُ بـ`UNIQUE constraint failed` في الفهرس، فتوقّف الإهلاكُ
+      // بعد شهره الأوّل بدل أن يُرحَّل.
+      const multiJeReferenceTypes = kMultiJeReferenceTypes;
       if (isAutoPosted && referenceType != null && referenceId != null &&
           !multiJeReferenceTypes.contains(referenceType)) {
         // Build the full set of reference type aliases to check:

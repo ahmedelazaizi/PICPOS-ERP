@@ -259,6 +259,7 @@ BookingResource _resource() => BookingResource(
       isActive: true,
       sortOrder: 0,
       createdAt: DateTime(2026, 1, 1),
+      rowVersion: 0, // v167
     );
 
 BookingService _service() => BookingService(
@@ -271,4 +272,5 @@ BookingService _service() => BookingService(
       isActive: true,
       sortOrder: 0,
       createdAt: DateTime(2026, 1, 1),
+      rowVersion: 0, // v167
     );

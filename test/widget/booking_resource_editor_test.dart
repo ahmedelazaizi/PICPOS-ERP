@@ -54,6 +54,7 @@ void main() {
                 salaryType: 'monthly',
                 isActive: true,
                 hiredAt: DateTime(2026, 1, 1),
+                rowVersion: 0, // v167
               ),
             ]),
           ),

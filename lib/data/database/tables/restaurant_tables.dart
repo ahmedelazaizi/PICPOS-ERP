@@ -47,6 +47,13 @@ class TableSections extends Table {
       text().withLength(max: 100)(); // اسم القسم (صالة، تراس، خارجي)
   BoolColumn get isActive => boolean().withDefault(const Constant(true))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  // === v167 — أعمدةُ المزامنة (المرحلة ٣: الفئةُ التشغيليّة) ===
+  TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
+  DateTimeColumn get lastModifiedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get originClientId => text().nullable()();
+  IntColumn get rowVersion => integer().withDefault(const Constant(0))();
 }
 
 class RestaurantTables extends Table {
@@ -69,6 +76,13 @@ class RestaurantTables extends Table {
   )(); // For Service Attention timers
   BoolColumn get isActive => boolean().withDefault(const Constant(true))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  // === v167 — أعمدةُ المزامنة (المرحلة ٣: الفئةُ التشغيليّة) ===
+  TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
+  DateTimeColumn get lastModifiedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get originClientId => text().nullable()();
+  IntColumn get rowVersion => integer().withDefault(const Constant(0))();
 }
 
 class TableOrders extends Table {
@@ -157,6 +171,13 @@ class TableOrders extends Table {
   List<String> get customConstraints => [
         'CHECK (NOT tax_enabled OR tax_rate >= 0.01)',
       ];
+
+  // === v167 — أعمدةُ المزامنة (المرحلة ٣: الفئةُ التشغيليّة) ===
+  TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
+  DateTimeColumn get lastModifiedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get originClientId => text().nullable()();
+  IntColumn get rowVersion => integer().withDefault(const Constant(0))();
 }
 
 class TableOrderItems extends Table {
@@ -183,6 +204,13 @@ class TableOrderItems extends Table {
   IntColumn get sourceTableOrderId =>
       integer().nullable().references(TableOrders, #id)();
   DateTimeColumn get addedAt => dateTime().withDefault(currentDateAndTime)();
+
+  // === v167 — أعمدةُ المزامنة (المرحلة ٣: الفئةُ التشغيليّة) ===
+  TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
+  DateTimeColumn get lastModifiedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get originClientId => text().nullable()();
+  IntColumn get rowVersion => integer().withDefault(const Constant(0))();
 }
 
 /// Table reservations for restaurant tables
@@ -199,6 +227,13 @@ class TableReservations extends Table {
     const Constant('pending'),
   )(); // pending, confirmed, seated, cancelled, no_show
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  // === v167 — أعمدةُ المزامنة (المرحلة ٣: الفئةُ التشغيليّة) ===
+  TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
+  DateTimeColumn get lastModifiedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get originClientId => text().nullable()();
+  IntColumn get rowVersion => integer().withDefault(const Constant(0))();
 }
 
 /// دفعةٌ واحدةٌ على طلبِ طاولة — صفٌّ لكلّ دافع.
@@ -240,4 +275,11 @@ class TableOrderPayments extends Table {
         "CHECK ((status = 'pending' AND invoice_id IS NULL) "
             "OR (status = 'settled' AND invoice_id IS NOT NULL))",
       ];
+
+  // === v167 — أعمدةُ المزامنة (المرحلة ٣: الفئةُ التشغيليّة) ===
+  TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
+  DateTimeColumn get lastModifiedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get originClientId => text().nullable()();
+  IntColumn get rowVersion => integer().withDefault(const Constant(0))();
 }

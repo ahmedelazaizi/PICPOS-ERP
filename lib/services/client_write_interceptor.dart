@@ -574,6 +574,11 @@ class ClientWriteInterceptor implements SyncInterceptor {
       _CwiSync.submitManufacturingAction(request);
 
   @override
+  Future<void> submitBookingDepositApplication(
+          Map<String, dynamic> request) =>
+      _CwiSync.submitBookingDepositApplication(request);
+
+  @override
   Future<void> submitJournalEntry({required String description, required DateTime date, required List<dynamic> lines, String? referenceType, int? referenceId, bool isAutoPosted = false, int? costCenterId, int? branchId, String? globalId}) => _CwiSync.submitJournalEntry(description: description, date: date, lines: lines, referenceType: referenceType, referenceId: referenceId, isAutoPosted: isAutoPosted, costCenterId: costCenterId, branchId: branchId, globalId: globalId);
 
   @override

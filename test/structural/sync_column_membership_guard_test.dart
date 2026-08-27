@@ -1,0 +1,212 @@
+// حارسُ العقد: عضويّةُ القوائم لا تُغني عن الأعمدة — ولا العكس.
+//
+// ═══ فئةُ العطب ═══
+//
+// إدراجُ جدولٍ في `pullTables` **لا يمنحه** أعمدةَ المزامنة. والطرفان
+// يفشلان صامتَين حين يفترقان:
+//
+//  ‏١) 🔴 **عضويّةٌ بلا أعمدة.** `_upsertRow` يبني
+//     `INSERT OR REPLACE INTO t (global_id, …)` من مفاتيحِ ردِّ الخادم، ثمّ
+//     **يبتلع** خطأَ العمود المفقود بـ`debugPrint` ويمضي
+//     (`delta_pull_service.dart` — كتلةُ `catch` حول الإدراج). فالسحبُ
+//     يبدو عاملاً، ولا صفَّ يصل، ولا اختبارَ يحمرّ.
+//
+//     وقع فعلاً في هذه المرحلةِ نفسِها: `employees` أُدرجت في **ستِّ**
+//     قوائمَ وهي بلا `global_id` — والفحوصُ كلُّها خضراء. لم يكشفها إلّا
+//     مسحٌ صريحٌ لتعريفات الجداول، وهو ما يفعله هذا الملفّ.
+//
+//  ‏٢) 🔴 **وأعمدةٌ بلا أرضيّةِ ترقيم.** جدولٌ في `pullTables` وغائبٌ عن
+//     `IdNamespaceService.namespacedTables` يبدأ ترقيمَه المحلّيَّ من ١،
+//     فيصطدم صفُّ العميل بصفِّ الخادم على نفس الرقم. الحارسُ العامُّ في
+//     `_upsertRow` يعالجه بإعادةِ ترقيمٍ **بعد** وقوع التصادم، والأرضيّةُ
+//     تمنعه أصلاً. والعقدُ المكتوبُ في وثيقةِ القائمة صريح: «اتّحادُ
+//     `pullTables` مع حفنةِ جداولَ محلّيّة» — فالانحرافُ عنه خللٌ لا خيار.
+//
+//     وهذا أيضاً وقع: ثلاثةَ عشرَ جدولاً (‏اثنا عشرَ من المرحلة ٢ ومعها
+//     `activity_logs`) دخلت `pullTables` ولم تدخل الأرضيّة.
+//
+// ═══ ما لا يفعله ═══
+//
+// حارسُ **بنيةٍ** لا حارسُ صحّة: وجودُ العمود لا يثبت أنّ قيمتَه تُسَكّ ولا
+// أنّ التعارضَ يُحَلّ. تلك مصالحةٌ تُقاس باختبارات تكامل.
+
+import 'dart:io';
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:ural_erp/services/delta_pull_service.dart';
+import 'package:ural_erp/services/id_namespace_service.dart';
+
+/// الأعمدةُ الخمسةُ التي يقوم عليها مسارُ الدلتا.
+const _syncColumns = <String>[
+  'globalId',
+  'lastModifiedAt',
+  'deletedAt',
+  'originClientId',
+  'rowVersion',
+];
+
+/// استثناءاتٌ **بحكمٍ مكتوب** — لا قائمةُ إسكاتٍ تكبر بالصمت.
+///
+/// `activity_logs` سجلٌّ لا يُعدَّل ولا يُحذَف: يُكتَب مرّةً ويُقرأ.
+/// فـ`deleted_at` بلا معنًى فيه (‏حذفُ سطرِ تدقيقٍ هو العطبُ لا الميزة)،
+/// و`row_version` رقمٌ لا يرتفع أبداً. وله `global_id` و`last_modified_at`
+/// وهما ما يحتاجه سحبُ الدلتا فعلاً.
+const _columnExceptions = <String, Set<String>>{
+  'activity_logs': {'deletedAt', 'rowVersion'},
+};
+
+/// جداولُ ليست في `pullTables` وتُرقَّم مع ذلك — الطرفُ الآخرُ من العقد.
+///
+/// وثيقةُ [IdNamespaceService.namespacedTables] تذكر «حفنةً من جداولَ
+/// محلّيّةِ الترقيم تصل الخادمَ عبر إعادةِ تشغيل الطابور» — و**مقيسٌ
+/// 2026-08-27 أنّها لا أحد**: `shifts` و`held_orders` وأخواتُها كلُّها
+/// في `pullTables` فعلاً، فالمجموعتان متطابقتان تماماً (٧٢ = ٧٢).
+///
+/// وتُترَك فارغةً عمداً لا محذوفةً: إضافةُ جدولٍ محلّيِّ الترقيم مستقبلاً
+/// قرارٌ يُكتَب هنا بحكمه، لا انحرافٌ يمرّ صامتاً.
+const _namespacedButNotPulled = <String>{};
+
+// ── الكشف ─────────────────────────────────────────────────────────────────
+
+String _snake(String s) => s
+    .replaceAllMapped(RegExp(r'([a-z0-9])([A-Z])'), (m) => '${m[1]}_${m[2]}')
+    .toLowerCase();
+
+/// جسمُ كلِّ صنفِ جدولٍ في المشروع، مفهرساً باسمه في SQL.
+///
+/// المطابقةُ بعدِّ الأقواس لا بتعبيرٍ نمطيّ: جسمُ الجدول يحوي `{` و`}`
+/// داخلَ `customConstraints` و`primaryKey`، وتعبيرٌ كسولٌ يقطع عند أوّلها
+/// فيُبلّغ عن أعمدةٍ مفقودةٍ وهي موجودة.
+Map<String, ({String cls, String body})> _tableBodies() {
+  final out = <String, ({String cls, String body})>{};
+  final dir = Directory('lib/data/database/tables');
+  for (final f in dir.listSync(recursive: true)) {
+    if (f is! File || !f.path.endsWith('.dart')) continue;
+    final src = f.readAsStringSync();
+    for (final m in RegExp(r'class\s+(\w+)\s+extends\s+Table\s*\{').allMatches(src)) {
+      var depth = 1;
+      var i = m.end;
+      while (i < src.length && depth > 0) {
+        if (src[i] == '{') {
+          depth++;
+        } else if (src[i] == '}') {
+          depth--;
+        }
+        i++;
+      }
+      final body = src.substring(m.end, i - 1);
+      final override =
+          RegExp(r"String\s+get\s+tableName\s*=>\s*'([^']+)'").firstMatch(body);
+      out[override?.group(1) ?? _snake(m.group(1)!)] =
+          (cls: m.group(1)!, body: body);
+    }
+  }
+  return out;
+}
+
+bool _hasColumn(String body, String column) =>
+    RegExp('get\\s+$column\\s*=>').hasMatch(body);
+
+void main() {
+  final bodies = _tableBodies();
+
+  group('مرساةُ الكشف — قبلَ أيِّ حكم', () {
+    // ⚠️ الفحوصُ أدناه تقيس **غيابَ** شيء، وغيابٌ يمرّ أخضرَ حين ينكسر
+    // الكشفُ نفسُه. فلو عاد `_tableBodies` فارغاً لصار «لا جدولَ ناقصاً»
+    // صحيحاً شكلاً وكاذباً معنًى.
+    test('المسحُ وجد جداولَ أصلاً', () {
+      expect(bodies.length, greaterThan(100),
+          reason: 'مسحُ `lib/data/database/tables` عاد شبهَ فارغ — كلُّ حكمٍ '
+              'بعده باطل. غالباً تغيّر المسارُ أو شكلُ التعريف.');
+    });
+
+    test('ويقرأ جسمَ الجدول كاملاً — لا يقطعه عند أوّل قوس', () {
+      // `BookingReminders` تحمل `customConstraints` (‏فيها `{` و`}`) **قبلَ**
+      // أعمدةِ المزامنة. تعبيرٌ كسولٌ يقطع عندها فيقول «ينقصها global_id».
+      final br = bodies['booking_reminders'];
+      expect(br, isNotNull);
+      expect(br!.body.contains('customConstraints'), isTrue,
+          reason: 'تغيّر الجدولُ — اختر مرساةً أخرى ذاتَ قوسٍ داخليّ');
+      expect(_hasColumn(br.body, 'globalId'), isTrue,
+          reason: 'الكشفُ يقطع جسمَ الجدول عند قوسٍ داخليّ ⇒ كلُّ بلاغٍ '
+              'أدناه مشكوكٌ فيه.');
+    });
+
+    test('ويرى العمودَ الموجودَ ويفتقد الغائبَ — على نصٍّ مضبوط', () {
+      // اختبارُ الحارس على **البلاغ نفسِه**: هذا شكلُ `Employees` قبلَ
+      // v167 بالضبط — عضويّةُ قوائمَ بلا عمود.
+      const before = 'IntColumn get id => integer().autoIncrement()();\n'
+          'RealColumn get salary => real()();';
+      expect(_hasColumn(before, 'salary'), isTrue);
+      expect(_hasColumn(before, 'globalId'), isFalse,
+          reason: 'الكشفُ يرى عموداً غيرَ موجود ⇒ لن يمسك فجوةً أبداً.');
+    });
+  });
+
+  test('🔴 كلُّ جدولٍ يُسحَب يحمل أعمدةَ المزامنة في تعريفه', () {
+    final gaps = <String>[];
+    for (final table in DeltaPullService.pullTables) {
+      final entry = bodies[table];
+      if (entry == null) {
+        gaps.add('$table — لا صنفَ يقابله');
+        continue;
+      }
+      final allowed = _columnExceptions[table] ?? const <String>{};
+      final missing = _syncColumns
+          .where((c) => !allowed.contains(c) && !_hasColumn(entry.body, c))
+          .toList();
+      if (missing.isNotEmpty) {
+        gaps.add('$table (${entry.cls}) — ينقصه ${missing.join('، ')}');
+      }
+    }
+
+    expect(
+      gaps,
+      isEmpty,
+      reason: 'جداولُ في `pullTables` بلا أعمدةِ مزامنةٍ في تعريفها:\n'
+          '  ${gaps.join('\n  ')}\n\n'
+          '`_upsertRow` يبني الإدراجَ من مفاتيحِ ردِّ الخادم و**يبتلع** خطأَ '
+          'العمود المفقود بـ`debugPrint`. فالسحبُ يبدو عاملاً، ولا صفَّ '
+          'يصل، ولا اختبارَ يحمرّ. أضِف الأعمدةَ وهجرةً ترفع رقمَ المخطَّط '
+          '— أو انزع الجدولَ من القائمة.',
+    );
+  });
+
+  test('🔴 وكلُّ جدولٍ يُسحَب له أرضيّةُ ترقيمٍ محلّيّة', () {
+    final missing = DeltaPullService.pullTables
+        .where((t) => !IdNamespaceService.namespacedTables.contains(t))
+        .toList()
+      ..sort();
+
+    expect(
+      missing,
+      isEmpty,
+      reason: 'جداولُ في `pullTables` وغائبةٌ عن `namespacedTables`: '
+          '${missing.join('، ')}\n\n'
+          'ترقيمُها المحلّيُّ يبدأ من ١ فيصطدم صفُّ العميل بصفِّ الخادم على '
+          'نفس الرقم. الحارسُ العامُّ يعالجه بإعادةِ ترقيمٍ **بعد** التصادم، '
+          'والأرضيّةُ تمنعه ابتداءً.',
+    );
+  });
+
+  test('ولا اسمَ بائتٍ في أرضيّة الترقيم', () {
+    // الاتّجاهُ المعاكس: اسمٌ في الأرضيّة لا يقابله جدولٌ يُسحَب ولا استثناءٌ
+    // معلَن ⇒ إمّا حُذف أو أُعيدت تسميتُه، والأرضيّةُ تحمي جدولاً لا وجودَ له.
+    final ghosts = IdNamespaceService.namespacedTables
+        .where((t) => !DeltaPullService.pullTables.contains(t))
+        .where((t) => !_namespacedButNotPulled.contains(t))
+        .toList()
+      ..sort();
+
+    expect(ghosts, isEmpty,
+        reason: 'أسماءٌ في `namespacedTables` بلا مقابلٍ في `pullTables` ولا '
+            'حكمٍ في `_namespacedButNotPulled`: ${ghosts.join('، ')}');
+  });
+
+  test('واستثناءاتُ الأعمدة تصف جداولَ قائمةً — لا أسماءَ بائتة', () {
+    for (final t in _columnExceptions.keys) {
+      expect(DeltaPullService.pullTables, contains(t),
+          reason: 'استثناءٌ لجدولٍ لا يُسحَب — أزِله بدل أن يُخفي فجوةً لاحقاً');
+    }
+  });
+}

@@ -461,6 +461,11 @@ extension BookingsDao on AppDatabase {
     int? branchId,
     int? createdBy,
     DateTime? now,
+
+    /// v167 — هويّةُ الحجز. تُسَكّ مرّةً واحدةً ويُدعى بها الحجزُ في كلِّ
+    /// حدثٍ ماليٍّ بعدها: رقمُ الحجز على العميل يخالف رقمَه على الخادم،
+    /// وخصمُ عربونٍ يصل برقمٍ محلّيٍّ قد يُطبَّق على حجزِ عميلٍ **آخر**.
+    String? globalId,
   }) async {
     final newBookingId = await transaction(() async {
       final currentTime = now ?? DateTime.now();
@@ -503,6 +508,7 @@ extension BookingsDao on AppDatabase {
           notes: Value(notes),
           branchId: Value(branchId),
           createdBy: Value(createdBy),
+          globalId: Value(globalId ?? UuidV7.generate()), // v167
         ),
       );
 
@@ -669,11 +675,60 @@ extension BookingsDao on AppDatabase {
   ///
   /// ⚠️ و`Bookings.invoiceId` يُكتب في نفس المعاملة: بدونه لا يُعرَف أنّ
   ///    الحجزَ فُوتِر، فيُطبَّق العربونُ ثانيةً على فاتورةٍ أخرى.
+  /// v167 — يُرسل خصمَ العربون إلى الخادم بدل تنفيذه محلّيّاً.
+  ///
+  /// ⚠️ **بالهويّة لا بالرقم.** رقمُ الحجز والفاتورة على العميل يخالف
+  /// رقمَهما على الخادم بالتصميم، وحدثٌ يصل برقمٍ محلّيٍّ قد يُطفئ عربونَ
+  /// حجزٍ **آخر** على فاتورةِ عميلٍ آخر — ولا يظهر ذلك في أيّ رصيدٍ حتّى
+  /// المصالحة.
+  ///
+  /// 🔴 ومفتاحُ إزالة تكرار القيد `(referenceType, referenceId)` **لا
+  /// يمسك** هذا: `referenceId` هنا رقمُ الحجز **المحلّيّ**، وهو يخالف
+  /// رقمَه على الخادم. فترحيلُ الطرفين لنفس الحدث يُنتج قيدَين لا يراهما
+  /// التكرارُ قيداً واحداً — ورصيدَ عميلٍ منقوصاً مرّتين. ولذلك الخادمُ
+  /// وحدَه يُرحّل، والعميلُ يُرسل ولا يحسب.
+  ///
+  /// وحجزٌ أو فاتورةٌ بلا هويّةٍ **يرمي** ولا يمرّ: التمريرُ الصامتُ يعني
+  /// تنفيذاً محلّيّاً، أي عينَ التفاوت الذي تسدّه المرحلة.
+  ///
+  /// يعيد `true` حين تولّى الخادمُ الحدثَ، فيمتنع النداءُ المحلّيّ.
+  Future<bool> _pushBookingDeposit(int bookingId, int invoiceId,
+      {int? userId}) async {
+    if (!SyncInterceptor.isClientMode) return false;
+
+    final booking = await (select(bookings)
+          ..where((b) => b.id.equals(bookingId)))
+        .getSingleOrNull();
+    if (booking == null || booking.globalId == null) {
+      throw StateError('الحجزُ بلا معرّفٍ عالميّ — لا يمكن إرسالُ خصمِ العربون.');
+    }
+    final invoice = await (select(salesInvoices)
+          ..where((i) => i.id.equals(invoiceId)))
+        .getSingleOrNull();
+    if (invoice == null || invoice.globalId == null) {
+      throw StateError(
+        'الفاتورةُ بلا معرّفٍ عالميّ — لا يمكن إرسالُ خصمِ العربون.',
+      );
+    }
+
+    await SyncInterceptor.instance
+        ?.submitBookingDepositApplication(<String, dynamic>{
+      'bookingGlobalId': booking.globalId,
+      'invoiceGlobalId': invoice.globalId,
+      'userId': userId,
+    });
+    return true;
+  }
+
   Future<void> applyBookingDepositToInvoice({
     required int bookingId,
     required int invoiceId,
     int? userId,
   }) async {
+    if (await _pushBookingDeposit(bookingId, invoiceId, userId: userId)) {
+      return;
+    }
+
     return transaction(() async {
       final booking = await (select(bookings)
             ..where((b) => b.id.equals(bookingId)))

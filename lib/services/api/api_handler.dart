@@ -204,6 +204,8 @@ class ApiHandler {
     router.post('/api/fixed-assets', _data.postFixedAsset);
     router.post('/api/op-expenses', _data.postOperationalExpense);
     router.post('/api/manufacturing/action', _data.postManufacturingAction);
+    // v167 / المرحلة ٣ — خصمُ عربونِ حجزٍ واردٌ من عميل.
+    router.post('/api/bookings/apply-deposit', _data.postBookingApplyDeposit);
     router.post('/api/fixed-assets/depreciation/run',
         _data.postAssetDepreciationRun);
     // Settings
@@ -2212,6 +2214,19 @@ class ApiHandler {
     'fixed_assets', 'manufacturing_orders', 'bom_components',
     'op_expenses', 'asset_depreciations', 'mfg_order_costs',
     'landed_cost_sheets', 'landed_cost_items', 'landed_cost_allocations',
+    // Tier 6 — v167 / المرحلة ٣: الفئةُ التشغيليّة.
+    // تقابل الكتلةَ نفسَها في [DeltaPullService.pullTables]؛ هنا مجموعةٌ
+    // فالترتيبُ لا يعني شيئاً، والقائمةُ هناك مرتّبةٌ بالمفاتيح.
+    // و`employees` منها — خمسةٌ من جداول الفئة تشير إليها وثلاثةٌ بإشارةٍ
+    // غيرِ قابلةٍ للإفراغ.
+    'employees',
+    'table_sections', 'restaurant_tables', 'table_orders',
+    'table_order_items', 'table_reservations', 'table_order_payments',
+    'kitchen_stations', 'category_station_mappings',
+    'work_orders', 'work_order_items',
+    'booking_resources', 'booking_services', 'bookings', 'booking_reminders',
+    'sales_routes', 'route_visits', 'sales_rep_targets',
+    'sales_rep_collections',
   };
 
   /// Phase 5A.1 (Issue 5) — per-table branch column for the `/api/sync/pull`
@@ -2313,6 +2328,25 @@ class ApiHandler {
     'landed_cost_sheets', 'landed_cost_items', 'landed_cost_allocations',
     'fixed_assets', 'asset_depreciations', 'op_expenses',
     'manufacturing_orders', 'mfg_order_costs',
+
+    // v167 / المرحلة ٣ — الفئةُ التشغيليّة.
+    //
+    // 🔴 و`employees` هنا **لسببٍ أمنيٍّ لا لسببِ مفاتيح**: الجدولُ يحمل
+    //    `salary` و`salary_type`. والقائمةُ **قائمةُ منعٍ لا سماح**، فجدولٌ
+    //    جديدٌ يُسلَّم كاملاً لمستدعٍ بلا توكن ما لم يُذكَر هنا — أي أنّ
+    //    إغفالَ `employees` كان سيُسلّم رواتبَ الموظّفين قبلَ الدخول.
+    //
+    // والمرجعيُّ عمداً — `table_sections` · `restaurant_tables` ·
+    // `kitchen_stations` · `category_station_mappings` ·
+    // `booking_services` — خارجَ القائمة ليعمل التزويدُ قبل الدخول.
+    'employees',
+    'booking_resources',
+    'table_orders', 'table_order_items', 'table_reservations',
+    'table_order_payments',
+    'work_orders', 'work_order_items',
+    'bookings', 'booking_reminders',
+    'sales_routes', 'route_visits', 'sales_rep_targets',
+    'sales_rep_collections',
   };
 
   /// Spec 151 P1-8b — exposed so a guard test can assert this stays IDENTICAL

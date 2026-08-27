@@ -145,6 +145,24 @@ class _CwiSync {
     );
   }
 
+  // ── Bookings (v167) ───────────────────────────────────────────────────────
+
+  static Future<void> submitBookingDepositApplication(
+      Map<String, dynamic> request) async {
+    if (!SyncInterceptor.isClientMode) return;
+    debugPrint('[ClientInterceptor] Routing booking deposit to server');
+    await ClientWriteInterceptor._tryOrQueueVoid(
+      tableName: 'bookings',
+      operation: 'apply_deposit',
+      payload: Map<String, dynamic>.from(request),
+      serverCall: (reqIdemKey) =>
+          ClientWriteInterceptor._proxy.submitBookingDepositApplication(
+        request,
+        idempotencyKey: reqIdemKey,
+      ),
+    );
+  }
+
   // ── Safe Transactions ─────────────────────────────────────────────────────
 
   static Future<void> submitSafeTransaction({

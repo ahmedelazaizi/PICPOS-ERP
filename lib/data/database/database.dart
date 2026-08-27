@@ -305,12 +305,60 @@ const String kJeAutopostDedupIndexName = 'idx_je_autopost_dedup';
 /// SQLite-only (partial index `WHERE …`). Postgres never carried this index
 /// (the v120 migration was SQLite-only and it is not a Drift schema entity), so
 /// we do NOT create it on PG — matching existing behavior.
+/// أنواعُ المراجع التي تُنتج **قيداً لكلِّ حدثٍ** لا قيداً لكلِّ مرجع.
+///
+/// هذه هي القائمةُ الواحدةُ التي يقرؤها الطرفان: حارسُ
+/// `createJournalEntry` في التطبيق، و`NOT IN` في الفهرس أدناه. وكانا
+/// مكتوبَين مرّتين، والوثيقةُ تقول «لا بدّ أن يبقيا متطابقَين» — ولا شيءَ
+/// يفرض ذلك.
+///
+/// 🔴 **وقع فعلاً 2026-08-27:** أُضيف `asset_depreciation` إلى حارس التطبيق
+/// وحدَه، فصار الترحيلُ يمرّ الحارسَ ثمّ يصطدم بـ`UNIQUE constraint failed`
+/// في الفهرس. و`runMonthlyDepreciation` يلتقط الاستثناءَ **لكلِّ أصلٍ على
+/// حدة** ويتخطّاه، فتراجعت المعاملةُ كلُّها: لا قيدَ ولا صفَّ إهلاكٍ ولا
+/// بطاقةٌ متقدّمة. أي أنّ الإهلاكَ **توقّف** بعد شهره الأوّل — والمصالحةُ
+/// مرّت خضراءَ لأنّ الطرفَين تساويا عند الرقم الخاطئ.
+///
+/// و`e_je_dedup_lockstep_test.dart` يثبّت التطابقَ الآن.
+const Set<String> kMultiJeReferenceTypes = {
+  // Spec 151 (A-01/F-02) — قيودُ المردودات مفتاحُها فاتورةُ المنشأ ليتمكّن
+  // `cancelSalesReturn` / `editPurchaseReturn` من عكسها بذلك الرقم. وفاتورةٌ
+  // واحدةٌ تحمل مردوداتٍ جزئيّةً متعدّدة، فتفرّدُها يركب على `globalId`
+  // الحتميِّ لا على `(refType, refId)`.
+  'sales_return',
+  'purchase_return',
+  // قيدٌ لكلِّ انتقالِ حالة: pending → deposited → cashed.
+  'commercial_paper',
+  // قيدٌ لكلِّ قسطِ تحصيل.
+  'partial_collection',
+  // 🔴 v168 (‏2026-08-27) — كشفته مصالحةُ الأصول في المرحلة ٤، ولا يظهر في
+  // أيّ اختبارِ وحدة.
+  //
+  // الإهلاكُ قيدٌ لكلِّ **شهر**، و`referenceId` رقمُ الأصل **بلا فترة**.
+  // فأصلٌ يُهلَك شهريّاً كان يُرحَّل في شهره الأوّل فقط، ويُعَدّ كلُّ شهرٍ
+  // تالٍ «مكرَّراً» فيُبتلَع — بينما صفُّ `asset_depreciations` يُكتَب
+  // و`fixed_assets.accumulated_depreciation` يتقدّم كالمعتاد.
+  //
+  // والأثرُ يتراكم صامتاً: مجمَّعُ الإهلاك في الأستاذ يتجمّد عند شهرٍ واحدٍ
+  // لكلّ أصل، فالأصولُ الثابتةُ **مضخَّمةٌ** في الميزانيّة ومصروفُ الإهلاك
+  // **منقوصٌ** في قائمة الدخل — ربحٌ أعلى من حقيقته وضريبةُ دخلٍ على أساسٍ
+  // خاطئ. والشاشاتُ تقرأ البطاقةَ لا الأستاذ، فتبدو سليمةً تماماً.
+  //
+  // مقيسٌ: ثلاثةُ أشهرٍ ⇒ البطاقةُ ٦٠٠ والأستاذُ ٢٠٠، وصفوفُ الإهلاك
+  // الثلاثةُ كلُّها تشير إلى **نفس** رقم القيد.
+  //
+  // وتفرّدُه لكلِّ حدثٍ محفوظٌ في موضعه الصحيح: `runMonthlyDepreciation`
+  // يفحص `(assetId, periodDate)` ويتخطّى المُهلَك سلفاً قبل أن يصل هنا.
+  'asset_depreciation',
+};
+
 const String kCreateJeAutopostDedupIndexSql =
     'CREATE UNIQUE INDEX IF NOT EXISTS $kJeAutopostDedupIndexName '
     'ON journal_entries(reference_type, reference_id) '
     'WHERE is_auto_posted = 1 '
     "AND reference_type NOT IN "
-    "('sales_return', 'purchase_return', 'commercial_paper', 'partial_collection')";
+    "('sales_return', 'purchase_return', 'commercial_paper', "
+    "'partial_collection', 'asset_depreciation')";
 
 /// B1 — قيد قاعدة البيانات ضد صرف الراتب مرتين لنفس الفترة.
 ///
@@ -756,7 +804,7 @@ class AppDatabase extends _$AppDatabase {
   // `newColumns`، فرمت `no such column: "role"` وابتلعها `_safeMigrate`
   // (تعدُّها خطأً عديمَ الأثر) — فخُتمت القواعدُ 161 وأعمدةُ المورد لم تُضَف،
   // و`from < 161` لا يعود يفحصها. الخطوةُ الجديدةُ تفحص ثمّ تُصلح.
-  int get schemaVersion => 166;
+  int get schemaVersion => 168;
 
   /// PostgreSQL-specific table creation: Drift's `currentDateAndTime` generates
   /// `strftime('%s','now')` which doesn't exist in PostgreSQL.

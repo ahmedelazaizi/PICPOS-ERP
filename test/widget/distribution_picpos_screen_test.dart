@@ -20,6 +20,7 @@ SalesRoute _route(int id, String name, {int? repId, String? area}) => SalesRoute
       area: area,
       isActive: true,
       createdAt: DateTime(2026, 1, 1),
+      rowVersion: 0, // v167
     );
 
 RouteVisit _visit(int id, int routeId, String status,
@@ -34,6 +35,7 @@ RouteVisit _visit(int id, int routeId, String status,
       saleId: saleId,
       orderAmount: amount,
       createdAt: DateTime(2026, 8, 1),
+      rowVersion: 0, // v167
     );
 
 /// متحكّمٌ زائف — ينفّذ ما تناديه الشاشةُ وحدَه.
@@ -97,6 +99,7 @@ void main() {
       salaryType: 'monthly',
       isActive: true,
       hiredAt: DateTime(2026, 1, 1),
+      rowVersion: 0, // v167
     ),
   ];
 
@@ -111,6 +114,7 @@ void main() {
       targetVisits: 20,
       achievedVisits: 15,
       createdAt: DateTime(2026, 8, 1),
+      rowVersion: 0, // v167
     ),
   ];
 

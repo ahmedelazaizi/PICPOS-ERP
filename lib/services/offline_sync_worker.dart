@@ -1624,6 +1624,16 @@ class OfflineSyncWorker {
         }
         throw StateError('Unhandled op $operation for table $table');
 
+      // v167 — خصمُ عربون. الخادمُ يفحص `bookings.invoice_id` قبل التنفيذ،
+      // فإعادةُ الإرسال بعد انقطاعٍ تُردّ بدل أن تُطفئ الالتزامَ مرّتين
+      // وتنقص رصيدَ العميل ضِعفَ ما دفع.
+      case 'bookings':
+        if (operation == 'apply_deposit') {
+          return proxy.submitBookingDepositApplication(payload,
+              idempotencyKey: idempotencyKey);
+        }
+        throw StateError('Unhandled op $operation for table $table');
+
       case 'safe_transactions':
         if (operation == 'insert') {
           return proxy.submitSafeTransaction(

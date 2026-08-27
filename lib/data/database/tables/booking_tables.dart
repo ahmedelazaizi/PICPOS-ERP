@@ -69,6 +69,12 @@ class BookingResources extends Table {
         'CHECK (shift_end_minutes IS NULL OR '
             '(shift_end_minutes >= 0 AND shift_end_minutes < 1440))',
       ];
+
+  // === v167 — أعمدةُ المزامنة (المرحلة ٣: الفئةُ التشغيليّة) ===
+  TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
+  DateTimeColumn get lastModifiedAt => dateTime().nullable()();
+  TextColumn get originClientId => text().nullable()();
+  IntColumn get rowVersion => integer().withDefault(const Constant(0))();
 }
 
 /// الخدمةُ المعروضة للحجز.
@@ -125,6 +131,12 @@ class BookingServices extends Table {
         'CHECK (duration_minutes > 0 AND buffer_minutes >= 0 '
         'AND duration_minutes + buffer_minutes <= 1440)',
       ];
+
+  // === v167 — أعمدةُ المزامنة (المرحلة ٣: الفئةُ التشغيليّة) ===
+  TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
+  DateTimeColumn get lastModifiedAt => dateTime().nullable()();
+  TextColumn get originClientId => text().nullable()();
+  IntColumn get rowVersion => integer().withDefault(const Constant(0))();
 }
 
 /// الموعد.
@@ -203,6 +215,13 @@ class Bookings extends Table {
             "'completed', 'cancelled', 'no_show'))",
         "CHECK (deposit_status IN ('held', 'refunded', 'forfeited'))",
       ];
+
+  // === v167 — أعمدةُ المزامنة (المرحلة ٣: الفئةُ التشغيليّة) ===
+  TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
+  DateTimeColumn get lastModifiedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get originClientId => text().nullable()();
+  IntColumn get rowVersion => integer().withDefault(const Constant(0))();
 }
 
 /// تذكيرُ موعدٍ — `rem` في التصميم.
@@ -268,4 +287,10 @@ class BookingReminders extends Table {
         // تذكيرٌ **بعد** الموعد لا معنى له، وسالبُ الإزاحة يُنتجه.
         'CHECK (offset_minutes >= 0)',
       ];
+
+  // === v167 — أعمدةُ المزامنة (المرحلة ٣: الفئةُ التشغيليّة) ===
+  TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
+  DateTimeColumn get lastModifiedAt => dateTime().nullable()();
+  TextColumn get originClientId => text().nullable()();
+  IntColumn get rowVersion => integer().withDefault(const Constant(0))();
 }

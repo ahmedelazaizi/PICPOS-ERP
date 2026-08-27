@@ -1369,6 +1369,20 @@ class ServerProxy {
   }
 
   // ═══════════════════════════════════════════════════════════════
+  // Bookings (Client → Server) · v167
+  // ═══════════════════════════════════════════════════════════════
+
+  /// إطفاءُ التزامِ عربونٍ على فاتورة. الحجزُ والفاتورةُ يُدعيان
+  /// بهويّتهما العالميّة لا برقمهما المحلّيّ.
+  Future<void> submitBookingDepositApplication(
+    Map<String, dynamic> request, {
+    String? idempotencyKey,
+  }) async {
+    await post('/api/bookings/apply-deposit', request,
+        idempotencyKey: idempotencyKey);
+  }
+
+  // ═══════════════════════════════════════════════════════════════
   // Safe Transactions (Client → Server)
   // ═══════════════════════════════════════════════════════════════
 

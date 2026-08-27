@@ -119,6 +119,14 @@ abstract class SyncInterceptor {
   /// بقيدٍ — يُنتج رصيداً سالباً أو نقصاً لا يُفسَّر.
   Future<void> submitManufacturingAction(Map<String, dynamic> request);
 
+  /// v167 — إطفاءُ التزامِ عربونٍ على فاتورة. الحدثُ الماليُّ الوحيدُ في
+  /// الفئةِ التشغيليّة (‏`tables_dao` و`kitchen_dao` فيهما صفرُ قيدٍ).
+  ///
+  /// 🔴 والعربونُ **التزامٌ لا إيراد**: مقابلُه `2134`، والقيدُ «مدين
+  /// الالتزام / دائن حساب العميل» — بلا حركةِ نقدٍ ثانيةٍ ألبتّة، فالنقدُ
+  /// دخل الخزنةَ لحظةَ الحجز.
+  Future<void> submitBookingDepositApplication(Map<String, dynamic> request);
+
   /// Submit a safe transaction to the server for sync.
   ///
   /// Phase 5B.4 (Issue 7) — `safeGlobalId` and `costCenterId` are added so

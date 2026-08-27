@@ -896,6 +896,89 @@ class ApiDataHandler extends ApiHandlerBase {
     }
   }
 
+  /// POST /api/bookings/apply-deposit · v167 / المرحلة ٣
+  ///
+  /// إطفاءُ التزامِ عربونٍ على فاتورة، واردٌ من عميل. الحدثُ الماليُّ
+  /// الوحيدُ في الفئةِ التشغيليّة.
+  ///
+  /// 🔴 **والخادمُ وحدَه يُرحّل.** مفتاحُ إزالة تكرار القيد
+  /// `(referenceType, referenceId)` لا يمسك ترحيلاً مزدوجاً هنا:
+  /// `referenceId` رقمُ الحجز **المحلّيّ** على العميل وهو يخالف رقمَه
+  /// هنا. فلو حسب الطرفان لصار قيدان يبدوان مختلفَين، ورصيدُ العميل
+  /// منقوصاً ضِعفَ العربون.
+  ///
+  /// والحجزُ يُدعى بهويّته العالميّة: رقمٌ محلّيٌّ قد يُطفئ عربونَ حجزِ
+  /// عميلٍ آخر على فاتورةِ عميلٍ آخر.
+  ///
+  /// ⚠️ و`applyBookingDepositToInvoice` نفسُها هي المنفّذ — لا منطقَ
+  /// ماليٌّ مكرَّرٌ في المعالج يمكن أن ينحرف عنها. وحارسُها
+  /// (`booking.invoiceId != null`) هو ما يجعل إعادةَ إرسالِ الطابور بعد
+  /// انقطاعٍ تُردّ بدل أن تُطفئ الالتزامَ مرّتين.
+  Future<Response> postBookingApplyDeposit(Request request) async {
+    try {
+      final perm = await ApiUserCtx.requirePermission(
+          request, db, PermissionCodes.bookingsDeposit);
+      if (perm != null) return perm;
+
+      return await ApiHandlerBase.withBroadcast<Response>(
+        endpointLabel: 'postBookingApplyDeposit',
+        tables: const {
+          'bookings', 'sales_invoices', 'parties', 'journal_entries',
+          'accounting',
+        },
+        body: () async {
+          final data =
+              json.decode(await request.readAsString()) as Map<String, dynamic>;
+
+          final bookingGid = data['bookingGlobalId'] as String?;
+          final invoiceGid = data['invoiceGlobalId'] as String?;
+          if (bookingGid == null ||
+              bookingGid.isEmpty ||
+              invoiceGid == null ||
+              invoiceGid.isEmpty) {
+            return jsonResponse({
+              'success': false,
+              'error': 'bookingGlobalId أو invoiceGlobalId مفقود',
+            }, statusCode: 400);
+          }
+
+          final booking = await (db.select(db.bookings)
+                ..where((b) => b.globalId.equals(bookingGid))
+                ..limit(1))
+              .getSingleOrNull();
+          final invoice = await (db.select(db.salesInvoices)
+                ..where((i) => i.globalId.equals(invoiceGid))
+                ..limit(1))
+              .getSingleOrNull();
+
+          // 409 لا 404: الطرفُ الغائبُ سيصل بالمزامنة، والطابورُ يعيد
+          // المحاولة. و404 يعني «لن يصل أبداً» فيُسقِط الحدثَ نهائيّاً.
+          if (booking == null || invoice == null) {
+            return jsonResponse({
+              'success': false,
+              'error': booking == null
+                  ? 'الحجزُ لم يصل الخادمَ بعد'
+                  : 'الفاتورةُ لم تصل الخادمَ بعد',
+              'retry': true,
+            }, statusCode: 409);
+          }
+
+          await db.applyBookingDepositToInvoice(
+            bookingId: booking.id,
+            invoiceId: invoice.id,
+            userId: parseIntNullable(data['userId']),
+          );
+
+          return jsonResponse({'success': true, 'serverId': booking.id});
+        },
+      );
+    } catch (e, st) {
+      debugPrint('[API] postBookingApplyDeposit failed: $e\n$st');
+      return jsonResponse({'success': false, 'error': e.toString()},
+          statusCode: 500);
+    }
+  }
+
   Future<Response> postReceipt(Request request) async {
     try {
       // Spec 077 Batch 5 (Spec 060 Phase 2): per-user permission gate.

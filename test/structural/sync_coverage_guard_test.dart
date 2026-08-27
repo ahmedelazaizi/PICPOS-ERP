@@ -53,13 +53,19 @@ const _unsyncedBaseline = <String>{
   // ومعها `BillOfMaterials` — ولم يكن لها سطرٌ أصلاً لأنّ الحارسَ كان
   // يقرأ التعليقاتِ فيعدّها مُزامَنةً وهي ليست كذلك. انظر [_stripComments].
 
-  // ═══ 🔴 تشغيلٌ عابرٌ للأجهزة — مطعمٌ بجهازين لا يرى أحدُهما الآخر ═══
-  'TableOrders', 'TableOrderItems', 'TableOrderPayments',
-  'TableReservations', 'RestaurantTables', 'TableSections',
-  'WorkOrders', 'WorkOrderItems', 'KitchenStations',
-  'CategoryStationMappings',
-  'Bookings', 'BookingResources', 'BookingServices', 'BookingReminders',
-  'SalesRoutes', 'RouteVisits', 'SalesRepCollections', 'SalesRepTargets',
+  // ═══ ✅ تشغيلٌ عابرٌ للأجهزة — سُدَّت 2026-08-27 (المرحلة ٣ / v167) ═══
+  //
+  // كانت ثمانيةَ عشرَ جدولاً هنا: طاولاتُ المطعم وطلباتُها · أوامرُ
+  // المطبخ ومحطّاتُه · الحجوزاتُ ومواردُها · وخطوطُ سير المندوبين.
+  // صارت كلُّها تحمل أعمدةَ المزامنة الخمسةَ وتُدرَج في مساري السحب.
+  //
+  // ⚠️ **والمسارُ الوارد وحدَه.** `SyncInterceptor` عقدٌ صريحٌ لكلِّ
+  //    عمليّةٍ لا مسحٌ عامٌّ للجداول، فدفعُ العميلِ لهذه الجداول يحتاج
+  //    نقطةَ نهايةٍ لكلِّ حدث. المبنيُّ منها اليومَ **واحدةٌ**:
+  //    `/api/bookings/apply-deposit` — الحدثُ الماليُّ الوحيدُ في الفئة.
+  //    وما عداه يصل من الخادم إلى العميل ولا يعود.
+
+  // ═══ 🔴 تشغيلٌ عابرٌ للأجهزة — لم تُسَدّ بعد ═══
   'CycleCountPlans', 'CycleCountTasks', 'CycleCountItems',
   'StockAudits', 'StockAuditItems',
   'StockRequisitions', 'StockRequisitionItems',
@@ -83,7 +89,17 @@ const _unsyncedBaseline = <String>{
   // شؤونُ الموظّفين مؤجَّلةٌ في `lite` بقرار مالك 2026-08-10 والكودُ مسيَّجٌ
   // بـ`features.hrEnabled` — فبقاؤها محلّيّةً متّسقٌ مع ذلك، ويُراجَع يومَ
   // تُفتَح الميزة.
-  'Employees', 'EmployeeAttendance', 'EmployeeContracts', 'EmployeeLeaves',
+  //
+  // ⚠️ و`Employees` **وحدَها** خرجت من هنا في المرحلة ٣ (v167)، ولا يعني
+  //    ذلك فتحَ شؤون الموظّفين: خمسةٌ من جداول الفئة التشغيليّة تشير
+  //    إليها — ثلاثةٌ منها بإشارةٍ **غيرِ قابلةٍ للإفراغ**
+  //    (`RouteVisits` · `SalesRepTargets` · `SalesRepCollections`) —
+  //    و`PRAGMA foreign_keys = ON` في الإنتاج، و`_upsertRow` يبتلع خطأَ
+  //    المفتاح ويمضي. فبقاؤها محلّيّةً كان يُسقط كلَّ صفِّ زيارةٍ أو
+  //    تحصيلٍ **صامتاً**. وهي مُدرَجةٌ في `_transactionalPullTables`
+  //    لأنّها تحمل `salary` — لا تُسلَّم لمستدعٍ بلا هويّةٍ متحقَّقة.
+  //    وبقيّةُ جداول الموظّفين على حالها.
+  'EmployeeAttendance', 'EmployeeContracts', 'EmployeeLeaves',
   'EmployeeTransactions', 'LeaveBalances', 'OvertimeRecords',
   'SalaryPayments', 'WorkHolidays', 'FingerprintDevices',
   'PerformanceGoals', 'PerformanceReviews',

@@ -14,6 +14,13 @@ class SalesRoutes extends Table {
   TextColumn get area => text().nullable()(); // المنطقة الجغرافية
   BoolColumn get isActive => boolean().withDefault(const Constant(true))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  // === v167 — أعمدةُ المزامنة (المرحلة ٣: الفئةُ التشغيليّة) ===
+  TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
+  DateTimeColumn get lastModifiedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get originClientId => text().nullable()();
+  IntColumn get rowVersion => integer().withDefault(const Constant(0))();
 }
 
 /// زيارات المندوبين للعملاء على المسار
@@ -32,6 +39,13 @@ class RouteVisits extends Table {
   RealColumn get orderAmount =>
       real().withDefault(const Constant(0))(); // قيمة الطلب
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  // === v167 — أعمدةُ المزامنة (المرحلة ٣: الفئةُ التشغيليّة) ===
+  TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
+  DateTimeColumn get lastModifiedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get originClientId => text().nullable()();
+  IntColumn get rowVersion => integer().withDefault(const Constant(0))();
 }
 
 /// أهداف المندوبين الشهرية
@@ -48,6 +62,13 @@ class SalesRepTargets extends Table {
   IntColumn get achievedVisits =>
       integer().withDefault(const Constant(0))(); // زيارات محققة
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  // === v167 — أعمدةُ المزامنة (المرحلة ٣: الفئةُ التشغيليّة) ===
+  TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
+  DateTimeColumn get lastModifiedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get originClientId => text().nullable()();
+  IntColumn get rowVersion => integer().withDefault(const Constant(0))();
 }
 
 /// تحصيلات المندوبين من العملاء
@@ -61,4 +82,11 @@ class SalesRepCollections extends Table {
   TextColumn get referenceNumber => text().nullable()(); // رقم الشيك/الإيصال
   TextColumn get notes => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  // === v167 — أعمدةُ المزامنة (المرحلة ٣: الفئةُ التشغيليّة) ===
+  TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
+  DateTimeColumn get lastModifiedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get originClientId => text().nullable()();
+  IntColumn get rowVersion => integer().withDefault(const Constant(0))();
 }

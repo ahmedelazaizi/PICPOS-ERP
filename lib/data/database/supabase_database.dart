@@ -1166,6 +1166,9 @@ class SupabaseDatabase {
       name: data['name'] as String,
       isActive: data['is_active'] as bool? ?? true,
       createdAt: DateTime.parse(data['created_at'] as String),
+      // v167 — مطلوبٌ في صنفِ البيانات المولَّد. والصفُّ السحابيُّ قد لا
+      // يحمل العمودَ بعد، وصفرٌ هو حالُ صفٍّ لم يُعدَّل قطّ.
+      rowVersion: (data['row_version'] as int?) ?? 0,
     );
   }
 
@@ -1184,6 +1187,7 @@ class SupabaseDatabase {
           : DateTime.now(),
       isActive: data['is_active'] as bool? ?? true,
       createdAt: DateTime.parse(data['created_at'] as String),
+      rowVersion: (data['row_version'] as int?) ?? 0, // v167
     );
   }
 
@@ -1207,6 +1211,7 @@ class SupabaseDatabase {
       closedAt: data['closed_at'] != null
           ? DateTime.parse(data['closed_at'] as String)
           : null,
+      rowVersion: (data['row_version'] as int?) ?? 0, // v167
     );
   }
 
@@ -1221,6 +1226,7 @@ class SupabaseDatabase {
       taxRate: (data['tax_rate'] as num?)?.toDouble() ?? 0,
       taxAmount: (data['tax_amount'] as num?)?.toDouble() ?? 0,
       addedAt: DateTime.parse(data['added_at'] as String),
+      rowVersion: (data['row_version'] as int?) ?? 0, // v167
     );
   }
 

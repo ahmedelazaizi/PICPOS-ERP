@@ -107,6 +107,40 @@ class DeltaPullService {
     'landed_cost_sheets',      // → purchase_invoices, users
     'landed_cost_items',       // → landed_cost_sheets, parties
     'landed_cost_allocations', // → landed_cost_sheets, products, purchase_invoice_items
+
+    // ── Tier 6: الفئةُ التشغيليّة (v167 / المرحلة ٣) ──
+    //
+    // حالةُ تشغيلٍ لحظيّةٌ يقرؤها أكثرُ من جهازٍ في آنٍ واحد: طلبُ طاولةٍ
+    // يُفتَح على نقطةٍ ويُغلَق من أخرى، وأمرُ تحضيرٍ يُطبَع في المطبخ
+    // ويُنجَز من الكاشير، وحجزٌ يُؤخَذ على الاستقبال فلا تُباع الطاولةُ
+    // مرّتين. والترتيبُ يتبع المفاتيحَ حرفاً — الأبُ قبل ابنه.
+    //
+    // ⚠️ و`employees` هنا وليست من الثمانيةَ عشر — نفسُ سابقةِ
+    //    `bill_of_materials` في المرحلة ٢. خمسةٌ من جداول الفئة تشير
+    //    إليها، وثلاثةٌ منها بإشارةٍ **غيرِ قابلةٍ للإفراغ**
+    //    (`route_visits` · `sales_rep_targets` · `sales_rep_collections`).
+    //    و`PRAGMA foreign_keys = ON` في الإنتاج، و`_upsertRow` **يبتلع**
+    //    خطأَ المفتاح بـ`debugPrint` ويمضي — فبدونها كان كلُّ صفِّ زيارةٍ
+    //    أو تحصيلٍ يُسقَط صامتاً ولا يظهر في أيّ اختبار.
+    'employees',               // → branches
+    'table_sections',
+    'kitchen_stations',
+    'restaurant_tables',       // → table_sections
+    'category_station_mappings', // → categories, kitchen_stations
+    'booking_services',        // → products, branches
+    'booking_resources',       // → employees, branches
+    'sales_routes',            // → employees
+    'table_orders',            // → restaurant_tables, users
+    'bookings',                // → parties, booking_services, booking_resources, sales_invoices
+    'work_orders',             // → table_orders, sales_invoices, users
+    'table_order_items',       // → table_orders, products
+    'table_reservations',      // → restaurant_tables
+    'table_order_payments',    // → table_orders, sales_invoices
+    'work_order_items',        // → work_orders, products, users
+    'booking_reminders',       // → bookings, users
+    'route_visits',            // → sales_routes, parties, employees
+    'sales_rep_targets',       // → employees
+    'sales_rep_collections',   // → employees, parties
   ];
 
   /// Spec 151 P1-8b — the TRANSACTIONAL delta-pull tables (Tier 3 + Tier 4 +
@@ -137,6 +171,28 @@ class DeltaPullService {
     'landed_cost_sheets', 'landed_cost_items', 'landed_cost_allocations',
     'fixed_assets', 'asset_depreciations', 'op_expenses',
     'manufacturing_orders', 'mfg_order_costs',
+
+    // v167 / المرحلة ٣ — الفئةُ التشغيليّة.
+    //
+    // 🔴 و`employees` هنا **لسببٍ أمنيٍّ لا لسببِ مفاتيح**: الجدولُ يحمل
+    //    `salary` و`salary_type`. تركُه مرجعيّاً يعني تسليمَ رواتبِ
+    //    الموظّفين إلى مستدعٍ **بلا هويّةٍ متحقَّقة** في التزويد قبل
+    //    الدخول. والخمسةُ التي تشير إليه تتبعه هنا لا لتُحمى وحدَها بل
+    //    ليصلَ الأبُ قبل أبنائه: مرجعيٌّ يُسحَب تokenless فيسبق أباه
+    //    المحميَّ فيسقط مفتاحُه صامتاً.
+    //
+    // والمرجعيُّ عمداً — `table_sections` · `restaurant_tables` ·
+    // `kitchen_stations` · `category_station_mappings` ·
+    // `booking_services` — يبقى خارجَ هذه القائمة ليعمل التزويدُ قبل
+    // الدخول: شاشةُ الطاولات تحتاج خريطةَ الصالة قبلَ أوّلِ تسجيلِ دخول.
+    'employees',
+    'booking_resources',
+    'table_orders', 'table_order_items', 'table_reservations',
+    'table_order_payments',
+    'work_orders', 'work_order_items',
+    'bookings', 'booking_reminders',
+    'sales_routes', 'route_visits', 'sales_rep_targets',
+    'sales_rep_collections',
   };
 
   /// المرحلة ١ (W1) — الجداول الأساسية التي صار الخادم يقصّها على الفرع
@@ -183,6 +239,19 @@ class DeltaPullService {
     'fixed_assets', 'manufacturing_orders', 'bom_components',
     'op_expenses', 'asset_depreciations', 'mfg_order_costs',
     'landed_cost_sheets', 'landed_cost_items', 'landed_cost_allocations',
+
+    // v167 / المرحلة ٣ — الفئةُ التشغيليّة. التسعةَ عشرَ كلُّها بلا
+    // استراتيجيّةٍ في `fullSync`، فبذرُ علامتِها المائيّة يعني عميلاً لا
+    // يرى **طلبَ طاولةٍ أو حجزاً سابقاً لإقلاعه أبداً** — ولا يظهر ذلك
+    // في أيّ اختبار: الجدولُ يمتلئ بما يقع بعد الإقلاع فيبدو عاملاً.
+    'employees',
+    'table_sections', 'restaurant_tables', 'table_orders',
+    'table_order_items', 'table_reservations', 'table_order_payments',
+    'kitchen_stations', 'category_station_mappings',
+    'work_orders', 'work_order_items',
+    'booking_resources', 'booking_services', 'bookings', 'booking_reminders',
+    'sales_routes', 'route_visits', 'sales_rep_targets',
+    'sales_rep_collections',
   };
 
   static const Set<String> branchScopedMasterPullTables = {
