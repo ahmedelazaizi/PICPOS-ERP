@@ -2466,7 +2466,18 @@ extension Epoch3Migrations on AppDatabase {
           'UPDATE table_orders SET tax_enabled = 0 '
           'WHERE tax_enabled = 1 AND tax_rate < 0.01',
         );
-        await m.alterTable(TableMigration(tableOrders));
+        // v167 — أعمدةُ المزامنة **إلزاميّةٌ هنا** وإن أُضيفت بعد هذه
+        // الخطوة بأحدَ عشرَ إصداراً: `alterTable` تنسخ بـ`INSERT INTO new
+        // SELECT <أعمدةِ اليوم> FROM old`، وقاعدةٌ عند v155 لا تملكها
+        // فترمي `no such column: global_id` — ويبتلعها `_safeMigrate`
+        // فتضيع **الخطوةُ كلُّها** بما فيها قيدُ الضريبة.
+        await m.alterTable(TableMigration(tableOrders, newColumns: [
+          tableOrders.globalId,
+          tableOrders.lastModifiedAt,
+          tableOrders.deletedAt,
+          tableOrders.originClientId,
+          tableOrders.rowVersion,
+        ]));
         debugPrint('[Migration] v156 table_orders tax CHECK OK');
       });
     }
@@ -2493,7 +2504,13 @@ extension Epoch3Migrations on AppDatabase {
           'UPDATE table_orders SET tax_enabled = 0 '
           'WHERE tax_enabled = 1 AND tax_rate < 0.01',
         );
-        await m.alterTable(TableMigration(tableOrders));
+        await m.alterTable(TableMigration(tableOrders, newColumns: [
+          tableOrders.globalId, // v167 — انظر v156 أعلاه
+          tableOrders.lastModifiedAt,
+          tableOrders.deletedAt,
+          tableOrders.originClientId,
+          tableOrders.rowVersion,
+        ]));
         debugPrint('[Migration] v157 table_orders minimum tax rate OK');
       });
     }
@@ -2518,7 +2535,13 @@ extension Epoch3Migrations on AppDatabase {
       await _safeMigrate('v158 table_order_payments reserve-then-commit',
           () async {
         await m.addColumn(tableOrderPayments, tableOrderPayments.status);
-        await m.alterTable(TableMigration(tableOrderPayments));
+        await m.alterTable(TableMigration(tableOrderPayments, newColumns: [
+          tableOrderPayments.globalId, // v167 — انظر v156 أعلاه
+          tableOrderPayments.lastModifiedAt,
+          tableOrderPayments.deletedAt,
+          tableOrderPayments.originClientId,
+          tableOrderPayments.rowVersion,
+        ]));
         debugPrint('[Migration] v158 table_order_payments reserve/commit OK');
       });
     }
@@ -2577,7 +2600,15 @@ extension Epoch3Migrations on AppDatabase {
           () async {
         // ‏١) `bookings.status` يقبل `seated`. إضافةٌ لا استبدال، فلا صفٌّ
         //    قائمٌ يصير مخالفاً — ولا تسويةَ بياناتٍ مطلوبةٌ قبلها.
-        await m.alterTable(TableMigration(bookings));
+        // v167 — انظر تحذيرَ `newColumns` أدناه: ينطبق على `bookings` أيضاً،
+        // وقاعدةٌ عند v160 لا تملك أعمدةَ المزامنة.
+        await m.alterTable(TableMigration(bookings, newColumns: [
+          bookings.globalId,
+          bookings.lastModifiedAt,
+          bookings.deletedAt,
+          bookings.originClientId,
+          bookings.rowVersion,
+        ]));
 
         // ‏٢) أعمدةُ المورد. `addColumn` لا تكفي وحدَها لأن القيدَ على `kind`
         //    جزءٌ من تعريف الجدول، و`alterTable` تحمل الاثنين معاً.
@@ -2596,6 +2627,15 @@ extension Epoch3Migrations on AppDatabase {
             bookingResources.kind,
             bookingResources.shiftStartMinutes,
             bookingResources.shiftEndMinutes,
+            // v167 — أعمدةُ المزامنة أُضيفت بعد هذه الخطوة بستِّ إصدارات،
+            // وقاعدةٌ عند v160 لا تملكها. ونفسُ التحذير أعلاه ينطبق عليها
+            // حرفاً: بدونها ترمي `no such column: global_id` ويبتلعها
+            // `_safeMigrate` فتضيع أعمدةُ المورد الأربعةُ معها.
+            // و`deletedAt` ليس منها — الجدولُ وُلد به.
+            bookingResources.globalId,
+            bookingResources.lastModifiedAt,
+            bookingResources.originClientId,
+            bookingResources.rowVersion,
           ],
         ));
 
@@ -2638,6 +2678,11 @@ extension Epoch3Migrations on AppDatabase {
             bookingResources.kind,
             bookingResources.shiftStartMinutes,
             bookingResources.shiftEndMinutes,
+            // v167 — انظر v161 أعلاه؛ نفسُ السبب حرفاً.
+            bookingResources.globalId,
+            bookingResources.lastModifiedAt,
+            bookingResources.originClientId,
+            bookingResources.rowVersion,
           ],
         ));
         debugPrint('[Migration] v162 أعمدةُ المورد أُضيفت — إنقاذُ 161 OK');
