@@ -209,6 +209,42 @@ extension OperationalExpensesDao on AppDatabase {
   Future<bool> updateExpenseCategory(int id, OpExpenseCategoriesCompanion data) =>
       (update(opExpenseCategories)..where((c) => c.id.equals(id))).write(data).then((rows) => rows > 0);
 
+  /// ينقل المصروفَ في دورته: `draft` ← `approved` ← `paid`.
+  ///
+  /// ═══ ⚠️ ولا يحرّك القيدَ ولا الخزنة ═══
+  ///
+  /// نصُّ التصميم «القيد ينشأ عند الاعتماد» **يخالف المحرّكَ الحاليّ**:
+  /// [recordAndPostOperationalExpense] يُنشئ القيدَ وسندَ الصرف وخصمَ الخزنة
+  /// **عند التسجيل**، ومفتاحُ إزالة تكرار القيد `(referenceType, referenceId)`
+  /// مبنيٌّ على ذلك.
+  ///
+  /// 🔴 فترحيلُ قيدٍ ثانٍ عند الاعتماد يعني **مصروفاً مقيَّداً مرّتَين**.
+  /// وقرارُ المالك (‏2026-08-28): تُوصَّل الانتقالاتُ بلا تحريكِ موضعِ القيد،
+  /// فهذا العمودُ أثرُ مراجعةٍ لا حدثٌ محاسبيّ. ونقلُ القيد إلى الاعتماد
+  /// مهمّةٌ مستقلّةٌ تحتاج هجرةً للمصروفات القائمة.
+  ///
+  /// ⚠️ **وعلى عميلٍ يرفض**: `op_expenses` تُسحَب من الخادم، فكتابةٌ محلّيّةٌ
+  /// هنا يمحوها أوّلُ سحبِ دلتا — والصمتُ عن ذلك يجعل المشغّلَ يعتمد المصروفَ
+  /// ثمّ يجده مسوّدةً بعد دقائق بلا سبب.
+  Future<bool> updateExpenseStatus(int expenseId, String status) async {
+    const allowed = {'draft', 'approved', 'paid'};
+    if (!allowed.contains(status)) {
+      throw ArgumentError.value(status, 'status', 'حالةُ مصروفٍ غير معروفة');
+    }
+    if (SyncInterceptor.isClientMode) {
+      throw Exception(
+        'اعتمادُ المصروفات وسدادُها يتمّان على الخادم — هذا الجهاز عميل.',
+      );
+    }
+    final rows = await (update(opExpenses)
+          ..where((e) => e.id.equals(expenseId)))
+        .write(OpExpensesCompanion(
+      status: Value(status),
+      lastModifiedAt: Value(DateTime.now()),
+    ));
+    return rows > 0;
+  }
+
   /// Delete expense category
   Future<bool> deleteExpenseCategory(int id) =>
       (delete(opExpenseCategories)..where((c) => c.id.equals(id))).go().then((rows) => rows > 0);

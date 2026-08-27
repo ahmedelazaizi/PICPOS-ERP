@@ -252,6 +252,10 @@ class ManufacturingRepositoryImpl implements ManufacturingRepository {
       );
 
   @override
+  Stream<List<MfgOrderCostData>> watchAllMfgOrderCosts() =>
+      _db.watchAllMfgOrderCosts();
+
+  @override
   Future<void> updateManufacturingOrderCosts(int orderId, double additionalCosts) async {
     await (_db.update(_db.manufacturingOrders)
           ..where((o) => o.id.equals(orderId)))
@@ -287,6 +291,17 @@ class ManufacturingRepositoryImpl implements ManufacturingRepository {
   @override
   Future<bool> updateExpenseCategory(int id, OpExpenseCategoriesCompanion data) =>
       _db.updateExpenseCategory(id, data);
+
+  @override
+  Future<bool> updateExpenseStatus(int expenseId, String status) =>
+      _db.updateExpenseStatus(expenseId, status);
+
+  @override
+  Future<List<Map<String, dynamic>>> getExpensesForReport({
+    required DateTime from,
+    required DateTime to,
+  }) =>
+      _db.getExpensesForReport(from: from, to: to);
 
   @override
   Future<bool> deleteExpenseCategory(int id) =>
