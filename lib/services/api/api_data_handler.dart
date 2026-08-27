@@ -801,6 +801,101 @@ class ApiDataHandler extends ApiHandlerBase {
     }
   }
 
+  // ═══════════════════════════════════════════════════════════════════════
+  // MANUFACTURING — حدثٌ على أمرِ إنتاجٍ واردٌ من عميل (v166 / المرحلة ٢)
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /// `POST /api/manufacturing/action`
+  ///
+  /// أربعةُ أحداثٍ في نقطةٍ واحدة: `start` · `complete` · `reverse` ·
+  /// `add_cost`. وكلُّها تُنفَّذ بدوالِّ الـDAO نفسِها التي يشغّلها الوضعُ
+  /// المستقلّ، فلا منطقَ ماليٌّ مكرَّرٌ هنا يمكن أن ينحرف عنها.
+  ///
+  /// ⚠️ **والأمرُ يُحَلّ بهويّته العالميّة.** رقمٌ محلّيٌّ يصل هنا قد يطابق
+  ///    أمراً آخرَ تماماً، فتُستهلك خاماتُ غيره — واستهلاكٌ خطأٌ لا يُعكَس
+  ///    بقيدٍ كما يُعكَس ترحيلٌ خطأ.
+  ///
+  /// وإعادةُ الإرسال لا تُنفّذ مرّتين: كلُّ دالّةٍ تفحص حالةَ الأمر أوّلاً
+  /// (‏`draft` للبدء و`in_progress` للإنجاز) وترمي إن خالفت.
+  Future<Response> postManufacturingAction(Request request) async {
+    try {
+      final perm = await ApiUserCtx.requirePermission(
+          request, db, PermissionCodes.manufacturingManage);
+      if (perm != null) return perm;
+
+      return await ApiHandlerBase.withBroadcast<Response>(
+        endpointLabel: 'postManufacturingAction',
+        tables: const {
+          'manufacturing_orders', 'mfg_order_costs', 'stock_movements',
+          'products', 'inventory_balances', 'journal_entries', 'accounting',
+        },
+        body: () async {
+          final data =
+              json.decode(await request.readAsString()) as Map<String, dynamic>;
+
+          final orderGid = data['orderGlobalId'] as String?;
+          final action = data['action'] as String?;
+          if (orderGid == null || orderGid.isEmpty || action == null) {
+            return jsonResponse({
+              'success': false,
+              'error': 'orderGlobalId أو action مفقود',
+            }, statusCode: 400);
+          }
+
+          final order = await (db.select(db.manufacturingOrders)
+                ..where((o) => o.globalId.equals(orderGid))
+                ..limit(1))
+              .getSingleOrNull();
+          if (order == null) {
+            // 409 لا 404: الأمرُ سيصل بالمزامنة، والطابورُ يعيد المحاولة.
+            return jsonResponse({
+              'success': false,
+              'error': 'أمرُ الإنتاج لم يصل الخادمَ بعد',
+              'retry': true,
+            }, statusCode: 409);
+          }
+
+          switch (action) {
+            case 'start':
+              await db.startProduction(order.id);
+              break;
+            case 'complete':
+              await db.completeProduction(
+                order.id,
+                actualProducedQty:
+                    parseDoubleNullable(data['actualProducedQty']),
+                costCenterId: parseIntNullable(data['costCenterId']),
+              );
+              break;
+            case 'reverse':
+              await db.reverseManufacturingOrder(order.id);
+              break;
+            case 'add_cost':
+              await db.addMfgOrderCost(
+                orderId: order.id,
+                costType: data['costType'] as String? ?? 'other',
+                description: data['description'] as String? ?? '',
+                amount: parseDouble(data['amount']),
+                globalId: data['globalId'] as String?,
+              );
+              break;
+            default:
+              return jsonResponse({
+                'success': false,
+                'error': 'حدثٌ غيرُ معروف: $action',
+              }, statusCode: 400);
+          }
+
+          return jsonResponse({'success': true, 'serverId': order.id});
+        },
+      );
+    } catch (e, st) {
+      debugPrint('[API] postManufacturingAction failed: $e\n$st');
+      return jsonResponse({'success': false, 'error': e.toString()},
+          statusCode: 500);
+    }
+  }
+
   Future<Response> postReceipt(Request request) async {
     try {
       // Spec 077 Batch 5 (Spec 060 Phase 2): per-user permission gate.

@@ -1614,6 +1614,16 @@ class OfflineSyncWorker {
         }
         throw StateError('Unhandled op $operation for table $table');
 
+      // v166 — حدثٌ على أمرِ إنتاج. الخادمُ يفحص حالةَ الأمر قبل التنفيذ
+      // (‏`draft` للبدء و`in_progress` للإنجاز)، فإعادةُ الإرسال بعد
+      // انقطاعٍ تُردّ بدل أن تستهلك الخاماتِ ثانية.
+      case 'manufacturing_orders':
+        if (operation == 'action') {
+          return proxy.submitManufacturingAction(payload,
+              idempotencyKey: idempotencyKey);
+        }
+        throw StateError('Unhandled op $operation for table $table');
+
       case 'safe_transactions':
         if (operation == 'insert') {
           return proxy.submitSafeTransaction(

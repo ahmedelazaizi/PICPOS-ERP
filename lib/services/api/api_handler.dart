@@ -203,6 +203,7 @@ class ApiHandler {
     // v166 / المرحلة ٢ — اقتناءُ أصلٍ وترحيلُ إهلاكٍ واردان من عميل.
     router.post('/api/fixed-assets', _data.postFixedAsset);
     router.post('/api/op-expenses', _data.postOperationalExpense);
+    router.post('/api/manufacturing/action', _data.postManufacturingAction);
     router.post('/api/fixed-assets/depreciation/run',
         _data.postAssetDepreciationRun);
     // Settings

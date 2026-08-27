@@ -88,6 +88,10 @@ extension ManufacturingDao on AppDatabase {
     bool autoDepleteOnSale = false,
     String depletionPolicy = 'prefer_finished_stock',
     bool isActive = true,
+    /// v166 — هويّةُ القائمة. تُسَكّ على العميل وتُمرَّر إلى الخادم، وإلّا
+    /// سكّ كلُّ طرفٍ هويّةً فعادت القائمةُ بسحب الدلتا مكرَّرةً — وأمرا
+    /// إنتاجٍ يشيران إلى قائمتَين لنفس الصنف.
+    String? globalId,
   }) async {
     // FR-004 (defense-in-depth): an inactive BOM must never be allowed to
     // run an auto-deplete deduction at sale time. The UI guard in T022
@@ -123,6 +127,7 @@ extension ManufacturingDao on AppDatabase {
           isActive: Value(isActive),
           autoDepleteOnSale: Value(autoDepleteOnSale),
           depletionPolicy: Value(depletionPolicy),
+          globalId: Value(globalId ?? UuidV7.generate()), // v166
         ),
       );
 
@@ -135,6 +140,8 @@ extension ManufacturingDao on AppDatabase {
             unit: Value((c['unit'] as String?) ?? 'قطعة'),
             quantityInBase: Value((c['quantityInBase'] as double?) ?? 1.0),
             wastagePercent: Value((c['wastagePercent'] as double?) ?? 0),
+            // v166 — المكوّنُ يُزامَن استقلالاً عن قائمته.
+            globalId: Value((c['globalId'] as String?) ?? UuidV7.generate()),
           ),
         );
       }
@@ -220,6 +227,8 @@ extension ManufacturingDao on AppDatabase {
             unit: Value((c['unit'] as String?) ?? 'قطعة'),
             quantityInBase: Value((c['quantityInBase'] as double?) ?? 1.0),
             wastagePercent: Value((c['wastagePercent'] as double?) ?? 0),
+            // v166 — المكوّنُ يُزامَن استقلالاً عن قائمته.
+            globalId: Value((c['globalId'] as String?) ?? UuidV7.generate()),
           ),
         );
       }
@@ -273,6 +282,10 @@ extension ManufacturingDao on AppDatabase {
     required int warehouseId,
     required DateTime startDate,
     String? notes,
+    /// v166 — هويّةُ الأمر. كلُّ حدثٍ ماليٍّ بعدها يُشير إليها لا إلى رقمٍ
+    /// محلّيّ: رقمُ الأمر على العميل يخالف رقمَه على الخادم، وحدثٌ يصل
+    /// برقمٍ محلّيٍّ قد يُشغَّل على أمرٍ **آخر** فيستهلك خاماتِ غيره.
+    String? globalId,
   }) async {
     // Generate order number
     final count =
@@ -290,6 +303,7 @@ extension ManufacturingDao on AppDatabase {
         warehouseId: warehouseId,
         startDate: startDate,
         notes: Value(notes),
+        globalId: Value(globalId ?? UuidV7.generate()), // v166
       ),
     );
   }
@@ -305,7 +319,35 @@ extension ManufacturingDao on AppDatabase {
   /// [InsufficientStockException] back into `Exception(e.message)` so any
   /// existing UI that surfaces `e.toString()` sees identical text
   /// (Constitution I — Behavior Preservation).
+  /// v166 — يُرسل حدثاً ماليّاً على أمرِ إنتاجٍ قائمٍ إلى الخادم.
+  ///
+  /// ⚠️ **بالهويّة لا بالرقم.** رقمُ الأمر على العميل يخالف رقمَه على
+  /// الخادم بالتصميم، وحدثٌ يصل برقمٍ محلّيٍّ قد يُشغَّل على أمرٍ **آخر**
+  /// فيستهلك خاماتِ غيره. والاستهلاكُ الخطأ لا يُعكَس بقيد.
+  ///
+  /// ويعيد `true` حين تولّى الخادمُ الحدثَ، فيمتنع النداءُ المحلّيّ.
+  Future<bool> _pushMfgAction(int orderId, String action,
+      [Map<String, dynamic> extra = const {}]) async {
+    if (!SyncInterceptor.isClientMode) return false;
+    final order = await (select(manufacturingOrders)
+          ..where((o) => o.id.equals(orderId)))
+        .getSingleOrNull();
+    if (order == null || order.globalId == null) {
+      // أمرٌ بلا هويّةٍ لا يُدعى على الخادم. الفشلُ صريحٌ لا صامت: تمريرُه
+      // يعني تنفيذاً محلّيّاً يُنتج التفاوتَ الذي نسدّه.
+      throw StateError('أمرُ الإنتاج بلا معرّفٍ عالميّ — لا يمكن إرسالُه.');
+    }
+    await SyncInterceptor.instance?.submitManufacturingAction(<String, dynamic>{
+      'orderGlobalId': order.globalId,
+      'action': action,
+      ...extra,
+    });
+    return true;
+  }
+
   Future<void> startProduction(int orderId) async {
+    if (await _pushMfgAction(orderId, 'start')) return;
+
     await transaction(() async {
       final order = await (select(
         manufacturingOrders,
@@ -416,6 +458,13 @@ extension ManufacturingDao on AppDatabase {
     double? actualProducedQty,
     int? costCenterId,
   }) async {
+    if (await _pushMfgAction(orderId, 'complete', <String, dynamic>{
+      'actualProducedQty': actualProducedQty,
+      'costCenterId': costCenterId,
+    })) {
+      return;
+    }
+
     await transaction(() async {
       final order = await (select(
         manufacturingOrders,
@@ -671,6 +720,8 @@ extension ManufacturingDao on AppDatabase {
   /// below is the single GL entry), so there is no double-post. The whole
   /// operation is one transaction: a failure anywhere rolls back everything.
   Future<void> reverseManufacturingOrder(int orderId) async {
+    if (await _pushMfgAction(orderId, 'reverse')) return;
+
     await transaction(() async {
       // Re-read status INSIDE the tx so a lost race with complete/reverse fails
       // on the guard rather than double-posting (TOCTOU hardening, cf. S-COST).
@@ -793,15 +844,31 @@ extension ManufacturingDao on AppDatabase {
     required double amount,
     int? expenseCategoryId,
     int? expenseId,
-  }) =>
-      into(mfgOrderCosts).insert(MfgOrderCostsCompanion.insert(
+    String? globalId, // v166
+  }) async {
+    // v166 — التكلفةُ الإضافيّةُ تُرحَّل قيداً على الخادم (‏`manufacturing_
+    // overhead`)، فالعميلُ يُرسلها ولا يكتبها: صفٌّ محلّيٌّ بلا قيدِه يجعل
+    // تكلفةَ الأمر تخالف الأستاذ.
+    final gid = globalId ?? UuidV7.generate();
+    if (await _pushMfgAction(orderId, 'add_cost', <String, dynamic>{
+      'globalId': gid,
+      'costType': costType,
+      'description': description,
+      'amount': amount,
+    })) {
+      return 0;
+    }
+
+    return into(mfgOrderCosts).insert(MfgOrderCostsCompanion.insert(
         orderId: orderId,
         costType: costType,
         description: description,
         amount: amount,
         expenseCategoryId: Value(expenseCategoryId),
         expenseId: Value(expenseId),
-      ));
+      globalId: Value(gid), // v166
+    ));
+  }
 
   /// Get all costs for a manufacturing order
   Future<List<MfgOrderCostData>> getMfgOrderCosts(int orderId) =>

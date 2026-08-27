@@ -1355,6 +1355,20 @@ class ServerProxy {
   }
 
   // ═══════════════════════════════════════════════════════════════
+  // Manufacturing (Client → Server) · v166
+  // ═══════════════════════════════════════════════════════════════
+
+  /// حدثٌ على أمرِ إنتاجٍ قائم: `start` · `complete` · `reverse` ·
+  /// `add_cost`. الأمرُ يُدعى بهويّته العالميّة لا برقمه المحلّيّ.
+  Future<void> submitManufacturingAction(
+    Map<String, dynamic> request, {
+    String? idempotencyKey,
+  }) async {
+    await post('/api/manufacturing/action', request,
+        idempotencyKey: idempotencyKey);
+  }
+
+  // ═══════════════════════════════════════════════════════════════
   // Safe Transactions (Client → Server)
   // ═══════════════════════════════════════════════════════════════
 

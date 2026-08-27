@@ -114,6 +114,11 @@ abstract class SyncInterceptor {
   /// رصيد. الخادمُ ينفّذ الثلاثةَ، والعميلُ يُرسل فحسب.
   Future<void> submitOperationalExpense(Map<String, dynamic> document);
 
+  /// v166 — حدثٌ ماليٌّ على أمرِ إنتاج. أثرُه **مخزنيٌّ** لا محاسبيٌّ فقط:
+  /// البدءُ يخصم خاماتٍ والإنجازُ يُدخل تامّاً. وخصمٌ مضاعفٌ لا يُعكَس
+  /// بقيدٍ — يُنتج رصيداً سالباً أو نقصاً لا يُفسَّر.
+  Future<void> submitManufacturingAction(Map<String, dynamic> request);
+
   /// Submit a safe transaction to the server for sync.
   ///
   /// Phase 5B.4 (Issue 7) — `safeGlobalId` and `costCenterId` are added so

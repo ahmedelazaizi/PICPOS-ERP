@@ -127,6 +127,24 @@ class _CwiSync {
     );
   }
 
+  // ── Manufacturing (v166) ──────────────────────────────────────────────────
+
+  static Future<void> submitManufacturingAction(
+      Map<String, dynamic> request) async {
+    if (!SyncInterceptor.isClientMode) return;
+    debugPrint('[ClientInterceptor] Routing manufacturing action to server');
+    await ClientWriteInterceptor._tryOrQueueVoid(
+      tableName: 'manufacturing_orders',
+      operation: 'action',
+      payload: Map<String, dynamic>.from(request),
+      serverCall: (reqIdemKey) =>
+          ClientWriteInterceptor._proxy.submitManufacturingAction(
+        request,
+        idempotencyKey: reqIdemKey,
+      ),
+    );
+  }
+
   // ── Safe Transactions ─────────────────────────────────────────────────────
 
   static Future<void> submitSafeTransaction({
