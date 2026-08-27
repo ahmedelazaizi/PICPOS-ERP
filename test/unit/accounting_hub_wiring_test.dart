@@ -12,6 +12,7 @@ import 'package:ural_erp/core/navigation/screen_id.dart';
 import 'package:ural_erp/core/navigation/screen_registry.dart';
 import 'package:ural_erp/data/providers/auth_providers.dart';
 import 'package:ural_erp/presentation/accounting_picpos/accounting_hub_picpos_screen.dart';
+import 'package:ural_erp/presentation/accounting_picpos/financial_statements_picpos_screen.dart';
 
 void main() {
   group('الحاويةُ موصولةٌ في المواضع الستّة', () {
@@ -53,14 +54,25 @@ void main() {
     });
   });
 
-  group('التبويباتُ على التصميم — سبعةٌ لا ثمانية', () {
-    // ⚠️ مقيسٌ من `TABS` في PicPos-Accounting-remote-2026-08-22.dc.html،
-    //    ومن `screen` في `data-props` (‏نفسُ السبعةِ حرفاً بحرف)، ومن
-    //    `hint-placeholder-count="7"` على شريط التبويبات. و«الحسابات» اسمُ
-    //    المدخل في `NAV` لا تبويبٌ ثامن.
-    test('عددُها وترتيبُها كالتصميم', () {
+  group('التبويباتُ على التصميم — سبعتُه وثامنٌ بقرارِ مالك', () {
+    // ⚠️ السبعةُ الأولى مقيسةٌ من `TABS` في
+    //    PicPos-Accounting-remote-2026-08-22.dc.html، ومن `screen` في
+    //    `data-props` (‏نفسُها حرفاً بحرف)، ومن `hint-placeholder-count="7"`
+    //    على شريط التبويبات. و«الحسابات» اسمُ المدخل في `NAV` لا تبويب.
+    //
+    // ═══ والثامنُ انحرافٌ مقصودٌ عن التصميم — قرارُ مالك 2026-08-27 ═══
+    //
+    // شريحةُ `tb` كانت تفتح شاشةَ القوائم المالية بستِّ تبويباتٍ داخليّة:
+    // **تبويباتٌ داخل تبويبات**، وأوّلُها ميزانُ المراجعة. فالمستخدمُ ينقر
+    // «ميزان المراجعة» ليجد شريطاً ثانياً أوّلُه «ميزان المراجعة».
+    //
+    // والتصميمُ لا يحلّ هذا: سبعتُه لا موضعَ فيها للقوائم الخمسِ الأخرى
+    // (‏قائمةُ الدخل · الميزانيّةُ · التدفّقاتُ · تقادمُ الذمم · مطابقةُ
+    // الترحيل). فاختار المالكُ الثامنةَ على إخراجها إلى مدخلٍ مستقلّ:
+    // مدخلٌ واحدٌ يبقى واحداً، والتبويبُ داخلَ التبويب يزول.
+    test('عددُها وترتيبُها كالتصميم ثمّ الثامنُ في ذيلها', () {
       expect(AccountingTab.values.map((t) => t.name).toList(),
-          ['coa', 'cc', 'je', 'gl', 'tb', 'tpl', 'map']);
+          ['coa', 'cc', 'je', 'gl', 'tb', 'tpl', 'map', 'fs']);
     });
 
     test('وأسماؤها كالتصميم', () {
@@ -72,7 +84,21 @@ void main() {
         'ميزان المراجعة',
         'قوالب القيود',
         'ربط الحسابات',
+        'القوائم المالية',
       ]);
+    });
+
+    test('و`tb` صار ميزانَ المراجعة وحدَه لا الشاشةَ السداسيّة', () {
+      // ⚠️ القياسُ على النوع لا على النصّ: تبويبان يبنيان نفسَ الصنف
+      //    يعني أنّ الطيَّ لم يحدث وأنّ التبويبَ داخلَ التبويب باقٍ.
+      final tb = AccountingTab.tb.build();
+      final fs = AccountingTab.fs.build();
+      expect(tb, isA<FinancialStatementsPicPosScreen>());
+      expect(fs, isA<FinancialStatementsPicPosScreen>());
+      expect((tb as FinancialStatementsPicPosScreen).view,
+          FinancialStatementsView.trialBalance);
+      expect((fs as FinancialStatementsPicPosScreen).view,
+          FinancialStatementsView.statements);
     });
 
     test('وصلاحيةُ كلِّ تبويبٍ هي صلاحيةُ شاشتِه — لا توسيعَ ولا تضييق', () {

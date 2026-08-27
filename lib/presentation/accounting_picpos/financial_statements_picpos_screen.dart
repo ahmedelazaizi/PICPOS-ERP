@@ -29,11 +29,46 @@ import '../../core/constants/app_constants.dart';
 import '../widgets/report_components.dart' show DateRangeFilter;
 import '../../domain/entities/accounting_entities.dart' show BranchCostCenterRepairReport;
 
+/// أيُّ تبويباتِ الشاشة تُعرَض — والشاشةُ واحدةٌ لا شاشتان.
+///
+/// ═══ لماذا مُعامِلٌ لا ملفٌّ جديد ═══
+///
+/// قرارُ المالك 2026-08-27: شريحةُ «ميزان المراجعة» في حاوية الحسابات
+/// كانت تفتح هذه الشاشةَ بستِّ تبويباتٍ داخليّة — **تبويباتٌ داخل
+/// تبويبات**، وأوّلُها ميزانُ المراجعة نفسُه. فيُقسَم المعروضُ على
+/// شريحتَين: `tb` للميزان وحدَه، وثامنةٌ للقوائم الخمس.
+///
+/// وشقُّ الميزان إلى ملفٍّ مستقلٍّ كان سيُكرّر مرشِّحاتِ المدى والفرع
+/// والمنطقة ومركز التكلفة، ومسارَي التصدير والطباعة — وهي مشتركةٌ بين
+/// الميزان والقوائم حرفاً. فالتكرارُ كان سيُنتج نسختَين تنحرفان بأوّل
+/// تعديلِ مرشِّح، والأرقامُ عندئذٍ تُقرأ على نطاقَين مختلفَين بلا أن
+/// يظهر ذلك. فالانقسامُ في **ما يُعرَض** لا في **ما يُحسَب**.
+enum FinancialStatementsView {
+  /// ميزانُ المراجعة وحدَه — بلا شريطِ تبويباتٍ أصلاً.
+  trialBalance,
+
+  /// القوائمُ الخمسُ الباقية.
+  statements,
+
+  /// الستّةُ معاً — السلوكُ قبل الانقسام، ويبقى لأيّ مستدعٍ خارجيّ.
+  all,
+}
+
 class FinancialStatementsPicPosScreen extends ConsumerStatefulWidget {
   /// Optional tab to open on startup. 5 = مطابقة الترحيل (used by sync badge).
+  ///
+  /// ⚠️ الرقمُ يُقاس على تبويبات **[FinancialStatementsView.all]** دائماً
+  /// (‏٠ الميزان … ٥ مطابقةُ الترحيل)، ثمّ يُترجَم إلى موضعِه في العرض
+  /// المختار. فمستدعٍ قديمٌ يمرّر `5` يصل إلى مطابقة الترحيل في الحالتين.
   final int initialTabIndex;
-  const FinancialStatementsPicPosScreen(
-      {super.key, this.initialTabIndex = 0});
+
+  final FinancialStatementsView view;
+
+  const FinancialStatementsPicPosScreen({
+    super.key,
+    this.initialTabIndex = 0,
+    this.view = FinancialStatementsView.all,
+  });
 
   @override
   ConsumerState<FinancialStatementsPicPosScreen> createState() =>
@@ -66,13 +101,55 @@ class _FinancialStatementsPicPosScreenState
   // screen, regardless of what they pick in the branch dropdown.
   Set<int>? _allowedBranchIds;
 
+  /// تبويباتُ الشاشة الستّةُ بترتيبها الأصليّ.
+  ///
+  /// ⚠️ `slot` هو الرقمُ **الثابت** الذي يعرفه المستدعون الخارجيّون
+  /// (‏شارةُ المزامنة تمرّر `5` لمطابقة الترحيل). فلا يُشتقّ من الموضع في
+  /// القائمة المعروضة، وإلّا صار «٥» يعني تبويباً مختلفاً بكلّ عرض.
+  static final List<({int slot, String label, IconData icon})> _allTabs = [
+    (slot: 0, label: 'ميزان المراجعة', icon: PhosphorIconsBold.scales),
+    (slot: 1, label: 'قائمة الدخل (P&L)', icon: PhosphorIconsBold.chartLineUp),
+    (slot: 2, label: 'الميزانية العمومية', icon: PhosphorIconsBold.bank),
+    (
+      slot: 3,
+      label: 'التدفقات النقدية',
+      icon: PhosphorIconsBold.currencyCircleDollar
+    ),
+    (slot: 4, label: 'تقادم الذمم', icon: PhosphorIconsBold.hourglass),
+    (
+      slot: 5,
+      label: 'مطابقة الترحيل',
+      icon: PhosphorIconsBold.checkSquareOffset
+    ),
+  ];
+
+  List<({int slot, String label, IconData icon})> get _tabs =>
+      switch (widget.view) {
+        FinancialStatementsView.trialBalance => [_allTabs.first],
+        FinancialStatementsView.statements => _allTabs.sublist(1),
+        FinancialStatementsView.all => _allTabs,
+      };
+
+  Widget _tabBody(int slot) => switch (slot) {
+        0 => _buildTrialBalanceTab(),
+        1 => _buildIncomeStatementTab(),
+        2 => _buildBalanceSheetTab(),
+        3 => _buildCashFlowTab(),
+        4 => _buildAgingReportTab(),
+        _ => _buildReconciliationTab(),
+      };
+
   @override
   void initState() {
     super.initState();
+    final tabs = _tabs;
+    // الرقمُ المطلوبُ قد لا يكون معروضاً في هذا العرض — فيُرتدّ إلى أوّله
+    // بدل أن يُقصَّ إلى تبويبٍ غيرِ الذي طُلب.
+    final wanted = tabs.indexWhere((t) => t.slot == widget.initialTabIndex);
     _tabController = TabController(
-      length: 6,
+      length: tabs.length,
       vsync: this,
-      initialIndex: widget.initialTabIndex.clamp(0, 5),
+      initialIndex: wanted < 0 ? 0 : wanted,
     );
     Future.microtask(() async {
       // Feature 058: seed _selectedBranchId from the device's active branch
@@ -103,6 +180,7 @@ class _FinancialStatementsPicPosScreenState
 
   @override
   Widget build(BuildContext context) {
+    final tabs = _tabs;
     // FIL-2 (spec 149 B12): resolve the auth-level branch scope BEFORE any
     // report query runs. Reports MUST NOT render (even a flash) while the
     // scope is unknown — a restricted user briefly seeing an unscoped
@@ -128,39 +206,40 @@ class _FinancialStatementsPicPosScreenState
     return Directionality(
       textDirection: TextDirection.rtl,
       child: PicPosScreenScaffold(
-        title: 'القوائم المالية',
-        subtitle: 'ميزانُ المراجعة · قائمةُ الدخل · المركزُ المالي · التدفّقات',
-        icon: PhosphorIconsBold.scales,
+        title: switch (widget.view) {
+          FinancialStatementsView.trialBalance => 'ميزان المراجعة',
+          FinancialStatementsView.statements => 'القوائم المالية',
+          FinancialStatementsView.all => 'القوائم المالية',
+        },
+        // عنوانُ الميزان الفرعيُّ منقولٌ من `HEADS.tb` في التصميم حرفاً.
+        subtitle: switch (widget.view) {
+          FinancialStatementsView.trialBalance =>
+            'أرصدة افتتاحية وحركة وأرصدة ختامية',
+          FinancialStatementsView.statements =>
+            'قائمةُ الدخل · المركزُ المالي · التدفّقات · تقادمُ الذمم · مطابقةُ الترحيل',
+          FinancialStatementsView.all =>
+            'ميزانُ المراجعة · قائمةُ الدخل · المركزُ المالي · التدفّقات',
+        },
+        icon: switch (widget.view) {
+          FinancialStatementsView.statements => PhosphorIconsBold.chartLineUp,
+          _ => PhosphorIconsBold.scales,
+        },
         // ⚠️ التبويباتُ في `subHeader` لا في `AppBar.bottom`: الغلافُ
         //    المشتركُ لا يحمل `AppBar` أصلاً، والترويسةُ فيه جزءٌ منه.
-        subHeader: TabBar(
-            controller: _tabController,
-            isScrollable: true,
-            tabAlignment: TabAlignment.start,
-            tabs: const [
-              Tab(text: 'ميزان المراجعة', icon: Icon(PhosphorIconsBold.scales)),
-              Tab(
-                text: 'قائمة الدخل (P&L)',
-                icon: Icon(PhosphorIconsBold.chartLineUp),
+        //
+        // وشريطٌ بتبويبٍ واحدٍ ليس تبويباً — هو صفٌّ يشغل ارتفاعاً ويكرّر
+        // عنوانَ الشاشة. فيسقط كلَّه في عرض الميزان.
+        subHeader: tabs.length < 2
+            ? null
+            : TabBar(
+                controller: _tabController,
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
+                tabs: [
+                  for (final t in tabs)
+                    Tab(text: t.label, icon: Icon(t.icon)),
+                ],
               ),
-              Tab(
-                text: 'الميزانية العمومية',
-                icon: Icon(PhosphorIconsBold.bank),
-              ),
-              Tab(
-                text: 'التدفقات النقدية',
-                icon: Icon(PhosphorIconsBold.currencyCircleDollar),
-              ),
-              Tab(
-                text: 'تقادم الذمم',
-                icon: Icon(PhosphorIconsBold.hourglass),
-              ),
-              Tab(
-                text: 'مطابقة الترحيل',
-                icon: Icon(PhosphorIconsBold.checkSquareOffset),
-              ),
-            ],
-          ),
         // ⚠️ المرشِّحاتُ في الشريط لا في `AppBar.actions`: الشريطُ `Wrap`
         //    يلتفّ، و`actions` صفٌّ يفيض. وهي مرشِّحاتٌ حقيقيّة (المنطقةُ
         //    والفرعُ ومركزُ التكلفة) تغيّر أرقامَ القوائم — إسقاطُها في
@@ -309,14 +388,7 @@ class _FinancialStatementsPicPosScreenState
         //    نهائيّاً وانهار — وهو عطبُ الخزينة البيضاء نفسُه.
         body: TabBarView(
           controller: _tabController,
-          children: [
-            _buildTrialBalanceTab(),
-            _buildIncomeStatementTab(),
-            _buildBalanceSheetTab(),
-            _buildCashFlowTab(),
-            _buildAgingReportTab(),
-            _buildReconciliationTab(),
-          ],
+          children: [for (final t in tabs) _tabBody(t.slot)],
         ),
       ),
     );

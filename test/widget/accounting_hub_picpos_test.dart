@@ -100,7 +100,7 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('ويظهر الشريطُ بتبويباتِه السبعة عند عرض $w', (tester) async {
+    testWidgets('ويظهر الشريطُ بتبويباتِه الثمانية عند عرض $w', (tester) async {
       await pump(tester, width);
 
       // اسمُ الحاوية على الشريط.
@@ -135,12 +135,15 @@ void main() {
     expect(find.text('الحسابات'), findsOneWidget);
   });
 
-  testWidgets('صلاحيةٌ ناقصةٌ تُخفي تبويبَها وحدَه', (tester) async {
-    // بلا `reports_view` يسقط «ميزانُ المراجعة» وتبقى الستّةُ الباقية.
+  testWidgets('صلاحيةٌ ناقصةٌ تُخفي تبويباتِها وحدَها', (tester) async {
+    // بلا `reports_view` يسقط «ميزانُ المراجعة» و«القوائمُ المالية» معاً —
+    // وهما التبويبان الوحيدان اللذان يحرسهما هذا الكود — وتبقى الستّةُ.
     await pump(tester, 1920, perms: const ['settings_view']);
 
     expect(find.text('ميزان المراجعة'), findsNothing,
         reason: 'الحاويةُ لا توسّع دائرةَ مَن يرى القوائمَ المالية');
+    expect(find.text('القوائم المالية'), findsNothing,
+        reason: 'الشريحةُ الثامنةُ تحمل نفسَ الصلاحية — فتسقط معها');
     expect(find.text('دليل الحسابات'), findsWidgets);
     expect(find.text('ربط الحسابات'), findsWidgets);
     expect(tester.takeException(), isNull);
