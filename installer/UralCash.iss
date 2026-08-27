@@ -74,7 +74,22 @@
 #endif
 
 ; ── Shared across brands — same engine, same release train ───────────────
-#define AppVersion    "3.1.2.247"
+;
+; ⚠️ MUST track `pubspec.yaml`'s `version:` — `3.1.3+248` becomes `3.1.3.248`
+;    (Inno wants four dotted numerals; pubspec's `+build` is the fourth).
+;
+; 🔴 Drifted once and shipped a lie: pubspec was bumped to 3.1.3+248 on
+;    2026-08-03 ("نظافة الإصدار") while this line was last touched
+;    2026-07-26, so the installer labelled a 3.1.3+248 build as 3.1.2.247.
+;    Nothing reads pubspec from here — Inno never sees Dart — so the only
+;    thing keeping the two in step is this comment and the guard test
+;    `test/static/installer_version_matches_pubspec_test.dart`.
+;
+;    Why it matters beyond cosmetics: Inno uses AppVersion for upgrade
+;    detection and it is what Add/Remove Programs shows. A stale number
+;    means support cannot tell which build a customer is running, and two
+;    different builds can claim the same version.
+#define AppVersion    "3.1.3.248"
 
 ; ── Brand-derived paths — no brand names below this line ─────────────────
 #define ReleaseDir    "..\build\windows\x64\runner\Release"
