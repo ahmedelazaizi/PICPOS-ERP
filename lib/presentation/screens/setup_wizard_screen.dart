@@ -12,6 +12,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 // مباشر ليه هنا (الـ analyzer بيعتبره زيادة).
 import '../../core/config/app_config.dart';
 import '../../core/config/business_profile_meta.dart';
+import '../../domain/models/setup_step_order.dart';
 import '../../core/config/business_profile_provider.dart';
 import '../../core/config/feature_key.dart';
 import '../../core/config/feature_policy.dart';
@@ -44,6 +45,60 @@ part 'setup_wizard/step_users.dart';
 part 'setup_wizard/step_settings.dart';
 part 'setup_wizard/step_provisioning.dart';
 part 'setup_wizard/step_touch_mode.dart';
+
+/// لونُ النصّ الخافت **من الثيم** لا مثبَّتاً.
+///
+/// 🔴 `AppColors.textMuted` رماديٌّ مضبوطٌ للوضع الفاتح وحدَه، ويذوب في
+/// الداكن. وقد وقع ذلك فعلاً في ترويسة المعالج — بلّغ عنه المالكُ أنّ
+/// العنوانَ الفرعيَّ «شبهُ مخفيّ».
+Color? _mutedInk(BuildContext context) =>
+    Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.85);
+
+/// ملاحظةٌ ملوّنةٌ داخلَ جسم الخطوة — نفسُ شكل `SetupNote` في اللوحة الجانبيّة.
+Widget _inlineNote(
+  BuildContext context, {
+  required IconData icon,
+  required Color tone,
+  required String title,
+  required String body,
+}) {
+  return Container(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: tone.withValues(alpha: 0.07),
+      border: Border.all(color: tone.withValues(alpha: 0.35)),
+      borderRadius: BorderRadius.circular(11),
+    ),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 17, color: tone),
+        const SizedBox(width: 9),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w800,
+                  color: tone,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                body,
+                style: TextStyle(fontSize: 12, color: _mutedInk(context)),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
 /// First-Run Setup Wizard — shown once after first login
 /// Guides the user through essential setup steps.
@@ -164,19 +219,33 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
   /// Developer password (7) and business profile (8) are inserted BEFORE
   /// the heavy-lifting steps so the admin picks them up front. Once set,
   /// the end-user cannot change them without the developer password.
-  List<int> get _activeSteps {
-    // Feature 031 — step `9` (Touch Mode) inserted AFTER network selection
-    // (step 1) and BEFORE the first heavy data step. Same position in
-    // every mode so operators on any deployment shape see it (research D13).
-    if (_networkMode == NetworkMode.client) {
-      return [0, 8, 7, 1, 9, 3, 4]; // company, profile, dev-pwd, network, touch, users, tax
+  /// ⚠️ **الترتيبُ في `domain/models/setup_step_order.dart`** — حسابٌ خالصٌ
+  /// يُقاس بلا تركيبِ شجرة، ويحرسه `test/unit/setup_step_order_test.dart`.
+  ///
+  /// كان مكتوباً هنا بثلاثة `return`، و**بلا اختبارٍ واحد** فوق ٣٨٤١ سطرٍ من
+  /// المعالج. وأوّلُ ما تكسره إعادةُ تنسيقٍ بصريّةٌ هو ترتيبُ الخطوات: تُنقَل
+  /// كتلةٌ فتُزاح خطوةٌ ولا شيءَ يقول، ويظهر النقصُ بعد أيّامٍ في تنصيبِ عميل.
+  ///
+  /// 🔴 **وهو قرارُ مالكٍ مثبَّت** (‏2026-08-28) يخالف التصميمَ عمداً —
+  /// راجع تعليقَ الملفّ قبل أيّ تعديل.
+  List<int> get _activeSteps => setupStepOrderFor(_deploymentMode);
+
+  /// `NetworkMode` مترجَماً إلى نوع الحساب الخالص.
+  ///
+  /// ⚠️ **نسخةٌ لا استيراد**: `setup_step_order.dart` لا يستورد
+  /// `services/network_service.dart` عمداً — فذلك يجرّ الشبكةَ والقاعدةَ إلى
+  /// اختبارِ وحدةٍ لا يحتاجهما.
+  SetupDeploymentMode get _deploymentMode {
+    switch (_networkMode) {
+      case NetworkMode.client:
+        return SetupDeploymentMode.client;
+      case NetworkMode.server:
+        return SetupDeploymentMode.server;
+      case NetworkMode.mirror:
+        return SetupDeploymentMode.mirror;
+      case NetworkMode.standalone:
+        return SetupDeploymentMode.standalone;
     }
-    if (_networkMode == NetworkMode.server) {
-      return [0, 8, 7, 1, 9, 5, 6]; // company, profile, dev-pwd, network, touch, PG, provision
-    }
-    // standalone + mirror share the user-facing skeleton; mirror finalises
-    // via _pairMirror inside step 1, so it doesn't need extra steps.
-    return [0, 8, 7, 1, 9, 2, 3, 4];
   }
 
   int get _totalSteps => _activeSteps.length;
@@ -185,17 +254,9 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
 
   bool get _isLastStep => _activeStepIndex == _totalSteps - 1;
 
-  int get _nextStep {
-    final idx = _activeStepIndex;
-    if (idx < _totalSteps - 1) return _activeSteps[idx + 1];
-    return _currentStep;
-  }
+  int get _nextStep => setupNextStep(_activeSteps, _currentStep);
 
-  int get _prevStep {
-    final idx = _activeStepIndex;
-    if (idx > 0) return _activeSteps[idx - 1];
-    return _currentStep;
-  }
+  int get _prevStep => setupPreviousStep(_activeSteps, _currentStep);
 
   @override
   void dispose() {
@@ -229,6 +290,18 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
     return Directionality(
       textDirection: ui.TextDirection.rtl,
       child: Scaffold(
+        // 🔴 **عطبُ التباين الذي بلّغ عنه المالك.** كان اللونُ الأوسطُ
+        //    `Colors.white` مثبَّتاً، فيرسم شريطاً أبيضَ عبر وسط الشاشة في
+        //    الوضع الداكن — والعنوانُ الفرعيُّ `AppColors.textMuted` عليه
+        //    يكاد لا يُقرَأ.
+        //
+        // ⚠️ **والأبيضُ هنا أرضيّةُ `BoxDecoration` فيؤمَن تبديلُه.** أكثرُ
+        //    ما في المستودع من `Colors.white` **مقدّمةٌ** لا خلفيّة (‏نصٌّ
+        //    على زرٍّ ملوّن)، وتبديلُه هناك يجعله غيرَ مقروء. فالفحصُ
+        //    السطريُّ لا يكفي — وهذا الموضعُ مقيسٌ أرضيّةً.
+        //
+        //    والبديلُ `scaffoldBackgroundColor` من الثيم: يتبع الوضعَين،
+        //    فيبقى التدرّجُ لمسةً فوقه لا طبقةً تُخفيه.
         body: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -236,7 +309,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
               end: Alignment.bottomRight,
               colors: [
                 AppColors.primary.withValues(alpha: 0.05),
-                Colors.white,
+                Theme.of(context).scaffoldBackgroundColor,
                 AppColors.primary.withValues(alpha: 0.02),
               ],
             ),
@@ -282,9 +355,20 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
                             color: Theme.of(context).textTheme.titleLarge?.color,
                           ),
                         ),
-                        const Text(
+                        // 🔴 **الشقُّ الثاني من عطب التباين**: كان
+                        //    `AppColors.textMuted` مثبَّتاً — رماديٌّ مضبوطٌ
+                        //    للوضع الفاتح وحدَه، فيذوب في الداكن. ولونُ
+                        //    `bodySmall` من الثيم يتبع الوضعَين.
+                        Text(
                           'دعنا نُعد نظامك في دقائق معدودة',
-                          style: TextStyle(color: AppColors.textMuted, fontSize: 14),
+                          style: TextStyle(
+                            color: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.color
+                                ?.withValues(alpha: 0.85),
+                            fontSize: 14,
+                          ),
                         ),
                       ],
                     ),
@@ -312,14 +396,22 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
                       width: 300,
                       color: Theme.of(context).cardColor,
                       padding: const EdgeInsets.all(20),
-                      child: SingleChildScrollView(
-                        child: Column(
-                          children: [
-                            for (final s in _activeSteps)
-                              if (kSetupSteps[s] != null)
-                                _buildStepItem(kSetupSteps[s]!),
-                          ],
-                        ),
+                      child: Column(
+                        children: [
+                          Expanded(
+                            child: SingleChildScrollView(
+                              child: Column(
+                                children: [
+                                  for (final s in _activeSteps)
+                                    if (kSetupSteps[s] != null)
+                                      _buildStepItem(kSetupSteps[s]!),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const Divider(height: 20),
+                          _buildSidebarFooter(),
+                        ],
                       ),
                     ),
                     // Content
@@ -380,11 +472,21 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
                                 else
                                   TextButton(
                                     onPressed: _skipSetup,
-                                    child: const Text(
+                                    child: Text(
                                       'تخطي الإعداد',
-                                      style: TextStyle(color: AppColors.textMuted),
+                                      style: TextStyle(color: _mutedInk(context)),
                                     ),
                                   ),
+                                // نقاطُ الترقيم في وسط التذييل — كما في
+                                // التصميم. تُطوى تحت ٩٠٠px حيث لا يبقى لها
+                                // عرضٌ بين الزرَّين.
+                                Flexible(
+                                  child: LayoutBuilder(
+                                    builder: (context, c) => c.maxWidth < 260
+                                        ? const SizedBox.shrink()
+                                        : _buildStepDots(),
+                                  ),
+                                ),
                                 !_isLastStep
                                     ? ElevatedButton.icon(
                                         onPressed: _canAdvance()
@@ -439,12 +541,162 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
     );
   }
 
-  Widget _buildProgressIndicator() {
+  /// نقاطُ الترقيم في التذييل — موضعُ الخطوة من المسار بلمحة.
+  ///
+  /// ⚠️ **تُقرأ ولا يُنقَر عليها**: القفزُ إلى خطوةٍ لاحقةٍ يتخطّى
+  /// `_canAdvance()` الذي يحرس الحقولَ الإلزاميّة — فيصل المستخدمُ إلى
+  /// التهيئة باسمِ شركةٍ فارغ. والتنقّلُ يبقى بالزرَّين.
+  Widget _buildStepDots() {
+    final steps = _activeSteps;
+    final at = _activeStepIndex;
     return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var i = 0; i < steps.length; i++)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 3),
+            child: Container(
+              // الحاليّةُ أعرضُ — فيُعرَف موضعُها بلا لونٍ وحدَه (‏عمى
+              // الألوان يجعل النقاطَ المتساويةَ بلا معنى).
+              width: i == at ? 20 : 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: i <= at
+                    ? AppColors.primary
+                    : Theme.of(context).dividerColor,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// ذيلُ الشريط الجانبيّ — مبدّلُ السمة.
+  ///
+  /// ═══ ⚠️ وبندان في التصميم لا يُعرَضان ═══
+  ///
+  /// 🔴 **«استعادة نسخة»**: `BackupRestoreWidget` قائمٌ فعلاً، لكنّه يستبدل
+  ///    القاعدةَ **تحت** معالجٍ يجري تهيئتَها الآن. والخطوةُ ٦ تكتب الجداولَ
+  ///    وشجرةَ الحسابات والسنةَ الماليّة، واستعادةٌ في منتصفها تترك تنصيباً
+  ///    نصفَه من النسخة ونصفَه من التهيئة — ولا تراجعَ فيه.
+  ///    ⇒ يحتاج مسارَ «استعادة بدل تنصيب» يبدأ **قبل** المعالج، وهو بناءٌ
+  ///      لا تنسيق. فلا يُعرَض زرٌّ يَعِد بما لم يُبنَ.
+  ///
+  /// 🔴 **«مساعدة»**: لا شاشةَ مساعدةٍ في التطبيق، ولا رابطَ توثيقٍ مستقرّ.
+  Widget _buildSidebarFooter() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: TextButton.icon(
+        onPressed: () => ref
+            .read(themeModeProvider.notifier)
+            .setMode(isDark ? ThemeMode.light : ThemeMode.dark),
+        icon: Icon(
+          isDark ? PhosphorIconsBold.sun : PhosphorIconsBold.moon,
+          size: 16,
+        ),
+        label: Text(isDark ? 'الوضع الفاتح' : 'الوضع الداكن'),
+        style: TextButton.styleFrom(foregroundColor: _mutedInk(context)),
+      ),
+    );
+  }
+
+  /// عنوانُ حقلٍ داخلَ جسم الخطوة — فوق مجموعةِ بطاقاتٍ أو رقاقات.
+  Widget _stepFieldLabel(String text) => Text(
+        text,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w800,
+          color: _mutedInk(context),
+        ),
+      );
+
+  /// بطاقةُ اختيارٍ — أيقونةٌ وعنوانٌ وسطرٌ يشرح الفرق.
+  ///
+  /// ⚠️ **الوصفُ ليس زخرفة**: هو ما يفرّق «تجزئة» عن «جملة وتوزيع» لمن
+  /// يُنصّب أوّلَ مرّة، والقائمةُ المنسدلةُ تُخفيه خلفَ نقرة.
+  Widget _choiceCard({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(13),
+        decoration: BoxDecoration(
+          color: selected
+              ? AppColors.primary.withValues(alpha: 0.08)
+              : theme.cardColor,
+          border: Border.all(
+            color: selected ? AppColors.primary : theme.dividerColor,
+            width: selected ? 2 : 1,
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  icon,
+                  size: 18,
+                  color: selected ? AppColors.primary : _mutedInk(context),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: selected ? AppColors.primary : null,
+                    ),
+                  ),
+                ),
+                if (selected)
+                  const Icon(
+                    PhosphorIconsBold.checkCircle,
+                    size: 16,
+                    color: AppColors.primary,
+                  ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              subtitle,
+              style: TextStyle(fontSize: 11.5, color: _mutedInk(context)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// شريطُ التقدّم — عدّادُ الخطوة ونسبةٌ مئويّةٌ كما في التصميم.
+  ///
+  /// ⚠️ **النسبةُ على الخطوة المكتملة لا الحاليّة** (`setupProgress`):
+  /// الوقوفُ على أوّل خطوةٍ تقدّمُه صفرٌ لا `1/8`. وشريطٌ يبدأ ممتلئاً
+  /// جزئيّاً قبل أن يُكتَب حرفٌ يَعِد بما لم يقع.
+  ///
+  /// والعدّادُ يبقى `الخطوة ١ من ٨` — وهو موضعٌ لا تقدّم، فلا تناقضَ بينهما.
+  Widget _buildProgressIndicator() {
+    final progress = setupProgress(_activeSteps, _currentStep);
+    final muted = Theme.of(context).textTheme.bodySmall?.color;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           'الخطوة ${_activeStepIndex + 1} من $_totalSteps',
-          style: const TextStyle(color: AppColors.textMuted, fontSize: 14),
+          style: TextStyle(color: muted, fontSize: 14),
         ),
         const SizedBox(width: 12),
         SizedBox(
@@ -452,11 +704,20 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
           child: ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: LinearProgressIndicator(
-              value: (_activeStepIndex + 1) / _totalSteps,
+              value: progress,
               backgroundColor: AppColors.border,
               color: AppColors.primary,
               minHeight: 8,
             ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          '${(progress * 100).round()}٪',
+          style: const TextStyle(
+            color: AppColors.primary,
+            fontSize: 14,
+            fontWeight: FontWeight.w800,
           ),
         ),
       ],
