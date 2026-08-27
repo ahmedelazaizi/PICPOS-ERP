@@ -30,8 +30,12 @@ import '../../../core/permissions/permission_codes.dart';
 import '../../../data/providers/providers.dart';
 import '../../../domain/repositories/treasury_repository.dart' show SafeData;
 import '../../screens/commercial_papers/create_paper_action.dart';
+import '../../screens/commercial_papers/deposit_papers_action.dart';
+import '../../screens/commercial_papers/paper_status_actions.dart';
 import '../../widgets/permission_guard.dart';
 import 'cheques_picpos_create_dialog.dart';
+import 'cheques_picpos_deposit_dialog.dart';
+import 'cheques_picpos_endorse_dialog.dart';
 import '../../picpos_shell/picpos_data_table.dart';
 import '../../picpos_shell/picpos_entity_card.dart' show PicPosBlockHeader;
 import '../../picpos_shell/picpos_hub_kpi.dart';
@@ -52,14 +56,39 @@ const _tabNotes = [
 ];
 
 /// الحالاتُ كما يكتبها الكودُ — لا كما يسمّيها التصميم.
+///
+/// ⚠️ **و«مودع» حالتان لا واحدة.** مقيسٌ في `commercial_papers_dao.dart`:
+/// `updatePaperStatus(id,'deposited')` يكتب `deposited`، بينما
+/// `depositForCollection()` يكتب `deposited_for_collection` — والمُبدِّلُ
+/// المحاسبيُّ يعالجهما **معاً** كحالةٍ وسيطةٍ لا تلمس البنك (‏سطرا 392 و485).
+/// فهما اسمان لشيءٍ واحد.
+///
+/// 🔴 وإسقاطُ الطويلة كان يُظهر السلسلةَ الإنجليزيّةَ خامّةً في رقاقة الحالة،
+/// ويُسقط الورقةَ من شريحة «مودعة» — أيْ أنّ الإيداعَ ينجح والورقةُ تختفي.
 const _statusLabels = <String, (String, Color)>{
   'pending': ('بالخزنة', AppColors.warning),
+  'in_portfolio': ('بالحافظة', Color(0xFF6366F1)),
   'deposited': ('مودع', Color(0xFF4A80E8)),
+  'deposited_for_collection': ('برسم التحصيل', Color(0xFF4A80E8)),
+  'partial_collected': ('محصَّل جزئيّاً', Color(0xFF14B8A6)),
   'cashed': ('محصَّل', AppColors.success),
   'bounced': ('مرتجع', AppColors.error),
   'endorsed': ('مظهَّر', Color(0xFF8B5CF6)),
   'cancelled': ('ملغى', AppColors.textMuted),
 };
+
+/// الحالتان اللتان تعنيان «عند البنك تحت التحصيل».
+///
+/// ⚠️ اقرأها في كلّ ترشيحٍ بدل `== 'deposited'` — راجع [_statusLabels].
+bool _isDeposited(String s) =>
+    s == 'deposited' || s == 'deposited_for_collection';
+
+/// الحالتان اللتان يقبلهما `depositForCollection` — حارسُ الـDAO حرفاً:
+/// `if (!['pending','in_portfolio'].contains(paper.status)) throw`.
+///
+/// 🔴 فورقةٌ مرتجعةٌ تُلقي دائماً هنا، ومسارُها الصحيحُ
+/// `updatePaperStatus(id,'deposited')` — وهو ما يفعله زرُّ «إعادة إيداع».
+bool _canDeposit(String s) => s == 'pending' || s == 'in_portfolio';
 
 const _typeLabels = <String, String>{
   'cheque': 'شيك',
@@ -163,6 +192,64 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
       ..showSnackBar(SnackBar(content: Text(message)));
   }
 
+  /// «إيداع دفعة شيكات» — الفعلُ الثاني في رأس التصميم (`HEADS.main.alt`).
+  ///
+  /// ⚠️ **المرشَّحون [_canDeposit] وحدَهم.** حارسُ الـDAO يرفض ما عداهما،
+  /// وعرضُ ورقةٍ مرتجعةٍ في الرقاقات يعني زرَّ إيداعٍ يُلقي دائماً.
+  ///
+  /// و[only] تُمرَّر من زرِّ الصفّ ليُفتَح الحوارُ على ورقتها معلَّمةً.
+  Future<void> _depositBatch(
+    List<CommercialPaperData> papers,
+    List<Party> parties, {
+    int? only,
+  }) async {
+    final safes = await ref.read(treasuryRepositoryProvider).getSafesList();
+    if (!mounted) return;
+    final banks =
+        safes.where((s) => s.safeType == 'bank' && s.isActive).toList();
+
+    final candidates = [
+      for (final p in papers.where((p) => _canDeposit(p.status)))
+        DepositCandidate(
+          id: p.id,
+          paperNumber: p.paperNumber,
+          amount: p.amount,
+          dueDate: p.dueDate,
+          partyName: _partyName(parties, p.partyId),
+        ),
+    ];
+
+    final form = await showChequesPicposDepositDialog(
+      context,
+      candidates: candidates,
+      bankSafes: banks,
+      preselected: only == null ? const {} : {only},
+    );
+    if (form == null || !mounted) return;
+
+    final userId = ref.read(authProvider).user?.id;
+    final voucher = form.voucherNumber;
+    final result = await depositPapersForCollection(
+      repo: ref.read(commercialPapersRepositoryProvider),
+      paperIds: form.paperIds,
+      bankSafeId: form.bankSafeId,
+      changedBy: userId,
+      // رقمُ القسيمة يخصّ الدفعةَ كلَّها فيُكتَب على كلّ ورقةٍ فيها.
+      notes: voucher.isEmpty ? null : 'إيداع برسم التحصيل — قسيمة $voucher',
+    );
+    if (!mounted) return;
+
+    ref.invalidate(_papersProvider);
+    // ⚠️ **يُقال الرقمُ لا «تمّ»**: دفعةٌ نجح ثلاثةٌ من خمسةٍ فيها تُبلَّغ
+    //    «تمّ الإيداع» فيظنّ المشغّلُ القسيمةَ كاملةً وهي ناقصة.
+    _snack(
+      result.allSucceeded
+          ? 'أُودعت ${result.count} ورقة'
+          : 'أُودعت ${result.count} من ${form.paperIds.length} — '
+              'تعذّر: ${result.failed.keys.join('، ')}',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final List<CommercialPaperData> papers =
@@ -184,6 +271,15 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
       // 🔴 وحارسُ الصلاحيّة واجبٌ: إنشاءُ ورقةٍ يفتح ذمّةً ويكتب على
       //    الخادم في وضع العميل. وحصرُ التنقّل يفتح الشاشةَ للقراءة.
       headerActions: [
+        // الفعلُ الثاني (`HEADS.main.alt`) — ثانويٌّ بصريّاً كما في التصميم.
+        PermissionGuard(
+          permission: PermissionCodes.commercialPapersManage,
+          child: OutlinedButton.icon(
+            onPressed: () => _depositBatch(papers, parties),
+            icon: const Icon(PhosphorIconsBold.vault, size: 15),
+            label: const Text('إيداع دفعة شيكات'),
+          ),
+        ),
         PermissionGuard(
           permission: PermissionCodes.commercialPapersManage,
           child: FilledButton.icon(
@@ -277,6 +373,7 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
         PicPosTableColumn('الاستحقاق', flex: 1.2),
         PicPosTableColumn('المبلغ', flex: 1.2, align: PicPosCellAlign.end),
         PicPosTableColumn('الحالة', flex: 1.2),
+        PicPosTableColumn('إجراء', flex: 1.3),
       ];
 
   List<PicPosTableRow> _paperRows(
@@ -307,9 +404,181 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
                 _statusLabels[p.status]?.$1 ?? p.status,
                 _statusLabels[p.status]?.$2 ?? AppColors.textMuted,
               ),
+              _actionCell(p, parties),
             ],
           ),
       ];
+
+  /// عمودُ «إجراء» — زرٌّ لكلّ صفٍّ **يتبع حالتَه**، كما في التصميم.
+  ///
+  /// ⚠️ **كلُّ فرعٍ هنا مقيسٌ على نداءٍ يقبله الـDAO**، لا على ما يبدو
+  /// منطقيّاً. تحديداً:
+  ///
+  /// • «إيداع» يمرّ بـ`depositForCollection` ويقبل `pending`/`in_portfolio`
+  ///   وحدَهما.
+  /// • «إعادة إيداع» للمرتجعة تمرّ بـ`updatePaperStatus(id,'deposited')` —
+  ///   لأنّ حارسَ الإيداع يرفض المرتجعةَ دائماً.
+  /// • «تجيير» نداءٌ ثالثٌ يحتاج الطرفَ المُجيَّرَ إليه.
+  ///
+  /// 🔴 والصادرةُ **لا تُودَع**: `depositForCollection` تنقل ورقةً إلى
+  /// «تحت التحصيل» عندنا، وهو معنًى لا وجودَ له في ورقةٍ نحن مَن أصدرها.
+  /// فعلُها الوحيدُ «تسجيل خصم» حين يخصمها البنك.
+  PicPosCell _actionCell(CommercialPaperData p, List<Party> parties) {
+    // ⚠️ `hasPermissionProvider` لا `PermissionBuilder`: الأوّلُ يمرّ بـ
+    //    `userHasPermission` الذي فيه **تجاوزُ مدير النظام** بنفس استثناء
+    //    العمليات الماليّة الحرجة الذي في `PermissionGuard._checkPermission`،
+    //    والثاني `contains` نضيفٌ بلا تجاوز. وسجلُّ سبب٠٨٦ يوثّق إخفاءَ
+    //    إجراءٍ عن مدير النظام بهذا الخطأ بالضبط.
+    //
+    //    و`?? false` احتياطاً: قبل أن تُحسَم الصلاحيّةُ لا تُعرَض كتابة.
+    final canWrite = ref
+            .watch(hasPermissionProvider(PermissionCodes.commercialPapersManage))
+            .value ??
+        false;
+
+    PicPosCell view() => PicPosButtonCell(
+          'عرض',
+          icon: PhosphorIconsBold.eye,
+          tint: AppColors.textMuted,
+          onPressed: () => _showHistoryOf(p.id),
+        );
+
+    // القراءةُ متاحةٌ دائماً؛ والكتابةُ وحدَها خلفَ الصلاحيّة.
+    if (!canWrite) return view();
+
+    if (p.status == 'bounced') {
+      return PicPosButtonCell(
+        'إعادة إيداع',
+        icon: PhosphorIconsBold.arrowClockwise,
+        tint: AppColors.warning,
+        onPressed: () => _redeposit(p),
+      );
+    }
+
+    if (_isDeposited(p.status) || p.status == 'partial_collected') {
+      return PicPosButtonCell(
+        p.direction == 'issued' ? 'تسجيل خصم' : 'تحصيل',
+        icon: p.direction == 'issued'
+            ? PhosphorIconsBold.bank
+            : PhosphorIconsBold.checkCircle,
+        tint: AppColors.success,
+        onPressed: () => _markCashed(p),
+      );
+    }
+
+    if (_canDeposit(p.status)) {
+      // الصادرةُ لا تُودَع — تُخصَم. راجع تعليقَ الرأس.
+      if (p.direction == 'issued') {
+        return PicPosButtonCell(
+          'تسجيل خصم',
+          icon: PhosphorIconsBold.bank,
+          tint: AppColors.primary,
+          onPressed: () => _markCashed(p),
+        );
+      }
+      // كمبيالةٌ بلا بنك: التصميمُ يعطيها «تجيير» لا «إيداع» — وهو الصحيح،
+      // فالإيداعُ البنكيُّ لورقةٍ لا بنكَ لها بلا معنى.
+      if (p.type == 'promissory_note') {
+        return PicPosButtonCell(
+          'تجيير',
+          icon: PhosphorIconsBold.arrowBendUpLeft,
+          tint: const Color(0xFF8B5CF6),
+          onPressed: () => _endorse(p, parties),
+        );
+      }
+      return PicPosButtonCell(
+        'إيداع',
+        icon: PhosphorIconsBold.vault,
+        tint: AppColors.primary,
+        onPressed: () => _depositBatch(
+          ref.read(_papersProvider).value ?? const [],
+          parties,
+          only: p.id,
+        ),
+      );
+    }
+
+    // محصَّلةٌ · مظهَّرةٌ · ملغاةٌ — لا انتقالَ بعدها، فالفعلُ عرضٌ.
+    return view();
+  }
+
+  /// «عرض» — ينقل إلى تبويبة «سجل الحالات» على هذه الورقة.
+  ///
+  /// السجلُّ يقرأ **ورقةً واحدةً** (`watchPaperHistory` تأخذ معرِّفاً)، فهذا
+  /// هو أقربُ ما في الشاشة إلى عرضِ ورقةٍ بعينها.
+  void _showHistoryOf(int paperId) {
+    setState(() => _historyPaperId = paperId);
+    _tabs.animateTo(4);
+  }
+
+  int? get _userId => ref.read(authProvider).user?.id;
+
+  /// يلفّ كتابةً ماليّةً برسالةِ نجاحٍ أو فشلٍ ويُبطل مزوِّدَ الأوراق.
+  ///
+  /// ⚠️ **الفشلُ يُقال ولا يُبتلَع**: حرّاسُ الـDAO تُلقي بنصٍّ عربيٍّ مفيد
+  /// («يجب أن تكون الورقة معلقة أو في الحافظة»)، وابتلاعُه يترك المشغّلَ
+  /// يضغط زرّاً ولا يرى شيئاً.
+  Future<void> _write(Future<void> Function() body, String done) async {
+    try {
+      await body();
+      if (!mounted) return;
+      ref.invalidate(_papersProvider);
+      _snack(done);
+    } catch (e) {
+      if (!mounted) return;
+      _snack('تعذّر التنفيذ: $e');
+    }
+  }
+
+  Future<void> _redeposit(CommercialPaperData p) => _write(
+        () => redepositBouncedPaper(
+          repo: ref.read(commercialPapersRepositoryProvider),
+          paperId: p.id,
+          changedBy: _userId,
+        ),
+        'أُعيد إيداعُ ${p.paperNumber}',
+      );
+
+  Future<void> _markCashed(CommercialPaperData p) => _write(
+        () => markPaperCashed(
+          repo: ref.read(commercialPapersRepositoryProvider),
+          paperId: p.id,
+          changedBy: _userId,
+        ),
+        p.direction == 'issued'
+            ? 'سُجّل خصمُ ${p.paperNumber}'
+            : 'حُصّلت ${p.paperNumber}',
+      );
+
+  Future<void> _endorse(CommercialPaperData p, List<Party> parties) async {
+    // المُجيَّرُ إليه **غيرُ** الطرف الأصليّ — تجييرُ ورقةٍ لصاحبها بلا معنى.
+    final targets = [
+      for (final q in parties.where((q) => q.id != p.partyId))
+        (id: q.id, name: q.name),
+    ];
+
+    final form = await showChequesPicposEndorseDialog(
+      context,
+      paperNumber: p.paperNumber,
+      paperTypeLabel: _typeLabels[p.type] ?? p.type,
+      fromPartyName: _partyName(parties, p.partyId),
+      amount: p.amount,
+      dueDate: p.dueDate,
+      parties: targets,
+    );
+    if (form == null || !mounted) return;
+
+    await _write(
+      () => endorsePaperTo(
+        repo: ref.read(commercialPapersRepositoryProvider),
+        paperId: p.id,
+        toPartyId: form.toPartyId,
+        changedBy: _userId,
+        notes: form.notes.isEmpty ? null : form.notes,
+      ),
+      'جُيّرت ${p.paperNumber}',
+    );
+  }
 
   double _sum(List<CommercialPaperData> l) =>
       l.fold<double>(0, (s, p) => s + p.amount);
@@ -328,7 +597,7 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
     final chipDefs = <(String, bool Function(CommercialPaperData))>[
       ('الكل', (p) => true),
       ('بالخزنة', (p) => p.status == 'pending'),
-      ('مودعة', (p) => p.status == 'deposited'),
+      ('مودعة', (p) => _isDeposited(p.status)),
       ('محصَّلة', (p) => p.status == 'cashed'),
       ('مرتجعة', (p) => p.status == 'bounced'),
     ];
@@ -342,7 +611,7 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
     final week = DateTime.now().add(const Duration(days: 7));
     final dueSoon = papers
         .where((p) =>
-            (p.status == 'pending' || p.status == 'deposited') &&
+            (p.status == 'pending' || _isDeposited(p.status)) &&
             p.dueDate.isBefore(week))
         .toList();
 
@@ -370,9 +639,9 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
               icon: PhosphorIconsBold.vault,
               label: 'مودعة بالبنك',
               value:
-                  '${papers.where((p) => p.status == 'deposited').length}',
+                  '${papers.where((p) => _isDeposited(p.status)).length}',
               tint: const Color(0xFF4A80E8),
-              vs: _sum(papers.where((p) => p.status == 'deposited').toList())
+              vs: _sum(papers.where((p) => _isDeposited(p.status)).toList())
                   .toStringAsFixed(0),
             ),
             PicPosHubKpi(
@@ -401,6 +670,8 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
           ],
           selectedChip: pick,
           rows: _paperRows(shown, parties),
+          // ⚠️ طولُها = عددُ الأعمدة. زيادةُ عمودِ «إجراء» بلا خانةٍ هنا
+          //    تُزيح الإجماليَّ عموداً كاملاً تحت «الحالة».
           totals: [
             '${shown.length} ورقة',
             '',
@@ -408,6 +679,7 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
             '',
             '',
             _sum(shown).toStringAsFixed(0),
+            '',
             '',
           ],
         ),
@@ -425,7 +697,7 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
     // ⚠️ **المفتوحةُ وحدَها**: ورقةٌ محصَّلةٌ أو ملغاةٌ لا استحقاقَ لها،
     //    وإدراجُها يجعل الجدولَ يعِد بمطالباتٍ انتهت.
     final open = papers
-        .where((p) => p.status == 'pending' || p.status == 'deposited')
+        .where((p) => p.status == 'pending' || _isDeposited(p.status))
         .where((p) =>
             _hit(p.paperNumber) || _hit(_partyName(parties, p.partyId)))
         .toList()
