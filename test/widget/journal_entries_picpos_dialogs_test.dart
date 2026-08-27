@@ -173,7 +173,10 @@ void main() {
         expect(find.text('بند 3'), findsNothing);
         // القيدُ الفارغُ **غيرُ** متوازنٍ — والزرُّ معطَّلٌ تبعاً لذلك.
         expect(find.text('غير متوازن!'), findsOneWidget);
-        expect(find.text('حفظ القيد'), findsOneWidget);
+        // ⚠️ كان «حفظ القيد». وقرارُ مالك 2026-08-27 ألغى الترحيلَ الفوريَّ
+        //    من هذا الحوار، فصار مسارُ الحفظ واحداً يُنتج مسودّة.
+        expect(find.text('حفظ كمسودة'), findsOneWidget);
+        expect(find.text('حفظ القيد'), findsNothing);
         expect(tester.takeException(), isNull);
 
         await teardown(tester);

@@ -1361,6 +1361,7 @@ class AppDatabase extends _$AppDatabase {
             "NOT NULL DEFAULT 'posted'",
         'ALTER TABLE journal_entries ADD COLUMN IF NOT EXISTS approved_by INTEGER',
         'ALTER TABLE journal_entries ADD COLUMN IF NOT EXISTS approved_at BIGINT',
+        'ALTER TABLE journal_entries ADD COLUMN IF NOT EXISTS created_by INTEGER',
       ]) {
         try {
           await customStatement(ddl);

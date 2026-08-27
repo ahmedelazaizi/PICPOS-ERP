@@ -365,92 +365,72 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
                   }
                   if (ctx.mounted) Navigator.pop(ctx);
             },
-            // «حفظ كمسودة» — حوارُ `draft` في التصميم، بعنوانه ونصِّه وزرِّه.
+            // ═══ مسارُ حفظٍ واحدٌ يُنتج مسودّةً — قرارُ مالك 2026-08-27 ═══
             //
-            // ⚠️ **وهو الفعلُ الذي يفصل الإنشاءَ عن الترحيل.** «حفظ القيد»
-            //    يرحّل فوراً ويحرّك الأرصدة؛ والمسودّةُ لا تحرّك شيئاً حتى
-            //    يعتمدها أحدٌ من قائمة القيود. ومتوازنةٌ كغيرها — الشرطُ
-            //    نفسُه، فالفرقُ الترحيلُ لا التساهل.
-            secondaryActions: [
-              PicPosDialogAction(
-                label: 'حفظ كمسودة',
-                icon: PhosphorIconsBold.floppyDisk,
-                onPressed: isBalanced && !saving
-                    ? () async {
-                        final total = lines.fold(0.0, (s, l) => s + l.debit);
-                        final ok = await showPicPosConfirm(
-                          ctx,
-                          icon: PhosphorIconsBold.floppyDisk,
-                          title: 'حفظ كمسودة',
-                          message:
-                              'المسودة لا تؤثر على الأرصدة، ويمكن استكمالها '
-                              'واعتمادها لاحقاً من قائمة القيود.',
-                          confirmLabel: 'حفظ المسودة',
-                          details: [
-                            PicPosDialogSummary(
-                              rows: [
-                                (
-                                  label: 'البيان',
-                                  value: descCtrl.text.isEmpty
-                                      ? '—'
-                                      : descCtrl.text,
-                                  color: null,
-                                ),
-                                (
-                                  label: 'عدد السطور',
-                                  value: '${lines.length} سطر',
-                                  color: null,
-                                ),
-                                (
-                                  label: 'إجمالي القيد',
-                                  value: '${total.toStringAsFixed(AppConstants.decimalPlaces)} '
-                                      '${AppConstants.currencySymbol}',
-                                  color: null,
-                                ),
-                              ],
-                            ),
-                          ],
-                        );
-                        if (!ok || !ctx.mounted || saving) return;
-                        saving = true;
-                        final saved = await saveManualEntry(
-                          ctx,
-                          descCtrl.text,
-                          entryDate,
-                          lines,
-                          entryType,
-                          asDraft: true,
-                        );
-                        saving = false;
-                        // ⚠️ إعادةُ البناءِ **عند الإخفاق وحدَه** — الحوارُ
-                        //    عندئذٍ ما زال مفتوحاً.
-                        if (!saved && ctx.mounted) setDialogState(() {});
-                      }
-                    : null,
-              ),
-            ],
-            // ⚠️ الشرطُ كما كان: قيدٌ غيرُ متوازنٍ **لا** يُحفَظ، والدوّارةُ
-            //    تحلّ محلَّ الأيقونة بمقاسها فلا يقفز عرضُ الزرّ.
+            // «كلُّ قيدٍ يدويٍّ مسودّةٌ حتى يعتمده **غيرُ** منشئه».
+            //
+            // ⚠️ فلا زرَّ «حفظ القيد» بعد اليوم: زرّان أحدُهما يرحّل فوراً
+            //    والآخرُ يؤجّل يجعلان الضابطَ اختياريّاً — ومَن يستعجل يضغط
+            //    الأوّل. والتصميمُ نفسُه يعرض فعلَين (`postNew` و`draft`)،
+            //    و`postNew` **رفضه المالك** لأنّه اعتمادٌ ذاتيّ. فبقي واحد.
+            //
+            // ⚠️ و`saving` حارسُ **إعادةِ دخولٍ** لا حالةُ بناء: ضبطُه بـ
+            //    `setDialogState` قبل الكتابة يجعل عنصرَ `StatefulBuilder`
+            //    متّسخاً، ثمّ يُغلَق الحوارُ عند النجاح فيُعاد بناؤه وسلفُه
+            //    مُبطَل — «Looking up a deactivated widget's ancestor is
+            //    unsafe» من `Theme.of` في بطاقة البند. فلا إعادةَ بناءٍ
+            //    إلّا عند الإخفاق حيث يبقى الحوار.
             primaryAction: PicPosDialogAction(
-              label: 'حفظ القيد',
+              label: 'حفظ كمسودة',
               icon: PhosphorIconsBold.floppyDisk,
               busy: saving,
-              // ⚠️ `saving` حارسُ **إعادةِ دخولٍ** لا حالةُ بناء.
-              //
-              //    كان يُضبَط بـ`setDialogState` قبل الكتابة، فيتّسخ عنصرُ
-              //    `StatefulBuilder`؛ ثمّ يُغلَق الحوارُ عند النجاح، فيُعاد
-              //    بناءُ العنصر المتّسخ وسلفُه يُبطَل في الأثناء —
-              //    و«Looking up a deactivated widget's ancestor is unsafe»
-              //    من `Theme.of` داخل `context.picposField` في بطاقة البند.
-              //    (‏توكيدُ وضع التنقيح وحدَه، لكنّه يشير إلى ترتيبٍ خاطئ.)
-              //
-              //    فلا يُعاد البناءُ إلّا عند **الإخفاق** — حيث يبقى الحوار.
               onPressed: isBalanced && !saving
                   ? () async {
                       if (saving) return;
+                      final total = lines.fold(0.0, (s, l) => s + l.debit);
+                      final ok = await showPicPosConfirm(
+                        ctx,
+                        icon: PhosphorIconsBold.floppyDisk,
+                        title: 'حفظ كمسودة',
+                        message:
+                            'المسودة لا تؤثر على الأرصدة، ويمكن استكمالها '
+                            'واعتمادها لاحقاً من قائمة القيود.',
+                        confirmLabel: 'حفظ المسودة',
+                        details: [
+                          PicPosDialogSummary(
+                            rows: [
+                              (
+                                label: 'البيان',
+                                value: descCtrl.text.isEmpty
+                                    ? '—'
+                                    : descCtrl.text,
+                                color: null,
+                              ),
+                              (
+                                label: 'عدد السطور',
+                                value: '${lines.length} سطر',
+                                color: null,
+                              ),
+                              (
+                                label: 'إجمالي القيد',
+                                value:
+                                    '${total.toStringAsFixed(AppConstants.decimalPlaces)} '
+                                    '${AppConstants.currencySymbol}',
+                                color: null,
+                              ),
+                            ],
+                          ),
+                        ],
+                      );
+                      if (!ok || !ctx.mounted || saving) return;
                       saving = true;
                       final saved = await saveManualEntry(
-                          ctx, descCtrl.text, entryDate, lines, entryType);
+                        ctx,
+                        descCtrl.text,
+                        entryDate,
+                        lines,
+                        entryType,
+                      );
                       saving = false;
                       if (!saved && ctx.mounted) setDialogState(() {});
                     }
@@ -528,11 +508,17 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
     DateTime date,
     List<JournalLineInput> lines,
     String referenceType, {
-    /// «حفظ كمسودة» — تُحفَظ غيرَ مرحَّلةٍ ولا تحرّك رصيداً حتى تُعتمَد.
+    /// **افتراضُه `true`** — قرارُ مالك 2026-08-27: كلُّ قيدٍ يدويٍّ مسودّةٌ
+    /// حتى يعتمده غيرُ منشئه.
     ///
-    /// ⚠️ والتحقّقاتُ أدناه تسري عليها كاملةً: المسودّةُ **متوازنةٌ** وكلُّ
+    /// ⚠️ والافتراضُ هنا وحدَه، لا في `createJournalEntry`: الأخيرةُ يشاركها
+    /// **الترحيلُ الآليّ** (‏فواتيرُ وسنداتٌ وإهلاك)، وجعلُ افتراضِها
+    /// مسودّةً كان يُجمّد كلَّ حركةٍ ماليّةٍ في النظام بانتظار اعتمادٍ يدويّ.
+    /// فالقرارُ يخصّ **اليدويَّ** وحدَه، ومكانُه المسارُ اليدويّ.
+    ///
+    /// والتحقّقاتُ أدناه تسري عليها كاملةً: المسودّةُ **متوازنةٌ** وكلُّ
     /// بندٍ له حسابٌ وطرفٌ واحد. فرقُها الترحيلُ لا التساهل.
-    bool asDraft = false,
+    bool asDraft = true,
   }) async {
     if (description.isEmpty) {
       AppToast.show(context, 'يرجى إدخال وصف القيد', type: ToastType.info);
@@ -583,6 +569,9 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
         referenceType: referenceType,
         isAutoPosted: false,
         asDraft: asDraft,
+        // ⚠️ مَن أنشأ — بلا هذا لا يعرف `approveJournalEntry` أن يمنع
+        //    الاعتمادَ الذاتيّ، فيصير الضابطُ سطراً في التوثيق لا حارساً.
+        createdBy: ref.read(authProvider).user?.id,
       );
 
       if (ctx.mounted) Navigator.pop(ctx);

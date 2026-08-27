@@ -53,18 +53,17 @@ class _PermissiveAuthRepo implements IAuthRepository {
 class _RecordingRepo implements IAccountingRepository {
   _RecordingRepo({
     this.accounts = const [],
-    this.costCenters = const [],
     this.templates = const [],
     this.templateLines = const [],
   });
 
   final List<Account> accounts;
-  final List<CostCenter> costCenters;
   final List<JournalEntryTemplateData> templates;
   final List<Map<String, dynamic>> templateLines;
 
   /// ما وصل فعلاً إلى طبقة البيانات.
-  final List<({bool asDraft, String description, int lineCount})> created = [];
+  final List<({bool asDraft, String description, int lineCount, int? createdBy})>
+      created = [];
 
   @override
   Stream<List<JournalEntryData>> watchJournalEntries({
@@ -77,7 +76,7 @@ class _RecordingRepo implements IAccountingRepository {
   Future<List<Account>> getAllAccounts() async => accounts;
 
   @override
-  Future<List<CostCenter>> getCostCenters() async => costCenters;
+  Future<List<CostCenter>> getCostCenters() async => const [];
 
   @override
   Stream<List<JournalEntryTemplateData>> watchActiveTemplates() =>
@@ -98,11 +97,13 @@ class _RecordingRepo implements IAccountingRepository {
     int? costCenterId,
     int? branchId,
     bool asDraft = false,
+    int? createdBy,
   }) async {
     created.add((
       asDraft: asDraft,
       description: description,
       lineCount: lines.length,
+      createdBy: createdBy,
     ));
     return 1;
   }
@@ -227,11 +228,13 @@ void main() {
     final w = width.toInt();
 
     group('عرض $w', () {
-      testWidgets('زرُّ «حفظ كمسودة» حاضرٌ بجانب «حفظ القيد»', (tester) async {
+      testWidgets('«حفظ كمسودة» هو مسارُ الحفظ **الوحيد**', (tester) async {
         await pump(tester, width);
 
         expect(find.text('حفظ كمسودة'), findsOneWidget);
-        expect(find.text('حفظ القيد'), findsOneWidget);
+        // ⚠️ قرارُ مالك 2026-08-27: لا زرَّ ترحيلٍ فوريّ. زرّان أحدُهما
+        //    يرحّل والآخرُ يؤجّل يجعلان الضابطَ اختياريّاً.
+        expect(find.text('حفظ القيد'), findsNothing);
         expect(tester.takeException(), isNull);
 
         await teardown(tester);
@@ -327,22 +330,31 @@ void main() {
             reason: 'زرٌّ يَعِد بمسودّةٍ ويحفظ قيداً مرحَّلاً أسوأُ من غيابه');
         expect(repo.created.single.description, expectedDesc);
         expect(repo.created.single.lineCount, 2);
+        // ⚠️ ومَن أنشأ يصل أيضاً — بلا هذا لا يعرف الاعتمادُ أن يمنع نفسَه.
+        expect(repo.created.single.createdBy, 1,
+            reason: 'مُعرِّفُ المنشئ هو ما يبني عليه ضابطُ «لا يعتمده منشئُه»');
         expect(tester.takeException(), isNull);
 
         await teardown(tester);
       });
 
-      testWidgets('و«حفظ القيد» يبقى ترحيلاً فوريّاً — `asDraft: false`',
-          (tester) async {
+      testWidgets('ولا مسارَ ترحيلٍ فوريٍّ في الشاشة إطلاقاً', (tester) async {
+        // ⚠️ لا يكفي أن يختفي زرُّ «حفظ القيد»: المقصودُ ألّا يبقى **أيُّ**
+        //    مسارٍ في هذا الحوار يكتب قيداً مرحَّلاً. فيُقاس على ما وصل
+        //    المستودعَ لا على النصوص المعروضة.
         await pumpFromTemplate(tester, width);
 
-        await tester.tap(find.text('حفظ القيد'));
+        await tester.tap(find.text('حفظ كمسودة'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 400));
+        await tester.tap(find.text('حفظ المسودة'));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 400));
 
-        expect(repo.created, hasLength(1));
-        expect(repo.created.single.asDraft, isFalse,
-            reason: 'المسارُ القديمُ لا يتغيّر بإضافة الجديد');
+        expect(repo.created, isNotEmpty);
+        expect(repo.created.every((c) => c.asDraft), isTrue,
+            reason: 'قيدٌ يدويٌّ يصل المستودعَ بـ`asDraft: false` = ترحيلٌ '
+                'بلا اعتماد، وهو عينُ ما ألغاه قرارُ المالك');
         expect(tester.takeException(), isNull);
 
         await teardown(tester);

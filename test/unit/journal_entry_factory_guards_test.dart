@@ -58,8 +58,10 @@ class _MockAccountingRepo implements IAccountingRepository {
     bool isAutoPosted = false,
     int? costCenterId,
     int? branchId,
-    // القيدُ الآليُّ لا يكون مسودّةً — والمُعامِلُ هنا للمطابقة وحدَها.
+    // القيدُ الآليُّ لا يكون مسودّةً ولا منشئَ له — والمُعامِلان هنا
+    // للمطابقة وحدَها.
     bool asDraft = false,
+    int? createdBy,
   }) async {
     capturedEntries.add(_CapturedJE(
       description: description,

@@ -23,6 +23,10 @@ extension AccountingDaoWritesExt on AppDatabase {
     /// «حفظ كمسودة» — يُحفَظ غيرَ مرحَّلٍ وبانتظار الاعتماد، ولا يحرّك
     /// رصيداً حتى [approveJournalEntry].
     bool asDraft = false,
+
+    /// مَن أنشأ القيد — يُكتَب بـ لأنّ  عمودٌ
+    /// أضافته الإضافةُ الدفاعيّة ولا تعرفه كيانات drift.
+    int? createdBy,
   }) async {
     // Spec 007 / FR-007: mint the JE's globalId BEFORE the transaction opens
     // so the same UUID is used for (a) the local insert below, and
@@ -402,6 +406,14 @@ extension AccountingDaoWritesExt on AppDatabase {
           globalId: Value(mintedGlobalId),
         ),
       );
+
+      // مَن أنشأ — عمودٌ دفاعيٌّ لا يعرفه drift، فيُكتَب بعبارةٍ خام.
+      if (createdBy != null) {
+        await customStatement(
+          'UPDATE journal_entries SET created_by = ? WHERE id = ?',
+          [createdBy, entryId],
+        );
+      }
 
       // Collect affected accounts for batch balance update (PERF-01)
       final affectedAccountIds = <int>{};
@@ -1392,6 +1404,24 @@ extension AccountingDaoWritesExt on AppDatabase {
           .getSingleOrNull();
       if (entry == null) throw Exception('القيد غير موجود');
       if (entry.isPosted) throw Exception('القيد مرحّل بالفعل');
+
+      // ⚠️ **لا يعتمد القيدَ منشئُه** — قرارُ مالك 2026-08-27.
+      //
+      //    والفحصُ هنا لا في الواجهة: الواجهةُ تُخفي الزرَّ فتحسّن التجربة،
+      //    لكنّ المسارَ يُبلَغ من غيرها (مزامنة · سكربت · شاشةٌ ثانية).
+      //    وهو **قبل** أيّ كتابة، فالرفضُ لا يترك رصيداً تحرّك.
+      //
+      //    و`created_by = NULL` لا يُمنَع: قيدٌ أقدمُ من الضابط أو آليٌّ لا
+      //    يمكن إثباتُ منشئه، ومنعُه يُجمّده بلا سبيلٍ لفكِّه.
+      final makerRow = await customSelect(
+        'SELECT created_by FROM journal_entries WHERE id = ?',
+        variables: [Variable.withInt(entryId)],
+        readsFrom: {journalEntries},
+      ).getSingleOrNull();
+      final maker = makerRow?.read<int?>('created_by');
+      if (maker != null && maker == approverId) {
+        throw Exception('لا يعتمد القيدَ منشئُه — يلزم اعتمادُ مستخدمٍ آخر');
+      }
 
       // Post and record approval — migration-added columns, must use customStatement
       final boolTrue = sqlBool(true);

@@ -159,6 +159,11 @@ extension DatabaseStartup on AppDatabase {
       "ALTER TABLE journal_entries ADD COLUMN status TEXT NOT NULL DEFAULT 'posted'",
       'ALTER TABLE journal_entries ADD COLUMN approved_by INTEGER REFERENCES users(id)',
       'ALTER TABLE journal_entries ADD COLUMN approved_at INTEGER',
+      // ⚠️ **مَن أنشأ.** بلا هذا العمود لا ضابطَ «لا يعتمد القيدَ منشئُه»
+      //    أصلاً — فمَن يُنشئ يستطيع أن يعتمد، ويصير الترحيلُ خطوتَين بيدٍ
+      //    واحدة: تأخيرٌ لا رقابة. وهو غيرُ مُعلَنٍ في صنف الجدول كإخوته
+      //    الثلاثة، فيُضاف هنا لا بـ`build_runner`.
+      'ALTER TABLE journal_entries ADD COLUMN created_by INTEGER REFERENCES users(id)',
     ]) {
       try {
         await customStatement(stmt);

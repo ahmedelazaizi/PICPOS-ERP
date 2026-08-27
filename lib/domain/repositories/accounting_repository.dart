@@ -32,6 +32,13 @@ abstract class IAccountingRepository {
     /// حتى يعتمدها [approveJournalEntry]. وهي متوازنةٌ كغيرها — التحقّقُ
     /// من تساوي المدين والدائن يقع قبل الحفظ في الحالتين.
     bool asDraft = false,
+
+    /// مَن أنشأ القيد — يُسجَّل ليمنع [approveJournalEntry] اعتمادَه بيده.
+    ///
+    /// ⚠️ `null` يعني «منشئٌ غيرُ معروف» (‏قيدٌ آليٌّ أو أقدمُ من الضابط)،
+    /// وعندئذٍ **لا** يُمنَع الاعتماد — فالمنعُ بما لا يُعلَم يُجمّد قيوداً
+    /// لا يمكن إثباتُ منشئها.
+    int? createdBy,
   });
   Future<List<JournalEntryData>> getJournalEntries({DateTime? from, DateTime? to});
   Stream<List<JournalEntryData>> watchJournalEntries({DateTime? from, DateTime? to});
