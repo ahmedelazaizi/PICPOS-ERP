@@ -29,7 +29,7 @@ import 'package:ural_erp/domain/repositories/accounting_repository.dart';
 import 'package:ural_erp/domain/repositories/fixed_assets_repository.dart';
 import 'package:ural_erp/presentation/fixed_assets_picpos/screens/fixed_assets_picpos_screen.dart';
 
-final _categories = [
+const _categories = [
   db.AssetCategory(
     id: 10,
     name: 'أجهزة تبريد',
