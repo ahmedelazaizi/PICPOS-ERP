@@ -26,7 +26,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/permissions/permission_codes.dart';
 import '../../../data/providers/providers.dart';
+import '../../../domain/repositories/treasury_repository.dart' show SafeData;
+import '../../screens/commercial_papers/create_paper_action.dart';
+import '../../widgets/permission_guard.dart';
+import 'cheques_picpos_create_dialog.dart';
 import '../../picpos_shell/picpos_data_table.dart';
 import '../../picpos_shell/picpos_entity_card.dart' show PicPosBlockHeader;
 import '../../picpos_shell/picpos_hub_kpi.dart';
@@ -115,6 +120,49 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
   static String _d(DateTime x) =>
       '${x.year}-${x.month.toString().padLeft(2, '0')}-${x.day.toString().padLeft(2, '0')}';
 
+  /// «ورقة جديدة» — الفعلُ الأوّلُ في رأس التصميم.
+  ///
+  /// ⚠️ الاتّجاهُ الابتدائيُّ يتبع **التبويبةَ المفتوحة**: مَن يقف على
+  /// «الصادرة» يريد صادرةً غالباً. والتبويباتُ الثلاثُ الأخرى ليست
+  /// اتّجاهاً، فتُقرأ واردة.
+  Future<void> _createPaper(List<Party> parties) async {
+    final safes = await ref.read(treasuryRepositoryProvider).getSafesList();
+    if (!mounted) return;
+    final banks =
+        safes.where((s) => s.safeType == 'bank' && s.isActive).toList();
+
+    final form = await showChequePicposCreateDialog(
+      context,
+      direction: _tabs.index == 1 ? 'issued' : 'received',
+      parties: parties,
+      bankSafes: banks,
+    );
+    if (form == null || !mounted) return;
+
+    try {
+      // ⚠️ الدالّةُ **مشتركةٌ** مع الشاشة القديمة: سَكُّ `globalId` مرّةً ثمّ
+      //    كتابتان به. نسختان تنحرفان بأوّل تعديل — راجع تعليقَها.
+      await createCommercialPaper(
+        repo: ref.read(commercialPapersRepositoryProvider),
+        // ⚠️ من **النموذج** لا من التبويبة: الحوارُ يسمح بتبديل الاتّجاه.
+        direction: form['direction'] as String,
+        form: form,
+      );
+      if (!mounted) return;
+      ref.invalidate(_papersProvider);
+      _snack('أُنشئت الورقة');
+    } catch (e) {
+      if (!mounted) return;
+      _snack('تعذّر الإنشاء: $e');
+    }
+  }
+
+  void _snack(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
   @override
   Widget build(BuildContext context) {
     final List<CommercialPaperData> papers =
@@ -129,6 +177,22 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
       title: 'الشيكات والأوراق التجارية',
       subtitle: 'الوارد والصادر والاستحقاق والتجيير والارتجاع',
       icon: PhosphorIconsBold.note,
+      // ⚠️ **رأسُ التصميم فعلان، وكان الفوركُ بلا أيٍّ منهما.** فالشاشةُ
+      //    تعرض الأوراقَ ولا تُنشئ ورقةً — والمستخدمُ يرجع إلى الشاشة
+      //    القديمة ليضيف شيكاً ثمّ يعود ليراه هنا.
+      //
+      // 🔴 وحارسُ الصلاحيّة واجبٌ: إنشاءُ ورقةٍ يفتح ذمّةً ويكتب على
+      //    الخادم في وضع العميل. وحصرُ التنقّل يفتح الشاشةَ للقراءة.
+      headerActions: [
+        PermissionGuard(
+          permission: PermissionCodes.commercialPapersManage,
+          child: FilledButton.icon(
+            onPressed: () => _createPaper(parties),
+            icon: const Icon(PhosphorIconsBold.plus, size: 15),
+            label: const Text('ورقة جديدة'),
+          ),
+        ),
+      ],
       headerSearch: TextField(
         controller: _searchCtrl,
         onChanged: (v) => setState(() => _query = v.trim().toLowerCase()),
