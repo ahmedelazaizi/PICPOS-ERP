@@ -243,12 +243,16 @@ class ManufacturingRepositoryImpl implements ManufacturingRepository {
     required String costType,
     required String description,
     required double amount,
+    int? expenseCategoryId,
+    int? expenseId,
   }) =>
       _db.addMfgOrderCost(
         orderId: orderId,
         costType: costType,
         description: description,
         amount: amount,
+        expenseCategoryId: expenseCategoryId,
+        expenseId: expenseId,
       );
 
   @override

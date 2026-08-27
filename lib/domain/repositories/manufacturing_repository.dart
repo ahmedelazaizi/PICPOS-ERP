@@ -83,11 +83,17 @@ abstract class ManufacturingRepository {
   Future<void> cancelManufacturingOrder(int orderId);
 
   /// Add a cost entry to a manufacturing order.
+  ///
+  /// ⚠️ **و[expenseId] ليس زينة**: بدونه يصير سطرُ التكلفة يتيماً — يُعرَف
+  /// مبلغُه ولا يُعرَف أيُّ مصروفٍ مُوّل منه، فلا يُقاس «كم بقي غيرَ محمَّل»
+  /// ولا يُمنَع تحميلُ المصروف نفسِه مرّتَين.
   Future<void> addMfgOrderCost({
     required int orderId,
     required String costType,
     required String description,
     required double amount,
+    int? expenseCategoryId,
+    int? expenseId,
   });
 
   /// Watch **every** order's cost rows at once.

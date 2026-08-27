@@ -49,6 +49,7 @@ import '../../../data/providers/providers.dart';
 import '../../../domain/repositories/accounting_repository.dart';
 import '../../../domain/repositories/manufacturing_repository.dart';
 import '../../widgets/permission_guard.dart';
+import 'opex_picpos_allocate_dialog.dart';
 import 'opex_picpos_expense_dialog.dart';
 import '../../picpos_shell/picpos_bar_list.dart';
 import '../../picpos_shell/picpos_data_table.dart';
@@ -244,6 +245,15 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
       //    يفتحها للقراءة لأيّ دورٍ في النطاق. ⇒ `expensesManage` سُنَّ
       //    وأُنفِذَ مع هذا الزرّ لا قبله.
       headerActions: [
+        // `HEADS.main.alt` — ثانويٌّ بصريّاً كما في التصميم.
+        PermissionGuard(
+          permission: PermissionCodes.expensesManage,
+          child: OutlinedButton.icon(
+            onPressed: () => _allocateExpense(expenses, orders, categories),
+            icon: const Icon(PhosphorIconsBold.factory, size: 15),
+            label: const Text('تحميل على أمر تصنيع'),
+          ),
+        ),
         PermissionGuard(
           permission: PermissionCodes.expensesManage,
           child: FilledButton.icon(
@@ -389,6 +399,86 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
       if (!mounted) return;
       _snack('تعذّر التسجيل: $e');
     }
+  }
+
+  /// «تحميل على أمر تصنيع» — `HEADS.main.alt`.
+  ///
+  /// ⚠️ **المرشَّحون مصروفاتُ فئاتٍ مرتبطةٍ بالإنتاج وحدَها**: تحميلُ إيجارِ
+  /// إدارةٍ على أمرِ تصنيعٍ يُدخِله في تكلفة الوحدة، وهو خطأُ تكاليفٍ لا
+  /// يُظهره أيُّ تقرير.
+  ///
+  /// و**الأوامرُ غيرُ الملغاة** وحدَها: تحميلُ تكلفةٍ على أمرٍ ملغًى يكتب
+  /// صفّاً لا يدخل أيَّ تكلفةِ وحدة.
+  Future<void> _allocateExpense(
+    List<Map<String, dynamic>> expenses,
+    List<ManufacturingOrderData> orders,
+    List<OpExpenseCategoryData> categories,
+  ) async {
+    final production = {
+      for (final c in categories.where((c) => c.isProductionRelated)) c.name: c,
+    };
+
+    final candidates = <AllocatableExpense>[
+      for (final e in expenses)
+        if (e['source'] == 'op_expense' &&
+            e['id'] is int &&
+            production.containsKey(e['category_name']))
+          (
+            id: e['id'] as int,
+            label: (e['notes'] ?? e['reference'] ?? _d(e['expense_date'] as DateTime?))
+                .toString(),
+            amount: _num(e['amount']),
+            categoryName: '${e['category_name']}',
+            allocationMethod:
+                production['${e['category_name']}']!.allocationMethod,
+            rate: production['${e['category_name']}']!.defaultRate,
+          ),
+    ];
+
+    final targets = <AllocatableOrder>[
+      for (final o in orders)
+        if (o.status != 'cancelled')
+          (
+            id: o.id,
+            orderNumber: o.orderNumber,
+            // ⚠️ **المنتَجةُ لا المطلوبة**: التحميلُ يدخل تكلفةَ الوحدة،
+            //    وهي تُقسَم على ما خرج فعلاً.
+            quantity: o.producedQty > 0 ? o.producedQty : o.orderedQty,
+          ),
+    ];
+
+    final form = await showOpexPicposAllocateDialog(
+      context,
+      expenses: candidates,
+      orders: targets,
+    );
+    if (form == null || !mounted) return;
+
+    final repo = ref.read(manufacturingRepositoryProvider);
+    final failed = <int>[];
+    for (final line in form.lines) {
+      try {
+        await repo.addMfgOrderCost(
+          orderId: line.orderId,
+          costType: form.costType,
+          description: form.description,
+          amount: line.amount,
+          // ⚠️ الربطُ بالمصروف ليس زينة — راجع `addMfgOrderCost`.
+          expenseId: form.expenseId,
+        );
+      } catch (_) {
+        failed.add(line.orderId);
+      }
+    }
+    if (!mounted) return;
+    ref.invalidate(_orderCostsProvider);
+    // 🔴 الرقمُ لا «تمّ»: دفعةٌ نجح بعضُها تُبلَّغ بعددِها.
+    _snack(
+      failed.isEmpty
+          ? 'حُمِّل المصروفُ على ${form.lines.length} أمراً'
+          : 'حُمِّل على ${form.lines.length - failed.length} من '
+              '${form.lines.length} — تعذّر: ${failed.join('، ')}',
+    );
   }
 
   /// ينقل المصروفَ في دورته.
