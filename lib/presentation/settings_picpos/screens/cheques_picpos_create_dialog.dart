@@ -26,8 +26,16 @@ import 'package:intl/intl.dart' hide TextDirection;
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../../../data/database/database.dart' as db;
-import '../../../domain/repositories/treasury_repository.dart' show SafeData;
+// ⚠️ **لا `data/database` مباشرةً.** حارسُ `presentation_db_import_guard`
+//    يمنع كلَّ ملفِّ عرضٍ **جديد** من ذلك (‏D4-001 / Constitution §IV)،
+//    والقائمةُ البيضاءُ مقفولة.
+//
+//    و`providers.dart` فيه `export '../database/database_barrel.dart'` —
+//    فهو المسارُ الشرعيُّ الذي تصل به أنواعُ القاعدة إلى طبقة العرض، وهو ما
+//    تستعمله الشاشةُ نفسُها وكلُّ الفوركات الأخرى. والنوعُ المطلوبُ هنا
+//    `Party` وحدَه.
+//    ويحمل `SafeData` أيضاً، فلا حاجةَ لاستيراد `treasury_repository`.
+import '../../../data/providers/providers.dart';
 import '../../picpos_shell/picpos_dialog.dart';
 
 /// نوعُ الورقة كما يكتبه العمودُ `type`.
@@ -51,7 +59,7 @@ const _types = <(String, String, IconData, String)>[
 Future<Map<String, dynamic>?> showChequePicposCreateDialog(
   BuildContext context, {
   required String direction,
-  required List<db.Party> parties,
+  required List<Party> parties,
   required List<SafeData> bankSafes,
 }) {
   return showDialog<Map<String, dynamic>>(
@@ -74,7 +82,7 @@ class _CreatePaperPicposDialog extends StatefulWidget {
 
   /// `received` · `issued` — و`portfolio` تبويبةُ عرضٍ تُقرأ واردة.
   final String direction;
-  final List<db.Party> parties;
+  final List<Party> parties;
   final List<SafeData> bankSafes;
 
   @override
