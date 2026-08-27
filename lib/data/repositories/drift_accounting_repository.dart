@@ -81,6 +81,7 @@ class DriftAccountingRepository implements IAccountingRepository {
     bool isAutoPosted = false,
     int? costCenterId,
     int? branchId,
+    bool asDraft = false,
   }) async {
     // Feature 010 / Cluster B (Issue 2) — resolve the originating branch
     // when the caller did not supply one. The manual-JE dialog
@@ -106,6 +107,7 @@ class DriftAccountingRepository implements IAccountingRepository {
       isAutoPosted: isAutoPosted,
       costCenterId: costCenterId,
       branchId: resolvedBranchId,
+      asDraft: asDraft,
     );
   }
 

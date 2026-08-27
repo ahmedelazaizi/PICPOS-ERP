@@ -1350,6 +1350,17 @@ class AppDatabase extends _$AppDatabase {
             'ON activity_logs(global_id) WHERE global_id IS NOT NULL',
         'CREATE INDEX IF NOT EXISTS idx_activity_logs_modified '
             'ON activity_logs(last_modified_at)',
+        // ── نظيرُ PG لأعمدة «Maker-Checker» الثلاثة ──
+        //
+        // ⚠️ نفسُ علّة `activity_logs` أعلاه بالضبط: v82 أضافها بـ`ALTER
+        //    TABLE` في هجرة SQLite، و`onUpgrade` **متجاوَزٌ على PG**،
+        //    و`_createAllForPostgres` يبني من كيانات drift وهي غيرُ مُعلَنةٍ
+        //    في صنف الجدول. فخادمُ PostgreSQL بلا هذه الأعمدة، و
+        //    `approveJournalEntry` ينهار عليه بـ42703.
+        'ALTER TABLE journal_entries ADD COLUMN IF NOT EXISTS status TEXT '
+            "NOT NULL DEFAULT 'posted'",
+        'ALTER TABLE journal_entries ADD COLUMN IF NOT EXISTS approved_by INTEGER',
+        'ALTER TABLE journal_entries ADD COLUMN IF NOT EXISTS approved_at BIGINT',
       ]) {
         try {
           await customStatement(ddl);

@@ -365,17 +365,94 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
                   }
                   if (ctx.mounted) Navigator.pop(ctx);
             },
+            // «حفظ كمسودة» — حوارُ `draft` في التصميم، بعنوانه ونصِّه وزرِّه.
+            //
+            // ⚠️ **وهو الفعلُ الذي يفصل الإنشاءَ عن الترحيل.** «حفظ القيد»
+            //    يرحّل فوراً ويحرّك الأرصدة؛ والمسودّةُ لا تحرّك شيئاً حتى
+            //    يعتمدها أحدٌ من قائمة القيود. ومتوازنةٌ كغيرها — الشرطُ
+            //    نفسُه، فالفرقُ الترحيلُ لا التساهل.
+            secondaryActions: [
+              PicPosDialogAction(
+                label: 'حفظ كمسودة',
+                icon: PhosphorIconsBold.floppyDisk,
+                onPressed: isBalanced && !saving
+                    ? () async {
+                        final total = lines.fold(0.0, (s, l) => s + l.debit);
+                        final ok = await showPicPosConfirm(
+                          ctx,
+                          icon: PhosphorIconsBold.floppyDisk,
+                          title: 'حفظ كمسودة',
+                          message:
+                              'المسودة لا تؤثر على الأرصدة، ويمكن استكمالها '
+                              'واعتمادها لاحقاً من قائمة القيود.',
+                          confirmLabel: 'حفظ المسودة',
+                          details: [
+                            PicPosDialogSummary(
+                              rows: [
+                                (
+                                  label: 'البيان',
+                                  value: descCtrl.text.isEmpty
+                                      ? '—'
+                                      : descCtrl.text,
+                                  color: null,
+                                ),
+                                (
+                                  label: 'عدد السطور',
+                                  value: '${lines.length} سطر',
+                                  color: null,
+                                ),
+                                (
+                                  label: 'إجمالي القيد',
+                                  value: '${total.toStringAsFixed(AppConstants.decimalPlaces)} '
+                                      '${AppConstants.currencySymbol}',
+                                  color: null,
+                                ),
+                              ],
+                            ),
+                          ],
+                        );
+                        if (!ok || !ctx.mounted || saving) return;
+                        saving = true;
+                        final saved = await saveManualEntry(
+                          ctx,
+                          descCtrl.text,
+                          entryDate,
+                          lines,
+                          entryType,
+                          asDraft: true,
+                        );
+                        saving = false;
+                        // ⚠️ إعادةُ البناءِ **عند الإخفاق وحدَه** — الحوارُ
+                        //    عندئذٍ ما زال مفتوحاً.
+                        if (!saved && ctx.mounted) setDialogState(() {});
+                      }
+                    : null,
+              ),
+            ],
             // ⚠️ الشرطُ كما كان: قيدٌ غيرُ متوازنٍ **لا** يُحفَظ، والدوّارةُ
             //    تحلّ محلَّ الأيقونة بمقاسها فلا يقفز عرضُ الزرّ.
             primaryAction: PicPosDialogAction(
               label: 'حفظ القيد',
               icon: PhosphorIconsBold.floppyDisk,
               busy: saving,
+              // ⚠️ `saving` حارسُ **إعادةِ دخولٍ** لا حالةُ بناء.
+              //
+              //    كان يُضبَط بـ`setDialogState` قبل الكتابة، فيتّسخ عنصرُ
+              //    `StatefulBuilder`؛ ثمّ يُغلَق الحوارُ عند النجاح، فيُعاد
+              //    بناءُ العنصر المتّسخ وسلفُه يُبطَل في الأثناء —
+              //    و«Looking up a deactivated widget's ancestor is unsafe»
+              //    من `Theme.of` داخل `context.picposField` في بطاقة البند.
+              //    (‏توكيدُ وضع التنقيح وحدَه، لكنّه يشير إلى ترتيبٍ خاطئ.)
+              //
+              //    فلا يُعاد البناءُ إلّا عند **الإخفاق** — حيث يبقى الحوار.
               onPressed: isBalanced && !saving
                   ? () async {
-                      setDialogState(() => saving = true);
-                      await saveManualEntry(ctx, descCtrl.text, entryDate, lines, entryType);
-                      if (ctx.mounted) setDialogState(() => saving = false);
+                      if (saving) return;
+                      saving = true;
+                      final saved = await saveManualEntry(
+                          ctx, descCtrl.text, entryDate, lines, entryType);
+                      saving = false;
+                      if (!saved && ctx.mounted) setDialogState(() {});
                     }
                   : null,
             ),
@@ -438,32 +515,44 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
     );
   }
 
-  Future<void> saveManualEntry(
+  /// يُرجع `true` حين حُفظ القيدُ **وأُغلق الحوار**.
+  ///
+  /// ⚠️ والإرجاعُ ليس تجميلاً: المستدعي كان يُنهي حالةَ «يحفظ» بـ
+  /// `setDialogState` بعد العودة — وهي إعادةُ بناءٍ على عنصرٍ **أُغلق
+  /// حوارُه للتوّ**، فيلتمس `PicPosDialog` منها `MediaQuery.of` على
+  /// عنصرٍ مُبطَل ويُرمى «Looking up a deactivated widget's ancestor is
+  /// unsafe». فالمستدعي يعيد الحالةَ **حين لم يُحفَظ** وحدَها.
+  Future<bool> saveManualEntry(
     BuildContext ctx,
     String description,
     DateTime date,
     List<JournalLineInput> lines,
-    String referenceType,
-  ) async {
+    String referenceType, {
+    /// «حفظ كمسودة» — تُحفَظ غيرَ مرحَّلةٍ ولا تحرّك رصيداً حتى تُعتمَد.
+    ///
+    /// ⚠️ والتحقّقاتُ أدناه تسري عليها كاملةً: المسودّةُ **متوازنةٌ** وكلُّ
+    /// بندٍ له حسابٌ وطرفٌ واحد. فرقُها الترحيلُ لا التساهل.
+    bool asDraft = false,
+  }) async {
     if (description.isEmpty) {
       AppToast.show(context, 'يرجى إدخال وصف القيد', type: ToastType.info);
-      return;
+      return false;
     }
 
     for (final line in lines) {
       if (line.account == null) {
         AppToast.show(context, 'يرجى اختيار حساب لكل بند', type: ToastType.info);
-        return;
+        return false;
       }
       if (line.debit <= 0 && line.credit <= 0) {
         AppToast.show(context, 'كل بند يجب أن يحتوي على قيمة مدين أو دائن', type: ToastType.info);
-        return;
+        return false;
       }
       // BUG-U13: a line may carry a debit OR a credit, never both.
       if (line.debit > 0 && line.credit > 0) {
         AppToast.show(context, 'لا يمكن إدخال مدين ودائن معاً في نفس البند',
             type: ToastType.info);
-        return;
+        return false;
       }
     }
 
@@ -473,7 +562,7 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
     // Checked BEFORE createJournalEntry so a denied user never reaches the
     // shared DAO call (which stays unaware of the caller/permission —
     // autopost also calls it with no user).
-    if (!await _requireAccountingJournalPermission()) return;
+    if (!await _requireAccountingJournalPermission()) return false;
 
     try {
       final repo = ref.read(accountingRepositoryProvider);
@@ -493,16 +582,24 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
         lines: journalLines,
         referenceType: referenceType,
         isAutoPosted: false,
+        asDraft: asDraft,
       );
 
       if (ctx.mounted) Navigator.pop(ctx);
       if (mounted) {
-        AppToast.show(context, 'تم حفظ القيد بنجاح');
+        AppToast.show(
+          context,
+          asDraft
+              ? 'حُفظت المسودّة — لا تؤثّر على الأرصدة حتى تُعتمَد'
+              : 'تم حفظ القيد بنجاح',
+        );
       }
+      return true;
     } catch (e) {
       if (mounted) {
         AppToast.show(context, 'خطأ: $e', type: ToastType.error);
       }
+      return false;
     }
   }
 }

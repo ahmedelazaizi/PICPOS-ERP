@@ -19,6 +19,10 @@ extension AccountingDaoWritesExt on AppDatabase {
     int? costCenterId,
     int? branchId,
     String? globalId,
+
+    /// «حفظ كمسودة» — يُحفَظ غيرَ مرحَّلٍ وبانتظار الاعتماد، ولا يحرّك
+    /// رصيداً حتى [approveJournalEntry].
+    bool asDraft = false,
   }) async {
     // Spec 007 / FR-007: mint the JE's globalId BEFORE the transaction opens
     // so the same UUID is used for (a) the local insert below, and
@@ -367,9 +371,15 @@ extension AccountingDaoWritesExt on AppDatabase {
       // Get current fiscal year
       final currentFY = await getCurrentFiscalYear();
 
-      // All balanced entries are posted immediately (manual and auto)
-      const shouldPost = true;
-      const shouldNeedApproval = false;
+      // كلُّ قيدٍ متوازنٍ يُرحَّل فوراً — إلّا ما طُلب حفظُه مسودّةً.
+      //
+      // ⚠️ وقبل 2026-08-27 كان الثابتان `true`/`false` بلا مدخل، فلم يكن
+      //    **أحدٌ في المستودع كلِّه** يكتب `needsApproval = true` — فشارةُ
+      //    «بانتظار الاعتماد» وزرُّ الاعتماد في الشاشة كانا مسيَّجَين
+      //    بقيمةٍ لا تُكتَب أبداً، أي ميتَين. وحارسُ الأرصدة تحت مكتوبٌ
+      //    لهذه الحالة منذ ICR-01 وينتظر مدخلَه.
+      final shouldPost = !asDraft;
+      final shouldNeedApproval = asDraft;
 
       final entryId = await into(journalEntries).insert(
         JournalEntriesCompanion.insert(
@@ -378,9 +388,9 @@ extension AccountingDaoWritesExt on AppDatabase {
           description: Value(description),
           referenceType: Value(referenceType),
           referenceId: Value(referenceId),
-          isPosted: const Value(shouldPost),
+          isPosted: Value(shouldPost),
           isAutoPosted: Value(isAutoPosted),
-          needsApproval: const Value(shouldNeedApproval),
+          needsApproval: Value(shouldNeedApproval),
           fiscalYearId: Value(currentFY?.id),
           costCenterId: Value(resolvedCostCenterId),
           branchId: Value(finalBranchId),
@@ -498,7 +508,13 @@ extension AccountingDaoWritesExt on AppDatabase {
     // Phase 1.5: Sync OUTSIDE transaction — lock already released above.
     // HTTP latency no longer blocks other writers (fixes SqliteException 517
     // under concurrent cashier sessions on slow networks).
-    if (SyncInterceptor.isClientMode && syncDesc != null) {
+    // ⚠️ **والمسودّةُ لا تُدفَع.** `submitJournalEntry` لا يحمل حقلَ ترحيلٍ
+    //    أصلاً، و`journal_sync_strategy` يفرض على كلِّ قيدٍ قادمٍ من الخادم
+    //    `isPosted: true` و`needsApproval: false` صراحةً. فدفعُ مسودّةٍ
+    //    كان يجعلها تُرحَّل على الخادم وعلى كلِّ جهازٍ آخر — أي ترحيلٌ بلا
+    //    اعتماد، وهو عينُ ما تمنعه المسودّة. فتُحتجَز محلّيّاً حتّى
+    //    `approveJournalEntry`، وهو الذي يدفعها.
+    if (SyncInterceptor.isClientMode && syncDesc != null && !asDraft) {
       try {
         await SyncInterceptor.instance?.submitJournalEntry(
           description: syncDesc!,
@@ -1361,7 +1377,16 @@ extension AccountingDaoWritesExt on AppDatabase {
   /// Approve a draft journal entry (Maker-Checker: approver != creator)
   /// Uses customStatement for migration-added columns (status, approved_by, approved_at)
   Future<void> approveJournalEntry(int entryId, int approverId) async {
-    return transaction(() async {
+    // ورقةُ الدفع تُجمَع داخلَ المعاملة وتُرسَل بعد إغلاقها — كما في
+    // `createJournalEntry` تماماً، كي لا تحبس زمنُ الشبكة قفلَ الكتابة.
+    String? pushDesc;
+    DateTime? pushDate;
+    List<Map<String, dynamic>>? pushLines;
+    String? pushGlobalId;
+    int? pushCostCenterId;
+    int? pushBranchId;
+
+    await transaction(() async {
       final entry = await (select(journalEntries)
             ..where((e) => e.id.equals(entryId)))
           .getSingleOrNull();
@@ -1401,7 +1426,50 @@ extension AccountingDaoWritesExt on AppDatabase {
           }
         });
       }
+
+      // ورقةُ الدفع — تُجمَع هنا وتُرسَل بعد إغلاق المعاملة.
+      if (SyncInterceptor.isClientMode) {
+        pushDesc = entry.description ?? '';
+        pushDate = entry.entryDate;
+        pushGlobalId = entry.globalId;
+        pushCostCenterId = entry.costCenterId;
+        pushBranchId = entry.branchId;
+        pushLines = approvalLines
+            .map((l) => <String, dynamic>{
+                  'account_id': l.accountId,
+                  'debit': l.debit,
+                  'credit': l.credit,
+                  'description': l.description,
+                  'cost_center_id': l.costCenterId,
+                })
+            .toList();
+      }
     });
+
+    // ⚠️ **الاعتمادُ هو ما يدفع المسودّةَ إلى الخادم.** إنشاؤها لا يدفع
+    //    (‏راجع `createJournalEntry`)، فلو لم تُدفَع هنا لبقيت محبوسةً في
+    //    الجهاز بعد اعتمادها: رصيدٌ يتحرّك محلّيّاً ولا أثرَ له على الخادم
+    //    ولا على بقيّة الأجهزة — وهو افتراقُ أستاذٍ صامت.
+    //
+    //    والـ`globalId` يُمرَّر كما هو، فالخادمُ يخزّنها تحت نفس الهويّة
+    //    ولا تعود بالسحب صفّاً مكرَّراً.
+    final desc = pushDesc;
+    final lines = pushLines;
+    if (desc != null && lines != null) {
+      try {
+        await SyncInterceptor.instance?.submitJournalEntry(
+          description: desc,
+          date: pushDate!,
+          lines: lines,
+          isAutoPosted: false,
+          costCenterId: pushCostCenterId,
+          branchId: pushBranchId,
+          globalId: pushGlobalId,
+        );
+      } catch (e) {
+        debugPrint('[ACCOUNTING_SYNC] Approval push failed for JE #$entryId: $e');
+      }
+    }
   }
 
 

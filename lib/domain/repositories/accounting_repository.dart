@@ -25,6 +25,13 @@ abstract class IAccountingRepository {
     bool isAutoPosted = false,
     int? costCenterId,
     int? branchId,
+
+    /// يُحفَظ **غيرَ مرحَّلٍ** وبانتظار الاعتماد — «حفظ كمسودة» في التصميم.
+    ///
+    /// ⚠️ والفرقُ ماليٌّ لا وصفيّ: المسودّةُ **لا تحرّك رصيدَ أيّ حساب**
+    /// حتى يعتمدها [approveJournalEntry]. وهي متوازنةٌ كغيرها — التحقّقُ
+    /// من تساوي المدين والدائن يقع قبل الحفظ في الحالتين.
+    bool asDraft = false,
   });
   Future<List<JournalEntryData>> getJournalEntries({DateTime? from, DateTime? to});
   Stream<List<JournalEntryData>> watchJournalEntries({DateTime? from, DateTime? to});
