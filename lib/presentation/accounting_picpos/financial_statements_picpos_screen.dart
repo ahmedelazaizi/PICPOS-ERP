@@ -4,6 +4,7 @@ import 'package:ural_erp/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/theme/app_colors.dart';
+import '../picpos_shell/picpos_dialog.dart';
 import '../picpos_shell/picpos_screen_scaffold.dart';
 import '../picpos_shell/picpos_toolbar.dart';
 import '../../core/widgets/shimmer_loading.dart';
@@ -1605,27 +1606,34 @@ class _FinancialStatementsPicPosScreenState
       branchLine = 'لا توجد قيود بحاجة لإعادة التوزيع على مراكز الفروع.';
     }
 
+    // ⚠️ يبقى `showDialog<bool>` بـ`ok == true` لا `ok != false`: الإغلاقُ
+    //    العرَضيَّ يُرجع `null`، وهذا الحوارُ يبدأ عمليّةً تمسّ بياناتٍ —
+    //    فالافتراضُ **الرفض**.
     final ok = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('إصلاح فروقات التقارير والمراكز'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('١) تعبئة مراكز التكلفة للأسطر التاريخية من رؤوس القيود.'),
-            const SizedBox(height: 10),
-            Text('٢) $branchLine'),
-            const SizedBox(height: 12),
-            const Text(
-              'العملية آمنة ولا تغيّر أي مبالغ مدينة/دائنة — تعيد فقط تصنيف مركز التكلفة.',
-              style: TextStyle(fontSize: 12, color: AppColors.textMuted),
-            ),
-          ],
+      builder: (ctx) => PicPosDialog(
+        icon: PhosphorIconsBold.magicWand,
+        accent: AppColors.warning,
+        title: 'إصلاح فروقات التقارير والمراكز',
+        subtitle: 'خطوتان تعيدان تصنيفَ مراكز التكلفة — بلا مساسٍ بالمبالغ',
+        width: 560,
+        onCancel: () => Navigator.pop(ctx, false),
+        primaryAction: PicPosDialogAction(
+          label: 'بدء الإصلاح',
+          icon: PhosphorIconsBold.magicWand,
+          color: AppColors.warning,
+          onPressed: () => Navigator.pop(ctx, true),
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('بدء الإصلاح')),
+        body: [
+          const Text('١) تعبئة مراكز التكلفة للأسطر التاريخية من رؤوس القيود.'),
+          // ⚠️ سطرُ المعاينة: هو **كلُّ** ما يعرفه المشغّلُ عن حجم ما
+          //    سيتحرّك قبل أن يضغط. ولا يُختصَر ولا يُطوى.
+          Text('٢) $branchLine'),
+          const PicPosDialogBanner(
+            icon: PhosphorIconsBold.shieldCheck,
+            color: AppColors.success,
+            text: 'العملية آمنة ولا تغيّر أي مبالغ مدينة/دائنة — تعيد فقط تصنيف مركز التكلفة.',
+          ),
         ],
       ),
     );

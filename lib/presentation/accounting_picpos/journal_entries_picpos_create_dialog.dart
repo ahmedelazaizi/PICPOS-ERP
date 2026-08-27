@@ -58,45 +58,57 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
           final totalCredit = lines.fold(0.0, (s, l) => s + l.credit);
           final isBalanced = (totalDebit - totalCredit).abs() < 0.01 && totalDebit > 0;
 
-          return AlertDialog(
-            title: Row(
-              children: [
-                const Icon(PhosphorIconsBold.notebook, color: AppColors.primary, size: 20),
-                const SizedBox(width: 8),
-                Text('إنشاء قيد يدوي', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
-              ],
-            ),
-            content: SizedBox(
-              width: 650,
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+          return PicPosDialog(
+            icon: PhosphorIconsBold.notebook,
+            title: 'إنشاء قيد يدوي',
+            subtitle: initialTemplate != null
+                ? 'من قالب: ${initialTemplate.name}'
+                : 'قيدٌ يدويٌّ متوازنٌ يُرحَّل إلى دفتر الأستاذ',
+            width: 760,
+            headerChips: [
+              PicPosDialogChip(
+                icon: isBalanced
+                    ? PhosphorIconsBold.checkCircle
+                    : PhosphorIconsBold.warning,
+                label: isBalanced ? 'متوازن' : 'غير متوازن',
+                tint: isBalanced ? AppColors.success : AppColors.error,
+              ),
+            ],
+            // ⚠️ الجسمُ عنصرٌ واحدٌ لا قائمةُ عناصر: `PicPosDialog` يضع ١٣
+            //    بكسل بين كلِّ عنصرَين، والمسافاتُ هنا مكتوبةٌ يدويّاً
+            //    بـ`SizedBox` فكان الجمعُ بينهما يضاعفها.
+            body: [
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                     // Entry Type & Description & Date
-                    Row(
+                    //
+                    // ⚠️ كان الأوّلُ `SizedBox(width: 130)` ثابتاً، فتصل إلى
+                    //    قائمتِه قيودٌ عرضُها ٧٤ بكسل ولا تكفي نصَّها وأيقونتَها
+                    //    — فيضٌ مقيسٌ بـ٦ بكسل عند العرضَين ١٢٨٠ و١٩٢٠ معاً،
+                    //    لأنّ عرضَ الحوار مثبَّتٌ فلا يتغيّر بالشاشة.
+                    //    و`PicPosDialogRow` يعطيه حصّةً لا رقماً، ويكسر الصفَّ
+                    //    رأسيّاً تحت ٥٢٠ بدل أن يسحقه.
+                    PicPosDialogRow(
+                      flex: const [2, 4, 3],
                       children: [
-                        SizedBox(
-                          width: 130,
-                          child: DropdownButtonFormField<String>(
-                            initialValue: entryType,
-                            decoration: const InputDecoration(
-                              labelText: 'نوع القيد',
-                              border: OutlineInputBorder(),
-                              isDense: true,
-                            ),
-                            items: const [
-                              DropdownMenuItem(value: 'daily', child: Text('يومية')),
-                              DropdownMenuItem(value: 'adjustment', child: Text('تسوية')),
-                              DropdownMenuItem(value: 'salary', child: Text('رواتب')),
-                            ],
-                            onChanged: (v) => setDialogState(() => entryType = v ?? 'daily'),
+                        DropdownButtonFormField<String>(
+                          initialValue: entryType,
+                          isExpanded: true,
+                          decoration: const InputDecoration(
+                            labelText: 'نوع القيد',
+                            border: OutlineInputBorder(),
+                            isDense: true,
                           ),
+                          items: const [
+                            DropdownMenuItem(value: 'daily', child: Text('يومية')),
+                            DropdownMenuItem(value: 'adjustment', child: Text('تسوية')),
+                            DropdownMenuItem(value: 'salary', child: Text('رواتب')),
+                          ],
+                          onChanged: (v) => setDialogState(() => entryType = v ?? 'daily'),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          flex: 3,
-                          child: TextField(
+                          TextField(
                             controller: descCtrl,
                             decoration: const InputDecoration(
                               labelText: 'وصف القيد',
@@ -104,11 +116,7 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
                               border: OutlineInputBorder(),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          flex: 2,
-                          child: InkWell(
+                          InkWell(
                             onTap: () async {
                               final date = await CompactDatePicker.showCompact(
                                 ctx,
@@ -132,7 +140,6 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
                               ),
                             ),
                           ),
-                        ),
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -335,65 +342,43 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
                     ),
                   ],
                 ),
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () async {
+            ],
+            onCancel: () async {
                   // U-03: Unsaved changes guard
                   final hasData = descCtrl.text.isNotEmpty ||
                       lines.any((l) => l.account != null || l.debit > 0 || l.credit > 0 || l.descCtrl.text.isNotEmpty);
                   if (hasData) {
-                    final leave = await showDialog<bool>(
-                      context: ctx,
-                      builder: (c) => Directionality(
-                        textDirection: ui.TextDirection.rtl,
-                        child: AlertDialog(
-                          title: Row(
-                            children: [
-                              const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
-                              const SizedBox(width: 8),
-                              Text('تنبيه', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
-                            ],
-                          ),
-                          content: Text(
-                            'يوجد بيانات غير محفوظة في القيد. هل أنت متأكد من الإلغاء؟',
-                            style: GoogleFonts.cairo(fontSize: 14, height: 1.5),
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(c, false),
-                              child: const Text('لا، البقاء'),
-                            ),
-                            ElevatedButton(
-                              onPressed: () => Navigator.pop(c, true),
-                              style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-                              child: const Text('نعم، إلغاء'),
-                            ),
-                          ],
-                        ),
-                      ),
+                    // ⚠️ `showPicPosConfirm` يُرجع `bool` غيرَ لاغٍ افتراضُه
+                    //    **الرفض**، فالإغلاقُ العرَضيُّ يُبقي القيدَ لا
+                    //    يبتلعه — وهو ما كان `leave != true` يضمنه هنا.
+                    final leave = await showPicPosConfirm(
+                      ctx,
+                      icon: PhosphorIconsBold.warning,
+                      title: 'تنبيه',
+                      message:
+                          'يوجد بيانات غير محفوظة في القيد. هل أنت متأكد من الإلغاء؟',
+                      confirmLabel: 'نعم، إلغاء',
+                      cancelLabel: 'لا، البقاء',
+                      danger: true,
                     );
-                    if (leave != true) return;
+                    if (!leave) return;
                   }
                   if (ctx.mounted) Navigator.pop(ctx);
-                },
-                child: const Text('إلغاء'),
-              ),
-              ElevatedButton.icon(
-                onPressed: isBalanced && !saving
-                    ? () async {
-                        setDialogState(() => saving = true);
-                        await saveManualEntry(ctx, descCtrl.text, entryDate, lines, entryType);
-                        if (ctx.mounted) setDialogState(() => saving = false);
-                      }
-                    : null,
-                icon: saving
-                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Icon(PhosphorIconsBold.floppyDisk, size: 16),
-                label: const Text('حفظ القيد'),
-              ),
-            ],
+            },
+            // ⚠️ الشرطُ كما كان: قيدٌ غيرُ متوازنٍ **لا** يُحفَظ، والدوّارةُ
+            //    تحلّ محلَّ الأيقونة بمقاسها فلا يقفز عرضُ الزرّ.
+            primaryAction: PicPosDialogAction(
+              label: 'حفظ القيد',
+              icon: PhosphorIconsBold.floppyDisk,
+              busy: saving,
+              onPressed: isBalanced && !saving
+                  ? () async {
+                      setDialogState(() => saving = true);
+                      await saveManualEntry(ctx, descCtrl.text, entryDate, lines, entryType);
+                      if (ctx.mounted) setDialogState(() => saving = false);
+                    }
+                  : null,
+            ),
           );
         }),
       ),
@@ -404,18 +389,18 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => Directionality(
-        textDirection: ui.TextDirection.rtl,
-        child: AlertDialog(
-          title: Row(
-            children: [
-              const Icon(PhosphorIconsBold.copy, color: AppColors.primary, size: 20),
-              const SizedBox(width: 8),
-              Text('اختيار قالب قيد', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
-            ],
-          ),
-          content: SizedBox(
-            width: 400,
+      builder: (ctx) => PicPosDialog(
+        icon: PhosphorIconsBold.copy,
+        title: 'اختيار قالب قيد',
+        subtitle: 'ابدأ القيدَ من قالبٍ نشطٍ بدل إدخاله من الصفر',
+        width: 520,
+        // ⚠️ الجسمُ قائمةٌ متمرّرةٌ بارتفاعٍ ثابت. فلو بقي `scrollable` على
+        //    افتراضه لصارت تمريرتان متداخلتان في المحور نفسِه — والقائمةُ
+        //    محدودةٌ هنا بـ`SizedBox` فلا تنهار، لكنّ التمريرَ يصير مربكاً.
+        scrollable: false,
+        onCancel: () => Navigator.pop(ctx),
+        body: [
+          SizedBox(
             height: 300,
             child: StreamBuilder<List<JournalEntryTemplateData>>(
               stream: repo.watchActiveTemplates(),
@@ -448,13 +433,7 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
               },
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('إلغاء'),
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }
