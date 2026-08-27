@@ -43,10 +43,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
+import '../../../core/permissions/permission_codes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/providers.dart';
 import '../../../domain/repositories/accounting_repository.dart';
 import '../../../domain/repositories/manufacturing_repository.dart';
+import '../../widgets/permission_guard.dart';
+import 'opex_picpos_expense_dialog.dart';
 import '../../picpos_shell/picpos_bar_list.dart';
 import '../../picpos_shell/picpos_data_table.dart';
 import '../../picpos_shell/picpos_hub_kpi.dart';
@@ -166,6 +169,13 @@ final _budgetProvider =
   return ref.watch(budgetRepositoryProvider).getBudgetVsActualReport(year.id);
 });
 
+/// الفروعُ ومراكزُ التكلفة — لحوار «مصروف جديد» وحدَه.
+final _branchesProvider = FutureProvider.autoDispose<List<Branche>>(
+    (ref) => ref.watch(branchRepositoryProvider).getBranches());
+
+final _costCentresProvider = StreamProvider.autoDispose<List<CostCenter>>(
+    (ref) => ref.watch(accountingRepositoryProvider).watchCostCenters());
+
 // ═══════════════════════════════════════════════════════════════════════════
 
 class OpexPicposScreen extends ConsumerStatefulWidget {
@@ -227,15 +237,22 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
       title: 'المصاريف التشغيلية',
       subtitle: 'المصروفات وفئاتها وقواعد التحميل والاعتماد والسداد',
       icon: PhosphorIconsBold.receiptX,
-      // ⚠️ **فعلا الرأس يأتيان في الدفعة التالية.** `HEADS.main` يعرّف
-      //    «مصروف جديد» و«تحميل على أمر تصنيع»، وكلاهما **كتابةٌ ماليّة**:
-      //    الأوّلُ يقيّد قيدَ يوميّةٍ ويخصم من الخزنة، والثاني يدخل تكلفةَ
-      //    أمرٍ ثمّ تكلفةَ الوحدة.
-      //
-      // 🔴 ولا كودَ صلاحيّةٍ للمصروفات التشغيليّة في `PermissionCodes` —
-      //    الشاشةُ محصورةٌ بالنطاق وحدَه (`screen_registry.dart:202`). فزرُّ
-      //    كتابةٍ اليومَ يكون بلا حارسٍ، وحصرُ التنقّل يفتح الشاشةَ للقراءة
-      //    لأيّ دور. ⇒ الكودُ يُسَنّ ويُنفَّذ مع الفعلَين معاً لا قبلهما.
+      // 🔴 **حارسُ الصلاحيّة ليس زينةً هنا.** تسجيلُ المصروف يرحّل قيدَ
+      //    يوميّةٍ ويُنشئ سندَ صرفٍ ويخصم رصيدَ الخزنة — ثلاثةُ آثارٍ
+      //    ماليّةٍ في معاملةٍ واحدة. والشاشةُ كانت محصورةً بالنطاق وحدَه
+      //    (`screen_registry.dart:202`) بلا أيّ كودِ صلاحيّة، فحصرُ التنقّل
+      //    يفتحها للقراءة لأيّ دورٍ في النطاق. ⇒ `expensesManage` سُنَّ
+      //    وأُنفِذَ مع هذا الزرّ لا قبله.
+      headerActions: [
+        PermissionGuard(
+          permission: PermissionCodes.expensesManage,
+          child: FilledButton.icon(
+            onPressed: _createExpense,
+            icon: const Icon(PhosphorIconsBold.plus, size: 15),
+            label: const Text('مصروف جديد'),
+          ),
+        ),
+      ],
       headerSearch: TextField(
         controller: _searchCtrl,
         onChanged: (v) => setState(() => _query = v.trim().toLowerCase()),
@@ -309,6 +326,91 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 26),
         child: child,
       );
+
+  void _snack(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  /// «مصروف جديد» — `HEADS.main.action`.
+  ///
+  /// ⚠️ **يمرّ بـ`recordAndPostOperationalExpense`** وهي معاملةٌ واحدة:
+  /// إدراجُ الصفّ وترحيلُ القيد معاً. والنداءان المنفصلان كانا يتركان صفّاً
+  /// بلا قيدٍ حين يفشل الترحيل (‏EXP-2 / S-FAILLOUD) — فلا يُفكَّكان هنا.
+  Future<void> _createExpense() async {
+    final categories = ref.read(_categoriesProvider).value ?? const [];
+    final branches = ref.read(_branchesProvider).value ?? const [];
+    final centres = ref.read(_costCentresProvider).value ?? const [];
+
+    final form = await showOpexPicposExpenseDialog(
+      context,
+      categories: [
+        for (final c in categories.where((c) => c.isActive))
+          (
+            id: c.id,
+            name: c.name,
+            accountCode: c.accountCode,
+            allocationMethod: c.allocationMethod,
+          ),
+      ],
+      branches: [for (final b in branches) (id: b.id, name: b.name)],
+      costCentres: [for (final cc in centres) (id: cc.id, name: cc.name)],
+    );
+    if (form == null || !mounted) return;
+
+    final userId = ref.read(authProvider).user?.id;
+    if (userId == null) {
+      // ⚠️ **لا `?? 1`**: المصروفُ يُنسَب لمن سجّله في سجلّ التدقيق، ونسبتُه
+      //    للمستخدم رقم ١ تُسند فعلاً ماليّاً إلى شخصٍ لم يفعله.
+      _snack('تعذّر تحديدُ المستخدم — سجّل الدخولَ ثمّ أعد المحاولة');
+      return;
+    }
+
+    try {
+      await ref.read(accountingRepositoryProvider).recordAndPostOperationalExpense(
+            categoryId: form.categoryId,
+            amount: form.amount,
+            expenseDate: form.expenseDate,
+            description: form.description,
+            expenseAccountCode: form.accountCode,
+            period: form.period,
+            reference: form.reference,
+            notes: form.notes,
+            userId: userId,
+            branchId: form.branchId,
+            costCenterId: form.costCenterId,
+            paymentMethod: form.paymentMethod,
+          );
+      if (!mounted) return;
+      ref.invalidate(_expensesProvider);
+      _snack('سُجّل المصروفُ ورُحّل قيدُه');
+    } catch (e) {
+      if (!mounted) return;
+      _snack('تعذّر التسجيل: $e');
+    }
+  }
+
+  /// ينقل المصروفَ في دورته.
+  ///
+  /// ⚠️ **أثرُ مراجعةٍ لا حدثٌ محاسبيّ** — القيدُ رُحّل عند التسجيل، وهذا
+  /// يكتب العمودَ `status` وحدَه. راجع `updateExpenseStatus`.
+  Future<void> _moveExpense(Map<String, dynamic> e, String to) async {
+    final id = e['id'];
+    if (id is! int) return;
+    try {
+      await ref
+          .read(manufacturingRepositoryProvider)
+          .updateExpenseStatus(id, to);
+      if (!mounted) return;
+      ref.invalidate(_expensesProvider);
+      _snack(to == 'approved' ? 'اعتُمد المصروف' : 'سُجّل السداد');
+    } catch (err) {
+      if (!mounted) return;
+      // الـDAO يرفض على عميلٍ بنصٍّ مفيد — يُقال ولا يُبتلَع.
+      _snack('$err');
+    }
+  }
 
   // ── ١ · المصروفات ───────────────────────────────────────────────────────
 
@@ -751,12 +853,24 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
     final approved = of('approved');
     final paid = of('paid');
 
+    // 🔴 **`expensesApprove` لا `expensesManage`**: مَن يسجّل المصروفَ ليس
+    //    بالضرورة مَن يعتمده، وفصلُ الأدوار هو غرضُ دورة الاعتماد كلِّها.
+    //    فجمعُهما تحت كودٍ واحدٍ يُبطلها.
+    //
+    // ⚠️ و`hasPermissionProvider` لا `PermissionBuilder`: الأوّلُ يمرّ
+    //    بـ`userHasPermission` الذي فيه تجاوزُ مدير النظام.
+    final canApprove = ref
+            .watch(hasPermissionProvider(PermissionCodes.expensesApprove))
+            .value ??
+        false;
+
     PicPosBoardColumn column(
       String label,
       IconData icon,
       Color tint,
-      List<Map<String, dynamic>> rows,
-    ) =>
+      List<Map<String, dynamic>> rows, {
+      String? moveTo,
+    }) =>
         PicPosBoardColumn(
           label: label,
           icon: icon,
@@ -774,6 +888,15 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
                 meta: '${e['user_name'] ?? 'غير معروف'}',
                 metaIcon: PhosphorIconsBold.user,
                 metaTint: tint,
+                // ⚠️ **صفُّ `safe_tx` لا يُنقَل**: `getExpensesForReport`
+                //    يضمّ حركاتِ الخزنة بـ`status == null` و`id` يخصّ جدولاً
+                //    آخر. ونقلُه يكتب على مصروفٍ **بمعرِّفٍ مطابقٍ صدفةً**.
+                //    فالنقلُ لصفوف `op_expense` وحدَها.
+                onTap: (canApprove &&
+                        moveTo != null &&
+                        e['source'] == 'op_expense')
+                    ? () => _moveExpense(e, moveTo)
+                    : null,
               ),
           ],
         );
@@ -815,12 +938,23 @@ class _OpexPicposScreenState extends ConsumerState<OpexPicposScreen>
           ],
         ),
         const SizedBox(height: 16),
+        if (canApprove)
+          const Padding(
+            padding: EdgeInsets.only(bottom: 10),
+            child: Text(
+              'اضغط بطاقةً لنقلها إلى الحالة التالية — الاعتماد ثمّ السداد.',
+              style: TextStyle(fontSize: 12, color: _idle),
+            ),
+          ),
         PicPosStatusBoard(
           emptyLabel: 'لا مصروفاتِ هذا الشهر',
           columns: [
-            column('مسوّدة', PhosphorIconsBold.fileDashed, _warn, drafts),
+            column('مسوّدة', PhosphorIconsBold.fileDashed, _warn, drafts,
+                moveTo: 'approved'),
             column('معتمدة', PhosphorIconsBold.sealCheck, AppColors.primary,
-                approved),
+                approved,
+                moveTo: 'paid'),
+            // المسدَّدةُ آخرُ الدورة — لا حالةَ بعدها.
             column('مسدَّدة', PhosphorIconsBold.checkCircle, _ok, paid),
           ],
         ),
