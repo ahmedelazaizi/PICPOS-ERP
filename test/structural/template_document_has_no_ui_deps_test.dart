@@ -23,6 +23,10 @@ const _guarded = <String>[
   'lib/domain/printing/template_document.dart',
   'lib/domain/printing/condition_evaluator.dart',
   'lib/domain/printing/template_mapper.dart',
+  // حاسبُ قيم الحقول — يقرؤه المساران (‏التدفّقيُّ يبني منه ودجت، والنطاقيُّ
+  // يبني منه خريطةَ نصوص). لو جرّ `package:pdf` لصار المسارُ الجديدُ مقيَّداً
+  // بقماشٍ واحدٍ من أضعف نقطةٍ فيه.
+  'lib/domain/printing/print_values.dart',
   'lib/services/printing/layout_engine.dart',
   'lib/services/printing/paint_plan.dart',
   'lib/services/printing/template_resolver.dart',

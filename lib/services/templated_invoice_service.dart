@@ -10,6 +10,9 @@ import '../core/logging/diagnostic_logger.dart';
 import '../core/utils/template_json_flags.dart';
 import '../data/database/database.dart';
 import '../domain/entities/shift_closing_snapshot.dart';
+import '../domain/printing/print_values.dart' as pv;
+import 'printing/paint_plan.dart' show PaintDirection;
+import 'printing/template_render_pipeline.dart';
 import '../data/repositories/printers_repository_impl.dart';
 import 'printer_resolver.dart';
 
@@ -398,6 +401,63 @@ class TemplatedInvoiceService {
       '[TemplatedInvoice] Template: "${templateData.template.name}", elements: ${elements.length}, items: ${items.length}',
     );
 
+    // ── بوّابةُ نسخة التخطيط ────────────────────────────────────────────
+    //
+    // ١ = التدفّقُ القديم (‏`sortOrder` + `flexWidth`) — يبقى بحرفه.
+    // ٢ = النطاقاتُ بإحداثيّاتٍ بالمليمتر عبر المحرّك.
+    //
+    // والقوالبُ غيرُ المهاجَرة كلُّها عند ١، فلا يتغيّر مطبوعٌ واحدٌ اليوم.
+    // وهذا مقيسٌ لا مأمول: سبعٌ وعشرون بصمةً ذهبيّةً في
+    // `test/unit/printing_characterization_test.dart`.
+    if (templateData.template.layoutVersion >= kBandLayoutVersion) {
+      // ⚠️ المنازلُ تُحسم **قبل** بناء الحمولة. `_docDecimals` ساكنٌ يحمل
+      // قيمةَ آخرِ مستندٍ طُبع، فالبوّابةُ تقع قبل موضع حسمِه في المسار
+      // القديم — ولولا هذا السطر لطُبعت فاتورةٌ بمنازلِ التي سبقتها.
+      _docDecimals = _resolveDocDecimals(templateData.tableSettings);
+
+      final bytes = await TemplateRenderPipeline.render(
+        template: templateData.template,
+        orderedElements: elements,
+        tableSettings: templateData.tableSettings,
+        payload: _payloadOf(
+          invoiceNumber: invoiceNumber,
+          date: date,
+          customerName: customerName,
+          customerPhone: customerPhone,
+          customerAddress: customerAddress,
+          adhocCustomerName: adhocCustomerName,
+          adhocCustomerPhone: adhocCustomerPhone,
+          companyName: companyName,
+          companyAddress: companyAddress,
+          companyPhone: companyPhone,
+          companyTaxId: companyTaxId,
+          paymentMethod: paymentMethod,
+          cashierName: cashierName,
+          notes: notes,
+          subtotal: subtotal,
+          discount: discount,
+          tax: tax,
+          deliveryFee: deliveryFee,
+          total: total,
+          paid: paid,
+          orderNumber: orderNumber,
+          platformOrderNumber: platformOrderNumber,
+          cashAmount: cashAmount,
+          bankAmount: bankAmount,
+        ),
+        items: items,
+        direction: locale == 'en' ? PaintDirection.ltr : PaintDirection.rtl,
+      );
+      if (debugBuildOnly) return bytes;
+      await _pushToPrinter(
+        db: db,
+        bytes: bytes,
+        directPrint: directPrint,
+        category: category,
+      );
+      return bytes;
+    }
+
     final pdf = await BaseGenerator.newDocument();
     final remaining = total - paid;
 
@@ -575,8 +635,26 @@ class TemplatedInvoiceService {
     final bytes = await pdf.save();
     if (debugBuildOnly) return bytes;
 
+    await _pushToPrinter(
+      db: db,
+      bytes: bytes,
+      directPrint: directPrint,
+      category: category,
+    );
+    return bytes;
+  }
+
+  /// الدفعُ إلى الطابعة — موضعٌ واحدٌ يخدم نسختَي التخطيط.
+  ///
+  /// نسخةٌ ثانيةٌ من حلِّ الطابعة تعني أنّ إصلاحَ «المطبخُ يخرج على طابعة
+  /// الكاشير» يُصلَح في أحدهما ويبقى في الآخر.
+  static Future<void> _pushToPrinter({
+    required AppDatabase db,
+    required Uint8List bytes,
+    required bool directPrint,
+    required String category,
+  }) async {
     if (directPrint) {
-      // Resolve configured printer based on category
       final printersRepo = PrintersRepositoryImpl(db);
       final resolvedPrinter = category == 'kitchen'
           ? await PrinterResolver.resolveByPurpose(printersRepo, 'kitchen')
@@ -588,17 +666,73 @@ class TemplatedInvoiceService {
           printer: resolvedPrinter,
           onLayout: (_) => bytes,
         );
-      } else {
-        debugPrint(
-          '[TemplatedInvoice] No configured $category printer, showing print dialog',
-        );
-        await Printing.layoutPdf(onLayout: (_) => bytes);
+        return;
       }
-    } else {
-      await Printing.layoutPdf(onLayout: (_) => bytes);
+      debugPrint(
+        '[TemplatedInvoice] No configured $category printer, showing print dialog',
+      );
     }
-    return bytes;
+    await Printing.layoutPdf(onLayout: (_) => bytes);
   }
+
+  /// حمولةُ القيم — تُبنى مرّةً ويقرؤها المسارُ الجديد.
+  ///
+  /// و`_docDecimals` تُحسم قبل هذا في `printWithTemplate` من إعدادات
+  /// الجدول، فالمساران يقرآن نفسَ المنازل.
+  static pv.PrintPayload _payloadOf({
+    required String invoiceNumber,
+    required DateTime date,
+    String? customerName,
+    String? customerPhone,
+    String? customerAddress,
+    String? adhocCustomerName,
+    String? adhocCustomerPhone,
+    required String companyName,
+    required String companyAddress,
+    required String companyPhone,
+    String? companyTaxId,
+    required String paymentMethod,
+    String? cashierName,
+    String? notes,
+    required double subtotal,
+    required double discount,
+    required double tax,
+    required double deliveryFee,
+    required double total,
+    required double paid,
+    String? orderNumber,
+    String? platformOrderNumber,
+    double? cashAmount,
+    double? bankAmount,
+  }) =>
+      pv.PrintPayload(
+        invoiceNumber: invoiceNumber,
+        date: date,
+        customerName: customerName,
+        customerPhone: customerPhone,
+        customerAddress: customerAddress,
+        adhocCustomerName: adhocCustomerName,
+        adhocCustomerPhone: adhocCustomerPhone,
+        companyName: companyName,
+        companyAddress: companyAddress,
+        companyPhone: companyPhone,
+        companyTaxId: companyTaxId,
+        paymentMethod: paymentMethod,
+        cashierName: cashierName,
+        notes: notes,
+        subtotal: subtotal,
+        discount: discount,
+        tax: tax,
+        deliveryFee: deliveryFee,
+        total: total,
+        paid: paid,
+        remaining: total - paid,
+        orderNumber: orderNumber,
+        platformOrderNumber: platformOrderNumber,
+        cashAmount: cashAmount,
+        bankAmount: bankAmount,
+        decimals: _docDecimals,
+      );
 
   /// بناء محتوى عنصر واحد من القالب (resolvedType تم حله بالفعل في الـ caller)
   ///
@@ -1044,68 +1178,11 @@ class TemplatedInvoiceService {
     }
   }
 
-  /// Labels for all known element types — mirrors preview dialog's _getLabel
-  static String _getLabel(String type) {
-    const labels = {
-      'invoice_number': 'رقم الفاتورة',
-      'order_number': 'رقم الطلب',
-      'date': 'التاريخ',
-      'time': 'الوقت',
-      'customer_name': 'اسم العميل',
-      'customer': 'العميل',
-      'customer_phone': 'الهاتف',
-      'customer_address': 'العنوان',
-      'cashier_name': 'الكاشير',
-      'payment_method': 'طريقة الدفع',
-      'sale_type': 'نوع البيع',
-      'invoice_type_label': 'نوع الفاتورة',
-      'warehouse_name': 'المخزن',
-      'branch_name': 'الفرع',
-      'company_name': 'اسم الشركة',
-      'company_address': 'عنوان الشركة',
-      'company_phone': 'هاتف الشركة',
-      'company_tax_number': 'الرقم الضريبي',
-      'company_tax_id': 'الرقم الضريبي',
-      'tax_registration': 'السجل الضريبي',
-      'adhoc_customer_name': 'اسم العميل',
-      'adhoc_customer_phone': 'هاتف العميل',
-      'supplier_name': 'المورد',
-      'subtotal': 'الإجمالي الفرعي',
-      'discount': 'الخصم',
-      'tax': 'الضريبة',
-      'tax_amount': 'الضريبة',
-      'total': 'الإجمالي النهائي',
-      'total_amount': 'الإجمالي النهائي',
-      'grand_total': 'الإجمالي النهائي',
-      'paid': 'المدفوع',
-      'paid_amount': 'المدفوع',
-      'remaining': 'المتبقي',
-      'change': 'الباقي',
-      'cash_amount': 'مدفوع نقداً',
-      'bank_amount': 'مدفوع بنكياً',
-      'click_amount': 'مدفوع كليك',
-      'notes': 'ملاحظات',
-      'kitchen_notes': 'ملاحظات المطبخ',
-      'delivery_fee': 'رسوم التوصيل',
-      'delivery_type': 'نوع التوصيل',
-      'delivery_address': 'عنوان التوصيل',
-      'courier_name': 'المندوب',
-      'table_number': 'رقم الطاولة',
-      'waiter_name': 'الويتر',
-      'footer_text': 'التذييل',
-    };
-    return labels[type] ?? '';
-  }
+  /// تفويضٌ — انظر `_getDataValue`.
+  static String _getLabel(String type) => pv.contentLabel(type);
 
-  /// Whether a field should be rendered as a total row (label ↔ value)
-  static bool _isTotalField(String type) {
-    return const {
-      'subtotal', 'discount', 'tax', 'tax_amount', 'total',
-      'total_amount', 'grand_total', 'paid', 'paid_amount',
-      'remaining', 'change', 'cash_amount', 'bank_amount',
-      'click_amount', 'delivery_fee',
-    }.contains(type);
-  }
+  /// تفويضٌ — انظر `_getDataValue`.
+  static bool _isTotalField(String type) => pv.isTotalField(type);
 
   /// Resolve element type from DB element — handles variable, text, image, line
   static String _resolveType(InvoiceTemplateElement element) {
@@ -1362,31 +1439,8 @@ class TemplatedInvoiceService {
   ///
   /// وما لا يُعرف يُعاد كما هو لا يُبتلع: تسميةٌ عربيةٌ وصلت جاهزةً من منادٍ
   /// آخر تمرّ، وكودٌ جديدٌ يظهر فيُرى بدل أن يختفي صامتاً.
-  static String mapPaymentMethodLabel(String method) {
-    switch (method.trim().toLowerCase()) {
-      case 'cash':
-        return 'نقدي';
-      case 'card':
-      case 'visa':
-      case 'mastercard':
-        return 'بطاقة';
-      case 'bank':
-      case 'transfer':
-        return 'تحويل بنكي';
-      case 'click':
-        return 'كليك';
-      case 'credit':
-      case 'deferred':
-        return 'آجل';
-      case 'wallet':
-        return 'محفظة';
-      case 'mixed':
-      case 'multi':
-        return 'مختلط';
-      default:
-        return method;
-    }
-  }
+  static String mapPaymentMethodLabel(String method) =>
+      pv.mapPaymentMethodLabel(method);
 
   /// Map sale type codes to human-readable Arabic labels (with platform hashtags)
   static String _mapSaleTypeLabel(String saleType) {
@@ -1425,6 +1479,12 @@ class TemplatedInvoiceService {
   }
 
   /// Get the actual data value for an element type from the print parameters
+  /// تفويضٌ إلى الحساب الخالص في `domain/printing/print_values.dart`.
+  ///
+  /// كان المبدّلُ كلُّه هنا. ونَقلُه لم يكن ترتيباً: المسارُ الجديد
+  /// (`layout_version == 2`) يحتاج **نصّاً** لا ودجت، فلو نُسخ الحسابُ
+  /// هناك لافترق المطبوعان عند أوّل إصلاح. فصار مصدراً واحداً يقرؤه
+  /// المساران.
   static String _getDataValue(
     String type, {
     required String invoiceNumber,
@@ -1452,48 +1512,38 @@ class TemplatedInvoiceService {
     String? platformOrderNumber,
     double? cashAmount,
     double? bankAmount,
-  }) {
-    switch (type) {
-      case 'invoice_number': return invoiceNumber;
-      case 'order_number': return platformOrderNumber ?? orderNumber ?? invoiceNumber;
-      case 'date': return '${date.day}/${date.month}/${date.year}';
-      case 'time': return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
-      case 'customer_name': case 'customer': return customerName ?? '';
-      case 'customer_phone': return customerPhone ?? '';
-      case 'customer_address': return customerAddress ?? '';
-      case 'adhoc_customer_name': return adhocCustomerName ?? '';
-      case 'adhoc_customer_phone': return adhocCustomerPhone ?? '';
-      case 'company_name': return companyName;
-      case 'company_address': return companyAddress;
-      case 'company_phone': return companyPhone;
-      case 'company_tax_id': case 'company_tax_number': case 'tax_registration': return companyTaxId ?? '';
-      case 'payment_method': return mapPaymentMethodLabel(paymentMethod);
-      case 'sale_type': case 'invoice_type_label': return paymentMethod;
-      case 'cashier_name': return cashierName ?? '';
-      case 'supplier_name': return customerName ?? '';
-      case 'notes': case 'kitchen_notes': return notes ?? '';
-      case 'subtotal': return subtotal.toStringAsFixed(_docDecimals);
-      case 'discount': return discount.toStringAsFixed(_docDecimals);
-      case 'tax': case 'tax_amount': return tax.toStringAsFixed(_docDecimals);
-      case 'delivery_fee': return deliveryFee.toStringAsFixed(_docDecimals);
-      case 'total': case 'total_amount': case 'grand_total': return total.toStringAsFixed(_docDecimals);
-      case 'paid': case 'paid_amount': return paid.toStringAsFixed(_docDecimals);
-      case 'remaining': case 'change': return remaining.toStringAsFixed(_docDecimals);
-      // Fields where data is not yet passed through to the print service
-      case 'table_number':
-        return platformOrderNumber ?? adhocCustomerName ?? customerName ?? '';
-      case 'warehouse_name': case 'branch_name': case 'delivery_type':
-      case 'delivery_address': case 'courier_name': case 'waiter_name':
-      // استردادُ مرتجع المبيعات — نقداً وبنكياً. كانا يُرجعان `''` دائماً.
-      case 'cash_amount':
-        return cashAmount == null ? '' : cashAmount.toStringAsFixed(_docDecimals);
-      case 'bank_amount':
-        return bankAmount == null ? '' : bankAmount.toStringAsFixed(_docDecimals);
-      case 'click_amount':
-        return '';
-      default: return '';
-    }
-  }
+  }) =>
+      pv.resolveContentValue(
+        type,
+        pv.PrintPayload(
+          invoiceNumber: invoiceNumber,
+          date: date,
+          customerName: customerName,
+          customerPhone: customerPhone,
+          customerAddress: customerAddress,
+          adhocCustomerName: adhocCustomerName,
+          adhocCustomerPhone: adhocCustomerPhone,
+          companyName: companyName,
+          companyAddress: companyAddress,
+          companyPhone: companyPhone,
+          companyTaxId: companyTaxId,
+          paymentMethod: paymentMethod,
+          cashierName: cashierName,
+          notes: notes,
+          subtotal: subtotal,
+          discount: discount,
+          tax: tax,
+          deliveryFee: deliveryFee,
+          total: total,
+          paid: paid,
+          remaining: remaining,
+          orderNumber: orderNumber,
+          platformOrderNumber: platformOrderNumber,
+          cashAmount: cashAmount,
+          bankAmount: bankAmount,
+          decimals: _docDecimals,
+        ),
+      );
 
   static pw.Widget _buildItemsTable(
     List<Map<String, dynamic>> items,
