@@ -381,19 +381,14 @@ class TemplatedInvoiceService {
 
     // Derive lookup type from category: kitchen templates have type='kitchen'
     final InvoiceTemplateWithData? templateData;
-    if (category == 'kitchen') {
-      // Kitchen templates have type='kitchen'
-      templateData = await db.getDefaultTemplateWithData('kitchen');
-    } else {
-      templateData = await _resolveTemplate(
-        db: db,
-        type: type,
-        category: category,
-        documentType: documentType,
-        branchId: branchId,
-        locale: locale,
-      );
-    }
+    templateData = await _resolveTemplate(
+      db: db,
+      type: type,
+      category: category,
+      documentType: documentType,
+      branchId: branchId,
+      locale: locale,
+    );
 
     if (templateData == null) {
       throw Exception('لا يوجد قالب افتراضي - سيتم استخدام التصميم الافتراضي');
@@ -699,6 +694,15 @@ class TemplatedInvoiceService {
         // المطبوعَ معها.
         debugPrint('[TemplatedInvoice] resolve failed, falling back: $e');
       }
+    }
+    // ── السقوطُ الافتراضيّ ────────────────────────────────────────────
+    //
+    // والمطبخُ يُفهرَس **بالنوع وحدَه**: قوالبُه تحمل `type='kitchen'` وقد
+    // تحمل أيَّ فئة — ملفُّ `kitchen_professional.json` بلا
+    // `templateCategory` أصلاً فيُستورد فئتُه `receipt`. فالبحثُ بالفئة
+    // يُفلته، وهذا هو سببُ الاستثناء لا تفضيلٌ له.
+    if (category == 'kitchen') {
+      return db.getDefaultTemplateWithData('kitchen');
     }
     return db.getDefaultTemplateWithDataByCategory(type, category);
   }

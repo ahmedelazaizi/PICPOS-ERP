@@ -198,6 +198,7 @@ class InvoiceGenerator {
             notes: notes, // ADDED: Pass notes to template engine
             type: 'a4',
             category: 'invoice',
+            documentType: 'sales_invoice',
           );
           return;
         } catch (e) {
@@ -294,6 +295,7 @@ class InvoiceGenerator {
             bankAmount: bankRefund,
             type: 'thermal',
             category: 'sales_return',
+            documentType: 'sales_return',
             directPrint: true,
           );
           return;
@@ -374,6 +376,8 @@ class InvoiceGenerator {
             companyTaxId: null,
             type: 'a4',
             category: category,
+            documentType:
+                isReturn ? 'purchase_return' : 'purchase_invoice',
           );
           return;
         } catch (e) {
@@ -444,6 +448,7 @@ class InvoiceGenerator {
             companyTaxId: null,
             type: 'kitchen',
             category: 'kitchen',
+            documentType: 'kitchen_order',
             notes: orderNotes,  // RESTORED: User still wants general cart notes on kitchen receipt
             adhocCustomerName: null,
             adhocCustomerPhone: null,

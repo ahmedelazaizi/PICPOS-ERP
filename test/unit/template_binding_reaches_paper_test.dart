@@ -119,6 +119,45 @@ void main() {
         reason: 'الفكُّ لم يُعِد الحسم — رابطةٌ ميّتةٌ تبقى تحكم الورق');
   });
 
+  group('المطبخ — كان يتخطّى السلسلةَ كلَّها', () {
+    // كان النداءُ يتفرّع قبل الحسم: `category == 'kitchen'` ⇒
+    // `getDefaultTemplateWithData('kitchen')` مباشرةً. فأمرُ المطبخ لا يعرف
+    // رابطةً ولا فرعاً ولا طابعة، ومطعمٌ بمحطّتَي تحضيرٍ لا يستطيع أن يعطي
+    // كلَّ محطّةٍ قالبَها.
+    test('بلا رابطةٍ يحسم كما كان — بالنوع لا بالفئة', () async {
+      // ⚠️ والفهرسةُ بالنوع وحدَه ليست تفضيلاً: ملفُّ
+      // `kitchen_professional.json` بلا `templateCategory` فيُستورد فئتُه
+      // `receipt`. فالبحثُ بـ(kitchen, kitchen) يُفلته.
+      await db.seedDefaultTemplates();
+      final t = (await db.getAllTemplates())
+          .firstWhere((t) => t.type == 'kitchen');
+
+      final probe = probePdf(await _render(db, t, documentType: 'kitchen_order'));
+      expect(probe.allTexts, isNotEmpty,
+          reason: 'أمرُ المطبخ لم يجد قالبَه بعد إدخاله السلسلة');
+    });
+
+    test('ورابطةٌ تُحوّله إلى قالبٍ آخر', () async {
+      await db.seedDefaultTemplates();
+      final seeded = (await db.getAllTemplates())
+          .firstWhere((t) => t.type == 'kitchen');
+      final other = await _import(db, 'kitchen_professional.json');
+
+      final before =
+          probePdf(await _render(db, seeded, documentType: 'kitchen_order'));
+
+      await db.activateBinding(
+          templateId: other, documentType: 'kitchen_order');
+
+      final after =
+          probePdf(await _render(db, seeded, documentType: 'kitchen_order'));
+
+      expect(after.fingerprint(), isNot(equals(before.fingerprint())),
+          reason: 'رابطةُ المطبخ لا تصل الورقةَ — الفرعُ ما زال يتخطّى '
+              'السلسلة');
+    });
+  });
+
   test('ضابط: حسمٌ منهارٌ لا يُسقِط المطبوع', () async {
     // نوعُ مستندٍ لا تعرفه السلسلةُ — يجب أن يسقط إلى الافتراضيّ لا أن
     // يرمي. فاتورةٌ لا تُطبع أسوأُ من فاتورةٍ بقالبٍ عامّ.

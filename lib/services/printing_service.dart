@@ -179,6 +179,7 @@ class PrintingServiceImpl implements IPrintingService {
             paymentMethod: printData.paymentMethod,
             directPrint: true,
             category: 'receipt',
+            documentType: 'sales_receipt',
             cashierName: printData.cashierName,
             notes: printData.notes,
             adhocCustomerName: printData.adhocCustomerName,
