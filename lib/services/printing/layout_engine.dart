@@ -18,6 +18,7 @@
 /// مثلَ [TemplateDocument] تماماً — وهذا ما يجعله قابلاً للاختبار بلا واجهة.
 library;
 
+import '../../domain/printing/condition_evaluator.dart';
 import '../../domain/printing/template_document.dart';
 
 /// خليّةٌ واحدةٌ في صفِّ جدولٍ — بموضعها النهائيِّ وعرضها.
@@ -208,31 +209,6 @@ class LayoutEngine {
       cursorY = flowTop;
     }
 
-    void emitBandElements(TemplateBand band, double bandTop) {
-      final page = drafts.last;
-      for (final el in band.elements) {
-        if (!el.visible) continue;
-        page.elements.add(
-          PositionedElement(
-            id: el.id,
-            contentKey: el.contentKey,
-            band: band.id,
-            xMm: startX + el.xMm,
-            yMm: bandTop + el.yMm,
-            wMm: el.wMm,
-            hMm: el.hMm,
-            text: values[el.contentKey] ?? '',
-            labelAr: el.labelAr,
-            labelEn: el.labelEn,
-            fontSize: el.fontSize,
-            bold: el.bold,
-            align: el.align,
-            colorHex: el.colorHex,
-          ),
-        );
-      }
-    }
-
     for (final band in flowBands) {
       if (band.growsWithData && document.table != null) {
         cursorY = _layoutDetails(
@@ -254,7 +230,7 @@ class LayoutEngine {
       if (cursorY + band.heightMm > flowBottom && drafts.last.contentBottomMm > flowTop) {
         breakPage();
       }
-      emitBandElements(band, cursorY);
+      drafts.last.elements.addAll(_placeBand(band, cursorY, startX, values));
       cursorY += band.heightMm;
       drafts.last.contentBottomMm = cursorY;
     }
@@ -295,6 +271,8 @@ class LayoutEngine {
     return List.unmodifiable(pages);
   }
 
+  /// **مسارُ الانبعاث الوحيد.** كلُّ عنصرٍ يخرج من هنا — فقاعدةُ الإظهار
+  /// تُطبَّق مرّةً واحدةً ولا يوجد مسارٌ ثانٍ ينساها.
   static List<PositionedElement> _placeBand(
     TemplateBand band,
     double bandTop,
@@ -303,7 +281,7 @@ class LayoutEngine {
   ) =>
       [
         for (final el in band.elements)
-          if (el.visible)
+          if (_shows(el, values))
             PositionedElement(
               id: el.id,
               contentKey: el.contentKey,
@@ -321,6 +299,24 @@ class LayoutEngine {
               colorHex: el.colorHex,
             ),
       ];
+
+  /// هل يُطبع هذا العنصر؟ ثلاثةُ حواجزَ بالترتيب.
+  static bool _shows(TemplateElement el, Map<String, String> values) {
+    // ١ · أطفأه المستخدمُ في المحرّر.
+    if (!el.visible) return false;
+
+    // ٢ · شرطُ الإظهار. والغموضُ يُظهِر — انظر `condition_evaluator`.
+    if (!evaluateCondition(el.condition, values)) return false;
+
+    // ٣ · التسميةُ المعلَّقة: حقلٌ بقيمةٍ فارغةٍ لا يُطبع ولو كانت له تسمية.
+    //     «الكاشير:» بلا اسمٍ يجعل القارئَ يظنّ البيانَ ناقصاً لا الحقلَ
+    //     غيرَ مفعَّل — وهو عطبٌ مرصودٌ على ورقٍ حقيقيّ (2026-08-11).
+    //
+    //     والنصُّ الثابتُ (`contentKey` فارغ) يُستثنى: هو نفسُه القيمة،
+    //     وخلطُه بالحقلِ الفارغ يمحو تذييلَ كلِّ إيصال.
+    if (el.contentKey.isEmpty) return true;
+    return (values[el.contentKey] ?? '').isNotEmpty;
+  }
 
   /// يوزّع صفوفَ الجدول على الصفحات ويُرجع موضعَ المؤشِّر بعدَ آخر صفّ.
   ///

@@ -75,16 +75,21 @@ List<List<String>> _rows(int n) => List.generate(
       (i) => ['صنف ${i + 1}', '1', '10.00'],
     );
 
+/// قيمُ العناصر — بدونها يسقط العنصرُ بقاعدة «لا تسميةَ معلَّقة».
+const _values = {'company_name': 'شركة الاختبار', 'total_amount': '420.00'};
+
 void main() {
   test('٤٢ صنفاً تنقسم على صفحتين', () {
-    final pages = LayoutEngine.paginate(document: _doc(), rows: _rows(42));
+    final pages = LayoutEngine.paginate(
+        document: _doc(), rows: _rows(42), values: _values);
     expect(pages, hasLength(2));
     expect(pages.first.pageCount, 2, reason: 'كلُّ صفحةٍ تعرف العدَّ الكلّيّ');
     expect(pages.last.pageNumber, 2);
   });
 
   test('كلُّ صفٍّ يظهر مرّةً واحدةً وبترتيبه الأصليّ', () {
-    final pages = LayoutEngine.paginate(document: _doc(), rows: _rows(42));
+    final pages = LayoutEngine.paginate(
+        document: _doc(), rows: _rows(42), values: _values);
 
     final indices = <int>[
       for (final p in pages)
@@ -97,7 +102,8 @@ void main() {
   });
 
   test('المجاميعُ تقع بعدَ قاع آخر صفٍّ لا فوقَه', () {
-    final pages = LayoutEngine.paginate(document: _doc(), rows: _rows(42));
+    final pages = LayoutEngine.paginate(
+        document: _doc(), rows: _rows(42), values: _values);
     final last = pages.last;
 
     final lastRow = last.tables.expand((t) => t.rows).last;
@@ -116,8 +122,10 @@ void main() {
 
   test('خمسةُ أصنافٍ تبقى في صفحةٍ واحدةٍ والمجاميعُ ترتفع معها', () {
     // الضابط: لو كان موضعُ المجاميع ثابتاً لما تحرّك بتغيّر عدد الصفوف.
-    final few = LayoutEngine.paginate(document: _doc(), rows: _rows(5));
-    final many = LayoutEngine.paginate(document: _doc(), rows: _rows(20));
+    final few = LayoutEngine.paginate(
+        document: _doc(), rows: _rows(5), values: _values);
+    final many = LayoutEngine.paginate(
+        document: _doc(), rows: _rows(20), values: _values);
 
     expect(few, hasLength(1));
 

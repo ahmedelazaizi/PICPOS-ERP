@@ -46,7 +46,14 @@ void main() {
       ],
     );
 
-    final pages = LayoutEngine.paginate(document: doc, rows: const []);
+    final pages = LayoutEngine.paginate(
+      document: doc,
+      rows: const [],
+      values: const {
+        'company_name': 'شركة الاختبار',
+        'invoice_number': 'INV-1040',
+      },
+    );
 
     expect(pages, hasLength(1), reason: 'نطاقان صغيران على ورقة A4 = صفحةٌ واحدة');
 

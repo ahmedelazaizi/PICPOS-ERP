@@ -69,9 +69,13 @@ TemplateDocument _doc({bool repeatHeader = true}) => TemplateDocument(
 List<List<String>> _rows(int n) =>
     List.generate(n, (i) => ['صنف ${i + 1}', '1', '10.00']);
 
+/// قيمُ العناصر — بدونها يسقط العنصرُ بقاعدة «لا تسميةَ معلَّقة».
+const _values = {'company_name': 'شركة الاختبار', 'page_number': '1'};
+
 void main() {
   test('الرأسُ والتذييلُ يظهران على كلِّ صفحةٍ من الصفحتين', () {
-    final pages = LayoutEngine.paginate(document: _doc(), rows: _rows(42));
+    final pages = LayoutEngine.paginate(
+        document: _doc(), rows: _rows(42), values: _values);
     expect(pages.length, greaterThan(1), reason: 'الضابط: بلا صفحتين لا معنى للتكرار');
 
     for (final p in pages) {
@@ -89,7 +93,8 @@ void main() {
   });
 
   test('التذييلُ مثبَّتٌ في قاع الصفحة لا يتدفّق مع المحتوى', () {
-    final pages = LayoutEngine.paginate(document: _doc(), rows: _rows(42));
+    final pages = LayoutEngine.paginate(
+        document: _doc(), rows: _rows(42), values: _values);
 
     // قاعُ الورقة ٢٩٧ − هامشٌ ١٠ − ارتفاعُ النطاق ١٥ = ٢٧٢، والعنصرُ عندها +٢.
     for (final p in pages) {
@@ -101,7 +106,8 @@ void main() {
   });
 
   test('الرأسُ مثبَّتٌ في قمّة كلِّ صفحة', () {
-    final pages = LayoutEngine.paginate(document: _doc(), rows: _rows(42));
+    final pages = LayoutEngine.paginate(
+        document: _doc(), rows: _rows(42), values: _values);
     for (final p in pages) {
       final h = p.elements.firstWhere((e) => e.id == 'company_name');
       expect(h.yMm, 14.0, reason: 'هامشٌ ١٠ + إزاحةٌ ٤');
@@ -109,7 +115,8 @@ void main() {
   });
 
   test('رؤوسُ الأعمدة تُعاد على كلِّ شريحةٍ حين repeatHeader', () {
-    final pages = LayoutEngine.paginate(document: _doc(), rows: _rows(42));
+    final pages = LayoutEngine.paginate(
+        document: _doc(), rows: _rows(42), values: _values);
     for (final p in pages) {
       for (final t in p.tables) {
         expect(t.headerCells, isNotEmpty,
@@ -124,6 +131,7 @@ void main() {
     final pages = LayoutEngine.paginate(
       document: _doc(repeatHeader: false),
       rows: _rows(42),
+      values: _values,
     );
 
     final slices = [for (final p in pages) ...p.tables];
