@@ -339,7 +339,14 @@ Future<String?> _compareGolden(File file, String actual) async {
     // ‏«غائبٌ ⇒ اكتبه وانجح» ثقبٌ: حذفُ المجلّد يُفرِغ السويّةَ من معناها.
     return 'لا ملفَّ ذهبيّ (${file.path}) — شغّل `--update-goldens` وانظر إليه';
   }
-  final expected = await file.readAsString();
+  // ⚠️ تسويةُ نهايات السطور قبل المقارنة — لا رفاهيةَ فيها.
+  //
+  // ‏`core.autocrlf = true` في هذا المستودع: الملفُّ يُحفظ LF ويُخرَج CRLF.
+  // فالبصمةُ تُكتب هنا بـLF وتُقرأ من القرص بـCRLF، وكلُّ ملفٍّ ذهبيٍّ
+  // يختلف عند السطر الأوّل في أوّل استنساخٍ جديد. مقيسٌ: حوّلتُ ملفاً واحداً
+  // إلى CRLF فسقط الاختبارُ فوراً.
+  final expected = _normalize(await file.readAsString());
+  actual = _normalize(actual);
   if (expected == actual) return null;
 
   final e = expected.split('\n');
@@ -355,6 +362,9 @@ Future<String?> _compareGolden(File file, String actual) async {
   }
   return 'فرقٌ في الطول: ${e.length} → ${a.length}';
 }
+
+/// تسويةُ نهايات السطور — انظر شرحَ `_compareGolden`.
+String _normalize(String s) => s.replaceAll('\r\n', '\n');
 
 /// اسمُ ملفٍّ مقروءٌ بالعين — العربيةُ تبقى كما هي (‏Git وWindows يحملانها)،
 /// وكلُّ ما ليس حرفاً ولا رقماً يصير شرطةً سفليّة.
