@@ -32,6 +32,14 @@ class LegacyElement {
   final String? fontColor;
   final String? condition;
 
+  /// مُعرِّفُ الصفِّ الذي جاء منه — يعود به [TemplateElement.id].
+  ///
+  /// تحتاجه **الهجرة** وحدَها: تشتقّ المواضعَ بهذا المُخطِّط ثمّ تكتبها
+  /// في الصفوف، فلا بدّ أن تعرف أيُّ صفٍّ يقابل أيَّ عنصرٍ محسوب. وبدونه
+  /// كان لا بدّ من نسخِ حلقةِ الرصّ في الهجرة — نسخةٌ تنحرف عن الأصل عند
+  /// أوّل تعديل، فتُهاجَر القوالبُ إلى تخطيطٍ يخالف ما كان يُطبع.
+  final String? sourceId;
+
   const LegacyElement({
     required this.elementType,
     this.content,
@@ -46,6 +54,7 @@ class LegacyElement {
     this.textAlign = 'center',
     this.fontColor,
     this.condition,
+    this.sourceId,
   });
 }
 
@@ -186,7 +195,7 @@ class TemplateMapper {
 
       placed.add(
         TemplateElement(
-          id: '${id.name}_${seq++}',
+          id: el.sourceId ?? '${id.name}_${seq++}',
           contentKey: contentKeyFor(el),
           xMm: rowX,
           yMm: y,

@@ -455,14 +455,23 @@ class TemplateRenderPipeline {
         return '${index + 1}';
       case 'name':
       case 'product':
-        return item['name'] as String? ?? '';
+        // الملاحظةُ تلحق الاسمَ كما في المسار القديم. وإسقاطُها ليس تفصيلاً
+        // تجميليّاً: «بدون ثلج» و«زيادة صوص» تعليماتُ تحضيرٍ يقرؤها المطبخُ
+        // من الورقة — وقياسُ الهجرة أظهر ضياعَها في **كلِّ** قالبٍ فيه جدول.
+        final name = item['name'] as String? ?? '';
+        final note = (item['note'] as String?)?.trim() ?? '';
+        return note.isEmpty ? name : '$name\n$note';
       case 'code':
       case 'barcode':
         return item['code'] as String? ?? '';
       case 'quantity':
-        // الكميّةُ الصحيحةُ بلا كسرٍ — «٢» لا «٢٫٠٠».
-        final q = num0('quantity');
-        return q == q.roundToDouble() ? '${q.toInt()}' : fmt(q);
+        // ⚠️ بمنازل العمود لا بالاختصار إلى صحيح.
+        //
+        // كان هنا «الكميّةُ الصحيحةُ تُكتب ٢ لا ٢٫٠٠» — وهو تحسينٌ معقولٌ في
+        // ذاته، لكنّ المسارَ القديم يكتب `2.00`. فكان كلُّ قالبٍ فيه جدولٌ
+        // يخرج بعد الهجرة بكميّاتٍ مختلفةِ الشكل عمّا اعتاده المالك. وقاعدةُ
+        // الهجرة: **يطبع بعدها نفسَ ما كان يطبعه**، لا ما نراه أجمل.
+        return fmt(num0('quantity'));
       case 'price':
         return fmt(num0('price'));
       case 'discount':
