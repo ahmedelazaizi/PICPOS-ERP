@@ -53,8 +53,16 @@ class PdfPainter {
             page.widthMm * _mmToPt,
             page.heightMm * _mmToPt,
           ),
+          // صفحةٌ بلا اتّجاهٍ صريحٍ تُرسم LTR، فلا تُشكَّل العربيةُ ولا يُعاد
+          // ترتيبُها: «صبري» ⇒ «يربص».
+          //
+          // والمواضعُ لا تنقلب بهذا: `pw.Positioned` تأخذ `left` مطلقاً من
+          // حافّة اليسار، فلا ازدواجَ مع القلب الذي وقع في `planPage`.
+          textDirection: direction == PaintDirection.rtl
+              ? pw.TextDirection.rtl
+              : pw.TextDirection.ltr,
           build: (_) => pw.Stack(
-            children: [for (final op in ops) _positioned(op)],
+            children: [for (final op in ops) _positioned(op, direction)],
           ),
         ),
       );
@@ -64,17 +72,18 @@ class PdfPainter {
     return doc.save();
   }
 
-  static pw.Widget _positioned(PaintOp op) => pw.Positioned(
+  static pw.Widget _positioned(PaintOp op, PaintDirection dir) =>
+      pw.Positioned(
         left: op.leftMm * _mmToPt,
         top: op.topMm * _mmToPt,
         child: pw.SizedBox(
           width: op.widthMm * _mmToPt,
           height: op.heightMm * _mmToPt,
-          child: _content(op),
+          child: _content(op, dir),
         ),
       );
 
-  static pw.Widget _content(PaintOp op) {
+  static pw.Widget _content(PaintOp op, PaintDirection dir) {
     final style = pw.TextStyle(
       fontSize: op.fontSize,
       fontWeight: op.bold ? pw.FontWeight.bold : pw.FontWeight.normal,
@@ -85,21 +94,22 @@ class PdfPainter {
     if (op.subText.isNotEmpty) {
       return pw.Column(
         mainAxisAlignment: pw.MainAxisAlignment.center,
-        crossAxisAlignment: _crossAlign(op.align),
+        crossAxisAlignment: _crossAlign(op.align, dir),
         children: [
-          pw.Text(op.text, style: style, textAlign: _textAlign(op.align)),
+          pw.Text(op.text, style: style, textAlign: _textAlign(op.align, dir)),
           pw.Text(
             op.subText,
             style: style.copyWith(fontSize: op.fontSize * 0.8),
-            textAlign: _textAlign(op.align),
+            textAlign: _textAlign(op.align, dir),
           ),
         ],
       );
     }
 
     return pw.Align(
-      alignment: _alignment(op.align),
-      child: pw.Text(op.text, style: style, textAlign: _textAlign(op.align)),
+      alignment: _alignment(op.align, dir),
+      child:
+          pw.Text(op.text, style: style, textAlign: _textAlign(op.align, dir)),
     );
   }
 
@@ -111,36 +121,49 @@ class PdfPainter {
     return v == null ? null : PdfColor.fromInt(0xFF000000 | v);
   }
 
-  static pw.Alignment _alignment(TextAlignSpec a) {
+  // ── «البداية» و«النهاية» تُحسمان بالاتّجاه لا بافتراضٍ مكتوب ─────────────
+  // تثبيتُهما على RTL يجعل قالباً إنجليزيّاً يحاذي من الجهة الخطأ بلا شكوى —
+  // والراسمُ يستقبل الاتّجاهَ أصلاً، فتثبيتُه إهدارٌ لمعلومةٍ في اليد.
+  static bool _startIsRight(PaintDirection d) => d == PaintDirection.rtl;
+
+  static pw.Alignment _alignment(TextAlignSpec a, PaintDirection d) {
     switch (a) {
       case TextAlignSpec.start:
-        return pw.Alignment.centerRight;
+        return _startIsRight(d)
+            ? pw.Alignment.centerRight
+            : pw.Alignment.centerLeft;
       case TextAlignSpec.center:
         return pw.Alignment.center;
       case TextAlignSpec.end:
-        return pw.Alignment.centerLeft;
+        return _startIsRight(d)
+            ? pw.Alignment.centerLeft
+            : pw.Alignment.centerRight;
     }
   }
 
-  static pw.CrossAxisAlignment _crossAlign(TextAlignSpec a) {
+  static pw.CrossAxisAlignment _crossAlign(TextAlignSpec a, PaintDirection d) {
     switch (a) {
       case TextAlignSpec.start:
-        return pw.CrossAxisAlignment.end;
+        return _startIsRight(d)
+            ? pw.CrossAxisAlignment.end
+            : pw.CrossAxisAlignment.start;
       case TextAlignSpec.center:
         return pw.CrossAxisAlignment.center;
       case TextAlignSpec.end:
-        return pw.CrossAxisAlignment.start;
+        return _startIsRight(d)
+            ? pw.CrossAxisAlignment.start
+            : pw.CrossAxisAlignment.end;
     }
   }
 
-  static pw.TextAlign _textAlign(TextAlignSpec a) {
+  static pw.TextAlign _textAlign(TextAlignSpec a, PaintDirection d) {
     switch (a) {
       case TextAlignSpec.start:
-        return pw.TextAlign.right;
+        return _startIsRight(d) ? pw.TextAlign.right : pw.TextAlign.left;
       case TextAlignSpec.center:
         return pw.TextAlign.center;
       case TextAlignSpec.end:
-        return pw.TextAlign.left;
+        return _startIsRight(d) ? pw.TextAlign.left : pw.TextAlign.right;
     }
   }
 }

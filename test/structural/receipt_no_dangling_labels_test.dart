@@ -24,8 +24,9 @@ void main() {
   final src = File(_servicePath).readAsStringSync();
 
   test('ملفُّ الطابعة الحيّة موجود', () {
-    // §٦-٥: `template_based_printer.dart` **لا يناديه شيء**. أيُّ إصلاحٍ
-    // يُكتب هناك لا يصل إلى ورقة. الحيُّ هو هذا.
+    // §٦-٥: كان في المشروع `template_based_printer.dart` لا يناديه شيء،
+    // فأيُّ إصلاحٍ يُكتب هناك لا يصل إلى ورقة. **حُذف** بعد إحصاءِ رمزَيه
+    // (`TemplatePrintRenderer` و`_ColDef`) بصفرِ مستدعٍ خارجيّ. الحيُّ هو هذا.
     expect(File(_servicePath).existsSync(), isTrue);
   });
 
