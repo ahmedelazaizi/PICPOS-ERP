@@ -12,13 +12,19 @@
 /// قالبَها الافتراضيَّ لحظةَ الترقية — فيبقى ذيلاً للسلسلة لا بديلاً عنها.
 ///
 /// نقيّ: لا `package:pdf` ولا `package:flutter` ولا قاعدةَ بيانات — الـDAO
-/// يملأ [TemplateBinding] ويناديه.
+/// يملأ [BindingRule] ويناديه.
 library;
 
 /// رابطةٌ واحدةٌ بين مستندٍ وقالب.
 ///
 /// `null` في أيِّ حقلِ نطاقٍ يعني «أيّاً كان» — وهو ما يجعل الرابطةَ أعمَّ.
-class TemplateBinding {
+/// **الاسمُ `BindingRule` لا `TemplateBinding`** عمداً: الأخيرُ اسمُ صفِّ
+/// الصفِّ الذي يولّده drift لجدول `template_bindings`، والتصادمُ بينهما يُجبر
+/// كلَّ مستدعٍ على بادئةِ استيراد.
+///
+/// وهي **قاعدةُ حسمٍ** لا صفٌّ في قاعدة: قد تأتي من جدولٍ أو إعدادٍ أو اختبار،
+/// والمحرّكُ لا يعرف من أين — وهذا ما يُبقيه قابلاً للقياس بلا قاعدة.
+class BindingRule {
   final int templateId;
 
   /// `sales_invoice` · `sales_return` · `purchase_invoice` · …
@@ -39,7 +45,7 @@ class TemplateBinding {
   /// يفصل عند تساوي الخصوصيّة — الأعلى يفوز.
   final int priority;
 
-  const TemplateBinding({
+  const BindingRule({
     required this.templateId,
     required this.documentType,
     this.branchId,
@@ -118,7 +124,7 @@ class TemplateResolver {
   static TemplateResolution resolve({
     required String documentType,
     required String category,
-    required List<TemplateBinding> bindings,
+    required List<BindingRule> bindings,
     int? branchId,
     int? printerId,
     String? locale,
@@ -164,7 +170,7 @@ class TemplateResolver {
   }
 
   static bool _matchesLevel(
-    TemplateBinding b,
+    BindingRule b,
     int level, {
     int? branchId,
     int? printerId,
@@ -196,9 +202,9 @@ class TemplateResolver {
   }
 
   /// الرابطاتُ التي يُلغيها تفعيلُ [incoming] — تُذكر في الإشعار صراحةً.
-  static List<TemplateBinding> conflictsWith(
-    TemplateBinding incoming,
-    List<TemplateBinding> existing,
+  static List<BindingRule> conflictsWith(
+    BindingRule incoming,
+    List<BindingRule> existing,
   ) =>
       existing
           .where((b) =>

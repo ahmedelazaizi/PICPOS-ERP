@@ -17,14 +17,14 @@ import 'package:ural_erp/services/printing/template_resolver.dart';
 
 const _doc = 'sales_invoice';
 
-TemplateBinding _b(
+BindingRule _b(
   int templateId, {
   String documentType = _doc,
   int? branchId,
   int? printerId,
   String? locale,
 }) =>
-    TemplateBinding(
+    BindingRule(
       templateId: templateId,
       documentType: documentType,
       branchId: branchId,
@@ -33,7 +33,7 @@ TemplateBinding _b(
     );
 
 TemplateResolution _resolve(
-  List<TemplateBinding> bindings, {
+  List<BindingRule> bindings, {
   int? branchId = 7,
   int? printerId = 3,
   String locale = 'ar',
@@ -168,9 +168,9 @@ void main() {
   group('الأولويّةُ تفصل عند تساوي الخصوصيّة', () {
     test('الأعلى أولويّةً يفوز', () {
       final r = _resolve([
-        const TemplateBinding(
+        const BindingRule(
             templateId: 30, documentType: _doc, locale: 'ar', priority: 1),
-        const TemplateBinding(
+        const BindingRule(
             templateId: 31, documentType: _doc, locale: 'ar', priority: 9),
       ]);
       expect(r.templateId, 31);
@@ -179,7 +179,7 @@ void main() {
 
   test('الحسمُ يحمل نسخَ الطباعة والطباعةَ المباشرة من الرابطة', () {
     final r = _resolve([
-      const TemplateBinding(
+      const BindingRule(
         templateId: 40,
         documentType: _doc,
         branchId: 7,
