@@ -19,6 +19,7 @@ import '../../../data/providers/repository_providers.dart';
 import '../../../data/providers/template_library_providers.dart';
 import '../../../domain/models/picpos_template_card.dart';
 import '../../print_test_picpos/screens/print_test_picpos_screen.dart';
+import '../../template_editor_picpos/screens/template_editor_picpos_screen.dart';
 import '../../picpos_shell/picpos_content_card.dart';
 import '../../picpos_shell/picpos_empty_state.dart';
 import '../../picpos_shell/picpos_section_header.dart';
@@ -95,6 +96,19 @@ class TemplateDetailPanel extends ConsumerWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
+              // «تحرير» في عقد الأزرار §٢ — يفتح المحرّرَ على هذا القالب
+              // بتمرير `templateId`. وهو المدخلُ الأوّلُ للمحرّر.
+              FilledButton.icon(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        TemplateEditorPicposScreen(templateId: c.id),
+                  ),
+                ),
+                icon: const Icon(PhosphorIconsBold.pencilSimple, size: 15),
+                label: const Text('تحرير'),
+              ),
               // «طباعة تجريبية» في عقد الأزرار §٢ — تفتح المعاينةَ على هذا
               // القالب بعينه، فتُفحص حالاتُه الحدّيّةُ قبل التفعيل.
               OutlinedButton.icon(

@@ -214,9 +214,9 @@ void main() {
       await saveTemplateLayout(db,
           templateId: templateId, document: _doc());
 
-      final lean = TemplateDocument(
-        paper: const PaperSpec(widthMm: 210, heightMm: 297, margins: _margins),
-        bands: const [
+      const lean = TemplateDocument(
+        paper: PaperSpec(widthMm: 210, heightMm: 297, margins: _margins),
+        bands: [
           TemplateBand(id: BandId.header, heightMm: 30, elements: [
             TemplateElement(
                 id: 'h1', contentKey: 'company_name',
