@@ -356,6 +356,15 @@ class TemplatedInvoiceService {
     /// محرّرُ القوالب. `null` لكلّ مطبوعٍ آخر.
     ShiftClosingSnapshot? shift,
 
+    /// نوعُ المستند في سلسلة الحسم (`sales_invoice` · `sales_return` …).
+    ///
+    /// `null` يعني «لا رابطاتٍ تُستشار» فيسقط الحسمُ فوراً إلى الافتراضيِّ
+    /// القديم — وهو سلوكُ كلِّ منادٍ لم يُحدَّث بعد.
+    String? documentType,
+
+    /// فرعُ المستند — رابطةٌ مخصَّصةٌ لفرعٍ تتقدّم على العامّة.
+    int? branchId,
+
     /// تُبنى الوثيقةُ وتُعاد بايتاتُها **بلا دفعٍ إلى الطابعة**.
     ///
     /// كانت هذه الدالّةُ تبني `pw.Document` وتدفعه إلى `Printing.*` في نفس
@@ -376,9 +385,13 @@ class TemplatedInvoiceService {
       // Kitchen templates have type='kitchen'
       templateData = await db.getDefaultTemplateWithData('kitchen');
     } else {
-      templateData = await db.getDefaultTemplateWithDataByCategory(
-        type,
-        category,
+      templateData = await _resolveTemplate(
+        db: db,
+        type: type,
+        category: category,
+        documentType: documentType,
+        branchId: branchId,
+        locale: locale,
       );
     }
 
@@ -642,6 +655,51 @@ class TemplatedInvoiceService {
       category: category,
     );
     return bytes;
+  }
+
+  /// يحسم القالبَ بسلسلة الرابطات، ويسقط إلى الافتراضيِّ القديم.
+  ///
+  /// ── لماذا لا `getDefaultTemplateWithDataByCategory` وحدَها ──────────────
+  /// `isDefault` عَلَمٌ **عالميٌّ لا يعرف فرعاً ولا طابعةً ولا لغة**. وجدولُ
+  /// `TemplateBindings` والسلسلةُ السداسيّةُ شُحنا ليحلّا محلَّه — و`grep`
+  /// يقول إنّ **لا سطرَ في مسار الطباعة كان يستشيرهما**. فزرُّ «تفعيل
+  /// كافتراضي» في المكتبة كان سيكتب رابطةً لا تصل ورقةً أبداً.
+  ///
+  /// والسقوطُ مضمون: المستوى الأخيرُ في السلسلة هو عينُ الافتراضيِّ
+  /// بالفئة، فقاعدةٌ بلا رابطاتٍ تحسم كما كانت بالضبط — والبصماتُ السبعُ
+  /// والعشرون هي البرهان.
+  static Future<InvoiceTemplateWithData?> _resolveTemplate({
+    required AppDatabase db,
+    required String type,
+    required String category,
+    String? documentType,
+    int? branchId,
+    String? locale,
+  }) async {
+    if (documentType != null) {
+      try {
+        final r = await db.resolveTemplateFor(
+          documentType: documentType,
+          category: category,
+          branchId: branchId,
+          locale: locale,
+          paperType: type,
+        );
+        if (r.templateId != null) {
+          final data = await db.getTemplateWithData(r.templateId!);
+          if (data != null) {
+            unawaited(DiagnosticLogger.log(DiagnosticLogger.printOut,
+                'resolve level=${r.level} template=${r.templateId}'));
+            return data;
+          }
+        }
+      } catch (e) {
+        // حسمٌ منهارٌ يعني فاتورةً لا تُطبع. فالسلسلةُ تسقط ولا تُسقِط
+        // المطبوعَ معها.
+        debugPrint('[TemplatedInvoice] resolve failed, falling back: $e');
+      }
+    }
+    return db.getDefaultTemplateWithDataByCategory(type, category);
   }
 
   /// الدفعُ إلى الطابعة — موضعٌ واحدٌ يخدم نسختَي التخطيط.
