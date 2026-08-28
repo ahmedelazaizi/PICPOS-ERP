@@ -158,9 +158,13 @@ class TemplateResolver {
   /// نوعٍ يُوصَل غداً يُحمِّر الحارسَ حتى يُضاف هنا — وأيُّ نوعٍ يُفقد توصيلُه
   /// كذلك. وبلا هذا تبقى الشاشةُ تقول «بانتظار التوصيل» عن مسارٍ صار يعمل.
   ///
-  /// و`report` و`party_statement` و`quotation` خارجَه اليوم: الأوّلان يُطبعان
-  /// من `report_pdf_generator.dart` الذي لا يمرّ على منظومة القوالب أصلاً
-  /// (‏انظر `EXTENSION-SPEC.md`)، والثالثُ بلا مسارِ طباعةٍ بعد.
+  /// و`report` و`quotation` خارجَه اليوم: الأوّلُ يُطبع من `report_pdf_generator.dart`
+  /// بعشرين دالّةٍ ثابتةٍ لا تمرّ على منظومة القوالب (‏`EXTENSION-SPEC.md` §١)،
+  /// والثاني بلا مسارِ طباعةٍ بعد.
+  ///
+  /// و`party_statement` **دخل** بامتداد §٣: `InvoiceGenerator.printPartyStatement`
+  /// يبني [PartyStatementSnapshot] ويمرّ بالقوالب، ويسقط إلى المولّد الثابت
+  /// حين لا قالبَ محسوماً.
   static const wiredDocumentTypes = <String>{
     'sales_invoice',
     'sales_return',
@@ -169,6 +173,7 @@ class TemplateResolver {
     'sales_receipt',
     'kitchen_order',
     'shift_closing',
+    'party_statement',
   };
 
   /// الزوجُ `(type, category)` الذي يمرّره منادي كلِّ نوع.

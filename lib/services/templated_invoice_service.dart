@@ -11,6 +11,7 @@ import '../core/utils/template_json_flags.dart';
 import '../data/database/database.dart';
 import '../domain/entities/shift_closing_snapshot.dart';
 import '../domain/printing/print_values.dart' as pv;
+import '../domain/printing/party_statement_snapshot.dart';
 import 'printing/paint_plan.dart' show PaintDirection;
 import 'printing/template_render_pipeline.dart';
 import '../data/repositories/printers_repository_impl.dart';
@@ -356,6 +357,13 @@ class TemplatedInvoiceService {
     /// محرّرُ القوالب. `null` لكلّ مطبوعٍ آخر.
     ShiftClosingSnapshot? shift,
 
+    /// لقطةُ كشف حساب الطرف — تُمرَّر حين يكون المطبوعُ كشفاً
+    /// (`documentType: 'party_statement'`). `null` لكلّ مطبوعٍ آخر.
+    ///
+    /// ⚠️ ومُحلِّلُها يُسأل **قبل** مُحلِّل الفاتورة ويُرجع `null` لما ليس له،
+    /// فلا يخطف حقلاً — نفسُ عقد [shift].
+    PartyStatementSnapshot? statement,
+
     /// نوعُ المستند في سلسلة الحسم (`sales_invoice` · `sales_return` …).
     ///
     /// `null` يعني «لا رابطاتٍ تُستشار» فيسقط الحسمُ فوراً إلى الافتراضيِّ
@@ -456,6 +464,7 @@ class TemplatedInvoiceService {
         items: items,
         direction: locale == 'en' ? PaintDirection.ltr : PaintDirection.rtl,
         logoBytes: logoBytes,
+        statement: statement,
       );
       if (debugBuildOnly) return bytes;
       await _pushToPrinter(
@@ -529,6 +538,7 @@ class TemplatedInvoiceService {
         resolvedType: resolvedType,
         element: element,
         shift: shift,
+        statement: statement,
         invoiceNumber: invoiceNumber,
         date: date,
         customerName: customerName,
@@ -801,10 +811,14 @@ class TemplatedInvoiceService {
   ///
   /// [shift] — لقطةُ إقفال الوردية حين يكون المطبوعُ تقريرَ وردية. تُقرأ
   /// **قبل** جدول الفاتورة كي تُحلَّ أنواعُ `shift_*` التي يعرضها المحرر.
+  ///
+  /// [statement] — لقطةُ كشف الحساب، بنفس العقد: تُسأل قبل جدول الفاتورة
+  /// وتُرجع `null` لما ليس لها.
   static pw.Widget _buildElementContent({
     required String resolvedType,
     required InvoiceTemplateElement element,
     ShiftClosingSnapshot? shift,
+    PartyStatementSnapshot? statement,
     required String invoiceNumber,
     required DateTime date,
     String? customerName,
@@ -846,6 +860,23 @@ class TemplatedInvoiceService {
         final label = element.labelAr?.trim();
         return pw.Text(
           label == null || label.isEmpty ? shiftValue : '$label: $shiftValue',
+          style: style,
+          textAlign: align,
+        );
+      }
+    }
+
+    // وكشفُ الحساب بنفس العقد — يُسأل قبل جدول الفاتورة ويُرجع `null` لما
+    // ليس له. و`''` منه تعني «حقلي وقيمتُه فارغة» فيُطوى العنصرُ ولا يترك
+    // تسميةً معلَّقة.
+    if (statement != null) {
+      final v = pv.resolvePartyStatementValue(resolvedType, statement,
+          decimals: _docDecimals);
+      if (v != null) {
+        if (v.isEmpty) return pw.SizedBox();
+        final label = element.labelAr?.trim();
+        return pw.Text(
+          label == null || label.isEmpty ? v : '$label: $v',
           style: style,
           textAlign: align,
         );

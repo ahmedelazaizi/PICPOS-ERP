@@ -14,6 +14,8 @@
 // ولا `package:pdf` هنا ولا `package:flutter`: يحرسه
 // `test/structural/template_document_has_no_ui_deps_test.dart`.
 
+import 'party_statement_snapshot.dart';
+
 /// كلُّ ما يحتاجه حقلٌ ليُحلَّ نصّاً.
 ///
 /// حاملُ بياناتٍ خالصٌ — لا يقرأ قاعدةً ولا يبني ودجت. تبنيه طبقةُ الخدمة
@@ -269,4 +271,92 @@ String mapPaymentMethodLabel(String method) {
     default:
       return method;
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// كشفُ حساب الطرف
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// أعمدةُ جدول الحركة، بمفاتيحها كما يبنيها [PartyStatementSnapshot.rowMaps].
+///
+/// ⚠️ **مصدرٌ واحدٌ للاثنين**: مفتاحٌ في الصفوف بلا عمودٍ هنا يختفي من الورقة،
+/// وعمودٌ هنا بلا مفتاحٍ هناك يخرج فارغاً — وكلاهما صامت.
+const ledgerColumnKeys = <String>[
+  'date',
+  'document',
+  'description',
+  'debit',
+  'credit',
+  'balance',
+];
+
+/// قيمةُ حقلٍ من لقطة كشف الحساب — **و`null` تعني «هذا النوع ليس لي»**.
+///
+/// ── ولماذا `null` لا `''` ─────────────────────────────────────────────────
+/// نفسُ عقد `resolveShiftValue` بحرفه: `''` تعني «حقلي وقيمتُه فارغة»
+/// فيُسقَط العنصرُ من الورقة، و`null` تعني «ليس حقلي» فيُسأل مُحلِّلُ الفاتورة
+/// بعدي. ولو أرجعتُ `''` في `default` لخطفتُ **كلَّ** حقول الفاتورة فخرج
+/// كشفُ الحساب بلا اسم شركةٍ ولا تاريخ.
+///
+/// و[decimals] منازلُ المستند — تُحسم مرّةً كي لا يفترق الإجماليُّ عن الجدول
+/// في نفس الورقة.
+String? resolvePartyStatementValue(
+  String type,
+  PartyStatementSnapshot s, {
+  int decimals = 2,
+}) {
+  String n(double v) => v.toStringAsFixed(decimals);
+  String d(DateTime v) => '${v.day}/${v.month}/${v.year}';
+
+  switch (type) {
+    case 'party_name':
+      return s.partyName;
+    case 'party_code':
+      return s.partyCode;
+    case 'party_tax_number':
+      return s.partyTaxNumber ?? '';
+    case 'period_from':
+      return d(s.periodFrom);
+    case 'period_to':
+      return d(s.periodTo);
+    case 'credit_limit':
+      return n(s.creditLimit);
+    case 'opening_balance':
+      return n(s.openingBalance);
+    case 'total_debit':
+      return n(s.totalDebit);
+    case 'total_credit':
+      return n(s.totalCredit);
+    case 'closing_balance':
+      return n(s.closingBalance);
+
+    // ⚠️ حقلانِ متبادلان: المتأخّراتُ للعميل، والأوراقُ القائمةُ للمورد.
+    //    و`null` للطرف الآخر تعني «ليس حقلي» فيُحذف العنصرُ من الورقة بدل
+    //    أن يطبع «متأخرات: 0.00» على كشف مورد.
+    case 'overdue_amount':
+      return s.isSupplier ? null : n(s.overdueAmount);
+    case 'outstanding_papers':
+      return s.isSupplier ? n(s.outstandingPapers) : null;
+
+    case 'ageing_buckets':
+      return formatAgeingBuckets(s.ageingBuckets, decimals: decimals);
+
+    // تسميةُ الطرف تنقلب بنوعه — كشفُ مورّدٍ لا يقول «العميل».
+    case 'party_role':
+      return s.isSupplier ? 'مورد' : 'عميل';
+
+    default:
+      // ← الحرفُ المهمّ: لا يخطف أنواعَ الفاتورة.
+      return null;
+  }
+}
+
+/// «٠-٣٠: ١٢٣٫٠٠ · ٣١-٦٠: ٤٥٫٠٠» — سطرٌ واحد.
+///
+/// وفارغةٌ تُرجع `''` لا «لا يوجد»: العنصرُ بلا قيمةٍ لا يُطبع أصلاً.
+String formatAgeingBuckets(Map<String, double> buckets, {int decimals = 2}) {
+  if (buckets.isEmpty) return '';
+  return buckets.entries
+      .map((e) => '${e.key}: ${e.value.toStringAsFixed(decimals)}')
+      .join(' · ');
 }

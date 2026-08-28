@@ -26,6 +26,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import '../../data/database/database.dart';
+import '../../domain/printing/party_statement_snapshot.dart';
 import '../../domain/printing/print_values.dart';
 import '../../domain/printing/template_document.dart';
 import '../../domain/printing/template_mapper.dart';
@@ -52,6 +53,9 @@ class TemplateRenderPipeline {
     required List<Map<String, dynamic>> items,
     PaintDirection direction = PaintDirection.rtl,
     Uint8List? logoBytes,
+
+    /// لقطةُ كشف الحساب حين يكون المطبوعُ كشفاً — تُسأل قبل مُحلِّل الفاتورة.
+    PartyStatementSnapshot? statement,
   }) async {
     final document = buildDocument(
       template: template,
@@ -62,7 +66,7 @@ class TemplateRenderPipeline {
     final pages = LayoutEngine.paginate(
       document: document,
       rows: buildRows(items, document.table, payload.decimals),
-      values: buildValues(document, payload),
+      values: buildValues(document, payload, statement: statement),
     );
 
     return PdfPainter.paint(
@@ -267,7 +271,7 @@ class TemplateRenderPipeline {
   static TableSpec? buildTable(InvoiceTableSetting? s, PaperSpec paper) {
     final kind = _kindOf(s?.tableKind);
 
-    final columns = _columnsFrom(s);
+    final columns = _columnsFrom(s, kind);
     if (columns.isEmpty) return null;
 
     // العناوينُ الثنائيّةُ تُطفأ على الورق الضيّق — لا مكانَ لسطرين في ٥٨مم.
@@ -308,9 +312,17 @@ class TemplateRenderPipeline {
     }
   }
 
-  static List<TableColumn> _columnsFrom(InvoiceTableSetting? s) {
+  static List<TableColumn> _columnsFrom(
+      InvoiceTableSetting? s, TableKind kind) {
     final custom = _columnsFromJson(s?.columnsJson);
     if (custom != null) return custom;
+
+    // ⚠️ **جدولُ الحركة أعمدتُه غيرُ أعمدة الفاتورة**: أعلامُ `show*` تصف بنودَ
+    //    فاتورةٍ (صنف · كميّة · سعر)، وكشفُ الحساب يحتاج (تاريخ · مستند ·
+    //    بيان · مدين · دائن · رصيد). فقالبُ كشفٍ مبذورٌ بلا `columnsJson` كان
+    //    يرث أعمدةَ الفاتورة فيخرج جدولُه **فارغاً بالكامل** — ستّةُ أعمدةٍ
+    //    لا يقابل أيٌّ منها مفتاحاً في صفوف الحركة.
+    if (kind == TableKind.ledger) return _ledgerColumns(s);
 
     // ترتيبُ القراءة (‏من حافّة البداية) — مقيسٌ من الورق لا مفترَض.
     return [
@@ -358,6 +370,55 @@ class TemplateRenderPipeline {
           flex: 1.5,
           visible: s?.showTotal ?? true),
     ];
+  }
+
+  /// أعمدةُ جدول الحركة — بمفاتيح [ledgerColumnKeys] نفسِها.
+  ///
+  /// والعرضُ النسبيُّ يُقرأ من `columnWidths` حين يحمله القالبُ المبذور،
+  /// وإلّا فبنسبٍ مقيسةٍ من ملفّ الكشف: البيانُ أعرضُها والأرقامُ متساوية.
+  static List<TableColumn> _ledgerColumns(InvoiceTableSetting? s) {
+    final widths = _ledgerWidthsFrom(s?.columnWidths);
+    double flex(String key, double fallback) => widths[key] ?? fallback;
+
+    return [
+      TableColumn(
+          key: 'date', labelAr: 'التاريخ', labelEn: 'Date',
+          flex: flex('date', 1.1), decimals: 0),
+      TableColumn(
+          key: 'document', labelAr: 'المستند', labelEn: 'Document',
+          flex: flex('document', 1.1), decimals: 0),
+      TableColumn(
+          key: 'description', labelAr: 'البيان', labelEn: 'Description',
+          flex: flex('description', 2.4), decimals: 0,
+          align: ColumnAlign.start, wrap: true),
+      TableColumn(
+          key: 'debit', labelAr: 'مدين', labelEn: 'Debit',
+          flex: flex('debit', 1.1), align: ColumnAlign.end),
+      TableColumn(
+          key: 'credit', labelAr: 'دائن', labelEn: 'Credit',
+          flex: flex('credit', 1.1), align: ColumnAlign.end),
+      TableColumn(
+          key: 'balance', labelAr: 'الرصيد', labelEn: 'Balance',
+          flex: flex('balance', 1.2), align: ColumnAlign.end),
+    ];
+  }
+
+  /// `columnWidths` نصٌّ JSON قديمٌ قد يحمل مفاتيحَ خدمةٍ (`_decimalPlaces`).
+  /// وقراءتُه لا تُسقط الأعمدةَ حين يكون معطوباً — تعود إلى النسب المقيسة.
+  static Map<String, double> _ledgerWidthsFrom(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return const {};
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map) return const {};
+      final out = <String, double>{};
+      for (final key in ledgerColumnKeys) {
+        final v = decoded[key];
+        if (v is num && v > 0) out[key] = v.toDouble();
+      }
+      return out;
+    } catch (_) {
+      return const {};
+    }
   }
 
   static List<TableColumn>? _columnsFromJson(String? raw) {
@@ -412,15 +473,33 @@ class TemplateRenderPipeline {
   ///
   /// تُبنى من مفاتيح المستند لا من قائمةٍ مكتوبةٍ في الكود: مفتاحٌ جديدٌ في
   /// قالبٍ جديدٍ يُحَلّ من يومه، ولا تنمو قائمةٌ يُنسى تحديثُها.
+  /// [statement] لقطةُ كشف الحساب حين يكون المطبوعُ كشفاً — وتُسأل **أوّلاً**.
+  ///
+  /// ⚠️ والترتيبُ ليس تفصيلاً: مُحلِّلُ الكشف يُرجع `null` لكلِّ نوعٍ ليس له،
+  /// فيُسأل مُحلِّلُ الفاتورة بعدَه. ولو عُكس لخطف `resolveContentValue`
+  /// مفاتيحَ الكشف بـ`default: return ''` فخرجت الورقةُ بلا اسم طرفٍ ولا
+  /// أرصدة. نفسُ عقدِ `shift` في المسار القديم.
   static Map<String, String> buildValues(
     TemplateDocument document,
-    PrintPayload payload,
-  ) {
+    PrintPayload payload, {
+    PartyStatementSnapshot? statement,
+  }) {
     final out = <String, String>{};
     for (final band in document.bands) {
       for (final el in band.elements) {
         if (el.contentKey.isEmpty) continue;
-        out[el.contentKey] = resolveContentValue(el.contentKey, payload);
+        final key = el.contentKey;
+
+        if (statement != null) {
+          final v = resolvePartyStatementValue(key, statement,
+              decimals: payload.decimals);
+          if (v != null) {
+            out[key] = v;
+            continue;
+          }
+        }
+
+        out[key] = resolveContentValue(key, payload);
       }
     }
     return out;
