@@ -18,6 +18,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../data/providers/template_library_providers.dart';
 import '../../../domain/models/picpos_template_card.dart';
+import '../../print_test_picpos/screens/print_test_picpos_screen.dart';
 import '../../picpos_shell/picpos_content_card.dart';
 import '../../picpos_shell/picpos_empty_state.dart';
 import '../../picpos_shell/picpos_section_header.dart';
@@ -94,6 +95,18 @@ class TemplateDetailPanel extends ConsumerWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
+              // «طباعة تجريبية» في عقد الأزرار §٢ — تفتح المعاينةَ على هذا
+              // القالب بعينه، فتُفحص حالاتُه الحدّيّةُ قبل التفعيل.
+              OutlinedButton.icon(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PrintTestPicposScreen(templateId: c.id),
+                  ),
+                ),
+                icon: const Icon(PhosphorIconsBold.testTube, size: 15),
+                label: const Text('معاينة تجريبية'),
+              ),
               OutlinedButton.icon(
                 onPressed: () => _duplicate(context, ref, c),
                 icon: const Icon(PhosphorIconsBold.copy, size: 15),

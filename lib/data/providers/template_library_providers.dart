@@ -16,6 +16,7 @@ import '../../domain/printing/print_values.dart';
 import '../../services/printing/layout_engine.dart';
 import '../../services/printing/paint_plan.dart';
 import '../../services/printing/template_render_pipeline.dart';
+import '../../services/templated_invoice_service.dart';
 import '../database/database.dart';
 import 'repository_providers.dart';
 
@@ -155,7 +156,12 @@ TemplateThumbnail buildTemplateThumbnail(
   try {
     final doc = TemplateRenderPipeline.buildDocument(
       template: template,
-      orderedElements: elements,
+      // ⚠️ **مرتَّبةً كما يرتّبها الطبعُ لا كما تخرج من القاعدة**: الـDAO
+      //    يفرز بـ`sortOrder` وحدَه، و`orderElementsForPrint` تُسقط المخفيَّ
+      //    وتنقّي تكرارَ المتغيّرات فوقَ ذلك. فبدونها تعرض المصغَّرةُ عنصراً
+      //    لا يُطبع — وهو عينُ «المصغَّرةُ تفترق عن الورق» الذي بُنيت لمنعه.
+      orderedElements:
+          TemplatedInvoiceService.orderElementsForPrint(elements),
       tableSettings: settings,
     );
     final pages = LayoutEngine.paginate(
