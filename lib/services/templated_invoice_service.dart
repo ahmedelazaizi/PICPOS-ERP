@@ -312,7 +312,7 @@ class TemplatedInvoiceService {
   }
 
   /// طباعة فاتورة باستخدام القالب المخصصة (Thermal أو A4)
-  static Future<void> printWithTemplate({
+  static Future<Uint8List> printWithTemplate({
     required AppDatabase db,
     required String invoiceNumber,
     required DateTime date,
@@ -352,6 +352,18 @@ class TemplatedInvoiceService {
     /// (`type: 'shift_closing'`)، فتُحلّ بها عناصرُ `shift_*` التي يعرضها
     /// محرّرُ القوالب. `null` لكلّ مطبوعٍ آخر.
     ShiftClosingSnapshot? shift,
+
+    /// تُبنى الوثيقةُ وتُعاد بايتاتُها **بلا دفعٍ إلى الطابعة**.
+    ///
+    /// كانت هذه الدالّةُ تبني `pw.Document` وتدفعه إلى `Printing.*` في نفس
+    /// النَّفَس، فلا مِقبضَ يقيس ما يصل الورقة — ولذلك كانت حراسُ المطبوع
+    /// **بنيويةً** تقرأ المصدرَ ولا ترى ورقة. واختباراتُ التوصيف تحتاج
+    /// البايتات: ترسم القوالبَ المبذورةَ كلَّها وتُثبّت بصمتَها قبل أن
+    /// يتحرّك سطرٌ واحدٌ في الراسم.
+    ///
+    /// ولا يغيّر هذا المطبوعَ بحرف: نفسُ الوثيقةِ تُبنى في الحالتين.
+    @visibleForTesting
+    bool debugBuildOnly = false,
   }) async {
     await _initFont();
 
@@ -558,6 +570,11 @@ class TemplatedInvoiceService {
           locale == 'en' ? pw.TextDirection.ltr : pw.TextDirection.rtl,
     );
 
+    // البايتاتُ تُحسب مرّةً واحدةً ثم تُقدَّم لكلِّ مسارٍ — بدلَ استدعاء
+    // `pdf.save()` داخلَ كلِّ `onLayout`. نفسُ المخرَج، ونداءٌ واحد.
+    final bytes = await pdf.save();
+    if (debugBuildOnly) return bytes;
+
     if (directPrint) {
       // Resolve configured printer based on category
       final printersRepo = PrintersRepositoryImpl(db);
@@ -569,17 +586,18 @@ class TemplatedInvoiceService {
         debugPrint('[TemplatedInvoice] Printing ($category) to: ${resolvedPrinter.name}');
         await Printing.directPrintPdf(
           printer: resolvedPrinter,
-          onLayout: (_) => pdf.save(),
+          onLayout: (_) => bytes,
         );
       } else {
         debugPrint(
           '[TemplatedInvoice] No configured $category printer, showing print dialog',
         );
-        await Printing.layoutPdf(onLayout: (_) => pdf.save());
+        await Printing.layoutPdf(onLayout: (_) => bytes);
       }
     } else {
-      await Printing.layoutPdf(onLayout: (_) => pdf.save());
+      await Printing.layoutPdf(onLayout: (_) => bytes);
     }
+    return bytes;
   }
 
   /// بناء محتوى عنصر واحد من القالب (resolvedType تم حله بالفعل في الـ caller)
