@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import '../../data/database/database.dart' as db;
 import '../../domain/repositories/invoice_templates_repository.dart';
 
@@ -100,5 +102,70 @@ class InvoiceTemplatesRepositoryImpl implements IInvoiceTemplatesRepository {
   @override
   List<Map<String, String>> getAvailableTemplateFiles() {
     return _db.getAvailableTemplateFiles();
+  }
+
+  @override
+  Future<List<db.TemplateBinding>> getAllBindings() => _db.getAllBindings();
+
+  @override
+  Future<List<db.TemplateBinding>> getBindingsForTemplate(int templateId) =>
+      _db.getBindingsForTemplate(templateId);
+
+  @override
+  Future<List<db.TemplateBinding>> activateBinding({
+    required int templateId,
+    required String documentType,
+    int? branchId,
+    int? printerId,
+    String? locale,
+    double? printerWidthMm,
+  }) =>
+      _db.activateBinding(
+        templateId: templateId,
+        documentType: documentType,
+        branchId: branchId,
+        printerId: printerId,
+        locale: locale,
+        printerWidthMm: printerWidthMm,
+      );
+
+  @override
+  Future<int> deactivateBinding({
+    required String documentType,
+    int? branchId,
+    int? printerId,
+    String? locale,
+  }) =>
+      _db.deactivateBinding(
+        documentType: documentType,
+        branchId: branchId,
+        printerId: printerId,
+        locale: locale,
+      );
+
+  @override
+  Future<void> deleteTemplateGuarded(int templateId) =>
+      _db.deleteTemplateGuarded(templateId);
+
+  @override
+  Future<db.InvoiceTableSetting?> getTableSettings(int templateId) =>
+      _db.getTableSettings(templateId);
+
+  /// النسخُ يمرّ بالتصدير والاستيراد — لا بنسخِ صفوفٍ بيد.
+  ///
+  /// `exportTemplateToJson` و`importTemplateFromJson` يعرفان كلَّ حقلٍ في
+  /// القالب ويتطوّران معه. ونسخٌ يدويٌّ للصفوف يُنسى تحديثُه عند إضافة
+  /// عمود، فتخرج النسخةُ ناقصةً بصمت — وهي فئةُ عطبٍ لا يراها إلّا من
+  /// يقارن الورقتين.
+  ///
+  /// والمستوردُ يكتب `isDefault = false` ولا يلمس الرابطات، وهو المطلوب
+  /// بالضبط: نسخةٌ لا تخطف مستنداتِ أصلها.
+  @override
+  Future<int> duplicateTemplate(int templateId) async {
+    final json = await _db.exportTemplateToJson(templateId);
+    final decoded = jsonDecode(json) as Map<String, dynamic>;
+    final base = (decoded['name'] as String?) ?? 'نموذج';
+    decoded['name'] = '$base — نسخة';
+    return _db.importTemplateFromJson(jsonEncode(decoded));
   }
 }

@@ -25,4 +25,49 @@ abstract class IInvoiceTemplatesRepository {
   Future<int> importTemplateFromJson(String jsonString);
   Future<String> exportTemplateToJson(int templateId);
   List<Map<String, String>> getAvailableTemplateFiles();
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // المكتبةُ والرابطات
+  // ═══════════════════════════════════════════════════════════════════════
+  //
+  // شاشاتُ الطباعة تُمنع من استيراد `data/database` (حارسُ
+  // `presentation_db_import_guard`)، فكلُّ ما تحتاجه المكتبةُ يمرّ من هنا.
+
+  /// كلُّ الرابطات — تقرؤها شاشتا المكتبة والحسم.
+  Future<List<db.TemplateBinding>> getAllBindings();
+
+  /// رابطاتُ قالبٍ بعينه — يقرؤها زرُّ الحذف قبل أن يرفض.
+  Future<List<db.TemplateBinding>> getBindingsForTemplate(int templateId);
+
+  /// يُفعِّل قالباً لمفتاحٍ رباعيّ ويُرجع **ما أُلغي** من رابطات.
+  ///
+  /// القائمةُ المرجَعةُ ليست زينة: الإلغاءُ الصامتُ يجعل المستخدمَ يظنّ
+  /// قالبين مفعَّلَين. فتُعرَض في الإشعار صراحةً.
+  Future<List<db.TemplateBinding>> activateBinding({
+    required int templateId,
+    required String documentType,
+    int? branchId,
+    int? printerId,
+    String? locale,
+    double? printerWidthMm,
+  });
+
+  /// يفكّ رابطةَ مفتاحٍ ويُرجع عددَ ما حُذف.
+  Future<int> deactivateBinding({
+    required String documentType,
+    int? branchId,
+    int? printerId,
+    String? locale,
+  });
+
+  /// يحذف قالباً **ما لم يكن مربوطاً** — وإلّا رمى بعدد الرابطات.
+  Future<void> deleteTemplateGuarded(int templateId);
+
+  /// نسخةٌ كاملةٌ من قالبٍ بعناصره وإعدادات جدوله — **بلا رابطات**.
+  ///
+  /// نسخُ الرابطات يجعل النسخةَ تخطف مستنداتِ الأصل لحظةَ إنشائها.
+  Future<int> duplicateTemplate(int templateId);
+
+  /// إعداداتُ جدول قالبٍ — تقرؤها بطاقةُ المكتبة لتعدّ الأعمدة.
+  Future<db.InvoiceTableSetting?> getTableSettings(int templateId);
 }
