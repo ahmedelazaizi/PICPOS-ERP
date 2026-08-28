@@ -84,7 +84,7 @@ InvoiceTemplateElement _el({
     );
 
 /// إعداداتُ جدولٍ بأعمدةٍ مسمّاة — لازمةٌ ليظهر محرّرُ الأعمدة أصلاً.
-InvoiceTableSetting _tableSettings() => InvoiceTableSetting(
+InvoiceTableSetting _tableSettings() => const InvoiceTableSetting(
       id: 1,
       templateId: 1,
       xPosition: 0,
