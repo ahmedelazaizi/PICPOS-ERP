@@ -24,6 +24,7 @@ const _guarded = <String>[
   'lib/domain/printing/condition_evaluator.dart',
   'lib/domain/printing/template_mapper.dart',
   'lib/services/printing/layout_engine.dart',
+  'lib/services/printing/paint_plan.dart',
   'lib/services/printing/template_resolver.dart',
   'lib/services/printing/paper_compatibility.dart',
 ];
