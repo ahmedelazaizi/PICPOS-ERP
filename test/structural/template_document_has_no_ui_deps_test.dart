@@ -21,6 +21,8 @@ import 'package:flutter_test/flutter_test.dart';
 /// الملفّاتُ المحروسة — نقيّةٌ بالتعريف.
 const _guarded = <String>[
   'lib/domain/printing/template_document.dart',
+  'lib/domain/printing/condition_evaluator.dart',
+  'lib/domain/printing/template_mapper.dart',
   'lib/services/printing/layout_engine.dart',
 ];
 
