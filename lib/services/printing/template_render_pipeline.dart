@@ -145,6 +145,8 @@ class TemplateRenderPipeline {
                 align: _alignOf(e.textAlign),
                 colorHex: e.fontColor,
                 condition: e.condition,
+                structural:
+                    isStructuralElement(e.elementType, contentKeyOf(e)),
               ),
           ],
         ),

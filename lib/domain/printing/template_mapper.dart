@@ -71,6 +71,16 @@ const _totalsKeys = <String>{
 const _freeTextTypes = <String>{'text', 'footer', 'note', 'label'};
 
 /// أنواعٌ لا تحمل نصّاً — لا تسقط بقاعدة «لا تسميةَ معلَّقة».
+/// هل هذا العنصرُ شكلٌ على الورق لا حقلَ بيانات؟
+///
+/// ⚠️ **يُفحص النوعُ والمفتاحُ معاً**. المحرّرُ يخزّن كثيراً من الأشكال
+/// نوعاً عامّاً ومحتوىً خاصّاً: مربّعُ QR في القوالب المشحونة
+/// `{"type":"variable","content":"qr_code"}`، والشعارُ
+/// `{"type":"image","content":"logo"}`. ففحصُ النوع وحدَه يمسك الشعارَ
+/// ويُفلت مربّعَ QR — مقيسٌ على ملفّ الفاتورة الضريبيّة.
+bool isStructuralElement(String elementType, String contentKey) =>
+    _nonTextTypes.contains(elementType) || _nonTextTypes.contains(contentKey);
+
 const _nonTextTypes = <String>{
   'logo', 'image', 'line', 'rectangle', 'qr_code', 'barcode', 'items_table',
   'ledger_table', 'report_table', 'spacer', 'divider',
@@ -190,6 +200,7 @@ class TemplateMapper {
           align: _alignFor(el.textAlign),
           colorHex: el.fontColor,
           condition: el.condition,
+          structural: isStructuralElement(el.elementType, contentKeyFor(el)),
         ),
       );
 

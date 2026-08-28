@@ -139,6 +139,18 @@ class TemplateElement {
   /// العنصرُ الذي لا يتحقّق شرطُه **لا يُطبع ولا يترك فراغاً**.
   final String? condition;
 
+  /// شكلٌ على الورق لا حقلُ بيانات — فاصلٌ أو شعارٌ أو مربّعُ QR.
+  ///
+  /// ⚠️ **وهذا الوسمُ هو ما يُنجّيه من قاعدة «لا تسميةَ معلَّقة»**: تلك
+  /// القاعدةُ تُسقط كلَّ عنصرٍ ذي مفتاحٍ بقيمةٍ فارغة، وهي صوابٌ لحقلِ
+  /// بيانات — «الكاشير:» بلا اسمٍ يُوهم القارئَ أنّ البيانَ ناقص. لكنّ
+  /// الفاصلَ **لا قيمةَ له أصلاً**، فكان يسقط معها.
+  ///
+  /// مقيسٌ قبل هذا الوسم: قالبُ الفاتورة الضريبيّة يضع ١٤ عنصراً من ٣٠
+  /// على الورق — تسقط منه أربعةُ فواصلَ والشعارُ ومربّعُ QR. والنيّةُ
+  /// كانت مكتوبةً في `_nonTextTypes` ولم يكن يحملها شيءٌ إلى المحرّك.
+  final bool structural;
+
   const TemplateElement({
     required this.id,
     required this.contentKey,
@@ -154,6 +166,7 @@ class TemplateElement {
     this.align = TextAlignSpec.start,
     this.colorHex,
     this.condition,
+    this.structural = false,
   });
 
   TemplateElement copyWith({

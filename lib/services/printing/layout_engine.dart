@@ -314,6 +314,11 @@ class LayoutEngine {
     //
     //     والنصُّ الثابتُ (`contentKey` فارغ) يُستثنى: هو نفسُه القيمة،
     //     وخلطُه بالحقلِ الفارغ يمحو تذييلَ كلِّ إيصال.
+    //
+    //     والعنصرُ **البنيويُّ** يُستثنى كذلك: فاصلٌ أو شعارٌ أو مربّعُ QR
+    //     لا قيمةَ له أصلاً، فالقاعدةُ تُسقطه وهي تحرس شيئاً آخر. مقيسٌ:
+    //     ١٤ عنصراً من ٣٠ تصل الورقةَ بدونه.
+    if (el.structural) return true;
     if (el.contentKey.isEmpty) return true;
     return (values[el.contentKey] ?? '').isNotEmpty;
   }
