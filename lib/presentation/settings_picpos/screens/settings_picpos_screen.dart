@@ -164,6 +164,7 @@ import '../widgets/settings_blocks.dart';
 import '../widgets/settings_count.dart';
 import '../widgets/settings_nav_rail.dart';
 import '../widgets/settings_section_pane.dart';
+import '../../template_library_picpos/screens/template_library_picpos_screen.dart';
 
 // Part files — copied verbatim from lib/presentation/screens/settings/*
 // (only `part of` retargeted to this shell; see the copy-trap note above).
@@ -2127,9 +2128,22 @@ class _DeviceTiles extends ConsumerWidget {
           ),
         ),
         SettingsTile(
+          icon: PhosphorIconsBold.books,
+          title: 'مكتبة النماذج',
+          sub: 'استعراضُ قوالب الطباعة وربطُها بالمستندات',
+          meta: 'المطبوعات',
+          tint: AppColors.info,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const TemplateLibraryPicposScreen(),
+            ),
+          ),
+        ),
+        SettingsTile(
           icon: PhosphorIconsBold.paintBrush,
-          title: 'قوالب الفواتير',
-          sub: 'إدارة وتخصيص قوالب الطباعة',
+          title: 'محرّر القوالب',
+          sub: 'تعديلُ عناصر القالب وجدولِه',
           meta: 'تصميمُ المطبوعات',
           tint: AppColors.info,
           onTap: () => Navigator.push(
