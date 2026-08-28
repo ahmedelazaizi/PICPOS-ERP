@@ -24,6 +24,7 @@ import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../picpos_shell/picpos_section_header.dart';
 import '../../picpos_shell/picpos_surface.dart';
 import '../widgets/template_detail_panel.dart';
+import '../widgets/new_template_sheet.dart';
 import '../widgets/template_gallery_card.dart';
 
 /// عرضُ لوحة التفاصيل. تحتَه تُطوى اللوحةُ وتبقى الشبكةُ وحدَها — بطاقةٌ
@@ -62,6 +63,13 @@ class _TemplateLibraryPicposScreenState
       title: 'مكتبة النماذج',
       subtitle: _subtitleFor(all),
       icon: PhosphorIconsBold.books,
+      headerActions: [
+        FilledButton.icon(
+          onPressed: () => showNewTemplateSheet(context, ref),
+          icon: const Icon(PhosphorIconsBold.filePlus, size: 17),
+          label: const Text('قالب جديد'),
+        ),
+      ],
       headerSearch: TextField(
         controller: _searchCtrl,
         onChanged: (v) => ref.read(templateQueryProvider.notifier).set(v),
