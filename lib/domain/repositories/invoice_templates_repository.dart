@@ -1,4 +1,6 @@
 import '../../data/database/database.dart' as db;
+import '../printing/template_document.dart';
+import '../printing/template_save_result.dart';
 
 abstract class IInvoiceTemplatesRepository {
   Future<void> seedDefaultTemplates();
@@ -70,4 +72,31 @@ abstract class IInvoiceTemplatesRepository {
 
   /// إعداداتُ جدول قالبٍ — تقرؤها بطاقةُ المكتبة لتعدّ الأعمدة.
   Future<db.InvoiceTableSetting?> getTableSettings(int templateId);
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // المحرّر
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /// يهاجر قالباً من التدفّق إلى النطاقات — **مُعادٌ آمن**.
+  ///
+  /// يُنادى عند أوّل فتحٍ في المحرّر لا دفعةً واحدة: الترقيةُ الجماعيّةُ تلمس
+  /// قوالبَ قد لا يفتحها المستخدمُ أبداً، وأيُّ خطأٍ فيها يظهر على ورقِ عميلٍ
+  /// لا على شاشة. ويُرجع `true` حين هاجر فعلاً.
+  Future<bool> migrateTemplateLayout(int templateId);
+
+  /// يحفظ تخطيطَ القالب كلَّه في **معاملةٍ واحدةٍ مُلزَمةِ الترتيب**.
+  ///
+  /// الحذفُ وإعادةُ الكتابة داخلها: الانقطاعُ بينهما يترك قالباً بلا عناصر —
+  /// أي فاتورةً تُطبع بيضاء.
+  ///
+  /// [activateForDocumentType] غيرُ فارغٍ ⇒ تُكتب الرابطةُ في نفس المعاملة،
+  /// ويُرجَع ما أُلغي منها كي يذكره الإشعارُ صراحةً.
+  Future<TemplateSaveResult> saveTemplateLayout({
+    required int templateId,
+    required TemplateDocument document,
+    String? name,
+    String? activateForDocumentType,
+    int? activateBranchId,
+    String? activateLocale,
+  });
 }

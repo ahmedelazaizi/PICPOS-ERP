@@ -1,7 +1,11 @@
 import 'dart:convert';
 
 import '../../data/database/database.dart' as db;
+import '../../domain/printing/template_document.dart';
+import '../../domain/printing/template_save_result.dart';
 import '../../domain/repositories/invoice_templates_repository.dart';
+import '../../services/printing/template_migration.dart';
+import 'template_layout_writer.dart' as writer;
 
 class InvoiceTemplatesRepositoryImpl implements IInvoiceTemplatesRepository {
   final db.AppDatabase _db;
@@ -103,6 +107,29 @@ class InvoiceTemplatesRepositoryImpl implements IInvoiceTemplatesRepository {
   List<Map<String, String>> getAvailableTemplateFiles() {
     return _db.getAvailableTemplateFiles();
   }
+
+  @override
+  Future<bool> migrateTemplateLayout(int templateId) =>
+      TemplateMigration.migrate(_db, templateId);
+
+  @override
+  Future<TemplateSaveResult> saveTemplateLayout({
+    required int templateId,
+    required TemplateDocument document,
+    String? name,
+    String? activateForDocumentType,
+    int? activateBranchId,
+    String? activateLocale,
+  }) =>
+      writer.saveTemplateLayout(
+        _db,
+        templateId: templateId,
+        document: document,
+        name: name,
+        activateForDocumentType: activateForDocumentType,
+        activateBranchId: activateBranchId,
+        activateLocale: activateLocale,
+      );
 
   @override
   Future<List<db.TemplateBinding>> getAllBindings() => _db.getAllBindings();
