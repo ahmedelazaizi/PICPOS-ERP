@@ -85,6 +85,46 @@ class TemplateResolution {
   bool get isBuiltIn => templateId == null;
 }
 
+/// حالُ مستوىً واحدٍ في السلسلة كما رآه الحسم.
+enum ResolutionStepState {
+  /// جُرِّب وطابق — **وهو الفائز**. لا يقع إلّا مرّةً في السلسلة.
+  matched,
+
+  /// جُرِّب ولم يطابق.
+  missed,
+
+  /// لم يُجرَّب: الحسمُ توقّف عند مستوىً أخصَّ منه.
+  notTried,
+}
+
+/// مستوىً واحدٌ من سلسلة الحسم — تعرضه شاشةُ الحسم سطراً.
+class ResolutionStep {
+  /// ١..٦.
+  final int level;
+
+  /// اسمُ المستوى كما يُقرأ.
+  final String label;
+
+  /// المفتاحُ الذي جُرِّب به — `*` تعني «أيّاً كان».
+  final String key;
+
+  final ResolutionStepState state;
+
+  /// القالبُ الفائز، و`null` في كلِّ مستوىً آخرَ **وفي المستوى السادس**:
+  /// المدمجُ لا قالبَ له في القاعدة.
+  final int? templateId;
+
+  const ResolutionStep({
+    required this.level,
+    required this.label,
+    required this.key,
+    required this.state,
+    this.templateId,
+  });
+
+  bool get isWinner => state == ResolutionStepState.matched;
+}
+
 class TemplateResolver {
   const TemplateResolver._();
 
@@ -104,6 +144,32 @@ class TemplateResolver {
     'party_statement',
     'report',
   ];
+
+  /// أنواعُ المستندات التي **يمرّرها منادٍ حيٌّ اليوم**.
+  ///
+  /// ── لماذا ثابتٌ لا استنتاج ─────────────────────────────────────────────
+  /// نوعٌ معلَنٌ في [documentTypes] بلا منادٍ يمرّره هو رابطةٌ تُكتب ولا تصل
+  /// ورقةً أبداً: المستخدمُ يفعّل القالبَ، والشاشةُ تقول «مضبوط»، والمطبوعُ
+  /// يخرج من مسارٍ آخرَ لا يعرف الرابطات. فشاشةُ الحسم تحتاج أن تفرّق بين
+  /// «محسومٌ ويطبع» و«محسومٌ وينتظر توصيلاً».
+  ///
+  /// ⚠️ **ولا يُحدَّث باليد**: يقيسه
+  /// `print_callers_pass_document_type_test.dart` بمسحِ ملفّات المنادين، فأيُّ
+  /// نوعٍ يُوصَل غداً يُحمِّر الحارسَ حتى يُضاف هنا — وأيُّ نوعٍ يُفقد توصيلُه
+  /// كذلك. وبلا هذا تبقى الشاشةُ تقول «بانتظار التوصيل» عن مسارٍ صار يعمل.
+  ///
+  /// و`report` و`party_statement` و`quotation` خارجَه اليوم: الأوّلان يُطبعان
+  /// من `report_pdf_generator.dart` الذي لا يمرّ على منظومة القوالب أصلاً
+  /// (‏انظر `EXTENSION-SPEC.md`)، والثالثُ بلا مسارِ طباعةٍ بعد.
+  static const wiredDocumentTypes = <String>{
+    'sales_invoice',
+    'sales_return',
+    'purchase_invoice',
+    'purchase_return',
+    'sales_receipt',
+    'kitchen_order',
+    'shift_closing',
+  };
 
   /// خريطةُ الفئة القديمة ⇒ نوعِ المستند — تُملأ منها الرابطاتُ آليّاً عند
   /// الترقية، فينتج سلوكٌ مطابقٌ لليوم بالضبط.
@@ -199,6 +265,90 @@ class TemplateResolver {
         return b.branchId == null && b.printerId == null && b.locale == null;
     }
     return false;
+  }
+
+  /// نفسُ السلسلةِ التي يمشيها [resolve] — **بكلِّ مستوىً لا بالفائز وحدَه**.
+  ///
+  /// ── لماذا دالّةٌ ثانيةٌ لا حقلٌ في [TemplateResolution] ─────────────────
+  /// مسارُ الطباعة يريد الفائزَ ويقف؛ وبناءُ السلسلةِ كاملةً لكلِّ فاتورةٍ
+  /// عملٌ لا يُقرأ. أمّا شاشةُ الحسم فتريد **لماذا** — أيُّ مستوىً جُرّب
+  /// وأخفق قبل الفائز، وأيُّها لم يُجرَّب أصلاً.
+  ///
+  /// ⚠️ **والخطرُ أنّ تفترقا**: شاشةٌ تعرض سلسلةً غيرَ التي يمشيها الراسمُ
+  /// أسوأُ من شاشةٍ لا توجد — فهي تشرح عطباً غيرَ الواقع. لذلك يقيس
+  /// `template_resolution_chain_test.dart` أنّ فائزَ [explain] هو مستوى
+  /// [resolve] نفسُه على كلِّ تركيبة.
+  static List<ResolutionStep> explain({
+    required String documentType,
+    required String category,
+    required List<BindingRule> bindings,
+    int? branchId,
+    int? printerId,
+    String? locale,
+    int? categoryDefaultTemplateId,
+  }) {
+    final mine =
+        bindings.where((b) => b.documentType == documentType).toList();
+
+    String b(int? v) => v?.toString() ?? '*';
+    final keys = <String>[
+      '$documentType · ${b(branchId)} · ${b(printerId)} · ${locale ?? '*'}',
+      '$documentType · ${b(branchId)} · * · ${locale ?? '*'}',
+      '$documentType · * · * · ${locale ?? '*'}',
+      '$documentType · * · * · *',
+      '$category · * · * · *',
+      'built-in',
+    ];
+
+    const labels = <String>[
+      '١ · مستند + فرع + طابعة + لغة',
+      '٢ · مستند + فرع + لغة',
+      '٣ · مستند + لغة',
+      '٤ · مستند',
+      '٥ · الفئة (السلوك القائم)',
+      '٦ · التصميم المدمج في الكود',
+    ];
+
+    var winner = 0; // ١..٦ — صفرٌ يعني «لم يُحسم بعد».
+    int? winnerTemplate;
+
+    for (var level = 1; level <= 4 && winner == 0; level++) {
+      final matches = mine.where((r) => _matchesLevel(
+            r,
+            level,
+            branchId: branchId,
+            printerId: printerId,
+            locale: locale,
+          ));
+      if (matches.isEmpty) continue;
+      winner = level;
+      winnerTemplate =
+          matches.reduce((a, c) => c.priority > a.priority ? c : a).templateId;
+    }
+
+    if (winner == 0 && categoryDefaultTemplateId != null) {
+      winner = 5;
+      winnerTemplate = categoryDefaultTemplateId;
+    }
+
+    // ٦ يفوز دائماً حين يصله الدور — التصميمُ المدمجُ لا يُخفق، وقالبُه
+    // `null` عن قصدٍ لا عن فقد.
+    if (winner == 0) winner = 6;
+
+    return [
+      for (var level = 1; level <= 6; level++)
+        ResolutionStep(
+          level: level,
+          label: labels[level - 1],
+          key: keys[level - 1],
+          state: level == winner
+              ? ResolutionStepState.matched
+              : level < winner
+                  ? ResolutionStepState.missed
+                  : ResolutionStepState.notTried,
+          templateId: level == winner ? winnerTemplate : null,
+        ),
+    ];
   }
 
   /// الرابطاتُ التي يُلغيها تفعيلُ [incoming] — تُذكر في الإشعار صراحةً.

@@ -42,6 +42,26 @@ const _knownTypes = <String>{
   'report',
 };
 
+/// كلُّ نوعٍ يمرّره منادٍ، مقروءاً من المصدر.
+///
+/// ⚠️ **لا يكفي `documentType:\s*'…'`**: أحدُ المنادين يمرّر تعبيراً شرطيّاً
+/// على سطرين — `documentType:\n  isReturn ? 'purchase_return' :
+/// 'purchase_invoice',` — فالنمطُ المُلصَقُ بعلامة الاقتباس مباشرةً **لا يراه**،
+/// ويسقط نوعان من القياس بلا أن يقول شيئاً. وهو عينُ «صفرُ المطابقات = نمطٌ
+/// غلط»، إلّا أنّه هنا نقصٌ لا صفرٌ فيمرّ أهدأ.
+///
+/// فالقراءةُ على مرحلتين: قيمةُ الوسيط حتى فاصلته، ثمّ كلُّ نصٍّ حرفيٍّ فيها.
+Set<String> _typesPassedIn(String src) {
+  final out = <String>{};
+  for (final m in RegExp(r'documentType:([^,]*),', dotAll: true)
+      .allMatches(src)) {
+    for (final lit in RegExp(r"'([a-z_]+)'").allMatches(m.group(1)!)) {
+      out.add(lit.group(1)!);
+    }
+  }
+  return out;
+}
+
 void main() {
   test('كلُّ نداءٍ لـ`printWithTemplate` يمرّر `documentType`', () {
     final missing = <String>[];
@@ -73,17 +93,47 @@ void main() {
   test('وكلُّ نوعٍ مُمرَّرٍ تعرفه السلسلة', () {
     // نوعٌ مكتوبٌ بخطأٍ مطبعيٍّ يمرّ من الحارس الأوّل ويسقط الحسمَ صامتاً.
     final unknown = <String>[];
-    final re = RegExp(r"documentType:\s*'([a-z_]+)'");
 
     for (final path in _callerFiles) {
-      for (final m in re.allMatches(File(path).readAsStringSync())) {
-        final t = m.group(1)!;
+      for (final t in _typesPassedIn(File(path).readAsStringSync())) {
         if (!_knownTypes.contains(t)) unknown.add('$path → $t');
       }
     }
 
     expect(unknown, isEmpty, reason: 'أنواعٌ لا تعرفها السلسلة:\n'
         '  ${unknown.join('\n  ')}');
+  });
+
+  test('و`wiredDocumentTypes` تطابق ما يمرّره المنادون فعلاً', () {
+    // شاشةُ الحسم تقرأ هذا الثابتَ لتقول «محسومٌ وينتظر توصيلاً». وثابتٌ
+    // يُحدَّث باليد يبيت: نوعٌ يُوصَل غداً تبقى الشاشةُ تصفه منتظِراً، ونوعٌ
+    // يُفقد توصيلُه تبقى تصفه عاملاً. فيُشتقّ من المصدر لا من الذاكرة.
+    final passed = <String>{};
+    for (final path in _callerFiles) {
+      passed.addAll(_typesPassedIn(File(path).readAsStringSync()));
+    }
+
+    // ضابطٌ على القارئ نفسِه: الشرطيُّ يمرّر نوعين من موضعٍ واحد، فحضورُهما
+    // معاً هو الدليلُ أنّ القراءةَ تعبر السطر ولا تقف عند علامة الاقتباس.
+    expect(passed, containsAll(['purchase_return', 'purchase_invoice']),
+        reason: 'النوعان يُمرَّران بتعبيرٍ شرطيٍّ على سطرين — غيابُهما يعني '
+            'أنّ القارئَ عاد يقف عند علامة الاقتباس');
+
+    final src =
+        File('lib/services/printing/template_resolver.dart').readAsStringSync();
+    final block = RegExp(r'wiredDocumentTypes = <String>\{(.*?)\}', dotAll: true)
+        .firstMatch(src);
+    expect(block, isNotNull, reason: 'لم يعد للثابت وجودٌ في مصدره');
+
+    final declared = RegExp(r"'([a-z_]+)'")
+        .allMatches(block!.group(1)!)
+        .map((m) => m.group(1)!)
+        .toSet();
+
+    expect(declared, passed,
+        reason: 'ثابتُ الأنواع الموصولة انحرف عمّا يمرّره المنادون:\n'
+            '  المعلَن: ${declared.toList()..sort()}\n'
+            '  المرصود: ${passed.toList()..sort()}');
   });
 
   group('ضابط: الحارسُ يمسك ما يدّعي', () {
