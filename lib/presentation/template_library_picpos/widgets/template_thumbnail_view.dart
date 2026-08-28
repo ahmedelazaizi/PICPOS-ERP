@@ -120,6 +120,15 @@ class _ThumbPainter extends CustomPainter {
         return brand.withValues(alpha: 0.55);
       case PaintKind.tableCell:
         return muted.withValues(alpha: 0.45);
+      case PaintKind.image:
+      case PaintKind.qrCode:
+      case PaintKind.barcode:
+        // كتلةٌ صمّاءُ بلون العلامة — الشعارُ ومربّعُ QR يُقرآن بموضعهما
+        // وحجمهما في مصغَّرةٍ بهذا القياس، لا بتفصيلهما.
+        return brand.withValues(alpha: 0.35);
+      case PaintKind.line:
+      case PaintKind.rect:
+        return muted.withValues(alpha: 0.7);
       case PaintKind.text:
         if (op.bold) return ink.withValues(alpha: 0.75);
         return muted.withValues(alpha: 0.55);

@@ -38,6 +38,29 @@ enum BandId {
   bool get repeatsByDefault => this == BandId.header || this == BandId.footer;
 }
 
+/// ما هو هذا العنصرُ على الورق.
+///
+/// ── لماذا نوعٌ لا عَلَمٌ ثنائيّ ────────────────────────────────────────────
+/// كان هنا `structural` — «شكلٌ أم حقلُ بيانات؟». وكفى ذلك لقاعدةِ الإظهار،
+/// ولم يكفِ للرسم: الراسمُ يحتاج أن يعرف **أيَّ شكل**. فالشعارُ صورةٌ، ومربّعُ
+/// QR رمزٌ يُولَّد من رقم الفاتورة، والفاصلُ خطٌّ بسمك نصفِ نقطة — ولا يجمعها
+/// عَلَمٌ واحد.
+///
+/// وأثرُ غيابه مقيس: `LOGO` كان آخرَ ما يضيع من الورقة عند الهجرة، لأنّ
+/// المحرّكَ يخطّط الشعارَ ولا يملك وسيلةً لقول «ارسم صورةً هنا».
+enum ElementKind {
+  text,
+  image,
+  qrCode,
+  barcode,
+  line,
+  rect,
+  spacer;
+
+  /// شكلٌ على الورق لا حقلُ بيانات — فلا تُسقطه قاعدةُ «لا تسميةَ معلَّقة».
+  bool get isStructural => this != ElementKind.text;
+}
+
 enum TextAlignSpec { start, center, end }
 
 enum ColumnAlign { start, center, end }
@@ -149,7 +172,10 @@ class TemplateElement {
   /// مقيسٌ قبل هذا الوسم: قالبُ الفاتورة الضريبيّة يضع ١٤ عنصراً من ٣٠
   /// على الورق — تسقط منه أربعةُ فواصلَ والشعارُ ومربّعُ QR. والنيّةُ
   /// كانت مكتوبةً في `_nonTextTypes` ولم يكن يحملها شيءٌ إلى المحرّك.
-  final bool structural;
+  final ElementKind kind;
+
+  /// شكلٌ على الورق لا حقلُ بيانات — مشتقٌّ من [kind].
+  bool get structural => kind.isStructural;
 
   const TemplateElement({
     required this.id,
@@ -166,7 +192,7 @@ class TemplateElement {
     this.align = TextAlignSpec.start,
     this.colorHex,
     this.condition,
-    this.structural = false,
+    this.kind = ElementKind.text,
   });
 
   TemplateElement copyWith({
@@ -198,6 +224,8 @@ class TemplateElement {
         align: align ?? this.align,
         colorHex: colorHex ?? this.colorHex,
         condition: condition ?? this.condition,
+        // ⚠️ بدونه يفقد كلُّ نسخٍ نوعَه فيعود شعاراً نصّاً فارغاً.
+        kind: kind,
       );
 }
 

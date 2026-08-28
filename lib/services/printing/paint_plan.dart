@@ -28,6 +28,22 @@ enum PaintKind {
 
   /// خليّةُ بياناتٍ في الجدول.
   tableCell,
+
+  /// صورةٌ — الشعارُ اليوم. بايتاتُها لا تمرّ بالخطّة: الخطّةُ **حسابٌ
+  /// خالصٌ** لا يلمس ملفّاً، فتقول «صورةٌ هنا» ويأتي الراسمُ بالبكسل.
+  image,
+
+  /// مربّعُ QR — حمولتُه في [PaintOp.text].
+  qrCode,
+
+  /// شفرةٌ خطّيّة — حمولتُها في [PaintOp.text].
+  barcode,
+
+  /// خطٌّ فاصلٌ أفقيّ.
+  line,
+
+  /// مستطيلٌ محدَّد.
+  rect,
 }
 
 /// عمليّةُ رسمٍ واحدة — بإحداثيٍّ **نهائيٍّ من حافّة اليسار** بالمليمتر.
@@ -70,6 +86,25 @@ class PaintOp {
   });
 }
 
+/// نوعُ العنصر ⇒ نوعُ عمليّة الرسم.
+PaintKind _kindOf(ElementKind k) {
+  switch (k) {
+    case ElementKind.image:
+      return PaintKind.image;
+    case ElementKind.qrCode:
+      return PaintKind.qrCode;
+    case ElementKind.barcode:
+      return PaintKind.barcode;
+    case ElementKind.line:
+      return PaintKind.line;
+    case ElementKind.rect:
+      return PaintKind.rect;
+    case ElementKind.text:
+    case ElementKind.spacer:
+      return PaintKind.text;
+  }
+}
+
 /// يحوّل صفحةً مخطَّطةً إلى عمليّاتِ رسمٍ بإحداثيّاتٍ من اليسار.
 ///
 /// هذه الدالّةُ **هي** العقدُ بين المعاينة والورق. أيُّ راسمٍ يحسب موضعاً
@@ -109,10 +144,12 @@ List<PaintOp> planPage(
           : startMm;
 
   for (final el in page.elements) {
+    // الفراغُ لا يُرسم ولا يُنشئ عمليّة — يحجز مكانَه في التخطيط وكفى.
+    if (el.kind == ElementKind.spacer) continue;
     ops.add(
       PaintOp(
         id: el.id,
-        kind: PaintKind.text,
+        kind: _kindOf(el.kind),
         leftMm: left(el.xMm, el.wMm),
         topMm: el.yMm,
         widthMm: el.wMm,

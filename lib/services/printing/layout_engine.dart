@@ -113,6 +113,9 @@ class PositionedElement {
   final TextAlignSpec align;
   final String? colorHex;
 
+  /// ما يُرسم: نصٌّ أم صورةٌ أم خطٌّ… — يحتاجه الراسمُ ليختار.
+  final ElementKind kind;
+
   const PositionedElement({
     required this.id,
     required this.contentKey,
@@ -128,6 +131,7 @@ class PositionedElement {
     this.bold = false,
     this.align = TextAlignSpec.start,
     this.colorHex,
+    this.kind = ElementKind.text,
   });
 }
 
@@ -297,6 +301,7 @@ class LayoutEngine {
               bold: el.bold,
               align: el.align,
               colorHex: el.colorHex,
+              kind: el.kind,
             ),
       ];
 

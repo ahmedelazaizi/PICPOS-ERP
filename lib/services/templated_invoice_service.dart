@@ -460,6 +460,7 @@ class TemplatedInvoiceService {
         ),
         items: items,
         direction: locale == 'en' ? PaintDirection.ltr : PaintDirection.rtl,
+        logoBytes: logoBytes,
       );
       if (debugBuildOnly) return bytes;
       await _pushToPrinter(

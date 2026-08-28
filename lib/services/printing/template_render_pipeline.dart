@@ -51,6 +51,7 @@ class TemplateRenderPipeline {
     required PrintPayload payload,
     required List<Map<String, dynamic>> items,
     PaintDirection direction = PaintDirection.rtl,
+    Uint8List? logoBytes,
   }) async {
     final document = buildDocument(
       template: template,
@@ -64,7 +65,11 @@ class TemplateRenderPipeline {
       values: buildValues(document, payload),
     );
 
-    return PdfPainter.paint(pages: pages, direction: direction);
+    return PdfPainter.paint(
+      pages: pages,
+      direction: direction,
+      logoBytes: logoBytes,
+    );
   }
 
   // ═════════════════════════════════════════════════════════════════════════
@@ -145,8 +150,7 @@ class TemplateRenderPipeline {
                 align: _alignOf(e.textAlign),
                 colorHex: e.fontColor,
                 condition: e.condition,
-                structural:
-                    isStructuralElement(e.elementType, contentKeyOf(e)),
+                kind: elementKindFor(e.elementType, contentKeyOf(e)),
               ),
           ],
         ),

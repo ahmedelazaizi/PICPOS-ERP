@@ -88,7 +88,42 @@ const _freeTextTypes = <String>{'text', 'footer', 'note', 'label'};
 /// `{"type":"image","content":"logo"}`. ففحصُ النوع وحدَه يمسك الشعارَ
 /// ويُفلت مربّعَ QR — مقيسٌ على ملفّ الفاتورة الضريبيّة.
 bool isStructuralElement(String elementType, String contentKey) =>
-    _nonTextTypes.contains(elementType) || _nonTextTypes.contains(contentKey);
+    elementKindFor(elementType, contentKey).isStructural;
+
+/// نوعُ العنصر على الورق — من نوعه المخزَّن أو من مفتاحه.
+///
+/// ⚠️ **يُفحص الاثنان**. المحرّرُ يخزّن كثيراً من الأشكال نوعاً عامّاً
+/// ومحتوىً خاصّاً: مربّعُ QR `{"type":"variable","content":"qr_code"}`،
+/// والشعارُ `{"type":"image","content":"logo"}`. ففحصُ النوع وحدَه يمسك
+/// الشعارَ ويُفلت مربّعَ QR — مقيسٌ على ملفّ الفاتورة الضريبيّة.
+ElementKind elementKindFor(String elementType, String contentKey) {
+  for (final key in [elementType, contentKey]) {
+    switch (key) {
+      case 'logo':
+      case 'image':
+        return ElementKind.image;
+      case 'qr_code':
+        return ElementKind.qrCode;
+      case 'barcode':
+      case 'barcode_image':
+        return ElementKind.barcode;
+      case 'line':
+      case 'divider':
+        return ElementKind.line;
+      case 'rectangle':
+        return ElementKind.rect;
+      case 'spacer':
+        return ElementKind.spacer;
+      case 'items_table':
+      case 'ledger_table':
+      case 'report_table':
+        // الجدولُ يرسمه النطاقُ لا العنصر — يبقى بنيويّاً كي يحجز مكانَه
+        // ولا تُسقطه قاعدةُ الفراغ.
+        return ElementKind.spacer;
+    }
+  }
+  return ElementKind.text;
+}
 
 const _nonTextTypes = <String>{
   'logo', 'image', 'line', 'rectangle', 'qr_code', 'barcode', 'items_table',
@@ -209,7 +244,7 @@ class TemplateMapper {
           align: _alignFor(el.textAlign),
           colorHex: el.fontColor,
           condition: el.condition,
-          structural: isStructuralElement(el.elementType, contentKeyFor(el)),
+          kind: elementKindFor(el.elementType, contentKeyFor(el)),
         ),
       );
 

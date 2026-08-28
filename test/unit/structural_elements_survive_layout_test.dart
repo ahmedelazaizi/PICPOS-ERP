@@ -123,7 +123,7 @@ void main() {
           yMm: 0,
           wMm: 40,
           hMm: 1,
-          structural: true,
+          kind: ElementKind.line,
         ),
       ]);
 
@@ -144,7 +144,7 @@ void main() {
           yMm: 0,
           wMm: 40,
           hMm: 1,
-          structural: true,
+          kind: ElementKind.line,
           condition: 'discount > 0',
         ),
       ]);
