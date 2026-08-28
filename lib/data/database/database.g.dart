@@ -57495,6 +57495,18 @@ class $InvoiceTemplatesTable extends InvoiceTemplates
     ),
     defaultValue: const Constant(true),
   );
+  static const VerificationMeta _layoutVersionMeta = const VerificationMeta(
+    'layoutVersion',
+  );
+  @override
+  late final GeneratedColumn<int> layoutVersion = GeneratedColumn<int>(
+    'layout_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -57533,6 +57545,7 @@ class $InvoiceTemplatesTable extends InvoiceTemplates
     defaultFont,
     defaultFontSize,
     isActive,
+    layoutVersion,
     createdAt,
     updatedAt,
   ];
@@ -57631,6 +57644,15 @@ class $InvoiceTemplatesTable extends InvoiceTemplates
         isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta),
       );
     }
+    if (data.containsKey('layout_version')) {
+      context.handle(
+        _layoutVersionMeta,
+        layoutVersion.isAcceptableOrUnknown(
+          data['layout_version']!,
+          _layoutVersionMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -57700,6 +57722,10 @@ class $InvoiceTemplatesTable extends InvoiceTemplates
         DriftSqlType.bool,
         data['${effectivePrefix}is_active'],
       )!,
+      layoutVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}layout_version'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -57730,6 +57756,14 @@ class InvoiceTemplate extends DataClass implements Insertable<InvoiceTemplate> {
   final String defaultFont;
   final double defaultFontSize;
   final bool isActive;
+
+  /// ١ = تدفّق (‏`sortOrder` + `flexWidth`) · ٢ = نطاقاتٌ بإحداثيّات.
+  ///
+  /// الراسمُ يقرأ هذا العمودَ ويسلك المسارَ المناسب، **فالقوالبُ غيرُ
+  /// المهاجَرة تعمل كما هي بلا أيِّ تغيير**. والهجرةُ كسولةٌ عند أوّل فتحٍ في
+  /// المحرّر لا دفعةً واحدة: الترقيةُ الجماعيّةُ تلمس قوالبَ قد لا يفتحها
+  /// المستخدمُ أبداً، وأيُّ خطأٍ فيها يظهر على ورقِ عميلٍ لا على شاشة.
+  final int layoutVersion;
   final DateTime createdAt;
   final DateTime updatedAt;
   const InvoiceTemplate({
@@ -57745,6 +57779,7 @@ class InvoiceTemplate extends DataClass implements Insertable<InvoiceTemplate> {
     required this.defaultFont,
     required this.defaultFontSize,
     required this.isActive,
+    required this.layoutVersion,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -57765,6 +57800,7 @@ class InvoiceTemplate extends DataClass implements Insertable<InvoiceTemplate> {
     map['default_font'] = Variable<String>(defaultFont);
     map['default_font_size'] = Variable<double>(defaultFontSize);
     map['is_active'] = Variable<bool>(isActive);
+    map['layout_version'] = Variable<int>(layoutVersion);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -57786,6 +57822,7 @@ class InvoiceTemplate extends DataClass implements Insertable<InvoiceTemplate> {
       defaultFont: Value(defaultFont),
       defaultFontSize: Value(defaultFontSize),
       isActive: Value(isActive),
+      layoutVersion: Value(layoutVersion),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -57809,6 +57846,7 @@ class InvoiceTemplate extends DataClass implements Insertable<InvoiceTemplate> {
       defaultFont: serializer.fromJson<String>(json['defaultFont']),
       defaultFontSize: serializer.fromJson<double>(json['defaultFontSize']),
       isActive: serializer.fromJson<bool>(json['isActive']),
+      layoutVersion: serializer.fromJson<int>(json['layoutVersion']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -57829,6 +57867,7 @@ class InvoiceTemplate extends DataClass implements Insertable<InvoiceTemplate> {
       'defaultFont': serializer.toJson<String>(defaultFont),
       'defaultFontSize': serializer.toJson<double>(defaultFontSize),
       'isActive': serializer.toJson<bool>(isActive),
+      'layoutVersion': serializer.toJson<int>(layoutVersion),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -57847,6 +57886,7 @@ class InvoiceTemplate extends DataClass implements Insertable<InvoiceTemplate> {
     String? defaultFont,
     double? defaultFontSize,
     bool? isActive,
+    int? layoutVersion,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => InvoiceTemplate(
@@ -57862,6 +57902,7 @@ class InvoiceTemplate extends DataClass implements Insertable<InvoiceTemplate> {
     defaultFont: defaultFont ?? this.defaultFont,
     defaultFontSize: defaultFontSize ?? this.defaultFontSize,
     isActive: isActive ?? this.isActive,
+    layoutVersion: layoutVersion ?? this.layoutVersion,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -57889,6 +57930,9 @@ class InvoiceTemplate extends DataClass implements Insertable<InvoiceTemplate> {
           ? data.defaultFontSize.value
           : this.defaultFontSize,
       isActive: data.isActive.present ? data.isActive.value : this.isActive,
+      layoutVersion: data.layoutVersion.present
+          ? data.layoutVersion.value
+          : this.layoutVersion,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -57909,6 +57953,7 @@ class InvoiceTemplate extends DataClass implements Insertable<InvoiceTemplate> {
           ..write('defaultFont: $defaultFont, ')
           ..write('defaultFontSize: $defaultFontSize, ')
           ..write('isActive: $isActive, ')
+          ..write('layoutVersion: $layoutVersion, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -57929,6 +57974,7 @@ class InvoiceTemplate extends DataClass implements Insertable<InvoiceTemplate> {
     defaultFont,
     defaultFontSize,
     isActive,
+    layoutVersion,
     createdAt,
     updatedAt,
   );
@@ -57948,6 +57994,7 @@ class InvoiceTemplate extends DataClass implements Insertable<InvoiceTemplate> {
           other.defaultFont == this.defaultFont &&
           other.defaultFontSize == this.defaultFontSize &&
           other.isActive == this.isActive &&
+          other.layoutVersion == this.layoutVersion &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -57965,6 +58012,7 @@ class InvoiceTemplatesCompanion extends UpdateCompanion<InvoiceTemplate> {
   final Value<String> defaultFont;
   final Value<double> defaultFontSize;
   final Value<bool> isActive;
+  final Value<int> layoutVersion;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   const InvoiceTemplatesCompanion({
@@ -57980,6 +58028,7 @@ class InvoiceTemplatesCompanion extends UpdateCompanion<InvoiceTemplate> {
     this.defaultFont = const Value.absent(),
     this.defaultFontSize = const Value.absent(),
     this.isActive = const Value.absent(),
+    this.layoutVersion = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
   });
@@ -57996,6 +58045,7 @@ class InvoiceTemplatesCompanion extends UpdateCompanion<InvoiceTemplate> {
     this.defaultFont = const Value.absent(),
     this.defaultFontSize = const Value.absent(),
     this.isActive = const Value.absent(),
+    this.layoutVersion = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
   }) : name = Value(name);
@@ -58012,6 +58062,7 @@ class InvoiceTemplatesCompanion extends UpdateCompanion<InvoiceTemplate> {
     Expression<String>? defaultFont,
     Expression<double>? defaultFontSize,
     Expression<bool>? isActive,
+    Expression<int>? layoutVersion,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
   }) {
@@ -58028,6 +58079,7 @@ class InvoiceTemplatesCompanion extends UpdateCompanion<InvoiceTemplate> {
       if (defaultFont != null) 'default_font': defaultFont,
       if (defaultFontSize != null) 'default_font_size': defaultFontSize,
       if (isActive != null) 'is_active': isActive,
+      if (layoutVersion != null) 'layout_version': layoutVersion,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
     });
@@ -58046,6 +58098,7 @@ class InvoiceTemplatesCompanion extends UpdateCompanion<InvoiceTemplate> {
     Value<String>? defaultFont,
     Value<double>? defaultFontSize,
     Value<bool>? isActive,
+    Value<int>? layoutVersion,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
   }) {
@@ -58062,6 +58115,7 @@ class InvoiceTemplatesCompanion extends UpdateCompanion<InvoiceTemplate> {
       defaultFont: defaultFont ?? this.defaultFont,
       defaultFontSize: defaultFontSize ?? this.defaultFontSize,
       isActive: isActive ?? this.isActive,
+      layoutVersion: layoutVersion ?? this.layoutVersion,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -58106,6 +58160,9 @@ class InvoiceTemplatesCompanion extends UpdateCompanion<InvoiceTemplate> {
     if (isActive.present) {
       map['is_active'] = Variable<bool>(isActive.value);
     }
+    if (layoutVersion.present) {
+      map['layout_version'] = Variable<int>(layoutVersion.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -58130,6 +58187,7 @@ class InvoiceTemplatesCompanion extends UpdateCompanion<InvoiceTemplate> {
           ..write('defaultFont: $defaultFont, ')
           ..write('defaultFontSize: $defaultFontSize, ')
           ..write('isActive: $isActive, ')
+          ..write('layoutVersion: $layoutVersion, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -58452,6 +58510,62 @@ class $InvoiceTemplateElementsTable extends InvoiceTemplateElements
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _bandIdMeta = const VerificationMeta('bandId');
+  @override
+  late final GeneratedColumn<String> bandId = GeneratedColumn<String>(
+    'band_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _xMmMeta = const VerificationMeta('xMm');
+  @override
+  late final GeneratedColumn<double> xMm = GeneratedColumn<double>(
+    'x_mm',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _yMmMeta = const VerificationMeta('yMm');
+  @override
+  late final GeneratedColumn<double> yMm = GeneratedColumn<double>(
+    'y_mm',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _wMmMeta = const VerificationMeta('wMm');
+  @override
+  late final GeneratedColumn<double> wMm = GeneratedColumn<double>(
+    'w_mm',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _hMmMeta = const VerificationMeta('hMm');
+  @override
+  late final GeneratedColumn<double> hMm = GeneratedColumn<double>(
+    'h_mm',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _conditionMeta = const VerificationMeta(
+    'condition',
+  );
+  @override
+  late final GeneratedColumn<String> condition = GeneratedColumn<String>(
+    'condition',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -58480,6 +58594,12 @@ class $InvoiceTemplateElementsTable extends InvoiceTemplateElements
     extraStyles,
     section,
     formula,
+    bandId,
+    xMm,
+    yMm,
+    wMm,
+    hMm,
+    condition,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -58665,6 +58785,42 @@ class $InvoiceTemplateElementsTable extends InvoiceTemplateElements
         formula.isAcceptableOrUnknown(data['formula']!, _formulaMeta),
       );
     }
+    if (data.containsKey('band_id')) {
+      context.handle(
+        _bandIdMeta,
+        bandId.isAcceptableOrUnknown(data['band_id']!, _bandIdMeta),
+      );
+    }
+    if (data.containsKey('x_mm')) {
+      context.handle(
+        _xMmMeta,
+        xMm.isAcceptableOrUnknown(data['x_mm']!, _xMmMeta),
+      );
+    }
+    if (data.containsKey('y_mm')) {
+      context.handle(
+        _yMmMeta,
+        yMm.isAcceptableOrUnknown(data['y_mm']!, _yMmMeta),
+      );
+    }
+    if (data.containsKey('w_mm')) {
+      context.handle(
+        _wMmMeta,
+        wMm.isAcceptableOrUnknown(data['w_mm']!, _wMmMeta),
+      );
+    }
+    if (data.containsKey('h_mm')) {
+      context.handle(
+        _hMmMeta,
+        hMm.isAcceptableOrUnknown(data['h_mm']!, _hMmMeta),
+      );
+    }
+    if (data.containsKey('condition')) {
+      context.handle(
+        _conditionMeta,
+        condition.isAcceptableOrUnknown(data['condition']!, _conditionMeta),
+      );
+    }
     return context;
   }
 
@@ -58778,6 +58934,30 @@ class $InvoiceTemplateElementsTable extends InvoiceTemplateElements
         DriftSqlType.string,
         data['${effectivePrefix}formula'],
       ),
+      bandId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}band_id'],
+      ),
+      xMm: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}x_mm'],
+      ),
+      yMm: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}y_mm'],
+      ),
+      wMm: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}w_mm'],
+      ),
+      hMm: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}h_mm'],
+      ),
+      condition: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}condition'],
+      ),
     );
   }
 
@@ -58815,6 +58995,19 @@ class InvoiceTemplateElement extends DataClass
   final String? extraStyles;
   final String section;
   final String? formula;
+
+  /// header · info · party · details · totals · footer
+  final String? bandId;
+
+  /// إحداثيّاتٌ بالمليمتر من حافّة النطاق — لا بالبكسل: البكسلُ يتغيّر
+  /// بالتكبير، والمليمترُ وحدةُ الورق.
+  final double? xMm;
+  final double? yMm;
+  final double? wMm;
+  final double? hMm;
+
+  /// `field op value` — فارغٌ يعني «يظهر دائماً».
+  final String? condition;
   const InvoiceTemplateElement({
     required this.id,
     required this.templateId,
@@ -58842,6 +59035,12 @@ class InvoiceTemplateElement extends DataClass
     this.extraStyles,
     required this.section,
     this.formula,
+    this.bandId,
+    this.xMm,
+    this.yMm,
+    this.wMm,
+    this.hMm,
+    this.condition,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -58887,6 +59086,24 @@ class InvoiceTemplateElement extends DataClass
     map['section'] = Variable<String>(section);
     if (!nullToAbsent || formula != null) {
       map['formula'] = Variable<String>(formula);
+    }
+    if (!nullToAbsent || bandId != null) {
+      map['band_id'] = Variable<String>(bandId);
+    }
+    if (!nullToAbsent || xMm != null) {
+      map['x_mm'] = Variable<double>(xMm);
+    }
+    if (!nullToAbsent || yMm != null) {
+      map['y_mm'] = Variable<double>(yMm);
+    }
+    if (!nullToAbsent || wMm != null) {
+      map['w_mm'] = Variable<double>(wMm);
+    }
+    if (!nullToAbsent || hMm != null) {
+      map['h_mm'] = Variable<double>(hMm);
+    }
+    if (!nullToAbsent || condition != null) {
+      map['condition'] = Variable<String>(condition);
     }
     return map;
   }
@@ -58935,6 +59152,16 @@ class InvoiceTemplateElement extends DataClass
       formula: formula == null && nullToAbsent
           ? const Value.absent()
           : Value(formula),
+      bandId: bandId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(bandId),
+      xMm: xMm == null && nullToAbsent ? const Value.absent() : Value(xMm),
+      yMm: yMm == null && nullToAbsent ? const Value.absent() : Value(yMm),
+      wMm: wMm == null && nullToAbsent ? const Value.absent() : Value(wMm),
+      hMm: hMm == null && nullToAbsent ? const Value.absent() : Value(hMm),
+      condition: condition == null && nullToAbsent
+          ? const Value.absent()
+          : Value(condition),
     );
   }
 
@@ -58970,6 +59197,12 @@ class InvoiceTemplateElement extends DataClass
       extraStyles: serializer.fromJson<String?>(json['extraStyles']),
       section: serializer.fromJson<String>(json['section']),
       formula: serializer.fromJson<String?>(json['formula']),
+      bandId: serializer.fromJson<String?>(json['bandId']),
+      xMm: serializer.fromJson<double?>(json['xMm']),
+      yMm: serializer.fromJson<double?>(json['yMm']),
+      wMm: serializer.fromJson<double?>(json['wMm']),
+      hMm: serializer.fromJson<double?>(json['hMm']),
+      condition: serializer.fromJson<String?>(json['condition']),
     );
   }
   @override
@@ -59002,6 +59235,12 @@ class InvoiceTemplateElement extends DataClass
       'extraStyles': serializer.toJson<String?>(extraStyles),
       'section': serializer.toJson<String>(section),
       'formula': serializer.toJson<String?>(formula),
+      'bandId': serializer.toJson<String?>(bandId),
+      'xMm': serializer.toJson<double?>(xMm),
+      'yMm': serializer.toJson<double?>(yMm),
+      'wMm': serializer.toJson<double?>(wMm),
+      'hMm': serializer.toJson<double?>(hMm),
+      'condition': serializer.toJson<String?>(condition),
     };
   }
 
@@ -59032,6 +59271,12 @@ class InvoiceTemplateElement extends DataClass
     Value<String?> extraStyles = const Value.absent(),
     String? section,
     Value<String?> formula = const Value.absent(),
+    Value<String?> bandId = const Value.absent(),
+    Value<double?> xMm = const Value.absent(),
+    Value<double?> yMm = const Value.absent(),
+    Value<double?> wMm = const Value.absent(),
+    Value<double?> hMm = const Value.absent(),
+    Value<String?> condition = const Value.absent(),
   }) => InvoiceTemplateElement(
     id: id ?? this.id,
     templateId: templateId ?? this.templateId,
@@ -59061,6 +59306,12 @@ class InvoiceTemplateElement extends DataClass
     extraStyles: extraStyles.present ? extraStyles.value : this.extraStyles,
     section: section ?? this.section,
     formula: formula.present ? formula.value : this.formula,
+    bandId: bandId.present ? bandId.value : this.bandId,
+    xMm: xMm.present ? xMm.value : this.xMm,
+    yMm: yMm.present ? yMm.value : this.yMm,
+    wMm: wMm.present ? wMm.value : this.wMm,
+    hMm: hMm.present ? hMm.value : this.hMm,
+    condition: condition.present ? condition.value : this.condition,
   );
   InvoiceTemplateElement copyWithCompanion(
     InvoiceTemplateElementsCompanion data,
@@ -59106,6 +59357,12 @@ class InvoiceTemplateElement extends DataClass
           : this.extraStyles,
       section: data.section.present ? data.section.value : this.section,
       formula: data.formula.present ? data.formula.value : this.formula,
+      bandId: data.bandId.present ? data.bandId.value : this.bandId,
+      xMm: data.xMm.present ? data.xMm.value : this.xMm,
+      yMm: data.yMm.present ? data.yMm.value : this.yMm,
+      wMm: data.wMm.present ? data.wMm.value : this.wMm,
+      hMm: data.hMm.present ? data.hMm.value : this.hMm,
+      condition: data.condition.present ? data.condition.value : this.condition,
     );
   }
 
@@ -59137,7 +59394,13 @@ class InvoiceTemplateElement extends DataClass
           ..write('isVisible: $isVisible, ')
           ..write('extraStyles: $extraStyles, ')
           ..write('section: $section, ')
-          ..write('formula: $formula')
+          ..write('formula: $formula, ')
+          ..write('bandId: $bandId, ')
+          ..write('xMm: $xMm, ')
+          ..write('yMm: $yMm, ')
+          ..write('wMm: $wMm, ')
+          ..write('hMm: $hMm, ')
+          ..write('condition: $condition')
           ..write(')'))
         .toString();
   }
@@ -59170,6 +59433,12 @@ class InvoiceTemplateElement extends DataClass
     extraStyles,
     section,
     formula,
+    bandId,
+    xMm,
+    yMm,
+    wMm,
+    hMm,
+    condition,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -59200,7 +59469,13 @@ class InvoiceTemplateElement extends DataClass
           other.isVisible == this.isVisible &&
           other.extraStyles == this.extraStyles &&
           other.section == this.section &&
-          other.formula == this.formula);
+          other.formula == this.formula &&
+          other.bandId == this.bandId &&
+          other.xMm == this.xMm &&
+          other.yMm == this.yMm &&
+          other.wMm == this.wMm &&
+          other.hMm == this.hMm &&
+          other.condition == this.condition);
 }
 
 class InvoiceTemplateElementsCompanion
@@ -59231,6 +59506,12 @@ class InvoiceTemplateElementsCompanion
   final Value<String?> extraStyles;
   final Value<String> section;
   final Value<String?> formula;
+  final Value<String?> bandId;
+  final Value<double?> xMm;
+  final Value<double?> yMm;
+  final Value<double?> wMm;
+  final Value<double?> hMm;
+  final Value<String?> condition;
   const InvoiceTemplateElementsCompanion({
     this.id = const Value.absent(),
     this.templateId = const Value.absent(),
@@ -59258,6 +59539,12 @@ class InvoiceTemplateElementsCompanion
     this.extraStyles = const Value.absent(),
     this.section = const Value.absent(),
     this.formula = const Value.absent(),
+    this.bandId = const Value.absent(),
+    this.xMm = const Value.absent(),
+    this.yMm = const Value.absent(),
+    this.wMm = const Value.absent(),
+    this.hMm = const Value.absent(),
+    this.condition = const Value.absent(),
   });
   InvoiceTemplateElementsCompanion.insert({
     this.id = const Value.absent(),
@@ -59286,6 +59573,12 @@ class InvoiceTemplateElementsCompanion
     this.extraStyles = const Value.absent(),
     this.section = const Value.absent(),
     this.formula = const Value.absent(),
+    this.bandId = const Value.absent(),
+    this.xMm = const Value.absent(),
+    this.yMm = const Value.absent(),
+    this.wMm = const Value.absent(),
+    this.hMm = const Value.absent(),
+    this.condition = const Value.absent(),
   }) : templateId = Value(templateId),
        elementType = Value(elementType);
   static Insertable<InvoiceTemplateElement> custom({
@@ -59315,6 +59608,12 @@ class InvoiceTemplateElementsCompanion
     Expression<String>? extraStyles,
     Expression<String>? section,
     Expression<String>? formula,
+    Expression<String>? bandId,
+    Expression<double>? xMm,
+    Expression<double>? yMm,
+    Expression<double>? wMm,
+    Expression<double>? hMm,
+    Expression<String>? condition,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -59343,6 +59642,12 @@ class InvoiceTemplateElementsCompanion
       if (extraStyles != null) 'extra_styles': extraStyles,
       if (section != null) 'section': section,
       if (formula != null) 'formula': formula,
+      if (bandId != null) 'band_id': bandId,
+      if (xMm != null) 'x_mm': xMm,
+      if (yMm != null) 'y_mm': yMm,
+      if (wMm != null) 'w_mm': wMm,
+      if (hMm != null) 'h_mm': hMm,
+      if (condition != null) 'condition': condition,
     });
   }
 
@@ -59373,6 +59678,12 @@ class InvoiceTemplateElementsCompanion
     Value<String?>? extraStyles,
     Value<String>? section,
     Value<String?>? formula,
+    Value<String?>? bandId,
+    Value<double?>? xMm,
+    Value<double?>? yMm,
+    Value<double?>? wMm,
+    Value<double?>? hMm,
+    Value<String?>? condition,
   }) {
     return InvoiceTemplateElementsCompanion(
       id: id ?? this.id,
@@ -59401,6 +59712,12 @@ class InvoiceTemplateElementsCompanion
       extraStyles: extraStyles ?? this.extraStyles,
       section: section ?? this.section,
       formula: formula ?? this.formula,
+      bandId: bandId ?? this.bandId,
+      xMm: xMm ?? this.xMm,
+      yMm: yMm ?? this.yMm,
+      wMm: wMm ?? this.wMm,
+      hMm: hMm ?? this.hMm,
+      condition: condition ?? this.condition,
     );
   }
 
@@ -59485,6 +59802,24 @@ class InvoiceTemplateElementsCompanion
     if (formula.present) {
       map['formula'] = Variable<String>(formula.value);
     }
+    if (bandId.present) {
+      map['band_id'] = Variable<String>(bandId.value);
+    }
+    if (xMm.present) {
+      map['x_mm'] = Variable<double>(xMm.value);
+    }
+    if (yMm.present) {
+      map['y_mm'] = Variable<double>(yMm.value);
+    }
+    if (wMm.present) {
+      map['w_mm'] = Variable<double>(wMm.value);
+    }
+    if (hMm.present) {
+      map['h_mm'] = Variable<double>(hMm.value);
+    }
+    if (condition.present) {
+      map['condition'] = Variable<String>(condition.value);
+    }
     return map;
   }
 
@@ -59516,7 +59851,13 @@ class InvoiceTemplateElementsCompanion
           ..write('isVisible: $isVisible, ')
           ..write('extraStyles: $extraStyles, ')
           ..write('section: $section, ')
-          ..write('formula: $formula')
+          ..write('formula: $formula, ')
+          ..write('bandId: $bandId, ')
+          ..write('xMm: $xMm, ')
+          ..write('yMm: $yMm, ')
+          ..write('wMm: $wMm, ')
+          ..write('hMm: $hMm, ')
+          ..write('condition: $condition')
           ..write(')'))
         .toString();
   }
@@ -59859,6 +60200,29 @@ class $InvoiceTableSettingsTable extends InvoiceTableSettings
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _tableKindMeta = const VerificationMeta(
+    'tableKind',
+  );
+  @override
+  late final GeneratedColumn<String> tableKind = GeneratedColumn<String>(
+    'table_kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('items'),
+  );
+  static const VerificationMeta _columnsJsonMeta = const VerificationMeta(
+    'columnsJson',
+  );
+  @override
+  late final GeneratedColumn<String> columnsJson = GeneratedColumn<String>(
+    'columns_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -59886,6 +60250,8 @@ class $InvoiceTableSettingsTable extends InvoiceTableSettings
     altRowBgColor,
     rowHeight,
     columnWidths,
+    tableKind,
+    columnsJson,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -60087,6 +60453,21 @@ class $InvoiceTableSettingsTable extends InvoiceTableSettings
         ),
       );
     }
+    if (data.containsKey('table_kind')) {
+      context.handle(
+        _tableKindMeta,
+        tableKind.isAcceptableOrUnknown(data['table_kind']!, _tableKindMeta),
+      );
+    }
+    if (data.containsKey('columns_json')) {
+      context.handle(
+        _columnsJsonMeta,
+        columnsJson.isAcceptableOrUnknown(
+          data['columns_json']!,
+          _columnsJsonMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -60196,6 +60577,14 @@ class $InvoiceTableSettingsTable extends InvoiceTableSettings
         DriftSqlType.string,
         data['${effectivePrefix}column_widths'],
       ),
+      tableKind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}table_kind'],
+      )!,
+      columnsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}columns_json'],
+      ),
     );
   }
 
@@ -60232,6 +60621,16 @@ class InvoiceTableSetting extends DataClass
   final String? altRowBgColor;
   final double rowHeight;
   final String? columnWidths;
+
+  /// items | ledger | report — يقرّر أيَّ حمولةٍ يقرأ الرابط.
+  final String tableKind;
+
+  /// الأعمدةُ بعناوينها وعروضها ومنازلها، مسلسلةً.
+  ///
+  /// `null` تعني «استعمل أعلام `show*` القديمة» — وهو ما يُبقي كلَّ قالبٍ
+  /// قائمٍ يطبع كما كان بالضبط. وبها تحلّ عناوينُ الأعمدة محلَّ الحرفيّات
+  /// الثمانية المكتوبة في الكود، فتعمل ثنائيّةُ اللغة في رؤوس الجدول.
+  final String? columnsJson;
   const InvoiceTableSetting({
     required this.id,
     required this.templateId,
@@ -60258,6 +60657,8 @@ class InvoiceTableSetting extends DataClass
     this.altRowBgColor,
     required this.rowHeight,
     this.columnWidths,
+    required this.tableKind,
+    this.columnsJson,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -60292,6 +60693,10 @@ class InvoiceTableSetting extends DataClass
     map['row_height'] = Variable<double>(rowHeight);
     if (!nullToAbsent || columnWidths != null) {
       map['column_widths'] = Variable<String>(columnWidths);
+    }
+    map['table_kind'] = Variable<String>(tableKind);
+    if (!nullToAbsent || columnsJson != null) {
+      map['columns_json'] = Variable<String>(columnsJson);
     }
     return map;
   }
@@ -60329,6 +60734,10 @@ class InvoiceTableSetting extends DataClass
       columnWidths: columnWidths == null && nullToAbsent
           ? const Value.absent()
           : Value(columnWidths),
+      tableKind: Value(tableKind),
+      columnsJson: columnsJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(columnsJson),
     );
   }
 
@@ -60363,6 +60772,8 @@ class InvoiceTableSetting extends DataClass
       altRowBgColor: serializer.fromJson<String?>(json['altRowBgColor']),
       rowHeight: serializer.fromJson<double>(json['rowHeight']),
       columnWidths: serializer.fromJson<String?>(json['columnWidths']),
+      tableKind: serializer.fromJson<String>(json['tableKind']),
+      columnsJson: serializer.fromJson<String?>(json['columnsJson']),
     );
   }
   @override
@@ -60394,6 +60805,8 @@ class InvoiceTableSetting extends DataClass
       'altRowBgColor': serializer.toJson<String?>(altRowBgColor),
       'rowHeight': serializer.toJson<double>(rowHeight),
       'columnWidths': serializer.toJson<String?>(columnWidths),
+      'tableKind': serializer.toJson<String>(tableKind),
+      'columnsJson': serializer.toJson<String?>(columnsJson),
     };
   }
 
@@ -60423,6 +60836,8 @@ class InvoiceTableSetting extends DataClass
     Value<String?> altRowBgColor = const Value.absent(),
     double? rowHeight,
     Value<String?> columnWidths = const Value.absent(),
+    String? tableKind,
+    Value<String?> columnsJson = const Value.absent(),
   }) => InvoiceTableSetting(
     id: id ?? this.id,
     templateId: templateId ?? this.templateId,
@@ -60453,6 +60868,8 @@ class InvoiceTableSetting extends DataClass
         : this.altRowBgColor,
     rowHeight: rowHeight ?? this.rowHeight,
     columnWidths: columnWidths.present ? columnWidths.value : this.columnWidths,
+    tableKind: tableKind ?? this.tableKind,
+    columnsJson: columnsJson.present ? columnsJson.value : this.columnsJson,
   );
   InvoiceTableSetting copyWithCompanion(InvoiceTableSettingsCompanion data) {
     return InvoiceTableSetting(
@@ -60509,6 +60926,10 @@ class InvoiceTableSetting extends DataClass
       columnWidths: data.columnWidths.present
           ? data.columnWidths.value
           : this.columnWidths,
+      tableKind: data.tableKind.present ? data.tableKind.value : this.tableKind,
+      columnsJson: data.columnsJson.present
+          ? data.columnsJson.value
+          : this.columnsJson,
     );
   }
 
@@ -60539,7 +60960,9 @@ class InvoiceTableSetting extends DataClass
           ..write('rowBgColor: $rowBgColor, ')
           ..write('altRowBgColor: $altRowBgColor, ')
           ..write('rowHeight: $rowHeight, ')
-          ..write('columnWidths: $columnWidths')
+          ..write('columnWidths: $columnWidths, ')
+          ..write('tableKind: $tableKind, ')
+          ..write('columnsJson: $columnsJson')
           ..write(')'))
         .toString();
   }
@@ -60571,6 +60994,8 @@ class InvoiceTableSetting extends DataClass
     altRowBgColor,
     rowHeight,
     columnWidths,
+    tableKind,
+    columnsJson,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -60600,7 +61025,9 @@ class InvoiceTableSetting extends DataClass
           other.rowBgColor == this.rowBgColor &&
           other.altRowBgColor == this.altRowBgColor &&
           other.rowHeight == this.rowHeight &&
-          other.columnWidths == this.columnWidths);
+          other.columnWidths == this.columnWidths &&
+          other.tableKind == this.tableKind &&
+          other.columnsJson == this.columnsJson);
 }
 
 class InvoiceTableSettingsCompanion
@@ -60630,6 +61057,8 @@ class InvoiceTableSettingsCompanion
   final Value<String?> altRowBgColor;
   final Value<double> rowHeight;
   final Value<String?> columnWidths;
+  final Value<String> tableKind;
+  final Value<String?> columnsJson;
   const InvoiceTableSettingsCompanion({
     this.id = const Value.absent(),
     this.templateId = const Value.absent(),
@@ -60656,6 +61085,8 @@ class InvoiceTableSettingsCompanion
     this.altRowBgColor = const Value.absent(),
     this.rowHeight = const Value.absent(),
     this.columnWidths = const Value.absent(),
+    this.tableKind = const Value.absent(),
+    this.columnsJson = const Value.absent(),
   });
   InvoiceTableSettingsCompanion.insert({
     this.id = const Value.absent(),
@@ -60683,6 +61114,8 @@ class InvoiceTableSettingsCompanion
     this.altRowBgColor = const Value.absent(),
     this.rowHeight = const Value.absent(),
     this.columnWidths = const Value.absent(),
+    this.tableKind = const Value.absent(),
+    this.columnsJson = const Value.absent(),
   }) : templateId = Value(templateId);
   static Insertable<InvoiceTableSetting> custom({
     Expression<int>? id,
@@ -60710,6 +61143,8 @@ class InvoiceTableSettingsCompanion
     Expression<String>? altRowBgColor,
     Expression<double>? rowHeight,
     Expression<String>? columnWidths,
+    Expression<String>? tableKind,
+    Expression<String>? columnsJson,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -60737,6 +61172,8 @@ class InvoiceTableSettingsCompanion
       if (altRowBgColor != null) 'alt_row_bg_color': altRowBgColor,
       if (rowHeight != null) 'row_height': rowHeight,
       if (columnWidths != null) 'column_widths': columnWidths,
+      if (tableKind != null) 'table_kind': tableKind,
+      if (columnsJson != null) 'columns_json': columnsJson,
     });
   }
 
@@ -60766,6 +61203,8 @@ class InvoiceTableSettingsCompanion
     Value<String?>? altRowBgColor,
     Value<double>? rowHeight,
     Value<String?>? columnWidths,
+    Value<String>? tableKind,
+    Value<String?>? columnsJson,
   }) {
     return InvoiceTableSettingsCompanion(
       id: id ?? this.id,
@@ -60793,6 +61232,8 @@ class InvoiceTableSettingsCompanion
       altRowBgColor: altRowBgColor ?? this.altRowBgColor,
       rowHeight: rowHeight ?? this.rowHeight,
       columnWidths: columnWidths ?? this.columnWidths,
+      tableKind: tableKind ?? this.tableKind,
+      columnsJson: columnsJson ?? this.columnsJson,
     );
   }
 
@@ -60874,6 +61315,12 @@ class InvoiceTableSettingsCompanion
     if (columnWidths.present) {
       map['column_widths'] = Variable<String>(columnWidths.value);
     }
+    if (tableKind.present) {
+      map['table_kind'] = Variable<String>(tableKind.value);
+    }
+    if (columnsJson.present) {
+      map['columns_json'] = Variable<String>(columnsJson.value);
+    }
     return map;
   }
 
@@ -60904,7 +61351,677 @@ class InvoiceTableSettingsCompanion
           ..write('rowBgColor: $rowBgColor, ')
           ..write('altRowBgColor: $altRowBgColor, ')
           ..write('rowHeight: $rowHeight, ')
-          ..write('columnWidths: $columnWidths')
+          ..write('columnWidths: $columnWidths, ')
+          ..write('tableKind: $tableKind, ')
+          ..write('columnsJson: $columnsJson')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $TemplateBindingsTable extends TemplateBindings
+    with TableInfo<$TemplateBindingsTable, TemplateBinding> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TemplateBindingsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _documentTypeMeta = const VerificationMeta(
+    'documentType',
+  );
+  @override
+  late final GeneratedColumn<String> documentType = GeneratedColumn<String>(
+    'document_type',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(maxTextLength: 40),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _branchIdMeta = const VerificationMeta(
+    'branchId',
+  );
+  @override
+  late final GeneratedColumn<int> branchId = GeneratedColumn<int>(
+    'branch_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _printerIdMeta = const VerificationMeta(
+    'printerId',
+  );
+  @override
+  late final GeneratedColumn<int> printerId = GeneratedColumn<int>(
+    'printer_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _localeMeta = const VerificationMeta('locale');
+  @override
+  late final GeneratedColumn<String> locale = GeneratedColumn<String>(
+    'locale',
+    aliasedName,
+    true,
+    additionalChecks: GeneratedColumn.checkTextLength(maxTextLength: 10),
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _templateIdMeta = const VerificationMeta(
+    'templateId',
+  );
+  @override
+  late final GeneratedColumn<int> templateId = GeneratedColumn<int>(
+    'template_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES invoice_templates (id)',
+    ),
+  );
+  static const VerificationMeta _copiesMeta = const VerificationMeta('copies');
+  @override
+  late final GeneratedColumn<int> copies = GeneratedColumn<int>(
+    'copies',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _directPrintMeta = const VerificationMeta(
+    'directPrint',
+  );
+  @override
+  late final GeneratedColumn<bool> directPrint = GeneratedColumn<bool>(
+    'direct_print',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("direct_print" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _priorityMeta = const VerificationMeta(
+    'priority',
+  );
+  @override
+  late final GeneratedColumn<int> priority = GeneratedColumn<int>(
+    'priority',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    documentType,
+    branchId,
+    printerId,
+    locale,
+    templateId,
+    copies,
+    directPrint,
+    priority,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'template_bindings';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TemplateBinding> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('document_type')) {
+      context.handle(
+        _documentTypeMeta,
+        documentType.isAcceptableOrUnknown(
+          data['document_type']!,
+          _documentTypeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_documentTypeMeta);
+    }
+    if (data.containsKey('branch_id')) {
+      context.handle(
+        _branchIdMeta,
+        branchId.isAcceptableOrUnknown(data['branch_id']!, _branchIdMeta),
+      );
+    }
+    if (data.containsKey('printer_id')) {
+      context.handle(
+        _printerIdMeta,
+        printerId.isAcceptableOrUnknown(data['printer_id']!, _printerIdMeta),
+      );
+    }
+    if (data.containsKey('locale')) {
+      context.handle(
+        _localeMeta,
+        locale.isAcceptableOrUnknown(data['locale']!, _localeMeta),
+      );
+    }
+    if (data.containsKey('template_id')) {
+      context.handle(
+        _templateIdMeta,
+        templateId.isAcceptableOrUnknown(data['template_id']!, _templateIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_templateIdMeta);
+    }
+    if (data.containsKey('copies')) {
+      context.handle(
+        _copiesMeta,
+        copies.isAcceptableOrUnknown(data['copies']!, _copiesMeta),
+      );
+    }
+    if (data.containsKey('direct_print')) {
+      context.handle(
+        _directPrintMeta,
+        directPrint.isAcceptableOrUnknown(
+          data['direct_print']!,
+          _directPrintMeta,
+        ),
+      );
+    }
+    if (data.containsKey('priority')) {
+      context.handle(
+        _priorityMeta,
+        priority.isAcceptableOrUnknown(data['priority']!, _priorityMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  TemplateBinding map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TemplateBinding(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      documentType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}document_type'],
+      )!,
+      branchId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}branch_id'],
+      ),
+      printerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}printer_id'],
+      ),
+      locale: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}locale'],
+      ),
+      templateId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}template_id'],
+      )!,
+      copies: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}copies'],
+      )!,
+      directPrint: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}direct_print'],
+      )!,
+      priority: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}priority'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $TemplateBindingsTable createAlias(String alias) {
+    return $TemplateBindingsTable(attachedDatabase, alias);
+  }
+}
+
+class TemplateBinding extends DataClass implements Insertable<TemplateBinding> {
+  final int id;
+
+  /// sales_invoice · sales_return · purchase_invoice · purchase_return · …
+  ///
+  /// والمرتجعان فئتان قائمتان بذاتهما: بدونهما يتقاسم المرتجعُ فئةَ الفاتورة
+  /// ويستحيل أن يكون له قالبٌ افتراضيٌّ خاصّ.
+  final String documentType;
+
+  /// null = أيُّ فرع.
+  final int? branchId;
+
+  /// null = أيُّ طابعة.
+  final int? printerId;
+
+  /// null = أيُّ لغة.
+  final String? locale;
+  final int templateId;
+  final int copies;
+  final bool directPrint;
+
+  /// يفصل عند تساوي الخصوصيّة — الأعلى يفوز.
+  final int priority;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const TemplateBinding({
+    required this.id,
+    required this.documentType,
+    this.branchId,
+    this.printerId,
+    this.locale,
+    required this.templateId,
+    required this.copies,
+    required this.directPrint,
+    required this.priority,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['document_type'] = Variable<String>(documentType);
+    if (!nullToAbsent || branchId != null) {
+      map['branch_id'] = Variable<int>(branchId);
+    }
+    if (!nullToAbsent || printerId != null) {
+      map['printer_id'] = Variable<int>(printerId);
+    }
+    if (!nullToAbsent || locale != null) {
+      map['locale'] = Variable<String>(locale);
+    }
+    map['template_id'] = Variable<int>(templateId);
+    map['copies'] = Variable<int>(copies);
+    map['direct_print'] = Variable<bool>(directPrint);
+    map['priority'] = Variable<int>(priority);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  TemplateBindingsCompanion toCompanion(bool nullToAbsent) {
+    return TemplateBindingsCompanion(
+      id: Value(id),
+      documentType: Value(documentType),
+      branchId: branchId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(branchId),
+      printerId: printerId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(printerId),
+      locale: locale == null && nullToAbsent
+          ? const Value.absent()
+          : Value(locale),
+      templateId: Value(templateId),
+      copies: Value(copies),
+      directPrint: Value(directPrint),
+      priority: Value(priority),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory TemplateBinding.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TemplateBinding(
+      id: serializer.fromJson<int>(json['id']),
+      documentType: serializer.fromJson<String>(json['documentType']),
+      branchId: serializer.fromJson<int?>(json['branchId']),
+      printerId: serializer.fromJson<int?>(json['printerId']),
+      locale: serializer.fromJson<String?>(json['locale']),
+      templateId: serializer.fromJson<int>(json['templateId']),
+      copies: serializer.fromJson<int>(json['copies']),
+      directPrint: serializer.fromJson<bool>(json['directPrint']),
+      priority: serializer.fromJson<int>(json['priority']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'documentType': serializer.toJson<String>(documentType),
+      'branchId': serializer.toJson<int?>(branchId),
+      'printerId': serializer.toJson<int?>(printerId),
+      'locale': serializer.toJson<String?>(locale),
+      'templateId': serializer.toJson<int>(templateId),
+      'copies': serializer.toJson<int>(copies),
+      'directPrint': serializer.toJson<bool>(directPrint),
+      'priority': serializer.toJson<int>(priority),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  TemplateBinding copyWith({
+    int? id,
+    String? documentType,
+    Value<int?> branchId = const Value.absent(),
+    Value<int?> printerId = const Value.absent(),
+    Value<String?> locale = const Value.absent(),
+    int? templateId,
+    int? copies,
+    bool? directPrint,
+    int? priority,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => TemplateBinding(
+    id: id ?? this.id,
+    documentType: documentType ?? this.documentType,
+    branchId: branchId.present ? branchId.value : this.branchId,
+    printerId: printerId.present ? printerId.value : this.printerId,
+    locale: locale.present ? locale.value : this.locale,
+    templateId: templateId ?? this.templateId,
+    copies: copies ?? this.copies,
+    directPrint: directPrint ?? this.directPrint,
+    priority: priority ?? this.priority,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  TemplateBinding copyWithCompanion(TemplateBindingsCompanion data) {
+    return TemplateBinding(
+      id: data.id.present ? data.id.value : this.id,
+      documentType: data.documentType.present
+          ? data.documentType.value
+          : this.documentType,
+      branchId: data.branchId.present ? data.branchId.value : this.branchId,
+      printerId: data.printerId.present ? data.printerId.value : this.printerId,
+      locale: data.locale.present ? data.locale.value : this.locale,
+      templateId: data.templateId.present
+          ? data.templateId.value
+          : this.templateId,
+      copies: data.copies.present ? data.copies.value : this.copies,
+      directPrint: data.directPrint.present
+          ? data.directPrint.value
+          : this.directPrint,
+      priority: data.priority.present ? data.priority.value : this.priority,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TemplateBinding(')
+          ..write('id: $id, ')
+          ..write('documentType: $documentType, ')
+          ..write('branchId: $branchId, ')
+          ..write('printerId: $printerId, ')
+          ..write('locale: $locale, ')
+          ..write('templateId: $templateId, ')
+          ..write('copies: $copies, ')
+          ..write('directPrint: $directPrint, ')
+          ..write('priority: $priority, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    documentType,
+    branchId,
+    printerId,
+    locale,
+    templateId,
+    copies,
+    directPrint,
+    priority,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TemplateBinding &&
+          other.id == this.id &&
+          other.documentType == this.documentType &&
+          other.branchId == this.branchId &&
+          other.printerId == this.printerId &&
+          other.locale == this.locale &&
+          other.templateId == this.templateId &&
+          other.copies == this.copies &&
+          other.directPrint == this.directPrint &&
+          other.priority == this.priority &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class TemplateBindingsCompanion extends UpdateCompanion<TemplateBinding> {
+  final Value<int> id;
+  final Value<String> documentType;
+  final Value<int?> branchId;
+  final Value<int?> printerId;
+  final Value<String?> locale;
+  final Value<int> templateId;
+  final Value<int> copies;
+  final Value<bool> directPrint;
+  final Value<int> priority;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  const TemplateBindingsCompanion({
+    this.id = const Value.absent(),
+    this.documentType = const Value.absent(),
+    this.branchId = const Value.absent(),
+    this.printerId = const Value.absent(),
+    this.locale = const Value.absent(),
+    this.templateId = const Value.absent(),
+    this.copies = const Value.absent(),
+    this.directPrint = const Value.absent(),
+    this.priority = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  });
+  TemplateBindingsCompanion.insert({
+    this.id = const Value.absent(),
+    required String documentType,
+    this.branchId = const Value.absent(),
+    this.printerId = const Value.absent(),
+    this.locale = const Value.absent(),
+    required int templateId,
+    this.copies = const Value.absent(),
+    this.directPrint = const Value.absent(),
+    this.priority = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  }) : documentType = Value(documentType),
+       templateId = Value(templateId);
+  static Insertable<TemplateBinding> custom({
+    Expression<int>? id,
+    Expression<String>? documentType,
+    Expression<int>? branchId,
+    Expression<int>? printerId,
+    Expression<String>? locale,
+    Expression<int>? templateId,
+    Expression<int>? copies,
+    Expression<bool>? directPrint,
+    Expression<int>? priority,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (documentType != null) 'document_type': documentType,
+      if (branchId != null) 'branch_id': branchId,
+      if (printerId != null) 'printer_id': printerId,
+      if (locale != null) 'locale': locale,
+      if (templateId != null) 'template_id': templateId,
+      if (copies != null) 'copies': copies,
+      if (directPrint != null) 'direct_print': directPrint,
+      if (priority != null) 'priority': priority,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+    });
+  }
+
+  TemplateBindingsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? documentType,
+    Value<int?>? branchId,
+    Value<int?>? printerId,
+    Value<String?>? locale,
+    Value<int>? templateId,
+    Value<int>? copies,
+    Value<bool>? directPrint,
+    Value<int>? priority,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+  }) {
+    return TemplateBindingsCompanion(
+      id: id ?? this.id,
+      documentType: documentType ?? this.documentType,
+      branchId: branchId ?? this.branchId,
+      printerId: printerId ?? this.printerId,
+      locale: locale ?? this.locale,
+      templateId: templateId ?? this.templateId,
+      copies: copies ?? this.copies,
+      directPrint: directPrint ?? this.directPrint,
+      priority: priority ?? this.priority,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (documentType.present) {
+      map['document_type'] = Variable<String>(documentType.value);
+    }
+    if (branchId.present) {
+      map['branch_id'] = Variable<int>(branchId.value);
+    }
+    if (printerId.present) {
+      map['printer_id'] = Variable<int>(printerId.value);
+    }
+    if (locale.present) {
+      map['locale'] = Variable<String>(locale.value);
+    }
+    if (templateId.present) {
+      map['template_id'] = Variable<int>(templateId.value);
+    }
+    if (copies.present) {
+      map['copies'] = Variable<int>(copies.value);
+    }
+    if (directPrint.present) {
+      map['direct_print'] = Variable<bool>(directPrint.value);
+    }
+    if (priority.present) {
+      map['priority'] = Variable<int>(priority.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TemplateBindingsCompanion(')
+          ..write('id: $id, ')
+          ..write('documentType: $documentType, ')
+          ..write('branchId: $branchId, ')
+          ..write('printerId: $printerId, ')
+          ..write('locale: $locale, ')
+          ..write('templateId: $templateId, ')
+          ..write('copies: $copies, ')
+          ..write('directPrint: $directPrint, ')
+          ..write('priority: $priority, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
   }
@@ -119782,6 +120899,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $InvoiceTemplateElementsTable(this);
   late final $InvoiceTableSettingsTable invoiceTableSettings =
       $InvoiceTableSettingsTable(this);
+  late final $TemplateBindingsTable templateBindings = $TemplateBindingsTable(
+    this,
+  );
   late final $InventoryBondsTable inventoryBonds = $InventoryBondsTable(this);
   late final $InventoryBondItemsTable inventoryBondItems =
       $InventoryBondItemsTable(this);
@@ -120610,6 +121730,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     invoiceTemplates,
     invoiceTemplateElements,
     invoiceTableSettings,
+    templateBindings,
     inventoryBonds,
     inventoryBondItems,
     stockRequisitions,
@@ -181784,6 +182905,7 @@ typedef $$InvoiceTemplatesTableCreateCompanionBuilder =
       Value<String> defaultFont,
       Value<double> defaultFontSize,
       Value<bool> isActive,
+      Value<int> layoutVersion,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
     });
@@ -181801,6 +182923,7 @@ typedef $$InvoiceTemplatesTableUpdateCompanionBuilder =
       Value<String> defaultFont,
       Value<double> defaultFontSize,
       Value<bool> isActive,
+      Value<int> layoutVersion,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
     });
@@ -181864,6 +182987,29 @@ final class $$InvoiceTemplatesTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _invoiceTableSettingsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$TemplateBindingsTable, List<TemplateBinding>>
+  _templateBindingsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.templateBindings,
+    aliasName: $_aliasNameGenerator(
+      db.invoiceTemplates.id,
+      db.templateBindings.templateId,
+    ),
+  );
+
+  $$TemplateBindingsTableProcessedTableManager get templateBindingsRefs {
+    final manager = $$TemplateBindingsTableTableManager(
+      $_db,
+      $_db.templateBindings,
+    ).filter((f) => f.templateId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _templateBindingsRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -181940,6 +183086,11 @@ class $$InvoiceTemplatesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<int> get layoutVersion => $composableBuilder(
+    column: $table.layoutVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnFilters(column),
@@ -181992,6 +183143,31 @@ class $$InvoiceTemplatesTableFilterComposer
           }) => $$InvoiceTableSettingsTableFilterComposer(
             $db: $db,
             $table: $db.invoiceTableSettings,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> templateBindingsRefs(
+    Expression<bool> Function($$TemplateBindingsTableFilterComposer f) f,
+  ) {
+    final $$TemplateBindingsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.templateBindings,
+      getReferencedColumn: (t) => t.templateId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TemplateBindingsTableFilterComposer(
+            $db: $db,
+            $table: $db.templateBindings,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -182071,6 +183247,11 @@ class $$InvoiceTemplatesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get layoutVersion => $composableBuilder(
+    column: $table.layoutVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -182137,6 +183318,11 @@ class $$InvoiceTemplatesTableAnnotationComposer
   GeneratedColumn<bool> get isActive =>
       $composableBuilder(column: $table.isActive, builder: (column) => column);
 
+  GeneratedColumn<int> get layoutVersion => $composableBuilder(
+    column: $table.layoutVersion,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -182195,6 +183381,31 @@ class $$InvoiceTemplatesTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> templateBindingsRefs<T extends Object>(
+    Expression<T> Function($$TemplateBindingsTableAnnotationComposer a) f,
+  ) {
+    final $$TemplateBindingsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.templateBindings,
+      getReferencedColumn: (t) => t.templateId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TemplateBindingsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.templateBindings,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$InvoiceTemplatesTableTableManager
@@ -182213,6 +183424,7 @@ class $$InvoiceTemplatesTableTableManager
           PrefetchHooks Function({
             bool invoiceTemplateElementsRefs,
             bool invoiceTableSettingsRefs,
+            bool templateBindingsRefs,
           })
         > {
   $$InvoiceTemplatesTableTableManager(
@@ -182242,6 +183454,7 @@ class $$InvoiceTemplatesTableTableManager
                 Value<String> defaultFont = const Value.absent(),
                 Value<double> defaultFontSize = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
+                Value<int> layoutVersion = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
               }) => InvoiceTemplatesCompanion(
@@ -182257,6 +183470,7 @@ class $$InvoiceTemplatesTableTableManager
                 defaultFont: defaultFont,
                 defaultFontSize: defaultFontSize,
                 isActive: isActive,
+                layoutVersion: layoutVersion,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
               ),
@@ -182274,6 +183488,7 @@ class $$InvoiceTemplatesTableTableManager
                 Value<String> defaultFont = const Value.absent(),
                 Value<double> defaultFontSize = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
+                Value<int> layoutVersion = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
               }) => InvoiceTemplatesCompanion.insert(
@@ -182289,6 +183504,7 @@ class $$InvoiceTemplatesTableTableManager
                 defaultFont: defaultFont,
                 defaultFontSize: defaultFontSize,
                 isActive: isActive,
+                layoutVersion: layoutVersion,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
               ),
@@ -182304,12 +183520,14 @@ class $$InvoiceTemplatesTableTableManager
               ({
                 invoiceTemplateElementsRefs = false,
                 invoiceTableSettingsRefs = false,
+                templateBindingsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (invoiceTemplateElementsRefs) db.invoiceTemplateElements,
                     if (invoiceTableSettingsRefs) db.invoiceTableSettings,
+                    if (templateBindingsRefs) db.templateBindings,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -182356,6 +183574,27 @@ class $$InvoiceTemplatesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (templateBindingsRefs)
+                        await $_getPrefetchedData<
+                          InvoiceTemplate,
+                          $InvoiceTemplatesTable,
+                          TemplateBinding
+                        >(
+                          currentTable: table,
+                          referencedTable: $$InvoiceTemplatesTableReferences
+                              ._templateBindingsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$InvoiceTemplatesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).templateBindingsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.templateId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -182379,6 +183618,7 @@ typedef $$InvoiceTemplatesTableProcessedTableManager =
       PrefetchHooks Function({
         bool invoiceTemplateElementsRefs,
         bool invoiceTableSettingsRefs,
+        bool templateBindingsRefs,
       })
     >;
 typedef $$InvoiceTemplateElementsTableCreateCompanionBuilder =
@@ -182409,6 +183649,12 @@ typedef $$InvoiceTemplateElementsTableCreateCompanionBuilder =
       Value<String?> extraStyles,
       Value<String> section,
       Value<String?> formula,
+      Value<String?> bandId,
+      Value<double?> xMm,
+      Value<double?> yMm,
+      Value<double?> wMm,
+      Value<double?> hMm,
+      Value<String?> condition,
     });
 typedef $$InvoiceTemplateElementsTableUpdateCompanionBuilder =
     InvoiceTemplateElementsCompanion Function({
@@ -182438,6 +183684,12 @@ typedef $$InvoiceTemplateElementsTableUpdateCompanionBuilder =
       Value<String?> extraStyles,
       Value<String> section,
       Value<String?> formula,
+      Value<String?> bandId,
+      Value<double?> xMm,
+      Value<double?> yMm,
+      Value<double?> wMm,
+      Value<double?> hMm,
+      Value<String?> condition,
     });
 
 final class $$InvoiceTemplateElementsTableReferences
@@ -182610,6 +183862,36 @@ class $$InvoiceTemplateElementsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get bandId => $composableBuilder(
+    column: $table.bandId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get xMm => $composableBuilder(
+    column: $table.xMm,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get yMm => $composableBuilder(
+    column: $table.yMm,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get wMm => $composableBuilder(
+    column: $table.wMm,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get hMm => $composableBuilder(
+    column: $table.hMm,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get condition => $composableBuilder(
+    column: $table.condition,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$InvoiceTemplatesTableFilterComposer get templateId {
     final $$InvoiceTemplatesTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -182768,6 +184050,36 @@ class $$InvoiceTemplateElementsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get bandId => $composableBuilder(
+    column: $table.bandId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get xMm => $composableBuilder(
+    column: $table.xMm,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get yMm => $composableBuilder(
+    column: $table.yMm,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get wMm => $composableBuilder(
+    column: $table.wMm,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get hMm => $composableBuilder(
+    column: $table.hMm,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get condition => $composableBuilder(
+    column: $table.condition,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$InvoiceTemplatesTableOrderingComposer get templateId {
     final $$InvoiceTemplatesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -182888,6 +184200,24 @@ class $$InvoiceTemplateElementsTableAnnotationComposer
   GeneratedColumn<String> get formula =>
       $composableBuilder(column: $table.formula, builder: (column) => column);
 
+  GeneratedColumn<String> get bandId =>
+      $composableBuilder(column: $table.bandId, builder: (column) => column);
+
+  GeneratedColumn<double> get xMm =>
+      $composableBuilder(column: $table.xMm, builder: (column) => column);
+
+  GeneratedColumn<double> get yMm =>
+      $composableBuilder(column: $table.yMm, builder: (column) => column);
+
+  GeneratedColumn<double> get wMm =>
+      $composableBuilder(column: $table.wMm, builder: (column) => column);
+
+  GeneratedColumn<double> get hMm =>
+      $composableBuilder(column: $table.hMm, builder: (column) => column);
+
+  GeneratedColumn<String> get condition =>
+      $composableBuilder(column: $table.condition, builder: (column) => column);
+
   $$InvoiceTemplatesTableAnnotationComposer get templateId {
     final $$InvoiceTemplatesTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -182977,6 +184307,12 @@ class $$InvoiceTemplateElementsTableTableManager
                 Value<String?> extraStyles = const Value.absent(),
                 Value<String> section = const Value.absent(),
                 Value<String?> formula = const Value.absent(),
+                Value<String?> bandId = const Value.absent(),
+                Value<double?> xMm = const Value.absent(),
+                Value<double?> yMm = const Value.absent(),
+                Value<double?> wMm = const Value.absent(),
+                Value<double?> hMm = const Value.absent(),
+                Value<String?> condition = const Value.absent(),
               }) => InvoiceTemplateElementsCompanion(
                 id: id,
                 templateId: templateId,
@@ -183004,6 +184340,12 @@ class $$InvoiceTemplateElementsTableTableManager
                 extraStyles: extraStyles,
                 section: section,
                 formula: formula,
+                bandId: bandId,
+                xMm: xMm,
+                yMm: yMm,
+                wMm: wMm,
+                hMm: hMm,
+                condition: condition,
               ),
           createCompanionCallback:
               ({
@@ -183033,6 +184375,12 @@ class $$InvoiceTemplateElementsTableTableManager
                 Value<String?> extraStyles = const Value.absent(),
                 Value<String> section = const Value.absent(),
                 Value<String?> formula = const Value.absent(),
+                Value<String?> bandId = const Value.absent(),
+                Value<double?> xMm = const Value.absent(),
+                Value<double?> yMm = const Value.absent(),
+                Value<double?> wMm = const Value.absent(),
+                Value<double?> hMm = const Value.absent(),
+                Value<String?> condition = const Value.absent(),
               }) => InvoiceTemplateElementsCompanion.insert(
                 id: id,
                 templateId: templateId,
@@ -183060,6 +184408,12 @@ class $$InvoiceTemplateElementsTableTableManager
                 extraStyles: extraStyles,
                 section: section,
                 formula: formula,
+                bandId: bandId,
+                xMm: xMm,
+                yMm: yMm,
+                wMm: wMm,
+                hMm: hMm,
+                condition: condition,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -183157,6 +184511,8 @@ typedef $$InvoiceTableSettingsTableCreateCompanionBuilder =
       Value<String?> altRowBgColor,
       Value<double> rowHeight,
       Value<String?> columnWidths,
+      Value<String> tableKind,
+      Value<String?> columnsJson,
     });
 typedef $$InvoiceTableSettingsTableUpdateCompanionBuilder =
     InvoiceTableSettingsCompanion Function({
@@ -183185,6 +184541,8 @@ typedef $$InvoiceTableSettingsTableUpdateCompanionBuilder =
       Value<String?> altRowBgColor,
       Value<double> rowHeight,
       Value<String?> columnWidths,
+      Value<String> tableKind,
+      Value<String?> columnsJson,
     });
 
 final class $$InvoiceTableSettingsTableReferences
@@ -183352,6 +184710,16 @@ class $$InvoiceTableSettingsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get tableKind => $composableBuilder(
+    column: $table.tableKind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get columnsJson => $composableBuilder(
+    column: $table.columnsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$InvoiceTemplatesTableFilterComposer get templateId {
     final $$InvoiceTemplatesTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -183505,6 +184873,16 @@ class $$InvoiceTableSettingsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get tableKind => $composableBuilder(
+    column: $table.tableKind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get columnsJson => $composableBuilder(
+    column: $table.columnsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$InvoiceTemplatesTableOrderingComposer get templateId {
     final $$InvoiceTemplatesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -183636,6 +185014,14 @@ class $$InvoiceTableSettingsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get tableKind =>
+      $composableBuilder(column: $table.tableKind, builder: (column) => column);
+
+  GeneratedColumn<String> get columnsJson => $composableBuilder(
+    column: $table.columnsJson,
+    builder: (column) => column,
+  );
+
   $$InvoiceTemplatesTableAnnotationComposer get templateId {
     final $$InvoiceTemplatesTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -183721,6 +185107,8 @@ class $$InvoiceTableSettingsTableTableManager
                 Value<String?> altRowBgColor = const Value.absent(),
                 Value<double> rowHeight = const Value.absent(),
                 Value<String?> columnWidths = const Value.absent(),
+                Value<String> tableKind = const Value.absent(),
+                Value<String?> columnsJson = const Value.absent(),
               }) => InvoiceTableSettingsCompanion(
                 id: id,
                 templateId: templateId,
@@ -183747,6 +185135,8 @@ class $$InvoiceTableSettingsTableTableManager
                 altRowBgColor: altRowBgColor,
                 rowHeight: rowHeight,
                 columnWidths: columnWidths,
+                tableKind: tableKind,
+                columnsJson: columnsJson,
               ),
           createCompanionCallback:
               ({
@@ -183775,6 +185165,8 @@ class $$InvoiceTableSettingsTableTableManager
                 Value<String?> altRowBgColor = const Value.absent(),
                 Value<double> rowHeight = const Value.absent(),
                 Value<String?> columnWidths = const Value.absent(),
+                Value<String> tableKind = const Value.absent(),
+                Value<String?> columnsJson = const Value.absent(),
               }) => InvoiceTableSettingsCompanion.insert(
                 id: id,
                 templateId: templateId,
@@ -183801,6 +185193,8 @@ class $$InvoiceTableSettingsTableTableManager
                 altRowBgColor: altRowBgColor,
                 rowHeight: rowHeight,
                 columnWidths: columnWidths,
+                tableKind: tableKind,
+                columnsJson: columnsJson,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -183869,6 +185263,449 @@ typedef $$InvoiceTableSettingsTableProcessedTableManager =
       $$InvoiceTableSettingsTableUpdateCompanionBuilder,
       (InvoiceTableSetting, $$InvoiceTableSettingsTableReferences),
       InvoiceTableSetting,
+      PrefetchHooks Function({bool templateId})
+    >;
+typedef $$TemplateBindingsTableCreateCompanionBuilder =
+    TemplateBindingsCompanion Function({
+      Value<int> id,
+      required String documentType,
+      Value<int?> branchId,
+      Value<int?> printerId,
+      Value<String?> locale,
+      required int templateId,
+      Value<int> copies,
+      Value<bool> directPrint,
+      Value<int> priority,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+    });
+typedef $$TemplateBindingsTableUpdateCompanionBuilder =
+    TemplateBindingsCompanion Function({
+      Value<int> id,
+      Value<String> documentType,
+      Value<int?> branchId,
+      Value<int?> printerId,
+      Value<String?> locale,
+      Value<int> templateId,
+      Value<int> copies,
+      Value<bool> directPrint,
+      Value<int> priority,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+    });
+
+final class $$TemplateBindingsTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $TemplateBindingsTable, TemplateBinding> {
+  $$TemplateBindingsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $InvoiceTemplatesTable _templateIdTable(_$AppDatabase db) =>
+      db.invoiceTemplates.createAlias(
+        $_aliasNameGenerator(
+          db.templateBindings.templateId,
+          db.invoiceTemplates.id,
+        ),
+      );
+
+  $$InvoiceTemplatesTableProcessedTableManager get templateId {
+    final $_column = $_itemColumn<int>('template_id')!;
+
+    final manager = $$InvoiceTemplatesTableTableManager(
+      $_db,
+      $_db.invoiceTemplates,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_templateIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$TemplateBindingsTableFilterComposer
+    extends Composer<_$AppDatabase, $TemplateBindingsTable> {
+  $$TemplateBindingsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get documentType => $composableBuilder(
+    column: $table.documentType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get branchId => $composableBuilder(
+    column: $table.branchId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get printerId => $composableBuilder(
+    column: $table.printerId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get locale => $composableBuilder(
+    column: $table.locale,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get copies => $composableBuilder(
+    column: $table.copies,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get directPrint => $composableBuilder(
+    column: $table.directPrint,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get priority => $composableBuilder(
+    column: $table.priority,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$InvoiceTemplatesTableFilterComposer get templateId {
+    final $$InvoiceTemplatesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.templateId,
+      referencedTable: $db.invoiceTemplates,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$InvoiceTemplatesTableFilterComposer(
+            $db: $db,
+            $table: $db.invoiceTemplates,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TemplateBindingsTableOrderingComposer
+    extends Composer<_$AppDatabase, $TemplateBindingsTable> {
+  $$TemplateBindingsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get documentType => $composableBuilder(
+    column: $table.documentType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get branchId => $composableBuilder(
+    column: $table.branchId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get printerId => $composableBuilder(
+    column: $table.printerId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get locale => $composableBuilder(
+    column: $table.locale,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get copies => $composableBuilder(
+    column: $table.copies,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get directPrint => $composableBuilder(
+    column: $table.directPrint,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get priority => $composableBuilder(
+    column: $table.priority,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$InvoiceTemplatesTableOrderingComposer get templateId {
+    final $$InvoiceTemplatesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.templateId,
+      referencedTable: $db.invoiceTemplates,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$InvoiceTemplatesTableOrderingComposer(
+            $db: $db,
+            $table: $db.invoiceTemplates,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TemplateBindingsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TemplateBindingsTable> {
+  $$TemplateBindingsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get documentType => $composableBuilder(
+    column: $table.documentType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get branchId =>
+      $composableBuilder(column: $table.branchId, builder: (column) => column);
+
+  GeneratedColumn<int> get printerId =>
+      $composableBuilder(column: $table.printerId, builder: (column) => column);
+
+  GeneratedColumn<String> get locale =>
+      $composableBuilder(column: $table.locale, builder: (column) => column);
+
+  GeneratedColumn<int> get copies =>
+      $composableBuilder(column: $table.copies, builder: (column) => column);
+
+  GeneratedColumn<bool> get directPrint => $composableBuilder(
+    column: $table.directPrint,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get priority =>
+      $composableBuilder(column: $table.priority, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$InvoiceTemplatesTableAnnotationComposer get templateId {
+    final $$InvoiceTemplatesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.templateId,
+      referencedTable: $db.invoiceTemplates,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$InvoiceTemplatesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.invoiceTemplates,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TemplateBindingsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TemplateBindingsTable,
+          TemplateBinding,
+          $$TemplateBindingsTableFilterComposer,
+          $$TemplateBindingsTableOrderingComposer,
+          $$TemplateBindingsTableAnnotationComposer,
+          $$TemplateBindingsTableCreateCompanionBuilder,
+          $$TemplateBindingsTableUpdateCompanionBuilder,
+          (TemplateBinding, $$TemplateBindingsTableReferences),
+          TemplateBinding,
+          PrefetchHooks Function({bool templateId})
+        > {
+  $$TemplateBindingsTableTableManager(
+    _$AppDatabase db,
+    $TemplateBindingsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TemplateBindingsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TemplateBindingsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TemplateBindingsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> documentType = const Value.absent(),
+                Value<int?> branchId = const Value.absent(),
+                Value<int?> printerId = const Value.absent(),
+                Value<String?> locale = const Value.absent(),
+                Value<int> templateId = const Value.absent(),
+                Value<int> copies = const Value.absent(),
+                Value<bool> directPrint = const Value.absent(),
+                Value<int> priority = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+              }) => TemplateBindingsCompanion(
+                id: id,
+                documentType: documentType,
+                branchId: branchId,
+                printerId: printerId,
+                locale: locale,
+                templateId: templateId,
+                copies: copies,
+                directPrint: directPrint,
+                priority: priority,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String documentType,
+                Value<int?> branchId = const Value.absent(),
+                Value<int?> printerId = const Value.absent(),
+                Value<String?> locale = const Value.absent(),
+                required int templateId,
+                Value<int> copies = const Value.absent(),
+                Value<bool> directPrint = const Value.absent(),
+                Value<int> priority = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+              }) => TemplateBindingsCompanion.insert(
+                id: id,
+                documentType: documentType,
+                branchId: branchId,
+                printerId: printerId,
+                locale: locale,
+                templateId: templateId,
+                copies: copies,
+                directPrint: directPrint,
+                priority: priority,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$TemplateBindingsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({templateId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (templateId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.templateId,
+                                referencedTable:
+                                    $$TemplateBindingsTableReferences
+                                        ._templateIdTable(db),
+                                referencedColumn:
+                                    $$TemplateBindingsTableReferences
+                                        ._templateIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$TemplateBindingsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TemplateBindingsTable,
+      TemplateBinding,
+      $$TemplateBindingsTableFilterComposer,
+      $$TemplateBindingsTableOrderingComposer,
+      $$TemplateBindingsTableAnnotationComposer,
+      $$TemplateBindingsTableCreateCompanionBuilder,
+      $$TemplateBindingsTableUpdateCompanionBuilder,
+      (TemplateBinding, $$TemplateBindingsTableReferences),
+      TemplateBinding,
       PrefetchHooks Function({bool templateId})
     >;
 typedef $$InventoryBondsTableCreateCompanionBuilder =
@@ -232480,6 +234317,8 @@ class $AppDatabaseManager {
       );
   $$InvoiceTableSettingsTableTableManager get invoiceTableSettings =>
       $$InvoiceTableSettingsTableTableManager(_db, _db.invoiceTableSettings);
+  $$TemplateBindingsTableTableManager get templateBindings =>
+      $$TemplateBindingsTableTableManager(_db, _db.templateBindings);
   $$InventoryBondsTableTableManager get inventoryBonds =>
       $$InventoryBondsTableTableManager(_db, _db.inventoryBonds);
   $$InventoryBondItemsTableTableManager get inventoryBondItems =>

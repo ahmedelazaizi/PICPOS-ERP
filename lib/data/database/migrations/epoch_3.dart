@@ -3078,5 +3078,48 @@ extension Epoch3Migrations on AppDatabase {
         debugPrint('[Migration] v168: الإهلاكُ صار يُرحَّل شهريّاً');
       });
     }
+
+    if (from < 169) {
+      await _safeMigrate('v169 نموذجُ النطاقات ورابطاتُ القوالب', () async {
+        // ── لماذا ALTER خامٌّ لا m.addColumn ─────────────────────────────
+        // نفسُ نمطِ ما سبقه في هذا الملفّ: كلُّ عبارةٍ في try مستقلٍّ، فعمودٌ
+        // موجودٌ سلفاً لا يوقف البقيّة. والأعمدةُ **مُعلَنةٌ أيضاً في أصناف
+        // الجداول**، فالتنصيبُ الجديدُ يأخذها من onCreate — والإعلانُ في
+        // مكانٍ واحدٍ فقط هو كيف غاب approved_by عن كلِّ قاعدةٍ جديدة.
+        //
+        // وكلُّها بلا افتراضٍ عمداً: الصفرُ موضعٌ حقيقيٌّ عند الحافّة، و
+        // null وحدَها تقول «لم يُهاجَر بعد».
+        for (final ddl in [
+          'ALTER TABLE invoice_template_elements ADD COLUMN band_id TEXT',
+          'ALTER TABLE invoice_template_elements ADD COLUMN x_mm REAL',
+          'ALTER TABLE invoice_template_elements ADD COLUMN y_mm REAL',
+          'ALTER TABLE invoice_template_elements ADD COLUMN w_mm REAL',
+          'ALTER TABLE invoice_template_elements ADD COLUMN h_mm REAL',
+          'ALTER TABLE invoice_template_elements ADD COLUMN condition TEXT',
+          'ALTER TABLE invoice_templates '
+              'ADD COLUMN layout_version INTEGER NOT NULL DEFAULT 1',
+          "ALTER TABLE invoice_table_settings "
+              "ADD COLUMN table_kind TEXT NOT NULL DEFAULT 'items'",
+          'ALTER TABLE invoice_table_settings ADD COLUMN columns_json TEXT',
+        ]) {
+          try {
+            await m.database.customStatement(ddl);
+          } catch (e) {
+            debugPrint('[Migration] v169 (safe-skip): $e');
+          }
+        }
+
+        // جدولُ الرابطات. تمريرةُ `allSchemaEntities` في ensureSchemaDefaults
+        // تغطّيه كذلك على كلِّ إقلاع، وهذا صريحٌ لئلّا يعتمد إنشاؤه على أثرٍ
+        // جانبيٍّ في مكانٍ آخر.
+        try {
+          await m.createTable(templateBindings);
+        } catch (e) {
+          debugPrint('[Migration] v169 template_bindings (safe-skip): $e');
+        }
+
+        debugPrint('[Migration] v169: النطاقاتُ والرابطاتُ جاهزة');
+      });
+    }
   }
 }
