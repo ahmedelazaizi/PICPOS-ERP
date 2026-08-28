@@ -171,6 +171,33 @@ class TemplateResolver {
     'shift_closing',
   };
 
+  /// الزوجُ `(type, category)` الذي يمرّره منادي كلِّ نوع.
+  ///
+  /// المستوى الخامسُ يُفهرَس بهما لا بنوع المستند (‏`getDefaultTemplateByCategory`
+  /// تأخذ النوعَ الورقيَّ والفئة). فشاشةُ الحسم لا تستطيع أن تعرض المستوى
+  /// الخامسَ بصدقٍ ما لم تسأل بنفس الزوج الذي يسأل به المنادي — وزوجٌ مخالف
+  /// يجعلها تعرض قالباً غيرَ الذي يخرج من الطابعة.
+  ///
+  /// والثلاثةُ غيرُ الموصولة (`quotation` · `party_statement` · `report`)
+  /// تحمل زوجَ ملفّاتِ قوالبها المبذورة، فحين يُوصَل مسارُها يسأل بنفسه.
+  ///
+  /// ⚠️ **مقيسٌ لا مفترَض**: `print_callers_pass_document_type_test.dart`
+  /// يقرأ ملفّاتِ المنادين ويشترط حضورَ فئةِ كلِّ نوعٍ موصولٍ فيها نصّاً.
+  static const documentContexts = <String, ({String type, String category})>{
+    'sales_invoice': (type: 'a4', category: 'invoice'),
+    'sales_return': (type: 'thermal', category: 'sales_return'),
+    'purchase_invoice': (type: 'a4', category: 'purchase'),
+    'purchase_return': (type: 'a4', category: 'purchase_return'),
+    // `printing_service` لا تمرّر `type` — فالقيمةُ افتراضيُّ الوسيط في
+    // `printWithTemplate` وهو `'thermal'`.
+    'sales_receipt': (type: 'thermal', category: 'receipt'),
+    'quotation': (type: 'a4', category: 'quotation'),
+    'kitchen_order': (type: 'kitchen', category: 'kitchen'),
+    'shift_closing': (type: 'shift_closing', category: 'shift_closing'),
+    'party_statement': (type: 'statement', category: 'party_statement'),
+    'report': (type: 'report', category: 'report'),
+  };
+
   /// خريطةُ الفئة القديمة ⇒ نوعِ المستند — تُملأ منها الرابطاتُ آليّاً عند
   /// الترقية، فينتج سلوكٌ مطابقٌ لليوم بالضبط.
   static const categoryToDocumentType = <String, String>{
@@ -290,13 +317,28 @@ class TemplateResolver {
     final mine =
         bindings.where((b) => b.documentType == documentType).toList();
 
-    String b(int? v) => v?.toString() ?? '*';
+    // ── نجمةٌ وشَرطةٌ ليستا سواءً ────────────────────────────────────────
+    // `*` = **المستوى** يعمّم هذا الحقل، فأيُّ قيمةٍ تمرّ.
+    // `—` = المستوى يشترط الحقلَ و**الاستعلامُ لم يحمله**، فلا يطابق أبداً.
+    //
+    // وبلا هذا التفريق تظهر المستوياتُ الثلاثةُ الأولى بمفتاحٍ **واحدٍ
+    // حرفيّاً** حين يُفحَص «كلُّ الفروع» بلا طابعة — ثلاثةُ سطورٍ متطابقةٍ
+    // في اللوحة، ولا تقول أيُّها أخفق ولماذا. مقيسٌ في اختبار الشاشة.
+    const gen = '*';
+    const unset = '—';
+    String req(Object? v) => v?.toString() ?? unset;
+
     final keys = <String>[
-      '$documentType · ${b(branchId)} · ${b(printerId)} · ${locale ?? '*'}',
-      '$documentType · ${b(branchId)} · * · ${locale ?? '*'}',
-      '$documentType · * · * · ${locale ?? '*'}',
-      '$documentType · * · * · *',
-      '$category · * · * · *',
+      // ١ · الفرعُ والطابعةُ واللغةُ كلُّها مشروطة.
+      '$documentType · ${req(branchId)} · ${req(printerId)} · ${req(locale)}',
+      // ٢ · الطابعةُ معمَّمةٌ بالمستوى، والفرعُ واللغةُ مشروطان.
+      '$documentType · ${req(branchId)} · $gen · ${req(locale)}',
+      // ٣ · الفرعُ والطابعةُ معمَّمان، واللغةُ مشروطة.
+      '$documentType · $gen · $gen · ${req(locale)}',
+      // ٤ · الكلُّ معمَّم.
+      '$documentType · $gen · $gen · $gen',
+      // ٥ · يُفهرَس بالفئة لا بنوع المستند.
+      '$category · $gen · $gen · $gen',
       'built-in',
     ];
 

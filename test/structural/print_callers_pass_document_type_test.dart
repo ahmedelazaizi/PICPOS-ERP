@@ -17,6 +17,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ural_erp/services/printing/template_resolver.dart';
 
 /// الملفّاتُ التي تنادي الطباعةَ بقالب.
 const _callerFiles = <String>[
@@ -134,6 +135,66 @@ void main() {
         reason: 'ثابتُ الأنواع الموصولة انحرف عمّا يمرّره المنادون:\n'
             '  المعلَن: ${declared.toList()..sort()}\n'
             '  المرصود: ${passed.toList()..sort()}');
+  });
+
+  group('سياقُ كلِّ نوعٍ يطابق ما يسأل به منادِيه', () {
+    // المستوى الخامسُ يُفهرَس بـ(النوع الورقيّ + الفئة). فشاشةُ الحسم تسأل
+    // بنفس الزوج أو تعرض قالباً غيرَ الذي يخرج من الطابعة.
+    late final String callerSrc = _callerFiles
+        .map((p) => File(p).readAsStringSync())
+        .join('\n');
+
+    test('كلُّ نوعٍ معلَنٍ له سياق — بلا زيادةٍ ولا نقص', () {
+      final src = File('lib/services/printing/template_resolver.dart')
+          .readAsStringSync();
+      final block = RegExp(r'documentTypes = <String>\[(.*?)\]', dotAll: true)
+          .firstMatch(src)!;
+      final declared = RegExp(r"'([a-z_]+)'")
+          .allMatches(block.group(1)!)
+          .map((m) => m.group(1)!)
+          .toSet();
+
+      final contexts = RegExp(
+              r"documentContexts = <String, \(\{String type, String category\}\)>\{(.*?)\n  \};",
+              dotAll: true)
+          .firstMatch(src);
+      expect(contexts, isNotNull, reason: 'لم يعد للسياقات وجودٌ في مصدرها');
+
+      final keyed = RegExp(r"^\s*'([a-z_]+)':", multiLine: true)
+          .allMatches(contexts!.group(1)!)
+          .map((m) => m.group(1)!)
+          .toSet();
+
+      expect(keyed, declared,
+          reason: 'نوعٌ بلا سياقٍ لا تستطيع الشاشةُ عرضَ مستواه الخامس، '
+              'وسياقٌ بلا نوعٍ صفٌّ ميّت');
+    });
+
+    test('وفئةُ كلِّ نوعٍ موصولٍ مكتوبةٌ في ملفِّ منادِيه', () {
+      // ⚠️ الفئةُ قد تُمرَّر متغيّراً (`category: category`) فلا تُقرأ من
+      //    موضع النداء — لكنّ نصَّها الحرفيَّ يبقى في الملفّ حيث يُشتقّ.
+      final missing = <String>[];
+      for (final type in TemplateResolver.wiredDocumentTypes) {
+        final ctx = TemplateResolver.documentContexts[type];
+        expect(ctx, isNotNull, reason: 'نوعٌ موصولٌ بلا سياق: $type');
+        if (!callerSrc.contains("'${ctx!.category}'")) {
+          missing.add('$type → ${ctx.category}');
+        }
+      }
+      expect(missing, isEmpty,
+          reason: 'فئاتٌ يدّعيها السياقُ ولا أثرَ لها في المنادين:\n'
+              '  ${missing.join('\n  ')}');
+    });
+
+    test('وافتراضيُّ `type` في `printWithTemplate` ما زال `thermal`', () {
+      // `printing_service` لا تمرّر `type`، فسياقُ `sales_receipt` يعتمد على
+      // هذا الافتراضيّ. تغييرُه يبدّل قالبَ الكاشير صامتاً.
+      final src =
+          File('lib/services/templated_invoice_service.dart').readAsStringSync();
+      expect(src, contains("String type = 'thermal',"));
+      expect(TemplateResolver.documentContexts['sales_receipt']!.type,
+          'thermal');
+    });
   });
 
   group('ضابط: الحارسُ يمسك ما يدّعي', () {

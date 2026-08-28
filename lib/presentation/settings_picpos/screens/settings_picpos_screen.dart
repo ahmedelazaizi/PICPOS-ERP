@@ -165,6 +165,7 @@ import '../widgets/settings_count.dart';
 import '../widgets/settings_nav_rail.dart';
 import '../widgets/settings_section_pane.dart';
 import '../../template_library_picpos/screens/template_library_picpos_screen.dart';
+import '../../template_resolution_picpos/screens/template_resolution_picpos_screen.dart';
 
 // Part files — copied verbatim from lib/presentation/screens/settings/*
 // (only `part of` retargeted to this shell; see the copy-trap note above).
@@ -2137,6 +2138,25 @@ class _DeviceTiles extends ConsumerWidget {
             context,
             MaterialPageRoute(
               builder: (_) => const TemplateLibraryPicposScreen(),
+            ),
+          ),
+        ),
+        // بلوغٌ ثانٍ لشاشةِ الحسم بجوار المكتبة: من يربط قالباً هنا يسأل
+        // فوراً «هل وصل؟» — والقائمةُ الجانبيّةُ بعيدةٌ عن لحظة السؤال.
+        SettingsTile(
+          icon: PhosphorIconsBold.gitFork,
+          title: 'حسم القوالب',
+          sub: 'أيُّ مستندٍ يخرج بأيِّ قالبٍ — وسلسلةُ السقوط',
+          meta: 'تشخيصُ الطباعة',
+          tint: AppColors.info,
+          onTap: () => guarded(
+            PermissionCodes.settingsPrinter,
+            'حسم القوالب',
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const TemplateResolutionPicposScreen(),
+              ),
             ),
           ),
         ),

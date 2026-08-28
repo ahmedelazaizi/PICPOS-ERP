@@ -40,6 +40,7 @@ import 'presentation/purchases_picpos/screens/purchases_picpos_screen.dart';
 import 'presentation/screens/treasury_screen.dart';
 import 'presentation/treasury_picpos/screens/treasury_picpos_screen.dart';
 import 'presentation/bookings_picpos/screens/bookings_picpos_screen.dart';
+import 'presentation/template_resolution_picpos/screens/template_resolution_picpos_screen.dart';
 import 'presentation/screens/reports_screen.dart';
 import 'presentation/reports_picpos/screens/reports_picpos_screen.dart';
 import 'presentation/screens/settings_screen.dart';
@@ -1035,6 +1036,14 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => const AccountingHubPicPosScreen(),
         label: 'الحسابات',
         icon: PhosphorIconsBold.bookOpen,
+      ),
+      // حسمُ القوالب — PicPos وحدَها اليوم: مبنيّةٌ على `picpos_shell` ولا
+      // نظيرَ لها في UralCash. ونطاقُها **كلُّ** الملفّات: كلُّها تطبع.
+      ScreenConfig(
+        appScreen: AppScreen.templateResolution,
+        builder: (_) => const TemplateResolutionPicposScreen(),
+        label: 'حسم القوالب',
+        icon: PhosphorIconsBold.gitFork,
       ),
       ScreenConfig(
         appScreen: AppScreen.syncConflicts,

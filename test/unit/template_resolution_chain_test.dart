@@ -155,15 +155,28 @@ void main() {
   });
 
   group('المفاتيحُ المعروضةُ تصف الاستعلامَ لا الرابطة', () {
-    test('الغائبُ يُكتب نجمةً في كلِّ حقل', () {
+    test('النجمةُ تعميمُ المستوى والشَّرطةُ نقصُ الاستعلام — وهما ليسا سواءً',
+        () {
+      // ⚠️ بلا هذا التفريق تظهر الثلاثةُ الأولى بمفتاحٍ **واحدٍ حرفيّاً** حين
+      //    يُفحَص «كلُّ الفروع» بلا طابعة، فلا تقول اللوحةُ أيُّها أخفق ولماذا.
       final chain = TemplateResolver.explain(
         documentType: 'sales_invoice',
         category: 'invoice',
         bindings: const [],
+        locale: 'ar',
       );
-      expect(chain[0].key, 'sales_invoice · * · * · *');
+
+      expect(chain[0].key, 'sales_invoice · — · — · ar',
+          reason: 'الأوّلُ يشترط فرعاً وطابعةً ولم يحملهما الاستعلام');
+      expect(chain[1].key, 'sales_invoice · — · * · ar',
+          reason: 'الثاني يعمّم الطابعةَ ويشترط الفرع');
+      expect(chain[2].key, 'sales_invoice · * · * · ar');
+      expect(chain[3].key, 'sales_invoice · * · * · *');
       expect(chain[4].key, 'invoice · * · * · *',
           reason: 'المستوى الخامسُ يُفهرَس بالفئة لا بنوع المستند');
+
+      // والدليلُ القاطع: أربعةُ مفاتيحَ متمايزةٍ لا مفتاحٌ مكرَّر.
+      expect(chain.take(4).map((s) => s.key).toSet(), hasLength(4));
     });
 
     test('والمحدَّدُ يُكتب بقيمته', () {

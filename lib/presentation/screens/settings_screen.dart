@@ -66,6 +66,7 @@ import '../widgets/settings/mirror_parity_audit_dialog.dart';
 import '../widgets/settings/database_settings_widget.dart';
 import '../touch_keyboard/providers/touch_mode_provider.dart';
 import '../template_library_picpos/screens/template_library_picpos_screen.dart';
+import '../template_resolution_picpos/screens/template_resolution_picpos_screen.dart';
 
 // Part files — extracted from this file to reduce size (PIR God File split)
 part 'settings/general_settings_widgets.dart';
@@ -519,6 +520,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             MaterialPageRoute(
                               builder: (_) =>
                                   const TemplateLibraryPicposScreen(),
+                            ),
+                          ),
+                        ),
+                        ListTile(
+                          leading: const Icon(
+                            PhosphorIconsBold.gitFork,
+                            color: AppColors.info,
+                          ),
+                          title: const Text('حسم القوالب'),
+                          subtitle: const Text(
+                              'أيُّ مستندٍ يخرج بأيِّ قالبٍ — وسلسلةُ السقوط'),
+                          trailing: const Icon(PhosphorIconsBold.caretLeft),
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  const TemplateResolutionPicposScreen(),
                             ),
                           ),
                         ),
