@@ -216,6 +216,61 @@ void main() {
       expect(_band(doc, BandId.details).heightMm, 96.0);
     });
 
+    test('ارتفاعاتُ النطاقات تُحفَظ — لا تُشتقّ', () async {
+      await db.seedDefaultTemplates();
+      final template = await db.getDefaultTemplateByCategory('a4', 'invoice');
+
+      final doc = TemplateRenderPipeline.buildDocument(
+        template: template!,
+        orderedElements: await db.getTemplateElements(template.id),
+        tableSettings: await db.getTableSettings(template.id),
+      );
+
+      // ⚠️ أرقامُ التصميم لا أرقامُ الاشتقاق. أبعدُ قاعِ عنصرٍ يعطي
+      //    ٣١/١٩/١٨/٩٦/٣٣/٣٣ — أي بلا الحشوة السفليّة تحت كلِّ نطاق،
+      //    فتضيق الورقةُ ٢٨مم عن المقصود. تثبيتُ القيم المحسوبة هو ما
+      //    يمنع عودةَ الاشتقاق صامتاً.
+      expect(_band(doc, BandId.header).heightMm, 34.0);
+      expect(_band(doc, BandId.info).heightMm, 24.0);
+      expect(_band(doc, BandId.party).heightMm, 26.0);
+      expect(_band(doc, BandId.details).heightMm, 96.0);
+      expect(_band(doc, BandId.totals).heightMm, 42.0);
+      expect(_band(doc, BandId.footer).heightMm, 36.0);
+    });
+
+    test('عمودٌ فارغٌ أو تالفٌ يعني «اشتقّ» — لا ارتفاعاً صفريّاً', () {
+      expect(TemplateRenderPipeline.parseBandHeights(null), isEmpty);
+      expect(TemplateRenderPipeline.parseBandHeights(''), isEmpty);
+      // JSON تالفٌ لا يُسقط الشاشةَ ومعها عملُ المستخدم.
+      expect(TemplateRenderPipeline.parseBandHeights('{ليس'), isEmpty);
+      // وقيمةٌ غيرُ موجبةٍ تُهمَل: نطاقٌ بصفرٍ يخفي عناصرَه.
+      expect(
+        TemplateRenderPipeline.parseBandHeights('{"header":0,"info":24}'),
+        {BandId.info: 24.0},
+      );
+    });
+
+    test('العناوينُ الثنائيّةُ صارت ممكنةً على A4', () async {
+      await db.seedDefaultTemplates();
+      final template = await db.getDefaultTemplateByCategory('a4', 'invoice');
+      final table = TemplateRenderPipeline.buildTable(
+        await db.getTableSettings(template!.id),
+        TemplateRenderPipeline.buildPaper(template),
+      );
+
+      // ⚠️ كانت أعمدةُ الفاتورة كلُّها بلا `labelEn`، وشرطُ الإشعال
+      //    `columns.any((c) => c.labelEn.isNotEmpty)` — فالرأسُ الثنائيُّ
+      //    مطفأٌ **دائماً** على A4 مهما فعل المستخدم.
+      expect(table, isNotNull);
+      expect(table!.columns.every((c) => c.labelEn.isNotEmpty), isTrue);
+      expect(table.bilingualHeaders, isTrue);
+
+      // ⚠️ **وحدودُ هذا الحارس**: يثبّت أنّ **المواصفةَ** صارت ثنائيّةً — لا
+      //    أنّ الورقةَ تطبعها. مقيسٌ 2026-08-29 أنّ **لا بصمةً ذهبيّةً واحدةً**
+      //    من السبعٍ وعشرين تحمل عنواناً إنجليزيّاً، فالانقطاعُ أعمقُ من هذه
+      //    الطبقة ولم يُشخَّص بعد. لا تقرأ هذا الاختبارَ دليلاً على المطبوع.
+    });
+
     test('القالبُ المبذورُ مختومٌ عند ٢ فلا تدهسه الهجرةُ عند أوّل فتح',
         () async {
       await db.seedDefaultTemplates();

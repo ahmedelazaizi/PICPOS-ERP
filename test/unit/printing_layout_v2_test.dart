@@ -120,20 +120,33 @@ void main() {
 
     test('سحبُ عنصرٍ ٥ مم لأعلى يرفعه ٥ مم على الورق — بالمقدار', () async {
       final id = await _importPositioned(db, 'a4_sales_tax_invoice.json');
-      final elId = await _plantMarker(db, id, marker, xMm: 10, yMm: 40);
+      // ⚠️ ‏٢٠ لا ٤٠. القياسُ فرقُ موضعٍ **على نفس الصفحة**، وانقسامُ ورقةٍ
+      //    بين الرسمتين يجعل الفرقَ ارتفاعَ صفحةٍ لا خمسةَ مليمترات.
+      //    وكان ٤٠ يضع المستندَ عند ٢٨٩٫٨مم من ٢٨٧ متاحة — أي صفحتان — ثمّ
+      //    يعيده السحبُ إلى صفحةٍ واحدة، فقُرئ الفرقُ ‏−٢٥٥ نقطة. مقيسٌ
+      //    2026-08-29 يومَ أشعلت العناوينُ الثنائيّةُ رأسَ الجدول (‏+٣٫٦مم)
+      //    فتجاوزت التجهيزةُ الحافّةَ التي كانت على بُعد مليمترٍ منها.
+      final elId = await _plantMarker(db, id, marker, xMm: 10, yMm: 20);
 
       final before = probePdf(await _render(db, id));
       final y0 = _yOf(before, marker);
       expect(y0, isNotNull,
           reason: 'العنصرُ المزروعُ لم يصل الورقةَ — القياسُ على فراغ');
+      // والشرطُ المسبقُ **مُعلَنٌ لا مضمَر**: يسقط الاختبارُ بسببه لا برقمٍ
+      // لا معنى له، فيعرف من يقرؤه أنّ التجهيزةَ تحتاج فسحةً لا أنّ
+      // الإحداثيَّ انكسر.
+      expect(before.pageCount, 1,
+          reason: 'التجهيزةُ تجاوزت الصفحةَ — القياسُ عبر انقسامٍ لا يعني شيئاً');
 
       await db.updateTemplateElement(
         elId,
-        const InvoiceTemplateElementsCompanion(yMm: Value(35)),
+        const InvoiceTemplateElementsCompanion(yMm: Value(15)),
       );
 
-      final y1 = _yOf(probePdf(await _render(db, id)), marker);
+      final after = probePdf(await _render(db, id));
+      final y1 = _yOf(after, marker);
       expect(y1, isNotNull);
+      expect(after.pageCount, 1, reason: 'انقسمت الورقةُ بعد السحب');
 
       // أعلى على الورق = ‏y أكبر (أصلُ الـPDF أسفلَ اليسار).
       expect(y1! - y0!, closeTo(_fiveMmPts, 0.3),

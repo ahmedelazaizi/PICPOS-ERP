@@ -177,6 +177,8 @@ class InvoiceGenerator {
           final itemsMaps = items.map((i) => <String, dynamic>{
             'name': i.name, 'quantity': i.quantity,
             'price': i.price, 'total': i.total, 'note': i.note ?? '',
+            'code': i.code, 'unit': i.unit, 'barcode': i.barcode,
+            'discount': i.discount, 'tax': i.tax,
           }).toList();
           await TemplatedInvoiceService.printWithTemplate(
             db: db,
@@ -277,6 +279,10 @@ class InvoiceGenerator {
                       'price': i.price,
                       'total': i.total,
                       'note': i.note ?? '',
+                      'code': i.code,
+                      'unit': i.unit,
+                      'discount': i.discount,
+                      'tax': i.tax,
                     })
                 .toList(),
             subtotal: returnTotal,
@@ -356,6 +362,8 @@ class InvoiceGenerator {
           final itemsMaps = items.map((i) => <String, dynamic>{
             'name': i.name, 'quantity': i.quantity,
             'price': i.price, 'total': i.total, 'note': i.note ?? '',
+            'code': i.code, 'unit': i.unit, 'barcode': i.barcode,
+            'discount': i.discount, 'tax': i.tax,
           }).toList();
           await TemplatedInvoiceService.printWithTemplate(
             db: db,
@@ -424,6 +432,8 @@ class InvoiceGenerator {
           final itemsMaps = items.map((i) => <String, dynamic>{
             'name': i.name, 'quantity': i.quantity,
             'price': i.price, 'total': i.total, 'note': i.note ?? '',
+            'code': i.code, 'unit': i.unit, 'barcode': i.barcode,
+            'discount': i.discount, 'tax': i.tax,
             // رايةُ **عرضٍ** لا بيانات — وكانت تسقط هنا صامتةً فيُطبع اسمُ
             // التصنيف صنفاً بكمّية صفر. البلاغ: «*عرايس* بدل الصنف».
             'isCategoryHeader': i.isCategoryHeader,

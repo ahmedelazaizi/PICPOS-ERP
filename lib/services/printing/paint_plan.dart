@@ -179,6 +179,10 @@ List<PaintOp> planPage(
           heightMm: table.headerHeightMm,
           text: c.text,
           subText: table.bilingualHeaders ? c.subText : '',
+          // ⚠️ ولولاه أخذت العمليّةُ افتراضَ `PaintOp` (‏١٠) فلا يصل مقاسُ
+          //    خطِّ الجدول المخزَّنُ الورقةَ أبداً — مقيسٌ: القالبُ يخزّن ١٢
+          //    والبصمةُ الذهبيّةُ تقرأ ١٠.
+          fontSize: table.headerFontSize,
           bold: true,
           align: _align(c.align),
           band: BandId.details,
@@ -199,6 +203,8 @@ List<PaintOp> planPage(
             widthMm: c.wMm,
             heightMm: row.heightMm,
             text: c.text,
+            // نظيرُ الرأس: خطُّ الخليّة المخزَّنُ لم يكن يصل الورقةَ كذلك.
+            fontSize: table.cellFontSize,
             align: _align(c.align),
             band: BandId.details,
           ),

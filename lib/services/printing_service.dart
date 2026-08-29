@@ -153,6 +153,11 @@ class PrintingServiceImpl implements IPrintingService {
                   'price': item.price,
                   'total': item.total,
                   'note': item.note ?? '',
+                  'code': item.code,
+                  'unit': item.unit,
+                  'barcode': item.barcode,
+                  'discount': item.discount,
+                  'tax': item.tax,
                 },
               )
               .toList();

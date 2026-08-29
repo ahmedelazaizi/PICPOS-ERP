@@ -54,6 +54,13 @@ Future<TemplateSaveResult> saveTemplateLayout(
         paperHeight: Value(document.paper.heightMm),
         // الحفظُ من المحرّر يعني نطاقاتٍ بإحداثيّات — بلا رجعة.
         layoutVersion: const Value(kBandLayoutVersion),
+        // ارتفاعاتُ النطاقات — وإلّا بقي زرّا `+`/`−` في لوحة «ارتفاع النطاق»
+        // بلا مستقرّ: يعملان في الجلسة ثمّ يعود الرقمُ مشتقّاً عند إعادة
+        // الفتح. والستّةُ تُكتب كلُّها لا المعدَّلُ وحدَه، فالمستندُ المحفوظُ
+        // يصف نفسَه تامّاً ولا يعتمد على اشتقاقٍ قد يتغيّر.
+        bandHeights: Value(jsonEncode({
+          for (final b in document.bands) b.id.name: b.heightMm,
+        })),
       ),
     );
 

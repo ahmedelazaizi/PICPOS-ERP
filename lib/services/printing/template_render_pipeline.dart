@@ -90,7 +90,8 @@ class TemplateRenderPipeline {
     final visible = orderedElements.where((e) => e.isVisible).toList();
 
     if (visible.isNotEmpty && visible.every(_isPositioned)) {
-      return _fromBands(paper, visible, table);
+      return _fromBands(
+          paper, visible, table, parseBandHeights(template.bandHeights));
     }
 
     // لا إحداثيّاتٍ بعد ⇒ يُشتقّ من التدفّق. مستندٌ مشتقٌّ خيرٌ من ورقةٍ
@@ -109,10 +110,32 @@ class TemplateRenderPipeline {
       e.wMm != null &&
       e.hMm != null;
 
+  /// ارتفاعاتُ النطاقات المخزَّنةُ — `{"header":34,…}` بالمليمتر.
+  ///
+  /// خريطةٌ فارغةٌ تعني «اشتقّ»، وهو حالُ كلِّ قالبٍ سابقٍ للنسخة ١٧٠.
+  /// و**لا ترمي على JSON تالف**: قالبٌ بعمودٍ مشوّهٍ يجب أن يُرسم مشتقّاً
+  /// لا أن يُسقط الشاشةَ ومعها عملُ المستخدم.
+  static Map<BandId, double> parseBandHeights(String? json) {
+    if (json == null || json.trim().isEmpty) return const {};
+    try {
+      final raw = jsonDecode(json);
+      if (raw is! Map) return const {};
+      final out = <BandId, double>{};
+      for (final id in BandId.values) {
+        final v = raw[id.name];
+        if (v is num && v > 0) out[id] = v.toDouble();
+      }
+      return out;
+    } catch (_) {
+      return const {};
+    }
+  }
+
   static TemplateDocument _fromBands(
     PaperSpec paper,
     List<InvoiceTemplateElement> elements,
     TableSpec? table,
+    Map<BandId, double> storedHeights,
   ) {
     final buckets = <BandId, List<InvoiceTemplateElement>>{
       for (final id in BandId.values) id: <InvoiceTemplateElement>[],
@@ -126,20 +149,28 @@ class TemplateRenderPipeline {
       final own = buckets[id]!;
       // ارتفاعُ النطاق = أبعدُ قاعِ عنصرٍ فيه. صفرٌ لنطاقٍ فارغ — يبقى
       // موجوداً كي يجد المحرّرُ مكانَ الإفلات.
-      var height = 0.0;
-      for (final e in own) {
-        final bottom = e.yMm! + e.hMm!;
-        if (bottom > height) height = bottom;
+      // الارتفاعُ المخزَّنُ يسبق — وهو ما يجعل زرَّي `+`/`−` في لوحة
+      // «ارتفاع النطاق» يستقرّان. وغيابُه يعني «اشتقّ»: أبعدُ قاعِ عنصرٍ فيه،
+      // وصفرٌ لنطاقٍ فارغ — يبقى موجوداً كي يجد المحرّرُ مكانَ الإفلات.
+      var height = storedHeights[id];
+      if (height == null) {
+        height = 0.0;
+        for (final e in own) {
+          final bottom = e.yMm! + e.hMm!;
+          if (bottom > height!) height = bottom;
+        }
       }
-      // ⚠️ و`details` يحجز كتلةَ جدوله: الجدولُ ليس عنصراً، فبلا هذا الحدِّ
-      //    يبقى النطاقُ صفراً ويُرسم الجدولُ **خارجَ الورقة** كلِّها.
-      if (id.isDetails && table != null && table.designHeightMm > height) {
+      // ⚠️ و`details` يحجز كتلةَ جدوله **حتى لو صُغِّر يدويّاً**: الجدولُ ليس
+      //    عنصراً، فبلا هذا الحدِّ يبقى النطاقُ صفراً ويُرسم الجدولُ خارجَ
+      //    الورقة كلِّها. والحدُّ بعد المخزَّن لا قبلَه — وإلّا استطاع المستخدمُ
+      //    أن يحفظ ارتفاعاً يدهس جدولَه.
+      if (id.isDetails && table != null && table.designHeightMm > height!) {
         height = table.designHeightMm;
       }
       bands.add(
         TemplateBand(
           id: id,
-          heightMm: height,
+          heightMm: height!,
           repeatEachPage: id.repeatsByDefault,
           growsWithData: id.isDetails,
           elements: [
@@ -330,16 +361,25 @@ class TemplateRenderPipeline {
     if (kind == TableKind.ledger) return _ledgerColumns(s);
 
     // ترتيبُ القراءة (‏من حافّة البداية) — مقيسٌ من الورق لا مفترَض.
+    //
+    // ⚠️ **و`labelEn` على كلِّ عمودٍ عمداً**: `buildTable` تُشعل العناوينَ
+    //    الثنائيّةَ بشرط `columns.any((c) => c.labelEn.isNotEmpty)`. وكانت
+    //    أعمدةُ الفاتورة كلُّها بلا إنجليزيّ، فالشرطُ يفشل دائماً ولا يخرج
+    //    رأسٌ ثنائيٌّ على A4 **أبداً** مهما فعل المستخدم — بينما التصميمُ
+    //    (`PicPos Template Editor.dc.html:544`) يعرضه سطرين. والعناوينُ
+    //    أدناه منقولةٌ منه حرفيّاً.
     return [
       TableColumn(
           key: 'index',
           labelAr: 'م',
+          labelEn: '#',
           flex: 0.8,
           decimals: 0,
           visible: s?.showIndex ?? false),
       TableColumn(
           key: 'name',
           labelAr: 'الصنف',
+          labelEn: 'Description',
           flex: 3.0,
           align: ColumnAlign.start,
           wrap: true,
@@ -347,33 +387,62 @@ class TemplateRenderPipeline {
       TableColumn(
           key: 'code',
           labelAr: 'الكود',
+          labelEn: 'Code',
           flex: 1.5,
           visible: s?.showProductCode ?? false),
       TableColumn(
+          key: 'unit',
+          labelAr: 'الوحدة',
+          labelEn: 'Unit',
+          flex: 1.0,
+          decimals: 0,
+          visible: s?.showUnit ?? false),
+      TableColumn(
           key: 'quantity',
-          labelAr: 'العدد',
+          labelAr: 'الكمية',
+          labelEn: 'Qty',
           flex: 1.0,
           visible: s?.showQuantity ?? true),
       TableColumn(
           key: 'price',
           labelAr: 'السعر',
+          labelEn: 'Price',
           flex: 1.2,
           visible: s?.showUnitPrice ?? true),
       TableColumn(
           key: 'discount',
           labelAr: 'الخصم',
+          labelEn: 'Disc.',
           flex: 1.0,
           visible: s?.showDiscount ?? false),
       TableColumn(
           key: 'tax',
           labelAr: 'الضريبة',
+          labelEn: 'VAT',
           flex: 1.0,
           visible: s?.showTax ?? false),
       TableColumn(
           key: 'total',
           labelAr: 'الإجمالي',
+          labelEn: 'Amount',
           flex: 1.5,
           visible: s?.showTotal ?? true),
+      TableColumn(
+          key: 'barcode',
+          labelAr: 'الباركود',
+          labelEn: 'Barcode',
+          flex: 1.6,
+          decimals: 0,
+          visible: s?.showBarcode ?? false),
+      TableColumn(
+          key: 'note',
+          labelAr: 'ملاحظة',
+          labelEn: 'Note',
+          flex: 2.0,
+          decimals: 0,
+          align: ColumnAlign.start,
+          wrap: true,
+          visible: s?.showNotes ?? false),
     ];
   }
 
@@ -550,8 +619,12 @@ class TemplateRenderPipeline {
         final note = (item['note'] as String?)?.trim() ?? '';
         return note.isEmpty ? name : '$name\n$note';
       case 'code':
-      case 'barcode':
         return item['code'] as String? ?? '';
+      // ⚠️ الباركودُ **ليس** الكود: كانا يشتركان في هذه الحالة، فعمودُ
+      //    الباركود كان يطبع كودَ الصنف. لم يظهر لأنّ العمودَين لم يُشعلا
+      //    معاً قطُّ — ويظهر لحظةَ يفعل المستخدمُ ذلك.
+      case 'barcode':
+        return item['barcode'] as String? ?? '';
       case 'quantity':
         // ⚠️ بمنازل العمود لا بالاختصار إلى صحيح.
         //

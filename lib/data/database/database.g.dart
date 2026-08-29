@@ -57507,6 +57507,17 @@ class $InvoiceTemplatesTable extends InvoiceTemplates
     requiredDuringInsert: false,
     defaultValue: const Constant(1),
   );
+  static const VerificationMeta _bandHeightsMeta = const VerificationMeta(
+    'bandHeights',
+  );
+  @override
+  late final GeneratedColumn<String> bandHeights = GeneratedColumn<String>(
+    'band_heights',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -57546,6 +57557,7 @@ class $InvoiceTemplatesTable extends InvoiceTemplates
     defaultFontSize,
     isActive,
     layoutVersion,
+    bandHeights,
     createdAt,
     updatedAt,
   ];
@@ -57653,6 +57665,15 @@ class $InvoiceTemplatesTable extends InvoiceTemplates
         ),
       );
     }
+    if (data.containsKey('band_heights')) {
+      context.handle(
+        _bandHeightsMeta,
+        bandHeights.isAcceptableOrUnknown(
+          data['band_heights']!,
+          _bandHeightsMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -57726,6 +57747,10 @@ class $InvoiceTemplatesTable extends InvoiceTemplates
         DriftSqlType.int,
         data['${effectivePrefix}layout_version'],
       )!,
+      bandHeights: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}band_heights'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -57764,6 +57789,24 @@ class InvoiceTemplate extends DataClass implements Insertable<InvoiceTemplate> {
   /// المحرّر لا دفعةً واحدة: الترقيةُ الجماعيّةُ تلمس قوالبَ قد لا يفتحها
   /// المستخدمُ أبداً، وأيُّ خطأٍ فيها يظهر على ورقِ عميلٍ لا على شاشة.
   final int layoutVersion;
+
+  /// ارتفاعاتُ النطاقات بالمليمتر — JSON ‏`{"header":34,"info":24,…}`.
+  ///
+  /// ── لماذا عمودٌ أصلاً ────────────────────────────────────────────────
+  /// كان ارتفاعُ النطاق **مشتقّاً**: أبعدُ قاعِ عنصرٍ فيه. فزرّا `+`/`−` في
+  /// لوحة «ارتفاع النطاق» يعملان في الجلسة ثمّ يعود الرقمُ عند إعادة الفتح —
+  /// تعديلٌ لا مستقرَّ له. والاشتقاقُ يمنع أيضاً الحشوةَ السفليّةَ التي
+  /// يطلبها التصميم: ‏٣٤/٢٤/٢٦/٩٦/٤٢/٣٦مم بينما الاشتقاقُ يعطي
+  /// ٣١/١٩/١٨/٩٦/٣٣/٣٣.
+  ///
+  /// ── ولماذا JSON لا ستّةُ أعمدة ───────────────────────────────────────
+  /// النطاقاتُ قد تزيد (‏`BandId` تعدادٌ قد يكبر)، وستّةُ أعمدةٍ تعني هجرةً
+  /// لكلِّ نطاقٍ جديد. والقراءةُ كلُّها دفعةً واحدةً في `buildDocument` فلا
+  /// يُستعلَم عن نطاقٍ منفرداً — وهو الشرطُ الذي يجعل JSON مقبولاً هنا.
+  ///
+  /// ⚠️ **و`null` تعني «اشتقّ»** لا «صفر»: القوالبُ القائمةُ كلُّها فارغةُ
+  /// هذا العمود، فلا يجوز أن تنهار نطاقاتُها إلى ارتفاعٍ صفريّ.
+  final String? bandHeights;
   final DateTime createdAt;
   final DateTime updatedAt;
   const InvoiceTemplate({
@@ -57780,6 +57823,7 @@ class InvoiceTemplate extends DataClass implements Insertable<InvoiceTemplate> {
     required this.defaultFontSize,
     required this.isActive,
     required this.layoutVersion,
+    this.bandHeights,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -57801,6 +57845,9 @@ class InvoiceTemplate extends DataClass implements Insertable<InvoiceTemplate> {
     map['default_font_size'] = Variable<double>(defaultFontSize);
     map['is_active'] = Variable<bool>(isActive);
     map['layout_version'] = Variable<int>(layoutVersion);
+    if (!nullToAbsent || bandHeights != null) {
+      map['band_heights'] = Variable<String>(bandHeights);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -57823,6 +57870,9 @@ class InvoiceTemplate extends DataClass implements Insertable<InvoiceTemplate> {
       defaultFontSize: Value(defaultFontSize),
       isActive: Value(isActive),
       layoutVersion: Value(layoutVersion),
+      bandHeights: bandHeights == null && nullToAbsent
+          ? const Value.absent()
+          : Value(bandHeights),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -57847,6 +57897,7 @@ class InvoiceTemplate extends DataClass implements Insertable<InvoiceTemplate> {
       defaultFontSize: serializer.fromJson<double>(json['defaultFontSize']),
       isActive: serializer.fromJson<bool>(json['isActive']),
       layoutVersion: serializer.fromJson<int>(json['layoutVersion']),
+      bandHeights: serializer.fromJson<String?>(json['bandHeights']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -57868,6 +57919,7 @@ class InvoiceTemplate extends DataClass implements Insertable<InvoiceTemplate> {
       'defaultFontSize': serializer.toJson<double>(defaultFontSize),
       'isActive': serializer.toJson<bool>(isActive),
       'layoutVersion': serializer.toJson<int>(layoutVersion),
+      'bandHeights': serializer.toJson<String?>(bandHeights),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -57887,6 +57939,7 @@ class InvoiceTemplate extends DataClass implements Insertable<InvoiceTemplate> {
     double? defaultFontSize,
     bool? isActive,
     int? layoutVersion,
+    Value<String?> bandHeights = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => InvoiceTemplate(
@@ -57903,6 +57956,7 @@ class InvoiceTemplate extends DataClass implements Insertable<InvoiceTemplate> {
     defaultFontSize: defaultFontSize ?? this.defaultFontSize,
     isActive: isActive ?? this.isActive,
     layoutVersion: layoutVersion ?? this.layoutVersion,
+    bandHeights: bandHeights.present ? bandHeights.value : this.bandHeights,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -57933,6 +57987,9 @@ class InvoiceTemplate extends DataClass implements Insertable<InvoiceTemplate> {
       layoutVersion: data.layoutVersion.present
           ? data.layoutVersion.value
           : this.layoutVersion,
+      bandHeights: data.bandHeights.present
+          ? data.bandHeights.value
+          : this.bandHeights,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -57954,6 +58011,7 @@ class InvoiceTemplate extends DataClass implements Insertable<InvoiceTemplate> {
           ..write('defaultFontSize: $defaultFontSize, ')
           ..write('isActive: $isActive, ')
           ..write('layoutVersion: $layoutVersion, ')
+          ..write('bandHeights: $bandHeights, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -57975,6 +58033,7 @@ class InvoiceTemplate extends DataClass implements Insertable<InvoiceTemplate> {
     defaultFontSize,
     isActive,
     layoutVersion,
+    bandHeights,
     createdAt,
     updatedAt,
   );
@@ -57995,6 +58054,7 @@ class InvoiceTemplate extends DataClass implements Insertable<InvoiceTemplate> {
           other.defaultFontSize == this.defaultFontSize &&
           other.isActive == this.isActive &&
           other.layoutVersion == this.layoutVersion &&
+          other.bandHeights == this.bandHeights &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -58013,6 +58073,7 @@ class InvoiceTemplatesCompanion extends UpdateCompanion<InvoiceTemplate> {
   final Value<double> defaultFontSize;
   final Value<bool> isActive;
   final Value<int> layoutVersion;
+  final Value<String?> bandHeights;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   const InvoiceTemplatesCompanion({
@@ -58029,6 +58090,7 @@ class InvoiceTemplatesCompanion extends UpdateCompanion<InvoiceTemplate> {
     this.defaultFontSize = const Value.absent(),
     this.isActive = const Value.absent(),
     this.layoutVersion = const Value.absent(),
+    this.bandHeights = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
   });
@@ -58046,6 +58108,7 @@ class InvoiceTemplatesCompanion extends UpdateCompanion<InvoiceTemplate> {
     this.defaultFontSize = const Value.absent(),
     this.isActive = const Value.absent(),
     this.layoutVersion = const Value.absent(),
+    this.bandHeights = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
   }) : name = Value(name);
@@ -58063,6 +58126,7 @@ class InvoiceTemplatesCompanion extends UpdateCompanion<InvoiceTemplate> {
     Expression<double>? defaultFontSize,
     Expression<bool>? isActive,
     Expression<int>? layoutVersion,
+    Expression<String>? bandHeights,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
   }) {
@@ -58080,6 +58144,7 @@ class InvoiceTemplatesCompanion extends UpdateCompanion<InvoiceTemplate> {
       if (defaultFontSize != null) 'default_font_size': defaultFontSize,
       if (isActive != null) 'is_active': isActive,
       if (layoutVersion != null) 'layout_version': layoutVersion,
+      if (bandHeights != null) 'band_heights': bandHeights,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
     });
@@ -58099,6 +58164,7 @@ class InvoiceTemplatesCompanion extends UpdateCompanion<InvoiceTemplate> {
     Value<double>? defaultFontSize,
     Value<bool>? isActive,
     Value<int>? layoutVersion,
+    Value<String?>? bandHeights,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
   }) {
@@ -58116,6 +58182,7 @@ class InvoiceTemplatesCompanion extends UpdateCompanion<InvoiceTemplate> {
       defaultFontSize: defaultFontSize ?? this.defaultFontSize,
       isActive: isActive ?? this.isActive,
       layoutVersion: layoutVersion ?? this.layoutVersion,
+      bandHeights: bandHeights ?? this.bandHeights,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -58163,6 +58230,9 @@ class InvoiceTemplatesCompanion extends UpdateCompanion<InvoiceTemplate> {
     if (layoutVersion.present) {
       map['layout_version'] = Variable<int>(layoutVersion.value);
     }
+    if (bandHeights.present) {
+      map['band_heights'] = Variable<String>(bandHeights.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -58188,6 +58258,7 @@ class InvoiceTemplatesCompanion extends UpdateCompanion<InvoiceTemplate> {
           ..write('defaultFontSize: $defaultFontSize, ')
           ..write('isActive: $isActive, ')
           ..write('layoutVersion: $layoutVersion, ')
+          ..write('bandHeights: $bandHeights, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -182906,6 +182977,7 @@ typedef $$InvoiceTemplatesTableCreateCompanionBuilder =
       Value<double> defaultFontSize,
       Value<bool> isActive,
       Value<int> layoutVersion,
+      Value<String?> bandHeights,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
     });
@@ -182924,6 +182996,7 @@ typedef $$InvoiceTemplatesTableUpdateCompanionBuilder =
       Value<double> defaultFontSize,
       Value<bool> isActive,
       Value<int> layoutVersion,
+      Value<String?> bandHeights,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
     });
@@ -183091,6 +183164,11 @@ class $$InvoiceTemplatesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get bandHeights => $composableBuilder(
+    column: $table.bandHeights,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnFilters(column),
@@ -183252,6 +183330,11 @@ class $$InvoiceTemplatesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get bandHeights => $composableBuilder(
+    column: $table.bandHeights,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -183320,6 +183403,11 @@ class $$InvoiceTemplatesTableAnnotationComposer
 
   GeneratedColumn<int> get layoutVersion => $composableBuilder(
     column: $table.layoutVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get bandHeights => $composableBuilder(
+    column: $table.bandHeights,
     builder: (column) => column,
   );
 
@@ -183455,6 +183543,7 @@ class $$InvoiceTemplatesTableTableManager
                 Value<double> defaultFontSize = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 Value<int> layoutVersion = const Value.absent(),
+                Value<String?> bandHeights = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
               }) => InvoiceTemplatesCompanion(
@@ -183471,6 +183560,7 @@ class $$InvoiceTemplatesTableTableManager
                 defaultFontSize: defaultFontSize,
                 isActive: isActive,
                 layoutVersion: layoutVersion,
+                bandHeights: bandHeights,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
               ),
@@ -183489,6 +183579,7 @@ class $$InvoiceTemplatesTableTableManager
                 Value<double> defaultFontSize = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 Value<int> layoutVersion = const Value.absent(),
+                Value<String?> bandHeights = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
               }) => InvoiceTemplatesCompanion.insert(
@@ -183505,6 +183596,7 @@ class $$InvoiceTemplatesTableTableManager
                 defaultFontSize: defaultFontSize,
                 isActive: isActive,
                 layoutVersion: layoutVersion,
+                bandHeights: bandHeights,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
               ),

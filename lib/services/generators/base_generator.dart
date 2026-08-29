@@ -162,6 +162,20 @@ abstract class BaseGenerator {
 }
 
 /// Invoice item model for generators
+///
+/// ── لماذا الحقولُ الخمسةُ الجديدةُ اختياريّةٌ بمُهيَّآت ────────────────────
+/// كان هذا النموذجُ يحمل خمسةَ حقولٍ فقط، وأعمدةُ الجدول تسألُ عن الكود
+/// والوحدة والباركود والخصم والضريبة. فكان عمودُ «الخصم» — **وهو مُشعَلٌ
+/// افتراضيّاً** — يطبع `0.00` على كلِّ فاتورة، وعمودا الكود والوحدة يخرجان
+/// فارغَين لو أشعلهما المستخدم.
+///
+/// والاختياريّةُ ليست تهاوناً بل شرطُ سلامة: للنموذج **ثلاثون موضعَ إنشاءٍ**
+/// عبر المبيعات والمشتريات والمرتجعات وسلّة نقطة البيع والطلبات المعلّقة.
+/// جعلُها مطلوبةً يكسرها كلَّها دفعةً واحدة، والمُهيَّآتُ تجعل كلَّ موضعٍ
+/// يُملأ حين تتوفّر بياناتُه — وما لم يُملأ يبقى على سلوكه اليوم بالضبط.
+///
+/// ⚠️ و`discount`/`tax` صفرٌ لا `null`: الجدولُ يطبعهما رقماً بمنازل، وفرقُ
+/// «صفرٌ صريح» عن «غيرُ معروف» لا يظهر على ورقٍ أصلاً.
 class InvoiceItem {
   final String name;
   final double quantity;
@@ -169,12 +183,32 @@ class InvoiceItem {
   final double total;
   final String? note;
 
+  /// كودُ الصنف — عمودُ `code`.
+  final String? code;
+
+  /// اسمُ الوحدة (‏كرتونة · كيس…) — عمودُ `unit`.
+  final String? unit;
+
+  /// الباركود — عمودُ `barcode`، وهو **غيرُ** الكود. كانا يقرآن نفسَ الحقل.
+  final String? barcode;
+
+  /// خصمُ السطر بالقيمة — عمودُ `discount`.
+  final double discount;
+
+  /// ضريبةُ السطر بالقيمة — عمودُ `tax`.
+  final double tax;
+
   InvoiceItem({
     required this.name,
     required this.quantity,
     required this.price,
     required this.total,
     this.note,
+    this.code,
+    this.unit,
+    this.barcode,
+    this.discount = 0,
+    this.tax = 0,
   });
 }
 

@@ -77,6 +77,15 @@ class PositionedTable {
   /// القالب. الراسمُ يقرأ هذه لا [TableSpec.bilingualHeaders].
   final bool bilingualHeaders;
 
+  /// حجمُ خطِّ الرأس وخطِّ الخليّة — بالنقاط.
+  ///
+  /// ⚠️ **ولولاهما لا يصل مقاسُ خطِّ الجدول الورقةَ إطلاقاً**: `paint_plan`
+  /// كانت لا تمرّر `fontSize` لعمليّات الرأس والخلايا، فتأخذ افتراضَ
+  /// `PaintOp` وهو **١٠** — أيّاً كان المخزَّنُ في `invoice_table_settings`.
+  /// مقيسٌ على البصمة الذهبيّة: القالبُ يخزّن ١٢ والورقةُ تطبع ١٠.
+  final double headerFontSize;
+  final double cellFontSize;
+
   final List<PositionedRow> rows;
 
   const PositionedTable({
@@ -86,6 +95,8 @@ class PositionedTable {
     required this.headerCells,
     required this.headerHeightMm,
     required this.bilingualHeaders,
+    required this.headerFontSize,
+    required this.cellFontSize,
     required this.rows,
   });
 
@@ -165,6 +176,27 @@ class _PageDraft {
 ///
 /// تفصل الحراريَّ (٥٨مم ⇒ ٥٢ متاحة · ٨٠مم ⇒ ٧٤) عن A5 (١٤٨مم ⇒ ١٣٨).
 const double narrowPaperMm = 100;
+
+/// ارتفاعُ رأسٍ ثنائيِّ اللغة — **مشتقٌّ من الخطّ لا من ارتفاع الصفّ**.
+///
+/// ── العطبُ الذي يمنعه ────────────────────────────────────────────────────
+/// كان `rowHeightMm * 1.6` — أي ٩٫٦مم عند الافتراض ٦. وذلك أقصرُ من سطرين،
+/// فحزمةُ `pdf` **تُسقط الطفلَ الفائض بلا رسالةٍ ولا استثناء**: الرأسُ يُرسم
+/// عربيّاً وحدَه والإنجليزيُّ يختفي. ولذلك لم تحمل **أيُّ** بصمةٍ ذهبيّةٍ من
+/// السبعٍ وعشرين عنواناً إنجليزيّاً قطُّ — الميزةُ لم تصل الورقةَ يوماً.
+///
+/// ── والمعاملُ مقيسٌ لا مقدَّر ─────────────────────────────────────────────
+/// بمعايرةٍ على الراسم نفسِه (‏خطُّ ١٠ + سطرٌ ثانٍ بـ٠٫٨ منه): ١٠٫٥مم تُسقط
+/// السطرَ و١١٫٠مم تُظهره. فالحاجةُ ‏١٨ نقطةً من الحرف تشغل ٣١٫٢ نقطةً من
+/// الصندوق — نسبةُ ١٫٧٥ تشمل ارتفاعَ السطر وفسحةَ التوسيط.
+///
+/// و`rowHeightMm` يبقى حدّاً أدنى: قالبٌ بصفٍّ عريضٍ وخطٍّ صغيرٍ لا يضيق رأسُه.
+double bilingualHeaderHeightMm(double headerFontSize, double rowHeightMm) {
+  const ptToMm = 0.3528;
+  const boxFactor = 1.75;
+  final needed = (headerFontSize + headerFontSize * 0.8) * ptToMm * boxFactor;
+  return needed > rowHeightMm ? needed : rowHeightMm;
+}
 
 /// يحوّل [TemplateDocument] + بيانات ⇒ صفحاتٍ بمواضعَ نهائيّة.
 class LayoutEngine {
@@ -351,7 +383,9 @@ class LayoutEngine {
     // تسع سطرين لكلِّ عمود، والسطرُ الثاني يدهس الصفَّ الأوّل من البيانات.
     // العتبةُ تفصل الحراريَّ (٥٨/٨٠) عن A5 (١٤٨) وA4 (٢١٠).
     final bilingual = table.bilingualHeaders && contentWidth >= narrowPaperMm;
-    final headerHeight = bilingual ? table.rowHeightMm * 1.6 : table.rowHeightMm;
+    final headerHeight = bilingual
+        ? bilingualHeaderHeightMm(table.headerFontSize, table.rowHeightMm)
+        : table.rowHeightMm;
 
     final detailsTop = cursorY;
     var y = cursorY;
@@ -407,6 +441,8 @@ class LayoutEngine {
           headerCells: headerCells,
           headerHeightMm: headerOnThisSlice,
           bilingualHeaders: bilingual,
+          headerFontSize: table.headerFontSize,
+          cellFontSize: table.fontSize,
           rows: List.unmodifiable(sliceRows),
         ),
       );

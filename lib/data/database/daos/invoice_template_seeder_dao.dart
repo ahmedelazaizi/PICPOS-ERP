@@ -1841,9 +1841,27 @@ extension InvoiceTemplateSeederDao on AppDatabase {
     //    غيرَ مهاجَرٍ فأعادت اشتقاقَ المواضع من التدفّق ودهست التصميمَ عند
     //    أوّل فتحٍ للمحرّر. والشرطُ **كلُّها** لا بعضُها: `buildDocument`
     //    يشترط `visible.every(_isPositioned)`.
-    if (positioned == elements.length) {
+    // ⚠️ و`type != 'thermal'` صراحةً مع أنّ الحرفَ الأوّلَ كافٍ اليوم:
+    //    الارتفاعاتُ أدناه **مقاساتُ A4**، ولو أُضيفت إحداثيّاتٌ للقائمة
+    //    الحراريّة غداً لورثتها بلا أن يلاحظ أحد.
+    if (positioned == elements.length && type != 'thermal') {
       await (update(invoiceTemplates)..where((t) => t.id.equals(templateId)))
-          .write(const InvoiceTemplatesCompanion(layoutVersion: Value(2)));
+          .write(InvoiceTemplatesCompanion(
+        layoutVersion: const Value(2),
+        // ارتفاعاتُ التصميم حرفيّاً (`PicPos Template Editor.dc.html:487`).
+        //
+        // ولا تُترك للاشتقاق: أبعدُ قاعِ عنصرٍ يعطي ٣١/١٩/١٨/٩٦/٣٣/٣٣ —
+        // أي بلا الحشوة السفليّة التي يتركها التصميمُ تحت كلِّ نطاق، فتتلاصق
+        // الكتلُ وتضيق الورقةُ ٢٨مم عن المقصود.
+        bandHeights: Value(jsonEncode(const {
+          'header': 34.0,
+          'info': 24.0,
+          'party': 26.0,
+          'details': 96.0,
+          'totals': 42.0,
+          'footer': 36.0,
+        })),
+      ));
     }
 
     // Seed default table settings with calculated position
