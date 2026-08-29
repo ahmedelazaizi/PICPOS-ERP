@@ -417,6 +417,7 @@ class PosClosingController extends Notifier<PosClosingState> {
     String password = '',
     String cardCode = '',
     bool overrideVariance = false,
+    String? varianceReason,
   }) async {
     state = state.copyWith(isProcessing: true);
 
@@ -708,6 +709,16 @@ class PosClosingController extends Notifier<PosClosingState> {
             'بنك: ${state.actualBankAmount.toStringAsFixed(AppConstants.decimalPlaces)}',
           if (state.actualClickAmount > 0)
             'كليك: ${state.actualClickAmount.toStringAsFixed(AppConstants.decimalPlaces)}',
+          // سببُ الفرق حين تطلبه سياسةُ البيع السريع (§٤ `diffmax`).
+          //
+          // ⚠️ **وسيطٌ اختياريٌّ افتراضُه `null`**: هذا المتحكّمُ مشترَكٌ
+          // مع شاشة UralCash المجمّدة، ونداؤها لا يمرّره فتبقى ملاحظتُها
+          // حرفاً بحرف كما كانت. ومن يطلبه هو حوارُ PicPos وحدَه.
+          //
+          // والسببُ يُخزَّن مع الوردية لا في سجلٍّ منفصل: من يراجع فرقاً
+          // بعد أسبوعٍ يفتح الوردية، وسببٌ في مكانٍ آخرَ لا يُقرأ.
+          if (varianceReason != null && varianceReason.trim().isNotEmpty)
+            'سبب الفرق: ${varianceReason.trim()}',
         ].join(' - '),
         closingMethod: closingMethod,
         closingSnapshot: snapshot.encode(),

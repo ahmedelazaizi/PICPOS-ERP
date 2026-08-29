@@ -1098,6 +1098,68 @@ class _PicposCashierClosingDialogState
     );
   }
 
+  /// يطلب سببَ الفرق — `null` تعني إلغاءً أو سبباً فارغاً.
+  ///
+  /// حقلٌ حرٌّ لا قائمةُ أسبابٍ جاهزة: قائمةٌ قصيرةٌ تدفع الكاشيرَ لاختيار
+  /// أقربِ بندٍ لا لوصفِ ما حدث، فتُنتج بياناتٍ مرتّبةً بلا معنى.
+  Future<String?> _promptVarianceReason(
+    double difference,
+    double limit,
+  ) async {
+    final controller = TextEditingController();
+    final shortfall = difference < 0;
+    final reason = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          title: Row(children: [
+            const Icon(PhosphorIconsBold.warning, color: AppColors.warning),
+            const SizedBox(width: 8),
+            Text(shortfall ? 'عجزٌ في الدرج' : 'زيادةٌ في الدرج'),
+          ]),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'الفرق ${difference.abs().toStringAsFixed(AppConstants.decimalPlaces)} يتجاوز الحدَّ المسموح ${limit.toStringAsFixed(0)}.'
+                '\nاكتب سببَ الفرق ليُحفَظ مع الوردية.',
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller,
+                autofocus: true,
+                maxLines: 2,
+                decoration: const InputDecoration(
+                  labelText: 'سبب الفرق',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('إلغاء'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final v = controller.text.trim();
+                if (v.isEmpty) return;
+                Navigator.pop(ctx, v);
+              },
+              child: const Text('تأكيد'),
+            ),
+          ],
+        ),
+      ),
+    );
+    controller.dispose();
+    return (reason == null || reason.trim().isEmpty) ? null : reason;
+  }
+
   Future<void> _handleClosingAction(bool isAdmin, PosClosingState state) async {
     if (state.isProcessing) return;
 
@@ -1150,10 +1212,35 @@ class _PicposCashierClosingDialogState
       }
     }
 
+    // §٤ `diffmax` — فرقٌ فوق الحدّ لا يمرّ بلا سببٍ مكتوب.
+    //
+    // ⚠️ **بالقيمة المطلقة**: العجزُ ٢٥ يحتاج سبباً كما تحتاجه الزيادةُ
+    // ٢٥، وإهمالُ الإشارة يُعفي العجزَ — وهو الأخطرُ محاسبيّاً: المالُ
+    // الناقصُ يمرّ بلا تفسير. والمنطقُ في `quickSaleShiftDiffNeedsReason`.
+    String? varianceReason;
+    final diffPolicy = ref.read(quickSalePolicyProvider).asData?.value;
+    if (diffPolicy != null) {
+      final limit = quickSaleShiftDiffLimit(diffPolicy);
+      if (quickSaleShiftDiffNeedsReason(
+        difference: state.totalVariance,
+        limit: limit,
+      )) {
+        varianceReason = await _promptVarianceReason(
+          state.totalVariance,
+          limit!,
+        );
+        // إلغاءٌ أو سببٌ فارغ ⇒ لا تُغلَق الوردية. والسكوتُ هنا كان
+        // سيجعل الحدَّ زينةً: يُعرَض ثمّ يُتخطّى بضغطةِ «إلغاء».
+        if (varianceReason == null) return;
+        if (!mounted) return;
+      }
+    }
+
     try {
       await ref.read(posClosingControllerProvider.notifier).handleClosing(
         password: _passwordController.text,
         cardCode: _msrCardController.text,
+        varianceReason: varianceReason,
       );
 
       if (mounted) {

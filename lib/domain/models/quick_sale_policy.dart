@@ -637,7 +637,7 @@ const List<QuickSaleStep> kQuickSaleSteps = [
             sub: 'فوقه يُطلب سبب مكتوب يُرفق بمحضر الوردية',
             options: ['٥ ج.م', '٢٠ ج.م', '٥٠ ج.م', 'بلا حد'],
             defaultIndex: 1,
-            notEnforcedReason: _newBehaviour,
+            enforced: true,
           ),
           QuickSaleRow(
             id: 'xrep',
