@@ -376,6 +376,18 @@ extension PurchaseDao on AppDatabase {
         ABS(sm.quantity)  AS returned_qty,
         COALESCE(pii.unit_cost, sm.unit_cost, 0)   AS unit_cost,
         COALESCE(pii.unit_name, '')                 AS unit_name,
+        p.code                                      AS product_code,
+        COALESCE(p.barcode, '')                     AS product_barcode,
+        -- ⚠️ **الخصمُ والضريبةُ مقسَّطان بنسبة المرتجَع**: القيمتان المخزَّنتان
+        --    تخصّان السطرَ كاملاً، ونقلُهما حرفيّاً في مرتجعٍ جزئيٍّ يطبع
+        --    خصماً أكبرَ من قيمة المرتجَع نفسِه — رقمٌ خاطئٌ على مستندٍ ماليّ.
+        --    والقسمةُ محروسةٌ من الصفر: سطرٌ بكمّيّةٍ صفريّةٍ يعطي صفراً لا NULL.
+        CASE WHEN COALESCE(pii.quantity, 0) > 0
+             THEN COALESCE(pii.discount, 0) * ABS(sm.quantity) / pii.quantity
+             ELSE 0 END                             AS line_discount,
+        CASE WHEN COALESCE(pii.quantity, 0) > 0
+             THEN COALESCE(pii.tax_amount, 0) * ABS(sm.quantity) / pii.quantity
+             ELSE 0 END                             AS line_tax,
         ABS(sm.quantity) * COALESCE(pii.unit_cost, sm.unit_cost, 0) AS total_amount
       FROM stock_movements sm
       JOIN products p ON p.id = sm.product_id
@@ -423,6 +435,11 @@ extension PurchaseDao on AppDatabase {
         pii.quantity AS returned_qty,
         pii.unit_cost AS unit_cost,
         COALESCE(pii.unit_name, '') AS unit_name,
+        p.code AS product_code,
+        COALESCE(p.barcode, '') AS product_barcode,
+        -- مرتجعٌ **كامل** (‏`status = 'returned'` شرطٌ أعلاه) ⇒ بلا تقسيط.
+        COALESCE(pii.discount, 0) AS line_discount,
+        COALESCE(pii.tax_amount, 0) AS line_tax,
         pii.total AS total_amount
       FROM purchase_invoice_items pii
       JOIN products p ON p.id = pii.product_id
