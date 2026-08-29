@@ -170,20 +170,38 @@ void main() {
     };
 
     for (final e in bodies.entries) {
-      test('${e.key} يعيد الأقسامَ وحدَها عند `picposChrome`', () {
+      test('${e.key} يخرج قبل زرِّ الحفظ عند `picposChrome`', () {
         // زرّان للحفظ في حوارٍ واحدٍ يجعل المستخدمَ لا يعرف أيُّهما يحفظ.
+        //
+        // ⚠️ **يُقاس الترتيبُ لا التهجئة.** كانت الصياغةُ تشترط
+        // `return sections;` حرفاً بحرف، فسقطت حين صار جسمُ «البيع السريع»
+        // يعيد `_buildDesignLayout()` (‏§٣ — تخطيطُ التصميم) وهو **يحقّق
+        // الشرطَ نفسَه**: خروجٌ مبكّرٌ قبل الزرّ. أي أنّ الحارسَ كان يحرس
+        // اسمَ متغيّرٍ لا الخاصّيّةَ التي يدّعيها.
+        //
+        // والخاصّيّةُ الحقيقيّةُ شرطان: خروجٌ مبكّرٌ على `picposChrome`،
+        // وزرُّ الحفظِ **بعده** في المصدر فلا يبلغه ذلك المسار.
         final src = _code(
           File('lib/presentation/widgets/settings/${e.key}.dart')
               .readAsStringSync(),
         );
-        expect(
-          RegExp(r'if\s*\(widget\.picposChrome\)\s*return\s+sections;')
-              .hasMatch(src),
-          isTrue,
-          reason: '${e.key} لا يقصّر جسمَه عند `picposChrome` — '
-              'فيظهر زرُّ «${e.value}» داخلَ الجسم وزرٌّ آخرُ في تذييل '
-              '`PicPosDialog`.',
-        );
+
+        final early = RegExp(
+          r'if\s*\(widget\.picposChrome\)\s*return\s+[^;]+;',
+        ).firstMatch(src);
+
+        expect(early, isNotNull,
+            reason: '${e.key} لا يقصّر جسمَه عند `picposChrome` — '
+                'فيظهر زرُّ «${e.value}» داخلَ الجسم وزرٌّ آخرُ في تذييل '
+                '`PicPosDialog`.');
+
+        final button = src.indexOf('ElevatedButton(onPressed: _saveSettings');
+        expect(button, greaterThan(-1),
+            reason: 'زرُّ الحفظِ لم يُعثر عليه في ${e.key} — تغيّرت صياغتُه '
+                'فصار الحارسُ يقيس عدماً.');
+        expect(button, greaterThan(early!.start),
+            reason: 'زرُّ «${e.value}» يقع **قبل** الخروجِ المبكّر في '
+                '${e.key}، فيراه غلافُ PicPos ويصير في الحوار زرّا حفظ.');
       });
     }
   });

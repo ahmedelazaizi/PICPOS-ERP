@@ -6,6 +6,8 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../picpos_shell/picpos_body_handle.dart';
 import '../../picpos_shell/picpos_dialog.dart';
+import '../../picpos_shell/picpos_surface.dart';
+import '../../settings_picpos/widgets/quick_sale_settings_chrome.dart';
 import '../../../data/providers/providers.dart';
 import '../../../core/config/app_config.dart';
 import '../../../services/client_write_interceptor.dart';
@@ -116,6 +118,12 @@ class PosSettingsWidget extends ConsumerStatefulWidget {
 
 class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
   bool _isLoading = true;
+
+  /// القسمُ المعروضُ في تخطيط التصميم — فهرسٌ في [kQuickSaleSections].
+  ///
+  /// ⚠️ **يخصُّ غلافَ PicPos وحدَه.** لوحةُ UralCash تبقى تمريرةً واحدةً
+  /// تعرض الأقسامَ الخمسةَ فوقَ بعضها، فلا يتبدّل شيءٌ لها.
+  int _sectionIndex = 0;
   // Action buttons
   bool _showTaxButtonInPOS = true;
   bool _showDiscountButtonInPOS = true;
@@ -729,6 +737,15 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
   Widget build(BuildContext context) {
     if (_isLoading) return const Center(child: CircularProgressIndicator());
 
+    // في غلاف PicPos: لا زرَّ حفظٍ هنا ولا `Directionality` — الغلافُ يوفّر
+    // الاثنين، وزرّان للحفظ في حوارٍ واحدٍ يربكان.
+    //
+    // والتخطيطُ يصير شريطاً جانبيّاً ولوحةً كما في التصميم بدل تمريرةٍ
+    // واحدةٍ تُكدِّس الأقسامَ الخمسةَ — §٣ من بلاغ المالك 2026-08-29.
+    // والعودةُ **قبل** بناء `sections` عمداً: ذاك يبني الأقسامَ الخمسةَ كلَّها
+    // وتخطيطُ التصميم يعرض واحداً.
+    if (widget.picposChrome) return _buildDesignLayout();
+
     final sections = SingleChildScrollView(
       child: Column(children: [
         _buildMainPOSSection(),
@@ -742,10 +759,6 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
         _buildTablePOSSection(),
       ]),
     );
-
-    // في غلاف PicPos: لا زرَّ حفظٍ هنا ولا `Directionality` — الغلافُ يوفّر
-    // الاثنين، وزرّان للحفظ في حوارٍ واحدٍ يربكان.
-    if (widget.picposChrome) return sections;
 
     return Directionality(
       textDirection: ui.TextDirection.rtl,
@@ -762,27 +775,326 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
     );
   }
 
+  /// تخطيطُ التصميم — شريطُ أقسامٍ جانبيٌّ ولوحةٌ تعرض المختارَ وحدَه.
+  ///
+  /// ⚠️ **الشريطُ أوّلُ أبناء `Row` عمداً.** الغلافُ يوفّر `Directionality`
+  /// من اليمين، فأوّلُ الأبناء يقع يميناً — وهو موضعُ الشريط في التصميم
+  /// (`border-inline-end`). ولهذا الحدُّ `left` لا `right`: الطرفُ المنطقيُّ
+  /// `inline-end` هو الأيسرُ فيزيائيّاً في واجهةٍ عربيّة.
+  Widget _buildDesignLayout() {
+    final section = kQuickSaleSections[_sectionIndex];
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(
+          width: 250,
+          child: Container(
+            decoration: BoxDecoration(
+              color: context.picposField,
+              border: Border(left: BorderSide(color: context.picposHairline)),
+            ),
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
+                  child: Text(
+                    'أقسام الحوار',
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.4,
+                      color: context.picposMuted,
+                    ),
+                  ),
+                ),
+                for (var i = 0; i < kQuickSaleSections.length; i++)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: QuickSaleNavTile(
+                      icon: kQuickSaleSections[i].icon,
+                      tint: kQuickSaleSections[i].tint,
+                      title: kQuickSaleSections[i].title,
+                      settingCount: kQuickSaleSections[i].settingCount,
+                      selected: i == _sectionIndex,
+                      onTap: () => setState(() => _sectionIndex = i),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(22, 18, 22, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                QuickSaleSectionHeader(
+                  icon: section.icon,
+                  tint: section.tint,
+                  title: section.title,
+                  hint: section.hint,
+                ),
+                const SizedBox(height: 14),
+                _sectionBody(_sectionIndex),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // لونُ كلِّ قسمٍ من [kQuickSaleSections] لا أرقاماً مكرّرة — مصدرٌ واحدٌ
+  // للتصميم، فتغييرُ اللون هناك يسري على صفوفه هنا.
+  Color get _mainTint => kQuickSaleSections[0].tint;
+  Color get _catTint => kQuickSaleSections[1].tint;
+  Color get _gridTint => kQuickSaleSections[2].tint;
+  Color get _receiptTint => kQuickSaleSections[3].tint;
+  Color get _tposTint => kQuickSaleSections[4].tint;
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // صفوفُ الإعداد — نداءٌ واحدٌ يخدم العلامتَين
+  // ═══════════════════════════════════════════════════════════════════════
+  //
+  // ⚠️ **لماذا الفرعُ داخلَ الصفِّ لا حولَ القسم.** تفريعُ كلِّ قسمٍ كان
+  // يعني نسختَين من ٣٧ صفّاً في ملفٍّ واحد، وأوّلُ إصلاحٍ يدخل واحدةً
+  // وينسى الأخرى. فالمُناداةُ واحدةٌ لكلِّ إعداد، والشكلُ وحدَه يتفرّع.
+  //
+  // و[legacyTitle] يحفظ نصَّ UralCash **حرفاً بحرف** حيث اختلف عن التصميم
+  // (‏«حجم خط الاسم» مقابلَ «حجم الخط» مثلاً): العملُ على UralCash موقوفٌ،
+  // فلا يصحُّ أن يبدّل هذا البندُ نصوصَها.
+
+  /// ترويسةُ مجموعةٍ داخلَ القسم — شريطٌ ملوّنٌ رفيعٌ ثمّ الاسم.
+  ///
+  /// التصميمُ يفصل المجموعاتِ ببطاقاتٍ مستقلّة؛ وهنا تبقى بطاقةُ القسم
+  /// واحدةً والمجموعاتُ تُفصَل بترويسةٍ بنفس المفردات البصريّة (شريطُ
+  /// `3.5×15` بنصف قطر ٣). فرقٌ في التغليف لا في اللغة، ويُجنّب تفكيكَ
+  /// خمسةِ بُناةٍ إلى بطاقاتٍ منفصلةٍ في هذا البند.
+  Widget _groupHeader(String label, Color tint) {
+    if (!widget.picposChrome) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Text(label,
+            style: TextStyle(
+                fontWeight: FontWeight.bold, fontSize: 14, color: tint)),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 14, 0, 6),
+      child: Row(children: [
+        Container(
+          width: 3.5,
+          height: 15,
+          decoration: BoxDecoration(
+            color: tint,
+            borderRadius: BorderRadius.circular(3),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Text(label,
+            style: TextStyle(
+              fontSize: 13.5,
+              fontWeight: FontWeight.w800,
+              color: context.picposText,
+            )),
+      ]),
+    );
+  }
+
+  /// صفُّ مِزلاجٍ (‏`toggle` في التصميم).
+  Widget _toggleRow({
+    required IconData icon,
+    required Color tint,
+    required String title,
+    required String settingKey,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+    String? sub,
+    String? legacyTitle,
+    bool isLast = false,
+  }) {
+    if (!widget.picposChrome) {
+      // بلا `style` على العنوان الفرعيّ — النسخةُ القديمةُ تتركه لـ`ListTile`،
+      // وأيُّ مقاسٍ هنا يبدّل مظهرَ UralCash.
+      return SwitchListTile(
+        contentPadding: EdgeInsets.zero,
+        title: Text(legacyTitle ?? title),
+        subtitle: sub == null ? null : Text(sub),
+        value: value,
+        onChanged: onChanged,
+      );
+    }
+    return QuickSaleSettingRow(
+      icon: icon,
+      tint: tint,
+      title: title,
+      settingKey: settingKey,
+      sub: sub,
+      isLast: isLast,
+      control: Switch(value: value, onChanged: onChanged),
+    );
+  }
+
+  /// صفُّ مِنزلقٍ (‏`slider` في التصميم) — القيمةُ تُعرَض إلى جانبه.
+  Widget _sliderRow({
+    required IconData icon,
+    required Color tint,
+    required String title,
+    required String settingKey,
+    required double value,
+    required double min,
+    required double max,
+    required int divisions,
+    required ValueChanged<double> onChanged,
+    String? sub,
+    String? legacyTitle,
+    bool isLast = false,
+    /// تنسيقُ القيمة المعروضة — `نسبة العرض/الارتفاع` كسريّةٌ بمنزلتَين لا
+    /// صحيحة، فتقريبُها يخفي الفرقَ بين ٠٫٧٥ و٠٫٨٥.
+    String Function(double)? format,
+
+    /// تلميحُ المِنزلق حين يختلف عن القيمة المعروضة — «٥ دقيقة» في التلميح
+    /// و«٥» بجانبه. تقريبُهما إلى صيغةٍ واحدةٍ يبدّل نصَّ UralCash.
+    String Function(double)? labelFormat,
+  }) {
+    final shown = format ?? (v) => '${v.round()}';
+    final tip = labelFormat ?? shown;
+    final slider = Slider(
+      value: value,
+      min: min,
+      max: max,
+      divisions: divisions,
+      label: tip(value),
+      onChanged: onChanged,
+    );
+
+    if (!widget.picposChrome) {
+      return Row(children: [
+        Text('${legacyTitle ?? title}: '),
+        Expanded(child: slider),
+        Text(shown(value),
+            style: const TextStyle(fontWeight: FontWeight.bold)),
+      ]);
+    }
+
+    return QuickSaleSettingRow(
+      icon: icon,
+      tint: tint,
+      title: title,
+      settingKey: settingKey,
+      sub: sub,
+      isLast: isLast,
+      control: SizedBox(
+        width: 230,
+        child: Row(children: [
+          Expanded(child: slider),
+          SizedBox(
+            width: 44,
+            child: Text(
+              shown(value),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 12.5,
+                color: context.picposText,
+              ),
+            ),
+          ),
+        ]),
+      ),
+    );
+  }
+
+  /// صفُّ اختيارٍ من قائمة (‏`select` في التصميم).
+  Widget _selectRow<T>({
+    required IconData icon,
+    required Color tint,
+    required String title,
+    required String settingKey,
+    required T value,
+    required List<DropdownMenuItem<T>> items,
+    required ValueChanged<T?> onChanged,
+    String? sub,
+    String? legacyTitle,
+    bool isLast = false,
+  }) {
+    final dropdown = DropdownButton<T>(
+      value: value,
+      underline: const SizedBox.shrink(),
+      items: items,
+      onChanged: onChanged,
+    );
+
+    if (!widget.picposChrome) {
+      return ListTile(
+        contentPadding: EdgeInsets.zero,
+        title: Text(legacyTitle ?? title),
+        subtitle: sub == null ? null : Text(sub),
+        trailing: dropdown,
+      );
+    }
+
+    return QuickSaleSettingRow(
+      icon: icon,
+      tint: tint,
+      title: title,
+      settingKey: settingKey,
+      sub: sub,
+      isLast: isLast,
+      control: dropdown,
+    );
+  }
+
+  /// جسمُ القسمِ المختار — نفسُ بُناةِ UralCash بلا نسخ.
+  Widget _sectionBody(int index) => switch (index) {
+        0 => _buildMainPOSSection(),
+        1 => _buildCategoryDisplaySection(),
+        2 => _buildProductGridSection(),
+        3 => _buildReceiptSection(),
+        _ => _buildTablePOSSection(),
+      };
+
   Widget _buildMainPOSSection() {
     return _buildSectionCard(
       title: 'إعدادات البيع السريع الرئيسية', icon: PhosphorIconsBold.shoppingCart, iconColor: AppColors.primary,
       children: [
         // ─── إعدادات الوردية والعرض ───
-        const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Text('إعدادات الوردية والعرض', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primary))),
-        SwitchListTile(title: const Text('إظهار ديالوج فتح الوردية'), subtitle: const Text('عند الإغلاق يتم فتح الوردية تلقائياً بدون سؤال'), value: _posShiftDialogEnabled, onChanged: (v) => setState(() => _posShiftDialogEnabled = v), contentPadding: EdgeInsets.zero),
-        SwitchListTile(title: const Text('إظهار شريط التنقل العلوي'), subtitle: const Text('إظهار أو إخفاء شريط التنبيهات والتنقل أعلى الشاشة'), value: _showTopBar, onChanged: (v) => setState(() => _showTopBar = v), contentPadding: EdgeInsets.zero),
-        ListTile(
-          title: const Text('وضع تنبيهات المخزون'),
-          subtitle: Text(_posStockAlertMode == 'min_stock' ? 'تنبيه عند الوصول للحد الأدنى' : 'تنبيه فقط عند نفاد المخزون'),
-          contentPadding: EdgeInsets.zero,
-          trailing: DropdownButton<String>(
-            value: _posStockAlertMode,
-            underline: const SizedBox.shrink(),
-            items: const [
-              DropdownMenuItem(value: 'zero', child: Text('نفاد المخزون فقط')),
-              DropdownMenuItem(value: 'min_stock', child: Text('الحد الأدنى')),
-            ],
-            onChanged: (v) => setState(() => _posStockAlertMode = v ?? 'zero'),
-          ),
+        _groupHeader('إعدادات الوردية والعرض', _mainTint),
+        _toggleRow(
+          icon: PhosphorIconsBold.clockCountdown,
+          tint: _mainTint,
+          title: 'إظهار ديالوج فتح الوردية',
+          settingKey: 'pos_shift_dialog_enabled',
+          sub: 'عند الإغلاق يتم فتح الوردية تلقائياً بدون سؤال',
+          value: _posShiftDialogEnabled,
+          onChanged: (v) => setState(() => _posShiftDialogEnabled = v),
+        ),
+        _toggleRow(
+          icon: PhosphorIconsBold.layout,
+          tint: kQuickSaleSections[0].tint,
+          title: 'إظهار شريط التنقل العلوي',
+          settingKey: 'app_show_top_bar',
+          sub: 'إظهار أو إخفاء شريط التنبيهات والتنقل أعلى الشاشة',
+          value: _showTopBar,
+          onChanged: (v) => setState(() => _showTopBar = v),
+        ),
+        _selectRow<String>(
+          icon: PhosphorIconsBold.bellRinging,
+          tint: AppColors.warning,
+          title: 'وضع تنبيهات المخزون',
+          settingKey: 'pos_stock_alert_mode',
+          sub: _posStockAlertMode == 'min_stock'
+              ? 'تنبيه عند الوصول للحد الأدنى'
+              : 'تنبيه فقط عند نفاد المخزون',
+          value: _posStockAlertMode,
+          items: const [
+            DropdownMenuItem(value: 'zero', child: Text('نفاد المخزون فقط')),
+            DropdownMenuItem(value: 'min_stock', child: Text('الحد الأدنى')),
+          ],
+          onChanged: (v) => setState(() => _posStockAlertMode = v ?? 'zero'),
         ),
         // Feature 022 (follow-up): expose the negative-sales toggle in
         // POS settings — that's where operators expect it. The same
@@ -790,7 +1102,26 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
         // sale; defaults to false (block) on fresh installs and is
         // preserved as true on existing installs via the boot-time
         // backfill (Cluster 018).
-        SwitchListTile(
+        // ⚠️ الأيقونةُ تتبع الحالةَ: كهرمانيّةٌ حين يُسمح بالسالب وخضراءُ حين
+        // يُمنع — إشارةُ خطرٍ لا زينة، فتُنقَل كما هي إلى صفِّ التصميم.
+        widget.picposChrome
+            ? _toggleRow(
+                icon: PhosphorIconsBold.warning,
+                tint: _enableNegativeSales
+                    ? AppColors.warning
+                    : AppColors.success,
+                title: 'السماح بالبيع بالسالب عند نقص المخزون',
+                settingKey: 'enable_negative_sales',
+                sub: _enableNegativeSales
+                    ? 'يمكن للكاشير بيع أصناف خارج المخزون — قد ينتج مخزون سالب.'
+                    : 'يمنع البيع عند نفاد المخزون ويظهر تنبيه باللغة العربية.',
+                value: _enableNegativeSales,
+                onChanged: (v) async {
+                  setState(() => _enableNegativeSales = v);
+                  if (v) await _offerNegativeSaleOnAllProducts();
+                },
+              )
+            : SwitchListTile(
           title: const Text('السماح بالبيع بالسالب عند نقص المخزون'),
           subtitle: Text(
             _enableNegativeSales
@@ -874,10 +1205,10 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
             );
           },
         ),
-        const Divider(thickness: 2),
+        if (!widget.picposChrome) const Divider(thickness: 2),
 
         // ─── أزرار الإجراءات السريعة والسلة ───
-        const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Text('أزرار البيع السريع والسلة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primary))),
+        _groupHeader('أزرار البيع السريع والسلة', _mainTint),
         Wrap(
           spacing: 8,
           runSpacing: 8,
@@ -895,10 +1226,10 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
             FilterChip(label: const Text('زر الاستبدال'), selected: _showExchangeButtonInPOS, onSelected: (v) => setState(() => _showExchangeButtonInPOS = v)),
           ],
         ),
-        const Divider(thickness: 2),
+        if (!widget.picposChrome) const Divider(thickness: 2),
 
         // ─── إعدادات ترقيم المستندات ───
-        const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Text('إعدادات ترقيم المستندات', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primary))),
+        _groupHeader('إعدادات ترقيم المستندات', _mainTint),
         const Text('تحديد بادئة الترقيم لكل نوع مستند. اترك الحقل فارغاً للترقيم الافتراضي.', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
         const SizedBox(height: 8),
         // Sales group
@@ -959,10 +1290,10 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
             onChanged: (v) => _prefixPaymentVoucher = v,
           )),
         ]),
-        const Divider(thickness: 2),
+        if (!widget.picposChrome) const Divider(thickness: 2),
 
         // ─── واجهة العرض والتفاعل ───
-        const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Text('واجهة العرض والتفاعل', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primary))),
+        _groupHeader('واجهة العرض والتفاعل', _mainTint),
         Wrap(
           spacing: 8,
           runSpacing: 8,
@@ -988,49 +1319,110 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
             ),
           ],
         ),
-        const Divider(thickness: 2),
+        if (!widget.picposChrome) const Divider(thickness: 2),
 
         // ─── أيقونة الصنف وباقي الإعدادات ───
-        const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Text('عرض المنتجات', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primary))),
-        SwitchListTile(title: const Text('إظهار صور الأصناف'), subtitle: const Text('إظهار أو إخفاء صور المنتجات في شبكة البيع السريع'), value: _showProductImagesInPOS, onChanged: (v) => setState(() => _showProductImagesInPOS = v), contentPadding: EdgeInsets.zero),
-        SwitchListTile(title: const Text('إظهار ترتيب الأصناف'), value: _showProductSortInPOS, onChanged: (v) => setState(() => _showProductSortInPOS = v), contentPadding: EdgeInsets.zero),
-        SwitchListTile(title: const Text('إظهار زر طي القائمة'), subtitle: const Text('إظهار أو إخفاء زر التحكم في أماكن عرض المنتجات'), value: _showProductLayoutToggleInPOS, onChanged: (v) => setState(() => _showProductLayoutToggleInPOS = v), contentPadding: EdgeInsets.zero),
-        const SizedBox(height: 8),
-        Row(children: [
-          const Text('حجم خط الاسم: '),
-          Expanded(child: Slider(value: _productNameFontSize, min: 10, max: 24, divisions: 14, label: '${_productNameFontSize.round()}', onChanged: (v) => setState(() => _productNameFontSize = v))),
-          Text('${_productNameFontSize.round()}', style: const TextStyle(fontWeight: FontWeight.bold)),
-        ]),
-        Row(children: [
-          const Text('حجم خط السعر: '),
-          Expanded(child: Slider(value: _productPriceFontSize, min: 10, max: 24, divisions: 14, label: '${_productPriceFontSize.round()}', onChanged: (v) => setState(() => _productPriceFontSize = v))),
-          Text('${_productPriceFontSize.round()}', style: const TextStyle(fontWeight: FontWeight.bold)),
-        ]),
-        const Divider(thickness: 2),
+        _groupHeader('عرض المنتجات', _mainTint),
+        _toggleRow(
+          icon: PhosphorIconsBold.image,
+          tint: AppColors.success,
+          title: 'إظهار صور الأصناف',
+          settingKey: 'pos_show_product_images',
+          sub: 'إظهار أو إخفاء صور المنتجات في شبكة البيع السريع',
+          value: _showProductImagesInPOS,
+          onChanged: (v) => setState(() => _showProductImagesInPOS = v),
+        ),
+        _toggleRow(
+          icon: PhosphorIconsBold.sortAscending,
+          tint: AppColors.success,
+          title: 'إظهار ترتيب الأصناف',
+          settingKey: 'pos_show_product_sort',
+          value: _showProductSortInPOS,
+          onChanged: (v) => setState(() => _showProductSortInPOS = v),
+        ),
+        _toggleRow(
+          icon: PhosphorIconsBold.columns,
+          tint: AppColors.success,
+          title: 'إظهار زر طي القائمة',
+          settingKey: 'pos_show_layout_toggle',
+          sub: 'إظهار أو إخفاء زر التحكم في أماكن عرض المنتجات',
+          value: _showProductLayoutToggleInPOS,
+          onChanged: (v) => setState(() => _showProductLayoutToggleInPOS = v),
+        ),
+        if (!widget.picposChrome) const SizedBox(height: 8),
+        _sliderRow(
+          icon: PhosphorIconsBold.textAa,
+          tint: _mainTint,
+          title: 'حجم خط الاسم',
+          settingKey: 'pos_product_name_font_size',
+          value: _productNameFontSize, min: 10, max: 24, divisions: 14,
+          onChanged: (v) => setState(() => _productNameFontSize = v),
+        ),
+        _sliderRow(
+          icon: PhosphorIconsBold.textT,
+          tint: _mainTint,
+          title: 'حجم خط السعر',
+          settingKey: 'pos_product_price_font_size',
+          value: _productPriceFontSize, min: 10, max: 24, divisions: 14,
+          isLast: true,
+          onChanged: (v) => setState(() => _productPriceFontSize = v),
+        ),
+        if (!widget.picposChrome) const Divider(thickness: 2),
 
         // ─── إعدادات السلة ───
-        const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Text('إعدادات السلة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primary))),
-        SwitchListTile(title: const Text('قفل نسبة عرض السلة'), subtitle: const Text('منع الكاشير من تغيير حجم السلة'), value: _posCartRatioLocked, onChanged: (v) => setState(() => _posCartRatioLocked = v), contentPadding: EdgeInsets.zero),
+        _groupHeader('إعدادات السلة', _mainTint),
+        _toggleRow(
+          icon: PhosphorIconsBold.lockKey,
+          tint: AppColors.error,
+          title: 'قفل نسبة عرض السلة',
+          settingKey: 'pos_cart_ratio_locked',
+          sub: 'منع الكاشير من تغيير حجم السلة',
+          value: _posCartRatioLocked,
+          isLast: !_posCartRatioLocked,
+          onChanged: (v) => setState(() => _posCartRatioLocked = v),
+        ),
         if (_posCartRatioLocked) ...[
-          const SizedBox(height: 8),
-          Row(children: [
-            const Text('نسبة عرض السلة: '),
-            Expanded(child: Slider(value: _posCartRatioValue, min: 0.3, max: 0.7, divisions: 8, label: '${(_posCartRatioValue * 100).round()}%', onChanged: (v) => setState(() => _posCartRatioValue = v))),
-            Text('${(_posCartRatioValue * 100).round()}%', style: const TextStyle(fontWeight: FontWeight.bold)),
-          ]),
+          if (!widget.picposChrome) const SizedBox(height: 8),
+          _sliderRow(
+            icon: PhosphorIconsBold.columns,
+            tint: _mainTint,
+            title: 'نسبة عرض السلة',
+            settingKey: 'pos_cart_ratio_value',
+            sub: '٦٠٪ = عمود الأصناف ستون بالمئة والسلة أربعون',
+            value: _posCartRatioValue, min: 0.3, max: 0.7, divisions: 8,
+            format: (v) => '${(v * 100).round()}%',
+            isLast: true,
+            onChanged: (v) => setState(() => _posCartRatioValue = v),
+          ),
         ],
-        const Divider(thickness: 2),
+        if (!widget.picposChrome) const Divider(thickness: 2),
 
         // ─── إعدادات الأمان ───
-        const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Text('إعدادات الأمان والحماية', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primary))),
-        SwitchListTile(title: const Text('مهلة انتهاء الجلسة'), subtitle: const Text('تسجيل خروج تلقائي عند ترك النظام بدون نشاط (نفس إعداد الإعدادات العامة)'), value: _posSessionTimeoutEnabled, onChanged: (v) => setState(() => _posSessionTimeoutEnabled = v), contentPadding: EdgeInsets.zero),
+        _groupHeader('إعدادات الأمان والحماية', _mainTint),
+        _toggleRow(
+          icon: PhosphorIconsBold.timer,
+          tint: AppColors.warning,
+          title: 'مهلة انتهاء الجلسة',
+          settingKey: 'pos_session_timeout_enabled',
+          sub: 'تسجيل خروج تلقائي عند ترك النظام بدون نشاط (نفس إعداد الإعدادات العامة)',
+          value: _posSessionTimeoutEnabled,
+          isLast: !_posSessionTimeoutEnabled,
+          onChanged: (v) => setState(() => _posSessionTimeoutEnabled = v),
+        ),
         if (_posSessionTimeoutEnabled) ...[
-          const SizedBox(height: 8),
-          Row(children: [
-            const Text('مدة الانتظار (دقائق): '),
-            Expanded(child: Slider(value: _posSessionTimeoutMinutes, min: 1, max: 60, divisions: 59, label: '${_posSessionTimeoutMinutes.round()} دقيقة', onChanged: (v) => setState(() => _posSessionTimeoutMinutes = v))),
-            Text('${_posSessionTimeoutMinutes.round()}', style: const TextStyle(fontWeight: FontWeight.bold)),
-          ]),
+          if (!widget.picposChrome) const SizedBox(height: 8),
+          _sliderRow(
+            icon: PhosphorIconsBold.hourglass,
+            tint: AppColors.warning,
+            title: 'مدة المهلة',
+            legacyTitle: 'مدة الانتظار (دقائق)',
+            settingKey: 'pos_session_timeout_minutes',
+            sub: 'المفتاح الوحيد المعتمد — صفر يعني تعطيل',
+            value: _posSessionTimeoutMinutes, min: 1, max: 60, divisions: 59,
+            labelFormat: (v) => '${v.round()} دقيقة',
+            isLast: true,
+            onChanged: (v) => setState(() => _posSessionTimeoutMinutes = v),
+          ),
         ],
       ],
     );
@@ -1040,51 +1432,78 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
     return _buildSectionCard(
       title: 'إعدادات منطقة التصنيفات', icon: PhosphorIconsBold.squaresFour, iconColor: AppColors.success,
       children: [
-        const Text('تحكم في مظهر أيقونات التصنيفات أسفل منطقة المنتجات', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
-        const SizedBox(height: 12),
-        Row(children: [
-          const Text('حجم الأيقونة: '),
-          Expanded(child: Slider(value: _catIconSize, min: 30, max: 80, divisions: 10, label: '${_catIconSize.round()}', onChanged: (v) => setState(() => _catIconSize = v))),
-          Text('${_catIconSize.round()}', style: const TextStyle(fontWeight: FontWeight.bold)),
-        ]),
-        Row(children: [
-          const Text('حجم خط الاسم: '),
-          Expanded(child: Slider(value: _catFontSize, min: 8, max: 18, divisions: 10, label: '${_catFontSize.round()}', onChanged: (v) => setState(() => _catFontSize = v))),
-          Text('${_catFontSize.round()}', style: const TextStyle(fontWeight: FontWeight.bold)),
-        ]),
-        Row(children: [
-          const Text('التباعد الأفقي: '),
-          Expanded(child: Slider(value: _catSpacing, min: 4, max: 24, divisions: 10, label: '${_catSpacing.round()}', onChanged: (v) => setState(() => _catSpacing = v))),
-          Text('${_catSpacing.round()}', style: const TextStyle(fontWeight: FontWeight.bold)),
-        ]),
-        Row(children: [
-          const Text('التباعد الرأسي: '),
-          Expanded(child: Slider(value: _catRunSpacing, min: 4, max: 16, divisions: 6, label: '${_catRunSpacing.round()}', onChanged: (v) => setState(() => _catRunSpacing = v))),
-          Text('${_catRunSpacing.round()}', style: const TextStyle(fontWeight: FontWeight.bold)),
-        ]),
-        Row(children: [
-          const Text('عرض نص التصنيف: '),
-          Expanded(child: Slider(value: _catLabelWidth, min: 40, max: 80, divisions: 8, label: '${_catLabelWidth.round()}', onChanged: (v) => setState(() => _catLabelWidth = v))),
-          Text('${_catLabelWidth.round()}', style: const TextStyle(fontWeight: FontWeight.bold)),
-        ]),
-        Row(children: [
-          const Text('ارتفاع المنطقة: '),
-          Expanded(child: Slider(value: _catMaxHeight, min: 80, max: 300, divisions: 11, label: '${_catMaxHeight.round()}', onChanged: (v) => setState(() => _catMaxHeight = v))),
-          Text('${_catMaxHeight.round()}', style: const TextStyle(fontWeight: FontWeight.bold)),
-        ]),
-        const SizedBox(height: 8),
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          title: const Text('شكل الأيقونة'),
-          trailing: DropdownButton<String>(
-            value: _catShape,
-            underline: const SizedBox.shrink(),
-            items: const [
-              DropdownMenuItem(value: 'circle', child: Text('دائري')),
-              DropdownMenuItem(value: 'rounded', child: Text('مستطيل مدور')),
-            ],
-            onChanged: (v) => setState(() => _catShape = v ?? 'circle'),
-          ),
+        // في تخطيط التصميم يحمل `QuickSaleSectionHeader` هذا الشرحَ، فتكرارُه
+        // هنا سطرٌ ثانٍ بنفس المعنى.
+        if (!widget.picposChrome) ...[
+          const Text('تحكم في مظهر أيقونات التصنيفات أسفل منطقة المنتجات', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+          const SizedBox(height: 12),
+        ],
+        _sliderRow(
+          icon: PhosphorIconsBold.circle,
+          tint: _catTint,
+          title: 'حجم الأيقونة',
+          settingKey: 'pos_category_icon_size',
+          value: _catIconSize, min: 30, max: 80, divisions: 10,
+          onChanged: (v) => setState(() => _catIconSize = v),
+        ),
+        _sliderRow(
+          icon: PhosphorIconsBold.textAa,
+          tint: _catTint,
+          title: 'حجم الخط',
+          legacyTitle: 'حجم خط الاسم',
+          settingKey: 'pos_category_font_size',
+          value: _catFontSize, min: 8, max: 18, divisions: 10,
+          onChanged: (v) => setState(() => _catFontSize = v),
+        ),
+        _sliderRow(
+          icon: PhosphorIconsBold.arrowsHorizontal,
+          tint: _catTint,
+          title: 'التباعد الأفقي',
+          settingKey: 'pos_category_spacing',
+          value: _catSpacing, min: 4, max: 24, divisions: 10,
+          onChanged: (v) => setState(() => _catSpacing = v),
+        ),
+        _sliderRow(
+          icon: PhosphorIconsBold.arrowsVertical,
+          tint: _catTint,
+          title: 'تباعد الأسطر',
+          legacyTitle: 'التباعد الرأسي',
+          settingKey: 'pos_category_run_spacing',
+          value: _catRunSpacing, min: 4, max: 16, divisions: 6,
+          onChanged: (v) => setState(() => _catRunSpacing = v),
+        ),
+        _sliderRow(
+          icon: PhosphorIconsBold.textAlignCenter,
+          tint: _catTint,
+          title: 'عرض التسمية',
+          legacyTitle: 'عرض نص التصنيف',
+          settingKey: 'pos_category_label_width',
+          value: _catLabelWidth, min: 40, max: 80, divisions: 8,
+          onChanged: (v) => setState(() => _catLabelWidth = v),
+        ),
+        _sliderRow(
+          icon: PhosphorIconsBold.arrowsOutLineVertical,
+          tint: _catTint,
+          title: 'أقصى ارتفاع للمنطقة',
+          legacyTitle: 'ارتفاع المنطقة',
+          settingKey: 'pos_category_max_height',
+          sub: 'ما يزيد يُخفى — الأقسام لا تأكل الشبكة',
+          value: _catMaxHeight, min: 80, max: 300, divisions: 11,
+          onChanged: (v) => setState(() => _catMaxHeight = v),
+        ),
+        if (!widget.picposChrome) const SizedBox(height: 8),
+        _selectRow<String>(
+          icon: PhosphorIconsBold.shapes,
+          tint: _catTint,
+          title: 'شكل الأيقونة',
+          settingKey: 'pos_category_shape',
+          value: _catShape,
+          isLast: true,
+          items: const [
+            DropdownMenuItem(value: 'circle', child: Text('دائري')),
+            DropdownMenuItem(value: 'rounded', child: Text('مستطيل مدور')),
+          ],
+          onChanged: (v) => setState(() => _catShape = v ?? 'circle'),
         ),
       ],
     );
@@ -1094,23 +1513,38 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
     return _buildSectionCard(
       title: 'إعدادات شبكة المنتجات', icon: PhosphorIconsBold.gridFour, iconColor: AppColors.info,
       children: [
-        const Text('تحكم في عدد وتباعد أيقونات المنتجات في الشبكة', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
-        const SizedBox(height: 12),
-        Row(children: [
-          const Text('عدد الأعمدة: '),
-          Expanded(child: Slider(value: _gridColumns.toDouble(), min: 2, max: 12, divisions: 10, label: '$_gridColumns', onChanged: (v) => setState(() => _gridColumns = v.round()))),
-          Text('$_gridColumns', style: const TextStyle(fontWeight: FontWeight.bold)),
-        ]),
-        Row(children: [
-          const Text('التباعد بين الأيقونات: '),
-          Expanded(child: Slider(value: _gridSpacing, min: 2, max: 20, divisions: 9, label: '${_gridSpacing.round()}', onChanged: (v) => setState(() => _gridSpacing = v))),
-          Text('${_gridSpacing.round()}', style: const TextStyle(fontWeight: FontWeight.bold)),
-        ]),
-        Row(children: [
-          const Text('نسبة العرض/الارتفاع: '),
-          Expanded(child: Slider(value: _gridAspectRatio, min: 0.5, max: 1.5, divisions: 10, label: _gridAspectRatio.toStringAsFixed(2), onChanged: (v) => setState(() => _gridAspectRatio = v))),
-          Text(_gridAspectRatio.toStringAsFixed(2), style: const TextStyle(fontWeight: FontWeight.bold)),
-        ]),
+        if (!widget.picposChrome) ...[
+          const Text('تحكم في عدد وتباعد أيقونات المنتجات في الشبكة', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+          const SizedBox(height: 12),
+        ],
+        _sliderRow(
+          icon: PhosphorIconsBold.columns,
+          tint: _gridTint,
+          title: 'عدد الأعمدة',
+          settingKey: 'pos_grid_columns',
+          sub: 'اثنا عشر عموداً على شاشة عشرة بوصات يجعل الاسم سطراً واحداً مقصوصاً',
+          value: _gridColumns.toDouble(), min: 2, max: 12, divisions: 10,
+          onChanged: (v) => setState(() => _gridColumns = v.round()),
+        ),
+        _sliderRow(
+          icon: PhosphorIconsBold.dotsNine,
+          tint: _gridTint,
+          title: 'التباعد بين الأيقونات',
+          settingKey: 'pos_grid_spacing',
+          value: _gridSpacing, min: 2, max: 20, divisions: 9,
+          onChanged: (v) => setState(() => _gridSpacing = v),
+        ),
+        _sliderRow(
+          icon: PhosphorIconsBold.frameCorners,
+          tint: _gridTint,
+          title: 'نسبة العرض/الارتفاع',
+          settingKey: 'pos_grid_aspect_ratio',
+          sub: 'أقل من ١ يعني بطاقة أطول من عرضها',
+          value: _gridAspectRatio, min: 0.5, max: 1.5, divisions: 10,
+          format: (v) => v.toStringAsFixed(2),
+          isLast: true,
+          onChanged: (v) => setState(() => _gridAspectRatio = v),
+        ),
       ],
     );
   }
@@ -1122,6 +1556,68 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
       icon: PhosphorIconsBold.receipt,
       iconColor: AppColors.info,
       children: [
+        // ⚠️ **هذا القسمُ يتفرّع صراحةً لا عبر مساعِدات الصفوف.** ضوابطُه
+        // `DropdownButtonFormField` و`TextFormField` بـ`labelText` — أي أنّ
+        // التسميةَ **داخلَ** الضابط لا بجانبه. وصفُّ التصميم يضع التسميةَ
+        // عنواناً والضابطَ بجواره، فتمريرُها عبر `_selectRow` كان يحوّل
+        // ضوابطَ UralCash إلى شكلٍ آخر — والعملُ عليها موقوف.
+        if (widget.picposChrome) ...[
+          _toggleRow(
+            icon: PhosphorIconsBold.printer,
+            tint: _receiptTint,
+            title: 'طباعة تلقائية عند البيع',
+            settingKey: 'auto_print_receipt',
+            sub: 'طباعة الإيصال تلقائياً بعد إتمام عملية البيع',
+            value: _autoPrint,
+            onChanged: (v) => setState(() => _autoPrint = v),
+          ),
+          _selectRow<String>(
+            icon: PhosphorIconsBold.qrCode,
+            tint: _receiptTint,
+            title: 'نوع الكود في الإيصال',
+            settingKey: 'receipt_code_type',
+            value: _receiptCodeType,
+            items: const [
+              DropdownMenuItem(value: 'barcode', child: Text('باركود')),
+              DropdownMenuItem(value: 'qr', child: Text('QR Code')),
+              DropdownMenuItem(value: 'none', child: Text('بدون')),
+            ],
+            onChanged: (v) => setState(() => _receiptCodeType = v ?? 'barcode'),
+          ),
+          _selectRow<String>(
+            icon: PhosphorIconsBold.translate,
+            tint: _receiptTint,
+            title: 'لغة طباعة الفاتورة',
+            settingKey: 'invoice_language',
+            sub: 'يبدّل عناوين الأعمدة والمسمّيات على الإيصال',
+            value: _invoiceLanguage,
+            items: const [
+              DropdownMenuItem(value: 'ar', child: Text('العربية')),
+              DropdownMenuItem(value: 'en', child: Text('English')),
+            ],
+            onChanged: (v) => setState(() => _invoiceLanguage = v ?? 'ar'),
+          ),
+          QuickSaleSettingRow(
+            icon: PhosphorIconsBold.textAlignCenter,
+            tint: _receiptTint,
+            title: 'تذييل الإيصال',
+            settingKey: 'receipt_footer',
+            sub: 'سطران كحد أقصى على الحراري ٨٠مم',
+            isLast: true,
+            control: SizedBox(
+              width: 260,
+              child: TextFormField(
+                initialValue: _receiptFooter,
+                decoration: const InputDecoration(
+                  hintText: 'نص يظهر أسفل الإيصال...',
+                  isDense: true,
+                ),
+                maxLines: 2,
+                onChanged: (v) => _receiptFooter = v,
+              ),
+            ),
+          ),
+        ] else ...[
         SwitchListTile(
           title: const Text('طباعة تلقائية عند البيع'),
           subtitle: const Text('طباعة الإيصال تلقائياً بعد إتمام عملية البيع'),
@@ -1167,6 +1663,7 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
           maxLines: 2,
           onChanged: (v) => _receiptFooter = v,
         ),
+        ],
       ],
     );
   }
@@ -1175,38 +1672,96 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
     return _buildSectionCard(
       title: 'إعدادات نقطة بيع الطاولات', icon: PhosphorIconsBold.table, iconColor: AppColors.warning,
       children: [
-        const Text('إعدادات تنظيم وتنسيق نقطة بيع الطاولات والصالة', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
-        const SizedBox(height: 12),
-
+        if (!widget.picposChrome) ...[
+          const Text('إعدادات تنظيم وتنسيق نقطة بيع الطاولات والصالة', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+          const SizedBox(height: 12),
+        ],
         // ─── واجهة العرض ───
-        const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Text('واجهة العرض', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.warning))),
-        SwitchListTile(title: const Text('إظهار حقل الباركود'), subtitle: const Text('إظهار أو إخفاء حقل مسح الباركود'), value: _tposShowBarcode, onChanged: (v) => setState(() => _tposShowBarcode = v), contentPadding: EdgeInsets.zero),
-        SwitchListTile(title: const Text('إظهار صور الأصناف'), subtitle: const Text('إظهار أو إخفاء صور المنتجات في شبكة الطاولات'), value: _tposShowProductImages, onChanged: (v) => setState(() => _tposShowProductImages = v), contentPadding: EdgeInsets.zero),
-        SwitchListTile(title: const Text('إظهار ترتيب الأصناف'), value: _tposShowProductSort, onChanged: (v) => setState(() => _tposShowProductSort = v), contentPadding: EdgeInsets.zero),
-        const Divider(thickness: 2),
-
+        _groupHeader('واجهة العرض', _tposTint),
+        _toggleRow(
+          icon: PhosphorIconsBold.barcode,
+          tint: _tposTint,
+          title: 'إظهار حقل الباركود',
+          settingKey: 'tpos_show_barcode',
+          sub: 'إظهار أو إخفاء حقل مسح الباركود',
+          value: _tposShowBarcode,
+          onChanged: (v) => setState(() => _tposShowBarcode = v),
+        ),
+        _toggleRow(
+          icon: PhosphorIconsBold.image,
+          tint: _tposTint,
+          title: 'إظهار صور الأصناف',
+          settingKey: 'tpos_show_product_images',
+          sub: 'إظهار أو إخفاء صور المنتجات في شبكة الطاولات',
+          value: _tposShowProductImages,
+          onChanged: (v) => setState(() => _tposShowProductImages = v),
+        ),
+        _toggleRow(
+          icon: PhosphorIconsBold.sortAscending,
+          tint: _tposTint,
+          title: 'إظهار ترتيب الأصناف',
+          settingKey: 'tpos_show_product_sort',
+          value: _tposShowProductSort,
+          onChanged: (v) => setState(() => _tposShowProductSort = v),
+        ),
+        if (!widget.picposChrome) const Divider(thickness: 2),
         // ─── أزرار الإجراءات ───
-        const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Text('أزرار الإجراءات', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.warning))),
-        SwitchListTile(title: const Text('إظهار زر تحصيل الحساب'), subtitle: const Text('إظهار أو إخفاء زر تحصيل الحساب في سلة الطاولة'), value: _tposShowCheckout, onChanged: (v) => setState(() => _tposShowCheckout = v), contentPadding: EdgeInsets.zero),
-        const Divider(thickness: 2),
-
+        _groupHeader('أزرار الإجراءات', _tposTint),
+        _toggleRow(
+          icon: PhosphorIconsBold.money,
+          tint: _tposTint,
+          title: 'إظهار زر تحصيل الحساب',
+          settingKey: 'tpos_show_checkout',
+          sub: 'إظهار أو إخفاء زر تحصيل الحساب في سلة الطاولة',
+          value: _tposShowCheckout,
+          onChanged: (v) => setState(() => _tposShowCheckout = v),
+        ),
+        if (!widget.picposChrome) const Divider(thickness: 2),
         // ─── خطوط الأصناف ───
-        const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Text('حجم خطوط الأصناف', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.warning))),
-        Row(children: [
-          const Text('حجم خط الاسم: '),
-          Expanded(child: Slider(value: _tposNameFontSize, min: 10, max: 24, divisions: 14, label: '${_tposNameFontSize.round()}', onChanged: (v) => setState(() => _tposNameFontSize = v))),
-          Text('${_tposNameFontSize.round()}', style: const TextStyle(fontWeight: FontWeight.bold)),
-        ]),
-        Row(children: [
-          const Text('حجم خط السعر: '),
-          Expanded(child: Slider(value: _tposPriceFontSize, min: 10, max: 24, divisions: 14, label: '${_tposPriceFontSize.round()}', onChanged: (v) => setState(() => _tposPriceFontSize = v))),
-          Text('${_tposPriceFontSize.round()}', style: const TextStyle(fontWeight: FontWeight.bold)),
-        ]),
+        _groupHeader('حجم خطوط الأصناف', _tposTint),
+        _sliderRow(
+          icon: PhosphorIconsBold.textAa,
+          tint: _tposTint,
+          title: 'حجم خط الاسم',
+          settingKey: 'tpos_name_font_size',
+          value: _tposNameFontSize, min: 10, max: 24, divisions: 14,
+          onChanged: (v) => setState(() => _tposNameFontSize = v),
+        ),
+        _sliderRow(
+          icon: PhosphorIconsBold.textT,
+          tint: _tposTint,
+          title: 'حجم خط السعر',
+          settingKey: 'tpos_price_font_size',
+          value: _tposPriceFontSize, min: 10, max: 24, divisions: 14,
+          isLast: true,
+          onChanged: (v) => setState(() => _tposPriceFontSize = v),
+        ),
       ],
     );
   }
 
   Widget _buildSectionCard({required String title, required IconData icon, required Color iconColor, required List<Widget> children}) {
+    // في تخطيط التصميم: البطاقةُ إطارٌ بالشعرة بلا ظلٍّ، وترويستُها محذوفةٌ
+    // لأنّ `QuickSaleSectionHeader` تعرض العنوانَ والأيقونةَ فوقها — وترويستان
+    // بنفس النصّ في لوحةٍ واحدةٍ تكرارٌ يراه المستخدم.
+    if (widget.picposChrome) {
+      return Container(
+        decoration: BoxDecoration(
+          color: context.picposCard,
+          border: Border.all(color: context.picposHairline),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: children,
+          ),
+        ),
+      );
+    }
+
     return Card(
       elevation: 1,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
