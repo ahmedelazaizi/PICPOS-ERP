@@ -222,7 +222,7 @@ const List<QuickSaleStep> kQuickSaleSteps = [
             kind: QuickSaleControl.toggle,
             title: 'سؤال عن الكمية قبل الإضافة',
             sub: 'يفتح لوحة أرقام — أطفئه إذا كانت أغلب المبيعات وحدة واحدة',
-            notEnforcedReason: _newBehaviour,
+            enforced: true,
           ),
           QuickSaleRow(
             id: 'scale',
@@ -247,7 +247,7 @@ const List<QuickSaleStep> kQuickSaleSteps = [
               'يتحول الحقل لبحث نصي',
               'صوت تنبيه ولا شيء يُضاف',
             ],
-            notEnforcedReason: _newBehaviour,
+            enforced: true,
           ),
         ],
       ),
@@ -440,7 +440,7 @@ const List<QuickSaleStep> kQuickSaleSteps = [
             title: 'تخطّي الحوار عند طريقة واحدة',
             sub: 'يُحصَّل المبلغ مباشرة بلا نافذة — أسرع مسار ممكن',
             defaultIndex: 1,
-            notEnforcedReason: _newBehaviour,
+            enforced: true,
           ),
           QuickSaleRow(
             id: 'defmethod',
@@ -449,7 +449,7 @@ const List<QuickSaleStep> kQuickSaleSteps = [
             title: 'الطريقة الافتراضية',
             sub: 'المحدّدة مسبقاً عند فتح الحوار',
             options: ['نقدي', 'بطاقة', 'محفظة / كليك', 'آجل'],
-            notEnforcedReason: _newBehaviour,
+            enforced: true,
           ),
           QuickSaleRow(
             id: 'round',
@@ -480,7 +480,7 @@ const List<QuickSaleStep> kQuickSaleSteps = [
             title: 'لوحة مبالغ سريعة',
             sub: 'أزرار ٥٠ / ١٠٠ / ٢٠٠ / ٥٠٠ لحساب الباقي بنقرة',
             defaultIndex: 1,
-            notEnforcedReason: _newBehaviour,
+            enforced: true,
           ),
         ],
       ),
@@ -517,7 +517,7 @@ const List<QuickSaleStep> kQuickSaleSteps = [
             title: 'عدد النسخ',
             sub: 'النسخة الثانية للأرشيف أو لتوقيع العميل',
             options: ['نسخة واحدة', 'نسختان', '٣ نسخ'],
-            notEnforcedReason: _newBehaviour,
+            enforced: true,
           ),
           QuickSaleRow(
             id: 'tpl',
@@ -541,7 +541,7 @@ const List<QuickSaleStep> kQuickSaleSteps = [
             title: 'فتح درج النقدية مع الطباعة',
             sub: 'يفتح في الدفع النقدي فقط',
             defaultIndex: 1,
-            notEnforcedReason: _newBehaviour,
+            enforced: true,
           ),
         ],
       ),
@@ -561,7 +561,7 @@ const List<QuickSaleStep> kQuickSaleSteps = [
               'للمراجعة أو إعادة الطباعة',
               'تتطلب دخول كاشير من جديد',
             ],
-            notEnforcedReason: _newBehaviour,
+            enforced: true,
           ),
           QuickSaleRow(
             id: 'digital',
@@ -990,3 +990,52 @@ bool quickSaleShiftDiffNeedsReason({
 /// عددُ نسخ الإيصال — لا يكون صفراً أبداً.
 int quickSaleReceiptCopies(QuickSalePolicyValues v) =>
     const [1, 2, 3][v.indexOf(_rowById('copies'))];
+
+/// ما يحدث حين لا يطابق الباركودُ أيَّ صنف.
+///
+/// ⚠️ **الترتيبُ هو ترتيبُ خيارات التصميم** — فهرسٌ يُقرأ خطأً يقلب
+/// «ارفض» إلى «أنشئ صنفاً»، وهو أوسعُ بابٍ في هذه الشاشة: صنفٌ يُخلَق
+/// بسعرٍ يكتبه الكاشير بلا كارتٍ ولا تكلفة.
+enum QuickSaleUnknownBarcodeAction {
+  /// يفتح `QuickAddProductDialog` — السلوكُ القائم قبل التوصيل.
+  quickAdd,
+
+  /// يحوّل الحقلَ إلى بحثٍ نصّيٍّ بالاسم.
+  nameSearch,
+
+  /// صوتُ تنبيهٍ ورفضٌ — لا شيءَ يُضاف ولا صنفَ يُخلَق.
+  reject,
+}
+
+QuickSaleUnknownBarcodeAction quickSaleUnknownBarcodeAction(
+  QuickSalePolicyValues v,
+) =>
+    QuickSaleUnknownBarcodeAction
+        .values[v.indexOf(_rowById('unknown'))];
+
+/// الطريقةُ المؤشَّرةُ مسبقاً عند فتح حوار الدفع.
+///
+/// ⚠️ **الرموزُ هي رموزُ المحرّك** (`cash` · `card` · `click` · `credit`)
+/// كما في `_methodOrder` بـ`pos_payment_dialogs.dart` — لا تسمياتُ الشاشة.
+/// وهي **تأشيرٌ لا إلزام**: الكاشيرُ يبدّلها في الحوار، وطريقةٌ غيرُ
+/// مسموحةٍ في هذا الفرع يتجاهلها الحوارُ ويؤشّر أوّلَ المسموح.
+String quickSaleDefaultPaymentMethod(QuickSalePolicyValues v) =>
+    const ['cash', 'card', 'click', 'credit']
+        [v.indexOf(_rowById('defmethod'))];
+
+/// وجهةُ الشاشة مباشرةً بعد إغلاق الفاتورة.
+enum QuickSaleAfterPrintAction {
+  /// سلّةٌ فارغةٌ والمؤشّرُ على المسح — السلوكُ القائم قبل التوصيل.
+  newInvoice,
+
+  /// البقاءُ على الفاتورة للمراجعة أو إعادة الطباعة.
+  stay,
+
+  /// شاشةُ الانتظار — تتطلّب دخولَ كاشيرٍ من جديد.
+  lockScreen,
+}
+
+QuickSaleAfterPrintAction quickSaleAfterPrintAction(
+  QuickSalePolicyValues v,
+) =>
+    QuickSaleAfterPrintAction.values[v.indexOf(_rowById('after'))];

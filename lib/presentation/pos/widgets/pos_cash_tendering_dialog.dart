@@ -11,14 +11,35 @@ import '../../../core/utils/number_utils.dart';
 class PosCashTenderingDialog extends StatefulWidget {
   final double totalAmount;
 
-  const PosCashTenderingDialog({super.key, required this.totalAmount});
+  /// أزرارُ الفئات السريعة (٥ · ١٠ · ٢٠ · ٥٠ · ١٠٠) ظاهرةٌ أم لا.
+  ///
+  /// ⚠️ **الافتراضُ `true` عمداً، وهو تعاقدٌ لا تفضيل**: هذا الحوارُ
+  /// مشترَكٌ مع شاشة UralCash، والعملُ عليها موقوف. فالنداءُ الذي لا يمرّر
+  /// شيئاً يسلك سلوكَ اليوم حرفاً بحرف، ولا يملك هذا الوسيطُ أن يغيّرها.
+  ///
+  /// ومن يطفئها هو نداءُ PicPos وحدَه، بسياسة «لوحة مبالغ سريعة» (§٤
+  /// `pos_quick_amounts_enabled`).
+  final bool showQuickAmounts;
+
+  const PosCashTenderingDialog({
+    super.key,
+    required this.totalAmount,
+    this.showQuickAmounts = true,
+  });
 
   /// Show the dialog. Returns true if confirmed, null if cancelled.
-  static Future<bool?> show(BuildContext context, {required double totalAmount}) {
+  static Future<bool?> show(
+    BuildContext context, {
+    required double totalAmount,
+    bool showQuickAmounts = true,
+  }) {
     return showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => PosCashTenderingDialog(totalAmount: totalAmount),
+      builder: (_) => PosCashTenderingDialog(
+        totalAmount: totalAmount,
+        showQuickAmounts: showQuickAmounts,
+      ),
     );
   }
 
@@ -196,13 +217,19 @@ class _PosCashTenderingDialogState extends State<PosCashTenderingDialog> {
               ),
 
               // Quick amount buttons
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 6,
-                alignment: WrapAlignment.center,
-                children: _buildQuickAmountButtons(),
-              ),
+              //
+              // الحقلُ نفسُه يبقى: الإطفاءُ يخفي **الاختصارَ** لا وسيلةَ
+              // الإدخال. ومحلٌّ لا يتعامل بهذه الفئات كان يرى أزراراً لا
+              // يضغطها أحدٌ أبداً، وهي تزاحم لوحةَ الأرقام على الشاشة.
+              if (widget.showQuickAmounts) ...[
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  alignment: WrapAlignment.center,
+                  children: _buildQuickAmountButtons(),
+                ),
+              ],
             ],
           ),
         ),

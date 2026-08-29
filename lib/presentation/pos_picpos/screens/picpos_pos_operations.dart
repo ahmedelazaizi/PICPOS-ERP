@@ -589,7 +589,45 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       await _addProductWithUnits(product, quantity: weight);
       return;
     }
-    await _addProductWithUnits(product);
+
+    // «سؤال عن الكمية قبل الإضافة» — §٤. بعد فرع الوزن عمداً: الصنفُ
+    // الموزونُ يسأل عن وزنه سلفاً، وسؤالُه مرّتين تكرارٌ لا دقّة.
+    final quantity = await _askLineQuantity(product);
+    if (quantity == null || !mounted) return;
+    await _addProductWithUnits(product, quantity: quantity);
+  }
+
+  /// كميّةُ السطر قبل الإضافة — `null` تعني «ألغى الكاشيرُ فلا يُضاف شيء».
+  ///
+  /// ⚠️ **القراءةُ متزامنةٌ عمداً** (`asData?.value` لا `await`): هذا مسارٌ
+  /// ساخنٌ يلمسه كلُّ مسحٍ، و`await` يُدخل إطارَ انتظارٍ بين لمسة الكاشير
+  /// وظهور الصنف. و`null` — أي السياسةُ لم تُقرأ بعد — تعني **السلوكَ
+  /// القائم**: وحدةٌ واحدةٌ فوراً، لا حوارٌ يظهر لأنّ القراءة تأخّرت.
+  Future<double?> _askLineQuantity(ProductEntity product) async {
+    final policy = ref.read(quickSalePolicyProvider).asData?.value;
+    if (policy == null) return 1;
+    if (!policy.isOn(kQuickSaleRows.firstWhere((r) => r.id == 'askqty'))) {
+      return 1;
+    }
+
+    // نفسُ سقف «أقصى كمية في السطر» المطبَّق في حوار تعديل السطر — وإلّا
+    // قَبِلَ بابُ الدخولِ رقماً يرفضه بابُ التعديل، وهو تناقضٌ يراه
+    // الكاشيرُ خطأً في النظام لا حدّاً مقصوداً.
+    final maxQty = quickSaleMaxLineQty(policy);
+    final qty = await PicPosNumericKeypadDialog.show(
+      context,
+      title: product.name,
+      initialValue: 1,
+      decimals: 0,
+      min: 1,
+      max: maxQty,
+    );
+    if (!mounted) return null;
+    if (qty == null || qty <= 0) {
+      _refocusScanner();
+      return null;
+    }
+    return qty;
   }
 
   /// Adds [product] to the cart, offering the unit picker first when the
@@ -865,7 +903,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     if (error != null) {
       if (shouldOfferQuickAdd(
           searchState.errorKind, ref.read(posReturnModeProvider))) {
-        await _offerQuickAdd(barcode);
+        await _handleUnknownBarcode(barcode, error);
       } else {
         showPosToast(context, ref, error, type: PosNotificationType.error);
         ref.read(posSearchControllerProvider.notifier).clearSearchResults();
@@ -881,6 +919,53 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
 
     barcodeController.clear();
     _refocusScanner();
+  }
+
+  /// باركودٌ غيرُ مسجَّلٍ — والسياسةُ تقرّر ما يحدث (§٤ `unknown`).
+  ///
+  /// ثلاثةُ مسالكَ في التصميم، وأثرُها ليس تجميليّاً:
+  ///
+  ///   • **صنفٌ سريع** — السلوكُ القائمُ قبل التوصيل، وهو الافتراض.
+  ///   • **بحثٌ بالاسم** — يُسقط الباركودَ في حقل بحث الشبكة
+  ///     (`PosProductSelectionPanel`) فيرشّح الكاشيرُ بصرياً. مفيدٌ حين
+  ///     يكون الباركودُ ممسوحاً أو الملصقُ من مورّدٍ آخر.
+  ///   • **تحذيرٌ ورفض** — لا صنفَ يُخلَق. وهذا هو البابُ الذي يُغلَق:
+  ///     الإضافةُ السريعةُ تخلق صنفاً بسعرٍ يكتبه الكاشيرُ بلا كارتٍ ولا
+  ///     تكلفة، فيدخل المخزونَ برصيدٍ ومتوسّطِ تكلفةٍ مخترعَين.
+  ///
+  /// ⚠️ ونغمةُ الخطأ مضروبةٌ سلفاً: `searchBarcode` تعزفها حين تضع
+  /// `error`، فلا تُعاد هنا في مسار الرفض.
+  Future<void> _handleUnknownBarcode(String barcode, String error) async {
+    final policy = ref.read(quickSalePolicyProvider).asData?.value;
+    // السياسةُ لم تُقرأ بعد ⇒ السلوكُ القائم.
+    final action = policy == null
+        ? QuickSaleUnknownBarcodeAction.quickAdd
+        : quickSaleUnknownBarcodeAction(policy);
+
+    switch (action) {
+      case QuickSaleUnknownBarcodeAction.quickAdd:
+        await _offerQuickAdd(barcode);
+
+      case QuickSaleUnknownBarcodeAction.nameSearch:
+        // حقلُ بحث الشبكة يزامن نفسَه من `posControllerProvider`، فالكتابةُ
+        // في الحالة تصل النصَّ المعروضَ فوراً (`pos_product_search_field`).
+        ref.read(posControllerProvider.notifier).setSearchQuery(barcode);
+        ref.read(posSearchControllerProvider.notifier).clearSearchResults();
+        if (mounted) {
+          showPosToast(
+            context,
+            ref,
+            'باركود غير مسجَّل — ابحث بالاسم في الشبكة',
+            type: PosNotificationType.info,
+          );
+        }
+
+      case QuickSaleUnknownBarcodeAction.reject:
+        ref.read(posSearchControllerProvider.notifier).clearSearchResults();
+        if (mounted) {
+          showPosToast(context, ref, error, type: PosNotificationType.error);
+        }
+    }
   }
 
   /// باركودٌ غيرُ مسجَّل (`shouldOfferQuickAdd` تأكّدت: `errorKind ==
@@ -1471,7 +1556,14 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       //
       // وما يُفقَد هو اختيارُ عميلٍ **من داخل** الحوار — وله بابُه في السلّة
       // (`_pickCustomer`)، ومنه تأتي `cartState.selectedCustomerId`.
-      final fastPath = singlePaymentMethodFastPath(allowed);
+      // §٤ `skipdlg`: المسارُ السريعُ كان **دائمَ التشغيل**، وصار مشروطاً.
+      // والافتراضُ مضاءٌ في التصميم، و`null` (‏السياسةُ لم تُقرأ بعد) تعني
+      // السلوكَ القائم — فلا تتغيّر بيعةٌ واحدةٌ حتّى يُطفئه المديرُ عمداً.
+      final policy = ref.read(quickSalePolicyProvider).asData?.value;
+      final skipDialog = policy == null ||
+          policy.isOn(kQuickSaleRows.firstWhere((r) => r.id == 'skipdlg'));
+      final fastPath =
+          skipDialog ? singlePaymentMethodFastPath(allowed) : null;
       if (fastPath != null) {
         method = fastPath;
         paidTotal = total;
@@ -1483,7 +1575,13 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
         final result = await PosDialogs.showPaymentDialog(
           context,
           totalAmount: total,
-          initialMethod: isPlatform ? 'credit' : 'cash',
+          // §٤ `defmethod`. ومنصّاتُ التوصيل تبقى `credit` قسراً: قيدُ
+          // عملٍ لا تفضيلُ عرضٍ، وسياسةُ الشاشة لا تنقضه.
+          initialMethod: isPlatform
+              ? 'credit'
+              : policy == null
+                  ? 'cash'
+                  : quickSaleDefaultPaymentMethod(policy),
           allowedMethods: allowed,
         );
         if (result == null || !mounted) {
@@ -1508,8 +1606,20 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     // ديالوج الدفع متعشّش في فرع `multiple` بس، فمسار النقدي مالوش أي عرض
     // للفكة. نفس حل UralCash: ديالوج تحصيل النقدية بخانة المستلم وأزرار الفئات.
     if (method == 'cash') {
-      final confirmed =
-          await PosCashTenderingDialog.show(context, totalAmount: total);
+      // §٤ `quickamt` — يُمرَّر من هنا لا يُقرَأ داخلَ الحوار: الحوارُ
+      // مشترَكٌ مع UralCash، فالسياسةُ تُحقَن عند نداء PicPos وحدَه.
+      //
+      // وقراءةٌ مستقلّةٌ عن قراءة `skipdlg` فوق عمداً: تلك تعيش في فرع
+      // «ليست منصّةً آجلة» وحدَه، وهذا المسارُ يصله النقديُّ من الفرعين.
+      final cashPolicy = ref.read(quickSalePolicyProvider).asData?.value;
+      final confirmed = await PosCashTenderingDialog.show(
+        context,
+        totalAmount: total,
+        showQuickAmounts: cashPolicy == null ||
+            cashPolicy.isOn(
+              kQuickSaleRows.firstWhere((r) => r.id == 'quickamt'),
+            ),
+      );
       if (confirmed != true || !mounted) {
         _refocusScanner();
         return;
@@ -1582,14 +1692,38 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     SystemSound.play(SystemSoundType.click);
     barcodeController.clear();
 
+    final printPolicy = ref.read(quickSalePolicyProvider).asData?.value;
+
     if (printAfter) {
       // الدرج بيتركل **بالتوازي** مع الطباعة مش بعدها: الركلة بتروح للطابعة
       // على نفس المنفذ، وتسلسلهم كان بيضيف زمن ميت على مسار حرج.
-      final drawerFuture = _openCashDrawerQuietly();
+      //
+      // §٤ `drawer` — ويضيّق التوصيلُ سلوكاً كان أوسع: الدرجُ كان يُركَل
+      // في **كلّ** بيعةٍ مطبوعة، والتصميمُ يقول «يفتح في الدفع النقدي
+      // فقط». وهو الصواب: بيعةُ بطاقةٍ لا نقدَ فيها تُدخِله، ففتحُ الدرج
+      // يعرّض النقدَ بلا سبب. و`null` تُبقي السلوكَ القائم.
+      final openDrawer = printPolicy == null ||
+          (printPolicy
+                  .isOn(kQuickSaleRows.firstWhere((r) => r.id == 'drawer')) &&
+              method == 'cash');
+      final drawerFuture =
+          openDrawer ? _openCashDrawerQuietly() : Future<void>.value();
+
       final invoiceId = ref.read(checkoutControllerProvider).lastInvoiceId;
-      final printed = invoiceId != null && await _hasReceiptPrinter()
-          ? await _tryPrintReceipt(invoiceId)
-          : false;
+
+      // §٤ `copies`. والتوقّفُ عند أوّلِ إخفاقٍ مقصود: سببُ الإخفاق ورقٌ
+      // ناقصٌ أو طابعةٌ صامتة، وكلاهما لا يُشفى بمحاولةٍ ثانيةٍ فوراً —
+      // وتكرارُها يُغرق الكاشيرَ بثلاث رسائل تحذيرٍ عن عطبٍ واحد.
+      final copies =
+          printPolicy == null ? 1 : quickSaleReceiptCopies(printPolicy);
+      var printed = false;
+      if (invoiceId != null && await _hasReceiptPrinter()) {
+        for (var i = 0; i < copies; i++) {
+          printed = await _tryPrintReceipt(invoiceId);
+          if (!printed || !mounted) break;
+        }
+      }
+
       await drawerFuture;
       if (mounted) {
         showPosToast(
@@ -1603,7 +1737,41 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       showPosToast(context, ref, 'تم حفظ الفاتورة',
           type: PosNotificationType.success);
     }
-    _refocusScanner();
+
+    await _applyAfterInvoiceAction(printPolicy);
+  }
+
+  /// وجهةُ الشاشة بعد إغلاق الفاتورة — §٤ `after`.
+  ///
+  /// يُنادى على **مساري** الحفظ (‏بطباعةٍ وبدونها): نصُّ التصميم «وجهة
+  /// الشاشة مباشرة بعد إغلاق الفاتورة»، والحفظُ بلا طباعةٍ إغلاقٌ أيضاً.
+  ///
+  /// و`null` — أي السياسةُ لم تُقرأ — تعني السلوكَ القائم: إعادةُ التركيز
+  /// على الماسح وحدَها.
+  Future<void> _applyAfterInvoiceAction(
+    QuickSalePolicyValues? policy,
+  ) async {
+    final action = policy == null
+        ? QuickSaleAfterPrintAction.newInvoice
+        : quickSaleAfterPrintAction(policy);
+
+    switch (action) {
+      case QuickSaleAfterPrintAction.newInvoice:
+        _refocusScanner();
+
+      case QuickSaleAfterPrintAction.stay:
+        // السلّةُ أُفرغت في الترحيل، فـ«البقاء عليها» يعني إبقاءَ الفاتورة
+        // **معروضةً** للمراجعة وإعادة الطباعة — وهذا ما يفعله حوارُ آخرِ
+        // فاتورة. ولا سلّةَ تُستعاد: استعادتُها تفتح بابَ بيعِها مرّتين.
+        if (mounted) await PicPosLastInvoiceDialog.show(context);
+        if (mounted) _refocusScanner();
+
+      case QuickSaleAfterPrintAction.lockScreen:
+        // «تتطلب دخول كاشير من جديد» — وحوارُ تحويل المستخدم هو مسارُ
+        // ذلك في PicPos: يشترط بيانات دخولٍ ولا يُغلَق باللمس خارجَه.
+        if (mounted) await PicposSwitchUserDialog.show(context, ref);
+        if (mounted) _refocusScanner();
+    }
   }
 
   /// هل فيه طابعة إيصالات مضبوطة فعلاً؟

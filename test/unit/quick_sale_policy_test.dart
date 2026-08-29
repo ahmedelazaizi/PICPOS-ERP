@@ -236,6 +236,156 @@ void _valuesSuite() {
           reason: '«دفع متعدّد» مطفأٌ افتراضاً في التصميم.');
     });
   });
+
+  // ═════════════════════════════════════════════════════════════════════
+  // ترجمةُ الخيارات الجديدة — الجسرُ بين الشاشة والمحرّك
+  // ═════════════════════════════════════════════════════════════════════
+  //
+  // ⚠️ **الفهرسُ لا الاسم.** الشاشةُ تحفظ رقمَ الخيار، فتبديلُ ترتيبِ
+  // `options` في التصميم يقلب معنى القيمة المحفوظة سلفاً. وهذه الفحوصُ
+  // تثبّت الاقترانَ بين الفهرس ومعناه في المحرّك — لا صحّةَ الترجمة وحدَها.
+
+  group('ترجمةُ «باركود غير معروف»', () {
+    test('القاعدةُ الفارغةُ تعطي «صنفاً سريعاً» — السلوكَ القائم', () {
+      expect(
+        quickSaleUnknownBarcodeAction(const QuickSalePolicyValues({})),
+        QuickSaleUnknownBarcodeAction.quickAdd,
+        reason: 'الافتراضُ يجب أن يُبقي ما كان يفعله المحرّكُ قبل التوصيل، '
+            'وإلّا غيّر التوصيلُ وحدَه سلوكَ تركيبةٍ قائمة.',
+      );
+    });
+
+    test('وكلُّ فهرسٍ يقابل مسلكَه', () {
+      const expected = [
+        QuickSaleUnknownBarcodeAction.quickAdd,
+        QuickSaleUnknownBarcodeAction.nameSearch,
+        QuickSaleUnknownBarcodeAction.reject,
+      ];
+      for (var i = 0; i < expected.length; i++) {
+        expect(
+          quickSaleUnknownBarcodeAction(
+            QuickSalePolicyValues({'pos_unknown_barcode_action': '$i'}),
+          ),
+          expected[i],
+          reason: 'الفهرسُ $i يجب أن يعطي ${expected[i]}',
+        );
+      }
+    });
+
+    test('وقيمةٌ فاسدةٌ ترجع للافتراض لا للرفض', () {
+      expect(
+        quickSaleUnknownBarcodeAction(
+          const QuickSalePolicyValues({'pos_unknown_barcode_action': 'x'}),
+        ),
+        QuickSaleUnknownBarcodeAction.quickAdd,
+        reason: 'قيمةٌ فاسدةٌ تسقط للافتراض — و`reject` ليست افتراضاً آمناً '
+            'بل أشدُّ الخيارات، فالسقوطُ إليها يوقف بيعاً مشروعاً.',
+      );
+    });
+  });
+
+  group('ترجمةُ الطريقة الافتراضية', () {
+    test('رموزُ المحرّك لا تسمياتُ الشاشة', () {
+      const keys = ['cash', 'card', 'click', 'credit'];
+      for (var i = 0; i < keys.length; i++) {
+        expect(
+          quickSaleDefaultPaymentMethod(
+            QuickSalePolicyValues({'pos_default_payment_method': '$i'}),
+          ),
+          keys[i],
+          reason: 'الرمزُ يجب أن يطابق `_methodOrder` في حوار الدفع — '
+              'رمزٌ غريبٌ يجعل الحوارَ يؤشّر أوّلَ المسموح بلا سبب.',
+        );
+      }
+    });
+
+    test('والافتراضُ نقديّ', () {
+      expect(
+        quickSaleDefaultPaymentMethod(const QuickSalePolicyValues({})),
+        'cash',
+      );
+    });
+  });
+
+  group('ترجمةُ «بعد الطباعة»', () {
+    test('الافتراضُ فاتورةٌ جديدة — السلوكُ القائم', () {
+      expect(
+        quickSaleAfterPrintAction(const QuickSalePolicyValues({})),
+        QuickSaleAfterPrintAction.newInvoice,
+      );
+    });
+
+    test('وكلُّ فهرسٍ يقابل وجهتَه', () {
+      const expected = [
+        QuickSaleAfterPrintAction.newInvoice,
+        QuickSaleAfterPrintAction.stay,
+        QuickSaleAfterPrintAction.lockScreen,
+      ];
+      for (var i = 0; i < expected.length; i++) {
+        expect(
+          quickSaleAfterPrintAction(
+            QuickSalePolicyValues({'pos_after_print_action': '$i'}),
+          ),
+          expected[i],
+        );
+      }
+    });
+  });
+
+  group('عددُ نسخ الإيصال', () {
+    test('نسخةٌ واحدةٌ افتراضاً، ولا صفرَ أبداً', () {
+      expect(quickSaleReceiptCopies(const QuickSalePolicyValues({})), 1);
+      for (var i = 0; i < 3; i++) {
+        expect(
+          quickSaleReceiptCopies(
+            QuickSalePolicyValues({'pos_receipt_copies': '$i'}),
+          ),
+          i + 1,
+          reason: 'صفرُ نسخٍ يعني بيعةً بلا إيصالٍ وهي ليست خياراً في التصميم.',
+        );
+      }
+    });
+  });
+
+  // ═════════════════════════════════════════════════════════════════════
+  // ما وُصل فعلاً — القائمةُ تتقلّص ولا تكبر
+  // ═════════════════════════════════════════════════════════════════════
+
+  group('حصيلةُ التوصيل', () {
+    test('الصفوفُ الثمانيةُ الموصَّلةُ في هذه الجولة لا تحمل وسمَ «لا يُنفَّذ»',
+        () {
+      const wiredThisRound = [
+        'askqty',
+        'unknown',
+        'skipdlg',
+        'defmethod',
+        'copies',
+        'after',
+        'drawer',
+        'quickamt',
+      ];
+      for (final id in wiredThisRound) {
+        final row = _row(id);
+        expect(row.enforced, isTrue,
+            reason: 'الصفُّ `$id` وُصِّل في المحرّك — فوسمُ «يُحفَظ ولا '
+                'يُنفَّذ» صار كذباً على المدير.');
+        expect(row.notEnforcedReason, isNull,
+            reason: 'صفٌّ منفَّذٌ لا يحمل سببَ عدمِ إنفاذ.');
+      }
+    });
+
+    test('و`digital` و`round` و`scale` تبقى موسومةً — لم تُوصَّل بعد', () {
+      // ⚠️ مرساةٌ عكسيّة: بلا هذا الفحصِ يمرُّ الملفُّ أخضرَ لو رُفعت
+      // أوسمةُ الجميع دفعةً واحدةً بلا توصيلٍ حقيقيّ.
+      for (final id in const ['digital', 'round', 'scale']) {
+        final row = _row(id);
+        expect(row.enforced, isFalse,
+            reason: 'الصفُّ `$id` لم يُوصَّل — ورفعُ وسمِه يُنتج ميزةً '
+                'ميّتةً صامتة.');
+        expect(row.notEnforcedReason, isNotNull);
+      }
+    });
+  });
 }
 
 QuickSaleRow _row(String id) => kQuickSaleRows.firstWhere((r) => r.id == id);
