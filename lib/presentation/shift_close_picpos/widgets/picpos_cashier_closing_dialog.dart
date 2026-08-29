@@ -8,6 +8,8 @@ import '../../../data/providers/providers.dart';
 import '../../pos/providers/pos_notification_provider.dart';
 import '../../../core/constants/app_constants.dart' hide InvoiceStatus;
 import '../../pos/providers/pos_closing_controller.dart';
+import '../../../data/providers/quick_sale_policy_providers.dart';
+import '../../../domain/models/quick_sale_policy.dart';
 
 // منطق منسوخ حرفياً من lib/presentation/pos/widgets/pos_cashier_closing_dialog.dart
 // (الأصل، ١٠٦٦ سطر — حوار مطابقة/إغلاق وردية الكاشير: مطابقة نقد/بنك/كليك/آجل،
@@ -759,7 +761,23 @@ class _PicposCashierClosingDialogState
     );
   }
 
+  /// هل الإغلاقُ أعمى؟ — §٤ `blind`.
+  ///
+  /// ⚠️ **الافتراضُ `true` وهو سلوكُ الحوار المشحون**: الأرقامُ مخفيّةٌ حتّى
+  /// «إظهار النتائج». وإطفاءُ المِزلاج يكشفها قبل العدّ — وهو ما يجعل الفرقَ
+  /// دائماً صفراً على الورق، فالكاشيرُ يكتب ما يراه لا ما عدّه.
+  ///
+  /// ⚠️ **ولا `revealResults()` في `initState`**: تلك كتابةٌ في مزوِّدٍ أثناء
+  /// البناء. والشرطُ هنا يعطي نفسَ الأثر بلا طفرةِ حالة.
+  bool get _blindClose {
+    final policy = ref.read(quickSalePolicyProvider).asData?.value;
+    return policy == null ||
+        policy.isOn(kQuickSaleRows.firstWhere((r) => r.id == 'blind'));
+  }
+
   Widget _buildReconciliationSection(bool canViewDetails, PosClosingState state) {
+    // الكشفُ إمّا بضغطةِ الكاشير، وإمّا لأنّ السياسةَ لا تُخفي أصلاً.
+    final revealed = state.isRevealed || !_blindClose;
     if (!canViewDetails) {
       return Card(
         // PicPos chrome: بطاقة مسطحة بحدود بدل اللون الرمادي الخام.
@@ -811,13 +829,13 @@ class _PicposCashierClosingDialogState
               ],
             ),
             const Divider(),
-            _buildReconciliationRow('النقدى الفعلى', _actualCashController, state.cashVariance, PhosphorIconsBold.money, AppColors.primary, state.isRevealed),
+            _buildReconciliationRow('النقدى الفعلى', _actualCashController, state.cashVariance, PhosphorIconsBold.money, AppColors.primary, revealed),
             const SizedBox(height: 12),
-            _buildReconciliationRow('البنك الفعلى', _actualCardController, state.bankVariance, PhosphorIconsBold.creditCard, AppColors.info, state.isRevealed),
+            _buildReconciliationRow('البنك الفعلى', _actualCardController, state.bankVariance, PhosphorIconsBold.creditCard, AppColors.info, revealed),
             const SizedBox(height: 12),
-            _buildReconciliationRow('كليك الفعلى', _actualClickController, state.clickVariance, PhosphorIconsBold.deviceMobile, AppColors.warning, state.isRevealed),
+            _buildReconciliationRow('كليك الفعلى', _actualClickController, state.clickVariance, PhosphorIconsBold.deviceMobile, AppColors.warning, revealed),
             const SizedBox(height: 16),
-            if (!state.isRevealed)
+            if (!revealed)
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -831,7 +849,7 @@ class _PicposCashierClosingDialogState
                   child: const Text('إظهار النتائج والمطابقة'),
                 ),
               ),
-            if (state.isRevealed) _buildTotalVarianceStatus(state.totalVariance),
+            if (revealed) _buildTotalVarianceStatus(state.totalVariance),
           ],
         ),
       ),

@@ -24,6 +24,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/permissions/permission_codes.dart';
 import '../../../data/providers/auth_providers.dart';
+import '../../../data/providers/quick_sale_policy_providers.dart';
+import '../../../domain/models/quick_sale_policy.dart';
 import '../../../services/manager_approval_cache.dart';
 import '../../widgets/permission_guard.dart';
 
@@ -181,6 +183,65 @@ Future<bool> ensureCartDiscountPermission(
 ) =>
     _ensure(ref, context, canApplyDiscountCodes, PermissionCodes.posDiscount,
         'تطبيق خصم');
+
+// ── سقفُ الخصم — §٤ `disccap` و`discappr` ────────────────────────────────
+
+/// مآلُ فحصِ نسبةِ خصمٍ على سقف السياسة.
+enum DiscountPolicyOutcome {
+  /// داخلَ السقف، أو فوقَه وقد صُودق عليه.
+  allowed,
+
+  /// فوقَ السقف و«موافقة مدير» مطفأةٌ ⇒ يُرفض ولا مسارَ لتجاوزه.
+  aboveCapRejected,
+
+  /// فوقَ السقف، وطُلبت الموافقةُ فرُفضت أو أُلغيت.
+  approvalDenied,
+}
+
+/// هل تقع نسبةُ الخصم داخلَ سقف السياسة؟ وإن تجاوزته، هل يُصادَق عليها؟
+///
+/// ⚠️ **يُنادى قبل [ensureCartDiscountPermission] لا بعدها.** الترتيبُ
+/// ليس ذوقاً: موافقةُ المسؤول تمنح إذناً في `ManagerApprovalCache`،
+/// و`_ensure` **تستهلكه**. فالسقفُ أوّلاً ⇒ حوارُ كلمةِ سرٍّ **واحدٌ**
+/// يغطّي القرارين. وعكسُه يسأل المسؤولَ مرّتين للخصم الواحد — وهو بعينه
+/// العطبُ الموصوفُ في `_ensure` أعلاه.
+///
+/// و`null` (‏السياسةُ لم تُقرأ بعد) تعني **السلوكَ القائم**: لا سقفَ.
+Future<DiscountPolicyOutcome> ensureDiscountWithinPolicy(
+  WidgetRef ref,
+  BuildContext context,
+  double percent,
+) async {
+  final policy = ref.read(quickSalePolicyProvider).asData?.value;
+  if (policy == null) return DiscountPolicyOutcome.allowed;
+
+  final cap = quickSaleDiscountCap(policy);
+  if (quickSaleDiscountAllowed(percent: percent, cap: cap)) {
+    return DiscountPolicyOutcome.allowed;
+  }
+
+  final needsManager =
+      policy.isOn(kQuickSaleRows.firstWhere((r) => r.id == 'discappr'));
+  if (!needsManager) return DiscountPolicyOutcome.aboveCapRejected;
+
+  if (!context.mounted) return DiscountPolicyOutcome.approvalDenied;
+  final approved = await requestManagerApproval(
+    context,
+    actionName: 'خصم ${percent.toStringAsFixed(0)}٪ — فوق حدّ ${cap.toStringAsFixed(0)}٪',
+    permission: PermissionCodes.posDiscount,
+  );
+  return approved
+      ? DiscountPolicyOutcome.allowed
+      : DiscountPolicyOutcome.approvalDenied;
+}
+
+/// رسالةُ الرفض حين لا مسارَ للموافقة — `null` حين لا رسالةَ تلزم.
+///
+/// حوارُ الموافقة يتكلّم عن نفسه، فالرفضُ بعده لا يحتاج توستاً ثانياً.
+String? discountPolicyMessage(DiscountPolicyOutcome outcome) =>
+    outcome == DiscountPolicyOutcome.aboveCapRejected
+        ? 'الخصمُ يتجاوز الحدَّ المسموح، ولا مسارَ موافقةٍ مفعَّل'
+        : null;
 
 /// يسمح بتعليق الفاتورة، أو يطلب موافقةَ مسؤولٍ يملكها.
 Future<bool> ensureHoldOrderPermission(

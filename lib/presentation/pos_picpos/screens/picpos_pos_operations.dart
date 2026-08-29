@@ -1346,6 +1346,16 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
         // البابُ الثاني للخصم — الأولُ خليةُ «الخصم ٪» في الجدول. وكان هذا
         // الفرعُ **بلا فحص** بينما جاراه فوقه محروسان، فمن رُفع عنه الخصمُ
         // كان يطبّقه من هنا. (مقيسٌ 2026-08-13)
+        // §٤ `disccap` — والسقفُ قبل الصلاحية (‏حوارٌ واحدٌ لا اثنان).
+        final verdict = await ensureDiscountWithinPolicy(ref, context, disc);
+        if (verdict != DiscountPolicyOutcome.allowed) {
+          final msg = discountPolicyMessage(verdict);
+          if (msg != null && mounted) {
+            showPosToast(context, ref, msg, type: PosNotificationType.error);
+          }
+          return;
+        }
+        if (!mounted) return;
         if (await ensureCartDiscountPermission(ref, context)) {
           cart.setItemDiscount(index, disc);
         }
@@ -1401,6 +1411,23 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     );
     controller.dispose();
     if (result != null && result >= 0 && result <= 100) {
+      // §٤ `disccap` على خصم الفاتورة كلِّها.
+      //
+      // ⚠️ **هنا الفحصُ بعد الحوار لا قبله**، خلافاً للبابين الآخرين: القيمةُ
+      // لا تُعرف إلّا بعد أن يكتبها الكاشير. وفحصُ الصلاحية يبقى قبل الحوار
+      // كما كان (‏لا يُطلب منه أن يكتب نسبةً ثمّ يُرفض لأنه لا يملك الخصمَ
+      // أصلاً)، فمن لا يملك الصلاحيةَ **ويتجاوز السقفَ** يرى حوارَين —
+      // وهما قراران مختلفان فعلاً: «أتخصم أصلاً؟» ثمّ «أتتجاوز الحدَّ؟».
+      final verdict = await ensureDiscountWithinPolicy(ref, context, result);
+      if (verdict != DiscountPolicyOutcome.allowed) {
+        final msg = discountPolicyMessage(verdict);
+        if (msg != null && mounted) {
+          showPosToast(context, ref, msg, type: PosNotificationType.error);
+        }
+        _refocusScanner();
+        return;
+      }
+      if (!mounted) return;
       ref.read(cartControllerProvider.notifier).setDiscount(result);
     }
     _refocusScanner();
@@ -1526,6 +1553,37 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     if (!mounted) return;
 
     final total = cartState.total;
+
+    // §٤ `mgrlimit` — حاجزُ أمانٍ على الفواتير الكبيرة.
+    //
+    // ⚠️ **قبل أيّ حوارِ دفعٍ وقبل الترحيل**: الغرضُ أن يراها مسؤولٌ قبل أن
+    // تصير قيداً، لا أن تُصادَق بعد أن دخلت الدفاتر. و`null` من المترجِم
+    // تعني «بلا حد» لا صفراً — والخلطُ بينهما كان سيطلب موافقةً لكلّ فاتورة.
+    final limitPolicy = ref.read(quickSalePolicyProvider).asData?.value;
+    final confirmAbove = limitPolicy == null
+        ? null
+        : quickSaleManagerConfirmAbove(limitPolicy);
+    if (confirmAbove != null && total > confirmAbove) {
+      final okBig = await requestManagerApproval(
+        context,
+        actionName:
+            'فاتورة ${total.toStringAsFixed(2)} — فوق حدّ ${confirmAbove.toStringAsFixed(0)}',
+        // ⚠️ **لا `posDiscount` هنا.** استعمالُه كان يفتح عطبَين معاً:
+        // كاشيرٌ يملك الخصمَ يصير مؤهَّلاً للمصادقة على فاتورةٍ كبيرة،
+        // **والإذنُ الممنوحُ يدخل `ManagerApprovalCache` تحت `pos_discount`**
+        // فيستهلكه فحصُ خصمٍ لاحقٌ في نفس الدقيقة بلا سؤال. والافتراضُ
+        // `approve_high_value_return` مخصَّصٌ لهذا المعنى بالضبط.
+      );
+      if (!okBig) {
+        if (mounted) {
+          showPosToast(context, ref, 'أُلغيت البيعة — لم يُصادَق على المبلغ',
+              type: PosNotificationType.warning);
+        }
+        _refocusScanner();
+        return;
+      }
+      if (!mounted) return;
+    }
 
     // شركات التوصيل بتتحاسب آجل. القيد ده كان عايش كـ `creditOnly` في صف طرق
     // الدفع في اللوحة؛ الصف اتشال، فالقيد نزل هنا — على مسار الكتابة، فما

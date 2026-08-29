@@ -12,6 +12,7 @@ import '../../../domain/entities/cart_item_entity.dart';
 import '../../pos/providers/cart_controller.dart';
 import '../../pos/widgets/modifier_selection_dialog.dart';
 import 'picpos_numeric_keypad_dialog.dart';
+import '../../pos/providers/pos_notification_provider.dart';
 import 'picpos_cart_permissions.dart';
 import 'picpos_pos_text.dart';
 
@@ -476,6 +477,19 @@ class _ItemRow extends ConsumerWidget {
                 // لوناً اسمُه `AppColors.posDiscount` إنفاذاً للكود.
                 onSubmitted: (v) async {
                   if (v < 0 || v > 100) return;
+                  // §٤ `disccap` — والسقفُ **قبل** الصلاحية: انظر تعليقَ
+                  // `ensureDiscountWithinPolicy` (‏حوارٌ واحدٌ لا اثنان).
+                  final verdict =
+                      await ensureDiscountWithinPolicy(ref, context, v);
+                  if (verdict != DiscountPolicyOutcome.allowed) {
+                    final msg = discountPolicyMessage(verdict);
+                    if (msg != null && context.mounted) {
+                      showPosToast(context, ref, msg,
+                          type: PosNotificationType.error);
+                    }
+                    return;
+                  }
+                  if (!context.mounted) return;
                   if (!await ensureCartDiscountPermission(ref, context)) return;
                   cart.setItemDiscount(index, v);
                 },

@@ -324,7 +324,7 @@ const List<QuickSaleStep> kQuickSaleSteps = [
             max: 50,
             defaultNumber: 15,
             unit: '٪',
-            notEnforcedReason: _newBehaviour,
+            enforced: true,
           ),
           QuickSaleRow(
             id: 'discappr',
@@ -333,7 +333,7 @@ const List<QuickSaleStep> kQuickSaleSteps = [
             title: 'يتطلب موافقة مدير فوق الحد',
             sub: 'بدون الموافقة يُرفض الخصم بدلاً من تسجيله',
             defaultIndex: 1,
-            notEnforcedReason: _newBehaviour,
+            enforced: true,
           ),
           QuickSaleRow(
             id: 'priceedit',
@@ -471,7 +471,7 @@ const List<QuickSaleStep> kQuickSaleSteps = [
             sub: 'حاجز أمان على الفواتير الكبيرة',
             options: ['١,٠٠٠ ج.م', '٢,٥٠٠ ج.م', '٥,٠٠٠ ج.م', 'بلا حد'],
             defaultIndex: 2,
-            notEnforcedReason: _newBehaviour,
+            enforced: true,
           ),
           QuickSaleRow(
             id: 'quickamt',
@@ -627,7 +627,7 @@ const List<QuickSaleStep> kQuickSaleSteps = [
             title: 'إغلاق أعمى',
             sub: 'لا يعرض المتوقع للكاشير قبل إدخال العدّة الفعلية',
             defaultIndex: 1,
-            notEnforcedReason: _newBehaviour,
+            enforced: true,
           ),
           QuickSaleRow(
             id: 'diffmax',

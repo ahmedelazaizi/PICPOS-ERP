@@ -352,7 +352,7 @@ void _valuesSuite() {
   // ═════════════════════════════════════════════════════════════════════
 
   group('حصيلةُ التوصيل', () {
-    test('الصفوفُ الثمانيةُ الموصَّلةُ في هذه الجولة لا تحمل وسمَ «لا يُنفَّذ»',
+    test('الصفوفُ الاثنا عشرَ الموصَّلةُ في هذه الجولة لا تحمل وسمَ «لا يُنفَّذ»',
         () {
       const wiredThisRound = [
         'askqty',
@@ -363,6 +363,10 @@ void _valuesSuite() {
         'after',
         'drawer',
         'quickamt',
+        'disccap',
+        'discappr',
+        'mgrlimit',
+        'blind',
       ];
       for (final id in wiredThisRound) {
         final row = _row(id);
@@ -384,6 +388,48 @@ void _valuesSuite() {
                 'ميّتةً صامتة.');
         expect(row.notEnforcedReason, isNotNull);
       }
+    });
+  });
+
+  group('حدودُ المال — و`null` تعني «بلا حد» لا صفراً', () {
+    test('سقفُ تأكيد المدير: كلُّ فهرسٍ، والأخيرُ بلا حد', () {
+      const expected = <double?>[1000, 2500, 5000, null];
+      for (var i = 0; i < expected.length; i++) {
+        expect(
+          quickSaleManagerConfirmAbove(
+            QuickSalePolicyValues({'pos_manager_confirm_above': '$i'}),
+          ),
+          expected[i],
+          reason: 'الفهرسُ $i — و`null` في الأخير تعني بلا حد. قراءتُها '
+              'صفراً تطلب موافقةَ مديرٍ لكلّ فاتورة.',
+        );
+      }
+    });
+
+    test('وفرقُ الوردية يُقاس بالقيمة المطلقة — العجزُ كالزيادة', () {
+      // ⚠️ العجزُ ٢٥ يحتاج سبباً كما تحتاجه الزيادةُ ٢٥. وإهمالُ الإشارة
+      // يُعفي العجزَ — وهو الأخطرُ محاسبيّاً: المالُ الناقصُ يمرّ بلا تفسير.
+      expect(
+        quickSaleShiftDiffNeedsReason(difference: -25, limit: 20),
+        isTrue,
+        reason: 'العجزُ فوق الحدّ يجب أن يطلب سبباً',
+      );
+      expect(
+        quickSaleShiftDiffNeedsReason(difference: 25, limit: 20),
+        isTrue,
+      );
+      expect(
+        quickSaleShiftDiffNeedsReason(difference: -25, limit: null),
+        isFalse,
+        reason: '`null` بلا حد — لا سببَ يُطلَب',
+      );
+    });
+
+    test('وسقفُ الخصم: المساواةُ مسموحة', () {
+      expect(quickSaleDiscountAllowed(percent: 15, cap: 15), isTrue,
+          reason: 'الخصمُ المساوي للسقف داخلَه — والرفضُ عنده يجعل السقفَ '
+              'المعلَن كذباً بنقطةٍ واحدة.');
+      expect(quickSaleDiscountAllowed(percent: 15.01, cap: 15), isFalse);
     });
   });
 }
