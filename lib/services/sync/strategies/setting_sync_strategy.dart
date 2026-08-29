@@ -51,6 +51,14 @@ class SettingSyncStrategy extends SyncStrategy {
       'machine_id',
       'pos_receipt_printer',
       'pos_kitchen_printer',
+      // سياسةُ البيع السريع §٤ — قرارُ المالك 2026-08-29: هذان لكلِّ جهازٍ لا
+      // عامّان. `pos_open_drawer_on_print` خاصّيّةُ عتادٍ: نقطةُ بيعٍ بلا درجٍ
+      // كانت سترث إعدادَ من عنده درج. و`pos_receipt_template` يُحسَم أصلاً
+      // بالفرع والطابعة واللغة، فتثبيتُه مركزيّاً يتجاوز تلك السلسلة.
+      // أُضيفا **قبل** التوصيل عمداً — تغييرُ النطاق بعد انتشار المفتاح على
+      // أجهزةٍ حقيقيّةٍ أصعبُ بكثير.
+      'pos_open_drawer_on_print',
+      'pos_receipt_template',
       // Feature 031 — touch keyboard is per-device hardware preference
       // (FR-019). Server never overrides what the operator picked at
       // each terminal.
