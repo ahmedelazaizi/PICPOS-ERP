@@ -70,6 +70,12 @@ enum ColumnAlign { start, center, end }
 /// `items` بنودُ الفاتورة · `ledger` حركةُ كشف الحساب · `report` أعمدةٌ متغيّرة.
 enum TableKind { items, ledger, report }
 
+/// عددُ صفوفِ العيّنة التي يحجزها نطاقُ `details` عند التصميم.
+///
+/// أربعةٌ لأنّها ما يعرضه المحرّرُ فعلاً — الرقمُ واحدٌ للحجز وللعرض، فلا
+/// ينفصلان. ولا أثرَ له على الورق: هناك يتمدّد النطاقُ بعدد الأصناف.
+const int kDesignTableRows = 4;
+
 /// هوامشُ الورقة بالمليمتر.
 class MarginsMm {
   final double top;
@@ -322,6 +328,23 @@ class TableSpec {
   /// الأعمدةُ الظاهرةُ فقط — وهي وحدَها ما يُرسم ويقتسم العرض.
   List<TableColumn> get visibleColumns =>
       columns.where((c) => c.visible).toList(growable: false);
+
+  /// ارتفاعُ رأس الجدول — سطران حين تكون العناوينُ ثنائيّةً.
+  double get headerHeightMm =>
+      bilingualHeaders ? rowHeightMm * 1.5 : rowHeightMm;
+
+  /// ارتفاعُ كتلةِ الجدول **عند التصميم** — رأسٌ + [kDesignTableRows] صفّاً.
+  ///
+  /// ── لماذا يلزم رقمٌ عند التصميم أصلاً ────────────────────────────────
+  /// على الورق ينمو `details` بعدد الأصناف و`LayoutEngine` يتولّاه، فلا
+  /// أحدَ يحتاج ارتفاعاً مخزَّناً. أمّا في المحرّر فلا بيانات: النطاقُ
+  /// يأخذ ارتفاعَه من **أبعدِ قاعِ عنصرٍ فيه**، والجدولُ ليس عنصراً — فيبقى
+  /// النطاقُ صفراً ويُرسم الجدولُ خارجَ الورقة كلِّها.
+  ///
+  /// ⚠️ وهذا رقمُ **حجزٍ لا تخطيط**: لا يقيّد عددَ الصفوف المطبوعة، ولا
+  /// يُقرأ في `LayoutEngine` إطلاقاً. وضعُه هنا لا في ملفّ الواجهة لأنّ
+  /// «إن اضطررتَ لكتابة منطق تخطيطٍ في ملفّ الواجهة فالمحرّكُ ناقص».
+  double get designHeightMm => headerHeightMm + rowHeightMm * kDesignTableRows;
 
   TableSpec copyWith({
     List<TableColumn>? columns,

@@ -28,10 +28,6 @@ PAGE 1 595.27x583.79
   TXT 509.02,319.05 NotoNaskhArabic-Bold 10.00 «SINV-2026-0417»
   TXT 403.05,336.08 NotoNaskhArabic-Regular 10.00 «ﺍﻟﺘﺎﺭﻳﺦ:»
   TXT 356.06,336.08 NotoNaskhArabic-Regular 10.00 «14/3/2026»
-  TXT 338.36,336.68 NotoNaskhArabic-Regular 8.50 «ﺍﻟﻔﺮﻉ:»
-  TXT 310.95,336.68 NotoNaskhArabic-Regular 8.50 «300.00»
-  TXT 154.14,336.68 NotoNaskhArabic-Regular 8.50 «ﺍﻟﻤﺨﺰﻥ:»
-  TXT 126.73,336.68 NotoNaskhArabic-Regular 8.50 «300.00»
   TXT 558.98,302.02 NotoNaskhArabic-Bold 10.00 «ﺍﻟﻌﻤﻴﻞ:»
   TXT 538.21,302.02 NotoNaskhArabic-Bold 10.00 «ﺃﺣﻤﺪ»
   TXT 522.73,302.02 NotoNaskhArabic-Bold 10.00 «ﻋﺒﺪ»

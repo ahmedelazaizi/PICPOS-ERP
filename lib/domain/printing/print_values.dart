@@ -166,6 +166,12 @@ String resolveContentValue(String type, PrintPayload p) {
     case 'delivery_address':
     case 'courier_name':
     case 'waiter_name':
+      // ⚠️ **و`return` لا تعليقٌ وحدَه**: كانت الستّةُ تسقط إلى `cash_amount`
+      //    التي تليها، فيطبع «الفرع» و«المخزن» و«الويتر» **المبلغَ النقديَّ**
+      //    رقماً. مقيسٌ على البصمة الذهبيّة: «ﺍﻟﻔﺮﻉ: 300.00». وكان نائماً
+      //    لأنّ أيَّ قالبٍ مشحونٍ لم يستعمل هذه المفاتيح قطُّ — استيقظ يومَ
+      //    استعملها قالبُ A4 الافتراضيُّ الجديد.
+      return '';
     // استردادُ مرتجع المبيعات — نقداً وبنكياً.
     case 'cash_amount':
       return p.cashAmount == null ? '' : n(p.cashAmount!);

@@ -19,6 +19,7 @@
 import 'package:drift/drift.dart' show Value;
 
 import '../../data/database/database.dart';
+import '../../domain/printing/template_document.dart';
 import '../../domain/printing/template_mapper.dart';
 import 'template_render_pipeline.dart';
 
@@ -28,6 +29,29 @@ class TemplateMigration {
   /// هل هاجر هذا القالبُ بعد؟
   static bool isMigrated(InvoiceTemplate t) =>
       t.layoutVersion >= kBandLayoutVersion;
+
+  /// بصمةُ قالبٍ هاجر بالمُخطِّط **المعطوب** — جدولُ الأصناف خارج `details`.
+  ///
+  /// ── لماذا هذه البصمةُ بالذات ─────────────────────────────────────────
+  /// المُخطِّطُ القديمُ كان يرمي كلَّ عنصرٍ قسمُه `'body'` في `info`، وجدولُ
+  /// الأصناف منها. فبقي `details` صفريَّ الارتفاع ورُسم الجدولُ **خارجَ
+  /// الورقة**. والهجرةُ كتبت ذلك في `band_id` فصار العطبُ محفوظاً: إصلاحُ
+  /// المُخطِّط وحدَه لا يصل القوالبَ المهاجَرةَ لأنّ `buildDocument` تقرأ
+  /// `band_id` المخزَّنَ ولا تسأل المُخطِّطَ أصلاً.
+  ///
+  /// ⚠️ **ولا تُتَّخذ بصمةٌ أوسع**: «عنصرٌ نطاقُه يخالف مفتاحَه» تشمل عنصراً
+  /// جرّه المستخدمُ بيده إلى نطاقٍ آخر — فيُمحى عملُه. أمّا جدولُ الأصناف
+  /// خارجَ `details` فحالةٌ لا يصنعها المحرّرُ ولا يريدها أحد: النطاقُ
+  /// المتمدِّدُ هو `details` وحدَه، فالجدولُ في غيره يعني قالباً لم يُخطَّط
+  /// قطُّ لا قالباً مُخصَّصاً.
+  static bool needsBandRepair(List<InvoiceTemplateElement> elements) {
+    for (final e in elements) {
+      final key = TemplateRenderPipeline.contentKeyOf(e);
+      if (bandForKey(key) != BandId.details) continue;
+      if (e.bandId != BandId.details.name) return true;
+    }
+    return false;
+  }
 
   /// يكتب النطاقاتِ والإحداثيّاتِ ويرفع `layout_version`.
   ///
@@ -45,10 +69,16 @@ class TemplateMigration {
   }) async {
     final template = await db.getTemplateById(templateId);
     if (template == null) return false;
-    if (isMigrated(template) && !force) return false;
 
     final elements = await db.getTemplateElements(templateId);
     if (elements.isEmpty) return false;
+
+    // المهاجَرُ يُترك وشأنَه — **إلّا** أن يحمل بصمةَ المُخطِّط المعطوب،
+    // فيُعاد اشتقاقُه بالمُخطِّط المُصلَح. وبدون هذا الاستثناء يبقى كلُّ
+    // قالبٍ هاجر قبل الإصلاح مقصوصاً إلى الأبد.
+    if (isMigrated(template) && !force && !needsBandRepair(elements)) {
+      return false;
+    }
 
     final paper = TemplateRenderPipeline.buildPaper(template);
     final settings = await db.getTableSettings(templateId);
@@ -88,6 +118,10 @@ class TemplateMigration {
           await db.updateTemplateElement(
             rowId,
             InvoiceTemplateElementsCompanion(
+              // ⚠️ **والقسمُ مع النطاق**: كانت الهجرةُ تكتب `band_id` وحدَه
+              //    فيبقى `section` على `'body'` القديم — صفٌّ يناقض نفسَه،
+              //    وأيُّ قارئٍ يسقط إلى المسار التدفّقيِّ يعيد العطبَ.
+              section: Value(band.id.name),
               bandId: Value(band.id.name),
               xMm: Value(el.xMm),
               yMm: Value(el.yMm),

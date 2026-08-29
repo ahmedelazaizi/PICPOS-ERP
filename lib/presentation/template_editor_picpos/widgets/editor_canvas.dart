@@ -48,6 +48,7 @@ class EditorCanvas extends StatelessWidget {
     super.key,
     required this.document,
     required this.values,
+    required this.rows,
     required this.zoom,
     required this.showGrid,
     required this.selectedBand,
@@ -61,6 +62,13 @@ class EditorCanvas extends StatelessWidget {
 
   final TemplateDocument document;
   final Map<String, String> values;
+
+  /// صفوفُ العيّنة كما يبنيها المحرّكُ — لا بياناتٌ مكتوبةٌ بجانب الواجهة.
+  ///
+  /// جدولٌ برأسٍ بلا صفوفٍ لا يُظهر عرضَ الأعمدة ولا محاذاتَها ولا كم
+  /// يشغل من الورقة — وهو ما كان يجعل نطاقَ التفاصيل يبدو شريطاً رفيعاً.
+  final List<List<String>> rows;
+
   final double zoom;
   final bool showGrid;
   final BandId? selectedBand;
@@ -107,6 +115,15 @@ class EditorCanvas extends StatelessWidget {
           const SizedBox(width: 8),
           Container(
             width: paperWidth,
+            // ⚠️ **الورقةُ صفحةٌ كاملةٌ لا مجموعَ نطاقاتها**: بلا هذا القيد
+            //    ينتهي البياضُ عند آخر نطاقٍ فتبدو الورقةُ مقصوصة — قالبٌ
+            //    نطاقاتُه ١٨٢مم كان يُرسم على ورقةِ A4 طولُها ١٨٢ لا ٢٩٧.
+            //    و`minHeight` لا `height`: الفائضُ يظهر ولا يُقصّ، فيرى
+            //    المستخدمُ أنّ تخطيطَه تجاوز الصفحة بدل أن يختفي صامتاً.
+            //    والورقُ المتّصلُ (`heightMm == null`) يبقى بطول محتواه.
+            constraints: document.paper.heightMm == null
+                ? null
+                : BoxConstraints(minHeight: document.paper.heightMm! * k),
             decoration: const BoxDecoration(
               color: Colors.white,
               boxShadow: [
@@ -126,6 +143,7 @@ class EditorCanvas extends StatelessWidget {
                     contentLeftPx: margins.left * k,
                     contentWidthPx: document.paper.contentWidthMm * k,
                     values: values,
+                    rows: rows,
                     table: document.table,
                     showGrid: showGrid,
                     selected: band.id == selectedBand,
@@ -196,6 +214,7 @@ class _BandSurface extends StatelessWidget {
     required this.contentLeftPx,
     required this.contentWidthPx,
     required this.values,
+    required this.rows,
     required this.table,
     required this.showGrid,
     required this.selected,
@@ -212,6 +231,7 @@ class _BandSurface extends StatelessWidget {
   final double contentLeftPx;
   final double contentWidthPx;
   final Map<String, String> values;
+  final List<List<String>> rows;
   final TableSpec? table;
   final bool showGrid;
   final bool selected;
@@ -262,7 +282,8 @@ class _BandSurface extends StatelessWidget {
                 width: contentWidthPx,
                 child: GestureDetector(
                   onTap: onTapTable,
-                  child: _TablePreview(table: table!, widthPx: contentWidthPx),
+                  child: _TablePreview(
+                      table: table!, rows: rows, widthPx: contentWidthPx),
                 ),
               ),
             for (final el in band.elements)
@@ -417,9 +438,14 @@ class _ElementBox extends StatelessWidget {
 /// وهي **رؤوسٌ لا صفوف**: عددُ الصفوف يقرّره التخطيطُ بالبيانات، وعرضُ عددٍ
 /// ثابتٍ هنا يجعل المحرّرَ يَعِد بارتفاعٍ لا يقع.
 class _TablePreview extends StatelessWidget {
-  const _TablePreview({required this.table, required this.widthPx});
+  const _TablePreview({
+    required this.table,
+    required this.rows,
+    required this.widthPx,
+  });
 
   final TableSpec table;
+  final List<List<String>> rows;
   final double widthPx;
 
   @override
@@ -427,48 +453,88 @@ class _TablePreview extends StatelessWidget {
     final cols = table.visibleColumns;
     if (cols.isEmpty) return const SizedBox.shrink();
 
+    // صفوفُ العيّنةِ المعروضةُ — [kDesignTableRows] كما يحجز النطاقُ تماماً،
+    // فلا يعد المحرّرُ مساحةً لا يملؤها ولا يملأ مساحةً لم يحجزها.
+    final shown = rows.take(kDesignTableRows).toList(growable: false);
+
     return Container(
       decoration: const BoxDecoration(
         border: Border(
           top: BorderSide(color: Color(0xFF0B1220), width: 1.4),
-          bottom: BorderSide(color: Color(0xFF0B1220)),
         ),
       ),
-      padding: const EdgeInsets.symmetric(vertical: 3),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          for (final c in cols)
-            Expanded(
-              flex: (c.flex * 10).round().clamp(1, 1000),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 3),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      c.labelAr,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: _align(c.align),
-                      style: TextStyle(
-                          fontSize: table.headerFontSize * 0.8,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFF0B1220)),
-                    ),
-                    if (table.bilingualHeaders && c.labelEn.isNotEmpty)
-                      Text(
-                        c.labelEn,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: _align(c.align),
-                        style: TextStyle(
-                            fontSize: table.headerFontSize * 0.62,
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFF8B95A5)),
+          Container(
+            decoration: const BoxDecoration(
+              border: Border(
+                bottom: BorderSide(color: Color(0xFF0B1220)),
+              ),
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 3),
+            child: Row(
+              children: [
+                for (final c in cols)
+                  Expanded(
+                    flex: (c.flex * 10).round().clamp(1, 1000),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 3),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            c.labelAr,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: _align(c.align),
+                            style: TextStyle(
+                                fontSize: table.headerFontSize * 0.8,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF0B1220)),
+                          ),
+                          if (table.bilingualHeaders && c.labelEn.isNotEmpty)
+                            Text(
+                              c.labelEn,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: _align(c.align),
+                              style: TextStyle(
+                                  fontSize: table.headerFontSize * 0.62,
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF8B95A5)),
+                            ),
+                        ],
                       ),
-                  ],
-                ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          for (var i = 0; i < shown.length; i++)
+            Container(
+              color: i.isOdd ? const Color(0xFFFAFBFD) : null,
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Row(
+                children: [
+                  for (var j = 0; j < cols.length; j++)
+                    Expanded(
+                      flex: (cols[j].flex * 10).round().clamp(1, 1000),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 3),
+                        child: Text(
+                          j < shown[i].length ? shown[i][j] : '',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: _align(cols[j].align),
+                          style: TextStyle(
+                              fontSize: table.fontSize * 0.8,
+                              color: const Color(0xFF0B1220)),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
         ],

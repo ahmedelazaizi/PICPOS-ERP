@@ -485,6 +485,7 @@ class _CanvasPane extends ConsumerWidget {
       child: EditorCanvas(
         document: state.document,
         values: ref.watch(editorSampleValuesProvider),
+        rows: ref.watch(editorSampleRowsProvider),
         zoom: state.zoom,
         showGrid: state.snapToGrid,
         selectedBand: state.selection.bandId,

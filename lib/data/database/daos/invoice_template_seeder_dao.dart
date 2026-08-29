@@ -1774,6 +1774,13 @@ extension InvoiceTemplateSeederDao on AppDatabase {
   // ═══════════════════════════════════════════════════════════════════════════
 
   /// Seed default elements for a new template
+  /// يبذر عناصرَ القالب الافتراضيّ — **بنطاقاتها**، وبإحداثيّاتها حين
+  /// تحملها القائمةُ (‏A4 وحدَها اليوم).
+  ///
+  /// عنصرٌ يحمل `x`/`y`/`w`/`h` يُكتب `bandId` وملّيمتراتُه معاً فيقرؤه
+  /// `TemplateRenderPipeline._fromBands` مباشرةً؛ وما لا يحملها يُكتب له
+  /// `section` وحدَه فيشتقّ `TemplateMapper` مواضعَه من التدفّق. والاثنان
+  /// يخرجان بنطاقاتٍ صحيحة — وهو المقصود.
   Future<void> _seedDefaultElements(int templateId, String type) async {
     final elements = type == 'thermal'
         ? _thermalDefaultElements
@@ -1783,6 +1790,7 @@ extension InvoiceTemplateSeederDao on AppDatabase {
     const double elementHeight = 25; // Default element height
     const double spacing = 5; // Space between elements
     final double paperWidth = type == 'thermal' ? 220.0 : 500.0;
+    var positioned = 0;
 
     for (int i = 0; i < elements.length; i++) {
       final el = elements[i];
@@ -1793,6 +1801,10 @@ extension InvoiceTemplateSeederDao on AppDatabase {
 
       final (elType, elContent) = _normalizeSeedElement(
           el['type'] as String, el['content'] as String?);
+
+      final xMm = el['x'] as double?;
+      final hasMm = xMm != null;
+      if (hasMm) positioned++;
 
       await into(invoiceTemplateElements).insert(
         InvoiceTemplateElementsCompanion.insert(
@@ -1810,11 +1822,28 @@ extension InvoiceTemplateSeederDao on AppDatabase {
           labelAr: Value(el['labelAr'] as String?),
           labelEn: Value(el['labelEn'] as String?),
           content: Value(elContent),
+          // النطاقُ صراحةً — لا يُترك للافتراض `'body'`.
+          section: Value(el['band'] as String? ?? 'body'),
+          bandId: Value(el['band'] as String?),
+          condition: Value(el['condition'] as String?),
+          xMm: Value(xMm),
+          yMm: Value(el['y'] as double?),
+          wMm: Value(el['w'] as double?),
+          hMm: Value(el['h'] as double?),
         ),
       );
 
       // Move to next Y position
       currentY += height + spacing;
+    }
+
+    // ⚠️ قالبٌ بإحداثيّاتٍ كاملةٍ يُختم عند ٢، وإلّا اعتبرته `TemplateMigration`
+    //    غيرَ مهاجَرٍ فأعادت اشتقاقَ المواضع من التدفّق ودهست التصميمَ عند
+    //    أوّل فتحٍ للمحرّر. والشرطُ **كلُّها** لا بعضُها: `buildDocument`
+    //    يشترط `visible.every(_isPositioned)`.
+    if (positioned == elements.length) {
+      await (update(invoiceTemplates)..where((t) => t.id.equals(templateId)))
+          .write(const InvoiceTemplatesCompanion(layoutVersion: Value(2)));
     }
 
     // Seed default table settings with calculated position
@@ -1831,61 +1860,93 @@ extension InvoiceTemplateSeederDao on AppDatabase {
   /// Default elements for thermal receipts — NEW FORMAT
   /// elementType must be one of: variable, text, line, image, rectangle
   /// The 'content' field holds the variable key (e.g. 'company_name')
+  /// ⚠️ **و`band` على كلِّ سطر**: بدونها تأخذ العناصرُ الافتراضَ `'body'`
+  /// فينهار القالبُ كلُّه في نطاقٍ واحدٍ ويخرج الجدولُ خارجَ الورقة. أمّا
+  /// المواضعُ فتبقى مشتقّةً من التدفّق هنا — الورقُ الحراريُّ عمودٌ واحد،
+  /// فلا معنىً لإحداثيّاتٍ أفقيّةٍ فيه.
   List<Map<String, dynamic>> get _thermalDefaultElements => [
-    {'type': 'image', 'content': 'logo', 'alignment': 'center'},
-    {'type': 'variable', 'content': 'company_name', 'alignment': 'center', 'fontSize': 16.0, 'fontWeight': 'bold'},
-    {'type': 'variable', 'content': 'company_address', 'alignment': 'center', 'fontSize': 10.0},
-    {'type': 'variable', 'content': 'company_phone', 'alignment': 'center', 'fontSize': 10.0},
-    {'type': 'line'},
-    {'type': 'variable', 'content': 'invoice_number', 'alignment': 'right', 'labelAr': 'رقم الفاتورة', 'labelEn': 'Invoice #'},
-    {'type': 'variable', 'content': 'order_number', 'alignment': 'right', 'labelAr': 'رقم الطلب', 'labelEn': 'Order #'},
-    {'type': 'variable', 'content': 'date', 'alignment': 'right', 'labelAr': 'التاريخ', 'labelEn': 'Date'},
-    {'type': 'variable', 'content': 'sale_type', 'alignment': 'right', 'labelAr': 'نوع البيع', 'labelEn': 'Sale Type'},
-    {'type': 'variable', 'content': 'customer_name', 'alignment': 'right', 'labelAr': 'العميل', 'labelEn': 'Customer'},
-    {'type': 'variable', 'content': 'customer_phone', 'alignment': 'right', 'labelAr': 'الهاتف', 'labelEn': 'Phone'},
-    {'type': 'line'},
+    {'type': 'image', 'content': 'logo', 'band': 'header', 'alignment': 'center'},
+    {'type': 'variable', 'content': 'company_name', 'band': 'header', 'alignment': 'center', 'fontSize': 16.0, 'fontWeight': 'bold'},
+    {'type': 'variable', 'content': 'company_address', 'band': 'header', 'alignment': 'center', 'fontSize': 10.0},
+    {'type': 'variable', 'content': 'company_phone', 'band': 'header', 'alignment': 'center', 'fontSize': 10.0},
+    {'type': 'line', 'band': 'header'},
+    {'type': 'variable', 'content': 'invoice_number', 'band': 'info', 'alignment': 'right', 'labelAr': 'رقم الفاتورة', 'labelEn': 'Invoice #'},
+    {'type': 'variable', 'content': 'order_number', 'band': 'info', 'alignment': 'right', 'labelAr': 'رقم الطلب', 'labelEn': 'Order #'},
+    {'type': 'variable', 'content': 'date', 'band': 'info', 'alignment': 'right', 'labelAr': 'التاريخ', 'labelEn': 'Date'},
+    {'type': 'variable', 'content': 'sale_type', 'band': 'info', 'alignment': 'right', 'labelAr': 'نوع البيع', 'labelEn': 'Sale Type'},
+    {'type': 'variable', 'content': 'customer_name', 'band': 'party', 'alignment': 'right', 'labelAr': 'العميل', 'labelEn': 'Customer'},
+    {'type': 'variable', 'content': 'customer_phone', 'band': 'party', 'alignment': 'right', 'labelAr': 'الهاتف', 'labelEn': 'Phone'},
+    {'type': 'line', 'band': 'party'},
     // الخيار (ب) 2026-08-12: للجدول عنصرٌ في القالب — موضعُه ملكُ المصمّم
     // لا أثرٌ جانبيٌّ لاستدلالٍ في المُصيِّر.
-    {'type': 'variable', 'content': 'items_table', 'labelAr': 'جدول الأصناف'},
-    {'type': 'variable', 'content': 'subtotal', 'alignment': 'right', 'labelAr': 'المجموع', 'labelEn': 'Subtotal'},
-    {'type': 'variable', 'content': 'discount', 'alignment': 'right', 'labelAr': 'الخصم', 'labelEn': 'Discount'},
-    {'type': 'variable', 'content': 'tax_amount', 'alignment': 'right', 'labelAr': 'الضريبة', 'labelEn': 'Tax'},
-    {'type': 'variable', 'content': 'total_amount', 'alignment': 'right', 'fontSize': 14.0, 'fontWeight': 'bold', 'labelAr': 'الإجمالي', 'labelEn': 'Total'},
-    {'type': 'variable', 'content': 'paid', 'alignment': 'right', 'labelAr': 'المدفوع', 'labelEn': 'Paid'},
-    {'type': 'variable', 'content': 'remaining', 'alignment': 'right', 'labelAr': 'المتبقي', 'labelEn': 'Remaining'},
-    {'type': 'line'},
-    {'type': 'variable', 'content': 'qr_code', 'alignment': 'center'},
-    {'type': 'text', 'content': 'شكراً لتعاملكم معنا', 'alignment': 'center', 'fontSize': 10.0},
+    {'type': 'variable', 'content': 'items_table', 'band': 'details', 'labelAr': 'جدول الأصناف'},
+    {'type': 'variable', 'content': 'subtotal', 'band': 'totals', 'alignment': 'right', 'labelAr': 'المجموع', 'labelEn': 'Subtotal'},
+    {'type': 'variable', 'content': 'discount', 'band': 'totals', 'alignment': 'right', 'labelAr': 'الخصم', 'labelEn': 'Discount'},
+    {'type': 'variable', 'content': 'tax_amount', 'band': 'totals', 'alignment': 'right', 'labelAr': 'الضريبة', 'labelEn': 'Tax'},
+    {'type': 'variable', 'content': 'total_amount', 'band': 'totals', 'alignment': 'right', 'fontSize': 14.0, 'fontWeight': 'bold', 'labelAr': 'الإجمالي', 'labelEn': 'Total'},
+    {'type': 'variable', 'content': 'paid', 'band': 'totals', 'alignment': 'right', 'labelAr': 'المدفوع', 'labelEn': 'Paid'},
+    {'type': 'variable', 'content': 'remaining', 'band': 'totals', 'alignment': 'right', 'labelAr': 'المتبقي', 'labelEn': 'Remaining'},
+    {'type': 'line', 'band': 'footer'},
+    {'type': 'variable', 'content': 'qr_code', 'band': 'footer', 'alignment': 'center'},
+    {'type': 'text', 'content': 'شكراً لتعاملكم معنا', 'band': 'footer', 'alignment': 'center', 'fontSize': 10.0},
   ];
 
-  /// Default elements for A4 invoices — NEW FORMAT
+  /// عناصرُ «فاتورة A4» الافتراضيّة — **منقولةٌ حرفيّاً عن ملفِّ التصميم**
+  /// `invoice_templates/designs/PicPos Template Editor.dc.html:510` (‏`ELEMENTS`).
+  ///
+  /// ── لماذا بإحداثيّاتٍ لا بتدفّق ──────────────────────────────────────────
+  /// كانت هذه القائمةُ تدفّقاً بلا `section`، فتأخذ كلُّ العناصر الافتراضَ
+  /// `'body'` من عمود الجدول، ويضعها `TemplateMapper._bandFor` كلَّها في
+  /// نطاقٍ واحد (`info`) — فيبقى `header` و`details` و`totals` و`footer`
+  /// **فارغةً**، ويخرج جدولُ الأصناف من نطاقٍ صفريِّ الارتفاع إلى خارج
+  /// الورقة. مقيسٌ: `info` = ١٦٢مم و`party` = ١٩٫٨مم بالضبط.
+  ///
+  /// ── والإحداثيّاتُ من حافّة **المحتوى** لا الورقة ────────────────────────
+  /// التصميمُ يقيس من حافّة الورقة، والنموذجُ هنا يقيس من حافّة المحتوى
+  /// (`EditorCanvas` تضيف `margins.left`). والهامشُ الافتراضيُّ ٥مم، فكلُّ
+  /// `x` أدناه = `x` التصميم **ناقص ٥**. أقصى حافّةٍ ١٨٩مم من ٢٠٠ متاحة.
+  ///
+  /// ⚠️ ولا تُبذَر بلا `layoutVersion: 2`: `TemplateMigration` تعتبر القالبَ
+  /// عند ١ غيرَ مهاجَرٍ فتُعيد اشتقاقَ المواضع من التدفّق — أي تدهس هذه
+  /// الإحداثيّاتِ عند أوّل فتحٍ للمحرّر.
   List<Map<String, dynamic>> get _a4DefaultElements => [
-    {'type': 'image', 'content': 'logo', 'alignment': 'left'},
-    {'type': 'variable', 'content': 'company_name', 'alignment': 'left', 'fontSize': 24.0, 'fontWeight': 'bold'},
-    {'type': 'variable', 'content': 'company_address', 'alignment': 'left', 'fontSize': 12.0},
-    {'type': 'variable', 'content': 'company_phone', 'alignment': 'left', 'fontSize': 12.0},
-    {'type': 'variable', 'content': 'company_tax_number', 'alignment': 'left', 'fontSize': 12.0, 'labelAr': 'الرقم الضريبي', 'labelEn': 'Tax ID'},
-    {'type': 'text', 'content': 'فاتورة مبيعات', 'alignment': 'center', 'fontSize': 20.0, 'fontWeight': 'bold'},
-    {'type': 'variable', 'content': 'invoice_number', 'alignment': 'right', 'labelAr': 'رقم الفاتورة', 'labelEn': 'Invoice #'},
-    {'type': 'variable', 'content': 'order_number', 'alignment': 'right', 'labelAr': 'رقم الطلب', 'labelEn': 'Order #'},
-    {'type': 'variable', 'content': 'date', 'alignment': 'right', 'labelAr': 'التاريخ', 'labelEn': 'Date'},
-    {'type': 'variable', 'content': 'sale_type', 'alignment': 'right', 'labelAr': 'نوع البيع', 'labelEn': 'Sale Type'},
-    {'type': 'variable', 'content': 'customer_name', 'alignment': 'left', 'labelAr': 'العميل', 'labelEn': 'Customer'},
-    {'type': 'variable', 'content': 'customer_address', 'alignment': 'left', 'labelAr': 'العنوان', 'labelEn': 'Address'},
-    {'type': 'variable', 'content': 'customer_phone', 'alignment': 'left', 'labelAr': 'الهاتف', 'labelEn': 'Phone'},
-    {'type': 'line'},
+    // ── الرأس ──────────────────────────────────────────────────────────
+    {'type': 'variable', 'content': 'company_name', 'band': 'header', 'x': 1.0, 'y': 5.0, 'w': 96.0, 'h': 8.0, 'fontSize': 15.0, 'fontWeight': 'bold', 'alignment': 'right', 'labelAr': 'اسم الشركة', 'labelEn': 'Company'},
+    {'type': 'variable', 'content': 'company_address', 'band': 'header', 'x': 1.0, 'y': 14.0, 'w': 96.0, 'h': 5.0, 'fontSize': 7.5, 'alignment': 'right'},
+    {'type': 'variable', 'content': 'company_phone', 'band': 'header', 'x': 1.0, 'y': 20.0, 'w': 60.0, 'h': 5.0, 'fontSize': 7.5, 'alignment': 'right', 'labelAr': 'هاتف', 'labelEn': 'Tel'},
+    {'type': 'variable', 'content': 'company_tax_number', 'band': 'header', 'x': 1.0, 'y': 26.0, 'w': 60.0, 'h': 5.0, 'fontSize': 7.5, 'alignment': 'right', 'labelAr': 'س.ت', 'labelEn': 'Tax Reg.'},
+    {'type': 'image', 'content': 'logo', 'band': 'header', 'x': 167.0, 'y': 5.0, 'w': 22.0, 'h': 22.0, 'fontSize': 8.0, 'alignment': 'center'},
+    {'type': 'text', 'content': 'فاتورة ضريبية · TAX INVOICE', 'band': 'header', 'x': 61.0, 'y': 12.0, 'w': 78.0, 'h': 11.0, 'fontSize': 14.0, 'fontWeight': 'bold', 'alignment': 'center'},
+
+    // ── البيانات ───────────────────────────────────────────────────────
+    {'type': 'variable', 'content': 'invoice_number', 'band': 'info', 'x': 1.0, 'y': 5.0, 'w': 82.0, 'h': 6.0, 'fontSize': 9.0, 'fontWeight': 'bold', 'alignment': 'right', 'labelAr': 'رقم الفاتورة', 'labelEn': 'Invoice No.'},
+    {'type': 'variable', 'content': 'date', 'band': 'info', 'x': 107.0, 'y': 5.0, 'w': 82.0, 'h': 6.0, 'fontSize': 9.0, 'alignment': 'left', 'labelAr': 'التاريخ', 'labelEn': 'Date'},
+    {'type': 'variable', 'content': 'branch_name', 'band': 'info', 'x': 1.0, 'y': 13.0, 'w': 82.0, 'h': 6.0, 'fontSize': 8.0, 'alignment': 'right', 'labelAr': 'الفرع', 'labelEn': 'Branch'},
+    {'type': 'variable', 'content': 'warehouse_name', 'band': 'info', 'x': 107.0, 'y': 13.0, 'w': 82.0, 'h': 6.0, 'fontSize': 8.0, 'alignment': 'left', 'labelAr': 'المخزن', 'labelEn': 'Warehouse'},
+
+    // ── الطرف ──────────────────────────────────────────────────────────
+    {'type': 'variable', 'content': 'customer_name', 'band': 'party', 'x': 1.0, 'y': 4.0, 'w': 96.0, 'h': 7.0, 'fontSize': 9.5, 'fontWeight': 'bold', 'alignment': 'right', 'labelAr': 'العميل', 'labelEn': 'Customer'},
+    {'type': 'variable', 'content': 'customer_phone', 'band': 'party', 'x': 107.0, 'y': 4.0, 'w': 82.0, 'h': 7.0, 'fontSize': 9.0, 'alignment': 'left', 'labelAr': 'الهاتف', 'labelEn': 'Phone'},
+    {'type': 'variable', 'content': 'customer_address', 'band': 'party', 'x': 1.0, 'y': 12.0, 'w': 118.0, 'h': 6.0, 'fontSize': 8.0, 'alignment': 'right', 'labelAr': 'العنوان', 'labelEn': 'Address'},
+    {'type': 'variable', 'content': 'payment_method', 'band': 'party', 'x': 125.0, 'y': 12.0, 'w': 64.0, 'h': 6.0, 'fontSize': 8.0, 'alignment': 'left', 'labelAr': 'طريقة الدفع', 'labelEn': 'Payment'},
+
+    // ── التفاصيل ───────────────────────────────────────────────────────
     // الخيار (ب) 2026-08-12: للجدول عنصرٌ في القالب — موضعُه ملكُ المصمّم
-    // لا أثرٌ جانبيٌّ لاستدلالٍ في المُصيِّر.
-    {'type': 'variable', 'content': 'items_table', 'labelAr': 'جدول الأصناف'},
-    {'type': 'variable', 'content': 'subtotal', 'alignment': 'right', 'labelAr': 'المجموع', 'labelEn': 'Subtotal'},
-    {'type': 'variable', 'content': 'discount', 'alignment': 'right', 'labelAr': 'الخصم', 'labelEn': 'Discount'},
-    {'type': 'variable', 'content': 'tax_amount', 'alignment': 'right', 'labelAr': 'الضريبة', 'labelEn': 'Tax'},
-    {'type': 'variable', 'content': 'total_amount', 'alignment': 'right', 'fontSize': 16.0, 'fontWeight': 'bold', 'labelAr': 'الإجمالي', 'labelEn': 'Total'},
-    {'type': 'variable', 'content': 'paid', 'alignment': 'right', 'labelAr': 'المدفوع', 'labelEn': 'Paid'},
-    {'type': 'variable', 'content': 'remaining', 'alignment': 'right', 'labelAr': 'المتبقي', 'labelEn': 'Remaining'},
-    {'type': 'line'},
-    {'type': 'variable', 'content': 'notes', 'alignment': 'left', 'labelAr': 'ملاحظات', 'labelEn': 'Notes'},
-    {'type': 'variable', 'content': 'qr_code', 'alignment': 'right'},
-    {'type': 'text', 'content': 'شكراً لتعاملكم معنا', 'alignment': 'center', 'fontSize': 10.0},
+    // لا أثرٌ جانبيٌّ لاستدلالٍ في المُصيِّر. و`h` هنا ٩٦مم كما التصميم،
+    // وهي ما يمنح نطاقَ `details` ارتفاعَه في المحرّر.
+    {'type': 'variable', 'content': 'items_table', 'band': 'details', 'x': 0.0, 'y': 0.0, 'w': 200.0, 'h': 96.0, 'fontSize': 9.0, 'labelAr': 'جدول الأصناف'},
+
+    // ── المجاميع ───────────────────────────────────────────────────────
+    {'type': 'variable', 'content': 'subtotal', 'band': 'totals', 'x': 107.0, 'y': 3.0, 'w': 82.0, 'h': 6.0, 'fontSize': 9.0, 'alignment': 'right', 'labelAr': 'الإجمالي الفرعي', 'labelEn': 'Subtotal'},
+    {'type': 'variable', 'content': 'discount', 'band': 'totals', 'x': 107.0, 'y': 10.0, 'w': 82.0, 'h': 6.0, 'fontSize': 9.0, 'alignment': 'right', 'labelAr': 'الخصم', 'labelEn': 'Discount', 'condition': 'discount > 0'},
+    {'type': 'variable', 'content': 'tax_amount', 'band': 'totals', 'x': 107.0, 'y': 17.0, 'w': 82.0, 'h': 6.0, 'fontSize': 9.0, 'alignment': 'right', 'labelAr': 'ضريبة القيمة المضافة', 'labelEn': 'VAT'},
+    {'type': 'variable', 'content': 'total_amount', 'band': 'totals', 'x': 107.0, 'y': 25.0, 'w': 82.0, 'h': 8.0, 'fontSize': 12.0, 'fontWeight': 'bold', 'alignment': 'right', 'labelAr': 'الإجمالي المستحق', 'labelEn': 'Total Due'},
+    {'type': 'variable', 'content': 'remaining', 'band': 'totals', 'x': 1.0, 'y': 25.0, 'w': 82.0, 'h': 8.0, 'fontSize': 10.0, 'fontWeight': 'bold', 'alignment': 'right', 'labelAr': 'المتبقي', 'labelEn': 'Balance', 'condition': 'remaining > 0', 'fontColor': '#B42318'},
+
+    // ── التذييل ────────────────────────────────────────────────────────
+    {'type': 'variable', 'content': 'qr_code', 'band': 'footer', 'x': 1.0, 'y': 4.0, 'w': 18.0, 'h': 18.0, 'fontSize': 7.0, 'alignment': 'center'},
+    {'type': 'variable', 'content': 'tax_registration', 'band': 'footer', 'x': 23.0, 'y': 5.0, 'w': 96.0, 'h': 6.0, 'fontSize': 7.5, 'alignment': 'right', 'labelAr': 'الرقم الضريبي', 'labelEn': 'Tax Registration'},
+    {'type': 'variable', 'content': 'notes', 'band': 'footer', 'x': 23.0, 'y': 12.0, 'w': 120.0, 'h': 6.0, 'fontSize': 7.5, 'alignment': 'right', 'labelAr': 'ملاحظات', 'labelEn': 'Notes', 'condition': 'notes != ""'},
+    {'type': 'text', 'content': 'شكراً لتعاملكم معنا · Thank you', 'band': 'footer', 'x': 1.0, 'y': 26.0, 'w': 188.0, 'h': 7.0, 'fontSize': 8.0, 'alignment': 'center'},
   ];
 }

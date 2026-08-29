@@ -433,6 +433,18 @@ final editorSampleValuesProvider =
       s.document, _sampleScenario.payload);
 });
 
+/// صفوفُ العيّنة لجدولِ الكانفاس — **بالمحرّك نفسِه** الذي يطبع.
+///
+/// ولا تُكتب بيانةٌ ثابتةٌ بجانب الواجهة: عمودٌ يُضاف أو تُغيَّر منازلُه
+/// كان سيظهر في المعاينة ولا يظهر في الكانفاس، فيصير الاثنان قالبَين.
+final editorSampleRowsProvider =
+    Provider.autoDispose<List<List<String>>>((ref) {
+  final s = ref.watch(templateEditorProvider);
+  if (s == null) return const [];
+  return TemplateRenderPipeline.buildRows(
+      _sampleScenario.items, s.document.table, 2);
+});
+
 /// صفحاتُ المعاينة — بالمحرّك نفسِه الذي يطبع.
 final editorPreviewPagesProvider =
     Provider.autoDispose<List<({double widthMm, double heightMm, List<PaintOp> ops, int number, int count})>>(

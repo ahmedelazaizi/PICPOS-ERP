@@ -58,14 +58,61 @@ class LegacyElement {
   });
 }
 
+/// مفاتيحُ الرأس — هويّةُ الشركة وعنوانُ المستند.
+const _headerKeys = <String>{
+  'company_name', 'company_address', 'company_phone', 'company_email',
+  'company_website', 'company_tax_number', 'company_cr_number', 'logo',
+  'doc_title', 'document_title',
+};
+
+/// مفاتيحُ التفاصيل — الجداولُ وحدَها.
+const _detailsKeys = <String>{
+  'items_table', 'ledger_table', 'report_table',
+};
+
+/// مفاتيحُ التذييل — ما يقع أسفلَ المجاميع.
+const _footerKeys = <String>{
+  'qr_code', 'barcode', 'barcode_image', 'notes', 'note', 'page_number',
+  'tax_registration', 'footer_text', 'terms', 'signature', 'stamp',
+};
+
 /// مفاتيحُ الطرف — تفصل `party` عن `info` داخلَ `body` القديم.
 const _partyKeys = <String>{
   'customer_name', 'customer_phone', 'customer_address', 'customer_tax_number',
   'customer_code', 'supplier_name', 'supplier_phone', 'supplier_address',
   'supplier_tax_number', 'supplier_code', 'party_name', 'party_code',
   'party_phone', 'party_address', 'party_tax_number', 'courier_name',
-  'courier_phone',
+  'courier_phone', 'table_number', 'waiter_name', 'payment_method',
+  // ⚠️ مقيسٌ من ملفّات الأصول لا مفترَض: أربعةٌ منها تكتب `"type":"customer"`
+  //    مفتاحاً خاماً، واثنان يكتبان `adhoc_customer_*` للعميل العابر. وهي
+  //    أسماءٌ لا يولّدها المحرّرُ فلا تخطر على بال — وغيابُها كان يضع اسمَ
+  //    العميل في نطاق «البيانات».
+  'customer', 'supplier', 'adhoc_customer_name', 'adhoc_customer_phone',
 };
+
+/// نطاقُ عنصرٍ **من مفتاحه وحدَه** — حين لا يقول القسمُ المخزَّنُ شيئاً.
+///
+/// ── لماذا اشتقاقٌ لا وسمٌ يدويٌّ في كلِّ باذر ────────────────────────────
+/// سبعُ دوالِّ بذرٍ في `invoice_template_seeder_dao.dart` وثمانيةُ ملفّاتِ
+/// أصولٍ في `assets/invoice_templates/` كانت تكتب عناصرَها **بلا `section`**،
+/// فتأخذ الافتراضَ `'body'` من عمود الجدول وتنهار كلُّها في نطاقٍ واحد:
+/// مقيسٌ على «فاتورة A4» أنّ `info` بلغت ١٦٢مم و`header` و`details` و`totals`
+/// و`footer` بقيت **فارغة** — فخرج جدولُ الأصناف من نطاقٍ صفريِّ الارتفاع
+/// إلى خارج الورقة.
+///
+/// ووسمُ ثلاثةَ عشرَ مصدراً بيدٍ يتفكّك عند أوّل إضافة. فالمفتاحُ هو الموجّهُ:
+/// عنصرٌ اسمُه `company_name` رأسٌ أينما كُتب، و`items_table` تفاصيلُ دائماً.
+///
+/// ⚠️ **والقسمُ الصريحُ يسبق**: عنصرٌ حُفظ من المحرّر يحمل اسمَ نطاقه، ولا
+/// يجوز أن يقفز لأنّ مفتاحَه يوحي بغيره. هذا الاشتقاقُ للمجهول وحدَه.
+BandId bandForKey(String contentKey) {
+  if (_headerKeys.contains(contentKey)) return BandId.header;
+  if (_detailsKeys.contains(contentKey)) return BandId.details;
+  if (_partyKeys.contains(contentKey)) return BandId.party;
+  if (_totalsKeys.contains(contentKey)) return BandId.totals;
+  if (_footerKeys.contains(contentKey)) return BandId.footer;
+  return BandId.info;
+}
 
 /// مفاتيحُ المجاميع — تفصل `totals` عن `footer` داخلَ `footer` القديم.
 const _totalsKeys = <String>{
@@ -157,7 +204,7 @@ class TemplateMapper {
 
     final bands = <TemplateBand>[];
     for (final id in BandId.values) {
-      bands.add(_buildBand(id, buckets[id]!, paper.contentWidthMm));
+      bands.add(_buildBand(id, buckets[id]!, paper.contentWidthMm, table));
     }
 
     return TemplateDocument(paper: paper, bands: bands, table: table);
@@ -176,20 +223,36 @@ class TemplateMapper {
     return c.isEmpty ? el.elementType : c;
   }
 
+  /// نطاقُ العنصر — القسمُ الصريحُ أوّلاً، ثمّ الاشتقاقُ من المفتاح.
+  ///
+  /// ⚠️ **والأسماءُ الستّةُ كلُّها مقبولةٌ صراحةً**: `saveTemplateLayout` يكتب
+  /// `section: band.id.name`، فقالبٌ حُفظ من المحرّر يحمل `'info'` أو
+  /// `'party'` أو `'totals'`. وكانت هذه الثلاثةُ تسقط في فرع `default` —
+  /// أي تُحسب من جديدٍ بدل أن تُحترَم، فيقفز عنصرٌ وضعه المستخدمُ بيده.
   static BandId _bandFor(LegacyElement el) {
     switch (el.section) {
       case 'header':
         return BandId.header;
+      case 'info':
+        return BandId.info;
+      case 'party':
+        return BandId.party;
       case 'details':
         return BandId.details;
+      case 'totals':
+        return BandId.totals;
       case 'footer':
+        // `footer` القديمُ كان يجمع المجاميعَ والتذييلَ معاً.
         return _totalsKeys.contains(contentKeyFor(el))
             ? BandId.totals
             : BandId.footer;
       default:
-        return _partyKeys.contains(contentKeyFor(el))
-            ? BandId.party
-            : BandId.info;
+        // ⚠️ نوعُ `footer` نصٌّ حرٌّ فمفتاحُه **فارغ** — و`bandForKey('')`
+        //    تُرجع `info`. فسطرُ التذييل («شكراً لتعاملكم معنا») كان يقفز
+        //    إلى وسط الفاتورة. النوعُ هنا يقول ما لا يقوله المفتاح.
+        if (el.elementType == 'footer') return BandId.footer;
+        // `'body'` وما لا يُعرف ⇒ المفتاحُ هو الموجّه.
+        return bandForKey(contentKeyFor(el));
     }
   }
 
@@ -201,6 +264,7 @@ class TemplateMapper {
     BandId id,
     List<LegacyElement> raw,
     double contentWidth,
+    TableSpec? table,
   ) {
     final items = [...raw]..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
 
@@ -256,7 +320,14 @@ class TemplateMapper {
     closeRow();
 
     // نطاقٌ فارغٌ يبقى بارتفاعٍ صفريّ — حذفُه يفقد المحرّرَ مكانَ الإفلات.
-    final height = y > 0 ? y - _rowGapMm : 0.0;
+    var height = y > 0 ? y - _rowGapMm : 0.0;
+
+    // ⚠️ و`details` يحجز كتلةَ جدوله — نظيرُ الحدِّ في `_fromBands`. وبدونه
+    //    يأخذ النطاقُ ارتفاعَ سطرٍ واحدٍ (‏عنصرُ `items_table` نفسُه) فيفيض
+    //    الجدولُ خارجَ الورقة. والقالبُ المشتقُّ يُحفظ بهذا الارتفاع.
+    if (id.isDetails && table != null && table.designHeightMm > height) {
+      height = table.designHeightMm;
+    }
 
     return TemplateBand(
       id: id,

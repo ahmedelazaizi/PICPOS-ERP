@@ -131,6 +131,11 @@ class TemplateRenderPipeline {
         final bottom = e.yMm! + e.hMm!;
         if (bottom > height) height = bottom;
       }
+      // ⚠️ و`details` يحجز كتلةَ جدوله: الجدولُ ليس عنصراً، فبلا هذا الحدِّ
+      //    يبقى النطاقُ صفراً ويُرسم الجدولُ **خارجَ الورقة** كلِّها.
+      if (id.isDetails && table != null && table.designHeightMm > height) {
+        height = table.designHeightMm;
+      }
       bands.add(
         TemplateBand(
           id: id,

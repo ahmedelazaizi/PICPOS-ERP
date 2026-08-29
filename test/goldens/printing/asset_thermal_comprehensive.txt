@@ -2,11 +2,9 @@
 # نوع=thermal فئة=receipt ورق=80.0mm
 # راسم=TemplatedInvoiceService
 PAGES 1
-PAGE 1 204.09x413.54
-  TXT 122.87,398.32 NotoNaskhArabic-Regular 8.00 «ﺽ.ﻕ.ﻡ:»
-  TXT 60.04,398.32 NotoNaskhArabic-Regular 8.00 «789-456-123-310»
-  TXT 103.84,236.56 NotoNaskhArabic-Regular 10.00 «ﺍﻟﻤﻨﺪﻭﺏ:»
-  TXT 71.59,236.56 NotoNaskhArabic-Regular 10.00 «300.00»
+PAGE 1 204.09x394.51
+  TXT 122.87,379.29 NotoNaskhArabic-Regular 8.00 «ﺽ.ﻕ.ﻡ:»
+  TXT 60.04,379.29 NotoNaskhArabic-Regular 8.00 «789-456-123-310»
   TXT 13.08,216.53 NotoNaskhArabic-Bold 10.00 «ﺍﻹﺟﻤﺎﻟﻲ»
   TXT 56.13,216.53 NotoNaskhArabic-Bold 10.00 «ﺍﻟﺴﻌﺮ»
   TXT 89.32,216.53 NotoNaskhArabic-Bold 10.00 «ﺍﻟﻌﺪﺩ»
@@ -45,12 +43,12 @@ PAGE 1 204.09x413.54
   TXT 85.92,10.74 NotoNaskhArabic-Regular 8.00 «ﺑﻌﺪ»
   TXT 75.04,10.74 NotoNaskhArabic-Regular 8.00 «48»
   TXT 58.77,10.74 NotoNaskhArabic-Regular 8.00 «ﺳﺎﻋﺔ»
-  LIN 198.42,380.00 -> 5.67,380.00
-  LIN 198.42,356.00 -> 5.67,356.00
-  LIN 198.42,332.00 -> 5.67,332.00
-  LIN 198.42,308.00 -> 5.67,308.00
-  LIN 198.42,284.00 -> 5.67,284.00
-  LIN 198.42,260.00 -> 5.67,260.00
+  LIN 198.42,360.97 -> 5.67,360.97
+  LIN 198.42,336.97 -> 5.67,336.97
+  LIN 198.42,312.97 -> 5.67,312.97
+  LIN 198.42,288.97 -> 5.67,288.97
+  LIN 198.42,264.97 -> 5.67,264.97
+  LIN 198.42,240.97 -> 5.67,240.97
   LIN 48.82,69.29 -> 48.82,229.22
   LIN 83.35,69.29 -> 83.35,229.22
   LIN 112.11,69.29 -> 112.11,229.22

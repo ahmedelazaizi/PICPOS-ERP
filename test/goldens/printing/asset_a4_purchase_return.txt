@@ -37,9 +37,6 @@ PAGE 1 595.27x544.86
   TXT 345.05,302.16 NotoNaskhArabic-Regular 8.50 «ﺿﺪ»
   TXT 319.12,302.16 NotoNaskhArabic-Regular 8.50 «ﺍﻟﻔﺎﺗﻮﺭﺓ:»
   TXT 307.81,302.16 NotoNaskhArabic-Regular 8.50 «17»
-  TXT 179.80,301.16 NotoNaskhArabic-Regular 8.50 «ﺍﻟﻤﺨﺰﻥ»
-  TXT 154.14,301.16 NotoNaskhArabic-Regular 8.50 «ﺍﻟﻤُﺨﺮِﺝ:»
-  TXT 126.73,301.16 NotoNaskhArabic-Regular 8.50 «300.00»
   TXT 560.23,266.49 NotoNaskhArabic-Bold 10.00 «ﺍﻟﻤﻮﺭﺩ:»
   TXT 539.46,266.49 NotoNaskhArabic-Bold 10.00 «ﺃﺣﻤﺪ»
   TXT 523.98,266.49 NotoNaskhArabic-Bold 10.00 «ﻋﺒﺪ»

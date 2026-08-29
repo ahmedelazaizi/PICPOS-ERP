@@ -63,12 +63,17 @@ void main() {
           reason: 'عنصرا صفٍّ واحدٍ على نفس الارتفاع');
     });
 
+    // ⚠️ المفتاحان كلاهما من نطاق «البيانات» عمداً. كان الأوّلُ
+    //    `company_name` — ومنذ صار المُخطِّطُ يشتقّ النطاقَ من المفتاح لم
+    //    يعد يقع في `info` أصلاً بل في `header`، فسقط الاختبارُ بـRangeError
+    //    لا بخللٍ في رصّ الصفوف. وموضوعُ هذا الاختبار **الرصُّ** لا التوزيع،
+    //    فالمفتاحُ تفصيلٌ فيه: يُبدَّل ولا يُضعَّف التوكيد.
     test('عنصرٌ بـ١٠٠٪ ينفرد بصفِّه ويدفع ما بعده لأسفل', () {
       final doc = TemplateMapper.fromLegacy(
         paper: _a4,
         elements: [
-          _e('company_name', content: 'company_name', sortOrder: 0),
-          _e('invoice_number', content: 'invoice_number', sortOrder: 1),
+          _e('invoice_number', content: 'invoice_number', sortOrder: 0),
+          _e('date', content: 'date', sortOrder: 1),
         ],
       );
 
