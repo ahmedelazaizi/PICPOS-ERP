@@ -453,7 +453,7 @@ class _ItemRow extends ConsumerWidget {
                 onSubmitted: (v) async {
                   if (v < 0) return;
                   // §٤ `priceedit` — «ممنوع» قبل أيّ حوارِ مصادقة.
-                  if (priceEditBlockedByPolicy(ref)) {
+                  if (await priceEditBlockedByPolicy(ref)) {
                     showPosToast(context, ref, kPriceEditBlockedMessage,
                         type: PosNotificationType.error);
                     return;

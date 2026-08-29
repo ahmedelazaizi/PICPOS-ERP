@@ -212,6 +212,16 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
 
   @override
   Widget build(BuildContext context) {
+    // ⚠️ **تسخينُ سياسة البيع السريع — لا تحذفها ظنّاً أنّها بلا استعمال.**
+    //
+    // `quickSalePolicyProvider` مستقبليٌّ، و`_refocusScanner` تقرأه **متزامناً**
+    // لأنّها مسارٌ ساخنٌ يلمسه كلُّ مسحةٍ ولا يحتمل إطارَ انتظار. وبلا مراقبٍ
+    // في الشجرة يبقى بارداً فترجع تلك القراءةُ `null` أبداً — فيسقط الكودُ
+    // إلى «السلوك القائم» ويبدو الإعدادُ مُهمَلاً. (‏بلاغُ المالك 2026-08-30)
+    //
+    // والمراقبةُ هنا تُبقيه حيّاً وتُعيد جلبَه فورَ `invalidate` بعد الحفظ.
+    ref.watch(quickSalePolicyProvider);
+
     final isProcessing =
         ref.watch(posControllerProvider.select((s) => s.isProcessing));
     // وضعُ المرتجع (جولةُ إصلاح ٢ — مانعٌ ١): تعطيلُ زرّ «الفواتير المعلّقة»

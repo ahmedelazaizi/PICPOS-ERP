@@ -83,9 +83,8 @@ Future<bool> ensureCartQuantityPermission(
 /// تجاوزَه — ولا يستطيع.
 ///
 /// و`null` (‏السياسةُ لم تُقرأ) تعني السلوكَ القائم: مسموحٌ بحسب الصلاحية.
-bool priceEditBlockedByPolicy(WidgetRef ref) {
-  final policy = ref.read(quickSalePolicyProvider).asData?.value;
-  if (policy == null) return false;
+Future<bool> priceEditBlockedByPolicy(WidgetRef ref) async {
+  final policy = await ref.read(quickSalePolicyProvider.future);
   return quickSalePriceEditPolicy(policy) ==
       QuickSalePriceEditPolicy.blocked;
 }
@@ -230,8 +229,8 @@ Future<DiscountPolicyOutcome> ensureDiscountWithinPolicy(
   BuildContext context,
   double percent,
 ) async {
-  final policy = ref.read(quickSalePolicyProvider).asData?.value;
-  if (policy == null) return DiscountPolicyOutcome.allowed;
+  final policy = await ref.read(quickSalePolicyProvider.future);
+  if (!context.mounted) return DiscountPolicyOutcome.approvalDenied;
 
   final cap = quickSaleDiscountCap(policy);
   if (quickSaleDiscountAllowed(percent: percent, cap: cap)) {

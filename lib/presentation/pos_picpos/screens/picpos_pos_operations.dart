@@ -604,8 +604,8 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
   /// وظهور الصنف. و`null` — أي السياسةُ لم تُقرأ بعد — تعني **السلوكَ
   /// القائم**: وحدةٌ واحدةٌ فوراً، لا حوارٌ يظهر لأنّ القراءة تأخّرت.
   Future<double?> _askLineQuantity(ProductEntity product) async {
-    final policy = ref.read(quickSalePolicyProvider).asData?.value;
-    if (policy == null) return 1;
+    final policy = await ref.read(quickSalePolicyProvider.future);
+    if (!mounted) return null;
     if (!policy.isOn(kQuickSaleRows.firstWhere((r) => r.id == 'askqty'))) {
       return 1;
     }
@@ -944,11 +944,9 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
   /// ⚠️ ونغمةُ الخطأ مضروبةٌ سلفاً: `searchBarcode` تعزفها حين تضع
   /// `error`، فلا تُعاد هنا في مسار الرفض.
   Future<void> _handleUnknownBarcode(String barcode, String error) async {
-    final policy = ref.read(quickSalePolicyProvider).asData?.value;
-    // السياسةُ لم تُقرأ بعد ⇒ السلوكُ القائم.
-    final action = policy == null
-        ? QuickSaleUnknownBarcodeAction.quickAdd
-        : quickSaleUnknownBarcodeAction(policy);
+    final policy = await ref.read(quickSalePolicyProvider.future);
+    if (!mounted) return;
+    final action = quickSaleUnknownBarcodeAction(policy);
 
     switch (action) {
       case QuickSaleUnknownBarcodeAction.quickAdd:
@@ -1332,7 +1330,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       }
       if (price != null && price >= 0 && price != current.effectivePrice) {
         // §٤ `priceedit` — «ممنوع» قبل أيّ حوارِ مصادقة.
-        if (priceEditBlockedByPolicy(ref)) {
+        if (await priceEditBlockedByPolicy(ref)) {
           if (mounted) {
             showPosToast(context, ref, kPriceEditBlockedMessage,
                 type: PosNotificationType.error);
@@ -1565,10 +1563,9 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     // ⚠️ **قبل أيّ حوارِ دفعٍ وقبل الترحيل**: الغرضُ أن يراها مسؤولٌ قبل أن
     // تصير قيداً، لا أن تُصادَق بعد أن دخلت الدفاتر. و`null` من المترجِم
     // تعني «بلا حد» لا صفراً — والخلطُ بينهما كان سيطلب موافقةً لكلّ فاتورة.
-    final limitPolicy = ref.read(quickSalePolicyProvider).asData?.value;
-    final confirmAbove = limitPolicy == null
-        ? null
-        : quickSaleManagerConfirmAbove(limitPolicy);
+    final limitPolicy = await ref.read(quickSalePolicyProvider.future);
+    if (!mounted) return;
+    final confirmAbove = quickSaleManagerConfirmAbove(limitPolicy);
     if (confirmAbove != null && total > confirmAbove) {
       final okBig = await requestManagerApproval(
         context,
@@ -1631,8 +1628,9 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       // §٤ `skipdlg`: المسارُ السريعُ كان **دائمَ التشغيل**، وصار مشروطاً.
       // والافتراضُ مضاءٌ في التصميم، و`null` (‏السياسةُ لم تُقرأ بعد) تعني
       // السلوكَ القائم — فلا تتغيّر بيعةٌ واحدةٌ حتّى يُطفئه المديرُ عمداً.
-      final policy = ref.read(quickSalePolicyProvider).asData?.value;
-      final skipDialog = policy == null ||
+      final policy = await ref.read(quickSalePolicyProvider.future);
+      if (!mounted) return;
+      final skipDialog =
           policy.isOn(kQuickSaleRows.firstWhere((r) => r.id == 'skipdlg'));
       final fastPath =
           skipDialog ? singlePaymentMethodFastPath(allowed) : null;
@@ -1651,9 +1649,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
           // عملٍ لا تفضيلُ عرضٍ، وسياسةُ الشاشة لا تنقضه.
           initialMethod: isPlatform
               ? 'credit'
-              : policy == null
-                  ? 'cash'
-                  : quickSaleDefaultPaymentMethod(policy),
+              : quickSaleDefaultPaymentMethod(policy),
           allowedMethods: allowed,
         );
         if (result == null || !mounted) {
@@ -1683,14 +1679,14 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       //
       // وقراءةٌ مستقلّةٌ عن قراءة `skipdlg` فوق عمداً: تلك تعيش في فرع
       // «ليست منصّةً آجلة» وحدَه، وهذا المسارُ يصله النقديُّ من الفرعين.
-      final cashPolicy = ref.read(quickSalePolicyProvider).asData?.value;
+      final cashPolicy = await ref.read(quickSalePolicyProvider.future);
+      if (!mounted) return;
       final confirmed = await PosCashTenderingDialog.show(
         context,
         totalAmount: total,
-        showQuickAmounts: cashPolicy == null ||
-            cashPolicy.isOn(
-              kQuickSaleRows.firstWhere((r) => r.id == 'quickamt'),
-            ),
+        showQuickAmounts: cashPolicy.isOn(
+          kQuickSaleRows.firstWhere((r) => r.id == 'quickamt'),
+        ),
       );
       if (confirmed != true || !mounted) {
         _refocusScanner();
@@ -1764,7 +1760,8 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     SystemSound.play(SystemSoundType.click);
     barcodeController.clear();
 
-    final printPolicy = ref.read(quickSalePolicyProvider).asData?.value;
+    final printPolicy = await ref.read(quickSalePolicyProvider.future);
+    if (!mounted) return;
 
     if (printAfter) {
       // الدرج بيتركل **بالتوازي** مع الطباعة مش بعدها: الركلة بتروح للطابعة
@@ -1774,10 +1771,9 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       // في **كلّ** بيعةٍ مطبوعة، والتصميمُ يقول «يفتح في الدفع النقدي
       // فقط». وهو الصواب: بيعةُ بطاقةٍ لا نقدَ فيها تُدخِله، ففتحُ الدرج
       // يعرّض النقدَ بلا سبب. و`null` تُبقي السلوكَ القائم.
-      final openDrawer = printPolicy == null ||
-          (printPolicy
-                  .isOn(kQuickSaleRows.firstWhere((r) => r.id == 'drawer')) &&
-              method == 'cash');
+      final openDrawer = printPolicy
+              .isOn(kQuickSaleRows.firstWhere((r) => r.id == 'drawer')) &&
+          method == 'cash';
       final drawerFuture =
           openDrawer ? _openCashDrawerQuietly() : Future<void>.value();
 
@@ -1786,8 +1782,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       // §٤ `copies`. والتوقّفُ عند أوّلِ إخفاقٍ مقصود: سببُ الإخفاق ورقٌ
       // ناقصٌ أو طابعةٌ صامتة، وكلاهما لا يُشفى بمحاولةٍ ثانيةٍ فوراً —
       // وتكرارُها يُغرق الكاشيرَ بثلاث رسائل تحذيرٍ عن عطبٍ واحد.
-      final copies =
-          printPolicy == null ? 1 : quickSaleReceiptCopies(printPolicy);
+      final copies = quickSaleReceiptCopies(printPolicy);
       var printed = false;
       if (invoiceId != null && await _hasReceiptPrinter()) {
         for (var i = 0; i < copies; i++) {
@@ -1821,11 +1816,9 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
   /// و`null` — أي السياسةُ لم تُقرأ — تعني السلوكَ القائم: إعادةُ التركيز
   /// على الماسح وحدَها.
   Future<void> _applyAfterInvoiceAction(
-    QuickSalePolicyValues? policy,
+    QuickSalePolicyValues policy,
   ) async {
-    final action = policy == null
-        ? QuickSaleAfterPrintAction.newInvoice
-        : quickSaleAfterPrintAction(policy);
+    final action = quickSaleAfterPrintAction(policy);
 
     switch (action) {
       case QuickSaleAfterPrintAction.newInvoice:

@@ -127,6 +127,12 @@ class _PicposCashierClosingDialogState
 
   @override
   Widget build(BuildContext context) {
+    // تسخينُ سياسة البيع السريع: `_blindClose` تُقرأ متزامناً من البناء
+    // فلا تحتمل `await`. وبلا مراقبٍ تبقى `null` فيظهر المتوقَّعُ للكاشير
+    // قبل العدّ ولو كان «الإغلاق الأعمى» مضاءً — وهو يجعل الفرقَ صفراً
+    // على الورق دائماً.
+    ref.watch(quickSalePolicyProvider);
+
     final authState = ref.watch(authProvider);
     final perms = ref.watch(currentUserPermissionsProvider).value ?? [];
     // مدير النظام بس هو اللي بيتجاوز صلاحية عرض تفاصيل الإقفال. قبل كده كانت
@@ -1218,8 +1224,10 @@ class _PicposCashierClosingDialogState
     // ٢٥، وإهمالُ الإشارة يُعفي العجزَ — وهو الأخطرُ محاسبيّاً: المالُ
     // الناقصُ يمرّ بلا تفسير. والمنطقُ في `quickSaleShiftDiffNeedsReason`.
     String? varianceReason;
-    final diffPolicy = ref.read(quickSalePolicyProvider).asData?.value;
-    if (diffPolicy != null) {
+    // `await` لا قراءةً باردة: هذه دالّةٌ غيرُ متزامنةٍ أصلاً، والقراءةُ
+    // الباردةُ ترجع `null` قبل أن يسخن المزوِّدُ فيمرّ الفرقُ بلا سبب.
+    final diffPolicy = await ref.read(quickSalePolicyProvider.future);
+    if (mounted) {
       final limit = quickSaleShiftDiffLimit(diffPolicy);
       if (quickSaleShiftDiffNeedsReason(
         difference: state.totalVariance,
@@ -1241,11 +1249,10 @@ class _PicposCashierClosingDialogState
         password: _passwordController.text,
         cardCode: _msrCardController.text,
         varianceReason: varianceReason,
-        // §٤ `xrep`. و`null` تعني السلوكَ القائم: تُطبَع.
-        printReport: diffPolicy == null ||
-            diffPolicy.isOn(
-              kQuickSaleRows.firstWhere((r) => r.id == 'xrep'),
-            ),
+        // §٤ `xrep`.
+        printReport: diffPolicy.isOn(
+          kQuickSaleRows.firstWhere((r) => r.id == 'xrep'),
+        ),
       );
 
       if (mounted) {
