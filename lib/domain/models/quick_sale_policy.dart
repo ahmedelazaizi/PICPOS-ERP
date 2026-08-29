@@ -343,12 +343,16 @@ const List<QuickSaleStep> kQuickSaleSteps = [
             sub: 'تغيير سعر السطر أثناء العملية',
             options: ['ممنوع', 'بموافقة', 'مسموح'],
             optionSubs: [
-              'السعر من كارت الصنف فقط',
+              'السعر من كارت الصنف فقط — ولو كان معك التصريح',
               'يتطلب مصادقة مشرف',
-              'حر بلا مصادقة',
+              'بحسب صلاحية الكاشير',
             ],
             defaultIndex: 1,
-            notEnforcedReason: _newBehaviour,
+            enforced: true,
+            caveat: 'السياسةُ تضيّق ولا توسّع: «ممنوع» يمنع الجميعَ حتّى مالكَ '
+                'الصلاحية، أمّا «بموافقة» و«مسموح» فيتركان القرارَ لصلاحية '
+                '`pos_price_edit` كما هو اليوم — فإعدادُ شاشةٍ لا يمنح ما '
+                'تمنعه الصلاحيات. (قرارُ المالك 2026-08-30)',
           ),
         ],
       ),
@@ -646,7 +650,7 @@ const List<QuickSaleStep> kQuickSaleSteps = [
             title: 'طباعة تقرير X عند الإغلاق',
             sub: 'ملخّص الوردية على الطابعة الحرارية مباشرة',
             defaultIndex: 1,
-            notEnforcedReason: _newBehaviour,
+            enforced: true,
           ),
         ],
       ),
@@ -986,6 +990,23 @@ bool quickSaleShiftDiffNeedsReason({
   required double? limit,
 }) =>
     limit != null && difference.abs() > limit;
+
+/// سياسةُ تعديل سعر البيع في السلة — §٤ `priceedit`.
+///
+/// ⚠️ **لا تمنح صلاحيةً أبداً** (‏قرارُ المالك 2026-08-30). صلاحيةُ
+/// `pos_price_edit` تبقى الحاكمةَ، والسياسةُ **تضيّق ولا توسّع**:
+///
+///   • [blocked] — تمنع الجميعَ، حتّى مالكَ الصلاحية. وهي التضييقُ
+///     الحقيقيُّ الذي تضيفه هذه السياسة: «الأسعارُ ثابتةٌ في هذا المحلّ».
+///   • [needsApproval] و[allowed] — كلتاهما تتركان القرارَ لنظام
+///     الصلاحيات كما هو اليوم. وجعلُ [allowed] تفتح للجميع كان يعني
+///     إعداداً يمنح ما تمنعه الصلاحيات، وهو تراجعٌ أمنيٌّ لا ميزة.
+enum QuickSalePriceEditPolicy { blocked, needsApproval, allowed }
+
+QuickSalePriceEditPolicy quickSalePriceEditPolicy(
+  QuickSalePolicyValues v,
+) =>
+    QuickSalePriceEditPolicy.values[v.indexOf(_rowById('priceedit'))];
 
 /// عددُ نسخ الإيصال — لا يكون صفراً أبداً.
 int quickSaleReceiptCopies(QuickSalePolicyValues v) =>

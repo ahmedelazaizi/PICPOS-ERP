@@ -1241,6 +1241,11 @@ class _PicposCashierClosingDialogState
         password: _passwordController.text,
         cardCode: _msrCardController.text,
         varianceReason: varianceReason,
+        // §٤ `xrep`. و`null` تعني السلوكَ القائم: تُطبَع.
+        printReport: diffPolicy == null ||
+            diffPolicy.isOn(
+              kQuickSaleRows.firstWhere((r) => r.id == 'xrep'),
+            ),
       );
 
       if (mounted) {

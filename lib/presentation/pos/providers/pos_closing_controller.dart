@@ -418,6 +418,13 @@ class PosClosingController extends Notifier<PosClosingState> {
     String cardCode = '',
     bool overrideVariance = false,
     String? varianceReason,
+
+    /// طباعةُ تقرير الإغلاق — §٤ `xrep`.
+    ///
+    /// ⚠️ **الافتراضُ `true` تعاقدٌ لا تفضيل**: نداءُ شاشة UralCash لا
+    /// يمرّره فتبقى تطبع كما كانت حرفاً بحرف. ومن يطفئه نداءُ PicPos
+    /// وحدَه — والإغلاقُ نفسُه والقيدُ لا يتأثّران بحال.
+    bool printReport = true,
   }) async {
     state = state.copyWith(isProcessing: true);
 
@@ -743,14 +750,19 @@ class PosClosingController extends Notifier<PosClosingState> {
       // Variance entries (actual vs expected) are handled separately
       // in treasury_dao.dart → _postVarianceJournalEntry().
 
-      await printShiftClosingSnapshot(
-        snapshot: snapshot,
-        fontScale: fontScale,
-        printersRepo: ref.read(printersRepositoryProvider),
-        // يتيح الطباعةَ بقالب `shift_closing` الذي صمّمه المستخدم؛ وبلا
-        // قالبٍ افتراضيّ يبقى المولّدُ الثابت.
-        db: ref.read(databaseProvider),
-      );
+      // ⚠️ الطباعةُ وحدَها مشروطة. إغلاقُ الخزائن وقيدُ الفرق وسجلُّ
+      // النشاط تحتها كلُّها تقع مهما كان الإعداد — ورقةٌ لا تُطبَع لا
+      // تعني ورديةً لا تُقفَل.
+      if (printReport) {
+        await printShiftClosingSnapshot(
+          snapshot: snapshot,
+          fontScale: fontScale,
+          printersRepo: ref.read(printersRepositoryProvider),
+          // يتيح الطباعةَ بقالب `shift_closing` الذي صمّمه المستخدم؛ وبلا
+          // قالبٍ افتراضيّ يبقى المولّدُ الثابت.
+          db: ref.read(databaseProvider),
+        );
+      }
 
       final logger = ref.read(activityLoggerProvider);
       await logger.logShiftClose(

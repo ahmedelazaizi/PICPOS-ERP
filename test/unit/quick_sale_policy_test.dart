@@ -352,7 +352,7 @@ void _valuesSuite() {
   // ═════════════════════════════════════════════════════════════════════
 
   group('حصيلةُ التوصيل', () {
-    test('الصفوفُ الثلاثةَ عشرَ الموصَّلةُ في هذه الجولة لا تحمل وسمَ «لا يُنفَّذ»',
+    test('الصفوفُ الخمسةَ عشرَ الموصَّلةُ في هذه الجولة لا تحمل وسمَ «لا يُنفَّذ»',
         () {
       const wiredThisRound = [
         'askqty',
@@ -368,6 +368,8 @@ void _valuesSuite() {
         'mgrlimit',
         'blind',
         'diffmax',
+        'xrep',
+        'priceedit',
       ];
       for (final id in wiredThisRound) {
         final row = _row(id);

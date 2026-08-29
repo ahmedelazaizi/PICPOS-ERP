@@ -76,6 +76,24 @@ Future<bool> ensureCartQuantityPermission(
     _ensure(ref, context, canEditCartQuantityCodes,
         PermissionCodes.posQuantityEdit, 'تعديل الكمية');
 
+/// هل تسمح السياسةُ بتعديل السعر أصلاً؟ — §٤ `priceedit`.
+///
+/// ⚠️ **تُفحَص قبل الصلاحية وقبل أيّ حوار**: «ممنوع» قرارُ محلٍّ لا
+/// نقصُ صلاحية، فعرضُ حوارِ مصادقةٍ ثمّ الرفضُ يُوهم أنّ مديراً يستطيع
+/// تجاوزَه — ولا يستطيع.
+///
+/// و`null` (‏السياسةُ لم تُقرأ) تعني السلوكَ القائم: مسموحٌ بحسب الصلاحية.
+bool priceEditBlockedByPolicy(WidgetRef ref) {
+  final policy = ref.read(quickSalePolicyProvider).asData?.value;
+  if (policy == null) return false;
+  return quickSalePriceEditPolicy(policy) ==
+      QuickSalePriceEditPolicy.blocked;
+}
+
+/// رسالةُ المنع — نصٌّ واحدٌ كي لا يختلف البابان.
+const String kPriceEditBlockedMessage =
+    'تعديلُ السعر ممنوعٌ بسياسة البيع السريع';
+
 /// يسمح بتعديل السعر، أو يطلب موافقةَ مسؤولٍ يملكها.
 Future<bool> ensureCartPricePermission(
   WidgetRef ref,

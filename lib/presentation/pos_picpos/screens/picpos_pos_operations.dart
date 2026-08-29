@@ -1331,7 +1331,13 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
         }
       }
       if (price != null && price >= 0 && price != current.effectivePrice) {
-        if (await _ensureCartPermission(
+        // §٤ `priceedit` — «ممنوع» قبل أيّ حوارِ مصادقة.
+        if (priceEditBlockedByPolicy(ref)) {
+          if (mounted) {
+            showPosToast(context, ref, kPriceEditBlockedMessage,
+                type: PosNotificationType.error);
+          }
+        } else if (await _ensureCartPermission(
           canEditCartPrice,
           PermissionCodes.posPriceEdit,
           'تعديل سعر الصنف',
