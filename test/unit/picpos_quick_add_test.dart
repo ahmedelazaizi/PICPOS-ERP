@@ -21,8 +21,12 @@
 // نفسُ المفاضلة الموثّقة في `picpos_quick_return_lines_test.dart`.
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/domain/models/returnable_line.dart';
-import 'package:ural_erp/presentation/pos/providers/pos_search_controller.dart'
-    show BarcodeSearchErrorKind;
+// ⚠️ التعدادُ من **نسخة PicPos** لا من المشترَك: `shouldOfferQuickAdd` صارت
+// تقرأ `PicposBarcodeSearchErrorKind` بعد استنساخ المتحكّم (‏قرارُ المالك
+// 2026-08-29). والنوعان متطابقا القيم ومختلفا الهويّة — وهذا هو المقصود:
+// تعديلُ أحدِهما لا يرتدُّ على الآخر.
+import 'package:ural_erp/presentation/pos_picpos/providers/picpos_search_controller.dart'
+    show PicposBarcodeSearchErrorKind;
 import 'package:ural_erp/presentation/pos_picpos/screens/picpos_pos_screen.dart'
     as picpos;
 import 'package:ural_erp/presentation/pos_picpos/state/pos_return_mode.dart';
@@ -43,7 +47,7 @@ void main() {
   group('shouldOfferQuickAdd', () {
     test('باركودٌ غيرُ مسجَّلٍ فعلاً وليس وضعَ مرتجع ⇒ يفتح', () {
       expect(
-        picpos.shouldOfferQuickAdd(BarcodeSearchErrorKind.notFound, null),
+        picpos.shouldOfferQuickAdd(PicposBarcodeSearchErrorKind.notFound, null),
         isTrue,
       );
     });
@@ -51,21 +55,21 @@ void main() {
     test('باركودُ ميزانٍ فشل تحليلُه (`invalidScale`) ⇒ لا يفتح — القيد '
         'الخامس من بلاغ المالك', () {
       expect(
-        picpos.shouldOfferQuickAdd(BarcodeSearchErrorKind.invalidScale, null),
+        picpos.shouldOfferQuickAdd(PicposBarcodeSearchErrorKind.invalidScale, null),
         isFalse,
       );
     });
 
     test('صنفٌ معطَّل (`inactive`) ⇒ لا يفتح — لا يجوز اقتراحُ تكرارِه', () {
       expect(
-        picpos.shouldOfferQuickAdd(BarcodeSearchErrorKind.inactive, null),
+        picpos.shouldOfferQuickAdd(PicposBarcodeSearchErrorKind.inactive, null),
         isFalse,
       );
     });
 
     test('خطأٌ عامّ (`general`) ⇒ لا يفتح', () {
       expect(
-        picpos.shouldOfferQuickAdd(BarcodeSearchErrorKind.general, null),
+        picpos.shouldOfferQuickAdd(PicposBarcodeSearchErrorKind.general, null),
         isFalse,
       );
     });
@@ -79,7 +83,7 @@ void main() {
         '`_handleProductTap`/`_showHeldOrders`', () {
       expect(
         picpos.shouldOfferQuickAdd(
-            BarcodeSearchErrorKind.notFound, buildReturnMode()),
+            PicposBarcodeSearchErrorKind.notFound, buildReturnMode()),
         isFalse,
       );
     });

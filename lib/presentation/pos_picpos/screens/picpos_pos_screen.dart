@@ -38,7 +38,7 @@ import '../../pos/providers/cart_controller.dart';
 import '../../pos/providers/checkout_controller.dart';
 import '../../pos/providers/pos_controller.dart';
 import '../../pos/providers/pos_notification_provider.dart';
-import '../../pos/providers/pos_search_controller.dart';
+import '../providers/picpos_search_controller.dart';
 import '../../pos/services/scale_barcode_handler.dart';
 import '../../pos/dialogs/quick_add_product_dialog.dart';
 import '../../pos/dialogs/unit_selection_dialog.dart';
@@ -86,10 +86,14 @@ part 'picpos_pos_operations.dart';
 /// totals down the main column; display board and operations down the side;
 /// keyboard shortcuts along the bottom.
 ///
-/// It shares the engine completely: `cart_controller`, `checkout_controller`,
-/// `pos_search_controller` and every dialog are the same objects the UralCash
-/// screen uses. Nothing about pricing, stock or accounting is re-implemented
-/// here — this class owns layout and key handling, and that is all.
+/// It shares most of the engine: `cart_controller`, `checkout_controller`
+/// and every dialog are the same objects the UralCash screen uses. Nothing
+/// about pricing, stock or accounting is re-implemented here — this class
+/// owns layout and key handling, and that is all.
+///
+/// ⚠️ **باستثناءٍ واحدٍ منذ 2026-08-29**: بحثُ الباركود صار نسخةً مستقلّةً
+/// (`../providers/picpos_search_controller.dart`) ليحمل «سؤال عن الكمية
+/// قبل الإضافة» على مسار المسح بلا أن يمسّ شاشتَي UralCash المجمّدتَين.
 class PicPosPosScreen extends ConsumerStatefulWidget {
   final bool showBackButton;
 

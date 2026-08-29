@@ -223,8 +223,8 @@ bool blocksCartMutation(PosReturnMode? mode) => mode != null;
 ///     `_handleProductTap`/`_showHeldOrders` فوق، فلا يفتح الديالوجُ
 ///     ويكتب على سلّة بيعٍ أثناء تحرير مرتجع.
 @visibleForTesting
-bool shouldOfferQuickAdd(BarcodeSearchErrorKind? errorKind, PosReturnMode? mode) =>
-    errorKind == BarcodeSearchErrorKind.notFound && !blocksCartMutation(mode);
+bool shouldOfferQuickAdd(PicposBarcodeSearchErrorKind? errorKind, PosReturnMode? mode) =>
+    errorKind == PicposBarcodeSearchErrorKind.notFound && !blocksCartMutation(mode);
 
 mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
   // ── Contract the screen must satisfy ───────────────────────────────────
@@ -702,7 +702,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     bool shouldWarnDuplicate = false;
     if (product.isSoldByWeight && quantity > 0) {
       shouldWarnDuplicate = ref
-          .read(posSearchControllerProvider.notifier)
+          .read(picposSearchControllerProvider.notifier)
           .checkAndWarnDuplicateWeight(
             productId: product.id,
             productName: product.name,
@@ -744,11 +744,11 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     // acknowledges. The item stays in the cart either way — the popup only
     // makes sure a repeated weight cannot go unnoticed.
     if (shouldWarnDuplicate && mounted) {
-      final msg = ref.read(posSearchControllerProvider).duplicateWeightWarning;
+      final msg = ref.read(picposSearchControllerProvider).duplicateWeightWarning;
       // Cleared immediately so a follow-up add with a new weight doesn't
       // re-trigger the popup from stale state.
       ref
-          .read(posSearchControllerProvider.notifier)
+          .read(picposSearchControllerProvider.notifier)
           .clearDuplicateWeightWarning();
       if (msg != null) _showDuplicateWeightDialog(msg);
     }
@@ -895,10 +895,18 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     // إجمالي الكميات قبل السحب — اقرا `_scanWasRefused` تحت.
     final qtyBefore = _totalCartQuantity();
 
-    await ref.read(posSearchControllerProvider.notifier).searchBarcode(barcode);
+    // §٤ `askqty` على مسار المسح — قرارُ المالك 2026-08-29.
+    //
+    // ⚠️ **الحقنُ عند كلّ مسحةٍ لا مرّةً في `initState`**: المتحكّمُ يعيش
+    // أطولَ من الشاشة، فخطّافٌ محقونٌ مرّةً يبقى معلّقاً على شاشةٍ مفكّكةٍ
+    // ويفتح حواراً على سياقٍ ميّت. والحقنُ هنا يجعل الخطّافَ دائماً ملكَ
+    // الشاشة الحيّة، وكلفتُه إسنادُ دالّةٍ لا أكثر.
+    final search = ref.read(picposSearchControllerProvider.notifier);
+    search.askQuantity = _askLineQuantity;
+    await search.searchBarcode(barcode);
 
     if (!mounted) return;
-    final searchState = ref.read(posSearchControllerProvider);
+    final searchState = ref.read(picposSearchControllerProvider);
     final error = searchState.error;
     if (error != null) {
       if (shouldOfferQuickAdd(
@@ -906,7 +914,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
         await _handleUnknownBarcode(barcode, error);
       } else {
         showPosToast(context, ref, error, type: PosNotificationType.error);
-        ref.read(posSearchControllerProvider.notifier).clearSearchResults();
+        ref.read(picposSearchControllerProvider.notifier).clearSearchResults();
       }
     } else if (_totalCartQuantity() == qtyBefore) {
       await _handleSilentlyRefusedScan(barcode);
@@ -950,7 +958,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
         // حقلُ بحث الشبكة يزامن نفسَه من `posControllerProvider`، فالكتابةُ
         // في الحالة تصل النصَّ المعروضَ فوراً (`pos_product_search_field`).
         ref.read(posControllerProvider.notifier).setSearchQuery(barcode);
-        ref.read(posSearchControllerProvider.notifier).clearSearchResults();
+        ref.read(picposSearchControllerProvider.notifier).clearSearchResults();
         if (mounted) {
           showPosToast(
             context,
@@ -961,7 +969,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
         }
 
       case QuickSaleUnknownBarcodeAction.reject:
-        ref.read(posSearchControllerProvider.notifier).clearSearchResults();
+        ref.read(picposSearchControllerProvider.notifier).clearSearchResults();
         if (mounted) {
           showPosToast(context, ref, error, type: PosNotificationType.error);
         }
@@ -1015,7 +1023,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
 
     if (shouldAdd != true) {
       if (mounted) {
-        ref.read(posSearchControllerProvider.notifier).clearSearchResults();
+        ref.read(picposSearchControllerProvider.notifier).clearSearchResults();
       }
       return;
     }
@@ -1025,7 +1033,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
         ref, context, PermissionCodes.productsAdd,
         actionName: 'إضافة صنف جديد')) {
       if (mounted) {
-        ref.read(posSearchControllerProvider.notifier).clearSearchResults();
+        ref.read(picposSearchControllerProvider.notifier).clearSearchResults();
       }
       return;
     }
@@ -1034,12 +1042,12 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     final newProductId = await QuickAddProductDialog.show(context, barcode);
     if (!mounted) return;
     if (newProductId == null) {
-      ref.read(posSearchControllerProvider.notifier).clearSearchResults();
+      ref.read(picposSearchControllerProvider.notifier).clearSearchResults();
       return;
     }
 
     await ref
-        .read(posSearchControllerProvider.notifier)
+        .read(picposSearchControllerProvider.notifier)
         .searchBarcode(barcode);
     if (!mounted) return;
     final items = ref.read(cartControllerProvider).items;
@@ -1079,7 +1087,7 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     if (!await _ensureOversellAllowed(blocked)) return;
     if (!mounted) return;
 
-    await ref.read(posSearchControllerProvider.notifier).searchBarcode(barcode);
+    await ref.read(picposSearchControllerProvider.notifier).searchBarcode(barcode);
     if (!mounted) return;
     final items = ref.read(cartControllerProvider).items;
     if (items.isNotEmpty) setState(() => selectedIndex = items.length - 1);
