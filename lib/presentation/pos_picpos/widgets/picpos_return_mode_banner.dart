@@ -35,13 +35,13 @@ class PicPosReturnModeBanner extends StatelessWidget {
               size: 16, color: AppColors.error),
           const SizedBox(width: 8),
           Text('وضع المرتجع',
-              style: PicPosText.v(13, color: AppColors.error)),
+              style: PicPosText.v(context, 13, color: AppColors.error)),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               invoiceNumber,
               overflow: TextOverflow.ellipsis,
-              style: PicPosText.v(13, color: AppColors.error),
+              style: PicPosText.v(context, 13, color: AppColors.error),
             ),
           ),
         ],

@@ -292,7 +292,7 @@ class _EmptyState extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             'امسح باركود أو اكتب كود الصنف للبدء',
-            style: PicPosText.l(14),
+            style: PicPosText.l(context, 14),
           ),
         ],
       ),
@@ -393,7 +393,7 @@ class _ItemRow extends ConsumerWidget {
               flex: _kFlexIndex,
               child: Text('${index + 1}',
                   textAlign: TextAlign.center,
-                  style: PicPosText.l(13 * scale)),
+                  style: PicPosText.l(context, 13 * scale)),
             ),
             Expanded(
               flex: _kFlexName,
@@ -402,7 +402,7 @@ class _ItemRow extends ConsumerWidget {
                 child: Text(
                   '${item.productName}$unitSuffix',
                   overflow: TextOverflow.ellipsis,
-                  style: PicPosText.v(13 * scale),
+                  style: PicPosText.v(context, 13 * scale),
                 ),
               ),
             ),
@@ -504,7 +504,7 @@ class _ItemRow extends ConsumerWidget {
                 // `13 * scale` مش `13`: الخانة دي كانت مثبِّتة المقاس وبتتجاهل
                 // `posCartItemScaleProvider`، فسلايدر «حجم نص الأصناف» كان
                 // بيكبّر كل الأعمدة إلا المجموع.
-                style: PicPosText.v(13 * scale,
+                style: PicPosText.v(context, 13 * scale,
                     color: AppColors.primaryDark),
               ),
             ),
@@ -684,7 +684,7 @@ class _NumberCellState extends State<_NumberCell> {
         inputFormatters: [
           FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
         ],
-        style: PicPosText.v(13 * widget.scale,
+        style: PicPosText.v(context, 13 * widget.scale,
             color: widget.canEdit ? null : AppColors.textMuted),
         // `readOnly` لا `enabled: false`: المعطَّلُ لا يستقبل `onTap` أصلاً،
         // فيضيع بابُ موافقة المسؤول. والقراءةُ فقط تمنع الكتابةَ المباشرة

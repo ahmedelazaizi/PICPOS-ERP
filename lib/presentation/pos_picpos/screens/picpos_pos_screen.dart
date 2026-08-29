@@ -225,8 +225,16 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
         onKeyEvent: _handleKey,
         child: Stack(
           children: [
+            // ⚠️ **لا `backgroundColor` هنا.** كان `AppColors.posBackground`
+            // وهو `#F1F5F9` ثابتُ الوضعِ الفاتحِ وحدَه، فأوسعُ سطحٍ في شاشة
+            // الكاشير كان يبقى فاتحاً والثيمُ حولَه يقلب — وهو الشطرُ الأوّلُ
+            // من بلاغ المالك 2026-08-29 («توزيعُ الوضع على الشاشة»).
+            //
+            // والتجاوزُ **يُحذَف ولا يُستبدَل**: `PicPosTheme` يعرّف
+            // `scaffoldBackgroundColor` للوضعَين (`_canvas` · `_canvasDark`)،
+            // فحذفُ السطر يجعل الشاشةَ تتبع الثيمَ كبقيّةِ شاشات PicPos بدل
+            // أن تحمل رمزاً ثانياً يفترق عنه.
             Scaffold(
-              backgroundColor: AppColors.posBackground,
               body: Column(
                 children: [
                   PicPosTopBar(
@@ -314,7 +322,7 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
             Expanded(
               child: Text(
                 'عرض المنطقة مقفول من الإعدادات',
-                style: PicPosText.l(10),
+                style: PicPosText.l(context, 10),
               ),
             )
           else
@@ -552,7 +560,7 @@ class _OversellBadge extends ConsumerWidget {
                     size: 12, color: AppColors.warning),
                 const SizedBox(width: 4),
                 Text('بيع بالسالب',
-                    style: PicPosText.v(10, color: AppColors.warning)),
+                    style: PicPosText.v(context, 10, color: AppColors.warning)),
                 const SizedBox(width: 3),
                 const Icon(PhosphorIconsBold.x,
                     size: 9, color: AppColors.warning),
@@ -597,8 +605,8 @@ class _MiniToggle extends StatelessWidget {
           child: Text(
             label,
             style: active
-                ? PicPosText.v(10, color: Colors.white)
-                : PicPosText.l(10),
+                ? PicPosText.v(context, 10, color: Colors.white)
+                : PicPosText.l(context, 10),
           ),
         ),
       ),
@@ -637,7 +645,7 @@ class _ClearCartButton extends ConsumerWidget {
               const SizedBox(width: 4),
               Text(
                 'مسح الكل',
-                style: PicPosText.v(10, color: AppColors.error),
+                style: PicPosText.v(context, 10, color: AppColors.error),
               ),
             ],
           ),

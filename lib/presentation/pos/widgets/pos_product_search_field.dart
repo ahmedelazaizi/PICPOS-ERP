@@ -5,6 +5,7 @@ import '../../../core/permissions/permission_codes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../providers/pos_controller.dart';
 import '../../widgets/permission_guard.dart';
+import '../../picpos_shell/picpos_surface.dart';
 
 /// حقلُ البحث عن المنتج حين يُرفع من داخل شبكة الأصناف إلى صفّ الباركود
 /// (‏`PosLayoutPolicy.searchBesideBarcode`).
@@ -61,10 +62,10 @@ class _PosProductSearchFieldState extends ConsumerState<PosProductSearchField> {
       child: Container(
         height: widget.height,
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: context.picposField,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: AppColors.border.withValues(alpha: 0.8),
+            color: context.picposHairline.withValues(alpha: 0.8),
             width: 1.5,
           ),
         ),

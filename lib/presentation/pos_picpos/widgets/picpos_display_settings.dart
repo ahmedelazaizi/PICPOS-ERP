@@ -54,7 +54,7 @@ class PicPosDisplaySettingsButton extends StatelessWidget {
             const Icon(PhosphorIconsBold.slidersHorizontal,
                 size: 13, color: AppColors.primary),
             const SizedBox(width: 4),
-            Text('العرض', style: PicPosText.v(10, color: AppColors.primary)),
+            Text('العرض', style: PicPosText.v(context, 10, color: AppColors.primary)),
           ],
         ),
       ),
@@ -254,7 +254,7 @@ class _Slider extends StatelessWidget {
             children: [
               Icon(icon, size: 15, color: AppColors.primary),
               const SizedBox(width: 6),
-              Expanded(child: Text(label, style: PicPosText.v(13))),
+              Expanded(child: Text(label, style: PicPosText.v(context, 13))),
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -263,7 +263,7 @@ class _Slider extends StatelessWidget {
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(display,
-                    style: PicPosText.v(11, color: AppColors.primary)),
+                    style: PicPosText.v(context, 11, color: AppColors.primary)),
               ),
             ],
           ),

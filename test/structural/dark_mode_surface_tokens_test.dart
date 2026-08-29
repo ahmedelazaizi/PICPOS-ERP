@@ -75,14 +75,39 @@ const _scope = <String>[
   'lib/presentation/screens/invoice_designer',
   'lib/presentation/screens/printers_screen.dart',
   'lib/presentation/screens/account_mapping_settings_screen.dart',
+  // ── نصفُ التصفّح في «البيع السريع» — بلاغُ المالك 2026-08-29 ────────────
+  //
+  // ⚠️ `lib/presentation/pos_picpos` كان في النطاق **منذ الجولة الأولى**
+  // ومرّ أخضرَ، ومع ذلك بقيت الشاشةُ فاتحةً. لأنّ نصفَها الأيسرَ ليس فيها:
+  // `picpos_pos_screen.dart:400` يضخُّ `PosProductSelectionPanel` وهي تحت
+  // `lib/presentation/pos/` — فالشاشةُ نظيفةٌ والمرسومُ فاتح. وهو **عينُ**
+  // درسِ الخزينة المكتوبِ أعلاه، تكرَّر لأنّ النطاقَ لم يُشتقّ من الشجرة.
+  //
+  // وهذه السبعةُ هي ما ترسمه تلك اللوحةُ فعلاً — قِيست من `build` لا حُزرت.
+  'lib/presentation/pos/widgets/pos_product_selection_panel.dart',
+  'lib/presentation/pos/widgets/product_grid.dart',
+  'lib/presentation/pos/widgets/pos_barcode_input.dart',
+  'lib/presentation/pos/widgets/pos_product_search_field.dart',
+  'lib/presentation/pos/widgets/pos_scale_input.dart',
+  'lib/presentation/pos/widgets/product_pricing_inquiry.dart',
+  // شريطُ التصنيفات نفسُه — `EnhancedCategoryFilter` مضخوخةٌ من
+  // `product_grid.dart:480` وحدَها في المستودع كلِّه.
+  'lib/presentation/widgets/enhanced_components.dart',
 ];
 
 /// ثوابتُ الأسطحِ الفاتحةِ وحدَها — بلا نظائرِها الداكنة.
 ///
 /// `\b` بعدَ الاسمِ يمنع مطابقةَ `cardDark` و`borderDark` و`backgroundDark`:
 /// تلك صحيحةٌ ومقصودةٌ حيث تقع.
+///
+/// ⚠️ **و`posBackground` و`posCard` منهما** — أُضيفتا 2026-08-29. الاسمُ
+/// وحدَه كان يُنجيهما: النمطُ يشترط `AppColors.` متبوعاً مباشرةً بأحدِ
+/// الأربعة، و`AppColors.posCard` بعد النقطةِ فيها `pos` فلا تطابق. وهما
+/// `#F1F5F9` و`Colors.white` — سطحان فاتحان بلا نظيرٍ داكن، وأحدُهما
+/// خلفيّةُ `Scaffold` شاشةِ الكاشير كلِّها (`picpos_pos_screen.dart:229`).
+/// أي أنّ أعرضَ سطحٍ في الشاشة كان خارجَ الحارس.
 final _lightSurface = RegExp(
-  r'AppColors\.(?:card|surface|border|background)\b',
+  r'AppColors\.(?:card|surface|border|background|posCard|posBackground)\b',
 );
 
 /// ألوانُ أسطحٍ فاتحةٍ مكتوبةٌ ستّةَ عشرَ رقماً — نفسُ عطبِ [_lightSurface]
@@ -106,6 +131,22 @@ const _definesBothModes = <String>{
   // `_fieldOf` — نفسُ رمزِ `--field` بقيمته الفاتحةِ داخلَ شرطِ وضع.
   'lib/presentation/pos_picpos/widgets/picpos_payment_panel.dart',
 };
+
+/// سطرٌ يختار بين قيمتَين **بحسب الوضع** — فالقيمةُ الفاتحةُ فيه أحدُ فرعَي
+/// الشرط، لا لونٌ مثبَّت.
+///
+/// ═══ لماذا قاعدةٌ لا استثناءُ ملفّ ═══
+///
+/// `enhanced_components.dart` يخلط الأمرَين: `EnhancedCategoryFilter` كانت
+/// تُثبّت الفاتحَ (‏١٤٥ · ١٤٩ · ١٩٥ · ٢٠٣)، بينما `EnhancedCard` في نفس
+/// الملفّ تكتب `isDark ? AppColors.cardDark : Colors.white` وهي **صحيحة**.
+/// فوضعُه في [_definesBothModes] كان سيُعمي الحارسَ عن أربعِ مخالفاتٍ
+/// حقيقيّةٍ لأجل ثلاثِ إيجابيّاتٍ كاذبة — وهو عينُ ما يحذّر منه [_paperMark].
+///
+/// والقاعدةُ أضيقُ من الاستثناء: لا تُعفي الملفَّ ولا السطرَ اعتباطاً، بل
+/// تقرأ أنّ اللونَ الفاتحَ مقترنٌ بنظيرٍ داكنٍ يختار بينهما الوضعُ — وهو
+/// نفسُ تعريفِ [_definesBothModes] مطبَّقاً سطراً سطراً.
+final _modeConditional = RegExp(r'(?:isDark|IsDark|Brightness\.\w+)[^\n]*\?');
 
 /// `Colors.white` **مباشرةً** أرضيّةً لـ`BoxDecoration`.
 ///
@@ -182,6 +223,8 @@ void main() {
           // التعليقاتُ التي تشرح القاعدةَ ليست مخالفةً لها.
           final trimmed = line.trimLeft();
           if (trimmed.startsWith('//')) continue;
+          // والفاتحُ داخلَ شرطِ وضعٍ ليس مثبَّتاً — انظر [_modeConditional].
+          if (_modeConditional.hasMatch(line)) continue;
           offenders.add('$rel:${i + 1}');
         }
       }
@@ -240,6 +283,8 @@ void main() {
         for (final m in _whiteBoxDecoration.allMatches(src)) {
           // الوسمُ يقع بين `BoxDecoration(` و`color:`، فهو داخلَ المطابقة.
           if (m.group(0)!.contains(_paperMark)) continue;
+          // وكذلك شرطُ الوضع — انظر [_modeConditional].
+          if (_modeConditional.hasMatch(m.group(0)!)) continue;
           // رقمُ السطرِ من عددِ الأسطر قبل الموضع — الملفّاتُ هنا CRLF
           // وLF معاً، فالعدُّ على `\n` وحدَه يصحُّ في الحالتين.
           final line = '\n'.allMatches(src.substring(0, m.start)).length + 1;

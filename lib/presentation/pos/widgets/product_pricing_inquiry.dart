@@ -5,6 +5,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/providers.dart';
 import '../../../domain/entities/product_entity.dart';
+import '../../picpos_shell/picpos_surface.dart';
 
 /// Product pricing inquiry button — A large button below POS barcode input
 /// which opens a spacious Popup Menu (Dialog) to scan and edit item prices.
@@ -15,7 +16,7 @@ class ProductPricingInquiry extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       width: double.infinity,
-      color: Colors.white,
+      color: context.picposCard,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: ElevatedButton.icon(
         onPressed: () async {
@@ -36,7 +37,7 @@ class ProductPricingInquiry extends ConsumerWidget {
           }
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.surface,
+          backgroundColor: context.picposField,
           foregroundColor: AppColors.primary,
           elevation: 0,
           side: const BorderSide(color: AppColors.primary, width: 1),
@@ -215,14 +216,14 @@ class _ProductPricingDialogState extends ConsumerState<_ProductPricingDialog> {
                       : null,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.border),
+                    borderSide: BorderSide(color: context.picposHairline),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(color: AppColors.primary, width: 2),
                   ),
                   filled: true,
-                  fillColor: AppColors.surface,
+                  fillColor: context.picposField,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 ),
                 onSubmitted: _search,
@@ -289,9 +290,9 @@ class _ProductPricingDialogState extends ConsumerState<_ProductPricingDialog> {
     return Container(
       constraints: const BoxConstraints(maxHeight: 280),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.picposField,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.picposHairline),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -373,9 +374,9 @@ class _ProductPricingDialogState extends ConsumerState<_ProductPricingDialog> {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: context.picposCard,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(color: context.picposHairline),
                 ),
                 child: const Center(child: Icon(PhosphorIconsBold.package, color: AppColors.primary, size: 24)),
               ),
@@ -395,9 +396,9 @@ class _ProductPricingDialogState extends ConsumerState<_ProductPricingDialog> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: context.picposCard,
                               borderRadius: BorderRadius.circular(4),
-                              border: Border.all(color: AppColors.border),
+                              border: Border.all(color: context.picposHairline),
                             ),
                             child: Row(
                               children: [

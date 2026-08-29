@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/theme/app_colors.dart';
+import '../picpos_shell/picpos_surface.dart';
 
 /// Enhanced UI Components for UralCash ERP
 /// Maintains Teal Theme visual identity with improved UX
@@ -23,6 +24,18 @@ class CategoryFilterItem {
     this.color,
   });
 }
+
+/// حبرُ اسم التصنيف في **الوضع الغامق**.
+///
+/// ⚠️ **القيمةُ من التصميم لا مخترَعة**: `PicPos Quick Sale Dialog.dc.html`
+/// يرسم `{{ c.name }}` بـ`color:#C6D0E0` في معاينته الداكنة. وهو لونٌ واحدٌ
+/// للمختار وغيرِ المختار معاً — التمييزُ في التصميم بالوزن وبرقعةِ الأيقونة
+/// الممتلئة، لا بلونِ النصّ.
+///
+/// وكان المختارُ يُرسَم بـ`AppColors.primary` (`#0250D3`) وغيرُه بـ
+/// `AppColors.textSecondary` (`#374151`)؛ وكلاهما حبرُ أرضيّةٍ فاتحة،
+/// فنسبتاهما على الكرت الداكن ١٫٤٤ و١٫٠٧. والوضعُ الفاتحُ لم يُمَسّ.
+const Color _categoryLabelDark = Color(0xFFC6D0E0);
 
 /// Enhanced category filter with circular icon buttons
 class EnhancedCategoryFilter extends StatelessWidget {
@@ -122,6 +135,7 @@ class EnhancedCategoryFilter extends StatelessWidget {
 
     if (showAllOption) {
       items.add(_buildCategoryItem(
+        context: context,
         id: null,
         name: 'الكل',
         icon: PhosphorIconsBold.squaresFour,
@@ -132,6 +146,7 @@ class EnhancedCategoryFilter extends StatelessWidget {
 
     for (final cat in categories) {
       items.add(_buildCategoryItem(
+        context: context,
         id: cat.id,
         name: cat.name,
         icon: cat.icon,
@@ -143,10 +158,10 @@ class EnhancedCategoryFilter extends StatelessWidget {
     return Container(
       constraints: BoxConstraints(maxHeight: maxHeight),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.picposCard,
         border: Border(
           top: BorderSide(
-            color: AppColors.border.withValues(alpha: 0.5),
+            color: context.picposHairline.withValues(alpha: 0.5),
             width: 1,
           ),
         ),
@@ -163,6 +178,9 @@ class EnhancedCategoryFilter extends StatelessWidget {
   }
 
   Widget _buildCategoryItem({
+    /// السياقُ يُمرَّر صراحةً — الرقعةُ تقرأ `context.picposField` و
+    /// `picposHairline`، فبدونه تعود الأرضيّةُ ثابتةً فاتحةً في الغامق.
+    required BuildContext context,
     required int? id,
     required String name,
     required IconData icon,
@@ -192,7 +210,7 @@ class EnhancedCategoryFilter extends StatelessWidget {
                         end: Alignment.bottomRight,
                       )
                     : null,
-                color: isSelected ? null : AppColors.surface,
+                color: isSelected ? null : context.picposField,
                 shape: BoxShape.rectangle,
                 borderRadius: isRounded 
                     ? BorderRadius.circular(iconSize * 0.25) 
@@ -200,7 +218,7 @@ class EnhancedCategoryFilter extends StatelessWidget {
                 border: Border.all(
                   color: isSelected
                       ? Colors.transparent
-                      : AppColors.border.withValues(alpha: 0.5),
+                      : context.picposHairline.withValues(alpha: 0.5),
                   width: 1.5,
                 ),
                 boxShadow: isSelected
@@ -215,9 +233,12 @@ class EnhancedCategoryFilter extends StatelessWidget {
               ),
               child: Icon(
                 icon,
+                // أيقونةُ التصنيفِ غيرِ المختار كانت `AppColors.textPrimary`
+                // وهو **أسودُ صافٍ** — أيقونةٌ سوداءُ على رقعةٍ داكنة.
+                // و`picposText` يعطي عينَ الأسودِ في الفاتح وأبيضَ في الغامق.
                 color: isSelected
                     ? Colors.white
-                    : AppColors.textPrimary.withValues(alpha: 0.7),
+                    : context.picposText.withValues(alpha: 0.7),
                 size: iconInnerSize,
               ),
             ),
@@ -230,12 +251,32 @@ class EnhancedCategoryFilter extends StatelessWidget {
                 style: TextStyle(
                   fontSize: fontSize,
                   fontWeight: isSelected ? FontWeight.w900 : labelWeight,
-                  color: isSelected
-                      ? AppColors.primary
-                      : AppColors.textSecondary,
+                  color: context.picposIsDark
+                      ? _categoryLabelDark
+                      : (isSelected
+                          ? AppColors.primary
+                          : AppColors.textSecondary),
                   letterSpacing: -0.2,
                 ),
-                maxLines: 1,
+                // سطران لا سطر — بلاغُ المالك 2026-08-29 بالصورة: «صناعة
+                // الحلو…» و«بقوليات و م…» و«كيك وكوكوا…».
+                //
+                // الرقعةُ عرضُها ثابتٌ (`labelWidth`، افتراضيّاً ٥٢px) وهذا
+                // **مقصود**: هو ما يُبقي الشبكةَ مصطفّةً ويجعل `Wrap` تحسب
+                // صفوفاً متساويةَ العرض. فالبترُ لم يكن من العرض بل من
+                // `maxLines: 1` معه — واسمٌ عربيٌّ فوق ~٧ محارفَ عند خطٍّ ٩
+                // لا يسع سطراً واحداً بـ٥٢px مهما فعلنا.
+                //
+                // ⚠️ **والتصميمُ يوافق**: تسميةُ التصنيف في
+                // `PicPos Quick Sale Dialog.dc.html` تُرسم بـ`line-height:1.25`
+                // و`text-align:center` **بلا** `white-space:nowrap` — بينما
+                // رقعةٌ أخرى في نفس الملفّ تحملها صراحةً. أي أنّ التصميمَ
+                // يقصد اللفَّ، و`maxLines: 1` كانت مخالفةً له لا اختيارَ
+                // مدرسةٍ ثانية. والمالكُ حدَّه بسطرَين 2026-08-29.
+                //
+                // و`ellipsis` تبقى شبكةَ أمانٍ لما يتجاوز السطرَين، ولا
+                // يفيض الشريطُ لأنّ `maxHeight` يحدُّ المنطقةَ أصلاً.
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
               ),

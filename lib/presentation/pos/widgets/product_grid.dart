@@ -17,6 +17,7 @@ import 'product_card.dart';
 import 'product_card_shimmer.dart';
 import '../../widgets/category_icon_picker.dart';
 import '../../../core/utils/arabic_utils.dart';
+import '../../picpos_shell/picpos_surface.dart';
 
 /// زرار طيّ شبكة المنتجات (ملء الشاشة بالسلة) — مستخرج كودجت مستقل عن
 /// `_ProductGridState` عشان يتعمله اختبار widget من غير الشاشة كلها.
@@ -309,9 +310,9 @@ class _ProductGridState extends ConsumerState<ProductGrid> {
   Widget _buildSearchBar(String query, PosController controller) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: AppColors.border, width: 0.5)),
+      decoration: BoxDecoration(
+        color: context.picposCard,
+        border: Border(bottom: BorderSide(color: context.picposHairline, width: 0.5)),
       ),
       child: Row(
         children: [
@@ -333,10 +334,10 @@ class _ProductGridState extends ConsumerState<ProductGrid> {
                 child: Container(
                   height: 48,
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: context.picposField,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: AppColors.border.withValues(alpha: 0.8),
+                      color: context.picposHairline.withValues(alpha: 0.8),
                       width: 1.5,
                     ),
                   ),
@@ -498,7 +499,7 @@ class _ProductGridState extends ConsumerState<ProductGrid> {
 
   Widget _buildShimmerGrid() {
     return Shimmer.fromColors(
-      baseColor: AppColors.surface.withValues(alpha: 0.5),
+      baseColor: context.picposField.withValues(alpha: 0.5),
       highlightColor: AppColors.primary.withValues(alpha: 0.1),
       child: GridView.builder(
         padding: const EdgeInsets.all(12),

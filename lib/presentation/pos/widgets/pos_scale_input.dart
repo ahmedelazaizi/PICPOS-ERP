@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../services/scale_service.dart';
+import '../../picpos_shell/picpos_surface.dart';
 
 /// Scale input widget that displays real-time weight from connected scale
 /// Shows green when stable, red when unstable
@@ -142,7 +143,7 @@ class _PosScaleInputState extends State<PosScaleInput> {
               duration: const Duration(milliseconds: 300),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: context.picposCard,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: statusColor, width: 1.5),
               ),

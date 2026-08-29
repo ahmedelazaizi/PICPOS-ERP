@@ -177,7 +177,7 @@ class _PicPosNumericKeypadDialogState
         children: [
           const Icon(PhosphorIconsBold.calculator, color: AppColors.primary),
           const SizedBox(width: 8),
-          Text(widget.title, style: PicPosText.v(16)),
+          Text(widget.title, style: PicPosText.v(context, 16)),
         ],
       ),
       content: SizedBox(
@@ -195,7 +195,7 @@ class _PicPosNumericKeypadDialogState
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'[0-9.٠-٩٫،,]')),
               ],
-              style: PicPosText.v(30),
+              style: PicPosText.v(context, 30),
               decoration: InputDecoration(
                 isDense: true,
                 contentPadding:
@@ -205,7 +205,7 @@ class _PicPosNumericKeypadDialogState
                 fillColor: context.picposCard,
                 suffixText: widget.suffix,
                 errorText: error,
-                errorStyle: PicPosText.v(12, color: AppColors.error),
+                errorStyle: PicPosText.v(context, 12, color: AppColors.error),
               ),
               onChanged: (_) => setState(() => _pristine = false),
               onSubmitted: (_) => _confirm(),
@@ -234,7 +234,7 @@ class _PicPosNumericKeypadDialogState
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text('إلغاء', style: PicPosText.l(14)),
+          child: Text('إلغاء', style: PicPosText.l(context, 14)),
         ),
         ElevatedButton.icon(
           onPressed: error == null ? _confirm : null,
@@ -323,7 +323,7 @@ class _KeyButton extends StatelessWidget {
           ),
           child: icon != null
               ? Icon(icon, size: 22, color: c)
-              : Text(label!, style: PicPosText.v(22, color: c)),
+              : Text(label!, style: PicPosText.v(context, 22, color: c)),
         ),
       ),
     );

@@ -63,13 +63,13 @@ class PicPosExchangeModeBanner extends StatelessWidget {
                   size: 16, color: AppColors.warning),
               const SizedBox(width: 8),
               Text('وضع الاستبدال',
-                  style: PicPosText.v(13, color: AppColors.warning)),
+                  style: PicPosText.v(context, 13, color: AppColors.warning)),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   invoiceNumber,
                   overflow: TextOverflow.ellipsis,
-                  style: PicPosText.v(13, color: AppColors.warning),
+                  style: PicPosText.v(context, 13, color: AppColors.warning),
                 ),
               ),
             ],
@@ -81,14 +81,14 @@ class PicPosExchangeModeBanner extends StatelessWidget {
                 child: Text(
                   'المرتجع ${NumberUtils.formatCurrency(refundTotal)}',
                   overflow: TextOverflow.ellipsis,
-                  style: PicPosText.v(12, color: AppColors.textSecondary),
+                  style: PicPosText.v(context, 12, color: AppColors.textSecondary),
                 ),
               ),
               Expanded(
                 child: Text(
                   'البديل ${NumberUtils.formatCurrency(replacementTotal)}',
                   overflow: TextOverflow.ellipsis,
-                  style: PicPosText.v(12, color: AppColors.textSecondary),
+                  style: PicPosText.v(context, 12, color: AppColors.textSecondary),
                 ),
               ),
               Expanded(
@@ -96,7 +96,7 @@ class PicPosExchangeModeBanner extends StatelessWidget {
                   differenceLabel,
                   textAlign: TextAlign.end,
                   overflow: TextOverflow.ellipsis,
-                  style: PicPosText.v(12, color: differenceColor),
+                  style: PicPosText.v(context, 12, color: differenceColor),
                 ),
               ),
             ],

@@ -11,6 +11,7 @@ import '../../widgets/permission_guard.dart';
 import '../../../core/permissions/permission_codes.dart';
 import '../../../domain/entities/product_entity.dart';
 import '../../../data/providers/providers.dart';
+import '../../picpos_shell/picpos_surface.dart';
 
 class PosProductSelectionPanel extends ConsumerWidget {
   final TextEditingController barcodeController;
@@ -55,7 +56,7 @@ class PosProductSelectionPanel extends ConsumerWidget {
     );
 
     return Container(
-      color: AppColors.surface,
+      color: context.picposField,
       child: Column(
         children: [
           // Barcode input - controlled by settings
@@ -81,10 +82,10 @@ class PosProductSelectionPanel extends ConsumerWidget {
                       vertical: layout.barcodeRowPaddingV,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: context.picposCard,
                       border: Border(
                         bottom: BorderSide(
-                          color: AppColors.border.withValues(alpha: 0.5),
+                          color: context.picposHairline.withValues(alpha: 0.5),
                           width: 1,
                         ),
                       ),

@@ -744,24 +744,24 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(product.name, style: PicPosText.v(15)),
+              Text(product.name, style: PicPosText.v(context, 15)),
               const SizedBox(height: 6),
               Text(
                 'الرصيد الحالي: ${NumberUtils.formatQuantity(product.currentStock)}',
-                style: PicPosText.v(13, color: AppColors.error),
+                style: PicPosText.v(context, 13, color: AppColors.error),
               ),
               const Divider(height: 18),
               Text(
                 'تسمح بالبيع بالسالب في هذه الفاتورة؟ الرصيد هيبقى سالب '
                 'ولازم جرد يصحّحه.',
-                style: PicPosText.l(13),
+                style: PicPosText.l(context, 13),
               ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: Text('لا', style: PicPosText.l(14)),
+              child: Text('لا', style: PicPosText.l(context, 14)),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx, true),

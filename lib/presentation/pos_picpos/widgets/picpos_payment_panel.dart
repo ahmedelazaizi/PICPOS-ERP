@@ -205,8 +205,8 @@ class _CustomerRow extends ConsumerWidget {
                   isSet ? name : 'عميل نقدي — اضغط للاختيار',
                   overflow: TextOverflow.ellipsis,
                   style: isSet
-                      ? PicPosText.v(13 * scale, color: AppColors.primary)
-                      : PicPosText.l(13 * scale),
+                      ? PicPosText.v(context, 13 * scale, color: AppColors.primary)
+                      : PicPosText.l(context, 13 * scale),
                 ),
               ),
               const Icon(PhosphorIconsBold.caretLeft,
@@ -314,13 +314,13 @@ class _TypeChip extends StatelessWidget {
           children: [
             Icon(icon,
                 size: 14,
-                color: selected ? Colors.white : PicPosText.label),
+                color: selected ? Colors.white : PicPosText.labelOf(context)),
             const SizedBox(width: 5),
             Text(
               label,
               style: selected
-                  ? PicPosText.v(12 * scale, color: Colors.white)
-                  : PicPosText.l(12 * scale),
+                  ? PicPosText.v(context, 12 * scale, color: Colors.white)
+                  : PicPosText.l(context, 12 * scale),
             ),
           ],
         ),
@@ -440,7 +440,7 @@ class _TotalsBlock extends ConsumerWidget {
                 children: [
                   Text(
                     'الإجمالي النهائي',
-                    style: PicPosText.l(
+                    style: PicPosText.l(context, 
                       13 * scale,
                       color: AppColors.textSecondary,
                     ),
@@ -449,7 +449,7 @@ class _TotalsBlock extends ConsumerWidget {
                   Text(
                     NumberUtils.formatCurrency(cart.total),
                     // اللون دلالي (أحمر لو سالب) فبيغلب أسود القيم.
-                    style: PicPosText.v(
+                    style: PicPosText.v(context, 
                       24 * scale,
                       color: cart.isNegative
                           ? AppColors.error
@@ -487,11 +487,11 @@ class _Line extends StatelessWidget {
       padding: EdgeInsets.symmetric(vertical: 2 * scale),
       child: Row(
         children: [
-          Text(label, style: PicPosText.l(12 * scale)),
+          Text(label, style: PicPosText.l(context, 12 * scale)),
           const Spacer(),
           Text(
             '${negative ? '− ' : ''}${NumberUtils.formatCurrency(value)}',
-            style: PicPosText.v(
+            style: PicPosText.v(context, 
               13 * scale,
               color: color,
             ),
@@ -538,13 +538,13 @@ class _ToggleTile extends StatelessWidget {
           children: [
             Icon(icon,
                 size: 14,
-                color: active ? AppColors.primary : PicPosText.label),
+                color: active ? AppColors.primary : PicPosText.labelOf(context)),
             const SizedBox(width: 5),
             Text(
               label,
               style: active
-                  ? PicPosText.v(12 * scale, color: AppColors.primary)
-                  : PicPosText.l(12 * scale),
+                  ? PicPosText.v(context, 12 * scale, color: AppColors.primary)
+                  : PicPosText.l(context, 12 * scale),
             ),
           ],
         ),
@@ -705,7 +705,7 @@ class _SafeChip extends StatelessWidget {
               const SizedBox(width: 5),
               Text(
                 label,
-                style: PicPosText.v(
+                style: PicPosText.v(context, 
                   11 * scale,
                   color: color,
                 ),
@@ -996,7 +996,7 @@ class _MiniAction extends StatelessWidget {
               Text(
                 label,
                 overflow: TextOverflow.ellipsis,
-                style: PicPosText.v(
+                style: PicPosText.v(context, 
                   font,
                   color: AppColors.primaryDark,
                 ),
@@ -1044,7 +1044,7 @@ class _Action extends StatelessWidget {
               child: Text(
                 label,
                 overflow: TextOverflow.ellipsis,
-                style: PicPosText.v(font),
+                style: PicPosText.v(context, font),
               ),
             ),
           ],

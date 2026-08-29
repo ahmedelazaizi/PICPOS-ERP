@@ -51,8 +51,8 @@ class PicPosLastInvoiceDialog extends ConsumerWidget {
         ),
       ),
       error: (e, _) => AlertDialog(
-        title: Text('الفاتورة السابقة', style: PicPosText.v(16)),
-        content: Text('تعذّر التحميل: $e', style: PicPosText.v(13)),
+        title: Text('الفاتورة السابقة', style: PicPosText.v(context, 16)),
+        content: Text('تعذّر التحميل: $e', style: PicPosText.v(context, 13)),
         actions: [_closeButton(context)],
       ),
       data: (invoice) {
@@ -69,7 +69,7 @@ class PicPosLastInvoiceDialog extends ConsumerWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text('فاتورة #${invoice.invoiceNumber}',
-                    style: PicPosText.v(16)),
+                    style: PicPosText.v(context, 16)),
               ),
             ],
           ),
@@ -92,14 +92,14 @@ class PicPosLastInvoiceDialog extends ConsumerWidget {
                       const Icon(PhosphorIconsBold.clock,
                           size: 14, color: AppColors.textMuted),
                       const SizedBox(width: 4),
-                      Text(time, style: PicPosText.v(12)),
+                      Text(time, style: PicPosText.v(context, 12)),
                       const SizedBox(width: 12),
                       const Icon(PhosphorIconsBold.wallet,
                           size: 14, color: AppColors.textMuted),
                       const SizedBox(width: 4),
                       Text(
                         PaymentMethods.label(invoice.paymentMethod),
-                        style: PicPosText.v(12),
+                        style: PicPosText.v(context, 12),
                       ),
                       if (invoice.orderNumber != null) ...[
                         const SizedBox(width: 12),
@@ -107,7 +107,7 @@ class PicPosLastInvoiceDialog extends ConsumerWidget {
                             size: 14, color: AppColors.textMuted),
                         const SizedBox(width: 4),
                         Text('طلب ${invoice.orderNumber}',
-                            style: PicPosText.v(12)),
+                            style: PicPosText.v(context, 12)),
                       ],
                     ],
                   ),
@@ -142,19 +142,19 @@ class PicPosLastInvoiceDialog extends ConsumerWidget {
           children: [
             const Icon(PhosphorIconsBold.receiptX, color: AppColors.textMuted),
             const SizedBox(width: 8),
-            Text('الفاتورة السابقة', style: PicPosText.v(16)),
+            Text('الفاتورة السابقة', style: PicPosText.v(context, 16)),
           ],
         ),
         content: Text(
           'لا توجد فاتورة سابقة في هذه الوردية',
-          style: PicPosText.l(14),
+          style: PicPosText.l(context, 14),
         ),
         actions: [_closeButton(context)],
       );
 
   Widget _closeButton(BuildContext context) => TextButton(
         onPressed: () => Navigator.pop(context),
-        child: Text('إغلاق', style: PicPosText.l(14)),
+        child: Text('إغلاق', style: PicPosText.l(context, 14)),
       );
 
   Future<void> _reprint(

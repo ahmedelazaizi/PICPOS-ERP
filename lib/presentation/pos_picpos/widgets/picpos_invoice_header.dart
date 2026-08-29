@@ -102,9 +102,9 @@ class _Field extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(icon, size: 12, color: PicPosText.label),
+            Icon(icon, size: 12, color: PicPosText.labelOf(context)),
             const SizedBox(width: 4),
-            Text(label, style: PicPosText.l(10)),
+            Text(label, style: PicPosText.l(context, 10)),
           ],
         ),
         const SizedBox(height: 2),
@@ -115,8 +115,8 @@ class _Field extends StatelessWidget {
           // البيع السريع بولد (طلب ١٠). الميل الحرفي بيفضل عشان يفرّق النص
           // النائب («—»، «...») عن قيمة حقيقية.
           style: muted
-              ? PicPosText.l(11, fontStyle: FontStyle.italic)
-              : PicPosText.v(13, color: valueColor),
+              ? PicPosText.l(context, 11, fontStyle: FontStyle.italic)
+              : PicPosText.v(context, 13, color: valueColor),
         ),
       ],
     );

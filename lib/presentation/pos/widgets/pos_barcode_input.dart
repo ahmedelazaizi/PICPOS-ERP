@@ -7,6 +7,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_osk.dart';
 import '../../../data/database/database.dart';
 import '../providers/pos_controller.dart';
+import '../../picpos_shell/picpos_surface.dart';
 
 /// Barcode input for POS — handles USB/Bluetooth barcode scanners.
 ///
@@ -198,10 +199,10 @@ class _PosBarcodeInputState extends ConsumerState<PosBarcodeInput> {
         vertical: widget.rowPaddingV,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.picposCard,
         border: Border(
           bottom: BorderSide(
-            color: AppColors.border.withValues(alpha: 0.5),
+            color: context.picposHairline.withValues(alpha: 0.5),
             width: 1,
           ),
         ),
@@ -261,7 +262,7 @@ class _PosBarcodeInputState extends ConsumerState<PosBarcodeInput> {
                     borderSide: BorderSide.none,
                   ),
                   filled: true,
-                  fillColor: AppColors.surface,
+                  fillColor: context.picposField,
                   contentPadding: EdgeInsets.symmetric(
                     horizontal: 20,
                     vertical: widget.contentPaddingV,
