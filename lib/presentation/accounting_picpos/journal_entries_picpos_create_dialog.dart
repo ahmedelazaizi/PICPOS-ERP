@@ -58,45 +58,57 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
           final totalCredit = lines.fold(0.0, (s, l) => s + l.credit);
           final isBalanced = (totalDebit - totalCredit).abs() < 0.01 && totalDebit > 0;
 
-          return AlertDialog(
-            title: Row(
-              children: [
-                const Icon(PhosphorIconsBold.notebook, color: AppColors.primary, size: 20),
-                const SizedBox(width: 8),
-                Text('إنشاء قيد يدوي', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
-              ],
-            ),
-            content: SizedBox(
-              width: 650,
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+          return PicPosDialog(
+            icon: PhosphorIconsBold.notebook,
+            title: 'إنشاء قيد يدوي',
+            subtitle: initialTemplate != null
+                ? 'من قالب: ${initialTemplate.name}'
+                : 'قيدٌ يدويٌّ متوازنٌ يُرحَّل إلى دفتر الأستاذ',
+            width: 760,
+            headerChips: [
+              PicPosDialogChip(
+                icon: isBalanced
+                    ? PhosphorIconsBold.checkCircle
+                    : PhosphorIconsBold.warning,
+                label: isBalanced ? 'متوازن' : 'غير متوازن',
+                tint: isBalanced ? AppColors.success : AppColors.error,
+              ),
+            ],
+            // ⚠️ الجسمُ عنصرٌ واحدٌ لا قائمةُ عناصر: `PicPosDialog` يضع ١٣
+            //    بكسل بين كلِّ عنصرَين، والمسافاتُ هنا مكتوبةٌ يدويّاً
+            //    بـ`SizedBox` فكان الجمعُ بينهما يضاعفها.
+            body: [
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                     // Entry Type & Description & Date
-                    Row(
+                    //
+                    // ⚠️ كان الأوّلُ `SizedBox(width: 130)` ثابتاً، فتصل إلى
+                    //    قائمتِه قيودٌ عرضُها ٧٤ بكسل ولا تكفي نصَّها وأيقونتَها
+                    //    — فيضٌ مقيسٌ بـ٦ بكسل عند العرضَين ١٢٨٠ و١٩٢٠ معاً،
+                    //    لأنّ عرضَ الحوار مثبَّتٌ فلا يتغيّر بالشاشة.
+                    //    و`PicPosDialogRow` يعطيه حصّةً لا رقماً، ويكسر الصفَّ
+                    //    رأسيّاً تحت ٥٢٠ بدل أن يسحقه.
+                    PicPosDialogRow(
+                      flex: const [2, 4, 3],
                       children: [
-                        SizedBox(
-                          width: 130,
-                          child: DropdownButtonFormField<String>(
-                            initialValue: entryType,
-                            decoration: const InputDecoration(
-                              labelText: 'نوع القيد',
-                              border: OutlineInputBorder(),
-                              isDense: true,
-                            ),
-                            items: const [
-                              DropdownMenuItem(value: 'daily', child: Text('يومية')),
-                              DropdownMenuItem(value: 'adjustment', child: Text('تسوية')),
-                              DropdownMenuItem(value: 'salary', child: Text('رواتب')),
-                            ],
-                            onChanged: (v) => setDialogState(() => entryType = v ?? 'daily'),
+                        DropdownButtonFormField<String>(
+                          initialValue: entryType,
+                          isExpanded: true,
+                          decoration: const InputDecoration(
+                            labelText: 'نوع القيد',
+                            border: OutlineInputBorder(),
+                            isDense: true,
                           ),
+                          items: const [
+                            DropdownMenuItem(value: 'daily', child: Text('يومية')),
+                            DropdownMenuItem(value: 'adjustment', child: Text('تسوية')),
+                            DropdownMenuItem(value: 'salary', child: Text('رواتب')),
+                          ],
+                          onChanged: (v) => setDialogState(() => entryType = v ?? 'daily'),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          flex: 3,
-                          child: TextField(
+                          TextField(
                             controller: descCtrl,
                             decoration: const InputDecoration(
                               labelText: 'وصف القيد',
@@ -104,11 +116,7 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
                               border: OutlineInputBorder(),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          flex: 2,
-                          child: InkWell(
+                          InkWell(
                             onTap: () async {
                               final date = await CompactDatePicker.showCompact(
                                 ctx,
@@ -132,7 +140,6 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
                               ),
                             ),
                           ),
-                        ),
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -335,65 +342,100 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
                     ),
                   ],
                 ),
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () async {
+            ],
+            onCancel: () async {
                   // U-03: Unsaved changes guard
                   final hasData = descCtrl.text.isNotEmpty ||
                       lines.any((l) => l.account != null || l.debit > 0 || l.credit > 0 || l.descCtrl.text.isNotEmpty);
                   if (hasData) {
-                    final leave = await showDialog<bool>(
-                      context: ctx,
-                      builder: (c) => Directionality(
-                        textDirection: ui.TextDirection.rtl,
-                        child: AlertDialog(
-                          title: Row(
-                            children: [
-                              const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
-                              const SizedBox(width: 8),
-                              Text('تنبيه', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
-                            ],
-                          ),
-                          content: Text(
-                            'يوجد بيانات غير محفوظة في القيد. هل أنت متأكد من الإلغاء؟',
-                            style: GoogleFonts.cairo(fontSize: 14, height: 1.5),
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(c, false),
-                              child: const Text('لا، البقاء'),
-                            ),
-                            ElevatedButton(
-                              onPressed: () => Navigator.pop(c, true),
-                              style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-                              child: const Text('نعم، إلغاء'),
-                            ),
-                          ],
-                        ),
-                      ),
+                    // ⚠️ `showPicPosConfirm` يُرجع `bool` غيرَ لاغٍ افتراضُه
+                    //    **الرفض**، فالإغلاقُ العرَضيُّ يُبقي القيدَ لا
+                    //    يبتلعه — وهو ما كان `leave != true` يضمنه هنا.
+                    final leave = await showPicPosConfirm(
+                      ctx,
+                      icon: PhosphorIconsBold.warning,
+                      title: 'تنبيه',
+                      message:
+                          'يوجد بيانات غير محفوظة في القيد. هل أنت متأكد من الإلغاء؟',
+                      confirmLabel: 'نعم، إلغاء',
+                      cancelLabel: 'لا، البقاء',
+                      danger: true,
                     );
-                    if (leave != true) return;
+                    if (!leave) return;
                   }
                   if (ctx.mounted) Navigator.pop(ctx);
-                },
-                child: const Text('إلغاء'),
-              ),
-              ElevatedButton.icon(
-                onPressed: isBalanced && !saving
-                    ? () async {
-                        setDialogState(() => saving = true);
-                        await saveManualEntry(ctx, descCtrl.text, entryDate, lines, entryType);
-                        if (ctx.mounted) setDialogState(() => saving = false);
-                      }
-                    : null,
-                icon: saving
-                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Icon(PhosphorIconsBold.floppyDisk, size: 16),
-                label: const Text('حفظ القيد'),
-              ),
-            ],
+            },
+            // ═══ مسارُ حفظٍ واحدٌ يُنتج مسودّةً — قرارُ مالك 2026-08-27 ═══
+            //
+            // «كلُّ قيدٍ يدويٍّ مسودّةٌ حتى يعتمده **غيرُ** منشئه».
+            //
+            // ⚠️ فلا زرَّ «حفظ القيد» بعد اليوم: زرّان أحدُهما يرحّل فوراً
+            //    والآخرُ يؤجّل يجعلان الضابطَ اختياريّاً — ومَن يستعجل يضغط
+            //    الأوّل. والتصميمُ نفسُه يعرض فعلَين (`postNew` و`draft`)،
+            //    و`postNew` **رفضه المالك** لأنّه اعتمادٌ ذاتيّ. فبقي واحد.
+            //
+            // ⚠️ و`saving` حارسُ **إعادةِ دخولٍ** لا حالةُ بناء: ضبطُه بـ
+            //    `setDialogState` قبل الكتابة يجعل عنصرَ `StatefulBuilder`
+            //    متّسخاً، ثمّ يُغلَق الحوارُ عند النجاح فيُعاد بناؤه وسلفُه
+            //    مُبطَل — «Looking up a deactivated widget's ancestor is
+            //    unsafe» من `Theme.of` في بطاقة البند. فلا إعادةَ بناءٍ
+            //    إلّا عند الإخفاق حيث يبقى الحوار.
+            primaryAction: PicPosDialogAction(
+              label: 'حفظ كمسودة',
+              icon: PhosphorIconsBold.floppyDisk,
+              busy: saving,
+              onPressed: isBalanced && !saving
+                  ? () async {
+                      if (saving) return;
+                      final total = lines.fold(0.0, (s, l) => s + l.debit);
+                      final ok = await showPicPosConfirm(
+                        ctx,
+                        icon: PhosphorIconsBold.floppyDisk,
+                        title: 'حفظ كمسودة',
+                        message:
+                            'المسودة لا تؤثر على الأرصدة، ويمكن استكمالها '
+                            'واعتمادها لاحقاً من قائمة القيود.',
+                        confirmLabel: 'حفظ المسودة',
+                        details: [
+                          PicPosDialogSummary(
+                            rows: [
+                              (
+                                label: 'البيان',
+                                value: descCtrl.text.isEmpty
+                                    ? '—'
+                                    : descCtrl.text,
+                                color: null,
+                              ),
+                              (
+                                label: 'عدد السطور',
+                                value: '${lines.length} سطر',
+                                color: null,
+                              ),
+                              (
+                                label: 'إجمالي القيد',
+                                value:
+                                    '${total.toStringAsFixed(AppConstants.decimalPlaces)} '
+                                    '${AppConstants.currencySymbol}',
+                                color: null,
+                              ),
+                            ],
+                          ),
+                        ],
+                      );
+                      if (!ok || !ctx.mounted || saving) return;
+                      saving = true;
+                      final saved = await saveManualEntry(
+                        ctx,
+                        descCtrl.text,
+                        entryDate,
+                        lines,
+                        entryType,
+                      );
+                      saving = false;
+                      if (!saved && ctx.mounted) setDialogState(() {});
+                    }
+                  : null,
+            ),
           );
         }),
       ),
@@ -404,18 +446,18 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => Directionality(
-        textDirection: ui.TextDirection.rtl,
-        child: AlertDialog(
-          title: Row(
-            children: [
-              const Icon(PhosphorIconsBold.copy, color: AppColors.primary, size: 20),
-              const SizedBox(width: 8),
-              Text('اختيار قالب قيد', style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
-            ],
-          ),
-          content: SizedBox(
-            width: 400,
+      builder: (ctx) => PicPosDialog(
+        icon: PhosphorIconsBold.copy,
+        title: 'اختيار قالب قيد',
+        subtitle: 'ابدأ القيدَ من قالبٍ نشطٍ بدل إدخاله من الصفر',
+        width: 520,
+        // ⚠️ الجسمُ قائمةٌ متمرّرةٌ بارتفاعٍ ثابت. فلو بقي `scrollable` على
+        //    افتراضه لصارت تمريرتان متداخلتان في المحور نفسِه — والقائمةُ
+        //    محدودةٌ هنا بـ`SizedBox` فلا تنهار، لكنّ التمريرَ يصير مربكاً.
+        scrollable: false,
+        onCancel: () => Navigator.pop(ctx),
+        body: [
+          SizedBox(
             height: 300,
             child: StreamBuilder<List<JournalEntryTemplateData>>(
               stream: repo.watchActiveTemplates(),
@@ -448,43 +490,55 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
               },
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('إلغاء'),
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }
 
-  Future<void> saveManualEntry(
+  /// يُرجع `true` حين حُفظ القيدُ **وأُغلق الحوار**.
+  ///
+  /// ⚠️ والإرجاعُ ليس تجميلاً: المستدعي كان يُنهي حالةَ «يحفظ» بـ
+  /// `setDialogState` بعد العودة — وهي إعادةُ بناءٍ على عنصرٍ **أُغلق
+  /// حوارُه للتوّ**، فيلتمس `PicPosDialog` منها `MediaQuery.of` على
+  /// عنصرٍ مُبطَل ويُرمى «Looking up a deactivated widget's ancestor is
+  /// unsafe». فالمستدعي يعيد الحالةَ **حين لم يُحفَظ** وحدَها.
+  Future<bool> saveManualEntry(
     BuildContext ctx,
     String description,
     DateTime date,
     List<JournalLineInput> lines,
-    String referenceType,
-  ) async {
+    String referenceType, {
+    /// **افتراضُه `true`** — قرارُ مالك 2026-08-27: كلُّ قيدٍ يدويٍّ مسودّةٌ
+    /// حتى يعتمده غيرُ منشئه.
+    ///
+    /// ⚠️ والافتراضُ هنا وحدَه، لا في `createJournalEntry`: الأخيرةُ يشاركها
+    /// **الترحيلُ الآليّ** (‏فواتيرُ وسنداتٌ وإهلاك)، وجعلُ افتراضِها
+    /// مسودّةً كان يُجمّد كلَّ حركةٍ ماليّةٍ في النظام بانتظار اعتمادٍ يدويّ.
+    /// فالقرارُ يخصّ **اليدويَّ** وحدَه، ومكانُه المسارُ اليدويّ.
+    ///
+    /// والتحقّقاتُ أدناه تسري عليها كاملةً: المسودّةُ **متوازنةٌ** وكلُّ
+    /// بندٍ له حسابٌ وطرفٌ واحد. فرقُها الترحيلُ لا التساهل.
+    bool asDraft = true,
+  }) async {
     if (description.isEmpty) {
       AppToast.show(context, 'يرجى إدخال وصف القيد', type: ToastType.info);
-      return;
+      return false;
     }
 
     for (final line in lines) {
       if (line.account == null) {
         AppToast.show(context, 'يرجى اختيار حساب لكل بند', type: ToastType.info);
-        return;
+        return false;
       }
       if (line.debit <= 0 && line.credit <= 0) {
         AppToast.show(context, 'كل بند يجب أن يحتوي على قيمة مدين أو دائن', type: ToastType.info);
-        return;
+        return false;
       }
       // BUG-U13: a line may carry a debit OR a credit, never both.
       if (line.debit > 0 && line.credit > 0) {
         AppToast.show(context, 'لا يمكن إدخال مدين ودائن معاً في نفس البند',
             type: ToastType.info);
-        return;
+        return false;
       }
     }
 
@@ -494,7 +548,7 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
     // Checked BEFORE createJournalEntry so a denied user never reaches the
     // shared DAO call (which stays unaware of the caller/permission —
     // autopost also calls it with no user).
-    if (!await _requireAccountingJournalPermission()) return;
+    if (!await _requireAccountingJournalPermission()) return false;
 
     try {
       final repo = ref.read(accountingRepositoryProvider);
@@ -514,16 +568,27 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
         lines: journalLines,
         referenceType: referenceType,
         isAutoPosted: false,
+        asDraft: asDraft,
+        // ⚠️ مَن أنشأ — بلا هذا لا يعرف `approveJournalEntry` أن يمنع
+        //    الاعتمادَ الذاتيّ، فيصير الضابطُ سطراً في التوثيق لا حارساً.
+        createdBy: ref.read(authProvider).user?.id,
       );
 
       if (ctx.mounted) Navigator.pop(ctx);
       if (mounted) {
-        AppToast.show(context, 'تم حفظ القيد بنجاح');
+        AppToast.show(
+          context,
+          asDraft
+              ? 'حُفظت المسودّة — لا تؤثّر على الأرصدة حتى تُعتمَد'
+              : 'تم حفظ القيد بنجاح',
+        );
       }
+      return true;
     } catch (e) {
       if (mounted) {
         AppToast.show(context, 'خطأ: $e', type: ToastType.error);
       }
+      return false;
     }
   }
 }

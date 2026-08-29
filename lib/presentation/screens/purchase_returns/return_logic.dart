@@ -168,6 +168,11 @@ mixin _PurchaseReturnLogicMixin on ConsumerState<PurchaseReturnsScreen> {
           .map((i) {
             final qty  = returnQuantities[i.item.id]!;
             final cost = i.item.unitCost;
+            // الخصمُ والضريبةُ مقسَّطان بنسبة المرتجَع — نظيرُ ما في
+            // `returns_repository_impl` و`getPurchaseReturnItemDetails`.
+            // ونقلُهما كاملَين في مرتجعٍ جزئيٍّ يطبع رقماً أكبرَ من المرتجَع.
+            final ratio =
+                i.item.quantity > 0 ? qty / i.item.quantity : 0.0;
             return InvoiceItem(
               name: i.product.name,
               quantity: qty,
@@ -175,6 +180,10 @@ mixin _PurchaseReturnLogicMixin on ConsumerState<PurchaseReturnsScreen> {
               total: qty * cost,
               note: i.item.unitName,
               barcode: i.product.barcode,
+              code: i.product.code,
+              unit: i.item.unitName,
+              discount: i.item.discount * ratio,
+              tax: i.item.taxAmount * ratio,
             );
           })
           .toList();
@@ -246,6 +255,13 @@ mixin _PurchaseReturnLogicMixin on ConsumerState<PurchaseReturnsScreen> {
           price: cost,
           total: total,
           note: r['unit_name'] as String? ?? '',
+          // الأعمدةُ الجديدةُ تأتي من الاستعلام نفسِه — والخصمُ والضريبةُ
+          // مقسَّطان هناك بـSQL، فلا تقسيطَ ثانيَ هنا.
+          code: r['product_code'] as String?,
+          barcode: r['product_barcode'] as String?,
+          unit: r['unit_name'] as String?,
+          discount: (r['line_discount'] as num?)?.toDouble() ?? 0,
+          tax: (r['line_tax'] as num?)?.toDouble() ?? 0,
         ));
       }
 

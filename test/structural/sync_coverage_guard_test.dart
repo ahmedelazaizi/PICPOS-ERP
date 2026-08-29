@@ -110,7 +110,18 @@ const _unsyncedBaseline = <String>{
   'EntityMappings', 'ActivityProfiles', 'ExchangeRateHistory',
 
   // قوالبُ ووثائقُ إعداد — تُنقل يدويّاً اليوم.
+  //
+  // ⚠️ **و`TemplateBindings` لا تُزامَن كما هي حتى لو زُومنت أخواتُها.**
+  //    مفتاحُها يحمل `printerId` و`branchId`، وكلاهما معرِّفٌ **محلّيُّ
+  //    الدلالة**: الطابعةُ رقم ٣ على جهاز الكاشير ليست الطابعةَ رقم ٣ على
+  //    جهاز المدير. فدفعُ الرابطة كما هي يُسند قالبَ A4 إلى طابعةٍ حراريّةٍ
+  //    على الجهاز الآخر — وهو **عينُ** القصِّ الصامت الذي أُنشئ هذا الجدولُ
+  //    ليمنعه.
+  //
+  //    ومزامنتُها حين تُطلب تحتاج ترجمةَ المعرِّفات لا نقلَها: الرابطاتُ
+  //    العامّة (`printerId = null`) وحدَها قابلةٌ للنقل المباشر.
   'InvoiceTemplates', 'InvoiceTemplateElements', 'InvoiceTableSettings',
+  'TemplateBindings',
   'JournalEntryTemplates', 'JournalEntryTemplateLines',
   'TaxTypes', 'TaxSubtypes',
   'CustomReports',

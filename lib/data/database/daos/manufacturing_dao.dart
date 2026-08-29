@@ -878,6 +878,15 @@ extension ManufacturingDao on AppDatabase {
   Stream<List<MfgOrderCostData>> watchMfgOrderCosts(int orderId) =>
       (select(mfgOrderCosts)..where((c) => c.orderId.equals(orderId))).watch();
 
+  /// Watch **every** order's cost rows in one stream.
+  ///
+  /// ⚠️ **لجدولٍ يعرض أوامرَ كثيرةً معاً** — تبويبُ «تحميل أوامر التصنيع» في
+  /// شاشة المصروفات يعرض خامات/أجور/تحميل لكلّ أمر. و[watchMfgOrderCosts]
+  /// تأخذ أمراً واحداً، فبناءُ الجدول منها يعني استعلاماً لكلّ صفّ (N+1) —
+  /// وستّةُ أوامرَ تصير ستّةَ مجاري تُعاد كلَّما تغيّر أيٌّ منها.
+  Stream<List<MfgOrderCostData>> watchAllMfgOrderCosts() =>
+      select(mfgOrderCosts).watch();
+
   /// Get total cost breakdown for a manufacturing order by type
   Future<Map<String, double>> getMfgOrderCostBreakdown(int orderId) async {
     final results = await customSelect(

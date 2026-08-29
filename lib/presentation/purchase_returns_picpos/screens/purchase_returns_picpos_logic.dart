@@ -174,6 +174,10 @@ mixin _PurchaseReturnsPicposLogic on ConsumerState<PurchaseReturnsPicposScreen> 
           .map((i) {
             final qty  = returnQuantities[i.item.id]!;
             final cost = i.item.unitCost;
+            // الخصمُ والضريبةُ مقسَّطان بنسبة المرتجَع — نظيرُ التوأم في
+            // `screens/purchase_returns/return_logic.dart`.
+            final ratio =
+                i.item.quantity > 0 ? qty / i.item.quantity : 0.0;
             return InvoiceItem(
               name: i.product.name,
               quantity: qty,
@@ -181,6 +185,10 @@ mixin _PurchaseReturnsPicposLogic on ConsumerState<PurchaseReturnsPicposScreen> 
               total: qty * cost,
               note: i.item.unitName,
               barcode: i.product.barcode,
+              code: i.product.code,
+              unit: i.item.unitName,
+              discount: i.item.discount * ratio,
+              tax: i.item.taxAmount * ratio,
             );
           })
           .toList();
@@ -252,6 +260,12 @@ mixin _PurchaseReturnsPicposLogic on ConsumerState<PurchaseReturnsPicposScreen> 
           price: cost,
           total: total,
           note: r['unit_name'] as String? ?? '',
+          // الأعمدةُ من الاستعلام نفسِه — والتقسيطُ وقع هناك بـSQL.
+          code: r['product_code'] as String?,
+          barcode: r['product_barcode'] as String?,
+          unit: r['unit_name'] as String?,
+          discount: (r['line_discount'] as num?)?.toDouble() ?? 0,
+          tax: (r['line_tax'] as num?)?.toDouble() ?? 0,
         ));
       }
 

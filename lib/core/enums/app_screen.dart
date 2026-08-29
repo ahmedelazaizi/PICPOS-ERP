@@ -66,7 +66,10 @@ enum AppScreen {
   financialStatements(62),
 
   /// حاويةُ «الحسابات» بتبويباتها — يجب أن تطابق `ScreenId.accountingHub`.
-  accountingHub(63);
+  accountingHub(63),
+
+  /// حسمُ القوالب — يجب أن تطابق `ScreenId.templateResolution`.
+  templateResolution(64);
 
   /// The integer index for this screen, used in permission maps and storage.
   final int value;

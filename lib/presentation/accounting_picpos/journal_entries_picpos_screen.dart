@@ -384,10 +384,60 @@ class _JournalEntriesPicPosScreenState
     setState(() => _filterBranchId = picked.$1);
   }
 
+  /// ملخّصُ القيد في حوارَي الاعتماد والعكس — أسطرُ التصميم الأربعة.
+  ///
+  /// ⚠️ **القيمةُ مجموعُ المدين لا مجموعُ الطرفَين.** القيدُ متوازنٌ بحكم
+  /// تعريفه، فجمعُ المدين والدائن معاً يضاعف الرقمَ المعروضَ فيقرأ
+  /// المشغّلُ ضِعفَ ما سيعتمد.
+  Future<List<PicPosDialogSummary>> _entrySummary(
+    IAccountingRepository repo,
+    JournalEntryData entry,
+  ) async {
+    double total = 0;
+    try {
+      final lines = await repo.getJournalEntryLinesWithAccounts(entry.id);
+      for (final l in lines) {
+        total += (l['debit'] as num?)?.toDouble() ?? 0;
+      }
+    } catch (_) {
+      // تعذُّرُ جلبِ الأسطر لا يمنع الحوار — تُعرض «—» مكانَ القيمة.
+      total = -1;
+    }
+
+    return [
+      PicPosDialogSummary(
+        rows: [
+          (label: 'رقم القيد', value: entry.entryNumber, color: null),
+          (
+            label: 'البيان',
+            value: cleanDescription(entry.description),
+            color: null,
+          ),
+          (
+            label: 'التاريخ',
+            value: _dateFormat.format(entry.entryDate),
+            color: null,
+          ),
+          (
+            label: 'القيمة',
+            value: total < 0
+                ? '—'
+                : '${total.toStringAsFixed(AppConstants.decimalPlaces)} '
+                    '${AppConstants.currencySymbol}',
+            color: null,
+          ),
+        ],
+      ),
+    ];
+  }
+
   Future<void> _approveEntry(
     IAccountingRepository repo,
     JournalEntryData entry,
   ) async {
+    final details = await _entrySummary(repo, entry);
+    if (!mounted) return;
+
     final confirmed = await showPicPosConfirm(
       context,
       icon: PhosphorIconsBold.checkCircle,
@@ -397,6 +447,7 @@ class _JournalEntriesPicPosScreenState
       message: 'بعد الاعتماد يصبح القيدُ مؤثّراً على أرصدة الحسابات ولا يمكن '
           'تعديله — يمكن عكسُه بقيدٍ مضادٍّ فقط.',
       confirmLabel: 'تأكيد الاعتماد',
+      details: details,
     );
     if (!confirmed || !mounted) return;
 
@@ -553,6 +604,12 @@ class _JournalEntriesPicPosScreenState
   }
 
   Future<void> _confirmReverseEntry(JournalEntryData entry) async {
+    final details = await _entrySummary(
+      ref.read(accountingRepositoryProvider),
+      entry,
+    );
+    if (!mounted) return;
+
     final confirmed = await showPicPosConfirm(
       context,
       icon: PhosphorIconsBold.arrowUUpLeft,
@@ -568,6 +625,7 @@ class _JournalEntriesPicPosScreenState
               '(الفاتورة/السند)، وإلّا افترق الأستاذُ عن حالة المستند.',
       ].join('\n\n'),
       confirmLabel: 'تأكيد العكس',
+      details: details,
     );
     if (!confirmed || !mounted) return;
 

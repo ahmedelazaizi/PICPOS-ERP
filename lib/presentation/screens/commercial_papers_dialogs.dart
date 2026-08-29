@@ -27,38 +27,15 @@ extension CommercialPapersDialogs on _CommercialPapersScreenState {
 
     if (result != null && result['confirmed'] == true && mounted) {
       try {
-        // Cluster 030 / Bug D: mint the globalId ONCE here and pass to
-        // both the server-side create AND the local DAO. Without this,
-        // mirror + server ended up with different globalIds and every
-        // subsequent paper status update from the mirror failed with
-        // "Commercial paper not found" on the server.
-        final paperGlobalId = UuidV7.generate();
-        // ── Client mode: sync to server ──
-        await ClientWriteInterceptor.createCommercialPaper(
-          type: result['type'] as String,
-          paperNumber: result['number'] as String,
-          direction: _currentDirection == 'portfolio' ? 'received' : _currentDirection,
-          amount: result['amount'] as double,
-          issueDate: result['issueDate'] as DateTime,
-          dueDate: result['dueDate'] as DateTime,
-          partyId: result['partyId'] as int,
-          bankName: result['bankName'] as String?,
-          accountNumber: result['accountNumber'] as String?,
-          notes: result['notes'] as String?,
-          globalId: paperGlobalId,
-        );
-        await repo.createPaper(
-          type: result['type'] as String,
-          paperNumber: result['number'] as String,
-          direction: _currentDirection == 'portfolio' ? 'received' : _currentDirection,
-          amount: result['amount'] as double,
-          issueDate: result['issueDate'] as DateTime,
-          dueDate: result['dueDate'] as DateTime,
-          partyId: result['partyId'] as int,
-          bankName: result['bankName'] as String?,
-          accountNumber: result['accountNumber'] as String?,
-          notes: result['notes'] as String?,
-          globalId: paperGlobalId,
+        // ⚠️ الكتلةُ كانت هنا حرفيّاً — سَكُّ `globalId` مرّةً ثمّ كتابتان
+        //    به. واستُخرجت إلى `createCommercialPaper` لمّا صارت شاشةُ
+        //    PicPos تُنشئ ورقةً أيضاً: نسختان من مسارٍ ماليٍّ تنحرفان بأوّل
+        //    تعديل، وعطبُ Cluster 030 / Bug D كان بالضبط هويّتَين لورقةٍ
+        //    واحدة. راجع تعليقَ الدالّة.
+        await createCommercialPaper(
+          repo: repo,
+          direction: _currentDirection,
+          form: result,
         );
         _invalidateStreams();
         setState(() {});

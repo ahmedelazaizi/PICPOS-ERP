@@ -153,6 +153,11 @@ class PrintingServiceImpl implements IPrintingService {
                   'price': item.price,
                   'total': item.total,
                   'note': item.note ?? '',
+                  'code': item.code,
+                  'unit': item.unit,
+                  'barcode': item.barcode,
+                  'discount': item.discount,
+                  'tax': item.tax,
                 },
               )
               .toList();
@@ -179,6 +184,7 @@ class PrintingServiceImpl implements IPrintingService {
             paymentMethod: printData.paymentMethod,
             directPrint: true,
             category: 'receipt',
+            documentType: 'sales_receipt',
             cashierName: printData.cashierName,
             notes: printData.notes,
             adhocCustomerName: printData.adhocCustomerName,

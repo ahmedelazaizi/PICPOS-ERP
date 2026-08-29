@@ -73,11 +73,16 @@ mixin _StatementExportMixin on ConsumerState<PartyStatementPicposScreen> {
       await InvoiceGenerator.printPartyStatement(
         partyName: _partyLabel,
         partyType: isSupplier ? 'supplier' : 'customer',
+        partyCode: party?.code,
         currentBalance: party?.balance ?? 0,
         transactions: items,
         fromDate: range.start,
         toDate: range.end,
         company: company,
+        // ⚠️ **بها وحدَها يمرّ الكشفُ على منظومة القوالب** — وبدونها يبقى
+        //    المولّدُ الثابتُ كما كان. وشاشةُ UralCash **لا تُمسّ** (أمرُ
+        //    المالك: نسخةٌ مستقلّةٌ لا تفريع)، فتبقى على المولّد القديم.
+        db: ref.read(databaseProvider),
       );
     } catch (e) {
       unawaited(DiagnosticLogger.log(

@@ -83,12 +83,24 @@ abstract class ManufacturingRepository {
   Future<void> cancelManufacturingOrder(int orderId);
 
   /// Add a cost entry to a manufacturing order.
+  ///
+  /// ⚠️ **و[expenseId] ليس زينة**: بدونه يصير سطرُ التكلفة يتيماً — يُعرَف
+  /// مبلغُه ولا يُعرَف أيُّ مصروفٍ مُوّل منه، فلا يُقاس «كم بقي غيرَ محمَّل»
+  /// ولا يُمنَع تحميلُ المصروف نفسِه مرّتَين.
   Future<void> addMfgOrderCost({
     required int orderId,
     required String costType,
     required String description,
     required double amount,
+    int? expenseCategoryId,
+    int? expenseId,
   });
+
+  /// Watch **every** order's cost rows at once.
+  ///
+  /// ⚠️ لجدولٍ يعرض أوامرَ كثيرةً معاً — القراءةُ لأمرٍ واحدٍ تُنتج استعلاماً
+  /// لكلّ صفّ (N+1).
+  Stream<List<MfgOrderCostData>> watchAllMfgOrderCosts();
 
   /// Update the additionalCosts total on a manufacturing order.
   Future<void> updateManufacturingOrderCosts(int orderId, double additionalCosts);
@@ -172,6 +184,20 @@ abstract class ManufacturingRepository {
     double defaultRate = 0,
   });
   Future<bool> updateExpenseCategory(int id, OpExpenseCategoriesCompanion data);
+
+  /// ينقل المصروفَ في دورته: `draft` ← `approved` ← `paid`.
+  ///
+  /// ⚠️ **أثرُ مراجعةٍ لا حدثٌ محاسبيّ** — القيدُ يُرحَّل عند التسجيل لا عند
+  /// الاعتماد، وترحيلُ ثانٍ هنا يُقيّد المصروفَ مرّتَين. راجع تعليقَ الـDAO.
+  Future<bool> updateExpenseStatus(int expenseId, String status);
+
+  /// كلُّ المصروفات في نافذةٍ زمنيّةٍ بفئتها وفرعها وحالتها.
+  ///
+  /// مفاتيحُ الخريطة كما يعطيها `getExpensesForReport` — راجعه.
+  Future<List<Map<String, dynamic>>> getExpensesForReport({
+    required DateTime from,
+    required DateTime to,
+  });
   Future<bool> deleteExpenseCategory(int id);
   Future<int> recordExpense({
     required int categoryId,

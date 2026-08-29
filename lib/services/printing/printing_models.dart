@@ -12,6 +12,16 @@ class InvoiceItem {
   /// (the default false) render normally.
   final bool isCategoryHeader;
 
+  /// كودُ الصنف والوحدةُ وخصمُ السطر وضريبتُه — أعمدةُ الجدول تسألُ عنها.
+  ///
+  /// نظيرُ ما في `base_generator.dart` وبالمُهيَّآت نفسِها كي لا يفترق
+  /// النموذجان: هذا يخدم مسارَ الطباعة والآخرُ مسارَ المولّدات، والقالبُ
+  /// الواحدُ قد يُطبع من كليهما.
+  final String? code;
+  final String? unit;
+  final double discount;
+  final double tax;
+
   InvoiceItem({
     required this.name,
     required this.quantity,
@@ -20,6 +30,10 @@ class InvoiceItem {
     this.barcode,
     this.note,
     this.isCategoryHeader = false,
+    this.code,
+    this.unit,
+    this.discount = 0,
+    this.tax = 0,
   });
 }
 

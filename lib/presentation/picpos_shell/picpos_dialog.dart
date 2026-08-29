@@ -552,6 +552,14 @@ Future<bool> showPicPosConfirm(
   /// إجراءٌ مدمِّر — يصبغ الزرَّ الرئيسيَّ بلون الخطأ.
   bool danger = false,
   double width = 520,
+
+  /// عناصرُ تُلحَق بالرسالة — أشهرُها [PicPosDialogSummary].
+  ///
+  /// ⚠️ حوارُ تأكيدٍ بلا **رقمٍ** يجعل القرارَ ظنّاً: «اعتماد القيد» يجعله
+  /// مؤثّراً على الأرصدة ولا يمكن تعديله، فقيمتُه يجب أن تُقرأ في الحوار
+  /// نفسِه لا أن تُفترَض من الشاشة خلفَه. وهذا ما يفعله التصميمُ في
+  /// حوارَيه (‏`post` و`reverse` يعرضان أربعةَ أسطرِ ملخّص).
+  List<Widget> details = const [],
 }) async {
   final color = danger ? AppColors.error : accent;
   final result = await showDialog<bool>(
@@ -581,6 +589,7 @@ Future<bool> showPicPosConfirm(
             height: 1.6,
           ),
         ),
+        ...details,
       ],
     ),
   );

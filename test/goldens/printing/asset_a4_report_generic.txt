@@ -1,0 +1,88 @@
+# قالب «نموذج تقرير عام — A4»
+# نوع=report فئة=report ورق=210.0mm
+# راسم=TemplatedInvoiceService
+PAGES 1
+PAGE 1 595.27x349.19
+  TXT 532.46,315.54 NotoNaskhArabic-Bold 19.00 «ﻣﺆﺳﺴﺔ»
+  TXT 495.05,315.54 NotoNaskhArabic-Bold 19.00 «ﺍﻟﻨﻮﺭ»
+  TXT 435.94,315.54 NotoNaskhArabic-Bold 19.00 «ﺍﻟﺘﺠﺎﺭﻳﺔ»
+  TXT 281.85,261.73 NotoNaskhArabic-Regular 12.00 «LOGO»
+  TXT 187.10,328.77 NotoNaskhArabic-Regular 8.50 «ﺷﺎﺭﻉ»
+  TXT 155.00,328.77 NotoNaskhArabic-Regular 8.50 «ﺍﻟﺠﻤﻬﻮﺭﻳﺔ»
+  TXT 143.45,328.77 NotoNaskhArabic-Regular 8.50 «—»
+  TXT 115.40,328.77 NotoNaskhArabic-Regular 8.50 «ﺍﻟﻤﻨﺼﻮﺭﺓ»
+  TXT 567.25,181.74 NotoNaskhArabic-Regular 8.50 «ﻫﺎﺗﻒ:»
+  TXT 546.31,181.74 NotoNaskhArabic-Regular 8.50 «0100»
+  TXT 530.46,181.74 NotoNaskhArabic-Regular 8.50 «123»
+  TXT 509.08,181.74 NotoNaskhArabic-Regular 8.50 «4567»
+  TXT 298.83,181.74 NotoNaskhArabic-Regular 8.50 «ﺍﻟﺴﺠﻞ»
+  TXT 269.90,181.74 NotoNaskhArabic-Regular 8.50 «ﺍﻟﻀﺮﻳﺒﻲ:»
+  TXT 203.09,181.74 NotoNaskhArabic-Regular 8.50 «789-456-123-310»
+  TXT 55.14,106.67 NotoNaskhArabic-Bold 9.50 «ﺍﻹﺟﻤﺎﻟﻲ»
+  TXT 162.21,106.67 NotoNaskhArabic-Bold 9.50 «ﺍﻟﺴﻌﺮ»
+  TXT 247.65,106.67 NotoNaskhArabic-Bold 9.50 «ﺍﻟﻌﺪﺩ»
+  TXT 397.76,106.67 NotoNaskhArabic-Bold 9.50 «ﺍﻟﺼﻨﻒ»
+  TXT 551.81,106.67 NotoNaskhArabic-Bold 9.50 «ﻡ»
+  TXT 55.35,86.49 NotoNaskhArabic-Regular 9.50 «251.00»
+  TXT 158.46,86.49 NotoNaskhArabic-Regular 9.50 «125.50»
+  TXT 247.71,86.49 NotoNaskhArabic-Regular 9.50 «2.00»
+  TXT 503.94,84.49 NotoNaskhArabic-Regular 9.50 «ﺟﺒﻨﺔ»
+  TXT 483.03,84.49 NotoNaskhArabic-Regular 9.50 «ﺭﻭﻣﻲ»
+  TXT 461.14,84.49 NotoNaskhArabic-Regular 9.50 «ﺻﺒﺮﻱ»
+  TXT 438.91,84.49 NotoNaskhArabic-Regular 9.50 «ﻗﺪﻳﻤﺔ»
+  TXT 418.79,84.49 NotoNaskhArabic-Regular 9.50 «ﺩﺭﺟﺔ»
+  TXT 401.55,84.49 NotoNaskhArabic-Regular 9.50 «ﺃﻭﻟﻰ»
+  TXT 552.14,86.49 NotoNaskhArabic-Regular 9.50 «1»
+  TXT 55.35,62.31 NotoNaskhArabic-Regular 9.50 «265.00»
+  TXT 160.98,62.31 NotoNaskhArabic-Regular 9.50 «90.00»
+  TXT 247.68,62.31 NotoNaskhArabic-Regular 9.50 «3.00»
+  TXT 490.91,60.31 NotoNaskhArabic-Regular 9.50 «Virgin»
+  TXT 464.74,60.31 NotoNaskhArabic-Regular 9.50 «Extra»
+  TXT 451.67,60.31 NotoNaskhArabic-Regular 9.50 «1L»
+  TXT 436.16,60.31 NotoNaskhArabic-Regular 9.50 «Oil»
+  TXT 410.80,60.31 NotoNaskhArabic-Regular 9.50 «Olive»
+  TXT 506.21,44.27 NotoNaskhArabic-Regular 7.50 «ﺑﺪﻭﻥ»
+  TXT 477.46,44.27 NotoNaskhArabic-Regular 7.50 «ﺛﻠﺞ|ﺯﻳﺎﺩﺓ»
+  TXT 458.79,44.27 NotoNaskhArabic-Regular 7.50 «ﺻﻮﺹ»
+  TXT 442.74,44.27 NotoNaskhArabic-Regular 7.50 «5.00»
+  TXT 551.91,62.31 NotoNaskhArabic-Regular 9.50 «2»
+  TXT 57.97,23.36 NotoNaskhArabic-Regular 9.50 «95.76»
+  TXT 160.93,23.36 NotoNaskhArabic-Regular 9.50 «84.00»
+  TXT 247.75,23.36 NotoNaskhArabic-Regular 9.50 «1.00»
+  TXT 509.58,21.36 NotoNaskhArabic-Regular 9.50 «ﺃﺭﺯ»
+  TXT 486.82,21.36 NotoNaskhArabic-Regular 9.50 «ﻣﺼﺮﻱ»
+  TXT 480.89,21.36 NotoNaskhArabic-Regular 9.50 «٥»
+  TXT 462.79,21.36 NotoNaskhArabic-Regular 9.50 «ﻛﺠﻢ»
+  TXT 551.84,23.36 NotoNaskhArabic-Regular 9.50 «3»
+  LIN 202.20,178.57 -> 11.34,178.57
+  LIN 583.93,154.57 -> 11.34,154.57
+  LIN 202.20,130.57 -> 11.34,130.57
+  LIN 125.86,11.34 -> 125.86,118.82
+  LIN 217.47,11.34 -> 217.47,118.82
+  LIN 293.82,11.34 -> 293.82,118.82
+  LIN 522.85,11.34 -> 522.85,118.82
+  LIN 11.34,98.65 -> 583.93,98.65
+  LIN 11.34,74.47 -> 583.93,74.47
+  LIN 11.34,35.52 -> 583.93,35.52
+  REC 202.20,190.82 190.86x147.03
+  REC 11.34,98.65 114.52x20.18
+  REC 125.86,98.65 91.61x20.18
+  REC 217.47,98.65 76.35x20.18
+  REC 293.82,98.65 229.04x20.18
+  REC 522.85,98.65 61.08x20.18
+  REC 11.34,78.47 114.52x20.18
+  REC 125.86,78.47 91.61x20.18
+  REC 217.47,78.47 76.35x20.18
+  REC 293.82,74.47 229.04x24.18
+  REC 522.85,78.47 61.08x20.18
+  REC 11.34,54.29 114.52x20.18
+  REC 125.86,54.29 91.61x20.18
+  REC 217.47,54.29 76.35x20.18
+  REC 293.82,35.52 229.04x38.95
+  REC 522.85,54.29 61.08x20.18
+  REC 11.34,15.34 114.52x20.18
+  REC 125.86,15.34 91.61x20.18
+  REC 217.47,15.34 76.35x20.18
+  REC 293.82,11.34 229.04x24.18
+  REC 522.85,15.34 61.08x20.18
+  REC 11.34,11.34 572.59x107.49

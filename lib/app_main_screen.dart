@@ -40,6 +40,7 @@ import 'presentation/purchases_picpos/screens/purchases_picpos_screen.dart';
 import 'presentation/screens/treasury_screen.dart';
 import 'presentation/treasury_picpos/screens/treasury_picpos_screen.dart';
 import 'presentation/bookings_picpos/screens/bookings_picpos_screen.dart';
+import 'presentation/template_resolution_picpos/screens/template_resolution_picpos_screen.dart';
 import 'presentation/screens/reports_screen.dart';
 import 'presentation/reports_picpos/screens/reports_picpos_screen.dart';
 import 'presentation/screens/settings_screen.dart';
@@ -86,6 +87,7 @@ import 'presentation/screens/commercial_papers_screen.dart';
 import 'presentation/settings_picpos/screens/cheques_picpos_screen.dart';
 import 'presentation/screens/fixed_assets_screen.dart';
 import 'presentation/fixed_assets_picpos/screens/fixed_assets_picpos_screen.dart';
+import 'presentation/opex_picpos/screens/opex_picpos_screen.dart';
 import 'presentation/screens/general_ledger_screen.dart';
 import 'presentation/screens/sales_orders_screen.dart';
 import 'presentation/screens/branch_performance_screen.dart';
@@ -844,7 +846,13 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
       ),
       ScreenConfig(
         appScreen: AppScreen.operationalExpenses,
-        builder: (_) => const OperationalExpensesScreen(),
+        // فوركُ PicPos على «PicPos Operating Expenses.dc.html» بتبويباته
+        // الخمسة — المصروفات والفئات وقواعد التحميل وتحميل أوامر التصنيع
+        // والاعتماد والسداد ومقابل الموازنة. وشاشةُ UralCash (‏تبويبان)
+        // تبقى كما هي بلا مساس.
+        builder: (_) => Brand.isPicPos
+            ? const OpexPicposScreen()
+            : const OperationalExpensesScreen(),
         label: 'المصروفات التشغيلية',
         icon: PhosphorIconsBold.coins,
       ),
@@ -1028,6 +1036,14 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => const AccountingHubPicPosScreen(),
         label: 'الحسابات',
         icon: PhosphorIconsBold.bookOpen,
+      ),
+      // حسمُ القوالب — PicPos وحدَها اليوم: مبنيّةٌ على `picpos_shell` ولا
+      // نظيرَ لها في UralCash. ونطاقُها **كلُّ** الملفّات: كلُّها تطبع.
+      ScreenConfig(
+        appScreen: AppScreen.templateResolution,
+        builder: (_) => const TemplateResolutionPicposScreen(),
+        label: 'حسم القوالب',
+        icon: PhosphorIconsBold.gitFork,
       ),
       ScreenConfig(
         appScreen: AppScreen.syncConflicts,

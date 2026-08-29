@@ -36,6 +36,10 @@ class ScreenRegistry {
     // إدراجُها في `screenPermissionMap` — الحلقةُ ترشِّح بنطاق الملفّ
     // **قبل** فحص الصلاحية، وهو ما أسقط إغلاقَ الورديّة من `unified`.
     ScreenId.bookings,
+    // شاشةُ حسم القوالب: **كلُّ** نطاقٍ يطبع، وهي الموضعُ الوحيدُ الذي يقول
+    // أيُّ قالبٍ يخرج مع أيِّ مستند. وحصرُها في نطاقٍ يترك البقيّةَ بلا
+    // جوابٍ لسؤالٍ يقع فيها جميعاً.
+    ScreenId.templateResolution,
   ];
 
   static const List<ScreenId> cafe = restaurant;
@@ -69,6 +73,10 @@ class ScreenRegistry {
     ScreenId.fiscalYear,
     ScreenId.salesReturns,
     ScreenId.purchaseReturns,
+    // شاشةُ حسم القوالب: **كلُّ** نطاقٍ يطبع، وهي الموضعُ الوحيدُ الذي يقول
+    // أيُّ قالبٍ يخرج مع أيِّ مستند. وحصرُها في نطاقٍ يترك البقيّةَ بلا
+    // جوابٍ لسؤالٍ يقع فيها جميعاً.
+    ScreenId.templateResolution,
   ];
 
   /// Supermarket + HR module (no tables/kitchen)
@@ -102,6 +110,10 @@ class ScreenRegistry {
     ScreenId.fiscalYear,
     ScreenId.salesReturns,
     ScreenId.purchaseReturns,
+    // شاشةُ حسم القوالب: **كلُّ** نطاقٍ يطبع، وهي الموضعُ الوحيدُ الذي يقول
+    // أيُّ قالبٍ يخرج مع أيِّ مستند. وحصرُها في نطاقٍ يترك البقيّةَ بلا
+    // جوابٍ لسؤالٍ يقع فيها جميعاً.
+    ScreenId.templateResolution,
   ];
 
   /// Supermarket + Restaurant features (tables, kitchen, delivery) + HR
@@ -137,6 +149,10 @@ class ScreenRegistry {
     ScreenId.fiscalYear,
     ScreenId.salesReturns,
     ScreenId.purchaseReturns,
+    // شاشةُ حسم القوالب: **كلُّ** نطاقٍ يطبع، وهي الموضعُ الوحيدُ الذي يقول
+    // أيُّ قالبٍ يخرج مع أيِّ مستند. وحصرُها في نطاقٍ يترك البقيّةَ بلا
+    // جوابٍ لسؤالٍ يقع فيها جميعاً.
+    ScreenId.templateResolution,
   ];
 
   static const List<ScreenId> commercial = [
@@ -170,6 +186,10 @@ class ScreenRegistry {
     ScreenId.taxReports,
     ScreenId.salesReturns,
     ScreenId.purchaseReturns,
+    // شاشةُ حسم القوالب: **كلُّ** نطاقٍ يطبع، وهي الموضعُ الوحيدُ الذي يقول
+    // أيُّ قالبٍ يخرج مع أيِّ مستند. وحصرُها في نطاقٍ يترك البقيّةَ بلا
+    // جوابٍ لسؤالٍ يقع فيها جميعاً.
+    ScreenId.templateResolution,
   ];
 
   static const List<ScreenId> unified = [
@@ -243,6 +263,10 @@ class ScreenRegistry {
     ScreenId.financialStatements,
     // حاويةُ التبويبات — نطاقُها نطاقُ ما تحويه، وكلُّه هنا وحدَه.
     ScreenId.accountingHub,
+    // شاشةُ حسم القوالب: **كلُّ** نطاقٍ يطبع، وهي الموضعُ الوحيدُ الذي يقول
+    // أيُّ قالبٍ يخرج مع أيِّ مستند. وحصرُها في نطاقٍ يترك البقيّةَ بلا
+    // جوابٍ لسؤالٍ يقع فيها جميعاً.
+    ScreenId.templateResolution,
   ];
 
   /// أصغر نطاق نشحنه: نقطة بيع + مخازن + صناديق + تقارير.
@@ -287,6 +311,10 @@ class ScreenRegistry {
     ScreenId.parties,
     ScreenId.settings,
     ScreenId.users,
+    // شاشةُ حسم القوالب: **كلُّ** نطاقٍ يطبع، وهي الموضعُ الوحيدُ الذي يقول
+    // أيُّ قالبٍ يخرج مع أيِّ مستند. وحصرُها في نطاقٍ يترك البقيّةَ بلا
+    // جوابٍ لسؤالٍ يقع فيها جميعاً.
+    ScreenId.templateResolution,
   ];
 
   /// PicPos-only widening of `lite`: adds the PLU scale-export screen.

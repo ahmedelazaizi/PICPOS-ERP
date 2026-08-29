@@ -717,6 +717,11 @@ const kAllNavItemDefs = [
   NavItemDef(icon: PhosphorIconsBold.users, label: 'الموظفين', permission: 'hr_view', index: 16, group: 'system'),
   NavItemDef(icon: PhosphorIconsBold.scales, label: 'ميزان التسعير', permission: 'settings_scale', index: 21, group: 'system'),
   NavItemDef(icon: PhosphorIconsBold.gear, label: 'الإعدادات', permission: 'settings_view', index: 12, group: 'system'),
+  // ⚠️ المصدرُ **السادسُ** للتوصيل ولا يُشتقّ من الخمسة قبله: شاشةٌ صحيحةٌ في
+  //    `ScreenId` و`AppScreen` والصلاحياتِ والنطاقِ و`ScreenConfig` تبقى
+  //    غائبةً عن القائمة الجانبيّة بلا هذا السطر — وقع مع الحجوزات
+  //    2026-08-22 وكلُّ الحرّاس خضراء.
+  NavItemDef(icon: PhosphorIconsBold.gitFork, label: 'حسم القوالب', permission: PermissionCodes.settingsPrinter, index: 64, group: 'system'),
   NavItemDef(icon: PhosphorIconsBold.question, label: 'مركز المساعدة', permission: 'pos_access', index: 40, group: 'system'),
 ];
 
@@ -904,6 +909,9 @@ const screenPermissionMap = <ScreenId, String>{
   // فلا يوسّع دخولُها دائرةَ مَن يرى القوائمَ المالية.
   ScreenId.accountingHub: 'settings_view',
   ScreenId.shiftClose: PermissionCodes.posShiftClose,
+  // حسمُ القوالب: قراءةُ إعدادِ طباعةٍ وتشخيصُه، فصلاحيّتُه صلاحيةُ الطابعات
+  // نفسُها. و`settings_view` كان سيوسّع الدائرةَ لكلِّ من يرى الإعدادات.
+  ScreenId.templateResolution: PermissionCodes.settingsPrinter,
 };
 
 final userAllowedScreensProvider = FutureProvider<List<int>>((ref) async {

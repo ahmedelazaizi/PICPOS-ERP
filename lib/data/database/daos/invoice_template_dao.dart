@@ -473,36 +473,45 @@ extension InvoiceTemplateDao on AppDatabase {
     return jsonEncode(data);
   }
 
-  /// Get available template files from assets
-  List<Map<String, String>> getAvailableTemplateFiles() {
-    return [
-      {
-        'name': 'فاتورة حرارية كلاسيكية',
-        'file': 'thermal_classic.json',
-        'type': 'thermal',
-      },
-      {
-        'name': 'فاتورة حرارية عصرية',
-        'file': 'thermal_modern.json',
-        'type': 'thermal',
-      },
-      {
-        'name': 'فاتورة حرارية شاملة',
-        'file': 'thermal_comprehensive.json',
-        'type': 'thermal',
-      },
-      {
-        'name': 'طلب مطبخ احترافي',
-        'file': 'kitchen_professional.json',
-        'type': 'kitchen',
-      },
-      {'name': 'فاتورة A4 تجارية', 'file': 'a4_commercial.json', 'type': 'a4'},
-      {'name': 'فاتورة A4 احترافية', 'file': 'a4_professional.json', 'type': 'a4'},
-      {'name': 'سند قبض / صرف', 'file': 'a4_receipt_voucher.json', 'type': 'a4'},
-      {'name': 'فاتورة مشتريات A4', 'file': 'a4_purchase.json', 'type': 'a4'},
-    ];
-  }
+  /// ملفّاتُ القوالب الجاهزة — تفويضٌ إلى [kReadyTemplateFiles].
+  List<Map<String, String>> getAvailableTemplateFiles() =>
+      kReadyTemplateFiles;
 }
+
+/// كلُّ ملفّات القوالب الجاهزة في `assets/invoice_templates/` — **مرجعٌ واحد**.
+///
+/// ── لماذا قائمةٌ واحدةٌ لا اثنتان ────────────────────────────────────────
+/// كان في هذا الملفّ **دالّتان بنفس الاسم**: واحدةٌ على الـDAO بثمانيةِ
+/// ملفّاتٍ وأخرى على مستوى الملفّ بأربعة — والثانيةُ محجوبةٌ لا تُنادى.
+/// فمن التسعةَ عشرَ ملفاً في المستودع كان **أحدَ عشرَ لا يصلها مسارُ
+/// استيرادٍ إطلاقاً**، وفيها كلُّ الملفّات الجديدة التي بُني المحرّكُ لأجلها:
+/// الفاتورةُ الضريبيّةُ والمرتجعاتُ وكشفا الحساب والتقريرُ العامّ.
+///
+/// مكتوبةٌ في المستودع، ومقيسةٌ على المحرّك، ولا يراها المالكُ قطّ.
+///
+/// ⚠️ ويحرسها `template_files_are_complete_test`: أيُّ ملفٍّ يُضاف إلى
+/// الأصول ولا يُدرَج هنا يُسقط الاختبار — فلا يتكرّر الغيابُ صامتاً.
+const kReadyTemplateFiles = <Map<String, String>>[
+  {'name': 'فاتورة حرارية كلاسيكية', 'file': 'thermal_classic.json', 'type': 'thermal'},
+  {'name': 'فاتورة حرارية عصرية', 'file': 'thermal_modern.json', 'type': 'thermal'},
+  {'name': 'فاتورة حرارية شاملة', 'file': 'thermal_comprehensive.json', 'type': 'thermal'},
+  {'name': 'بيع سريع حراري — 80mm', 'file': 'thermal80_quick_sale.json', 'type': 'thermal'},
+  {'name': 'بيع سريع حراري — 58mm', 'file': 'thermal58_quick_sale.json', 'type': 'thermal'},
+  {'name': 'مرتجع مبيعات حراري — 80mm', 'file': 'thermal80_sales_return.json', 'type': 'thermal'},
+  {'name': 'طلب مطبخ احترافي', 'file': 'kitchen_professional.json', 'type': 'kitchen'},
+  {'name': 'فاتورة A4 تجارية', 'file': 'a4_commercial.json', 'type': 'a4'},
+  {'name': 'فاتورة A4 احترافية', 'file': 'a4_professional.json', 'type': 'a4'},
+  {'name': 'فاتورة مبيعات ضريبية — A4', 'file': 'a4_sales_tax_invoice.json', 'type': 'a4'},
+  {'name': 'فاتورة مبيعات ضريبية — A5', 'file': 'a5_sales_tax_invoice.json', 'type': 'a4'},
+  {'name': 'مرتجع مبيعات — A4', 'file': 'a4_sales_return.json', 'type': 'a4'},
+  {'name': 'فاتورة مشتريات A4', 'file': 'a4_purchase.json', 'type': 'a4'},
+  {'name': 'فاتورة مشتريات — A4', 'file': 'a4_purchase_invoice.json', 'type': 'a4'},
+  {'name': 'مرتجع مشتريات — A4', 'file': 'a4_purchase_return.json', 'type': 'a4'},
+  {'name': 'سند قبض / صرف', 'file': 'a4_receipt_voucher.json', 'type': 'a4'},
+  {'name': 'كشف حساب عميل — A4', 'file': 'a4_customer_statement.json', 'type': 'statement'},
+  {'name': 'كشف حساب مورد — A4', 'file': 'a4_supplier_statement.json', 'type': 'statement'},
+  {'name': 'نموذج تقرير عام — A4', 'file': 'a4_report_generic.json', 'type': 'report'},
+];
 
 /// Combined template data for printing
 class InvoiceTemplateWithData {
@@ -517,24 +526,9 @@ class InvoiceTemplateWithData {
   });
 }
 
-/// قائمة ملفات النماذج الجاهزة المتاحة للاستيراد
-List<Map<String, String>> getAvailableTemplateFiles() {
-  return [
-    {
-      'name': 'فاتورة حرارية كلاسيكية',
-      'type': 'thermal',
-      'file': 'thermal_classic.json',
-    },
-    {
-      'name': 'فاتورة حرارية عصرية',
-      'type': 'thermal',
-      'file': 'thermal_modern.json',
-    },
-    {
-      'name': 'طلب مطبخ احترافي',
-      'type': 'kitchen',
-      'file': 'kitchen_professional.json',
-    },
-    {'name': 'فاتورة A4 تجارية', 'type': 'a4', 'file': 'a4_commercial.json'},
-  ];
-}
+/// قائمةُ ملفّات النماذج الجاهزة.
+///
+/// ⚠️ كانت نسخةً ثانيةً بأربعة ملفّاتٍ **محجوبةً** بدالّةِ الـDAO التي
+/// تحمل نفسَ الاسم — تُكتب ولا تُنادى. صارت تفويضاً كي لا يعود
+/// الانقسام.
+List<Map<String, String>> getAvailableTemplateFiles() => kReadyTemplateFiles;

@@ -782,12 +782,25 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
           final netUnitPrice = (item.total / item.quantity) * factor;
           final itemRefundTotal = returnQty * netUnitPrice;
 
+          // ⚠️ **الخصمُ والضريبةُ يُقسَّطان بنسبة المرتجَع** — لا يُنقلان كما
+          //    هما. القيمتان المخزَّنتان تخصّان السطرَ **كاملاً**، ومرتجعُ
+          //    صنفَين من عشرةٍ ينقلهما حرفيّاً فيطبع خصماً أكبرَ من قيمة
+          //    المرتجَع نفسِه — رقمٌ خاطئٌ على مستندٍ ماليّ. والتقسيطُ هو
+          //    عينُ ما يفعله `netUnitPrice` أعلاه بالسعر.
+          final returnRatio =
+              item.quantity > 0 ? returnQty / item.quantity : 0.0;
+
           printableItems.add(
             InvoiceItem(
               name: product?.name ?? 'منتج #${item.productId}',
               quantity: returnQty,
               price: netUnitPrice,
               total: itemRefundTotal,
+              code: product?.code,
+              barcode: product?.barcode,
+              unit: item.unitName,
+              discount: item.discount * returnRatio,
+              tax: item.taxAmount * returnRatio,
             ),
           );
         }
@@ -803,12 +816,19 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
         final items = await _db.getSalesInvoiceItems(inv.id);
         for (final item in items) {
           final product = await _db.getProductById(item.productId);
+          // هنا الكمّيّةُ كاملةٌ (مرتجعٌ من السجلّ لا جلسةٌ جزئيّة)، فالخصمُ
+          // والضريبةُ يُنقلان كما هما بلا تقسيط.
           printableItems.add(
             InvoiceItem(
               name: product?.name ?? 'منتج #${item.productId}',
               quantity: item.quantity,
               price: item.unitPrice,
               total: item.total,
+              code: product?.code,
+              barcode: product?.barcode,
+              unit: item.unitName,
+              discount: item.discount,
+              tax: item.taxAmount,
             ),
           );
         }

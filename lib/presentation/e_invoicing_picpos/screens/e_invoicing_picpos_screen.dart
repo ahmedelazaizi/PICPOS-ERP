@@ -281,6 +281,13 @@ class _EInvoicingPicposScreenState
   int? _selectedId;
   bool _showResponse = false;
 
+  /// الفحصُ الجماعيُّ جارٍ — يُعطّل الزرَّ ويُظهر دوّارة.
+  ///
+  /// ⚠️ حالةُ بناءٍ لا حارسُ إعادةِ دخولٍ وحدَه: الفحصُ نداءاتُ شبكةٍ
+  /// متتاليةٌ قد تطول، وزرٌّ لا يقول إنّه يعمل يُضغَط مرّتَين فتنطلق
+  /// جولتان متوازيتان على نفس المستندات.
+  bool _refreshingAll = false;
+
   @override
   Widget build(BuildContext context) {
     final queue = ref.watch(_queueProvider);
@@ -301,12 +308,44 @@ class _EInvoicingPicposScreenState
 
     final pending = rows.where((r) => r.status == 'pending').length;
 
+    // ⚠️ «تحديث الحالات» يخصّ **المُرسَلَ المنتظِرَ حكماً** وحدَه.
+    //
+    //    `pending` لم يُرسَل فلا معرّفَ له يُفحَص؛ و`valid` و`rejected`
+    //    و`cancelled` أحكامٌ نهائيّةٌ لا تنقلب بفحص؛ و`invalid` لا يتغيّر
+    //    إلّا بإعادة إرسالٍ لا بسؤال. فالباقي `submitted` — وهو بالضبط ما
+    //    ينتظر المشغّلُ معرفتَه.
+    //
+    //    ولا معرّفَ ⇒ لا فحص: صفٌّ بلا `documentUuid` يُعدّ خارجَ العدّ
+    //    كيلا يَعِد الزرُّ بعملٍ يرتدّ صامتاً.
+    final awaiting = rows
+        .where((r) => r.status == 'submitted' && r.documentUuid != null)
+        .toList();
+
     return PicPosScreenScaffold(
       title: 'الفوترة الإلكترونية',
       subtitle:
           'إرسال الفواتير لمنظومة الضرائب ومتابعة حالتها — كل تغيير حالة يُسجَّل ولا يُحذف',
       icon: PhosphorIconsBold.broadcast,
       headerActions: [
+        // «تحديث الحالات» — الفعلُ الثاني في رأس التصميم، وكان غائباً.
+        //
+        // ⚠️ **وهو غيرُ محروسٍ عمداً**: نظيرُه لكلِّ صفٍّ («فحص الحالة»)
+        //    غيرُ محروس، والمساران واحد. فحراسةُ الجماعيِّ وحدَه كانت
+        //    تُعطي أماناً ظاهريّاً يُلتَفّ عليه بصفٍّ صفّاً.
+        OutlinedButton.icon(
+          onPressed: awaiting.isEmpty || _refreshingAll
+              ? null
+              : () => _refreshAllStatuses(awaiting),
+          icon: _refreshingAll
+              ? const SizedBox(
+                  width: 15,
+                  height: 15,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(PhosphorIconsBold.arrowsClockwise, size: 15),
+          label: Text('تحديث الحالات (${_ar(awaiting.length)})'),
+        ),
+        const SizedBox(width: 8),
         // 🔴 **حارسُ `einvoiceSubmit` واجب.** الإرسالُ فعلٌ خارجيٌّ قانونيّ:
         //    يبعث المستندَ لمنظومة الضرائب ويُنشئ له معرّفاً لا يُلغى إلّا
         //    بمسارٍ آخر. والشاشةُ الأصلُ تحرسه (`buildEinvoiceSubmitButton`)،
@@ -1463,6 +1502,55 @@ class _EInvoicingPicposScreenState
       if (!mounted) return;
       _toast('تعذّر الإرسال: $e');
     }
+  }
+
+  /// فحصٌ جماعيٌّ لكلّ مستندٍ مُرسَلٍ ينتظر حكماً.
+  ///
+  /// ⚠️ **يمرّ على الكلّ ولا يتوقّف عند أوّل إخفاق.** المنظومةُ تردّ لمستندٍ
+  /// وتعجز عن آخر (‏انقطاعٌ · مهلة)، والتوقّفُ عند الأوّل يترك ما بعده
+  /// بحالةٍ قديمةٍ بلا أن يعلم المشغّل. فيُعدّ الناجحُ والمتغيّرُ والمخفقُ
+  /// ويُقال العددُ صراحةً.
+  ///
+  /// ⚠️ والتقريرُ يفصل **المفحوصَ** عن **المتغيّر**: «فُحص ٧ ولم يتغيّر
+  /// شيء» خبرٌ مفيد، و«حُدِّثت ٧» عنه كذبٌ يُطمئِن على غير أساس.
+  Future<void> _refreshAllStatuses(List<_Row> awaiting) async {
+    setState(() => _refreshingAll = true);
+    final repo = ref.read(eInvoiceRepositoryProvider);
+    final wrapper = ref.read(eInvoiceServiceProvider);
+
+    var changed = 0;
+    var failed = 0;
+
+    for (final r in awaiting) {
+      try {
+        final status = await wrapper.checkStatus(r.documentUuid!);
+        if (status.isValid) {
+          await repo.updateSubmissionStatus(r.id, 'valid');
+          changed++;
+        } else if (status.isRejected) {
+          await repo.updateSubmissionStatus(
+            r.id,
+            'invalid',
+            errorMessage: status.errors.isNotEmpty
+                ? status.errors.first.toString()
+                : 'مرفوضة',
+          );
+          changed++;
+        }
+        if (mounted) ref.invalidate(_auditProvider(r.id));
+      } catch (_) {
+        failed++;
+      }
+    }
+
+    if (!mounted) return;
+    setState(() => _refreshingAll = false);
+    final checked = awaiting.length - failed;
+    _toast(
+      failed == 0
+          ? 'فُحص ${_ar(checked)} — تغيّرت حالةُ ${_ar(changed)}'
+          : 'فُحص ${_ar(checked)} — تغيّرت ${_ar(changed)} · تعذّر ${_ar(failed)}',
+    );
   }
 
   Future<void> _refreshStatus(_Row r) async {

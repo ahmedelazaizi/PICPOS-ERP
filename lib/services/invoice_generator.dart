@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../data/database/database.dart' hide Printer;
 import '../domain/repositories/printers_repository.dart';
+import '../domain/printing/party_statement_snapshot.dart';
 import 'printing/thermal_receipt_generator.dart';
 // ⚠️ صنفان بنفس الاسم `ThermalReceiptGenerator`: واحدٌ في `printing/` وآخرُ
 // في `generators/`، و`printReturnReceipt` في الثاني وحدَه. والشاشتان تستوردان
@@ -176,6 +177,8 @@ class InvoiceGenerator {
           final itemsMaps = items.map((i) => <String, dynamic>{
             'name': i.name, 'quantity': i.quantity,
             'price': i.price, 'total': i.total, 'note': i.note ?? '',
+            'code': i.code, 'unit': i.unit, 'barcode': i.barcode,
+            'discount': i.discount, 'tax': i.tax,
           }).toList();
           await TemplatedInvoiceService.printWithTemplate(
             db: db,
@@ -198,6 +201,7 @@ class InvoiceGenerator {
             notes: notes, // ADDED: Pass notes to template engine
             type: 'a4',
             category: 'invoice',
+            documentType: 'sales_invoice',
           );
           return;
         } catch (e) {
@@ -275,6 +279,10 @@ class InvoiceGenerator {
                       'price': i.price,
                       'total': i.total,
                       'note': i.note ?? '',
+                      'code': i.code,
+                      'unit': i.unit,
+                      'discount': i.discount,
+                      'tax': i.tax,
                     })
                 .toList(),
             subtotal: returnTotal,
@@ -294,6 +302,7 @@ class InvoiceGenerator {
             bankAmount: bankRefund,
             type: 'thermal',
             category: 'sales_return',
+            documentType: 'sales_return',
             directPrint: true,
           );
           return;
@@ -353,6 +362,8 @@ class InvoiceGenerator {
           final itemsMaps = items.map((i) => <String, dynamic>{
             'name': i.name, 'quantity': i.quantity,
             'price': i.price, 'total': i.total, 'note': i.note ?? '',
+            'code': i.code, 'unit': i.unit, 'barcode': i.barcode,
+            'discount': i.discount, 'tax': i.tax,
           }).toList();
           await TemplatedInvoiceService.printWithTemplate(
             db: db,
@@ -374,6 +385,8 @@ class InvoiceGenerator {
             companyTaxId: null,
             type: 'a4',
             category: category,
+            documentType:
+                isReturn ? 'purchase_return' : 'purchase_invoice',
           );
           return;
         } catch (e) {
@@ -419,6 +432,8 @@ class InvoiceGenerator {
           final itemsMaps = items.map((i) => <String, dynamic>{
             'name': i.name, 'quantity': i.quantity,
             'price': i.price, 'total': i.total, 'note': i.note ?? '',
+            'code': i.code, 'unit': i.unit, 'barcode': i.barcode,
+            'discount': i.discount, 'tax': i.tax,
             // رايةُ **عرضٍ** لا بيانات — وكانت تسقط هنا صامتةً فيُطبع اسمُ
             // التصنيف صنفاً بكمّية صفر. البلاغ: «*عرايس* بدل الصنف».
             'isCategoryHeader': i.isCategoryHeader,
@@ -444,6 +459,7 @@ class InvoiceGenerator {
             companyTaxId: null,
             type: 'kitchen',
             category: 'kitchen',
+            documentType: 'kitchen_order',
             notes: orderNotes,  // RESTORED: User still wants general cart notes on kitchen receipt
             adhocCustomerName: null,
             adhocCustomerPhone: null,
@@ -474,6 +490,15 @@ class InvoiceGenerator {
   }
 
   /// Print party (customer/supplier) account statement
+  /// ── امتدادُ الكشف (‏`EXTENSION-SPEC.md` §٣) ───────────────────────────
+  ///
+  /// كشفُ الحساب كان يُطبع من مولّدٍ ثابتٍ لا يقرأ جدولَ القوالب إطلاقاً —
+  /// فتغييرُ عمودٍ فيه يعني تعديلَ Dart وإعادةَ بناءِ التطبيق. وقالبا الكشف
+  /// (‏`a4_customer_statement.json` و`a4_supplier_statement.json`) مكتوبان
+  /// ومبذوران منذ حينها ولا يصلان ورقة.
+  ///
+  /// و[db] هي البوّابة: بدونها — أو حين لا قالبَ محسوماً — يبقى المولّدُ
+  /// الثابتُ كما هو بحرفه، فلا يتغيّر مطبوعُ أحد.
   static Future<void> printPartyStatement({
     required String partyName,
     required String partyType,
@@ -483,7 +508,73 @@ class InvoiceGenerator {
     DateTime? toDate,
     String? companyName,
     DocumentCompanyHeader? company,
-  }) {
+    AppDatabase? db,
+    String? partyCode,
+    double openingBalance = 0,
+  }) async {
+    final isSupplier = partyType == 'supplier' || partyType == 'مورد';
+
+    if (db != null) {
+      try {
+        final from = fromDate ??
+            (transactions.isEmpty ? DateTime.now() : transactions.first.date);
+        final to = toDate ??
+            (transactions.isEmpty ? DateTime.now() : transactions.last.date);
+
+        final snapshot = PartyStatementSnapshot(
+          partyName: partyName,
+          partyCode: partyCode ?? '',
+          isSupplier: isSupplier,
+          periodFrom: from,
+          periodTo: to,
+          openingBalance: openingBalance,
+          closingBalance: currentBalance,
+          totalDebit: transactions.fold(0.0, (a, t) => a + t.debit),
+          totalCredit: transactions.fold(0.0, (a, t) => a + t.credit),
+          lines: [
+            for (final t in transactions)
+              PartyStatementLine(
+                date: t.date,
+                documentNumber: t.documentNumber ?? '',
+                description: t.description,
+                debit: t.debit,
+                credit: t.credit,
+                runningBalance: t.balance,
+              ),
+          ],
+        );
+
+        await TemplatedInvoiceService.printWithTemplate(
+          db: db,
+          invoiceNumber: '',
+          date: to,
+          customerName: partyName,
+          customerPhone: null,
+          customerAddress: null,
+          items: snapshot.rowMaps,
+          subtotal: snapshot.totalDebit,
+          discount: 0,
+          tax: 0,
+          deliveryFee: 0,
+          total: currentBalance,
+          paid: snapshot.totalCredit,
+          companyName: company?.name ?? companyName ?? '',
+          companyAddress: company?.address ?? '',
+          companyPhone: company?.phone ?? '',
+          companyTaxId: company?.taxId,
+          type: 'statement',
+          category: 'party_statement',
+          documentType: 'party_statement',
+          statement: snapshot,
+        );
+        return;
+      } catch (e) {
+        // كشفٌ لا يُطبع أسوأُ من كشفٍ بالشكل القديم.
+        debugPrint('[InvoiceGenerator] statement template failed, '
+            'falling back: $e');
+      }
+    }
+
     return ReportPdfGenerator.printPartyStatement(
       partyName: partyName,
       partyType: partyType,

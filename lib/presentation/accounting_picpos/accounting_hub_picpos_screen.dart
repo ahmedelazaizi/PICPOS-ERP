@@ -37,11 +37,24 @@ enum AccountingTab {
       ScreenId.journalEntries),
   gl('دفتر الأستاذ', PhosphorIconsBold.book, 'settings_view',
       ScreenId.generalLedger),
-  tb('ميزان المراجعة', PhosphorIconsBold.scales, 'reports_view',
-      ScreenId.financialStatements),
+  // ⚠️ `screenId` هنا `null` عن قصد: «ميزان المراجعة» لم يكن له مدخلُ
+  //    قائمةٍ قطّ — كان تبويباً أوّلَ داخلَ «القوائم المالية». فالمدخلُ
+  //    المطويُّ `ScreenId.financialStatements` يحمله التبويبُ `fs` أدناه،
+  //    وهو ما يقيس عليه حارسُ البلوغ.
+  tb('ميزان المراجعة', PhosphorIconsBold.scales, 'reports_view', null),
   tpl('قوالب القيود', PhosphorIconsBold.stack, 'settings_view', null),
   map('ربط الحسابات', PhosphorIconsBold.link, 'settings_view',
-      ScreenId.accountMapping);
+      ScreenId.accountMapping),
+
+  /// ثامنٌ لا يعرفه التصميم — قرارُ مالك 2026-08-27.
+  ///
+  /// تصميمُ `TABS` سبعةٌ ولا موضعَ فيها للقوائم الخمسِ الأخرى (‏قائمةُ
+  /// الدخل · الميزانيّةُ · التدفّقاتُ · تقادمُ الذمم · مطابقةُ الترحيل).
+  /// وكانت مطويّةً خلفَ شريحة `tb` فتُنتج **تبويباتٍ داخلَ تبويبات**.
+  /// فاختار المالكُ شريحةً ثامنةً على إخراجها إلى مدخلٍ مستقلّ: المدخلُ
+  /// يبقى واحداً، والتبويبُ داخلَ التبويب يزول.
+  fs('القوائم المالية', PhosphorIconsBold.chartLineUp, 'reports_view',
+      ScreenId.financialStatements);
 
   const AccountingTab(this.label, this.icon, this.permission, this.screenId);
 
@@ -77,9 +90,18 @@ enum AccountingTab {
             title: 'دفتر الأستاذ',
             child: GeneralLedgerPicPosScreen(),
           ),
-        AccountingTab.tb => const FinancialStatementsPicPosScreen(),
+        AccountingTab.tb => const FinancialStatementsPicPosScreen(
+            view: FinancialStatementsView.trialBalance,
+          ),
         AccountingTab.tpl => const JournalTemplatesPicPosScreen(),
         AccountingTab.map => const AccountMappingPicPosScreen(),
+        AccountingTab.fs => const FinancialStatementsPicPosScreen(
+            view: FinancialStatementsView.statements,
+            // ‏١ = قائمةُ الدخل، وهي أوّلُ ما يُعرَض هنا. و`0` كان سيُطلَب
+            //    تبويباً غيرَ معروضٍ فيرتدّ إلى الأوّل — يعمل، لكنّه يُخفي
+            //    القصدَ خلف ارتداد.
+            initialTabIndex: 1,
+          ),
       };
 }
 

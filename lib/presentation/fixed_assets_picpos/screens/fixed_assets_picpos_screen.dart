@@ -40,8 +40,10 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/permissions/permission_codes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/providers.dart';
+import '../../../domain/models/depreciation_math.dart';
 import '../../../domain/repositories/accounting_repository.dart';
 import '../../../domain/repositories/fixed_assets_repository.dart';
+import 'fixed_assets_picpos_create_dialog.dart';
 import '../../picpos_shell/picpos_bar_list.dart';
 import '../../picpos_shell/picpos_content_card.dart';
 import '../../picpos_shell/picpos_data_table.dart';
@@ -104,6 +106,10 @@ final _depreciationsProvider =
 final _accountsProvider = StreamProvider.autoDispose<List<Account>>(
     (ref) => ref.watch(accountingRepositoryProvider).watchAllAccounts());
 
+/// مراكزُ التكلفة — لحوار «أصل جديد» وحدَه.
+final _costCentersProvider = StreamProvider.autoDispose<List<CostCenter>>(
+    (ref) => ref.watch(accountingRepositoryProvider).watchCostCenters());
+
 // ═══════════════════════════════════════════════════════════════════════════
 // الحساب — خالصٌ وقابلٌ للقياس وحدَه
 // ═══════════════════════════════════════════════════════════════════════════
@@ -135,21 +141,17 @@ bool _isNearEnd(FixedAssetData a) =>
 
 /// قسطُ الشهر لأصلٍ واحد.
 ///
-/// ⚠️ **منقولٌ عن `runMonthlyDepreciation` حرفاً بحرف** — راجع شرحَ الرأس.
-double _monthlyDepreciation(FixedAssetData a) {
-  final depreciable = _depreciableAmount(a);
-  double monthly;
-  if (a.depreciationMethod == 'declining_balance') {
-    final rate = 2 / (a.usefulLifeYears * 12);
-    monthly = _bookValue(a) * rate;
-    if (a.accumulatedDepreciation + monthly > depreciable) {
-      monthly = depreciable - a.accumulatedDepreciation;
-    }
-  } else {
-    monthly = depreciable / (a.usefulLifeYears * 12);
-  }
-  return monthly > 0 ? monthly : 0;
-}
+/// ⚠️ **الصيغةُ في `domain/models/depreciation_math.dart`** — نسخةٌ واحدةٌ
+/// يشاركها هذا العرضُ وحوارُ «أصل جديد»، ومصدرُها `runMonthlyDepreciation`.
+/// وكانت مكتوبةً هنا بيدٍ ثانية، فلمّا صار الحوارُ يعرض جدولَ إهلاكٍ قبل
+/// الإنشاء كانت ستصير ثالثة.
+double _monthlyDepreciation(FixedAssetData a) => monthlyDepreciation(
+      purchasePrice: a.purchasePrice,
+      salvageValue: a.salvageValue,
+      usefulLifeYears: a.usefulLifeYears,
+      depreciationMethod: a.depreciationMethod,
+      accumulatedDepreciation: a.accumulatedDepreciation,
+    );
 
 String _methodLabel(String method) =>
     method == 'declining_balance' ? 'قسط متناقص' : 'قسط ثابت';
@@ -248,6 +250,22 @@ class _FixedAssetsPicposScreenState
             onPressed: () => _confirmRunDepreciation(onBooks, deprs),
             icon: const Icon(PhosphorIconsBold.arrowDownRight, size: 15),
             label: const Text('ترحيل إهلاك الشهر'),
+          ),
+        ),
+        // ⚠️ **`HEADS.main.action` كان غائباً كلّيّاً**: الرأسُ في التصميم
+        //    فعلان — «أصل جديد» و«ترحيل إهلاك الشهر» — وهذا الفوركُ حمل
+        //    الثانيَ وحدَه. فالشاشةُ تعرض بطاقاتِ الأصول ولا تُنشئ أصلاً،
+        //    والمستخدمُ يرجع إلى الشاشة القديمة ليضيف ثمّ يعود ليرى.
+        //
+        // 🔴 وحارسُه `assetsManage` لا `assetsDepreciation`: إنشاءُ أصلٍ
+        //    يقيّد قيدَ اقتناءٍ ويُنشئ حساباً فرعيّاً، وهو فعلٌ آخرُ غيرُ
+        //    الترحيل — ومَن يملك الترحيلَ قد لا يملك الإنشاء.
+        PermissionGuard(
+          permission: PermissionCodes.assetsManage,
+          child: FilledButton.icon(
+            onPressed: _createAsset,
+            icon: const Icon(PhosphorIconsBold.plus, size: 15),
+            label: const Text('أصل جديد'),
           ),
         ),
       ],
@@ -1029,6 +1047,63 @@ class _FixedAssetsPicposScreenState
     } catch (e) {
       if (!mounted) return;
       _toast('تعذّر ترحيلُ الإهلاك: $e');
+    }
+  }
+
+  /// «أصل جديد» — الفعلُ الأوّلُ في رأس التصميم (`HEADS.main.action`).
+  ///
+  /// ⚠️ **الحساباتُ الورقيّةُ وحدَها** في قائمة الحساب المقابل: الحسابُ
+  /// الأبُ مجموعُ أبنائه، والقيدُ عليه مباشرةً يجعل مجموعَ الأبناء يخالف
+  /// رصيدَ الأب — وهو خللٌ لا يُظهره ميزانُ المراجعة لأنّه متوازن.
+  Future<void> _createAsset() async {
+    final categories = ref.read(_categoriesProvider).value ?? const [];
+    final accounts = ref.read(_accountsProvider).value ?? const [];
+    final costCenters = ref.read(_costCentersProvider).value ?? const [];
+
+    final leafIds = {for (final a in accounts) a.parentId}..remove(null);
+
+    final form = await showFixedAssetPicposCreateDialog(
+      context,
+      categories: [
+        for (final c in categories)
+          (
+            id: c.id,
+            name: c.name,
+            defaultUsefulLife: c.defaultUsefulLife.toDouble(),
+          ),
+      ],
+      accounts: [
+        for (final a in accounts)
+          if (!leafIds.contains(a.id))
+            (id: a.id, code: a.code, name: a.name),
+      ],
+      costCenters: [
+        for (final cc in costCenters) (id: cc.id, name: cc.name),
+      ],
+    );
+    if (form == null || !mounted) return;
+
+    try {
+      await ref.read(fixedAssetsRepositoryProvider).createFixedAsset(
+            code: form.code,
+            name: form.name,
+            categoryId: form.categoryId,
+            location: form.location,
+            purchasePrice: form.purchasePrice,
+            purchaseDate: form.purchaseDate,
+            usefulLifeYears: form.usefulLifeYears,
+            salvageValue: form.salvageValue,
+            depreciationMethod: form.depreciationMethod,
+            notes: form.notes,
+            costCenterId: form.costCenterId,
+            contraAccountId: form.contraAccountId,
+          );
+      if (!mounted) return;
+      ref.invalidate(_assetsProvider);
+      _toast('أُنشئ الأصلُ ${form.name}');
+    } catch (e) {
+      if (!mounted) return;
+      _toast('تعذّر الإنشاء: $e');
     }
   }
 

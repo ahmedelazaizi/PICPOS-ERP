@@ -143,6 +143,27 @@ extension DatabaseStartup on AppDatabase {
       // `allSchemaEntities` تحت بتغطّي **الجداول** بس، والفهارس الخامّة مش
       // كيانات drift فما بتوصلهاش — فلو جدولٌ وصل من هناك بقي بلا فهرسه.
       kCreateBookingResourceSlotIndexSql,
+      // ⚠️ v82 (‏«Maker-Checker») أضاف هذه الثلاثةَ بـ`ALTER TABLE` في
+      //    `epoch_3`، ولم تُعلَن قطُّ في صنف جدول `JournalEntries`. و
+      //    `onCreate` يبني من كيانات drift لا من الهجرات — فالتنصيبُ
+      //    **الجديدُ** لا يملكها.
+      //
+      //    والأثرُ مقيسٌ 2026-08-27: `approveJournalEntry` و
+      //    `rejectJournalEntry` يكتبان `approved_by` بـ`customStatement`،
+      //    فينهاران بـ«no such column: approved_by» على كلِّ قاعدةٍ جديدة.
+      //    وPicPos بلا تنصيباتٍ قديمةٍ أصلاً ⇒ **كلُّ** قاعدةٍ جديدة.
+      //
+      //    ولم يظهر العطبُ قبل اليوم لأنّ الاعتمادَ كان طريقاً ميتاً: لا
+      //    أحدَ في المستودع كان يكتب `needs_approval = true`، فلم يُعرَض
+      //    زرُّ الاعتماد ولم يُستدعَ المسار. وقد أحياه «حفظ كمسودة».
+      "ALTER TABLE journal_entries ADD COLUMN status TEXT NOT NULL DEFAULT 'posted'",
+      'ALTER TABLE journal_entries ADD COLUMN approved_by INTEGER REFERENCES users(id)',
+      'ALTER TABLE journal_entries ADD COLUMN approved_at INTEGER',
+      // ⚠️ **مَن أنشأ.** بلا هذا العمود لا ضابطَ «لا يعتمد القيدَ منشئُه»
+      //    أصلاً — فمَن يُنشئ يستطيع أن يعتمد، ويصير الترحيلُ خطوتَين بيدٍ
+      //    واحدة: تأخيرٌ لا رقابة. وهو غيرُ مُعلَنٍ في صنف الجدول كإخوته
+      //    الثلاثة، فيُضاف هنا لا بـ`build_runner`.
+      'ALTER TABLE journal_entries ADD COLUMN created_by INTEGER REFERENCES users(id)',
     ]) {
       try {
         await customStatement(stmt);

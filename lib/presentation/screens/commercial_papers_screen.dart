@@ -15,6 +15,7 @@ import '../../core/widgets/app_toast.dart';
 import '../../services/printing/report_pdf_generator.dart';
 import '../../services/client_write_interceptor.dart';
 import '../../core/utils/uuid_v7.dart';
+import 'commercial_papers/create_paper_action.dart';
 import 'commercial_papers/widgets/status_change_dialog.dart';
 import 'commercial_papers/widgets/renew_paper_dialog.dart';
 import 'commercial_papers/widgets/partial_collection_dialog.dart';

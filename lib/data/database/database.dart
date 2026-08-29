@@ -13,6 +13,8 @@ import '../../domain/repositories/treasury_repository.dart';
 import 'connection.dart';
 import 'wal_checkpoint.dart';
 import '../../services/security_service.dart';
+import '../../services/printing/template_resolver.dart';
+import '../../services/printing/paper_compatibility.dart';
 import '../../services/password_collision_scanner.dart';
 import '../../services/journal_entry_diagnostics.dart';
 import '../../core/config/app_config.dart';
@@ -116,6 +118,7 @@ part 'daos/fixed_assets_dao_ext.dart';
 part 'daos/e_invoicing_dao.dart';
 part 'daos/activity_logs_dao.dart';
 part 'daos/invoice_template_dao.dart';
+part 'daos/template_binding_dao.dart';
 part 'daos/invoice_template_seeder_dao.dart';
 part 'daos/sync_dao.dart';
 part 'daos/quotations_dao.dart';
@@ -494,6 +497,7 @@ const String kCreateBookingResourceSlotIndexSql =
     InvoiceTemplates,
     InvoiceTemplateElements,
     InvoiceTableSettings,
+    TemplateBindings,
     // Phase 2: Inventory Bonds
     InventoryBonds,
     InventoryBondItems,
@@ -804,7 +808,7 @@ class AppDatabase extends _$AppDatabase {
   // `newColumns`، فرمت `no such column: "role"` وابتلعها `_safeMigrate`
   // (تعدُّها خطأً عديمَ الأثر) — فخُتمت القواعدُ 161 وأعمدةُ المورد لم تُضَف،
   // و`from < 161` لا يعود يفحصها. الخطوةُ الجديدةُ تفحص ثمّ تُصلح.
-  int get schemaVersion => 168;
+  int get schemaVersion => 170;
 
   /// PostgreSQL-specific table creation: Drift's `currentDateAndTime` generates
   /// `strftime('%s','now')` which doesn't exist in PostgreSQL.
@@ -1350,6 +1354,18 @@ class AppDatabase extends _$AppDatabase {
             'ON activity_logs(global_id) WHERE global_id IS NOT NULL',
         'CREATE INDEX IF NOT EXISTS idx_activity_logs_modified '
             'ON activity_logs(last_modified_at)',
+        // ── نظيرُ PG لأعمدة «Maker-Checker» الثلاثة ──
+        //
+        // ⚠️ نفسُ علّة `activity_logs` أعلاه بالضبط: v82 أضافها بـ`ALTER
+        //    TABLE` في هجرة SQLite، و`onUpgrade` **متجاوَزٌ على PG**،
+        //    و`_createAllForPostgres` يبني من كيانات drift وهي غيرُ مُعلَنةٍ
+        //    في صنف الجدول. فخادمُ PostgreSQL بلا هذه الأعمدة، و
+        //    `approveJournalEntry` ينهار عليه بـ42703.
+        'ALTER TABLE journal_entries ADD COLUMN IF NOT EXISTS status TEXT '
+            "NOT NULL DEFAULT 'posted'",
+        'ALTER TABLE journal_entries ADD COLUMN IF NOT EXISTS approved_by INTEGER',
+        'ALTER TABLE journal_entries ADD COLUMN IF NOT EXISTS approved_at BIGINT',
+        'ALTER TABLE journal_entries ADD COLUMN IF NOT EXISTS created_by INTEGER',
       ]) {
         try {
           await customStatement(ddl);

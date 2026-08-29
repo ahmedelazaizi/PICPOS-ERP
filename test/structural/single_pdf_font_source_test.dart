@@ -18,7 +18,8 @@
 // الراء**، و«لوز ارباع» صارت «لوزارباع». وكلُّ اختبارات الخطوط خضراءُ في
 // نفس اللحظة — لأنها تقيس `BaseGenerator`، والطابعةُ لا تمرُّ به.
 //
-// أربعُ طابعاتٍ كانت خارج المصدر الواحد: `template_based_printer` ·
+// أربعُ طابعاتٍ كانت خارج المصدر الواحد: `template_based_printer` (حُذف
+// لاحقاً — ميّتٌ بلا مستدعٍ) ·
 // `template_pdf_renderer` · `templated_invoice_service` ·
 // `audit_report_generator`. واثنتان كانتا سليمتَين
 // (`report_pdf_generator` · `thermal_receipt_generator`) — فالقاعدةُ كانت

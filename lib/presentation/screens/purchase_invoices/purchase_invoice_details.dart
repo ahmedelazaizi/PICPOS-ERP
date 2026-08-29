@@ -130,11 +130,17 @@ mixin _PurchaseInvoiceDetailsMixin
         supplierName: supplier?.name ?? 'غير محدد',
         items: items
             .map(
+              // فاتورةٌ كاملةٌ لا مرتجعٌ جزئيّ ⇒ الخصمُ والضريبةُ بلا تقسيط.
               (item) => InvoiceItem(
                 name: item.product.name,
                 quantity: item.item.quantity,
                 price: item.item.unitCost,
                 total: item.item.quantity * item.item.unitCost,
+                code: item.product.code,
+                barcode: item.product.barcode,
+                unit: item.item.unitName,
+                discount: item.item.discount,
+                tax: item.item.taxAmount,
               ),
             )
             .toList(),

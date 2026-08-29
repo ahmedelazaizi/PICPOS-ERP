@@ -18,7 +18,21 @@ import 'package:flutter_test/flutter_test.dart';
 
 const _paletteFile =
     'lib/presentation/screens/invoice_designer/invoice_designer_ui.dart';
-const _rendererFile = 'lib/services/templated_invoice_service.dart';
+
+/// مصدرا الرسم — **ملفّان لا ملفّ**.
+///
+/// كان الحارسُ يقرأ ملفَّ الخدمة وحدَه، وكان ذلك كافياً يومَ كان المبدّلُ
+/// كلُّه فيه. ثمّ انتقل حسابُ قيم الحقول إلى `domain/printing/print_values`
+/// كي يقرأه مسارا التخطيط معاً — فأبلغ الحارسُ عن سبعة أنواعٍ «لا تُرسم»
+/// وهي مُنفَّذةٌ بحرفها، على بُعد ملفٍّ واحد.
+///
+/// وهذه فئةُ عطبٍ في الحارس نفسِه لا في الكود: **حارسٌ يقرأ ملفاً بعينه
+/// يحرس موضعاً لا قدرة**، فيحمرّ عند كلِّ نقلٍ سليم ويُدرَّب القارئُ على
+/// تجاهله. فالقائمةُ تتبع القدرةَ أينما سكنت.
+const _rendererFiles = <String>[
+  'lib/services/templated_invoice_service.dart',
+  'lib/domain/printing/print_values.dart',
+];
 
 /// `_PaletteItem('التسمية', 'elementType', 'content', icon)` — الثالثُ هو
 /// المحتوى، وهو ما يقارنه الرسّامُ بعد `resolveType`.
@@ -36,7 +50,7 @@ const _structural = <String>{
 void main() {
   test('كلُّ عنصرٍ في لوحة المحرِّر له مقابلٌ في الرسّام', () {
     final paletteSrc = File(_paletteFile).readAsStringSync();
-    final rendererSrc = File(_rendererFile).readAsStringSync();
+    final rendererSrc = _rendererSource();
 
     final missing = <String>[];
     final seen = <String>{};
@@ -57,10 +71,29 @@ void main() {
       missing,
       isEmpty,
       reason: 'أنواعٌ تُعرض وتُحفظ ولا تُرسم ⇒ تختفي من المطبوع بلا أن ينطق '
-          'شيء. إمّا أن تُنفَّذ في `templated_invoice_service`، وإمّا أن '
+          'شيء. إمّا أن تُنفَّذ في ${_rendererFiles.join(' أو ')}، وإمّا أن '
           'تُرفع من اللوحة — وعرضُ ما لا يُرسم أسوأُ من غيابه. '
           'الناقص:\n  ${missing.join('\n  ')}',
     );
+  });
+
+  test('ضابط: توسيعُ المصدر لم يجعل كلَّ شيءٍ يُطابِق', () {
+    // ضمُّ ملفٍّ ثانٍ إلى المصدر يزيد فرصةَ المطابقة العرَضيّة. فلو صار
+    // الحارسُ يجد **أيَّ** مفتاحٍ لما بقي حارساً — يقرأ خُضرةً وهو أعمى.
+    final src = _rendererSource();
+    expect(src.contains("case 'لا_وجودَ_لهذا_النوع_قطّ'"), isFalse,
+        reason: 'الحارسُ صار يطابق ما لا وجودَ له');
+    expect(src.contains("case 'total'"), isTrue,
+        reason: 'الحارسُ لا يرى حالةً موجودةً بيقين — المصدرُ لم يُقرأ');
+  });
+
+  test('ضابط: كلُّ ملفِّ مصدرٍ موجودٌ وغيرُ فارغ', () {
+    // مسارٌ بائتٌ بعد نقلِ ملفٍّ يجعل `readAsStringSync` ترمي — أو، لو
+    // تُسومح معها، يجعل المصدرَ ينكمش صامتاً فيبلّغ عن فجواتٍ وهميّة.
+    for (final f in _rendererFiles) {
+      expect(File(f).existsSync(), isTrue, reason: 'مسارٌ بائت: $f');
+      expect(File(f).lengthSync(), greaterThan(500), reason: 'ملفٌّ منكمش: $f');
+    }
   });
 
   test('ضابط: الحارسُ يقرأ لوحةً فيها عناصرُ فعلاً', () {
@@ -72,3 +105,7 @@ void main() {
             'يطابق شكلَ `_PaletteItem`');
   });
 }
+
+/// مصدرُ الرسم كلُّه في نصٍّ واحد.
+String _rendererSource() =>
+    [for (final f in _rendererFiles) File(f).readAsStringSync()].join('\n');

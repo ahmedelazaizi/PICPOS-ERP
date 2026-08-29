@@ -164,6 +164,8 @@ import '../widgets/settings_blocks.dart';
 import '../widgets/settings_count.dart';
 import '../widgets/settings_nav_rail.dart';
 import '../widgets/settings_section_pane.dart';
+import '../../template_library_picpos/screens/template_library_picpos_screen.dart';
+import '../../template_resolution_picpos/screens/template_resolution_picpos_screen.dart';
 
 // Part files — copied verbatim from lib/presentation/screens/settings/*
 // (only `part of` retargeted to this shell; see the copy-trap note above).
@@ -2127,10 +2129,49 @@ class _DeviceTiles extends ConsumerWidget {
           ),
         ),
         SettingsTile(
-          icon: PhosphorIconsBold.paintBrush,
-          title: 'قوالب الفواتير',
-          sub: 'إدارة وتخصيص قوالب الطباعة',
-          meta: 'تصميمُ المطبوعات',
+          icon: PhosphorIconsBold.books,
+          title: 'مكتبة النماذج',
+          sub: 'استعراضُ قوالب الطباعة وربطُها بالمستندات',
+          meta: 'المطبوعات',
+          tint: AppColors.info,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const TemplateLibraryPicposScreen(),
+            ),
+          ),
+        ),
+        // بلوغٌ ثانٍ لشاشةِ الحسم بجوار المكتبة: من يربط قالباً هنا يسأل
+        // فوراً «هل وصل؟» — والقائمةُ الجانبيّةُ بعيدةٌ عن لحظة السؤال.
+        SettingsTile(
+          icon: PhosphorIconsBold.gitFork,
+          title: 'حسم القوالب',
+          sub: 'أيُّ مستندٍ يخرج بأيِّ قالبٍ — وسلسلةُ السقوط',
+          meta: 'تشخيصُ الطباعة',
+          tint: AppColors.info,
+          onTap: () => guarded(
+            PermissionCodes.settingsPrinter,
+            'حسم القوالب',
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const TemplateResolutionPicposScreen(),
+              ),
+            ),
+          ),
+        ),
+        // ⚠️ **السطحُ القديمُ باقٍ عن قصدٍ لا عن إهمال**: هو الوحيدُ الذي
+        //    يحرّر **ملصقاتِ الباركود** (‏`templateCategory == 'barcode'`)،
+        //    والمكتبةُ تُرشِّحها والمحرّرُ الجديدُ لا يخدمها. فإخفاؤه كان
+        //    سيُلغي الطريقَ الوحيدَ لتعديل الملصقات.
+        //
+        //    وتحريرُ قوالب الفواتير مدخلُه **المكتبة**: المحرّرُ الجديدُ يفتح
+        //    على قالبٍ بعينه (`templateId`)، فلا معنى لفتحه بلا اختيار.
+        SettingsTile(
+          icon: PhosphorIconsBold.barcode,
+          title: 'مصمّم ملصقات الباركود',
+          sub: 'السطحُ القديم — ملصقاتُ الباركود وقوالبُها',
+          meta: 'الملصقات',
           tint: AppColors.info,
           onTap: () => Navigator.push(
             context,

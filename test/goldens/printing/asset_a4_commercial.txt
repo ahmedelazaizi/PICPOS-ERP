@@ -1,0 +1,98 @@
+# قالب «فاتورة A4 تجارية»
+# نوع=a4 فئة=receipt ورق=210.0mm
+# راسم=TemplatedInvoiceService
+PAGES 1
+PAGE 1 595.27x841.88
+  TXT 531.87,804.88 NotoNaskhArabic-Bold 24.00 «ﻓﺎﺗﻮﺭﺓ»
+  TXT 462.70,804.88 NotoNaskhArabic-Bold 24.00 «ﻣﺒﻴﻌﺎﺕ»
+  TXT 40.46,780.18 NotoNaskhArabic-Bold 7.00 «ﺍﻹﺟﻤﺎﻟﻲ»
+  TXT 106.38,780.18 NotoNaskhArabic-Bold 7.00 «ﺍﻟﻀﺮﻳﺒﺔ»
+  TXT 159.43,780.18 NotoNaskhArabic-Bold 7.00 «ﺍﻟﺨﺼﻢ»
+  TXT 217.79,780.18 NotoNaskhArabic-Bold 7.00 «ﺍﻟﺴﻌﺮ»
+  TXT 276.13,780.18 NotoNaskhArabic-Bold 7.00 «ﺍﻟﻌﺪﺩ»
+  TXT 341.12,780.18 NotoNaskhArabic-Bold 7.00 «ﺍﻟﻜﻮﺩ»
+  TXT 456.41,780.18 NotoNaskhArabic-Bold 7.00 «ﺍﻟﺼﻨﻒ»
+  TXT 561.94,780.18 NotoNaskhArabic-Bold 7.00 «ﻡ»
+  TXT 33.64,758.92 NotoNaskhArabic-Regular 12.00 «251.00»
+  TXT 105.23,758.92 NotoNaskhArabic-Regular 12.00 «0.00»
+  TXT 157.28,758.92 NotoNaskhArabic-Regular 12.00 «0.00»
+  TXT 208.08,758.92 NotoNaskhArabic-Regular 12.00 «125.50»
+  TXT 271.99,758.92 NotoNaskhArabic-Regular 12.00 «2.00»
+  TXT 332.98,758.92 NotoNaskhArabic-Regular 12.00 «P-001»
+  TXT 519.44,756.92 NotoNaskhArabic-Regular 12.00 «ﺟﺒﻨﺔ»
+  TXT 493.03,756.92 NotoNaskhArabic-Regular 12.00 «ﺭﻭﻣﻲ»
+  TXT 465.38,756.92 NotoNaskhArabic-Regular 12.00 «ﺻﺒﺮﻱ»
+  TXT 437.30,756.92 NotoNaskhArabic-Regular 12.00 «ﻗﺪﻳﻤﺔ»
+  TXT 411.89,756.92 NotoNaskhArabic-Regular 12.00 «ﺩﺭﺟﺔ»
+  TXT 520.49,736.48 NotoNaskhArabic-Regular 12.00 «ﺃﻭﻟﻰ»
+  TXT 561.53,758.92 NotoNaskhArabic-Regular 12.00 «1»
+  TXT 33.64,710.04 NotoNaskhArabic-Regular 12.00 «265.00»
+  TXT 105.23,710.04 NotoNaskhArabic-Regular 12.00 «0.00»
+  TXT 157.40,710.04 NotoNaskhArabic-Regular 12.00 «5.00»
+  TXT 211.26,710.04 NotoNaskhArabic-Regular 12.00 «90.00»
+  TXT 271.95,710.04 NotoNaskhArabic-Regular 12.00 «3.00»
+  TXT 332.75,710.04 NotoNaskhArabic-Regular 12.00 «P-002»
+  TXT 502.99,708.04 NotoNaskhArabic-Regular 12.00 «Virgin»
+  TXT 469.93,708.04 NotoNaskhArabic-Regular 12.00 «Extra»
+  TXT 453.42,708.04 NotoNaskhArabic-Regular 12.00 «1L»
+  TXT 433.84,708.04 NotoNaskhArabic-Regular 12.00 «Oil»
+  TXT 401.80,708.04 NotoNaskhArabic-Regular 12.00 «Olive»
+  TXT 521.43,687.75 NotoNaskhArabic-Regular 10.00 «ﺑﺪﻭﻥ»
+  TXT 483.09,687.75 NotoNaskhArabic-Regular 10.00 «ﺛﻠﺞ|ﺯﻳﺎﺩﺓ»
+  TXT 458.20,687.75 NotoNaskhArabic-Regular 10.00 «ﺻﻮﺹ»
+  TXT 436.80,687.75 NotoNaskhArabic-Regular 10.00 «5.00»
+  TXT 561.24,710.04 NotoNaskhArabic-Regular 12.00 «2»
+  TXT 36.95,662.58 NotoNaskhArabic-Regular 12.00 «95.76»
+  TXT 102.20,662.58 NotoNaskhArabic-Regular 12.00 «11.76»
+  TXT 157.28,662.58 NotoNaskhArabic-Regular 12.00 «0.00»
+  TXT 211.20,662.58 NotoNaskhArabic-Regular 12.00 «84.00»
+  TXT 272.05,662.58 NotoNaskhArabic-Regular 12.00 «1.00»
+  TXT 332.69,662.58 NotoNaskhArabic-Regular 12.00 «P-003»
+  TXT 526.57,660.58 NotoNaskhArabic-Regular 12.00 «ﺃﺭﺯ»
+  TXT 497.82,660.58 NotoNaskhArabic-Regular 12.00 «ﻣﺼﺮﻱ»
+  TXT 490.33,660.58 NotoNaskhArabic-Regular 12.00 «٥»
+  TXT 467.47,660.58 NotoNaskhArabic-Regular 12.00 «ﻛﺠﻢ»
+  TXT 561.14,662.58 NotoNaskhArabic-Regular 12.00 «3»
+  LIN 89.42,648.97 -> 89.42,789.67
+  LIN 141.47,648.97 -> 141.47,789.67
+  LIN 193.53,648.97 -> 193.53,789.67
+  LIN 255.99,648.97 -> 255.99,789.67
+  LIN 308.04,648.97 -> 308.04,789.67
+  LIN 386.12,648.97 -> 386.12,789.67
+  LIN 542.28,648.97 -> 542.28,789.67
+  LIN 11.34,773.74 -> 583.93,773.74
+  LIN 11.34,724.87 -> 583.93,724.87
+  LIN 11.34,677.41 -> 583.93,677.41
+  REC 11.34,773.74 78.08x15.92
+  REC 89.42,773.74 52.05x15.92
+  REC 141.47,773.74 52.05x15.92
+  REC 193.53,773.74 62.46x15.92
+  REC 255.99,773.74 52.05x15.92
+  REC 308.04,773.74 78.08x15.92
+  REC 386.12,773.74 156.16x15.92
+  REC 542.28,773.74 41.64x15.92
+  REC 11.34,749.31 78.08x24.44
+  REC 89.42,749.31 52.05x24.44
+  REC 141.47,749.31 52.05x24.44
+  REC 193.53,749.31 62.46x24.44
+  REC 255.99,749.31 52.05x24.44
+  REC 308.04,749.31 78.08x24.44
+  REC 386.12,724.87 156.16x48.87
+  REC 542.28,749.31 41.64x24.44
+  REC 11.34,700.44 78.08x24.44
+  REC 89.42,700.44 52.05x24.44
+  REC 141.47,700.44 52.05x24.44
+  REC 193.53,700.44 62.46x24.44
+  REC 255.99,700.44 52.05x24.44
+  REC 308.04,700.44 78.08x24.44
+  REC 386.12,677.41 156.16x47.47
+  REC 542.28,700.44 41.64x24.44
+  REC 11.34,652.97 78.08x24.44
+  REC 89.42,652.97 52.05x24.44
+  REC 141.47,652.97 52.05x24.44
+  REC 193.53,652.97 62.46x24.44
+  REC 255.99,652.97 52.05x24.44
+  REC 308.04,652.97 78.08x24.44
+  REC 386.12,648.97 156.16x28.44
+  REC 542.28,652.97 41.64x24.44
+  REC 11.34,648.97 572.59x140.69

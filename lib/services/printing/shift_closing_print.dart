@@ -32,6 +32,7 @@ Future<void> printShiftClosingSnapshot({
           db: db,
           type: 'shift_closing',
           category: 'shift_closing',
+          documentType: 'shift_closing',
           shift: snapshot,
           // تقريرُ الوردية ليس فاتورة: لا بنودَ ولا مبالغَ فاتورة. القيمُ
           // المعروضةُ كلُّها من اللقطة عبر `resolveShiftValue`.

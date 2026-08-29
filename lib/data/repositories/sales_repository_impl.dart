@@ -623,12 +623,21 @@ class SalesRepositoryImpl extends DatabaseAccessor<AppDatabase>
     final printableItems = <InvoiceItem>[];
     for(final item in items) {
        final product = await db.getProductById(item.productId);
+       // الكودُ والباركودُ من المنتج، والوحدةُ والخصمُ والضريبةُ من **السطر**
+       // لا من المنتج: الوحدةُ تُختار عند البيع (`unitName`)، والخصمُ والضريبةُ
+       // خاصّان بهذا السطر. وبدونها كان عمودُ «الخصم» — وهو مُشعَلٌ
+       // افتراضيّاً — يطبع `0.00` على كلِّ فاتورة.
        printableItems.add(InvoiceItem(
          name: product?.name ?? 'منتج #${item.productId}',
          quantity: item.quantity,
          price: item.unitPrice,
          total: item.total,
          note: item.note,
+         code: product?.code,
+         barcode: product?.barcode,
+         unit: item.unitName,
+         discount: item.discount,
+         tax: item.taxAmount,
        ));
     }
 
