@@ -177,6 +177,32 @@ Widget buildPosSettingsTileGuarded({required VoidCallback onOpen}) {
   );
 }
 
+/// بلاطةُ «سياسة البيع السريع» — §٤.
+///
+/// ⚠️ **نفسُ صلاحيةِ [buildPosSettingsTileGuarded] عمداً** (`settingsPosEdit`):
+/// الشاشتان تضبطان نفسَ نقطةِ البيع، إحداهما **ما يُعرَض** والأخرى **ما
+/// يحدث**. وصلاحيةٌ ثالثةٌ لواحدةٍ منهما كانت ستعني أنّ من يملك تغييرَ حدودِ
+/// الخصم قد لا يملك تغييرَ مقاسِ الأيقونة — تفرقةٌ بلا معنىً تشغيليّ.
+Widget buildQuickSalePolicyTileGuarded({required VoidCallback onOpen}) {
+  return PermissionGuard(
+    permission: PermissionCodes.settingsPosEdit,
+    allowManagerOverride: true,
+    actionName: 'سياسة البيع السريع',
+    onGranted: onOpen,
+    child: ListTile(
+      leading: const Icon(
+        PhosphorIconsBold.slidersHorizontal,
+        color: AppColors.primary,
+      ),
+      title: const Text('سياسة البيع السريع'),
+      subtitle: const Text(
+          'المسح، السلة، الدفع، الطباعة، الوردية — ما يحدث لا ما يُعرَض'),
+      trailing: const Icon(PhosphorIconsBold.caretLeft),
+      onTap: onOpen,
+    ),
+  );
+}
+
 /// زرار «تفعيل الآن» — `system_license`.
 ///
 /// زرار التفعيل التاني في `core/trial/trial_guard.dart` (شاشة انتهاء

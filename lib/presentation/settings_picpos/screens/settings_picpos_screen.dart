@@ -166,6 +166,7 @@ import '../widgets/settings_nav_rail.dart';
 import '../widgets/settings_section_pane.dart';
 import '../../template_library_picpos/screens/template_library_picpos_screen.dart';
 import '../../template_resolution_picpos/screens/template_resolution_picpos_screen.dart';
+import 'quick_sale_policy_screen_picpos.dart';
 
 // Part files — copied verbatim from lib/presentation/screens/settings/*
 // (only `part of` retargeted to this shell; see the copy-trap note above).
@@ -600,6 +601,29 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
                   subtitle: 'سلوكُ شاشة الكاشير وحدودُ الخصم',
                   child: buildPosSettingsTileGuarded(
                     onOpen: () => showPosSettingsDialog(context, picpos: true),
+                  ),
+                ),
+              ),
+              // §٤ — شاشةُ السياسة بجوار ديالوج العرض.
+              //
+              // ⚠️ **بلوكان لا واحد عن قصد.** البلوكُ أعلاه يفتح ديالوجاً
+              // يضبط **ما يُعرَض** (مقاساتٌ وأعمدةٌ وأيقونات)، وهذا يفتح
+              // شاشةً تضبط **ما يحدث** (‏البيعُ بالسالب · سقفُ الخصم · من
+              // يصادق على الإغلاق). ودمجُهما كان يخلط قرارَ مظهرٍ بقرارٍ
+              // محاسبيّ في نافذةٍ واحدة.
+              SettingsBlockSpan(
+                span: 12,
+                child: SettingsBlock(
+                  title: 'سياسة البيع السريع',
+                  subtitle: 'ما يحدث بين المسح والإغلاق — بخمس خطوات',
+                  tint: AppColors.info,
+                  child: buildQuickSalePolicyTileGuarded(
+                    onOpen: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const QuickSalePolicyScreenPicpos(),
+                      ),
+                    ),
                   ),
                 ),
               ),

@@ -760,3 +760,178 @@ class QuickSalePolicyValues {
           QuickSalePick pick, List<String> selected) =>
       {pick.settingKey: selected.join(',')};
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// أثرُ الإعدادات الحالية
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// `buildPreview()` في التصميم: ثلاثةُ أسطرٍ لكلِّ خطوة، نصُّها **مشتقٌّ من
+// القيم** لا ثابت. وهي أثمنُ ما في الشاشة: لا أحدَ يقرأ ٢٩ مِزلاجاً ليعرف
+// ماذا فعل، لكنّ جملةً واحدةً — «أي كاشير يقفل بلا مصادقة والفرق يُسجَّل
+// صفراً» — تجعل الإعدادَ قراراً لا مِزلاجاً.
+
+/// نبرةُ سطر الأثر — جزءٌ من المعنى لا زينة.
+///
+/// ⚠️ **رمزٌ لا لون.** ترجمتُها إلى لونٍ تقع في طبقة العرض، وإلّا استورد
+/// `domain/models` حزمةَ `material`.
+enum QuickSaleImpactTone { good, neutral, warn, danger }
+
+class QuickSaleImpactLine {
+  final QuickSaleImpactTone tone;
+  final String text;
+
+  const QuickSaleImpactLine(this.tone, this.text);
+}
+
+/// أرقامٌ عربيّةٌ داخلَ الجملة — «٢٥٪» لا «25%».
+String _arDigits(Object n) =>
+    '$n'.replaceAllMapped(RegExp(r'\d'), (m) => '٠١٢٣٤٥٦٧٨٩'[int.parse(m[0]!)]);
+
+QuickSaleRow _rowById(String id) =>
+    kQuickSaleRows.firstWhere((r) => r.id == id);
+
+/// أسطرُ الأثر لخطوةٍ بعينها.
+List<QuickSaleImpactLine> quickSaleImpact(
+  String stepId,
+  QuickSalePolicyValues values,
+) {
+  bool on(String id) => values.isOn(_rowById(id));
+  int idx(String id) => values.indexOf(_rowById(id));
+  String opt(String id) {
+    final row = _rowById(id);
+    return row.options[values.indexOf(row)];
+  }
+
+  switch (stepId) {
+    case 'scan':
+      final askQty = on('askqty');
+      return [
+        QuickSaleImpactLine(
+          askQty ? QuickSaleImpactTone.neutral : QuickSaleImpactTone.good,
+          askQty
+              ? 'كل مسحة تفتح لوحة أرقام — أبطأ، لكن أدق في أصناف الكمية.'
+              : 'المسح يضيف وحدة واحدة فوراً — أقصر مسار للطابور.',
+        ),
+        QuickSaleImpactLine(
+          on('scale') ? QuickSaleImpactTone.good : QuickSaleImpactTone.warn,
+          on('scale')
+              ? 'باركود الميزان يُفكّ تلقائياً — لا إدخال وزن يدوي.'
+              : 'وزن الميزان يُدخَل يدوياً، وهو أكثر مصادر الخطأ في الجرد.',
+        ),
+        QuickSaleImpactLine(
+          QuickSaleImpactTone.neutral,
+          const [
+            'الباركود غير المعروف يفتح صنفاً سريعاً — راجع «الأصناف المؤقتة» أسبوعياً.',
+            'الباركود غير المعروف يتحول لبحث بالاسم.',
+            'الباركود غير المعروف يُرفض — لا تسريب أصناف بلا كارت.',
+          ][idx('unknown')],
+        ),
+      ];
+
+    case 'cart':
+      final cap = _arDigits(values.numberOf(_rowById('disccap')).round());
+      final hold = on('hold');
+      final delAuth = on('delauth');
+      return [
+        QuickSaleImpactLine(
+          QuickSaleImpactTone.warn,
+          'الكاشير يخصم حتى $cap٪ '
+              '${on('discappr') ? 'وما فوقه يحتاج موافقة مدير.' : 'وما فوقه يُرفض بلا مسار موافقة.'}',
+        ),
+        QuickSaleImpactLine(
+          hold ? QuickSaleImpactTone.good : QuickSaleImpactTone.neutral,
+          hold
+              ? 'التعليق مفعّل — الكاشير يخدم عميلاً ثانياً بلا فقد السلة.'
+              : 'التعليق مطفأ — أي انقطاع يعني إعادة إدخال السلة كاملة.',
+        ),
+        QuickSaleImpactLine(
+          delAuth ? QuickSaleImpactTone.good : QuickSaleImpactTone.danger,
+          delAuth
+              ? 'كل حذف سطر يُصادق عليه ويُسجَّل باسم المصادق.'
+              : 'حذف السطر حر — لا أثر يربط الحذف بشخص.',
+        ),
+      ];
+
+    case 'pay':
+      final methods = values.pickOf(
+          kQuickSalePicks.firstWhere((p) => p.id == 'methods'));
+      final fast = on('skipdlg') && methods.length == 1;
+      return [
+        QuickSaleImpactLine(
+          fast ? QuickSaleImpactTone.good : QuickSaleImpactTone.neutral,
+          fast
+              ? 'مسار سريع: طريقة واحدة مؤشَّرة والحوار مُتخطّى تماماً.'
+              : '${_arDigits(methods.length)} طرق مؤشَّرة — الكاشير يختار من حوار الدفع.',
+        ),
+        QuickSaleImpactLine(
+          QuickSaleImpactTone.neutral,
+          'التقريب: ${opt('round')} · الافتراضي: ${opt('defmethod')}.',
+        ),
+        QuickSaleImpactLine(
+          QuickSaleImpactTone.warn,
+          'ما فوق ${opt('mgrlimit')} يحتاج تأكيد مدير.',
+        ),
+      ];
+
+    case 'print':
+      final autoPrint = on('autoprint');
+      final drawer = on('drawer');
+      final digital = on('digital');
+      return [
+        QuickSaleImpactLine(
+          autoPrint ? QuickSaleImpactTone.good : QuickSaleImpactTone.neutral,
+          autoPrint
+              ? '${opt('copies')} تُطبع تلقائياً على قالب ${opt('tpl')}.'
+              : 'لا طباعة تلقائية — الكاشير يطبع بنقرة عند الطلب فقط.',
+        ),
+        QuickSaleImpactLine(
+          QuickSaleImpactTone.neutral,
+          drawer
+              ? 'الدرج يُفتح مع الطباعة في الدفع النقدي فقط.'
+              : 'الدرج لا يُفتح آلياً — فتحه اليدوي يُسجَّل في الوردية.',
+        ),
+        QuickSaleImpactLine(
+          digital ? QuickSaleImpactTone.good : QuickSaleImpactTone.neutral,
+          digital
+              ? 'زر الإرسال الرقمي ظاهر بجانب الطباعة.'
+              : 'لا إرسال رقمي — الإيصال ورقي فقط.',
+        ),
+      ];
+
+    default:
+      final quickClose = on('quickclose');
+      final blind = on('blind');
+      final auth = values
+          .pickOf(kQuickSalePicks.firstWhere((p) => p.id == 'auth'));
+      final authLabels = [
+        for (final id in auth)
+          kQuickSalePicks
+              .firstWhere((p) => p.id == 'auth')
+              .items
+              .firstWhere((i) => i.id == id)
+              .label,
+      ];
+      return [
+        QuickSaleImpactLine(
+          quickClose ? QuickSaleImpactTone.danger : QuickSaleImpactTone.good,
+          quickClose
+              ? 'الإغلاق السريع ظاهر — أي كاشير يقفل بلا مصادقة والفرق يُسجَّل صفراً.'
+              : 'كل إغلاق يمرّ بمصادقة، والفرق يُسجَّل كما هو.',
+        ),
+        QuickSaleImpactLine(
+          QuickSaleImpactTone.neutral,
+          blind
+              ? 'إغلاق أعمى — الكاشير لا يرى المتوقع قبل العدّ.'
+              : 'المتوقع معروض قبل العدّ، وهو ما يجعل الفرق دائماً صفراً على الورق.',
+        ),
+        QuickSaleImpactLine(
+          authLabels.isEmpty
+              ? QuickSaleImpactTone.danger
+              : QuickSaleImpactTone.good,
+          authLabels.isEmpty
+              ? 'لا طريقة مصادقة مفعّلة — النظام سيُبقي كلمة المرور قسراً.'
+              : 'طرق المصادقة المتاحة: ${authLabels.join(' · ')}.',
+        ),
+      ];
+  }
+}
