@@ -214,9 +214,7 @@ const List<QuickSaleStep> kQuickSaleSteps = [
             title: 'التركيز الدائم على حقل الباركود',
             sub: 'يرجع المؤشر لحقل المسح بعد كل إضافة أو إغلاق نافذة',
             defaultIndex: 1,
-            notEnforcedReason:
-                'الشاشةُ تُرجع المؤشرَ دائماً اليوم (`_refocusScanner`) بلا '
-                'شرطٍ — فالمفتاحُ لا يُطفئ شيئاً حتّى يُقرأ هناك.',
+            enforced: true,
           ),
           QuickSaleRow(
             id: 'askqty',
@@ -297,7 +295,7 @@ const List<QuickSaleStep> kQuickSaleSteps = [
             sub: 'حاجز أمان ضد الأخطاء المطبعية في لوحة الأرقام',
             options: ['٩٩', '٩٩٩', '٩,٩٩٩', 'بلا حد'],
             defaultIndex: 1,
-            notEnforcedReason: _newBehaviour,
+            enforced: true,
           ),
         ],
       ),
@@ -375,7 +373,7 @@ const List<QuickSaleStep> kQuickSaleSteps = [
             sub: 'الوصول للحد يمنع تعليق فاتورة جديدة',
             options: ['٥', '١٠', '٢٠', 'بلا حد'],
             defaultIndex: 1,
-            notEnforcedReason: _newBehaviour,
+            enforced: true,
           ),
           QuickSaleRow(
             id: 'delauth',
@@ -384,9 +382,10 @@ const List<QuickSaleStep> kQuickSaleSteps = [
             title: 'حذف سطر يتطلب مصادقة',
             sub: 'يُسجَّل كل حذف في سجل الوردية باسم من صادق عليه',
             risky: true,
-            notEnforcedReason:
-                'الحذفُ محروسٌ اليوم بصلاحية `pos_remove_item` لا بإعداد — '
-                'وهذا المفتاحُ طبقةٌ ثانيةٌ لم تُوصَّل.',
+            enforced: true,
+            caveat: 'طبقةٌ **فوق** صلاحية `pos_remove_item` لا بديلٌ عنها: '
+                'الصلاحيةُ تقول من يملك الحذف، وهذا يقول إنّ المالكَ نفسَه '
+                'يُصادَق عليه في كلِّ مرّة.',
           ),
           QuickSaleRow(
             id: 'reqcust',
@@ -394,7 +393,7 @@ const List<QuickSaleStep> kQuickSaleSteps = [
             kind: QuickSaleControl.toggle,
             title: 'إلزام اختيار عميل قبل الدفع',
             sub: 'الآجل يطلب عميلاً دائماً بغضّ النظر عن هذا الإعداد',
-            notEnforcedReason: _newBehaviour,
+            enforced: true,
           ),
         ],
       ),
@@ -935,3 +934,59 @@ List<QuickSaleImpactLine> quickSaleImpact(
       ];
   }
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ترجمةُ الخيارات إلى حدودٍ رقميّة — الجسرُ بين الشاشة والمحرّك
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// خيارُ الشاشة نصٌّ («٩,٩٩٩» · «بلا حد») والمحرّكُ يحتاج رقماً. وهذه الترجمةُ
+// موضعُ عطبٍ حقيقيّ: فهرسٌ يُقرأ خطأً يعني سقفاً مختلفاً تماماً.
+//
+// ⚠️ **و`null` تعني «بلا حد» لا صفراً.** الخلطُ بينهما يقلب أكثرَ الإعدادات
+// تساهلاً إلى أشدِّها تقييداً — «بلا حدٍّ للتعليق» تصير «ممنوعُ التعليق».
+
+/// سقفُ الفواتير المعلّقة — `null` بلا حد.
+int? quickSaleHoldCap(QuickSalePolicyValues v) =>
+    const [5, 10, 20, null][v.indexOf(_rowById('holdmax'))];
+
+/// هل يُسمح بتعليق فاتورةٍ جديدة؟ — الوصولُ للحدّ يمنع، لا تجاوزُه.
+bool quickSaleCanHoldMore({required int current, required int? cap}) =>
+    cap == null || current < cap;
+
+/// أقصى كميّةٍ في السطر — `null` بلا حد.
+double? quickSaleMaxLineQty(QuickSalePolicyValues v) =>
+    const <double?>[99, 999, 9999, null][v.indexOf(_rowById('maxqty'))];
+
+/// المبلغُ الذي فوقه يُطلَب تأكيدُ مدير — `null` بلا حد.
+double? quickSaleManagerConfirmAbove(QuickSalePolicyValues v) =>
+    const <double?>[1000, 2500, 5000, null]
+        [v.indexOf(_rowById('mgrlimit'))];
+
+/// سقفُ الخصم اليدويّ نسبةً مئويّة.
+double quickSaleDiscountCap(QuickSalePolicyValues v) =>
+    v.numberOf(_rowById('disccap'));
+
+/// هل تقع نسبةُ الخصم داخلَ السقف؟ — المساواةُ مسموحة.
+bool quickSaleDiscountAllowed({
+  required double percent,
+  required double cap,
+}) =>
+    percent <= cap;
+
+/// أقصى فرقٍ في الوردية يُقبل بلا سببٍ مكتوب — `null` بلا حد.
+double? quickSaleShiftDiffLimit(QuickSalePolicyValues v) =>
+    const <double?>[5, 20, 50, null][v.indexOf(_rowById('diffmax'))];
+
+/// هل يحتاج فرقُ الوردية سبباً مكتوباً؟
+///
+/// ⚠️ **بالقيمة المطلقة**: العجزُ ٢٥ يحتاج سبباً كما تحتاجه الزيادةُ ٢٥،
+/// وإهمالُ الإشارة يُعفي العجزَ — وهو الأخطرُ محاسبيّاً.
+bool quickSaleShiftDiffNeedsReason({
+  required double difference,
+  required double? limit,
+}) =>
+    limit != null && difference.abs() > limit;
+
+/// عددُ نسخ الإيصال — لا يكون صفراً أبداً.
+int quickSaleReceiptCopies(QuickSalePolicyValues v) =>
+    const [1, 2, 3][v.indexOf(_rowById('copies'))];

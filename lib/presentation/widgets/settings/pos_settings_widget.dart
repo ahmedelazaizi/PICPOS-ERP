@@ -7,6 +7,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../picpos_shell/picpos_body_handle.dart';
 import '../../picpos_shell/picpos_dialog.dart';
 import '../../picpos_shell/picpos_surface.dart';
+import '../../settings_picpos/widgets/quick_sale_display_preview.dart';
 import '../../settings_picpos/widgets/quick_sale_settings_chrome.dart';
 import '../../../data/providers/providers.dart';
 import '../../../core/config/app_config.dart';
@@ -782,6 +783,13 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
   /// (`border-inline-end`). ولهذا الحدُّ `left` لا `right`: الطرفُ المنطقيُّ
   /// `inline-end` هو الأيسرُ فيزيائيّاً في واجهةٍ عربيّة.
   Widget _buildDesignLayout() {
+    return LayoutBuilder(
+      builder: (context, constraints) =>
+          _buildDesignRow(showPreview: constraints.maxWidth >= _previewMinTotalWidth),
+    );
+  }
+
+  Widget _buildDesignRow({required bool showPreview}) {
     final section = kQuickSaleSections[_sectionIndex];
 
     return Row(
@@ -843,7 +851,46 @@ class _PosSettingsWidgetState extends ConsumerState<PosSettingsWidget> {
             ),
           ),
         ),
+        // ⚠️ **لوحةُ المعاينة مشروطةٌ بالعرض لا دائمة.** التصميمُ يرسمها
+        // ثالثةً على شاشةٍ عريضة، والحوارُ يُفتَح على أجهزةِ تِلٍّ ضيّقةٍ
+        // أيضاً. وثلاثةُ أعمدةٍ ثابتةٍ على ٩٠٠px تسحق لوحةَ الإعدادات نفسَها
+        // — فالمعاينةُ تُسقَط قبل أن تُضيَّق الإعدادات.
+        if (showPreview)
+          SizedBox(width: _previewPaneWidth, child: _buildPreviewPane()),
       ],
+    );
+  }
+
+  /// عرضُ لوحةِ المعاينة — تُعرَض حين يتّسع الحوارُ لها وحدَها.
+  static const double _previewPaneWidth = 360;
+
+  /// أدنى عرضٍ يُبقي لوحةَ الإعدادات صالحةً بجوار المعاينة.
+  static const double _previewMinTotalWidth = 1120;
+
+  Widget _buildPreviewPane() {
+    return Container(
+      decoration: BoxDecoration(
+        color: context.picposField,
+        border: Border(right: BorderSide(color: context.picposHairline)),
+      ),
+      padding: const EdgeInsets.fromLTRB(14, 18, 14, 20),
+      child: SingleChildScrollView(
+        child: QuickSaleDisplayPreview(
+          showTopBar: _showTopBar,
+          catIconSize: _catIconSize,
+          catFontSize: _catFontSize,
+          catSpacing: _catSpacing,
+          catRunSpacing: _catRunSpacing,
+          catLabelWidth: _catLabelWidth,
+          catShape: _catShape,
+          gridColumns: _gridColumns,
+          gridSpacing: _gridSpacing,
+          gridAspectRatio: _gridAspectRatio,
+          nameFontSize: _productNameFontSize,
+          priceFontSize: _productPriceFontSize,
+          showProductImages: _showProductImagesInPOS,
+        ),
+      ),
     );
   }
 

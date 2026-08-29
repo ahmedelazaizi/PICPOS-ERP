@@ -258,8 +258,21 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
 
   String? get _exchangeInvoiceNumber => _exchangeInvoice?.invoiceNumber;
 
+  /// يُعيد المؤشرَ إلى حقل الباركود — ما لم يُطفئ المديرُ «التركيز الدائم».
+  ///
+  /// ⚠️ **قراءةٌ متزامنةٌ بـ`asData?.value` لا `await`.** هذه الدالّةُ تُنادى بعد
+  /// كلِّ إضافةٍ وحذفٍ وإغلاقِ نافذة، فجعلُها `async` كان يُدخل إطارَ انتظارٍ
+  /// في أسخنِ مسارٍ في الشاشة. و`null` (‏السياسةُ لم تُحمَّل بعد) تعني
+  /// **الإرجاع** — وهو السلوكُ القائمُ قبل هذا الإعداد، فلا يتبدّل شيءٌ في
+  /// أوّلِ إطاراتِ الشاشة.
   void _refocusScanner() {
-    if (mounted) barcodeFocus.requestFocus();
+    if (!mounted) return;
+    final policy = ref.read(quickSalePolicyProvider).asData?.value;
+    if (policy != null &&
+        !policy.isOn(kQuickSaleRows.firstWhere((r) => r.id == 'focus'))) {
+      return;
+    }
+    barcodeFocus.requestFocus();
   }
 
   // ── Shift open enforcement ─────────────────────────────────────────────
@@ -1069,6 +1082,27 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       return;
     }
     if (!mounted) return;
+
+    // «حذف سطر يتطلب مصادقة» — §٤.
+    //
+    // ⚠️ **طبقةٌ فوق الصلاحية لا بديلٌ عنها.** `pos_remove_item` تقول «من
+    // يملك الحذف»، وهذا الإعدادُ يقول «حتّى المالكُ للصلاحية يُصادَق عليه
+    // في كلِّ مرّة» — وهو ما يترك أثراً باسم من صادق. فالفحصان متتاليان
+    // لا متبادلان.
+    final policy = await ref.read(quickSalePolicyProvider.future);
+    if (!mounted) return;
+    final delAuthRow =
+        kQuickSaleRows.firstWhere((r) => r.id == 'delauth');
+    if (policy.isOn(delAuthRow)) {
+      final approved = await requestManagerApproval(
+        context,
+        actionName: 'حذف سطر من الفاتورة',
+        permission: PermissionCodes.posRemoveItem,
+      );
+      if (!approved) return;
+      if (!mounted) return;
+    }
+
     ref.read(cartControllerProvider.notifier).removeFromCart(index);
     final remaining = ref.read(cartControllerProvider).items.length;
     setState(() {
@@ -1176,6 +1210,25 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       // أن يسقط الاثنان ولا أن يمرّا معاً.
       final current = ref.read(cartControllerProvider).items[index];
       if (qty != null && qty > 0 && qty != current.quantity) {
+        // «أقصى كمية في السطر الواحد» — §٤: حاجزُ أمانٍ ضدّ الأخطاء
+        // المطبعيّة في لوحة الأرقام (‏«١٠٠» تصير «١٠٠٠» بضغطةٍ زائدة).
+        //
+        // ⚠️ **يُفحَص قبل الصلاحية عمداً**: الرقمُ الخاطئُ خطأٌ لا تصرّفٌ
+        // يُستأذَن فيه، فإظهارُ حوارِ مصادقةٍ ثمّ رفضُ الرقم يُتعب المستخدمَ
+        // مرّتين.
+        final policy = await ref.read(quickSalePolicyProvider.future);
+        if (!mounted) return;
+        final maxQty = quickSaleMaxLineQty(policy);
+        if (maxQty != null && qty > maxQty) {
+          showPosToast(
+            context,
+            ref,
+            'الكميةُ تتجاوز الحدَّ المسموح (${maxQty.toStringAsFixed(0)})',
+            type: PosNotificationType.error,
+          );
+          return;
+        }
+
         if (await _ensureCartPermission(
           canEditCartQuantity,
           PermissionCodes.posQuantityEdit,
@@ -1315,6 +1368,25 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       return;
     }
     if (!await _validateCartBeforeCheckout(cartState)) return;
+
+    // «إلزام اختيار عميل قبل الدفع» — §٤.
+    //
+    // ⚠️ **لا يمسُّ الآجل**: البيعُ الآجلُ يطلب عميلاً دائماً بحكم كونه ديناً
+    // على أحد، ويحرسه مسارُه الخاصُّ بغضّ النظر عن هذا الإعداد. وهذا الإعدادُ
+    // يخصُّ البيعَ النقديَّ وحدَه — متجرٌ يريد سجلَّ عملاءَ كاملاً.
+    final policy = await ref.read(quickSalePolicyProvider.future);
+    if (!mounted) return;
+    final requireCustomer =
+        policy.isOn(kQuickSaleRows.firstWhere((r) => r.id == 'reqcust'));
+    if (requireCustomer && cartState.selectedCustomerId == null) {
+      showPosToast(
+        context,
+        ref,
+        'اختر عميلاً قبل الدفع — الإعداد يُلزم بذلك',
+        type: PosNotificationType.error,
+      );
+      return;
+    }
 
     // Selling into a closed fiscal year would post a journal entry into a
     // locked period. Fail before taking the customer's money, not after.
@@ -1963,6 +2035,26 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     // `migrations/epoch_3.dart` — وكلاهما ليس شاشة.
     if (!await ensureHoldOrderPermission(ref, context)) return;
     if (!mounted) return;
+
+    // سقفُ «أقصى عدد فواتير معلّقة» — §٤.
+    //
+    // ⚠️ **الوصولُ للحدّ يمنع، لا تجاوزُه**: عشرُ فواتيرَ معلّقةٍ وسقفٌ عشرةٌ
+    // يعني أنّ الحادية عشرةَ مرفوضة. و«بلا حد» تُمثَّل بـ`null` لا بصفر —
+    // والخلطُ بينهما كان سيمنع كلَّ تعليق.
+    final policy = await ref.read(quickSalePolicyProvider.future);
+    if (!mounted) return;
+    final cap = quickSaleHoldCap(policy);
+    final heldNow = ref.read(heldOrdersProvider).value?.length ?? 0;
+    if (!quickSaleCanHoldMore(current: heldNow, cap: cap)) {
+      showPosToast(
+        context,
+        ref,
+        'بلغتَ الحدَّ الأقصى للفواتير المعلّقة ($cap) — أنهِ فاتورةً معلّقةً أوّلاً',
+        type: PosNotificationType.error,
+      );
+      return;
+    }
+
     final err = await ref.read(cartControllerProvider.notifier).holdOrder();
     if (!mounted) return;
     if (err == null) {
