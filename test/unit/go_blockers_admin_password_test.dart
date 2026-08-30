@@ -124,28 +124,28 @@ void main() {
       await db.close();
     });
 
-    test('الكلمةُ الصحيحةُ تمرّ، والخاطئةُ لا', () {
-      expect(svc.verify('correct-horse'), isTrue, reason: 'مرساة');
-      expect(svc.verify('wrong'), isFalse);
+    test('الكلمةُ الصحيحةُ تمرّ، والخاطئةُ لا', () async {
+      expect(await svc.verify('correct-horse'), isTrue, reason: 'مرساة');
+      expect(await svc.verify('wrong'), isFalse);
     });
 
-    test('خمسُ محاولاتٍ خاطئةٍ تقفل — وحتّى الصحيحةُ تُرفَض بعدها', () {
+    test('خمسُ محاولاتٍ خاطئةٍ تقفل — وحتّى الصحيحةُ تُرفَض بعدها', () async {
       for (var i = 0; i < 5; i++) {
-        expect(svc.verify('wrong-$i'), isFalse);
+        expect(await svc.verify('wrong-$i'), isFalse);
       }
       expect(AdminPasswordService.isLockedOut, isTrue,
           reason: '🔴 المعطوب: لا قفلَ إطلاقاً — آلافُ المحاولات في الدقيقة');
-      expect(svc.verify('correct-horse'), isFalse,
+      expect(await svc.verify('correct-horse'), isFalse,
           reason: 'القفلُ يسبق الفحص، وإلّا لم يكن قفلاً');
     });
 
-    test('نجاحٌ قبل بلوغ الحدِّ يصفّر العدّاد', () {
-      expect(svc.verify('wrong'), isFalse);
-      expect(svc.verify('wrong'), isFalse);
-      expect(svc.verify('correct-horse'), isTrue);
+    test('نجاحٌ قبل بلوغ الحدِّ يصفّر العدّاد', () async {
+      expect(await svc.verify('wrong'), isFalse);
+      expect(await svc.verify('wrong'), isFalse);
+      expect(await svc.verify('correct-horse'), isTrue);
       // العدّادُ صُفِّر، فأربعُ محاولاتٍ بعده لا تقفل.
       for (var i = 0; i < 4; i++) {
-        expect(svc.verify('wrong-$i'), isFalse);
+        expect(await svc.verify('wrong-$i'), isFalse);
       }
       expect(AdminPasswordService.isLockedOut, isFalse);
     });
