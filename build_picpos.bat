@@ -46,7 +46,7 @@ if "%BRAND_BINARY_NAME%"=="" (
 REM --- 1) Verify brand isolation BEFORE building -------------------------
 REM Catches any UralCash leak in the name, logo, colours or data file.
 REM Failing here is far cheaper than discovering the mix after shipping.
-echo [1/5] Verifying brand isolation...
+echo [1/6] Verifying brand isolation...
 call flutter test --dart-define=APP_BRAND=%BRAND_ID% test\unit\brand_picpos_test.dart
 if %ERRORLEVEL% NEQ 0 (
     echo.
@@ -55,7 +55,7 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 REM --- 2) Brand icon ----------------------------------------------------
-echo [2/5] Applying %BRAND_ID% icon...
+echo [2/6] Applying %BRAND_ID% icon...
 copy /Y "windows\runner\resources\app_icon_%BRAND_ID%.ico" "windows\runner\resources\app_icon.ico" >nul
 if %ERRORLEVEL% NEQ 0 (
     echo FAILED: could not apply icon.
@@ -63,11 +63,11 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 REM --- 3) Clean build directory ------------------------------------------
-echo [3/5] Clearing build\windows (prevents mixed CMake cache)...
+echo [3/6] Clearing build\windows (prevents mixed CMake cache)...
 if exist "build\windows" rmdir /S /Q "build\windows"
 
 REM --- 4) Build ---------------------------------------------------------
-echo [4/5] Building...
+echo [4/6] Building...
 call flutter build windows --release --dart-define=APP_BRAND=%BRAND_ID% --dart-define=APP_FLAVOR=unified
 if %ERRORLEVEL% NEQ 0 (
     echo.
@@ -90,8 +90,49 @@ if exist "build\windows\x64\runner\Release\UralCash.exe" (
     exit /b 1
 )
 
-REM --- 5) Separate output directory --------------------------------------
-echo [5/5] Copying to %OUT_DIR%...
+REM --- 5) Force the SQLCipher engine into the bundle ---------------------
+REM
+REM WHY: package:sqlite3 ships a native-assets build hook that downloads a
+REM PLAIN sqlite3.dll and the Flutter tool copies it next to the exe, where
+REM it SHADOWS the SQLCipher dll that sqlcipher_flutter_libs provides. Both
+REM are named sqlite3.dll and the native-assets copy lands last, so it wins.
+REM
+REM Measured 2026-08-30: the shipped sqlite3.dll was 1,665,536 bytes with
+REM zero "sqlcipher" markers, and the live database file began with the
+REM plaintext header "SQLite format 3". PRAGMA key does NOT fail on plain
+REM sqlite3 - it is silently ignored - so nothing ever reported a problem,
+REM while the audit dashboard showed a green hardcoded "encrypted" tick.
+REM
+REM Removing the direct sqlite3 dependency from pubspec.yaml is NOT enough:
+REM drift pulls it transitively and the hook still runs. Verified by
+REM building after the removal - the plain dll was still shipped.
+REM
+REM So: overwrite it here, then PROVE the result is SQLCipher. The runtime
+REM guard in connection_io.dart (PRAGMA cipher_version) is the second layer;
+REM it refuses to open an unencrypted database rather than trusting this.
+echo [5/6] Enforcing SQLCipher engine...
+set CIPHER_SRC=build\windows\x64\plugins\sqlcipher_flutter_libs\Release\sqlite3.dll
+set SHIPPED_DLL=build\windows\x64\runner\Release\sqlite3.dll
+if not exist "%CIPHER_SRC%" (
+    echo FAILED: SQLCipher dll not found at %CIPHER_SRC%
+    exit /b 1
+)
+copy /Y "%CIPHER_SRC%" "%SHIPPED_DLL%" >nul
+if %ERRORLEVEL% NEQ 0 (
+    echo FAILED: could not overwrite the shipped sqlite3.dll.
+    exit /b 1
+)
+findstr /M /C:sqlcipher "%SHIPPED_DLL%" >nul
+if %ERRORLEVEL% NEQ 0 (
+    echo.
+    echo FAILED: the shipped sqlite3.dll is NOT SQLCipher.
+    echo The database would be written in PLAINTEXT. Build aborted.
+    exit /b 1
+)
+echo        OK - shipped sqlite3.dll carries the SQLCipher engine.
+
+REM --- 6) Separate output directory --------------------------------------
+echo [6/6] Copying to %OUT_DIR%...
 if exist "%OUT_DIR%" rmdir /S /Q "%OUT_DIR%"
 mkdir "%OUT_DIR%"
 xcopy /E /Y /I /Q "build\windows\x64\runner\Release\*" "%OUT_DIR%\" >nul
