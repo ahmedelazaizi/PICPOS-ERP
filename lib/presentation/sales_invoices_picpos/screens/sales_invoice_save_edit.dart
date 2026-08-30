@@ -946,7 +946,7 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
                 final controller = container.read(
                   salesInvoicesControllerProvider.notifier,
                 );
-                final isVerified = controller.verifyAdminPassword(
+                final isVerified = await controller.verifyAdminPassword(
                   passwordController.text,
                 );
 

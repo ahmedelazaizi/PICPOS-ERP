@@ -1075,8 +1075,30 @@ class SalesInvoicesController extends Notifier<SalesInvoicesScreenState> {
     );
   }
 
-  bool verifyAdminPassword(String password) {
-    return ref.read(adminPasswordServiceProvider).verify(password);
+  /// تحقّقٌ من إذن الحذف: كلمةُ مرور المدير **أو** مستخدمٌ مديرٌ بكلمته.
+  ///
+  /// 🔴 الاحتياطيُّ الثاني ليس ترفاً. كلمةُ مرور المدير تعيش في `settings`
+  /// وقد توقّف تسليمُها إلى العملاء (`kServerSecretSettingKeys` على
+  /// `GET /api/settings`) — وهو صوابٌ أمنيّاً. لكنّ الأثرَ الجانبيَّ أنّ
+  /// **أيَّ عميلٍ جديدٍ لا يستلمها أبداً**، فيفشل هذا التحقّقُ دائماً
+  /// ويصير حذفُ الفواتير مستحيلاً عليه — بلا رسالةٍ مفهومة، إذ تظهر
+  /// «كلمة مرور خاطئة» على كلمةٍ صحيحة.
+  ///
+  /// وشاشةُ القفل (`app_main_screen`) وإغلاقُ الوردية
+  /// (`pos_closing_controller`) تحملان هذا الاحتياطيَّ سلفاً — فهذا توحيدٌ
+  /// لسلوكٍ قائمٍ لا توسيعٌ للسطح: من يفكّ قفلَ الجهاز يستطيع الحذف.
+  Future<bool> verifyAdminPassword(String password) async {
+    if (await ref.read(adminPasswordServiceProvider).verify(password)) {
+      return true;
+    }
+    final user = await ref
+        .read(authRepositoryProvider)
+        .authenticateByPasswordOrCard(password.trim());
+    if (user == null) return false;
+    final roleName = user.role?.name.toLowerCase() ?? '';
+    return (user.role?.isSystemRole ?? false) ||
+        roleName.contains('admin') ||
+        roleName.contains('مدير');
   }
 }
 

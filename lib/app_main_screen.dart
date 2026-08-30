@@ -1625,7 +1625,7 @@ class _AdminCloseDialogState extends ConsumerState<_AdminCloseDialog> {
 
     try {
       // Check admin_password (stored as hash)
-      if (ref.read(adminPasswordServiceProvider).verify(input)) {
+      if (await ref.read(adminPasswordServiceProvider).verify(input)) {
         if (mounted) Navigator.pop(context, true);
         return;
       }

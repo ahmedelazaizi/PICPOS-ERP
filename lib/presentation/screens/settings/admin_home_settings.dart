@@ -82,7 +82,7 @@ class _AdminPasswordSettingState extends ConsumerState<_AdminPasswordSetting> {
               onPressed: () async {
                 final adminPwd = ref.read(adminPasswordServiceProvider);
                 // Validate
-                if (!adminPwd.verify(oldPasswordController.text)) {
+                if (!(await adminPwd.verify(oldPasswordController.text))) {
                   AppToast.show(
                     ctx,
                     'كلمة السر الحالية غير صحيحة',

@@ -508,7 +508,7 @@ class PosClosingController extends Notifier<PosClosingState> {
               state = state.copyWith(isProcessing: false);
               throw Exception('أدخل كلمة سر المدير');
             }
-            if (ref.read(adminPasswordServiceProvider).verify(cleanPassword)) {
+            if (await ref.read(adminPasswordServiceProvider).verify(cleanPassword)) {
               authenticated = true;
             } else {
               final authRepo = ref.read(authRepositoryProvider);
@@ -550,7 +550,7 @@ class PosClosingController extends Notifier<PosClosingState> {
 
             // كلمةُ مرور الإعدادات تبقى مقبولةً — هي مفتاحُ المالك حين لا
             // يكون له حسابُ مستخدمٍ على الطرفيّة.
-            if (ref.read(adminPasswordServiceProvider).verify(input)) {
+            if (await ref.read(adminPasswordServiceProvider).verify(input)) {
               authenticated = true;
             } else {
               final authRepo = ref.read(authRepositoryProvider);
@@ -580,7 +580,7 @@ class PosClosingController extends Notifier<PosClosingState> {
             // 'normal' method: current behavior (enter amounts + admin password)
             final cleanPassword = password.trim();
             bool normalAuth = false;
-            if (ref.read(adminPasswordServiceProvider).verify(cleanPassword)) {
+            if (await ref.read(adminPasswordServiceProvider).verify(cleanPassword)) {
               normalAuth = true;
             } else {
               final authRepo = ref.read(authRepositoryProvider);

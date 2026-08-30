@@ -115,7 +115,7 @@ class _FiscalYearGateContentState
         setState(() => _errorText = 'لم يتم إعداد كلمة مرور المطور. يرجى التواصل مع الدعم الفني.');
         return;
       }
-      if (devAuth.verify(input)) {
+      if (await devAuth.verify(input)) {
         if (mounted) Navigator.pop(context, true);
         return;
       }

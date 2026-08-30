@@ -622,7 +622,7 @@ class _FiscalYearScreenState extends ConsumerState<FiscalYearScreen> {
       setDs(() => setError('لم يتم إعداد كلمة مرور المطور. يرجى التواصل مع الدعم الفني.'));
       return;
     }
-    if (devAuth.verify(input)) {
+    if (await devAuth.verify(input)) {
       if (ctx.mounted) Navigator.pop(ctx, true);
       return;
     }

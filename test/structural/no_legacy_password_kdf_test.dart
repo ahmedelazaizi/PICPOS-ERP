@@ -24,17 +24,23 @@ import 'package:flutter_test/flutter_test.dart';
 
 /// خط أساس موثَّق — **مش نمطاً مقبولاً**، دي مواضع باقية بسبب اعتمادية بنيوية.
 ///
-/// الملفّين دول بيخزّنوا الهاش في **الإعدادات** مش في جدول `users`، فمش
-/// معرَّضين في `GET /api/users`. والمشكلة إن `verify()` فيهم **متزامنة**
-/// (‏`bool verify(String)`) وبتتندَه من الواجهة، وArgon2 غير متزامن — فترقيتهم
-/// بتغيّر توقيع الدالة وكل مستدعيها. تغيير منفصل بمخاطرته الخاصة.
+/// ✅ **فاضي دلوقتي (2026-08-31).** كان فيه ملفّين — `admin_password_service`
+/// و`developer_auth_service` — بيخزّنوا الهاش في **الإعدادات** مش في جدول
+/// `users`، و`verify()` فيهم كانت **متزامنة** فترقيتها بتغيّر توقيع الدالة
+/// وكل مستدعيها. اتعملت الترقية بالوصفة المكتوبة تحت: `verify` بقت
+/// `Future<bool>` بـ`verifyPasswordFull` (‏بتقبل الهاش القديم مرّة واحدة
+/// وتعيد سكّه Argon2id فوراً)، والإنشاء بقى `hashPasswordArgon2`،
+/// واتصلّح ١٠ مستدعيين.
 ///
-/// لترقية ملف: حوّل `verify` لـ`Future<bool>` بـ`verifyPasswordFull`، حوّل
-/// الإنشاء لـ`hashPasswordArgon2`، أصلح المستدعين، وشيله من هنا.
-const Map<String, int> _baseline = {
-  'lib/services/admin_password_service.dart': 1,
-  'lib/services/developer_auth_service.dart': 1,
-};
+/// ⚠️ ولزوم **الملح** اترخى في الملفّين: Argon2id بيحطّ الملح جوّه الـPHC
+/// وبيفضّي العمود، والشرط القديم (`salt.isNotEmpty`) كان هيرفض كل كلمة
+/// صحيحة بعد أوّل إعادة سكّ — وفي `developer_auth_service` كان كمان
+/// هيخلّي `isConfigured` تقول «مفيش كلمة مطوّر» على كل تنصيبة فيتقفل
+/// الباب تماماً.
+///
+/// لترقية ملف جديد: حوّل `verify` لـ`Future<bool>` بـ`verifyPasswordFull`،
+/// حوّل الإنشاء لـ`hashPasswordArgon2`، أصلح المستدعين، وشيله من هنا.
+const Map<String, int> _baseline = <String, int>{};
 
 void main() {
   test('مفيش أي نداء لـSecurityService.hashPassword في lib/', () {

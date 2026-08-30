@@ -468,7 +468,7 @@ class _AppShellState extends ConsumerState<AppShell> {
       UserWithRole? authenticatedAdmin;
 
       // Method 1: Check admin_password (stored as hash)
-      if (ref.read(adminPasswordServiceProvider).verify(cleanPassword)) {
+      if (await ref.read(adminPasswordServiceProvider).verify(cleanPassword)) {
         granted = true;
       }
 

@@ -924,7 +924,7 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesScreenState {
                 final controller = container.read(
                   salesInvoicesControllerProvider.notifier,
                 );
-                final isVerified = controller.verifyAdminPassword(
+                final isVerified = await controller.verifyAdminPassword(
                   passwordController.text,
                 );
 

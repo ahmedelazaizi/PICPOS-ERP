@@ -96,7 +96,7 @@ class _DeveloperPasswordGateState
       _error = null;
     });
     final auth = ref.read(developerAuthServiceProvider);
-    final ok = auth.verify(_pwdCtl.text);
+    final ok = await auth.verify(_pwdCtl.text);
     if (!ok) {
       setState(() {
         _verifying = false;

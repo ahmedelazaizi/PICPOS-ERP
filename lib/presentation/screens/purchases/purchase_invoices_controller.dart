@@ -646,8 +646,22 @@ class PurchaseInvoicesController extends Notifier<PurchaseInvoicesScreenState> {
     );
   }
 
-  bool verifyAdminPassword(String password) {
-    return ref.read(adminPasswordServiceProvider).verify(password);
+  /// تحقّقٌ من إذن الحذف: كلمةُ مرور المدير **أو** مستخدمٌ مديرٌ بكلمته.
+  /// نظيرُ [SalesInvoicesController.verifyAdminPassword] — وعلّتُه نفسُها:
+  /// كلمةُ المدير لم تعد تُسلَّم إلى العملاء، فبلا الاحتياطيِّ يصير الحذفُ
+  /// مستحيلاً على كلِّ عميلٍ جديد.
+  Future<bool> verifyAdminPassword(String password) async {
+    if (await ref.read(adminPasswordServiceProvider).verify(password)) {
+      return true;
+    }
+    final user = await ref
+        .read(authRepositoryProvider)
+        .authenticateByPasswordOrCard(password.trim());
+    if (user == null) return false;
+    final roleName = user.role?.name.toLowerCase() ?? '';
+    return (user.role?.isSystemRole ?? false) ||
+        roleName.contains('admin') ||
+        roleName.contains('مدير');
   }
 }
 

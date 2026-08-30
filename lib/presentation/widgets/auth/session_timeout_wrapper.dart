@@ -101,7 +101,7 @@ class _SessionTimeoutWrapperState extends ConsumerState<SessionTimeoutWrapper> {
       final authRepo = ref.read(authRepositoryProvider);
       
       // Check if it's the master admin password first
-      if (ref.read(adminPasswordServiceProvider).verify(input)) {
+      if (await ref.read(adminPasswordServiceProvider).verify(input)) {
         _completeUnlock();
         return;
       }
