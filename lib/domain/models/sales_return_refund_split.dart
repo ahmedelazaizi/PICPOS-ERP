@@ -24,7 +24,10 @@ import '../../core/constants/payment_methods.dart';
 /// نتيجةُ تقسيمِ مرتجعٍ واحد.
 ///
 /// الحاصلاتُ الثلاثةُ ([arRefund] و[cashRefund] و[bankRefund]) مجموعُها
-/// [totalReturn] دائماً (في حدود دقّةِ العشريّات).
+/// [totalReturn] دائماً (في حدود دقّةِ العشريّات) — **ما لم يُمرَّر
+/// `invoiceRoundingAdjustment` غيرَ صفرٍ على مرتجعٍ كامل**، فيكون المجموعُ
+/// حينها `totalReturn - invoiceRoundingAdjustment`، والفرقُ يقابله سطرُ
+/// `4319 فروق تقريب` في قيد المرتجع.
 class SalesReturnRefundSplit {
   /// ما قوصص من ذمّةِ العميل بدل أن يُدفع — لا يمسّ درجاً.
   final double arRefund;
@@ -59,6 +62,16 @@ class SalesReturnRefundSplit {
   /// [hasCustomer] — الفاتورةُ مرتبطةٌ بعميل. بدونه لا مقاصّةَ ذمّةٍ إطلاقاً
   /// ويخرج المرتجعُ كلُّه دفعاً، وهو سلوكُ المسار الأصليّ
   /// (`if (invoice.customerId != null)`).
+  /// [invoiceRoundingAdjustment] — فرقُ تقريب الإجماليّ على الفاتورة الأصليّة
+  /// (`total - roundedTotal`). **افتراضُه صفرٌ فيبقى السلوكُ السابقُ حرفاً
+  /// بحرف** لكلِّ منادٍ لا يمرّرُه.
+  ///
+  /// بدونه يقع عطبان على مرتجعِ بيعةٍ قُرِّبت:
+  ///   • `oldRemaining` تُقرأ ٠٫٠٢ فيُقاصّ مبلغٌ من ذمّةٍ **لم تُفتح أصلاً**
+  ///     (‏قيدُ البيع لم يَعُد يُثبت مديناً بفرق التقريب) ⇒ رصيدٌ دائنٌ وهميٌّ
+  ///     على حساب المراقبة.
+  ///   • والمرتجعُ الكاملُ يردّ ١١٤٫٠٧ بينما المقبوضُ كان ١١٤٫٠٥ ⇒ قرشان
+  ///     يخرجان من الدرج لم يدخلاه قطّ.
   factory SalesReturnRefundSplit.from({
     required double invoiceTotal,
     required double invoicePaid,
@@ -67,19 +80,32 @@ class SalesReturnRefundSplit {
     required double bankPaid,
     required double totalReturn,
     required bool hasCustomer,
+    double invoiceRoundingAdjustment = 0,
   }) {
+    // ٠) عكسُ التقريب — **على المرتجع الكامل وحدَه.**
+    //
+    // التقريبُ وقع على تسويةِ الفاتورة كلِّها لا على سطرٍ بعينه، فلا معنى
+    // لتوزيعه على مرتجعٍ جزئيّ: نصفُ الأصناف لا يحمل نصفَ قرشِ التقريب.
+    // والمرتجعُ الجزئيُّ يترك الفاتورةَ قائمةً بتقريبها كما هو.
+    final isFullReturn = invoiceRoundingAdjustment != 0 &&
+        totalReturn >= invoiceTotal - 0.01;
+    final roundingReversal = isFullReturn ? invoiceRoundingAdjustment : 0.0;
+
     // ١) ما زال على العميل؟ يُقاصّ أوّلاً — فلا نعيد نقداً لمن لم يدفعه بعد.
     //    والقصُّ عند [totalReturn] يمنع مقاصّةً أكبرَ من المرتجع نفسه.
-    var actualRefundToPay = totalReturn;
+    var actualRefundToPay = totalReturn - roundingReversal;
     var arRefund = 0.0;
 
     if (hasCustomer) {
+      // ⚠️ **وفرقُ التقريب يُطرَح — فهو ليس ديناً باقياً على العميل.**
       final oldRemaining =
-          (invoiceTotal - invoicePaid).clamp(0.0, double.infinity);
+          (invoiceTotal - invoicePaid - invoiceRoundingAdjustment)
+              .clamp(0.0, double.infinity);
       if (oldRemaining > 0) {
-        final balanceCorrection = totalReturn.clamp(0.0, oldRemaining);
+        final balanceCorrection =
+            actualRefundToPay.clamp(0.0, oldRemaining);
         arRefund = balanceCorrection;
-        actualRefundToPay = totalReturn - balanceCorrection;
+        actualRefundToPay -= balanceCorrection;
       }
     }
 

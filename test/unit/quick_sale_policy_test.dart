@@ -370,6 +370,7 @@ void _valuesSuite() {
         'diffmax',
         'xrep',
         'priceedit',
+        'round',
       ];
       for (final id in wiredThisRound) {
         final row = _row(id);
@@ -381,10 +382,10 @@ void _valuesSuite() {
       }
     });
 
-    test('و`digital` و`round` و`scale` تبقى موسومةً — لم تُوصَّل بعد', () {
+    test('و`digital` و`scale` تبقى موسومةً — لم تُوصَّل بعد', () {
       // ⚠️ مرساةٌ عكسيّة: بلا هذا الفحصِ يمرُّ الملفُّ أخضرَ لو رُفعت
       // أوسمةُ الجميع دفعةً واحدةً بلا توصيلٍ حقيقيّ.
-      for (final id in const ['digital', 'round', 'scale']) {
+      for (final id in const ['digital', 'scale']) {
         final row = _row(id);
         expect(row.enforced, isFalse,
             reason: 'الصفُّ `$id` لم يُوصَّل — ورفعُ وسمِه يُنتج ميزةً '

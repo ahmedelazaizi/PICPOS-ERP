@@ -20994,6 +20994,18 @@ class $SalesInvoicesTable extends SalesInvoices
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _roundingAdjustmentMeta =
+      const VerificationMeta('roundingAdjustment');
+  @override
+  late final GeneratedColumn<double> roundingAdjustment =
+      GeneratedColumn<double>(
+        'rounding_adjustment',
+        aliasedName,
+        false,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(0),
+      );
   static const VerificationMeta _cashPaidMeta = const VerificationMeta(
     'cashPaid',
   );
@@ -21371,6 +21383,7 @@ class $SalesInvoicesTable extends SalesInvoices
     tax,
     total,
     paid,
+    roundingAdjustment,
     cashPaid,
     bankPaid,
     clickPaid,
@@ -21504,6 +21517,15 @@ class $SalesInvoicesTable extends SalesInvoices
       context.handle(
         _paidMeta,
         paid.isAcceptableOrUnknown(data['paid']!, _paidMeta),
+      );
+    }
+    if (data.containsKey('rounding_adjustment')) {
+      context.handle(
+        _roundingAdjustmentMeta,
+        roundingAdjustment.isAcceptableOrUnknown(
+          data['rounding_adjustment']!,
+          _roundingAdjustmentMeta,
+        ),
       );
     }
     if (data.containsKey('cash_paid')) {
@@ -21792,6 +21814,10 @@ class $SalesInvoicesTable extends SalesInvoices
         DriftSqlType.double,
         data['${effectivePrefix}paid'],
       )!,
+      roundingAdjustment: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}rounding_adjustment'],
+      )!,
       cashPaid: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}cash_paid'],
@@ -21947,6 +21973,29 @@ class SalesInvoiceData extends DataClass
   final double tax;
   final double total;
   final double paid;
+
+  /// v171 — فرقُ تقريب الإجماليّ (‏سياسةُ البيع السريع `pos_total_rounding`).
+  ///
+  /// `total` يبقى الإجماليَّ **الحقيقيَّ** دائماً — الوعاءُ الضريبيُّ
+  /// والإيرادُ يُشتقّان منه — و`paid` هو ما قُبض فعلاً بعد التقريب. وهذا
+  /// العمودُ هو الفرقُ بينهما الذي **ليس ديناً على العميل**:
+  ///
+  /// ```
+  /// roundingAdjustment = total - roundedTotal
+  /// ```
+  ///
+  /// موجبٌ = قُرِّب هبوطاً (‏قُبض أقلّ) ⇒ `Dr 4319 فروق تقريب`.
+  /// سالبٌ = قُرِّب صعوداً (‏قُبض أكثر) ⇒ `Cr 4319`.
+  ///
+  /// ⚠️ **ولا يُشتقّ من الإعداد وقتَ القراءة.** الإعدادُ يسري فوراً على كلِّ
+  /// نقاط البيع، فاشتقاقُه لاحقاً كان سيُبدّل قيدَ فاتورةٍ أُغلقت — ومسارُ
+  /// إصلاح الترحيل (`autopost_repair_dao`) يُعيد بناءَ القيد من الصفّ بعد
+  /// شهور. لقطةٌ وقتَ الإصدار، نفسُ مبدأ [dueDate].
+  ///
+  /// ⚠️ **وهو ليس خصماً.** الخصمُ يقع قبل الضريبة ويظهر في `4212 خصم
+  /// المبيعات`؛ وهذا يقع **بعد** الإجماليّ ولا يمسّ الوعاءَ الضريبيَّ ولا
+  /// المستندَ الضريبيَّ المرسَل لمصلحة الضرائب.
+  final double roundingAdjustment;
   final double cashPaid;
   final double bankPaid;
   final double clickPaid;
@@ -21991,6 +22040,7 @@ class SalesInvoiceData extends DataClass
     required this.tax,
     required this.total,
     required this.paid,
+    required this.roundingAdjustment,
     required this.cashPaid,
     required this.bankPaid,
     required this.clickPaid,
@@ -22044,6 +22094,7 @@ class SalesInvoiceData extends DataClass
     map['tax'] = Variable<double>(tax);
     map['total'] = Variable<double>(total);
     map['paid'] = Variable<double>(paid);
+    map['rounding_adjustment'] = Variable<double>(roundingAdjustment);
     map['cash_paid'] = Variable<double>(cashPaid);
     map['bank_paid'] = Variable<double>(bankPaid);
     map['click_paid'] = Variable<double>(clickPaid);
@@ -22134,6 +22185,7 @@ class SalesInvoiceData extends DataClass
       tax: Value(tax),
       total: Value(total),
       paid: Value(paid),
+      roundingAdjustment: Value(roundingAdjustment),
       cashPaid: Value(cashPaid),
       bankPaid: Value(bankPaid),
       clickPaid: Value(clickPaid),
@@ -22222,6 +22274,9 @@ class SalesInvoiceData extends DataClass
       tax: serializer.fromJson<double>(json['tax']),
       total: serializer.fromJson<double>(json['total']),
       paid: serializer.fromJson<double>(json['paid']),
+      roundingAdjustment: serializer.fromJson<double>(
+        json['roundingAdjustment'],
+      ),
       cashPaid: serializer.fromJson<double>(json['cashPaid']),
       bankPaid: serializer.fromJson<double>(json['bankPaid']),
       clickPaid: serializer.fromJson<double>(json['clickPaid']),
@@ -22281,6 +22336,7 @@ class SalesInvoiceData extends DataClass
       'tax': serializer.toJson<double>(tax),
       'total': serializer.toJson<double>(total),
       'paid': serializer.toJson<double>(paid),
+      'roundingAdjustment': serializer.toJson<double>(roundingAdjustment),
       'cashPaid': serializer.toJson<double>(cashPaid),
       'bankPaid': serializer.toJson<double>(bankPaid),
       'clickPaid': serializer.toJson<double>(clickPaid),
@@ -22328,6 +22384,7 @@ class SalesInvoiceData extends DataClass
     double? tax,
     double? total,
     double? paid,
+    double? roundingAdjustment,
     double? cashPaid,
     double? bankPaid,
     double? clickPaid,
@@ -22372,6 +22429,7 @@ class SalesInvoiceData extends DataClass
     tax: tax ?? this.tax,
     total: total ?? this.total,
     paid: paid ?? this.paid,
+    roundingAdjustment: roundingAdjustment ?? this.roundingAdjustment,
     cashPaid: cashPaid ?? this.cashPaid,
     bankPaid: bankPaid ?? this.bankPaid,
     clickPaid: clickPaid ?? this.clickPaid,
@@ -22448,6 +22506,9 @@ class SalesInvoiceData extends DataClass
       tax: data.tax.present ? data.tax.value : this.tax,
       total: data.total.present ? data.total.value : this.total,
       paid: data.paid.present ? data.paid.value : this.paid,
+      roundingAdjustment: data.roundingAdjustment.present
+          ? data.roundingAdjustment.value
+          : this.roundingAdjustment,
       cashPaid: data.cashPaid.present ? data.cashPaid.value : this.cashPaid,
       bankPaid: data.bankPaid.present ? data.bankPaid.value : this.bankPaid,
       clickPaid: data.clickPaid.present ? data.clickPaid.value : this.clickPaid,
@@ -22529,6 +22590,7 @@ class SalesInvoiceData extends DataClass
           ..write('tax: $tax, ')
           ..write('total: $total, ')
           ..write('paid: $paid, ')
+          ..write('roundingAdjustment: $roundingAdjustment, ')
           ..write('cashPaid: $cashPaid, ')
           ..write('bankPaid: $bankPaid, ')
           ..write('clickPaid: $clickPaid, ')
@@ -22578,6 +22640,7 @@ class SalesInvoiceData extends DataClass
     tax,
     total,
     paid,
+    roundingAdjustment,
     cashPaid,
     bankPaid,
     clickPaid,
@@ -22626,6 +22689,7 @@ class SalesInvoiceData extends DataClass
           other.tax == this.tax &&
           other.total == this.total &&
           other.paid == this.paid &&
+          other.roundingAdjustment == this.roundingAdjustment &&
           other.cashPaid == this.cashPaid &&
           other.bankPaid == this.bankPaid &&
           other.clickPaid == this.clickPaid &&
@@ -22672,6 +22736,7 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceData> {
   final Value<double> tax;
   final Value<double> total;
   final Value<double> paid;
+  final Value<double> roundingAdjustment;
   final Value<double> cashPaid;
   final Value<double> bankPaid;
   final Value<double> clickPaid;
@@ -22716,6 +22781,7 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceData> {
     this.tax = const Value.absent(),
     this.total = const Value.absent(),
     this.paid = const Value.absent(),
+    this.roundingAdjustment = const Value.absent(),
     this.cashPaid = const Value.absent(),
     this.bankPaid = const Value.absent(),
     this.clickPaid = const Value.absent(),
@@ -22761,6 +22827,7 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceData> {
     this.tax = const Value.absent(),
     this.total = const Value.absent(),
     this.paid = const Value.absent(),
+    this.roundingAdjustment = const Value.absent(),
     this.cashPaid = const Value.absent(),
     this.bankPaid = const Value.absent(),
     this.clickPaid = const Value.absent(),
@@ -22809,6 +22876,7 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceData> {
     Expression<double>? tax,
     Expression<double>? total,
     Expression<double>? paid,
+    Expression<double>? roundingAdjustment,
     Expression<double>? cashPaid,
     Expression<double>? bankPaid,
     Expression<double>? clickPaid,
@@ -22854,6 +22922,7 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceData> {
       if (tax != null) 'tax': tax,
       if (total != null) 'total': total,
       if (paid != null) 'paid': paid,
+      if (roundingAdjustment != null) 'rounding_adjustment': roundingAdjustment,
       if (cashPaid != null) 'cash_paid': cashPaid,
       if (bankPaid != null) 'bank_paid': bankPaid,
       if (clickPaid != null) 'click_paid': clickPaid,
@@ -22904,6 +22973,7 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceData> {
     Value<double>? tax,
     Value<double>? total,
     Value<double>? paid,
+    Value<double>? roundingAdjustment,
     Value<double>? cashPaid,
     Value<double>? bankPaid,
     Value<double>? clickPaid,
@@ -22949,6 +23019,7 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceData> {
       tax: tax ?? this.tax,
       total: total ?? this.total,
       paid: paid ?? this.paid,
+      roundingAdjustment: roundingAdjustment ?? this.roundingAdjustment,
       cashPaid: cashPaid ?? this.cashPaid,
       bankPaid: bankPaid ?? this.bankPaid,
       clickPaid: clickPaid ?? this.clickPaid,
@@ -23024,6 +23095,9 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceData> {
     }
     if (paid.present) {
       map['paid'] = Variable<double>(paid.value);
+    }
+    if (roundingAdjustment.present) {
+      map['rounding_adjustment'] = Variable<double>(roundingAdjustment.value);
     }
     if (cashPaid.present) {
       map['cash_paid'] = Variable<double>(cashPaid.value);
@@ -23138,6 +23212,7 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceData> {
           ..write('tax: $tax, ')
           ..write('total: $total, ')
           ..write('paid: $paid, ')
+          ..write('roundingAdjustment: $roundingAdjustment, ')
           ..write('cashPaid: $cashPaid, ')
           ..write('bankPaid: $bankPaid, ')
           ..write('clickPaid: $clickPaid, ')
@@ -151598,6 +151673,7 @@ typedef $$SalesInvoicesTableCreateCompanionBuilder =
       Value<double> tax,
       Value<double> total,
       Value<double> paid,
+      Value<double> roundingAdjustment,
       Value<double> cashPaid,
       Value<double> bankPaid,
       Value<double> clickPaid,
@@ -151644,6 +151720,7 @@ typedef $$SalesInvoicesTableUpdateCompanionBuilder =
       Value<double> tax,
       Value<double> total,
       Value<double> paid,
+      Value<double> roundingAdjustment,
       Value<double> cashPaid,
       Value<double> bankPaid,
       Value<double> clickPaid,
@@ -152070,6 +152147,11 @@ class $$SalesInvoicesTableFilterComposer
 
   ColumnFilters<double> get paid => $composableBuilder(
     column: $table.paid,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get roundingAdjustment => $composableBuilder(
+    column: $table.roundingAdjustment,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -152635,6 +152717,11 @@ class $$SalesInvoicesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get roundingAdjustment => $composableBuilder(
+    column: $table.roundingAdjustment,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get cashPaid => $composableBuilder(
     column: $table.cashPaid,
     builder: (column) => ColumnOrderings(column),
@@ -153007,6 +153094,11 @@ class $$SalesInvoicesTableAnnotationComposer
 
   GeneratedColumn<double> get paid =>
       $composableBuilder(column: $table.paid, builder: (column) => column);
+
+  GeneratedColumn<double> get roundingAdjustment => $composableBuilder(
+    column: $table.roundingAdjustment,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<double> get cashPaid =>
       $composableBuilder(column: $table.cashPaid, builder: (column) => column);
@@ -153554,6 +153646,7 @@ class $$SalesInvoicesTableTableManager
                 Value<double> tax = const Value.absent(),
                 Value<double> total = const Value.absent(),
                 Value<double> paid = const Value.absent(),
+                Value<double> roundingAdjustment = const Value.absent(),
                 Value<double> cashPaid = const Value.absent(),
                 Value<double> bankPaid = const Value.absent(),
                 Value<double> clickPaid = const Value.absent(),
@@ -153598,6 +153691,7 @@ class $$SalesInvoicesTableTableManager
                 tax: tax,
                 total: total,
                 paid: paid,
+                roundingAdjustment: roundingAdjustment,
                 cashPaid: cashPaid,
                 bankPaid: bankPaid,
                 clickPaid: clickPaid,
@@ -153644,6 +153738,7 @@ class $$SalesInvoicesTableTableManager
                 Value<double> tax = const Value.absent(),
                 Value<double> total = const Value.absent(),
                 Value<double> paid = const Value.absent(),
+                Value<double> roundingAdjustment = const Value.absent(),
                 Value<double> cashPaid = const Value.absent(),
                 Value<double> bankPaid = const Value.absent(),
                 Value<double> clickPaid = const Value.absent(),
@@ -153688,6 +153783,7 @@ class $$SalesInvoicesTableTableManager
                 tax: tax,
                 total: total,
                 paid: paid,
+                roundingAdjustment: roundingAdjustment,
                 cashPaid: cashPaid,
                 bankPaid: bankPaid,
                 clickPaid: clickPaid,

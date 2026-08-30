@@ -20,6 +20,11 @@ extension SalesMutationsDao on AppDatabase {
     required double tax,
     required double total,
     required double paid,
+
+    /// فرقُ تقريب الإجماليّ — `total - roundedTotal`، بإشارته.
+    ///
+    /// افتراضُه صفرٌ عمداً فكلُّ منادٍ قائمٍ يبقى على سلوكه حرفاً بحرف.
+    double roundingAdjustment = 0,
     required String paymentMethod,
     bool isBooking = false,
     String? deliveryStatus,
@@ -87,7 +92,12 @@ extension SalesMutationsDao on AppDatabase {
       final orderNum = await getNextDailyOrderNumber();
 
       // Calculate remaining (not stored, just for status determination)
-      final remaining = total - paid;
+      //
+      // ⚠️ **وفرقُ التقريب يُطرَح — فهو ليس ديناً.** المقبوضُ مقرَّبٌ بينما
+      // `total` حقيقيّ، فبلا هذا الطرح تُقرأ كلُّ فاتورةٍ قُرِّبت هبوطاً
+      // `pending` إلى الأبد، ويُفتَح لها فرعُ الحدّ الائتمانيِّ أدناه، ويُضاف
+      // فتاتُ التقريب إلى رصيد العميل في `_recordSalesReceipt`.
+      final remaining = total - paid - roundingAdjustment;
 
 
       // #Phase4 + 062 (D1-004): Enforce credit limit, with override path
@@ -229,6 +239,7 @@ extension SalesMutationsDao on AppDatabase {
           tax: Value(tax),
           total: Value(total),
           paid: Value(paid),
+          roundingAdjustment: Value(roundingAdjustment),
           cashPaid: Value(cashAmount ?? 0),
           bankPaid: Value(bankAmount ?? 0),
           clickPaid: Value(clickAmount ?? 0),

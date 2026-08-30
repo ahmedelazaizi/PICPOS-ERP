@@ -951,6 +951,9 @@ class ApiHandler {
           'tax': inv.tax,
           'total': inv.total,
           'paid': inv.paid,
+          // فرقُ التقريب يسافر مع الفاتورة، وإلّا قرأه العميلُ صفراً بعد
+          // السحب فرأى `total > paid` ⇒ فاتورةٌ مكتملةٌ تعود `pending`.
+          'roundingAdjustment': inv.roundingAdjustment,
           'cashPaid': inv.cashPaid,
           'bankPaid': inv.bankPaid,
           'paymentMethod': inv.paymentMethod,

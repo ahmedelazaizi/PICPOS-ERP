@@ -72,6 +72,9 @@ class SalesSyncStrategy extends SyncStrategy {
     // collection submit, a mirror-offline collection, or a delta<=0 correction
     // would leave paid permanently divergent), mirroring purchase_sync_strategy.
     final serverPaid = parseDouble(saleMap['paid']);
+    // خادمٌ أقدمُ لا يرسل المفتاح ⇒ صفرٌ، وهو الحقُّ لفاتورةٍ لم تُقرَّب.
+    final serverRoundingAdjustment =
+        parseDouble(saleMap['roundingAdjustment']);
     final serverIsLocked = parseBool(saleMap['isLocked']);
     final serverUpdatedAt = DateTime.tryParse(saleMap['updatedAt']?.toString() ?? '');
     final serverStatus = saleMap['status'] as String? ?? 'completed';
@@ -97,6 +100,10 @@ class SalesSyncStrategy extends SyncStrategy {
               existing.status != serverStatus ||
               existing.clickPaid != serverClickPaid ||
               existing.paid != serverPaid ||
+              // فرقُ التقريب يُشفى كما يُشفى `paid` تماماً: بدونه لا سبيلَ
+              // لتصحيح صفٍّ موجودٍ محلّيّاً عبر هذا المسار أبداً — والمرآةُ
+              // تُشغِّل هذه الاستراتيجيّةَ فعلاً (‏`isClient` تُكذَب للمرآة).
+              existing.roundingAdjustment != serverRoundingAdjustment ||
               existing.deletedAt != serverDeletedAt;
 
           if (needsUpdate) {
@@ -110,6 +117,7 @@ class SalesSyncStrategy extends SyncStrategy {
               status: Value(serverStatus),
               clickPaid: Value(serverClickPaid),
               paid: Value(serverPaid),
+              roundingAdjustment: Value(serverRoundingAdjustment),
               updatedAt: Value(serverUpdatedAt ?? DateTime.now()),
               customerId: Value(resolvedCustomerId),
             ));
@@ -175,6 +183,10 @@ class SalesSyncStrategy extends SyncStrategy {
             tax: Value(parseDouble(saleMap['tax'])),
             total: Value(saleTotal),
             paid: Value(parseDouble(saleMap['paid'])),
+            // خادمٌ أقدمُ لا يرسل المفتاح ⇒ `parseDouble` تعطي صفراً، وهو
+            // الحقُّ حرفيّاً لفاتورةٍ لم تُقرَّب. فلا انكسارَ في الاتجاهين.
+            roundingAdjustment:
+                Value(parseDouble(saleMap['roundingAdjustment'])),
             cashPaid: Value(parseDouble(saleMap['cashPaid'])),
             bankPaid: Value(parseDouble(saleMap['bankPaid'])),
             clickPaid: Value(serverClickPaid),

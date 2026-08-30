@@ -153,6 +153,12 @@ class SyncRepositoryImpl implements ISyncRepository {
           'tax': inv.tax,
           'total': inv.total,
           'paid': inv.paid,
+          // ⚠️ **بدونه يرحّل الخادمُ قيداً مخالفاً لقيد العميل.** هذا مسارٌ
+          // حيٌّ يُطلَق من زرِّ «دفع المبيعات للسيرفر»، والخادمُ يعيد بناءَ
+          // القيد من الحمولة: غيابُ الفرق يجعله يرى `total > paid` فيفتح
+          // ذمّةً مدينةً على حساب المراقبة، ولا يُصدر سطرَ ٤٣١٩، وتبقى
+          // الفاتورةُ `pending` على الخادم و`completed` على الجهاز.
+          'roundingAdjustment': inv.roundingAdjustment,
           'paymentMethod': inv.paymentMethod,
           'deliveryFee': inv.deliveryFee,
           'notes': inv.notes,

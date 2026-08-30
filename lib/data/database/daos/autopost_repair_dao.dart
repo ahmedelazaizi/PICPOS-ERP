@@ -70,7 +70,14 @@ extension AutoPostRepairDao on AppDatabase {
         // Determine: cash sale (fully paid) vs credit sale (has remaining balance)
         // This covers all 3 sources: POS main, Sales Invoices, Table Service POS
         // all of which may use cash/bank/click payment methods.
-        final hasRemaining = (invoice.total - invoice.paid) > 0.01;
+        // ⚠️ **وفرقُ التقريب يُطرَح — وإلّا أعاد الإصلاحُ بناءَ قيدٍ مختلف.**
+        // بيعةٌ نقديّةٌ مقرَّبةٌ يقرؤها الفحصُ الخام «عليها باقٍ» فتُرحَّل
+        // بـ`autoPostCreditSale` — ولا سطرَ ٤٣١٩ فيها إطلاقاً، وتفتح ذمّةً
+        // دائمةً على الحساب الفرعيّ. والقيدُ الأصليُّ كان `autoPostCashSale`.
+        // (‏وهذا عينُ ما حذّر منه تعليقُ العمود: مسارُ الإصلاح يعيد البناءَ
+        // من الصفّ بعد شهور.)
+        final hasRemaining =
+            (invoice.total - invoice.paid - invoice.roundingAdjustment) > 0.01;
         if (!hasRemaining) {
           await autoPostCashSale(invoice);
         } else {

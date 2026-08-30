@@ -298,7 +298,12 @@ extension ReportBuilderDao on AppDatabase {
         // صف بيقول «مكتمل» مهما كانت الحقيقة. و`payment_status` مش عمود
         // في الجدول أصلاً، فلازم يُشتق من paid مقابل total.
         if (col == 'payment_status') {
-          return "CASE WHEN sales_invoices.paid >= sales_invoices.total "
+          // وفرقُ التقريب يُضاف للمقبوض قبل المقارنة: بيعةٌ نقديّةٌ مقرَّبةٌ
+          // مسدَّدةٌ بالكامل كانت تُقرأ «جزئي» لأنّ `paid` أقلُّ من `total`
+          // بمقدارٍ ليس ديناً.
+          return "CASE WHEN sales_invoices.paid + "
+              "COALESCE(sales_invoices.rounding_adjustment, 0) "
+              ">= sales_invoices.total "
               "THEN 'مكتمل' "
               "WHEN sales_invoices.paid > 0 THEN 'جزئي' "
               "ELSE 'غير مدفوع' END";

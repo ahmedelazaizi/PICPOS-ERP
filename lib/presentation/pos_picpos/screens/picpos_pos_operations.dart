@@ -1690,6 +1690,19 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     // عرض الفكة للعميل (طلب ٢). الصندوق الأخضر «الباقي للعميل (فكة)» جوه
     // ديالوج الدفع متعشّش في فرع `multiple` بس، فمسار النقدي مالوش أي عرض
     // للفكة. نفس حل UralCash: ديالوج تحصيل النقدية بخانة المستلم وأزرار الفئات.
+    // §٤ `round` — **التقريبُ قرارٌ يقع هنا، قبل عدِّ النقد.**
+    //
+    // ⚠️ ولا يُترَك للأوركستريتر: لو قُرِّب هناك لكان الكاشيرُ قد عدّ النقدَ
+    // وأعاد الباقيَ على الإجماليِّ **غيرِ** المقرَّب (‏حوارُ التحصيل يستقبل
+    // ما نمرّره له)، فيبقى في الدرج ١١٤٫٠٨ ويقول الدفترُ ١١٤٫٠٠ ⇒ فرقُ
+    // ورديّةٍ يخلقه الإعدادُ الذي وُجد ليمنعه. الأوركستريترُ الآن **يشتقّ**
+    // الفرقَ ممّا قُبض فعلاً ولا يُعيد كتابةَ المقبوض.
+    // (‏بلاغُ التدقيق المحاسبيّ 2026-08-30 · BLOCKER-1)
+    //
+    // ونقداً خالصاً فقط، ووصفُ الإعداد نفسُه «لأقرب وحدة عملة متاحة فعلاً في
+    // الدرج» — فالبطاقةُ والتحويلُ يسدّدان القرشَ بالضبط.
+    double collectTotal = paidTotal;
+    double? collectCash = cashAmount;
     if (method == 'cash') {
       // §٤ `quickamt` — يُمرَّر من هنا لا يُقرَأ داخلَ الحوار: الحوارُ
       // مشترَكٌ مع UralCash، فالسياسةُ تُحقَن عند نداء PicPos وحدَه.
@@ -1698,9 +1711,21 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       // «ليست منصّةً آجلة» وحدَه، وهذا المسارُ يصله النقديُّ من الفرعين.
       final cashPolicy = await ref.read(quickSalePolicyProvider.future);
       if (!mounted) return;
+
+      final roundStep = quickSaleRoundingStep(cashPolicy);
+      if (roundStep > 0) {
+        final rounded = FinancialUtils.round(
+            quickSaleRoundedTotal(total: paidTotal, step: roundStep));
+        if (rounded != paidTotal) {
+          collectTotal = rounded;
+          if (collectCash != null) collectCash = rounded;
+        }
+      }
+
       final confirmed = await PosCashTenderingDialog.show(
         context,
-        totalAmount: total,
+        // المقرَّبُ هو ما يراه الكاشيرُ والعميلُ وما تُحسَب عليه الفكّة.
+        totalAmount: collectTotal,
         showQuickAmounts: cashPolicy.isOn(
           kQuickSaleRows.firstWhere((r) => r.id == 'quickamt'),
         ),
@@ -1732,8 +1757,9 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
           .read(checkoutControllerProvider.notifier)
           .processPayment(
             method: method,
-            total: paidTotal,
-            cashAmount: cashAmount,
+            // المقرَّبُ — هو ما دخل الدرجَ فعلاً، فيتطابق الدفترُ مع العدّ.
+            total: collectTotal,
+            cashAmount: collectCash,
             bankAmount: bankAmount,
             clickAmount: clickAmount,
             bankSafeId: bankSafeId,

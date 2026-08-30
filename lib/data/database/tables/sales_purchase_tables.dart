@@ -243,6 +243,29 @@ class SalesInvoices extends Table {
   RealColumn get tax => real().withDefault(const Constant(0))();
   RealColumn get total => real().withDefault(const Constant(0))();
   RealColumn get paid => real().withDefault(const Constant(0))();
+
+  /// v171 — فرقُ تقريب الإجماليّ (‏سياسةُ البيع السريع `pos_total_rounding`).
+  ///
+  /// `total` يبقى الإجماليَّ **الحقيقيَّ** دائماً — الوعاءُ الضريبيُّ
+  /// والإيرادُ يُشتقّان منه — و`paid` هو ما قُبض فعلاً بعد التقريب. وهذا
+  /// العمودُ هو الفرقُ بينهما الذي **ليس ديناً على العميل**:
+  ///
+  /// ```
+  /// roundingAdjustment = total - roundedTotal
+  /// ```
+  ///
+  /// موجبٌ = قُرِّب هبوطاً (‏قُبض أقلّ) ⇒ `Dr 4319 فروق تقريب`.
+  /// سالبٌ = قُرِّب صعوداً (‏قُبض أكثر) ⇒ `Cr 4319`.
+  ///
+  /// ⚠️ **ولا يُشتقّ من الإعداد وقتَ القراءة.** الإعدادُ يسري فوراً على كلِّ
+  /// نقاط البيع، فاشتقاقُه لاحقاً كان سيُبدّل قيدَ فاتورةٍ أُغلقت — ومسارُ
+  /// إصلاح الترحيل (`autopost_repair_dao`) يُعيد بناءَ القيد من الصفّ بعد
+  /// شهور. لقطةٌ وقتَ الإصدار، نفسُ مبدأ [dueDate].
+  ///
+  /// ⚠️ **وهو ليس خصماً.** الخصمُ يقع قبل الضريبة ويظهر في `4212 خصم
+  /// المبيعات`؛ وهذا يقع **بعد** الإجماليّ ولا يمسّ الوعاءَ الضريبيَّ ولا
+  /// المستندَ الضريبيَّ المرسَل لمصلحة الضرائب.
+  RealColumn get roundingAdjustment => real().withDefault(const Constant(0))();
   RealColumn get cashPaid =>
       real().withDefault(const Constant(0))(); // NEW: Split payment support
   RealColumn get bankPaid =>

@@ -808,7 +808,7 @@ class AppDatabase extends _$AppDatabase {
   // `newColumns`، فرمت `no such column: "role"` وابتلعها `_safeMigrate`
   // (تعدُّها خطأً عديمَ الأثر) — فخُتمت القواعدُ 161 وأعمدةُ المورد لم تُضَف،
   // و`from < 161` لا يعود يفحصها. الخطوةُ الجديدةُ تفحص ثمّ تُصلح.
-  int get schemaVersion => 170;
+  int get schemaVersion => 171;
 
   /// PostgreSQL-specific table creation: Drift's `currentDateAndTime` generates
   /// `strftime('%s','now')` which doesn't exist in PostgreSQL.

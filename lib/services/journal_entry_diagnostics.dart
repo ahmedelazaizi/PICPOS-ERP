@@ -14,4 +14,17 @@ class JournalEntryDiagnostics {
   /// by construction; larger diffs are rejected with the
   /// "المدين لا يساوي الدائن" exception (dead-lettered by the sync worker).
   static double lastRoundingAdjustment = 0;
+
+  /// فرقُ تقريب **سياسةِ البيع** (`pos_total_rounding`) في آخر بيعةٍ رُحِّلت
+  /// — `total - roundedTotal`، مُرحَّلاً بسطرٍ صريحٍ على `4319`.
+  ///
+  /// ⚠️ **حقلٌ مستقلٌّ عن [lastRoundingAdjustment] عمداً — ولا يُدمَجان.**
+  /// ذاك فتاتُ عائمٍ دون ٠٫٠١ لا يراه أحدٌ ولا يملك المشغّلُ حياله شيئاً؛
+  /// وهذا **قرارُ سعرٍ رآه العميلُ على الإيصال** ويبلغ نصفَ جنيهٍ عند خيار
+  /// «لأقرب جنيه». وخلطُهما في رسالةٍ واحدةٍ يجعل الكاشيرَ يقرأ تسويةً
+  /// حسابيّةً حيث وقع تقريبُ ثمن، أو يتجاهل الاثنين معاً.
+  ///
+  /// يُصفَّر في مطلع `autoPostCashSale` لا في `createJournalEntry`: قيمتُه
+  /// تُكتَب **قبل** بناء القيد، فتصفيرُها هناك كان سيمحوها قبل أن تُقرأ.
+  static double lastPolicyRounding = 0;
 }

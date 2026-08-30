@@ -289,6 +289,13 @@ class ApiSalesHandler extends ApiHandlerBase {
           tax: (parseDoubleNullable(data['tax']))?.toDouble() ?? 0,
           total: (parseDoubleNullable(data['total']))?.toDouble() ?? 0,
           paid: (parseDoubleNullable(data['paid']))?.toDouble() ?? 0,
+          // ⚠️ **بدونه يرحّل الخادمُ قيداً مخالفاً لقيد العميل.** الخادمُ
+          // يعيد بناءَ القيد من الحمولة، فغيابُ الفرق يجعله يرى `total > paid`
+          // فيفتح ذمّةً مدينةً لا وجودَ لها ويترك الفاتورةَ `pending` —
+          // بينما الفاتورةُ نفسُها على الجهاز مكتملةٌ ومتوازنة.
+          // و`?? 0` يُبقي عميلاً أقدمَ لا يرسل المفتاح على سلوكه حرفيّاً.
+          roundingAdjustment:
+              (parseDoubleNullable(data['roundingAdjustment']))?.toDouble() ?? 0,
           paymentMethod: data['paymentMethod'] as String? ?? 'cash',
           deliveryFee: (parseDoubleNullable(data['deliveryFee']))?.toDouble() ?? 0,
           notes: resolvedNotes,
@@ -986,6 +993,9 @@ class ApiSalesHandler extends ApiHandlerBase {
       tax: (parseDoubleNullable(sale['tax']))?.toDouble() ?? 0,
       total: (parseDoubleNullable(sale['total']))?.toDouble() ?? 0,
       paid: (parseDoubleNullable(sale['paid']))?.toDouble() ?? 0,
+      // نفسُ سببِ شقِّ البيع أعلاه — القيدُ يُعاد بناؤه من الحمولة.
+      roundingAdjustment:
+          (parseDoubleNullable(sale['roundingAdjustment']))?.toDouble() ?? 0,
       paymentMethod: sale['paymentMethod'] as String? ?? 'cash',
       saleType: sale['saleType'] as String? ?? 'default',
       notes: '${(sale['notes'] as String?)?.isNotEmpty == true ? sale['notes'] : 'استبدال'}'

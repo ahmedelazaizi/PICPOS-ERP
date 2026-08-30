@@ -6,6 +6,7 @@ import '../../core/errors/app_exceptions.dart';
 import '../../domain/entities/cart_item_entity.dart';
 import '../../domain/entities/sync_dtos.dart';
 import '../../domain/models/sales_return_refund_split.dart';
+import '../../domain/models/quick_sale_policy.dart';
 import '../../domain/repositories/sales_repository.dart';
 import '../../core/logging/diagnostic_logger.dart';
 import '../../core/utils/financial_utils.dart';
@@ -104,6 +105,10 @@ class SalesTransactionOrchestrator {
     required double tax,
     required double total,
     required double paid,
+    /// فرقُ تقريب الإجماليّ — `total - roundedTotal`، صفرٌ بلا تقريب.
+    /// افتراضُه صفرٌ عمداً: كلُّ منادٍ لا يعرف السياسةَ (‏الحجوزاتُ
+    /// والتوصيلُ والاستيرادُ) يبقى على سلوكه حرفاً بحرف.
+    double roundingAdjustment = 0,
     required String paymentMethod,
     required List<CartItemEntity> items,
     double? cashAmount,
@@ -233,6 +238,7 @@ class SalesTransactionOrchestrator {
         tax: tax,
         total: total,
         paid: paid,
+        roundingAdjustment: roundingAdjustment,
         paymentMethod: paymentMethod,
         items: itemCompanions,
         saleType: saleType ?? 'default',
@@ -514,6 +520,9 @@ class SalesTransactionOrchestrator {
             'tax': tax,
             'total': total,
             'paid': paid,
+            // نفسُ سببِ الحمولة الأخرى: الحقلُ يُحفَظ محلّيّاً في هذه الدالّة
+            // نفسِها، فإسقاطُه من دفعتِها يجعل الخادمَ يبني قيداً مختلفاً.
+            'roundingAdjustment': roundingAdjustment,
             'paymentMethod': paymentMethod,
             'deliveryFee': deliveryFee,
             'notes': notes,
@@ -690,6 +699,28 @@ class SalesTransactionOrchestrator {
     double? effectiveBank = request.bankAmount;
     double? effectiveClick = request.clickAmount;
 
+    // ── الإجماليُّ المقرَّب حسب السياسة — يُقرأ **قبل** فحص الحدّ الائتمانيّ ──
+    //
+    // الفحصُ أدناه يقارن `finalTotal - effectivePaid`، وبيعةٌ نقديّةٌ مقرَّبةٌ
+    // هبوطاً تُظهر «باقياً» وهميّاً بمقدار الفرق — فتُرفَض على عميلٍ بلغ حدَّه
+    // الائتمانيَّ بسبب ثلاثةِ قروشٍ ليست ديناً أصلاً.
+    final storedRounding = await _db.getSettingValue('pos_total_rounding');
+    final roundingStep = quickSaleRoundingStep(QuickSalePolicyValues(
+      storedRounding == null
+          ? const <String, String>{}
+          : <String, String>{'pos_total_rounding': storedRounding},
+    ));
+    final policyRoundedTotal = roundingStep > 0
+        ? FinancialUtils.round(
+            quickSaleRoundedTotal(total: finalTotal, step: roundingStep))
+        : finalTotal;
+
+    /// هل سُدِّدت الفاتورةُ بالكامل — مع اعتبارِ فرق التقريب **ليس ديناً**؟
+    double outstandingAfterRounding() =>
+        (effectivePaid - policyRoundedTotal).abs() <= 0.01
+            ? 0.0
+            : finalTotal - effectivePaid;
+
     // 2b. Credit limit enforcement + delivery-company override.
     // Merged into a single block to avoid double-fetching the party.
     if (!request.isReturn && request.customerId != null) {
@@ -712,7 +743,11 @@ class SalesTransactionOrchestrator {
       // Use the effective paid value so the credit-limit check applies
       // after the delivery-company override (otherwise paid==full bypasses
       // the limit entirely).
-      final remaining = finalTotal - effectivePaid;
+      //
+      // وفرقُ التقريب لا يُعَدّ ديناً — انظر `outstandingAfterRounding` أعلاه.
+      // وتجاوزُ شركة التوصيل يصفّر المقبوضَ فلا ينطبق شرطُ التقريب ويعود
+      // الباقي كاملاً، وهو المطلوب.
+      final remaining = outstandingAfterRounding();
       if (remaining > 0.01) {
         if (customer != null && customer.creditLimit > 0) {
           final projected = customer.balance + remaining;
@@ -733,6 +768,76 @@ class SalesTransactionOrchestrator {
                 'customer=${customer.id} projected=$projected '
                 'limit=${customer.creditLimit}'));
           }
+        }
+      }
+    }
+
+    // ── تقريبُ الإجماليّ (`pos_total_rounding`) ─────────────────────────────
+    //
+    // **الفاتورةُ تبقى بإجماليها الحقيقيّ، والمقبوضُ وحدَه يُقرَّب**، والفرقُ
+    // يُحمَل على `4319 فروق تقريب` بسطرٍ صريحٍ في القيد. والأشكالُ الثلاثةُ
+    // البديلةُ كلُّها معطوبةٌ ومقيسة (‏تدقيقٌ محاسبيٌّ 2026-08-30):
+    //
+    //   • تقريبُ المقبوض **صعوداً** بلا سطرٍ مقابل ⇒ «المدين لا يساوي
+    //     الدائن» فيُرمى القيدُ ويصير dead-letter دائماً — وقد خرج المخزونُ
+    //     ودخل النقدُ الدرجَ فعلاً، لأنّ الترحيل يقع **خارج** معاملة الفاتورة.
+    //   • تقريبُه **هبوطاً** ⇒ ذمّةٌ مدينةٌ وهميّةٌ تتراكم على حساب المراقبة
+    //     لزبونٍ عابرٍ بلا حسابٍ فرعيّ، والفاتورةُ تبقى `pending` أبداً.
+    //   • تقريبُ `total` نفسِه ⇒ **يتّزن ويكذب**، وهو الأخطرُ لأنّه لا يصرخ:
+    //     `_deriveBalancedLegs` تشتقّ الأطرافَ من `sale.total` فتتوازن
+    //     بالبناء مهما كان الرقم، فيُبتلَع الفرقُ في `4121 مبيعات` أو في
+    //     `4212 خصم المبيعات` بلا سطرٍ ولا تشخيص — والميزانُ يقفل والمدقّقُ
+    //     لا يجد شيئاً. (‏٤٠٠ فاتورة/يوم × ٣٠٠ يوم × ٠٫٠١٢٥ ≈ ١٥٠٠ ج.م سنويّاً)
+    //
+    // ⚠️ **ونقداً خالصاً وحدَه.** وصفُ الإعداد نفسُه «لأقرب وحدة عملة متاحة
+    // فعلاً في الدرج» — فالقيدُ ماديٌّ في الدرج لا في الحساب. البطاقةُ
+    // والتحويلُ يسدّدان القرشَ بالضبط، فتقريبُهما يخترع فرقاً لا وجودَ له.
+    //
+    // ⚠️ **وعلى المسدَّد بالكامل وحدَه.** البيعةُ الآجلةُ أو المسدَّدةُ جزئيّاً
+    // باقيها دَينٌ حقيقيّ، وتقريبُه كان سيخلط فرقَ التقريب بالدَّين فيضيع
+    // الاثنان.
+    //
+    // ⚠️ **وبعد تجاوزِ شركة التوصيل عمداً**: التجاوزُ يصفّر المقبوض ويحوّل
+    // البيعةَ إلى `credit`، فحسابُ التقريب قبلَه كان سيُقرِّب بيعةً لا تمسّ
+    // درجاً أصلاً.
+    // ⚠️⚠️ **يُشتقُّ ممّا قُبض فعلاً — ولا يُعاد كتابةُ `paid` بحالٍ.**
+    //
+    // النسخةُ الأولى كانت تُقرِّب `effectivePaid` **هنا**، أي **بعد** أن
+    // عدّ الكاشيرُ النقدَ وأعاد الباقيَ على الإجماليِّ غيرِ المقرَّب (‏حوارُ
+    // `PosCashTenderingDialog` يستقبل الإجماليَّ الخام). فالدرجُ يحوي ١١٤٫٠٨
+    // والدفترُ يقول ١١٤٫٠٠ ⇒ **فرقُ ورديّةٍ يخلقه الإعدادُ الذي وُجد ليمنعه**،
+    // بمقدار ٠٫٠٨ لكلِّ بيعةٍ — ٤٠٠ بيعة/يوم عند خيار الجنيه تكسر كلَّ سقوف
+    // `diffmax` وتفرض تبريراً مكتوباً كلَّ ورديّة.
+    // (‏بلاغُ التدقيق المحاسبيّ 2026-08-30 · BLOCKER-1)
+    //
+    // فالقرارُ يقع **مرّةً واحدةً في شاشة الكاشير** قبل عدِّ النقد، وهنا
+    // يُتحقَّق منه فحسب: إن كان المقبوضُ يساوي المقرَّبَ فالفرقُ فرقُ تقريب.
+    // ومنادٍ لم يُقرِّب (‏الـAPI · UralCash · الحجوزات) يصل بـ`paid` مساوياً
+    // للإجماليِّ الحقيقيّ فلا ينطبق الشرطُ ويبقى سلوكُه حرفاً بحرف.
+    double roundingAdjustment = 0;
+    if (!request.isReturn) {
+      // `== 'cash'` صراحةً لا «لا بنكَ ولا كليك»: بيعةُ البطاقة تمرّ بـ
+      // `bankAmount == null` كذلك، فالفحصُ السلبيُّ وحدَه كان يعدّها نقداً.
+      final isPureCash = effectivePaymentMethod == 'cash' &&
+          (effectiveBank ?? 0) == 0 &&
+          (effectiveClick ?? 0) == 0;
+      // ⚠️ **وبيعةُ التوصيل غيرِ المسلَّمة تُستثنى.** `autoPostCashSale`
+      // تحوّلها إلى `_autoPostDeferredRevenue` **قبل** أن تبلغ سطرَ ٤٣١٩،
+      // وذلك المسارُ لا يعرف التقريب: المقرَّبُ صعوداً يُنتج مديناً يفوق
+      // الدائنَ بفارقٍ فوق السقف فيُرمى القيدُ ويصير dead-letter، والمقرَّبُ
+      // هبوطاً يفتح ذمّةً مدينةً صامتة. (‏BLOCKER-2)
+      final isImmediateRevenue = request.deliveryStatus == null ||
+          request.deliveryStatus!.isEmpty ||
+          request.deliveryStatus == 'delivered';
+      if (roundingStep > 0 && isPureCash && isImmediateRevenue) {
+        if ((effectivePaid - policyRoundedTotal).abs() <= 0.01 &&
+            policyRoundedTotal != finalTotal) {
+          roundingAdjustment =
+              FinancialUtils.round(finalTotal - policyRoundedTotal);
+          unawaited(DiagnosticLogger.log(
+              'SALE-ROUNDING',
+              'total=$finalTotal collected=$effectivePaid '
+              'adj=$roundingAdjustment step=$roundingStep'));
         }
       }
     }
@@ -826,6 +931,10 @@ class SalesTransactionOrchestrator {
         'tax': totalTax,
         'total': finalTotal,
         'paid': effectivePaid,
+        // ⚠️ **بلا هذا المفتاح يُرحّل الخادمُ قيداً مخالفاً لقيد العميل.**
+        // الخادمُ يعيد بناءَ القيد من الحمولة، فغيابُ الفرق يجعله يرى
+        // `total > paid` فيفتح ذمّةً مدينةً لا وجودَ لها.
+        'roundingAdjustment': roundingAdjustment,
         'paymentMethod': effectivePaymentMethod,
         'deliveryFee': request.deliveryFee,
         'notes': request.notes,
@@ -910,7 +1019,12 @@ class SalesTransactionOrchestrator {
         // العميل أعلاه فيُسند القيمة.
         final invoiceNumber = clientSaleNumber ??
             await _db.generateInvoiceNumber(isReturn ? 'RET-' : 'Receipt');
-        final remaining = finalTotal - effectivePaid;
+        // ⚠️ **وفرقُ التقريب يُطرَح — توأمُ `sales_mutations_dao` تماماً.**
+        // بدونه يكتب شقُّ العميل/المرآة `pending` لكلِّ بيعةٍ نقديّةٍ مقرَّبة
+        // (‏أدنى فرقٍ ٠٫٠٢٥ وهو فوق سقف ٠٫٠١ دائماً)، فيرى الكاشيرُ فاتورةً
+        // غيرَ مسدَّدةٍ لبيعةٍ قُبض ثمنُها كاملاً — ولا تُشفى إلّا حين يصل
+        // صدى الخادم. (‏بلاغُ التدقيق المحاسبيّ 2026-08-30 · MAJOR-3)
+        final remaining = finalTotal - effectivePaid - roundingAdjustment;
         final status = remaining <= 0.01 ? 'completed' : 'pending';
 
         final itemCompanions = <SalesInvoiceItemsCompanion>[];
@@ -995,6 +1109,7 @@ class SalesTransactionOrchestrator {
             tax: Value(totalTax),
             total: Value(finalTotal),
             paid: Value(effectivePaid),
+            roundingAdjustment: Value(roundingAdjustment),
             status: Value(status),
             paymentMethod: Value(effectivePaymentMethod),
             notes: Value(request.notes),
@@ -1036,6 +1151,7 @@ class SalesTransactionOrchestrator {
           tax: totalTax,
           total: finalTotal,
           paid: effectivePaid,
+          roundingAdjustment: roundingAdjustment,
           paymentMethod: effectivePaymentMethod,
           items: request.items,
           netLines: netLines,

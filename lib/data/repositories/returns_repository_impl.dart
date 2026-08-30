@@ -122,6 +122,10 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
         bankPaid: invoice.bankPaid,
         totalReturn: totalReturn,
         hasCustomer: invoice.customerId != null,
+        // مرتجعُ بيعةٍ قُرِّبت: الفرقُ لم يدخل الدرجَ ولم يُفتح به دَينٌ،
+        // فلا يخرج ولا يُقاصّ. والمرورُ عبر هذه الدالّة وحدَها هو ما يجعل
+        // الحارسَ والتنفيذَ والإيصالَ يتّفقون على الرقم نفسِه.
+        invoiceRoundingAdjustment: invoice.roundingAdjustment,
       );
 
   @override

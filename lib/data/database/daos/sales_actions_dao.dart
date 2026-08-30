@@ -122,7 +122,11 @@ extension SalesActionsDao on AppDatabase {
 
       // Reverse customer balance
       if (inv.customerId != null) {
-        final remaining = inv.total - inv.paid;
+        // ⚠️ **وفرقُ التقريب يُطرَح — وإلّا صار الإبطالُ يمنح العميلَ رصيداً.**
+        // إنشاءُ البيعة لم يُضِف الفرقَ إلى `parties.balance` (‏المصدرُ
+        // `sales_mutations_dao` يطرحه)، فإبطالُها بطرحه يمنح دائناً بمقدار
+        // ٠٫٠٢ لم يوجد قطّ — ويتراكم بلا قيدٍ يقابله.
+        final remaining = inv.total - inv.paid - inv.roundingAdjustment;
         if (remaining > 0) {
           await adjustPartyBalance(inv.customerId!, -remaining);
         }

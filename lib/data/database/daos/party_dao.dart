@@ -2135,19 +2135,19 @@ extension PartyDao on AppDatabase {
           p.name,
           p.balance,
           COALESCE(SUM(CASE WHEN julianday(?, 'unixepoch') - julianday(COALESCE(si.due_date, si.invoice_date), 'unixepoch') <= 30
-            THEN MAX(si.total - si.paid, 0) ELSE 0 END), 0) AS bucket_0_30,
+            THEN MAX(si.total - si.paid - COALESCE(si.rounding_adjustment, 0), 0) ELSE 0 END), 0) AS bucket_0_30,
           COALESCE(SUM(CASE WHEN julianday(?, 'unixepoch') - julianday(COALESCE(si.due_date, si.invoice_date), 'unixepoch') BETWEEN 31 AND 60
-            THEN MAX(si.total - si.paid, 0) ELSE 0 END), 0) AS bucket_31_60,
+            THEN MAX(si.total - si.paid - COALESCE(si.rounding_adjustment, 0), 0) ELSE 0 END), 0) AS bucket_31_60,
           COALESCE(SUM(CASE WHEN julianday(?, 'unixepoch') - julianday(COALESCE(si.due_date, si.invoice_date), 'unixepoch') BETWEEN 61 AND 90
-            THEN MAX(si.total - si.paid, 0) ELSE 0 END), 0) AS bucket_61_90,
+            THEN MAX(si.total - si.paid - COALESCE(si.rounding_adjustment, 0), 0) ELSE 0 END), 0) AS bucket_61_90,
           COALESCE(SUM(CASE WHEN julianday(?, 'unixepoch') - julianday(COALESCE(si.due_date, si.invoice_date), 'unixepoch') > 90
-            THEN MAX(si.total - si.paid, 0) ELSE 0 END), 0) AS bucket_90_plus
+            THEN MAX(si.total - si.paid - COALESCE(si.rounding_adjustment, 0), 0) ELSE 0 END), 0) AS bucket_90_plus
         FROM parties p
         LEFT JOIN sales_invoices si
           ON si.customer_id = p.id
           AND si.status NOT IN ('returned', 'cancelled')
           AND si.is_deleted = 0
-          AND si.paid < si.total
+          AND si.paid + COALESCE(si.rounding_adjustment, 0) < si.total
           AND si.invoice_date <= ?
         WHERE p.is_active = 1
           AND p.is_customer = 1

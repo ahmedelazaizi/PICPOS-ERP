@@ -24,6 +24,7 @@ import '../../../domain/entities/cart_item_entity.dart';
 import '../../../domain/entities/product_entity.dart';
 import '../widgets/picpos_payment_methods.dart';
 import '../widgets/picpos_shift_conflict_dialog.dart';
+import '../../../core/utils/financial_utils.dart';
 import '../../../domain/models/quick_sale_policy.dart';
 import '../../../domain/models/shift_open_gate.dart';
 import '../../../services/delta_pull_service.dart';

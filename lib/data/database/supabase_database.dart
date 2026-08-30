@@ -416,6 +416,9 @@ class SupabaseDatabase {
       tax: (data['tax'] as num?)?.toDouble() ?? 0,
       total: (data['total'] as num?)?.toDouble() ?? 0,
       paid: (data['paid'] as num?)?.toDouble() ?? 0,
+      // صفٌّ بلا العمود ⇒ صفرٌ، وهو الحقُّ لفاتورةٍ لم تُقرَّب.
+      roundingAdjustment:
+          (data['rounding_adjustment'] as num?)?.toDouble() ?? 0,
       paymentMethod: data['payment_method'] as String? ?? 'cash',
       cashPaid: (data['cash_paid'] as num?)?.toDouble() ?? 0,
       bankPaid: (data['bank_paid'] as num?)?.toDouble() ?? 0,

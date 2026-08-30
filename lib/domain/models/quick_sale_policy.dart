@@ -486,10 +486,14 @@ const List<QuickSaleStep> kQuickSaleSteps = [
             title: 'تقريب الإجمالي',
             sub: 'لأقرب وحدة عملة متاحة فعلاً في الدرج',
             options: ['بلا تقريب', 'لأقرب ٥ قروش', 'لأقرب ٢٥ قرش', 'لأقرب جنيه'],
-            defaultIndex: 1,
-            notEnforcedReason:
-                'التقريبُ يمسُّ الإجماليَّ المحاسبيَّ ومقابلَه في القيد — '
-                'فتوصيلُه يحتاج مسارَ ترحيلٍ لا قراءةَ مفتاح.',
+            // ⚠️ **الافتراضُ «بلا تقريب» عمداً — ولا يُرفَع.**
+            //
+            // المفتاحُ غائبٌ عن كلِّ قاعدةٍ قائمة، فالافتراضُ هو ما ستقرؤه
+            // كلُّ تنصيبةٍ لحظةَ الترقية. وافتراضٌ غيرُ الصفر كان سيبدأ
+            // تقريبَ فواتيرِ كلِّ فرعٍ في العالم بلا أن يطلبه أحد، ويقلب
+            // دفاترَهم بأثرٍ فوريّ. التقريبُ قرارُ مالكٍ يُفعَّل صراحةً.
+            defaultIndex: 0,
+            enforced: true,
           ),
           QuickSaleRow(
             id: 'mgrlimit',
@@ -1011,6 +1015,44 @@ bool quickSaleDiscountAllowed({
   required double cap,
 }) =>
     percent <= cap;
+
+/// خطوةُ تقريب الإجماليّ بالعملة — **صفرٌ يعني «بلا تقريب»**.
+///
+/// الخياراتُ الأربعةُ بترتيب الشاشة: بلا · ٥ قروش · ٢٥ قرشاً · جنيه.
+double quickSaleRoundingStep(QuickSalePolicyValues v) =>
+    const <double>[0, 0.05, 0.25, 1.00][v.indexOf(_rowById('round'))];
+
+/// الإجماليُّ **المقبوض** بعد التقريب لأقرب [step].
+///
+/// ⚠️ **ولا يمسّ `total` المحفوظ.** الإيرادُ والوعاءُ الضريبيُّ يُشتقّان من
+/// الإجماليِّ الحقيقيّ؛ وتقريبُ `total` نفسِه كان **يتّزن ويكذب**: أطرافُ
+/// القيد تُشتقّ منه فتتوازن بالبناء مهما كان الرقم، فيُبتلَع الفرقُ في
+/// المبيعات أو في الخصم بلا سطرٍ ولا تشخيص. (‏تدقيقٌ محاسبيٌّ 2026-08-30)
+///
+/// `step <= 0` ⇒ يعود الإجماليُّ كما هو، فخيارُ «بلا تقريب» لا يمرّ بحساب.
+double quickSaleRoundedTotal({required double total, required double step}) {
+  if (step <= 0) return total;
+  // نصفٌ لأعلى بوحداتٍ صحيحةٍ من الخطوة — لا حسابَ عائمٍ مباشرٍ على العملة.
+  return (total / step).roundToDouble() * step;
+}
+
+/// فرقُ التقريب = `total - roundedTotal` — بإشارته.
+///
+/// موجبٌ = قُرِّب هبوطاً (‏قُبض أقلّ) ⇒ `Dr 4319 فروق تقريب`.
+/// سالبٌ = قُرِّب صعوداً (‏قُبض أكثر) ⇒ `Cr 4319`.
+///
+/// ⚠️ **والفتاتُ العائمُ يُقصّ**: `(114.08/0.05).round()*0.05` تعطي
+/// `114.05000000000001`، فالفرقُ بلا تقريبٍ للخانات يصير `-0.0000000000001`
+/// ويولّد سطرَ قيدٍ بقيمةٍ لا تُرى — يُرفض في الترحيل أو يلوّث الأستاذ.
+double quickSaleRoundingDelta({
+  required double total,
+  required double step,
+  required int decimals,
+}) {
+  if (step <= 0) return 0;
+  final rounded = quickSaleRoundedTotal(total: total, step: step);
+  return double.parse((total - rounded).toStringAsFixed(decimals));
+}
 
 /// أقصى فرقٍ في الوردية يُقبل بلا سببٍ مكتوب — `null` بلا حد.
 double? quickSaleShiftDiffLimit(QuickSalePolicyValues v) =>

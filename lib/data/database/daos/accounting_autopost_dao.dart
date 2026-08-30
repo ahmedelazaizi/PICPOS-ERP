@@ -428,7 +428,15 @@ extension AccountingAutopostDao on AppDatabase {
     // partial-cash sale to no customer credited full revenue+VAT but debited
     // only the cash paid → credits > debits → the whole JE dead-lettered. Book
     // the remainder to the receivables CONTROL account (mirrors the factory).
-    if (sale.total > sale.paid) {
+    // ⚠️ **وفرقُ التقريب يُطرَح قبل المقارنة — فهو ليس ديناً.**
+    // بيعةٌ ١١٤٫٠٧ قُبض عنها ١١٤٫٠٥ كانت تفتح `Dr 1121 ذمم عملاء 0.02`
+    // لزبونٍ عابرٍ بلا `customerId`، فيتراكم فتاتُ التقريب على حسابِ
+    // **المراقبة** بلا حسابٍ فرعيٍّ يقابله — وتنكسر مطابقةُ المراقبة مع
+    // مجموع الفرعيّات، وتبقى الفاتورةُ `pending`.
+    final receivableDue = FinancialUtils.round(
+      sale.total - sale.paid - sale.roundingAdjustment,
+    );
+    if (receivableDue > 0) {
       final controlAccount = await accountingDao.getAccountByCode(
         await accountingDao.getMappedAccountCode(
           'receivables',
@@ -448,10 +456,50 @@ extension AccountingAutopostDao on AppDatabase {
         lines.add(
           JournalLine(
             accountId: receivableAccount.id,
-            debit: sale.total - sale.paid,
+            debit: receivableDue,
             description: 'مدينون',
           ),
         );
+      }
+    }
+
+    // ── فرقُ تقريب الإجماليّ — سطرٌ صريحٌ لا فرقٌ مبتلَع ────────────────────
+    //
+    // `total` يبقى حقيقيّاً و`paid` مقرَّباً، والفرقُ يقع هنا على حسابه
+    // الخاصّ `4319 فروق تقريب` — فيبقى `4121 مبيعات` و`2121 ض.ق.م` سليمَين
+    // ويظهر التقريبُ في الأستاذ بسطرٍ يقرؤه المدقّق.
+    //
+    // ⚠️ **ولا يُترَك للموازن التلقائيّ.** سقفُ
+    // `FinancialUtils.balanceToleranceMinorUnits` ٠٫٠١ ثابتاً، بينما أدنى
+    // خطوةِ تقريبٍ (٥ قروش) تعطي فرقاً أقصاه ٠٫٠٢٥ — و٢٥ قرشاً تعطي ٠٫١٢٥،
+    // والجنيهُ ٠٫٥٠. أي **فوق السقف دائماً** فيُرمى القيدُ كلُّه بـ«المدين
+    // لا يساوي الدائن»، وقد خرج المخزونُ ودخل النقدُ الدرجَ فعلاً.
+    // السطرُ الصريحُ هنا يجعل القيدَ متوازناً **قبل** أن يبلغ الموازنَ أصلاً،
+    // فلا ازدواجَ تصحيحٍ كذلك.
+    JournalEntryDiagnostics.lastPolicyRounding = sale.roundingAdjustment;
+    if (sale.roundingAdjustment != 0) {
+      final roundingAccount =
+          await accountingDao.getLeafAccountByPurpose('rounding_difference');
+      if (roundingAccount != null) {
+        final adj = sale.roundingAdjustment;
+        lines.add(
+          JournalLine(
+            accountId: roundingAccount.id,
+            // موجبٌ = قُرِّب هبوطاً (‏قُبض أقلّ) ⇒ مدين.
+            // سالبٌ = قُرِّب صعوداً (‏قُبض أكثر) ⇒ دائن.
+            debit: adj > 0 ? adj : 0,
+            credit: adj < 0 ? -adj : 0,
+            description: 'فروق تقريب',
+          ),
+        );
+      } else {
+        // `4319` مضمونٌ بالشفاء الذاتيِّ كلَّ إقلاع، فهذا الفرعُ دفاعيٌّ
+        // بحت — لكنّ صمتَه كان سيُنتج قيداً غيرَ متوازنٍ يُرمى بلا سبب.
+        unawaited(DiagnosticLogger.log(
+            'AUTOPOST-WARN',
+            'sale #${sale.id}: rounding_difference account UNMAPPED — '
+            'adj=${sale.roundingAdjustment} has no leg. Map '
+            'rounding_difference in الربط المحاسبي.'));
       }
     }
 
@@ -1540,6 +1588,30 @@ extension AccountingAutopostDao on AppDatabase {
           accountId: cogsAccount.id,
           credit: effectiveCogs,
           description: 'عكس تكلفة بضاعة',
+        ));
+      }
+    }
+
+    // ── عكسُ فرق التقريب — على المرتجع الكامل وحدَه ────────────────────────
+    //
+    // الشرطُ **نفسُه حرفيّاً** في `SalesReturnRefundSplit.from`: هناك يُخصَم
+    // الفرقُ من المبلغ المردود، وهنا يُعكَس سطرُه في القيد. واختلافُ الشرطَين
+    // كان سيفصل النقدَ الخارجَ من الدرج عن الدفتر.
+    //
+    // والجزئيُّ لا يمسّه: التقريبُ وقع على تسويةِ الفاتورة كلِّها لا على سطرٍ
+    // بعينه، فنصفُ الأصناف لا يحمل نصفَ قرشِ التقريب.
+    final returnRoundingAdj = originalInvoice.roundingAdjustment;
+    if (returnRoundingAdj != 0 &&
+        returnAmount >= originalInvoice.total - 0.01) {
+      final roundingAccount =
+          await accountingDao.getLeafAccountByPurpose('rounding_difference');
+      if (roundingAccount != null) {
+        lines.add(JournalLine(
+          accountId: roundingAccount.id,
+          // بعكس اتجاه سطر البيع تماماً: ما كان مديناً هناك دائنٌ هنا.
+          debit: returnRoundingAdj < 0 ? -returnRoundingAdj : 0,
+          credit: returnRoundingAdj > 0 ? returnRoundingAdj : 0,
+          description: 'عكس فروق تقريب',
         ));
       }
     }
