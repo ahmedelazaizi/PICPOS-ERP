@@ -1,31 +1,32 @@
 # قالب «الفاتورة الحرارية»
 # راسم=TemplatePdfRenderer
 PAGES 1
-PAGE 1 226.77x711.28
-  TXT 94.97,681.56 NotoNaskhArabic-Regular 14.00 «LOGO»
-  TXT 133.23,654.00 NotoNaskhArabic-Regular 16.00 «ﻣﺆﺳﺴﺔ»
-  TXT 102.96,654.00 NotoNaskhArabic-Regular 16.00 «ﺍﻟﻨﻮﺭ»
-  TXT 54.27,654.00 NotoNaskhArabic-Regular 16.00 «ﺍﻟﺘﺠﺎﺭﻳﺔ»
-  TXT 147.21,631.17 NotoNaskhArabic-Regular 10.00 «ﺷﺎﺭﻉ»
-  TXT 109.45,631.17 NotoNaskhArabic-Regular 10.00 «ﺍﻟﺠﻤﻬﻮﺭﻳﺔ»
-  TXT 95.86,631.17 NotoNaskhArabic-Regular 10.00 «—»
-  TXT 62.86,631.17 NotoNaskhArabic-Regular 10.00 «ﺍﻟﻤﻨﺼﻮﺭﺓ»
-  TXT 124.63,612.14 NotoNaskhArabic-Regular 10.00 «4567»
-  TXT 106.24,612.14 NotoNaskhArabic-Regular 10.00 «123»
-  TXT 81.33,612.14 NotoNaskhArabic-Regular 10.00 «0100»
-  TXT 124.46,570.97 NotoNaskhArabic-Regular 12.00 «SINV-2026-0417»
-  TXT 160.13,548.53 NotoNaskhArabic-Regular 12.00 «14/3/2026»
-  TXT 166.11,526.10 NotoNaskhArabic-Regular 12.00 «delivery»
-  TXT 192.52,503.66 NotoNaskhArabic-Regular 12.00 «ﺃﺣﻤﺪ»
-  TXT 174.28,503.66 NotoNaskhArabic-Regular 12.00 «ﻋﺒﺪ»
-  TXT 142.59,503.66 NotoNaskhArabic-Regular 12.00 «ﺍﻟﺮﺣﻤﻦ»
-  TXT 187.19,481.22 NotoNaskhArabic-Regular 12.00 «6543»
-  TXT 164.18,481.22 NotoNaskhArabic-Regular 12.00 «987»
-  TXT 135.03,481.22 NotoNaskhArabic-Regular 12.00 «0111»
-  TXT 81.65,438.79 NotoNaskhArabic-Regular 12.00 «items_table»
-  TXT 177.93,416.35 NotoNaskhArabic-Regular 12.00 «611.76»
-  TXT 191.20,393.92 NotoNaskhArabic-Regular 12.00 «5.00»
-  TXT 145.07,371.48 NotoNaskhArabic-Regular 12.00 «tax_amount»
+PAGE 1 226.77x733.71
+  TXT 94.97,703.99 NotoNaskhArabic-Regular 14.00 «LOGO»
+  TXT 133.23,676.44 NotoNaskhArabic-Regular 16.00 «ﻣﺆﺳﺴﺔ»
+  TXT 102.96,676.44 NotoNaskhArabic-Regular 16.00 «ﺍﻟﻨﻮﺭ»
+  TXT 54.27,676.44 NotoNaskhArabic-Regular 16.00 «ﺍﻟﺘﺠﺎﺭﻳﺔ»
+  TXT 147.21,653.60 NotoNaskhArabic-Regular 10.00 «ﺷﺎﺭﻉ»
+  TXT 109.45,653.60 NotoNaskhArabic-Regular 10.00 «ﺍﻟﺠﻤﻬﻮﺭﻳﺔ»
+  TXT 95.86,653.60 NotoNaskhArabic-Regular 10.00 «—»
+  TXT 62.86,653.60 NotoNaskhArabic-Regular 10.00 «ﺍﻟﻤﻨﺼﻮﺭﺓ»
+  TXT 124.63,634.57 NotoNaskhArabic-Regular 10.00 «4567»
+  TXT 106.24,634.57 NotoNaskhArabic-Regular 10.00 «123»
+  TXT 81.33,634.57 NotoNaskhArabic-Regular 10.00 «0100»
+  TXT 124.46,593.40 NotoNaskhArabic-Regular 12.00 «SINV-2026-0417»
+  TXT 160.13,570.97 NotoNaskhArabic-Regular 12.00 «14/3/2026»
+  TXT 166.11,548.53 NotoNaskhArabic-Regular 12.00 «delivery»
+  TXT 192.52,526.10 NotoNaskhArabic-Regular 12.00 «ﺃﺣﻤﺪ»
+  TXT 174.28,526.10 NotoNaskhArabic-Regular 12.00 «ﻋﺒﺪ»
+  TXT 142.59,526.10 NotoNaskhArabic-Regular 12.00 «ﺍﻟﺮﺣﻤﻦ»
+  TXT 187.19,503.66 NotoNaskhArabic-Regular 12.00 «6543»
+  TXT 164.18,503.66 NotoNaskhArabic-Regular 12.00 «987»
+  TXT 135.03,503.66 NotoNaskhArabic-Regular 12.00 «0111»
+  TXT 81.65,461.22 NotoNaskhArabic-Regular 12.00 «items_table»
+  TXT 177.93,438.79 NotoNaskhArabic-Regular 12.00 «611.76»
+  TXT 191.20,416.35 NotoNaskhArabic-Regular 12.00 «5.00»
+  TXT 145.07,393.92 NotoNaskhArabic-Regular 12.00 «tax_amount»
+  TXT 184.57,371.48 NotoNaskhArabic-Regular 12.00 «20.00»
   TXT 172.15,346.91 NotoNaskhArabic-Regular 14.00 «626.76»
   TXT 177.79,323.20 NotoNaskhArabic-Regular 12.00 «500.00»
   TXT 177.99,300.77 NotoNaskhArabic-Regular 12.00 «126.76»
@@ -78,8 +79,8 @@ PAGE 1 226.77x711.28
   TXT 120.72,24.51 NotoNaskhArabic-Regular 10.00 «—»
   TXT 75.19,24.51 NotoNaskhArabic-Regular 10.00 «VERSION»
   TXT 43.68,24.51 NotoNaskhArabic-Regular 10.00 «TRIAL»
-  LIN 212.60,594.55 -> 14.17,594.55
-  LIN 212.60,462.37 -> 14.17,462.37
+  LIN 212.60,616.98 -> 14.17,616.98
+  LIN 212.60,484.80 -> 14.17,484.80
   LIN 212.60,281.91 -> 14.17,281.91
   LIN 212.60,155.38 -> 14.17,155.38
   LIN 212.60,67.64 -> 14.17,67.64

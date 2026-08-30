@@ -48,6 +48,9 @@ class PrintingServiceImpl implements IPrintingService {
         subtotal: printData.subtotal,
         discount: printData.discount,
         tax: printData.tax,
+        // كان مفقوداً: المسارُ الحراريُّ يمرّره (`:176`) وA4 لا — فورقةُ
+        // A4 وحدَها هي التي لا تجمع.
+        deliveryFee: printData.deliveryFee,
         total: printData.total,
         paid: printData.paid,
         companyName: s.companyName,

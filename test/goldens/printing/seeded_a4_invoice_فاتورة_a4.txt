@@ -45,20 +45,23 @@ PAGE 1 595.28x841.89
   TXT 209.76,619.05 NotoNaskhArabic-Regular 8.00 «ﻃﺮﻳﻘﺔ»
   TXT 191.67,619.05 NotoNaskhArabic-Regular 8.00 «ﺍﻟﺪﻓﻊ:»
   TXT 175.96,619.05 NotoNaskhArabic-Regular 8.00 «ﻧﻘﺪﻱ»
-  TXT 101.24,298.51 NotoNaskhArabic-Regular 9.00 «ﺍﻹﺟﻤﺎﻟﻲ»
-  TXT 75.31,298.51 NotoNaskhArabic-Regular 9.00 «ﺍﻟﻔﺮﻋﻲ:»
-  TXT 46.36,298.51 NotoNaskhArabic-Regular 9.00 «611.76»
-  TXT 65.24,278.67 NotoNaskhArabic-Regular 9.00 «ﺍﻟﺨﺼﻢ:»
-  TXT 46.25,278.67 NotoNaskhArabic-Regular 9.00 «5.00»
-  TXT 119.83,258.83 NotoNaskhArabic-Regular 9.00 «ﺿﺮﻳﺒﺔ»
-  TXT 99.21,258.83 NotoNaskhArabic-Regular 9.00 «ﺍﻟﻘﻴﻤﺔ»
-  TXT 70.28,258.83 NotoNaskhArabic-Regular 9.00 «ﺍﻟﻤﻀﺎﻓﺔ:»
-  TXT 46.41,258.83 NotoNaskhArabic-Regular 9.00 «11.76»
-  TXT 131.07,232.67 NotoNaskhArabic-Bold 12.00 «ﺍﻹﺟﻤﺎﻟﻲ»
-  TXT 85.90,232.67 NotoNaskhArabic-Bold 12.00 «ﺍﻟﻤﺴﺘﺤﻖ:»
-  TXT 46.31,232.67 NotoNaskhArabic-Bold 12.00 «626.76»
-  TXT 379.62,233.10 NotoNaskhArabic-Bold 10.00 «ﺍﻟﻤﺘﺒﻘﻲ:»
-  TXT 346.60,233.10 NotoNaskhArabic-Bold 10.00 «126.76»
+  TXT 101.24,301.35 NotoNaskhArabic-Regular 9.00 «ﺍﻹﺟﻤﺎﻟﻲ»
+  TXT 75.31,301.35 NotoNaskhArabic-Regular 9.00 «ﺍﻟﻔﺮﻋﻲ:»
+  TXT 46.36,301.35 NotoNaskhArabic-Regular 9.00 «611.76»
+  TXT 65.24,282.92 NotoNaskhArabic-Regular 9.00 «ﺍﻟﺨﺼﻢ:»
+  TXT 46.25,282.92 NotoNaskhArabic-Regular 9.00 «5.00»
+  TXT 119.83,264.50 NotoNaskhArabic-Regular 9.00 «ﺿﺮﻳﺒﺔ»
+  TXT 99.21,264.50 NotoNaskhArabic-Regular 9.00 «ﺍﻟﻘﻴﻤﺔ»
+  TXT 70.28,264.50 NotoNaskhArabic-Regular 9.00 «ﺍﻟﻤﻀﺎﻓﺔ:»
+  TXT 46.41,264.50 NotoNaskhArabic-Regular 9.00 «11.76»
+  TXT 101.37,246.07 NotoNaskhArabic-Regular 9.00 «ﺭﺳﻮﻡ»
+  TXT 70.28,246.07 NotoNaskhArabic-Regular 9.00 «ﺍﻟﺘﻮﺻﻴﻞ:»
+  TXT 46.31,246.07 NotoNaskhArabic-Regular 9.00 «20.00»
+  TXT 131.07,221.33 NotoNaskhArabic-Bold 12.00 «ﺍﻹﺟﻤﺎﻟﻲ»
+  TXT 85.90,221.33 NotoNaskhArabic-Bold 12.00 «ﺍﻟﻤﺴﺘﺤﻖ:»
+  TXT 46.31,221.33 NotoNaskhArabic-Bold 12.00 «626.76»
+  TXT 379.62,221.76 NotoNaskhArabic-Bold 10.00 «ﺍﻟﻤﺘﺒﻘﻲ:»
+  TXT 346.60,221.76 NotoNaskhArabic-Bold 10.00 «126.76»
   TXT 329.04,91.91 NotoNaskhArabic-Regular 7.50 «ﺍﻟﺮﻗﻢ»
   TXT 303.52,91.91 NotoNaskhArabic-Regular 7.50 «ﺍﻟﻀﺮﻳﺒﻲ:»
   TXT 244.56,91.91 NotoNaskhArabic-Regular 7.50 «789-456-123-310»

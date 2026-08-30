@@ -1,208 +1,219 @@
 {
-    "name": "فاتورة حرارية كلاسيكية",
-    "type": "thermal",
-    "paperSize": "80mm",
-    "paperWidth": 80,
-    "elements": [
-        {
-            "type": "company_name",
-            "x": 10,
-            "y": 10,
-            "width": 200,
-            "height": 30,
-            "fontSize": 18,
-            "isBold": true,
-            "textAlign": "center"
-        },
-        {
-            "type": "company_address",
-            "x": 10,
-            "y": 40,
-            "width": 200,
-            "height": 20,
-            "fontSize": 11,
-            "textAlign": "center"
-        },
-        {
-            "type": "company_phone",
-            "x": 10,
-            "y": 60,
-            "width": 200,
-            "height": 20,
-            "fontSize": 11,
-            "textAlign": "center"
-        },
-        {
-            "type": "divider",
-            "x": 10,
-            "y": 85,
-            "width": 200,
-            "height": 3
-        },
-        {
-            "type": "invoice_number",
-            "x": 10,
-            "y": 95,
-            "width": 200,
-            "height": 22,
-            "fontSize": 12,
-            "textAlign": "right",
-            "labelAr": "رقم الفاتورة"
-        },
-        {
-            "type": "date",
-            "x": 10,
-            "y": 117,
-            "width": 100,
-            "height": 20,
-            "fontSize": 11,
-            "textAlign": "right",
-            "labelAr": "التاريخ"
-        },
-        {
-            "type": "time",
-            "x": 110,
-            "y": 117,
-            "width": 100,
-            "height": 20,
-            "fontSize": 11,
-            "textAlign": "left",
-            "labelAr": "الوقت"
-        },
-        {
-            "type": "customer",
-            "x": 10,
-            "y": 137,
-            "width": 200,
-            "height": 20,
-            "fontSize": 11,
-            "textAlign": "right",
-            "labelAr": "العميل"
-        },
-        {
-            "type": "cashier_name",
-            "x": 10,
-            "y": 157,
-            "width": 200,
-            "height": 20,
-            "fontSize": 11,
-            "textAlign": "right",
-            "labelAr": "الكاشير"
-        },
-        {
-            "type": "divider",
-            "x": 10,
-            "y": 180,
-            "width": 200,
-            "height": 3
-        },
-        {
-            "type": "subtotal",
-            "x": 10,
-            "y": 320,
-            "width": 200,
-            "height": 22,
-            "fontSize": 12,
-            "textAlign": "right",
-            "labelAr": "المجموع"
-        },
-        {
-            "type": "discount",
-            "x": 10,
-            "y": 342,
-            "width": 200,
-            "height": 20,
-            "fontSize": 11,
-            "textAlign": "right",
-            "labelAr": "الخصم"
-        },
-        {
-            "type": "tax",
-            "x": 10,
-            "y": 362,
-            "width": 200,
-            "height": 20,
-            "fontSize": 11,
-            "textAlign": "right",
-            "labelAr": "الضريبة"
-        },
-        {
-            "type": "divider",
-            "x": 10,
-            "y": 385,
-            "width": 200,
-            "height": 3
-        },
-        {
-            "type": "total",
-            "x": 10,
-            "y": 393,
-            "width": 200,
-            "height": 30,
-            "fontSize": 16,
-            "isBold": true,
-            "textAlign": "center",
-            "labelAr": "الإجمالي"
-        },
-        {
-            "type": "paid",
-            "x": 10,
-            "y": 425,
-            "width": 100,
-            "height": 20,
-            "fontSize": 11,
-            "textAlign": "right",
-            "labelAr": "المدفوع"
-        },
-        {
-            "type": "remaining",
-            "x": 110,
-            "y": 425,
-            "width": 100,
-            "height": 20,
-            "fontSize": 11,
-            "textAlign": "left",
-            "labelAr": "المتبقي"
-        },
-        {
-            "type": "divider",
-            "x": 10,
-            "y": 450,
-            "width": 200,
-            "height": 3
-        },
-        {
-            "type": "qr_code",
-            "x": 80,
-            "y": 458,
-            "width": 60,
-            "height": 60
-        },
-        {
-            "type": "footer",
-            "x": 10,
-            "y": 525,
-            "width": 200,
-            "height": 25,
-            "fontSize": 12,
-            "textAlign": "center",
-            "content": "شكراً لزيارتكم"
-        }
-    ],
-    "tableSettings": {
-        "x": 10,
-        "y": 188,
-        "width": 200,
-        "fontSize": 11,
-        "headerFontSize": 12,
-        "rowHeight": 22,
-        "showIndex": true,
-        "showProductCode": false,
-        "showProductName": true,
-        "showQuantity": true,
-        "showUnitPrice": true,
-        "showDiscount": false,
-        "showTax": false,
-        "showTotal": true
+  "name": "فاتورة حرارية كلاسيكية",
+  "type": "thermal",
+  "paperSize": "80mm",
+  "paperWidth": 80,
+  "elements": [
+    {
+      "type": "company_name",
+      "x": 10,
+      "y": 10,
+      "width": 200,
+      "height": 30,
+      "fontSize": 18,
+      "isBold": true,
+      "textAlign": "center"
+    },
+    {
+      "type": "company_address",
+      "x": 10,
+      "y": 40,
+      "width": 200,
+      "height": 20,
+      "fontSize": 11,
+      "textAlign": "center"
+    },
+    {
+      "type": "company_phone",
+      "x": 10,
+      "y": 60,
+      "width": 200,
+      "height": 20,
+      "fontSize": 11,
+      "textAlign": "center"
+    },
+    {
+      "type": "divider",
+      "x": 10,
+      "y": 85,
+      "width": 200,
+      "height": 3
+    },
+    {
+      "type": "invoice_number",
+      "x": 10,
+      "y": 95,
+      "width": 200,
+      "height": 22,
+      "fontSize": 12,
+      "textAlign": "right",
+      "labelAr": "رقم الفاتورة"
+    },
+    {
+      "type": "date",
+      "x": 10,
+      "y": 117,
+      "width": 100,
+      "height": 20,
+      "fontSize": 11,
+      "textAlign": "right",
+      "labelAr": "التاريخ"
+    },
+    {
+      "type": "time",
+      "x": 110,
+      "y": 117,
+      "width": 100,
+      "height": 20,
+      "fontSize": 11,
+      "textAlign": "left",
+      "labelAr": "الوقت"
+    },
+    {
+      "type": "customer",
+      "x": 10,
+      "y": 137,
+      "width": 200,
+      "height": 20,
+      "fontSize": 11,
+      "textAlign": "right",
+      "labelAr": "العميل"
+    },
+    {
+      "type": "cashier_name",
+      "x": 10,
+      "y": 157,
+      "width": 200,
+      "height": 20,
+      "fontSize": 11,
+      "textAlign": "right",
+      "labelAr": "الكاشير"
+    },
+    {
+      "type": "divider",
+      "x": 10,
+      "y": 180,
+      "width": 200,
+      "height": 3
+    },
+    {
+      "type": "subtotal",
+      "x": 10,
+      "y": 320,
+      "width": 200,
+      "height": 22,
+      "fontSize": 12,
+      "textAlign": "right",
+      "labelAr": "المجموع"
+    },
+    {
+      "type": "discount",
+      "x": 10,
+      "y": 342,
+      "width": 200,
+      "height": 20,
+      "fontSize": 11,
+      "textAlign": "right",
+      "labelAr": "الخصم"
+    },
+    {
+      "type": "tax",
+      "x": 10,
+      "y": 362,
+      "width": 200,
+      "height": 20,
+      "fontSize": 11,
+      "textAlign": "right",
+      "labelAr": "الضريبة"
+    },
+    {
+      "type": "delivery_fee",
+      "x": 10,
+      "y": 373.5,
+      "width": 200,
+      "height": 20,
+      "fontSize": 11,
+      "textAlign": "right",
+      "labelAr": "رسوم التوصيل",
+      "labelEn": "Delivery"
+    },
+    {
+      "type": "divider",
+      "x": 10,
+      "y": 385,
+      "width": 200,
+      "height": 3
+    },
+    {
+      "type": "total",
+      "x": 10,
+      "y": 393,
+      "width": 200,
+      "height": 30,
+      "fontSize": 16,
+      "isBold": true,
+      "textAlign": "center",
+      "labelAr": "الإجمالي"
+    },
+    {
+      "type": "paid",
+      "x": 10,
+      "y": 425,
+      "width": 100,
+      "height": 20,
+      "fontSize": 11,
+      "textAlign": "right",
+      "labelAr": "المدفوع"
+    },
+    {
+      "type": "remaining",
+      "x": 110,
+      "y": 425,
+      "width": 100,
+      "height": 20,
+      "fontSize": 11,
+      "textAlign": "left",
+      "labelAr": "المتبقي"
+    },
+    {
+      "type": "divider",
+      "x": 10,
+      "y": 450,
+      "width": 200,
+      "height": 3
+    },
+    {
+      "type": "qr_code",
+      "x": 80,
+      "y": 458,
+      "width": 60,
+      "height": 60
+    },
+    {
+      "type": "footer",
+      "x": 10,
+      "y": 525,
+      "width": 200,
+      "height": 25,
+      "fontSize": 12,
+      "textAlign": "center",
+      "content": "شكراً لزيارتكم"
     }
+  ],
+  "tableSettings": {
+    "x": 10,
+    "y": 188,
+    "width": 200,
+    "fontSize": 11,
+    "headerFontSize": 12,
+    "rowHeight": 22,
+    "showIndex": true,
+    "showProductCode": false,
+    "showProductName": true,
+    "showQuantity": true,
+    "showUnitPrice": true,
+    "showDiscount": false,
+    "showTax": false,
+    "showTotal": true
+  }
 }

@@ -208,7 +208,12 @@ void main() {
       expect(_band(doc, BandId.info).elements, hasLength(4));
       expect(_band(doc, BandId.party).elements, hasLength(4));
       expect(_band(doc, BandId.details).elements, hasLength(1));
-      expect(_band(doc, BandId.totals).elements, hasLength(5));
+      // ⚠️ **ستّةٌ لا خمسة — انحرافٌ مقصودٌ عن ملفِّ التصميم.**
+      // التصميمُ لا يحمل سطرَ رسم التوصيل، والإجماليُّ المحفوظ يشمله
+      // (`sales_transaction_orchestrator.dart:695`) — فالورقةُ المطبوعةُ
+      // كانت لا تجمع: `subtotal − discount + tax ≠ total`، على **مستندٍ
+      // ضريبيّ**. فالسطرُ أُضيف عمداً، والتصميمُ هو الناقصُ هنا لا الكود.
+      expect(_band(doc, BandId.totals).elements, hasLength(6));
       expect(_band(doc, BandId.footer).elements, hasLength(4));
 
       // نفيُ الرقم المعطوب صراحةً — لا «أكبر من صفر».

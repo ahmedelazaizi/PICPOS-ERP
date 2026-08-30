@@ -2,95 +2,98 @@
 # نوع=thermal فئة=receipt ورق=80.0mm
 # راسم=TemplatedInvoiceService
 PAGES 1
-PAGE 1 204.09x809.58
-  TXT 86.26,761.50 NotoNaskhArabic-Regular 12.00 «LOGO»
-  TXT 122.03,705.21 NotoNaskhArabic-Bold 16.00 «ﻣﺆﺳﺴﺔ»
-  TXT 90.53,705.21 NotoNaskhArabic-Bold 16.00 «ﺍﻟﻨﻮﺭ»
-  TXT 40.75,705.21 NotoNaskhArabic-Bold 16.00 «ﺍﻟﺘﺠﺎﺭﻳﺔ»
-  TXT 135.87,682.38 NotoNaskhArabic-Regular 10.00 «ﺷﺎﺭﻉ»
-  TXT 98.11,682.38 NotoNaskhArabic-Regular 10.00 «ﺍﻟﺠﻤﻬﻮﺭﻳﺔ»
-  TXT 84.52,682.38 NotoNaskhArabic-Regular 10.00 «—»
-  TXT 51.52,682.38 NotoNaskhArabic-Regular 10.00 «ﺍﻟﻤﻨﺼﻮﺭﺓ»
-  TXT 126.78,665.35 NotoNaskhArabic-Regular 10.00 «ﻫﺎﺗﻒ:»
-  TXT 102.14,665.35 NotoNaskhArabic-Regular 10.00 «0100»
-  TXT 83.50,665.35 NotoNaskhArabic-Regular 10.00 «123»
-  TXT 58.34,665.35 NotoNaskhArabic-Regular 10.00 «4567»
-  TXT 183.84,622.18 NotoNaskhArabic-Regular 12.00 «ﺭﻗﻢ»
-  TXT 147.04,622.18 NotoNaskhArabic-Regular 12.00 «ﺍﻟﻔﺎﺗﻮﺭﺓ:»
-  TXT 54.97,622.18 NotoNaskhArabic-Regular 12.00 «SINV-2026-0417»
-  TXT 183.84,601.75 NotoNaskhArabic-Regular 12.00 «ﺭﻗﻢ»
-  TXT 152.87,601.75 NotoNaskhArabic-Regular 12.00 «ﺍﻟﻄﻠﺐ:»
-  TXT 136.90,601.75 NotoNaskhArabic-Regular 12.00 «17»
-  TXT 167.73,581.31 NotoNaskhArabic-Regular 12.00 «ﺍﻟﺘﺎﺭﻳﺦ:»
-  TXT 111.34,581.31 NotoNaskhArabic-Regular 12.00 «14/3/2026»
-  TXT 183.73,560.87 NotoNaskhArabic-Regular 12.00 «ﻧﻮﻉ»
-  TXT 159.46,560.87 NotoNaskhArabic-Regular 12.00 «ﺍﻟﺒﻴﻊ:»
-  TXT 126.65,560.87 NotoNaskhArabic-Regular 12.00 «ﺗﻮﺻﻴﻞ»
-  TXT 170.49,540.44 NotoNaskhArabic-Regular 12.00 «ﺍﻟﻌﻤﻴﻞ:»
-  TXT 146.49,540.44 NotoNaskhArabic-Regular 12.00 «ﺃﺣﻤﺪ»
-  TXT 128.25,540.44 NotoNaskhArabic-Regular 12.00 «ﻋﺒﺪ»
-  TXT 96.55,540.44 NotoNaskhArabic-Regular 12.00 «ﺍﻟﺮﺣﻤﻦ»
-  TXT 171.11,520.00 NotoNaskhArabic-Regular 12.00 «ﺍﻟﻬﺎﺗﻒ:»
-  TXT 141.88,520.00 NotoNaskhArabic-Regular 12.00 «0111»
-  TXT 118.77,520.00 NotoNaskhArabic-Regular 12.00 «987»
-  TXT 89.52,520.00 NotoNaskhArabic-Regular 12.00 «6543»
-  TXT 11.34,477.84 NotoNaskhArabic-Bold 8.00 «ﺍﻹﺟﻤﺎﻟﻲ»
-  TXT 41.80,477.84 NotoNaskhArabic-Bold 8.00 «ﺍﻟﺨﺼﻢ»
-  TXT 68.00,477.84 NotoNaskhArabic-Bold 8.00 «ﺍﻟﺴﻌﺮ»
-  TXT 94.18,477.84 NotoNaskhArabic-Bold 8.00 «ﺍﻟﻌﺪﺩ»
-  TXT 137.36,477.84 NotoNaskhArabic-Bold 8.00 «ﺍﻟﺼﻨﻒ»
-  TXT 188.02,477.84 NotoNaskhArabic-Bold 8.00 «ﻡ»
-  TXT 9.30,455.94 NotoNaskhArabic-Regular 12.00 «251.0»
-  TXT 20.40,435.51 NotoNaskhArabic-Regular 12.00 «0»
-  TXT 44.16,455.94 NotoNaskhArabic-Regular 12.00 «0.0»
-  TXT 48.75,435.51 NotoNaskhArabic-Regular 12.00 «0»
-  TXT 65.93,455.94 NotoNaskhArabic-Regular 12.00 «125.»
-  TXT 70.46,435.51 NotoNaskhArabic-Regular 12.00 «50»
-  TXT 94.24,455.94 NotoNaskhArabic-Regular 12.00 «2.0»
-  TXT 98.64,435.51 NotoNaskhArabic-Regular 12.00 «0»
-  TXT 157.44,453.94 NotoNaskhArabic-Regular 12.00 «ﺟﺒﻨﺔ»
-  TXT 131.03,453.94 NotoNaskhArabic-Regular 12.00 «ﺭﻭﻣﻲ»
-  TXT 152.71,433.51 NotoNaskhArabic-Regular 12.00 «ﺻﺒﺮﻱ»
-  TXT 124.63,433.51 NotoNaskhArabic-Regular 12.00 «ﻗﺪﻳﻤﺔ»
-  TXT 154.94,413.07 NotoNaskhArabic-Regular 12.00 «ﺩﺭﺟﺔ»
-  TXT 133.18,413.07 NotoNaskhArabic-Regular 12.00 «ﺃﻭﻟﻰ»
-  TXT 187.77,455.94 NotoNaskhArabic-Regular 12.00 «1»
-  TXT 9.30,386.63 NotoNaskhArabic-Regular 12.00 «265.0»
-  TXT 20.40,366.20 NotoNaskhArabic-Regular 12.00 «0»
-  TXT 44.28,386.63 NotoNaskhArabic-Regular 12.00 «5.0»
-  TXT 48.75,366.20 NotoNaskhArabic-Regular 12.00 «0»
-  TXT 65.82,386.63 NotoNaskhArabic-Regular 12.00 «90.0»
-  TXT 73.69,366.20 NotoNaskhArabic-Regular 12.00 «0»
-  TXT 94.20,386.63 NotoNaskhArabic-Regular 12.00 «3.0»
-  TXT 98.64,366.20 NotoNaskhArabic-Regular 12.00 «0»
-  TXT 140.99,384.63 NotoNaskhArabic-Regular 12.00 «Virgin»
-  TXT 146.21,364.20 NotoNaskhArabic-Regular 12.00 «Extra»
-  TXT 129.70,364.20 NotoNaskhArabic-Regular 12.00 «1L»
-  TXT 160.64,343.76 NotoNaskhArabic-Regular 12.00 «Oil»
-  TXT 128.60,343.76 NotoNaskhArabic-Regular 12.00 «Olive»
-  TXT 159.43,323.46 NotoNaskhArabic-Regular 10.00 «ﺑﺪﻭﻥ»
-  TXT 121.09,323.46 NotoNaskhArabic-Regular 10.00 «ﺛﻠﺞ|ﺯﻳﺎﺩﺓ»
-  TXT 154.14,305.93 NotoNaskhArabic-Regular 10.00 «ﺻﻮﺹ»
-  TXT 132.74,305.93 NotoNaskhArabic-Regular 10.00 «5.00»
-  TXT 187.49,386.63 NotoNaskhArabic-Regular 12.00 «2»
-  TXT 9.25,280.77 NotoNaskhArabic-Regular 12.00 «95.76»
-  TXT 44.16,280.77 NotoNaskhArabic-Regular 12.00 «0.0»
-  TXT 48.75,260.33 NotoNaskhArabic-Regular 12.00 «0»
-  TXT 65.76,280.77 NotoNaskhArabic-Regular 12.00 «84.0»
-  TXT 73.69,260.33 NotoNaskhArabic-Regular 12.00 «0»
-  TXT 94.30,280.77 NotoNaskhArabic-Regular 12.00 «1.0»
-  TXT 98.64,260.33 NotoNaskhArabic-Regular 12.00 «0»
-  TXT 164.57,278.77 NotoNaskhArabic-Regular 12.00 «ﺃﺭﺯ»
-  TXT 135.82,278.77 NotoNaskhArabic-Regular 12.00 «ﻣﺼﺮﻱ»
-  TXT 128.33,278.77 NotoNaskhArabic-Regular 12.00 «٥»
-  TXT 158.00,258.33 NotoNaskhArabic-Regular 12.00 «ﻛﺠﻢ»
-  TXT 187.39,280.77 NotoNaskhArabic-Regular 12.00 «3»
-  TXT 163.85,231.89 NotoNaskhArabic-Regular 12.00 «ﺍﻟﻤﺠﻤﻮﻉ»
-  TXT 7.01,231.89 NotoNaskhArabic-Regular 12.00 «611.76»
-  TXT 170.89,207.46 NotoNaskhArabic-Regular 12.00 «ﺍﻟﺨﺼﻢ»
-  TXT 6.51,207.46 NotoNaskhArabic-Regular 12.00 «-5.00»
-  TXT 167.33,183.02 NotoNaskhArabic-Regular 12.00 «ﺍﻟﻀﺮﻳﺒﺔ»
-  TXT 7.07,183.02 NotoNaskhArabic-Regular 12.00 «11.76»
+PAGE 1 204.09x834.02
+  TXT 86.26,785.94 NotoNaskhArabic-Regular 12.00 «LOGO»
+  TXT 122.03,729.65 NotoNaskhArabic-Bold 16.00 «ﻣﺆﺳﺴﺔ»
+  TXT 90.53,729.65 NotoNaskhArabic-Bold 16.00 «ﺍﻟﻨﻮﺭ»
+  TXT 40.75,729.65 NotoNaskhArabic-Bold 16.00 «ﺍﻟﺘﺠﺎﺭﻳﺔ»
+  TXT 135.87,706.82 NotoNaskhArabic-Regular 10.00 «ﺷﺎﺭﻉ»
+  TXT 98.11,706.82 NotoNaskhArabic-Regular 10.00 «ﺍﻟﺠﻤﻬﻮﺭﻳﺔ»
+  TXT 84.52,706.82 NotoNaskhArabic-Regular 10.00 «—»
+  TXT 51.52,706.82 NotoNaskhArabic-Regular 10.00 «ﺍﻟﻤﻨﺼﻮﺭﺓ»
+  TXT 126.78,689.79 NotoNaskhArabic-Regular 10.00 «ﻫﺎﺗﻒ:»
+  TXT 102.14,689.79 NotoNaskhArabic-Regular 10.00 «0100»
+  TXT 83.50,689.79 NotoNaskhArabic-Regular 10.00 «123»
+  TXT 58.34,689.79 NotoNaskhArabic-Regular 10.00 «4567»
+  TXT 183.84,646.62 NotoNaskhArabic-Regular 12.00 «ﺭﻗﻢ»
+  TXT 147.04,646.62 NotoNaskhArabic-Regular 12.00 «ﺍﻟﻔﺎﺗﻮﺭﺓ:»
+  TXT 54.97,646.62 NotoNaskhArabic-Regular 12.00 «SINV-2026-0417»
+  TXT 183.84,626.18 NotoNaskhArabic-Regular 12.00 «ﺭﻗﻢ»
+  TXT 152.87,626.18 NotoNaskhArabic-Regular 12.00 «ﺍﻟﻄﻠﺐ:»
+  TXT 136.90,626.18 NotoNaskhArabic-Regular 12.00 «17»
+  TXT 167.73,605.75 NotoNaskhArabic-Regular 12.00 «ﺍﻟﺘﺎﺭﻳﺦ:»
+  TXT 111.34,605.75 NotoNaskhArabic-Regular 12.00 «14/3/2026»
+  TXT 183.73,585.31 NotoNaskhArabic-Regular 12.00 «ﻧﻮﻉ»
+  TXT 159.46,585.31 NotoNaskhArabic-Regular 12.00 «ﺍﻟﺒﻴﻊ:»
+  TXT 126.65,585.31 NotoNaskhArabic-Regular 12.00 «ﺗﻮﺻﻴﻞ»
+  TXT 170.49,564.87 NotoNaskhArabic-Regular 12.00 «ﺍﻟﻌﻤﻴﻞ:»
+  TXT 146.49,564.87 NotoNaskhArabic-Regular 12.00 «ﺃﺣﻤﺪ»
+  TXT 128.25,564.87 NotoNaskhArabic-Regular 12.00 «ﻋﺒﺪ»
+  TXT 96.55,564.87 NotoNaskhArabic-Regular 12.00 «ﺍﻟﺮﺣﻤﻦ»
+  TXT 171.11,544.44 NotoNaskhArabic-Regular 12.00 «ﺍﻟﻬﺎﺗﻒ:»
+  TXT 141.88,544.44 NotoNaskhArabic-Regular 12.00 «0111»
+  TXT 118.77,544.44 NotoNaskhArabic-Regular 12.00 «987»
+  TXT 89.52,544.44 NotoNaskhArabic-Regular 12.00 «6543»
+  TXT 11.34,502.28 NotoNaskhArabic-Bold 8.00 «ﺍﻹﺟﻤﺎﻟﻲ»
+  TXT 41.80,502.28 NotoNaskhArabic-Bold 8.00 «ﺍﻟﺨﺼﻢ»
+  TXT 68.00,502.28 NotoNaskhArabic-Bold 8.00 «ﺍﻟﺴﻌﺮ»
+  TXT 94.18,502.28 NotoNaskhArabic-Bold 8.00 «ﺍﻟﻌﺪﺩ»
+  TXT 137.36,502.28 NotoNaskhArabic-Bold 8.00 «ﺍﻟﺼﻨﻒ»
+  TXT 188.02,502.28 NotoNaskhArabic-Bold 8.00 «ﻡ»
+  TXT 9.30,480.38 NotoNaskhArabic-Regular 12.00 «251.0»
+  TXT 20.40,459.94 NotoNaskhArabic-Regular 12.00 «0»
+  TXT 44.16,480.38 NotoNaskhArabic-Regular 12.00 «0.0»
+  TXT 48.75,459.94 NotoNaskhArabic-Regular 12.00 «0»
+  TXT 65.93,480.38 NotoNaskhArabic-Regular 12.00 «125.»
+  TXT 70.46,459.94 NotoNaskhArabic-Regular 12.00 «50»
+  TXT 94.24,480.38 NotoNaskhArabic-Regular 12.00 «2.0»
+  TXT 98.64,459.94 NotoNaskhArabic-Regular 12.00 «0»
+  TXT 157.44,478.38 NotoNaskhArabic-Regular 12.00 «ﺟﺒﻨﺔ»
+  TXT 131.03,478.38 NotoNaskhArabic-Regular 12.00 «ﺭﻭﻣﻲ»
+  TXT 152.71,457.94 NotoNaskhArabic-Regular 12.00 «ﺻﺒﺮﻱ»
+  TXT 124.63,457.94 NotoNaskhArabic-Regular 12.00 «ﻗﺪﻳﻤﺔ»
+  TXT 154.94,437.51 NotoNaskhArabic-Regular 12.00 «ﺩﺭﺟﺔ»
+  TXT 133.18,437.51 NotoNaskhArabic-Regular 12.00 «ﺃﻭﻟﻰ»
+  TXT 187.77,480.38 NotoNaskhArabic-Regular 12.00 «1»
+  TXT 9.30,411.07 NotoNaskhArabic-Regular 12.00 «265.0»
+  TXT 20.40,390.63 NotoNaskhArabic-Regular 12.00 «0»
+  TXT 44.28,411.07 NotoNaskhArabic-Regular 12.00 «5.0»
+  TXT 48.75,390.63 NotoNaskhArabic-Regular 12.00 «0»
+  TXT 65.82,411.07 NotoNaskhArabic-Regular 12.00 «90.0»
+  TXT 73.69,390.63 NotoNaskhArabic-Regular 12.00 «0»
+  TXT 94.20,411.07 NotoNaskhArabic-Regular 12.00 «3.0»
+  TXT 98.64,390.63 NotoNaskhArabic-Regular 12.00 «0»
+  TXT 140.99,409.07 NotoNaskhArabic-Regular 12.00 «Virgin»
+  TXT 146.21,388.63 NotoNaskhArabic-Regular 12.00 «Extra»
+  TXT 129.70,388.63 NotoNaskhArabic-Regular 12.00 «1L»
+  TXT 160.64,368.20 NotoNaskhArabic-Regular 12.00 «Oil»
+  TXT 128.60,368.20 NotoNaskhArabic-Regular 12.00 «Olive»
+  TXT 159.43,347.90 NotoNaskhArabic-Regular 10.00 «ﺑﺪﻭﻥ»
+  TXT 121.09,347.90 NotoNaskhArabic-Regular 10.00 «ﺛﻠﺞ|ﺯﻳﺎﺩﺓ»
+  TXT 154.14,330.37 NotoNaskhArabic-Regular 10.00 «ﺻﻮﺹ»
+  TXT 132.74,330.37 NotoNaskhArabic-Regular 10.00 «5.00»
+  TXT 187.49,411.07 NotoNaskhArabic-Regular 12.00 «2»
+  TXT 9.25,305.20 NotoNaskhArabic-Regular 12.00 «95.76»
+  TXT 44.16,305.20 NotoNaskhArabic-Regular 12.00 «0.0»
+  TXT 48.75,284.77 NotoNaskhArabic-Regular 12.00 «0»
+  TXT 65.76,305.20 NotoNaskhArabic-Regular 12.00 «84.0»
+  TXT 73.69,284.77 NotoNaskhArabic-Regular 12.00 «0»
+  TXT 94.30,305.20 NotoNaskhArabic-Regular 12.00 «1.0»
+  TXT 98.64,284.77 NotoNaskhArabic-Regular 12.00 «0»
+  TXT 164.57,303.20 NotoNaskhArabic-Regular 12.00 «ﺃﺭﺯ»
+  TXT 135.82,303.20 NotoNaskhArabic-Regular 12.00 «ﻣﺼﺮﻱ»
+  TXT 128.33,303.20 NotoNaskhArabic-Regular 12.00 «٥»
+  TXT 158.00,282.77 NotoNaskhArabic-Regular 12.00 «ﻛﺠﻢ»
+  TXT 187.39,305.20 NotoNaskhArabic-Regular 12.00 «3»
+  TXT 163.85,256.33 NotoNaskhArabic-Regular 12.00 «ﺍﻟﻤﺠﻤﻮﻉ»
+  TXT 7.01,256.33 NotoNaskhArabic-Regular 12.00 «611.76»
+  TXT 170.89,231.89 NotoNaskhArabic-Regular 12.00 «ﺍﻟﺨﺼﻢ»
+  TXT 6.51,231.89 NotoNaskhArabic-Regular 12.00 «-5.00»
+  TXT 167.33,207.46 NotoNaskhArabic-Regular 12.00 «ﺍﻟﻀﺮﻳﺒﺔ»
+  TXT 7.07,207.46 NotoNaskhArabic-Regular 12.00 «11.76»
+  TXT 175.84,183.02 NotoNaskhArabic-Regular 12.00 «ﺭﺳﻮﻡ»
+  TXT 137.11,183.02 NotoNaskhArabic-Regular 12.00 «ﺍﻟﺘﻮﺻﻴﻞ»
+  TXT 6.94,183.02 NotoNaskhArabic-Regular 12.00 «20.00»
   TXT 156.98,156.45 NotoNaskhArabic-Bold 14.00 «ﺍﻹﺟﻤﺎﻟﻲ»
   TXT 6.79,156.45 NotoNaskhArabic-Bold 14.00 «626.76»
   TXT 166.07,130.74 NotoNaskhArabic-Regular 12.00 «ﺍﻟﻤﺪﻓﻮﻉ»
@@ -100,43 +103,43 @@ PAGE 1 204.09x809.58
   TXT 117.68,12.01 NotoNaskhArabic-Regular 10.00 «ﺷﻜﺮﺍً»
   TXT 86.96,12.01 NotoNaskhArabic-Regular 10.00 «ﻟﺘﻌﺎﻣﻠﻜﻢ»
   TXT 70.56,12.01 NotoNaskhArabic-Regular 10.00 «ﻣﻌﻨﺎ»
-  LIN 198.42,646.76 -> 5.67,646.76
-  LIN 198.42,500.14 -> 5.67,500.14
-  LIN 39.68,246.72 -> 39.68,488.39
-  LIN 62.36,246.72 -> 62.36,488.39
-  LIN 89.57,246.72 -> 89.57,488.39
-  LIN 112.25,246.72 -> 112.25,488.39
-  LIN 180.28,246.72 -> 180.28,488.39
-  LIN 5.67,470.77 -> 198.42,470.77
-  LIN 5.67,401.46 -> 198.42,401.46
-  LIN 5.67,295.59 -> 198.42,295.59
+  LIN 198.42,671.20 -> 5.67,671.20
+  LIN 198.42,524.58 -> 5.67,524.58
+  LIN 39.68,271.16 -> 39.68,512.83
+  LIN 62.36,271.16 -> 62.36,512.83
+  LIN 89.57,271.16 -> 89.57,512.83
+  LIN 112.25,271.16 -> 112.25,512.83
+  LIN 180.28,271.16 -> 180.28,512.83
+  LIN 5.67,495.21 -> 198.42,495.21
+  LIN 5.67,425.90 -> 198.42,425.90
+  LIN 5.67,320.03 -> 198.42,320.03
   LIN 198.42,84.45 -> 5.67,84.45
-  REC 40.82,724.32 122.45x79.60
-  REC 5.67,470.77 34.02x17.62
-  REC 39.68,470.77 22.68x17.62
-  REC 62.36,470.77 27.21x17.62
-  REC 89.57,470.77 22.68x17.62
-  REC 112.25,470.77 68.03x17.62
-  REC 180.28,470.77 18.14x17.62
-  REC 5.67,425.90 34.02x44.87
-  REC 39.68,425.90 22.68x44.87
-  REC 62.36,425.90 27.21x44.87
-  REC 89.57,425.90 22.68x44.87
-  REC 112.25,401.46 68.03x69.31
-  REC 180.28,446.33 18.14x24.44
-  REC 5.67,356.59 34.02x44.87
-  REC 39.68,356.59 22.68x44.87
-  REC 62.36,356.59 27.21x44.87
-  REC 89.57,356.59 22.68x44.87
-  REC 112.25,295.59 68.03x105.87
-  REC 180.28,377.03 18.14x24.44
-  REC 5.67,271.16 34.02x24.44
-  REC 39.68,250.72 22.68x44.87
-  REC 62.36,250.72 27.21x44.87
-  REC 89.57,250.72 22.68x44.87
-  REC 112.25,246.72 68.03x48.87
-  REC 180.28,271.16 18.14x24.44
-  REC 5.67,246.72 192.75x241.67
+  REC 40.82,748.75 122.45x79.60
+  REC 5.67,495.21 34.02x17.62
+  REC 39.68,495.21 22.68x17.62
+  REC 62.36,495.21 27.21x17.62
+  REC 89.57,495.21 22.68x17.62
+  REC 112.25,495.21 68.03x17.62
+  REC 180.28,495.21 18.14x17.62
+  REC 5.67,450.33 34.02x44.87
+  REC 39.68,450.33 22.68x44.87
+  REC 62.36,450.33 27.21x44.87
+  REC 89.57,450.33 22.68x44.87
+  REC 112.25,425.90 68.03x69.31
+  REC 180.28,470.77 18.14x24.44
+  REC 5.67,381.03 34.02x44.87
+  REC 39.68,381.03 22.68x44.87
+  REC 62.36,381.03 27.21x44.87
+  REC 89.57,381.03 22.68x44.87
+  REC 112.25,320.03 68.03x105.87
+  REC 180.28,401.46 18.14x24.44
+  REC 5.67,295.59 34.02x24.44
+  REC 39.68,275.16 22.68x44.87
+  REC 62.36,275.16 27.21x44.87
+  REC 89.57,275.16 22.68x44.87
+  REC 112.25,271.16 68.03x48.87
+  REC 180.28,295.59 18.14x24.44
+  REC 5.67,271.16 192.75x241.67
   REC 77.05,70.32 16.67x2.38
   REC 96.09,70.32 4.76x2.38
   REC 105.62,70.32 2.38x2.38

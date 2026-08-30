@@ -344,6 +344,22 @@
       "sortOrder": 22,
       "isVisible": true,
       "type": "variable",
+      "content": "delivery_fee",
+      "section": "footer",
+      "flexWidth": 100,
+      "x": 20,
+      "y": 0,
+      "width": 260,
+      "height": 20,
+      "textAlign": "right",
+      "fontSize": 10,
+      "labelAr": "رسوم التوصيل",
+      "labelEn": "Delivery"
+    },
+    {
+      "sortOrder": 23,
+      "isVisible": true,
+      "type": "variable",
       "content": "total_amount",
       "section": "footer",
       "flexWidth": 100,
@@ -358,7 +374,7 @@
       "labelEn": "Total Due"
     },
     {
-      "sortOrder": 23,
+      "sortOrder": 24,
       "isVisible": true,
       "type": "variable",
       "content": "paid",
@@ -374,7 +390,7 @@
       "labelEn": "Paid"
     },
     {
-      "sortOrder": 24,
+      "sortOrder": 25,
       "isVisible": true,
       "type": "variable",
       "content": "remaining",
@@ -392,7 +408,7 @@
       "labelEn": "Balance"
     },
     {
-      "sortOrder": 25,
+      "sortOrder": 26,
       "isVisible": true,
       "type": "line",
       "section": "footer",
@@ -403,7 +419,7 @@
       "height": 1
     },
     {
-      "sortOrder": 26,
+      "sortOrder": 27,
       "isVisible": true,
       "type": "variable",
       "content": "qr_code",
@@ -417,7 +433,7 @@
       "fontSize": 8.5
     },
     {
-      "sortOrder": 27,
+      "sortOrder": 28,
       "isVisible": true,
       "type": "variable",
       "content": "tax_registration",
@@ -433,7 +449,7 @@
       "labelEn": "Tax Registration"
     },
     {
-      "sortOrder": 28,
+      "sortOrder": 29,
       "isVisible": true,
       "type": "variable",
       "content": "notes",

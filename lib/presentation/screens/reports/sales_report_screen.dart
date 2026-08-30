@@ -1128,6 +1128,7 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
         subtotal: invoice.subtotal,
         discount: invoice.discount,
         tax: invoice.tax,
+        deliveryFee: invoice.deliveryFee,
         total: invoice.total,
         paid: invoice.paid,
         notes: invoice.notes,

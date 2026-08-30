@@ -159,6 +159,16 @@ class InvoiceGenerator {
     required double tax,
     required double total,
     required double paid,
+
+    /// 🔴 كان التوقيعُ **لا يقبل رسمَ التوصيل أصلاً**، والنداءُ أدناه يمرّر
+    /// `0` صلباً. فحتّى لو حمل قالبُ A4 سطرَ التوصيل لطُبع `0.00` دائماً —
+    /// أي أنّ إصلاحَ القالب وحدَه كان يبقى بلا أثرٍ على هذا المسار.
+    ///
+    /// والإجماليُّ المخزَّنُ يشمل الرسمَ بالبناء
+    /// (`sales_transaction_orchestrator.dart:695`)، فالورقةُ لا تجمع:
+    ///     subtotal − discount + tax  ≠  total
+    /// والفرقُ = رسمُ التوصيل بالضبط، على **مستندٍ ضريبيّ**.
+    double deliveryFee = 0,
     String? companyName,
     String? companyAddress,
     String? companyPhone,
@@ -191,7 +201,7 @@ class InvoiceGenerator {
             subtotal: subtotal,
             discount: discount,
             tax: tax,
-            deliveryFee: 0,
+            deliveryFee: deliveryFee,
             total: total,
             paid: paid,
             companyName: companyName ?? '',

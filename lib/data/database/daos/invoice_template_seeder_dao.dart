@@ -1901,6 +1901,11 @@ extension InvoiceTemplateSeederDao on AppDatabase {
     {'type': 'variable', 'content': 'subtotal', 'band': 'totals', 'alignment': 'right', 'labelAr': 'المجموع', 'labelEn': 'Subtotal'},
     {'type': 'variable', 'content': 'discount', 'band': 'totals', 'alignment': 'right', 'labelAr': 'الخصم', 'labelEn': 'Discount'},
     {'type': 'variable', 'content': 'tax_amount', 'band': 'totals', 'alignment': 'right', 'labelAr': 'الضريبة', 'labelEn': 'Tax'},
+    // 🔴 كان غائباً عن **كلِّ** قالبٍ في المستودع، والإجماليُّ المخزَّنُ
+    // يشمله بالبناء ⇒ المطبوعُ لا تجمع أسطرُه إلى إجماليّه، على مستندٍ
+    // ضريبيّ. والشرطُ لازم: `resolveContentValue` تُرجع "0.00" لا "" لرسمٍ
+    // صفريّ، فبلا شرطٍ يظهر «رسوم التوصيل 0.00» على كلِّ فاتورةٍ عاديّة.
+    {'type': 'variable', 'content': 'delivery_fee', 'band': 'totals', 'alignment': 'right', 'labelAr': 'رسوم التوصيل', 'labelEn': 'Delivery', 'condition': 'delivery_fee > 0'},
     {'type': 'variable', 'content': 'total_amount', 'band': 'totals', 'alignment': 'right', 'fontSize': 14.0, 'fontWeight': 'bold', 'labelAr': 'الإجمالي', 'labelEn': 'Total'},
     {'type': 'variable', 'content': 'paid', 'band': 'totals', 'alignment': 'right', 'labelAr': 'المدفوع', 'labelEn': 'Paid'},
     {'type': 'variable', 'content': 'remaining', 'band': 'totals', 'alignment': 'right', 'labelAr': 'المتبقي', 'labelEn': 'Remaining'},
@@ -1955,11 +1960,23 @@ extension InvoiceTemplateSeederDao on AppDatabase {
     {'type': 'variable', 'content': 'items_table', 'band': 'details', 'x': 0.0, 'y': 0.0, 'w': 200.0, 'h': 96.0, 'fontSize': 9.0, 'labelAr': 'جدول الأصناف'},
 
     // ── المجاميع ───────────────────────────────────────────────────────
-    {'type': 'variable', 'content': 'subtotal', 'band': 'totals', 'x': 107.0, 'y': 3.0, 'w': 82.0, 'h': 6.0, 'fontSize': 9.0, 'alignment': 'right', 'labelAr': 'الإجمالي الفرعي', 'labelEn': 'Subtotal'},
-    {'type': 'variable', 'content': 'discount', 'band': 'totals', 'x': 107.0, 'y': 10.0, 'w': 82.0, 'h': 6.0, 'fontSize': 9.0, 'alignment': 'right', 'labelAr': 'الخصم', 'labelEn': 'Discount', 'condition': 'discount > 0'},
-    {'type': 'variable', 'content': 'tax_amount', 'band': 'totals', 'x': 107.0, 'y': 17.0, 'w': 82.0, 'h': 6.0, 'fontSize': 9.0, 'alignment': 'right', 'labelAr': 'ضريبة القيمة المضافة', 'labelEn': 'VAT'},
-    {'type': 'variable', 'content': 'total_amount', 'band': 'totals', 'x': 107.0, 'y': 25.0, 'w': 82.0, 'h': 8.0, 'fontSize': 12.0, 'fontWeight': 'bold', 'alignment': 'right', 'labelAr': 'الإجمالي المستحق', 'labelEn': 'Total Due'},
-    {'type': 'variable', 'content': 'remaining', 'band': 'totals', 'x': 1.0, 'y': 25.0, 'w': 82.0, 'h': 8.0, 'fontSize': 10.0, 'fontWeight': 'bold', 'alignment': 'right', 'labelAr': 'المتبقي', 'labelEn': 'Balance', 'condition': 'remaining > 0', 'fontColor': '#B42318'},
+    //
+    // ⚠️ **هذا النطاقُ مقيسٌ بالإحداثيّات لا بالتدفّق**، فإدراجُ سطرِ رسمِ
+    // التوصيل ليس إضافةَ عنصرٍ بل إعادةَ توزيعٍ للرصّة كلِّها. وارتفاعُ
+    // النطاق `42.0` (‏`:1857`) هو السقف.
+    //
+    //   قبل: 3 · 10 · 17 · 25(h8)          — أربعةُ صفوفٍ بتباعد ٧
+    //   بعد: 2 · 8.5 · 15 · 21.5 · 29(h8)  — خمسةٌ بتباعد ٦٫٥
+    //
+    // ‏29 + 8 = 37 < 42 ⇒ يبقى داخلَ النطاق. و`remaining` على الحافّة
+    // اليسرى بنفس `y` الإجماليّ، فتتحرّك معه.
+    {'type': 'variable', 'content': 'subtotal', 'band': 'totals', 'x': 107.0, 'y': 2.0, 'w': 82.0, 'h': 6.0, 'fontSize': 9.0, 'alignment': 'right', 'labelAr': 'الإجمالي الفرعي', 'labelEn': 'Subtotal'},
+    {'type': 'variable', 'content': 'discount', 'band': 'totals', 'x': 107.0, 'y': 8.5, 'w': 82.0, 'h': 6.0, 'fontSize': 9.0, 'alignment': 'right', 'labelAr': 'الخصم', 'labelEn': 'Discount', 'condition': 'discount > 0'},
+    {'type': 'variable', 'content': 'tax_amount', 'band': 'totals', 'x': 107.0, 'y': 15.0, 'w': 82.0, 'h': 6.0, 'fontSize': 9.0, 'alignment': 'right', 'labelAr': 'ضريبة القيمة المضافة', 'labelEn': 'VAT'},
+    // 🔴 كان غائباً، والإجماليُّ يشمله ⇒ الورقةُ لا تجمع.
+    {'type': 'variable', 'content': 'delivery_fee', 'band': 'totals', 'x': 107.0, 'y': 21.5, 'w': 82.0, 'h': 6.0, 'fontSize': 9.0, 'alignment': 'right', 'labelAr': 'رسوم التوصيل', 'labelEn': 'Delivery', 'condition': 'delivery_fee > 0'},
+    {'type': 'variable', 'content': 'total_amount', 'band': 'totals', 'x': 107.0, 'y': 29.0, 'w': 82.0, 'h': 8.0, 'fontSize': 12.0, 'fontWeight': 'bold', 'alignment': 'right', 'labelAr': 'الإجمالي المستحق', 'labelEn': 'Total Due'},
+    {'type': 'variable', 'content': 'remaining', 'band': 'totals', 'x': 1.0, 'y': 29.0, 'w': 82.0, 'h': 8.0, 'fontSize': 10.0, 'fontWeight': 'bold', 'alignment': 'right', 'labelAr': 'المتبقي', 'labelEn': 'Balance', 'condition': 'remaining > 0', 'fontColor': '#B42318'},
 
     // ── التذييل ────────────────────────────────────────────────────────
     {'type': 'variable', 'content': 'qr_code', 'band': 'footer', 'x': 1.0, 'y': 4.0, 'w': 18.0, 'h': 18.0, 'fontSize': 7.0, 'alignment': 'center'},
