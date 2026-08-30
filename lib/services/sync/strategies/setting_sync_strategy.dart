@@ -17,7 +17,39 @@ class SettingSyncStrategy extends SyncStrategy {
     final settingsMap = json['settings'] as Map<String, dynamic>;
     
     // إعدادات خاصة بالجهاز أو الفرع لا يجب طمسها من السيرفر الرئيسي
-    const devSpecificKeys = [
+    // القائمةُ ثابتٌ مُصدَّرٌ في ذيل الملفّ — يقرؤها الكاتبُ أيضاً.
+    const devSpecificKeys = kDeviceLocalSettingKeys;
+
+    for (final entry in settingsMap.entries) {
+      if (!devSpecificKeys.contains(entry.key)) {
+        await db.setSetting(entry.key, entry.value?.toString() ?? '');
+      }
+    }
+    // Force UI refresh after sync
+    if (settingsMap.isNotEmpty) {
+      db.markTablesUpdated({db.settings});
+    }
+  }
+
+  @override
+  Future<int> syncIncremental(DateTime since) async => 0;
+
+  @override
+  Future<void> upsert(Insertable record) async {
+    // Settings are handled differently in the DB (key-value pair)
+    // For now, this is not used via generic upsert in the same way
+    throw UnimplementedError('SettingSyncStrategy uses setSetting instead of upsert');
+  }
+}
+
+/// مفاتيحُ الإعدادات التي تخصُّ **هذا الجهاز** ولا تُشارَك.
+///
+/// ⚠️ **تُقرأ من طرفَين، وإغفالُ أحدهما يُبطل الآخر.**
+/// `SettingSyncStrategy` تمنع بها الكتابةَ الهابطةَ من الخادم فوق المفتاح،
+/// وشاشاتُ الإعدادات تمنع بها دفعَه **صاعداً**. ومفتاحٌ محميٌّ من الهبوط
+/// لكنّه يُدفَع صاعداً يصير قيمةَ الخادم ثمّ يُبَثّ إلى كلِّ الأجهزة — أي
+/// أنّ خيارَ طرفيّةٍ واحدةٍ يدهس الجميعَ من بابٍ خلفيّ.
+const kDeviceLocalSettingKeys = <String>[
       // ── Device identity / mode ──────────────────────────────────────
       // Spec 089: network_mode and deployment_mode are per-device. The
       // server stores 'server'; the client stores 'client'. Writing the
@@ -63,26 +95,4 @@ class SettingSyncStrategy extends SyncStrategy {
       // (FR-019). Server never overrides what the operator picked at
       // each terminal.
       'touchMode',
-    ];
-
-    for (final entry in settingsMap.entries) {
-      if (!devSpecificKeys.contains(entry.key)) {
-        await db.setSetting(entry.key, entry.value?.toString() ?? '');
-      }
-    }
-    // Force UI refresh after sync
-    if (settingsMap.isNotEmpty) {
-      db.markTablesUpdated({db.settings});
-    }
-  }
-
-  @override
-  Future<int> syncIncremental(DateTime since) async => 0;
-
-  @override
-  Future<void> upsert(Insertable record) async {
-    // Settings are handled differently in the DB (key-value pair)
-    // For now, this is not used via generic upsert in the same way
-    throw UnimplementedError('SettingSyncStrategy uses setSetting instead of upsert');
-  }
-}
+];

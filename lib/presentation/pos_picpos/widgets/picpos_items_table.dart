@@ -449,7 +449,8 @@ class _ItemRow extends ConsumerWidget {
                 min: 0,
                 onEditComplete: onEditComplete,
                 canEdit: canPrice,
-                requestAccess: () => ensureCartPricePermission(ref, context),
+                requestAccess: () => ensureCartPricePermission(ref, context,
+                    scope: 'cell_line_price'),
                 onSubmitted: (v) async {
                   if (v < 0) return;
                   // §٤ `priceedit` — «ممنوع» قبل أيّ حوارِ مصادقة.
@@ -458,7 +459,10 @@ class _ItemRow extends ConsumerWidget {
                         type: PosNotificationType.error);
                     return;
                   }
-                  if (!await ensureCartPricePermission(ref, context)) return;
+                  if (!await ensureCartPricePermission(ref, context,
+                      scope: 'cell_line_price')) {
+                    return;
+                  }
                   cart.updatePrice(index, v);
                 },
               ),
@@ -476,7 +480,10 @@ class _ItemRow extends ConsumerWidget {
                 suffix: '%',
                 onEditComplete: onEditComplete,
                 canEdit: canDiscount,
-                requestAccess: () => ensureCartDiscountPermission(ref, context),
+                // بابٌ واحدٌ لبوّابتَي الخليّة (لمسةٌ ثمّ إدخال) — فيتشاركان
+                // إذناً واحداً، ولا يُصرَف في بابٍ آخرَ يتقاسم نفسَ الكود.
+                requestAccess: () => ensureCartDiscountPermission(ref, context,
+                    scope: 'cell_line_discount'),
                 // ⚠️ كانت هذه الخانةُ **بلا فحصٍ إطلاقاً** حتى 2026-08-13 —
                 // وجارتاها فوقها محروستان في نفس الملفّ، فالنمطُ كان موجوداً
                 // ولم يُطبَّق عليها. ولم يكشفها الحارسُ البنيويُّ لأنه عَدَّ
@@ -485,8 +492,9 @@ class _ItemRow extends ConsumerWidget {
                   if (v < 0 || v > 100) return;
                   // §٤ `disccap` — والسقفُ **قبل** الصلاحية: انظر تعليقَ
                   // `ensureDiscountWithinPolicy` (‏حوارٌ واحدٌ لا اثنان).
-                  final verdict =
-                      await ensureDiscountWithinPolicy(ref, context, v);
+                  final verdict = await ensureDiscountWithinPolicy(
+                      ref, context, v,
+                      scope: 'cell_line_discount');
                   if (verdict != DiscountPolicyOutcome.allowed) {
                     final msg = discountPolicyMessage(verdict);
                     if (msg != null && context.mounted) {
@@ -496,7 +504,10 @@ class _ItemRow extends ConsumerWidget {
                     return;
                   }
                   if (!context.mounted) return;
-                  if (!await ensureCartDiscountPermission(ref, context)) return;
+                  if (!await ensureCartDiscountPermission(ref, context,
+                      scope: 'cell_line_discount')) {
+                    return;
+                  }
                   cart.setItemDiscount(index, v);
                 },
               ),

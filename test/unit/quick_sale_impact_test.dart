@@ -105,7 +105,7 @@ void main() {
     test('طريقةٌ واحدةٌ مؤشَّرةٌ مع تخطّي الحوار ⇒ مسارٌ سريع', () {
       final fast = quickSaleImpact(
           'pay',
-          const QuickSalePolicyValues({'pos_enabled_payment_methods': 'cash'}));
+          const QuickSalePolicyValues({'pos_payment_methods_enabled': 'cash'}));
 
       expect(fast.first.tone, QuickSaleImpactTone.good);
       expect(fast.first.text, contains('مسار سريع'));
@@ -115,7 +115,7 @@ void main() {
       final dialog = quickSaleImpact(
           'pay',
           const QuickSalePolicyValues(
-              {'pos_enabled_payment_methods': 'cash,card'}));
+              {'pos_payment_methods_enabled': 'cash,card'}));
 
       expect(dialog.first.tone, QuickSaleImpactTone.neutral);
       expect(dialog.first.text, contains('٢ طرق'));
@@ -125,7 +125,7 @@ void main() {
       final noSkip = quickSaleImpact(
           'pay',
           const QuickSalePolicyValues({
-            'pos_enabled_payment_methods': 'cash',
+            'pos_payment_methods_enabled': 'cash',
             'pos_skip_payment_dialog_single_method': 'false',
           }));
 

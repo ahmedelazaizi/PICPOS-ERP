@@ -4,6 +4,7 @@
   "templateCategory": "invoice",
   "paperSize": "A5",
   "paperWidth": 148,
+  "paperHeight": 210,
   "elements": [
     {
       "sortOrder": 0,

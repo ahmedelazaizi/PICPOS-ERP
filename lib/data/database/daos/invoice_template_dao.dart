@@ -282,6 +282,26 @@ extension InvoiceTemplateDao on AppDatabase {
   // IMPORT / EXPORT
   // ═══════════════════════════════════════════════════════════════════════════
 
+  /// ارتفاعُ الورقة بالمليمتر — يُستنتَج حين يغيب عن الملفّ.
+  ///
+  /// يُرجع `null` عمداً للحراريّ: تلك **لفّةٌ مستمرّة** ولا ورقةَ لها، وفرضُ
+  /// ارتفاعٍ عليها يقصّ الإيصالَ الطويل.
+  static double? _inferPaperHeight(Map<String, dynamic> data) {
+    final explicit = (data['paperHeight'] as num?)?.toDouble();
+    if (explicit != null && explicit > 0) return explicit;
+
+    // `paperSize` مصرَّحٌ في كلِّ ملفّات الأصول، والعرضُ احتياطٌ له.
+    final size = (data['paperSize'] as String?)?.toUpperCase().trim();
+    if (size == 'A4') return 297;
+    if (size == 'A5') return 210;
+    if (size == 'A3') return 420;
+
+    final width = (data['paperWidth'] as num?)?.toDouble() ?? 80;
+    if (width <= 80) return null; // حراريّ ⇒ لفّةٌ مستمرّة
+    if (width <= 160) return 210; // ~A5
+    return 297; // ~A4
+  }
+
   /// Import template from JSON string
   Future<int> importTemplateFromJson(String jsonString) async {
     final Map<String, dynamic> data = jsonDecode(jsonString);
@@ -296,7 +316,19 @@ extension InvoiceTemplateDao on AppDatabase {
         ),
         paperSize: Value(data['paperSize'] as String? ?? '80mm'),
         paperWidth: Value((data['paperWidth'] as num?)?.toDouble() ?? 80.0),
-        paperHeight: Value((data['paperHeight'] as num?)?.toDouble()),
+        // ⚠️ **الغيابُ يعني «لفّةً مستمرّة» لا «ورقةً قياسيّة».**
+        //
+        // `_pageHeightPoints` تُرجع `null` حين يغيب الارتفاع، و`null` تبني
+        // `pw.Page` بارتفاعٍ لا نهائيٍّ بدل `pw.MultiPage`. فقالبُ A4 بلا
+        // ارتفاعٍ يُخرج **صفحةً واحدةً** مهما طال: قِيس ٦٠ صنفاً على ورقةٍ
+        // طولُها ٦٩ سم — بلا فاصلِ صفحاتٍ ولا ترويسةٍ مكرّرةٍ ولا أرقامِ صفحات،
+        // والسائقُ إمّا يُصغّرها إلى نصٍّ لا يُقرأ أو يقصّها عند ٢٩٧ مم.
+        //
+        // وأحدَ عشرَ من اثنَي عشرَ ملفَّ A4/A5 في الأصول بلا هذا الحقل، فالاستنتاجُ
+        // هنا هو ما يمنع عودةَ العطب بأوّل ملفٍّ جديدٍ غداً — إصلاحُ الملفّات
+        // وحدَه يعالج الحاضرَ لا المستقبل.
+        // (‏بلاغُ تدقيق الطباعة 2026-08-30)
+        paperHeight: Value(_inferPaperHeight(data)),
         isDefault: const Value(false),
       ),
     );

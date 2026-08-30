@@ -135,6 +135,16 @@ class QuickSalePick {
 
   final List<QuickSalePickItem> items;
 
+  /// هل يقرأ المحرّكُ هذا المفتاحَ فعلاً؟
+  ///
+  /// ⚠️ **كان الحقلُ غائباً عن `QuickSalePick` وحدَها** بينما تُلزم به
+  /// `QuickSaleRow` — فلم يكن ثمّةَ سبيلٌ لوسمِ مجموعةِ اختيارٍ بأنّها
+  /// عرضٌ لا إنفاذ، ومرّت مجموعتان بلا وسمٍ وإحداهما بلا قارئٍ أصلاً.
+  final bool enforced;
+
+  /// سببُ عدمِ الإنفاذ — إلزاميٌّ حين [enforced] خطأ.
+  final String? notEnforcedReason;
+
   const QuickSalePick({
     required this.id,
     required this.title,
@@ -142,6 +152,8 @@ class QuickSalePick {
     required this.settingKey,
     required this.items,
     this.note,
+    this.enforced = false,
+    this.notEnforcedReason,
   });
 }
 
@@ -415,7 +427,16 @@ const List<QuickSaleStep> kQuickSaleSteps = [
       id: 'methods',
       title: 'الطرق المؤشَّرة',
       sub: 'الترتيب هو ترتيب الأزرار على الشاشة',
-      settingKey: 'pos_enabled_payment_methods',
+      // ⚠️ **الكلمتان كانتا مقلوبتَين**: كانت الشاشةُ تكتب
+      // `pos_enabled_payment_methods` والمحرّكُ يقرأ
+      // `pos_payment_methods_enabled` — فصفرُ قرّاءٍ للمفتاح المكتوب.
+      // المديرُ يُلغي تأشيرَ «آجل»، والمعاينةُ تُسقطه أمام عينَيه، ويحفظ —
+      // ثمّ يجده الكاشيرُ في حوار الدفع. مبيعاتٌ آجلةٌ من تِلٍّ ظُنَّ
+      // مغلقاً. (‏وجده تدقيقا المزامنة وسلامةِ القاعدة معاً 2026-08-30)
+      //
+      // ويحرسه `quick_sale_keys_have_readers_test` فلا يعود.
+      settingKey: 'pos_payment_methods_enabled',
+      enforced: true,
       items: [
         QuickSalePickItem(
             id: 'cash', label: 'نقدي', sub: 'الخزينة الرئيسية · بلا مصادقة'),
@@ -426,7 +447,10 @@ const List<QuickSaleStep> kQuickSaleSteps = [
         QuickSalePickItem(
             id: 'credit', label: 'آجل', sub: 'يتطلب عميلاً وحد ائتمان'),
         QuickSalePickItem(
-            id: 'split',
+            // `multiple` لا `split`: هو رمزُ المحرّك في
+            // `paymentMethodPermissionCodes`، و`parseEnabledPaymentMethods`
+            // تُسقط أيَّ رمزٍ غيرِ معروفٍ صامتاً — فكان الخيارُ لا يُفعَّل أبداً.
+            id: 'multiple',
             label: 'دفع متعدّد',
             sub: 'تقسيم المبلغ على أكثر من طريقة',
             onByDefault: false),
@@ -594,6 +618,8 @@ const List<QuickSaleStep> kQuickSaleSteps = [
       title: 'طرق المصادقة على الإغلاق',
       sub: 'الطريقة الواحدة تكفي — التعدد يعطي بديلاً وقت الأعطال',
       settingKey: 'pos_close_auth_methods',
+      notEnforcedReason: 'حوارُ الإغلاق يعرض شرائحَ المصادقة ثابتةً ولا يستشير '
+          'هذا المفتاح — فهو يُحفَظ ويُعرَض بلا أثر.',
       note: 'إطفاء كل الطرق مع إخفاء الإغلاق السريع يمنع إغلاق الوردية '
           'تماماً — النظام يُبقي «كلمة المرور» مفعّلة قسراً في هذه الحالة.',
       items: [
@@ -690,10 +716,19 @@ class QuickSalePolicyValues {
   /// هل المِزلاجُ مضاء؟ — يراعي [QuickSaleRow.invertedBinding].
   bool isOn(QuickSaleRow row) {
     final stored = raw[row.settingKey];
-    final on = stored == null
-        ? row.defaultIndex == 1
-        : stored.toLowerCase() == 'true';
-    return row.invertedBinding ? !on : on;
+
+    // ⚠️ **الغيابُ يعطي افتراضَ العرض مباشرةً — بلا عكس.**
+    //
+    // `defaultIndex` يصف ما **يراه** المديرُ في التصميم، لا ما هو مخزَّن.
+    // وعكسُه مع `invertedBinding` كان يقلبه مرّتين: «تجميع الصنف» افتراضُه
+    // ١ (مضاء) فكان يُعرَض **مطفأً** على تنصيبةٍ نظيفة، بينما
+    // `preventItemStackingProvider` يقرأ غيابَ المفتاح `false` أي
+    // «التجميعُ يعمل». فالشاشةُ كانت تصف عكسَ المحرّك.
+    // (‏بلاغُ تدقيق المخزون 2026-08-30)
+    if (stored == null) return row.defaultIndex == 1;
+
+    final storedOn = stored.toLowerCase() == 'true';
+    return row.invertedBinding ? !storedOn : storedOn;
   }
 
   /// فهرسُ الخيار المختار في `seg` و`pill`.
@@ -980,6 +1015,22 @@ bool quickSaleDiscountAllowed({
 /// أقصى فرقٍ في الوردية يُقبل بلا سببٍ مكتوب — `null` بلا حد.
 double? quickSaleShiftDiffLimit(QuickSalePolicyValues v) =>
     const <double?>[5, 20, 50, null][v.indexOf(_rowById('diffmax'))];
+
+/// الفرقُ الحاكمُ لسياسة «سبب الفرق» — أكبرُ القنوات بالقيمة المطلقة.
+///
+/// ⚠️ **لا مجموعُ القنوات.** المجموعُ يُقاصّ: عجزٌ نقديٌّ −٣٠٠ وفائضُ بنكٍ
+/// +٣٠٠ يعطيان صفراً فلا يُسأل الكاشيرُ عن شيء — بينما قيدُ الفرق يُرحّل
+/// **النقديَّ وحدَه** ()، فتخرج ٣٠٠ من
+/// الدرج ومن الدفاتر بلا سطرِ تفسيرٍ واحد.
+/// (‏بلاغُ التدقيق المحاسبيّ 2026-08-30)
+double quickSaleGoverningShiftDiff({
+  required double cash,
+  required double bank,
+  required double click,
+}) {
+  final a = cash.abs(), b = bank.abs(), c = click.abs();
+  return a >= b ? (a >= c ? a : c) : (b >= c ? b : c);
+}
 
 /// هل يحتاج فرقُ الوردية سبباً مكتوباً؟
 ///

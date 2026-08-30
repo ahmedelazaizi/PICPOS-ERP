@@ -58,11 +58,11 @@ void main() {
 
       // نقتطع كتلةَ القائمة وحدَها: مفتاحٌ مذكورٌ في تعليقٍ خارجَها لا يمنع
       // شيئاً، وفحصُ الملفِّ كلِّه كان سيقبله.
-      final start = source.indexOf('devSpecificKeys = [');
+      final start = source.indexOf('kDeviceLocalSettingKeys = <String>[');
       expect(start, isNot(-1),
-          reason: 'لم تُعثَر على `devSpecificKeys` — تغيّر شكلُ الاستراتيجيّة');
+          reason: 'لم تُعثَر على `kDeviceLocalSettingKeys` — تغيّر شكلُ الملفّ');
       final end = source.indexOf('];', start);
-      expect(end, isNot(-1), reason: 'كتلةُ `devSpecificKeys` غيرُ مغلقة');
+      expect(end, isNot(-1), reason: 'كتلةُ المفاتيح غيرُ مغلقة');
 
       devKeysBlock = source.substring(start, end);
     });

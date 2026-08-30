@@ -529,7 +529,14 @@ class _ManagerOverrideDialog extends ConsumerStatefulWidget {
   final String permission;
   final String? actionName;
 
-  const _ManagerOverrideDialog({required this.permission, this.actionName});
+  /// بابُ الطلب — يمنع صرفَ الإذن في بابٍ آخرَ يتقاسم نفسَ الكود.
+  final String? scope;
+
+  const _ManagerOverrideDialog({
+    required this.permission,
+    this.actionName,
+    this.scope,
+  });
 
   @override
   ConsumerState<_ManagerOverrideDialog> createState() =>
@@ -605,7 +612,8 @@ class _ManagerOverrideDialogState
         // doesn't get prompted a SECOND time for the same logical action
         // (button → payment → save). The token is consumed on first
         // read, so it can't authorise any later, distinct action.
-        ManagerApprovalCache.instance.grant(widget.permission);
+        ManagerApprovalCache.instance
+            .grant(widget.permission, scope: widget.scope);
         if (mounted) {
           Navigator.of(context).pop(true);
         }
@@ -764,6 +772,10 @@ Future<bool> requestManagerApproval(
   BuildContext context, {
   required String actionName,
   String permission = 'approve_high_value_return',
+
+  /// بابُ الطلب. حين يُمرَّر، لا يُصرَف الإذنُ إلّا في نفس الباب —
+  /// انظر `ManagerApprovalCache._key`. و`null` تُبقي السلوكَ القائم.
+  String? scope,
 }) async {
   final result = await showDialog<bool>(
     context: context,
@@ -771,6 +783,7 @@ Future<bool> requestManagerApproval(
     builder: (ctx) => _ManagerOverrideDialog(
       permission: permission,
       actionName: actionName,
+      scope: scope,
     ),
   );
   return result == true;

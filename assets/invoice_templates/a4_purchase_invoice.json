@@ -4,6 +4,7 @@
   "templateCategory": "purchase",
   "paperSize": "A4",
   "paperWidth": 210,
+  "paperHeight": 297,
   "elements": [
     {
       "sortOrder": 0,

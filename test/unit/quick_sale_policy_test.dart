@@ -220,10 +220,10 @@ void _valuesSuite() {
     test('يحفظ الترتيبَ لا المجموعةَ وحدَها', () {
       final pick = kQuickSalePicks.firstWhere((p) => p.id == 'methods');
       final w = QuickSalePolicyValues.writePick(pick, ['card', 'cash']);
-      expect(w, {'pos_enabled_payment_methods': 'card,cash'});
+      expect(w, {'pos_payment_methods_enabled': 'card,cash'});
 
       const v = QuickSalePolicyValues(
-          {'pos_enabled_payment_methods': 'card,cash'});
+          {'pos_payment_methods_enabled': 'card,cash'});
       expect(v.pickOf(pick), ['card', 'cash'],
           reason: 'الترتيبُ هو ترتيبُ الأزرار على شاشة الكاشير — '
               'فكُّه كمجموعةٍ يفقد المعنى.');
@@ -433,6 +433,62 @@ void _valuesSuite() {
           reason: 'الخصمُ المساوي للسقف داخلَه — والرفضُ عنده يجعل السقفَ '
               'المعلَن كذباً بنقطةٍ واحدة.');
       expect(quickSaleDiscountAllowed(percent: 15.01, cap: 15), isFalse);
+    });
+  });
+
+  // ═════════════════════════════════════════════════════════════════════
+  // بلاغا التدقيق 2026-08-30
+  // ═════════════════════════════════════════════════════════════════════
+
+  group('المِزلاجُ المعكوسُ عند غياب المفتاح', () {
+    test('«تجميع الصنف» مضاءٌ افتراضاً — لا مطفأً', () {
+      // ⚠️ `defaultIndex` افتراضُ **العرض** لا قيمةٌ مخزَّنة، فعكسُه يقلب
+      // ما يراه المديرُ عن المحرّك. و`pos_prevent_item_stacking` غائبٌ على
+      // تنصيبةٍ نظيفة، و`preventItemStackingProvider` يقرأ الغيابَ
+      // `false` أي «التجميعُ يعمل» — فالشاشةُ كانت تعرض عكسَ المحرّك.
+      const empty = QuickSalePolicyValues({});
+      expect(empty.isOn(_row('merge')), isTrue,
+          reason: 'التصميمُ يجعله مضاءً (defaultIndex 1)، والمحرّكُ '
+              'يجمّع فعلاً عند غياب المفتاح.');
+    });
+
+    test('ويبقى الذهابُ والإيابُ صحيحَين', () {
+      final row = _row('merge');
+      final written = QuickSalePolicyValues.write(row, 1);
+      expect(written['pos_prevent_item_stacking'], 'false');
+      expect(QuickSalePolicyValues(written).isOn(row), isTrue);
+      final off = QuickSalePolicyValues.write(row, 0);
+      expect(off['pos_prevent_item_stacking'], 'true');
+      expect(QuickSalePolicyValues(off).isOn(row), isFalse);
+    });
+  });
+
+  group('الفرقُ الحاكمُ لسبب فرق الوردية', () {
+    test('أكبرُ القنوات بالقيمة المطلقة لا مجموعُها', () {
+      // ⚠️ **العطبُ المقيس**: عجزٌ نقديٌّ −٣٠٠ وفائضُ بنكٍ +٣٠٠ يجمعان إلى
+      // صفر. والقيدُ يُرحّل **النقديَّ وحدَه**، فكان ٣٠٠ ج.م تخرج من الدرج
+      // ومن الدفاتر بلا سطرِ تفسيرٍ واحد.
+      expect(
+        quickSaleGoverningShiftDiff(cash: -300, bank: 300, click: 0),
+        300,
+        reason: 'المقاصّةُ بين القنوات تُخفي عجزاً نقديّاً حقيقيّاً',
+      );
+    });
+
+    test('ويكفي تجاوزُ قناةٍ واحدةٍ لطلب السبب', () {
+      final governing =
+          quickSaleGoverningShiftDiff(cash: -300, bank: 300, click: 0);
+      expect(
+        quickSaleShiftDiffNeedsReason(difference: governing, limit: 25),
+        isTrue,
+      );
+    });
+
+    test('والاتّزانُ التامُّ لا يطلب سبباً', () {
+      expect(
+        quickSaleGoverningShiftDiff(cash: 0, bank: 0, click: 0),
+        0,
+      );
     });
   });
 }

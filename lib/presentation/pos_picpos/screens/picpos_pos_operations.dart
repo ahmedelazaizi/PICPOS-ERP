@@ -599,10 +599,10 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
 
   /// كميّةُ السطر قبل الإضافة — `null` تعني «ألغى الكاشيرُ فلا يُضاف شيء».
   ///
-  /// ⚠️ **القراءةُ متزامنةٌ عمداً** (`asData?.value` لا `await`): هذا مسارٌ
-  /// ساخنٌ يلمسه كلُّ مسحٍ، و`await` يُدخل إطارَ انتظارٍ بين لمسة الكاشير
-  /// وظهور الصنف. و`null` — أي السياسةُ لم تُقرأ بعد — تعني **السلوكَ
-  /// القائم**: وحدةٌ واحدةٌ فوراً، لا حوارٌ يظهر لأنّ القراءة تأخّرت.
+  /// ⚠️ **تنتظر السياسةَ ولا تخمّنها.** كانت تقرأ `asData?.value` متزامناً
+  /// فترجع `null` قبل أن يسخن المزوِّدُ ⇒ لا يظهر الحوارُ أبداً. والمزوِّدُ
+  /// مُسخَّنٌ الآن بـ`ref.watch` في بناء الشاشة، لكنّ `await` هنا يجعل
+  /// الصحّةَ مستقلّةً عن ترتيب المسارات لا معتمدةً عليه.
   Future<double?> _askLineQuantity(ProductEntity product) async {
     final policy = await ref.read(quickSalePolicyProvider.future);
     if (!mounted) return null;
@@ -1151,9 +1151,18 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     String permission,
     String actionName,
   ) async {
+  // ⚠️ **المشروطُ يُفحَص قبل المِلك، والترتيبُ هو الميزةُ كلُّها.**
+  //    الصلاحيةُ المشروطةُ **ممنوحةٌ** فعلاً — صفُّها في `role_permissions`
+  //    — فلو فُحص المِلكُ أوّلاً لعاد `true` ولما سُئل مسؤولٌ أبداً، وصار
+  //    «مشروط» مِزلاجاً لا يفعل شيئاً. وهو ما كان واقعاً على شاشة الكاشير:
+  //    `ensurePermission` تحترمه و`_ensure` هنا لا تحترمه، فستّةَ عشرَ
+  //    كوداً على أخطرِ شاشةٍ كانت تمرّ بلا حوار.
+  //    (‏بلاغُ المراجعة الأمنيّة 2026-08-30 · النمطُ من `permission_guard`)
     final perms = ref.read(currentUserPermissionsProvider).asData?.value ??
         const <String>[];
-    if (can(perms)) return true;
+    if (!PermissionCodes.isConditionalIn(perms, permission) && can(perms)) {
+      return true;
+    }
     if (!mounted) return false;
     return requestManagerApproval(
       context,
@@ -1351,7 +1360,9 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
         // الفرعُ **بلا فحص** بينما جاراه فوقه محروسان، فمن رُفع عنه الخصمُ
         // كان يطبّقه من هنا. (مقيسٌ 2026-08-13)
         // §٤ `disccap` — والسقفُ قبل الصلاحية (‏حوارٌ واحدٌ لا اثنان).
-        final verdict = await ensureDiscountWithinPolicy(ref, context, disc);
+        final verdict = await ensureDiscountWithinPolicy(
+            ref, context, disc,
+            scope: 'line_edit_discount');
         if (verdict != DiscountPolicyOutcome.allowed) {
           final msg = discountPolicyMessage(verdict);
           if (msg != null && mounted) {
@@ -1360,7 +1371,8 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
           return;
         }
         if (!mounted) return;
-        if (await ensureCartDiscountPermission(ref, context)) {
+        if (await ensureCartDiscountPermission(ref, context,
+            scope: 'line_edit_discount')) {
           cart.setItemDiscount(index, disc);
         }
       }
@@ -1377,7 +1389,10 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     // «الخصم المعتمد» في بلاغ المالك — البابُ الثالث لـ`pos_discount`، وكان
     // مفتوحاً كالبابَين الآخرَين. والاستئذانُ **قبل** فتح الحوار لا بعده:
     // لا يُطلب من الكاشير أن يكتب نسبةً ثم يُرفض.
-    if (!await ensureCartDiscountPermission(ref, context)) return;
+    if (!await ensureCartDiscountPermission(ref, context,
+        scope: 'invoice_discount')) {
+      return;
+    }
     if (!mounted) return;
     final current = ref.read(cartControllerProvider).discountPercent;
     final controller =
@@ -1422,7 +1437,9 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       // كما كان (‏لا يُطلب منه أن يكتب نسبةً ثمّ يُرفض لأنه لا يملك الخصمَ
       // أصلاً)، فمن لا يملك الصلاحيةَ **ويتجاوز السقفَ** يرى حوارَين —
       // وهما قراران مختلفان فعلاً: «أتخصم أصلاً؟» ثمّ «أتتجاوز الحدَّ؟».
-      final verdict = await ensureDiscountWithinPolicy(ref, context, result);
+      final verdict = await ensureDiscountWithinPolicy(
+          ref, context, result,
+          scope: 'invoice_discount');
       if (verdict != DiscountPolicyOutcome.allowed) {
         final msg = discountPolicyMessage(verdict);
         if (msg != null && mounted) {
@@ -1763,7 +1780,20 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     final printPolicy = await ref.read(quickSalePolicyProvider.future);
     if (!mounted) return;
 
-    if (printAfter) {
+    // §٤ `autoprint` — قرارُ المالك 2026-08-30: «F4 يوقف الطباعة».
+    //
+    // كان `printAfter` يُحسَم بالزرِّ وحدَه (`دفع` ⇒ `true` ثابتاً)، ولا
+    // يُستشار `auto_print_receipt` إطلاقاً — فالصفُّ موسومٌ «منفَّذ» وهو
+    // لا يمنع طباعةَ فاتورةٍ واحدة. وقارئاه الوحيدان في المستودع كانا
+    // سندَ مصروفاتٍ وشاشةَ العتاد، أي موديولاً آخر.
+    // (‏بلاغُ اختبارات الوظائف 2026-08-30 · D2)
+    //
+    // ⚠️ والإطفاءُ يمنع **الطباعةَ وحدَها**: الحفظُ والترحيلُ وحركةُ
+    // الخزنة تقع كما هي. و`_saveOnly` (F2) يبقى بلا طباعةٍ كما كان.
+    final autoPrint = printPolicy
+        .isOn(kQuickSaleRows.firstWhere((r) => r.id == 'autoprint'));
+
+    if (printAfter && autoPrint) {
       // الدرج بيتركل **بالتوازي** مع الطباعة مش بعدها: الركلة بتروح للطابعة
       // على نفس المنفذ، وتسلسلهم كان بيضيف زمن ميت على مسار حرج.
       //
@@ -1901,6 +1931,9 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
 
     ref.invalidate(currentUserPermissionsProvider);
     final codes = await ref.read(currentUserPermissionsProvider.future);
+
+    // المشروطُ لا يمرّ بالمِلك — نفسُ قاعدة `_ensureCartPermission` أعلاه.
+    if (PermissionCodes.isConditionalIn(codes, permissionCode)) return false;
 
     if (codes.contains(permissionCode)) return true;
 

@@ -7,6 +7,8 @@ import '../../../core/widgets/app_toast.dart';
 import '../../../data/providers/providers.dart';
 import '../../../data/providers/quick_sale_policy_providers.dart';
 import '../../../domain/models/quick_sale_policy.dart';
+import '../../../services/client_write_interceptor.dart';
+import '../../../services/sync/strategies/setting_sync_strategy.dart';
 import '../../picpos_shell/picpos_surface.dart';
 import '../widgets/quick_sale_cashier_preview.dart';
 import '../widgets/quick_sale_settings_chrome.dart';
@@ -106,6 +108,23 @@ class _QuickSalePolicyScreenState
     try {
       await ref.read(databaseProvider).saveSettings(_draft);
       ref.invalidate(quickSalePolicyProvider);
+
+      // ⚠️ **الحفظُ المحلّيُّ وحدَه كان يُبتلَع.** على عميلٍ أو مرآةٍ لا
+      // يصل التغييرُ الخادمَ، ثمّ تعيده أوّلُ `fullSync` دوريّةٍ إلى قيمة
+      // الخادم — فيظنّ المديرُ أنّه حفظ وقد رُدَّ عليه بصمت.
+      // (‏بلاغُ تدقيق المزامنة 2026-08-30)
+      //
+      // ومفاتيحُ الجهاز تُستثنى من الدفع: رفعُها يجعل خيارَ طرفيّةٍ واحدةٍ
+      // قيمةَ الخادمِ ثمّ تُبَثّ إلى الجميع — أي عكسَ الغرض من عزلها.
+      final shared = Map<String, String>.from(_draft)
+        ..removeWhere((k, _) => kDeviceLocalSettingKeys.contains(k));
+      if (shared.isNotEmpty) {
+        // الإخفاقُ لا يُسقط الحفظَ المحلّيّ: الطابورُ يعيد المحاولةَ،
+        // والمرآةُ بلا طابورٍ ترمي — وكلاهما لا يُبطل ما كُتب محلّيّاً.
+        try {
+          await ClientWriteInterceptor.saveSettings(shared);
+        } catch (_) {}
+      }
       if (!mounted) return;
       setState(() {
         _draft.clear();

@@ -4,6 +4,7 @@
     "templateCategory": "receipt",
     "paperSize": "A4",
     "paperWidth": 210,
+  "paperHeight": 297,
     "elements": [
         {
             "type": "logo",

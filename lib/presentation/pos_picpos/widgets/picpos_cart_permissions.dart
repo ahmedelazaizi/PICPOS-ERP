@@ -46,8 +46,9 @@ Future<bool> _ensure(
   BuildContext context,
   bool Function(List<String>) can,
   String permission,
-  String actionName,
-) async {
+  String actionName, {
+  String? scope,
+}) async {
   // ⚠️ استهلاكُ موافقةٍ سابقةٍ **قبل** أيّ سؤال — وإلا سأل مرّتين.
   //
   // منذ صار الحقلُ يستأذن **قبل** الكتابة (‏«إظهارٌ وإخفاء»، طلبُ المالك
@@ -56,15 +57,27 @@ Future<bool> _ensure(
   // مرّتين لتعديلٍ واحد — وهو بعينه العطبُ الذي وُجدت له هذه الذاكرةُ في
   // `_userHasPermissionFresh`. والموافقةُ تبقى وحيدةَ الاستعمال وعمرُها ٦٠
   // ثانية، فلا تُصعّد الجلسة.
-  if (ManagerApprovalCache.instance.consume(permission)) return true;
+  if (ManagerApprovalCache.instance.consume(permission, scope: scope)) {
+    return true;
+  }
+  // ⚠️ **المشروطُ يُفحَص قبل المِلك، والترتيبُ هو الميزةُ كلُّها.**
+  //    الصلاحيةُ المشروطةُ **ممنوحةٌ** فعلاً — صفُّها في `role_permissions`
+  //    — فلو فُحص المِلكُ أوّلاً لعاد `true` ولما سُئل مسؤولٌ أبداً، وصار
+  //    «مشروط» مِزلاجاً لا يفعل شيئاً. وهو ما كان واقعاً على شاشة الكاشير:
+  //    `ensurePermission` تحترمه و`_ensure` هنا لا تحترمه، فستّةَ عشرَ
+  //    كوداً على أخطرِ شاشةٍ كانت تمرّ بلا حوار.
+  //    (‏بلاغُ المراجعة الأمنيّة 2026-08-30 · النمطُ من `permission_guard`)
   final perms =
       ref.read(currentUserPermissionsProvider).asData?.value ?? const <String>[];
-  if (can(perms)) return true;
+  if (!PermissionCodes.isConditionalIn(perms, permission) && can(perms)) {
+    return true;
+  }
   if (!context.mounted) return false;
   return requestManagerApproval(
     context,
     actionName: actionName,
     permission: permission,
+    scope: scope,
   );
 }
 
@@ -96,10 +109,11 @@ const String kPriceEditBlockedMessage =
 /// يسمح بتعديل السعر، أو يطلب موافقةَ مسؤولٍ يملكها.
 Future<bool> ensureCartPricePermission(
   WidgetRef ref,
-  BuildContext context,
-) =>
+  BuildContext context, {
+  String? scope,
+}) =>
     _ensure(ref, context, canEditCartPriceCodes, PermissionCodes.posPriceEdit,
-        'تعديل سعر الصنف');
+        'تعديل سعر الصنف', scope: scope);
 
 // ── دفعة ٢: ما يمسّ المال ──────────────────────────────────────────────────
 
@@ -194,12 +208,17 @@ bool canAddExpenseCodes(List<String> permissions) =>
     _isAdmin(permissions) || permissions.contains(PermissionCodes.posExpense);
 
 /// يسمح بتطبيق خصم، أو يطلب موافقةَ مسؤولٍ يملكها.
+///
+/// ⚠️ **مرّر [scope] باسم الباب.** لخصمِ السلّة ثلاثةُ أبوابٍ تتقاسم
+/// `pos_discount`، وبلا بابٍ يُصرَف إذنُ أحدها في الآخر: موافقةٌ على خصمِ
+/// **سطرٍ** أُلغيت لوحتُه تصير خصماً على **الفاتورة كلِّها** خلال ٦٠ ثانية.
 Future<bool> ensureCartDiscountPermission(
   WidgetRef ref,
-  BuildContext context,
-) =>
+  BuildContext context, {
+  String? scope,
+}) =>
     _ensure(ref, context, canApplyDiscountCodes, PermissionCodes.posDiscount,
-        'تطبيق خصم');
+        'تطبيق خصم', scope: scope);
 
 // ── سقفُ الخصم — §٤ `disccap` و`discappr` ────────────────────────────────
 
@@ -227,8 +246,9 @@ enum DiscountPolicyOutcome {
 Future<DiscountPolicyOutcome> ensureDiscountWithinPolicy(
   WidgetRef ref,
   BuildContext context,
-  double percent,
-) async {
+  double percent, {
+  String? scope,
+}) async {
   final policy = await ref.read(quickSalePolicyProvider.future);
   if (!context.mounted) return DiscountPolicyOutcome.approvalDenied;
 
@@ -244,6 +264,7 @@ Future<DiscountPolicyOutcome> ensureDiscountWithinPolicy(
   if (!context.mounted) return DiscountPolicyOutcome.approvalDenied;
   final approved = await requestManagerApproval(
     context,
+    scope: scope,
     actionName: 'خصم ${percent.toStringAsFixed(0)}٪ — فوق حدّ ${cap.toStringAsFixed(0)}٪',
     permission: PermissionCodes.posDiscount,
   );

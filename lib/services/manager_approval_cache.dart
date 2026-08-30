@@ -37,28 +37,44 @@ class ManagerApprovalCache {
   final Map<String, DateTime> _approvals = {};
   static const _ttl = Duration(seconds: 60);
 
+  /// مفتاحُ التخزين: الصلاحيةُ وحدَها، أو الصلاحيةُ **وبابُها**.
+  ///
+  /// ⚠️ **لماذا الباب.** الإذنُ يعيش ٦٠ ثانيةً ويستهلكه **أوّلُ** فحصٍ لنفس
+  /// الكود أيّاً كان مصدرُه. ولخصمِ السلّة ثلاثةُ أبوابٍ تتقاسم
+  /// `pos_discount`: خليّةُ الجدول (ببوّابتَين: لمسةٌ ثمّ إدخال)، وحوارُ
+  /// تعديل السطر، وخصمُ الفاتورة. فمديرٌ يصادق على خصمِ **سطرٍ** ثمّ يُلغي
+  /// الكاشيرُ لوحةَ الأرقام يترك إذناً حيّاً يُصرَف بعده خصماً على
+  /// **الفاتورة كلِّها** بلا كلمة مرور. (‏بلاغُ المراجعة الأمنيّة 2026-08-30)
+  ///
+  /// والبابُ يفصل بين الأبواب ويُبقي بوّابتَي البابِ الواحد تتشاركان إذناً
+  /// واحداً — وهو الغرضُ الأصليُّ من هذه الذاكرة. و`null` يُبقي السلوكَ القائم.
+  static String _key(String permission, String? scope) =>
+      scope == null ? permission : '$permission::$scope';
+
   /// Record a successful manager approval for [permission]. Subsequent
   /// permission checks for the same code within [_ttl] will pass without
   /// prompting again, until consumed.
-  void grant(String permission) {
+  void grant(String permission, {String? scope}) {
     if (permission.isEmpty) return;
-    _approvals[permission] = DateTime.now();
-    debugPrint('[MgrApproval] granted "$permission" for ${_ttl.inSeconds}s');
+    final key = _key(permission, scope);
+    _approvals[key] = DateTime.now();
+    debugPrint('[MgrApproval] granted "$key" for ${_ttl.inSeconds}s');
   }
 
   /// Returns true if there's a fresh approval for [permission] AND removes
   /// it (single-use). Stale entries (older than [_ttl]) are evicted.
-  bool consume(String permission) {
-    final stamp = _approvals[permission];
+  bool consume(String permission, {String? scope}) {
+    final key = _key(permission, scope);
+    final stamp = _approvals[key];
     if (stamp == null) return false;
     final age = DateTime.now().difference(stamp);
     if (age > _ttl) {
-      _approvals.remove(permission);
-      debugPrint('[MgrApproval] "$permission" expired (age=${age.inSeconds}s)');
+      _approvals.remove(key);
+      debugPrint('[MgrApproval] "$key" expired (age=${age.inSeconds}s)');
       return false;
     }
-    _approvals.remove(permission);
-    debugPrint('[MgrApproval] consumed "$permission" (age=${age.inSeconds}s)');
+    _approvals.remove(key);
+    debugPrint('[MgrApproval] consumed "$key" (age=${age.inSeconds}s)');
     return true;
   }
 

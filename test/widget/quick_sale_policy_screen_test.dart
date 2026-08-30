@@ -109,7 +109,7 @@ void main() {
     testWidgets('طريقةٌ واحدةٌ ⇒ زرُّ الإتمام الفوريّ في المحاكاة',
         (tester) async {
       await _pump(tester,
-          stored: {'pos_enabled_payment_methods': 'cash'});
+          stored: {'pos_payment_methods_enabled': 'cash'});
       await goToPay(tester);
 
       expect(find.textContaining('إتمام فوري'), findsOneWidget,
@@ -120,7 +120,7 @@ void main() {
     testWidgets('وطريقتان ⇒ شبكةُ الطرق ولوحةُ المبالغ السريعة',
         (tester) async {
       await _pump(tester,
-          stored: {'pos_enabled_payment_methods': 'cash,card'});
+          stored: {'pos_payment_methods_enabled': 'cash,card'});
       await goToPay(tester);
 
       expect(find.textContaining('إتمام فوري'), findsNothing);

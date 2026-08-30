@@ -222,6 +222,19 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
     // والمراقبةُ هنا تُبقيه حيّاً وتُعيد جلبَه فورَ `invalidate` بعد الحفظ.
     ref.watch(quickSalePolicyProvider);
 
+    // ⚠️ **ومزوّدُ التكديس معه — لا تحذفها ظنّاً أنّها بلا استعمال.**
+    //
+    // `preventItemStackingProvider` مستقبليٌّ أيضاً، ويُقرأ بارداً في
+    // `_addProductWithUnits` وفي متحكّم المسح بـ`.value ?? false`. وبلا
+    // مراقبٍ يبقى بارداً فترجع `null`، و`?? false` تقرؤها «التجميعُ
+    // مسموح» — فمديرٌ يُطفئ «تجميع الصنف المتكرر» والقاعدةُ تحفظ `true`
+    // والكاشيرُ يرى الأصنافَ تندمج. صفٌّ موسومٌ «منفَّذ» ولا يعمل.
+    //
+    // وهو نفسُ عطبِ القراءة الباردة في **مزوّدٍ ثانٍ**: إصلاحُ 2026-08-30
+    // غطّى `quickSalePolicyProvider` وحدَه، و`merge` أحدُ صفَّين لا
+    // يمرّان به. (‏بلاغُ اختبارات الوظائف 2026-08-30 · D1)
+    ref.watch(preventItemStackingProvider);
+
     final isProcessing =
         ref.watch(posControllerProvider.select((s) => s.isProcessing));
     // وضعُ المرتجع (جولةُ إصلاح ٢ — مانعٌ ١): تعطيلُ زرّ «الفواتير المعلّقة»

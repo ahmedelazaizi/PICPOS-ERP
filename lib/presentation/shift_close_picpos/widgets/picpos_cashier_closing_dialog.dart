@@ -1229,12 +1229,21 @@ class _PicposCashierClosingDialogState
     final diffPolicy = await ref.read(quickSalePolicyProvider.future);
     if (mounted) {
       final limit = quickSaleShiftDiffLimit(diffPolicy);
+      // ⚠️ **أكبرُ القنوات لا مجموعُها.** المجموعُ يُقاصّ: عجزٌ نقديٌّ −٣٠٠
+      // وفائضُ بنكٍ +٣٠٠ يعطيان صفراً فيمرّ الإغلاقُ بلا سبب — بينما
+      // `closeShiftWithAudit` تُرحّل **النقديَّ وحدَه**، فتخرج ٣٠٠ من الدرج
+      // ومن الدفاتر بلا تفسير. (‏بلاغُ التدقيق المحاسبيّ 2026-08-30)
+      final governing = quickSaleGoverningShiftDiff(
+        cash: state.cashVariance,
+        bank: state.bankVariance,
+        click: state.clickVariance,
+      );
       if (quickSaleShiftDiffNeedsReason(
-        difference: state.totalVariance,
+        difference: governing,
         limit: limit,
       )) {
         varianceReason = await _promptVarianceReason(
-          state.totalVariance,
+          governing,
           limit!,
         );
         // إلغاءٌ أو سببٌ فارغ ⇒ لا تُغلَق الوردية. والسكوتُ هنا كان
