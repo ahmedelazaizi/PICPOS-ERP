@@ -657,19 +657,34 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
       final unitPrice = selectedUnit.salePrice > 0
           ? selectedUnit.salePrice
           : product.salePrice;
-      await _addToCart(product, quantity: quantity, customPrice: unitPrice);
+      // ── الفهرسُ من `_addToCart`، لا `length - 1` ──────────────────────
+      //
+      // 🔴 كان السطرُ `cartItems.length - 1` — أي «آخرُ سطرٍ في السلّة»،
+      // وهو ليس بالضرورة السطرَ الذي أُضيف. و`_addToCart` تعرف الفهرسَ
+      // الصحيحَ أصلاً وتحسبه لتحديد التحديد، ففُصل عنها بلا سبب:
+      //
+      //   • **الاندماج**: مع التكديس يندمج الصنفُ في سطرٍ قائمٍ ليس الأخير،
+      //     فمعاملُ الوحدة (`quantityInBase`) يهبط على **صنفٍ آخر**. صنفٌ
+      //     يخرج من المخزون ×٦ وآخرُ يُبخَس — وكلاهما بكلفةٍ خاطئة.
+      //   • **الرفض**: حين يوقف حارسُ المخزون الإضافةَ (أو يرفضها الـuse
+      //     case) لا يُضاف سطرٌ إطلاقاً — وكان الوسمُ يقع مع ذلك على آخرِ
+      //     سطرٍ موجود، فيُفسد بيعةً سليمةً لم يمسّها المستخدم.
+      final addedIndex =
+          await _addToCart(product, quantity: quantity, customPrice: unitPrice);
       if (!mounted) return;
-
-      final cartItems = ref.read(cartControllerProvider).items;
-      if (cartItems.isNotEmpty) {
-        ref.read(cartControllerProvider.notifier).updateItemUnit(
-              cartItems.length - 1,
-              unitId: selectedUnit.id,
-              unitName: selectedUnit.unitName,
-              quantityInBase: selectedUnit.quantityInBase,
-              unitSalePrice: unitPrice,
-            );
+      if (addedIndex == null) {
+        // لم يُضَف شيء — لا سطرَ يُوسَم.
+        _refocusScanner();
+        return;
       }
+
+      ref.read(cartControllerProvider.notifier).updateItemUnit(
+            addedIndex,
+            unitId: selectedUnit.id,
+            unitName: selectedUnit.unitName,
+            quantityInBase: selectedUnit.quantityInBase,
+            unitSalePrice: unitPrice,
+          );
       return;
     }
 
@@ -678,7 +693,11 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
 
   /// The actual cart write, plus the selection/rejection bookkeeping the
   /// PicPos cart relies on.
-  Future<void> _addToCart(
+  ///
+  /// يُرجع **فهرسَ السطر الذي تأثّر فعلاً** — سواءٌ أُلحق سطرٌ جديدٌ أم اندمجت
+  /// الكمّيّةُ في سطرٍ قائم — و`null` حين لم يُضَف شيء (‏رفضُ المخزون أو رفضُ
+  /// الـuse case). كان يُرجع `void` والمنادي يخمّن `length - 1`.
+  Future<int?> _addToCart(
     ProductEntity product, {
     double quantity = 1,
     double? customPrice,
@@ -690,9 +709,9 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
     // بقت مكتشَفة بدل ما تكون معرفة شفهية.
     if (!await _ensureOversellAllowed(product)) {
       _refocusScanner();
-      return;
+      return null;
     }
-    if (!mounted) return;
+    if (!mounted) return null;
 
     // Live-scale duplicate-weight guard. Only for the tap → weight-dialog
     // flow: two identical PRE-PRINTED labels are two legitimate weighings,
@@ -723,13 +742,18 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
           customPrice: customPrice,
         );
     final items = ref.read(cartControllerProvider).items;
+    // الفهرسُ المتأثّرُ فعلاً — يُرجَع للمنادي كي لا يخمّنه. `null` = لم يُضَف
+    // شيءٌ ولا اندمج، فلا سطرَ يخصُّ هذه المحاولة.
+    int? affectedIndex;
     if (items.length > before) {
-      setState(() => selectedIndex = items.length - 1);
+      affectedIndex = items.length - 1;
+      setState(() => selectedIndex = affectedIndex!);
     } else if (items.length == before) {
       // Either merged into an existing line, or refused. Select the line the
       // product is on so the cashier sees what changed either way.
       final idx = items.lastIndexWhere((i) => i.productId == product.id);
       if (idx != -1) {
+        affectedIndex = idx;
         setState(() => selectedIndex = idx);
       } else {
         // مش رفض مخزون — ده اتعامل معاه فوق قبل الإضافة. أي رفض تاني (سعر
@@ -752,6 +776,8 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
           .clearDuplicateWeightWarning();
       if (msg != null) _showDuplicateWeightDialog(msg);
     }
+
+    return affectedIndex;
   }
 
   /// يتأكد إن [product] مسموح إضافته رغم إن مخزونه صفر أو أقل.

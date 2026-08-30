@@ -25,6 +25,17 @@ const Set<String> kPaidLeaveTypes = {'annual', 'sick', 'emergency'};
 /// حالةُ صفِّ الحضور لإجازةٍ مدفوعة معتمدة.
 const String kAttendanceStatusPaidLeave = 'leave';
 
+/// أقصى امتدادٍ زمنيٍّ تُعدُّ فيه بصمةُ انصرافٍ **تابعةً** لتحضيرٍ سابق.
+///
+/// تُستعمل في [HrExtensions.importDeviceCheckOut] لضمِّ ورديةٍ تعبر منتصفَ
+/// الليل في صفٍّ واحد. وهي **حدٌّ أعلى لا تعريفُ ورديّة**: ما تجاوزها ليس
+/// ورديّةً ممتدّةً بل بصمةُ انصرافٍ ضاع تحضيرُها — وضمُّها كان سيلصق يومَين
+/// لا علاقةَ بينهما ويُنتج «ورديّةً» بطول ثلاثين ساعة.
+///
+/// ستَّ عشرةَ ساعةً تغطّي أطولَ ورديّةٍ واقعيّةٍ (‏١٢ ساعة + تأخّرُ انصراف)
+/// وتقصر دون أقصرِ فجوةٍ بين ورديّتَين مستقلّتَين.
+const Duration kMaxShiftSpan = Duration(hours: 16);
+
 /// حالةُ صفِّ الحضور لإجازةٍ غير مدفوعة معتمدة.
 ///
 /// الصفُّ يُكتب ولا يُحتسب: الغيابُ مصرَّحٌ به لا مجهول، فيظهر في سجلِّ الحضور
@@ -486,8 +497,32 @@ extension HRExtensions on AppDatabase {
 
       // Create Treasury Transaction (Expense)
       // Assuming 'expense' category and default cash safe
+      //
+      // ── المخرجُ الصامتُ الأوّل: بلا خزنة ────────────────────────────────
+      //
+      // 🔴 كان `if (safe != null) { … }` يلفّ **كلَّ** الأثر الماليّ: سندَ
+      // الخزنة، وخصمَ الرصيد، والقيدَ المحاسبيّ. فحين لا تُحلّ خزنةٌ نقديّةٌ
+      // نشِطة كان الصفُّ في `salary_payments` يُكتَب ويُرجَع مُعرِّفُه —
+      // «مدفوع» في شاشة الرواتب، وصفرٌ في الخزنة، وصفرٌ في الأستاذ.
+      //
+      // والأسوأُ أنّ الحالةَ **لا تُصلَح**: فهرسٌ فريدٌ
+      // (`idx_salary_payments_period_dedup` على موظف+فترة+نوع) وحارسٌ في
+      // الكود يمنعان إعادةَ الصرف، ولا مسارَ إلغاءٍ لسندِ راتبٍ في المستودع
+      // كلِّه — فالفترةُ تصير غيرَ قابلةٍ للدفع ولا للتقييد إلى الأبد، ثمّ
+      // تُقفَل على هذا الخطأ (‏`closeAccountingPeriod` لا تفحص رواتبَ بلا
+      // قيد).
+      //
+      // فالفشلُ صريحٌ الآن، والدالّةُ كلُّها داخل معاملةٍ واحدة ⇒ الصفُّ
+      // يُلغى والإعادةُ ممكنة. وهذا عينُ ما يفعله
+      // `operational_expenses_dao` للحالة نفسِها منذ B7.
       final safe = await getDefaultSafeByType('cash');
-      if (safe != null) {
+      if (safe == null) {
+        throw StateError(
+          'لا توجد خزنة نقدية نشطة — لا يمكن صرفُ الراتب بلا حركةِ خزنة '
+          'ولا قيدٍ محاسبيّ. أنشئ خزنةً نقديّةً وأعِد المحاولة.',
+        );
+      }
+      {
         final newBalance = safe.balance - amount;
         final voucher = await generateInvoiceNumber('PV');
 
@@ -546,7 +581,7 @@ extension HRExtensions on AppDatabase {
         // وسطرُ الصفر يُحجَب: صافٍ بصفرٍ (سلفةٌ استوعبت المستحقَّ كلَّه) لا يعني
         // حركةَ نقدٍ، وسطرٌ بصفرٍ يشوّش سجلَّ الحساب بلا معنى.
         final expenseAmount = payableAmount ?? amount;
-        try {
+        {
           final salaryAccCode = await getMappedAccountCode(
             'salary_expense',
             AccountingDao.accountPurposes['salary_expense']!,
@@ -556,8 +591,39 @@ extension HRExtensions on AppDatabase {
             AccountingDao.accountPurposes['cash']!,
           );
           final salaryAcc = await getAccountByCode(salaryAccCode);
-          final cashAcc   = await getAccountByCode(cashAccCode);
-          if (salaryAcc != null && cashAcc != null) {
+          final cashAcc = await getAccountByCode(cashAccCode);
+
+          // ── المخرجان الصامتان الثاني والثالث ─────────────────────────────
+          //
+          // 🔴 (٢) كان `if (salaryAcc != null && cashAcc != null)` **بلا
+          // `else`**. و`getMappedAccountCode` لا تُرجع null أبداً (‏تسقط إلى
+          // `621`/`1111`)، فالفرعُ يقع حين يغيب ذلك الكودُ من شجرة الحسابات —
+          // محاسبٌ أعاد هيكلةَ الشجرة، أو بذرةٌ ناقصة. والنقدُ **كان قد خرج
+          // بالفعل** قبل عشرين سطراً (`adjustSafeBalance`)، فالنتيجةُ خزنةٌ
+          // ناقصةٌ وأستاذٌ صامت.
+          //
+          // 🔴 (٣) وكان الكلُّ ملفوفاً بـ`try { … } catch (e) { debugPrint }`.
+          // و`createJournalEntry` ترمي على: فترةٍ ماليّةٍ مقفلة، أو سنةٍ
+          // ماليّةٍ غائبة، أو قيدٍ غيرِ متوازن، أو حسابٍ غيرِ قابلٍ للترحيل —
+          // وكلُّها كانت تصير سطرَ `debugPrint` بينما النقدُ خرج. أي أنّ
+          // أكثرَ أسبابِ الفشل شيوعاً (‏صرفُ راتبِ فبراير في مارس بعد إقفال
+          // مارس) كان يُنتج بالضبط: نقصٌ في الخزنة، وصفرٌ في الأستاذ، وفترةٌ
+          // لا تقبل إعادةَ الصرف.
+          //
+          // كلاهما صريحٌ الآن. والمعاملةُ الواحدةُ تُرجِع كلَّ شيءٍ عند الرمي:
+          // لا صفَّ راتبٍ، ولا حركةَ خزنة، ولا رصيدَ منقوص — والإعادةُ ممكنة.
+          if (salaryAcc == null || cashAcc == null) {
+            final missing = [
+              if (salaryAcc == null) 'مصروف الرواتب ($salaryAccCode)',
+              if (cashAcc == null) 'النقدية ($cashAccCode)',
+            ].join(' و');
+            throw StateError(
+              'حساب $missing غير موجود في شجرة الحسابات — لا يمكن تقييدُ '
+              'صرفِ الراتب. صحّح شجرةَ الحسابات وأعِد المحاولة.',
+            );
+          }
+
+          {
             await createJournalEntry(
               description: 'صرف راتب — فترة $period',
               date: DateTime.now(),
@@ -585,8 +651,6 @@ extension HRExtensions on AppDatabase {
               isAutoPosted: true,
             );
           }
-        } catch (e) {
-          debugPrint('[HR-AUTOPOST] Salary GL entry failed for period $period: $e');
         }
       }
 
@@ -863,7 +927,7 @@ extension HRExtensions on AppDatabase {
               ))
             .get();
 
-    final daysAttended = attendanceRecords.length;
+    // (‏`daysAttended` يُحسَب بعد جلب العطلات — يرشّحها كما يرشّحها المقام.)
 
     // الأيامُ غيرُ المدفوعة **المسجَّلة** — أساسُ خصمِ الراتب الشهري.
     // تُقرأ من الجدول لا تُستنتج من غياب الصفوف: يومُ الراحة لا صفَّ له كذلك،
@@ -888,6 +952,22 @@ extension HRExtensions on AppDatabase {
             DateTime(r.date.year, r.date.month, r.date.day)))
         .length;
 
+    // ── البسطُ يُرشَّح كما يُرشَّح المقام ────────────────────────────────────
+    //
+    // ⚠️ كان `daysAttended = attendanceRecords.length` — عدَّ صفوفٍ خام.
+    // و`_writeLeaveAttendance` توثِّق نفسَها بأنّها تكتب صفّاً **لكلِّ يومٍ
+    // تقويميّ** في الإجازة المعتمدة، فتشمل العطلاتِ الواقعةَ داخلها. فما
+    // دام المقامُ صار أيّامَ عملٍ (‏تستثني العطلات) وجب أن يستثنيَها البسطُ
+    // كذلك، وإلّا زاد الراتبُ عن نفسه: إجازةُ ٧ أيّامٍ تعبر جمعةً واحدةً
+    // تُنتج ٢٨ صفّاً على مقامِ ٢٧ ⇒ **١٠٣٫٧٪** من الراتب.
+    //
+    // و`unpaidDays` أعلاه يرشّح العطلاتِ منذ 2026-08-09 — فالطرفان الآن
+    // متماثلان، وهذا شرطُ صحّةِ إصلاح المقام لا تحسينٌ مستقلّ.
+    final daysAttended = attendanceRecords
+        .where((r) => !holidays.contains(
+            DateTime(r.date.year, r.date.month, r.date.day)))
+        .length;
+
     // Get advances and deductions
     final advances = await getMonthlyAdvances(employeeId, year, month);
     final deductions = await getMonthlyDeductions(employeeId, year, month);
@@ -899,8 +979,34 @@ extension HRExtensions on AppDatabase {
       month,
     );
 
-    // Calculate
-    final dailyRate = employee.salary / _daysInMonth(year, month);
+    // ── مقامٌ واحدٌ صحيح: أيّامُ العمل ─────────────────────────────────────
+    //
+    // 🔴 كان `employee.salary / _daysInMonth(year, month)` — **أيّامُ
+    // التقويم**. والبسطُ في كلِّ استعمالاته أيّامُ عمل: `daysAttended` يأتي
+    // من بصمةٍ أو تحضيرٍ (‏ولا أحدَ يبصم في العطلة)، و`unpaidDays` يستثني
+    // العطلاتِ صراحةً. فخلطُ مقامٍ تقويميٍّ ببسطٍ عمليٍّ ينقص الراتبَ بنسبة
+    // العطلات في كلِّ شهر:
+    //
+    //   • يوميّ، راتب ٣٠٠٠، شهرٌ ٣١ يوماً بأربع عطلاتٍ أسبوعيّة، حضورٌ كامل:
+    //     ٣٠٠٠ ÷ ٣١ × ٢٧ = **٢٦١٢٫٩٠** — نقصُ ١٢٫٩٪ بلا غيابٍ واحد.
+    //   • شهريّ، غيابٌ كاملُ الشهر: ٣٠٠٠ − ٩٦٫٧٧×٢٧ = **٣٨٧٫١٠** بدل صفر.
+    //
+    // و`hourlyRateFor` كانت على المقام الصحيح (`workingDaysInMonth`) منذ
+    // البداية — فالمحرّكُ كان يحمل مقامَين متناقضَين في دالّتَين متجاورتين.
+    //
+    // ويُشتقّ العددُ من `holidays` المحسوبة أعلاه بدل استعلامٍ ثانٍ:
+    // `workingDaysInMonth` تحسبها بنفس الطريقة (‏أيّامُ الشهر − العطلات).
+    final calendarDays = _daysInMonth(year, month);
+    final workingDays = calendarDays - holidays.length;
+    if (workingDays <= 0) {
+      // حارسُ صفرٍ على شاكلة [hourlyRateFor]: بدونه يصير الأجرُ اليوميُّ
+      // `Infinity` أو `NaN` ويُطبَع على قسيمة الراتب.
+      throw StateError(
+        'لا أيامَ عملٍ في $month/$year لفرع الموظف $employeeId — '
+        'راجِع جدولَ العطلات قبل احتساب الراتب',
+      );
+    }
+    final dailyRate = employee.salary / workingDays;
 
     // ساعاتُ الحضور الفعلية — صفٌّ بلا انصرافٍ لا يُحتسب: مدةٌ مجهولة
     // تُوثَّق ولا تُخمَّن.
@@ -920,6 +1026,14 @@ extension HRExtensions on AppDatabase {
       }
       final inAt = a.checkIn, outAt = a.checkOut;
       if (inAt == null || outAt == null) return sum;
+      // ⚠️ **مدّةٌ سالبةٌ لا تُجمَع.** صفٌّ انصرافُه قبل تحضيره ليس عملاً
+      // بالسالب — هو صفٌّ مشوَّه (‏وردية ليلٍ سُجِّل طرفاها على نفس اليوم
+      // التقويميّ). وجمعُه كان يطرح ١٦ ساعةً من إجماليّ الشهر، فعشرون ليلةً
+      // متتاليةً تُنتج **−٣٠٤ ساعة** ⇒ صافياً سالباً يُقصَر إلى صفر، وزرُّ
+      // الصرف يُعطَّل (`payroll_tab` يشترط `netSalary > 0`) — فموظفُ
+      // الساعة لا يمكن دفعُه أصلاً.
+      // وهذه طبقةٌ ثانيةٌ لا علاجٌ للجذر: الجذرُ في `importDeviceCheckOut`.
+      if (!outAt.isAfter(inAt)) return sum;
       return sum + outAt.difference(inAt).inMinutes / 60.0;
     });
 
@@ -1012,7 +1126,15 @@ extension HRExtensions on AppDatabase {
 
     if (existing != null) {
       // Update only if no check-in yet
-      if (existing.checkIn == null) {
+      //
+      // ⚠️ **ولا يُكتَب تحضيرٌ بعد انصرافِ نفسِ الصفّ.** الصفوفُ اليتيمةُ
+      // التي خلّفها العطلُ القديم (‏انصرافٌ بلا تحضير، من وردياتِ ليلٍ
+      // سابقة) كانت تُملأ ببصمةِ الليلة التالية: تحضيرٌ ٢٢:٠٠ فوق انصرافٍ
+      // ٠٦:٠٠ على **نفس** اليوم ⇒ مدّةٌ سالبةٌ بستّ عشرةَ ساعة. الصفُّ
+      // اليتيمُ لا يُصلَح بلصقِ بصمةٍ لا تخصّه؛ يُترَك كما هو ليُراجَع.
+      if (existing.checkIn == null &&
+          (existing.checkOut == null ||
+              existing.checkOut!.isAfter(timestamp))) {
         await (update(
           employeeAttendance,
         )..where((a) => a.id.equals(existing.id))).write(
@@ -1047,17 +1169,58 @@ extension HRExtensions on AppDatabase {
     if (existing != null) {
       await (update(employeeAttendance)..where((a) => a.id.equals(existing.id)))
           .write(EmployeeAttendanceCompanion(checkOut: Value(timestamp)));
-    } else {
-      // Create record with just check-out (unusual but possible)
-      await into(employeeAttendance).insert(
-        EmployeeAttendanceCompanion.insert(
-          employeeId: employeeId,
-          date: day,
-          checkOut: Value(timestamp),
-          status: const Value('present'),
-        ),
-      );
+      return;
     }
+
+    // ── وردية تعبر منتصف الليل: صفٌّ واحدٌ لا صفّان ─────────────────────────
+    //
+    // 🔴 كلُّ بصمةٍ كانت تشتقّ يومَها من طابعها الزمنيّ وحدَه: تحضيرُ ٢٢:٠٠
+    // يقع على اليوم «د»، وانصرافُ ٠٦:٠٠ على «د+١». فلا يجد الانصرافُ صفّاً
+    // ليومه فيُنشئ **صفّاً ثانياً** بحالة `present` — وردية واحدة، صفّان.
+    // وقيدُ v152 الفريدُ على (موظف، يوم) لا يمنعها: اليومان مختلفان.
+    //
+    // والأثرُ المقيسُ يختلف باختلاف نموذج الأجر، وكلاهما خطأ:
+    //   • **يوميّ**: `daysAttended` يعدّ صفّين ⇒ يُدفَع **مرّتين** لوردية.
+    //   • **بالساعة**: كلا الصفَّين نصفُ بصمة (‏أحدُهما بلا انصراف والآخرُ
+    //     بلا تحضير) فيُسهمان بـ**صفر** ساعة ⇒ لا يُدفَع شيءٌ عن ثماني ساعات.
+    //   • وليالٍ متتالية: بصمةُ الليلة التالية تملأ الصفَّ اليتيم، فيصير
+    //     التحضيرُ والانصرافُ على **نفس** اليوم بفارقٍ سالب — ٢٠ ليلةً
+    //     تُنتج −٣٠٤ ساعة.
+    //
+    // فالانصرافُ يبحث أوّلاً عن **ورديةٍ مفتوحة**: صفٌّ سابقٌ له تحضيرٌ بلا
+    // انصراف، وفارقُه عن هذا الطابع داخل نافذةِ ورديةٍ معقولة. ويُقيَّد
+    // الانصرافُ عليه بدل إنشاء صفٍّ جديد.
+    //
+    // النافذةُ حدٌّ أعلى لا تعريفٌ لوردية: أيُّ فارقٍ أكبرَ منها ليس ورديةً
+    // بل بصمةٌ منسيّة، وضمُّها كان سيلصق يومَين لا علاقةَ بينهما.
+    final openShiftCutoff = timestamp.subtract(kMaxShiftSpan);
+    final openShift = await (select(employeeAttendance)
+          ..where((a) => a.employeeId.equals(employeeId))
+          ..where((a) => a.date.isSmallerThanValue(day))
+          ..where((a) => a.checkIn.isNotNull())
+          ..where((a) => a.checkOut.isNull())
+          ..where((a) => a.checkIn.isBiggerOrEqualValue(openShiftCutoff))
+          ..orderBy([(a) => OrderingTerm.desc(a.date)])
+          ..limit(1))
+        .getSingleOrNull();
+
+    if (openShift != null) {
+      await (update(employeeAttendance)
+            ..where((a) => a.id.equals(openShift.id)))
+          .write(EmployeeAttendanceCompanion(checkOut: Value(timestamp)));
+      return;
+    }
+
+    // Create record with just check-out (unusual but possible) — بصمةُ
+    // انصرافٍ بلا تحضيرٍ يقابلها في نافذة الوردية. تُوثَّق ولا تُخمَّن.
+    await into(employeeAttendance).insert(
+      EmployeeAttendanceCompanion.insert(
+        employeeId: employeeId,
+        date: day,
+        checkOut: Value(timestamp),
+        status: const Value('present'),
+      ),
+    );
   }
 
   // -----------------------------------------------------------------------

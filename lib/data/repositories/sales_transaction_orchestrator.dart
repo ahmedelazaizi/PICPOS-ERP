@@ -339,7 +339,16 @@ class SalesTransactionOrchestrator {
             .map((item) => SaleLineRef(
                   saleItemId: item.id,
                   productId: item.productId,
-                  qty: item.quantity,
+                  // ⚠️ **بوحدة الأساس**، لا بوحدة البيع. `item.quantity`
+                  // بالوحدة المباعة و`quantityInBase` معاملُ تحويلها
+                  // (‏افتراضُه ١٫٠). ومضاعِفُ قائمة المكوّنات يُشتقّ من هذا
+                  // الرقم، فبيعُ «صينيّة ×١٢» كان يستهلك خاماتِ **وجبةٍ
+                  // واحدة**: أحدَ عشرَ مثيلاً من الخامات يخرج بلا أثرٍ في
+                  // المخزون ولا في التكلفة.
+                  // ومسارُ المخزون العاديُّ يضرب المعاملَ منذ البداية
+                  // (`sales_mutations_dao`)، فمسارُ المكوّنات وحدَه شذّ.
+                  qty: item.quantity *
+                      (item.quantityInBase > 0 ? item.quantityInBase : 1.0),
                   warehouseId: warehouseId,
                 ))
             .toList();
