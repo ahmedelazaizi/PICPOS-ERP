@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../core/logging/diagnostic_logger.dart';
 import '../data/database/database.dart';
@@ -10,6 +11,7 @@ import 'device_identity_service.dart';
 import 'network_service.dart';
 import 'offline_sync_worker.dart';
 import 'sync_service.dart';
+import 'tls_trust.dart';
 
 /// WebSocket client for real-time data sync in client mode.
 /// Connects to the server's /ws endpoint and listens for data_changed events.
@@ -133,7 +135,15 @@ class WebSocketSyncClient {
       final modeLabel = ns.isMirror ? 'mirror' : 'client';
       debugPrint('[WS-Client] Connecting to $wsUrl (mode=$modeLabel, branch=$_clientBranchId, device=${mirrorDeviceId ?? "n/a"})...');
 
-      _channel = WebSocketChannel.connect(wsUrl);
+      // 🔴 كان `WebSocketChannel.connect` بعميلٍ افتراضيٍّ بلا خطّافِ
+      // شهادة، فقناةُ المزامنة الحيّة **تُخفق على `wss://`** بينما بقيّةُ
+      // المسارات تنجح — أي مزامنةٌ صامتةُ التعطّل بلا رسالةٍ مفهومة.
+      // و`IOWebSocketChannel` تقبل عميلاً مخصّصاً، فتمرّ من نفس نقطة
+      // التثبيت التي تمرُّ منها كلُّ نداءات HTTP.
+      _channel = wsUrl.scheme == 'wss'
+          ? IOWebSocketChannel.connect(wsUrl,
+              customClient: TlsTrust.ioClient())
+          : WebSocketChannel.connect(wsUrl);
       _subscription = _channel!.stream.listen(
         _onMessage,
         onDone: _onDisconnected,

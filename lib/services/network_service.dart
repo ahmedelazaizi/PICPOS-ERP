@@ -15,6 +15,7 @@ import 'deployment/reconcile_result.dart';
 import 'deployment/settings_keys.dart';
 import 'mirror_state.dart';
 import 'security_service.dart';
+import 'tls_trust.dart';
 import 'server_proxy.dart';
 import 'sync/mirror_settings_keys.dart';
 import 'sync_service.dart';
@@ -53,6 +54,19 @@ class NetworkService {
   String? _tlsKeyPassword;
   bool _activeServerIsTls = false;
 
+  /// بصمةُ شهادةِ **هذا الخادم** — تُحسَب عند الإقلاع وتُنشَر في
+  /// `/api/health` داخلَ نافذة الاقتران وحدَها.
+  String? _serverCertFingerprint;
+
+  /// هل يعمل **الخادمُ البعيد** بـTLS؟ سؤالٌ مختلفٌ عن [_activeServerIsTls].
+  ///
+  /// 🔴 هذا هو الحقلُ الذي كان غائباً، وغيابُه سببُ أنّ [buildServerUrl]
+  /// يبني `http://` صلباً. و[_activeServerIsTls] **لا يصلح بديلاً**: هو
+  /// حالةُ الخادم عن **نفسِه**، وعلى جهازِ عميلٍ لا خادمَ يعمل أصلاً
+  /// فقيمتُه `false` دائماً. فربطُ المخطَّط به يُنتج علَماً ميّتاً على كلِّ
+  /// عميل — إصلاحٌ يبدو صحيحاً ولا يفعل شيئاً.
+  bool _remoteServerIsTls = false;
+
   // Prefs keys
   static const _prefMode = 'network_mode';
   static const _prefServerAddress = 'network_server_address';
@@ -62,6 +76,8 @@ class NetworkService {
   static const _prefTlsCertPath = 'network_tls_cert_path';
   static const _prefTlsKeyPath = 'network_tls_key_path';
   static const _prefTlsKeyPassword = 'network_tls_key_password';
+  /// هل الخادمُ **البعيد** يعمل بـTLS — علَمُ العميل لا الخادم.
+  static const _prefRemoteTls = 'network_remote_tls';
 
   // Getters
   NetworkMode get mode => _mode;
@@ -97,8 +113,18 @@ class NetworkService {
   String? get tlsCertPath => _tlsCertPath;
   String? get tlsKeyPath => _tlsKeyPath;
   bool get isServerUsingTls => _activeServerIsTls;
+  String? get serverCertFingerprint => _serverCertFingerprint;
+
+  /// ⚠️ **هذان مخطَّطا الخادمِ عن نفسِه** — لعرضِ عنوانه للمشغّل ولسجلّاته.
+  /// لا تبنِ بهما رابطاً لخادمٍ **بعيد**: على العميل قيمتُهما `http`/`ws`
+  /// دائماً لأنّ خادمَه المحلّيَّ لا يعمل. استعمل [remoteHttpScheme].
   String get httpScheme => _activeServerIsTls ? 'https' : 'http';
   String get wsScheme => _activeServerIsTls ? 'wss' : 'ws';
+
+  /// مخطَّطُ مخاطبةِ الخادم **البعيد** — هذا هو الذي تبني به الروابط.
+  bool get remoteServerIsTls => _remoteServerIsTls;
+  String get remoteHttpScheme => _remoteServerIsTls ? 'https' : 'http';
+  String get remoteWsScheme => _remoteServerIsTls ? 'wss' : 'ws';
 
   // API handler reference for broadcasting
   ApiHandler? _apiHandler;
@@ -128,6 +154,18 @@ class NetworkService {
     _tlsCertPath = prefs.getString(_prefTlsCertPath);
     _tlsKeyPath = prefs.getString(_prefTlsKeyPath);
     _tlsKeyPassword = prefs.getString(_prefTlsKeyPassword);
+    _remoteServerIsTls = prefs.getBool(_prefRemoteTls) ?? false;
+
+    // ⚠️ تحميلُ البصمة المثبَّتة **هنا** لا عند أوّلِ فحصِ اتّصالٍ فقط.
+    // `TlsTrust` تقبل أيَّ شهادةٍ لمضيفٍ لا بصمةَ له في الذاكرة — فلو
+    // انتظرنا الفحصَ لكانت كلُّ مزامنةٍ بعد إقلاعٍ بارد (وهي تبدأ فوراً)
+    // تجري **بلا إنفاذ**: تثبيتٌ محفوظٌ على القرص لا يحرس شيئاً.
+    if (_serverAddress != null && _serverAddress!.isNotEmpty) {
+      final pinUri = Uri.tryParse(buildServerUrl());
+      if (pinUri != null && pinUri.host.isNotEmpty) {
+        await TlsTrust.loadPin(pinUri.host, pinUri.port);
+      }
+    }
     debugPrint('[NetworkService] Loaded mode=$_mode (raw=$modeStr), addr=$_serverAddress, port=$_serverPort, tls=$_tlsEnabled');
 
     // Restore API token for client OR mirror mode. Cluster 030 / Bug E:
@@ -434,6 +472,7 @@ class NetworkService {
     }
     await prefs.setInt(_prefServerPort, _serverPort);
     await prefs.setBool(_prefTlsEnabled, _tlsEnabled);
+    await prefs.setBool(_prefRemoteTls, _remoteServerIsTls);
     if (_tlsCertPath != null) {
       await prefs.setString(_prefTlsCertPath, _tlsCertPath!);
     }
@@ -455,7 +494,12 @@ class NetworkService {
     _tlsEnabled = enabled;
     _tlsCertPath = certPath;
     _tlsKeyPath = keyPath;
-    _tlsKeyPassword = keyPassword;
+    // 🔴 كان `= keyPassword` بلا شرط، ومنادِيا الواجهة يحذفان الوسيط —
+    // فكلُّ لمسةٍ للمفتاح في الشاشة تمسح كلمةَ مرور المفتاح من الذاكرة،
+    // و`saveSettings` لا تكتب إلّا حين `!= null` فيبقى في prefs مفتاحٌ
+    // بائتٌ لا يُقرأ. أي أنّ مفتاحاً مشفَّراً كان **غيرَ قابلٍ للاستعمال**
+    // من الواجهة إطلاقاً. الآن: لا يُمسّ إلّا حين يُمرَّر صراحةً.
+    if (keyPassword != null) _tlsKeyPassword = keyPassword;
     await saveSettings();
   }
 
@@ -649,6 +693,12 @@ class NetworkService {
       _serverPort = serverPort;
       _serverStartTime = DateTime.now();
       _activeServerIsTls = securityContext != null;
+      // بصمةُ الشهادةِ تُحسَب مرّةً هنا لا عند كلِّ نداءِ `/api/health`:
+      // قراءةُ ملفٍّ وتجزئتُه في مسارِ طلبٍ معفًى من حدِّ المعدّل تفتح
+      // بابَ إرهاقٍ رخيصاً.
+      _serverCertFingerprint = securityContext != null && _tlsCertPath != null
+          ? TlsTrust.fingerprintOfPemFile(_tlsCertPath!)
+          : null;
 
       // Get the local IP for display (WiFi/Ethernet preferred)
       _serverAddress = await getLocalIpAddress();
@@ -694,6 +744,15 @@ class NetworkService {
   /// Build the full HTTP base URL from the saved address.
   /// Supports both plain IP (e.g. 192.168.1.100) and full URLs
   /// (e.g. https://abc.ngrok-free.app).
+  ///
+  /// 🔴 **كان يبني `http://` صلباً.** فمشغّلٌ يُشغّل TLS على الخادم كان
+  /// يقطع كلَّ أجهزته: الخادمُ ينتظر مصافحةً والعملاءُ يخاطبونه بنصٍّ
+  /// صريح. أي أنّ «تشغيل الأمان» كان انقطاعاً لا أماناً.
+  ///
+  /// والمخطَّطُ الآن من [_remoteServerIsTls] — علَمُ **الخادم البعيد**، لا
+  /// [_activeServerIsTls] الذي يصف الخادمَ المحلّيَّ ويساوي `false` على
+  /// كلِّ عميل. وعنوانٌ مكتوبٌ بمخطَّطٍ صريحٍ يبقى مُحترَماً كما كان
+  /// (الأنفاق).
   String buildServerUrl({String? address, int? port}) {
     final addr = (address ?? _serverAddress ?? 'localhost').trim();
     final p = port ?? _serverPort;
@@ -702,7 +761,7 @@ class NetworkService {
       // Strip trailing slash
       return addr.endsWith('/') ? addr.substring(0, addr.length - 1) : addr;
     }
-    return 'http://$addr:$p';
+    return '$remoteHttpScheme://$addr:$p';
   }
 
   /// Build the WebSocket URL from the saved address.
@@ -718,7 +777,7 @@ class NetworkService {
       final base = addr.endsWith('/') ? addr.substring(0, addr.length - 1) : addr;
       return '${base.replaceFirst('http://', 'ws://')}/ws';
     }
-    return 'ws://$addr:$p/ws';
+    return '$remoteWsScheme://$addr:$p/ws';
   }
 
   /// Whether the current address is a tunnel/URL (not a plain IP)
@@ -735,16 +794,67 @@ class NetworkService {
     int port,
   ) async {
     try {
+      // ── اكتشافُ المخطَّط ─────────────────────────────────────────────
+      //
+      // العنوانُ يُدخَل **مجرَّداً** في كلِّ مسارات الاقتران الثلاثة (شاشةُ
+      // الإعدادات · معالجُ البدء · اقترانُ المرآة)، ولا اكتشافَ خادمٍ في
+      // المستودع يملأه. فلا سبيلَ لمعرفة المخطَّط سلفاً — نجرّب المحفوظَ
+      // أوّلاً ثمّ الآخر، ونثبّت ما نجح.
+      //
+      // وهذا يجعل تشغيلَ TLS على الخادم **لا يتطلّب لمسَ أيِّ عميل**:
+      // أوّلُ فحصِ اتّصالٍ يكتشف التبدّلَ ويصحّح نفسَه.
+      final schemes = _remoteServerIsTls
+          ? <bool>[true, false]
+          : <bool>[false, true];
+      final isExplicitUrl =
+          address.trim().startsWith('http://') ||
+          address.trim().startsWith('https://');
+
+      Object? lastError;
+      for (final useTls in schemes) {
+        // عنوانٌ مكتوبٌ بمخطَّطٍ صريحٍ يُحترَم كما هو ولا يُجرَّب مرّتين.
+        if (isExplicitUrl && useTls != schemes.first) break;
+        final previous = _remoteServerIsTls;
+        if (!isExplicitUrl) _remoteServerIsTls = useTls;
+        try {
+          final result = await _probeHealth(address, port);
+          if (!isExplicitUrl && useTls != previous) {
+            // نجح مخطَّطٌ مختلفٌ عن المحفوظ — ثبّته للنداءات التالية.
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setBool(_prefRemoteTls, useTls);
+            debugPrint('[NetworkService] 🔁 remote scheme → '
+                '${useTls ? "https" : "http"}');
+          }
+          return result;
+        } catch (e) {
+          lastError = e;
+          _remoteServerIsTls = previous;
+        }
+      }
+      return {'success': false, 'error': lastError.toString()};
+    } catch (e) {
+      return {
+        'success': false,
+        'error': e.toString(),
+      };
+    }
+  }
+
+  /// فحصُ `/api/health` بمخطَّطٍ واحد. يرمي عند فشل الشبكة ليجرّب المنادي
+  /// المخطَّطَ الآخر.
+  Future<Map<String, dynamic>> _probeHealth(String address, int port) async {
       final baseUrl = buildServerUrl(address: address, port: port);
       final healthUrl = '$baseUrl/api/health';
       debugPrint('[NetworkService] Testing connection to $healthUrl');
 
-      final client = HttpClient();
-      client.connectionTimeout = const Duration(seconds: 15);
-      // Accept any SSL certificate (needed for ngrok/tunnels)
-      client.badCertificateCallback = (cert, host, port) => true;
+      final uri = Uri.parse(healthUrl);
+      // البصمةُ المثبَّتةُ لهذا المضيف — إن وُجدت رُفضت أيُّ شهادةٍ سواها.
+      await TlsTrust.loadPin(uri.host, uri.port);
+      final client = TlsTrust.ioClient(
+        connectionTimeout: const Duration(seconds: 15),
+      );
 
-      final request = await client.getUrl(Uri.parse(healthUrl));
+      final request = await client.getUrl(uri);
       // Skip ngrok free-tier interstitial browser warning page
       request.headers.set('ngrok-skip-browser-warning', 'true');
       request.headers.set('User-Agent', '${Brand.name}-Client');
@@ -755,6 +865,16 @@ class NetworkService {
 
       if (response.statusCode == 200) {
         final data = json.decode(body) as Map<String, dynamic>;
+
+        // ── تثبيتُ بصمةِ الشهادة ────────────────────────────────────────
+        //
+        // تُسلَّم في نافذة الاقتران وحدَها، تماماً كالتوكن. وبعدها يرفض
+        // هذا الجهازُ أيَّ شهادةٍ أخرى لهذا المضيف — وهذا ما يمنع الرجلَ
+        // في المنتصف على الشبكة المحلّيّة.
+        final fingerprint = data['certFingerprint'] as String?;
+        if (fingerprint != null && fingerprint.isNotEmpty) {
+          await TlsTrust.pin(uri.host, uri.port, fingerprint);
+        }
 
         // ── Extract and persist API token from health handshake ──
         final apiToken = data['apiToken'] as String?;
@@ -788,13 +908,10 @@ class NetworkService {
           'error': 'Server returned ${response.statusCode}: $snippet',
         };
       }
-    } catch (e) {
-      return {
-        'success': false,
-        'error': e.toString(),
-      };
-    }
   }
+  // ⚠️ بلا `catch` هنا عن قصد: إخفاقُ الشبكة يجب أن **يُرمى** ليجرّب
+  // [testServerConnection] المخطَّطَ الآخر. وابتلاعُه هنا كان سيُعيد
+  // «فشل» على أوّل محاولةٍ فيموت اكتشافُ المخطَّط قبل أن يبدأ.
 
   /// Register a client connection (called by API handler)
   void registerClient(String clientId) {

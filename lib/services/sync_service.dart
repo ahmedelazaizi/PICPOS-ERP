@@ -8,6 +8,7 @@ import '../data/database/database.dart';
 import '../domain/entities/sync_dtos.dart';
 import 'delta_pull_service.dart';
 import 'server_proxy.dart';
+import 'tls_trust.dart';
 import 'network_service.dart';
 import 'sync/sync_strategy.dart';
 import 'sync/strategies/category_sync_strategy.dart';
@@ -616,9 +617,9 @@ class SyncService {
         return null;
       }
 
-      final client = HttpClient();
-      client.connectionTimeout = const Duration(seconds: 15);
-      client.badCertificateCallback = (cert, host, port) => true;
+      final client = TlsTrust.ioClient(
+        connectionTimeout: const Duration(seconds: 15),
+      );
       final liveUrl = _currentUrl;
 
       // Apply branch scope for scoped endpoints.
@@ -706,9 +707,9 @@ class SyncService {
     print('[Sync] POST → $fullUrl');
     _diagLog('POST → $fullUrl');
     try {
-      final client = HttpClient();
-      client.connectionTimeout = const Duration(seconds: 15);
-      client.badCertificateCallback = (cert, host, port) => true;
+      final client = TlsTrust.ioClient(
+        connectionTimeout: const Duration(seconds: 15),
+      );
       final request = await client.postUrl(Uri.parse(fullUrl));
       request.headers.contentType = ContentType.json;
 

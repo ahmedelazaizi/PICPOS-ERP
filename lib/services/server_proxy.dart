@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import 'tls_trust.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ural_erp/data/database/sync_interceptor.dart';
 import '../core/logging/diagnostic_logger.dart';
@@ -183,7 +184,7 @@ class ServerProxy {
     for (int attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
         debugPrint('[ServerProxy] POST $endpoint (attempt $attempt/$maxAttempts)');
-        final response = await http
+        final response = await TlsTrust.httpClient()
             .post(url, headers: headers, body: body)
             .timeout(const Duration(seconds: 8)); // Fast-fail → outbox on slow network
 
@@ -232,7 +233,7 @@ class ServerProxy {
       headers['X-Idempotency-Key'] = idempotencyKey;
     }
     
-    final response = await http
+    final response = await TlsTrust.httpClient()
         .post(
           url,
           headers: headers,
@@ -260,7 +261,7 @@ class ServerProxy {
       headers['X-Idempotency-Key'] = idempotencyKey;
     }
     
-    final response = await http
+    final response = await TlsTrust.httpClient()
         .put(
           url,
           headers: headers,
@@ -285,7 +286,7 @@ class ServerProxy {
       headers['X-Idempotency-Key'] = idempotencyKey;
     }
     
-    final response = await http
+    final response = await TlsTrust.httpClient()
         .delete(url, headers: headers)
         .timeout(const Duration(seconds: 8));
 
@@ -615,7 +616,7 @@ class ServerProxy {
       final branchParam = branchId != null ? '&branch_id=$branchId' : '';
       final url = Uri.parse('$_baseUrl/api/products/barcode?barcode=$encodedBarcode$branchParam');
       debugPrint('[ServerProxy] GET /api/products/barcode?barcode=$barcode$branchParam');
-      final response = await http
+      final response = await TlsTrust.httpClient()
           .get(url, headers: _authHeaders)
           .timeout(const Duration(seconds: 5));
       if (_isSuccessStatusCode(response.statusCode)) {
@@ -899,9 +900,9 @@ class ServerProxy {
       // The connection timeout is split: 8 s for the TCP/TLS handshake,
       // then a soft 12 s ceiling on the overall request — still bounded so
       // login isn't blocked indefinitely.
-      final client = HttpClient();
-      client.connectionTimeout = const Duration(seconds: 8);
-      client.badCertificateCallback = (cert, host, port) => true;
+      final client = TlsTrust.ioClient(
+        connectionTimeout: const Duration(seconds: 8),
+      );
       try {
         final request = await client.getUrl(url);
         if (_apiToken != null && _apiToken!.isNotEmpty) {
@@ -1102,7 +1103,7 @@ class ServerProxy {
     if (idempotencyKey != null) {
       headers['X-Idempotency-Key'] = idempotencyKey;
     }
-    final response = await http
+    final response = await TlsTrust.httpClient()
         .delete(url, headers: headers)
         .timeout(const Duration(seconds: 8));
     if (!_isSuccessStatusCode(response.statusCode)) {
@@ -1532,7 +1533,7 @@ class ServerProxy {
     try {
       final url = Uri.parse('$_baseUrl/api/regions');
       debugPrint('[ServerProxy] GET /api/regions');
-      final response = await http
+      final response = await TlsTrust.httpClient()
           .get(url, headers: _authHeaders)
           .timeout(const Duration(seconds: 10));
       if (_isSuccessStatusCode(response.statusCode)) {
@@ -1786,7 +1787,7 @@ class ServerProxy {
       final branchParam = await _branchScopeQueryParam();
       final url = Uri.parse('$_baseUrl/api/sync/pull?table=$table'
           '$sinceParam$limitParam$cursorParam$branchParam');
-      final response = await http
+      final response = await TlsTrust.httpClient()
           .get(url, headers: _authHeaders)
           .timeout(const Duration(seconds: 30));
       if (!_isSuccessStatusCode(response.statusCode)) {
@@ -1846,7 +1847,7 @@ class ServerProxy {
   Future<int?> fetchServerTime() async {
     try {
       final url = Uri.parse('$_baseUrl/api/sync/time');
-      final response = await http
+      final response = await TlsTrust.httpClient()
           .get(url, headers: _authHeaders)
           .timeout(const Duration(seconds: 10));
       if (!_isSuccessStatusCode(response.statusCode)) return null;
@@ -1871,7 +1872,7 @@ class ServerProxy {
   }) async {
     try {
       final url = Uri.parse('$_baseUrl/api/auth/verify-admin');
-      final response = await http
+      final response = await TlsTrust.httpClient()
           .post(
             url,
             headers: _authHeaders,
@@ -2052,7 +2053,7 @@ class ServerProxy {
 
     try {
       final url = Uri.parse('$_baseUrl/api/auth/session');
-      final response = await http
+      final response = await TlsTrust.httpClient()
           .post(url, headers: _authHeaders, body: json.encode(body))
           .timeout(const Duration(seconds: 8));
       if (_isSuccessStatusCode(response.statusCode) &&

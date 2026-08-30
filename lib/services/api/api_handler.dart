@@ -351,10 +351,20 @@ class ApiHandler {
           ? DateTime.now().difference(ns.serverStartTime!).inSeconds
           : 0,
       'connectedClients': ns.connectedClientCount,
+      // يُعلَن دائماً — ليس سرّاً، والعميلُ يحتاجه ليعرف بأيِّ مخطَّطٍ
+      // يخاطب الخادمَ في نداءاته التالية. وبدونه كان العميلُ يبني
+      // `http://` صلباً فيعمى عن خادمٍ يعمل بـTLS.
+      'tls': ns.isServerUsingTls,
       // A-SEC-1: only hand the bearer token to callers during an operator-opened
       // device-pairing window — never in steady state.
       if (ApiAuthMiddleware.isPairingOpen)
         'apiToken': ApiAuthMiddleware.activeToken,
+      // بصمةُ شهادةِ الخادم — تُسلَّم في **نفس** نافذة الاقتران التي
+      // يُسلَّم فيها التوكن، فيثبّتها العميلُ ويرفض بعدها أيَّ شهادةٍ
+      // أخرى. وهذا ما يحوّل TLS من تشفيرٍ بلا هويّةٍ إلى منعٍ فعليٍّ
+      // للرجل في المنتصف على الشبكة المحلّيّة.
+      if (ApiAuthMiddleware.isPairingOpen && ns.isServerUsingTls)
+        'certFingerprint': ns.serverCertFingerprint,
     });
   }
 
