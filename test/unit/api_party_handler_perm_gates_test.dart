@@ -48,17 +48,16 @@ void main() {
                 ..where((u) => u.username.equals('party_gate_test_cashier')))
               .getSingle())
           .id;
-      await db.setSetting('server_per_user_perms_enabled', 'true');
     });
 
     tearDown(() async {
       await db.close();
     });
 
-    Request reqWithUser(int userId) => Request(
+    Request reqWithUser(int? userId) => Request(
           'POST',
           Uri.parse('http://localhost:8080/api/parties'),
-          context: {ApiUserCtx.userIdKey: userId},
+          context: userId != null ? {ApiUserCtx.userIdKey: userId} : const {},
         );
 
     Future<void> grantPermToCashier(String code) async {
@@ -75,18 +74,33 @@ void main() {
           );
     }
 
-    test('flag OFF auto-passes regardless of party type', () async {
+    // ⚠️ كان اسمُه «flag OFF auto-passes» ويؤكّد `isNull` — أي أنّه كان
+    // **يثبّت العطب**: المفتاحُ `server_per_user_perms_enabled` لا يُزرع في
+    // أيِّ تنصيبةٍ فكانت البوّاباتُ الـ١٠٤ تمرّ تلقائيّاً في الإنتاج.
+    // حُذف المفتاح، والاختبارُ صار يُثبت أنّ زرعَه لا يُعطّل شيئاً.
+    test('المفتاحُ القديم لا يُعيد المرورَ التلقائيّ لأيِّ نوعِ طرف', () async {
       await db.setSetting('server_per_user_perms_enabled', 'false');
-      expect(
-        await ApiUserCtx.requirePermission(
-            reqWithUser(cashierUserId), db, PermissionCodes.customersAdd),
-        isNull,
-      );
-      expect(
-        await ApiUserCtx.requirePermission(
-            reqWithUser(cashierUserId), db, PermissionCodes.suppliersAdd),
-        isNull,
-      );
+      for (final code in [
+        PermissionCodes.customersAdd,
+        PermissionCodes.suppliersAdd,
+      ]) {
+        final resp = await ApiUserCtx.requirePermission(
+            reqWithUser(cashierUserId), db, code);
+        expect(resp, isNotNull, reason: 'الكاشيرُ لا يملك $code');
+        expect(resp!.statusCode, equals(403));
+      }
+    });
+
+    test('بلا جلسةٍ متحقَّقة → 401 على مسارَي الأطراف', () async {
+      for (final code in [
+        PermissionCodes.customersAdd,
+        PermissionCodes.suppliersAdd,
+      ]) {
+        final resp =
+            await ApiUserCtx.requirePermission(reqWithUser(null), db, code);
+        expect(resp, isNotNull);
+        expect(resp!.statusCode, equals(401));
+      }
     });
 
     test('admin (id=1) passes both customer and supplier paths', () async {

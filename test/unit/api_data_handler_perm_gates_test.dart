@@ -40,17 +40,16 @@ void main() {
                 ..where((u) => u.username.equals('data_gate_test_cashier')))
               .getSingle())
           .id;
-      await db.setSetting('server_per_user_perms_enabled', 'true');
     });
 
     tearDown(() async {
       await db.close();
     });
 
-    Request reqWithUser(int userId) => Request(
+    Request reqWithUser(int? userId) => Request(
           'POST',
           Uri.parse('http://localhost:8080/api/test'),
-          context: {ApiUserCtx.userIdKey: userId},
+          context: userId != null ? {ApiUserCtx.userIdKey: userId} : const {},
         );
 
     // Sample one representative code per major domain wired by Batch 5.
@@ -99,15 +98,34 @@ void main() {
       });
     });
 
-    test('flag OFF auto-passes for all sampled codes', () async {
+    // ⚠️ كان «flag OFF auto-passes» ويؤكّد `isNull` — يثبّت العطب لا العقد.
+    // وهذا الملفُّ يغطّي ٧٧ بوّابةً من الـ١٠٤، أي أكبرَ حصّةٍ منها.
+    test('المفتاحُ القديم لا يُعيد المرورَ التلقائيّ لأيٍّ من الأكواد',
+        () async {
       await db.setSetting('server_per_user_perms_enabled', 'false');
+      var checked = 0;
       for (final code in sampleCodes.values) {
-        expect(
-          await ApiUserCtx.requirePermission(
-              reqWithUser(cashierUserId), db, code),
-          isNull,
-          reason: 'Flag OFF must auto-pass on $code',
-        );
+        // `posShiftOpen` يمنحه البذّارُ للكاشير (‏Batch 0.5)، فمرورُه صحيحٌ
+        // ولا يقيس شيئاً هنا. البقيّةُ لا يملكها الكاشيرُ فتقيس الحارسَ.
+        if (code == PermissionCodes.posShiftOpen) continue;
+        final resp = await ApiUserCtx.requirePermission(
+            reqWithUser(cashierUserId), db, code);
+        expect(resp, isNotNull,
+            reason: 'المفتاحُ المطفأ صراحةً لا يفتح $code');
+        expect(resp!.statusCode, equals(403));
+        checked++;
+      }
+      // مرساةٌ: عددُ ناجحين > صفر. لو أُعيدت تسميةُ الأكواد وصارت الحلقةُ
+      // فارغةً لمرّ الاختبارُ بلا أن يقيس شيئاً.
+      expect(checked, greaterThan(10));
+    });
+
+    test('بلا جلسةٍ متحقَّقة → 401 لكلِّ الأكواد المعاينة', () async {
+      for (final code in sampleCodes.values) {
+        final resp =
+            await ApiUserCtx.requirePermission(reqWithUser(null), db, code);
+        expect(resp, isNotNull);
+        expect(resp!.statusCode, equals(401));
       }
     });
 

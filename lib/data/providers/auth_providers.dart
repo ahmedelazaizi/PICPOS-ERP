@@ -11,6 +11,7 @@ import '../../core/navigation/screen_id.dart';
 import '../../core/permissions/permission_codes.dart';
 import '../../services/login_rate_limiter.dart';
 import '../../services/network_service.dart';
+import '../../services/manager_approval_cache.dart';
 import '../../services/server_proxy.dart';
 import '../../services/websocket_sync_client.dart';
 import '../database/sync_interceptor.dart';
@@ -401,6 +402,12 @@ class AuthNotifier extends Notifier<AuthState> {
     // الخارج أصلاً — بننضّفها عشان ما تفضلش في الذاكرة بلا داعي، ونفس نية
     // Spec 151 P1-8: «الجاي يبدأ بلا هوية موروثة».
     ServerProxy.instance.clearSessions();
+    // 🔴 موافقةُ المدير **لا تعبر تبديلَ المستخدم.** `ManagerApprovalCache`
+    // تحمل أذوناً حيّةً لستّين ثانية، و`clear()` فيها كانت **بلا مستدعٍ
+    // إطلاقاً** — فمديرٌ يصادق ثمّ يسلّم الجهازَ لكاشيرٍ خلال الدقيقة يترك
+    // له إذناً جاهزاً يُصرَف على أوّل فعلٍ بنفس الكود. وهذا عينُ ما يمنعه
+    // تنظيفُ الجلسة أعلاه للتوكنات.
+    ManagerApprovalCache.instance.clear();
     // Feature 012 / Issue C-SHIFT-LOOP — من غيرها تحويل A→B→A بيسيب A متعلّم
     // إنه اتسأل يفتح وردية، فما يتسألش تاني.
     clearShiftDialogPromptedUsers();
@@ -478,6 +485,9 @@ class AuthNotifier extends Notifier<AuthState> {
     // Spec 151 (P1-8) — drop all cached session tokens + in-memory credential
     // proofs so the next user that signs in starts with no inherited identity.
     ServerProxy.instance.clearSessions();
+    // 🔴 نفسُ سببِ تنظيف التوكنات: إذنُ مديرٍ حيٌّ يعبر الخروجَ يصير إذناً
+    // للمستخدم التالي. و`ManagerApprovalCache.clear()` كانت بلا مستدعٍ.
+    ManagerApprovalCache.instance.clear();
     _recomputeElevation();
     // Feature 012 / Issue C-SHIFT-LOOP — clear the same-session
     // already-prompted set so the next user that signs in starts with a

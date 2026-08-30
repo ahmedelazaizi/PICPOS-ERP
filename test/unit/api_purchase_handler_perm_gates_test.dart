@@ -41,17 +41,16 @@ void main() {
                 ..where((u) => u.username.equals('purchase_gate_test_cashier')))
               .getSingle())
           .id;
-      await db.setSetting('server_per_user_perms_enabled', 'true');
     });
 
     tearDown(() async {
       await db.close();
     });
 
-    Request reqWithUser(int userId) => Request(
+    Request reqWithUser(int? userId) => Request(
           'POST',
           Uri.parse('http://localhost:8080/api/purchases'),
-          context: {ApiUserCtx.userIdKey: userId},
+          context: userId != null ? {ApiUserCtx.userIdKey: userId} : const {},
         );
 
     final purchaseCodes = [
@@ -78,14 +77,25 @@ void main() {
       });
     }
 
-    test('flag OFF auto-passes for all 5 purchase codes', () async {
+    // ⚠️ كان «flag OFF auto-passes» ويؤكّد `isNull` — يثبّت العطب لا العقد.
+    test('المفتاحُ القديم لا يُعيد المرورَ التلقائيّ لأكواد المشتريات',
+        () async {
       await db.setSetting('server_per_user_perms_enabled', 'false');
       for (final code in purchaseCodes) {
-        expect(
-          await ApiUserCtx.requirePermission(
-              reqWithUser(cashierUserId), db, code),
-          isNull,
-        );
+        final resp = await ApiUserCtx.requirePermission(
+            reqWithUser(cashierUserId), db, code);
+        expect(resp, isNotNull,
+            reason: 'المفتاحُ المطفأ صراحةً لا يفتح $code');
+        expect(resp!.statusCode, equals(403));
+      }
+    });
+
+    test('بلا جلسةٍ متحقَّقة → 401 لأكواد المشتريات', () async {
+      for (final code in purchaseCodes) {
+        final resp =
+            await ApiUserCtx.requirePermission(reqWithUser(null), db, code);
+        expect(resp, isNotNull);
+        expect(resp!.statusCode, equals(401));
       }
     });
   });

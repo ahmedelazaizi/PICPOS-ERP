@@ -21,6 +21,7 @@ import 'package:uuid/uuid.dart';
 import 'package:ural_erp/data/database/database.dart';
 import 'package:ural_erp/data/repositories/sync_repository_impl.dart';
 import 'package:ural_erp/services/api/api_sales_handler.dart';
+import 'package:ural_erp/services/api/api_user_context.dart';
 
 void main() {
   late AppDatabase db;
@@ -119,7 +120,7 @@ void main() {
           'POST',
           Uri.parse('http://localhost/api/sales'),
           body: payload1,
-          headers: {'Content-Type': 'application/json'},
+          headers: {'Content-Type': 'application/json'}, context: {ApiUserCtx.userIdKey: 1},
         ),
       );
       expect(response1.statusCode, 200);
@@ -150,7 +151,7 @@ void main() {
           'POST',
           Uri.parse('http://localhost/api/sales'),
           body: payload2,
-          headers: {'Content-Type': 'application/json'},
+          headers: {'Content-Type': 'application/json'}, context: {ApiUserCtx.userIdKey: 1},
         ),
       );
       expect(response2.statusCode, 200);
@@ -191,7 +192,7 @@ void main() {
             'POST',
             Uri.parse('http://localhost/api/sales'),
             body: jsonEncode(body),
-            headers: {'Content-Type': 'application/json'},
+            headers: {'Content-Type': 'application/json'}, context: {ApiUserCtx.userIdKey: 1},
           );
 
       // Live sale — server stores it (under its own number, e.g. AQ-POS-1).
@@ -355,7 +356,7 @@ void main() {
           'POST',
           Uri.parse('http://localhost/api/sales'),
           body: payload,
-          headers: {'Content-Type': 'application/json'},
+          headers: {'Content-Type': 'application/json'}, context: {ApiUserCtx.userIdKey: 1},
         ),
       );
       // On unexpected 500, surface the body to aid debugging.

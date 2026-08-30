@@ -8,9 +8,14 @@
 // orchestrators, WebSocket broadcast, etc.).
 //
 // What is verified per gate:
-//   1. Flag OFF (default) → auto-passes regardless of user.
-//   2. Flag ON + admin (bootstrap id=1) → auto-passes.
-//   3. Flag ON + cashier user lacking the perm → 403.
+//   1. No verified session → 401. **لا مرورَ تلقائيّ.**
+//   2. admin (bootstrap id=1) → auto-passes.
+//   3. cashier user lacking the perm → 403.
+//
+// ⚠️ كانت الحالةُ الأولى «Flag OFF (default) → auto-passes» — وهي وصفٌ
+// دقيقٌ لعطبٍ لا لعقد: المفتاحُ `server_per_user_perms_enabled` افتراضُه
+// إطفاءٌ **ولا يُزرع في أيِّ تنصيبة**، فكانت البوّاباتُ الـ١٠٤ كلُّها تمرّ
+// تلقائيّاً في الإنتاج بينما هذه الاختباراتُ خضراء. حُذف المفتاح.
 //
 // What is NOT verified (intentionally — out of scope for unit test):
 //   - End-to-end HTTP routing.
@@ -67,30 +72,32 @@ void main() {
           context: userId != null ? {ApiUserCtx.userIdKey: userId} : const {},
         );
 
-    /// Asserts the documented 3-state contract for a gate:
-    /// off→null, on+admin→null, on+denied-cashier→403.
+    /// Asserts the 3-state contract for a gate:
+    /// no-session→401, admin→null, denied-cashier→403.
+    ///
+    /// ⚠️ الحالةُ الأولى كانت «المفتاحُ مطفأ ⇒ يمرّ الجميع»، وهي عينُ العطب:
+    /// `server_per_user_perms_enabled` لم يكن يُزرع في أيِّ تنصيبةٍ فكانت
+    /// **كلُّ** البوّابات في هذا الملفّ وأخواته تمرّ تلقائيّاً في الإنتاج.
+    /// حُذف المفتاح، والحالةُ الأولى صارت تُثبت النقيض: بلا جلسةٍ لا مرور.
     Future<void> assertGateContract({
       required String permCode,
       required bool cashierShouldPass,
     }) async {
-      // 1. Flag OFF → auto-pass (anyone).
-      await db.setSetting('server_per_user_perms_enabled', 'false');
-      expect(
-        await ApiUserCtx.requirePermission(
-            reqWithUser(cashierUserId), db, permCode),
-        isNull,
-        reason: 'Flag OFF must auto-pass for $permCode',
-      );
+      // 1. بلا جلسةٍ متحقَّقة → 401 (‏لا مرورَ تلقائيّ بعد اليوم).
+      final noSession =
+          await ApiUserCtx.requirePermission(reqWithUser(null), db, permCode);
+      expect(noSession, isNotNull,
+          reason: 'بلا جلسة يجب أن تُرفَض $permCode — لا مرورَ تلقائيّ');
+      expect(noSession!.statusCode, equals(401));
 
-      // 2. Flag ON + admin (bootstrap id=1) → auto-pass.
-      await db.setSetting('server_per_user_perms_enabled', 'true');
+      // 2. admin (bootstrap id=1) → auto-pass.
       expect(
         await ApiUserCtx.requirePermission(reqWithUser(1), db, permCode),
         isNull,
         reason: 'Admin (id=1) must hold $permCode via catch-all',
       );
 
-      // 3. Flag ON + cashier user.
+      // 3. cashier user.
       final cashierResp = await ApiUserCtx.requirePermission(
           reqWithUser(cashierUserId), db, permCode);
       if (cashierShouldPass) {
@@ -102,6 +109,19 @@ void main() {
         expect(cashierResp!.statusCode, equals(403));
       }
     }
+
+    test('البوّابةُ تُنفَّذ بلا مفتاحٍ — وزرعُ المفتاح القديم لا يعطّلها',
+        () async {
+      // مرساةٌ على العطب نفسِه: المفتاحُ الذي كان يُطفئ ١٠٤ بوّابةٍ لم يعد
+      // يُقرأ. زرعُه بـ`'false'` صراحةً — وهو أسوأُ من غيابه — يجب ألّا
+      // يفتح شيئاً.
+      await db.setSetting('server_per_user_perms_enabled', 'false');
+      final resp = await ApiUserCtx.requirePermission(
+          reqWithUser(cashierUserId), db, PermissionCodes.salesDelete);
+      expect(resp, isNotNull,
+          reason: 'المفتاحُ المطفأ صراحةً لا يُعيد المرورَ التلقائيّ');
+      expect(resp!.statusCode, equals(403));
+    });
 
     // Spec 084 added `sales_create` to the cashier role's seeded grants
     // (role_grant_matrix.dart, role 'كاشير'; database_seeder_permissions.dart),
@@ -141,10 +161,11 @@ void main() {
       );
     });
 
-    test('missing X-User-Id on gated endpoint returns 401, not 403', () async {
-      // Spec 060 contract: when flag is ON and X-User-Id is missing,
-      // middleware leaves context empty → requirePermission returns 401.
-      await db.setSetting('server_per_user_perms_enabled', 'true');
+    test('missing session token on gated endpoint returns 401, not 403',
+        () async {
+      // Spec 060 contract: no verified identity in the request context →
+      // requirePermission returns 401 (not 403). الترويسةُ صارت
+      // `X-Session-Token` الموقَّعة لا `X-User-Id` المدَّعاة.
       final resp = await ApiUserCtx.requirePermission(
           reqWithUser(null), db, PermissionCodes.salesCreate);
       expect(resp, isNotNull);

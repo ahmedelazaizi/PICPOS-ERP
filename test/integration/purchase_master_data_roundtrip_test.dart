@@ -20,6 +20,7 @@ import 'package:shelf/shelf.dart' as shelf;
 import 'package:ural_erp/data/database/database.dart';
 import 'package:ural_erp/core/utils/uuid_v7.dart';
 import 'package:ural_erp/services/api/api_handler.dart';
+import 'package:ural_erp/services/api/api_user_context.dart';
 
 void main() {
   late AppDatabase db;
@@ -34,7 +35,7 @@ void main() {
   Future<Map<String, dynamic>> post(String path, Map<String, dynamic> body) async {
     final request = shelf.Request('POST', Uri.parse('http://localhost$path'),
         body: jsonEncode(body),
-        headers: {'content-type': 'application/json'});
+        headers: {'content-type': 'application/json'}, context: {ApiUserCtx.userIdKey: 1},);
     final response = await handler.buildRouter().call(request);
     return jsonDecode(await response.readAsString()) as Map<String, dynamic>;
   }

@@ -18,6 +18,8 @@ import '../../core/permissions/permission_codes.dart';
 import '../../core/utils/uuid_v7.dart';
 import '../../data/database/database.dart';
 import '../cheque_receipt_jes.dart';
+import '../sync/strategies/setting_sync_strategy.dart'
+    show isDeviceLocalSettingKey, isServerSecretSettingKey;
 import 'api_user_context.dart';
 import '../../domain/entities/accounting_entities.dart';
 import 'api_handler_base.dart';
@@ -1538,12 +1540,52 @@ class ApiDataHandler extends ApiHandlerBase {
       if (perm != null) return perm;
       final data =
           json.decode(await request.readAsString()) as Map<String, dynamic>;
-      final settings = data.map<String, String>(
+      final incoming = data.map<String, String>(
         (k, v) => MapEntry(k, v.toString()),
       );
-      await db.saveSettings(settings);
+
+      // ── قائمةُ منعٍ على الخادم، لا على العميل وحدَه ─────────────────────
+      //
+      // 🔴 كانت هذه النقطةُ تكتب **أيَّ** مفتاحٍ يرسله العميل. وهي الطرفُ
+      // الثالثُ لنفس الثغرة: العميلُ يمنع الدفعَ الصاعد، والاستراتيجيّةُ
+      // تمنع الكتابةَ الهابطة — والخادمُ كان مفتوحاً. فعميلٌ واحدٌ (‏أو
+      // حاملُ توكن LAN) يكتب `network_mode='client'` على الخادم فيقلع
+      // الخادمُ عميلاً وتعمى كلُّ الأجهزة، أو يكتب `_watermark__<table>`
+      // فيفتح فجوةَ سحبٍ دائمةً صامتة.
+      //
+      // ولا يُرفَض الطلبُ كلُّه: حمولةٌ مشروعةٌ قد تحمل مفتاحاً واحداً
+      // ممنوعاً بين عشرة صحيحة، ورفضُ الكلِّ يُسقط إعداداتٍ سليمة. فتُكتَب
+      // المسموحةُ ويُبلَّغ عن المحجوبة.
+      // ⚠️ **محوران، لا واحد.** `isDeviceLocalSettingKey` تمنع ما يخصُّ
+      // الجهاز، و`isServerSecretSettingKey` تمنع ما يحمل سرّاً. وكلمةُ مرور
+      // المدير ليست «إعداداً محلّيّاً» فلم تكن القائمةُ الأولى تغطّيها —
+      // فمن يملك `settings_edit` (‏أو المستخدمُ رقم ١) كان **يستبدلها عن
+      // بُعد** ويصير له تجاوزُ الصلاحيّات كلِّه. تصعيدُ امتيازٍ كامل عبر
+      // نقطةِ حفظِ إعدادات.
+      final blocked = <String>[];
+      final allowed = <String, String>{};
+      incoming.forEach((k, v) {
+        if (isDeviceLocalSettingKey(k) || isServerSecretSettingKey(k)) {
+          blocked.add(k);
+        } else {
+          allowed[k] = v;
+        }
+      });
+      if (blocked.isNotEmpty) {
+        unawaited(DiagnosticLogger.log(
+          'API-SETTINGS',
+          '⛔ رُفض ${blocked.length} مفتاحاً يخصُّ الجهاز: '
+              '${blocked.join(", ")}',
+        ));
+      }
+
+      await db.saveSettings(allowed);
       broadcast('settings');
-      return jsonResponse({'success': true});
+      return jsonResponse({
+        'success': true,
+        'saved': allowed.length,
+        if (blocked.isNotEmpty) 'blocked': blocked,
+      });
     } catch (e) {
       debugPrint('[API] postSettings error: $e');
       return errorResponse('Failed to save settings: $e');

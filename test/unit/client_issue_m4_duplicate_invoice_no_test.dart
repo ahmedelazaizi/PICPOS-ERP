@@ -21,6 +21,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shelf/shelf.dart' as shelf;
 import 'package:ural_erp/data/database/database.dart';
 import 'package:ural_erp/services/api/api_purchase_handler.dart';
+import 'package:ural_erp/services/api/api_user_context.dart';
 
 void main() {
   late AppDatabase db;
@@ -204,7 +205,7 @@ void main() {
             'items': [
               {'productId': productId, 'quantity': 1, 'unitCost': 100, 'total': 100},
             ],
-          }),
+          }), context: {ApiUserCtx.userIdKey: 1},
         ));
 
     final first = await post('gid-pur-m4-1', 'SRV-001');

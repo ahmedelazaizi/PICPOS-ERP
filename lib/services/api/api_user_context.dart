@@ -1,20 +1,20 @@
 // 060 (D1-001) — Per-user authentication for the embedded HTTP server.
 //
-// Today the only auth is a shared Bearer token; once a client holds the
-// token it can call any mutation endpoint with no per-user check. This
-// helper adds an X-User-Id header layer that identifies WHICH user
-// behind the token is making the request, plus a helper to gate
-// individual handlers on a permission code.
+// The transport auth is a shared Bearer token; once a client holds it,
+// the token alone says nothing about WHICH user is acting. This helper
+// reads the identity that `ApiAuthMiddleware` derived from the **signed**
+// `X-Session-Token` and gates individual handlers on a permission code.
 //
-// **Scope (Phase 1)**: middleware extracts header, validates the userId
-// against the DB, stores it in request.context['userId']. Handlers that
-// opt in call `requirePermission(...)` to gate. Phase 1 wires ~6
-// highest-risk endpoints; phase 2 sweeps the remaining ~85.
+// ⚠️ **الترويسةُ `X-User-Id` لم تعد تُقرأ.** كانت هويّةً يدّعيها العميلُ
+// بنفسه، فاستُبدلت بتوكن جلسةٍ موقَّعٍ يمنحه الخادم بعد التحقّق من
+// الاعتماد. ويحرس ذلك `test/unit/client_user_id_header_test.dart`.
 //
-// **Backward compatibility**: the entire layer is gated by the setting
-// `server_per_user_perms_enabled` (default `false` = off, behavior
-// identical to pre-060). Admin flips the flag once all clients have
-// shipped with X-User-Id support.
+// ⚠️ **ولا مفتاحَ تشغيلٍ بعد اليوم.** كانت الطبقةُ كلُّها مسيَّجةً بالإعداد
+// `server_per_user_perms_enabled` بافتراضِ **إطفاء** — والإعدادُ لا يُزرع
+// في أيِّ تنصيبةٍ (‏لا بذرةَ SQLite ولا بذرةَ PostgreSQL ولا هجرةَ ولا
+// خريطةَ افتراضات)، وكاتبُه الوحيد زرٌّ في الإعدادات. فالنتيجةُ المقيسة أنّ
+// **١٠٤ بوّاباتِ صلاحيّة** على مسارات POST/PUT/DELETE كانت تمرّ تلقائيّاً
+// على كلِّ تنصيبة. الفحصُ الآن بلا شرط.
 
 import 'package:shelf/shelf.dart';
 
@@ -31,25 +31,17 @@ class ApiUserCtx {
   // rollout without log spam.
   static bool _bootstrapBypassLogged = false;
 
-  /// Stored in `request.context[userIdKey]` after the middleware
-  /// validates `X-User-Id`. Null when the per-user mode is OFF.
+  /// Stored in `request.context[userIdKey]` after the middleware verifies
+  /// the signed `X-Session-Token`. Null when no valid token was presented.
   static const String userIdKey = 'urs.userId';
 
-  /// Read the validated userId from the request context. Returns null
-  /// when the middleware didn't populate it (per-user mode off, or
-  /// header missing on a legacy client).
+  /// Read the verified userId from the request context. Returns null when
+  /// the middleware didn't populate it — no session token, or one that
+  /// failed signature/expiry verification.
   static int? userIdOf(Request request) {
     final v = request.context[userIdKey];
     if (v is int) return v;
     return null;
-  }
-
-  /// Whether server-side per-user permission enforcement is currently
-  /// enabled for this installation. Cheap settings lookup — handlers
-  /// can short-circuit when off.
-  static Future<bool> isPerUserPermsEnabled(AppDatabase db) async {
-    final v = await db.getSettingValue('server_per_user_perms_enabled');
-    return v == 'true';
   }
 
   /// Permission gate. Reads the userId from request.context, looks up
@@ -63,12 +55,26 @@ class ApiUserCtx {
     AppDatabase db,
     String code,
   ) async {
-    if (!await isPerUserPermsEnabled(db)) return null;
+    // ── لماذا لا شرطَ هنا بعد اليوم ──────────────────────────────────────
+    // كان السطرُ الأوّل `if (!await isPerUserPermsEnabled(db)) return null;`
+    // والمفتاحُ `server_per_user_perms_enabled` **لا يُزرع في أيِّ تنصيب**:
+    // لا في `database_seeder`، ولا في بذرة PostgreSQL، ولا في هجرة، ولا في
+    // خريطة افتراضات. كاتبُه الوحيد زرُّ إعداداتٍ لا أحدَ يضغطه. فالنتيجةُ
+    // المقيسة أنّ **كلَّ** بوّاباتِ الصلاحيّة الـ١٠٤ على مسارات
+    // POST/PUT/DELETE كانت تمرّ تلقائيّاً على كلِّ تنصيبةٍ جديدة: توكنُ LAN
+    // واحدٌ يفتح `POST /api/users/<id>/password` و
+    // `POST /api/roles/<id>/permissions` و`POST /api/settings`.
+    // البوّابةُ الآن تُنفَّذ بلا شرط. و`role_grant_preflight_service` يبقى
+    // تقريراً يُشغَّل **قبل** الطرح ليكشف الأدوارَ الناقصةَ منحاً.
     final userId = userIdOf(request);
     if (userId == null) {
       return Response(
         401,
-        body: '{"error":"Missing X-User-Id (per-user perms enabled)"}',
+        // ⚠️ الرسالةُ كانت تقول `X-User-Id` وهو ترويسةٌ **لم تعد تُقرأ**
+        // (‏استُبدلت بـ`X-Session-Token` الموقَّع، ويحرسها
+        // `test/unit/client_user_id_header_test.dart`). فمشغِّلٌ يقرأ السجلَّ
+        // كان يُرسَل إلى ترويسةٍ لا وجودَ لها.
+        body: '{"error":"Missing or invalid X-Session-Token"}',
         headers: const {'content-type': 'application/json'},
       );
     }
@@ -101,5 +107,48 @@ class ApiUserCtx {
       );
     }
     return null;
+  }
+
+  /// يحسم **من يفعل** الطلبَ: هويّةُ الجلسة هي المرجع، وادّعاءُ الجسم
+  /// (`data['userId']`) لا يُقبل إلّا إن طابقها.
+  ///
+  /// ── لماذا هذا حارسٌ لا تجميل ──────────────────────────────────────────
+  /// بعضُ الدوالّ تجعل الفاعلَ **موضوعَ** فحصِ صلاحيّةٍ لا مجرَّدَ وسمِ
+  /// نسبة — `voidSalesInvoice` و`voidPurchaseInvoice` تمرّرانه إلى فحص
+  /// `voidPaidInvoice`، و`createSalesInvoice` تمرّره إلى
+  /// `overrideCreditLimit`. وكلاهما من العمليّات الماليّة الحرجة المستثناة
+  /// عمداً من تجاوز المدير. فحين يُقرأ الفاعلُ من جسم الطلب يصير المستدعي
+  /// هو من يختار **من تُفحَص صلاحيّتُه**: كاشيرٌ يرسل رقمَ مديرٍ فيمرّ.
+  ///
+  /// يُرجع `(actor, null)` عند القبول، و`(null, Response(403))` عند التعارض.
+  /// وحين لا توجد جلسةٌ يُرجع `(null, null)` — ولا يُعوَّض بادّعاء الجسم:
+  /// المسارُ محميٌّ سلفاً بـ[requirePermission] التي ترفض بلا جلسة، والفحصُ
+  /// الحرجُ يفشل مغلقاً على `null`.
+  static (int?, Response?) resolveActor(
+    Request request,
+    int? claimedUserId, {
+    String logTag = 'API-ACTOR',
+    String? context,
+  }) {
+    final sessionUserId = userIdOf(request);
+    if (claimedUserId != null &&
+        sessionUserId != null &&
+        claimedUserId != sessionUserId) {
+      // ignore: discarded_futures — أثرٌ تدقيقيٌّ لا ننتظره.
+      DiagnosticLogger.log(
+        logTag,
+        '⛔ رفض تعارضِ هويّة: الجسم يدّعي #$claimedUserId '
+        'والجلسة #$sessionUserId${context == null ? '' : ' — $context'}',
+      );
+      return (
+        null,
+        Response(
+          403,
+          body: '{"error":"هويّةُ الجسم تخالف هويّةَ الجلسة — الطلب مرفوض"}',
+          headers: const {'content-type': 'application/json'},
+        )
+      );
+    }
+    return (sessionUserId, null);
   }
 }

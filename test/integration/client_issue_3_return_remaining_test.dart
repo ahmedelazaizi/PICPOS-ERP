@@ -26,6 +26,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shelf/shelf.dart';
 import 'package:ural_erp/data/database/database.dart';
 import 'package:ural_erp/services/api/api_sales_handler.dart';
+import 'package:ural_erp/services/api/api_user_context.dart';
 
 void main() {
   late AppDatabase db;
@@ -134,7 +135,7 @@ void main() {
                 'quantityInBase': 1.0,
               },
             ],
-          }),
+          }), context: {ApiUserCtx.userIdKey: 1},
         ),
       );
 
@@ -195,7 +196,7 @@ void main() {
             'quantityInBase': 1.0,
           },
         ],
-      }),
+      }), context: {ApiUserCtx.userIdKey: 1},
     ));
     expect(res.statusCode, 200);
 

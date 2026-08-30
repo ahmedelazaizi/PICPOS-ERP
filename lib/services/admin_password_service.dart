@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../data/repositories/settings_repository_cached.dart';
+import 'api/server_login_throttle.dart';
 import 'audit_log.dart';
 import 'security_service.dart';
 
@@ -47,25 +48,60 @@ class AdminPasswordService {
     await AuditLog.record('admin_password_changed', level: AuditLevel.critical);
   }
 
+  /// مفتاحُ حدِّ المحاولات. ثابتٌ لا يتبع مستخدماً: كلمةُ مرور المدير
+  /// اعتمادٌ واحدٌ للتنصيبة كلِّها، فالحدُّ عليها لا على من يجرّبها.
+  static const String throttleKey = 'admin_password';
+
+  /// True while the admin password is locked out after repeated failures.
+  /// الواجهةُ تقرؤها لتعرض مدّةَ الانتظار بدل «كلمة مرور خاطئة» المضلِّلة.
+  static bool get isLockedOut => ServerLoginThrottle.isLockedOut(throttleKey);
+
   /// Verify a candidate password. Falls back to legacy plaintext comparison
   /// for installs that haven't migrated yet.
+  ///
+  /// ── حدُّ المحاولات ────────────────────────────────────────────────────
+  ///
+  /// 🔴 لم يكن هنا أيُّ حدّ. وعشرةُ مواضعَ في الواجهة تنادي هذه الدالّة —
+  /// شاشةُ القفل، وتصعيدُ المسؤول، وإغلاقُ الوردية، وتعديلُ فاتورةٍ
+  /// مقفلة — فكان بالإمكان تجريبُ آلافِ الكلمات في دقيقةٍ على الجهاز نفسِه
+  /// بلا قفلٍ ولا أثر. وهذه الكلمةُ هي بوّابةُ تجاوز الصلاحيّات كلِّها.
+  ///
+  /// ويُستعمَل [ServerLoginThrottle] لا [LoginRateLimiter] عن قصد: الأخيرُ
+  /// يُصفَّر عند كلِّ خروجٍ (`auth_providers`)، فكان الخروجُ والدخولُ يمسحان
+  /// القفلَ — أي حدٌّ يُلتَفُّ عليه بضغطتَين. والأوّلُ معزولٌ لهذا السبب
+  /// بالضبط، وتوثيقُه يقول ذلك.
   bool verify(String plaintext) {
-    try {
-      final hash = _settings.get(_hashKey);
-      final salt = _settings.get(_saltKey);
-      if (hash != null && hash.isNotEmpty && salt != null && salt.isNotEmpty) {
-        return SecurityService.verifyPassword(plaintext.trim(), salt, hash);
-      }
-      // Legacy fallback — plaintext comparison during migration window
-      final legacy = _settings.get(_legacyKey);
-      if (legacy != null && legacy.isNotEmpty) {
-        return legacy == plaintext.trim();
-      }
+    if (ServerLoginThrottle.isLockedOut(throttleKey)) {
+      // ignore: discarded_futures — أثرٌ تدقيقيٌّ لا ننتظره.
+      AuditLog.record('admin_password_locked_out', level: AuditLevel.critical);
       return false;
+    }
+    try {
+      final ok = _verifyInner(plaintext);
+      if (ok) {
+        ServerLoginThrottle.recordSuccess(throttleKey);
+      } else {
+        ServerLoginThrottle.recordFailure(throttleKey);
+      }
+      return ok;
     } catch (e, st) {
       debugPrint('[ADMIN-AUTH] verify error: $e\n$st');
       return false;
     }
+  }
+
+  bool _verifyInner(String plaintext) {
+    final hash = _settings.get(_hashKey);
+    final salt = _settings.get(_saltKey);
+    if (hash != null && hash.isNotEmpty && salt != null && salt.isNotEmpty) {
+      return SecurityService.verifyPassword(plaintext.trim(), salt, hash);
+    }
+    // Legacy fallback — plaintext comparison during migration window
+    final legacy = _settings.get(_legacyKey);
+    if (legacy != null && legacy.isNotEmpty) {
+      return legacy == plaintext.trim();
+    }
+    return false;
   }
 
   /// If a plaintext `admin_password` exists but no hash, hash and migrate it.

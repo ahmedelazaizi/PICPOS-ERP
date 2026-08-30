@@ -58,30 +58,47 @@ void main() {
               'returns 403 (the exact field bug).');
     });
 
-    test('bypass runs AFTER the 401 missing X-User-Id guard', () {
-      final missingIdx = src.indexOf(
-          'Missing X-User-Id (per-user perms enabled)');
+    test('bypass runs AFTER the 401 missing-session guard', () {
+      final missingIdx = src.indexOf('Missing or invalid X-Session-Token');
       final bypassIdx = src.indexOf('isBootstrapAdmin(userId)');
-      expect(missingIdx, isNot(-1));
+      expect(missingIdx, isNot(-1),
+          reason: 'الرسالةُ تسمّي `X-Session-Token` — الترويسةَ التي تُقرأ '
+              'فعلاً. و`X-User-Id` لم تعد تُقرأ منذ توكن الجلسة الموقَّع.');
       expect(bypassIdx, isNot(-1));
       expect(missingIdx < bypassIdx, isTrue,
-          reason: 'Order: the existing 401 guard for missing header must '
-              'still run first. Otherwise a request with no X-User-Id '
-              'would crash on the null check inside isBootstrapAdmin.');
+          reason: 'Order: the 401 guard for a missing session must still run '
+              'first. Otherwise a request with no verified identity would '
+              'crash on the null check inside isBootstrapAdmin.');
     });
 
-    test('per-user-perms-disabled path is preserved (returns null at top)',
-        () {
-      // The first guard in requirePermission must still short-circuit
-      // when the feature flag is off — admin bypass should not change
-      // this auto-pass behavior for non-admin users on a flag-off cluster.
-      final start = src.indexOf('Future<Response?> requirePermission(');
-      expect(start, isNot(-1));
-      final block = src.substring(start, start + 1200);
-      expect(block, contains('if (!await isPerUserPermsEnabled(db)) return null'),
-          reason: 'Removing this early-return would mean admin bypass code '
-              'runs even when the whole layer is disabled. The flag-off '
-              'auto-pass path must be unchanged.');
+    // ⚠️ كان هنا حارسٌ اسمُه «per-user-perms-disabled path is preserved»
+    // يشترط وجودَ السطر `if (!await isPerUserPermsEnabled(db)) return null`
+    // نصّاً. وهو **يثبّت العطب**: ذلك السطرُ كان يُعطّل ١٠٤ بوّاباتِ صلاحيّةٍ
+    // على كلِّ تنصيبةٍ في الميدان، لأنّ المفتاحَ لا يُزرع في أيِّ بذرةٍ أو
+    // هجرةٍ أو خريطةِ افتراضات. حُذف السطرُ ومعه هذا الحارس، وحلَّ محلَّه
+    // نقيضُه: لا شرطَ يسبق البوّابة.
+    test('لا شرطَ يسبق البوّابة — لا مفتاحَ ولا قراءةَ إعداد', () {
+      // ⚠️ **الفحصُ على الكود لا على النصّ الخام.** أوّلُ صياغتَين لهذا
+      // الحارس سقطتا على **تعليقٍ** يشرح لماذا حُذف المفتاح: الحارسُ يقرأ
+      // التعليقاتِ كما يقرأ الكود، فذِكرُ الاسم في شرحٍ يُقرأ استعمالاً.
+      final codeOnly = src
+          .split('\n')
+          .where((l) => !l.trimLeft().startsWith('//'))
+          .join('\n');
+
+      final start = codeOnly.indexOf('Future<Response?> requirePermission(');
+      expect(start, isNot(-1),
+          reason: 'مرساةٌ — تجريدُ التعليقات لم يُفرِغ الملفَّ ولا الدالّة.');
+      final block = codeOnly.substring(start, start + 900);
+
+      // مرساةٌ ثانية: الكتلةُ المقتطعةُ تحوي فعلاً جسمَ الدالّة.
+      expect(block, contains('userIdOf(request)'),
+          reason: 'مرساةٌ — لولاها لمرّت التوكيداتُ التاليةُ على نصٍّ فارغ.');
+
+      expect(block, isNot(contains('isPerUserPermsEnabled')),
+          reason: 'عودةُ المفتاح تعني عودةَ ١٠٤ بوّاباتٍ معطَّلةٍ افتراضاً.');
+      expect(codeOnly, isNot(contains('server_per_user_perms_enabled')),
+          reason: 'المفتاحُ محذوفٌ من الطبقة كلِّها، لا من نداءٍ واحد.');
     });
 
     test('one-shot bypass-logged flag exists', () {

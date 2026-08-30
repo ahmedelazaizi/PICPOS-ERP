@@ -333,7 +333,11 @@ class ApiSalesHandler extends ApiHandlerBase {
               .map((it) => SaleLineRef(
                     saleItemId: it.id,
                     productId: it.productId,
-                    qty: it.quantity,
+                    // ⚠️ بوحدة الأساس — انظر التعليقَ المفصَّل في
+                    // `sales_transaction_orchestrator`. نفسُ العطب: صينيّةٌ
+                    // ×١٢ كانت تستهلك خاماتِ وجبةٍ واحدة.
+                    qty: it.quantity *
+                        (it.quantityInBase > 0 ? it.quantityInBase : 1.0),
                     warehouseId: resolvedWarehouseId,
                   ))
               .toList();
@@ -1029,7 +1033,10 @@ class ApiSalesHandler extends ApiHandlerBase {
             .map((it) => SaleLineRef(
                   saleItemId: it.id,
                   productId: it.productId,
-                  qty: it.quantity,
+                  // ⚠️ بوحدة الأساس — الموضعُ الثالثُ لنفس العطب (‏مسارُ
+                  // الاستبدال). انظر `sales_transaction_orchestrator`.
+                  qty: it.quantity *
+                      (it.quantityInBase > 0 ? it.quantityInBase : 1.0),
                   warehouseId: resolvedWarehouseId,
                 ))
             .toList(),
@@ -1221,19 +1228,36 @@ class ApiSalesHandler extends ApiHandlerBase {
             });
           }
 
-          int? resolvedUserId;
+          // ── الفاعلُ من الجلسة لا من الجسم ────────────────────────────────
+          // `voidSalesInvoice` يجعل `deletedBy` **موضوعَ** فحصِ
+          // `voidPaidInvoice` (‏sales_actions_dao — من العمليّات الحرجة
+          // المستثناة عمداً من تجاوز المدير). فقراءةُ `data['userId']` كانت
+          // تجعل المستدعيَ يختار من تُفحَص صلاحيّتُه: كاشيرٌ يرسل رقمَ مديرٍ
+          // فيُبطل فاتورةً مدفوعةً كاملاً — ويُنسَب الإبطالُ لمن لم يلمسه.
+          // النمطُ منسوخٌ من `api_purchase_handler` (‏نداءُ `putPurchase`)
+          // وهو الموضعُ الوحيدُ الذي كان يفعلها صواباً.
+          final sessionUserId = ApiUserCtx.userIdOf(request);
           final rawUserId = parseIntNullable(data['userId']);
-          if (rawUserId != null) {
-            resolvedUserId = await _resolveUserId(
-              rawUserId,
-              fallbackUsername: data['createdByUsername'] as String?,
+          if (rawUserId != null &&
+              sessionUserId != null &&
+              rawUserId != sessionUserId) {
+            unawaited(DiagnosticLogger.log(
+                'API-SALE-VOID',
+                '⛔ رفض تعارضِ هويّة: الجسم يدّعي #$rawUserId '
+                    'والجلسة #$sessionUserId — invoice=${invoice.invoiceNumber}'));
+            return Response(
+              403,
+              body: jsonEncode({
+                'error': 'هويّةُ الجسم تخالف هويّةَ الجلسة — الطلب مرفوض',
+              }),
+              headers: const {'content-type': 'application/json'},
             );
           }
 
           await db.voidSalesInvoice(
             invoice.id,
             reason: reason,
-            deletedBy: resolvedUserId,
+            deletedBy: sessionUserId,
             globalId: voidGlobalId,
           );
 

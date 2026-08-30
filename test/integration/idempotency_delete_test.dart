@@ -5,6 +5,7 @@ import 'package:ural_erp/data/database/database.dart';
 import 'package:ural_erp/services/api/api_sales_handler.dart';
 import 'package:shelf/shelf.dart';
 import 'package:uuid/uuid.dart';
+import 'package:ural_erp/services/api/api_user_context.dart';
 
 /// Phase 3 — Fix 3.4: Idempotency Keys on DELETE Operations
 ///
@@ -57,7 +58,7 @@ void main() {
     final headers = <String, String>{'Content-Type': 'application/json'};
     if (idempotencyKey != null) headers['X-Idempotency-Key'] = idempotencyKey;
 
-    final req = Request('POST', Uri.parse('http://localhost/api/sales'), body: payload, headers: headers);
+    final req = Request('POST', Uri.parse('http://localhost/api/sales'), body: payload, headers: headers, context: {ApiUserCtx.userIdKey: 1},);
     final resp = await handler.postSale(req);
     final body = jsonDecode(await resp.readAsString()) as Map<String, dynamic>;
     return body['serverId'] as int? ?? body['id'] as int;
@@ -87,7 +88,7 @@ void main() {
       final req1 = Request(
         'DELETE',
         Uri.parse('http://localhost/api/sales/$serverId'),
-        headers: {'X-Idempotency-Key': delKey},
+        headers: {'X-Idempotency-Key': delKey}, context: {ApiUserCtx.userIdKey: 1},
       );
       final resp1 = await handler.deleteSalesInvoice(req1, serverId.toString());
       expect(resp1.statusCode, anyOf(200, 204),
@@ -104,7 +105,7 @@ void main() {
       final req2 = Request(
         'DELETE',
         Uri.parse('http://localhost/api/sales/$serverId'),
-        headers: {'X-Idempotency-Key': delKey},
+        headers: {'X-Idempotency-Key': delKey}, context: {ApiUserCtx.userIdKey: 1},
       );
       final resp2 = await handler.deleteSalesInvoice(req2, serverId.toString());
       // Should return any HTTP response (not an unhandled exception / connection error).
@@ -128,13 +129,13 @@ void main() {
 
       // Delete invoice 1
       final req1 = Request('DELETE', Uri.parse('http://localhost/api/sales/$id1'),
-          headers: {'X-Idempotency-Key': 'key-for-$id1'});
+          headers: {'X-Idempotency-Key': 'key-for-$id1'}, context: {ApiUserCtx.userIdKey: 1},);
       final resp1 = await handler.deleteSalesInvoice(req1, id1.toString());
       expect(resp1.statusCode, anyOf(200, 204));
 
       // Delete invoice 2
       final req2 = Request('DELETE', Uri.parse('http://localhost/api/sales/$id2'),
-          headers: {'X-Idempotency-Key': 'key-for-$id2'});
+          headers: {'X-Idempotency-Key': 'key-for-$id2'}, context: {ApiUserCtx.userIdKey: 1},);
       final resp2 = await handler.deleteSalesInvoice(req2, id2.toString());
       expect(resp2.statusCode, anyOf(200, 204));
 
@@ -165,7 +166,7 @@ void main() {
       final serverId = await createSaleViaHandler('DEL-NO-KEY-001');
 
       // DELETE without idempotency header
-      final req = Request('DELETE', Uri.parse('http://localhost/api/sales/$serverId'));
+      final req = Request('DELETE', Uri.parse('http://localhost/api/sales/$serverId'), context: {ApiUserCtx.userIdKey: 1},);
       final resp = await handler.deleteSalesInvoice(req, serverId.toString());
       expect(resp.statusCode, anyOf(200, 204),
           reason: 'DELETE without idempotency key should still work');

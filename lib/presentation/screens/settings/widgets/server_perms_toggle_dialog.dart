@@ -1,11 +1,15 @@
-// Spec 078 — Toggle dialog for server_per_user_perms_enabled.
+// Spec 078 — تقريرُ جاهزيّة صلاحيّات الخادم.
 //
-// Two modes based on current flag state:
-//   - Mode A (flag OFF, about to enable): pre-flight check + grant
-//     defaults + enable. "Enable" is disabled until known roles are
-//     ready.
-//   - Mode B (flag ON, about to disable): single-tap disable. No
-//     pre-flight (emergency-off must be fast).
+// ── لماذا لم يعد ديالوجَ تبديل ───────────────────────────────────────────
+// كان يكتب المفتاحَ `server_per_user_perms_enabled` الذي يحكم بوّاباتِ
+// الصلاحيّة الـ١٠٤ على الخادم. والمفتاحُ **لم يكن يُزرع في أيِّ تنصيب**
+// (‏لا بذرةٌ ولا هجرةٌ ولا خريطةُ افتراضات)، وهذا الديالوجُ كاتبُه الوحيد —
+// فكلُّ تنصيبةٍ لم يفتحها مشغِّلٌ يدوياً كانت تعمل بلا أيِّ فحصِ صلاحيّةٍ
+// على الخادم. صار الفحصُ يُنفَّذ بلا شرط (`ApiUserCtx.requirePermission`)،
+// فالمفتاحُ حُذف ومعه التبديل.
+//
+// وبقيت الأداةُ الحقيقيّة: **استطلاعُ المنح الناقصة ومنحُها**. وهي التي
+// تُشغَّل قبل الطرح لتكشف دوراً ينقصه كودٌ فيُرفَض عملُه في الميدان.
 //
 // Visibility of the entry tile in settings_screen.dart is gated on
 // PermissionCodes.rolesManage (the most relevant existing perm).
@@ -17,30 +21,22 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../data/database/database.dart';
 import '../../../../services/role_grant_preflight_service.dart';
 
-const String _settingKey = 'server_per_user_perms_enabled';
-
 class ServerPermsToggleDialog extends StatefulWidget {
   const ServerPermsToggleDialog({
     super.key,
     required this.db,
-    required this.currentlyEnabled,
   });
 
   final AppDatabase db;
-  final bool currentlyEnabled;
 
   static Future<bool?> show({
     required BuildContext context,
     required AppDatabase db,
-    required bool currentlyEnabled,
   }) {
     return showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => ServerPermsToggleDialog(
-        db: db,
-        currentlyEnabled: currentlyEnabled,
-      ),
+      builder: (_) => ServerPermsToggleDialog(db: db),
     );
   }
 
@@ -59,10 +55,7 @@ class _ServerPermsToggleDialogState extends State<ServerPermsToggleDialog> {
   void initState() {
     super.initState();
     _svc = RoleGrantPreflightService(widget.db);
-    if (!widget.currentlyEnabled) {
-      // Mode A — auto-run preflight on open.
-      _runPreflight();
-    }
+    _runPreflight();
   }
 
   Future<void> _runPreflight() async {
@@ -95,60 +88,18 @@ class _ServerPermsToggleDialogState extends State<ServerPermsToggleDialog> {
     }
   }
 
-  Future<void> _writeFlag(bool value) async {
-    setState(() => _saving = true);
-    try {
-      await widget.db.setSetting(_settingKey, value ? 'true' : 'false');
-      if (mounted) Navigator.of(context).pop(true);
-    } finally {
-      if (mounted) setState(() => _saving = false);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Directionality(
       textDirection: TextDirection.rtl,
-      child: widget.currentlyEnabled ? _buildDisableMode() : _buildEnableMode(),
+      child: _buildReportMode(),
     );
   }
 
-  // ───────────────────────── Mode B (Disable) ─────────────────────────
-
-  Widget _buildDisableMode() {
-    return AlertDialog(
-      title: const Text('تعطيل فحص الصلاحيات على السيرفر'),
-      content: const Text(
-        'هل تريد تعطيل الفحص؟ سيعود السيرفر للحالة الافتراضية '
-        '(يقبل أي مستخدم مُعرَّف بدون التحقق من صلاحياته على مستوى '
-        'العمليات).\n\nيمكنك إعادة التفعيل في أي وقت لاحقاً.',
-      ),
-      actions: [
-        TextButton(
-          onPressed: _saving ? null : () => Navigator.of(context).pop(false),
-          child: const Text('إلغاء'),
-        ),
-        FilledButton(
-          style: FilledButton.styleFrom(backgroundColor: AppColors.error),
-          onPressed: _saving ? null : () => _writeFlag(false),
-          child: _saving
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('تعطيل الآن'),
-        ),
-      ],
-    );
-  }
-
-  // ───────────────────────── Mode A (Enable) ──────────────────────────
-
-  Widget _buildEnableMode() {
+  Widget _buildReportMode() {
     final report = _report;
     return AlertDialog(
-      title: const Text('تفعيل فحص الصلاحيات على السيرفر'),
+      title: const Text('جاهزية صلاحيات السيرفر'),
       content: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 520),
         child: SingleChildScrollView(
@@ -179,29 +130,20 @@ class _ServerPermsToggleDialogState extends State<ServerPermsToggleDialog> {
       actions: [
         TextButton(
           onPressed: _saving ? null : () => Navigator.of(context).pop(false),
-          child: const Text('إلغاء'),
+          child: const Text('إغلاق'),
         ),
         FilledButton(
-          onPressed: (_canEnable && !_saving) ? () => _writeFlag(true) : null,
+          onPressed: _saving ? null : _runPreflight,
           child: _saving
               ? const SizedBox(
                   width: 16,
                   height: 16,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('تفعيل الآن'),
+              : const Text('إعادة الفحص'),
         ),
       ],
     );
-  }
-
-  bool get _canEnable {
-    final r = _report;
-    if (r == null) return false;
-    // Allow enabling even if there are custom roles — operator was
-    // shown the list and chose to proceed. Only block on known-role
-    // gaps (those would cause field outages).
-    return r.knownRolesAreReady;
   }
 
   Widget _warningBanner() {
@@ -219,10 +161,11 @@ class _ServerPermsToggleDialogState extends State<ServerPermsToggleDialog> {
           SizedBox(width: 12),
           Expanded(
             child: Text(
-              'بعد التفعيل، السيرفر سيرفض أي عملية يقوم بها مستخدم '
-              'لا يملك الصلاحية المناسبة لها (مثلاً: كاشير يحاول حذف '
-              'فاتورة بدون صلاحية sales_delete). تأكد من فحص الأدوار '
-              'قبل التفعيل.',
+              'فحصُ الصلاحيات على السيرفر **مُفعَّلٌ دائماً** — السيرفر يرفض '
+              'أي عملية يقوم بها مستخدم لا يملك صلاحيتها (مثلاً: كاشير '
+              'يحاول حذف فاتورة بدون صلاحية sales_delete). الفحصُ أدناه '
+              'يكشف الأدوارَ التي ينقصها منحٌ فيُرفَض عملُها في الميدان — '
+              'شغّله بعد أي تعديل على الأدوار.',
               style: TextStyle(fontSize: 13),
             ),
           ),

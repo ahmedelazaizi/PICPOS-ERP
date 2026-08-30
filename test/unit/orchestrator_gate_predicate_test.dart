@@ -536,10 +536,25 @@ void main() {
         reason: 'expected _getUsers handler in $relPath',
       );
 
-      // Walk ~150 lines forward to capture the where-clause area.
+      // Walk forward to capture the where-clause area.
+      //
+      // ⚠️ **النافذةُ بمحارفَ لا بأسطر، ومرساتُها تحتها.** كانت ٤٠٠٠ محرفٍ،
+      // فلمّا أُضيف تعليقٌ في رأس `_getUsers` (‏شرحُ حارسِ الاعتماد ونافذةِ
+      // الاقتران) خرج الكودُ المقصودُ من النافذة وسقط الاختبارُ برسالةٍ تقول
+      // «‏`_getUsers` لم يعد يضمّ المدير» — وهو **لم يتغيّر إطلاقاً**. حارسٌ
+      // يفشل بسببِ تعليقٍ يُضلّل من يقرؤه.
       final body = source.substring(
         methodStart,
-        (methodStart + 4000).clamp(0, source.length),
+        (methodStart + 9000).clamp(0, source.length),
+      );
+
+      // المرساة: النافذةُ تصل فعلاً إلى استعلامِ الجدول. لو قصُرت مرّةً
+      // أخرى فالرسالةُ تقول ذلك بدل أن تتّهم الكود.
+      expect(
+        body.contains('_db.select(_db.users)'),
+        isTrue,
+        reason: 'النافذةُ لم تعد تغطّي جسمَ `_getUsers` — وسّعها بدل أن '
+            'تقرأ فشلَها حكماً على الكود.',
       );
 
       // Feature 029 / US3 Bug A — accept either the original

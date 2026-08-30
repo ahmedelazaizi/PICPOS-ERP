@@ -1704,10 +1704,12 @@ class _EInvoiceVisibilityTogglesState extends ConsumerState<_EInvoiceVisibilityT
   }
 }
 
-// Spec 078 — Settings tile for server_per_user_perms_enabled.
-// Self-contained ConsumerStatefulWidget so it can read the flag state,
-// drive the Switch, and reload after the dialog closes — without
-// burdening the parent state with another setState path.
+// Spec 078 — بلاطةُ جاهزيّة صلاحيّات السيرفر (‏توأمُ نظيرتها في
+// `settings_screen.dart`).
+//
+// ⚠️ كانت مفتاحَ تشغيلٍ يقرأ `server_per_user_perms_enabled` ويعرض
+// «غير مُفعّل» على كلِّ تنصيبةٍ لأنّ المفتاحَ لا يُزرع أبداً. والفحصُ صار
+// يُنفَّذ بلا شرط، فالبلاطةُ الآن **تصف الحقيقة** وتفتح تقريرَ الاستطلاع.
 class _ServerPermsToggleTile extends ConsumerStatefulWidget {
   @override
   ConsumerState<_ServerPermsToggleTile> createState() =>
@@ -1716,59 +1718,24 @@ class _ServerPermsToggleTile extends ConsumerStatefulWidget {
 
 class _ServerPermsToggleTileState
     extends ConsumerState<_ServerPermsToggleTile> {
-  bool _enabled = false;
-  bool _loaded = false;
-
-  static const String _key = 'server_per_user_perms_enabled';
-
-  @override
-  void initState() {
-    super.initState();
-    _refresh();
-  }
-
-  Future<void> _refresh() async {
-    final db = ref.read(databaseProvider);
-    final v = await db.getSettingValue(_key);
-    if (mounted) {
-      setState(() {
-        _enabled = v == 'true';
-        _loaded = true;
-      });
-    }
-  }
-
   Future<void> _openDialog() async {
     final db = ref.read(databaseProvider);
-    final changed = await ServerPermsToggleDialog.show(
-      context: context,
-      db: db,
-      currentlyEnabled: _enabled,
-    );
-    if (changed == true) await _refresh();
+    await ServerPermsToggleDialog.show(context: context, db: db);
   }
 
   @override
   Widget build(BuildContext context) {
-    final subtitle = !_loaded
-        ? '...'
-        : (_enabled
-            ? 'مُفعّل — السيرفر يفحص صلاحيات كل مستخدم على كل عملية'
-            : 'غير مُفعّل — السيرفر يقبل أي مستخدم مُعرَّف (الوضع الافتراضي)');
     return ListTile(
-      leading: Icon(
+      leading: const Icon(
         PhosphorIconsBold.shieldCheck,
-        color: _enabled ? AppColors.success : AppColors.primary,
+        color: AppColors.success,
       ),
       title: const Text('فحص الصلاحيات على السيرفر'),
-      subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
-      trailing: _loaded
-          ? Switch(value: _enabled, onChanged: (_) => _openDialog())
-          : const SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
+      subtitle: const Text(
+        'مُفعّل دائماً — اضغط لفحص الأدوار التي ينقصها منح',
+        style: TextStyle(fontSize: 12),
+      ),
+      trailing: const Icon(PhosphorIconsBold.caretLeft, size: 18),
       onTap: _openDialog,
     );
   }

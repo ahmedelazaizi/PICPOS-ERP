@@ -27,6 +27,8 @@ import 'package:drift/drift.dart';
 import '../../data/database/database.dart';
 import '../network_service.dart';
 import '../security_service.dart';
+import '../sync/strategies/setting_sync_strategy.dart'
+    show isServerSecretSettingKey;
 import 'api_auth_middleware.dart';
 import 'api_user_context.dart';
 import 'api_handler_base.dart' show WsSubscriberInfo;
@@ -704,9 +706,15 @@ class ApiHandler {
       final settings = await _db.select(_db.settings).get();
       final settingsMap = <String, String>{};
       for (final s in settings) {
-        if (s.value != null) {
-          settingsMap[s.key] = s.value!;
-        }
+        if (s.value == null) continue;
+        // 🔴 كان هذا المسارُ يُفرغ جدولَ الإعدادات **كاملاً** — بلا بوّابةِ
+        // صلاحيّةٍ ولا ترشيح. ومن بين صفوفه `admin_password_hash` و
+        // `admin_password_salt`: كلمةُ مرور المدير التي تحرس تجاوزَ
+        // الصلاحيّات كلَّه. فأيُّ حاملٍ لتوكن LAN المشترك كان يقرؤها ثمّ
+        // يكسرها دون اتّصال — والهاشُ سلسلةُ SHA‑256 مكرَّرةٌ لا KDF حقيقيّ
+        // (‏الملحُ يدخل في الدورة الأولى وحدَها)، فالكسرُ رخيص.
+        if (isServerSecretSettingKey(s.key)) continue;
+        settingsMap[s.key] = s.value!;
       }
 
       return _json({'settings': settingsMap});
@@ -820,6 +828,33 @@ class ApiHandler {
         query.where((s) => s.branchId.equals(branchId) | s.branchId.isNull());
       }
       final safes = await query.get();
+
+      // ── هويّةُ الحساب المرتبط تُرسَل معه ────────────────────────────────
+      //
+      // 🔴 كانت الحمولةُ تحمل `linkedAccountId` **رقماً خامّاً من الخادم**
+      // وحدَه. ودليلُ الحسابات يُزرع على كلِّ طرفٍ مستقلّاً، فنفسُ الحساب
+      // يحمل مُعرِّفاً رقميّاً مختلفاً على الخادم وعلى العميل — ولهذا
+      // `JournalSyncStrategy` تترجم **كلَّ** سطرِ قيدٍ بـglobalId/code.
+      // وجدولُ الخزائن كان الوحيدَ المشيرَ إلى الحسابات بلا ترجمة.
+      //
+      // والأثرُ كان شكليّاً ما دام لا قيدَ يمرّ عبر هذا الحقل. ومع توجيه
+      // رِجْلِ كلِّ قيدِ خزنةٍ إليه يصير خطأُ الترجمة **ترحيلاً خاطئاً
+      // منهجيّاً على كلِّ جهاز** — وهو أصعبُ كشفاً من العطب الذي نُصلحه.
+      //
+      // فتُرسَل الهويّةُ المستقرّةُ معه. وعميلٌ قديمٌ يتجاهل الحقلَين،
+      // وخادمٌ قديمٌ لا يرسلهما فيسقط العميلُ إلى السلوك السابق — أي أنّ
+      // الإضافةَ متوافقةٌ في الاتّجاهَين.
+      final linkedIds =
+          safes.map((s) => s.linkedAccountId).whereType<int>().toSet();
+      final linkedAccounts = <int, Account>{};
+      if (linkedIds.isNotEmpty) {
+        for (final acc in await (_db.select(_db.accounts)
+              ..where((a) => a.id.isIn(linkedIds.toList())))
+            .get()) {
+          linkedAccounts[acc.id] = acc;
+        }
+      }
+
       final jsonList = safes
           .map(
             (s) => <String, dynamic>{
@@ -832,6 +867,9 @@ class ApiHandler {
               'branchId': s.branchId,
               'costCenterId': s.costCenterId,
               'linkedAccountId': s.linkedAccountId,
+              'linkedAccountGlobalId':
+                  linkedAccounts[s.linkedAccountId]?.globalId,
+              'linkedAccountCode': linkedAccounts[s.linkedAccountId]?.code,
               'isDefault': s.isDefault,
               'isActive': s.isActive,
             },
@@ -1599,7 +1637,29 @@ class ApiHandler {
     try {
       await _ensureBootstrapAdminOnce();
 
-      final branchId = await _extractBranchId(request);
+      // ── من يستحقُّ صفوفَ المستخدمين، ومتى تُشحَن اعتماداتُهم ────────────
+      // كان `failClosedOnNoIdentity` هنا على افتراضه `false` — وحدَه بين
+      // مسارات البيانات الحسّاسة (‏١٥ مساراً ماليّاً تمرّرها `true`). فمستدعٍ
+      // بلا جلسةٍ ولا `branch_id` يُرجَع له النطاقُ `null`، فيسقط شرطُ الفرع
+      // بالكامل ويُسلَّم **كلُّ** صفوف المستخدمين ومعها الهاشُ والملح.
+      //
+      // ولا يصحّ إغلاقُه بإطلاق: الدخولُ **محلّيٌّ أوّلاً**
+      // (`AuthRepositoryImpl.authenticateUser` → `db.authenticateUser`) بلا
+      // أيِّ ارتدادٍ إلى الخادم، فطرفيّةٌ جديدةٌ لا تدخل أصلاً قبل أن تصلها
+      // الصفوفُ بهاشاتها.
+      //
+      // فالحارسُ **نافذةُ الاقتران** — وهي الآليّةُ نفسُها التي يُسلَّم بها
+      // توكنُ الـAPI عبر `/api/health`، أي نفسُ فئةِ السرّ ونفسُ الحارس:
+      // يفتحها المشغِّلُ عمداً ولوقتٍ محدود، فيُزوَّد الجهازُ الجديدُ فيها،
+      // ثمّ تُغلَق فيعود المسارُ مغلقاً على من لا جلسةَ له.
+      final pairingOpen = ApiAuthMiddleware.isPairingOpen;
+      final hasIdentity = ApiUserCtx.userIdOf(request) != null;
+      final serveCredentials = pairingOpen || hasIdentity;
+
+      final branchId = await _extractBranchId(
+        request,
+        failClosedOnNoIdentity: !pairingOpen,
+      );
       final query = _db.select(_db.users);
 
       if (branchId != null) {
@@ -1680,10 +1740,16 @@ class ApiHandler {
               // وملحه جوّه سلسلة الـPHC) — وده اللي بيخلّي إرساله على الشبكة
               // المحلية مقبولاً. التعليق القديم كان بيقول «PBKDF2 — safe over
               // LAN» وده **ما كانش صحيحاً**: PBKDF2 بالملح المرفَق بيتكسر رخيص.
-              'passwordHash': u.passwordHash,
+              //
+              // ⚠️ «مقبولاً» ليست «بلا حارس»: Argon2id هنا بـm=4096KB وهو
+              // دون تدرّج OWASP، فالهاشُ الواصلُ إلى مهاجمٍ يُكسَر دون اتّصال.
+              // فلا يُشحَن إلّا لمن يستحقّه: جلسةٌ متحقَّقة، أو جهازٌ يُقتَرن
+              // في نافذةٍ فتحها المشغِّلُ عمداً. وغيرُهما يقرأ الصفَّ بلا
+              // اعتماد — فتبقى قوائمُ المستخدمين تعمل ولا يخرج السرّ.
+              if (serveCredentials) 'passwordHash': u.passwordHash,
               // باقٍ للتوافق مع أي هاش قديم واصل عبر المزامنة؛ لصفوف Argon2id
               // بقى بلا قيمة أمنية لأن الملح الحقيقي جوّه الـPHC.
-              'passwordSalt': u.passwordSalt,
+              if (serveCredentials) 'passwordSalt': u.passwordSalt,
               // ⛔ الـPIN **مايخرجش**. ٤-٦ أرقام = ١٫١ مليون احتمال على
               //    الأكثر، فأي KDF بيتكسر offline في وقت معقول لو الهاش وصل
               //    للمهاجم. ومحدش بيصادق بالـPIN أصلاً (`verifyUserPin` بلا
@@ -2572,9 +2638,41 @@ class ApiHandler {
         }
       }
 
+      // ── قائمةُ منعِ الأعمدة السرّيّة ──────────────────────────────────────
+      //
+      // 🔴 هذا المسارُ كان **أوسعَ** ثقبٍ في سطح الـAPI، وأوسعَ من تسريب
+      // `GET /api/users` المعروف. الاستعلامُ أعلاه `SELECT * FROM $table`
+      // بلا ترشيحِ أعمدةٍ إطلاقاً، و`users` مذكورٌ في `_syncPullTables`
+      // **وغائبٌ** عن `_transactionalPullTables` — وتلك قائمةُ منعٍ لا سماح،
+      // فحارسُ «الجدولُ المعامليُّ يحتاج هويّةً متحقَّقة» لا يعمل عليه.
+      // النتيجةُ المقيسة: أيُّ حاملٍ لتوكن LAN المشترك، **بلا جلسةٍ
+      // إطلاقاً**، يقرأ `password_hash` و`password_salt` و`pin` و`card_code`
+      // لكلِّ مستخدم. ويتجاوز ذلك استثناءَ الـPIN المقصودَ في `_getUsers`.
+      //
+      // ولا يصحّ إضافةُ `users` إلى قائمة المنع: التزويدُ قبل الدخول يحتاج
+      // الصفوف، والدخولُ محلّيٌّ أوّلاً. فالحارسُ هو الأعمدة، والمفتاحُ
+      // نفسُ حارسِ `_getUsers`: جلسةٌ متحقَّقة أو نافذةُ اقترانٍ مفتوحة.
+      //
+      // و`pin` يُمنَع **دائماً**: ٤–٦ أرقامٍ تُكسَر دون اتّصال، ولا مستهلكَ
+      // له أصلاً (`verifyUserPin` بلا مُنادٍ إنتاجيّ) — يُضبَط عبر
+      // `POST /api/users/<id>/pin` ويُتحقَّق محلّيّاً.
+      const alwaysDeniedColumns = <String, Set<String>>{
+        'users': {'pin'},
+      };
+      const credentialColumns = <String, Set<String>>{
+        'users': {'password_hash', 'password_salt', 'card_code'},
+      };
+      final serveCredentials = ApiUserCtx.userIdOf(request) != null ||
+          ApiAuthMiddleware.isPairingOpen;
+      final denied = <String>{
+        ...?alwaysDeniedColumns[table],
+        if (!serveCredentials) ...?credentialColumns[table],
+      };
+
       final jsonRows = rows.map((r) {
         final out = <String, dynamic>{};
         for (final entry in r.data.entries) {
+          if (denied.contains(entry.key)) continue;
           final v = entry.value;
           if (v is DateTime) {
             // Drift-native datetime → epoch seconds (matches client schema).

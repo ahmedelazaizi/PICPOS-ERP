@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -452,7 +453,43 @@ class _ManagerOverrideWrapperState
 
   /// Set once a manager approved a child that has no single action to run
   /// (a whole settings section, a toggle). See [_requestOverride].
-  bool _unlocked = false;
+  ///
+  /// 🔴 كان `bool _unlocked` بلا أيِّ أجل: يُرفَع مرّةً ولا يُخفَض ما دامت
+  /// الودجتُ حيّة. وودجتُ قسمٍ في شاشة الإعدادات تعيش ما دامت الشاشةُ
+  /// مفتوحة — فمديرٌ يفتح قسماً ثمّ ينصرف يترك القسمَ مفتوحاً للكاشير بلا
+  /// حدٍّ زمنيّ. وهذا يناقض عقدَ الحوار المكتوبَ نفسَه: «أذِن لهذا الفعل
+  /// ثمّ انسَ».
+  ///
+  /// فصار الفتحُ **مؤقّتاً** بطابعٍ زمنيٍّ ومؤقّتٍ يُعيد القفلَ من نفسه —
+  /// ولا يكفي الفحصُ في `build` وحدَه: بلا مؤقّتٍ يبقى القسمُ مفتوحاً على
+  /// الشاشة حتّى تُعيد بناءَه حادثةٌ أخرى.
+  DateTime? _unlockedAt;
+  Timer? _relockTimer;
+
+  /// أطولُ من أجلِ [ManagerApprovalCache] (‏٦٠ ثانية) عن قصد: ذاك يأذن
+  /// بفعلٍ واحدٍ يقع فوراً، وهذا يفتح قسماً يعمل فيه المديرُ بيده.
+  static const _sectionUnlockTtl = Duration(minutes: 2);
+
+  bool get _unlocked {
+    final at = _unlockedAt;
+    if (at == null) return false;
+    return DateTime.now().difference(at) <= _sectionUnlockTtl;
+  }
+
+  void _unlock() {
+    _relockTimer?.cancel();
+    setState(() => _unlockedAt = DateTime.now());
+    _relockTimer = Timer(_sectionUnlockTtl, () {
+      if (!mounted) return;
+      setState(() => _unlockedAt = null);
+    });
+  }
+
+  @override
+  void dispose() {
+    _relockTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -499,7 +536,7 @@ class _ManagerOverrideWrapperState
       // لو كان فيه بديل معروض (صلاحية عرض)، الموافقة كمان **بتكشف** الأصل —
       // تشغيل الفعل لوحده كان هيسيب الكارت مكتوب فيه `---` بعد الموافقة.
       if (widget.lockedChild != null && mounted) {
-        setState(() => _unlocked = true);
+        _unlock();
       }
       return;
     }
@@ -520,7 +557,7 @@ class _ManagerOverrideWrapperState
       'permission=${widget.permission} childType=${widget.child.runtimeType} '
       '→ فُك القفل.',
     );
-    setState(() => _unlocked = true);
+    _unlock();
   }
 }
 

@@ -29,6 +29,7 @@ import 'package:shelf/shelf.dart' as shelf;
 import 'package:ural_erp/data/database/database.dart';
 import 'package:ural_erp/core/permissions/permission_codes.dart';
 import 'package:ural_erp/services/api/api_purchase_handler.dart';
+import 'package:ural_erp/services/api/api_user_context.dart';
 
 void main() {
   late AppDatabase db;
@@ -365,7 +366,7 @@ void main() {
             'total': 1000,
           },
         ],
-      }),
+      }), context: {ApiUserCtx.userIdKey: 1},
     ));
     expect(res.statusCode, 200);
 

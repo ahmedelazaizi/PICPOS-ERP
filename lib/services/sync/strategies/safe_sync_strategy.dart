@@ -1,5 +1,8 @@
 // ignore_for_file: avoid_dynamic_calls
+import 'dart:async';
+
 import 'package:drift/drift.dart';
+import 'package:ural_erp/core/logging/diagnostic_logger.dart';
 import 'package:ural_erp/data/database/database.dart';
 import 'package:ural_erp/services/sync/sync_strategy.dart';
 
@@ -40,6 +43,50 @@ class SafeSyncStrategy extends SyncStrategy {
             .getSingleOrNull();
       }
 
+      // ── ترجمةُ مُعرِّف الحساب المرتبط ──────────────────────────────────
+      //
+      // 🔴 كان السطرُ `linkedAccountId: Value(parseIntNullable(s['linkedAccountId']))`
+      // — نسخُ رقمِ الخادم كما هو. ودليلُ الحسابات يُزرع على كلِّ طرفٍ
+      // مستقلّاً، فنفسُ الحساب يحمل مُعرِّفاً مختلفاً هنا وهناك. وهذا الجدولُ
+      // كان **الوحيدَ** المشيرَ إلى الحسابات بلا ترجمة، بينما
+      // `JournalSyncStrategy` تترجم كلَّ سطرِ قيدٍ بـglobalId ثمّ code.
+      //
+      // فالترتيبُ نفسُه: globalId ← code ← لا شيء. و**لا سقوطَ إلى رقم
+      // الخادم**: رابطٌ خاطئٌ أسوأُ من غياب رابط، لأنّ حسابَ الخزنة يصير
+      // رِجْلاً في قيدٍ ماليّ — فيُرحَّل على حسابٍ لا علاقةَ له. وغيابُ
+      // الرابط يسقط إلى حساب الغرض العامّ، وهو خطأٌ مرئيٌّ لا صامت.
+      final serverLinkedId = parseIntNullable(s['linkedAccountId']);
+      final linkedGlobalId = s['linkedAccountGlobalId'] as String?;
+      final linkedCode = s['linkedAccountCode'] as String?;
+      int? localLinkedId;
+      if (serverLinkedId != null) {
+        if (linkedGlobalId != null && linkedGlobalId.isNotEmpty) {
+          localLinkedId = (await (db.select(db.accounts)
+                    ..where((a) => a.globalId.equals(linkedGlobalId))
+                    ..limit(1))
+                  .getSingleOrNull())
+              ?.id;
+        }
+        if (localLinkedId == null && linkedCode != null && linkedCode.isNotEmpty) {
+          localLinkedId = (await (db.select(db.accounts)
+                    ..where((a) => a.code.equals(linkedCode))
+                    ..limit(1))
+                  .getSingleOrNull())
+              ?.id;
+        }
+        if (localLinkedId == null) {
+          // خادمٌ قديمٌ لا يرسل الهويّة، أو حسابٌ لم يصل بعد. يُترَك الرابطُ
+          // فارغاً ويُبلَّغ — والقيدُ يسقط إلى حساب الغرض حتّى تلحق
+          // مزامنةُ الحسابات.
+          unawaited(DiagnosticLogger.log(
+            'SYNC-WARN',
+            'safe "$safeName": تعذّرت ترجمةُ الحساب المرتبط '
+                '(serverId=$serverLinkedId code=$linkedCode '
+                'gid=$linkedGlobalId) — يُترَك بلا رابط',
+          ));
+        }
+      }
+
       final companion = SafesCompanion(
         name: Value(safeName),
         safeType: Value(s['safeType'] as String? ?? 'cash'),
@@ -48,7 +95,7 @@ class SafeSyncStrategy extends SyncStrategy {
         balance: Value(parseDouble(s['balance'])),
         branchId: Value(parseIntNullable(s['branchId'])),
         costCenterId: Value(parseIntNullable(s['costCenterId'])),
-        linkedAccountId: Value(parseIntNullable(s['linkedAccountId'])),
+        linkedAccountId: Value(localLinkedId),
         isDefault: Value(parseBool(s['isDefault'], false)),
         isActive: Value(parseBool(s['isActive'], true)),
         globalId: Value(globalId),

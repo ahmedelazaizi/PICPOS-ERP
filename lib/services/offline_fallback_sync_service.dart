@@ -3,6 +3,8 @@ import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import '../data/database/database.dart';
 import '../data/database/pg_config.dart';
+import 'sync/strategies/setting_sync_strategy.dart'
+    show isDeviceLocalSettingKey;
 import '../data/database/connection_io.dart'
     show openPostgresConnection, testPostgresConnection;
 
@@ -319,6 +321,35 @@ class OfflineFallbackSyncService {
         'SELECT $columnList FROM $tableName',
       ).get();
     }
+
+    // ── ما لا يُرفَع من `settings` ────────────────────────────────────────
+    //
+    // 🔴 جدولُ `settings` بلا `created_at`، فالفرعُ أعلاه يقرؤه **كاملاً بلا
+    // أيِّ شرط** ثمّ يرفعه بـ`ON CONFLICT (key) DO UPDATE` — أي أنّ كلَّ
+    // مفتاحٍ على هذا الجهاز يدهس نظيرَه على الخادم. وفي الجدول نوعان لا
+    // يجوز رفعُهما أبداً:
+    //
+    //   • `_watermark__<table>` — علاماتُ السحب. رفعُها يُقدِّم مؤشِّرَ
+    //     الخادم فوق صفوفٍ لم تُسحَب ⇒ **فجوةُ سحبٍ دائمةٌ صامتة**.
+    //   • `network_mode` / `deployment_mode` — هذا الجهازُ عميل، فرفعُ
+    //     `'client'` يجعل الخادمَ يقلع عميلاً في المرّة التالية ⇒ تعمى كلُّ
+    //     الأجهزة دفعةً واحدة.
+    //
+    // والمرجعُ واحدٌ للطرفَين: [isDeviceLocalSettingKey] — نفسُ الدالّة التي
+    // تمنع الكتابةَ الهابطة، فلا ينفصل الحارسان.
+    if (tableName == 'settings') {
+      final before = rows.length;
+      rows = rows.where((r) {
+        final key = r.data['key'];
+        return key is! String || !isDeviceLocalSettingKey(key);
+      }).toList();
+      final skipped = before - rows.length;
+      if (skipped > 0) {
+        debugPrint('[OfflineFallbackSync] settings: تُخُطِّي $skipped '
+            'مفتاحاً يخصُّ الجهاز (علاماتٌ مائيّةٌ/وضعُ شبكة)');
+      }
+    }
+
     if (rows.isEmpty) return 0;
 
     // 5. Build UPSERT template once (reused for all rows)

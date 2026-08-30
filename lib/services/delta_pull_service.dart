@@ -772,6 +772,42 @@ class DeltaPullService {
     // back to the existing local credentials so the row is otherwise updated
     // (display name, isActive, defaultScreen, …) without clobbering passwords.
     if (table == 'users') {
+      // ── حفظُ الأسرار المحلّيّة حين لا يرسلها الخادم ─────────────────────
+      //
+      // 🔴 `_upsertRow` يكتب بـ**INSERT OR REPLACE**، فالعمودُ الغائبُ عن
+      // الحمولة **يُمحى** لا يُترَك. ولهذا الكتلةُ أدناه ترقّع
+      // `password_hash`/`password_salt` من الصفّ المحلّيّ.
+      //
+      // وصار الخادمُ يحجب أعمدةَ الاعتماد عن مستدعٍ بلا هويّةٍ متحقَّقةٍ
+      // ولا نافذةِ اقتران (`_getSyncPull` — قائمةُ منعِ الأعمدة)، ويحجب
+      // `pin` **دائماً**. فبلا هذا الترقيع كانت أوّلُ مزامنةٍ تمحو الـPIN
+      // ورمزَ البطاقة من كلِّ جهاز — أي أنّ سدَّ ثقبِ تسريبٍ كان سيُنتج
+      // إتلافَ بيانات.
+      //
+      // الترقيعُ **غيرُ مشروطٍ** بحالة الهاش عمداً: الـPIN قد يغيب بينما
+      // الهاشُ سليم، فوضعُه داخل فرع «الاعتمادُ ناقص» يتركه مكشوفاً للمحو.
+      if (row['pin'] == null || row['card_code'] == null) {
+        try {
+          final secretRow = await _db!.customSelect(
+            'SELECT pin, card_code FROM users WHERE id = ? LIMIT 1',
+            variables: [
+              Variable.withInt(localId ?? (row['id'] as int? ?? 0)),
+            ],
+          ).getSingleOrNull();
+          if (secretRow != null) {
+            row = Map.of(row);
+            if (row['pin'] == null) {
+              row['pin'] = secretRow.read<String?>('pin');
+            }
+            if (row['card_code'] == null) {
+              row['card_code'] = secretRow.read<String?>('card_code');
+            }
+          }
+        } catch (e) {
+          debugPrint('[DeltaPull] users: preserve pin/card_code failed: $e');
+        }
+      }
+
       final serveSalt = row['password_salt'];
       final serveHash = row['password_hash'];
       final hashStr = serveHash is String ? serveHash : '';

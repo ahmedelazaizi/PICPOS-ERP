@@ -15,13 +15,11 @@ class SettingSyncStrategy extends SyncStrategy {
   @override
   Future<void> syncFromJson(Map<String, dynamic> json) async {
     final settingsMap = json['settings'] as Map<String, dynamic>;
-    
+
     // إعدادات خاصة بالجهاز أو الفرع لا يجب طمسها من السيرفر الرئيسي
     // القائمةُ ثابتٌ مُصدَّرٌ في ذيل الملفّ — يقرؤها الكاتبُ أيضاً.
-    const devSpecificKeys = kDeviceLocalSettingKeys;
-
     for (final entry in settingsMap.entries) {
-      if (!devSpecificKeys.contains(entry.key)) {
+      if (!isDeviceLocalSettingKey(entry.key)) {
         await db.setSetting(entry.key, entry.value?.toString() ?? '');
       }
     }
@@ -41,6 +39,59 @@ class SettingSyncStrategy extends SyncStrategy {
     throw UnimplementedError('SettingSyncStrategy uses setSetting instead of upsert');
   }
 }
+
+/// مفاتيحُ الإعدادات التي تحمل **سرّاً** فلا تخرج من الخادم عبر الـAPI ولا
+/// تُكتَب إليه من عميل.
+///
+/// ⚠️ **محورٌ مختلفٌ عن [kDeviceLocalSettingKeys] — لا تخلط بينهما.** تلك
+/// «يخصُّ هذا الجهاز»، وهذه «سرٌّ لا يُذاع». مفتاحٌ قد يكون في الاثنتين أو
+/// في واحدة. وحشرُ الأسرار في قائمة الجهاز كان سيمنع مزامنتَها أيضاً —
+/// وذلك قرارٌ آخر له أثرٌ تشغيليّ (‏الأجهزةُ تتحقّق من كلمة المدير محلّيّاً).
+///
+/// ── ما تغلقه هذه القائمة، مقيساً ────────────────────────────────────────
+/// • `GET /api/settings` كان **يُفرغ جدولَ الإعدادات كاملاً** بلا بوّابةِ
+///   صلاحيّةٍ إطلاقاً — فيسلّم `admin_password_hash` و`admin_password_salt`
+///   لأيِّ حاملِ توكن LAN. والهاشُ سلسلةُ SHA‑256 مكرَّرةٌ (‏ملحُها يدخل في
+///   الدورة الأولى وحدَها) فكسرُه دون اتّصالٍ رخيصٌ جدّاً.
+/// • `POST /api/settings` كان يكتب أيَّ مفتاح. فمن يملك `settings_edit` —
+///   أو المستخدمُ رقم ١ — كان **يستبدل كلمةَ مرور المدير عن بُعد**، وهي
+///   البوّابةُ التي تحرس تجاوزَ الصلاحيّات كلَّه. تصعيدُ امتيازٍ كامل.
+///
+/// وتشمل حسابَ المطوِّر كذلك: نفسُ العطب حرفيّاً في `developer_auth_service`.
+const List<String> kServerSecretSettingKeys = <String>[
+  'admin_password',       // النصُّ الصريحُ القديم — يبقى صفّاً فارغاً بعد الهجرة
+  'admin_password_hash',
+  'admin_password_salt',
+  'developer_password_hash',
+  'developer_password_salt',
+];
+
+/// هل [key] سرٌّ لا يُقرأ عبر الـAPI ولا يُكتَب منه؟
+bool isServerSecretSettingKey(String key) =>
+    kServerSecretSettingKeys.contains(key);
+
+/// بادئةُ العلامات المائيّة: `_watermark__<tableName>`.
+///
+/// 🔴 **هذه أخطرُ مفاتيح الجهاز على الإطلاق، وكانت خارجَ الحماية.**
+/// [kDeviceLocalSettingKeys] مطابقةٌ تامّةٌ فقط، والعلاماتُ المائيّةُ مفاتيحُ
+/// **مشتقّةٌ باسم الجدول** فلا يمكن سردُها. وهي تعيش في نفس جدول `settings`،
+/// فكانت تُدفَع صاعدةً وتُكتَب هابطةً كأيِّ إعدادٍ عادّيّ.
+///
+/// والأثرُ صامتٌ ودائم: العلامةُ تقول «سحبتُ كلَّ شيءٍ حتّى اللحظة س».
+/// فجهازٌ يدفع علامتَه إلى الخادم، أو خادمٌ يكتب علامتَه فوق علامة جهازٍ
+/// متأخّر، يُقدِّم المؤشِّرَ إلى الأمام فوق صفوفٍ **لم تُسحَب قطّ** — ولا
+/// تُسحَب بعدها أبداً، لأنّ السحبَ التاليَ يبدأ من المؤشِّر المزيَّف. لا خطأ،
+/// ولا سجلّ، ولا فرقٌ ظاهرٌ إلّا صفوفٌ ناقصةٌ إلى الأبد.
+const String kWatermarkSettingPrefix = '_watermark__';
+
+/// هل يخصُّ [key] هذا الجهازَ وحدَه فلا يُشارَك في أيِّ اتّجاه؟
+///
+/// المرجعُ الوحيدُ للطرفَين: الكتابةُ الهابطةُ من الخادم
+/// ([SettingSyncStrategy.syncFromJson]) والدفعُ الصاعدُ
+/// (`OfflineFallbackSyncService` وشاشاتُ الإعدادات و`postSettings`).
+bool isDeviceLocalSettingKey(String key) =>
+    kDeviceLocalSettingKeys.contains(key) ||
+    key.startsWith(kWatermarkSettingPrefix);
 
 /// مفاتيحُ الإعدادات التي تخصُّ **هذا الجهاز** ولا تُشارَك.
 ///

@@ -45,17 +45,16 @@ void main() {
                 ..where((u) => u.username.equals('product_gate_test_cashier')))
               .getSingle())
           .id;
-      await db.setSetting('server_per_user_perms_enabled', 'true');
     });
 
     tearDown(() async {
       await db.close();
     });
 
-    Request reqWithUser(int userId) => Request(
+    Request reqWithUser(int? userId) => Request(
           'POST',
           Uri.parse('http://localhost:8080/api/products'),
-          context: {ApiUserCtx.userIdKey: userId},
+          context: userId != null ? {ApiUserCtx.userIdKey: userId} : const {},
         );
 
     for (final code in [
@@ -81,7 +80,10 @@ void main() {
       });
     }
 
-    test('flag OFF auto-passes for all 5 distinct codes', () async {
+    // ⚠️ كان «flag OFF auto-passes» ويؤكّد `isNull` — يثبّت العطب لا العقد.
+    // المفتاحُ لا يُزرع في أيِّ تنصيبةٍ فكانت البوّاباتُ تمرّ في الإنتاج.
+    test('المفتاحُ القديم لا يُعيد المرورَ التلقائيّ على الأكواد الخمسة',
+        () async {
       await db.setSetting('server_per_user_perms_enabled', 'false');
       for (final code in [
         PermissionCodes.productsAdd,
@@ -90,12 +92,26 @@ void main() {
         PermissionCodes.productsUnits,
         PermissionCodes.productsBarcode,
       ]) {
-        expect(
-          await ApiUserCtx.requirePermission(
-              reqWithUser(cashierUserId), db, code),
-          isNull,
-          reason: 'Flag OFF must auto-pass on $code',
-        );
+        final resp = await ApiUserCtx.requirePermission(
+            reqWithUser(cashierUserId), db, code);
+        expect(resp, isNotNull,
+            reason: 'المفتاحُ المطفأ صراحةً لا يفتح $code');
+        expect(resp!.statusCode, equals(403));
+      }
+    });
+
+    test('بلا جلسةٍ متحقَّقة → 401 على الأكواد الخمسة', () async {
+      for (final code in [
+        PermissionCodes.productsAdd,
+        PermissionCodes.productsEdit,
+        PermissionCodes.productsDelete,
+        PermissionCodes.productsUnits,
+        PermissionCodes.productsBarcode,
+      ]) {
+        final resp =
+            await ApiUserCtx.requirePermission(reqWithUser(null), db, code);
+        expect(resp, isNotNull);
+        expect(resp!.statusCode, equals(401));
       }
     });
   });

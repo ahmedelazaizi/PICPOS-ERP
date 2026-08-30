@@ -1134,15 +1134,33 @@ class ApiPurchaseHandler extends ApiHandlerBase {
             });
           }
 
-          final resolvedUserId = await _resolveUserIdNullable(
-            parseIntNullable(data['userId']),
-            fallbackUsername: data['createdByUsername'] as String?,
-          );
+          // ── الفاعلُ من الجلسة لا من الجسم ────────────────────────────────
+          // توأمُ `postVoidSale`: `deletedBy` هو **موضوعُ** فحصِ
+          // `voidPaidInvoice` في `purchase_dao`، فقراءتُه من الجسم تجعل
+          // المستدعيَ يختار من تُفحَص صلاحيّتُه. ونفسُ النمط في
+          // `putPurchase` أدناه منذ البداية.
+          final sessionUserId = ApiUserCtx.userIdOf(request);
+          final rawUserId = parseIntNullable(data['userId']);
+          if (rawUserId != null &&
+              sessionUserId != null &&
+              rawUserId != sessionUserId) {
+            unawaited(DiagnosticLogger.log(
+                'API-PURCHASE-VOID',
+                '⛔ رفض تعارضِ هويّة: الجسم يدّعي #$rawUserId '
+                    'والجلسة #$sessionUserId — invoice=${invoice.invoiceNumber}'));
+            return Response(
+              403,
+              body: jsonEncode({
+                'error': 'هويّةُ الجسم تخالف هويّةَ الجلسة — الطلب مرفوض',
+              }),
+              headers: const {'content-type': 'application/json'},
+            );
+          }
 
           await db.voidPurchaseInvoice(
             invoice.id,
             reason: reason,
-            deletedBy: resolvedUserId,
+            deletedBy: sessionUserId,
             globalId: voidGlobalId,
           );
 
