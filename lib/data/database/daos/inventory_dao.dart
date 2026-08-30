@@ -792,16 +792,8 @@ extension InventoryDao on AppDatabase {
       );
     final purchaseRows = await purchaseLinesQuery.get();
 
+    // صنفٌ بلا تاريخِ شراءٍ صالحٍ لا يُعاد تسعيرُه — كما كان.
     if (purchaseRows.isEmpty) return;
-
-    double totalCost = 0;
-    double totalQty = 0;
-
-    for (final row in purchaseRows) {
-      final line = row.readTable(purchaseInvoiceItems);
-      totalCost += (line.quantity * line.unitCost);
-      totalQty += line.quantity;
-    }
 
     // S-COST (Spec 144): fold APPLIED landed cost into the WAC so a later
     // purchase edit/void/return that triggers a recalc does not silently wipe
@@ -824,10 +816,57 @@ extension InventoryDao on AppDatabase {
         purchaseInvoices,
       },
     ).getSingle();
-    totalCost += (landedRow.data['landed'] as num?)?.toDouble() ?? 0.0;
+    // ⚠️ تُضاف إلى **قيمة الدفتر** لا إلى مجموع الشراء: الكلفةُ المُنزَلةُ
+    // ترفع قيمةَ المخزون في الأستاذ بلا حركةِ كمّيّة، فلا يلتقطها مجموعُ
+    // `كمّيّة × تكلفة` على دفتر الحركات.
+    final landedTotal = (landedRow.data['landed'] as num?)?.toDouble() ?? 0.0;
 
-    if (totalQty > 0) {
-      final wac = totalCost / totalQty;
+    // ── القيمةُ المتبقّيةُ ÷ الموجود — لا متوسّطُ الشراء مدى الحياة ────────
+    //
+    // 🔴 كان `wac = totalCost / totalQty` حيث `totalQty` مجموعُ كمّيّاتِ
+    // **كلِّ** سطرِ شراءٍ في التاريخ. أي «متوسّطُ ما اشتريتَه يوماً» — وهو
+    // يساوي المتوسّطَ المتحرّك **فقط** ما لم يقع بيعٌ بينهما. وأوّلُ بيعةٍ
+    // تكسره:
+    //
+    //   شراء ١٠@١٠ ← بيع ٥ ← شراء ١٠@٢٠
+    //     الأستاذ ٢٥٠ · الموجود ١٥ · الصحيح ١٦٫٦٦٧
+    //     والقديم: (١٠٠+٢٠٠) ÷ ٢٠ = **١٥٫٠** ⇒ تقييمٌ ٢٢٥ مقابل أستاذٍ ٢٥٠،
+    //     **انحرافٌ ٢٥** بلا قيدٍ ولا خطأ (‏مقيسٌ بـ`getInventoryGlReconciliation`).
+    //
+    // ⚠️ **والعلاجُ ليس قيداً موازناً.** حسابُ المخزون في هذا المستودع
+    // **مدفوعٌ بالحركات**: كلُّ شراءٍ وبيعٍ وتعديلٍ وإبطالٍ يُرحَّل بتكلفته
+    // لحظتَها، ولا تقييمَ دوريَّ في أيِّ مكان. فإضافةُ قيدِ إعادةِ تقييمٍ هنا
+    // تُضاعف في **كلِّ** مواضع النداء الستّة — كلُّها ترحّل قيدَها أصلاً
+    // (‏`createPurchaseInvoice` · `voidPurchaseInvoice` · مسارا المرتجع ·
+    // تعديلُ الفاتورة). ونفسُ الحكم مكتوبٌ سلفاً في
+    // `costing_method_service` حين حُذفت طريقةُ «آخر سعر شراء»: العلاجُ
+    // إزالةُ الكتابة غير المحافِظة على القيمة، لا قيدٌ يصحّحها.
+    //
+    // فالقيمةُ تُشتقّ من دفتر الحركات — وهو المرآةُ الصنفيّةُ للأستاذ:
+    //   قيمةُ الدفتر = Σ(‏كمّيّة × تكلفة الوحدة) على كلِّ حركة (‏الكمّيّةُ
+    //   مُوقَّعة: + داخل، − خارج) **زائداً** الكلفةَ المُنزَلةَ المطبَّقة،
+    //   لأنّها ترفع قيمةَ المخزون في الأستاذ **بلا حركةِ كمّيّة**.
+    final bookRow = await customSelect(
+      'SELECT COALESCE(SUM(quantity * unit_cost), 0) AS book '
+      'FROM stock_movements '
+      'WHERE product_id = ? AND deleted_at IS NULL',
+      variables: [Variable<int>(productId)],
+      readsFrom: {stockMovements},
+    ).getSingle();
+    final ledgerValue =
+        ((bookRow.data['book'] as num?)?.toDouble() ?? 0.0) + landedTotal;
+
+    final product = await getProductById(productId);
+    final onHand = product?.currentStock ?? 0.0;
+
+    // ⚠️ **ولا كتابةَ حين لا يكون للجواب معنًى.** موجودٌ صفريٌّ أو سالبٌ
+    // (‏بيعٌ على المكشوف) أو قيمةُ دفترٍ سالبةٌ لا تُنتج تكلفةَ وحدةٍ
+    // صالحة. والقديمُ كان يكتب حينها متوسّطَ الشراء — رقماً موجباً يبدو
+    // معقولاً ويُخفي أنّ الحالةَ شاذّة، ثمّ يتسرّب إلى تكلفة كلِّ بيعةٍ
+    // لاحقة. تركُ القيمة كما هي أصدق: الشذوذُ يبقى مرئيّاً في تقرير
+    // المصالحة بدل أن يُطمَس.
+    if (onHand > 0 && ledgerValue > 0) {
+      final wac = ledgerValue / onHand;
       await (update(products)..where((p) => p.id.equals(productId))).write(
         ProductsCompanion(
           costPrice: Value(wac),
@@ -836,6 +875,10 @@ extension InventoryDao on AppDatabase {
       );
       // PERF: Invalidate cached product since costPrice changed
       invalidateProductCache(productId);
+    } else {
+      debugPrint('[WAC] recalc skipped for product $productId — '
+          'onHand=$onHand ledgerValue=$ledgerValue '
+          '(لا تكلفةَ وحدةٍ صالحة؛ التكلفةُ السابقة باقية)');
     }
   }
 

@@ -587,7 +587,44 @@ extension AccountingReportsDao on AppDatabase {
     final bankCode = await accountingDao.getMappedAccountCode(
       'bank', AccountingDao.accountPurposes['bank']!,
     );
-    final cashBankCodes = "'$cashCode', '$bankCode'";
+    // ── «النقديّة» شجرةٌ لا كودان ────────────────────────────────────────
+    //
+    // 🔴 كان الترشيحُ `WHERE a.code IN ('1111','1113')` — أي الحسابَين
+    // المعيَّنَين حرفيّاً. والشجرةُ المزروعة:
+    //
+    //     111  النقدية وما في حكمها          (view)
+    //      ├── 1111 الصندوق الرئيسي
+    //      ├── 1113 البنك الأهلي
+    //      └── 111-0000N  ← حسابُ **كلِّ خزنة**
+    //
+    // وحسابُ الخزنة **شقيقٌ** لـ`1111` لا هو. و`linkUnlinkedSafesToSubAccounts`
+    // تربط كلَّ خزنةٍ بحسابها عند الإقلاع، و`autoPostSale` ترحّل رِجْلَ النقد
+    // على حساب الخزنة التي استلمت (‏مواصفة ١٣٦). فالنتيجةُ المقيسة: **كلُّ
+    // بيعةٍ نقديّةٍ تسقط من قائمة التدفّقات** — تُقرأ صفراً بلا خطأٍ ولا أثر.
+    //
+    // فالجذرُ **أبو** الحساب المعيَّن لا الحسابُ نفسُه: هو المجموعةُ التي
+    // يعرّفها الدليلُ بأنّها «النقدية وما في حكمها»، وهي عينُ ما تقيسه
+    // القائمةُ (‏IAS 7). وهذا يضمّ أيضاً العهدةَ والبنوكَ الأخرى تحت نفس
+    // الأب — وضمُّها **تصحيحٌ لا توسيع**: كانت نقديّةً مهمَلةً من القائمة.
+    //
+    // ⚠️ والترشيحُ بالمعرِّفات لا ببادئة الكود: `LIKE '111%'` يلتقط `1110`
+    // و`11100` وأيَّ كودٍ أطولَ يبدأ بها — وهي مصيدةٌ موثَّقةٌ في رأس هذا
+    // الملفّ نفسِه. و`accountSubtreeIds` تمشي الشجرةَ بـ`WITH RECURSIVE`
+    // فتعمل على SQLite وPostgreSQL معاً.
+    final cashAcc = await accountingDao.getAccountByCode(cashCode);
+    final bankAcc = await accountingDao.getAccountByCode(bankCode);
+    final cashBankIds = <int>{};
+    for (final acc in [cashAcc, bankAcc]) {
+      if (acc == null) continue;
+      cashBankIds.addAll(await accountSubtreeIds(acc.parentId ?? acc.id));
+      // ولو كان الحسابُ المعيَّنُ خارجَ شجرةِ أبيه لسببٍ ما، يبقى محسوباً.
+      cashBankIds.add(acc.id);
+    }
+    // `1 = 0` لا `1 = 1`: دليلُ حساباتٍ بلا حسابِ نقديّةٍ معيَّنٍ يجب أن
+    // يُنتج قائمةً صفريّةً لا قائمةً تجمع **كلَّ** الحسابات.
+    final cashBankFilter = cashBankIds.isEmpty
+        ? '1 = 0'
+        : 'jel.account_id IN (${cashBankIds.join(', ')})';
 
     // ─── Operating Activities (IAS 7.14) ─────────────────────────────────
     final operatingResults = await customSelect(
@@ -598,7 +635,7 @@ extension AccountingReportsDao on AppDatabase {
       FROM journal_entry_lines jel
       INNER JOIN journal_entries je ON je.id = jel.entry_id
       INNER JOIN accounts a ON a.id = jel.account_id
-      WHERE a.code IN ($cashBankCodes)
+      WHERE $cashBankFilter
         AND je.entry_date BETWEEN ? AND ? AND je.is_posted = $boolTrue $ccFilter $brFilter$azFilter
         AND je.reference_type NOT IN ('asset_acquisition', 'asset_disposal', 'asset_transfer', 'asset_revaluation', 'commercial_paper')
       GROUP BY je.reference_type
@@ -675,7 +712,7 @@ extension AccountingReportsDao on AppDatabase {
       FROM journal_entry_lines jel
       INNER JOIN journal_entries je ON je.id = jel.entry_id
       INNER JOIN accounts a ON a.id = jel.account_id
-      WHERE a.code IN ($cashBankCodes)
+      WHERE $cashBankFilter
         AND je.entry_date BETWEEN ? AND ? AND je.is_posted = $boolTrue $ccFilter $brFilter$azFilter
         AND je.reference_type IN ('asset_acquisition', 'asset_disposal', 'asset_transfer', 'asset_revaluation')
       ''',
@@ -699,7 +736,7 @@ extension AccountingReportsDao on AppDatabase {
       FROM journal_entry_lines jel
       INNER JOIN journal_entries je ON je.id = jel.entry_id
       INNER JOIN accounts a ON a.id = jel.account_id
-      WHERE a.code IN ($cashBankCodes)
+      WHERE $cashBankFilter
         AND je.entry_date BETWEEN ? AND ? AND je.is_posted = $boolTrue $ccFilter $brFilter$azFilter
         AND je.reference_type = 'commercial_paper'
       ''',
@@ -722,7 +759,7 @@ extension AccountingReportsDao on AppDatabase {
       FROM journal_entry_lines jel
       INNER JOIN journal_entries je ON je.id = jel.entry_id
       INNER JOIN accounts a ON a.id = jel.account_id
-      WHERE a.code IN ($cashBankCodes)
+      WHERE $cashBankFilter
         AND je.entry_date < ? AND je.is_posted = $boolTrue $ccFilter $brFilter$azFilter
       ''',
       variables: [dateVar(from), ...ccVars, ...brVars, ...azVars],
@@ -1205,6 +1242,7 @@ extension AccountingReportsDao on AppDatabase {
     final cc = await _buildCostCenterFilter(costCenterId, tableAlias: 'si', entryAlias: 'si');
     final ccFilter = cc.filter;
     final boolTrue = sqlBool(true);
+    final boolFalse = sqlBool(false);
 
     // P1-5: Branch/region scope filter
     var scopeFilter = '';
@@ -1242,7 +1280,19 @@ extension AccountingReportsDao on AppDatabase {
              COALESCE(SUM(CASE WHEN (? - COALESCE(si.due_date, si.invoice_date)) / 86400 BETWEEN 61 AND 90 THEN si.total - si.paid - COALESCE(si.rounding_adjustment, 0) ELSE 0 END), 0) as days_61_90,
              COALESCE(SUM(CASE WHEN (? - COALESCE(si.due_date, si.invoice_date)) / 86400 > 90 THEN si.total - si.paid - COALESCE(si.rounding_adjustment, 0) ELSE 0 END), 0) as over_90
       FROM parties p
-      LEFT JOIN sales_invoices si ON si.customer_id = p.id AND si.total > si.paid + COALESCE(si.rounding_adjustment, 0) $ccFilter$scopeFilter
+      -- ⚠️ ثلاثةُ شروطٍ كانت غائبةً عن هذا الانضمام، ونظيرُه في `party_dao`
+      -- يحمل اثنين منها:
+      --   • `sale_type != 'return'` — مستندُ المرتجع ليس ديناً؛ بدونه يَزيد
+      --     دينَ العميل بمقدار المرتجَع بدل أن ينقصه.
+      --   • `is_deleted = 0` — الفاتورةُ المحذوفةُ ناعماً كانت تُعمَّر.
+      --   • `status NOT IN ('returned','cancelled')` — والملغاةُ كذلك.
+      -- والصيغةُ نفسُها مستعملةٌ في هذا الملفّ عينِه (‏استعلامُ حركة العميل)،
+      -- فهي معروفةٌ هنا ومُغفَلةٌ هنا.
+      LEFT JOIN sales_invoices si ON si.customer_id = p.id
+        AND si.status NOT IN ('returned', 'cancelled')
+        AND si.is_deleted = $boolFalse
+        AND (si.sale_type IS NULL OR si.sale_type != 'return')
+        AND si.total > si.paid + COALESCE(si.rounding_adjustment, 0) $ccFilter$scopeFilter
       WHERE p.is_customer = $boolTrue AND p.balance > 0.01
       GROUP BY p.id, p.name, p.balance
       ORDER BY p.balance DESC

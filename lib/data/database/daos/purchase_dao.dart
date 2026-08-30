@@ -1959,6 +1959,7 @@ extension PurchaseDao on AppDatabase {
             type: 'void_reversal',
             referenceType: 'purchase_invoice',
             referenceId: invoiceId,
+            unitCost: item.unitCost,
             notes: 'إلغاء فاتورة مشتريات #${invoice.invoiceNumber}',
           );
           // B8 (S-LANDED-LIFECYCLE / PUR-2a): the WAC recalc used to run

@@ -2147,6 +2147,15 @@ extension PartyDao on AppDatabase {
           ON si.customer_id = p.id
           AND si.status NOT IN ('returned', 'cancelled')
           AND si.is_deleted = 0
+          -- ⚠️ مستندُ المرتجع **ليس ديناً على العميل**. يعيش في نفس الجدول
+          -- بـ`sale_type = 'return'` وبإجماليٍّ موجب و`paid = 0`، فشرطُ
+          -- «المتبقي > صفر» أدناه يلتقطه ويحسبه **مديونيّةً**: مرتجعٌ بـ٨٠٠
+          -- كان يَزيد أعمارَ العميل ٨٠٠ بدل أن ينقصها — انعكاسُ إشارةٍ كامل
+          -- على تقريرٍ يُبنى عليه قرارُ التحصيل ووقفُ التعامل.
+          -- والصيغةُ نفسُها مستعملةٌ في تسعةِ استعلاماتٍ أخرى عبر المستودع
+          -- (`sales_analytics_dao` · `accounting_reports_dao` · وأعلى هذا
+          -- الملفّ) — هذا الاستعلامُ أغفلها وحدَه.
+          AND (si.sale_type IS NULL OR si.sale_type != 'return')
           AND si.paid + COALESCE(si.rounding_adjustment, 0) < si.total
           AND si.invoice_date <= ?
         WHERE p.is_active = 1

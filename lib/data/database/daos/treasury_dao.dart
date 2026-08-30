@@ -255,6 +255,72 @@ extension TreasuryDao on AppDatabase {
         .getSingleOrNull();
   }
 
+  /// موضعٌ واحدٌ لحسابِ خزنةٍ في الأستاذ — نظيرُ `resolveShiftDrawer`
+  /// للحسابات لا للأدراج.
+  ///
+  /// الترتيب: حسابُ الخزنة المرتبطُ ← حسابُ الغرض بحسب **نوعها** ← `null`.
+  ///
+  /// ── لماذا دالّةٌ واحدة ────────────────────────────────────────────────
+  /// كانت قيودُ الخزينة تُرحَّل على حسابِ الغرض **العامّ**
+  /// (`getAccountByPurpose('cash')` ⇒ `1111` عادةً) بينما المالُ يتحرّك على
+  /// خزنةٍ بعينها. و`linkUnlinkedSafesToSubAccounts` تُنشئ لكلِّ خزنةٍ حساباً
+  /// فرعيّاً `111-0000N` **شقيقاً** لـ`1111` لا ابناً له. فالنتيجة: رصيدُ
+  /// الخزنة يتحرّك في جدولها، وحسابُها في الأستاذ يبقى صفراً، و`1111` يحمل
+  /// حركاتٍ لا خزنةَ تملكها. المجموعُ تحت `111` يبقى صحيحاً — ولهذا لم
+  /// يكشفه اختبارُ اتّفاقِ الأستاذ — لكنّ نسبةَ كلِّ ريالٍ إلى درجه ضاعت.
+  ///
+  /// ⚠️ [safe] هي الخزنةُ التي **تحرّك رصيدُها فعلاً** — لا خزنةُ الفرع
+  /// الافتراضيّة ولا مفتاحُ إعدادات. ونداءٌ لا يستطيع تسميةَ خزنةٍ بعينها لا
+  /// يستعمل هذه الدالّة أصلاً: طرفُه العامُّ صحيحٌ لأن لا حركةَ خزنةٍ خلفه.
+  ///
+  /// و`getLeafAccountById` لا `getAccountById`: خزنةٌ مربوطةٌ بحسابٍ أبٍ
+  /// (`accountNature == 'view'`) يرفضها حارسُ الترحيل، والرفضُ يقع **بعد**
+  /// أن يكون النقدُ قد خرج.
+  Future<Account?> resolveSafeGlAccount(Safe? safe) async {
+    if (safe == null) return null;
+
+    final linkedId = safe.linkedAccountId;
+    if (linkedId != null) {
+      final linked = await accountingDao.getLeafAccountById(linkedId);
+      // ⚠️ **ولا يُوثَق بالرابط بلا فحص.** مسارُ السحب التفاضليّ يكتب
+      // `linked_account_id` رقماً خامّاً من الخادم، ودليلُ الحسابات يُزرع
+      // على كلِّ طرفٍ مستقلّاً — فالرقمُ قد يقع على حسابٍ **حقيقيٍّ آخر**
+      // (‏إيرادٍ أو مصروف). ورابطٌ خاطئٌ هنا يصير رِجْلاً في قيدٍ ماليّ،
+      // فيُرحَّل النقدُ على حسابٍ لا علاقةَ له — عطبٌ أصعبُ كشفاً من الذي
+      // نُصلحه. فيُشترَط أن يكون أصلاً: خزنةٌ لا تُربَط إلّا بحسابِ أصل.
+      if (linked != null && linked.accountType == 'asset') return linked;
+      if (linked != null) {
+        // ignore: discarded_futures — أثرٌ تشخيصيٌّ لا ننتظره.
+        DiagnosticLogger.log(
+          'ACCT-WARN',
+          'safe "${safe.name}" (id=${safe.id}) مربوطةٌ بحسابٍ ليس أصلاً: '
+              '${linked.code} (${linked.accountType}) — يُتجاهَل الرابطُ '
+              'ويُستعمل حسابُ الغرض. راجِع ربطَ الخزنة.',
+        );
+      }
+    }
+
+    final purpose = switch (safe.safeType) {
+      'bank' => 'bank',
+      'click' => 'click',
+      _ => 'cash',
+    };
+    return accountingDao.getLeafAccountByPurpose(purpose);
+  }
+
+  /// نفسُها ورميٌ صريح — لكلِّ مسارٍ حرّك رصيدَ خزنةٍ **قبل** أن يُرحّل.
+  /// الصمتُ هناك يعني نقداً خرج بلا أثرٍ في الأستاذ.
+  Future<Account> requireSafeGlAccount(Safe safe, {required String op}) async {
+    final acc = await resolveSafeGlAccount(safe);
+    if (acc == null) {
+      throw StateError(
+        'تعذّر تحديد حساب «${safe.name}» في الأستاذ أثناء $op — لا حسابٌ '
+        'مرتبطٌ ولا حسابُ غرضٍ لنوع «${safe.safeType}». اربط الخزنةَ من '
+        'شاشة إدارة الصناديق قبل إعادة المحاولة.',
+      );
+    }
+    return acc;
+  }
 
   // ═══════════════════════════════════════════════════════════════════════
   // SHIFT OPERATIONS (#Phase4: Blind Audit)
@@ -459,6 +525,8 @@ extension TreasuryDao on AppDatabase {
           shiftId: shiftId,
           variance: settlementResult.variance,
           endTime: endTime,
+          // الدرجُ الذي كتبت عليه التسويةُ حركتَها — لا مفتاحُ إعدادات.
+          drawerSafeId: settlementResult.drawerSafeId,
         );
       } catch (e, st) {
         debugPrint('[ShiftClose] Variance JE failed — logging to audit trail: $e\n$st');
@@ -701,17 +769,32 @@ extension TreasuryDao on AppDatabase {
     required int shiftId,
     required double variance,
     required DateTime endTime,
+    required int? drawerSafeId,
   }) async {
-    // Resolve branchId for the JE (from the primary cash safe).
-    // Use getSetting() which tolerates duplicate rows (legacy sync artifact).
-    final primarySafeSetting = await getSetting('pos_cash_safe_id');
-    final primarySafeId = int.tryParse(primarySafeSetting?.value ?? '1') ?? 1;
-    final primarySafe = await (select(safes)..where((s) => s.id.equals(primarySafeId))).getSingleOrNull();
+    // ── الدرجُ الذي حُسم فعلاً، لا مفتاحُ إعدادات ────────────────────────
+    //
+    // 🔴 كان هنا `getSetting('pos_cash_safe_id')` ثمّ `?? '1'`. و`_settleShift`
+    // قد حسم الدرجَ سلفاً بـ`resolveShiftDrawer` — وهي الدالّةُ التي يقول
+    // توثيقُها إنّها «موضعٌ واحدٌ لتعريف الدرج» وإنّها «ستحلّ محلَّها في
+    // تسوية فرقِ الوردية» — وكتب حركةَ الفرق على **ذلك** الدرج
+    // (`_postVarianceSafeTransaction(safeId: settlementResult.drawerSafeId!)`).
+    //
+    // فعلى فرعٍ متعدّدِ الأدراج كانت حركةُ الخزنة تقع على الدرج الثالث
+    // بينما وصفُ القيد يسمّي الدرجَ الأوّل — ومع توجيه الحساب إلى الدرج
+    // كان القيدُ نفسُه سيقع على الخزنة الخطأ. فيُمرَّر الدرجُ المحسوم.
+    final primarySafe = drawerSafeId == null
+        ? null
+        : await (select(safes)..where((s) => s.id.equals(drawerSafeId)))
+            .getSingleOrNull();
     final resolvedBranchId = primarySafe?.branchId;
 
-    final cashAccount = await accountingDao.getAccountByCode(
-      await accountingDao.getMappedAccountCode('cash', AccountingDao.accountPurposes['cash']!),
-    );
+    // ── حسابُ **هذا الدرج** لا حسابُ النقديّة العامّ ──────────────────────
+    //
+    // العجزُ أو الفائضُ وقع في درجٍ بعينه، وحركةُ الخزنة سُجِّلت عليه. وكان
+    // القيدُ يُرحَّل على حساب الغرض العامّ ⇒ رصيدُ الدرج يتحرّك في جدوله
+    // وحسابُه في الأستاذ لا يتحرّك، و`1111` يحمل فرقاً لا درجَ يملكه.
+    final cashAccount = await resolveSafeGlAccount(primarySafe) ??
+        await accountingDao.getLeafAccountByPurpose('cash');
     if (cashAccount == null) {
       // COA not configured — skip JE but log clearly. This is not a DB error.
       debugPrint('[FINANCIAL_WARNING] Shift #$shiftId: cash account not configured - variance JE skipped.');
@@ -1133,21 +1216,42 @@ extension TreasuryDao on AppDatabase {
 
         // Post a GL journal entry for this safe's shift-close transfer.
         // Credit: the safe's own linked GL account.
-        // Debit:  same-type purpose account (cash safe → cash, bank safe → bank).
-        try {
-          Account? sourceAccount;
-          if (safe.linkedAccountId != null) {
-            sourceAccount = await accountingDao.getAccountById(safe.linkedAccountId!);
-          }
-          sourceAccount ??= safe.safeType == 'bank'
-              ? await accountingDao.getAccountByPurpose('bank')
-              : await accountingDao.getAccountByPurpose('cash');
+        // Debit:  the CENTRAL safe's GL account — the money's real destination.
+        //
+        // ── ولا `try/catch` هنا بعد اليوم ────────────────────────────────
+        //
+        // 🔴 كان الكلُّ ملفوفاً بـ`try { … } catch (e) { debugPrint }`،
+        // والسحبُ (`adjustSafeBalance(sId, -actualDrain)`) والاستلامُ
+        // (`adjustSafeBalance(central.id, actualDrain)`) قد نُفِّذا **قبله**.
+        // فأيُّ رفضٍ للقيد — فترةٌ مقفلة، حسابٌ غيرُ قابلٍ للترحيل، خزنةٌ
+        // مربوطةٌ بحسابٍ أبٍ — كان يصير سطرَ تشخيصٍ بينما النقدُ انتقل بلا
+        // أيِّ أثرٍ في الأستاذ. و`closeSafe` أزال هذا الابتلاعَ بعينه؛ هذا
+        // المسارُ لم يُعالَج معه.
+        //
+        // والرميُ يُرجع المعاملةَ كلَّها: لا سحبَ ولا استلامَ ولا صفَّ إقفال
+        // — الوردية تبقى مفتوحةً برسالةٍ صريحةٍ بدل دفاترَ متضاربة.
+        {
+          // ── الطرفان خزنتان، فلكلٍّ حسابُه ───────────────────────────────
+          //
+          // المصدرُ كان صحيحاً منذ البداية (‏حسابُ الخزنة المرتبط)، أمّا
+          // **الوجهةُ** فكانت حسابَ الغرض العامّ بينما المالُ يصل إلى
+          // **الخزنة المركزيّة** فعلاً (`adjustSafeBalance(central.id, …)`
+          // أعلاه). فحسابُ المركزيّة يبقى صفراً إلى الأبد، و`1111` يحمل
+          // مديناً لا خزنةَ تملكه.
+          //
+          // ⚠️ **ولا يُمرَّر نفسُ الوسيط للطرفَين.** لو حُلَّ الاثنان من
+          // `safe` لصار القيدُ `Dr X / Cr X` — يتصفّى إلى صفرٍ ويصير
+          // السحبُ غيرَ مرئيٍّ في الأستاذ أصلاً. أي أن نحوّل انفصالاً إلى
+          // اختفاء.
+          final sourceAccount = await requireSafeGlAccount(safe,
+              op: 'إقفال وردية #$shiftId');
+          final destAccount = await requireSafeGlAccount(central,
+              op: 'استلام إقفال وردية #$shiftId');
 
-          final destAccount = safe.safeType == 'bank'
-              ? await accountingDao.getAccountByPurpose('bank')
-              : await accountingDao.getAccountByPurpose('cash');
-
-          if (sourceAccount != null && destAccount != null) {
+          // خزنتان تشتركان في نفس الحساب (‏كلتاهما بلا رابطٍ فتسقطان إلى
+          // حساب الغرض) تُنتجان قيداً يُلغي نفسَه. لا يُرحَّل — نفسُ الحارس
+          // الموجود في `closeSafe`.
+          if (sourceAccount.id != destAccount.id) {
             // Spec 135 BUG-F — deterministic globalId for the shift-close
             // transfer JE. Previously this createJournalEntry omitted
             // globalId, so it fell back to a random UuidV7 (see
@@ -1201,8 +1305,6 @@ extension TreasuryDao on AppDatabase {
               globalId: transferJeGid,
             );
           }
-        } catch (e) {
-          debugPrint('[TreasuryDao] Shift-close JE failed for safe #$sId: $e');
         }
 
         // 2026-05-12 NEG-BAL hotfix (Feature 035 v123) — DO NOT mirror this
@@ -2511,13 +2613,10 @@ extension TreasuryDao on AppDatabase {
             'والتحويلُ إلى الذات سطرُ استلامٍ وهميٌّ ورصيدٌ لا يتصفّى.');
       }
 
-      Account? sourceAccount;
-      if (safe.linkedAccountId != null) {
-        sourceAccount = await accountingDao.getAccountById(safe.linkedAccountId!);
-      }
-      sourceAccount ??= safe.safeType == 'bank'
-          ? await accountingDao.getAccountByPurpose('bank')
-          : await accountingDao.getAccountByPurpose('cash');
+      // نفسُ الترتيب السابق حرفاً بحرف، لكن عبر الدالّة المشتركة — ومعها
+      // حارسُ «الحسابُ المرتبطُ يجب أن يكون أصلاً» وحلُّ الحساب الورقيِّ
+      // إلى ورقةٍ قابلةٍ للترحيل.
+      final Account? sourceAccount = await resolveSafeGlAccount(safe);
       if (sourceAccount == null) {
         throw StateError(
             'الإقفال اليومي متوقّف: لا حسابَ دفتريّاً لـ«${safe.name}» ولا '
@@ -2612,7 +2711,15 @@ extension TreasuryDao on AppDatabase {
             }
           }
           if (effectiveCash > 0.001) {
-            final cashAccount = await accountingDao.getAccountByPurpose('cash');
+            // الشقُّ النقديُّ يذهب إلى **الخزنة المركزيّة** فعلاً
+            // (`adjustSafeBalance(central.id, currentBalance)` أعلاه)، فحسابُه
+            // حسابُها لا حسابُ الغرض العامّ.
+            //
+            // ⚠️ أمّا الشقُّ **البنكيُّ** أعلاه فيبقى على حساب الغرض عمداً:
+            // هو إيداعٌ في بنكٍ لا صفَّ خزنةٍ له، فتوجيهُه إلى حسابٍ فرعيٍّ
+            // يخترع دفتراً مساعداً لا وجودَ له. يتغيّر يومَ تختار الشاشةُ
+            // خزنةَ بنكٍ بعينها.
+            final cashAccount = await resolveSafeGlAccount(central);
             if (cashAccount != null) {
               lines.add(JournalLine(
                 accountId: cashAccount.id,
@@ -2633,10 +2740,10 @@ extension TreasuryDao on AppDatabase {
             );
           }
         } else {
-          // No split: use the same-type GL account
-          final destAccount = safe.safeType == 'bank'
-              ? await accountingDao.getAccountByPurpose('bank')
-              : await accountingDao.getAccountByPurpose('cash');
+          // بلا تقسيمٍ: الرصيدُ كلُّه انتقل إلى **الخزنة المركزيّة**، فالمدينُ
+          // حسابُها. كان حسابَ الغرض العامّ، فيبقى حسابُ المركزيّة صفراً
+          // ويحمل `1111` مديناً لا خزنةَ تملكه.
+          final destAccount = await resolveSafeGlAccount(central);
           if (destAccount != null) {
             lines.add(JournalLine(
               accountId: destAccount.id,
