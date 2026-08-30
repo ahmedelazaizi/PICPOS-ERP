@@ -1553,27 +1553,113 @@ extension AccountingReportsDao on AppDatabase {
     // يصير الفرقُ صفراً فتُرسَم الشاشةُ خضراء «مطابق» — براءةٌ كاذبة.
     final startVar = dateVar(start);
     final endVar = dateVar(end);
+    // ⚠️ `is_deleted = 0` نصّاً كان يكسر الدالّةَ على PostgreSQL
+    // (`boolean = integer`)، بينما ١٩ استعلاماً في هذا الملفّ تستعمل
+    // [sqlBool]. والطرفُ الأوّلُ خارجَ أيِّ `try`، فالشاشةُ كانت تنفجر.
+    final boolTrue = sqlBool(true);
+    final boolFalse = sqlBool(false);
 
-    // 1. Invoice-level tax totals
+    // ── 1. Invoice-level tax totals ─────────────────────────────────────
+    //
+    // 🔴 **عطبان مستقلّان كانا هنا، وإصلاحُ أحدِهما وحدَه يُضاعف الضرر.**
+    //
+    // (أ) صفُّ المرتجع (`sale_type = 'return'`) يحمل ضريبةً **موجبةً**
+    //     وكان يُجمَع كأيِّ بيع. والأستاذُ **يَدين** ضريبةَ المخرجات عند
+    //     المرتجع. فالطرفان يتحرّكان في اتّجاهين متعاكسين.
+    // (ب) `status NOT IN ('returned', 'cancelled')` كانت تُسقط الفاتورةَ
+    //     **الأصليّة**. و`status` عمودُ حالةٍ **راهنةٍ لا مؤرَّخة**، فمرتجعٌ
+    //     يقع في فبراير يُسقط فاتورةَ يناير من تقرير يناير — أي **يبدّل
+    //     أرقامَ شهرٍ أُقفل وقُدّم إقرارُه، بأثرٍ رجعيّ**.
+    //
+    // والحصيلةُ بمرتجعٍ جزئيٍّ (بيعٌ ١٠٠، مرتجعٌ ٣٠) في نفس الشهر:
+    //     الفواتير 100 + 30 = 130   مقابل   الأستاذ 100 − 30 = 70
+    //     ⇒ فرقٌ ٦٠ = **ضعفُ ضريبة المرتجع**.
+    //
+    // ⚠️ **ولماذا لا تصلح صيغةُ الاستبعاد المستعملةُ في تسعةِ مواضعَ**
+    // (`sale_type != 'return'`)؟ لأنّ هذا التقريرَ يقارن **صافياً بصافٍ**،
+    // والأستاذُ يطرح المرتجع. فإخفاءُ المرتجع يُصلح الحالةَ الشائعةَ
+    // ويُبقي يناير عند −١٠٠ وفبراير عند +١٠٠ إلى الأبد. المطلوبُ **طرحُه**
+    // لا إخفاؤه — وهو عينُ النموذج الموصوف في هذا الملفّ عند `:434`.
+    //
+    // ⚠️ **ولماذا معاً؟** إصلاحُ (ب) وحدَه يُعيد الأصلَ بلا تصحيح إشارة
+    // المرتجع، فتصير الحالةُ الكاملةُ `100 + 100 = 200` مقابل `0` — أي
+    // الخطأُ يقفز من ١٠٠ إلى ٢٠٠. أسوأُ حرفيّاً من قبل الإصلاح.
     final salesRow = await customSelect('''
-      SELECT COALESCE(SUM(tax), 0) as total_tax
+      SELECT COALESCE(SUM(
+               CASE WHEN sale_type = 'return' THEN -tax ELSE tax END
+             ), 0) as total_tax
       FROM sales_invoices
       WHERE invoice_date >= ? AND invoice_date < ?
-        AND is_deleted = 0
-        AND status NOT IN ('returned', 'cancelled')
+        AND is_deleted = $boolFalse
+        AND (status IS NULL OR status NOT IN ('cancelled', 'voided'))
     ''', variables: [startVar, endVar],
         readsFrom: {salesInvoices}).getSingle();
 
+    // ── طرفُ المشتريات — جذرٌ مختلفٌ ومقدارٌ مختلف ──────────────────────
+    //
+    // 🔴 مرتجعُ الشراء **لا صفَّ له في `purchase_invoices` إطلاقاً**. يعيش
+    // قيداً في الأستاذ (`reference_type='purchase_return'`) ومذكرةَ رصيدٍ
+    // في `safe_transactions` — والمذكرةُ تحمل **تصحيحَ رصيدٍ لا ضريبة**.
+    // فالأستاذُ يردُّ ضريبةَ المدخلات والفواتيرُ لا تعرف ⇒ فرقٌ دائمٌ
+    // = ضريبةُ المرتجع **مرّةً واحدةً** (لا مرّتين كطرف المبيعات، ولا
+    // تُصلحه صيغةُ `sale_type` لانعدام الصفِّ الذي يُرشَّح).
     final purchaseRow = await customSelect('''
       SELECT COALESCE(SUM(tax), 0) as total_tax
       FROM purchase_invoices
       WHERE invoice_date >= ? AND invoice_date < ?
-        AND is_deleted = 0
+        AND is_deleted = $boolFalse
     ''', variables: [startVar, endVar],
         readsFrom: {purchaseInvoices}).getSingle();
 
+    // ⚠️⚠️ **قرارُ تصميمٍ يجب أن يُقرأ قبل تعديل هذا الموضع.**
+    //
+    // لا مصدرَ مستقلٌّ لضريبة مرتجع الشراء في المستودع كلِّه — قِيس:
+    // لا جدولَ مستنداتٍ للمرتجع، والمذكرةُ في `safe_transactions` مبلغُ
+    // تصحيحِ رصيدٍ إجماليّ، و`stock_movements` كمّيّاتٌ وتكلفةٌ لا ضريبة.
+    // الضريبةُ تُحسَب لحظةَ المرتجع وتُكتَب في القيد وحدَه
+    // (`accounting_autopost_dao.dart:1907`).
+    //
+    // ⇒ فالطرحُ هنا **مشتقٌّ من الأستاذ**، وهذا يعني أنّ هذا المكوِّنَ
+    //   بعينه **لا يُطابَق مطابقةً مستقلّة**: الطرفان يقرآن نفسَ المصدر
+    //   فيتّفقان بالبناء.
+    //
+    // ولماذا يبقى هذا أفضلَ من تركه؟ لأنّ الفرقَ الزائفَ الدائمَ كان
+    // **يُغرق التقريرَ كلَّه**: أيُّ خطأِ ترحيلٍ حقيقيٍّ في المشتريات كان
+    // يختفي داخلَ رقمٍ لا يعود صفراً أبداً. فبعد الطرح تعود بقيّةُ
+    // المكوّنات قابلةً للكشف، ويُفصَح عن المكوِّن المشتقِّ في
+    // [VatReconciliationResult.inputVatReturns] كي يراه المحاسبُ رقماً
+    // مستقلّاً لا مندمجاً.
+    //
+    // والعلاجُ الجذريُّ — أن يكتب مسارُ المرتجع مستنداً بضريبته كما يفعل
+    // طرفُ المبيعات — تغييرُ مخطَّطٍ ومسارِ كتابةٍ ومزامنة، خارجَ نطاق هذا
+    // الإصلاح. **لا تحذف هذا التعليقَ عند تنفيذه؛ احذف الاشتقاق.**
+    double inputVatReturns = 0;
+    try {
+      final inputVatCode = await getMappedAccountCode(
+        'input_vat', AccountingDao.accountPurposes['input_vat']!,
+      );
+      final acc = await getAccountByCode(inputVatCode);
+      if (acc != null) {
+        final row = await customSelect('''
+          SELECT COALESCE(SUM(jel.credit - jel.debit), 0) as amt
+          FROM journal_entry_lines jel
+          JOIN journal_entries je ON je.id = jel.entry_id
+          WHERE jel.account_id = ?
+            AND je.reference_type = 'purchase_return'
+            AND je.entry_date >= ? AND je.entry_date < ?
+            AND je.is_deleted = $boolFalse AND je.is_posted = $boolTrue
+        ''', variables: [Variable(acc.id), startVar, endVar],
+            readsFrom: {journalEntryLines, journalEntries}).getSingle();
+        inputVatReturns = (row.data['amt'] as num).toDouble();
+      }
+    } catch (e) {
+      // غيرُ قاتل: بلا الطرح يعود الفرقُ الزائف، ولا تنهار الشاشة.
+      debugPrint('[VAT-RECON] ⚠️ تعذّر حسابُ ضريبةِ مرتجعات الشراء: $e');
+    }
+
     final invoiceOutputVat = (salesRow.data['total_tax'] as num).toDouble();
-    final invoiceInputVat = (purchaseRow.data['total_tax'] as num).toDouble();
+    final invoiceInputVat =
+        (purchaseRow.data['total_tax'] as num).toDouble() - inputVatReturns;
 
     // 2. GL account balances
     double glOutputVat = 0;
@@ -1599,7 +1685,7 @@ extension AccountingReportsDao on AppDatabase {
           JOIN journal_entries je ON je.id = jel.entry_id
           WHERE jel.account_id = ?
             AND je.entry_date >= ? AND je.entry_date < ?
-            AND je.is_deleted = 0 AND je.is_posted = 1
+            AND je.is_deleted = $boolFalse AND je.is_posted = $boolTrue
         ''', variables: [Variable(outputAcc.id), startVar, endVar],
             readsFrom: {journalEntryLines, journalEntries}).getSingle();
         glOutputVat = (rows.data['balance'] as num).toDouble();
@@ -1612,18 +1698,27 @@ extension AccountingReportsDao on AppDatabase {
           JOIN journal_entries je ON je.id = jel.entry_id
           WHERE jel.account_id = ?
             AND je.entry_date >= ? AND je.entry_date < ?
-            AND je.is_deleted = 0 AND je.is_posted = 1
+            AND je.is_deleted = $boolFalse AND je.is_posted = $boolTrue
         ''', variables: [Variable(inputAcc.id), startVar, endVar],
             readsFrom: {journalEntryLines, journalEntries}).getSingle();
         glInputVat = (rows.data['balance'] as num).toDouble();
       }
-    } catch (_) {
-      // GL data unavailable — return invoice data only
+    } catch (e, st) {
+      // ⚠️ **كان `catch (_) {}` صامتاً تماماً.** ولو سقط طرفُ الأستاذ
+      // وحدَه (‏حسابٌ غيرُ مرتبط، أو خطأُ صنفٍ على PostgreSQL) لبقي
+      // `glOutputVat = 0` فيظهر فرقٌ = **كاملُ ضريبة الشهر** بلا أيِّ
+      // أثرٍ يدلُّ على السبب — ويقرؤه المحاسبُ تفاوتاً حقيقيّاً.
+      // الفشلُ ما زال غيرَ قاتلٍ (‏الفواتيرُ وحدَها أفضلُ من لا شيء) لكنّه
+      // صار **مرئيّاً**.
+      debugPrint('[VAT-RECON] ⚠️ تعذّر قراءةُ أرصدة الأستاذ — '
+          'الأرقامُ المعروضةُ ناقصةٌ لا مطابِقة: $e');
+      debugPrint('$st');
     }
 
     return VatReconciliationResult(
       invoiceOutputVat: invoiceOutputVat,
       invoiceInputVat: invoiceInputVat,
+      inputVatReturns: inputVatReturns,
       glOutputVat: glOutputVat,
       glInputVat: glInputVat,
       outputVatAccCode: outputVatAccCode,
@@ -1808,7 +1903,17 @@ class InventoryGlReconciliation {
 /// Moved out of vat_reconciliation_screen to allow provider-based access.
 class VatReconciliationResult {
   final double invoiceOutputVat;
+
+  /// ضريبةُ المدخلات **بعد** طرحِ مرتجعات الشراء.
   final double invoiceInputVat;
+
+  /// المقدارُ المطروحُ لمرتجعات الشراء — **مُفصَحٌ عنه عن قصد**.
+  ///
+  /// وحدَه في هذا التقرير **مشتقٌّ من الأستاذ لا من مستند**، لانعدام أيِّ
+  /// مصدرٍ مستقلٍّ لضريبة مرتجع الشراء في المستودع. فهو لا يُطابَق مطابقةً
+  /// حقيقيّةً — الطرفان يقرآنه من نفس المكان — ولذلك يُعرَض رقماً مستقلّاً
+  /// كي لا يُقرأ اتّفاقُه على أنّه تطابقٌ مُتحقَّقٌ منه.
+  final double inputVatReturns;
   final double glOutputVat;
   final double glInputVat;
   final String outputVatAccCode;
@@ -1817,6 +1922,7 @@ class VatReconciliationResult {
   const VatReconciliationResult({
     required this.invoiceOutputVat,
     required this.invoiceInputVat,
+    this.inputVatReturns = 0,
     required this.glOutputVat,
     required this.glInputVat,
     required this.outputVatAccCode,
