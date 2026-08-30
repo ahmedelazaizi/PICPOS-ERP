@@ -436,6 +436,12 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
                   warehouseId: invoice.warehouseId,
                   quantity: -stockReturnQty, // negative = deduct from stock (in base units)
                   type: 'waste',
+                  // ⚠️ **هذا المسارُ يرحّل قيدَه بنفسه** أسفلَ الدالّة
+                  // (`Dr inventory_shrinkage / Cr inventory` بـ
+                  // `totalDamagedCogs`)، و`waste` صارت الآن ضمن الأنواع التي
+                  // يُرحّلها `adjustStock` — فبلا هذا السياج يقع الترحيلُ
+                  // **مرّتين** لكلِّ مرتجعٍ تالف.
+                  postAdjustmentJournal: false,
                   referenceType: 'sales_return_damaged',
                   referenceId: invoice.id,
                   userId: userId,

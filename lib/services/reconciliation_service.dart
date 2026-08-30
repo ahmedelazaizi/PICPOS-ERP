@@ -222,9 +222,32 @@ class ReconciliationService {
             fixCount++;
             break;
 
+          // ── الأطراف: تُبلَّغ ولا تُصلَّح تلقائياً ──────────────────────────
+          //
+          // كان هنا `updatePartyBalance(d.entityId, d.calculatedValue)` —
+          // **كتابةٌ مطلقةٌ بلا قيدٍ ولا أثرٍ تدقيقيّ**، ومصدرُها صيغةٌ تطرح
+          // المقبوضَ مرّتين:
+          //
+          //   getCalculatedPartyBalance = (receivable − receipts) − (payable − payments)
+          //
+          // و`receivable` هي `SUM(total − paid)` — أي أنّ المقبوضَ **مطروحٌ
+          // سلفاً** — ثمّ تطرحه `receipts` ثانيةً، لأنّ `_recordSalesReceipt`
+          // يكتب صفَّ `safe_transactions` بـ`partyId = customerId` لنفس المبلغ.
+          //
+          // مقيس: عميلٌ مسمّى وبيعةٌ نقديّةٌ كاملةٌ ١٠٠٠ ⇒ الرصيدُ الصحيح صفر،
+          // والصيغةُ تعطي **−١٠٠٠**، فضغطةُ الزرّ تكتب أنّنا **ندين** له بألف.
+          // على متجرٍ بألفِ فاتورةٍ بمتوسّط ٤٠٠ تفتح ضغطةٌ واحدةٌ فجوةً قدرُها
+          // ٤٠٠٬٠٠٠ في مطابقة الذمم — بلا سجلٍّ ولا رجعة.
+          //
+          // ونفسُ حجّة الخزائن أدناه حرفاً بحرف: رصيدُ طرفٍ ليس بياناتٍ تالفةً
+          // تُعاد اشتقاقُها، بل نتيجةُ قيودٍ مرحَّلة. والكاشفُ الصحيحُ الموجودُ
+          // سلفاً هو `PartyDao.getPartyBalanceMismatches()` الذي يقارن بالأستاذ
+          // لا بصيغةٍ موازية — وهو ما يجب أن يحلّ محلَّ `reconcileParties`.
           case 'party':
-            await _partiesRepo.updatePartyBalance(d.entityId, d.calculatedValue);
-            fixCount++;
+            debugPrint(
+                '[Reconcile] فرقُ طرف #${d.entityId}: مخزَّن=${d.cachedValue} '
+                'محسوب=${d.calculatedValue} — يُبلَّغ ولا يُصلَّح تلقائياً '
+                '(الصيغةُ تطرح المقبوضَ مرّتين — استعمل getPartyBalanceMismatches).');
             break;
 
           // ── الخزائن: تُبلَّغ ولا تُصلَّح تلقائياً ────────────────────────────

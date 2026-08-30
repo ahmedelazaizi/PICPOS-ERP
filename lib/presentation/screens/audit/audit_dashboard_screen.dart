@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/providers.dart';
+import '../../../services/security_service.dart';
 
 /// لوحة التدقيق — Audit Dashboard
 /// تعرض حالة Hash Chain وإحصائيات سلامة النظام
@@ -220,10 +221,15 @@ class _AuditDashboardScreenState
                               'عزل العمليات الفاشلة لمراجعتها',
                               true,
                             ),
+                            // ⚠️ قيمةٌ **حيّة** لا ثابتة: كانت `true` مثبَّتةً
+                            // فتعرض «مشفَّرة» خضراءَ على قاعدةٍ نصٍّ صريح —
+                            // فحصٌ يطمئن المشغّلَ ولا يقيس شيئاً.
                             _buildHealthItem(
                               'SQLCipher Encryption',
-                              'تشفير قاعدة البيانات المحلية',
-                              true,
+                              SecurityService.databaseEncryptionVerified
+                                  ? 'تشفير قاعدة البيانات المحلية — مُثبَت'
+                                  : 'غير مُثبَت (PostgreSQL أو محرّك بلا تشفير)',
+                              SecurityService.databaseEncryptionVerified,
                             ),
                             _buildHealthItem(
                               'Secure Token Storage',

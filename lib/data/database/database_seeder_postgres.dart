@@ -442,10 +442,14 @@ extension DatabaseSeederPostgres on AppDatabase {
     // provisioning. Raw SQL eliminates the ambiguity.
     final boolTrue = sqlBool(true);
     final boolFalse = sqlBool(false);
+    // ⚠️ نفسُ سبب نظيرتها في `database_seeder.dart`: بلا `force_password_change`
+    // يصل خادمُ PostgreSQL الإنتاجَ بـ`admin`/`admin` ولا يُوقَظ حارسُ تغيير
+    // كلمة المرور أبداً. (‏بلاغُ الاختبار الأمنيّ 2026-08-30 · B2)
     await customStatement(
       "INSERT INTO users (username, password_hash, password_salt, display_name, "
-      "role_id, is_active, is_locked, global_id) "
-      "VALUES ('admin', ?, ?, 'مدير النظام', ?, $boolTrue, $boolFalse, ?)",
+      "role_id, is_active, is_locked, force_password_change, global_id) "
+      "VALUES ('admin', ?, ?, 'مدير النظام', ?, $boolTrue, $boolFalse, "
+      "$boolTrue, ?)",
       [hash, salt, roleId, globalId],
     );
     return 1;

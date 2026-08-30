@@ -31,10 +31,22 @@ extension DatabaseSeeder on AppDatabase {
       final globalId = UuidV7.generate();
       final boolTrue = sqlBool(true);
       final boolFalse = sqlBool(false);
+      // ⚠️ **`force_password_change` صريحةٌ هنا — وإلّا شُحنت `admin`/`admin`.**
+      //
+      // العمودُ افتراضُه `false` (`auth_tables.dart`)، والموضعُ الوحيدُ الذي
+      // كان يرفعه هو هجرةُ `from < 112` — و**الهجراتُ لا تعمل على تنصيبةٍ
+      // جديدة** (`onCreate` يستدعي `createAll` لا `runOnUpgrade`). فحارسُ
+      // `login_screen.dart` لا يُوقظ أبداً، وكلُّ تنصيبةٍ تصل الإنتاجَ
+      // بكلمةِ مرورٍ معلومةٍ للجميع — ومستخدمُ `admin` يتجاوز كلَّ فحصِ
+      // صلاحيّةٍ على الخادم (`isBootstrapAdmin`).
+      //
+      // وهي عينُ فصيلةِ «عمودُ الهجرة يغيب عن التنصيب الجديد» التي أسقطت
+      // `approved_by` من قبل. (‏بلاغُ الاختبار الأمنيّ 2026-08-30 · B2)
       await customStatement(
         "INSERT INTO users (username, password_hash, password_salt, display_name, "
-        "role_id, is_active, is_locked, global_id) "
-        "VALUES ('admin', ?, ?, 'مدير النظام', 1, $boolTrue, $boolFalse, ?)",
+        "role_id, is_active, is_locked, force_password_change, global_id) "
+        "VALUES ('admin', ?, ?, 'مدير النظام', 1, $boolTrue, $boolFalse, "
+        "$boolTrue, ?)",
         [passwordHash, salt, globalId],
       );
     }

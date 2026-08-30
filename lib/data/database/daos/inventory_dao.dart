@@ -316,8 +316,25 @@ extension InventoryDao on AppDatabase {
       // ═══ Accounting Entry for manual inventory adjustments ═══
       // Mirrors the pattern in finalizeStockAudit() — createJournalEntry()
       // uses savepoints (nested transaction) which is safe inside an outer transaction.
+      // ⚠️ **`waste` و`damage` مضافتان — كانتا تحرّكان المخزونَ بلا قيدٍ واحد.**
+      //
+      // شاشتا المخزون تُصدران هذين النوعَين حرفيّاً
+      // (`inventory_notifier.dart:105,108`) من نفس القائمة التي تُصدر
+      // `adjustment` — فخيارُ «إزالة» كان يُرحَّل وخيارا «هدر/تالف» بجانبه لا
+      // يُرحَّلان. الأثرُ: المخزونُ ينقص والأستاذُ لا يتحرّك ⇒ الأصلُ والربحُ
+      // مبالَغٌ فيهما بقيمةِ كلِّ إعدامٍ يدويٍّ منذ أوّل يوم.
+      //
+      // ⚠️ **ولا تُضاف بلا `postAdjustmentJournal: false` في مسار المرتجع
+      // التالف** (`returns_repository_impl.dart`): ذاك المسارُ يستدعي
+      // `adjustStock(type: 'waste')` **ثمّ يرحّل قيدَه بنفسه**، فإضافةٌ عاريةٌ
+      // هنا كانت ستُنتج **ترحيلاً مزدوجاً** لكلِّ مرتجعٍ تالف. الموضعان
+      // يُعدَّلان معاً أو لا يُعدَّلان.
+      //
+      // والوجهةُ `inventory_shrinkage` لا `misc_expense`: نفسُ الحسابِ الذي
+      // يقصده مسارُ المرتجع التالف، فالحدثُ الماديُّ الواحد (بضاعةٌ أُتلفت)
+      // يقع على حسابٍ واحدٍ مهما كان بابُ الإدخال.
       const adjustmentAccountedTypes = {
-        'cycle_count', 'adjustment', 'write_off', 'loss',
+        'cycle_count', 'adjustment', 'write_off', 'loss', 'waste', 'damage',
       };
       final effectiveCost = unitCost ?? product.costPrice;
       if (postAdjustmentJournal &&

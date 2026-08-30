@@ -61,7 +61,17 @@ dependencies:
   supabase_flutter: ^2.8.0  # Supabase for web database
   device_info_plus: ^12.4.0
   logger: ^2.6.2
-  sqlite3: ^3.2.0           # SQLite3 core
+  # ⚠️ لا تُعِد `sqlite3` اعتماداً مباشراً — كانت هنا وتُظلِّل SQLCipher.
+  #
+  # الحزمةُ تحمل `hook/build.dart` يُنزِل نسخةَ sqlite3 **عاديّةً** يضعها
+  # native-assets بجانب الـexe باسم `sqlite3.dll` نفسِه، فتحلّ محلَّ نسخة
+  # `sqlcipher_flutter_libs`. النتيجةُ المقيسة (2026-08-30): الـDLL المشحونة
+  # ١٫٦ م.ب (‏عاديّة) لا ٥٫٤ (‏SQLCipher)، و`PRAGMA key` تُتجاهَل بصمت،
+  # والقاعدةُ الحيّةُ نصٌّ صريح.
+  #
+  # و`drift` تجلبها انتقاليّاً على أيّ حال، ولم يكن في `lib/` ولا `test/`
+  # استيرادٌ واحدٌ لـ`package:sqlite3` — فالإعلانُ المباشرُ كان بلا فائدة.
+  # والحارسُ في زمن التشغيل `PRAGMA cipher_version` في `connection_io.dart`.
   ffi: ^2.1.3               # FFI helpers (Pointer<Utf8>, calloc) for native scale SDKs
   shimmer: ^3.0.0
   # Cluster 024 / Issue 1 (perf) — virtualized DataTable2. The standard

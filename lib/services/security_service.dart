@@ -49,6 +49,17 @@ class PasswordRule {
 class SecurityService {
   SecurityService._();
 
+  /// هل أُثبت أنّ محرّكَ القاعدة SQLCipher فعلاً؟
+  ///
+  /// تُرفَع **مرّةً واحدةً** في `openConnection()` بعد أن تُرجع
+  /// `PRAGMA cipher_version` نسخةً غيرَ فارغة. وشاشةُ التدقيق تقرؤها بدل
+  /// قيمةٍ ثابتةٍ كانت تعرض «مشفَّرة» خضراءَ على قاعدةٍ نصٍّ صريح.
+  ///
+  /// ⚠️ ولا تُستعمَل حارساً: الحارسُ هو رفضُ الفتح في `connection_io.dart`.
+  /// هذه للعرض وحدَه — فبقاؤها `false` على PostgreSQL أو في الاختبارات
+  /// سلوكٌ صحيحٌ لا عطب.
+  static bool databaseEncryptionVerified = false;
+
   static const int _saltLength = 32;
   static const int _iterations = 10000;
 

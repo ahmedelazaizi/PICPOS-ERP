@@ -230,6 +230,8 @@ class AccountingService {
     required double tax,
     required double paid,
     required double remaining,
+    /// فرقُ تقريب الإجماليّ — يُمرَّر كما هو إلى المصنع.
+    double roundingAdjustment = 0,
     required String paymentMethod,
     required double deliveryFee,
     required List<SalesInvoiceItem> items,
@@ -248,6 +250,7 @@ class AccountingService {
         tax: tax,
         paid: paid,
         remaining: remaining,
+        roundingAdjustment: roundingAdjustment,
         paymentMethod: paymentMethod,
         deliveryFee: deliveryFee,
         items: items,

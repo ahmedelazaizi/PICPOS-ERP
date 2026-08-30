@@ -238,6 +238,20 @@ class JournalEntryFactory {
     required double tax,
     required double paid,
     required double remaining,
+
+    /// فرقُ تقريب الإجماليّ (`total - roundedTotal`) — صفرٌ بلا تقريب.
+    ///
+    /// ⚠️ **هذا المصنعُ هو مسارُ القيد الفعليُّ لشاشة الكاشير**، لا
+    /// `autoPostCashSale`: الأوركستريتر يمرّر `deferAutoPost: true` لكلِّ بيعةٍ
+    /// standalone فيصدر القيدَ بنفسه من هنا. فسطرُ ٤٣١٩ في الـDAO وحدَه كان
+    /// يخدم الخادمَ ولا يبلغ الكاشيرَ أبداً:
+    ///   • المقرَّبُ **صعوداً** ⇒ المدينُ يفوق الدائنَ بالفرق ⇒
+    ///     `UnbalancedJournalException` ⇒ **البيعةُ تُرفَض كاملةً** والنقدُ
+    ///     في الدرج بلا فاتورة.
+    ///   • والمقرَّبُ **هبوطاً** ⇒ `remaining > 0` فيُفتَح `Dr 1121` وهميٌّ
+    ///     على حساب المراقبة بدل ٤٣١٩.
+    /// (‏بلاغُ اختبارات الوظائف 2026-08-30 · R1/R2)
+    double roundingAdjustment = 0,
     required String paymentMethod,
     required double deliveryFee,
     required List<SalesInvoiceItem> items,
@@ -398,7 +412,33 @@ class JournalEntryFactory {
           'فاتورة #$invNumber: حساب إيراد التوصيل (delivery_revenue) غير مربوط — '
           'مبلغ التوصيل $deliveryFee أُدمج في إيراد المبيعات. اربطه في الربط المحاسبي.');
     }
-    final netSalesCredit = (paid + remaining) - vatLeg - deliveryLeg;
+    // ── سطرُ فرق التقريب — يُضاف قبل احتساب الإيراد ────────────────────────
+    //
+    // موجبٌ = قُرِّب هبوطاً (‏قُبض أقلّ) ⇒ مدين. سالبٌ = صعوداً ⇒ دائن.
+    // ونفسُ اتّجاه سطرِ `autoPostCashSale` حرفاً بحرف فلا يفترق المسارَان.
+    if (roundingAdjustment != 0) {
+      final roundingAcc = await _optionalAccount('rounding_difference');
+      if (roundingAcc != null) {
+        journalLines.add(JournalLine(
+          accountId: roundingAcc.id,
+          debit: roundingAdjustment > 0 ? roundingAdjustment : 0,
+          credit: roundingAdjustment < 0 ? -roundingAdjustment : 0,
+          description: 'فروق تقريب',
+          costCenterId: costCenterId,
+        ));
+      } else {
+        await DiagnosticLogger.log(
+            'AUTOPOST-WARN',
+            'فاتورة #$invNumber: حساب فروق التقريب (rounding_difference) غير '
+            'مربوط — فرقُ $roundingAdjustment بلا سطر. اربطه في الربط المحاسبي.');
+      }
+    }
+
+    // ⚠️ **و`roundingAdjustment` يدخل الإيراد.** الإيرادُ هو الإجماليُّ
+    // **الحقيقيُّ** لا المقبوض: `paid + remaining + adj == total` بالبناء،
+    // فبدونه يُحسَب الإيرادُ على المقبوضِ المقرَّب ويختلّ القيد.
+    final netSalesCredit =
+        (paid + remaining + roundingAdjustment) - vatLeg - deliveryLeg;
     if (netSalesCredit.abs() > 0.001) {
       journalLines.add(JournalLine(
         accountId: salesAcc.id,

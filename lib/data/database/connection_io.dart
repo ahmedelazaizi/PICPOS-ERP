@@ -62,6 +62,39 @@ QueryExecutor openConnection() {
         // Apply the SQLCipher encryption key. Key shape asserted above
         // so the single-quote interpolation can't be abused.
         database.execute("PRAGMA key = '$key';");
+
+        // ═══ إثباتُ أنّ التشفيرَ يعمل فعلاً — لا الاكتفاءُ بطلبه ═══════════
+        //
+        // ⚠️ **`PRAGMA key` على sqlite3 عاديٍّ لا تُخطئ — تُتجاهَل بصمت.**
+        // وهذا بعينُه ما وقع: الاعتمادُ المباشرُ `sqlite3` في `pubspec.yaml`
+        // يُنزِل نسخةً عاديّةً من `sqlite3.dll` يضعها native-assets بجانب
+        // الـexe، فتُظلِّل نسخةَ `sqlcipher_flutter_libs`. النتيجةُ المقيسة
+        // (2026-08-30): القاعدةُ المشحونةُ نصٌّ صريح — أوّلُ ١٦ بايتاً فيها
+        // `SQLite format 3` وتُفتَح بأيّ متصفّحِ SQLite بلا مفتاح، بينما
+        // شاشةُ التدقيق تعرض «تشفير» خضراءَ بقيمةٍ ثابتة.
+        //
+        // ⚠️ **و`PRAGMA cipher_version` لا ترمي على sqlite3 عاديّ — تُرجع
+        // صفرَ صفوفٍ صامتة.** فالفحصُ على **عدد الصفوف** لا على الاستثناء؛
+        // فحصٌ بـtry/catch وحدَه كان سيمرّ مرورَ الكرام.
+        //
+        // وهذا الفحصُ هو الوحيدُ الذي **لا يُخدَع بتبديل DLL**: بصمةُ الملفّ
+        // تُتحقَّق في سكربت البناء، وهذا يتحقّق في زمن التشغيل من المحرّك
+        // نفسِه. ورفضُ الفتح أسلمُ من العمل بلا تشفيرٍ ونحن نظنّه قائماً.
+        final cipher = database.select('PRAGMA cipher_version;');
+        final cipherVersion = cipher.isEmpty
+            ? ''
+            : (cipher.first.values.first?.toString().trim() ?? '');
+        if (cipherVersion.isEmpty) {
+          throw StateError(
+            'تعذّر تشفيرُ قاعدة البيانات: محرّكُ SQLite المحمَّل ليس SQLCipher '
+            '(`PRAGMA cipher_version` بلا نتيجة)، فمفتاحُ التشفير يُتجاهَل '
+            'بصمت وتُكتب القاعدةُ نصّاً صريحاً. رُفض الفتحُ عمداً.\n'
+            'السبب المعروف: الاعتماد المباشر `sqlite3` في pubspec.yaml يضع '
+            'sqlite3.dll عاديّة بجانب التطبيق فتُظلِّل sqlcipher_flutter_libs. '
+            'تحقّق أنّ sqlite3.dll المشحونة هي نسخةُ SQLCipher (‏~5.4MB لا ~1.6MB).',
+          );
+        }
+        SecurityService.databaseEncryptionVerified = true;
         // PIR R-03: Enforce referential integrity (FK constraints)
         database.execute('PRAGMA foreign_keys = ON;');
         // WAL mode for better concurrent read/write performance

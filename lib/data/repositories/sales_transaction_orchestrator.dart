@@ -433,7 +433,11 @@ class SalesTransactionOrchestrator {
           invNumber: invoice.invoiceNumber,
           tax: tax,
           paid: paid,
-          remaining: total - paid,
+          // ⚠️ **الفرقُ يُطرَح هنا ويُمرَّر سطراً هناك.** بدون الطرح تُقرأ
+          // بيعةٌ مقرَّبةٌ هبوطاً «عليها باقٍ» فيُفتَح `Dr 1121` وهميّ؛ وبدون
+          // التمرير يختلّ القيدُ صعوداً فتُرفَض البيعةُ كاملةً.
+          remaining: total - paid - roundingAdjustment,
+          roundingAdjustment: roundingAdjustment,
           paymentMethod: paymentMethod,
           deliveryFee: deliveryFee,
           items: savedItems,
