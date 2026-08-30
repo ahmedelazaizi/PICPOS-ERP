@@ -1194,10 +1194,21 @@ extension SalesDao on AppDatabase {
       for (final id in invoiceIds) Variable.withInt(id),
     ];
 
+    // ⚠️ `AND deleted_at IS NULL` — كان غائباً عن هذا الاستعلام وحدَه.
+    // `deleteExpenseTransaction` (`treasury_reports_dao`) تحذف حركةَ الخزنة
+    // **حذفاً ناعماً** (تضع `deleted_at` ليتمكّن العملاءُ من تكرار الحذف)،
+    // و`DELETE /api/expenses/{id}` يقبل أيَّ مُعرِّفٍ بما فيه حركةُ ردِّ
+    // مرتجَع. فالمرتجعُ الملغى كان يبقى محسوباً **إلى الأبد**: «المتبقي» على
+    // الفاتورة يُطرَح منه ما لم يُردَّ، وبطاقةُ «إجمالي المرتجعات» تُضخَّم.
+    // ونظيراه في نفس ملفّ الخزينة يرشّحان `deletedAt.isNull()` أصلاً.
+    //
+    // أمّا فرعُ `sales_invoices` أدناه فيرشّح `is_deleted = 0` منذ البداية —
+    // العمودان مختلفان بين الجدولين، فلا يُنسَخ الشرطُ حرفيّاً.
     final stRows = await customSelect(
       'SELECT reference_id, COALESCE(SUM(amount), 0) AS total '
       'FROM safe_transactions '
       "WHERE reference_type = 'sales_return' "
+      'AND deleted_at IS NULL '
       'AND reference_id IN ($placeholders) '
       'GROUP BY reference_id',
       variables: invoiceIdVars,

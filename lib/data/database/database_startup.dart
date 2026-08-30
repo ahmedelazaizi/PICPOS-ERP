@@ -143,6 +143,11 @@ extension DatabaseStartup on AppDatabase {
       // `allSchemaEntities` تحت بتغطّي **الجداول** بس، والفهارس الخامّة مش
       // كيانات drift فما بتوصلهاش — فلو جدولٌ وصل من هناك بقي بلا فهرسه.
       kCreateBookingResourceSlotIndexSql,
+      // ٦‑١: `e_invoice_status_log` جدولٌ خامٌّ لا كيانُ drift، فتمريرةُ
+      // `allSchemaEntities` أدناه لا تصله كذلك. وهو هنا شفاءٌ ذاتيٌّ لقاعدةٍ
+      // نُصِّبت قبل هذا الإصلاح: تُنشئه بلا هجرةٍ وبلا فقدِ بيانات.
+      kCreateEInvoiceStatusLogSql,
+      kCreateEInvoiceStatusLogIndexSql,
       // ⚠️ v82 (‏«Maker-Checker») أضاف هذه الثلاثةَ بـ`ALTER TABLE` في
       //    `epoch_3`، ولم تُعلَن قطُّ في صنف جدول `JournalEntries`. و
       //    `onCreate` يبني من كيانات drift لا من الهجرات — فالتنصيبُ

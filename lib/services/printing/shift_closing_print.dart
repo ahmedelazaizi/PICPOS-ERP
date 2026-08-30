@@ -33,6 +33,13 @@ Future<void> printShiftClosingSnapshot({
           type: 'shift_closing',
           category: 'shift_closing',
           documentType: 'shift_closing',
+          // ⚠️ `printWithTemplate` افتراضُها `directPrint: false` — أي أنّها
+          // تفتح ديالوجَ طباعة ويندوز. وكلُّ نظائرِها تمرّر `true`
+          // (`printing_service.dart` للفواتير، و`invoice_generator.dart`)،
+          // وهذا النداءُ وحدَه أغفلها. فتقريرُ إقفال الوردية كان يوقف
+          // الكاشيرَ بديالوجٍ في **كلِّ** إغلاق — والإقفالُ لحظةُ ازدحامٍ
+          // بطبيعته.
+          directPrint: true,
           shift: snapshot,
           // تقريرُ الوردية ليس فاتورة: لا بنودَ ولا مبالغَ فاتورة. القيمُ
           // المعروضةُ كلُّها من اللقطة عبر `resolveShiftValue`.

@@ -37,11 +37,23 @@ extension SettingsDao on AppDatabase {
     return setting?.value;
   }
 
-  /// Save multiple settings from a map
+  /// Save multiple settings from a map — **ذرّيّاً**.
+  ///
+  /// ⚠️ كانت حلقةَ `setSetting` عارية: كلُّ مفتاحٍ كتابةٌ مستقلّة. فإخفاقٌ في
+  /// منتصف الحلقة (‏قرصٌ ممتلئ، قفلُ قاعدة، انقطاعُ وصلة PostgreSQL) يترك
+  /// **نصفَ سياسةٍ محفوظاً**: بعضُ مفاتيح السياسة بالقيم الجديدة وبعضُها
+  /// بالقديمة، بلا خطأٍ يظهر للمستخدم لأنّ الاستثناء يقع بعد أن كُتب ما كُتب.
+  /// والأسوأ أنّ `POST /api/settings` يبثّ `settings` بعدها، فتُدفَع الحالةُ
+  /// النصفيّةُ إلى **كلِّ** الأجهزة.
+  ///
+  /// والمعاملةُ تجعلها كلَّها أو لا شيء.
   Future<void> saveSettings(Map<String, String> data) async {
-    for (final entry in data.entries) {
-      await setSetting(entry.key, entry.value);
-    }
+    if (data.isEmpty) return;
+    await transaction(() async {
+      for (final entry in data.entries) {
+        await setSetting(entry.key, entry.value);
+      }
+    });
   }
 
   /// Get all settings with a specific prefix

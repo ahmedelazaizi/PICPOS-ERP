@@ -393,6 +393,35 @@ const String kCreateAttendanceDayDedupIndexSql =
     'CREATE UNIQUE INDEX IF NOT EXISTS $kAttendanceDayDedupIndexName '
     'ON employee_attendance(employee_id, date)';
 
+/// ٦‑١ — سجلُّ حالات الفاتورة الإلكترونيّة: جدولٌ **غائبٌ عن كلِّ تنصيبةٍ
+/// SQLite جديدة**.
+///
+/// 🔴 `EInvoiceStatusLog` له صنفُ جدولٍ في `e_invoicing_tables.dart` لكنّه
+/// **غيرُ مُعلَنٍ في `@DriftDatabase`**. و`onCreate` يبني من كيانات drift،
+/// و`onUpgrade` لا يعمل على تنصيبةٍ جديدة — فالهجرةُ v81 التي تُنشئه لا
+/// تصل إلّا القواعدَ المُرقَّاة. أمّا PostgreSQL فمغطًّى بكتلةٍ خاصّةٍ في
+/// مسار التكافؤ.
+///
+/// والنتيجةُ على SQLite الجديد: `e_invoicing_dao` يكتب ويقرأ الجدولَ بـSQL
+/// خامٍّ (‏`INSERT INTO` و`SELECT * FROM`) فيفشل بـ«no such table» — وهو
+/// **عينُ العطب** الذي عولج هنا لفهارس v150/v152 وv159 بنفس التعليل.
+///
+/// فالـDDL مصدرٌ واحدٌ تقرؤه ثلاثةُ أطراف: الهجرةُ، و`onCreate`، والشفاءُ
+/// الذاتيُّ كلَّ إقلاع — وإلّا افترقت وعادت الفجوةُ من بابٍ آخر.
+const String kCreateEInvoiceStatusLogSql = '''
+CREATE TABLE IF NOT EXISTS e_invoice_status_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  submission_id INTEGER NOT NULL REFERENCES e_invoice_submissions(id),
+  old_status TEXT,
+  new_status TEXT NOT NULL,
+  changed_by TEXT,
+  notes TEXT,
+  changed_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+)''';
+const String kCreateEInvoiceStatusLogIndexSql =
+    'CREATE INDEX IF NOT EXISTS idx_einv_status_log_submission '
+    'ON e_invoice_status_log(submission_id)';
+
 /// v159 — المسارُ الساخنُ لمحرِّك الحجز: `getOverlappingBookings`.
 ///
 /// كلُّ إنشاءِ حجزٍ وكلُّ نقلٍ أو تأجيلٍ أو إحياءٍ يشغّل استعلامَ مرشَّحين
@@ -1911,6 +1940,12 @@ class AppDatabase extends _$AppDatabase {
           // v159: فهرسُ المسار الساخن لمحرِّك الحجز — نفسُ المنطق، فهرسٌ
           // خامٌّ لا كيانُ drift فـ`createAll()` ما بيصدّرهوش.
           await customStatement(kCreateBookingResourceSlotIndexSql);
+          // ٦‑١: نفسُ المنطق لكن على **جدول** لا فهرس. `EInvoiceStatusLog`
+          // صنفُ جدولٍ غيرُ مُعلَنٍ في `@DriftDatabase`، فتنصيبةٌ جديدةٌ
+          // تفتقده تماماً بينما المُرقّاةُ تأخذه من هجرة v81 — و
+          // `e_invoicing_dao` يقرؤه ويكتبه بـSQL خامّ.
+          await customStatement(kCreateEInvoiceStatusLogSql);
+          await customStatement(kCreateEInvoiceStatusLogIndexSql);
         }
         // seedInitialData + syncDefaultAccounts moved to beforeOpen
         // (after defensive v110 column additions)

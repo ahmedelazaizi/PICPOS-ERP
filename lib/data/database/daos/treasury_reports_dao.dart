@@ -353,9 +353,25 @@ extension TreasuryReportsDao on AppDatabase {
         safes,
       )..where((s) => s.id.equals(tx.safeId))).getSingleOrNull();
       if (safe != null) {
-        // Reverse: payment reduced balance, so add it back.
+        // ── الإشارةُ تتبع نوعَ السند، لا تُفترَض ──────────────────────────
+        //
+        // 🔴 كان السطرُ `adjustSafeBalance(safe.id, tx.amount)` بتعليقٍ يقول
+        // «الدفعُ أنقص الرصيد فنُعيده» — وهو صحيحٌ للدفع **فقط**. والدالّةُ
+        // نفسُها تفرّق بين `receipt` و`payment` في حارس قفل الفترة أعلاه،
+        // فهي تخدم النوعَين. وحذفُ سند **قبض** كان يَزيد الرصيدَ بدل أن
+        // ينقصه: القبضُ أضاف المبلغ، والحذفُ أضافه ثانيةً ⇒ **٢× المبلغ**
+        // فرقاً بين الخزنة ودفترها.
+        //
+        // والشاشةُ محميّةٌ بالصدفة لا بالتصميم: ديالوجُ «مصروفات سابقة»
+        // يرشّح `transactionType == 'payment'`. أمّا `DELETE /api/expenses/{id}`
+        // فيقبل أيَّ مُعرِّفٍ — ومنه سنداتُ القبض.
+        //
+        // `adjustSafeBalance` تجمع الدلتا (`balance = balance + ?`)، فعكسُ
+        // القبض يكون بالسالب.
+        final reversal =
+            tx.transactionType == 'receipt' ? -tx.amount : tx.amount;
         // 069 (D5-003): atomic delta update — no read-then-write.
-        await adjustSafeBalance(safe.id, tx.amount);
+        await adjustSafeBalance(safe.id, reversal);
       }
 
       // Accounting integrity: post a mirror-image reversal JE so the
