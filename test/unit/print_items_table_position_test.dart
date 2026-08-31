@@ -123,17 +123,44 @@ void main() {
     expect(slotsOf(seq), ['shift_total_sales', 'total_amount']);
   });
 
-  test('الأنواعُ خارج القائمة البيضاء تُرشَّح قبل الرسم', () {
+  // ⚠️ **عقدٌ مقلوبٌ عمداً 2026-09-02 (§٦‑١).**
+  //
+  // كان هذا الاختبارُ يؤكّد أنّ العنصرَ بالصيغة القديمة (‏`supplier_name`
+  // نوعاً لا محتوًى) **يُرشَّح**، بوصفه «بذرةً قديمةَ الصيغة لم تمرّ بالهجرة
+  // بعد». وذلك التوصيفُ لم يكن صحيحاً: **لا هجرةَ صيغةٍ في المستودع كلِّه**
+  // تحوّل هذه العناصرَ إلى `variable` — المُنشئُ الوحيدُ لـ`elementType:
+  // 'variable'` هو الباذر. فما بدا حالةً مؤقّتةً كان فقداً دائماً على الورقة.
+  //
+  // والأثرُ المقيس: خمسةُ قوالبَ مشحونةٍ كانت تُطبع جدولَ أصنافٍ عارياً —
+  // `thermal_classic` ٢١ من ٢١ عنصراً مُسقَطاً و`thermal_modern` ١٩ من ١٩:
+  // بلا اسمِ شركةٍ ولا رقمِ فاتورةٍ ولا تاريخٍ ولا عميلٍ ولا مجاميع.
+  //
+  // فالمعيارُ صار **قدرةَ الراسم**: ما يعرف `_buildElementContent` رسمَه يمرّ.
+  // ويحرس التطابقَ `printing_element_types_lockstep_test`.
+  test('ما يعرف الراسمُ رسمَه يمرُّ ولو كان بالصيغة القديمة', () {
     final seq = TemplatedInvoiceService.layoutSequenceForPrint(
       [
         el(id: 1, elementType: 'variable', content: 'company_name', sortOrder: 0),
-        // بذرةٌ قديمةُ الصيغة لم تمرّ بالهجرة بعد
+        // صيغةٌ قديمة — والراسمُ يعرف `supplier_name`، فتمرّ.
         el(id: 2, elementType: 'supplier_name', sortOrder: 1),
         el(id: 3, elementType: 'rectangle', sortOrder: 2),
       ],
       hasItems: false,
     );
 
-    expect(slotsOf(seq), ['company_name', 'rectangle']);
+    expect(slotsOf(seq), ['company_name', 'supplier_name', 'rectangle']);
+  });
+
+  test('النوعُ المجهولُ للراسم يُرشَّح — القائمةُ لم تُفتح على مصراعيها', () {
+    // حارسٌ ضدّ إصلاحٍ زائد: رفعُ القائمة البيضاء لا يعني تمريرَ كلِّ شيء.
+    final seq = TemplatedInvoiceService.layoutSequenceForPrint(
+      [
+        el(id: 1, elementType: 'variable', content: 'company_name', sortOrder: 0),
+        el(id: 2, elementType: 'gadget_that_does_not_exist', sortOrder: 1),
+      ],
+      hasItems: false,
+    );
+
+    expect(slotsOf(seq), ['company_name']);
   });
 }

@@ -17,6 +17,83 @@ import 'printing/template_render_pipeline.dart';
 import '../data/repositories/printers_repository_impl.dart';
 import 'printer_resolver.dart';
 
+/// أنواعُ **الحاويات** — لا تحمل معنًى بذاتها، بل يُحسم محتواها في
+/// `_resolveType` من حقل `content`.
+///
+/// تمرُّ دائماً إلى الراسم لأنّ محتواها قد يكون نصّاً حرّاً (عنوانٌ ثابتٌ
+/// كتبه المستخدم) لا نوعاً معروفاً — ولو رُشِّحت بمعرفة الراسم لسقط كلُّ نصٍّ
+/// ثابتٍ في كلِّ قالب.
+const kTemplateContainerElementTypes = <String>{
+  'variable',
+  'text',
+  'line',
+  'image',
+  'rectangle',
+};
+
+/// كلُّ نوعٍ **يعرف الراسمُ كيف يرسمه** — مستخرَجٌ من مُصيِّر
+/// `TemplatedInvoiceService._buildElementContent`.
+///
+/// ⚠️ **مصدرٌ واحدٌ لا نسخةٌ ثانية.** كانت هنا قائمةٌ يدويّةٌ بخمسةِ أنواعٍ
+/// داخلَ `layoutSequenceForPrint` تُسقط سبعةً وثلاثين نوعاً يفهمها الراسمُ —
+/// فخمسةُ قوالبَ مشحونةٍ كانت تُطبع جدولَ أصنافٍ عارياً (§٦‑١).
+///
+/// ويحرس تطابقَها مع المُصيِّر `printing_element_types_lockstep_test`: أيُّ
+/// `case` يُضاف أو يُحذف هناك ولا يقابله تغييرٌ هنا يُسقط الاختبار — فلا
+/// تعود الفجوةُ صامتةً.
+const kRenderableElementTypes = <String>{
+  'adhoc_customer_name',
+  'adhoc_customer_phone',
+  'barcode',
+  'cashier_name',
+  'company_address',
+  'company_name',
+  'company_phone',
+  'company_tax_id',
+  'custom_text',
+  'customer',
+  'customer_address',
+  'customer_phone',
+  'date',
+  'delivery_fee',
+  'discount',
+  'divider',
+  'footer',
+  'invoice_number',
+  'invoice_title',
+  'invoice_type_label',
+  'item_additions',
+  'item_options',
+  'items_table',
+  'logo',
+  'notes',
+  'order_number',
+  'paid',
+  'payment_method',
+  'qr_code',
+  'remaining',
+  'sale_type',
+  'spacer',
+  'subtotal',
+  'supplier_name',
+  'table_number',
+  'tax',
+  'text',
+  'time',
+  'total',
+};
+
+/// الأنواعُ التي **تتكرّر عمداً** على الورقة: فاصلٌ وفراغٌ ونصٌّ ثابت.
+///
+/// ما عداها حقلُ بياناتٍ يُحلّ من الحمولة، فلا يُطبع مرّتين ولو كتبه القالبُ
+/// بالصيغتَين معاً (‏`total` القديمة و`variable/total_amount` الجديدة).
+const kRepeatableElementTypes = <String>{
+  'divider',
+  'spacer',
+  'text',
+  'custom_text',
+};
+
 /// خدمة طباعة الفواتير باستخدام القوالب المخصصة
 /// تقرأ القالب الافتراضي وتطبق إعداداته على PDF الفاتورة
 class TemplatedInvoiceService {
@@ -1336,14 +1413,30 @@ class TemplatedInvoiceService {
     // مرّتين (بذرةٌ قديمةٌ كتبت `grand_total` و`total_amount` معاً). أمّا ما
     // رسمه المستخدمُ — فاصلٌ أو نصٌّ ثابتٌ أو شعار — فيتكرّر عمداً، وحذفُه
     // كان يُطبع قالباً بثلاثة فواصلَ بفاصلٍ واحد.
+    //
+    // ⚠️ **والمعيارُ صار النوعَ المحسومَ لا `elementType == 'variable'`.**
+    // بعد رفع القائمة البيضاء في [layoutSequenceForPrint] صار العنصرُ بالصيغة
+    // القديمة (‏`elementType == 'total'`) يصل الراسمَ كنظيره الجديد
+    // (‏`variable` + `content: 'total_amount'`)، وكلاهما يُحسم إلى `total`.
+    // فقالبٌ كُتب بالصيغتَين معاً كان سيطبع الإجماليَّ مرّتَين.
+    //
+    // ومقيسٌ 2026-09-02: لا ملفَّ في الأصول يخلط الصيغتَين اليومَ (صفرٌ من
+    // تسعةَ عشرَ)، فهذا حارسٌ استباقيٌّ لقالبٍ يحرّره المستخدم.
+    //
+    // ⚠️ **والحذفُ لحقول البيانات المعروفةِ وحدَها.** `_resolveType` تُرجع
+    // **محتوى** عنصر النصِّ الحرِّ حرفيّاً (‏`'— — —'`)، فشرطُ «ليس في قائمة
+    // المتكرّرات» وحدَه كان يحذف الفاصلَ الثانيَ والثالث: قالبٌ بثلاثة فواصلَ
+    // يُطبع بفاصلٍ واحد. أمسكه `print_follows_designer_order_test` القائم.
     final seenContent = <String>{};
     final elements = <InvoiceTemplateElement>[];
     for (final el in allVisible) {
-      if (el.elementType != 'variable') {
+      final key = _resolveType(el);
+      final isSingleInstanceField = kRenderableElementTypes.contains(key) &&
+          !kRepeatableElementTypes.contains(key);
+      if (!isSingleInstanceField) {
         elements.add(el);
         continue;
       }
-      final key = _resolveType(el);
       if (seenContent.add(key)) elements.add(el);
     }
     return elements;
@@ -1475,11 +1568,32 @@ class TemplatedInvoiceService {
     List<InvoiceTemplateElement> ordered, {
     required bool hasItems,
   }) {
-    // Filter elements: only process known elementTypes (variable, text, line, image)
-    // This skips old-format seeded elements with elementType like 'customer', 'footer'
+    // 🔴 §٦‑١ — كانت هنا قائمةٌ بيضاءُ من خمسةِ أنواعٍ **تُسقط القالبَ كلَّه**.
+    //
+    // نصُّها القديم: «only process known elementTypes … This skips old-format
+    // seeded elements with elementType like 'customer', 'footer'». والواقعُ
+    // أنّ [_buildElementContent] يعالج تسعةً وثلاثين نوعاً والقائمةُ تُمرّر
+    // خمسةً — فكلُّ عنصرٍ بالصيغة القديمة يسقط **قبل** أن يصل الراسمَ الذي
+    // يفهمه أصلاً.
+    //
+    // مقيسٌ 2026-09-02 على الأصول المشحونة:
+    //   thermal_classic       ٢١ من ٢١ مُسقَطاً
+    //   thermal_modern        ١٩ من ١٩
+    //   a4_commercial         ٢٣ من ٢٤
+    //   a4_professional       ٢٠ من ٢٨
+    //   thermal_comprehensive ٢١ من ٣١
+    // أي أنّ خمسةَ قوالبَ كانت تطبع **جدولَ أصنافٍ عارياً**: بلا اسمِ شركةٍ
+    // ولا رقمِ فاتورةٍ ولا تاريخٍ ولا عميلٍ ولا مجاميعَ ولا تذييل.
+    //
+    // فالمعيارُ صار قدرةَ الراسم لا قائمةً مكتوبةً بيد:
+    //   · أنواعُ الحاويات تمرُّ دائماً — محتواها يُحسم في [_resolveType] وقد
+    //     يكون نصّاً حرّاً لا نوعاً معروفاً.
+    //   · وما عداها يمرُّ إن كان الراسمُ يعرف نوعَه المحسوم.
+    // ويحرس التطابقَ `printing_element_types_lockstep_test`.
     final validElements = ordered
-        .where((e) => const {'variable', 'text', 'line', 'image', 'rectangle'}
-            .contains(e.elementType))
+        .where((e) =>
+            kTemplateContainerElementTypes.contains(e.elementType) ||
+            kRenderableElementTypes.contains(_resolveType(e)))
         .toList();
 
     // موضعُ الجدول من القالب أوّلاً. فإن خلا القالبُ من عنصرِ جدولٍ — وهو

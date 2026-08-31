@@ -2,10 +2,15 @@
 # نوع=thermal فئة=receipt ورق=80.0mm
 # راسم=TemplatedInvoiceService
 PAGES 1
-PAGE 1 204.09x522.27
-  TXT 118.28,500.71 NotoNaskhArabic-Bold 13.00 «ﻣﺆﺳﺴﺔ»
-  TXT 92.69,500.71 NotoNaskhArabic-Bold 13.00 «ﺍﻟﻨﻮﺭ»
-  TXT 52.24,500.71 NotoNaskhArabic-Bold 13.00 «ﺍﻟﺘﺠﺎﺭﻳﺔ»
+PAGE 1 204.09x543.05
+  TXT 118.28,521.48 NotoNaskhArabic-Bold 13.00 «ﻣﺆﺳﺴﺔ»
+  TXT 92.69,521.48 NotoNaskhArabic-Bold 13.00 «ﺍﻟﻨﻮﺭ»
+  TXT 52.24,521.48 NotoNaskhArabic-Bold 13.00 «ﺍﻟﺘﺠﺎﺭﻳﺔ»
+  TXT 130.53,495.22 NotoNaskhArabic-Regular 7.50 «ﺷﻜﺮﺍً»
+  TXT 108.00,495.22 NotoNaskhArabic-Regular 7.50 «ﻟﺰﻳﺎﺭﺗﻜﻢ»
+  TXT 102.78,495.22 NotoNaskhArabic-Regular 7.50 «·»
+  TXT 85.41,495.22 NotoNaskhArabic-Regular 7.50 «you»
+  TXT 60.89,495.22 NotoNaskhArabic-Regular 7.50 «Thank»
   TXT 127.41,482.45 NotoNaskhArabic-Regular 7.50 «ﺷﺎﺭﻉ»
   TXT 99.09,482.45 NotoNaskhArabic-Regular 7.50 «ﺍﻟﺠﻤﻬﻮﺭﻳﺔ»
   TXT 88.90,482.45 NotoNaskhArabic-Regular 7.50 «—»
