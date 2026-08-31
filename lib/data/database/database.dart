@@ -893,6 +893,42 @@ class AppDatabase extends _$AppDatabase {
   // و`from < 161` لا يعود يفحصها. الخطوةُ الجديدةُ تفحص ثمّ تُصلح.
   int get schemaVersion => 171;
 
+  /// 🔴 جملةُ `CREATE INDEX` صالحةً لـPostgreSQL، مأخوذةً من الجملة التي
+  /// ولّدتها drift لـSQLite.
+  ///
+  /// **العطب**: `Migrator.create(index)` يرمي على PG لأنّ الـcodegen لم يُولّد
+  /// إلّا لهجةَ sqlite (‏`dialects` في `build.yaml`)، وdrift يؤكّد على وجود
+  /// اللهجة قبل التنفيذ:
+  ///   «Tried running SQL optimized for … SqlDialect.sqlite. However, the
+  ///    database is running SqlDialect.postgres.»
+  /// ومسارا المعالجة كلاهما كانا يعيدان نداءَ `Migrator.create` نفسِه، فيفشلان
+  /// بعينِ السبب. مقيسٌ 2026-08-31 على قاعدةٍ حيّة: **١٤٨ من ١٤٨** فهرساً
+  /// مُعلَناً بـ`@TableIndex` غائبةٌ عن كلّ قاعدةِ PostgreSQL — وهي خلفيّةُ
+  /// الخادم في تنصيبة العميل/المرآة، أي أنّ كلّ استعلامٍ يعتمدها كان يمسح
+  /// الجدولَ كاملاً.
+  ///
+  /// **والعلاجُ بلا codegen**: الجملُ المولَّدةُ محمولةٌ حرفيّاً — نصُّها
+  /// `CREATE INDEX idx_accounts_code ON accounts (code)` وهو SQL قياسيٌّ تقبله
+  /// PostgreSQL كما هو. فتُؤخَذ من [Index.createStatementsByDialect] وتُنفَّذ
+  /// بـ`customStatement` بدل المرور بمُهاجر drift.
+  ///
+  /// ويُحقَن `IF NOT EXISTS` لأنّ drift لا تولّده، فيصير التنفيذُ آمناً على
+  /// قاعدةٍ تحمل الفهرسَ أصلاً — وهذا شرطُ الشفاء كلَّ إقلاع.
+  String pgPortableIndexSql(Index index) {
+    final byDialect = index.createStatementsByDialect;
+    final stmt = (byDialect[SqlDialect.postgres] ??
+            byDialect[SqlDialect.sqlite] ??
+            byDialect.values.first)
+        .trim();
+    if (RegExp(r'IF\s+NOT\s+EXISTS', caseSensitive: false).hasMatch(stmt)) {
+      return stmt;
+    }
+    return stmt.replaceFirst(
+      RegExp(r'INDEX\s+', caseSensitive: false),
+      'INDEX IF NOT EXISTS ',
+    );
+  }
+
   /// PostgreSQL-specific table creation: Drift's `currentDateAndTime` generates
   /// `strftime('%s','now')` which doesn't exist in PostgreSQL.
   /// We try normal creation first, and for failures, we create the table using
@@ -972,8 +1008,17 @@ class AppDatabase extends _$AppDatabase {
         } catch (e2) {
           debugPrint('[PG] Failed to create ${entity.entityName} even with fixed SQL: $e2');
         }
+      } else if (entity is Index) {
+        // إعادةُ نداء `m.create` كانت تفشل بعينِ السبب (لهجةُ sqlite وحدَها)،
+        // فالفهرسُ يُنشأ من جملته المحمولة — انظر [pgPortableIndexSql].
+        try {
+          await customStatement(pgPortableIndexSql(entity));
+          debugPrint('[PG] Created index ${entity.entityName} (portable SQL)');
+        } catch (e2) {
+          debugPrint('[PG] Failed to create index ${entity.entityName}: $e2');
+        }
       } else {
-        // For indices and other entities, try again (they might depend on now-created tables)
+        // For other entities, try again (they might depend on now-created tables)
         try {
           await m.create(entity);
           debugPrint('[PG] Created entity ${entity.entityName} on retry');
@@ -1810,14 +1855,26 @@ class AppDatabase extends _$AppDatabase {
             'index=$indexName action=created',
           );
         } catch (e) {
-          // Index creation failed (often because the underlying table
-          // doesn't have a matching column on this PG install). Warn-only
-          // so a single bad index doesn't block the whole pass.
-          driftCount++;
-          await DiagnosticLogger.log(
-            'PG-PARITY-DRIFT',
-            'index=$indexName reason=create_index_failed error=$e',
-          );
+          // 🔴 هذا المسارُ كان يبتلع **كلَّ** فهرس: مُهاجرُ drift يرمي على PG
+          // لأنّ الـcodegen لهجةُ sqlite وحدَها، فيُسجَّل «انحرافٌ» ويمضي.
+          // والجملةُ المولَّدةُ محمولةٌ أصلاً — تُنفَّذ خامّاً قبل الاستسلام.
+          try {
+            await customStatement(pgPortableIndexSql(entity));
+            healedCount++;
+            await DiagnosticLogger.log(
+              'PG-PARITY-HEAL',
+              'index=$indexName action=created_portable',
+            );
+          } catch (e2) {
+            // إخفاقٌ حقيقيٌّ الآن (عمودٌ ناقصٌ على هذه التنصيبة مثلاً).
+            // تحذيرٌ فقط كي لا يُسقط فهرسٌ واحدٌ التمريرةَ كلَّها.
+            driftCount++;
+            await DiagnosticLogger.log(
+              'PG-PARITY-DRIFT',
+              'index=$indexName reason=create_index_failed '
+                  'migrator_error=$e portable_error=$e2',
+            );
+          }
         }
       } else {
         // Trigger / View / unknown kind — explicitly out of Spec 130 scope
