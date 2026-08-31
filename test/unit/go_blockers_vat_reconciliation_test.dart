@@ -229,6 +229,38 @@ void main() {
         ));
   }
 
+  /// مستندُ مرتجعِ شراءٍ — §٦‑٢ (v172).
+  ///
+  /// ⚠️ **أُضيف 2026-09-02 لأنّ مصدرَ ضريبةِ المرتجع تغيّر.** كانت التسويةُ
+  /// تشتقُّ المقدارَ **من الأستاذ نفسِه**، فكان قيدُ [postInputVatEntry] وحدَه
+  /// يكفي لتغذيتها — وهو بالضبط ما جعل هذا المكوِّنَ لا يُطابَق مطابقةً
+  /// مستقلّة: الطرفان يقرآن مصدراً واحداً فيتّفقان بالبناء.
+  ///
+  /// وصار المرتجعُ يكتب **مستنداً** في `purchase_returns`، فالتجهيزةُ تكتب
+  /// الاثنين معاً كما يفعل `autoPostPurchaseReturn` في المسار الحقيقيّ.
+  /// وتوكيداتُ هذا الملفّ لم تتغيّر بحرف — تغيّرت التجهيزةُ وحدَها.
+  Future<void> postPurchaseReturnDoc({
+    required DateTime date,
+    required double tax,
+    required int invoiceId,
+  }) async {
+    final inv = await (db.select(db.purchaseInvoices)
+          ..where((p) => p.id.equals(invoiceId)))
+        .getSingle();
+    await db.into(db.purchaseReturns).insert(
+          PurchaseReturnsCompanion.insert(
+            originalInvoiceId: invoiceId,
+            supplierId: inv.supplierId,
+            returnDate: date,
+            subtotal: Value(tax * 10),
+            tax: Value(tax),
+            total: Value(tax * 11),
+            globalId:
+                Value('gid-pret-$invoiceId-${date.millisecondsSinceEpoch}'),
+          ),
+        );
+  }
+
   /// قيدُ ضريبةِ مدخلات: `debit` للشراء، `credit` لردِّها عند المرتجع.
   Future<void> postInputVatEntry({
     required DateTime date,
@@ -276,13 +308,16 @@ void main() {
         credit: 0,
         refType: 'purchase',
         refId: id);
-    // المرتجعُ يردُّ ٣٠ — بلا أيِّ صفٍّ في `purchase_invoices`.
+    // المرتجعُ يردُّ ٣٠ — بلا أيِّ صفٍّ في `purchase_invoices`، ومستندُه في
+    // `purchase_returns` كما يكتبه المسارُ الحقيقيّ (§٦‑٢).
     await postInputVatEntry(
         date: DateTime(2026, 7, 15),
         debit: 0,
         credit: 30,
         refType: 'purchase_return',
         refId: id);
+    await postPurchaseReturnDoc(
+        date: DateTime(2026, 7, 15), tax: 30, invoiceId: id);
 
     final r = await db.getVatReconciliationData(year: 2026, month: 7);
 
@@ -309,6 +344,8 @@ void main() {
         credit: 100,
         refType: 'purchase_return',
         refId: id);
+    await postPurchaseReturnDoc(
+        date: DateTime(2026, 7, 5), tax: 100, invoiceId: id);
 
     final june = await db.getVatReconciliationData(year: 2026, month: 6);
     expect(june.invoiceInputVat, closeTo(100, 0.01));
