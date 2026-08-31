@@ -1205,6 +1205,11 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
     //    Then flip the original's isAutoPosted=false so the recreate step's
     //    guard doesn't re-match it and a subsequent edit only touches the new
     //    canonical JE.
+    //
+    // §٦‑٢ — ويُبطَل مستندُ المرتجع مع قيده. بلا هذا تقرأ تسويةُ ض.ق.م ضريبةَ
+    // مرتجعٍ أُلغي، فينقلب الفرقُ الزائفُ إلى الاتّجاه الآخر.
+    await _db.voidPurchaseReturnDocs(invoice.id);
+
     final originalEntries = await (_db.select(_db.journalEntries)
           ..where((e) =>
               e.referenceType.equals('purchase_return') &

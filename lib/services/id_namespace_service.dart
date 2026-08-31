@@ -57,6 +57,9 @@ class IdNamespaceService {
     'sales_invoice_items', 'purchase_invoice_items', 'held_order_items',
     'sales_order_items', 'purchase_order_items', 'quotation_items',
     'payment_allocations',
+    // §٦‑٢ (v172) — مستندُ مرتجع الشراء. بلا أرضيّةِ ترقيمٍ يبدأ العميلُ من ١
+    // فيصطدم صفُّه بصفِّ الخادم على نفس الرقم.
+    'purchase_returns',
 
     // ── v166 / المرحلة ٢ — مستنداتُ الأثر المحاسبيّ ──
     //

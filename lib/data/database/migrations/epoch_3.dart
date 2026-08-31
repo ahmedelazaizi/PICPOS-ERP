@@ -3174,5 +3174,28 @@ extension Epoch3Migrations on AppDatabase {
         debugPrint('[Migration] v171: فرقُ التقريب صار له عمودٌ صريح');
       });
     }
+
+    if (from < 172) {
+      await _safeMigrate('v172 مستندُ مرتجع المشتريات', () async {
+        // §٦‑٢ — الطرفُ الثاني الغائبُ في تسوية ض.ق.م.
+        //
+        // مرتجعُ الشراء كان بلا صفٍّ في أيِّ جدولِ مستندات، فضريبتُه تُشتقّ
+        // من الأستاذ نفسِه ⇒ الطرفان يقرآن مصدراً واحداً ويتّفقان بالبناء.
+        //
+        // ⚠️ **ومُعلَنٌ في `@DriftDatabase` كذلك** (`PurchaseReturns`):
+        //    `onCreate` يبني من كيانات drift لا من هذه الخطوة، والإعلانُ في
+        //    مكانٍ واحدٍ فقط هو كيف غاب `approved_by` عن كلِّ قاعدةٍ جديدة.
+        //    فالخطوةُ هنا للقواعد المُرقّاة وحدَها، والكيانُ للجديدة.
+        //
+        // و`createTable` تُولّد `CREATE TABLE IF NOT EXISTS`، فهي no-op على
+        // قاعدةٍ نالته من `createAll`.
+        try {
+          await m.createTable(purchaseReturns);
+        } catch (e) {
+          debugPrint('[Migration] v172 (safe-skip): $e');
+        }
+        debugPrint('[Migration] v172: مرتجعُ الشراء صار مستنداً بضريبته');
+      });
+    }
   }
 }

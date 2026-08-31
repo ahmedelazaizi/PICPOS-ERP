@@ -2292,6 +2292,10 @@ class ApiHandler {
     'fixed_assets', 'manufacturing_orders', 'bom_components',
     'op_expenses', 'asset_depreciations', 'mfg_order_costs',
     'landed_cost_sheets', 'landed_cost_items', 'landed_cost_allocations',
+    // §٦‑٢ (v172) — مستندُ مرتجع الشراء. يقابل الإدراجَ نفسَه في
+    // [DeltaPullService.pullTables]؛ بدونه لا يسلّم الخادمُ صفوفَه فتُقارن
+    // تسويةُ ض.ق.م على العميل أستاذاً كاملاً بمستنداتٍ ناقصة.
+    'purchase_returns',
     // Tier 6 — v167 / المرحلة ٣: الفئةُ التشغيليّة.
     // تقابل الكتلةَ نفسَها في [DeltaPullService.pullTables]؛ هنا مجموعةٌ
     // فالترتيبُ لا يعني شيئاً، والقائمةُ هناك مرتّبةٌ بالمفاتيح.

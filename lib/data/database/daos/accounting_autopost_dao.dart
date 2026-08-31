@@ -1915,13 +1915,52 @@ extension AccountingAutopostDao on AppDatabase {
 
     if (lines.isEmpty) return null;
 
+    // المرتجع حدث لاحق له فترته الخاصة — مش تعديل على المستند الأصلي.
+    final postingDate = resolveReturnPostingDate(
+      returnDate: returnDate,
+      originalInvoiceDate: originalPurchase.invoiceDate,
+    );
+
+    // ── §٦‑٢: مستندُ المرتجع — الطرفُ الثاني في تسوية ض.ق.م ────────────────
+    //
+    // كان مرتجعُ الشراء بلا صفٍّ في أيِّ جدولِ مستندات، فتسويةُ ض.ق.م تشتقُّ
+    // ضريبتَه **من الأستاذ نفسِه** ⇒ الطرفان يقرآن مصدراً واحداً ويتّفقان
+    // بالبناء، فلا يُطابَق هذا المكوِّنُ مطابقةً مستقلّة.
+    //
+    // ⚠️ **وموضعُه هنا لا في مُنادٍ** — بعد حارس `_hasAutoPostEntryByGlobalId`
+    //    مباشرةً: `autoPostPurchaseReturn` هو القُمعُ الوحيدُ الذي تمرُّ به
+    //    المسارات الثلاثة (`purchases_repository_impl` · `api_purchase_handler`
+    //    · `auto_posting_service`)، فالكتابةُ فيه تضمن مستنداً لكلِّ قيدٍ
+    //    وقيداً لكلِّ مستند. وتوزيعُها على المنادين يفتح ثقباً في أيِّهم يُنسى.
+    //
+    // ⚠️ **والتاريخُ هو `postingDate` عينُه** لا `DateTime.now()`: التسويةُ
+    //    دوريّةٌ تقارن مدًى بمدًى، فتاريخانِ مختلفانِ لحدثٍ واحدٍ يُنتجان
+    //    فرقاً على حدِّ كلِّ شهر.
+    //
+    // ولا `try` حوله عمداً: فشلُ كتابة المستند يجب أن يُسقط المعاملةَ كلَّها
+    // كما يفعل غيابُ حساب المخزون أعلاه — قيدٌ بلا مستندٍ هو بعينه الفجوةُ
+    // التي وُجد هذا الجدولُ لسدّها.
+    await into(purchaseReturns).insert(
+      PurchaseReturnsCompanion.insert(
+        originalInvoiceId: originalPurchase.id,
+        supplierId: originalPurchase.supplierId,
+        warehouseId: Value(originalPurchase.warehouseId),
+        branchId: Value(branchId),
+        returnDate: postingDate,
+        subtotal: Value(returnAmount),
+        tax: Value(vatAmount),
+        total: Value(returnAmount + vatAmount),
+        costCenterId: Value(costCenterId),
+        // نفسُ بذرةِ معرّف القيد — فالمستندُ والقيدُ يتشاركان هويّةَ الحدث،
+        // وإعادةُ محاولةٍ حقيقيّةٌ تُنتج نفسَ المعرّفَين معاً.
+        globalId: Value('pret$purretSourceGid'),
+        lastModifiedAt: Value(postingDate),
+      ),
+    );
+
     return accountingDao.createJournalEntry(
       description: 'قيد مرتجع مشتريات فاتورة ${originalPurchase.invoiceNumber}',
-      // المرتجع حدث لاحق له فترته الخاصة — مش تعديل على المستند الأصلي.
-      date: resolveReturnPostingDate(
-        returnDate: returnDate,
-        originalInvoiceDate: originalPurchase.invoiceDate,
-      ),
+      date: postingDate,
       lines: lines,
       referenceType: 'purchase_return',
       // F-04: the edit-reverse query keys on the originating invoice id
@@ -1931,6 +1970,32 @@ extension AccountingAutopostDao on AppDatabase {
       costCenterId: costCenterId,
       branchId: branchId,
       globalId: jeGid,
+    );
+  }
+
+  /// §٦‑٢ — يُبطِل مستنداتِ مرتجع الشراء لفاتورةٍ، مقابلَ عكسِ قيودها.
+  ///
+  /// مسارُ التعديل يعكس قيدَ المرتجع بقيدٍ مقابلٍ فيصفو أثرُ الأستاذ. وبلا
+  /// نظيرٍ على طرف المستند يبقى الصفُّ حيّاً، فتقرأ تسويةُ ض.ق.م ضريبةَ
+  /// مرتجعٍ أُلغي — وينقلب الفرقُ الزائفُ الذي وُجد هذا الجدولُ لسدِّه إلى
+  /// **الاتّجاه الآخر**.
+  ///
+  /// حذفٌ ناعمٌ لا صلب: `is_deleted` عمودُ مزامنةٍ ينتشر إلى بقيّة الأجهزة،
+  /// أمّا الحذفُ الصلبُ فيترك المرآةَ تحمل صفّاً لا مصدرَ له.
+  ///
+  /// يعيد عددَ الصفوف المُبطَلة.
+  Future<int> voidPurchaseReturnDocs(int originalInvoiceId) async {
+    final now = DateTime.now();
+    return (update(purchaseReturns)
+          ..where((r) =>
+              r.originalInvoiceId.equals(originalInvoiceId) &
+              r.isDeleted.equals(false)))
+        .write(
+      PurchaseReturnsCompanion(
+        isDeleted: const Value(true),
+        deletedAt: Value(now),
+        lastModifiedAt: Value(now),
+      ),
     );
   }
 

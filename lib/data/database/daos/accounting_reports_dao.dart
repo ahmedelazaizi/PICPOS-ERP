@@ -1597,12 +1597,12 @@ extension AccountingReportsDao on AppDatabase {
 
     // ── طرفُ المشتريات — جذرٌ مختلفٌ ومقدارٌ مختلف ──────────────────────
     //
-    // 🔴 مرتجعُ الشراء **لا صفَّ له في `purchase_invoices` إطلاقاً**. يعيش
-    // قيداً في الأستاذ (`reference_type='purchase_return'`) ومذكرةَ رصيدٍ
-    // في `safe_transactions` — والمذكرةُ تحمل **تصحيحَ رصيدٍ لا ضريبة**.
-    // فالأستاذُ يردُّ ضريبةَ المدخلات والفواتيرُ لا تعرف ⇒ فرقٌ دائمٌ
-    // = ضريبةُ المرتجع **مرّةً واحدةً** (لا مرّتين كطرف المبيعات، ولا
-    // تُصلحه صيغةُ `sale_type` لانعدام الصفِّ الذي يُرشَّح).
+    // 🔴 مرتجعُ الشراء **لا صفَّ له في `purchase_invoices`**، وهذا مقصودٌ
+    // ويبقى: خمسةٌ وثلاثون استعلامَ مشترياتٍ يقرأ ذلك الجدولَ، فصفُّ مرتجعٍ
+    // فيه كان سيُعدّ شراءً في كلِّها — عينُ العطب الذي أُغلق على طرف المبيعات
+    // (‏٣‑١: ثماني تجميعاتٍ لم تكن تستثني المرتجع). فمستندُ المرتجع يعيش في
+    // جدولٍ **مستقلٍّ** هو `purchase_returns` (v172)، والفواتيرُ هنا تبقى
+    // شراءً خالصاً.
     final purchaseRow = await customSelect('''
       SELECT COALESCE(SUM(tax), 0) as total_tax
       FROM purchase_invoices
@@ -1613,45 +1613,43 @@ extension AccountingReportsDao on AppDatabase {
 
     // ⚠️⚠️ **قرارُ تصميمٍ يجب أن يُقرأ قبل تعديل هذا الموضع.**
     //
-    // لا مصدرَ مستقلٌّ لضريبة مرتجع الشراء في المستودع كلِّه — قِيس:
-    // لا جدولَ مستنداتٍ للمرتجع، والمذكرةُ في `safe_transactions` مبلغُ
-    // تصحيحِ رصيدٍ إجماليّ، و`stock_movements` كمّيّاتٌ وتكلفةٌ لا ضريبة.
-    // الضريبةُ تُحسَب لحظةَ المرتجع وتُكتَب في القيد وحدَه
-    // (`accounting_autopost_dao.dart:1907`).
+    // ── ما كان (حتى 2026-09-02) ────────────────────────────────────────────
     //
-    // ⇒ فالطرحُ هنا **مشتقٌّ من الأستاذ**، وهذا يعني أنّ هذا المكوِّنَ
-    //   بعينه **لا يُطابَق مطابقةً مستقلّة**: الطرفان يقرآن نفسَ المصدر
-    //   فيتّفقان بالبناء.
+    // لم يكن لضريبة مرتجع الشراء **مصدرٌ مستقلٌّ في المستودع كلِّه**: لا جدولَ
+    // مستنداتٍ للمرتجع، والمذكرةُ في `safe_transactions` مبلغُ تصحيحِ رصيدٍ
+    // إجماليّ، و`stock_movements` كمّيّاتٌ وتكلفةٌ لا ضريبة. فكان الطرحُ هنا
+    // **مشتقّاً من الأستاذ** — الطرفان يقرآن مصدراً واحداً ويتّفقان بالبناء،
+    // فهذا المكوِّنُ بعينه لا يُطابَق مطابقةً مستقلّة.
     //
-    // ولماذا يبقى هذا أفضلَ من تركه؟ لأنّ الفرقَ الزائفَ الدائمَ كان
-    // **يُغرق التقريرَ كلَّه**: أيُّ خطأِ ترحيلٍ حقيقيٍّ في المشتريات كان
-    // يختفي داخلَ رقمٍ لا يعود صفراً أبداً. فبعد الطرح تعود بقيّةُ
-    // المكوّنات قابلةً للكشف، ويُفصَح عن المكوِّن المشتقِّ في
-    // [VatReconciliationResult.inputVatReturns] كي يراه المحاسبُ رقماً
-    // مستقلّاً لا مندمجاً.
+    // وكان ذلك أفضلَ من تركه: الفرقُ الزائفُ الدائمُ كان **يُغرق التقريرَ
+    // كلَّه** — أيُّ خطأِ ترحيلٍ حقيقيٍّ في المشتريات يختفي داخلَ رقمٍ لا يعود
+    // صفراً أبداً.
     //
-    // والعلاجُ الجذريُّ — أن يكتب مسارُ المرتجع مستنداً بضريبته كما يفعل
-    // طرفُ المبيعات — تغييرُ مخطَّطٍ ومسارِ كتابةٍ ومزامنة، خارجَ نطاق هذا
-    // الإصلاح. **لا تحذف هذا التعليقَ عند تنفيذه؛ احذف الاشتقاق.**
+    // ── والعلاجُ الجذريُّ نُفِّذ (‏§٦‑٢ — أمرُ مالكٍ 2026-09-02) ──────────────
+    //
+    // صار مسارُ المرتجع يكتب **مستنداً بضريبته** في `purchase_returns` (v172)،
+    // من موضعٍ واحدٍ داخلَ `autoPostPurchaseReturn` — القُمعِ الذي تمرُّ به
+    // المسارات الثلاثة — وبتاريخِ الترحيل عينِه. ويُبطَل المستندُ حذفاً ناعماً
+    // مع عكسِ قيده (`voidPurchaseReturnDocs`).
+    //
+    // فالطرحُ أدناه صار **مصدراً ثانياً حقيقيّاً**: مستنداتٌ تُقارَن بأستاذٍ،
+    // لا أستاذٌ يُطرح من نفسه. وبقي [VatReconciliationResult.inputVatReturns]
+    // يُفصح عنه رقماً مستقلّاً للمحاسب.
+    //
+    // ⚠️ **وأثرٌ مقصودٌ يجب أن يُعرَف**: مرتجعٌ وقع **قبل** v172 له قيدٌ بلا
+    // مستند، فيظهر الآن فرقاً في التسوية. وهذا **صوابٌ لا عطب** — وهو عينُ ما
+    // وُجدت المطابقةُ المستقلّةُ لكشفه — ومعدومُ الأثر عمليّاً لأنّ PicPos بلا
+    // تنصيباتٍ سابقة.
     double inputVatReturns = 0;
     try {
-      final inputVatCode = await getMappedAccountCode(
-        'input_vat', AccountingDao.accountPurposes['input_vat']!,
-      );
-      final acc = await getAccountByCode(inputVatCode);
-      if (acc != null) {
-        final row = await customSelect('''
-          SELECT COALESCE(SUM(jel.credit - jel.debit), 0) as amt
-          FROM journal_entry_lines jel
-          JOIN journal_entries je ON je.id = jel.entry_id
-          WHERE jel.account_id = ?
-            AND je.reference_type = 'purchase_return'
-            AND je.entry_date >= ? AND je.entry_date < ?
-            AND je.is_deleted = $boolFalse AND je.is_posted = $boolTrue
-        ''', variables: [Variable(acc.id), startVar, endVar],
-            readsFrom: {journalEntryLines, journalEntries}).getSingle();
-        inputVatReturns = (row.data['amt'] as num).toDouble();
-      }
+      final row = await customSelect('''
+        SELECT COALESCE(SUM(tax), 0) as amt
+        FROM purchase_returns
+        WHERE return_date >= ? AND return_date < ?
+          AND is_deleted = $boolFalse
+      ''', variables: [startVar, endVar],
+          readsFrom: {purchaseReturns}).getSingle();
+      inputVatReturns = (row.data['amt'] as num).toDouble();
     } catch (e) {
       // غيرُ قاتل: بلا الطرح يعود الفرقُ الزائف، ولا تنهار الشاشة.
       debugPrint('[VAT-RECON] ⚠️ تعذّر حسابُ ضريبةِ مرتجعات الشراء: $e');

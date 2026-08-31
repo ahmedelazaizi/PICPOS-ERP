@@ -841,6 +841,12 @@ class ApiPurchaseHandler extends ApiHandlerBase {
         //     reversed "120"'s return JE and flipped its isAutoPosted). Then
         //     flip isAutoPosted=false on the originals so the recreate step's
         //     guard doesn't re-match them.
+        //
+        // §٦‑٢ — ويُبطَل مستندُ المرتجع مع قيده، كنظيره في
+        // `purchases_repository_impl`. بلا هذا تقرأ تسويةُ ض.ق.م على الخادم
+        // ضريبةَ مرتجعٍ أُلغي.
+        await db.voidPurchaseReturnDocs(invoice.id);
+
         final originalEntries = await (db.select(db.journalEntries)
               ..where((e) =>
                   e.referenceType.equals('purchase_return') &

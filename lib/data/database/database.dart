@@ -520,6 +520,9 @@ WHERE id NOT IN (
     Parties,
     PurchaseInvoices,
     PurchaseInvoiceItems,
+    // §٦‑٢ — مستندُ مرتجع المشتريات. جدولٌ **مستقلٌّ** عمداً: صفٌّ في
+    // `purchase_invoices` كان سيدخل خمسةً وثلاثين استعلامَ مشترياتٍ قائماً.
+    PurchaseReturns,
     SalesInvoices,
     SalesInvoiceItems,
     Offers,
@@ -891,7 +894,7 @@ class AppDatabase extends _$AppDatabase {
   // `newColumns`، فرمت `no such column: "role"` وابتلعها `_safeMigrate`
   // (تعدُّها خطأً عديمَ الأثر) — فخُتمت القواعدُ 161 وأعمدةُ المورد لم تُضَف،
   // و`from < 161` لا يعود يفحصها. الخطوةُ الجديدةُ تفحص ثمّ تُصلح.
-  int get schemaVersion => 171;
+  int get schemaVersion => 172;
 
   /// 🔴 جملةُ `CREATE INDEX` صالحةً لـPostgreSQL، مأخوذةً من الجملة التي
   /// ولّدتها drift لـSQLite.

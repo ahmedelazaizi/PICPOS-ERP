@@ -601,3 +601,78 @@ class SaleBomConsumptions extends Table {
   // retries produce identical IDs (idempotency under fire-and-forget pushes).
   TextColumn get globalId => text().unique()();
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// §٦‑٢ — مستندُ مرتجع المشتريات
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// صفٌّ لكلِّ مرتجعِ مشترياتٍ يقع — **مستندٌ مستقلٌّ بتاريخه وضريبته**.
+///
+/// ── لماذا وُجد ─────────────────────────────────────────────────────────────
+///
+/// كان مرتجعُ الشراء بلا صفٍّ في أيِّ جدولِ مستندات: يعيش قيداً في الأستاذ
+/// (`reference_type='purchase_return'`) ومذكّرةَ رصيدٍ في `safe_transactions`
+/// — والمذكّرةُ تحمل **تصحيحَ رصيدٍ لا ضريبة**، و`stock_movements` كمّيّاتٌ
+/// وتكلفةٌ لا ضريبة.
+///
+/// فتسويةُ ض.ق.م كانت تشتقُّ ضريبةَ المرتجع **من الأستاذ نفسِه**، فيقرأ
+/// الطرفان مصدراً واحداً ويتّفقان بالبناء: مكوّنٌ لا يُطابَق مطابقةً مستقلّة.
+/// وهذا الجدولُ هو الطرفُ الثاني الغائب.
+///
+/// ── لماذا جدولٌ مستقلٌّ لا صفٌّ في `purchase_invoices` ────────────────────
+///
+/// طرفُ المبيعات يكتب المرتجعَ صفّاً في `sales_invoices` بـ`sale_type='return'`،
+/// وثمنُ ذلك أنّ **كلَّ** تجميعةِ مبيعاتٍ يجب أن تستثنيه — وقد كُشف في هذه
+/// الجلسة عينِها أنّ ثمانيَ تجميعاتٍ لم تكن تستثنيه (٣‑١). و`purchase_invoices`
+/// له خمسةٌ وثلاثون قارئاً، فصفٌّ جديدٌ فيه يفتح عينَ العطب في خمسةٍ وثلاثين
+/// موضعاً دفعةً واحدة.
+///
+/// فالجدولُ المستقلُّ **إضافيٌّ بالكامل**: لا استعلامَ قائمٌ يراه، ولا تجميعةَ
+/// مشترياتٍ تتغيّر بحرف.
+///
+/// ⚠️ **والتاريخُ حقلٌ مستقلٌّ عن تاريخ الفاتورة الأصليّة عمداً**: مرتجعُ
+/// أكتوبرَ على فاتورةِ سبتمبرَ ينتمي إلى إقرارِ أكتوبر. وتجميعُه على الأصل
+/// كان يُسقط الدوريّةَ ويُفسد كلَّ إقرارٍ شهريّ.
+@TableIndex(name: 'idx_purchase_returns_date', columns: {#returnDate})
+@TableIndex(name: 'idx_purchase_returns_invoice', columns: {#originalInvoiceId})
+class PurchaseReturns extends Table {
+  IntColumn get id => integer().autoIncrement()();
+
+  /// الفاتورةُ الأصليّةُ التي رُدَّ منها.
+  IntColumn get originalInvoiceId =>
+      integer().references(PurchaseInvoices, #id)();
+  IntColumn get supplierId => integer().references(Parties, #id)();
+  IntColumn get warehouseId =>
+      integer().nullable().references(Warehouses, #id)();
+  IntColumn get branchId => integer().nullable().references(Branches, #id)();
+
+  /// تاريخُ **المرتجع** لا الفاتورة — أساسُ الدوريّة الضريبيّة.
+  DateTimeColumn get returnDate => dateTime()();
+
+  RealColumn get subtotal => real().withDefault(const Constant(0))();
+
+  /// ضريبةُ المدخلات المردودة — الحقلُ الذي وُجد الجدولُ لأجله.
+  RealColumn get tax => real().withDefault(const Constant(0))();
+  RealColumn get total => real().withDefault(const Constant(0))();
+
+  /// `cash` · `bank` · `credit`
+  TextColumn get refundMethod =>
+      text().withDefault(const Constant('credit'))();
+  BoolColumn get isFullReturn => boolean().withDefault(const Constant(false))();
+  TextColumn get reason => text().nullable()();
+  IntColumn get userId => integer().nullable().references(Users, #id)();
+  IntColumn get costCenterId =>
+      integer().nullable().references(CostCenters, #id)();
+
+  // Phase 4: Distributed Sync Reliability — نفسُ عقد `PurchaseInvoices`.
+  TextColumn get globalId => text().nullable().unique()();
+  BoolColumn get isDeleted => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  DateTimeColumn get updatedAt =>
+      dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get lastModifiedAt => dateTime().nullable()();
+  TextColumn get originClientId => text().nullable()();
+  IntColumn get rowVersion => integer().withDefault(const Constant(0))();
+  DateTimeColumn get createdAt =>
+      dateTime().withDefault(currentDateAndTime)();
+}

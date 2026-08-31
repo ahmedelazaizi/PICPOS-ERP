@@ -116,6 +116,11 @@ class DeltaPullService {
     'landed_cost_sheets',      // → purchase_invoices, users
     'landed_cost_items',       // → landed_cost_sheets, parties
     'landed_cost_allocations', // → landed_cost_sheets, products, purchase_invoice_items
+    // §٦‑٢ (v172) — مستندُ مرتجع الشراء. نفسُ علّة هذه الطبقة حرفاً: «القيدُ
+    // كان يُزامَن ومستندُه لا» — إلّا أنّ المستندَ هنا **لم يكن موجوداً
+    // أصلاً**، فتسويةُ ض.ق.م تشتقُّ ضريبتَه من الأستاذ نفسِه. وموضعُه بعد
+    // `purchase_invoices` (طبقة ٣) التي يشير إليها.
+    'purchase_returns',        // → purchase_invoices, parties, warehouses
 
     // ── Tier 6: الفئةُ التشغيليّة (v167 / المرحلة ٣) ──
     //
@@ -276,6 +281,13 @@ class DeltaPullService {
     // أبداً**. والخادمُ يقارن بـ`>` صارمة فلا مسارَ تعافٍ تلقائيّ.
     'currencies', 'party_groups', 'price_lists', 'price_list_items',
     'quotations', 'quotation_items',
+
+    // §٦‑٢ (v172) — `purchase_returns` بلا استراتيجيّةٍ في `fullSync` عمداً:
+    // جدولٌ مصلَّبٌ للمزامنة (‏`global_id` + أعمدةُ الدلتا) فمكانُه مسارُ
+    // الدلتا. وبذرُ علامتِه المائيّة بلا تنزيلٍ كان سيعني عميلاً **لا يرى
+    // مرتجعَ شراءٍ سابقاً لإقلاعه أبداً** — فتظهر تسويةُ ض.ق.م عنده فرقاً
+    // دائماً على بياناتٍ سليمة.
+    'purchase_returns',
 
     // ⚠️ **`printers` و`activity_logs` مستثنيان عن قصدٍ — قرارٌ لا سهو.**
     //   • `printers` يخلط إعداداً **جهازيّاً** (‏`port` = COM3) بإعدادٍ
