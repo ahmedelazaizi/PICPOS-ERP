@@ -29,6 +29,8 @@ Future<void> main() async {
   final containerName =
       'ural-pg-test-${DateTime.now().microsecondsSinceEpoch}';
   String? containerId;
+  // يُخرَج به بعد `finally` — انظر التعليقَ عند إسناده.
+  var exitCodeToReport = 0;
 
   try {
     print('[PG-RUNNER] Starting $_imageTag as $containerName ...');
@@ -68,6 +70,15 @@ Future<void> main() async {
         'test/integration_pg/',
         '--tags', 'pg',
         '--run-skipped', // dart_test.yaml marks `pg` skip by default
+        // ⚠️ **متسلسلٌ إلزاماً.** المِرفقُ (`_support/pg_fixture.dart`) يُسقط
+        // مخطَّطَ `public` ويعيد إنشاءه عند بدء كلِّ ملفّ، وكلُّ الملفّات
+        // تتشارك **قاعدةً واحدة**. فالتوازي يجعل ملفّاً يمحو جداولَ ملفٍّ
+        // آخرَ وهو يعمل، والعَرَضُ `42P06: schema "public" already exists`
+        // يتبعه `LateInitializationError: 'fx'` في `tearDownAll`.
+        //
+        // مقيسٌ 2026-08-31: بالتوازي ‏٢١ ✓ / ٣ ✗، وبالتسلسل ‏٤٦ ✓ / ٠ ✗ —
+        // على نفس الكود بلا تغييرِ سطرٍ واحد.
+        '--concurrency=1',
       ],
       runInShell: true,
       environment: {'PG_TEST_DSN': dsn},
@@ -78,13 +89,17 @@ Future<void> main() async {
       '[PG-RUNNER] flutter test exited $testExit in '
       '${stopwatch.elapsed.inSeconds}s',
     );
-    exit(testExit);
+    // ⚠️ `exit()` هنا كان **يُسرِّب الحاوية**: في Dart يُنهي العمليّةَ فوراً
+    // ولا يُشغّل `finally`، فالحاويةُ تبقى تعمل بعد كلّ تشغيلٍ — ناجحاً كان أم
+    // فاشلاً. والرمزُ يُخزَّن ليخرج **بعد** التنظيف.
+    exitCodeToReport = testExit;
   } finally {
     if (containerId != null) {
       print('[PG-RUNNER] Stopping container $containerName ...');
       await Process.run('docker', ['stop', containerName]);
     }
   }
+  exit(exitCodeToReport);
 }
 
 Future<void> _ensureDockerAvailable() async {
