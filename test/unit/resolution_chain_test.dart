@@ -1,4 +1,4 @@
-// سلسلةُ حسم القالب — ستّةُ مستوياتٍ من الأخصِّ للأعمّ، وأوّلُ مطابقةٍ تفوز.
+// سلسلةُ حسم القالب — سبعةُ مستوياتٍ من الأخصِّ للأعمّ، وأوّلُ مطابقةٍ تفوز.
 //
 // ── العطبُ الذي تمنعه ─────────────────────────────────────────────────────
 // اليومَ الحسمُ يقوم على عَلَمٍ واحدٍ هو `isDefault`، وهو **عالميٌّ لا يعرف
@@ -37,6 +37,7 @@ TemplateResolution _resolve(
   int? branchId = 7,
   int? printerId = 3,
   String locale = 'ar',
+  int? quickSaleTemplateId,
   int? categoryDefaultTemplateId,
 }) =>
     TemplateResolver.resolve(
@@ -46,11 +47,12 @@ TemplateResolution _resolve(
       printerId: printerId,
       locale: locale,
       bindings: bindings,
+      quickSaleTemplateId: quickSaleTemplateId,
       categoryDefaultTemplateId: categoryDefaultTemplateId,
     );
 
 void main() {
-  group('المستوياتُ الستّةُ كلٌّ على حدة', () {
+  group('المستوياتُ السبعةُ كلٌّ على حدة', () {
     test('١ · مستند + فرع + طابعة + لغة', () {
       final r = _resolve([_b(11, branchId: 7, printerId: 3, locale: 'ar')]);
       expect(r.templateId, 11);
@@ -75,17 +77,38 @@ void main() {
       expect(r.level, 4);
     });
 
-    test('٥ · حسمٌ بالفئة — سلوكُ اليوم يبقى للتوافق', () {
-      final r = _resolve(const [], categoryDefaultTemplateId: 15);
-      expect(r.templateId, 15);
+    test('٥ · مِزلاجُ البيع السريع — يرجّح حين لا رابطة', () {
+      final r = _resolve(const [], quickSaleTemplateId: 55);
+      expect(r.templateId, 55);
       expect(r.level, 5);
     });
 
-    test('٦ · التصميمُ المدمجُ حين لا شيء', () {
+    test('٦ · حسمٌ بالفئة — سلوكُ اليوم يبقى للتوافق', () {
+      final r = _resolve(const [], categoryDefaultTemplateId: 15);
+      expect(r.templateId, 15);
+      expect(r.level, 6);
+    });
+
+    test('٧ · التصميمُ المدمجُ حين لا شيء', () {
       final r = _resolve(const []);
       expect(r.templateId, isNull);
-      expect(r.level, 6);
+      expect(r.level, 7);
       expect(r.isBuiltIn, isTrue);
+    });
+
+    // ترتيبُ الخامس بين الرابعِ والسادس — لا يكفي أن يعمل كلٌّ على حدة.
+    test('والمِزلاجُ يخسر أمام رابطةٍ ويفوز على الفئة', () {
+      expect(
+          _resolve([_b(14)], quickSaleTemplateId: 55, categoryDefaultTemplateId: 15)
+              .templateId,
+          14,
+          reason: 'الرابطةُ نيّةٌ أخصُّ من مِزلاجٍ عامّ');
+      expect(
+          _resolve(const [],
+                  quickSaleTemplateId: 55, categoryDefaultTemplateId: 15)
+              .templateId,
+          55,
+          reason: '`isDefault` عَلَمٌ عالميٌّ لا يعرف نيّةً — والمِزلاجُ اختيار');
     });
   });
 

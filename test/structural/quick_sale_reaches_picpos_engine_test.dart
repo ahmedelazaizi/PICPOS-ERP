@@ -10,15 +10,16 @@
 // فالسؤالُ هنا أضيق: هل يبلغ المفتاحُ **شجرةَ PicPos** (‏`pos_picpos/`
 // و`shift_close_picpos/`) وهي وحدَها ما يجري تحت زرِّ «دفع»؟
 //
-// ═══ الطرقُ الأربعُ التي يبلغ بها ═══
+// ═══ الطرقُ الخمسُ التي يبلغ بها ═══
 //
 //   ١. نصُّ المفتاح مباشرةً.
 //   ٢. معرّفُ الصفّ: `kQuickSaleRows.firstWhere((r) => r.id == 'drawer')`.
 //   ٣. مترجِمٌ مسمّى في النموذج: `quickSaleReceiptCopies(policy)`.
 //   ٤. مزوِّدٌ وسيطٌ في `data/providers` يقرأ المفتاحَ، واسمُه مذكورٌ في
 //      شجرة PicPos — كـ`preventItemStackingProvider`.
+//   ٥. حاسمُ القالب (الـDAO) يقرأ المفتاحَ، والمحرّكُ يُشعل الطباعة.
 //
-// وإسقاطُ أيٍّ من الأربع يُنتج بلاغاً كاذباً، وقد قِيس ذلك: نسخةٌ تبحث عن
+// وإسقاطُ أيٍّ منها يُنتج بلاغاً كاذباً، وقد قِيس ذلك: نسخةٌ تبحث عن
 // نصِّ المفتاح وحدَه تعدّ عشرةَ مفاتيحَ ميّتةً وكلُّها حيّة.
 
 import 'dart:io';
@@ -96,6 +97,31 @@ void main() {
     return buffer.toString().contains("'$key'");
   }
 
+  /// أسماءُ الثوابت في النموذج التي تحمل نصَّ [key].
+  ///
+  /// ⚠️ **بدونها يقرأ الفحصُ صفراً كاذباً**: القارئُ قد يستعمل ثابتاً مسمّىً
+  /// (`kQuickSaleReceiptTemplateKey`) لا نصَّ المفتاح، فالبحثُ عن النصّ وحدَه
+  /// يعدّ الصفَّ ميّتاً وهو حيّ. مقيسٌ على `tpl` قبل هذا السطر بدقائق.
+  List<String> constantsFor(String key) => [
+        for (final m
+            in RegExp("const\\s+(\\w+)\\s*=\\s*'$key'\\s*;").allMatches(model))
+          m.group(1)!,
+      ];
+
+  /// هل يقرأ **حاسمُ القالب** أيّاً من [tokens]؟
+  ///
+  /// ⚠️ **ملفٌّ واحدٌ بعينه، وهو القارئُ الفعليّ.** و`template_resolver.dart`
+  /// مستبعَدٌ عمداً رغم أنّه يذكر الثابت: هو نقيٌّ لا يقرأ إعداداً، وإنّما
+  /// يعرض اسمَ المفتاح مفتاحاً للسطر في شاشة الحسم. فإدراجُه كان يُبقي
+  /// الحارسَ أخضرَ لو توقّف الـDAO عن القراءة — أي حارسٌ يحرس ذِكرَ اسمٍ لا
+  /// وصلةً.
+  bool resolverDaoReads(List<String> tokens) {
+    final f = File('lib/data/database/daos/template_binding_dao.dart');
+    if (!f.existsSync()) return false;
+    final src = f.readAsStringSync();
+    return tokens.any(src.contains);
+  }
+
   /// بأيّ طريقةٍ يبلغ الصفُّ محرّكَ PicPos؟ — `null` حين لا يبلغ.
   String? reach(QuickSaleRow row) {
     if (engine.contains("'${row.settingKey}'")) return 'نصُّ المفتاح';
@@ -110,6 +136,20 @@ void main() {
     // `negstock` عبر `enable_negative_sales`.
     final mirror = row.mirrorKey;
     if (mirror != null && dataLayerReads(mirror)) return 'مرآة $mirror';
+
+    // ٥ · سلسلةُ حسم القالب — يقرؤها الحاسمُ، ويشعلها المحرّكُ بنداء الطباعة.
+    //
+    // ⚠️ **مشروطةٌ بشقَّين عن قصد.** «طبقةُ البيانات تقرأ المفتاح» وحدَها هي
+    // عينُ الفحص الفضفاض الذي بُني هذا الملفُّ ليتجاوزه (‏`auto_print_receipt`
+    // كان له قارئٌ في سندِ مصروف). فيُشترط معه أنّ شجرةَ PicPos **تُشعل
+    // الطباعةَ فعلاً** — وإلّا فالمفتاحُ يُقرأ في مسارٍ لا يمرُّ به زرُّ الدفع.
+    if (resolverDaoReads([
+          "'${row.settingKey}'",
+          ...constantsFor(row.settingKey),
+        ]) &&
+        RegExp(r'printInvoice\(|_tryPrintReceipt\(').hasMatch(engine)) {
+      return 'سلسلةُ حسم القالب';
+    }
     return null;
   }
 
@@ -141,7 +181,7 @@ void main() {
         }
         expect(how, isNotNull,
             reason: 'الصفُّ «${row.id}» موسومٌ `enforced: true` ولا يبلغ '
-                'شجرةَ PicPos بأيٍّ من الطرق الأربع ⇒ **ميزةٌ ميّتةٌ '
+                'شجرةَ PicPos بأيٍّ من الطرق الخمس ⇒ **ميزةٌ ميّتةٌ '
                 'صامتة**: المديرُ يبدّله ولا يتغيّر شيء.');
       });
     }

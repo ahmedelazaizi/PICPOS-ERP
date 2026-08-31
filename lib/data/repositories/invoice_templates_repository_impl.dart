@@ -135,6 +135,10 @@ class InvoiceTemplatesRepositoryImpl implements IInvoiceTemplatesRepository {
   Future<List<db.TemplateBinding>> getAllBindings() => _db.getAllBindings();
 
   @override
+  Future<int?> quickSaleTemplateId(String documentType) =>
+      _db.quickSaleTemplateIdFor(documentType);
+
+  @override
   Future<List<db.TemplateBinding>> getBindingsForTemplate(int templateId) =>
       _db.getBindingsForTemplate(templateId);
 

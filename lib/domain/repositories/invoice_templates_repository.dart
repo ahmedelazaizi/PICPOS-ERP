@@ -38,6 +38,16 @@ abstract class IInvoiceTemplatesRepository {
   /// كلُّ الرابطات — تقرؤها شاشتا المكتبة والحسم.
   Future<List<db.TemplateBinding>> getAllBindings();
 
+  /// القالبُ الذي يختاره مِزلاجُ «القالب المستخدم» — المستوى الخامس.
+  ///
+  /// `null` حين لا رأيَ للمِزلاج أو لا يجد قالبَه.
+  ///
+  /// ⚠️ **ويمرُّ من هنا لا من القاعدة مباشرةً**: شاشةُ الحسم تُبنى في
+  /// الاختبارات بمستودعٍ زائف، فاعتمادُ مزوّدها على `databaseProvider`
+  /// يفتح قاعدةً حقيقيّةً في اختبار ودجت — ومقيسٌ أنّه يُعلّق `pumpAndSettle`
+  /// حتّى المهلة.
+  Future<int?> quickSaleTemplateId(String documentType);
+
   /// رابطاتُ قالبٍ بعينه — يقرؤها زرُّ الحذف قبل أن يرفض.
   Future<List<db.TemplateBinding>> getBindingsForTemplate(int templateId);
 

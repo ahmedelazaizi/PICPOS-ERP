@@ -61,7 +61,6 @@ final printResolutionRowsProvider =
   ref.watch(templateLibraryRefreshProvider);
 
   final repo = ref.watch(invoiceTemplatesRepositoryProvider);
-  final db = ref.watch(databaseProvider);
   final branchId = ref.watch(resolutionBranchProvider);
   final locale = ref.watch(resolutionLocaleProvider);
 
@@ -99,12 +98,17 @@ final printResolutionRowsProvider =
     return null;
   }
 
-  // ⚠️ **المِزلاجُ يُقرأ من الـDAO نفسِه** لا يُعاد حسابُه هنا: شاشةُ الحسم
-  // تدّعي أنّها تصف ما يقع على الورق، فمنطقان متوازيان يعنيان شاشةً تُطمئن
-  // على قالبٍ آخر. وهو `null` لكلِّ نوعٍ سوى `sales_receipt`.
+  // ⚠️ **المِزلاجُ يُقرأ من نفس المصدر** الذي يقرؤه مسارُ الطباعة، لا يُعاد
+  // حسابُه هنا: شاشةُ الحسم تدّعي أنّها تصف ما يقع على الورق، فمنطقان
+  // متوازيان يعنيان شاشةً تُطمئن على قالبٍ آخر. وهو `null` لكلِّ نوعٍ سوى
+  // `sales_receipt`.
+  //
+  // ⚠️ **وعبر المستودع لا القاعدة**: هذه الشاشةُ تُبنى في اختبارات الودجت
+  // بمستودعٍ زائف، و`ref.watch(databaseProvider)` هنا كان يفتح قاعدةً
+  // حقيقيّةً فيها فيُعلَّق `pumpAndSettle` حتّى المهلة. مقيسٌ لا مفترَض.
   final quickSaleIds = <String, int?>{
     for (final type in TemplateResolver.documentTypes)
-      type: await db.quickSaleTemplateIdFor(type),
+      type: await repo.quickSaleTemplateId(type),
   };
 
   // القرارُ الأوّل: احسم كلَّ نوعٍ، ثمّ اقرأ التصادماتِ من الحصيلة. فتقاسمُ

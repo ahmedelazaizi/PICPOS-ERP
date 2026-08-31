@@ -88,6 +88,12 @@ class _FakeTemplatesRepo implements IInvoiceTemplatesRepository {
   @override
   Future<List<TemplateBinding>> getAllBindings() async => bindings;
 
+  /// ⚠️ **صريحةٌ لا عبر `noSuchMethod`**: الأخيرةُ ترمي، والمزوّدُ ينتظرها
+  /// فيُعلَّق `pumpAndSettle` حتّى المهلة بدل أن يُبلغ عن خطأ. و`null` هنا
+  /// تعني «لا مِزلاجَ في هذه التجهيزة» — وهو ما يفحصه بقيّةُ الملفّ.
+  @override
+  Future<int?> quickSaleTemplateId(String documentType) async => null;
+
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
@@ -219,7 +225,7 @@ void main() {
   });
 
   group('اللوحةُ تشرح السلسلةَ كاملةً', () {
-    testWidgets('المستوياتُ الستّةُ معروضةٌ وفائزٌ واحدٌ موسوم', (tester) async {
+    testWidgets('المستوياتُ السبعةُ معروضةٌ وفائزٌ واحدٌ موسوم', (tester) async {
       await open(tester, const Size(1920, 1080));
 
       expect(find.text('سلسلة السقوط'), findsOneWidget);
@@ -228,8 +234,9 @@ void main() {
         '٢ · مستند + فرع + لغة',
         '٣ · مستند + لغة',
         '٤ · مستند',
-        '٥ · الفئة (السلوك القائم)',
-        '٦ · التصميم المدمج في الكود',
+        '٥ · مِزلاج البيع السريع',
+        '٦ · الفئة (السلوك القائم)',
+        '٧ · التصميم المدمج في الكود',
       ]) {
         expect(find.text(level), findsOneWidget, reason: 'المستوى «$level» غائب');
       }
