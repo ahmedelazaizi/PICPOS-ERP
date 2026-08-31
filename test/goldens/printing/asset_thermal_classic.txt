@@ -70,6 +70,7 @@ PAGE 1 204.09x697.87
   TXT 173.19,263.26 NotoNaskhArabic-Regular 11.00 «ﺍﻟﺨﺼﻢ»
   TXT 6.44,263.26 NotoNaskhArabic-Regular 11.00 «-5.00»
   TXT 169.92,240.53 NotoNaskhArabic-Regular 11.00 «ﺍﻟﻀﺮﻳﺒﺔ»
+  TXT 145.15,240.53 NotoNaskhArabic-Regular 11.00 «16%»
   TXT 6.96,240.53 NotoNaskhArabic-Regular 11.00 «11.76»
   TXT 177.72,217.79 NotoNaskhArabic-Regular 11.00 «ﺭﺳﻮﻡ»
   TXT 142.22,217.79 NotoNaskhArabic-Regular 11.00 «ﺍﻟﺘﻮﺻﻴﻞ»

@@ -85,6 +85,7 @@ PAGE 1 595.27x841.88
   TXT 558.24,35.65 NotoNaskhArabic-Regular 12.00 «ﺿﺮﻳﺒﺔ»
   TXT 530.74,35.65 NotoNaskhArabic-Regular 12.00 «ﺍﻟﻘﻴﻤﺔ»
   TXT 494.90,35.65 NotoNaskhArabic-Regular 12.00 «ﺍﻟﻤﻀﺎﻓﺔ»
+  TXT 467.88,35.65 NotoNaskhArabic-Regular 12.00 «16%»
   TXT 12.74,35.65 NotoNaskhArabic-Regular 12.00 «11.76»
   LIN 583.93,359.24 -> 11.34,359.24
   LIN 583.93,304.59 -> 11.34,304.59

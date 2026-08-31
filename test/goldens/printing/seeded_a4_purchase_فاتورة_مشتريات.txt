@@ -69,6 +69,7 @@ PAGE 1 595.27x841.88
   TXT 518.13,440.48 NotoNaskhArabic-Regular 12.00 «ﺍﻟﻔﺮﻋﻲ»
   TXT 12.68,440.48 NotoNaskhArabic-Regular 12.00 «611.76»
   TXT 552.84,416.04 NotoNaskhArabic-Regular 12.00 «ﺍﻟﻀﺮﻳﺒﺔ»
+  TXT 525.81,416.04 NotoNaskhArabic-Regular 12.00 «16%»
   TXT 12.74,416.04 NotoNaskhArabic-Regular 12.00 «11.76»
   TXT 542.49,389.47 NotoNaskhArabic-Bold 14.00 «ﺍﻹﺟﻤﺎﻟﻲ»
   TXT 12.46,389.47 NotoNaskhArabic-Bold 14.00 «626.76»

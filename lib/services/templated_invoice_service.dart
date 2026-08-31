@@ -1,5 +1,8 @@
 import 'dart:async' show unawaited;
 import 'dart:convert';
+// ⚠️ `show Value` وحدَها: استيرادُ drift كاملاً يُظلّل `isNull`/`isNotNull`
+// اللتين يعرّفهما `matcher` — وهو التباسٌ وقع في هذا المستودع من قبل.
+import 'package:drift/drift.dart' show Value;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'generators/base_generator.dart';
@@ -488,7 +491,8 @@ class TemplatedInvoiceService {
         'elements=${templateData.elements.length} '
         'shift=${shift != null}'));
 
-    final elements = orderElementsForPrint(templateData.elements);
+    final elements =
+        await _withTaxRateLabels(db, orderElementsForPrint(templateData.elements));
 
     debugPrint(
       '[TemplatedInvoice] Template: "${templateData.template.name}", elements: ${elements.length}, items: ${items.length}',
@@ -829,6 +833,89 @@ class TemplatedInvoiceService {
   ///
   /// و`_docDecimals` تُحسم قبل هذا في `printWithTemplate` من إعدادات
   /// الجدول، فالمساران يقرآن نفسَ المنازل.
+  // ── §٤‑٦ — نسبةُ الضريبة على الورقة تأتي من الإعداد ──────────────────────
+  //
+  // قرارُ المالك 2026-08-31: الورقةُ تطابق الشاشة. والشاشةُ تعرض
+  // `pos_default_tax_rate` مئويّةً، فالورقةُ مثلُها.
+  //
+  // وكانت النسبةُ **نصّاً في القالب** (‏«ضريبة القيمة المضافة ١٤٪») فتكذب على
+  // كلِّ منشأةٍ نسبتُها غيرُ ذلك — ونُزعت. وهذا يُعيدها **محسوبةً**.
+
+  /// حقلٌ يعرض مبلغَ ضريبةِ المستند — لا عمودَ ضريبةٍ في جدول الأصناف.
+  ///
+  /// ⚠️ **والمخطَّطان معاً**: القوالبُ الحديثةُ `variable`+`tax_amount`،
+  /// و`a4_commercial` القديمُ نوعُه `tax` بلا `content`.
+  static bool _isDocumentTaxField(InvoiceTemplateElement e) =>
+      e.elementType == 'tax' ||
+      e.content == 'tax' ||
+      e.content == 'tax_amount';
+
+  /// النسبةُ المئويّةُ من الإعداد — أو `null` إن تعذّرت القراءة.
+  ///
+  /// التخزينُ **كسريّ** (‏0.14 = ١٤٪) كما `posDefaultTaxRateProvider`،
+  /// والافتراضُ نفسُه كي لا تختلف الورقةُ عن الشاشة.
+  static Future<double?> _systemTaxPercent(AppDatabase db) async {
+    try {
+      final raw = await db.getSettingValue('pos_default_tax_rate');
+      final rate = raw == null ? 0.16 : (double.tryParse(raw) ?? 0.16);
+      return rate * 100;
+    } catch (_) {
+      // إعدادٌ لا يُقرأ لا يُسقط طباعةً — تبقى التسميةُ بلا نسبة.
+      return null;
+    }
+  }
+
+  /// ١٦ لا ١٦٫٠٠ · و١٢٫٥ تبقى ١٢٫٥.
+  ///
+  /// ⚠️ **ولا `v == v.roundToDouble()`**: التخزينُ كسريٌّ والضربُ في ١٠٠
+  /// عائمٌ ثنائيّ، فـ`0.07 * 100` تساوي `7.000000000000001` — فتُطبع على
+  /// الورقة بحرفها. مقيسٌ لا مفترَض. والتقريبُ ثمّ قصُّ الأصفار يحسمها،
+  /// و`toStringAsFixed` يضمن وجودَ فاصلةٍ فلا يُبتر رقمٌ صحيح.
+  static String _fmtPercent(double v) =>
+      v.toStringAsFixed(3).replaceFirst(RegExp(r'\.?0+$'), '');
+
+  /// يُلحق النسبةَ بتسمية حقلِ الضريبة — **موضعٌ واحدٌ يكفي المحرّكَين**.
+  ///
+  /// كلاهما يقرأ `labelAr`/`labelEn` من العنصر نفسِه (‏`_resolveValue` في
+  /// راسم التدفّق، و`_labelOf` في مسار النطاقات)، فالتزيينُ هنا يغطّي ١ و٢
+  /// معاً بلا تكرارِ منطقٍ في راسمَين.
+  ///
+  /// ⚠️ **و`ltrTagInRtl` شرطٌ لا زينة**: مقيسٌ أنّ `١٤٪` تصل الورقةَ `٤١٪`
+  /// و`(14%)` تصل `(%14)` — الرقمُ ينقلب داخلَ فقرةٍ عربيّة بقاعدة W2.
+  /// وLRM في الصدر يصير أقربَ صنفٍ قويٍّ سابقٍ فتبقى الأرقامُ `EN` وتتّصل.
+  ///
+  /// وRLM في الختم لا LRM: راسمُ التدفّق يكتب `'$label: $value'` سطراً
+  /// واحداً، وختمٌ يساريٌّ يجرّ النقطتين **والقيمةَ** إلى جزيرةٍ واحدةٍ
+  /// فتُرسَم القيمةُ يمينَ النسبة — أي تُقرأ قيمةٌ في موضع نسبة. مقيسٌ على
+  /// البصمة الذهبيّة، وتفصيلُه في [pv.ltrTagInRtl].
+  ///
+  /// ولا تُلحَق بتسميةٍ فارغة: «14%» وحدَها في مكان التسمية أسوأُ من غيابها.
+  static Future<List<InvoiceTemplateElement>> _withTaxRateLabels(
+    AppDatabase db,
+    List<InvoiceTemplateElement> elements,
+  ) async {
+    if (!elements.any(_isDocumentTaxField)) return elements;
+
+    final percent = await _systemTaxPercent(db);
+    if (percent == null || percent <= 0) return elements;
+    final suffix = ' ${pv.ltrTagInRtl('${_fmtPercent(percent)}%')}';
+
+    return [
+      for (final e in elements)
+        if (!_isDocumentTaxField(e))
+          e
+        else
+          e.copyWith(
+            labelAr: (e.labelAr == null || e.labelAr!.isEmpty)
+                ? const Value.absent()
+                : Value('${e.labelAr}$suffix'),
+            labelEn: (e.labelEn == null || e.labelEn!.isEmpty)
+                ? const Value.absent()
+                : Value('${e.labelEn}$suffix'),
+          ),
+    ];
+  }
+
   static pv.PrintPayload _payloadOf({
     required String invoiceNumber,
     required DateTime date,
