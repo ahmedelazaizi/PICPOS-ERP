@@ -469,7 +469,40 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
     await Future<void>.delayed(Duration.zero);
     if (!mounted) return;
 
-    final systemTaxRate = ref.read(posDefaultTaxRateProvider).value ?? 0;
+    // ⚠️ **عرفان متعاكسان من إعدادٍ واحد**: `SalesInvoiceForm` تأخذ النسبةَ
+    // **كسريّةً** (تضربها في ١٠٠ عند العرض)، و`PicPosInvoiceForm` تأخذها
+    // **مئويّةً** كما `Products.taxRate` التي تجاورها في
+    // `p.taxRate > 0 ? p.taxRate : widget.systemTaxRate`. فيُقرأ كلٌّ
+    // بمزوّده بدل ضربةٍ يدويّةٍ تُنسى في أحد الفرعين.
+    //
+    // وكانت `ref.read(p).value` **قراءةً باردة**: `FutureProvider` يرجع
+    // `null` قبل اكتمال مستقبَله، فتسقط إلى صفرٍ — أي فاتورةٌ بلا ضريبةٍ
+    // إطلاقاً، صامتةً.
+    //
+    // ⚠️ **و`.future` وحدَها لا تكفي**: في Riverpod 3 كلُّ مزوّدٍ
+    // `autoDispose` افتراضاً، و`ref.read(p.future)` **لا يُنشئ مستمعاً**
+    // يُبقيه حيّاً — فتُرمى النسخةُ قبل أن يكتمل المستقبَل ولا يعود أبداً.
+    // وهو عينُ التعلّق الموصوف في `purchases_picpos_crud`، فيُبقى حيّاً
+    // ويُغلَق في `finally`.
+    //
+    // والإخفاقُ يسقط إلى الافتراض لا إلى صفر: حوارٌ لا يُفتح لأجل إعدادٍ
+    // أسوأُ من نسبةٍ افتراضيّة، وصفرٌ صامتٌ أسوأُ من الاثنين.
+    final keepTaxAlive =
+        ref.listenManual(posDefaultTaxPercentProvider, (_, _) {});
+    double systemTaxPercent;
+    try {
+      systemTaxPercent = await ref
+          .read(posDefaultTaxPercentProvider.future)
+          .timeout(const Duration(seconds: 10));
+    } catch (e) {
+      systemTaxPercent = kPosDefaultTaxPercentFallback;
+      unawaited(DiagnosticLogger.log('SALES-FORM',
+          'تعذّرت قراءةُ نسبة الضريبة — سقوطٌ إلى $systemTaxPercent٪ ($e)'));
+    } finally {
+      keepTaxAlive.close();
+    }
+    // `SalesInvoiceForm` كسريّةُ العقد — تُشتقّ من المئويّة فلا قراءةَ ثانية.
+    final systemTaxRate = systemTaxPercent / 100;
     final activeWarehouses =
         warehousesList.whereType<WarehouseData>().toList();
 
@@ -586,7 +619,7 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
                 rawProducts: products,
                 warehouses: filteredWarehouses,
                 costCenters: costCentersList,
-                systemTaxRate: systemTaxRate,
+                systemTaxPercent: systemTaxPercent,
               ),
       ),
     );
@@ -611,7 +644,8 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
     required List<Product> rawProducts,
     required List<WarehouseData> warehouses,
     required List<CostCenter> costCenters,
-    required double systemTaxRate,
+    /// **مئويّةٌ** (‏١٦) لا كسر (‏٠٫١٦) — انظر [posDefaultTaxPercentProvider].
+    required double systemTaxPercent,
   }) {
     return PicPosInvoiceForm(
       kind: PicPosInvoiceKind.sales,
@@ -639,7 +673,7 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
         for (final c in costCenters)
           PicPosNamedOption(id: c.id, name: c.name),
       ],
-      systemTaxRate: systemTaxRate,
+      systemTaxRate: systemTaxPercent,
       invoiceNumberPreview: 'يُولَّد تلقائياً',
       userName: ref.read(authProvider).user?.displayName ?? '',
       initialWarehouseId: warehouses.length == 1 ? warehouses.first.id : null,

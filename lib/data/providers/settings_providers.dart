@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/config/business_profile_provider.dart';
 import '../../core/config/industry_tables_policy.dart';
+import '../../domain/models/table_order_totals.dart';
 import '../repositories/settings_repository_cached.dart';
 import 'providers.dart';
 
@@ -293,14 +294,46 @@ final posStockAlertModeProvider = FutureProvider<String>((ref) async {
   return value ?? 'zero';
 });
 
+/// النسبةُ الافتراضيّةُ **كسريّاً** حين لا إعدادَ ولا قراءة.
+const double kPosDefaultTaxRateFallback = 0.16;
+
+/// ونظيرتُها **مئويّةً** — لمن يسقط إلى الافتراض في مسارٍ مئويّ.
+const double kPosDefaultTaxPercentFallback = 16.0;
+
 /// Default tax rate for POS (default: 0.16)
+///
+/// ⚠️ **كسريّةٌ لا مئويّة**: `0.16` تعني ١٦٪. وهذا عرفُ التخزين في
+/// `pos_default_tax_rate` وفي `TableOrders.taxRate`، بينما `Products.taxRate`
+/// و`CartItemEntity.taxRate` و`FinancialUtils.calculateTaxAmount` كلُّها
+/// **مئويّة**. فمن يمرّرها إلى مستهلكٍ مئويٍّ فليستعمل
+/// [posDefaultTaxPercentProvider] — لا هذه.
 final posDefaultTaxRateProvider = FutureProvider<double>((ref) async {
   final db = ref.watch(databaseProvider);
   final value = await db.getSettingValue('pos_default_tax_rate');
   if (value != null) {
-    return double.tryParse(value) ?? 0.16;
+    return double.tryParse(value) ?? kPosDefaultTaxRateFallback;
   }
-  return 0.16;
+  return kPosDefaultTaxRateFallback;
+});
+
+/// نفسُ الإعداد **مئويّةً** (‏١٦) لا كسراً (‏٠٫١٦).
+///
+/// ── لماذا مزوِّدٌ ثانٍ لا ضربٌ عند المنادي ────────────────────────────────
+/// العرفان يلتقيان في سطرٍ واحدٍ داخل نماذج الفواتير:
+///
+///     final rate = p.taxRate > 0 ? p.taxRate : widget.systemTaxRate;
+///
+/// و`p.taxRate` منسوخةٌ عن `Products.taxRate` **مئويّةً**. فتمريرُ الكسر
+/// كان يُنتج عطبَين معاً على صنفٍ بلا نسبةٍ خاصّة: الشريحةُ تعرض
+/// «ضريبة 0%» (‏`0.16.toStringAsFixed(0)`)، والسطرُ يُحسَب بـ**٠٫١٦٪ بدل
+/// ١٦٪** — بخسٌ في ض.ق.م بمئةِ ضعف. وقع في نموذجَي المبيعات والمشتريات
+/// بهوية PicPos معاً.
+///
+/// والتحويلُ يمرّ بالمحوّل المعتمد ([TableOrderTotals.taxPercentFromRate])
+/// كي يبقى في المشروع **مصدرٌ واحدٌ** لهذه الضربة.
+final posDefaultTaxPercentProvider = FutureProvider<double>((ref) async {
+  final rate = await ref.watch(posDefaultTaxRateProvider.future);
+  return TableOrderTotals.taxPercentFromRate(rate);
 });
 
 /// Current industry mode provider (retail, supermarket, restaurant, cafe)

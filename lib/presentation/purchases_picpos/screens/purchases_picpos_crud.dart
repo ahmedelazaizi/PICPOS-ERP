@@ -124,7 +124,11 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
     final keepAlive = <ProviderSubscription<Object?>>[
       ref.listenManual(allWarehousesProvider, (_, _) {}),
       ref.listenManual(allCostCentersProvider, (_, _) {}),
-      ref.listenManual(posDefaultTaxRateProvider, (_, _) {}),
+      // ⚠️ **المئويُّ هو المقروء، فهو الذي يُبقى حيّاً.** وإبقاءُ الخامِ
+      // وحدَه لا يكفي: `posDefaultTaxPercentProvider` نسخةٌ مستقلّةٌ يُرمى
+      // قبل أن يكتمل مستقبَلُه — وهو عينُ التعلّق الموصوف أعلاه. وإبقاؤه
+      // يُبقي الخامَ تبعاً لأنّه يراقبه.
+      ref.listenManual(posDefaultTaxPercentProvider, (_, _) {}),
     ];
     try {
       final controller = ref.read(purchaseInvoicesControllerProvider.notifier);
@@ -147,8 +151,13 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
           .read(allCostCentersProvider.future)
           .timeout(const Duration(seconds: 10));
       // النسبةُ من الإعداد لا رقمٌ مطبوع — «١٤٪» في التصميم قيمةُ عيّنة.
+      //
+      // ⚠️ **مئويّةٌ لا كسر**: `PicPosInvoiceForm` تعرضها بـ
+      // `toStringAsFixed(0)` وتستعملها احتياطاً لصنفٍ بلا نسبةٍ خاصّةٍ بجوار
+      // `Products.taxRate` المئويّة. وكان يُمرَّر هنا الكسرُ (‏٠٫١٦) فتعرض
+      // الشريحةُ «ضريبة 0%» ويُحسَب السطرُ بـ٠٫١٦٪ بدل ١٦٪.
       final taxRate = await ref
-          .read(posDefaultTaxRateProvider.future)
+          .read(posDefaultTaxPercentProvider.future)
           .timeout(const Duration(seconds: 10));
       if (!mounted) return;
 
