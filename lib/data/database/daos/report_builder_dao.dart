@@ -269,6 +269,36 @@ extension ReportBuilderDao on AppDatabase {
     }
   }
 
+  /// 🔴 §٣‑٤ — شرطُ الحذف الناعم لكلّ كيان. `null` = **الجدولُ بلا عمودِ حذف**.
+  ///
+  /// لم يكن في هذا الملفّ ذكرٌ واحدٌ لحذفٍ ناعمٍ إطلاقاً، فكان أيُّ تقريرٍ
+  /// مخصَّصٍ يعرض **الفاتورةَ المحذوفةَ والعميلَ المحذوفَ والقيدَ الملغى** —
+  /// ويجمعها مع القائم. والمستخدمُ لا يملك تمييزَها: التقريرُ لا يعرض العمود.
+  ///
+  /// وستّةٌ من الكيانات السبعة تحمل عمودَ حذف. والعمودُ الحاكمُ يختلف:
+  ///   • الفواتيرُ والقيود → `is_deleted` (منطقيٌّ صريح، وهو المستعمَل في
+  ///     `accounting_reports_dao` و`sales_analytics_dao`)
+  ///   • الأصنافُ والأطرافُ والموظفون → `deleted_at IS NULL` (‏٣٦ موضعاً في
+  ///     المستودع مقابل ٣ للصيغة الدفاعيّة، فالسائدُ هو المتَّبَع)
+  ///   • أرصدةُ المخزون → لا عمودَ حذفٍ أصلاً ⇒ `null` ولا شرط
+  ///
+  /// ⚠️ **ولا يُقصى الملغى (`voided`)**: هذا حارسُ حذفٍ لا حارسُ حالة. الفاتورةُ
+  /// الملغاةُ مستندٌ قائمٌ له حالةٌ معروضة، والمحذوفةُ ليست كذلك.
+  String? _softDeleteClauseFor(String entity) {
+    switch (entity) {
+      case 'sales_invoices':
+      case 'purchase_invoices':
+      case 'journal_entries':
+        return '${_getTableName(entity)}.is_deleted = 0';
+      case 'products':
+      case 'parties':
+      case 'employees':
+        return '${_getTableName(entity)}.deleted_at IS NULL';
+      default:
+        return null; // inventory_balances — لا عمود
+    }
+  }
+
   /// تعبيرُ الحقل المعروض في SQL — **بلا `AS`**.
   ///
   /// المُعلَن في `getAvailableFields` ليس بالضرورة اسمَ العمود: `price` عمودُه
@@ -384,6 +414,11 @@ extension ReportBuilderDao on AppDatabase {
     // حواليه، فأي فلتر مستخدم بـOR ما يقدرش يوسّع النطاق.
     final conditions = <String>[];
     final vars = <Variable>[];
+    // §٣‑٤ — الحذفُ الناعم **أوّلاً وغيرَ مشروطٍ بالنطاق**: المحذوفُ مخفيٌّ عن
+    // المستخدم كاملِ الوصول كما عن المحصور. وبقوسَين كسابقه، فأيُّ فلترٍ
+    // بـ`OR` لا يوسّعه.
+    final softDelete = _softDeleteClauseFor(report.sourceEntity);
+    if (softDelete != null) conditions.add('($softDelete)');
     if (allowedBranchIds != null) {
       if (allowedBranchIds.isEmpty) {
         conditions.add('1 = 0'); // فشل مقفول
