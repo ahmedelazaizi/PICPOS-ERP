@@ -2,8 +2,7 @@
 # نوع=thermal فئة=receipt ورق=80.0mm
 # راسم=TemplatedInvoiceService
 PAGES 1
-PAGE 1 204.09x834.02
-  TXT 86.26,785.94 NotoNaskhArabic-Regular 12.00 «LOGO»
+PAGE 1 204.09x754.42
   TXT 122.03,729.65 NotoNaskhArabic-Bold 16.00 «ﻣﺆﺳﺴﺔ»
   TXT 90.53,729.65 NotoNaskhArabic-Bold 16.00 «ﺍﻟﻨﻮﺭ»
   TXT 40.75,729.65 NotoNaskhArabic-Bold 16.00 «ﺍﻟﺘﺠﺎﺭﻳﺔ»
@@ -115,7 +114,6 @@ PAGE 1 204.09x834.02
   LIN 5.67,425.90 -> 198.42,425.90
   LIN 5.67,320.03 -> 198.42,320.03
   LIN 198.42,84.45 -> 5.67,84.45
-  REC 40.82,748.75 122.45x79.60
   REC 5.67,495.21 34.02x17.62
   REC 39.68,495.21 22.68x17.62
   REC 62.36,495.21 27.21x17.62

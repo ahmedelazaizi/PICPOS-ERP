@@ -1,8 +1,7 @@
 # قالب «الفاتورة الحرارية»
 # راسم=TemplatePdfRenderer
 PAGES 1
-PAGE 1 226.77x733.71
-  TXT 94.97,703.99 NotoNaskhArabic-Regular 14.00 «LOGO»
+PAGE 1 226.77x708.71
   TXT 133.23,676.44 NotoNaskhArabic-Regular 16.00 «ﻣﺆﺳﺴﺔ»
   TXT 102.96,676.44 NotoNaskhArabic-Regular 16.00 «ﺍﻟﻨﻮﺭ»
   TXT 54.27,676.44 NotoNaskhArabic-Regular 16.00 «ﺍﻟﺘﺠﺎﺭﻳﺔ»

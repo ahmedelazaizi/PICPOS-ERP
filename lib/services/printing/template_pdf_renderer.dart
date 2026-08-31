@@ -253,13 +253,17 @@ class TemplatePdfRenderer {
           ),
         );
 
+      // ⚠️ **لا كلمةَ `LOGO` على ورق.** كانت تُرسَم هنا حرفيّاً في كلِّ مستندٍ
+      // يمرُّ بهذا الراسم — إيصالُ عميلٍ يقرؤه المشتري.
+      //
+      // ⚠️ **وفجوةٌ باقيةٌ مُعلَنة**: هذا الراسمُ لا يستقبل `logoBytes` أصلاً
+      // (‏`generatePdf` بلا الحقل، و`TemplateInvoiceData` كذلك، ومناديه
+      // `InvoiceGenerator.printThermalReceipt` لا يستقبله من أحد). فشعارُ
+      // المنشأة **لا يُطبع في هذا المسار إطلاقاً** — والسكوتُ أصدقُ من
+      // كلمةٍ إنجليزيّةٍ نائبةٍ عنه، لكنّه لا يُغني عن توصيله.
       case 'logo':
       case 'image':
-        return pw.Container(
-          height: el.height,
-          alignment: pw.Alignment.center,
-          child: pw.Text('LOGO', style: pw.TextStyle(font: font, fontSize: 14)),
-        );
+        return pw.SizedBox();
 
       case 'barcode':
         final barcodeData = _resolveValue(el, data) ?? data.invoiceNumber;

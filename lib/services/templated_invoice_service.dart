@@ -583,37 +583,25 @@ class TemplatedInvoiceService {
     pw.Widget buildFlowWidget(InvoiceTemplateElement element) {
       final resolvedType = resolveType(element);
 
-      // Special handling for logo — scale to actual paper width
-      if (resolvedType == 'logo') {
-        // Cap at 60% for thermal to prevent oversized logos
-        final maxPercent = paperWidthMm <= 80 ? 0.60 : 1.0;
-        final sizePercent = (element.width / 100.0).clamp(0.15, maxPercent);
-        final logoW = canvasWidth * sizePercent;
-        final logoH = logoW * 0.65;
-        if (logoBytes != null && logoBytes.isNotEmpty) {
-          final image = pw.MemoryImage(logoBytes);
-          return pw.Padding(
-            padding: const pw.EdgeInsets.symmetric(vertical: 4),
-            child: pw.Center(
-              child: pw.Image(
-                image,
-                width: logoW,
-                height: logoH,
-                fit: pw.BoxFit.contain,
-              ),
-            ),
-          );
-        }
-        return pw.Center(
-          child: pw.Container(
-            width: logoW, height: logoH,
-            decoration: pw.BoxDecoration(
-              border: pw.Border.all(color: PdfColors.grey300),
-            ),
-            child: pw.Center(child: pw.Text('LOGO', style: _getStyle(element))),
-          ),
-        );
-      }
+      // ── الشعارُ يمرُّ بـ`_buildElementContent` كسائر العناصر ──────────────
+      //
+      // كان هنا اعتراضٌ يقرأ `element.width` **نسبةً مئويّة**
+      // (‏`width / 100` من عرض الورقة) ويحسب الارتفاعَ `0.65×` متجاهلاً
+      // `element.height`. وهو خطأٌ في الوحدة: `width` نقاطٌ كما في كلِّ عنصرٍ
+      // آخر، ومقيسٌ أنّ الأثرَ ستّةُ أضعافٍ تقريباً في **كلِّ** قالب:
+      //
+      //   a4_professional  ١٣٠ نقطةً مكتوبةً ⇒ ٥٩٥ مطبوعةً (عرضُ الورقة)
+      //   a4_commercial    ١٠٠            ⇒ ٥٩٥
+      //   القوالبُ الحديثة  ٣٨             ⇒ ٢٢٦
+      //
+      // فشعارُ المنشأة يخرج على ورقتها بعرض A4 كاملاً وارتفاعِ ٣٨٧ نقطةً —
+      // ٤٦٪ من الصفحة. وحين لا شعارَ مضبوطاً كان يُملأ ذلك الصندوقُ بكلمة
+      // `LOGO` الحرفيّة، وهي التي تدفع المجاميعَ إلى صفحةٍ ثانية.
+      //
+      // والتنفيذُ الصحيحُ كان **موجوداً وميّتاً** في `_buildElementContent`
+      // يقرأ `width`/`height` نقاطاً — يعترضه هذا البلوكُ قبل أن يُبلَغ.
+      // فحُذف، ولا سقفَ حراريٌّ يلزم: أوسعُ شعارٍ مكتوبٍ ٩٠ نقطةً على ورقةٍ
+      // سعتُها ٢٠٤، وأوسعُ A4 ‏١٣٠ على ٥٩٥.
 
       return _buildElementContent(
         resolvedType: resolvedType,
@@ -1082,16 +1070,16 @@ class TemplatedInvoiceService {
             ),
           );
         }
-        return pw.Center(
-          child: pw.Container(
-            width: element.width,
-            height: element.height,
-            decoration: pw.BoxDecoration(
-              border: pw.Border.all(color: PdfColors.grey300),
-            ),
-            child: pw.Center(child: pw.Text('LOGO', style: style)),
-          ),
-        );
+        // ⚠️ **بلا شعارٍ ⇒ لا شيء، لا صندوقٌ مكتوبٌ فيه `LOGO`.**
+        //
+        // كانت الكلمةُ الإنجليزيّةُ تصل ورقةَ العميل في سبعَ عشرةَ بصمةً
+        // ذهبيّةً من سبعٍ وعشرين — كلُّ فواتير A4 وكشوفِ الحساب وإيصالاتٍ
+        // حراريّة. وصندوقٌ فارغٌ في مستندٍ ماليٍّ ليس نائباً عن شعار؛ هو
+        // عيبُ طباعةٍ يراه المشتري.
+        //
+        // ونظيرُه في هذا الملفّ: الرقمُ الضريبيُّ الغائبُ يُرجع `pw.SizedBox()`
+        // ولا يطبع «TAX ID».
+        return pw.SizedBox();
 
       // Invoice Info
       case 'invoice_title':

@@ -11,6 +11,7 @@
 //   · عددَ الصفحات وقياسَها
 //   · كلَّ نصٍّ بترتيبه ونقطتِه ووجهِ خطّه وحجمه
 //   · كلَّ خطٍّ ومستطيلٍ يُرسم
+//   · وكلَّ صورةٍ **بقياسها على الورق** — الشعارُ خاصّةً
 //
 // ⚠️ ولا يُقاس المطبوعُ ببصمةِ بايتات: حزمةُ `pdf` تكتب مُعرِّفَ وثيقةٍ
 // مشتقّاً من الوقت، فنداءان لنفس المدخل يعطيان بايتاتٍ مختلفة. المقيسُ هنا
@@ -79,6 +80,28 @@ class PdfLineOp {
   });
 }
 
+/// صورةٌ مرسومةٌ (`Do`) — شعارٌ أو باركودُ صورة، **بقياسها على الورق**.
+///
+/// ⚠️ **أُضيفت 2026-08-31 لأنّ غيابَها أعمى البصمات**: الملفُّ يقول إنّه
+/// يقرأ «ما وصل الورقةَ فعلاً»، وكان يقرأ النصوصَ والخطوطَ والمستطيلاتِ
+/// وحدَها. فشعارٌ يُرسم ٥٩٥×٣٨٧ نقطةً — عرضُ A4 كاملاً و٤٦٪ من ارتفاعها —
+/// مرَّ على سبعٍ وعشرين بصمةً ذهبيّةً بلا أن يهتزَّ حرف.
+class PdfImageOp {
+  final int page;
+  final double x;
+  final double y;
+  final double w;
+  final double h;
+
+  const PdfImageOp({
+    required this.page,
+    required this.x,
+    required this.y,
+    required this.w,
+    required this.h,
+  });
+}
+
 class PdfPageProbe {
   final int index;
   final double widthPts;
@@ -86,6 +109,7 @@ class PdfPageProbe {
   final List<PdfTextRun> texts;
   final List<PdfLineOp> lines;
   final List<PdfRectOp> rects;
+  final List<PdfImageOp> images;
 
   const PdfPageProbe({
     required this.index,
@@ -94,6 +118,7 @@ class PdfPageProbe {
     required this.texts,
     required this.lines,
     required this.rects,
+    this.images = const [],
   });
 }
 
@@ -106,6 +131,9 @@ class PdfProbe {
 
   /// كلُّ النصوص عبر الصفحات بترتيب الرسم.
   List<PdfTextRun> get allTexts => [for (final p in pages) ...p.texts];
+
+  /// وكلُّ الصور كذلك.
+  List<PdfImageOp> get allImages => [for (final p in pages) ...p.images];
 
   /// بصمةٌ نصّيّةٌ قابلةٌ للمقارنة والقراءة بالعين.
   ///
@@ -127,6 +155,9 @@ class PdfProbe {
       }
       for (final r in p.rects) {
         b.writeln('  REC ${_n(r.x)},${_n(r.y)} ${_n(r.w)}x${_n(r.h)}');
+      }
+      for (final i in p.images) {
+        b.writeln('  IMG ${_n(i.x)},${_n(i.y)} ${_n(i.w)}x${_n(i.h)}');
       }
     }
     return b.toString();
@@ -295,6 +326,7 @@ class _PdfReader {
       texts: interp.texts,
       lines: interp.lines,
       rects: interp.rects,
+      images: interp.images,
     );
   }
 
@@ -387,6 +419,7 @@ class _ContentInterpreter {
   final texts = <PdfTextRun>[];
   final lines = <PdfLineOp>[];
   final rects = <PdfRectOp>[];
+  final images = <PdfImageOp>[];
 
   _M ctm = [1, 0, 0, 1, 0, 0];
   final _stack = <_M>[];
@@ -466,6 +499,20 @@ class _ContentInterpreter {
         if (a.isNotEmpty && a.last is List) {
           _emitText((a.last as List).cast<Object>());
         }
+        break;
+      // صورةٌ خارجيّة. الرسمُ يقع دائماً في **مربّع الوحدة** `[0,1]²`
+      // ومصفوفةُ `cm` هي التي تعطيه قياسَه وموضعَه — فتحويلُ زاويتَيه يكفي،
+      // ولا حاجةَ لفكِّ بيانات الصورة نفسِها.
+      case 'Do':
+        final p0 = _apply(ctm, 0, 0);
+        final p1 = _apply(ctm, 1, 1);
+        images.add(PdfImageOp(
+          page: pageIndex,
+          x: p0[0] < p1[0] ? p0[0] : p1[0],
+          y: p0[1] < p1[1] ? p0[1] : p1[1],
+          w: (p1[0] - p0[0]).abs(),
+          h: (p1[1] - p0[1]).abs(),
+        ));
         break;
       case 'm':
       case 'l':
