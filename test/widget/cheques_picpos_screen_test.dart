@@ -29,7 +29,11 @@ CommercialPaperData _paper(
       partyId: 5,
       amount: amount,
       issueDate: DateTime(2026, 8, 1),
-      dueDate: due ?? DateTime(2026, 9, 1),
+      // ⚠️ **الافتراضُ نسبيٌّ لا تاريخٌ ثابت.** كان `DateTime(2026, 9, 1)`،
+      //    فلمّا بلغه التقويمُ صارت كلُّ ورقةٍ بلا `due:` مستحقّةً اليومَ ثمّ
+      //    متأخّرةً غداً — وسقط الفحصُ لسببٍ ليس في الكود. والتجهيزةُ التي
+      //    تتعفّن بمرور الوقت تُخفي العطبَ وتخترعه معاً.
+      dueDate: due ?? DateTime.now().add(const Duration(days: 30)),
       status: status,
       createdAt: DateTime(2026, 8, 1),
       rowVersion: 0,
@@ -86,7 +90,11 @@ void main() {
     ),
   ];
 
-  Future<void> open(WidgetTester tester, Size size) async {
+  Future<void> open(
+    WidgetTester tester,
+    Size size, {
+    List<CommercialPaperData>? papersOverride,
+  }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -94,7 +102,7 @@ void main() {
       ProviderScope(
         overrides: [
           commercialPapersRepositoryProvider
-              .overrideWithValue(_FakeRepo(papers, history)),
+              .overrideWithValue(_FakeRepo(papersOverride ?? papers, history)),
           allPartiesProvider
               .overrideWith((ref) => Stream.value(const <Party>[])),
         ],
@@ -173,6 +181,41 @@ void main() {
     expect(find.text('متأخّرة عن موعدها'), findsOneWidget);
     // وتسميةُ المؤشّر تبقى مستقلّةً عن نصّ الصفّ.
     expect(find.text('تجاوزت الاستحقاق'), findsOneWidget);
+    await teardownTree(tester);
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // 🔴 المستحقُّ **اليومَ** ليس متأخّراً
+  // ═══════════════════════════════════════════════════════════════════════
+  //
+  // كان الشرطُ `dueDate.isBefore(DateTime.now())`، و`dueDate` يُخزَّن عند
+  // منتصف الليل — فورقةٌ مستحقّةٌ اليومَ تُعَدّ متأخّرةً منذ أوّل دقيقةٍ من
+  // يومها، في بطاقة المؤشّر وفي سطر الجدول معاً. والبنكُ يقبلها ذلك اليوم.
+  //
+  // ولم يظهر العطبُ قبلَ 2026-09-01 لأنّ تجهيزةَ هذا الملفّ كانت تكتب تاريخاً
+  // ثابتاً في المستقبل — فلمّا بلغه التقويمُ انكشف. والحارسُ هنا **نسبيٌّ**
+  // كي لا يتعفّن مثلَه.
+
+  testWidgets('🔴 ورقةٌ مستحقّةٌ اليومَ لا تُعَدّ متأخّرةً', (tester) async {
+    final now = DateTime.now();
+    final todayPapers = [
+      _paper(1, '8842', direction: 'received', status: 'pending',
+          amount: 18000, due: DateTime(now.year, now.month, now.day)),
+    ];
+
+    await open(tester, const Size(1500, 900), papersOverride: todayPapers);
+    await tester.tap(find.text('جدول الاستحقاق').first);
+    await tester.pumpAndSettle();
+
+    // مرساة: الورقةُ في الجدول فعلاً — وإلّا مرَّ التوكيدُ السلبيُّ على فراغ.
+    expect(find.text('8842'), findsOneWidget,
+        reason: 'الورقةُ المفتوحةُ يجب أن تُعرَض');
+
+    expect(find.text('متأخّرة عن موعدها'), findsNothing,
+        reason: 'مستحقٌّ اليومَ ≠ متأخّر — الشرطُ يقارن ببداية اليوم لا باللحظة');
+    expect(find.text('0'), findsWidgets,
+        reason: 'وبطاقةُ «تجاوزت الاستحقاق» تقول صفراً — والحدُّ نفسُه في '
+            'البطاقة والصفّ');
     await teardownTree(tester);
   });
 

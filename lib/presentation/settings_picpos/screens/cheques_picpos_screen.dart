@@ -703,8 +703,18 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
         .toList()
       ..sort((a, b) => a.dueDate.compareTo(b.dueDate));
 
+    // 🔴 **التأخّرُ يُقاس باليوم لا باللحظة.**
+    //
+    // كان الشرطُ `dueDate.isBefore(DateTime.now())`. و`dueDate` يُخزَّن عند
+    // منتصف الليل (منتقي التاريخ يعيد يوماً بلا وقت)، فورقةٌ مستحقّةٌ **اليومَ**
+    // تصير «قبل الآن» بعد أوّل دقيقةٍ من اليوم — فتُعَدّ متأخّرةً طوالَ يومِ
+    // استحقاقها. والبنكُ يقبلها في ذلك اليوم.
+    //
+    // فالمقارنةُ على **بداية اليوم**: المستحقُّ اليومَ ليس متأخّراً، والمستحقُّ
+    // أمسِ متأخّر.
     final now = DateTime.now();
-    final overdue = open.where((p) => p.dueDate.isBefore(now)).toList();
+    final today = DateTime(now.year, now.month, now.day);
+    final overdue = open.where((p) => p.dueDate.isBefore(today)).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -769,7 +779,9 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
                     // ⚠️ نصٌّ **مختلفٌ** عن تسمية المؤشّر أعلاه («تجاوزت
                     //    الاستحقاق»): تطابقُهما يجعل أيَّ فحصٍ على النصّ
                     //    يعدّ الاثنين، ويجعل المشغّلَ يظنّ العنوانَ صفّاً.
-                    sub: p.dueDate.isBefore(now) ? 'متأخّرة عن موعدها' : null,
+                    // نفسُ حدِّ بطاقة المؤشّر أعلاه — `today` لا `now`. ولو
+                    // افترقا لقالت البطاقةُ عدداً والجدولُ تحتها آخر.
+                    sub: p.dueDate.isBefore(today) ? 'متأخّرة عن موعدها' : null,
                   ),
                   PicPosTextCell(p.amount.toStringAsFixed(0)),
                   PicPosPillCell(

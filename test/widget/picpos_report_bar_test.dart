@@ -77,15 +77,34 @@ void main() {
       expect(find.byIcon(PhosphorIconsBold.calendarBlank), findsOneWidget);
     });
 
+    // ⚠️ **الفتراتُ ليست متنافيةً بالضرورة.** في **أوّلِ كلِّ شهر** يكون مدى
+    //    «الشهر» (‏من أوّل الشهر إلى اليوم) هو **عينُ** مدى «اليوم»، وكذلك
+    //    «السنة» في أوّلِ يناير. فإبرازُ الاثنين سلوكٌ صادق: كلتاهما تصف المدى
+    //    المعروضَ فعلاً، وترجيحُ إحداهما كان سيحتاج قاعدةَ تعادلٍ مخترَعة.
+    //
+    //    وكان الفحصُ يفترض التنافيَ فيسقط في أوّلِ كلِّ شهر — وقد سقط فعلاً
+    //    يوم 2026-09-01. فالمقارنةُ الآن على **المدى** لا على الترتيب.
     testWidgets('والمنتقاةُ هي التي تطابق المدى المعروض', (tester) async {
       final ps = DateRangeFilter.presets();
-      await pump(tester, range: ps[2].range);
+      final selected = ps[2].range;
+      await pump(tester, range: selected);
 
       Text label(String s) => tester.widget<Text>(find.text(s));
+
       expect(label(ps[2].label).style?.fontWeight, FontWeight.w800,
           reason: 'الفترةُ المطابقةُ للمدى ليست هي المُبرَزة.');
-      for (final other in [ps[0], ps[1], ps[3]]) {
-        expect(label(other.label).style?.fontWeight, FontWeight.w700);
+
+      // مرساة: ثمّة فترةٌ واحدةٌ على الأقلّ **تختلف** فعلاً، وإلّا كانت الحلقةُ
+      // أدناه فارغةً ومرَّ الفحصُ بلا أن يقيس شيئاً.
+      final differing = [ps[0], ps[1], ps[3]]
+          .where((p) => !DateRangeFilter.isPresetSelected(selected, p.range))
+          .toList();
+      expect(differing, isNotEmpty,
+          reason: 'مرساة: يجب أن تبقى فترةٌ غيرُ مطابقةٍ ليُقاس عليها');
+
+      for (final other in differing) {
+        expect(label(other.label).style?.fontWeight, FontWeight.w700,
+            reason: 'فترةٌ مداها مختلفٌ يجب ألّا تُبرَز: «${other.label}»');
       }
     });
 
