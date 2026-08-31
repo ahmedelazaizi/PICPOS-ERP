@@ -143,6 +143,16 @@ extension DatabaseStartup on AppDatabase {
       // `allSchemaEntities` تحت بتغطّي **الجداول** بس، والفهارس الخامّة مش
       // كيانات drift فما بتوصلهاش — فلو جدولٌ وصل من هناك بقي بلا فهرسه.
       kCreateBookingResourceSlotIndexSql,
+      // ٦‑٣: تسويةُ ربطِ الحسابات المزدوجِ ثمّ تركيبُ قيدِ التفرّد — **بهذا
+      // الترتيب**. الفهرسُ تعبيريٌّ لأنّ الربطَ العامَّ `cost_center_id IS
+      // NULL` هو عينُ الصفِّ الذي يفلت من `UNIQUE` العاديّ.
+      //
+      // وبخلاف فهرسَي B1/B2 فوق، التسويةُ هنا **آليّةٌ** بقرار المالك
+      // 2026-08-31 (يبقى الأحدثُ بـ`updated_at`): الصفُّ الزائدُ هناك حركةٌ
+      // ذاتُ قيمةٍ ماليّة، وهنا **إعدادٌ** مكرَّرٌ بقاؤه هو الضرر — يجعل
+      // `getAccountByPurpose` يختار الحسابَ عشوائيّاً.
+      kDedupAccountMappingsSql,
+      kCreateAccountMappingsPurposeCcIndexSql,
       // ٦‑١: `e_invoice_status_log` جدولٌ خامٌّ لا كيانُ drift، فتمريرةُ
       // `allSchemaEntities` أدناه لا تصله كذلك. وهو هنا شفاءٌ ذاتيٌّ لقاعدةٍ
       // نُصِّبت قبل هذا الإصلاح: تُنشئه بلا هجرةٍ وبلا فقدِ بيانات.
@@ -358,6 +368,36 @@ extension DatabaseStartup on AppDatabase {
     } catch (e) {
       debugPrint('[Integrity] ⚠ accounts.code UNIQUE check skipped: $e');
     }
+
+    // 5. account_mappings: فهرسٌ فريدٌ تعبيريٌّ على (‏purpose، coalesce(cc,0)).
+    //
+    // ٦‑٣: PG لا يمرُّ بـ`ensureSchemaDefaults` إطلاقاً (تعود مبكّراً على PG)،
+    // ولا بهجرات SQLite التي تكتب هذا الفهرس — فبلا هذه الكتلة تبقى **كلُّ**
+    // قاعدةِ PostgreSQL بلا القيد. وهو نظيرُ الكتلةِ المضافةِ هناك حرفاً بحرف
+    // كي لا تفترق الخلفيّتان.
+    //
+    // والصيغتان مشتركتان مع مسار SQLite ([kDedupAccountMappingsSql] و
+    // [kCreateAccountMappingsPurposeCcIndexSql]) — مصدرٌ واحدٌ لا نسخةٌ ثانية.
+    await dedupAndAdd(
+      'account_mappings UNIQUE (purpose, coalesce(cost_center_id,0))',
+      kDedupAccountMappingsSql,
+      kCreateAccountMappingsPurposeCcIndexSql,
+      () async {
+        // فهرسٌ لا قيدٌ، فلا يظهر في `table_constraints` — والفحصُ على
+        // `pg_indexes`.
+        try {
+          final rows = await customSelect(
+            "SELECT 1 AS x FROM pg_indexes "
+            "WHERE tablename = 'account_mappings' "
+            "  AND indexname = '$kAccountMappingsPurposeCcIndexName' "
+            "LIMIT 1",
+          ).get();
+          return rows.isNotEmpty;
+        } catch (_) {
+          return true; // fail-open كنظائره أعلاه
+        }
+      },
+    );
 
     debugPrint('[Integrity] ✅ Phase 2b complete');
   }

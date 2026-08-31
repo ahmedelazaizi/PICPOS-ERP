@@ -439,6 +439,60 @@ const String kCreateBookingResourceSlotIndexSql =
     'CREATE INDEX IF NOT EXISTS $kBookingResourceSlotIndexName '
     'ON bookings(resource_id, starts_at)';
 
+/// ٦‑٣ — تفرّدُ ربطِ الحسابات على (‏الغرض، مركزُ التكلفة).
+///
+/// `getAccountByPurpose` يختار بـ`limit(1)` بلا `orderBy`، فصفّان لنفس الغرض
+/// يجعلان **اختيارَ الحساب غيرَ حتميّ**: نفسُ الفاتورةِ قد تُرحَّل على حسابٍ
+/// اليومَ وعلى آخرَ غداً. والازدواجُ ميدانيٌّ مُوثَّقٌ في
+/// `accounting_dao_writes.dart` (‏«mirror sync replays can leave more than one
+/// row per purpose key») — و`.limit(1)` هناك مسكّنٌ للعَرَض لا علاجٌ للجذر.
+///
+/// ⚠️ **و`UNIQUE(purpose, cost_center_id)` لا يعالجه**: الربطُ العامُّ
+/// `cost_center_id IS NULL`، و`NULL` لا يساوي `NULL` في قيدِ تفرّد — فالصفُّ
+/// الذي يزدوج هو بعينه الصفُّ الذي يفلت. ولذلك الفهرسُ **تعبيريٌّ** على
+/// `coalesce(cost_center_id, 0)`، وهو الشكلُ المكتوبُ أصلاً في ثلاثِ خطواتِ
+/// هجرةٍ في `epoch_3.dart` — لكنّ `onCreate` يبني من كيانات drift و`onUpgrade`
+/// لا يعمل على قاعدةٍ جديدةٍ ومتجاوَزٌ كلّيّاً على PG، فلم يصل تنصيبةً واحدة.
+///
+/// والمُعلَنُ في صنف الجدول `@TableIndex(idx_account_mappings_purpose)` —
+/// غيرُ فريدٍ وعلى الغرض وحدَه — فلا يسدّ شيئاً من هذا.
+const String kAccountMappingsPurposeCcIndexName =
+    'idx_account_mappings_purpose_cc';
+const String kCreateAccountMappingsPurposeCcIndexSql =
+    'CREATE UNIQUE INDEX IF NOT EXISTS $kAccountMappingsPurposeCcIndexName '
+    'ON account_mappings(purpose, coalesce(cost_center_id, 0))';
+
+/// تسويةُ المزدوج **قبل** تركيب [kCreateAccountMappingsPurposeCcIndexSql].
+///
+/// قرارُ المالك 2026-08-31: **يبقى الأحدثُ بـ`updated_at`**، والتعادلُ يُحسَم
+/// بأكبر `id`. المنطق: آخرُ ما اختاره المستخدمُ في شاشة ربط الحسابات هو
+/// نيّتُه الحاليّة.
+///
+/// ⚠️ والترتيبُ مُلزِم: القيدُ على بياناتٍ مزدوجةٍ يفشل، وحلقةُ الشفاء الذاتيِّ
+/// **تبتلع الفشلَ بصمت** — فتخرج القاعدةُ بلا حمايةٍ ولا بلاغ. ولذلك يُثبِت
+/// الاختبارُ وجودَ الفهرس **بعد** التسوية لا نجاحَ الجملة.
+///
+/// وهذا يخالف عمداً سياسةَ فهرسَي B1/B2 المجاورَين (‏«التسويةُ اليدويّةُ شغلُ
+/// محاسبٍ لا شغلُ إقلاع»): هناك الصفُّ الزائدُ حركةٌ لها قيمةٌ ماليّةٌ مستقلّة،
+/// وهنا الصفُّ الزائدُ **إعدادٌ** مكرَّرٌ لا حركةَ فيه — وبقاؤه هو الضرر.
+///
+/// الصيغةُ مكتوبةٌ بمقارنةٍ مترابطةٍ لا بدوالِّ نوافذَ كي تعمل حرفيّاً على
+/// SQLite وPostgreSQL معاً.
+const String kDedupAccountMappingsSql = '''
+DELETE FROM account_mappings
+WHERE id NOT IN (
+  SELECT m.id
+  FROM account_mappings m
+  WHERE m.id = (
+    SELECT m2.id
+    FROM account_mappings m2
+    WHERE m2.purpose = m.purpose
+      AND coalesce(m2.cost_center_id, 0) = coalesce(m.cost_center_id, 0)
+    ORDER BY m2.updated_at DESC, m2.id DESC
+    LIMIT 1
+  )
+)''';
+
 // ═══════════════════════════════════════════════════════════════════════════
 // DATABASE CLASS
 // ═══════════════════════════════════════════════════════════════════════════
