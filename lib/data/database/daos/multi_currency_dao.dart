@@ -119,9 +119,18 @@ extension MultiCurrencyDao on AppDatabase {
         symbol: 'د.أ',
         isDefault: const Value(true),
         exchangeRate: const Value(1.0),
-        // UUID-First Phase 1 Slice 3: seeded currencies need stable UUID
-        // so every install reconciles to the same base currency row.
-        globalId: Value(UuidV7.generate()),
+        // 🔴 كان `UuidV7.generate()` — **عشوائيّاً لكلِّ تنصيب** — بينما
+        // التعليقُ نفسُه يدّعي «معرِّفٌ ثابتٌ يصالح كلَّ تنصيبٍ على نفس
+        // الصفّ». تعليقٌ يصف نيّةً لم تُنفَّذ.
+        //
+        // ولم يظهر أثرُه لأنّ `currencies` **لم تكن تُسحَب أصلاً**: علامتُها
+        // تُختَم بلا تنزيل (البند ٦‑٤). ويومَ فُتح سحبُها كانت JOD المحلّيّةُ
+        // ستصطدم بـJOD الخادم بمعرِّفَين مختلفَين، ولا ذراعَ مفتاحٍ طبيعيٍّ
+        // لـ`currencies` في `_upsertRow` — فتظهر **عملةٌ مكرّرة**. أي أنّ
+        // إصلاحَ ٦‑٤ وحدَه كان يُنتج عطباً مرئيّاً.
+        globalId: Value(
+          UuidV7.deriveSeedGlobalId(table: 'currencies', seedKey: 'JOD'),
+        ),
       ),
     );
 
@@ -134,7 +143,9 @@ extension MultiCurrencyDao on AppDatabase {
         isDefault: const Value(false),
         isActive: const Value(false),
         exchangeRate: const Value(0.02), // Relative to JOD
-        globalId: Value(UuidV7.generate()),
+        globalId: Value(
+          UuidV7.deriveSeedGlobalId(table: 'currencies', seedKey: 'EGP'),
+        ),
       ),
     );
   }

@@ -46,7 +46,12 @@ class DeltaPullService {
     'regions',
     'party_groups',
     'safes',
-    'printers',
+    // ⚠️ `printers` أُخرج من المزامنة — **قرارُ مالك 2026-08-31**.
+    // الجدولُ يخلط إعداداً جهازيّاً (`port` = COM3) بإعدادٍ مشترَك
+    // (`ip_address`)، و`_upsertRow` يستعمل `INSERT OR REPLACE` — فسحبُه
+    // يدهس منفذَ طابعةِ كلِّ طرفيّةٍ بمنفذِ الخادم فتتوقّف الطباعةُ عليها.
+    // وتعريفاتُ الطابعات تُضبَط محلّيّاً لكلِّ جهازٍ أصلاً، وهو الواقعُ
+    // الفعليُّ اليوم — فالإخراجُ يوافق السلوكَ لا يغيّره.
 
     // ── Tier 1: depend on Tier 0 ──
     'accounting_periods',   // → fiscal_years
@@ -55,7 +60,11 @@ class DeltaPullService {
     'price_lists',          // → currencies
     'users',                // → roles
     'shifts',
-    'activity_logs',        // → users; central audit trail from all clients
+    // ⚠️ `activity_logs` أُخرج من المزامنة — **قرارُ مالك 2026-08-31**.
+    // سجلٌّ إلحاقيٌّ بلا سقفٍ زمنيّ: `since = null` على متجرٍ بسنةِ تاريخٍ
+    // يتجاوز سقفَ الصفحات (٢٠٠×٥٠٠) فيعيد السحبُ نفسَه كلَّ دورةٍ بلا
+    // تقديمِ علامة. وكلُّ جهازٍ يرى ما سُجّل عليه وما وقع بعد انضمامه —
+    // وهو الواقعُ الفعليُّ اليوم — والمراجعةُ المركزيّةُ من جهاز الخادم.
 
     // ── Tier 2: depend on Tier 1 ──
     'parties',              // → accounts, party_groups
@@ -159,7 +168,7 @@ class DeltaPullService {
     'sales_invoices', 'purchase_invoices', 'held_orders', 'sales_orders',
     'purchase_orders', 'quotations', 'payments', 'journal_entries',
     'safe_transactions', 'commercial_papers', 'stock_movements', 'shifts',
-    'activity_logs', 'sales_invoice_items', 'purchase_invoice_items',
+    'sales_invoice_items', 'purchase_invoice_items',
     'held_order_items', 'sales_order_items', 'purchase_order_items',
     'quotation_items', 'payment_allocations',
     // v166 / المرحلة ٢ — مستنداتُ الأثر المحاسبيّ. بياناتُ عملٍ لا
@@ -252,6 +261,32 @@ class DeltaPullService {
     'booking_resources', 'booking_services', 'bookings', 'booking_reminders',
     'sales_routes', 'route_visits', 'sales_rep_targets',
     'sales_rep_collections',
+
+    // ── البند ٦‑٤ (2026-08-31) — ستّةٌ كانت **مبذورةً بلا تنزيل** ────────
+    //
+    // نفسُ العطب حرفاً، وقد أُغلق مرّتَين قبلَه (v166 وv167) ثمّ انفتح
+    // ثالثةً لأنّ الحارسَ **أحاديُّ الاتّجاه**: يفحص أنّ كلَّ اسمٍ هنا
+    // موجودٌ في `pullTables`، وأنّ لا جدولَ ذا استراتيجيّةٍ هنا — ولا
+    // يفحص العكسَ («بلا استراتيجيّةٍ ⇒ يجب أن يكون هنا»)، وهو عينُ
+    // الثقب. أُضيف الاتّجاهُ الثالث في `delta_only_watermark_guard_test`.
+    //
+    // والأثرُ مقيس: صفرُ استراتيجيّاتٍ تكتب أيّاً منها، و`seedWatermarks`
+    // يختمها كلَّها بعد `fullSync` — فيسأل العميلُ عمّا بعد لحظةِ انضمامه
+    // ولا يرى **قائمةَ أسعارٍ ولا مجموعةَ أطرافٍ ولا عرضَ سعرٍ سابقاً
+    // أبداً**. والخادمُ يقارن بـ`>` صارمة فلا مسارَ تعافٍ تلقائيّ.
+    'currencies', 'party_groups', 'price_lists', 'price_list_items',
+    'quotations', 'quotation_items',
+
+    // ⚠️ **`printers` و`activity_logs` مستثنيان عن قصدٍ — قرارٌ لا سهو.**
+    //   • `printers` يخلط إعداداً **جهازيّاً** (‏`port` = COM3) بإعدادٍ
+    //     مشترَك (‏`ip_address` لطابعة الشبكة). و`_upsertRow` يستعمل
+    //     `INSERT OR REPLACE`، ففتحُ سحبِه يدهس منفذَ طابعةِ كلِّ جهازٍ
+    //     بمنفذِ الخادم — سدُّ ثقبٍ يفتح عطباً مرئيّاً.
+    //   • `activity_logs` سجلٌّ إلحاقيٌّ بلا سقفٍ زمنيّ؛ `since = null`
+    //     على متجرٍ بسنةِ تاريخٍ قد يتجاوز سقفَ الصفحات (٢٠٠×٥٠٠) فيبقى
+    //     معلَّقاً بلا تقديمِ علامة.
+    // كلاهما يبقى مختوماً كما هو اليوم — أي **لا انحدار**، ولا ادّعاءَ
+    // إغلاق. يُحسمان بقرارِ مالكٍ في بندٍ مستقلّ.
   };
 
   static const Set<String> branchScopedMasterPullTables = {

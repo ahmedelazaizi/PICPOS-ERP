@@ -2269,11 +2269,10 @@ class ApiHandler {
   static const _syncPullTables = <String>{
     // Tier 0
     'fiscal_years', 'cost_centers', 'accounts', 'roles', 'currencies',
-    'categories', 'units', 'regions', 'party_groups', 'safes', 'printers',
+    'categories', 'units', 'regions', 'party_groups', 'safes',
     // Tier 1
     'accounting_periods', 'branches', 'warehouses', 'price_lists',
     'users', 'shifts',
-    'activity_logs',      // → users (FK on user_id); all clients share the audit trail
     // Tier 2
     'parties', 'products', 'price_list_items', 'product_barcodes',
     'product_units',
@@ -2358,7 +2357,6 @@ class ApiHandler {
     'purchase_invoices': 'branch_id',
     'journal_entries': 'branch_id',
     'stock_movements': 'branch_id',
-    'activity_logs': 'branch_id',
     // المرحلة ١ / G1 — البيانات الأساسية. بلا هذين المدخلين كان
     // `/api/sync/pull` يعيد كل الصفوف، وDeltaPull يعيد ملء قاعدة العميل
     // ببيانات الشركة كل دورة، مُلغياً حصر المزامنة الكاملة الذي يعمل
@@ -2395,7 +2393,9 @@ class ApiHandler {
     'sales_invoices', 'purchase_invoices', 'held_orders', 'sales_orders',
     'purchase_orders', 'quotations', 'payments', 'journal_entries',
     'safe_transactions', 'commercial_papers', 'stock_movements', 'shifts',
-    'activity_logs', 'sales_invoice_items', 'purchase_invoice_items',
+    // `activity_logs` أُسقط مع إخراجه من المزامنة (قرارُ مالك 2026-08-31):
+    // مدخلٌ في قائمةِ منعٍ لجدولٍ لا يُسمَح بسحبه أصلاً يوهم بحمايةٍ قائمة.
+    'sales_invoice_items', 'purchase_invoice_items',
     'held_order_items', 'sales_order_items', 'purchase_order_items',
     'quotation_items', 'payment_allocations',
     // v166 / المرحلة ٢ — مستنداتُ الأثر المحاسبيّ. بياناتُ عملٍ لا

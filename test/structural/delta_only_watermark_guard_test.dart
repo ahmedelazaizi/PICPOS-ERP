@@ -22,6 +22,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/services/delta_pull_service.dart';
+import 'dart:io';
 
 /// جداولٌ نعلم يقيناً أنّ لها استراتيجيّةً في `fullSync` — **مرساةُ الحارس**.
 ///
@@ -88,6 +89,69 @@ void main() {
       isEmpty,
       reason: 'مستنداتٌ محاسبيّةٌ خرجت من الحماية ⇒ عميلٌ جديدٌ سيُبذَر له '
           'watermark بلا تنزيل، فلا يرى منها صفّاً واحداً سابقاً لإقلاعه.',
+    );
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // الاتّجاهُ الثالث — المفقود، ومن ثقبِه انفتح البند ٦‑٤
+  // ═══════════════════════════════════════════════════════════════════════
+  //
+  // الفحصان أعلاه أحاديّا الاتّجاه: «لا اسمَ بائت» و«لا حمايةَ زائدة».
+  // والثالثُ — **«كلُّ جدولٍ بلا استراتيجيّةٍ يجب أن يكون هنا»** — لم يكن
+  // مفحوصاً إطلاقاً، وهو الوحيدُ الذي يمسك الحالةَ الخطرة.
+  //
+  // ولهذا انفتح الثقبُ **ثلاثَ مرّات** (‏v166 · v167 · ٦‑٤): المرساةُ
+  // `_knownStrategyBacked` خريطةٌ يدويّةٌ **لا تكبر مع المشروع**.
+  //
+  // ⚠️ **ولا يصلح `SyncStrategy.tableName` مصدراً** — مقيسٌ لا مفترَض:
+  // هو وسمٌ لا اسمُ جدول. `JournalSyncStrategy` يقول `journals` والجدولُ
+  // `journal_entries`؛ و`purchases` مقابلَ `purchase_invoices`؛ و
+  // `fiscalYears`/`productUnits` بحالةِ سنامٍ لا شرطة. والاشتقاقُ منه
+  // يُبلغ عن ثمانيةِ جداولَ سليمةٍ بوصفها مكشوفة.
+  //
+  // فالمصدرُ هنا **الكتابةُ الفعليّة**: `into/update/delete(db.X)` في
+  // ملفّات الاستراتيجيّات. و`pullTables`/`deltaOnlyTables` ثابتان
+  // يُستورَدان مباشرةً — فلا تحليلَ نصّيَّ إلّا على طرفٍ واحد.
+  test('🔴 كلُّ جدولٍ بلا استراتيجيّةٍ محميٌّ من البذر — الاتّجاهُ الثالث', () {
+    final dir = Directory('lib/services/sync/strategies');
+    expect(dir.existsSync(), isTrue,
+        reason: 'مجلّدُ الاستراتيجيّات انتقل — الحارسُ يقيس فراغاً');
+
+    final re = RegExp(r'\b(?:into|update|delete)\(\s*(?:db|_db|localDb)\.([A-Za-z][A-Za-z0-9]*)\s*\)');
+    String snake(String v) => v
+        .replaceAllMapped(RegExp(r'([a-z0-9])([A-Z])'), (m) => '${m[1]}_${m[2]}')
+        .toLowerCase();
+
+    final backed = <String>{};
+    for (final e in dir.listSync(recursive: true)) {
+      if (e is! File || !e.path.endsWith('.dart')) continue;
+      for (final m in re.allMatches(e.readAsStringSync())) {
+        backed.add(snake(m.group(1)!));
+      }
+    }
+
+    // ⚠️ مرساة: لو انكسر النمطُ لعاد الحارسُ أخضرَ بمجموعةٍ فارغة — وهو
+    // عينُ العطب الذي يحرسه. الرقمُ حدٌّ أدنى مقيسٌ لا سقف.
+    expect(backed.length, greaterThanOrEqualTo(40),
+        reason: 'استخراجُ جداولِ الاستراتيجيّات عاد شبهَ فارغ ⇒ الفحصُ '
+            'أدناه لا يقيس شيئاً. راجع النمط.');
+    expect(backed, contains('journal_entries'),
+        reason: 'مرساةٌ ثانية: جدولٌ نعلم يقيناً أنّ له استراتيجيّة');
+
+    final unprotected = DeltaPullService.pullTables
+        .where((t) =>
+            !backed.contains(t) &&
+            !DeltaPullService.deltaOnlyTables.contains(t))
+        .toList()
+      ..sort();
+
+    expect(
+      unprotected,
+      isEmpty,
+      reason: 'جداولُ في `pullTables` بلا استراتيجيّةٍ تملؤها وبلا حمايةٍ من '
+          'البذر ⇒ تُختَم علامتُها المائيّةُ بعد `fullSync` لم ينزّل منها '
+          'صفّاً، فلا تصل الجهازَ صفوفُها السابقةُ **أبداً** — بلا خطأٍ ولا '
+          'سجلّ. أضِفها إلى `deltaOnlyTables`، أو اكتب لها استراتيجيّة.',
     );
   });
 }
