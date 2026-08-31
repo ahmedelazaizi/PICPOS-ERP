@@ -11,9 +11,9 @@ PAGE 1 595.27x841.88
   TXT 514.81,785.19 NotoNaskhArabic-Regular 10.00 «—»
   TXT 481.81,785.19 NotoNaskhArabic-Regular 10.00 «ﺍﻟﻤﻨﺼﻮﺭﺓ»
   TXT 564.31,768.16 NotoNaskhArabic-Regular 10.00 «ﻫﺎﺗﻒ:»
-  TXT 539.67,768.16 NotoNaskhArabic-Regular 10.00 «0100»
+  TXT 539.42,768.16 NotoNaskhArabic-Regular 10.00 «4567»
   TXT 521.03,768.16 NotoNaskhArabic-Regular 10.00 «123»
-  TXT 495.87,768.16 NotoNaskhArabic-Regular 10.00 «4567»
+  TXT 496.12,768.16 NotoNaskhArabic-Regular 10.00 «0100»
   TXT 549.22,720.72 NotoNaskhArabic-Bold 16.00 «ﻓﺎﺗﻮﺭﺓ»
   TXT 491.99,720.72 NotoNaskhArabic-Bold 16.00 «ﻣﺸﺘﺮﻳﺎﺕ»
   TXT 569.35,673.75 NotoNaskhArabic-Regular 12.00 «ﺭﻗﻢ»

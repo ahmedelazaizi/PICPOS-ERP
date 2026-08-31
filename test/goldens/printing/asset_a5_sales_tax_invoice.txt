@@ -12,12 +12,12 @@ PAGE 1 419.52x595.27
   TXT 91.78,575.91 NotoNaskhArabic-Regular 7.50 «—»
   TXT 67.03,575.91 NotoNaskhArabic-Regular 7.50 «ﺍﻟﻤﻨﺼﻮﺭﺓ»
   TXT 393.47,472.29 NotoNaskhArabic-Regular 7.50 «ﻫﺎﺗﻒ:»
-  TXT 374.99,472.29 NotoNaskhArabic-Regular 7.50 «0100»
+  TXT 374.80,472.29 NotoNaskhArabic-Regular 7.50 «4567»
   TXT 361.01,472.29 NotoNaskhArabic-Regular 7.50 «123»
-  TXT 342.14,472.29 NotoNaskhArabic-Regular 7.50 «4567»
+  TXT 342.32,472.29 NotoNaskhArabic-Regular 7.50 «0100»
   TXT 228.88,472.29 NotoNaskhArabic-Regular 7.50 «ﺍﻟﺴﺠﻞ»
   TXT 203.36,472.29 NotoNaskhArabic-Regular 7.50 «ﺍﻟﻀﺮﻳﺒﻲ:»
-  TXT 144.40,472.29 NotoNaskhArabic-Regular 7.50 «789-456-123-310»
+  TXT 144.51,472.29 NotoNaskhArabic-Regular 7.50 «310-123-456-789»
   TXT 377.82,441.34 NotoNaskhArabic-Bold 14.00 «ﻓﺎﺗﻮﺭﺓ»
   TXT 337.72,441.34 NotoNaskhArabic-Bold 14.00 «ﺿﺮﻳﺒﻴﺔ»
   TXT 327.57,441.34 NotoNaskhArabic-Bold 14.00 «·»
@@ -33,9 +33,9 @@ PAGE 1 419.52x595.27
   TXT 194.36,398.84 NotoNaskhArabic-Bold 9.00 «ﻋﺒﺪ»
   TXT 227.57,383.52 NotoNaskhArabic-Bold 9.00 «ﺍﻟﺮﺣﻤﻦ»
   TXT 130.86,398.84 NotoNaskhArabic-Regular 9.00 «ﺍﻟﻬﺎﺗﻒ:»
-  TXT 108.93,398.84 NotoNaskhArabic-Regular 9.00 «0111»
+  TXT 108.86,398.84 NotoNaskhArabic-Regular 9.00 «6543»
   TXT 91.60,398.84 NotoNaskhArabic-Regular 9.00 «987»
-  TXT 91.78,383.52 NotoNaskhArabic-Regular 9.00 «6543»
+  TXT 91.85,383.52 NotoNaskhArabic-Regular 9.00 «0111»
   TXT 74.75,400.45 NotoNaskhArabic-Regular 7.50 «ﻃﺮﻳﻘﺔ»
   TXT 57.80,400.45 NotoNaskhArabic-Regular 7.50 «ﺍﻟﺪﻓﻊ:»
   TXT 43.07,400.45 NotoNaskhArabic-Regular 7.50 «ﻧﻘﺪﻱ»
@@ -101,7 +101,7 @@ PAGE 1 419.52x595.27
   TXT 144.31,164.62 NotoNaskhArabic-Bold 9.00 «126.76»
   TXT 228.88,143.23 NotoNaskhArabic-Regular 7.50 «ﺍﻟﺮﻗﻢ»
   TXT 203.36,143.23 NotoNaskhArabic-Regular 7.50 «ﺍﻟﻀﺮﻳﺒﻲ:»
-  TXT 144.40,143.23 NotoNaskhArabic-Regular 7.50 «789-456-123-310»
+  TXT 144.51,143.23 NotoNaskhArabic-Regular 7.50 «310-123-456-789»
   TXT 131.05,144.23 NotoNaskhArabic-Regular 7.50 «ﻳُﺴﻠﱠﻢ»
   TXT 115.58,144.23 NotoNaskhArabic-Regular 7.50 «ﺧﻼﻝ»
   TXT 107.21,144.23 NotoNaskhArabic-Regular 7.50 «٨٤»

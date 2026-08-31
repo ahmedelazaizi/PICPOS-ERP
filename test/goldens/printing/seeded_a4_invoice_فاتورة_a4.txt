@@ -13,11 +13,11 @@ PAGE 1 595.28x841.89
   TXT 331.69,779.31 NotoNaskhArabic-Regular 7.50 «—»
   TXT 306.94,779.31 NotoNaskhArabic-Regular 7.50 «ﺍﻟﻤﻨﺼﻮﺭﺓ»
   TXT 460.01,762.31 NotoNaskhArabic-Regular 7.50 «ﻫﺎﺗﻒ:»
-  TXT 441.53,762.31 NotoNaskhArabic-Regular 7.50 «0100»
+  TXT 441.34,762.31 NotoNaskhArabic-Regular 7.50 «4567»
   TXT 427.55,762.31 NotoNaskhArabic-Regular 7.50 «123»
-  TXT 408.68,762.31 NotoNaskhArabic-Regular 7.50 «4567»
+  TXT 408.86,762.31 NotoNaskhArabic-Regular 7.50 «0100»
   TXT 467.86,745.30 NotoNaskhArabic-Regular 7.50 «ﺱ.ﺕ:»
-  TXT 408.97,745.30 NotoNaskhArabic-Regular 7.50 «789-456-123-310»
+  TXT 409.08,745.30 NotoNaskhArabic-Regular 7.50 «310-123-456-789»
   TXT 66.01,780.62 NotoNaskhArabic-Regular 8.00 «LOGO»
   TXT 355.79,775.07 NotoNaskhArabic-Bold 14.00 «ﻓﺎﺗﻮﺭﺓ»
   TXT 315.69,775.07 NotoNaskhArabic-Bold 14.00 «ﺿﺮﻳﺒﻴﺔ»
@@ -34,9 +34,9 @@ PAGE 1 595.28x841.89
   TXT 333.10,639.98 NotoNaskhArabic-Bold 9.50 «ﻋﺒﺪ»
   TXT 307.35,639.98 NotoNaskhArabic-Bold 9.50 «ﺍﻟﺮﺣﻤﻦ»
   TXT 257.31,640.09 NotoNaskhArabic-Regular 9.00 «ﺍﻟﻬﺎﺗﻒ:»
-  TXT 235.39,640.09 NotoNaskhArabic-Regular 9.00 «0111»
+  TXT 235.32,640.09 NotoNaskhArabic-Regular 9.00 «6543»
   TXT 218.05,640.09 NotoNaskhArabic-Regular 9.00 «987»
-  TXT 196.12,640.09 NotoNaskhArabic-Regular 9.00 «6543»
+  TXT 196.19,640.09 NotoNaskhArabic-Regular 9.00 «0111»
   TXT 305.60,619.05 NotoNaskhArabic-Regular 8.00 «ﺍﻟﻌﻨﻮﺍﻥ:»
   TXT 290.85,619.05 NotoNaskhArabic-Regular 8.00 «ﻣﻴﺖ»
   TXT 277.62,619.05 NotoNaskhArabic-Regular 8.00 «ﻏﻤﺮ»
@@ -64,7 +64,7 @@ PAGE 1 595.28x841.89
   TXT 346.60,221.76 NotoNaskhArabic-Bold 10.00 «126.76»
   TXT 329.04,91.91 NotoNaskhArabic-Regular 7.50 «ﺍﻟﺮﻗﻢ»
   TXT 303.52,91.91 NotoNaskhArabic-Regular 7.50 «ﺍﻟﻀﺮﻳﺒﻲ:»
-  TXT 244.56,91.91 NotoNaskhArabic-Regular 7.50 «789-456-123-310»
+  TXT 244.67,91.91 NotoNaskhArabic-Regular 7.50 «310-123-456-789»
   TXT 230.97,72.07 NotoNaskhArabic-Regular 7.50 «ﻣﻼﺣﻈﺎﺕ:»
   TXT 216.05,72.07 NotoNaskhArabic-Regular 7.50 «ﻳُﺴﻠﱠﻢ»
   TXT 200.57,72.07 NotoNaskhArabic-Regular 7.50 «ﺧﻼﻝ»

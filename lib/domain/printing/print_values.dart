@@ -16,6 +16,37 @@
 
 import 'party_statement_snapshot.dart';
 
+/// علامةُ **يسار-إلى-يمين** — `U+200E LRM`.
+const String kLrm = '‎';
+
+/// يُثبّت اتّجاهَ معرِّفٍ لاتينيٍّ داخلَ فقرةٍ عربيّة.
+///
+/// ── العطبُ الذي يعالجه ────────────────────────────────────────────────────
+///
+/// رقمٌ مثل `310-123-456-789` بعد تسميةٍ عربيّةٍ يخرج على الورق
+/// `789-456-123-310` — **مقلوبَ المقاطع**. وكان مشحوناً فعلاً؛ يُرى في
+/// `test/goldens/printing/asset_a4_customer_statement.txt`.
+///
+/// ── الجذر: قاعدةُ W2 لا W4 ───────────────────────────────────────────────
+///
+/// الأرقامُ اللاتينيّةُ صنفُها `EN`، وقاعدةُ **W2** تحوّلها إلى `AN` حين
+/// يكون أقربُ صنفٍ قويٍّ **سابقٍ** هو `AL` (حرفٌ عربيّ) — وهو حالُ التسمية
+/// قبلها. وبعد التحوّل **تسقط W4**: هي تصل `EN ES EN` فقط ولا تعرف
+/// `AN ES AN`، فتبقى الشُّرَطُ محايدةً وتُقطَّع السلسلةُ مقاطعَ تُرتَّب من
+/// اليمين لليسار ⇒ الانقلاب.
+///
+/// ⚠️ **ولا يُعالَج بـ`U+2066 LRI`** رغم أنّه المحرفُ «الصحيح» نظريّاً:
+/// حزمةُ الـPDF **لا تنفّذ محارفَ العزل**، فيمرُّ كأنّه لا شيءٌ ويبقى
+/// الرقمُ مقلوباً. وقد وُصف ذلك العلاجُ في تسليمٍ أقدمَ وهو لا يعمل.
+///
+/// و`LRM` يعمل لأنّه **صنفٌ قويٌّ يساريّ**: يصير هو أقربَ صنفٍ قويٍّ سابق،
+/// فلا تنطبق W2، فتبقى الأرقامُ `EN`، فتعمل W4 وتصل السلسلةَ مقطعاً واحداً.
+///
+/// ويُحاط الطرفان: الأوّلُ يمنع W2، والأخيرُ يمنع امتدادَ الاتّجاه
+/// اليساريِّ إلى ما بعده.
+String ltrIsolate(String value) =>
+    value.isEmpty ? value : '$kLrm$value$kLrm';
+
 /// كلُّ ما يحتاجه حقلٌ ليُحلَّ نصّاً.
 ///
 /// حاملُ بياناتٍ خالصٌ — لا يقرأ قاعدةً ولا يبني ودجت. تبنيه طبقةُ الخدمة
@@ -109,23 +140,23 @@ String resolveContentValue(String type, PrintPayload p) {
     case 'customer':
       return p.customerName ?? '';
     case 'customer_phone':
-      return p.customerPhone ?? '';
+      return ltrIsolate(p.customerPhone ?? '');
     case 'customer_address':
       return p.customerAddress ?? '';
     case 'adhoc_customer_name':
       return p.adhocCustomerName ?? '';
     case 'adhoc_customer_phone':
-      return p.adhocCustomerPhone ?? '';
+      return ltrIsolate(p.adhocCustomerPhone ?? '');
     case 'company_name':
       return p.companyName;
     case 'company_address':
       return p.companyAddress;
     case 'company_phone':
-      return p.companyPhone;
+      return ltrIsolate(p.companyPhone);
     case 'company_tax_id':
     case 'company_tax_number':
     case 'tax_registration':
-      return p.companyTaxId ?? '';
+      return ltrIsolate(p.companyTaxId ?? '');
     case 'payment_method':
       return mapPaymentMethodLabel(p.paymentMethod);
     case 'sale_type':

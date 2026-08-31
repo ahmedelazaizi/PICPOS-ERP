@@ -4,7 +4,7 @@
 PAGES 1
 PAGE 1 204.09x394.51
   TXT 122.87,379.29 NotoNaskhArabic-Regular 8.00 «ﺽ.ﻕ.ﻡ:»
-  TXT 60.04,379.29 NotoNaskhArabic-Regular 8.00 «789-456-123-310»
+  TXT 60.16,379.29 NotoNaskhArabic-Regular 8.00 «310-123-456-789»
   TXT 13.08,216.53 NotoNaskhArabic-Bold 10.00 «ﺍﻹﺟﻤﺎﻟﻲ»
   TXT 56.13,216.53 NotoNaskhArabic-Bold 10.00 «ﺍﻟﺴﻌﺮ»
   TXT 89.32,216.53 NotoNaskhArabic-Bold 10.00 «ﺍﻟﻌﺪﺩ»

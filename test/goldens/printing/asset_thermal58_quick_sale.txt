@@ -7,12 +7,12 @@ PAGE 1 141.73x350.50
   TXT 62.94,331.07 NotoNaskhArabic-Bold 11.00 «ﺍﻟﻨﻮﺭ»
   TXT 28.72,331.07 NotoNaskhArabic-Bold 11.00 «ﺍﻟﺘﺠﺎﺭﻳﺔ»
   TXT 88.18,314.61 NotoNaskhArabic-Regular 7.00 «ﻫﺎﺗﻒ:»
-  TXT 70.93,314.61 NotoNaskhArabic-Regular 7.00 «0100»
+  TXT 70.76,314.61 NotoNaskhArabic-Regular 7.00 «4567»
   TXT 57.88,314.61 NotoNaskhArabic-Regular 7.00 «123»
-  TXT 40.27,314.61 NotoNaskhArabic-Regular 7.00 «4567»
+  TXT 40.45,314.61 NotoNaskhArabic-Regular 7.00 «0100»
   TXT 102.81,302.69 NotoNaskhArabic-Regular 7.00 «ﺍﻟﺴﺠﻞ»
   TXT 78.98,302.69 NotoNaskhArabic-Regular 7.00 «ﺍﻟﻀﺮﻳﺒﻲ:»
-  TXT 23.96,302.69 NotoNaskhArabic-Regular 7.00 «789-456-123-310»
+  TXT 24.06,302.69 NotoNaskhArabic-Regular 7.00 «310-123-456-789»
   TXT 116.51,265.70 NotoNaskhArabic-Bold 8.00 «ﻓﺎﺗﻮﺭﺓ:»
   TXT 93.96,252.08 NotoNaskhArabic-Bold 8.00 «SINV-2026-»
   TXT 118.71,238.45 NotoNaskhArabic-Bold 8.00 «0417»

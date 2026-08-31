@@ -5,7 +5,7 @@ PAGES 1
 PAGE 1 595.27x841.88
   TXT 568.86,819.92 NotoNaskhArabic-Regular 9.00 «ﺍﻟﺮﻗﻢ»
   TXT 538.23,819.92 NotoNaskhArabic-Regular 9.00 «ﺍﻟﻀﺮﻳﺒﻲ:»
-  TXT 467.49,819.92 NotoNaskhArabic-Regular 9.00 «789-456-123-310»
+  TXT 467.62,819.92 NotoNaskhArabic-Regular 9.00 «310-123-456-789»
   TXT 540.55,767.83 NotoNaskhArabic-Bold 20.00 «ﻓﺎﺗﻮﺭﺓ»
   TXT 483.27,767.83 NotoNaskhArabic-Bold 20.00 «ﺿﺮﻳﺒﻴﺔ»
   TXT 40.46,697.67 NotoNaskhArabic-Bold 7.00 «ﺍﻹﺟﻤﺎﻟﻲ»

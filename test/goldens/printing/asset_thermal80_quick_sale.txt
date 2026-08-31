@@ -11,12 +11,12 @@ PAGE 1 204.09x522.27
   TXT 88.90,482.45 NotoNaskhArabic-Regular 7.50 «—»
   TXT 64.15,482.45 NotoNaskhArabic-Regular 7.50 «ﺍﻟﻤﻨﺼﻮﺭﺓ»
   TXT 120.60,469.68 NotoNaskhArabic-Regular 7.50 «ﻫﺎﺗﻒ:»
-  TXT 102.12,469.68 NotoNaskhArabic-Regular 7.50 «0100»
+  TXT 101.93,469.68 NotoNaskhArabic-Regular 7.50 «4567»
   TXT 88.14,469.68 NotoNaskhArabic-Regular 7.50 «123»
-  TXT 69.27,469.68 NotoNaskhArabic-Regular 7.50 «4567»
+  TXT 69.45,469.68 NotoNaskhArabic-Regular 7.50 «0100»
   TXT 136.27,456.90 NotoNaskhArabic-Regular 7.50 «ﺍﻟﺴﺠﻞ»
   TXT 110.75,456.90 NotoNaskhArabic-Regular 7.50 «ﺍﻟﻀﺮﻳﺒﻲ:»
-  TXT 51.79,456.90 NotoNaskhArabic-Regular 7.50 «789-456-123-310»
+  TXT 51.90,456.90 NotoNaskhArabic-Regular 7.50 «310-123-456-789»
   TXT 120.39,417.46 NotoNaskhArabic-Bold 10.00 «ﻓﺎﺗﻮﺭﺓ»
   TXT 91.75,417.46 NotoNaskhArabic-Bold 10.00 «ﺿﺮﻳﺒﻴﺔ»
   TXT 63.16,417.46 NotoNaskhArabic-Bold 10.00 «ﻣﺒﺴﻄﺔ»
@@ -86,7 +86,7 @@ PAGE 1 204.09x522.27
   TXT 70.97,82.82 NotoNaskhArabic-Regular 9.00 «126.76»
   TXT 138.40,11.42 NotoNaskhArabic-Regular 7.50 «ﺍﻟﺮﻗﻢ»
   TXT 112.88,11.42 NotoNaskhArabic-Regular 7.50 «ﺍﻟﻀﺮﻳﺒﻲ:»
-  TXT 53.92,11.42 NotoNaskhArabic-Regular 7.50 «789-456-123-310»
+  TXT 54.03,11.42 NotoNaskhArabic-Regular 7.50 «310-123-456-789»
   LIN 198.42,439.90 -> 5.67,439.90
   LIN 198.42,398.87 -> 5.67,398.87
   LIN 48.82,194.48 -> 48.82,328.37

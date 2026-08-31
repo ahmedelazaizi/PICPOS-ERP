@@ -893,11 +893,15 @@ class TemplatedInvoiceService {
       case 'company_address':
         return pw.Text(companyAddress, style: style, textAlign: align);
       case 'company_phone':
-        return pw.Text('هاتف: $companyPhone', style: style, textAlign: align);
+        // ⚠️ `ltrIsolate` هنا **أيضاً**: هذا المسارُ (v1) يبني نصَّه بنفسه
+        // ولا يمرُّ بـ`resolveContentValue`، فإصلاحُ ذاك وحدَه ترك الحراريَّ
+        // مقلوباً — مقيسٌ بمسبار، لا مفترَض.
+        return pw.Text('هاتف: ${pv.ltrIsolate(companyPhone)}',
+            style: style, textAlign: align);
       case 'company_tax_id':
         return companyTaxId != null
             ? pw.Text(
-                'السجل الضريبي: $companyTaxId',
+                'السجل الضريبي: ${pv.ltrIsolate(companyTaxId)}',
                 style: style,
                 textAlign: align,
               )
@@ -995,7 +999,7 @@ class TemplatedInvoiceService {
       case 'customer_phone':
         return customerPhone != null
             ? pw.Text(
-                '${element.labelAr ?? 'الهاتف'}: $customerPhone',
+                '${element.labelAr ?? 'الهاتف'}: ${pv.ltrIsolate(customerPhone)}',
                 style: style,
                 textAlign: align,
               )
@@ -1019,7 +1023,7 @@ class TemplatedInvoiceService {
       case 'adhoc_customer_phone':
         return adhocCustomerPhone != null && adhocCustomerPhone.isNotEmpty
             ? pw.Text(
-                '${element.labelAr ?? 'هاتف العميل'}: $adhocCustomerPhone',
+                '${element.labelAr ?? 'هاتف العميل'}: ${pv.ltrIsolate(adhocCustomerPhone)}',
                 style: style,
                 textAlign: align,
               )
