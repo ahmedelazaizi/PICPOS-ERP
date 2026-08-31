@@ -1480,6 +1480,15 @@ class AppDatabase extends _$AppDatabase {
         'ALTER TABLE journal_entries ADD COLUMN IF NOT EXISTS approved_by INTEGER',
         'ALTER TABLE journal_entries ADD COLUMN IF NOT EXISTS approved_at BIGINT',
         'ALTER TABLE journal_entries ADD COLUMN IF NOT EXISTS created_by INTEGER',
+        // ── §٦‑٣: نظيرُ PG لأعمدة تدقيقِ إعادة فتح الفترة ──
+        //
+        // نفسُ العلّة حرفاً: v82 أضافها بـALTER في هجرة SQLite، وهي غيرُ
+        // مُعلَنةٍ في صنف `AccountingPeriods`، و`onUpgrade` متجاوَزٌ على PG.
+        // فبلا هذه الأسطر ينهار `reopenAccountingPeriodWithAudit` على الخادم
+        // بـ42703 متى وُصِل.
+        'ALTER TABLE accounting_periods ADD COLUMN IF NOT EXISTS reopen_reason TEXT',
+        'ALTER TABLE accounting_periods ADD COLUMN IF NOT EXISTS reopened_by INTEGER',
+        'ALTER TABLE accounting_periods ADD COLUMN IF NOT EXISTS reopened_at BIGINT',
       ]) {
         try {
           await customStatement(ddl);

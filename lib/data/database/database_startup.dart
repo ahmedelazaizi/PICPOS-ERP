@@ -179,6 +179,18 @@ extension DatabaseStartup on AppDatabase {
       //    واحدة: تأخيرٌ لا رقابة. وهو غيرُ مُعلَنٍ في صنف الجدول كإخوته
       //    الثلاثة، فيُضاف هنا لا بـ`build_runner`.
       'ALTER TABLE journal_entries ADD COLUMN created_by INTEGER REFERENCES users(id)',
+      // ⚠️ §٦‑٣ — **أثرُ تدقيقِ إعادة فتح الفترة.** نفسُ علّة إخوته أعلاه
+      //    حرفاً بحرف: v82 أضافها بـ`ALTER TABLE` في `epoch_3` ولم تُعلَن قطُّ
+      //    في صنف `AccountingPeriods`، فهي غائبةٌ عن كلّ قاعدةٍ جديدة.
+      //
+      //    و`reopenAccountingPeriodWithAudit` يكتب الثلاثةَ بـ`customStatement`
+      //    فينهار بـ«no such column: reopen_reason». ولم يظهر العطبُ لأنّه
+      //    طريقٌ لم يُوصَل بعد — كامنٌ لا نازف. ووصلُه لاحقاً بلا هذه الأسطر
+      //    يُسقط إعادةَ الفتح على **كلّ** تنصيبة، ويترك الفترةَ مغلقةً بلا
+      //    بلاغٍ للمستخدم.
+      "ALTER TABLE accounting_periods ADD COLUMN reopen_reason TEXT",
+      'ALTER TABLE accounting_periods ADD COLUMN reopened_by INTEGER REFERENCES users(id)',
+      'ALTER TABLE accounting_periods ADD COLUMN reopened_at INTEGER',
     ]) {
       try {
         await customStatement(stmt);
