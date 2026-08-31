@@ -31,6 +31,40 @@ Widget buildModifiersManageAddGroupButton({required VoidCallback onPressed}) {
   );
 }
 
+/// ٦‑٢ — كلُّ عمليّاتِ التعديل في هذه الشاشة كانت **بلا `try`**.
+///
+/// مسارُ القراءة (`_loadGroups`) وحدَه كان محروساً؛ أمّا الإضافةُ والحذفُ
+/// والربطُ فتُنادى عاريةً بعد `Navigator.pop`. فحين كان `createModifierGroup`
+/// ينهار على PostgreSQL — والجدولُ هناك كان ناقصَ خمسةِ أعمدة — كان الحوارُ
+/// يُغلَق ولا يُضاف صفٌّ **ولا تظهر رسالة**: المستخدمُ يرى نجاحاً وهماً.
+///
+/// عطبُ المخطَّط عولج في مصدره ([AppDatabase.ensureModifierTables])، وهذا
+/// حارسٌ ثانٍ: أيُّ إخفاقٍ لاحقٍ يظهر للمستخدم بدل أن يُبتلَع.
+///
+/// ويعود `true` عند النجاح فيبني المُنادي عليه قرارَ إعادة التحميل — فلا
+/// تُعاد بناءُ القائمة على عمليّةٍ لم تقع.
+@visibleForTesting
+Future<bool> runModifierMutation(
+  BuildContext context,
+  Future<void> Function() action, {
+  required String failureMessage,
+}) async {
+  try {
+    await action();
+    return true;
+  } catch (e) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$failureMessage: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+    return false;
+  }
+}
+
 class ModifierManagementWidget extends ConsumerStatefulWidget {
   const ModifierManagementWidget({super.key});
 
@@ -183,14 +217,18 @@ class _ModifierManagementWidgetState extends ConsumerState<ModifierManagementWid
 
     if (result == true && nameCtrl.text.isNotEmpty) {
       final repo = ref.read(modifierRepositoryProvider);
-      await repo.createGroup(
-        name: nameCtrl.text,
-        type: type,
-        minSelect: minSelect,
-        maxSelect: maxSelect,
-        isRequired: isRequired,
+      final ok = await runModifierMutation(
+        context,
+        () => repo.createGroup(
+          name: nameCtrl.text,
+          type: type,
+          minSelect: minSelect,
+          maxSelect: maxSelect,
+          isRequired: isRequired,
+        ),
+        failureMessage: 'تعذّرت إضافة المجموعة',
       );
-      await _loadGroups();
+      if (ok) await _loadGroups();
     }
   }
 }
@@ -237,16 +275,24 @@ class _ModifierGroupCardState extends State<_ModifierGroupCard> {
       ),
     );
     if (confirm == true) {
-      await widget.repo.deleteGroup(g.id);
-      widget.onRefresh();
+      final ok = await runModifierMutation(
+        context,
+        () => widget.repo.deleteGroup(g.id),
+        failureMessage: 'تعذّر حذف المجموعة',
+      );
+      if (ok) widget.onRefresh();
     }
   }
 
   /// مستخرجة لنفس السبب: `PermissionGuard.onGranted` و`IconButton.onPressed`
   /// ينادوا نفس الفعل صراحة.
   Future<void> _deleteItem(ModifierItemData item) async {
-    await widget.repo.deleteItem(item.id);
-    _loadItems();
+    final ok = await runModifierMutation(
+      context,
+      () => widget.repo.deleteItem(item.id),
+      failureMessage: 'تعذّر حذف العنصر',
+    );
+    if (ok) _loadItems();
   }
 
   @override
@@ -492,14 +538,22 @@ class _ModifierGroupCardState extends State<_ModifierGroupCard> {
       // Products to remove link
       final toRemove = currentLinked.difference(result);
 
-      for (final productId in toAdd) {
-        await repo.linkModifierToProduct(productId: productId, modifierGroupId: groupId);
-      }
-      for (final productId in toRemove) {
-        await repo.unlinkModifierFromProduct(productId: productId, modifierGroupId: groupId);
-      }
+      final ok = await runModifierMutation(
+        context,
+        () async {
+          for (final productId in toAdd) {
+            await repo.linkModifierToProduct(
+                productId: productId, modifierGroupId: groupId);
+          }
+          for (final productId in toRemove) {
+            await repo.unlinkModifierFromProduct(
+                productId: productId, modifierGroupId: groupId);
+          }
+        },
+        failureMessage: 'تعذّر ربط المجموعة بالأصناف',
+      );
 
-      if (mounted) {
+      if (ok && mounted) {
         setState(() {}); // Refresh card
       }
     }
@@ -548,13 +602,17 @@ class _ModifierGroupCardState extends State<_ModifierGroupCard> {
     );
 
     if (result == true && nameCtrl.text.isNotEmpty) {
-      await widget.repo.createItem(
-        groupId: widget.group.id,
-        name: nameCtrl.text,
-        extraPrice: double.tryParse(priceCtrl.text) ?? 0,
-        isDefault: isDefault,
+      final ok = await runModifierMutation(
+        context,
+        () => widget.repo.createItem(
+          groupId: widget.group.id,
+          name: nameCtrl.text,
+          extraPrice: double.tryParse(priceCtrl.text) ?? 0,
+          isDefault: isDefault,
+        ),
+        failureMessage: 'تعذّرت إضافة العنصر',
       );
-      _loadItems();
+      if (ok) _loadItems();
     }
   }
 }

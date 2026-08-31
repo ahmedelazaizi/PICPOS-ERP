@@ -1374,36 +1374,22 @@ class AppDatabase extends _$AppDatabase {
     //    then fails with "relation modifier_groups does not exist"
     //    every time a cashier opens the modifier panel for a product.
     //    Idempotent CREATE IF NOT EXISTS keeps this safe across restarts.
+    //
+    // 🔴 ٦‑٢: هذه الكتلةُ كانت تحمل **نسخةً ثانيةً** من تعريف
+    //    `modifier_groups` تخالف ما يكتبه [ensureModifierTables]:
+    //      هنا:      (id, name, min_selection, max_selection, is_active)
+    //      الصحيح:   (id, name, type, min_select, max_select, is_required,
+    //                 is_active, sort_order)
+    //    و`CREATE TABLE IF NOT EXISTS` تجعل الأسبقَ يفوز، والأسبقُ على PG هو
+    //    الإقلاعُ لا الشاشة — فـ`ensureTables()` التي تناديها شاشةُ الإعدادات
+    //    تصير بلا أثر، و`createModifierGroup` (تكتب الخمسةَ الناقصة) تنهار على
+    //    **كلِّ** قاعدةِ PostgreSQL. أي الميزةُ معطَّلةٌ بالكامل لا «تقرأ خطأً».
+    //
+    //    فالتعريفُ صار مصدراً واحداً: تُستدعى [ensureModifierTables] نفسُها،
+    //    وهي تُفرّع على الخلفيّة داخليّاً وتحمل شفاءَ الأعمدة الناقصة لخادمٍ
+    //    نُصِّب على الشكل القديم. والفهرسان يبقيان هنا لأنّها لا تُنشئهما.
     try {
-      await customStatement('''
-        CREATE TABLE IF NOT EXISTS modifier_groups (
-          id SERIAL PRIMARY KEY,
-          name TEXT NOT NULL,
-          min_selection INTEGER NOT NULL DEFAULT 0,
-          max_selection INTEGER NOT NULL DEFAULT 1,
-          is_active BOOLEAN NOT NULL DEFAULT TRUE
-        )
-      ''');
-      await customStatement('''
-        CREATE TABLE IF NOT EXISTS modifier_items (
-          id SERIAL PRIMARY KEY,
-          group_id INTEGER NOT NULL REFERENCES modifier_groups(id) ON DELETE CASCADE,
-          name TEXT NOT NULL,
-          extra_price DOUBLE PRECISION NOT NULL DEFAULT 0,
-          is_default BOOLEAN NOT NULL DEFAULT FALSE,
-          is_active BOOLEAN NOT NULL DEFAULT TRUE,
-          sort_order INTEGER NOT NULL DEFAULT 0
-        )
-      ''');
-      await customStatement('''
-        CREATE TABLE IF NOT EXISTS product_modifier_groups (
-          id SERIAL PRIMARY KEY,
-          product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-          modifier_group_id INTEGER NOT NULL REFERENCES modifier_groups(id) ON DELETE CASCADE,
-          sort_order INTEGER NOT NULL DEFAULT 0,
-          UNIQUE(product_id, modifier_group_id)
-        )
-      ''');
+      await ensureModifierTables();
       await customStatement(
         'CREATE INDEX IF NOT EXISTS idx_modifier_items_group ON modifier_items(group_id)',
       );
@@ -2444,14 +2430,26 @@ class AppDatabase extends _$AppDatabase {
     // created before sort_order was added still work after the schema
     // is reconciled.
     if (_isPostgres) {
-      try {
-        await customStatement(
-            'ALTER TABLE modifier_groups ADD COLUMN IF NOT EXISTS sort_order INTEGER NOT NULL DEFAULT 0');
-      } catch (_) {/* already exists */}
-      try {
-        await customStatement(
-            'ALTER TABLE modifier_items ADD COLUMN IF NOT EXISTS sort_order INTEGER NOT NULL DEFAULT 0');
-      } catch (_) {/* already exists */}
+      // ٦‑٢: خادمٌ نُصِّب قبل هذا الإصلاح يحمل شكلَ الخطوة 4.5 القديم —
+      //   (id, name, min_selection, max_selection, is_active)
+      // وينقصه **أربعةٌ** يكتبها `createModifierGroup` لا واحد، فكانت كلُّ
+      // محاولةِ إنشاءِ مجموعةٍ تنهار على PG والميزةُ معطَّلةً بالكامل.
+      //
+      // ⚠️ و`min_selection`/`max_selection` القديمان يبقيان بلا ضرر: لهما
+      // `DEFAULT` فالإدراجُ الذي يتجاهلهما يمرّ. وإعادةُ تسميتهما كانت ستحتاج
+      // `RENAME COLUMN` بلا `IF EXISTS` — أثقلَ وأخطرَ من إضافةِ الصحيح.
+      for (final stmt in [
+        "ALTER TABLE modifier_groups ADD COLUMN IF NOT EXISTS type TEXT NOT NULL DEFAULT 'addon'",
+        'ALTER TABLE modifier_groups ADD COLUMN IF NOT EXISTS min_select INTEGER NOT NULL DEFAULT 0',
+        'ALTER TABLE modifier_groups ADD COLUMN IF NOT EXISTS max_select INTEGER NOT NULL DEFAULT 1',
+        'ALTER TABLE modifier_groups ADD COLUMN IF NOT EXISTS is_required BOOLEAN NOT NULL DEFAULT FALSE',
+        'ALTER TABLE modifier_groups ADD COLUMN IF NOT EXISTS sort_order INTEGER NOT NULL DEFAULT 0',
+        'ALTER TABLE modifier_items ADD COLUMN IF NOT EXISTS sort_order INTEGER NOT NULL DEFAULT 0',
+      ]) {
+        try {
+          await customStatement(stmt);
+        } catch (_) {/* already exists */}
+      }
     }
   }
 
