@@ -153,6 +153,11 @@ extension DatabaseStartup on AppDatabase {
       // `getAccountByPurpose` يختار الحسابَ عشوائيّاً.
       kDedupAccountMappingsSql,
       kCreateAccountMappingsPurposeCcIndexSql,
+      // §٣‑٦: قيدُ تفرّدِ المطابقة البنكيّة — **بلا تسويةٍ آليّةٍ قبله**،
+      // كفهرسَي B1/B2 لا كربطِ الحسابات: الصفُّ المزدوجُ هنا حركةٌ ذاتُ قيمةٍ
+      // ماليّة، وتسويتُها شغلُ محاسبٍ لا شغلُ إقلاع. وعلى بياناتٍ مزدوجةٍ
+      // يفشل بصمتٍ ويبقى حارسُ `manualMatchStatement` قائماً.
+      kCreateBankStatementMatchDedupIndexSql,
       // ٦‑١: `e_invoice_status_log` جدولٌ خامٌّ لا كيانُ drift، فتمريرةُ
       // `allSchemaEntities` أدناه لا تصله كذلك. وهو هنا شفاءٌ ذاتيٌّ لقاعدةٍ
       // نُصِّبت قبل هذا الإصلاح: تُنشئه بلا هجرةٍ وبلا فقدِ بيانات.
@@ -487,6 +492,34 @@ extension DatabaseStartup on AppDatabase {
             "SELECT 1 AS x FROM pg_indexes "
             "WHERE tablename = 'account_mappings' "
             "  AND indexname = '$kAccountMappingsPurposeCcIndexName' "
+            "LIMIT 1",
+          ).get();
+          return rows.isNotEmpty;
+        } catch (_) {
+          return true; // fail-open كنظائره أعلاه
+        }
+      },
+    );
+
+    // 6. bank_statement_lines: فهرسٌ فريدٌ على `matched_journal_line_id`.
+    //
+    // §٣‑٦: نظيرُ السطر المضافِ في `ensureSchemaDefaults` — وPG لا يمرُّ بها
+    // إطلاقاً (تعود مبكّراً عليه) ولا بهجرات SQLite، فبلا هذه الكتلة تبقى
+    // **كلُّ** قاعدةِ PostgreSQL بلا القيد. والصيغةُ مشتركةٌ من
+    // [kCreateBankStatementMatchDedupIndexSql] — مصدرٌ واحدٌ لا نسخةٌ ثانية.
+    //
+    // ⚠️ **وتسويةٌ فارغة** عن قصد: الصفُّ المزدوجُ حركةٌ ذاتُ قيمةٍ ماليّة،
+    // فحذفُه قرارُ محاسبٍ لا قرارُ إقلاع — نفسُ سياسة B1/B2.
+    await dedupAndAdd(
+      'bank_statement_lines UNIQUE (matched_journal_line_id)',
+      '',
+      kCreateBankStatementMatchDedupIndexSql,
+      () async {
+        try {
+          final rows = await customSelect(
+            "SELECT 1 AS x FROM pg_indexes "
+            "WHERE tablename = 'bank_statement_lines' "
+            "  AND indexname = '$kBankStatementMatchDedupIndexName' "
             "LIMIT 1",
           ).get();
           return rows.isNotEmpty;

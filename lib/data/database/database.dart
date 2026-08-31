@@ -464,6 +464,31 @@ const String kCreateAccountMappingsPurposeCcIndexSql =
     'CREATE UNIQUE INDEX IF NOT EXISTS $kAccountMappingsPurposeCcIndexName '
     'ON account_mappings(purpose, coalesce(cost_center_id, 0))';
 
+/// §٣‑٦ — قيدُ قاعدةٍ ضدّ تغطيةِ سطرَي كشفٍ بنكيٍّ بقيدٍ واحد.
+///
+/// المطابقةُ الآليّةُ تُقصي سطرَ القيد المستعملَ سلفاً (`l.id NOT IN (...)`)،
+/// واليدويّةُ صارت ترمي عليه — **لكنّ الاثنين كودُ تطبيق**. ونفسُ حجّةِ فهرسَي
+/// B1/B2 تسري هنا حرفاً: الأثرُ ماليّ.
+///
+/// فسطرا كشفٍ يُغلقان على نفسِ سطر القيد يُعَدّان مطابَقَين اثنَين، وينخفض
+/// «غيرُ المطابَق» بمقدارَين، فتبدو المطابقةُ تامّةً بينما حركةٌ بنكيّةٌ كاملةٌ
+/// بلا ما يقابلها في الدفتر. وهذا **يُخفي** الفرقَ بدل أن يُظهره — وإظهارُه
+/// هو الغرضُ الوحيدُ من المطابقة.
+///
+/// ⚠️ **ولا حاجةَ لفهرسٍ جزئيّ**: العمودُ nullable، و`UNIQUE` تعامل `NULL`
+/// قيماً **متمايزةً** في SQLite وPostgreSQL معاً — فآلافُ الأسطر غير المطابَقة
+/// (`matched_journal_line_id IS NULL`) لا تتصادم.
+///
+/// ⚠️ **ولا تسويةَ آليّةً قبله** — نفسُ سياسة B1/B2 لا سياسةِ ربطِ الحسابات:
+/// الصفُّ الزائدُ هنا **حركةٌ ذاتُ قيمةٍ ماليّة** لا إعداداً، فحذفُه قرارُ
+/// محاسبٍ لا قرارُ إقلاع. وعلى بياناتٍ مزدوجةٍ تفشل الجملةُ بصمتٍ ويبقى حارسُ
+/// التطبيق.
+const String kBankStatementMatchDedupIndexName =
+    'idx_bank_stmt_matched_je_line_dedup';
+const String kCreateBankStatementMatchDedupIndexSql =
+    'CREATE UNIQUE INDEX IF NOT EXISTS $kBankStatementMatchDedupIndexName '
+    'ON bank_statement_lines(matched_journal_line_id)';
+
 /// تسويةُ المزدوج **قبل** تركيب [kCreateAccountMappingsPurposeCcIndexSql].
 ///
 /// قرارُ المالك 2026-08-31: **يبقى الأحدثُ بـ`updated_at`**، والتعادلُ يُحسَم
