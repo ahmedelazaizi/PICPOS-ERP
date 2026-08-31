@@ -483,10 +483,17 @@ extension SalesAnalyticsDao on AppDatabase {
       readsFrom: {salesInvoices},
     ).get();
 
+    // SAL-1: الكمّيّةُ بوحدةِ البيع و`cost_price` بالوحدةِ الأساس (WAC)،
+    // فـ`quantity_in_base` هي التي تحوّل بينهما — وبدونها تنقص التكلفةُ على
+    // كلّ بيعةِ كرتونة. نفسُ الصيغةِ المستعملةِ في ترحيل COGS إلى الأستاذ
+    // (`accounting_autopost_dao.dart`) وفي :264 و:906 و:1298 من هذا الملفّ،
+    // وإلّا خالفت شاشةُ التحليلاتِ الأستاذَ على الفاتورةِ نفسِها.
     final cogsRows = await customSelect(
       '''
       SELECT ${monthOf('sales_invoices.invoice_date')} as ym,
-             SUM(sales_invoice_items.quantity * sales_invoice_items.cost_price) as cogs
+             SUM(sales_invoice_items.quantity
+                 * sales_invoice_items.quantity_in_base
+                 * sales_invoice_items.cost_price) as cogs
       FROM sales_invoice_items
       JOIN sales_invoices ON sales_invoices.id = sales_invoice_items.invoice_id
       WHERE sales_invoices.invoice_date BETWEEN ? AND ?$invoiceScope
