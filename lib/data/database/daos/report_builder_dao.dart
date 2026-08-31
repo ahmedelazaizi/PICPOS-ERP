@@ -386,9 +386,102 @@ extension ReportBuilderDao on AppDatabase {
     return null;
   }
 
+  /// الدوالُّ التجميعيّةُ المقبولة — **قائمةٌ مغلقة**.
+  ///
+  /// اسمُ الدالّة يُركَّب في نصّ الاستعلام حرفيّاً (‏`SUM(?)` ليس SQL صالحاً
+  /// لاسمِ دالّة)، فالمقبولُ هو ما في هذه القائمة وحدَه — نفسُ سياسةِ حقلَي
+  /// التجميع والترتيب. وهي عينُ `_kFunctions` في شاشة PicPos.
+  static const _kAggregateFunctions = {'SUM', 'AVG', 'COUNT', 'MIN', 'MAX'};
+
+  /// يفكّ خريطةَ `aggregates` المحفوظة (‏`{"total":"SUM"}`) ويتحقّق منها.
+  ///
+  /// `null` = **مرفوض** ⇒ المُنادي يرفض التقريرَ كلَّه: حقلٌ ليس من سجلّ
+  /// الكيان، أو دالّةٌ خارج القائمة المغلقة، أو نصٌّ ليس خريطةَ نصوص.
+  /// وخريطةٌ فارغةٌ (‏`null` أو `''`) ليست رفضاً — هي «بلا دوالّ».
+  Map<String, String>? _parseAggregates(String entity, String? raw) {
+    final s = raw?.trim() ?? '';
+    if (s.isEmpty) return const {};
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(s);
+    } catch (_) {
+      debugPrint('[ReportBuilder] رُفض: `aggregates` ليست JSON صالحة');
+      return null;
+    }
+    if (decoded is! Map) {
+      debugPrint('[ReportBuilder] رُفض: `aggregates` ليست خريطة');
+      return null;
+    }
+    final out = <String, String>{};
+    for (final e in decoded.entries) {
+      final field = e.key;
+      final fn = e.value;
+      if (field is! String || fn is! String) {
+        debugPrint('[ReportBuilder] رُفض: مدخلةُ تجميعٍ ليست نصّاً');
+        return null;
+      }
+      if (_fieldType(entity, field) == null) {
+        debugPrint('[ReportBuilder] رُفض: حقلُ دالّةٍ "$field" ليس من حقول '
+            '"$entity"');
+        return null;
+      }
+      final upper = fn.toUpperCase();
+      if (!_kAggregateFunctions.contains(upper)) {
+        debugPrint('[ReportBuilder] رُفض: دالّةٌ تجميعيّةٌ غيرُ معروفة "$fn"');
+        return null;
+      }
+      out[field] = upper;
+    }
+    return out;
+  }
+
+  /// تعبيرُ عمودٍ **غيرِ مجمَّعٍ** داخل استعلامٍ فيه `GROUP BY`.
+  ///
+  /// الدالّةُ المعلَنةُ أوّلاً، ثمّ `SUM` لكلّ رقميٍّ بلا دالّة (قرارُ المالك)،
+  /// وما عدا ذلك يبقى عارياً: النصُّ والتاريخُ في تقريرٍ مجمَّعٍ يكونان تابعَين
+  /// لمفتاح المجموعة غالباً (اسمُ العميل مع `customer_id`)، وجمعُهما لا معنى
+  /// له أصلاً.
+  String _aggregateExpression(
+    String entity,
+    String col,
+    String expr,
+    Map<String, String> aggregates,
+  ) {
+    final declared = aggregates[col];
+    if (declared != null) return '$declared($expr)';
+    if (_fieldType(entity, col) == 'number') return 'SUM($expr)';
+    return expr;
+  }
+
   ({String sql, List<Variable> vars})? _buildReportQuery(
       CustomReportData report, Set<int>? allowedBranchIds, int rowLimit) {
     final tableName = _getTableName(report.sourceEntity);
+
+    // ── §٣‑٤(ب) التجميعُ يفرض دالّةً — لا قيمةً عشوائيّة ──────────────────
+    //
+    // `GROUP BY` كان يُركَّب بينما `SELECT` يبقى أعمدةً عاريةً. وSQLite تُرجع
+    // حينئذٍ قيمةَ **صفٍّ عشوائيٍّ** من داخل المجموعة، والمستخدمُ يقرؤها
+    // مجموعاً فرعيّاً: «تجميعٌ حسب العميل» يعطي عموداً واحداً باسم «الإجمالي»
+    // قيمتُه إجماليُّ فاتورةٍ واحدةٍ من فواتيره — لا مجموعُها.
+    //
+    // وعمودُ `aggregates` كان يُحفَظ من الواجهة **ولا يُقرأ هنا إطلاقاً**،
+    // فاللوحةُ إعدادٌ ميّت.
+    //
+    // والسياسةُ (قرارُ مالكٍ 2026-08-31):
+    //   • حقلٌ في `GROUP BY`            → عارياً (هو مفتاحُ المجموعة)
+    //   • حقلٌ له دالّةٌ معلَنة          → `FN(expr)`
+    //   • حقلٌ **رقميٌّ** بلا دالّة      → `SUM(expr)` افتراضاً
+    //   • حقلٌ نصّيٌّ/تاريخيٌّ بلا دالّة  → عارياً (تابعٌ لمفتاح المجموعة غالباً)
+    //
+    // ⚠️ **ولا تُطبَّق الدوالُّ بلا `GROUP BY`**: بلا مجموعاتٍ تنهار النتيجةُ
+    // إلى صفٍّ واحدٍ لم يطلبه أحد. فاللوحةُ ذاتُ أثرٍ عند التجميع وحدَه.
+    final grouped = <String>{
+      if (report.groupBy != null)
+        for (final f in report.groupBy!.split(',')) f.trim()
+    }..remove('');
+
+    final aggregates = _parseAggregates(report.sourceEntity, report.aggregates);
+    if (aggregates == null) return null; // دالّةٌ أو حقلٌ مرفوض ⇒ ارفض التقرير
 
     // Map friendly keys to proper SQL columns to prevent "no such column" errors
     String mappedCols = '*';
@@ -398,7 +491,10 @@ extension ReportBuilderDao on AppDatabase {
         final expr = _fieldSqlExpression(report.sourceEntity, col);
         // الاسمُ المُعلَن يُحفَظ بـ`AS` كي تبقى رؤوسُ الجدول في الواجهة هي ما
         // اختاره المستخدم لا اسمَ العمود الخام.
-        return expr == col ? col : '$expr AS $col';
+        final out = grouped.isEmpty || grouped.contains(col)
+            ? expr
+            : _aggregateExpression(report.sourceEntity, col, expr, aggregates);
+        return out == col ? col : '$out AS $col';
       }).join(', ');
     }
 
