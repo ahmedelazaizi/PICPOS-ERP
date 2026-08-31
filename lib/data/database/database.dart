@@ -13,6 +13,8 @@ import '../../domain/repositories/treasury_repository.dart';
 import 'connection.dart';
 import 'wal_checkpoint.dart';
 import '../../services/security_service.dart';
+import '../../domain/models/quick_sale_policy.dart'
+    show kQuickSaleReceiptTemplateKey, quickSaleReceiptTemplateFile;
 import '../../services/printing/template_resolver.dart';
 import '../../services/printing/paper_compatibility.dart';
 import '../../services/password_collision_scanner.dart';

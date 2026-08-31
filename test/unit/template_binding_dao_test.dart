@@ -129,7 +129,7 @@ void main() {
       );
 
       expect(r.templateId, t);
-      expect(r.level, 5);
+      expect(r.level, 6);
     });
 
     test('وللمدمج حين لا شيء إطلاقاً', () async {
@@ -138,7 +138,7 @@ void main() {
         category: 'invoice',
       );
       expect(r.isBuiltIn, isTrue);
-      expect(r.level, 6);
+      expect(r.level, 7);
     });
   });
 

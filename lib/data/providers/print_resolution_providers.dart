@@ -17,9 +17,7 @@ import '../../domain/models/picpos_template_card.dart';
 import '../../domain/models/print_resolution_row.dart';
 import '../../services/printing/paper_compatibility.dart';
 import '../../services/printing/template_resolver.dart';
-import '../database/database.dart';
-import 'auth_providers.dart';
-import 'repository_providers.dart';
+import 'providers.dart';
 import 'template_library_providers.dart';
 
 /// خيارُ الفرع في شريط الترشيح — `null` يعني «كل الفروع».
@@ -63,6 +61,7 @@ final printResolutionRowsProvider =
   ref.watch(templateLibraryRefreshProvider);
 
   final repo = ref.watch(invoiceTemplatesRepositoryProvider);
+  final db = ref.watch(databaseProvider);
   final branchId = ref.watch(resolutionBranchProvider);
   final locale = ref.watch(resolutionLocaleProvider);
 
@@ -88,7 +87,7 @@ final printResolutionRowsProvider =
       ),
   ];
 
-  // افتراضيُّ الفئة (المستوى الخامس) لكلِّ زوجٍ — يُحسب مرّةً لا مرّةً لكلِّ
+  // افتراضيُّ الفئة (المستوى السادس) لكلِّ زوجٍ — يُحسب مرّةً لا مرّةً لكلِّ
   // صفّ. و`getSingleOrNull` في الـDAO ترمي عند افتراضيَّين، فالقراءةُ هنا
   // من القائمة كاملةً: **أوّلُ** ما يطابق، وهو ما يفعله SQLite عمليّاً.
   int? categoryDefault(String type, String category) {
@@ -99,6 +98,14 @@ final printResolutionRowsProvider =
     }
     return null;
   }
+
+  // ⚠️ **المِزلاجُ يُقرأ من الـDAO نفسِه** لا يُعاد حسابُه هنا: شاشةُ الحسم
+  // تدّعي أنّها تصف ما يقع على الورق، فمنطقان متوازيان يعنيان شاشةً تُطمئن
+  // على قالبٍ آخر. وهو `null` لكلِّ نوعٍ سوى `sales_receipt`.
+  final quickSaleIds = <String, int?>{
+    for (final type in TemplateResolver.documentTypes)
+      type: await db.quickSaleTemplateIdFor(type),
+  };
 
   // القرارُ الأوّل: احسم كلَّ نوعٍ، ثمّ اقرأ التصادماتِ من الحصيلة. فتقاسمُ
   // افتراضيِّ الفئة لا يُعرَف إلّا بعد أن يُحسم الجميع.
@@ -112,16 +119,17 @@ final printResolutionRowsProvider =
       bindings: rules,
       branchId: branchId,
       locale: locale,
+      quickSaleTemplateId: quickSaleIds[type],
       categoryDefaultTemplateId: categoryDefault(ctx.type, ctx.category),
     );
   }
 
-  // كم نوعاً يحطّ على كلِّ قالبٍ **بالمستوى الخامس**؟ اثنان فأكثرُ تصادم.
-  final sharedAtLevelFive = <int, int>{};
+  // كم نوعاً يحطّ على كلِّ قالبٍ **بمستوى الفئة**؟ اثنان فأكثرُ تصادم.
+  final sharedAtCategoryLevel = <int, int>{};
   for (final r in resolutions.values) {
-    if (r.level == 5 && r.templateId != null) {
-      sharedAtLevelFive[r.templateId!] =
-          (sharedAtLevelFive[r.templateId!] ?? 0) + 1;
+    if (r.level == 6 && r.templateId != null) {
+      sharedAtCategoryLevel[r.templateId!] =
+          (sharedAtCategoryLevel[r.templateId!] ?? 0) + 1;
     }
   }
 
@@ -176,8 +184,8 @@ final printResolutionRowsProvider =
       health: classifyResolution(
         level: resolution.level,
         wired: TemplateResolver.wiredDocumentTypes.contains(type),
-        sharesCategoryDefault: resolution.level == 5 &&
-            (sharedAtLevelFive[resolution.templateId] ?? 0) > 1,
+        sharesCategoryDefault: resolution.level == 6 &&
+            (sharedAtCategoryLevel[resolution.templateId] ?? 0) > 1,
         fit: fit,
       ),
       chain: [
@@ -187,6 +195,7 @@ final printResolutionRowsProvider =
           bindings: rules,
           branchId: branchId,
           locale: locale,
+          quickSaleTemplateId: quickSaleIds[type],
           categoryDefaultTemplateId: categoryDefault(ctx.type, ctx.category),
         ))
           ResolutionStepView(

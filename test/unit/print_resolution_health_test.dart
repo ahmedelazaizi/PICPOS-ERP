@@ -28,8 +28,8 @@ void main() {
       );
 
   group('كلُّ حالٍ يُبلَغ من وقائعه', () {
-    test('السادسُ ⇐ بلا قالب', () {
-      expect(call(level: 6), ResolutionHealth.builtIn);
+    test('السابعُ ⇐ بلا قالب', () {
+      expect(call(level: 7), ResolutionHealth.builtIn);
     });
 
     test('الأوّلُ والثاني ⇐ من الفرع', () {
@@ -42,12 +42,21 @@ void main() {
       expect(call(level: 4), ResolutionHealth.bound);
     });
 
-    test('الخامسُ وحدَه ⇐ بالفئة', () {
-      expect(call(level: 5), ResolutionHealth.categoryOnly);
+    // ⚠️ المِزلاجُ **اختيارٌ صريحٌ من المدير** لا سقوطٌ إلى عَلَمٍ عالميّ،
+    // فحالُه «مضبوط» لا «بالفئة». ولا تصادمَ فيه: مِزلاجٌ واحدٌ لا يخدم إلّا
+    // `sales_receipt`، فالتقاسمُ لا يبلغه أصلاً.
+    test('الخامسُ (مِزلاجُ البيع السريع) ⇐ مضبوط', () {
+      expect(call(level: 5), ResolutionHealth.bound);
+      expect(call(level: 5, shares: true), ResolutionHealth.bound,
+          reason: 'التصادمُ حكمُ مستوى الفئة وحدَه');
     });
 
-    test('والخامسُ مُتقاسَماً ⇐ تصادمُ فئة', () {
-      expect(call(level: 5, shares: true), ResolutionHealth.collision);
+    test('السادسُ وحدَه ⇐ بالفئة', () {
+      expect(call(level: 6), ResolutionHealth.categoryOnly);
+    });
+
+    test('والسادسُ مُتقاسَماً ⇐ تصادمُ فئة', () {
+      expect(call(level: 6, shares: true), ResolutionHealth.collision);
     });
 
     test('وقالبٌ صحيحٌ بلا منادٍ ⇐ بانتظار التوصيل', () {
@@ -67,25 +76,25 @@ void main() {
   group('الترتيبُ عند تعارض الوقائع — أسوأً فأسوأ', () {
     test('«بلا قالب» تسبق «بانتظار التوصيل»', () {
       // عرضُ سعرٍ: لا قالبَ ولا منادٍ. والمستخدمُ يواجه غيابَ القالب أوّلاً.
-      expect(call(level: 6, wired: false), ResolutionHealth.builtIn);
+      expect(call(level: 7, wired: false), ResolutionHealth.builtIn);
     });
 
     test('و«بلا قالب» تسبق «ورقاً غيرَ مطابق»', () {
-      expect(call(level: 6, fit: PaperFit.tooWide), ResolutionHealth.builtIn);
+      expect(call(level: 7, fit: PaperFit.tooWide), ResolutionHealth.builtIn);
     });
 
     test('و«ورقٌ غيرُ مطابق» تسبق «تصادمَ فئة»', () {
-      expect(call(level: 5, shares: true, fit: PaperFit.tooWide),
+      expect(call(level: 6, shares: true, fit: PaperFit.tooWide),
           ResolutionHealth.paperMismatch);
     });
 
     test('و«تصادمُ فئة» تسبق «بانتظارَ التوصيل»', () {
-      expect(call(level: 5, shares: true, wired: false),
+      expect(call(level: 6, shares: true, wired: false),
           ResolutionHealth.collision);
     });
 
     test('و«بانتظار التوصيل» تسبق «بالفئة» و«من الفرع» و«مضبوط»', () {
-      expect(call(level: 5, wired: false), ResolutionHealth.unwired);
+      expect(call(level: 6, wired: false), ResolutionHealth.unwired);
       expect(call(level: 1, wired: false), ResolutionHealth.unwired);
       expect(call(level: 4, wired: false), ResolutionHealth.unwired);
     });

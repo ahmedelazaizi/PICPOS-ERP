@@ -28,19 +28,19 @@ void main() {
       BindingRule(templateId: 103, documentType: 'sales_invoice', locale: 'ar');
   const l4 = BindingRule(templateId: 104, documentType: 'sales_invoice');
 
-  group('السلسلةُ ستّةُ مستوياتٍ دائماً', () {
-    test('بلا رابطةٍ ولا افتراضيّ ⇐ المدمجُ يفوز والخمسةُ قبله أُخفقت', () {
+  group('السلسلةُ سبعةُ مستوياتٍ دائماً', () {
+    test('بلا رابطةٍ ولا مِزلاجٍ ولا افتراضيّ ⇐ المدمجُ يفوز والستّةُ قبله أُخفقت', () {
       final chain = TemplateResolver.explain(
         documentType: 'sales_invoice',
         category: 'invoice',
         bindings: const [],
       );
 
-      expect(chain, hasLength(6));
-      expect(chain.where((s) => s.isWinner).single.level, 6);
+      expect(chain, hasLength(7));
+      expect(chain.where((s) => s.isWinner).single.level, 7);
       expect(chain.last.templateId, isNull,
           reason: 'المدمجُ لا قالبَ له في القاعدة — و`null` هنا قصدٌ لا فقد');
-      for (final s in chain.take(5)) {
+      for (final s in chain.take(6)) {
         expect(s.state, ResolutionStepState.missed);
       }
     });
@@ -172,8 +172,10 @@ void main() {
           reason: 'الثاني يعمّم الطابعةَ ويشترط الفرع');
       expect(chain[2].key, 'sales_invoice · * · * · ar');
       expect(chain[3].key, 'sales_invoice · * · * · *');
-      expect(chain[4].key, 'invoice · * · * · *',
-          reason: 'المستوى الخامسُ يُفهرَس بالفئة لا بنوع المستند');
+      expect(chain[4].key, 'pos_receipt_template',
+          reason: 'المستوى الخامسُ إعدادٌ واحدٌ لا مفتاحَ نطاقٍ له');
+      expect(chain[5].key, 'invoice · * · * · *',
+          reason: 'المستوى السادسُ يُفهرَس بالفئة لا بنوع المستند');
 
       // والدليلُ القاطع: أربعةُ مفاتيحَ متمايزةٍ لا مفتاحٌ مكرَّر.
       expect(chain.take(4).map((s) => s.key).toSet(), hasLength(4));

@@ -76,9 +76,9 @@ extension ResolutionHealthLabel on ResolutionHealth {
 
 /// يصنّف مسارَ طباعةٍ واحداً من وقائعِه المقيسة.
 ///
-/// [level] مستوى السلسلة الفائز (١..٦) · [wired] هل يمرّر منادٍ حيٌّ نوعَه ·
+/// [level] مستوى السلسلة الفائز (١..٧) · [wired] هل يمرّر منادٍ حيٌّ نوعَه ·
 /// [sharesCategoryDefault] هل نوعٌ آخرُ يحطّ على القالب نفسِه في المستوى
-/// الخامس · [fit] حكمُ عرضِ الورق حين تكون الطابعةُ معروفةً.
+/// **السادس** (الفئة) · [fit] حكمُ عرضِ الورق حين تكون الطابعةُ معروفةً.
 ///
 /// ⚠️ **الترتيبُ أسوأً فأسوأ**: مسارٌ بلا قالبٍ وغيرُ موصولٍ في آنٍ واحدٍ
 /// يُعرَض «بلا قالب». وعرضٌ واحدٌ لا يحتمل تصنيفين.
@@ -88,11 +88,14 @@ ResolutionHealth classifyResolution({
   required bool sharesCategoryDefault,
   PaperFit fit = PaperFit.ok,
 }) {
-  if (level >= 6) return ResolutionHealth.builtIn;
+  if (level >= 7) return ResolutionHealth.builtIn;
   if (fit == PaperFit.tooWide) return ResolutionHealth.paperMismatch;
-  if (level == 5 && sharesCategoryDefault) return ResolutionHealth.collision;
+  if (level == 6 && sharesCategoryDefault) return ResolutionHealth.collision;
   if (!wired) return ResolutionHealth.unwired;
-  if (level == 5) return ResolutionHealth.categoryOnly;
+  if (level == 6) return ResolutionHealth.categoryOnly;
+  // ٥ (مِزلاجُ البيع السريع) يسقط إلى [ResolutionHealth.bound] أدناه: اختيارٌ
+  // صريحٌ من المدير، فهو «موصولٌ» لا «بالفئة وحدَها». ولا تصادمَ فيه —
+  // المِزلاجُ واحدٌ ولا يخدم إلّا `sales_receipt`.
   if (level <= 2) return ResolutionHealth.branchScoped;
   return ResolutionHealth.bound;
 }

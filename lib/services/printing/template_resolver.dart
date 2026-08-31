@@ -1,4 +1,4 @@
-/// سلسلةُ حسم القالب — ستّةُ مستوياتٍ من الأخصِّ للأعمّ.
+/// سلسلةُ حسم القالب — سبعةُ مستوياتٍ من الأخصِّ للأعمّ.
 ///
 /// ── لماذا رابطةٌ لا عَلَم ─────────────────────────────────────────────────
 /// الحسمُ اليومَ يقوم على `isDefault`، وهو عَلَمٌ **عالميٌّ لا يعرف فرعاً ولا
@@ -11,9 +11,18 @@
 /// الحسمُ بالفئة هو سلوكُ اليوم. إسقاطُه يعني أنّ كلَّ قاعدةٍ قائمةٍ تفقد
 /// قالبَها الافتراضيَّ لحظةَ الترقية — فيبقى ذيلاً للسلسلة لا بديلاً عنها.
 ///
+/// ── والمستوى الخامسُ أُدرج 2026-08-31 ────────────────────────────────────
+/// مِزلاجُ «القالب المستخدم» في إعدادات البيع السريع كان **يُحفَظ ولا يُقرأ
+/// في أيِّ مسارِ طباعة**. وبقرار المالك صار مُرجِّحاً: يخسر أمام أيِّ ربطٍ
+/// صريحٍ (‏١..٤) لأنّ الربطَ نيّةٌ أخصّ، ويفوز على `isDefault` لأنّ الأخيرَ
+/// عَلَمٌ عالميٌّ لا يعرف نيّة.
+///
 /// نقيّ: لا `package:pdf` ولا `package:flutter` ولا قاعدةَ بيانات — الـDAO
 /// يملأ [BindingRule] ويناديه.
 library;
+
+import '../../domain/models/quick_sale_policy.dart'
+    show kQuickSaleReceiptTemplateKey;
 
 /// رابطةٌ واحدةٌ بين مستندٍ وقالب.
 ///
@@ -69,7 +78,7 @@ class TemplateResolution {
   /// `null` يعني التصميمَ المدمجَ في الكود.
   final int? templateId;
 
-  /// ١..٦ — انظر ترتيبَ السلسلة أعلاه.
+  /// ١..٧ — انظر ترتيبَ السلسلة أعلاه.
   final int level;
 
   final int copies;
@@ -99,7 +108,7 @@ enum ResolutionStepState {
 
 /// مستوىً واحدٌ من سلسلة الحسم — تعرضه شاشةُ الحسم سطراً.
 class ResolutionStep {
-  /// ١..٦.
+  /// ١..٧.
   final int level;
 
   /// اسمُ المستوى كما يُقرأ.
@@ -218,7 +227,10 @@ class TemplateResolver {
 
   /// يحسم القالبَ بالمفتاح الرباعيّ.
   ///
-  /// [categoryDefaultTemplateId] هو `isDefault` القائم — المستوى الخامس.
+  /// [quickSaleTemplateId] مِزلاجُ «القالب المستخدم» في إعدادات البيع السريع
+  /// — المستوى الخامس. و`null` يعني **لا رأيَ له**، فيُتخطّى المستوى.
+  ///
+  /// [categoryDefaultTemplateId] هو `isDefault` القائم — المستوى السادس.
   static TemplateResolution resolve({
     required String documentType,
     required String category,
@@ -226,6 +238,7 @@ class TemplateResolver {
     int? branchId,
     int? printerId,
     String? locale,
+    int? quickSaleTemplateId,
     int? categoryDefaultTemplateId,
   }) {
     final mine =
@@ -255,16 +268,28 @@ class TemplateResolver {
       );
     }
 
-    // ٥ · الحسمُ بالفئة — سلوكُ اليوم، يبقى للتوافق.
+    // ٥ · مِزلاجُ البيع السريع — **مُرجِّحٌ عند غياب ربطٍ صريحٍ وحدَه**.
+    //
+    // قرارُ المالك 2026-08-31. وموضعُه بعد الرابطات لا قبلها عن قصد: مَن
+    // ربط قالباً بفرعٍ أو طابعةٍ بعينها عبّر عن نيّةٍ أخصَّ من مِزلاجٍ عامّ،
+    // وتقديمُ المِزلاج كان يُبطل ذلك الربطَ صامتاً.
+    //
+    // وقبل الفئة لأنّ `isDefault` عَلَمٌ عالميٌّ لا يعرف نيّةً — والمِزلاجُ
+    // اختيارٌ صريحٌ من المدير.
+    if (quickSaleTemplateId != null) {
+      return TemplateResolution(templateId: quickSaleTemplateId, level: 5);
+    }
+
+    // ٦ · الحسمُ بالفئة — سلوكُ اليوم، يبقى للتوافق.
     if (categoryDefaultTemplateId != null) {
       return TemplateResolution(
         templateId: categoryDefaultTemplateId,
-        level: 5,
+        level: 6,
       );
     }
 
-    // ٦ · التصميمُ المدمجُ في الكود.
-    return const TemplateResolution(templateId: null, level: 6);
+    // ٧ · التصميمُ المدمجُ في الكود.
+    return const TemplateResolution(templateId: null, level: 7);
   }
 
   static bool _matchesLevel(
@@ -317,6 +342,7 @@ class TemplateResolver {
     int? branchId,
     int? printerId,
     String? locale,
+    int? quickSaleTemplateId,
     int? categoryDefaultTemplateId,
   }) {
     final mine =
@@ -342,7 +368,9 @@ class TemplateResolver {
       '$documentType · $gen · $gen · ${req(locale)}',
       // ٤ · الكلُّ معمَّم.
       '$documentType · $gen · $gen · $gen',
-      // ٥ · يُفهرَس بالفئة لا بنوع المستند.
+      // ٥ · مِزلاجُ البيع السريع — إعدادٌ واحدٌ لا مفتاحَ نطاقٍ له.
+      kQuickSaleReceiptTemplateKey,
+      // ٦ · يُفهرَس بالفئة لا بنوع المستند.
       '$category · $gen · $gen · $gen',
       'built-in',
     ];
@@ -352,11 +380,12 @@ class TemplateResolver {
       '٢ · مستند + فرع + لغة',
       '٣ · مستند + لغة',
       '٤ · مستند',
-      '٥ · الفئة (السلوك القائم)',
-      '٦ · التصميم المدمج في الكود',
+      '٥ · مِزلاج البيع السريع',
+      '٦ · الفئة (السلوك القائم)',
+      '٧ · التصميم المدمج في الكود',
     ];
 
-    var winner = 0; // ١..٦ — صفرٌ يعني «لم يُحسم بعد».
+    var winner = 0; // ١..٧ — صفرٌ يعني «لم يُحسم بعد».
     int? winnerTemplate;
 
     for (var level = 1; level <= 4 && winner == 0; level++) {
@@ -373,17 +402,22 @@ class TemplateResolver {
           matches.reduce((a, c) => c.priority > a.priority ? c : a).templateId;
     }
 
-    if (winner == 0 && categoryDefaultTemplateId != null) {
+    if (winner == 0 && quickSaleTemplateId != null) {
       winner = 5;
+      winnerTemplate = quickSaleTemplateId;
+    }
+
+    if (winner == 0 && categoryDefaultTemplateId != null) {
+      winner = 6;
       winnerTemplate = categoryDefaultTemplateId;
     }
 
-    // ٦ يفوز دائماً حين يصله الدور — التصميمُ المدمجُ لا يُخفق، وقالبُه
+    // ٧ يفوز دائماً حين يصله الدور — التصميمُ المدمجُ لا يُخفق، وقالبُه
     // `null` عن قصدٍ لا عن فقد.
-    if (winner == 0) winner = 6;
+    if (winner == 0) winner = 7;
 
     return [
-      for (var level = 1; level <= 6; level++)
+      for (var level = 1; level <= 7; level++)
         ResolutionStep(
           level: level,
           label: labels[level - 1],

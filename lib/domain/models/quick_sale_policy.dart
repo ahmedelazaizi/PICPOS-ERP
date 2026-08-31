@@ -556,15 +556,13 @@ const List<QuickSaleStep> kQuickSaleSteps = [
             settingKey: 'pos_receipt_template',
             kind: QuickSaleControl.pill,
             title: 'القالب المستخدم',
-            sub: 'يُحلّ حسب الفرع والطابعة واللغة',
+            sub: 'يُرجَّح عند غياب ربطٍ صريحٍ للفرع أو الطابعة',
             options: [
               'thermal80_quick_sale',
               'thermal58_quick_sale',
               'a4_sales_tax_invoice',
             ],
-            notEnforcedReason:
-                'اختيارُ القالب يمرّ اليوم بسلسلةِ الحسم (الفرع · الطابعة · '
-                'اللغة) لا بمفتاحٍ واحد — وتثبيتُه هنا يتجاوزها فيحتاج قراراً.',
+            enforced: true,
           ),
           QuickSaleRow(
             id: 'drawer',
@@ -1104,6 +1102,29 @@ QuickSalePriceEditPolicy quickSalePriceEditPolicy(
 /// عددُ نسخ الإيصال — لا يكون صفراً أبداً.
 int quickSaleReceiptCopies(QuickSalePolicyValues v) =>
     const [1, 2, 3][v.indexOf(_rowById('copies'))];
+
+/// مفتاحُ «القالب المستخدم» — يقرؤه الحاسمُ من القاعدة مباشرةً بلا Riverpod.
+const kQuickSaleReceiptTemplateKey = 'pos_receipt_template';
+
+/// اسمُ ملفِّ القالب المختار في «القالب المستخدم» — من **القيمة المخزَّنة**.
+///
+/// يرجع `null` حين لا رأيَ للمِزلاج، وهي الحالةُ الافتراضيّة.
+///
+/// ⚠️ **ولا يُستعمل [QuickSalePolicyValues.indexOf] هنا**: هي تسقط إلى
+/// `defaultIndex` (صفر) عند غياب المفتاح — وهو الصوابُ لعرضِ شاشةٍ، وخطأٌ
+/// قاتلٌ لحسمِ قالب. فمفتاحٌ غائبٌ كان سيعني «اختار المديرُ
+/// `thermal80_quick_sale`»، فيتقدّم على القالب الافتراضيِّ للفئة في **كلِّ**
+/// تركيبٍ لم يلمس هذا المِزلاجَ قطّ — انقلابُ مطبوعٍ صامتٌ للجميع.
+///
+/// فالقاعدةُ: **مِزلاجٌ لم يُلمَس لا يقرّر شيئاً.** والفهرسُ الشاذُّ (قيمةٌ
+/// فاسدةٌ أو خارجُ المدى) يُعامَل مثلَه — سقوطٌ للمستوى التالي لا حَزْرٌ.
+String? quickSaleReceiptTemplateFile(String? storedIndex) {
+  if (storedIndex == null) return null;
+  final row = _rowById('tpl');
+  final idx = int.tryParse(storedIndex.trim());
+  if (idx == null || idx < 0 || idx >= row.options.length) return null;
+  return row.options[idx];
+}
 
 /// ما يحدث حين لا يطابق الباركودُ أيَّ صنف.
 ///

@@ -152,9 +152,9 @@ extension TemplateBindingDao on AppDatabase {
             }))
           .go();
 
-  /// يحسم القالبَ بالسلسلة السداسيّة.
+  /// يحسم القالبَ بالسلسلة السباعيّة.
   ///
-  /// [paperType] لازمٌ للمستوى الخامس وحدَه (‏`isDefault` القائم يُفهرَس
+  /// [paperType] لازمٌ للمستوى السادس وحدَه (‏`isDefault` القائم يُفهرَس
   /// بالنوع + الفئة). وغيابُه يعني تخطّي ذلك المستوى لا فشلَ الحسم.
   Future<TemplateResolution> resolveTemplateFor({
     required String documentType,
@@ -205,8 +205,62 @@ extension TemplateBindingDao on AppDatabase {
       branchId: branchId,
       printerId: printerId,
       locale: locale,
+      quickSaleTemplateId: await quickSaleTemplateIdFor(documentType),
       categoryDefaultTemplateId: categoryDefault,
     );
+  }
+
+  /// معرِّفُ القالب الذي يختاره مِزلاجُ «القالب المستخدم» — المستوى الخامس.
+  ///
+  /// يرجع `null` في كلِّ حالةٍ غامضة، فيسقط الحسمُ للمستوى التالي **بصمت**
+  /// مع بلاغٍ في السجلّ (قرارُ المالك 2026-08-31): مِزلاجٌ لا يجد قالبَه لا
+  /// يجوز أن يمنع فاتورةً من الطباعة.
+  ///
+  /// ⚠️ **ونطاقُه `sales_receipt` وحدَه**: المِزلاجُ إعدادُ إيصالِ نقطةِ
+  /// بيعٍ في شاشة «البيع السريع»، فلا يليق أن يحكم فاتورةَ مشترياتٍ ولا
+  /// كشفَ حسابٍ ولا تذكرةَ مطبخ.
+  ///
+  /// ⚠️ **والمفتاحُ الغائبُ ليس الخيارَ الأوّل**: التخزينُ فهرسٌ نصّيّ،
+  /// و`defaultIndex` صفرٌ — فقراءةٌ ساقطةٌ إلى الافتراض كانت ستفرض
+  /// `thermal80_quick_sale` على كلِّ تركيبٍ لم يلمس المِزلاجَ قطّ، متقدّمةً
+  /// على قالبه الافتراضيّ. وهذا ما يحرسه [quickSaleReceiptTemplateFile]
+  /// بإرجاع `null` للغائب.
+  Future<int?> quickSaleTemplateIdFor(String documentType) async {
+    if (documentType != 'sales_receipt') return null;
+    try {
+      final stored = await getSettingValue(kQuickSaleReceiptTemplateKey);
+      final file = quickSaleReceiptTemplateFile(stored);
+      if (file == null) return null;
+
+      // `options` تحمل اسمَ الملفِّ بلا لاحقة، و`kReadyTemplateFiles` يربطه
+      // باسم القالب كما يُبذَر في القاعدة.
+      final entry = kReadyTemplateFiles
+          .where((t) => t['file'] == '$file.json')
+          .firstOrNull;
+      if (entry == null) {
+        unawaited(DiagnosticLogger.log(DiagnosticLogger.printOut,
+            'مِزلاجُ القالب يشير إلى ملفٍّ مجهول "$file" — سقوطٌ للمستوى التالي'));
+        return null;
+      }
+
+      final match = (await getAllTemplates())
+          .where((t) => t.name == entry['name'])
+          .firstOrNull;
+      if (match == null) {
+        // القالبُ لم يُستورَد بعد، أو حُذف من المكتبة بعد ضبط المِزلاج.
+        unawaited(DiagnosticLogger.log(
+            DiagnosticLogger.printOut,
+            'مِزلاجُ القالب يشير إلى "${entry['name']}" وهو غيرُ موجودٍ في '
+            'القاعدة — سقوطٌ للمستوى التالي'));
+        return null;
+      }
+      return match.id;
+    } catch (e) {
+      // إعدادٌ لا يُقرأ لا يُسقط طباعةً.
+      unawaited(DiagnosticLogger.log(DiagnosticLogger.printOut,
+          'تعذّرت قراءةُ مِزلاج القالب — سقوطٌ للمستوى التالي ($e)'));
+      return null;
+    }
   }
 
   /// يحذف قالباً **ما لم يكن مربوطاً**.
