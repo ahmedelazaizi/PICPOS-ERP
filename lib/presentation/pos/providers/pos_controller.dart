@@ -228,8 +228,11 @@ class PosController extends Notifier<PosState> {
   }
 
   /// Print invoice (delegated to PrintingService)
-  Future<void> printInvoice(int invoiceId) async {
-    await ref.read(printingServiceProvider).printReceipt(invoiceId);
+  ///
+  /// يمرّر نتيجةَ الطباعة كما هي — `printReceipt` لا ترمي أبداً، فابتلاعُ
+  /// القيمة هنا كان يجعل كلَّ منادٍ يستنتج نجاحاً لم يقع.
+  Future<bool> printInvoice(int invoiceId) async {
+    return ref.read(printingServiceProvider).printReceipt(invoiceId);
   }
 
   /// Print kitchen orders (delegated to KitchenService)

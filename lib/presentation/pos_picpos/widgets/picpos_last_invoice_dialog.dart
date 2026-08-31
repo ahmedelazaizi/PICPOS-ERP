@@ -163,10 +163,19 @@ class PicPosLastInvoiceDialog extends ConsumerWidget {
     int invoiceId,
   ) async {
     try {
-      await ref.read(posControllerProvider.notifier).printInvoice(invoiceId);
+      // §٤‑٣ — القيمةُ لا غيابُ الرمي: `printReceipt` لا ترمي أبداً، فكانت
+      // «تمت إعادة الطباعة» تظهر ولو لم يخرج شيء.
+      final printed =
+          await ref.read(posControllerProvider.notifier).printInvoice(invoiceId);
       if (context.mounted) {
-        showPosToast(context, ref, 'تمت إعادة الطباعة',
-            type: PosNotificationType.success);
+        showPosToast(
+          context,
+          ref,
+          printed ? 'تمت إعادة الطباعة' : 'تعذّرت الطباعة — تأكد من الطابعة',
+          type: printed
+              ? PosNotificationType.success
+              : PosNotificationType.warning,
+        );
       }
     } catch (e) {
       if (context.mounted) {

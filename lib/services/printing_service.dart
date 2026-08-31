@@ -6,7 +6,20 @@ import 'templated_invoice_service.dart';
 import 'printing/printing_models.dart' as print_models;
 
 abstract class IPrintingService {
-  Future<void> printReceipt(int invoiceId);
+  /// يطبع إيصالَ نقطةِ البيع. يرجع `true` إن خرج الإيصالُ فعلاً.
+  ///
+  /// ⚠️ **والقيمةُ ليست زينة**: الجسمُ كلُّه ملفوفٌ في `try/catch` لا يُعيد
+  /// الرمي، فالدالّةُ **لا ترمي أبداً**. ومناديها في نقطة البيع كان يستنتج
+  /// النجاحَ من غياب الاستثناء — فيقول «تم حفظ وطباعة الفاتورة» ولا ورقةَ
+  /// خرجت، ويبقى تحذيرُ «فشلت الطباعة» كوداً ميّتاً لا يظهر قطّ، وحلقةُ
+  /// النسخِ تُعيد المحاولةَ على طابعةٍ عاطلةٍ لأنّ `if (!printed) break`
+  /// لا تقطع. فمن غيّر هذا التوقيعَ فليُبقِ المخارجَ الأربعةَ صريحة.
+  ///
+  /// وحدُّه معلَن: `false` تعني «لم يُرسَل إلى الطابعة» (بياناتٌ ناقصةٌ أو
+  /// إخفاقٌ رُمي). أمّا ما خرج من الطابعة بعد قبولها المهمّةَ فلا يراه
+  /// النظام — وإلغاءُ المستخدمِ في حوار الطباعة ما زال يُحسَب نجاحاً
+  /// (‏`Printing.layoutPdf` تُرجع `bool` تُهمَل في `PdfComputeHelper`).
+  Future<bool> printReceipt(int invoiceId);
 
   /// Print an A4 sales invoice (regular invoices screen).
   /// POS continues using [printReceipt] which outputs thermal 80mm.
@@ -115,13 +128,13 @@ class PrintingServiceImpl implements IPrintingService {
   }
 
   @override
-  Future<void> printReceipt(int invoiceId) async {
+  Future<bool> printReceipt(int invoiceId) async {
     try {
       final printData = await salesRepository.getSalesPrintData(invoiceId);
 
       if (printData == null) {
         logger.warning('Printing failed: Print data not found for invoice $invoiceId');
-        return;
+        return false;
       }
 
       final receiptSettings = printData.receiptSettings;
@@ -203,7 +216,7 @@ class PrintingServiceImpl implements IPrintingService {
             description: 'طباعةُ $docLabel حراريّة رقم ${printData.invoiceNumber}',
             amount: printData.total,
           );
-          return;
+          return true;
         } catch (e) {
           logger.error('Template print failed, falling back to default', e);
         }
@@ -261,8 +274,10 @@ class PrintingServiceImpl implements IPrintingService {
         description: 'طباعةُ $docLabel حراريّة رقم ${printData.invoiceNumber}',
         amount: printData.total,
       );
+      return true;
     } catch (e, stack) {
       logger.error('Failed to print invoice', e, stack, 'PrintingService');
+      return false;
     }
   }
 

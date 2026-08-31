@@ -1956,17 +1956,29 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
   ///
   /// فشل الطباعة تحذير، **لا تراجع** — إلغاء بيعة محصَّلة عشان ورق ناقص أسوأ
   /// بكتير من إيصال مش مطبوع.
+  /// ⚠️ **الإخفاقُ يصل هنا بالقيمة لا بالرمي.** `printReceipt` تلفّ جسمَها
+  /// في `try/catch` لا يُعيد الرمي، فهي لا ترمي أبداً — وكان هذا يجعل
+  /// `return true` بعد النداء صحيحاً **دائماً**: رسالةُ «تم حفظ وطباعة
+  /// الفاتورة» تظهر ولا ورقةَ خرجت، والتحذيرُ أدناه كودٌ ميّت، وحلقةُ النسخ
+  /// تُعيد المحاولةَ على طابعةٍ عاطلةٍ لأنّ `if (!printed) break` لا تقطع.
+  /// فالفحصُ على القيمة، والرميُ يبقى مُمسَكاً احتياطاً لمنادٍ يتغيّر.
   Future<bool> _tryPrintReceipt(int invoiceId) async {
-    try {
-      await ref.read(posControllerProvider.notifier).printInvoice(invoiceId);
-      return true;
-    } catch (e) {
-      debugPrint('[PicPos-Print] فشلت طباعة الفاتورة #$invoiceId: $e');
+    void warn(String why) {
+      debugPrint('[PicPos-Print] فشلت طباعة الفاتورة #$invoiceId: $why');
       if (mounted) {
         showPosToast(context, ref,
             '⚠️ الحفظ تم، لكن فشلت الطباعة (تأكد من الورق)',
             type: PosNotificationType.warning);
       }
+    }
+
+    try {
+      final printed =
+          await ref.read(posControllerProvider.notifier).printInvoice(invoiceId);
+      if (!printed) warn('الخدمةُ أبلغت بعدم الطباعة');
+      return printed;
+    } catch (e) {
+      warn('$e');
       return false;
     }
   }

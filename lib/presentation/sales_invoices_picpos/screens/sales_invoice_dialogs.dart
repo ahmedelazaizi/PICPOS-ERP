@@ -301,7 +301,13 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
       // This ensures the user's custom thermal/receipt template is applied
       // (falls back to default layout if no template exists).
       final printingService = ref.read(printingServiceProvider);
-      await printingService.printReceipt(invoice.id!);
+      // §٤‑٣ — `printReceipt` لا ترمي أبداً، فكان الإخفاقُ يمرّ **صامتاً
+      // تماماً**: لا رسالةَ نجاحٍ ولا خطأ، والمستخدمُ ينتظر ورقةً لن تخرج.
+      final printed = await printingService.printReceipt(invoice.id!);
+      if (!printed && mounted) {
+        AppToast.show(context, 'تعذّرت الطباعة — تأكد من الطابعة',
+            type: ToastType.error);
+      }
     } catch (e) {
       if (mounted) {
         AppToast.show(context, 'خطأ في الطباعة: $e', type: ToastType.error);
