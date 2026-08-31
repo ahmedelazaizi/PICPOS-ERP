@@ -224,6 +224,91 @@ extension DatabaseStartup on AppDatabase {
         debugPrint('[SchemaHeal] ${table.actualTableName}: $e');
       }
     }
+
+    // §٦‑٤ — البلاغُ عن قيدٍ ماليٍّ لم يُركَّب. انظر [findBlockedDedupIndexes].
+    for (final finding in await findBlockedDedupIndexes()) {
+      debugPrint('[DedupGuard] 🔴 $finding');
+      unawaited(DiagnosticLogger.log('DEDUP-GUARD', finding));
+    }
+  }
+
+  /// §٦‑٤ — أيُّ قيدِ تفرّدٍ **ماليٍّ** لم يُركَّب لأنّ البيانات ما زالت مكرّرة.
+  ///
+  /// فهرسا B1 (دفعاتُ الرواتب) وB2 (يومُ الحضور) يُنشآن في حلقة الشفاء أعلاه
+  /// بـ`CREATE UNIQUE INDEX IF NOT EXISTS`، والحلقةُ **تبتلع الفشلَ بصمت**.
+  /// فقاعدةٌ فيها تكرارٌ قائمٌ تخرج بلا حماية، ولا أحدَ يعلم.
+  ///
+  /// ⚠️ **والابتلاعُ مقصودٌ ويبقى** — بقرار المالك 2026-09-02، وبخلاف
+  /// `account_mappings` التي تُسوَّى آليّاً: الصفُّ الزائدُ هناك **إعدادٌ**
+  /// مكرَّرٌ لا قيمةَ له، وهنا **حركةٌ ماليّة** (دفعةُ راتبٍ أو يومُ حضورٍ
+  /// يتحوّل إلى أجر). فحذفُها آليّاً عند الإقلاع يُتلف مالاً بلا مراجعة.
+  ///
+  /// فالمتغيّرُ هو **الظهور** لا السياسة: الفشلُ الصامتُ صار بلاغاً يحمل
+  /// المفاتيحَ المكرّرةَ وعددَها، فيعرف المحاسبُ ما يسوّيه بيده.
+  ///
+  /// يعيد سطرَ بلاغٍ لكلّ قيدٍ غائب، وقائمةً فارغةً على قاعدةٍ سليمة.
+  @visibleForTesting
+  Future<List<String>> findBlockedDedupIndexes() async {
+    if (_isPostgres) return const [];
+
+    const checks = <({String index, String table, String keys, String what})>[
+      (
+        index: kSalaryPaymentDedupIndexName,
+        table: 'salary_payments',
+        keys: 'employee_id, period, type',
+        what: 'دفعاتُ الرواتب',
+      ),
+      (
+        index: kAttendanceDayDedupIndexName,
+        table: 'employee_attendance',
+        keys: 'employee_id, date',
+        what: 'أيّامُ الحضور',
+      ),
+    ];
+
+    final findings = <String>[];
+    for (final c in checks) {
+      try {
+        final exists = await customSelect(
+          "SELECT 1 AS x FROM sqlite_master "
+          "WHERE type = 'index' AND name = '${c.index}'",
+        ).get();
+        if (exists.isNotEmpty) continue;
+
+        final dups = await customSelect(
+          'SELECT ${c.keys}, COUNT(*) AS n FROM ${c.table} '
+          'GROUP BY ${c.keys} HAVING COUNT(*) > 1',
+        ).get();
+
+        if (dups.isEmpty) {
+          // غائبٌ بلا تكرار — علّةٌ أخرى (جدولٌ ناقصٌ مثلاً)، وتستحقّ بلاغاً
+          // كذلك كي لا يُظنَّ القيدُ قائماً.
+          findings.add(
+            'قيدُ التفرّد "${c.index}" غائبٌ عن ${c.table} بلا تكرارٍ ظاهر — '
+            'راجع المخطَّط: ${c.what} بلا حماية.',
+          );
+          continue;
+        }
+
+        final sample = dups.take(5).map((r) {
+          final parts = c.keys
+              .split(',')
+              .map((k) => '${k.trim()}=${r.data[k.trim()]}')
+              .join(' · ');
+          return '$parts ×${r.data['n']}';
+        }).join('  |  ');
+
+        findings.add(
+          'قيدُ التفرّد "${c.index}" لم يُركَّب: ${dups.length} مفتاحاً مكرَّراً '
+          'في ${c.table} (${c.what}). التسويةُ يدويّةٌ بقرار المالك — '
+          'أمثلة: $sample',
+        );
+      } catch (e) {
+        // جدولٌ غيرُ موجودٍ بعد أو خطأُ استعلام — لا يُسقط الإقلاع.
+        debugPrint('[DedupGuard] فحصُ ${c.index} تعذّر: $e');
+      }
+    }
+    return findings;
   }
 
   // ─────────────────────────────────────────────────────────────────────────
