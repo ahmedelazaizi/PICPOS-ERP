@@ -75,15 +75,20 @@ extension SalesAnalyticsDao on AppDatabase {
   /// sibling KPIs) already carried this guard, but getCategoryProfitReport did
   /// not, so positive-total returns inflated category profit only.
   ///
-  /// It deliberately does NOT fold in a `status` guard. Void/cancelled invoices
-  /// are already dropped by each query's `is_deleted = 0` (a committed void sets
-  /// is_deleted=true). Excluding `status='returned'` ORIGINALS would be wrong —
-  /// they are real gross sales that the separate returns figure already nets
-  /// out; dropping them would double-remove the value AND desync
-  /// getSalesAnalytics from the invoice list, the return-rate denominator, and
-  /// the sibling aggregates (Spec 136 card-vs-rows invariant). getCategoryProfit
-  /// keeps its own pre-existing status guard for the transient client-void
-  /// window; that narrow difference is by design.
+  /// ⚠️ **صُحِّح 2026-08-31 (‏٣‑١).** كان هنا نصٌّ يقول إنّ هذا المرشِّح
+  /// «لا يطوي حارسَ `status` عمداً»، وإنّ استبعادَ أصلٍ حالتُه `'returned'`
+  /// **خطأٌ** يطرح القيمةَ مرّتين. ذلك وصفُ حالةٍ انتهت: التوثيقُ من الكوميت
+  /// الأوّل (2026‑07‑13) وحارسُ الحالة دخل بعده بثمانية أيّام
+  /// (‏`bf977181` — 2026‑07‑21)، فبقي النصُّ يصف ما لم يعد قائماً.
+  ///
+  /// والعقدُ النافذُ اليومَ مكتوبٌ في `domain/models/sales_returns_netting.dart`:
+  /// المرتجعُ **الكاملُ** (‏`status='returned'`) يخرج من المجمل بالاستثناء،
+  /// والمرتجعُ **الجزئيُّ** (‏`partial_return`) يبقى بقيمة فاتورته الكاملة
+  /// ويُطرح في طبقة التقرير بـ`clampedReturnedTotal`. ولا ازدواجَ **بالبناء**:
+  /// فاتورةُ المرتجع الكامل ليست في القائمة المعروضة أصلاً فلا سبيلَ لطرحها
+  /// مرّتين.
+  ///
+  /// فمن يثق بالنصِّ القديم ويحذف حارسَ الحالة يكسر تقريرَ المبيعات كلَّه.
   ///
   /// `tableAlias` prefixes the column (e.g. 'inv') for JOINed queries; ''
   /// leaves it bare for single-table aggregates. Leading space so it appends
@@ -91,6 +96,29 @@ extension SalesAnalyticsDao on AppDatabase {
   String _saleReturnExclusion([String tableAlias = '']) {
     final p = tableAlias.isEmpty ? '' : '$tableAlias.';
     return " AND (${p}sale_type IS NULL OR ${p}sale_type != 'return')";
+  }
+
+  /// ٣‑١ — النصفُ الثاني من العقد: المستندُ الملغى أو المرتجعُ **كلّيّاً** ليس
+  /// مبيعاً.
+  ///
+  /// وهو مرتجعُ الشاشة المستقلّة: على تنصيبةٍ منفردةٍ لا يُكتَب صفُّ فاتورةٍ
+  /// جديدٌ إطلاقاً، وأثرُه الوحيدُ ختمُ الأصل `'returned'` — فبلا هذا الحارس
+  /// تبقى قيمتُه كاملةً في المجمل.
+  ///
+  /// كان منسوخاً حرفيّاً في أربعةِ استعلاماتٍ وغائباً عن ثمانيةٍ حيّة، والأثرُ
+  /// مرئيٌّ على شاشةٍ واحدة: `sales_by_classification_report.dart` يبني بطاقتَه
+  /// من [getSalesBySaleType] (كانت محروسة) وقائمتَه المنسدلةَ من
+  /// [getSalesInvoicesBySaleType] (لم تكن) — فتعرض الشاشةُ رقمَين مختلفَين
+  /// لنفس الشيء. فصار مصدراً واحداً كأخيه أعلاه.
+  ///
+  /// ⚠️ و`partial_return` **ليست** هنا وهذا مقصود: إضافتُها تطرح الفاتورةَ
+  /// الجزئيّةَ كاملةً ثمّ تطرح المردودَ منها ثانيةً في طبقة التقرير.
+  ///
+  /// وعمودُ `status` غيرُ قابلٍ للفراغ (‏`withDefault('completed')`)، فلا يقع
+  /// فخُّ `NULL NOT IN (...)` الذي يُسقط الصفَّ بصمت.
+  String _voidedOrFullyReturnedExclusion([String tableAlias = '']) {
+    final p = tableAlias.isEmpty ? '' : '$tableAlias.';
+    return " AND ${p}status NOT IN ('returned', 'cancelled', 'voided')";
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -197,8 +225,7 @@ extension SalesAnalyticsDao on AppDatabase {
       JOIN products p ON si.product_id = p.id
       JOIN sales_invoices inv ON si.invoice_id = inv.id
       WHERE inv.invoice_date BETWEEN ? AND ?
-        AND inv.is_deleted = 0
-        AND (inv.sale_type IS NULL OR inv.sale_type != 'return')
+        AND inv.is_deleted = 0${_voidedOrFullyReturnedExclusion('inv')}${_saleReturnExclusion('inv')}
         ${cc.filter} $warehouseFilter${az.filter}
       GROUP BY p.id, p.name
       ORDER BY total_sales DESC
@@ -266,7 +293,7 @@ extension SalesAnalyticsDao on AppDatabase {
       JOIN products p ON si.product_id = p.id
       LEFT JOIN categories c ON p.category_id = c.id
       JOIN sales_invoices inv ON si.invoice_id = inv.id
-      WHERE inv.invoice_date BETWEEN ? AND ? AND inv.is_deleted = 0 AND inv.status NOT IN ('returned', 'cancelled', 'voided')${_saleReturnExclusion('inv')} $warehouseFilter${az.filter} ${cc.filter}
+      WHERE inv.invoice_date BETWEEN ? AND ? AND inv.is_deleted = 0${_voidedOrFullyReturnedExclusion('inv')}${_saleReturnExclusion('inv')} $warehouseFilter${az.filter} ${cc.filter}
       GROUP BY c.id, c.name
       ORDER BY total_sales DESC
       ''',
@@ -328,7 +355,7 @@ extension SalesAnalyticsDao on AppDatabase {
       JOIN products p ON si.product_id = p.id
       JOIN sales_invoices inv ON si.invoice_id = inv.id
       WHERE inv.invoice_date BETWEEN ? AND ?
-        AND inv.is_deleted = 0${_saleReturnExclusion('inv')}
+        AND inv.is_deleted = 0${_voidedOrFullyReturnedExclusion('inv')}${_saleReturnExclusion('inv')}
         $warehouseFilter${az.filter}
       GROUP BY p.id, p.name
       ORDER BY $sortColumn DESC
@@ -398,8 +425,7 @@ extension SalesAnalyticsDao on AppDatabase {
       SELECT $dateExpr as sale_date, SUM(total) as daily_total
       FROM sales_invoices
       WHERE invoice_date BETWEEN ? AND ?
-        AND is_deleted = 0
-        AND (sale_type IS NULL OR sale_type != 'return')
+        AND is_deleted = 0${_voidedOrFullyReturnedExclusion()}${_saleReturnExclusion()}
         ${cc.filter} $whFilter${az.filter}
       GROUP BY sale_date
       ORDER BY sale_date ASC
@@ -465,9 +491,8 @@ extension SalesAnalyticsDao on AppDatabase {
 
     // نفسُ مرشِّحات [getDailySalesForRange] حرفاً بحرف — المحذوفُ والمرتجعُ
     // خارجَ الحساب، وإلّا خالفت التحليلاتُ تقريرَ المبيعات على نفس المدى.
-    const invoiceScope = '''
-        AND is_deleted = 0
-        AND (sale_type IS NULL OR sale_type != 'return')''';
+    final invoiceScope = '        AND is_deleted = 0'
+        '${_voidedOrFullyReturnedExclusion()}${_saleReturnExclusion()}';
 
     final salesRows = await customSelect(
       '''
@@ -572,8 +597,7 @@ extension SalesAnalyticsDao on AppDatabase {
       SELECT payment_method, COUNT(*) as count, SUM(total) as total_amount
       FROM sales_invoices
       WHERE invoice_date BETWEEN ? AND ?
-        AND is_deleted = 0
-        AND (sale_type IS NULL OR sale_type != 'return')
+        AND is_deleted = 0${_voidedOrFullyReturnedExclusion()}${_saleReturnExclusion()}
         ${cc.filter}${az.filter}
       GROUP BY payment_method
       ''',
@@ -605,7 +629,13 @@ extension SalesAnalyticsDao on AppDatabase {
     final az = _buildAuthScopeFilter(allowedBranchIds);
 
     final result = await customSelect(
-      'SELECT COUNT(DISTINCT customer_id) as count FROM sales_invoices WHERE customer_id IS NOT NULL AND invoice_date BETWEEN ? AND ? AND is_deleted = 0 ${cc.filter}${az.filter}',
+      // كان بلا حارسَي المرتجع معاً — لا `sale_type` ولا `status` — فمستندُ
+      // مرتجعٍ وحدَه كان يكفي لعدِّ صاحبه «عميلاً نشطاً».
+      'SELECT COUNT(DISTINCT customer_id) as count FROM sales_invoices '
+          'WHERE customer_id IS NOT NULL AND invoice_date BETWEEN ? AND ? '
+          'AND is_deleted = 0'
+          '${_voidedOrFullyReturnedExclusion()}${_saleReturnExclusion()}'
+          ' ${cc.filter}${az.filter}',
       variables: [dateVar(from), dateVar(to), ...cc.vars, ...az.vars],
       readsFrom: {salesInvoices},
     ).getSingle();
@@ -646,7 +676,7 @@ extension SalesAnalyticsDao on AppDatabase {
       LEFT JOIN categories c ON p.category_id = c.id
       JOIN sales_invoices inv ON si.invoice_id = inv.id
       WHERE inv.invoice_date BETWEEN ? AND ?
-        AND inv.is_deleted = 0${_saleReturnExclusion('inv')}
+        AND inv.is_deleted = 0${_voidedOrFullyReturnedExclusion('inv')}${_saleReturnExclusion('inv')}
         $warehouseFilter${az.filter}
       GROUP BY c.name
       ORDER BY total_amount DESC
@@ -699,7 +729,7 @@ extension SalesAnalyticsDao on AppDatabase {
       -- مختلفَين لنفس المدى على نفس الشاشة. والأسوأ أن `GROUP BY sale_type`
       -- كان يُخرج مجموعةً اسمُها `return` ضمن «أنواع البيع».
       WHERE invoice_date BETWEEN ? AND ? AND is_deleted = 0
-        AND status NOT IN ('returned', 'cancelled', 'voided')
+        ${_voidedOrFullyReturnedExclusion()}
         ${_saleReturnExclusion()}
         $warehouseFilter${az.filter}
       GROUP BY sale_type
@@ -740,7 +770,7 @@ extension SalesAnalyticsDao on AppDatabase {
         p.name as customer_name
       FROM sales_invoices s
       LEFT JOIN parties p ON s.customer_id = p.id
-      WHERE s.sale_type = ? AND s.invoice_date BETWEEN ? AND ? AND s.is_deleted = 0${az.filter}
+      WHERE s.sale_type = ? AND s.invoice_date BETWEEN ? AND ? AND s.is_deleted = 0${_voidedOrFullyReturnedExclusion('s')}${az.filter}
       ORDER BY s.invoice_date DESC
       ''',
       variables: [Variable(saleType), dateVar(from), dateVar(to), ...az.vars],
@@ -891,8 +921,7 @@ extension SalesAnalyticsDao on AppDatabase {
       -- للطرفين ⇒ فاتورةٌ مختومةٌ على الحدّ بالضبط تُحتسب في هذه المدّة **وفي
       -- التالية معاً**: ازدواجُ إيرادٍ عند حدود الشهور. المدى نصفُ مفتوح.
       WHERE invoice_date >= ? AND invoice_date < ?
-        AND is_deleted = 0${_saleReturnExclusion()}
-        AND status NOT IN ('returned', 'cancelled', 'voided')
+        AND is_deleted = 0${_saleReturnExclusion()}${_voidedOrFullyReturnedExclusion()}
         $userClause $ccFilter $whFilter $pmFilter $stFilter$azFilter
       ''',
       variables: variables,
@@ -916,8 +945,7 @@ extension SalesAnalyticsDao on AppDatabase {
       -- H7 · نفسُ المدى نصفِ المفتوح كالبطاقة فوقها بالضبط، وإلا اختلفت
       -- التكلفةُ عن الإيراد على الحدّ.
       WHERE inv.invoice_date >= ? AND inv.invoice_date < ?
-        AND inv.is_deleted = 0${_saleReturnExclusion('inv')}
-        AND inv.status NOT IN ('returned', 'cancelled', 'voided')
+        AND inv.is_deleted = 0${_saleReturnExclusion('inv')}${_voidedOrFullyReturnedExclusion('inv')}
         $userClause $ccFilter $whFilter $pmFilter $stFilter$azFilter
       ''',
       variables: variables,
@@ -1218,7 +1246,7 @@ extension SalesAnalyticsDao on AppDatabase {
       FROM sales_invoices inv
       JOIN parties p ON inv.customer_id = p.id
       WHERE inv.invoice_date BETWEEN ? AND ?
-        AND inv.is_deleted = 0${_saleReturnExclusion('inv')}
+        AND inv.is_deleted = 0${_voidedOrFullyReturnedExclusion('inv')}${_saleReturnExclusion('inv')}
         $warehouseFilter${az.filter}
       GROUP BY p.id, p.name
       ORDER BY total_value DESC
@@ -1310,7 +1338,7 @@ extension SalesAnalyticsDao on AppDatabase {
       JOIN sales_invoices inv ON si.invoice_id = inv.id
       WHERE inv.invoice_date BETWEEN ? AND ?
         AND inv.is_deleted = 0
-        AND inv.status NOT IN ('returned', 'cancelled', 'voided')${_saleReturnExclusion('inv')}
+        ${_voidedOrFullyReturnedExclusion('inv')}${_saleReturnExclusion('inv')}
         $warehouseFilter${az.filter} ${cc.filter}
       GROUP BY p.id, p.name, c.name, p.current_stock
       ORDER BY total_sales DESC
