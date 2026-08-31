@@ -141,12 +141,23 @@ String _fmt(double v, _Unit unit) {
   return (from: DateTime(now.year, now.month - 11, 1), to: end);
 }
 
+/// 🔴 **النطاقُ يُمرَّر — لا يُفترَض.**
+///
+/// `getMonthlyPerformanceSeries` تحمل مرشِّحَ الحصر منذ Spec 149 B12‑5a، وذاك
+/// البندُ يقول نصّاً إنّ توصيلَ الشاشات «‏B12‑5b» يأتي منفصلاً — ولم يأتِ لهذه
+/// الشاشة. فكانت تُنادى بلا `allowedBranchIds` إطلاقاً، ومديرُ فرعٍ محصورٌ يرى
+/// **أرقامَ الشركة كلِّها** على كلّ بطاقةٍ وكلّ عمودٍ في الرسم.
+///
+/// و`null` = وصولٌ كامل، `{}` = فشلٌ مقفول — نفسُ عقدِ `BranchScope`.
 final _seriesProvider =
-    FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
+    FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
   final w = _window();
-  return ref
-      .watch(reportingRepositoryProvider)
-      .getMonthlyPerformanceSeries(from: w.from, to: w.to);
+  final scope = await ref.watch(branchScopeProvider.future);
+  return ref.watch(reportingRepositoryProvider).getMonthlyPerformanceSeries(
+        from: w.from,
+        to: w.to,
+        allowedBranchIds: scope.hasFullAccess ? null : scope.allowedBranchIds,
+      );
 });
 
 /// نقطةٌ شهريّةٌ بكلّ مؤشّراتها — مقيسةٌ من صفوف الاستعلام لا مكتوبة.
@@ -154,19 +165,32 @@ class _MonthPoint {
   const _MonthPoint({
     required this.date,
     required this.sales,
+    required this.salesExTax,
     required this.invoices,
     required this.cogs,
     required this.expenses,
   });
 
   final DateTime date;
+
+  /// الإيرادُ **شاملَ الضريبة** — بطاقةُ المبيعات، ويطابق تقريرَ المبيعات.
   final double sales;
+
+  /// الإيرادُ **خالياً من الضريبة** — مقامُ الهامش وحدَه.
+  final double salesExTax;
+
   final int invoices;
   final double cogs;
   final double expenses;
 
   /// هامشُ الربح الإجماليّ نسبةً — والقسمةُ على صفرٍ تعطي صفراً لا `NaN`.
-  double get margin => sales > 0 ? (sales - cogs) / sales * 100 : 0;
+  ///
+  /// 🔴 **المقامُ خالٍ من الضريبة.** كان `sales` شاملَها بينما `cogs` تكلفةٌ
+  /// خالصة، فالهامشُ يُنفَخ بنسبةِ الضريبة على كلّ صنف: تكلفةٌ ١٠٠ وبيعٌ ١٢٥
+  /// وضريبةُ ١٦٪ ⇒ كان يُعرَض ٣١٪ والصحيحُ ٢٠٪. وأيُّ قرارِ تسعيرٍ اتُّخذ على
+  /// تلك البطاقة يستحقّ المراجعة.
+  double get margin =>
+      salesExTax > 0 ? (salesExTax - cogs) / salesExTax * 100 : 0;
 
   /// متوسّطُ قيمة الفاتورة.
   double get basket => invoices > 0 ? sales / invoices : 0;
@@ -188,9 +212,13 @@ List<_MonthPoint> _parse(List<Map<String, dynamic>> rows) {
     final year = int.tryParse(ym.substring(0, 4));
     final month = int.tryParse(ym.substring(5, 7));
     if (year == null || month == null) continue;
+    final sales = (r['net_sales'] as num?)?.toDouble() ?? 0;
     out.add(_MonthPoint(
       date: DateTime(year, month, 1),
-      sales: (r['net_sales'] as num?)?.toDouble() ?? 0,
+      sales: sales,
+      // السقوطُ إلى `sales` لا إلى صفر: غيابُ المفتاح يعني «لا ضريبة» —
+      // والصفرُ كان سيقلب هامشاً حقيقيّاً إلى ٠٪ صامتاً.
+      salesExTax: (r['net_sales_ex_tax'] as num?)?.toDouble() ?? sales,
       invoices: (r['invoice_count'] as num?)?.toInt() ?? 0,
       cogs: (r['cogs'] as num?)?.toDouble() ?? 0,
       expenses: (r['expenses'] as num?)?.toDouble() ?? 0,

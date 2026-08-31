@@ -20,6 +20,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:ural_erp/data/providers/branch_scope_provider.dart';
 import 'package:ural_erp/data/providers/repository_providers.dart';
 import 'package:ural_erp/domain/repositories/reporting_repository.dart';
 import 'package:ural_erp/presentation/analytics_picpos/screens/analytics_picpos_screen.dart';
@@ -91,10 +92,69 @@ class _ThrowingReportingRepo implements IReportingRepository {
       super.noSuchMethod(invocation);
 }
 
+/// سلسلةٌ **بضريبة**: الإجماليُّ ١٤٥ منه ٢٠ ضريبةً، والتكلفةُ ١٠٠.
+///   الهامشُ الصحيح  = (125 − 100) / 125 = ٢٠٫٠٪
+///   الهامشُ المعطوب = (145 − 100) / 145 = ٣١٫٠٪
+class _VatSeriesRepo implements IReportingRepository {
+  @override
+  Future<List<Map<String, dynamic>>> getMonthlyPerformanceSeries({
+    required DateTime from,
+    required DateTime to,
+    int? costCenterId,
+    List<int>? warehouseIds,
+    Set<int>? allowedBranchIds,
+  }) async {
+    final now = DateTime.now();
+    return [
+      for (var back = 2; back >= 0; back--)
+        {
+          'ym': () {
+            final d = DateTime(now.year, now.month - back, 1);
+            return '${d.year.toString().padLeft(4, '0')}-'
+                '${d.month.toString().padLeft(2, '0')}';
+          }(),
+          'net_sales': 145.0,
+          'net_sales_ex_tax': 125.0,
+          'invoice_count': 1,
+          'cogs': 100.0,
+          'expenses': 10.0,
+        },
+    ];
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      super.noSuchMethod(invocation);
+}
+
+/// مستودعٌ **يلتقط** النطاقَ الذي وصله — لقياسِ التمرير لا العرض.
+class _CapturingReportingRepo implements IReportingRepository {
+  Set<int>? captured;
+  var wasCalled = false;
+
+  @override
+  Future<List<Map<String, dynamic>>> getMonthlyPerformanceSeries({
+    required DateTime from,
+    required DateTime to,
+    int? costCenterId,
+    List<int>? warehouseIds,
+    Set<int>? allowedBranchIds,
+  }) async {
+    wasCalled = true;
+    captured = allowedBranchIds;
+    return _series();
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      super.noSuchMethod(invocation);
+}
+
 Future<void> _pump(
   WidgetTester tester,
   double width, {
   IReportingRepository? repo,
+  BranchScope scope = const BranchScope.fullAccess(),
 }) async {
   tester.view.physicalSize = Size(width, 1100);
   tester.view.devicePixelRatio = 1.0;
@@ -105,6 +165,10 @@ Future<void> _pump(
       overrides: [
         reportingRepositoryProvider
             .overrideWithValue(repo ?? _FakeReportingRepo()),
+        // ⚠️ **إلزاميّ**: `_seriesProvider` صار يقرأ `branchScopeProvider`،
+        // وذاك يقرأ `databaseProvider` — فبلا هذا التجاوز تُفتَح قاعدةٌ
+        // حقيقيّةٌ في اختبارِ ودجت ويتعلّق الإطار.
+        branchScopeProvider.overrideWith((ref) async => scope),
       ],
       child: const MaterialApp(home: AnalyticsPicposScreen()),
     ),
@@ -185,6 +249,84 @@ void main() {
     expect(find.text('لا تكفي البياناتُ لرسم اتجاه'), findsOneWidget,
         reason: 'الانحدارُ على نقطةٍ واحدةٍ يعطي ميلاً صفراً يبدو حقيقةً — '
             'فالشاشةُ يجب أن تمتنع لا أن ترسم.');
+  });
+
+  // ═════════════════════════════════════════════════════════════════════════
+  // §٣‑٢(ج) — الهامشُ على البطاقة نفسِها
+  // ═════════════════════════════════════════════════════════════════════════
+
+  testWidgets('🔴 هامشُ البطاقة يقسم على إيرادٍ خالٍ من الضريبة',
+      (tester) async {
+    await _pump(tester, 1920, repo: _VatSeriesRepo());
+
+    // مرساة: بطاقةُ المبيعات تعرض الإجماليَّ **شاملَ** الضريبة كما كانت،
+    // فسقوطُ الهامش أدناه ليس أثراً جانبيّاً لتغيّرِ الإيراد المعروض.
+    expect(find.text('145'), findsWidgets,
+        reason: 'بطاقةُ «صافي المبيعات» يجب أن تبقى ١٤٥ — تطابقاً مع تقرير '
+            'المبيعات على نفس المدى');
+
+    expect(find.text('20.0٪'), findsWidgets,
+        reason: 'التكلفةُ ١٠٠ والبيعُ ١٢٥ قبل ضريبةِ ٢٠ ⇒ الهامشُ ٢٠٪');
+
+    expect(find.text('31.0٪'), findsNothing,
+        reason: 'القسمةُ على ١٤٥ (شاملِ الضريبة) تعطي ٣١٪ — وهو الرقمُ '
+            'المعطوبُ الذي كان يُعرَض');
+  });
+
+  // ═════════════════════════════════════════════════════════════════════════
+  // §٣‑٢(أ) — النطاقُ يُمرَّر للمستودع، لا يُترَك `null`
+  // ═════════════════════════════════════════════════════════════════════════
+  //
+  // Spec 149 B12‑5a أضاف مرشِّحَ الحصر في `getMonthlyPerformanceSeries` ونصَّ
+  // على أنّ توصيلَ الشاشات «B12‑5b» يأتي منفصلاً — ولم يأتِ لهذه الشاشة.
+  // فكان مديرُ فرعٍ محصورٌ يرى أرقامَ الشركة كلِّها.
+  //
+  // ⚠️ والقياسُ على **ما وصل المستودعَ**، لا على ما يُعرَض: العرضُ يمرّ أخضرَ
+  // في الحالتين لأنّ المستودعَ المزيَّف يعيد نفسَ السلسلة.
+
+  group('§٣‑٢(أ) حصرُ الفروع يصل المستودع', () {
+    testWidgets('مستخدمٌ محصورٌ بفرعَين ⇒ يصل النطاقُ نفسُه', (tester) async {
+      final repo = _CapturingReportingRepo();
+      await _pump(tester, 1920,
+          repo: repo,
+          scope: const BranchScope(
+            allowedBranchIds: {3, 7},
+            primaryBranchId: 3,
+          ));
+
+      // مرساة: الدالّةُ نُوديت أصلاً — فـ`null` لن يمرَّ بوصفه «لم يُسأل».
+      expect(repo.wasCalled, isTrue,
+          reason: 'المستودعُ لم يُنادَ إطلاقاً — القياسُ تحته بلا معنى');
+
+      expect(repo.captured, {3, 7},
+          reason: 'كان يصل `null` (وصولٌ كامل) فيرى مديرُ الفرعِ '
+              'أرقامَ الشركة كلِّها');
+    });
+
+    testWidgets('وصولٌ كامل ⇒ يصل `null` لا مجموعةٌ فارغة', (tester) async {
+      final repo = _CapturingReportingRepo();
+      await _pump(tester, 1920, repo: repo);
+
+      expect(repo.wasCalled, isTrue);
+      expect(repo.captured, isNull,
+          reason: 'المجموعةُ الفارغةُ عقدُها «فشلٌ مقفول» — فتُفرغ الشاشةَ '
+              'على مستخدمٍ كاملِ الوصول');
+    });
+
+    testWidgets('🔴 نطاقٌ فارغ ⇒ يصل فارغاً (فشلٌ مقفول) لا `null`',
+        (tester) async {
+      final repo = _CapturingReportingRepo();
+      await _pump(tester, 1920,
+          repo: repo,
+          scope: const BranchScope(
+            allowedBranchIds: {},
+            primaryBranchId: null,
+          ));
+
+      expect(repo.wasCalled, isTrue);
+      expect(repo.captured, isEmpty,
+          reason: 'تجهيزةٌ ناقصةٌ يجب أن تُقفِل لا أن تنفتح على كلّ شيء');
+    });
   });
 }
 

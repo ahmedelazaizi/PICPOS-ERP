@@ -447,7 +447,22 @@ extension SalesAnalyticsDao on AppDatabase {
   /// السلسلةُ الشهريّةُ لمؤشّرات الأداء — أساسُ شاشة التحليلات.
   ///
   /// تعيد صفّاً لكلّ شهرٍ فيه حركةٌ بالمفاتيح:
-  /// `ym` · `net_sales` · `invoice_count` · `cogs` · `expenses`
+  /// `ym` · `net_sales` · `net_sales_ex_tax` · `invoice_count` · `cogs` ·
+  /// `expenses`
+  ///
+  /// ── 🔴 ولماذا إيرادان لا واحد ────────────────────────────────────────
+  ///
+  /// `net_sales` = ‏`SUM(total)` **شاملَ الضريبة** — وهو عينُ ما يعرضه تقريرُ
+  /// المبيعات و[getDailySalesForRange] على نفس المدى، فيبقى الرقمان
+  /// متطابقَين ولا يُسأل المالكُ لماذا تختلف شاشتان.
+  ///
+  /// و`net_sales_ex_tax` = ‏`SUM(total - tax)` **خالياً منها** — وهو وحدَه
+  /// الصالحُ لقسمةِ الهامش: `cost_price` تكلفةٌ خالصةٌ بلا ضريبة، فقسمةُ
+  /// إيرادٍ شاملِ الضريبةِ عليها تنفخ الهامشَ بنسبةِ الضريبة. مقيس: تكلفةٌ
+  /// ١٠٠ وبيعٌ ١٢٥ + ضريبةُ ١٦٪ ⇒ الهامشُ الصحيحُ ٢٠٪ والمعطوبُ ٣١٪.
+  ///
+  /// وهذا **نفسُ علاجِ** [getCategoryProfitReport] في هذا الملفّ
+  /// (`SUM(si.total - si.tax_amount)`) — كان قد نزل هناك ولم ينزل هنا.
   ///
   /// ── ⚠️ ثلاثةُ استعلاماتٍ لا واحدٌ موصول ──────────────────────────────
   ///
@@ -497,8 +512,9 @@ extension SalesAnalyticsDao on AppDatabase {
     final salesRows = await customSelect(
       '''
       SELECT ${monthOf('invoice_date')} as ym,
-             SUM(total)  as net_sales,
-             COUNT(id)   as invoice_count
+             SUM(total)       as net_sales,
+             SUM(total - tax) as net_sales_ex_tax,
+             COUNT(id)        as invoice_count
       FROM sales_invoices
       WHERE invoice_date BETWEEN ? AND ?$invoiceScope
         ${cc.filter} $whFilter${az.filter}
@@ -529,15 +545,38 @@ extension SalesAnalyticsDao on AppDatabase {
       readsFrom: {salesInvoices, salesInvoiceItems},
     ).get();
 
+    // 🔴 §٣‑٢ — المصروفُ يُحصَر بنفس نطاق المبيعات.
+    //
+    // كان استعلامُ المصروف بلا حصرِ فرعٍ ولا مركزِ تكلفة بينما المبيعاتُ
+    // والتكلفةُ فوقَه محصورتان بهما. فمديرُ فرعٍ يرى **مبيعاتِ فرعِه مقابلَ
+    // مصروفاتِ الشركة كلِّها** — رقمان من نطاقَين على بطاقةٍ واحدة، والفرقُ
+    // يُقرأ خسارةً ليست له.
+    //
+    // ⚠️ **ولا يُرشَّح `status`.** ذلك كان مقترحاً في الخارطة، وهو خطأ:
+    // `status` **أثرُ مراجعةٍ لا حدثٌ محاسبيّ** — القيدُ يُرحَّل للأستاذ عند
+    // التسجيل (`recordAndPostOperationalExpense`) و`updateExpenseStatus`
+    // يكتب العمودَ وحدَه. وافتراضُ العمود `draft`، فترشيحُ المسوّدات كان
+    // سيحذف المصروفاتِ **الحقيقيّةَ كلَّها** ويخالف الأستاذ.
+    //
+    // ⚠️ **ولا `deleted_at IS NULL`**: `deleteExpense` و`manufacturing_dao`
+    // يحذفان الصفَّ حذفاً صلباً، ولا كاتبَ لـ`deleted_at` على هذا الجدول —
+    // فالمرشِّحُ يحرس حالةً لا تقع.
+    //
+    // والمخزنُ لا يُرشَّح لأنّ المصروفَ التشغيليَّ لا يُنسَب لمخزن.
+    final ccExp = await _buildCostCenterFilter(costCenterId,
+        tableAlias: 'op_expenses');
+    final azExp =
+        _buildAuthScopeFilter(allowedBranchIds, tableAlias: 'op_expenses');
     final expenseRows = await customSelect(
       '''
       SELECT ${monthOf('expense_date')} as ym,
              COALESCE(SUM(amount), 0) as expenses
       FROM op_expenses
       WHERE expense_date BETWEEN ? AND ?
+        ${ccExp.filter}${azExp.filter}
       GROUP BY ym
       ''',
-      variables: [dateVar(from), dateVar(to)],
+      variables: [dateVar(from), dateVar(to), ...ccExp.vars, ...azExp.vars],
       readsFrom: {opExpenses},
     ).get();
 
@@ -547,6 +586,7 @@ extension SalesAnalyticsDao on AppDatabase {
         () => <String, dynamic>{
               'ym': ym,
               'net_sales': 0.0,
+              'net_sales_ex_tax': 0.0,
               'invoice_count': 0,
               'cogs': 0.0,
               'expenses': 0.0,
@@ -557,6 +597,8 @@ extension SalesAnalyticsDao on AppDatabase {
       if (ym == null) continue;
       final s = slot(ym);
       s['net_sales'] = (r.data['net_sales'] as num?)?.toDouble() ?? 0.0;
+      s['net_sales_ex_tax'] =
+          (r.data['net_sales_ex_tax'] as num?)?.toDouble() ?? 0.0;
       s['invoice_count'] = (r.data['invoice_count'] as num?)?.toInt() ?? 0;
     }
     for (final r in cogsRows) {
