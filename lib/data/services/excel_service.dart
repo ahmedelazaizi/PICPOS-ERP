@@ -1,4 +1,5 @@
 // ignore_for_file: avoid_dynamic_calls
+import '../../core/constants/app_constants.dart';
 import '../../core/tax/tax_rate_policy.dart';
 import '../../core/utils/file_utils.dart';
 import 'package:flutter/foundation.dart'
@@ -88,6 +89,32 @@ List<List<String>> reportContextRows({
   rows.add(['']);
 
   return rows;
+}
+
+/// خليّةُ بياناتٍ في تقريرٍ مُصدَّر.
+///
+/// ⚠️ **العددُ الكسريُّ يُدوَّر لخاناتِ العملة قبل الكتابة.** كان يُكتب
+/// `DoubleCellValue(cell)` خاماً، فالشاشةُ تعرض `12.346` والملفُّ يحمل
+/// `12.345678900000001` — ومجموعُ عمودٍ في Excel يفترق عن مجموع الشاشة في
+/// الكسور، فيقول المراجعُ إنّ التقريرَ لا يطابق النظام. والعطبُ صامت: الملفُّ
+/// يُفتح ويبدو سليماً، والفرقُ يظهر عند الجمع وحدَه.
+///
+/// وهذا **نفسُ عقدِ** `ExcelExportHelper.toCellValue` الذي كان يخدم أربعَ
+/// شاشاتٍ وحدَها، بينما [ExcelService.exportReport] تخدم ثمانيَ عشرةَ.
+///
+/// والصحيحُ يبقى `IntCellValue`: عددُ الفواتير ليس كسراً، وتحويلُه عائماً
+/// يجعل عموداً صحيحاً يُعرض `3.0`.
+///
+/// نقيّةٌ خارج الصنف عن قصد — كـ[reportBranchLabel] و[reportContextRows] — كي
+/// تُقاس بلا قاعدةِ بياناتٍ ولا كتابةِ ملفٍّ على القرص.
+CellValue reportCellValue(dynamic cell) {
+  if (cell is int) return IntCellValue(cell);
+  if (cell is num) {
+    return DoubleCellValue(
+      double.parse(cell.toDouble().toStringAsFixed(AppConstants.decimalPlaces)),
+    );
+  }
+  return TextCellValue(cell.toString());
 }
 
 class ExcelService {
@@ -1794,13 +1821,7 @@ class ExcelService {
       sheet.appendRow(headers.map((h) => TextCellValue(h)).toList());
 
       for (final row in rows) {
-        sheet.appendRow(
-          row.map((cell) {
-            if (cell is double) return DoubleCellValue(cell);
-            if (cell is int) return IntCellValue(cell);
-            return TextCellValue(cell.toString());
-          }).toList(),
-        );
+        sheet.appendRow(row.map(reportCellValue).toList());
       }
 
       return await _saveExcel(excel, title.replaceAll(' ', '_').toLowerCase());
