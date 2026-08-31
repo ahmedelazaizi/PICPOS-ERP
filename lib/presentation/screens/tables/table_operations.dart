@@ -613,6 +613,11 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
       // قبل الضريبة عكسيّاً (`subtotal = total + discount - tax`)، فتمريرُ
       // ضريبةٍ فوق إجماليٍّ لا يحويها يطبع مجموعاً أنقصَ من الحقيقة بمقدارها
       // ثم إجماليّاً لا يساوي ما سيُدفَع.
+      // الشعارُ من نفس القاعدة التي يقرأ منها القالبُ — وبدونه كانت الفاتورةُ
+      // المبدئيّةُ تُطبع بلا شعارِ المنشأة مهما ضبطه المستخدم.
+      final db = ref.read(databaseProvider);
+      final logoBytes = (await db.getReceiptSettings()).logoImage;
+
       await InvoiceGenerator.printThermalReceipt(
         invoiceNumber: 'T${table.id}-${order.id}',
         date: DateTime.now(),
@@ -625,7 +630,8 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
         customerName: table.name,
         employeeName: user?.displayName,
         notes: 'فاتورةٌ مبدئيّةٌ — ليست إيصالَ سداد',
-        db: ref.read(databaseProvider),
+        db: db,
+        logoBytes: logoBytes,
       );
 
       if (screenContext.mounted) {

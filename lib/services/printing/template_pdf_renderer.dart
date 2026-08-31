@@ -45,6 +45,16 @@ class TemplateInvoiceData {
   final int? orderNumber;
   final String locale; // 'ar' or 'en'
 
+  /// بكسلُ شعار المنشأة.
+  ///
+  /// كان هذا الحقلُ **غائباً كلَّه**، فعنصرُ `logo` في القالب يُرسم فراغاً في
+  /// هذا المسار مهما ضبط المستخدمُ شعاره — وهو مسارٌ حيٌّ مستقلٌّ يمرّ به كلُّ
+  /// إيصالٍ حراريٍّ يسقط من `TemplatedInvoiceService` إلى
+  /// `InvoiceGenerator.printThermalReceipt`.
+  ///
+  /// و`null` تبقى صمتاً لا كلمةً نائبة.
+  final Uint8List? logoBytes;
+
   const TemplateInvoiceData({
     required this.invoiceNumber,
     required this.date,
@@ -75,6 +85,7 @@ class TemplateInvoiceData {
     this.isDelivery = false,
     this.orderNumber,
     this.locale = 'ar',
+    this.logoBytes,
   });
 }
 
@@ -256,14 +267,29 @@ class TemplatePdfRenderer {
       // ⚠️ **لا كلمةَ `LOGO` على ورق.** كانت تُرسَم هنا حرفيّاً في كلِّ مستندٍ
       // يمرُّ بهذا الراسم — إيصالُ عميلٍ يقرؤه المشتري.
       //
-      // ⚠️ **وفجوةٌ باقيةٌ مُعلَنة**: هذا الراسمُ لا يستقبل `logoBytes` أصلاً
-      // (‏`generatePdf` بلا الحقل، و`TemplateInvoiceData` كذلك، ومناديه
-      // `InvoiceGenerator.printThermalReceipt` لا يستقبله من أحد). فشعارُ
-      // المنشأة **لا يُطبع في هذا المسار إطلاقاً** — والسكوتُ أصدقُ من
-      // كلمةٍ إنجليزيّةٍ نائبةٍ عنه، لكنّه لا يُغني عن توصيله.
+      // والفجوةُ المعلَنةُ في `006ae81d` **سُدَّت**: `logoBytes` صار يصل هذا
+      // المسارَ من `receiptSettings.logoImage` عبر
+      // `InvoiceGenerator.printThermalReceipt`. وكان عنصرُ الشعار يُرسَم فراغاً
+      // مهما ضبط المستخدمُ شعارَه — وهذا مسارٌ حيٌّ مستقلّ.
+      //
+      // ⚠️ **و`width`/`height` نقاطٌ لا نسبةٌ مئويّة** — نفسُ عقدِ كلّ عنصرٍ
+      // هنا (‏`barcode` يقصّهما نقاطاً كذلك)، وهو عينُ الالتباس الذي طبع
+      // الشعارَ بعرض A4 في المسار الآخر. و`BoxFit.contain` يحفظ النسبة داخل
+      // الصندوق المكتوب — نفسُ صيغةِ `templated_invoice_service`.
+      //
+      // وبلا بكسلٍ ⇒ صمتٌ، لا صندوقٌ ولا كلمة.
       case 'logo':
       case 'image':
-        return pw.SizedBox();
+        final logo = data.logoBytes;
+        if (logo == null || logo.isEmpty) return pw.SizedBox();
+        return pw.Center(
+          child: pw.Image(
+            pw.MemoryImage(logo),
+            width: el.width,
+            height: el.height,
+            fit: pw.BoxFit.contain,
+          ),
+        );
 
       case 'barcode':
         final barcodeData = _resolveValue(el, data) ?? data.invoiceNumber;

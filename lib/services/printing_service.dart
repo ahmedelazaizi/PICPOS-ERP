@@ -266,6 +266,9 @@ class PrintingServiceImpl implements IPrintingService {
         orderNumber: printData.orderNumber,
         notes: printData.notes,
         locale: locale,
+        // نفسُ مصدرِ المسار الأوّل أعلاه (`printWithTemplate`). وبدونه كان
+        // السقوطُ إلى هذا المسار يُفقد الشعارَ صامتاً.
+        logoBytes: receiptSettings.logoImage,
       );
       await _logPrint(
         action: printAction,

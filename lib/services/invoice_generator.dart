@@ -59,6 +59,16 @@ class InvoiceGenerator {
     String? notes,
     AppDatabase? db,
     String locale = 'ar',
+
+    /// بكسلُ شعار المنشأة — `receiptSettings.logoImage` عند المنادي.
+    ///
+    /// كان هذا المسارُ لا يستقبله إطلاقاً، فعنصرُ الشعار في القالب يُرسم
+    /// فراغاً مهما ضبطه المستخدم. والمسارُ حيٌّ: كلُّ إيصالٍ حراريٍّ يسقط من
+    /// `TemplatedInvoiceService` يمرّ به.
+    ///
+    /// ⚠️ ولا يُمرَّر إلى `ThermalReceiptGenerator` الاحتياطيّ: ذاك تخطيطٌ
+    /// مكتوبٌ في الكود بلا عنصرِ شعارٍ أصلاً، فتمريرُه إليه لا موضعَ له.
+    Uint8List? logoBytes,
   }) async {
     // ── Try template-driven rendering ──
     if (db != null) {
@@ -103,6 +113,7 @@ class InvoiceGenerator {
               isDelivery: isDelivery,
               orderNumber: orderNumber,
               locale: locale,
+              logoBytes: logoBytes,
             ),
             directPrint: directPrint,
             printersRepo: printersRepo,
