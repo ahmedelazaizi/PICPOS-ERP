@@ -262,8 +262,8 @@
       "height": 20,
       "textAlign": "right",
       "fontSize": 9,
-      "labelAr": "ضريبة القيمة المضافة ١٤٪",
-      "labelEn": "VAT 14%"
+      "labelAr": "ضريبة القيمة المضافة",
+      "labelEn": "VAT"
     },
     {
       "sortOrder": 17,

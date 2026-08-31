@@ -78,7 +78,6 @@ PAGE 1 204.09x543.05
   TXT 177.78,163.53 NotoNaskhArabic-Regular 9.00 «ﺍﻟﺨﺼﻢ»
   TXT 6.30,163.53 NotoNaskhArabic-Regular 9.00 «-5.00»
   TXT 175.71,144.21 NotoNaskhArabic-Regular 9.00 «ﺽ.ﻕ.ﻡ»
-  TXT 161.44,144.21 NotoNaskhArabic-Regular 9.00 «٤١٪»
   TXT 6.72,144.21 NotoNaskhArabic-Regular 9.00 «11.76»
   TXT 181.48,124.88 NotoNaskhArabic-Regular 9.00 «ﺭﺳﻮﻡ»
   TXT 152.44,124.88 NotoNaskhArabic-Regular 9.00 «ﺍﻟﺘﻮﺻﻴﻞ»

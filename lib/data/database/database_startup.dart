@@ -969,6 +969,20 @@ extension DatabaseStartup on AppDatabase {
       debugPrint('[Startup] template category repair: $e');
     }
 
+    // §٤‑٦ — نسبةُ الضريبة كانت مخبوزةً نصّاً في تسمية سطر الإجمالي بسبعةِ
+    // قوالب. أُصلحت الأصولُ، لكنّها تُقرأ عند الاستيراد لا عند كلِّ إقلاع —
+    // فنسخةٌ استُوردت قبل الإصلاح تبقى تطبع نسبةً كاذبة (‏`١٤٪` تصل الورقةَ
+    // `٤١٪` فعلاً — الأرقامُ الهنديّةُ تنعكس عند الرسم).
+    try {
+      final n = await repairHardcodedTaxRateLabels();
+      if (n > 0) {
+        await DiagnosticLogger.log('TEMPLATE',
+            'نُزعت نسبةُ الضريبة المخبوزةُ من $n تسميةً — النسبةُ من الصنف');
+      }
+    } catch (e) {
+      debugPrint('[Startup] tax rate label repair: $e');
+    }
+
     // Step 7: Spec 136 ISS-2 — backfill deterministic globalIds on seeded
     // master-data defaults that still carry a NULL globalId (pre-globalId
     // upgraded installs, e.g. fiscal_years created before createFiscalYear

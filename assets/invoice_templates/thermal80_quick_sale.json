@@ -262,8 +262,8 @@
       "height": 20,
       "textAlign": "right",
       "fontSize": 9,
-      "labelAr": "ض.ق.م ١٤٪",
-      "labelEn": "VAT 14%"
+      "labelAr": "ض.ق.م",
+      "labelEn": "VAT"
     },
     {
       "sortOrder": 17,

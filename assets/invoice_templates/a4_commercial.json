@@ -141,7 +141,7 @@
       "height": 25,
       "fontSize": 13,
       "textAlign": "right",
-      "labelAr": "ضريبة القيمة المضافة (14%)"
+      "labelAr": "ضريبة القيمة المضافة"
     },
     {
       "type": "delivery_fee",
