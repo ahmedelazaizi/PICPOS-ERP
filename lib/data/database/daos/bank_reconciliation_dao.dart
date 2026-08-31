@@ -69,6 +69,43 @@ extension BankReconciliationDao on AppDatabase {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
+  // §٣‑٦ — الدفترُ الذي تُطابَق عليه: قيودٌ **مرحَّلةٌ غيرُ محذوفة**، وشجرةُ
+  //        الحساب لا الحسابُ المفرد
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /// شرطُ القيد الصالح للمطابقة — يُلحَق بكلّ ضمٍّ على `journal_entries`.
+  ///
+  /// 🔴 لم يكن في هذا الملفّ شرطٌ واحدٌ منهما، وثلاثةُ استعلاماتٍ تقرأ الأستاذَ:
+  /// رصيدُ الدفتر، والمطابقةُ الآليّة، وقيودُ «في الدفتر لا في البنك». فكانت
+  /// **المسوّدةُ غيرُ المرحَّلة والقيدُ المحذوفُ** يدخلان الثلاثةَ جميعاً:
+  ///
+  ///   • رصيدُ الدفتر يخالف الأستاذَ ⇒ فرقُ المطابقة رقمٌ مخترَع.
+  ///   • والمطابقةُ الآليّةُ تُغلق سطرَ كشفٍ على قيدٍ **محذوف** — فيبدو مطابَقاً
+  ///     وما له في الدفتر وجود.
+  ///
+  /// وهذه عينُ صيغةِ `accounting_reports_dao.dart` على نفس الجدول.
+  static const _postedEntry = 'AND e.is_posted = 1 AND e.is_deleted = 0';
+
+  /// حسابُ البنك **وفروعُه**.
+  ///
+  /// كان الحصرُ `account_id = ?` على حسابٍ مفرد. وشجرةُ الحسابات هنا تسمح
+  /// بحسابٍ أبٍ للبنك تحته فرعيّاتٌ (حسابٌ لكلّ بنكٍ أو لكلّ فرع)، فمطابقةٌ
+  /// على الأب كانت تقرأ **صفراً** من الحركة وتعلن الفرقَ كلَّه.
+  /// وعلى حسابٍ ورقيٍّ (بلا أبناء) تعيد الدالّةُ نفسَه وحدَه — فلا تغيير.
+  Future<({String clause, List<Variable> vars})> _bankAccountScope(
+    int bankAccountId, {
+    String alias = 'l',
+  }) async {
+    final ids = await accountSubtreeIds(bankAccountId);
+    if (ids.isEmpty) ids.add(bankAccountId); // حسابٌ غيرُ موجودٍ ⇒ لا يطابق شيئاً
+    final ph = ids.map((_) => '?').join(', ');
+    return (
+      clause: '$alias.account_id IN ($ph)',
+      vars: ids.map<Variable>((id) => Variable<int>(id)).toList(),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
   // AUTO-MATCH ENGINE — محرك المطابقة الآلية
   // ─────────────────────────────────────────────────────────────────────────
 
@@ -93,11 +130,13 @@ extension BankReconciliationDao on AppDatabase {
       // returns NULL on SQLite and fails on Postgres. Compare directly in
       // seconds instead (3 days = 259200 seconds).
       const threeDaysInSeconds = 3 * 24 * 60 * 60;
+      final scope = await _bankAccountScope(bankAccountId);
       final matchQuery = await customSelect(
         '''SELECT l.id, l.debit, l.credit, e.entry_date, e.description
            FROM journal_entry_lines l
            JOIN journal_entries e ON l.entry_id = e.id
-           WHERE l.account_id = ?
+           WHERE ${scope.clause}
+           $_postedEntry
            AND ABS(${isDebit ? 'l.credit' : 'l.debit'} - ?) < 0.01
            AND ABS(e.entry_date - ?) <= ?
            AND l.id NOT IN (
@@ -106,7 +145,7 @@ extension BankReconciliationDao on AppDatabase {
            )
            LIMIT 1''',
         variables: [
-          Variable(bankAccountId),
+          ...scope.vars,
           Variable(amount),
           dateVar(stmt.transactionDate),
           const Variable<int>(threeDaysInSeconds),
@@ -129,10 +168,38 @@ extension BankReconciliationDao on AppDatabase {
   }
 
   /// Manually match a statement line to a journal entry line
+  ///
+  /// 🔴 **قيدٌ واحدٌ لا يغطّي سطرَين.** المطابقةُ الآليّةُ تُقصي القيودَ
+  /// المستعملةَ سلفاً (‏`l.id NOT IN (...)`)، واليدويّةُ كانت تكتب بلا فحصٍ
+  /// إطلاقاً. فيمكن إسنادُ **نفسِ سطر القيد** إلى سطرَي كشفٍ مختلفَين: يُعَدّان
+  /// مطابَقَين اثنَين، وينخفض «غيرُ المطابَق» بمقدارَين، وتبدو المطابقةُ تامّةً
+  /// بينما حركةٌ بنكيّةٌ كاملةٌ بلا ما يقابلها في الدفتر. وهذا **يخفي** الفرقَ
+  /// بدل أن يظهره — وإخفاءُ الفرق هو عينُ ما تقوم المطابقةُ لكشفه.
+  ///
+  /// والرمْيُ لا الابتلاعُ: مطابقةٌ لم تقع يجب أن تُقال للمحاسب. ولإعادة
+  /// الإسناد يُنزَع الأوّلُ بـ[unmatchStatement].
+  ///
+  /// ⚠️ وهذا حارسُ تطبيقٍ لا قيدُ قاعدة: `matched_journal_line_id` عمودٌ بلا
+  /// مفتاحٍ أجنبيٍّ ولا فهرسٍ فريد. وشدُّ قيدٍ على جدولٍ قائمٍ يمسّ الهجرات،
+  /// فلم يُفعَل لمسارٍ بلا مُنادٍ اليوم.
   Future<void> manualMatchStatement({
     required int statementLineId,
     required int journalLineId,
   }) async {
+    final taken = await (select(bankStatementLines)
+          ..where((l) =>
+              l.matchedJournalLineId.equals(journalLineId) &
+              l.id.isNotValue(statementLineId))
+          ..limit(1))
+        .getSingleOrNull();
+
+    if (taken != null) {
+      throw StateError(
+        'سطرُ القيد رقم $journalLineId مطابَقٌ سلفاً لسطر الكشف رقم '
+        '${taken.id}. انزع المطابقةَ الأولى قبل إعادة الإسناد.',
+      );
+    }
+
     await (update(bankStatementLines)
           ..where((l) => l.id.equals(statementLineId)))
         .write(BankStatementLinesCompanion(
@@ -166,12 +233,16 @@ extension BankReconciliationDao on AppDatabase {
     int? userId,
   }) async {
     // Calculate book balance from GL
+    // §٣‑٦ — المرحَّلُ غيرُ المحذوف، وعلى شجرة الحساب. راجع [_postedEntry].
+    final balanceScope = await _bankAccountScope(bankAccountId);
     final bookResult = await customSelect(
-      '''SELECT COALESCE(SUM(debit - credit), 0) as balance
+      '''SELECT COALESCE(SUM(l.debit - l.credit), 0) as balance
          FROM journal_entry_lines l
          JOIN journal_entries e ON l.entry_id = e.id
-         WHERE l.account_id = ? AND e.entry_date <= ?''',
-      variables: [Variable(bankAccountId), Variable(periodEnd)],
+         WHERE ${balanceScope.clause}
+         $_postedEntry
+         AND e.entry_date <= ?''',
+      variables: [...balanceScope.vars, dateVar(periodEnd)],
     ).getSingle();
     final bookBalance = (bookResult.data['balance'] as num?)?.toDouble() ?? 0;
 
@@ -185,8 +256,8 @@ extension BankReconciliationDao on AppDatabase {
          AND transaction_date BETWEEN ? AND ?''',
       variables: [
         Variable(bankAccountId),
-        Variable(periodStart),
-        Variable(periodEnd),
+        dateVar(periodStart),
+        dateVar(periodEnd),
       ],
     ).getSingle();
 
@@ -249,20 +320,25 @@ extension BankReconciliationDao on AppDatabase {
         .get();
 
     // Outstanding JE lines (in books, not in bank)
+    // §٣‑٦ — نفسُ شرطِ رصيد الدفتر: مسوّدةٌ غيرُ مرحَّلةٍ ليست «في الدفتر»،
+    // وقيدٌ محذوفٌ ليس فيه أصلاً. وبدونهما كانت قائمةُ «لم تظهر في البنك»
+    // تحمل ما لا وجودَ له فيبحث عنه المحاسبُ في الكشف.
+    final outstandingScope = await _bankAccountScope(recon.bankAccountId);
     final outstandingJE = await customSelect(
       '''SELECT l.*, e.entry_date, e.description as entry_desc
          FROM journal_entry_lines l
          JOIN journal_entries e ON l.entry_id = e.id
-         WHERE l.account_id = ?
+         WHERE ${outstandingScope.clause}
+         $_postedEntry
          AND e.entry_date BETWEEN ? AND ?
          AND l.id NOT IN (
            SELECT matched_journal_line_id FROM bank_statement_lines
            WHERE matched_journal_line_id IS NOT NULL
          )''',
       variables: [
-        Variable(recon.bankAccountId),
-        Variable(recon.periodStart),
-        Variable(recon.periodEnd),
+        ...outstandingScope.vars,
+        dateVar(recon.periodStart),
+        dateVar(recon.periodEnd),
       ],
     ).get();
 
