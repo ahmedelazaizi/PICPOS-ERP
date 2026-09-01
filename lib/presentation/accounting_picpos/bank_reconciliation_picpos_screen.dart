@@ -23,6 +23,7 @@ import 'package:intl/intl.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/widgets/app_toast.dart';
 import '../../data/providers/repository_providers.dart';
 import '../../domain/repositories/treasury_repository.dart' show SafeData;
 import '../picpos_shell/picpos_empty_state.dart';
@@ -33,6 +34,35 @@ import '../picpos_shell/picpos_screen_scaffold.dart';
 import '../picpos_shell/picpos_surface.dart';
 
 final _money = NumberFormat('#,##0.00', 'en');
+
+/// يحلّل نصَّ رصيد الكشف إلى رقمٍ صالح، أو `null` إن كان فارغاً أو معطوباً.
+///
+/// ⚠️ **يجرّد فاصلةَ الآلاف قبل التحليل**: الشاشةُ نفسُها تعرض المبالغَ
+/// بصيغة `NumberFormat('#,##0.00')` (‏`1,000.00`)، فمستخدمٌ ينسخ رقماً من
+/// الشاشة ويلصقه هنا يكتب فاصلةً — و`double.tryParse` يرفضها فيعامَل رقمٌ
+/// صحيحٌ بوصفه فشلاً. ولا قيمةَ افتراضيّةً عند الفشل: `null` يعني «أعِد
+/// كتابةَ الرقم»، لا «افترض صفراً» — فصفرٌ صامتٌ هنا فرقٌ محاسبيٌّ مختلَق.
+double? _parseStatementBalance(String raw) {
+  final trimmed = raw.trim();
+  if (trimmed.isEmpty) return null;
+  return double.tryParse(trimmed.replaceAll(',', ''));
+}
+
+/// تقريرُ جلسة مطابقةٍ بعينها — عائلةٌ على رقم الجلسة.
+///
+/// ⚠️ **مزوّدٌ لا نداءٌ داخل `build`**: `FutureBuilder.future` بكائنٍ يُبنى
+/// من جديد كلَّ إعادة بناء يعيد الاستعلامَ مع كلّ `setState` — ومهمّتا
+/// الاستيراد والمطابقة الآليّة (٥) والقائمتان المتجاورتان (٦) ستضيفان حالةً
+/// وأزراراً إلى هذا الملفّ نفسِه، فكلُّ تفاعلٍ فيهما كان سيُطلق استعلامَ
+/// تقريرٍ جديداً. والمزوّدُ (بمفتاح `sessionId`) يخزّن نتيجتَه بين
+/// عمليّات البناء، ويُنعَش عمداً حين تحتاج تينك المهمّتان ذلك.
+///
+/// ⚠️ **يقرأ `accountingRepositoryProvider` لا `databaseProvider`** —
+/// فاختبارُ الودجت يبقى بلا قاعدةٍ حقيقيّة.
+final _reconciliationReportProvider = FutureProvider.autoDispose
+    .family<Map<String, dynamic>, int>((ref, sessionId) {
+  return ref.watch(accountingRepositoryProvider).getReconciliationReport(sessionId);
+});
 
 /// الخزائنُ البنكيّةُ القابلةُ للمطابقة، وعددُ المُقصى منها لغياب حسابٍ
 /// مرتبط.
@@ -75,31 +105,24 @@ class _BankReconciliationPicposScreenState
     super.initState();
     _period = _lastMonthRange();
 
-    // ⚠️ لا خزنةَ مختارةً افتراضيّاً، والقائمةُ تصل بعد إطارٍ واحدٍ على
-    // الأقلّ (نداءٌ غيرُ متزامن للمستودع). فتُختار أوّلُ خزنةٍ قابلةٍ
-    // للمطابقة تلقائيّاً كي لا تبدأ الشاشةُ بلا شيءٍ مختار — على نمط
-    // `_selectedBranchId` في `financial_statements_picpos_screen.dart`.
-    Future.microtask(() async {
-      try {
-        final result = await ref.read(_bankSafesProvider.future);
-        if (!mounted) return;
-        if (_safeId == null && result.safes.isNotEmpty) {
-          final first = result.safes.first;
-          setState(() {
-            _safeId = first.id;
-            _accountId = first.linkedAccountId;
-          });
-        }
-      } catch (_) {
-        // يُقال بالفعل عبر `banksAsync.when(error: ...)` في build() — هنا
-        // فقط يُمنَع رميٌ غيرُ مُمسَكٍ يُسقط الاختيارَ التلقائيَّ بلا داعٍ.
-      }
-    });
+    // ⚠️ **بلا اختيارٍ تلقائيّ لأيّ خزنة**: `list.first` ترتيبُ صفوفِ
+    // استعلامٍ لا معنىً له عند المستخدم، وأثرُه ماليٌّ لا تجميليّ — خزنةٌ
+    // عشوائيّةٌ مختارةٌ تجعل زرَّ «جلسة جديدة» قابلاً للنقر فوراً، و
+    // `createReconciliation` إدراجٌ حقيقيٌّ بلا فحصِ تكرار. فتبدأ الشاشةُ
+    // بلا خزنةٍ مختارة، والمستخدمُ يختار بنفسه من المنتقي.
+    //
+    // وإعادةُ البناء عند تبدّل نصِّ رصيد الكشف — لتفعيل/تعطيل زرِّ «جلسة
+    // جديدة» ولإظهار خطأ الإدخال حيّاً بدل استبداله بصفر.
+    _statementBalanceController.addListener(_onBalanceTextChanged);
   }
+
+  void _onBalanceTextChanged() => setState(() {});
 
   @override
   void dispose() {
-    _statementBalanceController.dispose();
+    _statementBalanceController
+      ..removeListener(_onBalanceTextChanged)
+      ..dispose();
     super.dispose();
   }
 
@@ -151,6 +174,9 @@ class _BankReconciliationPicposScreenState
           selectedRange: _period,
           onRangeChanged: (start, end) => setState(() {
             _period = DateTimeRange(start: start, end: end);
+            // فترةٌ جديدةٌ ⇒ الجلسةُ المفتوحةُ (إن وُجدت) كانت على فترةٍ
+            // أخرى ومؤشّراتُها محسوبةٌ عليها — نفسُ تعليل تبديل الخزنة.
+            _sessionId = null;
           }),
           trailing: [
             _safePickerButton(context, safes),
@@ -233,9 +259,13 @@ class _BankReconciliationPicposScreenState
   }
 
   Widget _statementBalanceField(BuildContext context) {
+    final raw = _statementBalanceController.text;
+    // خطأُ إدخالٍ يُقال فقط بعد أن يكتب المستخدمُ شيئاً — حقلٌ فارغٌ لم
+    // يُلمَس بعدُ ليس «خطأً»، هو حالةُ البداية.
+    final invalid = raw.trim().isNotEmpty && _parseStatementBalance(raw) == null;
+
     return SizedBox(
       width: 170,
-      height: 40,
       child: TextField(
         controller: _statementBalanceController,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -249,9 +279,13 @@ class _BankReconciliationPicposScreenState
           isDense: true,
           hintText: 'رصيد كشف البنك',
           hintStyle: TextStyle(fontSize: 11.5, color: context.picposMuted),
+          // خطأُ إدخالٍ يُقال — لا يُستبدَل بصفرٍ صامت.
+          errorText: invalid ? 'قيمةٌ غيرُ صالحة' : null,
+          errorStyle: const TextStyle(fontSize: 10.5),
           filled: true,
           fillColor: context.picposField,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 13),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(11),
             borderSide: BorderSide(color: context.picposHairline),
@@ -264,17 +298,29 @@ class _BankReconciliationPicposScreenState
             borderRadius: BorderRadius.circular(11),
             borderSide: BorderSide(color: context.picposBrandInk),
           ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(11),
+            borderSide: const BorderSide(color: AppColors.error),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(11),
+            borderSide: const BorderSide(color: AppColors.error, width: 1.5),
+          ),
         ),
       ),
     );
   }
 
   Widget _newSessionButton(BuildContext context) {
-    final canCreate = _safeId != null && _accountId != null && !_creatingSession;
+    final balance = _parseStatementBalance(_statementBalanceController.text);
+    final canCreate = _safeId != null &&
+        _accountId != null &&
+        balance != null &&
+        !_creatingSession;
     return SizedBox(
       height: 40,
       child: ElevatedButton.icon(
-        onPressed: canCreate ? _createSession : null,
+        onPressed: canCreate ? () => _createSession(balance) : null,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
@@ -298,11 +344,11 @@ class _BankReconciliationPicposScreenState
     );
   }
 
-  Future<void> _createSession() async {
+  /// [balance] وصل مُحلَّلاً وصالحاً بالفعل — الزرُّ المُنادي معطَّلٌ ما لم
+  /// يكن كذلك، فلا حاجةَ لإعادة التحليل ولا لقيمةٍ افتراضيّة هنا.
+  Future<void> _createSession(double balance) async {
     final accountId = _accountId;
     if (accountId == null) return;
-    final balance =
-        double.tryParse(_statementBalanceController.text.trim()) ?? 0;
 
     setState(() => _creatingSession = true);
     try {
@@ -315,6 +361,13 @@ class _BankReconciliationPicposScreenState
       );
       if (!mounted) return;
       setState(() => _sessionId = id);
+    } catch (e) {
+      // ⚠️ لا يُبتلَع: كان `try { … } finally { … }` بلا `catch` يترك
+      // الاستثناءَ يفلت من ردّ نداء الزرّ — خطأُ منطقةٍ غيرُ مرئيٍّ في
+      // الإنتاج، والمستخدمُ يرى زرّاً ينبض ثمّ لا شيء.
+      if (!mounted) return;
+      AppToast.show(context, 'تعذّر إنشاءُ جلسة المطابقة: $e',
+          type: ToastType.error);
     } finally {
       if (mounted) setState(() => _creatingSession = false);
     }
@@ -334,20 +387,10 @@ class _BankReconciliationPicposScreenState
   }
 
   Widget _buildReport(int sessionId) {
-    final repo = ref.read(accountingRepositoryProvider);
-    return FutureBuilder<Map<String, dynamic>>(
-      key: ValueKey('bank_reconciliation_report_$sessionId'),
-      future: repo.getReconciliationReport(sessionId),
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return Center(
-            child: Text('تعذّر حسابُ تقرير المطابقة: ${snapshot.error}'),
-          );
-        }
-        if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        final data = snapshot.data!;
+    final reportAsync = ref.watch(_reconciliationReportProvider(sessionId));
+
+    return reportAsync.when(
+      data: (data) {
         final bookBalance = (data['bookBalance'] as num?)?.toDouble() ?? 0;
         final statementBalance =
             (data['statementBalance'] as num?)?.toDouble() ?? 0;
@@ -382,6 +425,10 @@ class _BankReconciliationPicposScreenState
           ),
         ]);
       },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(
+        child: Text('تعذّر حسابُ تقرير المطابقة: $e'),
+      ),
     );
   }
 }
