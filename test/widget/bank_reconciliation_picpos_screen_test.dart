@@ -74,55 +74,72 @@ class _FakeQueryRow {
 /// معلَّقٌ («قيد الإيداع»)، وسطرٌ مطابَقٌ سلفاً (لزرّ «نزع»). اختباراتُ
 /// المهمّة ٦ (القائمتان والمطابقةُ اليدويّة) تحتاج بياناتٍ حقيقيّةً في
 /// المفاتيح الثلاثة — لا قوائمَ فارغةً كسابقتها.
-Map<String, dynamic> _sampleReconciliationReport() => {
-      'reconciliation': null,
-      'statementBalance': 1000.0,
-      'bookBalance': 1000.0,
-      'difference': 0.0,
-      'matchedCount': 1,
-      'unmatchedCount': 1,
-      'matchedLines': <dynamic>[
-        db.BankStatementLine(
-          id: 10,
-          bankAccountId: 5,
-          transactionDate: DateTime(2026, 5, 9),
-          reference: 'REF-0',
-          description: 'إيداعٌ مطابَقٌ سلفاً',
-          debitAmount: 0,
-          creditAmount: 300,
-          runningBalance: 300,
-          isMatched: true,
-          matchedJournalLineId: 4,
-          matchType: 'manual',
-          createdAt: DateTime(2026, 5, 9),
-        ),
-      ],
-      'unmatchedBankLines': <dynamic>[
-        db.BankStatementLine(
-          id: 3,
-          bankAccountId: 5,
-          transactionDate: DateTime(2026, 5, 10),
-          reference: 'REF-1',
-          description: 'إيداع نقدي',
-          debitAmount: 0,
-          creditAmount: 500,
-          runningBalance: 800,
-          isMatched: false,
-          createdAt: DateTime(2026, 5, 10),
-        ),
-      ],
-      'outstandingBookEntries': <dynamic>[
-        const _FakeQueryRow({
-          'id': 7,
-          'entry_id': 1,
-          'account_id': 5,
-          'debit': 0.0,
-          'credit': 500.0,
-          'entry_date': '2026-05-10',
-          'entry_desc': 'قيد الإيداع',
-        }),
-      ],
-    };
+Map<String, dynamic> _sampleReconciliationReport() {
+  // ⚠️ **مراجعةٌ — مأخذ ١**: `entry_date` بختمٍ صحيحٍ (ثوانٍ منذ الإبوك)
+  // لا نصِّ ISO. النوعُ الفعليُّ القادمُ من `customSelect` هو `int`
+  // (`lib/data/database/database.dart`: `dateVar` تكتب
+  // `Variable<int>(dt.millisecondsSinceEpoch ~/ 1000)`، ولا تحويلَ درِفتيّ
+  // على نتيجة `customSelect` الخامّة). نصٌّ حرفيٌّ هنا كان يُخفي عطباً
+  // إنتاجيّاً حقيقيّاً: الشاشةُ لم تكن تعالج فرعَ `int` إطلاقاً، فكان هذا
+  // المزيَّفُ يقيس شكلاً لا يُنتجه المحرّكُ أبداً.
+  //
+  // ⚠️ **٥/١١ لا ٥/١٠ عمداً — تفادي تصادمٍ صامت**: `REF-1` أدناه
+  // بتاريخٍ `2026-05-10` أيضاً (عمودٌ منسوخٌ عن `l.transactionDate`
+  // مباشرةً لا عن `_fmtEntryDate`)؛ فلو تطابق التاريخان لمرّ اختبارُ
+  // «عمودُ تاريخِ الدفتر» حتى لو أخفقت `_fmtEntryDate` في فرع `int` —
+  // لأنّ عمودَ الكشف كان سيُظهر «2026-05-10» بمعزلٍ عن عمود الدفتر.
+  // اكتشفتُ هذا بطفرةٍ فعليّة (حذفُ فرع `int`) لم تُسقط الاختبارَ.
+  final entryDateEpoch = DateTime(2026, 5, 11).millisecondsSinceEpoch ~/ 1000;
+  return {
+    'reconciliation': null,
+    'statementBalance': 1000.0,
+    'bookBalance': 1000.0,
+    'difference': 0.0,
+    'matchedCount': 1,
+    'unmatchedCount': 1,
+    'matchedLines': <dynamic>[
+      db.BankStatementLine(
+        id: 10,
+        bankAccountId: 5,
+        transactionDate: DateTime(2026, 5, 9),
+        reference: 'REF-0',
+        description: 'إيداعٌ مطابَقٌ سلفاً',
+        debitAmount: 0,
+        creditAmount: 300,
+        runningBalance: 300,
+        isMatched: true,
+        matchedJournalLineId: 4,
+        matchType: 'manual',
+        createdAt: DateTime(2026, 5, 9),
+      ),
+    ],
+    'unmatchedBankLines': <dynamic>[
+      db.BankStatementLine(
+        id: 3,
+        bankAccountId: 5,
+        transactionDate: DateTime(2026, 5, 10),
+        reference: 'REF-1',
+        description: 'إيداع نقدي',
+        debitAmount: 0,
+        creditAmount: 500,
+        runningBalance: 800,
+        isMatched: false,
+        createdAt: DateTime(2026, 5, 10),
+      ),
+    ],
+    'outstandingBookEntries': <dynamic>[
+      _FakeQueryRow({
+        'id': 7,
+        'entry_id': 1,
+        'account_id': 5,
+        'debit': 0.0,
+        'credit': 500.0,
+        'entry_date': entryDateEpoch,
+        'entry_desc': 'قيد الإيداع',
+      }),
+    ],
+  };
+}
 
 /// مزيَّفٌ يلتقط الحسابَ الذي وصله `createReconciliation`، ويعيد تقريراً
 /// قابلاً للتخصيص من `getReconciliationReport` — لقياسِ أنّ بطاقاتِ
@@ -166,6 +183,11 @@ class _FakeAccounting implements IAccountingRepository {
   int completeCalls = 0;
   int? completedReconciliationId;
 
+  /// عددُ استدعاءات `getReconciliationReport` — يثبت أنّ `ref.invalidate`
+  /// أعاد الاستعلامَ فعلاً بعد مطابقةٍ/نزعٍ/إقفال، لا مجرّد أنّ الشاشةَ لم
+  /// تنهر (مراجعةٌ — مأخذ ٤).
+  int getReportCalls = 0;
+
   @override
   Future<int> createReconciliation({
     required int bankAccountId,
@@ -181,8 +203,10 @@ class _FakeAccounting implements IAccountingRepository {
 
   @override
   Future<Map<String, dynamic>> getReconciliationReport(
-          int reconciliationId) async =>
-      report;
+      int reconciliationId) async {
+    getReportCalls++;
+    return report;
+  }
 
   @override
   Future<int> importBankStatementLines({
@@ -635,6 +659,28 @@ void main() {
   // المهمّةُ ٦ — القائمتان المتجاورتان والمطابقةُ اليدويّةُ والنزع.
   // ═══════════════════════════════════════════════════════════════════════
 
+  // ⚠️ **مراجعةٌ — مأخذ ١**: `entry_date` في `outstandingBookEntries` يصل
+  // `int` (ثوانٍ منذ الإبوك) لا نصّاً — والشاشةُ كانت تسقط إلى عرض الرقم
+  // الخامّ (تسعُ خاناتٍ أو أكثر) بدل تاريخٍ مقروء. هذا الاختبارُ يقيس
+  // **شكلَ العرض** لا وجودَ رقمٍ فحسب: لو رجعت `_fmtEntryDate` تسقط إلى
+  // `'$raw'` على `int`، لن يظهر النصُّ `2026-05-11` إطلاقاً ويسقط التوكيد.
+  //
+  // ⚠️ **التاريخُ `05-11` لا `05-10` عمداً**: `REF-1` يحمل `05-10` أيضاً
+  // (عمودٌ آخرُ في الجدول المجاور، منسوخٌ عن `DateTime` حقيقيّةٍ لا عن
+  // `_fmtEntryDate`) — تطابقُهما كان يمرِّر هذا التوكيدَ حتى لو أخفقت
+  // `_fmtEntryDate` في فرع `int` تماماً (طفرةٌ فعليّةٌ كشفت ذلك — راجع
+  // تقريرَ الإصلاح).
+  testWidgets('🔴 عمودُ تاريخِ الدفتر يعرض تاريخاً مقروءاً لا ختماً خامّاً',
+      (tester) async {
+    await pump(tester, 1920,
+        safes: [_bankSafe(1, linked: 5, name: 'خزنة تاريخ الدفتر')]);
+    await openSession(tester, 'خزنة تاريخ الدفتر');
+
+    expect(find.text('2026-05-11'), findsWidgets,
+        reason: '`entry_date` يصل `int` من `customSelect` — والختمُ الخامُّ '
+            'ليس تاريخاً يقرؤه محاسب');
+  });
+
   testWidgets('🔴 «طابق» تُعطَّل حتى يُختار سطرٌ من كلّ جانب', (tester) async {
     await pump(tester, 1920,
         safes: [_bankSafe(1, linked: 5, name: 'خزنة المطابقة اليدوية')]);
@@ -672,12 +718,64 @@ void main() {
     await tester.tap(find.widgetWithText(ElevatedButton, 'طابق'));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('مطابَقٌ سلفاً'), findsWidgets,
-        reason: 'نصُّ المحرّك يسمّي السطرَ الآخر — وهو ما يحتاجه المحاسب');
+    // ⚠️ **مراجعةٌ — مأخذ ٢**: `'مطابَقٌ سلفاً'` وحدَها **متقاطعةٌ** مع وصف
+    // السطر المطابَق الافتراضيّ في `_sampleReconciliationReport`
+    // (‏`'إيداعٌ مطابَقٌ سلفاً'` — يُرسَم دائماً في جدول «الأسطرُ المطابَقة»
+    // أسفلَ الشاشة، بصرفِ النظر عن نجاح المطابقة أو فشلها). فالتوكيدُ كان
+    // يمرّ حتى لو استُبدلت `catch` برسالةٍ عامّةٍ («تعذّرت العمليّة») —
+    // أُثبت ذلك بطفرةٍ فعليّة (راجع تقريرَ الإصلاح). والنصُّ هنا **لا يوجد
+    // إلّا** في رسالة المحرّك نفسِها.
+    expect(find.textContaining('لسطر الكشف رقم 3'), findsWidgets,
+        reason: 'نصُّ المحرّك يسمّي السطرَ الآخر — وهو ما يحتاجه المحاسب. '
+            'ولا تقاطعَ مع وصف سطرٍ آخر في التقرير المزيَّف.');
 
     // ⚠️ مؤقّتُ `AppToast` ٢٥٠٠ms ثمّ ٣٠٠ms خروجاً — نفسُ نمط بقيّة
     // اختبارات هذا الملفّ.
     await tester.pump(const Duration(seconds: 4));
+  });
+
+  // ⚠️ **مراجعةٌ — مأخذ ٤**: مسارُ المطابقة **الناجح** كان بلا توكيدٍ
+  // واحد. الاختبارُ الوحيدُ الذي يضغط «طابق» كان اختبارَ الرمي (أعلاه) —
+  // فالمزيَّفُ يرمي قبل أن يُقاس شيء، ولو عُكس الوسيطان
+  // (‏`statementLineId`/`journalLineId`) في `_manualMatch` كانت السويّةُ
+  // كلُّها ستمرّ خضراء بينما الشاشةُ تربط سطرَ كشفٍ بقيدٍ خاطئ. `REF-1`
+  // معرّفُه `3` و«قيد الإيداع» معرّفُه `7` — مختلفان عمداً كي يُمسك
+  // انعكاسُهما.
+  testWidgets(
+      '🔴 مطابقةٌ ناجحةٌ تربط السطرَ الصحيحَ بالقيد الصحيح، وتُفرِغ '
+      'الاختيارَ، وتُنعش التقرير', (tester) async {
+    final accounting = _FakeAccounting();
+    await pump(tester, 1920,
+        safes: [_bankSafe(1, linked: 5, name: 'خزنة المطابقة الناجحة')],
+        accounting: accounting);
+    await openSession(tester, 'خزنة المطابقة الناجحة');
+
+    final reportCallsBeforeMatch = accounting.getReportCalls;
+
+    await tester.tap(find.text('REF-1'));
+    await tester.tap(find.text('قيد الإيداع'));
+    await tester.pump();
+    await tester.tap(find.widgetWithText(ElevatedButton, 'طابق'));
+    await tester.pumpAndSettle();
+
+    expect(accounting.manualMatchCalls, 1);
+    expect(accounting.manualMatchStatementLineId, 3,
+        reason: 'REF-1 هو سطرُ الكشف رقم 3 في التقرير الافتراضي');
+    expect(accounting.manualMatchJournalLineId, 7,
+        reason: '«قيد الإيداع» هو قيدُ الدفتر رقم 7 — لو عُكس الوسيطان في '
+            '_manualMatch لمرّ هذا التوكيدُ بقيمةٍ مقلوبةٍ لأنّهما مختلفان '
+            'عمداً (٣ ≠ ٧)');
+
+    final btn = tester.widget<ElevatedButton>(
+        find.widgetWithText(ElevatedButton, 'طابق'));
+    expect(btn.onPressed, isNull,
+        reason: 'نجاحُ المطابقة يُفرغ الاختيارَ — والمُوجزُ يذكر '
+            '`_clearPicks` صراحةً كخطوةٍ بعد النجاح، فبلا اختيارٍ يعود '
+            'الزرُّ معطَّلاً');
+
+    expect(accounting.getReportCalls, greaterThan(reportCallsBeforeMatch),
+        reason: 'التقريرُ يُنعش بعد المطابقة (`ref.invalidate`) — لا يبقى '
+            'على القيم القديمة');
   });
 
   testWidgets('🔴 و«نزع» يُنادي المحرّك', (tester) async {
@@ -691,6 +789,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(accounting.unmatchCalls, 1);
+    // ⚠️ **مراجعةٌ — مأخذ ٥**: العدّ وحدَه لا يمسك نزعَ السطر الخطأ —
+    // السطرُ المطابَقُ الوحيدُ في التقرير الافتراضيّ معرّفُه ١٠.
+    expect(accounting.unmatchedStatementLineId, 10,
+        reason: 'يجب أن يُنزَع سطرُ الكشف الصحيحُ لا أيُّ معرّف');
   });
 
   // ⚠️ **القياسُ عند عرضَين إلزاميٌّ هنا تحديداً**: القائمتان المتجاورتان
@@ -754,11 +856,19 @@ void main() {
     await tester.tap(find.widgetWithText(ElevatedButton, 'إقفال الجلسة'));
     await tester.pumpAndSettle();
 
-    // ⚠️ الفرقُ هنا ٤٩٫٧٥ لا صفر — والحوارُ يجب أن يعرضه صراحةً (قرارُ
-    // مالك: إقفالٌ بفرقٍ مشروعٍ كالشيكات برسم التحصيل يعمل، والمحاسبُ
-    // يقرّر بعينٍ مفتوحة).
-    expect(find.textContaining('49.75'), findsWidgets,
-        reason: 'حوارُ التأكيد يعرض الفرقَ صراحةً');
+    // ⚠️ **مراجعةٌ — مأخذ ٣**: بلا حصرٍ داخل الحوار، بطاقةُ «الفرق»
+    // (‏`49.75`) وبطاقةُ «رصيد الكشف» (‏`1,049.75`) في صفّ المؤشّرات
+    // تبقيان في الشجرة خلف الحوار غيرِ المُعتِم — فالتوكيدُ كان يمرّ حتى
+    // لو حُذف الفرقُ من نصّ الحوار كلّيّاً. الحصرُ هنا داخل `AlertDialog`
+    // نفسِه (نفسُ نمط `find.descendant` عند اختبار المؤشّرات أعلاه).
+    final dialog = find.byType(AlertDialog);
+    expect(dialog, findsOneWidget, reason: 'حوارُ التأكيد يجب أن يظهر');
+    expect(
+      find.descendant(of: dialog, matching: find.textContaining('49.75')),
+      findsWidgets,
+      reason: 'حوارُ التأكيد نفسُه يعرض الفرقَ صراحةً — لا بطاقةَ مؤشّرٍ '
+          'خلفه',
+    );
 
     await tester.tap(find.text('إقفال'));
     await tester.pumpAndSettle();

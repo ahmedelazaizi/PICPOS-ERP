@@ -931,12 +931,26 @@ class _BankReconciliationPicposScreenState
     );
   }
 
-  /// `outstandingBookEntries.data['entry_date']` قد يعود `String` أو رقماً
-  /// حسب المحرّك (تعليقُ العقد أعلى `_buildReport`) — فهذه لا تفترض
-  /// `DateTime` مطلقاً، وتعرض النصَّ الخامَ إن تعذّر التحليل بدل أن ترمي.
+  /// `outstandingBookEntries.data['entry_date']` قد يعود `DateTime` أو
+  /// `int` أو `String` حسب المحرّك (تعليقُ العقد أعلى `_buildReport`).
+  ///
+  /// ⚠️ **مراجعة — النوعُ الفعليّ `int` (ثوانٍ منذ الإبوك) لا `String`**:
+  /// `lib/data/database/database.dart` توثِّق أنّ drift تخزّن أعمدةَ
+  /// `DateTime` كـ`epoch seconds (BIGINT)` على SQLite وPostgreSQL معاً
+  /// (‏`dateVar` تكتب `Variable<int>(dt.millisecondsSinceEpoch ~/ 1000)`)،
+  /// و`entry_date` يصل من `customSelect` **خامّاً** بلا تحويل drift. وكانت
+  /// النسخةُ الأولى هنا تسقط إلى `'$raw'` فتعرض `1778371200` بدل
+  /// `2026-05-10` — عمودُ التاريخ عينُه الذي يقرّر به المحاسبُ أيَّ سطرٍ
+  /// يطابق أيَّ سطر. والإصلاحُ نسخُ النمط العامل على نفس الاستعلام
+  /// (‏`journal_entry_lines`/`journal_entries`) من
+  /// `lib/data/database/daos/accounting_dao_reads.dart:658-661` بدل
+  /// اختراع تحويلٍ جديد.
   String _fmtEntryDate(dynamic raw) {
     if (raw == null) return '—';
     if (raw is DateTime) return _dateFmt.format(raw);
+    if (raw is int) {
+      return _dateFmt.format(DateTime.fromMillisecondsSinceEpoch(raw * 1000));
+    }
     if (raw is String) {
       final parsed = DateTime.tryParse(raw);
       return parsed == null ? raw : _dateFmt.format(parsed);
