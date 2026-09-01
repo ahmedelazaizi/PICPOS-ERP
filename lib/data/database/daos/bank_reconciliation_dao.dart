@@ -281,12 +281,51 @@ extension BankReconciliationDao on AppDatabase {
   }
 
   /// Complete a reconciliation (mark as finished)
+  /// يُقفل الجلسةَ — **ويُحدّث العدّادين المحفوظَين قبل الختم**.
+  ///
+  /// 🔴 **كان يختم صفّاً يكذب.** `total_matched`/`total_unmatched` يُحسبان
+  /// **لحظةَ الإنشاء** في [createReconciliation]، والشاشةُ تُلزم بإنشاء
+  /// الجلسة **قبل** الاستيراد (المتنُ لا يظهر بلا جلسة). فالجلسةُ تُنشأ
+  /// وأسطرُ الكشف صفر، ثمّ يُستورَد مئةُ سطرٍ ويُطابَق تسعون — ويبقى الصفُّ
+  /// المحفوظُ يقول `0/0` إلى الأبد.
+  ///
+  /// ولم يكن يُرى: `getReconciliationReport` يحسب `matchedCount`
+  /// و`unmatchedCount` **حيَّين** من الجدول، فالشاشةُ تعرض الصحيحَ بينما
+  /// الأرشيفُ يحمل الكذب. ومن يقرأ `bank_reconciliations` لاحقاً — تقريرٌ
+  /// أو تدقيقٌ أو تصديرٌ — يقرأ الصفرَ لا التسعين.
+  ///
+  /// ⚠️ **ولا يُعاد حسابُ `bookBalance` و`difference` هنا عن قصد**: هما
+  /// **لقطةٌ** لحظةَ فتح الجلسة مقابلَ رصيد كشفٍ أدخله المحاسبُ لتلك اللحظة،
+  /// وإعادةُ حسابهما عند الإقفال تُغيّر الرقمَ الذي رآه وأقرّه في حوار
+  /// التأكيد. والمطابقةُ لا تُحرّك رصيدَ الدفتر أصلاً — تربط الأسطرَ فقط.
   Future<void> completeReconciliation(int reconciliationId) async {
+    final recon = await (select(bankReconciliations)
+          ..where((r) => r.id.equals(reconciliationId)))
+        .getSingle();
+
+    // نفسُ استعلامِ [createReconciliation] حرفاً — ولو افترقا لأعطى الإقفالُ
+    // عدداً غيرَ الذي أعطاه الفتحُ على نفس البيانات.
+    final matchStats = await customSelect(
+      '''SELECT
+          SUM(CASE WHEN is_matched = 1 THEN 1 ELSE 0 END) as matched,
+          SUM(CASE WHEN is_matched = 0 THEN 1 ELSE 0 END) as unmatched
+         FROM bank_statement_lines
+         WHERE bank_account_id = ?
+         AND transaction_date BETWEEN ? AND ?''',
+      variables: [
+        Variable(recon.bankAccountId),
+        dateVar(recon.periodStart),
+        dateVar(recon.periodEnd),
+      ],
+    ).getSingle();
+
     await (update(bankReconciliations)
           ..where((r) => r.id.equals(reconciliationId)))
         .write(BankReconciliationsCompanion(
       status: const Value('completed'),
       completedAt: Value(DateTime.now()),
+      totalMatched: Value((matchStats.data['matched'] as int?) ?? 0),
+      totalUnmatched: Value((matchStats.data['unmatched'] as int?) ?? 0),
     ));
   }
 

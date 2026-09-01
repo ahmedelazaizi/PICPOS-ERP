@@ -204,6 +204,18 @@ class _FakeAccounting implements IAccountingRepository {
   /// تنهر (مراجعةٌ — مأخذ ٤).
   int getReportCalls = 0;
 
+  /// معرّفاتُ الجلسات التي طُلب تقريرُها — تفرّق «فُتح تقريرُ الجلسة القائمة»
+  /// عن «فُتح تقريرُ جلسةٍ أُنشئت للتوّ»، وهو عينُ ما يقيسه اختبارُ الاستئناف.
+  final List<int> reportedSessionIds = [];
+
+  /// جلساتٌ قائمةٌ يعيدها `getReconciliationSessions` — فارغةٌ افتراضاً كي
+  /// تبقى كلُّ الاختبارات القديمةِ على سلوكها (‏«جلسة جديدة»).
+  List<db.BankReconciliationData> openSessions = const [];
+
+  @override
+  Future<List<db.BankReconciliationData>> getReconciliationSessions() async =>
+      openSessions;
+
   @override
   Future<int> createReconciliation({
     required int bankAccountId,
@@ -225,6 +237,7 @@ class _FakeAccounting implements IAccountingRepository {
   Future<Map<String, dynamic>> getReconciliationReport(
       int reconciliationId) async {
     getReportCalls++;
+    reportedSessionIds.add(reconciliationId);
     final after = reportAfterAutoMatch;
     if (after != null && autoMatchCalls > 0) return after;
     return report;
@@ -447,6 +460,73 @@ void main() {
         reason: 'مرساة: المربوطةُ تظهر كخيارٍ داخل المنتقي');
     expect(find.text('بنك بلا ربط'), findsNothing,
         reason: 'بلا حسابٍ لا دفترَ يُطابَق عليه — فلا تظهر كخيار');
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════
+  //  استئنافُ جلسةٍ مفتوحة — البند المفتوح ١، أُغلق 2026-09-02
+  // ═══════════════════════════════════════════════════════════════════════
+  //
+  // 🔴 الشاشةُ لم تكن تعرض إلّا «جلسة جديدة»، و`createReconciliation` إدراجٌ
+  // بلا فحصِ تكرار — فكلُّ فتحٍ للتبويبة على نفس الخزنة والفترة كان يُنشئ
+  // صفّاً آخرَ في `bank_reconciliations`. و`getReconciliationSessions` كانت
+  // مُعلَنةً ومُنفَّذةً وبلا مُنادٍ واحدٍ في `lib`.
+
+  testWidgets('🔴 جلسةٌ مفتوحةٌ تُستأنَف ولا يُنشَأ صفٌّ ثانٍ', (tester) async {
+    // نفسُ حسابِ `_lastMonthRange()` في الشاشة — الفترةُ الافتراضيّةُ نسبيّةٌ
+    // بالزمن، فتثبيتُ تاريخٍ حرفيٍّ هنا كان يجعل الاختبارَ يمرّ في شهرٍ
+    // ويسقط في آخر.
+    final now = DateTime.now();
+    final lastMonthEnd = DateTime(now.year, now.month, 1)
+        .subtract(const Duration(days: 1));
+    final periodStart = DateTime(lastMonthEnd.year, lastMonthEnd.month, 1);
+
+    final accounting = _FakeAccounting(sessionId: 99)
+      ..openSessions = [
+        db.BankReconciliationData(
+          id: 55,
+          bankAccountId: 42,
+          periodStart: periodStart,
+          // ⚠️ بفارقِ ثوانٍ عن `periodEnd` الذي تحسبه الشاشةُ — والمطابقةُ
+          //    يجب أن تنجح رغم ذلك، وإلّا أُنشئت نسخةٌ ثانيةٌ لكلّ فتح.
+          periodEnd: DateTime(
+              lastMonthEnd.year, lastMonthEnd.month, lastMonthEnd.day, 22, 13),
+          statementBalance: 500,
+          bookBalance: 500,
+          difference: 0,
+          totalMatched: 0,
+          totalUnmatched: 0,
+          status: 'draft',
+          createdAt: periodStart,
+        ),
+      ];
+
+    await pump(
+      tester,
+      1920,
+      safes: [_bankSafe(9, linked: 42, name: 'خزنة الاختبار')],
+      accounting: accounting,
+    );
+
+    await tester.tap(find.text('اختر خزنة بنكية'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('خزنة الاختبار'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('تطبيق'));
+    await tester.pumpAndSettle();
+
+    // الزرُّ انقلب — ولا يُعرَض «جلسة جديدة» فوق جلسةٍ مفتوحة.
+    expect(find.text('متابعة الجلسة المفتوحة'), findsOneWidget,
+        reason: 'جلسةٌ مفتوحةٌ للحساب والفترة ⇒ متابعةٌ لا إنشاء');
+    expect(find.text('جلسة جديدة'), findsNothing,
+        reason: 'عرضُهما معاً هو بابُ تراكمِ الصفوف');
+
+    await tester.tap(find.text('متابعة الجلسة المفتوحة'));
+    await tester.pumpAndSettle();
+
+    expect(accounting.createCalled, isFalse,
+        reason: 'الاستئنافُ لا يُنشئ صفّاً — وهذا هو العطبُ كلُّه');
+    expect(accounting.reportedSessionIds, contains(55),
+        reason: 'والتقريرُ يُقرأ للجلسة القائمة رقم ٥٥ لا لجلسةٍ جديدة');
   });
 
   testWidgets('إنشاءُ جلسةٍ يعرض مؤشّراتِ التقرير الأربعة بقيمها الحقيقيّة',

@@ -163,4 +163,105 @@ void main() {
     );
     expect(rows.map((r) => r.reference), ['داخل']);
   });
+
+  // ═══════════════════════════════════════════════════════════════════════
+  //  إقفالُ الجلسة يُحدّث العدّادين — البند المفتوح ٢، أُغلق 2026-09-02
+  // ═══════════════════════════════════════════════════════════════════════
+  //
+  // 🔴 `total_matched`/`total_unmatched` يُحسبان لحظةَ **الإنشاء**، والشاشةُ
+  // تُلزم بإنشاء الجلسة **قبل** الاستيراد (المتنُ لا يظهر بلا جلسة). فكان
+  // الصفُّ يُختَم `0/0` مهما استُورد وطوبق.
+  //
+  // ولم يكن يُرى: `getReconciliationReport` يحسب العدَّين **حيَّين**، فالشاشةُ
+  // تعرض الصحيحَ والأرشيفُ يحمل الكذب.
+
+  test('🔴 الإقفالُ يُحدّث العدّادين المحفوظَين لا يختمهما كما وُلدا', () async {
+    // جلسةٌ تُنشأ والكشفُ فارغٌ تماماً — وهو تدفّقُ الشاشة الفعليّ.
+    final id = await repo.createReconciliation(
+      bankAccountId: bankId,
+      periodStart: DateTime(2026, 5, 1),
+      periodEnd: DateTime(2026, 5, 31),
+      statementBalance: 700,
+    );
+
+    // مرساة: وُلدت `0/0` فعلاً — فلو لم تكن كذلك لما قاس الاختبارُ شيئاً.
+    final born = await (db.select(db.bankReconciliations)
+          ..where((r) => r.id.equals(id)))
+        .getSingle();
+    expect(born.totalMatched, 0, reason: 'مرساة: تُولَد بصفر');
+    expect(born.totalUnmatched, 0, reason: 'مرساة: تُولَد بصفر');
+
+    // ثمّ يُستورَد ثلاثةُ أسطرٍ ويُطابَق واحدٌ آليّاً (±٣ أيّام بالمبلغ).
+    await db.createJournalEntry(
+      description: 'إيداع',
+      date: DateTime(2026, 5, 10),
+      lines: [
+        JournalLine(accountId: bankId, debit: 400),
+        JournalLine(accountId: cashId, credit: 400),
+      ],
+    );
+    await repo.importBankStatementLines(
+      bankAccountId: bankId,
+      batchId: 'CLOSE',
+      lines: [
+        {'date': DateTime(2026, 5, 11), 'reference': 'M', 'description': '',
+         'debit': 0.0, 'credit': 400.0, 'balance': 400.0},
+        {'date': DateTime(2026, 5, 20), 'reference': 'U1', 'description': '',
+         'debit': 0.0, 'credit': 150.0, 'balance': 550.0},
+        {'date': DateTime(2026, 5, 21), 'reference': 'U2', 'description': '',
+         'debit': 0.0, 'credit': 150.0, 'balance': 700.0},
+      ],
+    );
+    expect(await repo.autoMatchStatementLines(bankId), 1,
+        reason: 'المطابقةُ الآليّةُ تمسك الأوّلَ وحدَه');
+
+    await repo.completeReconciliation(id);
+
+    final closed = await (db.select(db.bankReconciliations)
+          ..where((r) => r.id.equals(id)))
+        .getSingle();
+    expect(closed.status, 'completed');
+    // القيمتان محسوبتان يدويّاً: واحدٌ طوبق آليّاً واثنان لم يُطابَقا.
+    expect(closed.totalMatched, 1,
+        reason: 'الصفُّ المختومُ كان يقول 0 بينما التقريرُ يقول 1');
+    expect(closed.totalUnmatched, 2,
+        reason: 'الصفُّ المختومُ كان يقول 0 بينما التقريرُ يقول 2');
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════
+  //  استئنافُ جلسةٍ مفتوحة — البند المفتوح ١، أُغلق 2026-09-02
+  // ═══════════════════════════════════════════════════════════════════════
+  //
+  // 🔴 `getReconciliationSessions` كانت مُعلَنةً ومُنفَّذةً و**بلا مُنادٍ واحدٍ
+  // في `lib`**، والشاشةُ لا تعرض إلّا «جلسة جديدة» — و`createReconciliation`
+  // إدراجٌ بلا فحصِ تكرار. فكلُّ فتحٍ للتبويبة كان يُنشئ صفّاً آخر.
+  //
+  // وهذا يقيس ما تبني عليه الشاشةُ: أنّ الجلسةَ المفتوحةَ **قابلةٌ للعثور**
+  // بحسابها وفترتها، وأنّ المقفلةَ تخرج من النتيجة.
+
+  test('🔴 الجلسةُ المفتوحةُ تُوجَد بحسابها وفترتها، والمقفلةُ تخرج', () async {
+    final first = await repo.createReconciliation(
+      bankAccountId: bankId,
+      periodStart: DateTime(2026, 5, 1),
+      periodEnd: DateTime(2026, 5, 31, 23, 59, 59),
+      statementBalance: 100,
+    );
+
+    List<dynamic> openFor(List<dynamic> all, int acct) => all
+        .where((s) =>
+            s.bankAccountId == acct &&
+            s.status != 'completed' &&
+            (s.periodStart as DateTime).month == 5)
+        .toList();
+
+    var sessions = await repo.getReconciliationSessions();
+    expect(openFor(sessions, bankId).map((s) => s.id), [first],
+        reason: 'مرساة: المفتوحةُ تُوجَد — وإلّا فالشاشةُ لا تجد ما تستأنفه');
+
+    // وبعد الإقفال تخرج من نتيجة «المفتوحة» فيعود الزرُّ «جلسة جديدة».
+    await repo.completeReconciliation(first);
+    sessions = await repo.getReconciliationSessions();
+    expect(openFor(sessions, bankId), isEmpty,
+        reason: 'المقفلةُ ليست مفتوحةً — وإلّا عُرضت متابعةٌ لجلسةٍ منتهية');
+  });
 }

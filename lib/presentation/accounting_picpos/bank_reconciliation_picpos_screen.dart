@@ -104,6 +104,44 @@ final _reconciliationReportProvider = FutureProvider.autoDispose
   return ref.watch(accountingRepositoryProvider).getReconciliationReport(sessionId);
 });
 
+/// الجلسةُ **المفتوحةُ** لحسابٍ وفترةٍ بعينهما — إن وُجدت.
+///
+/// 🔴 **بلا هذا كانت الصفوفُ تتراكم.** `createReconciliation` إدراجٌ غيرُ
+/// مشروطٍ بلا فحصِ تكرار، والشاشةُ لم تكن تعرض إلّا زرَّ «جلسة جديدة» —
+/// فكلُّ فتحٍ للتبويبة على نفس الخزنة والفترة كان يُنشئ صفّاً آخرَ في
+/// `bank_reconciliations`. والمواصفةُ §٣‑٣ تعدّ قائمةَ الجلسات الجزءَ
+/// **الحقيقيّ** من الشاشة المحذوفة، وكانت `getReconciliationSessions`
+/// مُعلَنةً ومُنفَّذةً و**بلا مُنادٍ واحدٍ في `lib`**.
+///
+/// ⚠️ **والمطابقةُ بالتاريخ لا بلحظة**: `periodEnd` يُخزَّن بنهاية اليوم
+/// (‏`23:59:59`) و`periodStart` ببدايته، والمقارنةُ بـ`==` على `DateTime`
+/// تقارن الميلّي ثانية — فجلسةٌ أُنشئت بفارقِ ثانيةٍ لا تُطابَق وتُنشأ
+/// نسخةٌ ثانية. فالمقارنةُ على اليوم وحدَه.
+///
+/// ⚠️ **ويُعيد `int?` لا صفَّ drift**: `getReconciliationSessions` تُرجع
+/// `List<BankReconciliationData>`، وذكرُ ذلك النوع هنا يستلزم استيراد
+/// `data/database/database.dart` — وهو **ممنوعٌ على ملفّات العرض** بحارس
+/// `presentation_db_import_guard` وقائمتُه البيضاءُ مقفلة. فالحقولُ تُقرأ
+/// ديناميكيّاً ولا يخرج من المزوّد إلّا المعرّف — وهو كلُّ ما يحتاجه الزرّ.
+/// (نفسُ عقدِ `_sessionLocked` والقوائم الثلاث أدناه.)
+final _openSessionProvider = FutureProvider.autoDispose
+    .family<int?, ({int accountId, DateTime start, DateTime end})>(
+        (ref, key) async {
+  final sessions =
+      await ref.watch(accountingRepositoryProvider).getReconciliationSessions();
+  bool sameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+  for (final dynamic s in sessions) {
+    if (s.bankAccountId == key.accountId &&
+        s.status != 'completed' &&
+        sameDay(s.periodStart as DateTime, key.start) &&
+        sameDay(s.periodEnd as DateTime, key.end)) {
+      return s.id as int;
+    }
+  }
+  return null;
+});
+
 /// الخزائنُ البنكيّةُ القابلةُ للمطابقة، وعددُ المُقصى منها لغياب حسابٍ
 /// مرتبط.
 ///
@@ -409,10 +447,48 @@ class _BankReconciliationPicposScreenState
     );
   }
 
+  /// زرٌّ واحدٌ بوجهَين: **متابعةٌ** إن كانت للحساب والفترة جلسةٌ مفتوحة،
+  /// و**إنشاءٌ** إن لم تكن.
+  ///
+  /// ⚠️ ولا يُعرَض «جلسة جديدة» فوق جلسةٍ مفتوحة: ذلك بالضبط ما كان يراكم
+  /// الصفوف. والمتابعةُ لا تشترط رصيدَ كشفٍ — الرصيدُ مخزَّنٌ في الجلسة
+  /// أصلاً، واشتراطُه كان سيمنع المحاسبَ من العودة إلى عملِه.
   Widget _newSessionButton(BuildContext context) {
+    final accountId = _accountId;
+    final open = accountId == null
+        ? null
+        : ref
+            .watch(_openSessionProvider((
+              accountId: accountId,
+              start: _period.start,
+              end: _period.end,
+            )))
+            .value;
+
+    if (open != null) {
+      return SizedBox(
+        height: 40,
+        child: ElevatedButton.icon(
+          onPressed: _creatingSession
+              ? null
+              : () => setState(() => _sessionId = open),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(11),
+            ),
+          ),
+          icon: const Icon(PhosphorIconsBold.arrowUUpLeft, size: 16),
+          label: const Text('متابعة الجلسة المفتوحة'),
+        ),
+      );
+    }
+
     final balance = parseStatementBalance(_statementBalanceController.text);
     final canCreate = _safeId != null &&
-        _accountId != null &&
+        accountId != null &&
         balance != null &&
         !_creatingSession;
     return SizedBox(
@@ -464,6 +540,13 @@ class _BankReconciliationPicposScreenState
       );
       if (!mounted) return;
       setState(() => _sessionId = id);
+      // الجلسةُ صارت مفتوحةً — فالزرُّ يجب أن ينقلب إلى «متابعة»، وإلّا بقي
+      // يعرض «جلسة جديدة» فوق جلسةٍ قائمةٍ وعاد التراكمُ من بابه.
+      ref.invalidate(_openSessionProvider((
+        accountId: accountId,
+        start: _period.start,
+        end: _period.end,
+      )));
     } catch (e) {
       // ⚠️ لا يُبتلَع: كان `try { … } finally { … }` بلا `catch` يترك
       // الاستثناءَ يفلت من ردّ نداء الزرّ — خطأُ منطقةٍ غيرُ مرئيٍّ في
@@ -966,6 +1049,16 @@ class _BankReconciliationPicposScreenState
       if (!mounted) return;
       AppToast.show(context, 'أُقفلت جلسةُ المطابقة', type: ToastType.success);
       ref.invalidate(_reconciliationReportProvider(sessionId));
+      // ولم تعد مفتوحةً — فزرُّ «متابعة الجلسة المفتوحة» يجب أن يعود
+      // «جلسة جديدة»، وإلّا عرض متابعةً لجلسةٍ مقفلةٍ أزرارُها معطَّلة.
+      final accountId = _accountId;
+      if (accountId != null) {
+        ref.invalidate(_openSessionProvider((
+          accountId: accountId,
+          start: _period.start,
+          end: _period.end,
+        )));
+      }
     } catch (e) {
       if (!mounted) return;
       AppToast.show(context, 'تعذّر إقفالُ الجلسة: $e', type: ToastType.error);
