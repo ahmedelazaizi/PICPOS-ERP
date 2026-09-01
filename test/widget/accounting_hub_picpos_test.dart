@@ -100,7 +100,7 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('ويظهر الشريطُ بتبويباتِه الثمانية عند عرض $w', (tester) async {
+    testWidgets('ويظهر الشريطُ بتبويباتِه التسعة عند عرض $w', (tester) async {
       await pump(tester, width);
 
       // اسمُ الحاوية على الشريط.

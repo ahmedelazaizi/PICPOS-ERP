@@ -15,12 +15,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/data/database/database.dart' as db;
+import 'package:ural_erp/data/providers/auth_providers.dart';
 import 'package:ural_erp/data/providers/providers.dart' show excelServiceProvider;
 import 'package:ural_erp/data/providers/repository_providers.dart';
 import 'package:ural_erp/data/services/excel_service.dart' show BankStatementRowsSummary;
 import 'package:ural_erp/domain/repositories/accounting_repository.dart';
 import 'package:ural_erp/domain/repositories/treasury_repository.dart';
 import 'package:ural_erp/presentation/accounting_picpos/bank_reconciliation_picpos_screen.dart';
+import 'package:ural_erp/presentation/picpos_shell/picpos_dialog.dart';
 import 'package:ural_erp/presentation/picpos_shell/picpos_hub_kpi.dart';
 
 // ⚠️ **`db.BankStatementLine` هنا لا في الشاشة**: الشاشةُ تقرأ عناصرَ
@@ -150,11 +152,16 @@ class _FakeAccounting implements IAccountingRepository {
     this.sessionId = 1,
     this.autoMatchResult = 0,
     this.manualMatchThrows,
+    this.reportAfterAutoMatch,
   }) : report = report ?? _sampleReconciliationReport();
 
   final Map<String, dynamic> report;
   final int sessionId;
   final int autoMatchResult;
+
+  /// إن وُضعت، تُعاد بدل [report] بعد أوّل «مطابقة آلية» — لمحاكاة سطرِ
+  /// كشفٍ طوبق فاختفى من `unmatchedBankLines` (مراجعةٌ 2026-09-01، مأخذ ٨‑ج).
+  final Map<String, dynamic>? reportAfterAutoMatch;
 
   /// إن وُضعت، يرميها `manualMatchStatement` بدل أن يسجّل — لقياس مطابقةٍ
   /// مكرّرةٍ (المحرّكُ يرمي `StateError` تسمّي السطرَ الآخر).
@@ -167,6 +174,15 @@ class _FakeAccounting implements IAccountingRepository {
 
   int? createdBankAccountId;
   double? createdStatementBalance;
+  DateTime? createdPeriodStart;
+  DateTime? createdPeriodEnd;
+
+  /// ⚠️ **مراجعةٌ 2026-09-01، مأخذ ٥**: `createReconciliation` تقبل
+  /// `int? userId` والشاشةُ لم تكن تمرّره — فـ`preparedBy` فارغٌ في كلّ
+  /// جلسة. و`0` ليس القيمةَ الافتراضيّة هنا عمداً: `null` هو ما كان يصل،
+  /// فالتوكيدُ يفرّق بين «لم يُمرَّر» و«مُرِّر صفراً».
+  int? createdUserId;
+  bool createCalled = false;
   int autoMatchCalls = 0;
   int? autoMatchedBankAccountId;
   int? importedBankAccountId;
@@ -196,8 +212,12 @@ class _FakeAccounting implements IAccountingRepository {
     required double statementBalance,
     int? userId,
   }) async {
+    createCalled = true;
     createdBankAccountId = bankAccountId;
     createdStatementBalance = statementBalance;
+    createdPeriodStart = periodStart;
+    createdPeriodEnd = periodEnd;
+    createdUserId = userId;
     return sessionId;
   }
 
@@ -205,6 +225,8 @@ class _FakeAccounting implements IAccountingRepository {
   Future<Map<String, dynamic>> getReconciliationReport(
       int reconciliationId) async {
     getReportCalls++;
+    final after = reportAfterAutoMatch;
+    if (after != null && autoMatchCalls > 0) return after;
     return report;
   }
 
@@ -273,6 +295,39 @@ class _FakeExcelService {
       parseResult;
 }
 
+/// مستخدمٌ مسجَّلٌ رقمُه [_signedInUserId] — نمطُ
+/// `journal_entry_draft_dialog_test.dart`.
+///
+/// ⚠️ **يُحقَن في كلّ استدعاءٍ لا في اختبارِ `preparedBy` وحدَه** (مراجعةٌ
+/// 2026-09-01، مأخذ ٥): الشاشةُ صارت تقرأ `authProvider` عند إنشاء الجلسة،
+/// و`AuthNotifier` الحقيقيُّ يشتبك بـ`WebSocketSyncClient` في `build`. فحقنُ
+/// وهميٍّ في كلّ اختبارٍ يُبقي السويّةَ بلا شبكةٍ ولا قاعدة — وهو نفسُ تعليل
+/// «لا `databaseProvider` هنا» في رأس الشاشة.
+const int _signedInUserId = 41;
+
+class _SignedInAuth extends AuthNotifier {
+  @override
+  AuthState build() => AuthState(
+        isAuthenticated: true,
+        userWithRole: db.UserWithRole(
+          user: db.User(
+            id: _signedInUserId,
+            username: 'tester',
+            passwordHash: '',
+            passwordSalt: '',
+            displayName: 'مُعِدُّ المطابقة',
+            defaultScreen: '0',
+            isLocked: false,
+            isActive: true,
+            discountLimitIsPercent: true,
+            forcePasswordChange: false,
+            createdAt: DateTime(2026, 1, 1),
+            rowVersion: 1,
+          ),
+        ),
+      );
+}
+
 Future<void> pump(WidgetTester tester, double width, {
   required List<SafeData> safes,
   IAccountingRepository? accounting,
@@ -289,6 +344,7 @@ Future<void> pump(WidgetTester tester, double width, {
             .overrideWithValue(accounting ?? _FakeAccounting()),
         excelServiceProvider
             .overrideWithValue(excelService ?? _FakeExcelService()),
+        authProvider.overrideWith(_SignedInAuth.new),
       ],
       child: const MaterialApp(home: BankReconciliationPicposScreen()),
     ),
@@ -859,9 +915,14 @@ void main() {
     // ⚠️ **مراجعةٌ — مأخذ ٣**: بلا حصرٍ داخل الحوار، بطاقةُ «الفرق»
     // (‏`49.75`) وبطاقةُ «رصيد الكشف» (‏`1,049.75`) في صفّ المؤشّرات
     // تبقيان في الشجرة خلف الحوار غيرِ المُعتِم — فالتوكيدُ كان يمرّ حتى
-    // لو حُذف الفرقُ من نصّ الحوار كلّيّاً. الحصرُ هنا داخل `AlertDialog`
+    // لو حُذف الفرقُ من نصّ الحوار كلّيّاً. الحصرُ هنا داخل الحوار
     // نفسِه (نفسُ نمط `find.descendant` عند اختبار المؤشّرات أعلاه).
-    final dialog = find.byType(AlertDialog);
+    //
+    // ⚠️ **`PicPosDialog` لا `AlertDialog`** (مراجعةٌ 2026-09-01، مأخذ ٣):
+    // الحوارُ صار يمرّ بـ`showPicPosConfirm` — والحارسُ البنيويُّ
+    // `accounting_picpos_uses_picpos_dialog_test` كان يسمّي السطرَ القديمَ
+    // بالضبط. والحصرُ باقٍ كما هو، فهو ما جعل التوكيدَ قادراً على السقوط.
+    final dialog = find.byType(PicPosDialog);
     expect(dialog, findsOneWidget, reason: 'حوارُ التأكيد يجب أن يظهر');
     expect(
       find.descendant(of: dialog, matching: find.textContaining('49.75')),
@@ -877,6 +938,289 @@ void main() {
     expect(accounting.completedReconciliationId, accounting.sessionId);
     expect(find.textContaining('أُقفلت'), findsOneWidget,
         reason: 'نجاحُ الإقفال يُقال — لا صمتَ');
+
+    await tester.pump(const Duration(seconds: 4));
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // موجةُ إصلاحِ المراجعة الشاملة 2026-09-01.
+  // ═══════════════════════════════════════════════════════════════════════
+
+  // ⚠️ **مأخذ ٢ — نهايةُ الفترة الافتراضيّة كانت منتصفَ الليل.**
+  //
+  // `createReconciliation` تحسب رصيدَ الدفتر بـ`e.entry_date <= ?` وقيودُ
+  // اليوميّة تحمل وقتاً، فكلُّ قيدٍ في **اليوم الأخير من الفترة** كان يسقط
+  // من رصيد الدفتر بينما أسطرُ الكشف لذلك اليوم تدخل ⇒ فرقٌ مُختلَقٌ في
+  // المسار **الافتراضيّ** ما لم يلمس المستخدمُ شريطَ المدى.
+  //
+  // ⚠️ **والقياسُ على ما وصل المستودعَ لا على الدالّة الخاصّة**: `_period`
+  // يمرّ بالشاشة كاملةً ثمّ يصل `createReconciliation` — ولو كسر أحدٌ
+  // التمريرَ بينهما لسقط هذا التوكيدُ أيضاً، وهو ما لا تمسكه قراءةُ
+  // `_lastMonthRange` وحدَها.
+  testWidgets(
+      '🔴 الفترةُ الافتراضيّةُ تصل المحرّكَ بنهاية اليوم لا بمنتصف ليله',
+      (tester) async {
+    final accounting = _FakeAccounting();
+    await pump(tester, 1920,
+        safes: [_bankSafe(1, linked: 5, name: 'خزنة الفترة')],
+        accounting: accounting);
+    await openSession(tester, 'خزنة الفترة');
+
+    expect(accounting.createCalled, isTrue, reason: 'مرساة: الجلسةُ فُتحت');
+    final end = accounting.createdPeriodEnd!;
+    expect(end.hour, 23,
+        reason: 'نهايةٌ عند 00:00 تُسقط قيودَ اليوم الأخير كلَّها من رصيد '
+            'الدفتر — والكشفُ يحملها، فيُختلَق فرقٌ ويُصدَّق');
+    expect(end.minute, 59);
+
+    // والبدايةُ تبقى منتصفَ الليل — لا تُدفَع هي الأخرى بلا داعٍ.
+    final start = accounting.createdPeriodStart!;
+    expect(start.hour, 0, reason: 'اليومُ الأوّلُ يدخل كاملاً من أوّله');
+
+    // ومرساةٌ تُثبت أنّ المدى شهرٌ ماضٍ فعليٌّ لا يومٌ واحد.
+    expect(end.isAfter(start), isTrue);
+  });
+
+  // ⚠️ **مأخذ ٥ — `preparedBy` كان فارغاً في كلّ جلسة.**
+  testWidgets('🔴 مُعِدُّ الجلسة يصل المحرّكَ — لا `preparedBy` فارغاً',
+      (tester) async {
+    final accounting = _FakeAccounting();
+    await pump(tester, 1920,
+        safes: [_bankSafe(1, linked: 5, name: 'خزنة المُعِدّ')],
+        accounting: accounting);
+    await openSession(tester, 'خزنة المُعِدّ');
+
+    expect(accounting.createdUserId, _signedInUserId,
+        reason: 'الشاشةُ لم تكن تمرّر `userId` إطلاقاً، فعمودُ `preparedBy` '
+            'في `bank_reconciliations` لا يُملأ أبداً — مطابقةٌ مقفلةٌ بلا '
+            'اسمِ من أعدَّها. والرقمُ ٤١ لا ١ كي يسقط التوكيدُ لو مُرِّر '
+            'ثابتٌ بدل قراءةِ الجلسة');
+  });
+
+  // ⚠️ **مأخذ ٦ — الإقفالُ لا يُقفل شيئاً.**
+  //
+  // بعد `completeReconciliation` كان `_sessionId` يبقى والتقريرُ معروضاً
+  // وأزرارُ «طابق» و«نزع» و«استيراد كشف» و«مطابقة آلية» فعّالةً كلَّها على
+  // جلسةٍ `status = 'completed'`. والشاشةُ لم تكن تقرأ `report['reconciliation']`
+  // ولا `status` في أيّ موضع.
+  testWidgets('🔴 جلسةٌ مقفلةٌ تُعطِّل أزرارَ التعديل وتقول إنّها مقفلة',
+      (tester) async {
+    // ⚠️ صفُّ drift **حقيقيٌّ** لا خريطة: الشاشةُ تقرأ `.status` نداءً
+    // ديناميكيّاً (‏لا تستورد `database.dart`)، وخريطةٌ هنا كانت ستقيس
+    // مساراً لا يُنتجه `getReconciliationReport` أبداً.
+    final base = _sampleReconciliationReport();
+    final accounting = _FakeAccounting(
+      report: {
+        ...base,
+        'reconciliation': db.BankReconciliationData(
+          id: 1,
+          bankAccountId: 5,
+          periodStart: DateTime(2026, 5, 1),
+          periodEnd: DateTime(2026, 5, 31, 23, 59, 59),
+          statementBalance: 1000,
+          bookBalance: 1000,
+          difference: 0,
+          totalMatched: 1,
+          totalUnmatched: 1,
+          status: 'completed',
+          createdAt: DateTime(2026, 6, 1),
+        ),
+      },
+    );
+    await pump(tester, 1920,
+        safes: [_bankSafe(1, linked: 5, name: 'خزنة المقفلة')],
+        accounting: accounting);
+    await openSession(tester, 'خزنة المقفلة');
+
+    expect(
+      find.text('الجلسةُ مقفلة — لا استيرادَ ولا مطابقةَ ولا نزعَ بعد الإقفال'),
+      findsOneWidget,
+      reason: 'الحالةُ تُقال — زرٌّ رماديٌّ بلا سببٍ يُقرأ «مكسور»',
+    );
+
+    // ⚠️ **الاختيارُ يُنقَر فعلاً قبل القياس**: بلا اختيارٍ يكون «طابق»
+    // معطَّلاً بأيّ حال، فالتوكيدُ كان سيمرّ ولو أُلغي الإقفالُ كلُّه.
+    await tester.tap(find.text('REF-1'));
+    await tester.tap(find.text('قيد الإيداع'));
+    await tester.pump();
+
+    final match = tester.widget<ElevatedButton>(
+        find.widgetWithText(ElevatedButton, 'طابق'));
+    expect(match.onPressed, isNull,
+        reason: 'مطابقةٌ يدويّةٌ على جلسةٍ مقفلةٍ تكتب في دفترٍ أُغلق');
+
+    final complete = tester.widget<ElevatedButton>(
+        find.widgetWithText(ElevatedButton, 'إقفال الجلسة'));
+    expect(complete.onPressed, isNull, reason: 'ولا يُقفَل المقفول');
+
+    // ⚠️ **بأنواعها الملموسة**: `find.byType` يطابق `runtimeType` تطابقاً
+    // تامّاً، فـ`ButtonStyleButton` المجرَّدةُ لا تُطابِق شيئاً — وقد سقط
+    // هذا التوكيدُ بـ«No element» قبل التصويب.
+    const writeButtons = <String, Type>{
+      'استيراد كشف': OutlinedButton,
+      'مطابقة آلية': FilledButton,
+    };
+    for (final entry in writeButtons.entries) {
+      final button = tester.widget<ButtonStyleButton>(
+          find.widgetWithText(entry.value, entry.key));
+      expect(button.onPressed, isNull,
+          reason: '«${entry.key}» تكتب أسطراً في حسابٍ طُوبق وأُقفل');
+    }
+
+    // ⚠️ **ومرساةٌ تُثبت أنّ القفلَ مُنتقىً لا شاملاً**: «تنزيل القالب» لا
+    // يمسّ شيئاً ويبقى فعّالاً — ولولا هذا التوكيدُ لمرَّ «عطِّل الشريطَ
+    // كلَّه» بوصفه إصلاحاً.
+    final template = tester.widget<OutlinedButton>(
+        find.widgetWithText(OutlinedButton, 'تنزيل القالب'));
+    expect(template.onPressed, isNotNull,
+        reason: 'تنزيلُ القالب قراءةٌ لا كتابة — لا يُمنَع بالإقفال');
+
+    // ⚠️ `PicPosButtonCell` تُرسَم `InkWell` لا `IconButton` — قِيس لا خُمِّن
+    // (‏`picpos_data_table.dart`، فرعُ `case PicPosButtonCell()`).
+    final unmatch = tester.widget<InkWell>(
+      find
+          .ancestor(of: find.text('نزع'), matching: find.byType(InkWell))
+          .first,
+    );
+    expect(unmatch.onTap, isNull, reason: 'و«نزع» تفكّ مطابقةً مختومة');
+  });
+
+  // ⚠️ **مأخذ ٧ — «0/0» بلونِ النجاح على فترةٍ لا تلتقي مع الكشف.**
+  testWidgets(
+      '🔴 كشفٌ كلُّ أسطره خارجَ الفترة يُقال صراحةً لا يُعَدُّ نجاحاً',
+      (tester) async {
+    // ⚠️ **تواريخُ `DateTime` لا نصوصٌ**: هذا ما يُخرجه
+    // `parseBankStatementRow` فعلاً، والفحصُ في الشاشة يشترط `DateTime`
+    // عمداً كي لا يصيح إنذاراً على شكلٍ لا يعرفه.
+    //
+    // و2020 خارجَ «الشهر الماضي» مهما كان تاريخُ تشغيل الاختبار — لا
+    // اتّكالَ على `DateTime.now()` في التوكيد.
+    final excelService = _FakeExcelService(
+      parseResult: BankStatementRowsSummary(
+        <Map<String, dynamic>>[
+          {
+            'date': DateTime(2020, 1, 5),
+            'reference': 'OLD-1',
+            'description': 'إيداعٌ قديم',
+            'debit': 0.0,
+            'credit': 500.0,
+          },
+        ],
+        const <String>[],
+      ),
+    );
+    await pump(tester, 1920,
+        safes: [_bankSafe(1, linked: 5, name: 'خزنة خارج الفترة')],
+        excelService: excelService);
+
+    await tester.tap(find.text('اختر خزنة بنكية'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('خزنة خارج الفترة'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('تطبيق'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('استيراد كشف'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('استُورد ١ سطراً — ولا سطرَ منها يقع في الفترة المختارة، '
+          'فلن تظهر في المطابقة'),
+      findsOneWidget,
+      reason: 'الأسطرُ أُدرجت فعلاً لكنّ قوائمَ التقرير كلَّها ترشِّح '
+          'بالفترة — فبطاقةُ «مطابَق / غير مطابَق» تعرض صفراً على صفرٍ '
+          'بلون النجاح، وهو رقمٌ صحيحٌ يُقرأ خطأً',
+    );
+
+    await tester.pump(const Duration(seconds: 4));
+  });
+
+  // ⚠️ **مأخذ ٨‑ب — رصيدُ كشفِ خزنةٍ يبقى معروضاً لأخرى.**
+  testWidgets('🔴 تبديلُ الخزنة يمسح رصيدَ الكشف — لا يُورَّث', (tester) async {
+    await pump(tester, 1920, safes: [
+      _bankSafe(1, linked: 5, name: 'خزنة أولى'),
+      _bankSafe(2, linked: 6, name: 'خزنة ثانية'),
+    ]);
+
+    await tester.tap(find.text('اختر خزنة بنكية'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('خزنة أولى'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('تطبيق'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '9999.99');
+    await tester.pumpAndSettle();
+
+    // مرساة: الرقمُ مكتوبٌ فعلاً قبل التبديل.
+    expect(find.text('9999.99'), findsOneWidget);
+
+    await tester.tap(find.text('خزنة أولى'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('خزنة ثانية'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('تطبيق'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('9999.99'), findsNothing,
+        reason: 'رصيدُ كشفِ الخزنة الأولى يدخل `difference` مباشرةً بلا أيّ '
+            'تحقّقٍ خلفه — فإبقاؤه لخزنةٍ أخرى تصديقُ رقمٍ ليس لها');
+
+    final button = tester.widget<ElevatedButton>(
+      find.widgetWithText(ElevatedButton, 'جلسة جديدة'),
+    );
+    expect(button.onPressed, isNull,
+        reason: 'وبلا رقمٍ يعود الزرُّ معطَّلاً حتّى يُكتَب رقمُ هذه الخزنة');
+  });
+
+  // ⚠️ **مأخذ ٨‑ج — الاختيارُ لا يُصالَح بعد الإنعاش.**
+  //
+  // اختَر سطراً ثمّ اضغط «مطابقة آلية»: المحرّكُ يطابقه فيختفي من
+  // `unmatchedBankLines`، وكان `_pickedStmtId` يبقى عليه و«طابق» يبقى
+  // فعّالاً — نقرةٌ عليه تُنادي المحرّكَ على سطرٍ مطابَقٍ سلفاً.
+  testWidgets(
+      '🔴 سطرٌ اختير ثمّ طوبق آليّاً يسقط من الاختيار ويُعطَّل «طابق»',
+      (tester) async {
+    final base = _sampleReconciliationReport();
+    final accounting = _FakeAccounting(
+      autoMatchResult: 1,
+      // ⚠️ **قائمةُ الدفتر تبقى كما هي عمداً**: لو أُفرغت القائمتان معاً
+      // لمرَّ التوكيدُ بلا إصلاحٍ أيضاً (‏الزرُّ يُعطَّل لغياب أيّ صفٍّ
+      // يُنقَر). فالمقيسُ هنا أنّ `_pickedJeLineId` يبقى صالحاً بينما
+      // `_pickedStmtId` وحدَه يسقط — وهو عينُ الحالة المُبلَّغ عنها.
+      reportAfterAutoMatch: {
+        ...base,
+        'unmatchedBankLines': const <dynamic>[],
+        'unmatchedCount': 0,
+        'matchedCount': 2,
+      },
+    );
+    await pump(tester, 1920,
+        safes: [_bankSafe(1, linked: 5, name: 'خزنة الاختيار')],
+        accounting: accounting);
+    await openSession(tester, 'خزنة الاختيار');
+
+    await tester.tap(find.text('REF-1'));
+    await tester.tap(find.text('قيد الإيداع'));
+    await tester.pump();
+
+    // مرساة: الاختيارُ اكتمل والزرُّ فعّالٌ **قبل** المطابقة الآليّة.
+    final before = tester.widget<ElevatedButton>(
+        find.widgetWithText(ElevatedButton, 'طابق'));
+    expect(before.onPressed, isNotNull);
+
+    await tester.tap(find.text('مطابقة آلية'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('REF-1'), findsNothing,
+        reason: 'مرساة: السطرُ اختفى فعلاً من قائمة غيرِ المطابَق');
+    expect(find.text('قيد الإيداع'), findsWidgets,
+        reason: 'مرساة: وقيدُ الدفتر باقٍ — فالاختيارُ الثاني ما زال صالحاً');
+
+    final after = tester.widget<ElevatedButton>(
+        find.widgetWithText(ElevatedButton, 'طابق'));
+    expect(after.onPressed, isNull,
+        reason: 'السطرُ المختارُ لم يعد في القائمة — و«طابق» عليه نداءٌ '
+            'على سطرٍ مطابَقٍ سلفاً');
 
     await tester.pump(const Duration(seconds: 4));
   });

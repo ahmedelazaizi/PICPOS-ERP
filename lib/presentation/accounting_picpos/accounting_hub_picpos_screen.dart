@@ -17,7 +17,7 @@ import 'journal_entries_picpos_screen.dart';
 import 'journal_templates_picpos_screen.dart';
 import '../picpos_shell/picpos_surface.dart';
 
-/// حاويةُ «الحسابات» — مدخلٌ واحدٌ في القائمة الجانبيّة يفتح سبعةَ تبويبات.
+/// حاويةُ «الحسابات» — مدخلٌ واحدٌ في القائمة الجانبيّة يفتح تسعةَ تبويبات.
 ///
 /// التصميمُ المرجعُ PicPos-Accounting-remote-2026-08-22.dc.html: مصفوفةُ
 /// TABS فيه **سبعةٌ** (coa · cc · je · gl · tb · tpl · map)، و«الحسابات»

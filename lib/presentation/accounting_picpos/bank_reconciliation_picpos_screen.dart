@@ -32,10 +32,12 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/uuid_v7.dart';
 import '../../core/widgets/app_toast.dart';
-import '../../data/providers/providers.dart' show excelServiceProvider;
+import '../../data/providers/providers.dart'
+    show authProvider, excelServiceProvider;
 import '../../data/providers/repository_providers.dart';
 import '../../domain/repositories/treasury_repository.dart' show SafeData;
 import '../picpos_shell/picpos_data_table.dart';
+import '../picpos_shell/picpos_dialog.dart';
 import '../picpos_shell/picpos_empty_state.dart';
 import '../picpos_shell/picpos_hub_kpi.dart';
 import '../picpos_shell/picpos_option_picker.dart';
@@ -43,6 +45,7 @@ import '../picpos_shell/picpos_report_bar.dart';
 import '../picpos_shell/picpos_screen_scaffold.dart';
 import '../picpos_shell/picpos_surface.dart';
 import '../picpos_shell/picpos_toolbar.dart';
+import '../widgets/report_components.dart' show DateRangeFilter;
 
 final _money = NumberFormat('#,##0.00', 'en');
 final _dateFmt = DateFormat('yyyy-MM-dd');
@@ -179,13 +182,32 @@ class _BankReconciliationPicposScreenState
     super.dispose();
   }
 
+  /// الشهرُ الماضي كاملاً — **بنهاية يومه الأخير لا بمنتصف ليله**.
+  ///
+  /// ⚠️ **مراجعةٌ 2026-09-01، مأخذ ٢**: كانت تعيد
+  /// `firstOfThisMonth.subtract(Duration(days: 1))` أي `00:00:00`.
+  /// و`createReconciliation` تحسب رصيدَ الدفتر بـ`e.entry_date <= ?`
+  /// (‏`bank_reconciliation_dao.dart`)، وقيودُ اليوميّة تحمل وقتاً. فكلُّ قيدٍ
+  /// في **اليوم الأخير من الفترة** كان يسقط من رصيد الدفتر ومن «لم تظهر في
+  /// الكشف»، بينما أسطرُ الكشف لذلك اليوم (‏مسوّاةٌ إلى منتصف الليل في
+  /// `_asDate`) تدخل ⇒ **فرقٌ مُختلَقٌ يُعرَض ويُصدَّق**، في المسار
+  /// الافتراضيّ ما لم يلمس المستخدمُ شريطَ المدى.
+  ///
+  /// ⚠️ **و`DateRangeFilter.normalizeEnd` لا `DateTime(y, m, d, 23, 59, 59)`
+  /// بيدٍ ثانية**: هي عقدُ Spec 065 الموثَّقُ في `report_components.dart`
+  /// بوصفه «فقدانَ بياناتٍ لا يراه المشغّل»، وهي **عينُ** ما يمرّره
+  /// `PicPosReportFilterBar` من فتراتِه الجاهزةِ ومن منتقي المدى المخصّص —
+  /// فالبدايةُ والتحويلُ اليدويُّ يتّفقان بدل أن يفترقا في الكسور.
   static DateTimeRange _lastMonthRange() {
     final now = DateTime.now();
     final firstOfThisMonth = DateTime(now.year, now.month, 1);
     final lastMonthEnd =
         firstOfThisMonth.subtract(const Duration(days: 1));
     final lastMonthStart = DateTime(lastMonthEnd.year, lastMonthEnd.month, 1);
-    return DateTimeRange(start: lastMonthStart, end: lastMonthEnd);
+    return DateTimeRange(
+      start: lastMonthStart,
+      end: DateRangeFilter.normalizeEnd(lastMonthEnd),
+    );
   }
 
   @override
@@ -226,12 +248,16 @@ class _BankReconciliationPicposScreenState
       children: [
         PicPosReportFilterBar(
           selectedRange: _period,
-          onRangeChanged: (start, end) => setState(() {
-            _period = DateTimeRange(start: start, end: end);
-            // فترةٌ جديدةٌ ⇒ الجلسةُ المفتوحةُ (إن وُجدت) كانت على فترةٍ
-            // أخرى ومؤشّراتُها محسوبةٌ عليها — نفسُ تعليل تبديل الخزنة.
-            _sessionId = null;
-          }),
+          onRangeChanged: (start, end) {
+            // ⚠️ **قبل `setState` لا داخلَه**: `clear()` تُخطر مستمعيها
+            // فوراً، و`_onBalanceTextChanged` يستدعي `setState` — فنداءٌ
+            // متداخل. وهذا هو موضعُ **مأخذ ٨‑ب**: رصيدُ كشفٍ يخصُّ فترةً
+            // يبقى معروضاً لفترةٍ أخرى، وهو رقمٌ يدخل `difference` مباشرةً.
+            _invalidateSession();
+            setState(() {
+              _period = DateTimeRange(start: start, end: end);
+            });
+          },
           trailing: [
             _safePickerButton(context, safes),
             _statementBalanceField(context),
@@ -303,13 +329,31 @@ class _BankReconciliationPicposScreenState
     if (picked == null) return;
     final safe = safes.where((s) => s.id == picked);
     if (safe.isEmpty) return;
+    // خزنةٌ جديدةٌ ⇒ حسابٌ آخر، والجلسةُ المفتوحةُ كانت على حساب الخزنة
+    // السابقة فلا تصلح لهذه.
+    _invalidateSession();
     setState(() {
       _safeId = safe.first.id;
       _accountId = safe.first.linkedAccountId;
-      // خزنةٌ جديدةٌ ⇒ حسابٌ آخر، والجلسةُ المفتوحةُ كانت على حساب الخزنة
-      // السابقة فلا تصلح لهذه.
-      _sessionId = null;
     });
+  }
+
+  /// تُبطِل الجلسةَ المفتوحةَ وتمسح ما يخصُّها من مُدخَلات.
+  ///
+  /// ⚠️ **رصيدُ الكشف يُمسَح معها** (مراجعةٌ 2026-09-01، مأخذ ٨‑ب): كان
+  /// الحقلُ يبقى محمّلاً برصيد كشفِ الخزنة/الفترة السابقة، فيُنشئ المستخدمُ
+  /// جلسةَ خزنةٍ أخرى برقمِ الأولى — ورقمُ رصيدِ الكشف يدخل `difference`
+  /// مباشرةً بلا أيّ تحقّقٍ خلفه. ومسحُه يُعيد الزرَّ إلى التعطيل حتّى
+  /// يُكتَب رقمُ هذه الخزنة، وهو الفرقُ بين «أعِد الإدخال» و«صدِّق رقماً
+  /// ليس لك».
+  ///
+  /// ⚠️ **والاختيارُ يُمسَح كذلك**: `_pickedStmtId`/`_pickedJeLineId` معرّفا
+  /// سطرَين في قوائمِ جلسةٍ بطَلت.
+  void _invalidateSession() {
+    _sessionId = null;
+    _pickedStmtId = null;
+    _pickedJeLineId = null;
+    _statementBalanceController.clear();
   }
 
   Widget _statementBalanceField(BuildContext context) {
@@ -412,6 +456,11 @@ class _BankReconciliationPicposScreenState
         periodStart: _period.start,
         periodEnd: _period.end,
         statementBalance: balance,
+        // ⚠️ **مراجعةٌ 2026-09-01، مأخذ ٥**: `preparedBy` كان فارغاً في كلّ
+        // جلسة — عمودٌ في `bank_reconciliations` لا يُملأ أبداً، فمطابقةٌ
+        // مقفلةٌ بلا اسمِ مَن أعدَّها. والنمطُ منسوخٌ عن نظيره في نفس
+        // الفورك: `journal_entries_picpos_screen.dart`.
+        userId: ref.read(authProvider).user?.id,
       );
       if (!mounted) return;
       setState(() => _sessionId = id);
@@ -438,8 +487,37 @@ class _BankReconciliationPicposScreenState
   // ⚠️ **الثلاثةُ معطَّلةٌ حين `_accountId == null`** — لا خزنةَ لا حسابَ
   // مرتبطاً بها بعدُ، فلا جدوى من نداء أيٍّ منها.
 
+  /// هل الجلسةُ المعروضةُ **مقفلة**؟ يُقرَأ من `report['reconciliation']`
+  /// نفسِه لا من علمٍ محلّيّ.
+  ///
+  /// ⚠️ **مراجعةٌ 2026-09-01، مأخذ ٦**: بعد `completeReconciliation` كان
+  /// `_sessionId` يبقى والتقريرُ معروضاً وأزرارُ «طابق» و«نزع» و«استيراد
+  /// كشف» و«مطابقة آلية» فعّالةً كلَّها على جلسةٍ `status = 'completed'` —
+  /// فالإقفالُ لا يقفل شيئاً. والشاشةُ لم تكن تقرأ `reconciliation` ولا
+  /// `status` في أيّ موضع.
+  ///
+  /// ⚠️ **والقراءةُ ديناميكيّةٌ عن قصد**: `reconciliation` صفُّ drift
+  /// (‏`BankReconciliationData`) والشاشةُ **ممنوعةٌ** من استيراد
+  /// `data/database/database.dart` (حارسُ `presentation_db_import_guard`) —
+  /// نفسُ عقدِ القوائم الثلاث أعلى `_buildReport`.
+  ///
+  /// و`null` ⇒ غيرُ مقفلة: تقريرٌ بلا صفِّ جلسةٍ لا يُقرأ إقفالاً.
+  bool get _sessionLocked {
+    final id = _sessionId;
+    if (id == null) return false;
+    final report = ref.watch(_reconciliationReportProvider(id)).value;
+    if (report == null) return false;
+    final dynamic recon = report['reconciliation'];
+    if (recon == null) return false;
+    return recon.status == 'completed';
+  }
+
   Widget _buildActionsBar() {
     final enabled = _accountId != null && !_actionBusy;
+    // ⚠️ **الإقفالُ يمنع الكتابةَ وحدَها**: «تنزيل القالب» لا يمسّ شيئاً —
+    // ومحاسبٌ يفتح جلسةً مقفلةً ليراجعها قد يحتاج القالبَ للجلسة التالية.
+    // فتعطيلُه معهما تشديدٌ بلا سبب.
+    final canWrite = enabled && !_sessionLocked;
     return PicPosToolbar(
       children: [
         OutlinedButton.icon(
@@ -448,12 +526,12 @@ class _BankReconciliationPicposScreenState
           label: const Text('تنزيل القالب'),
         ),
         OutlinedButton.icon(
-          onPressed: enabled ? _importStatement : null,
+          onPressed: canWrite ? _importStatement : null,
           icon: const Icon(PhosphorIconsBold.uploadSimple, size: 15),
           label: const Text('استيراد كشف'),
         ),
         FilledButton.icon(
-          onPressed: enabled ? _autoMatch : null,
+          onPressed: canWrite ? _autoMatch : null,
           icon: const Icon(PhosphorIconsBold.arrowsLeftRight, size: 15),
           label: const Text('مطابقة آلية'),
         ),
@@ -523,13 +601,20 @@ class _BankReconciliationPicposScreenState
       // ⚠️ **مراجعة 2026-09-01، مأخذ ٤**: سطورٌ رُفضت مع أخرى أُدرجت ليست
       // نجاحاً كاملاً — `warning` لا `success` حين توجد أسبابُ رفض.
       final hasErrors = errors.isNotEmpty;
+      final outOfPeriod = _allLinesOutsidePeriod(lines);
       var message = 'استُورد ${_arabicDigits(n)} سطراً';
       if (hasErrors) {
         message += '، ورُفض ${_arabicDigits(errors.length)}: '
             '${errors.join('؛ ')}';
       }
+      if (outOfPeriod) {
+        message += ' — ولا سطرَ منها يقع في الفترة المختارة، فلن تظهر في '
+            'المطابقة';
+      }
       AppToast.show(context, message,
-          type: hasErrors ? ToastType.warning : ToastType.success);
+          type: hasErrors || outOfPeriod
+              ? ToastType.warning
+              : ToastType.success);
 
       final sessionId = _sessionId;
       if (sessionId != null) {
@@ -541,6 +626,27 @@ class _BankReconciliationPicposScreenState
     } finally {
       if (mounted) setState(() => _actionBusy = false);
     }
+  }
+
+  /// هل وقعت تواريخُ الأسطر المستورَدةِ **كلُّها** خارجَ الفترة المختارة؟
+  ///
+  /// ⚠️ **مراجعةٌ 2026-09-01، مأخذ ٧**: بعد استيرادٍ ناجحٍ لملفٍّ لا يلتقي
+  /// مع الفترة، تعرض بطاقةُ «مطابَق / غير مطابَق» **صفراً على صفر** بلون
+  /// النجاح — والرقمُ صحيحٌ حسابيّاً (لا سطرَ في الفترة أصلاً) لكنّه يُقرأ
+  /// «طوبق كلُّ شيء». وقوائمُ التقرير كلُّها ترشِّح بـ`periodStart/periodEnd`
+  /// (‏`getReconciliationReport`)، فالأسطرُ المُدرَجةُ فعلاً لا تظهر في أيّ
+  /// قائمة ولا يفهم المحاسبُ لماذا.
+  ///
+  /// ⚠️ **و`is DateTime` شرطٌ لا صدفة**: `parseBankStatementRow` تُخرج
+  /// `'date'` كـ`DateTime` دائماً — فما ليس كذلك ليس مصدراً أقيسُ عليه،
+  /// و«لا أدري» تعني الصمتَ لا صيحةَ إنذارٍ كاذبة.
+  bool _allLinesOutsidePeriod(List<Map<String, dynamic>> lines) {
+    if (lines.isEmpty) return false;
+    return lines.every((l) {
+      final d = l['date'];
+      if (d is! DateTime) return false;
+      return d.isBefore(_period.start) || d.isAfter(_period.end);
+    });
   }
 
   Future<void> _autoMatch() async {
@@ -605,9 +711,34 @@ class _BankReconciliationPicposScreenState
             (data['outstandingBookEntries'] as List?) ?? const [];
         final matchedLines = (data['matchedLines'] as List?) ?? const [];
 
+        // ── مأخذ ٨‑ج: الاختيارُ يُصالَح مقابلَ القوائم بعد كلّ إنعاش ───────
+        //
+        // ⚠️ اختَر سطراً ثمّ اضغط «مطابقة آلية»: المحرّكُ يطابقه فيختفي من
+        // `unmatchedBankLines`، وكان `_pickedStmtId` يبقى عليه و«طابق» يبقى
+        // فعّالاً — نقرةٌ عليه تُنادي `manualMatchStatement` على سطرٍ مطابَقٍ
+        // سلفاً. فالمعرّفان يُقاسان على القائمتين الحاليّتين، وما لم يعد فيهما
+        // يسقط.
+        //
+        // ⚠️ **كتابةٌ مباشرةٌ بلا `setState` عن قصد**: نحن داخلَ `build`،
+        // والقيمُ الجديدةُ تُستعمَل في هذه العمليّة نفسِها — فـ`setState` هنا
+        // إمّا محظورةٌ أو إطارٌ ضائعٌ يُرسَم فيه زرٌّ فعّالٌ على سطرٍ زائل.
+        final stmtIds = {for (final dynamic l in unmatchedBankLines) l.id as int};
+        final jeIds = {
+          for (final dynamic r in outstandingBookEntries)
+            (r.data['id'] as num).toInt()
+        };
+        if (_pickedStmtId != null && !stmtIds.contains(_pickedStmtId)) {
+          _pickedStmtId = null;
+        }
+        if (_pickedJeLineId != null && !jeIds.contains(_pickedJeLineId)) {
+          _pickedJeLineId = null;
+        }
+
+        final locked = _sessionLocked;
         final canMatch = _pickedStmtId != null &&
             _pickedJeLineId != null &&
-            !_actionBusy;
+            !_actionBusy &&
+            !locked;
 
         return ListView(
           padding: const EdgeInsets.only(bottom: 16),
@@ -638,8 +769,9 @@ class _BankReconciliationPicposScreenState
                 tint: unmatched == 0 ? AppColors.success : AppColors.warning,
               ),
             ]),
+            if (locked) _lockedNotice(),
             const SizedBox(height: 14),
-            _matchControlsBar(sessionId, difference, canMatch),
+            _matchControlsBar(sessionId, difference, canMatch, locked),
             const SizedBox(height: 12),
             // ⚠️ **١١٠٠ حدُّ الانقلاب** — نفسُ نمط `analytics_picpos_screen.dart`
             // (`_trendTable`/`_seasonalityCard`): فوقَه قائمتان متجاورتان
@@ -671,7 +803,7 @@ class _BankReconciliationPicposScreenState
               );
             }),
             const SizedBox(height: 12),
-            _matchedTable(matchedLines),
+            _matchedTable(matchedLines, locked),
           ],
         );
       },
@@ -684,7 +816,38 @@ class _BankReconciliationPicposScreenState
 
   // ── شريطُ «طابق» و«إقفال الجلسة» ───────────────────────────────────────
 
-  Widget _matchControlsBar(int sessionId, double difference, bool canMatch) {
+  /// سطرُ «الجلسةُ مقفلة» — الحالةُ تُقال ولا تُترَك تُستنتَج من زرٍّ رماديّ.
+  ///
+  /// ⚠️ **بلا أرضيّةٍ بيضاءَ صريحة**: حارسُ `picpos_light_surface_guard`
+  /// يقيس الأرضيّات، والنصُّ هنا على أرضيّة الشاشة كما هي.
+  Widget _lockedNotice() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(26, 12, 26, 0),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(PhosphorIconsBold.lockSimple,
+              size: 14, color: AppColors.warning),
+          const SizedBox(width: 7),
+          Text(
+            'الجلسةُ مقفلة — لا استيرادَ ولا مطابقةَ ولا نزعَ بعد الإقفال',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: context.picposMuted,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _matchControlsBar(
+    int sessionId,
+    double difference,
+    bool canMatch,
+    bool locked,
+  ) {
     return Row(
       children: [
         ElevatedButton.icon(
@@ -701,8 +864,9 @@ class _BankReconciliationPicposScreenState
         ),
         const Spacer(),
         ElevatedButton.icon(
-          onPressed:
-              _actionBusy ? null : () => _confirmComplete(sessionId, difference),
+          onPressed: _actionBusy || locked
+              ? null
+              : () => _confirmComplete(sessionId, difference),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.secondary,
             foregroundColor: Colors.white,
@@ -774,27 +938,26 @@ class _BankReconciliationPicposScreenState
   /// إقفالُ الجلسة يعمل **ولو بقي فرق** (قرارُ مالك: شيكاتٌ برسم التحصيل
   /// فرقٌ مشروع) — فلا يُمنَع الزرُّ على فرقٍ غيرِ صفريّ، لكنّ حوارَ
   /// التأكيد يعرض الفرقَ صراحةً كي يقرّر المحاسبُ بعين مفتوحة.
+  ///
+  /// ⚠️ **`showPicPosConfirm` لا `AlertDialog`** (مراجعةٌ 2026-09-01، مأخذ
+  /// ٣): `test/structural/accounting_picpos_uses_picpos_dialog_test.dart`
+  /// كان يسمّي هذا السطرَ بالضبط — حوارٌ عارٍ فوق شاشةٍ منقولةٍ إلى هويّة
+  /// PicPos يكسرها في أظهرِ لحظة.
+  ///
+  /// ⚠️ **ولا يُضعَّف الفحصُ في النقل**: `showPicPosConfirm` تُرجع `bool`
+  /// **غيرَ لاغٍ** افتراضُه الرفض — فالإغلاقُ بالمفتاح أو بالنقر خارجَ
+  /// الحوار يُقرأ رفضاً كما كان `proceed != true` يقرؤه. ونصُّ الحوار يبقى
+  /// حاملاً **الفرقَ صريحاً** (قرارُ مالك): إقفالٌ بلا رقمٍ قرارٌ بالظنّ.
   Future<void> _confirmComplete(int sessionId, double difference) async {
-    final proceed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        icon: const Icon(PhosphorIconsBold.lockSimple),
-        title: const Text('إقفال جلسة المطابقة'),
-        content: Text(
-          'الفرقُ الحاليّ: ${_money.format(difference)}. إقفالُ الجلسة '
+    final proceed = await showPicPosConfirm(
+      context,
+      icon: PhosphorIconsBold.lockSimple,
+      title: 'إقفال جلسة المطابقة',
+      message: 'الفرقُ الحاليّ: ${_money.format(difference)}. إقفالُ الجلسة '
           'يعمل ولو بقي فرقٌ (شيكاتٌ برسم التحصيل مثلاً) — متابعة؟',
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('إلغاء')),
-          ElevatedButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('إقفال')),
-        ],
-      ),
+      confirmLabel: 'إقفال',
     );
-    if (proceed != true || !mounted) return;
+    if (!proceed || !mounted) return;
 
     setState(() => _actionBusy = true);
     try {
@@ -895,8 +1058,9 @@ class _BankReconciliationPicposScreenState
     );
   }
 
-  /// أسطرُ الكشف المطابَقةُ سلفاً — كلٌّ منها قابلٌ للنزع.
-  Widget _matchedTable(List<dynamic> lines) {
+  /// أسطرُ الكشف المطابَقةُ سلفاً — كلٌّ منها قابلٌ للنزع ما لم تُقفَل
+  /// الجلسة.
+  Widget _matchedTable(List<dynamic> lines, bool locked) {
     return PicPosDataTable(
       title: 'الأسطرُ المطابَقة',
       columns: const [
@@ -908,11 +1072,11 @@ class _BankReconciliationPicposScreenState
         PicPosTableColumn('إجراء', flex: 1.0),
       ],
       emptyLabel: 'لا أسطرَ مطابَقةً بعد',
-      rows: [for (final dynamic l in lines) _matchedRow(l)],
+      rows: [for (final dynamic l in lines) _matchedRow(l, locked)],
     );
   }
 
-  PicPosTableRow _matchedRow(dynamic l) {
+  PicPosTableRow _matchedRow(dynamic l, bool locked) {
     final id = l.id as int;
     return PicPosTableRow(
       cells: [
@@ -925,7 +1089,7 @@ class _BankReconciliationPicposScreenState
           'نزع',
           icon: PhosphorIconsBold.linkBreak,
           tint: AppColors.error,
-          onPressed: _actionBusy ? null : () => _unmatch(id),
+          onPressed: _actionBusy || locked ? null : () => _unmatch(id),
         ),
       ],
     );
