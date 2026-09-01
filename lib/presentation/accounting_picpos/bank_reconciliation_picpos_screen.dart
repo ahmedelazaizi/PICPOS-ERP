@@ -35,16 +35,35 @@ import '../picpos_shell/picpos_surface.dart';
 
 final _money = NumberFormat('#,##0.00', 'en');
 
+/// نمطُ رصيدٍ صالح: رقمٌ عاديٌّ، أو مجموعٌ بفواصل الآلاف **في مواضعها
+/// فقط** — كلُّ فاصلةٍ متبوعةٌ بثلاثة أرقامٍ بالضبط، لا فاصلةً عشريّةً
+/// أوروبيّة. النقطةُ العشريّةُ اختياريّةٌ بعد ذلك، وإشارةُ سالبٍ اختياريّةٌ
+/// قبله (‏كان `double.tryParse` يقبلها قبل هذا التشديد، فلا داعيَ لإسقاطها).
+@visibleForTesting
+final validBalancePattern = RegExp(r'^-?(\d+|\d{1,3}(,\d{3})*)(\.\d+)?$');
+
 /// يحلّل نصَّ رصيد الكشف إلى رقمٍ صالح، أو `null` إن كان فارغاً أو معطوباً.
 ///
-/// ⚠️ **يجرّد فاصلةَ الآلاف قبل التحليل**: الشاشةُ نفسُها تعرض المبالغَ
-/// بصيغة `NumberFormat('#,##0.00')` (‏`1,000.00`)، فمستخدمٌ ينسخ رقماً من
-/// الشاشة ويلصقه هنا يكتب فاصلةً — و`double.tryParse` يرفضها فيعامَل رقمٌ
-/// صحيحٌ بوصفه فشلاً. ولا قيمةَ افتراضيّةً عند الفشل: `null` يعني «أعِد
-/// كتابةَ الرقم»، لا «افترض صفراً» — فصفرٌ صامتٌ هنا فرقٌ محاسبيٌّ مختلَق.
-double? _parseStatementBalance(String raw) {
+/// ⚠️ **الفاصلةُ تُقبَل في مواضع الآلاف فقط — لا فاصلةً عشريّةً أوروبيّة**
+/// (مراجعةٌ 2026-09-01، مأخذ أ): كانت `replaceAll(',', '')` تجرّد أيَّ
+/// فاصلةٍ بلا نظرٍ إلى موضعها، فـ`1500,50` (فاصلةٌ عشريّةٌ في تدوينٍ
+/// أوروبيّ) كانت تصير `150050` — مئةَ ضعفٍ بلا خطأٍ ولا تنبيه، يدخل
+/// `difference` مباشرةً ويُصدَّق. والعلاجُ صراحةُ الوحدة: [validBalancePattern]
+/// يتحقّق من **موضع** كلّ فاصلةٍ قبل التجريد، لا يجرّدها أينما وقعت.
+///
+/// ⚠️ **وتحقّقتُ أنّ `NumberFormat.tryParse` لا يحلّ هذا** — قرأتُ مصدره
+/// (`number_parser_base.dart` في حزمة `intl`): فاصلُ الآلاف يُستبدَل
+/// بلا فحص موضعٍ إطلاقاً (‏`GROUP_SEP: handleSpace` تجرّده أينما وقع)،
+/// فيقع في العطب نفسِه على `1500,50`. والنمطُ الصريحُ هنا هو الحلّ، لا
+/// استبدالُ مزوّدٍ بآخر يحمل نفس الثغرة.
+///
+/// ولا قيمةَ افتراضيّةً عند الفشل: `null` يعني «أعِد كتابةَ الرقم»، لا
+/// «افترض صفراً» — فصفرٌ صامتٌ هنا فرقٌ محاسبيٌّ مختلَق.
+@visibleForTesting
+double? parseStatementBalance(String raw) {
   final trimmed = raw.trim();
   if (trimmed.isEmpty) return null;
+  if (!validBalancePattern.hasMatch(trimmed)) return null;
   return double.tryParse(trimmed.replaceAll(',', ''));
 }
 
@@ -262,7 +281,7 @@ class _BankReconciliationPicposScreenState
     final raw = _statementBalanceController.text;
     // خطأُ إدخالٍ يُقال فقط بعد أن يكتب المستخدمُ شيئاً — حقلٌ فارغٌ لم
     // يُلمَس بعدُ ليس «خطأً»، هو حالةُ البداية.
-    final invalid = raw.trim().isNotEmpty && _parseStatementBalance(raw) == null;
+    final invalid = raw.trim().isNotEmpty && parseStatementBalance(raw) == null;
 
     return SizedBox(
       width: 170,
@@ -312,7 +331,7 @@ class _BankReconciliationPicposScreenState
   }
 
   Widget _newSessionButton(BuildContext context) {
-    final balance = _parseStatementBalance(_statementBalanceController.text);
+    final balance = parseStatementBalance(_statementBalanceController.text);
     final canCreate = _safeId != null &&
         _accountId != null &&
         balance != null &&

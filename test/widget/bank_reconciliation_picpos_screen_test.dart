@@ -18,6 +18,7 @@ import 'package:ural_erp/data/providers/repository_providers.dart';
 import 'package:ural_erp/domain/repositories/accounting_repository.dart';
 import 'package:ural_erp/domain/repositories/treasury_repository.dart';
 import 'package:ural_erp/presentation/accounting_picpos/bank_reconciliation_picpos_screen.dart';
+import 'package:ural_erp/presentation/picpos_shell/picpos_hub_kpi.dart';
 
 // نمطُ المزيَّفات من `test/widget/analytics_picpos_screen_test.dart`:
 // صنفٌ `implements` الواجهةَ، الدوالُّ المستعمَلةُ صريحةً بـ`@override`
@@ -117,6 +118,45 @@ Future<void> pump(WidgetTester tester, double width, {
 }
 
 void main() {
+  // ═══════════════════════════════════════════════════════════════════════
+  // مراجعةٌ 2026-09-01 (مأخذ أ) — الفاصلةُ تُقبَل في مواضع الآلاف فقط.
+  //
+  // ⚠️ `1500,50` فاصلةٌ عشريّةٌ أوروبيّة، لا فاصلةَ آلاف — وكانت
+  // `replaceAll(',', '')` تجرّدها بلا فحص موضعٍ فتُنتج `150050` (مئةَ
+  // ضعف) بلا خطأٍ ولا تنبيه. القياسُ هنا على الدالّة النقيّة مباشرةً —
+  // أسرعُ وأدقّ من دورة واجهةٍ كاملةٍ لكلّ حالة.
+  // ═══════════════════════════════════════════════════════════════════════
+  group('parseStatementBalance — الفاصلةُ في مواضع الآلاف فقط', () {
+    test('1,000.00 — فاصلةُ آلافٍ في موضعها ⇒ 1000.0', () {
+      expect(parseStatementBalance('1,000.00'), 1000.0);
+    });
+
+    test('15,300.50 — مجموعتا آلافٍ صحيحتان ⇒ 15300.5', () {
+      expect(parseStatementBalance('15,300.50'), 15300.5);
+    });
+
+    test('🔴 1500,50 — فاصلةٌ عشريّةٌ أوروبيّة ⇒ null، لا 150050', () {
+      final result = parseStatementBalance('1500,50');
+      expect(result, isNull,
+          reason: 'لو جرّدنا الفاصلةَ بلا فحص موضعٍ لخرج 150050 — مئةَ '
+              'ضعفٍ عن القيمة الحقيقيّة، وهو عينُ العطب المُبلَّغ عنه');
+    });
+
+    test('🔴 1.000,50 — تدوينٌ أوروبيّ (نقطةُ آلافٍ وفاصلةٌ عشريّة) ⇒ null',
+        () {
+      expect(parseStatementBalance('1.000,50'), isNull);
+    });
+
+    test('0 — رصيدٌ بنكيٌّ صفريٌّ يبقى مقبولاً', () {
+      expect(parseStatementBalance('0'), 0.0);
+    });
+
+    test('نصٌّ فارغٌ ⇒ null', () {
+      expect(parseStatementBalance(''), isNull);
+      expect(parseStatementBalance('   '), isNull);
+    });
+  });
+
   for (final width in [1280.0, 1920.0]) {
     testWidgets('الشاشةُ تُرسَم بلا فيضان عند ${width.toInt()}', (tester) async {
       await pump(tester, width, safes: [_bankSafe(1, linked: 5)]);
@@ -199,14 +239,65 @@ void main() {
         reason: 'رصيدُ الكشف المُدخَل بفاصلةٍ يجب أن يُحلَّل صحيحاً — لا '
             'يسقط إلى صفرٍ صامت');
 
-    expect(find.text('15,250.75'), findsWidgets,
-        reason: 'رصيدُ الدفتر يجب أن يأتي من `getReconciliationReport` '
-            'المزيَّف');
-    expect(find.text('15,300.50'), findsWidgets,
-        reason: 'رصيدُ الكشف يجب أن يأتي من التقرير المزيَّف');
-    expect(find.text('49.75'), findsWidgets,
-        reason: 'الفرقُ يجب أن يأتي من التقرير المزيَّف');
-    expect(find.text('12 / 3'), findsWidgets,
-        reason: 'مطابَق/غيرُ مطابَق يجب أن يأتيا من التقرير المزيَّف');
+    // ⚠️ **مأخذ ب (مراجعة 2026-09-01): محصورةٌ داخل `PicPosHubKpiRow`.**
+    // حقلُ رصيد الكشف يحمل نصَّ الإدخال نفسَه `'15,300.50'` (الذي كتبناه
+    // أعلاه)، فتوكيدٌ بلا حصرٍ يمرّ حتى لو غابت بطاقةُ «رصيد الكشف»
+    // تماماً — لأنّ `EditableText` الحقلِ يطابقه وحدَه. الحصرُ يجعل
+    // التوكيدَ قادراً على السقوط فعلاً.
+    final kpiRow = find.byType(PicPosHubKpiRow);
+    expect(kpiRow, findsOneWidget,
+        reason: 'صفُّ المؤشّرات نفسُه يجب أن يظهر بعد إنشاء الجلسة');
+
+    expect(
+      find.descendant(of: kpiRow, matching: find.text('15,250.75')),
+      findsWidgets,
+      reason: 'رصيدُ الدفتر يجب أن يأتي من `getReconciliationReport` '
+          'المزيَّف',
+    );
+    expect(
+      find.descendant(of: kpiRow, matching: find.text('15,300.50')),
+      findsWidgets,
+      reason: 'رصيدُ الكشف يجب أن يأتي من التقرير المزيَّف — لا من حقل '
+          'الإدخال',
+    );
+    expect(
+      find.descendant(of: kpiRow, matching: find.text('49.75')),
+      findsWidgets,
+      reason: 'الفرقُ يجب أن يأتي من التقرير المزيَّف',
+    );
+    expect(
+      find.descendant(of: kpiRow, matching: find.text('12 / 3')),
+      findsWidgets,
+      reason: 'مطابَق/غيرُ مطابَق يجب أن يأتيا من التقرير المزيَّف',
+    );
+  });
+
+  testWidgets(
+      '🔴 رصيدٌ بفاصلةٍ عشريّةٍ أوروبيّة يُظهر خطأ الإدخال ويُعطِّل الزرّ',
+      (tester) async {
+    await pump(tester, 1920,
+        safes: [_bankSafe(3, linked: 11, name: 'خزنة الفاصلة الأوروبية')]);
+
+    await tester.tap(find.text('اختر خزنة بنكية'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('خزنة الفاصلة الأوروبية'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('تطبيق'));
+    await tester.pumpAndSettle();
+
+    // فاصلةٌ عشريّةٌ أوروبيّة — نفسُ حالة المأخذ أ، لكن مقيسةً عبر الواجهة
+    // كاملةً كما طلب المنسّق: خطأُ الإدخال يُعرَض والزرُّ يُعطَّل فعلاً.
+    await tester.enterText(find.byType(TextField), '1500,50');
+    await tester.pumpAndSettle();
+
+    expect(find.text('قيمةٌ غيرُ صالحة'), findsOneWidget,
+        reason: 'خطأُ الإدخال يجب أن يُقال — لا صمتَ ولا سقوطٌ إلى صفر');
+
+    final button = tester.widget<ElevatedButton>(
+      find.widgetWithText(ElevatedButton, 'جلسة جديدة'),
+    );
+    expect(button.onPressed, isNull,
+        reason: 'زرُّ «جلسة جديدة» يجب أن يبقى معطَّلاً على قيمةٍ غيرِ '
+            'صالحة — لا أن يُنشئ جلسةً برصيدٍ مئةَ ضعفٍ');
   });
 }
