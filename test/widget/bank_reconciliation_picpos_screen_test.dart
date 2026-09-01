@@ -83,6 +83,7 @@ class _FakeAccounting implements IAccountingRepository {
   int? autoMatchedBankAccountId;
   int? importedBankAccountId;
   List<Map<String, dynamic>>? importedLines;
+  String? importedBatchId;
 
   @override
   Future<int> createReconciliation({
@@ -110,6 +111,7 @@ class _FakeAccounting implements IAccountingRepository {
   }) async {
     importedBankAccountId = bankAccountId;
     importedLines = lines;
+    importedBatchId = batchId;
     return lines.length;
   }
 
@@ -418,10 +420,87 @@ void main() {
     expect(find.text('لا صفَّ صالحاً في الملف: الصفُّ ٢: تاريخٌ غيرُ صالح'),
         findsOneWidget,
         reason: 'سببُ الرفض من التحليل يصل الشاشةَ كما هو');
-    expect(find.text('تعذّرت العمليّة'), findsNothing,
+    // ⚠️ مراجعة 2026-09-01 (مأخذ ١): «تعذّرت العمليّة» نصٌّ لا وجودَ له في
+    // `lib` إطلاقاً — الرسالةُ العامّةُ الفعليّةُ عند استثناءٍ حقيقيٍّ هي
+    // 'تعذّر استيرادُ الكشف: $e' (‏`screen.dart`، فرعُ `catch`). وهذا
+    // الاختبارُ يسلك فرعَ «لا صفَّ صالحاً» فلا يبلغ ذلك الفرعَ أصلاً — لكنّ
+    // التوكيدَ يجب أن ينفي الرسالةَ **الحقيقيّة** لا نصّاً وهميّاً لا يظهر
+    // أبداً مهما كتب الكودُ.
+    expect(find.textContaining('تعذّر استيرادُ الكشف'), findsNothing,
         reason: 'لا يُختصَر السببُ إلى رسالةٍ عامّةٍ تُخفي ما حدث فعلاً');
 
     // ⚠️ نفسُ مؤقّتِ `AppToast` أعلاه.
+    await tester.pump(const Duration(seconds: 4));
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // مراجعةٌ 2026-09-01 (مأخذ ٢) — متطلَّبُ المهمّة المركزيّ (الكتابةُ
+  // بالمستودع) كان يُشحَن بلا مرساةٍ تثبت أنّ الاستخراجَ يعمل: الاختبارُ
+  // الوحيدُ للاستيراد كان يسلك فرعَ `lines.isEmpty` الذي لا يبلغ
+  // `importBankStatementLines` أصلاً. هذا اختبارُ النجاح الجزئيّ — أصعبُ
+  // الحالات (سطرٌ مُدرَجٌ وآخرُ مرفوضٌ معاً) — يقيس المستودعَ نفسَه.
+  // ═══════════════════════════════════════════════════════════════════════
+
+  testWidgets(
+      '🔴 استيرادٌ ناجحٌ جزئيّاً يكتب بالمستودع على حساب الخزنة، بدفعةٍ '
+      'فريدة، ويقولها كاملة', (tester) async {
+    final accounting = _FakeAccounting();
+    final excelService = _FakeExcelService(
+      parseResult: const BankStatementRowsSummary(
+        <Map<String, dynamic>>[
+          {
+            'date': '2026-05-10',
+            'reference': 'REF-1',
+            'description': 'إيداع نقدي',
+            'debit': 0.0,
+            'credit': 500.0,
+          },
+          {
+            'date': '2026-05-11',
+            'reference': 'REF-2',
+            'description': 'سحب',
+            'debit': 200.0,
+            'credit': 0.0,
+          },
+        ],
+        <String>['الصفُّ ٤: تاريخٌ غيرُ صالح'],
+      ),
+    );
+    await pump(tester, 1920,
+        safes: [_bankSafe(6, linked: 77, name: 'خزنة الاستيراد الجزئي')],
+        accounting: accounting,
+        excelService: excelService);
+
+    await tester.tap(find.text('اختر خزنة بنكية'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('خزنة الاستيراد الجزئي'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('تطبيق'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('استيراد كشف'));
+    await tester.pumpAndSettle();
+
+    // مرساةٌ تفرّق معرّفَ الحساب عن معرّف الخزنة: الخزنةُ ٦، والحسابُ
+    // المرتبطُ ٧٧ — فالاختبارُ يسقط فعلاً لو نودِيَ المستودعُ بمعرّف
+    // الخزنة سهواً بدل حسابها.
+    expect(accounting.importedBankAccountId, 77,
+        reason: 'الكتابةُ تقع على حساب الخزنة المرتبط — لا معرّف الخزنة '
+            'نفسِها');
+    expect(accounting.importedLines?.length, 2,
+        reason: 'السطران الصالحان فقط يصلان المستودع — لا الرفوضُ معهما');
+    expect(accounting.importedBatchId, isNotEmpty,
+        reason: 'batchId فريدٌ لكلّ دفعة — لا فارغٌ ولا مُهمَل');
+
+    // النصُّ الكاملُ المركَّب كما يراه المستخدم — المُدرَجُ والمرفوضُ
+    // وسببُه معاً، لا جزءٌ منه.
+    expect(
+      find.text('استُورد ٢ سطراً، ورُفض ١: الصفُّ ٤: تاريخٌ غيرُ صالح'),
+      findsOneWidget,
+      reason: 'الرسالةُ تبنيها الشاشةُ من عددَي الإدراج والرفض وسببِه — لا '
+          'رسالةٍ ثابتة',
+    );
+
     await tester.pump(const Duration(seconds: 4));
   });
 }

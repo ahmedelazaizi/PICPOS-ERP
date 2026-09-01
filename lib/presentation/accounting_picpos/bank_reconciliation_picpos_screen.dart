@@ -135,6 +135,12 @@ class _BankReconciliationPicposScreenState
   final _statementBalanceController = TextEditingController();
   bool _creatingSession = false;
 
+  // ⚠️ **مراجعة 2026-09-01، مأخذ ٣**: بلا هذا العلم، نقرتان متتاليتان على
+  // «استيراد كشف» تفتحان مسارَين بدفعتَين مختلفتَين فتُدرَج الأسطرُ مرّتَين
+  // بلا فحصِ تكرارٍ في المحرّك. نفسُ نمط `_creatingSession` أعلاه — علمٌ
+  // واحدٌ يعطّل الأزرارَ الثلاثةَ معاً أثناء أيٍّ منها.
+  bool _actionBusy = false;
+
   @override
   void initState() {
     super.initState();
@@ -421,7 +427,7 @@ class _BankReconciliationPicposScreenState
   // مرتبطاً بها بعدُ، فلا جدوى من نداء أيٍّ منها.
 
   Widget _buildActionsBar() {
-    final enabled = _accountId != null;
+    final enabled = _accountId != null && !_actionBusy;
     return PicPosToolbar(
       children: [
         OutlinedButton.icon(
@@ -444,16 +450,23 @@ class _BankReconciliationPicposScreenState
   }
 
   /// [ExcelService.exportBankStatementTemplate] تُمسك كلَّ أخطائها داخليّاً
-  /// وتعيد `null` عند التعذّر — لا استثناءَ يفلت هنا فلا حاجةَ لـ`try/catch`.
+  /// وتعيد `null` عند التعذّر — لا استثناءَ يفلت هنا، لكنّ `_actionBusy`
+  /// لا يزال يحتاج `finally` كي يُعاد ولو أُعيد مبكّراً.
   Future<void> _downloadTemplate() async {
-    final service = ref.read(excelServiceProvider);
-    final path = await service.exportBankStatementTemplate();
-    if (!mounted) return;
-    if (path == null) {
-      AppToast.show(context, 'تعذّر إنشاءُ قالب الكشف', type: ToastType.error);
-      return;
+    setState(() => _actionBusy = true);
+    try {
+      final service = ref.read(excelServiceProvider);
+      final path = await service.exportBankStatementTemplate();
+      if (!mounted) return;
+      if (path == null) {
+        AppToast.show(context, 'تعذّر إنشاءُ قالب الكشف',
+            type: ToastType.error);
+        return;
+      }
+      AppToast.show(context, 'حُفظ القالبُ في: $path', type: ToastType.success);
+    } finally {
+      if (mounted) setState(() => _actionBusy = false);
     }
-    AppToast.show(context, 'حُفظ القالبُ في: $path', type: ToastType.success);
   }
 
   /// يختار المستخدمُ ملفَّ كشفٍ ويُحلَّل (`pickAndParseBankStatement`)، ثمّ
@@ -467,6 +480,7 @@ class _BankReconciliationPicposScreenState
   Future<void> _importStatement() async {
     final accountId = _accountId;
     if (accountId == null) return;
+    setState(() => _actionBusy = true);
     try {
       final service = ref.read(excelServiceProvider);
       final summary = await service.pickAndParseBankStatement();
@@ -494,12 +508,16 @@ class _BankReconciliationPicposScreenState
       );
       if (!mounted) return;
 
+      // ⚠️ **مراجعة 2026-09-01، مأخذ ٤**: سطورٌ رُفضت مع أخرى أُدرجت ليست
+      // نجاحاً كاملاً — `warning` لا `success` حين توجد أسبابُ رفض.
+      final hasErrors = errors.isNotEmpty;
       var message = 'استُورد ${_arabicDigits(n)} سطراً';
-      if (errors.isNotEmpty) {
+      if (hasErrors) {
         message += '، ورُفض ${_arabicDigits(errors.length)}: '
             '${errors.join('؛ ')}';
       }
-      AppToast.show(context, message, type: ToastType.success);
+      AppToast.show(context, message,
+          type: hasErrors ? ToastType.warning : ToastType.success);
 
       final sessionId = _sessionId;
       if (sessionId != null) {
@@ -508,12 +526,15 @@ class _BankReconciliationPicposScreenState
     } catch (e) {
       if (!mounted) return;
       AppToast.show(context, 'تعذّر استيرادُ الكشف: $e', type: ToastType.error);
+    } finally {
+      if (mounted) setState(() => _actionBusy = false);
     }
   }
 
   Future<void> _autoMatch() async {
     final accountId = _accountId;
     if (accountId == null) return;
+    setState(() => _actionBusy = true);
     try {
       final repo = ref.read(accountingRepositoryProvider);
       final n = await repo.autoMatchStatementLines(accountId);
@@ -529,6 +550,8 @@ class _BankReconciliationPicposScreenState
       if (!mounted) return;
       AppToast.show(context, 'تعذّرت المطابقةُ الآليّة: $e',
           type: ToastType.error);
+    } finally {
+      if (mounted) setState(() => _actionBusy = false);
     }
   }
 
