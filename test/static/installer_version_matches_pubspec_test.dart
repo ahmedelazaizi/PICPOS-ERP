@@ -3,7 +3,9 @@
 // ═══ فئةُ العطب ═══
 //
 // Inno Setup لا يقرأ Dart ولا `pubspec.yaml` إطلاقاً. فرقمُ الإصدار مكتوبٌ
-// **يدويّاً** في `installer/UralCash.iss`، ولا شيءَ يربطه بالمصدر.
+// **يدويّاً** في `installer/setup.iss`، ولا شيءَ يربطه بالمصدر.
+// (‏كان اسمُه `UralCash.iss` حتى 2026-09-02؛ أُعيدت تسميتُه لأنّ محتواه محايدٌ
+//  بين العلامتَين والمنتَجُ الحيُّ هو PicPos.)
 //
 // 🔴 **وقع فعلاً:** رُفع `pubspec` إلى `3.1.3+248` يوم 2026-08-03 في كوميتٍ
 // عنوانُه «نظافة الإصدار»، وآخرُ لمسةٍ للـ`iss` كانت 2026-07-26. فبقيت
@@ -40,7 +42,7 @@ void main() {
     final pm = RegExp(r'^version:\s*(\S+)\s*$', multiLine: true).firstMatch(pub);
     pubspecVersion = pm?.group(1) ?? '';
 
-    final iss = File('installer/UralCash.iss').readAsStringSync();
+    final iss = File('installer/setup.iss').readAsStringSync();
     final im = RegExp(r'#define\s+AppVersion\s+"([^"]+)"').firstMatch(iss);
     innoVersion = im?.group(1) ?? '';
   });
@@ -58,7 +60,7 @@ void main() {
 
     test('ورقمُ Inno قُرئ فعلاً', () {
       expect(innoVersion, isNotEmpty,
-          reason: 'تعذّرت قراءةُ `#define AppVersion` من UralCash.iss');
+          reason: 'تعذّرت قراءةُ `#define AppVersion` من setup.iss');
       expect(innoVersion, matches(RegExp(r'^\d+\.\d+\.\d+\.\d+$')),
           reason: 'Inno يريد أربعةَ أرقامٍ منقوطة: «$innoVersion»');
     });
@@ -82,7 +84,7 @@ void main() {
           'و«إضافة أو إزالة البرامج» تعرضه — فنسختان مختلفتان بالرقم نفسِه '
           'لا تُرقّي إحداهما الأخرى، والدعمُ يطارد عطباً في كودٍ ليس عند '
           'العميل.\n\n'
-          'حدِّث `#define AppVersion` في `installer/UralCash.iss` إلى '
+          'حدِّث `#define AppVersion` في `installer/setup.iss` إلى '
           '«${_pubspecToInnoVersion(pubspecVersion)}» في نفس الكوميت الذي '
           'يرفع pubspec.',
     );

@@ -4,11 +4,13 @@
 ;  runtime if missing, and optionally downloads/installs PostgreSQL (server
 ;  machines only). Arabic RTL wizard.
 ;
-;  Build (UralCash — the default, unchanged):
-;    "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\UralCash.iss
-;  Build (PicPos):
-;    ISCC.exe /DBrandId=picpos installer\UralCash.iss
+;  Build (PicPos — the live product):
+;    ISCC.exe /DBrandId=picpos installer\setup.iss
 ;    (or just run build_installer_picpos.bat)
+;  Build (UralCash — work is halted; kept compiling so the script stays honest):
+;    ISCC.exe /DBrandId=uralcash installer\setup.iss
+;
+;  The brand is MANDATORY. See the #ifndef below for why there is no default.
 ;
 ;  Prereq: build\windows\x64\runner\Release\ must exist for the brand you are
 ;  packaging — that directory is produced by `flutter build windows --release`
@@ -24,10 +26,21 @@
 ;  in this file may name a brand.
 ; ═══════════════════════════════════════════════════════════════════════════
 
-; The brand being packaged. Defaults to `uralcash` so an old, bare
-; `ISCC installer\UralCash.iss` keeps producing exactly what it always did.
+; The brand being packaged — REQUIRED, no default.
+;
+; ⚠️ This used to default to `uralcash`, from a time when UralCash was the only
+;    product. PicPos is the live product now and UralCash work is halted, so a
+;    silent default is worse than useless: a bare `ISCC installer\setup.iss`
+;    would quietly package the WRONG brand's metadata (AppId, publisher, name)
+;    around whatever Release output happens to be on disk. The [Files] guard
+;    below catches only the case where the expected exe is missing entirely —
+;    it cannot catch a UralCash-labelled package built over a UralCash build.
+;
+;    Flipping the default to `picpos` would just move the trap. Requiring the
+;    brand removes it: every caller states which product it is packaging, and
+;    the compile fails loudly if it doesn't.
 #ifndef BrandId
-  #define BrandId "uralcash"
+  #error BrandId is required. Pass /DBrandId=picpos (or /DBrandId=uralcash).
 #endif
 
 #if BrandId == "uralcash"
@@ -58,11 +71,11 @@
   #define AppId        "{{6700CCE0-EF37-4843-A057-F7799252DAA9}"
   #define AppName      "PicPos ERP"
   #define ShortName    "PicPos"
-  ; TODO(product owner): if PicPos is registered under a fuller legal name,
-  ; put that exact form here — this string is the publisher shown by Windows.
-  ; Same open question as the copyright line in build_picpos.bat.
+  ; Confirmed by the product owner 2026-09-01: the registered form is exactly
+  ; "PicPos" — no fuller legal entity to carry. This is the publisher string
+  ; Windows shows in Add/Remove Programs and in the UAC prompt.
   #define Publisher    "PicPos"
-  ; TODO(product owner): no domain yet. Left empty on purpose — the [Setup]
+  ; No domain yet (owner, 2026-09-01). Left empty on purpose — the [Setup]
   ; directive is omitted rather than pointed at UralCash's site.
   #define PublisherURL ""
   #define ExeName      "PicPos.exe"
@@ -96,8 +109,27 @@
 #define CertFile      "..\build\windows\x64\runner\" + CertName
 #define IconFile      "..\windows\runner\resources\app_icon.ico"
 #define InfoFile      "info-ar-" + BrandId + ".txt"
-#define WizardLarge   "assets\wizard-large-" + BrandId + ".bmp"
-#define WizardSmall   "assets\wizard-small-" + BrandId + ".bmp"
+
+; ── صورُ المعالج ──────────────────────────────────────────────────────────
+;
+; Inno 6 يختار الصورةَ بمطابقة مقاسها لنسبة تكبير الشاشة، ويقبل قائمةً
+; مفصولةً بفواصل. وصورةٌ واحدةٌ عند ١٦٤×٣١٤ تُمطُّ على شاشات ١٥٠٪ و٢٠٠٪ —
+; وهي الأغلبُ اليومَ — فتظهر ضبابيّةً في أوّلِ ما يراه العميل.
+;
+; المقاساتُ الأربعةُ يولّدها `tool/gen_installer_art.dart` بمحرّك Flutter
+; (‏`flutter test tool/gen_installer_art.dart`). ولا يولّدها المولّدُ القديم
+; `make_wizard_images.py`: فذاك يرسم بـPillow، وPillow لا تشكّل العربيّةَ ولا
+; تعكس اتّجاهَها — فبقيت صورةُ PicPos بلا سطرٍ عربيٍّ هرباً من العطب.
+;
+; ⚠️ UralCash ما زال على صورتَيه المشحونتَين بمقاسٍ واحد. لا تُدرج له
+;    لواحقَ لا وجودَ لها: Inno يفشل بالترجمة على ملفٍّ مفقود.
+#if BrandId == "picpos"
+  #define WizardLarge "assets\wizard-large-picpos.bmp,assets\wizard-large-picpos-125.bmp,assets\wizard-large-picpos-150.bmp,assets\wizard-large-picpos-200.bmp"
+  #define WizardSmall "assets\wizard-small-picpos.bmp,assets\wizard-small-picpos-125.bmp,assets\wizard-small-picpos-150.bmp,assets\wizard-small-picpos-200.bmp"
+#else
+  #define WizardLarge "assets\wizard-large-" + BrandId + ".bmp"
+  #define WizardSmall "assets\wizard-small-" + BrandId + ".bmp"
+#endif
 #define VCRedistUrl   "https://aka.ms/vs/17/release/vc_redist.x64.exe"
 ; Official EDB PostgreSQL x64 installer (best-effort; download is fault-tolerant)
 #define PGUrl         "https://get.enterprisedb.com/postgresql/postgresql-16.4-1-windows-x64.exe"
@@ -132,6 +164,12 @@ SolidCompression=yes
 WizardStyle=modern
 WizardImageFile={#WizardLarge}
 WizardSmallImageFile={#WizardSmall}
+; اللوحةُ الجانبيّةُ تملأ الارتفاعَ بدل شريطٍ في الأعلى — هي الفرقُ بين
+; «مثبِّتٍ افتراضيّ» و«منتَجٍ له هويّة».
+WizardImageStretch=yes
+; ١٢٠٪ من المقاس الافتراضيّ. المعالجُ الافتراضيُّ ضيّقٌ على نصٍّ عربيٍّ طويل،
+; والاتّساعُ يمنع التفافَ الأسطر في صفحتَي المعلومات والمكوّنات.
+WizardSizePercent=120
 InfoBeforeFile={#InfoFile}
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
@@ -149,8 +187,22 @@ Name: "arabic"; MessagesFile: "compiler:Languages\Arabic.isl"
 arabic.CompApp=نظام {#ShortName} (أساسي)
 arabic.CompPg=خادم PostgreSQL (للسيرفر/الفرع الرئيسي فقط — اختياري)
 arabic.InstallingCert=جارٍ تثبيت شهادة الناشر في الجهات الموثوقة...
-arabic.LaunchApp=تشغيل {#ShortName} الآن
 arabic.PreparingReqs=جارٍ تجهيز متطلبات النظام
+
+; ── الجسرُ إلى معالج البدء ────────────────────────────────────────────────
+;
+; ⚠️ **المثبِّتُ لا يسأل سؤالاً تجاريّاً واحداً** — لا نمطَ عملٍ ولا بياناتِ
+;    شركةٍ ولا فروعاً ولا مستخدمين. تلك كلُّها يملكها معالجُ البدء داخلَ
+;    التطبيق، وهو مبنيٌّ بلغة PicPos البصريّة ومختبَرٌ ويقرأ إعدادَ
+;    `setup_completed` عند الإقلاع فيفتح نفسَه إن كان فارغاً.
+;
+;    فوظيفةُ هذه الصفحة أن تكون **عتبةً لا نهاية**: تقول للعميل إنّ ما انتهى
+;    هو تجهيزُ الملفّات، وإنّ إعدادَ النظام يبدأ الآن. وبلا هذا يظنّ العميلُ
+;    أنّ «تمّ التثبيت» تعني أنّ النظامَ جاهزٌ للعمل، فيغلق ثمّ يفتح فيفاجَأ
+;    بمعالجٍ لم يتوقّعه.
+arabic.LaunchApp=ابدأ إعداد النظام الآن
+arabic.FinishedHeading=تمّ تجهيز {#ShortName} على هذا الجهاز
+arabic.FinishedLabel=نُسخت ملفات النظام وجُهّزت متطلباته.%n%nالخطوة التالية هي إعداد النظام نفسه: نمط العمل، وبيانات المنشأة، والفروع، والمستخدمون، ودليل الحسابات — ويتولاها معالج الإعداد داخل البرنامج.%n%nاترك الخيار أدناه مفعّلاً ليبدأ المعالج فور إغلاق هذه النافذة.
 
 [Components]
 Name: "app";   Description: "{cm:CompApp}"; Types: full compact custom; Flags: fixed
@@ -190,9 +242,51 @@ Filename: "{sys}\certutil.exe"; Parameters: "-delstore TrustedPublisher ""{#Cert
 #endif
 
 [Code]
+
+{ ── هويّةُ العلامة داخلَ نافذة المعالج ──────────────────────────────────────
+
+  ⚠️ **مصيدةُ ترتيب القنوات**: `TColor` في Delphi هو `$00BBGGRR` لا `$00RRGGBB`
+     — أي **معكوسٌ** عن ترميز CSS الذي تُكتب به ألوانُ العلامة. فـ`#0250D3`
+     يصير `$00D35002` لا `$000250D3`. وكتابتُه بترتيب CSS تُنتج لوناً آخرَ
+     تماماً يمرُّ بلا خطأِ ترجمةٍ ولا يلاحظه أحدٌ إلّا بالعين.
+
+  والقيمُ مأخوذةٌ من `lib/core/theme/app_colors.dart` — نفسُ اللون الذي يراه
+  العميلُ في التطبيق بعد لحظات. }
+const
+  BrandDark  = $00582201;  { #012258 }
+  BrandMid   = $00D35002;  { #0250D3 }
+  BrandWhite = $00FFFFFF;
+
 var
   DownloadPage: TDownloadWizardPage;
   NeedVC, NeedPG: Boolean;
+
+{ يصبغ شريطَ الرأس بلون العلامة ويجعل نصَّه أبيض.
+
+  ⚠️ **الرأسُ وحدَه، لا الأزرار**: أزرارُ Inno عناصرُ Win32 أصليّةٌ ترسمها
+     ثيمةُ ويندوز، فضبطُ لونِ خلفيّتها يُقبَل بلا خطأٍ **ولا يُرسَم**. ومحاولةُ
+     رسمها يدويّاً تكسر حالاتِ التعطيل والتركيز. فنكتفي بما يُرسَم فعلاً.
+
+  ⚠️ **ونصبغ المقدّمةَ والخلفيّةَ معاً دائماً**: ضبطُ الخلفيّة وحدَها يُنتج
+     نصّاً أسودَ على أزرقَ غامقٍ في ثيمةٍ فاتحة، وأبيضَ على أبيضَ في الغامقة. }
+procedure ApplyBrandChrome();
+begin
+  WizardForm.MainPanel.Color := BrandDark;
+  WizardForm.PageNameLabel.Font.Color := BrandWhite;
+  WizardForm.PageDescriptionLabel.Font.Color := BrandWhite;
+  WizardForm.PageNameLabel.Font.Style := [fsBold];
+
+  { ⚠️ `Bevel1` هو الخطُّ الرماديُّ **تحت شريط الرأس**، و`Bevel` خطٌّ آخرُ فوق
+       صفِّ الأزرار في الأسفل. المطلوبُ إخفاءُ الأوّل وحدَه: خطٌّ رماديٌّ تحت
+       شريطٍ أزرقَ غامقٍ يقطعه، والثاني يفصل الأزرارَ ووجودُه صحيح. وخلطُهما
+       يُنتج نافذةً بلا فاصلٍ للأزرار وبخطٍّ نافرٍ تحت الرأس — عكسُ المقصود. }
+  WizardForm.Bevel1.Visible := False;
+
+  WizardForm.WelcomeLabel1.Font.Color := BrandDark;
+  WizardForm.WelcomeLabel1.Font.Style := [fsBold];
+  WizardForm.FinishedHeadingLabel.Font.Color := BrandDark;
+  WizardForm.FinishedHeadingLabel.Font.Style := [fsBold];
+end;
 
 { True if the VC++ 2015-2022 x64 runtime is already registered. }
 function VCRedistInstalled(): Boolean;
@@ -207,6 +301,23 @@ procedure InitializeWizard();
 begin
   DownloadPage := CreateDownloadPage(SetupMessage(msgWizardPreparing),
     ExpandConstant('{cm:PreparingReqs}'), nil);
+  ApplyBrandChrome();
+end;
+
+{ صفحةُ النهاية ليست نهايةً بل **عتبة**: ما انتهى هو تجهيزُ الملفّات، وإعدادُ
+  النظام يبدأ في معالج البدء داخلَ التطبيق. وبلا هذا النصّ يظنّ العميلُ أنّ
+  «تمّ التثبيت» تعني أنّ النظامَ جاهزٌ للعمل.
+
+  ⚠️ ويُضبَط في `CurPageChanged` لا في `[Messages]`: Inno يعيد بناءَ نصِّ هذه
+     الصفحة عند عرضها، فأيُّ ضبطٍ أبكرَ يُدهَس. }
+procedure CurPageChanged(CurPageID: Integer);
+begin
+  if CurPageID = wpFinished then
+  begin
+    WizardForm.FinishedHeadingLabel.Caption :=
+      ExpandConstant('{cm:FinishedHeading}');
+    WizardForm.FinishedLabel.Caption := ExpandConstant('{cm:FinishedLabel}');
+  end;
 end;
 
 { On the Ready page, download whatever prerequisites are needed. Fault-tolerant:

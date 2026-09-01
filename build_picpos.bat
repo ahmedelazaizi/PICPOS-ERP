@@ -26,9 +26,10 @@ set BRAND_ID=picpos
 set BRAND_BINARY_NAME=PicPos
 set BRAND_PRODUCT_NAME=PicPos
 REM The legal entity shown in the exe file properties and the copyright line.
-REM If PicPos is registered under a fuller name (e.g. "PicPos LLC" or an
-REM Arabic company name), put that exact registered form here - the copyright
-REM notice should carry the registered name, not the trade mark alone.
+REM Confirmed by the product owner 2026-09-01: the registered form is exactly
+REM "PicPos" - there is no fuller legal entity to carry here. Keep this in
+REM step with `Publisher` in installer\setup.iss; they are the same fact
+REM told to two different parts of Windows (file properties vs Add/Remove).
 set BRAND_COMPANY_NAME=PicPos
 set OUT_DIR=FlavorBuilds\PicPos
 

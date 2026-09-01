@@ -17,7 +17,7 @@ REM ======================================================================
 setlocal
 
 set BRAND_ID=picpos
-set ISS_FILE=installer\UralCash.iss
+set ISS_FILE=installer\setup.iss
 set ISCC="C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 
 echo ============================================

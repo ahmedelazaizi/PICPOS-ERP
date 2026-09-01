@@ -2,6 +2,28 @@
 # -*- coding: utf-8 -*-
 """Generate the Inno Setup wizard BMP images for one brand.
 
+   ⚠️ SUPERSEDED FOR PICPOS (2026-09-02) — use `tool/gen_installer_art.dart`:
+       flutter test tool/gen_installer_art.dart
+
+   Reasons, in order of weight:
+     1) Arabic. The LATIN WORDMARK note below is not a style choice, it is this
+        script working around a defect it cannot fix: PIL draws glyphs without
+        shaping or bidi. The Dart generator uses Flutter's text engine, which
+        shapes and reverses correctly, so the PicPos art now carries a real
+        Arabic tagline.
+     2) Font coverage. This script loads Cairo, which is missing 16 Arabic
+        presentation forms (including the isolated yeh U+FEF1) — measured and
+        documented at the font declarations in pubspec.yaml. The Dart generator
+        uses the complete NotoNaskhArabic.
+     3) Scaling. Inno 6 picks the wizard image by matching size to the display
+        scale. This script emits one size, so 150%/200% displays stretch it.
+        The Dart generator emits 100/125/150/200.
+     4) Python is not installed on the build machine; Flutter necessarily is.
+
+   Kept, not deleted, because UralCash's shipped art was produced here and
+   re-running for `uralcash` still reproduces it. Do NOT run it for `picpos`:
+   it would overwrite the four-size Arabic set with one stretched Latin image.
+
    Run: python installer/make_wizard_images.py [uralcash|picpos|all]
    (needs Pillow). Default: all.
 
