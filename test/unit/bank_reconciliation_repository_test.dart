@@ -247,12 +247,19 @@ void main() {
       statementBalance: 100,
     );
 
-    List<dynamic> openFor(List<dynamic> all, int acct) => all
-        .where((s) =>
-            s.bankAccountId == acct &&
-            s.status != 'completed' &&
-            (s.periodStart as DateTime).month == 5)
-        .toList();
+    // ⚠️ بالنوع الصريح لا `dynamic`: هذا ملفُّ اختبارٍ يستورد `database.dart`
+    //    أصلاً، فلا عذرَ للديناميكيّ — وأربعةُ `avoid_dynamic_calls` كانت
+    //    ترفع خطَّ أساس `analyze` من ٦ إلى ١٠ فتُحمِّر البوّابةَ كلَّها.
+    //    (الشاشةُ وحدَها مضطرّةٌ للديناميكيّ: حارسُ `presentation_db_import_guard`
+    //    يمنعها من استيراد `data/database`.)
+    List<BankReconciliationData> openFor(
+            List<BankReconciliationData> all, int acct) =>
+        all
+            .where((s) =>
+                s.bankAccountId == acct &&
+                s.status != 'completed' &&
+                s.periodStart.month == 5)
+            .toList();
 
     var sessions = await repo.getReconciliationSessions();
     expect(openFor(sessions, bankId).map((s) => s.id), [first],
