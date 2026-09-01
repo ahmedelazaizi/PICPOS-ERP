@@ -17,6 +17,7 @@ import '../../core/utils/uuid_v7.dart';
 import 'package:drift/drift.dart';
 import 'package:excel/excel.dart';
 import 'package:file_picker/file_picker.dart';
+import 'bank_statement_row.dart';
 
 /// Excel Import/Export Service for Products, Customers, Suppliers, and Purchase Invoices
 // ═══════════════════════════════════════════════════════════════════════════
@@ -116,6 +117,37 @@ CellValue reportCellValue(dynamic cell) {
   }
   return TextCellValue(cell.toString());
 }
+
+/// حصيلةُ تحليل صفوف قالب الكشف: ما يصلح للإدراج، وأسبابُ ما رُفض.
+class BankStatementRowsSummary {
+  const BankStatementRowsSummary(this.lines, this.errors);
+  final List<Map<String, dynamic>> lines;
+  final List<String> errors;
+}
+
+/// يحلّل صفوفَ ورقةِ الكشف. [skipRows] عددُ الصفوف العلويّة التي تُتخطّى
+/// (سطرُ الشرح ثمّ صفُّ الرؤوس = ٢ في القالب).
+///
+/// نقيّةٌ خارجَ الصنف كـ[reportCellValue] — تُقاس بلا ملفٍّ ولا قاعدة.
+BankStatementRowsSummary summarizeBankStatementRows(
+  List<List<dynamic>> rows, {
+  int skipRows = 0,
+}) {
+  final lines = <Map<String, dynamic>>[];
+  final errors = <String>[];
+  for (var i = skipRows; i < rows.length; i++) {
+    final r = parseBankStatementRow(rows[i]);
+    if (r.line != null) {
+      lines.add(r.line!);
+    } else {
+      errors.add('الصفُّ ${_arabicDigits(i + 1)}: ${r.error}');
+    }
+  }
+  return BankStatementRowsSummary(lines, errors);
+}
+
+String _arabicDigits(int n) =>
+    '$n'.replaceAllMapped(RegExp(r'\d'), (m) => '٠١٢٣٤٥٦٧٨٩'[int.parse(m[0]!)]);
 
 class ExcelService {
   final IProductRepository productRepo;
@@ -1076,6 +1108,60 @@ class ExcelService {
     } catch (e) {
       return null;
     }
+  }
+
+  /// قالبُ كشف البنك — خمسةُ أعمدةٍ وسطرُ شرحٍ فوقها.
+  ///
+  /// ⚠️ سطرُ الشرح **ليس زينة**: «مدين/دائن» من منظور البنك، والمحرّكُ
+  /// يقلبهما عند المطابقة. ومن يلصق عمودَيه معكوسَين لا يطابق شيئاً ولا
+  /// يعرف لماذا.
+  Future<String?> exportBankStatementTemplate() async {
+    try {
+      final excel = Excel.createExcel();
+      final sheet = excel['كشف البنك'];
+      if (excel.sheets.containsKey('Sheet1')) excel.delete('Sheet1');
+
+      sheet.appendRow([
+        TextCellValue('⚠️ «مدين» = خروجُ مالٍ من حسابك عند البنك · '
+            '«دائن» = دخولُه. الحركةُ في عمودٍ واحدٍ لا اثنين.'),
+      ]);
+      sheet.appendRow([
+        TextCellValue('التاريخ'),
+        TextCellValue('المرجع'),
+        TextCellValue('البيان'),
+        TextCellValue('مدين'),
+        TextCellValue('دائن'),
+      ]);
+      sheet.appendRow([
+        TextCellValue('2026-05-10'),
+        TextCellValue('REF-1'),
+        TextCellValue('إيداع نقدي'),
+        TextCellValue('0'),
+        TextCellValue('500'),
+      ]);
+
+      return await _saveExcel(excel, 'bank_statement_template');
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// يختار ملفَّ كشفٍ ويحلّله — **ولا يكتب في القاعدة**.
+  ///
+  /// ⚠️ **الكتابةُ على المُنادي عن قصد**: `ExcelService` يأخذ مستوداتٍ لا
+  /// قاعدة، وحقنُ `IAccountingRepository` فيه لأجل دالّةٍ واحدةٍ يوسّع
+  /// اعتمادَه على كلّ مُنشئيه. فيُعيد الحصيلةَ، وتكتبها الشاشةُ بالمستودع
+  /// الذي بيدها أصلاً.
+  ///
+  /// `null` = لم يُختَر ملفّ (إلغاءُ المستخدم) — وهو ليس خطأً.
+  Future<BankStatementRowsSummary?> pickAndParseBankStatement() async {
+    final file = await _pickFile();
+    if (file == null) return null;
+    final excel = Excel.decodeBytes(file);
+    final sheet = excel.tables[excel.tables.keys.first]!;
+    final rows =
+        sheet.rows.map((r) => r.map((c) => c?.value).toList()).toList();
+    return summarizeBankStatementRows(rows, skipRows: 2);
   }
 
   /// Import purchase invoices from Excel
