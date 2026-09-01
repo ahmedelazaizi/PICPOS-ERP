@@ -37,4 +37,29 @@ void main() {
     expect(r.lines, hasLength(1));
     expect(r.errors, isEmpty);
   });
+
+  test('🔴 الصفوفُ الفارغةُ في ذيل الملفّ تُتخطّى ولا تُعَدُّ أخطاءً', () {
+    final r = summarizeBankStatementRows([
+      [DateTime(2026, 5, 1), 'A', '', 0, 100],
+      [DateTime(2026, 5, 2), 'B', '', 50, 0],
+      [],
+      [null, null, null, null, null],
+    ]);
+
+    expect(r.lines, hasLength(2), reason: 'السطرانِ السليمانِ وحدَهما');
+    expect(r.errors, isEmpty, reason: 'الفراغُ ليس خطأً فيُتخطّى صامتاً');
+  });
+
+  test('🔴 صفٌّ فارغٌ لا يُزحزح ترقيمَ الصفِّ الذي يليه', () {
+    final r = summarizeBankStatementRows([
+      [DateTime(2026, 5, 1), 'A', '', 0, 100],
+      [],
+      ['تاريخٌ فاسد', 'B', '', 0, 50],
+    ]);
+
+    expect(r.lines, hasLength(1));
+    expect(r.errors, hasLength(1), reason: 'الفراغُ لا يُحتسَب خطأً');
+    expect(r.errors.first, contains('٣'),
+        reason: 'الصفُّ الفاسدُ هو الثالثُ فعليّاً رغم تخطّي الثاني الفارغ');
+  });
 }

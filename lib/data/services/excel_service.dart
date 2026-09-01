@@ -136,7 +136,9 @@ BankStatementRowsSummary summarizeBankStatementRows(
   final lines = <Map<String, dynamic>>[];
   final errors = <String>[];
   for (var i = skipRows; i < rows.length; i++) {
-    final r = parseBankStatementRow(rows[i]);
+    final row = rows[i];
+    if (row.isEmpty || row[0] == null) continue;
+    final r = parseBankStatementRow(row);
     if (r.line != null) {
       lines.add(r.line!);
     } else {
