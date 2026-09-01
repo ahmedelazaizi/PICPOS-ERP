@@ -566,10 +566,14 @@ git commit -m "feat(accounting): تحليلُ صفِّ كشف البنك — د�
 **Interfaces:**
 - Consumes: `parseBankStatementRow` من المهمّة ٢ ·
   `importBankStatementLines` من المهمّة ١.
-- Produces: على `ExcelService`:
-  `Future<String?> exportBankStatementTemplate()` و
-  `Future<ImportResult> importBankStatement(int bankAccountId)`
+- Produces: `BankStatementRowsSummary` (‏`lines` و`errors`) · وعلى
+  `ExcelService`: `Future<String?> exportBankStatementTemplate()` و
+  `Future<BankStatementRowsSummary?> pickAndParseBankStatement()`
   تستهلكهما المهمّةُ ٥.
+
+⚠️ **`ExcelService` يأخذ مستوداتٍ لا قاعدة** (‏`ExcelService(productRepo,
+partyRepo, branchRepo, purchasesRepo, {...})`)، فالتحليلُ وحدَه هنا
+والكتابةُ في الشاشة بـ`repo.importBankStatementLines` من المهمّة ١.
 
 - [ ] **Step 1: اكتب الاختبارَ الساقط**
 
@@ -719,55 +723,28 @@ flutter test test/unit/bank_statement_import_test.dart
     }
   }
 
-  /// يستورد كشفَ بنكٍ إلى [bankAccountId] من ملفٍّ يختاره المستخدم.
+  /// يختار ملفَّ كشفٍ ويحلّله — **ولا يكتب في القاعدة**.
   ///
-  /// يُبلّغ بعددَي المُدرَج والمرفوض — والمرفوضُ يُقال بسببه ورقمِ صفّه.
-  Future<ImportResult> importBankStatement(int bankAccountId) async {
-    try {
-      final file = await _pickFile();
-      if (file == null) {
-        return ImportResult(success: false, message: 'لم يتم اختيار ملف');
-      }
-      final excel = Excel.decodeBytes(file);
-      final sheet = excel.tables[excel.tables.keys.first]!;
-      final rows = sheet.rows
-          .map((r) => r.map((c) => c?.value).toList())
-          .toList();
-
-      final summary = summarizeBankStatementRows(rows, skipRows: 2);
-      if (summary.lines.isEmpty) {
-        return ImportResult(
-          success: false,
-          message: 'لا صفَّ صالحاً في الملف.\n${summary.errors.take(5).join('\n')}',
-          errors: summary.errors.length,
-        );
-      }
-
-      final batchId = UuidV7.generate();
-      final n = await db.importBankStatementLines(
-        bankAccountId: bankAccountId,
-        lines: summary.lines,
-        batchId: batchId,
-      );
-
-      return ImportResult(
-        success: true,
-        message: summary.errors.isEmpty
-            ? 'أُدرج $n سطراً'
-            : 'أُدرج $n سطراً · رُفض ${summary.errors.length}:\n'
-                '${summary.errors.take(5).join('\n')}',
-        imported: n,
-        errors: summary.errors.length,
-      );
-    } catch (e) {
-      return ImportResult(success: false, message: 'تعذّر الاستيراد: $e');
-    }
+  /// ⚠️ **الكتابةُ على المُنادي عن قصد**: `ExcelService` يأخذ مستوداتٍ لا
+  /// قاعدة، وحقنُ `IAccountingRepository` فيه لأجل دالّةٍ واحدةٍ يوسّع
+  /// اعتمادَه على كلّ مُنشئيه. فيُعيد الحصيلةَ، وتكتبها الشاشةُ بالمستودع
+  /// الذي بيدها أصلاً.
+  ///
+  /// `null` = لم يُختَر ملفّ (إلغاءُ المستخدم) — وهو ليس خطأً.
+  Future<BankStatementRowsSummary?> pickAndParseBankStatement() async {
+    final file = await _pickFile();
+    if (file == null) return null;
+    final excel = Excel.decodeBytes(file);
+    final sheet = excel.tables[excel.tables.keys.first]!;
+    final rows =
+        sheet.rows.map((r) => r.map((c) => c?.value).toList()).toList();
+    return summarizeBankStatementRows(rows, skipRows: 2);
   }
 ```
 
-⚠️ إن لم يكن لـ`ExcelService` حقلُ قاعدةٍ باسم `db`، فمرّر `AppDatabase`
-كوسيطٍ للدالّة بدل حقلٍ جديد — وافحص باقي المستوردات لترى النمطَ المتّبع
-قبل أن تختار.
+⚠️ **ولا `try/catch` يبتلع هنا**: ملفٌّ تالفٌ يجب أن يصل خبرُه المستخدمَ،
+والشاشةُ تلتقط الرمْيَ وتعرض نصَّه. (‏`importProducts` القديمةُ تبتلع — لا
+تنسخ ذلك.)
 
 - [ ] **Step 6: تحقّق من التحليل**
 
