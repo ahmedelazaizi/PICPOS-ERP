@@ -817,6 +817,57 @@ class DriftAccountingRepository implements IAccountingRepository {
       _db.completeReconciliation(reconciliationId);
 
   @override
+  Future<int> importBankStatementLines({
+    required int bankAccountId,
+    required List<Map<String, dynamic>> lines,
+    required String batchId,
+  }) =>
+      _db.importBankStatementLines(
+        bankAccountId: bankAccountId,
+        lines: lines,
+        batchId: batchId,
+      );
+
+  @override
+  Future<List<BankStatementLine>> getUnmatchedStatementLines(
+          int bankAccountId) =>
+      _db.getUnmatchedStatementLines(bankAccountId);
+
+  @override
+  Future<List<BankStatementLine>> getStatementLines({
+    required int bankAccountId,
+    required DateTime from,
+    required DateTime to,
+  }) =>
+      _db.getStatementLines(
+        bankAccountId: bankAccountId,
+        from: from,
+        to: to,
+      );
+
+  @override
+  Future<int> autoMatchStatementLines(int bankAccountId) =>
+      _db.autoMatchStatementLines(bankAccountId);
+
+  @override
+  Future<void> manualMatchStatement({
+    required int statementLineId,
+    required int journalLineId,
+  }) =>
+      _db.manualMatchStatement(
+        statementLineId: statementLineId,
+        journalLineId: journalLineId,
+      );
+
+  @override
+  Future<void> unmatchStatement(int statementLineId) =>
+      _db.unmatchStatement(statementLineId);
+
+  @override
+  Future<Map<String, dynamic>> getReconciliationReport(int reconciliationId) =>
+      _db.getReconciliationReport(reconciliationId);
+
+  @override
   Future<List<Map<String, dynamic>>> runComplianceAudit() =>
       _db.runComplianceAudit();
 

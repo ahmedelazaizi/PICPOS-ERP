@@ -242,6 +242,47 @@ abstract class IAccountingRepository {
   /// Complete a reconciliation
   Future<void> completeReconciliation(int reconciliationId);
 
+  // ⚠️ السبعُ أدناه كانت **محجوبةً**: المحرّكُ يحملها منذ البداية والمستودعُ
+  //    يكشف ثلاثاً، فبقيت المطابقةُ الفعليّةُ غيرَ مبلوغةٍ من أيّ شاشة.
+  //    ولا يُستثنى شيءٌ «لأنّه غيرُ مستعمَلٍ الآن» — ذلك عينُ ما أماتها.
+
+  /// يُدرج أسطرَ كشفٍ مستورَدة. كلُّ سطرٍ خريطةٌ بمفاتيح
+  /// `date` · `reference` · `description` · `debit` · `credit` · `balance`.
+  Future<int> importBankStatementLines({
+    required int bankAccountId,
+    required List<Map<String, dynamic>> lines,
+    required String batchId,
+  });
+
+  /// أسطرُ الكشف غيرُ المطابَقة لحسابٍ بنكيّ.
+  Future<List<BankStatementLine>> getUnmatchedStatementLines(int bankAccountId);
+
+  /// أسطرُ الكشف في مدىً — مطابَقةً كانت أو لا.
+  Future<List<BankStatementLine>> getStatementLines({
+    required int bankAccountId,
+    required DateTime from,
+    required DateTime to,
+  });
+
+  /// مطابقةٌ آليّةٌ بالمبلغ و±٣ أيّام. تعيد عددَ ما طوبق.
+  Future<int> autoMatchStatementLines(int bankAccountId);
+
+  /// مطابقةٌ يدويّة. **ترمي `StateError`** إن كان سطرُ القيد مطابَقاً سلفاً
+  /// لسطرِ كشفٍ آخر — والرسالةُ تسمّيه.
+  Future<void> manualMatchStatement({
+    required int statementLineId,
+    required int journalLineId,
+  });
+
+  /// نزعُ مطابقةِ سطرِ كشف.
+  Future<void> unmatchStatement(int statementLineId);
+
+  /// تقريرُ جلسةٍ: الأرصدةُ والفرقُ والمطابَقُ وغيرُ المطابَق من الجانبَين.
+  /// المفاتيح: `reconciliation` · `statementBalance` · `bookBalance` ·
+  /// `difference` · `matchedCount` · `unmatchedCount` · `matchedLines` ·
+  /// `unmatchedBankLines` · `outstandingBookEntries`.
+  Future<Map<String, dynamic>> getReconciliationReport(int reconciliationId);
+
   // --- Compliance & Workflows ---
   Future<List<Map<String, dynamic>>> runComplianceAudit();
   Future<List<dynamic>> getActiveWorkflows();
