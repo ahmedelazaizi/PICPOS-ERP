@@ -6,8 +6,8 @@
 // `_downloadTemplate` أدناه.
 
 // شاشةُ «المطابقة البنكية» بهويّة PicPos — المهمّةُ ٤ (الرأسُ والجلسةُ
-// والمؤشّرات) والمهمّةُ ٥ (الاستيرادُ والمطابقةُ الآليّة) معاً. القائمتان
-// المتجاورتان (٦) مهمّةٌ لاحقةٌ — لا يبنيهما هذا الملفّ.
+// والمؤشّرات) والمهمّةُ ٥ (الاستيرادُ والمطابقةُ الآليّة) والمهمّةُ ٦
+// (القائمتان المتجاورتان والمطابقةُ اليدويّةُ والنزعُ وإقفالُ الجلسة) معاً.
 //
 // ═══ العقدُ الذي تستهلكه هذه الشاشة ═══
 //
@@ -35,6 +35,7 @@ import '../../core/widgets/app_toast.dart';
 import '../../data/providers/providers.dart' show excelServiceProvider;
 import '../../data/providers/repository_providers.dart';
 import '../../domain/repositories/treasury_repository.dart' show SafeData;
+import '../picpos_shell/picpos_data_table.dart';
 import '../picpos_shell/picpos_empty_state.dart';
 import '../picpos_shell/picpos_hub_kpi.dart';
 import '../picpos_shell/picpos_option_picker.dart';
@@ -44,6 +45,7 @@ import '../picpos_shell/picpos_surface.dart';
 import '../picpos_shell/picpos_toolbar.dart';
 
 final _money = NumberFormat('#,##0.00', 'en');
+final _dateFmt = DateFormat('yyyy-MM-dd');
 
 /// يحوّل رقماً إلى أرقامٍ عربيّة — «طوبق ٣ سطراً» لا «طوبق 3 سطراً» (نفسُ
 /// نمط `_ar` في `analytics_picpos_screen.dart` و`_arabicDigits` في
@@ -138,8 +140,18 @@ class _BankReconciliationPicposScreenState
   // ⚠️ **مراجعة 2026-09-01، مأخذ ٣**: بلا هذا العلم، نقرتان متتاليتان على
   // «استيراد كشف» تفتحان مسارَين بدفعتَين مختلفتَين فتُدرَج الأسطرُ مرّتَين
   // بلا فحصِ تكرارٍ في المحرّك. نفسُ نمط `_creatingSession` أعلاه — علمٌ
-  // واحدٌ يعطّل الأزرارَ الثلاثةَ معاً أثناء أيٍّ منها.
+  // واحدٌ يعطّل الأزرارَ الثلاثةَ معاً أثناء أيٍّ منها. والمهمّةُ ٦ توسّعه
+  // ليغطّي أزرارَ «طابق» و«نزع» و«إقفال الجلسة» أيضاً — نداءٌ واحدٌ في
+  // كلِّ لحظة، لا تشابكَ مسارَين على نفس السطر.
   bool _actionBusy = false;
+
+  // ── المهمّةُ ٦: اختيارُ سطرٍ من كلّ قائمة تمهيداً للمطابقة اليدويّة ─────
+  //
+  // ⚠️ **اختيارٌ لا تظليلَ ودجت**: `PicPosDataTable` لا تحمل مفهومَ «صفٍّ
+  // مختار» (ممنوعُ تعديلها هنا). فحالةُ الاختيار تعيش في الشاشة، وتُشار
+  // إليها بصريّاً بتلوين خلايا الصفّ نفسِه (`tint`/`bold`) لا بلبنةٍ جاهزة.
+  int? _pickedStmtId;
+  int? _pickedJeLineId;
 
   @override
   void initState() {
@@ -580,37 +592,355 @@ class _BankReconciliationPicposScreenState
         final matched = data['matchedCount'] as int? ?? 0;
         final unmatched = data['unmatchedCount'] as int? ?? 0;
 
-        return PicPosHubKpiRow(items: [
-          PicPosHubKpi(
-            icon: PhosphorIconsBold.bookOpen,
-            label: 'رصيد الدفتر',
-            value: _money.format(bookBalance),
-            tint: AppColors.primary,
-          ),
-          PicPosHubKpi(
-            icon: PhosphorIconsBold.bank,
-            label: 'رصيد الكشف',
-            value: _money.format(statementBalance),
-            tint: AppColors.info,
-          ),
-          PicPosHubKpi(
-            icon: PhosphorIconsBold.scales,
-            label: 'الفرق',
-            value: _money.format(difference),
-            tint: difference == 0 ? AppColors.success : AppColors.error,
-          ),
-          PicPosHubKpi(
-            icon: PhosphorIconsBold.checkSquareOffset,
-            label: 'مطابَق / غير مطابَق',
-            value: '$matched / $unmatched',
-            tint: unmatched == 0 ? AppColors.success : AppColors.warning,
-          ),
-        ]);
+        // ⚠️ **`dynamic` عمداً — العقدُ قِيس لا خُمِّن.** `unmatchedBankLines`
+        // و`matchedLines` عناصرُ `BankStatementLine` (صفوفُ drift بحقولٍ
+        // مسمّاة)، و`outstandingBookEntries` عناصرُ `QueryRow` تُقرأ بـ
+        // `.data['...']`. والشاشةُ **ممنوعةٌ** من استيراد
+        // `data/database/database.dart` (حارسُ
+        // `presentation_db_import_guard_test.dart`) — فالوصولُ ديناميكيٌّ
+        // (`avoid_dynamic_calls` مُلغًى أعلى الملفّ لهذا بالضبط).
+        final unmatchedBankLines =
+            (data['unmatchedBankLines'] as List?) ?? const [];
+        final outstandingBookEntries =
+            (data['outstandingBookEntries'] as List?) ?? const [];
+        final matchedLines = (data['matchedLines'] as List?) ?? const [];
+
+        final canMatch = _pickedStmtId != null &&
+            _pickedJeLineId != null &&
+            !_actionBusy;
+
+        return ListView(
+          padding: const EdgeInsets.only(bottom: 16),
+          children: [
+            PicPosHubKpiRow(items: [
+              PicPosHubKpi(
+                icon: PhosphorIconsBold.bookOpen,
+                label: 'رصيد الدفتر',
+                value: _money.format(bookBalance),
+                tint: AppColors.primary,
+              ),
+              PicPosHubKpi(
+                icon: PhosphorIconsBold.bank,
+                label: 'رصيد الكشف',
+                value: _money.format(statementBalance),
+                tint: AppColors.info,
+              ),
+              PicPosHubKpi(
+                icon: PhosphorIconsBold.scales,
+                label: 'الفرق',
+                value: _money.format(difference),
+                tint: difference == 0 ? AppColors.success : AppColors.error,
+              ),
+              PicPosHubKpi(
+                icon: PhosphorIconsBold.checkSquareOffset,
+                label: 'مطابَق / غير مطابَق',
+                value: '$matched / $unmatched',
+                tint: unmatched == 0 ? AppColors.success : AppColors.warning,
+              ),
+            ]),
+            const SizedBox(height: 14),
+            _matchControlsBar(sessionId, difference, canMatch),
+            const SizedBox(height: 12),
+            // ⚠️ **١١٠٠ حدُّ الانقلاب** — نفسُ نمط `analytics_picpos_screen.dart`
+            // (`_trendTable`/`_seasonalityCard`): فوقَه قائمتان متجاورتان
+            // بعرضٍ متساوٍ، وتحته عمودٌ. القائمتان المتجاورتان أوّلُ ما
+            // ينهار ضيقاً — راجع تعليقَ `PicPosDataTable.minWidth` أدناه.
+            LayoutBuilder(builder: (context, box) {
+              final unmatchedTable =
+                  _unmatchedBankTable(unmatchedBankLines);
+              final outstandingTable =
+                  _outstandingBookTable(outstandingBookEntries);
+              if (box.maxWidth < 1100) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    unmatchedTable,
+                    const SizedBox(height: 12),
+                    outstandingTable,
+                  ],
+                );
+              }
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: unmatchedTable),
+                  const SizedBox(width: 12),
+                  Expanded(child: outstandingTable),
+                ],
+              );
+            }),
+            const SizedBox(height: 12),
+            _matchedTable(matchedLines),
+          ],
+        );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(
         child: Text('تعذّر حسابُ تقرير المطابقة: $e'),
       ),
     );
+  }
+
+  // ── شريطُ «طابق» و«إقفال الجلسة» ───────────────────────────────────────
+
+  Widget _matchControlsBar(int sessionId, double difference, bool canMatch) {
+    return Row(
+      children: [
+        ElevatedButton.icon(
+          onPressed: canMatch ? _manualMatch : null,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
+          ),
+          icon: const Icon(PhosphorIconsBold.linkSimple, size: 15),
+          label: const Text('طابق'),
+        ),
+        const Spacer(),
+        ElevatedButton.icon(
+          onPressed:
+              _actionBusy ? null : () => _confirmComplete(sessionId, difference),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.secondary,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
+          ),
+          icon: const Icon(PhosphorIconsBold.lockSimple, size: 15),
+          label: const Text('إقفال الجلسة'),
+        ),
+      ],
+    );
+  }
+
+  /// مطابقةٌ يدويّة: السطرُ المختارُ من الكشف ↔ القيدُ المختارُ من الدفتر.
+  ///
+  /// ⚠️ **الرمْيُ يُعرَض كما هو لا يُبتلَع في «تعذّرت العمليّة»**: المحرّكُ
+  /// يرمي `StateError` تسمّي سطرَ الكشف الآخرَ حين يكون القيدُ مطابَقاً
+  /// سلفاً — وهذا بالضبط ما يحتاجه المحاسبُ ليقرّر. ورسالةٌ عامّةٌ هنا
+  /// تُخفيه.
+  Future<void> _manualMatch() async {
+    final stmtId = _pickedStmtId;
+    final jeId = _pickedJeLineId;
+    if (stmtId == null || jeId == null) return;
+
+    setState(() => _actionBusy = true);
+    try {
+      final repo = ref.read(accountingRepositoryProvider);
+      await repo.manualMatchStatement(
+        statementLineId: stmtId,
+        journalLineId: jeId,
+      );
+      if (!mounted) return;
+      setState(() {
+        _pickedStmtId = null;
+        _pickedJeLineId = null;
+      });
+      final sessionId = _sessionId;
+      if (sessionId != null) {
+        ref.invalidate(_reconciliationReportProvider(sessionId));
+      }
+    } catch (e) {
+      if (!mounted) return;
+      AppToast.show(context, e is StateError ? e.message : '$e',
+          type: ToastType.error);
+    } finally {
+      if (mounted) setState(() => _actionBusy = false);
+    }
+  }
+
+  Future<void> _unmatch(int statementLineId) async {
+    setState(() => _actionBusy = true);
+    try {
+      final repo = ref.read(accountingRepositoryProvider);
+      await repo.unmatchStatement(statementLineId);
+      if (!mounted) return;
+      final sessionId = _sessionId;
+      if (sessionId != null) {
+        ref.invalidate(_reconciliationReportProvider(sessionId));
+      }
+    } catch (e) {
+      if (!mounted) return;
+      AppToast.show(context, 'تعذّر نزعُ المطابقة: $e', type: ToastType.error);
+    } finally {
+      if (mounted) setState(() => _actionBusy = false);
+    }
+  }
+
+  /// إقفالُ الجلسة يعمل **ولو بقي فرق** (قرارُ مالك: شيكاتٌ برسم التحصيل
+  /// فرقٌ مشروع) — فلا يُمنَع الزرُّ على فرقٍ غيرِ صفريّ، لكنّ حوارَ
+  /// التأكيد يعرض الفرقَ صراحةً كي يقرّر المحاسبُ بعين مفتوحة.
+  Future<void> _confirmComplete(int sessionId, double difference) async {
+    final proceed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: const Icon(PhosphorIconsBold.lockSimple),
+        title: const Text('إقفال جلسة المطابقة'),
+        content: Text(
+          'الفرقُ الحاليّ: ${_money.format(difference)}. إقفالُ الجلسة '
+          'يعمل ولو بقي فرقٌ (شيكاتٌ برسم التحصيل مثلاً) — متابعة؟',
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('إلغاء')),
+          ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('إقفال')),
+        ],
+      ),
+    );
+    if (proceed != true || !mounted) return;
+
+    setState(() => _actionBusy = true);
+    try {
+      final repo = ref.read(accountingRepositoryProvider);
+      await repo.completeReconciliation(sessionId);
+      if (!mounted) return;
+      AppToast.show(context, 'أُقفلت جلسةُ المطابقة', type: ToastType.success);
+      ref.invalidate(_reconciliationReportProvider(sessionId));
+    } catch (e) {
+      if (!mounted) return;
+      AppToast.show(context, 'تعذّر إقفالُ الجلسة: $e', type: ToastType.error);
+    } finally {
+      if (mounted) setState(() => _actionBusy = false);
+    }
+  }
+
+  // ── القوائمُ الثلاث ─────────────────────────────────────────────────────
+
+  /// سطرُ كشفٍ غيرُ مطابَق. `l.id`/`l.transactionDate`/`l.reference`/
+  /// `l.description`/`l.debitAmount`/`l.creditAmount` نداءٌ ديناميكيٌّ على
+  /// `BankStatementLine` (راجع تعليقَ العقد أعلى `_buildReport`).
+  Widget _unmatchedBankTable(List<dynamic> lines) {
+    return PicPosDataTable(
+      title: 'أسطرُ الكشف غيرُ المطابَقة',
+      subtitle: 'اختر سطراً هنا وقيداً من الدفتر ثمّ اضغط «طابق»',
+      // ⚠️ **ليس الافتراضَ ٧٦٠**: قائمتان متجاورتان عند ١٢٨٠ تنالان نحوَ
+      // ٦٢٠ لكلٍّ — والافتراضُ كان سيفتح تمريراً أفقيّاً داخل كلّ جدول
+      // بلا داعٍ. ٥٦٠ تحت ذلك الحدّ فلا تمريرَ عند ١٢٨٠.
+      minWidth: 560,
+      columns: const [
+        PicPosTableColumn('التاريخ', flex: 1.0),
+        PicPosTableColumn('المرجع', flex: 1.0),
+        PicPosTableColumn('البيان', flex: 1.6),
+        PicPosTableColumn('مدين', flex: 1.0, align: PicPosCellAlign.end),
+        PicPosTableColumn('دائن', flex: 1.0, align: PicPosCellAlign.end),
+      ],
+      emptyLabel: 'لا أسطرَ غيرَ مطابَقةٍ في الكشف',
+      rows: [for (final dynamic l in lines) _unmatchedBankRow(l)],
+    );
+  }
+
+  PicPosTableRow _unmatchedBankRow(dynamic l) {
+    final id = l.id as int;
+    final selected = id == _pickedStmtId;
+    final tint = selected ? AppColors.primary : null;
+    return PicPosTableRow(
+      onTap: () => setState(() => _pickedStmtId = selected ? null : id),
+      cells: [
+        PicPosTextCell(_dateFmt.format(l.transactionDate as DateTime),
+            tint: tint, bold: selected ? true : null),
+        PicPosTextCell((l.reference as String?) ?? '—',
+            tint: tint, bold: selected ? true : null),
+        PicPosTextCell((l.description as String?) ?? '—', tint: tint),
+        PicPosTextCell(_money.format((l.debitAmount as num).toDouble()),
+            tint: tint),
+        PicPosTextCell(_money.format((l.creditAmount as num).toDouble()),
+            tint: tint),
+      ],
+    );
+  }
+
+  /// قيدُ دفترٍ لم يظهر في الكشف بعد. عنصرُ `rows` هنا `QueryRow` من
+  /// `customSelect` — يُقرأ بـ`.data['...']` بأسماء أعمدة SQL الخامّة، لا
+  /// بحقولٍ مسمّاة (راجع تعليقَ العقد أعلى `_buildReport`).
+  Widget _outstandingBookTable(List<dynamic> rows) {
+    return PicPosDataTable(
+      title: 'قيودٌ في الدفتر لم تظهر في الكشف',
+      subtitle: 'اختر قيداً هنا وسطراً من الكشف ثمّ اضغط «طابق»',
+      minWidth: 480,
+      columns: const [
+        PicPosTableColumn('التاريخ', flex: 1.0),
+        PicPosTableColumn('البيان', flex: 2.0),
+        PicPosTableColumn('مدين', flex: 1.0, align: PicPosCellAlign.end),
+        PicPosTableColumn('دائن', flex: 1.0, align: PicPosCellAlign.end),
+      ],
+      emptyLabel: 'لا قيودَ معلَّقةً في الدفتر',
+      rows: [for (final dynamic r in rows) _outstandingBookRow(r)],
+    );
+  }
+
+  PicPosTableRow _outstandingBookRow(dynamic r) {
+    final id = (r.data['id'] as num).toInt();
+    final selected = id == _pickedJeLineId;
+    final tint = selected ? AppColors.primary : null;
+    return PicPosTableRow(
+      onTap: () => setState(() => _pickedJeLineId = selected ? null : id),
+      cells: [
+        PicPosTextCell(_fmtEntryDate(r.data['entry_date']),
+            tint: tint, bold: selected ? true : null),
+        PicPosTextCell((r.data['entry_desc'] as String?) ?? '—', tint: tint),
+        PicPosTextCell(
+            _money.format(((r.data['debit'] as num?) ?? 0).toDouble()),
+            tint: tint),
+        PicPosTextCell(
+            _money.format(((r.data['credit'] as num?) ?? 0).toDouble()),
+            tint: tint),
+      ],
+    );
+  }
+
+  /// أسطرُ الكشف المطابَقةُ سلفاً — كلٌّ منها قابلٌ للنزع.
+  Widget _matchedTable(List<dynamic> lines) {
+    return PicPosDataTable(
+      title: 'الأسطرُ المطابَقة',
+      columns: const [
+        PicPosTableColumn('التاريخ', flex: 1.0),
+        PicPosTableColumn('المرجع', flex: 1.0),
+        PicPosTableColumn('البيان', flex: 1.6),
+        PicPosTableColumn('مدين', flex: 1.0, align: PicPosCellAlign.end),
+        PicPosTableColumn('دائن', flex: 1.0, align: PicPosCellAlign.end),
+        PicPosTableColumn('إجراء', flex: 1.0),
+      ],
+      emptyLabel: 'لا أسطرَ مطابَقةً بعد',
+      rows: [for (final dynamic l in lines) _matchedRow(l)],
+    );
+  }
+
+  PicPosTableRow _matchedRow(dynamic l) {
+    final id = l.id as int;
+    return PicPosTableRow(
+      cells: [
+        PicPosTextCell(_dateFmt.format(l.transactionDate as DateTime)),
+        PicPosTextCell((l.reference as String?) ?? '—'),
+        PicPosTextCell((l.description as String?) ?? '—'),
+        PicPosTextCell(_money.format((l.debitAmount as num).toDouble())),
+        PicPosTextCell(_money.format((l.creditAmount as num).toDouble())),
+        PicPosButtonCell(
+          'نزع',
+          icon: PhosphorIconsBold.linkBreak,
+          tint: AppColors.error,
+          onPressed: _actionBusy ? null : () => _unmatch(id),
+        ),
+      ],
+    );
+  }
+
+  /// `outstandingBookEntries.data['entry_date']` قد يعود `String` أو رقماً
+  /// حسب المحرّك (تعليقُ العقد أعلى `_buildReport`) — فهذه لا تفترض
+  /// `DateTime` مطلقاً، وتعرض النصَّ الخامَ إن تعذّر التحليل بدل أن ترمي.
+  String _fmtEntryDate(dynamic raw) {
+    if (raw == null) return '—';
+    if (raw is DateTime) return _dateFmt.format(raw);
+    if (raw is String) {
+      final parsed = DateTime.tryParse(raw);
+      return parsed == null ? raw : _dateFmt.format(parsed);
+    }
+    return '$raw';
   }
 }

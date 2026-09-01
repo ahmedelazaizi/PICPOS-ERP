@@ -14,6 +14,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ural_erp/data/database/database.dart' as db;
 import 'package:ural_erp/data/providers/providers.dart' show excelServiceProvider;
 import 'package:ural_erp/data/providers/repository_providers.dart';
 import 'package:ural_erp/data/services/excel_service.dart' show BankStatementRowsSummary;
@@ -21,6 +22,14 @@ import 'package:ural_erp/domain/repositories/accounting_repository.dart';
 import 'package:ural_erp/domain/repositories/treasury_repository.dart';
 import 'package:ural_erp/presentation/accounting_picpos/bank_reconciliation_picpos_screen.dart';
 import 'package:ural_erp/presentation/picpos_shell/picpos_hub_kpi.dart';
+
+// ⚠️ **`db.BankStatementLine` هنا لا في الشاشة**: الشاشةُ تقرأ عناصرَ
+// القوائمِ الثلاثِ ديناميكيّاً (`avoid_dynamic_calls` مُلغًى فيها عمداً) —
+// فلا تستورد `data/database/database.dart` مطلقاً؛ حارسُ
+// `presentation_db_import_guard_test.dart` يمنع أيَّ ملفّ عرضٍ **جديد**
+// من ذلك، وهذا الملفُّ ليس في القائمة البيضاء. أمّا اختبارُ ودجتٍ فخارجَ
+// نطاق ذلك الحارس (يفحص `lib/presentation` فقط)، فاستيرادُ النوع الحقيقيّ
+// هنا آمنٌ ومطابقٌ لنمط ملفّاتٍ أخرى (`fixed_assets_picpos_screen_test.dart`).
 
 // نمطُ المزيَّفات من `test/widget/analytics_picpos_screen_test.dart`:
 // صنفٌ `implements` الواجهةَ، الدوالُّ المستعمَلةُ صريحةً بـ`@override`
@@ -52,6 +61,69 @@ class _FakeTreasury implements ITreasuryRepository {
       super.noSuchMethod(invocation);
 }
 
+/// شبيهٌ لصفّ `QueryRow` — يحمل `.data` فقط، وهو كلُّ ما تقرؤه الشاشةُ من
+/// `outstandingBookEntries` (نداءٌ ديناميكيّ). بناءُ `QueryRow` الحقيقيّ
+/// يحتاج `DatabaseConnectionUser` داخليّاً؛ وهذا الشبيهُ يغني عنه لأنّ
+/// الشاشةَ لا تستعمل من الصفّ غيرَ `.data['...']`.
+class _FakeQueryRow {
+  const _FakeQueryRow(this.data);
+  final Map<String, dynamic> data;
+}
+
+/// تقريرٌ افتراضيٌّ واقعيٌّ — سطرُ كشفٍ غيرُ مطابَقٍ (`REF-1`)، وقيدُ دفترٍ
+/// معلَّقٌ («قيد الإيداع»)، وسطرٌ مطابَقٌ سلفاً (لزرّ «نزع»). اختباراتُ
+/// المهمّة ٦ (القائمتان والمطابقةُ اليدويّة) تحتاج بياناتٍ حقيقيّةً في
+/// المفاتيح الثلاثة — لا قوائمَ فارغةً كسابقتها.
+Map<String, dynamic> _sampleReconciliationReport() => {
+      'reconciliation': null,
+      'statementBalance': 1000.0,
+      'bookBalance': 1000.0,
+      'difference': 0.0,
+      'matchedCount': 1,
+      'unmatchedCount': 1,
+      'matchedLines': <dynamic>[
+        db.BankStatementLine(
+          id: 10,
+          bankAccountId: 5,
+          transactionDate: DateTime(2026, 5, 9),
+          reference: 'REF-0',
+          description: 'إيداعٌ مطابَقٌ سلفاً',
+          debitAmount: 0,
+          creditAmount: 300,
+          runningBalance: 300,
+          isMatched: true,
+          matchedJournalLineId: 4,
+          matchType: 'manual',
+          createdAt: DateTime(2026, 5, 9),
+        ),
+      ],
+      'unmatchedBankLines': <dynamic>[
+        db.BankStatementLine(
+          id: 3,
+          bankAccountId: 5,
+          transactionDate: DateTime(2026, 5, 10),
+          reference: 'REF-1',
+          description: 'إيداع نقدي',
+          debitAmount: 0,
+          creditAmount: 500,
+          runningBalance: 800,
+          isMatched: false,
+          createdAt: DateTime(2026, 5, 10),
+        ),
+      ],
+      'outstandingBookEntries': <dynamic>[
+        const _FakeQueryRow({
+          'id': 7,
+          'entry_id': 1,
+          'account_id': 5,
+          'debit': 0.0,
+          'credit': 500.0,
+          'entry_date': '2026-05-10',
+          'entry_desc': 'قيد الإيداع',
+        }),
+      ],
+    };
+
 /// مزيَّفٌ يلتقط الحسابَ الذي وصله `createReconciliation`، ويعيد تقريراً
 /// قابلاً للتخصيص من `getReconciliationReport` — لقياسِ أنّ بطاقاتِ
 /// المؤشّرات تعرض **قيمَ الخريطة المزيَّفة** لا أرقاماً ثابتةً في الشاشة.
@@ -60,22 +132,21 @@ class _FakeAccounting implements IAccountingRepository {
     Map<String, dynamic>? report,
     this.sessionId = 1,
     this.autoMatchResult = 0,
-  }) : report = report ??
-            const {
-              'reconciliation': null,
-              'statementBalance': 1000.0,
-              'bookBalance': 1000.0,
-              'difference': 0.0,
-              'matchedCount': 0,
-              'unmatchedCount': 0,
-              'matchedLines': <dynamic>[],
-              'unmatchedBankLines': <dynamic>[],
-              'outstandingBookEntries': <dynamic>[],
-            };
+    this.manualMatchThrows,
+  }) : report = report ?? _sampleReconciliationReport();
 
   final Map<String, dynamic> report;
   final int sessionId;
   final int autoMatchResult;
+
+  /// إن وُضعت، يرميها `manualMatchStatement` بدل أن يسجّل — لقياس مطابقةٍ
+  /// مكرّرةٍ (المحرّكُ يرمي `StateError` تسمّي السطرَ الآخر).
+  ///
+  /// ⚠️ **`unmatchStatement`/`completeReconciliation` بلا نظيرٍ للرمي
+  /// عمداً**: لا اختبارَ في هذا الملفّ يقيس فشلَهما، وحقلٌ لا يُقرأ إلّا
+  /// من مكانٍ واحدٍ لن يُستدعى منه أبداً هو كودٌ ميّت يرصده `analyze`
+  /// (‏`unused_element_parameter`) — يُضاف حين يحتاجه اختبارٌ فعليّ.
+  final Object? manualMatchThrows;
 
   int? createdBankAccountId;
   double? createdStatementBalance;
@@ -84,6 +155,16 @@ class _FakeAccounting implements IAccountingRepository {
   int? importedBankAccountId;
   List<Map<String, dynamic>>? importedLines;
   String? importedBatchId;
+
+  int manualMatchCalls = 0;
+  int? manualMatchStatementLineId;
+  int? manualMatchJournalLineId;
+
+  int unmatchCalls = 0;
+  int? unmatchedStatementLineId;
+
+  int completeCalls = 0;
+  int? completedReconciliationId;
 
   @override
   Future<int> createReconciliation({
@@ -120,6 +201,30 @@ class _FakeAccounting implements IAccountingRepository {
     autoMatchCalls++;
     autoMatchedBankAccountId = bankAccountId;
     return autoMatchResult;
+  }
+
+  @override
+  Future<void> manualMatchStatement({
+    required int statementLineId,
+    required int journalLineId,
+  }) async {
+    manualMatchCalls++;
+    manualMatchStatementLineId = statementLineId;
+    manualMatchJournalLineId = journalLineId;
+    final throws = manualMatchThrows;
+    if (throws != null) throw throws;
+  }
+
+  @override
+  Future<void> unmatchStatement(int statementLineId) async {
+    unmatchCalls++;
+    unmatchedStatementLineId = statementLineId;
+  }
+
+  @override
+  Future<void> completeReconciliation(int reconciliationId) async {
+    completeCalls++;
+    completedReconciliationId = reconciliationId;
   }
 
   @override
@@ -164,6 +269,28 @@ Future<void> pump(WidgetTester tester, double width, {
       child: const MaterialApp(home: BankReconciliationPicposScreen()),
     ),
   );
+  await tester.pumpAndSettle();
+}
+
+/// يفتح جلسةَ مطابقةٍ فعليّةً عبر الواجهة نفسِها: يختار الخزنةَ من
+/// المنتقي، يكتب رصيدَ كشفٍ صالحاً، وينقر «جلسة جديدة». تُستعمَل فقط في
+/// اختبارات المهمّة ٦ الجديدة (القائمتان والمطابقةُ اليدويّة) — بقيّةُ
+/// اختبارات هذا الملفّ أقدمُ من هذه الدالّة وتكرّر خطواتِها صراحةً، فلا
+/// داعيَ لإعادة كتابتها.
+Future<void> openSession(
+  WidgetTester tester,
+  String safeLabel, {
+  String balance = '1000',
+}) async {
+  await tester.tap(find.text('اختر خزنة بنكية'));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text(safeLabel));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('تطبيق'));
+  await tester.pumpAndSettle();
+  await tester.enterText(find.byType(TextField), balance);
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('جلسة جديدة'));
   await tester.pumpAndSettle();
 }
 
@@ -500,6 +627,146 @@ void main() {
       reason: 'الرسالةُ تبنيها الشاشةُ من عددَي الإدراج والرفض وسببِه — لا '
           'رسالةٍ ثابتة',
     );
+
+    await tester.pump(const Duration(seconds: 4));
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // المهمّةُ ٦ — القائمتان المتجاورتان والمطابقةُ اليدويّةُ والنزع.
+  // ═══════════════════════════════════════════════════════════════════════
+
+  testWidgets('🔴 «طابق» تُعطَّل حتى يُختار سطرٌ من كلّ جانب', (tester) async {
+    await pump(tester, 1920,
+        safes: [_bankSafe(1, linked: 5, name: 'خزنة المطابقة اليدوية')]);
+    await openSession(tester, 'خزنة المطابقة اليدوية');
+
+    final btn = tester.widget<ElevatedButton>(
+        find.widgetWithText(ElevatedButton, 'طابق'));
+    expect(btn.onPressed, isNull, reason: 'بلا اختيارٍ لا مطابقة');
+
+    await tester.tap(find.text('REF-1'));
+    await tester.pump();
+    final half = tester.widget<ElevatedButton>(
+        find.widgetWithText(ElevatedButton, 'طابق'));
+    expect(half.onPressed, isNull, reason: 'جانبٌ واحدٌ لا يكفي');
+
+    await tester.tap(find.text('قيد الإيداع'));
+    await tester.pump();
+    final both = tester.widget<ElevatedButton>(
+        find.widgetWithText(ElevatedButton, 'طابق'));
+    expect(both.onPressed, isNotNull);
+  });
+
+  testWidgets('🔴 مطابقةٌ مكرّرةٌ تُعرَض رسالتُها لا تُبتلَع', (tester) async {
+    final accounting = _FakeAccounting(
+        manualMatchThrows: StateError(
+            'سطرُ القيد رقم 7 مطابَقٌ سلفاً لسطر الكشف رقم 3.'));
+    await pump(tester, 1920,
+        safes: [_bankSafe(1, linked: 5, name: 'خزنة التكرار')],
+        accounting: accounting);
+    await openSession(tester, 'خزنة التكرار');
+
+    await tester.tap(find.text('REF-1'));
+    await tester.tap(find.text('قيد الإيداع'));
+    await tester.pump();
+    await tester.tap(find.widgetWithText(ElevatedButton, 'طابق'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('مطابَقٌ سلفاً'), findsWidgets,
+        reason: 'نصُّ المحرّك يسمّي السطرَ الآخر — وهو ما يحتاجه المحاسب');
+
+    // ⚠️ مؤقّتُ `AppToast` ٢٥٠٠ms ثمّ ٣٠٠ms خروجاً — نفسُ نمط بقيّة
+    // اختبارات هذا الملفّ.
+    await tester.pump(const Duration(seconds: 4));
+  });
+
+  testWidgets('🔴 و«نزع» يُنادي المحرّك', (tester) async {
+    final accounting = _FakeAccounting();
+    await pump(tester, 1920,
+        safes: [_bankSafe(1, linked: 5, name: 'خزنة النزع')],
+        accounting: accounting);
+    await openSession(tester, 'خزنة النزع');
+
+    await tester.tap(find.text('نزع').first);
+    await tester.pumpAndSettle();
+
+    expect(accounting.unmatchCalls, 1);
+  });
+
+  // ⚠️ **القياسُ عند عرضَين إلزاميٌّ هنا تحديداً**: القائمتان المتجاورتان
+  // أوّلُ ما ينهار ضيقاً، وخمسةُ أعطابِ تخطيطٍ أُمسكت في هذا المستودع
+  // بقياس عرضَين. «لم تنهر» ليس قياساً وحدَه — فالتوكيدُ هنا هندسيٌّ:
+  // يقارن ارتفاعَ صفّ REF-1 (يمين) بارتفاع صفّ «قيد الإيداع» (يسار).
+  // متقاربان ⇒ صفّان في نفس السطر (`Row`)؛ متباعدان ⇒ عمودٌ (`Column`).
+  for (final width in [1280.0, 1920.0]) {
+    testWidgets(
+        '🔴 القائمتان جنباً إلى جنبٍ فوق ١١٠٠ عرضاً (${width.toInt()})',
+        (tester) async {
+      await pump(tester, width,
+          safes: [_bankSafe(1, linked: 5, name: 'خزنة القوائم المتجاورة')]);
+      await openSession(tester, 'خزنة القوائم المتجاورة');
+
+      expect(tester.takeException(), isNull);
+
+      final stmtY = tester.getTopLeft(find.text('REF-1')).dy;
+      final bookY = tester.getTopLeft(find.text('قيد الإيداع')).dy;
+      expect((stmtY - bookY).abs(), lessThan(20),
+          reason: 'عند ${width.toInt()} عرضاً يجب أن تكون القائمتان جنباً '
+              'إلى جنبٍ — صفّاهما الأوّلان على ارتفاعٍ متقارب، لا واحدةً '
+              'فوق الأخرى');
+    });
+  }
+
+  testWidgets('🔴 القائمتان تنقلبان عموداً تحت ١١٠٠ عرضاً', (tester) async {
+    await pump(tester, 900,
+        safes: [_bankSafe(1, linked: 5, name: 'خزنة القوائم الضيقة')]);
+    await openSession(tester, 'خزنة القوائم الضيقة');
+
+    expect(tester.takeException(), isNull);
+
+    final stmtY = tester.getTopLeft(find.text('REF-1')).dy;
+    final bookY = tester.getTopLeft(find.text('قيد الإيداع')).dy;
+    expect(bookY - stmtY, greaterThan(60),
+        reason: 'تحت ١١٠٠ عرضاً يجب أن ينقلب التخطيطُ عموداً — قائمةُ '
+            'الدفتر تحت قائمة الكشف لا بجانبها');
+  });
+
+  testWidgets('🔴 «إقفال الجلسة» يعرض الفرقَ في حوار التأكيد وينادي المحرّك',
+      (tester) async {
+    final accounting = _FakeAccounting(
+      report: const {
+        'reconciliation': null,
+        'statementBalance': 1049.75,
+        'bookBalance': 1000.0,
+        'difference': 49.75,
+        'matchedCount': 0,
+        'unmatchedCount': 0,
+        'matchedLines': <dynamic>[],
+        'unmatchedBankLines': <dynamic>[],
+        'outstandingBookEntries': <dynamic>[],
+      },
+    );
+    await pump(tester, 1920,
+        safes: [_bankSafe(1, linked: 5, name: 'خزنة الإقفال')],
+        accounting: accounting);
+    await openSession(tester, 'خزنة الإقفال');
+
+    await tester.tap(find.widgetWithText(ElevatedButton, 'إقفال الجلسة'));
+    await tester.pumpAndSettle();
+
+    // ⚠️ الفرقُ هنا ٤٩٫٧٥ لا صفر — والحوارُ يجب أن يعرضه صراحةً (قرارُ
+    // مالك: إقفالٌ بفرقٍ مشروعٍ كالشيكات برسم التحصيل يعمل، والمحاسبُ
+    // يقرّر بعينٍ مفتوحة).
+    expect(find.textContaining('49.75'), findsWidgets,
+        reason: 'حوارُ التأكيد يعرض الفرقَ صراحةً');
+
+    await tester.tap(find.text('إقفال'));
+    await tester.pumpAndSettle();
+
+    expect(accounting.completeCalls, 1);
+    expect(accounting.completedReconciliationId, accounting.sessionId);
+    expect(find.textContaining('أُقفلت'), findsOneWidget,
+        reason: 'نجاحُ الإقفال يُقال — لا صمتَ');
 
     await tester.pump(const Duration(seconds: 4));
   });
