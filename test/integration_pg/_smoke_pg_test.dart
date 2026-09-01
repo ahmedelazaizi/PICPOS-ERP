@@ -13,6 +13,7 @@
 library;
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ural_erp/data/database/database.dart';
 
 import '_support/pg_fixture.dart';
 
@@ -34,9 +35,19 @@ void main() {
       expect(result.first.data['n'], equals(1));
     });
 
+    // ⚠️ **الفراغُ لم يعد العقد** — والغرضُ المُعلَن هو «إثباتُ أنّ الهجرة
+    //    عملت» لا خلوُّ الجدول.
+    //
+    //    كان بذرُ الإقلاع كلُّه يموت صامتاً على PostgreSQL: كلُّ SQL خامٍّ
+    //    بوسائطَ داخلَ `beforeOpen` يصل بعلامةِ `?` غيرِ مترجَمةٍ فيرمي 42601،
+    //    والرمْيُ مبتلَع. فكان الجدولُ يخرج فارغاً — بينما SQLite تبذر مديرَ
+    //    النظام وشجرةَ الحسابات. وهذا الفحصُ كان **يوثّق العطبَ** لا يحرس شيئاً.
+    //
+    //    فالمقيسُ الآن قابليّةُ الاستعلام وحدَها، والحراسةُ على البذر نفسِه في
+    //    `pg_startup_permission_sync_pg_test`.
     test('users table is queryable (proves Drift migration ran)', () async {
       final users = await fx.db.select(fx.db.users).get();
-      expect(users, isEmpty);
+      expect(users, isA<List<User>>());
     });
 
     test('shifts table is queryable (US3 Bug B prerequisite)', () async {

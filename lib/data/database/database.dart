@@ -11,6 +11,7 @@ import 'package:flutter/foundation.dart';
 // Import treasury_repository.dart for DAO types (SafeData, TreasurySummaryData, etc.)
 import '../../domain/repositories/treasury_repository.dart';
 import 'connection.dart';
+import 'pg_compat_sql.dart';
 import 'wal_checkpoint.dart';
 import '../../services/security_service.dart';
 import '../../domain/models/quick_sale_policy.dart'
@@ -821,6 +822,61 @@ class AppDatabase extends _$AppDatabase {
         _txDepth--;
       }
     }, requireNew: requireNew);
+  }
+
+  // ───────────────────────────────────────────────────────────────────────
+  // 🔴 توافقُ PostgreSQL في مسار الإقلاع — `beforeOpen` يتخطّى المُعترِض
+  // ───────────────────────────────────────────────────────────────────────
+  //
+  // الاتصالُ بـPostgreSQL يُلفّ بـ`_PgCompatInterceptor`
+  // (`connection_io.dart`: ‏`PgDatabase(...).interceptWith(...)`) وهو يترجم
+  // كلَّ SQL خامّ: ‏`strftime` و`julianday` و`GROUP_CONCAT` و**علامةَ
+  // الاستفهام** `? → $1, $2, …` (‏`PgCompatSql.fixSql` خطوة ١٠).
+  //
+  // ⚠️ **لكنّ ما يعمل داخلَ `beforeOpen` لا يمرُّ بالمُعترِض.** مقيسٌ في سياق
+  // الإقلاع نفسِه على PostgreSQL حيّة:
+  //
+  //     SELECT ?  AS a   ⇒ 42601: syntax error at or near "AS"
+  //     SELECT $1 AS a   ⇒ يعمل
+  //
+  // ونفسُ الجملتين خارجَ الإقلاع تعملان — فالفارقُ السياقُ لا الجملة.
+  //
+  // والأثرُ المقيس: `syncAllPermissions` تموت عند **أوّل** إدراج، ومعها
+  // `grantMissingDefaults` (أوّلُ سطرٍ فيها ينادي الأولى). وكلاهما مبتلَعٌ في
+  // `catch` يطبع سطراً ويمضي. فعلى خادم PostgreSQL: التنصيبُ الأوّلُ سليمٌ
+  // (معالجُ البدء خارجَ `beforeOpen`)، لكنّ **أيَّ صلاحيّةٍ تضيفها نسخةٌ لاحقةٌ
+  // لا تصل القاعدةَ أبداً** ولا تُمنَح لمدير النظام.
+  //
+  // فالترجمةُ تُطبَّق هنا كذلك — عند المصدر لا عند المُعترِض وحدَه. والدالّتان
+  // **مُتحايدتان**: `fixSql` محروسةٌ بـ`contains('?')` ولا تلمس شيئاً بعد
+  // الترجمة، و`fixArgs` لا تمسّ إلّا `DateTime`. فمرورُهما ثانيةً عبر
+  // المُعترِض بلا أثرٍ ولا كلفةٍ تُذكر.
+  //
+  // ⚠️ وسابقةٌ مسجَّلةٌ في `pg_compat_sql.dart` نفسِه (2026-04-28): عطبٌ بنفس
+  // رمز `42601` سببُه أنّ الترجمةَ لم تقع. فهذه هي الطبقةُ الصحيحة.
+
+  @override
+  Future<void> customStatement(String statement, [List<dynamic>? args]) {
+    if (!_isPostgres) return super.customStatement(statement, args);
+    return super.customStatement(
+      PgCompatSql.fixSql(statement),
+      args == null ? null : PgCompatSql.fixArgs(args),
+    );
+  }
+
+  @override
+  Selectable<QueryRow> customSelect(
+    String query, {
+    List<Variable> variables = const [],
+    Set<ResultSetImplementation> readsFrom = const {},
+  }) {
+    // المتغيّراتُ تبقى كما هي — الترتيبُ الموضعيُّ نفسُه، و`fixSql` ترقّم
+    // العلاماتِ من اليسار لليمين فتبقى المطابقةُ صحيحة.
+    return super.customSelect(
+      _isPostgres ? PgCompatSql.fixSql(query) : query,
+      variables: variables,
+      readsFrom: readsFrom,
+    );
   }
 
   /// Lazy accessor for the Audit Dashboard DAO

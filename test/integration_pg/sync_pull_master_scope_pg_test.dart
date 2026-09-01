@@ -35,6 +35,12 @@ void main() {
     await fx.db.delete(fx.db.safes).go();
     await fx.db.delete(fx.db.userBranchAccess).go();
     await fx.db.delete(fx.db.users).go();
+    // ⚠️ **قبل `roles`**: `role_permissions` تشير إليها، وPostgreSQL ينفّذ
+    //    الـFK. وكان هذا السطرُ غائباً ويمرُّ التنظيفُ رغم ذلك — لأنّ
+    //    `syncAllPermissions` كانت تموت صامتةً في الإقلاع فيبقى الجدولُ
+    //    **فارغاً**. فلمّا صحّت المزامنةُ انكشف النقص. والنمطُ الصحيحُ قائمٌ
+    //    في `users_endpoint_pg_test` منذ البداية.
+    await fx.db.delete(fx.db.rolePermissions).go();
     await fx.db.delete(fx.db.roles).go();
     await fx.db.delete(fx.db.branches).go();
 
