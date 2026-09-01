@@ -18,6 +18,7 @@ import 'package:drift/drift.dart';
 import 'package:excel/excel.dart';
 import 'package:file_picker/file_picker.dart';
 import 'bank_statement_row.dart';
+import 'numeric_cell_text.dart';
 
 /// Excel Import/Export Service for Products, Customers, Suppliers, and Purchase Invoices
 // ═══════════════════════════════════════════════════════════════════════════
@@ -125,6 +126,47 @@ class BankStatementRowsSummary {
   final List<String> errors;
 }
 
+/// صفوفُ قالب كشف البنك: سطرُ الشرح ثمّ صفُّ الرؤوس — **صفّان لا ثلاثة**.
+///
+/// ⚠️ **ولا صفَّ مثالٍ فيه** (مراجعةٌ 2026-09-01، مأخذ ٤): كان القالبُ يحمل
+/// صفّاً ثالثاً `2026-05-10 · REF-1 · إيداع نقدي · 0 · 500`، و
+/// [ExcelService.pickAndParseBankStatement] تتخطّى **صفّين** فقط. فمن ملأ
+/// القالبَ دون أن يحذف المثالَ بيده أدرج سطرَ كشفٍ ملفَّقاً بـ٥٠٠ دائن —
+/// قابلاً لأن تلتقطه المطابقةُ الآليّة فتربطه بقيدٍ حقيقيّ. وبقيّةُ قوالب
+/// المستودع (‏`exportProductsTemplate`) بلا صفِّ مثالٍ إطلاقاً.
+///
+/// ⚠️ **ونقيّةٌ خارجَ الصنف عن قصد**: هذا ما يجعل مرساةَ «القالبُ يمرّ
+/// بالمحلِّل» ممكنةً بلا كتابةِ ملفٍّ ولا منتقي ملفّات — ولم يكن في المستودع
+/// اختبارٌ **واحدٌ** يصل القالبَ بالمحلِّل، وهو عينُ الفجوة التي مرَّ منها
+/// صفُّ المثال.
+List<List<CellValue>> bankStatementTemplateRows() => [
+      [
+        TextCellValue('⚠️ «مدين» = خروجُ مالٍ من حسابك عند البنك · '
+            '«دائن» = دخولُه. الحركةُ في عمودٍ واحدٍ لا اثنين.'),
+      ],
+      [
+        TextCellValue('التاريخ'),
+        TextCellValue('المرجع'),
+        TextCellValue('البيان'),
+        TextCellValue('مدين'),
+        TextCellValue('دائن'),
+      ],
+    ];
+
+/// عددُ الصفوف العلويّةِ التي **ليست بياناتٍ** في ملفّ الكشف: سطرُ الشرح ثمّ
+/// صفُّ الرؤوس.
+///
+/// ⚠️ **ثابتٌ لا مشتقٌّ من `bankStatementTemplateRows().length`** — وهذه
+/// تجربةٌ لا رأي: جرّبتُ اشتقاقَه، فأعادةُ صفِّ المثال إلى القالب رفعت العددَ
+/// إلى ٣ فتخطّاه المحلِّلُ، **ومرَّ اختبارُ المرساة أخضرَ على العطب نفسِه**.
+/// والاشتقاقُ خطأٌ في الجوهر لا في القياس فقط: لو حمل القالبُ صفَّ مثالٍ
+/// وحذفه المحاسبُ — وهو ما يفعله كلُّ من يملأ قالباً — لابتُلع **أوّلُ سطرٍ
+/// حقيقيٍّ** له بصمت.
+///
+/// فالرقمُ عقدٌ ثابت، و[bankStatementTemplateRows] تُقاس عليه في
+/// `test/unit/bank_statement_import_test.dart`: طولُها يجب أن يساويَه.
+const int bankStatementTemplateSkipRows = 2;
+
 /// يحلّل صفوفَ ورقةِ الكشف. [skipRows] عددُ الصفوف العلويّة التي تُتخطّى
 /// (سطرُ الشرح ثمّ صفُّ الرؤوس = ٢ في القالب).
 ///
@@ -137,7 +179,13 @@ BankStatementRowsSummary summarizeBankStatementRows(
   final errors = <String>[];
   for (var i = skipRows; i < rows.length; i++) {
     final row = rows[i];
-    if (row.isEmpty || row[0] == null) continue;
+    // ⚠️ **الفارغُ كلُّه يُتخطّى — لا ذو العمود الأوّل الفارغ** (مراجعةٌ
+    // 2026-09-01، مأخذ ٨): كان الشرطُ `row[0] == null`، فصفٌّ بتاريخٍ فارغٍ
+    // وبقيّةِ الأعمدةِ مملوءةً (‏مرجعٌ وبيانٌ ومبلغ) يُبتلَع «فراغاً» بدل أن
+    // يُقال عنه «التاريخُ غيرُ مقروء» — حركةٌ بنكيّةٌ تختفي من الاستيراد بلا
+    // سببٍ يظهر للمحاسب. والترقيمُ لا يتغيّر: العدّادُ `i` يمشي على الصفوف
+    // كلِّها كما كان.
+    if (row.every((c) => c == null || c.toString().trim().isEmpty)) continue;
     final r = parseBankStatementRow(row);
     if (r.line != null) {
       lines.add(r.line!);
@@ -1123,24 +1171,9 @@ class ExcelService {
       final sheet = excel['كشف البنك'];
       if (excel.sheets.containsKey('Sheet1')) excel.delete('Sheet1');
 
-      sheet.appendRow([
-        TextCellValue('⚠️ «مدين» = خروجُ مالٍ من حسابك عند البنك · '
-            '«دائن» = دخولُه. الحركةُ في عمودٍ واحدٍ لا اثنين.'),
-      ]);
-      sheet.appendRow([
-        TextCellValue('التاريخ'),
-        TextCellValue('المرجع'),
-        TextCellValue('البيان'),
-        TextCellValue('مدين'),
-        TextCellValue('دائن'),
-      ]);
-      sheet.appendRow([
-        TextCellValue('2026-05-10'),
-        TextCellValue('REF-1'),
-        TextCellValue('إيداع نقدي'),
-        TextCellValue('0'),
-        TextCellValue('500'),
-      ]);
+      for (final row in bankStatementTemplateRows()) {
+        sheet.appendRow(row);
+      }
 
       return await _saveExcel(excel, 'bank_statement_template');
     } catch (e) {
@@ -1163,7 +1196,8 @@ class ExcelService {
     final sheet = excel.tables[excel.tables.keys.first]!;
     final rows =
         sheet.rows.map((r) => r.map((c) => c?.value).toList()).toList();
-    return summarizeBankStatementRows(rows, skipRows: 2);
+    return summarizeBankStatementRows(rows,
+        skipRows: bankStatementTemplateSkipRows);
   }
 
   /// Import purchase invoices from Excel
@@ -1526,69 +1560,15 @@ class ExcelService {
 
   /// Normalise a human-typed numeric string (Arabic digits, grouping
   /// separators, currency text, European decimals) into a Dart double.
+  ///
+  /// ⚠️ **الجسمُ انتقل إلى [normalizeNumericCellText]** في
+  /// `numeric_cell_text.dart` كي يستعملَه محلِّلُ صفوفِ كشفِ البنك أيضاً:
+  /// كان `_asAmount` هناك يجرّد الفاصلةَ بلا فحصِ موضعٍ، فـ`"1500,50"`
+  /// تصير `150050` — مئةَ ضعفٍ في مبلغِ كلِّ سطرِ كشف. والواجهةُ هنا باقيةٌ
+  /// كما هي: لها مُنادُوها ولها `test/unit/excel_numeric_parse_test.dart`.
   @visibleForTesting
-  static num? normalizeNumericString(String input) {
-    var s = input.trim();
-    if (s.isEmpty) return null;
-    // 1) Map Arabic-Indic + Extended Arabic-Indic digits and separators.
-    final sb = StringBuffer();
-    for (final r in s.runes) {
-      if (r >= 0x0660 && r <= 0x0669) {
-        sb.writeCharCode(0x30 + (r - 0x0660)); // ٠-٩ → 0-9
-      } else if (r >= 0x06F0 && r <= 0x06F9) {
-        sb.writeCharCode(0x30 + (r - 0x06F0)); // ۰-۹ → 0-9
-      } else if (r == 0x066B) {
-        sb.write('.'); // Arabic decimal separator ٫
-      } else if (r == 0x066C || r == 0x00A0 || r == 0x2009 || r == 0x202F) {
-        // Arabic thousands ٬, NBSP, thin/narrow spaces → drop (grouping)
-      } else {
-        sb.writeCharCode(r);
-      }
-    }
-    s = sb.toString();
-    // 2) Strip known currency notations (symbols + common AR/EN abbreviations)
-    //    and grouping whitespace — but NOT arbitrary letters/operators, so a
-    //    formula or typo is rejected (step 3) instead of being mined for digits
-    //    (e.g. "B2*1.1" must NOT become 21.1).
-    const currencyTokens = [
-      'ج.م.', 'ج.م', 'جنيه', 'ر.س', 'ريال', 'د.ك', 'دينار', 'درهم',
-      'د.إ', 'د.ل', 'ل.س', 'ل.ل', 'egp', 'usd', 'sar', 'aed', 'kwd', 'le',
-    ];
-    var t = s.toLowerCase();
-    for (final tok in currencyTokens) {
-      t = t.replaceAll(tok, '');
-    }
-    t = t
-        .replaceAll(RegExp(r'[\s   ]'), '') // any leftover spaces
-        .replaceAll(RegExp(r'[$€£¥₺﷼%]'), ''); // currency symbols / percent
-    if (t.isEmpty) return null;
-    // 3) Reject anything that is not a bare (optionally grouped/signed) number —
-    //    this is what keeps formulas ("=SUM(..)", "B2*1.1") and typos out.
-    if (!RegExp(r'^[+-]?[0-9.,]+([eE][+-]?[0-9]+)?$').hasMatch(t)) return null;
-    s = t;
-    if (s == '-' || s == '+') return null;
-    // 4) Resolve dot vs comma. When both appear, the LAST one is the decimal
-    //    mark (covers both "1,234.56" and "1.234,56"); the other is grouping.
-    final hasDot = s.contains('.');
-    final hasComma = s.contains(',');
-    if (hasDot && hasComma) {
-      if (s.lastIndexOf(',') > s.lastIndexOf('.')) {
-        s = s.replaceAll('.', '').replaceAll(',', '.'); // European
-      } else {
-        s = s.replaceAll(',', ''); // English grouping
-      }
-    } else if (hasComma) {
-      final parts = s.split(',');
-      // single comma with non-3-digit tail = decimal comma (e.g. "12,5");
-      // otherwise treat commas as thousands grouping.
-      if (parts.length == 2 && parts[1].length != 3) {
-        s = '${parts[0]}.${parts[1]}';
-      } else {
-        s = s.replaceAll(',', '');
-      }
-    }
-    return double.tryParse(s);
-  }
+  static num? normalizeNumericString(String input) =>
+      normalizeNumericCellText(input);
 
   bool _parseBool(dynamic value) {
     if (value == null) return false;
