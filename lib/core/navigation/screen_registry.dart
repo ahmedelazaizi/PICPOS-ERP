@@ -230,6 +230,7 @@ class ScreenRegistry {
     ScreenId.commercialPapers,
     ScreenId.fixedAssets,
     ScreenId.generalLedger,
+    ScreenId.bankReconciliation,
     ScreenId.salesOrders,
     ScreenId.stockRequisitions,
     ScreenId.branchPerformance,

@@ -918,6 +918,8 @@ const screenPermissionMap = <ScreenId, String>{
   // (‏ميزانُ المراجعة/القوائمُ المالية) يحرسه 'reports_view' داخلَ الحاوية،
   // فلا يوسّع دخولُها دائرةَ مَن يرى القوائمَ المالية.
   ScreenId.accountingHub: 'settings_view',
+  // نفسُ صلاحيّة الحاوية وستٍّ من تبويباتها — والحارسُ يشترط التطابق.
+  ScreenId.bankReconciliation: 'settings_view',
   ScreenId.shiftClose: PermissionCodes.posShiftClose,
   // حسمُ القوالب: قراءةُ إعدادِ طباعةٍ وتشخيصُه، فصلاحيّتُه صلاحيةُ الطابعات
   // نفسُها. و`settings_view` كان سيوسّع الدائرةَ لكلِّ من يرى الإعدادات.

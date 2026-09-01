@@ -8,6 +8,7 @@ import '../../data/providers/auth_providers.dart';
 import '../picpos_shell/picpos_empty_state.dart';
 import '../widgets/auth/security_gate_wrapper.dart';
 import 'account_mapping_picpos_screen.dart';
+import 'bank_reconciliation_picpos_screen.dart';
 import 'chart_of_accounts_picpos_screen.dart';
 import 'cost_centers_picpos_screen.dart';
 import 'financial_statements_picpos_screen.dart';
@@ -54,7 +55,15 @@ enum AccountingTab {
   /// فاختار المالكُ شريحةً ثامنةً على إخراجها إلى مدخلٍ مستقلّ: المدخلُ
   /// يبقى واحداً، والتبويبُ داخلَ التبويب يزول.
   fs('القوائم المالية', PhosphorIconsBold.chartLineUp, 'reports_view',
-      ScreenId.financialStatements);
+      ScreenId.financialStatements),
+
+  /// تاسعٌ لا يعرفه التصميم — قرارُ مالك 2026-09-01.
+  ///
+  /// المحرّكُ كان جاهزاً والمستودعُ يحجبه، والشاشةُ القديمةُ محاكاةً بحوارَين
+  /// كاذبَين. والبديلُ مدخلٌ جانبيٌّ عاشرٌ في مجموعةٍ فيها تسعةٌ — فاختير
+  /// إبقاءُ المدخل واحداً.
+  bank('المطابقة البنكية', PhosphorIconsBold.bank, 'settings_view',
+      ScreenId.bankReconciliation);
 
   const AccountingTab(this.label, this.icon, this.permission, this.screenId);
 
@@ -102,6 +111,7 @@ enum AccountingTab {
             //    القصدَ خلف ارتداد.
             initialTabIndex: 1,
           ),
+        AccountingTab.bank => const BankReconciliationPicposScreen(),
       };
 }
 
