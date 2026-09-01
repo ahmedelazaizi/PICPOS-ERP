@@ -14,7 +14,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ural_erp/data/providers/providers.dart' show excelServiceProvider;
 import 'package:ural_erp/data/providers/repository_providers.dart';
+import 'package:ural_erp/data/services/excel_service.dart' show BankStatementRowsSummary;
 import 'package:ural_erp/domain/repositories/accounting_repository.dart';
 import 'package:ural_erp/domain/repositories/treasury_repository.dart';
 import 'package:ural_erp/presentation/accounting_picpos/bank_reconciliation_picpos_screen.dart';
@@ -54,8 +56,11 @@ class _FakeTreasury implements ITreasuryRepository {
 /// قابلاً للتخصيص من `getReconciliationReport` — لقياسِ أنّ بطاقاتِ
 /// المؤشّرات تعرض **قيمَ الخريطة المزيَّفة** لا أرقاماً ثابتةً في الشاشة.
 class _FakeAccounting implements IAccountingRepository {
-  _FakeAccounting({Map<String, dynamic>? report, this.sessionId = 1})
-      : report = report ??
+  _FakeAccounting({
+    Map<String, dynamic>? report,
+    this.sessionId = 1,
+    this.autoMatchResult = 0,
+  }) : report = report ??
             const {
               'reconciliation': null,
               'statementBalance': 1000.0,
@@ -70,9 +75,14 @@ class _FakeAccounting implements IAccountingRepository {
 
   final Map<String, dynamic> report;
   final int sessionId;
+  final int autoMatchResult;
 
   int? createdBankAccountId;
   double? createdStatementBalance;
+  int autoMatchCalls = 0;
+  int? autoMatchedBankAccountId;
+  int? importedBankAccountId;
+  List<Map<String, dynamic>>? importedLines;
 
   @override
   Future<int> createReconciliation({
@@ -93,13 +103,49 @@ class _FakeAccounting implements IAccountingRepository {
       report;
 
   @override
+  Future<int> importBankStatementLines({
+    required int bankAccountId,
+    required List<Map<String, dynamic>> lines,
+    required String batchId,
+  }) async {
+    importedBankAccountId = bankAccountId;
+    importedLines = lines;
+    return lines.length;
+  }
+
+  @override
+  Future<int> autoMatchStatementLines(int bankAccountId) async {
+    autoMatchCalls++;
+    autoMatchedBankAccountId = bankAccountId;
+    return autoMatchResult;
+  }
+
+  @override
   dynamic noSuchMethod(Invocation invocation) =>
       super.noSuchMethod(invocation);
+}
+
+/// مزيَّفُ `ExcelService` — بلا `implements`: `excelServiceProvider` من نوع
+/// `Provider<dynamic>` فيقبل أيَّ كائن (مأخوذٌ من
+/// `financial_statements_picpos_screen.dart`)، والدالّتان المستعمَلتان من
+/// هذه الشاشة فقط هما `exportBankStatementTemplate` و
+/// `pickAndParseBankStatement` — لا حاجةَ لتزييف الصنف الحقيقيّ كاملاً.
+class _FakeExcelService {
+  _FakeExcelService({this.parseResult});
+
+  final BankStatementRowsSummary? parseResult;
+
+  Future<String?> exportBankStatementTemplate() async =>
+      'C:/tmp/template.xlsx';
+
+  Future<BankStatementRowsSummary?> pickAndParseBankStatement() async =>
+      parseResult;
 }
 
 Future<void> pump(WidgetTester tester, double width, {
   required List<SafeData> safes,
   IAccountingRepository? accounting,
+  Object? excelService,
 }) async {
   tester.view.physicalSize = Size(width, 1100);
   tester.view.devicePixelRatio = 1.0;
@@ -110,6 +156,8 @@ Future<void> pump(WidgetTester tester, double width, {
         treasuryRepositoryProvider.overrideWithValue(_FakeTreasury(safes)),
         accountingRepositoryProvider
             .overrideWithValue(accounting ?? _FakeAccounting()),
+        excelServiceProvider
+            .overrideWithValue(excelService ?? _FakeExcelService()),
       ],
       child: const MaterialApp(home: BankReconciliationPicposScreen()),
     ),
@@ -299,5 +347,81 @@ void main() {
     expect(button.onPressed, isNull,
         reason: 'زرُّ «جلسة جديدة» يجب أن يبقى معطَّلاً على قيمةٍ غيرِ '
             'صالحة — لا أن يُنشئ جلسةً برصيدٍ مئةَ ضعفٍ');
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // المهمّةُ ٥ — الشريطُ الثلاثيّ: تنزيلُ القالب · استيرادُ كشفٍ ·
+  // مطابقةٌ آليّة.
+  //
+  // ⚠️ **`ImportResult` غيرُ مستعمَلةٍ هنا عمداً**: الموجزُ الأصليُّ افترض
+  // `excelService.importBankStatement` تعيد `ImportResult` — وهذا نصٌّ بائد.
+  // الحقيقةُ المشحونة (المهمّةُ ٣، الكوميت 31d5aa3c): `ExcelService` يأخذ
+  // مستوداتٍ لا قاعدة، و`pickAndParseBankStatement` **تحلّل ولا تكتب** —
+  // الكتابةُ على الشاشة بالمستودع الذي بيدها (`importBankStatementLines`).
+  // ═══════════════════════════════════════════════════════════════════════
+
+  testWidgets('🔴 «مطابقة آلية» تُنادي المحرّكَ وتقول العدد', (tester) async {
+    final accounting = _FakeAccounting(autoMatchResult: 3);
+    await pump(tester, 1920,
+        safes: [_bankSafe(1, linked: 5, name: 'خزنة المطابقة')],
+        accounting: accounting);
+
+    // اختيارُ الخزنة أوّلاً — الأزرارُ الثلاثةُ معطَّلةٌ بلا حسابٍ مختار.
+    await tester.tap(find.text('اختر خزنة بنكية'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('خزنة المطابقة'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('تطبيق'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('مطابقة آلية'));
+    await tester.pumpAndSettle();
+
+    expect(accounting.autoMatchCalls, 1,
+        reason: 'الزرُّ كان يُظهر إشعاراً فقط — الآن يجب أن ينادي المحرّك');
+    expect(accounting.autoMatchedBankAccountId, 5,
+        reason: 'المطابقةُ تقع على حساب الخزنة المختارة');
+    // العددُ بالأرقام العربيّة — «تمّت» بلا رقمٍ لا تُخبر المحاسبَ بشيء.
+    expect(find.text('طوبق ٣ سطراً'), findsOneWidget,
+        reason: 'والعددُ يُقال — لا صمتَ عمّا طابقَه المحرّك');
+
+    // ⚠️ مؤقّتُ `AppToast` ٢٥٠٠ms ثمّ ٣٠٠ms خروجاً — تفكيكُ الشجرة قبل
+    // انقضائه يُسقط الاختبارَ بـ«A Timer is still pending» (نمطٌ مأخوذٌ من
+    // `journal_entry_draft_dialog_test.dart`).
+    await tester.pump(const Duration(seconds: 4));
+  });
+
+  testWidgets('🔴 إخفاقُ الاستيراد يُقال بسببه — لا يُبتلَع في «تعذّرت العمليّة»',
+      (tester) async {
+    final excelService = _FakeExcelService(
+      parseResult: const BankStatementRowsSummary(
+        <Map<String, dynamic>>[],
+        <String>['الصفُّ ٢: تاريخٌ غيرُ صالح'],
+      ),
+    );
+    await pump(tester, 1920,
+        safes: [_bankSafe(4, linked: 8, name: 'خزنة الاستيراد')],
+        excelService: excelService);
+
+    await tester.tap(find.text('اختر خزنة بنكية'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('خزنة الاستيراد'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('تطبيق'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('استيراد كشف'));
+    await tester.pumpAndSettle();
+
+    // سببُ الرفضِ نفسُه — لا مطابقةً جزئيّةً على «تعذّرت» قد يُرضيها نصٌّ
+    // عامٌّ مستقبليّ.
+    expect(find.text('لا صفَّ صالحاً في الملف: الصفُّ ٢: تاريخٌ غيرُ صالح'),
+        findsOneWidget,
+        reason: 'سببُ الرفض من التحليل يصل الشاشةَ كما هو');
+    expect(find.text('تعذّرت العمليّة'), findsNothing,
+        reason: 'لا يُختصَر السببُ إلى رسالةٍ عامّةٍ تُخفي ما حدث فعلاً');
+
+    // ⚠️ نفسُ مؤقّتِ `AppToast` أعلاه.
+    await tester.pump(const Duration(seconds: 4));
   });
 }

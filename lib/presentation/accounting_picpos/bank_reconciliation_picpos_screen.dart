@@ -1,6 +1,13 @@
-// شاشةُ «المطابقة البنكية» بهويّة PicPos — المهمّةُ ٤: الرأسُ والجلسةُ
-// والمؤشّراتُ وحدَها. الاستيرادُ والمطابقةُ الآليّةُ (٥) والقائمتان
-// المتجاورتان (٦) مهمّتان لاحقتان — لا يبنيهما هذا الملفّ.
+// ignore_for_file: avoid_dynamic_calls
+//
+// ⚠️ **مقصودٌ لا مهمَل**: `excelServiceProvider` من نوع `Provider<dynamic>`
+// (يخدم سطحَي ويب وDesktop بنوعَي إرجاعٍ مختلفَين)، والنمطُ نفسُه مستعمَلٌ
+// أصلاً في `financial_statements_picpos_screen.dart` — انظر تعليقَ
+// `_downloadTemplate` أدناه.
+
+// شاشةُ «المطابقة البنكية» بهويّة PicPos — المهمّةُ ٤ (الرأسُ والجلسةُ
+// والمؤشّرات) والمهمّةُ ٥ (الاستيرادُ والمطابقةُ الآليّة) معاً. القائمتان
+// المتجاورتان (٦) مهمّةٌ لاحقةٌ — لا يبنيهما هذا الملفّ.
 //
 // ═══ العقدُ الذي تستهلكه هذه الشاشة ═══
 //
@@ -23,7 +30,9 @@ import 'package:intl/intl.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/uuid_v7.dart';
 import '../../core/widgets/app_toast.dart';
+import '../../data/providers/providers.dart' show excelServiceProvider;
 import '../../data/providers/repository_providers.dart';
 import '../../domain/repositories/treasury_repository.dart' show SafeData;
 import '../picpos_shell/picpos_empty_state.dart';
@@ -32,8 +41,15 @@ import '../picpos_shell/picpos_option_picker.dart';
 import '../picpos_shell/picpos_report_bar.dart';
 import '../picpos_shell/picpos_screen_scaffold.dart';
 import '../picpos_shell/picpos_surface.dart';
+import '../picpos_shell/picpos_toolbar.dart';
 
 final _money = NumberFormat('#,##0.00', 'en');
+
+/// يحوّل رقماً إلى أرقامٍ عربيّة — «طوبق ٣ سطراً» لا «طوبق 3 سطراً» (نفسُ
+/// نمط `_ar` في `analytics_picpos_screen.dart` و`_arabicDigits` في
+/// `excel_service.dart`).
+String _arabicDigits(Object n) =>
+    '$n'.replaceAllMapped(RegExp(r'\d'), (m) => '٠١٢٣٤٥٦٧٨٩'[int.parse(m[0]!)]);
 
 /// نمطُ رصيدٍ صالح: رقمٌ عاديٌّ، أو مجموعٌ بفواصل الآلاف **في مواضعها
 /// فقط** — كلُّ فاصلةٍ متبوعةٌ بثلاثة أرقامٍ بالضبط، لا فاصلةً عشريّةً
@@ -163,6 +179,7 @@ class _BankReconciliationPicposScreenState
         title: 'المطابقة البنكية',
         icon: PhosphorIconsBold.bank,
         subHeader: _buildHeader(context, result.safes, result.excluded),
+        toolbar: _buildActionsBar(),
         body: _buildBody(),
       ),
       loading: () => const PicPosScreenScaffold(
@@ -389,6 +406,129 @@ class _BankReconciliationPicposScreenState
           type: ToastType.error);
     } finally {
       if (mounted) setState(() => _creatingSession = false);
+    }
+  }
+
+  // ── الشريطُ الثلاثيّ: تنزيلُ القالب · استيرادُ كشفٍ · مطابقةٌ آليّة ─────
+  //
+  // ⚠️ **الكتابةُ في الشاشة لا في `ExcelService`**: `pickAndParseBankStatement`
+  // تحلّل ولا تكتب (المهمّةُ ٣، الكوميت 31d5aa3c — قرارٌ موثّق): `ExcelService`
+  // يأخذ مستوداتٍ لا قاعدة، وحقنُ `IAccountingRepository` فيه لأجل دالّةٍ
+  // واحدةٍ كان سيوسّع اعتمادَه على كلّ مُنشئيه. فتكتب هذه الشاشةُ بالمستودع
+  // الذي بيدها أصلاً (‏`accountingRepositoryProvider`).
+  //
+  // ⚠️ **الثلاثةُ معطَّلةٌ حين `_accountId == null`** — لا خزنةَ لا حسابَ
+  // مرتبطاً بها بعدُ، فلا جدوى من نداء أيٍّ منها.
+
+  Widget _buildActionsBar() {
+    final enabled = _accountId != null;
+    return PicPosToolbar(
+      children: [
+        OutlinedButton.icon(
+          onPressed: enabled ? _downloadTemplate : null,
+          icon: const Icon(PhosphorIconsBold.download, size: 15),
+          label: const Text('تنزيل القالب'),
+        ),
+        OutlinedButton.icon(
+          onPressed: enabled ? _importStatement : null,
+          icon: const Icon(PhosphorIconsBold.uploadSimple, size: 15),
+          label: const Text('استيراد كشف'),
+        ),
+        FilledButton.icon(
+          onPressed: enabled ? _autoMatch : null,
+          icon: const Icon(PhosphorIconsBold.arrowsLeftRight, size: 15),
+          label: const Text('مطابقة آلية'),
+        ),
+      ],
+    );
+  }
+
+  /// [ExcelService.exportBankStatementTemplate] تُمسك كلَّ أخطائها داخليّاً
+  /// وتعيد `null` عند التعذّر — لا استثناءَ يفلت هنا فلا حاجةَ لـ`try/catch`.
+  Future<void> _downloadTemplate() async {
+    final service = ref.read(excelServiceProvider);
+    final path = await service.exportBankStatementTemplate();
+    if (!mounted) return;
+    if (path == null) {
+      AppToast.show(context, 'تعذّر إنشاءُ قالب الكشف', type: ToastType.error);
+      return;
+    }
+    AppToast.show(context, 'حُفظ القالبُ في: $path', type: ToastType.success);
+  }
+
+  /// يختار المستخدمُ ملفَّ كشفٍ ويُحلَّل (`pickAndParseBankStatement`)، ثمّ
+  /// تكتب هذه الدالّةُ الأسطرَ الصالحةَ بالمستودع.
+  ///
+  /// ⚠️ **`null` ليست خطأً**: إلغاءُ المستخدم لاختيار ملفّ — لا شيءَ يُعرَض.
+  ///
+  /// ⚠️ **الرمْيُ مقصودٌ على ملفٍّ تالف**: `pickAndParseBankStatement` ترمي
+  /// عمداً، و«تعذّرت العمليّة» العامّةُ كانت ستُخفي السببَ الذي يحتاجه
+  /// المحاسبُ ليصلح الملفّ — فنصُّ الاستثناء يُعرَض كما هو.
+  Future<void> _importStatement() async {
+    final accountId = _accountId;
+    if (accountId == null) return;
+    try {
+      final service = ref.read(excelServiceProvider);
+      final summary = await service.pickAndParseBankStatement();
+      if (summary == null) return; // إلغاءُ المستخدم — ليس خطأً
+      if (!mounted) return;
+
+      final List<Map<String, dynamic>> lines = summary.lines;
+      final List<String> errors = summary.errors;
+
+      // «لا صفَّ صالحاً» حالةٌ صريحةٌ — والأسبابُ (إن وُجدت) تصل كما هي،
+      // لا تُبتلَع في رسالةٍ عامّة.
+      if (lines.isEmpty) {
+        final reason = errors.isEmpty
+            ? 'لا صفَّ صالحاً في الملف'
+            : 'لا صفَّ صالحاً في الملف: ${errors.join('؛ ')}';
+        AppToast.show(context, reason, type: ToastType.error);
+        return;
+      }
+
+      final repo = ref.read(accountingRepositoryProvider);
+      final n = await repo.importBankStatementLines(
+        bankAccountId: accountId,
+        lines: lines,
+        batchId: UuidV7.generate(),
+      );
+      if (!mounted) return;
+
+      var message = 'استُورد ${_arabicDigits(n)} سطراً';
+      if (errors.isNotEmpty) {
+        message += '، ورُفض ${_arabicDigits(errors.length)}: '
+            '${errors.join('؛ ')}';
+      }
+      AppToast.show(context, message, type: ToastType.success);
+
+      final sessionId = _sessionId;
+      if (sessionId != null) {
+        ref.invalidate(_reconciliationReportProvider(sessionId));
+      }
+    } catch (e) {
+      if (!mounted) return;
+      AppToast.show(context, 'تعذّر استيرادُ الكشف: $e', type: ToastType.error);
+    }
+  }
+
+  Future<void> _autoMatch() async {
+    final accountId = _accountId;
+    if (accountId == null) return;
+    try {
+      final repo = ref.read(accountingRepositoryProvider);
+      final n = await repo.autoMatchStatementLines(accountId);
+      if (!mounted) return;
+      AppToast.show(context, 'طوبق ${_arabicDigits(n)} سطراً',
+          type: ToastType.success);
+
+      final sessionId = _sessionId;
+      if (sessionId != null) {
+        ref.invalidate(_reconciliationReportProvider(sessionId));
+      }
+    } catch (e) {
+      if (!mounted) return;
+      AppToast.show(context, 'تعذّرت المطابقةُ الآليّة: $e',
+          type: ToastType.error);
     }
   }
 
