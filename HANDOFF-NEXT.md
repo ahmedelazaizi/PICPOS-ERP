@@ -36,7 +36,7 @@ cd "D:/PICPOS-ERP/.claude/worktrees/distracted-antonelli-9bd55b" && git log --on
 | البند | القيمة |
 |---|---|
 | `analyze lib test` | **٦ info** بالضبط · صفرُ أخطاءٍ وتحذيرات |
-| `unit + data + structural + services` | **٥٤٧٨ ✓** (كان ٥٤٦٩ ⇒ **+٩**) |
+| `unit + data + structural + services` | **٥٤٨٣ ✓** (كان ٥٤٦٩ ⇒ **+١٤**) |
 | `widget + core + domain + presentation + security + static` | **١٥٣٧ ✓** (كان ١٥٣٦) |
 | `integration` | **٧٦٤ ✓** |
 | `integration_pg` (منفصلة) | **٦٧ ✓** (كان ٦١ ⇒ **+٦**) |
