@@ -87,7 +87,7 @@ void main() {
       final safe = await db.getDefaultSafeByType('cash');
 
       // حركةُ ردٍّ مرتبطةٌ بالفاتورة رقم ٩٩ — نفسُ الشكل الذي يكتبه
-      // `process_sales_return_usecase` و`returns_repository_impl`.
+      // `returns_repository_impl` (المسارُ الحيُّ الوحيدُ منذ 2026-09-02).
       final refundId = await db.into(db.safeTransactions).insert(
             SafeTransactionsCompanion.insert(
               voucherNumber: 'RET-TEST-1',

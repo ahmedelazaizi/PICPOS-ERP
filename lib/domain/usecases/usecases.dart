@@ -24,6 +24,5 @@ export 'purchase_orders/purchase_orders_usecases.dart';
 export 'purchases/purchases_usecases.dart' hide ValidationResult;
 export 'quotations/quotations_usecases.dart';
 export 'reporting/reporting_usecases.dart';
-export 'returns/returns_usecases.dart' hide ValidationResult;
 export 'sales/sales_usecases.dart';
 export 'treasury/treasury_usecases.dart';

@@ -784,8 +784,11 @@ class JournalEntryFactory {
       // 1. Reverse Stock
       //
       // ⚠️ مسارا المرتجع يكتبان مرجعَين مختلفَين لنفس الحركة:
-      //   * `ProcessSalesReturnUseCase` (شاشةُ مرتجع المبيعات — المسارُ
-      //     الرئيسيّ) يكتب `'sales_return'`.
+      //   * `ReturnsRepositoryImpl.processSalesReturn` (شاشةُ مرتجع
+      //     المبيعات ووضعُ المرتجع في نقطة البيع — المسارُ الرئيسيّ) يكتب
+      //     `'sales_return'`. (كان التعليقُ يسمّي `ProcessSalesReturnUseCase`
+      //     وهي كانت كوداً ميّتاً بلا مُنادٍ — حُذفت 2026-09-02؛ والمرجعُ
+      //     المكتوبُ واحدٌ في المسارَين فالإصلاحُ أدناه صحيحٌ على الحيّ.)
       //   * المرتجعُ السريع من البيع السريع (`sales_mutations_dao`) يكتب
       //     `'sales_invoice'`.
       // وكان هذا يستعلم بـ`'sales_invoice'` وحدَه، بينما الخطوتان ٢ و٣ تحته
@@ -834,7 +837,7 @@ class JournalEntryFactory {
             //
             // وكان العطبُ **مستوراً**: مسارُ المرتجع كان يخصم مرّتين أيضاً،
             // فالغلطان يتعادلان ما دام الإلغاءُ يتبع المرتجع. أُصلح المرتجعُ
-            // في `process_sales_return_usecase.dart` فظهر هذا وحدَه.
+            // في `returns_repository_impl.dart` فظهر هذا وحدَه.
             //
             // و`newBalance` يبقى لقطةً لـ`balanceAfter`.
             final newBalance = safe.balance + origTxn.amount;

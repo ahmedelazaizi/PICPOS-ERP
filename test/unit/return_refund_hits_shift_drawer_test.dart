@@ -8,8 +8,8 @@
 //
 // جولةُ مراجعةٍ ١ (2026-08-16): الاختبارُ الأوّل ينادي `db.resolveRefundSafe`
 // مباشرةً ولا يمرّ بمسار الإنتاج الفعليّ (`ReturnsRepositoryImpl.
-// processSalesReturn` / `ProcessSalesReturnUseCase`) — فلو رُدَّت مواضعُ
-// النداء الثلاثة إلى `getDefaultSafeByType('cash')` لبقي هذا الاختبار
+// processSalesReturn` — والـuse case الموازيةُ حُذفت 2026-09-02 كوداً
+// ميّتاً) — فلو رُدَّت مواضعُ النداء إلى `getDefaultSafeByType('cash')` لبقي هذا الاختبار
 // أخضر. المجموعةُ الثانية أدناه تسدّ هذه الفجوة: تنادي `processSalesReturn`
 // فعلياً وتفحص حركةَ الخزنة الناتجة.
 

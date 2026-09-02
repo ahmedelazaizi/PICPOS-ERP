@@ -2928,9 +2928,9 @@ mixin _PicPosOperations on ConsumerState<PicPosPosScreen> {
 
   /// مسارُ حفظ المرتجع — الفرعُ الذي يأخذه `_processPaymentAndSave` كلُّه
   /// حين يكون `posReturnModeProvider` غيرَ `null`. المسارُ الإلزاميّ
-  /// `returnsRepository.processSalesReturn` **لا** `ProcessSalesReturnUseCase`
-  /// — الأخيرُ بلا سقفِ كميةٍ في `_validate` (مقيسٌ، لا مفترَض)، فاستعمالُه
-  /// كان سيفتح ثغرةَ إرجاعٍ زائد.
+  /// `returnsRepository.processSalesReturn` — وهو يفرض سقفَ الكمية
+  /// (PIR F9: المطلوبُ ≤ الأصليُّ ناقصَ المُرجَع سلفاً). (كان هنا تحذيرٌ من
+  /// `ProcessSalesReturnUseCase` بلا سقف — حُذفت 2026-09-02 كوداً ميّتاً.)
   Future<void> _processQuickReturnSave(PosReturnMode mode) async {
     final invoice = _returnInvoice;
     if (invoice == null || invoice.id != mode.invoiceId) {

@@ -6,8 +6,14 @@
 // المخزون · حركاتِ الخزنة · رصيدَ العميل. الاثنان الأخيران يستعلمان بمرجع
 // `'sales_return'`، والأولُ وحدَه يستعلم بـ`'sales_invoice'`.
 //
-// والمسارُ الرئيسيُّ للمرتجعات (`ProcessSalesReturnUseCase` — وهو ما تناديه
-// شاشةُ «مرتجع المبيعات») يكتب حركةَ المخزون بمرجع `'sales_return'`.
+// والمسارُ الرئيسيُّ للمرتجعات (`ReturnsRepositoryImpl.processSalesReturn` —
+// وهو ما تناديه شاشةُ «مرتجع المبيعات» ووضعُ المرتجع في نقطة البيع) يكتب
+// حركةَ المخزون بمرجع `'sales_return'`.
+//
+// ⚠️ (2026-09-02) كانت التجهيزةُ هنا تنادي `ProcessSalesReturnUseCase` وتصفها
+// «ما تناديه الشاشة» — وهي كانت كوداً ميّتاً بلا مُنادٍ في `lib`. الاختبارُ
+// كان أخضرَ لسببٍ صحيحٍ بالصدفة (المرجعُ المكتوبُ واحد)، والآن ينادي المسارَ
+// الحيَّ نفسَه — فيلزمه ورديّةٌ مفتوحة (ح‑١: لا صرفَ نقديٍّ بلا ورديّة).
 // فالحلقةُ **لا تدور إطلاقاً**: القيدُ ينعكس والنقديةُ ترجع ورصيدُ العميل
 // يُعدَّل، والبضاعةُ تفضل في المخزون. ربحٌ وهميّ وجردٌ لا يطابق الرفّ.
 //
@@ -24,7 +30,7 @@ import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/domain/usecases/returns/process_sales_return_usecase.dart';
+import 'package:ural_erp/domain/entities/product_entity.dart';
 
 void main() {
   late AppDatabase db;
@@ -69,6 +75,8 @@ void main() {
       roleId: roleId,
     );
     warehouseId = (await db.getDefaultWarehouse())!.id;
+    // ح‑١: المسارُ الحيُّ يرفض الردَّ النقديَّ كلَّه بلا ورديّةٍ مفتوحة.
+    await db.openShift(userId, 0);
 
     productId = await db.insertProduct(ProductsCompanion.insert(
       code: 'CR-P1',
@@ -115,25 +123,31 @@ void main() {
     await db.close();
   });
 
-  /// يرجّع ٥ وحداتٍ بالمسار الرئيسيّ (نفسُ ما تفعله شاشةُ المردودات).
+  /// يرجّع ٥ وحداتٍ بالمسار الرئيسيّ — **عينُ** ما تناديه شاشةُ المردودات
+  /// (`sales_return_provider.processReturn`) ووضعُ المرتجع في نقطة البيع.
   Future<void> processReturn() async {
-    final useCase = ProcessSalesReturnUseCase(db, ActivityLogger(db));
-    final result = await useCase.execute(SalesReturnRequest(
-      originalInvoiceId: invoiceId,
-      items: [
-        ReturnItemInput(
-          originalItemId: invoiceItemId,
-          productId: productId,
-          productName: 'صنف الإلغاء',
-          quantity: 5,
-          unitPrice: 100,
+    final p = (await db.getProductById(productId))!;
+    final ok = await container.read(returnsRepositoryProvider).processSalesReturn(
+      invoice: (await db.getSalesInvoiceById(invoiceId))!,
+      returnQuantities: {invoiceItemId: 5},
+      productCache: {
+        productId: ProductEntity(
+          id: p.id,
+          name: p.name,
+          code: p.code,
+          salePrice: p.salePrice,
+          costPrice: p.costPrice,
+          currentStock: p.currentStock,
+          minStock: p.minStock,
+          trackInventory: p.trackInventory,
         ),
-      ],
-      returnReason: 'اختبار الإلغاء',
+      },
+      reason: 'اختبار الإلغاء',
       userId: userId,
-      refundMethod: 'cash',
-    ));
-    expect(result.isSuccess, isTrue, reason: 'تجهيزة: المرتجع لازم ينجح');
+      userName: 'Cancel Tester',
+      isFullReturn: true,
+    );
+    expect(ok, isTrue, reason: 'تجهيزة: المرتجع لازم ينجح');
   }
 
   Future<void> cancelReturn() async {
