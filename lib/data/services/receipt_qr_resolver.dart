@@ -1,0 +1,37 @@
+/// حلُّ رمز الإيصال من القاعدة — يُطعم القرارَ الخالصَ في `domain/models`.
+///
+/// الرايةُ من `Settings` (بلا سرّ، وتُزامَن) وصفُّ التقديم من
+/// `e_invoice_submissions` (يُزامَن منذ v173 ويحمل `qrCode` الذي أصدرته
+/// البوّابة). فكلُّ ما يحتاجه الكاشير لطباعة الرمز الصحيح يصله بالسحب —
+/// و`EInvoiceConfigs` بسرّها تبقى على الخادم.
+///
+/// والقراءةُ **لا متزامنة** (`getSettingValue`) لا عبر الكاش المتزامن، فلا
+/// تحتاج مفتاحاً في `preloadKeys` ولا تموت صامتةً إن نُسي.
+library;
+
+import '../../domain/models/receipt_qr_decision.dart';
+import '../database/database.dart';
+
+/// يقرّر ما يُطبع على إيصال البيعة [saleId].
+///
+/// غيابُ الراية = غيرُ مُفعَّل: منشأةٌ لم تفتح الميزةَ قطُّ لا تكتبها أبداً،
+/// ولها الرمزُ البديلُ عن الورق. والنافذةُ بين تفعيل الخادم ووصول الراية
+/// بأوّل سحبٍ نافذةُ المزامنة نفسِها.
+Future<ReceiptQr> resolveReceiptQrForSale(
+  AppDatabase db, {
+  required int saleId,
+  required ReceiptSaleSummary sale,
+}) async {
+  final enabled =
+      await db.getSettingValue(kEInvoiceEnabledSettingKey) == 'true';
+
+  // غيرُ مُفعَّل ⇒ القرارُ لا يقرأ التقديمَ أصلاً، فلا نستعلم عنه.
+  final submission = enabled ? await db.getSubmissionBySaleId(saleId) : null;
+
+  return resolveReceiptQr(
+    eInvoiceEnabled: enabled,
+    submissionStatus: submission?.status,
+    gatewayQrCode: submission?.qrCode,
+    sale: sale,
+  );
+}
