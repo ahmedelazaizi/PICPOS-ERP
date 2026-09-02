@@ -568,10 +568,22 @@ extension EInvoicingDao on AppDatabase {
         'unitPrice': item.unitPrice,
         'discount': item.discount,
         'totalAmount': item.total,
+        // التصنيفُ الضريبيُّ من المنتج (‏T1/V009 — وصفٌ لا مبلغ)، أمّا
+        // **النسبةُ والمبلغُ فمن لقطة البند**.
+        //
+        // ⚠️ كانا يُقرآن من `product.taxRate` الحيّة ويُحسب المبلغُ
+        // `item.total * product.taxRate / 100`. فتعديلُ ضريبةِ صنفٍ اليومَ —
+        // أو تغييرُ نسبةِ ض.ق.م — كان يُعيد إقرارَ **كلِّ فاتورةٍ قديمة** لذلك
+        // الصنف بنسبةٍ لم يدفعها العميل، فيخالف المقدَّمُ ما على إيصاله وما
+        // قُيِّد في الأستاذ.
+        //
+        // و`sales_invoice_items` يحمل العمودَين لقطةً وقتَ البيع يكتبهما
+        // `createSalesInvoice` على كلّ بند — نفسُ مبدأ `cost_price` و
+        // `due_date` و`rounding_adjustment` المكتوبِ في المخطَّط.
         'taxType': product.itemTaxType,
         'taxSubtype': product.itemTaxSubtype,
-        'taxRate': product.taxRate,
-        'taxAmount': item.total * product.taxRate / 100,
+        'taxRate': item.taxRate,
+        'taxAmount': item.taxAmount,
       });
     }
 

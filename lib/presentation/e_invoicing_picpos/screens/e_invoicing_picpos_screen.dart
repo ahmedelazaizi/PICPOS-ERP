@@ -1438,14 +1438,8 @@ class _EInvoicingPicposScreenState
     for (final sub in pending) {
       try {
         final payload = await repo.buildInvoicePayload(sub.saleId, sub.platform);
-        final result = await wrapper.submitInvoice(
-          UnifiedInvoice(
-            internalId: payload['internalId'] ?? '',
-            issueDate: DateTime.now(),
-            seller: (payload['seller'] as Map<String, dynamic>?) ?? {},
-            items: [],
-          ),
-        );
+        final result =
+            await wrapper.submitInvoice(UnifiedInvoice.fromPayload(payload));
         if (result.success) {
           await repo.markSubmissionSuccess(
             submissionId: sub.id,
@@ -1474,14 +1468,8 @@ class _EInvoicingPicposScreenState
     final wrapper = ref.read(eInvoiceServiceProvider);
     try {
       final payload = await repo.buildInvoicePayload(r.saleId, r.platform);
-      final result = await wrapper.submitInvoice(
-        UnifiedInvoice(
-          internalId: payload['internalId'] ?? '',
-          issueDate: DateTime.now(),
-          seller: (payload['seller'] as Map<String, dynamic>?) ?? {},
-          items: [],
-        ),
-      );
+      final result =
+          await wrapper.submitInvoice(UnifiedInvoice.fromPayload(payload));
       if (result.success) {
         await repo.markSubmissionSuccess(
           submissionId: r.id,

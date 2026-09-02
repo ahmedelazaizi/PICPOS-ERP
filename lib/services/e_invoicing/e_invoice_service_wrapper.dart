@@ -120,6 +120,62 @@ class UnifiedInvoice {
     this.originalInvoiceId,
   });
 
+  /// من حمولة `buildInvoicePayload` — **المصنعُ الوحيد**.
+  ///
+  /// كان كلُّ منادٍ يبني المستندَ بيده، فبنته الشاشةُ في موضعَين
+  /// `items: []` و`issueDate: DateTime.now()` بعد أن جلبت الحمولةَ الصحيحةَ
+  /// ورمتها: مستندٌ بلا بنودٍ وبتاريخ اليوم يصل مصلحةَ الضرائب عن فاتورةٍ
+  /// حُرِّرت أمس. إقرارٌ خاطئ، لا إخفاقُ إرسال.
+  ///
+  /// والقراءةُ **متساهلةٌ في النوع**: الحمولةُ تُخزَّن نصّاً في `rawRequest`،
+  /// فمسارُ إعادةِ محاولةٍ يقرؤها مفكوكةً من JSON بقوائمَ `List<dynamic>` —
+  /// وقالبٌ صارمٌ كان يرمي استثناءً يبتلعه `catch` فيُعدّ إخفاقاً بلا سبب.
+  factory UnifiedInvoice.fromPayload(Map<String, dynamic> payload) {
+    double num_(Object? v, [double fallback = 0]) =>
+        v is num ? v.toDouble() : fallback;
+    String str(Object? v, String fallback) =>
+        v is String && v.isNotEmpty ? v : fallback;
+
+    final rawItems = payload['items'];
+    final items = <UnifiedLineItem>[];
+    if (rawItems is List) {
+      for (final entry in rawItems) {
+        if (entry is! Map) continue;
+        final m = entry.cast<String, dynamic>();
+        items.add(UnifiedLineItem(
+          description: str(m['description'], ''),
+          itemCode: str(m['itemCode'], ''),
+          itemCodeType: str(m['itemType'], 'EGS'),
+          unitType: str(m['unitType'], 'EA'),
+          quantity: num_(m['quantity'], 1),
+          unitPrice: num_(m['unitPrice']),
+          discount: num_(m['discount']),
+          taxType: str(m['taxType'], 'T1'),
+          taxSubtype: str(m['taxSubtype'], 'V009'),
+          taxRate: num_(m['taxRate'], 14),
+        ));
+      }
+    }
+
+    final seller = payload['seller'];
+    final buyer = payload['buyer'];
+
+    return UnifiedInvoice(
+      internalId: str(payload['internalId'], ''),
+      invoiceType: str(payload['documentType'], 'invoice'),
+      documentVersion: payload['documentVersion'] as String?,
+      // تاريخُ الفاتورة لا ساعةُ الإرسال. و`DateTime.now()` احتياطٌ أخيرٌ
+      // لحمولةٍ بلا تاريخٍ صالحٍ أصلاً.
+      issueDate: DateTime.tryParse(str(payload['issueDate'], '')) ??
+          DateTime.now(),
+      seller: seller is Map ? seller.cast<String, dynamic>() : <String, dynamic>{},
+      buyer: buyer is Map ? buyer.cast<String, dynamic>() : null,
+      items: items,
+      paymentMethod: payload['paymentMethod'] as String?,
+      originalInvoiceId: payload['originalInvoiceId'] as String?,
+    );
+  }
+
   double get subtotal => items.fold(0, (sum, item) => sum + item.netAmount);
   double get totalTax => items.fold(0, (sum, item) => sum + item.taxAmount);
   double get totalAmount => subtotal + totalTax;

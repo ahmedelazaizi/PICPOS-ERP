@@ -166,33 +166,8 @@ class EInvoiceAutoSubmitter {
   // HELPERS — أدوات مساعدة
   // ─────────────────────────────────────────────────────────────────────────
 
-  /// Convert raw payload map to UnifiedInvoice
-  UnifiedInvoice _buildUnifiedInvoice(Map<String, dynamic> payload) {
-    final items = (payload['items'] as List<Map<String, dynamic>>?) ?? [];
-    final seller = payload['seller'] as Map<String, dynamic>? ?? {};
-
-    return UnifiedInvoice(
-      internalId: payload['internalId'] as String? ?? '',
-      invoiceType: payload['documentType'] as String? ?? 'invoice',
-      issueDate: DateTime.tryParse(payload['issueDate'] as String? ?? '') ??
-          DateTime.now(),
-      seller: seller,
-      buyer: payload['buyer'] as Map<String, dynamic>?,
-      items: items
-          .map((item) => UnifiedLineItem(
-                description: item['description'] as String? ?? '',
-                itemCode: item['itemCode'] as String? ?? '',
-                itemCodeType: item['itemType'] as String? ?? 'EGS',
-                unitType: item['unitType'] as String? ?? 'EA',
-                quantity: (item['quantity'] as num?)?.toDouble() ?? 1,
-                unitPrice: (item['unitPrice'] as num?)?.toDouble() ?? 0,
-                discount: (item['discount'] as num?)?.toDouble() ?? 0,
-                taxType: item['taxType'] as String? ?? 'T1',
-                taxSubtype: item['taxSubtype'] as String? ?? 'V009',
-                taxRate: (item['taxRate'] as num?)?.toDouble() ?? 14,
-              ))
-          .toList(),
-      paymentMethod: payload['paymentMethod'] as String? ?? 'cash',
-    );
-  }
+  /// Convert raw payload map to UnifiedInvoice — المصنعُ على النموذج نفسِه،
+  /// فلا نسخةَ ثانيةً تتخلّف عنه (‏`UnifiedInvoice.fromPayload`).
+  UnifiedInvoice _buildUnifiedInvoice(Map<String, dynamic> payload) =>
+      UnifiedInvoice.fromPayload(payload);
 }
