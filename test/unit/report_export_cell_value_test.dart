@@ -72,5 +72,16 @@ void main() {
     test('غيرُ الرقم يمرّ نصّاً', () {
       expect(reportCellValue('فرع المعادي'), isA<TextCellValue>());
     });
+
+    test('و`null` خليّةٌ فارغةٌ — لا كلمةُ «null»', () {
+      // كان `cell.toString()` يكتب «null» حرفيّاً. مقيسٌ 2026-09-02 على
+      // المنادين الثمانيةَ عشر: ما تُتُبِّع منهم يمرّر بدائلَ غيرَ فارغة، فلا
+      // مسارَ حيٌّ مُثبَتٌ اليوم — والحارسُ دفاعيٌّ لأنّ منادياً جديداً يمرّر
+      // `party.phone` بلا `??` يطبع «null» في عمود الهاتف صامتاً.
+      final cell = reportCellValue(null);
+      expect(cell, isA<TextCellValue>());
+      expect((cell as TextCellValue).value.toString(), isEmpty,
+          reason: 'الخليّةُ تحمل «null» نصّاً ⇒ المراجعُ يقرأ كلمةً لا قيمة');
+    });
   });
 }

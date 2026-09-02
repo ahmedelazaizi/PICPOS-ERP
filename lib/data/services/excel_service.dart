@@ -110,6 +110,12 @@ List<List<String>> reportContextRows({
 /// نقيّةٌ خارج الصنف عن قصد — كـ[reportBranchLabel] و[reportContextRows] — كي
 /// تُقاس بلا قاعدةِ بياناتٍ ولا كتابةِ ملفٍّ على القرص.
 CellValue reportCellValue(dynamic cell) {
+  // `null` كان يُكتب نصّاً «null» (‏`cell.toString()`). مقيسٌ 2026-09-02 على
+  // المنادين الثمانيةَ عشر: كلُّ ما تُتُبِّع منهم يمرّر بدائلَ غيرَ فارغة
+  // (‏`?? ''` · `?? 0` · أعمدةٌ غيرُ قابلةٍ للإفراغ)، فلا مسارَ حيٌّ **مُثبَتٌ**
+  // يصل هنا بـ`null` اليوم. والحارسُ دفاعيٌّ: قيمةٌ غائبةٌ في تقريرٍ خليّةٌ
+  // فارغةٌ لا كلمةُ «null» يقرؤها المراجع.
+  if (cell == null) return TextCellValue('');
   if (cell is int) return IntCellValue(cell);
   if (cell is num) {
     return DoubleCellValue(
