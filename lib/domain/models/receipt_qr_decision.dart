@@ -32,6 +32,27 @@ class ReceiptSaleSummary {
     required this.total,
     required this.companyName,
   });
+
+  /// من بيانات البيعة الخامّ — الصياغةُ هنا في موضعٍ واحدٍ مُختبَر، لا في كلِّ
+  /// منادٍ (‏`printing_service` لا يستورد `intl` أصلاً).
+  ///
+  /// التاريخُ بالدقيقة `yyyy-MM-dd HH:mm` والمبلغُ بمنزلتين.
+  factory ReceiptSaleSummary.fromSale({
+    required String invoiceNumber,
+    required DateTime issuedAt,
+    required double total,
+    required String companyName,
+  }) {
+    String two(int n) => n.toString().padLeft(2, '0');
+    final d = issuedAt;
+    return ReceiptSaleSummary(
+      invoiceNumber: invoiceNumber,
+      issuedAt: '${d.year}-${two(d.month)}-${two(d.day)} '
+          '${two(d.hour)}:${two(d.minute)}',
+      total: total.toStringAsFixed(2),
+      companyName: companyName,
+    );
+  }
 }
 
 /// وسمُ الرمز غير الضريبيّ — منطوقٌ صريحٌ يمنع تقديمَه على أنّه إيصالٌ ضريبيّ.

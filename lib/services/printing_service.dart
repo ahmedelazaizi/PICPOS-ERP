@@ -4,6 +4,8 @@ import '../core/logging/app_logger.dart';
 import 'invoice_generator.dart';
 import 'templated_invoice_service.dart';
 import 'printing/printing_models.dart' as print_models;
+import '../data/services/receipt_qr_resolver.dart';
+import '../domain/models/receipt_qr_decision.dart';
 
 abstract class IPrintingService {
   /// يطبع إيصالَ نقطةِ البيع. يرجع `true` إن خرج الإيصالُ فعلاً.
@@ -163,6 +165,21 @@ class PrintingServiceImpl implements IPrintingService {
         if (langSetting == 'en') locale = 'en';
       } catch (_) {}
 
+      // قرارُ الرمز يُحلّ مرّةً ويُمرَّر إلى **المسارين** معاً — القالبِ،
+      // و`InvoiceGenerator` الذي يسقط إلى التخطيط المكتوب صامتاً. وبدونه يبقى
+      // `null` = رقمُ الفاتورة بلا وسم، وهو عينُ العطب على جهازٍ مسجَّل.
+      // ولا يُبتلَع إخفاقُه: سقوطٌ صامتٌ إلى `null` يعيد العطبَ حيث لا يُرى.
+      final receiptQr = await resolveReceiptQrForSale(
+        db,
+        saleId: invoiceId,
+        sale: ReceiptSaleSummary.fromSale(
+          invoiceNumber: printData.invoiceNumber,
+          issuedAt: printData.date,
+          total: printData.total,
+          companyName: receiptSettings.companyName,
+        ),
+      );
+
       final hasTemplate = await TemplatedInvoiceService.hasDefaultTemplate(
         db,
         'thermal',
@@ -218,6 +235,7 @@ class PrintingServiceImpl implements IPrintingService {
             salesType: printData.salesTypeText,
             orderNumber: printData.platformOrderNumber ?? printData.orderNumber?.toString(),
             locale: locale,
+            receiptQr: receiptQr,
           );
           // إلغاءٌ في حوار الطباعة ⇒ `false` بلا سقوطٍ إلى التخطيط الافتراضيّ
           // (السقوطُ كان سيفتح الحوارَ ثانيةً) وبلا سطرِ سجلٍّ يدّعي طباعة.
@@ -282,6 +300,7 @@ class PrintingServiceImpl implements IPrintingService {
         // نفسُ مصدرِ المسار الأوّل أعلاه (`printWithTemplate`). وبدونه كان
         // السقوطُ إلى هذا المسار يُفقد الشعارَ صامتاً.
         logoBytes: receiptSettings.logoImage,
+        receiptQr: receiptQr,
       );
       if (!printed) return false;
       await _logPrint(

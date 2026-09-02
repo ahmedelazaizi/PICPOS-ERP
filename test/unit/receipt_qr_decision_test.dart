@@ -55,6 +55,36 @@ void main() {
     });
   });
 
+  group('ReceiptSaleSummary.fromSale — الصياغةُ في موضعٍ واحد', () {
+    // المنادي (`printing_service`) لا يستورد `intl`، وصياغةُ التاريخ والمبلغ
+    // في موضع النداء تتكرّر وتختلف. فالمصنعُ يثبّتها هنا حيث تُختبَر.
+    test('التاريخُ بالدقيقة والمبلغُ بمنزلتين', () {
+      final s = ReceiptSaleSummary.fromSale(
+        invoiceNumber: 'INV-9',
+        issuedAt: DateTime(2026, 9, 2, 14, 5),
+        total: 250,
+        companyName: 'مؤسّسة',
+      );
+
+      expect(s.invoiceNumber, 'INV-9');
+      expect(s.issuedAt, '2026-09-02 14:05');
+      expect(s.total, '250.00');
+      expect(s.companyName, 'مؤسّسة');
+    });
+
+    test('الشهرُ واليومُ والساعةُ تُصفَّر إلى خانتين', () {
+      final s = ReceiptSaleSummary.fromSale(
+        invoiceNumber: 'x',
+        issuedAt: DateTime(2026, 1, 3, 7, 8),
+        total: 0.5,
+        companyName: 'x',
+      );
+
+      expect(s.issuedAt, '2026-01-03 07:08');
+      expect(s.total, '0.50');
+    });
+  });
+
   group('الفاتورةُ الإلكترونيّةُ مُفعَّلةٌ على الجهاز', () {
     test('اعتمادُ البوّابة وصل ⇒ يطبع الرمزَ الضريبيَّ كما ورد', () {
       final qr = resolveReceiptQr(
