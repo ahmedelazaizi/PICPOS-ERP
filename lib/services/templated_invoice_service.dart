@@ -14,6 +14,7 @@ import '../core/logging/diagnostic_logger.dart';
 import '../core/utils/template_json_flags.dart';
 import '../data/database/database.dart';
 import '../domain/entities/shift_closing_snapshot.dart';
+import '../domain/models/receipt_qr_decision.dart';
 import '../domain/printing/print_values.dart' as pv;
 import '../domain/printing/party_statement_snapshot.dart';
 import 'printing/paint_plan.dart' show PaintDirection;
@@ -454,6 +455,13 @@ class TemplatedInvoiceService {
     /// فرعُ المستند — رابطةٌ مخصَّصةٌ لفرعٍ تتقدّم على العامّة.
     int? branchId,
 
+    /// قرارُ رمز الإيصال — ضريبيٌّ أو غيرُ ضريبيٍّ أو لا شيء.
+    ///
+    /// `null` تُبقي السلوكَ القديم (رقمُ الفاتورة) للمستندات التي ليست إيصالَ
+    /// بيعٍ أصلاً. وإيصالُ البيع يمرّره من `printing_service` بعد حلّه من
+    /// القاعدة (‏`resolveReceiptQrForSale`).
+    ReceiptQr? receiptQr,
+
     /// تُبنى الوثيقةُ وتُعاد بايتاتُها **بلا دفعٍ إلى الطابعة**.
     ///
     /// كانت هذه الدالّةُ تبني `pw.Document` وتدفعه إلى `Printing.*` في نفس
@@ -638,6 +646,7 @@ class TemplatedInvoiceService {
         platformOrderNumber: platformOrderNumber,
         cashAmount: cashAmount,
         bankAmount: bankAmount,
+        receiptQr: receiptQr,
       );
     }
 
@@ -1001,6 +1010,7 @@ class TemplatedInvoiceService {
     String? platformOrderNumber,
     double? cashAmount,
     double? bankAmount,
+    ReceiptQr? receiptQr,
   }) {
     final style = _getStyle(element);
     final align = _getAlignment(element.textAlign);
@@ -1262,12 +1272,36 @@ class TemplatedInvoiceService {
       case 'spacer':
         return pw.SizedBox(height: 8);
       case 'qr_code':
+        // لا اعتمادَ من البوّابة بعد على جهازٍ مُفعَّل ⇒ لا رمزَ إطلاقاً.
+        // ورمزٌ ببيانات البيعة هنا كان سيخرج بلا بياناتٍ ضريبيّةٍ من ماكينةِ
+        // منشأةٍ مسجَّلةٍ ضريبيّاً.
+        if (receiptQr != null && receiptQr.kind == ReceiptQrKind.none) {
+          return pw.SizedBox.shrink();
+        }
         return pw.Center(
-          child: pw.BarcodeWidget(
-            barcode: pw.Barcode.qrCode(),
-            data: invoiceNumber,
-            width: 50,
-            height: 50,
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.center,
+            children: [
+              pw.BarcodeWidget(
+                barcode: pw.Barcode.qrCode(),
+                data: receiptQr?.payload ?? invoiceNumber,
+                width: 50,
+                height: 50,
+              ),
+              // وسمُ الرمز غير الضريبيّ على الورقة نفسِها — من يقرأ الإيصالَ
+              // لا يرى قرارَ الكود.
+              if (receiptQr != null &&
+                  receiptQr.kind == ReceiptQrKind.nonFiscal &&
+                  receiptQr.disclaimer.isNotEmpty)
+                pw.Padding(
+                  padding: const pw.EdgeInsets.only(top: 2),
+                  child: pw.Text(
+                    receiptQr.disclaimer,
+                    style: style.copyWith(fontSize: 6),
+                    textDirection: pw.TextDirection.rtl,
+                  ),
+                ),
+            ],
           ),
         );
       case 'barcode':
