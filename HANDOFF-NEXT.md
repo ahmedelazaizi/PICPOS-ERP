@@ -36,10 +36,10 @@ cd "D:/PICPOS-ERP" && git log --oneline -1 && git merge-base --is-ancestor 6fb24
 | البند | القيمة |
 |---|---|
 | `analyze lib test` | **٦ info** بالضبط · صفرُ أخطاءٍ وتحذيرات |
-| `unit + data + structural + services` | **٥٥١٩ ✓** (كان ٥٤٨٣ ⇒ **+٣٦** = عددُ اختبارات رمز الإيصال بالضبط) |
-| `widget + core + domain + presentation + security + static` | **١٥٣٧ ✓** (كان ١٥٣٦) |
-| `integration` | **٧٦٤ ✓** |
-| `integration_pg` (منفصلة) | **٦٧ ✓** (بلا تغيير — لا اختبارَ PG جديدٌ في جلسة رمز الإيصال؛ مقيسٌ بعد البوّابة لا معها، `flutter test exited 0 in 788s`) |
+| `unit + data + structural + services` | **٥٥٩٠ ✓** (كان ٥٤٨٣ مطلعَ اليوم ⇒ **+١٠٧**) |
+| `widget + core + domain + presentation + security + static` | **١٥٤٣ ✓** (كان ١٥٣٦) |
+| `integration` | **٧٧٣ ✓** (كان ٧٦٤ ⇒ **+٩** = رحلةُ الطرف للطرف) |
+| `integration_pg` (منفصلة) | **٧٣ ✓** (كان ٦١ مطلعَ اليوم ⇒ **+١٢**؛ مقيسٌ **بعد** البوّابة لا معها، `exited 0 in 824s`) |
 | الحكم | `✓ البوابة كلها خضراء` · صفر `[E]` |
 
 ⚠️ **واشترط عددَ ناجحين > صفر في كلّ سويّة**: انقطاعُ الشبكة يُصفِّر سويّةً
@@ -83,14 +83,20 @@ docker info > /dev/null && rm -rf build/native_assets && dart run scripts/run_pg
 
 ---
 
-### الحزمةُ المسلَّمة — مبنيّةٌ من الجذر بعد الدمج، 2026-09-02
+### الحزمةُ المسلَّمة — مبنيّةٌ من الجذر بعد الدمج، 2026-09-02 (الجلسةُ الثالثة)
 
 ```
-D:/PICPOS-ERP/installer/output/PicPos-Setup-3.1.4.250.exe
-الحجم : 24,463,449 بايت (٢٣٫٣ م.ب)
-SHA-256: 637c69ebb4c237ec4151214d2970b84bca0474b62e9430cf9882c4257a7e0be2
-app.so MD5: 7a6f72544409150201349c9403d4e82e
+D:/PICPOS-ERP/installer/output/PicPos-Setup-3.1.4.251.exe
+الحجم : 24,472,806 بايت (٢٣٫٣ م.ب)
+SHA-256: defdb034c5d825d95eefb3a16941bea179fed2943ec9a8f37c94cfcc18b07288
+app.so MD5: 9843c0e1fcadc165b6388f66f95bfd81
 ```
+
+مبنيّةٌ عند `508a1110` — تحمل رمزَ الإيصال والفاتورةَ الإلكترونيّةَ من طرفٍ
+لطرف. ورُفع البناءُ إلى `3.1.4.251` بأمر المالك لأنّ `250` كان على حزمتَين.
+والمخرَجُ نظيف: `PicPos.exe` حاضر، لا `UralCash.exe`، و«‏OK - shipped
+sqlite3.dll carries the SQLCipher engine» (٤ مطابقاتِ `sqlcipher` في الـdll
+المشحونة).
 
 بُنيت **من الجذر بعد الدمج** بأمر المالك 2026-09-02، فلا تتوه بين الفروع.
 والبناءُ نظيف:
