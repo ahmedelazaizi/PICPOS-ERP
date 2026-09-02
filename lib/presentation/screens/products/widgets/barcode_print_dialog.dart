@@ -84,7 +84,7 @@ class _BarcodePrintDialogState extends State<BarcodePrintDialog> {
               Navigator.pop(context);
 
               // Print barcode
-              await InvoiceGenerator.printBarcodeLabel(
+              final printed = await InvoiceGenerator.printBarcodeLabel(
                 productName: widget.product.name,
                 barcodeValue: widget.product.barcode ?? widget.product.code,
                 price: widget.product.salePrice,
@@ -94,8 +94,10 @@ class _BarcodePrintDialogState extends State<BarcodePrintDialog> {
               if (context.mounted) {
                 AppToast.show(
                   context,
-                  'تمت طباعة $copies نسخة من الباركود',
-                  type: ToastType.success,
+                  printed
+                      ? 'تمت طباعة $copies نسخة من الباركود'
+                      : 'أُلغيت طباعة الباركود',
+                  type: printed ? ToastType.success : ToastType.warning,
                 );
               }
             },

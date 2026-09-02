@@ -67,7 +67,7 @@ void main() {
     expect(resolved?.name, expectedName,
         reason: 'الحاسمُ يجب أن يختار $file — وإلّا فالقياسُ على قالبٍ آخر');
 
-    final bytes = await TemplatedInvoiceService.printWithTemplate(
+    final bytes = (await TemplatedInvoiceService.printWithTemplate(
       db: db,
       debugBuildOnly: true,
       type: type,
@@ -91,7 +91,7 @@ void main() {
       companyPhone: '',
       companyTaxId: null,
       logoBytes: logo,
-    );
+    )).bytes;
     return probePdf(bytes);
   }
 

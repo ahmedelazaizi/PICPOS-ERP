@@ -17,7 +17,7 @@ class PdfComputeHelper {
   /// ```dart
   /// final pdf = await BaseGenerator.newDocument();
   /// pdf.addPage(...);
-  /// await PdfComputeHelper.layoutPdf(pdf);
+  /// final printed = await PdfComputeHelper.layoutPdf(pdf);
   /// ```
   ///
   /// Field-report 2026-05-14: standalone build silently process-exited
@@ -33,23 +33,63 @@ class PdfComputeHelper {
   /// عقب. والخطّافُ **فارغٌ بالبناء**، فمن لا يضبطه لا يتغيّر سلوكُه إطلاقاً.
   ///
   /// ⚠️ **ولا يُنادى إلّا بعد خروج الورقة**: بعد عودة حوار الطباعة الأصليّ
-  /// بلا رمي. فمستندٌ ألغى المستخدمُ طباعتَه في الحوار يُسجَّل — وهذا حدُّ
-  /// معلَنٌ لا سهو: النظامُ لا يرى ما بعد الحوار، وسطرُ «أُرسل إلى الطباعة»
-  /// أصدقُ ممّا يدّعي معرفةَ ما خرج من الطابعة فعلاً.
+  /// بـ`true`. مستندٌ ألغى المستخدمُ طباعتَه في الحوار **لا يُسجَّل** (منذ
+  /// 2026-09-02 — كان يُسجَّل لأنّ القيمةَ كانت تُهمَل). وما بعد قبول
+  /// الطابعة للمهمّة لا يراه النظام، فسطرُ «أُرسل إلى الطباعة» أصدقُ ممّا
+  /// يدّعي معرفةَ ما خرج من الطابعة فعلاً.
   static Future<void> Function(String documentLabel)? onPrinted;
+
+  /// بديلُ الحوار الأصليّ في الاختبارات — `null` في الإنتاج.
+  ///
+  /// `Printing.layoutPdf` تحتاج قناةَ منصّةٍ فلا تعمل في اختبار وحدة؛ وهذا
+  /// الخطّافُ يُثبت العقدَ الوحيدَ الذي يهمّ: إلغاءُ الحوار ⇒ `false`
+  /// و**لا** نداءَ لخطّاف التسجيل.
+  @visibleForTesting
+  static Future<bool> Function(Uint8List bytes, String? name)?
+      nativeLayoutOverride;
 
   /// [documentLabel] اسمُ المستند كما يُقرأ في السجلّ. `null` ⇒ لا تسجيل —
   /// وهو الوضعُ الصحيحُ للفواتير، فـ`PrintingServiceImpl` يسجّلها بنفسه
   /// بمعرِّفِ الفاتورة ومبلغِها، وتسجيلُها هنا أيضاً يكتب سطرَين لطباعةٍ
   /// واحدة.
-  static Future<void> layoutPdf(pw.Document pdf, {String? documentLabel}) async {
+  ///
+  /// يرجع **ما ردّه حوارُ الطباعة**: `true` قُبلت المهمّة، و`false` ألغى
+  /// المستخدمُ. كانت القيمةُ تُهمَل فيرى من ضغط «إلغاء» رسالةَ «تمّت
+  /// الطباعة» على كلِّ شاشةٍ تطبع — ٤٩ موضعاً في ١٨ ملفّاً (مقيس 2026-09-02).
+  static Future<bool> layoutPdf(
+    pw.Document pdf, {
+    String? documentLabel,
+    String? name,
+  }) async {
     final Uint8List bytes = await saveToBytes(pdf);
+    return layoutBytes(bytes, documentLabel: documentLabel, name: name);
+  }
+
+  /// نفسُ [layoutPdf] لبايتاتٍ جاهزة — القمعُ الوحيدُ لحوار الطباعة الأصليّ.
+  ///
+  /// ⚠️ **كلُّ نداءٍ لـ`Printing.layoutPdf` في `lib` يمرّ من هنا** — يحرسه
+  /// `print_dialog_funnel_guard_test`. نداءٌ مباشرٌ يفقد ثلاثةَ أشياء دفعةً:
+  /// سجلَّ التشخيص، وخطّافَ التسجيل، وقيمةَ الإلغاء.
+  static Future<bool> layoutBytes(
+    Uint8List bytes, {
+    String? documentLabel,
+    String? name,
+  }) async {
     unawaited(DiagnosticLogger.log(
         'PDF-PRINT', 'layoutPdf invoking native dialog (bytes=${bytes.length})'));
     try {
-      await printing_pkg.Printing.layoutPdf(
-        onLayout: (format) async => bytes,
-      );
+      final override = nativeLayoutOverride;
+      final bool printed = override != null
+          ? await override(bytes, name)
+          : await printing_pkg.Printing.layoutPdf(
+              onLayout: (format) async => bytes,
+              name: name ?? 'Document',
+            );
+      if (!printed) {
+        unawaited(DiagnosticLogger.log(
+            'PDF-PRINT', 'layoutPdf cancelled by user (no sheet, no audit)'));
+        return false;
+      }
       unawaited(DiagnosticLogger.log('PDF-PRINT', 'layoutPdf returned OK'));
       final hook = onPrinted;
       if (hook != null && documentLabel != null) {
@@ -61,6 +101,7 @@ class PdfComputeHelper {
               DiagnosticLogger.log('PDF-PRINT', 'print-audit hook failed: $e'));
         }
       }
+      return true;
     } catch (e, st) {
       unawaited(DiagnosticLogger.log(
           'PDF-PRINT', 'layoutPdf threw: $e\n$st'));
@@ -79,4 +120,3 @@ class PdfComputeHelper {
     }
   }
 }
-

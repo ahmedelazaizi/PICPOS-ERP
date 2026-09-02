@@ -2,6 +2,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'base_generator.dart';
+import '../printing/pdf_compute_helper.dart';
 import '../printer_resolver.dart';
 import '../../core/constants/app_constants.dart';
 import '../../domain/repositories/printers_repository.dart';
@@ -68,7 +69,7 @@ class ThermalVoucherGenerator {
   }
   /// Print Voucher (Receipt/Payment) - 80mm thermal format (#5)
   /// Layout: Company Header → Voucher Title → Party Info → Amount → Description → Footer
-  static Future<void> printVoucher({
+  static Future<bool> printVoucher({
     required String voucherNumber,
     required String voucherType, // 'receipt' or 'payment'
     required DateTime date,
@@ -331,14 +332,16 @@ class ThermalVoucherGenerator {
           onLayout: (format) async => pdf.save(),
         );
       } else {
-        await Printing.layoutPdf(onLayout: (format) async => pdf.save());
+        return PdfComputeHelper.layoutPdf(pdf);
       }
     }
+    // الإرسالُ المباشرُ إلى طابعةٍ مضبوطةٍ لا يُلغى من حوار.
+    return true;
   }
 
   /// Print Return Credit Note - 80mm thermal format
   /// Layout: Company Header → Return Title → Original Invoice Ref → Items Table → Refund Amount → Reason → Footer
-  static Future<void> printReturnReceipt({
+  static Future<bool> printReturnReceipt({
     required String returnVoucherNumber,
     required String originalInvoiceNumber,
     required DateTime date,
@@ -582,8 +585,10 @@ class ThermalVoucherGenerator {
           onLayout: (format) async => pdf.save(),
         );
       } else {
-        await Printing.layoutPdf(onLayout: (format) async => pdf.save());
+        return PdfComputeHelper.layoutPdf(pdf);
       }
     }
+    // الإرسالُ المباشرُ إلى طابعةٍ مضبوطةٍ لا يُلغى من حوار.
+    return true;
   }
 }

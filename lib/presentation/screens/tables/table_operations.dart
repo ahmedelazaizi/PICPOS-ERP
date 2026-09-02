@@ -618,7 +618,7 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
       final db = ref.read(databaseProvider);
       final logoBytes = (await db.getReceiptSettings()).logoImage;
 
-      await InvoiceGenerator.printThermalReceipt(
+      final printed = await InvoiceGenerator.printThermalReceipt(
         invoiceNumber: 'T${table.id}-${order.id}',
         date: DateTime.now(),
         items: invoiceItems,
@@ -635,8 +635,12 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
       );
 
       if (screenContext.mounted) {
-        AppToast.show(screenContext, 'تمت طباعةُ فاتورة ${table.name}',
-            type: ToastType.success);
+        AppToast.show(
+            screenContext,
+            printed
+                ? 'تمت طباعةُ فاتورة ${table.name}'
+                : 'أُلغيت طباعةُ فاتورة ${table.name}',
+            type: printed ? ToastType.success : ToastType.warning);
       }
     } catch (e) {
       if (screenContext.mounted) {

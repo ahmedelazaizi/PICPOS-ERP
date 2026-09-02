@@ -10,7 +10,7 @@ import '../../core/config/brand.dart';
 /// Handles printing of professional A4 PDF vouchers for receipts and payments.
 class VouchersPdfGenerator extends BaseGenerator {
   /// Print Receipt/Payment Voucher (A4)
-  static Future<void> printVoucher({
+  static Future<bool> printVoucher({
     required String voucherNumber,
     required String voucherType, // 'receipt' or 'payment'
     required DateTime date,
@@ -249,7 +249,7 @@ class VouchersPdfGenerator extends BaseGenerator {
       ),
     );
 
-    await PdfComputeHelper.layoutPdf(pdf);
+    return PdfComputeHelper.layoutPdf(pdf);
   }
 
   static pw.Widget _buildHeader(

@@ -1253,15 +1253,16 @@ class _PicposCashierClosingDialogState
       }
     }
 
+    // §٤ `xrep`.
+    final printReport = diffPolicy.isOn(
+      kQuickSaleRows.firstWhere((r) => r.id == 'xrep'),
+    );
     try {
       await ref.read(posClosingControllerProvider.notifier).handleClosing(
         password: _passwordController.text,
         cardCode: _msrCardController.text,
         varianceReason: varianceReason,
-        // §٤ `xrep`.
-        printReport: diffPolicy.isOn(
-          kQuickSaleRows.firstWhere((r) => r.id == 'xrep'),
-        ),
+        printReport: printReport,
       );
 
       if (mounted) {
@@ -1300,7 +1301,21 @@ class _PicposCashierClosingDialogState
         if (widget.logoutAfterClose) {
           ref.read(authProvider.notifier).logout();
         }
-        showPosToast(context, ref, 'تم إغلاق الوردية وطباعة التقرير بنجاح', type: PosNotificationType.success);
+        // الرسالةُ تقول ما وقع: الورديّةُ أُغلقت دائماً، والتقريرُ طُبع إن
+        // ردّ الحوارُ بالقبول — وإلغاؤه كان يُحسَب نجاحاً (2026-09-02).
+        final reportPrinted = finalState.reportPrinted;
+        showPosToast(
+          context,
+          ref,
+          !printReport
+              ? 'تم إغلاق الوردية بنجاح'
+              : reportPrinted == false
+                  ? 'تم إغلاق الوردية — وأُلغيت طباعة التقرير'
+                  : 'تم إغلاق الوردية وطباعة التقرير بنجاح',
+          type: reportPrinted == false
+              ? PosNotificationType.warning
+              : PosNotificationType.success,
+        );
       }
     } catch (e) {
       if (mounted) {

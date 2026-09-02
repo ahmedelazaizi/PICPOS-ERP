@@ -75,7 +75,7 @@ void main() {
     // والمقيسُ أنّه **القالبُ المربوطُ بعينه** لا «شيءٌ تغيّر»: لكلٍّ منهما
     // عنوانٌ ثابتٌ لا يوجد في الآخر.
     final boundData = await db.getTemplateWithData(boundId);
-    final direct = probePdf(await TemplatedInvoiceService.printWithTemplate(
+    final direct = probePdf((await TemplatedInvoiceService.printWithTemplate(
       db: db,
       debugBuildOnly: true,
       type: boundData!.template.type,
@@ -97,7 +97,7 @@ void main() {
       companyAddress: kFixtureCompanyAddress,
       companyPhone: kFixtureCompanyPhone,
       companyTaxId: kFixtureCompanyTaxId,
-    ));
+    )).bytes);
     expect(after.fingerprint(), direct.fingerprint(),
         reason: 'حُسم قالبٌ ثالثٌ لا هذا ولا ذاك');
   });
@@ -182,8 +182,8 @@ Future<Uint8List> _render(
   AppDatabase db,
   InvoiceTemplate t, {
   String? documentType,
-}) =>
-    TemplatedInvoiceService.printWithTemplate(
+}) async =>
+    (await TemplatedInvoiceService.printWithTemplate(
       db: db,
       debugBuildOnly: true,
       type: t.type,
@@ -205,4 +205,4 @@ Future<Uint8List> _render(
       companyAddress: kFixtureCompanyAddress,
       companyPhone: kFixtureCompanyPhone,
       companyTaxId: kFixtureCompanyTaxId,
-    );
+    )).bytes;

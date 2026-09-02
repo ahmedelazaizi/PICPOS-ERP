@@ -16,18 +16,21 @@ abstract class IPrintingService {
   /// لا تقطع. فمن غيّر هذا التوقيعَ فليُبقِ المخارجَ الأربعةَ صريحة.
   ///
   /// وحدُّه معلَن: `false` تعني «لم يُرسَل إلى الطابعة» (بياناتٌ ناقصةٌ أو
-  /// إخفاقٌ رُمي). أمّا ما خرج من الطابعة بعد قبولها المهمّةَ فلا يراه
-  /// النظام — وإلغاءُ المستخدمِ في حوار الطباعة ما زال يُحسَب نجاحاً
-  /// (‏`Printing.layoutPdf` تُرجع `bool` تُهمَل في `PdfComputeHelper`).
+  /// إخفاقٌ رُمي، **أو إلغاءُ المستخدم في حوار الطباعة** — منذ 2026-09-02،
+  /// فـ`PdfComputeHelper.layoutPdf` يرجع ما ردّه الحوار). أمّا ما خرج من
+  /// الطابعة بعد قبولها المهمّةَ فلا يراه النظام.
   Future<bool> printReceipt(int invoiceId);
 
   /// Print an A4 sales invoice (regular invoices screen).
   /// POS continues using [printReceipt] which outputs thermal 80mm.
-  Future<void> printSalesInvoiceA4(int invoiceId);
+  ///
+  /// يرجع `true` إن خرجت الورقة (أو قُبلت المهمّة)، و`false` إن ألغى
+  /// المستخدمُ الحوارَ أو غابت البيانات — بنفس عقد [printReceipt].
+  Future<bool> printSalesInvoiceA4(int invoiceId);
 
   /// Print an A4 purchase invoice — mirrors [printSalesInvoiceA4] but for
   /// the purchases flow so both screens share the same save-and-print path.
-  Future<void> printPurchaseInvoiceA4(int invoiceId);
+  Future<bool> printPurchaseInvoiceA4(int invoiceId);
 }
 
 class PrintingServiceImpl implements IPrintingService {
@@ -37,15 +40,15 @@ class PrintingServiceImpl implements IPrintingService {
   PrintingServiceImpl(this.db, this.salesRepository);
 
   @override
-  Future<void> printSalesInvoiceA4(int invoiceId) async {
+  Future<bool> printSalesInvoiceA4(int invoiceId) async {
     try {
       final printData = await salesRepository.getSalesPrintData(invoiceId);
       if (printData == null) {
         logger.warning('A4 print failed: data not found for invoice $invoiceId');
-        return;
+        return false;
       }
       final s = printData.receiptSettings;
-      await InvoiceGenerator.printSalesInvoice(
+      final printed = await InvoiceGenerator.printSalesInvoice(
         invoiceNumber: printData.invoiceNumber,
         date: printData.date,
         customerName: printData.customerName ?? printData.adhocCustomerName,
@@ -73,6 +76,8 @@ class PrintingServiceImpl implements IPrintingService {
         notes: printData.notes,
         db: db,
       );
+      // إلغاءٌ في الحوار ⇒ لا ورقةَ ولا سطرَ سجلٍّ يدّعي طباعةً.
+      if (!printed) return false;
       await _logPrint(
         action: 'print_invoice',
         entityType: 'sales_invoice',
@@ -80,24 +85,26 @@ class PrintingServiceImpl implements IPrintingService {
         description: 'طباعةُ فاتورة مبيعات A4 رقم ${printData.invoiceNumber}',
         amount: printData.total,
       );
+      return true;
     } catch (e, stack) {
       logger.error('Failed to print A4 sales invoice', e, stack, 'PrintingService');
+      return false;
     }
   }
 
   @override
-  Future<void> printPurchaseInvoiceA4(int invoiceId) async {
+  Future<bool> printPurchaseInvoiceA4(int invoiceId) async {
     try {
       final invoice = await db.getPurchaseInvoiceById(invoiceId);
       if (invoice == null) {
         logger.warning('A4 purchase print: invoice $invoiceId not found');
-        return;
+        return false;
       }
       final items = await db.getPurchaseInvoiceItemsWithProduct(invoiceId);
       final supplier = await db.getPartyById(invoice.supplierId);
       final companyName = await db.getSettingValue('company_name');
 
-      await InvoiceGenerator.printPurchaseInvoice(
+      final printed = await InvoiceGenerator.printPurchaseInvoice(
         invoiceNumber: invoice.invoiceNumber,
         date: invoice.invoiceDate,
         supplierName: supplier?.name ?? 'غير محدد',
@@ -115,6 +122,7 @@ class PrintingServiceImpl implements IPrintingService {
         companyName: companyName,
         db: db,
       );
+      if (!printed) return false;
       await _logPrint(
         action: 'print_purchase_invoice',
         entityType: 'purchase_invoice',
@@ -122,8 +130,10 @@ class PrintingServiceImpl implements IPrintingService {
         description: 'طباعةُ فاتورة مشتريات A4 رقم ${invoice.invoiceNumber}',
         amount: invoice.total,
       );
+      return true;
     } catch (e, stack) {
       logger.error('Failed to print A4 purchase invoice', e, stack, 'PrintingService');
+      return false;
     }
   }
 
@@ -178,7 +188,7 @@ class PrintingServiceImpl implements IPrintingService {
               )
               .toList();
 
-          await TemplatedInvoiceService.printWithTemplate(
+          final r = await TemplatedInvoiceService.printWithTemplate(
             db: db,
             invoiceNumber: printData.invoiceNumber,
             date: printData.date,
@@ -209,6 +219,9 @@ class PrintingServiceImpl implements IPrintingService {
             orderNumber: printData.platformOrderNumber ?? printData.orderNumber?.toString(),
             locale: locale,
           );
+          // إلغاءٌ في حوار الطباعة ⇒ `false` بلا سقوطٍ إلى التخطيط الافتراضيّ
+          // (السقوطُ كان سيفتح الحوارَ ثانيةً) وبلا سطرِ سجلٍّ يدّعي طباعة.
+          if (!r.printed) return false;
           await _logPrint(
             action: printAction,
             entityType: 'sales_invoice',
@@ -223,7 +236,7 @@ class PrintingServiceImpl implements IPrintingService {
       }
 
       // Default layout (fallback)
-      await InvoiceGenerator.printThermalReceipt(
+      final printed = await InvoiceGenerator.printThermalReceipt(
         invoiceNumber: printData.invoiceNumber,
         date: printData.date,
         items: printData.items.map((i) => print_models.InvoiceItem(
@@ -270,6 +283,7 @@ class PrintingServiceImpl implements IPrintingService {
         // السقوطُ إلى هذا المسار يُفقد الشعارَ صامتاً.
         logoBytes: receiptSettings.logoImage,
       );
+      if (!printed) return false;
       await _logPrint(
         action: printAction,
         entityType: 'sales_invoice',

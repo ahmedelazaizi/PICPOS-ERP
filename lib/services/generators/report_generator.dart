@@ -1,8 +1,8 @@
 // ignore_for_file: avoid_dynamic_calls
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
 import 'base_generator.dart';
+import '../printing/pdf_compute_helper.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/config/brand.dart';
 
@@ -17,7 +17,7 @@ import '../../core/config/brand.dart';
 /// - Financial statements
 class ReportGenerator extends BaseGenerator {
   /// Print inventory report
-  static Future<void> printInventoryReport({
+  static Future<bool> printInventoryReport({
     required List<dynamic> products,
     String? companyName,
     Map<int, String>? categoryMap,
@@ -79,11 +79,11 @@ class ReportGenerator extends BaseGenerator {
       ),
     );
 
-    await Printing.layoutPdf(onLayout: (format) async => pdf.save());
+    return PdfComputeHelper.layoutPdf(pdf);
   }
 
   /// Print treasury report
-  static Future<void> printTreasuryReport({
+  static Future<bool> printTreasuryReport({
     required List<dynamic> transactions,
     required double openingBalance,
     required double totalIn,
@@ -130,11 +130,11 @@ class ReportGenerator extends BaseGenerator {
       ),
     );
 
-    await Printing.layoutPdf(onLayout: (format) async => pdf.save());
+    return PdfComputeHelper.layoutPdf(pdf);
   }
 
   /// Print sales report
-  static Future<void> printSalesReport({
+  static Future<bool> printSalesReport({
     required List<dynamic> invoices,
     required double totalSales,
     required double totalProfit,
@@ -191,11 +191,11 @@ class ReportGenerator extends BaseGenerator {
       ),
     );
 
-    await Printing.layoutPdf(onLayout: (format) async => pdf.save());
+    return PdfComputeHelper.layoutPdf(pdf);
   }
 
   /// Print purchases report
-  static Future<void> printPurchasesReport({
+  static Future<bool> printPurchasesReport({
     required List<dynamic> invoices,
     required double totalPurchases,
     required double totalOutstanding,
@@ -252,11 +252,11 @@ class ReportGenerator extends BaseGenerator {
       ),
     );
 
-    await Printing.layoutPdf(onLayout: (format) async => pdf.save());
+    return PdfComputeHelper.layoutPdf(pdf);
   }
 
   /// Print category report (sales by category or classification)
-  static Future<void> printCategoryReport({
+  static Future<bool> printCategoryReport({
     required List<Map<String, dynamic>> categories,
     required double totalSales,
     required bool isCategory,
@@ -321,7 +321,7 @@ class ReportGenerator extends BaseGenerator {
       ),
     );
 
-    await Printing.layoutPdf(onLayout: (format) async => pdf.save());
+    return PdfComputeHelper.layoutPdf(pdf);
   }
 
   // ═══════════════════════════════════════════════════════════════════════════

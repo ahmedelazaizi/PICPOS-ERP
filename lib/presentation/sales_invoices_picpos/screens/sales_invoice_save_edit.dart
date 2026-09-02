@@ -298,12 +298,15 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
       // toast and proceed. 30s is generous enough for a real print
       // setup and short enough that a hung dialog is recoverable
       // without Task Manager.
+      // هل خرجت الورقةُ فعلاً؟ إلغاءُ المستخدم في حوار الطباعة كان يُحسَب
+      // نجاحاً فتقول الرسالةُ «حفظ وطباعة» ولا ورقة (2026-09-02).
+      var printedOk = false;
       if (printAfterSave) {
         unawaited(DiagnosticLogger.log('SALES-INVOICE-SAVE',
             'calling printSalesInvoiceA4 invoiceId=$invoiceId'));
         final printingService = container.read(printingServiceProvider);
         try {
-          await printingService
+          printedOk = await printingService
               .printSalesInvoiceA4(invoiceId)
               .timeout(const Duration(seconds: 30));
         } on TimeoutException catch (e) {
@@ -361,8 +364,8 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
           AppToast.show(
             context,
             isReturnMode
-                ? 'تم ${printAfterSave ? 'حفظ وطباعة' : 'إنشاء'} إشعار المرتجع بنجاح #$invoiceId'
-                : 'تم ${printAfterSave ? 'حفظ وطباعة' : 'إنشاء'} الفاتورة بنجاح #$invoiceId',
+                ? 'تم ${printedOk ? 'حفظ وطباعة' : (printAfterSave ? 'حفظ (بلا طباعة)' : 'إنشاء')} إشعار المرتجع بنجاح #$invoiceId'
+                : 'تم ${printedOk ? 'حفظ وطباعة' : (printAfterSave ? 'حفظ (بلا طباعة)' : 'إنشاء')} الفاتورة بنجاح #$invoiceId',
             type: ToastType.success,
           );
         }

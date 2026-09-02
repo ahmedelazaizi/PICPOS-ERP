@@ -7,6 +7,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'generators/base_generator.dart';
 import 'package:printing/printing.dart';
+import 'printing/pdf_compute_helper.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import '../core/logging/diagnostic_logger.dart';
@@ -396,7 +397,7 @@ class TemplatedInvoiceService {
   }
 
   /// طباعة فاتورة باستخدام القالب المخصصة (Thermal أو A4)
-  static Future<Uint8List> printWithTemplate({
+  static Future<({Uint8List bytes, bool printed})> printWithTemplate({
     required AppDatabase db,
     required String invoiceNumber,
     required DateTime date,
@@ -547,14 +548,14 @@ class TemplatedInvoiceService {
         logoBytes: logoBytes,
         statement: statement,
       );
-      if (debugBuildOnly) return bytes;
-      await _pushToPrinter(
+      if (debugBuildOnly) return (bytes: bytes, printed: false);
+      final printed = await _pushToPrinter(
         db: db,
         bytes: bytes,
         directPrint: directPrint,
         category: category,
       );
-      return bytes;
+      return (bytes: bytes, printed: printed);
     }
 
     final pdf = await BaseGenerator.newDocument();
@@ -721,15 +722,15 @@ class TemplatedInvoiceService {
     // البايتاتُ تُحسب مرّةً واحدةً ثم تُقدَّم لكلِّ مسارٍ — بدلَ استدعاء
     // `pdf.save()` داخلَ كلِّ `onLayout`. نفسُ المخرَج، ونداءٌ واحد.
     final bytes = await pdf.save();
-    if (debugBuildOnly) return bytes;
+    if (debugBuildOnly) return (bytes: bytes, printed: false);
 
-    await _pushToPrinter(
+    final printed = await _pushToPrinter(
       db: db,
       bytes: bytes,
       directPrint: directPrint,
       category: category,
     );
-    return bytes;
+    return (bytes: bytes, printed: printed);
   }
 
   /// يحسم القالبَ بسلسلة الرابطات، ويسقط إلى الافتراضيِّ القديم.
@@ -790,7 +791,7 @@ class TemplatedInvoiceService {
   ///
   /// نسخةٌ ثانيةٌ من حلِّ الطابعة تعني أنّ إصلاحَ «المطبخُ يخرج على طابعة
   /// الكاشير» يُصلَح في أحدهما ويبقى في الآخر.
-  static Future<void> _pushToPrinter({
+  static Future<bool> _pushToPrinter({
     required AppDatabase db,
     required Uint8List bytes,
     required bool directPrint,
@@ -808,13 +809,13 @@ class TemplatedInvoiceService {
           printer: resolvedPrinter,
           onLayout: (_) => bytes,
         );
-        return;
+        return true;
       }
       debugPrint(
         '[TemplatedInvoice] No configured $category printer, showing print dialog',
       );
     }
-    await Printing.layoutPdf(onLayout: (_) => bytes);
+    return PdfComputeHelper.layoutBytes(bytes);
   }
 
   /// حمولةُ القيم — تُبنى مرّةً ويقرؤها المسارُ الجديد.
@@ -2162,7 +2163,7 @@ class TemplatedInvoiceService {
   /// Prints barcode labels using a saved barcode template design.
   /// Each label is laid out according to the template's paper size,
   /// with multiple labels arranged in a grid on A4 pages.
-  static Future<void> printBarcodeWithTemplate({
+  static Future<bool> printBarcodeWithTemplate({
     required AppDatabase db,
     required String barcodeValue,
     required String productName,
@@ -2191,7 +2192,7 @@ class TemplatedInvoiceService {
 
     if (templateData == null) {
       debugPrint('[BarcodeTemplate] No barcode template found');
-      return;
+      return false;
     }
 
     final template = templateData.template;
@@ -2264,11 +2265,10 @@ class TemplatedInvoiceService {
         name: 'Barcode_${barcodeValue}_x$copies',
       );
     } else {
-      await Printing.layoutPdf(
-        onLayout: (format) async => pdf.save(),
-        name: 'Barcode_${barcodeValue}_x$copies',
-      );
+      return PdfComputeHelper.layoutPdf(pdf, name: 'Barcode_${barcodeValue}_x$copies');
     }
+    // الإرسالُ المباشرُ إلى طابعةٍ مضبوطةٍ لا يُلغى من حوار.
+    return true;
   }
 
   /// Build a single barcode label from template elements

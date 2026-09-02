@@ -193,7 +193,7 @@ mixin _PurchaseReturnsPicposLogic on ConsumerState<PurchaseReturnsPicposScreen> 
           })
           .toList();
 
-      await InvoiceGenerator.printPurchaseInvoice(
+      final printed = await InvoiceGenerator.printPurchaseInvoice(
         invoiceNumber: 'PRET-${invoice.invoiceNumber}',
         date: DateTime.now(),
         supplierName: supplierName,
@@ -210,8 +210,10 @@ mixin _PurchaseReturnsPicposLogic on ConsumerState<PurchaseReturnsPicposScreen> 
       if (mounted) {
         AppToast.show(
           context,
-          'تم طباعة فاتورة مرتجع ${invoice.invoiceNumber}',
-          type: ToastType.success,
+          printed
+              ? 'تم طباعة فاتورة مرتجع ${invoice.invoiceNumber}'
+              : 'أُلغيت طباعة فاتورة مرتجع ${invoice.invoiceNumber}',
+          type: printed ? ToastType.success : ToastType.warning,
         );
       }
     } catch (e, stack) {
@@ -269,7 +271,7 @@ mixin _PurchaseReturnsPicposLogic on ConsumerState<PurchaseReturnsPicposScreen> 
         ));
       }
 
-      await InvoiceGenerator.printPurchaseInvoice(
+      final printed = await InvoiceGenerator.printPurchaseInvoice(
         invoiceNumber: 'PRET-${invoice.invoiceNumber}',
         date: invoice.invoiceDate,
         supplierName: supplierName,
@@ -284,8 +286,10 @@ mixin _PurchaseReturnsPicposLogic on ConsumerState<PurchaseReturnsPicposScreen> 
       if (mounted) {
         AppToast.show(
           context,
-          'تم طباعة مرتجع الفاتورة ${invoice.invoiceNumber}',
-          type: ToastType.success,
+          printed
+              ? 'تم طباعة مرتجع الفاتورة ${invoice.invoiceNumber}'
+              : 'أُلغيت طباعة مرتجع الفاتورة ${invoice.invoiceNumber}',
+          type: printed ? ToastType.success : ToastType.warning,
         );
       }
     } catch (e, stack) {

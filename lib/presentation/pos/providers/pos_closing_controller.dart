@@ -40,6 +40,11 @@ class PosClosingState {
   final String closingMethod;
   final double? varianceJeWarning; // GAP-24: variance JE silently failed
 
+  /// هل خرج تقريرُ الإقفال فعلاً؟ `null` لم تُطلَب طباعة، و`false` ألغى
+  /// الكاشيرُ حوارَ الطباعة (2026-09-02 — كان الإلغاءُ يُحسَب نجاحاً فتقول
+  /// الرسالةُ «وطباعة التقرير» ولا ورقة).
+  final bool? reportPrinted;
+
   /// ISS-FIN-03: Set to true when variance is CRITICAL and manager has not
   /// yet confirmed the override. The UI must display an explicit confirmation
   /// before allowing the close to proceed.
@@ -68,6 +73,7 @@ class PosClosingState {
     this.error,
     this.closingMethod = 'normal',
     this.varianceJeWarning,
+    this.reportPrinted,
     this.criticalVarianceBlocked = false,
     this.resolvedShiftId,
     this.resolvedShiftUserId,
@@ -147,6 +153,7 @@ class PosClosingState {
     String? error,
     String? closingMethod,
     double? varianceJeWarning,
+    bool? reportPrinted,
     bool? criticalVarianceBlocked,
     int? resolvedShiftId,
     int? resolvedShiftUserId,
@@ -164,6 +171,7 @@ class PosClosingState {
       error: error ?? this.error,
       closingMethod: closingMethod ?? this.closingMethod,
       varianceJeWarning: varianceJeWarning ?? this.varianceJeWarning,
+      reportPrinted: reportPrinted ?? this.reportPrinted,
       criticalVarianceBlocked: criticalVarianceBlocked ?? this.criticalVarianceBlocked,
       resolvedShiftId: resolvedShiftId ?? this.resolvedShiftId,
       resolvedShiftUserId: resolvedShiftUserId ?? this.resolvedShiftUserId,
@@ -754,7 +762,7 @@ class PosClosingController extends Notifier<PosClosingState> {
       // النشاط تحتها كلُّها تقع مهما كان الإعداد — ورقةٌ لا تُطبَع لا
       // تعني ورديةً لا تُقفَل.
       if (printReport) {
-        await printShiftClosingSnapshot(
+        final printed = await printShiftClosingSnapshot(
           snapshot: snapshot,
           fontScale: fontScale,
           printersRepo: ref.read(printersRepositoryProvider),
@@ -762,6 +770,8 @@ class PosClosingController extends Notifier<PosClosingState> {
           // قالبٍ افتراضيّ يبقى المولّدُ الثابت.
           db: ref.read(databaseProvider),
         );
+        // القيمةُ لا غيابُ الرمي: إلغاءُ الحوار يعود `false` ولا يرمي.
+        state = state.copyWith(reportPrinted: printed);
       }
 
       final logger = ref.read(activityLoggerProvider);

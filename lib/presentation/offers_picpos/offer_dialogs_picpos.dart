@@ -193,7 +193,7 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                                         1;
                                     if (copies <= 0) return;
                                     try {
-                                      await InvoiceGenerator.printBarcodeLabel(
+                                      final printed = await InvoiceGenerator.printBarcodeLabel(
                                         barcodeValue: barcodeController.text,
                                         productName:
                                             nameController.text.isNotEmpty
@@ -209,8 +209,12 @@ mixin _OfferDialogsMixin on ConsumerState<OffersPicPosScreen> {
                                       if (ctx.mounted) {
                                         AppToast.show(
                                           ctx,
-                                          'تم إرسال $copies نسخة للطباعة',
-                                          type: ToastType.success,
+                                          printed
+                                              ? 'تم إرسال $copies نسخة للطباعة'
+                                              : 'أُلغيت الطباعة',
+                                          type: printed
+                                              ? ToastType.success
+                                              : ToastType.warning,
                                         );
                                       }
                                     } catch (e) {

@@ -28,7 +28,7 @@ class InvoiceGenerator {
   /// If [db] is provided and a default thermal receipt template exists,
   /// uses the user's custom template design. Otherwise falls back to
   /// the hardcoded receipt layout.
-  static Future<void> printThermalReceipt({
+  static Future<bool> printThermalReceipt({
     required String invoiceNumber,
     required DateTime date,
     required List<InvoiceItem> items,
@@ -82,7 +82,7 @@ class InvoiceGenerator {
           final grandTotal = total + (deliveryFee ?? 0);
           final remaining = grandTotal - paid;
 
-          await TemplatePdfRenderer.printFromTemplate(
+          final printed = await TemplatePdfRenderer.printFromTemplate(
             templateData: templateData,
             invoiceData: TemplateInvoiceData(
               invoiceNumber: invoiceNumber,
@@ -118,7 +118,7 @@ class InvoiceGenerator {
             directPrint: directPrint,
             printersRepo: printersRepo,
           );
-          return; // Done — template used successfully
+          return printed; // Done — template used successfully
         }
       } catch (e) {
         debugPrint('[InvoiceGenerator] Template rendering failed, falling back: $e');
@@ -160,7 +160,7 @@ class InvoiceGenerator {
   }
 
   /// Print A4 sales invoice — uses user template if available
-  static Future<void> printSalesInvoice({
+  static Future<bool> printSalesInvoice({
     required String invoiceNumber,
     required DateTime date,
     required String? customerName,
@@ -201,7 +201,7 @@ class InvoiceGenerator {
             'code': i.code, 'unit': i.unit, 'barcode': i.barcode,
             'discount': i.discount, 'tax': i.tax,
           }).toList();
-          await TemplatedInvoiceService.printWithTemplate(
+          final r = await TemplatedInvoiceService.printWithTemplate(
             db: db,
             invoiceNumber: invoiceNumber,
             date: date,
@@ -224,7 +224,7 @@ class InvoiceGenerator {
             category: 'invoice',
             documentType: 'sales_invoice',
           );
-          return;
+          return r.printed;
         } catch (e) {
           debugPrint('[InvoiceGenerator] A4 template failed, falling back: $e');
         }
@@ -259,7 +259,7 @@ class InvoiceGenerator {
   ///
   /// والتوجيهُ هنا لا في الشاشتَين: توأمان ينسخان النداءَ نفسَه، ومنطقٌ
   /// مكرَّرٌ في موضعَين يفترق (‏حصل في عنوان قناةٍ يومَ 2026-08-12).
-  static Future<void> printSalesReturnReceipt({
+  static Future<bool> printSalesReturnReceipt({
     required String returnVoucherNumber,
     required String originalInvoiceNumber,
     required DateTime date,
@@ -282,7 +282,7 @@ class InvoiceGenerator {
       );
       if (hasTemplate) {
         try {
-          await TemplatedInvoiceService.printWithTemplate(
+          final r = await TemplatedInvoiceService.printWithTemplate(
             db: db,
             // رقمُ المستند هو سندُ المرتجع SRET-N، والفاتورةُ الأصليةُ تُحمل
             // في `orderNumber` — وتسميتُها في القالب `labelAr` («رقم الفاتورة
@@ -326,7 +326,7 @@ class InvoiceGenerator {
             documentType: 'sales_return',
             directPrint: true,
           );
-          return;
+          return r.printed;
         } catch (e) {
           debugPrint(
               '[InvoiceGenerator] Sales return template failed, falling back: $e');
@@ -361,7 +361,7 @@ class InvoiceGenerator {
   /// *فاتورة مشتريات* ثابتاً». والحجّةُ صحيحةٌ والعلاجُ خطأ: للمرتجع قالبُه
   /// المبذورُ منذ البداية (`purchase_return`) بعنوانه الخاصّ في عنصرِ نصٍّ
   /// داخله. فالتخطّي كان يحرم المالكَ من تصميم مرتجعاته بلا سبب.
-  static Future<void> printPurchaseInvoice({
+  static Future<bool> printPurchaseInvoice({
     required String invoiceNumber,
     required DateTime date,
     required String supplierName,
@@ -386,7 +386,7 @@ class InvoiceGenerator {
             'code': i.code, 'unit': i.unit, 'barcode': i.barcode,
             'discount': i.discount, 'tax': i.tax,
           }).toList();
-          await TemplatedInvoiceService.printWithTemplate(
+          final r = await TemplatedInvoiceService.printWithTemplate(
             db: db,
             invoiceNumber: invoiceNumber,
             date: date,
@@ -409,7 +409,7 @@ class InvoiceGenerator {
             documentType:
                 isReturn ? 'purchase_return' : 'purchase_invoice',
           );
-          return;
+          return r.printed;
         } catch (e) {
           debugPrint('[InvoiceGenerator] Purchase template failed, falling back: $e');
         }
@@ -430,7 +430,7 @@ class InvoiceGenerator {
   }
 
   /// Print thermal work order for the kitchen/preparation — uses user template if available
-  static Future<void> printWorkOrderReceipt({
+  static Future<bool> printWorkOrderReceipt({
     required String orderNumber,
     required DateTime date,
     required String categoryName,
@@ -459,7 +459,7 @@ class InvoiceGenerator {
             // التصنيف صنفاً بكمّية صفر. البلاغ: «*عرايس* بدل الصنف».
             'isCategoryHeader': i.isCategoryHeader,
           }).toList();
-          await TemplatedInvoiceService.printWithTemplate(
+          final r = await TemplatedInvoiceService.printWithTemplate(
             db: db,
             invoiceNumber: invoiceNumber ?? orderNumber,
             date: date,
@@ -488,7 +488,7 @@ class InvoiceGenerator {
             orderNumber: orderNumber,
             salesType: orderType,
           );
-          return;
+          return r.printed;
         } catch (e) {
           debugPrint('[InvoiceGenerator] Kitchen template failed, falling back: $e');
         }
@@ -520,7 +520,7 @@ class InvoiceGenerator {
   ///
   /// و[db] هي البوّابة: بدونها — أو حين لا قالبَ محسوماً — يبقى المولّدُ
   /// الثابتُ كما هو بحرفه، فلا يتغيّر مطبوعُ أحد.
-  static Future<void> printPartyStatement({
+  static Future<bool> printPartyStatement({
     required String partyName,
     required String partyType,
     required double currentBalance,
@@ -565,7 +565,7 @@ class InvoiceGenerator {
           ],
         );
 
-        await TemplatedInvoiceService.printWithTemplate(
+        final r = await TemplatedInvoiceService.printWithTemplate(
           db: db,
           invoiceNumber: '',
           date: to,
@@ -588,7 +588,7 @@ class InvoiceGenerator {
           documentType: 'party_statement',
           statement: snapshot,
         );
-        return;
+        return r.printed;
       } catch (e) {
         // كشفٌ لا يُطبع أسوأُ من كشفٍ بالشكل القديم.
         debugPrint('[InvoiceGenerator] statement template failed, '
@@ -609,7 +609,7 @@ class InvoiceGenerator {
   }
 
   /// Print inventory stock report
-  static Future<void> printInventoryReport({
+  static Future<bool> printInventoryReport({
     required List<dynamic> products,
     String? companyName,
     Map<int, String>? categoryMap,
@@ -622,7 +622,7 @@ class InvoiceGenerator {
   }
 
   /// Print treasury/safe transaction report
-  static Future<void> printTreasuryReport({
+  static Future<bool> printTreasuryReport({
     required List<dynamic> transactions,
     required double openingBalance,
     required double totalIn,
@@ -645,7 +645,7 @@ class InvoiceGenerator {
   }
 
   /// Print detailed sales report
-  static Future<void> printSalesReport({
+  static Future<bool> printSalesReport({
     required List<dynamic> invoices,
     required double totalSales,
     required double totalProfit,
@@ -672,7 +672,7 @@ class InvoiceGenerator {
   }
 
   /// Print detailed purchases report
-  static Future<void> printPurchasesReport({
+  static Future<bool> printPurchasesReport({
     required List<dynamic> invoices,
     required double totalPurchases,
     required int invoiceCount,
@@ -693,7 +693,7 @@ class InvoiceGenerator {
   }
 
   /// Print category/sales-type report
-  static Future<void> printCategoryReport({
+  static Future<bool> printCategoryReport({
     required List<Map<String, dynamic>> categories,
     required double totalSales,
     required bool isCategory,
@@ -712,7 +712,7 @@ class InvoiceGenerator {
   }
 
   /// Print financial statements (Trial Balance, Income Statement, Balance Sheet)
-  static Future<void> printFinancialStatement({
+  static Future<bool> printFinancialStatement({
     required String title,
     required List<dynamic> data,
     required String statementType,
@@ -731,7 +731,7 @@ class InvoiceGenerator {
   }
 
   /// Print treasury closing/audit report
-  static Future<void> printTreasuryClosingReport({
+  static Future<bool> printTreasuryClosingReport({
     required List<Map<String, dynamic>> safeData,
     required double totalSystem,
     required double totalActual,
@@ -750,7 +750,7 @@ class InvoiceGenerator {
   }
 
   /// Print barcode labels for products
-  static Future<void> printBarcodeLabel({
+  static Future<bool> printBarcodeLabel({
     required String barcodeValue,
     required String productName,
     double? price,
@@ -765,7 +765,7 @@ class InvoiceGenerator {
   }
 
   /// Print shift closing report (thermal)
-  static Future<void> printShiftClosingReport({
+  static Future<bool> printShiftClosingReport({
     required int invoiceCount,
     required double totalSales,
     required double systemCash,

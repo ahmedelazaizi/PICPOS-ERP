@@ -78,7 +78,7 @@ void main() {
   tearDown(() => db.close());
 
   Future<List<String>> printDefault(String type, String category) async {
-    final bytes = await TemplatedInvoiceService.printWithTemplate(
+    final bytes = (await TemplatedInvoiceService.printWithTemplate(
       db: db,
       debugBuildOnly: true,
       type: type,
@@ -101,7 +101,7 @@ void main() {
       companyAddress: '',
       companyPhone: '',
       companyTaxId: null,
-    );
+    )).bytes;
     return probePdf(bytes).allTexts.map((t) => t.text.trim()).toList();
   }
 

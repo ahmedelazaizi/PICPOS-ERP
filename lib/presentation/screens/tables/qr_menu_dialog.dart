@@ -6,7 +6,7 @@ import '../../../services/network_service.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import '../../../services/generators/base_generator.dart';
-import 'package:printing/printing.dart' as printing_pkg;
+import '../../../services/printing/pdf_compute_helper.dart';
 
 class QrMenuDialog extends StatelessWidget {
   final List<RestaurantTable> tables;
@@ -183,9 +183,7 @@ class QrMenuDialog extends StatelessWidget {
                   ),
                 );
               }
-              await printing_pkg.Printing.layoutPdf(
-                onLayout: (format) async => pdf.save(),
-              );
+              await PdfComputeHelper.layoutPdf(pdf);
             },
             icon: const Icon(PhosphorIconsBold.printer),
             label: const Text('طباعة الكل'),

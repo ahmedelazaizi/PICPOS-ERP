@@ -3,6 +3,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:flutter/foundation.dart';
 import 'base_generator.dart';
+import '../printing/pdf_compute_helper.dart';
 import '../cash_drawer_service.dart';
 import '../printer_resolver.dart';
 import '../../core/constants/app_constants.dart';
@@ -17,7 +18,7 @@ import '../../core/config/brand.dart';
 class ThermalReceiptGenerator extends BaseGenerator {
   /// Print thermal receipt (80mm format) - Elegant professional design
   /// Layout: Company Header → Invoice Title → Customer Info → Items Table → Totals Section → Footer
-  static Future<void> print({
+  static Future<bool> print({
     required String invoiceNumber,
     required DateTime date,
     required List<InvoiceItem> items,
@@ -184,9 +185,11 @@ class ThermalReceiptGenerator extends BaseGenerator {
         await CashDrawerService().openDrawer(printerName: fallback.name);
       } else {
         debugPrint('[ThermalReceipt] No printers, showing dialog');
-        await Printing.layoutPdf(onLayout: (format) async => pdf.save());
+        return PdfComputeHelper.layoutPdf(pdf);
       }
     }
+    // الإرسالُ المباشرُ إلى طابعةٍ مضبوطةٍ لا يُلغى من حوار.
+    return true;
   }
 
   static pw.Widget _buildHeader(
@@ -538,7 +541,7 @@ class ThermalReceiptGenerator extends BaseGenerator {
   // =======================================================================
 
   /// Forwarding: Print Voucher → ThermalVoucherGenerator.printVoucher
-  static Future<void> printVoucher({
+  static Future<bool> printVoucher({
     required String voucherNumber,
     required String voucherType,
     required DateTime date,
@@ -569,7 +572,7 @@ class ThermalReceiptGenerator extends BaseGenerator {
   );
 
   /// Forwarding: Print Return Receipt → ThermalVoucherGenerator.printReturnReceipt
-  static Future<void> printReturnReceipt({
+  static Future<bool> printReturnReceipt({
     required String returnVoucherNumber,
     required String originalInvoiceNumber,
     required DateTime date,

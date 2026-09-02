@@ -554,31 +554,34 @@ mixin _OfferCardsMixin on ConsumerState<OffersPicPosScreen> {
     if (copies == null || copies <= 0) return;
 
     try {
-      await InvoiceGenerator.printBarcodeLabel(
+      final printed = await InvoiceGenerator.printBarcodeLabel(
         barcodeValue: offer.barcode!,
         productName: offer.name,
         price: offer.offerPrice,
         copies: copies,
       );
 
-      try {
-        final user = ref.read(authProvider).user;
-        final activityLogRepo = ref.read(activityLogRepositoryProvider);
-        await activityLogRepo.logActivity(
-          userId: user?.id,
-          userName: user?.displayName ?? 'مستخدم',
-          action: 'offer_print',
-          entityType: 'offer',
-          entityId: offer.id,
-          description: 'طباعة باركود عرض: ${offer.name} — $copies نسخة',
-        );
-      } catch (_) {}
+      // إلغاءٌ في الحوار ⇒ لا سطرَ نشاطٍ يدّعي طباعةً ولا رسالةَ نجاح.
+      if (printed) {
+        try {
+          final user = ref.read(authProvider).user;
+          final activityLogRepo = ref.read(activityLogRepositoryProvider);
+          await activityLogRepo.logActivity(
+            userId: user?.id,
+            userName: user?.displayName ?? 'مستخدم',
+            action: 'offer_print',
+            entityType: 'offer',
+            entityId: offer.id,
+            description: 'طباعة باركود عرض: ${offer.name} — $copies نسخة',
+          );
+        } catch (_) {}
+      }
 
       if (mounted) {
         AppToast.show(
           context,
-          'تم إرسال $copies نسخة للطباعة',
-          type: ToastType.success,
+          printed ? 'تم إرسال $copies نسخة للطباعة' : 'أُلغيت الطباعة',
+          type: printed ? ToastType.success : ToastType.warning,
         );
       }
     } catch (e) {

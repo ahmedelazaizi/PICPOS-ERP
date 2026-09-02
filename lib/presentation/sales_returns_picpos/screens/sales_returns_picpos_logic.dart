@@ -272,7 +272,7 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
       // القالبُ أوّلاً (`thermal`/`sales_return`)، والمولّدُ المكتوبُ في الكود
       // احتياطاً داخل الخدمة. كان النداءُ يذهب إلى المولّد مباشرةً فلا يُسأل
       // عن قالبٍ أصلاً — ومرتجعُ المبيعات له قالبٌ مبذورٌ قابلٌ للتصميم.
-      await InvoiceGenerator.printSalesReturnReceipt(
+      final printed = await InvoiceGenerator.printSalesReturnReceipt(
         db: ref.read(databaseProvider),
         // Prefer the real SRET-N voucher produced during processSalesReturn;
         // fall back to a legible placeholder if the lookup failed for any
@@ -299,8 +299,10 @@ mixin _SalesReturnsPicposLogic on ConsumerState<SalesReturnsPicposScreen> {
       if (mounted) {
         AppToast.show(
           context,
-          'تم طباعة إيصال مرتجع فاتورة $invoiceNumber',
-          type: ToastType.success,
+          printed
+              ? 'تم طباعة إيصال مرتجع فاتورة $invoiceNumber'
+              : 'أُلغيت طباعة إيصال مرتجع فاتورة $invoiceNumber',
+          type: printed ? ToastType.success : ToastType.warning,
         );
       }
     } catch (e, stack) {

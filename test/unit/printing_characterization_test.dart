@@ -297,7 +297,7 @@ Future<Uint8List> _renderViaService(AppDatabase db, int templateId) async {
   final t = (await db.getTemplateById(templateId))!;
   await db.setDefaultTemplate(templateId);
 
-  return TemplatedInvoiceService.printWithTemplate(
+  return (await TemplatedInvoiceService.printWithTemplate(
     db: db,
     debugBuildOnly: true,
     type: t.type,
@@ -325,7 +325,7 @@ Future<Uint8List> _renderViaService(AppDatabase db, int templateId) async {
     cashAmount: 300.0,
     bankAmount: 200.0,
     shift: kFixtureShift,
-  );
+  )).bytes;
 }
 
 /// يعيد وصفَ الفرق، أو `null` إن طابق.

@@ -3,6 +3,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import '../generators/base_generator.dart' show BaseGenerator;
 import 'package:printing/printing.dart' as printing_pkg;
+import 'pdf_compute_helper.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:intl/intl.dart' as intl;
@@ -108,7 +109,7 @@ class TemplatePdfRenderer {
   }
 
   /// Main entry: print using template + real data.
-  static Future<void> printFromTemplate({
+  static Future<bool> printFromTemplate({
     required InvoiceTemplateWithData templateData,
     required TemplateInvoiceData invoiceData,
     bool directPrint = false,
@@ -130,12 +131,10 @@ class TemplatePdfRenderer {
           printer: resolvedPrinter,
           onLayout: (format) async => pdfBytes,
         );
-        return;
+        return true;
       }
     }
-    await printing_pkg.Printing.layoutPdf(
-      onLayout: (format) async => pdfBytes,
-    );
+    return PdfComputeHelper.layoutBytes(pdfBytes);
   }
 
   /// Generate PDF bytes from template.

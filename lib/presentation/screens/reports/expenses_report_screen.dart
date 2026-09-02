@@ -10,7 +10,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart' as printing_pkg;
+import '../../../services/printing/pdf_compute_helper.dart';
 import '../../../core/logging/diagnostic_logger.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
@@ -402,10 +402,7 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
       ),
     );
 
-    await printing_pkg.Printing.layoutPdf(
-      onLayout: (format) async => pdf.save(),
-      name: 'تقرير_المصروفات_${_dateFormat.format(DateTime.now())}',
-    );
+    await PdfComputeHelper.layoutPdf(pdf, name: 'تقرير_المصروفات_${_dateFormat.format(DateTime.now())}');
   }
 
   // ── Computed helpers ────────────────────────────────────────────────────

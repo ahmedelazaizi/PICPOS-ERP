@@ -1,6 +1,7 @@
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart' as printing_pkg;
+import 'pdf_compute_helper.dart';
 import 'package:flutter/foundation.dart';
 import '../printer_resolver.dart';
 import '../license_service.dart';
@@ -79,7 +80,7 @@ class ThermalReceiptGenerator {
     _arabicFont = await BaseGenerator.initFont();
   }
 
-  static Future<void> printThermalReceipt({
+  static Future<bool> printThermalReceipt({
     required String invoiceNumber,
     required DateTime date,
     required List<InvoiceItem> items,
@@ -215,16 +216,14 @@ class ThermalReceiptGenerator {
           printer: resolvedPrinter,
           onLayout: (format) async => pdf.save(),
         );
-        return;
+        return true;
       }
     }
-    await printing_pkg.Printing.layoutPdf(
-      onLayout: (format) async => pdf.save(),
-    );
+    return PdfComputeHelper.layoutPdf(pdf);
   }
 
   /// Print thermal work order for the kitchen/preparation
-  static Future<void> printWorkOrderReceipt({
+  static Future<bool> printWorkOrderReceipt({
     required String orderNumber,
     required DateTime date,
     required String categoryName,
@@ -441,10 +440,10 @@ class ThermalReceiptGenerator {
         onLayout: (format) async => pdf.save(),
       );
     } else {
-      await printing_pkg.Printing.layoutPdf(
-        onLayout: (format) async => pdf.save(),
-      );
+      return PdfComputeHelper.layoutPdf(pdf);
     }
+    // الإرسالُ المباشرُ إلى طابعةٍ مضبوطةٍ لا يُلغى من حوار.
+    return true;
   }
 
   /// Map sale type codes to human-readable Arabic labels (with platform hashtags)
@@ -1092,7 +1091,7 @@ class ThermalReceiptGenerator {
     );
   }
 
-  static Future<void> printShiftClosingReport({
+  static Future<bool> printShiftClosingReport({
     required int invoiceCount,
     required double totalSales,
     required double systemCash,
@@ -1297,10 +1296,10 @@ class ThermalReceiptGenerator {
         onLayout: (format) async => pdf.save(),
       );
     } else {
-      await printing_pkg.Printing.layoutPdf(
-        onLayout: (format) async => pdf.save(),
-      );
+      return PdfComputeHelper.layoutPdf(pdf);
     }
+    // الإرسالُ المباشرُ إلى طابعةٍ مضبوطةٍ لا يُلغى من حوار.
+    return true;
   }
 
   static pw.Widget _labelValue(

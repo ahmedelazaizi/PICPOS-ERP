@@ -55,7 +55,7 @@ void main() {
 
   /// يطبع بقالبِ (نوع، فئة) ويعيد كلَّ النصوص المرسومة.
   Future<List<String>> printAndReadTexts(String type, String category) async {
-    final bytes = await TemplatedInvoiceService.printWithTemplate(
+    final bytes = (await TemplatedInvoiceService.printWithTemplate(
       db: db,
       debugBuildOnly: true,
       type: type,
@@ -84,7 +84,7 @@ void main() {
       companyPhone: '',
       companyTaxId: null,
       salesType: 'delivery',
-    );
+    )).bytes;
     return probePdf(bytes).allTexts.map((t) => t.text).toList();
   }
 
@@ -115,7 +115,7 @@ void main() {
       // ⚠️ ضابطٌ لازم: `resolveContentValue` تُرجع "0.00" لا "" لرسمٍ صفريّ.
       // فبلا الشرط `delivery_fee > 0` كان السطرُ يظهر على **كلِّ** فاتورةٍ
       // عاديّةٍ بقيمة صفر — ضجيجٌ على كلِّ ورقةٍ تُطبع في المحلّ.
-      final bytes = await TemplatedInvoiceService.printWithTemplate(
+      final bytes = (await TemplatedInvoiceService.printWithTemplate(
         db: db,
         debugBuildOnly: true,
         type: 'thermal',
@@ -138,7 +138,7 @@ void main() {
         companyAddress: '',
         companyPhone: '',
         companyTaxId: null,
-      );
+      )).bytes;
       final texts = probePdf(bytes).allTexts.map((t) => t.text).toList();
 
       expect(texts.any((t) => t.trim() == '100.00'), isTrue,

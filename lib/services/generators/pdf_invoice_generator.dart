@@ -10,7 +10,7 @@ import '../../core/config/brand.dart';
 /// Handles printing of A4 PDF invoices for sales, purchases, and party statements.
 class PdfInvoiceGenerator extends BaseGenerator {
   /// Print sales invoice (A4)
-  static Future<void> printSalesInvoice({
+  static Future<bool> printSalesInvoice({
     required String invoiceNumber,
     required DateTime date,
     required String? customerName,
@@ -110,11 +110,11 @@ class PdfInvoiceGenerator extends BaseGenerator {
       ),
     );
 
-    await PdfComputeHelper.layoutPdf(pdf);
+    return PdfComputeHelper.layoutPdf(pdf);
   }
 
   /// Print purchase invoice (A4)
-  static Future<void> printPurchaseInvoice({
+  static Future<bool> printPurchaseInvoice({
     required String invoiceNumber,
     required DateTime date,
     required String supplierName,
@@ -211,11 +211,11 @@ class PdfInvoiceGenerator extends BaseGenerator {
       ),
     );
 
-    await PdfComputeHelper.layoutPdf(pdf);
+    return PdfComputeHelper.layoutPdf(pdf);
   }
 
   /// Print party statement (A4)
-  static Future<void> printPartyStatement({
+  static Future<bool> printPartyStatement({
     required String partyName,
     required String partyType,
     required double currentBalance,
@@ -310,7 +310,7 @@ class PdfInvoiceGenerator extends BaseGenerator {
       ),
     );
 
-    await PdfComputeHelper.layoutPdf(pdf);
+    return PdfComputeHelper.layoutPdf(pdf);
   }
 
   // ═══════════════════════════════════════════════════════════════════════════

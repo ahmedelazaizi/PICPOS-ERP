@@ -19,7 +19,10 @@ import '../templated_invoice_service.dart';
 /// كان المحرِّرُ يعرض نوعَ القالب هذا وستّةَ عشرَ عنصراً تحته، والبذرةُ تزرع
 /// قالباً افتراضياً باسمه — ولا شيءَ يقرؤه. فالتصميمُ يُحفظ ولا يُرى.
 /// (‏`printing_service.dart` يسأل السؤالَ نفسَه للفواتير منذ البداية.)
-Future<void> printShiftClosingSnapshot({
+/// يرجع `true` إن خرج التقريرُ (أو قُبلت المهمّة)، و`false` إن ألغى
+/// المستخدمُ حوارَ الطباعة — فرسالةُ «أُغلقت الورديّة **وطُبع** التقرير»
+/// تُقال حين تصدق فقط.
+Future<bool> printShiftClosingSnapshot({
   required ShiftClosingSnapshot snapshot,
   double fontScale = 1.0,
   IPrintersRepository? printersRepo,
@@ -28,7 +31,7 @@ Future<void> printShiftClosingSnapshot({
   if (db != null) {
     try {
       if (await TemplatedInvoiceService.hasDefaultTemplate(db, 'shift_closing')) {
-        await TemplatedInvoiceService.printWithTemplate(
+        final r = await TemplatedInvoiceService.printWithTemplate(
           db: db,
           type: 'shift_closing',
           category: 'shift_closing',
@@ -61,7 +64,7 @@ Future<void> printShiftClosingSnapshot({
           companyTaxId: null,
           cashierName: snapshot.employeeName,
         );
-        return;
+        return r.printed;
       }
     } catch (e) {
       // القالبُ إضافةٌ لا استبدال: أيُّ عطبٍ فيه لا يمنع طباعةَ الإقفال.

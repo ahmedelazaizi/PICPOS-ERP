@@ -17,7 +17,7 @@ class ReportPdfGenerator {
     _arabicFont ??= await BaseGenerator.initFont();
   }
 
-  static Future<void> printSalesInvoice({
+  static Future<bool> printSalesInvoice({
     required String invoiceNumber,
     required DateTime date,
     required String? customerName,
@@ -35,7 +35,7 @@ class ReportPdfGenerator {
     String title = 'فاتورة مبيعات',
     String? printedBy,
   }) async {
-    await PdfComputeHelper.layoutPdf(await buildSalesInvoiceDocument(
+    return PdfComputeHelper.layoutPdf(await buildSalesInvoiceDocument(
       invoiceNumber: invoiceNumber,
       date: date,
       customerName: customerName,
@@ -212,7 +212,7 @@ class ReportPdfGenerator {
     );
   }
 
-  static Future<void> printPurchaseInvoice({
+  static Future<bool> printPurchaseInvoice({
     required String invoiceNumber,
     required DateTime date,
     required String supplierName,
@@ -222,7 +222,7 @@ class ReportPdfGenerator {
     String? companyName,
     bool isReturn = false,
   }) async {
-    await PdfComputeHelper.layoutPdf(await buildPurchaseInvoiceDocument(
+    return PdfComputeHelper.layoutPdf(await buildPurchaseInvoiceDocument(
       invoiceNumber: invoiceNumber,
       date: date,
       supplierName: supplierName,
@@ -300,7 +300,7 @@ class ReportPdfGenerator {
     return pdf;
   }
 
-  static Future<void> printPartyStatement({
+  static Future<bool> printPartyStatement({
     required String partyName,
     required String partyType,
     required double currentBalance,
@@ -343,7 +343,7 @@ class ReportPdfGenerator {
         ],
       ),
     );
-    await PdfComputeHelper.layoutPdf(pdf, documentLabel: 'كشف حساب');
+    return PdfComputeHelper.layoutPdf(pdf, documentLabel: 'كشف حساب');
   }
 
   /// ترويسة الشركة: الاسم ثم الهاتف والعنوان ثم الرقم الضريبي.
@@ -432,7 +432,7 @@ class ReportPdfGenerator {
     );
   }
 
-  static Future<void> printInventoryReport({
+  static Future<bool> printInventoryReport({
     required List<dynamic> products,
     String? companyName,
     Map<int, String>? categoryMap,
@@ -461,10 +461,10 @@ class ReportPdfGenerator {
         ],
       ),
     );
-    await PdfComputeHelper.layoutPdf(pdf, documentLabel: 'تقرير المخزون');
+    return PdfComputeHelper.layoutPdf(pdf, documentLabel: 'تقرير المخزون');
   }
 
-  static Future<void> printTreasuryReport({
+  static Future<bool> printTreasuryReport({
     required List<dynamic> transactions,
     required double openingBalance,
     required double totalIn,
@@ -503,10 +503,10 @@ class ReportPdfGenerator {
         ],
       ),
     );
-    await PdfComputeHelper.layoutPdf(pdf, documentLabel: 'تقرير الخزينة');
+    return PdfComputeHelper.layoutPdf(pdf, documentLabel: 'تقرير الخزينة');
   }
 
-  static Future<void> printSalesReport({
+  static Future<bool> printSalesReport({
     required List<dynamic> invoices,
     required double totalSales,
     required double totalProfit,
@@ -544,10 +544,10 @@ class ReportPdfGenerator {
         ],
       ),
     );
-    await PdfComputeHelper.layoutPdf(pdf, documentLabel: 'تقرير المبيعات');
+    return PdfComputeHelper.layoutPdf(pdf, documentLabel: 'تقرير المبيعات');
   }
 
-  static Future<void> printFixedAssetsRegister({
+  static Future<bool> printFixedAssetsRegister({
     required List<dynamic> assets,
     required double totalCost,
     required double totalDepreciation,
@@ -622,10 +622,10 @@ class ReportPdfGenerator {
         ],
       ),
     );
-    await PdfComputeHelper.layoutPdf(pdf, documentLabel: 'سجل الأصول الثابتة');
+    return PdfComputeHelper.layoutPdf(pdf, documentLabel: 'سجل الأصول الثابتة');
   }
 
-  static Future<void> printGeneralLedger({
+  static Future<bool> printGeneralLedger({
     required String accountName,
     required List<Map<String, dynamic>> data,
     DateTime? fromDate,
@@ -689,7 +689,7 @@ class ReportPdfGenerator {
         ],
       ),
     );
-    await PdfComputeHelper.layoutPdf(pdf, documentLabel: 'دفتر الأستاذ');
+    return PdfComputeHelper.layoutPdf(pdf, documentLabel: 'دفتر الأستاذ');
   }
 
   // --- Helper Widgets ---
@@ -839,7 +839,7 @@ class ReportPdfGenerator {
     );
   }
 
-  static Future<void> printCategoryReport({
+  static Future<bool> printCategoryReport({
     required List<Map<String, dynamic>> categories,
     required double totalSales,
     required bool isCategory,
@@ -935,10 +935,10 @@ class ReportPdfGenerator {
         ],
       ),
     );
-    await PdfComputeHelper.layoutPdf(pdf, documentLabel: 'تقرير التصنيفات');
+    return PdfComputeHelper.layoutPdf(pdf, documentLabel: 'تقرير التصنيفات');
   }
 
-  static Future<void> printFinancialStatement({
+  static Future<bool> printFinancialStatement({
     required String title,
     required List<dynamic> data,
     required String statementType,
@@ -974,10 +974,10 @@ class ReportPdfGenerator {
         ],
       ),
     );
-    await PdfComputeHelper.layoutPdf(pdf, documentLabel: 'القوائم المالية');
+    return PdfComputeHelper.layoutPdf(pdf, documentLabel: 'القوائم المالية');
   }
 
-  static Future<void> printTreasuryClosingReport({
+  static Future<bool> printTreasuryClosingReport({
     required List<Map<String, dynamic>> safeData,
     required double totalSystem,
     required double totalActual,
@@ -1056,10 +1056,10 @@ class ReportPdfGenerator {
         ],
       ),
     );
-    await PdfComputeHelper.layoutPdf(pdf, documentLabel: 'تقرير إغلاق الخزينة');
+    return PdfComputeHelper.layoutPdf(pdf, documentLabel: 'تقرير إغلاق الخزينة');
   }
 
-  static Future<void> printBarcodeLabel({
+  static Future<bool> printBarcodeLabel({
     required String barcodeValue,
     required String productName,
     double? price,
@@ -1122,7 +1122,7 @@ class ReportPdfGenerator {
         ),
       );
     }
-    await PdfComputeHelper.layoutPdf(pdf, documentLabel: 'ملصق باركود');
+    return PdfComputeHelper.layoutPdf(pdf, documentLabel: 'ملصق باركود');
   }
 
   static String _fmtNum(dynamic val) {
@@ -1429,7 +1429,7 @@ class ReportPdfGenerator {
   }
 
   /// Print detailed purchases report
-  static Future<void> printPurchasesReport({
+  static Future<bool> printPurchasesReport({
     required List<dynamic> invoices,
     required double totalPurchases,
     required int invoiceCount,
@@ -1464,7 +1464,7 @@ class ReportPdfGenerator {
     );
     // يمرّ عبر الغلاف كبقيّة التقارير: يكسب سجلَّ تشخيص الطباعة
     // ونداءَ خطّاف التسجيل معاً.
-    await PdfComputeHelper.layoutPdf(pdf, documentLabel: 'تقرير المشتريات');
+    return PdfComputeHelper.layoutPdf(pdf, documentLabel: 'تقرير المشتريات');
   }
 
   static pw.Widget _buildPurchasesSummary(double total, int count) {
@@ -1525,7 +1525,7 @@ class ReportPdfGenerator {
   /// coloured branch pill in the header. The colour comes from the same
   /// [BranchChip.colorFor] palette used on-screen so the PDF matches what the
   /// auditor saw when they triggered the print.
-  static Future<void> printJournalEntry({
+  static Future<bool> printJournalEntry({
     required String entryNumber,
     required DateTime entryDate,
     required String? description,
@@ -1752,7 +1752,7 @@ class ReportPdfGenerator {
     );
     // يمرّ عبر الغلاف كبقيّة التقارير: يكسب سجلَّ تشخيص الطباعة
     // ونداءَ خطّاف التسجيل معاً.
-    await PdfComputeHelper.layoutPdf(pdf, documentLabel: 'قيد يوميّة');
+    return PdfComputeHelper.layoutPdf(pdf, documentLabel: 'قيد يوميّة');
   }
 
   static pw.Widget _buildReportHeader(
@@ -2082,7 +2082,7 @@ class ReportPdfGenerator {
   }
 
   /// Print Check Receipt/Disbursement Voucher — سند قبض/صرف شيك (Item #13)
-  static Future<void> printCheckVoucher({
+  static Future<bool> printCheckVoucher({
     required String checkNumber,
     required double amount,
     required DateTime checkDate,
@@ -2268,7 +2268,7 @@ class ReportPdfGenerator {
         ),
       ),
     );
-    await PdfComputeHelper.layoutPdf(pdf, documentLabel: 'سند شيك');
+    return PdfComputeHelper.layoutPdf(pdf, documentLabel: 'سند شيك');
   }
 
   static pw.Widget _voucherRow(String label, String value) {

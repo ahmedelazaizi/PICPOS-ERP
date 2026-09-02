@@ -6,7 +6,7 @@
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'generators/base_generator.dart';
-import 'package:printing/printing.dart' as printing_pkg;
+import 'printing/pdf_compute_helper.dart';
 import 'package:intl/intl.dart';
 
 /// Generates a consolidated audit report as PDF
@@ -14,7 +14,7 @@ class AuditReportGenerator {
   static final _fmt = DateFormat('yyyy/MM/dd HH:mm');
 
   /// Generate and print a consolidated audit report
-  static Future<void> generateAndPrint({
+  static Future<bool> generateAndPrint({
     required List<AuditReportEntry> entries,
     required String companyName,
     required DateTime fromDate,
@@ -127,10 +127,7 @@ class AuditReportGenerator {
     );
 
     final bytes = await pdf.save();
-    await printing_pkg.Printing.layoutPdf(
-      onLayout: (_) => bytes,
-      name: 'audit_report_${DateFormat('yyyyMMdd').format(fromDate)}_${DateFormat('yyyyMMdd').format(toDate)}',
-    );
+    return PdfComputeHelper.layoutBytes(bytes, name: 'audit_report_${DateFormat('yyyyMMdd').format(fromDate)}_${DateFormat('yyyyMMdd').format(toDate)}');
   }
 
   static pw.Widget _statBox(pw.Font font, pw.Font fontBold, String label, String value) {

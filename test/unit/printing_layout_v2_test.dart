@@ -295,7 +295,7 @@ Future<Uint8List> _render(AppDatabase db, int templateId) async {
   final t = (await db.getTemplateById(templateId))!;
   await db.setDefaultTemplate(templateId);
 
-  return TemplatedInvoiceService.printWithTemplate(
+  return (await TemplatedInvoiceService.printWithTemplate(
     db: db,
     debugBuildOnly: true,
     type: t.type,
@@ -322,7 +322,7 @@ Future<Uint8List> _render(AppDatabase db, int templateId) async {
     salesType: 'delivery',
     cashAmount: 300.0,
     bankAmount: 200.0,
-  );
+  )).bytes;
 }
 
 /// يزرع عنصرَ نصٍّ بمرساةٍ فريدةٍ وإحداثيّاتٍ صريحة.
