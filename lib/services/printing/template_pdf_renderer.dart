@@ -13,6 +13,7 @@ import '../../core/constants/app_constants.dart';
 import '../printer_resolver.dart';
 import '../license_service.dart';
 import 'printing_models.dart';
+import '../../domain/models/receipt_qr_decision.dart';
 
 /// Invoice data container passed to the template renderer.
 class TemplateInvoiceData {
@@ -56,6 +57,12 @@ class TemplateInvoiceData {
   /// و`null` تبقى صمتاً لا كلمةً نائبة.
   final Uint8List? logoBytes;
 
+  /// قرارُ رمز الاستجابة السريعة — ضريبيٌّ أو غيرُ ضريبيٍّ أو لا شيء.
+  ///
+  /// `null` تعني «لا قرارَ مُمرَّراً» فيبقى السلوكُ القديم (‏رقمُ الفاتورة).
+  /// وهي حالةُ المستنداتِ التي ليست إيصالَ بيعٍ أصلاً.
+  final ReceiptQr? receiptQr;
+
   const TemplateInvoiceData({
     required this.invoiceNumber,
     required this.date,
@@ -87,6 +94,7 @@ class TemplateInvoiceData {
     this.orderNumber,
     this.locale = 'ar',
     this.logoBytes,
+    this.receiptQr,
   });
 }
 
@@ -305,15 +313,45 @@ class TemplatePdfRenderer {
         );
 
       case 'qr_code':
-        final qrData = _resolveValue(el, data) ?? data.invoiceNumber;
+        final decision = data.receiptQr;
+
+        // لا اعتمادَ من البوّابة بعد على جهازٍ مُفعَّل ⇒ لا رمزَ إطلاقاً.
+        // وطباعةُ رمزٍ ببيانات البيعة هنا كانت ستُخرِج رمزاً بلا بياناتٍ
+        // ضريبيّةٍ من ماكينةِ منشأةٍ مسجَّلةٍ ضريبيّاً.
+        if (decision != null && decision.kind == ReceiptQrKind.none) {
+          return pw.SizedBox.shrink();
+        }
+
+        final qrData =
+            decision?.payload ?? _resolveValue(el, data) ?? data.invoiceNumber;
+        final qr = pw.BarcodeWidget(
+          barcode: pw.Barcode.qrCode(),
+          data: qrData,
+          width: el.width.clamp(40, 80),
+          height: el.height.clamp(40, 80),
+        );
+
         return pw.Container(
           alignment: pw.Alignment.center,
           margin: const pw.EdgeInsets.symmetric(vertical: 4),
-          child: pw.BarcodeWidget(
-            barcode: pw.Barcode.qrCode(),
-            data: qrData,
-            width: el.width.clamp(40, 80),
-            height: el.height.clamp(40, 80),
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.center,
+            children: [
+              qr,
+              // وسمُ الرمز غير الضريبيّ — على الورقة نفسِها، لأنّ من يقرأ
+              // الإيصالَ لا يرى قرارَ الكود.
+              if (decision != null &&
+                  decision.kind == ReceiptQrKind.nonFiscal &&
+                  decision.disclaimer.isNotEmpty)
+                pw.Padding(
+                  padding: const pw.EdgeInsets.only(top: 2),
+                  child: pw.Text(
+                    decision.disclaimer,
+                    style: pw.TextStyle(font: font, fontSize: 6),
+                    textDirection: pw.TextDirection.rtl,
+                  ),
+                ),
+            ],
           ),
         );
 
