@@ -1020,11 +1020,41 @@ class _EInvoicingPicposScreenState
   /// ⚠️ «إلغاء المستند» في التصميم لا يُعرَض هنا — لا مسارَ إلغاءٍ في
   /// `EInvoiceServiceWrapper`، وزرٌّ يظهر ولا يفعل أسوأُ من زرٍّ غائب.
   Widget _detailActions(_Row r) {
-    final canSend = r.status == 'pending' ||
-        r.status == 'invalid' ||
-        r.status == 'submitted';
+    // 🔴 هل يملك **هذا الجهازُ** اعتمادَ البوّابة أصلاً؟
+    //
+    // قرارُ المالك: الخادمُ وحدَه يحمل السرَّ ويرسل، و`EInvoiceConfigs` خارجَ
+    // المزامنة. فجهازُ الكاشير لا إعدادَ عنده ⇒ المحرّكُ غيرُ مضبوط ⇒ كلُّ
+    // «إرسال الآن» كان ينتهي بـ`StateError: not configured` **مبتلَعاً** ثمّ
+    // يُوسَم المستندُ «فاشلاً» بخطأٍ لا يفهمه أحد. والمستندُ يصل البوّابةَ من
+    // الخادم بالمِكنسة، فالانتظارُ صحيحٌ لا عطب.
+    final hasCredentials = ref.watch(_configProvider(r.platform)).maybeWhen(
+          data: (c) => c != null,
+          orElse: () => false,
+        );
+
+    final canSend = hasCredentials &&
+        (r.status == 'pending' ||
+            r.status == 'invalid' ||
+            r.status == 'submitted');
     return Row(
       children: [
+        if (!hasCredentials) ...[
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: null,
+              icon: const Icon(PhosphorIconsBold.cloudArrowUp, size: 14),
+              label: const Text('الإرسال يتم من الخادم'),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: () => _refreshStatus(r),
+              icon: const Icon(PhosphorIconsBold.arrowsClockwise, size: 14),
+              label: const Text('فحص الحالة'),
+            ),
+          ),
+        ] else ...[
         // 🔴 نفسُ حارس زرِّ الإرسال الجماعيّ — والمسارُ واحدٌ فالحراسةُ واحدة.
         //    و`fallback` يشرح الغيابَ بدل أن يختفيَ الزرُّ بلا تفسير.
         Expanded(
@@ -1050,6 +1080,7 @@ class _EInvoicingPicposScreenState
             label: const Text('فحص الحالة'),
           ),
         ),
+        ],
       ],
     );
   }
