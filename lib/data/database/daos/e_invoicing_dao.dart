@@ -176,6 +176,79 @@ extension EInvoicingDao on AppDatabase {
     return rows.map((r) => r.id).toList();
   }
 
+  /// مرتجعاتُ المبيعات التي تنتظر إشعارَ ائتمان — مع أصلِ كلٍّ منها.
+  ///
+  /// ═══ لماذا لا تُمسَح مع الفواتير ═══
+  ///
+  /// إشعارُ الائتمان **لا يقوم بذاته**: يشير إلى الفاتورة الأصليّة، وسقفُ
+  /// مبلغه منها. و`SalesInvoices` لا يحمل عموداً للرابط — إنّما نصٌّ في
+  /// `notes` بصيغة `Return for invoice #<id>|gid:<uuid>`.
+  ///
+  /// ⚠️ **والحلُّ بالمعرّف العالميّ أوّلاً**: الرقمُ لا معنى له إلّا في المخزن
+  /// الذي كتبه، والسحبُ يستبدل صفَّ العميل بصفِّ الخادم — فمرتجعٌ جاء
+  /// بالمزامنة يحمل رقمَ الخادم، وقراءتُه رقماً محلّيّاً تشير إلى فاتورةٍ
+  /// أخرى تماماً فيُقدَّم إشعارُ ائتمانٍ على فاتورةِ عميلٍ بريء.
+  ///
+  /// ⚠️ **ومرتجعٌ لا يُحلّ أصلُه يُترك**: مرتجعُ نقطةِ بيعٍ سريعٌ بلا أصل، أو
+  /// رابطٌ يشير إلى فاتورةٍ غيرِ موجودة. وتقديمُه كان سيُنتج مستنداً باطلاً.
+  ///
+  /// والحلُّ في Dart لا SQL: المرشَّحون محدودون بالحدّ، والاستعلامُ المركّب
+  /// (‏`CASE` على `INSTR`/`SUBSTR`) لا تُضمَن ترجمتُه إلى PostgreSQL.
+  Future<List<({int returnSaleId, int originalSaleId})>>
+      findReturnsNeedingCreditNoteSubmission({int limit = 25}) async {
+    final submitted = selectOnly(eInvoiceSubmissions)
+      ..addColumns([eInvoiceSubmissions.saleId]);
+
+    final candidates = await (select(salesInvoices)
+          ..where((s) =>
+              s.status.equals('completed') &
+              s.saleType.equals('return') &
+              s.deletedAt.isNull() &
+              s.id.isNotInQuery(submitted))
+          ..orderBy([(s) => OrderingTerm.asc(s.id)])
+          ..limit(limit))
+        .get();
+
+    final out = <({int returnSaleId, int originalSaleId})>[];
+    for (final r in candidates) {
+      final gid = returnOriginalGidFromNote(r.notes);
+      int? originalId;
+
+      if (gid != null) {
+        final byGid = await (select(salesInvoices)
+              ..where((s) => s.globalId.equals(gid))
+              ..limit(1))
+            .getSingleOrNull();
+        originalId = byGid?.id;
+      }
+
+      // احتياطُ الرقم — لصفوفٍ كُتبت قبل صيغة المعرّف العالميّ.
+      if (originalId == null) {
+        final raw = returnOriginalIdFromNote(r.notes);
+        if (raw != null) {
+          final byId = await (select(salesInvoices)
+                ..where((s) => s.id.equals(raw))
+                ..limit(1))
+              .getSingleOrNull();
+          originalId = byId?.id;
+        }
+      }
+
+      if (originalId == null) continue; // لا أصلَ يُحلّ ⇒ لا إشعار.
+
+      // ⚠️ **والأصلُ يجب أن يكون معتمَداً لدى البوّابة**: إشعارُ الائتمان
+      //    يحمل `documentUuid` مستندِ الأصل مرجعاً له
+      //    (‏`createCreditNoteSubmission`). فأصلٌ لم يُقدَّم بعد — أو قُدِّم
+      //    ولم يصدر له معرّفٌ — يُنتج إشعاراً **بمرجعٍ فارغ**. والترتيبُ
+      //    هنا شرطٌ لا تفصيل: يُنتظَر الأصلُ، وتلتقطه دورةٌ تالية.
+      final originalSubmission = await getSubmissionBySaleId(originalId);
+      if (originalSubmission?.documentUuid == null) continue;
+
+      out.add((returnSaleId: r.id, originalSaleId: originalId));
+    }
+    return out;
+  }
+
   /// Create a submission record (before sending)
   Future<int> createSubmission({
     required int saleId,

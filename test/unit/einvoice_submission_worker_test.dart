@@ -98,4 +98,88 @@ void main() {
 
     expect(await worker.runOnce(), 0);
   });
+
+  // ═════════════════════════════════════════════════════════════════════════
+  // إشعاراتُ الائتمان — المرتجعاتُ كانت خارجَ المكنسة كلَّها
+  // ═════════════════════════════════════════════════════════════════════════
+
+  group('إشعاراتُ الائتمان', () {
+    test('🔴 تُمسَح وتُقدَّم مع أصلِ كلٍّ منها', () async {
+      final sent = <({int returnSaleId, int originalSaleId})>[];
+      final worker = EInvoiceSubmissionWorker(
+        isEnabled: () async => true,
+        findDue: ({int limit = 25}) async => const [],
+        submit: (_) async {},
+        findDueCreditNotes: ({int limit = 25}) async => const [
+          (returnSaleId: 5, originalSaleId: 1),
+          (returnSaleId: 6, originalSaleId: 2),
+        ],
+        submitCreditNote: (r) async => sent.add(r),
+      );
+
+      expect(await worker.runOnce(), 2);
+      expect(sent.map((e) => e.returnSaleId), [5, 6]);
+      expect(sent.first.originalSaleId, 1,
+          reason: 'الأصلُ يُمرَّر — إشعارٌ بلا أصلٍ مستندٌ باطل وسقفُه لا يُفحَص');
+    });
+
+    test('🔴 وإخفاقُ إشعارٍ لا يحجب ما بعده', () async {
+      final sent = <int>[];
+      final worker = EInvoiceSubmissionWorker(
+        isEnabled: () async => true,
+        findDue: ({int limit = 25}) async => const [],
+        submit: (_) async {},
+        findDueCreditNotes: ({int limit = 25}) async => const [
+          (returnSaleId: 1, originalSaleId: 10),
+          (returnSaleId: 2, originalSaleId: 20),
+          (returnSaleId: 3, originalSaleId: 30),
+        ],
+        submitCreditNote: (r) async {
+          sent.add(r.returnSaleId);
+          // السقفُ الضريبيُّ يرمي على المخالف — ولا يوقف الطابور.
+          if (r.returnSaleId == 2) throw Exception('يتجاوز مبلغ الفاتورة');
+        },
+      );
+
+      expect(await worker.runOnce(), 2);
+      expect(sent, [1, 2, 3]);
+    });
+
+    test('تُحصى مع الفواتير في عدّادٍ واحد', () async {
+      final worker = EInvoiceSubmissionWorker(
+        isEnabled: () async => true,
+        findDue: ({int limit = 25}) async => const [7],
+        submit: (_) async {},
+        findDueCreditNotes: ({int limit = 25}) async =>
+            const [(returnSaleId: 8, originalSaleId: 1)],
+        submitCreditNote: (_) async {},
+      );
+
+      expect(await worker.runOnce(), 2);
+    });
+
+    test('وإخفاقُ مسحِها لا يُسقط مسحَ الفواتير', () async {
+      final worker = EInvoiceSubmissionWorker(
+        isEnabled: () async => true,
+        findDue: ({int limit = 25}) async => const [7],
+        submit: (_) async {},
+        findDueCreditNotes: ({int limit = 25}) async =>
+            throw StateError('قاعدةٌ مقطوعة'),
+        submitCreditNote: (_) async {},
+      );
+
+      expect(await worker.runOnce(), 1,
+          reason: 'الفاتورةُ قُدِّمت — ولا يُسقطها تعثّرُ مسارٍ آخر');
+    });
+
+    test('وبلا مُمرَّرٍ لها لا يتغيّر شيء — عقدُ المنادي القديم', () async {
+      final worker = EInvoiceSubmissionWorker(
+        isEnabled: () async => true,
+        findDue: ({int limit = 25}) async => const [1],
+        submit: (_) async {},
+      );
+
+      expect(await worker.runOnce(), 1);
+    });
+  });
 }

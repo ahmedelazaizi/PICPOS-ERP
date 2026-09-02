@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 
 import '../../data/database/database.dart';
@@ -28,16 +30,32 @@ class EInvoiceSubmissionWorker {
   final Future<bool> Function() _isEnabled;
   final Future<List<int>> Function({int limit}) _findDue;
   final Future<void> Function(int saleId) _submit;
+
+  /// مرتجعاتٌ تنتظر إشعارَ ائتمان — كلٌّ مع أصلِه.
+  ///
+  /// الأصلُ **جزءٌ من العقد** لا زينة: إشعارُ الائتمان يشير إلى فاتورته،
+  /// وسقفُ مبلغه منها.
+  final Future<List<({int returnSaleId, int originalSaleId})>> Function(
+      {int limit})? _findDueCreditNotes;
+  final Future<void> Function(({int returnSaleId, int originalSaleId}) pair)?
+      _submitCreditNote;
+
   final int batchSize;
 
   EInvoiceSubmissionWorker({
     required Future<bool> Function() isEnabled,
     required Future<List<int>> Function({int limit}) findDue,
     required Future<void> Function(int saleId) submit,
+    Future<List<({int returnSaleId, int originalSaleId})>> Function({int limit})?
+        findDueCreditNotes,
+    Future<void> Function(({int returnSaleId, int originalSaleId}) pair)?
+        submitCreditNote,
     this.batchSize = 25,
   })  : _isEnabled = isEnabled,
         _findDue = findDue,
-        _submit = submit;
+        _submit = submit,
+        _findDueCreditNotes = findDueCreditNotes,
+        _submitCreditNote = submitCreditNote;
 
   /// يبني العاملَ من القاعدة ويضبط المحرّكَ من الإعداد المحفوظ.
   ///
@@ -90,12 +108,68 @@ class EInvoiceSubmissionWorker {
     }
 
     final submitter = EInvoiceAutoSubmitter(repo: repo, wrapper: wrapper);
+    final activePlatform = platform;
     return EInvoiceSubmissionWorker(
       isEnabled: () => submitter.isEnabled,
       findDue: ({int limit = 25}) =>
           db.findSalesNeedingEInvoiceSubmission(limit: limit),
       submit: submitter.submitSaleInvoice,
+      findDueCreditNotes: ({int limit = 25}) =>
+          db.findReturnsNeedingCreditNoteSubmission(limit: limit),
+      submitCreditNote: (pair) => _sendCreditNoteToGateway(
+        db: db,
+        repo: repo,
+        wrapper: wrapper,
+        platform: activePlatform,
+        pair: pair,
+      ),
     );
+  }
+
+  /// يقدّم إشعارَ ائتمانٍ لمرتجعٍ واحد.
+  ///
+  /// ⚠️ **عبر `createCreditNoteSubmission` لا `createSubmission`**: الأولى
+  /// وحدَها تفرض السقفَ الضريبيَّ (مبلغُ الإشعار لا يتجاوز الفاتورةَ الأصليّة)
+  /// وتضع `documentUuid` الأصلِ مرجعاً. والمسارُ القديم
+  /// (`EInvoiceAutoSubmitter.submitCreditNote`) كان ينادي `createSubmission`
+  /// مباشرةً — فالسقفُ الذي يسمّيه الكودُ «مخالفةً ضريبيّة» **لا يُبلَغ
+  /// أبداً**، ولا مرجعَ للأصل في المستند.
+  static Future<void> _sendCreditNoteToGateway({
+    required AppDatabase db,
+    required DriftEInvoiceRepository repo,
+    required EInvoiceServiceWrapper wrapper,
+    required String platform,
+    required ({int returnSaleId, int originalSaleId}) pair,
+  }) async {
+    final payload =
+        await repo.buildInvoicePayload(pair.returnSaleId, platform);
+    payload['documentType'] = 'credit_note';
+
+    // يرمي على المخالف — والعاملُ يحصر ويمضي إلى ما بعده.
+    final submissionId = await db.createCreditNoteSubmission(
+      returnSaleId: pair.returnSaleId,
+      originalSaleId: pair.originalSaleId,
+      platform: platform,
+      rawRequest: jsonEncode(payload),
+    );
+
+    final result =
+        await wrapper.submitInvoice(UnifiedInvoice.fromPayload(payload));
+    if (result.success) {
+      await repo.markSubmissionSuccess(
+        submissionId: submissionId,
+        submissionUuid: result.submissionId ?? '',
+        documentUuid: result.documentUuid,
+        qrCode: result.qrCode,
+        rawResponse: result.rawResponse,
+      );
+    } else {
+      await repo.markSubmissionFailed(
+        submissionId,
+        result.errorMessage ?? 'فشل غير معروف',
+        rawResponse: result.rawResponse,
+      );
+    }
   }
 
   /// يمسح دفعةً ويقدّمها. يُرجع عددَ ما **نجح** لا ما حوول.
@@ -129,6 +203,39 @@ class EInvoiceSubmissionWorker {
         done++;
       } catch (e) {
         debugPrint('[EInvoiceWorker] فاتورة #$saleId — إخفاقٌ: $e');
+      }
+    }
+
+    done += await _sweepCreditNotes();
+    return done;
+  }
+
+  /// مرتجعاتُ المبيعات — مسارٌ مستقلٌّ لأنّ إشعارَ الائتمان يحتاج أصلَه.
+  ///
+  /// ومعزولٌ عن مسحِ الفواتير: تعثّرُه لا يُسقط ما قُدِّم منها.
+  Future<int> _sweepCreditNotes() async {
+    final find = _findDueCreditNotes;
+    final send = _submitCreditNote;
+    if (find == null || send == null) return 0;
+
+    final List<({int returnSaleId, int originalSaleId})> due;
+    try {
+      due = await find(limit: batchSize);
+    } catch (e) {
+      debugPrint('[EInvoiceWorker] تعذّر مسحُ إشعارات الائتمان: $e');
+      return 0;
+    }
+
+    var done = 0;
+    for (final pair in due) {
+      try {
+        await send(pair);
+        done++;
+      } catch (e) {
+        // السقفُ الضريبيُّ يرمي على المخالف (‏مبلغٌ يتجاوز الأصل) — ولا
+        // يوقف الطابور.
+        debugPrint(
+            '[EInvoiceWorker] مرتجع #${pair.returnSaleId} — إخفاقٌ: $e');
       }
     }
     return done;

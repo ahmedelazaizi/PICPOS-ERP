@@ -33,11 +33,12 @@ part of '../database.dart';
 /// it against LOCAL ids — netting the refund off the wrong invoice, or none.
 /// The UUID is stable across every store, so the reader resolves by gid first
 /// and only falls back to the number for rows written before this format.
-String localReturnLinkNote(int originalInvoiceId, {String? originalGlobalId}) {
-  final base = 'Return for invoice #$originalInvoiceId';
-  if (originalGlobalId == null || originalGlobalId.isEmpty) return base;
-  return '$base|gid:$originalGlobalId';
-}
+/// ⚠️ الصيغةُ نفسُها تُقرأ من مِكنسةِ إشعارات الائتمان، فاستُخرجت الدوالُّ
+/// الخالصةُ إلى `domain/models/return_original_link.dart` ويفوّض إليها هذا
+/// الملفُّ — نسخةٌ ثانيةٌ كانت ستتخلّف عن الأولى.
+String localReturnLinkNote(int originalInvoiceId, {String? originalGlobalId}) =>
+    buildReturnOriginalLinkNote(originalInvoiceId,
+        originalGlobalId: originalGlobalId);
 
 /// صف واحد في «سجل مرتجع المبيعات».
 ///
@@ -855,24 +856,16 @@ extension SalesDao on AppDatabase {
   }
 
   /// `'Return for invoice #12|gid:<uuid>'` → `<uuid>`; null when absent.
-  static String? _originalGidFromNote(String? notes) {
-    if (notes == null) return null;
-    final i = notes.indexOf('|gid:');
-    if (i < 0) return null;
-    final gid = notes.substring(i + 5).trim();
-    return gid.isEmpty ? null : gid;
-  }
+  ///
+  /// يفوّض إلى الدالّة الخالصة المشتركة — انظر [localReturnLinkNote].
+  static String? _originalGidFromNote(String? notes) =>
+      returnOriginalGidFromNote(notes);
 
   /// `'Return for invoice #12|gid:…'` → `12`; null when the note doesn't
   /// follow the [localReturnLinkNote] format (e.g. a POS quick-return, which
   /// has no original at all).
-  static int? _originalIdFromNote(String? notes) {
-    if (notes == null || !notes.startsWith('Return for invoice #')) return null;
-    var tail = notes.substring('Return for invoice #'.length);
-    final bar = tail.indexOf('|');
-    if (bar >= 0) tail = tail.substring(0, bar);
-    return int.tryParse(tail.trim());
-  }
+  static int? _originalIdFromNote(String? notes) =>
+      returnOriginalIdFromNote(notes);
 
   /// Helper to resolve cost center and its children (copied/shared from SalesAnalyticsDao pattern)
   /// Note: Ideally this would be a shared mixin or base class method.
