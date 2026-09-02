@@ -92,6 +92,9 @@ class EInvoiceAutoSubmitter {
           submissionId: submissionId,
           submissionUuid: result.submissionId ?? '',
           documentUuid: result.documentUuid,
+          // المعرّفُ الطويلُ يُخزَّن — الشاشةُ تعرضه، وكان يسقط بين الغلاف
+          // والصفّ فيُقرأ «—» على كلّ مستندٍ مقبول.
+          longId: result.longId,
           qrCode: result.qrCode,
           rawResponse: result.rawResponse,
         );
@@ -146,6 +149,9 @@ class EInvoiceAutoSubmitter {
           submissionId: submissionId,
           submissionUuid: result.submissionId ?? '',
           documentUuid: result.documentUuid,
+          // المعرّفُ الطويلُ يُخزَّن — الشاشةُ تعرضه، وكان يسقط بين الغلاف
+          // والصفّ فيُقرأ «—» على كلّ مستندٍ مقبول.
+          longId: result.longId,
           qrCode: result.qrCode,
           rawResponse: result.rawResponse,
         );

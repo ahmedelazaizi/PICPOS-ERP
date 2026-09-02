@@ -160,6 +160,7 @@ class EInvoiceSubmissionWorker {
         submissionId: submissionId,
         submissionUuid: result.submissionId ?? '',
         documentUuid: result.documentUuid,
+        longId: result.longId,
         qrCode: result.qrCode,
         rawResponse: result.rawResponse,
       );

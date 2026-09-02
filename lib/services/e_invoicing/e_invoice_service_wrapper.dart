@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'eta_service.dart';
 import 'jofotara_service.dart';
 
@@ -16,6 +17,13 @@ class UnifiedSubmissionResult {
   final EInvoicePlatform platform;
   final String? submissionId;
   final String? documentUuid;
+
+  /// المعرّفُ الطويلُ من ETA — وهو ما يُشتقّ منه الـQR.
+  ///
+  /// ⚠️ كان **يسقط هنا**: الغلافُ يولّد الـQR منه ثمّ يهمله، فعمودُ
+  /// `e_invoice_submissions.long_id` يبقى فارغاً أبداً — والشاشةُ تعرضه
+  /// «—» على كلّ مستندٍ مقبول.
+  final String? longId;
   final String? qrCode;
   final String? errorMessage;
   final String? rawResponse;
@@ -25,6 +33,7 @@ class UnifiedSubmissionResult {
     required this.platform,
     this.submissionId,
     this.documentUuid,
+    this.longId,
     this.qrCode,
     this.errorMessage,
     this.rawResponse,
@@ -211,11 +220,18 @@ class EInvoiceServiceWrapper {
     EInvoicePlatform? platform,
     EtaConfig? etaConfig,
     JofotaraConfig? jofotaraConfig,
+
+    /// عميلُ HTTP بديلٌ — **للاختبار وحدَه**.
+    ///
+    /// `EtaService` يقبل واحداً محقوناً أصلاً، لكنّ هذا المُنشئَ كان يبتلعه
+    /// فلا سبيلَ إلى قياس رحلةِ المستند من طرفٍ لطرفٍ بلا شبكةٍ حقيقيّة.
+    /// و`null` تعني عميلَ الشبكة المعتاد، فلا يتغيّر شيءٌ في الإنتاج.
+    @visibleForTesting http.Client? httpClient,
   }) {
     _activePlatform = platform;
 
     if (etaConfig != null) {
-      _etaService = EtaService(config: etaConfig);
+      _etaService = EtaService(config: etaConfig, httpClient: httpClient);
       _activePlatform ??= EInvoicePlatform.eta;
     }
 
@@ -323,6 +339,7 @@ class EInvoiceServiceWrapper {
         platform: EInvoicePlatform.eta,
         submissionId: result.submissionId,
         documentUuid: doc.uuid,
+        longId: doc.longId,
         qrCode: qr,
         rawResponse: result.rawResponse,
       );
