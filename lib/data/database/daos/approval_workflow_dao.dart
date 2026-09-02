@@ -184,6 +184,8 @@ extension ApprovalWorkflowDao on AppDatabase {
       notes: r.data['notes'] as String?,
       createdAt: () { final v = r.data['created_at']; return v is DateTime ? v : DateTime.fromMillisecondsSinceEpoch((v as int) * 1000); }(),
       completedAt: null,
+      // v173 — مطلوبٌ في صنفِ البيانات المولَّد؛ صفرٌ حالُ صفٍّ لم يُعدَّل قطّ.
+      rowVersion: (r.data['row_version'] as int?) ?? 0,
     )).toList());
   }
 

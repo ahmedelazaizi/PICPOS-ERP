@@ -315,6 +315,7 @@ class _DeliveryManagementBodyState
                       name: 'توصيل داخلي',
                       isActive: true,
                       createdAt: DateTime.now(),
+                      rowVersion: 0, // v173
                     ),
                   ),
                   orElse: () => null,

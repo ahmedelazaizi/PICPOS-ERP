@@ -87,6 +87,20 @@ class IdNamespaceService {
     'booking_resources', 'booking_services', 'bookings', 'booking_reminders',
     'sales_routes', 'route_visits', 'sales_rep_targets',
     'sales_rep_collections',
+
+    // ── v173 / المرحلة ٤ — السجلُّ الرقابيُّ والتشغيلُ العابر ──
+    'loyalty_programs', 'delivery_companies', 'couriers',
+    'customer_loyalty_points', 'loyalty_transactions',
+    'warehouse_prices',
+    'cycle_count_plans', 'cycle_count_tasks', 'cycle_count_items',
+    'stock_audits', 'stock_audit_items',
+    'stock_requisitions', 'stock_requisition_items',
+    'bank_reconciliations', 'bank_statement_lines',
+    'e_invoice_submissions', 'e_invoice_status_log',
+    'field_audit_logs', 'failed_autoposts',
+    'approval_workflows', 'approval_steps', 'approval_requests',
+    'approval_decisions', 'sod_conflicts', 'sod_violations',
+    'compliance_checks',
   ];
 
   /// Raise the `sqlite_sequence` row for every namespaced table to

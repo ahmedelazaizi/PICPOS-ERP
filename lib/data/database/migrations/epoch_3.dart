@@ -3197,5 +3197,131 @@ extension Epoch3Migrations on AppDatabase {
         debugPrint('[Migration] v172: مرتجعُ الشراء صار مستنداً بضريبته');
       });
     }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // v173 — المرحلة ٤: أعمدةُ المزامنة للسجلِّ الرقابيِّ والتشغيلِ العابر
+    // ═══════════════════════════════════════════════════════════════════
+    //
+    // ═══ العطبُ الذي تسدّه ═══
+    //
+    // ستّةٌ وعشرون جدولاً كانت محلّيّةً بالكامل وحكمُها في
+    // `sync_coverage_guard_test` 🔴 «يجب أن تُزامَن»:
+    //
+    //   • **سجلٌّ قانونيٌّ ورقابيّ** — تقديماتُ الفاتورة الإلكترونيّة وسجلُّ
+    //     حالاتها، وسجلُّ تغييرات الحقول، وفشلُ الترحيل، وسيرُ الاعتماد
+    //     بطلباته وقراراته، وتعارضاتُ فصل المهامّ وانتهاكاتُها، وفحوصُ
+    //     الامتثال. ضياعُ الجهاز ضياعُ الإثبات، ولا يُعاد بناؤه.
+    //   • **تشغيلٌ عابرٌ للأجهزة** — الجردُ الدوريُّ وجردُ المخزون وطلباتُ
+    //     الصرف، ونقاطُ الولاء، وشركاتُ التوصيل ومندوبوها، والمطابقةُ
+    //     البنكيّةُ بأسطر كشفها، وأسعارُ المخازن. جهازٌ يطابق كشفاً لا يراه
+    //     جهازٌ آخرُ فيطابقه ثانية.
+    //
+    // ⚠️ و`e_invoice_configs` **مستثنًى عمداً**: يحمل `client_secret` نصّاً،
+    //    ومسارُ السحب يُرسل `SELECT *`. استبعادُ العمود على السلك يُسقط
+    //    الإدراجَ على العميل (‏`NOT NULL` بلا افتراض) صامتاً، وإرسالُ قيمةٍ
+    //    بديلةٍ يدهس سرَّ العميل المحلّيَّ بـ`INSERT OR REPLACE`. فبقاؤه
+    //    محلّيّاً هو الحكمُ المكتوبُ في الحارس، لا سهو.
+    //
+    // ═══ الصيغةُ نسخةُ v167 حرفاً ═══
+    //
+    // عمودٌ عاديٌّ + فهرسٌ فريدٌ جزئيّ (‏`ADD COLUMN … UNIQUE` مرفوضةٌ في
+    // SQLite)، وتعبئةٌ بـ`UuidV7` **قبلَ** المُشغِّل، ومُشغِّلٌ يرفع
+    // `row_version` بحارسِ `WHEN` يمنع الدور.
+    //
+    // ⚠️ و`stock_requisitions` لها `global_id` وفهرسُه منذ v149 — الـsafe-skip
+    //    يتكفّل بهما والتعبئةُ تملأ الفارغَ وحدَه. و`e_invoice_status_log`
+    //    كانت جدولاً بلا كيانٍ (٦‑١) وصارت كياناً في v173، فهذه الخطوةُ
+    //    تُلحِق الأعمدةَ بالقواعد المُرقّاة و`createAll` يبنيها للجديدة.
+    if (from < 173) {
+      await _safeMigrate('v173 أعمدةُ مزامنةٍ للسجلِّ الرقابيِّ والتشغيلِ العابر',
+          () async {
+        const phase4Tables = [
+          // التشغيلُ العابرُ للأجهزة
+          'loyalty_programs', 'delivery_companies', 'couriers',
+          'customer_loyalty_points', 'loyalty_transactions',
+          'warehouse_prices',
+          'cycle_count_plans', 'cycle_count_tasks', 'cycle_count_items',
+          'stock_audits', 'stock_audit_items',
+          'stock_requisitions', 'stock_requisition_items',
+          'bank_reconciliations', 'bank_statement_lines',
+          // السجلُّ القانونيُّ والرقابيّ
+          'e_invoice_submissions', 'e_invoice_status_log',
+          'field_audit_logs', 'failed_autoposts',
+          'approval_workflows', 'approval_steps', 'approval_requests',
+          'approval_decisions', 'sod_conflicts', 'sod_violations',
+          'compliance_checks',
+        ];
+
+        for (final t in phase4Tables) {
+          // ١. المعرّفُ العالميّ — عمودٌ عاديٌّ ثمّ فهرسٌ فريدٌ جزئيّ.
+          try {
+            await m.database.customStatement(
+              'ALTER TABLE $t ADD COLUMN global_id TEXT',
+            );
+          } catch (e) {
+            debugPrint('[Migration] v173 ADD $t.global_id (safe-skip): $e');
+          }
+          try {
+            await m.database.customStatement(
+              'CREATE UNIQUE INDEX IF NOT EXISTS idx_${t}_global_id '
+              'ON $t(global_id) WHERE global_id IS NOT NULL',
+            );
+          } catch (e) {
+            debugPrint('[Migration] v173 IX $t.global_id (safe-skip): $e');
+          }
+
+          // ٢. تعبئةُ الصفوفِ القائمة — **قبلَ** المُشغِّل عمداً.
+          try {
+            final existing = await m.database
+                .customSelect(
+                  "SELECT id FROM $t WHERE global_id IS NULL OR global_id = ''",
+                )
+                .get();
+            for (final row in existing) {
+              await m.database.customStatement(
+                'UPDATE $t SET global_id = ? WHERE id = ?',
+                [UuidV7.generate(), row.data['id']],
+              );
+            }
+          } catch (e) {
+            debugPrint('[Migration] v173 backfill $t.global_id (safe-skip): $e');
+          }
+
+          // ٣. أعمدةُ الدلتا الأربعة.
+          for (final ddl in [
+            'ALTER TABLE $t ADD COLUMN last_modified_at INTEGER',
+            'ALTER TABLE $t ADD COLUMN deleted_at INTEGER',
+            'ALTER TABLE $t ADD COLUMN origin_client_id TEXT',
+            'ALTER TABLE $t ADD COLUMN row_version INTEGER NOT NULL DEFAULT 0',
+          ]) {
+            try {
+              await m.database.customStatement(ddl);
+            } catch (_) {} // safe-skip: العمودُ موجودٌ سلفاً
+          }
+
+          // ٤. مُشغِّلُ رفعِ النسخة.
+          try {
+            await m.database.customStatement('''
+              CREATE TRIGGER IF NOT EXISTS ${t}_bump_version
+              AFTER UPDATE ON $t FOR EACH ROW
+              WHEN NEW.row_version = OLD.row_version
+              BEGIN
+                UPDATE $t SET
+                  last_modified_at = strftime('%s', 'now'),
+                  row_version = OLD.row_version + 1
+                WHERE id = NEW.id;
+              END
+            ''');
+          } catch (e) {
+            debugPrint('[Migration] v173 trigger $t: $e');
+          }
+        }
+
+        debugPrint(
+          '[Migration] v173: أعمدةُ المزامنة على '
+          '${phase4Tables.length} جدولاً رقابيّاً وتشغيليّاً',
+        );
+      });
+    }
   }
 }

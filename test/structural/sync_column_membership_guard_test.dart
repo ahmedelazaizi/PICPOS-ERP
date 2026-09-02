@@ -77,9 +77,24 @@ const _namespacedButNotPulled = <String>{
 
 // ── الكشف ─────────────────────────────────────────────────────────────────
 
-String _snake(String s) => s
-    .replaceAllMapped(RegExp(r'([a-z0-9])([A-Z])'), (m) => '${m[1]}_${m[2]}')
-    .toLowerCase();
+/// اسمُ الجدول في SQL كما يشتقّه drift. ⚠️ الصيغةُ القديمةُ
+/// `([a-z0-9])([A-Z])` كانت تُخرج `EInvoiceStatusLog` ⇒ `einvoice_status_log`
+/// فيُبلَّغ «لا صنفَ يقابله» عن جدولٍ قائم (مقيس 2026-09-02).
+String _snake(String s) {
+  final b = StringBuffer();
+  for (var i = 0; i < s.length; i++) {
+    final c = s[i];
+    final isUpper = c.toUpperCase() == c && c.toLowerCase() != c;
+    if (isUpper && i > 0) {
+      final prevUpper = s[i - 1].toUpperCase() == s[i - 1] &&
+          s[i - 1].toLowerCase() != s[i - 1];
+      final nextLower = i + 1 < s.length && s[i + 1].toLowerCase() == s[i + 1];
+      if (!prevUpper || nextLower) b.write('_');
+    }
+    b.write(c.toLowerCase());
+  }
+  return b.toString();
+}
 
 /// جسمُ كلِّ صنفِ جدولٍ في المشروع، مفهرساً باسمه في SQL.
 ///
@@ -127,6 +142,14 @@ void main() {
       expect(bodies.length, greaterThan(100),
           reason: 'مسحُ `lib/data/database/tables` عاد شبهَ فارغ — كلُّ حكمٍ '
               'بعده باطل. غالباً تغيّر المسارُ أو شكلُ التعريف.');
+    });
+
+    test('واشتقاقُ اسم SQL يطابق drift — على البلاغ نفسِه', () {
+      expect(_snake('EInvoiceStatusLog'), 'e_invoice_status_log');
+      expect(_snake('EInvoiceSubmissions'), 'e_invoice_submissions');
+      expect(_snake('BookingReminders'), 'booking_reminders');
+      expect(bodies.containsKey('e_invoice_status_log'), isTrue,
+          reason: 'الجدولُ يُسحَب ولا يجده المسحُ ⇒ «لا صنفَ يقابله» كاذب');
     });
 
     test('ويقرأ جسمَ الجدول كاملاً — لا يقطعه عند أوّل قوس', () {

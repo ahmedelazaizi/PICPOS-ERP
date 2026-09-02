@@ -127,6 +127,7 @@ class StockAuditNotifier extends Notifier<StockAuditState> {
           actualQuantity: 0,
           difference: 0,
           scannedAt: DateTime.now(),
+          rowVersion: 0, // v173
         ),
       );
 

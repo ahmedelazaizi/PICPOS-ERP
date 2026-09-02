@@ -113,6 +113,7 @@ Map<String, dynamic> _sampleReconciliationReport() {
         matchedJournalLineId: 4,
         matchType: 'manual',
         createdAt: DateTime(2026, 5, 9),
+        rowVersion: 0,
       ),
     ],
     'unmatchedBankLines': <dynamic>[
@@ -127,6 +128,7 @@ Map<String, dynamic> _sampleReconciliationReport() {
         runningBalance: 800,
         isMatched: false,
         createdAt: DateTime(2026, 5, 10),
+        rowVersion: 0,
       ),
     ],
     'outstandingBookEntries': <dynamic>[
@@ -497,6 +499,7 @@ void main() {
           totalUnmatched: 0,
           status: 'draft',
           createdAt: periodStart,
+          rowVersion: 0,
         ),
       ];
 
@@ -1104,6 +1107,7 @@ void main() {
           totalUnmatched: 1,
           status: 'completed',
           createdAt: DateTime(2026, 6, 1),
+          rowVersion: 0,
         ),
       },
     );

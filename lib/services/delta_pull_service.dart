@@ -155,6 +155,46 @@ class DeltaPullService {
     'route_visits',            // → sales_routes, parties, employees
     'sales_rep_targets',       // → employees
     'sales_rep_collections',   // → employees, parties
+
+    // ── Tier 7: السجلُّ الرقابيُّ والتشغيلُ العابرُ للأجهزة (v173 / المرحلة ٤) ──
+    //
+    // ستّةٌ وعشرون جدولاً كان حكمُها في `sync_coverage_guard_test` 🔴:
+    // إثباتٌ رقابيٌّ لا يُعاد بناؤه إن ضاع الجهاز (الفاتورةُ الإلكترونيّةُ
+    // وسجلُّ الحقول والاعتمادُ وفصلُ المهامّ)، وحالةُ تشغيلٍ يقرؤها أكثرُ من
+    // جهازٍ (الجردُ الدوريُّ وطلباتُ الصرف والولاءُ والمطابقةُ البنكيّة).
+    // والترتيبُ يتبع المفاتيحَ حرفاً — الأبُ قبل ابنه.
+    //
+    // ⚠️ و`e_invoice_configs` **ليست هنا عمداً** — تحمل `client_secret`
+    //    نصّاً؛ انظر حكمَها في `sync_coverage_guard_test`.
+    //
+    // ⚠️ **والمسارُ الواردُ وحدَه** كما في المرحلة ٣: لا نقطةَ نهايةٍ لدفع
+    //    أيٍّ منها من العميل؛ ما يُكتَب على العميل يبقى عليه.
+    'loyalty_programs',
+    'delivery_companies',
+    'sod_conflicts',
+    'approval_workflows',
+    'compliance_checks',
+    'couriers',                  // → delivery_companies
+    'approval_steps',            // → approval_workflows, roles, users
+    'customer_loyalty_points',   // → parties, loyalty_programs
+    'loyalty_transactions',      // → parties, loyalty_programs
+    'warehouse_prices',          // → products, warehouses
+    'cycle_count_plans',         // → warehouses, users
+    'cycle_count_tasks',         // → cycle_count_plans, users
+    'cycle_count_items',         // → cycle_count_tasks, products
+    'stock_audits',              // → warehouses, users
+    'stock_audit_items',         // → stock_audits, products
+    'stock_requisitions',        // → branches, users
+    'stock_requisition_items',   // → stock_requisitions, products, units
+    'bank_reconciliations',      // → accounts
+    'bank_statement_lines',      // → accounts
+    'e_invoice_submissions',     // → sales_invoices
+    'e_invoice_status_log',      // → e_invoice_submissions
+    'field_audit_logs',          // → users
+    'failed_autoposts',          // → users
+    'approval_requests',         // → approval_workflows, users
+    'approval_decisions',        // → approval_requests, approval_steps, users
+    'sod_violations',            // → sod_conflicts, users, roles
   ];
 
   /// Spec 151 P1-8b — the TRANSACTIONAL delta-pull tables (Tier 3 + Tier 4 +
@@ -207,6 +247,26 @@ class DeltaPullService {
     'bookings', 'booking_reminders',
     'sales_routes', 'route_visits', 'sales_rep_targets',
     'sales_rep_collections',
+
+    // v173 / المرحلة ٤ — بياناتُ عملٍ لا تُسلَّم لمستدعٍ بلا هويّة: أرصدةُ
+    // الولاء وحركاتُه، وأوراقُ الجرد وطلباتُ الصرف، والمطابقةُ البنكيّة
+    // بأسطر كشفها، وتقديماتُ الفاتورة الإلكترونيّة وسجلُّها، وسجلُّ الحقول
+    // وفشلُ الترحيل، وطلباتُ الاعتماد وقراراتُه، وانتهاكاتُ فصل المهامّ،
+    // وفحوصُ الامتثال.
+    //
+    // والمرجعيُّ عمداً — `loyalty_programs` · `delivery_companies` ·
+    // `couriers` · `warehouse_prices` · `approval_workflows` ·
+    // `approval_steps` · `sod_conflicts` — خارجَ القائمة ليعمل التزويدُ
+    // قبل الدخول (سعرُ المخزن يسبق أوّلَ بيع، وسيرُ الاعتماد يسبق أوّلَ طلب).
+    'customer_loyalty_points', 'loyalty_transactions',
+    'cycle_count_plans', 'cycle_count_tasks', 'cycle_count_items',
+    'stock_audits', 'stock_audit_items',
+    'stock_requisitions', 'stock_requisition_items',
+    'bank_reconciliations', 'bank_statement_lines',
+    'e_invoice_submissions', 'e_invoice_status_log',
+    'field_audit_logs', 'failed_autoposts',
+    'approval_requests', 'approval_decisions',
+    'sod_violations', 'compliance_checks',
   };
 
   /// المرحلة ١ (W1) — الجداول الأساسية التي صار الخادم يقصّها على الفرع
@@ -288,6 +348,22 @@ class DeltaPullService {
     // مرتجعَ شراءٍ سابقاً لإقلاعه أبداً** — فتظهر تسويةُ ض.ق.م عنده فرقاً
     // دائماً على بياناتٍ سليمة.
     'purchase_returns',
+
+    // v173 / المرحلة ٤ — الستّةُ والعشرون كلُّها بلا استراتيجيّةٍ في
+    // `fullSync`، فمكانُها مسارُ الدلتا وبذرُ علامتِها المائيّة يعني عميلاً
+    // لا يرى مطابقةً بنكيّةً ولا طلبَ اعتمادٍ سابقاً لإقلاعه أبداً.
+    'loyalty_programs', 'delivery_companies', 'couriers',
+    'customer_loyalty_points', 'loyalty_transactions',
+    'warehouse_prices',
+    'cycle_count_plans', 'cycle_count_tasks', 'cycle_count_items',
+    'stock_audits', 'stock_audit_items',
+    'stock_requisitions', 'stock_requisition_items',
+    'bank_reconciliations', 'bank_statement_lines',
+    'e_invoice_submissions', 'e_invoice_status_log',
+    'field_audit_logs', 'failed_autoposts',
+    'approval_workflows', 'approval_steps', 'approval_requests',
+    'approval_decisions', 'sod_conflicts', 'sod_violations',
+    'compliance_checks',
 
     // ⚠️ **`printers` و`activity_logs` مستثنيان عن قصدٍ — قرارٌ لا سهو.**
     //   • `printers` يخلط إعداداً **جهازيّاً** (‏`port` = COM3) بإعدادٍ

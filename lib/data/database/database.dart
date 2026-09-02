@@ -411,6 +411,11 @@ const String kCreateAttendanceDayDedupIndexSql =
 ///
 /// فالـDDL مصدرٌ واحدٌ تقرؤه ثلاثةُ أطراف: الهجرةُ، و`onCreate`، والشفاءُ
 /// الذاتيُّ كلَّ إقلاع — وإلّا افترقت وعادت الفجوةُ من بابٍ آخر.
+///
+/// v173 — **صار الصنفُ مُعلَناً في `@DriftDatabase`** فيبنيه `createAll`
+/// و`_createAllForPostgres` كأيّ كيان، وهذا الـDDL بقي شفاءً ذاتيّاً
+/// للقواعد التي سبقت الإعلان. ويحمل أعمدةَ المزامنة الخمسةَ ليتطابق مع
+/// الكيان: سجلُّ حالات الفاتورة الإلكترونيّة إثباتٌ رقابيٌّ يُزامَن.
 const String kCreateEInvoiceStatusLogSql = '''
 CREATE TABLE IF NOT EXISTS e_invoice_status_log (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -419,7 +424,12 @@ CREATE TABLE IF NOT EXISTS e_invoice_status_log (
   new_status TEXT NOT NULL,
   changed_by TEXT,
   notes TEXT,
-  changed_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+  changed_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+  global_id TEXT UNIQUE,
+  last_modified_at INTEGER,
+  deleted_at INTEGER,
+  origin_client_id TEXT,
+  row_version INTEGER NOT NULL DEFAULT 0
 )''';
 const String kCreateEInvoiceStatusLogIndexSql =
     'CREATE INDEX IF NOT EXISTS idx_einv_status_log_submission '
@@ -641,6 +651,10 @@ WHERE id NOT IN (
     // Phase 4: E-Invoicing
     EInvoiceConfigs,
     EInvoiceSubmissions,
+    // v173 — كان صنفاً بلا إعلانٍ (٦‑١) يُبنى بـSQL خامٍّ في ثلاثة مواضع.
+    // صار كياناً كأخواته: `onCreate` و`_createAllForPostgres` يبنيانه
+    // بأعمدة المزامنة، والـSQL الخامُّ أدناه بقي شفاءً ذاتيّاً لا مصدراً.
+    EInvoiceStatusLog,
     TaxTypes,
     TaxSubtypes,
     // Phase 5.2: Loyalty Points
@@ -977,7 +991,7 @@ class AppDatabase extends _$AppDatabase {
   // `newColumns`، فرمت `no such column: "role"` وابتلعها `_safeMigrate`
   // (تعدُّها خطأً عديمَ الأثر) — فخُتمت القواعدُ 161 وأعمدةُ المورد لم تُضَف،
   // و`from < 161` لا يعود يفحصها. الخطوةُ الجديدةُ تفحص ثمّ تُصلح.
-  int get schemaVersion => 172;
+  int get schemaVersion => 173;
 
   /// 🔴 جملةُ `CREATE INDEX` صالحةً لـPostgreSQL، مأخوذةً من الجملة التي
   /// ولّدتها drift لـSQLite.
@@ -1261,6 +1275,22 @@ class AppDatabase extends _$AppDatabase {
   /// Canonical list of sync-hardening tables (mirrors the list in
   /// `migrations/epoch_3.dart` v129). Used by the Postgres infrastructure
   /// ensurer to backfill columns and attach auto-bump triggers.
+  ///
+  /// 🔴 **v173 (2026-09-02) — القائمةُ كانت متأخّرةً ٣٢ جدولاً عن `pullTables`.**
+  ///
+  /// المرحلتان ٢ و٣ (v166 · v167) و`purchase_returns` (v172) أضافت
+  /// أعمدةَ المزامنة إلى كيانات drift وأدرجت الجداولَ في مساري السحب —
+  /// **ولم تُضِفها هنا**. وهذه القائمةُ هي ما يعلّق عليه PostgreSQL مُشغِّلَ
+  /// `fn_bump_row_version`، وهو **الوحيدُ** الذي يختم `last_modified_at`
+  /// عند الإدراج. فعلى خادم PostgreSQL كان كلُّ صفٍّ جديدٍ في تلك الجداول
+  /// يُولَد بـ`last_modified_at = NULL`، ومسارُ السحب يرشّح بـ
+  /// `last_modified_at IS NOT NULL AND > since` — أي أنّ **أوّلَ سحبٍ وحدَه**
+  /// يراها، وما يُدرَج بعده لا يصل أيَّ عميلٍ أبداً. ولا يظهر ذلك في اختبارِ
+  /// وحدةٍ: SQLite لا مُشغِّلَ إدراجٍ فيه أصلاً والفحوصُ تقيس الأعمدةَ لا الختم.
+  ///
+  /// فالعقدُ الآن: **كلُّ جدولٍ في `DeltaPullService.pullTables` هنا** —
+  /// و`pg_sync_hardened_tables_guard_test` يثبّته. و`printers` تبقى (خارجَ
+  /// السحب بقرار مالك، والمُشغِّلُ عليها بلا ضرر).
   static const _syncHardenedTables = <String>[
     'party_groups', 'parties', 'purchase_invoices', 'purchase_invoice_items',
     'sales_invoices', 'sales_invoice_items', 'held_orders', 'held_order_items',
@@ -1274,7 +1304,43 @@ class AppDatabase extends _$AppDatabase {
     'quotations', 'quotation_items',
     'safes', 'safe_transactions', 'printers',
     'shifts',
+
+    // v166 / المرحلة ٢ — مستنداتُ الأثر المحاسبيّ (كانت غائبةً هنا).
+    'asset_categories', 'op_expense_categories', 'bill_of_materials',
+    'fixed_assets', 'manufacturing_orders', 'bom_components',
+    'op_expenses', 'asset_depreciations', 'mfg_order_costs',
+    'landed_cost_sheets', 'landed_cost_items', 'landed_cost_allocations',
+    // §٦‑٢ (v172)
+    'purchase_returns',
+    // v167 / المرحلة ٣ — الفئةُ التشغيليّة (كانت غائبةً هنا).
+    'employees',
+    'table_sections', 'restaurant_tables', 'table_orders',
+    'table_order_items', 'table_reservations', 'table_order_payments',
+    'kitchen_stations', 'category_station_mappings',
+    'work_orders', 'work_order_items',
+    'booking_resources', 'booking_services', 'bookings', 'booking_reminders',
+    'sales_routes', 'route_visits', 'sales_rep_targets',
+    'sales_rep_collections',
+
+    // v173 / المرحلة ٤ — السجلُّ الرقابيُّ والتشغيلُ العابرُ للأجهزة.
+    'loyalty_programs', 'delivery_companies', 'couriers',
+    'customer_loyalty_points', 'loyalty_transactions',
+    'warehouse_prices',
+    'cycle_count_plans', 'cycle_count_tasks', 'cycle_count_items',
+    'stock_audits', 'stock_audit_items',
+    'stock_requisitions', 'stock_requisition_items',
+    'bank_reconciliations', 'bank_statement_lines',
+    'e_invoice_submissions', 'e_invoice_status_log',
+    'field_audit_logs', 'failed_autoposts',
+    'approval_workflows', 'approval_steps', 'approval_requests',
+    'approval_decisions', 'sod_conflicts', 'sod_violations',
+    'compliance_checks',
   ];
+
+  /// مكشوفةٌ لحارسٍ يثبّت أنّ كلَّ جدولٍ يُسحَب يحمل مُشغِّلَ الختم على
+  /// PostgreSQL — انظر تعليقَ [_syncHardenedTables].
+  @visibleForTesting
+  static List<String> get syncHardenedTablesForTest => _syncHardenedTables;
 
   /// Ensures PostgreSQL has the full sync-hardening infrastructure.
   ///
@@ -1307,6 +1373,9 @@ class AppDatabase extends _$AppDatabase {
     // ── Step 1: backfill sync columns (Postgres 9.6+ supports IF NOT EXISTS).
     for (final t in _syncHardenedTables) {
       for (final ddl in [
+        // v173 — دفاعيٌّ للقواعد التي سبقت إعلانَ كيانٍ ما (الكيانُ يحمله
+        // على القواعد الجديدة، و`IF NOT EXISTS` يجعله عديمَ الأثر هناك).
+        'ALTER TABLE $t ADD COLUMN IF NOT EXISTS global_id TEXT',
         'ALTER TABLE $t ADD COLUMN IF NOT EXISTS last_modified_at BIGINT',
         'ALTER TABLE $t ADD COLUMN IF NOT EXISTS deleted_at BIGINT',
         'ALTER TABLE $t ADD COLUMN IF NOT EXISTS origin_client_id TEXT',
@@ -1414,7 +1483,12 @@ class AppDatabase extends _$AppDatabase {
           new_status TEXT NOT NULL,
           changed_by TEXT,
           notes TEXT,
-          changed_at BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())::bigint
+          changed_at BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())::bigint,
+          global_id TEXT UNIQUE,
+          last_modified_at BIGINT,
+          deleted_at BIGINT,
+          origin_client_id TEXT,
+          row_version INTEGER NOT NULL DEFAULT 0
         )
       ''');
       await customStatement(

@@ -2309,6 +2309,21 @@ class ApiHandler {
     'booking_resources', 'booking_services', 'bookings', 'booking_reminders',
     'sales_routes', 'route_visits', 'sales_rep_targets',
     'sales_rep_collections',
+    // Tier 7 — v173 / المرحلة ٤: السجلُّ الرقابيُّ والتشغيلُ العابر.
+    // تقابل الكتلةَ نفسَها في [DeltaPullService.pullTables]. و
+    // `e_invoice_configs` ليست هنا عمداً (تحمل `client_secret`).
+    'loyalty_programs', 'delivery_companies', 'couriers',
+    'customer_loyalty_points', 'loyalty_transactions',
+    'warehouse_prices',
+    'cycle_count_plans', 'cycle_count_tasks', 'cycle_count_items',
+    'stock_audits', 'stock_audit_items',
+    'stock_requisitions', 'stock_requisition_items',
+    'bank_reconciliations', 'bank_statement_lines',
+    'e_invoice_submissions', 'e_invoice_status_log',
+    'field_audit_logs', 'failed_autoposts',
+    'approval_workflows', 'approval_steps', 'approval_requests',
+    'approval_decisions', 'sod_conflicts', 'sod_violations',
+    'compliance_checks',
   };
 
   /// Phase 5A.1 (Issue 5) — per-table branch column for the `/api/sync/pull`
@@ -2430,6 +2445,22 @@ class ApiHandler {
     'bookings', 'booking_reminders',
     'sales_routes', 'route_visits', 'sales_rep_targets',
     'sales_rep_collections',
+
+    // v173 / المرحلة ٤ — بياناتُ عملٍ لا تُسلَّم لمستدعٍ بلا هويّة. تقابل
+    // الكتلةَ نفسَها في `DeltaPullService.branchScopedPullTables` حرفاً.
+    // والمرجعيُّ عمداً — `loyalty_programs` · `delivery_companies` ·
+    // `couriers` · `warehouse_prices` · `approval_workflows` ·
+    // `approval_steps` · `sod_conflicts` — خارجَ القائمة ليعمل التزويدُ
+    // قبل الدخول.
+    'customer_loyalty_points', 'loyalty_transactions',
+    'cycle_count_plans', 'cycle_count_tasks', 'cycle_count_items',
+    'stock_audits', 'stock_audit_items',
+    'stock_requisitions', 'stock_requisition_items',
+    'bank_reconciliations', 'bank_statement_lines',
+    'e_invoice_submissions', 'e_invoice_status_log',
+    'field_audit_logs', 'failed_autoposts',
+    'approval_requests', 'approval_decisions',
+    'sod_violations', 'compliance_checks',
   };
 
   /// Spec 151 P1-8b — exposed so a guard test can assert this stays IDENTICAL

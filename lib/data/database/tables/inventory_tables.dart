@@ -138,7 +138,12 @@ class StockAudits extends Table {
   IntColumn get warehouseId => integer().nullable().references(Warehouses, #id)(); // المستودع
   IntColumn get createdBy => integer().nullable().references(Users, #id)();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
-
+  // === v173 — أعمدةُ المزامنة (المرحلة ٤: السجلُّ الرقابيُّ والتشغيلُ العابر) ===
+  TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
+  DateTimeColumn get lastModifiedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get originClientId => text().nullable()();
+  IntColumn get rowVersion => integer().withDefault(const Constant(0))();
 }
 
 class StockAuditItems extends Table {
@@ -149,7 +154,12 @@ class StockAuditItems extends Table {
   RealColumn get actualQuantity => real()();
   RealColumn get difference => real()();
   DateTimeColumn get scannedAt => dateTime().withDefault(currentDateAndTime)();
-
+  // === v173 — أعمدةُ المزامنة (المرحلة ٤: السجلُّ الرقابيُّ والتشغيلُ العابر) ===
+  TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
+  DateTimeColumn get lastModifiedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get originClientId => text().nullable()();
+  IntColumn get rowVersion => integer().withDefault(const Constant(0))();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -223,7 +233,11 @@ class StockRequisitions extends Table {
   // nullable int (no drift-level relationship needed; the migration adds a
   // bare INTEGER column, matching how the id is used).
   IntColumn get fulfilledByTransferId => integer().nullable()();
-
+  // === v173 — أعمدةُ المزامنة (المرحلة ٤). `globalId` أعلاه منذ v149 ===
+  DateTimeColumn get lastModifiedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get originClientId => text().nullable()();
+  IntColumn get rowVersion => integer().withDefault(const Constant(0))();
 }
 
 @TableIndex(name: 'idx_stock_requisition_items_req', columns: {#requisitionId})
@@ -235,5 +249,10 @@ class StockRequisitionItems extends Table {
   RealColumn get quantity => real()();
   IntColumn get unitId => integer().nullable().references(Units, #id)();
   TextColumn get notes => text().nullable()();
-
+  // === v173 — أعمدةُ المزامنة (المرحلة ٤: السجلُّ الرقابيُّ والتشغيلُ العابر) ===
+  TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
+  DateTimeColumn get lastModifiedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get originClientId => text().nullable()();
+  IntColumn get rowVersion => integer().withDefault(const Constant(0))();
 }

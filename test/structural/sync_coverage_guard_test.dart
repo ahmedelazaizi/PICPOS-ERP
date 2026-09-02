@@ -23,6 +23,17 @@
 // مستنداتِ الأثر المحاسبيّ أعمدةَ المزامنة الخمسةَ ووصلتها بمساري
 // السحب. فالباقي **٨٢ من ١٥٩** — ٩٤ ناقص ١٢.
 //
+// ═══ ثمّ تقلّصت القائمةُ مرّتين ═══
+//
+// المرحلةُ ٣ (v167، 2026-08-27) أخرجت ثمانيةَ عشرَ جدولاً تشغيليّاً، والمرحلةُ
+// ٤ (v173، 2026-09-02) أخرجت ستّةً وعشرين (السجلَّ الرقابيَّ والتشغيلَ
+// العابر). **فالرقمُ في هذا الرأس يبطُل — اقِسه**:
+//
+//   awk '/^const _unsyncedBaseline/,/^};/' <هذا الملفّ> | grep -oE "'[A-Za-z]+'" | wc -l
+//
+// وما بقي كلُّه 🟡 قرارُ مالكٍ أو ⚪ محلّيٌّ بطبعه — عدا استثناءٍ أمنيٍّ
+// واحدٍ مكتوبٍ بحكمه (‏`EInvoiceConfigs`).
+//
 // ═══ ما يفعله هذا الملفّ ═══
 //
 // يجمّد الـ٩١ خطَّ أساسٍ صريحاً. جدولٌ **جديدٌ** بلا مزامنةٍ يُسقط الحارسَ
@@ -65,24 +76,38 @@ const _unsyncedBaseline = <String>{
   //    `/api/bookings/apply-deposit` — الحدثُ الماليُّ الوحيدُ في الفئة.
   //    وما عداه يصل من الخادم إلى العميل ولا يعود.
 
-  // ═══ 🔴 تشغيلٌ عابرٌ للأجهزة — لم تُسَدّ بعد ═══
-  'CycleCountPlans', 'CycleCountTasks', 'CycleCountItems',
-  'StockAudits', 'StockAuditItems',
-  'StockRequisitions', 'StockRequisitionItems',
-  'CustomerLoyaltyPoints', 'LoyaltyPrograms', 'LoyaltyTransactions',
-  'DeliveryCompanies', 'Couriers',
-  'BankReconciliations', 'BankStatementLines',
+  // ═══ ✅ تشغيلٌ عابرٌ للأجهزة — سُدَّت 2026-09-02 (المرحلة ٤ / v173) ═══
+  //
+  // كانت أربعةَ عشرَ جدولاً هنا: الجردُ الدوريُّ وجردُ المخزون وطلباتُ
+  // الصرف · الولاءُ · شركاتُ التوصيل ومندوبوها · المطابقةُ البنكيّةُ
+  // بأسطر كشفها — ومعها `WarehousePrices` من أسفل القائمة. صارت كلُّها
+  // تحمل أعمدةَ المزامنة الخمسةَ وتُدرَج في القوائم الستّ **وفي قائمة
+  // مُشغِّلات PostgreSQL** (‏`_syncHardenedTables`، وكانت غائبةً عنها
+  // المرحلتان ٢ و٣ كلتاهما — انظر تعليقَها في `database.dart`).
 
-  // ═══ 🔴 سجلٌّ قانونيٌّ ورقابيّ — ضياعُ الجهاز ضياعُ الإثبات ═══
-  'EInvoiceSubmissions', 'EInvoiceStatusLog',
-  'FieldAuditLogs', 'FailedAutoposts',
-  'ApprovalWorkflows', 'ApprovalRequests', 'ApprovalSteps',
-  'ApprovalDecisions', 'SodConflicts', 'SodViolations',
-  'ComplianceChecks',
+  // ═══ ✅ سجلٌّ قانونيٌّ ورقابيّ — سُدَّت 2026-09-02 (المرحلة ٤ / v173) ═══
+  //
+  // كانت أحدَ عشرَ جدولاً هنا: تقديماتُ الفاتورة الإلكترونيّة وسجلُّ
+  // حالاتها · سجلُّ الحقول · فشلُ الترحيل · سيرُ الاعتماد بخطواته وطلباته
+  // وقراراته · فصلُ المهامّ بتعارضاته وانتهاكاته · فحوصُ الامتثال.
+  //
+  // و`EInvoiceStatusLog` كانت صنفاً **بلا إعلانٍ** في `@DriftDatabase`
+  // (٦‑١) يُبنى بـSQL خامّ — صارت كياناً في v173 كي تحمل الأعمدةَ من
+  // `createAll` لا من هجرةٍ وحدَها.
+  //
+  // ⚠️ **والمسارُ الوارد وحدَه** كما في المرحلة ٣: ما يُكتَب على العميل
+  //    في هذه الجداول يبقى عليه حتى تُبنى نقطةُ نهايةٍ لكلِّ حدث.
 
-  // ⚠️ **`EInvoiceConfigs` استثناءٌ أمنيٌّ صريح**: يحمل `clientSecret` نصّاً.
-  //    لا يُزامَن كما هو مهما تقرّر في الباقي — وأيُّ مزامنةٍ له تحتاج
-  //    تشفيراً أو استبعادَ العمود.
+  // ═══ 🔴 استثناءٌ أمنيٌّ صريحٌ — يستحقّ المزامنةَ و**ليس كما هو** ═══
+  //
+  // `EInvoiceConfigs` يحمل `clientSecret` نصّاً، ومسارُ السحب يُرسل
+  // `SELECT *`. والبديلان المتاحان في المحرّك كلاهما يكسر شيئاً:
+  //   • استبعادُ العمود على السلك (‏`alwaysDeniedColumns`) ⇒ الإدراجُ على
+  //     العميل يسقط بـ`NOT NULL` بلا افتراض، و`_upsertRow` يبتلعه صامتاً.
+  //   • إرسالُ قيمةٍ بديلةٍ ⇒ `INSERT OR REPLACE` يدهس سرَّ العميل المحلّيّ.
+  // فمزامنتُه تحتاج تشفيرَ العمود أو جعلَه قابلاً للإفراغ مع دمجٍ لا
+  // استبدال — قرارُ تصميمٍ لا سطرٌ في قائمة. وأُبقي هنا **تحت حكمه** لا
+  // مع المحلّيِّ بطبعه: سجلُّ التقديمات يُزامَن والإعدادُ الذي أنتجه لا.
   'EInvoiceConfigs',
 
   // ═══ 🟡 قرارُ مالكٍ مؤجَّل ═══
@@ -138,13 +163,8 @@ const _unsyncedBaseline = <String>{
   // `ProcessedMessages` بالضبط.
   'SyncOutbox',
 
-  // ═══ 🔴 كشفهما نزعُ التعليقات 2026-08-27 ═══
-  //
-  // `WarehousePrices` سعرُ بيعٍ وتكلفةٍ لكلّ صنفٍ في كلّ مخزن. جهازٌ يبيع
-  // بسعرٍ عدّله جهازٌ آخرُ ولا يراه ⇒ فرقُ إيرادٍ لا يُفسَّر. تستحقّ
-  // استراتيجيّةً، وهي خارجُ نطاق المرحلة ٢ المعلَن (‏مستنداتُ الأثر
-  // المحاسبيّ) فتُسجَّل هنا بحكمها بدل أن تمرّ صامتة.
-  'WarehousePrices',
+  // (‏`WarehousePrices` — كشفها نزعُ التعليقات 2026-08-27 وسُدَّت في
+  //  المرحلة ٤ / v173 مع الفئة التشغيليّة أعلاه.)
 };
 
 /// جداولُ نعلم يقيناً أنّها تُزامَن — **مرساةُ الحارس**.
@@ -159,9 +179,27 @@ const _knownSynced = <String>{
 
 // ── الكشف ─────────────────────────────────────────────────────────────────
 
-String _snake(String s) =>
-    s.replaceAllMapped(RegExp(r'([a-z0-9])([A-Z])'), (m) => '${m[1]}_${m[2]}')
-        .toLowerCase();
+/// اسمُ الجدول في SQL كما يشتقّه drift (‏`ReCase.snakeCase`).
+///
+/// ⚠️ كانت الصيغةُ `([a-z0-9])([A-Z])` فتُسقط الشرطةَ بعد حرفٍ كبيرٍ أوّل:
+/// `EInvoiceSubmissions` ⇒ `einvoice_submissions` لا `e_invoice_submissions`.
+/// فبدا الجدولان غيرَ مُزامَنَين وهما في القوائم كلِّها (مقيس 2026-09-02).
+/// الحرفُ الكبيرُ يفتح كلمةً إلّا إن كان تتمّةَ اختصارٍ (يسبقه كبيرٌ ويليه كبير).
+String _snake(String s) {
+  final b = StringBuffer();
+  for (var i = 0; i < s.length; i++) {
+    final c = s[i];
+    final isUpper = c.toUpperCase() == c && c.toLowerCase() != c;
+    if (isUpper && i > 0) {
+      final prevUpper = s[i - 1].toUpperCase() == s[i - 1] &&
+          s[i - 1].toLowerCase() != s[i - 1];
+      final nextLower = i + 1 < s.length && s[i + 1].toLowerCase() == s[i + 1];
+      if (!prevUpper || nextLower) b.write('_');
+    }
+    b.write(c.toLowerCase());
+  }
+  return b.toString();
+}
 
 List<String> _allTables() {
   final out = <String>[];
@@ -248,6 +286,16 @@ void main() {
         isTrue,
         reason: 'قُطع السطرُ عند `://` داخلَ نصٍّ حرفيّ ⇒ كودٌ ضائع.',
       );
+    });
+
+    test('واشتقاقُ اسم SQL يطابق drift — على البلاغ نفسِه', () {
+      // 2026-09-02: `EInvoiceSubmissions` بدت غيرَ مُزامَنةٍ وهي في القوائم
+      // كلِّها، لأنّ الاشتقاقَ أسقط الشرطةَ بعد الحرف الأوّل.
+      expect(_snake('EInvoiceSubmissions'), 'e_invoice_submissions');
+      expect(_snake('EInvoiceStatusLog'), 'e_invoice_status_log');
+      expect(_snake('SalesInvoices'), 'sales_invoices');
+      expect(_snake('SodConflicts'), 'sod_conflicts');
+      expect(_snake('ApiKeys'), 'api_keys');
     });
 
     test('وسطحُ المزامنة مقروءٌ — مرساةٌ موجبة', () {
