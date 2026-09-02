@@ -464,6 +464,7 @@ class _EInvoicingPicposScreenState
           'تسجيل ${cfg.registrationNumber} · نشاط ${cfg.activityCode ?? '—'}'
           ' · فرع ${cfg.branchId ?? '—'} · إصدار ${cfg.documentVersion}'
           ' · ترميز ${cfg.codingSystem}',
+          platformId: id,
         );
       },
     );
@@ -473,8 +474,9 @@ class _EInvoicingPicposScreenState
     ({String name, IconData icon, Color tint}) meta,
     EInvoiceConfigData? cfg,
     int sentToday,
-    String metaLine,
-  ) {
+    String metaLine, {
+    String platformId = 'eta',
+  }) {
     final isProduction = cfg?.isProduction ?? false;
     final isEnabled = cfg?.isEnabled ?? false;
 
@@ -545,9 +547,45 @@ class _EInvoicingPicposScreenState
                       color: context.picposMuted)),
             ],
           ),
+          // ⚠️ الإعدادُ يحمل `clientSecret` — اعتمادَ البوّابة. وحملُ السرِّ
+          //    أخطرُ من الإرسال، فالبوّابةُ `settings_tax` لا `einvoice_submit`.
+          //
+          //    وبلا هذا الزرّ كان `EInvoiceConfigs` **لا يُكتَب من PicPos
+          //    إطلاقاً**: الميزةُ لا تُفعَّل من داخل المنتج، ولا تُكتب رايةُ
+          //    `einvoice_enabled` — فيبقى كلُّ جهازٍ «غيرَ مُفعَّل» ويطبع
+          //    الرمزَ غيرَ الضريبيّ مهما كانت المنشأةُ مسجَّلة.
+          PermissionGuard(
+            permission: PermissionCodes.settingsTax,
+            child: IconButton(
+              tooltip: 'إعداد المنصّة',
+              iconSize: 17,
+              visualDensity: VisualDensity.compact,
+              icon: const Icon(PhosphorIconsBold.gearSix),
+              onPressed: () => _openConfigForm(platformId, cfg),
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  /// نموذجُ اعتماد المنصّة — يكتب `EInvoiceConfigs` ثمّ يضبط المحرّك.
+  ///
+  /// ⚠️ وضبطُ المحرّك بعد الحفظ **ليس تجميلاً**: `EInvoiceServiceWrapper` لم
+  /// يكن يُضبَط في PicPos إطلاقاً، فكلُّ «إرسال الآن» ينتهي بـ
+  /// `StateError: not configured` مبتلَعاً في `catch`.
+  Future<void> _openConfigForm(String platform, EInvoiceConfigData? cfg) async {
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (_) => _EInvoiceConfigDialog(platform: platform, existing: cfg),
+    );
+    if (saved != true || !mounted) return;
+
+    // المحرّكُ يُضبَط من الإعداد المحفوظ، ثمّ تُبرَّد القراءاتُ المخزَّنة.
+    await initializeEInvoiceService(ref, platform);
+    if (!mounted) return;
+    ref.invalidate(_configProvider(platform));
+    _toast('حُفظ إعدادُ المنصّة');
   }
 
   // ═════════════════════════════════════════════════════════════════════════
@@ -1575,5 +1613,194 @@ class _EInvoicingPicposScreenState
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(message)));
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// نموذجُ اعتماد المنصّة — الموضعُ الوحيدُ الذي يكتب `EInvoiceConfigs` في PicPos
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// ⚠️ **السرُّ لا يُعرَض ولا يُمحى بالسهو**: حقلُ «سر العميل» يُفتح بالقيمة
+// المحفوظة ويُحجب حرفُه، فحفظٌ لم يُغيّره يُبقيه كما هو. ونموذجٌ يفتح فارغاً
+// كان سيمحو اعتمادَ البوّابة عند أوّل حفظ.
+class _EInvoiceConfigDialog extends ConsumerStatefulWidget {
+  final String platform;
+  final EInvoiceConfigData? existing;
+
+  const _EInvoiceConfigDialog({required this.platform, this.existing});
+
+  @override
+  ConsumerState<_EInvoiceConfigDialog> createState() =>
+      _EInvoiceConfigDialogState();
+}
+
+class _EInvoiceConfigDialogState extends ConsumerState<_EInvoiceConfigDialog> {
+  final _form = GlobalKey<FormState>();
+  late final TextEditingController _clientId;
+  late final TextEditingController _secret;
+  late final TextEditingController _registration;
+  late final TextEditingController _activity;
+  late final TextEditingController _branch;
+  late String _version;
+  late String _coding;
+  late bool _production;
+  late bool _enabled;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final c = widget.existing;
+    _clientId = TextEditingController(text: c?.clientId ?? '');
+    _secret = TextEditingController(text: c?.clientSecret ?? '');
+    _registration = TextEditingController(text: c?.registrationNumber ?? '');
+    _activity = TextEditingController(text: c?.activityCode ?? '');
+    _branch = TextEditingController(text: c?.branchId ?? '');
+    _version = c?.documentVersion ?? '1.0';
+    _coding = c?.codingSystem ?? 'EGS';
+    _production = c?.isProduction ?? false;
+    _enabled = c?.isEnabled ?? false;
+  }
+
+  @override
+  void dispose() {
+    _clientId.dispose();
+    _secret.dispose();
+    _registration.dispose();
+    _activity.dispose();
+    _branch.dispose();
+    super.dispose();
+  }
+
+  String? _required(String? v) =>
+      (v == null || v.trim().isEmpty) ? 'حقلٌ مطلوب' : null;
+
+  Future<void> _save() async {
+    if (!(_form.currentState?.validate() ?? false)) return;
+    setState(() => _saving = true);
+    try {
+      await ref.read(eInvoiceRepositoryProvider).saveEInvoiceConfig(
+            platform: widget.platform,
+            clientId: _clientId.text.trim(),
+            clientSecret: _secret.text.trim(),
+            registrationNumber: _registration.text.trim(),
+            activityCode:
+                _activity.text.trim().isEmpty ? null : _activity.text.trim(),
+            branchId: _branch.text.trim().isEmpty ? null : _branch.text.trim(),
+            documentVersion: _version,
+            codingSystem: _coding,
+            isProduction: _production,
+            isEnabled: _enabled,
+          );
+      if (mounted) Navigator.pop(context, true);
+    } catch (e) {
+      // الإخفاقُ يُقال — ولا يُبتلَع في حوارٍ يُغلَق كأنّ شيئاً حُفظ.
+      if (!mounted) return;
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('تعذّر الحفظ: $e')));
+    }
+  }
+
+  Widget _field(TextEditingController c, String label,
+          {bool obscure = false, bool required = true}) =>
+      Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: TextFormField(
+          controller: c,
+          obscureText: obscure,
+          validator: required ? _required : null,
+          decoration: InputDecoration(
+            labelText: label,
+            isDense: true,
+            border: const OutlineInputBorder(),
+          ),
+        ),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('إعداد ${widget.platform == 'eta' ? 'مصلحة الضرائب' : 'جوفوترة'}'),
+      content: SizedBox(
+        width: 420,
+        child: SingleChildScrollView(
+          child: Form(
+            key: _form,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _field(_registration, 'الرقم الضريبي'),
+                _field(_clientId, 'معرّف العميل'),
+                _field(_secret, 'سر العميل', obscure: true),
+                _field(_activity, 'كود النشاط', required: false),
+                _field(_branch, 'كود الفرع', required: false),
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        initialValue: _version,
+                        decoration: const InputDecoration(
+                            labelText: 'إصدار المستند',
+                            isDense: true,
+                            border: OutlineInputBorder()),
+                        items: const [
+                          DropdownMenuItem(value: '0.9', child: Text('0.9')),
+                          DropdownMenuItem(value: '1.0', child: Text('1.0')),
+                        ],
+                        onChanged: (v) => setState(() => _version = v ?? '1.0'),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        initialValue: _coding,
+                        decoration: const InputDecoration(
+                            labelText: 'نظام الترميز',
+                            isDense: true,
+                            border: OutlineInputBorder()),
+                        items: const [
+                          DropdownMenuItem(value: 'EGS', child: Text('EGS')),
+                          DropdownMenuItem(value: 'GPC', child: Text('GPC')),
+                          DropdownMenuItem(value: 'GS1', child: Text('GS1')),
+                        ],
+                        onChanged: (v) => setState(() => _coding = v ?? 'EGS'),
+                      ),
+                    ),
+                  ],
+                ),
+                SwitchListTile(
+                  value: _production,
+                  onChanged: (v) => setState(() => _production = v),
+                  title: const Text('بيئة الإنتاج'),
+                  subtitle: const Text('موقوفاً تُرسَل المستندات إلى البيئة التجريبية'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+                SwitchListTile(
+                  value: _enabled,
+                  onChanged: (v) => setState(() => _enabled = v),
+                  title: const Text('تفعيل الفوترة الإلكترونية'),
+                  // الرايةُ المُزامَنةُ تُشتقّ من هذا الحقل — وهي التي تحكم
+                  // رمزَ الإيصال على كلّ جهاز.
+                  subtitle: const Text(
+                      'يحكم أيضاً رمز الإيصال المطبوع على كل جهاز'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _saving ? null : () => Navigator.pop(context, false),
+          child: const Text('إلغاء'),
+        ),
+        FilledButton(
+          onPressed: _saving ? null : _save,
+          child: const Text('حفظ'),
+        ),
+      ],
+    );
   }
 }
