@@ -35,9 +35,13 @@
 // ٢) **«مُرسَلة اليوم» على بطاقة المنصّة**: تُحسَب من `submittedAt` لهذا
 //    اليوم لا من عدّادٍ مخزَّن.
 //
-// ٣) **زرُّ «إلغاء المستند»**: التصميمُ يعرضه للمقبولة. والإلغاءُ في المنظومة
-//    مسارُ شبكةٍ لا تملكه هذه الشاشة (‏`EInvoiceServiceWrapper` لا يكشف
-//    إلغاءً)، فلا يُعرَض زرٌّ يظهر ولا يفعل.
+// ٣) ✅ **زرُّ «إلغاء المستند»** — كان مكتوباً هنا أنّ الغلافَ «لا يكشف
+//    إلغاءً» وهو **باطل**: `EInvoiceServiceWrapper.cancelDocument` موجودةٌ
+//    وتنادي `EtaService.cancelDocument` (‏PUT إلى
+//    `/documents/state/{uuid}/state`). فالقدرةُ كانت مبنيّةً وغيرَ مكشوفة،
+//    ووُصِّلت 2026-09-03 بثلاثة شروط: صلاحيّةُ `einvoice_cancel` · واعتمادُ
+//    البوّابة على هذا الجهاز (الأجهزةُ لا تبلغ البوّابة) · والمستندُ معتمَدٌ
+//    (‏لا يُلغى ما لم يُقبل).
 
 import 'dart:convert';
 
@@ -1080,9 +1084,98 @@ class _EInvoicingPicposScreenState
             label: const Text('فحص الحالة'),
           ),
         ),
+        // ⚠️ **إلغاءُ المستند** — كان الرأسُ يقول إنّ الغلافَ «لا يكشف
+        //    إلغاءً»، وهو **باطل**: `cancelDocument` موجودةٌ وتنادي
+        //    `EtaService.cancelDocument` (‏PUT إلى
+        //    `/documents/state/{uuid}/state`). فالقدرةُ مبنيّةٌ ولم تكن
+        //    مكشوفة.
+        //
+        //    ولا يُعرَض إلّا لمستندٍ **معتمَد**: لا شيءَ لدى البوّابة يُلغى
+        //    قبل القبول. وبصلاحيّةٍ خاصّةٍ — إلغاءُ مستندٍ ضريبيٍّ معتمَدٍ أثرٌ
+        //    لا يُعطى لكلّ من يرسل.
+        if (r.status == 'valid' && r.documentUuid != null) ...[
+          const SizedBox(width: 8),
+          Expanded(
+            child: PermissionGuard(
+              permission: PermissionCodes.einvoiceCancel,
+              child: OutlinedButton.icon(
+                onPressed: () => _cancelDocument(r),
+                icon: const Icon(PhosphorIconsBold.prohibit, size: 14),
+                label: const Text('إلغاء المستند'),
+              ),
+            ),
+          ),
+        ],
         ],
       ],
     );
+  }
+
+  /// يلغي المستندَ لدى البوّابة — بسببٍ مكتوب.
+  ///
+  /// البوّابةُ تشترط سبباً، والإلغاءُ **لا رجعةَ فيه**: مستندٌ ضريبيٌّ معتمَدٌ
+  /// يُسحَب من الإقرار. فيُستأذَن أوّلاً، ويُكتب الحكمُ بسجلّ تدقيقٍ لا بكتابةٍ
+  /// عارية.
+  Future<void> _cancelDocument(_Row r) async {
+    final reasonCtl = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('إلغاء المستند لدى المنظومة'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('سيُسحَب ${r.reference} من الإقرار الضريبيّ. '
+                'والإلغاءُ لا رجعةَ فيه.'),
+            const SizedBox(height: 12),
+            TextField(
+              controller: reasonCtl,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: 'سبب الإلغاء',
+                border: OutlineInputBorder(),
+                isDense: true,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('تراجع')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('إلغاء المستند')),
+        ],
+      ),
+    );
+
+    final reason = reasonCtl.text.trim();
+    reasonCtl.dispose();
+    if (ok != true || !mounted) return;
+
+    if (reason.isEmpty) {
+      _toast('الإلغاء يحتاج سبباً — لم يُرسَل شيء');
+      return;
+    }
+
+    final repo = ref.read(eInvoiceRepositoryProvider);
+    final wrapper = ref.read(eInvoiceServiceProvider);
+    try {
+      final done = await wrapper.cancelDocument(r.documentUuid!, reason);
+      if (!done) {
+        if (!mounted) return;
+        _toast('لم تقبل المنظومةُ الإلغاء');
+        return;
+      }
+      await repo.updateSubmissionStatus(r.id, 'cancelled');
+      if (!mounted) return;
+      _toast('أُلغي ${r.reference}');
+    } catch (e) {
+      // الإخفاقُ يُقال — ولا يُوسَم المستندُ ملغىً وهو قائمٌ لدى البوّابة.
+      if (!mounted) return;
+      _toast('تعذّر الإلغاء: $e');
+    }
   }
 
   Widget _idsPanel(_Row r) {

@@ -21,6 +21,8 @@ import 'tables/merge_table_dialog.dart';
 import 'tables/split_table_dialog.dart';
 import 'tables/table_log_sheet.dart';
 import 'tables/transfer_dialog.dart';
+import '../../data/services/receipt_qr_resolver.dart';
+import '../../domain/models/receipt_qr_decision.dart';
 
 // ── Part files (dialogs and mixed logic) ─────────────────────────────────
 part 'tables/table_order_dialogs.dart';

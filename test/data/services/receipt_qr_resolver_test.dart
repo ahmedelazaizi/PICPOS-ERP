@@ -115,6 +115,41 @@ void main() {
         reason: 'بيعتي لا تقديمَ لها — فلا رمزَ، لا رمزُ البيعة الأخرى');
   });
 
+  // ═══════════════════════════════════════════════════════════════════════
+  // الفاتورةُ المبدئيّة — مستندٌ ليس بيعةً أصلاً
+  // ═══════════════════════════════════════════════════════════════════════
+  //
+  // فاتورةُ الطاولة المبدئيّةُ تُطبع قبل السداد ولا صفَّ بيعٍ لها، فلا معرّفَ
+  // تُسأل به عن تقديم. وكانت تمرّر `null` فتطبع **رقمَ الفاتورة بلا وسم** —
+  // وهو أسوأُ الاحتمالين: رمزٌ يبدو إيصالاً على ورقةٍ ليست إيصالاً.
+  group('الفاتورةُ المبدئيّة', () {
+    test('🔴 على جهازٍ غيرِ مُفعَّلٍ ⇒ رمزٌ غيرُ ضريبيٍّ موسوم', () async {
+      final qr = await resolveReceiptQrForProforma(db, sale: sale);
+
+      expect(qr.kind, ReceiptQrKind.nonFiscal);
+      expect(qr.disclaimer, isNotEmpty);
+    });
+
+    // 🔴 الثابتُ الأمنيُّ نفسُه: جهازٌ مسجَّلٌ لا يُنتج غيرَ الضريبيّ أبداً —
+    //    ومبدئيّةٌ لا تقديمَ لها، فلا رمزَ إطلاقاً.
+    test('🔴 وعلى جهازٍ مُفعَّلٍ ⇒ لا رمزَ إطلاقاً', () async {
+      await db.setSetting(kEInvoiceEnabledSettingKey, 'true');
+
+      final qr = await resolveReceiptQrForProforma(db, sale: sale);
+
+      expect(qr.kind, ReceiptQrKind.none,
+          reason: 'مبدئيّةٌ لا مستندَ ضريبيَّ لها — ورمزٌ غيرُ ضريبيٍّ من '
+              'ماكينةِ منشأةٍ مسجَّلةٍ هو عينُ ما مُنع');
+    });
+
+    test('ولا تسأل عن تقديمٍ أصلاً — لا معرّفَ بيعةٍ لها', () async {
+      // لو سألت لاحتاجت `saleId`؛ والتوقيعُ نفسُه يمنع ذلك.
+      final qr = await resolveReceiptQrForProforma(db, sale: sale);
+
+      expect(qr.payload, contains(sale.invoiceNumber));
+    });
+  });
+
   test("تقديمٌ مُرسَلٌ لم يُعتمَد بعد ⇒ لا رمزَ رغم وجود الحمولة", () async {
     await db.setSetting(kEInvoiceEnabledSettingKey, 'true');
     final saleId = await seedSale('INV-7');

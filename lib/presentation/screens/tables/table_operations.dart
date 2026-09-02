@@ -618,9 +618,26 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
       final db = ref.read(databaseProvider);
       final logoBytes = (await db.getReceiptSettings()).logoImage;
 
+      final proformaNumber = 'T${table.id}-${order.id}';
+      final printedAt = DateTime.now();
+
+      // ⚠️ رمزُ المبدئيّة: كانت تطبع **رقمَ الفاتورة بلا وسم** — رمزٌ يبدو
+      //    إيصالاً على ورقةٍ مكتوبٌ عليها «ليست إيصالَ سداد». ولا صفَّ بيعٍ
+      //    لها فلا تقديمَ تُسأل عنه: جهازٌ غيرُ مُفعَّلٍ يطبع رمزاً غيرَ
+      //    ضريبيٍّ موسوماً، ومُفعَّلٌ لا يطبع رمزاً إطلاقاً.
+      final receiptQr = await resolveReceiptQrForProforma(
+        db,
+        sale: ReceiptSaleSummary.fromSale(
+          invoiceNumber: proformaNumber,
+          issuedAt: printedAt,
+          total: totals.total,
+          companyName: (await db.getReceiptSettings()).companyName,
+        ),
+      );
+
       final printed = await InvoiceGenerator.printThermalReceipt(
-        invoiceNumber: 'T${table.id}-${order.id}',
-        date: DateTime.now(),
+        invoiceNumber: proformaNumber,
+        date: printedAt,
         items: invoiceItems,
         total: totals.total,
         paid: order.paidAmount,
@@ -632,6 +649,7 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
         notes: 'فاتورةٌ مبدئيّةٌ — ليست إيصالَ سداد',
         db: db,
         logoBytes: logoBytes,
+        receiptQr: receiptQr,
       );
 
       if (screenContext.mounted) {

@@ -96,4 +96,35 @@ void main() {
         reason: 'السقوطُ إلى التخطيط المكتوب صامت؛ فبدون التمرير هنا يبقى '
             'بابُ الرمز غير الضريبيّ مفتوحاً حيث لا يُرى');
   });
+
+  // ═════════════════════════════════════════════════════════════════════════
+  // والفاتورةُ المبدئيّةُ للطاولات — ورقةٌ ليست إيصالاً أصلاً
+  // ═════════════════════════════════════════════════════════════════════════
+
+  group('الفاتورةُ المبدئيّة', () {
+    const proformaFile = 'lib/presentation/screens/tables/table_operations.dart';
+    final proformaSrc = _stripComments(File(proformaFile).readAsStringSync());
+    final proformaCalls =
+        _callBlocks(proformaSrc, 'InvoiceGenerator.printThermalReceipt');
+
+    test('مرساة: نداءُ طباعة المبدئيّة موجودٌ وواحد', () {
+      expect(proformaCalls, hasLength(1),
+          reason: 'لم يُقتنَص نداءُ الطباعة — فالتوكيدُ بعده بلا معنى');
+      expect(proformaCalls.single, contains('فاتورةٌ مبدئيّةٌ'),
+          reason: 'المقنوصُ ليس نداءَ المبدئيّة');
+    });
+
+    test('🔴 تحلّ قرارَ الرمز وتمرّره', () {
+      expect(proformaSrc, contains('resolveReceiptQrForProforma('),
+          reason: 'بلا حلٍّ تُطبع رقمُ الفاتورة بلا وسم — رمزٌ يبدو إيصالاً '
+              'على ورقةٍ مكتوبٌ عليها «ليست إيصالَ سداد»');
+      expect(proformaCalls.single.contains('receiptQr:'), isTrue);
+    });
+
+    test('🔴 ولا تسأل عن تقديمٍ ببيعةٍ لا وجودَ لها', () {
+      expect(proformaSrc.contains('resolveReceiptQrForSale('), isFalse,
+          reason: 'المبدئيّةُ لا صفَّ بيعٍ لها — والسؤالُ بمعرّفٍ مُختلَقٍ '
+              'قد يقرأ تقديمَ فاتورةٍ أخرى');
+    });
+  });
 }
