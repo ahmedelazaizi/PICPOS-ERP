@@ -36,10 +36,10 @@ cd "D:/PICPOS-ERP" && git log --oneline -1 && git merge-base --is-ancestor 6fb24
 | البند | القيمة |
 |---|---|
 | `analyze lib test` | **٦ info** بالضبط · صفرُ أخطاءٍ وتحذيرات |
-| `unit + data + structural + services` | **٥٥٩٠ ✓** (كان ٥٤٨٣ مطلعَ اليوم ⇒ **+١٠٧**) |
-| `widget + core + domain + presentation + security + static` | **١٥٤٣ ✓** (كان ١٥٣٦) |
-| `integration` | **٧٧٣ ✓** (كان ٧٦٤ ⇒ **+٩** = رحلةُ الطرف للطرف) |
-| `integration_pg` (منفصلة) | **٧٣ ✓** (كان ٦١ مطلعَ اليوم ⇒ **+١٢**؛ مقيسٌ **بعد** البوّابة لا معها، `exited 0 in 824s`) |
+| `unit + data + structural + services` | **٥٥٩٥ ✓** |
+| `widget + core + domain + presentation + security + static` | **١٥٤٩ ✓** |
+| `integration` | **٧٧٣ ✓** |
+| `integration_pg` (منفصلة) | **٧٣ ✓** (مقيسٌ **بعد** البوّابة لا معها، `exited 0 in 779s`) |
 | الحكم | `✓ البوابة كلها خضراء` · صفر `[E]` |
 
 ⚠️ **واشترط عددَ ناجحين > صفر في كلّ سويّة**: انقطاعُ الشبكة يُصفِّر سويّةً
