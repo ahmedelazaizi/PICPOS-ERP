@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../core/logging/diagnostic_logger.dart';
 import '../data/database/database.dart';
 import 'api/api_handler.dart';
+import 'e_invoicing/e_invoice_submission_worker.dart';
 import 'api/api_auth_middleware.dart';
 import 'api/api_session_token.dart';
 import 'api/api_rate_limiter.dart';
@@ -706,6 +707,9 @@ class NetworkService {
       debugPrint(
         '[NetworkService] ✅ Server running at $httpScheme://$_serverAddress:$serverPort',
       );
+
+      // الخادمُ وحدَه يقدّم المستنداتِ الضريبيّة — وهذا موضعُ تعليق النبضة.
+      await _startEInvoiceWorker(db);
       return true;
     } catch (e) {
       debugPrint('[NetworkService] ❌ Failed to start server: $e');
@@ -722,8 +726,39 @@ class NetworkService {
         '[NetworkService] Device pairing window opened for ${ttl.inMinutes} min');
   }
 
+  /// نبضةُ تقديم الفاتورة الإلكترونيّة — **على الخادم وحدَه**.
+  ///
+  /// قرارُ المالك: الخادمُ وحدَه يحمل السرَّ ويرسل. والفواتيرُ تصل بالمزامنة
+  /// من كلّ كاشير، فالمسحُ هو ما يلتقطها — لا خُطّافٌ عند إنشاء الفاتورة.
+  Timer? _eInvoiceTimer;
+  static const _eInvoiceSweepInterval = Duration(minutes: 2);
+
+  Future<void> _startEInvoiceWorker(AppDatabase db) async {
+    _eInvoiceTimer?.cancel();
+    _eInvoiceTimer = null;
+    try {
+      final worker = await EInvoiceSubmissionWorker.forServer(db);
+      if (worker == null) {
+        debugPrint('[NetworkService] E-invoicing not configured — no sweep');
+        return;
+      }
+      // نبضةٌ أولى فوراً ثمّ دوريّاً — فلا ينتظر أوّلُ مستندٍ دورةً كاملة.
+      unawaited(worker.runOnce());
+      _eInvoiceTimer = Timer.periodic(
+        _eInvoiceSweepInterval,
+        (_) => unawaited(worker.runOnce()),
+      );
+      debugPrint('[NetworkService] E-invoice sweep armed');
+    } catch (e) {
+      // إقلاعُ الخادم لا يسقط لأنّ الفوترةَ الإلكترونيّة تعثّرت.
+      debugPrint('[NetworkService] E-invoice worker failed to start: $e');
+    }
+  }
+
   /// Stop the embedded HTTP server
   Future<void> stopServer() async {
+    _eInvoiceTimer?.cancel();
+    _eInvoiceTimer = null;
     if (_httpServer != null) {
       await _httpServer!.close(force: true);
       _httpServer = null;

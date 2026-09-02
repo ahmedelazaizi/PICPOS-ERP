@@ -144,6 +144,38 @@ extension EInvoicingDao on AppDatabase {
     )..where((s) => s.saleId.equals(saleId))).getSingleOrNull();
   }
 
+  /// فواتيرُ البيع التي تنتظر تقديماً — قلبُ مِكنسةِ الخادم.
+  ///
+  /// ═══ لماذا مِكنسةٌ لا خُطّافُ نداء ═══
+  ///
+  /// الفواتيرُ تصل الخادمَ **بالمزامنة** من كلّ كاشير، لا بمعالج الـAPI وحدَه.
+  /// فخُطّافٌ عند مواضع `createSalesInvoice` كان سيُغفل كلَّ فاتورةٍ جاءت من
+  /// جهاز — وهي الأغلب. والمِكنسةُ تمسح ما وصل أيّاً كان طريقُه، وتعمل بعد
+  /// إعادة التشغيل، وتُعيد المحاولةَ بلا حالةٍ في الذاكرة.
+  ///
+  /// ⚠️ **والمرتجعاتُ خارجَها**: إشعارُ الائتمان يحتاج ربطاً بالفاتورة
+  /// الأصليّة وسقفاً على مبلغه (‏`createCreditNoteSubmission`) لا يُشتقّان من
+  /// صفِّ المرتجع وحدَه — فيُترك لمساره بدل مستندٍ بلا أصلٍ يشير إليه.
+  ///
+  /// ⚠️ ومكتوبةٌ بباني drift لا SQL خامّ: الخادمُ PostgreSQL، وعلامةُ
+  /// الاستفهام لا تُترجَم في كلّ سياق.
+  Future<List<int>> findSalesNeedingEInvoiceSubmission({int limit = 25}) async {
+    final submitted = selectOnly(eInvoiceSubmissions)
+      ..addColumns([eInvoiceSubmissions.saleId]);
+
+    final q = (select(salesInvoices)
+      ..where((s) =>
+          s.status.equals('completed') &
+          s.saleType.equals('default') &
+          s.deletedAt.isNull() &
+          s.id.isNotInQuery(submitted))
+      ..orderBy([(s) => OrderingTerm.asc(s.id)])
+      ..limit(limit));
+
+    final rows = await q.get();
+    return rows.map((r) => r.id).toList();
+  }
+
   /// Create a submission record (before sending)
   Future<int> createSubmission({
     required int saleId,
