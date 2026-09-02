@@ -8,6 +8,7 @@ import '../license_service.dart';
 import '../generators/base_generator.dart' hide InvoiceItem;
 import '../../core/constants/app_constants.dart';
 import '../../domain/repositories/printers_repository.dart';
+import '../../domain/models/receipt_qr_decision.dart';
 import 'printing_models.dart';
 import '../../core/config/brand.dart';
 
@@ -80,7 +81,7 @@ class ThermalReceiptGenerator {
     _arabicFont = await BaseGenerator.initFont();
   }
 
-  static Future<bool> printThermalReceipt({
+  static Future<({Uint8List bytes, bool printed})> printThermalReceipt({
     required String invoiceNumber,
     required DateTime date,
     required List<InvoiceItem> items,
@@ -111,6 +112,16 @@ class ThermalReceiptGenerator {
     IPrintersRepository? printersRepo,
     String? notes,
     String locale = 'ar',
+
+    /// قرارُ رمز الإيصال — ضريبيٌّ أو غيرُ ضريبيٍّ أو لا شيء. `null` تُبقي
+    /// السلوكَ القديم (رقمُ الفاتورة). والسقوطُ إلى هذا المسار **صامت**، فلو
+    /// لم يُمرَّر إليه طُبع رمزٌ غيرُ ضريبيٍّ من جهازٍ مسجَّلٍ دون أن يعرف أحد.
+    ReceiptQr? receiptQr,
+
+    /// تُبنى الوثيقةُ وتُعاد بايتاتُها **بلا دفعٍ إلى الطابعة** — نفسُ عقد
+    /// `TemplatedInvoiceService.debugBuildOnly`: لا مِقبضَ يقيس ما يصل الورقة
+    /// بدونه، ولا يغيّر المطبوعَ بحرف.
+    @visibleForTesting bool debugBuildOnly = false,
   }) async {
     await _initFont();
     final pdf = await BaseGenerator.newDocument();
@@ -197,7 +208,7 @@ class ThermalReceiptGenerator {
                 ),
               ),
             pw.SizedBox(height: 8),
-            _buildCodes(receiptCodeType, invoiceNumber),
+            _buildCodes(receiptCodeType, invoiceNumber, receiptQr),
             pw.SizedBox(height: 8),
             _buildFooter(footerText),
             pw.SizedBox(height: 15),
@@ -205,6 +216,9 @@ class ThermalReceiptGenerator {
         ),
       ),
     );
+
+    final bytes = await pdf.save();
+    if (debugBuildOnly) return (bytes: bytes, printed: false);
 
     if (directPrint) {
       printing_pkg.Printer? resolvedPrinter;
@@ -214,12 +228,12 @@ class ThermalReceiptGenerator {
       if (resolvedPrinter != null) {
         await printing_pkg.Printing.directPrintPdf(
           printer: resolvedPrinter,
-          onLayout: (format) async => pdf.save(),
+          onLayout: (format) async => bytes,
         );
-        return true;
+        return (bytes: bytes, printed: true);
       }
     }
-    return PdfComputeHelper.layoutPdf(pdf);
+    return (bytes: bytes, printed: await PdfComputeHelper.layoutBytes(bytes));
   }
 
   /// Print thermal work order for the kitchen/preparation
@@ -1011,7 +1025,7 @@ class ThermalReceiptGenerator {
     );
   }
 
-  static pw.Widget _buildCodes(String? type, String data) {
+  static pw.Widget _buildCodes(String? type, String data, ReceiptQr? qr) {
     if (type == 'barcode') {
       return pw.BarcodeWidget(
         barcode: pw.Barcode.code128(),
@@ -1021,11 +1035,32 @@ class ThermalReceiptGenerator {
         textStyle: const pw.TextStyle(fontSize: 6),
       );
     } else if (type == 'qr_code') {
-      return pw.BarcodeWidget(
-        barcode: pw.Barcode.qrCode(),
-        data: data,
-        width: 50,
-        height: 50,
+      // لا اعتمادَ من البوّابة بعد على جهازٍ مُفعَّل ⇒ لا رمزَ إطلاقاً.
+      if (qr != null && qr.kind == ReceiptQrKind.none) return pw.SizedBox();
+
+      return pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.center,
+        children: [
+          pw.BarcodeWidget(
+            barcode: pw.Barcode.qrCode(),
+            data: qr?.payload ?? data,
+            width: 50,
+            height: 50,
+          ),
+          // وسمُ الرمز غير الضريبيّ على الورقة نفسِها — من يقرأ الإيصالَ لا
+          // يرى قرارَ الكود.
+          if (qr != null &&
+              qr.kind == ReceiptQrKind.nonFiscal &&
+              qr.disclaimer.isNotEmpty)
+            pw.Padding(
+              padding: const pw.EdgeInsets.only(top: 2),
+              child: pw.Text(
+                qr.disclaimer,
+                style: pw.TextStyle(font: _arabicFont, fontSize: 6),
+                textDirection: pw.TextDirection.rtl,
+              ),
+            ),
+        ],
       );
     }
     return pw.SizedBox();

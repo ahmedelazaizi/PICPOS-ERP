@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../data/database/database.dart' hide Printer;
 import '../domain/repositories/printers_repository.dart';
+import '../domain/models/receipt_qr_decision.dart';
 import '../domain/printing/party_statement_snapshot.dart';
 import 'printing/thermal_receipt_generator.dart';
 // ⚠️ صنفان بنفس الاسم `ThermalReceiptGenerator`: واحدٌ في `printing/` وآخرُ
@@ -69,6 +70,10 @@ class InvoiceGenerator {
     /// ⚠️ ولا يُمرَّر إلى `ThermalReceiptGenerator` الاحتياطيّ: ذاك تخطيطٌ
     /// مكتوبٌ في الكود بلا عنصرِ شعارٍ أصلاً، فتمريرُه إليه لا موضعَ له.
     Uint8List? logoBytes,
+
+    /// قرارُ رمز الإيصال — يُمرَّر إلى **المسارين** معاً: القالبِ والتخطيطِ
+    /// المكتوبِ في الكود الذي يسقط إليه صامتاً. `null` يُبقي السلوكَ القديم.
+    ReceiptQr? receiptQr,
   }) async {
     // ── Try template-driven rendering ──
     if (db != null) {
@@ -114,6 +119,7 @@ class InvoiceGenerator {
               orderNumber: orderNumber,
               locale: locale,
               logoBytes: logoBytes,
+              receiptQr: receiptQr,
             ),
             directPrint: directPrint,
             printersRepo: printersRepo,
@@ -126,7 +132,7 @@ class InvoiceGenerator {
     }
 
     // ── Fallback: hardcoded generator ──
-    return ThermalReceiptGenerator.printThermalReceipt(
+    return (await ThermalReceiptGenerator.printThermalReceipt(
       invoiceNumber: invoiceNumber,
       date: date,
       items: items,
@@ -156,7 +162,9 @@ class InvoiceGenerator {
       printersRepo: printersRepo,
       notes: notes,
       locale: locale,
-    );
+      receiptQr: receiptQr,
+    ))
+        .printed;
   }
 
   /// Print A4 sales invoice — uses user template if available
