@@ -105,4 +105,42 @@ void main() {
     expect(src, contains('EInvoiceSubmissionWorker.forServer'),
         reason: 'المصنعُ هو ما يقرأ السرَّ ويضبط المحرّك');
   });
+
+  // ═════════════════════════════════════════════════════════════════════════
+  // ومصنعُ الخادم يوصّل المسارات الثلاثة كلَّها
+  // ═════════════════════════════════════════════════════════════════════════
+  //
+  // كلُّ مسارٍ منها مُختبَرٌ وحدَه، ولا واحدٌ يقول إنّ المصنعَ **يمرّره**.
+  // ومسارٌ غيرُ مُمرَّرٍ يعني `null` = «لا تفعل شيئاً» بصمت.
+
+  group('مصنعُ الخادم', () {
+    final workerSrc = _stripComments(
+        File('lib/services/e_invoicing/e_invoice_submission_worker.dart')
+            .readAsStringSync());
+    final factoryBody = _body(workerSrc, 'forServer(AppDatabase db)');
+
+    test('مرساة: جسمُ المصنع اقتُنص', () {
+      expect(factoryBody, contains('EInvoiceSubmissionWorker('),
+          reason: 'لم يُقتنَص جسمُ `forServer` — فالتوكيداتُ بعده بلا معنى');
+    });
+
+    test('🔴 الفواتيرُ موصولة', () {
+      expect(factoryBody, contains('findDue:'));
+      expect(factoryBody, contains('submit:'));
+    });
+
+    test('🔴 وإشعاراتُ الائتمان', () {
+      expect(factoryBody, contains('findDueCreditNotes:'),
+          reason: 'بلا تمريرٍ لا يُقدَّم إشعارُ ائتمانٍ أبداً — وفاتورةٌ '
+              'رُدَّت تبقى مُقرَّةً بكاملها');
+      expect(factoryBody, contains('submitCreditNote:'));
+    });
+
+    test('🔴 والاستطلاع', () {
+      expect(factoryBody, contains('findDueStatusChecks:'),
+          reason: 'بلا استطلاعٍ يقف المستندُ عند `submitted` أبداً — ولا رمزَ '
+              'ضريبيَّ يُطبع لأنّ القرارَ يشترط `valid`');
+      expect(factoryBody, contains('checkStatus:'));
+    });
+  });
 }

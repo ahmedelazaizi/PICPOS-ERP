@@ -182,4 +182,92 @@ void main() {
       expect(await worker.runOnce(), 1);
     });
   });
+
+  // ═════════════════════════════════════════════════════════════════════════
+  // استطلاعُ الحالة — المستندُ يبقى `submitted` إلى الأبد بدونه
+  // ═════════════════════════════════════════════════════════════════════════
+
+  group('استطلاعُ الحالة', () {
+    test('🔴 يُستطلَع كلُّ مستندٍ مستحقّ', () async {
+      final polled = <String>[];
+      final worker = EInvoiceSubmissionWorker(
+        isEnabled: () async => true,
+        findDue: ({int limit = 25}) async => const [],
+        submit: (_) async {},
+        findDueStatusChecks: ({int limit = 25}) async => const [
+          (submissionId: 1, documentUuid: 'D-1'),
+          (submissionId: 2, documentUuid: 'D-2'),
+        ],
+        checkStatus: (p) async => polled.add(p.documentUuid),
+      );
+
+      await worker.runOnce();
+
+      expect(polled, ['D-1', 'D-2']);
+    });
+
+    test('🔴 وإخفاقُ استطلاعٍ لا يحجب ما بعده', () async {
+      final polled = <int>[];
+      final worker = EInvoiceSubmissionWorker(
+        isEnabled: () async => true,
+        findDue: ({int limit = 25}) async => const [],
+        submit: (_) async {},
+        findDueStatusChecks: ({int limit = 25}) async => const [
+          (submissionId: 1, documentUuid: 'D-1'),
+          (submissionId: 2, documentUuid: 'D-2'),
+          (submissionId: 3, documentUuid: 'D-3'),
+        ],
+        checkStatus: (p) async {
+          polled.add(p.submissionId);
+          if (p.submissionId == 2) throw Exception('البوّابةُ لم تردّ');
+        },
+      );
+
+      await worker.runOnce();
+
+      expect(polled, [1, 2, 3],
+          reason: 'توقّفٌ عند مستندٍ لا تردّ عنه البوّابةُ يجمّد الطابورَ كلَّه');
+    });
+
+    // 🔴 الاستطلاعُ **ليس تقديماً**: لا يُحصى في عدّاد ما قُدِّم، وإلّا بدا
+    //    الخادمُ يقدّم مستنداتٍ لا وجودَ لها.
+    test('🔴 لا يُحصى في عدّاد التقديم', () async {
+      final worker = EInvoiceSubmissionWorker(
+        isEnabled: () async => true,
+        findDue: ({int limit = 25}) async => const [7],
+        submit: (_) async {},
+        findDueStatusChecks: ({int limit = 25}) async => const [
+          (submissionId: 1, documentUuid: 'D-1'),
+          (submissionId: 2, documentUuid: 'D-2'),
+        ],
+        checkStatus: (_) async {},
+      );
+
+      expect(await worker.runOnce(), 1,
+          reason: 'فاتورةٌ واحدةٌ قُدِّمت — والاستطلاعان قراءةٌ لا تقديم');
+    });
+
+    test('وإخفاقُ مسحِ الاستطلاع لا يُسقط التقديم', () async {
+      final worker = EInvoiceSubmissionWorker(
+        isEnabled: () async => true,
+        findDue: ({int limit = 25}) async => const [7],
+        submit: (_) async {},
+        findDueStatusChecks: ({int limit = 25}) async =>
+            throw StateError('قاعدةٌ مقطوعة'),
+        checkStatus: (_) async {},
+      );
+
+      expect(await worker.runOnce(), 1);
+    });
+
+    test('وبلا مُمرَّرٍ له لا يُستطلَع شيء', () async {
+      final worker = EInvoiceSubmissionWorker(
+        isEnabled: () async => true,
+        findDue: ({int limit = 25}) async => const [1],
+        submit: (_) async {},
+      );
+
+      expect(await worker.runOnce(), 1);
+    });
+  });
 }

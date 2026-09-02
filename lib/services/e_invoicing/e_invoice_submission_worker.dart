@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../data/database/database.dart';
 import '../../data/repositories/drift_e_invoice_repository.dart';
+import '../../domain/models/einvoice_document_status.dart';
 import '../secure_storage_service.dart';
 import 'e_invoice_auto_submitter.dart';
 import 'e_invoice_service_wrapper.dart';
@@ -40,6 +41,16 @@ class EInvoiceSubmissionWorker {
   final Future<void> Function(({int returnSaleId, int originalSaleId}) pair)?
       _submitCreditNote;
 
+  /// مستنداتٌ ما زالت تنتظر حكمَ البوّابة.
+  ///
+  /// التقديمُ يترك المستندَ عند `submitted` — البوّابةُ قبلت **الاستلامَ** لا
+  /// المستند. وبلا استطلاعٍ يبقى كذلك إلى الأبد، ولا رمزَ ضريبيَّ يُطبع على
+  /// إيصاله لأنّ القرارَ يشترط `valid`.
+  final Future<List<({int submissionId, String documentUuid})>> Function(
+      {int limit})? _findDueStatusChecks;
+  final Future<void> Function(({int submissionId, String documentUuid}) pair)?
+      _checkStatus;
+
   final int batchSize;
 
   EInvoiceSubmissionWorker({
@@ -50,12 +61,19 @@ class EInvoiceSubmissionWorker {
         findDueCreditNotes,
     Future<void> Function(({int returnSaleId, int originalSaleId}) pair)?
         submitCreditNote,
+    Future<List<({int submissionId, String documentUuid})>> Function(
+            {int limit})?
+        findDueStatusChecks,
+    Future<void> Function(({int submissionId, String documentUuid}) pair)?
+        checkStatus,
     this.batchSize = 25,
   })  : _isEnabled = isEnabled,
         _findDue = findDue,
         _submit = submit,
         _findDueCreditNotes = findDueCreditNotes,
-        _submitCreditNote = submitCreditNote;
+        _submitCreditNote = submitCreditNote,
+        _findDueStatusChecks = findDueStatusChecks,
+        _checkStatus = checkStatus;
 
   /// يبني العاملَ من القاعدة ويضبط المحرّكَ من الإعداد المحفوظ.
   ///
@@ -123,6 +141,48 @@ class EInvoiceSubmissionWorker {
         platform: activePlatform,
         pair: pair,
       ),
+      findDueStatusChecks: ({int limit = 25}) =>
+          db.findSubmissionsAwaitingStatus(
+            limit: limit,
+            notCheckedSince: DateTime.now().subtract(statusRecheckGap),
+          ),
+      checkStatus: (pair) => _pollStatus(db: db, wrapper: wrapper, pair: pair),
+    );
+  }
+
+  /// أقلُّ فاصلٍ بين استطلاعَين لنفس المستند.
+  ///
+  /// نبضةُ العامل كلَّ دقيقتين، والطابورُ قد يبلغ مئاتِ المستندات — فبلا فاصلٍ
+  /// تُغرَق بوّابةٌ حكوميّةٌ محدودةُ المعدّل.
+  static const statusRecheckGap = Duration(minutes: 10);
+
+  /// يستطلع حكمَ البوّابة على مستندٍ واحد.
+  static Future<void> _pollStatus({
+    required AppDatabase db,
+    required EInvoiceServiceWrapper wrapper,
+    required ({int submissionId, String documentUuid}) pair,
+  }) async {
+    final remote = await wrapper.checkStatus(pair.documentUuid);
+    final canonical = canonicalEInvoiceStatus(remote.status);
+
+    if (canonical == null) {
+      // ما زال قيدَ المراجعة، أو حالةٌ لا نعرفها. لا حكمَ — لكنّ **وقتَ**
+      // الاستطلاع يُسجَّل وإلّا عاد المستندُ في كلّ دورةٍ أبداً.
+      await db.touchSubmissionChecked(pair.submissionId);
+      return;
+    }
+
+    final errors = remote.errors
+        .map((e) => e.values.join(' '))
+        .where((s) => s.isNotEmpty)
+        .join(' · ');
+
+    await db.updateSubmissionStatusWithAudit(
+      pair.submissionId,
+      canonical,
+      errorMessage: errors.isEmpty ? null : errors,
+      changedBy: 'server',
+      notes: 'استطلاعُ الخادم — ردَّت البوّابةُ «${remote.status}»',
     );
   }
 
@@ -208,7 +268,36 @@ class EInvoiceSubmissionWorker {
     }
 
     done += await _sweepCreditNotes();
+
+    // ⚠️ **الاستطلاعُ قراءةٌ لا تقديم** — فلا يُحصى في العدّاد، وإلّا بدا
+    //    الخادمُ يقدّم مستنداتٍ لا وجودَ لها.
+    await _sweepStatusChecks();
     return done;
+  }
+
+  /// يستطلع حكمَ البوّابة على ما قُدِّم ولم يُحسَم بعد.
+  Future<void> _sweepStatusChecks() async {
+    final find = _findDueStatusChecks;
+    final check = _checkStatus;
+    if (find == null || check == null) return;
+
+    final List<({int submissionId, String documentUuid})> due;
+    try {
+      due = await find(limit: batchSize);
+    } catch (e) {
+      debugPrint('[EInvoiceWorker] تعذّر مسحُ الاستطلاع: $e');
+      return;
+    }
+
+    for (final pair in due) {
+      try {
+        await check(pair);
+      } catch (e) {
+        // بوّابةٌ لا تردّ عن مستندٍ لا تجمّد الطابورَ كلَّه.
+        debugPrint(
+            '[EInvoiceWorker] استطلاع #${pair.submissionId} — إخفاقٌ: $e');
+      }
+    }
   }
 
   /// مرتجعاتُ المبيعات — مسارٌ مستقلٌّ لأنّ إشعارَ الائتمان يحتاج أصلَه.

@@ -249,6 +249,66 @@ extension EInvoicingDao on AppDatabase {
     return out;
   }
 
+  /// المستنداتُ التي ما زالت تنتظر حكمَ البوّابة.
+  ///
+  /// ═══ لماذا يلزم استطلاع ═══
+  ///
+  /// التقديمُ يترك المستندَ عند `submitted`: البوّابةُ قبلت **الاستلامَ** لا
+  /// المستند. والاعتمادُ (`valid`) أو الرفضُ يأتي لاحقاً. ولم يكن يستطلعه
+  /// أحدٌ إلّا المستخدمُ بزرٍّ في الشاشة — فمستندٌ لا يفتح أحدٌ شاشتَه يبقى
+  /// `submitted` إلى الأبد، **ولا رمزَ ضريبيَّ يُطبع على إيصاله** لأنّ القرارَ
+  /// يشترط `valid`.
+  ///
+  /// ⚠️ **و[notCheckedSince] ليس تحسيناً**: نبضةٌ على طابورٍ فيه مئاتُ
+  /// المستندات تُغرق بوّابةً حكوميّةً محدودةَ المعدّل. فيُستطلَع ما لم
+  /// يُستطلَع منذ تلك اللحظة فقط، والأقدمُ أوّلاً كي لا يجوع أحد.
+  ///
+  /// ⚠️ **وبلا `documentUuid` لا يُسأل عن شيء**: نداءٌ بمعرّفٍ فارغٍ يرجع
+  /// خطأً يُسجَّل على مستندٍ سليم.
+  ///
+  /// ⚠️ **ودقّةُ الوقت ثانيةٌ لا ميلّي**: drift يخزّن `DateTime` ثوانيَ يونكس،
+  /// فمستندٌ استُطلع في نفس ثانية [notCheckedSince] لا يمرّ `<`. لا أثرَ لذلك
+  /// على فاصلِ العشر دقائق، لكنّه يُربك عتبةً بعرض ثانية.
+  Future<List<({int submissionId, String documentUuid})>>
+      findSubmissionsAwaitingStatus({
+    int limit = 25,
+    required DateTime notCheckedSince,
+  }) async {
+    final rows = await (select(eInvoiceSubmissions)
+          ..where((s) =>
+              s.status.equals('submitted') &
+              s.documentUuid.isNotNull() &
+              s.deletedAt.isNull() &
+              (s.lastCheckedAt.isNull() |
+                  s.lastCheckedAt.isSmallerThanValue(notCheckedSince)))
+          // الأقدمُ استطلاعاً أوّلاً؛ و`NULL` (لم يُستطلَع قطُّ) يتقدّم.
+          ..orderBy([
+            (s) => OrderingTerm.asc(s.lastCheckedAt),
+            (s) => OrderingTerm.asc(s.id),
+          ])
+          ..limit(limit))
+        .get();
+
+    return [
+      for (final r in rows)
+        if (r.documentUuid != null && r.documentUuid!.isNotEmpty)
+          (submissionId: r.id, documentUuid: r.documentUuid!),
+    ];
+  }
+
+  /// يسجّل أنّ المستندَ استُطلع الآن — **بلا حكمٍ عليه**.
+  ///
+  /// حين تردّ البوّابةُ بحالةٍ ليست نهائيّةً (‏ما زال قيد المراجعة) أو بحالةٍ
+  /// مجهولة، لا تتغيّر حالتُنا — لكن يجب أن يُسجَّل **وقتُ** الاستطلاع، وإلّا
+  /// عاد نفسُ المستند في كلّ دورةٍ أبداً فيتحوّل التباعُدُ إلى لا شيء.
+  Future<void> touchSubmissionChecked(int submissionId, {DateTime? at}) async {
+    await (update(eInvoiceSubmissions)
+          ..where((s) => s.id.equals(submissionId)))
+        .write(EInvoiceSubmissionsCompanion(
+      lastCheckedAt: Value(at ?? DateTime.now()),
+    ));
+  }
+
   /// Create a submission record (before sending)
   Future<int> createSubmission({
     required int saleId,

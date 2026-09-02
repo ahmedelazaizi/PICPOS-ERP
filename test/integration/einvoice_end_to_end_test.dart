@@ -25,6 +25,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:ural_erp/data/database/database.dart';
 import 'package:ural_erp/data/services/receipt_qr_resolver.dart';
+import 'package:ural_erp/domain/models/einvoice_document_status.dart';
 import 'package:ural_erp/domain/models/receipt_qr_decision.dart';
 import 'package:ural_erp/services/e_invoicing/e_invoice_auto_submitter.dart';
 import 'package:ural_erp/services/e_invoicing/e_invoice_service_wrapper.dart';
@@ -41,6 +42,9 @@ void main() {
   late int whId;
   late List<String> hitPaths;
 
+  /// حكمُ البوّابة عند الاستطلاع — يُبدَّل لكلّ حالة.
+  var gatewayVerdict = 'Valid';
+
   /// بوّابةُ ETA وهميّة: مصادقةٌ ثمّ قبولُ المستند بمعرّفٍ وQR.
   ///
   /// وتسجّل المساراتِ المطروقة، فيُقاس أنّ الرحلةَ مرّت بالمصادقة فعلاً لا
@@ -51,6 +55,13 @@ void main() {
         if (req.url.path.contains('/connect/token')) {
           return http.Response(
               jsonEncode({'access_token': 'tok-123', 'expires_in': 3600}), 200);
+        }
+
+        // استطلاعُ حالةِ مستند: GET /documents/<uuid>/raw أو ما شابه.
+        if (req.method == 'GET' && req.url.path.contains('/documents/')) {
+          return http.Response(
+              jsonEncode({'status': gatewayVerdict, 'validationResults': {}}),
+              200);
         }
 
         if (req.url.path.contains('documentsubmissions')) {
@@ -100,6 +111,7 @@ void main() {
     });
 
     hitPaths = <String>[];
+    gatewayVerdict = 'Valid';
     db = AppDatabase.forTesting();
     await db.saveEInvoiceConfig(
       platform: 'eta',
@@ -145,7 +157,10 @@ void main() {
   }
 
   /// عاملٌ حقيقيٌّ بكلّ طبقاته — والبوّابةُ وحدَها وهميّة.
-  EInvoiceSubmissionWorker worker({bool reject = false}) {
+  ///
+  /// [poll] يفصل الاستطلاعَ عن التقديم، فتُقاس **مساهمتُه** وحدَها: بلا
+  /// استطلاعٍ يقف المستندُ عند `submitted` ولا رمزَ ضريبيَّ يُطبع.
+  EInvoiceSubmissionWorker worker({bool reject = false, bool poll = true}) {
     final repo = DriftEInvoiceRepository(db, SecureStorageService());
     final wrapper = EInvoiceServiceWrapper()
       ..configure(
@@ -163,6 +178,25 @@ void main() {
       findDue: ({int limit = 25}) =>
           db.findSalesNeedingEInvoiceSubmission(limit: limit),
       submit: submitter.submitSaleInvoice,
+      // ⚠️ عتبةٌ في المستقبل = «استطلعْ كلَّ ما لم يُحسَم الآن». والتباعُدُ
+      //    الحقيقيُّ (عشرُ دقائق) مقيسٌ في `einvoice_status_poll_query_test`
+      //    — ولا يُقاس هنا لأنّ drift يخزّن الوقتَ بدقّة **الثانية**، فتقديمٌ
+      //    واستطلاعٌ في نفس الثانية يتساويان فلا يمرّ `<`.
+      findDueStatusChecks: !poll
+          ? null
+          : ({int limit = 25}) => db.findSubmissionsAwaitingStatus(
+              limit: limit,
+              notCheckedSince: DateTime.now().add(const Duration(days: 1))),
+      checkStatus: !poll ? null : (pair) async {
+        final remote = await wrapper.checkStatus(pair.documentUuid);
+        final canonical = canonicalEInvoiceStatus(remote.status);
+        if (canonical == null) {
+          await db.touchSubmissionChecked(pair.submissionId);
+          return;
+        }
+        await db.updateSubmissionStatusWithAudit(pair.submissionId, canonical,
+            changedBy: 'server');
+      },
     );
   }
 
@@ -179,7 +213,7 @@ void main() {
       () async {
     final saleId = await seedSale();
 
-    final done = await worker().runOnce();
+    final done = await worker(poll: false).runOnce();
 
     expect(done, 1);
     // مرّت بالمصادقة فعلاً — لا قفزَ إلى التقديم بمفتاحٍ فارغ.
@@ -191,7 +225,46 @@ void main() {
     expect(row!.documentUuid, 'DOC-UUID-E2E');
     expect(row.submissionId, 'SUB-E2E');
     expect(row.longId, 'LONG-E2E');
+    // 🔴 التقديمُ وحدَه يقف عند `submitted` — البوّابةُ قبلت **الاستلام** لا
+    //    المستند. وهذا بعينه ما كان يبقى إلى الأبد بلا استطلاع.
     expect(row.status, 'submitted');
+  });
+
+  test('🔴 والاستطلاعُ وحدَه ينقله إلى `valid` — وبدونه يقف أبداً', () async {
+    final saleId = await seedSale();
+
+    await worker(poll: false).runOnce();
+    expect((await db.getSubmissionBySaleId(saleId))!.status, 'submitted',
+        reason: 'مرساة: بلا استطلاعٍ لا يتحرّك');
+
+    await worker().runOnce();
+
+    expect((await db.getSubmissionBySaleId(saleId))!.status, 'valid',
+        reason: 'الاستطلاعُ هو ما يجلب حكمَ البوّابة — ولا رمزَ ضريبيَّ '
+            'يُطبع قبله');
+    expect(hitPaths.any((p) => p.contains('/documents/')), isTrue,
+        reason: 'لم يُسأل عن المستند أصلاً');
+  });
+
+  test('🔴 وحكمٌ مجهولٌ لا يُجمّد المستندَ — يبقى للاستطلاع', () async {
+    final saleId = await seedSale();
+    await worker(poll: false).runOnce();
+
+    gatewayVerdict = 'SomethingBrandNew';
+    await worker().runOnce();
+
+    expect((await db.getSubmissionBySaleId(saleId))!.status, 'submitted',
+        reason: 'ترجمةُ المجهول إلى حكمٍ نهائيٍّ تُجمّد المستندَ خطأً');
+  });
+
+  test('🔴 ورفضُ البوّابة عند الاستطلاع يُسجَّل', () async {
+    final saleId = await seedSale();
+    await worker(poll: false).runOnce();
+
+    gatewayVerdict = 'Rejected';
+    await worker().runOnce();
+
+    expect((await db.getSubmissionBySaleId(saleId))!.status, 'rejected');
   });
 
   test('🔴 والحمولةُ المرسَلةُ تحمل بنودَ الفاتورة وتاريخَها الحقيقيّ',
@@ -221,8 +294,9 @@ void main() {
         reason: 'الرمزُ يُشتقّ من المعرّفَين — وسقوطُ أحدِهما يُفقده');
     final generatedQr = row.qrCode!;
 
-    // ثمّ يعتمد المستندَ استطلاعُ الحالة (تصل الأجهزةَ بالمزامنة).
-    await db.updateSubmissionStatus(row.id, 'valid');
+    // والاعتمادُ من **استطلاع الخادم** لا بيدِ الاختبار.
+    expect(row.status, 'valid',
+        reason: 'الدورةُ الواحدةُ تقدّم ثمّ تستطلع — فيصل الحكمُ فوراً');
 
     final qr = await resolveReceiptQrForSale(
       db,
