@@ -37,40 +37,63 @@ extension EInvoicingDao on AppDatabase {
     bool isProduction = false,
     bool isEnabled = false,
   }) async {
-    final existing = await getEInvoiceConfig(platform);
-    if (existing != null) {
-      await (update(
-        eInvoiceConfigs,
-      )..where((c) => c.id.equals(existing.id))).write(
-        EInvoiceConfigsCompanion(
-          clientId: Value(clientId),
-          clientSecret: Value(clientSecret),
-          registrationNumber: Value(registrationNumber),
-          activityCode: Value(activityCode),
-          branchId: Value(branchId),
-          documentVersion: Value(documentVersion),
-          codingSystem: Value(codingSystem),
-          isProduction: Value(isProduction),
-          isEnabled: Value(isEnabled),
-        ),
-      );
-      return existing.id;
-    } else {
-      return into(eInvoiceConfigs).insert(
-        EInvoiceConfigsCompanion.insert(
-          platform: platform,
-          clientId: clientId,
-          clientSecret: clientSecret,
-          registrationNumber: registrationNumber,
-          activityCode: Value(activityCode),
-          branchId: Value(branchId),
-          documentVersion: Value(documentVersion),
-          codingSystem: Value(codingSystem),
-          isProduction: Value(isProduction),
-          isEnabled: Value(isEnabled),
-        ),
-      );
-    }
+    // الإعدادُ والرايةُ في معاملةٍ واحدة: إمّا يُكتبان معاً وإمّا لا شيء.
+    // فلا يبقى إعدادٌ مُفعَّلٌ على الخادم ورايةٌ منزَلةٌ على الأجهزة.
+    return transaction(() async {
+      final existing = await getEInvoiceConfig(platform);
+      final int id;
+      if (existing != null) {
+        await (update(
+          eInvoiceConfigs,
+        )..where((c) => c.id.equals(existing.id))).write(
+          EInvoiceConfigsCompanion(
+            clientId: Value(clientId),
+            clientSecret: Value(clientSecret),
+            registrationNumber: Value(registrationNumber),
+            activityCode: Value(activityCode),
+            branchId: Value(branchId),
+            documentVersion: Value(documentVersion),
+            codingSystem: Value(codingSystem),
+            isProduction: Value(isProduction),
+            isEnabled: Value(isEnabled),
+          ),
+        );
+        id = existing.id;
+      } else {
+        id = await into(eInvoiceConfigs).insert(
+          EInvoiceConfigsCompanion.insert(
+            platform: platform,
+            clientId: clientId,
+            clientSecret: clientSecret,
+            registrationNumber: registrationNumber,
+            activityCode: Value(activityCode),
+            branchId: Value(branchId),
+            documentVersion: Value(documentVersion),
+            codingSystem: Value(codingSystem),
+            isProduction: Value(isProduction),
+            isEnabled: Value(isEnabled),
+          ),
+        );
+      }
+      await _writeEInvoiceEnabledFlag();
+      return id;
+    });
+  }
+
+  /// رايةُ `Settings` بلا سرّ — الشيءُ الوحيدُ من هذا الإعداد الذي يصل
+  /// الأجهزةَ بالمزامنة (الجدولُ نفسُه خارجَها لأنّه يحمل `clientSecret`).
+  ///
+  /// تعني «توجد منصّةٌ مُفعَّلة» لا «آخرُ ما كُتب»: تُعاد حسابُها من الجدول
+  /// بعد كلّ حفظ، فكتابةُ منصّةٍ معطَّلةٍ لا تُنزل رايةَ منصّةٍ قائمة.
+  Future<void> _writeEInvoiceEnabledFlag() async {
+    final anyEnabled = await (select(eInvoiceConfigs)
+          ..where((c) => c.isEnabled.equals(true))
+          ..limit(1))
+        .get();
+    await setSetting(
+      kEInvoiceEnabledSettingKey,
+      anyEnabled.isNotEmpty ? 'true' : 'false',
+    );
   }
 
   // ─────────────────────────────────────────────────────────────────────────

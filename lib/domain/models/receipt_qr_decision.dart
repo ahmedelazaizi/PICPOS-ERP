@@ -37,6 +37,15 @@ class ReceiptSaleSummary {
 /// وسمُ الرمز غير الضريبيّ — منطوقٌ صريحٌ يمنع تقديمَه على أنّه إيصالٌ ضريبيّ.
 const kNonFiscalQrDisclaimer = 'ليس إيصالاً ضريبيّاً';
 
+/// مفتاحُ رايةِ التفعيل في `Settings` — `'true'` أو `'false'`.
+///
+/// `EInvoiceConfigs.isEnabled` هي الحقيقة، لكنّ جدولَها خارجَ المزامنة لأنّه
+/// يحمل السرَّ نصّاً (قرارُ مالك 2026-09-02). فهذه الرايةُ — بلا سرّ — هي ما
+/// يصل الكاشير ويفصل بين الرمز الضريبيّ وغير الضريبيّ. تُكتب داخلَ
+/// `saveEInvoiceConfig` فلا تنفكّ عن الإعداد، وتُقرأ **لا متزامنةً**
+/// (`getSettingValue`) فلا تحتاج مفتاحاً في `preloadKeys`.
+const kEInvoiceEnabledSettingKey = 'einvoice_enabled';
+
 /// نتيجةُ القرار.
 class ReceiptQr {
   final ReceiptQrKind kind;

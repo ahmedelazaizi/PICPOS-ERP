@@ -10,6 +10,8 @@ import 'package:uuid/uuid.dart';
 import 'package:flutter/foundation.dart';
 // Import treasury_repository.dart for DAO types (SafeData, TreasurySummaryData, etc.)
 import '../../domain/repositories/treasury_repository.dart';
+import '../../domain/models/receipt_qr_decision.dart'
+    show kEInvoiceEnabledSettingKey;
 import 'connection.dart';
 import 'pg_compat_sql.dart';
 import 'wal_checkpoint.dart';
