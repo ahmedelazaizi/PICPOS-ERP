@@ -1,0 +1,406 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&amp;display=swap">
+  <style>
+    body { margin: 0; font-family: 'Cairo', 'Segoe UI', sans-serif; }
+    a { color: #0250D3; } a:hover { color: #012258; }
+    .tap { cursor: pointer; }
+  </style>
+</helmet>
+<div dir="rtl" style="width: 430px; height: 1010px; background: #E7ECF4; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px; color: #000000;">
+
+  <div style="background: #ffffff; border: 1px solid #DCE3EE; border-radius: 14px; padding: 13px 14px; display: flex; flex-direction: column; gap: 10px;">
+    <div style="display: flex; align-items: center; gap: 7px;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0250D3" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11.5 11 13.5 15.5 9"></path><circle cx="12" cy="12" r="9"></circle></svg>
+      <span style="font-size: 12px; font-weight: 700; color: #0250D3;">اضغط للتجربة — بدّل المستخدم وشوف القائمة تتغيّر</span>
+    </div>
+    <div style="display: flex; gap: 7px;">
+      <sc-for list="{{roleChips}}" as="chip" hint-placeholder-count="4">
+        <div class="tap" onClick="{{ chip.pick }}" style="flex-grow: 1; border-radius: 999px; padding: 9px 4px; text-align: center; font-size: 12px; font-weight: 700; background: {{chip.bg}}; color: {{chip.fg}}; border: 1px solid {{chip.bd}};">{{chip.short}}</div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="width: 390px; height: 844px; background: #F2F5FA; border-radius: 18px; overflow: hidden; display: flex; flex-direction: column; position: relative; border: 1px solid #DCE3EE;">
+
+    <div style="background: linear-gradient(135deg, #0250D3, #012258); padding: 18px 16px 16px; display: flex; flex-direction: column; gap: 12px;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="width: 40px; height: 40px; border-radius: 999px; background: rgba(255,255,255,0.16); border: 1.5px solid rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; color: #ffffff; font-size: 14px; font-weight: 700;">{{user.ini}}</div>
+        <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 1px;">
+          <div style="color: #ffffff; font-size: 15px; font-weight: 600;">{{user.name}}</div>
+          <div style="color: rgba(255,255,255,0.72); font-size: 12px;">{{user.sub}}</div>
+        </div>
+        <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(255,255,255,0.12); display: flex; align-items: center; justify-content: center;">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="color: #ffffff; font-size: 17px; font-weight: 700; flex-grow: 1;">{{title}}</span>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <div style="width: 7px; height: 7px; border-radius: 999px; background: {{net.dot}};"></div>
+          <span style="color: rgba(255,255,255,0.8); font-size: 11px;">{{net.label}}</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex-grow: 1; padding: 16px; display: flex; flex-direction: column; gap: 13px; overflow: hidden;">
+
+      <sc-if value="{{hasBanner}}" hint-placeholder-val="{{true}}">
+        <div style="background: #FFFBEB; border: 1px solid #FCD9A0; border-radius: 12px; padding: 11px 13px; display: flex; align-items: center; gap: 10px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M2 8.8a16 16 0 0 1 20 0"></path><path d="M5 12.8a11 11 0 0 1 14 0"></path><path d="M8.5 16.4a6 6 0 0 1 7 0"></path><path d="M12 20h.01"></path><path d="m2 2 20 20"></path></svg>
+          <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 1px;">
+            <span style="font-size: 12px; font-weight: 700; color: #92400E;">{{banner.title}}</span>
+            <span style="font-size: 11px; color: #B45309;">{{banner.sub}}</span>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{hasKpi}}" hint-placeholder-val="{{true}}">
+        <div style="background: #ffffff; border: 1px solid #DCE3EE; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 8px;">
+          <span style="font-size: 12px; font-weight: 700; color: #6B7280;">{{kpi.label}}</span>
+          <div style="display: flex; align-items: flex-end; gap: 8px;">
+            <span style="font-size: 32px; font-weight: 700; letter-spacing: -1px; line-height: 1;">{{kpi.value}}</span>
+            <span style="font-size: 13px; color: #6B7280; padding-bottom: 3px;">{{kpi.unit}}</span>
+          </div>
+          <span style="font-size: 13px; font-weight: 600; color: {{kpi.noteColor}};">{{kpi.note}}</span>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{hasTiles}}" hint-placeholder-val="{{true}}">
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px;">
+          <sc-for list="{{tiles}}" as="tile" hint-placeholder-count="2">
+            <div style="background: #ffffff; border: 1px solid #DCE3EE; border-radius: 14px; padding: 13px; display: flex; flex-direction: column; gap: 5px;">
+              <span style="font-size: 11px; font-weight: 700; color: #6B7280;">{{tile.label}}</span>
+              <span style="font-size: 21px; font-weight: 700; line-height: 1.1; color: {{tile.color}};">{{tile.value}}</span>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <span style="font-size: 13px; font-weight: 700; padding: 0 2px;">{{section}}</span>
+        <div style="background: #ffffff; border: 1px solid #DCE3EE; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column;">
+          <sc-for list="{{rows}}" as="row" hint-placeholder-count="3">
+            <div style="display: flex; align-items: center; gap: 11px; padding: 13px 14px; border-bottom: 1px solid {{row.line}};">
+              <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px;">
+                <span style="font-size: 14px; font-weight: 600;">{{row.title}}</span>
+                <span style="font-size: 11px; color: #6B7280;">{{row.sub}}</span>
+              </div>
+              <span style="font-size: 14px; font-weight: 700; white-space: nowrap; color: {{row.color}};">{{row.value}}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <sc-if value="{{hasAction}}" hint-placeholder-val="{{true}}">
+        <div class="tap" onClick="{{ openSheet }}" style="background: #0250D3; border-radius: 10px; padding: 15px; text-align: center; color: #ffffff; font-size: 15px; font-weight: 700;">{{action.label}}</div>
+      </sc-if>
+
+    </div>
+
+    <div style="background: #ffffff; border-top: 1px solid #DCE3EE; padding: 8px 8px 12px; display: flex; gap: 2px;">
+      <sc-for list="{{navItems}}" as="item" hint-placeholder-count="4">
+        <div class="tap" onClick="{{ item.pick }}" style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 0;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="{{item.color}}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{item.d}}"></path></svg>
+          <span style="font-size: 10px; color: {{item.color}}; font-weight: {{item.weight}};">{{item.label}}</span>
+        </div>
+      </sc-for>
+    </div>
+
+    <sc-if value="{{sheetOpen}}" hint-placeholder-val="{{true}}">
+      <div style="position: absolute; inset: 0;">
+        <div class="tap" onClick="{{ closeSheet }}" style="position: absolute; inset: 0; background: rgba(1, 34, 88, 0.42);"></div>
+        <div style="position: absolute; left: 0; right: 0; bottom: 0; background: #ffffff; border-radius: 18px 18px 0 0; padding: 12px 16px 20px; display: flex; flex-direction: column; gap: 13px;">
+          <div style="width: 40px; height: 4px; border-radius: 999px; background: #DCE3EE; align-self: center;"></div>
+          <span style="font-size: 17px; font-weight: 700;">{{sheet.title}}</span>
+
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <span style="font-size: 12px; font-weight: 700; color: #374151;">{{sheet.fieldLabel}}</span>
+            <div style="background: #F4F7FC; border: 1px solid #DCE3EE; border-radius: 10px; padding: 13px; display: flex; align-items: baseline; gap: 7px;">
+              <span style="font-size: 24px; font-weight: 700;">{{sheet.fieldValue}}</span>
+              <span style="font-size: 12px; color: #6B7280;">{{sheet.unit}}</span>
+            </div>
+          </div>
+
+          <div style="background: #ffffff; border: 1.5px solid #D97706; border-radius: 10px; padding: 12px 13px; display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M12 9v4"></path><path d="M12 17h.01"></path><circle cx="12" cy="12" r="9"></circle></svg>
+              <span style="font-size: 12px; font-weight: 700; color: #D97706;">{{sheet.guard}}</span>
+            </div>
+            <div style="background: #F4F7FC; border: 1px solid #DCE3EE; border-radius: 8px; padding: 10px 12px; display: flex; align-items: center; gap: 2px;">
+              <span style="font-size: 15px; font-weight: 700;">{{sheet.fieldValue}}</span>
+              <div style="width: 1.5px; height: 17px; background: #0250D3; margin-right: 2px;"></div>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 10px;">
+            <div class="tap" onClick="{{ confirmSheet }}" style="flex-grow: 1; background: #0250D3; border-radius: 10px; padding: 15px; text-align: center; color: #ffffff; font-size: 15px; font-weight: 700;">{{sheet.confirm}}</div>
+            <div class="tap" onClick="{{ closeSheet }}" style="background: #F4F7FC; border: 1px solid #DCE3EE; border-radius: 10px; padding: 15px 22px; text-align: center; font-size: 15px; font-weight: 600; color: #374151;">إلغاء</div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 7px; justify-content: center;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            <span style="font-size: 11px; color: #6B7280;">يُنفَّذ على النظام ويُقيَّد فوراً</span>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{toastOpen}}" hint-placeholder-val="{{true}}">
+      <div class="tap" onClick="{{ hideToast }}" style="position: absolute; left: 16px; right: 16px; bottom: 96px; background: #16A34A; border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 11px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M20 6 9 17l-5-5"></path></svg>
+        <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 1px;">
+          <span style="color: #ffffff; font-size: 14px; font-weight: 700;">{{toast.title}}</span>
+          <span style="color: rgba(255,255,255,0.85); font-size: 11px;">{{toast.sub}}</span>
+        </div>
+      </div>
+    </sc-if>
+
+  </div>
+
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":430,"height":1010}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { role: 'manager', screen: 'home', sheet: false, toast: false };
+  }
+
+  roles() {
+    return {
+      manager: { ini: 'أ.ي', name: 'أحمد يوسف', sub: 'مدير عام · كلُّ الفروع', short: 'مدير', nav: ['home', 'treasury', 'shifts', 'stock'], online: true },
+      warehouse: { ini: 'ع.ح', name: 'عمرو حسن', sub: 'أمينُ مخزن · الفرعُ الرئيسيّ', short: 'مخزن', nav: ['home', 'stock'], online: true },
+      accountant: { ini: 'ه.م', name: 'هدى مصطفى', sub: 'محاسب · الإدارة', short: 'محاسب', nav: ['home', 'journal', 'treasury'], online: true },
+      rep: { ini: 'ط.إ', name: 'طارق إبراهيم', sub: 'مندوبُ مبيعات · خطُّ الجيزة', short: 'مندوب', nav: ['home', 'customers'], online: false }
+    };
+  }
+
+  navDefs() {
+    return {
+      home: { label: 'الرئيسيّة', d: 'm3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z' },
+      treasury: { label: 'الخزائن', d: 'M3 7h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM17 13h.01' },
+      shifts: { label: 'الورديّات', d: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5l3 2' },
+      stock: { label: 'المخزون', d: 'm21 8-9-5-9 5v8l9 5 9-5zM3 8l9 5 9-5M12 13v8' },
+      journal: { label: 'اليوميّة', d: 'M4 4h16v16H4zM4 10h16M10 10v10' },
+      customers: { label: 'العملاء', d: 'M9 5a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM3 20a6 6 0 0 1 12 0M17 11h4M19 9v4' }
+    };
+  }
+
+  screens() {
+    var line = '#DCE3EE';
+    return {
+      'manager.home': {
+        title: 'نبضُ اليوم',
+        kpi: { label: 'مبيعاتُ اليوم', value: '٨٤٬٣٢٠', unit: 'ج.م', note: '١٢٪ فوق أمس (٧٥٬٢٨٠)', noteColor: '#16A34A' },
+        tiles: [{ label: 'عددُ الفواتير', value: '٣١٧', color: '#000000' }, { label: 'صافي النقد', value: '٦٢٬١٤٠', color: '#0250D3' }],
+        section: 'أداءُ الفروع',
+        rows: [
+          { title: 'الفرعُ الرئيسيّ', sub: '١٤٢ فاتورة', value: '٣٩٬٤٠٠', color: '#000000', line: line },
+          { title: 'فرعُ المعادي', sub: '٩٨ فاتورة', value: '٢٧٬٩٦٠', color: '#000000', line: line },
+          { title: 'فرعُ مدينة نصر', sub: '٧٧ فاتورة', value: '١٦٬٩٦٠', color: '#000000', line: 'transparent' }
+        ]
+      },
+      'manager.treasury': {
+        title: 'الخزائن',
+        kpi: { label: 'إجماليُّ النقد', value: '٦٢٬١٤٠', unit: 'ج.م', note: 'في ٤ خزائن', noteColor: '#6B7280' },
+        section: 'الأرصدةُ الآن',
+        rows: [
+          { title: 'الخزنةُ الرئيسيّة', sub: 'الفرعُ الرئيسيّ · نقديّ', value: '٣٤٬٨٠٠', color: '#000000', line: line },
+          { title: 'خزنةُ المعادي', sub: 'فرعُ المعادي · نقديّ', value: '١٨٬٢٤٠', color: '#000000', line: line },
+          { title: 'حساب البنك الأهليّ', sub: 'بنكيّ', value: '٩٬١٠٠', color: '#000000', line: 'transparent' }
+        ],
+        action: {
+          label: 'سندُ صرفٍ من الخزنة',
+          sheet: { title: 'سندُ صرفٍ من الخزنة الرئيسيّة', fieldLabel: 'المبلغ', fieldValue: '٢٬٥٠٠', unit: 'ج.م', guard: 'اكتب المبلغَ مرّةً أخرى للتأكيد', confirm: 'تنفيذُ الصرف' },
+          toast: { title: 'تمّ الصرفُ وقُيِّد محاسبيّاً', sub: 'رصيدُ الخزنة الآن ٣٢٬٣٠٠' }
+        }
+      },
+      'manager.shifts': {
+        title: 'الورديّات',
+        kpi: { label: 'ورديّاتٌ مفتوحةٌ الآن', value: '٣', unit: 'ورديّات', note: 'أطولُها ٩ س ٤٠ د', noteColor: '#D97706' },
+        section: 'المفتوحةُ الآن',
+        rows: [
+          { title: 'محمود عادل', sub: 'الفرعُ الرئيسيّ · ٩ س ٤٠ د', value: '٣٤٬٨٠٠', color: '#000000', line: line },
+          { title: 'سارة فؤاد', sub: 'فرعُ المعادي · ٥ س ١٠ د', value: '١٨٬٢٤٠', color: '#000000', line: line },
+          { title: 'كريم طارق', sub: 'فرعُ مدينة نصر · ٣ س ٢٥ د', value: '٩٬١٠٠', color: '#000000', line: 'transparent' }
+        ],
+        action: {
+          label: 'إغلاقُ ورديّة محمود عادل',
+          sheet: { title: 'إغلاقُ ورديّة — محمود عادل', fieldLabel: 'النقديّةُ المتوقّعة', fieldValue: '٣٤٬٨٠٠', unit: 'ج.م', guard: 'اكتب النقديّةَ المعدودةَ للتأكيد', confirm: 'إغلاقُ الورديّة' },
+          toast: { title: 'أُغلِقت الورديّةُ بلا عجز', sub: 'الفرعُ الرئيسيّ · ١٤٢ فاتورة' }
+        }
+      },
+      'manager.stock': {
+        title: 'المخزون',
+        kpi: { label: 'قيمةُ المخزون', value: '١٬٢٤٠٬٠٠٠', unit: 'ج.م', note: 'في ٣ مخازن', noteColor: '#6B7280' },
+        tiles: [{ label: 'تحت حدّ الطلب', value: '١٤', color: '#D97706' }, { label: 'قاربت الانتهاء', value: '٦', color: '#DC2626' }],
+        section: 'أهمُّ النواقص',
+        rows: [
+          { title: 'زيت عافية ذرة ١ لتر', sub: 'الفرعُ الرئيسيّ', value: '٤ متبقٍّ', color: '#DC2626', line: line },
+          { title: 'سكر أبيض ١ كجم', sub: 'فرعُ المعادي', value: '٩ متبقٍّ', color: '#D97706', line: line },
+          { title: 'شاي ليبتون ١٠٠ فتلة', sub: 'الفرعُ الرئيسيّ', value: '١١ متبقٍّ', color: '#D97706', line: 'transparent' }
+        ]
+      },
+      'warehouse.home': {
+        title: 'مخزنُ الفرع الرئيسيّ',
+        kpi: { label: 'أصنافٌ تحت حدّ الطلب', value: '١٤', unit: 'صنفاً', note: '٦ منها قاربت الانتهاء', noteColor: '#D97706' },
+        tiles: [{ label: 'حركاتُ اليوم', value: '٣٨', color: '#000000' }, { label: 'استلامٌ منتظَر', value: '٣', color: '#0250D3' }],
+        section: 'أهمُّ النواقص',
+        rows: [
+          { title: 'زيت عافية ذرة ١ لتر', sub: 'حدُّ الطلب ٢٠', value: '٤ متبقٍّ', color: '#DC2626', line: line },
+          { title: 'سكر أبيض ١ كجم', sub: 'حدُّ الطلب ٥٠', value: '٩ متبقٍّ', color: '#D97706', line: line },
+          { title: 'شاي ليبتون ١٠٠ فتلة', sub: 'حدُّ الطلب ٣٠', value: '١١ متبقٍّ', color: '#D97706', line: 'transparent' }
+        ]
+      },
+      'warehouse.stock': {
+        title: 'المخزون',
+        kpi: { label: 'آخرُ جردٍ دوريّ', value: '٢٣ يوماً', unit: 'مضت', note: 'المخزنُ الرئيسيّ', noteColor: '#6B7280' },
+        section: 'آخرُ الحركات',
+        rows: [
+          { title: 'استلامُ مشتريات', sub: 'شركة النيل · ١١:٢٠ ص', value: '+٢٤٠', color: '#16A34A', line: line },
+          { title: 'تحويلٌ إلى المعادي', sub: '١٠:٠٥ ص', value: '‎−٦٠‎', color: '#DC2626', line: line },
+          { title: 'تسويةُ عجز', sub: '٩:٤٠ ص', value: '‎−٤‎', color: '#DC2626', line: 'transparent' }
+        ],
+        action: {
+          label: 'بدءُ جردٍ دوريّ',
+          sheet: { title: 'بدءُ جلسة جردٍ — المخزنُ الرئيسيّ', fieldLabel: 'عددُ الأصناف المتوقَّع', fieldValue: '٤١٢', unit: 'صنفاً', guard: 'اكتب اسمَ المخزن للتأكيد', confirm: 'بدءُ الجرد' },
+          toast: { title: 'بدأت جلسةُ الجرد', sub: 'صوِّب الكاميرا نحو الباركود' }
+        }
+      },
+      'accountant.home': {
+        title: 'الملخّصُ المحاسبيّ',
+        kpi: { label: 'صافي ربح الشهر', value: '٣١٤٬٦٠٠', unit: 'ج.م', note: '٨٪ فوق الشهر الماضي', noteColor: '#16A34A' },
+        tiles: [{ label: 'قيودُ اليوم', value: '١٢', color: '#000000' }, { label: 'شيكاتٌ مستحقّة', value: '٥', color: '#D97706' }],
+        section: 'يستحقُّ انتباهك',
+        rows: [
+          { title: 'شيكٌ يستحقُّ غداً', sub: 'شركة النيل للتوريدات', value: '١٨٬٠٠٠', color: '#D97706', line: line },
+          { title: 'مصروفٌ بانتظار الاعتماد', sub: 'صيانةُ فرع المعادي', value: '٤٬٢٠٠', color: '#000000', line: line },
+          { title: 'فرقُ تسويةٍ مخزنيّة', sub: 'قيدٌ آليٌّ غيرُ مرحَّل', value: '٩٦٠', color: '#DC2626', line: 'transparent' }
+        ]
+      },
+      'accountant.journal': {
+        title: 'دفترُ اليوميّة',
+        kpi: { label: 'قيودُ اليوم', value: '١٢', unit: 'قيداً', note: 'كلُّها متوازنة', noteColor: '#16A34A' },
+        section: 'آخرُ القيود',
+        rows: [
+          { title: 'إثباتُ مصروف إيجار', sub: 'مدين ٥١٢٠ · دائن ١١١١', value: '١٥٬٠٠٠', color: '#000000', line: line },
+          { title: 'تحصيلٌ من عميل', sub: 'مدين ١١١١ · دائن ١٢٣٠', value: '٦٬٢٠٠', color: '#000000', line: line },
+          { title: 'إهلاكُ أصولٍ ثابتة', sub: 'قيدٌ آليٌّ شهريّ', value: '٢٬٧٥٠', color: '#000000', line: 'transparent' }
+        ],
+        action: {
+          label: 'قيدُ يوميّةٍ جديد',
+          sheet: { title: 'ترحيلُ قيد — إيجار سبتمبر', fieldLabel: 'مدين = دائن', fieldValue: '١٥٬٠٠٠', unit: 'ج.م', guard: 'اكتب الإجماليَّ للتأكيد', confirm: 'ترحيلُ القيد' },
+          toast: { title: 'رُحِّل القيدُ إلى الأستاذ', sub: 'رقمُ القيد JV-٢٠٤٨' }
+        }
+      },
+      'accountant.treasury': {
+        title: 'الخزائن',
+        kpi: { label: 'إجماليُّ النقد', value: '٦٢٬١٤٠', unit: 'ج.م', note: 'في ٤ خزائن', noteColor: '#6B7280' },
+        section: 'الأرصدةُ الآن',
+        rows: [
+          { title: 'الخزنةُ الرئيسيّة', sub: 'نقديّ', value: '٣٤٬٨٠٠', color: '#000000', line: line },
+          { title: 'خزنةُ المعادي', sub: 'نقديّ', value: '١٨٬٢٤٠', color: '#000000', line: line },
+          { title: 'حساب البنك الأهليّ', sub: 'بنكيّ', value: '٩٬١٠٠', color: '#000000', line: 'transparent' }
+        ]
+      },
+      'rep.home': {
+        title: 'زياراتُ اليوم',
+        banner: { title: 'تعمل بلا شبكة', sub: '٣ عمليّاتٍ تنتظر الإرسال — تُرسَل تلقائيّاً عند عودة الشبكة' },
+        kpi: { label: 'تحصيلُ اليوم', value: '٨٬٢٠٠', unit: 'ج.م', note: '٧ زياراتٍ من ١٢', noteColor: '#6B7280' },
+        section: 'في انتظار الإرسال',
+        rows: [
+          { title: 'فاتورةُ بيع — سوبر ماركت الصفا', sub: '٢:١٤ م · ١٢ صنفاً', value: '٦٬٢٠٠', color: '#D97706', line: line },
+          { title: 'سندُ تحصيل — بقّالةُ الأمل', sub: '١:٠٥ م · نقديّ', value: '٢٬٠٠٠', color: '#D97706', line: line },
+          { title: 'عميلٌ جديد — ماركت السلام', sub: '١١:٤٠ ص', value: 'بانتظار', color: '#D97706', line: 'transparent' }
+        ]
+      },
+      'rep.customers': {
+        title: 'عملائي',
+        banner: { title: 'تعمل بلا شبكة', sub: 'البياناتُ من آخر مزامنةٍ — ١١:٠٥ ص' },
+        kpi: { label: 'إجماليُّ المستحقّ', value: '٤٨٬٣٥٠', unit: 'ج.م', note: 'على ١٤ عميلاً', noteColor: '#DC2626' },
+        section: 'الأعلى مديونيّةً',
+        rows: [
+          { title: 'بقّالةُ النور', sub: 'أقدمُ فاتورة ٤٧ يوماً', value: '٨٬٤٥٠', color: '#DC2626', line: line },
+          { title: 'سوبر ماركت الصفا', sub: 'أقدمُ فاتورة ٢١ يوماً', value: '٦٬٢٠٠', color: '#D97706', line: line },
+          { title: 'بقّالةُ الأمل', sub: 'أقدمُ فاتورة ٩ أيّام', value: '٣٬١٠٠', color: '#000000', line: 'transparent' }
+        ],
+        action: {
+          label: 'تحصيلٌ من بقّالة النور',
+          sheet: { title: 'سندُ تحصيل — بقّالةُ النور', fieldLabel: 'المبلغُ المحصَّل', fieldValue: '٣٬٠٠٠', unit: 'ج.م', guard: 'اكتب المبلغَ مرّةً أخرى للتأكيد', confirm: 'تسجيلُ التحصيل' },
+          toast: { title: 'سُجِّل التحصيلُ محلّيّاً', sub: 'يُرسَل للنظام عند عودة الشبكة' }
+        }
+      }
+    };
+  }
+
+  renderVals() {
+    var self = this;
+    var s = this.state;
+    var roles = this.roles();
+    var navDefs = this.navDefs();
+    var all = this.screens();
+
+    var role = roles[s.role];
+    var sc = all[s.role + '.' + s.screen] || all[s.role + '.home'];
+    var action = sc.action || null;
+
+    var chips = ['manager', 'warehouse', 'accountant', 'rep'].map(function (id) {
+      var on = id === s.role;
+      return {
+        short: roles[id].short,
+        bg: on ? '#0250D3' : '#F4F7FC',
+        fg: on ? '#ffffff' : '#374151',
+        bd: on ? '#0250D3' : '#DCE3EE',
+        pick: function () { self.setState({ role: id, screen: 'home', sheet: false, toast: false }); }
+      };
+    });
+
+    var items = role.nav.map(function (k) {
+      var on = k === s.screen;
+      return {
+        label: navDefs[k].label,
+        d: navDefs[k].d,
+        color: on ? '#0250D3' : '#6B7280',
+        weight: on ? '700' : '400',
+        pick: function () { self.setState({ screen: k, sheet: false, toast: false }); }
+      };
+    });
+
+    return {
+      user: role,
+      net: role.online ? { dot: '#4ADE80', label: 'متّصل الآن' } : { dot: '#FBBF24', label: 'بلا شبكة' },
+      roleChips: chips,
+      navItems: items,
+      title: sc.title,
+      hasBanner: !!sc.banner,
+      banner: sc.banner || {},
+      hasKpi: !!sc.kpi,
+      kpi: sc.kpi || {},
+      hasTiles: !!(sc.tiles && sc.tiles.length),
+      tiles: sc.tiles || [],
+      section: sc.section,
+      rows: sc.rows || [],
+      hasAction: !!action,
+      action: action || {},
+      sheet: (action && action.sheet) || {},
+      toast: (action && action.toast) || {},
+      sheetOpen: s.sheet,
+      toastOpen: s.toast,
+      openSheet: function () { self.setState({ sheet: true }); },
+      closeSheet: function () { self.setState({ sheet: false }); },
+      confirmSheet: function () { self.setState({ sheet: false, toast: true }); },
+      hideToast: function () { self.setState({ toast: false }); }
+    };
+  }
+}
+</script>
+</body>
+</html>
