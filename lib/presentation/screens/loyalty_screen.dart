@@ -44,7 +44,7 @@ class _LoyaltyScreenState extends ConsumerState<LoyaltyScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('نظام نقاط الولاء'),
+        title: const Text('نقاط العملاء'),
         centerTitle: true,
         bottom: TabBar(
           controller: _tabController,

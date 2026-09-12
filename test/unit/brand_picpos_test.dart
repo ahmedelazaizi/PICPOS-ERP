@@ -21,6 +21,7 @@ import 'package:ural_erp/core/config/app_config.dart';
 import 'package:ural_erp/core/config/brand.dart';
 import 'package:ural_erp/core/constants/app_constants.dart';
 import 'package:ural_erp/core/navigation/screen_id.dart';
+import 'package:ural_erp/core/navigation/screen_registry.dart';
 import 'package:ural_erp/core/theme/app_colors.dart';
 import 'package:ural_erp/core/theme/app_theme.dart';
 import 'package:ural_erp/data/database/connection_io.dart';
@@ -183,6 +184,29 @@ void main() {
 
       // «الخزينة» مدخلٌ مستقلٌّ في التصميم ولا تُطوى.
       expect(navItemVisibleForBrand(ScreenId.treasury.navigationIndex), isTrue);
+    });
+
+    test('والشاشاتُ الثلاثُ المتقاعدةُ تختفي من قائمة PicPos', () {
+      // أمرُ المالك 2026-09-12. وهذا — كسابقِه — الموضعُ **الوحيدُ** الذي
+      // يُنفَّذ فيه فرعُ PicPos من `navItemVisibleForBrand`: سجلُّ التقاعد
+      // قد يُكتَب صحيحاً ولا يُوصَل بالبوّابة، فيمرّ كلُّ شيءٍ أخضرَ
+      // والمداخلُ الثلاثةُ ما زالت في الشريط.
+      for (final retired in kPicPosRetiredNavIndexes) {
+        expect(navItemVisibleForBrand(retired), isFalse,
+            reason: 'المدخلُ $retired ما زال يظهر — التقاعدُ غيرُ موصول');
+      }
+
+      // وجارتُها في نفس المجموعة تبقى: `حركة المخزون` (29).
+      expect(navItemVisibleForBrand(ScreenId.stockMovements.navigationIndex),
+          isTrue);
+
+      // والنطاقُ يُسقطها كذلك — الشريطُ وحدَه لا يمنع البلوغَ بالفهرس.
+      final scope = ScreenRegistry.forProfile(BusinessProfile.unified)
+          .map((s) => s.navigationIndex);
+      for (final retired in kPicPosRetiredNavIndexes) {
+        expect(scope, isNot(contains(retired)),
+            reason: 'الشاشةُ $retired ما زالت في نطاق PicPos');
+      }
     });
   }, skip: skipReason);
 }

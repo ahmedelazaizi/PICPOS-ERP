@@ -728,7 +728,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => Brand.isPicPos
             ? const BranchesPicposScreen()
             : const BranchManagementScreen(),
-        label: 'الفروع',
+        label: 'الفروع والمخازن',
         icon: PhosphorIconsBold.buildings,
       ),
       ScreenConfig(
@@ -794,7 +794,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => Brand.isPicPos
             ? const StockTransferPicposScreen()
             : const StockTransferScreen(),
-        label: 'تحويل مخزني',
+        label: 'سند تحويل اصناف',
         icon: PhosphorIconsBold.arrowsLeftRight,
       ),
       ScreenConfig(
@@ -825,7 +825,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
       ScreenConfig(
         appScreen: AppScreen.loyalty,
         builder: (_) => const LoyaltyScreen(),
-        label: 'نقاط الولاء',
+        label: 'نقاط العملاء',
         icon: PhosphorIconsBold.trophy,
       ),
       ScreenConfig(
@@ -987,7 +987,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => Brand.isPicPos
             ? const ReportBuilderPicposScreen()
             : const ReportBuilderScreen(),
-        label: 'تقارير مخصصة',
+        label: 'اعداد وتصميم التقارير',
         icon: PhosphorIconsBold.chartBar,
       ),
       ScreenConfig(

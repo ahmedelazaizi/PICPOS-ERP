@@ -180,7 +180,7 @@ class _StockTransferPicposScreenState
     final warehouses = ref.watch(allWarehousesProvider);
 
     return PicPosScreenScaffold(
-      title: 'تحويل مخزني',
+      title: 'سند تحويل اصناف',
       subtitle: 'نقل الأصناف بين المستودعات',
       icon: PhosphorIconsBold.arrowsLeftRight,
       headerActions: [

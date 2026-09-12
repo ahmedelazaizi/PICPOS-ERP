@@ -376,9 +376,42 @@ class ScreenRegistry {
     return [...litePicpos, ScreenId.tables, ScreenId.kitchen];
   }
 
+  /// الشاشاتُ التي أسقطها المالكُ من PicPos 2026-09-12.
+  ///
+  /// ⚠️ ولا يكفي إخفاءُ مدخلِ القائمة (`kPicPosRetiredNavIndexes`): الشاشةُ
+  /// تُبلَغ بالفهرس المباشر من كلّ اختصارٍ ومن `onNavigate`، والنطاقُ هو
+  /// البوّابةُ التي تسبق الصلاحيةَ نفسَها. فالموضعان معاً أو لا شيء.
+  static const picposRetired = <ScreenId>{
+    ScreenId.stockRequisitions, // طلبات الصرف
+    ScreenId.landedCost, // التكاليف المحملة
+    ScreenId.cycleCounting, // الجرد الدوري
+  };
+
+  /// [src] بعد إسقاط [picposRetired].
+  ///
+  /// ⚠️ **المقارنةُ بالفهرس لا بقيمة `ScreenId`**: `cycleCounting` و
+  /// `fieldAudit` قيمتان مختلفتان لفهرسٍ **واحدٍ** (42)، فـ`Set.contains`
+  /// على القيمة يُبقي الشاشةَ حيّةً باسمها الآخر — وهي مدرجةٌ في خمسة
+  /// نطاقاتٍ باسم `fieldAudit` وفي `unified` وحدَها باسم `cycleCounting`.
+  static List<ScreenId> withoutPicposRetired(List<ScreenId> src) {
+    final retired = {for (final s in picposRetired) s.navigationIndex};
+    return [
+      for (final s in src)
+        if (!retired.contains(s.navigationIndex)) s,
+    ];
+  }
+
   /// [features] اختياريٌّ عن قصد: تركُه `null` يعطي **بالضبط** ما كان
   /// يعطيه التوقيعُ القديم، فلا يتغيّر سلوكُ أيّ منادٍ لم يُحدَّث.
   static List<ScreenId> forProfile(
+    BusinessProfile profile, {
+    FeaturePolicy? features,
+  }) {
+    final base = _baseForProfile(profile, features: features);
+    return Brand.isPicPos ? withoutPicposRetired(base) : base;
+  }
+
+  static List<ScreenId> _baseForProfile(
     BusinessProfile profile, {
     FeaturePolicy? features,
   }) {

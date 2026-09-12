@@ -158,21 +158,14 @@ class _EnhancedNavItemState extends State<_EnhancedNavItem> {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Group metadata for sidebar sections
-class _GroupMeta {
-  final String label;
-  final IconData icon;
-  const _GroupMeta(this.label, this.icon);
-}
+typedef _GroupMeta = NavGroupDef;
 
-const _groupMeta = <String, _GroupMeta>{
-  'home': _GroupMeta('Dashboard', PhosphorIconsBold.house),
-  'sales': _GroupMeta('المبيعات', PhosphorIconsBold.shoppingCart),
-  'purchases': _GroupMeta('المشتريات', PhosphorIconsBold.receipt),
-  'inventory': _GroupMeta('الاصناف والمخزون', PhosphorIconsBold.package),
-  'relations': _GroupMeta('العملاء والموردين', PhosphorIconsBold.usersThree),
-  'accounting': _GroupMeta('المالية والمحاسبة', PhosphorIconsBold.wallet),
-  'reports': _GroupMeta('التقارير', PhosphorIconsBold.chartBar),
-  'system': _GroupMeta('النظام', PhosphorIconsBold.gear),
+/// ⚠️ **مشتقَّةٌ من [kNavGroupDefs] لا مكتوبةٌ هنا.** كانت خريطةً يدويّةً
+/// موازيةً لمفاتيح `group` في `kAllNavItemDefs`، ومصدران يفترقان: مدخلٌ
+/// يُنقَل إلى مجموعةٍ غيرِ مذكورةٍ هنا يسقط على البديل الصامت أسفله فيظهر
+/// تحت رأسٍ بالمفتاح الإنجليزيّ الخام — بلا خطأٍ ولا تحذير.
+final _groupMeta = <String, _GroupMeta>{
+  for (final g in kNavGroupDefs) g.key: g,
 };
 
 class _CollapsibleNavGroups extends StatefulWidget {
@@ -218,7 +211,10 @@ class _CollapsibleNavGroupsState extends State<_CollapsibleNavGroups> {
       padding: const EdgeInsets.symmetric(vertical: 4),
       children: widget.groupOrder.map((groupKey) {
         final items = widget.groups[groupKey]!;
-        final meta = _groupMeta[groupKey] ?? _GroupMeta(groupKey, PhosphorIconsBold.folder);
+        // البديلُ الصامت: رأسٌ بالمفتاح الإنجليزيّ الخام. لا يُبلَغ ما دام
+        // `sidebar_owner_layout_test` يشترط تعريفاً لكلّ مفتاحٍ مستعمَل.
+        final meta = _groupMeta[groupKey] ??
+            _GroupMeta(groupKey, groupKey, PhosphorIconsBold.folder);
         final isExpanded = _expandedGroup == groupKey;
         final hasActiveItem = items.any((i) => i.index == widget.currentIndex);
 

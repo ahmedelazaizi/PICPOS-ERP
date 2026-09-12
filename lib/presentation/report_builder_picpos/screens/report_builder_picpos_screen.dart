@@ -155,7 +155,7 @@ class _ReportBuilderPicposScreenState
     final reports = ref.watch(_reportsProvider);
 
     return PicPosScreenScaffold(
-      title: 'تقارير مخصصة',
+      title: 'اعداد وتصميم التقارير',
       subtitle:
           'ابنِ تقريرك باختيار جهة البيانات وأعمدتها وشروطها — ثم شغّله واحفظه',
       icon: PhosphorIconsBold.chartBar,
