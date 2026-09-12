@@ -162,29 +162,58 @@ void main() {
 
   // ═════════════════════════════════════════════════════════════════════
   group('رابطُ واتساب', () {
-    test('ينظّف الرقمَ من الرموز والمسافات', () {
-      final link = whatsappReminderLink(phone: '079-123 4567', message: 'x');
-      expect(link, contains('wa.me/0791234567'));
-      expect(link, isNot(contains('-')));
-      expect(link, isNot(contains(' ')));
+    // ⚠️ **الصيغةُ الدوليّةُ شرطٌ، والصفرُ البادئُ يُبطلها.**
+    //
+    // كانت هذه المجموعةُ تؤكّد `wa.me/0791234567` — أي رقماً **يبدأ بصفر**،
+    // وهو غيرُ صالحٍ عند واتساب: لا رقمَ دوليٌّ يبدأ بصفر. فكان التوكيدُ
+    // **يوثّق العطبَ لا يحرسه**، والتعليقُ فوقَ الدالّة يحذّر من عينِ ما
+    // تفعله. وُحِّد المسارُ 2026-09-12 على `normalizeWhatsAppPhone` —
+    // محرّكِ إرسالِ الفواتير وكشوفِ الحساب نفسِه.
+    String? link(String? phone, {String cc = '962'}) => whatsappReminderLink(
+          phone: phone,
+          message: 'x',
+          defaultCountryCode: cc,
+        );
+
+    test('المحلّيُّ يصير دوليّاً — ولا يبقى الصفرُ البادئ', () {
+      final url = link('079-123 4567');
+      expect(url, contains('wa.me/962791234567'));
+      expect(url, isNot(contains('wa.me/0')),
+          reason: 'صفرٌ بادئٌ في رابطٍ دوليّ — واتساب يرفضه');
+      expect(url, isNot(contains('-')));
+      expect(url, isNot(contains(' ')));
     });
 
     test('يزيل `+` من الصيغة الدوليّة', () {
-      expect(whatsappReminderLink(phone: '+962791234567', message: 'x'),
-          contains('wa.me/962791234567'));
+      expect(link('+962791234567'), contains('wa.me/962791234567'));
+    });
+
+    test('والأرقامُ العربيّةُ الهنديّةُ تُحوَّل ولا تُمسَح', () {
+      // كانت تُمسَح بالكامل فيعود `null` — زرٌّ معطَّلٌ بلا سببٍ مفهوم.
+      expect(link('٠٧٩١٢٣٤٥٦٧'), contains('wa.me/962791234567'));
     });
 
     // ⚠️ رابطٌ يفشل صامتاً أسوأُ من زرٍّ معطَّل: الموظَّفُ يظنّ أنه أرسل.
     test('رقمٌ معدومٌ أو بلا أرقامٍ ⇒ لا رابط', () {
-      expect(whatsappReminderLink(phone: null, message: 'x'), isNull);
-      expect(whatsappReminderLink(phone: '---', message: 'x'), isNull);
-      expect(whatsappReminderLink(phone: '', message: 'x'), isNull);
+      expect(link(null), isNull);
+      expect(link('---'), isNull);
+      expect(link(''), isNull);
+    });
+
+    test('ورمزُ دولةٍ غيرُ مضبوطٍ ⇒ لا رابط', () {
+      // الإعدادُ فارغٌ في تنصيبةٍ جديدة؛ ورابطٌ بلا رمزِ دولةٍ يفتح صفحةَ
+      // «الرقمُ غيرُ صالح» — فالزرُّ المعطَّلُ أصدق.
+      expect(link('0791234567', cc: ''), isNull);
     });
 
     test('يُرمّز النصَّ العربيَّ فلا يكسر الرابط', () {
-      final link = whatsappReminderLink(phone: '0791234567', message: 'مرحباً');
-      expect(link, isNot(contains('مرحباً')));
-      expect(link, contains('%'));
+      final url = whatsappReminderLink(
+        phone: '0791234567',
+        message: 'مرحباً',
+        defaultCountryCode: '962',
+      );
+      expect(url, isNot(contains('مرحباً')));
+      expect(url, contains('%'));
     });
 
     test('نصُّ الرسالة يذكر العميلَ والخدمةَ والوقت', () {

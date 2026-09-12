@@ -295,6 +295,43 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
   // PRINT INVOICE
   // ══════════════════════════════════════════════════════
 
+  /// إرسالُ الفاتورة على واتساب — البندُ الثاني (2026-09-12).
+  ///
+  /// ⚠️ **ورقمُ العميل يُقرأ من صفِّه لا من الفاتورة**: لا عمودَ هاتفٍ على
+  /// الفاتورة، و«عميلٌ نقديٌّ» بلا صفٍّ لا رقمَ له — فيُقال ذلك صراحةً بدل
+  /// فتح حوارٍ برقمٍ فارغٍ يظنّه الموظّفُ عطباً.
+  Future<void> _sendInvoiceWhatsApp(InvoiceEntity invoice) async {
+    final db = ref.read(databaseProvider);
+    final shopName = await db.getSettingValue('company_name') ?? '';
+
+    Party? party;
+    if (invoice.partyId case final id? when id > 0) {
+      party = await (db.select(db.parties)..where((p) => p.id.equals(id)))
+          .getSingleOrNull();
+    }
+    if (!mounted) return;
+
+    if (party == null) {
+      AppToast.show(context, 'الفاتورةُ بلا عميلٍ مسجَّل — لا رقمَ يُرسَل إليه');
+      return;
+    }
+
+    await WhatsAppSendDialog.show(
+      context,
+      ref,
+      title: 'إرسال الفاتورة',
+      rawPhone: party.phone,
+      message: composeInvoiceMessage(
+        shopName: shopName,
+        customerName: party.name,
+        invoiceNumber: invoice.invoiceNumber,
+        total: invoice.total,
+        issuedAt: invoice.invoiceDate,
+      ),
+      actionLogLabel: 'فاتورة ${invoice.invoiceNumber}',
+    );
+  }
+
   void _printInvoice(InvoiceEntity invoice) async {
     try {
       // Use PrintingService.printReceipt — the same unified path as POS.

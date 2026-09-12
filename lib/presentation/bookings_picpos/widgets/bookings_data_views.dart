@@ -1,4 +1,5 @@
 // الوجهاتُ الأربعُ الباقية: العملاءُ والتذكيراتُ والتقاريرُ والإعدادات.
+import '../../shared_widgets/whatsapp_send_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -259,7 +260,16 @@ class _ReminderCard extends ConsumerWidget {
       serviceName: row.serviceName,
       timeLabel: bookingTimeLabel(row.bookingStartsAt),
     );
-    final link = whatsappReminderLink(phone: row.customerPhone, message: message);
+    // رمزُ الدولة من الإعداد المشترك — نفسُ ما يستعمله إرسالُ الفواتير
+    // وكشوفِ الحساب. وغيابُه يعني «لا رابط»، وهو أصدقُ من رابطٍ يفتح
+    // صفحةَ «الرقمُ غيرُ صالح».
+    final countryCode =
+        ref.watch(whatsAppCountryCodeProvider).asData?.value ?? '';
+    final link = whatsappReminderLink(
+      phone: row.customerPhone,
+      message: message,
+      defaultCountryCode: countryCode,
+    );
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),

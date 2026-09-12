@@ -46,6 +46,9 @@ import '../../picpos_shell/picpos_content_card.dart';
 import '../../picpos_shell/picpos_dialog.dart';
 import '../../picpos_shell/picpos_empty_state.dart';
 import '../../picpos_shell/picpos_kpi_row.dart';
+import '../../shared_widgets/whatsapp_send_dialog.dart';
+import '../../../domain/models/whatsapp_message.dart';
+import '../../../core/utils/number_utils.dart';
 
 part 'parties_summary_cards.dart';
 part 'parties_filter_bar.dart';
@@ -205,6 +208,7 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
       onEdit: (c) => _openEdit(lookup(c)),
       onVoucher: (c) => _openVoucher(lookup(c)),
       onDelete: (c) => _openDelete(lookup(c)),
+      onWhatsApp: (c) => _openWhatsApp(lookup(c)),
     );
 
     return Column(
@@ -275,6 +279,69 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
       unawaited(DiagnosticLogger.log(
           'PARTIES-ACTION', 'edit dialog threw partyId=${party.id}: $e\n$st'));
     }
+  }
+
+  /// إرسالُ كشفِ حسابٍ أو مطالبةٍ على واتساب.
+  ///
+  /// ⚠️ **والاختيارُ بينهما يُشتقّ من الرصيد لا يُسأل عنه عبثاً**: مطالبةٌ لا
+  /// تُبنى إلّا على مستحقٍّ موجب، فعميلٌ مسدَّدٌ أو دائنٌ لا يُعرَض له خيارُ
+  /// مطالبةٍ يُنتج نصّاً بصفر — و`composeDueReminderMessage` ترفضه أصلاً.
+  Future<void> _openWhatsApp(Party? party) async {
+    if (party == null) return;
+
+    final shopName =
+        await ref.read(databaseProvider).getSettingValue('company_name') ?? '';
+    if (!mounted) return;
+
+    // الإشارةُ في هذا المستودع `+debit / -credit`: الموجبُ مستحقٌّ على العميل.
+    final owes = NumberUtils.roundCurrency(party.balance) > 0;
+    final choice = owes
+        ? await showDialog<String>(
+            context: context,
+            builder: (ctx) => Directionality(
+              textDirection: TextDirection.rtl,
+              child: SimpleDialog(
+                title: const Text('ماذا تُرسل؟'),
+                children: [
+                  SimpleDialogOption(
+                    onPressed: () => Navigator.pop(ctx, 'statement'),
+                    child: const Text('كشف حساب'),
+                  ),
+                  SimpleDialogOption(
+                    onPressed: () => Navigator.pop(ctx, 'due'),
+                    child: const Text('مطالبة بالمستحقّ'),
+                  ),
+                ],
+              ),
+            ),
+          )
+        : 'statement';
+    if (choice == null || !mounted) return;
+
+    final isDue = choice == 'due';
+    final message = isDue
+        ? composeDueReminderMessage(
+            shopName: shopName,
+            customerName: party.name,
+            dueAmount: party.balance,
+          )
+        : composeStatementMessage(
+            shopName: shopName,
+            customerName: party.name,
+            balance: party.balance,
+            asOf: DateTime.now(),
+          );
+    // `null` يقع على المطالبة وحدَها — ولا يُفتَح حوارٌ بنصٍّ معدوم.
+    if (message == null) return;
+
+    await WhatsAppSendDialog.show(
+      context,
+      ref,
+      title: isDue ? 'مطالبة بالمستحقّ' : 'إرسال كشف الحساب',
+      rawPhone: party.phone,
+      message: message,
+      actionLogLabel: '${isDue ? 'مطالبة' : 'كشف حساب'} — ${party.name}',
+    );
   }
 
   void _openVoucher(Party? party) {

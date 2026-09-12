@@ -4,6 +4,7 @@
 // `presentation_db_import_guard` يمنع أيَّ ملفِّ عرضٍ **جديد** من استيراد
 // `data/database`، والقائمةُ البيضاء مقفولة. والحسابُ الخالصُ يُختبَر هنا
 // بلا `ProviderScope` ولا قاعدةٍ مفتوحة.
+import 'whatsapp_message.dart';
 import '../../core/utils/financial_utils.dart';
 
 /// تصنيفُ العميل — `tier` في التصميم.
@@ -135,14 +136,32 @@ String bookingReminderMessage({
 /// على محادثةٍ فارغة — فيظنّ الموظَّفُ أنه أرسل ولم يُرسَل شيء.
 ///
 /// و`null` تعني «لا رابطَ ممكن» — تُعرَض بزرٍّ معطَّلٍ لا برابطٍ يفشل صامتاً.
+///
+/// ═══ 🔴 وما كان مكسوراً فيها حتى 2026-09-12 ═══
+///
+/// كان التنظيفُ `replaceAll(RegExp(r'[^0-9]'), '')` وحدَه — يُسقط الرموزَ
+/// **ويُبقي الصفرَ البادئ**. فرقمٌ محلّيٌّ (`079…`) كان يُنتج
+/// `wa.me/0791234567`، وهو **غيرُ صالحٍ** عند واتساب: لا رقمَ دوليٌّ يبدأ
+/// بصفر. فتفتح صفحةٌ تقول «الرقمُ غيرُ صالح» — وهو عينُ العطب الذي يحذّر منه
+/// التعليقُ فوقَه ولا يمنعه. والاختبارُ كان **يوثّقه لا يحرسه**:
+/// `expect(link, contains('wa.me/0791234567'))`.
+///
+/// والأرقامُ العربيّةُ الهنديّةُ (`٠٧٩…`) كانت تُمسَح بالكامل فيعود `null` —
+/// يفشل مغلقاً على الأقل، لكنّ الزرَّ يبقى معطَّلاً بلا سببٍ مفهوم.
+///
+/// فصارت تمرّ بـ[normalizeWhatsAppPhone] — **نفسِ** محرّكِ إرسالِ الفواتير
+/// وكشوفِ الحساب والمطالبات. ومحرّكان لتسويةِ رقمٍ واحدٍ يفترقان بأوّل إصلاح.
 String? whatsappReminderLink({
   required String? phone,
   required String message,
+  required String defaultCountryCode,
 }) {
-  if (phone == null) return null;
-  final digits = phone.replaceAll(RegExp(r'[^0-9]'), '');
-  if (digits.isEmpty) return null;
-  return 'https://wa.me/$digits?text=${Uri.encodeComponent(message)}';
+  final normalized = normalizeWhatsAppPhone(
+    phone,
+    defaultCountryCode: defaultCountryCode,
+  );
+  if (normalized == null) return null;
+  return buildWhatsAppUrl(phone: normalized, message: message);
 }
 
 /// صفُّ لوحةِ الحجوزات — حجزٌ **موصولٌ** بخدمته ومورده، جاهزٌ للعرض.

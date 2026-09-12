@@ -63,6 +63,7 @@ void main() {
         onEdit: (c) => log.add('edit:${c.id}'),
         onVoucher: (c) => log.add('voucher:${c.id}'),
         onDelete: (c) => log.add('delete:${c.id}'),
+        onWhatsApp: (c) => log.add('whatsapp:${c.id}'),
       );
 
   group('PartyCard — العرض', () {

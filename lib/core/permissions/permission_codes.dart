@@ -329,6 +329,13 @@ class PermissionCodes {
   /// حذف عملاء
   static const String customersDelete = 'customers_delete';
 
+  /// إرسال مستندات العميل على واتساب (فاتورة · كشف حساب · مطالبة)
+  ///
+  /// كودٌ مستقلٌّ عن `customers_view` عن قصد: القراءةُ داخل النظام شيء،
+  /// ومخاطبةُ الزبون باسم المحلّ شيءٌ آخر. وطلبُ المالك 2026-09-12 نصَّ
+  /// على أنّ الإرسال «بيفرق من مستخدم لاخر».
+  static const String customerMessageSend = 'customer_message_send';
+
   // ═══════════════════════════════════════════════════════════════════════════
   // SUPPLIER PERMISSIONS (الموردين)
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1257,6 +1264,11 @@ class PermissionCodes {
     {'code': customersAdd, 'name': 'إضافة عملاء', 'category': 'customers'},
     {'code': customersEdit, 'name': 'تعديل العملاء', 'category': 'customers'},
     {'code': customersDelete, 'name': 'حذف عملاء', 'category': 'customers'},
+    {
+      'code': customerMessageSend,
+      'name': 'إرسال مستندات العميل على واتساب',
+      'category': 'customers',
+    },
 
     // ── Suppliers ──
     {'code': suppliersView, 'name': 'عرض الموردين', 'category': 'suppliers'},

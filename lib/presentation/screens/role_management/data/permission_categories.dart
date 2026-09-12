@@ -122,6 +122,7 @@ final Map<String, PermissionCategory> permissionCategories = {
       'customers_add': 'إضافة عميل جديد',
       'customers_edit': 'تعديل بيانات العميل',
       'customers_delete': 'حذف عميل',
+      'customer_message_send': 'إرسال فاتورة أو كشف حساب أو مطالبة على واتساب',
       'suppliers_view': 'عرض قائمة الموردين',
       'suppliers_add': 'إضافة مورد جديد',
       'suppliers_edit': 'تعديل بيانات المورد',

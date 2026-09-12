@@ -51,6 +51,8 @@ import '../../picpos_shell/picpos_screen_scaffold.dart';
 // تصميمُ 2026-08-21 — شاشةُ «فاتورة جديدة» المشتركة بين النمطَين.
 import '../../invoice_form_picpos/picpos_invoice_form.dart';
 import '../../../domain/models/picpos_invoice_draft.dart';
+import '../../shared_widgets/whatsapp_send_dialog.dart';
+import '../../../domain/models/whatsapp_message.dart';
 
 // ── Part files (منسوخة حرفياً من lib/presentation/screens/widgets/sales_invoices/
 // — الشاشة الأصل `part of _SalesInvoicesScreenState` خاصة فما ينفعش تتعمل
@@ -225,6 +227,7 @@ class _SalesInvoicesPicposScreenState
                     onEdit: _editInvoice,
                     onPrint: _printInvoice,
                     onDelete: _deleteInvoice,
+                    onWhatsApp: _sendInvoiceWhatsApp,
                   ),
                   const SalesBatchActionBar(),
                 ],

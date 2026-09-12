@@ -29,12 +29,17 @@ class PartyCardActions {
     required this.onEdit,
     required this.onVoucher,
     required this.onDelete,
+    required this.onWhatsApp,
   });
 
   final void Function(PicPosPartyCard) onStatement;
   final void Function(PicPosPartyCard) onEdit;
   final void Function(PicPosPartyCard) onVoucher;
   final void Function(PicPosPartyCard) onDelete;
+
+  /// إرسالُ كشفِ حسابٍ أو مطالبةٍ على واتساب — يُفتَح من الشاشة لأنه
+  /// يحتاج `ref` لفحصِ الصلاحية وقراءةِ رمز الدولة.
+  final void Function(PicPosPartyCard) onWhatsApp;
 }
 
 /// بطاقةُ طرفٍ واحدة.
@@ -294,6 +299,7 @@ class PartyCard extends StatelessWidget {
                 size: 13, color: muted),
             onSelected: (v) {
               if (v == 'voucher') actions.onVoucher(party);
+              if (v == 'whatsapp') actions.onWhatsApp(party);
               if (v == 'delete') actions.onDelete(party);
             },
             itemBuilder: (_) => const [
@@ -305,6 +311,17 @@ class PartyCard extends StatelessWidget {
                         size: 16, color: AppColors.success),
                     SizedBox(width: 8),
                     Text('سند مالي', style: TextStyle(fontSize: 12)),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'whatsapp',
+                child: Row(
+                  children: [
+                    Icon(PhosphorIconsBold.whatsappLogo,
+                        size: 16, color: AppColors.success),
+                    SizedBox(width: 8),
+                    Text('إرسال واتساب', style: TextStyle(fontSize: 12)),
                   ],
                 ),
               ),

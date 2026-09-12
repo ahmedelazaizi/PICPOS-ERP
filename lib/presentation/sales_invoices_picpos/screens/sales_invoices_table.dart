@@ -99,6 +99,7 @@ class SalesInvoicesTable extends ConsumerWidget {
   final Function(InvoiceEntity) onEdit;
   final Function(InvoiceEntity) onPrint;
   final Function(InvoiceEntity) onDelete;
+  final Function(InvoiceEntity) onWhatsApp;
 
   const SalesInvoicesTable({
     super.key,
@@ -106,6 +107,7 @@ class SalesInvoicesTable extends ConsumerWidget {
     required this.onEdit,
     required this.onPrint,
     required this.onDelete,
+    required this.onWhatsApp,
   });
 
   @override
@@ -265,6 +267,7 @@ class SalesInvoicesTable extends ConsumerWidget {
                     onEdit: onEdit,
                     onPrint: onPrint,
                     onDelete: onDelete,
+                    onWhatsApp: onWhatsApp,
                   );
                 },
               ),
@@ -366,6 +369,7 @@ class _InvoiceCard extends StatelessWidget {
     required this.onEdit,
     required this.onPrint,
     required this.onDelete,
+    required this.onWhatsApp,
   });
 
   final InvoiceEntity invoice;
@@ -381,6 +385,7 @@ class _InvoiceCard extends StatelessWidget {
   final Function(InvoiceEntity) onEdit;
   final Function(InvoiceEntity) onPrint;
   final Function(InvoiceEntity) onDelete;
+  final Function(InvoiceEntity) onWhatsApp;
 
   String get _customerName {
     if (invoice.partyId == null) return 'عميل نقدي';
@@ -683,6 +688,15 @@ class _InvoiceCard extends StatelessWidget {
                   const SizedBox(width: 5),
                 ],
                 buildSalesPrintButtonGuarded(onPrint: () => onPrint(invoice)),
+                const SizedBox(width: 5),
+                // إرسالُ الفاتورة على واتساب — البندُ الثاني (2026-09-12).
+                // زرٌّ مستقلٌّ لا مدخلُ قائمةٍ: الحراسةُ تُعطِّله فعلاً.
+                _RowAction(
+                  icon: PhosphorIconsBold.whatsappLogo,
+                  color: AppColors.success,
+                  tooltip: 'إرسال على واتساب',
+                  onTap: () => onWhatsApp(invoice),
+                ),
                 if (!invoice.isLocked) ...[
                   const SizedBox(width: 5),
                   _RowAction(
