@@ -630,6 +630,51 @@ class ServerProxy {
     }
   }
 
+  // ═══════════════════════════════════════════════════════════════
+  // طلباتُ الضيوف — الطابورُ يعيش في ذاكرة الخادم وحدَه
+  // ═══════════════════════════════════════════════════════════════
+  //
+  // ⚠️ **ولا مِرآةَ له في القاعدة**، فلا تصل هذه الطلباتُ بالمزامنة كما يصل
+  // كلُّ شيءٍ آخرَ تعرضه شاشةُ الطاولات. جهازُ العميل لا سبيلَ له إليها إلّا
+  // بهذه النداءات، وبدونها كانت الشاشةُ تعرض «لا طلبات» على كلِّ جهازٍ ليس
+  // هو الخادم — وهو أسوأُ من عدمها: نفيٌ يبدو يقيناً.
+
+  /// ما ينتظر اعتمادَ النادل كما يراه الخادم. `null` = تعذّر السؤال.
+  Future<List<Map<String, dynamic>>?> fetchGuestOrderRequests() async {
+    try {
+      final url = Uri.parse('$_baseUrl/api/table-requests');
+      final response = await TlsTrust.httpClient()
+          .get(url, headers: _authHeaders)
+          .timeout(const Duration(seconds: 5));
+      if (!_isSuccessStatusCode(response.statusCode)) return null;
+      final body = json.decode(response.body) as Map<String, dynamic>;
+      if (body['success'] != true) return null;
+      return (body['requests'] as List).cast<Map<String, dynamic>>();
+    } catch (e) {
+      debugPrint('[ServerProxy] fetchGuestOrderRequests error: $e');
+      return null;
+    }
+  }
+
+  /// يعتمد طلبَ ضيفٍ على الخادم. والخطأُ يعود نصّاً ليُعرَض كما هو.
+  Future<String?> approveGuestOrderRequest(int id) =>
+      _guestRequestAction('/api/table-requests/$id/approve');
+
+  Future<String?> rejectGuestOrderRequest(int id) =>
+      _guestRequestAction('/api/table-requests/$id/reject');
+
+  /// `null` عند النجاح، ونصُّ الخطأ عند الرفض.
+  Future<String?> _guestRequestAction(String endpoint) async {
+    try {
+      final result = await post(endpoint, const {});
+      if (result['success'] == true) return null;
+      return (result['error'] as String?) ?? 'تعذّر التنفيذ';
+    } catch (e) {
+      debugPrint('[ServerProxy] $endpoint error: $e');
+      return 'تعذّر الاتصال بالخادم';
+    }
+  }
+
   Future<int?> createProduct(Map<String, dynamic> productData, {String? idempotencyKey}) async {
     final result = await post('/api/products', productData, idempotencyKey: idempotencyKey);
     return result['serverId'] as int?;

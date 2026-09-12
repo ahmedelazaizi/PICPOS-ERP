@@ -34,6 +34,7 @@ import '../../screens/tables/providers/tables_state_provider.dart';
 import '../../screens/tables/widgets/table_card.dart';
 import '../../screens/tables_screen.dart' show TableActionsHost, TableActionsRunner;
 import '../../widgets/permission_guard.dart';
+import '../widgets/guest_requests_banner.dart';
 import '../widgets/table_bill_qr_dialog.dart';
 import '../widgets/tables_action_rail.dart';
 import '../widgets/tables_status_rail.dart';
@@ -220,11 +221,19 @@ class _TablesPicposBodyState extends ConsumerState<_TablesPicposBody> {
         const SizedBox(width: Spacing.sm),
         _buildMoreMenu(selectedTable),
       ],
-      body: sections.isEmpty
-          ? _buildNoSections()
-          : Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
+      // شريطُ طلبات الضيوف فوق كلِّ شيء — يظهر حين يوجد ما ينتظر، ويختفي
+      // تماماً حين لا يوجد. وفوقَ الأقسام لا داخلَها: الطلبُ قد يصل من طاولةٍ
+      // في قسمٍ غيرِ المعروض الآن، فإخفاؤه مع القسم يُضيع النداء.
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const GuestRequestsBanner(),
+          Expanded(
+            child: sections.isEmpty
+                ? _buildNoSections()
+                : Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
                 // في RTL أوّلُ ابنٍ يقع في أوّل القراءة — عمودُ الحالات ثم
                 // الخريطةُ ثم شريطُ الأفعال، كترتيب المواصفة.
                 SizedBox(
@@ -261,8 +270,11 @@ class _TablesPicposBodyState extends ConsumerState<_TablesPicposBody> {
                     ),
                   ),
                 ),
-              ],
-            ),
+                    ],
+                  ),
+          ),
+        ],
+      ),
     );
   }
 

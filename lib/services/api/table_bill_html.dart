@@ -81,6 +81,19 @@ const String _tableBillHtmlRaw = r'''
   .note{
     text-align:center;font-size:.72rem;color:#8b98ab;margin-top:10px;
   }
+  .btn.ghost{background:#fff;color:#0250D3;border:1.5px solid #0250D3}
+  .gap{height:10px}
+  .link{
+    background:none;border:0;color:#0250D3;font-weight:700;
+    font-size:.82rem;cursor:pointer;font-family:inherit;padding:4px;
+  }
+  .step{display:flex;align-items:center;gap:10px}
+  .sbtn{
+    width:32px;height:32px;border-radius:9px;border:1.5px solid #d6dce8;
+    background:#fff;color:#0250D3;font-size:1.05rem;font-weight:800;
+    cursor:pointer;font-family:inherit;line-height:1;
+  }
+  .scount{min-width:20px;text-align:center;font-weight:800;font-size:.92rem}
 </style>
 </head>
 <body>
@@ -164,7 +177,20 @@ function render(d){
   }
   root.appendChild(card);
 
+  if (d.pendingRequests > 0) {
+    var wait = el('div','card');
+    wait.appendChild(el('div','ok',
+      'طلبُك وصل النادل — يظهر على حسابك بعد اعتماده'));
+    root.appendChild(wait);
+  }
+
   var act = el('div','card');
+  if (d.guestOrder) {
+    var addBtn = el('button','btn ghost','أضف أصنافاً');
+    addBtn.onclick = openMenu;
+    act.appendChild(addBtn);
+    act.appendChild(el('div','gap'));
+  }
   if (d.billRequested || requested) {
     act.appendChild(el('div','ok','تمّ إبلاغ النادل — الحساب في الطريق'));
   } else {
@@ -206,7 +232,127 @@ function stateBoxAppend(msg){
   root.appendChild(c);
 }
 
+// ═══ إضافةُ أصنافٍ — تدخل طابورَ النادل لا الحساب ═══
+//
+// ⚠️ ولا يُرسَل سعرٌ من هنا بحال. الخادمُ يقبل معرِّفَ صنفٍ وكمّيّةً وملاحظة،
+// ويُسعِّر عند الاعتماد من المنتج — فسعرٌ يُضاف هنا لا أثرَ له إلّا أن يوهم
+// من يقرأ الشيفرة أنه مقروء.
+var menuCache = null;
+var draft = {};
+// ⚠️ **التحديثُ الدوريُّ يتوقّف داخلَ القائمة.** الصفحةُ تُعيد التحميلَ كلَّ
+// ١٥ ثانيةً ليرى الضيفُ ما يضيفه النادل؛ وبلا هذه الرايةِ كان ذلك يمسح
+// شاشةَ الاختيار **وما اختاره فيها** بينما إصبعُه عليها.
+var inMenu = false;
+
+function openMenu(){
+  inMenu = true;
+  if (menuCache) return renderMenu();
+  var root = document.getElementById('root');
+  root.innerHTML = '';
+  var c = el('div','card');
+  c.appendChild(el('div','state','جارٍ تحميل القائمة…'));
+  root.appendChild(c);
+  fetch('/api/menu')
+    .then(function(r){ return r.json(); })
+    .then(function(j){ menuCache = j.products || []; renderMenu(); })
+    .catch(function(){ stateBox('state','تعذّر تحميل القائمة'); });
+}
+
+function draftCount(){
+  var n = 0;
+  for (var k in draft) { if (draft[k] > 0) n += draft[k]; }
+  return n;
+}
+
+function renderMenu(){
+  var root = document.getElementById('root');
+  root.innerHTML = '';
+
+  var head = el('div','card');
+  var hr = el('div','head');
+  hr.appendChild(el('h1', null, 'أضف إلى طلبك'));
+  var back = el('button','link','رجوع للحساب');
+  back.onclick = function(){ draft = {}; inMenu = false; load(); };
+  hr.appendChild(back);
+  head.appendChild(hr);
+  root.appendChild(head);
+
+  var card = el('div','card');
+  var lines = el('div','lines');
+  menuCache.forEach(function(p){
+    var row = el('div','line');
+    var info = el('div');
+    info.appendChild(el('div','nm', p.name));
+    info.appendChild(el('div','qt', money(p.price)));
+    row.appendChild(info);
+
+    var stepper = el('div','step');
+    var minus = el('button','sbtn','−');
+    var count = el('span','scount', String(draft[p.id] || 0));
+    var plus = el('button','sbtn','+');
+    minus.onclick = function(){
+      draft[p.id] = Math.max(0, (draft[p.id] || 0) - 1);
+      count.textContent = String(draft[p.id]);
+      syncSend();
+    };
+    plus.onclick = function(){
+      draft[p.id] = (draft[p.id] || 0) + 1;
+      count.textContent = String(draft[p.id]);
+      syncSend();
+    };
+    stepper.appendChild(minus);
+    stepper.appendChild(count);
+    stepper.appendChild(plus);
+    row.appendChild(stepper);
+    lines.appendChild(row);
+  });
+  if (!menuCache.length) lines.appendChild(el('div','state','لا أصناف معروضة'));
+  card.appendChild(lines);
+  root.appendChild(card);
+
+  var act = el('div','card');
+  var send = el('button','btn','أرسل الطلب للنادل');
+  send.id = 'sendBtn';
+  send.onclick = function(){ sendDraft(send); };
+  act.appendChild(send);
+  root.appendChild(act);
+  syncSend();
+}
+
+function syncSend(){
+  var b = document.getElementById('sendBtn');
+  if (!b) return;
+  var n = draftCount();
+  b.disabled = n === 0;
+  b.textContent = n === 0 ? 'اختر أصنافاً' : ('أرسل الطلب (' + n + ')');
+}
+
+function sendDraft(btn){
+  var items = [];
+  for (var k in draft) {
+    if (draft[k] > 0) items.push({productId: Number(k), qty: draft[k]});
+  }
+  if (!items.length) return;
+  btn.disabled = true;
+  btn.textContent = 'جارٍ الإرسال…';
+  fetch('/api/table-bill/' + encodeURIComponent(TOKEN) + '/add', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({session: session, items: items})
+  }).then(function(r){ return r.json(); }).then(function(j){
+    if (j && j.success) { draft = {}; inMenu = false; load(); }
+    else {
+      syncSend();
+      stateBoxAppend(j && j.error ? j.error : 'تعذّر الإرسال — نادِ النادل');
+    }
+  }).catch(function(){
+    syncSend();
+    stateBoxAppend('تعذّر الاتصال — نادِ النادل');
+  });
+}
+
 function load(){
+  if (inMenu) return;
   fetch('/api/table-bill/' + encodeURIComponent(TOKEN))
     .then(function(r){ return r.json(); })
     .then(function(j){

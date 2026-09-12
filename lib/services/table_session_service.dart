@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 
 import '../core/constants/app_constants.dart';
 import '../data/database/database.dart';
+import 'guest_order_requests.dart';
 import '../domain/models/table_order_totals.dart';
 import '../domain/models/table_status.dart';
 import '../domain/models/tax_rate_bounds.dart';
@@ -151,6 +152,10 @@ class TableSessionService {
         status: const Value('closed'),
         closedAt: Value(DateTime.now()),
       ));
+      // ⚠️ وطلباتُ الضيوف المعلَّقةُ على هذا الطلب تسقط معه. ولولا ذلك بقيت
+      // في شاشة النادل تنادي لطاولةٍ أُغلقت ودُفعت — وهو نداءٌ لا يُلبّى
+      // (‏الاعتمادُ يرفضه ويُسقطه) لكنّه يبقى معروضاً حتى يلمسه أحد.
+      GuestOrderRequests.instance.dropForOrder(settled.id);
       await _log(
         userId: userId,
         userName: userName,
@@ -273,6 +278,10 @@ class TableSessionService {
         status: const Value('closed'),
         closedAt: Value(DateTime.now()),
       ));
+      // ⚠️ وطلباتُ الضيوف المعلَّقةُ على هذا الطلب تسقط معه. ولولا ذلك بقيت
+      // في شاشة النادل تنادي لطاولةٍ أُغلقت ودُفعت — وهو نداءٌ لا يُلبّى
+      // (‏الاعتمادُ يرفضه ويُسقطه) لكنّه يبقى معروضاً حتى يلمسه أحد.
+      GuestOrderRequests.instance.dropForOrder(order.id);
       await _db.updateTableStatus(tableId, TableStatus.available);
       await _log(
         userId: userId,

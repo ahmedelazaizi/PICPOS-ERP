@@ -42,6 +42,9 @@ import 'api_terminals_handler.dart';
 import 'api_html_templates.dart';
 import 'table_bill_html.dart';
 import 'table_bill_token.dart';
+import '../guest_order_requests.dart';
+import '../guest_order_approval.dart';
+import '../../core/permissions/permission_codes.dart';
 import '../table_session_service.dart';
 import '../../core/config/app_config.dart';
 
@@ -341,6 +344,13 @@ class ApiHandler {
     router.get('/t/<token>', _getTableBillPage);
     router.get('/api/table-bill/<token>', _getTableBill);
     router.post('/api/table-bill/<token>/request', _requestTableBill);
+    router.post('/api/table-bill/<token>/add', _addGuestOrderRequest);
+
+    // طابورُ طلبات الضيوف — **مصادَقٌ** بخلاف الثلاثة فوقه: هذه يقرؤها
+    // النادلُ من جهازٍ مقترنٍ، لا الضيفُ من هاتفه.
+    router.get('/api/table-requests', _listGuestOrderRequests);
+    router.post('/api/table-requests/<id>/approve', _approveGuestOrderRequest);
+    router.post('/api/table-requests/<id>/reject', _rejectGuestOrderRequest);
 
     // Catch-all for undefined routes
     router.all('/<ignored|.*>', _notFound);
@@ -2072,6 +2082,11 @@ class ApiHandler {
         'tableName': table?.name ?? '—',
         'guestCount': order.guestCount,
         'billRequested': order.status == 'bill_requested',
+        // ⚠️ **تُقرأ من الخادم لا تُفترَض في الصفحة**: زرٌّ يظهر وميزتُه
+        // مطفأةٌ يعطي الضيفَ وعداً يُرَدُّ عليه بخطأٍ بعد أن يختار.
+        'guestOrder': await _guestOrderEnabled(),
+        'pendingRequests':
+            GuestOrderRequests.instance.forOrder(order.id).length,
         // رمزُ الجلسة — الكتابةُ لا تُقبَل بدونه، ويموت بإغلاق الطلب.
         'session':
             TableBillToken.mintSession(orderId: order.id, openedAt: order.openedAt),
@@ -2102,7 +2117,197 @@ class ApiHandler {
     }
   }
 
+  // ═══════════════════════════════════════════════════════════════
+  // طلباتُ الضيوف — من الهاتف إلى طابورٍ ينتظر اعتمادَ النادل
+  // ═══════════════════════════════════════════════════════════════
+
+  /// هل يُسمَح للضيف بطلبِ أصنافٍ من هاتفه؟ رايةٌ ثانيةٌ مطفأةٌ افتراضاً.
+  Future<bool> _guestOrderEnabled() async =>
+      (await _db.getSettingValue(kTableBillGuestOrderEnabledKey)) == 'true';
+
+  /// الضيفُ يطلب أصنافاً — تدخل **الطابورَ** لا الحساب.
+  ///
+  /// ⚠️ **ولا سعرَ يُقرأ من الجسم.** المصدرُ هاتفٌ غيرُ مصادَق؛ وسعرٌ يأتي
+  /// منه سعرٌ يكتبه الزبون. المقبولُ معرِّفُ صنفٍ وكمّيّةٌ وملاحظة، والتسعيرُ
+  /// يقع عند الاعتماد من `Products.salePrice` كما لو أدخله النادلُ بيده.
+  // EXEMPT-PER-USER: مسارُ **ضيفٍ** لا مستخدم — لا جلسةَ له ولا صلاحيّة، فـ
+  // `ApiUserCtx.requirePermission` ترفضه 401 دائماً. وبديلُها ثلاثةُ حرّاسٍ
+  // مقيسةٌ في `guest_order_request_api_test`: رايتان مطفأتان افتراضاً،
+  // وتوقيعُ الطاولة، ورمزُ الجلسة. ولا يكتب هذا المعالجُ في القاعدة أصلاً —
+  // يُدرج في طابورٍ في الذاكرة لا يبلغ الحسابَ إلّا باعتمادِ مستخدمٍ
+  // **مصادَقٍ** عبر `/api/table-requests/<id>/approve` المحروسِ بـ
+  // `tables_view`.
+  Future<Response> _addGuestOrderRequest(Request request, String token) async {
+    if (!await _tableBillEnabled()) return _notFound(request);
+    if (!await _guestOrderEnabled()) {
+      return _json({'success': false, 'error': 'الطلبُ من الهاتف غيرُ مفعَّل'});
+    }
+    try {
+      final order = await _openOrderForToken(token);
+      if (order == null) {
+        return _json({'success': false, 'error': 'لا حساب مفتوحاً'});
+      }
+
+      final body = await request.readAsString();
+      if (body.isEmpty) {
+        return _json({'success': false, 'error': 'طلبٌ فارغ'});
+      }
+      final map = json.decode(body) as Map<String, dynamic>;
+      if (!TableBillToken.verifySession(
+        map['session'] as String?,
+        orderId: order.id,
+        openedAt: order.openedAt,
+      )) {
+        return _json({'success': false, 'error': 'انتهت الجلسة — حدِّث الصفحة'});
+      }
+
+      final raw = map['items'];
+      if (raw is! List || raw.isEmpty) {
+        return _json({'success': false, 'error': 'لم تختر أصنافاً'});
+      }
+
+      final lines = <GuestOrderLine>[];
+      for (final entry in raw) {
+        if (entry is! Map) continue;
+        final pid = (entry['productId'] as num?)?.toInt() ?? 0;
+        final qty = (entry['qty'] as num?)?.toDouble() ?? 0;
+        final note = entry['note'] as String?;
+        lines.add(GuestOrderLine(
+          productId: pid,
+          quantity: qty,
+          // ملاحظةُ الضيف تصل المطبخَ وتُطبع، فتُقَصّ عند حدٍّ معقول.
+          note: (note == null || note.trim().isEmpty)
+              ? null
+              : note.trim().substring(0, note.trim().length.clamp(0, 120)),
+        ));
+      }
+
+      // ⚠️ **وجودُ الصنف يُتحقَّق هنا لا عند الاعتماد**: معرِّفٌ ملفَّقٌ كان
+      // يدخل الطابورَ فيرى النادلُ سطراً بلا اسمٍ لا يستطيع اعتمادَه ولا
+      // يفهم من أين جاء.
+      final ids = {for (final l in lines) l.productId};
+      final known = {
+        for (final p in await (_db.select(_db.products)
+              ..where((p) => p.id.isIn(ids))
+              ..where((p) => p.isActive.equals(true)))
+            .get())
+          p.id,
+      };
+      if (lines.any((l) => !known.contains(l.productId))) {
+        return _json({'success': false, 'error': 'صنفٌ غيرُ متاح'});
+      }
+
+      final table = await (_db.select(_db.restaurantTables)
+            ..where((t) => t.id.equals(order.tableId)))
+          .getSingleOrNull();
+
+      final id = GuestOrderRequests.instance.enqueue(
+        tableId: order.tableId,
+        orderId: order.id,
+        tableName: table?.name ?? '—',
+        lines: lines,
+      );
+      if (id == null) {
+        return _json({
+          'success': false,
+          'error': 'طلباتُك المعلَّقةُ كثيرة — انتظر النادل',
+        });
+      }
+
+      // الشاشاتُ تُنبَّه بجدولٍ قائمٍ: لا جدولَ لهذا الطابور، و`table_orders`
+      // هو ما تشترك فيه شاشةُ الطاولات أصلاً.
+      await ApiHandlerBase.withBroadcast(
+        endpointLabel: 'POST /api/table-bill/<token>/add',
+        tables: {'table_orders'},
+        body: () async {},
+      );
+      return _json({'success': true});
+    } catch (e) {
+      debugPrint('[TABLE-BILL] guest add failed: $e');
+      return _json({'success': false, 'error': 'تعذّر إرسال الطلب'});
+    }
+  }
+
+  /// ما ينتظر اعتمادَ النادل — يقرؤه جهازٌ **مقترنٌ** لا هاتفُ ضيف.
+  Future<Response> _listGuestOrderRequests(Request request) async {
+    final perm = await ApiUserCtx.requirePermission(
+        request, _db, PermissionCodes.tablesView);
+    if (perm != null) return perm;
+
+    return _json({
+      'success': true,
+      'requests': [
+        for (final r in GuestOrderRequests.instance.pending)
+          {
+            'id': r.id,
+            'tableId': r.tableId,
+            'orderId': r.orderId,
+            'tableName': r.tableName,
+            'at': r.at.toIso8601String(),
+            'lines': [
+              for (final l in r.lines)
+                {
+                  'productId': l.productId,
+                  'qty': l.quantity,
+                  'note': l.note,
+                },
+            ],
+          },
+      ],
+    });
+  }
+
+  /// اعتمادُ طلبِ ضيفٍ — يدخل الحسابَ عبر مسار الإضافة القائم.
+  ///
+  /// ⚠️ **والسعرُ يُقرأ الآن من المنتج، ولقطةُ الضريبة معه.** المرورُ بـ
+  /// `addOrUpdateTableOrderItem` هو ما يجعل صنفَ الضيف مطابقاً لما يُدخِله
+  /// النادلُ بيده: نفسُ الدمج مع بندٍ قائم، ونفسُ قاعدةِ «لا تُطمَس نسبةٌ
+  /// محفوظة»، ونفسُ تحديثِ إجماليّ الطلب.
+  Future<Response> _approveGuestOrderRequest(Request request, String id) async {
+    final perm = await ApiUserCtx.requirePermission(
+        request, _db, PermissionCodes.tablesView);
+    if (perm != null) return perm;
+
+    final requestId = int.tryParse(id);
+    if (requestId == null) return _json({'success': false, 'error': 'معرّفٌ غيرُ صالح'});
+
+    // ⚠️ المنطقُ في [GuestOrderApproval] لا هنا: جهازُ الخادم يعتمد من شاشته
+    // **مباشرةً** بلا مرورٍ بـHTTP، فنسخةٌ ثانيةٌ هنا تعني بنداً يدخل الحسابَ
+    // بسعرٍ أو ضريبةٍ مختلفةٍ بحسب الجهاز الذي ضُغط عليه الزرّ.
+    final outcome = await ApiHandlerBase.withBroadcast(
+      endpointLabel: 'POST /api/table-requests/<id>/approve',
+      tables: {'table_orders', 'restaurant_tables'},
+      body: () => GuestOrderApproval(_db).approve(requestId),
+    );
+
+    return switch (outcome) {
+      GuestApprovalOutcome.approved => _json({'success': true}),
+      GuestApprovalOutcome.notPending =>
+        _json({'success': false, 'error': 'الطلبُ لم يعد معلَّقاً'}),
+      GuestApprovalOutcome.orderClosed =>
+        _json({'success': false, 'error': 'الطاولةُ أُغلقت'}),
+      GuestApprovalOutcome.failed =>
+        _json({'success': false, 'error': 'تعذّر الاعتماد'}),
+    };
+  }
+
+  Future<Response> _rejectGuestOrderRequest(Request request, String id) async {
+    final perm = await ApiUserCtx.requirePermission(
+        request, _db, PermissionCodes.tablesView);
+    if (perm != null) return perm;
+
+    final requestId = int.tryParse(id);
+    if (requestId == null) {
+      return _json({'success': false, 'error': 'معرّفٌ غيرُ صالح'});
+    }
+    return _json({'success': GuestOrderRequests.instance.reject(requestId)});
+  }
+
   /// «اطلب الحساب» — ينقل الطلبَ إلى `bill_requested` ويُنبّه الشاشات.
+  // EXEMPT-PER-USER: مسارُ **ضيفٍ** لا مستخدم — انظر
+  // `_addGuestOrderRequest`. وأثرُه الوحيدُ نقلُ الحالة إلى `bill_requested`
+  // أي مناداةُ النادل: لا مبلغَ ولا صنفَ ولا سطرَ دفتر. وحارسُه رمزُ الجلسة
+  // الذي لا يُنال إلّا بقراءةِ حسابٍ مفتوحٍ الآن على تلك الطاولة.
   Future<Response> _requestTableBill(Request request, String token) async {
     if (!await _tableBillEnabled()) return _notFound(request);
     try {
