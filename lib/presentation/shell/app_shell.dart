@@ -13,6 +13,10 @@ import '../../core/theme/app_colors.dart';
 import '../../core/services/backup_service.dart';
 import '../../domain/models/pos_shortcut_fab_gate.dart';
 import '../../domain/models/nav_search.dart';
+import '../../core/navigation/screen_id.dart';
+import '../providers/pending_picpos_report.dart';
+import '../reports_picpos/screens/reports_picpos_screen.dart';
+import '../../data/providers/e_invoicing_providers.dart';
 import '../widgets/permission_guard.dart' show hasPermissionWithAdminBypass;
 
 import '../../data/providers/providers.dart';
@@ -560,6 +564,36 @@ class _AppShellState extends ConsumerState<AppShell> {
     }
   }
 
+  /// فئاتُ التقارير تحت مجموعة «التقارير» — أو `null` لكلِّ مجموعةٍ سواها.
+  ///
+  /// ⚠️ **ومشروطٌ بحضور مدخلِ «التقارير» في [items]**: من لا يملك
+  /// `reports_view` لا يرى المدخلَ، فعرضُ فئاته تحته يمنحه خريطةَ ما لا
+  /// يبلغه — والنقرةُ تنقله إلى شاشةٍ يرفضها النطاق.
+  ///
+  /// ⚠️ **ومسيَّجٌ بـ[Brand.isPicPos]**: الكتالوجُ كتالوجُ مركزِ تقارير
+  /// PicPos، والفوركُ الآخر شاشةُ تقاريرَ أخرى لا تعرف هذه المعرّفات.
+  Widget? _reportCategoriesFor(String groupKey, List<NavItemDef> items) {
+    if (groupKey != 'reports' || !Brand.isPicPos) return null;
+    final hasReports =
+        items.any((i) => i.index == ScreenId.reports.navigationIndex);
+    if (!hasReports) return null;
+
+    return _ReportCategoryNav(
+      onOpen: (categoryId, reportId) {
+        pendingPicposReport.request(
+          categoryId: categoryId,
+          reportId: reportId,
+        );
+        for (final i in items) {
+          if (i.index == ScreenId.reports.navigationIndex) {
+            _onNavItemTap(i);
+            return;
+          }
+        }
+      },
+    );
+  }
+
   /// حقلُ البحث أعلى القائمة.
   Widget _navSearchField() {
     return Padding(
@@ -1081,6 +1115,8 @@ class _AppShellState extends ConsumerState<AppShell> {
                           activeGroup: activeGroup,
                           currentIndex: widget.currentIndex,
                           onItemTap: _onNavItemTap,
+                          groupExtraBuilder: (groupKey) =>
+                              _reportCategoriesFor(groupKey, items),
                         );
                       },
                       loading: () => const Center(

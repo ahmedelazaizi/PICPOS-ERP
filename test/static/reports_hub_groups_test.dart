@@ -22,12 +22,16 @@ void main() {
     'lib/presentation/reports_picpos/screens/reports_picpos_screen.dart',
   ).readAsStringSync();
 
-  /// معرّفاتُ الفئات كما تُعرَّف فعلاً في `_buildCategories`.
+  /// معرّفاتُ الفئات كما تُعرَّف فعلاً في `buildPicposReportCatalog`.
   ///
   /// ⚠️ `[a-z_0-9]+` لا `[a-z_]+`: معرّفاتُ هذا المستودع تحمل أرقاماً
   ///    (`bank2`)، ونمطٌ يستبعدها يُسقط فئةً ويُقرأ «لا فجوة».
+  ///
+  /// ⚠️ والاسمُ `PicposReportCategory` لا `_ReportCategory`: رُفع الصنفُ إلى
+  ///    العلن 2026-09-12 ليقرأه الشريطُ الجانبيّ. والحارسُ أمسك نفسَه —
+  ///    توكيدُ «عشرةٌ على الأقلّ» أبلغ صفراً بدل أن يُقرأ «لا فجوة».
   Set<String> categoryIds() => RegExp(
-        r"_ReportCategory\(\s*id:\s*'([a-z_0-9]+)'",
+        r"PicposReportCategory\(\s*id:\s*'([a-z_0-9]+)'",
         multiLine: true,
       ).allMatches(src).map((m) => m.group(1)!).toSet();
 

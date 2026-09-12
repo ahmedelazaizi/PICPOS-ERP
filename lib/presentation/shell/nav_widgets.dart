@@ -175,12 +175,20 @@ class _CollapsibleNavGroups extends StatefulWidget {
   final int currentIndex;
   final void Function(NavItemDef) onItemTap;
 
+  /// محتوىً إضافيٌّ يُلحَق بمجموعةٍ بعينها داخلَ طيّها.
+  ///
+  /// ⚠️ وليس مدخلَ تنقّلٍ: فئاتُ التقارير ليست شاشاتٍ ولا `ScreenId` لها،
+  /// فإقحامُها في `kAllNavItemDefs` كان يقتضي فهارسَ وهميّةً وصلاحيّاتٍ
+  /// وخرائطَ لا وجهةَ لها.
+  final Widget? Function(String groupKey)? groupExtraBuilder;
+
   const _CollapsibleNavGroups({
     required this.groupOrder,
     required this.groups,
     required this.activeGroup,
     required this.currentIndex,
     required this.onItemTap,
+    this.groupExtraBuilder,
   });
 
   @override
@@ -286,10 +294,14 @@ class _CollapsibleNavGroupsState extends State<_CollapsibleNavGroups> {
             AnimatedCrossFade(
               firstChild: Column(
                 mainAxisSize: MainAxisSize.min,
-                children: items.map((item) {
-                  final isSelected = widget.currentIndex == item.index;
-                  return _buildGroupItem(item, isSelected);
-                }).toList(),
+                children: [
+                  ...items.map((item) {
+                    final isSelected = widget.currentIndex == item.index;
+                    return _buildGroupItem(item, isSelected);
+                  }),
+                  // إضافةٌ خاصّةٌ بالمجموعة — فئاتُ التقارير تحت «التقارير».
+                  ?widget.groupExtraBuilder?.call(groupKey),
+                ],
               ),
               secondChild: const SizedBox.shrink(),
               crossFadeState: isExpanded
@@ -388,5 +400,129 @@ class _CollapsibleNavGroupsState extends State<_CollapsibleNavGroups> {
         ),
       ),
     );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// فئاتُ التقارير في الشريط — البندُ التاسع من أمر المالك 2026-09-12
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// رؤوسُ فئات التقارير تحت مجموعة «التقارير»، وتحت كلِّ رأسٍ تقاريرُه.
+///
+/// ⚠️ **الكتالوجُ يُقرأ من مصدره لا يُنسَخ.** `buildPicposReportCatalog` هي
+/// عينُ ما تبنيه شاشةُ التقارير؛ ونسخُ العناوين هنا كان يُنتج مصدراً ثالثاً
+/// في ملفٍّ يحمل أصلاً تحذيراً من ازدواجٍ قائم. وتُستدعى بـ
+/// [PicposReportActions.inert] لأن الوصفَ لا يفتح شيئاً.
+///
+/// ⚠️ **والفتحُ يمرّ بشاشة التقارير لا بـ`action()`.** بطاقاتُ التقارير
+/// هناك ملفوفةٌ بـ`PermissionGuard` مع تجاوزِ المسؤول؛ ونقرةٌ من الشريط
+/// تستدعي الفعلَ مباشرةً كانت تفتح تقريراً محجوباً بلا كلمةِ مرور. فالشريطُ
+/// **يطلب** والشاشةُ تفتح بعد `ensurePermission`.
+class _ReportCategoryNav extends ConsumerStatefulWidget {
+  /// فتحُ التقرير: يُسجَّل الطلبُ ويُنتقَل إلى شاشة التقارير.
+  final void Function(String categoryId, String? reportId) onOpen;
+
+  const _ReportCategoryNav({required this.onOpen});
+
+  @override
+  ConsumerState<_ReportCategoryNav> createState() => _ReportCategoryNavState();
+}
+
+class _ReportCategoryNavState extends ConsumerState<_ReportCategoryNav> {
+  String? _openCatId;
+
+  @override
+  Widget build(BuildContext context) {
+    final platform = ref.watch(activeEInvoicePlatformProvider).value;
+    final cats = buildPicposReportCatalog(
+      actions: PicposReportActions.inert,
+      eInvoicePlatform: platform,
+    );
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final cat in cats) ..._buildCategory(cat),
+      ],
+    );
+  }
+
+  List<Widget> _buildCategory(PicposReportCategory cat) {
+    final isOpen = _openCatId == cat.id;
+    return [
+      InkWell(
+        onTap: () => setState(() => _openCatId = isOpen ? null : cat.id),
+        child: Container(
+          height: 32,
+          margin: const EdgeInsets.only(right: 18, left: 6, bottom: 1),
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          decoration: BoxDecoration(
+            color: isOpen
+                ? Colors.white.withValues(alpha: 0.07)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(7),
+          ),
+          child: Row(
+            children: [
+              Icon(cat.icon, size: 13, color: cat.color.withValues(alpha: 0.9)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  cat.title,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: isOpen ? 0.95 : 0.72),
+                    fontSize: 11.5,
+                    fontWeight: isOpen ? FontWeight.w700 : FontWeight.w500,
+                  ),
+                ),
+              ),
+              AnimatedRotation(
+                turns: isOpen ? 0.25 : 0,
+                duration: const Duration(milliseconds: 180),
+                child: Icon(
+                  PhosphorIconsBold.caretLeft,
+                  size: 10,
+                  color: Colors.white.withValues(alpha: 0.3),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      if (isOpen)
+        for (final r in cat.mainReports)
+          InkWell(
+            onTap: () => widget.onOpen(cat.id, r.id),
+            child: Container(
+              height: 28,
+              margin: const EdgeInsets.only(right: 30, left: 6, bottom: 1),
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: Row(
+                children: [
+                  Container(
+                    width: 4,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: cat.color.withValues(alpha: 0.7),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      r.title,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.62),
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+    ];
   }
 }
