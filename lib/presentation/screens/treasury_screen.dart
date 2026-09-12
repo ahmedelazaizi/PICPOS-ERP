@@ -18,7 +18,6 @@ import '../treasury/widgets/treasury_transactions_list.dart';
 import '../treasury/widgets/treasury_safe_card.dart';
 import '../treasury/widgets/safe_management_dialog.dart';
 import '../../services/reconciliation_service.dart';
-import '../providers/breadcrumb_provider.dart';
 import '../../domain/usecases/accounting/get_cashflow_statement_usecase.dart';
 
 /// Provider for safe transactions.
@@ -56,34 +55,10 @@ class _TreasuryScreenState extends ConsumerState<TreasuryScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 5, vsync: this);
-    _tabController.addListener(_onTabChanged);
-    
-    // Initial breadcrumb update
-    WidgetsBinding.instance.addPostFrameCallback((_) => _updateBreadcrumbs());
-  }
-
-  void _onTabChanged() {
-    if (_tabController.indexIsChanging) return;
-    _updateBreadcrumbs();
-  }
-
-  void _updateBreadcrumbs() {
-    final labels = ['نقدي', 'بنوك', 'كليك', 'إغلاق', 'تحليل'];
-    final label = labels[_tabController.index];
-    
-    ref.read(breadcrumbProvider.notifier).setBreadcrumbs([
-      BreadcrumbItem(
-        label: AppLocalizations.of(context)!.treasuryManagement,
-        // Assuming index 10 is treasury based on common patterns in this app
-        onTap: () => ref.read(breadcrumbProvider.notifier).popToLabel(AppLocalizations.of(context)!.treasuryManagement),
-      ),
-      BreadcrumbItem(label: label),
-    ]);
   }
 
   @override
   void dispose() {
-    _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
     _searchController.dispose();
     super.dispose();

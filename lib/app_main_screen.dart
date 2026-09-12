@@ -8,6 +8,8 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'core/config/app_config.dart';
 import 'core/config/business_profile_provider.dart';
 import 'core/enums/app_screen.dart';
+import 'domain/models/screen_tabs.dart';
+import 'presentation/shell/screen_tabs_bar.dart';
 import 'core/utils/logger.dart';
 import 'data/providers/providers.dart';
 import 'services/license_service.dart';
@@ -140,12 +142,16 @@ class MainScreen extends ConsumerStatefulWidget {
 }
 
 class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
-  // Default to first screen in allowed list (position 0)
-  // For cashiers: position 0 = POS (dashboard is hidden)
-  // For admins: position 0 = Dashboard, POS is found via _initDefaultScreen
-  int _currentIndex = 0;
+  /// التاباتُ المفتوحةُ والنشطُ منها — بلاغُ المالك 2026-09-12.
+  ///
+  /// ⚠️ **وحلَّ محلَّ `int _currentIndex` الذي كان موضعاً في قائمةٍ مُرشَّحة.**
+  /// وذاك الموضعُ مصدرُ عطبٍ أصيل: `_initDefaultScreen` كان يحسبه بـ
+  /// `allowedIndices.indexOf(target)` بينما `screens` مُرتَّبةٌ بترتيب
+  /// `_getAllScreens()` — قائمتان مختلفتا الترتيب، فموضعٌ صحيحٌ في إحداهما
+  /// يشير إلى شاشةٍ أخرى في الثانية. والفهرسُ المطلقُ يُنهي البابَ كلَّه.
+  ScreenTabs _tabs = ScreenTabs.of(AppScreen.dashboard.value);
 
-  /// Navigation history stack for back button support
+  /// Navigation history stack for back button support — **بفهارسِ الشاشات**.
   final List<int> _navigationHistory = [];
 
   @override
@@ -250,23 +256,25 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
           : (allowedIndices.isNotEmpty ? allowedIndices.first : 0);
     }
 
-    final targetListPosition = allowedIndices.indexOf(targetScreenIndex);
+    // ⚠️ **بالفهرس المطلق لا بموضعٍ في قائمة.** الحسابُ السابقُ كان
+    // `allowedIndices.indexOf(target)` والقراءةُ `screens[_currentIndex]`،
+    // و`screens` مُرتَّبةٌ بترتيب `_getAllScreens()` لا بترتيب
+    // `allowedIndices` — فموضعٌ صحيحٌ في إحداهما يفتح شاشةً أخرى.
+    final isAllowed = allowedIndices.contains(targetScreenIndex);
     debugPrint('[NAV] _initDefaultScreen: target=$targetScreenIndex → '
-        'position=$targetListPosition');
+        'allowed=$isAllowed');
     await DiagnosticLogger.log('NAV',
-        'resolved: targetScreenIndex=$targetScreenIndex '
-        'position=$targetListPosition '
-        '(will ${targetListPosition >= 0 && !_userHasNavigatedManually ? "apply" : "skip"})');
+        'resolved: targetScreenIndex=$targetScreenIndex allowed=$isAllowed '
+        '(will ${isAllowed && !_userHasNavigatedManually ? "apply" : "skip"})');
 
     // Cache for re-entry detection
     _lastDefaultScreenApplied = userDefault;
     _lastAllowedIndicesApplied = List.of(allowedIndices);
 
-    if (targetListPosition >= 0 && mounted && !_userHasNavigatedManually) {
-      setState(() => _currentIndex = targetListPosition);
-      await DiagnosticLogger.log('NAV',
-          '✓ _currentIndex set to $targetListPosition (screen '
-          'index=$targetScreenIndex)');
+    if (isAllowed && mounted && !_userHasNavigatedManually) {
+      setState(() => _tabs = _tabs.open(targetScreenIndex));
+      await DiagnosticLogger.log(
+          'NAV', '✓ active tab set to screen index=$targetScreenIndex');
     }
   }
 
@@ -454,6 +462,10 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
     if (platform.isDesktop()) {
       windowManager.removeListener(this);
     }
+    for (final node in _tabFocusScopes.values) {
+      node.dispose();
+    }
+    _tabFocusScopes.clear();
     super.dispose();
   }
 
@@ -1082,14 +1094,199 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
   void _navigateToScreen(int screenIndex) {
     final allowedAsync = ref.read(userAllowedScreensProvider);
     allowedAsync.whenData((allowedIndices) {
-      final targetListIndex = allowedIndices.indexOf(screenIndex);
-      if (targetListIndex >= 0) {
-        _navigationHistory.add(_currentIndex);
-        // Record that the user manually navigated — stops the auto-default
-        // re-pick on subsequent builds from overriding the user's choice.
-        _userHasNavigatedManually = true;
-        setState(() => _currentIndex = targetListIndex);
+      if (!allowedIndices.contains(screenIndex)) return;
+      // Record that the user manually navigated — stops the auto-default
+      // re-pick on subsequent builds from overriding the user's choice.
+      _userHasNavigatedManually = true;
+      _activateScreen(screenIndex);
+    });
+  }
+
+  /// يفتح تابَ [screenIndex] أو ينشّطه، ويسجّل السابقَ في تاريخ الرجوع.
+  ///
+  /// ⚠️ **وهي المعبرُ الوحيد.** كانت سبعةَ مواضعَ تكتب `_currentIndex`
+  /// مباشرةً، وكلُّ موضعٍ ينسى شيئاً: هذا ينسى التاريخَ وذاك يحسب الموضعَ
+  /// من قائمةٍ أخرى. والتاباتُ تضيف عملاً ثالثاً (‏الفتحَ والإخلاء) — فنسخُه
+  /// سبعاً كان يُنتج شريطاً يتناقض مع المحتوى.
+  void _activateScreen(int screenIndex) {
+    // ⚠️ **والمسارُ الفرعيُّ يُزال أوّلاً.** الشاشاتُ تدفع مساراتٍ على
+    // مُوجِّه الشلّ (‏تقريرٌ مفتوحٌ، شاشةُ وحداتِ قياس…) وهي تعلو الكومةَ
+    // كلَّها؛ فتبديلُ التاب تحتها لا يُرى — نقرةٌ عاملةٌ تبدو ميّتة، وهو
+    // عينُ ما بلّغ عنه المالك في الشريط السابق. و`_navigateToPosShortcut`
+    // كانت وحدَها تفعل هذا.
+    appShellNestedNavigatorKey.currentState?.popUntil((route) => route.isFirst);
+
+    if (_tabs.active == screenIndex) return;
+    _navigationHistory.add(_tabs.active);
+
+    // ⚠️ **والإخلاءُ يُعلَن.** السقفُ يُغلق تاباً لم يطلب أحدٌ إغلاقَه؛
+    // واختفاءٌ صامتٌ يُنتج بلاغاً («التابُ الذي فتحتُه اختفى») أشدَّ من
+    // السقف نفسِه. ويُقرأ قبل `open` لأنّ الضحيّةَ تُحسَب من الحالة السابقة.
+    final evicted = _tabs.isFull && !_tabs.contains(screenIndex)
+        ? _tabs.evictionCandidate
+        : null;
+
+    setState(() => _tabs = _tabs.open(screenIndex));
+
+    if (evicted != null && mounted) {
+      final label = _screenLabelFor(evicted);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          duration: const Duration(seconds: 3),
+          content: Text(
+            'أُغلق تاب «$label» — السقف $kMaxScreenTabs تابات',
+            textDirection: TextDirection.rtl,
+          ),
+        ),
+      );
+    }
+
+    // ⚠️ **وبؤرةُ لوحة المفاتيح تنتقل مع التاب.** حقلُ الباركود في شاشة
+    // البيع يطلب البؤرةَ في `initState`، والتابُ يُبقي الشاشةَ مبنيّةً —
+    // فتبقى البؤرةُ عندها وأنت على شاشةٍ أخرى، ويذهب مسحُ الماسح إلى سلّةٍ
+    // لا تراها. و`FocusScopeNode` يتذكّر آخرَ ما كان مبئوراً فيه، فالعودةُ
+    // إلى التاب تُعيد البؤرةَ إلى حقلها بلا نقرة.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _pruneTabScopes();
+      _tabFocusScopes[screenIndex]?.requestFocus();
+    });
+  }
+
+  /// نطاقُ بؤرةٍ لكلِّ تابٍ — يُنشأ عند أوّل رسمٍ ويُتلَف مع التاب.
+  final Map<int, FocusScopeNode> _tabFocusScopes = {};
+
+  /// تسميةُ شاشةٍ بفهرسها — للرسائل وحدَها.
+  String _screenLabelFor(int screenIndex) {
+    for (final s in _getAllScreens()) {
+      if (s.index == screenIndex) return s.label;
+    }
+    return 'شاشة $screenIndex';
+  }
+
+  /// يُتلف نطاقاتِ التابات التي لم تعد مفتوحة.
+  ///
+  /// ⚠️ **والإغلاقُ ليس المخرجَ الوحيد**: الإخلاءُ عند السقف و`retain` عند
+  /// سحب الصلاحية يُسقطان تاباتٍ بلا مرورٍ بـ`_closeTab`. وبعد الإطار وحدَه:
+  /// إتلافُ عقدةٍ ما زالت موصولةً بشجرةٍ حيّةٍ يرمي في وضع التصحيح.
+  void _pruneTabScopes() {
+    final stale = _tabFocusScopes.keys.where((k) => !_tabs.contains(k)).toList();
+    for (final k in stale) {
+      _tabFocusScopes.remove(k)?.dispose();
+    }
+  }
+
+  /// الشاشاتُ المفتوحةُ كلُّها مبنيّةٌ، والمعروضةُ واحدة.
+  ///
+  /// ⚠️ **والمفتاحُ إلزاميّ.** `IndexedStack` يطابق أطفالَه **بالموضع**؛
+  /// فإغلاقُ تابٍ في الوسط يُزحزح ما بعده موضعاً واحداً، فتُسلَّم حالةُ
+  /// شاشةٍ إلى شاشةٍ أخرى — سلّةُ الكاشير تظهر في شاشة المخزون. والمفتاحُ
+  /// بالفهرس يجعل المطابقةَ بالهويّة لا بالموضع.
+  ///
+  /// ⚠️ **وكلفةُ هذا حقيقيّةٌ لا مجّانيّة**: كلُّ تابٍ مفتوحٍ شجرةٌ حيّةٌ
+  /// بمؤقّتاتها ومراقباتها على القاعدة، لا اسمٌ في شريط. ولذلك سقفُ
+  /// `kMaxScreenTabs` ثمانية، ولذلك تُخلى الأقدمُ استعمالاً.
+  Widget _openScreensStack(Map<int, ScreenConfig> byScreenIndex) {
+    final open = [
+      for (final i in _tabs.order)
+        if (byScreenIndex[i] case final s?) (index: i, config: s),
+    ];
+    if (open.isEmpty) return const SizedBox.shrink();
+
+    var active = open.indexWhere((e) => e.index == _tabs.active);
+    if (active < 0) active = 0;
+
+    return IndexedStack(
+      index: active,
+      sizing: StackFit.expand,
+      children: [
+        for (final e in open)
+          KeyedSubtree(
+            key: ValueKey<int>(e.index),
+            // ⚠️ **ومؤقّتاتُ التاب المستور تتوقّف.** `IndexedStack` يُبقي
+            // كلَّ طفلٍ مبنيّاً حيّاً، فثمانيةُ تاباتٍ بثمانيةِ مجموعاتٍ من
+            // الرسوم المتحرّكة تُبقي الإطارَ يُعاد رسمُه بلا سببٍ مرئيّ —
+            // وهو ثمنٌ يدفعه الجهازُ الضعيفُ الذي يُشحَن إليه هذا المنتج.
+            child: TickerMode(
+              enabled: e.index == _tabs.active,
+              child: FocusScope(
+                node: _tabFocusScopes.putIfAbsent(
+                  e.index,
+                  () => FocusScopeNode(debugLabel: 'tab_${e.index}'),
+                ),
+                child: e.config.screen,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// يرجع خطوةً في تاريخ التنقّل. ويعود `false` إن لم يبقَ ما يُرجَع إليه.
+  ///
+  /// ⚠️ **ويتخطّى ما لم يبقَ مفتوحاً.** التاريخُ كان يحمل مواضعَ في قائمةٍ
+  /// مُرشَّحةٍ تتغيّر طولاً مع الصلاحيات، فرجوعٌ بعد تغيُّرها كان يفتح شاشةً
+  /// غيرَ التي تُرِكت. والفهرسُ المطلقُ يُنهي ذلك، ويبقى أن تابَ الوجهة قد
+  /// أُغلِق — فالرجوعُ إليه فتحٌ جديدٌ لا رجوع.
+  bool _goBack() {
+    while (_navigationHistory.isNotEmpty) {
+      final target = _navigationHistory.removeLast();
+      if (target == _tabs.active) continue;
+      if (!_tabs.contains(target)) continue;
+      setState(() => _tabs = _tabs.open(target));
+      return true;
+    }
+    return false;
+  }
+
+  /// يُغلق تابَ [screenIndex] بعد حارسِ السلّة إن كان شاشةَ البيع.
+  ///
+  /// ⚠️ **وحارسُ السلّة انتقل من التنقّل إلى الإغلاق.** فالتابُ يُبقي شاشةَ
+  /// البيع مبنيّةً حيّةً، فالتنقّلُ عنها لم يبقَ يمسح السلّة — والإغلاقُ
+  /// وحدَه يهدم الشجرةَ ويمسحها. وإبقاءُ الحارس على التنقّل كان يسأل
+  /// الكاشيرَ في كلّ نقرةِ تابٍ عن خطرٍ لم يبقَ قائماً.
+  Future<void> _closeTab(int screenIndex) async {
+    if (!_tabs.contains(screenIndex)) return;
+    if (_tabs.order.length <= 1) return;
+
+    if (screenIndex == AppScreen.pos.value) {
+      final cartState = ref.read(cartControllerProvider);
+      if (cartState.items.isNotEmpty) {
+        final shouldClose = await showDialog<bool>(
+              context: context,
+              builder: (ctx) => Directionality(
+                textDirection: TextDirection.rtl,
+                child: AlertDialog(
+                  title: const Text('تنبيه'),
+                  content: const Text(
+                    'إغلاق تاب نقطة البيع يمسح السلة. هل تريد المتابعة؟',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: const Text('لا'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                      ),
+                      child: const Text('نعم، إغلاق'),
+                    ),
+                  ],
+                ),
+              ),
+            ) ??
+            false;
+        if (!shouldClose || !mounted) return;
       }
+    }
+
+    setState(() {
+      _tabs = _tabs.close(screenIndex);
+      _navigationHistory.removeWhere((i) => i == screenIndex);
+      // النطاقُ يموت مع تابه — وإلّا تراكمت عُقَدٌ لشاشاتٍ لم تعد مبنيّة.
+      _tabFocusScopes.remove(screenIndex)?.dispose();
     });
   }
 
@@ -1180,16 +1377,20 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
     }
     {
       final screens = _getScreensForAllowed(allowedIndices);
+      final byScreenIndex = {for (final s in screens) s.index: s};
 
-      // Reset index if out of bounds
-      if (_currentIndex >= screens.length) {
-        _currentIndex = 0;
+      // ⚠️ **تاباتُ الشاشات التي لم تبقَ مسموحةً تُسقَط هنا.** والشاشةُ
+      // المفتوحةُ في تابٍ **مبنيّةٌ حيّةٌ** تقرأ وتكتب، لا مجرّدَ اسمٍ في
+      // شريط؛ فبقاءُ تابٍ بعد سحب الصلاحية إبقاءُ الشاشة عاملةً لمن مُنِع.
+      //
+      // و`screens` تخلو مؤقّتاً أثناء إعادة تحميل المزوّد، و`retain` تُعيد
+      // الحالةَ كما هي عند المجموعة الفارغة — فلا تُهدَم التاباتُ كلُّها
+      // على وميضٍ عابر.
+      if (screens.isNotEmpty) {
+        _tabs = _tabs.retain(byScreenIndex.keys.toSet());
       }
 
-      // Get the actual screen index for the current position
-      final currentScreenIndex = screens.isNotEmpty
-          ? screens[_currentIndex].index
-          : 0;
+      final currentScreenIndex = _tabs.active;
 
       return PopScope(
         canPop: false,
@@ -1204,10 +1405,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
           }
 
           // 2. Try popping sidebar navigation history
-          if (_navigationHistory.isNotEmpty) {
-            setState(() => _currentIndex = _navigationHistory.removeLast());
-            return;
-          }
+          if (_goBack()) return;
 
           // 3. No history — show exit dialog
           //
@@ -1261,55 +1459,31 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
           // Pass actual screen index for proper highlighting
           currentIndex: currentScreenIndex,
           // Back navigation via history stack — always pass callback
-          onBackTap: () {
-            if (_navigationHistory.isEmpty) return;
-            setState(() => _currentIndex = _navigationHistory.removeLast());
+          onBackTap: _goBack,
+          // ⚠️ **وحارسُ «يوجد أصناف في السلة» نُزع من هنا.** كان يمنع
+          // التنقّلَ عن شاشة البيع لأنّ التنقّلَ كان يهدم شجرتَها فتُمسَح
+          // السلّة. والتابُ يُبقيها مبنيّةً حيّةً، فالسلّةُ تنتظر كما هي —
+          // والسؤالُ في كلّ نقرةٍ صار إنذاراً عن خطرٍ غيرِ قائم. والخطرُ
+          // انتقل إلى `_closeTab` وهناك يُسأل.
+          onNavigate: (screenIndex) {
+            if (!screens.any((s) => s.index == screenIndex)) return;
+            _activateScreen(screenIndex);
           },
-          // Convert screen index to list position
-          onNavigate: (screenIndex) async {
-            final listPosition = screens.indexWhere(
-              (s) => s.index == screenIndex,
-            );
-            if (listPosition < 0) return;
-
-            // #9: Guard navigation away from POS when cart has items
-            if (currentScreenIndex == 1 && screenIndex != 1) {
-              final cartState = ref.read(cartControllerProvider);
-              if (cartState.items.isNotEmpty) {
-                final shouldLeave =
-                    await showDialog<bool>(
-                      context: context,
-                      builder: (ctx) => Directionality(
-                        textDirection: TextDirection.rtl,
-                        child: AlertDialog(
-                          title: const Text('تنبيه'),
-                          content: const Text(
-                            'يوجد أصناف في السلة. هل تريد المغادرة بدون حفظ؟',
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(ctx, false),
-                              child: const Text('لا'),
-                            ),
-                            ElevatedButton(
-                              onPressed: () => Navigator.pop(ctx, true),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.red,
-                              ),
-                              child: const Text('نعم، مغادرة'),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ) ??
-                    false;
-                if (!shouldLeave) return;
-              }
-            }
-
-            _navigationHistory.add(_currentIndex);
-            setState(() => _currentIndex = listPosition);
-          },
+          tabs: [
+            for (final i in _tabs.order)
+              if (byScreenIndex[i] case final s?)
+                ScreenTabView(
+                  index: i,
+                  label: s.label,
+                  icon: s.icon,
+                  closable: _tabs.order.length > 1,
+                ),
+          ],
+          onSelectTab: _activateScreen,
+          onCloseTab: _closeTab,
+          onHomeTab: byScreenIndex.containsKey(AppScreen.dashboard.value)
+              ? () => _activateScreen(AppScreen.dashboard.value)
+              : null,
           child: Column(
             children: [
               // ── Offline fallback banner ──────────────────────
@@ -1384,22 +1558,15 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
               Expanded(
                 child: GlobalSearchOmnibox(
                   onNavigateToScreen: (index) {
-                    final listPosition = screens.indexWhere(
-                      (s) => s.index == index,
-                    );
-                    if (listPosition >= 0) {
-                      _navigationHistory.add(_currentIndex);
-                      setState(() => _currentIndex = listPosition);
-                    }
+                    if (!byScreenIndex.containsKey(index)) return;
+                    _activateScreen(index);
                   },
                   // Guard: screens can be transiently empty during a provider
                   // reload (e.g. after updateActivity() triggers a rebuild while
-                  // userAllowedScreensProvider is still computing). Without this
-                  // guard, screens[0] on an empty list throws
-                  // RangeError (length): Invalid value: Valid value range is empty: 0.
-                  child: screens.isNotEmpty
-                      ? screens[_currentIndex].screen
-                      : const SizedBox.shrink(),
+                  // userAllowedScreensProvider is still computing).
+                  child: screens.isEmpty
+                      ? const SizedBox.shrink()
+                      : _openScreensStack(byScreenIndex),
                 ),
               ),
             ],

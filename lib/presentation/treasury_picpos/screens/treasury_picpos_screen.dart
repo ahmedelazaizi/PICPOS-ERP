@@ -24,8 +24,7 @@
 // (`ReceiptVoucherDialog`، `PaymentVoucherDialog`، `DailyClosingDialog`،
 // `SafeManagementScreen`)، و`scopedSafesProvider`/`safeTransactionsProvider`
 // (الأخير مستورد حرفياً من treasury_screen.dart بدل ما يتكرر تعريفه)،
-// `reconciliationServiceProvider`، `getCashFlowStatementUseCaseProvider`،
-// و`breadcrumbProvider`.
+// `reconciliationServiceProvider` و`getCashFlowStatementUseCaseProvider`.
 //
 // راجع lib/presentation/screens/treasury_screen.dart (الأصل).
 import 'package:ural_erp/core/constants/app_constants.dart';
@@ -53,7 +52,6 @@ import '../../treasury/widgets/payment_voucher_dialog.dart';
 import 'package:ural_erp/l10n/app_localizations.dart';
 import '../../treasury/widgets/safe_management_dialog.dart';
 import '../../../services/reconciliation_service.dart';
-import '../../providers/breadcrumb_provider.dart';
 import '../../../domain/usecases/accounting/get_cashflow_statement_usecase.dart';
 import '../../screens/treasury_screen.dart' show safeTransactionsProvider;
 import '../../picpos_shell/picpos_screen_scaffold.dart';
@@ -70,7 +68,7 @@ import '../../picpos_shell/picpos_dialog.dart';
 /// الصناديق/مراجعة الأرصدة)، لوحة المؤشرات (TreasuryMetricsPanel)، حقل
 /// البحث بمنطق التصفية والمسح، التبويبات الخمسة (نقدي/بنوك/كليك/إغلاق
 /// يومي/تحليل تدفقات) وكل محتواها، حوار الإغلاق اليومي، حوار مراجعة
-/// الأرصدة، وتحديث الـ breadcrumbs عند تبديل التبويب.
+/// الأرصدة.
 class TreasuryPicposScreen extends ConsumerStatefulWidget {
   const TreasuryPicposScreen({super.key});
 
@@ -89,35 +87,10 @@ class _TreasuryPicposScreenState extends ConsumerState<TreasuryPicposScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 5, vsync: this);
-    _tabController.addListener(_onTabChanged);
-
-    // Initial breadcrumb update
-    WidgetsBinding.instance.addPostFrameCallback((_) => _updateBreadcrumbs());
-  }
-
-  void _onTabChanged() {
-    if (_tabController.indexIsChanging) return;
-    _updateBreadcrumbs();
-  }
-
-  void _updateBreadcrumbs() {
-    final labels = ['نقدي', 'بنوك', 'كليك', 'إغلاق', 'تحليل'];
-    final label = labels[_tabController.index];
-
-    ref.read(breadcrumbProvider.notifier).setBreadcrumbs([
-      BreadcrumbItem(
-        label: AppLocalizations.of(context)!.treasuryManagement,
-        // Assuming index 10 is treasury based on common patterns in this app
-        onTap: () => ref.read(breadcrumbProvider.notifier).popToLabel(
-            AppLocalizations.of(context)!.treasuryManagement),
-      ),
-      BreadcrumbItem(label: label),
-    ]);
   }
 
   @override
   void dispose() {
-    _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
     _searchController.dispose();
     super.dispose();

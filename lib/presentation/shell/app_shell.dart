@@ -16,6 +16,7 @@ import '../../domain/models/nav_search.dart';
 import '../../core/navigation/screen_id.dart';
 import '../providers/pending_picpos_report.dart';
 import '../reports_picpos/screens/reports_picpos_screen.dart';
+import 'report_category_nav.dart';
 import '../../data/providers/e_invoicing_providers.dart';
 import '../widgets/permission_guard.dart' show hasPermissionWithAdminBypass;
 
@@ -35,8 +36,7 @@ import '../widgets/inactivity_detector.dart';
 import '../../main_desktop.dart'
     if (dart.library.html) '../../main_web.dart'
     as platform;
-import '../shared_widgets/app_breadcrumbs.dart';
-import '../providers/breadcrumb_provider.dart';
+import 'screen_tabs_bar.dart';
 import '../widgets/sync_management_dialog.dart';
 import '../widgets/sync_status_badge.dart';
 import '../widgets/mirror_badge.dart';
@@ -57,12 +57,29 @@ class AppShell extends ConsumerStatefulWidget {
   final Function(int) onNavigate;
   final VoidCallback? onBackTap;
 
+  /// التاباتُ المفتوحةُ بترتيب فتحها — يرسمها الشريطُ الأعلى.
+  final List<ScreenTabView> tabs;
+
+  /// تنشيطُ تابٍ مفتوح. ويُنادى أيضاً على التاب النشط نفسِه.
+  final void Function(int screenIndex) onSelectTab;
+
+  /// إغلاقُ تابٍ. حارسُ السلّة يقع هنا لا عند التنشيط: التنقّلُ بين
+  /// التابات لم يبقَ يهدم شاشةَ البيع، والإغلاقُ يهدمها.
+  final void Function(int screenIndex) onCloseTab;
+
+  /// الانتقالُ إلى لوحة المعلومات — `null` لمن لا يملكها (‏الكاشير).
+  final VoidCallback? onHomeTab;
+
   const AppShell({
     super.key,
     required this.child,
     required this.currentIndex,
     required this.onNavigate,
     this.onBackTap,
+    this.tabs = const [],
+    required this.onSelectTab,
+    required this.onCloseTab,
+    this.onHomeTab,
   });
 
   @override
@@ -572,26 +589,39 @@ class _AppShellState extends ConsumerState<AppShell> {
   ///
   /// ⚠️ **ومسيَّجٌ بـ[Brand.isPicPos]**: الكتالوجُ كتالوجُ مركزِ تقارير
   /// PicPos، والفوركُ الآخر شاشةُ تقاريرَ أخرى لا تعرف هذه المعرّفات.
-  Widget? _reportCategoriesFor(String groupKey, List<NavItemDef> items) {
-    if (groupKey != 'reports' || !Brand.isPicPos) return null;
-    final hasReports =
-        items.any((i) => i.index == ScreenId.reports.navigationIndex);
-    if (!hasReports) return null;
+  Widget? _reportCategoriesFor(NavItemDef item) {
+    if (!Brand.isPicPos) return null;
+    if (item.index != ScreenId.reports.navigationIndex) return null;
 
-    return _ReportCategoryNav(
-      onOpen: (categoryId, reportId) {
-        pendingPicposReport.request(
-          categoryId: categoryId,
-          reportId: reportId,
-        );
-        for (final i in items) {
-          if (i.index == ScreenId.reports.navigationIndex) {
-            _onNavItemTap(i);
-            return;
-          }
-        }
-      },
+    return ReportCategoryNav(
+      onOpen: (categoryId, reportId) => _openReport(
+        item,
+        categoryId: categoryId,
+        reportId: reportId,
+      ),
     );
+  }
+
+  /// ينتقل إلى شاشة التقارير ثمّ يُسجّل طلبَ التقرير.
+  ///
+  /// ⚠️ **والترتيبُ انقلب مع التابات، وانقلابُه لازم.** كان الطلبُ يُسجَّل
+  /// أوّلاً لأنّ الشاشةَ تستهلكه في `initState`. ومع التابات صارت الشاشةُ
+  /// قد تكون **مبنيّةً في تابٍ خلفيّ**، فمستمِعُها يفتح التقريرَ في الحال —
+  /// ثمّ يأتي التنقّلُ فيمسح المسارَ المدفوعَ بـ`popUntil` قبل أن يُرى.
+  /// فتقريرٌ يُفتَح ويُغلَق في إطارٍ واحد، والنقرةُ تبدو ميّتة.
+  ///
+  /// والحالاتُ الثلاثُ تصحّ بهذا الترتيب:
+  ///   • الشاشةُ غيرُ مفتوحةٍ ⇒ التابُ يُفتَح، والطلبُ يُسجَّل في نفس
+  ///     الإطار قبل أن يُركَّب `initState` ويقرأه في `postFrame`.
+  ///   • مفتوحةٌ في الخلف ⇒ التنقّلُ يُظهرها، ثمّ يفتح المستمِعُ التقرير.
+  ///   • معروضةٌ أصلاً ⇒ `popUntil` ثمّ الطلبُ يفتح فوقَها.
+  void _openReport(
+    NavItemDef reportsItem, {
+    required String categoryId,
+    required String? reportId,
+  }) {
+    _onNavItemTap(reportsItem);
+    pendingPicposReport.request(categoryId: categoryId, reportId: reportId);
   }
 
   /// حقلُ البحث أعلى القائمة.
@@ -660,7 +690,26 @@ class _AppShellState extends ConsumerState<AppShell> {
   /// التي نجت من نطاق الملفّ الشخصيّ ومن صلاحيّات المستخدم ومن سياج
   /// العلامة. والبحثُ في القائمة الكاملة يعرض للكاشير شاشةَ الحسابات.
   Widget _navSearchResults(List<NavItemDef> items) {
-    final hits = searchNavEntries(_navQuery, navEntriesFromNavItems(items));
+    final reportsItem = items
+        .where((i) => i.index == ScreenId.reports.navigationIndex)
+        .firstOrNull;
+
+    // ⚠️ **ومداخلُ التقارير مشروطةٌ بحضور مدخلها**: من لا يملك
+    // `reports_view` لا يرى الشاشةَ، فإظهارُ تقاريرها في البحث يمنحه
+    // خريطةَ ما لا يبلغه — وهو عينُ سياجِ الفئات في الشريط.
+    final entries = <NavSearchEntry>[
+      ...navEntriesFromNavItems(items),
+      if (reportsItem != null && Brand.isPicPos)
+        ...reportSearchEntries(
+          reportsScreenIndex: reportsItem.index,
+          categories: buildPicposReportCatalog(
+            actions: PicposReportActions.inert,
+            eInvoicePlatform: ref.watch(activeEInvoicePlatformProvider).value,
+          ),
+        ),
+    ];
+
+    final hits = searchNavEntries(_navQuery, entries);
     if (hits.isEmpty) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
@@ -690,22 +739,35 @@ class _AppShellState extends ConsumerState<AppShell> {
       itemBuilder: (context, i) {
         final hit = hits[i];
         final item = byIndex[hit.index]!;
-        final groupLabel = _groupMeta[hit.group ?? '']?.label;
-        final isSelected = widget.currentIndex == item.index;
+        final isReport = hit.kind != NavSearchKind.screen;
+        // سطرٌ ثانٍ: اسمُ الفئة للتقرير، واسمُ المجموعة للشاشة.
+        final groupLabel =
+            hit.parentLabel ?? _groupMeta[hit.group ?? '']?.label;
+        final isSelected = !isReport && widget.currentIndex == item.index;
         return ListTile(
           dense: true,
           visualDensity: VisualDensity.compact,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+          contentPadding: EdgeInsets.only(
+            right: hit.kind == NavSearchKind.report ? 26 : 14,
+            left: 14,
+          ),
           leading: Icon(
-            item.icon,
-            size: 17,
+            switch (hit.kind) {
+              NavSearchKind.screen => item.icon,
+              NavSearchKind.reportCategory => PhosphorIconsBold.folderOpen,
+              NavSearchKind.report => PhosphorIconsBold.fileText,
+            },
+            size: isReport ? 15 : 17,
             color: isSelected ? AppColors.primary : AppColors.textMuted,
           ),
           title: Text(
-            item.label,
+            // ⚠️ **تسميةُ النتيجة لا تسميةُ الشاشة.** كلُّ مداخل التقارير
+            // تحمل فهرسَ شاشة التقارير، فقراءةُ `item.label` كانت تعرض
+            // ستّةً وأربعينَ صفّاً كلُّها «التقارير».
+            hit.label,
             style: TextStyle(
               color: isSelected ? AppColors.primary : Colors.white,
-              fontSize: 12.5,
+              fontSize: isReport ? 12 : 12.5,
               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
             ),
           ),
@@ -723,7 +785,15 @@ class _AppShellState extends ConsumerState<AppShell> {
             // بينما المحتوى على شاشةٍ أخرى — ولا سبيلَ للعودة للمجموعات.
             _navSearchCtrl.clear();
             setState(() => _navQuery = '');
-            _onNavItemTap(item);
+            if (isReport) {
+              _openReport(
+                item,
+                categoryId: hit.reportCategoryId!,
+                reportId: hit.reportId,
+              );
+            } else {
+              _onNavItemTap(item);
+            }
           },
         );
       },
@@ -737,35 +807,16 @@ class _AppShellState extends ConsumerState<AppShell> {
   /// النشاط وفتاتَ الخبز في نسخةٍ واحدةٍ منهما — فيتنقّل المستخدمُ من البحث
   /// وسلّتُه مملوءةٌ بلا تحذير.
   void _onNavItemTap(NavItemDef item) {
-      // Delegate to parent's _buildNavItem onTap logic
-      final cartItems = ref.read(cartControllerProvider).items;
-      if (cartItems.isNotEmpty && item.index != widget.currentIndex) {
-        showDialog(
-          context: context,
-          builder: (ctx) => Directionality(
-            textDirection: TextDirection.rtl,
-            child: AlertDialog(
-              title: const Row(
-                children: [
-                  Icon(PhosphorIconsBold.warning, color: AppColors.warning),
-                  SizedBox(width: 8),
-                  Text('يوجد أصناف في السلة'),
-                ],
-              ),
-              content: const Text(
-                'لا يمكن الانتقال لشاشة أخرى وهناك أصناف في السلة.\nيرجى إتمام الفاتورة أو تعليقها أو مسح السلة أولاً.',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('حسناً'),
-                ),
-              ],
-            ),
-          ),
-        );
-        return;
-      }
+      // ⚠️ **حارسُ «لا يمكن الانتقال لشاشة أخرى وهناك أصناف في السلة» نُزع.**
+      //
+      // كان منعاً مطلقاً: سلّةٌ فيها صنفٌ واحدٌ تُقعِد الكاشيرَ عن **كلّ**
+      // شاشةٍ في النظام. وعلّتُه أنّ التنقّلَ كان يهدم شجرةَ شاشة البيع
+      // فتُمسَح السلّة. والتابُ يُبقيها مبنيّةً حيّةً — فالسلّةُ تنتظر كما
+      // هي، والمنعُ صار إنذاراً عن خطرٍ غيرِ قائمٍ يمنع عملاً قائماً.
+      //
+      // والحمايةُ لم تسقط، انتقلت إلى حيث الخطرُ فعليّ:
+      //   • `_closeTab` — إغلاقُ تابِ البيع يهدم الشجرةَ، فيُسأل.
+      //   • `shouldBlockAppCloseForCart` — إغلاقُ البرنامج، في ثلاثة مواضع.
       try {
         final user = ref.read(authProvider).user;
         if (user != null) {
@@ -775,24 +826,6 @@ class _AppShellState extends ConsumerState<AppShell> {
         }
       } catch (_) {}
       
-      // #Breadcrumbs: Update breadcrumb stack on navigation with hierarchy
-      final groupMeta = _groupMeta[item.group ?? ''];
-      if (groupMeta != null && item.group != 'home') {
-        ref.read(breadcrumbProvider.notifier).setBreadcrumbs([
-          BreadcrumbItem(label: groupMeta.label),
-          BreadcrumbItem(
-            label: item.label,
-            onTap: () => widget.onNavigate(item.index),
-          ),
-        ]);
-      } else {
-        ref.read(breadcrumbProvider.notifier).setBreadcrumbs([
-          BreadcrumbItem(
-            label: item.label,
-            onTap: () => widget.onNavigate(item.index),
-          ),
-        ]);
-      }
       
       widget.onNavigate(item.index);
   }
@@ -1115,8 +1148,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                           activeGroup: activeGroup,
                           currentIndex: widget.currentIndex,
                           onItemTap: _onNavItemTap,
-                          groupExtraBuilder: (groupKey) =>
-                              _reportCategoriesFor(groupKey, items),
+                          itemExtraBuilder: _reportCategoriesFor,
                         );
                       },
                       loading: () => const Center(
@@ -1431,9 +1463,19 @@ class _AppShellState extends ConsumerState<AppShell> {
               child: InactivityDetector(
                 child: Column(
                   children: [
-                    if (ref.watch(showTopBarProvider).value ?? true)
-                      AppBreadcrumbs(
-                        onHomeTap: () => widget.onNavigate(0),
+                    // ⚠️ **حلَّ محلَّ `AppBreadcrumbs`.** ذاك كان يعرض مدخلاً
+                    // أو مدخلَين لأنّ `setBreadcrumbs` يستبدل القائمةَ في
+                    // كلّ تنقّل — وصفرَ مداخلَ قابلةٍ للنقر، لأنّ الوحيدَ
+                    // الذي يحمل `onTap` هو عينُ الوحيدِ الذي يُرسَم
+                    // بـ`isLast ? null : item.onTap`.
+                    if ((ref.watch(showTopBarProvider).value ?? true) &&
+                        widget.tabs.isNotEmpty)
+                      ScreenTabsBar(
+                        tabs: widget.tabs,
+                        active: widget.currentIndex,
+                        onSelect: widget.onSelectTab,
+                        onClose: widget.onCloseTab,
+                        onHome: widget.onHomeTab,
                       ),
                     Expanded(
                       child: Navigator(
@@ -1465,61 +1507,18 @@ class _AppShellState extends ConsumerState<AppShell> {
     widget.onNavigate(AppScreen.pos.value);
   }
 
+  /// مدخلُ الوضع المطويّ — أيقونةٌ بلا تسمية.
+  ///
+  /// ⚠️ **ويُفوِّض إلى [_onNavItemTap] الآن.** كان ينسخ منطقَ النقر كاملاً،
+  /// فبقي فيه حارسُ السلّة المنزوعُ من هناك — نسختان تفترقان في أوّل تعديل.
+  /// وتسجيلُ النشاط كان في إحداهما دونَ الأخرى أصلاً: من تنقّل وشريطُه
+  /// مطويٌّ لم يُسجَّل تنقّلُه.
   Widget _buildNavItem(NavItemDef item, int index, bool isSelected) {
     return _EnhancedNavItem(
       item: item,
       isExpanded: _isExpanded,
       isSelected: isSelected,
-      onTap: () {
-        // Block navigation away from POS if cart has items
-        final cartItems = ref.read(cartControllerProvider).items;
-        if (cartItems.isNotEmpty && item.index != widget.currentIndex) {
-          showDialog(
-            context: context,
-            builder: (ctx) => Directionality(
-              textDirection: TextDirection.rtl,
-              child: AlertDialog(
-                title: const Row(
-                  children: [
-                    Icon(PhosphorIconsBold.warning, color: AppColors.warning),
-                    SizedBox(width: 8),
-                    Text('يوجد أصناف في السلة'),
-                  ],
-                ),
-                content: const Text(
-                  'لا يمكن الانتقال لشاشة أخرى وهناك أصناف في السلة.\nيرجى إتمام الفاتورة أو تعليقها أو مسح السلة أولاً.',
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(ctx),
-                    child: const Text('حسناً'),
-                  ),
-                ],
-              ),
-            ),
-          );
-          return;
-        }
-      widget.onNavigate(item.index);
-      // #Breadcrumbs: Update breadcrumb stack on navigation with hierarchy
-      final groupMeta = _groupMeta[item.group ?? ''];
-      if (groupMeta != null && item.group != 'home') {
-        ref.read(breadcrumbProvider.notifier).setBreadcrumbs([
-          BreadcrumbItem(label: groupMeta.label),
-          BreadcrumbItem(
-            label: item.label,
-            onTap: () => widget.onNavigate(item.index),
-          ),
-        ]);
-      } else {
-        ref.read(breadcrumbProvider.notifier).setBreadcrumbs([
-          BreadcrumbItem(
-            label: item.label,
-            onTap: () => widget.onNavigate(item.index),
-          ),
-        ]);
-      }
-    },
+      onTap: () => _onNavItemTap(item),
     );
   }
 

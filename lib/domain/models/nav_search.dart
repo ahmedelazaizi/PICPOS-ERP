@@ -29,6 +29,13 @@ String normalizeArabicForSearch(String input) {
   return s.trim().replaceAll(_spaces, ' ');
 }
 
+/// نوعُ المدخل — يحكم الترتيبَ ومسارَ الفتح.
+///
+/// ⚠️ **والترتيبُ ليس ذوقاً.** «مبيعات» تطابق شاشةً وفئةً وتسعةَ تقارير؛
+/// ومن كتبها يريد الشاشةَ أوّلاً. وبلا هذا التصنيف تغرق الشاشةُ الوحيدةُ
+/// المطلوبةُ وسط ستّةٍ وأربعين تقريراً — فيصير البحثُ أسوأَ من غيابه.
+enum NavSearchKind { screen, reportCategory, report }
+
 /// مدخلٌ قابلٌ للبحث — الحدُّ الأدنى الذي تحتاجه المطابقة.
 ///
 /// ⚠️ ولا يستورد `NavItemDef`: هذا الملفُّ في `domain` و`NavItemDef` في
@@ -44,11 +51,29 @@ class NavSearchEntry {
   /// كلماتٌ تصف **ما داخلَ** الشاشة لا اسمَها.
   final List<String> keywords;
 
+  final NavSearchKind kind;
+
+  /// معرّفُ فئةِ التقارير — لمداخل الفئات والتقارير وحدَها.
+  final String? reportCategoryId;
+
+  /// معرّفُ التقرير — `null` لمدخل الفئة نفسِها.
+  final String? reportId;
+
+  /// اسمُ الحاوي (‏فئةُ التقرير) — يُعرَض سطراً ثانياً.
+  ///
+  /// ⚠️ وبلا ذلك يظهر «تقرير المبيعات» و«ملخّص المبيعات» متجاورَين بلا ما
+  /// يقول من أيّ فئةٍ هما، وعناوينُ التقارير تتشابه بين الفئات.
+  final String? parentLabel;
+
   const NavSearchEntry({
     required this.index,
     required this.label,
     this.group,
     this.keywords = const [],
+    this.kind = NavSearchKind.screen,
+    this.reportCategoryId,
+    this.reportId,
+    this.parentLabel,
   });
 }
 
@@ -61,11 +86,20 @@ class NavSearchHit {
   /// طابق الاسمُ نفسُه — لا كلمةٌ تصفه. يرفع النتيجةَ في الترتيب.
   final bool matchedInLabel;
 
+  final NavSearchKind kind;
+  final String? reportCategoryId;
+  final String? reportId;
+  final String? parentLabel;
+
   const NavSearchHit({
     required this.index,
     required this.label,
     required this.group,
     required this.matchedInLabel,
+    this.kind = NavSearchKind.screen,
+    this.reportCategoryId,
+    this.reportId,
+    this.parentLabel,
   });
 }
 
@@ -83,8 +117,10 @@ List<NavSearchHit> searchNavEntries(String query, List<NavSearchEntry> entries) 
   final tokens = q.split(' ').where((t) => t.isNotEmpty).toList();
   if (tokens.isEmpty) return const [];
 
-  final byLabel = <NavSearchHit>[];
-  final byKeyword = <NavSearchHit>[];
+  // دِلاءٌ مرتَّبة: مطابقةُ الاسم أوّلاً، وداخلَها شاشةٌ ثمّ فئةٌ ثمّ تقرير.
+  final buckets = <List<NavSearchHit>>[
+    for (var i = 0; i < 2 * NavSearchKind.values.length; i++) <NavSearchHit>[],
+  ];
 
   for (final e in entries) {
     final label = normalizeArabicForSearch(e.label);
@@ -105,11 +141,16 @@ List<NavSearchHit> searchNavEntries(String query, List<NavSearchEntry> entries) 
       label: e.label,
       group: e.group,
       matchedInLabel: inLabel,
+      kind: e.kind,
+      reportCategoryId: e.reportCategoryId,
+      reportId: e.reportId,
+      parentLabel: e.parentLabel,
     );
-    (inLabel ? byLabel : byKeyword).add(hit);
+    final slot = (inLabel ? 0 : NavSearchKind.values.length) + e.kind.index;
+    buckets[slot].add(hit);
   }
 
-  return [...byLabel, ...byKeyword];
+  return [for (final b in buckets) ...b];
 }
 
 /// «ما داخلَ» كلِّ شاشة — بفهرسها في `kAllNavItemDefs`.
