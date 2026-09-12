@@ -35,10 +35,16 @@ void main() {
 
   test('مرساةُ القراءة — المركزُ مقروءٌ وفيه مداخلُ فعلاً', () {
     // بلا هذه المرساة، كلُّ فحصٍ أدناه يقرأ صفراً ويمرّ وهو أعمى.
+    //
+    // ⚠️ **وقد وقع فعلاً 2026-09-12**: رُفع الكتالوجُ إلى مستوى الملفّ
+    //    ليقرأه الشريطُ الجانبيّ، فصار `_ReportEntry` ← `PicposReportEntry`
+    //    و`nav(` ← `actions.open(`. والنمطان القديمان ماتا معاً، فلو لم
+    //    تكن هذه المرساةُ هنا لقرأ فحصُ «الشاشات النائبة» أدناه صفراً
+    //    **وهو أعمى** ومرّ أخضرَ إلى الأبد.
     expect(src.length, greaterThan(20000));
-    expect(_count(src, '_ReportEntry('), greaterThan(30),
+    expect(_count(src, 'PicposReportEntry('), greaterThan(30),
         reason: 'نمطُ المدخلات تبدّل — الفحوصُ أدناه تقرأ صفراً كاذباً');
-    expect(_count(src, 'action: () => nav('), greaterThan(30),
+    expect(_count(src, 'action: () => actions.open('), greaterThan(30),
         reason: 'نمطُ التوصيل تبدّل');
   });
 
@@ -49,7 +55,7 @@ void main() {
       'ActivityLogScreen(',
       'ReportBuilderScreen()',
     ]) {
-      expect(_count(src, 'nav(() => const $placeholder'), 0,
+      expect(_count(src, 'actions.open(() => const $placeholder'), 0,
           reason: '«$placeholder» عادت وجهةً نائبةً لمدخلٍ في المركز');
     }
   });
