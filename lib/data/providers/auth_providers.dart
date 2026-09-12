@@ -9,6 +9,7 @@ import '../../core/config/brand.dart';
 import '../../core/config/business_profile_provider.dart';
 import '../../core/navigation/screen_id.dart';
 import '../../core/permissions/permission_codes.dart';
+import '../../domain/models/nav_search.dart';
 import '../../services/login_rate_limiter.dart';
 import '../../services/network_service.dart';
 import '../../services/manager_approval_cache.dart';
@@ -809,6 +810,21 @@ const kPicPosFoldedIntoAccountingHub = <int>{
   36, // دفتر الأستاذ
   62, // القوائم المالية → ميزان المراجعة
 };
+
+/// مداخلُ [items] بصيغةٍ قابلةٍ للبحث — مع كلماتِ [kNavSearchKeywords].
+///
+/// ⚠️ **المحوّلُ هنا لا في `domain`**: `nav_search.dart` حسابٌ خالصٌ في
+/// طبقة النطاق، واستيرادُه `NavItemDef` من `data/providers` يقلب اتّجاهَ
+/// الطبقات. فالمعرفةُ بالنوعَين تعيش في الطبقة الأعلى.
+List<NavSearchEntry> navEntriesFromNavItems(List<NavItemDef> items) => [
+      for (final i in items)
+        NavSearchEntry(
+          index: i.index,
+          label: i.label,
+          group: i.group,
+          keywords: kNavSearchKeywords[i.index] ?? const [],
+        ),
+    ];
 
 /// الشاشاتُ التي أسقطها المالكُ من PicPos — «مش محتاجهم يبقوا موجودين فى
 /// النظام للعمل بيهم» (‏2026-09-12).

@@ -12,6 +12,7 @@ import '../../core/permissions/permission_codes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/backup_service.dart';
 import '../../domain/models/pos_shortcut_fab_gate.dart';
+import '../../domain/models/nav_search.dart';
 import '../widgets/permission_guard.dart' show hasPermissionWithAdminBypass;
 
 import '../../data/providers/providers.dart';
@@ -74,6 +75,14 @@ class _AppShellState extends ConsumerState<AppShell> {
   // value on every build, so without this we'd spam snackbars on rebuilds).
   DateTime? _lastSeenDeadLetterAt;
   void Function()? _deadLetterListener;
+
+  /// بحثُ الشاشات في الشريط الجانبيّ — أمرُ المالك 2026-09-12.
+  ///
+  /// ⚠️ ويُبحَث في **المداخل المسموحة** لا في `kAllNavItemDefs`: بحثٌ يعرض
+  /// شاشةً ممنوعةً يمنح خريطةَ النظام لمن لا يملكها، ونقرةٌ عليها تُفتح
+  /// شاشةً يرفضها الحارسُ — أو أسوأ: لا يرفضها.
+  final TextEditingController _navSearchCtrl = TextEditingController();
+  String _navQuery = '';
 
   @override
   void initState() {
@@ -194,6 +203,7 @@ class _AppShellState extends ConsumerState<AppShell> {
 
   @override
   void dispose() {
+    _navSearchCtrl.dispose();
     _conflictSub?.cancel();
     if (_deadLetterListener != null) {
       OfflineSyncWorker.instance.lastDeadLetterEvent
@@ -550,6 +560,209 @@ class _AppShellState extends ConsumerState<AppShell> {
     }
   }
 
+  /// حقلُ البحث أعلى القائمة.
+  Widget _navSearchField() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(10, 8, 10, 4),
+      child: SizedBox(
+        height: 34,
+        child: TextField(
+          controller: _navSearchCtrl,
+          onChanged: (v) => setState(() => _navQuery = v),
+          style: const TextStyle(color: Colors.white, fontSize: 12.5),
+          cursorColor: AppColors.primary,
+          textInputAction: TextInputAction.search,
+          decoration: InputDecoration(
+            isDense: true,
+            hintText: 'ابحث عن شاشة أو ما بداخلها…',
+            hintStyle: const TextStyle(
+              color: AppColors.textMuted,
+              fontSize: 12,
+            ),
+            prefixIcon: const Icon(
+              PhosphorIconsBold.magnifyingGlass,
+              size: 15,
+              color: AppColors.textMuted,
+            ),
+            prefixIconConstraints:
+                const BoxConstraints(minWidth: 32, minHeight: 32),
+            suffixIcon: _navQuery.isEmpty
+                ? null
+                : IconButton(
+                    icon: const Icon(PhosphorIconsBold.x, size: 13),
+                    color: AppColors.textMuted,
+                    splashRadius: 14,
+                    padding: EdgeInsets.zero,
+                    constraints:
+                        const BoxConstraints(minWidth: 30, minHeight: 30),
+                    tooltip: 'مسح البحث',
+                    onPressed: () {
+                      _navSearchCtrl.clear();
+                      setState(() => _navQuery = '');
+                    },
+                  ),
+            filled: true,
+            fillColor: Colors.white.withValues(alpha: 0.06),
+            contentPadding: const EdgeInsets.symmetric(vertical: 8),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(
+                color: AppColors.primary.withValues(alpha: 0.6),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// نتائجُ البحث — قائمةٌ مسطَّحةٌ تحمل اسمَ الشاشة ومجموعتَها.
+  ///
+  /// ⚠️ **مبنيّةٌ من [items] لا من `kAllNavItemDefs`**: [items] هي المداخلُ
+  /// التي نجت من نطاق الملفّ الشخصيّ ومن صلاحيّات المستخدم ومن سياج
+  /// العلامة. والبحثُ في القائمة الكاملة يعرض للكاشير شاشةَ الحسابات.
+  Widget _navSearchResults(List<NavItemDef> items) {
+    final hits = searchNavEntries(_navQuery, navEntriesFromNavItems(items));
+    if (hits.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(PhosphorIconsBold.magnifyingGlass,
+                color: AppColors.textMuted, size: 22),
+            const SizedBox(height: 8),
+            Text(
+              'لا شاشةَ بهذا الاسم',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppColors.textMuted.withValues(alpha: 0.9),
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final byIndex = {for (final i in items) i.index: i};
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      itemCount: hits.length,
+      itemBuilder: (context, i) {
+        final hit = hits[i];
+        final item = byIndex[hit.index]!;
+        final groupLabel = _groupMeta[hit.group ?? '']?.label;
+        final isSelected = widget.currentIndex == item.index;
+        return ListTile(
+          dense: true,
+          visualDensity: VisualDensity.compact,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+          leading: Icon(
+            item.icon,
+            size: 17,
+            color: isSelected ? AppColors.primary : AppColors.textMuted,
+          ),
+          title: Text(
+            item.label,
+            style: TextStyle(
+              color: isSelected ? AppColors.primary : Colors.white,
+              fontSize: 12.5,
+              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            ),
+          ),
+          subtitle: groupLabel == null
+              ? null
+              : Text(
+                  groupLabel,
+                  style: const TextStyle(
+                    color: AppColors.textMuted,
+                    fontSize: 10.5,
+                  ),
+                ),
+          onTap: () {
+            // البحثُ يُصفَّر بعد التنقّل: إبقاؤه يترك الشريطَ على نتيجةٍ
+            // بينما المحتوى على شاشةٍ أخرى — ولا سبيلَ للعودة للمجموعات.
+            _navSearchCtrl.clear();
+            setState(() => _navQuery = '');
+            _onNavItemTap(item);
+          },
+        );
+      },
+    );
+  }
+
+  /// نقرةُ مدخلٍ في القائمة — من المجموعات أو من نتائج البحث.
+  ///
+  /// ⚠️ **كانت مُغلَقةً داخل `onItemTap` في شجرة البناء.** ونتائجُ البحث
+  /// مسارُ تنقّلٍ ثانٍ، ونسخُ المنطق لها كان يترك حارسَ السلّة وتسجيلَ
+  /// النشاط وفتاتَ الخبز في نسخةٍ واحدةٍ منهما — فيتنقّل المستخدمُ من البحث
+  /// وسلّتُه مملوءةٌ بلا تحذير.
+  void _onNavItemTap(NavItemDef item) {
+      // Delegate to parent's _buildNavItem onTap logic
+      final cartItems = ref.read(cartControllerProvider).items;
+      if (cartItems.isNotEmpty && item.index != widget.currentIndex) {
+        showDialog(
+          context: context,
+          builder: (ctx) => Directionality(
+            textDirection: TextDirection.rtl,
+            child: AlertDialog(
+              title: const Row(
+                children: [
+                  Icon(PhosphorIconsBold.warning, color: AppColors.warning),
+                  SizedBox(width: 8),
+                  Text('يوجد أصناف في السلة'),
+                ],
+              ),
+              content: const Text(
+                'لا يمكن الانتقال لشاشة أخرى وهناك أصناف في السلة.\nيرجى إتمام الفاتورة أو تعليقها أو مسح السلة أولاً.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('حسناً'),
+                ),
+              ],
+            ),
+          ),
+        );
+        return;
+      }
+      try {
+        final user = ref.read(authProvider).user;
+        if (user != null) {
+          ref.read(activityLoggerProvider).logNavigation(
+            user.id, user.displayName, item.label,
+          );
+        }
+      } catch (_) {}
+      
+      // #Breadcrumbs: Update breadcrumb stack on navigation with hierarchy
+      final groupMeta = _groupMeta[item.group ?? ''];
+      if (groupMeta != null && item.group != 'home') {
+        ref.read(breadcrumbProvider.notifier).setBreadcrumbs([
+          BreadcrumbItem(label: groupMeta.label),
+          BreadcrumbItem(
+            label: item.label,
+            onTap: () => widget.onNavigate(item.index),
+          ),
+        ]);
+      } else {
+        ref.read(breadcrumbProvider.notifier).setBreadcrumbs([
+          BreadcrumbItem(
+            label: item.label,
+            onTap: () => widget.onNavigate(item.index),
+          ),
+        ]);
+      }
+      
+      widget.onNavigate(item.index);
+  }
+
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
@@ -813,6 +1026,10 @@ class _AppShellState extends ConsumerState<AppShell> {
 
                   const Divider(color: AppColors.secondaryLight, height: 1),
 
+                  // بحثُ الشاشات — يظهر في الوضع الموسَّع وحدَه؛ الوضعُ
+                  // المطويُّ أيقوناتٌ بعرض ٦٤ بكسل لا يسع حقلَ نصّ.
+                  if (_isExpanded) _navSearchField(),
+
                   // Navigation Items — Collapsible Groups
                   // PERF: skipLoadingOnReload/Refresh keeps the previous nav
                   // list visible while the FutureProvider re-fetches on auth
@@ -833,6 +1050,11 @@ class _AppShellState extends ConsumerState<AppShell> {
                               return _buildNavItem(item, index, isSelected);
                             },
                           );
+                        }
+
+                        // بحثٌ جارٍ: نتائجُ مسطَّحةٌ بدل المجموعات.
+                        if (_navQuery.trim().isNotEmpty) {
+                          return _navSearchResults(items);
                         }
 
                         // Expanded mode: group items by group key
@@ -858,66 +1080,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                           groups: groups,
                           activeGroup: activeGroup,
                           currentIndex: widget.currentIndex,
-                          onItemTap: (item) {
-                            // Delegate to parent's _buildNavItem onTap logic
-                            final cartItems = ref.read(cartControllerProvider).items;
-                            if (cartItems.isNotEmpty && item.index != widget.currentIndex) {
-                              showDialog(
-                                context: context,
-                                builder: (ctx) => Directionality(
-                                  textDirection: TextDirection.rtl,
-                                  child: AlertDialog(
-                                    title: const Row(
-                                      children: [
-                                        Icon(PhosphorIconsBold.warning, color: AppColors.warning),
-                                        SizedBox(width: 8),
-                                        Text('يوجد أصناف في السلة'),
-                                      ],
-                                    ),
-                                    content: const Text(
-                                      'لا يمكن الانتقال لشاشة أخرى وهناك أصناف في السلة.\nيرجى إتمام الفاتورة أو تعليقها أو مسح السلة أولاً.',
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () => Navigator.pop(ctx),
-                                        child: const Text('حسناً'),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                              return;
-                            }
-                            try {
-                              final user = ref.read(authProvider).user;
-                              if (user != null) {
-                                ref.read(activityLoggerProvider).logNavigation(
-                                  user.id, user.displayName, item.label,
-                                );
-                              }
-                            } catch (_) {}
-                            
-                            // #Breadcrumbs: Update breadcrumb stack on navigation with hierarchy
-                            final groupMeta = _groupMeta[item.group ?? ''];
-                            if (groupMeta != null && item.group != 'home') {
-                              ref.read(breadcrumbProvider.notifier).setBreadcrumbs([
-                                BreadcrumbItem(label: groupMeta.label),
-                                BreadcrumbItem(
-                                  label: item.label,
-                                  onTap: () => widget.onNavigate(item.index),
-                                ),
-                              ]);
-                            } else {
-                              ref.read(breadcrumbProvider.notifier).setBreadcrumbs([
-                                BreadcrumbItem(
-                                  label: item.label,
-                                  onTap: () => widget.onNavigate(item.index),
-                                ),
-                              ]);
-                            }
-                            
-                            widget.onNavigate(item.index);
-                          },
+                          onItemTap: _onNavItemTap,
                         );
                       },
                       loading: () => const Center(
