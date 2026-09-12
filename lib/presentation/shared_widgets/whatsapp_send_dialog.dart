@@ -7,21 +7,9 @@ import '../../core/permissions/permission_codes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/app_toast.dart';
 import '../../data/providers/providers.dart';
+import '../../data/providers/feature_settings_providers.dart';
 import '../../domain/models/whatsapp_message.dart';
 import '../widgets/permission_guard.dart';
-
-/// مفتاحُ رمز الدولة الافتراضيّ لتسوية أرقام واتساب.
-///
-/// ⚠️ **ولا افتراضَ صلبٌ لدولةٍ بعينها.** المنتجُ يُشحَن في أكثرَ من سوق،
-/// ورمزٌ مكتوبٌ في الشيفرة يُنتج أرقاماً مشوَّهةً لكلّ عميلٍ في السوق الآخر
-/// — ولا يظهر ذلك إلّا حين يقول الزبونُ «لم تصلني رسالة».
-const String kWhatsAppCountryCodeKey = 'whatsapp_default_country_code';
-
-/// رمزُ الدولة المضبوط — فارغٌ يعني «غيرُ مضبوط» لا «مصر».
-final whatsAppCountryCodeProvider = FutureProvider<String>((ref) async {
-  final db = ref.watch(databaseProvider);
-  return (await db.getSettingValue(kWhatsAppCountryCodeKey))?.trim() ?? '';
-});
 
 /// حوارُ إرسالِ رسالةٍ للعميل على واتساب.
 ///
@@ -289,9 +277,7 @@ class _CountryCodeFieldState extends ConsumerState<_CountryCodeField> {
       return;
     }
     setState(() => _error = null);
-    await ref
-        .read(databaseProvider)
-        .setSetting(kWhatsAppCountryCodeKey, raw);
+    await writeFeatureSetting(ref, kWhatsAppCountryCodeKey, raw);
     widget.onSaved();
   }
 

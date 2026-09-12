@@ -71,7 +71,7 @@ void main() {
       const isSoldByWeight = true; // زي ما شاشة الصنف بتحفظها
 
       // الصيغة اللي كانت في شاشة الترحيل وشاشة اللوحات
-      final oldExportFormula = scaleType == 'weight' ||
+      const oldExportFormula = scaleType == 'weight' ||
           scaleType == 'weightByPiece' ||
           isSoldByWeight;
       // الصيغة اللي كانت في مسارَي PLU manager

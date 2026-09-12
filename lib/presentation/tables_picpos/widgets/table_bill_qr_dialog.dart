@@ -7,6 +7,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_toast.dart';
+import '../../../data/providers/feature_settings_providers.dart';
 import '../../../data/providers/providers.dart';
 import '../../../services/api/table_bill_token.dart';
 import '../../../services/generators/base_generator.dart';
@@ -61,8 +62,8 @@ class TableBillQrDialog extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final enabled = ref.watch(_tableBillEnabledProvider);
-    final publicBase = ref.watch(_publicBaseUrlProvider).asData?.value;
+    final enabled = ref.watch(tableBillQrEnabledProvider);
+    final publicBase = ref.watch(tableBillPublicBaseUrlProvider).asData?.value;
     final ns = NetworkService.instance;
     final serving = ns.isServer && ns.isServerRunning;
 
@@ -112,10 +113,11 @@ class TableBillQrDialog extends ConsumerWidget {
                   onChanged: enabled.isLoading
                       ? null
                       : (v) async {
-                          await ref
-                              .read(databaseProvider)
-                              .setSetting(kTableBillQrEnabledKey, '$v');
-                          ref.invalidate(_tableBillEnabledProvider);
+                          await writeFeatureSetting(
+                            ref,
+                            kTableBillQrEnabledKey,
+                            '$v',
+                          );
                         },
                 ),
               if (serving && enabled.asData?.value == true)
@@ -316,10 +318,7 @@ class _PublicBaseUrlFieldState extends ConsumerState<_PublicBaseUrlField> {
       return;
     }
     setState(() => _error = null);
-    await ref
-        .read(databaseProvider)
-        .setSetting(kTableBillPublicBaseUrlKey, raw);
-    ref.invalidate(_publicBaseUrlProvider);
+    await writeFeatureSetting(ref, kTableBillPublicBaseUrlKey, raw);
     if (mounted) AppToast.show(context, raw.isEmpty ? 'أُلغي النشر' : 'حُفظ');
   }
 
@@ -361,15 +360,3 @@ class _PublicBaseUrlFieldState extends ConsumerState<_PublicBaseUrlField> {
   }
 }
 
-/// العنوانُ العامُّ إن كان الخادمُ منشوراً على دومين.
-final _publicBaseUrlProvider = FutureProvider<String?>((ref) async {
-  final db = ref.watch(databaseProvider);
-  return normalizeTableBillBaseUrl(
-    await db.getSettingValue(kTableBillPublicBaseUrlKey),
-  );
-});
-
-final _tableBillEnabledProvider = FutureProvider<bool>((ref) async {
-  final db = ref.watch(databaseProvider);
-  return (await db.getSettingValue(kTableBillQrEnabledKey)) == 'true';
-});

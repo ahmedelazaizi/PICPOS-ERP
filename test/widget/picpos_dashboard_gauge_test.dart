@@ -32,9 +32,9 @@ void main() {
   });
 
   testWidgets('PicPosDonut builds with segments and reacts to tap', (t) async {
-    await t.pumpWidget(MaterialApp(
+    await t.pumpWidget(const MaterialApp(
       home: Scaffold(
-        body: PicPosDonut(segments: const [
+        body: PicPosDonut(segments: [
           PicPosDonutSegment(
               label: 'صافي الإيراد', value: 800, color: Color(0xFF10B981)),
           PicPosDonutSegment(

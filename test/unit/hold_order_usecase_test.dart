@@ -13,7 +13,6 @@ import 'package:ural_erp/data/providers/providers.dart';
 import 'package:ural_erp/domain/entities/cart_item_entity.dart';
 import 'package:ural_erp/domain/usecases/sales/hold_order_usecase.dart';
 import 'package:ural_erp/presentation/pos/widgets/modifier_selection_dialog.dart';
-import 'package:ural_erp/data/database/database.dart' show ProductsCompanion;
 
 void main() {
   late AppDatabase db;

@@ -124,6 +124,7 @@ import '../../screens/settings/widgets/server_perms_toggle_dialog.dart';
 import '../../accounting_picpos/account_mapping_picpos_screen.dart';
 import 'work_holidays_picpos_screen.dart';
 
+import 'guest_services_settings_picpos.dart';
 import 'printers_picpos_screen.dart';
 import 'pos_terminals_picpos_screen.dart';
 import 'delivery_management_picpos_screen.dart';
@@ -921,12 +922,37 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
         title: 'التكاملات والخدمات',
         icon: PhosphorIconsBold.plugsConnected,
         group: 'الامتدادات',
-        desc: 'شاشة العميل · المطبخ · التوصيل',
-        keywords: 'توصيل مناديب شاشة عميل CFD مطبخ KDS إضافات معدلات',
+        desc: 'شاشة العميل · المطبخ · التوصيل · رمز الطاولة · واتساب',
+        keywords: 'توصيل مناديب شاشة عميل CFD مطبخ KDS إضافات معدلات '
+            'رمز طاولة QR حساب ضيف دومين واتساب whatsapp رمز دولة رسائل عملاء',
         children: () => [
           // ═══ 7. التكاملات والخدمات ═══
           SettingsBlockGrid(
             blocks: [
+              // ⚠️ **هنا لا في حوار الطباعة وحدَه.** كانت رايتا رمز الطاولة
+              // تُضبطان داخلَ حوارٍ يُفتَح لطباعة الأكواد — فمن بحث عنها في
+              // الإعدادات لم يجدها، وهو بلاغُ المالك بنصّه. ورايةُ طلبِ
+              // الضيف لم يكن لها **كاتبٌ في `lib/` كلِّها**، فالنصفُ الذي
+              // طُلب صراحةً كان مطفأً إلى الأبد.
+              if (features.tablesEnabled)
+                const SettingsBlockSpan(
+                  span: 12,
+                  child: SettingsBlock(
+                    title: 'رمز حساب الطاولة',
+                    subtitle: 'الضيفُ يرى حسابَه ويطلب من هاتفه',
+                    tint: AppColors.info,
+                    child: TableBillSettingsCard(),
+                  ),
+                ),
+              const SettingsBlockSpan(
+                span: 12,
+                child: SettingsBlock(
+                  title: 'رسائل العملاء — واتساب',
+                  subtitle: 'الفاتورةُ وكشفُ الحساب والمطالبة',
+                  tint: AppColors.success,
+                  child: WhatsAppSettingsCard(),
+                ),
+              ),
               if (features.deliveryEnabled)
                 SettingsBlockSpan(
                   span: 12,

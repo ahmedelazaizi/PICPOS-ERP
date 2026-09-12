@@ -216,7 +216,10 @@ void main() {
     final replay = await post('gid-pur-m4-1', 'SRV-001');
     expect(replay.statusCode, 200,
         reason: 'إعادة المحاولة على نفس globalId ليست تعارضاً');
-    expect(json.decode(await replay.readAsString())['duplicate'], true);
+    expect(
+        (json.decode(await replay.readAsString()) as Map<String, dynamic>)
+            ['duplicate'],
+        true);
 
     // فاتورة **مختلفة** بنفس رقم المورد = تعارض حقيقي.
     final conflict = await post('gid-pur-m4-2', 'SRV-001');
