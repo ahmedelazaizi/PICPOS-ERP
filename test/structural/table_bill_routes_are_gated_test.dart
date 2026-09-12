@@ -137,6 +137,40 @@ void main() {
         reason: 'بلا قاعدةِ تصنيفٍ يسقط على الافتراضيّ مع تحذيرِ «غيرُ مصنَّف»');
   });
 
+  group('وضعُ الدومين العامّ — الحاجزُ الأوّلُ ساقط', () {
+    // ⚠️ على شبكةٍ محلّيّةٍ كان الحاجزُ الأوّلُ **الشبكةَ نفسَها**. وخادمٌ على
+    // دومينٍ يُسقطه: من صوّر الرمزَ المطبوعَ مرّةً يقرأ من أيّ مكانٍ ويبلغ
+    // رمزَ الجلسة من القراءة نفسِها فيكتب. فالرقمُ القصير هو كلُّ ما يبقى.
+
+    test('الكتابتان كلتاهما تمرّان بفحص الرقم', () {
+      for (final fn in const [
+        'Future<Response> _requestTableBill',
+        'Future<Response> _addGuestOrderRequest',
+      ]) {
+        expect(_body(handler, fn).contains('_requireSessionPin('), isTrue,
+            reason: '«$fn» يكتب بلا رقمٍ على خادمٍ عامّ — للعالم كلِّه');
+      }
+    });
+
+    test('والاشتراطُ مشتقٌّ من وجود العنوان لا من إعدادٍ ثالث', () {
+      // إعدادان يصفان نفسَ الحقيقة يفترقان: من ينشر على دومينٍ وينسى
+      // الثانيَ يفتح الكتابةَ بلا حاجزٍ واحد.
+      final body = _decl(handler, 'Future<bool> _tableBillIsPublic()');
+      expect(body.contains('kTableBillPublicBaseUrlKey'), isTrue);
+      expect(body.contains('normalizeTableBillBaseUrl('), isTrue,
+          reason: 'عنوانٌ غيرُ صالحٍ يُعدّ نشراً — أو العكس');
+    });
+
+    test('ولا تُرسَل قيمةُ الرقم مع القراءة', () {
+      // إرسالُه يُلغيه: من يقرأ عن بُعدٍ يأخذه ويكتب.
+      final body = _body(handler, 'Future<Response> _getTableBill(Request');
+      expect(body.contains('sessionPin('), isFalse,
+          reason: 'الرقمُ يُشتقّ داخلَ جواب القراءة — فبطل معناه');
+      expect(body.contains("'pinRequired'"), isTrue,
+          reason: 'الصفحةُ لا تعرف أنّ الرقمَ مطلوب فلا تسأل عنه');
+    });
+  });
+
   test('ومفتاحُ التوقيع يُشتقّ عند إقلاع الخادم', () {
     // بلا هذا السطر يفشل التحقّقُ مغلقاً — وهو الصوابُ — فيبدو كلُّ رمزٍ
     // مطبوعٍ معطّلاً بلا سببٍ ظاهرٍ في أيّ سجلّ.

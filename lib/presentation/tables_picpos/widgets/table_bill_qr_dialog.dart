@@ -38,21 +38,31 @@ class TableBillQrDialog extends ConsumerWidget {
 
   /// رابطُ حسابِ الطاولة كما يُوضَع في الرمز.
   ///
-  /// ⚠️ ويُبنى بمخطَّط **هذا** الخادم لا بمخطَّط خادمٍ بعيد: الورقةُ تُطبَع
-  /// على الجهاز الذي يستضيف، و`remoteHttpScheme` على جهاز خادمٍ يساوي `http`
-  /// دائماً لأن لا خادمَ بعيداً عنده — فيُطبَع رابطٌ لا يفتح على TLS.
-  static String? urlFor(RestaurantTable table) {
+  /// ⚠️ **[publicBaseUrl] يسبق عنوانَ الشبكة المحلّيّة.** الرمزُ يُطبَع ويُلصَق
+  /// على الخشب سنةً، وعنوانُ الشبكة المحلّيّة (`192.168.x.y`) لا يفتح من خارج
+  /// المحلّ. فمن نشر خادمَه على دومينٍ يجب أن تحمل ورقتُه الدومين، وإلّا
+  /// طُبعت أوراقٌ تعمل داخلَ المحلّ وحدَه وهو يظنّها تعمل من الخارج.
+  ///
+  /// ⚠️ وبلا [publicBaseUrl] يُبنى بمخطَّط **هذا** الخادم لا بمخطَّط خادمٍ
+  /// بعيد: `remoteHttpScheme` على جهاز خادمٍ يساوي `http` دائماً لأن لا
+  /// خادمَ بعيداً عنده — فيُطبَع رابطٌ لا يفتح على TLS.
+  static String? urlFor(RestaurantTable table, {String? publicBaseUrl}) {
+    if (!TableBillToken.isReady) return null;
+    final token = TableBillToken.mintTable(table.id);
+
+    final public = normalizeTableBillBaseUrl(publicBaseUrl);
+    if (public != null) return '$public/t/$token';
+
     final ns = NetworkService.instance;
     final host = ns.serverAddress;
     if (host == null || host.isEmpty) return null;
-    if (!TableBillToken.isReady) return null;
-    return '${ns.httpScheme}://$host:${ns.serverPort}'
-        '/t/${TableBillToken.mintTable(table.id)}';
+    return '${ns.httpScheme}://$host:${ns.serverPort}/t/$token';
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final enabled = ref.watch(_tableBillEnabledProvider);
+    final publicBase = ref.watch(_publicBaseUrlProvider).asData?.value;
     final ns = NetworkService.instance;
     final serving = ns.isServer && ns.isServerRunning;
 
@@ -108,6 +118,16 @@ class TableBillQrDialog extends ConsumerWidget {
                           ref.invalidate(_tableBillEnabledProvider);
                         },
                 ),
+              if (serving && enabled.asData?.value == true)
+                _PublicBaseUrlField(current: publicBase),
+              if (publicBase != null)
+                _banner(
+                  icon: PhosphorIconsBold.globe,
+                  color: AppColors.warning,
+                  text: 'الخادمُ منشورٌ على دومين — الرمزُ يفتح من خارج المحلّ. '
+                      'ولذلك يُطلَب من الضيف **رقمُ الطاولة** قبل أن يطلب '
+                      'الحساب أو يضيف أصنافاً، ويقوله له النادل.',
+                ),
               const SizedBox(height: 8),
               Flexible(
                 child: tables.isEmpty
@@ -121,7 +141,8 @@ class TableBillQrDialog extends ConsumerWidget {
                         separatorBuilder: (_, _) => const Divider(height: 1),
                         itemBuilder: (context, i) {
                           final table = tables[i];
-                          final url = urlFor(table);
+                          final url =
+                              urlFor(table, publicBaseUrl: publicBase);
                           return ListTile(
                             dense: true,
                             title: Text(
@@ -167,7 +188,9 @@ class TableBillQrDialog extends ConsumerWidget {
             child: const Text('إغلاق'),
           ),
           ElevatedButton.icon(
-            onPressed: tables.isEmpty ? null : () => _printSheets(context),
+            onPressed: tables.isEmpty
+                ? null
+                : () => _printSheets(context, publicBase),
             icon: const Icon(PhosphorIconsBold.printer),
             label: const Text('طباعة الأكواد'),
           ),
@@ -198,10 +221,10 @@ class TableBillQrDialog extends ConsumerWidget {
     );
   }
 
-  Future<void> _printSheets(BuildContext context) async {
+  Future<void> _printSheets(BuildContext context, String? publicBase) async {
     final withUrls = <(RestaurantTable, String)>[
       for (final t in tables)
-        if (urlFor(t) case final url?) (t, url),
+        if (urlFor(t, publicBaseUrl: publicBase) case final url?) (t, url),
     ];
     if (withUrls.isEmpty) {
       AppToast.show(context, 'لا رابطَ يُطبَع — الخادمُ غيرُ مهيّأ');
@@ -236,8 +259,13 @@ class TableBillQrDialog extends ConsumerWidget {
                   height: 230,
                 ),
                 pw.SizedBox(height: 18),
+                // ⚠️ والسطرُ يتبع الواقعَ لا يُكتَب مرّةً: ورقةٌ تقول
+                // «لا بدّ من شبكة المحلّ» على خادمٍ منشورٍ تُخيف الضيفَ
+                // من رمزٍ يعمل، وعكسُها يَعِده بما لا يقع.
                 pw.Text(
-                  'الاتّصالُ بشبكة المحلّ شرطٌ لفتح الرابط',
+                  publicBase == null
+                      ? 'الاتّصالُ بشبكة المحلّ شرطٌ لفتح الرابط'
+                      : 'يفتح من أيّ مكان — والرقمُ يُطلَب من النادل',
                   style: const pw.TextStyle(fontSize: 11),
                 ),
               ],
@@ -255,6 +283,92 @@ class TableBillQrDialog extends ConsumerWidget {
 /// ⚠️ **ولا يمرّ بالإعدادات المخزَّنة**: تلك تُرجع `null` عند إخفاق الكاش لا
 /// عند غياب المفتاح، ومفتاحٌ غيرُ مسجَّلٍ في `preloadKeys` يُقرأ فارغاً دوماً
 /// — فتبدو الميزةُ مطفأةً وهي مُشعَلة، والمستخدمُ يُشعلها مرّتين.
+/// حقلُ الدومين العامّ.
+///
+/// ⚠️ **والتحقّقُ عند الحفظ لا عند الطباعة.** عنوانٌ فيه مسارٌ أو بلا مخطَّطٍ
+/// يُرفَض هنا بكلمةٍ يقرؤها المشغّل؛ ولو قُبل لطُبعت أوراقٌ ولُصقت ثمّ اكتُشف
+/// من ضيفٍ أنّ الرمزَ لا يفتح.
+class _PublicBaseUrlField extends ConsumerStatefulWidget {
+  const _PublicBaseUrlField({required this.current});
+
+  final String? current;
+
+  @override
+  ConsumerState<_PublicBaseUrlField> createState() =>
+      _PublicBaseUrlFieldState();
+}
+
+class _PublicBaseUrlFieldState extends ConsumerState<_PublicBaseUrlField> {
+  late final TextEditingController _ctrl =
+      TextEditingController(text: widget.current ?? '');
+  String? _error;
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final raw = _ctrl.text.trim();
+    if (raw.isNotEmpty && normalizeTableBillBaseUrl(raw) == null) {
+      setState(() => _error = 'عنوانٌ غيرُ صالح — مثال: https://shop.com');
+      return;
+    }
+    setState(() => _error = null);
+    await ref
+        .read(databaseProvider)
+        .setSetting(kTableBillPublicBaseUrlKey, raw);
+    ref.invalidate(_publicBaseUrlProvider);
+    if (mounted) AppToast.show(context, raw.isEmpty ? 'أُلغي النشر' : 'حُفظ');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _ctrl,
+              style: const TextStyle(fontSize: 12.5),
+              decoration: InputDecoration(
+                isDense: true,
+                labelText: 'دومين الخادم العامّ (اختياريّ)',
+                labelStyle: const TextStyle(fontSize: 12),
+                hintText: 'https://shop.example.com',
+                hintStyle: const TextStyle(fontSize: 11.5),
+                helperText: 'اتركه فارغاً إن كان الخادمُ على شبكة المحلّ فقط',
+                helperStyle: const TextStyle(fontSize: 10.5),
+                errorText: _error,
+                border: const OutlineInputBorder(),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: OutlinedButton(
+              onPressed: _save,
+              child: const Text('حفظ'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// العنوانُ العامُّ إن كان الخادمُ منشوراً على دومين.
+final _publicBaseUrlProvider = FutureProvider<String?>((ref) async {
+  final db = ref.watch(databaseProvider);
+  return normalizeTableBillBaseUrl(
+    await db.getSettingValue(kTableBillPublicBaseUrlKey),
+  );
+});
+
 final _tableBillEnabledProvider = FutureProvider<bool>((ref) async {
   final db = ref.watch(databaseProvider);
   return (await db.getSettingValue(kTableBillQrEnabledKey)) == 'true';

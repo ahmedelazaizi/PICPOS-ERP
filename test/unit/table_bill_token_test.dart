@@ -141,4 +141,98 @@ void main() {
       );
     });
   });
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // رمزُ الجلسة القصير — الحاجزُ البديلُ حين يخرج الخادمُ إلى دومين
+  // ═══════════════════════════════════════════════════════════════════════
+  //
+  // ⚠️ **الحاجزُ الأوّلُ كان الشبكةَ نفسَها**: خادمٌ محلّيٌّ لا يبلغه إلّا من
+  // هو في المحلّ. وخادمٌ على دومينٍ يُسقط ذلك الحاجزَ كلَّه — فمن صوّر الرمزَ
+  // المطبوعَ مرّةً يقرأ حسابَ تلك الطاولة **من أيّ مكانٍ في العالم** كلّما
+  // شُغلت، ويبلغ رمزَ الجلسة (‏يُعاد مع القراءة) فيكتب.
+  //
+  // فالبديلُ رقمٌ قصيرٌ **لا يُنال إلّا من داخل المحلّ**: يقرؤه النادلُ من
+  // شاشته ويقوله للضيف الجالس أمامه. ويُشتقّ ولا يُخزَّن — لا عمودَ ولا هجرة.
+  group('الرقمُ القصير', () {
+    test('أربعةُ محارفَ رقميّةٌ دائماً', () {
+      for (var id = 1; id <= 40; id++) {
+        final pin = TableBillToken.sessionPin(orderId: id, openedAt: opened);
+        expect(pin, hasLength(4), reason: 'الطلبُ $id أعطى «$pin»');
+        expect(RegExp(r'^\d{4}$').hasMatch(pin), isTrue, reason: pin);
+      }
+    });
+
+    test('وثابتٌ لنفس الجلسة — يُقال مرّةً ويبقى', () {
+      expect(
+        TableBillToken.sessionPin(orderId: 41, openedAt: opened),
+        TableBillToken.sessionPin(orderId: 41, openedAt: opened),
+      );
+    });
+
+    test('ويتبدّل بتبدّل الجلسة', () {
+      final a = TableBillToken.sessionPin(orderId: 41, openedAt: opened);
+      final b = TableBillToken.sessionPin(orderId: 42, openedAt: opened);
+      final c = TableBillToken.sessionPin(
+        orderId: 41,
+        openedAt: opened.add(const Duration(minutes: 1)),
+      );
+      expect(a, isNot(b));
+      expect(a, isNot(c), reason: 'جلسةٌ تاليةٌ على نفس الطاولة بنفس الرقم');
+    });
+
+    test('والتحقّقُ لا يقبل سواه ولا يقبل فراغاً', () {
+      final pin = TableBillToken.sessionPin(orderId: 41, openedAt: opened);
+      expect(
+        TableBillToken.verifySessionPin(pin, orderId: 41, openedAt: opened),
+        isTrue,
+      );
+      expect(
+        TableBillToken.verifySessionPin('0000', orderId: 41, openedAt: opened),
+        pin == '0000',
+      );
+      expect(
+        TableBillToken.verifySessionPin(null, orderId: 41, openedAt: opened),
+        isFalse,
+      );
+      expect(
+        TableBillToken.verifySessionPin('', orderId: 41, openedAt: opened),
+        isFalse,
+      );
+    });
+
+    test('ويتجاوز الفراغَ حولَه — الضيفُ يكتبه بيده', () {
+      final pin = TableBillToken.sessionPin(orderId: 41, openedAt: opened);
+      expect(
+        TableBillToken.verifySessionPin(
+          ' $pin ',
+          orderId: 41,
+          openedAt: opened,
+        ),
+        isTrue,
+      );
+    });
+
+    test('ولا يُشتقّ بلا مفتاح', () {
+      TableBillToken.clearKey();
+      expect(
+        () => TableBillToken.sessionPin(orderId: 1, openedAt: opened),
+        throwsStateError,
+      );
+      expect(
+        TableBillToken.verifySessionPin('1234', orderId: 1, openedAt: opened),
+        isFalse,
+      );
+    });
+
+    test('وتوزيعُه غيرُ منحازٍ إلى قيمةٍ واحدة', () {
+      // ⚠️ اشتقاقٌ من بايتٍ واحدٍ يعطي ٢٥٦ قيمةً فقط، ومن `hashCode` يعطي
+      // تكراراً واضحاً. والمقياسُ هنا **عددُ القيم المتمايزة** لا شكلُها.
+      final seen = <String>{};
+      for (var id = 1; id <= 200; id++) {
+        seen.add(TableBillToken.sessionPin(orderId: id, openedAt: opened));
+      }
+      expect(seen.length, greaterThan(180),
+          reason: 'تصادمٌ كثيفٌ — الرقمُ يُخمَّن بمحاولاتٍ قليلة');
+    });
+  });
 }

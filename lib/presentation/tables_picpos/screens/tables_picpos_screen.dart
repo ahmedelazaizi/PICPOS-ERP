@@ -36,6 +36,7 @@ import '../../screens/tables_screen.dart' show TableActionsHost, TableActionsRun
 import '../../widgets/permission_guard.dart';
 import '../widgets/guest_requests_banner.dart';
 import '../widgets/table_bill_qr_dialog.dart';
+import '../widgets/table_session_pin_card.dart';
 import '../widgets/tables_action_rail.dart';
 import '../widgets/tables_status_rail.dart';
 
@@ -260,13 +261,24 @@ class _TablesPicposBodyState extends ConsumerState<_TablesPicposBody> {
                 SizedBox(
                   width: 220,
                   child: SingleChildScrollView(
-                    child: TablesActionRail(
-                      tableStatus: selectedTable?.status,
-                      onAction: (action) {
-                        final table = selectedTable;
-                        if (table == null) return;
-                        widget.actions.run(table, action);
-                      },
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // رقمُ الجلسة فوقَ الأفعال — يقرؤه النادلُ
+                        // للطاولة المختارة، ولا يظهر إلّا في وضع
+                        // الدومين العامّ حيث يُطلَب فعلاً.
+                        TableSessionPinCard(
+                          tableId: selectedTable?.id,
+                        ),
+                        TablesActionRail(
+                          tableStatus: selectedTable?.status,
+                          onAction: (action) {
+                            final table = selectedTable;
+                            if (table == null) return;
+                            widget.actions.run(table, action);
+                          },
+                        ),
+                      ],
                     ),
                   ),
                 ),

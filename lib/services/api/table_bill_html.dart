@@ -94,6 +94,11 @@ const String _tableBillHtmlRaw = r'''
     cursor:pointer;font-family:inherit;line-height:1;
   }
   .scount{min-width:20px;text-align:center;font-weight:800;font-size:.92rem}
+  .pin{
+    width:100%;padding:14px;border-radius:12px;border:1.5px solid #d6dce8;
+    font-size:1.6rem;text-align:center;letter-spacing:.5rem;
+    font-family:inherit;font-weight:800;color:#0250D3;
+  }
 </style>
 </head>
 <body>
@@ -107,6 +112,11 @@ const String _tableBillHtmlRaw = r'''
 var TOKEN = decodeURIComponent(location.pathname.replace(/^\/t\//, ''));
 var CUR = '{{CURRENCY}}';
 var session = null;
+// الرقمُ القصير — يُطلَب فقط حين يكون الخادمُ على دومينٍ عامّ، ويُحفَظ في
+// الجلسة كي لا يُسأل عنه الضيفُ مع كلّ فعل. ولا يُخزَّن في المتصفّح بعد
+// إغلاق اللسان: هو رقمُ جلسةٍ لا رقمُ حساب.
+var pin = null;
+var pinRequired = false;
 var requested = false;
 var timer = null;
 
@@ -210,9 +220,13 @@ function requestBill(btn){
   fetch('/api/table-bill/' + encodeURIComponent(TOKEN) + '/request', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({session: session})
+    body: JSON.stringify({session: session, pin: pin})
   }).then(function(r){ return r.json(); }).then(function(j){
     if (j && j.success) { requested = true; load(); }
+    else if (j && j.pinRequired) {
+      pin = null;
+      askPin(function(){ requestBill(btn); });
+    }
     else {
       btn.disabled = false;
       btn.textContent = 'اطلب الحساب';
@@ -223,6 +237,41 @@ function requestBill(btn){
     btn.textContent = 'اطلب الحساب';
     stateBoxAppend('تعذّر الاتصال — نادِ النادل');
   });
+}
+
+// يسأل الضيفَ عن رقم الطاولة ثم يُعيد [retry].
+//
+// ⚠️ **ولا يُسأل إلّا عند الرفض.** طلبُه مقدّماً — قبل أن يحتاجه — يضع
+// حاجزاً أمام من يريد أن **يقرأ** حسابَه فقط، وهو أكثرُ من يفتح الصفحة.
+function askPin(retry){
+  var root = document.getElementById('root');
+  root.innerHTML = '';
+  var c = el('div','card');
+  c.appendChild(el('h1',null,'رقمُ الطاولة'));
+  c.appendChild(el('div','muted',
+    'اطلبه من النادل — أربعةُ أرقامٍ خاصّةٌ بجلستك'));
+  c.appendChild(el('div','gap'));
+  var input = document.createElement('input');
+  input.className = 'pin';
+  input.type = 'tel';
+  input.inputMode = 'numeric';
+  input.maxLength = 4;
+  input.placeholder = '••••';
+  c.appendChild(input);
+  c.appendChild(el('div','gap'));
+  var ok = el('button','btn','تأكيد');
+  ok.onclick = function(){
+    var v = (input.value || '').trim();
+    if (v.length !== 4) { input.focus(); return; }
+    pin = v;
+    retry();
+  };
+  c.appendChild(ok);
+  var back = el('button','link','رجوع للحساب');
+  back.onclick = function(){ inMenu = false; load(); };
+  c.appendChild(back);
+  root.appendChild(c);
+  input.focus();
 }
 
 function stateBoxAppend(msg){
@@ -338,9 +387,13 @@ function sendDraft(btn){
   fetch('/api/table-bill/' + encodeURIComponent(TOKEN) + '/add', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({session: session, items: items})
+    body: JSON.stringify({session: session, pin: pin, items: items})
   }).then(function(r){ return r.json(); }).then(function(j){
     if (j && j.success) { draft = {}; inMenu = false; load(); }
+    else if (j && j.pinRequired) {
+      pin = null;
+      askPin(function(){ renderMenu(); sendDraft(document.getElementById('sendBtn')); });
+    }
     else {
       syncSend();
       stateBoxAppend(j && j.error ? j.error : 'تعذّر الإرسال — نادِ النادل');
@@ -365,6 +418,7 @@ function load(){
         return;
       }
       session = j.session || null;
+      pinRequired = j.pinRequired === true;
       render(j);
     })
     .catch(function(){ stateBox('state','تعذّر الاتصال بالمحلّ'); });

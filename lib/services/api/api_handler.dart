@@ -2019,6 +2019,37 @@ class ApiHandler {
   Future<bool> _tableBillEnabled() async =>
       (await _db.getSettingValue(kTableBillQrEnabledKey)) == 'true';
 
+  /// هل الخادمُ منشورٌ على دومينٍ عامّ؟
+  ///
+  /// ⚠️ **وهذا السؤالُ أمنيٌّ لا عرضيّ.** جوابُه `true` يعني أن حاجزَ الشبكة
+  /// المحلّيّة سقط، فيُشترَط الرقمُ القصير على كلّ كتابة. واشتقاقُه من
+  /// **وجود العنوان** لا من إعدادٍ ثالثٍ مستقلٍّ مقصود: إعدادان يصفان نفسَ
+  /// الحقيقة يفترقان، ومن ينشر على دومينٍ وينسى الثانيَ يفتح الكتابةَ للعالم.
+  Future<bool> _tableBillIsPublic() async =>
+      normalizeTableBillBaseUrl(
+        await _db.getSettingValue(kTableBillPublicBaseUrlKey),
+      ) !=
+      null;
+
+  /// يفحص الرقمَ القصير حين يكون الخادمُ عامّاً. `null` = مسموح.
+  Future<Response?> _requireSessionPin(
+    Map<String, dynamic> body,
+    TableOrder order,
+  ) async {
+    if (!await _tableBillIsPublic()) return null;
+    final ok = TableBillToken.verifySessionPin(
+      body['pin'] as String?,
+      orderId: order.id,
+      openedAt: order.openedAt,
+    );
+    if (ok) return null;
+    return _json({
+      'success': false,
+      'pinRequired': true,
+      'error': 'اطلب رقمَ الطاولة من النادل',
+    });
+  }
+
   /// الطلبُ المفتوحُ على الطاولة الموقَّعة في [token]، أو `null`.
   ///
   /// ⚠️ و«مفتوح» تشمل `bill_requested`: الضيفُ طلب الحساب ثمّ فتح الصفحةَ
@@ -2085,6 +2116,10 @@ class ApiHandler {
         // ⚠️ **تُقرأ من الخادم لا تُفترَض في الصفحة**: زرٌّ يظهر وميزتُه
         // مطفأةٌ يعطي الضيفَ وعداً يُرَدُّ عليه بخطأٍ بعد أن يختار.
         'guestOrder': await _guestOrderEnabled(),
+        // ⚠️ **ولا يُرسَل الرقمُ نفسُه بحال.** الصفحةُ تعرف أنه مطلوبٌ فقط،
+        // والرقمُ يُقال شفاهاً من النادل. وإرسالُه مع القراءة كان يُلغيه
+        // تماماً: من يقرأ عن بُعدٍ يأخذه ويكتب.
+        'pinRequired': await _tableBillIsPublic(),
         'pendingRequests':
             GuestOrderRequests.instance.forOrder(order.id).length,
         // رمزُ الجلسة — الكتابةُ لا تُقبَل بدونه، ويموت بإغلاق الطلب.
@@ -2159,6 +2194,9 @@ class ApiHandler {
         openedAt: order.openedAt,
       )) {
         return _json({'success': false, 'error': 'انتهت الجلسة — حدِّث الصفحة'});
+      }
+      if (await _requireSessionPin(map, order) case final blocked?) {
+        return blocked;
       }
 
       final raw = map['items'];
@@ -2320,17 +2358,24 @@ class ApiHandler {
       // ينتهي، فمن مسحه مرّةً كان يستطيع مناداةَ النادل لطاولةٍ يجلس عليها
       // غيرُه بعد شهر. ورمزُ الجلسة لا يُنال إلّا بقراءةِ حسابٍ **مفتوحٍ
       // الآن**، ويموت بإغلاقه.
-      final body = await request.readAsString();
-      final session = body.isEmpty
-          ? null
-          : (json.decode(body) as Map<String, dynamic>)['session'] as String?;
+      final raw = await request.readAsString();
+      final body = raw.isEmpty
+          ? const <String, dynamic>{}
+          : json.decode(raw) as Map<String, dynamic>;
       final valid = TableBillToken.verifySession(
-        session,
+        body['session'] as String?,
         orderId: order.id,
         openedAt: order.openedAt,
       );
       if (!valid) {
         return _json({'success': false, 'error': 'انتهت الجلسة — حدِّث الصفحة'});
+      }
+      // ⚠️ والرقمُ القصير **بعد** رمز الجلسة لا قبله: رمزُ الجلسة يُثبت أن
+      // الطلبَ مفتوحٌ الآن، والرقمُ يُثبت أن الطالبَ في المحلّ. وترتيبُهما
+      // يجعل رسالةَ «انتهت الجلسة» تسبق «اطلب الرقم» — وهي الأصحُّ للضيف
+      // الذي تُركت صفحتُه مفتوحةً من جلسةٍ سابقة.
+      if (await _requireSessionPin(body, order) case final blocked?) {
+        return blocked;
       }
 
       // ساكنٌ عند التكرار: ضغطتان لا تُنتجان نداءَين ولا تُرجعان خطأً.

@@ -19,6 +19,36 @@ const String kTableBillQrEnabledKey = 'table_bill_qr_enabled';
 /// `GuestOrderRequests`.
 const String kTableBillGuestOrderEnabledKey = 'table_bill_guest_order_enabled';
 
+/// عنوانُ الخادم العامّ (‏دومين) — فارغٌ يعني «شبكةُ المحلّ وحدَها».
+///
+/// ⚠️ **وضبطُه يغيّر نموذجَ التهديد لا العنوانَ فقط.** الحاجزُ الأوّلُ في هذا
+/// التصميم كان الشبكةَ نفسَها: خادمٌ محلّيٌّ لا يبلغه إلّا من هو في المحلّ.
+/// وخادمٌ على دومينٍ يُسقطه — فمن صوّر الرمزَ المطبوعَ مرّةً يقرأ حسابَ تلك
+/// الطاولة من أيّ مكانٍ كلّما شُغلت، ويبلغ رمزَ الجلسة فيكتب.
+///
+/// ولذلك: **ضبطُه يُشعِل اشتراطَ الرقم القصير على كلّ كتابة** تلقائيّاً —
+/// راجع `TableBillToken.sessionPin`. ولا يُترَك ذلك لإعدادٍ ثالثٍ يُنسى.
+const String kTableBillPublicBaseUrlKey = 'table_bill_public_base_url';
+
+/// [raw] بعد التسوية، أو `null` إن لم يكن عنواناً صالحاً للاستعمال.
+///
+/// ⚠️ **ويُرفَض ما فيه مسارٌ أو استعلام**: العنوانُ **أساسٌ** يُلحَق به
+/// `/t/<token>`، فقيمةٌ مثل `https://x.com/menu` كانت تُنتج `…/menu/t/…` —
+/// رمزاً مطبوعاً ومُلصَقاً لا يفتح شيئاً، ولا يُكتشَف إلّا من ضيف.
+String? normalizeTableBillBaseUrl(String? raw) {
+  final value = raw?.trim();
+  if (value == null || value.isEmpty) return null;
+  final uri = Uri.tryParse(value);
+  if (uri == null) return null;
+  if (uri.scheme != 'http' && uri.scheme != 'https') return null;
+  if (uri.host.isEmpty) return null;
+  if (uri.hasQuery || uri.hasFragment) return null;
+  final path = uri.path.replaceAll(RegExp(r'/+$'), '');
+  if (path.isNotEmpty) return null;
+  final port = uri.hasPort ? ':${uri.port}' : '';
+  return '${uri.scheme}://${uri.host}$port';
+}
+
 /// رمزا رابطِ حسابِ الطاولة — القراءةُ بالمطبوع والكتابةُ بالجلسة.
 ///
 /// ═══ لماذا رمزان ═══
@@ -131,6 +161,52 @@ class TableBillToken {
   }) {
     if (token == null || token.isEmpty || _signingKey == null) return false;
     return _constantTimeEquals(token, _sign(_sessionPayload(orderId, openedAt)));
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // الرقمُ القصير — الحاجزُ البديلُ حين يخرج الخادمُ إلى دومين
+  // ═══════════════════════════════════════════════════════════════
+
+  /// رقمٌ من أربع خاناتٍ لجلسةِ طلبٍ بعينها.
+  ///
+  /// ⚠️ **لماذا وُجد أصلاً.** الحاجزُ الأوّلُ في هذا التصميم كان **الشبكةَ**:
+  /// خادمٌ محلّيٌّ لا يبلغه إلّا من هو في المحلّ. وخادمٌ على دومينٍ يُسقط ذلك
+  /// كلَّه — فمن صوّر الرمزَ المطبوعَ مرّةً يقرأ حسابَ تلك الطاولة من أيّ
+  /// مكانٍ كلّما شُغلت، ويبلغ رمزَ الجلسة (‏يُعاد مع القراءة) فيكتب.
+  ///
+  /// فهذا ما **لا يُنال إلّا من داخل المحلّ**: يقرؤه النادلُ من شاشته ويقوله
+  /// للضيف الجالس أمامه. ويُشتقّ ولا يُخزَّن — لا عمودَ ولا هجرة، ويتبدّل مع
+  /// كلّ جلسةٍ بلا عملٍ من أحد.
+  ///
+  /// ⚠️ **وأربعُ خاناتٍ ليست سرّاً قويّاً** — عشرةُ آلافِ احتمالٍ تُمسَح في
+  /// دقائقَ بلا مانع. فالمانعُ هو محدِّدُ المعدّل على `/api/table-bill`
+  /// (‏١٢٠/دقيقة لكلّ عنوان)، وهما معاً لا أحدُهما.
+  static String sessionPin({required int orderId, required DateTime openedAt}) {
+    if (_signingKey == null) {
+      throw StateError('TableBillToken.sessionPin before deriveKey');
+    }
+    final mac = Hmac(sha256, _signingKey!)
+        .convert(utf8.encode('pin${_sessionPayload(orderId, openedAt)}'))
+        .bytes;
+    // أربعةُ بايتاتٍ لا واحد: بايتٌ واحدٌ يعطي ٢٥٦ قيمةً فقط من عشرة آلاف،
+    // فتتصادم الأرقامُ بكثافةٍ ويُخمَّن الرقمُ بمحاولاتٍ قليلة.
+    final value = (mac[0] << 24) | (mac[1] << 16) | (mac[2] << 8) | mac[3];
+    return (value % 10000).toString().padLeft(4, '0');
+  }
+
+  /// هل [pin] رقمُ هذه الجلسة؟ يتجاوز الفراغَ حولَه — الضيفُ يكتبه بيده.
+  static bool verifySessionPin(
+    String? pin, {
+    required int orderId,
+    required DateTime openedAt,
+  }) {
+    if (pin == null || _signingKey == null) return false;
+    final trimmed = pin.trim();
+    if (trimmed.isEmpty) return false;
+    return _constantTimeEquals(
+      trimmed,
+      sessionPin(orderId: orderId, openedAt: openedAt),
+    );
   }
 
   /// ⚠️ **بالميلي ثانية UTC**: drift يخزّن الوقتَ بدقّة الثانية، والمنطقةُ

@@ -298,6 +298,141 @@ void main() {
     });
   });
 
+  // ═══════════════════════════════════════════════════════════════════════
+  // الخادمُ على دومينٍ عامّ — الحاجزُ الأوّلُ سقط
+  // ═══════════════════════════════════════════════════════════════════════
+  //
+  // ⚠️ خادمٌ محلّيٌّ لا يبلغه إلّا من هو في المحلّ، وهذا هو ما كان يجعل
+  // «من صوّر الرمزَ مرّةً» تهديداً نظريّاً. وخادمٌ على دومينٍ يجعله عمليّاً:
+  // يقرأ الحسابَ من أيّ مكانٍ كلّما شُغلت الطاولة، ويبلغ رمزَ الجلسة من
+  // القراءة نفسِها فيكتب. فالرقمُ القصير هو ما يبقى — ولا يُنال إلّا من
+  // النادل وجهاً لوجه.
+  group('وضعُ الدومين العامّ', () {
+    Future<void> goPublic() =>
+        db.setSetting(kTableBillPublicBaseUrlKey, 'https://shop.example.com');
+
+    test('القراءةُ تُخبر الصفحةَ أنّ الرقمَ مطلوب — ولا ترسله', () async {
+      await enable();
+      await goPublic();
+      final seed = await seedOrder();
+      final body =
+          await getJson('/api/table-bill/${TableBillToken.mintTable(seed.tableId)}');
+
+      expect(body['pinRequired'], isTrue);
+      // ⚠️ التوكيدُ الذي يحمي الميزةَ من أن تُلغيَ نفسَها: إرسالُ الرقم مع
+      // القراءة يعني أن من يقرأ عن بُعدٍ يأخذه ويكتب — فلا حاجزَ بقي.
+      expect(jsonEncode(body).contains('"pin"'), isFalse,
+          reason: 'الرقمُ خرج مع القراءة فبطل معناه');
+      final expected = TableBillToken.sessionPin(
+        orderId: seed.orderId,
+        openedAt: (await (db.select(db.tableOrders)
+                  ..where((o) => o.id.equals(seed.orderId)))
+                .getSingle())
+            .openedAt,
+      );
+      expect(jsonEncode(body).contains(expected), isFalse,
+          reason: 'قيمةُ الرقم ظهرت في الجواب');
+    });
+
+    test('وطلبُ الحساب يُرفَض بلا رقمٍ ولو صحّ رمزُ الجلسة', () async {
+      await enable();
+      await goPublic();
+      final seed = await seedOrder();
+      final token = TableBillToken.mintTable(seed.tableId);
+      final body = await getJson('/api/table-bill/$token');
+
+      final res = await post('/api/table-bill/$token/request', {
+        'session': body['session'],
+      });
+      final json_ = jsonDecode(await res.readAsString()) as Map;
+      expect(json_['success'], isFalse);
+      expect(json_['pinRequired'], isTrue);
+
+      final status = (await (db.select(db.tableOrders)
+                ..where((o) => o.id.equals(seed.orderId)))
+              .getSingle())
+          .status;
+      expect(status, 'open', reason: 'الحالةُ تحرّكت بلا رقم');
+    });
+
+    test('ويُقبَل بالرقم الصحيح', () async {
+      await enable();
+      await goPublic();
+      final seed = await seedOrder();
+      final token = TableBillToken.mintTable(seed.tableId);
+      final body = await getJson('/api/table-bill/$token');
+      final order = await (db.select(db.tableOrders)
+            ..where((o) => o.id.equals(seed.orderId)))
+          .getSingle();
+
+      final res = await post('/api/table-bill/$token/request', {
+        'session': body['session'],
+        'pin': TableBillToken.sessionPin(
+          orderId: order.id,
+          openedAt: order.openedAt,
+        ),
+      });
+      expect((jsonDecode(await res.readAsString()) as Map)['success'], isTrue);
+    });
+
+    test('ورقمُ جلسةٍ أخرى لا يصلح', () async {
+      await enable();
+      await goPublic();
+      final seed = await seedOrder();
+      final token = TableBillToken.mintTable(seed.tableId);
+      final body = await getJson('/api/table-bill/$token');
+      final order = await (db.select(db.tableOrders)
+            ..where((o) => o.id.equals(seed.orderId)))
+          .getSingle();
+
+      final res = await post('/api/table-bill/$token/request', {
+        'session': body['session'],
+        'pin': TableBillToken.sessionPin(
+          orderId: order.id + 7,
+          openedAt: order.openedAt,
+        ),
+      });
+      expect((jsonDecode(await res.readAsString()) as Map)['success'], isFalse);
+    });
+
+    test('وعلى الشبكة المحلّيّة لا يُطلَب رقمٌ أصلاً', () async {
+      // الحاجزُ الأوّلُ قائمٌ هناك، وإقحامُ رقمٍ يُثقل ميزةً لا تحتاجه.
+      await enable();
+      final seed = await seedOrder();
+      final token = TableBillToken.mintTable(seed.tableId);
+      final body = await getJson('/api/table-bill/$token');
+      expect(body['pinRequired'], isFalse);
+
+      final res = await post('/api/table-bill/$token/request', {
+        'session': body['session'],
+      });
+      expect((jsonDecode(await res.readAsString()) as Map)['success'], isTrue);
+      expect(seed.orderId, greaterThan(0));
+    });
+
+    test('وعنوانٌ بمسارٍ أو بمخطَّطٍ غريبٍ لا يُعدّ نشراً', () async {
+      // ⚠️ العنوانُ **أساسٌ** يُلحَق به `/t/<token>`. فقيمةٌ فيها مسارٌ كانت
+      // تُنتج رمزاً مطبوعاً لا يفتح شيئاً — ولا يُكتشَف إلّا من ضيف.
+      expect(normalizeTableBillBaseUrl('https://shop.example.com'),
+          'https://shop.example.com');
+      expect(normalizeTableBillBaseUrl('https://shop.example.com/'),
+          'https://shop.example.com');
+      expect(normalizeTableBillBaseUrl('https://shop.example.com:8443'),
+          'https://shop.example.com:8443');
+      for (final bad in const [
+        '',
+        '   ',
+        'shop.example.com',
+        'ftp://shop.example.com',
+        'https://shop.example.com/menu',
+        'https://shop.example.com?x=1',
+        'https:///',
+      ]) {
+        expect(normalizeTableBillBaseUrl(bad), isNull, reason: 'قُبل: «$bad»');
+      }
+    });
+  });
+
   test('صفحةُ الهاتف تُخدَم HTML حين تُشعَل الراية', () async {
     await enable();
     final seed = await seedOrder();
