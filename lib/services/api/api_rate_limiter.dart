@@ -171,6 +171,15 @@ class ApiRateLimiter {
     // (same budget as verify-admin) to blunt password/card brute-force.
     const MapEntry('/api/auth/session', RateLimitClass.read),
     const MapEntry('/api/backup', RateLimitClass.otherWrite),
+    // حسابُ الطاولة على هاتف الزبون (2026-09-12) — **مصنَّفٌ صراحةً على
+    // الفئة الافتراضيّة (١٢٠/دقيقة) لا على `read` (٦٠٠)**.
+    //
+    // ⚠️ وهو المسارُ الوحيدُ **غيرُ المصادَق** الذي يُصنَّف هنا: `/menu`
+    // و`/cfd` معفيّان من المحدِّد أصلاً لأنهما شاشتا عرضٍ لا تقرآن بياناتِ
+    // زبونٍ بعينه. وهذا يقرأ حساباً، فتخمينُ التوقيعات عليه مسحٌ لا تصفّح —
+    // والمحدِّدُ هو ما يُبطئ المسح. وتركُه بلا قاعدةٍ كان يُسقطه على نفس
+    // الفئة لكن مع تحذيرِ «مسارٌ غيرُ مصنَّف» في كلّ جلسة، فيبدو سهواً.
+    const MapEntry('/api/table-bill', RateLimitClass.defaultClass),
   ];
 
   /// Configure the rate limiter (backward compat — v1 single-bucket tests).

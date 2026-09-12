@@ -34,6 +34,7 @@ import '../../screens/tables/providers/tables_state_provider.dart';
 import '../../screens/tables/widgets/table_card.dart';
 import '../../screens/tables_screen.dart' show TableActionsHost, TableActionsRunner;
 import '../../widgets/permission_guard.dart';
+import '../widgets/table_bill_qr_dialog.dart';
 import '../widgets/tables_action_rail.dart';
 import '../widgets/tables_status_rail.dart';
 
@@ -170,6 +171,24 @@ class _TablesPicposBodyState extends ConsumerState<_TablesPicposBody> {
             icon: const Icon(PhosphorIconsBold.mapPinArea, size: 18),
             label: const Text('إدارة الأقسام'),
             style: OutlinedButton.styleFrom(foregroundColor: AppColors.primary),
+          ),
+        ),
+        const SizedBox(width: Spacing.sm),
+        // أكوادُ حسابِ الطاولات — البندُ الأوّل من فيتشرات المالك 2026-09-12.
+        //
+        // ⚠️ **في الرأس لا في «مزيد»** — للسبب المكتوب فوق بالضبط: الورقةُ
+        // المطبوعةُ تحمل رموزاً موقَّعةً يقرأ بها حاملُها حساباتِ الطاولات،
+        // فحراستُها لازمة، وحراسةُ مدخلِ قائمةٍ منبثقةٍ زينةٌ لا ضابط.
+        PermissionGuard(
+          permission: PermissionCodes.tablesManage,
+          allowManagerOverride: true,
+          actionName: 'طباعة أكواد حساب الطاولات',
+          onGranted: () => TableBillQrDialog.show(context, tables),
+          child: OutlinedButton.icon(
+            onPressed: () => TableBillQrDialog.show(context, tables),
+            icon: const Icon(PhosphorIconsBold.qrCode, size: 18),
+            label: const Text('أكواد الحساب'),
+            style: OutlinedButton.styleFrom(foregroundColor: AppColors.info),
           ),
         ),
         const SizedBox(width: Spacing.sm),

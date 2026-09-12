@@ -11,6 +11,7 @@ import 'api/api_handler.dart';
 import 'e_invoicing/e_invoice_submission_worker.dart';
 import 'api/api_auth_middleware.dart';
 import 'api/api_session_token.dart';
+import 'api/table_bill_token.dart';
 import 'api/api_rate_limiter.dart';
 import 'deployment/reconcile_result.dart';
 import 'deployment/settings_keys.dart';
@@ -658,6 +659,11 @@ class NetworkService {
       // SAME machine seed (distinct salt). Used to mint/verify per-user session
       // tokens that replace the forgeable X-User-Id header.
       ApiSessionToken.deriveKey(machineSeed);
+      // حسابُ الطاولة (2026-09-12): نفسُ البذرة بملحٍ ثالث. وبلا هذا السطر
+      // تُرفَض كلُّ رموز الطاولات — الفشلُ مغلقٌ عمداً — فيبدو الـQR المطبوعُ
+      // معطّلاً بلا سببٍ ظاهر. والملحُ ثابتٌ فالرموزُ المطبوعةُ تبقى صالحةً
+      // عبر إعادات التشغيل.
+      TableBillToken.deriveKey(machineSeed);
       debugPrint('[NetworkService] API auth + session token keys generated');
 
       final handler = const Pipeline()

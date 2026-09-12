@@ -31,7 +31,7 @@ import '../sync/strategies/setting_sync_strategy.dart'
     show isServerSecretSettingKey;
 import 'api_auth_middleware.dart';
 import 'api_user_context.dart';
-import 'api_handler_base.dart' show WsSubscriberInfo;
+import 'api_handler_base.dart' show WsSubscriberInfo, ApiHandlerBase;
 import 'api_sales_handler.dart';
 import 'api_data_handler.dart';
 import 'api_party_handler.dart';
@@ -40,6 +40,10 @@ import 'api_purchase_handler.dart';
 import 'api_auth_handler.dart';
 import 'api_terminals_handler.dart';
 import 'api_html_templates.dart';
+import 'table_bill_html.dart';
+import 'table_bill_token.dart';
+import '../table_session_service.dart';
+import '../../core/config/app_config.dart';
 
 /// REST API handler for the embedded server.
 /// Exposes read-only endpoints for products, categories, units,
@@ -330,6 +334,13 @@ class ApiHandler {
     // Digital Menu Endpoints
     router.get('/menu', _getMenuDisplay);
     router.get('/api/menu', _getMenuData);
+
+    // حسابُ الطاولة على هاتف الزبون — البندُ الأوّل من فيتشرات المالك
+    // 2026-09-12. ثلاثةُ مساراتٍ **بلا مصادقة** (الزبونُ ليس جهازاً مقترناً)
+    // وكلُّها محكومةٌ بـ[kTableBillQrEnabledKey] المطفأ افتراضاً، وبالتوقيع.
+    router.get('/t/<token>', _getTableBillPage);
+    router.get('/api/table-bill/<token>', _getTableBill);
+    router.post('/api/table-bill/<token>/request', _requestTableBill);
 
     // Catch-all for undefined routes
     router.all('/<ignored|.*>', _notFound);
@@ -1978,6 +1989,166 @@ class ApiHandler {
       _buildMenuHtml(),
       headers: {'Content-Type': 'text/html; charset=utf-8'},
     );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // حسابُ الطاولة على هاتف الزبون — البندُ الأوّل (2026-09-12)
+  // ═══════════════════════════════════════════════════════════════
+  //
+  // ⚠️ **ثلاثةُ حرّاسٍ متعاقبةٍ على كلّ مسار، بهذا الترتيب:**
+  //    ١. الرايةُ مُشعَلة — والافتراضُ مُطفأ، فتنصيبةٌ لم تطلب الميزةَ لا
+  //       تفتح مساراً بلا مصادقةٍ لمجرّد أنها رقّت.
+  //    ٢. التوقيعُ صحيح — يمنع تخمينَ أرقام الطاولات وتبديلَها.
+  //    ٣. الطاولةُ لها طلبٌ مفتوح — ولا يُكشَف الفرقُ بين «لا طاولة» و«لا
+  //       طلب»، فالجوابُ واحدٌ في الحالتين.
+  //
+  // ⚠️ **ولا `_error` بنصٍّ تشخيصيّ**: هذه المسارات يقرؤها غريبٌ على شبكة
+  //    المحلّ، ورسالةٌ تقول «الطاولة ٧ غير موجودة» تُحوِّل التخمينَ إلى مسح.
+
+  /// هل ميزةُ رمز حساب الطاولة مُشعَلة؟ مُطفأةٌ ما لم تُكتَب `true` صراحةً.
+  Future<bool> _tableBillEnabled() async =>
+      (await _db.getSettingValue(kTableBillQrEnabledKey)) == 'true';
+
+  /// الطلبُ المفتوحُ على الطاولة الموقَّعة في [token]، أو `null`.
+  ///
+  /// ⚠️ و«مفتوح» تشمل `bill_requested`: الضيفُ طلب الحساب ثمّ فتح الصفحةَ
+  /// ثانيةً ليراجع — وإخفاؤه عنه حينَها يبدو كأنّ حسابَه ضاع.
+  Future<TableOrder?> _openOrderForToken(String token) async {
+    final tableId = TableBillToken.verifyTable(token);
+    if (tableId == null) return null;
+    final rows = await (_db.select(_db.tableOrders)
+          ..where((o) => o.tableId.equals(tableId))
+          ..where((o) => o.status.isIn(['open', 'bill_requested']))
+          ..orderBy([(o) => OrderingTerm.desc(o.openedAt)])
+          ..limit(1))
+        .get();
+    return rows.isEmpty ? null : rows.first;
+  }
+
+  Future<Response> _getTableBillPage(Request request, String token) async {
+    if (!await _tableBillEnabled()) return _notFound(request);
+    return Response.ok(
+      tableBillHtmlTemplate,
+      headers: {'Content-Type': 'text/html; charset=utf-8'},
+    );
+  }
+
+  Future<Response> _getTableBill(Request request, String token) async {
+    if (!await _tableBillEnabled()) return _notFound(request);
+    try {
+      final order = await _openOrderForToken(token);
+      if (order == null) return _json({'success': true, 'open': false});
+
+      final items = await (_db.select(_db.tableOrderItems)
+            ..where((i) => i.tableOrderId.equals(order.id))
+            ..orderBy([(i) => OrderingTerm.asc(i.addedAt)]))
+          .get();
+
+      // ⚠️ **المحرّكُ الواحدُ لا حسابٌ رابع.** `TableOrderTotals.compute` هو
+      // ما تحسب به الشاشةُ والطباعةُ والتحصيل، وجمعُ `quantity × unitPrice`
+      // هنا كان يعرض على هاتف الضيف رقماً يخالف ما يُطبَع في يده كلّما كان
+      // على الطلب خصمٌ أو ضريبة.
+      final totals = await TableSessionService(_db).totalsFor(order.id);
+
+      final table = await (_db.select(_db.restaurantTables)
+            ..where((t) => t.id.equals(order.tableId)))
+          .getSingleOrNull();
+
+      final products = {
+        for (final p in await (_db.select(_db.products)
+              ..where((p) => p.id.isIn(items.map((i) => i.productId).toSet())))
+            .get())
+          p.id: p.name,
+      };
+
+      final shopName =
+          await _db.getSettingValue('company_name') ?? AppConfig.appNameAr;
+      final remaining = totals.total - order.paidAmount;
+
+      return _json({
+        'success': true,
+        'open': true,
+        'shopName': shopName,
+        'tableName': table?.name ?? '—',
+        'guestCount': order.guestCount,
+        'billRequested': order.status == 'bill_requested',
+        // رمزُ الجلسة — الكتابةُ لا تُقبَل بدونه، ويموت بإغلاق الطلب.
+        'session':
+            TableBillToken.mintSession(orderId: order.id, openedAt: order.openedAt),
+        'items': [
+          for (var i = 0; i < items.length; i++)
+            {
+              'name': products[items[i].productId] ?? '—',
+              'qty': items[i].quantity,
+              'unitPrice': items[i].unitPrice,
+              // حصّةُ البند من المستحقّ — نصيبُه من الخصم وضريبتُه فوقه،
+              // فمجموعُ ما يقرؤه الضيفُ يساوي المستحقَّ بالضبط.
+              'total': i < totals.lineTotals.length
+                  ? totals.lineTotals[i]
+                  : items[i].total,
+              'notes': items[i].notes,
+            },
+        ],
+        'subtotal': totals.subtotal,
+        'discount': totals.discount,
+        'taxAmount': totals.taxAmount,
+        'total': totals.total,
+        'paidAmount': order.paidAmount,
+        'remaining': remaining < 0 ? 0 : remaining,
+      });
+    } catch (e) {
+      debugPrint('[TABLE-BILL] read failed: $e');
+      return _json({'success': false, 'error': 'تعذّر عرض الحساب'});
+    }
+  }
+
+  /// «اطلب الحساب» — ينقل الطلبَ إلى `bill_requested` ويُنبّه الشاشات.
+  Future<Response> _requestTableBill(Request request, String token) async {
+    if (!await _tableBillEnabled()) return _notFound(request);
+    try {
+      final order = await _openOrderForToken(token);
+      if (order == null) {
+        return _json({'success': false, 'error': 'لا حساب مفتوحاً'});
+      }
+
+      // ⚠️ **رمزُ الجلسة شرطُ الكتابة.** رمزُ الطاولة مطبوعٌ وملصوقٌ ولا
+      // ينتهي، فمن مسحه مرّةً كان يستطيع مناداةَ النادل لطاولةٍ يجلس عليها
+      // غيرُه بعد شهر. ورمزُ الجلسة لا يُنال إلّا بقراءةِ حسابٍ **مفتوحٍ
+      // الآن**، ويموت بإغلاقه.
+      final body = await request.readAsString();
+      final session = body.isEmpty
+          ? null
+          : (json.decode(body) as Map<String, dynamic>)['session'] as String?;
+      final valid = TableBillToken.verifySession(
+        session,
+        orderId: order.id,
+        openedAt: order.openedAt,
+      );
+      if (!valid) {
+        return _json({'success': false, 'error': 'انتهت الجلسة — حدِّث الصفحة'});
+      }
+
+      // ساكنٌ عند التكرار: ضغطتان لا تُنتجان نداءَين ولا تُرجعان خطأً.
+      if (order.status != 'bill_requested') {
+        // ⚠️ `withBroadcast` لا `broadcast` مباشرةً — عقدُ مواصفة ١٢٩
+        // يحرسه `no_manual_broadcast_test`. والجدولان معاً: شاشةُ الطاولات
+        // تقرأ الحالةَ من `restaurant_tables` وقائمةُ الطلبات من
+        // `table_orders`، فبثٌّ لأحدهما يترك النصفَ الآخرَ بلا إيقاظ.
+        await ApiHandlerBase.withBroadcast(
+          endpointLabel: 'POST /api/table-bill/<token>/request',
+          tables: {'table_orders', 'restaurant_tables'},
+          body: () async =>
+              (_db.update(_db.tableOrders)..where((o) => o.id.equals(order.id)))
+                  .write(const TableOrdersCompanion(
+            status: Value('bill_requested'),
+          )),
+        );
+      }
+      return _json({'success': true});
+    } catch (e) {
+      debugPrint('[TABLE-BILL] request failed: $e');
+      return _json({'success': false, 'error': 'تعذّر الإرسال'});
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════

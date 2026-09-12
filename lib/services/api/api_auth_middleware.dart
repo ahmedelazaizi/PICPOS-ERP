@@ -24,7 +24,19 @@ class ApiAuthMiddleware {
   static String? _activeToken;
 
   /// Paths that do NOT require authentication.
-  static const _exemptPrefixes = ['/api/health', '/cfd', '/menu', '/ws'];
+  ///
+  /// ⚠️ `/api/table-bill` — حسابُ الطاولة على هاتف الزبون (2026-09-12).
+  /// الزبونُ ليس جهازاً مقترناً ولا مستخدماً، فلا حاملَ عنده يقدّمه. وبديلُ
+  /// المصادقة **ثلاثةُ حرّاسٍ أخرى**: رايةٌ مطفأةٌ افتراضاً، وتوقيعُ HMAC على
+  /// رقم الطاولة، ورمزُ جلسةٍ يموت بإغلاق الطلب تُشترَط فيه الكتابة. وهي
+  /// **ليست** معفاةً من محدّد المعدّل — بخلاف `/menu` و`/cfd`.
+  static const _exemptPrefixes = [
+    '/api/health',
+    '/cfd',
+    '/menu',
+    '/ws',
+    '/api/table-bill',
+  ];
 
   /// Generate and store the API token from a machine-specific seed.
   ///
