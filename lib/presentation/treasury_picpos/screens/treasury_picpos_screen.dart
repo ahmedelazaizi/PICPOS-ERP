@@ -47,8 +47,8 @@ import '../widgets/treasury_tab_bar_picpos.dart';
 import '../../../domain/models/picpos_treasury_view.dart';
 import '../../treasury/widgets/treasury_closing_tab.dart';
 import '../../treasury/widgets/daily_closing_dialog.dart';
-import '../../treasury/widgets/receipt_voucher_dialog.dart';
-import '../../treasury/widgets/payment_voucher_dialog.dart';
+import '../widgets/receipt_voucher_dialog_picpos.dart';
+import '../widgets/payment_voucher_dialog_picpos.dart';
 import 'package:ural_erp/l10n/app_localizations.dart';
 import '../../treasury/widgets/safe_management_dialog.dart';
 import '../../../services/reconciliation_service.dart';
@@ -156,11 +156,11 @@ class _TreasuryPicposScreenState extends ConsumerState<TreasuryPicposScreen>
                     child: TreasuryActionsGridPicpos(
                       onReceipt: () => showDialog(
                         context: context,
-                        builder: (_) => const ReceiptVoucherDialog(),
+                        builder: (_) => const ReceiptVoucherDialogPicpos(),
                       ),
                       onPayment: () => showDialog(
                         context: context,
-                        builder: (_) => const PaymentVoucherDialog(),
+                        builder: (_) => const PaymentVoucherDialogPicpos(),
                       ),
                       onSafes: () => Navigator.push(
                         context,
