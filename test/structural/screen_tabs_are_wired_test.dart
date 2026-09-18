@@ -87,6 +87,51 @@ void main() {
     }
   });
 
+  test('والمسارُ يُرسَم تحتَه في نفس الشرط لا في شرطٍ ثانٍ', () {
+    // القاعدةُ ح‑٢ (‏قرارُ المالك 2026-09-18): «والمسار يفضل تحت التابات».
+    //
+    // ⚠️ **ثلاثةُ أشياءَ تُقاس هنا، وسقوطُ أيٍّ منها يُعيد عطباً بعينه:**
+    //   • **موجودٌ أصلاً** — الشريطُ الذي يُبنى ولا يُوصَل سابقةٌ مقيسةٌ في
+    //     هذا المستودع لا فرضٌ (‏`InvoiceCurrencySelector` ودجتٌ كاملةٌ بلا
+    //     مستعملٍ واحد).
+    //   • **تحتَه لا فوقَه** — «تحت التابات» نصُّ القرار، وترتيبُ أطفال
+    //     `Column` هو كلُّ ما يفصل الامتثالَ عن مخالفته.
+    //   • **في نفس الشرط** — شرطان متطابقان يفترقان في أوّل تعديلٍ فيبقى
+    //     مسارٌ معلَّقاً بلا تاباتٍ فوقَه، أو تاباتٌ بلا مسار.
+    final shell = _code(_read(_shellPath));
+
+    final gate = shell.indexOf('showTopBarProvider');
+    expect(gate, greaterThan(0), reason: 'لا شرطَ ظهورٍ للقشرة العلويّة');
+    expect(RegExp('showTopBarProvider').allMatches(shell).length, 1,
+        reason: 'شرطُ الظهور تكرّر — نسختان تفترقان في أوّل تعديل');
+
+    final bar = shell.indexOf('ScreenTabsBar(');
+    final crumbs = shell.indexOf('ScreenBreadcrumbs(screenIndex:');
+    expect(crumbs, greaterThan(0),
+        reason: 'المسارُ غيرُ موصولٍ بالقشرة — القاعدةُ ح‑٢ تقول يبقى');
+    expect(bar, greaterThan(gate), reason: 'شريطُ التابات خارجَ شرط الظهور');
+    expect(crumbs, greaterThan(bar),
+        reason: 'المسارُ فوقَ التابات لا تحتها — عكسُ نصّ القرار');
+  });
+
+  test('والمسارُ يُشتقُّ ولا يُدفَع — فلا مزوّدَ يُكتَب فيه', () {
+    // ⚠️ **وهذا عينُ ما أسقط `AppBreadcrumbs`:** `setBreadcrumbs` كان
+    // **يستبدل** القائمةَ في كلّ تنقّل، فما تراكم مسارٌ قطّ — «ولا يفتح اكثر
+    // من تابين». فأيُّ مُحدِّثٍ يُنادى من خارج الشريط يُعيد العطبَ نفسَه.
+    final src = _code(_read('lib/presentation/shell/screen_breadcrumbs.dart'));
+    expect(src.contains('ScreenPath? resolveScreenPath(int screenIndex)'),
+        isTrue,
+        reason: 'لا مُشتقٌّ خالصٌ — فالمسارُ يُدفَع من مكانٍ ما');
+    for (final pushed in const ['StateProvider', 'Notifier', 'setBreadcrumb']) {
+      expect(src.contains(pushed), isFalse,
+          reason: 'حالةٌ تُكتَب في المسار ($pushed) — والمكتوبُ يفترق '
+              'عن المعروض');
+    }
+    expect(src.contains('firstWhere('), isFalse,
+        reason: '`firstWhere` بلا `orElse` ترمي StateError على شاشةٍ بلا '
+            'مدخلٍ جانبيّ — وتُسقط القشرةَ كلَّها لا الشريطَ وحدَه');
+  });
+
   test('والنقرُ في الشريط يُبلِّغ بلا شرطٍ يُبطله', () {
     final bar = _code(_read(_barPath));
     expect(bar.contains('onTap: widget.onSelect'), isTrue,

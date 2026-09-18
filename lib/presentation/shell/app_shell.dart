@@ -36,6 +36,7 @@ import '../widgets/inactivity_detector.dart';
 import '../../main_desktop.dart'
     if (dart.library.html) '../../main_web.dart'
     as platform;
+import 'screen_breadcrumbs.dart';
 import 'screen_tabs_bar.dart';
 import '../widgets/sync_management_dialog.dart';
 import '../widgets/sync_status_badge.dart';
@@ -1469,7 +1470,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                     // الذي يحمل `onTap` هو عينُ الوحيدِ الذي يُرسَم
                     // بـ`isLast ? null : item.onTap`.
                     if ((ref.watch(showTopBarProvider).value ?? true) &&
-                        widget.tabs.isNotEmpty)
+                        widget.tabs.isNotEmpty) ...[
                       ScreenTabsBar(
                         tabs: widget.tabs,
                         active: widget.currentIndex,
@@ -1477,6 +1478,15 @@ class _AppShellState extends ConsumerState<AppShell> {
                         onClose: widget.onCloseTab,
                         onHome: widget.onHomeTab,
                       ),
+                      // القاعدةُ ح‑٢: مسارُ التنقّل يبقى — **تحت** شريط
+                      // التابات. ويُشتقُّ من فهرس الشاشة لا يُدفَع إليه،
+                      // فلا شاشةَ تنسى أن تُعلن موضعَها.
+                      //
+                      // ⚠️ **وفي نفس الشرط لا في شرطٍ ثانٍ مطابق.** شرطان
+                      // متطابقان يفترقان في أوّل تعديل، فيبقى مسارٌ معلَّقاً
+                      // بلا تاباتٍ فوقَه — وهو ما يقيسه حارسُ التوصيل.
+                      ScreenBreadcrumbs(screenIndex: widget.currentIndex),
+                    ],
                     Expanded(
                       child: Navigator(
                         key: appShellNestedNavigatorKey,
