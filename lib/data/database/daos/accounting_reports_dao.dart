@@ -626,6 +626,23 @@ extension AccountingReportsDao on AppDatabase {
         ? '1 = 0'
         : 'jel.account_id IN (${cashBankIds.join(', ')})';
 
+    // ── تصنيفُ الأنشطة: قائمةٌ واحدةٌ تقرؤها الأقسامُ الثلاثة ───────────
+    //
+    // 🔴 كانت أنواعُ المراجع مكتوبةً حرفيّاً **مرّتين** أدناه، فانحرفت عن
+    // المحرّك: `'asset_acquisition'` و`'asset_disposal'` لا يكتبهما شيء،
+    // والمحرّكُ يكتب `'fixed_asset'` و`'fixed_asset_disposal'`. فكلُّ
+    // شراءِ أصلٍ أو بيعِه نقداً كان يُحتسَب تشغيليّاً ويُقرأ صفراً في
+    // الاستثماريّة. التفصيلُ الكاملُ والقياسُ في [kInvestingJeReferenceTypes].
+    //
+    // والتشغيليّةُ هي **الباقي**: ما ليس استثماريّاً ولا تمويليّاً. فصياغتُها
+    // نفياً لاتّحاد القائمتَين تضمن أنّ أيَّ نوعٍ يُضاف إلى إحداهما يخرج من
+    // التشغيليّة في اللحظة نفسِها — وهذا عينُ الانحراف الذي وقع.
+    final investingRefTypes = sqlRefTypeList(kInvestingJeReferenceTypes);
+    final financingRefTypes = sqlRefTypeList(kFinancingJeReferenceTypes);
+    final nonOperatingRefTypes = sqlRefTypeList(
+      {...kInvestingJeReferenceTypes, ...kFinancingJeReferenceTypes},
+    );
+
     // ─── Operating Activities (IAS 7.14) ─────────────────────────────────
     final operatingResults = await customSelect(
       '''
@@ -637,7 +654,7 @@ extension AccountingReportsDao on AppDatabase {
       INNER JOIN accounts a ON a.id = jel.account_id
       WHERE $cashBankFilter
         AND je.entry_date BETWEEN ? AND ? AND je.is_posted = $boolTrue $ccFilter $brFilter$azFilter
-        AND je.reference_type NOT IN ('asset_acquisition', 'asset_disposal', 'asset_transfer', 'asset_revaluation', 'commercial_paper')
+        AND je.reference_type NOT IN ($nonOperatingRefTypes)
       GROUP BY je.reference_type
       ''',
       variables: [dateVar(from), dateVar(to), ...ccVars, ...brVars, ...azVars],
@@ -714,7 +731,7 @@ extension AccountingReportsDao on AppDatabase {
       INNER JOIN accounts a ON a.id = jel.account_id
       WHERE $cashBankFilter
         AND je.entry_date BETWEEN ? AND ? AND je.is_posted = $boolTrue $ccFilter $brFilter$azFilter
-        AND je.reference_type IN ('asset_acquisition', 'asset_disposal', 'asset_transfer', 'asset_revaluation')
+        AND je.reference_type IN ($investingRefTypes)
       ''',
       variables: [dateVar(from), dateVar(to), ...ccVars, ...brVars, ...azVars],
       readsFrom: {journalEntryLines, journalEntries, accounts},
@@ -738,7 +755,7 @@ extension AccountingReportsDao on AppDatabase {
       INNER JOIN accounts a ON a.id = jel.account_id
       WHERE $cashBankFilter
         AND je.entry_date BETWEEN ? AND ? AND je.is_posted = $boolTrue $ccFilter $brFilter$azFilter
-        AND je.reference_type = 'commercial_paper'
+        AND je.reference_type IN ($financingRefTypes)
       ''',
       variables: [dateVar(from), dateVar(to), ...ccVars, ...brVars, ...azVars],
       readsFrom: {journalEntryLines, journalEntries, accounts},
