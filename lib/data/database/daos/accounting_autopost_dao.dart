@@ -1770,6 +1770,12 @@ extension AccountingAutopostDao on AppDatabase {
     // single-lump behaviour keyed on paymentMethod is preserved unchanged.
     double? apPortion,
     double? cashPortion,
+    /// سببُ المردود من القائمة الثابتة — يُكتب في `PurchaseReturns.reason`.
+    ///
+    /// ⚠️ **وموضعُ كتابته هنا لا في المنادي:** هذه الدالّةُ هي القُمعُ
+    /// الوحيدُ الذي تمرّ به المساراتُ الثلاث، وهي عينُ من يكتب صفَّ
+    /// المستند أصلاً — فسببٌ يُمرَّر ولا يُكتب يصير حقلاً ميّتاً من جديد.
+    String? reason,
   }) async {
     if (returnAmount <= 0) return null;
     // F-04 / F-02 (Spec 151): key the return JE by the ORIGINATING invoice id
@@ -1954,6 +1960,7 @@ extension AccountingAutopostDao on AppDatabase {
         // نفسُ بذرةِ معرّف القيد — فالمستندُ والقيدُ يتشاركان هويّةَ الحدث،
         // وإعادةُ محاولةٍ حقيقيّةٌ تُنتج نفسَ المعرّفَين معاً.
         globalId: Value('pret$purretSourceGid'),
+        reason: Value(reason),
         lastModifiedAt: Value(postingDate),
       ),
     );

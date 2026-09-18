@@ -15,6 +15,13 @@ class PurchaseReturnState {
   final DateTime toDate;
   final String? error;
 
+  /// المُرتجَعُ سابقاً من كلّ صنف — معرّفُ الصنف ↦ الكمّيّة بالوحدة
+  /// الأساسيّة. يُقرأ عند اختيار الفاتورة من `stock_movements`.
+  final Map<int, double> alreadyReturnedByProduct;
+
+  /// سببُ المردود — قائمةٌ ثابتةٌ إلزاميّة (قرارُ المالك 2026-09-18).
+  final String? returnReason;
+
   /// البند 7 — فلاتر التتبّع: المورد · الصنف · رقم الفاتورة. كلها تُنفَّذ في
   /// SQL؛ لا يوجد أي ترشيح في الذاكرة بعد الآن.
   final int? supplierId;
@@ -34,6 +41,8 @@ class PurchaseReturnState {
     this.supplierId,
     this.productId,
     this.invoiceQuery = '',
+    this.alreadyReturnedByProduct = const {},
+    this.returnReason,
   });
 
   PurchaseReturnState copyWith({
@@ -50,6 +59,8 @@ class PurchaseReturnState {
     int? supplierId,
     int? productId,
     String? invoiceQuery,
+    Map<int, double>? alreadyReturnedByProduct,
+    String? returnReason,
     // الفلاتر اختيارية، فمسحها يحتاج علماً صريحاً — تمرير null وحده يعني
     // «لا تغيير» لا «امسح».
     bool clearSupplier = false,
@@ -68,6 +79,13 @@ class PurchaseReturnState {
       supplierId: clearSupplier ? null : (supplierId ?? this.supplierId),
       productId: clearProduct ? null : (productId ?? this.productId),
       invoiceQuery: invoiceQuery ?? this.invoiceQuery,
+      // اختيارُ فاتورةٍ أخرى يُبطِل المرتجعَ السابقَ والسببَ معاً:
+      // إبقاؤهما يرسم حدودَ فاتورةٍ على أخرى.
+      alreadyReturnedByProduct: clearSelected
+          ? const {}
+          : (alreadyReturnedByProduct ?? this.alreadyReturnedByProduct),
+      returnReason:
+          clearSelected ? null : (returnReason ?? this.returnReason),
     );
   }
 }
@@ -179,9 +197,15 @@ class PurchaseReturnNotifier extends Notifier<PurchaseReturnState> {
         returnQuantities[item.item.id] = 0;
       }
 
+      // المُرتجَعُ سابقاً — قرارُ المالك: يُعرَض مع «المتاح حالياً».
+      final alreadyReturned = await ref
+          .read(databaseProvider)
+          .getPurchaseReturnedQtyByProduct(invoice.id);
+
       state = state.copyWith(
         invoiceItems: items,
         returnQuantities: returnQuantities,
+        alreadyReturnedByProduct: alreadyReturned,
         isLoading: false,
       );
     } catch (e) {
@@ -189,10 +213,29 @@ class PurchaseReturnNotifier extends Notifier<PurchaseReturnState> {
     }
   }
 
+  /// المتاحُ للإرجاع من صنفٍ = المشترى − المرتجَعُ سابقاً.
+  ///
+  /// ⚠️ **وطرحُ السابق ليس تجميلاً.** السقفُ كان الكمّيّةَ الأصليّةَ وحدَها،
+  /// فردُّ خمسةٍ من خمسةٍ **مرّتَين** كان يمرّ: مخزونٌ يُخصَم مرّتَين،
+  /// وذمّةُ موردٍ تُخفَّض مرّتَين، وقيدان في الأستاذ. وجانبُ المبيعات
+  /// يطرحُه منذ زمن (`returns_repository_impl`) — والشراءُ لا.
+  double maxReturnableFor(int itemId) {
+    final item =
+        state.invoiceItems.where((i) => i.item.id == itemId).firstOrNull;
+    if (item == null) return 0;
+    final already =
+        state.alreadyReturnedByProduct[item.item.productId] ?? 0.0;
+    final left = item.item.quantity - already;
+    return left > 0 ? left : 0.0;
+  }
+
+  /// يبدّل سببَ المردود.
+  void updateReturnReason(String? reason) {
+    state = state.copyWith(returnReason: reason);
+  }
+
   void updateReturnQuantity(int itemId, double quantity) {
-    // Clamp to original quantity to prevent returning more than purchased
-    final item = state.invoiceItems.where((i) => i.item.id == itemId).firstOrNull;
-    final maxQty = item?.item.quantity ?? 0.0;
+    final maxQty = maxReturnableFor(itemId);
     final clampedQty = quantity.clamp(0.0, maxQty);
 
     final newQuantities = Map<int, double>.from(state.returnQuantities);
@@ -221,11 +264,15 @@ class PurchaseReturnNotifier extends Notifier<PurchaseReturnState> {
           .where((e) => e.value > 0)
           .map((entry) {
         final item = state.invoiceItems.firstWhere((i) => i.item.id == entry.key);
-        // Validate: return quantity must not exceed original quantity
-        final maxQty = item.item.quantity;
+        // ⚠️ **والسقفُ هنا هو عينُه سقفُ الحقل** — المتاحُ لا الأصليّ.
+        // حارسُ الواجهة يُقصُّ بالمعروض، وهذا يحرس من مسارٍ لا يمرّ به
+        // (لصقٌ، أو حالةٌ قديمةٌ بقيت بعد مرتجعٍ في جهازٍ آخر).
+        final maxQty = maxReturnableFor(entry.key);
         if (entry.value > maxQty + 0.001) {
           throw Exception(
-            'كمية الإرجاع (${entry.value}) تتجاوز الكمية الأصلية ($maxQty) للصنف رقم ${item.item.productId}',
+            'كمية الإرجاع (${entry.value}) تتجاوز المتاح للإرجاع "$maxQty" '
+            'للصنف رقم ${item.item.productId} — المرتجَعُ سابقاً '
+            '${state.alreadyReturnedByProduct[item.item.productId] ?? 0}',
           );
         }
         return PurchaseReturnItem(
@@ -242,6 +289,7 @@ class PurchaseReturnNotifier extends Notifier<PurchaseReturnState> {
       await purchasesRepo.processPurchaseReturn(
         invoice: state.selectedInvoice!,
         returnItems: returnItems,
+        reason: state.returnReason,
       );
 
       state = state.copyWith(isProcessing: false, clearSelected: true);

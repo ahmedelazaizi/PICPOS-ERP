@@ -108,7 +108,12 @@ mixin _PurchaseReturnsPicposDetailsPanel
       itemBuilder: (context, index) {
         final item = state.invoiceItems[index];
         final returnQty = state.returnQuantities[item.item.id] ?? 0;
-        final maxQty = item.item.quantity;
+        // «المشتراة» و«المرتجع سابقاً» و«المتاح حالياً» — قرارُ المالك
+        // 2026-09-18: الثلاثةُ تُعرَض، وكان يُعرَض الأوّلُ وحدَه.
+        final purchasedQty = item.item.quantity;
+        final alreadyReturned =
+            state.alreadyReturnedByProduct[item.item.productId] ?? 0.0;
+        final maxQty = notifier.maxReturnableFor(item.item.id);
 
         return Card(
           margin: const EdgeInsets.only(bottom: 8),
@@ -123,8 +128,24 @@ mixin _PurchaseReturnsPicposDetailsPanel
                     children: [
                       Text(item.product.name, style: const TextStyle(fontWeight: FontWeight.bold)),
                       Text(
-                        'الكمية: ${maxQty.toStringAsFixed(0)} • السعر: ${item.item.unitCost.toStringAsFixed(AppConstants.decimalPlaces)}',
+                        'المشتراة: ${purchasedQty.toStringAsFixed(0)}'
+                        ' • السعر: ${item.item.unitCost.toStringAsFixed(AppConstants.decimalPlaces)}',
                         style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                      ),
+                      // 🔴 **والمتاحُ ليس عرضاً فحسب — هو السقفُ نفسُه.**
+                      // سقفُ الحقل كان الكمّيّةَ الأصليّةَ وحدَها، فردُّ
+                      // خمسةٍ من خمسةٍ مرّتَين كان يمرّ ويخصم المخزونَ
+                      // مرّتَين ويخفّض ذمّةَ المورّد مرّتَين.
+                      Text(
+                        'المرتجع سابقاً: ${alreadyReturned.toStringAsFixed(0)}'
+                        ' • المتاح حالياً: ${maxQty.toStringAsFixed(0)}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: maxQty <= 0
+                              ? AppColors.error
+                              : AppColors.textMuted,
+                        ),
                       ),
                       // Per-line tax indicator from the original purchase
                       // invoice row — one invoice may mix taxable and
@@ -232,46 +253,30 @@ mixin _PurchaseReturnsPicposDetailsPanel
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // B4: Return reason categorization
+          // سببُ المردود — قائمةٌ ثابتةٌ **إلزاميّة** (قرارُ المالك).
+          //
+          // 🔴 **وكان يُكتَب في حالةٍ محلّيّةٍ لا تغادر الودجت.**
+          // `_selectedReasonCategory` و`_returnReasonController` يُملآن ثمّ
+          // يُهملان: `processReturn` لا يقرأهما، و`PurchaseReturns.reason`
+          // عمودٌ قائمٌ **بلا كاتبٍ واحد** في المستودع كلّه. فالقيمةُ تمرّ
+          // الآن عبر المزوّد إلى المستودع إلى صفّ المستند.
           DropdownButtonFormField<String>(
-            value: screenState._selectedReasonCategory.isEmpty ? null : screenState._selectedReasonCategory,
+            initialValue: state.returnReason,
             decoration: const InputDecoration(
-              labelText: 'سبب الإرجاع',
+              labelText: 'سبب المردود *',
               prefixIcon: Icon(PhosphorIconsBold.notepad, size: 18),
               border: OutlineInputBorder(),
               isDense: true,
-              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              contentPadding:
+                  EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             ),
             style: const TextStyle(fontSize: 13, color: Colors.black87),
-            items: AppConstants.returnReasonCategories
+            items: AppConstants.purchaseReturnReasons
                 .map((r) => DropdownMenuItem(value: r, child: Text(r)))
                 .toList(),
-            onChanged: (val) {
-              setState(() {
-                screenState._selectedReasonCategory = val ?? '';
-                if (val != null && val != 'أخرى') {
-                  screenState._returnReasonController.text = val;
-                } else if (val == 'أخرى') {
-                  screenState._returnReasonController.text = '';
-                }
-              });
-            },
+            onChanged: notifier.updateReturnReason,
           ),
-          if (screenState._selectedReasonCategory == 'أخرى') ...[
-            const SizedBox(height: 6),
-            TextField(
-              controller: screenState._returnReasonController,
-              decoration: const InputDecoration(
-                labelText: 'ملاحظات إضافية',
-                prefixIcon: Icon(PhosphorIconsBold.textT, size: 18),
-                border: OutlineInputBorder(),
-                isDense: true,
-                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              ),
-              style: const TextStyle(fontSize: 13),
-              maxLines: 1,
-            ),
-          ],
+
           const SizedBox(height: 12),
           Row(
         children: [
@@ -288,8 +293,20 @@ mixin _PurchaseReturnsPicposDetailsPanel
               ],
             ),
           ),
-          ElevatedButton.icon(
-            onPressed: (total > 0 && !state.isProcessing) ? processReturn : null,
+          // ⚠️ **زرٌّ معطَّلٌ بسببٍ ظاهرٍ** لا مخفيّ: إخفاؤه يجعل المستخدمَ
+          // يبحث عن فعلٍ يظنّه غائباً، والتلميحُ يقول ما ينقص.
+          Tooltip(
+            message: state.returnReason == null
+                ? 'اختر سبب المردود أولاً'
+                : (total <= 0
+                    ? 'حدّد كميات المرتجع'
+                    : 'تنفيذ المرتجع'),
+            child: ElevatedButton.icon(
+            onPressed: (total > 0 &&
+                    state.returnReason != null &&
+                    !state.isProcessing)
+                ? processReturn
+                : null,
             icon: state.isProcessing
               ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
               : const Icon(PhosphorIconsBold.arrowUUpLeft),
@@ -300,6 +317,7 @@ mixin _PurchaseReturnsPicposDetailsPanel
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
+          ),
           ),
         ],
       ),

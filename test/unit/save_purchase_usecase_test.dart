@@ -53,6 +53,7 @@ class _MockPurchasesRepository implements PurchasesRepository {
   Future<double> processPurchaseReturn({
     required PurchaseInvoiceData invoice,
     required List<PurchaseReturnItem> returnItems,
+    String? reason,
   }) async =>
       0.0;
   @override

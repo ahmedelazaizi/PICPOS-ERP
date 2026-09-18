@@ -491,6 +491,9 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
   Future<double> processPurchaseReturn({
     required PurchaseInvoiceData invoice,
     required List<PurchaseReturnItem> returnItems,
+    /// سببُ المردود — قائمةٌ ثابتةٌ إلزاميّةٌ في الواجهة (قرارُ المالك
+    /// 2026-09-18)، واختيارٌ هنا لأنّ مساراتٍ أخرى قديمةً تناديها.
+    String? reason,
   }) async {
     double totalReturnAmount = 0;
     for (final item in returnItems) {
@@ -548,7 +551,10 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
           // Spec 136 ISS-7 — per-return-event id for a unique, consistent
           // memo globalId across mirror + server.
           'returnGlobalId': returnGlobalId,
-          'invoiceNumber': invoice.invoiceNumber,
+          // والسببُ يسافر معها: الخادمُ هو من يكتب صفَّ المستند في
+          // وضع العميل، فإسقاطُه من الحمولة يجعل الحقلَ ميّتاً على كلّ
+          // جهازٍ عميلٍ — وهي أكثرُ التنصيبات.
+          if (reason != null && reason.isNotEmpty) 'reason': reason,          'invoiceNumber': invoice.invoiceNumber,
           // Spec 002 Round 7 (FINAL FIX): explicitly type the inner map as
           // <String, dynamic>. Without this annotation, Dart infers the
           // literal as Map<String, num> because all three values are numeric
@@ -761,6 +767,7 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
         invoice: invoice,
         returnItems: returnItems,
         totalReturnAmount: totalReturnAmount,
+        reason: reason,
       );
     });
 
@@ -775,6 +782,7 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
     required PurchaseInvoiceData invoice,
     required List<PurchaseReturnItem> returnItems,
     required double totalReturnAmount,
+    String? reason,
   }) async {
       // B3: Generate sequential return invoice number
       // allow-bare-generateInvoiceNumber: _processPurchaseReturnBody requires caller to open the transaction (see method docstring above).
@@ -923,6 +931,7 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
       // whole refund onto a single leg keyed only on paymentMethod.
       await _db.autoPostPurchaseReturn(
         originalPurchase: invoice,
+        reason: reason,
         // نفس سبب مرتجع المبيعات: المرتجع حدث لاحق له فترته الخاصة.
         returnDate: DateTime.now(),
         returnAmount: totalReturnAmount,

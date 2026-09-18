@@ -396,6 +396,40 @@ extension PurchaseDao on AppDatabase {
     };
   }
 
+  /// المُرتجَعُ سابقاً من كلّ صنفٍ في [invoiceId] — معرّفُ الصنف ↦ الكمّيّة.
+  ///
+  /// ⚠️ **والوحدةُ أساسيّةٌ في الطرفَين.** `stock_movements.quantity` يُكتب من
+  /// `item.returnQuantity` وهو آتٍ من `purchase_invoice_items.quantity` المخزّنة
+  /// بالوحدة الأساسيّة بعد التحويل في `createPurchaseInvoice` (موثّقٌ عند
+  /// `stockReturnQty` في `purchases_repository_impl.dart`). فمقارنةُ هذا
+  /// المخرَج بـ`item.quantity` مشروعةٌ بلا ضربٍ في معامل الوحدة —
+  /// والضربُ هنا كان سيعطي عشرةَ أضعافٍ كما وقع فعلاً 2026-04-28.
+  ///
+  /// والمصدرُ `stock_movements` لا `purchase_returns`: الجدولُ الأخيرُ
+  /// يحمل إجماليَ المرتجع لا سطورَه، فلا يجيب عن «كم رُدّ من هذا
+  /// الصنف؟». وهذا عينُ ما تقرؤه [getPurchaseReturnItemDetails] أدناه.
+  Future<Map<int, double>> getPurchaseReturnedQtyByProduct(
+    int invoiceId,
+  ) async {
+    final rows = await customSelect(
+      '''
+      SELECT product_id,
+             COALESCE(SUM(ABS(quantity)), 0.0) AS qty
+      FROM stock_movements
+      WHERE reference_type = 'purchase_return'
+        AND reference_id = ?
+      GROUP BY product_id
+      ''',
+      variables: [Variable<int>(invoiceId)],
+      readsFrom: {stockMovements},
+    ).get();
+    return {
+      for (final row in rows)
+        row.data['product_id'] as int:
+            (row.data['qty'] as num?)?.toDouble() ?? 0.0,
+    };
+  }
+
   /// Get the ACTUAL returned items for a purchase return from stock_movements.
   /// Returns [{productId, productName, returnedQty, unitCost, unitName, total}]
   Future<List<Map<String, dynamic>>> getPurchaseReturnItemDetails(int invoiceId) async {

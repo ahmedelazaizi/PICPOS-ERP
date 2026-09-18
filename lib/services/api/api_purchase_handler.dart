@@ -315,6 +315,9 @@ class ApiPurchaseHandler extends ApiHandlerBase {
       final purchaseId = parseInt(data['purchaseId']);
       final purchaseGlobalId = data['purchaseGlobalId'] as String?;
       final invoiceNumber = data['invoiceNumber'] as String?;
+      // سببُ المردود من جهاز العميل — غيابُه مسموحٌ (مساراتٌ أقدم
+      // ومنادون آخرون)، والواجهةُ هي التي تفرضه إلزاماً.
+      final returnReason = data['reason'] as String?;
       final items = (data['items'] as List).cast<Map<String, dynamic>>();
       final totalReturn = parseDouble(data['totalReturn']);
 
@@ -541,6 +544,7 @@ class ApiPurchaseHandler extends ApiHandlerBase {
         // single leg keyed only on paymentMethod.
         await db.autoPostPurchaseReturn(
           originalPurchase: invoice,
+          reason: returnReason,
           returnAmount: totalReturn,
           vatAmount: totalVatReturn,
           costCenterId: invoice.costCenterId,
@@ -635,6 +639,9 @@ class ApiPurchaseHandler extends ApiHandlerBase {
       final purchaseId = parseInt(data['purchaseId']);
       final purchaseGlobalId = data['purchaseGlobalId'] as String?;
       final invoiceNumber = data['invoiceNumber'] as String?;
+      // سببُ المردود من جهاز العميل — غيابُه مسموحٌ (مساراتٌ أقدم
+      // ومنادون آخرون)، والواجهةُ هي التي تفرضه إلزاماً.
+      final returnReason = data['reason'] as String?;
       final items = (data['items'] as List).cast<Map<String, dynamic>>();
       final totalReturn = parseDouble(data['totalReturn']);
 
@@ -1002,6 +1009,7 @@ class ApiPurchaseHandler extends ApiHandlerBase {
         // rule) instead of lumping the whole refund onto a single leg.
         await db.autoPostPurchaseReturn(
           originalPurchase: invoice,
+          reason: returnReason,
           returnAmount: totalReturn,
           vatAmount: totalVatReturn,
           costCenterId: invoice.costCenterId,

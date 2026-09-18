@@ -54,8 +54,9 @@ class _PurchaseReturnsPicposScreenState
     extends ConsumerState<PurchaseReturnsPicposScreen>
     with _PurchaseReturnsPicposLogic, _PurchaseReturnsPicposDetailsPanel {
   final _searchController = TextEditingController();
-  final _returnReasonController = TextEditingController(); // B4
-  String _selectedReasonCategory = ''; // B4: Return reason categorization
+  // حقلا السبب المحلّيّان حُذفا: السببُ يعيش في `PurchaseReturnState`
+  // ويصل صفَّ المستند. حالةٌ محلّيّةٌ لا تغادر الودجت هي ما جعل
+  // `PurchaseReturns.reason` عموداً بلا كاتب.
 
   @override
   void initState() {
@@ -68,7 +69,6 @@ class _PurchaseReturnsPicposScreenState
   @override
   void dispose() {
     _searchController.dispose();
-    _returnReasonController.dispose();
     super.dispose();
   }
 

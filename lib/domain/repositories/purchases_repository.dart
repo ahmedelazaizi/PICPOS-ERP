@@ -47,6 +47,9 @@ abstract class PurchasesRepository {
   Future<double> processPurchaseReturn({
     required PurchaseInvoiceData invoice,
     required List<PurchaseReturnItem> returnItems,
+    /// سببُ المردود من القائمة الثابتة — يُكتَب في `PurchaseReturns.reason`.
+    /// اختياريٌّ في العقد لأنّ منادين أقدمَ لا يمرّرونه؛ والواجهةُ تفرضه.
+    String? reason,
   });
 
   /// Feature 015 — Edit a previously-posted purchase return.
