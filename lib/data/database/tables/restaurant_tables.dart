@@ -48,6 +48,29 @@ class TableSections extends Table {
   BoolColumn get isActive => boolean().withDefault(const Constant(true))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 
+  // === v174 — مقاسُ الصالة وموضعُها (بلاغُ المالك 2026-09-18) ===
+  //
+  // كانت اللوحةُ ثابتةً `1200×900` في `floor_plan_designer.dart`، بلا علاقةٍ
+  // بشكل المحلّ الحقيقيّ — فمحلٌّ ضيّقٌ طويلٌ يُحشر في مستطيلٍ عريض. والمقاسُ
+  // يُسحَب بالماوس من حوافّ اللوحة (قرارُ المالك)، فيلزم حفظُه لكلّ قسم.
+
+  /// عرضُ صالة القسم وارتفاعُها بالبكسل. `null` ⇒ الافتراضُ القديم
+  /// `1200×900`، فالأقسامُ القائمةُ لا تتبدّل تحت المستخدم.
+  RealColumn get canvasWidth => real().nullable()();
+  RealColumn get canvasHeight => real().nullable()();
+
+  /// موضعُ القسم على **أرضيّة المحلّ** — لا داخلَ نفسِه.
+  ///
+  /// ⚠️ وهذان نتيجةٌ مباشرةٌ لقرار «نظرةِ المحلّ كلِّه»: الأقسامُ تُرى معاً
+  /// على أرضيّةٍ واحدة (الصالةُ هنا والتراسُ خلفها)، وهذا لا يُشتقّ. وبدونهما
+  /// تصير النظرةُ الشاملةُ صفَّ مستطيلاتٍ مرصوصاً لا مخطَّطَ محلّ.
+  RealColumn get originX => real().nullable()();
+  RealColumn get originY => real().nullable()();
+
+  /// ترتيبُ العرض ولونُ التمييز على الأرضيّة.
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+  TextColumn get color => text().nullable().withLength(max: 9)();
+
   // === v167 — أعمدةُ المزامنة (المرحلة ٣: الفئةُ التشغيليّة) ===
   TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
   DateTimeColumn get lastModifiedAt => dateTime().nullable()();
@@ -77,8 +100,63 @@ class RestaurantTables extends Table {
   BoolColumn get isActive => boolean().withDefault(const Constant(true))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 
+  // === v174 — أبعادُ الطاولة ودورانُها (بلاغُ المالك 2026-09-18) ===
+  //
+  // كان المرسومُ مربّعاً أو دائرةً بمقاسٍ **يُشتقّ من السعة**:
+  //   `size = (60 + capacity × 8).clamp(80, 140)`
+  // فطاولةُ اثنَين وطاولةُ ثلاثةٍ تظهران **متطابقتَين** (كلتاهما تُقصَّان إلى
+  // ٨٠)، ولا سبيلَ لتمثيل طاولةٍ مستطيلةٍ طويلةٍ ولا بارٍ ولا طاولةٍ مائلة.
+  //
+  /// `null` ⇒ يُرجَع إلى الاشتقاق من السعة، فلا تتبدّل خريطةٌ قائمةٌ تحت
+  /// المستخدم عند الترقية.
+  RealColumn get width => real().nullable()();
+  RealColumn get height => real().nullable()();
+
+  /// الدورانُ بالدرجات — صفرٌ افتراضاً.
+  RealColumn get rotation => real().withDefault(const Constant(0))();
+
   // === v167 — أعمدةُ المزامنة (المرحلة ٣: الفئةُ التشغيليّة) ===
   TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
+  DateTimeColumn get lastModifiedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get originClientId => text().nullable()();
+  IntColumn get rowVersion => integer().withDefault(const Constant(0))();
+}
+
+/// معالمُ القاعة غيرُ الطاولات — جدارٌ وبابٌ وبارٌ ومطبخٌ وعمودٌ ونصّ.
+///
+/// ═══ لماذا جدولٌ مستقلٌّ لا صفةٌ على الطاولة ═══
+///
+/// بلاغُ المالك 2026-09-18: «التصميمُ والخريطةُ فيهما مشاكلُ ومش مريح». وأحدُ
+/// أسبابه أنّ الخريطةَ **لا تشبه المكان**: نقاطٌ عائمةٌ بلا جدارٍ ولا بابٍ ولا
+/// بار، فلا يتوجّه بها النادلُ ولا يتعرّف على القاعة.
+///
+/// والمعلَمُ ليس طاولةً: لا سعةَ له ولا حالةَ ولا طلبَ ولا أصنافَ ولا تقارير.
+/// فحشرُه في `RestaurantTables` يُدخل صفوفاً بلا معنًى في كلِّ استعلامِ
+/// طاولاتٍ في المستودع — وكلُّها تفترض أنّ الصفَّ طاولةٌ حقيقيّة.
+@DataClassName('FloorPlanItemData')
+@TableIndex(name: 'idx_floor_plan_items_section', columns: {#sectionId})
+class FloorPlanItems extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get sectionId => integer().references(TableSections, #id)();
+
+  /// `wall` · `door` · `bar` · `kitchen` · `pillar` · `text`
+  TextColumn get kind => text().withLength(max: 20)();
+
+  RealColumn get x => real().withDefault(const Constant(0))();
+  RealColumn get y => real().withDefault(const Constant(0))();
+  RealColumn get width => real().withDefault(const Constant(40))();
+  RealColumn get height => real().withDefault(const Constant(40))();
+  RealColumn get rotation => real().withDefault(const Constant(0))();
+
+  /// نصُّ المعلَم — لازمٌ لـ`kind = 'text'`، واختياريٌّ تسميةً لغيره.
+  TextColumn get label => text().nullable().withLength(max: 60)();
+
+  BoolColumn get isActive => boolean().withDefault(const Constant(true))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  // === أعمدةُ المزامنة — القاعةُ واحدةٌ على كلّ جهاز ===
+  TextColumn get globalId => text().nullable().unique()();
   DateTimeColumn get lastModifiedAt => dateTime().nullable()();
   DateTimeColumn get deletedAt => dateTime().nullable()();
   TextColumn get originClientId => text().nullable()();

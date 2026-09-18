@@ -3323,5 +3323,89 @@ extension Epoch3Migrations on AppDatabase {
         );
       });
     }
+    // ═══════════════════════════════════════════════════════════════════
+    // v174 — بنيةُ إعادة تصميم الشاشات (بلاغُ المالك 2026-09-18)
+    // ═══════════════════════════════════════════════════════════════════
+    //
+    // ⚠️ **ولمن هذه الكتلة؟ لعملاء SQLite وحدَهم.**
+    //
+    // ثلاثةُ مسالكَ تصل الجداولَ الجديدة، وهذا أضيقُها:
+    //   • تنصيبةٌ جديدة  ⇒ `onCreate` يبني من كيانات drift مباشرةً
+    //   • خادمُ PostgreSQL ⇒ مُصحِّحُ التكافؤ يُنشئ الناقصَ عند الإقلاع
+    //                       (`[PG-PARITY-HEAL] action=created`) — مقيسٌ في
+    //                       لوج الميدان لا مفترَض
+    //   • عميلُ SQLite قائم ⇒ **هنا**، ولا مسلكَ له غيرُها
+    //
+    // ولهذا لا يُستغنى عنها بحجّة أنّ الخادمَ يُصلح نفسَه.
+    if (from < 174) {
+      await _safeMigrate('v174 جداولُ وأعمدةُ إعادة تصميم الشاشات', () async {
+        // ─── أوّلاً: الجداولُ الأربعةُ الجديدة ───────────────────────────
+        //
+        // `createTable` تُولّد `CREATE TABLE IF NOT EXISTS`، فهي بلا أثرٍ على
+        // قاعدةٍ نالتها من `createAll` — ولذلك تُنفَّذ بلا شرط.
+        for (final entry in <String, TableInfo>{
+          'asset_disposals': assetDisposals,
+          'cheque_books': chequeBooks,
+          'floor_plan_items': floorPlanItems,
+          'import_purchase_details': importPurchaseDetails,
+        }.entries) {
+          try {
+            await m.createTable(entry.value);
+          } catch (e) {
+            debugPrint('[Migration] v174 ${entry.key} (safe-skip): $e');
+          }
+        }
+
+        // ─── ثانياً: الأعمدةُ الخمسةَ عشرَ ──────────────────────────────
+        //
+        // ⚠️ **ولا عمودَ `UNIQUE` بينها عمداً**: SQLite ترفض
+        // `ADD COLUMN ... UNIQUE` على جدولٍ قائم، وهي مصيدةٌ قتلت الإقلاعَ في
+        // v132 — انظر `isIdempotentMigrationError`.
+        //
+        // و`NOT NULL` مقبولةٌ ما دام لها `DEFAULT`، فالصفوفُ القائمةُ تُملأ.
+        const columns = <String, List<String>>{
+          'table_sections': [
+            'canvas_width REAL',
+            'canvas_height REAL',
+            'origin_x REAL',
+            'origin_y REAL',
+            'sort_order INTEGER NOT NULL DEFAULT 0',
+            'color TEXT',
+          ],
+          'restaurant_tables': [
+            'width REAL',
+            'height REAL',
+            'rotation REAL NOT NULL DEFAULT 0',
+          ],
+          'fixed_assets': ['custodian_user_id INTEGER'],
+          'commercial_papers': [
+            'source_voucher_id INTEGER',
+            'cheque_book_id INTEGER',
+          ],
+          'journal_entries': ['reference TEXT'],
+          'purchase_invoices': [
+            'currency_id INTEGER',
+            'exchange_rate REAL',
+          ],
+        };
+
+        for (final table in columns.entries) {
+          for (final col in table.value) {
+            try {
+              await m.database.customStatement(
+                'ALTER TABLE ${table.key} ADD COLUMN $col',
+              );
+            } catch (e) {
+              debugPrint(
+                '[Migration] v174 ${table.key}.$col (safe-skip): $e',
+              );
+            }
+          }
+        }
+
+        debugPrint('[Migration] v174: أربعةُ جداولَ وخمسةَ عشرَ عموداً');
+      });
+    }
+
   }
 }

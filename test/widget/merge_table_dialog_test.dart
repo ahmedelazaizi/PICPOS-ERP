@@ -43,6 +43,7 @@ RestaurantTable _table(int id, String name) => RestaurantTable(
       isActive: true,
       createdAt: DateTime(2026),
       rowVersion: 0,
+      rotation: 0,
     );
 
 void main() {

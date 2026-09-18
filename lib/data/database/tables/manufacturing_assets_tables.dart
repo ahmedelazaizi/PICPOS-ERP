@@ -147,9 +147,85 @@ class FixedAssets extends Table {
   // Acquisition + depreciation JEs continue to debit the category account
   // (Constitution I — Behavior Preservation). Per-asset GL flows out of scope.
   IntColumn get linkedAccountId => integer().nullable().references(Accounts, #id)();
+
+  /// v174 — المسؤولُ عن الأصل (بطاقةُ الأصل، بلاغُ المالك 2026-09-18).
+  ///
+  /// **مستخدمٌ من النظام لا نصٌّ حرّ** بقرار المالك: النصُّ يُكتَب بثلاث
+  /// صيغٍ للشخص الواحد فلا يُجمَع عليه ولا يُساءَل به، والربطُ يجعل «ما في
+  /// عهدة فلان» استعلاماً لا بحثاً.
+  IntColumn get custodianUserId =>
+      integer().nullable().references(Users, #id)();
+
   TextColumn get globalId => text().nullable().unique()();
 
   // === v166 — أعمدةُ المزامنة (المرحلة ٢) ===
+  DateTimeColumn get lastModifiedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get originClientId => text().nullable()();
+  IntColumn get rowVersion => integer().withDefault(const Constant(0))();
+}
+
+/// طلبُ استبعاد أصلٍ — مستندٌ مستقلٌّ له دورةُ حياة.
+///
+/// ═══ لماذا جدولٌ لا أعمدةٌ على `FixedAssets` ═══
+///
+/// بقرار المالك 2026-09-18 صار للاستبعاد **زرّان منفصلان** (حفظُ مسوّدةٍ ثمّ
+/// مراجعةٌ واعتماد)، وصار تحصيلُه **نقديّاً أو آجلاً على ذمّة عميل**. فلزم
+/// حفظُ طريقةٍ ومشترٍ وطريقةِ تحصيلٍ وحالةٍ ومَن اعتمد ومتى.
+///
+/// والاستبعادُ **حدثٌ** لا صفةٌ في الأصل: خمسةُ أعمدةٍ على `FixedAssets`
+/// تترك الأصلَ محمَّلاً بحقولٍ ميّتةٍ لو رُفض الطلبُ أو أُلغي، ولا تُبقي أثراً
+/// لمن طلب ومن رفض.
+///
+/// والسابقةُ في هذا المستودع صريحة: `LandedCostSheets` مستندٌ مرتبطٌ بفاتورةٍ
+/// له `status: draft · applied · cancelled · voided` — وهذا نفسُ الشكل.
+///
+/// ⚠️ و`FixedAssets.status` **لا يُلمَس إلّا لحظةَ الاعتماد**: مسوّدةٌ تُغيّر
+/// حالةَ الأصل تُخرجه من التقارير قبل أن يُوافَق على إخراجه.
+@DataClassName('AssetDisposalData')
+@TableIndex(name: 'idx_asset_disposals_asset', columns: {#assetId})
+@TableIndex(name: 'idx_asset_disposals_status', columns: {#status})
+class AssetDisposals extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get assetId => integer().references(FixedAssets, #id)();
+
+  /// رقمُ الطلب المتسلسل — `ADP-####`.
+  TextColumn get disposalNumber => text().withLength(max: 50)();
+
+  DateTimeColumn get disposalDate => dateTime()();
+
+  /// `sale` (بيع) · `scrap` (إعدام) · `donation` (تبرّع) · `writeoff` (تخريد)
+  TextColumn get method => text().withLength(max: 20)();
+
+  /// ثمنُ البيع المتوقَّع. صفرٌ للإعدام والتبرّع.
+  RealColumn get disposalValue => real().withDefault(const Constant(0))();
+
+  /// `cash` (نقديّ) · `credit` (آجلٌ على ذمّة العميل)
+  ///
+  /// ⚠️ و`credit` يفرض `buyerPartyId` غيرَ فارغ: بلا طرفٍ مسجَّلٍ لا ذمّةَ
+  /// تُحمَّل، فيصير القيدُ بلا مدينٍ حقيقيّ.
+  TextColumn get collectionMethod =>
+      text().withLength(max: 10).withDefault(const Constant('cash'))();
+
+  /// المشتري. نصٌّ حرٌّ لا يكفي في `credit` — انظر أعلاه.
+  IntColumn get buyerPartyId => integer().nullable().references(Parties, #id)();
+
+  /// سببُ الاستبعاد — بقرار المالك يُستعمَل الحقلُ العامُّ لا عمودٌ جديد.
+  TextColumn get notes => text().nullable()();
+
+  /// `draft` · `approved` · `cancelled`
+  TextColumn get status =>
+      text().withLength(max: 12).withDefault(const Constant('draft'))();
+
+  IntColumn get createdBy => integer().nullable().references(Users, #id)();
+  IntColumn get approvedBy => integer().nullable().references(Users, #id)();
+  DateTimeColumn get approvedAt => dateTime().nullable()();
+  IntColumn get costCenterId =>
+      integer().nullable().references(CostCenters, #id)();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  // === أعمدةُ المزامنة ===
+  TextColumn get globalId => text().nullable().unique()();
   DateTimeColumn get lastModifiedAt => dateTime().nullable()();
   DateTimeColumn get deletedAt => dateTime().nullable()();
   TextColumn get originClientId => text().nullable()();

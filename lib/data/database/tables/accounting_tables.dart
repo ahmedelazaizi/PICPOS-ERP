@@ -49,6 +49,16 @@ class JournalEntries extends Table {
   TextColumn get entryNumber => text().withLength(max: 50)();
   DateTimeColumn get entryDate => dateTime()();
   TextColumn get description => text().nullable()();
+
+  /// v174 — «المرجع» الذي يكتبه المستخدمُ في سند القيد (بلاغُ المالك
+  /// 2026-09-18، تصميمُ `(14).jpeg`).
+  ///
+  /// ⚠️ **ولا يُخلَط بـ[referenceType]/[referenceId]**: هذان حقلا **نظامٍ**
+  /// يربطان القيدَ بمستنده الذي ولّده (فاتورةٌ · سندٌ · استبعادُ أصل)، ويقرؤهما
+  /// محرّكُ الترحيل وتقريرُ التدفّقات وزرُّ القفز إلى المستند المصدر. وحشرُ نصٍّ
+  /// حرٍّ فيهما يكسر ذلك كلَّه. وهذا حقلٌ وصفيٌّ لا يقرؤه محرّك.
+  TextColumn get reference => text().nullable().withLength(max: 100)();
+
   TextColumn get referenceType =>
       text().nullable()(); // sale, purchase, receipt, payment, return, transfer
   IntColumn get referenceId => integer().nullable()();

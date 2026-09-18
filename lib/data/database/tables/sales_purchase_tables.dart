@@ -152,6 +152,22 @@ class PurchaseInvoices extends Table {
   BoolColumn get isLocked =>
       boolean().withDefault(const Constant(false))(); // قفل بعد الدفع الكامل
   IntColumn get costCenterId => integer().nullable().references(CostCenters, #id)(); // مركز التكلفة
+
+  // === v174 — عملةُ الفاتورة ولقطةُ سعرِها (المشتريات الخارجيّة) ===
+  //
+  // بقرار المالك 2026-09-18 (الخيارُ أ): تُدخَل بالعملة الأجنبيّة وتُحوَّل
+  // **فوراً** بسعر يومها، والذمّةُ تُقيَّد بالمحلّيّة — فلا فروقَ صرفٍ لاحقةً
+  // ولا محرّكَ إعادةِ ترجمةٍ عند السداد.
+  //
+  // ⚠️ و[exchangeRate] **لقطةٌ لا مرجع**: قراءةُ السعر وقتَ العرض تُعيد تقييمَ
+  // فاتورةٍ رُحِّلت — وهو عينُ ما تحذّر منه فقرةُ [dueDate] أعلاه. وهو أيضاً
+  // **نفسُ ما يفعله `JournalEntries`** بعمودَي `currencyId`/`exchangeRate`،
+  // فالنمطُ قائمٌ في المستودع لا مُخترَع.
+  //
+  /// `null` ⇒ العملةُ المحلّيّةُ بسعرِ ١ — وهو حالُ كلِّ فاتورةٍ قائمة.
+  IntColumn get currencyId => integer().nullable().references(Currencies, #id)();
+  RealColumn get exchangeRate => real().nullable()();
+
   TextColumn get integrityHash => text().nullable()(); // TCE-02: هاش الفاتورة للأرشيف غير القابل للتعديل
   TextColumn get notes => text().nullable()();
 
@@ -168,6 +184,58 @@ class PurchaseInvoices extends Table {
   IntColumn get rowVersion => integer().withDefault(const Constant(0))();
 
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// تفاصيلُ فاتورةِ استيراد — v174، بلاغُ المالك 2026-09-18.
+///
+/// ═══ لماذا جدولٌ ١:١ لا ستّةُ أعمدةٍ على الفاتورة ═══
+///
+/// `PurchaseInvoices` أكثرُ جداول المشتريات قراءةً، وفاتورةُ الاستيراد أقلّيّةٌ
+/// بين صفوفه. فستّةُ أعمدةٍ نصّيّةٍ تبقى فارغةً في كلّ فاتورةٍ محلّيّةٍ إلى
+/// الأبد حشوٌ دائمٌ في الجدول الساخن.
+///
+/// ووجودُ الصفِّ نفسُه هو العلامة: «أهذه فاتورةُ استيراد؟» تصير فحصَ وجودٍ لا
+/// فحصَ ستّةِ حقولٍ فارغة. وهو نفسُ شكلِ `LandedCostSheets` المعلَّقةِ بالفاتورة.
+///
+/// ⚠️ **ولا يحمل العملةَ ولا سعرَ الصرف** — هما على الفاتورة نفسِها: الذمّةُ
+/// والإجماليّاتُ تُقرأ من `purchase_invoices` في عشرات المواضع، فوضعُ العملة
+/// هنا يُلزم كلَّ واحدٍ منها بضمٍّ لا يحتاجه.
+@DataClassName('ImportPurchaseDetailData')
+@TableIndex(
+    name: 'idx_import_purchase_invoice', columns: {#purchaseInvoiceId})
+class ImportPurchaseDetails extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get purchaseInvoiceId =>
+      integer().references(PurchaseInvoices, #id)();
+
+  /// رقمُ البيان الجمركيّ.
+  TextColumn get customsDeclarationNo =>
+      text().nullable().withLength(max: 50)();
+
+  /// بوليصةُ الشحن (‏B/L أو AWB).
+  TextColumn get billOfLading => text().nullable().withLength(max: 60)();
+
+  /// بلدُ المنشأ والميناء.
+  TextColumn get countryOfOrigin => text().nullable().withLength(max: 60)();
+  TextColumn get port => text().nullable().withLength(max: 60)();
+
+  /// رقمُ الاعتماد المستنديّ.
+  TextColumn get letterOfCredit => text().nullable().withLength(max: 50)();
+
+  /// وكيلُ التخليص — طرفٌ مسجَّلٌ حين يكون مورّداً للخدمة، وإلّا فنصّ.
+  IntColumn get clearingAgentPartyId =>
+      integer().nullable().references(Parties, #id)();
+  TextColumn get clearingAgentName => text().nullable().withLength(max: 100)();
+
+  TextColumn get notes => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  // === أعمدةُ المزامنة ===
+  TextColumn get globalId => text().nullable().unique()();
+  DateTimeColumn get lastModifiedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get originClientId => text().nullable()();
+  IntColumn get rowVersion => integer().withDefault(const Constant(0))();
 }
 
 @TableIndex(name: 'idx_purchase_items_invoice', columns: {#invoiceId})

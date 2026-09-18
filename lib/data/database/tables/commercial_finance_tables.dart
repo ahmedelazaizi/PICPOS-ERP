@@ -4,6 +4,54 @@ part of '../database.dart';
 // COMMERCIAL PAPERS (الأوراق التجارية — شيكات/كمبيالات)
 // ═══════════════════════════════════════════════════════════════════════════
 
+/// دفترُ شيكاتٍ صادرٌ من بنكنا — v174، بلاغُ المالك 2026-09-18.
+///
+/// ═══ وهو **ليس** «الحافظة» ═══
+///
+/// `in_portfolio` («حافظة الشيكات») **حالةٌ** على ورقةٍ **واردةٍ** بحوزتنا لم
+/// تُودَع بعد. وهذا **كيانٌ**: دفترُ شيكاتٍ بيضاءَ من حسابنا البنكيّ، له مدًى
+/// من الأرقام ورصيدٌ متبقٍّ. الأوّلُ `received` والثاني `issued`.
+///
+/// والمفهومُ معترَفٌ به في المستودع ولم يُنمذَج — `commercial_papers_dao.dart:80`:
+///   `issued → (paperNumber, type, bankName)` — our own chequebook
+/// أي أنّ تفرُّدَ الشيك الصادر مبنيٌّ على أنّه من دفترنا، بلا دفترٍ يضبطه:
+/// فلا رقمَ تاليَ آليّاً، ولا منعَ لتكرارٍ أو قفزةٍ، ولا معرفةَ بما تبقّى.
+/// ورقمٌ مكرَّرٌ في شيكٍ صادرٍ خطأٌ **يصل البنك**.
+@DataClassName('ChequeBookData')
+@TableIndex(name: 'idx_cheque_books_account', columns: {#bankAccountId})
+class ChequeBooks extends Table {
+  IntColumn get id => integer().autoIncrement()();
+
+  /// الحسابُ البنكيُّ في دليل الحسابات — الدفترُ مسحوبٌ عليه.
+  IntColumn get bankAccountId => integer().references(Accounts, #id)();
+
+  TextColumn get bookNumber => text().withLength(max: 30)();
+
+  /// بادئةُ الترقيم — مثل `CHK-`. فارغةٌ ⇒ أرقامٌ مجرّدة.
+  TextColumn get prefix => text().nullable().withLength(max: 10)();
+
+  /// مدى الأرقام، والتالي منه.
+  IntColumn get fromNumber => integer()();
+  IntColumn get toNumber => integer()();
+
+  /// أوّلُ رقمٍ لم يُستعمَل بعد. يبدأ عند [fromNumber].
+  IntColumn get nextNumber => integer()();
+
+  /// `active` · `exhausted` · `cancelled`
+  TextColumn get status =>
+      text().withLength(max: 12).withDefault(const Constant('active'))();
+
+  TextColumn get notes => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  // === أعمدةُ المزامنة ===
+  TextColumn get globalId => text().nullable().unique()();
+  DateTimeColumn get lastModifiedAt => dateTime().nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get originClientId => text().nullable()();
+  IntColumn get rowVersion => integer().withDefault(const Constant(0))();
+}
+
 @DataClassName('CommercialPaperData')
 @TableIndex(name: 'idx_papers_due_date', columns: {#dueDate})
 @TableIndex(name: 'idx_papers_status', columns: {#status})
@@ -27,6 +75,21 @@ class CommercialPapers extends Table {
   TextColumn get notes => text().nullable()();
   IntColumn get safeId =>
       integer().nullable().references(Safes, #id)(); // الخزنة المودع فيها
+
+  /// v174 — السندُ الذي وُلدت منه الورقة (بلاغُ المالك 2026-09-18).
+  ///
+  /// كان الرابطُ **نصّاً عربيّاً حرّاً** في `notes`:
+  ///   `'ترحيل تلقائي من سند قبض $voucherNumber'`
+  /// فلا يُضغَط ولا يُستعلَم عنه، وأيُّ تغييرٍ في الصياغة يكسر كلَّ محاولةِ
+  /// تحليلٍ نصّيّ. وشاشةُ «إدارة الشيكات» تعرض السندَ رابطاً في التصميم.
+  IntColumn get sourceVoucherId => integer().nullable()();
+
+  /// v174 — دفترُ الشيكات الذي سُحب منه هذا الشيكُ الصادر.
+  ///
+  /// للأوراق `issued` وحدَها؛ الواردةُ تأتي من دفتر الطرف الآخر.
+  IntColumn get chequeBookId =>
+      integer().nullable().references(ChequeBooks, #id)();
+
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
   DateTimeColumn get lastModifiedAt => dateTime().nullable()();

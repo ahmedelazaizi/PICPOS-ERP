@@ -613,6 +613,8 @@ WHERE id NOT IN (
     Parties,
     PurchaseInvoices,
     PurchaseInvoiceItems,
+    // v174 - تفاصيلُ فاتورة الاستيراد (١:١ مع الفاتورة)
+    ImportPurchaseDetails,
     // §٦‑٢ — مستندُ مرتجع المشتريات. جدولٌ **مستقلٌّ** عمداً: صفٌّ في
     // `purchase_invoices` كان سيدخل خمسةً وثلاثين استعلامَ مشترياتٍ قائماً.
     PurchaseReturns,
@@ -624,6 +626,8 @@ WHERE id NOT IN (
     RestaurantTables, // NEW: Restaurant tables
     TableOrders, // NEW: Table orders
     TableOrderItems, // NEW: Items in table orders
+    // v174 - معالمُ القاعة غيرُ الطاولات
+    FloorPlanItems,
     TableReservations, // NEW: Table reservations
     TableOrderPayments, // v154: دفعةٌ لكلّ دافعٍ على طلب الطاولة
     BookingResources, // v159: «الموظفون / الموارد» — مَن يُحجَز وقتُه
@@ -690,6 +694,9 @@ WHERE id NOT IN (
     AccountingPeriods, // PIR Phase 1.5: Monthly period locking
     ActivityProfiles,
     // Phase 2: Commercial Papers & Finance
+    // v174 - دفترُ الشيكات الصادرة، وهو قبلَ CommercialPapers
+    // لأنَّ الأخيرَ صار يشير إليه بـchequeBookId.
+    ChequeBooks,
     CommercialPapers,
     PaperStatusHistory,
     Currencies,
@@ -702,6 +709,8 @@ WHERE id NOT IN (
     ManufacturingOrders,
     AssetCategories,
     FixedAssets,
+    // v174 - طلبُ استبعاد أصلٍ: مستندٌ بدورةِ حياة
+    AssetDisposals,
     AssetDepreciations,
     // Phase 4: E-Invoicing
     EInvoiceConfigs,
@@ -1046,7 +1055,7 @@ class AppDatabase extends _$AppDatabase {
   // `newColumns`، فرمت `no such column: "role"` وابتلعها `_safeMigrate`
   // (تعدُّها خطأً عديمَ الأثر) — فخُتمت القواعدُ 161 وأعمدةُ المورد لم تُضَف،
   // و`from < 161` لا يعود يفحصها. الخطوةُ الجديدةُ تفحص ثمّ تُصلح.
-  int get schemaVersion => 173;
+  int get schemaVersion => 174;
 
   /// 🔴 جملةُ `CREATE INDEX` صالحةً لـPostgreSQL، مأخوذةً من الجملة التي
   /// ولّدتها drift لـSQLite.

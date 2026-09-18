@@ -1172,6 +1172,10 @@ class SupabaseDatabase {
       // v167 — مطلوبٌ في صنفِ البيانات المولَّد. والصفُّ السحابيُّ قد لا
       // يحمل العمودَ بعد، وصفرٌ هو حالُ صفٍّ لم يُعدَّل قطّ.
       rowVersion: (data['row_version'] as int?) ?? 0,
+      // v174 — نفسُ العلّة: العمودُ ذو قيمةٍ افتراضيّةٍ في SQL لكنّ صنفَ
+      // البيانات يطلبه صراحةً. وبقيّةُ أعمدة v174 (المقاسُ والموضعُ واللون)
+      // تقبل `null` فتُترَك لافتراضها.
+      sortOrder: (data['sort_order'] as int?) ?? 0,
     );
   }
 
@@ -1191,6 +1195,9 @@ class SupabaseDatabase {
       isActive: data['is_active'] as bool? ?? true,
       createdAt: DateTime.parse(data['created_at'] as String),
       rowVersion: (data['row_version'] as int?) ?? 0, // v167
+      // v174 — العرضُ والارتفاعُ يقبلان `null` (‏`null` ⇒ يُشتقّ المقاسُ من
+      // السعة كما كان)، والدورانُ لا يقبله فيُملأ بصفره.
+      rotation: (data['rotation'] as num?)?.toDouble() ?? 0.0,
     );
   }
 

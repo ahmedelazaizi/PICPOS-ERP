@@ -31,6 +31,7 @@ RestaurantTable _table(int id, String name, String status) => RestaurantTable(
       isActive: true,
       createdAt: DateTime(2026, 1, 1),
       rowVersion: 0, // v167
+      rotation: 0, // v174
     );
 
 final _tables = [
