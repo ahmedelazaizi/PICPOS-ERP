@@ -1,9 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/config/business_profile_provider.dart';
+import '../../../core/navigation/screen_id.dart';
 import '../../../data/providers/providers.dart';
 import '../../../domain/entities/invoice_entity.dart';
+import '../../../domain/models/purchase_doc.dart';
 
 /// إجمالياتُ **الفترة السابقة** لفواتير المشتريات — نافذةٌ بنفس الطول تسبق
 /// المدى المختار مباشرةً وتُقاس بنفس المرشِّحات.
@@ -63,6 +66,16 @@ class PurchaseInvoicesScreenState {
   /// سيعني «لا فواتيرَ بهذه الحالة» وهو ما لم يُقَس بعد.
   final Map<String, int> statusCounts;
 
+  /// أوامرُ الشراء المحمّلة — **فارغةٌ خارجَ نطاق `unified`**، فشاشةُ
+  /// أوامر الشراء ليست في أيّ نطاقٍ آخر (`ScreenRegistry`).
+  final List<PurchaseOrderRow> allOrders;
+
+  /// المستنداتُ المعروضةُ مدموجةً ومرتّبةً بالأحدث.
+  final List<PurchaseDoc> filteredDocs;
+
+  /// مرشِّحُ «نوع المستند» — قرارُ المالك 2026-09-18.
+  final PurchaseDocTypeFilter docTypeFilter;
+
   /// معرّفاتُ الفواتير التي **لها قيدٌ مُرحَّلٌ فعلاً** في الأستاذ.
   ///
   /// ⚠️ **و`null` ليست «لا شيء مُرحَّل» بل «لم يُعرَف بعد».**
@@ -103,6 +116,9 @@ class PurchaseInvoicesScreenState {
     this.invoiceCount = 0,
     this.statusCounts = const {},
     this.postedInvoiceIds,
+    this.allOrders = const [],
+    this.filteredDocs = const [],
+    this.docTypeFilter = PurchaseDocTypeFilter.all,
 
     this.previousPeriod,
     this.displayLimit = 50,
@@ -140,6 +156,9 @@ class PurchaseInvoicesScreenState {
     int? invoiceCount,
     Map<String, int>? statusCounts,
     Set<int>? postedInvoiceIds,
+    List<PurchaseOrderRow>? allOrders,
+    List<PurchaseDoc>? filteredDocs,
+    PurchaseDocTypeFilter? docTypeFilter,
     bool clearPostedInvoiceIds = false,
 
     PurchasePreviousPeriod? previousPeriod,
@@ -170,6 +189,9 @@ class PurchaseInvoicesScreenState {
       totalReturns: totalReturns ?? this.totalReturns,
       invoiceCount: invoiceCount ?? this.invoiceCount,
       statusCounts: statusCounts ?? this.statusCounts,
+      allOrders: allOrders ?? this.allOrders,
+      filteredDocs: filteredDocs ?? this.filteredDocs,
+      docTypeFilter: docTypeFilter ?? this.docTypeFilter,
       postedInvoiceIds: clearPostedInvoiceIds
           ? null
           : (postedInvoiceIds ?? this.postedInvoiceIds),
@@ -343,13 +365,51 @@ class PurchaseInvoicesController extends Notifier<PurchaseInvoicesScreenState> {
         // يبقى `null` ⇒ العمودُ يرسم «—» ولا يدّعي علماً.
       }
 
+      await _loadPurchaseOrders();
+
       _applyFilters();
     } catch (_) {
       if (!_disposed) state = state.copyWith(isLoading: false);
     }
   }
 
+  /// أوامرُ الشراء — **ولا تُحمَّل خارجَ نطاقِها**.
+  ///
+  /// ⚠️ `ScreenId.purchaseOrders` في `ScreenRegistry.unified` **وحدَه**. ففي
+  /// بقيّة الأنماط لا وجودَ للمستند أصلاً، وقراءتُه هناك تملأ قائمةً
+  /// بمستنداتٍ لا شاشةَ لها ولا مرشِّحَ يستثنيها.
+  Future<void> _loadPurchaseOrders() async {
+    if (!AppConfig.allowedScreenIds.contains(ScreenId.purchaseOrders)) {
+      return;
+    }
+    try {
+      final repo = ref.read(purchaseOrdersRepositoryProvider);
+      final rows = await repo.watchPurchaseOrders().first;
+      if (_disposed) return;
+      state = state.copyWith(
+        allOrders: [
+          for (final o in rows)
+            PurchaseOrderRow(
+              id: o.id,
+              orderNumber: o.orderNumber,
+              supplierId: o.supplierId,
+              orderDate: o.orderDate,
+              total: o.total,
+              status: o.status,
+              warehouseId: o.warehouseId,
+              costCenterId: o.costCenterId,
+              convertedToInvoiceId: o.convertedToInvoiceId,
+            ),
+        ],
+      );
+      _applyFilters();
+    } catch (_) {
+      // القائمةُ تعمل بالفواتير وحدَها.
+    }
+  }
+
   void _applyFilters() {
+
     var filtered = state.allInvoices.toList();
 
     // Text search
@@ -424,8 +484,20 @@ class PurchaseInvoicesController extends Notifier<PurchaseInvoicesScreenState> {
     final totalRemaining = totalAmount - totalPaid - totalReturned;
     final invoiceCount = filtered.length;
 
+    // القائمةُ المعروضةُ: فواتيرُ وأوامرُ معاً مرتّبةً بالأحدث.
+    //
+    // ⚠️ **والإجماليّاتُ محسوبةٌ قبلَ هذا ومن `filtered` وحدَها.**
+    // أمرُ الشراء التزامٌ لم يُستلَم ولم يُرحَّل؛ وضمُّه إلى «إجمالي
+    // المشتريات» يعدُّ المبلغَ **مرّتَين** عند تحويله إلى فاتورة.
+    final docs = mergePurchaseDocs(
+      invoices: filtered,
+      orders: _ordersMatchingFilters(),
+      typeFilter: state.docTypeFilter,
+    );
+
     state = state.copyWith(
       filteredInvoices: filtered.take(state.displayLimit).toList(),
+      filteredDocs: docs.take(state.displayLimit).toList(),
       totalAmount: totalAmount,
       totalPaid: totalPaid,
       totalRemaining: totalRemaining,
@@ -441,6 +513,50 @@ class PurchaseInvoicesController extends Notifier<PurchaseInvoicesScreenState> {
     unawaited(_refreshSummaryTotals());
   }
 
+  /// الأوامرُ المطابِقةُ للمرشِّحات التي **تنطبق عليها**.
+  ///
+  /// ⚠️ وليست كلُّ مرشِّحات الفواتير تنطبق: لا فرعَ مختوماً على أمر
+  /// الشراء ولا حالةَ سدادٍ له. وإسقاطُ الأوامر عند ترشيحٍ لا معنى
+  /// له عندها أصدقُ من إبقائها: من يرشّح بـ«غير مدفوع» يسأل عن
+  /// ذمّةٍ، والأمرُ لا ذمّةَ له.
+  List<PurchaseOrderRow> _ordersMatchingFilters() {
+    if (state.allOrders.isEmpty) return const [];
+    var rows = state.allOrders;
+
+    final query = state.searchQuery.toLowerCase();
+    if (query.isNotEmpty) {
+      rows = rows.where((o) {
+        final supplier =
+            state.supplierNames[o.supplierId]?.toLowerCase() ?? '';
+        return o.orderNumber.toLowerCase().contains(query) ||
+            supplier.contains(query);
+      }).toList();
+    }
+    final range = state.dateRange;
+    if (range != null) {
+      rows = rows
+          .where((o) =>
+              o.orderDate
+                  .isAfter(range.start.subtract(const Duration(days: 1))) &&
+              o.orderDate.isBefore(range.end.add(const Duration(days: 1))))
+          .toList();
+    }
+    if (state.selectedWarehouseId != null) {
+      rows = rows
+          .where((o) => o.warehouseId == state.selectedWarehouseId)
+          .toList();
+    }
+    if (state.selectedCostCenterId != null) {
+      rows = rows
+          .where((o) => o.costCenterId == state.selectedCostCenterId)
+          .toList();
+    }
+    if (state.selectedBranchId != null || state.statusFilter != 'all') {
+      return const [];
+    }
+    return rows;
+  }
+
   /// هل ثمّةَ مرشِّحٌ فعّالٌ الآن؟ — تُميّز «لا فواتيرَ إطلاقاً» من «المرشِّحاتُ
   /// ضيّقت النتيجةَ إلى الصفر»، فتُعرَض إعادةُ التعيين في الحالة الثانية فقط.
   bool get hasActiveFilters =>
@@ -449,7 +565,8 @@ class PurchaseInvoicesController extends Notifier<PurchaseInvoicesScreenState> {
       state.statusFilter != 'all' ||
       state.selectedWarehouseId != null ||
       state.selectedBranchId != null ||
-      state.selectedCostCenterId != null;
+      state.selectedCostCenterId != null ||
+      state.docTypeFilter != PurchaseDocTypeFilter.all;
 
   /// إعادةُ تعيين كلّ المرشِّحات دفعةً واحدة — تطبيقٌ واحدٌ لا ستّة.
   void clearAllFilters() {
@@ -460,6 +577,7 @@ class PurchaseInvoicesController extends Notifier<PurchaseInvoicesScreenState> {
       clearWarehouse: true,
       clearBranch: true,
       clearCostCenter: true,
+      docTypeFilter: PurchaseDocTypeFilter.all,
     );
     _applyFilters();
   }
@@ -601,7 +719,14 @@ class PurchaseInvoicesController extends Notifier<PurchaseInvoicesScreenState> {
     _applyFilters();
   }
 
+  /// يبدّل مرشِّحَ «نوع المستند».
+  void updateDocTypeFilter(PurchaseDocTypeFilter value) {
+    state = state.copyWith(docTypeFilter: value);
+    _applyFilters();
+  }
+
   void updateCostCenterFilter(int? costCenterId) {
+
     if (costCenterId == null) {
       state = state.copyWith(clearCostCenter: true);
     } else {

@@ -196,6 +196,13 @@ class PurchasesFilterBar extends ConsumerWidget {
     final warehousesAsync = ref.watch(allWarehousesProvider);
     final branchesAsync = ref.watch(allBranchesProvider);
     final costCentersAsync = ref.watch(allCostCentersProvider);
+    final docTypeFilter = ref.watch(
+        purchaseInvoicesControllerProvider.select((s) => s.docTypeFilter));
+    // النطاقُ يُقرأ من النمط حيّاً: تبديلُ النمط في زمن التشغيل
+    // يغيّر القائمة، و`AppConfig` ساكنٌ فلا يُعيد البناءَ وحدَه.
+    ref.watch(businessProfileProvider);
+    final ordersInScope =
+        AppConfig.allowedScreenIds.contains(ScreenId.purchaseOrders);
 
     final theme = Theme.of(context);
     final muted = _purMuted(context);
@@ -340,7 +347,35 @@ class PurchasesFilterBar extends ConsumerWidget {
                 ),
               ),
             ),
+              // ── نوعُ المستند — قرارُ المالك 2026-09-18 ──────────
+              //
+              // ⚠️ **ولا يُعرَض خارجَ نطاق `unified`**: أوامرُ الشراء
+              // ليست في أيّ نطاقٍ آخر (`ScreenRegistry`)، فمرشِّحٌ يعرض نوعاً
+              // لا وجودَ له يُرجِع قائمةً فارغةً دائماً ويبدو معطّلاً.
+              if (ordersInScope)
+                _PurFilterPill<PurchaseDocTypeFilter>(
+                  label: 'نوع المستند',
+                  value: docTypeFilter,
+                  items: const [
+                    DropdownMenuItem(
+                      value: PurchaseDocTypeFilter.all,
+                      child: Text('جميع الأنواع'),
+                    ),
+                    DropdownMenuItem(
+                      value: PurchaseDocTypeFilter.invoice,
+                      child: Text('فاتورة شراء'),
+                    ),
+                    DropdownMenuItem(
+                      value: PurchaseDocTypeFilter.order,
+                      child: Text('أمر شراء'),
+                    ),
+                  ],
+                  onChanged: (v) => controller
+                      .updateDocTypeFilter(v ?? PurchaseDocTypeFilter.all),
+                ),
+
             // ── الفرع (يظهر عند تعدّد الفروع فقط) ───────────────────────
+
             branchesAsync.when(
               data: (branches) {
                 if (branches.length <= 1) return const SizedBox.shrink();

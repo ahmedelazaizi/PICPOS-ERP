@@ -23,6 +23,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/domain/entities/invoice_entity.dart';
+import 'package:ural_erp/domain/models/purchase_doc.dart';
 import 'package:ural_erp/presentation/purchases_picpos/screens/purchases_picpos_screen.dart';
 import 'package:ural_erp/presentation/screens/purchases/purchase_invoices_controller.dart';
 
@@ -51,6 +52,12 @@ class _FrozenController extends PurchaseInvoicesController {
         isLoading: false,
         allInvoices: [_inv(1, 'PINV-0201'), _inv(2, 'PINV-0202')],
         filteredInvoices: [_inv(1, 'PINV-0201'), _inv(2, 'PINV-0202')],
+        // الجدولُ يرسم `filteredDocs` — القائمةَ المدموجة — لا
+        // `filteredInvoices`؛ فتركُها فارغةً يعرض حالةَ «لا نتائج».
+        filteredDocs: [
+          PurchaseInvoiceDoc(_inv(1, 'PINV-0201')),
+          PurchaseInvoiceDoc(_inv(2, 'PINV-0202')),
+        ],
         postedInvoiceIds: _posted,
       );
 }

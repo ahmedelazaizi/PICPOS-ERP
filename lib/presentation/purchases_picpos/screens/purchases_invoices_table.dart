@@ -111,6 +111,8 @@ class PurchasesInvoicesTable extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final filteredInvoices = ref.watch(
         purchaseInvoicesControllerProvider.select((s) => s.filteredInvoices));
+    final docs = ref.watch(
+        purchaseInvoicesControllerProvider.select((s) => s.filteredDocs));
     final supplierNames = ref.watch(
         purchaseInvoicesControllerProvider.select((s) => s.supplierNames));
     final selectedInvoices = ref.watch(
@@ -130,7 +132,7 @@ class PurchasesInvoicesTable extends ConsumerWidget {
 
     final notifier = ref.read(purchaseInvoicesControllerProvider.notifier);
 
-    if (filteredInvoices.isEmpty) {
+    if (docs.isEmpty) {
       // تُميَّز «لا فواتيرَ إطلاقاً» من «المرشِّحاتُ ضيّقت النتيجةَ إلى الصفر»
       // — والثانيةُ تعرض إعادةَ تعيينٍ كي لا يفكّ المستخدمُ كلَّ حبّةٍ وحدَها.
       final hasFilters = notifier.hasActiveFilters;
@@ -168,7 +170,10 @@ class PurchasesInvoicesTable extends ConsumerWidget {
       );
     }
 
-    final allSelected = selectedInvoices.length == filteredInvoices.length;
+    // ⚠️ ويُقاس على الفواتير وحدَها: الأوامرُ لا تُحدّد، فلو دخلت
+    // المقامَ لما اكتمل «تحديدُ الكلّ» أبداً.
+    final allSelected = filteredInvoices.isNotEmpty &&
+        selectedInvoices.length == filteredInvoices.length;
 
     return Expanded(
       child: Padding(
@@ -184,10 +189,21 @@ class PurchasesInvoicesTable extends ConsumerWidget {
               // مُفهرَسٌ — لا تُبنى إلا البطاقاتُ المرئيّة. اقرأ رأسَ الملفّ
               // لسبب هذا الاختيار بالذات.
               child: ListView.separated(
-                itemCount: filteredInvoices.length,
+                itemCount: docs.length,
                 separatorBuilder: (_, _) => const SizedBox(height: 6),
                 itemBuilder: (context, i) {
-                  final invoice = filteredInvoices[i];
+                  // مستندان لا واحد — وكلٌّ ببطاقته: أمرُ الشراء
+                  // يفتقر إلى نصف أعمدة الفاتورة.
+                  final doc = docs[i];
+                  if (doc is PurchaseOrderDoc) {
+                    return _PurOrderCard(
+                      order: doc.order,
+                      supplierNames: supplierNames,
+                      warehouseNames: warehouseNames,
+                      costCenterNames: costCenterNames,
+                    );
+                  }
+                  final invoice = (doc as PurchaseInvoiceDoc).invoice;
                   return _PurInvoiceCard(
                     invoice: invoice,
                     selected: selectedInvoices.contains(invoice.id),
@@ -659,6 +675,253 @@ class _PurInvoiceCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+
+/// بطاقةُ **أمرِ شراء** — أخٌ لبطاقة الفاتورة لا حالةٌ منها.
+///
+/// ═══ لماذا بطاقةٌ مستقلّة ═══
+///
+/// أمرُ الشراء يفتقر إلى نصف أعمدة الفاتورة: لا مسدَّدَ له ولا متبقّي ولا
+/// قيدَ في الأستاذ ولا فرعَ مختوماً عليه. وبطاقةٌ واحدةٌ تُفرِغ نصفَ خاناتها
+/// كانت ستعرض «مدفوعٌ ٠ من ٥٠٠٠» على التزامٍ لم يُستلَم بعد — وصفرٌ في خانةِ
+/// سدادٍ يُقرأ «متأخّراً» لا «غيرَ منطبق».
+///
+/// ⚠️ **والخانتان تُرسَمان «—» بتلميحَيهما**، ودورةُ حياة الأمر تظهر وسماً
+/// بجوار رقمه — حيث يرى القارئُ أصلاً أنّه ليس فاتورة. فلا عمودٌ يقول شيئاً
+/// ليس هو.
+class _PurOrderCard extends StatelessWidget {
+  const _PurOrderCard({
+    required this.order,
+    required this.supplierNames,
+    required this.warehouseNames,
+    required this.costCenterNames,
+  });
+
+  final PurchaseOrderRow order;
+  final Map<int, String> supplierNames;
+  final Map<int, String> warehouseNames;
+  final Map<int, String> costCenterNames;
+
+  /// تسميةُ حالة الأمر ولونُها — مفرداتٌ خاصّةٌ به لا مفرداتُ السداد.
+  static (String, Color) _statusOf(String raw) => switch (raw) {
+        'draft' => ('مسودة', AppColors.textMuted),
+        'sent' => ('مُرسَل', AppColors.info),
+        'confirmed' => ('مؤكَّد', AppColors.primary),
+        'received' => ('مُستلَم', AppColors.success),
+        'cancelled' => ('ملغى', AppColors.error),
+        _ => (raw, AppColors.textMuted),
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final muted = _purMuted(context);
+    final (statusLabel, statusColor) = _statusOf(order.status);
+    final whName = order.warehouseId != null
+        ? (warehouseNames[order.warehouseId] ?? 'WH#${order.warehouseId}')
+        : '—';
+    final ccName = order.costCenterId != null
+        ? (costCenterNames[order.costCenterId] ?? '—')
+        : '—';
+
+    Widget dash(String tip) => Tooltip(
+          message: tip,
+          child: Text(
+            '—',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              color: muted,
+            ),
+          ),
+        );
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        border: Border.all(color: theme.dividerColor),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      child: Row(
+        children: [
+          // خانةُ التحديد تبقى فارغةً: الأفعالُ المجمّعة (طباعةٌ وحذف) مبنيّةٌ
+          // على الفواتير، وصندوقٌ يُؤشَّر ولا يفعل شيئاً أسوأُ من غيابه.
+          const SizedBox(width: _kPurColCheckW),
+
+          Expanded(
+            flex: _kPurColNum,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Wrap(
+                  spacing: 5,
+                  runSpacing: 2,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(
+                      order.orderNumber,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w800,
+                        color: theme.textTheme.bodyMedium?.color,
+                      ),
+                    ),
+                    const _PurDocKindBadge(),
+                    _PurOrderStatusBadge(label: statusLabel, color: statusColor),
+                    if (order.isConverted)
+                      Tooltip(
+                        message: 'حُوِّل إلى فاتورة مشتريات',
+                        child: Icon(PhosphorIconsBold.arrowBendUpLeft,
+                            size: 11, color: muted),
+                      ),
+                  ],
+                ),
+                Text(
+                  whName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                    color: muted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          Expanded(
+            flex: _kPurColParty,
+            child: Text(
+              supplierNames[order.supplierId] ?? 'مورد #${order.supplierId}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+            ),
+          ),
+
+          Expanded(
+            flex: _kPurColDate,
+            child: Text(
+              '${order.orderDate.day}/${order.orderDate.month}/'
+              '${order.orderDate.year}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 11.5, color: muted),
+            ),
+          ),
+
+          Expanded(
+            flex: _kPurColPlace,
+            child: Text(
+              ccName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 11, color: muted),
+            ),
+          ),
+
+          Expanded(
+            flex: _kPurColTotal,
+            child: Text(
+              order.total.toStringAsFixed(AppConstants.decimalPlaces),
+              textAlign: TextAlign.end,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w800,
+                fontFeatures: [FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+
+          Expanded(
+            flex: _kPurColPay,
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: dash('أمرُ الشراء التزامٌ — لا سدادَ عليه حتى يُفوتَر'),
+            ),
+          ),
+
+          SizedBox(
+            width: _kPurColPostedW,
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: dash('أمرُ الشراء لا يُرحَّل إلى دفتر الأستاذ'),
+            ),
+          ),
+
+          SizedBox(
+            width: _kPurColStatusW,
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: dash('حالةُ الأمر موسومةٌ بجوار رقمه'),
+            ),
+          ),
+
+          const SizedBox(width: _kPurColActionsW),
+        ],
+      ),
+    );
+  }
+}
+
+/// وسمُ «أمر شراء» — يميّز الصفَّ عن الفاتورة بنظرة.
+class _PurDocKindBadge extends StatelessWidget {
+  const _PurDocKindBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: AppColors.info.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.info.withValues(alpha: 0.4)),
+      ),
+      child: const Text(
+        'أمر شراء',
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+          color: AppColors.info,
+        ),
+      ),
+    );
+  }
+}
+
+/// وسمُ دورةِ حياة الأمر — مفرداتُه الخمسُ لا مفرداتُ السداد الثلاث.
+class _PurOrderStatusBadge extends StatelessWidget {
+  const _PurOrderStatusBadge({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+          color: color,
+        ),
       ),
     );
   }

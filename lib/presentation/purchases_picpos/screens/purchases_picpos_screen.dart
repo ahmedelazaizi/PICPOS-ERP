@@ -4,6 +4,9 @@ import 'package:ural_erp/core/widgets/app_toast.dart';
 import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import '../../../core/config/app_config.dart';
+import '../../../core/config/business_profile_provider.dart';
+import '../../../core/navigation/screen_id.dart';
 import '../../../core/permissions/permission_codes.dart';
 import '../../../domain/models/branch_assignment_scope.dart';
 // دفعة ٩ — حارس purchases_print على زرار الطباعة في قائمة الفواتير.
@@ -26,6 +29,7 @@ import '../../picpos_shell/picpos_screen_scaffold.dart';
 // تصميمُ 2026-08-21 — شاشةُ «فاتورة جديدة» المشتركة بين النمطَين.
 import '../../invoice_form_picpos/picpos_invoice_form.dart';
 import '../../../domain/models/picpos_invoice_draft.dart';
+import '../../../domain/models/purchase_doc.dart';
 import '../../picpos_shell/picpos_content_card.dart';
 import '../../picpos_shell/picpos_totals_bar.dart';
 // نمطُ ديالوجات PicPos — الغلافُ وحوارُ التأكيد المشتركان.
