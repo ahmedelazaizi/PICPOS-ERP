@@ -2,6 +2,14 @@
 ///
 /// The attached [index] keeps backward compatibility with the current
 /// screen-index based navigation until the app is migrated completely.
+/// اسمُ شاشةِ القيود — **موضعٌ واحدٌ يقرؤه الجميع**.
+///
+/// قرارُ المالك 2026-09-18 على تصميم الشاشة: الاسمُ يصير «اليومية العامة».
+/// وكان مكتوباً في **أربعة مواضع** (المدخلُ الجانبيُّ · عنوانُ الشاشة ·
+/// وسمُ التاب · بطاقةُ حاوية الحسابات)، فتغييرُ واحدٍ يترك الثلاثةَ تقول
+/// غيرَه — ويقرأ المستخدمُ اسمَين لشاشةٍ واحدة.
+const String journalEntriesScreenLabel = 'اليومية العامة';
+
 enum ScreenId {
   dashboard(0),
   pos(1),

@@ -56,7 +56,11 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
         child: StatefulBuilder(builder: (ctx, setDialogState) {
           final totalDebit = lines.fold(0.0, (s, l) => s + l.debit);
           final totalCredit = lines.fold(0.0, (s, l) => s + l.credit);
-          final isBalanced = (totalDebit - totalCredit).abs() < 0.01 && totalDebit > 0;
+          // `isPostable` = اتّزانٌ **وقيمةٌ موجبة** — الشرطان اللذان كانا
+          // مدموجَين في رايةٍ واحدةٍ تعني شيئَين.
+          final isBalanced =
+              JournalBalance(debit: totalDebit, credit: totalCredit)
+                  .isPostable;
 
           return PicPosDialog(
             icon: PhosphorIconsBold.notebook,

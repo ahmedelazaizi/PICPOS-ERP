@@ -742,7 +742,7 @@ const kAllNavItemDefs = [
   // PicPos وحدَها، وتُطوى تحتها مداخلُ [kPicPosFoldedIntoAccountingHub].
   NavItemDef(icon: PhosphorIconsBold.bookOpen, label: 'الحسابات', permission: 'settings_view', index: 63, section: 'المالية والمحاسبة', group: 'accounting'),
   NavItemDef(icon: PhosphorIconsBold.treeStructure, label: 'دليل الحسابات', permission: 'settings_view', index: 27, group: 'accounting'),
-  NavItemDef(icon: PhosphorIconsBold.notebook, label: 'دفتر اليومية', permission: 'settings_view', index: 32, group: 'accounting'),
+  NavItemDef(icon: PhosphorIconsBold.notebook, label: journalEntriesScreenLabel, permission: 'settings_view', index: 32, group: 'accounting'),
   NavItemDef(icon: PhosphorIconsBold.book, label: 'دفتر الأستاذ', permission: 'settings_view', index: 36, group: 'accounting'),
   NavItemDef(icon: PhosphorIconsBold.link, label: 'ربط الحسابات', permission: 'settings_view', index: 31, group: 'accounting'),
   NavItemDef(icon: PhosphorIconsBold.treeStructure, label: 'مراكز التكلفة', permission: 'settings_view', index: 33, group: 'accounting'),

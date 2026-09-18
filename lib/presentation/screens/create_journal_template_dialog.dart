@@ -1,5 +1,6 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import '../../domain/models/journal_balance.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -103,7 +104,8 @@ class _CreateJournalTemplateDialogState extends ConsumerState<CreateJournalTempl
 
     final totalDebit = _lines.fold(0.0, (s, l) => s + l.debit);
     final totalCredit = _lines.fold(0.0, (s, l) => s + l.credit);
-    if ((totalDebit - totalCredit).abs() >= 0.01) {
+    if (!JournalBalance(debit: totalDebit, credit: totalCredit)
+        .isBalanced) {
       AppToast.show(context, 'القيد غير متوازن، يجب أن يتساوى إجمالي المدين والدائن', type: ToastType.info);
       return;
     }
@@ -147,7 +149,8 @@ class _CreateJournalTemplateDialogState extends ConsumerState<CreateJournalTempl
   Widget build(BuildContext context) {
     final totalDebit = _lines.fold(0.0, (s, l) => s + l.debit);
     final totalCredit = _lines.fold(0.0, (s, l) => s + l.credit);
-    final isBalanced = (totalDebit - totalCredit).abs() < 0.01 && totalDebit > 0;
+    final isBalanced =
+        JournalBalance(debit: totalDebit, credit: totalCredit).isPostable;
 
     return Directionality(
       textDirection: ui.TextDirection.rtl,

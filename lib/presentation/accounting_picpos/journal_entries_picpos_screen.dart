@@ -13,6 +13,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/widgets/app_toast.dart';
 import '../../data/providers/providers.dart';
 import '../../domain/repositories/accounting_repository.dart';
+import '../../domain/models/journal_balance.dart';
 import '../../services/printing/report_pdf_generator.dart';
 import '../picpos_shell/picpos_dialog.dart';
 import '../picpos_shell/picpos_empty_state.dart';
@@ -987,11 +988,20 @@ class _LinesTable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final totalDebit = lines.fold<double>(
-        0, (s, l) => s + ((l['debit'] as num?)?.toDouble() ?? 0));
-    final totalCredit = lines.fold<double>(
-        0, (s, l) => s + ((l['credit'] as num?)?.toDouble() ?? 0));
-    final balanced = (totalDebit - totalCredit).abs() < 0.005;
+    // 🔴 **كانت `< 0.005` هنا — أشدَّ من مُصادِق المزامنة.** فقيدٌ يصل بفرق
+    // ٠٫٠٠٧ يقبله `journal_sync_strategy` ويكتبه، ثمّ تعرضه هذه الشاشةُ
+    // «غير متوازن» — ولا يملك المستخدمُ ما يصلحه به. والسماحيّةُ الآن
+    // سماحيّةُ النظام: يقرؤها العرضُ كما يقرؤها الكاتب.
+    final balance = JournalBalance.of([
+      for (final l in lines)
+        (
+          debit: (l['debit'] as num?)?.toDouble() ?? 0,
+          credit: (l['credit'] as num?)?.toDouble() ?? 0,
+        ),
+    ]);
+    final totalDebit = balance.debit;
+    final totalCredit = balance.credit;
+    final balanced = balance.isBalanced;
 
     Widget cell(String v, {bool head = false, TextAlign align = TextAlign.start}) =>
         Text(
@@ -1065,6 +1075,24 @@ class _LinesTable extends StatelessWidget {
                 _Badge(
                   label: balanced ? 'متوازن' : 'غير متوازن',
                   tint: balanced ? AppColors.success : AppColors.error,
+                ),
+                const SizedBox(width: 8),
+                // «الفرق» **رقماً وشارةً معاً** — قرارُ المالك 2026-09-18.
+                //
+                // 🔴 **والشارةُ وحدَها لا تكفي**: «غير متوازن» لا تقول
+                // بكم ولا في أيّ اتّجاه، فلا يُعرَف أهو ضجيجُ تقريبٍ أم
+                // سطرٌ ناقص. والرقمُ **بإشارته**: موجبٌ مدينٌ زائد.
+                Text('الفرق', style: text.labelSmall
+                    ?.copyWith(color: AppColors.textMuted)),
+                const SizedBox(width: 5),
+                Text(
+                  balance.difference
+                      .toStringAsFixed(AppConstants.decimalPlaces),
+                  style: text.labelMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: balanced ? AppColors.success : AppColors.error,
+                    fontFeatures: const [ui.FontFeature.tabularFigures()],
+                  ),
                 ),
                 const Spacer(),
                 Text('الإجمالي',

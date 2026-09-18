@@ -21,6 +21,8 @@ import 'presentation/pos_picpos/screens/picpos_pos_screen.dart';
 import 'presentation/offers_picpos/offers_picpos_screen.dart';
 import 'presentation/accounting_picpos/accounting_hub_picpos_screen.dart';
 import 'presentation/accounting_picpos/chart_of_accounts_picpos_screen.dart';
+import 'core/navigation/screen_id.dart';
+import 'presentation/accounting_picpos/journal_entries_picpos_screen.dart';
 import 'presentation/accounting_picpos/financial_statements_picpos_screen.dart';
 import 'presentation/screens/reports/financial_statements_screen.dart';
 import 'services/shift_dialog_session_guard.dart';
@@ -909,12 +911,19 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
       ),
       ScreenConfig(
         appScreen: AppScreen.journalEntries,
+        // 🔴 **فرعُ علامةٍ كان ناقصاً.** الشاشةُ المُعاد تصميمُها
+        // (`JournalEntriesPicPosScreen`) لم تكن تُفتَح إلّا من تبويب `je` في
+        // حاوية الحسابات، بينما هذا المدخلُ الجانبيُّ — وهو الظاهرُ في
+        // القائمة — يفتح القديمةَ. فكلُّ ما يُعاد تصميمُه فيها لا يراه من
+        // يدخل من الباب المعتاد.
         builder: (_) => const SecurityScreenGate(
           settingKey: 'accounting_access_password',
-          title: 'دفتر اليومية',
-          child: JournalEntriesScreen(),
+          title: journalEntriesScreenLabel,
+          child: Brand.isPicPos
+              ? JournalEntriesPicPosScreen()
+              : JournalEntriesScreen(),
         ),
-        label: 'دفتر اليومية',
+        label: journalEntriesScreenLabel,
         icon: PhosphorIconsBold.notebook,
       ),
       ScreenConfig(

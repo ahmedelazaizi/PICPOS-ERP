@@ -2,6 +2,7 @@
 import 'package:ural_erp/core/constants/app_constants.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import '../../domain/models/journal_balance.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';

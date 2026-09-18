@@ -91,7 +91,7 @@ enum AccountingTab {
         AccountingTab.cc => const CostCentersPicPosScreen(),
         AccountingTab.je => const SecurityScreenGate(
             settingKey: 'accounting_access_password',
-            title: 'دفتر اليومية',
+            title: journalEntriesScreenLabel,
             child: JournalEntriesPicPosScreen(),
           ),
         AccountingTab.gl => const SecurityScreenGate(

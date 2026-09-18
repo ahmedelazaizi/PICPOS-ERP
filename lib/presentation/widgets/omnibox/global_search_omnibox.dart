@@ -1,3 +1,4 @@
+import '../../../core/navigation/screen_id.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -122,7 +123,14 @@ class _SearchOverlayState extends ConsumerState<_SearchOverlay> {
       {'title': 'دليل العملاء والموردين', 'screenIndex': 6, 'icon': PhosphorIconsBold.usersThree},
       {'title': 'الأصناف والمنتجات', 'screenIndex': 4, 'icon': PhosphorIconsBold.package},
       {'title': 'الإعدادات', 'screenIndex': 11, 'icon': PhosphorIconsBold.gear},
-      {'title': 'دفتر اليومية', 'screenIndex': 31, 'icon': PhosphorIconsBold.notebook},
+      // 🔴 **كان `31` — وهو «ربط الحسابات».** فمن يبحث عن اليومية في
+      // البحث الشامل كان يُفتَح له ربطُ الحسابات. والفهرسُ يُقرأ من
+      // `ScreenId` لا يُكتَب رقماً، فالفئةُ كلُّها تسقط.
+      {
+        'title': journalEntriesScreenLabel,
+        'screenIndex': ScreenId.journalEntries.navigationIndex,
+        'icon': PhosphorIconsBold.notebook,
+      },
       {'title': 'التقارير', 'screenIndex': 10, 'icon': PhosphorIconsBold.chartBar},
       {'title': 'إدارة الفروع', 'screenIndex': 12, 'icon': PhosphorIconsBold.buildings},
     ];

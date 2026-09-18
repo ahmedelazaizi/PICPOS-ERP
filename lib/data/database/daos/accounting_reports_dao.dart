@@ -1172,7 +1172,9 @@ extension AccountingReportsDao on AppDatabase {
       'groups': grouped,
       'totalDebit': totalDebit,
       'totalCredit': totalCredit,
-      'isBalanced': (totalDebit - totalCredit).abs() < 0.01,
+      // سماحيّةُ النظام الواحدة — لا رقمٌ يُكتَب هنا (‏Spec 139).
+      'isBalanced':
+          JournalBalance(debit: totalDebit, credit: totalCredit).isBalanced,
     };
   }
 
