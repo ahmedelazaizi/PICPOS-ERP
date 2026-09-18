@@ -240,6 +240,8 @@ class _PicPosMoneyPanel extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _methods(context),
+                const SizedBox(height: 10),
+                _dueDate(context),
                 const SizedBox(height: 12),
                 Row(
                   children: [
@@ -376,6 +378,80 @@ class _PicPosMoneyPanel extends StatelessWidget {
                   fontSize: 9.5, fontWeight: FontWeight.w800, color: muted)),
           const SizedBox(height: 2),
           child,
+        ],
+      ),
+    );
+  }
+
+  /// «تاريخ الاستحقاق» — **مرآةٌ مشتقّةٌ مقفولة** (قرارُ المالك 2026-09-18).
+  ///
+  /// التصميمُ يرسمه حقلَ تاريخٍ يُكتَب بنجمةِ إلزام. وقاعدةُ ح‑١: القيمةُ
+  /// المشتقّةُ تبقى مشتقّة. والسببُ هنا ماليٌّ لا تجميليّ: المحرّكُ يشتقّه
+  /// من مهلة الطرف وقتَ الحفظ ولا يقرأ ما يكتبه المستخدم، فحقلٌ يُملأ
+  /// ويُتجاهَل يعد بأجلٍ لا يقع — وعلى `due_date` تُبنى أعمارُ الدين
+  /// وتنبيهاتُ التأخّر وتقاريرُ الاستحقاق.
+  ///
+  /// ⚠️ **وبلا مهلةٍ لا يُعرَض تاريخ**: العمودُ يبقى فارغاً في القاعدة،
+  /// و`COALESCE(due_date, invoice_date)` يرجع إلى تاريخ الإصدار. فعرضُ
+  /// تاريخِ الفاتورة نفسِه هنا كان يوهم بأجلٍ متّفقٍ عليه مدّتُه صفر.
+  Widget _dueDate(BuildContext context) {
+    final muted = _fMuted(context);
+    final due = state._dueDate;
+    final terms = state._party?.paymentTermsDays ?? 0;
+    final hasTerms = due != null;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+      decoration: BoxDecoration(
+        color: _fField(context),
+        border: Border.all(color: Theme.of(context).dividerColor),
+        borderRadius: BorderRadius.circular(11),
+      ),
+      child: Row(
+        children: [
+          Icon(PhosphorIconsBold.calendarCheck,
+              size: 13, color: hasTerms ? AppColors.info : muted),
+          const SizedBox(width: 7),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('تاريخ الاستحقاق',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w800,
+                        color: muted)),
+                const SizedBox(height: 2),
+                Text(
+                  hasTerms
+                      ? due.toString().substring(0, 10)
+                      : 'بلا مهلة متفقة',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: hasTerms ? null : muted,
+                    fontFeatures: const [ui.FontFeature.tabularFigures()],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (hasTerms)
+            Text('${state.widget.kind.isSales ? 'سماح' : 'سداد'} $terms يوماً',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w700,
+                    color: muted)),
+          const SizedBox(width: 6),
+          // مقفولٌ صراحةً — كحقل رقم الفاتورة في شريط المستند.
+          Icon(PhosphorIconsBold.lockSimple, size: 12, color: muted),
         ],
       ),
     );

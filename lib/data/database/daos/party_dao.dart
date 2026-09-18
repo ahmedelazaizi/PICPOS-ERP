@@ -282,9 +282,16 @@ extension PartyDao on AppDatabase {
     if (partyId == null) return null;
     final party = await (select(parties)..where((p) => p.id.equals(partyId)))
         .getSingleOrNull();
-    final days = party?.paymentTermsDays ?? 0;
-    if (days <= 0) return null;
-    return invoiceDate.add(Duration(days: days));
+    // 🔴 **القاعدةُ في `domain/models` لا هنا.** الشاشةُ تعرض الاستحقاقَ
+    // مرآةً قبل الحفظ (قرارُ المالك 2026-09-18)، وحارسُ
+    // `presentation_db_import_guard` يمنعها من مناداة هذه الدالّة. فلو
+    // بقيت القاعدةُ هنا لكتبتها الشاشةُ بيدها — ومرآةٌ تحسب بنفسها ليست
+    // مرآة: يقرأ المستخدمُ تاريخاً ويُختَم على المستند غيرُه، وعليه تُبنى
+    // أعمارُ الدين وتنبيهاتُ التأخّر.
+    return resolveDueDateFromTerms(
+      invoiceDate: invoiceDate,
+      paymentTermsDays: party?.paymentTermsDays,
+    );
   }
 
 

@@ -45,6 +45,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/number_utils.dart';
+import '../../domain/models/invoice_due_date.dart';
 import '../../domain/models/picpos_invoice_draft.dart';
 
 part 'picpos_invoice_lines.dart';
@@ -249,6 +250,22 @@ class _PicPosInvoiceFormState extends State<PicPosInvoiceForm> {
 
   double get _headerDiscount =>
       NumberUtils.tryParseLocale(_discountController.text) ?? 0;
+
+  /// الطرفُ المختار — أو `null`.
+  PicPosPartyOption? get _party =>
+      widget.parties.where((p) => p.id == _partyId).firstOrNull;
+
+  /// تاريخُ الاستحقاق **مشتقٌّ** من مهلة الطرف وتاريخ الفاتورة — ح‑١.
+  ///
+  /// 🔴 **ولا يُحسَب هنا**: [resolveDueDateFromTerms] هي عينُ الدالّة التي
+  /// يناديها `PartyDao.resolveInvoiceDueDate` وقتَ الحفظ. فما يُقرأ على
+  /// الشاشة هو ما يُختَم على المستند حرفاً — ومرآةٌ تحسب بنفسها ليست مرآة.
+  ///
+  /// و`null` = **بلا مهلةٍ متّفقة**، لا «يُستحقُّ اليوم».
+  DateTime? get _dueDate => resolveDueDateFromTerms(
+        invoiceDate: _date,
+        paymentTermsDays: _party?.paymentTermsDays,
+      );
 
   double get _paidRaw => NumberUtils.tryParseLocale(_paidController.text) ?? 0;
 

@@ -25,7 +25,12 @@ void main() {
       taxRate: 14,
     ),
   ];
-  const parties = [PicPosPartyOption(id: 5, name: 'شركة النيل', meta: 'آجل')];
+  const parties = [
+    PicPosPartyOption(
+        id: 5, name: 'شركة النيل', meta: 'آجل', paymentTermsDays: 30),
+    // طرفٌ **بلا مهلة** — الحالةُ التي يجب ألّا تُعرَض فيها تواريخُ أصلاً.
+    PicPosPartyOption(id: 6, name: 'مؤسسة الفور', meta: 'نقدي'),
+  ];
   const warehouses = [PicPosNamedOption(id: 2, name: 'المخزن الرئيسي')];
 
   /// يبني الشاشةَ ويعيد سجلَّ نداءات الحفظ.
@@ -467,6 +472,72 @@ void main() {
       await save(tester);
       expect(saves.single['paid'], saves.single['net'],
           reason: 'وإلّا عاد الدَّينُ من بابِ الكمّيّة');
+    });
+  });
+
+  // ═══ «تاريخ الاستحقاق» مرآةٌ مشتقّة — قرارُ المالك 2026-09-18 ═══════════
+  //
+  // التصميمُ يرسمه حقلَ تاريخٍ يُكتَب بنجمةِ إلزام، والمحرّكُ يشتقّه من مهلة
+  // الطرف ولا يقرأ ما يكتبه المستخدم (ح‑١). فالمقيسُ هنا أنّ المعروضَ يتبع
+  // مصدرَه — الطرفَ وتاريخَ الفاتورة — لا أن يُرسَم حقلٌ جميل.
+  group('مرآةُ تاريخ الاستحقاق', () {
+    testWidgets('بلا طرفٍ ⇒ «بلا مهلة متفقة» لا تاريخَ اليوم', (tester) async {
+      // 🔴 عرضُ تاريخ الفاتورة هنا يوهم بأجلٍ متّفقٍ مدّتُه صفر، والعمودُ في
+      // القاعدة يبقى فارغاً — فالمعروضُ ليس المحفوظ.
+      await pump(tester, kind: PicPosInvoiceKind.purchase);
+      expect(find.text('تاريخ الاستحقاق'), findsOneWidget);
+      expect(find.text('بلا مهلة متفقة'), findsOneWidget);
+    });
+
+    testWidgets('وطرفٌ بمهلة ٣٠ يوماً ⇒ تاريخٌ محسوبٌ ومدّةٌ مذكورة',
+        (tester) async {
+      await pump(tester, kind: PicPosInvoiceKind.purchase);
+      await tester.tap(find.text('اختر المورد'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('شركة النيل'));
+      await tester.pumpAndSettle();
+
+      final due = DateTime.now().add(const Duration(days: 30));
+      expect(find.text(due.toString().substring(0, 10)), findsOneWidget,
+          reason: 'المرآةُ لم تتبع مهلةَ الطرف');
+      expect(find.text('سداد 30 يوماً'), findsOneWidget);
+      expect(find.text('بلا مهلة متفقة'), findsNothing);
+    });
+
+    testWidgets('وطرفٌ بلا مهلةٍ يعيدها إلى «بلا مهلة متفقة»', (tester) async {
+      // ⚠️ الرجوعُ مقصود: من اختار طرفاً بمهلةٍ ثمّ بدّله يجب ألّا يبقى
+      // ناظراً إلى استحقاقِ الأوّل.
+      await pump(tester, kind: PicPosInvoiceKind.purchase);
+      await tester.tap(find.text('اختر المورد'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('شركة النيل'));
+      await tester.pumpAndSettle();
+      expect(find.text('بلا مهلة متفقة'), findsNothing);
+
+      await tester.tap(find.text('شركة النيل').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('مؤسسة الفور'));
+      await tester.pumpAndSettle();
+      expect(find.text('بلا مهلة متفقة'), findsOneWidget);
+    });
+
+    testWidgets('والمبيعاتُ تقول «سماح» لا «سداد»', (tester) async {
+      await pump(tester, kind: PicPosInvoiceKind.sales);
+      await tester.tap(find.text('اختر العميل'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('شركة النيل'));
+      await tester.pumpAndSettle();
+      expect(find.text('سماح 30 يوماً'), findsOneWidget);
+    });
+
+    testWidgets('ولا منتقيَ تاريخٍ ولا حقلَ كتابةٍ في كتلة الاستحقاق',
+        (tester) async {
+      // المرآةُ مقفولةٌ صراحةً: نقرةٌ عليها لا تفتح شيئاً.
+      await pump(tester, kind: PicPosInvoiceKind.purchase);
+      await tester.tap(find.text('تاريخ الاستحقاق'), warnIfMissed: false);
+      await tester.pumpAndSettle();
+      expect(find.byType(DatePickerDialog), findsNothing,
+          reason: 'منتقٍ يُفتَح لقيمةٍ لا تُقرأ عند الحفظ');
     });
   });
 

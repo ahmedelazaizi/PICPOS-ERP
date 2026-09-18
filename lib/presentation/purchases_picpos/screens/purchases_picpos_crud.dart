@@ -175,6 +175,9 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
                 id: s.id,
                 name: s.name,
                 meta: s.phone ?? '',
+                // مصدرُ «تاريخ الاستحقاق» المعروض — وهو عينُ ما يقرؤه
+                // `PartyDao.resolveInvoiceDueDate` وقتَ الحفظ.
+                paymentTermsDays: s.paymentTermsDays,
               ),
           ],
           products: [

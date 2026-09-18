@@ -688,7 +688,15 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
       kind: PicPosInvoiceKind.sales,
       parties: [
         for (final c in customers)
-          PicPosPartyOption(id: c.id, name: c.name, meta: c.phone ?? ''),
+          PicPosPartyOption(
+            id: c.id,
+            name: c.name,
+            meta: c.phone ?? '',
+            // مصدرُ «تاريخ الاستحقاق» المعروض. وبدونه تقول الشاشةُ
+            // «بلا مهلة متفقة» لعميلٍ له مهلةٌ فعلاً — والمحرّكُ
+            // يختم الاستحقاقَ رغم ذلك.
+            paymentTermsDays: c.paymentTermsDays,
+          ),
       ],
       products: [
         for (final p in rawProducts)

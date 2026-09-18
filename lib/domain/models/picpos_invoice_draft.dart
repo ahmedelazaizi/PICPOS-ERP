@@ -63,10 +63,17 @@ class PicPosPartyOption {
     required this.id,
     required this.name,
     this.meta = '',
+    this.paymentTermsDays,
   });
 
   final int id;
   final String name;
+
+  /// مهلةُ السداد المتّفقة بالأيّام — مصدرُ «تاريخ الاستحقاق» المعروض.
+  ///
+  /// ‏`null` أو صفرٌ يعني **بلا مهلة**، فلا يُعرَض تاريخٌ أصلاً. راجع
+  /// [resolveDueDateFromTerms].
+  final int? paymentTermsDays;
 
   /// سطرُ التفاصيل تحت الاسم — «آجل · حد ائتمان …» أو «مورد · سداد ٣٠ يوم».
   final String meta;
