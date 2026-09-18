@@ -63,7 +63,17 @@ class PurchaseInvoicesScreenState {
   /// سيعني «لا فواتيرَ بهذه الحالة» وهو ما لم يُقَس بعد.
   final Map<String, int> statusCounts;
 
+  /// معرّفاتُ الفواتير التي **لها قيدٌ مُرحَّلٌ فعلاً** في الأستاذ.
+  ///
+  /// ⚠️ **و`null` ليست «لا شيء مُرحَّل» بل «لم يُعرَف بعد».**
+  /// الاستعلامُ يصل بعد التحميل الأوّل وقد يُخفق؛ ومجموعةٌ فارغةٌ
+  /// في الحالتين كانت ستكتب «غير مُرحَّل» حمراء على **كلّ** فاتورة،
+  /// وهو إنذارٌ ماليٌّ كاذبٌ أسوأُ من لا شيء. فالعمودُ يرسم «—»
+  /// حتّى يصل جوابٌ.
+  final Set<int>? postedInvoiceIds;
+
   /// إجمالياتُ الفترة السابقة — `null` ⇒ لا شارةَ اتّجاه.
+
   final PurchasePreviousPeriod? previousPeriod;
 
   final int displayLimit;
@@ -92,6 +102,8 @@ class PurchaseInvoicesScreenState {
     this.totalReturns = 0,
     this.invoiceCount = 0,
     this.statusCounts = const {},
+    this.postedInvoiceIds,
+
     this.previousPeriod,
     this.displayLimit = 50,
     this.hasMore = false,
@@ -127,6 +139,9 @@ class PurchaseInvoicesScreenState {
     double? totalReturns,
     int? invoiceCount,
     Map<String, int>? statusCounts,
+    Set<int>? postedInvoiceIds,
+    bool clearPostedInvoiceIds = false,
+
     PurchasePreviousPeriod? previousPeriod,
     bool clearPreviousPeriod = false,
     int? displayLimit,
@@ -155,6 +170,10 @@ class PurchaseInvoicesScreenState {
       totalReturns: totalReturns ?? this.totalReturns,
       invoiceCount: invoiceCount ?? this.invoiceCount,
       statusCounts: statusCounts ?? this.statusCounts,
+      postedInvoiceIds: clearPostedInvoiceIds
+          ? null
+          : (postedInvoiceIds ?? this.postedInvoiceIds),
+
       previousPeriod: clearPreviousPeriod
           ? null
           : (previousPeriod ?? this.previousPeriod),
@@ -278,6 +297,9 @@ class PurchaseInvoicesController extends Notifier<PurchaseInvoicesScreenState> {
       state = state.copyWith(
         allInvoices: invoices,
         isLoading: false,
+        // صفحةٌ جديدةٌ ⇒ جوابٌ جديد، وإبقاءُ القديم يرسم حالةَ
+        // فواتيرَ أخرى على هذه.
+        clearPostedInvoiceIds: true,
       );
 
       // Pull purchase-return amounts for every loaded invoice. Source is
@@ -300,6 +322,25 @@ class PurchaseInvoicesController extends Notifier<PurchaseInvoicesScreenState> {
         }
       } catch (e) {
         // Non-fatal — list still works, just without returns adjustment.
+      }
+
+      // وحالةُ الترحيل: تُقرأ من **الأستاذ نفسِه** لا من `isLocked` التي
+      // تكذب في ثلاث حالات — راجع [postedPurchaseInvoiceIds].
+      //
+      // ⚠️ والإخفاقُ يُبقيها `null` («لم يُعرَف») لا مجموعةً فارغةً
+      // («لا شيء مُرحَّل»): الثانيةُ تصبغ كلَّ الصفوف بإنذارٍ كاذب.
+      try {
+        final ids = invoices
+            .where((inv) => inv.id != null)
+            .map((inv) => inv.id!)
+            .toList();
+        final db = ref.read(databaseProvider);
+        final posted = await db.postedPurchaseInvoiceIds(ids);
+        if (!_disposed) {
+          state = state.copyWith(postedInvoiceIds: posted);
+        }
+      } catch (_) {
+        // يبقى `null` ⇒ العمودُ يرسم «—» ولا يدّعي علماً.
       }
 
       _applyFilters();

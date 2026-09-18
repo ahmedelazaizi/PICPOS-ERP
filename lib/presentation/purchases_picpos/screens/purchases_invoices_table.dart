@@ -35,7 +35,11 @@ const _kPurColDate = 80;
 const _kPurColPlace = 135;
 const _kPurColTotal = 100;
 const _kPurColPay = 155;
+/// عرضُ عمود «حالة الترحيل» — قرارُ المالك 2026-09-18:
+/// «الحالة» **عمودان** لا عمودٌ واحد.
+const double _kPurColPostedW = 118;
 const double _kPurColStatusW = 104;
+
 
 /// ثلاثةُ أزرارٍ (‏31) وفاصلان (‏5) = ‏103؛ و‏118 تترك هامشاً لا ينضغط.
 const double _kPurColActionsW = 118;
@@ -121,6 +125,8 @@ class PurchasesInvoicesTable extends ConsumerWidget {
         purchaseInvoicesControllerProvider.select((s) => s.branchNames));
     final costCenterNames = ref.watch(
         purchaseInvoicesControllerProvider.select((s) => s.costCenterNames));
+    final postedIds = ref.watch(
+        purchaseInvoicesControllerProvider.select((s) => s.postedInvoiceIds));
 
     final notifier = ref.read(purchaseInvoicesControllerProvider.notifier);
 
@@ -190,6 +196,8 @@ class PurchasesInvoicesTable extends ConsumerWidget {
                       if (id != null) notifier.toggleSelection(id);
                     },
                     returnedAmount: returnedAmounts[invoice.id] ?? 0.0,
+                    posted: postedIds?.contains(invoice.id),
+
                     supplierNames: supplierNames,
                     warehouseNames: warehouseNames,
                     warehouseBranchId: warehouseBranchId,
@@ -255,9 +263,20 @@ class _PurHeaderRow extends StatelessWidget {
           label('الإجمالي', _kPurColTotal, align: TextAlign.end),
           label('السداد', _kPurColPay),
           SizedBox(
+            width: _kPurColPostedW,
+            child: Text(
+              'حالة الترحيل',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                color: muted,
+              ),
+            ),
+          ),
+          SizedBox(
             width: _kPurColStatusW,
             child: Text(
-              'الحالة',
+              'حالة السداد',
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
@@ -291,6 +310,7 @@ class _PurInvoiceCard extends StatelessWidget {
     required this.selected,
     required this.onToggleSelect,
     required this.returnedAmount,
+    required this.posted,
     required this.supplierNames,
     required this.warehouseNames,
     required this.warehouseBranchId,
@@ -306,6 +326,9 @@ class _PurInvoiceCard extends StatelessWidget {
   final bool selected;
   final VoidCallback onToggleSelect;
   final double returnedAmount;
+
+  /// هل لهذه الفاتورة قيدٌ مُرحَّلٌ في الأستاذ؟ `null` ⇒ **لم يُعرَف بعد**.
+  final bool? posted;
   final Map<int, String> supplierNames;
   final Map<int, String> warehouseNames;
   final Map<int, int?> warehouseBranchId;
@@ -550,7 +573,16 @@ class _PurInvoiceCard extends StatelessWidget {
             ),
           ),
 
-          // ── الحالة ────────────────────────────────────────────────────
+          // ── حالةُ الترحيل — من الأستاذ لا من `isLocked` ─────────
+          SizedBox(
+            width: _kPurColPostedW,
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: _PurPostedPill(posted: posted),
+            ),
+          ),
+
+          // ── حالةُ السداد ───────────────────────────────
           SizedBox(
             width: _kPurColStatusW,
             child: Align(
@@ -568,12 +600,17 @@ class _PurInvoiceCard extends StatelessWidget {
                   children: [
                     Icon(statusIcon, size: 11, color: statusColor),
                     const SizedBox(width: 5),
-                    Text(
-                      statusLabel,
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w800,
-                        color: statusColor,
+                    // ونفسُ العلّة هنا: «غير مدفوع» أطولُ من الخانة.
+                    Flexible(
+                      child: Text(
+                        statusLabel,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w800,
+                          color: statusColor,
+                        ),
                       ),
                     ),
                   ],
@@ -622,6 +659,71 @@ class _PurInvoiceCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// وسمُ حالة الترحيل — **ثلاثُ حالاتٍ لا حالتان**.
+///
+/// ⚠️ **والثالثةُ ليست ترفاً:** `null` تعني «لم يُعرَف بعد» — الاستعلامُ
+/// يصل بعد التحميل الأوّل وقد يُخفق. ورسمُ «غير مُرحَّل» حمراء حينئذٍ
+/// يصبغ **كلَّ** الصفوف بإنذارٍ ماليٍّ كاذب، وهو أسوأُ من لا شيء.
+class _PurPostedPill extends StatelessWidget {
+  const _PurPostedPill({required this.posted});
+
+  final bool? posted;
+
+  @override
+  Widget build(BuildContext context) {
+    final muted = _purMuted(context);
+    if (posted == null) {
+      return Tooltip(
+        message: 'حالة الترحيل قيد القراءة من دفتر الأستاذ',
+        child: Text('—',
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800,
+                color: muted)),
+      );
+    }
+    final ok = posted!;
+    final color = ok ? AppColors.success : AppColors.error;
+    return Tooltip(
+      message: ok
+          ? 'لها قيدٌ مُرحَّلٌ في دفتر الأستاذ'
+          : 'لا قيدَ مُرحَّلاً لها — راجعها قبل الإقفال',
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: .12),
+          border: Border.all(color: color.withValues(alpha: .35)),
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              ok ? PhosphorIconsBold.bookOpen : PhosphorIconsBold.warningCircle,
+              size: 11,
+              color: color,
+            ),
+            // ⚠️ **`Flexible` لازمةٌ والعمودُ ثابتُ العرض.** الوسمُ يعيش
+            // في `SizedBox` بـ١١٨px والنصُّ غيرُ محدود، فـ`Row` يمنحه
+            // عرضاً غيرَ محدودٍ ويفيض. مقيسٌ: «غير مُرحَّل» فاضت ٢٦ بكسل.
+            const SizedBox(width: 5),
+            Flexible(
+              child: Text(
+                ok ? 'مُرحَّل' : 'غير مُرحَّل',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w800,
+                  color: color,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -409,6 +409,24 @@ const Set<String> kInvestingJeReferenceTypes = {
   'asset_revaluation',
 };
 
+/// أنواعُ مراجع **قيدِ فاتورة المشتريات** — اسمان لقيدٍ واحد.
+///
+/// ⚠️ **ولهما مصدران مختلفان يكتبان نفسَ المستند:** المسارُ المُدمَج في
+/// `createPurchaseInvoice` يختم `'purchase_invoice'`، و`autoPostPurchase`
+/// يختم `'purchase'`. فأيُّ قارئٍ يفحص أحدَهما وحدَه يقرأ نصفَ الفواتير
+/// «غيرَ مُرحَّلة» وهي مُرحَّلة.
+///
+/// وهي مقروءةٌ في ثلاثة مواضعَ: عكسُ القيد عند التعديل، وعكسُه عند الإلغاء،
+/// وعمودُ «حالة الترحيل» في شاشة الاستعلام. وثلاثُ نسخٍ يدويّةٍ من نفس
+/// القائمة تفترق في أوّل نوعٍ يُضاف — وهي بعينها عائلةُ عطبِ
+/// [kInvestingJeReferenceTypes] أعلاه: طرفان يكتبان ويقرآن ولا يعرف
+/// أحدُهما الآخر. فالقائمةُ **واحدةٌ** و`purchase_je_reference_lockstep_
+/// guard_test.dart` يرفض أيَّ مُرشِّحٍ يكتبها بيده.
+const Set<String> kPurchaseJeReferenceTypes = {
+  'purchase_invoice', // المسارُ المُدمَج — createPurchaseInvoice
+  'purchase', // الترحيلُ الآليّ — autoPostPurchase
+};
+
 /// أنواعُ المراجع المصنَّفةُ **أنشطةً تمويليّةً** (‏IAS 7.17).
 const Set<String> kFinancingJeReferenceTypes = {'commercial_paper'};
 

@@ -67,6 +67,37 @@ class PurchaseInvoiceSummary {
 
 /// Extension for Purchase-related database operations
 extension PurchaseDao on AppDatabase {
+
+  /// من بين [invoiceIds]، ما له **قيدٌ مشترياتٍ مُرحَّلٌ فعلاً** في الأستاذ.
+  ///
+  /// ⚠️ **ولماذا لا `isLocked`:** الرايةُ تكذب في ثلاث حالات.
+  /// `createPurchaseInvoice` يرحّل قيدَه مُدمَجاً و**لا يرفعها قطّ** (راجع
+  /// `_voidPurchaseInvoice` حيث وُثّق ذلك)، و`autoPostPurchase` يرفعها،
+  /// **والإلغاءُ يرفعها أيضاً**. فعمودٌ مبنيٌّ عليها يكتب «مسودة» على
+  /// فاتورةٍ قيدُها في الأستاذ، و«معتمد» على ملغاة. وتعليقان في هذا
+  /// الملفّ نفسِه يتناقضان في وصفها.
+  ///
+  /// فالمقروءُ هنا الأستاذُ نفسُه بـ[kPurchaseJeReferenceTypes] — عينُ ما
+  /// يقرؤه مسارا العكس عند التعديل والإلغاء.
+  ///
+  /// ⚙️ ويُزاد `isPosted` على مُرشِّحَي العكس: أولئك يسألان «هل ثمّة
+  /// ما يُحذف؟» وهذا يسأل «هل هو في الأستاذ الآن؟» — وقيدٌ مُنزَلُ
+  /// الترحيل موجودٌ وغيرُ مُرحَّل. والعمودُ الافتراضيُّ `true`،
+  /// فلا يُسقِط هذا شيئاً في المسار المعتاد.
+  ///
+  /// و[invoiceIds] فارغةٌ ⇒ مجموعةٌ فارغةٌ بلا استعلام.
+  Future<Set<int>> postedPurchaseInvoiceIds(List<int> invoiceIds) async {
+    if (invoiceIds.isEmpty) return <int>{};
+    final rows = await (selectOnly(journalEntries, distinct: true)
+          ..addColumns([journalEntries.referenceId])
+          ..where(journalEntries.referenceType
+                  .isIn(kPurchaseJeReferenceTypes.toList()) &
+              journalEntries.referenceId.isIn(invoiceIds) &
+              journalEntries.isAutoPosted.equals(true) &
+              journalEntries.isPosted.equals(true)))
+        .get();
+    return {for (final r in rows) ?r.read(journalEntries.referenceId)};
+  }
   // ═══════════════════════════════════════════════════════════════════════
   // PURCHASE INVOICE CRUD
   // ═══════════════════════════════════════════════════════════════════════
@@ -1680,8 +1711,7 @@ extension PurchaseDao on AppDatabase {
   Future<void> _reverseOldPurchaseJournalEntry(int invoiceId) async {
     final oldEntries = await (select(journalEntries)
           ..where((e) =>
-              (e.referenceType.equals('purchase_invoice') |
-                  e.referenceType.equals('purchase')) &
+              e.referenceType.isIn(kPurchaseJeReferenceTypes.toList()) &
               e.referenceId.equals(invoiceId) &
               e.isAutoPosted.equals(true)))
         .get();
@@ -2059,7 +2089,8 @@ extension PurchaseDao on AppDatabase {
         try {
           final originalJE = await (select(journalEntries)
                 ..where((e) =>
-                    (e.referenceType.equals('purchase') | e.referenceType.equals('purchase_invoice')) &
+                    e.referenceType
+                        .isIn(kPurchaseJeReferenceTypes.toList()) &
                     e.referenceId.equals(invoice.id) &
                     e.isAutoPosted.equals(true))
                 ..limit(1))
