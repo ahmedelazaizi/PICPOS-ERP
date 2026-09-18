@@ -618,8 +618,12 @@ extension PurchaseDao on AppDatabase {
       double total = 0;
       double rawMaterialSubtotal = 0;
       double subtotalSum = 0;
+      // مواضعُ سطور الخامات — يُجمَع نصيبُها من **الصافي** بعد الخصم
+      // أدناه، لا بضربِ إجماليّها في معاملٍ واحد.
+      final rawMaterialLineIndexes = <int>{};
 
-      for (final item in items) {
+      for (var lineAt = 0; lineAt < items.length; lineAt++) {
+        final item = items[lineAt];
         final qty = item.quantity.present ? item.quantity.value : 1.0;
         final cost = item.unitCost.present ? item.unitCost.value : 0.0;
         final rate = item.taxRate.present ? (item.taxRate.value ?? 0.0) : 0.0;
@@ -646,6 +650,7 @@ extension PurchaseDao on AppDatabase {
           if (inventoryAccountPurposeForProduct(p?.productType) ==
               'raw_materials') {
             rawMaterialSubtotal += subtotal;
+            rawMaterialLineIndexes.add(lineAt);
           }
         }
         total += subtotal + tax;
@@ -674,9 +679,24 @@ extension PurchaseDao on AppDatabase {
       }
       // Factor applied to every line's unit cost. Guard against a zero-value
       // invoice so we never divide by zero.
-      final discountFactor = (effectiveDiscount > 0 && subtotalSum > 0)
-          ? (subtotalSum - effectiveDiscount) / subtotalSum
-          : 1.0;
+      // خصمٌ **لكلّ صنف** — قرارُ المالك 2026-09-18. القاعدةُ واحدةٌ:
+      // خصمُ السطر الصريحُ يُطرَح أوّلاً، وما بقي من خصم المستند يُوزَّع
+      // نسبةً إلى ما بقي من قيمة السطور. راجع [resolvePurchaseLineNets].
+      //
+      // ⚠️ **وبلا خصومِ سطورٍ تُنتج القاعدةُ عينَ التوزيع النسبيّ القديم**
+      // حرفاً — وهو شرطُ ألّا يتغيّر رقمٌ في فاتورةٍ قديمةٍ أو في إعادةِ
+      // صندوقٍ صادرٍ أو مزامنة.
+      final lineNets = resolvePurchaseLineNets(
+        grossPerLine: [
+          for (final it in items)
+            (it.quantity.present ? it.quantity.value : 1.0) *
+                (it.unitCost.present ? it.unitCost.value : 0.0),
+        ],
+        explicitDiscountPerLine: [
+          for (final it in items) it.discount.present ? it.discount.value : 0.0,
+        ],
+        documentDiscount: effectiveDiscount,
+      );
       total = FinancialUtils.round(total - effectiveDiscount);
       subtotalSum = FinancialUtils.round(subtotalSum - effectiveDiscount);
 
@@ -768,16 +788,21 @@ extension PurchaseDao on AppDatabase {
         ),
       );
 
-      for (final item in items) {
+      for (var lineAt = 0; lineAt < items.length; lineAt++) {
+        final item = items[lineAt];
         final productId = item.productId.present ? item.productId.value : 0;
         final quantity = item.quantity.present ? item.quantity.value : 1.0;
-        // ح-1 (trade discount): apportion the invoice discount pro-rata into
-        // the line cost BEFORE it reaches the stored line, the stock movement
-        // and updateProductWAC — this is what makes WAC the true landed cost
-        // and stops a later return refunding more than was paid.
-        final unitCost = FinancialUtils.round(
-            (item.unitCost.present ? item.unitCost.value : 0.0) *
-                discountFactor);
+        // ح-1 (trade discount): الخصمُ يصل تكلفةَ السطر **قبل** أن يصل
+        // السطرَ المخزَّنَ وحركةَ المخزون و`updateProductWAC` — وهذا ما
+        // يجعل متوسّطَ التكلفة تكلفةً حقيقيّةً ويمنع مرتجعاً من ردّ أكثرَ
+        // ممّا دُفع.
+        //
+        // 🔴 **ومرّةً واحدةً بالضبط**: الصافي مطروحٌ منه الخصمُ الصريحُ
+        // وحصّتُه من الباقي معاً في [resolvePurchaseLineNets]، فلا ضربَ
+        // في معاملٍ هنا يُطبّقه ثانيةً.
+        final unitCost = quantity > 0
+            ? FinancialUtils.round(lineNets[lineAt] / quantity)
+            : 0.0;
         final taxRate = item.taxRate.present ? (item.taxRate.value ?? 0.0) : 0.0;
         // Spec 151 E-03: honour the passed per-line taxAmount (exactly as the
         // header loop above does) instead of always recomputing from the rate.
@@ -921,8 +946,12 @@ extension PurchaseDao on AppDatabase {
       //
       // نسبة الخصم اتطبقت على `subtotalSum` فوق، فنصيب الخامات بيتعدّل بنفس
       // النسبة عشان مجموع السطرين يساوي الإجمالي بعد الخصم بالظبط.
+      // نصيبُ الخامات من الصافي — مجموعُ صافي سطورها بعد الخصم، فمجموعُ
+      // السطرَين المحاسبيَّين يساوي الإجماليَّ بعد الخصم بالضبط.
       final rawShare = rawMaterialSubtotal > 0
-          ? FinancialUtils.round(rawMaterialSubtotal * discountFactor)
+          ? FinancialUtils.round([
+              for (final at in rawMaterialLineIndexes) lineNets[at],
+            ].fold<double>(0, (a, v) => a + v))
           : 0.0;
       final rawAcc = rawShare > 0
           ? await accountingDao.getAccountByCode(
