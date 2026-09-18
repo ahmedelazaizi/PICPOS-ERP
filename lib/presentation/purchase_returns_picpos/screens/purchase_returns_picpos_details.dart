@@ -60,41 +60,43 @@ mixin _PurchaseReturnsPicposDetailsPanel
     );
   }
 
+  /// ترويسةُ المستند — لبِنةُ القشرة الموحَّدة.
+  ///
+  /// ⚠️ **ولا وسمَ حالةٍ هنا وإن عرضه التصميم.** الصورةُ تُظهر «مسودة»،
+  /// وقرارُ المالك على هذه الشاشة **ترحيلٌ بخطوةٍ واحدةٍ كما اليوم — لا
+  /// دورةَ مسوّدة**. فوسمٌ لحالةٍ لا وجودَ لها يعد المستخدمَ بحفظٍ مؤقّتٍ
+  /// لا يقع.
+  ///
+  /// ⚠️ **ولا رقمَ مستندٍ قبل الحفظ.** رقمُ المرتجع يُولَّد في المعاملة
+  /// (`generateInvoiceNumber('PRET-')`)، فعرضُ رقمٍ مُخمَّنٍ يُطبَع على
+  /// مستندٍ ماليّ. و`null` تعني «يُولَّد تلقائياً» بالعقد.
   Widget _buildInvoiceHeader(PurchaseInvoiceData invoice) {
-    return Card(
-      color: AppColors.primary.withValues(alpha: 0.05),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: AppColors.primary.withValues(alpha: 0.1)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            const CircleAvatar(
-              backgroundColor: AppColors.primary,
-              child: Icon(PhosphorIconsBold.receipt, color: Colors.white, size: 20),
+    final d = invoice.invoiceDate;
+    return PicPosDocumentHeader(
+      title: 'مردود مشتريات',
+      icon: PhosphorIconsBold.arrowUUpLeft,
+      note: 'من فاتورة ${invoice.invoiceNumber} • '
+          '${d.day}/${d.month}/${d.year} • '
+          '${invoice.total.toStringAsFixed(AppConstants.decimalPlaces)} '
+          '${AppConstants.currencySymbolAr}',
+      trailing: [
+        Container(
+          padding:
+              const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Text(
+            invoice.invoiceNumber,
+            style: const TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w800,
+              color: AppColors.primary,
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'فاتورة #${invoice.invoiceNumber}',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  Text(
-                    'التاريخ: ${invoice.invoiceDate.day}/${invoice.invoiceDate.month}/${invoice.invoiceDate.year} • الإجمالي: ${invoice.total.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolAr}',
-                    style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
-                  ),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 
@@ -348,23 +350,42 @@ PurchaseReturnState state, PurchaseReturnNotifier notifier) {
           const SizedBox(height: 12),
           _buildSettlementMirror(notifier),
           const SizedBox(height: 12),
-          Row(
 
-        children: [
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('إجمالي المرتجع', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
-                Text(
-                  '${total.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolAr}',
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.error),
-                ),
-              ],
-            ),
+          // شريطُ الإجماليّات النحيف — لبِنةُ القشرة، لا صفٌّ مبنيٌّ هنا.
+          //
+          // ⚠️ **وثلاثةُ أرقامٍ لا رقمٌ واحد**: الضريبةُ كانت غائبةً عن
+          // العرض بينما تدخل تسويةَ المورّد إجماليّاً — فالمستخدمُ يرى
+          // «١٠٠» ويُخصَم من الذمّة «١١٤».
+          PicPosTotalsBar(
+            items: [
+              PicPosTotal(
+                label: 'صافي المرتجع',
+                value: total.toStringAsFixed(AppConstants.decimalPlaces),
+              ),
+              PicPosTotal(
+                label: 'الضريبة',
+                value: notifier
+                    .calculateReturnVat()
+                    .toStringAsFixed(AppConstants.decimalPlaces),
+              ),
+              PicPosTotal(
+                label: 'إجمالي المرتجع',
+                value: (total + notifier.calculateReturnVat())
+                    .toStringAsFixed(AppConstants.decimalPlaces),
+                emphasis: true,
+                tone: AppColors.error,
+              ),
+            ],
           ),
-          // ⚠️ **زرٌّ معطَّلٌ بسببٍ ظاهرٍ** لا مخفيّ: إخفاؤه يجعل المستخدمَ
+          const SizedBox(height: 10),
+
+          // شريطُ الأفعال — لبِنةُ القشرة.
+          //
+          // ⚠️ **بفعلٍ واحدٍ لا فعلَين.** التصميمُ يعرض «حفظ مسودة» و«مراجعة
+          // واعتماد»، وقرارُ المالك على هذه الشاشة **ترحيلٌ بخطوةٍ واحدةٍ كما
+          // اليوم**. فزرُّ مسوّدةٍ لا دورةَ حياةٍ خلفَه يعد بحفظٍ لا يقع.
+          //
+          // ⚠️ **وزرٌّ معطَّلٌ بسببٍ ظاهرٍ** لا مخفيّ: إخفاؤه يجعل المستخدمَ
           // يبحث عن فعلٍ يظنّه غائباً، والتلميحُ يقول ما ينقص.
           Tooltip(
             message: state.returnReason == null
@@ -372,26 +393,18 @@ PurchaseReturnState state, PurchaseReturnNotifier notifier) {
                 : (total <= 0
                     ? 'حدّد كميات المرتجع'
                     : 'تنفيذ المرتجع'),
-            child: ElevatedButton.icon(
-            onPressed: (total > 0 &&
-                    state.returnReason != null &&
-                    !state.isProcessing)
-                ? processReturn
-                : null,
-            icon: state.isProcessing
-              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-              : const Icon(PhosphorIconsBold.arrowUUpLeft),
-            label: const Text('تنفيذ المرتجع', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            child: PicPosFormActionBar(
+              busy: state.isProcessing,
+              primary: PicPosFormAction(
+                label: 'تنفيذ المرتجع',
+                icon: PhosphorIconsBold.arrowUUpLeft,
+                onPressed:
+                    (total > 0 && state.returnReason != null)
+                        ? processReturn
+                        : null,
+              ),
             ),
           ),
-          ),
-        ],
-      ),
       ],
       ),
     );

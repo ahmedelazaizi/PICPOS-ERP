@@ -19,6 +19,9 @@ import '../../widgets/common/common.dart';
 
 import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../picpos_shell/picpos_content_card.dart';
+import '../../picpos_shell/picpos_document_header.dart';
+import '../../picpos_shell/picpos_form_action_bar.dart';
+import '../../picpos_shell/picpos_totals_bar.dart';
 import '../../picpos_shell/picpos_returns_panel.dart';
 import '../../../domain/models/picpos_return_view.dart';
 

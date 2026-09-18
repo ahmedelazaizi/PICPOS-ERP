@@ -181,4 +181,50 @@ void main() {
     expect(find.text('معتمد'), findsNothing,
         reason: 'وسمٌ لم يُمرَّر ظهر — الترويسةُ تخترع حالة');
   });
+
+  testWidgets('ومحتوى شاشة مردود المشتريات بعينِه لا يفيض', (tester) async {
+    // ⚠️ **اللبِناتُ مقيسةٌ أعلاه بمحتوىً اخترتُه أنا.** والخطرُ الحقيقيُّ
+    // في النصوص التي تحملها الشاشاتُ فعلاً: «من فاتورة PINV-0201 · 8/9/2026
+    // · 900.00 ج.م» سطرُ ملاحظةٍ أطولُ بكثيرٍ ممّا جرّبت، و«تنفيذ المرتجع»
+    // مع تلميحٍ طويل. فتُقاس هنا **بنصّها** لا بعيّنةٍ مشابهة.
+    PicPosDocumentHeader header() => const PicPosDocumentHeader(
+          title: 'مردود مشتريات',
+          icon: Icons.keyboard_return,
+          note: 'من فاتورة PINV-0201 • 8/9/2026 • 900.00 ج.م',
+          trailing: [Text('PINV-0201')],
+        );
+
+    final wideH = await _measure(tester, header(), _wide);
+    expect(wideH.layoutErrors, isEmpty, reason: 'الترويسةُ فاضت على الواسع');
+    final narrowH = await _measure(tester, header(), _narrow);
+    expect(narrowH.layoutErrors, isEmpty, reason: 'الترويسةُ فاضت على الضيّق');
+    expect(narrowH.height, greaterThan(wideH.height));
+
+    PicPosTotalsBar totals() => const PicPosTotalsBar(
+          items: [
+            PicPosTotal(label: 'صافي المرتجع', value: '100.00'),
+            PicPosTotal(label: 'الضريبة', value: '14.00'),
+            PicPosTotal(label: 'إجمالي المرتجع', value: '114.00', emphasis: true),
+          ],
+        );
+    final wideT = await _measure(tester, totals(), _wide);
+    expect(wideT.layoutErrors, isEmpty, reason: 'الإجماليّاتُ فاضت على الواسع');
+    final narrowT = await _measure(tester, totals(), _narrow);
+    expect(narrowT.layoutErrors, isEmpty, reason: 'الإجماليّاتُ فاضت على الضيّق');
+    expect(narrowT.height, greaterThan(wideT.height));
+
+    // شريطُ أفعالٍ **بفعلٍ واحد** — الشكلُ الذي تستعمله هذه الشاشة.
+    PicPosFormActionBar bar() => PicPosFormActionBar(
+          primary: PicPosFormAction(
+            label: 'تنفيذ المرتجع',
+            icon: Icons.keyboard_return,
+            onPressed: () {},
+          ),
+        );
+    for (final w in const [_wide, _narrow]) {
+      final m = await _measure(tester, bar(), w);
+      expect(m.layoutErrors, isEmpty, reason: 'شريطُ الأفعال فاض عند $w');
+    }
+  });
+
 }
