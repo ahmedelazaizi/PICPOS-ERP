@@ -539,6 +539,8 @@ extension TablesDao on AppDatabase {
       }
 
       final sourceItems = await getTableOrderItems(sourceOrder.id);
+      unawaited(DiagnosticLogger.log(
+          'TABLE-MERGE', '19/ DAO: بنودُ المصدر=${sourceItems.length}'));
 
       for (final item in sourceItems) {
         // لا بحثَ عن متشابهٍ في الهدف ولا جمعَ كميّات: البندُ يُنقل كما هو
@@ -551,6 +553,8 @@ extension TablesDao on AppDatabase {
         ));
       }
 
+      unawaited(DiagnosticLogger.log('TABLE-MERGE', '20/ DAO: البنودُ نُقلت'));
+
       // Mark source order as merged
       await (update(
         tableOrders,
@@ -561,13 +565,19 @@ extension TablesDao on AppDatabase {
           closedAt: Value(DateTime.now()),
         ),
       );
+      unawaited(
+          DiagnosticLogger.log('TABLE-MERGE', '21/ DAO: المصدرُ أُغلق'));
 
       // Update both totals
       await _updateTableOrderTotal(sourceOrder.id); // Should be 0
       await _updateTableOrderTotal(targetOrder.id);
+      unawaited(
+          DiagnosticLogger.log('TABLE-MERGE', '22/ DAO: الإجماليّاتُ حُدّثت'));
 
       // Release source table
       await updateTableStatus(sourceTableId, 'available');
+      unawaited(DiagnosticLogger.log(
+          'TABLE-MERGE', '23/ DAO: الطاولةُ حُرّرت — انتهى'));
     });
   }
 

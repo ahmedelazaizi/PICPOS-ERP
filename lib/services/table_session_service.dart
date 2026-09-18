@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:drift/drift.dart';
 
 import '../core/constants/app_constants.dart';
+import '../core/logging/diagnostic_logger.dart';
 import '../data/database/database.dart';
 import 'guest_order_requests.dart';
 import '../domain/models/table_order_totals.dart';
@@ -388,11 +390,17 @@ class TableSessionService {
       throw const TableTransitionException(
           'لا تُدمج الطاولةُ في نفسها');
     }
+    unawaited(DiagnosticLogger.log(
+        'TABLE-MERGE', '14/ الخدمة: قبل فتح المعاملة'));
     return _db.transaction(() async {
+      unawaited(
+          DiagnosticLogger.log('TABLE-MERGE', '15/ الخدمة: المعاملةُ فُتحت'));
       final source = await _table(sourceTableId);
       final target = await _table(targetTableId);
       final sourceOrder = await _db.getActiveOrderForTable(sourceTableId);
       final targetOrder = await _db.getActiveOrderForTable(targetTableId);
+      unawaited(DiagnosticLogger.log('TABLE-MERGE',
+          '16/ الخدمة: الطلبان src=${sourceOrder?.id} tgt=${targetOrder?.id}'));
 
       if (sourceOrder == null) {
         throw TableTransitionException('لا يوجد طلبٌ على ${source.name}');
@@ -408,7 +416,11 @@ class TableSessionService {
 
       final droppedDiscount = _units(sourceOrder.discountValue) > 0;
 
+      unawaited(DiagnosticLogger.log(
+          'TABLE-MERGE', '17/ الخدمة: الحرّاسُ مرّوا — نداءُ الـDAO'));
       await _db.mergeTableOrders(sourceTableId, targetTableId);
+      unawaited(
+          DiagnosticLogger.log('TABLE-MERGE', '18/ الخدمة: الـDAO انتهى'));
 
       // الضيوفُ يُجمعون: صاروا على طاولةٍ واحدة.
       await (_db.update(_db.tableOrders)

@@ -529,18 +529,25 @@ mixin _TableOrderDialogsMixin<T extends ConsumerStatefulWidget>
     RestaurantTable sourceTable,
     TableOrder sourceOrder,
   ) async {
+    unawaited(DiagnosticLogger.log('TABLE-MERGE',
+        '7/ دخولُ _onMergeTable source=${sourceTable.id} order=${sourceOrder.id} busy=$_mergingTables'));
     if (_mergingTables) return;
     final allTables = await restaurantRepo.getAllTables();
+    unawaited(DiagnosticLogger.log(
+        'TABLE-MERGE', '8/ getAllTables أعادت ${allTables.length}'));
     final allOccupied = allTables
         .where((t) =>
             (t.status == 'occupied' || t.status == 'billing') &&
             t.id != sourceTable.id &&
             t.isActive)
         .toList();
+    unawaited(DiagnosticLogger.log(
+        'TABLE-MERGE', '9/ المشغولةُ غيرُ المصدر=${allOccupied.length}'));
 
     if (!mounted) return;
 
     if (allOccupied.isEmpty) {
+      unawaited(DiagnosticLogger.log('TABLE-MERGE', '10/ لا طاولاتٍ — توقّف'));
       AppToast.show(
         context,
         'لا توجد طاولات مشغولة أخرى للدمج معها',
@@ -549,6 +556,8 @@ mixin _TableOrderDialogsMixin<T extends ConsumerStatefulWidget>
       return;
     }
 
+    unawaited(
+        DiagnosticLogger.log('TABLE-MERGE', '10/ قبل فتح حوار الاختيار'));
     final targetTable = await showDialog<RestaurantTable>(
       context: context,
       builder: (ctx) => MergeTableDialog(
@@ -557,6 +566,8 @@ mixin _TableOrderDialogsMixin<T extends ConsumerStatefulWidget>
         onMerge: (table) => Navigator.pop(ctx, table),
       ),
     );
+    unawaited(DiagnosticLogger.log(
+        'TABLE-MERGE', '11/ الحوارُ أُغلق target=${targetTable?.id}'));
 
     if (targetTable != null && mounted) {
       setState(() => _mergingTables = true);
@@ -564,12 +575,16 @@ mixin _TableOrderDialogsMixin<T extends ConsumerStatefulWidget>
         // `mergeOrders` تشترط ألّا يكون دُفع من أيٍّ من الطلبين شيء، وتكتب
         // سطرَ السجلِّ بنفسها — لا نداءَ يدويّاً بعدها.
         final user = ref.read(authProvider).user;
+        unawaited(DiagnosticLogger.log('TABLE-MERGE',
+            '12/ نداءُ mergeOrders ${sourceTable.id}→${targetTable.id}'));
         final outcome = await ref.read(tableSessionServiceProvider).mergeOrders(
               sourceTableId: sourceTable.id,
               targetTableId: targetTable.id,
               userId: user?.id,
               userName: user?.displayName ?? 'مجهول',
             );
+        unawaited(DiagnosticLogger.log('TABLE-MERGE',
+            '13/ mergeOrders تمّت droppedDiscount=${outcome.droppedDiscount}'));
 
         if (mounted) {
           // خصمُ الطاولة المصدر يسقط في الدمج — يجب أن يصل الكاشيرَ، لا أن
@@ -585,7 +600,9 @@ mixin _TableOrderDialogsMixin<T extends ConsumerStatefulWidget>
                 : ToastType.success,
           );
         }
-      } catch (e) {
+      } catch (e, st) {
+        unawaited(DiagnosticLogger.log('TABLE-MERGE',
+            'E/ فشلٌ في mergeOrders: $e\n${st.toString().split('\n').take(12).join('\n')}'));
         if (mounted) {
           AppToast.show(
             context,

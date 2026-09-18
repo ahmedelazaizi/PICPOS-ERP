@@ -355,7 +355,11 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
         _handleTransferOrder(screenContext, restaurantRepo, table);
         break;
       case TableAction.merge:
+        unawaited(DiagnosticLogger.log(
+            'TABLE-MERGE', '5/ قراءةُ الطلبِ النشط table=${table.id}'));
         final order = await restaurantRepo.getActiveOrderForTable(table.id);
+        unawaited(DiagnosticLogger.log(
+            'TABLE-MERGE', '6/ الطلبُ النشط=${order?.id}'));
         if (!screenContext.mounted) return;
         if (order != null) {
           _onMergeTable(restaurantRepo, table, order);
@@ -1105,14 +1109,30 @@ class _TableActionsHostState extends ConsumerState<TableActionsHost>
 
   @override
   Future<void> run(RestaurantTable table, TableAction action) async {
+    // ⚠️ **وسمُ التشخيص `[TABLE-MERGE]`** — بلاغُ المالك 2026-09-18: الشاشةُ
+    // تسودّ والنظامُ يتجمّد عند الضغط على «دمج الطاولات»، **قبل** ظهور قائمة
+    // الطاولات. ولوجُ الخادمِ صامتٌ تماماً: ٢٦ وسماً وليس بينها وسمٌ واحدٌ
+    // للطاولات — فالمسارُ كلُّه غيرُ مسجَّل، ولو تكرّر العطبُ ألفَ مرّةٍ لم
+    // يترك أثراً. ومعالجا `FlutterError.onError` و`PlatformDispatcher.onError`
+    // يكتبان فوراً ولم يكتبا شيئاً ⇒ **لا استثناءَ وقع**، فالعطبُ تعليقٌ.
+    //
+    // فالوسمُ يقول **آخرَ خطوةٍ وصلها** قبل التجمُّد، وهو يبقى بعد الإصلاح:
+    // صمتُ اللوج نفسُه كان نصفَ المشكلة.
+    final tag = action == TableAction.merge ? 'TABLE-MERGE' : 'TABLE-ACTION';
+    unawaited(DiagnosticLogger.log(
+        tag, '1/ ضغطةُ الشريط action=${action.name} table=${table.id}'));
     // الفحصُ الدفاعيُّ — انظر ترويسةَ [TableActionsRunner.run].
     final code = permissionForAction(action);
+    unawaited(DiagnosticLogger.log(tag, '2/ كودُ الصلاحية=$code'));
     if (code != null &&
         !await _ensureTablePermission(
             context, code, tableActionLabels[action]!)) {
+      unawaited(DiagnosticLogger.log(tag, '3/ الصلاحيةُ رُفضت — توقّف'));
       return;
     }
+    unawaited(DiagnosticLogger.log(tag, '3/ الصلاحيةُ مُنحت'));
     if (!mounted) return;
+    unawaited(DiagnosticLogger.log(tag, '4/ تمريرٌ إلى _handleTableAction'));
     return _handleTableAction(
       context,
       ref.read(restaurantRepositoryProvider),

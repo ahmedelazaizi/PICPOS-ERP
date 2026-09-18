@@ -6,6 +6,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../core/widgets/app_toast.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/logging/diagnostic_logger.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/permissions/permission_codes.dart';
 import '../../data/providers/providers.dart';
