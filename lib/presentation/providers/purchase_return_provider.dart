@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/providers/providers.dart';
+import '../../domain/models/purchase_return_settlement.dart';
 import '../../domain/repositories/purchases_repository.dart';
 
 /// State for the Purchase Return flow
@@ -253,7 +254,45 @@ class PurchaseReturnNotifier extends Notifier<PurchaseReturnState> {
     return total;
   }
 
+  /// ضريبةُ المردود — **مقسَّطةٌ بنسبة المرتجَع** من ضريبة السطر.
+  ///
+  /// ⚠️ والصيغةُ منسوخةٌ عن المحرّك حرفاً (`_processPurchaseReturnBody`):
+  /// `taxAmount * (returnQty / originalQty)`. ونقلُ ضريبة السطر كاملةً في
+  /// مرتجعٍ جزئيٍّ يعطي ضريبةً أكبرَ من قيمة المرتجَع نفسِه.
+  double calculateReturnVat() {
+    double vat = 0;
+    for (final item in state.invoiceItems) {
+      final qty = state.returnQuantities[item.item.id] ?? 0;
+      if (qty <= 0) continue;
+      if (item.item.taxAmount > 0 && item.item.quantity > 0) {
+        vat += item.item.taxAmount * (qty / item.item.quantity);
+      }
+    }
+    return vat;
+  }
+
+  /// تسويةُ المبلغ مع المورّد كما **سيقسمها المحرّك**.
+  ///
+  /// 🔴 **مرآةٌ مشتقّةٌ لا قائمةُ اختيار** — قرارُ المالك 2026-09-18.
+  /// والقسمةُ من [resolvePurchaseReturnSettlement] عينِها التي ينفّذها
+  /// المستودعُ ومعالجُ الـAPI، فما يُعرَض هو ما سيقع.
+  ///
+  /// ⚠️ **ولا تُبنى `PurchaseReturnSettlement` هنا بيدها.** طفرةٌ نجت من
+  /// الحارس الأوّل لأنّها كتبت القسمةَ بـ`g < rem ? g : rem` بدل `clamp`
+  /// — فالحارسُ صار يمنع البناءَ المباشرَ لا صياغةً بعينها.
+  PurchaseReturnSettlement? get settlement {
+    final invoice = state.selectedInvoice;
+    if (invoice == null) return null;
+    return resolvePurchaseReturnSettlement(
+      returnNet: calculateReturnTotal(),
+      returnVat: calculateReturnVat(),
+      invoiceTotal: invoice.total,
+      invoicePaid: invoice.paid,
+    );
+  }
+
   Future<bool> processReturn() async {
+
     if (state.selectedInvoice == null) return false;
     state = state.copyWith(isProcessing: true);
 

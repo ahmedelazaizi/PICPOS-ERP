@@ -6,6 +6,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../domain/repositories/purchases_repository.dart';
+import '../../domain/models/purchase_return_settlement.dart';
 import '../database/database.dart';
 import '../../domain/entities/invoice_entity.dart';
 import '../../services/accounting_service.dart';
@@ -682,13 +683,16 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
               item.taxAmount * (item.returnQuantity / item.originalQuantity);
         }
       }
-      final grossReturnAmount = totalReturnAmount + totalVatReturn;
-      final oldRemaining = (invoice.total - invoice.paid)
-          .clamp(0.0, double.infinity)
-          .toDouble();
-      final balanceCorrection = oldRemaining > 0
-          ? grossReturnAmount.clamp(0.0, oldRemaining).toDouble()
-          : 0.0;
+      // القسمةُ من الصيغة الواحدة — والواجهةُ تقرأ عينَها، فالمرآةُ
+      // تعرض ما سيفعله المحرّكُ لا ما تحسبه بنفسها.
+      final settlement = resolvePurchaseReturnSettlement(
+        returnNet: totalReturnAmount,
+        returnVat: totalVatReturn,
+        invoiceTotal: invoice.total,
+        invoicePaid: invoice.paid,
+      );
+      final grossReturnAmount = settlement.gross;
+      final balanceCorrection = settlement.apPortion;
       if (balanceCorrection > 0) {
         try {
           final isBank =
@@ -826,11 +830,16 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
       // Supplier balance is stored as GROSS (net + VAT) — match that convention.
       // Case A: Invoice partially/fully unpaid → reduce what we still owe.
       // Case B: Invoice already paid → record cash received back from supplier.
-      final grossReturnAmount = totalReturnAmount + totalVatReturn;
-      final oldRemaining = (invoice.total - invoice.paid).clamp(0.0, double.infinity);
-      final balanceCorrection = (oldRemaining > 0)
-          ? grossReturnAmount.clamp(0.0, oldRemaining)
-          : 0.0;
+      // القسمةُ من الصيغة الواحدة — والواجهةُ تقرأ عينَها، فالمرآةُ
+      // تعرض ما سيفعله المحرّكُ لا ما تحسبه بنفسها.
+      final settlement = resolvePurchaseReturnSettlement(
+        returnNet: totalReturnAmount,
+        returnVat: totalVatReturn,
+        invoiceTotal: invoice.total,
+        invoicePaid: invoice.paid,
+      );
+      final grossReturnAmount = settlement.gross;
+      final balanceCorrection = settlement.apPortion;
       if (balanceCorrection > 0) {
         await _db.adjustPartyBalance(invoice.supplierId, -balanceCorrection);
 
@@ -873,7 +882,7 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
       // already ran above. Plain insert avoids the nested transaction
       // (root cause of the full-return freeze) and keeps the balances
       // consistent.
-      final cashReturnAmount = grossReturnAmount - balanceCorrection;
+      final cashReturnAmount = settlement.cashPortion;
       if (cashReturnAmount > 0) {
         // Record in safe: supplier gives back money → receipt into our safe
         final isBank = isBankPaymentMethod(invoice.paymentMethod);
@@ -1124,13 +1133,16 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
             item.taxAmount * (item.returnQuantity / item.originalQuantity);
       }
     }
-    final oldGrossReturn = oldTotalReturnAmount + oldVatReturn;
-    final oldRemaining =
-        (invoice.total - invoice.paid).clamp(0.0, double.infinity);
-    final oldBalanceCorrection = (oldRemaining > 0)
-        ? oldGrossReturn.clamp(0.0, oldRemaining)
-        : 0.0;
-    final oldCashReturn = oldGrossReturn - oldBalanceCorrection;
+    // ونفسُ الصيغة في العكس — وإلّا عاد ما لم يُخصَم.
+    final oldSettlement = resolvePurchaseReturnSettlement(
+      returnNet: oldTotalReturnAmount,
+      returnVat: oldVatReturn,
+      invoiceTotal: invoice.total,
+      invoicePaid: invoice.paid,
+    );
+    final oldGrossReturn = oldSettlement.gross;
+    final oldBalanceCorrection = oldSettlement.apPortion;
+    final oldCashReturn = oldSettlement.cashPortion;
 
     final reverseVoucher =
         'PRET-REV-${invoice.id}-${DateTime.now().millisecondsSinceEpoch}';

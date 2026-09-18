@@ -5,6 +5,7 @@
 // Extracted from ApiDataHandler for maintainability (PIR C-01).
 
 import '../../core/constants/payment_methods.dart';
+import '../../domain/models/purchase_return_settlement.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io' show File, FileMode;
@@ -438,15 +439,17 @@ class ApiPurchaseHandler extends ApiHandlerBase {
           );
         }
 
-        // Supplier balance & cash refund.
-        // `clamp` returns `num`, not `double` — convert explicitly so the
-        // arithmetic stays typed as double for the safe-balance update below.
-        final grossReturn = totalReturn + totalVatReturn;
-        final oldRemaining =
-            (invoice.total - invoice.paid).clamp(0.0, double.infinity).toDouble();
-        final balanceCorrection = oldRemaining > 0
-            ? grossReturn.clamp(0.0, oldRemaining).toDouble()
-            : 0.0;
+        // القسمةُ من الصيغة الواحدة — نفسُها في المستودع المحلّيّ وفي
+        // مرآةِ الواجهة، فلا ينحرف خادمٌ عن عميلٍ بمقدارٍ واحد.
+        final settlement = resolvePurchaseReturnSettlement(
+          returnNet: totalReturn,
+          returnVat: totalVatReturn,
+          invoiceTotal: invoice.total,
+          invoicePaid: invoice.paid,
+        );
+        final grossReturn = settlement.gross;
+        final oldRemaining = settlement.remainingBefore;
+        final balanceCorrection = settlement.apPortion;
         debugPrint('[API:postPurchaseReturn] step=balanceCalc gross=$grossReturn oldRemaining=$oldRemaining balanceCorrection=$balanceCorrection');
         if (balanceCorrection > 0) {
           debugPrint('[API:postPurchaseReturn] step=adjustPartyBalance supplierId=${invoice.supplierId} amount=${-balanceCorrection}');
@@ -503,7 +506,7 @@ class ApiPurchaseHandler extends ApiHandlerBase {
           }
         }
 
-        final cashReturnAmount = grossReturn - balanceCorrection;
+        final cashReturnAmount = settlement.cashPortion;
         if (cashReturnAmount > 0) {
           final isBank = isBankPaymentMethod(invoice.paymentMethod);
           final safe = isBank
@@ -743,14 +746,15 @@ class ApiPurchaseHandler extends ApiHandlerBase {
             oldVatReturn += origItem.taxAmount * (qty / origItem.quantity);
           }
         }
-        final oldGrossReturn = oldTotalReturn + oldVatReturn;
-        final oldRemaining = (invoice.total - invoice.paid)
-            .clamp(0.0, double.infinity)
-            .toDouble();
-        final oldBalanceCorrection = oldRemaining > 0
-            ? oldGrossReturn.clamp(0.0, oldRemaining).toDouble()
-            : 0.0;
-        final oldCashReturn = oldGrossReturn - oldBalanceCorrection;
+        final oldSettlement = resolvePurchaseReturnSettlement(
+          returnNet: oldTotalReturn,
+          returnVat: oldVatReturn,
+          invoiceTotal: invoice.total,
+          invoicePaid: invoice.paid,
+        );
+        final oldGrossReturn = oldSettlement.gross;
+        final oldBalanceCorrection = oldSettlement.apPortion;
+        final oldCashReturn = oldSettlement.cashPortion;
 
         final reverseVoucher =
             'PRET-REV-${invoice.id}-${DateTime.now().millisecondsSinceEpoch}';

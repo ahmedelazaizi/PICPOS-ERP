@@ -233,7 +233,75 @@ mixin _PurchaseReturnsPicposDetailsPanel
     );
   }
 
-  Widget _buildReturnFooter(PurchaseReturnState state, PurchaseReturnNotifier notifier) {
+  /// «تسوية المبلغ مع المورد» — **مرآةٌ مشتقّةٌ لا حقولُ إدخال**.
+  ///
+  /// 🔴 **قرارُ المالك 2026-09-18**: التصميمُ عرض «طريقة التسوية» قائمةً
+  /// منسدلة، والمحرّكُ **لا يستشيرها**: يقسم آليّاً — ما يُخصَم من ذمّة
+  /// المورّد بقدر ما نَدين له، والباقي نقداً. فقائمةٌ تُعرَض ولا تُقرأ هي
+  /// أسوأُ من غيابها: يختار المستخدمُ «استرداد نقدي» فيُخفَّض رصيدُ الذمّة
+  /// ولا يصله شيء.
+  ///
+  /// ⚠️ **وكلُّ الأرقام مشتقّةٌ من نفس الدالّة** التي ينفّذها المستودعُ
+  /// ومعالجُ الـAPI — لا نسخةٌ سادسةٌ من الصيغة.
+  Widget _buildSettlementMirror(PurchaseReturnNotifier notifier) {
+    final s = notifier.settlement;
+    if (s == null || s.gross <= 0) return const SizedBox.shrink();
+
+    Widget row(String label, String value, {bool emphasis = false}) =>
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 3),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(label,
+                    style: const TextStyle(
+                        fontSize: 12, color: AppColors.textMuted)),
+              ),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: emphasis ? 15 : 13,
+                  fontWeight:
+                      emphasis ? FontWeight.w800 : FontWeight.w700,
+                  color: emphasis ? AppColors.primary : null,
+                ),
+              ),
+            ],
+          ),
+        );
+
+    String money(double v) =>
+        v.toStringAsFixed(AppConstants.decimalPlaces);
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.12)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'تسوية المبلغ مع المورد',
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 6),
+          row('طريقة التسوية', s.methodLabel),
+          row('الرصيد المستحق حالياً', money(s.remainingBefore)),
+          if (s.touchesPayable) row('تخفيض الذمة', money(s.apPortion)),
+          if (s.touchesCash) row('استرداد نقدي', money(s.cashPortion)),
+          row('الرصيد بعد التسوية', money(s.remainingAfter),
+              emphasis: true),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReturnFooter(
+PurchaseReturnState state, PurchaseReturnNotifier notifier) {
     final total = notifier.calculateReturnTotal();
     final screenState = this as _PurchaseReturnsPicposScreenState;
 
@@ -278,7 +346,10 @@ mixin _PurchaseReturnsPicposDetailsPanel
           ),
 
           const SizedBox(height: 12),
+          _buildSettlementMirror(notifier),
+          const SizedBox(height: 12),
           Row(
+
         children: [
           Expanded(
             child: Column(
