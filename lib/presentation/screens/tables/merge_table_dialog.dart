@@ -72,10 +72,19 @@ class MergeTableDialog extends StatelessWidget {
                               ),
                             ),
                             subtitle: Text('السعة: ${table.capacity} أشخاص'),
-                            onTap: () {
-                              Navigator.pop(context);
-                              onMerge(table);
-                            },
+                            // ⚠️ **طردٌ واحدٌ لا اثنان — و[onMerge] هو من
+                            // يطرد.**
+                            //
+                            // كان هنا `Navigator.pop(context)` قبل النداء،
+                            // والمُنادي يمرّر `onMerge: (t) => Navigator.pop
+                            // (ctx, t)`. فيقع طردان: الأوّلُ يُغلق الحوارَ بلا
+                            // نتيجة (‏`showDialog` يعيد `null` فلا دمجَ يقع)،
+                            // والثاني لا يجد حواراً فيَطرد **الشاشةَ التي
+                            // تحته** — ولا شيءَ تحتها، فسوادٌ وجمود.
+                            //
+                            // والطردُ فعلٌ مشروعٌ لا يرمي استثناءً، ولهذا لم
+                            // يكتب اللوجُ حرفاً. بلاغُ المالك 2026-09-18.
+                            onTap: () => onMerge(table),
                           );
                         },
                       ),

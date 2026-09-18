@@ -422,6 +422,27 @@ mixin _TableSectionsMixin<T extends ConsumerStatefulWidget>
                           );
                           return;
                         }
+                        // ⚠️ **القسمُ محروسٌ كالاسم — وغيابُ حارسِه انهيارٌ
+                        // مقيسٌ في الميدان** (لوج المالك 2026-09-18T06:47:05:
+                        // `Null check operator used on a null value`).
+                        //
+                        // `selectedSectionId` يُهيَّأ بـ`sectionId ??
+                        // existingTable?.sectionId`، فهو فارغٌ لطاولةٍ جديدةٍ
+                        // حين لا تحمل الشاشةُ نطاقَ قسمٍ («كل المناطق») أو
+                        // حين لا أقسامَ بعد. وكان يُفَضّ بـ`!` في موضعَين.
+                        //
+                        // ونسخةٌ محلّيّةٌ لا `!`: `selectedSectionId` متغيّرٌ
+                        // يلتقطه الإغلاقُ ويكتبه `setDialogState`، فلا
+                        // يُرقّيه المحلّلُ بعد الفحص مهما فُحص.
+                        final chosenSectionId = selectedSectionId;
+                        if (chosenSectionId == null) {
+                          AppToast.show(
+                            ctx,
+                            'يرجى اختيار القسم',
+                            type: ToastType.warning,
+                          );
+                          return;
+                        }
                         setDialogState(() => _savingTable = true);
                         try {
                           final capacity = int.tryParse(capacityController.text) ?? 4;
@@ -436,7 +457,7 @@ mixin _TableSectionsMixin<T extends ConsumerStatefulWidget>
                               final tableName = count > 1 ? '$baseName $i' : baseName;
                               await restaurantRepo.createTable(
                                 name: tableName,
-                                sectionId: selectedSectionId!,
+                                sectionId: chosenSectionId,
                                 capacity: capacity,
                               );
                             }
@@ -455,7 +476,7 @@ mixin _TableSectionsMixin<T extends ConsumerStatefulWidget>
                               id: existingTable.id,
                               name: nameController.text.trim(),
                               capacity: capacity,
-                              sectionId: selectedSectionId!,
+                              sectionId: chosenSectionId,
                             );
                             final user = ref.read(authProvider).user;
                             final activityLogRepo =
