@@ -200,12 +200,9 @@ class PurchasesFilterBar extends ConsumerWidget {
     final theme = Theme.of(context);
     final muted = _purMuted(context);
 
-    Widget divider() => Container(
-          width: 1,
-          height: 24,
-          margin: const EdgeInsets.symmetric(horizontal: 3),
-          color: theme.dividerColor,
-        );
+    // ⚠️ والفاصلُ الرأسيُّ سقط مع التحوّل إلى `Wrap`: فاصلٌ يقع
+    // أوّلَ سطرٍ ملتفٍّ يرسم خطّاً معلّقاً لا يفصل شيئاً.
+
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -216,8 +213,23 @@ class PurchasesFilterBar extends ConsumerWidget {
           border: Border.all(color: theme.dividerColor),
           borderRadius: BorderRadius.circular(14),
         ),
-        child: Row(
+        // ⚠️ **`Row` يفيض ولا يلتفّ.** بحثٌ بعرض ٢٦٠ + حبّةُ تاريخٍ
+        // + ثلاثُ قوائمَ + ثلاثُ شرائحَ يتجاوزون عرضَ نافذةٍ متوسّطة،
+        // و`Spacer` داخلَ `Row` مكتظٍّ يأخذ صفراً ثمّ يُبتَر ما بعده.
+        //
+        // ومركزُ التكلفة آخرُ من يُبتَر لأنّه آخرُ القوائم،
+        // وقرارُ المالك 2026-09-18 أنّه **يظلّ ظاهراً في الشريط الأساسيّ**.
+        child: Wrap(
+          spacing: 12,
+          runSpacing: 10,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          alignment: WrapAlignment.spaceBetween,
           children: [
+            Wrap(
+              spacing: 8,
+              runSpacing: 10,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
             // ── البحث ───────────────────────────────────────────────────
             SizedBox(
               width: 260,
@@ -248,8 +260,6 @@ class PurchasesFilterBar extends ConsumerWidget {
                 onChanged: (val) => controller.updateSearchQuery(val),
               ),
             ),
-            const SizedBox(width: 8),
-
             // ── مدى التاريخ ─────────────────────────────────────────────
             Material(
               color: Colors.transparent,
@@ -330,24 +340,19 @@ class PurchasesFilterBar extends ConsumerWidget {
                 ),
               ),
             ),
-            divider(),
-
             // ── الفرع (يظهر عند تعدّد الفروع فقط) ───────────────────────
             branchesAsync.when(
               data: (branches) {
                 if (branches.length <= 1) return const SizedBox.shrink();
-                return Padding(
-                  padding: const EdgeInsetsDirectional.only(end: 8),
-                  child: _PurFilterPill<int?>(
-                    label: 'الفرع',
-                    value: selectedBranchId,
-                    items: [
-                      const DropdownMenuItem(value: null, child: Text('الكل')),
-                      ...branches.map((b) =>
-                          DropdownMenuItem(value: b.id, child: Text(b.name))),
-                    ],
-                    onChanged: (v) => controller.updateBranchFilter(v),
-                  ),
+                return _PurFilterPill<int?>(
+                  label: 'الفرع',
+                  value: selectedBranchId,
+                  items: [
+                    const DropdownMenuItem(value: null, child: Text('الكل')),
+                    ...branches.map((b) =>
+                        DropdownMenuItem(value: b.id, child: Text(b.name))),
+                  ],
+                  onChanged: (v) => controller.updateBranchFilter(v),
                 );
               },
               loading: () => const SizedBox.shrink(),
@@ -358,18 +363,15 @@ class PurchasesFilterBar extends ConsumerWidget {
             warehousesAsync.when(
               data: (warehouses) {
                 if (warehouses.length <= 1) return const SizedBox.shrink();
-                return Padding(
-                  padding: const EdgeInsetsDirectional.only(end: 8),
-                  child: _PurFilterPill<int?>(
-                    label: 'المخزن',
-                    value: selectedWarehouseId,
-                    items: [
-                      const DropdownMenuItem(value: null, child: Text('الكل')),
-                      ...warehouses.map((w) =>
-                          DropdownMenuItem(value: w.id, child: Text(w.name))),
-                    ],
-                    onChanged: (v) => controller.updateWarehouseFilter(v),
-                  ),
+                return _PurFilterPill<int?>(
+                  label: 'المخزن',
+                  value: selectedWarehouseId,
+                  items: [
+                    const DropdownMenuItem(value: null, child: Text('الكل')),
+                    ...warehouses.map((w) =>
+                        DropdownMenuItem(value: w.id, child: Text(w.name))),
+                  ],
+                  onChanged: (v) => controller.updateWarehouseFilter(v),
                 );
               },
               loading: () => const SizedBox.shrink(),
@@ -395,21 +397,26 @@ class PurchasesFilterBar extends ConsumerWidget {
               error: (_, _) => const SizedBox.shrink(),
             ),
 
-            const Spacer(),
-
-            // ── شرائحُ الحالة — انتقاءٌ أُحاديّ، وإعادةُ النقر تعيد «الكل» ──
-            for (final (code, label, color) in _statuses) ...[
-              _PurStatusChip(
-                label: label,
-                color: color,
-                selected: statusFilter == code,
-                count: statusCounts[code],
-                onTap: () => controller.updateStatusFilter(
-                  statusFilter == code ? 'all' : code,
+              ],
+            ),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+              // ── شرائحُ الحالة — انتقاءٌ أُحاديّ، وإعادةُ النقر تعيد «الكل» ──
+              for (final (code, label, color) in _statuses)
+                _PurStatusChip(
+                  label: label,
+                  color: color,
+                  selected: statusFilter == code,
+                  count: statusCounts[code],
+                  onTap: () => controller.updateStatusFilter(
+                    statusFilter == code ? 'all' : code,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 6),
-            ],
+              ],
+            ),
           ],
         ),
       ),

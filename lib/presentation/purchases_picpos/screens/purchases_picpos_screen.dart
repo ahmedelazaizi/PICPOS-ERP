@@ -27,6 +27,7 @@ import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../invoice_form_picpos/picpos_invoice_form.dart';
 import '../../../domain/models/picpos_invoice_draft.dart';
 import '../../picpos_shell/picpos_content_card.dart';
+import '../../picpos_shell/picpos_totals_bar.dart';
 // نمطُ ديالوجات PicPos — الغلافُ وحوارُ التأكيد المشتركان.
 import '../../picpos_shell/picpos_dialog.dart';
 
@@ -38,7 +39,7 @@ part 'purchases_picpos_details.dart';
 
 // ── Design part files (تصميمُ PicPos 2026-08-21) — مرآةُ شكلٍ لثلاثةِ
 // مكوّناتِ شاشة المبيعات، وفروقُها المقيسةُ موثَّقةٌ في رأس كلِّ ملفّ. ───────
-part 'purchases_summary_cards.dart';
+part 'purchases_totals_bar.dart';
 part 'purchases_filter_bar.dart';
 part 'purchases_invoices_table.dart';
 
@@ -167,8 +168,8 @@ class _PurchasesPicposScreenState extends ConsumerState<PurchasesPicposScreen>
                 tableName: 'purchase_invoices',
                 label: 'فاتورة مشتريات',
               ),
-              // صفُّ الإجماليات — بطاقةٌ رئيسيّةٌ بالمعادلة + أربعُ ثانويّة.
-              const PurchasesSummaryRow(),
+              // شريطُ الإجماليّات — نحيفٌ نهائيّاً بقرار المالك 2026-09-18.
+              const PurchasesTotalsBar(),
 
               // شريطُ الترشيح — حبّاتٌ دائريّةٌ + شرائحُ حالةٍ بعدّادات.
               PurchasesFilterBar(
