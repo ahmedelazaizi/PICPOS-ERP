@@ -37,6 +37,107 @@ const double _kDelW = 42;
 @visibleForTesting
 const quickAddSearchKey = Key('picpos_quick_add_search');
 
+/// شريطُ «أمر الشراء المصدر» — الاتّجاهُ الجديد بقرار المالك 2026-09-18.
+///
+/// ═══ ولماذا من هنا لا من هناك ═══
+///
+/// القائمُ اليومَ عكسُه: زرٌّ على شاشة الأوامر يُنشئ فاتورةً بلا أن يراها
+/// أحد — بمخزن الأمر وتاريخِ اليوم وبلا رقم فاتورةِ مورّد. والاتّجاهُ
+/// الجديد يجعل الفاتورةَ هي المستندَ الذي يُراجَع قبل أن يتحرّك المخزون.
+///
+/// ⚠️ **والأمرُ يُستهلَك بالحفظ لا بالربط**: الربطُ هنا اختيارٌ يُفَكّ،
+/// والختمُ يقع في معاملة `createPurchaseInvoice` وحدَها.
+class _PicPosOrderLinkBar extends StatelessWidget {
+  const _PicPosOrderLinkBar({required this.state});
+  final _PicPosInvoiceFormState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final muted = _fMuted(context);
+    final linked = state.widget.purchaseOrders
+        .where((o) => o.id == state._sourceOrderId)
+        .firstOrNull;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        border: Border.all(
+          color: linked != null
+              ? AppColors.info.withValues(alpha: .55)
+              : theme.dividerColor,
+        ),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          Icon(PhosphorIconsBold.link,
+              size: 14, color: linked != null ? AppColors.info : muted),
+          const SizedBox(width: 8),
+          Text('أمر الشراء المصدر',
+              style: TextStyle(
+                  fontSize: 11, fontWeight: FontWeight.w800, color: muted)),
+          const SizedBox(width: 12),
+          if (linked == null)
+            OutlinedButton.icon(
+              onPressed: () => state._linkPurchaseOrder(context),
+              icon: const Icon(PhosphorIconsBold.link, size: 14),
+              label: const Text('ربط أمر شراء',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+              style: OutlinedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+            )
+          else ...[
+            Flexible(
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.info.withValues(alpha: .12),
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: Text(
+                  linked.orderNumber,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.info,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 6),
+            IconButton(
+              tooltip: 'فكّ الربط — البنودُ تبقى',
+              onPressed: state._unlinkPurchaseOrder,
+              icon: const Icon(PhosphorIconsBold.x, size: 13),
+              visualDensity: VisualDensity.compact,
+              constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
+            ),
+          ],
+          const Spacer(),
+          if (linked != null)
+            Flexible(
+              child: Text(
+                'يُستهلَك الأمرُ بحفظ الفاتورة',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.end,
+                style: TextStyle(
+                    fontSize: 10, fontWeight: FontWeight.w600, color: muted),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 /// سطرُ الإدخال السريع — باركودٌ عريضٌ ثمّ كمّيّةٌ ثمّ إضافة.
 class _PicPosQuickAdd extends StatelessWidget {
   const _PicPosQuickAdd({required this.state});

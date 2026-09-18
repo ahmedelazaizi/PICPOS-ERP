@@ -130,6 +130,36 @@ class PicPosNamedOption {
   final String name;
 }
 
+/// أمرُ شراءٍ **مفتوحٌ** صالحٌ لأن تُسحَب بنودُه — الاتّجاهُ الجديد بقرار
+/// المالك 2026-09-18: من داخل الفاتورة ← اختَر أمراً، لا من الأمر ← أنشئ
+/// فاتورة.
+///
+/// ⚠️ **ولا يحمل البنود**: الأمرُ الواحدُ قد يحمل عشرات، وقائمةُ الأوامر
+/// تُحمَّل لتُعرَض. فالبنودُ تُجلَب عند الاختيار وحدَه
+/// (`onPullPurchaseOrder`).
+class PicPosPurchaseOrderOption {
+  const PicPosPurchaseOrderOption({
+    required this.id,
+    required this.orderNumber,
+    required this.supplierId,
+    required this.supplierName,
+    required this.orderDate,
+    required this.total,
+  });
+
+  final int id;
+  final String orderNumber;
+  final int supplierId;
+  final String supplierName;
+  final DateTime orderDate;
+  final double total;
+
+  /// السطرُ الخافتُ في المنتقي — المورّدُ والتاريخُ والإجماليّ.
+  String get subtitle =>
+      '$supplierName · ${orderDate.toString().substring(0, 10)} · '
+      '${total.toStringAsFixed(2)}';
+}
+
 /// سطرُ بنودٍ واحد.
 ///
 /// ‏**والخصمُ لكلّ سطرٍ في المشتريات وحدَها** — راجع

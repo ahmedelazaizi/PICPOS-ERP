@@ -67,11 +67,19 @@ typedef PicPosInvoiceSaveCallback = Future<void> Function({
   required int? costCenterId,
   required String paymentMethod,
   required bool printAfterSave,
+  // أمرُ الشراء المصدر — `null` حين لا رابط.
+  //
+  // 🔴 **ويجب أن يصل المحرّك**: هو ما يستهلك الأمرَ في نفس معاملة الفاتورة.
+  // ولو سُقط لبقي الأمرُ مفتوحاً بعد أن دخلت بضاعتُه، فيحوّله أحدٌ من شاشة
+  // الأوامر وتدخل مرّتَين.
+  required int? sourceOrderId,
 });
 
 /// حفظُ المسودّة — ومعناه يختلف بالنمط اختلافاً جوهريّاً:
 ///
-/// • **المشتريات**: `onSave(isDraft: true)` — مسودّةُ فاتورةِ شراء.
+/// • **المشتريات**: لا شيء — حُذف الفعلُ بقرار المالك 2026-09-19 (كان
+///   ينادي `onSave(isDraft: true)` ومعاملاً لا يقرؤه أحد، فيرحّل فاتورةً
+///   آجلةً كاملة). ويمنعه توكيدٌ في `PicPosInvoiceForm`.
 /// • **المبيعات**: **عرضُ سعر** يُحفَظ فيظهر في تبويب «عروض الأسعار»، فيُعدَّل
 ///   لاحقاً أو يُحوَّل إلى فاتورة (قرارُ المالك 2026-08-21). والمسارُ قائمٌ
 ///   بالكامل — `onSaveQuotation` ← `_saveQuotation` — فلا سطرَ جديدٌ في أيّ
@@ -122,6 +130,8 @@ class PicPosInvoiceForm extends StatefulWidget {
     this.initialWarehouseId,
     this.initialCostCenterId,
     this.availableStock,
+    this.purchaseOrders = const [],
+    this.onPullPurchaseOrder,
   })  :
         // 🔴 **فعلُ المسوّدة للمبيعات وحدَها** — قرارُ المالك 2026-09-19.
         //
@@ -139,6 +149,20 @@ class PicPosInvoiceForm extends StatefulWidget {
             'فعلُ المسوّدة للمبيعات وحدَها — والمشترياتُ خطوةٌ واحدة');
 
   final PicPosInvoiceKind kind;
+
+  /// أوامرُ الشراء **المفتوحة** — فارغةٌ تعني «لا ربطَ في هذا النطاق».
+  ///
+  /// ⚠️ شاشةُ أوامر الشراء في نطاق `unified` وحدَه، والترشيحُ يقع عند
+  /// المنادي: النموذجُ لا يعرف `ScreenId` ولا يقرأ إعداداً.
+  final List<PicPosPurchaseOrderOption> purchaseOrders;
+
+  /// يجلب بنودَ أمرٍ بعينه عند اختياره.
+  ///
+  /// البنودُ لا تُحمَّل مع القائمة: أمرٌ واحدٌ قد يحمل عشرات، والقائمةُ
+  /// تُحمَّل لتُعرَض.
+  final Future<List<PicPosInvoiceLine>> Function(int orderId)?
+      onPullPurchaseOrder;
+
   final List<PicPosPartyOption> parties;
   final List<PicPosProductOption> products;
   final List<PicPosNamedOption> warehouses;
@@ -191,6 +215,9 @@ class _PicPosInvoiceFormState extends State<PicPosInvoiceForm> {
   final _searchFocus = FocusNode();
 
   int? _partyId;
+
+  /// أمرُ الشراء المربوط — يُمرَّر إلى الحفظ فيُستهلَك في نفس المعاملة.
+  int? _sourceOrderId;
   int? _warehouseId;
   int? _costCenterId;
   DateTime _date = DateTime.now();
@@ -378,6 +405,7 @@ class _PicPosInvoiceFormState extends State<PicPosInvoiceForm> {
         costCenterId: _costCenterId,
         paymentMethod: _paymentMethod,
         printAfterSave: printAfterSave,
+        sourceOrderId: _sourceOrderId,
       );
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -481,12 +509,88 @@ class _PicPosInvoiceFormState extends State<PicPosInvoiceForm> {
     );
   }
 
+  /// هل يُعرَض شريطُ «أمر الشراء المصدر»؟
+  ///
+  /// ثلاثةُ شروطٍ معاً، وأيُّها ناقصٌ يعني زرّاً لا يفعل شيئاً: النمطُ شراءٌ،
+  /// وثمّة أوامرُ مفتوحة، ومنادٍ يعرف كيف يجلب بنودَها.
+  bool get _canLinkPurchaseOrder =>
+      !widget.kind.isSales &&
+      widget.onPullPurchaseOrder != null &&
+      widget.purchaseOrders.isNotEmpty;
+
+  /// يربط أمراً ويسحب بنودَه **بدل** ما في الجدول.
+  ///
+  /// ⚠️ **بدلاً لا إضافةً**: الإضافةُ فوق بنودٍ قائمةٍ تُنتج فاتورةً لا
+  /// تطابق أمرَها، والأمرُ يُستهلَك كاملاً على أيّ حال — فيدخل المخزونَ ما
+  /// لم يُطلَب. ولهذا يُستأذَن حين يكون الجدولُ غيرَ فارغ.
+  Future<void> _linkPurchaseOrder(BuildContext context) async {
+    final pull = widget.onPullPurchaseOrder;
+    if (pull == null) return;
+
+    final picked = await showDialog<int>(
+      context: context,
+      builder: (ctx) => _SearchPickerDialog(
+        title: 'اختر أمر شراء',
+        items: [
+          for (final o in widget.purchaseOrders)
+            (id: o.id, title: o.orderNumber, subtitle: o.subtitle),
+        ],
+      ),
+    );
+    if (picked == null || !context.mounted) return;
+
+    if (_lines.isNotEmpty) {
+      final replace = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('استبدال البنود؟'),
+          content: const Text(
+              'بنودُ أمر الشراء ستحلّ محلَّ البنود الحالية — لأنّ الأمرَ '
+              'يُستهلَك كاملاً بهذه الفاتورة.'),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('إلغاء')),
+            FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('استبدال')),
+          ],
+        ),
+      );
+      if (replace != true) return;
+    }
+
+    final order = widget.purchaseOrders.where((o) => o.id == picked).firstOrNull;
+    final pulled = await pull(picked);
+    if (!mounted) return;
+    setState(() {
+      _sourceOrderId = picked;
+      _lines
+        ..clear()
+        ..addAll(pulled);
+      // المورّدُ يتبع الأمرَ: فاتورةٌ على مورّدٍ آخرَ تستهلك أمرَ هذا
+      // المورّد تقيّد الذمّةَ على الطرف الخطأ.
+      if (order != null) _partyId = order.supplierId;
+    });
+    _syncAutoPaid();
+  }
+
+  void _unlinkPurchaseOrder() {
+    // البنودُ تبقى: فكُّ الربط يعني «لن أستهلك هذا الأمر»، لا «امحُ ما
+    // أدخلتُه». ومحوُها بلا طلبٍ يفقد عملَ المستخدم.
+    setState(() => _sourceOrderId = null);
+  }
+
   Widget _buildDocumentColumn(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _PicPosDocBar(state: this),
         const SizedBox(height: 12),
+        if (_canLinkPurchaseOrder) ...[
+          _PicPosOrderLinkBar(state: this),
+          const SizedBox(height: 12),
+        ],
         _PicPosQuickAdd(state: this),
         const SizedBox(height: 12),
         Expanded(child: _PicPosLinesTable(state: this)),

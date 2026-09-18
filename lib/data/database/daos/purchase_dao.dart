@@ -598,6 +598,10 @@ extension PurchaseDao on AppDatabase {
     String? globalId,
     // 062 (D1-004): caller's userId for the overrideCreditLimit gate.
     int? userId,
+    // أمرُ الشراء المصدر — «ربط أمر شراء» من داخل الفاتورة (قرارُ المالك
+    // 2026-09-18). ويُستهلَك **في نفس هذه المعاملة**: لولا ذلك لبقي مفتوحاً
+    // بعد أن دخلت بضاعتُه، فيحوّله أحدٌ ثانيةً وتدخل مرّتَين.
+    int? sourceOrderId,
     // Client issue ح-1 (2026-07-25): invoice-level discount. Was accepted by
     // the form, dropped on the way down, and never reached the DAO — so the
     // header stored the GROSS total while the operator paid the NET, leaving
@@ -613,6 +617,13 @@ extension PurchaseDao on AppDatabase {
       final effectiveInvoiceDate = invoiceDate ?? DateTime.now();
       await accountingDao.validateFinancialPeriod(effectiveInvoiceDate,
           operation: 'فاتورة مشتريات');
+
+      // أهليّةُ الأمر تُفحَص **قبل** أن يتحرّك شيء: الرفضُ بعد إدخال
+      // البضاعة يعتمد على تراجع المعاملة وحدَه، والرسالةُ تصل المستخدمَ
+      // بعد أن رأى نجاحاً.
+      if (sourceOrderId != null) {
+        await _requireConsumablePurchaseOrder(sourceOrderId);
+      }
 
       double taxTotal = 0;
       double total = 0;
@@ -1153,6 +1164,13 @@ extension PurchaseDao on AppDatabase {
               .toList(),
         },
       );
+
+      // وختمُ الأمر **آخرُ ما يقع داخلَ المعاملة**: فلو أخفق
+      // شيءٌ قبلَه رجع الختمُ مع الفاتورة، ولا يبقى أمرٌ مستهلَكٌ بلا
+      // فاتورة — وهي حالةٌ لا يُخرج منها شيءٌ من الواجهة.
+      if (sourceOrderId != null) {
+        await _markPurchaseOrderConverted(sourceOrderId, invoiceId);
+      }
 
       return invoiceId;
     });

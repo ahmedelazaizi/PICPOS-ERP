@@ -95,6 +95,14 @@ class CreatePurchaseInvoiceParams {
   /// payable on the supplier that could never be settled.
   final double discount;
 
+  /// أمرُ الشراء المصدر — «ربط أمر شراء» من داخل الفاتورة (قرارُ المالك
+  /// 2026-09-18).
+  ///
+  /// 🔴 **ويستهلكه المحرّكُ في نفس معاملة الفاتورة.** الأمرُ له مدخلان إلى
+  /// نفس الحدث (هذا، وزرُّ التحويل على شاشة الأوامر)، فبلا استهلاكٍ مختومٍ
+  /// تدخل بضاعتُه مرّتَين ويُقيَّد على المورّد مرّتَين.
+  final int? sourceOrderId;
+
   const CreatePurchaseInvoiceParams({
     required this.supplierId,
     required this.warehouseId,
@@ -109,6 +117,7 @@ class CreatePurchaseInvoiceParams {
     this.userId,
     this.createdByUsername,
     this.discount = 0,
+    this.sourceOrderId,
   });
 }
 

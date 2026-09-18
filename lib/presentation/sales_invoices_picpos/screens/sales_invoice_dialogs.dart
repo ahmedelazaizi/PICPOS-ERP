@@ -741,6 +741,9 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
         required int? costCenterId,
         required String paymentMethod,
         required bool printAfterSave,
+        // أوامرُ الشراء لا تخصّ المبيعات — والنموذجُ لا يعرضها في هذا النمط
+        // أصلاً (`_canLinkPurchaseOrder`)، فتصل `null` دائماً.
+        required int? sourceOrderId,
       }) async {
         await _saveInvoice(
           context: ctx,

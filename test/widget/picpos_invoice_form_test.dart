@@ -39,6 +39,8 @@ void main() {
     required PicPosInvoiceKind kind,
     int? initialWarehouseId,
     Map<int, double>? availableStock,
+    List<PicPosPurchaseOrderOption> purchaseOrders = const [],
+    Future<List<PicPosInvoiceLine>> Function(int)? onPull,
   }) async {
     // مقاسٌ واقعيٌّ لسطح المكتب: التصميمُ مرسومٌ على ١٩٢٠×١٠٨٠، والشاشةُ
     // تتفرّع إلى تخطيطٍ عريضٍ فوق ٩٦٠. والافتراضيُّ ٨٠٠×٦٠٠ كان يختبر
@@ -61,6 +63,8 @@ void main() {
           userName: 'محمود',
           initialWarehouseId: initialWarehouseId,
           availableStock: availableStock,
+          purchaseOrders: purchaseOrders,
+          onPullPurchaseOrder: onPull,
           onCancel: () {},
           onSave: ({
             required partyId,
@@ -77,6 +81,7 @@ void main() {
             required costCenterId,
             required paymentMethod,
             required printAfterSave,
+            required sourceOrderId,
           }) async {
             saves.add({
               'partyId': partyId,
@@ -89,6 +94,10 @@ void main() {
               'subtotal': subtotal,
               'discount': discount,
               'tax': tax,
+              // 🔴 الرابطُ هو ما يستهلك الأمرَ في معاملة الفاتورة. وقياسُ
+              // البنود وحدَها لا يفرّق بين سحبٍ **رَبَط** وسحبٍ نسخ أرقاماً
+              // وترك الأمرَ مفتوحاً ليدخل ثانيةً.
+              'sourceOrderId': sourceOrderId,
             });
           },
         ),
@@ -286,6 +295,7 @@ void main() {
             required costCenterId,
             required paymentMethod,
             required printAfterSave,
+            required sourceOrderId,
           }) async {},
         ),
       ),
@@ -472,6 +482,201 @@ void main() {
       await save(tester);
       expect(saves.single['paid'], saves.single['net'],
           reason: 'وإلّا عاد الدَّينُ من بابِ الكمّيّة');
+    });
+  });
+
+  // ═══ ربطُ أمر الشراء — الاتّجاهُ الجديد بقرار المالك 2026-09-18 ══════════
+  //
+  // القائمُ عكسُه: زرٌّ على شاشة الأوامر يُنشئ فاتورةً بلا أن يراها أحد.
+  // والجديدُ يجعل الفاتورةَ هي المستندَ الذي يُراجَع قبل أن يتحرّك المخزون.
+  group('ربطُ أمر شراء', () {
+    final order = PicPosPurchaseOrderOption(
+      id: 77,
+      orderNumber: 'PO-00077',
+      supplierId: 5,
+      supplierName: 'شركة النيل',
+      orderDate: DateTime(2026, 9, 1),
+      total: 500,
+    );
+
+    Future<List<PicPosInvoiceLine>> pull(int id) async => const [
+          PicPosInvoiceLine(
+            productId: 1,
+            productName: 'صنف تجريبي',
+            quantity: 4,
+            unitPrice: 55,
+            discount: 20,
+            taxRate: 14,
+            taxEnabled: true,
+          ),
+        ];
+
+    Future<List<Map<String, dynamic>>> pumpLinkable(WidgetTester tester) =>
+        pump(
+          tester,
+          kind: PicPosInvoiceKind.purchase,
+          initialWarehouseId: 2,
+          purchaseOrders: [order],
+          onPull: pull,
+        );
+
+    /// ‏`pickParty` العامّةُ تنقر «اختر العميل» — وهي تسميةُ المبيعات.
+    Future<void> pickSupplier(WidgetTester tester) async {
+      await tester.tap(find.text('اختر المورد'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('شركة النيل'));
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> link(WidgetTester tester) async {
+      await tester.tap(find.text('ربط أمر شراء'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('PO-00077'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('الشريطُ لا يظهر بلا أوامرَ مفتوحة', (tester) async {
+      // ⚠️ زرٌّ يُعرَض ولا يجد ما يربطه أسوأُ من غيابه.
+      await pump(tester, kind: PicPosInvoiceKind.purchase);
+      expect(find.text('أمر الشراء المصدر'), findsNothing);
+    });
+
+    testWidgets('ولا يظهر في المبيعات ولو مُرّرت أوامر', (tester) async {
+      await pump(
+        tester,
+        kind: PicPosInvoiceKind.sales,
+        purchaseOrders: [order],
+        onPull: pull,
+      );
+      expect(find.text('أمر الشراء المصدر'), findsNothing,
+          reason: 'أمرُ شراءٍ على فاتورة مبيعات — مستندٌ لا علاقةَ له بها');
+    });
+
+    testWidgets('ويظهر في المشتريات حين تُوجَد أوامرُ مفتوحة', (tester) async {
+      await pumpLinkable(tester);
+      expect(find.text('أمر الشراء المصدر'), findsOneWidget);
+      expect(find.text('ربط أمر شراء'), findsOneWidget);
+    });
+
+    testWidgets('والربطُ يسحب البنودَ ويضبط المورّد', (tester) async {
+      final saves = await pumpLinkable(tester);
+      await link(tester);
+
+      expect(find.text('PO-00077'), findsOneWidget,
+          reason: 'الرابطُ لا يظهر بعد الاختيار');
+      expect(find.text('1 بند'), findsOneWidget,
+          reason: 'بنودُ الأمر لم تُسحَب');
+      // 🔴 المورّدُ يتبع الأمر: فاتورةٌ على مورّدٍ آخرَ تستهلك أمرَ هذا
+      // المورّد تقيّد الذمّةَ على الطرف الخطأ.
+      expect(find.text('شركة النيل'), findsWidgets);
+
+      await tester.enterText(
+        find.byWidgetPredicate(
+            (w) => w is TextField && w.decoration?.hintText == 'مطلوب'),
+        'SUP-9',
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('حفظ الفاتورة'));
+      await tester.pump();
+
+      expect(saves, hasLength(1), reason: 'الحفظُ مُنع لسببٍ غيرِ الربط');
+      final items = saves.single['items'] as List<Map<String, dynamic>>;
+      expect(items.single['quantity'], 4);
+      expect(items.single['unitCost'], 55);
+      expect(items.single['discount'], 20,
+          reason: 'خصمُ سطر الأمر لم يعبر — والمحرّكُ يوزّعه على التكلفة');
+    });
+
+    testWidgets('🔴 والرابطُ يصل نداءَ الحفظ — وهو ما يستهلك الأمر',
+        (tester) async {
+      // بلا ذلك تُحفَظ الفاتورةُ ويبقى الأمرُ مفتوحاً بعد أن دخلت بضاعتُه،
+      // فيحوّله أحدٌ من شاشة الأوامر وتدخل مرّتَين.
+      final saves = await pumpLinkable(tester);
+      await link(tester);
+      await tester.enterText(
+        find.byWidgetPredicate(
+            (w) => w is TextField && w.decoration?.hintText == 'مطلوب'),
+        'SUP-9',
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('حفظ الفاتورة'));
+      await tester.pump();
+      expect(saves.single['sourceOrderId'], 77);
+    });
+
+    testWidgets('وبلا ربطٍ يبقى `null` — لا يلمس أمراً', (tester) async {
+      final saves = await pumpLinkable(tester);
+      await pickSupplier(tester);
+      await addLine(tester);
+      await tester.enterText(
+        find.byWidgetPredicate(
+            (w) => w is TextField && w.decoration?.hintText == 'مطلوب'),
+        'SUP-9',
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('حفظ الفاتورة'));
+      await tester.pump();
+      expect(saves.single['sourceOrderId'], isNull);
+    });
+
+    testWidgets('وفكُّ الربط يُبقي البنود — لا يمحو عملَ المستخدم',
+        (tester) async {
+      final saves = await pumpLinkable(tester);
+      await link(tester);
+      expect(find.text('1 بند'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('فكّ الربط — البنودُ تبقى'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('ربط أمر شراء'), findsOneWidget,
+          reason: 'الشريطُ لم يعد إلى حالة «بلا ربط»');
+      expect(find.text('1 بند'), findsOneWidget,
+          reason: 'البنودُ مُحيت بفكّ الربط — عملُ المستخدم ضاع');
+
+      await tester.enterText(
+        find.byWidgetPredicate(
+            (w) => w is TextField && w.decoration?.hintText == 'مطلوب'),
+        'SUP-9',
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('حفظ الفاتورة'));
+      await tester.pump();
+      expect(saves.single['sourceOrderId'], isNull,
+          reason: 'الأمرُ يُستهلَك رغم فكّ الربط');
+    });
+
+    testWidgets('وربطٌ فوق بنودٍ قائمةٍ يستأذن قبل الاستبدال', (tester) async {
+      // ⚠️ الإضافةُ فوق بنودٍ قائمةٍ تُنتج فاتورةً لا تطابق أمرَها، والأمرُ
+      // يُستهلَك كاملاً على أيّ حال — فيدخل المخزونَ ما لم يُطلَب.
+      final saves = await pumpLinkable(tester);
+      await pickSupplier(tester);
+      await addLine(tester);
+      expect(find.text('1 بند'), findsOneWidget);
+
+      await tester.tap(find.text('ربط أمر شراء'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('PO-00077'));
+      await tester.pumpAndSettle();
+      expect(find.text('استبدال البنود؟'), findsOneWidget);
+
+      // ‏«إلغاء» نصٌّ يظهر في زرّ النموذج أيضاً — فيُقصَر البحثُ على الحوار.
+      await tester.tap(find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('إلغاء'),
+      ));
+      await tester.pumpAndSettle();
+      expect(find.text('ربط أمر شراء'), findsOneWidget,
+          reason: 'الربطُ وقع رغم الإلغاء');
+
+      await tester.enterText(
+        find.byWidgetPredicate(
+            (w) => w is TextField && w.decoration?.hintText == 'مطلوب'),
+        'SUP-9',
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('حفظ الفاتورة'));
+      await tester.pump();
+      expect(saves.single['sourceOrderId'], isNull);
     });
   });
 

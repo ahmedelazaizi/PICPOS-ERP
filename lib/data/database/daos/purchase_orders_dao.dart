@@ -156,12 +156,55 @@ extension PurchaseOrdersDao on AppDatabase {
     });
   }
 
+  /// يتحقّق أنّ الأمرَ **صالحٌ للاستهلاك** — ويرمي إن لم يكن.
+  ///
+  /// ═══ ولماذا قاعدةٌ لا رسم ═══
+  ///
+  /// للأمر **مدخلان** إلى نفس الحدث منذ قرارِ المالك 2026-09-18: زرُّ
+  /// «استلام وتحويل لفاتورة» على شاشة الأوامر، و«ربط أمر شراء» من داخل
+  /// الفاتورة. وأيُّ واحدٍ منهما يُدخل البضاعةَ ويقيّد ذمّةَ المورّد.
+  ///
+  /// 🔴 **وكان المنعُ رسماً لا قاعدة**: `convertPOToInvoice` يرفض الملغى
+  /// وحدَه، وشاشةُ الأوامر تخفي الزرَّ بعد التحويل لأنّ الحالةَ تصير
+  /// `received`. فالمنعُ يعيش في الودجت، ويمرّ منه كلُّ منادٍ آخر — حالةُ
+  /// الاستعمال العامّة، والمدخلُ الجديد. وثمنُه فاتورتان بنفس البضاعة:
+  /// مخزونٌ يدخل مرّتَين، ومتوسّطُ تكلفةٍ على كمّيّةٍ ضِعفَ الحقيقة، وذمّةٌ
+  /// تُقيَّد مرّتَين.
+  ///
+  /// ⚠️ **والفاصلُ `convertedToInvoiceId` لا `status`**: الرابطُ هو **واقعةُ**
+  /// الاستهلاك، والحالةُ وسمٌ يُبدَّل بـ`updatePurchaseOrderStatus` بلا أن
+  /// يقع شيء.
+  Future<PurchaseOrderData> _requireConsumablePurchaseOrder(int orderId) async {
+    final po = await getPurchaseOrderById(orderId);
+    if (po == null) throw Exception('أمر شراء غير موجود');
+    if (po.status == 'cancelled') {
+      throw Exception('لا يمكن تحويل أمر شراء ملغي');
+    }
+    if (po.convertedToInvoiceId != null) {
+      throw Exception(
+          'أمر الشراء ${po.orderNumber} مرتبطٌ بالفاتورة رقم '
+          '${po.convertedToInvoiceId} — لا يُحوَّل مرّتين');
+    }
+    return po;
+  }
+
+  /// يختم الأمرَ مستهلَكاً بالفاتورة — **داخلَ معاملةِ إنشائها**.
+  ///
+  /// فلو أخفق شيءٌ بعده رجع الختمُ مع الفاتورة، ولا يبقى أمرٌ مستهلَكٌ بلا
+  /// فاتورة.
+  Future<void> _markPurchaseOrderConverted(int orderId, int invoiceId) async {
+    await (update(purchaseOrders)..where((po) => po.id.equals(orderId)))
+        .write(PurchaseOrdersCompanion(
+      status: const Value('received'),
+      convertedToInvoiceId: Value(invoiceId),
+      receivedAt: Value(DateTime.now()),
+    ));
+  }
+
   /// Convert PO to Purchase Invoice
   Future<int> convertPOToInvoice(int orderId) async {
     return transaction(() async {
-      final po = await getPurchaseOrderById(orderId);
-      if (po == null) throw Exception('أمر شراء غير موجود');
-      if (po.status == 'cancelled') throw Exception('لا يمكن تحويل أمر شراء ملغي');
+      final po = await _requireConsumablePurchaseOrder(orderId);
 
       final items = await getPurchaseOrderItems(orderId);
 
@@ -193,12 +236,7 @@ extension PurchaseOrdersDao on AppDatabase {
         items: invoiceItems,
       );
 
-      // Update PO status and link
-      await (update(purchaseOrders)..where((po) => po.id.equals(orderId)))
-          .write(PurchaseOrdersCompanion(
-        status: const Value('received'),
-        convertedToInvoiceId: Value(invoiceId),
-      ));
+      await _markPurchaseOrderConverted(orderId, invoiceId);
 
       return invoiceId;
     });

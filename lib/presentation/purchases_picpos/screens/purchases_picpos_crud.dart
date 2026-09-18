@@ -158,6 +158,41 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
       final taxRate = await ref
           .read(posDefaultTaxPercentProvider.future)
           .timeout(const Duration(seconds: 10));
+
+      // أوامرُ الشراء **المفتوحة** — «ربط أمر شراء» (قرارُ المالك 2026-09-18).
+      //
+      // ⚠️ **ولا تُحمَّل خارجَ نطاقِها**: `ScreenId.purchaseOrders` في
+      // `ScreenRegistry.unified` وحدَه، ففي بقيّة الأنماط لا وجودَ للمستند
+      // ولا لشاشته. والقائمةُ الفارغةُ تُخفي الشريطَ كلَّه.
+      //
+      // 🔴 **والمرشِّحُ `convertedToInvoiceId` لا الحالة**: الرابطُ هو
+      // **واقعةُ** الاستهلاك، والحالةُ وسمٌ يُبدَّل بلا أن يقع شيء. وعرضُ
+      // أمرٍ مستهلَكٍ يعِد المستخدمَ بسحبٍ سيرفضه المحرّكُ عند الحفظ.
+      final openOrders = <PicPosPurchaseOrderOption>[];
+      if (AppConfig.allowedScreenIds.contains(ScreenId.purchaseOrders)) {
+        try {
+          final poRepo = ref.read(purchaseOrdersRepositoryProvider);
+          final rows = await poRepo
+              .watchPurchaseOrders()
+              .first
+              .timeout(const Duration(seconds: 10));
+          final byId = {for (final s in suppliers) s.id: s.name};
+          for (final o in rows) {
+            if (o.convertedToInvoiceId != null) continue;
+            if (o.status == 'cancelled') continue;
+            openOrders.add(PicPosPurchaseOrderOption(
+              id: o.id,
+              orderNumber: o.orderNumber,
+              supplierId: o.supplierId,
+              supplierName: byId[o.supplierId] ?? 'مورد #${o.supplierId}',
+              orderDate: o.orderDate,
+              total: o.total,
+            ));
+          }
+        } catch (_) {
+          // الفاتورةُ تعمل بلا ربط — ولا يُحجَب إنشاؤها لأجل قائمةٍ إضافيّة.
+        }
+      }
       if (!mounted) return;
 
     showGeneralDialog(
@@ -207,6 +242,35 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
           initialWarehouseId:
               warehouses.length == 1 ? warehouses.first.id : null,
           onCancel: () => Navigator.pop(dialogContext),
+          purchaseOrders: openOrders,
+          // سحبُ البنود عند الاختيار وحدَه — الأمرُ الواحدُ قد يحمل عشرات،
+          // والقائمةُ تُحمَّل لتُعرَض.
+          //
+          // ⚠️ **والكمّيّةُ كمّيّةُ الأمر لا المتبقّي منه**: `receivedQuantity`
+          // يتحرّك باستلامٍ جزئيٍّ لا يوجد له مسارٌ اليوم، والأمرُ يُستهلَك
+          // كاملاً بهذه الفاتورة — فسحبُ «المتبقّي» كان سيعِد باستلامٍ
+          // جزئيٍّ لا يقع.
+          onPullPurchaseOrder: (orderId) async {
+            final poRepo = ref.read(purchaseOrdersRepositoryProvider);
+            final items = await poRepo.getPurchaseOrderItems(orderId);
+            final byId = {for (final p in products) p.id: p};
+            return [
+              for (final it in items)
+                if (byId[it.productId] != null)
+                  PicPosInvoiceLine(
+                    productId: it.productId,
+                    productName: byId[it.productId]!.name,
+                    categoryId: byId[it.productId]!.categoryId,
+                    quantity: it.quantity,
+                    unitPrice: it.unitCost,
+                    discount: it.discount,
+                    taxRate: it.taxRate,
+                    // الضريبةُ مشعلةٌ متى حمل السطرُ مبلغاً فعليّاً — وسطرٌ
+                    // معفىً في الأمر يبقى معفىً في الفاتورة.
+                    taxEnabled: it.taxAmount > 0,
+                  ),
+            ];
+          },
           onSave: ({
             required int? partyId,
             required String supplierInvoiceNumber,
@@ -222,6 +286,7 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
             required int? costCenterId,
             required String paymentMethod,
             required bool printAfterSave,
+            required int? sourceOrderId,
           }) async {
             await _handleSavePurchaseSimple(
               partyId: partyId,
@@ -241,6 +306,9 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
               paymentMethod: paymentMethod,
               safeId: null,
               printAfterSave: printAfterSave,
+              // 🔴 يصل المحرّكَ فيستهلك الأمرَ في **نفس معاملة الفاتورة**.
+              // ولو سقط هنا لبقي الأمرُ مفتوحاً بعد أن دخلت بضاعتُه.
+              sourceOrderId: sourceOrderId,
             );
             if (dialogContext.mounted) Navigator.pop(dialogContext);
           },
@@ -349,6 +417,7 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
     required int? warehouseId,
     required int? costCenterId,
     required String paymentMethod,
+    int? sourceOrderId,
     int? editInvoiceId,
     int? safeId,
     bool printAfterSave = false,
@@ -433,6 +502,7 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
           createdByUsername: auth.user?.username,
           // ح-1: was collected by the form and silently dropped here.
           discount: discount,
+          sourceOrderId: sourceOrderId,
         ));
       }
 

@@ -191,6 +191,7 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
         costCenterId: params.costCenterId,
         safeId: params.safeId,
         discount: params.discount,
+        sourceOrderId: params.sourceOrderId,
       );
     });
   }
