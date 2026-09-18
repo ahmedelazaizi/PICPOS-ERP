@@ -771,13 +771,13 @@ class _PicPosMoneyPanel extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: busy ? null : state._saveDraft,
                     icon: const Icon(PhosphorIconsBold.floppyDisk, size: 14),
-                    label: Text(
-                      // ‏«مسودة» في المشتريات و«عرض سعر» في المبيعات: الاسمُ
-                      // يقول ما سيحدث فعلاً — والعرضُ يذهب إلى تبويبه.
-                      state.widget.kind.isSales
-                          ? 'حفظ كعرض سعر'
-                          : 'حفظ كمسودة',
-                      style: const TextStyle(
+                    label: const Text(
+                      // ‏«عرض سعر» لا «مسودة»: الاسمُ يقول ما سيحدث فعلاً،
+                      // والعرضُ يذهب إلى تبويبه. والفرعُ الآخرُ حُذف مع
+                      // مسوّدةِ المشتريات — لم يكن خلفَه شيء، وتوكيدُ
+                      // `PicPosInvoiceForm` يمنع عودتَه.
+                      'حفظ كعرض سعر',
+                      style: TextStyle(
                           fontSize: 12, fontWeight: FontWeight.w700),
                     ),
                     style: OutlinedButton.styleFrom(

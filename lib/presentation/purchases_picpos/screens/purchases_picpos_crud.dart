@@ -64,7 +64,6 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
               items: items,
               warehouseId: warehouseId,
               costCenterId: costCenterId,
-              isDraft: isDraft,
               paymentMethod: paymentMethod,
               safeId: safeId,
               printAfterSave: printAfterSave,
@@ -239,45 +238,21 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
               items: items,
               warehouseId: warehouseId,
               costCenterId: costCenterId,
-              isDraft: false,
               paymentMethod: paymentMethod,
               safeId: null,
               printAfterSave: printAfterSave,
             );
             if (dialogContext.mounted) Navigator.pop(dialogContext);
           },
-          onSaveDraft: ({
-            required int? partyId,
-            required String notes,
-            required List<Map<String, dynamic>> items,
-            required double subtotal,
-            required double discount,
-            required double tax,
-            required double net,
-          }) async {
-            // مسودّةٌ: لا تحرّك مخزوناً ولا مالاً، فالمسدَّدُ صفرٌ والمخزنُ
-            // يُترَك كما اختير.
-            await _handleSavePurchaseSimple(
-              partyId: partyId,
-              invoiceNumber: '',
-              supplierInvoiceNumber: '',
-              date: DateTime.now(),
-              total: subtotal,
-              discount: discount,
-              tax: tax,
-              netAmount: net,
-              paidAmount: 0,
-              notes: notes,
-              items: items,
-              warehouseId: null,
-              costCenterId: null,
-              isDraft: true,
-              paymentMethod: 'credit',
-              safeId: null,
-              printAfterSave: false,
-            );
-            if (dialogContext.mounted) Navigator.pop(dialogContext);
-          },
+          // 🔴 **لا فعلَ مسوّدةٍ هنا** — قرارُ المالك 2026-09-19: خطوةٌ
+          // واحدةٌ كما في مردود المشتريات.
+          //
+          // كان الزرُّ ينادي هذه الدالّةَ بـ`isDraft: true`، والمعاملُ
+          // **مُعلَنٌ في ثلاث دوالَّ ولا يُقرأ في موضعٍ واحد**. فالمسوّدةُ
+          // كانت فاتورةً آجلةً مرحَّلةً كاملةً: مخزونٌ يتحرّك وقيدٌ يُرحَّل
+          // وذمّةُ مورّدٍ تُقيَّد — وعلى **أوّل مخزنٍ في النطاق** لأنّ
+          // النداءَ كان يمرّر `warehouseId: null`، لا على ما اختاره
+          // المستخدمُ في النموذج.
         ),
       ),
       );
@@ -347,7 +322,6 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
               items: items,
               warehouseId: warehouseId,
               costCenterId: costCenterId,
-              isDraft: isDraft,
               editInvoiceId: invoice.id,
               paymentMethod: paymentMethod,
               safeId: safeId,
@@ -374,7 +348,6 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
     required List<Map<String, dynamic>> items,
     required int? warehouseId,
     required int? costCenterId,
-    required bool isDraft,
     required String paymentMethod,
     int? editInvoiceId,
     int? safeId,
