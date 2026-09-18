@@ -400,8 +400,13 @@ class _PicPosMoneyPanel extends StatelessWidget {
     final terms = state._party?.paymentTermsDays ?? 0;
     final hasTerms = due != null;
 
+    // ⚠️ **سطرٌ واحدٌ لا سطران.** البطاقةُ الماليّةُ في التخطيط العريض
+    // محدودةُ الارتفاع و`Spacer` يبتلع فضلَها، فأيُّ زيادةٍ تُفيض العمود.
+    // وأوّلُ صياغةٍ (تسميةٌ فوق قيمة) أفاضته بتسعة بكسلاتٍ — لا دائماً، بل
+    // متى ظهر شريطُ نسبة السداد معها: أي على فاتورةٍ مسدَّدةٍ **جزئيّاً**
+    // بالضبط، وهي عينُ ما تُفتَح عليه شاشةُ التحرير.
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
       decoration: BoxDecoration(
         color: _fField(context),
         border: Border.all(color: Theme.of(context).dividerColor),
@@ -412,43 +417,37 @@ class _PicPosMoneyPanel extends StatelessWidget {
           Icon(PhosphorIconsBold.calendarCheck,
               size: 13, color: hasTerms ? AppColors.info : muted),
           const SizedBox(width: 7),
+          Text('تاريخ الاستحقاق',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                  fontSize: 9.5, fontWeight: FontWeight.w800, color: muted)),
+          const SizedBox(width: 8),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('تاريخ الاستحقاق',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                        fontSize: 9.5,
-                        fontWeight: FontWeight.w800,
-                        color: muted)),
-                const SizedBox(height: 2),
-                Text(
-                  hasTerms
-                      ? due.toString().substring(0, 10)
-                      : 'بلا مهلة متفقة',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    color: hasTerms ? null : muted,
-                    fontFeatures: const [ui.FontFeature.tabularFigures()],
-                  ),
-                ),
-              ],
+            child: Text(
+              hasTerms ? due.toString().substring(0, 10) : 'بلا مهلة متفقة',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w800,
+                color: hasTerms ? null : muted,
+                fontFeatures: const [ui.FontFeature.tabularFigures()],
+              ),
             ),
           ),
           if (hasTerms)
-            Text('${state.widget.kind.isSales ? 'سماح' : 'سداد'} $terms يوماً',
+            Flexible(
+              child: Text(
+                '${state.widget.kind.isSales ? 'سماح' : 'سداد'} $terms يوماً',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                     fontSize: 9.5,
                     fontWeight: FontWeight.w700,
-                    color: muted)),
+                    color: muted),
+              ),
+            ),
           const SizedBox(width: 6),
           // مقفولٌ صراحةً — كحقل رقم الفاتورة في شريط المستند.
           Icon(PhosphorIconsBold.lockSimple, size: 12, color: muted),
@@ -735,7 +734,11 @@ class _PicPosMoneyPanel extends StatelessWidget {
               child: _primary(
                 context,
                 icon: PhosphorIconsBold.checkCircle,
-                label: 'حفظ الفاتورة',
+                // الاسمُ يقول ما يحدث: زرٌّ يقول «حفظ الفاتورة» على تحريرٍ
+                // يوهم بإنشاء ثانية.
+                label: state.widget.isEdit
+                    ? 'حفظ التعديلات'
+                    : 'حفظ الفاتورة',
                 shortcut: 'F9',
                 onTap: busy ? null : () => state._save(printAfterSave: false),
               ),

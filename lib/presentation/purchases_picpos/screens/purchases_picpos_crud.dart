@@ -9,85 +9,106 @@ part of 'purchases_picpos_screen.dart';
 // مصيدة النسخ (موثّقة): أي باج منطقي يُصلَّح هنا لاحقاً، افحص أصله في
 // purchase_invoice_crud.dart — يُصلَّح بكوميت منفصل + patch لـ UralCash.
 mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
-  /// Create a new purchase invoice or return
-  void createNewInvoice() async {
-    if (!mounted) return;
-    // ⚠️ انحرافٌ مقصودٌ عن الأصل المنسوخ (`purchase_invoice_crud.dart`):
-    // `purchases_create` لم يكن له إنفاذٌ محليٌّ إطلاقاً — لا على الزرّ ولا
-    // على **F5** (`AppShortcuts(onNew: createNewInvoice)`)، وموضعُه الوحيد
-    // `api_purchase_handler` وهو خلف رايةٍ مطفأةٍ افتراضياً ولا وجودَ له على
-    // تنصيبةٍ مستقلّة. فالفحصُ هنا في القِمع ليغطّي المدخلَين.
-    if (!await ensurePermission(
-        ref, context, PermissionCodes.purchasesCreate,
-        actionName: 'فاتورة مشتريات جديدة')) {
-      return;
-    }
-    if (!mounted) return;
+  // ═══ النموذجان القديمان حُذفا ═══════════════════════════════════════
+  //
+  // ‏`createNewInvoice` و`editInvoice` كانا يفتحان `PurchaseInvoiceForm`
+  // القديم. والشاشةُ لم تعد تصل إلى الأوّل منذ شُحنت شاشةُ التصميم، ووُجِّه
+  // الثاني إليها بقرار المالك 2026-09-19 — فلم يبقَ لهما منادٍ.
+  //
+  // 🔴 **وحذفُهما ليس تنظيفاً**: النموذجُ القديمُ يحمل زرَّ «مسودة» بسلوكه
+  // القديم (فاتورةٌ آجلةٌ مرحَّلة)، ويملأ التكلفةَ من المخزَّن **صافيةً**
+  // مع الخصم كاملاً فيُعاد توزيعُه عند كلّ حفظ. فبقاؤهما بابٌ يُفتَح
+  // بتوصيلِ سطرٍ واحد.
+  //
+  // والنموذجُ نفسُه يبقى لشاشة `purchase_invoice_crud.dart` الأصليّة —
+  // قاعدةُ ح‑٣: يُنسَخ ولا يُشارَك.
 
-    showGeneralDialog(
-      context: context,
-      barrierDismissible: false,
-      barrierLabel: 'Purchase Invoice',
-      transitionDuration: const Duration(milliseconds: 200),
-      pageBuilder: (context, anim1, anim2) => Scaffold(
-        body: PurchaseInvoiceForm(
-          onSave: ({
-            required int? partyId,
-            required String invoiceNumber,
-            required String supplierInvoiceNumber,
-            required DateTime date,
-            required double total,
-            required double discount,
-            required double tax,
-            required double netAmount,
-            required double paidAmount,
-            required String notes,
-            required List<Map<String, dynamic>> items,
-            required int? warehouseId,
-            required int? costCenterId,
-            required bool isDraft,
-            required String paymentMethod,
-            int? safeId,
-            bool printAfterSave = false,
-          }) async {
-            await _handleSavePurchaseSimple(
-              partyId: partyId,
-              invoiceNumber: invoiceNumber,
-              supplierInvoiceNumber: supplierInvoiceNumber,
-              date: date,
-              total: total,
-              discount: discount,
-              tax: tax,
-              netAmount: netAmount,
-              paidAmount: paidAmount,
-              notes: notes,
-              items: items,
-              warehouseId: warehouseId,
-              costCenterId: costCenterId,
-              paymentMethod: paymentMethod,
-              safeId: safeId,
-              printAfterSave: printAfterSave,
-            );
-          },
-        ),
-      ),
+  /// يعيد بناءَ حالةِ النموذج من فاتورةٍ **مخزَّنة**.
+  ///
+  /// ═══ 🔴 عكسان لا واحد ═══
+  ///
+  /// المخزَّنُ ليس ما يقبله المحرّك:
+  ///
+  ///   • تكلفةُ السطر مخزَّنةٌ **صافيةً** بعد توزيع الخصم، والمحرّكُ يستقبل
+  ///     **إجماليّةً** ويوزّع بنفسه. فملؤها كما هي يوزّع الخصمَ مرّةً
+  ///     ثانيةً — **وكلُّ حفظٍ يخفّض التكلفة** ولو لم يُغيَّر حرف.
+  ///   • و`invoice.discount` هو **مجموعُ** الخصم (الترويسة + السطور)،
+  ///     والنموذجُ يجمعهما بنفسه. فملءُ الحقل بالمجموع يحسبه مرّتَين.
+  ///
+  /// وكلاهما لا يظهر على الشاشة: الفاتورةُ تبدو سليمةً، والرقمُ الذي ينزل
+  /// هو **متوسّطُ تكلفة الصنف**.
+  PicPosInvoiceInitial _initialFromInvoice(
+    PurchaseInvoiceData invoice,
+    List<PurchaseInvoiceItemWithProduct> rows,
+  ) {
+    final gross = resolvePurchaseLineGross(
+      netPerLine: [for (final r in rows) r.item.quantity * r.item.unitCost],
+      explicitDiscountPerLine: [for (final r in rows) r.item.discount],
+      documentDiscount: invoice.discount,
+    );
+    final explicitSum =
+        rows.fold<double>(0, (a, r) => a + (r.item.discount > 0 ? r.item.discount : 0));
+    final headerOnly = invoice.discount - explicitSum;
+
+    return PicPosInvoiceInitial(
+      partyId: invoice.supplierId,
+      warehouseId: invoice.warehouseId,
+      costCenterId: invoice.costCenterId,
+      supplierInvoiceNumber: invoice.supplierInvoiceNumber ?? '',
+      notes: invoice.notes ?? '',
+      date: invoice.invoiceDate,
+      paid: invoice.paid,
+      paymentMethod: invoice.paymentMethod,
+      headerDiscount: headerOnly > 0 ? headerOnly : 0,
+      lines: [
+        for (var i = 0; i < rows.length; i++)
+          PicPosInvoiceLine(
+            productId: rows[i].item.productId,
+            productName: rows[i].product.name,
+            categoryId: rows[i].product.categoryId,
+            quantity: rows[i].item.quantity,
+            unitPrice: rows[i].item.quantity > 0
+                ? gross[i] / rows[i].item.quantity
+                : 0,
+            discount: rows[i].item.discount,
+            taxRate: rows[i].item.taxRate,
+            // سطرٌ معفىً يبقى معفىً: الحبّةُ تتبع المبلغَ المخزَّن لا النسبة.
+            taxEnabled: rows[i].item.taxAmount > 0,
+            unitName: rows[i].item.unitName ?? 'قطعة',
+          ),
+      ],
     );
   }
 
-  /// «فاتورة جديدة» على تصميم PicPos (‏2026-08-21).
+  /// يفتح شاشةَ التصميم الجديدة — **إنشاءً وتحريراً معاً**.
   ///
-  /// ⚠️ **ولا تلمس مسارَ المال**: تنتهي إلى `_handleSavePurchaseSimple`
-  /// نفسِها التي ينتهي إليها [createNewInvoice] القديم، بنفس الوسائط. فما
-  /// تبدّل هو العرضُ وحدَه.
+  /// 🔴 **ولماذا دالّةٌ واحدة:** كان التحريرُ يفتح `PurchaseInvoiceForm`
+  /// القديم، فكلُّ ما أُعيد تصميمُه — عمودُ الخصم، ومرآةُ الاستحقاق، وقشرةُ
+  /// الشاشة — **لا يُرى عند فتح فاتورةٍ للتعديل**. وأسوأُ من ذلك أنّ النموذجَ
+  /// القديمَ يحمل زرَّ «مسودة» بسلوكه القديم، ويملأ التكلفةَ من المخزَّن
+  /// (صافيةً) مع الخصم كاملاً فيُعاد توزيعُه.
   ///
-  /// والقديمُ [createNewInvoice] يبقى موصولاً بـ«تعديل» ولم يُحذَف: النموذجُ
-  /// الجديدُ للإنشاء فقط (اقرأ رأس `picpos_invoice_form.dart`).
-  Future<void> createNewInvoicePicPos() async {
+  /// [initial] تُبنى بـ[_initialFromInvoice] — وهي التي تعكس التخزينَ إلى
+  /// ما يقبله المحرّك.
+  Future<void> openPicPosInvoiceForm({
+    InvoiceEntity? editing,
+    PicPosInvoiceInitial? initial,
+  }) async {
     if (!mounted) return;
     // نفسُ حارسِ [createNewInvoice] — يغطّي الزرَّ و**F5** معاً.
+    //
+    // ⚠️ **والصلاحيةُ تتبع الفعل**: التحريرُ يعكس قيداً ويعيد ترحيلَه، فلا
+    // يحكمه إذنُ الإنشاء. والمحرّكُ يفرض `purchases_edit` عند الحفظ على
+    // أيّ حال، وهذا يمنع فتحَ شاشةٍ سيُرفَض حفظُها.
     if (!await ensurePermission(
-        ref, context, PermissionCodes.purchasesCreate,
-        actionName: 'فاتورة مشتريات جديدة')) {
+        ref,
+        context,
+        editing == null
+            ? PermissionCodes.purchasesCreate
+            : PermissionCodes.purchasesEdit,
+        actionName: editing == null
+            ? 'فاتورة مشتريات جديدة'
+            : 'تعديل فاتورة مشتريات')) {
       return;
     }
     if (!mounted) return;
@@ -168,8 +189,13 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
       // 🔴 **والمرشِّحُ `convertedToInvoiceId` لا الحالة**: الرابطُ هو
       // **واقعةُ** الاستهلاك، والحالةُ وسمٌ يُبدَّل بلا أن يقع شيء. وعرضُ
       // أمرٍ مستهلَكٍ يعِد المستخدمَ بسحبٍ سيرفضه المحرّكُ عند الحفظ.
+      //
+      // ⚠️ **ولا ربطَ على التحرير**: `updatePurchaseInvoice` لا يستهلك
+      // أمراً، فزرٌّ هنا يسحب بنوداً ويترك الأمرَ مفتوحاً — وهو عينُ
+      // العطب الذي حُرس في مسار الإنشاء.
       final openOrders = <PicPosPurchaseOrderOption>[];
-      if (AppConfig.allowedScreenIds.contains(ScreenId.purchaseOrders)) {
+      if (editing == null &&
+          AppConfig.allowedScreenIds.contains(ScreenId.purchaseOrders)) {
         try {
           final poRepo = ref.read(purchaseOrdersRepositoryProvider);
           final rows = await poRepo
@@ -238,7 +264,9 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
           systemTaxRate: taxRate,
           // الرقمُ يولّده الخادمُ تسلسليّاً عند الحفظ، فلا يُدَّعى رقمٌ
           // بعينه قبل أن يُحجَز.
-          invoiceNumberPreview: 'يُولَّد تلقائياً',
+          invoiceNumberPreview:
+              editing?.invoiceNumber ?? 'يُولَّد تلقائياً',
+          initial: initial,
           initialWarehouseId:
               warehouses.length == 1 ? warehouses.first.id : null,
           onCancel: () => Navigator.pop(dialogContext),
@@ -306,6 +334,7 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
               paymentMethod: paymentMethod,
               safeId: null,
               printAfterSave: printAfterSave,
+              editInvoiceId: editing?.id,
               // 🔴 يصل المحرّكَ فيستهلك الأمرَ في **نفس معاملة الفاتورة**.
               // ولو سقط هنا لبقي الأمرُ مفتوحاً بعد أن دخلت بضاعتُه.
               sourceOrderId: sourceOrderId,
@@ -340,64 +369,20 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
     }
   }
 
-  /// Edit existing invoice
+  /// Edit existing invoice — **بشاشة التصميم الجديدة**.
+  ///
+  /// كان يفتح `PurchaseInvoiceForm` القديم، فلا يرى المستخدمُ شيئاً ممّا
+  /// أُعيد تصميمُه حين يفتح فاتورةً قائمة.
   void editInvoice(InvoiceEntity invoice) async {
     final purchasesRepo = ref.read(purchasesRepositoryProvider);
-
-    // Fetch the raw invoice data for editing
     final rawInvoice = await purchasesRepo.getRawInvoiceById(invoice.id!);
-
     if (!mounted || rawInvoice == null) return;
+    final rows = await purchasesRepo.getInvoiceItemsWithProduct(invoice.id!);
+    if (!mounted) return;
 
-    showGeneralDialog(
-      context: context,
-      barrierDismissible: false,
-      barrierLabel: 'Edit Purchase Invoice',
-      transitionDuration: const Duration(milliseconds: 200),
-      pageBuilder: (context, anim1, anim2) => Scaffold(
-        body: PurchaseInvoiceForm(
-          editInvoice: rawInvoice,
-          onSave: ({
-            required int? partyId,
-            required String invoiceNumber,
-            required String supplierInvoiceNumber,
-            required DateTime date,
-            required double total,
-            required double discount,
-            required double tax,
-            required double netAmount,
-            required double paidAmount,
-            required String notes,
-            required List<Map<String, dynamic>> items,
-            required int? warehouseId,
-            required int? costCenterId,
-            required bool isDraft,
-            required String paymentMethod,
-            int? safeId,
-            bool printAfterSave = false,
-          }) async {
-            await _handleSavePurchaseSimple(
-              partyId: partyId,
-              invoiceNumber: invoiceNumber,
-              supplierInvoiceNumber: supplierInvoiceNumber,
-              date: date,
-              total: total,
-              discount: discount,
-              tax: tax,
-              netAmount: netAmount,
-              paidAmount: paidAmount,
-              notes: notes,
-              items: items,
-              warehouseId: warehouseId,
-              costCenterId: costCenterId,
-              editInvoiceId: invoice.id,
-              paymentMethod: paymentMethod,
-              safeId: safeId,
-              printAfterSave: printAfterSave,
-            );
-          },
-        ),
-      ),
+    await openPicPosInvoiceForm(
+      editing: invoice,
+      initial: _initialFromInvoice(rawInvoice, rows),
     );
   }
 

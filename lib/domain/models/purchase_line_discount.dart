@@ -62,3 +62,57 @@ List<double> resolvePurchaseLineNets({
   final factor = math.max(0.0, (base - residual) / base);
   return [for (final v in afterExplicit) v * factor];
 }
+
+/// عكسُ [resolvePurchaseLineNets] — الإجماليُّ من الصافي المخزَّن.
+///
+/// ═══ لماذا وُجدت ═══
+///
+/// المحرّكُ يخزّن تكلفةَ السطر **صافيةً** بعد توزيع الخصم، ويستقبل من
+/// النموذج تكلفةً **إجماليّةً** وخصمَ مستندٍ يوزّعه بنفسه. فشاشةُ التحرير
+/// التي تملأ حقولَها من المخزَّن حرفاً تعطيه صافياً وتقول له «وزّع» —
+/// **فيوزّع مرّةً ثانية**.
+///
+/// 🔴 **وكلُّ حفظٍ يخفّض التكلفة ثانيةً** ولو لم يُغيَّر حرف: ١٠٠ ← ٩٠ ←
+/// ٨١ ← … ولا يظهر على الشاشة، إنّما في **متوسّط تكلفة الصنف** — فيُضخَّم
+/// الربحُ في كلّ بيعةٍ تالية، ويردّ المرتجعُ أقلَّ ممّا دُفع.
+///
+/// ═══ والاشتقاق ═══
+///
+/// في الاتّجاه الأمام: `net_i = afterExplicit_i × (base − R) / base` حيث
+/// `base = Σ afterExplicit` و`R` الباقي من خصم المستند. ومنه:
+///
+///     Σnet = base − R           ⇒  base = Σnet + R
+///     afterExplicit_i = net_i × base / (base − R) = net_i × (Σnet + R) / Σnet
+///     gross_i         = afterExplicit_i + explicit_i
+///
+/// فالعكسُ **دقيقٌ** لا تقريبيّ: الدورةُ تُعيد نفسَ الأرقام حرفاً.
+///
+/// ⚠️ **وصافٍ مجموعُه صفرٌ لا يُعكَس**: خصمٌ استوعب القيمةَ كلَّها يمحو
+/// النِّسَبَ التي تُبنى عليها القسمة. فتُعاد الأصفارُ مضافاً إليها الصريحُ —
+/// وهو أقربُ ما يمكن بناؤه بلا اختراع.
+List<double> resolvePurchaseLineGross({
+  required List<double> netPerLine,
+  required List<double> explicitDiscountPerLine,
+  required double documentDiscount,
+}) {
+  assert(netPerLine.length == explicitDiscountPerLine.length);
+  if (netPerLine.isEmpty) return const [];
+
+  final explicitSum = explicitDiscountPerLine.fold<double>(
+      0, (a, d) => a + math.max(0.0, d));
+  final residual = math.max(0.0, documentDiscount - explicitSum);
+  final netSum = netPerLine.fold<double>(0, (a, v) => a + v);
+
+  if (residual <= 0 || netSum <= 0) {
+    return [
+      for (var i = 0; i < netPerLine.length; i++)
+        netPerLine[i] + math.max(0.0, explicitDiscountPerLine[i]),
+    ];
+  }
+
+  final expand = (netSum + residual) / netSum;
+  return [
+    for (var i = 0; i < netPerLine.length; i++)
+      netPerLine[i] * expand + math.max(0.0, explicitDiscountPerLine[i]),
+  ];
+}

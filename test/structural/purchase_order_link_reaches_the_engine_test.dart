@@ -65,6 +65,11 @@ void main() {
         reason: 'زرٌّ بلا من يجلب البنود');
     expect(gate.contains('widget.purchaseOrders.isNotEmpty'), isTrue,
         reason: 'زرٌّ بلا أوامرَ يربطها');
+    // 🔴 ولا ربطَ على فاتورةٍ قائمة: `updatePurchaseInvoice` لا يستهلك أمراً،
+    // فالسحبُ يترك الأمرَ مفتوحاً ليدخل ثانيةً. والشرطُ في **الودجت** لا عند
+    // المنادي وحدَه — شرطُ المنادي عُرفٌ يُنسى.
+    expect(gate.contains('!widget.isEdit'), isTrue,
+        reason: 'شريطُ الربط يُعرَض على فاتورةٍ قائمة');
 
     expect(_code(_linesPath).contains('class _PicPosOrderLinkBar'), isTrue,
         reason: 'الشريطُ نفسُه اختفى');

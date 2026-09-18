@@ -30,6 +30,7 @@ import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../invoice_form_picpos/picpos_invoice_form.dart';
 import '../../../domain/models/picpos_invoice_draft.dart';
 import '../../../domain/models/purchase_doc.dart';
+import '../../../domain/models/purchase_line_discount.dart';
 import '../../picpos_shell/picpos_content_card.dart';
 import '../../picpos_shell/picpos_totals_bar.dart';
 // نمطُ ديالوجات PicPos — الغلافُ وحوارُ التأكيد المشتركان.
@@ -131,7 +132,7 @@ class _PurchasesPicposScreenState extends ConsumerState<PurchasesPicposScreen>
     return AppShortcuts(
       searchFocusNode: _searchFocusNode,
       searchController: _searchController,
-      onNew: createNewInvoicePicPos, // شاشةُ التصميم الجديدة
+      onNew: openPicPosInvoiceForm, // شاشةُ التصميم الجديدة
       child: PicPosScreenScaffold(
         title: 'المشتريات',
         icon: PhosphorIconsBold.receipt,
@@ -155,7 +156,7 @@ class _PurchasesPicposScreenState extends ConsumerState<PurchasesPicposScreen>
           ),
           const SizedBox(width: 8),
           ElevatedButton.icon(
-            onPressed: createNewInvoicePicPos,
+            onPressed: openPicPosInvoiceForm,
             icon: const Icon(PhosphorIconsBold.plus, size: 18),
             label: const Text('فاتورة جديدة'),
           ),

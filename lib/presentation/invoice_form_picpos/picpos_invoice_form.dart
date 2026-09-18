@@ -132,6 +132,7 @@ class PicPosInvoiceForm extends StatefulWidget {
     this.availableStock,
     this.purchaseOrders = const [],
     this.onPullPurchaseOrder,
+    this.initial,
   })  :
         // 🔴 **فعلُ المسوّدة للمبيعات وحدَها** — قرارُ المالك 2026-09-19.
         //
@@ -201,6 +202,14 @@ class PicPosInvoiceForm extends StatefulWidget {
   /// وصنفٌ غائبٌ عن الخريطة يُتخطّى: قد يكون خدمةً لا تُخزَّن.
   final Map<int, double>? availableStock;
 
+  /// حالةُ البدء حين تُفتَح على فاتورةٍ قائمة — `null` ⇒ فاتورةٌ جديدة.
+  ///
+  /// ووجودُها يقلب تسميةَ الفعل إلى «حفظ التعديلات»: زرٌّ يقول «حفظ
+  /// الفاتورة» على تحريرٍ يوهم بإنشاء ثانية.
+  final PicPosInvoiceInitial? initial;
+
+  bool get isEdit => initial != null;
+
   @override
   State<PicPosInvoiceForm> createState() => _PicPosInvoiceFormState();
 }
@@ -243,6 +252,31 @@ class _PicPosInvoiceFormState extends State<PicPosInvoiceForm> {
     _warehouseId = widget.initialWarehouseId ??
         (widget.warehouses.length == 1 ? widget.warehouses.first.id : null);
     _costCenterId = widget.initialCostCenterId;
+
+    // ═══ التحرير: تُملأ الحقولُ كلُّها دفعةً ═══
+    //
+    // ⚠️ وبعد إسناد المخزن أعلاه لا قبلَه: حالةُ البدء أولى بالمخزن من
+    // الافتراضيّ، وإلّا انتقل التحريرُ إلى مخزنٍ آخرَ بلا أن يلمس أحدٌ شيئاً.
+    final init = widget.initial;
+    if (init != null) {
+      _lines.addAll(init.lines);
+      _partyId = init.partyId;
+      if (init.warehouseId != null) _warehouseId = init.warehouseId;
+      _costCenterId = init.costCenterId;
+      _supplierInvoiceController.text = init.supplierInvoiceNumber;
+      _notesController.text = init.notes;
+      if (init.date != null) _date = init.date!;
+      _paymentMethod = init.paymentMethod;
+      _discountController.text =
+          init.headerDiscount.toStringAsFixed(AppConstants.decimalPlaces);
+      _paidController.text =
+          init.paid.toStringAsFixed(AppConstants.decimalPlaces);
+      // 🔴 **والمسدَّدُ لا تُعيد التهيئةُ كتابتَه.** `picPosAutoPaid` تملأ
+      // الصافيَ ما لم يكتبه المستخدم، وعلى فاتورةٍ قائمةٍ يعني ذلك أن يصير
+      // المسدَّدُ كاملاً بمجرّد فتحها — فيُنشأ سندُ صرفٍ لم يُصدره أحد.
+      _paidTouched = true;
+    }
+
     // إعادةُ الرسم مع كلّ تغيّرٍ في الخصم أو المدفوع: الاثنان يغذّيان
     // المعادلةَ والمتبقي، فبقاؤهما بلا استماعٍ كان سيُجمِّد الأرقامَ على
     // قيمةٍ قديمةٍ بينما الحقلُ يُظهر جديدةً.
@@ -513,8 +547,13 @@ class _PicPosInvoiceFormState extends State<PicPosInvoiceForm> {
   ///
   /// ثلاثةُ شروطٍ معاً، وأيُّها ناقصٌ يعني زرّاً لا يفعل شيئاً: النمطُ شراءٌ،
   /// وثمّة أوامرُ مفتوحة، ومنادٍ يعرف كيف يجلب بنودَها.
+  /// 🔴 **ولا ربطَ على فاتورةٍ قائمة**: `updatePurchaseInvoice` لا يستهلك
+  /// أمراً، فزرٌّ هنا يسحب بنوداً ويترك الأمرَ مفتوحاً — ثمّ يحوّله أحدٌ من
+  /// شاشة الأوامر فتدخل البضاعةُ مرّتَين. والمنعُ هنا لا عند المنادي وحدَه:
+  /// شرطُ المنادي عُرفٌ يُنسى، وهذا عقدُ الودجت.
   bool get _canLinkPurchaseOrder =>
       !widget.kind.isSales &&
+      !widget.isEdit &&
       widget.onPullPurchaseOrder != null &&
       widget.purchaseOrders.isNotEmpty;
 

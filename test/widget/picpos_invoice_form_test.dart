@@ -41,6 +41,7 @@ void main() {
     Map<int, double>? availableStock,
     List<PicPosPurchaseOrderOption> purchaseOrders = const [],
     Future<List<PicPosInvoiceLine>> Function(int)? onPull,
+    PicPosInvoiceInitial? initial,
   }) async {
     // مقاسٌ واقعيٌّ لسطح المكتب: التصميمُ مرسومٌ على ١٩٢٠×١٠٨٠، والشاشةُ
     // تتفرّع إلى تخطيطٍ عريضٍ فوق ٩٦٠. والافتراضيُّ ٨٠٠×٦٠٠ كان يختبر
@@ -65,6 +66,7 @@ void main() {
           availableStock: availableStock,
           purchaseOrders: purchaseOrders,
           onPullPurchaseOrder: onPull,
+          initial: initial,
           onCancel: () {},
           onSave: ({
             required partyId,
@@ -482,6 +484,97 @@ void main() {
       await save(tester);
       expect(saves.single['paid'], saves.single['net'],
           reason: 'وإلّا عاد الدَّينُ من بابِ الكمّيّة');
+    });
+  });
+
+  // ═══ التحرير: الشاشةُ نفسُها تُفتَح على فاتورةٍ قائمة ══════════════════
+  //
+  // كان التحريرُ يفتح النموذجَ القديم، فلا يُرى شيءٌ ممّا أُعيد تصميمُه.
+  group('فتحُ فاتورةٍ قائمة', () {
+    final initial = PicPosInvoiceInitial(
+      partyId: 5,
+      warehouseId: 2,
+      supplierInvoiceNumber: 'SUP-311',
+      notes: 'ملاحظةٌ محفوظة',
+      date: DateTime(2026, 9, 8),
+      paid: 40,
+      paymentMethod: 'credit',
+      headerDiscount: 5,
+      lines: const [
+        PicPosInvoiceLine(
+          productId: 1,
+          productName: 'صنف تجريبي',
+          quantity: 3,
+          unitPrice: 70,
+          discount: 10,
+          taxRate: 14,
+        ),
+      ],
+    );
+
+    testWidgets('البنودُ والحقولُ تُملأ كلُّها دفعةً', (tester) async {
+      await pump(tester, kind: PicPosInvoiceKind.purchase, initial: initial);
+      expect(find.text('1 بند'), findsOneWidget);
+      expect(find.text('SUP-311'), findsOneWidget);
+      expect(find.text('شركة النيل'), findsWidgets,
+          reason: 'المورّدُ لم يُملأ — يُحفَظ التعديلُ على طرفٍ آخر');
+    });
+
+    testWidgets('وتسميةُ الفعل «حفظ التعديلات» لا «حفظ الفاتورة»',
+        (tester) async {
+      await pump(tester, kind: PicPosInvoiceKind.purchase, initial: initial);
+      expect(find.text('حفظ التعديلات'), findsOneWidget);
+      expect(find.text('حفظ الفاتورة'), findsNothing,
+          reason: 'زرٌّ يوهم بإنشاء فاتورةٍ ثانية');
+    });
+
+    testWidgets('🔴 والمسدَّدُ يبقى كما حُفظ — لا تدهسه التهيئةُ التلقائيّة',
+        (tester) async {
+      // `picPosAutoPaid` تملأ الصافيَ ما لم يكتبه المستخدم. وعلى فاتورةٍ
+      // قائمةٍ يعني ذلك أن يصير المسدَّدُ كاملاً بمجرّد فتحها — فيُنشأ سندُ
+      // صرفٍ لم يُصدره أحد.
+      final saves = await pump(tester,
+          kind: PicPosInvoiceKind.purchase, initial: initial);
+      await tester.tap(find.text('حفظ التعديلات'));
+      await tester.pump();
+      expect(saves, hasLength(1));
+      expect(saves.single['paid'], 40.0,
+          reason: 'المسدَّدُ قفز إلى الصافي بمجرّد فتح الفاتورة');
+    });
+
+    testWidgets('وخصمُ الترويسة وخصمُ السطر لا يُجمعان مرّتَين',
+        (tester) async {
+      // 🔴 المُمرَّرُ = حقلُ الترويسة + خصومُ السطور. وحالةُ البدء تحمل
+      // **حقلَ الترويسة وحدَه** (المنادي يطرح خصومَ السطور من المخزَّن)،
+      // فالمجموعُ هنا ٥ + ١٠ = ١٥.
+      final saves = await pump(tester,
+          kind: PicPosInvoiceKind.purchase, initial: initial);
+      await tester.tap(find.text('حفظ التعديلات'));
+      await tester.pump();
+      expect(saves.single['discount'], 15.0);
+      expect(saves.single['subtotal'], 210.0, reason: '٣ × ٧٠ قبل الخصم');
+    });
+
+    testWidgets('ولا شريطَ ربطِ أمرٍ على فاتورةٍ قائمة', (tester) async {
+      await pump(
+        tester,
+        kind: PicPosInvoiceKind.purchase,
+        initial: initial,
+        purchaseOrders: [
+          PicPosPurchaseOrderOption(
+            id: 77,
+            orderNumber: 'PO-00077',
+            supplierId: 5,
+            supplierName: 'شركة النيل',
+            orderDate: DateTime(2026, 9, 1),
+            total: 500,
+          ),
+        ],
+        onPull: (id) async => const [],
+      );
+      // ⚠️ `updatePurchaseInvoice` لا يستهلك أمراً، فربطٌ هنا يسحب بنوداً
+      // ويترك الأمرَ مفتوحاً ليدخل ثانيةً.
+      expect(find.text('ربط أمر شراء'), findsNothing);
     });
   });
 

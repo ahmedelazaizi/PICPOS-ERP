@@ -130,6 +130,47 @@ class PicPosNamedOption {
   final String name;
 }
 
+/// حالةُ البدء حين تُفتَح الشاشةُ على فاتورةٍ **قائمة** (تحرير).
+///
+/// ═══ ولماذا نوعٌ واحدٌ لا عشرةُ معاملات ═══
+///
+/// التحريرُ يملأ عشرةَ حقولٍ معاً، وأيُّ واحدٍ يُنسى يُحفَظ بقيمةٍ خاطئةٍ
+/// بلا رسالة: مخزنٌ يعود إلى الافتراضيّ، أو مسدَّدٌ يعود صفراً فيُنشأ سندٌ
+/// لم يُصدره أحد. فالحزمةُ واحدةٌ يقرؤها `initState` دفعةً.
+///
+/// 🔴 **و[headerDiscount] ليس `invoice.discount`.** المخزَّنُ هو **مجموعُ**
+/// الخصم (حقلُ الترويسة + خصومُ السطور)، والنموذجُ يجمعهما بنفسه
+/// (`PicPosInvoiceTotals.discountTotal`). فملءُ الحقل بالمجموع يحسبه
+/// **مرّتَين** — راجع [resolvePurchaseLineGross] وبانيَ هذه الحزمة عند
+/// المنادي.
+class PicPosInvoiceInitial {
+  const PicPosInvoiceInitial({
+    required this.lines,
+    this.partyId,
+    this.warehouseId,
+    this.costCenterId,
+    this.supplierInvoiceNumber = '',
+    this.notes = '',
+    this.date,
+    this.paid = 0,
+    this.paymentMethod = 'cash',
+    this.headerDiscount = 0,
+  });
+
+  final List<PicPosInvoiceLine> lines;
+  final int? partyId;
+  final int? warehouseId;
+  final int? costCenterId;
+  final String supplierInvoiceNumber;
+  final String notes;
+  final DateTime? date;
+  final double paid;
+  final String paymentMethod;
+
+  /// خصمُ المستند **بعد** طرح خصوم السطور منه.
+  final double headerDiscount;
+}
+
 /// أمرُ شراءٍ **مفتوحٌ** صالحٌ لأن تُسحَب بنودُه — الاتّجاهُ الجديد بقرار
 /// المالك 2026-09-18: من داخل الفاتورة ← اختَر أمراً، لا من الأمر ← أنشئ
 /// فاتورة.

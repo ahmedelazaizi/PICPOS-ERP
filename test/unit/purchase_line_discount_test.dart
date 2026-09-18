@@ -25,6 +25,7 @@
 import 'package:drift/drift.dart' show OrderingTerm, Value;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/data/database/database.dart';
+import 'package:ural_erp/domain/models/purchase_line_discount.dart';
 
 void main() {
   late AppDatabase db;
@@ -343,5 +344,70 @@ void main() {
     // ومتوسّطُ التكلفة يتبع ما كُتب فعلاً.
     final product = await db.getProductById(cheap);
     expect(product!.costPrice, closeTo(5.0, 0.001));
+  });
+
+  group('العكسُ يُغلق الدورة', () {
+    // ⚠️ **حسابٌ خالصٌ بلا قاعدة**: الدورةُ عبر القاعدة مقيسةٌ في
+    // `purchase_edit_discount_roundtrip_test`، وهذه تثبّت الخاصّيّةَ نفسَها
+    // على الصيغتَين مباشرةً فتُمسك الانحرافَ قبل أن يصل جدولاً.
+    void roundTrip(List<double> gross, List<double> explicit, double doc) {
+      final nets = resolvePurchaseLineNets(
+        grossPerLine: gross,
+        explicitDiscountPerLine: explicit,
+        documentDiscount: doc,
+      );
+      final back = resolvePurchaseLineGross(
+        netPerLine: nets,
+        explicitDiscountPerLine: explicit,
+        documentDiscount: doc,
+      );
+      for (var i = 0; i < gross.length; i++) {
+        expect(back[i], closeTo(gross[i], 0.0001),
+            reason: 'السطرُ $i لم يعد كما كان — وكلُّ حفظٍ يزيحه ثانيةً');
+      }
+    }
+
+    test('خصمُ مستندٍ وحدَه', () {
+      roundTrip([100, 900], [0, 0], 100);
+    });
+
+    test('وخصومُ أصنافٍ وحدَها', () {
+      roundTrip([100, 900], [50, 50], 100);
+    });
+
+    test('ومختلطٌ — صريحٌ وباقٍ يُوزَّع', () {
+      roundTrip([100, 900], [50, 0], 100);
+    });
+
+    test('وبلا خصمٍ إطلاقاً', () {
+      roundTrip([100, 900], [0, 0], 0);
+    });
+
+    test('وكسورٌ لا تقبل القسمة بلا باقٍ', () {
+      roundTrip([33.33, 66.67, 111.11], [0, 5.5, 0], 27.77);
+    });
+
+    test('وخصمٌ يستوعب القيمةَ كلَّها لا يرمي', () {
+      // ⚠️ الصافي صفرٌ فالنِّسَبُ ممحوّة، ولا سبيلَ لاستعادة التوزيع. المقيسُ
+      // أنّها لا ترمي ولا تُنتج `NaN` يُطبَع على مستند.
+      final back = resolvePurchaseLineGross(
+        netPerLine: const [0, 0],
+        explicitDiscountPerLine: const [0, 0],
+        documentDiscount: 1000,
+      );
+      expect(back, hasLength(2));
+      expect(back.every((v) => v.isFinite), isTrue);
+    });
+
+    test('وقائمةٌ فارغةٌ تعطي فارغة', () {
+      expect(
+        resolvePurchaseLineGross(
+          netPerLine: const [],
+          explicitDiscountPerLine: const [],
+          documentDiscount: 50,
+        ),
+        isEmpty,
+      );
+    });
   });
 }
