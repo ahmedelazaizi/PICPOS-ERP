@@ -27,6 +27,19 @@ enum PicPosInvoiceKind {
   /// تسميةُ عمود السعر — `priceLabel` في التصميم.
   String get priceLabel => isSales ? 'سعر البيع' : 'سعر الشراء';
 
+  /// هل يقبل مسارُ الحفظ خصماً **لكلّ سطر**؟
+  ///
+  /// 🔴 **بوّابةٌ واحدةٌ يقرؤها العمودُ وخريطةُ الحفظ معاً.** لو قرأ
+  /// كلٌّ منهما شرطَه الخاصَّ لانفصلا يوماً، والنتيجةُ أسوأُ الاثنين: عمودٌ
+  /// يُعرَض ويُكتَب فيه ولا يصل القاعدةَ — حقلٌ يبتلع ما يُكتَب فيه صامتاً.
+  /// وحارسٌ بنيويٌّ يثبّت أنّ الموضعَين يقرآن هذا الرمزَ بعينه.
+  ///
+  /// ⚠️ **والمشترياتُ وحدَها اليوم**: `createPurchaseInvoice`
+  /// يوزّع خصمَ السطر على التكلفة عبر `resolvePurchaseLineNets` (قرارُ
+  /// المالك 2026-09-18)، بينما `createSalesInvoice` لا يعرف خصماً إلّا على
+  /// المستند — فعمودٌ في المبيعات كان سيُبتلَع.
+  bool get supportsLineDiscount => this == PicPosInvoiceKind.purchase;
+
   /// عنوانُ بطاقة الدفع.
   String get payTitle => isSales ? 'التحصيل من العميل' : 'السداد للمورد';
 
@@ -112,12 +125,11 @@ class PicPosNamedOption {
 
 /// سطرُ بنودٍ واحد.
 ///
-/// ‏**لا خصمَ على مستوى السطر** رغم وجود العمود في التصميم وفي القاعدة
-/// (`PurchaseInvoiceItems.discount` و`SalesInvoiceItems.discount`): مسارُ
-/// الحفظ القائم لا يقرأ `item['discount']` ولا يحمل `PurchaseItemParams`
-/// حقلاً له، فالقيمةُ كانت ستُكتَب صفراً مهما أدخل المستخدم — حقلٌ يبتلع ما
-/// يُكتَب فيه صامتاً. والخصمُ على مستوى **المستند** يُحفَظ فعلاً، فهو
-/// المعروض. يُرفَع هذا حين يُمَدَّ العقدُ حتى القاعدة.
+/// ‏**والخصمُ لكلّ سطرٍ في المشتريات وحدَها** — راجع
+/// [PicPosInvoiceKind.supportsLineDiscount]. كان العمودُ موجوداً في التصميم
+/// وفي القاعدة (`PurchaseInvoiceItems.discount`) وبلا كاتب، فوُصل مسارُ
+/// الشراء حتى `resolvePurchaseLineNets` (قرارُ المالك 2026-09-18). ومسارُ
+/// المبيعات لم يُوصَل بعد، فلا يُعرَض له العمودُ أصلاً — لا يُعرَض ويُبتلَع.
 class PicPosInvoiceLine {
   const PicPosInvoiceLine({
     required this.productId,
@@ -128,6 +140,7 @@ class PicPosInvoiceLine {
     this.taxRate = 0,
     this.taxEnabled = false,
     this.unitName = 'قطعة',
+    this.discount = 0,
   });
 
   final int productId;
@@ -146,26 +159,53 @@ class PicPosInvoiceLine {
 
   final String unitName;
 
-  /// إجماليُّ السطر **قبل** الضريبة — نفسُ اصطلاح النموذجَين القائمَين
-  /// (`lineTotal` عندهما لا يشمل الضريبة).
+  /// خصمُ هذا السطر **مبلغاً** لا نسبةً — قرارُ المالك «يُثبَّت، لا مفتاح».
+  ///
+  /// ‏[appliedDiscount] هو ما يُحسَب ويُحفَظ؛ وهذا ما كتبه المستخدمُ خاماً.
+  final double discount;
+
+  /// إجماليُّ السطر **قبل** الضريبة و**قبل** الخصم — نفسُ اصطلاح النموذجَين
+  /// القائمَين (`lineTotal` عندهما لا يشمل الضريبة). وهو «المجموع» في شريط
+  /// الإجماليّات.
   double get lineSubtotal =>
       FinancialUtils.calculateLineSubtotal(quantity, unitPrice);
 
+  /// الخصمُ المطبَّقُ فعلاً — محصورٌ في [0, lineSubtotal].
+  ///
+  /// ⚠️ **والحصرُ هنا لا عند المنادي**: خصمٌ أكبرُ من قيمة السطر كان
+  /// يُنتج سطراً صافيه صفرٌ بينما ترويسةُ المستند تطرح المبلغَ كاملاً —
+  /// فتنفصل الترويسةُ عن سطورها. والمحرّكُ يحصره أيضاً
+  /// (`resolvePurchaseLineNets`)، فالحصرُ هنا يجعل المعروضَ هو المحفوظ.
+  double get appliedDiscount {
+    if (discount <= 0) return 0.0;
+    final cap = lineSubtotal;
+    return discount > cap ? cap : discount;
+  }
+
+  /// صافي السطر بعد خصمِه الصريح — وعاءُ الضريبة.
+  double get lineNet =>
+      FinancialUtils.round(lineSubtotal - appliedDiscount);
+
   /// ضريبةُ السطر — صفرٌ حين تُطفأ الحبّة.
+  ///
+  /// ⚠️ **على الصافي لا على الإجماليّ**: الخصمُ التجاريُّ يخفّض وعاءَ
+  /// الضريبة، فاحتسابُها على الإجماليّ يُقرّ ضريبةَ مدخلاتٍ لم تُدفَع.
+  /// وبلا خصمٍ يتطابق الوعاءان حرفاً.
   double get taxAmount => taxEnabled
-      ? FinancialUtils.calculateTaxAmount(lineSubtotal, taxRate)
+      ? FinancialUtils.calculateTaxAmount(lineNet, taxRate)
       : 0.0;
 
-  /// ما يُعرض في عمود «الإجمالي» — شاملاً ضريبةَ السطر كي يقرأ المستخدمُ
-  /// ما سيدفعه في هذا السطر لا نصفَه.
+  /// ما يُعرض في عمود «الإجمالي» — بعد الخصم وشاملاً ضريبةَ السطر كي يقرأ
+  /// المستخدمُ ما سيدفعه في هذا السطر لا نصفَه.
   double get lineTotalWithTax =>
-      FinancialUtils.round(lineSubtotal + taxAmount);
+      FinancialUtils.round(lineNet + taxAmount);
 
   PicPosInvoiceLine copyWith({
     double? quantity,
     double? unitPrice,
     bool? taxEnabled,
     String? unitName,
+    double? discount,
   }) =>
       PicPosInvoiceLine(
         productId: productId,
@@ -176,6 +216,7 @@ class PicPosInvoiceLine {
         taxRate: taxRate,
         taxEnabled: taxEnabled ?? this.taxEnabled,
         unitName: unitName ?? this.unitName,
+        discount: discount ?? this.discount,
       );
 
   /// الشكلُ الذي يفهمه مسارُ الحفظ القائم — **بمفاتيحَ مختلفةٍ بين النمطَين**.
@@ -201,6 +242,11 @@ class PicPosInvoiceLine {
       base['taxEnabled'] = taxEnabled;
       base['selectedUnitName'] = unitName;
     }
+    // 🔴 **نفسُ البوّابة التي يقرؤها العمود.** المفتاحُ لا يُكتَب لنمطٍ
+    // لا يقرؤه مسارُ حفظه — فلا يبقى في الخريطة رقمٌ يظنُّ قارئُه أنّه وصل.
+    if (kind.supportsLineDiscount) {
+      base['discount'] = appliedDiscount;
+    }
     return base;
   }
 }
@@ -213,6 +259,7 @@ class PicPosInvoiceTotals {
     required this.headerDiscount,
     required this.lineCount,
     required this.quantityTotal,
+    this.lineDiscount = 0,
   });
 
   /// مجموعُ السطور قبل الضريبة وقبل خصمِ المستند.
@@ -221,18 +268,28 @@ class PicPosInvoiceTotals {
   /// مجموعُ ضرائب السطور.
   final double tax;
 
-  /// خصمُ المستند — الخصمُ الوحيدُ الذي يصل القاعدةَ فعلاً (اقرأ
-  /// [PicPosInvoiceLine]).
+  /// خصمُ المستند — ما كُتب في حقل «خصم على الفاتورة» وحدَه.
   final double headerDiscount;
+
+  /// مجموعُ خصوم السطور الصريحة.
+  final double lineDiscount;
 
   final int lineCount;
   final double quantityTotal;
 
-  /// الصافي = الفرعي + الضريبة − خصمِ المستند.
+  /// الخصمُ المعروضُ في شريط الإجماليّات، وهو **ما يُمرَّر إلى المحرّك**.
+  ///
+  /// 🔴 **والمحرّكُ يقرأ خصمَ المستند على أنّه المجموع** ثمّ يحفر منه
+  /// خصمَ كلّ سطر (`resolvePurchaseLineNets`). فتمريرُ حقل الترويسة وحدَه
+  /// كان سيجعل ترويسةَ الفاتورة تقول «بلا خصم» وسطورَها مخصومة.
+  double get discountTotal =>
+      FinancialUtils.round(headerDiscount + lineDiscount);
+
+  /// الصافي = الفرعي + الضريبة − الخصمِ كلِّه.
   ///
   /// نفسُ ترتيب `_netAmount` في نموذج المشتريات القائم حرفاً بحرف. وعكسُ
   /// الترتيب (خصمٌ قبل ضريبة) كان سيعطي رقماً مختلفاً على نفس المدخلات.
-  double get net => FinancialUtils.round(subtotal + tax - headerDiscount);
+  double get net => FinancialUtils.round(subtotal + tax - discountTotal);
 
   /// المتبقي بعد ما دُفع — لا يقلّ عن صفر.
   double remainingAfter(double paid) =>
@@ -263,15 +320,18 @@ class PicPosInvoiceTotals {
     var subtotal = 0.0;
     var tax = 0.0;
     var qty = 0.0;
+    var lineDiscount = 0.0;
     for (final l in lines) {
       subtotal += l.lineSubtotal;
       tax += l.taxAmount;
       qty += l.quantity;
+      lineDiscount += l.appliedDiscount;
     }
     return PicPosInvoiceTotals(
       subtotal: FinancialUtils.round(subtotal),
       tax: FinancialUtils.round(tax),
       headerDiscount: headerDiscount,
+      lineDiscount: FinancialUtils.round(lineDiscount),
       lineCount: lines.length,
       quantityTotal: qty,
     );

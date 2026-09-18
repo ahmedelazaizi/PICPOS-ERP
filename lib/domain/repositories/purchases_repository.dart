@@ -126,6 +126,15 @@ class PurchaseItemParams {
   // UOM: conversion factor from selected unit to base unit
   final double quantityInBase; // e.g. 24 for carton=24 pieces
 
+  /// خصمُ هذا السطر **مبلغاً** — قرارُ المالك 2026-09-18 على تصميم فاتورة
+  /// المشتريات: الخصمُ لكلّ صنف.
+  ///
+  /// ⚠️ **وهو مبلغٌ على السطر كلِّه لا على الوحدة**، فلا يُقسَم على
+  /// `quantityInBase` كما تُقسَم [unitCost]. والمحرّكُ يوزّعه عبر
+  /// `resolvePurchaseLineNets` قبل أن يصل التكلفةَ وحركةَ المخزون ومتوسّطَ
+  /// التكلفة.
+  final double discount;
+
   const PurchaseItemParams({
     required this.productId,
     required this.quantity,
@@ -137,12 +146,24 @@ class PurchaseItemParams {
     this.expiryDate,
     this.unitName,
     this.quantityInBase = 1.0,
+    this.discount = 0,
   });
 
   /// Stock quantity in base units (e.g., 3 cartons × 24 = 72 pieces)
   double get stockQuantity => quantity * quantityInBase;
 
-  double get total => (quantity * unitCost) + taxAmount;
+  /// قيمةُ السطر قبل الخصم والضريبة.
+  double get grossSubtotal => quantity * unitCost;
+
+  /// الخصمُ المطبَّقُ فعلاً — محصورٌ في [0, grossSubtotal].
+  ///
+  /// خصمٌ أكبرُ من قيمة السطر كان سيُنتج `total` سالباً يُخزَّن كما هو.
+  double get appliedDiscount {
+    if (discount <= 0) return 0.0;
+    return discount > grossSubtotal ? grossSubtotal : discount;
+  }
+
+  double get total => (grossSubtotal - appliedDiscount) + taxAmount;
 }
 
 /// Parameters for updating a purchase invoice

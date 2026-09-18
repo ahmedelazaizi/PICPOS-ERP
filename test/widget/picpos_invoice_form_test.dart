@@ -79,6 +79,11 @@ void main() {
               'paid': paid,
               'items': items,
               'warehouseId': warehouseId,
+              // خصمُ المستند وفرعيُّه وضريبتُه — الثلاثةُ تصل المحرّكَ معاً،
+              // وقياسُ الصافي وحدَه لا يفرّق بين خصمٍ وصل وسعرٍ نزل.
+              'subtotal': subtotal,
+              'discount': discount,
+              'tax': tax,
             });
           },
         ),
@@ -462,6 +467,120 @@ void main() {
       await save(tester);
       expect(saves.single['paid'], saves.single['net'],
           reason: 'وإلّا عاد الدَّينُ من بابِ الكمّيّة');
+    });
+  });
+
+  // ═══ الخصمُ لكلّ صنف — قرارُ المالك 2026-09-18 ═══════════════════════════
+  //
+  // 🔴 **المقيسُ أنّ ما يُكتَب في العمود يصل نداءَ الحفظ**، لا أنّ العمودَ
+  // مرسوم. حقلٌ يُعرَض ولا يُقرأ هو عينُ العطب الذي كان مكتوباً في رأس
+  // `PicPosInvoiceLine` قبل هذا الوصل.
+  group('عمودُ الخصم', () {
+    /// يملأ ما يمنع حفظَ فاتورةِ مشترياتٍ عدا البنود.
+    Future<List<Map<String, dynamic>>> pumpPurchase(WidgetTester tester) async {
+      final saves = await pump(
+        tester,
+        kind: PicPosInvoiceKind.purchase,
+        initialWarehouseId: 2,
+      );
+      await tester.tap(find.text('اختر المورد'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('شركة النيل'));
+      await tester.pumpAndSettle();
+      // رقمُ فاتورةِ المورد مطلوبٌ للحفظ — وحقلُه بلا مفتاح، فيُلتقَط بتلميحه.
+      await tester.enterText(
+        find.byWidgetPredicate(
+            (w) => w is TextField && w.decoration?.hintText == 'مطلوب'),
+        'SUP-771',
+      );
+      await tester.pumpAndSettle();
+      await addLine(tester);
+      return saves;
+    }
+
+    Future<void> typeDiscount(WidgetTester tester, String v) async {
+      await tester.enterText(find.byKey(const ValueKey('discount_1')), v);
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('يظهر في المشتريات ولا يظهر في المبيعات', (tester) async {
+      await pump(tester, kind: PicPosInvoiceKind.purchase);
+      expect(find.text('الخصم'), findsOneWidget,
+          reason: 'قرارُ المالك: الخصمُ لكلّ صنف — يُثبَّت لا يُفتَح بمفتاح');
+
+      await pump(tester, kind: PicPosInvoiceKind.sales);
+      expect(find.text('الخصم'), findsNothing,
+          reason: 'مسارُ حفظ المبيعات لا يقرأ خصمَ سطرٍ — فعمودٌ هنا يبتلع');
+    });
+
+    testWidgets('وحقلُه غائبٌ عن صفِّ المبيعات لا معطَّلٌ فيه', (tester) async {
+      await pump(tester, kind: PicPosInvoiceKind.sales, initialWarehouseId: 2);
+      await addLine(tester);
+      expect(find.byKey(const ValueKey('discount_1')), findsNothing);
+    });
+
+    testWidgets('ما يُكتَب فيه يصل بندَ الحفظ', (tester) async {
+      final saves = await pumpPurchase(tester);
+      await typeDiscount(tester, '25');
+      await tester.tap(find.text('حفظ الفاتورة'));
+      await tester.pump();
+
+      expect(saves, hasLength(1), reason: 'الحفظُ مُنع لسببٍ غيرِ الخصم');
+      final items = saves.single['items'] as List<Map<String, dynamic>>;
+      expect(items.single['discount'], 25,
+          reason: 'العمودُ يُعرَض ويُكتَب فيه ولا يصل الحفظَ — حقلٌ يبتلع');
+    });
+
+    testWidgets('ويبلغ خصمَ المستند الذي يقرؤه المحرّك', (tester) async {
+      // 🔴 `resolvePurchaseLineNets` تقرأ خصمَ المستند على أنّه **المجموع**.
+      // فلو مُرّر حقلُ الترويسة وحدَه (صفرٌ هنا) لكتب المحرّكُ ترويسةً بلا
+      // خصمٍ وسطوراً مخصومة.
+      final saves = await pumpPurchase(tester);
+      await typeDiscount(tester, '25');
+      await tester.tap(find.text('حفظ الفاتورة'));
+      await tester.pump();
+      expect(saves.single['discount'], 25);
+    });
+
+    testWidgets('والصافي ينزل بالخصمِ **وبضريبتِه** معاً', (tester) async {
+      // ⚠️ **والنزولُ أكبرُ من الخصم بالضبط بضريبته.** السطرُ ٦٠ بضريبة ١٤٪
+      // ⇒ صافٍ ٦٨٫٤. وبخصمِ ٢٥ يصير الوعاءُ ٣٥ وضريبتُه ٤٫٩ ⇒ ٣٩٫٩.
+      // فالفرقُ ٢٨٫٥ = ٢٥ + ٣٫٥.
+      //
+      // 🔴 ولو حُسبت الضريبةُ على الإجماليّ لبقيت ٨٫٤ وصار الصافي ٤٣٫٤ —
+      // أي إقرارُ ضريبةِ مدخلاتٍ على مبلغٍ لم يُدفَع للمورّد.
+      final saves = await pumpPurchase(tester);
+      await tester.tap(find.text('حفظ الفاتورة'));
+      await tester.pump();
+      expect(saves.single['net'], closeTo(68.4, 0.001));
+      expect(saves.single['tax'], closeTo(8.4, 0.001));
+      saves.clear();
+
+      await typeDiscount(tester, '25');
+      await tester.tap(find.text('حفظ الفاتورة'));
+      await tester.pump();
+      expect(saves.single['net'], closeTo(39.9, 0.001),
+          reason: 'الخصمُ لا يبلغ الصافيَ — يرى المستخدمُ رقماً ويدفع آخر');
+      expect(saves.single['tax'], closeTo(4.9, 0.001),
+          reason: 'وعاءُ الضريبة لم ينزل بالخصم');
+      expect(saves.single['subtotal'], closeTo(60, 0.001),
+          reason: '«المجموع» قبل الخصم — والتصميمُ يعرضهما رقمَين منفصلَين');
+    });
+
+    testWidgets('وخصمٌ أكبرُ من قيمة السطر يُحصَر عند قيمته', (tester) async {
+      // بلا الحصر تطرح الترويسةُ مبلغاً لم يوجد في السطر، فينفصل المستندُ
+      // عن سطوره.
+      final saves = await pumpPurchase(tester);
+      await typeDiscount(tester, '9999');
+      await tester.tap(find.text('حفظ الفاتورة'));
+      await tester.pump();
+
+      final items = saves.single['items'] as List<Map<String, dynamic>>;
+      // سطرٌ واحدٌ بكمّيّة ١ وتكلفةِ ٦٠ (costPrice في التجهيزة).
+      expect(items.single['discount'], 60);
+      expect(saves.single['discount'], 60);
+      expect(saves.single['net'], 0);
     });
   });
 }

@@ -669,8 +669,27 @@ extension PurchaseDao on AppDatabase {
       //     valuation reconciliation stays tied.
       //   • A later purchase RETURN refunds the net cost, so a discounted
       //     invoice can no longer refund more cash than was ever paid.
-      final effectiveDiscount =
+      final requestedDiscount =
           discount > 0 ? FinancialUtils.round(discount) : 0.0;
+      // 🔴 **وخصمُ المستند لا يقلّ عن مجموع خصوم السطور.**
+      // [resolvePurchaseLineNets] تقرأ خصمَ المستند على أنّه **المجموع**
+      // وتحفر منه الصريحَ. فمنادٍ يمرّر خصومَ سطورٍ وخصمَ مستندٍ صفراً كان
+      // يحصل على سطورٍ مخصومةٍ وترويسةٍ **غيرِ مخصومة**: مجموعُ السطور ٩٠٠
+      // والترويسةُ ١٠٠٠. والفرقُ ذمّةٌ على المورّد لا يقابلها مخزونٌ دخل،
+      // ولا يمسكه فحصُ اتّزانٍ لأنّ القيدَ متّزنٌ على الرقم الخاطئ.
+      //
+      // ⚠️ **وبلا خصومِ سطورٍ يبقى المطلوبُ كما هو حرفاً** — فلا
+      // يتغيّر رقمٌ لأيّ منادٍ قائم (صندوقٌ صادرٌ · إعادةُ API · تحويلُ
+      // أمرِ شراء)، وهذا شرطُ الإصلاح لا أثرُه الجانبيّ.
+      var explicitLineDiscountSum = 0.0;
+      for (final it in items) {
+        final d = it.discount.present ? it.discount.value : 0.0;
+        if (d > 0) explicitLineDiscountSum += d;
+      }
+      explicitLineDiscountSum = FinancialUtils.round(explicitLineDiscountSum);
+      final effectiveDiscount = requestedDiscount > explicitLineDiscountSum
+          ? requestedDiscount
+          : explicitLineDiscountSum;
       if (effectiveDiscount > total) {
         throw StateError(
           'الخصم (${effectiveDiscount.toStringAsFixed(2)}) أكبر من إجمالي '
@@ -1183,8 +1202,19 @@ extension PurchaseDao on AppDatabase {
       // mirror's cached header matches what the server actually stored. This
       // path writes no stock/WAC (that is the server's job), so only the
       // header amounts need netting here.
-      final effectiveDiscount =
+      final requestedDiscount =
           discount > 0 ? FinancialUtils.round(discount) : 0.0;
+      // نفسُ قاعدةِ الإنشاء — وإلّا قالت ترويسةُ المرآة رقماً غيرَ الذي
+      // خزّنه الخادمُ لنفس الفاتورة.
+      var explicitLineDiscountSum = 0.0;
+      for (final it in items) {
+        final d = it.discount.present ? it.discount.value : 0.0;
+        if (d > 0) explicitLineDiscountSum += d;
+      }
+      explicitLineDiscountSum = FinancialUtils.round(explicitLineDiscountSum);
+      final effectiveDiscount = requestedDiscount > explicitLineDiscountSum
+          ? requestedDiscount
+          : explicitLineDiscountSum;
       total = FinancialUtils.round(total - effectiveDiscount);
       subtotalSum = FinancialUtils.round(subtotalSum - effectiveDiscount);
 
@@ -1571,8 +1601,18 @@ extension PurchaseDao on AppDatabase {
       // net `subtotal` also makes autoPostPurchase's _deriveBalancedLegs
       // compute discountLeg == 0 by construction, so the re-post debits
       // inventory net and credits only the payable.
-      final effectiveDiscount = FinancialUtils.round(
+      final requestedDiscount = FinancialUtils.round(
           discount ?? oldInvoice.discount);
+      // نفسُ قاعدةِ الإنشاء: خصمُ المستند لا يقلّ عن مجموع خصوم السطور.
+      var explicitLineDiscountSum = 0.0;
+      for (final it in items) {
+        final d = it.discount.present ? it.discount.value : 0.0;
+        if (d > 0) explicitLineDiscountSum += d;
+      }
+      explicitLineDiscountSum = FinancialUtils.round(explicitLineDiscountSum);
+      final effectiveDiscount = requestedDiscount > explicitLineDiscountSum
+          ? requestedDiscount
+          : explicitLineDiscountSum;
       final grossSubtotal = newTotal - newTaxTotal;
       if (effectiveDiscount > newTotal) {
         throw StateError(
@@ -1580,9 +1620,21 @@ extension PurchaseDao on AppDatabase {
           'الفاتورة (${newTotal.toStringAsFixed(2)}).',
         );
       }
-      final editDiscountFactor = (effectiveDiscount > 0 && grossSubtotal > 0)
-          ? (grossSubtotal - effectiveDiscount) / grossSubtotal
-          : 1.0;
+      // 🔴 **والتحريرُ يقرأ الصيغةَ نفسَها التي يقرؤها الإنشاء.** كان هنا
+      // معاملٌ نسبيٌّ مكتوبٌ بيده، فتحريرُ فاتورةٍ بخصومِ أصنافٍ كان يُعيد
+      // توزيعَها نسبيّاً ويمحو ما كتبه المستخدمُ لكلّ سطر — بلا رسالةٍ، ولا
+      // يظهر إلّا في متوسّط التكلفة بعد حين.
+      final lineNets = resolvePurchaseLineNets(
+        grossPerLine: [
+          for (final it in items)
+            (it.quantity.present ? it.quantity.value : 1.0) *
+                (it.unitCost.present ? it.unitCost.value : 0.0),
+        ],
+        explicitDiscountPerLine: [
+          for (final it in items) it.discount.present ? it.discount.value : 0.0,
+        ],
+        documentDiscount: effectiveDiscount,
+      );
       newTotal = FinancialUtils.round(newTotal - effectiveDiscount);
       final netSubtotal = FinancialUtils.round(grossSubtotal - effectiveDiscount);
 
@@ -1615,14 +1667,18 @@ extension PurchaseDao on AppDatabase {
           .where((id) => id > 0).toList();
       final newProductMap = await getProductsByIds(newProductIds);
 
-      for (final item in items) {
+      for (var lineAt = 0; lineAt < items.length; lineAt++) {
+        final item = items[lineAt];
         final productId = item.productId.present ? item.productId.value : 0;
         final quantity = item.quantity.present ? item.quantity.value : 1.0;
         // ح-1 (trade discount): apportion on the edit path too, so re-saving
         // never restores gross line costs into stock/WAC.
-        final unitCost = FinancialUtils.round(
-            (item.unitCost.present ? item.unitCost.value : 0.0) *
-                editDiscountFactor);
+        //
+        // 🔴 **ومرّةً واحدةً بالضبط** — الصريحُ وحصّتُه من الباقي معاً في
+        // [resolvePurchaseLineNets]، فلا ضربَ في معاملٍ هنا يُطبّقه ثانيةً.
+        final unitCost = quantity > 0
+            ? FinancialUtils.round(lineNets[lineAt] / quantity)
+            : 0.0;
         final taxRate = item.taxRate.present ? (item.taxRate.value ?? 0.0) : 0.0;
         // Spec 151 E-03: honour the passed per-line taxAmount (matching the
         // header loop above) instead of always recomputing from the rate, so an

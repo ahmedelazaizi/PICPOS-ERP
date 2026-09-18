@@ -148,7 +148,11 @@ class _PicPosMoneyPanel extends StatelessWidget {
                   runSpacing: 7,
                   children: [
                     _chip('الفرعي', f0(t.subtotal), Colors.white),
-                    _chip('خصم', '−${f0(t.headerDiscount)}', AppColors.warning),
+                    // الخصمُ المعروضُ هو **ما يُمرَّر إلى المحرّك**: حقلُ
+                    // الترويسة + خصومُ السطور. وعرضُ أحدهما وحدَه كان يُظهر
+                    // رقماً لا يطابق فرقَ «المجموع − الإجمالي» على الشاشة
+                    // نفسِها.
+                    _chip('خصم', '−${f0(t.discountTotal)}', AppColors.warning),
                     _chip(
                       // النسبةُ من الإعداد لا «١٤٪» مطبوعة — والتصميمُ كتبها
                       // قيمةَ عيّنةٍ لا عقداً.

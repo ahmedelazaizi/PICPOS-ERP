@@ -6,10 +6,28 @@ part of 'picpos_invoice_form.dart';
 /// نسختان منفصلتان كانتا ستنحرفان بأوّل تعديلٍ فتُزاح العناوينُ عن أعمدتها
 /// بلا ما يكسر بناءً — انحرافٌ لا يظهر إلا بالعين.
 const _kIdxW = 4;
-const _kNameW = 33;
+
+/// عمودُ الصنف — **وهو الذي يدفع ثمنَ عمود الخصم وحدَه**.
+///
+/// 🔴 عمودٌ ثامنٌ يُضاف بلا إعادةِ توزيعٍ يسرق من **كلّ** جارٍ بنسبته.
+/// وقياسٌ عند ١٢٠٠ بكسل: حقلُ الكمّيّة ينزل من ٢٠ بكسلاً إلى ٩ — حقلٌ
+/// لا يُكتَب فيه. فيُطرَح عرضُ الخصم من عرض الصنف، ويبقى مجموعُ
+/// النِّسَب ٩٥ في النمطَين، **فتتطابق أعرضةُ الأعمدة السبعة الأخرى
+/// بكسلاً بكسل**.
+///
+/// واسمُ الصنف يتحمّلها: سطران مع `ellipsis`، لا رقمٌ يُقرأ خطأً.
+int _nameW(PicPosInvoiceKind kind) =>
+    kind.supportsLineDiscount ? 33 - _kDiscW : 33;
 const _kUnitW = 10;
 const _kQtyW = 13;
 const _kPriceW = 12;
+
+/// عمودُ «الخصم» — **يُضاف ولا يُزيح**.
+///
+/// نِسَبُ الأعمدة الأخرى تُركت كما هي حرفاً، فنمطُ المبيعات (الذي لا عمودَ
+/// خصمٍ له) يبقى بتخطيطه السابق بلا إزاحةِ بكسل. راجع
+/// [PicPosInvoiceKind.supportsLineDiscount].
+const _kDiscW = 10;
 const _kTaxW = 10;
 const _kTotalW = 13;
 const double _kDelW = 42;
@@ -323,10 +341,11 @@ class _PicPosLinesTable extends StatelessWidget {
       child: Row(
         children: [
           cell('#', _kIdxW),
-          cell('الصنف', _kNameW),
+          cell('الصنف', _nameW(state.widget.kind)),
           cell('الوحدة', _kUnitW),
           cell('الكمية', _kQtyW),
           cell(state.widget.kind.priceLabel, _kPriceW),
+          if (state.widget.kind.supportsLineDiscount) cell('الخصم', _kDiscW),
           cell('الضريبة', _kTaxW),
           cell('الإجمالي', _kTotalW, align: TextAlign.end),
           const SizedBox(width: _kDelW),
@@ -499,7 +518,7 @@ class _LineRow extends StatelessWidget {
 
           // ── الصنف ───────────────────────────────────────────────────
           Expanded(
-            flex: _kNameW,
+            flex: _nameW(state.widget.kind),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Text(
@@ -634,6 +653,67 @@ class _LineRow extends StatelessWidget {
               ),
             ),
           ),
+
+          // ── الخصم — مبلغٌ لكلّ صنف (المشتريات وحدَها) ──────────────
+          //
+          // 🔴 **البوّابةُ هي عينُها التي تكتب المفتاحَ في خريطة الحفظ**
+          // (`PicPosInvoiceLine.toSaveMap`). فلا يُعرَض حقلٌ لنمطٍ لا يقرؤه
+          // مسارُ حفظه: المستخدمُ يكتب خصماً ويراه في الإجمالي ثمّ يُحفَظ
+          // بلا خصم.
+          if (state.widget.kind.supportsLineDiscount)
+            Expanded(
+              flex: _kDiscW,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Container(
+                  height: 32,
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  decoration: BoxDecoration(
+                    color: field,
+                    border: Border.all(
+                      color: line.appliedDiscount > 0
+                          ? AppColors.warning.withValues(alpha: .55)
+                          : theme.dividerColor,
+                    ),
+                    borderRadius: BorderRadius.circular(9),
+                  ),
+                  alignment: Alignment.centerRight,
+                  child: TextField(
+                    key: ValueKey('discount_${line.productId}'),
+                    controller: TextEditingController(
+                      text: line.appliedDiscount
+                          .toStringAsFixed(AppConstants.decimalPlaces),
+                    ),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    textAlign: TextAlign.right,
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                      color: line.appliedDiscount > 0
+                          ? AppColors.warning
+                          : null,
+                      fontFeatures: const [ui.FontFeature.tabularFigures()],
+                    ),
+                    decoration: const InputDecoration(
+                      isDense: true,
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    // ⚠️ **والقيمةُ المعروضةُ هي المحصورة**: خصمٌ أكبرُ من قيمة
+                    // السطر يُحصَر في `appliedDiscount`، فلو عُرض الخامُ لقرأ
+                    // المستخدمُ رقماً لا يُحفَظ.
+                    onSubmitted: (v) => state._updateLine(
+                      index,
+                      line.copyWith(
+                          discount:
+                              NumberUtils.tryParseLocale(v) ?? line.discount),
+                    ),
+                    onTapOutside: (_) => FocusScope.of(context).unfocus(),
+                  ),
+                ),
+              ),
+            ),
 
           // ── الضريبة — حبّةٌ تُنقَر للتبديل ──────────────────────────
           Expanded(

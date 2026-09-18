@@ -82,6 +82,11 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
           'expiryDate': it.expiryDate?.toIso8601String(),
           'unitName': it.unitName,
           'quantityInBase': it.quantityInBase,
+          // 🔴 **والخصمُ يسافر مع السطر.** الخادمُ هو من يوزّعه على التكلفة
+          // (`createPurchaseInvoice` عنده)، فإسقاطُه هنا كان يُنتج تكلفةً
+          // على الخادم أعلى من تكلفة نسخة العميل لنفس الفاتورة — ومتوسّطَ
+          // تكلفةٍ مختلفاً على الجهازَين.
+          'discount': it.appliedDiscount,
           // Feature 043 — line-level identity, shared with the local insert below.
           'globalId': itemGlobalIds[i],
         });
@@ -127,6 +132,7 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
           expiryDate: Value(it.expiryDate),
           unitName: Value(it.unitName),
           quantityInBase: Value(it.quantityInBase),
+          discount: Value(it.appliedDiscount),
           // Feature 043 — same identity as the JSON map sent to the server.
           globalId: Value(itemGlobalIds[i]),
         ));
@@ -172,6 +178,7 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
                   expiryDate: Value(i.expiryDate),
                   unitName: Value(i.unitName), // NEW: Capture unit name
                   quantityInBase: Value(i.quantityInBase), // NEW: Capture conversion factor
+                  discount: Value(i.appliedDiscount),
                 );
               },
             )
@@ -234,6 +241,9 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
                       expiryDate: Value(i.expiryDate),
                       unitName: Value(i.unitName),
                       quantityInBase: Value(i.quantityInBase),
+                      // بلا هذا يفقد التحريرُ خصومَ الأصناف كلَّها: الشاشةُ
+                      // تعرضها والمحفوظُ بلا شيء.
+                      discount: Value(i.appliedDiscount),
                     );
                   },
                 )

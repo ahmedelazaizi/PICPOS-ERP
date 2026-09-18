@@ -216,4 +216,132 @@ void main() {
     expect(lines[0].unitCost, closeTo(4.74, 0.01));
     expect(lines[1].unitCost, closeTo(85.26, 0.01));
   });
+
+  test('وخصومُ سطورٍ بلا خصمِ مستندٍ تُكتَب في الترويسة — لا تختفي', () async {
+    // 🔴 **ثغرةُ الثابت.** الصيغةُ تقرأ خصمَ المستند على أنّه **مجموعُ**
+    // الخصم، وتحفر منه الصريحَ. فمنادٍ يمرّر خصومَ سطورٍ وخصمَ مستندٍ صفراً
+    // يحصل على سطورٍ مخصومةٍ وترويسةٍ **غيرِ مخصومة**:
+    //
+    //     Σ(كمّيّة × تكلفة) = ٩٠٠   بينما   الترويسة: إجماليٌّ ١٠٠٠ وخصمٌ ٠
+    //
+    // وهذا انفصالُ سطورٍ عن ترويستها: الذمّةُ على المورّد ١٠٠٠ والمخزونُ
+    // دخل بـ٩٠٠، فالفرقُ ١٠٠ أصلٌ لا يقابله شيءٌ في الأستاذ — ولا يمسكه
+    // فحصُ اتّزانٍ لأنّ القيدَ متّزنٌ على الرقم الخاطئ.
+    //
+    // والعلاجُ أنّ خصمَ المستند **لا يقلّ** عن مجموع الصريح.
+    final warehouseId = (await db.getDefaultWarehouse())!.id;
+    final supplierId = await seedSupplier();
+    final cheap = await seedProduct('HDR-CHEAP');
+    final pricey = await seedProduct('HDR-PRICEY');
+
+    final invoiceId = await db.createPurchaseInvoice(
+      supplierId: supplierId,
+      warehouseId: warehouseId,
+      paid: 0.0,
+      // ⚠️ صفرٌ — والمنادي يعتمد على خصوم السطور وحدَها.
+      discount: 0.0,
+      items: [
+        PurchaseInvoiceItemsCompanion.insert(
+          invoiceId: 0,
+          productId: cheap,
+          quantity: 10.0,
+          unitCost: 10.0,
+          discount: const Value(50.0),
+          total: 100.0,
+        ),
+        PurchaseInvoiceItemsCompanion.insert(
+          invoiceId: 0,
+          productId: pricey,
+          quantity: 10.0,
+          unitCost: 90.0,
+          discount: const Value(50.0),
+          total: 900.0,
+        ),
+      ],
+    );
+
+    final header = await (db.select(db.purchaseInvoices)
+          ..where((i) => i.id.equals(invoiceId)))
+        .getSingle();
+    final lines = await linesOf(invoiceId);
+    final linesSum = lines.fold<double>(
+        0, (a, l) => a + l.quantity * l.unitCost);
+
+    expect(linesSum, closeTo(900.0, 0.01),
+        reason: 'السطورُ لم تأخذ خصمَها الصريح');
+    expect(header.discount, closeTo(100.0, 0.01),
+        reason: 'الترويسةُ تقول «بلا خصم» وسطورُها مخصومة');
+    expect(header.subtotal, closeTo(linesSum, 0.01),
+        reason: 'فرعيُّ الترويسة انفصل عن مجموع سطورها');
+    expect(header.total, closeTo(900.0, 0.01),
+        reason: 'ذمّةُ المورّد ١٠٠٠ والمخزونُ دخل بـ٩٠٠');
+  });
+
+  test('والتحريرُ يحفظ خصمَ كلِّ سطرٍ — لا يعيد توزيعَه نسبيّاً', () async {
+    // 🔴 **مسارُ التحرير كان يكتب الصيغةَ بيده.** `createPurchaseInvoice`
+    // رُبط بـ[resolvePurchaseLineNets]، و`updatePurchaseInvoice` بقي على
+    // معاملٍ نسبيٍّ واحدٍ يضرب كلَّ سطر. فمن أدخل خصماً لكلّ صنفٍ ثمّ فتح
+    // الفاتورةَ وحفظ — ولو بلا تغييرِ حرف — وجد خصومَه **مُعادَ توزيعِها**
+    // بلا رسالة. ولا يظهر ذلك على الشاشة: يظهر في متوسّط تكلفة الصنف بعد
+    // حين، وفي ما يردّه مرتجعٌ لاحق.
+    final warehouseId = (await db.getDefaultWarehouse())!.id;
+    final supplierId = await seedSupplier();
+    final cheap = await seedProduct('EDIT-CHEAP');
+    final pricey = await seedProduct('EDIT-PRICEY');
+
+    List<PurchaseInvoiceItemsCompanion> lines(int invoiceId) => [
+          PurchaseInvoiceItemsCompanion.insert(
+            invoiceId: invoiceId,
+            productId: cheap,
+            quantity: 10.0,
+            unitCost: 10.0,
+            discount: const Value(50.0),
+            total: 100.0,
+          ),
+          PurchaseInvoiceItemsCompanion.insert(
+            invoiceId: invoiceId,
+            productId: pricey,
+            quantity: 10.0,
+            unitCost: 90.0,
+            discount: const Value(50.0),
+            total: 900.0,
+          ),
+        ];
+
+    final invoiceId = await db.createPurchaseInvoice(
+      supplierId: supplierId,
+      warehouseId: warehouseId,
+      paid: 0.0,
+      discount: 100.0,
+      items: lines(0),
+    );
+
+    final adminId = (await db
+            .customSelect("SELECT id FROM users WHERE username = 'admin' LIMIT 1")
+            .getSingle())
+        .read<int>('id');
+
+    // حفظٌ بلا تغييرِ حرفٍ — نفسُ السطور ونفسُ الخصوم.
+    await db.updatePurchaseInvoice(
+      invoiceId: invoiceId,
+      supplierId: supplierId,
+      warehouseId: warehouseId,
+      paid: 0.0,
+      paymentMethod: 'credit',
+      discount: 100.0,
+      items: lines(invoiceId),
+      userId: adminId,
+    );
+
+    final edited = await linesOf(invoiceId);
+    expect(edited, hasLength(2));
+    expect(edited[0].unitCost, closeTo(5.0, 0.001),
+        reason: 'التحريرُ أعاد توزيعَ الخصم نسبيّاً — ٩.٠ بدل ٥.٠');
+    expect(edited[1].unitCost, closeTo(85.0, 0.001),
+        reason: 'التحريرُ أعاد توزيعَ الخصم نسبيّاً — ٨١.٠ بدل ٨٥.٠');
+
+    // ومتوسّطُ التكلفة يتبع ما كُتب فعلاً.
+    final product = await db.getProductById(cheap);
+    expect(product!.costPrice, closeTo(5.0, 0.001));
+  });
 }

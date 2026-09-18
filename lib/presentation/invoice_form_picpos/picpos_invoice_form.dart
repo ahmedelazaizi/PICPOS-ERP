@@ -330,7 +330,12 @@ class _PicPosInvoiceFormState extends State<PicPosInvoiceForm> {
         supplierInvoiceNumber: _supplierInvoiceController.text.trim(),
         date: _date,
         subtotal: t.subtotal,
-        discount: t.headerDiscount,
+        // 🔴 **الخصمُ كلُّه لا حقلُ الترويسة وحدَه.** المحرّكُ يقرأ هذا الرقمَ
+        // على أنّه مجموعُ الخصم ثمّ يحفر منه خصمَ كلّ سطر
+        // (`resolvePurchaseLineNets`). فتمريرُ حقل الترويسة وحدَه كان يجعل
+        // ترويسةَ الفاتورة تقول «بلا خصم» وسطورَها مخصومة — ذمّةٌ على المورّد
+        // لا يقابلها مخزونٌ دخل.
+        discount: t.discountTotal,
         tax: t.tax,
         net: t.net,
         // المحصورُ لا الخام: الحقلُ يقبل أيَّ رقم، والحفظُ لا يقبل سالباً
@@ -366,7 +371,7 @@ class _PicPosInvoiceFormState extends State<PicPosInvoiceForm> {
         notes: _notesController.text,
         items: _lines.map((l) => l.toSaveMap(widget.kind)).toList(),
         subtotal: t.subtotal,
-        discount: t.headerDiscount,
+        discount: t.discountTotal,
         tax: t.tax,
         net: t.net,
       );

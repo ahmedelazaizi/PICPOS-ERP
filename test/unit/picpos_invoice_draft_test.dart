@@ -18,6 +18,7 @@ void main() {
     double price = 100,
     double taxRate = 14,
     bool taxOn = false,
+    double discount = 0,
   }) =>
       PicPosInvoiceLine(
         productId: 7,
@@ -26,6 +27,7 @@ void main() {
         unitPrice: price,
         taxRate: taxRate,
         taxEnabled: taxOn,
+        discount: discount,
       );
 
   group('حسابُ السطر', () {
@@ -47,6 +49,119 @@ void main() {
 
     test('نسبةُ صفرٍ تعطي ضريبةَ صفرٍ ولو أُشعلت الحبّة', () {
       expect(line(taxRate: 0, taxOn: true).taxAmount, 0);
+    });
+  });
+
+  // ═══ الخصمُ لكلّ صنف — قرارُ المالك 2026-09-18 ═══════════════════════════
+  //
+  // كان `PurchaseInvoiceItems.discount` عموداً **بلا كاتبٍ وله قارئ**: طباعةُ
+  // المرتجع تقسّطه وتطبعه — صفراً منذ وُجد. ووُصل العمودُ حتى المحرّك عبر
+  // `resolvePurchaseLineNets`، وهذه الحزمةُ تحرس شطرَ الواجهة منه.
+  group('الخصمُ لكلّ صنف', () {
+    test('يخفّض صافيَ السطر ولا يمسّ المجموع', () {
+      final l = line(qty: 10, price: 10, discount: 50);
+      expect(l.lineSubtotal, 100,
+          reason: '«المجموع» في شريط الإجماليّات قبل الخصم — والتصميمُ '
+              'يعرض الخصمَ رقماً مستقلاً بجواره');
+      expect(l.appliedDiscount, 50);
+      expect(l.lineNet, 50);
+    });
+
+    test('والضريبةُ على الصافي لا على الإجماليّ', () {
+      // ⚠️ الخصمُ التجاريُّ يخفّض وعاءَ الضريبة. واحتسابُها على الإجماليّ
+      // يُقرّ ضريبةَ مدخلاتٍ لم تُدفَع — رقمٌ يذهب إلى إقرارٍ ضريبيّ.
+      final l = line(qty: 10, price: 10, discount: 50, taxRate: 14, taxOn: true);
+      expect(l.taxAmount, 7,
+          reason: '١٤٪ من ٥٠ = ٧. وعلى الإجماليِّ كانت ١٤ — ضِعفُ الحقيقة');
+      expect(l.lineTotalWithTax, 57);
+    });
+
+    test('وبلا خصمٍ لا يتغيّر رقمٌ واحد', () {
+      // 🔴 **مرساةُ عدمِ الارتداد.** المبيعاتُ كلُّها وكلُّ فاتورةِ شراءٍ بلا
+      // خصمِ أصنافٍ تمرّ من هنا، فأيُّ انزياحٍ هنا يغيّر فواتيرَ قائمة.
+      final l = line(qty: 2, price: 50, taxRate: 14, taxOn: true);
+      expect(l.appliedDiscount, 0);
+      expect(l.lineNet, l.lineSubtotal);
+      expect(l.taxAmount, 14);
+      expect(l.lineTotalWithTax, 114);
+    });
+
+    test('وخصمٌ أكبرُ من قيمة السطر يُحصَر ولا يقلبه سالباً', () {
+      // بلا الحصر: صافٍ سالبٌ يدخل حركةَ المخزون ومتوسّطَ التكلفة، ويطرح
+      // المستندُ مبلغاً لم يوجد في السطر أصلاً.
+      final l = line(qty: 10, price: 10, discount: 500);
+      expect(l.appliedDiscount, 100);
+      expect(l.lineNet, 0);
+      expect(l.lineTotalWithTax, 0);
+    });
+
+    test('وسالبٌ يُقرأ صفراً — لا خصماً يزيد القيمة', () {
+      expect(line(qty: 1, price: 100, discount: -30).appliedDiscount, 0);
+      expect(line(qty: 1, price: 100, discount: -30).lineNet, 100);
+    });
+  });
+
+  group('الخصمُ يعبر إلى مسار الحفظ — أو لا يُعرَض أصلاً', () {
+    test('المشتريات: المفتاحُ موجودٌ ويحمل المحصور', () {
+      final m = line(qty: 10, price: 10, discount: 50)
+          .toSaveMap(PicPosInvoiceKind.purchase);
+      expect(m['discount'], 50);
+    });
+
+    test('المبيعات: لا مفتاحَ إطلاقاً — لا صفرٌ ولا رقم', () {
+      // 🔴 `createSalesInvoice` لا يعرف خصماً إلّا على المستند. فمفتاحٌ يُكتَب
+      // ولا يُقرأ هو الشكلُ الأسوأ: قارئُه يظنّ أنّ القيمةَ وصلت.
+      final m = line(qty: 10, price: 10, discount: 50)
+          .toSaveMap(PicPosInvoiceKind.sales);
+      expect(m.containsKey('discount'), isFalse);
+    });
+
+    test('والبوّابةُ نفسُها في النمطَين', () {
+      expect(PicPosInvoiceKind.purchase.supportsLineDiscount, isTrue);
+      expect(PicPosInvoiceKind.sales.supportsLineDiscount, isFalse);
+    });
+
+    test('والمحصورُ هو ما يُحفَظ لا الخام', () {
+      final m = line(qty: 10, price: 10, discount: 900)
+          .toSaveMap(PicPosInvoiceKind.purchase);
+      expect(m['discount'], 100,
+          reason: 'المعروضُ محصورٌ والمحفوظُ خامٌ ⇒ ترويسةٌ تطرح ٩٠٠ وسطورٌ '
+              'تطرح ١٠٠');
+    });
+  });
+
+  group('خصمُ السطور يبلغ إجماليَّ المستند', () {
+    test('الخصمُ المُمرَّر = حقلُ الترويسة + خصومُ السطور', () {
+      // 🔴 **وهذا ما يصل المحرّك.** `resolvePurchaseLineNets` تقرأ خصمَ
+      // المستند على أنّه **المجموع** ثمّ تحفر منه الصريحَ. فتمريرُ حقل
+      // الترويسة وحدَه كان يجعل الترويسةَ تقول «بلا خصم» وسطورَها مخصومة.
+      final t = PicPosInvoiceTotals.from(
+        [line(qty: 10, price: 10, discount: 50), line(qty: 10, price: 90)],
+        headerDiscount: 20,
+      );
+      expect(t.subtotal, 1000);
+      expect(t.lineDiscount, 50);
+      expect(t.headerDiscount, 20);
+      expect(t.discountTotal, 70);
+      expect(t.net, 930, reason: '١٠٠٠ + ٠ − ٧٠');
+    });
+
+    test('وبلا خصومِ سطورٍ يساوي المجموعُ حقلَ الترويسة حرفاً', () {
+      final t = PicPosInvoiceTotals.from(
+        [line(qty: 2, price: 50, taxRate: 14, taxOn: true)],
+        headerDiscount: 10,
+      );
+      expect(t.lineDiscount, 0);
+      expect(t.discountTotal, 10);
+      expect(t.net, 104);
+    });
+
+    test('ومجموعُ خصومِ السطور محصورٌ سطراً سطراً', () {
+      final t = PicPosInvoiceTotals.from(
+        [line(qty: 1, price: 100, discount: 500), line(qty: 1, price: 100)],
+      );
+      expect(t.lineDiscount, 100, reason: 'الحصرُ يقع على السطر لا على المجموع');
+      expect(t.net, 100);
     });
   });
 

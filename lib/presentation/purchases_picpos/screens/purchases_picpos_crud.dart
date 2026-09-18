@@ -412,6 +412,10 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
         taxRate: (item['taxRate'] as num?)?.toDouble() ?? 0,
         taxAmount: (item['taxAmount'] as num?)?.toDouble() ?? 0,
         unitName: item['selectedUnitName'] as String?,
+        // خصمُ الصنف — يكتبه عمودُ «الخصم» في النموذج
+        // (`PicPosInvoiceLine.toSaveMap`). وغيابُ المفتاح يعني نمطاً لا
+        // يدعمه، فصفرٌ هو الصواب لا خطأ.
+        discount: (item['discount'] as num?)?.toDouble() ?? 0,
       )).toList();
 
       final auth = ref.read(authProvider);

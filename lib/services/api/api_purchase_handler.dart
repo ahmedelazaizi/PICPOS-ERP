@@ -199,6 +199,9 @@ class ApiPurchaseHandler extends ApiHandlerBase {
           expiryDate: Value(expiryDate),
           unitName: Value(m['unitName'] as String?),
           quantityInBase: Value(parseDouble(m['quantityInBase'], 1.0)),
+          // خصمُ السطر — يصل الخادمَ ويوزّعه `resolvePurchaseLineNets`.
+          // وغيابُه من حمولةٍ قديمةٍ يعطي صفراً، وهو عينُ السلوك السابق.
+          discount: Value(parseDouble(m['discount'])),
           globalId: (lineGid != null && lineGid.isNotEmpty)
               ? Value(lineGid)
               : const Value.absent(),
@@ -1346,6 +1349,9 @@ class ApiPurchaseHandler extends ApiHandlerBase {
           expiryDate: Value(expiryDate),
           unitName: Value(m['unitName'] as String?),
           quantityInBase: Value(parseDouble(m['quantityInBase'], 1.0)),
+          // خصمُ السطر — يصل الخادمَ ويوزّعه `resolvePurchaseLineNets`.
+          // وغيابُه من حمولةٍ قديمةٍ يعطي صفراً، وهو عينُ السلوك السابق.
+          discount: Value(parseDouble(m['discount'])),
           globalId: (lineGid != null && lineGid.isNotEmpty)
               ? Value(lineGid)
               : const Value.absent(),
