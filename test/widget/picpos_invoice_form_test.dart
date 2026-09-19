@@ -31,7 +31,12 @@ void main() {
     // طرفٌ **بلا مهلة** — الحالةُ التي يجب ألّا تُعرَض فيها تواريخُ أصلاً.
     PicPosPartyOption(id: 6, name: 'مؤسسة الفور', meta: 'نقدي'),
   ];
-  const warehouses = [PicPosNamedOption(id: 2, name: 'المخزن الرئيسي')];
+  // ⚠️ **ومعه اسمُ فرعه**: حقلُ «الفرع» مقفولٌ على فرع المخزن (تصميمُ
+  //    المالك `12.02.29`)، فالمخزنُ هو مَن يحمله.
+  const warehouses = [
+    PicPosWarehouseOption(
+        id: 2, name: 'المخزن الرئيسي', branchName: 'الفرع الرئيسي'),
+  ];
 
   /// يبني الشاشةَ ويعيد سجلَّ نداءات الحفظ.
   Future<List<Map<String, dynamic>>> pump(

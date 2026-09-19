@@ -170,6 +170,16 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
       final costCenters = await ref
           .read(allCostCentersProvider.future)
           .timeout(const Duration(seconds: 10));
+      // أسماءُ الفروع — لحقل «الفرع» المقفول على فرع المخزن.
+      //
+      // ⚠️ **خريطةٌ لا قائمة**: الحقلُ يسأل عن فرعِ مخزنٍ بعينه، والبحثُ
+      //    الخطّيُّ في كلّ إعادة بناءٍ داخلَ ودجتٍ تُبنى مع كلّ حرف.
+      final branchNames = <int, String>{
+        for (final b in await ref
+            .read(allBranchesProvider.future)
+            .timeout(const Duration(seconds: 10)))
+          b.id: b.name,
+      };
       // النسبةُ من الإعداد لا رقمٌ مطبوع — «١٤٪» في التصميم قيمةُ عيّنة.
       //
       // ⚠️ **مئويّةٌ لا كسر**: `PicPosInvoiceForm` تعرضها بـ
@@ -255,7 +265,12 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
           ],
           warehouses: [
             for (final w in warehouses)
-              PicPosNamedOption(id: w.id, name: w.name),
+              PicPosWarehouseOption(
+                id: w.id,
+                name: w.name,
+                branchName:
+                    w.branchId == null ? null : branchNames[w.branchId],
+              ),
           ],
           costCenters: [
             for (final c in costCenters)

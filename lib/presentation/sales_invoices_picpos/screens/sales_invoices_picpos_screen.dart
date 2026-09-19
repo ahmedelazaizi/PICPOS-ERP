@@ -50,6 +50,8 @@ import '../../screens/widgets/sales_invoices/sales_invoice_form.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
 // تصميمُ 2026-08-21 — شاشةُ «فاتورة جديدة» المشتركة بين النمطَين.
 import '../../invoice_form_picpos/picpos_invoice_form.dart';
+// نموذجُ سطرِ الطباعة — لمعاينة A4 قبل الحفظ.
+import '../../../services/printing/printing_models.dart' as print_models;
 import '../../../domain/models/picpos_invoice_draft.dart';
 import '../../shared_widgets/whatsapp_send_dialog.dart';
 import '../../../domain/models/whatsapp_message.dart';

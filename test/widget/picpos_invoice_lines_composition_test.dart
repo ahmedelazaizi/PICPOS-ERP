@@ -85,7 +85,8 @@ Future<_Pumped> _pumpAt(
             ),
           ],
           warehouses: const [
-            PicPosNamedOption(id: 2, name: 'المستودع الرئيسي'),
+            PicPosWarehouseOption(
+                id: 2, name: 'المستودع الرئيسي', branchName: 'الفرع الرئيسي'),
           ],
           costCenters: const [],
           systemTaxRate: 14,

@@ -794,6 +794,31 @@ class _PicPosMoneyPanel extends StatelessWidget {
               ),
               const SizedBox(width: 9),
             ],
+            if (state.widget.onPreviewA4 != null) ...[
+              Expanded(
+                child: SizedBox(
+                  height: 40,
+                  child: OutlinedButton.icon(
+                    onPressed: busy ? null : state._previewA4,
+                    icon: const Icon(PhosphorIconsBold.filePdf, size: 14),
+                    label: const Text(
+                      // ‏«معاينة» لا «طباعة»: لا مستندَ بعد، والورقةُ موسومةٌ
+                      // «غير محفوظة» وبلا رقم — الرقمُ يُولَّد في معاملة الحفظ.
+                      'معاينة A4',
+                      style: TextStyle(
+                          fontSize: 12, fontWeight: FontWeight.w700),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: theme.dividerColor),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(11),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 9),
+            ],
             Expanded(
               child: SizedBox(
                 height: 40,

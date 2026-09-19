@@ -548,6 +548,16 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
     // appears in the branch's invoice list. القاعدةُ نفسُها في
     // `narrowWarehousesToClientBranch` — كانت منسوخةً هنا وفي التوأم الكامل،
     // وبقيت نافذةُ فاتورة المشتريات بلا حصر.
+    // أسماءُ الفروع — لحقل «الفرع» المقفول على فرع المخزن.
+    //
+    // ⚠️ **يُقرأ من القاعدة لا من مزوِّدٍ بارد**: `allBranchesProvider` مجرىً
+    //    `autoDispose`، و`.value` عليه قبل أن يبثّ تُرجع `null` فيبدو كلُّ
+    //    مخزنٍ بلا فرع. وهذا المسارُ غيرُ متزامنٍ أصلاً فلا يدفع ثمناً.
+    final branchNames = <int, String>{
+      for (final b in await ref.read(databaseProvider).getBranches())
+        b.id: b.name,
+    };
+
     List<WarehouseData> filteredWarehouses = activeWarehouses;
     if (SyncInterceptor.isClientMode) {
       final prefs = await SharedPreferences.getInstance();
@@ -655,6 +665,7 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
                 customers: customersList,
                 rawProducts: products,
                 warehouses: filteredWarehouses,
+                branchNames: branchNames,
                 costCenters: costCentersList,
                 systemTaxPercent: systemTaxPercent,
               ),
@@ -680,6 +691,7 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
     required List<Party> customers,
     required List<Product> rawProducts,
     required List<WarehouseData> warehouses,
+    required Map<int, String> branchNames,
     required List<CostCenter> costCenters,
     /// **مئويّةٌ** (‏١٦) لا كسر (‏٠٫١٦) — انظر [posDefaultTaxPercentProvider].
     required double systemTaxPercent,
@@ -712,7 +724,14 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
           ),
       ],
       warehouses: [
-        for (final w in warehouses) PicPosNamedOption(id: w.id, name: w.name),
+        for (final w in warehouses)
+          PicPosWarehouseOption(
+            id: w.id,
+            name: w.name,
+            // مخزنٌ عامٌّ (`branch_id = NULL`) يُختَم على فاتورته فرعٌ فارغٌ
+            // فتسقط من كلّ تقريرٍ مرشَّحٍ بفرع — والحقلُ يقولها قبل الحفظ.
+            branchName: w.branchId == null ? null : branchNames[w.branchId],
+          ),
       ],
       costCenters: [
         for (final c in costCenters)
@@ -766,6 +785,53 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
           warehouseId: warehouseId,
           costCenterId: costCenterId,
         );
+      },
+      // 🔴 **معاينةُ A4 قبل الحفظ** — قرارُ المالك على تصميم `12.02.29`.
+      //
+      //    والورقةُ **بلا رقمٍ وموسومةٌ «غير محفوظة»**: الرقمُ يُولَّد داخلَ
+      //    معاملة الحفظ (‏Spec 066)، فتخمينُه يُخرج ورقةً تبدو مستنداً
+      //    ضريبيّاً برقمٍ قد يذهب لفاتورة عميلٍ آخر. والقاعدةُ في
+      //    `previewSalesInvoiceA4` لا هنا — فلا تُنسَخ في كلّ منادٍ.
+      onPreviewA4: ({
+        required int? partyId,
+        required DateTime date,
+        required List<Map<String, dynamic>> items,
+        required double subtotal,
+        required double discount,
+        required double tax,
+        required double net,
+        required double paid,
+        required String notes,
+      }) async {
+        final customer =
+            customers.where((c) => c.id == partyId).firstOrNull;
+        final ok = await ref.read(printingServiceProvider).previewSalesInvoiceA4(
+              date: date,
+              customerName: customer?.name,
+              items: [
+                for (final it in items)
+                  print_models.InvoiceItem(
+                    name: (it['productName'] as String?) ?? '',
+                    quantity: (it['quantity'] as num?)?.toDouble() ?? 0,
+                    price: (it['unitPrice'] as num?)?.toDouble() ?? 0,
+                    // إجماليُّ السطر كما يعرضه الجدولُ — لا حسابٌ ثانٍ
+                    // يعطي ورقةً تخالف الشاشة.
+                    total: (it['lineTotal'] as num?)?.toDouble() ??
+                        (((it['quantity'] as num?)?.toDouble() ?? 0) *
+                            ((it['unitPrice'] as num?)?.toDouble() ?? 0)),
+                  ),
+              ],
+              subtotal: subtotal,
+              discount: discount,
+              tax: tax,
+              total: net,
+              paid: paid,
+              notes: notes,
+            );
+        if (!ok && ctx.mounted) {
+          AppToast.show(ctx, 'تعذّرت معاينة الفاتورة',
+              type: ToastType.warning);
+        }
       },
       onSaveDraft: ({
         required int? partyId,

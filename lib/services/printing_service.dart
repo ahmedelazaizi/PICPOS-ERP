@@ -33,6 +33,33 @@ abstract class IPrintingService {
   /// Print an A4 purchase invoice — mirrors [printSalesInvoiceA4] but for
   /// the purchases flow so both screens share the same save-and-print path.
   Future<bool> printPurchaseInvoiceA4(int invoiceId);
+
+  /// معاينةُ A4 لفاتورة مبيعاتٍ **لم تُحفَظ بعد** — تصميمُ المالك `12.02.29`.
+  ///
+  /// ═══ ⚠️ ولماذا لا رقمَ على الورقة ═══
+  ///
+  /// رقمُ الفاتورة يُولَّد **داخلَ معاملة الحفظ** (‏Spec 066 — `generateInvoiceNumber`
+  /// والإدراجُ التابعُ له في نفس الدالّة). فقبل الحفظ لا رقمَ موجود، وتخمينُه
+  /// يعني ورقةً تبدو مستنداً ضريبيّاً برقمٍ قد يذهب لغيرها: يطبع المستخدمُ
+  /// «INV-1043» ثمّ يُحفَظ مستندُه «INV-1044» — ونسخةٌ ورقيّةٌ برقمٍ يخصّ
+  /// فاتورةَ عميلٍ آخر.
+  ///
+  /// فالورقةُ **موسومةٌ في عنوانها** «غير محفوظة» وخانةُ الرقم فيها شرطة.
+  ///
+  /// ⚠️ **ولا تُسجَّل في سجلّ النشاط**: السجلُّ يربط الطباعةَ بمستندٍ
+  /// (`entityId`)، ولا مستندَ هنا. وصفٌّ بلا معرِّفٍ يوهم بطباعة فاتورةٍ
+  /// حُفظت.
+  Future<bool> previewSalesInvoiceA4({
+    required DateTime date,
+    required String? customerName,
+    required List<print_models.InvoiceItem> items,
+    required double subtotal,
+    required double discount,
+    required double tax,
+    required double total,
+    required double paid,
+    String? notes,
+  });
 }
 
 class PrintingServiceImpl implements IPrintingService {
@@ -40,6 +67,45 @@ class PrintingServiceImpl implements IPrintingService {
   final SalesRepository salesRepository;
 
   PrintingServiceImpl(this.db, this.salesRepository);
+
+  @override
+  Future<bool> previewSalesInvoiceA4({
+    required DateTime date,
+    required String? customerName,
+    required List<print_models.InvoiceItem> items,
+    required double subtotal,
+    required double discount,
+    required double tax,
+    required double total,
+    required double paid,
+    String? notes,
+  }) async {
+    try {
+      final s = await db.getReceiptSettings();
+      return await InvoiceGenerator.printSalesInvoice(
+        // 🔴 شرطةٌ لا رقمٌ مخمَّن — راجع عقدَ [IPrintingService.previewSalesInvoiceA4].
+        invoiceNumber: '—',
+        title: 'معاينة فاتورة مبيعات — غير محفوظة',
+        date: date,
+        customerName: customerName,
+        items: items,
+        subtotal: subtotal,
+        discount: discount,
+        tax: tax,
+        total: total,
+        paid: paid,
+        companyName: s.companyName,
+        companyAddress: s.companyAddress,
+        companyPhone: s.companyPhone,
+        companyTaxId: s.taxNumber,
+        notes: notes,
+        db: db,
+      );
+    } catch (e) {
+      logger.warning('A4 preview failed: $e');
+      return false;
+    }
+  }
 
   @override
   Future<bool> printSalesInvoiceA4(int invoiceId) async {

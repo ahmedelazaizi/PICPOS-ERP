@@ -198,8 +198,13 @@ void main() {
         'lib/presentation/invoice_form_picpos/picpos_invoice_form.dart');
     expect(form.contains('discount: t.headerDiscount'), isFalse,
         reason: 'النموذجُ يمرّر حقلَ الترويسة وحدَه');
-    expect('discount: t.discountTotal'.allMatches(form).length, 2,
-        reason: 'الحفظُ أو المسوّدةُ ما زال يمرّر حقلَ الترويسة وحدَه');
+    // ⚠️ **ثلاثةٌ منذ 2026-09-19**: الحفظُ · المسوّدةُ · و**معاينةُ A4**
+    //    (تصميمُ المالك `12.02.29`). والمعاينةُ تُحسَب في العدّ عمداً: ورقةٌ
+    //    تعرض خصمَ الترويسة وحدَه بينما يُحفَظ المجموعُ تُخالف المستندَ الذي
+    //    خرجت لتعاينه — وهو عينُ العطب في مكانٍ يراه المستخدمُ أوّلاً.
+    expect('discount: t.discountTotal'.allMatches(form).length, 3,
+        reason: 'أحدُ المسارات الثلاثة (حفظٌ · مسوّدةٌ · معاينة) ما زال '
+            'يمرّر حقلَ الترويسة وحدَه');
 
     final draft = _code(_kindPath);
     expect(

@@ -113,6 +113,23 @@ Color _fHero(BuildContext context) =>
         ? const Color(0xFF10305F)
         : AppColors.primaryDark;
 
+/// معاينةُ A4 **قبل الحفظ** — قرارُ المالك على تصميم `12.02.29`.
+///
+/// ⚠️ **بلا رقمِ مستند**: الرقمُ يُولَّد داخلَ معاملة الحفظ (‏Spec 066)، فلا
+/// رقمَ يُطبَع قبلها. وتخمينُه على ورقةٍ تبدو مستنداً ضريبيّاً أسوأُ من عدم
+/// المعاينة: يطبع المستخدمُ «INV-1043» ثمّ يُحفَظ المستندُ برقمٍ آخر.
+typedef PicPosInvoicePreviewCallback = Future<void> Function({
+  required int? partyId,
+  required DateTime date,
+  required List<Map<String, dynamic>> items,
+  required double subtotal,
+  required double discount,
+  required double tax,
+  required double net,
+  required double paid,
+  required String notes,
+});
+
 class PicPosInvoiceForm extends StatefulWidget {
   const PicPosInvoiceForm({
     super.key,
@@ -126,6 +143,7 @@ class PicPosInvoiceForm extends StatefulWidget {
     required this.onSave,
     required this.onCancel,
     this.onSaveDraft,
+    this.onPreviewA4,
     this.userName = '',
     this.initialWarehouseId,
     this.initialCostCenterId,
@@ -151,6 +169,12 @@ class PicPosInvoiceForm extends StatefulWidget {
 
   final PicPosInvoiceKind kind;
 
+  /// معاينةُ A4 قبل الحفظ — `null` ⇒ لا زرَّ لها.
+  ///
+  /// ⚠️ **والزرُّ يتبع الرابطَ لا النمط**: مسارُ المعاينة مبنيٌّ للمبيعات
+  /// وحدَها في هذه الدفعة، وزرٌّ يُعرَض بلا ما ينفّذه أسوأُ من غيابه.
+  final PicPosInvoicePreviewCallback? onPreviewA4;
+
   /// أوامرُ الشراء **المفتوحة** — فارغةٌ تعني «لا ربطَ في هذا النطاق».
   ///
   /// ⚠️ شاشةُ أوامر الشراء في نطاق `unified` وحدَه، والترشيحُ يقع عند
@@ -166,7 +190,7 @@ class PicPosInvoiceForm extends StatefulWidget {
 
   final List<PicPosPartyOption> parties;
   final List<PicPosProductOption> products;
-  final List<PicPosNamedOption> warehouses;
+  final List<PicPosWarehouseOption> warehouses;
   final List<PicPosNamedOption> costCenters;
 
   /// نسبةُ الضريبة من إعداد النظام — لا رقمٌ مطبوع.
@@ -330,6 +354,10 @@ class _PicPosInvoiceFormState extends State<PicPosInvoiceForm> {
   PicPosPartyOption? get _party =>
       widget.parties.where((p) => p.id == _partyId).firstOrNull;
 
+  /// المخزنُ المختار — مصدرُ «الفرع» المعروض.
+  PicPosWarehouseOption? get _selectedWarehouse =>
+      widget.warehouses.where((x) => x.id == _warehouseId).firstOrNull;
+
   /// تاريخُ الاستحقاق **مشتقٌّ** من مهلة الطرف وتاريخ الفاتورة — ح‑١.
   ///
   /// 🔴 **ولا يُحسَب هنا**: [resolveDueDateFromTerms] هي عينُ الدالّة التي
@@ -440,6 +468,35 @@ class _PicPosInvoiceFormState extends State<PicPosInvoiceForm> {
         paymentMethod: _paymentMethod,
         printAfterSave: printAfterSave,
         sourceOrderId: _sourceOrderId,
+      );
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  /// يفتح معاينةَ A4 بالقيم المعروضة — بلا حفظٍ وبلا رقم.
+  Future<void> _previewA4() async {
+    final cb = widget.onPreviewA4;
+    if (cb == null) return;
+    if (_lines.isEmpty) {
+      _toast('أضف صنفاً واحداً على الأقل قبل المعاينة');
+      return;
+    }
+    final t = _totals;
+    setState(() => _saving = true);
+    try {
+      await cb(
+        partyId: _partyId,
+        date: _date,
+        items: _lines.map((l) => l.toSaveMap(widget.kind)).toList(),
+        subtotal: t.subtotal,
+        // نفسُ الأرقام التي تذهب إلى الحفظ حرفاً — ورقةُ معاينةٍ تحسب
+        // بنفسها ليست معاينة.
+        discount: t.discountTotal,
+        tax: t.tax,
+        net: t.net,
+        paid: t.clampPaid(_paidRaw),
+        notes: _notesController.text,
       );
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -692,6 +749,30 @@ class _PicPosDocBar extends StatelessWidget {
           // بلا سهمٍ: عرضٌ لا اختيار (اقرأ `userName` في الودجت).
           trailing: null,
         ),
+      // 🔴 **الفرعُ مقفولٌ على فرع المخزن** — قرارُ المالك على تصميم
+      //    `12.02.29`.
+      //
+      //    وهو في المحرّك ليس اختياراً: `createSalesInvoice` و
+      //    `createPurchaseInvoice` كلاهما يشتقّ `branchId` من
+      //    `warehouses.branch_id` حين لا يمرّره المنادي — وهذه الشاشةُ لا
+      //    تمرّره. فمنتقي فرعٍ كان يَعِد بما لا يقع: يختار المستخدمُ فرعاً
+      //    ويُختَم المستندُ على فرع المخزن، ثمّ يبحث عنه في تقارير فرعٍ آخر.
+      _field(
+        context,
+        icon: PhosphorIconsBold.buildings,
+        label: 'الفرع',
+        value: state._selectedWarehouse == null
+            ? 'يتبع المخزن'
+            : (state._selectedWarehouse!.branchName ?? 'غير مخصّص لفرع'),
+        trailing: PhosphorIconsBold.lockSimple,
+        // ⚠️ مخزنٌ بلا فرعٍ ليس عطباً في العرض: المستندُ يُختَم
+        //    `branch_id = NULL` فيسقط من كلّ تقريرٍ مرشَّحٍ بفرع. وقولُ ذلك
+        //    قبل الحفظ أرخصُ من اكتشافه آخرَ الشهر.
+        valueColor: state._selectedWarehouse != null &&
+                state._selectedWarehouse!.branchName == null
+            ? AppColors.warning
+            : muted,
+      ),
       _field(
         context,
         icon: PhosphorIconsBold.warehouse,
