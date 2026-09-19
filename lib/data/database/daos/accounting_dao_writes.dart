@@ -898,18 +898,40 @@ extension AccountingDaoWritesExt on AppDatabase {
     required String name,
     required String accountType,
     int? parentId,
+
+    /// أبٌ لا يُرحَّل عليه (`view`) أم تفصيليٌّ يُرحَّل — اختيارُ مستخدمٍ لا
+    /// اشتقاق. راجع [kAccountNatureView].
+    String accountNature = kAccountNatureDetail,
   }) async {
     // Validate code uniqueness
     final existing = await getAccountByCode(code);
     if (existing != null) {
       throw Exception('رمز الحساب $code مستخدم بالفعل');
     }
+    // ═══ 🔴 حقولٌ يعرف النظامُ اشتقاقَها ولم يكن يشتقّها ═══════════════
+    //
+    // هجرةُ v110 تملأ `normal_balance` من `account_type` و`level` من عمق
+    // الأب بقاعدةٍ صريحة، **وهذا الكاتبُ كان يتركهما لافتراضات العمود**
+    // (`'debit'` و`1`). فحسابُ إيراداتٍ جديدٌ يخرج «مديناً» — يناقض قاعدةَ
+    // الهجرة نفسِها — وابنٌ في العمق الثالث يخرج بمستوى ١.
+    //
+    // ⚠️ والقاعدةُ من [normalBalanceFor]/[accountLevelUnder] لا مكتوبةً هنا:
+    // نسختان تفترقان بأوّل نوعٍ يُضاف.
+    final parentLevel = parentId == null
+        ? null
+        : (await (select(accounts)..where((a) => a.id.equals(parentId)))
+                .getSingleOrNull())
+            ?.level;
+
     return into(accounts).insert(
       AccountsCompanion.insert(
         code: code,
         name: name,
         accountType: accountType,
         parentId: Value(parentId),
+        accountNature: Value(accountNature),
+        normalBalance: Value(normalBalanceFor(accountType)),
+        level: Value(accountLevelUnder(parentLevel)),
         // UUID-First (Phase 1): stable cross-install identity for sync.
         globalId: Value(UuidV7.generate()),
       ),
@@ -918,13 +940,30 @@ extension AccountingDaoWritesExt on AppDatabase {
 
 
   /// Update an existing account
-  Future<int> updateAccount(int id, {String? name, String? code, bool? isActive, bool? isHiddenFromEntries}) {
+  Future<int> updateAccount(int id, {String? name, String? code, bool? isActive, bool? isHiddenFromEntries, String? accountNature}) async {
+    // 🔴 **وحسابٌ مُرحَّلٌ عليه لا يصير رئيسيّاً**: حارسُ v110 يرفض الترحيلَ
+    // على `view`، فتبديلُ الطبيعة بعد الترحيل يترك سطوراً قائمةً على حسابٍ
+    // يقول النظامُ إنّه لا يقبلها — لا تُعكَس ولا تُعدَّل، والدفترُ يحمل ما
+    // يمنعه. والفحصُ **قبل** الكتابة فلا يترك نصفَ تبديل.
+    if (accountNature == kAccountNatureView) {
+      final posted = await (selectOnly(journalEntryLines)
+            ..addColumns([journalEntryLines.id.count()])
+            ..where(journalEntryLines.accountId.equals(id)))
+          .map((r) => r.read(journalEntryLines.id.count()) ?? 0)
+          .getSingle();
+      if (posted > 0) {
+        throw Exception(
+            'لا يمكن جعل الحساب رئيسيّاً — عليه $posted سطرَ قيدٍ مُرحَّل');
+      }
+    }
+
     return (update(accounts)..where((a) => a.id.equals(id))).write(
       AccountsCompanion(
         name: name != null ? Value(name) : const Value.absent(),
         code: code != null ? Value(code) : const Value.absent(),
         isActive: isActive != null ? Value(isActive) : const Value.absent(),
         isHiddenFromEntries: isHiddenFromEntries != null ? Value(isHiddenFromEntries) : const Value.absent(),
+        accountNature: accountNature != null ? Value(accountNature) : const Value.absent(),
       ),
     );
   }

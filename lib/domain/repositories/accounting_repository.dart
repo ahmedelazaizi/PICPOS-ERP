@@ -10,8 +10,15 @@ abstract class IAccountingRepository {
   Stream<List<Account>> watchAllAccounts();
   Future<Account?> getAccountById(int id);
   Future<Account?> getAccountByCode(String code);
-  Future<int> createAccount({required String code, required String name, required String accountType, int? parentId});
-  Future<int> updateAccount(int id, {String? name, String? code, bool? isActive, bool? isHiddenFromEntries});
+  /// [accountNature]: `view` أبٌ لا يُرحَّل عليه · `detail` يُرحَّل.
+  ///
+  /// ⚠️ و`normalBalance` و`level` **مشتقّان** لا يُمرَّران: الأوّلُ من
+  /// [accountType] والثاني من عمق الأب — راجع `domain/models/account_facts`.
+  Future<int> createAccount({required String code, required String name, required String accountType, int? parentId, String accountNature});
+
+  /// ⚠️ وتبديلُ [accountNature] إلى `view` **يُرفَض** لحسابٍ عليه سطورُ قيدٍ
+  /// مُرحَّلة: حارسُ v110 يرفض الترحيلَ عليه، فتُحبَس سطورُه.
+  Future<int> updateAccount(int id, {String? name, String? code, bool? isActive, bool? isHiddenFromEntries, String? accountNature});
   Future<void> deleteAccount(int id);
   Future<List<Map<String, dynamic>>> getAccountLedger(int accountId, DateTime from, DateTime to, {int? costCenterId, int? branchId, Set<int>? allowedBranchIds});
 

@@ -3,6 +3,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/utils/uuid_v7.dart';
+import '../../domain/models/account_facts.dart';
 import '../../domain/repositories/accounting_repository.dart';
 import '../../services/activity_logger.dart';
 import '../../services/client_write_interceptor.dart';
@@ -28,7 +29,7 @@ class DriftAccountingRepository implements IAccountingRepository {
   Future<Account?> getAccountByCode(String code) => _db.getAccountByCode(code);
 
   @override
-  Future<int> createAccount({required String code, required String name, required String accountType, int? parentId}) async {
+  Future<int> createAccount({required String code, required String name, required String accountType, int? parentId, String accountNature = kAccountNatureDetail}) async {
     if (SyncInterceptor.isClientMode) {
       final id = await ClientWriteInterceptor.createAccount(
         code: code,
@@ -38,24 +39,31 @@ class DriftAccountingRepository implements IAccountingRepository {
       );
       return id ?? 0;
     }
-    return _db.createAccount(code: code, name: name, accountType: accountType, parentId: parentId);
+    return _db.createAccount(
+      code: code,
+      name: name,
+      accountType: accountType,
+      parentId: parentId,
+      accountNature: accountNature,
+    );
   }
 
   @override
-  Future<int> updateAccount(int id, {String? name, String? code, bool? isActive, bool? isHiddenFromEntries}) async {
+  Future<int> updateAccount(int id, {String? name, String? code, bool? isActive, bool? isHiddenFromEntries, String? accountNature}) async {
     if (SyncInterceptor.isClientMode) {
       await ClientWriteInterceptor.updateAccount(id, {
         'name': ?name,
         'code': ?code,
         'isActive': ?isActive,
         'isHiddenFromEntries': ?isHiddenFromEntries,
+        'accountNature': ?accountNature,
       });
       // Drift's updateAccount returns the affected row count; the
       // interceptor doesn't have that figure, so fall back to 1 on
       // success (the next DeltaPull will reconcile).
       return 1;
     }
-    return _db.updateAccount(id, name: name, code: code, isActive: isActive, isHiddenFromEntries: isHiddenFromEntries);
+    return _db.updateAccount(id, name: name, code: code, isActive: isActive, isHiddenFromEntries: isHiddenFromEntries, accountNature: accountNature);
   }
 
   @override

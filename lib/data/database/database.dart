@@ -17,6 +17,7 @@ import 'pg_compat_sql.dart';
 import 'wal_checkpoint.dart';
 import '../../domain/models/return_original_link.dart';
 import '../../domain/models/invoice_due_date.dart';
+import '../../domain/models/account_facts.dart';
 import '../../domain/models/journal_balance.dart';
 import '../../domain/models/purchase_line_discount.dart';
 import '../../services/security_service.dart';
