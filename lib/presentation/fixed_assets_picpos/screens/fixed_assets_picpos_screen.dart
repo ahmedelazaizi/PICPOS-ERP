@@ -39,10 +39,13 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/permissions/permission_codes.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../../../data/providers/providers.dart';
+import '../../../domain/models/asset_movement_types.dart';
 import '../../../domain/models/depreciation_math.dart';
 import '../../../domain/repositories/accounting_repository.dart';
 import '../../../domain/repositories/fixed_assets_repository.dart';
+import 'asset_card_picpos.dart';
 import 'fixed_assets_picpos_create_dialog.dart';
 import '../../picpos_shell/picpos_bar_list.dart';
 import '../../picpos_shell/picpos_content_card.dart';
@@ -51,6 +54,7 @@ import '../../picpos_shell/picpos_empty_state.dart';
 import '../../picpos_shell/picpos_report_tabs.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../picpos_shell/picpos_stat_tile.dart';
+import '../../picpos_shell/picpos_totals_bar.dart';
 import '../../picpos_shell/picpos_surface.dart';
 import '../../widgets/permission_guard.dart';
 
@@ -109,6 +113,27 @@ final _accountsProvider = StreamProvider.autoDispose<List<Account>>(
 /// مراكزُ التكلفة — لحوار «أصل جديد» وحدَه.
 final _costCentersProvider = StreamProvider.autoDispose<List<CostCenter>>(
     (ref) => ref.watch(accountingRepositoryProvider).watchCostCenters());
+
+/// لقطاتُ الأصول **كما في تاريخ** — مرشِّحُ «كما في» في تصميم المالك `(10)`.
+///
+/// ⚠️ **المفتاحُ يومٌ لا لحظة**: `DateTime` تتساوى بالقيمة، فوقتُ اللحظة
+/// يجعل كلَّ إعادةِ بناءٍ مفتاحاً جديداً واستعلاماً جديداً.
+final _asOfSnapshotsProvider = FutureProvider.autoDispose
+    .family<Map<int, ({double accumulated, double bookValue, double cost})>,
+        DateTime>((ref, day) {
+  return ref.watch(fixedAssetsRepositoryProvider).getAssetSnapshotsAsOf(
+        DateTime(day.year, day.month, day.day, 23, 59, 59),
+      );
+});
+
+/// حركاتُ أصلٍ بعينه — تبويبةُ «الحركات» في البطاقة.
+final _assetMovementsProvider = FutureProvider.autoDispose
+    .family<List<JournalEntryData>, int>((ref, assetId) =>
+        ref.watch(fixedAssetsRepositoryProvider).getAssetMovements(assetId));
+
+/// مستخدمو النظام — قائمةُ «المسؤول».
+final _usersProvider = StreamProvider.autoDispose<List<UserWithRole>>(
+    (ref) => ref.watch(authRepositoryProvider).watchAllUsers());
 
 // ═══════════════════════════════════════════════════════════════════════════
 // الحساب — خالصٌ وقابلٌ للقياس وحدَه
@@ -170,9 +195,34 @@ class _FixedAssetsPicposScreenState
   late final TabController _tabs;
   final _searchCtrl = TextEditingController();
   String _query = '';
-  int _assetChip = 0;
   int _deprChip = 0;
   int _disposalChip = 0;
+
+  // ── تصميمُ المالك `(10)`: مرشِّحاتٌ وترقيمُ صفحات ──────────────────────
+  late DateTime _asOf = _today();
+  int? _filterCategoryId;
+  String? _filterLocation;
+  String _filterStatus = 'all';
+  int _page = 0;
+  int _perPage = 10;
+
+  /// الأصلُ المفتوحةُ بطاقتُه — `null` = الجدول.
+  ///
+  /// ⚠️ **حالةٌ في الشاشة لا شاشةٌ سادسة**: البطاقةُ تفصيلُ صفٍّ يفتحه 👁،
+  /// ومسارُها في التصميم «الأصول الثابتة / بطاقة أصل ثابت». وشاشةٌ مستقلّةٌ
+  /// كانت ستعني ستّةَ مواضعِ توصيلٍ وصلاحيّةً سابعةً لشيءٍ لا يُفتَح إلّا
+  /// من هنا.
+  int? _openAssetId;
+
+  static DateTime _today() {
+    final n = DateTime.now();
+    return DateTime(n.year, n.month, n.day);
+  }
+
+  static bool _sameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+
+  static final DateFormat _dateFmt = DateFormat('dd-MM-yyyy');
 
   static const _tabNotes = [
     'القيمة الدفترية = التكلفة ناقص مجمع الإهلاك',
@@ -214,6 +264,30 @@ class _FixedAssetsPicposScreenState
     final onBooks = all.where((a) => _isActive(a)).toList();
     final disposed = all.where((a) => !_isActive(a)).toList();
     final locations = _locationKeys(onBooks);
+    final snaps = ref.watch(_asOfSnapshotsProvider(_asOf)).value ??
+        const <int, ({double accumulated, double bookValue, double cost})>{};
+
+    // بطاقةُ أصلٍ مفتوحةٌ ⇒ تحلّ محلَّ الشاشة كلِّها: التصميمُ يعطيها الصفحةَ
+    // ومسارَها الخاصّ، وعرضُها داخلَ تبويبةٍ كان سيترك شريطَ التبويبات فوقها
+    // فيبدو أنّ «الإهلاك» في البطاقة و«الإهلاك الدوري» في الشاشة شيءٌ واحد.
+    final open = _openAssetId == null
+        ? null
+        : all.where((a) => a.id == _openAssetId).firstOrNull;
+    if (_openAssetId != null && open == null && !assets.isLoading) {
+      // حُذف الأصلُ أو خرج من المجرى — لا بطاقةَ لشيءٍ غيرِ موجود.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _openAssetId = null);
+      });
+    }
+    if (open != null) {
+      return PicPosScreenScaffold(
+        title: 'بطاقة أصل ثابت',
+        subtitle: '${open.code} · ${open.name}',
+        icon: PhosphorIconsBold.identificationCard,
+        bodyPadding: EdgeInsets.zero,
+        body: _assetCard(open, cats, deprs),
+      );
+    }
 
     return PicPosScreenScaffold(
       title: 'الأصول الثابتة والإهلاك',
@@ -312,7 +386,7 @@ class _FixedAssetsPicposScreenState
           : TabBarView(
               controller: _tabs,
               children: [
-                _scroll(_assetsTab(all, cats)),
+                _scroll(_assetsTab(all, cats, snaps)),
                 _scroll(_depreciationTab(onBooks, cats, deprs, accountById)),
                 _scroll(_categoriesTab(cats, all, accountById)),
                 _scroll(_disposalTab(disposed)),
@@ -361,145 +435,499 @@ class _FixedAssetsPicposScreenState
     return seen.toList()..sort();
   }
 
+
   // ═════════════════════════════════════════════════════════════════════════
-  // ١ — الأصول
+  // بطاقةُ الأصل — تحويلُ صفوف drift إلى قيمٍ خالصة
+  // ═════════════════════════════════════════════════════════════════════════
+  //
+  // ⚠️ **التحويلُ هنا لا في البطاقة**: `asset_card_picpos.dart` ملفُّ عرضٍ
+  // **جديد**، وحارسُ `presentation_db_import_guard` يمنعه من استيراد
+  // `data/database` وقائمتُه البيضاءُ مقفولة. وهذه الشاشةُ سابقةٌ للحارس
+  // فتستورد الأنواعَ عبر واجهات `domain/repositories/`.
+
+  Widget _assetCard(
+    FixedAssetData a,
+    List<AssetCategory> cats,
+    List<AssetDepreciationData> deprs,
+  ) {
+    final users = ref.watch(_usersProvider).value ?? const <UserWithRole>[];
+    final moves = ref.watch(_assetMovementsProvider(a.id)).value ??
+        const <JournalEntryData>[];
+
+    return AssetCardPicpos(
+      key: ValueKey('asset_card_${a.id}'),
+      asset: (
+        id: a.id,
+        code: a.code,
+        name: a.name,
+        categoryId: a.categoryId,
+        categoryName:
+            cats.where((c) => c.id == a.categoryId).firstOrNull?.name ?? '—',
+        location: a.location,
+        purchasePrice: a.purchasePrice,
+        purchaseDate: a.purchaseDate,
+        usefulLifeYears: a.usefulLifeYears,
+        salvageValue: a.salvageValue,
+        depreciationMethod: a.depreciationMethod,
+        accumulatedDepreciation: a.accumulatedDepreciation,
+        status: a.status,
+        notes: a.notes,
+        custodianUserId: a.custodianUserId,
+      ),
+      custodians: [
+        for (final u in users)
+          if (u.user.isActive) (id: u.user.id, name: u.user.displayName),
+      ],
+      posted: [
+        for (final d in deprs)
+          if (d.assetId == a.id)
+            (
+              periodDate: d.periodDate,
+              amount: d.depreciationAmount,
+              accumulated: d.accumulatedDepreciation,
+              bookValue: d.bookValue,
+            ),
+      ],
+      movements: [
+        for (final m in moves)
+          (
+            date: m.entryDate,
+            entryNumber: m.entryNumber,
+            description: m.description,
+            referenceType: m.referenceType,
+            isPosted: m.isPosted,
+          ),
+      ],
+      // 🔴 **حارسُ الصلاحيّة على الحفظ لا على الفتح**: `assets_view` يفتح
+      //    الشاشةَ للقراءة، وتعديلُ اسمِ أصلٍ أو مسؤوليّتِه فعلُ كتابةٍ أعلى.
+      canEdit: ref
+          .watch(hasPermissionProvider(PermissionCodes.assetsManage))
+          .value ??
+          false,
+      onBack: () => setState(() => _openAssetId = null),
+      onSave: ({
+        required String name,
+        required String? location,
+        required String? notes,
+        required int? custodianUserId,
+        required bool clearCustodian,
+      }) async {
+        await ref.read(fixedAssetsRepositoryProvider).updateFixedAsset(
+              a.id,
+              name: name,
+              location: location,
+              notes: notes,
+              custodianUserId: custodianUserId,
+              clearCustodian: clearCustodian,
+            );
+        if (!mounted) return;
+        ref.invalidate(_assetMovementsProvider(a.id));
+        AppToast.show(context, 'حُفظت تعديلاتُ البطاقة');
+      },
+    );
+  }
+
+  // ═════════════════════════════════════════════════════════════════════════
+  // ١ — الأصول (تصميمُ المالك `(10)`: مرشِّحاتٌ · شريطٌ نحيفٌ · جدولٌ بترقيم)
   // ═════════════════════════════════════════════════════════════════════════
 
-  Widget _assetsTab(List<FixedAssetData> all, List<AssetCategory> cats) {
+  Widget _assetsTab(
+    List<FixedAssetData> all,
+    List<AssetCategory> cats,
+    Map<int, ({double accumulated, double bookValue, double cost})> snaps,
+  ) {
     final catName = {for (final c in cats) c.id: c.name};
-    final onBooks = all.where(_isActive).toList();
-    final cost = all.fold<double>(0, (s, a) => s + a.purchasePrice);
-    final accum = all.fold<double>(0, (s, a) => s + a.accumulatedDepreciation);
-    final nearEnd = all.where(_isNearEnd).toList();
 
-    final visible = all.where(_matches).where((a) {
-      if (_assetChip == 1) return _isActive(a) && !_isNearEnd(a);
-      if (_assetChip == 2) return _isNearEnd(a);
+    // 🔴 **اليومُ يُقرأ حيّاً والماضي يُقرأ لقطةً.**
+    //
+    // `fixed_assets.accumulated_depreciation` هو **حاضرُ** الأصل: تكتبه
+    // `runMonthlyDepreciation` و`disposeAsset` وأيُّ استيرادٍ سابق. وقصرُ
+    // القراءة على `asset_depreciations` كان سيُظهر صفراً لأصلٍ مجمَّعُه
+    // قائمٌ في بطاقته لكنّ صفوفَه لم تُكتَب (تجهيزةٌ مرحَّلةٌ من نظامٍ آخر
+    // مثلاً) — أي إخفاءُ تعارضٍ بدل إظهاره.
+    //
+    // وسؤالُ «كم كان في تاريخٍ مضى؟» لا يجيبه العمودُ الحيُّ إطلاقاً،
+    // فجوابُه اللقطة.
+    final historical = _asOf.isBefore(_today());
+
+    /// أرقامُ الأصل **كما في التاريخ المختار**.
+    ///
+    /// ⚠️ وأصلٌ بلا لقطةٍ حتى تاريخٍ ماضٍ يُقرأ بتكلفته ومجمَّعِ صفر — وهو ما
+    /// كان عليه فعلاً قبل أوّل ترحيلِ إهلاك.
+    ({double cost, double accum, double book}) figures(FixedAssetData a) {
+      if (!historical) {
+        return (
+          cost: a.purchasePrice,
+          accum: a.accumulatedDepreciation,
+          book: a.purchasePrice - a.accumulatedDepreciation,
+        );
+      }
+      final s = snaps[a.id];
+      if (s == null) {
+        return (cost: a.purchasePrice, accum: 0, book: a.purchasePrice);
+      }
+      return (cost: s.cost, accum: s.accumulated, book: s.bookValue);
+    }
+
+    // 🔴 الشرطُ في `domain/models` ومُختبَرٌ وحدَه — راجع
+    //    [assetOnBooksAt].
+    final onDate =
+        all.where((a) => assetOnBooksAt(a.purchaseDate, _asOf)).toList();
+
+    final visible = onDate.where(_matches).where((a) {
+      if (_filterCategoryId != null && a.categoryId != _filterCategoryId) {
+        return false;
+      }
+      if (_filterLocation != null && _locationOf(a) != _filterLocation) {
+        return false;
+      }
+      if (_filterStatus == 'active' && !_isActive(a)) return false;
+      if (_filterStatus == 'disposed' && _isActive(a)) return false;
       return true;
     }).toList();
+
+    final cost = visible.fold<double>(0, (s, a) => s + figures(a).cost);
+    final accum = visible.fold<double>(0, (s, a) => s + figures(a).accum);
+    final nearEnd = visible.where(_isNearEnd).length;
+
+    // ترقيمُ الصفحات — والصفحةُ تُقصّ إلى المدى بعد أيّ ترشيح.
+    final pages = visible.isEmpty ? 1 : ((visible.length - 1) ~/ _perPage) + 1;
+    final page = _page >= pages ? pages - 1 : _page;
+    final from = page * _perPage;
+    final shown = visible.skip(from).take(_perPage).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        _kpis([
-          PicPosStatTile(
-            label: 'الأصول النشطة',
-            value: _ar(onBooks.length),
-            icon: PhosphorIconsBold.package,
-            accent: AppColors.primary,
-            caption: 'من ${_ar(all.length)} على الدفاتر',
-          ),
-          PicPosStatTile(
-            label: 'التكلفة التاريخية',
-            value: _money0.format(cost),
-            icon: PhosphorIconsBold.currencyCircleDollar,
-            accent: const Color(0xFF4A80E8),
-          ),
-          PicPosStatTile(
-            label: 'مجمع الإهلاك',
-            value: _money0.format(accum),
-            icon: PhosphorIconsBold.arrowDownRight,
-            accent: _warn,
-            caption: cost > 0 ? '${_pct(accum / cost * 100)} من التكلفة' : null,
-          ),
-          PicPosStatTile(
-            label: 'القيمة الدفترية',
-            value: _money0.format(cost - accum),
-            icon: PhosphorIconsBold.scales,
-            accent: _ok,
-          ),
-          PicPosStatTile(
-            label: 'أصول قارب عمرها',
-            value: _ar(nearEnd.length),
-            icon: PhosphorIconsBold.hourglass,
-            accent: _err,
-            caption: 'تجاوز إهلاكها ${_pct(_nearEndThreshold * 100)}',
+        _assetFilters(context, cats, onDate),
+        const SizedBox(height: 12),
+        // **شريطٌ نحيفٌ** بدل خمسِ بطاقات — التصميمُ يعطي الجدولَ الصفحةَ.
+        PicPosTotalsBar(items: [
+          PicPosTotal(label: 'الأصول', value: _ar(visible.length)),
+          PicPosTotal(label: 'التكلفة', value: _money0.format(cost)),
+          PicPosTotal(label: 'مجمع الإهلاك', value: _money0.format(accum)),
+          PicPosTotal(
+              label: 'صافي القيمة',
+              value: _money0.format(cost - accum),
+              emphasis: true),
+          PicPosTotal(
+            label: 'قارب عمرها',
+            value: _ar(nearEnd),
+            tone: nearEnd > 0 ? _warn : null,
           ),
         ]),
         const SizedBox(height: 12),
         PicPosDataTable(
           title: 'بطاقات الأصول',
-          subtitle: 'القيمة الدفترية تُحسب لحظياً من التكلفة ومجمع الإهلاك',
-          minWidth: 1080,
-          chips: [
-            PicPosTableChip(
-                label: 'الكل',
-                count: _ar(all.length),
-                onTap: () => setState(() => _assetChip = 0)),
-            PicPosTableChip(
-                label: 'نشط',
-                count: _ar(all.where((a) => _isActive(a) && !_isNearEnd(a)).length),
-                onTap: () => setState(() => _assetChip = 1)),
-            PicPosTableChip(
-                label: 'قارب الانتهاء',
-                count: _ar(nearEnd.length),
-                onTap: () => setState(() => _assetChip = 2)),
-          ],
-          selectedChip: _assetChip,
+          subtitle: historical
+              ? 'الأرقامُ كما في ${_dateFmt.format(_asOf)} — من لقطات '
+                  'الإهلاك المرحَّلة لا من أرصدة اليوم'
+              : 'القيمة الدفترية = التكلفة ناقص مجمع الإهلاك',
+          minWidth: 1020,
           columns: const [
-            PicPosTableColumn('الأصل', flex: 1.6),
-            PicPosTableColumn('الفئة', flex: 1.4),
+            PicPosTableColumn('#', flex: 0.4),
+            PicPosTableColumn('رقم الأصل', flex: 1),
+            PicPosTableColumn('الأصل', flex: 1.7),
+            PicPosTableColumn('الموقع', flex: 1.1),
             PicPosTableColumn('التكلفة',
-                flex: 1.2, align: PicPosCellAlign.end),
-            PicPosTableColumn('العمر', flex: 1.2),
+                flex: 1.1, align: PicPosCellAlign.end),
             PicPosTableColumn('مجمع الإهلاك',
                 flex: 1.2, align: PicPosCellAlign.end),
-            PicPosTableColumn('الدفترية',
+            PicPosTableColumn('صافي القيمة',
                 flex: 1.2, align: PicPosCellAlign.end),
-            PicPosTableColumn('نسبة الإهلاك', flex: 1.5),
-            PicPosTableColumn('الحالة', flex: 1.2),
+            PicPosTableColumn('الحالة', flex: 1.1),
+            PicPosTableColumn('إجراءات', flex: 0.9),
           ],
           emptyLabel: _query.isEmpty
-              ? 'لا أصولَ مسجَّلةً بعد'
+              ? 'لا أصولَ تطابق المرشِّحات'
               : 'لا أصلَ يطابق «$_query»',
           rows: [
-            for (final a in visible)
-              PicPosTableRow(cells: [
-                PicPosTextCell('${a.code} · ${a.name}',
-                    sub: (a.location ?? '').trim().isEmpty ? null : a.location,
-                    icon: PhosphorIconsBold.package,
-                    tint: _isNearEnd(a) ? _warn : AppColors.primary),
-                PicPosTextCell(catName[a.categoryId] ?? '—'),
-                PicPosTextCell(_money0.format(a.purchasePrice)),
-                PicPosTextCell(
-                  '${_ar(a.usefulLifeYears.toStringAsFixed(0))} سنوات',
-                  sub: 'باقي ${_ar(_remainingYears(a).toStringAsFixed(1))}',
-                ),
-                PicPosTextCell(_money0.format(a.accumulatedDepreciation)),
-                PicPosTextCell(_money0.format(_bookValue(a)), bold: true),
-                PicPosBarCell(
-                  _pct(_deprRatio(a) * 100),
-                  _deprRatio(a),
-                  _deprRatio(a) >= _nearEndThreshold
-                      ? _err
-                      : _deprRatio(a) >= 0.5
-                          ? _warn
-                          : _ok,
-                ),
-                PicPosPillCell(
-                  _isActive(a)
-                      ? (_isNearEnd(a) ? 'قارب الانتهاء' : 'نشط')
-                      : (a.status == 'sold' ? 'بيع' : 'مستبعد'),
-                  _isActive(a) ? (_isNearEnd(a) ? _warn : _ok) : _idle,
-                ),
-              ]),
+            for (var i = 0; i < shown.length; i++)
+              () {
+                final a = shown[i];
+                final f = figures(a);
+                return PicPosTableRow(cells: [
+                  PicPosTextCell(_ar(from + i + 1)),
+                  PicPosTextCell(a.code),
+                  PicPosTextCell(a.name,
+                      icon: PhosphorIconsBold.package,
+                      tint: _isNearEnd(a) ? _warn : AppColors.primary),
+                  PicPosTextCell(_locationOf(a)),
+                  PicPosTextCell(_money0.format(f.cost)),
+                  PicPosTextCell(_money0.format(f.accum)),
+                  PicPosTextCell(_money0.format(f.book), bold: true),
+                  PicPosPillCell(
+                    _isActive(a)
+                        ? (_isNearEnd(a) ? 'قارب الانتهاء' : 'قيد الاستخدام')
+                        : (a.status == 'sold' ? 'بيع' : 'مستبعد'),
+                    _isActive(a) ? (_isNearEnd(a) ? _warn : _ok) : _idle,
+                  ),
+                  // 👁 — البطاقة. والتصميمُ يضع معها ⋮ لقائمةٍ لم يُبنَ فيها
+                  //    فعلٌ بعد، وزرٌّ يفتح قائمةً فارغةً أسوأُ من غيابه.
+                  PicPosButtonCell(
+                    'البطاقة',
+                    icon: PhosphorIconsBold.eye,
+                    tint: AppColors.primary,
+                    onPressed: () => setState(() => _openAssetId = a.id),
+                  ),
+                ]);
+              }(),
           ],
-          totals: visible.isEmpty
+          totals: shown.isEmpty
               ? null
               : [
+                  '',
                   '${_ar(visible.length)} أصول',
                   '',
-                  _money0.format(
-                      visible.fold<double>(0, (s, a) => s + a.purchasePrice)),
                   '',
-                  _money0.format(visible.fold<double>(
-                      0, (s, a) => s + a.accumulatedDepreciation)),
-                  _money0
-                      .format(visible.fold<double>(0, (s, a) => s + _bookValue(a))),
+                  _money0.format(cost),
+                  _money0.format(accum),
+                  _money0.format(cost - accum),
                   '',
                   '',
                 ],
+        ),
+        const SizedBox(height: 10),
+        _pager(context, visible.length, page, pages, from, shown.length),
+      ],
+    );
+  }
+
+  String _locationOf(FixedAssetData a) =>
+      (a.location ?? '').trim().isEmpty ? 'بلا موقع' : a.location!.trim();
+
+  Widget _assetFilters(
+    BuildContext context,
+    List<AssetCategory> cats,
+    List<FixedAssetData> onDate,
+  ) {
+    final locations = _locationKeys(onDate);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: context.picposCard,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.picposHairline),
+      ),
+      child: Wrap(
+        spacing: 10,
+        runSpacing: 10,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          _asOfButton(context),
+          _dropFilter<int?>(
+            context,
+            label: 'الفئة',
+            value: _filterCategoryId,
+            allLabel: 'كل الفئات',
+            items: [for (final c in cats) (value: c.id, label: c.name)],
+            onChanged: (v) => setState(() {
+              _filterCategoryId = v;
+              _page = 0;
+            }),
+          ),
+          _dropFilter<String?>(
+            context,
+            label: 'الموقع',
+            value: _filterLocation,
+            allLabel: 'كل المواقع',
+            items: [for (final l in locations) (value: l, label: l)],
+            onChanged: (v) => setState(() {
+              _filterLocation = v;
+              _page = 0;
+            }),
+          ),
+          _dropFilter<String?>(
+            context,
+            label: 'الحالة',
+            value: _filterStatus == 'all' ? null : _filterStatus,
+            allLabel: 'كل الحالات',
+            items: const [
+              (value: 'active', label: 'قيد الاستخدام'),
+              (value: 'disposed', label: 'مستبعد أو مُباع'),
+            ],
+            onChanged: (v) => setState(() {
+              _filterStatus = v ?? 'all';
+              _page = 0;
+            }),
+          ),
+          OutlinedButton.icon(
+            onPressed: _resetFilters,
+            icon: const Icon(PhosphorIconsBold.arrowCounterClockwise, size: 15),
+            label: const Text('إعادة تعيين'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _resetFilters() {
+    setState(() {
+      _asOf = _today();
+      _filterCategoryId = null;
+      _filterLocation = null;
+      _filterStatus = 'all';
+      _page = 0;
+      _query = '';
+      _searchCtrl.clear();
+    });
+  }
+
+  Widget _asOfButton(BuildContext context) {
+    final isToday = _sameDay(_asOf, _today());
+    return _filterShell(
+      context,
+      label: 'كما في',
+      on: !isToday,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(PhosphorIconsBold.calendarBlank,
+              size: 14, color: context.picposMuted),
+          const SizedBox(width: 6),
+          Text(_dateFmt.format(_asOf),
+              style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: context.picposText)),
+        ],
+      ),
+      onTap: () async {
+        final picked = await showDatePicker(
+          context: context,
+          initialDate: _asOf,
+          firstDate: DateTime(2015),
+          lastDate: DateTime(DateTime.now().year + 5),
+        );
+        if (picked != null && mounted) {
+          setState(() {
+            _asOf = picked;
+            _page = 0;
+          });
+        }
+      },
+    );
+  }
+
+  Widget _dropFilter<T>(
+    BuildContext context, {
+    required String label,
+    required T value,
+    required String allLabel,
+    required List<({T value, String label})> items,
+    required ValueChanged<T?> onChanged,
+  }) {
+    return _filterShell(
+      context,
+      label: label,
+      on: value != null,
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<T?>(
+          value: value,
+          isDense: true,
+          hint: Text(allLabel,
+              style: TextStyle(fontSize: 12, color: context.picposText)),
+          items: [
+            DropdownMenuItem<T?>(value: null, child: Text(allLabel)),
+            for (final i in items)
+              DropdownMenuItem<T?>(value: i.value, child: Text(i.label)),
+          ],
+          onChanged: onChanged,
+          style: TextStyle(fontSize: 12, color: context.picposText),
+        ),
+      ),
+    );
+  }
+
+  Widget _filterShell(
+    BuildContext context, {
+    required String label,
+    required bool on,
+    required Widget child,
+    VoidCallback? onTap,
+  }) {
+    final body = Container(
+      height: 38,
+      constraints: const BoxConstraints(minWidth: 130),
+      padding: const EdgeInsets.symmetric(horizontal: 11),
+      alignment: AlignmentDirectional.centerStart,
+      decoration: BoxDecoration(
+        color: on ? AppColors.primary.withValues(alpha: .06) : context.picposField,
+        borderRadius: BorderRadius.circular(9),
+        border: Border.all(
+            color: on ? AppColors.primary : context.picposHairline),
+      ),
+      child: child,
+    );
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 4),
+          child: Text(label,
+              style: TextStyle(fontSize: 11, color: context.picposMuted)),
+        ),
+        if (onTap == null)
+          body
+        else
+          InkWell(
+              borderRadius: BorderRadius.circular(9),
+              onTap: onTap,
+              child: body),
+      ],
+    );
+  }
+
+  Widget _pager(
+    BuildContext context,
+    int total,
+    int page,
+    int pages,
+    int from,
+    int count,
+  ) {
+    return Row(
+      children: [
+        Text('عرض', style: TextStyle(fontSize: 12, color: context.picposMuted)),
+        const SizedBox(width: 8),
+        DropdownButton<int>(
+          value: _perPage,
+          isDense: true,
+          items: [
+            for (final n in const [10, 25, 50])
+              DropdownMenuItem(value: n, child: Text(_ar(n))),
+          ],
+          onChanged: (v) => setState(() {
+            _perPage = v ?? 10;
+            _page = 0;
+          }),
+        ),
+        const SizedBox(width: 8),
+        Text('لكل صفحة',
+            style: TextStyle(fontSize: 12, color: context.picposMuted)),
+        const Spacer(),
+        Text(
+          total == 0
+              ? 'لا نتائج'
+              : 'عرض ${_ar(from + 1)} إلى ${_ar(from + count)} '
+                  'من ${_ar(total)} نتيجة',
+          style: TextStyle(fontSize: 12, color: context.picposMuted),
+        ),
+        const SizedBox(width: 12),
+        IconButton(
+          tooltip: 'السابق',
+          onPressed: page > 0 ? () => setState(() => _page = page - 1) : null,
+          icon: const Icon(Icons.chevron_right, size: 18),
+        ),
+        Text('${_ar(page + 1)} / ${_ar(pages)}',
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
+        IconButton(
+          tooltip: 'التالي',
+          onPressed:
+              page < pages - 1 ? () => setState(() => _page = page + 1) : null,
+          icon: const Icon(Icons.chevron_left, size: 18),
         ),
       ],
     );

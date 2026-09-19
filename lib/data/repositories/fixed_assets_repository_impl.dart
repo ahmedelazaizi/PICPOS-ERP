@@ -90,6 +90,8 @@ class FixedAssetsRepositoryImpl implements IFixedAssetsRepository {
     String? notes,
     int? costCenterId,
     bool clearCostCenter = false,
+    int? custodianUserId,
+    bool clearCustodian = false,
   }) => _db.updateFixedAsset(
         assetId,
         name: name,
@@ -98,10 +100,20 @@ class FixedAssetsRepositoryImpl implements IFixedAssetsRepository {
         notes: notes,
         costCenterId: costCenterId,
         clearCostCenter: clearCostCenter,
+        custodianUserId: custodianUserId,
+        clearCustodian: clearCustodian,
       );
 
   @override
   Future<void> deleteFixedAsset(int id) => _db.deleteFixedAsset(id);
+
+  @override
+  Future<Map<int, ({double accumulated, double bookValue, double cost})>>
+      getAssetSnapshotsAsOf(DateTime asOf) => _db.getAssetSnapshotsAsOf(asOf);
+
+  @override
+  Future<List<JournalEntryData>> getAssetMovements(int assetId) =>
+      _db.getAssetMovements(assetId);
 
   @override
   Future<int> runMonthlyDepreciation(DateTime periodDate, {int? costCenterId}) =>

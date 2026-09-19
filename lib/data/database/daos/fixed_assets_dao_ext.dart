@@ -346,6 +346,8 @@ extension FixedAssetsDao on AppDatabase {
     String? notes,
     int? costCenterId,
     bool clearCostCenter = false,
+    int? custodianUserId,
+    bool clearCustodian = false,
   }) async {
     final companion = FixedAssetsCompanion(
       name: name != null ? Value(name) : const Value.absent(),
@@ -353,6 +355,14 @@ extension FixedAssetsDao on AppDatabase {
       salvageValue: salvageValue != null ? Value(salvageValue) : const Value.absent(),
       notes: notes != null ? Value(notes) : const Value.absent(),
       costCenterId: costCenterId != null || clearCostCenter ? Value(costCenterId) : const Value.absent(),
+      // v174 — المسؤولُ عن الأصل. العمودُ مزروعٌ منذ الهجرة **بلا كاتب**،
+      // وبطاقةُ الأصل (تصميمُ المالك `(9)`) هي أوّلُ مَن يكتبه.
+      //
+      // ⚠️ و[clearCustodian] لا تُغني عنها `null`: `null` وحدَها تعني «لا
+      //    تلمس» في كلّ حقلٍ هنا، فبلا الرايةِ لا سبيلَ لرفع العهدة عن أحد.
+      custodianUserId: custodianUserId != null || clearCustodian
+          ? Value(custodianUserId)
+          : const Value.absent(),
     );
     await transaction(() async {
       // Read current name + linkedAccountId before mutation so we can detect
@@ -649,6 +659,59 @@ extension FixedAssetsDao on AppDatabase {
         .get();
   }
 
+  /// حالةُ الأصول **كما في تاريخ** — لمرشِّح «كما في» في تصميم المالك `(10)`.
+  ///
+  /// ═══ لماذا لقطةٌ مخزَّنةٌ لا حسابٌ حيّ ═══
+  ///
+  /// `fixed_assets.accumulated_depreciation` رقمُ **اليوم**. وسؤالُ «كم كان
+  /// مجمَّعُ الإهلاك في ٣٠ يونيو؟» جوابُه في `asset_depreciations`: كلُّ صفٍّ
+  /// يحمل `accumulated_depreciation` و`book_value` **لحظتَه**، وهو ما دخل
+  /// الأستاذَ في ذلك الشهر.
+  ///
+  /// ⚠️ **والتكلفةُ تُشتقّ من اللقطة** (`book_value + accumulated`) لا من
+  /// `purchase_price` الحاليّ: `revalueAsset` تغيّر التكلفةَ ولا تكتب صفَّ
+  /// إهلاك، فقراءةُ التكلفة الحيّة مع مجمَّعٍ قديمٍ تُنتج قيمةً دفتريّةً لم
+  /// تقع في أيّ تاريخ.
+  ///
+  /// وأصلٌ بلا صفٍّ حتى التاريخ يغيب عن الخريطة — والمنادي يقرؤه بتكلفته
+  /// ومجمَّعِ صفر.
+  Future<Map<int, ({double accumulated, double bookValue, double cost})>>
+      getAssetSnapshotsAsOf(DateTime asOf) async {
+    final rows = await customSelect(
+      'SELECT d.asset_id AS aid, d.accumulated_depreciation AS acc, '
+      'd.book_value AS bv FROM asset_depreciations d '
+      'JOIN (SELECT asset_id, MAX(period_date) AS mx FROM asset_depreciations '
+      '      WHERE period_date <= ? GROUP BY asset_id) m '
+      '  ON m.asset_id = d.asset_id AND m.mx = d.period_date',
+      variables: [Variable<DateTime>(asOf)],
+      readsFrom: {assetDepreciations},
+    ).get();
+
+    final out = <int, ({double accumulated, double bookValue, double cost})>{};
+    for (final r in rows) {
+      final acc = (r.data['acc'] as num?)?.toDouble() ?? 0;
+      final bv = (r.data['bv'] as num?)?.toDouble() ?? 0;
+      out[r.data['aid'] as int] =
+          (accumulated: acc, bookValue: bv, cost: acc + bv);
+    }
+    return out;
+  }
+
+  /// قيودُ الأصل — تبويبةُ «الحركات» في البطاقة.
+  ///
+  /// ⚠️ **بالأنواع المعلَنة لا بكلّ ما يحمل هذا الرقم**: `referenceId` رقمٌ
+  /// مشتركٌ بين كلّ الجداول، فقيدُ فاتورةٍ رقمُها يساوي رقمَ الأصل كان
+  /// سيظهر في بطاقته.
+  Future<List<JournalEntryData>> getAssetMovements(int assetId) {
+    return (select(journalEntries)
+          ..where((e) =>
+              e.referenceId.equals(assetId) &
+              e.referenceType.isIn(kAssetJeReferenceTypes) &
+              e.isDeleted.equals(false))
+          ..orderBy([(e) => OrderingTerm.desc(e.entryDate)]))
+        .get();
+  }
+
   /// Get asset summary: total value, accumulated depreciation, book value
   Future<Map<String, double>> getAssetsSummary() async {
     final assets = await (select(
@@ -670,7 +733,29 @@ extension FixedAssetsDao on AppDatabase {
     };
   }
 
+  /// يُلحق أثرَ محرّكٍ بملاحظة الأصل **بلا أن يمحوَ ما كتبه المستخدم**.
+  ///
+  /// 🔴 كانت `revalueAsset` و`transferAsset` تكتبان `notes: Value('…')`
+  /// مباشرةً. و`notes` عمودٌ **يكتبه المستخدم** (`createFixedAsset(notes:)`
+  /// و`updateFixedAsset(notes:)` كلاهما من حقلٍ في الحوار، وبطاقةُ الأصل في
+  /// تصميم المالك `(9)` تجعله حقلاً ظاهراً يُحرَّر). فإعادةُ تقييمٍ واحدةٌ
+  /// كانت تمسح رقمَ الضمان واسمَ المورّد ومكانَ الجهاز — بلا سؤالٍ وبلا أثر.
+  ///
+  /// ⚠️ **والسجلُّ الدائمُ ليس هنا**: هو القيدُ (`asset_revaluation` ·
+  /// `asset_transfer`) وتعرضه تبويبةُ «الحركات» في البطاقة. وهذا السطرُ
+  /// تذكرةٌ تُقرأ مع الملاحظة، فلا يجوز أن يكلّف حقلَ مستخدمٍ ثمنَه.
+  String _assetNoteWith(String? existing, String machineLine) {
+    final prior = (existing ?? '').trim();
+    return prior.isEmpty ? machineLine : '$prior\n$machineLine';
+  }
+
   /// Transfer asset to a different cost center (IAS 16.73e)
+  ///
+  /// ⚠️ **بلا منادٍ اليوم**: `IFixedAssetsRepository` لا تكشفها، فلا شاشةَ
+  /// تصل إليها. ومعها عطبٌ ثانٍ **لم يُصلَح هنا** لأنّه خارجَ نطاق بطاقة
+  /// الأصل: الشرحُ يقول «Update the asset's cost center reference» والكتابةُ
+  /// تحته لا تمسّ `costCenterId` إطلاقاً — فالقيدُ ينقل الرصيدَ بين مركزَي
+  /// تكلفةٍ والبطاقةُ تبقى على المركز القديم.
   Future<void> transferAsset(
     int assetId, {
     required int newCostCenterId,
@@ -687,7 +772,10 @@ extension FixedAssetsDao on AppDatabase {
       // Update the asset's cost center reference
       await (update(fixedAssets)..where((a) => a.id.equals(assetId)))
           .write(FixedAssetsCompanion(
-            notes: Value('محوّل إلى مركز تكلفة #$newCostCenterId — القيمة الدفترية: ${bookValue.toStringAsFixed(AppConstants.decimalPlaces)}'),
+            notes: Value(_assetNoteWith(
+              asset.notes,
+              'محوّل إلى مركز تكلفة #$newCostCenterId — القيمة الدفترية: ${bookValue.toStringAsFixed(AppConstants.decimalPlaces)}',
+            )),
           ));
 
       // Journal entry: Dr Fixed Assets (new CC) / Cr Fixed Assets (old CC)
@@ -731,7 +819,10 @@ extension FixedAssetsDao on AppDatabase {
       await (update(fixedAssets)..where((a) => a.id.equals(assetId)))
           .write(FixedAssetsCompanion(
             purchasePrice: Value(newFairValue + asset.accumulatedDepreciation),
-            notes: Value('إعادة تقييم — القيمة العادلة: ${newFairValue.toStringAsFixed(AppConstants.decimalPlaces)} (${difference > 0 ? '+' : ''}${difference.toStringAsFixed(AppConstants.decimalPlaces)})'),
+            notes: Value(_assetNoteWith(
+              asset.notes,
+              'إعادة تقييم — القيمة العادلة: ${newFairValue.toStringAsFixed(AppConstants.decimalPlaces)} (${difference > 0 ? '+' : ''}${difference.toStringAsFixed(AppConstants.decimalPlaces)})',
+            )),
           ));
 
       final assetAccount = await _getCategoryAssetAccount(asset.categoryId);

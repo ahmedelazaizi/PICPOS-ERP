@@ -44,8 +44,18 @@ abstract class IFixedAssetsRepository {
     String? notes,
     int? costCenterId,
     bool clearCostCenter = false,
+    int? custodianUserId,
+    bool clearCustodian = false,
   });
   Future<void> deleteFixedAsset(int id);
+
+  /// حالةُ الأصول **كما في تاريخ** — مفتاحُها رقمُ الأصل، وأصلٌ بلا صفِّ
+  /// إهلاكٍ حتى التاريخ يغيب عنها.
+  Future<Map<int, ({double accumulated, double bookValue, double cost})>>
+      getAssetSnapshotsAsOf(DateTime asOf);
+
+  /// قيودُ الأصل — بالأنواع المعلَنة في `kAssetJeReferenceTypes`.
+  Future<List<JournalEntryData>> getAssetMovements(int assetId);
   
   Future<int> runMonthlyDepreciation(DateTime periodDate, {int? costCenterId});
   Future<void> revalueAsset(int assetId, {required double newFairValue, int? costCenterId});
