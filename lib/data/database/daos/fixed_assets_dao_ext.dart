@@ -684,9 +684,29 @@ extension FixedAssetsDao on AppDatabase {
 
       final bookValue = asset.purchasePrice - asset.accumulatedDepreciation;
 
+      // المصدرُ يأتي من المنادي ثقةً، والبطاقةُ تعرف مركزَها الحقيقيّ. فلو
+      // تناقضا لأخرج الطرفُ الدائنُ أدناه القيمةَ من مركزٍ لم يحملها قطّ،
+      // وبقي المركزُ الحقيقيُّ حاملاً أصلاً غادره — بلا أثرٍ في ميزان
+      // المراجعة لأنّ الطرفَين في نفس الحساب. يُرفَض قبل أيّ كتابة.
+      if (asset.costCenterId != fromCostCenterId) {
+        final current = asset.costCenterId == null
+            ? 'بلا مركز تكلفة'
+            : '#${asset.costCenterId}';
+        throw Exception(
+          'مركزُ التكلفة المصدر (#$fromCostCenterId) لا يطابق مركزَ الأصل '
+          'الحاليّ ($current) — حدِّث بطاقةَ الأصل أوّلاً.',
+        );
+      }
+
       // Update the asset's cost center reference
+      //
+      // 🔴 `costCenterId` كان غائباً عن هذه الكتابة بينما القيدُ أدناه ينقل
+      // القيمةَ الدفتريّةَ بين المركزَين في الأستاذ ⇒ بطاقةٌ في مركزٍ ودفترٌ
+      // في آخر، وكلُّ تقريرٍ يجمع الأصولَ بمركز التكلفة يخالف الدفتر.
+      // الحارس: `test/unit/asset_transfer_moves_its_cost_center_test.dart`.
       await (update(fixedAssets)..where((a) => a.id.equals(assetId)))
           .write(FixedAssetsCompanion(
+            costCenterId: Value(newCostCenterId),
             notes: Value('محوّل إلى مركز تكلفة #$newCostCenterId — القيمة الدفترية: ${bookValue.toStringAsFixed(AppConstants.decimalPlaces)}'),
           ));
 
