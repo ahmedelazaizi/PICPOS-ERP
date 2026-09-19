@@ -940,7 +940,7 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => Brand.isPicPos
             ? const ChequesPicposScreen()
             : const CommercialPapersScreen(),
-        label: 'الشيكات',
+        label: chequesScreenLabel,
         icon: PhosphorIconsBold.receipt,
       ),
       ScreenConfig(

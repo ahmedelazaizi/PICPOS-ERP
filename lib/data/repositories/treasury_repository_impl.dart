@@ -18,6 +18,10 @@ class TreasuryRepositoryImpl extends BaseRepository<Safe> implements ITreasuryRe
   AccountingService get _accountingService => _ref.read(accountingServiceProvider);
 
   @override
+  Future<String?> getVoucherNumberById(int id) async =>
+      (await db.getSafeTransactionById(id))?.voucherNumber;
+
+  @override
   Stream<List<SafeData>> watchSafes() {
     return db.watchAllSafes().map((list) => list.map(_safeRowToData).toList());
   }

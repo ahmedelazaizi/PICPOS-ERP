@@ -114,12 +114,27 @@ class PicPosButtonCell extends PicPosCell {
   final VoidCallback? onPressed;
 }
 
+/// زرُّ اختيارٍ **مفرد** — دائرةُ راديو لا مربّعُ تعليم.
+///
+/// ⚠️ **والشكلُ عقدٌ لا زينة**: المربّعُ يَعِد بتعدّدٍ، والدائرةُ تقول
+/// «واحدٌ فقط». وشريطُ الإجراءات تحت الجدول يخصّ صفّاً واحداً (سندُه ·
+/// إيداعُه · عرضُ سنده)، فمربّعٌ كان سيَعِد بما لا يقع.
+class PicPosRadioCell extends PicPosCell {
+  const PicPosRadioCell({required this.selected, this.onSelect});
+
+  final bool selected;
+  final VoidCallback? onSelect;
+}
+
 /// صفٌّ: خلاياه وإجراءُ فتحه إن كان قابلاً للنقر.
 class PicPosTableRow {
-  const PicPosTableRow({required this.cells, this.onTap});
+  const PicPosTableRow({required this.cells, this.onTap, this.selected = false});
 
   final List<PicPosCell> cells;
   final VoidCallback? onTap;
+
+  /// يُظلَّل الصفُّ المختار — التصميمُ يميّزه بأرضيّةٍ زرقاءَ خفيفة.
+  final bool selected;
 }
 
 class PicPosDataTable extends StatelessWidget {
@@ -390,6 +405,7 @@ class PicPosDataTable extends StatelessWidget {
     final content = Container(
       padding: const EdgeInsets.symmetric(horizontal: _hPad, vertical: 11),
       decoration: BoxDecoration(
+        color: r.selected ? AppColors.primary.withValues(alpha: 0.06) : null,
         border: Border(bottom: BorderSide(color: context.picposHairline)),
       ),
       child: _gridRow(context, w, cells),
@@ -447,6 +463,31 @@ class PicPosDataTable extends StatelessWidget {
     final end = align == PicPosCellAlign.end;
     final main = end ? MainAxisAlignment.end : MainAxisAlignment.start;
     switch (c) {
+      case PicPosRadioCell():
+        return Row(
+          mainAxisAlignment: main,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // ⚠️ `Radio` بلا مجموعةٍ: الاختيارُ حالةُ الشاشة، والجدولُ يعرضه.
+            //    وربطُه بـ`groupValue` هنا كان سيجعل الجدولَ يملك الاختيارَ
+            //    فلا يعرف شريطُ الإجراءات تحته ما اختير.
+            // ⚠️ **لا `IconButton`**: حدُّه الأدنى ٢٨ بكسلاً لا ينكمش، وعمودُ
+            //    الاختيار أضيقُ من ذلك عند العروض الصغيرة — فيفيض الصفُّ
+            //    ويُبتَر ما بعده. (قِيس: فيضٌ ١٩ بكسلاً عند ٨٢٠.) والصفُّ
+            //    كلُّه قابلٌ للنقر على أيّ حال، فهذه أيقونةُ حالةٍ تُنقَر.
+            InkWell(
+              onTap: c.onSelect,
+              customBorder: const CircleBorder(),
+              child: Icon(
+                c.selected
+                    ? Icons.radio_button_checked
+                    : Icons.radio_button_unchecked,
+                size: 18,
+                color: c.selected ? AppColors.primary : context.picposMuted,
+              ),
+            ),
+          ],
+        );
       case PicPosTextCell():
         return Row(
           mainAxisAlignment: main,

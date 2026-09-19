@@ -1712,6 +1712,8 @@ bool _rowMatches(PicPosTableRow row, String q) {
       PicPosBarCell(:final text) => text,
       PicPosTrendCell(:final text) => text,
       PicPosButtonCell(:final text) => text,
+      // زرُّ الاختيار لا نصَّ فيه — والبحثُ يقرأ ما يُقرأ.
+      PicPosRadioCell() => '',
     };
     if (text.toLowerCase().contains(q)) return true;
   }

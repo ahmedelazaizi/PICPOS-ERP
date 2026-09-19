@@ -1939,6 +1939,14 @@ extension TreasuryDao on AppDatabase {
   /// ⚠️ **والقارئان اللذان لا يرشّحان** (`getPartyLedger` ·
   /// `getPartyTransactions`) يستثنيانه صراحةً — وإلّا ظهر سطراً مكرّراً في
   /// كشف الحساب بجوار قيد الترحيل الآليّ للورقة.
+  /// سندٌ واحدٌ بمعرّفه — تقرؤه «إدارة الشيكات» لتسمّي سندَ الورقة المختارة.
+  ///
+  /// ⚠️ **ويعيد  حين لا يوجد**: معرّفٌ من ورقةٍ وصلت بالمزامنة قد يشير
+  /// إلى صفٍّ لم يصل بعد، فالشاشةُ تعرض «—» لا تنهار.
+  Future<SafeTransactionData?> getSafeTransactionById(int id) =>
+      (select(safeTransactions)..where((t) => t.id.equals(id)))
+          .getSingleOrNull();
+
   Future<int> _writeChequeVoucherRow({
     required int safeId,
     required String prefix,

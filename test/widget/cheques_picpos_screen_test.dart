@@ -7,6 +7,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ural_erp/core/navigation/screen_id.dart';
 import 'package:ural_erp/data/providers/providers.dart';
 import 'package:ural_erp/domain/repositories/commercial_papers_repository.dart'
     show ICommercialPapersRepository;
@@ -126,7 +127,7 @@ void main() {
         await open(tester, e.$2);
         expect(tester.takeException(), isNull,
             reason: 'انهيارُ تخطيطٍ عند العرض ${e.$2.width}');
-        expect(find.text('الشيكات والأوراق التجارية'), findsOneWidget);
+        expect(find.text(chequesScreenLabel), findsOneWidget);
         expect(find.text('8842'), findsWidgets);
         await teardownTree(tester);
       });

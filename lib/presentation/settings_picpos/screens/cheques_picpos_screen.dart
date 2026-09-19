@@ -42,6 +42,8 @@ import '../../picpos_shell/picpos_hub_kpi.dart';
 import '../../picpos_shell/picpos_report_tabs.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../picpos_shell/picpos_surface.dart';
+import '../../../core/navigation/screen_id.dart';
+import '../../../data/providers/screen_navigation_provider.dart';
 
 /// ملاحظاتُ التبويبات — نصوصُ `TABS.main[].note` حرفيّاً.
 ///
@@ -121,6 +123,20 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
   String _query = '';
   final Map<int, int> _chip = {};
   int? _historyPaperId;
+
+  /// مرشِّحُ **النوع** — قرارُ المالك: يُظهر الكمبيالةَ وسندَ السحب.
+  ///
+  /// 🔴 **والنوعان كانا مخفيَّين**: `_typeLabels` تعرفهما منذ زمنٍ وتُظهرهما
+  /// سطراً خافتاً تحت رقم الورقة، ولا سبيلَ لعزلهما. فمن عنده كمبيالاتٌ
+  /// يقلّب الصفحاتِ كلَّها ليجدها بين الشيكات.
+  String _typeFilter = 'all';
+
+  /// الورقةُ المختارة — **واحدةٌ** بحكم زرّ الراديو.
+  ///
+  /// ⚠️ **مفردٌ لا متعدّد**: شريطُ الإجراءات تحت الجدول يخصّ ورقةً بعينها
+  /// (سندُها · إيداعُها · عرضُ سندها)، فمربّعُ تعليمٍ كان يَعِد بتعدّدٍ لا
+  /// يقع. والإيداعُ الجماعيُّ زرٌّ مستقلٌّ في الرأس وله حوارُه.
+  int? _selectedPaperId;
 
   @override
   void initState() {
@@ -261,7 +277,8 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
     final bounced = papers.where((p) => p.status == 'bounced').toList();
 
     return PicPosScreenScaffold(
-      title: 'الشيكات والأوراق التجارية',
+      // الاسمُ من الثابت المشترك — راجع [chequesScreenLabel] لِمَ موضعٌ واحد.
+      title: chequesScreenLabel,
       subtitle: 'الوارد والصادر والاستحقاق والتجيير والارتجاع',
       icon: PhosphorIconsBold.note,
       // ⚠️ **رأسُ التصميم فعلان، وكان الفوركُ بلا أيٍّ منهما.** فالشاشةُ
@@ -341,6 +358,40 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
               ),
             ],
           ),
+          // مرشِّحُ النوع — قرارُ المالك 2026-09-18. والعدّادُ على كلّ شريحةٍ
+          // **محسوبٌ** من نفس القائمة، فشريحةٌ بصفرٍ تقول «لا كمبيالاتِ
+          // عندك» بدل أن تفتح جدولاً فارغاً بلا تفسير.
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: Row(
+              children: [
+                const Icon(PhosphorIconsBold.funnel,
+                    size: 14, color: AppColors.textMuted),
+                const SizedBox(width: 8),
+                SegmentedButton<String>(
+                  showSelectedIcon: false,
+                  style: const ButtonStyle(visualDensity: VisualDensity.compact),
+                  segments: [
+                    ButtonSegment(
+                        value: 'all', label: Text('الكل (${papers.length})')),
+                    for (final e in _typeLabels.entries)
+                      ButtonSegment(
+                        value: e.key,
+                        label: Text('${e.value} '
+                            '(${papers.where((p) => p.type == e.key).length})'),
+                      ),
+                  ],
+                  selected: {_typeFilter},
+                  onSelectionChanged: (s) => setState(() {
+                    _typeFilter = s.first;
+                    // ⚠️ الاختيارُ يسقط مع الترشيح: ورقةٌ اختيرت ثمّ أُخفيت
+                    //    تترك شريطَ إجراءاتٍ يعمل على ما لا يُرى.
+                    _selectedPaperId = null;
+                  }),
+                ),
+              ],
+            ),
+          ),
           PicPosTabNote(note: _tabNotes[_tabs.index]),
         ],
       ),
@@ -365,6 +416,20 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
         child: child,
       );
 
+  /// أعمدةُ الجدول **مع** خانةِ الاختيار — والعرضُ ضيّقٌ مقصود: زرُّ راديو
+  /// لا نصّ. وطولُ [PicPosDataTable.totals] يجب أن يطابقها خانةً بخانة.
+  List<PicPosTableColumn> get _selectableCols => const [
+        PicPosTableColumn('', flex: 0.35),
+        PicPosTableColumn('رقم الورقة', flex: 1.3),
+        PicPosTableColumn('الطرف', flex: 1.7),
+        PicPosTableColumn('البنك', flex: 1.4),
+        PicPosTableColumn('الإصدار', flex: 1.2),
+        PicPosTableColumn('الاستحقاق', flex: 1.2),
+        PicPosTableColumn('المبلغ', flex: 1.2, align: PicPosCellAlign.end),
+        PicPosTableColumn('الحالة', flex: 1.2),
+        PicPosTableColumn('إجراء', flex: 1.3),
+      ];
+
   List<PicPosTableColumn> get _paperCols => const [
         PicPosTableColumn('رقم الورقة', flex: 1.3),
         PicPosTableColumn('الطرف', flex: 1.7),
@@ -376,6 +441,32 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
         PicPosTableColumn('إجراء', flex: 1.3),
       ];
 
+  /// صفوفُ الجدول **باختيارٍ مفرد**.
+  ///
+  /// ⚠️ **والنقرُ على الصفّ كلِّه يختار**: زرُّ الراديو هدفٌ صغير، وإلزامُ
+  /// المستخدم بإصابته يجعل الاختيارَ عملاً. والنقرةُ الثانيةُ تُلغي
+  /// الاختيارَ — فلا يبقى شريطُ إجراءاتٍ مفتوحاً بلا سبيلٍ لإغلاقه.
+  List<PicPosTableRow> _selectableRows(
+    List<CommercialPaperData> papers,
+    List<Party> parties,
+  ) =>
+      [
+        for (final p in papers)
+          PicPosTableRow(
+            selected: p.id == _selectedPaperId,
+            onTap: () => setState(() =>
+                _selectedPaperId = _selectedPaperId == p.id ? null : p.id),
+            cells: [
+              PicPosRadioCell(
+                selected: p.id == _selectedPaperId,
+                onSelect: () => setState(() =>
+                    _selectedPaperId = _selectedPaperId == p.id ? null : p.id),
+              ),
+              ..._paperCells(p, parties),
+            ],
+          ),
+      ];
+
   List<PicPosTableRow> _paperRows(
     List<CommercialPaperData> papers,
     List<Party> parties,
@@ -383,30 +474,31 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
       [
         for (final p in papers)
           PicPosTableRow(
-            cells: [
-              PicPosTextCell(
-                p.paperNumber,
-                sub: _typeLabels[p.type] ?? p.type,
-                icon: p.type == 'promissory_note'
-                    ? PhosphorIconsBold.scroll
-                    : PhosphorIconsBold.note,
-                tint: _statusLabels[p.status]?.$2 ?? AppColors.primary,
-              ),
-              PicPosTextCell(_partyName(parties, p.partyId)),
-              PicPosTextCell(
-                p.bankName ?? '—',
-                sub: p.bankBranch,
-              ),
-              PicPosTextCell(_d(p.issueDate)),
-              PicPosTextCell(_d(p.dueDate)),
-              PicPosTextCell(p.amount.toStringAsFixed(0)),
-              PicPosPillCell(
-                _statusLabels[p.status]?.$1 ?? p.status,
-                _statusLabels[p.status]?.$2 ?? AppColors.textMuted,
-              ),
-              _actionCell(p, parties),
-            ],
+            cells: _paperCells(p, parties),
           ),
+      ];
+
+  /// خلايا الورقة بلا خانةِ الاختيار — يقرؤها الجدولان المفردُ والعاديّ،
+  /// فلا يفترق ما يُعرَض في تبويبةٍ عمّا يُعرَض في أخرى.
+  List<PicPosCell> _paperCells(CommercialPaperData p, List<Party> parties) => [
+        PicPosTextCell(
+          p.paperNumber,
+          sub: _typeLabels[p.type] ?? p.type,
+          icon: p.type == 'promissory_note'
+              ? PhosphorIconsBold.scroll
+              : PhosphorIconsBold.note,
+          tint: _statusLabels[p.status]?.$2 ?? AppColors.primary,
+        ),
+        PicPosTextCell(_partyName(parties, p.partyId)),
+        PicPosTextCell(p.bankName ?? '—', sub: p.bankBranch),
+        PicPosTextCell(_d(p.issueDate)),
+        PicPosTextCell(_d(p.dueDate)),
+        PicPosTextCell(p.amount.toStringAsFixed(0)),
+        PicPosPillCell(
+          _statusLabels[p.status]?.$1 ?? p.status,
+          _statusLabels[p.status]?.$2 ?? AppColors.textMuted,
+        ),
+        _actionCell(p, parties),
       ];
 
   /// عمودُ «إجراء» — زرٌّ لكلّ صفٍّ **يتبع حالتَه**، كما في التصميم.
@@ -605,8 +697,16 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
     final shown = papers
         .where((p) =>
             chipDefs[pick].$2(p) &&
+            // مرشِّحُ النوع — قرارُ المالك: الكمبيالةُ وسندُ السحب يُعزَلان.
+            (_typeFilter == 'all' || p.type == _typeFilter) &&
             (_hit(p.paperNumber) || _hit(_partyName(parties, p.partyId))))
         .toList();
+
+    // ⚠️ **الاختيارُ يُقرأ من المعروض لا من الذاكرة**: ورقةٌ اختيرت ثمّ
+    //    أخفاها ترشيحٌ أو تغيّرت حالتُها تترك شريطَ إجراءاتٍ يعمل على ما لا
+    //    يُرى — وهو أسوأُ من زرٍّ لا يفعل.
+    final selected =
+        shown.where((p) => p.id == _selectedPaperId).firstOrNull;
 
     final week = DateTime.now().add(const Duration(days: 7));
     final dueSoon = papers
@@ -659,20 +759,24 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
           title: title,
           subtitle: subtitle,
           emptyLabel: 'لا أوراقَ مطابقة',
-          columns: _paperCols,
+          columns: _selectableCols,
           chips: [
             for (var i = 0; i < chipDefs.length; i++)
               PicPosTableChip(
                 label: chipDefs[i].$1,
                 count: '${papers.where(chipDefs[i].$2).length}',
-                onTap: () => setState(() => _chip[tabIndex] = i),
+                onTap: () => setState(() {
+                  _chip[tabIndex] = i;
+                  _selectedPaperId = null;
+                }),
               ),
           ],
           selectedChip: pick,
-          rows: _paperRows(shown, parties),
-          // ⚠️ طولُها = عددُ الأعمدة. زيادةُ عمودِ «إجراء» بلا خانةٍ هنا
-          //    تُزيح الإجماليَّ عموداً كاملاً تحت «الحالة».
+          rows: _selectableRows(shown, parties),
+          // ⚠️ طولُها = عددُ الأعمدة. وخانةُ الاختيار عمودٌ تاسعٌ، فإسقاطُ
+          //    خانتِها هنا يُزيح الإجماليَّ عموداً كاملاً تحت «الاستحقاق».
           totals: [
+            '',
             '${shown.length} ورقة',
             '',
             '',
@@ -683,6 +787,17 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
             '',
           ],
         ),
+        if (selected != null) ...[
+          const SizedBox(height: 10),
+          _SelectionBar(
+            paper: selected,
+            canDeposit: _canDeposit(selected.status),
+            onDeposit: () => _depositBatch(papers, parties, only: selected.id),
+            onOpenVoucher: () => ref
+                .read(screenNavigationProvider.notifier)
+                .open(ScreenId.treasury.navigationIndex),
+          ),
+        ],
       ],
     );
   }
@@ -927,4 +1042,99 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
           ),
         ),
       );
+}
+
+/// شريطُ الورقة المختارة — الشيكُ وسندُه وفعلاه، كما يرسمه التصميم تحت
+/// الجدول.
+///
+/// ═══ 🔴 «سند القبض» — ولماذا قد يقول «—» ═══
+///
+/// السندُ يُقرأ من `commercial_papers.sourceVoucherId`، وهو عمودٌ مشحونٌ منذ
+/// v174 **كان بلا كاتبٍ ولا قارئ**. وقياسُ المسار وجد أنّ سندَ القبض بشيكٍ
+/// **لم يكن يُكتَب أصلاً** (‏مواصفة ١٣٣: `skipSafeTransaction`)، فالرابطُ
+/// الوحيدُ كان نصّاً عربيّاً حرّاً في `notes` يحمل رقماً يولّده الحوارُ في
+/// ذاكرته ولا يُخزَّن قطّ.
+///
+/// فيُعرَض «—» في ثلاث حالاتٍ **كلُّها حقيقيّةٌ لا أعطاب**:
+///   ‏١) ورقةٌ أُنشئت يدويّاً من هذه الشاشة — لا سندَ لها أصلاً؛
+///   ‏٢) ورقةٌ أقدمُ من العمود؛
+///   ‏٣) وفي وضع العميل: الكتابةُ على الخادم فلا معرّفَ محلّيّ.
+///
+/// ⚠️ **وزرُّ «عرض السند» يتبع وجودَ السند** لا وجودَ الورقة: زرٌّ يُعرَض
+/// ولا يقفز أسوأُ من غيابه.
+class _SelectionBar extends ConsumerWidget {
+  const _SelectionBar({
+    required this.paper,
+    required this.canDeposit,
+    required this.onDeposit,
+    required this.onOpenVoucher,
+  });
+
+  final CommercialPaperData paper;
+  final bool canDeposit;
+  final VoidCallback onDeposit;
+  final VoidCallback onOpenVoucher;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final text = Theme.of(context).textTheme;
+    final voucherId = paper.sourceVoucherId;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+      decoration: BoxDecoration(
+        color: context.picposCard,
+        border: Border.all(color: context.picposHairline),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Text('الشيك',
+              style: text.labelSmall?.copyWith(color: AppColors.textMuted)),
+          const SizedBox(width: 8),
+          Text(paper.paperNumber,
+              style: text.labelLarge?.copyWith(fontWeight: FontWeight.w800)),
+          const SizedBox(width: 18),
+          Container(width: 1, height: 22, color: context.picposHairline),
+          const SizedBox(width: 18),
+          Text(
+            paper.direction == 'issued' ? 'سند الصرف' : 'سند القبض',
+            style: text.labelSmall?.copyWith(color: AppColors.textMuted),
+          ),
+          const SizedBox(width: 8),
+          if (voucherId == null)
+            Text('—',
+                style: text.labelLarge?.copyWith(color: AppColors.textMuted))
+          else
+            FutureBuilder<String?>(
+              future: ref
+                  .read(treasuryRepositoryProvider)
+                  .getVoucherNumberById(voucherId),
+              builder: (context, snap) => Text(
+                snap.data ?? '—',
+                style: text.labelLarge?.copyWith(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          const Spacer(),
+          if (canDeposit)
+            FilledButton.icon(
+              onPressed: onDeposit,
+              icon: const Icon(PhosphorIconsBold.vault, size: 15),
+              label: const Text('إيداع للتحصيل'),
+            ),
+          if (voucherId != null) ...[
+            const SizedBox(width: 8),
+            OutlinedButton.icon(
+              onPressed: onOpenVoucher,
+              icon: const Icon(PhosphorIconsBold.arrowSquareOut, size: 15),
+              label: const Text('عرض السند'),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 }

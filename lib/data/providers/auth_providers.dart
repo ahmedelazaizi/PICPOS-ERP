@@ -738,6 +738,7 @@ const kAllNavItemDefs = [
   // ═══════════════════════════════════════════
   NavItemDef(icon: PhosphorIconsBold.wallet, label: 'الخزينة', permission: 'treasury_view', index: 10, section: 'المالية والمحاسبة', group: 'accounting'),
   NavItemDef(icon: PhosphorIconsBold.lockKey, label: 'إغلاق الوردية', permission: PermissionCodes.posShiftClose, index: 56, group: 'accounting'),
+  NavItemDef(icon: PhosphorIconsBold.checks, label: chequesScreenLabel, permission: 'treasury_view', index: 34, group: 'accounting'),
   // حاويةُ «الحسابات» — مدخلٌ واحدٌ يفتح تبويباتِ التصميم السبعة. تظهر في
   // PicPos وحدَها، وتُطوى تحتها مداخلُ [kPicPosFoldedIntoAccountingHub].
   NavItemDef(icon: PhosphorIconsBold.bookOpen, label: 'الحسابات', permission: 'settings_view', index: 63, section: 'المالية والمحاسبة', group: 'accounting'),
@@ -746,7 +747,6 @@ const kAllNavItemDefs = [
   NavItemDef(icon: PhosphorIconsBold.book, label: 'دفتر الأستاذ', permission: 'settings_view', index: 36, group: 'accounting'),
   NavItemDef(icon: PhosphorIconsBold.link, label: 'ربط الحسابات', permission: 'settings_view', index: 31, group: 'accounting'),
   NavItemDef(icon: PhosphorIconsBold.treeStructure, label: 'مراكز التكلفة', permission: 'settings_view', index: 33, group: 'accounting'),
-  NavItemDef(icon: PhosphorIconsBold.checks, label: 'الشيكات', permission: 'treasury_view', index: 34, group: 'accounting'),
   NavItemDef(icon: PhosphorIconsBold.buildings, label: 'الأصول الثابتة', permission: 'assets_view', index: 35, group: 'accounting'),
   // ⚠️ مصدرُ توصيلٍ **سادسٌ مستقلٌّ** لا يُشتقّ من الخمسة قبله: شاشةٌ صحيحةٌ
   //    في `ScreenId` و`AppScreen` وخريطةِ الصلاحيات والنطاقِ و`ScreenConfig`
