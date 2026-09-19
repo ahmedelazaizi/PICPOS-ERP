@@ -94,16 +94,20 @@ void main() {
         'lib/presentation/treasury_picpos/widgets/treasury_actions_grid_picpos.dart';
 
     test('لا بابَ ثانياً — الحوارُ يُفتح من الفعل المُمرَّر للشبكة وحدَه', () {
+      // 🔴 **ومرساةٌ كسرها فوركٌ**: الصنفُ صار `ReceiptVoucherDialogPicpos`
+      //    في `b71e7f2e`، والمرساةُ بقيت `ReceiptVoucherDialog(` — وهي ليست
+      //    مقطعاً من الجديد (‏`Picpos` بين `Dialog` و`(`). وفحصُ **العدد**
+      //    هو ما أسقطها صريحةً (‏٠ ≠ ١) بدل أن تمرّ خضراءَ بلا مقيس.
       final src = _code(screenPath);
       expect(
-        'ReceiptVoucherDialog('.allMatches(src).length,
+        'ReceiptVoucherDialogPicpos('.allMatches(src).length,
         1,
         reason: 'موضعٌ ثانٍ يفتح الحوارَ يتجاوز حارسَ الشبكة — وهي بالضبط '
             'فئةُ «البابِ الثاني» التي وُجد هذا الملفُّ لأجلها',
       );
       expect(
         at(src, 'TreasuryActionsGridPicpos('),
-        lessThan(at(src, 'ReceiptVoucherDialog(')),
+        lessThan(at(src, 'ReceiptVoucherDialogPicpos(')),
         reason: 'الفعلُ يُبنى داخلَ استدعاء الشبكة لا خارجَه',
       );
     });
@@ -130,10 +134,18 @@ void main() {
         'PermissionCodes.productsAdd',
         'AddProductDialog.show',
       ],
+      // 🔴 **ومرساةٌ ثانيةٌ كسرها تحويلُ التعديل** (‏`546e7d87`): كانت
+      //    `createNewInvoice` فصارت `openPicPosInvoiceForm` تخدم الإنشاءَ
+      //    والتعديلَ معاً. والخاصّيّةُ المحروسةُ قائمة، والمرساةُ تتبعها.
       'lib/presentation/purchases_picpos/screens/purchases_picpos_crud.dart': [
-        'void createNewInvoice() async {',
+        'Future<void> openPicPosInvoiceForm({',
         'PermissionCodes.purchasesCreate',
         'showGeneralDialog(',
+        // ⚠️ نافذةٌ أوسعُ لهذه وحدَها: الدالّةُ كبرت بتحميل أوامر الشراء
+        //    والملءِ الأوّليّ، فصار الحوارُ عند ٢٨٠٤. والدالّةُ التاليةُ عند
+        //    ٧٧٩٢ — فالنافذةُ تبقى **داخلَ** هذه الدالّة بفارقٍ واسع، ولا
+        //    تلتقط `showGeneralDialog` من جارةٍ لها.
+        '3200',
       ],
       'lib/presentation/sales_invoices_picpos/screens/sales_invoice_dialogs.dart':
           [
@@ -145,12 +157,30 @@ void main() {
 
     cases.forEach((path, spec) {
       final signature = spec[0], code = spec[1], action = spec[2];
+      final window = spec.length > 3 ? int.parse(spec[3]) : 2500;
       test('${path.split('/').last} — الفحصُ قبل فتح الحوار', () {
-        final body = windowFrom(_code(path), signature);
+        final body = windowFrom(_code(path), signature, window);
         expect(at(body, code), lessThan(at(body, action)),
             reason: 'الفحصُ يجب أن يسبق فتحَ حوار الإنشاء. وبلا فحصٍ في '
                 'الدالّة يتخطّى **F5** لفّةَ الزرّ كلياً.');
       });
+    });
+
+    test('وفاتورةُ المشتريات — الصلاحيةُ تتبع الفعلَ لا مدخلَه', () {
+      // 🔴 بابٌ واحدٌ يخدم فعلَين: التحريرُ يعكس قيداً ويعيد ترحيلَه، فلا
+      //    يحكمه إذنُ **الإنشاء**. وفحصُ `purchasesCreate` وحدَه كان سيفتح
+      //    التحريرَ لمن لا يملكه — ثمّ يرفض المحرّكُ الحفظَ بعد ملءِ شاشة.
+      final body = windowFrom(
+        _code(
+            'lib/presentation/purchases_picpos/screens/purchases_picpos_crud.dart'),
+        'Future<void> openPicPosInvoiceForm({',
+        3200,
+      );
+      expect(body.contains('PermissionCodes.purchasesEdit'), isTrue,
+          reason: 'إذنُ التحرير لا يُفحَص — والبابُ واحدٌ للفعلَين');
+      expect(at(body, 'PermissionCodes.purchasesEdit'),
+          lessThan(at(body, 'showGeneralDialog(')),
+          reason: 'الفحصُ بعد فتح الحوار — فلا يمنع شيئاً');
     });
   });
 

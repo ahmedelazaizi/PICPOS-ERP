@@ -19,6 +19,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ural_erp/core/navigation/screen_id.dart';
 import 'package:ural_erp/data/providers/providers.dart';
 import 'package:ural_erp/domain/repositories/accounting_repository.dart';
 import 'package:ural_erp/presentation/accounting_picpos/journal_entries_picpos_screen.dart';
@@ -40,6 +41,13 @@ class _FakeAccountingRepo implements IAccountingRepository {
     DateTime? to,
   }) =>
       Stream.value(const []);
+
+  @override
+  Stream<Map<int, ({double debit, double credit})>> watchJournalEntryTotals({
+    DateTime? from,
+    DateTime? to,
+  }) =>
+      Stream.value(const {});
 
   @override
   Future<List<Account>> getAllAccounts() async => accounts;
@@ -152,7 +160,7 @@ void main() {
       testWidgets('الشاشةُ تُبنى وتحمل زرَّي الحوارَين', (tester) async {
         await pump(tester, width);
 
-        expect(find.text('قيود اليومية'), findsWidgets);
+        expect(find.text(journalEntriesScreenLabel), findsWidgets);
         expect(find.widgetWithText(FilledButton, 'قيد يدوي'), findsOneWidget);
         expect(find.widgetWithText(OutlinedButton, 'من قالب'), findsOneWidget);
         expect(tester.takeException(), isNull);

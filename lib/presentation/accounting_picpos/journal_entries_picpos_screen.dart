@@ -35,12 +35,23 @@ import '../picpos_shell/picpos_surface.dart';
 part 'journal_entries_picpos_create_dialog.dart';
 part 'journal_entries_picpos_widgets.dart';
 
+/// تنسيقُ المال على هذه الشاشة — **واحدٌ للشريط ولصفوف القيود**.
+///
+/// ⚠️ ورقمُ الخانات من [AppConstants.decimalPlaces] لا مكتوباً: العملةُ
+/// الافتراضيّةُ هنا بثلاث خانات، وتثبيتُ اثنتَين يُخفي فلساً في كلّ سطر.
+final journalMoney =
+    NumberFormat('#,##0.${'0' * AppConstants.decimalPlaces}');
+
 /// قيودُ اليومية بهويّة PicPos — تبويبُ `je` في حاويةِ الحسابات.
 ///
-/// التصميمُ: بطاقتا إجمالٍ (مدين/دائن) ثمّ صفوفُ القيود بأعمدةِ رقمِ القيد ·
-/// التاريخ · البيان · المصدر · مركز التكلفة · القيمة · الحالة · إجراءات،
-/// ويتوسّع الصفُّ إلى سطوره (الحساب · مركز التكلفة · مدين · دائن) مع شارةِ
-/// «متوازن».
+/// التصميمُ: شريطُ إجماليّاتٍ بأربع بطاقات (عدد القيود · إجمالي المدين ·
+/// إجمالي الدائن · الفرق) ثمّ صفوفُ القيود بأعمدةِ رقمِ القيد · التاريخ ·
+/// البيان · المصدر · الحالة · إجمالي المدين · إجمالي الدائن · الفرق ·
+/// إجراءات، ويتوسّع الصفُّ إلى سطوره مع «الفرق» رقماً وشارةً، ثمّ تذييلٍ
+/// فيه المنشئُ والمرجعُ وزرُّ المستند المصدر.
+///
+/// ⚠️ **ومجاميعُ الصفوف من استعلامٍ مُجمَّعٍ واحد** (`watchJournalEntryTotals`)
+/// لا من قراءةِ سطورٍ لكلّ صفّ: تلك N+1 في كلّ إعادةِ بناء.
 ///
 /// ⚠️ **حارسُ MJE-3 منقولٌ كما هو ولا يُسقَط.** عكسُ القيد يُنشئ قيداً
 /// يدويّاً جديداً، وكان الفحصُ موجوداً على الخادم وحدَه — فأيُّ مستخدمٍ يعبر
@@ -62,6 +73,15 @@ class _JournalEntriesPicPosScreenState
   DateTime _dateFrom = DateTime(DateTime.now().year, DateTime.now().month, 1);
   DateTime _dateTo = DateTime.now();
   String _filterType = 'all';
+
+  /// «الحالة» في التصميم — مرشِّحٌ قائمٌ بذاته لا شارةٌ في بطاقة.
+  ///
+  /// 🔴 **وهو بديلُ بطاقةٍ سقطت**: شريطُ الإجماليّات كان يعدّ «بانتظار
+  /// الاعتماد»، وقد حلّت محلَّه بطاقاتُ التصميم الأربع. وإسقاطُ العدّ بلا
+  /// بديلٍ يترك القيودَ المنتظرةَ بلا ما يجمعها — والمرشِّحُ أقوى منه:
+  /// يُظهرها لا يَعُدُّها.
+  String _filterStatus = 'all';
+
   int? _filterBranchId;
   static const int _noBranchSentinel = -1;
   String _searchQuery = '';
@@ -121,8 +141,11 @@ class _JournalEntriesPicPosScreenState
           final shown = _applyFilters(all);
 
           return PicPosScreenScaffold(
-            title: 'قيود اليومية',
-            subtitle: 'القيود التلقائية واليدوية',
+            // الاسمُ من الثابت المشترك — وقياسُ 2026-09-19 وجد **ثمانيةَ**
+            // مواضعَ تكتبه: أربعةُ أبوابٍ تؤدّي إلى الشاشة، وأربعةٌ يقرؤها
+            // من وصل (العنوان · تبويبُ `je` · ورقةُ الطباعة · ملفُّ Excel).
+            title: journalEntriesScreenLabel,
+            subtitle: 'عرض القيود المحاسبية مع إمكانية البحث والتصفية',
             icon: PhosphorIconsBold.notebook,
             headerSearch: TextField(
               controller: _searchController,
@@ -179,7 +202,21 @@ class _JournalEntriesPicPosScreenState
             toolbar: _buildToolbar(),
             body: !snapshot.hasData
                 ? const Center(child: CircularProgressIndicator())
-                : _buildBody(repo, all, shown),
+                // ⚠️ **مجرىً ثانٍ بنفس المدى**: المجاميعُ في
+                // `journal_entry_lines` لا على صفّ القيد، فلا يحملها
+                // `watchJournalEntries`. وتُقرأ **مُجمَّعةً مرّةً واحدة** لا
+                // بنداءٍ لكلّ صفّ.
+                : StreamBuilder<Map<int, ({double debit, double credit})>>(
+                    stream: repo.watchJournalEntryTotals(
+                        from: _dateFrom, to: _dateTo),
+                    builder: (context, totalsSnap) => _buildBody(
+                      repo,
+                      all,
+                      shown,
+                      totalsSnap.data ??
+                          const <int, ({double debit, double credit})>{},
+                    ),
+                  ),
           );
         },
       ),
@@ -193,6 +230,14 @@ class _JournalEntriesPicPosScreenState
       out = out.where((e) => e.isAutoPosted).toList();
     } else if (_filterType == 'manual') {
       out = out.where((e) => !e.isAutoPosted).toList();
+    }
+
+    // «الحالة» — و`isPosted` هو الفاصل: أدخل الأستاذَ أم لا. وهو نفسُه ما
+    // يحكم شارةَ الصفّ وزرَّ العكس، فلا يقول المرشِّحُ غيرَ ما تقوله الشارة.
+    if (_filterStatus == 'posted') {
+      out = out.where((e) => e.isPosted).toList();
+    } else if (_filterStatus == 'pending') {
+      out = out.where((e) => !e.isPosted).toList();
     }
 
     final branch = _filterBranchId;
@@ -235,6 +280,18 @@ class _JournalEntriesPicPosScreenState
           selected: {_filterType},
           onSelectionChanged: (s) => setState(() => _filterType = s.first),
         ),
+        // «الحالة» في التصميم — ويحلّ محلَّ بطاقة «بانتظار الاعتماد» التي
+        // أخلت مكانَها لبطاقات الإجماليّات الأربع.
+        SegmentedButton<String>(
+          showSelectedIcon: false,
+          segments: const [
+            ButtonSegment(value: 'all', label: Text('كل الحالات')),
+            ButtonSegment(value: 'posted', label: Text('مرحّل')),
+            ButtonSegment(value: 'pending', label: Text('بانتظار الاعتماد')),
+          ],
+          selected: {_filterStatus},
+          onSelectionChanged: (s) => setState(() => _filterStatus = s.first),
+        ),
         Consumer(
           builder: (context, ref, _) {
             // نفسُ مزوِّدِ الفروع الذي تقرأ منه الطباعةُ — مصدرٌ واحدٌ فلا
@@ -271,6 +328,7 @@ class _JournalEntriesPicPosScreenState
     IAccountingRepository repo,
     List<JournalEntryData> all,
     List<JournalEntryData> shown,
+    Map<int, ({double debit, double credit})> totals,
   ) {
     if (all.isEmpty) {
       return const PicPosEmptyState(
@@ -290,6 +348,7 @@ class _JournalEntriesPicPosScreenState
             setState(() {
               _searchQuery = '';
               _filterType = 'all';
+              _filterStatus = 'all';
               _filterBranchId = null;
             });
           },
@@ -302,7 +361,7 @@ class _JournalEntriesPicPosScreenState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _TotalsBar(entries: shown, total: all.length),
+        _TotalsBar(entries: shown, totals: totals),
         const SizedBox(height: 10),
         Expanded(
           child: ListView.separated(
@@ -314,6 +373,10 @@ class _JournalEntriesPicPosScreenState
               return _EntryCard(
                 entry: entry,
                 repo: repo,
+                balance: JournalBalance(
+                  debit: totals[entry.id]?.debit ?? 0,
+                  credit: totals[entry.id]?.credit ?? 0,
+                ),
                 dateFormat: _dateFormat,
                 expanded: _expanded.contains(entry.id),
                 onToggle: () => setState(() {
@@ -542,7 +605,7 @@ class _JournalEntriesPicPosScreenState
       }
 
       await ReportPdfGenerator.printGeneralLedger(
-        accountName: 'قيود اليومية',
+        accountName: journalEntriesScreenLabel,
         data: data,
         fromDate: _dateFrom,
         toDate: _dateTo,
@@ -593,7 +656,7 @@ class _JournalEntriesPicPosScreenState
       if (!mounted) return;
       await ExcelExportHelper.export(
         context: context,
-        title: 'قيود اليومية',
+        title: journalEntriesScreenLabel,
         headers: const [
           'رقم القيد',
           'التاريخ',
@@ -713,23 +776,44 @@ class _Chip extends StatelessWidget {
   }
 }
 
-/// بطاقتا الإجمال — مقيستان من القيود **المعروضة**، والعددُ الكلّيُّ
-/// مذكورٌ بجانبهما كي لا يظنّ القارئُ أنّ الترشيحَ حذف قيوداً.
+/// شريطُ إجماليّات الصفحة — **عدد القيود · إجمالي المدين · إجمالي الدائن ·
+/// الفرق**، كما في التصميم حرفاً.
+///
+/// ⚠️ **ومقيسٌ من القيود المعروضة** لا من كلّ ما في المدى: الشريطُ يصف ما تحته.
+///
+/// ═══ 🔴 ولماذا الشارةُ تقرأ [JournalBalance.worstOf] لا فرقَ المجموع ═══
+///
+/// قيدان أحدُهما مدينُه زائدٌ مئةً والآخرُ دائنُه زائدٌ مئةً يعطيان مجموعاً
+/// **فرقُه صفر**. فشريطٌ يلوّن نفسَه بفرق المجموع يقول «متوازن» وفي الصفحة
+/// قيدان مكسوران — وهي الحالةُ التي يُبنى الشريطُ لكشفها.
+///
+/// فالرقمُ المعروضُ فرقُ المجموع (وإلّا لم يطابق طرحَ العمودَين بجانبه)،
+/// **واللونُ والتنبيهُ من أسوأِ قيدٍ منفرد**.
 class _TotalsBar extends StatelessWidget {
-  const _TotalsBar({required this.entries, required this.total});
+  const _TotalsBar({required this.entries, required this.totals});
 
   final List<JournalEntryData> entries;
-  final int total;
+  final Map<int, ({double debit, double credit})> totals;
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
+    final parts = [
+      for (final e in entries)
+        JournalBalance(
+          debit: totals[e.id]?.debit ?? 0,
+          credit: totals[e.id]?.credit ?? 0,
+        ),
+    ];
+    final page = JournalBalance.sum(parts);
+    final worst = JournalBalance.worstOf(parts);
+    final anyBroken = !JournalBalance(debit: worst, credit: 0).isBalanced;
+
     return Row(
       children: [
         Expanded(
           child: _TotalCard(
-            label: 'القيود المعروضة',
-            value: '${entries.length} من $total',
+            label: 'عدد القيود',
+            value: '${entries.length}',
             tint: AppColors.primary,
             icon: PhosphorIconsBold.notebook,
           ),
@@ -737,34 +821,36 @@ class _TotalsBar extends StatelessWidget {
         const SizedBox(width: 8),
         Expanded(
           child: _TotalCard(
-            label: 'قيود آلية',
-            value: '${entries.where((e) => e.isAutoPosted).length}',
+            label: 'إجمالي المدين',
+            value: journalMoney.format(page.debit),
             tint: AppColors.info,
-            icon: PhosphorIconsBold.lightning,
+            icon: PhosphorIconsBold.arrowDownLeft,
           ),
         ),
         const SizedBox(width: 8),
         Expanded(
           child: _TotalCard(
-            label: 'قيود يدوية',
-            value: '${entries.where((e) => !e.isAutoPosted).length}',
-            tint: AppColors.warning,
-            icon: PhosphorIconsBold.notePencil,
+            label: 'إجمالي الدائن',
+            value: journalMoney.format(page.credit),
+            tint: AppColors.info,
+            icon: PhosphorIconsBold.arrowUpRight,
           ),
         ),
         const SizedBox(width: 8),
         Expanded(
-          child: Builder(builder: (context) {
-            // ⚠️ لا عمودَ `isReversed` في الجدول — حالةُ القيد الفعليّةُ
-            //    `needsApproval`، وهي ما يعرضه عمودُ «الحالة» في التصميم.
-            final pending = entries.where((e) => e.needsApproval).length;
-            return _TotalCard(
-              label: 'بانتظار الاعتماد',
-              value: '$pending',
-              tint: pending > 0 ? AppColors.error : AppColors.textMuted,
-              icon: PhosphorIconsBold.hourglass,
-            );
-          }),
+          child: _TotalCard(
+            label: 'الفرق',
+            value: journalMoney.format(page.difference),
+            tint: (page.isBalanced && !anyBroken)
+                ? AppColors.success
+                : AppColors.error,
+            icon: PhosphorIconsBold.scales,
+            // 🔴 المجموعُ متّزنٌ وفي الصفحة قيدٌ مكسور — الحالةُ التي يُخفيها
+            //    الرقمُ وحدَه، فتُقال نصّاً لا لوناً فقط.
+            hint: (page.isBalanced && anyBroken)
+                ? 'بينها قيدٌ غيرُ متوازن'
+                : null,
+          ),
         ),
       ],
     );
@@ -777,12 +863,16 @@ class _TotalCard extends StatelessWidget {
     required this.value,
     required this.tint,
     required this.icon,
+    this.hint,
   });
 
   final String label;
   final String value;
   final Color tint;
   final IconData icon;
+
+  /// سطرٌ صغيرٌ تحت القيمة — يُقال حين لا يكفي الرقمُ وحدَه.
+  final String? hint;
 
   @override
   Widget build(BuildContext context) {
@@ -811,6 +901,11 @@ class _TotalCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: text.titleSmall?.copyWith(
                         color: tint, fontWeight: FontWeight.w800)),
+                if (hint != null)
+                  Text(hint!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: text.labelSmall?.copyWith(color: AppColors.error)),
               ],
             ),
           ),
@@ -825,6 +920,7 @@ class _EntryCard extends StatelessWidget {
   const _EntryCard({
     required this.entry,
     required this.repo,
+    required this.balance,
     required this.dateFormat,
     required this.expanded,
     required this.onToggle,
@@ -836,6 +932,10 @@ class _EntryCard extends StatelessWidget {
 
   final JournalEntryData entry;
   final IAccountingRepository repo;
+
+  /// مجموعا سطور القيد — من الاستعلام المُجمَّع، لا بقراءةٍ لكلّ صفّ.
+  final JournalBalance balance;
+
   final DateFormat dateFormat;
   final bool expanded;
   final VoidCallback onToggle;
@@ -911,11 +1011,24 @@ class _EntryCard extends StatelessWidget {
                     label: auto ? 'آلي' : 'يدوي',
                     tint: tint,
                   ),
-                  if (entry.needsApproval) ...[
-                    const SizedBox(width: 6),
-                    const _Badge(
-                        label: 'بانتظار الاعتماد', tint: AppColors.error),
-                  ],
+                  const SizedBox(width: 6),
+                  // «الحالة» — و«مرحّل» تُقال صراحةً لا بغياب شارة: الفرقُ
+                  // بين «دخل الأستاذَ» و«ينتظر» هو ما يحكم زرَّ العكس تحته.
+                  _Badge(
+                    label: entry.isPosted ? 'مرحّل' : 'بانتظار الاعتماد',
+                    tint: entry.isPosted ? AppColors.success : AppColors.error,
+                  ),
+                  const SizedBox(width: 6),
+                  // ثلاثةُ أعمدةِ التصميم — من الاستعلام المُجمَّع.
+                  _NumCell(value: balance.debit, tint: AppColors.textPrimary),
+                  _NumCell(value: balance.credit, tint: AppColors.textPrimary),
+                  _NumCell(
+                    value: balance.difference,
+                    tint: balance.isBalanced
+                        ? AppColors.textMuted
+                        : AppColors.error,
+                    bold: !balance.isBalanced,
+                  ),
                   const SizedBox(width: 6),
                   // فعلُ الاعتماد لا يظهر إلّا لقيدٍ ينتظره — وإسقاطُه كان
                   // سيُخفي الفعلَ كلَّه من الشاشة المفروكة.
@@ -928,12 +1041,18 @@ class _EntryCard extends StatelessWidget {
                       icon: const Icon(PhosphorIconsBold.checkCircle),
                       onPressed: onApprove,
                     ),
+                  // 🔴 **ولا يُعكَس إلّا ما رُحِّل** — والزرُّ معطَّلٌ بسببٍ
+                  // ظاهرٍ لا مخفيّ. والقاعدةُ نفسُها محروسةٌ في الـDAO،
+                  // فالتعطيلُ هنا تحسينُ تجربةٍ لا حارسٌ (المسارُ يُبلَغ من
+                  // الشاشة الأصليّة ومن أيّ سكربت).
                   IconButton(
-                    tooltip: 'عكس القيد',
+                    tooltip: entry.isPosted
+                        ? 'عكس القيد'
+                        : 'مسودة لم تُرحَّل — تُعتمَد أو تُعدَّل، ولا تُعكَس',
                     iconSize: 15,
                     visualDensity: VisualDensity.compact,
                     icon: const Icon(PhosphorIconsBold.arrowUUpLeft),
-                    onPressed: onReverse,
+                    onPressed: entry.isPosted ? onReverse : null,
                   ),
                   Icon(
                     expanded
@@ -1072,6 +1191,36 @@ class _EntryFooter extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// خانةُ رقمٍ في صفّ القيد — عرضٌ ثابتٌ كي تصطفَّ الأعمدةُ رأسيّاً.
+///
+/// ⚠️ **ولا تنكمش**: عرضٌ مرنٌ يجعل الأرقامَ تتزحزح مع طول البيان فتُقرأ
+/// الأعمدةُ الثلاثةُ ملتويةً — وهي أرقامٌ تُقارَن بالعين.
+class _NumCell extends StatelessWidget {
+  const _NumCell({required this.value, required this.tint, this.bold = false});
+
+  final double value;
+  final Color tint;
+  final bool bold;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 78,
+      child: Text(
+        journalMoney.format(value),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.left,
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: tint,
+              fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
+              fontFeatures: const [ui.FontFeature.tabularFigures()],
+            ),
       ),
     );
   }

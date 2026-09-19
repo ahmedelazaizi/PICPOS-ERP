@@ -36,6 +36,8 @@ const _navPath = 'lib/data/providers/auth_providers.dart';
 const _hubPath =
     'lib/presentation/accounting_picpos/accounting_hub_picpos_screen.dart';
 const _omniPath = 'lib/presentation/widgets/omnibox/global_search_omnibox.dart';
+const _screenPath =
+    'lib/presentation/accounting_picpos/journal_entries_picpos_screen.dart';
 
 void main() {
   test('الاسمُ ثابتٌ واحدٌ وقيمتُه «اليومية العامة»', () {
@@ -50,6 +52,27 @@ void main() {
       expect(_code(path).contains("'دفتر اليومية'"), isFalse,
           reason: '$path ما زال يحمل الاسمَ القديم مكتوباً');
     }
+  });
+
+  test('🔴 وأربعةٌ أخرى: العنوانُ والتبويبُ والورقةُ وملفُّ Excel', () {
+    // 🔴 المواضعُ الأربعةُ أعلاه أبوابٌ **تؤدّي** إلى الشاشة. وقياسُ
+    //    2026-09-19 وجد **أربعةً غيرَها** يقرؤها المستخدمُ بعد أن يصل،
+    //    وكلُّها تكتب «قيود اليومية» بيدها: عنوانُ الشاشة · تبويبُ `je` في
+    //    حاوية الحسابات · ترويسةُ الـPDF المطبوع · وعنوانُ ملفّ Excel.
+    //
+    // ⚠️ **والورقةُ والملفُّ يخرجان من البرنامج**: اسمٌ قديمٌ عليهما يبقى
+    //    عند المحاسب بعد أن تتغيّر الشاشةُ كلُّها.
+    for (final path in [_screenPath, _hubPath]) {
+      expect(_code(path).contains("'قيود اليومية'"), isFalse,
+          reason: '$path ما زال يكتب الاسمَ القديم');
+    }
+    final code = _code(_screenPath);
+    expect(code.contains('title: journalEntriesScreenLabel'), isTrue,
+        reason: 'عنوانُ الشاشة لا يقرأ الثابتَ المشترك');
+    expect(code.contains('accountName: journalEntriesScreenLabel'), isTrue,
+        reason: 'ترويسةُ الورقة المطبوعة لا تقرؤه');
+    expect(_code(_hubPath).contains('je(journalEntriesScreenLabel'), isTrue,
+        reason: 'تبويبُ الحسابات لا يقرؤه');
   });
 
   test('🔴 والمدخلُ الجانبيُّ يفتح الشاشةَ المُعاد تصميمُها', () {

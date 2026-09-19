@@ -81,7 +81,7 @@ void main() {
       expect(AccountingTab.values.map((t) => t.label).toList(), [
         'دليل الحسابات',
         'مراكز التكلفة',
-        'قيود اليومية',
+        journalEntriesScreenLabel,
         'دفتر الأستاذ',
         'ميزان المراجعة',
         'قوالب القيود',

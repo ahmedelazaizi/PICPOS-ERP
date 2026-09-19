@@ -42,6 +42,16 @@ abstract class IAccountingRepository {
   });
   Future<List<JournalEntryData>> getJournalEntries({DateTime? from, DateTime? to});
   Stream<List<JournalEntryData>> watchJournalEntries({DateTime? from, DateTime? to});
+
+  /// مجموعا المدين والدائن لكلّ قيدٍ في نفس المدى — بالمفتاح الأساسيِّ للقيد.
+  ///
+  /// ⚠️ **ولا تُستبدَل بنداءٍ لكلّ صفّ**: التصميمُ يطلبها على كلّ سطرٍ وفي
+  /// شريط الإجماليّات معاً، والقراءةُ المفردةُ تجعلها N+1 في كلّ إعادة بناء.
+  Stream<Map<int, ({double debit, double credit})>> watchJournalEntryTotals({
+    DateTime? from,
+    DateTime? to,
+  });
+
   Stream<List<JournalEntryData>> watchJournalEntriesPaged({
     required int limit,
     required int offset,

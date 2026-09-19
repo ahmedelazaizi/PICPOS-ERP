@@ -387,6 +387,59 @@ extension AccountingDaoReadsExt on AppDatabase {
   }
 
 
+  /// مجموعا المدين والدائن **لكلّ قيدٍ في المدى** — استعلامٌ واحدٌ مُجمَّع.
+  ///
+  /// ═══ لماذا استعلامٌ مستقلٌّ لا قراءةُ سطورٍ لكلّ صفّ ═══
+  ///
+  /// `journal_entries` **لا تحمل عمودَي مجموع**: الأرقامُ في
+  /// `journal_entry_lines` وحدَها. وتصميمُ اليومية العامة يطلبها في موضعَين
+  /// معاً — عمودَي «إجمالي المدين/الدائن» على **كلّ صفّ**، وشريطَ إجماليّاتِ
+  /// الصفحة فوقها.
+  ///
+  /// 🔴 **وقراءتُها بنداءٍ لكلّ قيدٍ استعلامُ N+1**: صفحةٌ بمئة قيدٍ = مئةُ
+  /// رحلةٍ إلى القاعدة **في كلّ إعادةِ بناء**. فالتجميعُ في القاعدة
+  /// (`GROUP BY entry_id`) رحلةٌ واحدةٌ مهما كثُر.
+  ///
+  /// ⚠️ **ويشمل غيرَ المُرحَّل**: الشاشةُ تعرض المسوّداتِ المنتظرةَ للاعتماد
+  /// وتحتاج أرقامَها. والفرقُ بين «مكتوبٌ في القيد» و«دخل الأستاذَ» يقوله
+  /// عمودُ الحالة لا الإجماليّات.
+  Stream<Map<int, ({double debit, double credit})>> watchJournalEntryTotals({
+    DateTime? from,
+    DateTime? to,
+  }) {
+    final debitSum = journalEntryLines.debit.sum();
+    final creditSum = journalEntryLines.credit.sum();
+    final query = selectOnly(journalEntryLines).join([
+      innerJoin(journalEntries,
+          journalEntries.id.equalsExp(journalEntryLines.entryId)),
+    ])
+      ..addColumns([journalEntryLines.entryId, debitSum, creditSum])
+      ..groupBy([journalEntryLines.entryId]);
+
+    // نفسُ ترشيحِ [watchJournalEntries] حرفاً — وأيُّ اختلافٍ يعني شريطاً
+    // يجمع قيوداً لا تظهر في القائمة تحته.
+    Expression<bool> filter = journalEntries.isDeleted.equals(false);
+    if (from != null) {
+      final startOfDay = DateTime(from.year, from.month, from.day);
+      filter =
+          filter & journalEntries.entryDate.isBiggerOrEqual(Variable(startOfDay));
+    }
+    if (to != null) {
+      final endOfDay = DateTime(to.year, to.month, to.day, 23, 59, 59);
+      filter =
+          filter & journalEntries.entryDate.isSmallerOrEqual(Variable(endOfDay));
+    }
+    query.where(filter);
+
+    return query.watch().map((rows) => {
+          for (final row in rows)
+            row.read(journalEntryLines.entryId)!: (
+              debit: row.read(debitSum) ?? 0.0,
+              credit: row.read(creditSum) ?? 0.0,
+            ),
+        });
+  }
+
   /// Watch journal entries with pagination and filtering
   Stream<List<JournalEntryData>> watchJournalEntriesPaged({
     required int limit,

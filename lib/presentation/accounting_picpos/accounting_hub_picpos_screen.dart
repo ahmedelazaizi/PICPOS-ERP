@@ -34,7 +34,7 @@ enum AccountingTab {
       ScreenId.chartOfAccounts),
   cc('مراكز التكلفة', PhosphorIconsBold.crosshair, 'settings_view',
       ScreenId.costCenters),
-  je('قيود اليومية', PhosphorIconsBold.notebook, 'settings_view',
+  je(journalEntriesScreenLabel, PhosphorIconsBold.notebook, 'settings_view',
       ScreenId.journalEntries),
   gl('دفتر الأستاذ', PhosphorIconsBold.book, 'settings_view',
       ScreenId.generalLedger),

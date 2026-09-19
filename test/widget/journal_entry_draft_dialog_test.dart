@@ -73,6 +73,13 @@ class _RecordingRepo implements IAccountingRepository {
       Stream.value(const []);
 
   @override
+  Stream<Map<int, ({double debit, double credit})>> watchJournalEntryTotals({
+    DateTime? from,
+    DateTime? to,
+  }) =>
+      Stream.value(const {});
+
+  @override
   Future<List<Account>> getAllAccounts() async => accounts;
 
   @override

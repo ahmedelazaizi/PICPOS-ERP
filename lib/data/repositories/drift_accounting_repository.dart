@@ -183,6 +183,13 @@ class DriftAccountingRepository implements IAccountingRepository {
       _db.watchJournalEntries(from: from, to: to);
 
   @override
+  Stream<Map<int, ({double debit, double credit})>> watchJournalEntryTotals({
+    DateTime? from,
+    DateTime? to,
+  }) =>
+      _db.watchJournalEntryTotals(from: from, to: to);
+
+  @override
   Stream<List<JournalEntryData>> watchJournalEntriesPaged({
     required int limit,
     required int offset,

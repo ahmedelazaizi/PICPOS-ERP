@@ -64,6 +64,24 @@ class _FakeAccountingRepo implements IAccountingRepository {
   }) =>
       Stream.value(entries);
 
+  /// مجاميعُ الصفوف — الشريطُ والأعمدةُ الثلاثةُ يقرآنها مُجمَّعةً مرّةً
+  /// واحدةً لا بنداءٍ لكلّ قيد. وتُشتقُّ هنا من نفس [lines] كي لا يختلف ما
+  /// يُقرأ على الصفّ عمّا يُقرأ في حواره.
+  @override
+  Stream<Map<int, ({double debit, double credit})>> watchJournalEntryTotals({
+    DateTime? from,
+    DateTime? to,
+  }) =>
+      Stream.value({
+        for (final e in entries)
+          e.id: (
+            debit: lines.fold<double>(
+                0, (s, l) => s + ((l['debit'] as num?)?.toDouble() ?? 0)),
+            credit: lines.fold<double>(
+                0, (s, l) => s + ((l['credit'] as num?)?.toDouble() ?? 0)),
+          ),
+      });
+
   @override
   Future<List<Map<String, dynamic>>> getJournalEntryLinesWithAccounts(
     int entryId,
