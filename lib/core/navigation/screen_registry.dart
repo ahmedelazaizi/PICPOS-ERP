@@ -236,6 +236,8 @@ class ScreenRegistry {
     //    يُسقطهما حتى عن مدير النظام.
     ScreenId.assetCategories,
     ScreenId.assetLocations,
+    // «سند قيد» — نطاقُ أختِها `journalEntries` بالضبط: `unified` وحدَه.
+    ScreenId.journalVoucher,
     ScreenId.generalLedger,
     ScreenId.bankReconciliation,
     ScreenId.salesOrders,

@@ -92,6 +92,7 @@ class DriftAccountingRepository implements IAccountingRepository {
     int? branchId,
     bool asDraft = false,
     int? createdBy,
+    String? reference,
   }) async {
     // Feature 010 / Cluster B (Issue 2) — resolve the originating branch
     // when the caller did not supply one. The manual-JE dialog
@@ -119,6 +120,7 @@ class DriftAccountingRepository implements IAccountingRepository {
       branchId: resolvedBranchId,
       asDraft: asDraft,
       createdBy: createdBy,
+      reference: reference,
     );
 
     await _logManualEntry(entryId, createdBy, lines, description);

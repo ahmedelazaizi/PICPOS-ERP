@@ -105,6 +105,8 @@ class _RecordingRepo implements IAccountingRepository {
     int? branchId,
     bool asDraft = false,
     int? createdBy,
+    // v174: «المرجع» صار يُكتَب من سند القيد — راجع الواجهة.
+    String? reference,
   }) async {
     created.add((
       asDraft: asDraft,

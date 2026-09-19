@@ -194,9 +194,10 @@ void main() {
         for (final n in kAllNavItemDefs)
           if (n.group == 'accounting') n.label,
       ];
-      expect(accounting.take(4).toList(), [
+      expect(accounting.take(5).toList(), [
         journalEntriesScreenLabel,
         chequesScreenLabel,
+        'سند قيد',
         'فئات الأصول',
         'التوزيع والمواقع',
       ]);

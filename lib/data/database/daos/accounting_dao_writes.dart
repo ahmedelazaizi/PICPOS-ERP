@@ -27,6 +27,19 @@ extension AccountingDaoWritesExt on AppDatabase {
     /// مَن أنشأ القيد — يُكتَب بـ لأنّ  عمودٌ
     /// أضافته الإضافةُ الدفاعيّة ولا تعرفه كيانات drift.
     int? createdBy,
+
+    /// «المرجع» الذي يكتبه المستخدمُ في سند القيد — نصٌّ حرٌّ اختياريّ
+    /// (رقمُ عقدٍ، رقمُ إشعارِ بنكٍ، رقمُ مستندٍ ورقيّ).
+    ///
+    /// 🔴 **والعمودُ `journal_entries.reference` مزروعٌ منذ v174 بلا كاتبٍ
+    /// ولا قارئ** — `grep` على المستودع كلِّه لا يجد إلّا تعريفَه والهجرة.
+    /// وهو عينُ ما وقع لـ`custodian_user_id` و`source_voucher_id`: عمودٌ
+    /// يُشحَن ويبقى فارغاً إلى الأبد لأنّ أحداً لم يصله.
+    ///
+    /// ⚠️ **وليس [referenceType]**: ذاك مفرداتٌ مغلقةٌ يكتبها المحرّك
+    /// (`sale` · `purchase` · `daily`…) ويُرشَّح بها، وهذا نصٌّ يقرؤه
+    /// إنسان. وخلطُهما كان يُفسد كلَّ ترشيحٍ على المصدر.
+    String? reference,
   }) async {
     // Spec 007 / FR-007: mint the JE's globalId BEFORE the transaction opens
     // so the same UUID is used for (a) the local insert below, and
@@ -398,6 +411,7 @@ extension AccountingDaoWritesExt on AppDatabase {
           fiscalYearId: Value(currentFY?.id),
           costCenterId: Value(resolvedCostCenterId),
           branchId: Value(finalBranchId),
+          reference: Value(reference),
           // UUID-First (Phase 1): stable cross-install identity for sync.
           // Deterministic globalId can be injected by reversal flows so both
           // sides of the sync loop converge to one row. Spec 007 / FR-007:

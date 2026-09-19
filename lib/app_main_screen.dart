@@ -92,6 +92,7 @@ import 'presentation/screens/commercial_papers_screen.dart';
 import 'presentation/settings_picpos/screens/cheques_picpos_screen.dart';
 import 'presentation/screens/fixed_assets_screen.dart';
 import 'presentation/fixed_assets_picpos/screens/fixed_assets_picpos_screen.dart';
+import 'presentation/accounting_picpos/journal_voucher_picpos_screen.dart';
 import 'presentation/fixed_assets_picpos/screens/asset_categories_picpos_screen.dart';
 import 'presentation/fixed_assets_picpos/screens/asset_locations_picpos_screen.dart';
 import 'presentation/opex_picpos/screens/opex_picpos_screen.dart';
@@ -1083,6 +1084,14 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => const AssetLocationsPicposScreen(),
         label: 'التوزيع والمواقع',
         icon: PhosphorIconsBold.mapPin,
+      ),
+      // «سند قيد» — PicPos وحدَها: صفحةٌ كاملةٌ تحلّ محلَّ حوارٍ مدفونٍ في
+      // «اليومية العامة»، والحوارُ الأصلُ باقٍ لمسارَي القالب والعكس.
+      ScreenConfig(
+        appScreen: AppScreen.journalVoucher,
+        builder: (_) => const JournalVoucherPicposScreen(),
+        label: 'سند قيد',
+        icon: PhosphorIconsBold.notePencil,
       ),
       ScreenConfig(
         appScreen: AppScreen.syncConflicts,

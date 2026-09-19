@@ -1,7 +1,6 @@
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart' hide TextDirection;
@@ -26,6 +25,7 @@ import '../picpos_shell/picpos_toolbar.dart';
 import '../../services/excel_export_helper.dart';
 import '../widgets/branch_chip.dart';
 import '../widgets/compact_date_picker.dart';
+import 'journal_entries_picpos_widgets.dart';
 import 'journal_templates_picpos_screen.dart';
 import '../picpos_shell/picpos_surface.dart';
 
@@ -33,7 +33,7 @@ import '../picpos_shell/picpos_surface.dart';
 //    الأصل (‏`part of`)، فلا تُستورَد ولا تُستدعى من خارج مكتبتها. ولذلك
 //    نُسخت الوحدةُ كاملةً — ١٩٠١ سطرٍ في ثلاثة ملفّات لا ١٠٥٩ في واحد.
 part 'journal_entries_picpos_create_dialog.dart';
-part 'journal_entries_picpos_widgets.dart';
+
 
 /// تنسيقُ المال على هذه الشاشة — **واحدٌ للشريط ولصفوف القيود**.
 ///

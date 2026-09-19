@@ -62,6 +62,8 @@ class _MockAccountingRepo implements IAccountingRepository {
     // للمطابقة وحدَها.
     bool asDraft = false,
     int? createdBy,
+    // v174: «المرجع» صار يُكتَب من سند القيد — راجع الواجهة.
+    String? reference,
   }) async {
     capturedEntries.add(_CapturedJE(
       description: description,

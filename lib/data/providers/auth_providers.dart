@@ -751,6 +751,7 @@ const kAllNavItemDefs = [
   //    وخريطةِ الصلاحيات والنطاقِ و`ScreenConfig` تبقى **غائبةً عن القائمة
   //    الجانبيّة** بلا هذين السطرين. وقع فعلاً مع الحجوزات 2026-08-22 وكلُّ
   //    الحرّاس خضراء.
+  NavItemDef(icon: PhosphorIconsBold.notePencil, label: 'سند قيد', permission: 'settings_view', index: 67, group: 'accounting'),
   NavItemDef(icon: PhosphorIconsBold.folders, label: 'فئات الأصول', permission: 'assets_view', index: 65, group: 'accounting'),
   NavItemDef(icon: PhosphorIconsBold.mapPin, label: 'التوزيع والمواقع', permission: 'assets_view', index: 66, group: 'accounting'),
   // ── بقيّةُ المجموعة كما هي ────────────────────────────────────────────
@@ -1036,6 +1037,11 @@ const screenPermissionMap = <ScreenId, String>{
   // يُمنح يدويّاً، ويمسّ سجلَّ التكافؤ. وهو عينُ ما حُسم في «حسم القوالب».
   ScreenId.assetCategories: PermissionCodes.assetsView,
   ScreenId.assetLocations: PermissionCodes.assetsView,
+  // «سند قيد» على `settings_view` كأختِها «اليومية العامة» — وهو **عينُ**
+  // ما يبلغ القيدَ اليدويَّ اليوم. و`accounting_journal` تُفحَص عند الحفظ:
+  // ربطُ الشاشة بها كان يسحبها من كلّ دورٍ قائمٍ لأنّها ليست في
+  // `RoleGrantMatrix.defaultGrants` أصلاً.
+  ScreenId.journalVoucher: 'settings_view',
 };
 
 final userAllowedScreensProvider = FutureProvider<List<int>>((ref) async {

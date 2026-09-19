@@ -2,7 +2,24 @@
 // JOURNAL ENTRY HELPER WIDGETS — Phase 7 God File Splitting
 // Extracted from journal_entries_screen.dart (lines 1032-1340)
 // =======================================================================
-part of 'journal_entries_picpos_screen.dart';
+// ⚠️ **مكتبةٌ مستقلّةٌ لا `part`.** كانت جزءاً من
+// `journal_entries_picpos_screen.dart`، فلا يبلغها شيءٌ خارجَ تلك المكتبة —
+// وهو عينُ ما حبس حوارَي فئة الأصول داخل شاشة UralCash حتى صارت PicPos
+// عاجزةً عن إنشاء فئة. و«سند قيد» شاشةٌ ثانيةٌ تحتاج **نفسَ** منتقي الحساب
+// ونفسَ منتقي مركز التكلفة: نسخُهما كان يعني نسختَين تفترقان عند أوّل
+// تعديل، والأصنافُ الثلاثةُ هنا **قائمةٌ بذاتها** ولا تمسّ حالةَ الشاشة.
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
+
+import '../../core/theme/app_colors.dart';
+// ⚠️ **أنواعُ القاعدة تصل من هنا لا من `data/database` مباشرةً**:
+//    `providers.dart` يُصدِّر `database_barrel.dart`، وحارسُ
+//    `presentation_db_import_guard` يمنع الاستيرادَ المباشر.
+import '../../data/providers/providers.dart';
+import '../../domain/repositories/accounting_repository.dart';
 
 /// Input model for journal entry line
 class JournalLineInput {

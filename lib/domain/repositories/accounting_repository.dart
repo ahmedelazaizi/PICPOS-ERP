@@ -46,6 +46,15 @@ abstract class IAccountingRepository {
     /// وعندئذٍ **لا** يُمنَع الاعتماد — فالمنعُ بما لا يُعلَم يُجمّد قيوداً
     /// لا يمكن إثباتُ منشئها.
     int? createdBy,
+
+    /// «المرجع» الذي يكتبه المستخدم — نصٌّ حرٌّ اختياريٌّ يقرؤه إنسان.
+    ///
+    /// 🔴 والعمودُ مزروعٌ منذ v174 **بلا كاتبٍ ولا قارئ**، وهو عينُ ما وقع
+    /// لـ`custodian_user_id` و`source_voucher_id`.
+    ///
+    /// ⚠️ **وليس [referenceType]**: ذاك مفرداتٌ مغلقةٌ يكتبها المحرّك
+    /// ويُرشَّح بها، وخلطُهما يُفسد كلَّ ترشيحٍ على المصدر.
+    String? reference,
   });
   Future<List<JournalEntryData>> getJournalEntries({DateTime? from, DateTime? to});
   Stream<List<JournalEntryData>> watchJournalEntries({DateTime? from, DateTime? to});
