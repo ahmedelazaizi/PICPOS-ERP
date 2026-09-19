@@ -1969,62 +1969,116 @@ extension PartyDao on AppDatabase {
     // Let's get the opening balance before the 'from' date.
     
     double openingBalance = 0;
-    
-    // Calculate opening from sales/purchases and transactions before 'from'
+
+    // ⚠️ **شرطُ الفرع مكتوبٌ مرّةً واحدةً لكلّ جدول — وبـ`IS NULL`.**
+    //
+    // 🔴 كان مكرّراً ستَّ مرّاتٍ بيدها، وكان يفترق عن صفوف الفترة أعلاه في
+    // كلمةٍ واحدة: النافذةُ تقول
+    // `warehouses.branchId.equals(b) | warehouses.branchId.isNull()` وSQL
+    // الافتتاحيّ كانت تقول `branch_id = ?` وحدَها. فمخزنٌ أو خزنةٌ **بلا فرع**
+    // — وهي الحالةُ الافتراضيّةُ في تجهيزةٍ لم تُقسَّم فروعاً — تدخل الحركةَ
+    // وتخرج من رصيد البداية، فيبدأ الكشفُ من رقمٍ أصغرَ ممّا يقابل حركتَه
+    // ويظلّ الختاميُّ ناقصاً إلى آخر سطر. ولا فحصَ اتّزانٍ يمسكه: الكشفُ
+    // متّسقٌ مع نفسه، والخطأُ في نقطة البدء.
+    //
+    // و`branch_id IS NULL` تعني «غيرُ مخصَّصٍ لفرع» لا «فرعٌ آخر» — فالمشتركُ
+    // يخصّ الجميعَ ويُقرأ من كلّ فرع.
+    final branchOfWarehouse = branchId == null
+        ? ''
+        : 'AND (warehouse_id IN (SELECT id FROM warehouses '
+            'WHERE branch_id = ? OR branch_id IS NULL))';
+    final branchOfJoinedSafe =
+        branchId == null ? '' : 'AND (s.branch_id = ? OR s.branch_id IS NULL)';
+    final branchOfMemoSafe = branchId == null
+        ? ''
+        : 'AND (t.safe_id IN (SELECT id FROM safes '
+            'WHERE branch_id = ? OR branch_id IS NULL))';
+
+    // ═══ الافتتاحيُّ **مرآةُ النافذة** ═══════════════════════════════════
+    //
+    // 🔴 كان `if (isCustomer) … else …`، وصفوفُ الفترة أعلاه **شرطان
+    // مستقلّان** (`if (isCustomer)` ثمّ `if (isSupplier)`). فطرفٌ بالصفتين —
+    // مورّدٌ نشتري منه ونبيع له، وهي حالةٌ شائعة — تظهر فواتيرُ شرائه داخلَ
+    // الفترة ولا تدخل رصيدَ بدايتها، فيبدأ كشفُه من رقمٍ يُغفل مشترياته
+    // السابقةَ كلَّها.
+    //
+    // والاتّجاهُ يقرّره `isCustomer` وحدَه في حلقة الرصيد الجاري
+    // (`runningBalance += debit − credit`)، فالشقُّ المورّديُّ لطرفٍ بالصفتين
+    // يُحسَب **باتّجاه العميل**: الشراءُ دائنٌ ⇒ سالب، وتسويةُ مردود الشراء
+    // مدينةٌ ⇒ موجبة. وطرفٌ مورّدٌ خالصٌ يبقى على معادلته كما هي حرفاً بحرف.
+    double customerSide = 0;
+    double supplierSide = 0;
+
     if (party.isCustomer) {
+      // 🔴 **والمبيعاتُ موقَّعةٌ بنوعها.** مرتجعُ نقطةِ البيع صفٌّ في
+      // `sales_invoices` بـ`sale_type = 'return'` (‏Spec 113)، وصفُّ الفترة
+      // يضعه **دائناً**؛ و`SUM(total)` بلا شرطٍ كانت تضعه مديناً — فينحرف
+      // الافتتاحيُّ بضعف قيمة المرتجع.
       final pastSales = await customSelect(
-        'SELECT COALESCE(SUM(total), 0) as amt FROM sales_invoices WHERE customer_id = ? AND invoice_date < ? ${branchId != null ? 'AND (warehouse_id IN (SELECT id FROM warehouses WHERE branch_id = ?))' : ''}',
+        "SELECT COALESCE(SUM(CASE WHEN sale_type = 'return' THEN -total ELSE total END), 0) as amt FROM sales_invoices WHERE customer_id = ? AND invoice_date < ? $branchOfWarehouse",
         variables: [Variable(partyId), dateVar(from), if (branchId != null) Variable(branchId)],
       ).getSingle();
       // Include the settlement discount: a receipt voucher reduces the
       // customer's AR by (amount + discount), so the opening balance must too
       // — matching the discount statement line emitted in the window above.
       final pastReceipts = await customSelect(
-        "SELECT COALESCE(SUM(t.amount + COALESCE(t.discount, 0)), 0) as amt FROM safe_transactions t JOIN safes s ON t.safe_id = s.id WHERE t.party_id = ? AND t.transaction_type = 'receipt' AND t.created_at < ? ${branchId != null ? 'AND (s.branch_id = ?)' : ''}",
+        "SELECT COALESCE(SUM(t.amount + COALESCE(t.discount, 0)), 0) as amt FROM safe_transactions t JOIN safes s ON t.safe_id = s.id WHERE t.party_id = ? AND t.transaction_type = 'receipt' AND t.created_at < ? $branchOfJoinedSafe",
         variables: [Variable(partyId), dateVar(from), if (branchId != null) Variable(branchId)],
       ).getSingle();
       final pastPayments = await customSelect(
-        "SELECT COALESCE(SUM(t.amount), 0) as amt FROM safe_transactions t JOIN safes s ON t.safe_id = s.id WHERE t.party_id = ? AND t.transaction_type = 'payment' AND t.created_at < ? ${branchId != null ? 'AND (s.branch_id = ?)' : ''}",
+        "SELECT COALESCE(SUM(t.amount), 0) as amt FROM safe_transactions t JOIN safes s ON t.safe_id = s.id WHERE t.party_id = ? AND t.transaction_type = 'payment' AND t.created_at < ? $branchOfJoinedSafe",
         variables: [Variable(partyId), dateVar(from), if (branchId != null) Variable(branchId)],
       ).getSingle();
 
       final pastSalesReturnMemos = await customSelect(
-        "SELECT COALESCE(SUM(t.amount), 0) as amt FROM safe_transactions t WHERE t.party_id = ? AND t.transaction_type = 'memo' AND t.category = 'sales_return_balance' AND t.created_at < ? ${branchId != null ? 'AND (t.safe_id IN (SELECT id FROM safes WHERE branch_id = ?))' : ''}",
+        "SELECT COALESCE(SUM(t.amount), 0) as amt FROM safe_transactions t WHERE t.party_id = ? AND t.transaction_type = 'memo' AND t.category = 'sales_return_balance' AND t.created_at < ? $branchOfMemoSafe",
         variables: [Variable(partyId), dateVar(from), if (branchId != null) Variable(branchId)],
       ).getSingle();
       // Customer balance = sales − receipts − cash refunds − balance adjustments from returns
-      openingBalance = (pastSales.read<double>('amt') ?? 0)
-                     - (pastReceipts.read<double>('amt') ?? 0)
-                     - (pastPayments.read<double>('amt') ?? 0)
-                     - (pastSalesReturnMemos.read<double>('amt') ?? 0)
-                     + chequeOpeningBalance;
-    } else {
+      customerSide = (pastSales.read<double>('amt') ?? 0)
+                   - (pastReceipts.read<double>('amt') ?? 0)
+                   - (pastPayments.read<double>('amt') ?? 0)
+                   - (pastSalesReturnMemos.read<double>('amt') ?? 0);
+    }
+
+    if (party.isSupplier) {
       final pastPurchases = await customSelect(
-        'SELECT COALESCE(SUM(total), 0) as amt FROM purchase_invoices WHERE supplier_id = ? AND invoice_date < ? ${branchId != null ? 'AND (warehouse_id IN (SELECT id FROM warehouses WHERE branch_id = ?))' : ''}',
-        variables: [Variable(partyId), dateVar(from), if (branchId != null) Variable(branchId)],
-      ).getSingle();
-      // Include the settlement discount: a payment voucher reduces our AP to
-      // the supplier by (amount + discount), so the opening balance must too
-      // — matching the discount statement line emitted in the window above.
-      final pastPayments = await customSelect(
-        "SELECT COALESCE(SUM(t.amount + COALESCE(t.discount, 0)), 0) as amt FROM safe_transactions t JOIN safes s ON t.safe_id = s.id WHERE t.party_id = ? AND t.transaction_type = 'payment' AND t.created_at < ? ${branchId != null ? 'AND (s.branch_id = ?)' : ''}",
-        variables: [Variable(partyId), dateVar(from), if (branchId != null) Variable(branchId)],
-      ).getSingle();
-      final pastReceipts = await customSelect(
-        "SELECT COALESCE(SUM(t.amount), 0) as amt FROM safe_transactions t JOIN safes s ON t.safe_id = s.id WHERE t.party_id = ? AND t.transaction_type = 'receipt' AND t.created_at < ? ${branchId != null ? 'AND (s.branch_id = ?)' : ''}",
+        'SELECT COALESCE(SUM(total), 0) as amt FROM purchase_invoices WHERE supplier_id = ? AND invoice_date < ? $branchOfWarehouse',
         variables: [Variable(partyId), dateVar(from), if (branchId != null) Variable(branchId)],
       ).getSingle();
       final pastPurchaseReturnMemos = await customSelect(
-        "SELECT COALESCE(SUM(t.amount), 0) as amt FROM safe_transactions t WHERE t.party_id = ? AND t.transaction_type = 'memo' AND t.category = 'purchase_return_balance' AND t.created_at < ? ${branchId != null ? 'AND (t.safe_id IN (SELECT id FROM safes WHERE branch_id = ?))' : ''}",
+        "SELECT COALESCE(SUM(t.amount), 0) as amt FROM safe_transactions t WHERE t.party_id = ? AND t.transaction_type = 'memo' AND t.category = 'purchase_return_balance' AND t.created_at < ? $branchOfMemoSafe",
         variables: [Variable(partyId), dateVar(from), if (branchId != null) Variable(branchId)],
       ).getSingle();
-      // Supplier balance = purchases − payments − cash receipts from supplier − balance adjustments from returns
-      openingBalance = (pastPurchases.read<double>('amt') ?? 0)
+
+      if (party.isCustomer) {
+        // ⚠️ **وحركةُ الخزنة لا تُحسَب هنا ثانيةً**: صفُّ الفترة يفرّع
+        //    `if (isCustomer) … else if (isSupplier)` فيقرأ سندَ القبض
+        //    والصرف **مرّةً واحدةً** باتّجاه العميل. وجمعُ الشقَّين هنا كان
+        //    سيطرح السندَ مرّتين.
+        supplierSide = -(pastPurchases.read<double>('amt') ?? 0)
+                     + (pastPurchaseReturnMemos.read<double>('amt') ?? 0);
+      } else {
+        // Include the settlement discount: a payment voucher reduces our AP to
+        // the supplier by (amount + discount), so the opening balance must too
+        // — matching the discount statement line emitted in the window above.
+        final pastPayments = await customSelect(
+          "SELECT COALESCE(SUM(t.amount + COALESCE(t.discount, 0)), 0) as amt FROM safe_transactions t JOIN safes s ON t.safe_id = s.id WHERE t.party_id = ? AND t.transaction_type = 'payment' AND t.created_at < ? $branchOfJoinedSafe",
+          variables: [Variable(partyId), dateVar(from), if (branchId != null) Variable(branchId)],
+        ).getSingle();
+        final pastReceipts = await customSelect(
+          "SELECT COALESCE(SUM(t.amount), 0) as amt FROM safe_transactions t JOIN safes s ON t.safe_id = s.id WHERE t.party_id = ? AND t.transaction_type = 'receipt' AND t.created_at < ? $branchOfJoinedSafe",
+          variables: [Variable(partyId), dateVar(from), if (branchId != null) Variable(branchId)],
+        ).getSingle();
+        // Supplier balance = purchases − payments − cash receipts from supplier − balance adjustments from returns
+        supplierSide = (pastPurchases.read<double>('amt') ?? 0)
                      - (pastPayments.read<double>('amt') ?? 0)
                      - (pastReceipts.read<double>('amt') ?? 0)
-                     - (pastPurchaseReturnMemos.read<double>('amt') ?? 0)
-                     + chequeOpeningBalance;
+                     - (pastPurchaseReturnMemos.read<double>('amt') ?? 0);
+      }
     }
+
+    openingBalance = customerSide + supplierSide + chequeOpeningBalance;
 
     if (openingBalance != 0) {
       entries.insert(0, PartyStatementEntry(

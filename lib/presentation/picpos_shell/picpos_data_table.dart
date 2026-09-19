@@ -149,6 +149,7 @@ class PicPosDataTable extends StatelessWidget {
     this.totals,
     this.emptyLabel = 'لا صفوفَ لعرضها',
     this.minWidth = 760,
+    this.headerAction,
   });
 
   final String title;
@@ -163,6 +164,13 @@ class PicPosDataTable extends StatelessWidget {
   final List<String>? totals;
 
   final String emptyLabel;
+
+  /// ودجتٌ في آخر رأس الجدول، بعد الشرائح — «تخصيص الأعمدة» في تصميم كشف
+  /// الحساب.
+  ///
+  /// ⚠️ **داخلَ نفس `Wrap` الشرائح** لا في صفٍّ ثالث: الرأسُ يحمل عنواناً
+  /// وسطراً خافتاً وخمسَ شرائحَ، وزرٌّ خارجَ الالتفاف كان يفيض عند الضيق.
+  final Widget? headerAction;
 
   /// أدنى عرضٍ قبل أن يبدأ التمريرُ الأفقيّ.
   final double minWidth;
@@ -271,7 +279,7 @@ class PicPosDataTable extends StatelessWidget {
               ],
             ),
           ),
-          if (chips.isNotEmpty) ...[
+          if (chips.isNotEmpty || headerAction != null) ...[
             const SizedBox(width: 11),
             // تلتفّ عند الضيق: أربعُ شرائحَ ورأسٌ طويلٌ كانا يفيضان.
             Flexible(
@@ -282,6 +290,7 @@ class PicPosDataTable extends StatelessWidget {
                 children: [
                   for (var i = 0; i < chips.length; i++)
                     _chip(context, chips[i], i == selectedChip),
+                  ?headerAction,
                 ],
               ),
             ),

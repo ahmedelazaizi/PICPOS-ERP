@@ -472,8 +472,12 @@ void main() {
           // والمحتوى ظاهرٌ فعلاً — لا شجرةٌ فارغةٌ تمرّ.
           expect(find.text('كشف حساب ${mode.$1}'), findsOneWidget);
           expect(find.text('الحركة والرصيد'), findsWidgets);
-          expect(find.text('تصدير الكشف'), findsOneWidget);
-          expect(find.text('طباعة'), findsOneWidget);
+          // ⚠️ **الفعلان نزلا من الترويسة إلى شريط «الحركة والرصيد»**
+          //    (تصميمُ المالك `(7)`): كلاهما يُعيد استعلامَ الكشف أيّاً كانت
+          //    التبويبةُ المفتوحة، فموضعُهما الآن هو التبويبةُ التي يصدّرانها.
+          expect(find.text('تصدير'), findsOneWidget);
+          expect(find.text('طباعة الكشف'), findsOneWidget);
+          expect(find.text('عرض المستند'), findsOneWidget);
           await teardownTree(tester);
         });
       }

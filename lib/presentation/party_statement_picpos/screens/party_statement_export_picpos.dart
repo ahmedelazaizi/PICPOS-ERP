@@ -22,6 +22,7 @@ mixin _StatementExportMixin on ConsumerState<PartyStatementPicposScreen> {
   Party? get party;
   DateTimeRange get range;
   DateFormat get df;
+  int? get branchId;
 
   String get _partyLabel => party?.name ?? widget.partyName;
 
@@ -32,6 +33,10 @@ mixin _StatementExportMixin on ConsumerState<PartyStatementPicposScreen> {
           pid,
           fromDate: range.start,
           toDate: range.end,
+          // 🔴 **والفرعُ يُمرَّر هنا أيضاً.** بدونه يَخرج الكشفُ المطبوعُ
+          //    والمصدَّرُ من **كلّ** الفروع بينما الشاشةُ تعرض واحداً — ورقةٌ
+          //    وشاشةٌ برقمَين مختلفَين لنفس السؤال، والورقةُ هي ما يُوقَّع.
+          branchId: branchId,
         );
   }
 

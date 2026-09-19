@@ -48,6 +48,126 @@ Color _bucketTint(String bucket) => switch (bucket) {
       _ => _tintErr,
     };
 
+// ═══ أعمدةُ «الحركة والرصيد» — كتالوجٌ واحدٌ يقرؤه الجدولُ والمنتقي ═══════
+//
+// قرارُ المالك على الصورة `(7)`: **«تخصيص الأعمدة» يُبنى بتفضيلٍ يُحفَظ لكلّ
+// مستخدم**.
+//
+// ⚠️ **الرمزُ هو المحفوظُ لا الترتيب**: التفضيلُ يُخزَّن أسماءَ أعمدةٍ، فترتيبُ
+// الأعمدة يبقى ترتيبَ هذا الكتالوج دائماً. وحفظُ الترتيبِ كان سيعني تفضيلاً
+// قديماً يفرض ترتيباً على عمودٍ أُضيف بعده.
+//
+// ⚠️ **وما يُقرأ من التفضيل يُقاطَع مع هذه القائمة**: اسمُ عمودٍ حُذف لاحقاً
+// يُسقَط بدل أن يُنتج خانةً في صفٍّ بلا رأسٍ فوقها.
+const String kStatementColumnDate = 'date';
+const String kStatementColumnDoc = 'doc';
+const String kStatementColumnDesc = 'desc';
+const String kStatementColumnDebit = 'debit';
+const String kStatementColumnCredit = 'credit';
+const String kStatementColumnBalance = 'balance';
+const String kStatementColumnStatus = 'status';
+
+typedef StatementColumnDef = ({
+  String id,
+  String label,
+  double flex,
+  PicPosCellAlign align,
+});
+
+const List<StatementColumnDef> kStatementColumnCatalogue = [
+  (
+    id: kStatementColumnDate,
+    label: 'التاريخ',
+    flex: 1.1,
+    align: PicPosCellAlign.start
+  ),
+  (
+    id: kStatementColumnDoc,
+    label: 'المستند',
+    flex: 1.4,
+    align: PicPosCellAlign.start
+  ),
+  (
+    id: kStatementColumnDesc,
+    label: 'البيان',
+    flex: 2,
+    align: PicPosCellAlign.start
+  ),
+  (
+    id: kStatementColumnDebit,
+    label: 'مدين',
+    flex: 1.2,
+    align: PicPosCellAlign.end
+  ),
+  (
+    id: kStatementColumnCredit,
+    label: 'دائن',
+    flex: 1.2,
+    align: PicPosCellAlign.end
+  ),
+  (
+    id: kStatementColumnBalance,
+    label: 'الرصيد الجاري',
+    flex: 1.3,
+    align: PicPosCellAlign.end
+  ),
+  (
+    id: kStatementColumnStatus,
+    label: 'الحالة',
+    flex: 1.2,
+    align: PicPosCellAlign.start
+  ),
+];
+
+Set<String> get kStatementColumnIds =>
+    {for (final c in kStatementColumnCatalogue) c.id};
+
+/// مفتاحُ التفضيل — **لكلّ مستخدمٍ على حدة**.
+///
+/// ⚠️ مفتاحٌ مشتركٌ بلا معرِّفٍ كان سيجعل تفضيلَ آخرِ من فتح الشاشةَ يحكم
+/// الجميعَ على نفس الجهاز — وهو عكسُ ما طُلب حرفيّاً: «يُحفَظ لكلّ مستخدم».
+String statementColumnPrefKey(int userId) =>
+    'statement.ledger.columns.u$userId';
+
+String encodeStatementColumnPreference(Set<String> cols) => [
+      for (final c in kStatementColumnCatalogue)
+        if (cols.contains(c.id)) c.id,
+    ].join(',');
+
+/// يقرأ المحفوظَ — و`null` تعني «لا تفضيلَ، خُذِ الافتراض».
+///
+/// ⚠️ **ويُقاطَع مع الكتالوج**: اسمُ عمودٍ حُذف لاحقاً يُسقَط بدل أن يُنتج
+/// خانةً في صفٍّ بلا رأسٍ فوقها — و`PicPosDataTable` تؤكّد على تساوي الطولين،
+/// فالخلطُ كان سيُسقط الشاشةَ لا أن يُزيح خانة.
+///
+/// ⚠️ **وعمودُ التاريخ يُعاد دائماً**: تفضيلٌ قديمٌ — أو نصٌّ حُرِّر بيدٍ —
+/// بلا تاريخٍ يُنتج كشفاً لا يُقرأ ولا يُرتَّب.
+Set<String>? parseStatementColumnPreference(String? raw) {
+  if (raw == null || raw.trim().isEmpty) return null;
+  final kept = raw
+      .split(',')
+      .map((e) => e.trim())
+      .where(kStatementColumnIds.contains)
+      .toSet();
+  if (kept.isEmpty) return null;
+  return {...kept, kStatementColumnDate};
+}
+
+/// الافتراضُ: **الأعمدةُ السبعةُ كلُّها**.
+///
+/// ⚠️ التصميمُ يرسم ستّاً بلا «الحالة» — و«الحالة» عمودٌ **مقيسٌ** قائمٌ
+/// (‏الفاتورةُ القائمةُ تُعرَف من `getPartyOpenInvoices`). فإطفاؤه افتراضاً
+/// كان إسقاطَ معلومةٍ بلا طلب؛ والمنتقي يصل إلى ستّ التصميم بنقرةٍ واحدة.
+const Set<String> kDefaultStatementColumns = {
+  kStatementColumnDate,
+  kStatementColumnDoc,
+  kStatementColumnDesc,
+  kStatementColumnDebit,
+  kStatementColumnCredit,
+  kStatementColumnBalance,
+  kStatementColumnStatus,
+};
+
 // ═══ تعريفاتُ التبويبات ═══════════════════════════════════════════════════
 
 const List<_StatementTab> _customerTabs = [
@@ -125,6 +245,21 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
   Party? get party;
   DateTimeRange get range;
   DateFormat get df;
+
+  /// الفرعُ المختار — `null` = كلُّ ما يراه المستخدم.
+  int? get branchId;
+
+  /// أعمدةُ الكشف الظاهرة، و«تخصيص الأعمدة» يفتح منتقيَها.
+  ValueListenable<Set<String>> get visibleColumns;
+  void openColumnPicker();
+
+  /// الصفُّ المختار في الكشف — مصدرُ «عرض المستند» في الشريط السفليّ.
+  ValueNotifier<PartyStatementEntry?> get selectedEntry;
+
+  // يوفّرهما `_StatementExportMixin` على نفس الحالة — والشريطُ السفليُّ
+  // يبنيهما داخلَ التبويبة التي يصدّرانها فعلاً.
+  Future<void> printStatement();
+  Future<void> exportToExcel();
 
   /// نصُّ البحث في الترويسة — يُرشِّح المحمَّلَ ولا يُعيد الاستعلام.
   ValueListenable<String> get query;
@@ -232,6 +367,7 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
       pid,
       fromDate: range.start,
       toDate: range.end,
+      branchId: branchId,
     );
     if (entries.isEmpty) return const _TabData();
 
@@ -356,63 +492,69 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
         ),
     ];
 
-    return _TabData(
-      badge: '${entries.length}',
-      blocks: [
-        PicPosHubKpiRow(items: kpis),
-        _FilterableTable<PartyStatementEntry>(
-          query: query,
-          title: 'كشف الحركة — الرصيد الجاري',
-          subtitle: isSupplier
-              ? 'الدائن يزيد ما علينا للمورد والمدين ينقصه · الرصيد الجاري تراكمي'
-              : 'مرتّب زمنياً · المدين يزيد الذمة والدائن ينقصها · الرصيد الجاري تراكمي',
-          columns: const [
-            PicPosTableColumn('التاريخ', flex: 1.1),
-            PicPosTableColumn('المستند', flex: 1.4),
-            PicPosTableColumn('البيان', flex: 2),
-            PicPosTableColumn('مدين',
-                flex: 1.2, align: PicPosCellAlign.end),
-            PicPosTableColumn('دائن',
-                flex: 1.2, align: PicPosCellAlign.end),
-            PicPosTableColumn('الرصيد الجاري',
-                flex: 1.3, align: PicPosCellAlign.end),
-            PicPosTableColumn('الحالة', flex: 1.2),
-          ],
-          groups: groups,
-          buildRow: (e) => PicPosTableRow(cells: [
-            PicPosTextCell(df.format(e.date)),
-            PicPosTextCell(
+    /// خليّةُ عمودٍ واحدٍ من صفٍّ واحد — الكتالوجُ يختار أيَّها يُبنى.
+    PicPosCell cellOf(String columnId, PartyStatementEntry e) =>
+        switch (columnId) {
+          kStatementColumnDate => PicPosTextCell(df.format(e.date)),
+          // ⚠️ **بلون العلامة**: التصميمُ يرسم رقمَ المستند رابطاً تحته خطّ،
+          //    وهو ما يُنقَر ليُفتَح. والصفُّ كلُّه قابلٌ للنقر هنا، فاللونُ
+          //    يقول «هذا ما يُفتَح» بلا خطٍّ يوحي بمتصفِّح.
+          kStatementColumnDoc => PicPosTextCell(
               (e.invoiceNumber ?? '').isEmpty ? '—' : e.invoiceNumber!,
               icon: _entryIcon(e.entryType),
               tint: _entryTint(e.entryType),
             ),
-            PicPosTextCell(e.description),
+          kStatementColumnDesc => PicPosTextCell(e.description),
+          kStatementColumnDebit =>
             PicPosTextCell(e.debit == 0 ? '—' : _money(e.debit)),
+          kStatementColumnCredit =>
             PicPosTextCell(e.credit == 0 ? '—' : _money(e.credit)),
-            PicPosTextCell(_money(e.balance)),
-            _statusPill(e, openByNumber),
-          ]),
-          // ⚠️ المجاميعُ مجاميعُ **العمود المعروض** لا مجاميعَ الكشف كلِّه —
-          //    فتتغيّر مع الشريحة، وإلّا قرأ المشغّلُ مجموعاً لا يخصّ ما يراه.
-          totals: (rows) {
-            var d = 0.0;
-            var c = 0.0;
-            for (final e in rows) {
-              d += e.debit;
-              c += e.credit;
-            }
-            return [
-              _count(rows.length, 'حركة'),
-              '',
-              '',
-              _money(d),
-              _money(c),
-              rows.isEmpty ? '—' : _money(rows.last.balance),
-              '',
-            ];
-          },
+          kStatementColumnBalance => PicPosTextCell(_money(e.balance)),
+          _ => _statusPill(e, openByNumber),
+        };
+
+    /// خانةُ المجاميع تحت عمودٍ واحد.
+    ///
+    /// ⚠️ المجاميعُ مجاميعُ **العمود المعروض** لا مجاميعَ الكشف كلِّه — فتتغيّر
+    /// مع الشريحة، وإلّا قرأ المشغّلُ مجموعاً لا يخصّ ما يراه.
+    String totalOf(String columnId, List<PartyStatementEntry> rows) {
+      switch (columnId) {
+        case kStatementColumnDate:
+          return _count(rows.length, 'حركة');
+        case kStatementColumnDebit:
+          return _money(rows.fold<double>(0, (t, e) => t + e.debit));
+        case kStatementColumnCredit:
+          return _money(rows.fold<double>(0, (t, e) => t + e.credit));
+        case kStatementColumnBalance:
+          return rows.isEmpty ? '—' : _money(rows.last.balance);
+        default:
+          return '';
+      }
+    }
+
+    return _TabData(
+      badge: '${entries.length}',
+      blocks: [
+        PicPosHubKpiRow(items: kpis),
+        _LedgerTable(
+          columnsVN: visibleColumns,
+          selectedVN: selectedEntry,
+          query: query,
+          groups: groups,
+          subtitle: isSupplier
+              ? 'الدائن يزيد ما علينا للمورد والمدين ينقصه · الرصيد الجاري تراكمي'
+              : 'مرتّب زمنياً · المدين يزيد الذمة والدائن ينقصها · الرصيد الجاري تراكمي',
+          cell: cellOf,
+          total: totalOf,
+          onCustomize: openColumnPicker,
         ),
       ],
+      // شريطُ التصميم السفليّ: «عرض المستند · طباعة الكشف · تصدير».
+      footer: _StatementActionBar(
+        selectedVN: selectedEntry,
+        onPrint: printStatement,
+        onExport: exportToExcel,
+      ),
     );
   }
 
@@ -1727,6 +1869,7 @@ bool _rowMatches(PicPosTableRow row, String q) {
 /// الشريحةُ ستُرسَم ولا تفعل — وشريحةٌ لا تُرشِّح تكذب كزرٍّ لا يفعل.
 class _FilterableTable<T> extends StatefulWidget {
   const _FilterableTable({
+    super.key,
     required this.title,
     required this.columns,
     required this.groups,
@@ -1735,11 +1878,15 @@ class _FilterableTable<T> extends StatefulWidget {
     this.subtitle,
     this.totals,
     this.minWidth = 760,
+    this.headerAction,
   });
 
   final String title;
   final String? subtitle;
   final List<PicPosTableColumn> columns;
+
+  /// ودجتٌ في آخر رأس الجدول — «تخصيص الأعمدة».
+  final Widget? headerAction;
 
   /// شريحةٌ لكلّ مجموعة، وعدّادُها طولُها بعدَ البحث.
   final List<({String label, List<T> items})> groups;
@@ -1788,6 +1935,7 @@ class _FilterableTableState<T> extends State<_FilterableTable<T>> {
           title: widget.title,
           subtitle: widget.subtitle,
           minWidth: widget.minWidth,
+          headerAction: widget.headerAction,
           columns: widget.columns,
           selectedChip: sel,
           chips: [
@@ -1864,6 +2012,231 @@ class _FilterableBoard extends StatelessWidget {
                 );
               }(),
           ],
+        );
+      },
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// جدولُ الكشف — أعمدةٌ تُختار، وصفٌّ يُختار
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// ⚠️ **لا يُعيد الاستعلام.** تبديلُ عمودٍ عرضٌ خالصٌ، فمفتاحُ `_futures` لا
+// يحمل الأعمدةَ ولا الاختيار: يسمع الجدولُ مُبلِّغَين ويعيد بناءَ نفسِه.
+//
+// ⚠️ **والبحثُ يقرأ الظاهرَ وحدَه** بعد التخصيص — وهو عينُ عقد `_rowMatches`:
+// «يُقرأ ما يراه المشغّل». فإخفاءُ عمودِ البيان يُخرجه من البحث أيضاً، ولو
+// بقي مبحوثاً فيه لأعطى نتائجَ لا يُرى سببُها.
+class _LedgerTable extends StatelessWidget {
+  const _LedgerTable({
+    required this.columnsVN,
+    required this.selectedVN,
+    required this.query,
+    required this.groups,
+    required this.subtitle,
+    required this.cell,
+    required this.total,
+    required this.onCustomize,
+  });
+
+  final ValueListenable<Set<String>> columnsVN;
+  final ValueNotifier<PartyStatementEntry?> selectedVN;
+  final ValueListenable<String> query;
+  final List<({String label, List<PartyStatementEntry> items})> groups;
+  final String subtitle;
+  final PicPosCell Function(String columnId, PartyStatementEntry e) cell;
+  final String Function(String columnId, List<PartyStatementEntry> rows) total;
+  final VoidCallback onCustomize;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<Set<String>>(
+      valueListenable: columnsVN,
+      builder: (context, visible, _) {
+        // الترتيبُ ترتيبُ الكتالوج دائماً — التفضيلُ يحفظ **أيَّها** لا أيُّها
+        // أوّل.
+        final cols = [
+          for (final c in kStatementColumnCatalogue)
+            if (visible.contains(c.id)) c,
+        ];
+        return ValueListenableBuilder<PartyStatementEntry?>(
+          valueListenable: selectedVN,
+          builder: (context, selected, _) =>
+              _FilterableTable<PartyStatementEntry>(
+            // ⚠️ **بلا مفتاحٍ عمداً**: حالةُ `_FilterableTable` هي الشريحةُ
+            //    المنتقاةُ وحدَها، وهي فهرسٌ في `groups` لا في الأعمدة. ومفتاحٌ
+            //    يحمل الأعمدةَ كان سيُعيد بناءَ الحالة عند كلّ تخصيصٍ فيرتدّ
+            //    الترشيحُ إلى «كل الحركات» بلا سبب.
+            query: query,
+            title: 'كشف الحركة — الرصيد الجاري',
+            subtitle: subtitle,
+            headerAction: _CustomizeColumnsButton(onTap: onCustomize),
+            columns: [
+              for (final c in cols)
+                PicPosTableColumn(c.label, flex: c.flex, align: c.align),
+            ],
+            groups: groups,
+            buildRow: (e) => PicPosTableRow(
+              cells: [for (final c in cols) cell(c.id, e)],
+              selected: identical(selected, e),
+              // نقرةٌ ثانيةٌ على المختار تُلغي الاختيار — وإلّا بقي الشريطُ
+              // السفليُّ معلّقاً على صفٍّ لا سبيلَ للتخلّي عنه.
+              onTap: () =>
+                  selectedVN.value = identical(selected, e) ? null : e,
+            ),
+            totals: (rows) => [for (final c in cols) total(c.id, rows)],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _CustomizeColumnsButton extends StatelessWidget {
+  const _CustomizeColumnsButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: context.picposField,
+      borderRadius: BorderRadius.circular(9),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(9),
+        child: Container(
+          height: 32,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            border: Border.all(color: context.picposHairline),
+            borderRadius: BorderRadius.circular(9),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(PhosphorIconsBold.slidersHorizontal,
+                  size: 13, color: context.picposMuted),
+              const SizedBox(width: 6),
+              Text(
+                'تخصيص الأعمدة',
+                style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w700,
+                  color: context.picposText,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// شريطُ أفعال الكشف — **مثبَّتٌ أسفلَ التبويبة**.
+///
+/// ⚠️ **و«عرض المستند» يتبع وجودَ الوجهة لا وجودَ الصفّ**: صفُّ الرصيد
+/// الافتتاحيّ بلا مستندٍ أصلاً، وتسويةُ رصيدٍ صفُّ خزنةٍ لا وثيقةَ له. فزرٌّ
+/// يُعرَض على كلّ صفٍّ ثمّ لا يقفز في نصفها يُقرأ عطباً — والخريطةُ **مغلقةٌ**
+/// بالاسم كما في «المستند المصدر».
+class _StatementActionBar extends ConsumerWidget {
+  const _StatementActionBar({
+    required this.selectedVN,
+    required this.onPrint,
+    required this.onExport,
+  });
+
+  final ValueNotifier<PartyStatementEntry?> selectedVN;
+  final Future<void> Function() onPrint;
+  final Future<void> Function() onExport;
+
+  /// مفرداتُ الكشف تلتقي مفرداتِ اليومية في خمسٍ وتفترق في واحدة.
+  ///
+  /// `sales_return_balance` صفُّ `safe_transactions` يحمل أثرَ مردودٍ لا
+  /// فاتورةَ له (‏Spec 136 ISS-26) — فوجهتُه وجهةُ صفِّ الخزنة، لا شاشةُ
+  /// فواتيرَ لن تجد فيها شيئاً بهذا المعرّف.
+  String? _referenceTypeOf(PartyStatementEntry e) =>
+      e.referenceType == 'sales_return_balance'
+          ? 'safe_transaction'
+          : e.referenceType;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final text = Theme.of(context).textTheme;
+    return ValueListenableBuilder<PartyStatementEntry?>(
+      valueListenable: selectedVN,
+      builder: (context, selected, _) {
+        final target = selected == null
+            ? null
+            : resolveJournalSourceTarget(
+                referenceType: _referenceTypeOf(selected),
+                referenceId: selected.referenceId,
+                allowedScreenIds: AppConfig.allowedScreenIds.toSet(),
+              );
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 12),
+          decoration: BoxDecoration(
+            color: context.picposCard,
+            border: Border(top: BorderSide(color: context.picposHairline)),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                selected == null
+                    ? PhosphorIconsBold.cursorClick
+                    : PhosphorIconsBold.fileText,
+                size: 15,
+                color: context.picposMuted,
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  selected == null
+                      ? 'اختر سطراً لعرض مستنده'
+                      : (target == null
+                          ? '${selected.description} — لا مستندَ يُفتَح'
+                          : '${selected.invoiceNumber ?? selected.description}'
+                              ' · ${target.label}'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: text.labelMedium?.copyWith(
+                    color: context.picposMuted,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const Spacer(),
+              OutlinedButton.icon(
+                onPressed: () => unawaited(onExport()),
+                icon: const Icon(PhosphorIconsBold.downloadSimple, size: 16),
+                label: const Text('تصدير'),
+                style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.success),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton.icon(
+                onPressed: () => unawaited(onPrint()),
+                icon: const Icon(PhosphorIconsBold.printer, size: 16),
+                label: const Text('طباعة الكشف'),
+              ),
+              const SizedBox(width: 8),
+              FilledButton.icon(
+                // 🔴 **الفتحُ عبر القناة لا مباشرةً**: مالكُ التابات وحدَه يعرف
+                //    الصلاحيّاتِ وتاريخَ الرجوع وسقفَ التابات — وهي نفسُ قناةِ
+                //    «المستند المصدر» في اليومية العامة.
+                onPressed: target == null
+                    ? null
+                    : () => ref
+                        .read(screenNavigationProvider.notifier)
+                        .open(target.screenId.navigationIndex),
+                icon: const Icon(PhosphorIconsBold.arrowSquareOut, size: 16),
+                label: const Text('عرض المستند'),
+              ),
+            ],
+          ),
         );
       },
     );
