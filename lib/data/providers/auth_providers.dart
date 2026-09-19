@@ -736,14 +736,30 @@ const kAllNavItemDefs = [
   // ═══════════════════════════════════════════
   // 💵 المالية والمحاسبة
   // ═══════════════════════════════════════════
-  NavItemDef(icon: PhosphorIconsBold.wallet, label: 'الخزينة', permission: 'treasury_view', index: 10, section: 'المالية والمحاسبة', group: 'accounting'),
-  NavItemDef(icon: PhosphorIconsBold.lockKey, label: 'إغلاق الوردية', permission: PermissionCodes.posShiftClose, index: 56, group: 'accounting'),
+  // ⚠️ **الترتيبُ أمرُ مالكٍ 2026-09-18** (‏`PLAN-REDESIGN-SCREENS.md` §٣):
+  //    سبعةٌ في صدر المجموعة ثمّ بقيّتُها كما هي. ولا يُقرأ الترتيبُ من
+  //    `kNavGroupDefs` — الشريطُ يبني ترتيبَ الرؤوس من **أوّلِ ظهورٍ** لكلّ
+  //    مفتاحٍ هنا، وترتيبَ المداخل من موضعها في هذه القائمة.
+  //
+  // ⚠️ **و«اليومية العامة» مطويّةٌ في PicPos** ضمن حاوية «الحسابات»
+  //    (`kPicPosFoldedIntoAccountingHub` فيه الفهرس ٣٢). فصدرُ المجموعة
+  //    المرئيُّ في PicPos يبدأ بما بعدها — والترتيبُ النسبيُّ كما طُلب،
+  //    والطيُّ قرارٌ سابقٌ مستقلٌّ يُرفَع بسطر.
+  NavItemDef(icon: PhosphorIconsBold.notebook, label: journalEntriesScreenLabel, permission: 'settings_view', index: 32, section: 'المالية والمحاسبة', group: 'accounting'),
   NavItemDef(icon: PhosphorIconsBold.checks, label: chequesScreenLabel, permission: 'treasury_view', index: 34, group: 'accounting'),
+  // ⚠️ مصدرُ توصيلٍ **سادسٌ مستقلٌّ**: شاشةٌ صحيحةٌ في `ScreenId` و`AppScreen`
+  //    وخريطةِ الصلاحيات والنطاقِ و`ScreenConfig` تبقى **غائبةً عن القائمة
+  //    الجانبيّة** بلا هذين السطرين. وقع فعلاً مع الحجوزات 2026-08-22 وكلُّ
+  //    الحرّاس خضراء.
+  NavItemDef(icon: PhosphorIconsBold.folders, label: 'فئات الأصول', permission: 'assets_view', index: 65, group: 'accounting'),
+  NavItemDef(icon: PhosphorIconsBold.mapPin, label: 'التوزيع والمواقع', permission: 'assets_view', index: 66, group: 'accounting'),
+  // ── بقيّةُ المجموعة كما هي ────────────────────────────────────────────
+  NavItemDef(icon: PhosphorIconsBold.wallet, label: 'الخزينة', permission: 'treasury_view', index: 10, group: 'accounting'),
+  NavItemDef(icon: PhosphorIconsBold.lockKey, label: 'إغلاق الوردية', permission: PermissionCodes.posShiftClose, index: 56, group: 'accounting'),
   // حاويةُ «الحسابات» — مدخلٌ واحدٌ يفتح تبويباتِ التصميم السبعة. تظهر في
   // PicPos وحدَها، وتُطوى تحتها مداخلُ [kPicPosFoldedIntoAccountingHub].
-  NavItemDef(icon: PhosphorIconsBold.bookOpen, label: 'الحسابات', permission: 'settings_view', index: 63, section: 'المالية والمحاسبة', group: 'accounting'),
+  NavItemDef(icon: PhosphorIconsBold.bookOpen, label: 'الحسابات', permission: 'settings_view', index: 63, group: 'accounting'),
   NavItemDef(icon: PhosphorIconsBold.treeStructure, label: 'دليل الحسابات', permission: 'settings_view', index: 27, group: 'accounting'),
-  NavItemDef(icon: PhosphorIconsBold.notebook, label: journalEntriesScreenLabel, permission: 'settings_view', index: 32, group: 'accounting'),
   NavItemDef(icon: PhosphorIconsBold.book, label: 'دفتر الأستاذ', permission: 'settings_view', index: 36, group: 'accounting'),
   NavItemDef(icon: PhosphorIconsBold.link, label: 'ربط الحسابات', permission: 'settings_view', index: 31, group: 'accounting'),
   NavItemDef(icon: PhosphorIconsBold.treeStructure, label: 'مراكز التكلفة', permission: 'settings_view', index: 33, group: 'accounting'),
@@ -1015,6 +1031,11 @@ const screenPermissionMap = <ScreenId, String>{
   // حسمُ القوالب: قراءةُ إعدادِ طباعةٍ وتشخيصُه، فصلاحيّتُه صلاحيةُ الطابعات
   // نفسُها. و`settings_view` كان سيوسّع الدائرةَ لكلِّ من يرى الإعدادات.
   ScreenId.templateResolution: PermissionCodes.settingsPrinter,
+  // الفئاتُ والمواقعُ **تفصيلان في الأصول الثابتة** خرجا إلى مدخلَين — فلا
+  // كودَ جديدٌ لهما. وكودٌ ثالثٌ كان يترك كلَّ دورٍ قائمٍ بلا الشاشتَين حتى
+  // يُمنح يدويّاً، ويمسّ سجلَّ التكافؤ. وهو عينُ ما حُسم في «حسم القوالب».
+  ScreenId.assetCategories: PermissionCodes.assetsView,
+  ScreenId.assetLocations: PermissionCodes.assetsView,
 };
 
 final userAllowedScreensProvider = FutureProvider<List<int>>((ref) async {

@@ -224,18 +224,19 @@ class _FixedAssetsPicposScreenState
 
   static final DateFormat _dateFmt = DateFormat('dd-MM-yyyy');
 
+  /// ⚠️ **ثلاثةٌ لا خمسة**: «الفئات» و«التوزيع والمواقع» خرجتا إلى مدخلَين
+  /// جانبيَّين مستقلَّين بقرار المالك 2026-09-18. وطولُ هذه القائمة يُفهرَس
+  /// بـ`_tabs.index` — فتركُ سطرَيهما كان يُظهر شرحَ الفئات تحت الاستبعاد.
   static const _tabNotes = [
     'القيمة الدفترية = التكلفة ناقص مجمع الإهلاك',
     'القسط الشهري يُرحَّل بقيد واحد لكل فئة · الأصول المستبعدة لا تُهلك',
-    'الفئة تحدد العمر الافتراضي والطريقة وحسابي الأصل والإهلاك',
     'الربح أو الخسارة = ثمن البيع ناقص القيمة الدفترية',
-    'الأصل يتبع موقعاً ومركز تكلفة',
   ];
 
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 5, vsync: this)
+    _tabs = TabController(length: 3, vsync: this)
       ..addListener(() => setState(() {}));
   }
 
@@ -361,19 +362,9 @@ class _FixedAssetsPicposScreenState
                 badge: '${_activeCategoryIds(onBooks).length}'
               ),
               (
-                label: 'الفئات',
-                icon: PhosphorIconsBold.folders,
-                badge: '${cats.length}'
-              ),
-              (
                 label: 'الاستبعاد والبيع',
                 icon: PhosphorIconsBold.trash,
                 badge: '${disposed.length}'
-              ),
-              (
-                label: 'التوزيع والمواقع',
-                icon: PhosphorIconsBold.mapPin,
-                badge: '${locations.length}'
               ),
             ],
           ),
@@ -388,9 +379,7 @@ class _FixedAssetsPicposScreenState
               children: [
                 _scroll(_assetsTab(all, cats, snaps)),
                 _scroll(_depreciationTab(onBooks, cats, deprs, accountById)),
-                _scroll(_categoriesTab(cats, all, accountById)),
                 _scroll(_disposalTab(disposed)),
-                _scroll(_distributionTab(onBooks)),
               ],
             ),
     );
@@ -1098,77 +1087,6 @@ class _FixedAssetsPicposScreenState
   }
 
   // ═════════════════════════════════════════════════════════════════════════
-  // ٣ — الفئات
-  // ═════════════════════════════════════════════════════════════════════════
-
-  Widget _categoriesTab(
-    List<AssetCategory> cats,
-    List<FixedAssetData> all,
-    Map<int, String> accountById,
-  ) {
-    final countByCat = <int, int>{};
-    for (final a in all) {
-      countByCat[a.categoryId] = (countByCat[a.categoryId] ?? 0) + 1;
-    }
-
-    if (cats.isEmpty) {
-      return const PicPosEmptyState(
-        icon: PhosphorIconsBold.folders,
-        title: 'لا فئاتِ أصولٍ بعد',
-        hint: 'الفئة تحدّد العمر الافتراضي وطريقة الإهلاك وحسابي الأصل '
-            'والإهلاك — ولا يُسجَّل أصلٌ بلا فئة.',
-      );
-    }
-
-    return PicPosDataTable(
-      title: 'فئات الأصول',
-      subtitle: 'الفئة تحدد العمر الافتراضي والطريقة وحسابي الأصل والإهلاك',
-      minWidth: 980,
-      columns: const [
-        PicPosTableColumn('الفئة', flex: 1.7),
-        PicPosTableColumn('العمر الافتراضي', flex: 1.2),
-        PicPosTableColumn('طريقة الإهلاك', flex: 1.5),
-        PicPosTableColumn('الأصول', align: PicPosCellAlign.end),
-        PicPosTableColumn('حساب الأصل', flex: 1.5),
-        PicPosTableColumn('حساب الإهلاك', flex: 1.5),
-      ],
-      rows: [
-        for (final c in cats)
-          PicPosTableRow(cells: [
-            PicPosTextCell(c.name,
-                icon: PhosphorIconsBold.folders,
-                sub: (countByCat[c.id] ?? 0) == 0
-                    ? 'بلا أصول على الدفاتر'
-                    : null,
-                tint: (countByCat[c.id] ?? 0) == 0 ? _idle : AppColors.primary),
-            PicPosTextCell(
-                '${_ar(c.defaultUsefulLife.toStringAsFixed(0))} سنوات'),
-            PicPosPillCell(
-              _methodLabel(c.defaultDepreciationMethod),
-              c.defaultDepreciationMethod == 'declining_balance'
-                  ? _purple
-                  : AppColors.primary,
-            ),
-            PicPosTextCell(_ar(countByCat[c.id] ?? 0)),
-            PicPosTextCell(accountById[c.accountId] ?? '— غير مربوط',
-                tint: c.accountId == null ? _err : null),
-            PicPosTextCell(
-                accountById[c.depreciationAccountId] ?? '— غير مربوط',
-                tint: c.depreciationAccountId == null ? _err : null),
-          ]),
-      ],
-      totals: [
-        '${_ar(cats.length)} فئات',
-        '',
-        '',
-        _ar(all.length),
-        '',
-        '',
-      ],
-    );
-  }
-
-  // ═════════════════════════════════════════════════════════════════════════
   // ٤ — الاستبعاد والبيع
   // ═════════════════════════════════════════════════════════════════════════
 
@@ -1304,112 +1222,6 @@ class _FixedAssetsPicposScreenState
       ],
     );
   }
-
-  // ═════════════════════════════════════════════════════════════════════════
-  // ٥ — التوزيع والمواقع
-  // ═════════════════════════════════════════════════════════════════════════
-
-  Widget _distributionTab(List<FixedAssetData> onBooks) {
-    if (onBooks.isEmpty) {
-      return const PicPosEmptyState(
-        icon: PhosphorIconsBold.mapPin,
-        title: 'لا أصولَ نشطةً لتوزَّع',
-        hint: 'الأصل يتبع موقعاً ومركزَ تكلفة — ويُستعمل ذلك في توزيع '
-            'الإهلاك على مراكز التكلفة.',
-      );
-    }
-
-    final byLocation = <String, List<FixedAssetData>>{};
-    for (final a in onBooks) {
-      final key =
-          (a.location ?? '').trim().isEmpty ? 'بلا موقع' : a.location!.trim();
-      byLocation.putIfAbsent(key, () => []).add(a);
-    }
-
-    final entries = byLocation.entries.toList()
-      ..sort((x, y) => _sumBook(y.value).compareTo(_sumBook(x.value)));
-
-    final totalBook = onBooks.fold<double>(0, (s, a) => s + _bookValue(a));
-    final totalCost = onBooks.fold<double>(0, (s, a) => s + a.purchasePrice);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        PicPosContentCard(
-          child: PicPosBarList(
-            title: 'القيمة الدفترية حسب الموقع',
-            subtitle: 'الأصل يتبع موقعاً ومركز تكلفة · ج.م',
-            emptyHint: 'لا مواقعَ مسجَّلة',
-            items: [
-              for (final e in entries)
-                PicPosBarItem(
-                  label: e.key,
-                  sub: '${_ar(e.value.length)} أصول',
-                  value: _sumBook(e.value),
-                  display: _money0.format(_sumBook(e.value)),
-                  caption: totalBook > 0
-                      ? '${_pct(_sumBook(e.value) / totalBook * 100)} من الدفترية'
-                      : '',
-                  icon: PhosphorIconsBold.storefront,
-                ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        PicPosDataTable(
-          title: 'الأصول حسب الموقع',
-          subtitle: 'يُستخدم في توزيع الإهلاك على مراكز التكلفة',
-          minWidth: 820,
-          columns: const [
-            PicPosTableColumn('الموقع', flex: 1.6),
-            PicPosTableColumn('الأصول', align: PicPosCellAlign.end),
-            PicPosTableColumn('التكلفة',
-                flex: 1.3, align: PicPosCellAlign.end),
-            PicPosTableColumn('الدفترية',
-                flex: 1.3, align: PicPosCellAlign.end),
-            PicPosTableColumn('نسبة الاستهلاك', flex: 1.4),
-          ],
-          rows: [
-            for (final e in entries)
-              () {
-                final cost = e.value.fold<double>(0, (s, a) => s + a.purchasePrice);
-                final accum = e.value
-                    .fold<double>(0, (s, a) => s + a.accumulatedDepreciation);
-                final ratio = cost > 0 ? (accum / cost).clamp(0.0, 1.0) : 0.0;
-                return PicPosTableRow(cells: [
-                  PicPosTextCell(e.key,
-                      icon: PhosphorIconsBold.storefront,
-                      tint: AppColors.primary),
-                  PicPosTextCell(_ar(e.value.length)),
-                  PicPosTextCell(_money0.format(cost)),
-                  PicPosTextCell(_money0.format(cost - accum), bold: true),
-                  PicPosBarCell(
-                    _pct(ratio * 100),
-                    ratio,
-                    ratio >= _nearEndThreshold
-                        ? _err
-                        : ratio >= 0.5
-                            ? _warn
-                            : _ok,
-                  ),
-                ]);
-              }(),
-          ],
-          totals: [
-            '${_ar(entries.length)} مواقع',
-            _ar(onBooks.length),
-            _money0.format(totalCost),
-            _money0.format(totalBook),
-            '',
-          ],
-        ),
-      ],
-    );
-  }
-
-  double _sumBook(List<FixedAssetData> list) =>
-      list.fold<double>(0, (s, a) => s + _bookValue(a));
 
   // ═════════════════════════════════════════════════════════════════════════
   // الأفعال

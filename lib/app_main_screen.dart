@@ -92,6 +92,8 @@ import 'presentation/screens/commercial_papers_screen.dart';
 import 'presentation/settings_picpos/screens/cheques_picpos_screen.dart';
 import 'presentation/screens/fixed_assets_screen.dart';
 import 'presentation/fixed_assets_picpos/screens/fixed_assets_picpos_screen.dart';
+import 'presentation/fixed_assets_picpos/screens/asset_categories_picpos_screen.dart';
+import 'presentation/fixed_assets_picpos/screens/asset_locations_picpos_screen.dart';
 import 'presentation/opex_picpos/screens/opex_picpos_screen.dart';
 import 'presentation/screens/general_ledger_screen.dart';
 import 'presentation/screens/sales_orders_screen.dart';
@@ -1066,6 +1068,21 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => const TemplateResolutionPicposScreen(),
         label: 'حسم القوالب',
         icon: PhosphorIconsBold.gitFork,
+      ),
+      // فئاتُ الأصول والتوزيعُ والمواقع — PicPos وحدَها: تفصيلان في شاشة
+      // الأصول خرجا إلى مدخلَين بقرار المالك 2026-09-18، ولا نظيرَ لهما في
+      // UralCash (تبويباتُها الخمسةُ باقيةٌ كما هي هناك).
+      ScreenConfig(
+        appScreen: AppScreen.assetCategories,
+        builder: (_) => const AssetCategoriesPicposScreen(),
+        label: 'فئات الأصول',
+        icon: PhosphorIconsBold.folders,
+      ),
+      ScreenConfig(
+        appScreen: AppScreen.assetLocations,
+        builder: (_) => const AssetLocationsPicposScreen(),
+        label: 'التوزيع والمواقع',
+        icon: PhosphorIconsBold.mapPin,
       ),
       ScreenConfig(
         appScreen: AppScreen.syncConflicts,

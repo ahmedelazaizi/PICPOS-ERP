@@ -211,18 +211,22 @@ void main() {
   for (final width in [1280.0, 1920.0]) {
     final w = width.toInt();
 
-    testWidgets('التبويباتُ الخمسةُ كلُّها تُرسَم بلا فيضان عند عرض $w',
+    // ⚠️ **ثلاثةٌ لا خمسة** منذ 2026-09-19: «الفئات» و«التوزيع والمواقع»
+    //    خرجتا إلى شاشتَين بمدخلَين جانبيَّين مستقلَّين بقرار المالك، ولهما
+    //    اختبارا تركيبٍ خاصّان بهما.
+    testWidgets('التبويباتُ الثلاثةُ كلُّها تُرسَم بلا فيضان عند عرض $w',
         (tester) async {
       await _pump(tester, width);
 
       expect(find.text('الأصول الثابتة والإهلاك'), findsOneWidget);
+      // والخارجتان لا تُرسَمان هنا — وإلّا كان المستخدمُ يقرأ الفئةَ في
+      // موضعَين يفترقان عند أوّل تعديل.
+      expect(find.text('الفئات'), findsNothing);
 
       for (final tab in [
         'الأصول',
         'الإهلاك الدوري',
-        'الفئات',
         'الاستبعاد والبيع',
-        'التوزيع والمواقع',
       ]) {
         await _openTab(tester, tab);
         expect(tester.takeException(), isNull,
@@ -328,16 +332,6 @@ void main() {
         reason: 'الربحُ لا يساوي ثمنَ البيع ناقصَ القيمة الدفترية.');
   });
 
-  testWidgets('التوزيعُ يجمع الأصولَ النشطةَ حسب الموقع', (tester) async {
-    await _pump(tester, 1920);
-    await _openTab(tester, 'التوزيع والمواقع');
-
-    expect(find.text('القيمة الدفترية حسب الموقع'), findsOneWidget);
-    expect(find.textContaining('فرع المعادي'), findsWidgets);
-
-    // ⚠️ الأصلُ المباعُ (‏بلا موقع) يجب ألّا يظهر هنا: التوزيعُ على النشط
-    //    وحدَه، وإلّا نُسب للمواقع أصلٌ خرج من الدفاتر.
-    expect(find.textContaining('AST-007'), findsNothing,
-        reason: 'الأصلُ المستبعدُ ظهر في التوزيع — والتوزيعُ للنشط وحدَه.');
-  });
+  // «التوزيعُ يجمع الأصولَ النشطةَ حسب الموقع» انتقل إلى
+  // `asset_locations_picpos_test.dart` مع الشاشة.
 }

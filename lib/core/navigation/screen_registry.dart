@@ -229,6 +229,13 @@ class ScreenRegistry {
     ScreenId.costCenters,
     ScreenId.commercialPapers,
     ScreenId.fixedAssets,
+    // ⚠️ **نطاقُهما نطاقُ [ScreenId.fixedAssets] بالضبط** — وهو `unified`
+    //    وحدَه. وهما تفصيلان فيها خرجا إلى مدخلَين، فنطاقٌ أوسعُ كان يُظهر
+    //    «فئات الأصول» في ملفٍّ لا شاشةَ أصولٍ فيه: مدخلٌ يُنشئ فئةً لا
+    //    يستعملها أحد. والحلقةُ ترشّح بالنطاق **قبل** الصلاحية، فالنقصانُ
+    //    يُسقطهما حتى عن مدير النظام.
+    ScreenId.assetCategories,
+    ScreenId.assetLocations,
     ScreenId.generalLedger,
     ScreenId.bankReconciliation,
     ScreenId.salesOrders,
