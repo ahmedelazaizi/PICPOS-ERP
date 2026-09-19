@@ -92,6 +92,7 @@ part 'daos/product_crud_dao.dart';
 part 'daos/product_barcode_units_dao.dart';
 part 'daos/sales_dao.dart';
 part 'daos/sales_mutations_dao.dart';
+part 'daos/payment_allocations_dao.dart';
 part 'daos/sales_actions_dao.dart';
 part 'daos/sales_held_orders_dao.dart';
 part 'daos/sales_analytics_dao.dart';
@@ -1078,7 +1079,7 @@ class AppDatabase extends _$AppDatabase {
   // `newColumns`، فرمت `no such column: "role"` وابتلعها `_safeMigrate`
   // (تعدُّها خطأً عديمَ الأثر) — فخُتمت القواعدُ 161 وأعمدةُ المورد لم تُضَف،
   // و`from < 161` لا يعود يفحصها. الخطوةُ الجديدةُ تفحص ثمّ تُصلح.
-  int get schemaVersion => 174;
+  int get schemaVersion => 175;
 
   /// 🔴 جملةُ `CREATE INDEX` صالحةً لـPostgreSQL، مأخوذةً من الجملة التي
   /// ولّدتها drift لـSQLite.

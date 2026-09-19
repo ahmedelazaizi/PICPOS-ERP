@@ -24677,6 +24677,18 @@ class $SalesInvoicesTable extends SalesInvoices
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _paidUnallocatedMeta = const VerificationMeta(
+    'paidUnallocated',
+  );
+  @override
+  late final GeneratedColumn<double> paidUnallocated = GeneratedColumn<double>(
+    'paid_unallocated',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _roundingAdjustmentMeta =
       const VerificationMeta('roundingAdjustment');
   @override
@@ -25066,6 +25078,7 @@ class $SalesInvoicesTable extends SalesInvoices
     tax,
     total,
     paid,
+    paidUnallocated,
     roundingAdjustment,
     cashPaid,
     bankPaid,
@@ -25200,6 +25213,15 @@ class $SalesInvoicesTable extends SalesInvoices
       context.handle(
         _paidMeta,
         paid.isAcceptableOrUnknown(data['paid']!, _paidMeta),
+      );
+    }
+    if (data.containsKey('paid_unallocated')) {
+      context.handle(
+        _paidUnallocatedMeta,
+        paidUnallocated.isAcceptableOrUnknown(
+          data['paid_unallocated']!,
+          _paidUnallocatedMeta,
+        ),
       );
     }
     if (data.containsKey('rounding_adjustment')) {
@@ -25497,6 +25519,10 @@ class $SalesInvoicesTable extends SalesInvoices
         DriftSqlType.double,
         data['${effectivePrefix}paid'],
       )!,
+      paidUnallocated: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}paid_unallocated'],
+      )!,
       roundingAdjustment: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}rounding_adjustment'],
@@ -25657,6 +25683,35 @@ class SalesInvoiceData extends DataClass
   final double total;
   final double paid;
 
+  /// v175 — المسدَّدُ **خارجَ التخصيصات**، وقاعدةُ حسابِ [paid].
+  ///
+  /// ═══ 🔴 العطبُ الذي أوجب العمود ═══
+  ///
+  /// `PaymentAllocationSyncStrategy` تكتب `paid = SUM(payment_allocations)`
+  /// — **تستبدل ولا تجمع**. وهي لا تعمل اليوم لأنّ صفرَ كُتّابٍ للجدول،
+  /// فبقي العطبُ نائماً.
+  ///
+  /// لكنّ [paid] يُكتَب **وقتَ البيع** من الدفعة الحاضرة، وفاتورةٌ دُفع منها
+  /// ٣٠٠ نقداً وبقي ٧٠٠ آجلاً **لا تحمل أيَّ تخصيص**. فأوّلُ سندِ قبضٍ
+  /// يخصّص لها ٧٠٠ كان سيجعل `paid = ٧٠٠` بدل ١٠٠٠ — تختفي الثلاثُمئة،
+  /// ويتضخّم رصيدُ العملاء، وتعود الفاتورةُ «جزئيّةً» وهي مسدَّدة.
+  ///
+  /// ═══ والثابتُ الذي يحرسه هذا العمود ═══
+  ///
+  ///     paid = paid_unallocated + Σ payment_allocations
+  ///
+  /// ⚠️ **والاسمُ «غيرُ المخصَّص» لا «وقتَ البيع»**: أوّلُ صياغةٍ للقرار
+  /// سمّته `paid_at_sale`، لكنّ الثابتَ أوسع — كلُّ قرشٍ يُسجَّل على
+  /// الفاتورة ولا يمثّله صفُّ تخصيصٍ يجب أن يقع هنا، ومنه تحصيلُ
+  /// `applyCustomerCollectionToInvoice` الذي يقع بعد البيع بشهور. وتسميتُه
+  /// «وقتَ البيع» كانت ستُغري بتركه ساكناً بعده فينكسر الثابتُ صامتاً.
+  ///
+  /// ⚠️ **ولا نظيرَ له في `PurchaseInvoices` عمداً**: الاستراتيجيّةُ تُعيد
+  /// الحسابَ للمبيعات وحدَها (`invoiceType == 'sales'`)، وعمودٌ لا يقرؤه
+  /// أحدٌ دَينٌ لا حارس. فإن صارت تعيد حسابَ المشتريات لزم توأمُه في نفس
+  /// الكوميت.
+  final double paidUnallocated;
+
   /// v171 — فرقُ تقريب الإجماليّ (‏سياسةُ البيع السريع `pos_total_rounding`).
   ///
   /// `total` يبقى الإجماليَّ **الحقيقيَّ** دائماً — الوعاءُ الضريبيُّ
@@ -25723,6 +25778,7 @@ class SalesInvoiceData extends DataClass
     required this.tax,
     required this.total,
     required this.paid,
+    required this.paidUnallocated,
     required this.roundingAdjustment,
     required this.cashPaid,
     required this.bankPaid,
@@ -25777,6 +25833,7 @@ class SalesInvoiceData extends DataClass
     map['tax'] = Variable<double>(tax);
     map['total'] = Variable<double>(total);
     map['paid'] = Variable<double>(paid);
+    map['paid_unallocated'] = Variable<double>(paidUnallocated);
     map['rounding_adjustment'] = Variable<double>(roundingAdjustment);
     map['cash_paid'] = Variable<double>(cashPaid);
     map['bank_paid'] = Variable<double>(bankPaid);
@@ -25868,6 +25925,7 @@ class SalesInvoiceData extends DataClass
       tax: Value(tax),
       total: Value(total),
       paid: Value(paid),
+      paidUnallocated: Value(paidUnallocated),
       roundingAdjustment: Value(roundingAdjustment),
       cashPaid: Value(cashPaid),
       bankPaid: Value(bankPaid),
@@ -25957,6 +26015,7 @@ class SalesInvoiceData extends DataClass
       tax: serializer.fromJson<double>(json['tax']),
       total: serializer.fromJson<double>(json['total']),
       paid: serializer.fromJson<double>(json['paid']),
+      paidUnallocated: serializer.fromJson<double>(json['paidUnallocated']),
       roundingAdjustment: serializer.fromJson<double>(
         json['roundingAdjustment'],
       ),
@@ -26019,6 +26078,7 @@ class SalesInvoiceData extends DataClass
       'tax': serializer.toJson<double>(tax),
       'total': serializer.toJson<double>(total),
       'paid': serializer.toJson<double>(paid),
+      'paidUnallocated': serializer.toJson<double>(paidUnallocated),
       'roundingAdjustment': serializer.toJson<double>(roundingAdjustment),
       'cashPaid': serializer.toJson<double>(cashPaid),
       'bankPaid': serializer.toJson<double>(bankPaid),
@@ -26067,6 +26127,7 @@ class SalesInvoiceData extends DataClass
     double? tax,
     double? total,
     double? paid,
+    double? paidUnallocated,
     double? roundingAdjustment,
     double? cashPaid,
     double? bankPaid,
@@ -26112,6 +26173,7 @@ class SalesInvoiceData extends DataClass
     tax: tax ?? this.tax,
     total: total ?? this.total,
     paid: paid ?? this.paid,
+    paidUnallocated: paidUnallocated ?? this.paidUnallocated,
     roundingAdjustment: roundingAdjustment ?? this.roundingAdjustment,
     cashPaid: cashPaid ?? this.cashPaid,
     bankPaid: bankPaid ?? this.bankPaid,
@@ -26189,6 +26251,9 @@ class SalesInvoiceData extends DataClass
       tax: data.tax.present ? data.tax.value : this.tax,
       total: data.total.present ? data.total.value : this.total,
       paid: data.paid.present ? data.paid.value : this.paid,
+      paidUnallocated: data.paidUnallocated.present
+          ? data.paidUnallocated.value
+          : this.paidUnallocated,
       roundingAdjustment: data.roundingAdjustment.present
           ? data.roundingAdjustment.value
           : this.roundingAdjustment,
@@ -26273,6 +26338,7 @@ class SalesInvoiceData extends DataClass
           ..write('tax: $tax, ')
           ..write('total: $total, ')
           ..write('paid: $paid, ')
+          ..write('paidUnallocated: $paidUnallocated, ')
           ..write('roundingAdjustment: $roundingAdjustment, ')
           ..write('cashPaid: $cashPaid, ')
           ..write('bankPaid: $bankPaid, ')
@@ -26323,6 +26389,7 @@ class SalesInvoiceData extends DataClass
     tax,
     total,
     paid,
+    paidUnallocated,
     roundingAdjustment,
     cashPaid,
     bankPaid,
@@ -26372,6 +26439,7 @@ class SalesInvoiceData extends DataClass
           other.tax == this.tax &&
           other.total == this.total &&
           other.paid == this.paid &&
+          other.paidUnallocated == this.paidUnallocated &&
           other.roundingAdjustment == this.roundingAdjustment &&
           other.cashPaid == this.cashPaid &&
           other.bankPaid == this.bankPaid &&
@@ -26419,6 +26487,7 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceData> {
   final Value<double> tax;
   final Value<double> total;
   final Value<double> paid;
+  final Value<double> paidUnallocated;
   final Value<double> roundingAdjustment;
   final Value<double> cashPaid;
   final Value<double> bankPaid;
@@ -26464,6 +26533,7 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceData> {
     this.tax = const Value.absent(),
     this.total = const Value.absent(),
     this.paid = const Value.absent(),
+    this.paidUnallocated = const Value.absent(),
     this.roundingAdjustment = const Value.absent(),
     this.cashPaid = const Value.absent(),
     this.bankPaid = const Value.absent(),
@@ -26510,6 +26580,7 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceData> {
     this.tax = const Value.absent(),
     this.total = const Value.absent(),
     this.paid = const Value.absent(),
+    this.paidUnallocated = const Value.absent(),
     this.roundingAdjustment = const Value.absent(),
     this.cashPaid = const Value.absent(),
     this.bankPaid = const Value.absent(),
@@ -26559,6 +26630,7 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceData> {
     Expression<double>? tax,
     Expression<double>? total,
     Expression<double>? paid,
+    Expression<double>? paidUnallocated,
     Expression<double>? roundingAdjustment,
     Expression<double>? cashPaid,
     Expression<double>? bankPaid,
@@ -26605,6 +26677,7 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceData> {
       if (tax != null) 'tax': tax,
       if (total != null) 'total': total,
       if (paid != null) 'paid': paid,
+      if (paidUnallocated != null) 'paid_unallocated': paidUnallocated,
       if (roundingAdjustment != null) 'rounding_adjustment': roundingAdjustment,
       if (cashPaid != null) 'cash_paid': cashPaid,
       if (bankPaid != null) 'bank_paid': bankPaid,
@@ -26656,6 +26729,7 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceData> {
     Value<double>? tax,
     Value<double>? total,
     Value<double>? paid,
+    Value<double>? paidUnallocated,
     Value<double>? roundingAdjustment,
     Value<double>? cashPaid,
     Value<double>? bankPaid,
@@ -26702,6 +26776,7 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceData> {
       tax: tax ?? this.tax,
       total: total ?? this.total,
       paid: paid ?? this.paid,
+      paidUnallocated: paidUnallocated ?? this.paidUnallocated,
       roundingAdjustment: roundingAdjustment ?? this.roundingAdjustment,
       cashPaid: cashPaid ?? this.cashPaid,
       bankPaid: bankPaid ?? this.bankPaid,
@@ -26778,6 +26853,9 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceData> {
     }
     if (paid.present) {
       map['paid'] = Variable<double>(paid.value);
+    }
+    if (paidUnallocated.present) {
+      map['paid_unallocated'] = Variable<double>(paidUnallocated.value);
     }
     if (roundingAdjustment.present) {
       map['rounding_adjustment'] = Variable<double>(roundingAdjustment.value);
@@ -26895,6 +26973,7 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceData> {
           ..write('tax: $tax, ')
           ..write('total: $total, ')
           ..write('paid: $paid, ')
+          ..write('paidUnallocated: $paidUnallocated, ')
           ..write('roundingAdjustment: $roundingAdjustment, ')
           ..write('cashPaid: $cashPaid, ')
           ..write('bankPaid: $bankPaid, ')
@@ -169090,6 +169169,7 @@ typedef $$SalesInvoicesTableCreateCompanionBuilder =
       Value<double> tax,
       Value<double> total,
       Value<double> paid,
+      Value<double> paidUnallocated,
       Value<double> roundingAdjustment,
       Value<double> cashPaid,
       Value<double> bankPaid,
@@ -169137,6 +169217,7 @@ typedef $$SalesInvoicesTableUpdateCompanionBuilder =
       Value<double> tax,
       Value<double> total,
       Value<double> paid,
+      Value<double> paidUnallocated,
       Value<double> roundingAdjustment,
       Value<double> cashPaid,
       Value<double> bankPaid,
@@ -169564,6 +169645,11 @@ class $$SalesInvoicesTableFilterComposer
 
   ColumnFilters<double> get paid => $composableBuilder(
     column: $table.paid,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get paidUnallocated => $composableBuilder(
+    column: $table.paidUnallocated,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -170134,6 +170220,11 @@ class $$SalesInvoicesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get paidUnallocated => $composableBuilder(
+    column: $table.paidUnallocated,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get roundingAdjustment => $composableBuilder(
     column: $table.roundingAdjustment,
     builder: (column) => ColumnOrderings(column),
@@ -170511,6 +170602,11 @@ class $$SalesInvoicesTableAnnotationComposer
 
   GeneratedColumn<double> get paid =>
       $composableBuilder(column: $table.paid, builder: (column) => column);
+
+  GeneratedColumn<double> get paidUnallocated => $composableBuilder(
+    column: $table.paidUnallocated,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<double> get roundingAdjustment => $composableBuilder(
     column: $table.roundingAdjustment,
@@ -171063,6 +171159,7 @@ class $$SalesInvoicesTableTableManager
                 Value<double> tax = const Value.absent(),
                 Value<double> total = const Value.absent(),
                 Value<double> paid = const Value.absent(),
+                Value<double> paidUnallocated = const Value.absent(),
                 Value<double> roundingAdjustment = const Value.absent(),
                 Value<double> cashPaid = const Value.absent(),
                 Value<double> bankPaid = const Value.absent(),
@@ -171108,6 +171205,7 @@ class $$SalesInvoicesTableTableManager
                 tax: tax,
                 total: total,
                 paid: paid,
+                paidUnallocated: paidUnallocated,
                 roundingAdjustment: roundingAdjustment,
                 cashPaid: cashPaid,
                 bankPaid: bankPaid,
@@ -171155,6 +171253,7 @@ class $$SalesInvoicesTableTableManager
                 Value<double> tax = const Value.absent(),
                 Value<double> total = const Value.absent(),
                 Value<double> paid = const Value.absent(),
+                Value<double> paidUnallocated = const Value.absent(),
                 Value<double> roundingAdjustment = const Value.absent(),
                 Value<double> cashPaid = const Value.absent(),
                 Value<double> bankPaid = const Value.absent(),
@@ -171200,6 +171299,7 @@ class $$SalesInvoicesTableTableManager
                 tax: tax,
                 total: total,
                 paid: paid,
+                paidUnallocated: paidUnallocated,
                 roundingAdjustment: roundingAdjustment,
                 cashPaid: cashPaid,
                 bankPaid: bankPaid,

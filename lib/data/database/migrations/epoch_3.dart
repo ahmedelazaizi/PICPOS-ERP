@@ -3406,6 +3406,48 @@ extension Epoch3Migrations on AppDatabase {
         debugPrint('[Migration] v174: أربعةُ جداولَ وخمسةَ عشرَ عموداً');
       });
     }
+    // ═══════════════════════════════════════════════════════════════════
+    // v175 — قاعدةُ حسابِ `sales_invoices.paid`
+    // ═══════════════════════════════════════════════════════════════════
+    //
+    // قرارُ المالك 2026-09-19 (الخيار أ): `paid` يُبنى من قاعدةٍ مخزَّنةٍ
+    // زائدَ مجموعِ التخصيصات — راجع شرحَ `paidUnallocated`.
+    //
+    // 🔴 **والملءُ أهمُّ من الإضافة.** عمودٌ يُضاف بـ`DEFAULT 0` يجعل كلَّ
+    // فاتورةٍ قائمةٍ تقول «لم يُسدَّد منّي شيءٌ خارجَ التخصيصات» — وهو كذبٌ
+    // على كلّ تاريخِ التنصيبة. وأوّلُ إعادةِ حسابٍ بعدها تُصفِّر `paid` لكلّ
+    // ما مضى.
+    //
+    // والملءُ `paid_unallocated = paid` **صحيحٌ حرفيّاً اليوم**: جدولُ
+    // التخصيصات بلا كاتبٍ واحدٍ في `lib/` (مقيسٌ)، فكلُّ قرشٍ مسجَّلٍ في
+    // `paid` وقع خارجَ تخصيص. ولو وُصِل الكاتبُ قبلَ هذه الهجرةِ لصار الملءُ
+    // يضاعف المخصَّص — ولذلك العمودُ والكاتبُ في كوميتٍ واحد.
+    if (from < 175) {
+      await _safeMigrate('v175 قاعدةُ حسابِ المسدَّد', () async {
+        try {
+          await m.database.customStatement(
+            'ALTER TABLE sales_invoices '
+            'ADD COLUMN paid_unallocated REAL NOT NULL DEFAULT 0',
+          );
+        } catch (e) {
+          debugPrint('[Migration] v175 paid_unallocated (safe-skip): $e');
+        }
+
+        // الملءُ يُنفَّذُ **على كلّ حال**، لا داخلَ `catch` الإضافة: قاعدةٌ
+        // نالت العمودَ من `createAll` تحتاجُ الملءَ أيضاً لو حملت صفوفاً
+        // (مرآةٌ مُزامَنةٌ مثلاً)، وهو بلا أثرٍ على الفارغة.
+        try {
+          await m.database.customStatement(
+            'UPDATE sales_invoices SET paid_unallocated = paid '
+            'WHERE paid_unallocated = 0 AND paid <> 0',
+          );
+        } catch (e) {
+          debugPrint('[Migration] v175 backfill (safe-skip): $e');
+        }
+
+        debugPrint('[Migration] v175: paid_unallocated + ملءٌ');
+      });
+    }
 
   }
 }

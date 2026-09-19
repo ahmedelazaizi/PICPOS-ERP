@@ -72,6 +72,23 @@ class SalesSyncStrategy extends SyncStrategy {
     // collection submit, a mirror-offline collection, or a delta<=0 correction
     // would leave paid permanently divergent), mirroring purchase_sync_strategy.
     final serverPaid = parseDouble(saleMap['paid']);
+
+    /// قاعدةُ حساب [serverPaid] — v175.
+    ///
+    /// 🔴 **وخادمٌ لا يرسل المفتاح يسقط على `paid` ناقصَ التخصيصات
+    /// المحلّيّة، لا على صفر.** صفرٌ يقول «كلُّ ما دُفع كان تخصيصاً»، فأوّلُ
+    /// إعادةِ حسابٍ تُصفّر مسدَّدَ كلِّ فاتورةٍ وصلت بالمزامنة — وهو عينُ
+    /// العطب الذي بُني العمودُ لأجله، من بابٍ آخر.
+    ///
+    /// ⚠️ **والطرحُ يُقرأ من القاعدة لا يُفترَض صفراً**: ترتيبُ الدفعات في
+    /// السحب غيرُ مضمون، فقد تصل تخصيصاتُ الفاتورة قبل صفِّها.
+    Future<double> serverPaidUnallocated() async {
+      final sent = saleMap['paidUnallocated'] ?? saleMap['paid_unallocated'];
+      if (sent != null) return parseDouble(sent);
+      final allocated = await db.getPaymentAllocationsTotal(serverId);
+      final base = serverPaid - allocated;
+      return base < 0 ? 0 : base;
+    }
     // خادمٌ أقدمُ لا يرسل المفتاح ⇒ صفرٌ، وهو الحقُّ لفاتورةٍ لم تُقرَّب.
     final serverRoundingAdjustment =
         parseDouble(saleMap['roundingAdjustment']);
@@ -117,6 +134,7 @@ class SalesSyncStrategy extends SyncStrategy {
               status: Value(serverStatus),
               clickPaid: Value(serverClickPaid),
               paid: Value(serverPaid),
+              paidUnallocated: Value(await serverPaidUnallocated()),
               roundingAdjustment: Value(serverRoundingAdjustment),
               updatedAt: Value(serverUpdatedAt ?? DateTime.now()),
               customerId: Value(resolvedCustomerId),
@@ -183,6 +201,7 @@ class SalesSyncStrategy extends SyncStrategy {
             tax: Value(parseDouble(saleMap['tax'])),
             total: Value(saleTotal),
             paid: Value(parseDouble(saleMap['paid'])),
+            paidUnallocated: Value(await serverPaidUnallocated()),
             // خادمٌ أقدمُ لا يرسل المفتاح ⇒ `parseDouble` تعطي صفراً، وهو
             // الحقُّ حرفيّاً لفاتورةٍ لم تُقرَّب. فلا انكسارَ في الاتجاهين.
             roundingAdjustment:

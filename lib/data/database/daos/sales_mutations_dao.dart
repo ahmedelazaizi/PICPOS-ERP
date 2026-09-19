@@ -239,6 +239,9 @@ extension SalesMutationsDao on AppDatabase {
           tax: Value(tax),
           total: Value(total),
           paid: Value(paid),
+          // v175 — لا تخصيصاتِ دفعاتٍ لفاتورةٍ تُولَد الآن، فالقاعدةُ هي
+          // المسدَّدُ كلُّه. راجع `paidUnallocated` في تعريف الجدول.
+          paidUnallocated: Value(paid),
           roundingAdjustment: Value(roundingAdjustment),
           cashPaid: Value(cashAmount ?? 0),
           bankPaid: Value(bankAmount ?? 0),
@@ -900,12 +903,14 @@ extension SalesMutationsDao on AppDatabase {
           discount: Value(discount),
           tax: Value(tax),
           total: Value(total),
-          paid: Value(paid),
           paymentMethod: Value(paymentMethod),
           status: Value(status),
           notes: Value(notes),
         ),
       );
+      // v175 — `paid` يُكتَب عبر الثابت وحدَه: تحريرُ فاتورةٍ لا يمسّ
+      // تخصيصاتِها، فالقاعدةُ تُعاد حسابُها من الفرق.
+      await _writeSalesInvoicePaid(invoiceId, paid);
 
       // Insert new items and update stock
       for (final item in items) {
@@ -1335,10 +1340,42 @@ extension SalesMutationsDao on AppDatabase {
       }
     }
 
+    await _writeSalesInvoicePaid(invoiceId, newPaid, status: newStatus);
+  }
+
+  /// يكتب `paid` **ويُبقي الثابتَ** — الموضعُ الوحيدُ الذي يكتب العمودَين معاً.
+  ///
+  ///     paid = paid_unallocated + Σ payment_allocations
+  ///
+  /// ═══ 🔴 لماذا موضعٌ واحد ═══
+  ///
+  /// `PaymentAllocationSyncStrategy` تُعيد حسابَ `paid` من القاعدة والمجموع.
+  /// فكلُّ كاتبٍ يرفع `paid` **بلا تخصيصٍ** يجب أن يرفع القاعدةَ بقدره،
+  /// وإلّا محا أوّلُ إعادةِ حسابٍ ما كتبه: فاتورةٌ دُفع منها ٣٠٠ نقداً عند
+  /// البيع وخُصِّص لها ٧٠٠ لاحقاً تعود إلى ٧٠٠ — وتختفي الثلاثُمئة من دفتر
+  /// المبيعات ومن رصيد العميل معاً.
+  ///
+  /// وأربعةُ كُتّابٍ يكتبون `paid` مطلقاً (الإنشاءُ · التحريرُ · التحصيلُ ·
+  /// هذا الضابط)، فجمعُ القاعدة في دالّةٍ واحدةٍ يجعل الثابتَ **بناءً** لا
+  /// اتّفاقاً بين أربعة مواضع.
+  ///
+  /// ⚠️ **والقاعدةُ لا تنزل تحت الصفر**: ضبطٌ يخفض `paid` دون مجموعِ
+  /// التخصيصات يعني أنّ تخصيصاتٍ لم تعد صحيحةً — وقصُّها عند الصفر يجعل
+  /// إعادةَ الحساب تُرجع `paid` إلى المجموع، أي أنّ **التخصيصاتِ تفوز**.
+  /// وهو عينُ ما تفعله الاستراتيجيّةُ اليوم (`serverWins`)، ولا يُفقَد به
+  /// شيءٌ لم يكن يُفقَد قبل العمود.
+  Future<void> _writeSalesInvoicePaid(
+    int invoiceId,
+    double newPaid, {
+    String? status,
+  }) async {
+    final allocated = await getPaymentAllocationsTotal(invoiceId);
+    final base = newPaid - allocated;
     await (update(salesInvoices)..where((i) => i.id.equals(invoiceId))).write(
       SalesInvoicesCompanion(
         paid: Value(newPaid),
-        status: Value(newStatus),
+        paidUnallocated: Value(base < 0 ? 0 : base),
+        status: status == null ? const Value.absent() : Value(status),
       ),
     );
   }
@@ -1417,12 +1454,9 @@ extension SalesMutationsDao on AppDatabase {
       final newRemaining = invoice.total - newPaid;
       final newStatus = newRemaining <= 0 ? 'paid' : 'partial';
 
-      await (update(salesInvoices)..where((i) => i.id.equals(invoiceId))).write(
-        SalesInvoicesCompanion(
-          paid: Value(newPaid),
-          status: Value(newStatus),
-        ),
-      );
+      // v175 — تحصيلٌ **بلا تخصيص**، فالقاعدةُ تزيد بنفس المبلغ:
+      // `base' = newPaid − Σ = (paid + amount) − Σ = base + amount`.
+      await _writeSalesInvoicePaid(invoiceId, newPaid, status: newStatus);
 
       // Post the MONEY via the receipt path: Dr Safe / Cr Customer-AR + safe
       // balance + parties.balance + balanced JE. Thread the SAME globalId so the

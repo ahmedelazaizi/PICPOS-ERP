@@ -50,11 +50,27 @@ class PaymentAllocationSyncStrategy extends SyncStrategy {
     // Recalculate paid amount for every affected sales invoice so that
     // the "remaining" column (= total - paid) reflects the latest receipts
     // without waiting for a manual refresh.
+    //
+    // ═══ 🔴 v175: قاعدةٌ زائدَ المجموع — لا المجموعُ وحدَه ═══
+    //
+    // كان السطرُ: `paid = Σ payment_allocations` — **يستبدل ولا يجمع**.
+    // وهو نائمٌ ما دام صفرُ كُتّابٍ للجدول، لكنّ `paid` يُكتَب **وقتَ البيع**
+    // من الدفعة الحاضرة: فاتورةٌ دُفع منها ٣٠٠ نقداً وبقي ٧٠٠ آجلاً لا
+    // تحمل أيَّ تخصيص. فأوّلُ سندِ قبضٍ يخصّص لها ٧٠٠ كان يجعل `paid = ٧٠٠`
+    // بدل ١٠٠٠ — تختفي الثلاثُمئة، ويتضخّم رصيدُ العملاء، وتعود الفاتورةُ
+    // «جزئيّةً» وهي مسدَّدة. ولا شيءَ يُبلِّغ.
+    //
+    // فالقاعدةُ صارت عموداً (`sales_invoices.paid_unallocated`) والحسابُ
+    // جمعاً — راجع شرحَ العمود في `sales_purchase_tables.dart`.
     for (final invoiceId in affectedSalesInvoiceIds) {
       try {
-        final totalPaid = await db.getPaymentAllocationsTotal(invoiceId);
+        final invoice = await db.getSalesInvoiceById(invoiceId);
+        if (invoice == null) continue;
+        final totalPaid =
+            invoice.paidUnallocated + await db.getPaymentAllocationsTotal(invoiceId);
         await db.updateSalesInvoicePaidAmount(invoiceId, totalPaid);
-        debugPrint('[Sync] PaymentAllocations: updated paid=$totalPaid for invoice #$invoiceId');
+        debugPrint('[Sync] PaymentAllocations: updated paid=$totalPaid '
+            '(base=${invoice.paidUnallocated}) for invoice #$invoiceId');
       } catch (e) {
         debugPrint('[Sync] PaymentAllocations: failed to update invoice #$invoiceId: $e');
       }

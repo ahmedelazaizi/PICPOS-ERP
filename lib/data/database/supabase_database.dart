@@ -416,6 +416,12 @@ class SupabaseDatabase {
       tax: (data['tax'] as num?)?.toDouble() ?? 0,
       total: (data['total'] as num?)?.toDouble() ?? 0,
       paid: (data['paid'] as num?)?.toDouble() ?? 0,
+      // v175 — قاعدةُ حساب `paid`. وصفٌّ من خادمٍ لم يُرقَّ بعد يسقط على
+      // `paid` نفسِه لا على صفر: صفرٌ يقول «كلُّ ما دُفع كان تخصيصاً»،
+      // فيُصفَّر المسدَّدُ عند أوّل إعادةِ حساب. راجع `paidUnallocated`.
+      paidUnallocated: (data['paid_unallocated'] as num?)?.toDouble() ??
+          (data['paid'] as num?)?.toDouble() ??
+          0,
       // صفٌّ بلا العمود ⇒ صفرٌ، وهو الحقُّ لفاتورةٍ لم تُقرَّب.
       roundingAdjustment:
           (data['rounding_adjustment'] as num?)?.toDouble() ?? 0,

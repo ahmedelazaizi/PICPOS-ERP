@@ -24,6 +24,8 @@ void main() {
         tax: 0,
         total: 100,
         paid: 100,
+        // v175 — قاعدةُ حساب `paid`؛ فاتورةٌ بلا تخصيصاتٍ ⇒ القاعدةُ كلُّها.
+        paidUnallocated: 100,
         roundingAdjustment: 0,
         cashPaid: paymentMethod == 'cash' ? 100 : 0,
         bankPaid: paymentMethod == 'card' || paymentMethod == 'transfer'
