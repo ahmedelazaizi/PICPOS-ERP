@@ -78,7 +78,13 @@ enum AppScreen {
   assetLocations(66),
 
   /// سندُ القيد — يجب أن تطابق `ScreenId.journalVoucher`.
-  journalVoucher(67);
+  journalVoucher(67),
+
+  /// سندُ القبض — يجب أن تطابق `ScreenId.receiptVoucher`.
+  receiptVoucher(68),
+
+  /// سندُ الصرف — يجب أن تطابق `ScreenId.paymentVoucher`.
+  paymentVoucher(69);
 
   /// The integer index for this screen, used in permission maps and storage.
   final int value;

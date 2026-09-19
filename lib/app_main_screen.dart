@@ -93,6 +93,8 @@ import 'presentation/settings_picpos/screens/cheques_picpos_screen.dart';
 import 'presentation/screens/fixed_assets_screen.dart';
 import 'presentation/fixed_assets_picpos/screens/fixed_assets_picpos_screen.dart';
 import 'presentation/accounting_picpos/journal_voucher_picpos_screen.dart';
+import 'presentation/treasury_picpos/screens/receipt_voucher_picpos_screen.dart';
+import 'presentation/treasury_picpos/screens/payment_voucher_picpos_screen.dart';
 import 'presentation/fixed_assets_picpos/screens/asset_categories_picpos_screen.dart';
 import 'presentation/fixed_assets_picpos/screens/asset_locations_picpos_screen.dart';
 import 'presentation/opex_picpos/screens/opex_picpos_screen.dart';
@@ -1092,6 +1094,20 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => const JournalVoucherPicposScreen(),
         label: 'سند قيد',
         icon: PhosphorIconsBold.notePencil,
+      ),
+      // سندا القبض والصرف — PicPos وحدَها: صفحتان تحلّان محلَّ حوارَي
+      // الخزينة، والحواران باقيان فيها حتى يصل دفترُ الشيكات.
+      ScreenConfig(
+        appScreen: AppScreen.receiptVoucher,
+        builder: (_) => const ReceiptVoucherPicposScreen(),
+        label: 'سند قبض',
+        icon: PhosphorIconsBold.arrowCircleDown,
+      ),
+      ScreenConfig(
+        appScreen: AppScreen.paymentVoucher,
+        builder: (_) => const PaymentVoucherPicposScreen(),
+        label: 'سند صرف',
+        icon: PhosphorIconsBold.arrowCircleUp,
       ),
       ScreenConfig(
         appScreen: AppScreen.syncConflicts,

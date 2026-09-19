@@ -34,6 +34,16 @@ part of '../database.dart';
 // بالضبط ما يجعل إعادةَ الحساب في `PaymentAllocationSyncStrategy` تُرجع
 // نفسَ الرقم بدل أن تمحو ما دُفع عند البيع.
 
+/// فاتورةٌ مفتوحةٌ يجوز توزيعُ المبلغ عليها.
+typedef OpenInvoiceRow = ({
+  String invoiceType,
+  int id,
+  String number,
+  DateTime date,
+  double total,
+  double paid,
+});
+
 /// تخصيصُ مبلغٍ لفاتورةٍ بعينها.
 typedef VoucherAllocationInput = ({
   /// `sales` أو `purchase` — مفرداتُ `PaymentAllocations.invoiceType`.
@@ -124,6 +134,48 @@ extension PaymentAllocationsDao on AppDatabase {
       markTablesUpdated({payments, paymentAllocations, salesInvoices});
       return paymentId;
     });
+  }
+
+  /// الفواتيرُ المفتوحةُ لطرفٍ — ما بقي منه شيءٌ غيرُ مسدَّد.
+  ///
+  /// ⚠️ **والمرتجعاتُ تُستثنى**: صفُّ المرتجع يعيش في `sales_invoices`
+  /// بـ`sale_type = 'return'` (‏مواصفة ١١٣)، وإجماليُّه **سالبٌ بالمعنى**.
+  /// فتخصيصُ قبضٍ عليه يعني «قبضتُ مالاً مقابلَ مرتجع» — وهو عكسُ ما وقع.
+  Future<List<OpenInvoiceRow>> getOpenInvoicesForParty({
+    required int partyId,
+    required bool forSupplier,
+  }) async {
+    final rows = forSupplier
+        ? await customSelect(
+            'SELECT id, invoice_number, invoice_date, total, paid '
+            'FROM purchase_invoices '
+            'WHERE supplier_id = ? AND paid < total '
+            'ORDER BY invoice_date ASC',
+            variables: [Variable<int>(partyId)],
+            readsFrom: {purchaseInvoices},
+          ).get()
+        : await customSelect(
+            'SELECT id, invoice_number, invoice_date, total, paid '
+            'FROM sales_invoices '
+            "WHERE customer_id = ? AND paid < total AND is_deleted = 0 "
+            "AND sale_type <> 'return' "
+            'ORDER BY invoice_date ASC',
+            variables: [Variable<int>(partyId)],
+            readsFrom: {salesInvoices},
+          ).get();
+
+    return [
+      for (final r in rows)
+        (
+          invoiceType: forSupplier ? 'purchase' : 'sales',
+          id: r.data['id'] as int,
+          number: r.data['invoice_number'] as String,
+          date: DateTime.fromMillisecondsSinceEpoch(
+              (r.data['invoice_date'] as int) * 1000),
+          total: (r.data['total'] as num).toDouble(),
+          paid: (r.data['paid'] as num).toDouble(),
+        ),
+    ];
   }
 
   /// يرفع مسدَّدَ الفاتورة بقدر التخصيص — **وحدَه، بلا قاعدة**.

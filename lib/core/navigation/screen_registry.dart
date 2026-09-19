@@ -238,6 +238,9 @@ class ScreenRegistry {
     ScreenId.assetLocations,
     // «سند قيد» — نطاقُ أختِها `journalEntries` بالضبط: `unified` وحدَه.
     ScreenId.journalVoucher,
+    // سندا القبض والصرف — نطاقُ `commercialPapers` و`treasury` معاً.
+    ScreenId.receiptVoucher,
+    ScreenId.paymentVoucher,
     ScreenId.generalLedger,
     ScreenId.bankReconciliation,
     ScreenId.salesOrders,

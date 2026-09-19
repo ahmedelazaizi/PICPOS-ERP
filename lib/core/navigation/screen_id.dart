@@ -152,7 +152,18 @@ enum ScreenId {
   /// و`accounting_journal` تُفحَص **عند الحفظ** كما يفعل `saveManualEntry`
   /// اليوم. وربطُ الشاشة بها كان يسحبها من كلّ دورٍ قائم: الكودُ ليس في
   /// `RoleGrantMatrix.defaultGrants` أصلاً.
-  journalVoucher(67);
+  journalVoucher(67),
+
+  /// «سند قبض» — تصميمُ المالك `(12)`/`(13)`: صفحةٌ كاملةٌ بمدخلٍ جانبيّ.
+  ///
+  /// ⚠️ **وصلاحيّتُها `treasury_view`** لا `treasury_receipts_create`:
+  /// الثاني موجودٌ في سجلّ الصلاحيّات و**غيرُ ممنوحٍ لأيّ دور**، فربطُها به
+  /// كان يسحب الشاشةَ من الجميع. والحوارُ الذي تحلّ محلَّه يُبلَغ اليومَ
+  /// بـ`treasury_view` وحدَه.
+  receiptVoucher(68),
+
+  /// «سند صرف» — تصميمُ المالك `(11)`. راجع [receiptVoucher] في الصلاحية.
+  paymentVoucher(69);
 
   const ScreenId(this.navigationIndex);
   final int navigationIndex;

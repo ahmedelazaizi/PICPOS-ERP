@@ -746,6 +746,8 @@ const kAllNavItemDefs = [
   //    المرئيُّ في PicPos يبدأ بما بعدها — والترتيبُ النسبيُّ كما طُلب،
   //    والطيُّ قرارٌ سابقٌ مستقلٌّ يُرفَع بسطر.
   NavItemDef(icon: PhosphorIconsBold.notebook, label: journalEntriesScreenLabel, permission: 'settings_view', index: 32, section: 'المالية والمحاسبة', group: 'accounting'),
+  NavItemDef(icon: PhosphorIconsBold.arrowCircleDown, label: 'سند قبض', permission: 'treasury_view', index: 68, group: 'accounting'),
+  NavItemDef(icon: PhosphorIconsBold.arrowCircleUp, label: 'سند صرف', permission: 'treasury_view', index: 69, group: 'accounting'),
   NavItemDef(icon: PhosphorIconsBold.checks, label: chequesScreenLabel, permission: 'treasury_view', index: 34, group: 'accounting'),
   // ⚠️ مصدرُ توصيلٍ **سادسٌ مستقلٌّ**: شاشةٌ صحيحةٌ في `ScreenId` و`AppScreen`
   //    وخريطةِ الصلاحيات والنطاقِ و`ScreenConfig` تبقى **غائبةً عن القائمة
@@ -1042,6 +1044,12 @@ const screenPermissionMap = <ScreenId, String>{
   // ربطُ الشاشة بها كان يسحبها من كلّ دورٍ قائمٍ لأنّها ليست في
   // `RoleGrantMatrix.defaultGrants` أصلاً.
   ScreenId.journalVoucher: 'settings_view',
+  // سندا القبض والصرف على `treasury_view` — عينُ ما يبلغ حوارَيهما اليوم.
+  // و`treasury_receipts_create`/`treasury_payments_create` **غيرُ ممنوحَين
+  // لأيّ دور** في `RoleGrantMatrix.defaultGrants`، فربطُ الشاشتَين بهما
+  // كان يسحبهما من الجميع — وتغييرُ **مَن يُنشئ سنداً** قرارُ مالكٍ مستقلّ.
+  ScreenId.receiptVoucher: 'treasury_view',
+  ScreenId.paymentVoucher: 'treasury_view',
 };
 
 final userAllowedScreensProvider = FutureProvider<List<int>>((ref) async {
