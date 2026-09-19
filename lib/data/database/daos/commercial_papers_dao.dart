@@ -63,6 +63,13 @@ extension CommercialPapersDao on AppDatabase {
     int? safeId,
     String? notes,
     String? globalId,
+
+    /// معرّفُ **سندِ** القبض/الصرف الذي وُلدت منه الورقة (v174).
+    ///
+    /// 🔴 وكان الرابطُ نصّاً عربيّاً حرّاً في [notes] يحمل رقماً **يولّده
+    /// الحوارُ في ذاكرته ولا يُخزَّن قطّ** — فلا يُضغَط ولا يُستعلَم عنه،
+    /// ويسمّي سنداً لا وجودَ له.
+    int? sourceVoucherId,
   }) async {
     return transaction(() async {
       // Spec 112 — Real-world cheque uniqueness scope.
@@ -119,6 +126,7 @@ extension CommercialPapersDao on AppDatabase {
           accountNumber: Value(accountNumber),
           safeId: Value(safeId),
           notes: Value(notes),
+          sourceVoucherId: Value(sourceVoucherId),
           // UUID-First Phase 1 Slice 3: cheques/bills need stable cross-
           // install identity so endorsement history syncs deterministically.
           // Cluster 030 / Bug D: honour caller-provided globalId so mirror

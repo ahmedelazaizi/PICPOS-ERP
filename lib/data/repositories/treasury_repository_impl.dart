@@ -165,6 +165,9 @@ class TreasuryRepositoryImpl extends BaseRepository<Safe> implements ITreasuryRe
         globalId: globalId,
         skipJournalEntry: isCheckPayment,
         skipSafeTransaction: isCheckPayment,
+        // سندُ الشيك — مستندٌ بلا أثرٍ ماليّ، وهو ما يصله زرُّ «عرض السند»
+        // في «إدارة الشيكات». يُطلَب للشيك وحدَه، فالنقديُّ له صفُّه أصلاً.
+        chequeVoucherSafeId: isCheckPayment ? targetSafeId : null,
         operatingBranchId: operatingBranchId, // Spec 135 BUG-C
       );
 
@@ -271,6 +274,8 @@ class TreasuryRepositoryImpl extends BaseRepository<Safe> implements ITreasuryRe
         skipJournalEntry: isCheckPayment,
         // For check payments, no physical cash leaves the safe — skip entirely.
         skipSafeTransaction: isCheckPayment,
+        // سندُ الشيك — نظيرُ ما في [createReceiptVoucher].
+        chequeVoucherSafeId: isCheckPayment ? resolvedSafeId : null,
         operatingBranchId: operatingBranchId, // Spec 135 BUG-C
       );
 

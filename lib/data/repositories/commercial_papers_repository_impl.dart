@@ -50,8 +50,12 @@ class CommercialPapersRepositoryImpl implements ICommercialPapersRepository {
     String? accountNumber,
     String? notes,
     String? globalId,
+
+    /// سندُ القبض/الصرف الذي وُلدت منه الورقة — راجع الـDAO.
+    int? sourceVoucherId,
   }) {
     return _db.createCommercialPaper(
+      sourceVoucherId: sourceVoucherId,
       paperNumber: paperNumber,
       type: type,
       direction: direction,

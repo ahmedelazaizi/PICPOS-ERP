@@ -1715,7 +1715,11 @@ extension PartyDao on AppDatabase {
     final stQuery = select(safeTransactions).join([
       innerJoin(safes, safes.id.equalsExp(safeTransactions.safeId))
     ])..where(safeTransactions.partyId.equals(partyId) &
-              safeTransactions.createdAt.isBetween(Variable(from), Variable(to)));
+              safeTransactions.createdAt.isBetween(Variable(from), Variable(to)) &
+              // 🔴 سندُ الشيك مستندٌ لا حركة — راجع [getPartyTransactions].
+              safeTransactions.transactionType
+                  .equals(kChequeVoucherTxnType)
+                  .not());
 
     if (branchId != null) {
       stQuery.where(safes.branchId.equals(branchId) | safes.branchId.isNull());
@@ -2094,7 +2098,12 @@ extension PartyDao on AppDatabase {
   /// Get party transactions for statement
   Future<List<SafeTransactionData>> getPartyTransactions(int partyId) async {
     return (select(safeTransactions)
-          ..where((t) => t.partyId.equals(partyId))
+          ..where((t) =>
+              t.partyId.equals(partyId) &
+              // 🔴 سندُ الشيك مستندٌ لا حركة: ماله يتحرّك حين تُحصَّل الورقةُ
+              //    ويكتبه محرّكُ الأوراق التجاريّة. وعدُّه هنا يُظهر دفعةً
+              //    ثانيةً بجوار قيد الترحيل الآليّ — عينُ ازدواج مواصفة ١٣٣.
+              t.transactionType.equals(kChequeVoucherTxnType).not())
           ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
         .get();
   }

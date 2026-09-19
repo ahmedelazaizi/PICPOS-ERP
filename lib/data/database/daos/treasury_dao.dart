@@ -10,6 +10,13 @@ part of '../database.dart';
 /// اسم الصندوق الرئيسي (الإدارة المركزية) — وجهة نقدية إقفال الورديات.
 const String kCentralSafeName = 'الصندوق الرئيسي';
 
+/// نوعُ صفِّ **سند الشيك** — مستندٌ بلا أثرٍ ماليّ.
+///
+/// ⚠️ **يُقرأ ولا يُكتَب بيده**: القيمةُ تُستثنى في قرّاء كشف الحساب
+/// (`party_dao`)، وكتابتُها سلسلةً في موضعَين تجعل استثناءً واحداً يفلت
+/// فيعود السطرُ المكرّر. راجع [AppDatabase._writeChequeVoucherRow].
+const String kChequeVoucherTxnType = 'cheque_voucher';
+
 /// مفتاح البذرة الثابت للـ`globalId` — مستقل عن الاسم المعروض عشان إعادة
 /// التسمية ما تخلقش خزينة تانية على الأجهزة التانية (نفس نمط Spec 136 ISS-2).
 const String kCentralSafeSeedKey = 'central';
@@ -1905,6 +1912,79 @@ extension TreasuryDao on AppDatabase {
   /// what `deleteExpenseTransaction` does for payment vouchers. Otherwise
   /// deleting a receipt will leave its auto-posted JE on the books and
   /// break trial balance / GL.
+  /// صفُّ **سند الشيك** — مستندٌ يُكتَب، وقرشٌ لا يتحرّك.
+  ///
+  /// ═══ قرارُ المالك 2026-09-19 (تصميم «إدارة الشيكات») ═══
+  ///
+  /// التصميمُ يعرض بجوار الشيك «سند القبض RV-0051» وزرَّ «عرض السند».
+  /// وقياسُ المسار وجد أنّ **لا سندَ للشيك أصلاً**: مواصفة ١٣٣ تمرّر
+  /// `skipSafeTransaction: true` لمنع ازدواج قيدِ العميل، فلا يُكتَب صفٌّ
+  /// ولا يُولَّد رقم. والنصُّ في `commercial_papers.notes` كان يسمّي رقماً
+  /// **يولّده الحوارُ في ذاكرته ولا يُخزَّن قطّ**.
+  ///
+  /// ⚠️ **ولا يمسّ هذا الصفُّ قرشاً**: لا `adjustSafeBalance` ولا
+  /// `adjustPartyBalance` ولا قيدَ يومية. المالُ يتحرّك حين تُحصَّل الورقة،
+  /// ويكتبه محرّكُ الأوراق التجاريّة.
+  ///
+  /// ⚠️ **و`balanceAfter` هو الرصيدُ كما هو** لا `balance + amount`:
+  /// الأخيرةُ تَعِد برصيدٍ لم يقع، ويقرؤها كشفُ الخزنة سطراً.
+  ///
+  /// ═══ 🔴 ولماذا نوعٌ مستقلٌّ لا `receipt` ═══
+  ///
+  /// حسابُ الرصيد الافتتاحيّ للطرف في `party_dao` يجمع
+  /// `transaction_type = 'receipt'`؛ فصفٌّ بهذا النوع يُعَدّ **دفعةً ثانيةً**
+  /// من العميل — عينُ ازدواج مواصفة ١٣٣ عائداً من بابٍ آخر. والنوعُ المستقلُّ
+  /// يجعل كلَّ قارئٍ يرشّح بالاسم يتجاهله **بلا تعديلٍ فيه**.
+  ///
+  /// ⚠️ **والقارئان اللذان لا يرشّحان** (`getPartyLedger` ·
+  /// `getPartyTransactions`) يستثنيانه صراحةً — وإلّا ظهر سطراً مكرّراً في
+  /// كشف الحساب بجوار قيد الترحيل الآليّ للورقة.
+  Future<int> _writeChequeVoucherRow({
+    required int safeId,
+    required String prefix,
+    required double amount,
+    required String category,
+    int? partyId,
+    String? description,
+    int? userId,
+    int? costCenterId,
+    String? sourceGlobalId,
+  }) async {
+    // ⚠️ **معاملةٌ خاصّةٌ بها** ولو كان المنادي داخلَ واحدة: مواصفة ٠٦٦
+    // (‏D5-001) تشترط أن يقع `generateInvoiceNumber` وإدراجُه التابعُ في
+    // معاملةٍ **في نفس الدالّة** — وإلّا تقدّم العدّادُ وفشل الإدراجُ فبقيت
+    // فجوةٌ في الترقيم. وdrift يجعل الداخليّةَ `SAVEPOINT` فلا كلفةَ
+    // مضاعفة، وتبقى الدالّةُ سليمةً لو ناداها أحدٌ من خارج معاملة.
+    return transaction(() async {
+      final safe = await (select(safes)..where((s) => s.id.equals(safeId)))
+          .getSingleOrNull();
+      if (safe == null) return 0;
+
+    // معرّفٌ **مشتقٌّ** لا عشوائيّ: الطرفان (عميلٌ وخادم) يشتقّانه من نفس
+    // معرّف السند فيلتقيان على صفٍّ واحد — نفسُ نمط `'$gid-rev'` في العكس.
+    // وعشوائيٌّ هنا يعني صفَّين بعد أوّل مزامنة.
+      final gid = sourceGlobalId != null && sourceGlobalId.isNotEmpty
+          ? '$sourceGlobalId-chq'
+          : UuidV7.generate();
+
+      return into(safeTransactions).insert(
+        SafeTransactionsCompanion.insert(
+          voucherNumber: await generateInvoiceNumber(prefix),
+          safeId: safe.id,
+          transactionType: kChequeVoucherTxnType,
+          category: category,
+          amount: amount,
+          balanceAfter: safe.balance,
+          partyId: Value(partyId),
+          description: Value(description),
+          userId: Value(userId),
+          costCenterId: Value(costCenterId),
+          globalId: Value(gid),
+        ),
+      );
+    });
+  }
+
   Future<int> createReceiptVoucher({
     required double amount,
     required String category,
@@ -1936,6 +2016,12 @@ extension TreasuryDao on AppDatabase {
     bool skipJournalEntry = false,
     bool skipSafeTransaction = false,
 
+    /// خزنةُ **سندِ الشيك** — صفٌّ مستنديٌّ بلا أثرٍ ماليّ.
+    ///
+    /// راجع [_writeChequeVoucherRow]: يُطلَب صراحةً ولا يُفرَض، فمواصفة ١٣٣
+    /// محروسةٌ بـ«لا صفَّ» حين لا يُمرَّر.
+    int? chequeVoucherSafeId,
+
     /// ‏ق-٢ — يُنسَب السندُ للطرف على صفّه (تتبّعاً) **دون** أن يُنقص دَينَه.
     ///
     /// لعربون الحجز: المقابلُ حسابُ التزامٍ (`2134 عملاء - دفعات مقدمة`)
@@ -1960,6 +2046,22 @@ extension TreasuryDao on AppDatabase {
       await accountingDao.validateFinancialPeriod(DateTime.now(), operation: 'سند قبض');
 
       int transactionId = 0;
+
+      // سندُ الشيك — مستندٌ يُكتَب ولا يمسّ قرشاً. راجع
+      // [_writeChequeVoucherRow] لِمَ صفٌّ أصلاً ولِمَ نوعٌ مستقلّ.
+      if (skipSafeTransaction && chequeVoucherSafeId != null) {
+        transactionId = await _writeChequeVoucherRow(
+          safeId: chequeVoucherSafeId,
+          prefix: 'RV',
+          amount: amount,
+          category: category,
+          partyId: partyId,
+          description: description,
+          userId: userId,
+          costCenterId: costCenterId,
+          sourceGlobalId: globalId,
+        );
+      }
 
       if (!skipSafeTransaction) {
         // Phase 5B.5 (Issue 7) — on client mode, an absent safeId is a
@@ -2136,6 +2238,10 @@ extension TreasuryDao on AppDatabase {
     // When true, skips safe lookup / safe transaction / balance update entirely.
     // Used for check payments where no physical cash leaves the safe.
     bool skipSafeTransaction = false,
+
+    /// خزنةُ **سندِ الشيك** — راجع [createReceiptVoucher].
+    int? chequeVoucherSafeId,
+
     // Spec 135 BUG-C — operator's working branch (see createReceiptVoucher).
     // Prefer it for the JE branch; fall back to targetSafe.branchId.
     int? operatingBranchId,
@@ -2145,6 +2251,21 @@ extension TreasuryDao on AppDatabase {
       await accountingDao.validateFinancialPeriod(DateTime.now(), operation: 'سند صرف');
 
       int transactionId = 0;
+
+      // سندُ الشيك — نظيرُ ما في [createReceiptVoucher] بلاحقة `PV`.
+      if (skipSafeTransaction && chequeVoucherSafeId != null) {
+        transactionId = await _writeChequeVoucherRow(
+          safeId: chequeVoucherSafeId,
+          prefix: 'PV',
+          amount: amount,
+          category: category,
+          partyId: partyId,
+          description: description,
+          userId: userId,
+          costCenterId: costCenterId,
+          sourceGlobalId: globalId,
+        );
+      }
 
       if (!skipSafeTransaction) {
         // Phase 5B.5 (Issue 7) — same rationale as createReceiptVoucher.

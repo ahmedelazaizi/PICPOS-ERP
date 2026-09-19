@@ -1065,9 +1065,16 @@ class _ReceiptVoucherDialogPicposState extends ConsumerState<ReceiptVoucherDialo
         globalId: sharedGlobalId,
         paperType: paymentMethod == 'check' ? 'cheque' : null,
       );
+      // معرّفُ صفِّ السند — تحمله كلُّ ورقةٍ تُولَد منه في `sourceVoucherId`،
+      // فيقرؤه زرُّ «عرض السند» في «إدارة الشيكات».
+      //
+      // ⚠️ **ويبقى صفراً في وضع العميل**: الكتابةُ تقع على الخادم ويصل الصفُّ
+      // بالمزامنة، فلا معرّفَ محلّيٌّ هنا. وصفرٌ يعني «لا سندَ بعد» لا خطأً —
+      // والورقةُ تُكتَب على أيّ حال.
+      int voucherRowId = 0;
       if (intercepted == null) {
         // Not in client mode or server handled it — write locally
-        await treasuryRepo.createReceiptVoucher(
+        voucherRowId = await treasuryRepo.createReceiptVoucher(
           amount: netAmount,
           discount: totalDiscount,
           category: category,
@@ -1132,6 +1139,7 @@ class _ReceiptVoucherDialogPicposState extends ConsumerState<ReceiptVoucherDialo
             // 2. Local light cache so the UI reflects the new cheque
             //    immediately — pull-sync dedups on globalId.
             await cpRepo.createPaper(
+              sourceVoucherId: voucherRowId > 0 ? voucherRowId : null,
               paperNumber: paperNumber,
               type: 'cheque',
               direction: 'received',

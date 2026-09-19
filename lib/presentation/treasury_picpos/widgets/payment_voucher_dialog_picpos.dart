@@ -888,9 +888,12 @@ class _PaymentVoucherDialogPicposState extends ConsumerState<PaymentVoucherDialo
         costCenterId: selectedCostCenterId,
         paperType: paymentMethod == 'check' ? 'cheque' : null,
       );
+      // معرّفُ صفِّ السند — نظيرُ ما في حوار القبض. راجع تعليقَه: يبقى صفراً
+      // في وضع العميل لأنّ الكتابةَ على الخادم، والورقةُ تُكتَب على أيّ حال.
+      int voucherRowId = 0;
       if (intercepted == null) {
         // Not in client mode or server handled it — write locally
-        await treasuryRepo.createPaymentVoucher(
+        voucherRowId = await treasuryRepo.createPaymentVoucher(
           amount: amount,
           discount: double.tryParse(discountController.text) ?? 0,
           category: category,
@@ -987,6 +990,7 @@ class _PaymentVoucherDialogPicposState extends ConsumerState<PaymentVoucherDialo
               globalId: perCheckGlobalId,
             );
             await cpRepo.createPaper(
+              sourceVoucherId: voucherRowId > 0 ? voucherRowId : null,
               paperNumber: num,
               type: 'cheque',
               direction: 'issued',

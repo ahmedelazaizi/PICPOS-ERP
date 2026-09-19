@@ -33,6 +33,10 @@ abstract class ICommercialPapersRepository {
     // Cluster 030 / Bug D — let the caller pass a deterministic globalId
     // so mirror + server share identity for downstream status updates.
     String? globalId,
+
+    /// سندُ القبض/الصرف الذي وُلدت منه الورقة (v174) — بديلُ النصّ الحرّ
+    /// الذي كان في [notes]. تقرؤه «إدارة الشيكات» في زرّ «عرض السند».
+    int? sourceVoucherId,
   });
 
   /// Feature 048 (v130) — `counterAccountId` lets the caller override the
