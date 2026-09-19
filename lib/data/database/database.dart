@@ -2889,6 +2889,33 @@ class AppDatabase extends _$AppDatabase {
     }).toList();
   }
 
+  /// مَن أنشأ القيدَ — اسمُه المعروض، أو `null` حين لا يُعرَف.
+  ///
+  /// ═══ ولماذا `created_by` لا سجلُّ النشاط ═══
+  ///
+  /// `created_by` عمودٌ **دفاعيٌّ** (يُكتَب بعبارةٍ خامّ لأنّ drift لا يعرفه)،
+  /// يكتبه المسارُ اليدويُّ ويقرؤه ضابطُ «لا يعتمد القيدَ منشئُه». فهو
+  /// الحقيقةُ المخزَّنةُ على الصفّ نفسِه.
+  ///
+  /// ⚠️ **و`null` ثلاثُ حالاتٍ لا واحدة**، وكلُّها تُعرَض «—» لا اسماً
+  /// مخمَّناً:
+  ///   ‏• قيدٌ **آليّ**: لا منشئَ بشريّاً أصلاً — مصدرُه مستندُه.
+  ///   ‏• وقيدٌ **أقدمُ من العمود** (قبل إضافته).
+  ///   ‏• ومستخدمٌ حُذف صفُّه — والربطُ `JOIN` فيُسقطه، وهو الصواب:
+  ///     «لا يُعرَف» أصدقُ من رقمٍ بلا اسم.
+  Future<String?> getJournalEntryCreator(int entryId) async {
+    final row = await customSelect(
+      'SELECT u.display_name AS creator '
+      'FROM journal_entries e '
+      'JOIN users u ON u.id = e.created_by '
+      'WHERE e.id = ?',
+      variables: [Variable.withInt(entryId)],
+      readsFrom: {journalEntries, users},
+    ).getSingleOrNull();
+    final name = row?.read<String?>('creator');
+    return (name == null || name.isEmpty) ? null : name;
+  }
+
   /// Search sales invoices by invoice number (LIKE). PostgreSQL-compatible.
   Future<List<SalesInvoiceData>> searchInvoicesByNumber(String query) async {
     return (select(salesInvoices)

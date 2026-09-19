@@ -14,6 +14,10 @@ import '../../core/widgets/app_toast.dart';
 import '../../data/providers/providers.dart';
 import '../../domain/repositories/accounting_repository.dart';
 import '../../domain/models/journal_balance.dart';
+import '../../domain/models/journal_source_document.dart';
+import '../../data/providers/screen_navigation_provider.dart';
+import '../../core/navigation/screen_id.dart';
+import '../../core/config/app_config.dart';
 import '../../services/printing/report_pdf_generator.dart';
 import '../picpos_shell/picpos_dialog.dart';
 import '../picpos_shell/picpos_empty_state.dart';
@@ -318,6 +322,11 @@ class _JournalEntriesPicPosScreenState
                 onPrint: (lines) => _printEntry(entry, lines),
                 onReverse: () => _confirmReverseEntry(entry),
                 onApprove: () => _approveEntry(repo, entry),
+                // 🔴 **الفتحُ عبر القناة لا مباشرةً**: مالكُ التابات وحدَه
+                // يعرف الصلاحيّاتِ وتاريخَ الرجوع وسقفَ التابات.
+                onOpenSource: (target) => ref
+                    .read(screenNavigationProvider.notifier)
+                    .open(target.screenId.navigationIndex),
               );
             },
           ),
@@ -822,6 +831,7 @@ class _EntryCard extends StatelessWidget {
     required this.onPrint,
     required this.onReverse,
     required this.onApprove,
+    required this.onOpenSource,
   });
 
   final JournalEntryData entry;
@@ -832,6 +842,9 @@ class _EntryCard extends StatelessWidget {
   final ValueChanged<List<Map<String, dynamic>>> onPrint;
   final VoidCallback onReverse;
   final VoidCallback onApprove;
+
+  /// يفتح المستندَ المصدر — قرارُ المالك 2026-09-18.
+  final void Function(JournalSourceTarget target) onOpenSource;
 
   @override
   Widget build(BuildContext context) {
@@ -943,11 +956,120 @@ class _EntryCard extends StatelessWidget {
                     child: Center(child: CircularProgressIndicator()),
                   );
                 }
-                return _LinesTable(
-                  lines: snap.data!,
-                  onPrint: () => onPrint(snap.data!),
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _LinesTable(
+                      lines: snap.data!,
+                      onPrint: () => onPrint(snap.data!),
+                    ),
+                    _EntryFooter(entry: entry, repo: repo, onOpenSource: onOpenSource),
+                  ],
                 );
               },
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// تذييلُ القيد الموسَّع — «المنشئ» و«المرجع» وزرُّ «المستند المصدر».
+///
+/// ═══ قراراتُ المالك 2026-09-18 المُنفَّذةُ هنا ═══
+///
+/// ‏• **«المنشئ» يُعرَض** — ومصدرُه `journal_entries.created_by`، وهو الحقيقةُ
+///   المخزَّنةُ على الصفّ نفسِه ويقرؤها ضابطُ «لا يعتمد القيدَ منشئُه».
+/// ‏• **و«ملاحظات» تُسقَط** — الحقلُ لا وجودَ له على القيد أصلاً، والتصميمُ
+///   يرسمه صفّاً فارغاً بشَرطة. فلا يُبنى: صفٌّ لا يحمل شيئاً أبداً ضجيجٌ.
+/// ‏• **وزرُّ «المستند المصدر»** لا يُعرَض إلّا حين يكون له **أينَ يذهب**.
+///
+/// ⚠️ **و«لا يُعرَف» تُعرَض «—» لا اسماً مخمَّناً**: القيدُ الآليُّ بلا منشئٍ
+/// بشريٍّ أصلاً، والقيدُ الأقدمُ من العمود لا سبيلَ لمعرفة منشئه. وكتابةُ
+/// «النظام» مكانَهما تُخفي الفرقَ بين «آليٌّ» و«لا نعرف».
+class _EntryFooter extends StatelessWidget {
+  const _EntryFooter({
+    required this.entry,
+    required this.repo,
+    required this.onOpenSource,
+  });
+
+  final JournalEntryData entry;
+  final IAccountingRepository repo;
+  final void Function(JournalSourceTarget target) onOpenSource;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    const muted = AppColors.textMuted;
+    final target = resolveJournalSourceTarget(
+      referenceType: entry.referenceType,
+      referenceId: entry.referenceId,
+      allowedScreenIds: AppConfig.allowedScreenIds.toSet(),
+    );
+
+    Widget field(String label, Widget value) => Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(label,
+                  style: text.labelSmall?.copyWith(color: muted)),
+              const SizedBox(height: 2),
+              value,
+            ],
+          ),
+        );
+
+    Widget plain(String v) => Text(
+          v,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: text.labelMedium?.copyWith(fontWeight: FontWeight.w700),
+        );
+
+    return Container(
+      color: context.picposField,
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          field(
+            'المنشئ',
+            FutureBuilder<String?>(
+              future: repo.getJournalEntryCreator(entry.id),
+              builder: (context, snap) {
+                if (snap.connectionState != ConnectionState.done) {
+                  return plain('…');
+                }
+                final name = snap.data;
+                if (name != null) return plain(name);
+                // آليٌّ ⇒ يُسمّى آليّاً؛ ويدويٌّ بلا منشئٍ ⇒ «—» لا اسمٌ.
+                return Text(
+                  entry.isAutoPosted ? 'ترحيل آلي' : '—',
+                  style: text.labelMedium
+                      ?.copyWith(fontWeight: FontWeight.w700, color: muted),
+                );
+              },
+            ),
+          ),
+          field(
+            'المرجع',
+            plain((entry.reference?.trim().isNotEmpty ?? false)
+                ? entry.reference!.trim()
+                : '—'),
+          ),
+          if (target != null)
+            OutlinedButton.icon(
+              onPressed: () => onOpenSource(target),
+              icon: const Icon(PhosphorIconsBold.fileText, size: 14),
+              label: Text(target.label,
+                  style: const TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.w700)),
+              style: OutlinedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
             ),
         ],
       ),

@@ -51,6 +51,10 @@ abstract class IAccountingRepository {
   Future<List<JournalEntryData>> getJournalEntriesByReference(String referenceType, int referenceId);
   Future<List<Map<String, dynamic>>> getJournalEntryLinesWithAccounts(int entryId);
 
+  /// مَن أنشأ القيدَ — أو `null` حين لا يُعرَف (آليٌّ · أقدمُ من العمود ·
+  /// مستخدمٌ محذوف). و«لا يُعرَف» تُعرَض «—» لا اسماً مخمَّناً.
+  Future<String?> getJournalEntryCreator(int entryId);
+
   // --- Fiscal Years ---
   Future<List<FiscalYearData>> getFiscalYears();
   Stream<List<FiscalYearData>> watchFiscalYears();

@@ -1,5 +1,6 @@
 // ignore_for_file: avoid_dynamic_calls
 
+import 'data/providers/screen_navigation_provider.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -1310,6 +1311,21 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
 
   @override
   Widget build(BuildContext context) {
+    // ═══ قناةُ «افتح شاشةَ كذا» ═══════════════════════════════════════════
+    //
+    // ‏`_activateScreen` حالةٌ خاصّةٌ في هذه الودجت، فالشاشاتُ المتداخلةُ لا
+    // تصلها — وكان `onNavigate` يُمرَّر يدويّاً إلى ودجتَين اثنتَين. وزرُّ
+    // «المستند المصدر» في اليومية العامة (قرارُ المالك 2026-09-18) يحتاجها
+    // من عمقٍ أبعد، و«عرض المستند» في كشف الحساب يقرؤها بعده.
+    //
+    // ⚠️ **والطلبُ يُستهلَك بعد تنفيذه**: مزوِّدٌ يحتفظ بآخر طلبٍ يُعيد
+    // تنفيذَه مع أوّل إعادةِ بناءٍ عارضة، فتقفز الشاشةُ بلا أن ينقر أحد.
+    ref.listen(screenNavigationProvider, (_, next) {
+      if (next == null) return;
+      _navigateToScreen(next.screenIndex);
+      ref.read(screenNavigationProvider.notifier).consume();
+    });
+
     final allowedScreensAsync = ref.watch(userAllowedScreensProvider);
     final authState = ref.watch(authProvider);
 
