@@ -218,6 +218,14 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
                       ),
                     ),
                   ),
+                  const SizedBox(height: 16),
+                  const Divider(height: 1),
+                  const SizedBox(height: 12),
+                  // v176 / §٨ — أوراقُ الفاتورة.
+                  PicPosAttachmentsPanel(
+                    entityType: 'sales_invoice',
+                    entityId: invoice.id,
+                  ),
                 ],
               ),
             ),

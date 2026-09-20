@@ -28,6 +28,7 @@ import '../widgets/compact_date_picker.dart';
 import 'journal_entries_picpos_widgets.dart';
 import 'journal_templates_picpos_screen.dart';
 import '../picpos_shell/picpos_surface.dart';
+import '../picpos_shell/picpos_attachments_panel.dart';
 
 // ⚠️ حوارُ الإنشاء وودجتاتُ السطور **امتداداتٌ خاصّةٌ على حالة الشاشة** في
 //    الأصل (‏`part of`)، فلا تُستورَد ولا تُستدعى من خارج مكتبتها. ولذلك
@@ -1083,6 +1084,25 @@ class _EntryCard extends StatelessWidget {
                       onPrint: () => onPrint(snap.data!),
                     ),
                     _EntryFooter(entry: entry, repo: repo, onOpenSource: onOpenSource),
+                    // v176 / §٨ — مستندُ القيد الورقيّ.
+                    //
+                    // ⚠️ **داخلَ الموسَّع لا في الرأس**: قائمةُ القيود قد
+                    //    تحمل مئاتٍ، ولوحٌ لكلٍّ منها يعني مئةَ استعلامٍ
+                    //    عند أوّل رسم.
+                    //
+                    // 🔴 **والترحيلُ لا يُقفل المرفقات.** القفلُ في هذا
+                    //    النظام على **المبالغ**: قيدٌ مُرحَّلٌ لا تُبدَّل
+                    //    أرقامُه. والمرفقُ ورقةٌ لا رقم — وأكثرُ ما
+                    //    يُرفَق يصل **بعد** الترحيل (صورةُ الإيصال،
+                    //    كشفُ البنك، إقرارُ المراجع). فقفلُه بالترحيل
+                    //    يمنع الورقةَ في اللحظة التي تأتي فيها.
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(14, 4, 14, 12),
+                      child: PicPosAttachmentsPanel(
+                        entityType: 'journal_entry',
+                        entityId: entry.id,
+                      ),
+                    ),
                   ],
                 );
               },

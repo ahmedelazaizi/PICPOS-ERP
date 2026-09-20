@@ -15,8 +15,9 @@
 //
 // ═══ ⚠️ و«طريقة التحصيل» قسمٌ ظاهرٌ لا مطويّ ═══
 //
-// التصميمُ يطويها مع «المرفقات» في شريطٍ واحد. والمرفقاتُ **مؤجَّلةٌ** بقرار
-// مالك (ح‑٤)، فيبقى في الشريط حقلٌ واحد — وهو الحقلُ الذي **يقرّر القيد**:
+// التصميمُ يطويها مع «المرفقات» في شريطٍ واحد. والمرفقاتُ **بُنيت في
+// v176 (§٨)** وصارت لوحاً مستقلّاً أسفلَ هذا القسم لا مطويّاً معه، فيبقى
+// في الشريط حقلٌ واحد — وهو الحقلُ الذي **يقرّر القيد**:
 // نقديٌّ يُمدَن حسابَ الخزنة ويحرّك درجَها، وآجلٌ يُمدَن حسابَ العميل ويرفع
 // ذمّتَه. وطيُّ ما يغيّر القيدَ خلفَ سهمٍ أسوأُ من تغييرِ تخطيط.
 //
@@ -38,6 +39,7 @@ import '../../picpos_shell/picpos_form_action_bar.dart';
 import '../../picpos_shell/picpos_section_header.dart';
 import '../../picpos_shell/picpos_surface.dart';
 import '../../widgets/compact_date_picker.dart';
+import '../../picpos_shell/picpos_attachments_panel.dart';
 
 final _money = NumberFormat('#,##0.00');
 final _dateFmt = DateFormat('dd-MM-yyyy');
@@ -217,6 +219,18 @@ class AssetDisposalRequestFormState extends State<AssetDisposalRequestForm> {
                 _disposalCard(),
                 const SizedBox(height: 10),
                 _collectionCard(),
+                const SizedBox(height: 10),
+                // v176 / §٨ — عرضُ البيعِ وتقريرُ اللجنة.
+                //
+                // 🔴 **والاعتمادُ لا يُقفل الورقة.** الطلبُ المُعتمَدُ
+                //    تُقفَل حقولُه — الأصلُ خرج من الدفاتر وقيدُه رُحِّل.
+                //    أمّا عقدُ البيع وتقريرُ اللجنة فيصلان **بعد**
+                //    الاعتماد بطبيعتهما، فقفلُهما معه يمنع أهمَّ ورقةٍ
+                //    في الملفّ.
+                PicPosAttachmentsPanel(
+                  entityType: 'asset_disposal',
+                  entityId: widget.value?.id,
+                ),
                 if (approveReason != null) ...[
                   const SizedBox(height: 8),
                   Text(approveReason,

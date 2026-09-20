@@ -52,6 +52,7 @@ import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../picpos_shell/picpos_section_header.dart';
 import '../../picpos_shell/picpos_surface.dart';
 import '../../widgets/permission_guard.dart';
+import '../../picpos_shell/picpos_attachments_panel.dart';
 
 /// رقمُ الفاتورة يُولَّد **داخلَ معاملة الحفظ** (مواصفة ٠٦٦)، فلا يُدَّعى
 /// رقمٌ بعينه قبل أن يُحجَز.
@@ -686,13 +687,28 @@ class _ImportPurchasesPicposScreenState
         content: SizedBox(
           width: 720,
           child: SingleChildScrollView(
-            child: ImportDocumentPanel(
-              key: const Key('import_papers_panel'),
-              currencies: const [],
-              showCurrency: false,
-              agents: [for (final s in suppliers) (id: s.id, name: s.name)],
-              initial: value,
-              onChanged: (v) => value = v,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ImportDocumentPanel(
+                  key: const Key('import_papers_panel'),
+                  currencies: const [],
+                  showCurrency: false,
+                  agents: [
+                    for (final s in suppliers) (id: s.id, name: s.name)
+                  ],
+                  initial: value,
+                  onChanged: (v) => value = v,
+                ),
+                const SizedBox(height: 14),
+                // v176 / §٨ — البيانُ الجمركيُّ وبوليصةُ الشحن
+                // **ورقٌ بطبيعته** — §٨٫٤ قرار ٢: «والخارجيّةُ أولاها».
+                PicPosAttachmentsPanel(
+                  entityType: 'import_purchase',
+                  entityId: r.details.id,
+                ),
+              ],
             ),
           ),
         ),

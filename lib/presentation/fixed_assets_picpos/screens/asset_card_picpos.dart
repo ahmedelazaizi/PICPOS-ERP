@@ -27,11 +27,14 @@
 // والتحويلُ `usefulLifeMonths` في `domain/models/depreciation_math.dart` —
 // موضعٌ واحدٌ مسمّىً، ولا يُكتَب `* 12` في ملفِّ شاشةٍ أبداً.
 //
-// ═══ ⚠️ والمرفقاتُ تُسقَط ═══
+// ═══ ✅ والمرفقاتُ بُنيت ورُكِّبت (v176 / §٨) ═══
 //
-// «تفاصيل إضافية (ملاحظات ومرفقات)» يُبنى منها **الملاحظاتُ وحدَها**:
-// `notes` عمودٌ قائم، ولا بنيةَ مرفقاتٍ في المستودع إطلاقاً (قاعدةُ الخطّة
-// ح‑٤ — بندٌ مستقلٌّ بقرار المالك).
+// «تفاصيل إضافية (ملاحظات ومرفقات)» يُبنى منها الاثنان الآن: `notes`
+// عمودٌ قائم، و`PicPosAttachmentsPanel` في ذيل تبويب البيانات.
+//
+// ⚠️ وكان هذا الموضعُ ينفي وجودَ البنية إلى 2026-09-20. صارت
+// موجودةً — جدولان و`AttachmentsDao` ومنفذان. واللوحُ يحلّ هُويّةَ
+// الأصل بنفسه، فلا يحمل `DisposalAssetSummary` ولا غيرُه حقلاً جديداً.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -48,6 +51,7 @@ import '../../picpos_shell/picpos_empty_state.dart';
 import '../../picpos_shell/picpos_report_tabs.dart';
 import '../../picpos_shell/picpos_surface.dart';
 import '../../picpos_shell/picpos_totals_bar.dart';
+import '../../picpos_shell/picpos_attachments_panel.dart';
 
 final _money = NumberFormat('#,##0.00', 'en');
 final _dateFmt = DateFormat('dd-MM-yyyy');
@@ -456,10 +460,17 @@ class _AssetCardPicposState extends ConsumerState<AssetCardPicpos>
         ),
         const SizedBox(height: 14),
         _editable(context, 'ملاحظات', _notes, maxLines: 3),
-        _reason(
-          context,
-          'المرفقاتُ في التصميم لا تُبنى — لا بنيةَ مرفقاتٍ في المستودع بعد، '
-              'وهي بندٌ مستقلٌّ بقرار المالك',
+        const SizedBox(height: 14),
+        // v176 / §٨ — كانت هنا لافتةٌ تنفي وجودَ البنية. بُنيت، فحلّ
+        // محلَّها اللوحُ نفسُه.
+        //
+        // ⚠️ **و`_isActive` ليست شرطاً هنا.** الأصلُ المستبعَدُ تُقفَل
+        // بياناتُه، وورقتُه لا: عقدُ البيع وتقريرُ اللجنة يصلان **بعد**
+        // الاستبعاد. فالقيدُ على الصلاحية وحدَها.
+        PicPosAttachmentsPanel(
+          entityType: 'fixed_asset',
+          entityId: widget.asset.id,
+          readOnly: !widget.canEdit,
         ),
       ],
     );

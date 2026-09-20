@@ -28,6 +28,7 @@ import 'package:ural_erp/data/providers/providers.dart';
 import 'package:ural_erp/domain/repositories/accounting_repository.dart';
 import 'package:ural_erp/domain/repositories/fixed_assets_repository.dart';
 import 'package:ural_erp/presentation/fixed_assets_picpos/screens/fixed_assets_picpos_screen.dart';
+import '../helpers/attachments_test_overrides.dart';
 
 const _categories = [
   db.AssetCategory(
@@ -155,6 +156,10 @@ Future<_RecordingAssetsRepo> _pump(
         fixedAssetsRepositoryProvider.overrideWithValue(repo),
         accountingRepositoryProvider.overrideWithValue(_FakeAccountingRepo()),
         currentUserPermissionsProvider.overrideWith((ref) async => perms),
+        // v176 / §٨ — بطاقةُ الأصل تُفتَح من هذه الشاشة وتحمل
+        // لوحَ مرفقاتٍ يقرأ مستودعاً.
+        attachmentsRepositoryProvider
+            .overrideWithValue(fakeAttachmentsRepo()),
       ],
       child: const MaterialApp(home: FixedAssetsPicposScreen()),
     ),

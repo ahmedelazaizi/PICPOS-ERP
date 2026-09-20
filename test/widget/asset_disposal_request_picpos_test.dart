@@ -16,9 +16,12 @@
 //    تبرّعٍ فيُقرأ أنّ مالاً قُبض.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:ural_erp/presentation/fixed_assets_picpos/screens/asset_disposal_request_picpos.dart';
+import 'package:ural_erp/data/providers/providers.dart';
+import '../helpers/attachments_test_overrides.dart';
 
 const _asset = (
   id: 1,
@@ -41,7 +44,13 @@ Future<List<DisposalSubmission>> _pump(
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);
 
-  await tester.pumpWidget(MaterialApp(
+  await tester.pumpWidget(ProviderScope(
+    // v176 / §٨ — النموذجُ يحمل لوحَ مرفقاتٍ ريفربوديّاً،
+    // فلا يُرسَم بلا نطاق («No ProviderScope found»).
+    overrides: [
+      attachmentsRepositoryProvider.overrideWithValue(fakeAttachmentsRepo()),
+    ],
+    child: MaterialApp(
     home: Scaffold(
       body: AssetDisposalRequestForm(
         asset: asset,
@@ -52,7 +61,7 @@ Future<List<DisposalSubmission>> _pump(
         onSubmit: (v) async => out.add(v),
       ),
     ),
-  ));
+  )));
   await tester.pumpAndSettle();
   return out;
 }

@@ -19,12 +19,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:ural_erp/data/database/database.dart' as db;
-import 'package:ural_erp/data/providers/auth_providers.dart';
-import 'package:ural_erp/data/providers/repository_providers.dart';
 import 'package:ural_erp/domain/repositories/accounting_repository.dart';
 import 'package:ural_erp/domain/repositories/fixed_assets_repository.dart';
 import 'package:ural_erp/presentation/picpos_shell/picpos_report_tabs.dart';
 import 'package:ural_erp/presentation/fixed_assets_picpos/screens/fixed_assets_picpos_screen.dart';
+import 'package:ural_erp/data/providers/providers.dart';
+import '../helpers/attachments_test_overrides.dart';
 
 final _now = DateTime(2026, 8, 26);
 
@@ -183,6 +183,10 @@ Future<void> _pump(
         fixedAssetsRepositoryProvider.overrideWithValue(_FakeAssetsRepo()),
         accountingRepositoryProvider.overrideWithValue(_FakeAccountingRepo()),
         currentUserPermissionsProvider.overrideWith((ref) async => perms),
+        // v176 / §٨ — بطاقةُ الأصل تُفتَح من هذه الشاشة وتحمل
+        // لوحَ مرفقاتٍ يقرأ مستودعاً.
+        attachmentsRepositoryProvider
+            .overrideWithValue(fakeAttachmentsRepo()),
       ],
       child: const MaterialApp(home: FixedAssetsPicposScreen()),
     ),

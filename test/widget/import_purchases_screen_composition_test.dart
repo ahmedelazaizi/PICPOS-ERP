@@ -21,6 +21,7 @@ import 'package:ural_erp/data/providers/providers.dart';
 import 'package:ural_erp/domain/models/import_purchase_plan.dart';
 import 'package:ural_erp/domain/repositories/import_purchases_repository.dart';
 import 'package:ural_erp/presentation/import_purchases_picpos/screens/import_purchases_picpos_screen.dart';
+import '../helpers/attachments_test_overrides.dart';
 
 final _now = DateTime(2026, 9, 20);
 
@@ -121,6 +122,9 @@ Future<_FakeImportRepo> _pump(
             .overrideWith((ref) => const ['purchases_create', 'purchases_edit']),
         // وكلاءُ التخليص في حوار الأوراق — عبر مزوِّدهم لا عبر القاعدة.
         allSuppliersProvider.overrideWith((ref) => Stream.value(<Party>[])),
+        // v176 / §٨ — حوارُ الأوراق يحمل لوحَ المرفقات.
+        attachmentsRepositoryProvider
+            .overrideWithValue(fakeAttachmentsRepo()),
       ],
       child: const MaterialApp(home: ImportPurchasesPicposScreen()),
     ),

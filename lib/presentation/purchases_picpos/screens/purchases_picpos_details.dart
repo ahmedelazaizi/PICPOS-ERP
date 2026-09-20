@@ -93,6 +93,15 @@ mixin _PurchasesPicposDetails on ConsumerState<PurchasesPicposScreen> {
                         )
                         .toList(),
                   ),
+                  const SizedBox(height: 16),
+                  const Divider(height: 1),
+                  const SizedBox(height: 12),
+                  // v176 / §٨ — أوراقُ الفاتورة (البيانُ الجمركيُّ والعقدُ
+                  // وإذنُ التسليم). واللوحُ يحلّ هُويّةَ الفاتورة بنفسه.
+                  PicPosAttachmentsPanel(
+                    entityType: 'purchase_invoice',
+                    entityId: invoice.id,
+                  ),
                 ],
               ),
             ),

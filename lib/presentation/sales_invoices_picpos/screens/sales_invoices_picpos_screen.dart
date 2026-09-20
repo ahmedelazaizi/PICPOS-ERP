@@ -55,6 +55,7 @@ import '../../../services/printing/printing_models.dart' as print_models;
 import '../../../domain/models/picpos_invoice_draft.dart';
 import '../../shared_widgets/whatsapp_send_dialog.dart';
 import '../../../domain/models/whatsapp_message.dart';
+import '../../picpos_shell/picpos_attachments_panel.dart';
 
 // ── Part files (منسوخة حرفياً من lib/presentation/screens/widgets/sales_invoices/
 // — الشاشة الأصل `part of _SalesInvoicesScreenState` خاصة فما ينفعش تتعمل

@@ -22,6 +22,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/presentation/fixed_assets_picpos/screens/asset_card_picpos.dart';
+import 'package:ural_erp/data/providers/providers.dart';
+import '../helpers/attachments_test_overrides.dart';
 
 AssetCardValue _asset({
   String status = 'active',
@@ -76,6 +78,12 @@ void main() {
 
     await tester.pumpWidget(
       ProviderScope(
+        // v176 / §٨ — البطاقةُ تحمل لوحَ مرفقاتٍ يقرأ مستودعاً.
+        // بلا تجاوزٍ تُفتَح قاعدةٌ حقيقيّةٌ ولا يستقرّ `pumpAndSettle`.
+        overrides: [
+          attachmentsRepositoryProvider
+              .overrideWithValue(fakeAttachmentsRepo()),
+        ],
         child: MaterialApp(
           home: Scaffold(
             body: AssetCardPicpos(
@@ -153,12 +161,13 @@ void main() {
       await teardownTree(tester);
     });
 
-    testWidgets('والمرفقاتُ تُسقَط بسببٍ مكتوب', (tester) async {
+    testWidgets('✅ والمرفقاتُ لوحٌ لا لافتةُ تأجيل', (tester) async {
       await pump(tester);
       expect(find.text('ملاحظات'), findsOneWidget);
-      expect(find.textContaining('المرفقاتُ في التصميم لا تُبنى'),
-          findsOneWidget,
-          reason: 'حقلٌ ناقصٌ بلا سببٍ يُقرأ عطباً');
+      // ✅ v176 — كانت هنا لافتةٌ تقول «المرفقاتُ في التصميم لا
+      // تُبنى». بُنيت، فصار المطلوبُ **اللوحَ نفسَه** لا سببَ غيابِه.
+      expect(find.byKey(const Key('attachments_panel')), findsOneWidget,
+          reason: 'لوحُ المرفقات غاب عن بطاقة الأصل');
       await teardownTree(tester);
     });
   });

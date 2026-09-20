@@ -27,6 +27,7 @@ import 'package:ural_erp/domain/repositories/accounting_repository.dart';
 import 'package:ural_erp/domain/repositories/auth_repository.dart';
 import 'package:ural_erp/domain/repositories/fixed_assets_repository.dart';
 import 'package:ural_erp/presentation/fixed_assets_picpos/screens/fixed_assets_picpos_screen.dart';
+import '../helpers/attachments_test_overrides.dart';
 
 db.FixedAssetData _asset({
   required int id,
@@ -127,6 +128,10 @@ Future<void> _pump(WidgetTester tester, {double width = 1600}) async {
             .overrideWith((ref) async => const ['assets_view']),
         hasPermissionProvider(PermissionCodes.assetsManage)
             .overrideWith((ref) async => true),
+        // v176 / §٨ — بطاقةُ الأصل تُفتَح من هذه الشاشة، وتحمل لوحَ
+        // مرفقاتٍ يقرأ مستودعاً.
+        attachmentsRepositoryProvider
+            .overrideWithValue(fakeAttachmentsRepo()),
       ],
       child: const MaterialApp(home: FixedAssetsPicposScreen()),
     ),
