@@ -179,9 +179,18 @@ extension SettingsDao on AppDatabase {
           termsText: termsText != null
               ? Value(termsText)
               : const Value.absent(),
-          logoImage: logoImage != null
-              ? Value(logoImage)
-              : const Value.absent(),
+          // 🔴 **وهذا الحقلُ وحدَه غيرُ مشروط.** بقيّةُ الحقول تأتي من
+          // `TextEditingController` فترسل `''` لا `null`، فـ`null` فيها يعني
+          // حقّاً «لم يُرسَل». أمّا `logoImage` فـ`null` هو **فراغُه الحقيقيّ**:
+          // زرُّ «حذف الشعار» يضعه `null` ويحفظ. و`Value.absent()` كانت
+          // تجعل البايتاتِ **غيرَ قابلةٍ للمحو أبداً** — ويُخفيه أنّ
+          // `showLogo: false` تُكتَب فعلاً، فيختفي الشعارُ من الإيصال
+          // ثمّ **يعود عند إعادة فتح الشاشة**، وتحمله كلُّ نسخةٍ احتياطيّة.
+          //
+          // ولا يلزم وسيطٌ ثانٍ (`clearLogo`): مُنادوها الثلاثةُ تقرأ
+          // الحالةَ القائمةَ ثمّ تحفظ الاستمارةَ كاملةً ولا تُسقِط
+          // `logoImage:` — وحارسُ `receipt_logo_callers_pass_it_test` يثبّتُه.
+          logoImage: Value(logoImage),
           showLogo: showLogo != null ? Value(showLogo) : const Value.absent(),
           showQrCode: showQrCode != null
               ? Value(showQrCode)
@@ -231,6 +240,11 @@ extension SettingsDao on AppDatabase {
           headerText: Value(headerText ?? 'مرحباً بكم'),
           footerText: Value(footerText ?? 'شكراً لزيارتكم'),
           termsText: Value(termsText),
+          // ⚠️ **وكان مُسقَطاً هنا إسقاطاً تامّاً.** الفرعُ يعمل حين لا صفَّ
+          //    بعد، وهو غيرُ مطروقٍ اليوم (`getReceiptSettings` ينشئ الصفَّ
+          //    عند الطلب، وكلُّ شاشةٍ تقرأ قبل أن تحفظ) — **فهو كامنٌ لا
+          //    حيٌّ**. وحقلٌ يُسقَط صامتاً عطبٌ سواءٌ طُرِق اليومَ أم غداً.
+          logoImage: Value(logoImage),
           showLogo: Value(showLogo ?? false),
           showQrCode: Value(showQrCode ?? true),
           showBarcode: Value(showBarcode ?? false),
