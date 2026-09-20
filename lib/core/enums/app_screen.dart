@@ -53,6 +53,16 @@ enum AppScreen {
   // Phase 2 Audit: Returns Screens
   salesReturns(44),
   purchaseReturns(45),
+
+  /// المطابقةُ البنكيّة — يجب أن تطابق `ScreenId.bankReconciliation`.
+  ///
+  /// 🔴 **وكانت غائبةً منذ 2026-09-01**: المعرِّفُ في خريطة
+  /// الصلاحيات وفي نطاق `unified`، ولا `AppScreen` له ولا
+  /// `ScreenConfig` — أي **صلاحيّةٌ تُمنَح لشاشةٍ لا شيءَ يبنيها**.
+  /// وسترُها أنَّ حاويةَ «الحسابات» تفتحُها تبويباً فتتجاوز
+  /// `ScreenConfig` كلَّه. ويشدُّها الآن `allowed_screens_can_render_test`.
+  bankReconciliation(53),
+
   // Shift management
   shiftClose(56),
   // Phase 14: Hardening

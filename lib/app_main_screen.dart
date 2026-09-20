@@ -21,7 +21,11 @@ import 'presentation/pos/screens/pos_main_screen.dart';
 import 'presentation/pos_picpos/screens/picpos_pos_screen.dart';
 import 'presentation/offers_picpos/offers_picpos_screen.dart';
 import 'presentation/accounting_picpos/accounting_hub_picpos_screen.dart';
+import 'presentation/accounting_picpos/account_mapping_picpos_screen.dart';
+import 'presentation/accounting_picpos/bank_reconciliation_picpos_screen.dart';
 import 'presentation/accounting_picpos/chart_of_accounts_picpos_screen.dart';
+import 'presentation/accounting_picpos/cost_centers_picpos_screen.dart';
+import 'presentation/accounting_picpos/general_ledger_picpos_screen.dart';
 import 'core/navigation/screen_id.dart';
 import 'presentation/accounting_picpos/journal_entries_picpos_screen.dart';
 import 'presentation/accounting_picpos/financial_statements_picpos_screen.dart';
@@ -914,7 +918,13 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
       ),
       ScreenConfig(
         appScreen: AppScreen.accountMapping,
-        builder: (_) => const AccountMappingSettingsScreen(),
+        // 🔴 **فرعُ علامةٍ كان ناقصاً** — وسترُه أنَّ حاويةَ «الحسابات»
+        //    تفتح الفوركَ من تبويباتِها فتتجاوز `ScreenConfig` كلَّه.
+        //    فالمدخلُ الجانبيُّ كان يفتح **القديمة**، وكلُّ ما أُعيد
+        //    تصميمُه لا يراه من يدخل من الباب المعتاد.
+        builder: (_) => Brand.isPicPos
+            ? const AccountMappingPicPosScreen()
+            : const AccountMappingSettingsScreen(),
         label: 'ربط الحسابات',
         icon: PhosphorIconsBold.link,
       ),
@@ -937,7 +947,13 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
       ),
       ScreenConfig(
         appScreen: AppScreen.costCenters,
-        builder: (_) => const CostCentersScreen(),
+        // 🔴 **فرعُ علامةٍ كان ناقصاً** — وسترُه أنَّ حاويةَ «الحسابات»
+        //    تفتح الفوركَ من تبويباتِها فتتجاوز `ScreenConfig` كلَّه.
+        //    فالمدخلُ الجانبيُّ كان يفتح **القديمة**، وكلُّ ما أُعيد
+        //    تصميمُه لا يراه من يدخل من الباب المعتاد.
+        builder: (_) => Brand.isPicPos
+            ? const CostCentersPicPosScreen()
+            : const CostCentersScreen(),
         label: 'مراكز التكلفة',
         icon: PhosphorIconsBold.treeStructure,
       ),
@@ -964,10 +980,18 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
       ),
       ScreenConfig(
         appScreen: AppScreen.generalLedger,
+        // 🔴 **فرعُ علامةٍ كان ناقصاً** — وسترُه أنَّ حاويةَ «الحسابات»
+        //    تفتح الفوركَ من تبويباتِها فتتجاوز `ScreenConfig` كلَّه.
+        //    فالمدخلُ الجانبيُّ كان يفتح **القديمة**، وكلُّ ما أُعيد
+        //    تصميمُه لا يراه من يدخل من الباب المعتاد.
+        //    ⚠️ و`SecurityScreenGate` يبقى **حول الاثنين**: الفوركُ
+        //       يبدّل الشكلَ لا الحراسة.
         builder: (_) => const SecurityScreenGate(
           settingKey: 'accounting_access_password',
           title: 'دفتر الأستاذ',
-          child: GeneralLedgerScreen(),
+          child: Brand.isPicPos
+              ? GeneralLedgerPicPosScreen()
+              : GeneralLedgerScreen(),
         ),
         label: 'دفتر الأستاذ',
         icon: PhosphorIconsBold.book,
@@ -1060,6 +1084,17 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
             : const FinancialStatementsScreen(),
         label: 'القوائم المالية',
         icon: PhosphorIconsBold.scales,
+      ),
+      // المطابقةُ البنكيّة — PicPos وحدَها (لا نظيرَ لها في UralCash).
+      //
+      // 🔴 **وكانت بلا `ScreenConfig` إطلاقاً**: المعرِّفُ في خريطة
+      //    الصلاحيات وفي نطاق `unified`، ولا شيءَ يبنيها — فلا
+      //    تُبلَغ إلّا من تبويبٍ داخلَ حاوية «الحسابات».
+      ScreenConfig(
+        appScreen: AppScreen.bankReconciliation,
+        builder: (_) => const BankReconciliationPicposScreen(),
+        label: 'المطابقة البنكية',
+        icon: PhosphorIconsBold.bank,
       ),
       ScreenConfig(
         appScreen: AppScreen.accountingHub,
