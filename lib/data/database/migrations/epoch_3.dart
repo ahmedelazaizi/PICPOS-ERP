@@ -3483,5 +3483,30 @@ extension Epoch3Migrations on AppDatabase {
       });
     }
 
+    // ══════════════════════════════════════════════════════════════════
+    // v176 — المرفقات (§٨ من خطّة إعادة تصميم الشاشات)
+    // ══════════════════════════════════════════════════════════════════
+    //
+    // جدولان: `attachments` الوصفُ (يُزامَن)،
+    // و`attachment_blobs` البايتاتُ (خارجَ كلِّ قائمةِ سحبٍ عمداً).
+    //
+    // ⚠️ **ولمن هذه الكتلة؟ لعملاء SQLite القائمين وحدَهم** —
+    //    التنصيبةُ الجديدةُ تنالُهما من `onCreate`، والخادمُ
+    //    من مُصحِّح التكافؤ عند الإقلاع.
+    if (from < 176) {
+      await _safeMigrate('v176 جدولا المرفقات', () async {
+        for (final entry in <String, TableInfo>{
+          'attachments': attachments,
+          'attachment_blobs': attachmentBlobs,
+        }.entries) {
+          try {
+            await m.createTable(entry.value);
+          } catch (e) {
+            debugPrint('[Migration] v176 ${entry.key} (safe-skip): $e');
+          }
+        }
+        debugPrint('[Migration] v176: جدولا المرفقات');
+      });
+    }
   }
 }

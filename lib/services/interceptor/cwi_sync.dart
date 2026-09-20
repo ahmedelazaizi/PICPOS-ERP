@@ -97,6 +97,42 @@ class _CwiSync {
       ),
     );
   }
+  // ── Attachments (v176 / §٨) ──────────────────────────────────
+
+  /// مرفقٌ واحدٌ ببايتاتِه — **والحمولةُ تدخل صندوقَ الصادر كما هي إن
+  /// انقطعت الشبكة**: فالورقةُ لا تُفقَد بانقطاع، وهذا ثمنُه المقيسُ
+  /// والمقصود: صفٌّ في الطابور بحجم الملفّ مضروباً في أربعةٍ على
+  /// ثلاثة (base64)، وسقفُ الخمسة ميغا هو الذي يضبطُه.
+  static Future<void> submitAttachment(Map<String, dynamic> document) async {
+    if (!SyncInterceptor.isClientMode) return;
+    debugPrint('[ClientInterceptor] Routing attachment to server');
+    await ClientWriteInterceptor._tryOrQueueVoid(
+      tableName: 'attachments',
+      operation: 'insert',
+      payload: Map<String, dynamic>.from(document),
+      serverCall: (reqIdemKey) =>
+          ClientWriteInterceptor._proxy.submitAttachment(
+        document,
+        idempotencyKey: reqIdemKey,
+      ),
+    );
+  }
+
+  static Future<void> submitAttachmentDelete(
+      Map<String, dynamic> document) async {
+    if (!SyncInterceptor.isClientMode) return;
+    debugPrint('[ClientInterceptor] Routing attachment delete to server');
+    await ClientWriteInterceptor._tryOrQueueVoid(
+      tableName: 'attachments',
+      operation: 'delete',
+      payload: Map<String, dynamic>.from(document),
+      serverCall: (reqIdemKey) =>
+          ClientWriteInterceptor._proxy.submitAttachmentDelete(
+        document,
+        idempotencyKey: reqIdemKey,
+      ),
+    );
+  }
   // ── Fixed Assets (v166) ───────────────────────────────────────────────────
 
   static Future<void> submitFixedAssetCreate(

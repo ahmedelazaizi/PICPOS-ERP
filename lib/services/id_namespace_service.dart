@@ -112,6 +112,11 @@ class IdNamespaceService {
     'approval_workflows', 'approval_steps', 'approval_requests',
     'approval_decisions', 'sod_conflicts', 'sod_violations',
     'compliance_checks',
+
+    // ── v176 / §٨ — المرفقات ──
+    // ⚠️ و`attachment_blobs` **خارجٌ**: لا تعبُر صفوفُه السلكَ
+    //    أصلاً، فلا تصادمَ أرقامٍ يُتّقى.
+    'attachments',
   ];
 
   /// Raise the `sqlite_sequence` row for every namespaced table to

@@ -1593,6 +1593,25 @@ class OfflineSyncWorker {
         }
         throw StateError('Unhandled op $operation for table $table');
 
+      case 'attachments':
+        // v176 / §٨ — ورقةٌ رُفعت والشبكةُ مقطوعة. والحمولةُ
+        // **تحمل البايتاتِ نفسَها** (base64) لا مسارَ ملفٍّ على
+        // القرص: مسارٌ يصير مُعلَّقاً إن نُقِل الملفُّ أو مُسِح،
+        // فيُعاد إرسالُ مرفقٍ لا وجودَ له إلى الأبد.
+        if (operation == 'insert') {
+          return proxy.submitAttachment(
+            payload,
+            idempotencyKey: idempotencyKey,
+          );
+        }
+        if (operation == 'delete') {
+          return proxy.submitAttachmentDelete(
+            payload,
+            idempotencyKey: idempotencyKey,
+          );
+        }
+        throw StateError('Unhandled op $operation for table $table');
+
       case 'landed_cost_sheets':
         if (operation == 'apply') {
           return proxy.submitLandedCostApply(

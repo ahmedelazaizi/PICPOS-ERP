@@ -134153,6 +134153,1335 @@ class SupplierClaimsCompanion extends UpdateCompanion<SupplierClaim> {
   }
 }
 
+class $AttachmentsTable extends Attachments
+    with TableInfo<$AttachmentsTable, AttachmentData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AttachmentsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _entityTypeMeta = const VerificationMeta(
+    'entityType',
+  );
+  @override
+  late final GeneratedColumn<String> entityType = GeneratedColumn<String>(
+    'entity_type',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 40,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _entityGlobalIdMeta = const VerificationMeta(
+    'entityGlobalId',
+  );
+  @override
+  late final GeneratedColumn<String> entityGlobalId = GeneratedColumn<String>(
+    'entity_global_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _entityIdMeta = const VerificationMeta(
+    'entityId',
+  );
+  @override
+  late final GeneratedColumn<int> entityId = GeneratedColumn<int>(
+    'entity_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _fileNameMeta = const VerificationMeta(
+    'fileName',
+  );
+  @override
+  late final GeneratedColumn<String> fileName = GeneratedColumn<String>(
+    'file_name',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 255,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _mimeTypeMeta = const VerificationMeta(
+    'mimeType',
+  );
+  @override
+  late final GeneratedColumn<String> mimeType = GeneratedColumn<String>(
+    'mime_type',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 100,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _byteSizeMeta = const VerificationMeta(
+    'byteSize',
+  );
+  @override
+  late final GeneratedColumn<int> byteSize = GeneratedColumn<int>(
+    'byte_size',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _shaHexMeta = const VerificationMeta('shaHex');
+  @override
+  late final GeneratedColumn<String> shaHex = GeneratedColumn<String>(
+    'sha_hex',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 64,
+      maxTextLength: 64,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _docTypeMeta = const VerificationMeta(
+    'docType',
+  );
+  @override
+  late final GeneratedColumn<String> docType = GeneratedColumn<String>(
+    'doc_type',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 40,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('other'),
+  );
+  static const VerificationMeta _attachedByUserIdMeta = const VerificationMeta(
+    'attachedByUserId',
+  );
+  @override
+  late final GeneratedColumn<int> attachedByUserId = GeneratedColumn<int>(
+    'attached_by_user_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES users (id)',
+    ),
+  );
+  static const VerificationMeta _attachedAtMeta = const VerificationMeta(
+    'attachedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> attachedAt = GeneratedColumn<DateTime>(
+    'attached_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _globalIdMeta = const VerificationMeta(
+    'globalId',
+  );
+  @override
+  late final GeneratedColumn<String> globalId = GeneratedColumn<String>(
+    'global_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _lastModifiedAtMeta = const VerificationMeta(
+    'lastModifiedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastModifiedAt =
+      GeneratedColumn<DateTime>(
+        'last_modified_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _originClientIdMeta = const VerificationMeta(
+    'originClientId',
+  );
+  @override
+  late final GeneratedColumn<String> originClientId = GeneratedColumn<String>(
+    'origin_client_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _rowVersionMeta = const VerificationMeta(
+    'rowVersion',
+  );
+  @override
+  late final GeneratedColumn<int> rowVersion = GeneratedColumn<int>(
+    'row_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    entityType,
+    entityGlobalId,
+    entityId,
+    fileName,
+    mimeType,
+    byteSize,
+    shaHex,
+    docType,
+    attachedByUserId,
+    attachedAt,
+    notes,
+    globalId,
+    lastModifiedAt,
+    deletedAt,
+    originClientId,
+    rowVersion,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'attachments';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<AttachmentData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('entity_type')) {
+      context.handle(
+        _entityTypeMeta,
+        entityType.isAcceptableOrUnknown(data['entity_type']!, _entityTypeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_entityTypeMeta);
+    }
+    if (data.containsKey('entity_global_id')) {
+      context.handle(
+        _entityGlobalIdMeta,
+        entityGlobalId.isAcceptableOrUnknown(
+          data['entity_global_id']!,
+          _entityGlobalIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('entity_id')) {
+      context.handle(
+        _entityIdMeta,
+        entityId.isAcceptableOrUnknown(data['entity_id']!, _entityIdMeta),
+      );
+    }
+    if (data.containsKey('file_name')) {
+      context.handle(
+        _fileNameMeta,
+        fileName.isAcceptableOrUnknown(data['file_name']!, _fileNameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_fileNameMeta);
+    }
+    if (data.containsKey('mime_type')) {
+      context.handle(
+        _mimeTypeMeta,
+        mimeType.isAcceptableOrUnknown(data['mime_type']!, _mimeTypeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_mimeTypeMeta);
+    }
+    if (data.containsKey('byte_size')) {
+      context.handle(
+        _byteSizeMeta,
+        byteSize.isAcceptableOrUnknown(data['byte_size']!, _byteSizeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_byteSizeMeta);
+    }
+    if (data.containsKey('sha_hex')) {
+      context.handle(
+        _shaHexMeta,
+        shaHex.isAcceptableOrUnknown(data['sha_hex']!, _shaHexMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_shaHexMeta);
+    }
+    if (data.containsKey('doc_type')) {
+      context.handle(
+        _docTypeMeta,
+        docType.isAcceptableOrUnknown(data['doc_type']!, _docTypeMeta),
+      );
+    }
+    if (data.containsKey('attached_by_user_id')) {
+      context.handle(
+        _attachedByUserIdMeta,
+        attachedByUserId.isAcceptableOrUnknown(
+          data['attached_by_user_id']!,
+          _attachedByUserIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('attached_at')) {
+      context.handle(
+        _attachedAtMeta,
+        attachedAt.isAcceptableOrUnknown(data['attached_at']!, _attachedAtMeta),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('global_id')) {
+      context.handle(
+        _globalIdMeta,
+        globalId.isAcceptableOrUnknown(data['global_id']!, _globalIdMeta),
+      );
+    }
+    if (data.containsKey('last_modified_at')) {
+      context.handle(
+        _lastModifiedAtMeta,
+        lastModifiedAt.isAcceptableOrUnknown(
+          data['last_modified_at']!,
+          _lastModifiedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    if (data.containsKey('origin_client_id')) {
+      context.handle(
+        _originClientIdMeta,
+        originClientId.isAcceptableOrUnknown(
+          data['origin_client_id']!,
+          _originClientIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('row_version')) {
+      context.handle(
+        _rowVersionMeta,
+        rowVersion.isAcceptableOrUnknown(data['row_version']!, _rowVersionMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  AttachmentData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AttachmentData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      entityType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}entity_type'],
+      )!,
+      entityGlobalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}entity_global_id'],
+      ),
+      entityId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}entity_id'],
+      ),
+      fileName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}file_name'],
+      )!,
+      mimeType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}mime_type'],
+      )!,
+      byteSize: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}byte_size'],
+      )!,
+      shaHex: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sha_hex'],
+      )!,
+      docType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}doc_type'],
+      )!,
+      attachedByUserId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}attached_by_user_id'],
+      ),
+      attachedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}attached_at'],
+      )!,
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      globalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}global_id'],
+      ),
+      lastModifiedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_modified_at'],
+      ),
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+      originClientId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origin_client_id'],
+      ),
+      rowVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}row_version'],
+      )!,
+    );
+  }
+
+  @override
+  $AttachmentsTable createAlias(String alias) {
+    return $AttachmentsTable(attachedDatabase, alias);
+  }
+}
+
+class AttachmentData extends DataClass implements Insertable<AttachmentData> {
+  final int id;
+
+  /// نوعُ المستند المُرفَقِ به — من `kAttachmentEntityTypes`.
+  final String entityType;
+
+  /// 🔴 **الهُويّةُ العالميّةُ للمستند هي الرابطُ عبر الأجهزة.**
+  ///
+  /// رقمُ المستند المحلّيُّ لا يعبر جهازَين: الرقمُ ٧ على هذا الجهاز
+  /// قد يكون فاتورةً أخرى تماماً على الخادم. وهو عينُ الدرس الذي
+  /// دفعته المرحلةُ الثامنة في وكيل التخليص.
+  final String? entityGlobalId;
+
+  /// رقمٌ محلّيٌّ **للقراءة السريعة وحدَها** — لا يُعوَّل عليه عبر السلك.
+  final int? entityId;
+  final String fileName;
+  final String mimeType;
+  final int byteSize;
+
+  /// بصمةُ المحتوى ستّاً وستّين محرفاً ستّ عشريّاً.
+  ///
+  /// ⚠️ **وليست زينةً**: بها تُكشَف بايتاتٌ وصلت ناقصةً، وبها يُعرَف أنّ
+  /// ملفاً واحداً أُرفق بمستندَين فلا يُخزَّن مرّتَين.
+  ///
+  /// والاسمُ `shaHex` لا `sha256` عمداً: `sha256` رمزٌ عامٌّ في حزمة
+  /// `crypto` تستورده هذه المكتبةُ نفسُها.
+  final String shaHex;
+
+  /// تصنيفُ الورقة — من `AttachmentDocType`.
+  final String docType;
+  final int? attachedByUserId;
+  final DateTime attachedAt;
+  final String? notes;
+  final String? globalId;
+  final DateTime? lastModifiedAt;
+  final DateTime? deletedAt;
+  final String? originClientId;
+  final int rowVersion;
+  const AttachmentData({
+    required this.id,
+    required this.entityType,
+    this.entityGlobalId,
+    this.entityId,
+    required this.fileName,
+    required this.mimeType,
+    required this.byteSize,
+    required this.shaHex,
+    required this.docType,
+    this.attachedByUserId,
+    required this.attachedAt,
+    this.notes,
+    this.globalId,
+    this.lastModifiedAt,
+    this.deletedAt,
+    this.originClientId,
+    required this.rowVersion,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['entity_type'] = Variable<String>(entityType);
+    if (!nullToAbsent || entityGlobalId != null) {
+      map['entity_global_id'] = Variable<String>(entityGlobalId);
+    }
+    if (!nullToAbsent || entityId != null) {
+      map['entity_id'] = Variable<int>(entityId);
+    }
+    map['file_name'] = Variable<String>(fileName);
+    map['mime_type'] = Variable<String>(mimeType);
+    map['byte_size'] = Variable<int>(byteSize);
+    map['sha_hex'] = Variable<String>(shaHex);
+    map['doc_type'] = Variable<String>(docType);
+    if (!nullToAbsent || attachedByUserId != null) {
+      map['attached_by_user_id'] = Variable<int>(attachedByUserId);
+    }
+    map['attached_at'] = Variable<DateTime>(attachedAt);
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    if (!nullToAbsent || globalId != null) {
+      map['global_id'] = Variable<String>(globalId);
+    }
+    if (!nullToAbsent || lastModifiedAt != null) {
+      map['last_modified_at'] = Variable<DateTime>(lastModifiedAt);
+    }
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || originClientId != null) {
+      map['origin_client_id'] = Variable<String>(originClientId);
+    }
+    map['row_version'] = Variable<int>(rowVersion);
+    return map;
+  }
+
+  AttachmentsCompanion toCompanion(bool nullToAbsent) {
+    return AttachmentsCompanion(
+      id: Value(id),
+      entityType: Value(entityType),
+      entityGlobalId: entityGlobalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(entityGlobalId),
+      entityId: entityId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(entityId),
+      fileName: Value(fileName),
+      mimeType: Value(mimeType),
+      byteSize: Value(byteSize),
+      shaHex: Value(shaHex),
+      docType: Value(docType),
+      attachedByUserId: attachedByUserId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(attachedByUserId),
+      attachedAt: Value(attachedAt),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      globalId: globalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(globalId),
+      lastModifiedAt: lastModifiedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastModifiedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      originClientId: originClientId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(originClientId),
+      rowVersion: Value(rowVersion),
+    );
+  }
+
+  factory AttachmentData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AttachmentData(
+      id: serializer.fromJson<int>(json['id']),
+      entityType: serializer.fromJson<String>(json['entityType']),
+      entityGlobalId: serializer.fromJson<String?>(json['entityGlobalId']),
+      entityId: serializer.fromJson<int?>(json['entityId']),
+      fileName: serializer.fromJson<String>(json['fileName']),
+      mimeType: serializer.fromJson<String>(json['mimeType']),
+      byteSize: serializer.fromJson<int>(json['byteSize']),
+      shaHex: serializer.fromJson<String>(json['shaHex']),
+      docType: serializer.fromJson<String>(json['docType']),
+      attachedByUserId: serializer.fromJson<int?>(json['attachedByUserId']),
+      attachedAt: serializer.fromJson<DateTime>(json['attachedAt']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      globalId: serializer.fromJson<String?>(json['globalId']),
+      lastModifiedAt: serializer.fromJson<DateTime?>(json['lastModifiedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      originClientId: serializer.fromJson<String?>(json['originClientId']),
+      rowVersion: serializer.fromJson<int>(json['rowVersion']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'entityType': serializer.toJson<String>(entityType),
+      'entityGlobalId': serializer.toJson<String?>(entityGlobalId),
+      'entityId': serializer.toJson<int?>(entityId),
+      'fileName': serializer.toJson<String>(fileName),
+      'mimeType': serializer.toJson<String>(mimeType),
+      'byteSize': serializer.toJson<int>(byteSize),
+      'shaHex': serializer.toJson<String>(shaHex),
+      'docType': serializer.toJson<String>(docType),
+      'attachedByUserId': serializer.toJson<int?>(attachedByUserId),
+      'attachedAt': serializer.toJson<DateTime>(attachedAt),
+      'notes': serializer.toJson<String?>(notes),
+      'globalId': serializer.toJson<String?>(globalId),
+      'lastModifiedAt': serializer.toJson<DateTime?>(lastModifiedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'originClientId': serializer.toJson<String?>(originClientId),
+      'rowVersion': serializer.toJson<int>(rowVersion),
+    };
+  }
+
+  AttachmentData copyWith({
+    int? id,
+    String? entityType,
+    Value<String?> entityGlobalId = const Value.absent(),
+    Value<int?> entityId = const Value.absent(),
+    String? fileName,
+    String? mimeType,
+    int? byteSize,
+    String? shaHex,
+    String? docType,
+    Value<int?> attachedByUserId = const Value.absent(),
+    DateTime? attachedAt,
+    Value<String?> notes = const Value.absent(),
+    Value<String?> globalId = const Value.absent(),
+    Value<DateTime?> lastModifiedAt = const Value.absent(),
+    Value<DateTime?> deletedAt = const Value.absent(),
+    Value<String?> originClientId = const Value.absent(),
+    int? rowVersion,
+  }) => AttachmentData(
+    id: id ?? this.id,
+    entityType: entityType ?? this.entityType,
+    entityGlobalId: entityGlobalId.present
+        ? entityGlobalId.value
+        : this.entityGlobalId,
+    entityId: entityId.present ? entityId.value : this.entityId,
+    fileName: fileName ?? this.fileName,
+    mimeType: mimeType ?? this.mimeType,
+    byteSize: byteSize ?? this.byteSize,
+    shaHex: shaHex ?? this.shaHex,
+    docType: docType ?? this.docType,
+    attachedByUserId: attachedByUserId.present
+        ? attachedByUserId.value
+        : this.attachedByUserId,
+    attachedAt: attachedAt ?? this.attachedAt,
+    notes: notes.present ? notes.value : this.notes,
+    globalId: globalId.present ? globalId.value : this.globalId,
+    lastModifiedAt: lastModifiedAt.present
+        ? lastModifiedAt.value
+        : this.lastModifiedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    originClientId: originClientId.present
+        ? originClientId.value
+        : this.originClientId,
+    rowVersion: rowVersion ?? this.rowVersion,
+  );
+  AttachmentData copyWithCompanion(AttachmentsCompanion data) {
+    return AttachmentData(
+      id: data.id.present ? data.id.value : this.id,
+      entityType: data.entityType.present
+          ? data.entityType.value
+          : this.entityType,
+      entityGlobalId: data.entityGlobalId.present
+          ? data.entityGlobalId.value
+          : this.entityGlobalId,
+      entityId: data.entityId.present ? data.entityId.value : this.entityId,
+      fileName: data.fileName.present ? data.fileName.value : this.fileName,
+      mimeType: data.mimeType.present ? data.mimeType.value : this.mimeType,
+      byteSize: data.byteSize.present ? data.byteSize.value : this.byteSize,
+      shaHex: data.shaHex.present ? data.shaHex.value : this.shaHex,
+      docType: data.docType.present ? data.docType.value : this.docType,
+      attachedByUserId: data.attachedByUserId.present
+          ? data.attachedByUserId.value
+          : this.attachedByUserId,
+      attachedAt: data.attachedAt.present
+          ? data.attachedAt.value
+          : this.attachedAt,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      globalId: data.globalId.present ? data.globalId.value : this.globalId,
+      lastModifiedAt: data.lastModifiedAt.present
+          ? data.lastModifiedAt.value
+          : this.lastModifiedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      originClientId: data.originClientId.present
+          ? data.originClientId.value
+          : this.originClientId,
+      rowVersion: data.rowVersion.present
+          ? data.rowVersion.value
+          : this.rowVersion,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AttachmentData(')
+          ..write('id: $id, ')
+          ..write('entityType: $entityType, ')
+          ..write('entityGlobalId: $entityGlobalId, ')
+          ..write('entityId: $entityId, ')
+          ..write('fileName: $fileName, ')
+          ..write('mimeType: $mimeType, ')
+          ..write('byteSize: $byteSize, ')
+          ..write('shaHex: $shaHex, ')
+          ..write('docType: $docType, ')
+          ..write('attachedByUserId: $attachedByUserId, ')
+          ..write('attachedAt: $attachedAt, ')
+          ..write('notes: $notes, ')
+          ..write('globalId: $globalId, ')
+          ..write('lastModifiedAt: $lastModifiedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('originClientId: $originClientId, ')
+          ..write('rowVersion: $rowVersion')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    entityType,
+    entityGlobalId,
+    entityId,
+    fileName,
+    mimeType,
+    byteSize,
+    shaHex,
+    docType,
+    attachedByUserId,
+    attachedAt,
+    notes,
+    globalId,
+    lastModifiedAt,
+    deletedAt,
+    originClientId,
+    rowVersion,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AttachmentData &&
+          other.id == this.id &&
+          other.entityType == this.entityType &&
+          other.entityGlobalId == this.entityGlobalId &&
+          other.entityId == this.entityId &&
+          other.fileName == this.fileName &&
+          other.mimeType == this.mimeType &&
+          other.byteSize == this.byteSize &&
+          other.shaHex == this.shaHex &&
+          other.docType == this.docType &&
+          other.attachedByUserId == this.attachedByUserId &&
+          other.attachedAt == this.attachedAt &&
+          other.notes == this.notes &&
+          other.globalId == this.globalId &&
+          other.lastModifiedAt == this.lastModifiedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.originClientId == this.originClientId &&
+          other.rowVersion == this.rowVersion);
+}
+
+class AttachmentsCompanion extends UpdateCompanion<AttachmentData> {
+  final Value<int> id;
+  final Value<String> entityType;
+  final Value<String?> entityGlobalId;
+  final Value<int?> entityId;
+  final Value<String> fileName;
+  final Value<String> mimeType;
+  final Value<int> byteSize;
+  final Value<String> shaHex;
+  final Value<String> docType;
+  final Value<int?> attachedByUserId;
+  final Value<DateTime> attachedAt;
+  final Value<String?> notes;
+  final Value<String?> globalId;
+  final Value<DateTime?> lastModifiedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<String?> originClientId;
+  final Value<int> rowVersion;
+  const AttachmentsCompanion({
+    this.id = const Value.absent(),
+    this.entityType = const Value.absent(),
+    this.entityGlobalId = const Value.absent(),
+    this.entityId = const Value.absent(),
+    this.fileName = const Value.absent(),
+    this.mimeType = const Value.absent(),
+    this.byteSize = const Value.absent(),
+    this.shaHex = const Value.absent(),
+    this.docType = const Value.absent(),
+    this.attachedByUserId = const Value.absent(),
+    this.attachedAt = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.lastModifiedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.originClientId = const Value.absent(),
+    this.rowVersion = const Value.absent(),
+  });
+  AttachmentsCompanion.insert({
+    this.id = const Value.absent(),
+    required String entityType,
+    this.entityGlobalId = const Value.absent(),
+    this.entityId = const Value.absent(),
+    required String fileName,
+    required String mimeType,
+    required int byteSize,
+    required String shaHex,
+    this.docType = const Value.absent(),
+    this.attachedByUserId = const Value.absent(),
+    this.attachedAt = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.globalId = const Value.absent(),
+    this.lastModifiedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.originClientId = const Value.absent(),
+    this.rowVersion = const Value.absent(),
+  }) : entityType = Value(entityType),
+       fileName = Value(fileName),
+       mimeType = Value(mimeType),
+       byteSize = Value(byteSize),
+       shaHex = Value(shaHex);
+  static Insertable<AttachmentData> custom({
+    Expression<int>? id,
+    Expression<String>? entityType,
+    Expression<String>? entityGlobalId,
+    Expression<int>? entityId,
+    Expression<String>? fileName,
+    Expression<String>? mimeType,
+    Expression<int>? byteSize,
+    Expression<String>? shaHex,
+    Expression<String>? docType,
+    Expression<int>? attachedByUserId,
+    Expression<DateTime>? attachedAt,
+    Expression<String>? notes,
+    Expression<String>? globalId,
+    Expression<DateTime>? lastModifiedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? originClientId,
+    Expression<int>? rowVersion,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (entityType != null) 'entity_type': entityType,
+      if (entityGlobalId != null) 'entity_global_id': entityGlobalId,
+      if (entityId != null) 'entity_id': entityId,
+      if (fileName != null) 'file_name': fileName,
+      if (mimeType != null) 'mime_type': mimeType,
+      if (byteSize != null) 'byte_size': byteSize,
+      if (shaHex != null) 'sha_hex': shaHex,
+      if (docType != null) 'doc_type': docType,
+      if (attachedByUserId != null) 'attached_by_user_id': attachedByUserId,
+      if (attachedAt != null) 'attached_at': attachedAt,
+      if (notes != null) 'notes': notes,
+      if (globalId != null) 'global_id': globalId,
+      if (lastModifiedAt != null) 'last_modified_at': lastModifiedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (originClientId != null) 'origin_client_id': originClientId,
+      if (rowVersion != null) 'row_version': rowVersion,
+    });
+  }
+
+  AttachmentsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? entityType,
+    Value<String?>? entityGlobalId,
+    Value<int?>? entityId,
+    Value<String>? fileName,
+    Value<String>? mimeType,
+    Value<int>? byteSize,
+    Value<String>? shaHex,
+    Value<String>? docType,
+    Value<int?>? attachedByUserId,
+    Value<DateTime>? attachedAt,
+    Value<String?>? notes,
+    Value<String?>? globalId,
+    Value<DateTime?>? lastModifiedAt,
+    Value<DateTime?>? deletedAt,
+    Value<String?>? originClientId,
+    Value<int>? rowVersion,
+  }) {
+    return AttachmentsCompanion(
+      id: id ?? this.id,
+      entityType: entityType ?? this.entityType,
+      entityGlobalId: entityGlobalId ?? this.entityGlobalId,
+      entityId: entityId ?? this.entityId,
+      fileName: fileName ?? this.fileName,
+      mimeType: mimeType ?? this.mimeType,
+      byteSize: byteSize ?? this.byteSize,
+      shaHex: shaHex ?? this.shaHex,
+      docType: docType ?? this.docType,
+      attachedByUserId: attachedByUserId ?? this.attachedByUserId,
+      attachedAt: attachedAt ?? this.attachedAt,
+      notes: notes ?? this.notes,
+      globalId: globalId ?? this.globalId,
+      lastModifiedAt: lastModifiedAt ?? this.lastModifiedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      originClientId: originClientId ?? this.originClientId,
+      rowVersion: rowVersion ?? this.rowVersion,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (entityType.present) {
+      map['entity_type'] = Variable<String>(entityType.value);
+    }
+    if (entityGlobalId.present) {
+      map['entity_global_id'] = Variable<String>(entityGlobalId.value);
+    }
+    if (entityId.present) {
+      map['entity_id'] = Variable<int>(entityId.value);
+    }
+    if (fileName.present) {
+      map['file_name'] = Variable<String>(fileName.value);
+    }
+    if (mimeType.present) {
+      map['mime_type'] = Variable<String>(mimeType.value);
+    }
+    if (byteSize.present) {
+      map['byte_size'] = Variable<int>(byteSize.value);
+    }
+    if (shaHex.present) {
+      map['sha_hex'] = Variable<String>(shaHex.value);
+    }
+    if (docType.present) {
+      map['doc_type'] = Variable<String>(docType.value);
+    }
+    if (attachedByUserId.present) {
+      map['attached_by_user_id'] = Variable<int>(attachedByUserId.value);
+    }
+    if (attachedAt.present) {
+      map['attached_at'] = Variable<DateTime>(attachedAt.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (globalId.present) {
+      map['global_id'] = Variable<String>(globalId.value);
+    }
+    if (lastModifiedAt.present) {
+      map['last_modified_at'] = Variable<DateTime>(lastModifiedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (originClientId.present) {
+      map['origin_client_id'] = Variable<String>(originClientId.value);
+    }
+    if (rowVersion.present) {
+      map['row_version'] = Variable<int>(rowVersion.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AttachmentsCompanion(')
+          ..write('id: $id, ')
+          ..write('entityType: $entityType, ')
+          ..write('entityGlobalId: $entityGlobalId, ')
+          ..write('entityId: $entityId, ')
+          ..write('fileName: $fileName, ')
+          ..write('mimeType: $mimeType, ')
+          ..write('byteSize: $byteSize, ')
+          ..write('shaHex: $shaHex, ')
+          ..write('docType: $docType, ')
+          ..write('attachedByUserId: $attachedByUserId, ')
+          ..write('attachedAt: $attachedAt, ')
+          ..write('notes: $notes, ')
+          ..write('globalId: $globalId, ')
+          ..write('lastModifiedAt: $lastModifiedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('originClientId: $originClientId, ')
+          ..write('rowVersion: $rowVersion')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $AttachmentBlobsTable extends AttachmentBlobs
+    with TableInfo<$AttachmentBlobsTable, AttachmentBlobData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AttachmentBlobsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _attachmentGlobalIdMeta =
+      const VerificationMeta('attachmentGlobalId');
+  @override
+  late final GeneratedColumn<String> attachmentGlobalId =
+      GeneratedColumn<String>(
+        'attachment_global_id',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+        defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+      );
+  static const VerificationMeta _bytesMeta = const VerificationMeta('bytes');
+  @override
+  late final GeneratedColumn<Uint8List> bytes = GeneratedColumn<Uint8List>(
+    'bytes',
+    aliasedName,
+    false,
+    type: DriftSqlType.blob,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _cachedAtMeta = const VerificationMeta(
+    'cachedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> cachedAt = GeneratedColumn<DateTime>(
+    'cached_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    attachmentGlobalId,
+    bytes,
+    cachedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'attachment_blobs';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<AttachmentBlobData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('attachment_global_id')) {
+      context.handle(
+        _attachmentGlobalIdMeta,
+        attachmentGlobalId.isAcceptableOrUnknown(
+          data['attachment_global_id']!,
+          _attachmentGlobalIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_attachmentGlobalIdMeta);
+    }
+    if (data.containsKey('bytes')) {
+      context.handle(
+        _bytesMeta,
+        bytes.isAcceptableOrUnknown(data['bytes']!, _bytesMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bytesMeta);
+    }
+    if (data.containsKey('cached_at')) {
+      context.handle(
+        _cachedAtMeta,
+        cachedAt.isAcceptableOrUnknown(data['cached_at']!, _cachedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  AttachmentBlobData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AttachmentBlobData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      attachmentGlobalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}attachment_global_id'],
+      )!,
+      bytes: attachedDatabase.typeMapping.read(
+        DriftSqlType.blob,
+        data['${effectivePrefix}bytes'],
+      )!,
+      cachedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}cached_at'],
+      )!,
+    );
+  }
+
+  @override
+  $AttachmentBlobsTable createAlias(String alias) {
+    return $AttachmentBlobsTable(attachedDatabase, alias);
+  }
+}
+
+class AttachmentBlobData extends DataClass
+    implements Insertable<AttachmentBlobData> {
+  final int id;
+
+  /// الهُويّةُ العالميّةُ لصفِّ `attachments` — لا رقمُه المحلّيّ.
+  final String attachmentGlobalId;
+  final Uint8List bytes;
+  final DateTime cachedAt;
+  const AttachmentBlobData({
+    required this.id,
+    required this.attachmentGlobalId,
+    required this.bytes,
+    required this.cachedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['attachment_global_id'] = Variable<String>(attachmentGlobalId);
+    map['bytes'] = Variable<Uint8List>(bytes);
+    map['cached_at'] = Variable<DateTime>(cachedAt);
+    return map;
+  }
+
+  AttachmentBlobsCompanion toCompanion(bool nullToAbsent) {
+    return AttachmentBlobsCompanion(
+      id: Value(id),
+      attachmentGlobalId: Value(attachmentGlobalId),
+      bytes: Value(bytes),
+      cachedAt: Value(cachedAt),
+    );
+  }
+
+  factory AttachmentBlobData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AttachmentBlobData(
+      id: serializer.fromJson<int>(json['id']),
+      attachmentGlobalId: serializer.fromJson<String>(
+        json['attachmentGlobalId'],
+      ),
+      bytes: serializer.fromJson<Uint8List>(json['bytes']),
+      cachedAt: serializer.fromJson<DateTime>(json['cachedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'attachmentGlobalId': serializer.toJson<String>(attachmentGlobalId),
+      'bytes': serializer.toJson<Uint8List>(bytes),
+      'cachedAt': serializer.toJson<DateTime>(cachedAt),
+    };
+  }
+
+  AttachmentBlobData copyWith({
+    int? id,
+    String? attachmentGlobalId,
+    Uint8List? bytes,
+    DateTime? cachedAt,
+  }) => AttachmentBlobData(
+    id: id ?? this.id,
+    attachmentGlobalId: attachmentGlobalId ?? this.attachmentGlobalId,
+    bytes: bytes ?? this.bytes,
+    cachedAt: cachedAt ?? this.cachedAt,
+  );
+  AttachmentBlobData copyWithCompanion(AttachmentBlobsCompanion data) {
+    return AttachmentBlobData(
+      id: data.id.present ? data.id.value : this.id,
+      attachmentGlobalId: data.attachmentGlobalId.present
+          ? data.attachmentGlobalId.value
+          : this.attachmentGlobalId,
+      bytes: data.bytes.present ? data.bytes.value : this.bytes,
+      cachedAt: data.cachedAt.present ? data.cachedAt.value : this.cachedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AttachmentBlobData(')
+          ..write('id: $id, ')
+          ..write('attachmentGlobalId: $attachmentGlobalId, ')
+          ..write('bytes: $bytes, ')
+          ..write('cachedAt: $cachedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    attachmentGlobalId,
+    $driftBlobEquality.hash(bytes),
+    cachedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AttachmentBlobData &&
+          other.id == this.id &&
+          other.attachmentGlobalId == this.attachmentGlobalId &&
+          $driftBlobEquality.equals(other.bytes, this.bytes) &&
+          other.cachedAt == this.cachedAt);
+}
+
+class AttachmentBlobsCompanion extends UpdateCompanion<AttachmentBlobData> {
+  final Value<int> id;
+  final Value<String> attachmentGlobalId;
+  final Value<Uint8List> bytes;
+  final Value<DateTime> cachedAt;
+  const AttachmentBlobsCompanion({
+    this.id = const Value.absent(),
+    this.attachmentGlobalId = const Value.absent(),
+    this.bytes = const Value.absent(),
+    this.cachedAt = const Value.absent(),
+  });
+  AttachmentBlobsCompanion.insert({
+    this.id = const Value.absent(),
+    required String attachmentGlobalId,
+    required Uint8List bytes,
+    this.cachedAt = const Value.absent(),
+  }) : attachmentGlobalId = Value(attachmentGlobalId),
+       bytes = Value(bytes);
+  static Insertable<AttachmentBlobData> custom({
+    Expression<int>? id,
+    Expression<String>? attachmentGlobalId,
+    Expression<Uint8List>? bytes,
+    Expression<DateTime>? cachedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (attachmentGlobalId != null)
+        'attachment_global_id': attachmentGlobalId,
+      if (bytes != null) 'bytes': bytes,
+      if (cachedAt != null) 'cached_at': cachedAt,
+    });
+  }
+
+  AttachmentBlobsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? attachmentGlobalId,
+    Value<Uint8List>? bytes,
+    Value<DateTime>? cachedAt,
+  }) {
+    return AttachmentBlobsCompanion(
+      id: id ?? this.id,
+      attachmentGlobalId: attachmentGlobalId ?? this.attachmentGlobalId,
+      bytes: bytes ?? this.bytes,
+      cachedAt: cachedAt ?? this.cachedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (attachmentGlobalId.present) {
+      map['attachment_global_id'] = Variable<String>(attachmentGlobalId.value);
+    }
+    if (bytes.present) {
+      map['bytes'] = Variable<Uint8List>(bytes.value);
+    }
+    if (cachedAt.present) {
+      map['cached_at'] = Variable<DateTime>(cachedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AttachmentBlobsCompanion(')
+          ..write('id: $id, ')
+          ..write('attachmentGlobalId: $attachmentGlobalId, ')
+          ..write('bytes: $bytes, ')
+          ..write('cachedAt: $cachedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -134452,6 +135781,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $PartyFollowUpsTable partyFollowUps = $PartyFollowUpsTable(this);
   late final $SupplierClaimsTable supplierClaims = $SupplierClaimsTable(this);
+  late final $AttachmentsTable attachments = $AttachmentsTable(this);
+  late final $AttachmentBlobsTable attachmentBlobs = $AttachmentBlobsTable(
+    this,
+  );
   late final Index idxProductsBarcode = Index(
     'idx_products_barcode',
     'CREATE INDEX idx_products_barcode ON products (barcode)',
@@ -135072,6 +136405,18 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'idx_failed_autoposts_invoice',
     'CREATE INDEX idx_failed_autoposts_invoice ON failed_autoposts (invoice_id, reference_type)',
   );
+  late final Index idxAttachmentEntity = Index(
+    'idx_attachment_entity',
+    'CREATE INDEX idx_attachment_entity ON attachments (entity_type, entity_id)',
+  );
+  late final Index idxAttachmentEntityGid = Index(
+    'idx_attachment_entity_gid',
+    'CREATE INDEX idx_attachment_entity_gid ON attachments (entity_type, entity_global_id)',
+  );
+  late final Index idxAttachmentSha = Index(
+    'idx_attachment_sha',
+    'CREATE INDEX idx_attachment_sha ON attachments (sha_hex)',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -135242,6 +136587,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     failedAutoposts,
     partyFollowUps,
     supplierClaims,
+    attachments,
+    attachmentBlobs,
     idxProductsBarcode,
     idxProductsCategory,
     idxProductsCode,
@@ -135397,6 +136744,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     idxRemoteIdRemote,
     idxRemoteIdGlobal,
     idxFailedAutopostsInvoice,
+    idxAttachmentEntity,
+    idxAttachmentEntityGid,
+    idxAttachmentSha,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -137566,6 +138916,27 @@ final class $$UsersTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$AttachmentsTable, List<AttachmentData>>
+  _attachmentsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.attachments,
+    aliasName: $_aliasNameGenerator(
+      db.users.id,
+      db.attachments.attachedByUserId,
+    ),
+  );
+
+  $$AttachmentsTableProcessedTableManager get attachmentsRefs {
+    final manager = $$AttachmentsTableTableManager(
+      $_db,
+      $_db.attachments,
+    ).filter((f) => f.attachedByUserId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_attachmentsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$UsersTableFilterComposer extends Composer<_$AppDatabase, $UsersTable> {
@@ -138610,6 +139981,31 @@ class $$UsersTableFilterComposer extends Composer<_$AppDatabase, $UsersTable> {
           }) => $$SupplierClaimsTableFilterComposer(
             $db: $db,
             $table: $db.supplierClaims,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> attachmentsRefs(
+    Expression<bool> Function($$AttachmentsTableFilterComposer f) f,
+  ) {
+    final $$AttachmentsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.attachments,
+      getReferencedColumn: (t) => t.attachedByUserId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AttachmentsTableFilterComposer(
+            $db: $db,
+            $table: $db.attachments,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -139785,6 +141181,31 @@ class $$UsersTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> attachmentsRefs<T extends Object>(
+    Expression<T> Function($$AttachmentsTableAnnotationComposer a) f,
+  ) {
+    final $$AttachmentsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.attachments,
+      getReferencedColumn: (t) => t.attachedByUserId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AttachmentsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.attachments,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$UsersTableTableManager
@@ -139839,6 +141260,7 @@ class $$UsersTableTableManager
             bool failedAutopostsRefs,
             bool partyFollowUpsRefs,
             bool supplierClaimsRefs,
+            bool attachmentsRefs,
           })
         > {
   $$UsersTableTableManager(_$AppDatabase db, $UsersTable table)
@@ -139986,6 +141408,7 @@ class $$UsersTableTableManager
                 failedAutopostsRefs = false,
                 partyFollowUpsRefs = false,
                 supplierClaimsRefs = false,
+                attachmentsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -140027,6 +141450,7 @@ class $$UsersTableTableManager
                     if (failedAutopostsRefs) db.failedAutoposts,
                     if (partyFollowUpsRefs) db.partyFollowUps,
                     if (supplierClaimsRefs) db.supplierClaims,
+                    if (attachmentsRefs) db.attachments,
                   ],
                   addJoins:
                       <
@@ -140811,6 +142235,27 @@ class $$UsersTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (attachmentsRefs)
+                        await $_getPrefetchedData<
+                          User,
+                          $UsersTable,
+                          AttachmentData
+                        >(
+                          currentTable: table,
+                          referencedTable: $$UsersTableReferences
+                              ._attachmentsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$UsersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).attachmentsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.attachedByUserId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -140870,6 +142315,7 @@ typedef $$UsersTableProcessedTableManager =
         bool failedAutopostsRefs,
         bool partyFollowUpsRefs,
         bool supplierClaimsRefs,
+        bool attachmentsRefs,
       })
     >;
 typedef $$CostCentersTableCreateCompanionBuilder =
@@ -256744,6 +258190,746 @@ typedef $$SupplierClaimsTableProcessedTableManager =
       SupplierClaim,
       PrefetchHooks Function({bool supplierId, bool createdBy})
     >;
+typedef $$AttachmentsTableCreateCompanionBuilder =
+    AttachmentsCompanion Function({
+      Value<int> id,
+      required String entityType,
+      Value<String?> entityGlobalId,
+      Value<int?> entityId,
+      required String fileName,
+      required String mimeType,
+      required int byteSize,
+      required String shaHex,
+      Value<String> docType,
+      Value<int?> attachedByUserId,
+      Value<DateTime> attachedAt,
+      Value<String?> notes,
+      Value<String?> globalId,
+      Value<DateTime?> lastModifiedAt,
+      Value<DateTime?> deletedAt,
+      Value<String?> originClientId,
+      Value<int> rowVersion,
+    });
+typedef $$AttachmentsTableUpdateCompanionBuilder =
+    AttachmentsCompanion Function({
+      Value<int> id,
+      Value<String> entityType,
+      Value<String?> entityGlobalId,
+      Value<int?> entityId,
+      Value<String> fileName,
+      Value<String> mimeType,
+      Value<int> byteSize,
+      Value<String> shaHex,
+      Value<String> docType,
+      Value<int?> attachedByUserId,
+      Value<DateTime> attachedAt,
+      Value<String?> notes,
+      Value<String?> globalId,
+      Value<DateTime?> lastModifiedAt,
+      Value<DateTime?> deletedAt,
+      Value<String?> originClientId,
+      Value<int> rowVersion,
+    });
+
+final class $$AttachmentsTableReferences
+    extends BaseReferences<_$AppDatabase, $AttachmentsTable, AttachmentData> {
+  $$AttachmentsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $UsersTable _attachedByUserIdTable(_$AppDatabase db) =>
+      db.users.createAlias(
+        $_aliasNameGenerator(db.attachments.attachedByUserId, db.users.id),
+      );
+
+  $$UsersTableProcessedTableManager? get attachedByUserId {
+    final $_column = $_itemColumn<int>('attached_by_user_id');
+    if ($_column == null) return null;
+    final manager = $$UsersTableTableManager(
+      $_db,
+      $_db.users,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_attachedByUserIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$AttachmentsTableFilterComposer
+    extends Composer<_$AppDatabase, $AttachmentsTable> {
+  $$AttachmentsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get entityType => $composableBuilder(
+    column: $table.entityType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get entityGlobalId => $composableBuilder(
+    column: $table.entityGlobalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get entityId => $composableBuilder(
+    column: $table.entityId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fileName => $composableBuilder(
+    column: $table.fileName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mimeType => $composableBuilder(
+    column: $table.mimeType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get byteSize => $composableBuilder(
+    column: $table.byteSize,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get shaHex => $composableBuilder(
+    column: $table.shaHex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get docType => $composableBuilder(
+    column: $table.docType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get attachedAt => $composableBuilder(
+    column: $table.attachedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$UsersTableFilterComposer get attachedByUserId {
+    final $$UsersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.attachedByUserId,
+      referencedTable: $db.users,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UsersTableFilterComposer(
+            $db: $db,
+            $table: $db.users,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$AttachmentsTableOrderingComposer
+    extends Composer<_$AppDatabase, $AttachmentsTable> {
+  $$AttachmentsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get entityType => $composableBuilder(
+    column: $table.entityType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get entityGlobalId => $composableBuilder(
+    column: $table.entityGlobalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get entityId => $composableBuilder(
+    column: $table.entityId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fileName => $composableBuilder(
+    column: $table.fileName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mimeType => $composableBuilder(
+    column: $table.mimeType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get byteSize => $composableBuilder(
+    column: $table.byteSize,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get shaHex => $composableBuilder(
+    column: $table.shaHex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get docType => $composableBuilder(
+    column: $table.docType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get attachedAt => $composableBuilder(
+    column: $table.attachedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get globalId => $composableBuilder(
+    column: $table.globalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$UsersTableOrderingComposer get attachedByUserId {
+    final $$UsersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.attachedByUserId,
+      referencedTable: $db.users,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UsersTableOrderingComposer(
+            $db: $db,
+            $table: $db.users,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$AttachmentsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AttachmentsTable> {
+  $$AttachmentsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get entityType => $composableBuilder(
+    column: $table.entityType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get entityGlobalId => $composableBuilder(
+    column: $table.entityGlobalId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get entityId =>
+      $composableBuilder(column: $table.entityId, builder: (column) => column);
+
+  GeneratedColumn<String> get fileName =>
+      $composableBuilder(column: $table.fileName, builder: (column) => column);
+
+  GeneratedColumn<String> get mimeType =>
+      $composableBuilder(column: $table.mimeType, builder: (column) => column);
+
+  GeneratedColumn<int> get byteSize =>
+      $composableBuilder(column: $table.byteSize, builder: (column) => column);
+
+  GeneratedColumn<String> get shaHex =>
+      $composableBuilder(column: $table.shaHex, builder: (column) => column);
+
+  GeneratedColumn<String> get docType =>
+      $composableBuilder(column: $table.docType, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get attachedAt => $composableBuilder(
+    column: $table.attachedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<String> get globalId =>
+      $composableBuilder(column: $table.globalId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastModifiedAt => $composableBuilder(
+    column: $table.lastModifiedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get originClientId => $composableBuilder(
+    column: $table.originClientId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get rowVersion => $composableBuilder(
+    column: $table.rowVersion,
+    builder: (column) => column,
+  );
+
+  $$UsersTableAnnotationComposer get attachedByUserId {
+    final $$UsersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.attachedByUserId,
+      referencedTable: $db.users,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UsersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.users,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$AttachmentsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $AttachmentsTable,
+          AttachmentData,
+          $$AttachmentsTableFilterComposer,
+          $$AttachmentsTableOrderingComposer,
+          $$AttachmentsTableAnnotationComposer,
+          $$AttachmentsTableCreateCompanionBuilder,
+          $$AttachmentsTableUpdateCompanionBuilder,
+          (AttachmentData, $$AttachmentsTableReferences),
+          AttachmentData,
+          PrefetchHooks Function({bool attachedByUserId})
+        > {
+  $$AttachmentsTableTableManager(_$AppDatabase db, $AttachmentsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AttachmentsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AttachmentsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AttachmentsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> entityType = const Value.absent(),
+                Value<String?> entityGlobalId = const Value.absent(),
+                Value<int?> entityId = const Value.absent(),
+                Value<String> fileName = const Value.absent(),
+                Value<String> mimeType = const Value.absent(),
+                Value<int> byteSize = const Value.absent(),
+                Value<String> shaHex = const Value.absent(),
+                Value<String> docType = const Value.absent(),
+                Value<int?> attachedByUserId = const Value.absent(),
+                Value<DateTime> attachedAt = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<DateTime?> lastModifiedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> originClientId = const Value.absent(),
+                Value<int> rowVersion = const Value.absent(),
+              }) => AttachmentsCompanion(
+                id: id,
+                entityType: entityType,
+                entityGlobalId: entityGlobalId,
+                entityId: entityId,
+                fileName: fileName,
+                mimeType: mimeType,
+                byteSize: byteSize,
+                shaHex: shaHex,
+                docType: docType,
+                attachedByUserId: attachedByUserId,
+                attachedAt: attachedAt,
+                notes: notes,
+                globalId: globalId,
+                lastModifiedAt: lastModifiedAt,
+                deletedAt: deletedAt,
+                originClientId: originClientId,
+                rowVersion: rowVersion,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String entityType,
+                Value<String?> entityGlobalId = const Value.absent(),
+                Value<int?> entityId = const Value.absent(),
+                required String fileName,
+                required String mimeType,
+                required int byteSize,
+                required String shaHex,
+                Value<String> docType = const Value.absent(),
+                Value<int?> attachedByUserId = const Value.absent(),
+                Value<DateTime> attachedAt = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<String?> globalId = const Value.absent(),
+                Value<DateTime?> lastModifiedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> originClientId = const Value.absent(),
+                Value<int> rowVersion = const Value.absent(),
+              }) => AttachmentsCompanion.insert(
+                id: id,
+                entityType: entityType,
+                entityGlobalId: entityGlobalId,
+                entityId: entityId,
+                fileName: fileName,
+                mimeType: mimeType,
+                byteSize: byteSize,
+                shaHex: shaHex,
+                docType: docType,
+                attachedByUserId: attachedByUserId,
+                attachedAt: attachedAt,
+                notes: notes,
+                globalId: globalId,
+                lastModifiedAt: lastModifiedAt,
+                deletedAt: deletedAt,
+                originClientId: originClientId,
+                rowVersion: rowVersion,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$AttachmentsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({attachedByUserId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (attachedByUserId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.attachedByUserId,
+                                referencedTable: $$AttachmentsTableReferences
+                                    ._attachedByUserIdTable(db),
+                                referencedColumn: $$AttachmentsTableReferences
+                                    ._attachedByUserIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$AttachmentsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $AttachmentsTable,
+      AttachmentData,
+      $$AttachmentsTableFilterComposer,
+      $$AttachmentsTableOrderingComposer,
+      $$AttachmentsTableAnnotationComposer,
+      $$AttachmentsTableCreateCompanionBuilder,
+      $$AttachmentsTableUpdateCompanionBuilder,
+      (AttachmentData, $$AttachmentsTableReferences),
+      AttachmentData,
+      PrefetchHooks Function({bool attachedByUserId})
+    >;
+typedef $$AttachmentBlobsTableCreateCompanionBuilder =
+    AttachmentBlobsCompanion Function({
+      Value<int> id,
+      required String attachmentGlobalId,
+      required Uint8List bytes,
+      Value<DateTime> cachedAt,
+    });
+typedef $$AttachmentBlobsTableUpdateCompanionBuilder =
+    AttachmentBlobsCompanion Function({
+      Value<int> id,
+      Value<String> attachmentGlobalId,
+      Value<Uint8List> bytes,
+      Value<DateTime> cachedAt,
+    });
+
+class $$AttachmentBlobsTableFilterComposer
+    extends Composer<_$AppDatabase, $AttachmentBlobsTable> {
+  $$AttachmentBlobsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get attachmentGlobalId => $composableBuilder(
+    column: $table.attachmentGlobalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<Uint8List> get bytes => $composableBuilder(
+    column: $table.bytes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get cachedAt => $composableBuilder(
+    column: $table.cachedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$AttachmentBlobsTableOrderingComposer
+    extends Composer<_$AppDatabase, $AttachmentBlobsTable> {
+  $$AttachmentBlobsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get attachmentGlobalId => $composableBuilder(
+    column: $table.attachmentGlobalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<Uint8List> get bytes => $composableBuilder(
+    column: $table.bytes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get cachedAt => $composableBuilder(
+    column: $table.cachedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$AttachmentBlobsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AttachmentBlobsTable> {
+  $$AttachmentBlobsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get attachmentGlobalId => $composableBuilder(
+    column: $table.attachmentGlobalId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<Uint8List> get bytes =>
+      $composableBuilder(column: $table.bytes, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get cachedAt =>
+      $composableBuilder(column: $table.cachedAt, builder: (column) => column);
+}
+
+class $$AttachmentBlobsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $AttachmentBlobsTable,
+          AttachmentBlobData,
+          $$AttachmentBlobsTableFilterComposer,
+          $$AttachmentBlobsTableOrderingComposer,
+          $$AttachmentBlobsTableAnnotationComposer,
+          $$AttachmentBlobsTableCreateCompanionBuilder,
+          $$AttachmentBlobsTableUpdateCompanionBuilder,
+          (
+            AttachmentBlobData,
+            BaseReferences<
+              _$AppDatabase,
+              $AttachmentBlobsTable,
+              AttachmentBlobData
+            >,
+          ),
+          AttachmentBlobData,
+          PrefetchHooks Function()
+        > {
+  $$AttachmentBlobsTableTableManager(
+    _$AppDatabase db,
+    $AttachmentBlobsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AttachmentBlobsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AttachmentBlobsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AttachmentBlobsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> attachmentGlobalId = const Value.absent(),
+                Value<Uint8List> bytes = const Value.absent(),
+                Value<DateTime> cachedAt = const Value.absent(),
+              }) => AttachmentBlobsCompanion(
+                id: id,
+                attachmentGlobalId: attachmentGlobalId,
+                bytes: bytes,
+                cachedAt: cachedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String attachmentGlobalId,
+                required Uint8List bytes,
+                Value<DateTime> cachedAt = const Value.absent(),
+              }) => AttachmentBlobsCompanion.insert(
+                id: id,
+                attachmentGlobalId: attachmentGlobalId,
+                bytes: bytes,
+                cachedAt: cachedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$AttachmentBlobsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $AttachmentBlobsTable,
+      AttachmentBlobData,
+      $$AttachmentBlobsTableFilterComposer,
+      $$AttachmentBlobsTableOrderingComposer,
+      $$AttachmentBlobsTableAnnotationComposer,
+      $$AttachmentBlobsTableCreateCompanionBuilder,
+      $$AttachmentBlobsTableUpdateCompanionBuilder,
+      (
+        AttachmentBlobData,
+        BaseReferences<
+          _$AppDatabase,
+          $AttachmentBlobsTable,
+          AttachmentBlobData
+        >,
+      ),
+      AttachmentBlobData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -257090,4 +259276,8 @@ class $AppDatabaseManager {
       $$PartyFollowUpsTableTableManager(_db, _db.partyFollowUps);
   $$SupplierClaimsTableTableManager get supplierClaims =>
       $$SupplierClaimsTableTableManager(_db, _db.supplierClaims);
+  $$AttachmentsTableTableManager get attachments =>
+      $$AttachmentsTableTableManager(_db, _db.attachments);
+  $$AttachmentBlobsTableTableManager get attachmentBlobs =>
+      $$AttachmentBlobsTableTableManager(_db, _db.attachmentBlobs);
 }

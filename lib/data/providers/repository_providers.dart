@@ -86,6 +86,8 @@ import '../repositories/modifier_repository_impl.dart';
 import '../../domain/repositories/fingerprint_repository.dart';
 import '../repositories/fingerprint_repository_impl.dart';
 import 'providers.dart';
+import '../../domain/repositories/attachments_repository.dart';
+import '../repositories/attachments_repository_impl.dart';
 
 /// Provides the correct IProductRepository implementation based on the platform.
 /// This allows the rest of the application to ignore whether it's running on Web or Desktop.
@@ -354,4 +356,44 @@ final fingerprintRepositoryProvider = Provider<IFingerprintRepository>((ref) {
 /// Region Repository provider
 final regionRepositoryProvider = Provider<RegionRepository>((ref) {
   return RegionRepositoryImpl(ref.watch(databaseProvider));
+});
+
+// ══════════════════════════════════════════════════════════════════════════
+// المرفقات (v176 / §٨)
+// ══════════════════════════════════════════════════════════════════════════
+
+final attachmentsRepositoryProvider = Provider<IAttachmentsRepository>((ref) {
+  return AttachmentsRepositoryImpl(ref.watch(databaseProvider));
+});
+
+/// مدىً واحدٌ لمرفقات مستندٍ واحد.
+///
+/// ⚠️ **والسجلُّ (record) مفتاحاً لا صنفٌ مكتوب**: السجلّاتُ
+/// متساويةٌ بالقيمة، فمدىً بنفس الثلاثة يُعيد **نفسَ** المزوِّد
+/// لا مزوِّداً جديداً في كلّ بناءٍ — وإلّا فُتحَ تدفّقٌ جديدٌ على
+/// القاعدة مع كلّ إطار.
+typedef AttachmentScope = ({
+  String entityType,
+  int? entityId,
+  String? entityGlobalId,
+});
+
+/// هُويّةُ المستند العالميّةُ — **يُحلُّها اللوحُ بنفسِه**
+/// فلا تحملُها تسعُ شاشاتٍ ولا تسعةُ كياناتٍ.
+final attachmentAnchorProvider =
+    FutureProvider.family<String?, ({String entityType, int entityId})>(
+        (ref, key) {
+  return ref.watch(attachmentsRepositoryProvider).entityGlobalId(
+        entityType: key.entityType,
+        entityId: key.entityId,
+      );
+});
+
+final attachmentsStreamProvider =
+    StreamProvider.family<List<AttachmentData>, AttachmentScope>((ref, scope) {
+  return ref.watch(attachmentsRepositoryProvider).watchAttachments(
+        entityType: scope.entityType,
+        entityId: scope.entityId,
+        entityGlobalId: scope.entityGlobalId,
+      );
 });

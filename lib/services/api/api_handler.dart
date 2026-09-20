@@ -211,6 +211,10 @@ class ApiHandler {
     router.post('/api/landed-costs/apply', _data.postLandedCostApply);
     // v174 / قسمُ ٧ — مخطَّطُ القاعة يصل **مستنداً واحداً**.
     router.post('/api/floor-plan', _data.postFloorPlan);
+    // v176 / §٨ — المرفقات: رفعٌ وحذفٌ وجلبٌ كسولٌ للبايتات.
+    router.post('/api/attachments', _data.postAttachment);
+    router.post('/api/attachments/delete', _data.postAttachmentDelete);
+    router.get('/api/attachments/<globalId>', _data.getAttachmentBytes);
     // v166 / المرحلة ٢ — اقتناءُ أصلٍ وترحيلُ إهلاكٍ واردان من عميل.
     router.post('/api/fixed-assets', _data.postFixedAsset);
     router.post('/api/op-expenses', _data.postOperationalExpense);
@@ -2759,6 +2763,8 @@ class ApiHandler {
     'approval_workflows', 'approval_steps', 'approval_requests',
     'approval_decisions', 'sod_conflicts', 'sod_violations',
     'compliance_checks',
+    // v176 / §٨ — وصفُ المرفق وحدَه؛ و`attachment_blobs` خارجٌ عمداً.
+    'attachments',
   };
 
   /// Phase 5A.1 (Issue 5) — per-table branch column for the `/api/sync/pull`
@@ -2903,6 +2909,8 @@ class ApiHandler {
     'field_audit_logs', 'failed_autoposts',
     'approval_requests', 'approval_decisions',
     'sod_violations', 'compliance_checks',
+    // v176 / §٨ — تقابل الكتلةَ نفسَها في `branchScopedPullTables`.
+    'attachments',
   };
 
   /// Spec 151 P1-8b — exposed so a guard test can assert this stays IDENTICAL

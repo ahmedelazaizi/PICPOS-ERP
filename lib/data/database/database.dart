@@ -131,6 +131,7 @@ part 'daos/commercial_papers_dao.dart';
 part 'daos/cheque_books_dao.dart';
 part 'daos/asset_disposals_dao.dart';
 part 'daos/floor_plan_dao.dart';
+part 'daos/attachments_dao.dart';
 part 'daos/import_purchases_dao.dart';
 part 'daos/multi_currency_pricelist_dao.dart';
 part 'daos/manufacturing_dao.dart';
@@ -215,6 +216,7 @@ part 'tables/landed_cost_tables.dart';
 part 'tables/api_key_tables.dart';
 part 'tables/report_builder_tables.dart';
 part 'tables/booking_tables.dart';
+part 'tables/attachment_tables.dart';
 
 /// The primary industry mode for the application, controlling which
 /// screens and features are available (e.g. restaurant tables, café menus).
@@ -893,6 +895,10 @@ WHERE id NOT IN (
     // v165 — سجلّا تواصلٍ لا قيدَين: متابعةُ التحصيل ومطالبةُ المورد.
     PartyFollowUps,
     SupplierClaims,
+    // v176 / §٨ — المرفقات. الوصفُ يُزامَن، والبايتاتُ **خارجَ كلّ
+    // قائمةِ سحبٍ عمداً** — انظر `tables/attachment_tables.dart`.
+    Attachments,
+    AttachmentBlobs,
   ],
 )
 /// MonixaERP ERP Core Database.
@@ -1150,7 +1156,7 @@ class AppDatabase extends _$AppDatabase {
   // كلِّ قاعدةٍ دون ١٧٤ سواءٌ خُتمت بـ١٧٥ أم لا. والخفضُ إلى ١٧٤ كان يُسقط
   // `migration_numbering_test` (يطابق الرقمَ بأكبر كتلةِ هجرة) **ويُبطِل
   // هجرةَ ١٧٥ على كلّ قاعدةٍ مُرقّاةٍ سلفاً**.
-  int get schemaVersion => 175;
+  int get schemaVersion => 176;
 
   /// 🔴 جملةُ `CREATE INDEX` صالحةً لـPostgreSQL، مأخوذةً من الجملة التي
   /// ولّدتها drift لـSQLite.
@@ -1500,6 +1506,9 @@ class AppDatabase extends _$AppDatabase {
     'approval_workflows', 'approval_steps', 'approval_requests',
     'approval_decisions', 'sod_conflicts', 'sod_violations',
     'compliance_checks',
+
+    // v176 / §٨ — المرفقات. والعقدُ: كلُّ جدولٍ في `pullTables` هنا.
+    'attachments',
   ];
 
   /// مكشوفةٌ لحارسٍ يثبّت أنّ كلَّ جدولٍ يُسحَب يحمل مُشغِّلَ الختم على

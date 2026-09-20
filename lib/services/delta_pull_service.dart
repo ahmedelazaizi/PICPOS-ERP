@@ -215,6 +215,11 @@ class DeltaPullService {
     'approval_requests',         // → approval_workflows, users
     'approval_decisions',        // → approval_requests, approval_steps, users
     'sod_violations',            // → sod_conflicts, users, roles
+    // v176 / §٨ — وصفُ المرفق وحدَه. والبايتاتُ (`attachment_blobs`)
+    // **خارجَ هذه القائمة وكلِّ قائمةٍ سواها عمداً** — مُسلسِلُ
+    // `_getSyncPull` يُسقط كلَّ `List<int>`، فإدخالُها ينفخ
+    // حمولةَ السحب بلا أن يصل بايتٌ واحد.
+    'attachments',               // → users
   ];
 
   /// Spec 151 P1-8b — the TRANSACTIONAL delta-pull tables (Tier 3 + Tier 4 +
@@ -298,6 +303,10 @@ class DeltaPullService {
     'field_audit_logs', 'failed_autoposts',
     'approval_requests', 'approval_decisions',
     'sod_violations', 'compliance_checks',
+    // v176 / §٨ — **بياناتُ عملٍ لا مرجعيّة**: وصفُ المرفق يحمل
+    // اسمَ ملفٍّ وملاحظةً على فاتورةٍ أو قيدٍ — وهو فرعٌ من مستندٍ
+    // محميٍّ أصلاً، فالتركُ خارجاً يُسرِّب ما تحميه أمُّه.
+    'attachments',
   };
 
   /// المرحلة ١ (W1) — الجداول الأساسية التي صار الخادم يقصّها على الفرع
@@ -422,6 +431,12 @@ class DeltaPullService {
     //     معلَّقاً بلا تقديمِ علامة.
     // كلاهما يبقى مختوماً كما هو اليوم — أي **لا انحدار**، ولا ادّعاءَ
     // إغلاق. يُحسمان بقرارِ مالكٍ في بندٍ مستقلّ.
+
+    // v176 / §٨ — المرفقات. بلا استراتيجيّةٍ في `fullSync`، فبذرُ
+    // علامتِها يعني جهازاً ثانياً **لا يرى ورقةً أُرفقت قبل
+    // إقلاعِه أبداً** — والمراجِعُ يفتح الفاتورةَ فيراها بلا
+    // بيانِها الجمركيّ فيظنُّ أنَّ أحداً لم يُرفِقه.
+    'attachments',
   };
 
   static const Set<String> branchScopedMasterPullTables = {

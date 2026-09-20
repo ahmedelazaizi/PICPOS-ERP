@@ -562,6 +562,13 @@ class ClientWriteInterceptor implements SyncInterceptor {
   static Future<void> submitFloorPlan(Map<String, dynamic> document) =>
       _CwiSync.submitFloorPlan(document);
 
+  /// v176 / §٨ — مرفقٌ واحدٌ ببايتاتِه.
+  static Future<void> submitAttachment(Map<String, dynamic> document) =>
+      _CwiSync.submitAttachment(document);
+
+  static Future<void> submitAttachmentDelete(Map<String, dynamic> document) =>
+      _CwiSync.submitAttachmentDelete(document);
+
   @override
   Future<void> submitLandedCostApply(Map<String, dynamic> document) =>
       _CwiSync.submitLandedCostApply(document);

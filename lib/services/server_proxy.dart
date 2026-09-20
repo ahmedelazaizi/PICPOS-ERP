@@ -1382,6 +1382,51 @@ class ServerProxy {
   }) async {
     await post('/api/floor-plan', document, idempotencyKey: idempotencyKey);
   }
+
+  // ════════════════════════════════════════════════════════════
+  // Attachments — مرفقاتُ المستندات (Client ↔ Server) · v176 / §٨
+  // ════════════════════════════════════════════════════════════
+
+  /// الوصفُ والبايتاتُ معاً — والهُويّةُ العالميّةُ مختومةٌ من فوق،
+  /// فإعادةُ الإرسال تُعرَف على الخادم ولا تُنتج مرفقاً ثانياً.
+  Future<void> submitAttachment(
+    Map<String, dynamic> document, {
+    String? idempotencyKey,
+  }) async {
+    await post('/api/attachments', document, idempotencyKey: idempotencyKey);
+  }
+
+  Future<void> submitAttachmentDelete(
+    Map<String, dynamic> document, {
+    String? idempotencyKey,
+  }) async {
+    await post('/api/attachments/delete', document,
+        idempotencyKey: idempotencyKey);
+  }
+
+  /// بايتاتُ مرفقٍ — **جلبٌ كسولٌ عند الفتح لا سحبٌ دوريّ**.
+  ///
+  /// ومهلتُها أطولُ من سائر النداءات: خمسةُ ميغا على شبكةٍ محلّيّةٍ
+  /// بطيئةٍ تتجاوز الخمسَ ثوانٍ بسهولة، وانقطاعٌ هنا يُظهِر المرفقَ
+  /// مكسوراً لا «يُحمَّل».
+  Future<Uint8List?> fetchAttachmentBytes(String globalId) async {
+    try {
+      final url = Uri.parse(
+          '$_baseUrl/api/attachments/${Uri.encodeComponent(globalId)}');
+      final response = await TlsTrust.httpClient()
+          .get(url, headers: _authHeaders)
+          .timeout(const Duration(seconds: 30));
+      if (!_isSuccessStatusCode(response.statusCode)) return null;
+      final body = json.decode(response.body) as Map<String, dynamic>;
+      if (body['success'] != true) return null;
+      final b64 = body['bytesBase64'] as String?;
+      if (b64 == null || b64.isEmpty) return null;
+      return base64Decode(b64);
+    } catch (e) {
+      debugPrint('[ServerProxy] fetchAttachmentBytes error: $e');
+      return null;
+    }
+  }
   // ═══════════════════════════════════════════════════════════════
   // Fixed Assets — اقتناءٌ وإهلاك (Client → Server) · v166
   // ═══════════════════════════════════════════════════════════════
