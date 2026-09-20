@@ -194,8 +194,11 @@ void main() {
         for (final n in kAllNavItemDefs)
           if (n.group == 'accounting') n.label,
       ];
-      expect(accounting.take(7).toList(), [
-        journalEntriesScreenLabel,
+      // ⚠️ **وصدرُ المجموعة بدأ بـ«سند قبض» منذ 2026-09-20**: كان
+      //    `journalEntriesScreenLabel` أوّلَه، ونُقلت «اليومية العامة» إلى
+      //    رأسِ مجموعةٍ خاصٍّ بها بأمر المالك. والترتيبُ النسبيُّ للستّة
+      //    الباقية **كما طلبه المالكُ حرفاً** — النقلُ أزاح ولم يُرتّب.
+      expect(accounting.take(6).toList(), [
         'سند قبض',
         'سند صرف',
         chequesScreenLabel,
@@ -203,6 +206,13 @@ void main() {
         'فئات الأصول',
         'التوزيع والمواقع',
       ]);
+
+      // و«اليومية العامة» صدرُ مجموعتها الجديدة.
+      final journal = [
+        for (final n in kAllNavItemDefs)
+          if (n.group == 'journal') n.label,
+      ];
+      expect(journal.first, journalEntriesScreenLabel);
     });
   });
 }

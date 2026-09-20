@@ -33,8 +33,6 @@ String _code(String path) => [
 
 const _mainPath = 'lib/app_main_screen.dart';
 const _navPath = 'lib/data/providers/auth_providers.dart';
-const _hubPath =
-    'lib/presentation/accounting_picpos/accounting_hub_picpos_screen.dart';
 const _omniPath = 'lib/presentation/widgets/omnibox/global_search_omnibox.dart';
 const _screenPath =
     'lib/presentation/accounting_picpos/journal_entries_picpos_screen.dart';
@@ -45,8 +43,8 @@ void main() {
         reason: 'قرارُ المالك 2026-09-18 على تسمية الشاشة');
   });
 
-  test('والمواضعُ الأربعةُ تقرؤه لا تكتبه', () {
-    for (final path in [_mainPath, _navPath, _hubPath, _omniPath]) {
+  test('والمواضعُ الثلاثةُ تقرؤه لا تكتبه', () {
+    for (final path in [_mainPath, _navPath, _omniPath]) {
       expect(_code(path).contains('journalEntriesScreenLabel'), isTrue,
           reason: '$path يكتب الاسمَ بيده — فيتفرّق الاسمُ على الأبواب');
       expect(_code(path).contains("'دفتر اليومية'"), isFalse,
@@ -60,9 +58,13 @@ void main() {
     //    وكلُّها تكتب «قيود اليومية» بيدها: عنوانُ الشاشة · تبويبُ `je` في
     //    حاوية الحسابات · ترويسةُ الـPDF المطبوع · وعنوانُ ملفّ Excel.
     //
+    // ✅ **والتبويبُ سقط من العدّ 2026-09-20**: حُذفت حاويةُ
+    //    «الحسابات» وصارت اليوميةُ مدخلاً تحت رأسِها.
+    //    فالقارئون **ثلاثة**، والأبوابُ **ثلاثة**.
+    //
     // ⚠️ **والورقةُ والملفُّ يخرجان من البرنامج**: اسمٌ قديمٌ عليهما يبقى
     //    عند المحاسب بعد أن تتغيّر الشاشةُ كلُّها.
-    for (final path in [_screenPath, _hubPath]) {
+    for (final path in [_screenPath]) {
       expect(_code(path).contains("'قيود اليومية'"), isFalse,
           reason: '$path ما زال يكتب الاسمَ القديم');
     }
@@ -71,8 +73,6 @@ void main() {
         reason: 'عنوانُ الشاشة لا يقرأ الثابتَ المشترك');
     expect(code.contains('accountName: journalEntriesScreenLabel'), isTrue,
         reason: 'ترويسةُ الورقة المطبوعة لا تقرؤه');
-    expect(_code(_hubPath).contains('je(journalEntriesScreenLabel'), isTrue,
-        reason: 'تبويبُ الحسابات لا يقرؤه');
   });
 
   test('🔴 والمدخلُ الجانبيُّ يفتح الشاشةَ المُعاد تصميمُها', () {

@@ -648,6 +648,11 @@ const kNavGroupDefs = <NavGroupDef>[
   NavGroupDef('relations', 'العملاء والموردين', PhosphorIconsBold.usersThree),
   NavGroupDef('hr', 'الموارد البشرية', PhosphorIconsBold.identificationBadge),
   NavGroupDef('accounting', 'المالية والمحاسبة', PhosphorIconsBold.wallet),
+  // رأسان بأمر المالك 2026-09-20 — تبويباتُ حاوية «الحسابات»
+  // صارت شاشاتٍ، والحاويةُ رأساً. والرأسُ هنا يطوي ويبسط
+  // ولا ينتقل — `nav_widgets.dart` يربط `onTap` بالطيّ لا بالملاحة.
+  NavGroupDef('accounts', 'الحسابات', PhosphorIconsBold.bookOpen),
+  NavGroupDef('journal', 'اليومية العامة', PhosphorIconsBold.notebook),
   NavGroupDef('reports', 'التقارير', PhosphorIconsBold.chartBar),
   NavGroupDef('system', 'اعداد النظام', PhosphorIconsBold.gear),
 ];
@@ -754,8 +759,7 @@ const kAllNavItemDefs = [
   //    (`kPicPosFoldedIntoAccountingHub` فيه الفهرس ٣٢). فصدرُ المجموعة
   //    المرئيُّ في PicPos يبدأ بما بعدها — والترتيبُ النسبيُّ كما طُلب،
   //    والطيُّ قرارٌ سابقٌ مستقلٌّ يُرفَع بسطر.
-  NavItemDef(icon: PhosphorIconsBold.notebook, label: journalEntriesScreenLabel, permission: 'settings_view', index: 32, section: 'المالية والمحاسبة', group: 'accounting'),
-  NavItemDef(icon: PhosphorIconsBold.arrowCircleDown, label: 'سند قبض', permission: 'treasury_view', index: 68, group: 'accounting'),
+  NavItemDef(icon: PhosphorIconsBold.arrowCircleDown, label: 'سند قبض', permission: 'treasury_view', index: 68, section: 'المالية والمحاسبة', group: 'accounting'),
   NavItemDef(icon: PhosphorIconsBold.arrowCircleUp, label: 'سند صرف', permission: 'treasury_view', index: 69, group: 'accounting'),
   NavItemDef(icon: PhosphorIconsBold.checks, label: chequesScreenLabel, permission: 'treasury_view', index: 34, group: 'accounting'),
   // ⚠️ مصدرُ توصيلٍ **سادسٌ مستقلٌّ**: شاشةٌ صحيحةٌ في `ScreenId` و`AppScreen`
@@ -775,20 +779,41 @@ const kAllNavItemDefs = [
   NavItemDef(icon: PhosphorIconsBold.lockKey, label: 'إغلاق الوردية', permission: PermissionCodes.posShiftClose, index: 56, group: 'accounting'),
   // حاويةُ «الحسابات» — مدخلٌ واحدٌ يفتح تبويباتِ التصميم السبعة. تظهر في
   // PicPos وحدَها، وتُطوى تحتها مداخلُ [kPicPosFoldedIntoAccountingHub].
-  NavItemDef(icon: PhosphorIconsBold.bookOpen, label: 'الحسابات', permission: 'settings_view', index: 63, group: 'accounting'),
-  NavItemDef(icon: PhosphorIconsBold.treeStructure, label: 'دليل الحسابات', permission: 'settings_view', index: 27, group: 'accounting'),
-  NavItemDef(icon: PhosphorIconsBold.book, label: 'دفتر الأستاذ', permission: 'settings_view', index: 36, group: 'accounting'),
-  NavItemDef(icon: PhosphorIconsBold.link, label: 'ربط الحسابات', permission: 'settings_view', index: 31, group: 'accounting'),
-  NavItemDef(icon: PhosphorIconsBold.treeStructure, label: 'مراكز التكلفة', permission: 'settings_view', index: 33, group: 'accounting'),
   NavItemDef(icon: PhosphorIconsBold.buildings, label: 'الأصول الثابتة', permission: 'assets_view', index: 35, group: 'accounting'),
   // ⚠️ مصدرُ توصيلٍ **سادسٌ مستقلٌّ** لا يُشتقّ من الخمسة قبله: شاشةٌ صحيحةٌ
   //    في `ScreenId` و`AppScreen` وخريطةِ الصلاحيات والنطاقِ و`ScreenConfig`
   //    تبقى **غائبةً عن القائمة الجانبيّة** بلا هذا السطر. وقع فعلاً مع
   //    الحجوزات 2026-08-22 وكلُّ الحرّاس خضراء.
-  NavItemDef(icon: PhosphorIconsBold.scales, label: 'القوائم المالية', permission: 'reports_view', index: 62, group: 'accounting'),
   NavItemDef(icon: PhosphorIconsBold.invoice, label: 'الفوترة الإلكترونية', permission: 'einvoice_view', index: 22, group: 'accounting'),
   NavItemDef(icon: PhosphorIconsBold.calendar, label: 'السنوات المالية', permission: 'settings_view', index: 28, group: 'accounting'),
   NavItemDef(icon: PhosphorIconsBold.coins, label: 'المصروفات التشغيلية', permission: 'settings_view', index: 26, group: 'accounting'),
+
+  // ═══════════════════════════════════════════
+  // 📘 الحسابات — رأسٌ لا مدخل (أمرُ المالك 2026-09-20)
+  // ═══════════════════════════════════════════
+  //
+  // كانت حاويةً تُفتَح شاشةً بتسعة تبويبات. صارت التبويباتُ
+  // شاشاتٍ مستقلّةً، و«الحسابات» رأسَ مجموعةٍ يطوي ويبسط
+  // ولا ينتقل إلى شاشة.
+  //
+  // ⚠️ **وموضعُ الرأس من هنا لا من `kNavGroupDefs`**: الشريطُ يبني
+  //    ترتيبَه من **أوّل ظهورٍ** لكلّ مفتاح، فنقلُ أوّل مدخلٍ
+  //    ينقل الرأسَ كلَّه.
+  NavItemDef(icon: PhosphorIconsBold.treeStructure, label: 'دليل الحسابات', permission: 'settings_view', index: 27, section: 'الحسابات', group: 'accounts'),
+  NavItemDef(icon: PhosphorIconsBold.crosshair, label: 'مراكز التكلفة', permission: 'settings_view', index: 33, group: 'accounts'),
+  NavItemDef(icon: PhosphorIconsBold.book, label: 'دفتر الأستاذ', permission: 'settings_view', index: 36, group: 'accounts'),
+  // ⚠️ **شاشةٌ جديدةٌ لما لم يكن شاشةً**: ميزانُ المراجعة كان
+  //    `view` داخلَ القوائم المالية يُبلَغ من تبويب `tb` وحدَه.
+  NavItemDef(icon: PhosphorIconsBold.scales, label: 'ميزان المراجعة', permission: 'reports_view', index: 73, group: 'accounts'),
+
+  // ═══════════════════════════════════════════
+  // 📒 اليومية العامة — رأسٌ جديد (أمرُ المالك 2026-09-20)
+  // ═══════════════════════════════════════════
+  NavItemDef(icon: PhosphorIconsBold.notebook, label: journalEntriesScreenLabel, permission: 'settings_view', index: 32, section: 'اليومية العامة', group: 'journal'),
+  // ⚠️ **وقوالبُ القيود لم يكن لها معرِّفٌ ولا مدخل**: تُفتَح
+  //    بدفعةٍ من شاشة اليومية وبتبويب `tpl`. والدفعةُ تبقى.
+  NavItemDef(icon: PhosphorIconsBold.stack, label: 'قوالب القيود', permission: 'settings_view', index: 74, group: 'journal'),
+  NavItemDef(icon: PhosphorIconsBold.bank, label: 'المطابقة البنكية', permission: 'settings_view', index: 53, group: 'journal'),
 
   // ═══════════════════════════════════════════
   // 📊 التقارير والتحليلات
@@ -825,24 +850,20 @@ const kAllNavItemDefs = [
   NavItemDef(icon: PhosphorIconsBold.question, label: 'مركز المساعدة', permission: 'pos_access', index: 40, group: 'system'),
 ];
 
-/// مداخلُ القائمة الجانبيّة التي طُويت داخل حاويةِ «الحسابات» في PicPos —
-/// تبويباتُ التصميم السبعةُ التي كان لكلٍّ منها مدخلٌ مستقلّ. والسابعُ
-/// (‏قوالبُ القيود) لم يكن له مدخلٌ أصلاً، فالمطويُّ **ستّة**.
+/// ✅ **الطيُّ رُفِع 2026-09-20 بأمر المالك — والحاويةُ حُذفت.**
 ///
-/// ⚠️ الطيُّ يمسّ المدخلَ لا المسار: `ScreenId` وصلاحيّتُه و`ScreenConfig`
-/// كلُّها باقية، فالشاشةُ تُبلَغ من تبويبِها ومن أيّ بلوغٍ مباشرٍ قائم.
+/// كانت ستّةُ مداخلَ تُطوى تحت «الحسابات» في PicPos. صارت التبويباتُ
+/// شاشاتٍ مستقلّةً تحت رأسَين: «الحسابات» و«اليومية العامة» — والرأسُ في
+/// هذا الشريط يطوي ويبسط **ولا ينتقل إلى شاشة**.
 ///
-/// ⚠️ ومسيَّجٌ بـ[Brand.isPicPos]: `kAllNavItemDefs` ملاحةٌ **مشتركةٌ** مع
-/// UralCash، ورفعُ السياج يُخفي المداخلَ الستّةَ عنها أيضاً — وهي لا حاويةَ
-/// عندها تفتحها.
-const kPicPosFoldedIntoAccountingHub = <int>{
-  27, // دليل الحسابات
-  31, // ربط الحسابات
-  32, // دفتر اليومية  → قيود اليومية
-  33, // مراكز التكلفة
-  36, // دفتر الأستاذ
-  62, // القوائم المالية → ميزان المراجعة
-};
+/// ⚠️ **والمجموعةُ حقلٌ مشترَكٌ بين الفوركَين** (‏`group:` في `NavItemDef`
+/// بلا فرعِ علامة)، فإعادةُ التوزيع تسري على UralCash أيضاً. والعملُ عليه
+/// موقوفٌ بقرارٍ سابق، والتجميعُ **عرضٌ لا سلوك** — فقُبِل مكتوباً لا سهواً،
+/// وبديلُه تفريعُ `group` بالعلامة وهو كلفةٌ بلا عائدٍ اليوم.
+///
+/// وتبقى الثابتةُ فارغةً لا محذوفةً: `brand_picpos_test` و
+/// `brand_isolation_test` يقيسان أنّ الطيَّ **لا يُعاد** بلا قرار.
+const kPicPosFoldedIntoAccountingHub = <int>{};
 
 /// مداخلُ [items] بصيغةٍ قابلةٍ للبحث — مع كلماتِ [kNavSearchKeywords].
 ///
@@ -892,13 +913,16 @@ const kPicPosRetiredNavIndexes = <int>{
 /// وهكذا يقيسه `brand_picpos_test.dart` (‏يشغّله سكربتُ بناء PicPos) ويقيس
 /// نقيضَه `brand_isolation_test.dart`.
 bool navItemVisibleForBrand(int index) {
-  // طيُّ «الحسابات»: في PicPos تختفي المداخلُ الستّةُ لصالح الحاوية، وفي
-  // UralCash تختفي الحاويةُ لصالح المداخل. وكلُّ شاشةٍ مبلوغةٌ في الحالتين.
+  // ✅ حاويةُ «الحسابات» حُذفت 2026-09-20، فلم يبقَ إلّا التقاعدُ — وهو
+  // فرعُ علامةٍ أصيل: ثلاثُ شاشاتٍ أسقطَها المالكُ من PicPos وحدَها.
+  //
+  // ⚠️ ويبقى الطيُّ مقروءاً هنا ولو كان فارغاً: أوّلُ من يُعيد ملأه يُعيد
+  //    السلوكَ كلَّه بسطر، والحارسان يمنعانه بلا قرار.
   if (Brand.isPicPos) {
     if (kPicPosRetiredNavIndexes.contains(index)) return false;
     return !kPicPosFoldedIntoAccountingHub.contains(index);
   }
-  return index != ScreenId.accountingHub.navigationIndex;
+  return true;
 }
 
 final userNavItemsProvider = FutureProvider<List<NavItemDef>>((ref) async {
@@ -1048,7 +1072,10 @@ const screenPermissionMap = <ScreenId, String>{
   // الحاويةُ على 'settings_view' — صلاحيّةُ ستٍّ من تبويباتها السبعة. والسابعُ
   // (‏ميزانُ المراجعة/القوائمُ المالية) يحرسه 'reports_view' داخلَ الحاوية،
   // فلا يوسّع دخولُها دائرةَ مَن يرى القوائمَ المالية.
-  ScreenId.accountingHub: 'settings_view',
+  // خرجتا من حاوية «الحسابات» شاشتين — وبنفس كودَي تبويبَيهما لا بكودٍ
+  // جديد: كودٌ جديدٌ يترك كلَّ دورٍ قائمٍ بلا الشاشة حتّى يُمنَح يدويّاً.
+  ScreenId.trialBalance: 'reports_view',
+  ScreenId.journalTemplates: 'settings_view',
   // نفسُ صلاحيّة الحاوية وستٍّ من تبويباتها — والحارسُ يشترط التطابق.
   ScreenId.bankReconciliation: 'settings_view',
   ScreenId.shiftClose: PermissionCodes.posShiftClose,

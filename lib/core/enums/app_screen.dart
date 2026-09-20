@@ -75,9 +75,6 @@ enum AppScreen {
   /// القوائمُ المالية — يجب أن تطابق `ScreenId.financialStatements`.
   financialStatements(62),
 
-  /// حاويةُ «الحسابات» بتبويباتها — يجب أن تطابق `ScreenId.accountingHub`.
-  accountingHub(63),
-
   /// حسمُ القوالب — يجب أن تطابق `ScreenId.templateResolution`.
   templateResolution(64),
 
@@ -103,7 +100,13 @@ enum AppScreen {
   importPurchases(71),
 
   /// مصمّمُ القاعة — يجب أن تطابق `ScreenId.floorPlanDesigner`.
-  floorPlanDesigner(72);
+  floorPlanDesigner(72),
+
+  /// يجب أن تطابق `ScreenId.trialBalance`.
+  trialBalance(73),
+
+  /// يجب أن تطابق `ScreenId.journalTemplates`.
+  journalTemplates(74);
 
   /// The integer index for this screen, used in permission maps and storage.
   final int value;

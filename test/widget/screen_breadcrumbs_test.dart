@@ -18,6 +18,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/core/enums/app_screen.dart';
+import 'package:ural_erp/core/navigation/screen_id.dart';
 import 'package:ural_erp/data/providers/auth_providers.dart';
 import 'package:ural_erp/presentation/shell/screen_breadcrumbs.dart';
 
@@ -156,33 +157,45 @@ void main() {
             'خرج من الحدّ صامتاً');
   });
 
-  testWidgets('ويُسمّي شاشةً مطويّةً عن الشريط الجانبيّ', (tester) async {
-    // مداخلُ حاوية «الحسابات» الستّةُ مخفيّةٌ عن القائمة في PicPos وشاشاتُها
-    // تُبلَغ من تبويباتها. واشتقاقُ المسار من **المسموح به** بدل الجدول
-    // الكامل يترك المسارَ فارغاً في عين الموضع الذي يحتاجه.
-    expect(kPicPosFoldedIntoAccountingHub, isNotEmpty);
-    for (final index in kPicPosFoldedIntoAccountingHub) {
-      final path = resolveScreenPath(index);
-      expect(path, isNotNull,
-          reason: 'شاشةٌ مطويّةٌ ($index) بلا مسارٍ — المستخدمُ داخلَ حاويةٍ '
-              'لا يدلُّ عنوانُها على موضعه');
-      expect(path!.groupLabel, isNotNull);
+  testWidgets('✅ ويُسمّي كلَّ شاشةٍ في الجدول — لا المسموحَ وحدَه', (tester) async {
+    // ⚠️ العقدُ: `resolveScreenPath` يشتقُّ من **[kAllNavItemDefs]
+    //    الكاملة** لا من مداخل المستخدم بعد الترشيح. والمعروضُ
+    //    اسمُ شاشةٍ أنت فيها الآن فلا يكشف ما لا تراه.
+    //
+    // وكان هذا يُقاس على مداخل حاوية «الحسابات» المطويّة.
+    // حُذفت الحاويةُ 2026-09-20 وصارت شاشاتٍ ظاهرةً، فالمقياسُ
+    // الآن على **كلّ مدخل** لا على طائفةٍ منه.
+    final missing = <String>[];
+    for (final item in kAllNavItemDefs) {
+      final path = resolveScreenPath(item.index);
+      if (path == null) missing.add('${item.label} (${item.index})');
     }
+    expect(missing, isEmpty,
+        reason: 'مدخلٌ في الجدول بلا مسار ⇒ عنوانٌ فارغٌ في القشرة:\n'
+            '  ${missing.join('\n  ')}');
 
+    // ⚠️ و`null` حالةٌ حقيقيّةٌ لا احتياطٌ: شاشاتٌ تُبلَغ
+    //    بـ`Navigator.push` من الإعدادات أو التقارير لا من مُبدِّل
+    //    الشاشة الرئيس — فلا يُستدعى لها فتاتُ خبزٍ أصلاً.
+    //    (‏`ربط الحسابات` و`القوائم المالية` منها منذ 2026-09-20.)
+    expect(resolveScreenPath(ScreenId.accountMapping.navigationIndex), isNull);
+    expect(resolveScreenPath(ScreenId.financialStatements.navigationIndex),
+        isNull);
+
+    // والرسمُ يعرض الاسمَ ورأسَ مجموعتِه.
+    final sample = kAllNavItemDefs.firstWhere((i) => i.group == 'accounts');
     await tester.pumpWidget(
       MaterialApp(
         home: Directionality(
           textDirection: TextDirection.rtl,
           child: Scaffold(
-            body: ScreenBreadcrumbs(
-              screenIndex: kPicPosFoldedIntoAccountingHub.first,
-            ),
+            body: ScreenBreadcrumbs(screenIndex: sample.index),
           ),
         ),
       ),
     );
     await tester.pump();
-    final expected = resolveScreenPath(kPicPosFoldedIntoAccountingHub.first)!;
+    final expected = resolveScreenPath(sample.index)!;
     expect(find.text(expected.label), findsOneWidget);
     expect(find.text(expected.groupLabel!), findsOneWidget);
   });

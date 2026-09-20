@@ -149,21 +149,24 @@ void main() {
     });
   });
 
-  group('طيُّ «الحسابات» لا يمسّ UralCash', () {
-    // ⚠️ `kAllNavItemDefs` ملاحةٌ **مشتركة**. الطيُّ سيّجَ نفسَه
-    // بـ`Brand.isPicPos`، وهذا الاختبارُ يمسك رفعَ السياج: بغيرِه تختفي
-    // ستّةُ مداخلَ محاسبيّةٍ عن UralCash بلا حاويةٍ تفتحها.
-    test('مداخلُها المحاسبيّةُ الستّةُ باقيةٌ ظاهرة', () {
-      for (final folded in kPicPosFoldedIntoAccountingHub) {
-        expect(navItemVisibleForBrand(folded), isTrue,
-            reason: 'المدخلُ $folded اختفى عن UralCash — سياجُ العلامة مرفوع');
+  group('سياجُ العلامة لا يمسّ UralCash', () {
+    // ⚠️ `kAllNavItemDefs` ملاحةٌ **مشتركة**، فكلُّ إخفاءٍ خاصٍّ بـPicPos
+    // لا بدّ أن يُسيَّج بـ`Brand.isPicPos` — وإلّا اختفى عن UralCash أيضاً.
+    //
+    // ✅ وحاويةُ «الحسابات» حُذفت 2026-09-20 فلم يبقَ ما يُخفى عندها
+    // سوى التقاعد — وهو فرعُ PicPos وحدَه.
+    test('المداخلُ المتقاعدةُ في PicPos باقيةٌ ظاهرةً هنا', () {
+      for (final retired in kPicPosRetiredNavIndexes) {
+        expect(navItemVisibleForBrand(retired), isTrue,
+            reason: 'المدخلُ $retired اختفى عن UralCash — سياجُ العلامة مرفوع');
       }
     });
 
-    test('وحاويةُ PicPos لا تظهر عندها', () {
-      expect(navItemVisibleForBrand(ScreenId.accountingHub.navigationIndex),
-          isFalse,
-          reason: 'حاويةٌ بتبويباتِ PicPos في قائمة UralCash = مدخلٌ مكرَّر');
+    test('والطيُّ فارغٌ فلا يُخفي شيئاً عن أيّ علامة', () {
+      expect(kPicPosFoldedIntoAccountingHub, isEmpty);
+      for (final folded in kPicPosFoldedIntoAccountingHub) {
+        expect(navItemVisibleForBrand(folded), isTrue);
+      }
     });
   });
 }

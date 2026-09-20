@@ -11,7 +11,6 @@ import 'package:ural_erp/core/enums/app_screen.dart';
 import 'package:ural_erp/core/navigation/screen_id.dart';
 import 'package:ural_erp/core/navigation/screen_registry.dart';
 import 'package:ural_erp/data/providers/auth_providers.dart';
-import 'package:ural_erp/presentation/accounting_picpos/accounting_hub_picpos_screen.dart';
 
 void main() {
   group('القوائمُ المالية موصولةٌ في المواضع الستّة', () {
@@ -46,46 +45,49 @@ void main() {
       expect(ScreenRegistry.unified, contains(ScreenId.generalLedger));
     });
 
-    test('٦) وتعريفُ مدخلِها باقٍ بنفس كود الصلاحية', () {
+    test('٦) ✅ وتعريفُ المدخل **سُحب** — والصلاحيةُ باقيةٌ كما هي', () {
+      // كان هنا: «تعريفُ مدخلِها باقٍ بنفس كود الصلاحية» — وهو المصدرُ
+      // السادسُ الذي غاب عن الحجوزات.
+      //
+      // ✅ **وسُحب 2026-09-20 بأمر المالك**: بابُها التقارير وحدَها.
+      //
+      // ⚠️ **والسحبُ يمسّ المدخلَ لا الصلاحية**: الشاشةُ ما زالت ممنوحةً
+      //    في `screenPermissionMap` وفي نطاق `unified`، ولها `ScreenConfig`
+      //    يبنيها. فمن مُنحت له يفتحها من التقارير، ومن لم تُمنَح له
+      //    يُرفَض — كما كان.
       final item = kAllNavItemDefs
           .where((n) => n.index == ScreenId.financialStatements.navigationIndex)
           .toList();
-      expect(item, hasLength(1),
-          reason: 'هذا هو المصدرُ السادسُ الذي غاب عن الحجوزات');
-      expect(item.single.permission,
-          screenPermissionMap[ScreenId.financialStatements],
-          reason: 'مدخلٌ بكودٍ يخالف الشاشةَ = رابطٌ ميتٌ أو ثغرةٌ مفتوحة');
-      expect(item.single.group, 'accounting',
-          reason: 'قرارُ المالك 2026-08-23: مكانُها مجموعةُ الحسابات');
+      expect(item, isEmpty, reason: 'عاد المدخلُ الجانبيُّ إلى الشريط');
+
+      expect(screenPermissionMap[ScreenId.financialStatements], 'reports_view',
+          reason: 'سحبُ المدخل لا يمسّ الصلاحيةَ — وإلّا فُتحت أو أُغلقت '
+              'الشاشةُ على من لا يُقصَد');
     });
 
-    test('٧) وفي PicPos المدخلُ **مطويٌّ** — يُبلَغ من تبويبِ الحاوية', () {
-      // ⚠️ التعريفُ باقٍ (‏الاختبارُ السادسُ) لأنّ `kAllNavItemDefs` ملاحةٌ
-      //    مشتركةٌ مع UralCash — والطيُّ يقع في `userNavItemsProvider`
-      //    مسيَّجاً بالعلامة. فحارسٌ يقيس التعريفَ وحدَه يقول «موصولة» عن
-      //    مدخلٍ لا يظهر لمستخدمِ PicPos أبداً.
-      expect(kPicPosFoldedIntoAccountingHub,
-          contains(ScreenId.financialStatements.navigationIndex));
+    test('٧) ✅ وفي PicPos **لا مدخلَ لها** — بابُها التقارير', () {
+      // ═══ ثلاثةُ قراراتٍ متتاليةٍ — والأحدثُ يحكم ═══
+      //
+      // 2026-08-23: نُقلت من التقارير إلى مجموعة الحسابات.
+      // 2026-08-27: صارت شريحةً ثامنةً في الحاوية (`fs`).
+      // **2026-09-20: الحاويةُ حُذفت، والمدخلُ سُحِب — بابٌ
+      //   واحدٌ في التقارير.**
+      //
+      // 🔴 **والسببُ أنَّ ثلاثةَ أبوابٍ لشاشةٍ واحدة تفترق**:
+      //    كلُّ بابٍ يمرِّر مُعامِلاتٍ غيرَ مُعامِلات أخيه (`view`
+      //    و`initialTabIndex`)، فيرى المستخدمُ شاشتين مختلفتين باسمٍ
+      //    واحد ويظنُّ إحداهما معطوبة.
+      final item = kAllNavItemDefs.where(
+          (i) => i.index == ScreenId.financialStatements.navigationIndex);
+      expect(item, isEmpty,
+          reason: 'عاد المدخلُ الجانبيُّ — والقرارُ بابٌ واحدٌ في '
+              'التقارير');
 
-      // ═══ قراران متتاليان للمالك — والأحدثُ يحكم ═══
-      //
-      // كان هذا التوكيدُ على `AccountingTab.tb`، وحُجّتُه: «تبويبُ ميزان
-      // المراجعة يحمل القوائمَ المالية كاملةً — لا يُشطَر الملفُّ ولا
-      // تُنقَل قائمةُ الدخل».
-      //
-      // **وقرارُ 2026-08-27 نقلَ الحاملَ لا أكثر.** شريحةُ `tb` كانت تفتح
-      // الشاشةَ السداسيّةَ فتُنتج تبويباتٍ داخلَ تبويبات، فصار للقوائم
-      // شريحةٌ ثامنةٌ `fs` هي التي تحمل المدخلَ المطويّ.
-      //
-      // ⚠️ والقرارُ الأقدمُ **لم يُنقَض**: الملفُّ لم يُشطَر (‏شاشةٌ واحدةٌ
-      //    بمُعامِل `FinancialStatementsView`)، وقائمةُ الدخل لم تُنقَل إلى
-      //    مدخلٍ آخر — بقيت في نفس الحاوية، على شريحةٍ أخرى.
-      expect(AccountingTab.tb.screenId, isNull,
-          reason: '«ميزان المراجعة» لم يكن له مدخلُ قائمةٍ قطّ — فلا يحمل '
-              'مطويّاً');
-      expect(AccountingTab.fs.screenId, ScreenId.financialStatements,
-          reason: 'المدخلُ المطويُّ لا بدّ أن يحمله تبويبٌ، وإلّا صارت '
-              'الشاشةُ غيرَ مبلوغة');
+      // ⚠️ **و`ScreenConfig` يبقى**: الشاشةُ ممنوحةٌ وفي النطاق،
+      //    و`allowed_screens_can_render_test` يشترط لها بنّاءً. سحبُ
+      //    المدخل يمسّ البابَ لا الشاشة.
+      expect(AppScreen.financialStatements.value,
+          ScreenId.financialStatements.navigationIndex);
     });
   });
 

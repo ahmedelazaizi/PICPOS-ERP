@@ -170,19 +170,24 @@ void main() {
       // الشاشات. العلَمُ يفتح الإعداداتِ وحوارَ السلّة لا شاشةَ KDS.
     });
 
-    test('طيُّ «الحسابات» يقع فعلاً — والحاويةُ وحدَها تظهر', () {
+    test('✅ طيُّ «الحسابات» **رُفِع** — ولا يعود بلا قرار', () {
       // ⚠️ هذا هو الموضعُ الوحيدُ الذي يُنفَّذ فيه فرعُ PicPos من
       // `navItemVisibleForBrand`: البوّابةُ تشتغل على `uralcash`، فطيٌّ
-      // مكسورٌ يمرّ خضراءَ عندها ويظهر للمستخدم وحدَه.
-      expect(navItemVisibleForBrand(ScreenId.accountingHub.navigationIndex),
-          isTrue);
+      // يعود سهواً يمرّ خضراءَ عندها ويختفي للمستخدم وحدَه.
+      //
+      // حُذفت الحاويةُ 2026-09-20 وصارت تبويباتُها شاشاتٍ تحت رأسَين.
+      // والثابتةُ باقيةٌ **فارغةً** لا محذوفةً: أوّلُ من يملؤها يُعيد
+      // السلوكَ كلَّه بسطر، وهذا يمنعه.
+      expect(kPicPosFoldedIntoAccountingHub, isEmpty,
+          reason: 'عاد الطيُّ — والقرارُ شاشاتٌ مستقلّةٌ تحت رأسَين');
 
-      for (final folded in kPicPosFoldedIntoAccountingHub) {
-        expect(navItemVisibleForBrand(folded), isFalse,
-            reason: 'المدخلُ $folded ما زال يظهر في PicPos — الطيُّ لم يقع');
+      // والمداخلُ التي كانت مطويّةً تُرى الآن في PicPos.
+      for (final idx in const [27, 32, 33, 36]) {
+        expect(navItemVisibleForBrand(idx), isTrue,
+            reason: 'المدخلُ $idx ما زال مطويّاً بعد رفع الطيّ');
       }
 
-      // «الخزينة» مدخلٌ مستقلٌّ في التصميم ولا تُطوى.
+      // «الخزينة» مدخلٌ مستقلٌّ في التصميم ولم تُطوَ قطّ.
       expect(navItemVisibleForBrand(ScreenId.treasury.navigationIndex), isTrue);
     });
 
@@ -200,10 +205,28 @@ void main() {
       expect(navItemVisibleForBrand(ScreenId.stockMovements.navigationIndex),
           isTrue);
 
-      // والنطاقُ يُسقطها كذلك — الشريطُ وحدَه لا يمنع البلوغَ بالفهرس.
+      // والنطاقُ يُسقط **اثنتَين منها** — الشريطُ وحدَه لا يمنع البلوغَ
+      // بالفهرس.
+      //
+      // 🔴 **و«التكاليف المحملة» (41) ليست منها — عن قصدٍ مكتوب.** سطرُها
+      //    في [kPicPosRetiredNavIndexes] يقول حرفاً: «مخفيّةٌ من القائمة،
+      //    **مبلوغةٌ** من شاشة الاستيراد». فإسقاطُها من النطاق يقطع بابَها
+      //    الوحيدَ الباقي.
+      //
+      // ⚠️ **وكان هذا التوكيدُ أحمرَ قبل 2026-09-20 ولم يره أحد**: الملفُّ
+      //    كلُّه `skip` بلا `--dart-define=APP_BRAND=picpos`، فلا تُشغّله
+      //    سويّةُ `unit` إطلاقاً — يشغّله سكربتُ بناء PicPos وحدَه. وهو
+      //    عينُ الخطر الذي يحرسه هذا الملفّ: فرعٌ لا يُنفَّذ في البوّابة.
       final scope = ScreenRegistry.forProfile(BusinessProfile.unified)
           .map((s) => s.navigationIndex);
+      const reachableElsewhere = {41}; // التكاليف المحملة ← شاشةُ الاستيراد
       for (final retired in kPicPosRetiredNavIndexes) {
+        if (reachableElsewhere.contains(retired)) {
+          expect(scope, contains(retired),
+              reason: 'الشاشةُ $retired مخفيّةٌ من الشريط و**مبلوغةٌ** من '
+                  'شاشة الاستيراد — إسقاطُها من النطاق يقطع بابَها');
+          continue;
+        }
         expect(scope, isNot(contains(retired)),
             reason: 'الشاشةُ $retired ما زالت في نطاق PicPos');
       }

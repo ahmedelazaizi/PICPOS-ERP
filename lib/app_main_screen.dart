@@ -20,7 +20,7 @@ import 'core/config/brand.dart';
 import 'presentation/pos/screens/pos_main_screen.dart';
 import 'presentation/pos_picpos/screens/picpos_pos_screen.dart';
 import 'presentation/offers_picpos/offers_picpos_screen.dart';
-import 'presentation/accounting_picpos/accounting_hub_picpos_screen.dart';
+import 'presentation/accounting_picpos/journal_templates_picpos_screen.dart';
 import 'presentation/accounting_picpos/account_mapping_picpos_screen.dart';
 import 'presentation/accounting_picpos/bank_reconciliation_picpos_screen.dart';
 import 'presentation/accounting_picpos/chart_of_accounts_picpos_screen.dart';
@@ -1096,11 +1096,24 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         label: 'المطابقة البنكية',
         icon: PhosphorIconsBold.bank,
       ),
+      // ميزانُ المراجعة — شاشةٌ مستقلّةٌ بأمر المالك 2026-09-20.
+      //
+      // ⚠️ **وهي القوائمُ الماليةُ بـ`view` مثبَّت** لا شاشةٌ أخرى: الميزانُ
+      //    `FinancialStatementsView.trialBalance` (‏`slot: 0`) ولا محرّكَ
+      //    له غيرُه. واستنساخُه شاشةً ثانيةً كان يُنتج حسابَين للأرصدة.
       ScreenConfig(
-        appScreen: AppScreen.accountingHub,
-        builder: (_) => const AccountingHubPicPosScreen(),
-        label: 'الحسابات',
-        icon: PhosphorIconsBold.bookOpen,
+        appScreen: AppScreen.trialBalance,
+        builder: (_) => const FinancialStatementsPicPosScreen(
+          view: FinancialStatementsView.trialBalance,
+        ),
+        label: 'ميزان المراجعة',
+        icon: PhosphorIconsBold.scales,
+      ),
+      ScreenConfig(
+        appScreen: AppScreen.journalTemplates,
+        builder: (_) => const JournalTemplatesPicPosScreen(),
+        label: 'قوالب القيود',
+        icon: PhosphorIconsBold.stack,
       ),
       // حسمُ القوالب — PicPos وحدَها اليوم: مبنيّةٌ على `picpos_shell` ولا
       // نظيرَ لها في UralCash. ونطاقُها **كلُّ** الملفّات: كلُّها تطبع.
