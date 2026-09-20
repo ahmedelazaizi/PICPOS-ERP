@@ -651,8 +651,11 @@ class _PurInvoiceCard extends StatelessWidget {
                 _PurRowAction(
                   icon: PhosphorIconsBold.pencilSimple,
                   color: AppColors.warning,
+                  // نفسُ مصدرِ عمود «حالة الترحيل» — الأستاذُ لا `isLocked`
+                  // التي لا يرفعها مسارُ الإنشاء أصلاً. و`posted == null`
+                  // («لم يُعرَف بعد») تُقرأ تلميحاً محايداً لا ادّعاءَ فيه.
                   tooltip: canEdit
-                      ? (invoice.isLocked ? 'تعديل فاتورة مُرحّلة' : 'تعديل')
+                      ? (posted == true ? 'تعديل فاتورة مُرحّلة' : 'تعديل')
                       : 'لا تملك صلاحية تعديل فواتير المشتريات',
                   onTap: canEdit ? () => onEdit(invoice) : null,
                 ),

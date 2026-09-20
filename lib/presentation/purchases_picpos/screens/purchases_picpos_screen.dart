@@ -88,15 +88,52 @@ class _PurchasesPicposScreenState extends ConsumerState<PurchasesPicposScreen>
     super.dispose();
   }
 
+  /// هل لهذه الفاتورة قيدٌ مُرحَّلٌ في الأستاذ **فعلاً**؟
+  ///
+  /// المصدرُ الأوّلُ `postedInvoiceIds` المحمَّلةُ في حالة المتحكّم — وهي
+  /// مخرَجُ `AppDatabase.postedPurchaseInvoiceIds` الذي يقرأ
+  /// `journal_entries` بـ`kPurchaseJeReferenceTypes`، عينُ ما يقرؤه مسارُ
+  /// العكس عند التعديل.
+  ///
+  /// ⚠️ و`null` فيها **«لم يُعرَف بعد»** لا «لا شيءَ مُرحَّل»: الاستعلامُ يصل
+  /// بعد التحميل الأوّل وقد يُخفق. فتُسأل القاعدةُ حينئذٍ بدل تخطّي التحذير
+  /// صامتاً — وتخطّيه هو بعينه العطبُ الذي صُحِّح هنا.
+  ///
+  /// وتعذُّرُ القراءة (أو فاتورةٌ بلا معرِّف) ⇒ `true`: ثمنُ تحذيرٍ زائدٍ
+  /// نقرةٌ، وثمنُ إسقاطه دفترُ أستاذٍ يُعكَس ويُعاد ترحيلُه بلا علم المستخدم.
+  Future<bool> _hasPostedJournalEntry(InvoiceEntity invoice) async {
+    final id = invoice.id;
+    if (id == null) return true;
+    final known = ref.read(purchaseInvoicesControllerProvider).postedInvoiceIds;
+    if (known != null) return known.contains(id);
+    try {
+      final posted =
+          await ref.read(databaseProvider).postedPurchaseInvoiceIds([id]);
+      return posted.contains(id);
+    } catch (_) {
+      return true;
+    }
+  }
+
   /// Edit with confirmation if invoice has payments — verbatim from
   /// purchase_invoices_screen.dart's `_confirmEditInvoice`.
   Future<void> _confirmEditInvoice(InvoiceEntity invoice) async {
-    // Confirm on either risk factor: money already paid, OR the invoice is
-    // already posted to the GL (isLocked). Editing a posted invoice is now
-    // permitted without limit for permission holders, so the operator should
-    // still see explicitly that the GL entry will be reversed and re-posted.
-    if (invoice.paid > 0 || invoice.isLocked) {
-      final isPosted = invoice.isLocked;
+    // خطران يستدعيان التأكيد: مبلغٌ مدفوعٌ، **أو قيدٌ في الأستاذ**.
+    //
+    // ⚠️ **ولم يعد المقروءُ `isLocked`.** نصُّ الحوار يصف ما يحدث فعلاً —
+    // عكسُ القيد وحركةِ المخزون والتكلفةِ المتوسّطة ثمّ إعادةُ ترحيلها —
+    // لكنّ الشرطَ كان يقيس رايةً لا تعني ذلك: `updatePurchaseInvoice` ينادي
+    // `_reverseOldPurchaseJournalEntry` **بلا شرط** ثمّ يعيد الترحيل، بينما
+    // `createPurchaseInvoice` يرحّل قيدَه مُدمَجاً و**لا يرفع الرايةَ قطّ**
+    // (موثَّقٌ حرفيّاً في `purchase_dao.dart` عند مسار الإلغاء).
+    //
+    // فالفاتورةُ الآجلةُ المنشأةُ من هذه الشاشة — `paid == 0` و
+    // `isLocked == false` وقيدُها في الأستاذ — كانت تُعدَّل فيُعكَس قيدُها
+    // ويُعاد ترحيلُه **بلا تحذيرٍ أصلاً**، وهي الحالةُ الشائعة.
+    final isPosted = await _hasPostedJournalEntry(invoice);
+    // القراءةُ قد تكون استعلاماً، فقد تُفكَّك الشاشةُ قبل أن يعود.
+    if (!mounted) return;
+    if (invoice.paid > 0 || isPosted) {
       // نمطُ ديالوجات PicPos — ونصُّ التأكيد لم يتغيّر حرفاً.
       final confirmed = await showPicPosConfirm(
         context,
