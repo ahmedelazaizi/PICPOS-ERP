@@ -28,6 +28,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:ural_erp/domain/models/purchase_doc.dart';
 import 'package:ural_erp/core/permissions/permission_codes.dart';
 import 'package:ural_erp/data/providers/providers.dart';
 import 'package:ural_erp/domain/entities/invoice_entity.dart';
@@ -68,6 +69,14 @@ class _FrozenController extends PurchaseInvoicesController {
         isLoading: false,
         allInvoices: [_invoice],
         filteredInvoices: [_invoice],
+        // ⚠️ **و`filteredDocs` هي ما ترسمُه الجدولُ فعلاً** — أُضيفت
+        //    في 60941613 حين دخلت أوامرُ الشراء القائمةَ نفسَها
+        //    (مستندان لا مستندٌ واحد)، والجدولُ يعود بحالةِ فراغٍ
+        //    مبكّرةٍ حين تخلو. فتجهيزةٌ تملأ `filteredInvoices` وحدَها
+        //    تُنتج شاشةً بلا صفٍّ ولا زرِّ تعديل — وهذا عينُ ما وقع
+        //    عند دمج فرع الحارس في 2026-09-20: الدمجُ نظيفٌ نصّاً
+        //    والتجهيزةُ بائتةٌ معنى، ولا تمسكُه إلّا سويّةٌ كاملة.
+        filteredDocs: [PurchaseInvoiceDoc(_invoice)],
         postedInvoiceIds: _posted,
       );
 }
