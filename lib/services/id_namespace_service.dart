@@ -90,7 +90,8 @@ class IdNamespaceService {
 
     // ── v167 / المرحلة ٣ — الفئةُ التشغيليّة ──
     'employees',
-    'table_sections', 'restaurant_tables', 'table_orders',
+    'table_sections', 'restaurant_tables', 'floor_plan_items',
+    'table_orders',
     'table_order_items', 'table_reservations', 'table_order_payments',
     'kitchen_stations', 'category_station_mappings',
     'work_orders', 'work_order_items',

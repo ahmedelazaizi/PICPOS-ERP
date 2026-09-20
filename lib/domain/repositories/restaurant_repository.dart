@@ -1,4 +1,5 @@
 import '../../data/database/database.dart';
+import '../models/floor_plan_layout.dart';
 import '../models/tables_report_row.dart';
 
 abstract class IRestaurantRepository {
@@ -24,6 +25,15 @@ abstract class IRestaurantRepository {
   Future<void> deleteTable(int id);
   Future<void> updateTableStatus(int id, String status);
   Future<void> updateTablePosition(int id, double x, double y);
+
+  // ─── مصمّمُ القاعة (قسمُ ٧) ─────────────────────────────
+  //
+  // ⚠️ **وليس لها نظيرٌ يحفظ معلَماً واحداً.** المخطَّطُ وحدةُ الحفظ
+  //    لأنّ `تراجع` لا يعني شيئاً فوق كتابةٍ تقع مع كلّ سحبة، ولأنّ
+  //    الكتابةَ في هذا المستودع **مستندٌ صريح**.
+  Future<FloorPlanSectionLayout?> getFloorPlanLayout(int sectionId);
+  Future<List<FloorPlanSectionBox>> getFloorPlanSectionBoxes();
+  Future<void> saveFloorPlanLayout(FloorPlanSectionLayout layout);
 
   Future<TableReservation?> getActiveReservationForTable(int tableId);
   Future<void> createReservation({

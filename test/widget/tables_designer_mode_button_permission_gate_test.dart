@@ -1,12 +1,14 @@
-// المهمّة ٦-ب — زرُّ وضع التصميم في ترويسة `TablesPicposScreen` محروسٌ
-// بـ`tables_manage` (ترتيبُ المخطَّط إدارةٌ لا تشغيل — البند ٢ في
-// `task-6b-brief.md`).
+// زرُّ «مصمم القاعة» في ترويسة `TablesPicposScreen` محروسٌ بـ`tables_manage`
+// (ترتيبُ المخطَّط إدارةٌ لا تشغيل — البند ٢ في `task-6b-brief.md`).
 //
-// مستخرجٌ كدالّةٍ top-level (`buildTablesDesignerModeButton`) في
-// `tables_picpos_screen.dart` لنفس سبب `buildTablesManageAddTableButton` في
-// `tables_top_bar.dart` (انظر `task_6b_tables_manage_permission_gate_test
-// .dart`): يُبنى وحدَه بلا `TablesPicposScreen` كاملةً (محتاجةٌ
-// `AppDatabase` حقيقيّة فتتعلّق عند `db.close()`).
+// ⚠️ **وقسمُ ٧ بدّل ما يفعله الزرُّ لا حراستَه.** كان `buildTablesDesignerMode
+// Button` يقلب هذه الشاشةَ نفسَها إلى محرّر، فصار `buildTablesOpenDesigner
+// Button` يفتح شاشةً مستقلّة. والحراسةُ هي هي، **وهذا الملفُّ هو ما يُثبتها**:
+// نقلُ فعلٍ إلى مكانٍ آخرَ أشهرُ طريقةٍ لإسقاط حارسِه في الطريق.
+//
+// مستخرجٌ كدالّةٍ top-level في `tables_picpos_screen.dart` لنفس سبب
+// `buildTablesManageAddTableButton` في `tables_top_bar.dart`: يُبنى وحدَه بلا
+// `TablesPicposScreen` كاملةً (محتاجةٌ `AppDatabase` حقيقيّة فتتعلّق).
 //
 // ودرسُ المراجعة السابقة: `PopupMenuItem` ملفوفٌ بحارسٍ يبقى قابلاً للاختيار
 // مهما لُفَّ نصُّه — فالحراسةُ هنا على زرٍّ حقيقيٍّ يُعطَّل فعلاً، والدليلُ
@@ -47,14 +49,11 @@ void main() {
     await tester.pump();
   }
 
-  group('tables_manage — زرّ وضع التصميم', () {
+  group('tables_manage — زرّ مصمم القاعة', () {
     testWidgets('الحارس مربوط بالكود الصح ومعه onGranted صريح', (tester) async {
       await pumpButton(
         tester,
-        buildTablesDesignerModeButton(
-          isDesignerMode: false,
-          onToggle: () {},
-        ),
+        buildTablesOpenDesignerButton(onOpen: () {}),
         [PermissionCodes.tablesManage],
       );
 
@@ -67,56 +66,51 @@ void main() {
 
     testWidgets('بدون الصلاحية: الضغط بيطلب تصريح مدير، والفعل ما بيتنفّذش',
         (tester) async {
-      var toggled = false;
+      var opened = false;
       await pumpButton(
         tester,
-        buildTablesDesignerModeButton(
-          isDesignerMode: false,
-          onToggle: () => toggled = true,
-        ),
+        buildTablesOpenDesignerButton(onOpen: () => opened = true),
         const [],
       );
 
-      await tester.tap(find.text('تصميم'), warnIfMissed: false);
+      await tester.tap(find.byKey(const Key('tables_open_designer')),
+          warnIfMissed: false);
       await tester.pump();
 
       expect(find.text('تصريح المسؤول مطلوب'), findsOneWidget);
-      expect(toggled, isFalse);
+      expect(opened, isFalse);
 
       await closeAnyOpenDialog(tester);
     });
 
-    testWidgets('مع الصلاحية: الضغط بينفّذ التبديل مباشرة من غير طلب تصريح',
+    testWidgets('مع الصلاحية: الضغط بيفتح المصمّم مباشرة من غير طلب تصريح',
         (tester) async {
-      var toggled = false;
+      var opened = false;
       await pumpButton(
         tester,
-        buildTablesDesignerModeButton(
-          isDesignerMode: false,
-          onToggle: () => toggled = true,
-        ),
+        buildTablesOpenDesignerButton(onOpen: () => opened = true),
         [PermissionCodes.tablesManage],
       );
 
-      await tester.tap(find.text('تصميم'));
+      await tester.tap(find.byKey(const Key('tables_open_designer')));
       await tester.pump();
 
       expect(find.text('تصريح المسؤول مطلوب'), findsNothing);
-      expect(toggled, isTrue);
+      expect(opened, isTrue);
     });
 
-    testWidgets('في وضع التصميم المفعّل: النصُّ يتحوّل إلى «حفظ»',
+    testWidgets('النصُّ ثابتٌ لا يتبدّل بحالةٍ — الزرُّ يفتح شاشةً لا يقلب وضعاً',
         (tester) async {
+      // ⚠️ توكيدٌ على **غياب** «حفظ» من الزرّ: النصُّ المتبدّل كان يعني أنّ
+      //    الشاشةَ نفسَها في وضعِ تحرير، وذاك بالضبط ما أزاله قسمُ ٧.
       await pumpButton(
         tester,
-        buildTablesDesignerModeButton(
-          isDesignerMode: true,
-          onToggle: () {},
-        ),
+        buildTablesOpenDesignerButton(onOpen: () {}),
         [PermissionCodes.tablesManage],
       );
 
-      expect(find.text('حفظ'), findsOneWidget);
+      expect(find.text('مصمم القاعة'), findsOneWidget);
+      expect(find.text('حفظ'), findsNothing);
       expect(find.text('تصميم'), findsNothing);
     });
   });

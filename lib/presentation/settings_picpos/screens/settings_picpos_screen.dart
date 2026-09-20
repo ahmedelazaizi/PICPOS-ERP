@@ -113,6 +113,7 @@ import '../../pos_picpos/widgets/picpos_payment_methods.dart';
 import '../../widgets/permission_guard.dart';
 // دفعة ١٠ — تايلات الإعدادات المحروسة، مشتركة بين البراندين.
 import '../../widgets/settings/settings_permission_tiles.dart';
+import '../widgets/table_bill_qr_launcher_row.dart';
 import '../../widgets/settings/backup_restore_widget.dart';
 import '../../widgets/settings/company_info_widget.dart';
 import '../../users_picpos/screens/users_management_picpos_screen.dart';
@@ -941,7 +942,17 @@ class _SettingsPicposScreenState extends ConsumerState<SettingsPicposScreen> {
                     title: 'رمز حساب الطاولة',
                     subtitle: 'الضيفُ يرى حسابَه ويطلب من هاتفه',
                     tint: AppColors.info,
-                    child: TableBillSettingsCard(),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TableBillSettingsCard(),
+                        // قسمُ ٧ — طباعةُ الأكواد نُقلت من رأس شاشة
+                        // الطاولات: ورقةٌ تُطبَع مرّةً عند التجهيز، وموضعُها
+                        // في رأسِ شاشةٍ يفتحها النادلُ كلَّ دقيقةٍ يزاحم
+                        // أفعالَه اليوميّة بفعلٍ لا يفعلُه.
+                        TableBillQrLauncherRow(),
+                      ],
+                    ),
                   ),
                 ),
               const SettingsBlockSpan(

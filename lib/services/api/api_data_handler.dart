@@ -17,6 +17,7 @@ import '../../core/logging/diagnostic_logger.dart';
 import '../../core/permissions/permission_codes.dart';
 import '../../core/utils/uuid_v7.dart';
 import '../../data/database/database.dart';
+import '../../domain/models/floor_plan_layout.dart';
 import '../cheque_receipt_jes.dart';
 import '../sync/strategies/setting_sync_strategy.dart'
     show isDeviceLocalSettingKey, isServerSecretSettingKey;
@@ -487,6 +488,87 @@ class ApiDataHandler extends ApiHandlerBase {
       );
     } catch (e, st) {
       debugPrint('[API] postLandedCostApply failed: $e\n$st');
+      return jsonResponse({'success': false, 'error': e.toString()},
+          statusCode: 500);
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // FLOOR PLAN — مخطَّطُ قاعةٍ واردٌ من عميل (v174 / قسمُ ٧)
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /// `POST /api/floor-plan`
+  ///
+  /// يطبّق **نفسَ** `saveFloorPlanLayout` التي يشغّلها التشغيلُ المنفرد،
+  /// فلا منطقَ ثانٍ هنا ينحرف عنها.
+  ///
+  /// 🔴 **والطاولاتُ تُحلَّ من طاولاتِ هذا القسم وحدَها.** معرِّفٌ
+  ///    عالميٌّ لطاولةٍ في قسمٍ آخرَ يُسقَط بدل أن يُنقلَ إلى إحداثيّاتِ
+  ///    لوحةٍ لا تخصُّه — فتختفي من قسمِها ولم يلمسها أحد.
+  Future<Response> postFloorPlan(Request request) async {
+    try {
+      final perm = await ApiUserCtx.requirePermission(
+          request, db, PermissionCodes.tablesManage);
+      if (perm != null) return perm;
+
+      return await ApiHandlerBase.withBroadcast<Response>(
+        endpointLabel: 'postFloorPlan',
+        tables: const {
+          'floor_plan_items',
+          'table_sections',
+          'restaurant_tables',
+        },
+        body: () async {
+          final data =
+              json.decode(await request.readAsString()) as Map<String, dynamic>;
+
+          final sectionGid = data['sectionGlobalId'] as String?;
+          if (sectionGid == null || sectionGid.isEmpty) {
+            return jsonResponse(
+                {'success': false, 'error': 'sectionGlobalId مفقود'},
+                statusCode: 400);
+          }
+
+          final section = await (db.select(db.tableSections)
+                ..where((s) => s.globalId.equals(sectionGid))
+                ..limit(1))
+              .getSingleOrNull();
+          if (section == null) {
+            // 409 لا 400: الطلبُ سليمٌ والقسمُ لم يصل بعد، والطابورُ
+            // يعيد المحاولة. وابتلاعُه صامتاً يُضيّع ترتيبَ القاعة
+            // نهائيّاً والمستخدمُ يظنُّ أنّه حفظ.
+            return jsonResponse({
+              'success': false,
+              'error': 'قسمُ الطاولات لم يصل الخادمَ بعد',
+              'retry': true,
+            }, statusCode: 409);
+          }
+
+          final tablesInSection = await (db.select(db.restaurantTables)
+                ..where((t) => t.sectionId.equals(section.id)))
+              .get();
+          final idByGlobalId = <String, int>{
+            for (final t in tablesInSection)
+              if (t.globalId != null) t.globalId!: t.id,
+          };
+
+          final layout = floorPlanLayoutFromJson(
+            data,
+            sectionId: section.id,
+            resolveTableId: (gid) => gid == null ? null : idByGlobalId[gid],
+          );
+
+          await db.saveFloorPlanLayout(layout);
+
+          return jsonResponse({
+            'success': true,
+            'sectionId': section.id,
+            'items': layout.items.length,
+          });
+        },
+      );
+    } catch (e, st) {
+      debugPrint('[API] postFloorPlan failed: $e\n$st');
       return jsonResponse({'success': false, 'error': e.toString()},
           statusCode: 500);
     }

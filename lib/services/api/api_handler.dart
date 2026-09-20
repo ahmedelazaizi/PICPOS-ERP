@@ -209,6 +209,8 @@ class ApiHandler {
     router.post('/api/journals', _data.postJournalEntry);
     // v166 / المرحلة ٢ — تطبيقُ ورقة تحميلٍ واردةٍ من عميل.
     router.post('/api/landed-costs/apply', _data.postLandedCostApply);
+    // v174 / قسمُ ٧ — مخطَّطُ القاعة يصل **مستنداً واحداً**.
+    router.post('/api/floor-plan', _data.postFloorPlan);
     // v166 / المرحلة ٢ — اقتناءُ أصلٍ وترحيلُ إهلاكٍ واردان من عميل.
     router.post('/api/fixed-assets', _data.postFixedAsset);
     router.post('/api/op-expenses', _data.postOperationalExpense);
@@ -2734,7 +2736,8 @@ class ApiHandler {
     // و`employees` منها — خمسةٌ من جداول الفئة تشير إليها وثلاثةٌ بإشارةٍ
     // غيرِ قابلةٍ للإفراغ.
     'employees',
-    'table_sections', 'restaurant_tables', 'table_orders',
+    'table_sections', 'restaurant_tables', 'floor_plan_items',
+    'table_orders',
     'table_order_items', 'table_reservations', 'table_order_payments',
     'kitchen_stations', 'category_station_mappings',
     'work_orders', 'work_order_items',

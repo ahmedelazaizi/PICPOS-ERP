@@ -1,0 +1,579 @@
+// شاشةُ «مصمم القاعة» — التركيبُ والأدوات، قسمُ ٧.
+//
+// ═══ 🔴 ولا قاعدةَ حقيقيّةً داخلَ `testWidgets` ═══
+//
+// مقيسٌ في هذا المستودع: `AppDatabase.forTesting()` داخلَ `testWidgets` يجمّد
+// **سويّةَ الودجت كلَّها** — جسمُ الاختبار في منطقةٍ وهميّةِ الزمن ومؤقّتاتُ
+// drift لا يحرّكها أحدٌ فيها. فالمحقونُ هنا مستودعٌ وهميّ، والحسابُ الحقيقيُّ
+// مقيسٌ في `floor_plan_dao_test` على قاعدةٍ حقيقيّةٍ خارجَ المنطقة الوهميّة.
+
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:ural_erp/data/providers/providers.dart';
+import 'package:ural_erp/domain/models/floor_plan_layout.dart';
+import 'package:ural_erp/domain/repositories/restaurant_repository.dart';
+import 'package:ural_erp/presentation/floor_plan_picpos/screens/floor_plan_designer_picpos_screen.dart';
+import 'package:ural_erp/presentation/floor_plan_picpos/widgets/floor_plan_canvas_picpos.dart';
+
+final _now = DateTime(2026, 9, 20);
+
+TableSection _section(int id, String name) => TableSection(
+      id: id,
+      name: name,
+      isActive: true,
+      createdAt: _now,
+      sortOrder: 0,
+      rowVersion: 0,
+      globalId: 'sec-$id',
+    );
+
+RestaurantTable _table(
+  int id, {
+  int sectionId = 1,
+  String name = 'طاولة',
+  int capacity = 4,
+  double x = 100,
+  double y = 100,
+  double? width,
+  double? height,
+  String status = 'available',
+}) =>
+    RestaurantTable(
+      id: id,
+      sectionId: sectionId,
+      name: name,
+      capacity: capacity,
+      status: status,
+      x: x,
+      y: y,
+      shape: 'rect',
+      lastStatusAt: _now,
+      isActive: true,
+      createdAt: _now,
+      width: width,
+      height: height,
+      rotation: 0,
+      rowVersion: 0,
+      globalId: 'tbl-$id',
+    );
+
+class _FakeRestaurantRepo implements IRestaurantRepository {
+  _FakeRestaurantRepo({
+    List<TableSection>? sections,
+    List<RestaurantTable>? tables,
+    Map<int, FloorPlanSectionLayout>? layouts,
+  })  : _sections = sections ?? [_section(1, 'الصالة'), _section(2, 'التراس')],
+        _tables = tables ?? [_table(1)],
+        _layouts = layouts ?? {};
+
+  final List<TableSection> _sections;
+  final List<RestaurantTable> _tables;
+  final Map<int, FloorPlanSectionLayout> _layouts;
+
+  final saved = <FloorPlanSectionLayout>[];
+  Object? throwOnSave;
+
+  @override
+  Future<List<TableSection>> getAllSections() async => _sections;
+
+  @override
+  Future<List<RestaurantTable>> getAllTables() async => _tables;
+
+  @override
+  Future<FloorPlanSectionLayout?> getFloorPlanLayout(int sectionId) async {
+    if (!_sections.any((s) => s.id == sectionId)) return null;
+    return _layouts[sectionId] ??
+        (
+          sectionId: sectionId,
+          sectionGlobalId: 'sec-$sectionId',
+          canvasWidth: kDefaultCanvasWidth,
+          canvasHeight: kDefaultCanvasHeight,
+          originX: 0.0,
+          originY: 0.0,
+          tables: <FloorPlanTableGeometry>[
+            for (final t in _tables)
+              if (t.sectionId == sectionId)
+                (
+                  id: t.id,
+                  globalId: t.globalId,
+                  x: t.x,
+                  y: t.y,
+                  width: t.width,
+                  height: t.height,
+                  rotation: t.rotation,
+                  shape: t.shape,
+                ),
+          ],
+          items: const <FloorPlanItemInput>[],
+        );
+  }
+
+  @override
+  Future<List<FloorPlanSectionBox>> getFloorPlanSectionBoxes() async =>
+      resolveSectionOrigins([
+        for (final s in _sections)
+          (
+            sectionId: s.id,
+            originX: s.originX,
+            originY: s.originY,
+            width: s.canvasWidth ?? kDefaultCanvasWidth,
+            height: s.canvasHeight ?? kDefaultCanvasHeight,
+          ),
+      ]);
+
+  @override
+  Future<void> saveFloorPlanLayout(FloorPlanSectionLayout layout) async {
+    final boom = throwOnSave;
+    if (boom != null) throw boom;
+    saved.add(layout);
+    _layouts[layout.sectionId] = layout;
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      super.noSuchMethod(invocation);
+}
+
+Future<_FakeRestaurantRepo> _pump(
+  WidgetTester tester, {
+  _FakeRestaurantRepo? repo,
+  double width = 1920,
+}) async {
+  final r = repo ?? _FakeRestaurantRepo();
+  // ⚠️ المقاسُ ١٩٢٠×١٠٨٠ لا الافتراضيّ: خطُّ الاختبار يرسم كلَّ محرفٍ
+  //    مربّعاً كاملَ العرض فيتضخّم النصُّ العربيُّ ويولّد فيضاناتٍ وهمية.
+  tester.view.physicalSize = Size(width, 1080);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.reset);
+
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [
+        restaurantRepositoryProvider.overrideWithValue(r),
+        // تجاوزٌ متزامنٌ لا `async`: `ensurePermission` تقرأ المزوّدَ بـ
+        // `ref.read(...).value` ولا أحدَ يراقبه قبل النقرة، فالقراءةُ باردة.
+        currentUserPermissionsProvider
+            .overrideWith((ref) => const ['tables_manage']),
+      ],
+      child: const MaterialApp(
+        localizationsDelegates: [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: [Locale('ar'), Locale('en')],
+        locale: Locale('ar'),
+        home: FloorPlanDesignerPicposScreen(),
+      ),
+    ),
+  );
+  await tester.pump();
+  await tester.pump();
+  await tester.pump();
+  return r;
+}
+
+Future<void> _teardownTree(WidgetTester tester) async {
+  // مؤقّتُ `AppToast` ٢٫٥ث — بلا هذا يسقط الاختبارُ بـ«A Timer is still
+  // pending» رغم صحّة كلِّ شيءٍ قبله.
+  await tester.pump(const Duration(seconds: 3));
+  await tester.pumpWidget(const SizedBox.shrink());
+  await tester.pump(const Duration(milliseconds: 1));
+}
+
+void main() {
+  group('التركيب', () {
+    for (final width in [1280.0, 1920.0]) {
+      final w = width.toInt();
+      testWidgets('الشاشةُ تُرسَم بلا فيضان عند عرض $w', (tester) async {
+        await _pump(tester, width: width);
+        expect(tester.takeException(), isNull);
+        expect(find.text('مصمم القاعة'), findsWidgets);
+        await _teardownTree(tester);
+      });
+    }
+
+    testWidgets('وتفتح أوّلَ قسمٍ تلقائيّاً — لا شاشةَ فارغةٍ بمنسدلةٍ مملوءة',
+        (tester) async {
+      await _pump(tester);
+      expect(find.byType(FloorPlanEditorCanvas), findsOneWidget);
+      await _teardownTree(tester);
+    });
+
+    testWidgets('ولا أقسامَ ⇒ حالةُ فراغٍ تشرح الطريق', (tester) async {
+      await _pump(tester,
+          repo: _FakeRestaurantRepo(sections: [], tables: []));
+      expect(find.byKey(const Key('floor_plan_no_sections')), findsOneWidget);
+      expect(find.byType(FloorPlanEditorCanvas), findsNothing);
+      await _teardownTree(tester);
+    });
+
+    testWidgets('وأزرارُ الأنواع الستّةِ كلُّها معروضة', (tester) async {
+      await _pump(tester);
+      for (final kind in kFloorPlanItemKinds) {
+        expect(find.byKey(Key('floor_plan_add_$kind')), findsOneWidget,
+            reason: 'زرُّ $kind غائب');
+      }
+      await _teardownTree(tester);
+    });
+  });
+
+  group('الأدوات', () {
+    testWidgets('🔴 إضافةُ جدارٍ ثمّ تراجعٌ ثمّ إعادة', (tester) async {
+      await _pump(tester);
+
+      // تراجعٌ مُعطَّلٌ قبل أيّ تعديل.
+      final undo = tester.widget<IconButton>(
+          find.byKey(const Key('floor_plan_undo')));
+      expect(undo.onPressed, isNull);
+
+      await tester.tap(find.byKey(const Key('floor_plan_add_wall')));
+      await tester.pump();
+
+      final canvas = tester.widget<FloorPlanEditorCanvas>(
+          find.byType(FloorPlanEditorCanvas));
+      expect(canvas.layout.items.length, 1);
+      expect(canvas.layout.items.single.kind, 'wall');
+
+      await tester.tap(find.byKey(const Key('floor_plan_undo')));
+      await tester.pump();
+      expect(
+        tester
+            .widget<FloorPlanEditorCanvas>(find.byType(FloorPlanEditorCanvas))
+            .layout
+            .items,
+        isEmpty,
+      );
+
+      await tester.tap(find.byKey(const Key('floor_plan_redo')));
+      await tester.pump();
+      expect(
+        tester
+            .widget<FloorPlanEditorCanvas>(find.byType(FloorPlanEditorCanvas))
+            .layout
+            .items
+            .length,
+        1,
+      );
+
+      await _teardownTree(tester);
+    });
+
+    testWidgets('🔴 ومعلَمُ النصّ يُولَد بنصٍّ — وإلّا مُنع الحفظُ بلا سبب',
+        (tester) async {
+      await _pump(tester);
+      await tester.tap(find.byKey(const Key('floor_plan_add_text')));
+      await tester.pump();
+
+      final canvas = tester.widget<FloorPlanEditorCanvas>(
+          find.byType(FloorPlanEditorCanvas));
+      final item = canvas.layout.items.single;
+      expect(item.kind, 'text');
+      expect(validateFloorPlanItem(item), isNull);
+
+      await _teardownTree(tester);
+    });
+
+    testWidgets('والمعلَمُ الجديدُ محدَّدٌ فوراً فيمكن حذفُه', (tester) async {
+      await _pump(tester);
+      await tester.tap(find.byKey(const Key('floor_plan_add_pillar')));
+      await tester.pump();
+
+      final canvas = tester.widget<FloorPlanEditorCanvas>(
+          find.byType(FloorPlanEditorCanvas));
+      expect(canvas.selection.length, 1);
+
+      await tester.tap(find.byKey(const Key('floor_plan_delete')));
+      await tester.pump();
+      expect(
+        tester
+            .widget<FloorPlanEditorCanvas>(find.byType(FloorPlanEditorCanvas))
+            .layout
+            .items,
+        isEmpty,
+      );
+
+      await _teardownTree(tester);
+    });
+
+    testWidgets('والتدويرُ يزيد ٩٠ درجة', (tester) async {
+      await _pump(tester);
+      await tester.tap(find.byKey(const Key('floor_plan_add_bar')));
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('floor_plan_rotate')));
+      await tester.pump();
+
+      final canvas = tester.widget<FloorPlanEditorCanvas>(
+          find.byType(FloorPlanEditorCanvas));
+      expect(canvas.layout.items.single.rotation, 90);
+
+      await _teardownTree(tester);
+    });
+
+    testWidgets('والمعلَمُ يُولَد في وسط الصالة لا في زاويتها', (tester) async {
+      await _pump(tester);
+      await tester.tap(find.byKey(const Key('floor_plan_add_kitchen')));
+      await tester.pump();
+
+      final canvas = tester.widget<FloorPlanEditorCanvas>(
+          find.byType(FloorPlanEditorCanvas));
+      final it = canvas.layout.items.single;
+      expect(it.x, greaterThan(0));
+      expect(it.y, greaterThan(0));
+      expect(it.x + it.width, lessThanOrEqualTo(canvas.layout.canvasWidth));
+
+      await _teardownTree(tester);
+    });
+
+    testWidgets('وتبديلُ الشبكة يُطفئ الرسمَ ولا يمسّ المخطَّط',
+        (tester) async {
+      await _pump(tester);
+      expect(
+        tester
+            .widget<FloorPlanEditorCanvas>(find.byType(FloorPlanEditorCanvas))
+            .showGrid,
+        isTrue,
+      );
+      await tester.tap(find.byKey(const Key('floor_plan_grid_toggle')));
+      await tester.pump();
+      expect(
+        tester
+            .widget<FloorPlanEditorCanvas>(find.byType(FloorPlanEditorCanvas))
+            .showGrid,
+        isFalse,
+      );
+      await _teardownTree(tester);
+    });
+  });
+
+  group('المحاذاةُ والتوزيعُ والملاءمة', () {
+    testWidgets('🔴 المحاذاةُ مُعطَّلةٌ بمحدَّدٍ واحد — لا شيءَ يُحاذى إليه',
+        (tester) async {
+      await _pump(tester);
+      await tester.tap(find.byKey(const Key('floor_plan_add_wall')));
+      await tester.pump();
+
+      for (final k in ['floor_plan_align_h', 'floor_plan_align_v']) {
+        expect(tester.widget<IconButton>(find.byKey(Key(k))).onPressed, isNull,
+            reason: '$k يعمل بمحدَّدٍ واحد');
+      }
+      await _teardownTree(tester);
+    });
+
+    testWidgets('والتوزيعُ يحتاج ثلاثةً لا اثنين', (tester) async {
+      await _pump(tester);
+      await tester.tap(find.byKey(const Key('floor_plan_add_wall')));
+      await tester.pump();
+      await tester.longPress(find.byKey(const Key('floor_plan_table_1')));
+      await tester.pump();
+
+      // اثنان: المحاذاةُ تعمل والتوزيعُ لا.
+      expect(
+        tester
+            .widget<IconButton>(find.byKey(const Key('floor_plan_align_h')))
+            .onPressed,
+        isNotNull,
+      );
+      expect(
+        tester
+            .widget<IconButton>(
+                find.byKey(const Key('floor_plan_distribute_h')))
+            .onPressed,
+        isNull,
+      );
+      await _teardownTree(tester);
+    });
+
+    testWidgets('🔴 والمحاذاةُ تمسّ المحدَّدَ وحدَه لا القاعةَ كلَّها',
+        (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeRestaurantRepo(
+          tables: [
+            _table(1, x: 0, y: 100),
+            _table(2, x: 300, y: 500),
+            _table(3, x: 600, y: 800),
+          ],
+        ),
+      );
+
+      // طاولتان فقط في التحديد.
+      await tester.tap(find.byKey(const Key('floor_plan_table_1')));
+      await tester.pump();
+      await tester.longPress(find.byKey(const Key('floor_plan_table_2')));
+      await tester.pump();
+
+      await tester.tap(find.byKey(const Key('floor_plan_align_h')));
+      await tester.pump();
+
+      final layout = tester
+          .widget<FloorPlanEditorCanvas>(find.byType(FloorPlanEditorCanvas))
+          .layout;
+      final byId = {for (final t in layout.tables) t.id: t};
+      expect(byId[1]!.y, 300, reason: 'متوسّطُ 100 و500');
+      expect(byId[2]!.y, 300);
+      expect(byId[3]!.y, 800, reason: 'غيرُ المحدَّد لا يتحرّك');
+
+      await _teardownTree(tester);
+    });
+
+    testWidgets('وملاءمةُ الشاشة لا تُسقط المخطَّط', (tester) async {
+      await _pump(tester);
+      await tester.tap(find.byKey(const Key('floor_plan_fit')));
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      expect(find.byType(FloorPlanEditorCanvas), findsOneWidget);
+      await _teardownTree(tester);
+    });
+  });
+
+  group('الحفظ', () {
+    testWidgets('🔴 يُسلّم المخطَّطَ كاملاً للمستودع', (tester) async {
+      final repo = await _pump(tester);
+      await tester.tap(find.byKey(const Key('floor_plan_add_wall')));
+      await tester.pump();
+
+      await tester.tap(find.byKey(const Key('floor_plan_save')));
+      await tester.pump();
+      await tester.pump();
+
+      expect(repo.saved.length, 1);
+      expect(repo.saved.single.items.single.kind, 'wall');
+      expect(repo.saved.single.tables.length, 1,
+          reason: 'هندسةُ الطاولات تسافر مع المخطَّط لا بعده');
+
+      await _teardownTree(tester);
+    });
+
+    testWidgets('ولا حفظَ قبل أيّ تعديل ⇒ الزرُّ يعمل ولا يُعلَّم بنجمة',
+        (tester) async {
+      await _pump(tester);
+      expect(find.text('حفظ'), findsOneWidget);
+      expect(find.text('حفظ *'), findsNothing);
+      await _teardownTree(tester);
+    });
+
+    testWidgets('وبعد تعديلٍ يُعلَّم الزرُّ بنجمة', (tester) async {
+      await _pump(tester);
+      await tester.tap(find.byKey(const Key('floor_plan_add_door')));
+      await tester.pump();
+      expect(find.text('حفظ *'), findsOneWidget);
+      await _teardownTree(tester);
+    });
+
+    testWidgets('وفشلُ الحفظ يُبلَّغ ولا يُبتلَع', (tester) async {
+      final repo = _FakeRestaurantRepo()..throwOnSave = StateError('انقطاع');
+      await _pump(tester, repo: repo);
+      await tester.tap(find.byKey(const Key('floor_plan_add_wall')));
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('floor_plan_save')));
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.textContaining('فشل الحفظ'), findsOneWidget);
+      await _teardownTree(tester);
+    });
+  });
+
+  group('اللوحة', () {
+    testWidgets('🔴 الطاولةُ تُرسَم بمقاسها المحفوظ لا بالمشتقّ من السعة',
+        (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeRestaurantRepo(
+          tables: [_table(1, width: 320, height: 60, capacity: 2)],
+        ),
+      );
+
+      final box = tester.getSize(find.byKey(const Key('floor_plan_table_1')));
+      expect(box.width, 320);
+      expect(box.height, 60);
+      expect(box.width, isNot(legacyTableSide(2)));
+
+      await _teardownTree(tester);
+    });
+
+    testWidgets('وبلا مقاسٍ محفوظٍ تعود إلى الاشتقاق', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeRestaurantRepo(tables: [_table(1, capacity: 6)]),
+      );
+      final box = tester.getSize(find.byKey(const Key('floor_plan_table_1')));
+      expect(box.width, legacyTableSide(6));
+      await _teardownTree(tester);
+    });
+
+    testWidgets('واسمُ الطاولة وسعتُها معروضان على الخريطة', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeRestaurantRepo(
+          tables: [_table(1, name: 'ط-٧', capacity: 8)],
+        ),
+      );
+      expect(find.text('ط-٧'), findsOneWidget);
+      expect(find.text('8'), findsOneWidget);
+      await _teardownTree(tester);
+    });
+  });
+
+  group('نظرةُ المحلّ', () {
+    testWidgets('تعرض كلَّ الأقسام لا قسماً واحداً', (tester) async {
+      await _pump(tester);
+      await tester.tap(find.text('المحلّ كلّه'));
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byKey(const Key('floor_plan_shop_section_1')), findsOneWidget);
+      expect(find.byKey(const Key('floor_plan_shop_section_2')), findsOneWidget);
+      expect(find.byType(FloorPlanEditorCanvas), findsNothing);
+
+      await _teardownTree(tester);
+    });
+
+    testWidgets('🔴 والأقسامُ بلا موضعٍ لا تنطبق الواحدةُ فوق الأخرى',
+        (tester) async {
+      await _pump(tester);
+      await tester.tap(find.text('المحلّ كلّه'));
+      await tester.pump();
+      await tester.pump();
+
+      final a =
+          tester.getTopLeft(find.byKey(const Key('floor_plan_shop_section_1')));
+      final b =
+          tester.getTopLeft(find.byKey(const Key('floor_plan_shop_section_2')));
+      expect(a, isNot(b));
+
+      await _teardownTree(tester);
+    });
+
+    testWidgets('🔴 وتُرسَم طاولاتُ كلّ قسمٍ داخلَ صندوقِه', (tester) async {
+      // مستطيلاتٌ مسمّاةٌ وحدَها ليست مخطَّطَ محلّ: المديرُ يضع التراسَ
+      // خلفَ الصالة ليرى **أين تقع الطاولاتُ بعضُها من بعض**.
+      await _pump(tester);
+      await tester.tap(find.text('المحلّ كلّه'));
+      await tester.pump();
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byKey(const Key('floor_plan_shop_table_1')), findsOneWidget);
+
+      await _teardownTree(tester);
+    });
+
+    testWidgets('وحفظُ المواضع مُعطَّلٌ حتّى تُسحَب واحدة', (tester) async {
+      await _pump(tester);
+      await tester.tap(find.text('المحلّ كلّه'));
+      await tester.pump();
+      await tester.pump();
+
+      final btn = tester.widget<FilledButton>(
+          find.byKey(const Key('floor_plan_shop_save')));
+      expect(btn.onPressed, isNull);
+
+      await _teardownTree(tester);
+    });
+  });
+}

@@ -154,6 +154,11 @@ class DeltaPullService {
     'table_sections',
     'kitchen_stations',
     'restaurant_tables',       // → table_sections
+    // v174 / قسمُ ٧ — معالمُ القاعة. **وموضعُها بعد `table_sections`
+    // إلزاميٌ**: `section_id` مفتاحٌ خارجيٌّ إليه، و`_upsertRow` يبتلع
+    // خطأَ المفتاح بـ`debugPrint` ويمضي — فجدارٌ يسبقُ قسمَه
+    // يُسقَط صامتاً ولا يظهر في أيّ اختبار.
+    'floor_plan_items',        // → table_sections
     'category_station_mappings', // → categories, kitchen_stations
     'booking_services',        // → products, branches
     'booking_resources',       // → employees, branches
@@ -259,9 +264,11 @@ class DeltaPullService {
     //    المحميَّ فيسقط مفتاحُه صامتاً.
     //
     // والمرجعيُّ عمداً — `table_sections` · `restaurant_tables` ·
-    // `kitchen_stations` · `category_station_mappings` ·
-    // `booking_services` — يبقى خارجَ هذه القائمة ليعمل التزويدُ قبل
-    // الدخول: شاشةُ الطاولات تحتاج خريطةَ الصالة قبلَ أوّلِ تسجيلِ دخول.
+    // **`floor_plan_items`** · `kitchen_stations` ·
+    // `category_station_mappings` · `booking_services` — يبقى خارجَ هذه
+    // القائمة ليعمل التزويدُ قبل الدخول: شاشةُ الطاولات تحتاج خريطةَ
+    // الصالة قبلَ أوّلِ تسجيلِ دخول — **ومعالمُ القاعة هي الخريطة**
+    // لا زينتُها: جدارٌ وبابٌ ومطبخٌ لا يحمل سرًّا تجاريّاً يُحمَى.
     'employees',
     'booking_resources',
     'table_orders', 'table_order_items', 'table_reservations',
@@ -342,7 +349,8 @@ class DeltaPullService {
     // يرى **طلبَ طاولةٍ أو حجزاً سابقاً لإقلاعه أبداً** — ولا يظهر ذلك
     // في أيّ اختبار: الجدولُ يمتلئ بما يقع بعد الإقلاع فيبدو عاملاً.
     'employees',
-    'table_sections', 'restaurant_tables', 'table_orders',
+    'table_sections', 'restaurant_tables', 'floor_plan_items',
+    'table_orders',
     'table_order_items', 'table_reservations', 'table_order_payments',
     'kitchen_stations', 'category_station_mappings',
     'work_orders', 'work_order_items',

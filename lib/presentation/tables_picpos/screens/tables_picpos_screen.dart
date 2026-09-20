@@ -23,9 +23,10 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/design_system/spacing.dart';
 import '../../../core/permissions/permission_codes.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/navigation/screen_id.dart';
 import '../../../data/providers/providers.dart';
+import '../../../data/providers/screen_navigation_provider.dart';
 import '../../../domain/models/table_actions.dart';
-import '../../../domain/models/table_designer_mode.dart';
 import '../../../domain/repositories/restaurant_repository.dart';
 import '../../picpos_shell/picpos_content_card.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
@@ -35,7 +36,6 @@ import '../../screens/tables/widgets/table_card.dart';
 import '../../screens/tables_screen.dart' show TableActionsHost, TableActionsRunner;
 import '../../widgets/permission_guard.dart';
 import '../widgets/guest_requests_banner.dart';
-import '../widgets/table_bill_qr_dialog.dart';
 import '../widgets/table_session_pin_card.dart';
 import '../widgets/tables_action_rail.dart';
 import '../widgets/tables_status_rail.dart';
@@ -53,35 +53,31 @@ final _tablesInSectionProvider = StreamProvider.autoDispose
       .watchTablesInSection(sectionId);
 });
 
-// ── زرُّ وضع التصميم (Task 6b) ─────────────────────────────────────────────
-// مستخرجٌ كدالّةٍ top-level على نمط `buildTablesManageAddTableButton` في
-// `tables_top_bar.dart` — يتبنى وحدَه في اختبار widget خفيف بلا
-// `TablesPicposScreen` كاملة (محتاجةٌ `AppDatabase` حقيقيّة فتتعلّق).
+// ────────────────────────────────────────
+// زرُّ «مصمّم القاعة»
 //
-// الحراسةُ زرٌّ يُعطَّل فعلاً (`allowManagerOverride` مع `onGranted` صريح)
-// لا `PopupMenuItem` ملفوفٌ بحارسٍ يبقى قابلاً للاختيار مهما لُفَّ نصُّه —
-// درسُ المراجعة السابقة في هذه الخطّة.
+// 🔴 **كان زرُّ «تصميم» يقلب هذه الشاشةَ نفسَها إلى محرّر.** وقسمُ ٧
+// أخرجَ المحرّرَ إلى شاشةٍ مستقلّة، وصارت **خريطةُ النادل للقراءة
+// فقط** (القرارُ ٦)، فلا تنزلق طاولةٌ تحتَ إصبعٍ يريد أن ينقرَها.
+//
+// والزرُّ يبقى لا يُحذَف: من تعلّم أنّ الترتيبَ هنا يُدلَّ على مكانِه
+// الجديد، لا يجد الزرَّ غاب بلا كلمة.
+//
+// والحراسةُ زرٌّ يُعطَّل فعلاً (`allowManagerOverride` مع `onGranted` صريح)
+// لا `PopupMenuItem` ملفوفٌ بحارسٍ يبقى قابلاً للاختيار مهما لُفَّ نصُّه.
 @visibleForTesting
-Widget buildTablesDesignerModeButton({
-  required bool isDesignerMode,
-  required VoidCallback onToggle,
-}) {
+Widget buildTablesOpenDesignerButton({required VoidCallback onOpen}) {
   return PermissionGuard(
     permission: PermissionCodes.tablesManage,
     allowManagerOverride: true,
-    actionName: isDesignerMode ? 'حفظ تصميم الخريطة' : 'تصميم الخريطة',
-    onGranted: onToggle,
+    actionName: 'مصمم القاعة',
+    onGranted: onOpen,
     child: OutlinedButton.icon(
-      onPressed: onToggle,
-      icon: Icon(
-        isDesignerMode ? PhosphorIconsBold.check : PhosphorIconsBold.pencilLine,
-        size: 18,
-      ),
-      label: Text(isDesignerMode ? 'حفظ' : 'تصميم'),
-      style: OutlinedButton.styleFrom(
-        foregroundColor:
-            isDesignerMode ? AppColors.success : AppColors.warning,
-      ),
+      key: const Key('tables_open_designer'),
+      onPressed: onOpen,
+      icon: const Icon(PhosphorIconsBold.squaresFour, size: 18),
+      label: const Text('مصمم القاعة'),
+      style: OutlinedButton.styleFrom(foregroundColor: AppColors.warning),
     ),
   );
 }
@@ -175,24 +171,10 @@ class _TablesPicposBodyState extends ConsumerState<_TablesPicposBody> {
             style: OutlinedButton.styleFrom(foregroundColor: AppColors.primary),
           ),
         ),
-        const SizedBox(width: Spacing.sm),
-        // أكوادُ حسابِ الطاولات — البندُ الأوّل من فيتشرات المالك 2026-09-12.
-        //
-        // ⚠️ **في الرأس لا في «مزيد»** — للسبب المكتوب فوق بالضبط: الورقةُ
-        // المطبوعةُ تحمل رموزاً موقَّعةً يقرأ بها حاملُها حساباتِ الطاولات،
-        // فحراستُها لازمة، وحراسةُ مدخلِ قائمةٍ منبثقةٍ زينةٌ لا ضابط.
-        PermissionGuard(
-          permission: PermissionCodes.tablesManage,
-          allowManagerOverride: true,
-          actionName: 'طباعة أكواد حساب الطاولات',
-          onGranted: () => TableBillQrDialog.show(context, tables),
-          child: OutlinedButton.icon(
-            onPressed: () => TableBillQrDialog.show(context, tables),
-            icon: const Icon(PhosphorIconsBold.qrCode, size: 18),
-            label: const Text('أكواد الحساب'),
-            style: OutlinedButton.styleFrom(foregroundColor: AppColors.info),
-          ),
-        ),
+        // ⚠️ **وأكوادُ حساب الطاولات انتقلت إلى الإعدادات** (قسمُ ٧، بلاغُ
+        // المالك «قارئُ QR مكانُه مش شاشة الطاولات»): ورقةٌ تُطبَع مرّةً
+        // عند التجهيز ثمّ تُلصَق، فلا تزاحم أفعالَ النادل اليوميّة.
+        // والحراسةُ انتقلت معها بحرفها — راجع `TableBillQrLauncherRow`.
         const SizedBox(width: Spacing.sm),
         OutlinedButton.icon(
           // بلا مسٍّ لـ`_sectionId`: احتياطُ الخريطة محسوبٌ في `scopeId` فوق،
@@ -208,15 +190,15 @@ class _TablesPicposBodyState extends ConsumerState<_TablesPicposBody> {
           label: Text(uiState.isVisualView ? 'عرض الشبكة' : 'عرض الخريطة'),
           style: OutlinedButton.styleFrom(foregroundColor: AppColors.primary),
         ),
-        // وضعُ التصميم معناه ترتيبُ مخطَّطٍ — لا يظهر إلا في وضع الخريطة
-        // (`showDesignerModeToggle`، البند ٣ في task-6b-brief.md).
-        if (showDesignerModeToggle(isVisualView: uiState.isVisualView)) ...[
-          const SizedBox(width: Spacing.sm),
-          buildTablesDesignerModeButton(
-            isDesignerMode: uiState.isDesignerMode,
-            onToggle: ref.read(tablesUIProvider.notifier).toggleDesignerMode,
-          ),
-        ],
+        // مصمّمُ القاعة — **في العرضَين كلَيهما**. كان القديمُ محصوراً
+        // بوضع الخريطة لأنّه كان يقلب هذه الشاشةَ نفسَها، وهذا يفتح
+        // شاشةً أخرى — وحصرُه بعرضٍ بعينه يُخفيه عمّن يبحث عنه.
+        const SizedBox(width: Spacing.sm),
+        buildTablesOpenDesignerButton(
+          onOpen: () => ref
+              .read(screenNavigationProvider.notifier)
+              .open(ScreenId.floorPlanDesigner.navigationIndex),
+        ),
         const SizedBox(width: Spacing.sm),
         _buildScopeMenu(sections, scopeId, uiState.isVisualView),
         const SizedBox(width: Spacing.sm),
@@ -307,7 +289,11 @@ class _TablesPicposBodyState extends ConsumerState<_TablesPicposBody> {
           // مواضعُ السحب الحيّةُ من قسمٍ سابق.
           key: ValueKey(scopeId),
           sectionId: scopeId,
-          isEditMode: uiState.isDesignerMode,
+          // 🔴 **القرارُ ٦: خريطةُ النادل للقراءة فقط — لا سحبَ إطلاقاً.**
+          //    سحبٌ حيٌّ في شاشةِ تشغيلٍ يعني أنّ نقرةً مائلةً قليلاً تنقل
+          //    طاولةً بدل أن تفتحَها — ولا يدري النادلُ أنّه حرّك شيئاً
+          //    حتّى يرى الخريطةَ مبعثرةً غداً.
+          isEditMode: false,
           // مرشِّحُ عمود الحالات يسري على الخريطة كما يسري على الشبكة.
           // كان يسري على فرع الشبكة وحدَه، و`isVisualView` افتراضُها `true`
           // — فالمستخدمُ يهبط على الخريطة وينقر «متاحة» فلا يتغيّر شيء.

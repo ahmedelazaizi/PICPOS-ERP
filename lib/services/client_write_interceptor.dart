@@ -554,6 +554,14 @@ class ClientWriteInterceptor implements SyncInterceptor {
   // SyncInterceptor @override implementations — delegated to _CwiSync
   // ═══════════════════════════════════════════════════════════════
 
+  /// v174 / قسمُ ٧ — حفظُ مخطَّط قاعةٍ كاملاً.
+  ///
+  /// **وهي ساكنةٌ لا `@override`** عمداً: `SyncInterceptor` واجهةٌ
+  /// ينفّذها غيرُ هذا الصنف، وإضافةُ عضوٍ إليها تُلزِم كلَّ منفّذٍ
+  /// بما لا يخصُّه. وهذا نفسُ شكلِ `submitPurchase`.
+  static Future<void> submitFloorPlan(Map<String, dynamic> document) =>
+      _CwiSync.submitFloorPlan(document);
+
   @override
   Future<void> submitLandedCostApply(Map<String, dynamic> document) =>
       _CwiSync.submitLandedCostApply(document);

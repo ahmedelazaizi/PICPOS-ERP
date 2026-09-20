@@ -90,7 +90,10 @@ enum AppScreen {
   chequeBooks(70),
 
   /// المشتريات الخارجيّة — يجب أن تطابق `ScreenId.importPurchases`.
-  importPurchases(71);
+  importPurchases(71),
+
+  /// مصمّمُ القاعة — يجب أن تطابق `ScreenId.floorPlanDesigner`.
+  floorPlanDesigner(72);
 
   /// The integer index for this screen, used in permission maps and storage.
   final int value;

@@ -106,6 +106,7 @@ import 'presentation/screens/help_center_screen.dart';
 import 'presentation/screens/landed_cost_screen.dart';
 import 'presentation/landed_cost_picpos/screens/landed_cost_picpos_screen.dart';
 import 'presentation/import_purchases_picpos/screens/import_purchases_picpos_screen.dart';
+import 'presentation/floor_plan_picpos/screens/floor_plan_designer_picpos_screen.dart';
 import 'presentation/screens/cycle_count_screen.dart';
 import 'presentation/cycle_count_picpos/screens/cycle_count_picpos_screen.dart';
 import 'presentation/screens/report_builder_screen.dart';
@@ -1124,6 +1125,14 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => const ImportPurchasesPicposScreen(),
         label: 'المشتريات الخارجية',
         icon: PhosphorIconsBold.globeHemisphereEast,
+      ),
+      // مصمّمُ القاعة — شاشةٌ مستقلّةٌ عن شاشة الطاولات: النادلُ يقرأ
+      // الخريطةَ والمُعِدُّ يرسمُها، وجمعُهما هو سببُ بلاغ 2026-09-18.
+      ScreenConfig(
+        appScreen: AppScreen.floorPlanDesigner,
+        builder: (_) => const FloorPlanDesignerPicposScreen(),
+        label: 'مصمم القاعة',
+        icon: PhosphorIconsBold.squaresFour,
       ),
       ScreenConfig(
         appScreen: AppScreen.syncConflicts,

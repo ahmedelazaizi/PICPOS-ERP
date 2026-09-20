@@ -23,6 +23,7 @@ import '../../domain/models/journal_balance.dart';
 import '../../domain/models/purchase_line_discount.dart';
 import '../../domain/models/cheque_book_plan.dart';
 import '../../domain/models/asset_disposal_plan.dart';
+import '../../domain/models/floor_plan_layout.dart';
 import '../../domain/models/import_purchase_plan.dart';
 import '../../services/security_service.dart';
 import '../../domain/models/quick_sale_policy.dart'
@@ -129,6 +130,7 @@ part 'daos/accounting_audit_dao.dart';
 part 'daos/commercial_papers_dao.dart';
 part 'daos/cheque_books_dao.dart';
 part 'daos/asset_disposals_dao.dart';
+part 'daos/floor_plan_dao.dart';
 part 'daos/import_purchases_dao.dart';
 part 'daos/multi_currency_pricelist_dao.dart';
 part 'daos/manufacturing_dao.dart';
@@ -1429,7 +1431,8 @@ class AppDatabase extends _$AppDatabase {
     'purchase_returns',
     // v167 / المرحلة ٣ — الفئةُ التشغيليّة (كانت غائبةً هنا).
     'employees',
-    'table_sections', 'restaurant_tables', 'table_orders',
+    'table_sections', 'restaurant_tables', 'floor_plan_items',
+    'table_orders',
     'table_order_items', 'table_reservations', 'table_order_payments',
     'kitchen_stations', 'category_station_mappings',
     'work_orders', 'work_order_items',

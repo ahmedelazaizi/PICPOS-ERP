@@ -75,6 +75,28 @@ class _CwiSync {
     );
   }
 
+  // ── Floor Plan (v174 / قسمُ ٧) ───────────────────────────────
+
+  /// مخطَّطُ قاعةٍ كاملاً — **مستندٌ واحد لا سحبةٌ سحبة**.
+  ///
+  /// 🔴 ولو أُرسِلَت كلُّ سحبةٍ وحدَها لصار صندوقُ الصادر مئاتِ
+  ///    الرسائل لجلسةِ ترتيبٍ واحدة، **وإعادةُ تشغيلِها بترتيبٍ
+  ///    مختلفٍ تُنتج مخطَّطاً لم يرسمه أحد**. والمستندُ الواحدُ
+  ///    صورةٌ نهائيّةٌ: إعادةُ إرسالِه تُعيد نفسَ النتيجة.
+  static Future<void> submitFloorPlan(Map<String, dynamic> document) async {
+    if (!SyncInterceptor.isClientMode) return;
+    debugPrint('[ClientInterceptor] Routing floor-plan save to server');
+    await ClientWriteInterceptor._tryOrQueueVoid(
+      tableName: 'floor_plan_items',
+      operation: 'save',
+      payload: Map<String, dynamic>.from(document),
+      serverCall: (reqIdemKey) =>
+          ClientWriteInterceptor._proxy.submitFloorPlan(
+        document,
+        idempotencyKey: reqIdemKey,
+      ),
+    );
+  }
   // ── Fixed Assets (v166) ───────────────────────────────────────────────────
 
   static Future<void> submitFixedAssetCreate(

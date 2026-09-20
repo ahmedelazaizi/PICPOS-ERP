@@ -9,6 +9,9 @@ class ScreenRegistry {
     ScreenId.dashboard,
     ScreenId.pos,
     ScreenId.tables,
+    // مصمّمُ القاعة — حيث كانت الطاولاتُ كان مصمّمُها: الخريطةُ لا
+    // تُرسَم مرّةً ثمّ تُنسى — تُنقَل الطاولاتُ ويُضاف قسمٌ.
+    ScreenId.floorPlanDesigner,
     ScreenId.products,
     ScreenId.categories,
     ScreenId.parties,
@@ -122,6 +125,9 @@ class ScreenRegistry {
     ScreenId.pos,
     ScreenId.offers,
     ScreenId.tables,
+    // مصمّمُ القاعة — حيث كانت الطاولاتُ كان مصمّمُها: الخريطةُ لا
+    // تُرسَم مرّةً ثمّ تُنسى — تُنقَل الطاولاتُ ويُضاف قسمٌ.
+    ScreenId.floorPlanDesigner,
     ScreenId.products,
     ScreenId.categories,
     ScreenId.parties,
@@ -197,6 +203,9 @@ class ScreenRegistry {
     ScreenId.pos,
     ScreenId.offers,
     ScreenId.tables,
+    // مصمّمُ القاعة — حيث كانت الطاولاتُ كان مصمّمُها: الخريطةُ لا
+    // تُرسَم مرّةً ثمّ تُنسى — تُنقَل الطاولاتُ ويُضاف قسمٌ.
+    ScreenId.floorPlanDesigner,
     ScreenId.products,
     ScreenId.categories,
     ScreenId.parties,
@@ -390,7 +399,12 @@ class ScreenRegistry {
   /// [litePicpos] و`FeaturePolicy.litePicpos`.
   static List<ScreenId> litePicposWith(FeaturePolicy features) {
     if (!features.tablesEnabled) return litePicpos;
-    return [...litePicpos, ScreenId.tables, ScreenId.kitchen];
+    return [
+      ...litePicpos,
+      ScreenId.tables,
+      ScreenId.floorPlanDesigner,
+      ScreenId.kitchen,
+    ];
   }
 
   /// الشاشاتُ التي أسقطها المالكُ من PicPos 2026-09-12.

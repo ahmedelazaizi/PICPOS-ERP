@@ -1580,6 +1580,19 @@ class OfflineSyncWorker {
       // v166 — ورقةُ تحميلٍ مطبَّقة. الحمولةُ هي المستندُ نفسُه، فتُعاد
       // كما هي: الخادمُ يزيل التكرارَ بمعرّف الورقة العالميّ، فإعادةُ
       // الإرسال بعد انقطاعٍ لا تُنتج تطبيقاً ثانياً ولا قيداً ثانياً.
+      // v174 / قسمُ ٧ — مخطَّطُ قاعةٍ كاملاً. الحمولةُ **صورةٌ نهائيّةٌ**
+      // لا فرقٌ، فإعادةُ إرسالِها بعد انقطاعٍ تُعيد نفسَ المخطَّط لا
+      // معالمَ مضاعَفةً: المعالمُ تُطابَق بمعرّفاتِها العالميّة،
+      // والغائبُ عنها يُحذَف حذفاً ناعماً.
+      case 'floor_plan_items':
+        if (operation == 'save') {
+          return proxy.submitFloorPlan(
+            payload,
+            idempotencyKey: idempotencyKey,
+          );
+        }
+        throw StateError('Unhandled op $operation for table $table');
+
       case 'landed_cost_sheets':
         if (operation == 'apply') {
           return proxy.submitLandedCostApply(

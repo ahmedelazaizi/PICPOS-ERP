@@ -1,7 +1,11 @@
 import 'package:drift/drift.dart';
 import '../database/database.dart';
+import '../../domain/models/floor_plan_layout.dart';
 import '../../domain/models/tables_report_row.dart';
 import '../../domain/repositories/restaurant_repository.dart';
+import '../../core/utils/uuid_v7.dart';
+import '../database/sync_interceptor.dart';
+import '../../services/client_write_interceptor.dart';
 
 class RestaurantRepositoryImpl implements IRestaurantRepository {
   final AppDatabase _db;
@@ -75,6 +79,42 @@ class RestaurantRepositoryImpl implements IRestaurantRepository {
       (_db.update(_db.restaurantTables)..where((t) => t.id.equals(id))).write(
         RestaurantTablesCompanion(x: Value(x), y: Value(y)),
       );
+
+  // ═══ مصمّمُ القاعة (قسمُ ٧) ════════════════════════════
+
+  @override
+  Future<FloorPlanSectionLayout?> getFloorPlanLayout(int sectionId) =>
+      _db.getFloorPlanSectionLayout(sectionId);
+
+  @override
+  Future<List<FloorPlanSectionBox>> getFloorPlanSectionBoxes() =>
+      _db.getFloorPlanSectionBoxes();
+
+  /// حفظُ المخطَّط — محلّيّاً دائماً، وإلى الخادم في وضع العميل.
+  ///
+  /// 🔴 **والتوسيمُ يسبقُ الكتابتَين معاً.** لو وُلّدَ المعرِّفُ
+  ///    العالميُّ داخلَ كلّ كتابةٍ على حدة لحمل صفُّ العميل وصفُّ
+  ///    الخادم هويّتَين مختلفتَين لمعلَمٍ واحد — فيعود الجدارُ
+  ///    **مضاعَفاً** عند أوّل سحبِ دلتا.
+  @override
+  Future<void> saveFloorPlanLayout(FloorPlanSectionLayout layout) async {
+    final stamped = stampMissingGlobalIds(layout, UuidV7.generate);
+
+    if (SyncInterceptor.isClientMode) {
+      // والفحصُ **قبل** أيّ كتابة: إرسالٌ يُهمَل بعد حفظٍ محلّيٍّ
+      // يترك الجهازَ وحدَه يرى مخطَّطاً لا يراه غيرُه.
+      final bad = validateFloorPlanWireIdentity(stamped);
+      if (bad != null) throw StateError(bad);
+      await ClientWriteInterceptor.dispatchWrite(
+        () => ClientWriteInterceptor.submitFloorPlan(
+          floorPlanLayoutToJson(stamped),
+        ),
+        tag: 'FLOOR-PLAN-SYNC',
+      );
+    }
+
+    await _db.saveFloorPlanLayout(stamped);
+  }
 
   @override
   Future<TableReservation?> getActiveReservationForTable(int tableId) =>

@@ -691,6 +691,12 @@ const kAllNavItemDefs = [
   // شاشتَين بعينِهما، والحجوزاتُ نطاقُها أوسعُ من المطعم (الصالوناتُ تحجز
   // ولا مطبخَ لها ولا طاولاتِ خدمة) — ونطاقُها في `ScreenRegistry` يشهد.
   NavItemDef(icon: PhosphorIconsBold.circlesThree, label: 'الطاولات', permission: 'tables_view', index: 3, section: 'ادارة المطاعم', group: 'restaurant'),
+  // مصمّمُ القاعة — مدخلٌ جانبيٌّ مستقلٌّ بأمر المالك 2026-09-18.
+  //
+  // ⚠️ **وصلاحيّتُه `tables_manage` لا `tables_view`**: النادلُ يرى
+  //    الخريطةَ ولا يرسمُها، ومدخلٌ يراه ثمّ يُرفَض عند النقر أسوأُ
+  //    من غيابِه.
+  NavItemDef(icon: PhosphorIconsBold.squaresFour, label: 'مصمم القاعة', permission: 'tables_manage', index: 72, group: 'restaurant'),
   NavItemDef(icon: PhosphorIconsBold.cookingPot, label: 'المطبخ', permission: 'kitchen_view', index: 14, group: 'restaurant'),
 
   // ═══════════════════════════════════════════
@@ -1068,6 +1074,8 @@ const screenPermissionMap = <ScreenId, String>{
   ScreenId.chequeBooks: 'treasury_view',
   // المشتريات الخارجيّة — عينُ صلاحيّةِ «فواتير المشتريات».
   ScreenId.importPurchases: 'purchases_create',
+  // مصمّمُ القاعة — عينُ صلاحيّةِ «إدارةِ الطاولات» لا صلاحيّةٌ جديدة.
+  ScreenId.floorPlanDesigner: 'tables_manage',
 };
 
 final userAllowedScreensProvider = FutureProvider<List<int>>((ref) async {
