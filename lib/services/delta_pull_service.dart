@@ -1,5 +1,6 @@
 import 'dart:async';
-import 'package:drift/drift.dart' show TableUpdate, UpdateKind, Variable;
+import 'package:drift/drift.dart'
+    show DriftSqlType, TableUpdate, UpdateKind, Variable;
 import 'package:flutter/foundation.dart';
 import '../data/database/database.dart';
 import '../core/logging/diagnostic_logger.dart';
@@ -442,7 +443,30 @@ class DeltaPullService {
 
   void initialize(AppDatabase db) {
     _db = db;
+    _blobSchema = null;
     ConflictResolutionService.instance.initialize(db);
+  }
+
+  /// خريطةُ «الأعمدةُ الّتي لا يقدر الخادمُ على إرسالها» — مُشتقّةٌ من مخطَّط
+  /// drift نفسِه، لا مكتوبةٌ بيد. انظر [_preserveUnsendableBlobs].
+  Map<String, _BlobTableSchema>? _blobSchema;
+
+  Map<String, _BlobTableSchema> get _blobSchemaOfDb {
+    final cached = _blobSchema;
+    if (cached != null) return cached;
+    final built = <String, _BlobTableSchema>{};
+    for (final t in _db!.allTables) {
+      final blobs = <String>[
+        for (final c in t.$columns)
+          if (c.type == DriftSqlType.blob) c.name,
+      ];
+      if (blobs.isEmpty) continue;
+      built[t.actualTableName] = _BlobTableSchema(
+        blobColumns: blobs,
+        hasGlobalId: t.$columns.any((c) => c.name == 'global_id'),
+      );
+    }
+    return _blobSchema = built;
   }
 
   /// Test-only entry to the otherwise-private inbound upsert path, so an
@@ -878,6 +902,15 @@ class DeltaPullService {
       }
     }
 
+    await _preserveUnsendableBlobs(
+      table,
+      row,
+      localId: localId,
+      serverId: serverId,
+      globalId: globalId,
+      onPatched: (patched) => row = patched,
+    );
+
     // If the local row exists with a different id (client-originated record
     // that now carries a server id), UPDATE in place — preserving the local
     // primary key and all FK references to it.
@@ -1127,6 +1160,100 @@ class DeltaPullService {
     }
   }
 
+  /// يحفظ أعمدةَ الـblob الّتي **لا يقدر** الخادمُ على إرسالها، فلا يمحوها
+  /// السحبُ التفاضليّ.
+  ///
+  /// 🔴 العطلُ الّذي يعالجه: مُسلسِلُ `/api/sync/pull` في `api_handler.dart`
+  /// يُسقِط كلَّ قيمةٍ من نوع `List<int>` من الحمولة («Skip blob columns»)،
+  /// ويكتب `null` كما هو. فللعمودِ الواحدِ شكلان على السلك:
+  ///
+  ///   • الخادمُ يملك بايتات ⇒ المفتاحُ **غائبٌ** تماماً.
+  ///   • الخادمُ يملك NULL   ⇒ المفتاحُ **حاضرٌ بقيمةِ null**، وهذا هو
+  ///     الشكلُ الواقعيُّ اليوم لـ`products.image_data`: لا مسارَ دفعٍ يكتب
+  ///     العمودَ إلى الخادم أصلاً (‏`createProduct` في
+  ///     `client_write_interceptor.dart` بلا وسيطِ صورة)، فعمودُ الخادم
+  ///     NULL دائماً.
+  ///
+  /// وكلا الشكلين كان يمحو الصورةَ المحلّيّة: `INSERT OR REPLACE` يعيد
+  /// العمودَ الغائبَ إلى افتراضه (‏`blob().nullable()` بلا افتراض ⇒ NULL)،
+  /// والتحديثُ في المكان يكتب الـnull الحاضرَ حرفاً. وسياسةُ `products`
+  /// هي `serverWins` فالصفُّ يُطبَّق بلا مقارنةِ إصدار — أي أنّ كلَّ سحبةٍ
+  /// تُعيد صفَّ الصنف كانت تمحو صورتَه، بلا رسالةٍ ولا سجلّ.
+  ///
+  /// ولهذا فـnull الوارِدُ على عمودِ blob **ليس حذفاً**: القناةُ عاجزةٌ عن
+  /// التعبير عن غيرِه، فلا معلومةَ فيه. وحذفُ صورةٍ — إن أُريد لاحقاً —
+  /// يحتاج شاهداً صريحاً لا غياباً.
+  ///
+  /// والنطاقُ **مُشتقٌّ من مخطَّط drift** لا مكتوبٌ بيد: أيُّ عمودِ blob
+  /// يُضاف إلى جدولٍ مسحوبٍ يُحمى من يومه — ومنه `treasury_settings.logo_image`
+  /// إن دخل [pullTables] يوماً (هو خارجها اليوم فلا انكشافَ له).
+  /// انظر `delta_pull_blob_preserve_test.dart`.
+  ///
+  /// والحفظُ يتبع **الهُويّةَ لا الرقم**: صفٌّ محلّيٌّ يحتلّ نفسَ الرقم
+  /// بهُويّةٍ عالميّةٍ مختلفةٍ هو صنفٌ آخرُ سيُعاد ترقيمُه بحارسِ التصادم،
+  /// فلا تُورَّث صورتُه إلى صفِّ الخادم.
+  Future<void> _preserveUnsendableBlobs(
+    String table,
+    Map<String, dynamic> row, {
+    required int? localId,
+    required int? serverId,
+    required String? globalId,
+    required void Function(Map<String, dynamic>) onPatched,
+  }) async {
+    final schema = _blobSchemaOfDb[table];
+    if (schema == null) return;
+    // الغيابُ والـnull سواءٌ — كلاهما «لا معلومة».
+    final atRisk =
+        schema.blobColumns.where((c) => row[c] == null).toList(growable: false);
+    if (atRisk.isEmpty) return;
+
+    final anchorId = localId ?? serverId;
+    if (anchorId == null) return;
+
+    try {
+      final select = [
+        ...atRisk,
+        if (schema.hasGlobalId) 'global_id',
+      ].join(', ');
+      final local = await _db!
+          .customSelect(
+            'SELECT $select FROM "$table" WHERE id = ? LIMIT 1',
+            variables: [Variable.withInt(anchorId)],
+          )
+          .getSingleOrNull();
+      if (local == null) return;
+
+      if (schema.hasGlobalId) {
+        final localGid = local.data['global_id'] as String?;
+        final incomingGid = globalId ?? '';
+        if (localGid != null &&
+            localGid.isNotEmpty &&
+            incomingGid.isNotEmpty &&
+            localGid != incomingGid) {
+          // صفٌّ آخرُ يحتلّ الرقم — حارسُ التصادم سيُزحزحه.
+          return;
+        }
+      }
+
+      final patched = Map<String, dynamic>.of(row);
+      var kept = 0;
+      for (final c in atRisk) {
+        final value = local.data[c];
+        if (value != null) {
+          patched[c] = value;
+          kept++;
+        }
+      }
+      if (kept > 0) {
+        onPatched(patched);
+        debugPrint('[DeltaPull] $table id=$anchorId: preserved $kept local '
+            'blob column(s) the server cannot send — ${atRisk.join(", ")}');
+      }
+    } catch (e) {
+      debugPrint('[DeltaPull] $table: preserve blob columns failed: $e');
+    }
+  }
+
   // ─── Watermark helpers ───────────────────────────────────────────────────
 
   Future<DateTime?> _loadWatermark(String table) async {
@@ -1196,4 +1323,16 @@ class DeltaPullService {
     }
     return false;
   }
+}
+
+/// ما يحتاجه [DeltaPullService] من مخطَّط جدولٍ واحدٍ لحفظِ أعمدةِ الـblob:
+/// أسماءُ أعمدةِ الـblob فيه، وهل يحمل `global_id` لتمييزِ الهُويّة.
+class _BlobTableSchema {
+  const _BlobTableSchema({
+    required this.blobColumns,
+    required this.hasGlobalId,
+  });
+
+  final List<String> blobColumns;
+  final bool hasGlobalId;
 }
