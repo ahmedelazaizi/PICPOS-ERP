@@ -28,9 +28,12 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 /// جداولُ v174 التي تنتظر مزامنتَها — بأسماء أصنافها.
+/// ✅ **و`ChequeBooks` خرجت 2026-09-20 (المرحلة ٦ / v175)** — لا بإسقاط
+/// السطر بل بأداء الدَّين: استراتيجيّتُها مسارُ الدلتا (‏`deltaOnlyTables`)
+/// وهي في القوائم الثماني، ثمّ كُتب أوّلُ كاتبٍ لها. وهذا بالضبط ما وُجد
+/// الحارسُ ليُجبِر عليه.
 const _pendingSync = <String>[
   'AssetDisposals',
-  'ChequeBooks',
   'FloorPlanItems',
   'ImportPurchaseDetails',
 ];

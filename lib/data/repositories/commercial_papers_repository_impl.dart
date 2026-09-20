@@ -53,9 +53,13 @@ class CommercialPapersRepositoryImpl implements ICommercialPapersRepository {
 
     /// سندُ القبض/الصرف الذي وُلدت منه الورقة — راجع الـDAO.
     int? sourceVoucherId,
+
+    /// دفترُ الشيكات الذي سُحب منه الرقم — راجع الـDAO.
+    int? chequeBookId,
   }) {
     return _db.createCommercialPaper(
       sourceVoucherId: sourceVoucherId,
+      chequeBookId: chequeBookId,
       paperNumber: paperNumber,
       type: type,
       direction: direction,

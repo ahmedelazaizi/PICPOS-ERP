@@ -125,7 +125,11 @@ const _unsyncedBaseline = <String>{
   // ⚠️ **ونسيانُها ممنوعٌ بحارس**: `unsynced_tables_have_no_writer_test`
   // يسقط لحظةَ ظهور أوّل كاتبٍ لأيٍّ منها وهي ما زالت مكتوبةً هنا. فالسطرُ
   // أدناه ليس وعداً يُنسى — هو دَينٌ يُطالِب بنفسه.
-  'AssetDisposals', 'ChequeBooks', 'FloorPlanItems',
+  // ✅ **و`ChequeBooks` سُدَّت 2026-09-20 (المرحلة ٦ / v175)**: صارت في
+  //    `pullTables` و`deltaOnlyTables` و`_syncPullTables` و
+  //    `namespacedTables` و`_syncHardenedTables`، ثمّ كُتب أوّلُ كاتبٍ لها.
+  //    وهي **مرجعيّةٌ** فخارجَ قائمتَي المنع التعاملَيّتَين.
+  'AssetDisposals', 'FloorPlanItems',
   'ImportPurchaseDetails',
 
   // ═══ 🟡 قرارُ مالكٍ مؤجَّل ═══

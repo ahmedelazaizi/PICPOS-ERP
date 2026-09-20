@@ -37,8 +37,10 @@ class _RecordingRepo implements ICommercialPapersRepository {
     String? notes,
     String? globalId,
     int? sourceVoucherId,
+    int? chequeBookId,
   }) async {
     created.add({
+      'chequeBookId': chequeBookId,
       'paperNumber': paperNumber,
       'type': type,
       'direction': direction,

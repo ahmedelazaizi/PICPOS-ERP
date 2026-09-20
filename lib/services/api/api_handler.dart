@@ -2694,6 +2694,10 @@ class ApiHandler {
     // Tier 1
     'accounting_periods', 'branches', 'warehouses', 'price_lists',
     'users', 'shifts',
+    // v175 / المرحلة ٦ — دفترُ الشيكات. يقابل الإدراجَ نفسَه في
+    // [DeltaPullService.pullTables]؛ بدونه لا يسلّم الخادمُ صفوفَه فيفتح
+    // الجهازُ الثاني دفتراً بنفس المدى.
+    'cheque_books',
     // Tier 2
     'parties', 'products', 'price_list_items', 'product_barcodes',
     'product_units',

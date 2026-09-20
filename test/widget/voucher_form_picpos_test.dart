@@ -55,6 +55,7 @@ void main() {
     PicPosVoucherKind kind = PicPosVoucherKind.receipt,
     List<VoucherInvoiceOption> invoices = const [],
     List<VoucherCostCenterOption> costCenters = const [],
+    List<VoucherChequeBookOption> chequeBooks = const [],
     double width = 1440,
   }) async {
     tester.view.physicalSize = Size(width, 1000);
@@ -68,6 +69,7 @@ void main() {
         safes: _safes,
         costCenters: costCenters,
         openInvoices: invoices,
+        chequeBooks: chequeBooks,
         onSubmit: (v) async => submitted.add(v),
       ),
     ));
@@ -284,6 +286,130 @@ void main() {
     });
   });
 
+  // ═══════════════════════════════════════════════════════════════════════
+  // 🔴 دفترُ الشيكات (v175) — الرقمُ يُسحَب ولا يُكتَب بيد
+  // ═══════════════════════════════════════════════════════════════════════
+  //
+  // تفرُّدُ الشيك الصادر مبنيٌّ على `(paperNumber, type, bankName)` — وهو
+  // فحصٌ **بعد** الكتابة يسقط عند أوّل اختلافِ إملاءٍ في اسم البنك. والدفترُ
+  // يمنع التكرارَ قبل وقوعه.
+  group('🔴 دفترُ الشيكات', () {
+    const books = <VoucherChequeBookOption>[
+      (
+        id: 3,
+        label: 'دفتر بنك مصر A-1',
+        prefix: 'CHK-',
+        nextNumber: 101,
+        toNumber: 200,
+        remaining: 100
+      ),
+    ];
+
+    testWidgets('⚠️ ولا منتقيَ في سند القبض — الواردُ من دفتر غيرنا',
+        (tester) async {
+      await pump(tester, chequeBooks: books);
+      await switchToCheques(tester);
+      // النموذجُ لا يعرضه ما لم يمرّره المضيفُ، والقبضُ لا يمرّره أصلاً —
+      // فالمرساةُ هنا على المضيف في `voucher_screens_keep_their_money_path`.
+      expect(find.byKey(const Key('voucher_cheque_book')), findsOneWidget,
+          reason: 'النموذجُ يعرض ما يُمرَّر إليه — والقبضُ لا يمرّر');
+      await teardownTree(tester);
+    });
+
+    testWidgets('🔴 الرقمُ يُعايَن مقفولاً ويُمرَّر مع معرّف الدفتر',
+        (tester) async {
+      await pump(
+          tester, kind: PicPosVoucherKind.payment, chequeBooks: books);
+      await pickParty(tester, 'شركة النور');
+      await switchToCheques(tester);
+
+      // بلا دفترٍ: حقلُ رقمٍ محرَّر.
+      expect(_fieldByLabel('رقم الشيك'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('voucher_cheque_book')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('دفتر بنك مصر A-1 · متبقٍّ 100').last);
+      await tester.pumpAndSettle();
+
+      // 🔴 صار معاينةً مقفولةً — وحقلٌ يُكتَب فيه رقمٌ ثمّ يُستبدَل عند
+      //    الحفظ يكذب على من كتبه.
+      expect(_fieldByLabel('رقم الشيك'), findsNothing);
+      expect(find.byKey(const Key('voucher_cheque_preview_0')), findsOneWidget);
+      expect(find.text('CHK-101'), findsOneWidget);
+
+      await tester.enterText(_fieldByLabel('المبلغ').first, '500');
+      await tester.pumpAndSettle();
+      await tester.tap(
+          find.widgetWithText(InputDecorator, 'اختر التاريخ').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('OK').last);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('مراجعة واعتماد'));
+      await tester.pumpAndSettle();
+
+      expect(submitted.single.chequeBookId, 3,
+          reason: 'بلا المعرّف لا يسحب المضيفُ من الدفتر، ويبقى الرقمُ '
+              'معاينةً تُكتَب كما هي — فلا يتقدّم الدفترُ أبداً');
+      expect(submitted.single.cheques.single.number, 'CHK-101');
+      await teardownTree(tester);
+    });
+
+    testWidgets('🔴 وشيكاتٌ أكثرُ ممّا بقي في الدفتر تمنع الاعتماد',
+        (tester) async {
+      await pump(
+        tester,
+        kind: PicPosVoucherKind.payment,
+        chequeBooks: const [
+          (
+            id: 4,
+            label: 'دفتر شارف',
+            prefix: null,
+            nextNumber: 200,
+            toNumber: 200,
+            remaining: 1
+          ),
+        ],
+      );
+      await pickParty(tester, 'شركة النور');
+      await switchToCheques(tester);
+      await tester.tap(find.byKey(const Key('voucher_cheque_book')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('دفتر شارف · متبقٍّ 1').last);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('voucher_add_cheque')));
+      await tester.pumpAndSettle();
+
+      // 🔴 السحبُ الجزئيُّ كان يكتب شيكاً ويترك الثانيَ بلا رقمٍ في سندٍ
+      //    مُرحَّل. والرسالةُ تقول «الدفتر» لا «اكتب رقم الشيك» — والحقلُ
+      //    مقفولٌ فتلك كانت كاذبة.
+      expect(find.textContaining('الدفتر:'), findsOneWidget);
+      await teardownTree(tester);
+    });
+
+    testWidgets('⚠️ و«بلا دفتر» يُعيد الحقلَ محرَّراً', (tester) async {
+      await pump(
+          tester, kind: PicPosVoucherKind.payment, chequeBooks: books);
+      await pickParty(tester, 'شركة النور');
+      await switchToCheques(tester);
+      await tester.tap(find.byKey(const Key('voucher_cheque_book')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('دفتر بنك مصر A-1 · متبقٍّ 100').last);
+      await tester.pumpAndSettle();
+      expect(_fieldByLabel('رقم الشيك'), findsNothing);
+
+      await tester.tap(find.byKey(const Key('voucher_cheque_book')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('بلا دفتر — أكتب الرقم بيدي').last);
+      await tester.pumpAndSettle();
+      // ⚠️ دفاترُ قديمةٌ لم تُسجَّل وشيكٌ مصرفيٌّ من غير دفترنا — ومنعُ
+      //    اليدِ كان يوقف الصرفَ حتى يُسجَّل كلُّ دفترٍ في الدرج.
+      expect(_fieldByLabel('رقم الشيك'), findsOneWidget);
+      await teardownTree(tester);
+    });
+  });
+
   group('ومراسي تركيب', () {
     for (final w in const [1100.0, 1440.0, 1920.0]) {
       testWidgets('الشاشةُ بلا فيضٍ عند ${w ~/ 1}', (tester) async {
@@ -291,6 +417,27 @@ void main() {
         expect(tester.takeException(), isNull);
         await switchToCheques(tester);
         expect(tester.takeException(), isNull, reason: 'جدولُ الشيكات فاض');
+        await teardownTree(tester);
+      });
+
+      testWidgets('ومع منتقي الدفتر بلا فيضٍ عند ${w ~/ 1}', (tester) async {
+        await pump(
+          tester,
+          width: w,
+          kind: PicPosVoucherKind.payment,
+          chequeBooks: const [
+            (
+              id: 3,
+              label: 'دفتر بنك مصر — فرع وسط البلد A-1',
+              prefix: 'CHK-',
+              nextNumber: 101,
+              toNumber: 200,
+              remaining: 100
+            ),
+          ],
+        );
+        await switchToCheques(tester);
+        expect(tester.takeException(), isNull, reason: 'منتقي الدفتر فاض');
         await teardownTree(tester);
       });
     }

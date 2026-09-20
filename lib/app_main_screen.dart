@@ -95,6 +95,7 @@ import 'presentation/fixed_assets_picpos/screens/fixed_assets_picpos_screen.dart
 import 'presentation/accounting_picpos/journal_voucher_picpos_screen.dart';
 import 'presentation/treasury_picpos/screens/receipt_voucher_picpos_screen.dart';
 import 'presentation/treasury_picpos/screens/payment_voucher_picpos_screen.dart';
+import 'presentation/treasury_picpos/screens/cheque_books_picpos_screen.dart';
 import 'presentation/fixed_assets_picpos/screens/asset_categories_picpos_screen.dart';
 import 'presentation/fixed_assets_picpos/screens/asset_locations_picpos_screen.dart';
 import 'presentation/opex_picpos/screens/opex_picpos_screen.dart';
@@ -1108,6 +1109,13 @@ class _MainScreenState extends ConsumerState<MainScreen> with WindowListener {
         builder: (_) => const PaymentVoucherPicposScreen(),
         label: 'سند صرف',
         icon: PhosphorIconsBold.arrowCircleUp,
+      ),
+      // دفترُ الشيكات — أوّلُ كاتبٍ لجدول v174، ومنه يسحب سندُ الصرف رقمَه.
+      ScreenConfig(
+        appScreen: AppScreen.chequeBooks,
+        builder: (_) => const ChequeBooksPicposScreen(),
+        label: 'دفتر الشيكات',
+        icon: PhosphorIconsBold.checkSquareOffset,
       ),
       ScreenConfig(
         appScreen: AppScreen.syncConflicts,

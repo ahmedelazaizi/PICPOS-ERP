@@ -241,6 +241,8 @@ class ScreenRegistry {
     // سندا القبض والصرف — نطاقُ `commercialPapers` و`treasury` معاً.
     ScreenId.receiptVoucher,
     ScreenId.paymentVoucher,
+    // دفترُ الشيكات — نفسُ نطاقِ سندِ الصرف الذي يسحب منه.
+    ScreenId.chequeBooks,
     ScreenId.generalLedger,
     ScreenId.bankReconciliation,
     ScreenId.salesOrders,

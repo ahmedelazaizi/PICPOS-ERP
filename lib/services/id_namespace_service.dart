@@ -54,6 +54,10 @@ class IdNamespaceService {
     'sales_invoices', 'purchase_invoices', 'held_orders', 'sales_orders',
     'purchase_orders', 'quotations', 'payments', 'journal_entries',
     'safe_transactions', 'commercial_papers', 'stock_movements',
+    // v175 / المرحلة ٦ — دفترُ الشيكات. بلا أرضيّةِ ترقيمٍ يبدأ العميلُ من ١
+    // فيصطدم دفترُه بدفترِ الخادم على نفس الرقم، و`commercial_papers`
+    // تشير إليه بمعرّفٍ صار يدلّ على دفترٍ آخر.
+    'cheque_books',
     'sales_invoice_items', 'purchase_invoice_items', 'held_order_items',
     'sales_order_items', 'purchase_order_items', 'quotation_items',
     'payment_allocations',

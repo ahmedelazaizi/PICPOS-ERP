@@ -163,7 +163,16 @@ enum ScreenId {
   receiptVoucher(68),
 
   /// «سند صرف» — تصميمُ المالك `(11)`. راجع [receiptVoucher] في الصلاحية.
-  paymentVoucher(69);
+  paymentVoucher(69),
+
+  /// «دفتر الشيكات» — تصميمُ المالك `(11)`: أوّلُ كاتبٍ لجدول v174.
+  ///
+  /// ⚠️ **وصلاحيّتُها `treasury_view`** كسندَي القبض والصرف؛ والكتابةُ
+  /// داخلَها على `commercial_papers_manage` — وهي **ممنوحةٌ فعلاً**
+  /// («مدير مالي»، ومديرُ النظام يملك ما ليس عمليّةً ماليّةً حرجة).
+  /// و`treasury_manage` غيرُ ممنوحةٍ لأيّ دورٍ في
+  /// `RoleGrantMatrix.defaultGrants` فكانت ستُخفي الأزرارَ عن الجميع.
+  chequeBooks(70);
 
   const ScreenId(this.navigationIndex);
   final int navigationIndex;

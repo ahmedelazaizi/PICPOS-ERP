@@ -46,6 +46,7 @@ import 'package:intl/intl.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../domain/models/cheque_book_plan.dart';
 import '../../picpos_shell/picpos_content_card.dart';
 import '../../picpos_shell/picpos_form_action_bar.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
@@ -107,6 +108,19 @@ typedef VoucherInvoiceOption = ({
   double paid,
 });
 
+/// دفترُ شيكاتٍ يجوز السحبُ منه — **لسند الصرف وحدَه**.
+///
+/// ⚠️ الواردُ يأتي من دفتر الطرف الآخر، ولا دفترَ لنا يضبطه — فلا منتقيَ
+///    في سند القبض.
+typedef VoucherChequeBookOption = ({
+  int id,
+  String label,
+  String? prefix,
+  int nextNumber,
+  int toNumber,
+  int remaining,
+});
+
 /// شيكٌ واحدٌ في السند — **بمبلغه**، راجع رأسَ الملفّ.
 class VoucherChequeDraft {
   VoucherChequeDraft();
@@ -140,6 +154,13 @@ typedef VoucherSubmission = ({
   List<({String number, String bank, DateTime? dueDate, double amount})> cheques,
   bool depositImmediately,
   List<({String invoiceType, int invoiceId, double amount})> allocations,
+
+  /// الدفترُ المختارُ — و`null` يعني رقماً مكتوباً بيد.
+  ///
+  /// 🔴 **والأرقامُ في [cheques] معاينةٌ لا حجز** حين يكون هذا غيرَ فارغ:
+  ///    المضيفُ يسحبها بـ`allocateChequeNumbers` داخلَ معاملةٍ ويستعمل ما
+  ///    تُرجعه هي. وجهازٌ آخرُ قد يكون سحب في اللحظة نفسِها.
+  int? chequeBookId,
 });
 
 class PicPosVoucherForm extends StatefulWidget {
@@ -151,6 +172,7 @@ class PicPosVoucherForm extends StatefulWidget {
     required this.costCenters,
     required this.openInvoices,
     required this.onSubmit,
+    this.chequeBooks = const [],
     this.onCancel,
     this.onPartyPicked,
     this.initialPartyId,
@@ -164,6 +186,9 @@ class PicPosVoucherForm extends StatefulWidget {
 
   /// فواتيرُ الطرف المختار — تُحدَّث من المضيف عند تبديل الطرف.
   final List<VoucherInvoiceOption> openInvoices;
+
+  /// دفاترُ الشيكات السارية — **لسند الصرف وحدَه**، وفارغةٌ في القبض.
+  final List<VoucherChequeBookOption> chequeBooks;
 
   final Future<void> Function(VoucherSubmission) onSubmit;
   final VoidCallback? onCancel;
@@ -193,6 +218,18 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
   bool _allocationOpen = false;
 
   final List<VoucherChequeDraft> _cheques = [VoucherChequeDraft()];
+
+  /// الدفترُ المختار — `null` يعني رقماً مكتوباً بيد.
+  int? _chequeBookId;
+
+  VoucherChequeBookOption? get _pickedBook => _chequeBookId == null
+      ? null
+      : widget.chequeBooks.where((b) => b.id == _chequeBookId).firstOrNull;
+
+  /// الرقمُ الذي **سيُسحَب** للشيك رقم [i] — معاينةٌ لا حجز.
+  String _previewChequeNumber(VoucherChequeBookOption b, int i) =>
+      formatChequeNumber(
+          prefix: b.prefix, number: b.nextNumber + i, toNumber: b.toNumber);
 
   /// المخصَّصُ لكلّ فاتورة — بمفتاح `نوع#رقم`.
   final Map<String, TextEditingController> _allocCtrls = {};
@@ -270,9 +307,26 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
       return 'اختر مركز التكلفة.';
     }
     if (_isCheque) {
+      // 🔴 **والدفترُ يُفحَص قبل الأرقام**: لو لم يبقَ فيه ما يكفي فرسالةُ
+      //    «اكتب رقم الشيك» كاذبةٌ — الحقلُ مقفولٌ لأنّ الدفترَ يملؤه.
+      final book = _pickedBook;
+      if (book != null) {
+        final plan = planChequeNumbers(
+          book: (
+            id: book.id,
+            bankAccountId: 0,
+            fromNumber: book.nextNumber,
+            toNumber: book.toNumber,
+            nextNumber: book.nextNumber,
+            status: 'active',
+          ),
+          count: _cheques.length,
+        );
+        if (plan.error != null) return 'الدفتر: ${plan.error}';
+      }
       for (var i = 0; i < _cheques.length; i++) {
         final c = _cheques[i];
-        if (c.numberCtrl.text.trim().isEmpty) {
+        if (book == null && c.numberCtrl.text.trim().isEmpty) {
           return 'الشيك ${i + 1}: اكتب رقمه.';
         }
         // 🔴 مبلغٌ صفرٌ يعني قسمةً بالتساوي في المسار القديم — وهنا يُرفَض.
@@ -606,6 +660,10 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
             ),
             const SizedBox(height: 6),
             SizedBox(width: 230, child: _safeField()),
+            if (widget.chequeBooks.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              _chequeBookField(),
+            ],
             const SizedBox(height: 8),
             for (var i = 0; i < _cheques.length; i++) _chequeRow(i),
             const SizedBox(height: 4),
@@ -632,8 +690,39 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
         ),
       );
 
+  /// منتقي الدفتر — و«بلا دفتر» خيارٌ **صريحٌ** لا غيابُ اختيار.
+  ///
+  /// ⚠️ **ولماذا يبقى الكتابةُ بيدٍ ممكنةً**: دفاترُ قديمةٌ لم تُسجَّل بعد،
+  ///    وشيكٌ مصرفيٌّ يُسحَب من غير دفترنا. ومنعُ اليدِ كان يوقف الصرفَ حتى
+  ///    يُسجَّل كلُّ دفترٍ في الدرج.
+  Widget _chequeBookField() => DropdownButtonFormField<int?>(
+        key: const Key('voucher_cheque_book'),
+        initialValue: _chequeBookId,
+        // ⚠️ راجع نظيرَه في شاشة الدفتر: بلا هذه يفيض الصفُّ على اسمٍ طويل.
+        isExpanded: true,
+        decoration: const InputDecoration(
+          labelText: 'دفتر الشيكات',
+          helperText: 'الرقمُ يُسحَب من الدفتر عند الحفظ — لا يُكتَب بيد',
+          isDense: true,
+          border: OutlineInputBorder(),
+        ),
+        items: [
+          const DropdownMenuItem<int?>(
+            value: null,
+            child: Text('بلا دفتر — أكتب الرقم بيدي'),
+          ),
+          for (final b in widget.chequeBooks)
+            DropdownMenuItem<int?>(
+              value: b.id,
+              child: Text('${b.label} · متبقٍّ ${b.remaining}'),
+            ),
+        ],
+        onChanged: (v) => setState(() => _chequeBookId = v),
+      );
+
   Widget _chequeRow(int i) {
     final c = _cheques[i];
+    final book = _pickedBook;
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(10),
@@ -687,16 +776,33 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
             runSpacing: 6,
             children: [
               SizedBox(
-                width: 150,
-                child: TextField(
-                  controller: c.numberCtrl,
-                  onChanged: (_) => setState(() {}),
-                  decoration: const InputDecoration(
-                    labelText: 'رقم الشيك',
-                    isDense: true,
-                    border: OutlineInputBorder(),
-                  ),
-                ),
+                width: 170,
+                child: book == null
+                    ? TextField(
+                        controller: c.numberCtrl,
+                        onChanged: (_) => setState(() {}),
+                        decoration: const InputDecoration(
+                          labelText: 'رقم الشيك',
+                          isDense: true,
+                          border: OutlineInputBorder(),
+                        ),
+                      )
+                    // 🔴 **معاينةٌ مقفولةٌ لا حقلٌ محرَّر**: الرقمُ يُسحَب في
+                    //    معاملة الحفظ، وحقلٌ يُكتَب فيه رقمٌ ثمّ يُستبدَل
+                    //    بغيره عند الحفظ يكذب على من كتبه.
+                    : InputDecorator(
+                        decoration: const InputDecoration(
+                          labelText: 'رقم الشيك',
+                          helperText: 'من الدفتر عند الحفظ',
+                          isDense: true,
+                          border: OutlineInputBorder(),
+                        ),
+                        child: Text(
+                          _previewChequeNumber(book, i),
+                          key: Key('voucher_cheque_preview_$i'),
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                      ),
               ),
               SizedBox(
                 width: 170,
@@ -895,16 +1001,20 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
       notes: _notesCtrl.text.trim(),
       cheques: [
         if (_isCheque)
-          for (final c in _cheques)
+          for (var i = 0; i < _cheques.length; i++)
             (
-              number: c.numberCtrl.text.trim(),
-              bank: c.bankCtrl.text.trim(),
-              dueDate: c.dueDate,
-              amount: c.amount,
+              // معاينةٌ حين يكون ثَمَّ دفتر — والمضيفُ يسحب ويستبدل.
+              number: _pickedBook == null
+                  ? _cheques[i].numberCtrl.text.trim()
+                  : _previewChequeNumber(_pickedBook!, i),
+              bank: _cheques[i].bankCtrl.text.trim(),
+              dueDate: _cheques[i].dueDate,
+              amount: _cheques[i].amount,
             ),
       ],
       depositImmediately: _isCheque && _depositImmediately,
       allocations: allocations,
+      chequeBookId: _isCheque ? _chequeBookId : null,
     ));
   }
 }

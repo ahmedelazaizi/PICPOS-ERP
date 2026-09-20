@@ -21,6 +21,7 @@ import '../../domain/models/account_facts.dart';
 import '../../domain/models/asset_movement_types.dart';
 import '../../domain/models/journal_balance.dart';
 import '../../domain/models/purchase_line_discount.dart';
+import '../../domain/models/cheque_book_plan.dart';
 import '../../services/security_service.dart';
 import '../../domain/models/quick_sale_policy.dart'
     show kQuickSaleReceiptTemplateKey, quickSaleReceiptTemplateFile;
@@ -124,6 +125,7 @@ part 'daos/accounting_reports_dao.dart';
 part 'daos/accounting_fiscal_dao.dart';
 part 'daos/accounting_audit_dao.dart';
 part 'daos/commercial_papers_dao.dart';
+part 'daos/cheque_books_dao.dart';
 part 'daos/multi_currency_pricelist_dao.dart';
 part 'daos/manufacturing_dao.dart';
 part 'daos/fixed_assets_dao_ext.dart';
@@ -1386,7 +1388,8 @@ class AppDatabase extends _$AppDatabase {
     'payments', 'payment_allocations',
     'accounts', 'journal_entries', 'cost_centers', 'fiscal_years', 'accounting_periods',
     'roles', 'users',
-    'commercial_papers', 'currencies', 'price_lists', 'price_list_items',
+    'commercial_papers', 'cheque_books',
+    'currencies', 'price_lists', 'price_list_items',
     'regions', 'branches', 'warehouses', 'stock_movements',
     'units', 'categories', 'products', 'product_barcodes', 'product_units',
     'quotations', 'quotation_items',

@@ -756,6 +756,11 @@ const kAllNavItemDefs = [
   NavItemDef(icon: PhosphorIconsBold.notePencil, label: 'سند قيد', permission: 'settings_view', index: 67, group: 'accounting'),
   NavItemDef(icon: PhosphorIconsBold.folders, label: 'فئات الأصول', permission: 'assets_view', index: 65, group: 'accounting'),
   NavItemDef(icon: PhosphorIconsBold.mapPin, label: 'التوزيع والمواقع', permission: 'assets_view', index: 66, group: 'accounting'),
+  // ⚠️ **بعد صدرِ المجموعة لا داخلَه.** ترتيبُ السبعةِ الأُوَل أمرُ مالكٍ
+  //    2026-09-18 ويثبّته `asset_screens_have_their_writers_test`، وقد رُسم
+  //    قبل أن يوجد الدفترُ أصلاً. ووضعُه بجوار «إدارة الشيكات» — وهو موضعُه
+  //    المنطقيّ — يزيح ترتيباً طلبه المالكُ بنفسه، فذاك قرارُه لا اجتهادُنا.
+  NavItemDef(icon: PhosphorIconsBold.checkSquareOffset, label: 'دفتر الشيكات', permission: 'treasury_view', index: 70, group: 'accounting'),
   // ── بقيّةُ المجموعة كما هي ────────────────────────────────────────────
   NavItemDef(icon: PhosphorIconsBold.wallet, label: 'الخزينة', permission: 'treasury_view', index: 10, group: 'accounting'),
   NavItemDef(icon: PhosphorIconsBold.lockKey, label: 'إغلاق الوردية', permission: PermissionCodes.posShiftClose, index: 56, group: 'accounting'),
@@ -1050,6 +1055,7 @@ const screenPermissionMap = <ScreenId, String>{
   // كان يسحبهما من الجميع — وتغييرُ **مَن يُنشئ سنداً** قرارُ مالكٍ مستقلّ.
   ScreenId.receiptVoucher: 'treasury_view',
   ScreenId.paymentVoucher: 'treasury_view',
+  ScreenId.chequeBooks: 'treasury_view',
 };
 
 final userAllowedScreensProvider = FutureProvider<List<int>>((ref) async {

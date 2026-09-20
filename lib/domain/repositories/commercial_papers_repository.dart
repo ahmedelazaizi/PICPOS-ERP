@@ -37,6 +37,9 @@ abstract class ICommercialPapersRepository {
     /// سندُ القبض/الصرف الذي وُلدت منه الورقة (v174) — بديلُ النصّ الحرّ
     /// الذي كان في [notes]. تقرؤه «إدارة الشيكات» في زرّ «عرض السند».
     int? sourceVoucherId,
+
+    /// دفترُ الشيكات الذي سُحب منه الرقم (v174) — للصادر وحدَه.
+    int? chequeBookId,
   });
 
   /// Feature 048 (v130) — `counterAccountId` lets the caller override the

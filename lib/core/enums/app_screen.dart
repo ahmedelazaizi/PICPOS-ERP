@@ -84,7 +84,10 @@ enum AppScreen {
   receiptVoucher(68),
 
   /// سندُ الصرف — يجب أن تطابق `ScreenId.paymentVoucher`.
-  paymentVoucher(69);
+  paymentVoucher(69),
+
+  /// دفترُ الشيكات — يجب أن تطابق `ScreenId.chequeBooks`.
+  chequeBooks(70);
 
   /// The integer index for this screen, used in permission maps and storage.
   final int value;

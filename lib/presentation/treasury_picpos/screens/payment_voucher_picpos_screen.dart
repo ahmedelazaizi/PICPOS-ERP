@@ -12,13 +12,16 @@
 // راجع رأسَ `voucher_form_picpos.dart`: `amount / count` كانت تخترع مبالغَ
 // الشيكات، والمجموعُ وحدَه صحيح.
 //
-// ═══ ⚠️ وما لم يُنقَل: اختيارُ شيكٍ مسجَّلٍ سلفاً ═══
+// ═══ ✅ وما وصل الآن: الرقمُ يُسحَب من دفترٍ لا يُكتَب بيد (v175) ═══
 //
-// الحوارُ يسمح بانتقاء ورقةٍ **قائمةٍ** من القائمة فيُعلِّقها بملاحظةِ
-// تاريخٍ بدل إنشاء ورقةٍ ثانية. وهو مسارٌ لدفاتر الشيكات المطبوعة مسبقاً،
-// ومكانُه الطبيعيُّ **دفترُ الشيكات** (`ChequeBooks`) الذي لم يُبنَ بعد.
-// فبُني هنا مسارُ الشيك الجديد وحدَه، والقديمُ باقٍ في الحوار حتى يصل
-// الدفتر — ولا يُحذَف الحوارُ قبلَه.
+// الحوارُ كان يسمح بانتقاء ورقةٍ **قائمةٍ** من قائمة `commercial_papers` —
+// وهي حيلةٌ لغياب الدفتر: المستخدمُ يُنشئ الشيكاتِ يدويّاً في «إدارة
+// الشيكات» ثمّ ينتقيها هنا. ومع `ChequeBooks` صار المسارُ الصحيحُ متاحاً:
+// يُختار الدفترُ فتُسحَب أرقامُه **داخلَ معاملة** وتُكتَب على الورقة مع
+// `cheque_book_id`.
+//
+// ⚠️ **والكتابةُ بيدٍ تبقى ممكنة**: دفاترُ قديمةٌ لم تُسجَّل، وشيكٌ مصرفيٌّ
+//    من غير دفترنا. ومنعُها كان يوقف الصرفَ حتى يُسجَّل كلُّ دفترٍ في الدرج.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -28,8 +31,10 @@ import '../../../core/permissions/permission_codes.dart';
 import '../../../core/utils/uuid_v7.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../data/providers/providers.dart';
+import '../../../domain/models/cheque_book_plan.dart';
 import '../../../services/client_write_interceptor.dart';
 import '../../widgets/permission_guard.dart';
+import 'cheque_books_picpos_screen.dart' show chequeBooksListProvider;
 import 'receipt_voucher_picpos_screen.dart' show voucherOpenInvoicesProvider;
 import 'voucher_form_picpos.dart';
 
@@ -48,6 +53,9 @@ class _PaymentVoucherPicposScreenState
     extends ConsumerState<PaymentVoucherPicposScreen> {
   bool _busy = false;
   int? _partyId;
+
+  /// الأرقامُ التي سُحبت فعلاً في هذه المحاولة — تُقال في رسالة الفشل.
+  List<int> _drawn = const [];
 
   @override
   Widget build(BuildContext context) {
@@ -87,6 +95,7 @@ class _PaymentVoucherPicposScreenState
           for (final c in costCenters) (id: c.id, name: c.name),
         ],
         openInvoices: invoices,
+        chequeBooks: _bookOptions(),
         busy: _busy,
         onPartyPicked: (id) => setState(() => _partyId = id),
         onCancel: () => Navigator.of(context).maybePop(),
@@ -95,12 +104,46 @@ class _PaymentVoucherPicposScreenState
     );
   }
 
+  /// الدفاترُ الصالحةُ للسحب — **السارية وحدَها**.
+  ///
+  /// ⚠️ الملغى والمنتهي يُقصيان هنا لا في المحرّك وحدَه: خيارٌ يُعرَض ثمّ
+  ///    يُرفَض عند الحفظ بعد أن مُلئ السندُ كلُّه وعدٌ كاذب.
+  List<VoucherChequeBookOption> _bookOptions() {
+    final books =
+        ref.watch(chequeBooksListProvider).value ?? const <ChequeBookData>[];
+    return [
+      for (final b in books)
+        if (b.status == 'active' &&
+            chequesRemaining(nextNumber: b.nextNumber, toNumber: b.toNumber) >
+                0)
+          (
+            id: b.id,
+            label: b.bookNumber,
+            prefix: b.prefix,
+            nextNumber: b.nextNumber,
+            toNumber: b.toNumber,
+            remaining: chequesRemaining(
+                nextNumber: b.nextNumber, toNumber: b.toNumber),
+          ),
+    ];
+  }
+
   Future<void> _save(VoucherSubmission v) async {
     if (_busy) return;
     setState(() => _busy = true);
+    _drawn = const [];
     try {
       final amount = v.grossAmount;
-      final allCheckNumbers = v.cheques.map((c) => c.number).join(', ');
+
+      // 🔴 **السحبُ أوّلاً وفي معاملةٍ واحدة.** الأرقامُ التي عاينها النموذجُ
+      //    قد تكون بطُلت — جهازٌ آخرُ سحب قبله — فالحكمُ لما تُرجعه
+      //    `allocateChequeNumbers` لا لما عُرض.
+      //
+      // ⚠️ **وقبل أيّ كتابةٍ ماليّة**: الأرقامُ تدخل وصفَ السند وأرقامَ
+      //    الأوراق معاً، فسحبٌ بعدَها كان يترك سنداً يصف أرقاماً غيرَ التي
+      //    كُتبت.
+      final numbers = await _drawNumbers(v);
+      final allCheckNumbers = numbers.join(', ');
       var description =
           v.notes.isEmpty ? 'دفع لمورد' : v.notes;
       if (v.method == 'check') {
@@ -148,7 +191,7 @@ class _PaymentVoucherPicposScreenState
       }
 
       if (v.method == 'check') {
-        await _createCheques(v, voucherRowId);
+        await _createCheques(v, voucherRowId, numbers);
       }
 
       await _recordAllocations(v, amount, interceptedByServer: intercepted != null);
@@ -168,16 +211,63 @@ class _PaymentVoucherPicposScreenState
       _toast('تم حفظ سند الصرف', ToastType.success);
       Navigator.of(context).maybePop();
     } catch (e) {
-      _toast('خطأ في الحفظ: $e', ToastType.error);
+      // 🔴 **وما سُحب من الدفتر يُقال.** الفشلُ بعد السحب يترك أرقاماً
+      //    مُستهلَكةً في الدفتر بلا شيكٍ يقابلها — ورقةٌ نُزعت وأُتلفت.
+      //    وصمتٌ عنها يجعل المستخدمَ يعيد المحاولةَ ظانّاً أنّه يكتب نفسَ
+      //    الرقم، ثمّ يجد فجوةً في الدفتر لا يعرف سببَها.
+      final burnt = _drawn.isEmpty
+          ? ''
+          : ' — وقد سُحبت من الدفتر الأرقامُ ${_drawn.join('، ')} ولم '
+              'تُكتَب على شيك. صحّح «التالي» من شاشة دفتر الشيكات إن لزم.';
+      _toast('خطأ في الحفظ: $e$burnt', ToastType.error);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
   }
 
+  /// 🔴 **الأرقامُ تُسحَب من الدفتر في معاملةٍ واحدة** — أو تبقى كما كتبها
+  /// المستخدمُ بيده إن لم يُختَر دفتر.
+  ///
+  /// ⚠️ **وما سُحب لا يُردّ.** لو فشل الحفظُ بعد هذه النقطة احترقت الأرقامُ
+  ///    — تماماً كورقةٍ نُزعت من الدفتر ثمّ أُتلفت. وإنقاصُ `next_number`
+  ///    تعويضاً كان **أخطرَ**: جهازٌ آخرُ قد يكون سحب بعدنا، فإنقاصُنا
+  ///    يُعيد إصدارَ رقمٍ في يد مورّد. ولذلك «التالي» حقلٌ محرَّرٌ في شاشة
+  ///    الدفتر، والرسالةُ تقول ما احترق.
+  Future<List<String>> _drawNumbers(VoucherSubmission v) async {
+    final typed = [for (final c in v.cheques) c.number];
+    if (v.method != 'check' || v.chequeBookId == null || v.cheques.isEmpty) {
+      return typed;
+    }
+    final book = (ref.read(chequeBooksListProvider).value ??
+            const <ChequeBookData>[])
+        .where((b) => b.id == v.chequeBookId)
+        .firstOrNull;
+    final drawn =
+        await ref.read(chequeBooksRepositoryProvider).allocateChequeNumbers(
+              bookId: v.chequeBookId!,
+              count: v.cheques.length,
+            );
+    _drawn = drawn;
+    return [
+      for (final n in drawn)
+        formatChequeNumber(
+          prefix: book?.prefix,
+          number: n,
+          toNumber: book?.toNumber ?? n,
+        ),
+    ];
+  }
+
   /// 🔴 **بمبلغِ كلِّ شيكٍ كما كُتب** — لا قسمةً بالتساوي.
-  Future<void> _createCheques(VoucherSubmission v, int voucherRowId) async {
+  Future<void> _createCheques(
+    VoucherSubmission v,
+    int voucherRowId,
+    List<String> numbers,
+  ) async {
     final cpRepo = ref.read(commercialPapersRepositoryProvider);
-    for (final c in v.cheques) {
+    for (var i = 0; i < v.cheques.length; i++) {
+      final c = v.cheques[i];
+      final number = i < numbers.length ? numbers[i] : c.number;
       final gid = UuidV7.generate();
       final dueDate =
           c.dueDate ?? DateTime.now().add(const Duration(days: 30));
@@ -185,7 +275,7 @@ class _PaymentVoucherPicposScreenState
       const notes = 'ترحيل تلقائي من سند صرف';
 
       await ClientWriteInterceptor.createCommercialPaper(
-        paperNumber: c.number,
+        paperNumber: number,
         type: 'cheque',
         direction: 'issued',
         partyId: v.partyId ?? 0,
@@ -199,7 +289,10 @@ class _PaymentVoucherPicposScreenState
       );
       await cpRepo.createPaper(
         sourceVoucherId: voucherRowId > 0 ? voucherRowId : null,
-        paperNumber: c.number,
+        // v175 — الدفترُ الذي سُحب منه الرقمُ فعلاً. بلا هذا العمود يبقى
+        // الدفترُ متقدّماً وشيكُه مجهولَ المصدر.
+        chequeBookId: v.chequeBookId,
+        paperNumber: number,
         type: 'cheque',
         direction: 'issued',
         partyId: v.partyId ?? 0,

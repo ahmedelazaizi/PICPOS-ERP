@@ -55,6 +55,11 @@ class DeltaPullService {
 
     // ── Tier 1: depend on Tier 0 ──
     'accounting_periods',   // → fiscal_years
+    // v175 / المرحلة ٦ — دفترُ الشيكات. **موضعُه هنا إلزاميٌّ لا تنظيميّ**:
+    // `commercial_papers.cheque_book_id` تشير إليه وهي في الطبقة ٣، و
+    // `_upsertRow` يكتب بالترتيب و`PRAGMA foreign_keys = ON` في الإنتاج —
+    // فشيكٌ يسبق دفترَه يُسقَط صامتاً (الخطأُ مبتلَعٌ بـ`debugPrint`).
+    'cheque_books',         // → accounts
     'branches',             // → regions, cost_centers
     'warehouses',           // → branches
     'price_lists',          // → currencies
@@ -364,6 +369,11 @@ class DeltaPullService {
     'approval_workflows', 'approval_steps', 'approval_requests',
     'approval_decisions', 'sod_conflicts', 'sod_violations',
     'compliance_checks',
+
+    // v175 / المرحلة ٦ — دفترُ الشيكات. بلا استراتيجيّةٍ في `fullSync`،
+    // فبذرُ علامتِه يعني جهازاً ثانياً **لا يرى دفتراً فُتح قبل إقلاعه** —
+    // فيفتح دفتراً بنفس المدى ويُصدِر شيكَين بنفس الرقم إلى البنك.
+    'cheque_books',
 
     // ⚠️ **`printers` و`activity_logs` مستثنيان عن قصدٍ — قرارٌ لا سهو.**
     //   • `printers` يخلط إعداداً **جهازيّاً** (‏`port` = COM3) بإعدادٍ

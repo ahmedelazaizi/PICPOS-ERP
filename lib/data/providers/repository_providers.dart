@@ -65,6 +65,8 @@ import '../../domain/repositories/i_sales_orders_repository.dart';
 import '../repositories/drift_sales_orders_repository.dart';
 import '../../domain/repositories/commercial_papers_repository.dart';
 import '../repositories/commercial_papers_repository_impl.dart';
+export '../../domain/repositories/cheque_books_repository.dart';
+import '../repositories/cheque_books_repository_impl.dart';
 import '../../domain/repositories/cycle_count_repository.dart';
 import '../repositories/cycle_count_repository_impl.dart';
 import '../../domain/repositories/landed_cost_repository.dart';
@@ -292,6 +294,11 @@ final salesOrdersRepositoryProvider = Provider<ISalesOrdersRepository>((ref) {
 final commercialPapersRepositoryProvider = Provider<ICommercialPapersRepository>((ref) {
   final db = ref.watch(databaseProvider);
   return CommercialPapersRepositoryImpl(db);
+});
+
+/// دفاترُ الشيكات (v175 / المرحلة ٦) — أوّلُ كاتبٍ لجدولِ v174.
+final chequeBooksRepositoryProvider = Provider<IChequeBooksRepository>((ref) {
+  return ChequeBooksRepositoryImpl(ref.watch(databaseProvider));
 });
 
 final cycleCountRepositoryProvider = Provider<ICycleCountRepository>((ref) {
